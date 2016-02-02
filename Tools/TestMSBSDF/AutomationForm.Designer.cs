@@ -220,6 +220,7 @@
 			this.toolTip1.SetToolTip(this.checkBoxParm2_InclusiveStart, "If checked, the first step will be at min albedo, if not then the first step will" +
         " be at (max-min) * 1 / StepsCount");
 			this.checkBoxParm2_InclusiveStart.UseVisualStyleBackColor = true;
+			this.checkBoxParm2_InclusiveStart.CheckedChanged += new System.EventHandler(this.checkBoxParm2_InclusiveStart_CheckedChanged);
 			// 
 			// checkBoxParm2_InclusiveEnd
 			// 
@@ -232,6 +233,7 @@
 			this.toolTip1.SetToolTip(this.checkBoxParm2_InclusiveEnd, "If checked, the last step will be at max albedo, if not then the last step will b" +
         "e at (max-min) * (StepsCount-1)/StepsCount");
 			this.checkBoxParm2_InclusiveEnd.UseVisualStyleBackColor = true;
+			this.checkBoxParm2_InclusiveEnd.CheckedChanged += new System.EventHandler(this.checkBoxParm2_InclusiveEnd_CheckedChanged);
 			// 
 			// integerTrackbarControlParam2_Steps
 			// 
@@ -244,6 +246,7 @@
 			this.integerTrackbarControlParam2_Steps.TabIndex = 3;
 			this.integerTrackbarControlParam2_Steps.Value = 4;
 			this.integerTrackbarControlParam2_Steps.VisibleRangeMax = 20;
+			this.integerTrackbarControlParam2_Steps.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlParam2_Steps_ValueChanged);
 			// 
 			// floatTrackbarControlParam2_Max
 			// 
@@ -257,6 +260,7 @@
 			this.floatTrackbarControlParam2_Max.TabIndex = 2;
 			this.floatTrackbarControlParam2_Max.Value = 0F;
 			this.floatTrackbarControlParam2_Max.VisibleRangeMax = 1F;
+			this.floatTrackbarControlParam2_Max.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlParam2_Max_ValueChanged);
 			// 
 			// label15
 			// 
@@ -279,6 +283,7 @@
 			this.floatTrackbarControlParam2_Min.TabIndex = 2;
 			this.floatTrackbarControlParam2_Min.Value = 1F;
 			this.floatTrackbarControlParam2_Min.VisibleRangeMax = 1F;
+			this.floatTrackbarControlParam2_Min.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlParam2_Min_ValueChanged);
 			// 
 			// label16
 			// 
@@ -340,6 +345,7 @@
 			this.toolTip1.SetToolTip(this.checkBoxParm1_InclusiveStart, "If checked, the first step will be at min roughness, if not then the first step w" +
         "ill be at (max-min) * 1 / StepsCount");
 			this.checkBoxParm1_InclusiveStart.UseVisualStyleBackColor = true;
+			this.checkBoxParm1_InclusiveStart.CheckedChanged += new System.EventHandler(this.checkBoxParm1_InclusiveStart_CheckedChanged);
 			// 
 			// checkBoxParam1_InclusiveEnd
 			// 
@@ -354,6 +360,7 @@
 			this.toolTip1.SetToolTip(this.checkBoxParam1_InclusiveEnd, "If checked, the last step will be at max roughness, if not then the last step wil" +
         "l be at (max-min) * (StepsCount-1)/StepsCount");
 			this.checkBoxParam1_InclusiveEnd.UseVisualStyleBackColor = true;
+			this.checkBoxParam1_InclusiveEnd.CheckedChanged += new System.EventHandler(this.checkBoxParam1_InclusiveEnd_CheckedChanged);
 			// 
 			// integerTrackbarControlParam1_Steps
 			// 
@@ -366,6 +373,7 @@
 			this.integerTrackbarControlParam1_Steps.TabIndex = 3;
 			this.integerTrackbarControlParam1_Steps.Value = 10;
 			this.integerTrackbarControlParam1_Steps.VisibleRangeMax = 20;
+			this.integerTrackbarControlParam1_Steps.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlParam1_Steps_ValueChanged);
 			// 
 			// floatTrackbarControlParam1_Max
 			// 
@@ -379,6 +387,7 @@
 			this.floatTrackbarControlParam1_Max.TabIndex = 2;
 			this.floatTrackbarControlParam1_Max.Value = 1F;
 			this.floatTrackbarControlParam1_Max.VisibleRangeMax = 1F;
+			this.floatTrackbarControlParam1_Max.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlParam1_Max_ValueChanged);
 			// 
 			// label6
 			// 
@@ -401,6 +410,7 @@
 			this.floatTrackbarControlParam1_Min.TabIndex = 2;
 			this.floatTrackbarControlParam1_Min.Value = 0F;
 			this.floatTrackbarControlParam1_Min.VisibleRangeMax = 1F;
+			this.floatTrackbarControlParam1_Min.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlParam1_Min_ValueChanged);
 			// 
 			// label12
 			// 
@@ -445,6 +455,7 @@
 			this.integerTrackbarControlScatteringOrder_Max.Value = 4;
 			this.integerTrackbarControlScatteringOrder_Max.VisibleRangeMax = 4;
 			this.integerTrackbarControlScatteringOrder_Max.VisibleRangeMin = 1;
+			this.integerTrackbarControlScatteringOrder_Max.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlScatteringOrder_Max_ValueChanged);
 			// 
 			// integerTrackbarControlRayCastingIterations
 			// 
@@ -474,6 +485,7 @@
 			this.integerTrackbarControlScatteringOrder_Min.Value = 2;
 			this.integerTrackbarControlScatteringOrder_Min.VisibleRangeMax = 4;
 			this.integerTrackbarControlScatteringOrder_Min.VisibleRangeMin = 1;
+			this.integerTrackbarControlScatteringOrder_Min.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlScatteringOrder_Min_ValueChanged);
 			// 
 			// panelIncidentAngle
 			// 
@@ -505,6 +517,7 @@
 			this.toolTip1.SetToolTip(this.checkBoxParam0_InclusiveStart, "If checked, the first step will be at min incident angle, if not then the first s" +
         "tep will be at (max-min) * 1 / StepsCount");
 			this.checkBoxParam0_InclusiveStart.UseVisualStyleBackColor = true;
+			this.checkBoxParam0_InclusiveStart.CheckedChanged += new System.EventHandler(this.checkBoxParam0_InclusiveStart_CheckedChanged);
 			// 
 			// checkBoxParam0_InclusiveEnd
 			// 
@@ -517,6 +530,7 @@
 			this.toolTip1.SetToolTip(this.checkBoxParam0_InclusiveEnd, "If checked, the last step will be at max incident angle, if not then the last ste" +
         "p will be at (max-min) * (StepsCount-1)/StepsCount");
 			this.checkBoxParam0_InclusiveEnd.UseVisualStyleBackColor = true;
+			this.checkBoxParam0_InclusiveEnd.CheckedChanged += new System.EventHandler(this.checkBoxParam0_InclusiveEnd_CheckedChanged);
 			// 
 			// integerTrackbarControlParam0_Steps
 			// 
@@ -542,6 +556,7 @@
 			this.floatTrackbarControlParam0_Max.TabIndex = 2;
 			this.floatTrackbarControlParam0_Max.Value = 90F;
 			this.floatTrackbarControlParam0_Max.VisibleRangeMax = 90F;
+			this.floatTrackbarControlParam0_Max.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlParam0_Max_ValueChanged);
 			// 
 			// label4
 			// 
@@ -564,6 +579,7 @@
 			this.floatTrackbarControlParam0_Min.TabIndex = 2;
 			this.floatTrackbarControlParam0_Min.Value = 0F;
 			this.floatTrackbarControlParam0_Min.VisibleRangeMax = 90F;
+			this.floatTrackbarControlParam0_Min.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlParam0_Min_ValueChanged);
 			// 
 			// label5
 			// 

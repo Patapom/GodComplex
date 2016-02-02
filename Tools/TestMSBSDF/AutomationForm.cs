@@ -855,7 +855,39 @@ namespace TestMSBSDF
 		/// </summary>
 		void	Document2UI() {
 
+			DocumentSurface2UI();
 			DocumentSettings2UI();
+		}
+
+		/// <summary>
+		/// Mirrors the document's surface parameters to the UI
+		/// </summary>
+		void	DocumentSurface2UI() {
+
+			switch ( m_results.m_surface.m_type ) {
+				case TestForm.SURFACE_TYPE.CONDUCTOR: radioButtonSurfaceTypeConductor.Checked = true; break;
+				case TestForm.SURFACE_TYPE.DIELECTRIC: radioButtonSurfaceTypeDielectric.Checked = true; break;
+				case TestForm.SURFACE_TYPE.DIFFUSE: radioButtonSurfaceTypeDiffuse.Checked = true; break;
+			}
+
+			floatTrackbarControlParam0_Min.Value = m_results.m_surface.m_incomingAngle.Min;
+			floatTrackbarControlParam0_Max.Value = m_results.m_surface.m_incomingAngle.Max;
+			integerTrackbarControlParam0_Steps.Value = m_results.m_surface.m_incomingAngle.StepsCount;
+			floatTrackbarControlParam1_Min.Value = m_results.m_surface.m_roughness.Min;
+			floatTrackbarControlParam1_Max.Value = m_results.m_surface.m_roughness.Max;
+			integerTrackbarControlParam1_Steps.Value = m_results.m_surface.m_roughness.StepsCount;
+			floatTrackbarControlParam2_Min.Value = m_results.m_surface.m_albedoF0.Min;
+			floatTrackbarControlParam2_Max.Value = m_results.m_surface.m_albedoF0.Max;
+			integerTrackbarControlParam2_Steps.Value = m_results.m_surface.m_albedoF0.StepsCount;
+			integerTrackbarControlScatteringOrder_Min.Value = m_results.m_surface.ScatteringOrderMin;
+			integerTrackbarControlScatteringOrder_Max.Value = m_results.m_surface.ScatteringOrderMax;
+			integerTrackbarControlRayCastingIterations.Value = m_results.m_surface.m_rayTracingIterationsCount;
+			checkBoxParam0_InclusiveStart.Checked = m_results.m_surface.m_incomingAngle.InclusiveMin;
+			checkBoxParam0_InclusiveEnd.Checked = m_results.m_surface.m_incomingAngle.InclusiveMax;
+			checkBoxParm1_InclusiveStart.Checked = m_results.m_surface.m_roughness.InclusiveMin;
+			checkBoxParam1_InclusiveEnd.Checked = m_results.m_surface.m_roughness.InclusiveMax;
+			checkBoxParm2_InclusiveStart.Checked = m_results.m_surface.m_albedoF0.InclusiveMin;
+			checkBoxParm2_InclusiveEnd.Checked = m_results.m_surface.m_albedoF0.InclusiveMax;
 		}
 
 		/// <summary>
@@ -951,11 +983,6 @@ namespace TestMSBSDF
 // 			floatTrackbarControlInit_CustomRoughness.Enabled = radioButtonInit_UseCustomRoughness.Checked;
 		}
 
-		private void radioButtonSurfaceType_CheckedChanged( object sender, EventArgs e )
-		{
-			labelParm2.Text = SurfaceType == TestForm.SURFACE_TYPE.DIFFUSE ? "Albedo" : "F0";
-		}
-
 		private void buttonCompute_Click( object sender, EventArgs e )
 		{
 			if ( m_computing )
@@ -1042,19 +1069,6 @@ namespace TestMSBSDF
 			} catch ( Exception _e ) {
 				MessageBox( "An error occurred while saving results:\r\n" + _e );
 			}
-		}
-
-		private void integerTrackbarControlRayCastingIterations_ValueChanged(Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue)
-		{
-			long	count = TestForm.HEIGHTFIELD_SIZE * TestForm.HEIGHTFIELD_SIZE;
-					count *= (long) integerTrackbarControlRayCastingIterations.Value;
-
-			labelTotalRaysCount.Text = "Total Simulated Rays: " + count;
-		}
-
-		private void integerTrackbarControlParam0_Steps_ValueChanged( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue )
-		{
-			completionArrayControl.Init( m_results.m_surface.m_incomingAngle.StepsCount, m_results.m_surface.m_roughness.StepsCount, m_results.m_surface.m_albedoF0.StepsCount );
 		}
 
 		private void completionArrayControl_SelectionChanged( CompletionArrayControl _Sender )
@@ -1170,6 +1184,120 @@ namespace TestMSBSDF
 		private void floatTrackbarControlInit_MaskingImportance_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
 		{
 			m_results.m_settings.m_customMasking = _Sender.Value;
+		}
+
+		#endregion
+
+		#region Surface
+
+		private void radioButtonSurfaceType_CheckedChanged( object sender, EventArgs e )
+		{
+			labelParm2.Text = SurfaceType == TestForm.SURFACE_TYPE.DIFFUSE ? "Albedo" : "F0";
+
+			m_results.m_surface.m_type = radioButtonSurfaceTypeConductor.Checked ?	TestForm.SURFACE_TYPE.CONDUCTOR : (
+										radioButtonSurfaceTypeDielectric.Checked ?	TestForm.SURFACE_TYPE.DIELECTRIC :
+																					TestForm.SURFACE_TYPE.DIFFUSE);
+		}
+
+		private void floatTrackbarControlParam0_Min_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
+		{
+			m_results.m_surface.m_incomingAngle.Min = floatTrackbarControlParam0_Min.Value;
+		}
+
+		private void floatTrackbarControlParam0_Max_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
+		{
+			m_results.m_surface.m_incomingAngle.Max = floatTrackbarControlParam0_Max.Value;
+		}
+
+		private void integerTrackbarControlParam0_Steps_ValueChanged( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue )
+		{
+			m_results.m_surface.m_incomingAngle.StepsCount = integerTrackbarControlParam0_Steps.Value;
+			completionArrayControl.Init( m_results.m_surface.m_incomingAngle.StepsCount, m_results.m_surface.m_roughness.StepsCount, m_results.m_surface.m_albedoF0.StepsCount );
+		}
+
+		private void floatTrackbarControlParam1_Min_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
+		{
+			m_results.m_surface.m_roughness.Min = floatTrackbarControlParam1_Min.Value;
+		}
+
+		private void floatTrackbarControlParam1_Max_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
+		{
+			m_results.m_surface.m_roughness.Max = floatTrackbarControlParam1_Max.Value;
+		}
+
+		private void integerTrackbarControlParam1_Steps_ValueChanged( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue )
+		{
+			m_results.m_surface.m_roughness.StepsCount = integerTrackbarControlParam1_Steps.Value;
+			completionArrayControl.Init( m_results.m_surface.m_incomingAngle.StepsCount, m_results.m_surface.m_roughness.StepsCount, m_results.m_surface.m_albedoF0.StepsCount );
+		}
+
+		private void floatTrackbarControlParam2_Min_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
+		{
+			m_results.m_surface.m_albedoF0.Min = floatTrackbarControlParam2_Min.Value;
+		}
+
+		private void floatTrackbarControlParam2_Max_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
+		{
+			m_results.m_surface.m_albedoF0.Max = floatTrackbarControlParam2_Max.Value;
+		}
+
+		private void integerTrackbarControlParam2_Steps_ValueChanged( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue )
+		{
+			m_results.m_surface.m_albedoF0.StepsCount = integerTrackbarControlParam2_Steps.Value;
+			completionArrayControl.Init( m_results.m_surface.m_incomingAngle.StepsCount, m_results.m_surface.m_roughness.StepsCount, m_results.m_surface.m_albedoF0.StepsCount );
+			integerTrackbarControlViewAlbedoSlice.RangeMax = _Sender.Value - 1;
+		}
+
+		private void integerTrackbarControlScatteringOrder_Min_ValueChanged( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue )
+		{
+			m_results.m_surface.ScatteringOrderMin = integerTrackbarControlScatteringOrder_Min.Value;
+			integerTrackbarControlViewScatteringOrder.VisibleRangeMin = _Sender.Value;
+		}
+
+		private void integerTrackbarControlScatteringOrder_Max_ValueChanged( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue )
+		{
+			m_results.m_surface.ScatteringOrderMax = integerTrackbarControlScatteringOrder_Max.Value;
+			integerTrackbarControlViewScatteringOrder.VisibleRangeMax = _Sender.Value;
+		}
+
+		private void integerTrackbarControlRayCastingIterations_ValueChanged(Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue)
+		{
+			m_results.m_surface.m_rayTracingIterationsCount = integerTrackbarControlRayCastingIterations.Value;
+
+			long	count = TestForm.HEIGHTFIELD_SIZE * TestForm.HEIGHTFIELD_SIZE;
+					count *= (long) integerTrackbarControlRayCastingIterations.Value;
+
+			labelTotalRaysCount.Text = "Total Simulated Rays: " + count;
+		}
+
+		private void checkBoxParam0_InclusiveStart_CheckedChanged( object sender, EventArgs e )
+		{
+			m_results.m_surface.m_incomingAngle.InclusiveMin = checkBoxParam0_InclusiveStart.Checked;
+		}
+
+		private void checkBoxParam0_InclusiveEnd_CheckedChanged( object sender, EventArgs e )
+		{
+			m_results.m_surface.m_incomingAngle.InclusiveMax = checkBoxParam0_InclusiveEnd.Checked;
+		}
+
+		private void checkBoxParm1_InclusiveStart_CheckedChanged( object sender, EventArgs e )
+		{
+			m_results.m_surface.m_roughness.InclusiveMin = checkBoxParm1_InclusiveStart.Checked;
+		}
+
+		private void checkBoxParam1_InclusiveEnd_CheckedChanged( object sender, EventArgs e )
+		{
+			m_results.m_surface.m_roughness.InclusiveMax = checkBoxParam1_InclusiveEnd.Checked;
+		}
+
+		private void checkBoxParm2_InclusiveStart_CheckedChanged( object sender, EventArgs e )
+		{
+			m_results.m_surface.m_albedoF0.InclusiveMin = checkBoxParm2_InclusiveStart.Checked;
+		}
+
+		private void checkBoxParm2_InclusiveEnd_CheckedChanged( object sender, EventArgs e )
+		{
+			m_results.m_surface.m_albedoF0.InclusiveMax = checkBoxParm2_InclusiveEnd.Checked;
 		}
 
 		#endregion
