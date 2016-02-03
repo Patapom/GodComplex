@@ -31,8 +31,8 @@
 			this.components = new System.ComponentModel.Container();
 			this.groupBoxSimulationParameters = new System.Windows.Forms.GroupBox();
 			this.panel6 = new System.Windows.Forms.Panel();
-			this.checkBoxParm2_InclusiveStart = new System.Windows.Forms.CheckBox();
-			this.checkBoxParm2_InclusiveEnd = new System.Windows.Forms.CheckBox();
+			this.checkBoxParam2_InclusiveStart = new System.Windows.Forms.CheckBox();
+			this.checkBoxParam2_InclusiveEnd = new System.Windows.Forms.CheckBox();
 			this.integerTrackbarControlParam2_Steps = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
 			this.floatTrackbarControlParam2_Max = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label15 = new System.Windows.Forms.Label();
@@ -41,7 +41,7 @@
 			this.label17 = new System.Windows.Forms.Label();
 			this.labelParm2 = new System.Windows.Forms.Label();
 			this.panel5 = new System.Windows.Forms.Panel();
-			this.checkBoxParm1_InclusiveStart = new System.Windows.Forms.CheckBox();
+			this.checkBoxParam1_InclusiveStart = new System.Windows.Forms.CheckBox();
 			this.checkBoxParam1_InclusiveEnd = new System.Windows.Forms.CheckBox();
 			this.integerTrackbarControlParam1_Steps = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
 			this.floatTrackbarControlParam1_Max = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
@@ -193,8 +193,8 @@
 			// panel6
 			// 
 			this.panel6.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-			this.panel6.Controls.Add(this.checkBoxParm2_InclusiveStart);
-			this.panel6.Controls.Add(this.checkBoxParm2_InclusiveEnd);
+			this.panel6.Controls.Add(this.checkBoxParam2_InclusiveStart);
+			this.panel6.Controls.Add(this.checkBoxParam2_InclusiveEnd);
 			this.panel6.Controls.Add(this.integerTrackbarControlParam2_Steps);
 			this.panel6.Controls.Add(this.floatTrackbarControlParam2_Max);
 			this.panel6.Controls.Add(this.label15);
@@ -209,31 +209,31 @@
 			// 
 			// checkBoxParm2_InclusiveStart
 			// 
-			this.checkBoxParm2_InclusiveStart.AutoSize = true;
-			this.checkBoxParm2_InclusiveStart.Checked = true;
-			this.checkBoxParm2_InclusiveStart.CheckState = System.Windows.Forms.CheckState.Checked;
-			this.checkBoxParm2_InclusiveStart.Location = new System.Drawing.Point(358, 36);
-			this.checkBoxParm2_InclusiveStart.Name = "checkBoxParm2_InclusiveStart";
-			this.checkBoxParm2_InclusiveStart.Size = new System.Drawing.Size(99, 17);
-			this.checkBoxParm2_InclusiveStart.TabIndex = 4;
-			this.checkBoxParm2_InclusiveStart.Text = "First step at min";
-			this.toolTip1.SetToolTip(this.checkBoxParm2_InclusiveStart, "If checked, the first step will be at min albedo, if not then the first step will" +
+			this.checkBoxParam2_InclusiveStart.AutoSize = true;
+			this.checkBoxParam2_InclusiveStart.Checked = true;
+			this.checkBoxParam2_InclusiveStart.CheckState = System.Windows.Forms.CheckState.Checked;
+			this.checkBoxParam2_InclusiveStart.Location = new System.Drawing.Point(358, 36);
+			this.checkBoxParam2_InclusiveStart.Name = "checkBoxParm2_InclusiveStart";
+			this.checkBoxParam2_InclusiveStart.Size = new System.Drawing.Size(99, 17);
+			this.checkBoxParam2_InclusiveStart.TabIndex = 4;
+			this.checkBoxParam2_InclusiveStart.Text = "First step at min";
+			this.toolTip1.SetToolTip(this.checkBoxParam2_InclusiveStart, "If checked, the first step will be at min albedo, if not then the first step will" +
         " be at (max-min) * 1 / StepsCount");
-			this.checkBoxParm2_InclusiveStart.UseVisualStyleBackColor = true;
-			this.checkBoxParm2_InclusiveStart.CheckedChanged += new System.EventHandler(this.checkBoxParm2_InclusiveStart_CheckedChanged);
+			this.checkBoxParam2_InclusiveStart.UseVisualStyleBackColor = true;
+			this.checkBoxParam2_InclusiveStart.CheckedChanged += new System.EventHandler(this.checkBoxParm2_InclusiveStart_CheckedChanged);
 			// 
 			// checkBoxParm2_InclusiveEnd
 			// 
-			this.checkBoxParm2_InclusiveEnd.AutoSize = true;
-			this.checkBoxParm2_InclusiveEnd.Location = new System.Drawing.Point(482, 36);
-			this.checkBoxParm2_InclusiveEnd.Name = "checkBoxParm2_InclusiveEnd";
-			this.checkBoxParm2_InclusiveEnd.Size = new System.Drawing.Size(103, 17);
-			this.checkBoxParm2_InclusiveEnd.TabIndex = 4;
-			this.checkBoxParm2_InclusiveEnd.Text = "Last step at max";
-			this.toolTip1.SetToolTip(this.checkBoxParm2_InclusiveEnd, "If checked, the last step will be at max albedo, if not then the last step will b" +
+			this.checkBoxParam2_InclusiveEnd.AutoSize = true;
+			this.checkBoxParam2_InclusiveEnd.Location = new System.Drawing.Point(482, 36);
+			this.checkBoxParam2_InclusiveEnd.Name = "checkBoxParm2_InclusiveEnd";
+			this.checkBoxParam2_InclusiveEnd.Size = new System.Drawing.Size(103, 17);
+			this.checkBoxParam2_InclusiveEnd.TabIndex = 4;
+			this.checkBoxParam2_InclusiveEnd.Text = "Last step at max";
+			this.toolTip1.SetToolTip(this.checkBoxParam2_InclusiveEnd, "If checked, the last step will be at max albedo, if not then the last step will b" +
         "e at (max-min) * (StepsCount-1)/StepsCount");
-			this.checkBoxParm2_InclusiveEnd.UseVisualStyleBackColor = true;
-			this.checkBoxParm2_InclusiveEnd.CheckedChanged += new System.EventHandler(this.checkBoxParm2_InclusiveEnd_CheckedChanged);
+			this.checkBoxParam2_InclusiveEnd.UseVisualStyleBackColor = true;
+			this.checkBoxParam2_InclusiveEnd.CheckedChanged += new System.EventHandler(this.checkBoxParm2_InclusiveEnd_CheckedChanged);
 			// 
 			// integerTrackbarControlParam2_Steps
 			// 
@@ -318,7 +318,7 @@
 			// panel5
 			// 
 			this.panel5.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-			this.panel5.Controls.Add(this.checkBoxParm1_InclusiveStart);
+			this.panel5.Controls.Add(this.checkBoxParam1_InclusiveStart);
 			this.panel5.Controls.Add(this.checkBoxParam1_InclusiveEnd);
 			this.panel5.Controls.Add(this.integerTrackbarControlParam1_Steps);
 			this.panel5.Controls.Add(this.floatTrackbarControlParam1_Max);
@@ -334,18 +334,18 @@
 			// 
 			// checkBoxParm1_InclusiveStart
 			// 
-			this.checkBoxParm1_InclusiveStart.AutoSize = true;
-			this.checkBoxParm1_InclusiveStart.Checked = true;
-			this.checkBoxParm1_InclusiveStart.CheckState = System.Windows.Forms.CheckState.Checked;
-			this.checkBoxParm1_InclusiveStart.Location = new System.Drawing.Point(358, 36);
-			this.checkBoxParm1_InclusiveStart.Name = "checkBoxParm1_InclusiveStart";
-			this.checkBoxParm1_InclusiveStart.Size = new System.Drawing.Size(99, 17);
-			this.checkBoxParm1_InclusiveStart.TabIndex = 4;
-			this.checkBoxParm1_InclusiveStart.Text = "First step at min";
-			this.toolTip1.SetToolTip(this.checkBoxParm1_InclusiveStart, "If checked, the first step will be at min roughness, if not then the first step w" +
+			this.checkBoxParam1_InclusiveStart.AutoSize = true;
+			this.checkBoxParam1_InclusiveStart.Checked = true;
+			this.checkBoxParam1_InclusiveStart.CheckState = System.Windows.Forms.CheckState.Checked;
+			this.checkBoxParam1_InclusiveStart.Location = new System.Drawing.Point(358, 36);
+			this.checkBoxParam1_InclusiveStart.Name = "checkBoxParm1_InclusiveStart";
+			this.checkBoxParam1_InclusiveStart.Size = new System.Drawing.Size(99, 17);
+			this.checkBoxParam1_InclusiveStart.TabIndex = 4;
+			this.checkBoxParam1_InclusiveStart.Text = "First step at min";
+			this.toolTip1.SetToolTip(this.checkBoxParam1_InclusiveStart, "If checked, the first step will be at min roughness, if not then the first step w" +
         "ill be at (max-min) * 1 / StepsCount");
-			this.checkBoxParm1_InclusiveStart.UseVisualStyleBackColor = true;
-			this.checkBoxParm1_InclusiveStart.CheckedChanged += new System.EventHandler(this.checkBoxParm1_InclusiveStart_CheckedChanged);
+			this.checkBoxParam1_InclusiveStart.UseVisualStyleBackColor = true;
+			this.checkBoxParam1_InclusiveStart.CheckedChanged += new System.EventHandler(this.checkBoxParm1_InclusiveStart_CheckedChanged);
 			// 
 			// checkBoxParam1_InclusiveEnd
 			// 
@@ -467,7 +467,7 @@
 			this.integerTrackbarControlRayCastingIterations.RangeMin = 1;
 			this.integerTrackbarControlRayCastingIterations.Size = new System.Drawing.Size(200, 20);
 			this.integerTrackbarControlRayCastingIterations.TabIndex = 3;
-			this.integerTrackbarControlRayCastingIterations.Value = 1024;
+			this.integerTrackbarControlRayCastingIterations.Value = 1;
 			this.integerTrackbarControlRayCastingIterations.VisibleRangeMax = 2048;
 			this.integerTrackbarControlRayCastingIterations.VisibleRangeMin = 1;
 			this.integerTrackbarControlRayCastingIterations.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlRayCastingIterations_ValueChanged);
@@ -1672,7 +1672,7 @@
 		private System.Windows.Forms.Label label13;
 		private System.Windows.Forms.Label label14;
 		private System.Windows.Forms.Panel panel6;
-		private System.Windows.Forms.CheckBox checkBoxParm2_InclusiveEnd;
+		private System.Windows.Forms.CheckBox checkBoxParam2_InclusiveEnd;
 		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlParam2_Steps;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlParam2_Max;
 		private System.Windows.Forms.Label label15;
@@ -1681,8 +1681,8 @@
 		private System.Windows.Forms.Label label17;
 		private System.Windows.Forms.Label labelParm2;
 		private System.Windows.Forms.CheckBox checkBoxParam0_InclusiveStart;
-		private System.Windows.Forms.CheckBox checkBoxParm2_InclusiveStart;
-		private System.Windows.Forms.CheckBox checkBoxParm1_InclusiveStart;
+		private System.Windows.Forms.CheckBox checkBoxParam2_InclusiveStart;
+		private System.Windows.Forms.CheckBox checkBoxParam1_InclusiveStart;
 		private System.Windows.Forms.GroupBox groupBox4;
 		private System.Windows.Forms.Label label18;
 		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlMaxIterations;

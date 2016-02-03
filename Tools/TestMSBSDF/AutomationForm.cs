@@ -20,7 +20,13 @@ namespace TestMSBSDF
 
 		class CanceledException : Exception {}
 
-		class	Results {
+		/// <summary>
+		/// The main automation document class
+		/// Contains automations settings and results
+		/// </summary>
+		class	Document {
+
+			#region NESTED TYPES
 
 			public delegate void	SettingsChangedEventHandler();
 			public delegate void	ResultStateChangedEventHandler( Result _result );
@@ -138,10 +144,13 @@ namespace TestMSBSDF
 
 					public event ValueChangedEventHandler	ValueChanged;
 
-					public Parameter( SurfaceParameters _owner, float _rangeMin, float _rangeMax ) {
+					public Parameter( SurfaceParameters _owner, float _rangeMin, float _rangeMax, int _stepsCount ) {
 						m_owner = _owner;
 						m_rangeMin = _rangeMin;
+						m_min = m_rangeMin;
 						m_rangeMax = _rangeMax;
+						m_max = m_rangeMax;
+						m_stepsCount = _stepsCount;
 					}
 
 					/// <summary>
@@ -210,11 +219,15 @@ namespace TestMSBSDF
 				}
 
 				public	SurfaceParameters() {
-					m_incomingAngle = new Parameter( this, 0, 0.5f * (float) Math.PI );
-					m_roughness = new Parameter( this, 0, 1.0f );
-					m_albedoF0 = new Parameter( this, 0, 1.0f );
-					m_scatteringOrders = new Parameter( this, 1, 4 );
+					m_incomingAngle = new Parameter( this, 0, 90.0f, 30 );
+					m_roughness = new Parameter( this, 0, 1.0f, 10 );
+					m_albedoF0 = new Parameter( this, 0, 1.0f, 4 );
+					m_scatteringOrders = new Parameter( this, 1, 4, 1 );
 					m_scatteringOrders.ValueChanged += m_scatteringOrders_ValueChanged;
+
+					m_roughness.InclusiveMax = true;	// Roughness must be simulated all the way!
+					m_albedoF0.Min = 1.0f;
+					m_albedoF0.Max = 0.0f;
 				}
 
 				public void		Lock() {
@@ -352,10 +365,10 @@ namespace TestMSBSDF
 				public void		Load( XmlElement _parent ) {
 
 				}
-
 			}
 
 			public class	Result {
+				#region NESTED TYPES
 
 				public class	LobeParameters {
 					public double	m_theta = 0.0;
@@ -473,7 +486,9 @@ namespace TestMSBSDF
 					}
 				}
 
-				Results			m_owner = null;
+				#endregion
+
+				Document		m_owner = null;
 				int				m_order;
 				int				m_X;
 				int				m_Y;
@@ -521,7 +536,7 @@ namespace TestMSBSDF
 					}
 				}
 
-				public Result( Results _owner, int _order, int _X, int _Y, int _Z ) {
+				public Result( Document _owner, int _order, int _X, int _Y, int _Z ) {
 					m_owner = _owner;
 					m_order = _order;
 					m_X = _X;
@@ -554,18 +569,20 @@ namespace TestMSBSDF
 
 			}
 
+			#endregion
+
 			public SurfaceParameters	m_surface = new SurfaceParameters();
 			public Settings				m_settings = new Settings();
 			public Result[][,,]			m_results = new Result[0][,,];
 
 			public event ResultStateChangedEventHandler	ResultStateChanged;
 
-			public Results() {
+			public Document() {
 
 			}
 
 			/// <summary>
-			/// Initializes the array of results of the correct dimensions using the current settings
+			/// Initializes the array of results of the correct dimensions using the current settings and locks the surface (i.e. simulation parameters can't be modified anymore once computation has begun)
 			/// </summary>
 			public void		InitializeResults() {
 				int	orders = m_surface.ScatteringOrdersCount;
@@ -599,7 +616,7 @@ namespace TestMSBSDF
 								R.State = 0.0f;			// Not computed yet!
 								R.m_error = null;		// No error yet...
 
-								R.m_incomingAngleTheta = incomingAngle;
+								R.m_incomingAngleTheta = incomingAngle * (float) Math.PI / 180.0f;
 								R.m_incomingAnglePhi = incomingAnglePhi;
 								R.m_surfaceRoughness = roughness;
 								R.m_surfaceAlbedoF0 = albedoF0;
@@ -653,14 +670,6 @@ namespace TestMSBSDF
 
 			}
 
-// 			/// <summary>
-// 			/// Called by our results to notify of a state change
-// 			/// </summary>
-// 			/// <param name="_result"></param>
-// 			void	NotifyResultStateChanged( Result _result ) {
-// 
-// 			}
-
 			#region XML Helpers
 
 			static XmlElement	AppendChild( XmlDocument _doc, string _name ) {
@@ -693,10 +702,10 @@ namespace TestMSBSDF
 
 		bool			m_computing = false;
 		bool			m_isReflectedLobe = true;
-		Results.Result.LobeParameters	m_currentFittedResult = null;
+		Document.Result.LobeParameters	m_currentFittedResult = null;
 
-		Results			m_document = null;
-		Results.Result	m_selectedResult = null;		// Current selection
+		Document			m_document = null;
+		Document.Result	m_selectedResult = null;		// Current selection
 
 		public new TestForm		Owner {
 			get { return m_owner; }
@@ -706,7 +715,7 @@ namespace TestMSBSDF
 		/// <summary>
 		/// Gets or sets the result currently selected in the completion control
 		/// </summary>
-		Results.Result	SelectedResult {
+		Document.Result	SelectedResult {
 			get { return m_selectedResult; }
 			set {
 				if ( value == m_selectedResult )
@@ -737,7 +746,7 @@ namespace TestMSBSDF
 			m_lobeModel.ParametersChanged += m_lobeModel_ParametersChanged;
 
 			// Attach a default document
-			AttachDocument( new Results() );
+			AttachDocument( new Document() );
 		}
 
 		#region Automation Core
@@ -759,14 +768,14 @@ namespace TestMSBSDF
 		/// Recomputes the surface heightfield for the specified roughness
 		/// </summary>
 		/// <param name="_result"></param>
-		void	UpdateSurfaceRoughness( Results.Result _result ) {
+		void	UpdateSurfaceRoughness( Document.Result _result ) {
 			m_owner.BuildBeckmannSurfaceTexture( (float) _result.m_surfaceRoughness );
 		}
 
 		/// <summary>
 		/// Simulates incoming rays on surface (core routine)
 		/// </summary>
-		void	Simulate( Results.Result _result ) {
+		void	Simulate( Document.Result _result ) {
 
 			float	albedo = _result.m_surfaceAlbedoF0;
 			float	F0 = _result.m_surfaceAlbedoF0;
@@ -779,7 +788,7 @@ namespace TestMSBSDF
 		/// </summary>
 		/// <param name="_result"></param>
 		/// <param name="_reflected"></param>
-		void	PerformLobeFitting( Results.Result _result, bool _reflected ) {
+		void	PerformLobeFitting( Document.Result _result, bool _reflected ) {
 
 			m_isReflectedLobe = _reflected;	// Global flag for current fitting
 			m_currentFittedResult = _reflected ? _result.m_reflected : _result.m_refracted;
@@ -800,7 +809,7 @@ namespace TestMSBSDF
 
 			LobeModel.LOBE_TYPE	lobeType = m_document.m_settings.m_lobeModel;
 
-			Results.Result.LobeParameters	lobeResults = _reflected ? _result.m_reflected : _result.m_refracted;
+			Document.Result.LobeParameters	lobeResults = _reflected ? _result.m_reflected : _result.m_refracted;
 
 			lobeResults.Initialize( _result, m_lobeModel, _reflected ? reflectedDirection : refractedDirection );
 
@@ -816,7 +825,7 @@ namespace TestMSBSDF
 		#region Document Management
 
 		bool		m_internalDocumentChange = false;
-		void		AttachDocument( Results _doc ) {
+		void		AttachDocument( Document _doc ) {
 			// Detach existing doc first
 			DetachDocument( m_document );
 
@@ -837,7 +846,7 @@ namespace TestMSBSDF
 			m_internalDocumentChange = false;
 		}
 
-		void		DetachDocument( Results _doc ) {
+		void		DetachDocument( Document _doc ) {
 			if ( _doc == null )
 				return;
 
@@ -892,10 +901,10 @@ namespace TestMSBSDF
 			integerTrackbarControlRayCastingIterations.Value = m_document.m_surface.m_rayTracingIterationsCount;
 			checkBoxParam0_InclusiveStart.Checked = m_document.m_surface.m_incomingAngle.InclusiveMin;
 			checkBoxParam0_InclusiveEnd.Checked = m_document.m_surface.m_incomingAngle.InclusiveMax;
-			checkBoxParm1_InclusiveStart.Checked = m_document.m_surface.m_roughness.InclusiveMin;
+			checkBoxParam1_InclusiveStart.Checked = m_document.m_surface.m_roughness.InclusiveMin;
 			checkBoxParam1_InclusiveEnd.Checked = m_document.m_surface.m_roughness.InclusiveMax;
-			checkBoxParm2_InclusiveStart.Checked = m_document.m_surface.m_albedoF0.InclusiveMin;
-			checkBoxParm2_InclusiveEnd.Checked = m_document.m_surface.m_albedoF0.InclusiveMax;
+			checkBoxParam2_InclusiveStart.Checked = m_document.m_surface.m_albedoF0.InclusiveMin;
+			checkBoxParam2_InclusiveEnd.Checked = m_document.m_surface.m_albedoF0.InclusiveMax;
 		}
 
 		/// <summary>
@@ -910,30 +919,30 @@ namespace TestMSBSDF
 			}
 
 			switch ( m_document.m_settings.m_initialRoughness ) {
-				case Results.Settings.GUESS_INITIAL_ROUGHNESS.SURFACE: radioButtonInitRoughness_UseSurface.Checked = true; break;
-				case Results.Settings.GUESS_INITIAL_ROUGHNESS.CUSTOM: radioButtonInitRoughness_Custom.Checked = true; break;
-				case Results.Settings.GUESS_INITIAL_ROUGHNESS.NO_CHANGE: radioButtonInitRoughness_NoChange.Checked = true; break;
+				case Document.Settings.GUESS_INITIAL_ROUGHNESS.SURFACE: radioButtonInitRoughness_UseSurface.Checked = true; break;
+				case Document.Settings.GUESS_INITIAL_ROUGHNESS.CUSTOM: radioButtonInitRoughness_Custom.Checked = true; break;
+				case Document.Settings.GUESS_INITIAL_ROUGHNESS.NO_CHANGE: radioButtonInitRoughness_NoChange.Checked = true; break;
 			}
 
 			switch ( m_document.m_settings.m_initialMasking ) {
-				case Results.Settings.GUESS_INITIAL_MASKING.CUSTOM: radioButtonInitMasking_Custom.Checked = true; break;
-				case Results.Settings.GUESS_INITIAL_MASKING.NO_CHANGE: radioButtonInitMasking_NoChange.Checked = true; break;
+				case Document.Settings.GUESS_INITIAL_MASKING.CUSTOM: radioButtonInitMasking_Custom.Checked = true; break;
+				case Document.Settings.GUESS_INITIAL_MASKING.NO_CHANGE: radioButtonInitMasking_NoChange.Checked = true; break;
 			}
 
 			switch ( m_document.m_settings.m_initialFlatten ) {
-				case Results.Settings.GUESS_INITIAL_FLATTEN.CUSTOM: radioButtonInitFlatten_Custom.Checked = true; break;
-				case Results.Settings.GUESS_INITIAL_FLATTEN.NO_CHANGE: radioButtonInitFlatten_NoChange.Checked = true; break;
+				case Document.Settings.GUESS_INITIAL_FLATTEN.CUSTOM: radioButtonInitFlatten_Custom.Checked = true; break;
+				case Document.Settings.GUESS_INITIAL_FLATTEN.NO_CHANGE: radioButtonInitFlatten_NoChange.Checked = true; break;
 			}
 
 			switch ( m_document.m_settings.m_initialScale ) {
-				case Results.Settings.GUESS_INITIAL_SCALE.FACTOR_CENTER_OF_MASS: radioButtonInitScale_CoMFactor.Checked = true; break;
-				case Results.Settings.GUESS_INITIAL_SCALE.NO_CHANGE: radioButtonInitScale_NoChange.Checked = true; break;
+				case Document.Settings.GUESS_INITIAL_SCALE.FACTOR_CENTER_OF_MASS: radioButtonInitScale_CoMFactor.Checked = true; break;
+				case Document.Settings.GUESS_INITIAL_SCALE.NO_CHANGE: radioButtonInitScale_NoChange.Checked = true; break;
 			}
 
 			switch ( m_document.m_settings.m_initialDirection ) {
-				case Results.Settings.GUESS_INITIAL_DIRECTION.CENTER_OF_MASS: radioButtonInitDirection_TowardCoM.Checked = true; break;
-				case Results.Settings.GUESS_INITIAL_DIRECTION.REFLECTED_DIRECTION: radioButtonInitDirection_TowardReflected.Checked = true; break;
-				case Results.Settings.GUESS_INITIAL_DIRECTION.NO_CHANGE: radioButtonInitDirection_NoChange.Checked = true; break;
+				case Document.Settings.GUESS_INITIAL_DIRECTION.CENTER_OF_MASS: radioButtonInitDirection_TowardCoM.Checked = true; break;
+				case Document.Settings.GUESS_INITIAL_DIRECTION.REFLECTED_DIRECTION: radioButtonInitDirection_TowardReflected.Checked = true; break;
+				case Document.Settings.GUESS_INITIAL_DIRECTION.NO_CHANGE: radioButtonInitDirection_NoChange.Checked = true; break;
 			}
 
 			checkBoxInitDirection_Inherit.Checked = m_document.m_settings.m_inheritDirection;
@@ -963,7 +972,7 @@ namespace TestMSBSDF
 			//@TODO: Update 
 		}
 
-		void m_simulationParameter_ValueChanged( AutomationForm.Results.SurfaceParameters.Parameter _P )
+		void m_simulationParameter_ValueChanged( AutomationForm.Document.SurfaceParameters.Parameter _P )
 		{
 			throw new NotImplementedException();
 			//@TODO: Update completion control dimensions
@@ -973,7 +982,7 @@ namespace TestMSBSDF
 			groupBoxSimulationParameters.Enabled = !m_document.m_surface.IsLocked;
 		}
 
-		void m_results_ResultStateChanged( AutomationForm.Results.Result _result )
+		void m_results_ResultStateChanged( AutomationForm.Document.Result _result )
 		{
 			throw new NotImplementedException();
 		}
@@ -1065,7 +1074,7 @@ namespace TestMSBSDF
 			if ( MessageBox( "Are you sure you want to start a new document and lose existing results?", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2 ) != DialogResult.Yes )
 				return;
 
-			AttachDocument( new Results() );
+			AttachDocument( new Document() );
 		}
 
 		private void saveToolStripMenuItem1_Click( object sender, EventArgs e ) {
@@ -1112,13 +1121,13 @@ namespace TestMSBSDF
 
 		private void completionArrayControl_SelectionChanged( CompletionArrayControl _Sender )
 		{
-			Results.Result[,,]	layerResults = m_document.m_results[integerTrackbarControlViewScatteringOrder.Value];
+			Document.Result[,,]	layerResults = m_document.m_results[integerTrackbarControlViewScatteringOrder.Value];
 			SelectedResult = layerResults[_Sender.SelectedX,_Sender.SelectedY, _Sender.SelectedZ];
 		}
 
 		private void integerTrackbarControlViewScatteringOrder_ValueChanged( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue )
 		{
-			Results.Result[,,]	layerResults = m_document.m_results[_Sender.Value];
+			Document.Result[,,]	layerResults = m_document.m_results[_Sender.Value];
 
 			SelectedResult = layerResults[completionArrayControl.SelectedX, completionArrayControl.SelectedY, completionArrayControl.SelectedZ];
 		}
@@ -1150,34 +1159,34 @@ namespace TestMSBSDF
 
 		private void radioButtonInitRoughness_CheckedChanged( object sender, EventArgs e )
 		{
-			m_document.m_settings.m_initialRoughness = radioButtonInitRoughness_UseSurface.Checked ?	Results.Settings.GUESS_INITIAL_ROUGHNESS.SURFACE :
-													(radioButtonInitRoughness_Custom.Checked ?		Results.Settings.GUESS_INITIAL_ROUGHNESS.CUSTOM :
-																									Results.Settings.GUESS_INITIAL_ROUGHNESS.NO_CHANGE);
+			m_document.m_settings.m_initialRoughness = radioButtonInitRoughness_UseSurface.Checked ?	Document.Settings.GUESS_INITIAL_ROUGHNESS.SURFACE :
+													(radioButtonInitRoughness_Custom.Checked ?		Document.Settings.GUESS_INITIAL_ROUGHNESS.CUSTOM :
+																									Document.Settings.GUESS_INITIAL_ROUGHNESS.NO_CHANGE);
 		}
 
 		private void radioButtonInitMasking_CheckedChanged( object sender, EventArgs e )
 		{
-			m_document.m_settings.m_initialMasking = radioButtonInitMasking_Custom.Checked ?	Results.Settings.GUESS_INITIAL_MASKING.CUSTOM :
-																							Results.Settings.GUESS_INITIAL_MASKING.NO_CHANGE;
+			m_document.m_settings.m_initialMasking = radioButtonInitMasking_Custom.Checked ?	Document.Settings.GUESS_INITIAL_MASKING.CUSTOM :
+																							Document.Settings.GUESS_INITIAL_MASKING.NO_CHANGE;
 		}
 
 		private void radioButtonInitFlatten_CheckedChanged( object sender, EventArgs e )
 		{
-			m_document.m_settings.m_initialFlatten = radioButtonInitFlatten_Custom.Checked ?	Results.Settings.GUESS_INITIAL_FLATTEN.CUSTOM :
-																							Results.Settings.GUESS_INITIAL_FLATTEN.NO_CHANGE;
+			m_document.m_settings.m_initialFlatten = radioButtonInitFlatten_Custom.Checked ?	Document.Settings.GUESS_INITIAL_FLATTEN.CUSTOM :
+																							Document.Settings.GUESS_INITIAL_FLATTEN.NO_CHANGE;
 		}
 
 		private void radioButtonInitScale_CheckedChanged( object sender, EventArgs e )
 		{
-			m_document.m_settings.m_initialScale = radioButtonInitScale_CoMFactor.Checked ?	Results.Settings.GUESS_INITIAL_SCALE.FACTOR_CENTER_OF_MASS :
-																							Results.Settings.GUESS_INITIAL_SCALE.NO_CHANGE;
+			m_document.m_settings.m_initialScale = radioButtonInitScale_CoMFactor.Checked ?	Document.Settings.GUESS_INITIAL_SCALE.FACTOR_CENTER_OF_MASS :
+																							Document.Settings.GUESS_INITIAL_SCALE.NO_CHANGE;
 		}
 
 		private void radioButtonInitDirection_CheckedChanged( object sender, EventArgs e )
 		{
-			m_document.m_settings.m_initialDirection = radioButtonInitDirection_TowardCoM.Checked ?		Results.Settings.GUESS_INITIAL_DIRECTION.CENTER_OF_MASS :
-													(radioButtonInitDirection_TowardReflected.Checked ?	Results.Settings.GUESS_INITIAL_DIRECTION.REFLECTED_DIRECTION :
-																										Results.Settings.GUESS_INITIAL_DIRECTION.NO_CHANGE);
+			m_document.m_settings.m_initialDirection = radioButtonInitDirection_TowardCoM.Checked ?		Document.Settings.GUESS_INITIAL_DIRECTION.CENTER_OF_MASS :
+													(radioButtonInitDirection_TowardReflected.Checked ?	Document.Settings.GUESS_INITIAL_DIRECTION.REFLECTED_DIRECTION :
+																										Document.Settings.GUESS_INITIAL_DIRECTION.NO_CHANGE);
 		}
 
 		private void checkBoxInitDirection_Inherit_CheckedChanged( object sender, EventArgs e )
@@ -1306,7 +1315,14 @@ namespace TestMSBSDF
 			long	count = TestForm.HEIGHTFIELD_SIZE * TestForm.HEIGHTFIELD_SIZE;
 					count *= (long) integerTrackbarControlRayCastingIterations.Value;
 
-			labelTotalRaysCount.Text = "Total Simulated Rays: " + count;
+			string	readableCount = "";
+			while ( count > 0 ) {
+				long	mod = count % 1000;
+				count /= 1000;
+				readableCount = (count > 0 ? "," + mod.ToString( "G03" ) : "" + mod.ToString( "G3" )) + readableCount;
+			}
+
+			labelTotalRaysCount.Text = "Total Simulated Rays: " + readableCount;
 		}
 
 		private void checkBoxParam0_InclusiveStart_CheckedChanged( object sender, EventArgs e )
@@ -1321,7 +1337,7 @@ namespace TestMSBSDF
 
 		private void checkBoxParm1_InclusiveStart_CheckedChanged( object sender, EventArgs e )
 		{
-			m_document.m_surface.m_roughness.InclusiveMin = checkBoxParm1_InclusiveStart.Checked;
+			m_document.m_surface.m_roughness.InclusiveMin = checkBoxParam1_InclusiveStart.Checked;
 		}
 
 		private void checkBoxParam1_InclusiveEnd_CheckedChanged( object sender, EventArgs e )
@@ -1331,12 +1347,12 @@ namespace TestMSBSDF
 
 		private void checkBoxParm2_InclusiveStart_CheckedChanged( object sender, EventArgs e )
 		{
-			m_document.m_surface.m_albedoF0.InclusiveMin = checkBoxParm2_InclusiveStart.Checked;
+			m_document.m_surface.m_albedoF0.InclusiveMin = checkBoxParam2_InclusiveStart.Checked;
 		}
 
 		private void checkBoxParm2_InclusiveEnd_CheckedChanged( object sender, EventArgs e )
 		{
-			m_document.m_surface.m_albedoF0.InclusiveMax = checkBoxParm2_InclusiveEnd.Checked;
+			m_document.m_surface.m_albedoF0.InclusiveMax = checkBoxParam2_InclusiveEnd.Checked;
 		}
 
 		#endregion

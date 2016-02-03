@@ -160,7 +160,7 @@ namespace TestMSBSDF
 					for ( int X=0; X < m_dimensionX; X++ )
 						m_states[X,Y,0] = 1;			// Done
 				for ( int X=4; X < m_dimensionX; X++ )
-					m_states[X,m_dimensionY-3,0] = 2;	// Failed
+					m_states[X,m_dimensionY-3,0] = -1;	// Failed
 //			}
 		}
 
@@ -323,8 +323,11 @@ namespace TestMSBSDF
 						float	state = m_states[X,Y,m_selectedZ];
 						if ( state < 0.0f )
 							FillRectangle( e.Graphics, m_brushFailed, x0+margin, y0+margin, x1-margin, y1-margin );
-						else
-							FillRectangle( e.Graphics, m_brushSuccess, x0+margin, y0+margin, x0+state*(rectangleWidth-2*margin), y1-margin );
+						else {
+							// Show progress bar
+							state = Math.Min( 1.0f, state );
+							FillRectangle( e.Graphics, m_brushSuccess, x0+margin, y0+margin, x0+state*(x1-x0), y1-margin );
+						}
 					}
 				}
 
@@ -342,7 +345,7 @@ namespace TestMSBSDF
 // 			_g.ResetTransform();
 // 			_g.TranslateTransform( x0, y0 );
 // 			_g.FillPath( _brush, _path );
-			_g.FillRectangle( _brush, x0, y0, 1+x1-x0, 1+y1-y0 );
+			_g.FillRectangle( _brush, x0, y0, x1-x0, y1-y0 );
 		}
 
 		#region Rounded Rectangle Path Creation
