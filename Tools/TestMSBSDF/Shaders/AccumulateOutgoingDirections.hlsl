@@ -39,7 +39,7 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 	if ( iTheta < LOBES_COUNT_THETA ) {
 		uint3	UVW = uint3( iPhi, iTheta, scatteringOrder );
 		InterlockedAdd( _Tex_DirectionsHistogram_Decimal[UVW], value, oldValue );						// Decimal point addition
-		value += oldValue;	// Perform local addition to see if we need to add carry to integers
+		value += oldValue;																				// Perform local addition to see if we need to add carry to integers accumulator
 		InterlockedAdd( _Tex_DirectionsHistogram_Integer[UVW], value < oldValue ? 1 : 0, oldValue );	// Integer addition with carry
 	}
 }

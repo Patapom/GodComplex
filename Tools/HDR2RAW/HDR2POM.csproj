@@ -5,7 +5,7 @@
     <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
     <ProductVersion>8.0.30703</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{544CA9EF-FD80-4514-922F-86BB596A95F4}</ProjectGuid>
+    <ProjectGuid>{A07533DA-27B7-449C-8BCB-FA7F5BDFF3AD}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>HDR2RAW</RootNamespace>
