@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
+using System.Drawing.Imaging;
 using System.Linq;
 using System.Text;
 using System.Windows.Forms;
@@ -543,6 +544,92 @@ namespace TestMSBSDF
 
 				m_Tex_Heightfield = new Texture2D( m_Device, HEIGHTFIELD_SIZE, HEIGHTFIELD_SIZE, 1, 1, PIXEL_FORMAT.R32_FLOAT, false, false, new PixelsBuffer[] { Content } );
 			#endif
+		}
+
+		/// <summary>
+		/// Builds the surface texture from an actual image file
+		/// </summary>
+		/// <param name="_textureFileName"></param>
+		/// <param name="_pixelSize">Size of a pixel, assuming the maximum height is 1</param>
+		public unsafe void	BuildSurfaceFromTexture( string _textureFileName, float _pixelSize ) {
+
+			if ( m_Tex_Heightfield != null )
+				m_Tex_Heightfield.Dispose();	// We will create a new one so dispose of the old one...
+
+			// Read the bitmap
+			int			W, H;
+			float4[,]	Content = null;
+			using ( Bitmap BM = Bitmap.FromFile( _textureFileName ) as Bitmap ) {
+				W = BM.Width;
+				H = BM.Height;
+				Content = new float4[W,H];
+
+				BitmapData	LockedBitmap = BM.LockBits( new Rectangle( 0, 0, W, H ), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb );
+
+				byte	R, G, B, A;
+				for ( int Y=0; Y < H; Y++ ) {
+					byte*	pScanline = (byte*) LockedBitmap.Scan0.ToPointer() + Y*LockedBitmap.Stride;
+					for ( int X=0; X < W; X++ ) {
+
+						// Read in shitty order
+						B = *pScanline++;
+						G = *pScanline++;
+						R = *pScanline++;
+						A = *pScanline++;
+
+// Use this if you really need RGBA data
+//						Content[X,Y].Set( R / 255.0f, G / 255.0f, B / 255.0f, A / 255.0f );
+
+// But assuming it's a height field, we only store one component into alpha
+						Content[X,Y].Set( 0, 0, 0, R );	// Use Red as height
+					}
+				}
+				BM.UnlockBits( LockedBitmap );
+			}
+
+			// Build normal (shitty version)
+			float	Hx0, Hx1, Hy0, Hy1;
+			float3	dNx = new float3( 2.0f * _pixelSize, 0, 0 );
+			float3	dNy = new float3( 0, 2.0f * _pixelSize, 0 );
+			float3	N;
+			for ( int Y=0; Y < H; Y++ ) {
+				int	pY = (Y+H-1) % H;
+				int	nY = (Y+1) % H;
+				for ( int X=0; X < W; X++ ) {
+					int	pX = (X+W-1) % W;
+					int	nX = (X+1) % W;
+
+					Hx0 = Content[pX,Y].w;
+					Hx1 = Content[nX,Y].w;
+					Hy0 = Content[X,pY].w;
+					Hy1 = Content[X,nY].w;
+
+					dNx.z = Hx1 - Hx0;
+					dNy.z = Hy0 - Hy1;	// Assuming +Y is upward
+
+					N = dNx.Cross( dNy );
+					N = N.Normalized;
+
+					Content[X,Y].x = N.x;
+					Content[X,Y].y = N.y;
+					Content[X,Y].z = N.z;
+				}
+			}
+
+			// Build the texture from the array
+			PixelsBuffer	Buf = new PixelsBuffer( W*H*16 );
+			using ( BinaryWriter Writer = Buf.OpenStreamWrite() )
+				for ( int Y=0; Y < H; Y++ )
+					for ( int X=0; X < W; X++ ) {
+						float4	pixel = Content[X,Y];
+						Writer.Write( pixel.x );
+						Writer.Write( pixel.y );
+						Writer.Write( pixel.z );
+						Writer.Write( pixel.w );
+					}
+			Buf.CloseStream();
+
+			m_Tex_Heightfield = new Texture2D( m_Device, W, H, 1, 1, PIXEL_FORMAT.RGBA32_FLOAT, false, false, new PixelsBuffer[] { Buf } );
 		}
 
 		#endregion

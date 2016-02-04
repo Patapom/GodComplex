@@ -373,11 +373,18 @@ namespace TestMSBSDF
 				#region NESTED TYPES
 
 				public class	LobeParameters {
-					public double	m_theta = 0.0;
+					public double	m_theta = -1.0;		// -1 means invalid
 					public double	m_roughness = 0.8;
 					public double	m_scale = 0.1;
 					public double	m_flatten = 0.5;
 					public double	m_masking = 1.0;
+
+					/// <summary>
+					/// Tells if the parameters are valid
+					/// </summary>
+					public bool		IsValid {
+						get { return m_theta >= 0.0; }
+					}
 
 					public double[]	AsArray {
 						get { return new double[] {	m_theta,
@@ -403,7 +410,9 @@ namespace TestMSBSDF
 						if ( _owner.m_Y > 0 ) {
 							Result		previousResult = _owner.m_owner.GetResultsForOrder( _owner.ScatteringOrder )[_owner.m_X, _owner.m_Y-1, _owner.m_Z];
 							previousParams = reflected ? previousResult.m_reflected : previousResult.m_refracted;
-are they valid??						}
+							if ( !previousParams.IsValid )
+								previousParams = null;		// Can't use if the results are invalid!
+						}
 
 						//////////////////////////////////////////////////////////////////////////
 						// Initialize theta
@@ -728,6 +737,7 @@ are they valid??						}
 		bool			m_isReflectedLobe = true;
 		Document.Result.LobeParameters	m_currentFittedResult = null;
 
+		FileInfo		m_documentFileName = null;
 		Document		m_document = null;
 		Document.Result	m_selectedResult = null;		// Current selection
 
@@ -827,8 +837,10 @@ are they valid??						}
 		int		m_retriesCount = 0;
 		void	PerformLobeFitting( Document.Result _result, bool _reflected ) {
 
+			Document.Result.LobeParameters	lobeResults = _reflected ? _result.m_reflected : _result.m_refracted;
+
 			m_isReflectedLobe = _reflected;	// Global flag for current fitting
-			m_currentFittedResult = _reflected ? _result.m_reflected : _result.m_refracted;
+			m_currentFittedResult = lobeResults;
 
 			// Read back histogram to CPU for fitting
 			Texture2D	Tex_SimulatedLobeHistogram = m_owner.GetSimulationHistogram( _reflected );
@@ -846,8 +858,6 @@ are they valid??						}
 
 			LobeModel.LOBE_TYPE	lobeType = m_document.m_settings.m_lobeModel;
 
-move up			Document.Result.LobeParameters	lobeResults = _reflected ? _result.m_reflected : _result.m_refracted;
-
 			lobeResults.Initialize( _result, m_lobeModel, _reflected ? reflectedDirection : refractedDirection );
 
 			// Initialize lobe model using initialized lobe results
@@ -858,7 +868,7 @@ move up			Document.Result.LobeParameters	lobeResults = _reflected ? _result.m_re
 				m_fitter.Minimize( m_lobeModel );
 				if ( m_fitter.IterationsCount < m_document.m_settings.m_maxIterations ) {
 					// Finished!
-					m_retriesCount++:
+					m_retriesCount++;
 					break;
 				}
 			}
