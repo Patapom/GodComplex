@@ -46,6 +46,7 @@ namespace TestMSBSDF
 				public delegate void	LockStateChangedEventHandler();
 				public delegate void	ScatteringOrdersCountChangedEventHandler();
 
+				[System.Diagnostics.DebuggerDisplay( "Range=[{m_min}, {m_max}] Steps={m_stepsCount}" )]
 				public class	Parameter {
 
 					public delegate	void	ValueChangedEventHandler( Parameter _P );
@@ -245,8 +246,8 @@ namespace TestMSBSDF
 				}
 
 				public void		Save( XmlElement _parent ) {
-					Attrib( _parent, "Surface Type", m_type );
-					Attrib( _parent, "RayTrace Iterations", m_rayTracingIterationsCount );
+					Attrib( _parent, "SurfaceType", m_type );
+					Attrib( _parent, "RayTraceIterations", m_rayTracingIterationsCount );
 					Attrib( _parent, "Locked", m_locked );
 
 					XmlElement ElemParm0 = AppendChild( _parent, "IncomingAngle" );
@@ -371,9 +372,12 @@ namespace TestMSBSDF
 				}
 			}
 
+			[System.Diagnostics.DebuggerDisplay( "Order={m_order} ({m_X}, {m_Y}, {m_Z}) Theta={m_incomingAngleTheta} Rho={m_surfaceRoughness} F0={m_surfaceAlbedoF0} State={m_state}" )]
 			public class	Result {
+
 				#region NESTED TYPES
 
+				[System.Diagnostics.DebuggerDisplay( "Theta={m_theta} Rho={m_roughness} Scale={m_scale} Flatten={m_flatten} Masking={m_masking}" )]
 				public class	LobeParameters {
 					public double	m_theta = -1.0;		// -1 means invalid
 					public double	m_roughness = 0.8;
@@ -590,14 +594,14 @@ namespace TestMSBSDF
 				}
 
 				public void		Save( XmlElement _parent ) {
-					Attrib( _parent, "Index", "(" + m_X + "," + m_Y + ", " + m_Z + ")" );
+					Attrib( _parent, "Index", "(" + m_X + "," + m_Y + "," + m_Z + ")" );
 					Attrib( _parent, "State", m_state );
 					Attrib( _parent, "Error", m_error != null ? m_error : "" );
 
 					// Store surface parameters
-					Attrib( _parent, "incomingTheta", m_incomingAngleTheta );
-					Attrib( _parent, "incomingPhi", m_incomingAnglePhi );
-					Attrib( _parent, "surfaceRoughness", m_surfaceRoughness );
+					Attrib( _parent, "theta", m_incomingAngleTheta );
+					Attrib( _parent, "phi", m_incomingAnglePhi );
+					Attrib( _parent, "roughness", m_surfaceRoughness );
 					Attrib( _parent, "albedoF0", m_surfaceAlbedoF0 );
 
 					XmlElement	ElemReflected = AppendChild( _parent, "LobeReflected" );
@@ -696,7 +700,7 @@ namespace TestMSBSDF
 
 			public void		Save( XmlDocument _doc ) {
 
-				XmlElement	Root = _doc.CreateElement( "Root" );
+				XmlElement	Root = AppendChild( _doc, "Root" );
 
 				XmlElement	ElmSurface = AppendChild( Root, "SurfaceParameters" );
 				m_surface.Save( ElmSurface );
@@ -1065,6 +1069,8 @@ namespace TestMSBSDF
 
 			Document.Result[,,]	layerResults = m_document.GetResultsForOrder( SelectedScatteringOrder );
 
+			m_selectedResult = layerResults[0,0,0];
+
 			for ( int Z=0; Z < stepsCountZ; Z++ )
 				for ( int Y=0; Y < stepsCountY; Y++ )
 					for ( int X=0; X < stepsCountX; X++ ) {
@@ -1160,7 +1166,7 @@ namespace TestMSBSDF
 		}
 
 		string	FormatDuration( TimeSpan _duration ) {
-			return _duration.ToString( @"hh\:mm\:ss\" ) + ":" + _duration.Milliseconds.ToString( "G03" );
+			return _duration.ToString( @"hh\:mm\:ss" ) + ":" + _duration.Milliseconds.ToString( "G03" );
 		}
 
 		#endregion
@@ -1174,6 +1180,7 @@ namespace TestMSBSDF
 
 			groupBoxAnalyticalLobeModel.Enabled = false;
 			groupBoxLobeFitterConfig.Enabled = false;
+			completionArrayControl.Enabled = false;		// Musn't change selection!
 
 			// Lock surface, we can't change dimensions now that we're started!
 			if ( !m_document.m_surface.IsLocked )
@@ -1188,6 +1195,7 @@ namespace TestMSBSDF
 
 			groupBoxAnalyticalLobeModel.Enabled = true;
 			groupBoxLobeFitterConfig.Enabled = true;
+			completionArrayControl.Enabled = true;
 		}
 
 		DateTime	m_computationStart;
@@ -1284,7 +1292,7 @@ namespace TestMSBSDF
 									runCounter++;
 									if ( runCounter > AUTO_SAVE_EVERY_N_RUNS ) {
 										runCounter = 0;
-										saveToolStripMenuItem1_Click( null, EventArgs.Empty );
+										saveToolStripMenuItem_Click( null, EventArgs.Empty );
 									}
 
 								} catch ( Exception _e ) {
@@ -1307,7 +1315,7 @@ namespace TestMSBSDF
 				}
 
 			} catch ( CanceledException ) {
-				LogLine( "Canceled" );
+				LogLine( "Canceled!" );
 				SelectedResult.m_error = "Canceled";
 				SelectedResult.State = -1.0f;
 			} catch ( Exception _e ) {
@@ -1371,7 +1379,7 @@ namespace TestMSBSDF
 				SelectedResult.State = 1.0f;
 
 			} catch ( CanceledException ) {
-				LogLine( "Canceled" );
+				LogLine( "Canceled!" );
 				SelectedResult.m_error = "Canceled";
 				SelectedResult.State = -1.0f;
 			} catch ( Exception _e ) {
@@ -1428,7 +1436,7 @@ namespace TestMSBSDF
 			return fileName;
 		}
 
-		private void saveToolStripMenuItem1_Click( object sender, EventArgs e ) {
+		private void saveToolStripMenuItem_Click( object sender, EventArgs e ) {
 			if ( m_documentFileName == null ) {
 				string	FileName = AskForFileName();
 				if ( FileName == null )
@@ -1457,10 +1465,10 @@ namespace TestMSBSDF
 				return;
 
 			m_documentFileName = new FileInfo( FileName );
-			saveToolStripMenuItem1_Click( sender, e );
+			saveToolStripMenuItem_Click( sender, e );
 		}
 
-		private void loadToolStripMenuItem_Click(object sender, EventArgs e) {
+		private void openToolStripMenuItem_Click( object sender, EventArgs e ) {
 			try {
 				string	FileName = m_AppKey.GetValue( "LastDocFileName", new System.IO.FileInfo( "results.xml" ).FullName ) as string;
 				openFileDialogResults.FileName = Path.GetFileName( FileName );
@@ -1477,6 +1485,7 @@ namespace TestMSBSDF
 				Document	Doc = new Document();
 				Doc.Load( XmlDoc );
 
+				m_documentFileName = new FileInfo( FileName );
 				AttachDocument( Doc );
 
 				m_AppKey.SetValue( "LastDocFileName", openFileDialogResults.FileName );
@@ -1485,6 +1494,10 @@ namespace TestMSBSDF
 			} catch ( Exception _e ) {
 				MessageBox( "An error occurred while saving results:\r\n" + _e );
 			}
+		}
+
+		private void exportToolStripMenuItem_Click( object sender, EventArgs e ) {
+			//@TODO!
 		}
 
 		#endregion

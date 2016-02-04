@@ -33,21 +33,33 @@
 			this.panel6 = new System.Windows.Forms.Panel();
 			this.checkBoxParam2_InclusiveStart = new System.Windows.Forms.CheckBox();
 			this.checkBoxParam2_InclusiveEnd = new System.Windows.Forms.CheckBox();
+			this.integerTrackbarControlParam2_Steps = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
+			this.floatTrackbarControlParam2_Max = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label15 = new System.Windows.Forms.Label();
+			this.floatTrackbarControlParam2_Min = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label16 = new System.Windows.Forms.Label();
 			this.label17 = new System.Windows.Forms.Label();
 			this.labelParm2 = new System.Windows.Forms.Label();
 			this.panel5 = new System.Windows.Forms.Panel();
 			this.checkBoxParam1_InclusiveStart = new System.Windows.Forms.CheckBox();
 			this.checkBoxParam1_InclusiveEnd = new System.Windows.Forms.CheckBox();
+			this.integerTrackbarControlParam1_Steps = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
+			this.floatTrackbarControlParam1_Max = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label6 = new System.Windows.Forms.Label();
+			this.floatTrackbarControlParam1_Min = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label12 = new System.Windows.Forms.Label();
 			this.label13 = new System.Windows.Forms.Label();
 			this.label14 = new System.Windows.Forms.Label();
+			this.integerTrackbarControlScatteringOrder_Max = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
+			this.integerTrackbarControlRayCastingIterations = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
+			this.integerTrackbarControlScatteringOrder_Min = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
 			this.panelIncidentAngle = new System.Windows.Forms.Panel();
 			this.checkBoxParam0_InclusiveStart = new System.Windows.Forms.CheckBox();
 			this.checkBoxParam0_InclusiveEnd = new System.Windows.Forms.CheckBox();
+			this.integerTrackbarControlParam0_Steps = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
+			this.floatTrackbarControlParam0_Max = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label4 = new System.Windows.Forms.Label();
+			this.floatTrackbarControlParam0_Min = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label5 = new System.Windows.Forms.Label();
 			this.label3 = new System.Windows.Forms.Label();
 			this.label2 = new System.Windows.Forms.Label();
@@ -57,28 +69,39 @@
 			this.label11 = new System.Windows.Forms.Label();
 			this.label21 = new System.Windows.Forms.Label();
 			this.panelParameters = new System.Windows.Forms.Panel();
+			this.textBoxLog = new Nuaj.Cirrus.Utility.LogTextBox(this.components);
+			this.integerTrackbarControlViewAlbedoSlice = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
 			this.groupBoxLobeFitterConfig = new System.Windows.Forms.GroupBox();
+			this.floatTrackbarControlFitOversize = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label26 = new System.Windows.Forms.Label();
 			this.label23 = new System.Windows.Forms.Label();
 			this.label19 = new System.Windows.Forms.Label();
+			this.integerTrackbarControlRetries = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
 			this.label24 = new System.Windows.Forms.Label();
 			this.label25 = new System.Windows.Forms.Label();
 			this.label18 = new System.Windows.Forms.Label();
+			this.integerTrackbarControlMaxIterations = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
+			this.floatTrackbarControlGradientTolerance = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlGoalTolerance = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.integerTrackbarControlViewScatteringOrder = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
 			this.groupBoxAnalyticalLobeModel = new System.Windows.Forms.GroupBox();
 			this.groupBoxCustomInitialGuesses = new System.Windows.Forms.GroupBox();
 			this.panel9 = new System.Windows.Forms.Panel();
 			this.radioButtonInitMasking_Custom = new System.Windows.Forms.RadioButton();
 			this.radioButtonInitMasking_NoChange = new System.Windows.Forms.RadioButton();
 			this.checkBoxInitMasking_Inherit = new System.Windows.Forms.CheckBox();
+			this.floatTrackbarControlInit_MaskingImportance = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label8 = new System.Windows.Forms.Label();
 			this.panel8 = new System.Windows.Forms.Panel();
 			this.radioButtonInitFlatten_Custom = new System.Windows.Forms.RadioButton();
 			this.radioButtonInitFlatten_NoChange = new System.Windows.Forms.RadioButton();
 			this.checkBoxInitFlatten_Inherit = new System.Windows.Forms.CheckBox();
+			this.floatTrackbarControlInit_Flatten = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label28 = new System.Windows.Forms.Label();
 			this.panel7 = new System.Windows.Forms.Panel();
 			this.radioButtonInitScale_CoMFactor = new System.Windows.Forms.RadioButton();
 			this.radioButtonInitScale_NoChange = new System.Windows.Forms.RadioButton();
+			this.floatTrackbarControlInit_Scale = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.checkBoxInitScale_Inherit = new System.Windows.Forms.CheckBox();
 			this.label27 = new System.Windows.Forms.Label();
 			this.panel4 = new System.Windows.Forms.Panel();
@@ -88,6 +111,7 @@
 			this.checkBoxInitDirection_Inherit = new System.Windows.Forms.CheckBox();
 			this.label10 = new System.Windows.Forms.Label();
 			this.panel3 = new System.Windows.Forms.Panel();
+			this.floatTrackbarControlInit_CustomRoughness = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.radioButtonInitRoughness_NoChange = new System.Windows.Forms.RadioButton();
 			this.radioButtonInitRoughness_UseSurface = new System.Windows.Forms.RadioButton();
 			this.checkBoxInitRoughness_Inherit = new System.Windows.Forms.CheckBox();
@@ -116,42 +140,15 @@
 			this.newToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.openToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.saveToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.saveAsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.toolStripMenuItem2 = new System.Windows.Forms.ToolStripSeparator();
 			this.recentToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.resultsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-			this.loadToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-			this.saveToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
-			this.toolStripMenuItem1 = new System.Windows.Forms.ToolStripSeparator();
 			this.exportToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.buttonCompute = new System.Windows.Forms.Button();
 			this.buttonClearResults = new System.Windows.Forms.Button();
 			this.openFileDialogResults = new System.Windows.Forms.OpenFileDialog();
 			this.saveFileDialogResults = new System.Windows.Forms.SaveFileDialog();
-			this.textBoxLog = new Nuaj.Cirrus.Utility.LogTextBox(this.components);
-			this.integerTrackbarControlParam2_Steps = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
-			this.floatTrackbarControlParam2_Max = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.floatTrackbarControlParam2_Min = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.integerTrackbarControlParam1_Steps = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
-			this.floatTrackbarControlParam1_Max = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.floatTrackbarControlParam1_Min = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.integerTrackbarControlScatteringOrder_Max = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
-			this.integerTrackbarControlRayCastingIterations = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
-			this.integerTrackbarControlScatteringOrder_Min = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
-			this.integerTrackbarControlParam0_Steps = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
-			this.floatTrackbarControlParam0_Max = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.floatTrackbarControlParam0_Min = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.integerTrackbarControlViewAlbedoSlice = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
-			this.floatTrackbarControlFitOversize = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.integerTrackbarControlRetries = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
-			this.integerTrackbarControlMaxIterations = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
-			this.floatTrackbarControlGradientTolerance = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.floatTrackbarControlGoalTolerance = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.integerTrackbarControlViewScatteringOrder = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
-			this.floatTrackbarControlInit_MaskingImportance = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.floatTrackbarControlInit_Flatten = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.floatTrackbarControlInit_Scale = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.floatTrackbarControlInit_CustomRoughness = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.saveAsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.completionArrayControl = new TestMSBSDF.CompletionArrayControl();
 			this.groupBoxSimulationParameters.SuspendLayout();
 			this.panel6.SuspendLayout();
@@ -237,6 +234,33 @@
 			this.checkBoxParam2_InclusiveEnd.UseVisualStyleBackColor = true;
 			this.checkBoxParam2_InclusiveEnd.CheckedChanged += new System.EventHandler(this.checkBoxParm2_InclusiveEnd_CheckedChanged);
 			// 
+			// integerTrackbarControlParam2_Steps
+			// 
+			this.integerTrackbarControlParam2_Steps.Location = new System.Drawing.Point(149, 35);
+			this.integerTrackbarControlParam2_Steps.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.integerTrackbarControlParam2_Steps.MinimumSize = new System.Drawing.Size(70, 20);
+			this.integerTrackbarControlParam2_Steps.Name = "integerTrackbarControlParam2_Steps";
+			this.integerTrackbarControlParam2_Steps.RangeMin = 0;
+			this.integerTrackbarControlParam2_Steps.Size = new System.Drawing.Size(200, 20);
+			this.integerTrackbarControlParam2_Steps.TabIndex = 3;
+			this.integerTrackbarControlParam2_Steps.Value = 4;
+			this.integerTrackbarControlParam2_Steps.VisibleRangeMax = 20;
+			this.integerTrackbarControlParam2_Steps.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlParam2_Steps_ValueChanged);
+			// 
+			// floatTrackbarControlParam2_Max
+			// 
+			this.floatTrackbarControlParam2_Max.Location = new System.Drawing.Point(385, 9);
+			this.floatTrackbarControlParam2_Max.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlParam2_Max.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlParam2_Max.Name = "floatTrackbarControlParam2_Max";
+			this.floatTrackbarControlParam2_Max.RangeMax = 1F;
+			this.floatTrackbarControlParam2_Max.RangeMin = 0F;
+			this.floatTrackbarControlParam2_Max.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlParam2_Max.TabIndex = 2;
+			this.floatTrackbarControlParam2_Max.Value = 0F;
+			this.floatTrackbarControlParam2_Max.VisibleRangeMax = 1F;
+			this.floatTrackbarControlParam2_Max.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlParam2_Max_ValueChanged);
+			// 
 			// label15
 			// 
 			this.label15.AutoSize = true;
@@ -245,6 +269,20 @@
 			this.label15.Size = new System.Drawing.Size(27, 13);
 			this.label15.TabIndex = 1;
 			this.label15.Text = "Max";
+			// 
+			// floatTrackbarControlParam2_Min
+			// 
+			this.floatTrackbarControlParam2_Min.Location = new System.Drawing.Point(149, 9);
+			this.floatTrackbarControlParam2_Min.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlParam2_Min.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlParam2_Min.Name = "floatTrackbarControlParam2_Min";
+			this.floatTrackbarControlParam2_Min.RangeMax = 1F;
+			this.floatTrackbarControlParam2_Min.RangeMin = 0F;
+			this.floatTrackbarControlParam2_Min.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlParam2_Min.TabIndex = 2;
+			this.floatTrackbarControlParam2_Min.Value = 1F;
+			this.floatTrackbarControlParam2_Min.VisibleRangeMax = 1F;
+			this.floatTrackbarControlParam2_Min.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlParam2_Min_ValueChanged);
 			// 
 			// label16
 			// 
@@ -323,6 +361,33 @@
 			this.checkBoxParam1_InclusiveEnd.UseVisualStyleBackColor = true;
 			this.checkBoxParam1_InclusiveEnd.CheckedChanged += new System.EventHandler(this.checkBoxParam1_InclusiveEnd_CheckedChanged);
 			// 
+			// integerTrackbarControlParam1_Steps
+			// 
+			this.integerTrackbarControlParam1_Steps.Location = new System.Drawing.Point(149, 35);
+			this.integerTrackbarControlParam1_Steps.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.integerTrackbarControlParam1_Steps.MinimumSize = new System.Drawing.Size(70, 20);
+			this.integerTrackbarControlParam1_Steps.Name = "integerTrackbarControlParam1_Steps";
+			this.integerTrackbarControlParam1_Steps.RangeMin = 0;
+			this.integerTrackbarControlParam1_Steps.Size = new System.Drawing.Size(200, 20);
+			this.integerTrackbarControlParam1_Steps.TabIndex = 3;
+			this.integerTrackbarControlParam1_Steps.Value = 10;
+			this.integerTrackbarControlParam1_Steps.VisibleRangeMax = 20;
+			this.integerTrackbarControlParam1_Steps.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlParam1_Steps_ValueChanged);
+			// 
+			// floatTrackbarControlParam1_Max
+			// 
+			this.floatTrackbarControlParam1_Max.Location = new System.Drawing.Point(385, 9);
+			this.floatTrackbarControlParam1_Max.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlParam1_Max.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlParam1_Max.Name = "floatTrackbarControlParam1_Max";
+			this.floatTrackbarControlParam1_Max.RangeMax = 1F;
+			this.floatTrackbarControlParam1_Max.RangeMin = 0F;
+			this.floatTrackbarControlParam1_Max.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlParam1_Max.TabIndex = 2;
+			this.floatTrackbarControlParam1_Max.Value = 1F;
+			this.floatTrackbarControlParam1_Max.VisibleRangeMax = 1F;
+			this.floatTrackbarControlParam1_Max.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlParam1_Max_ValueChanged);
+			// 
 			// label6
 			// 
 			this.label6.AutoSize = true;
@@ -331,6 +396,20 @@
 			this.label6.Size = new System.Drawing.Size(27, 13);
 			this.label6.TabIndex = 1;
 			this.label6.Text = "Max";
+			// 
+			// floatTrackbarControlParam1_Min
+			// 
+			this.floatTrackbarControlParam1_Min.Location = new System.Drawing.Point(149, 9);
+			this.floatTrackbarControlParam1_Min.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlParam1_Min.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlParam1_Min.Name = "floatTrackbarControlParam1_Min";
+			this.floatTrackbarControlParam1_Min.RangeMax = 1F;
+			this.floatTrackbarControlParam1_Min.RangeMin = 0F;
+			this.floatTrackbarControlParam1_Min.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlParam1_Min.TabIndex = 2;
+			this.floatTrackbarControlParam1_Min.Value = 0F;
+			this.floatTrackbarControlParam1_Min.VisibleRangeMax = 1F;
+			this.floatTrackbarControlParam1_Min.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlParam1_Min_ValueChanged);
 			// 
 			// label12
 			// 
@@ -361,6 +440,51 @@
 			this.label14.TabIndex = 1;
 			this.label14.Text = "Roughness";
 			this.label14.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+			// 
+			// integerTrackbarControlScatteringOrder_Max
+			// 
+			this.integerTrackbarControlScatteringOrder_Max.Location = new System.Drawing.Point(398, 242);
+			this.integerTrackbarControlScatteringOrder_Max.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.integerTrackbarControlScatteringOrder_Max.MinimumSize = new System.Drawing.Size(70, 20);
+			this.integerTrackbarControlScatteringOrder_Max.Name = "integerTrackbarControlScatteringOrder_Max";
+			this.integerTrackbarControlScatteringOrder_Max.RangeMax = 4;
+			this.integerTrackbarControlScatteringOrder_Max.RangeMin = 1;
+			this.integerTrackbarControlScatteringOrder_Max.Size = new System.Drawing.Size(200, 20);
+			this.integerTrackbarControlScatteringOrder_Max.TabIndex = 3;
+			this.integerTrackbarControlScatteringOrder_Max.Value = 4;
+			this.integerTrackbarControlScatteringOrder_Max.VisibleRangeMax = 4;
+			this.integerTrackbarControlScatteringOrder_Max.VisibleRangeMin = 1;
+			this.integerTrackbarControlScatteringOrder_Max.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlScatteringOrder_Max_ValueChanged);
+			// 
+			// integerTrackbarControlRayCastingIterations
+			// 
+			this.integerTrackbarControlRayCastingIterations.Location = new System.Drawing.Point(162, 292);
+			this.integerTrackbarControlRayCastingIterations.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.integerTrackbarControlRayCastingIterations.MinimumSize = new System.Drawing.Size(70, 20);
+			this.integerTrackbarControlRayCastingIterations.Name = "integerTrackbarControlRayCastingIterations";
+			this.integerTrackbarControlRayCastingIterations.RangeMax = 4096;
+			this.integerTrackbarControlRayCastingIterations.RangeMin = 1;
+			this.integerTrackbarControlRayCastingIterations.Size = new System.Drawing.Size(200, 20);
+			this.integerTrackbarControlRayCastingIterations.TabIndex = 3;
+			this.integerTrackbarControlRayCastingIterations.Value = 1;
+			this.integerTrackbarControlRayCastingIterations.VisibleRangeMax = 2048;
+			this.integerTrackbarControlRayCastingIterations.VisibleRangeMin = 1;
+			this.integerTrackbarControlRayCastingIterations.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlRayCastingIterations_ValueChanged);
+			// 
+			// integerTrackbarControlScatteringOrder_Min
+			// 
+			this.integerTrackbarControlScatteringOrder_Min.Location = new System.Drawing.Point(163, 242);
+			this.integerTrackbarControlScatteringOrder_Min.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.integerTrackbarControlScatteringOrder_Min.MinimumSize = new System.Drawing.Size(70, 20);
+			this.integerTrackbarControlScatteringOrder_Min.Name = "integerTrackbarControlScatteringOrder_Min";
+			this.integerTrackbarControlScatteringOrder_Min.RangeMax = 4;
+			this.integerTrackbarControlScatteringOrder_Min.RangeMin = 1;
+			this.integerTrackbarControlScatteringOrder_Min.Size = new System.Drawing.Size(200, 20);
+			this.integerTrackbarControlScatteringOrder_Min.TabIndex = 3;
+			this.integerTrackbarControlScatteringOrder_Min.Value = 2;
+			this.integerTrackbarControlScatteringOrder_Min.VisibleRangeMax = 4;
+			this.integerTrackbarControlScatteringOrder_Min.VisibleRangeMin = 1;
+			this.integerTrackbarControlScatteringOrder_Min.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlScatteringOrder_Min_ValueChanged);
 			// 
 			// panelIncidentAngle
 			// 
@@ -407,6 +531,32 @@
 			this.checkBoxParam0_InclusiveEnd.UseVisualStyleBackColor = true;
 			this.checkBoxParam0_InclusiveEnd.CheckedChanged += new System.EventHandler(this.checkBoxParam0_InclusiveEnd_CheckedChanged);
 			// 
+			// integerTrackbarControlParam0_Steps
+			// 
+			this.integerTrackbarControlParam0_Steps.Location = new System.Drawing.Point(149, 35);
+			this.integerTrackbarControlParam0_Steps.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.integerTrackbarControlParam0_Steps.MinimumSize = new System.Drawing.Size(70, 20);
+			this.integerTrackbarControlParam0_Steps.Name = "integerTrackbarControlParam0_Steps";
+			this.integerTrackbarControlParam0_Steps.RangeMin = 0;
+			this.integerTrackbarControlParam0_Steps.Size = new System.Drawing.Size(200, 20);
+			this.integerTrackbarControlParam0_Steps.TabIndex = 3;
+			this.integerTrackbarControlParam0_Steps.Value = 30;
+			this.integerTrackbarControlParam0_Steps.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlParam0_Steps_ValueChanged);
+			// 
+			// floatTrackbarControlParam0_Max
+			// 
+			this.floatTrackbarControlParam0_Max.Location = new System.Drawing.Point(385, 9);
+			this.floatTrackbarControlParam0_Max.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlParam0_Max.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlParam0_Max.Name = "floatTrackbarControlParam0_Max";
+			this.floatTrackbarControlParam0_Max.RangeMax = 90F;
+			this.floatTrackbarControlParam0_Max.RangeMin = 0F;
+			this.floatTrackbarControlParam0_Max.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlParam0_Max.TabIndex = 2;
+			this.floatTrackbarControlParam0_Max.Value = 90F;
+			this.floatTrackbarControlParam0_Max.VisibleRangeMax = 90F;
+			this.floatTrackbarControlParam0_Max.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlParam0_Max_ValueChanged);
+			// 
 			// label4
 			// 
 			this.label4.AutoSize = true;
@@ -415,6 +565,20 @@
 			this.label4.Size = new System.Drawing.Size(27, 13);
 			this.label4.TabIndex = 1;
 			this.label4.Text = "Max";
+			// 
+			// floatTrackbarControlParam0_Min
+			// 
+			this.floatTrackbarControlParam0_Min.Location = new System.Drawing.Point(149, 9);
+			this.floatTrackbarControlParam0_Min.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlParam0_Min.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlParam0_Min.Name = "floatTrackbarControlParam0_Min";
+			this.floatTrackbarControlParam0_Min.RangeMax = 90F;
+			this.floatTrackbarControlParam0_Min.RangeMin = 0F;
+			this.floatTrackbarControlParam0_Min.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlParam0_Min.TabIndex = 2;
+			this.floatTrackbarControlParam0_Min.Value = 0F;
+			this.floatTrackbarControlParam0_Min.VisibleRangeMax = 90F;
+			this.floatTrackbarControlParam0_Min.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlParam0_Min_ValueChanged);
 			// 
 			// label5
 			// 
@@ -514,6 +678,30 @@
 			this.panelParameters.Size = new System.Drawing.Size(1033, 756);
 			this.panelParameters.TabIndex = 1;
 			// 
+			// textBoxLog
+			// 
+			this.textBoxLog.BackColor = System.Drawing.SystemColors.Info;
+			this.textBoxLog.Location = new System.Drawing.Point(0, 655);
+			this.textBoxLog.Name = "textBoxLog";
+			this.textBoxLog.ReadOnly = true;
+			this.textBoxLog.Size = new System.Drawing.Size(616, 98);
+			this.textBoxLog.TabIndex = 4;
+			this.textBoxLog.Text = "";
+			// 
+			// integerTrackbarControlViewAlbedoSlice
+			// 
+			this.integerTrackbarControlViewAlbedoSlice.Location = new System.Drawing.Point(403, 623);
+			this.integerTrackbarControlViewAlbedoSlice.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.integerTrackbarControlViewAlbedoSlice.MinimumSize = new System.Drawing.Size(70, 20);
+			this.integerTrackbarControlViewAlbedoSlice.Name = "integerTrackbarControlViewAlbedoSlice";
+			this.integerTrackbarControlViewAlbedoSlice.RangeMax = 4;
+			this.integerTrackbarControlViewAlbedoSlice.RangeMin = 0;
+			this.integerTrackbarControlViewAlbedoSlice.Size = new System.Drawing.Size(200, 20);
+			this.integerTrackbarControlViewAlbedoSlice.TabIndex = 3;
+			this.integerTrackbarControlViewAlbedoSlice.Value = 0;
+			this.integerTrackbarControlViewAlbedoSlice.VisibleRangeMax = 4;
+			this.integerTrackbarControlViewAlbedoSlice.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlViewAlbedoSlice_ValueChanged);
+			// 
 			// groupBoxLobeFitterConfig
 			// 
 			this.groupBoxLobeFitterConfig.Controls.Add(this.floatTrackbarControlFitOversize);
@@ -533,6 +721,21 @@
 			this.groupBoxLobeFitterConfig.TabIndex = 2;
 			this.groupBoxLobeFitterConfig.TabStop = false;
 			this.groupBoxLobeFitterConfig.Text = "Lobe Fitter Configuration";
+			// 
+			// floatTrackbarControlFitOversize
+			// 
+			this.floatTrackbarControlFitOversize.Location = new System.Drawing.Point(145, 132);
+			this.floatTrackbarControlFitOversize.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlFitOversize.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlFitOversize.Name = "floatTrackbarControlFitOversize";
+			this.floatTrackbarControlFitOversize.RangeMax = 2F;
+			this.floatTrackbarControlFitOversize.RangeMin = 0F;
+			this.floatTrackbarControlFitOversize.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlFitOversize.TabIndex = 7;
+			this.floatTrackbarControlFitOversize.Value = 1.02F;
+			this.floatTrackbarControlFitOversize.VisibleRangeMax = 1.1F;
+			this.floatTrackbarControlFitOversize.VisibleRangeMin = 1F;
+			this.floatTrackbarControlFitOversize.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlFitOversize_ValueChanged);
 			// 
 			// label26
 			// 
@@ -561,6 +764,20 @@
 			this.label19.TabIndex = 1;
 			this.label19.Text = "Goal Tolerance (log10)";
 			// 
+			// integerTrackbarControlRetries
+			// 
+			this.integerTrackbarControlRetries.Location = new System.Drawing.Point(211, 106);
+			this.integerTrackbarControlRetries.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.integerTrackbarControlRetries.MinimumSize = new System.Drawing.Size(70, 20);
+			this.integerTrackbarControlRetries.Name = "integerTrackbarControlRetries";
+			this.integerTrackbarControlRetries.RangeMax = 10;
+			this.integerTrackbarControlRetries.RangeMin = 0;
+			this.integerTrackbarControlRetries.Size = new System.Drawing.Size(134, 20);
+			this.integerTrackbarControlRetries.TabIndex = 3;
+			this.integerTrackbarControlRetries.Value = 2;
+			this.integerTrackbarControlRetries.VisibleRangeMax = 4;
+			this.integerTrackbarControlRetries.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlRetries_ValueChanged);
+			// 
 			// label24
 			// 
 			this.label24.Location = new System.Drawing.Point(6, 109);
@@ -587,6 +804,64 @@
 			this.label18.TabIndex = 1;
 			this.label18.Text = "Maximum Iterations";
 			// 
+			// integerTrackbarControlMaxIterations
+			// 
+			this.integerTrackbarControlMaxIterations.Location = new System.Drawing.Point(145, 28);
+			this.integerTrackbarControlMaxIterations.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.integerTrackbarControlMaxIterations.MinimumSize = new System.Drawing.Size(70, 20);
+			this.integerTrackbarControlMaxIterations.Name = "integerTrackbarControlMaxIterations";
+			this.integerTrackbarControlMaxIterations.RangeMin = 0;
+			this.integerTrackbarControlMaxIterations.Size = new System.Drawing.Size(200, 20);
+			this.integerTrackbarControlMaxIterations.TabIndex = 3;
+			this.integerTrackbarControlMaxIterations.Value = 200;
+			this.integerTrackbarControlMaxIterations.VisibleRangeMax = 200;
+			this.integerTrackbarControlMaxIterations.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlMaxIterations_ValueChanged);
+			// 
+			// floatTrackbarControlGradientTolerance
+			// 
+			this.floatTrackbarControlGradientTolerance.Location = new System.Drawing.Point(145, 80);
+			this.floatTrackbarControlGradientTolerance.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlGradientTolerance.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlGradientTolerance.Name = "floatTrackbarControlGradientTolerance";
+			this.floatTrackbarControlGradientTolerance.RangeMax = 0F;
+			this.floatTrackbarControlGradientTolerance.RangeMin = -10F;
+			this.floatTrackbarControlGradientTolerance.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlGradientTolerance.TabIndex = 2;
+			this.floatTrackbarControlGradientTolerance.Value = -6F;
+			this.floatTrackbarControlGradientTolerance.VisibleRangeMax = 0F;
+			this.floatTrackbarControlGradientTolerance.VisibleRangeMin = -8F;
+			this.floatTrackbarControlGradientTolerance.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlGradientTolerance_ValueChanged);
+			// 
+			// floatTrackbarControlGoalTolerance
+			// 
+			this.floatTrackbarControlGoalTolerance.Location = new System.Drawing.Point(145, 54);
+			this.floatTrackbarControlGoalTolerance.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlGoalTolerance.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlGoalTolerance.Name = "floatTrackbarControlGoalTolerance";
+			this.floatTrackbarControlGoalTolerance.RangeMax = 0F;
+			this.floatTrackbarControlGoalTolerance.RangeMin = -10F;
+			this.floatTrackbarControlGoalTolerance.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlGoalTolerance.TabIndex = 2;
+			this.floatTrackbarControlGoalTolerance.Value = -6F;
+			this.floatTrackbarControlGoalTolerance.VisibleRangeMax = 0F;
+			this.floatTrackbarControlGoalTolerance.VisibleRangeMin = -8F;
+			this.floatTrackbarControlGoalTolerance.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlGoalTolerance_ValueChanged);
+			// 
+			// integerTrackbarControlViewScatteringOrder
+			// 
+			this.integerTrackbarControlViewScatteringOrder.Location = new System.Drawing.Point(111, 623);
+			this.integerTrackbarControlViewScatteringOrder.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.integerTrackbarControlViewScatteringOrder.MinimumSize = new System.Drawing.Size(70, 20);
+			this.integerTrackbarControlViewScatteringOrder.Name = "integerTrackbarControlViewScatteringOrder";
+			this.integerTrackbarControlViewScatteringOrder.RangeMax = 4;
+			this.integerTrackbarControlViewScatteringOrder.RangeMin = 1;
+			this.integerTrackbarControlViewScatteringOrder.Size = new System.Drawing.Size(200, 20);
+			this.integerTrackbarControlViewScatteringOrder.TabIndex = 3;
+			this.integerTrackbarControlViewScatteringOrder.Value = 2;
+			this.integerTrackbarControlViewScatteringOrder.VisibleRangeMax = 4;
+			this.integerTrackbarControlViewScatteringOrder.VisibleRangeMin = 1;
+			this.integerTrackbarControlViewScatteringOrder.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlViewScatteringOrder_ValueChanged);
+			// 
 			// groupBoxAnalyticalLobeModel
 			// 
 			this.groupBoxAnalyticalLobeModel.Controls.Add(this.groupBoxCustomInitialGuesses);
@@ -605,7 +880,6 @@
 			this.groupBoxCustomInitialGuesses.Controls.Add(this.panel7);
 			this.groupBoxCustomInitialGuesses.Controls.Add(this.panel4);
 			this.groupBoxCustomInitialGuesses.Controls.Add(this.panel3);
-			this.groupBoxCustomInitialGuesses.Enabled = false;
 			this.groupBoxCustomInitialGuesses.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
 			this.groupBoxCustomInitialGuesses.Location = new System.Drawing.Point(6, 52);
 			this.groupBoxCustomInitialGuesses.Name = "groupBoxCustomInitialGuesses";
@@ -663,6 +937,20 @@
         "en it will inherit the value that was previosuly fitted");
 			this.checkBoxInitMasking_Inherit.UseVisualStyleBackColor = true;
 			this.checkBoxInitMasking_Inherit.CheckedChanged += new System.EventHandler(this.checkBoxInitMasking_Inherit_CheckedChanged);
+			// 
+			// floatTrackbarControlInit_MaskingImportance
+			// 
+			this.floatTrackbarControlInit_MaskingImportance.Location = new System.Drawing.Point(122, 1);
+			this.floatTrackbarControlInit_MaskingImportance.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlInit_MaskingImportance.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlInit_MaskingImportance.Name = "floatTrackbarControlInit_MaskingImportance";
+			this.floatTrackbarControlInit_MaskingImportance.RangeMax = 1F;
+			this.floatTrackbarControlInit_MaskingImportance.RangeMin = 0F;
+			this.floatTrackbarControlInit_MaskingImportance.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlInit_MaskingImportance.TabIndex = 2;
+			this.floatTrackbarControlInit_MaskingImportance.Value = 1F;
+			this.floatTrackbarControlInit_MaskingImportance.VisibleRangeMax = 1F;
+			this.floatTrackbarControlInit_MaskingImportance.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlInit_MaskingImportance_ValueChanged);
 			// 
 			// label8
 			// 
@@ -724,6 +1012,21 @@
 			this.checkBoxInitFlatten_Inherit.UseVisualStyleBackColor = true;
 			this.checkBoxInitFlatten_Inherit.CheckedChanged += new System.EventHandler(this.checkBoxInitFlatten_Inherit_CheckedChanged);
 			// 
+			// floatTrackbarControlInit_Flatten
+			// 
+			this.floatTrackbarControlInit_Flatten.Location = new System.Drawing.Point(119, 1);
+			this.floatTrackbarControlInit_Flatten.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlInit_Flatten.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlInit_Flatten.Name = "floatTrackbarControlInit_Flatten";
+			this.floatTrackbarControlInit_Flatten.RangeMax = 10F;
+			this.floatTrackbarControlInit_Flatten.RangeMin = 0F;
+			this.floatTrackbarControlInit_Flatten.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlInit_Flatten.TabIndex = 2;
+			this.toolTip1.SetToolTip(this.floatTrackbarControlInit_Flatten, "Specifies the lobe\'s flattening to start with (diffuse lobes tend to be flatter)");
+			this.floatTrackbarControlInit_Flatten.Value = 0.5F;
+			this.floatTrackbarControlInit_Flatten.VisibleRangeMax = 1F;
+			this.floatTrackbarControlInit_Flatten.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlInit_Flatten_ValueChanged);
+			// 
 			// label28
 			// 
 			this.label28.AutoSize = true;
@@ -769,6 +1072,22 @@
 			this.radioButtonInitScale_NoChange.Text = "No Change from Current";
 			this.radioButtonInitScale_NoChange.UseVisualStyleBackColor = true;
 			this.radioButtonInitScale_NoChange.CheckedChanged += new System.EventHandler(this.radioButtonInitScale_CheckedChanged);
+			// 
+			// floatTrackbarControlInit_Scale
+			// 
+			this.floatTrackbarControlInit_Scale.Location = new System.Drawing.Point(119, 21);
+			this.floatTrackbarControlInit_Scale.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlInit_Scale.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlInit_Scale.Name = "floatTrackbarControlInit_Scale";
+			this.floatTrackbarControlInit_Scale.RangeMax = 1F;
+			this.floatTrackbarControlInit_Scale.RangeMin = 0F;
+			this.floatTrackbarControlInit_Scale.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlInit_Scale.TabIndex = 2;
+			this.toolTip1.SetToolTip(this.floatTrackbarControlInit_Scale, "Specifies the percentage of the size of the simulated lobe to start with (smaller" +
+        " initial lobes make simulation converge faster)");
+			this.floatTrackbarControlInit_Scale.Value = 0.05F;
+			this.floatTrackbarControlInit_Scale.VisibleRangeMax = 1F;
+			this.floatTrackbarControlInit_Scale.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlInit_Scale_ValueChanged);
 			// 
 			// checkBoxInitScale_Inherit
 			// 
@@ -882,6 +1201,20 @@
 			this.panel3.Name = "panel3";
 			this.panel3.Size = new System.Drawing.Size(356, 67);
 			this.panel3.TabIndex = 5;
+			// 
+			// floatTrackbarControlInit_CustomRoughness
+			// 
+			this.floatTrackbarControlInit_CustomRoughness.Location = new System.Drawing.Point(125, 22);
+			this.floatTrackbarControlInit_CustomRoughness.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlInit_CustomRoughness.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlInit_CustomRoughness.Name = "floatTrackbarControlInit_CustomRoughness";
+			this.floatTrackbarControlInit_CustomRoughness.RangeMax = 1F;
+			this.floatTrackbarControlInit_CustomRoughness.RangeMin = 0F;
+			this.floatTrackbarControlInit_CustomRoughness.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlInit_CustomRoughness.TabIndex = 2;
+			this.floatTrackbarControlInit_CustomRoughness.Value = 0.5F;
+			this.floatTrackbarControlInit_CustomRoughness.VisibleRangeMax = 1F;
+			this.floatTrackbarControlInit_CustomRoughness.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlInit_CustomRoughness_ValueChanged);
 			// 
 			// radioButtonInitRoughness_NoChange
 			// 
@@ -1080,7 +1413,7 @@
             this.toolStripMenuItem3,
             this.clearToolStripMenuItem});
 			this.contextMenuStripSelection.Name = "contextMenuStripSelection";
-			this.contextMenuStripSelection.Size = new System.Drawing.Size(154, 98);
+			this.contextMenuStripSelection.Size = new System.Drawing.Size(154, 76);
 			this.contextMenuStripSelection.Opening += new System.ComponentModel.CancelEventHandler(this.contextMenuStripSelection_Opening);
 			// 
 			// computeToolStripMenuItem
@@ -1147,6 +1480,7 @@
 			this.openToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.O)));
 			this.openToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
 			this.openToolStripMenuItem.Text = "&Open";
+			this.openToolStripMenuItem.Click += new System.EventHandler(this.openToolStripMenuItem_Click);
 			// 
 			// saveToolStripMenuItem
 			// 
@@ -1154,6 +1488,16 @@
 			this.saveToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.S)));
 			this.saveToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
 			this.saveToolStripMenuItem.Text = "&Save";
+			this.saveToolStripMenuItem.Click += new System.EventHandler(this.saveToolStripMenuItem_Click);
+			// 
+			// saveAsToolStripMenuItem
+			// 
+			this.saveAsToolStripMenuItem.Name = "saveAsToolStripMenuItem";
+			this.saveAsToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)(((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.Shift) 
+            | System.Windows.Forms.Keys.S)));
+			this.saveAsToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
+			this.saveAsToolStripMenuItem.Text = "Save As...";
+			this.saveAsToolStripMenuItem.Click += new System.EventHandler(this.saveAsToolStripMenuItem_Click);
 			// 
 			// toolStripMenuItem2
 			// 
@@ -1169,38 +1513,17 @@
 			// resultsToolStripMenuItem
 			// 
 			this.resultsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.loadToolStripMenuItem,
-            this.saveToolStripMenuItem1,
-            this.toolStripMenuItem1,
             this.exportToolStripMenuItem});
 			this.resultsToolStripMenuItem.Name = "resultsToolStripMenuItem";
 			this.resultsToolStripMenuItem.Size = new System.Drawing.Size(56, 20);
 			this.resultsToolStripMenuItem.Text = "&Results";
-			// 
-			// loadToolStripMenuItem
-			// 
-			this.loadToolStripMenuItem.Name = "loadToolStripMenuItem";
-			this.loadToolStripMenuItem.Size = new System.Drawing.Size(107, 22);
-			this.loadToolStripMenuItem.Text = "&Load";
-			this.loadToolStripMenuItem.Click += new System.EventHandler(this.loadToolStripMenuItem_Click);
-			// 
-			// saveToolStripMenuItem1
-			// 
-			this.saveToolStripMenuItem1.Name = "saveToolStripMenuItem1";
-			this.saveToolStripMenuItem1.Size = new System.Drawing.Size(107, 22);
-			this.saveToolStripMenuItem1.Text = "&Save";
-			this.saveToolStripMenuItem1.Click += new System.EventHandler(this.saveToolStripMenuItem1_Click);
-			// 
-			// toolStripMenuItem1
-			// 
-			this.toolStripMenuItem1.Name = "toolStripMenuItem1";
-			this.toolStripMenuItem1.Size = new System.Drawing.Size(104, 6);
 			// 
 			// exportToolStripMenuItem
 			// 
 			this.exportToolStripMenuItem.Name = "exportToolStripMenuItem";
 			this.exportToolStripMenuItem.Size = new System.Drawing.Size(107, 22);
 			this.exportToolStripMenuItem.Text = "E&xport";
+			this.exportToolStripMenuItem.Click += new System.EventHandler(this.exportToolStripMenuItem_Click);
 			// 
 			// buttonCompute
 			// 
@@ -1238,353 +1561,6 @@
 			this.saveFileDialogResults.DefaultExt = "*.xml";
 			this.saveFileDialogResults.Filter = "Result Files (*.xml)|*.xml|All Files|*.*";
 			this.saveFileDialogResults.Title = "Choose an XML results file to save";
-			// 
-			// textBoxLog
-			// 
-			this.textBoxLog.BackColor = System.Drawing.SystemColors.Info;
-			this.textBoxLog.Location = new System.Drawing.Point(0, 655);
-			this.textBoxLog.Name = "textBoxLog";
-			this.textBoxLog.ReadOnly = true;
-			this.textBoxLog.Size = new System.Drawing.Size(616, 98);
-			this.textBoxLog.TabIndex = 4;
-			this.textBoxLog.Text = "";
-			// 
-			// integerTrackbarControlParam2_Steps
-			// 
-			this.integerTrackbarControlParam2_Steps.Location = new System.Drawing.Point(149, 35);
-			this.integerTrackbarControlParam2_Steps.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.integerTrackbarControlParam2_Steps.MinimumSize = new System.Drawing.Size(70, 20);
-			this.integerTrackbarControlParam2_Steps.Name = "integerTrackbarControlParam2_Steps";
-			this.integerTrackbarControlParam2_Steps.RangeMin = 0;
-			this.integerTrackbarControlParam2_Steps.Size = new System.Drawing.Size(200, 20);
-			this.integerTrackbarControlParam2_Steps.TabIndex = 3;
-			this.integerTrackbarControlParam2_Steps.Value = 4;
-			this.integerTrackbarControlParam2_Steps.VisibleRangeMax = 20;
-			this.integerTrackbarControlParam2_Steps.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlParam2_Steps_ValueChanged);
-			// 
-			// floatTrackbarControlParam2_Max
-			// 
-			this.floatTrackbarControlParam2_Max.Location = new System.Drawing.Point(385, 9);
-			this.floatTrackbarControlParam2_Max.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.floatTrackbarControlParam2_Max.MinimumSize = new System.Drawing.Size(70, 20);
-			this.floatTrackbarControlParam2_Max.Name = "floatTrackbarControlParam2_Max";
-			this.floatTrackbarControlParam2_Max.RangeMax = 1F;
-			this.floatTrackbarControlParam2_Max.RangeMin = 0F;
-			this.floatTrackbarControlParam2_Max.Size = new System.Drawing.Size(200, 20);
-			this.floatTrackbarControlParam2_Max.TabIndex = 2;
-			this.floatTrackbarControlParam2_Max.Value = 0F;
-			this.floatTrackbarControlParam2_Max.VisibleRangeMax = 1F;
-			this.floatTrackbarControlParam2_Max.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlParam2_Max_ValueChanged);
-			// 
-			// floatTrackbarControlParam2_Min
-			// 
-			this.floatTrackbarControlParam2_Min.Location = new System.Drawing.Point(149, 9);
-			this.floatTrackbarControlParam2_Min.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.floatTrackbarControlParam2_Min.MinimumSize = new System.Drawing.Size(70, 20);
-			this.floatTrackbarControlParam2_Min.Name = "floatTrackbarControlParam2_Min";
-			this.floatTrackbarControlParam2_Min.RangeMax = 1F;
-			this.floatTrackbarControlParam2_Min.RangeMin = 0F;
-			this.floatTrackbarControlParam2_Min.Size = new System.Drawing.Size(200, 20);
-			this.floatTrackbarControlParam2_Min.TabIndex = 2;
-			this.floatTrackbarControlParam2_Min.Value = 1F;
-			this.floatTrackbarControlParam2_Min.VisibleRangeMax = 1F;
-			this.floatTrackbarControlParam2_Min.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlParam2_Min_ValueChanged);
-			// 
-			// integerTrackbarControlParam1_Steps
-			// 
-			this.integerTrackbarControlParam1_Steps.Location = new System.Drawing.Point(149, 35);
-			this.integerTrackbarControlParam1_Steps.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.integerTrackbarControlParam1_Steps.MinimumSize = new System.Drawing.Size(70, 20);
-			this.integerTrackbarControlParam1_Steps.Name = "integerTrackbarControlParam1_Steps";
-			this.integerTrackbarControlParam1_Steps.RangeMin = 0;
-			this.integerTrackbarControlParam1_Steps.Size = new System.Drawing.Size(200, 20);
-			this.integerTrackbarControlParam1_Steps.TabIndex = 3;
-			this.integerTrackbarControlParam1_Steps.Value = 10;
-			this.integerTrackbarControlParam1_Steps.VisibleRangeMax = 20;
-			this.integerTrackbarControlParam1_Steps.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlParam1_Steps_ValueChanged);
-			// 
-			// floatTrackbarControlParam1_Max
-			// 
-			this.floatTrackbarControlParam1_Max.Location = new System.Drawing.Point(385, 9);
-			this.floatTrackbarControlParam1_Max.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.floatTrackbarControlParam1_Max.MinimumSize = new System.Drawing.Size(70, 20);
-			this.floatTrackbarControlParam1_Max.Name = "floatTrackbarControlParam1_Max";
-			this.floatTrackbarControlParam1_Max.RangeMax = 1F;
-			this.floatTrackbarControlParam1_Max.RangeMin = 0F;
-			this.floatTrackbarControlParam1_Max.Size = new System.Drawing.Size(200, 20);
-			this.floatTrackbarControlParam1_Max.TabIndex = 2;
-			this.floatTrackbarControlParam1_Max.Value = 1F;
-			this.floatTrackbarControlParam1_Max.VisibleRangeMax = 1F;
-			this.floatTrackbarControlParam1_Max.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlParam1_Max_ValueChanged);
-			// 
-			// floatTrackbarControlParam1_Min
-			// 
-			this.floatTrackbarControlParam1_Min.Location = new System.Drawing.Point(149, 9);
-			this.floatTrackbarControlParam1_Min.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.floatTrackbarControlParam1_Min.MinimumSize = new System.Drawing.Size(70, 20);
-			this.floatTrackbarControlParam1_Min.Name = "floatTrackbarControlParam1_Min";
-			this.floatTrackbarControlParam1_Min.RangeMax = 1F;
-			this.floatTrackbarControlParam1_Min.RangeMin = 0F;
-			this.floatTrackbarControlParam1_Min.Size = new System.Drawing.Size(200, 20);
-			this.floatTrackbarControlParam1_Min.TabIndex = 2;
-			this.floatTrackbarControlParam1_Min.Value = 0F;
-			this.floatTrackbarControlParam1_Min.VisibleRangeMax = 1F;
-			this.floatTrackbarControlParam1_Min.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlParam1_Min_ValueChanged);
-			// 
-			// integerTrackbarControlScatteringOrder_Max
-			// 
-			this.integerTrackbarControlScatteringOrder_Max.Location = new System.Drawing.Point(398, 242);
-			this.integerTrackbarControlScatteringOrder_Max.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.integerTrackbarControlScatteringOrder_Max.MinimumSize = new System.Drawing.Size(70, 20);
-			this.integerTrackbarControlScatteringOrder_Max.Name = "integerTrackbarControlScatteringOrder_Max";
-			this.integerTrackbarControlScatteringOrder_Max.RangeMax = 4;
-			this.integerTrackbarControlScatteringOrder_Max.RangeMin = 1;
-			this.integerTrackbarControlScatteringOrder_Max.Size = new System.Drawing.Size(200, 20);
-			this.integerTrackbarControlScatteringOrder_Max.TabIndex = 3;
-			this.integerTrackbarControlScatteringOrder_Max.Value = 4;
-			this.integerTrackbarControlScatteringOrder_Max.VisibleRangeMax = 4;
-			this.integerTrackbarControlScatteringOrder_Max.VisibleRangeMin = 1;
-			this.integerTrackbarControlScatteringOrder_Max.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlScatteringOrder_Max_ValueChanged);
-			// 
-			// integerTrackbarControlRayCastingIterations
-			// 
-			this.integerTrackbarControlRayCastingIterations.Location = new System.Drawing.Point(162, 292);
-			this.integerTrackbarControlRayCastingIterations.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.integerTrackbarControlRayCastingIterations.MinimumSize = new System.Drawing.Size(70, 20);
-			this.integerTrackbarControlRayCastingIterations.Name = "integerTrackbarControlRayCastingIterations";
-			this.integerTrackbarControlRayCastingIterations.RangeMax = 4096;
-			this.integerTrackbarControlRayCastingIterations.RangeMin = 1;
-			this.integerTrackbarControlRayCastingIterations.Size = new System.Drawing.Size(200, 20);
-			this.integerTrackbarControlRayCastingIterations.TabIndex = 3;
-			this.integerTrackbarControlRayCastingIterations.Value = 1;
-			this.integerTrackbarControlRayCastingIterations.VisibleRangeMax = 2048;
-			this.integerTrackbarControlRayCastingIterations.VisibleRangeMin = 1;
-			this.integerTrackbarControlRayCastingIterations.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlRayCastingIterations_ValueChanged);
-			// 
-			// integerTrackbarControlScatteringOrder_Min
-			// 
-			this.integerTrackbarControlScatteringOrder_Min.Location = new System.Drawing.Point(163, 242);
-			this.integerTrackbarControlScatteringOrder_Min.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.integerTrackbarControlScatteringOrder_Min.MinimumSize = new System.Drawing.Size(70, 20);
-			this.integerTrackbarControlScatteringOrder_Min.Name = "integerTrackbarControlScatteringOrder_Min";
-			this.integerTrackbarControlScatteringOrder_Min.RangeMax = 4;
-			this.integerTrackbarControlScatteringOrder_Min.RangeMin = 1;
-			this.integerTrackbarControlScatteringOrder_Min.Size = new System.Drawing.Size(200, 20);
-			this.integerTrackbarControlScatteringOrder_Min.TabIndex = 3;
-			this.integerTrackbarControlScatteringOrder_Min.Value = 2;
-			this.integerTrackbarControlScatteringOrder_Min.VisibleRangeMax = 4;
-			this.integerTrackbarControlScatteringOrder_Min.VisibleRangeMin = 1;
-			this.integerTrackbarControlScatteringOrder_Min.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlScatteringOrder_Min_ValueChanged);
-			// 
-			// integerTrackbarControlParam0_Steps
-			// 
-			this.integerTrackbarControlParam0_Steps.Location = new System.Drawing.Point(149, 35);
-			this.integerTrackbarControlParam0_Steps.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.integerTrackbarControlParam0_Steps.MinimumSize = new System.Drawing.Size(70, 20);
-			this.integerTrackbarControlParam0_Steps.Name = "integerTrackbarControlParam0_Steps";
-			this.integerTrackbarControlParam0_Steps.RangeMin = 0;
-			this.integerTrackbarControlParam0_Steps.Size = new System.Drawing.Size(200, 20);
-			this.integerTrackbarControlParam0_Steps.TabIndex = 3;
-			this.integerTrackbarControlParam0_Steps.Value = 30;
-			this.integerTrackbarControlParam0_Steps.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlParam0_Steps_ValueChanged);
-			// 
-			// floatTrackbarControlParam0_Max
-			// 
-			this.floatTrackbarControlParam0_Max.Location = new System.Drawing.Point(385, 9);
-			this.floatTrackbarControlParam0_Max.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.floatTrackbarControlParam0_Max.MinimumSize = new System.Drawing.Size(70, 20);
-			this.floatTrackbarControlParam0_Max.Name = "floatTrackbarControlParam0_Max";
-			this.floatTrackbarControlParam0_Max.RangeMax = 90F;
-			this.floatTrackbarControlParam0_Max.RangeMin = 0F;
-			this.floatTrackbarControlParam0_Max.Size = new System.Drawing.Size(200, 20);
-			this.floatTrackbarControlParam0_Max.TabIndex = 2;
-			this.floatTrackbarControlParam0_Max.Value = 90F;
-			this.floatTrackbarControlParam0_Max.VisibleRangeMax = 90F;
-			this.floatTrackbarControlParam0_Max.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlParam0_Max_ValueChanged);
-			// 
-			// floatTrackbarControlParam0_Min
-			// 
-			this.floatTrackbarControlParam0_Min.Location = new System.Drawing.Point(149, 9);
-			this.floatTrackbarControlParam0_Min.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.floatTrackbarControlParam0_Min.MinimumSize = new System.Drawing.Size(70, 20);
-			this.floatTrackbarControlParam0_Min.Name = "floatTrackbarControlParam0_Min";
-			this.floatTrackbarControlParam0_Min.RangeMax = 90F;
-			this.floatTrackbarControlParam0_Min.RangeMin = 0F;
-			this.floatTrackbarControlParam0_Min.Size = new System.Drawing.Size(200, 20);
-			this.floatTrackbarControlParam0_Min.TabIndex = 2;
-			this.floatTrackbarControlParam0_Min.Value = 0F;
-			this.floatTrackbarControlParam0_Min.VisibleRangeMax = 90F;
-			this.floatTrackbarControlParam0_Min.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlParam0_Min_ValueChanged);
-			// 
-			// integerTrackbarControlViewAlbedoSlice
-			// 
-			this.integerTrackbarControlViewAlbedoSlice.Location = new System.Drawing.Point(403, 623);
-			this.integerTrackbarControlViewAlbedoSlice.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.integerTrackbarControlViewAlbedoSlice.MinimumSize = new System.Drawing.Size(70, 20);
-			this.integerTrackbarControlViewAlbedoSlice.Name = "integerTrackbarControlViewAlbedoSlice";
-			this.integerTrackbarControlViewAlbedoSlice.RangeMax = 4;
-			this.integerTrackbarControlViewAlbedoSlice.RangeMin = 0;
-			this.integerTrackbarControlViewAlbedoSlice.Size = new System.Drawing.Size(200, 20);
-			this.integerTrackbarControlViewAlbedoSlice.TabIndex = 3;
-			this.integerTrackbarControlViewAlbedoSlice.Value = 0;
-			this.integerTrackbarControlViewAlbedoSlice.VisibleRangeMax = 4;
-			this.integerTrackbarControlViewAlbedoSlice.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlViewAlbedoSlice_ValueChanged);
-			// 
-			// floatTrackbarControlFitOversize
-			// 
-			this.floatTrackbarControlFitOversize.Location = new System.Drawing.Point(145, 132);
-			this.floatTrackbarControlFitOversize.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.floatTrackbarControlFitOversize.MinimumSize = new System.Drawing.Size(70, 20);
-			this.floatTrackbarControlFitOversize.Name = "floatTrackbarControlFitOversize";
-			this.floatTrackbarControlFitOversize.RangeMax = 2F;
-			this.floatTrackbarControlFitOversize.RangeMin = 0F;
-			this.floatTrackbarControlFitOversize.Size = new System.Drawing.Size(200, 20);
-			this.floatTrackbarControlFitOversize.TabIndex = 7;
-			this.floatTrackbarControlFitOversize.Value = 1.02F;
-			this.floatTrackbarControlFitOversize.VisibleRangeMax = 1.1F;
-			this.floatTrackbarControlFitOversize.VisibleRangeMin = 1F;
-			this.floatTrackbarControlFitOversize.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlFitOversize_ValueChanged);
-			// 
-			// integerTrackbarControlRetries
-			// 
-			this.integerTrackbarControlRetries.Location = new System.Drawing.Point(211, 106);
-			this.integerTrackbarControlRetries.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.integerTrackbarControlRetries.MinimumSize = new System.Drawing.Size(70, 20);
-			this.integerTrackbarControlRetries.Name = "integerTrackbarControlRetries";
-			this.integerTrackbarControlRetries.RangeMax = 10;
-			this.integerTrackbarControlRetries.RangeMin = 0;
-			this.integerTrackbarControlRetries.Size = new System.Drawing.Size(134, 20);
-			this.integerTrackbarControlRetries.TabIndex = 3;
-			this.integerTrackbarControlRetries.Value = 2;
-			this.integerTrackbarControlRetries.VisibleRangeMax = 4;
-			this.integerTrackbarControlRetries.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlRetries_ValueChanged);
-			// 
-			// integerTrackbarControlMaxIterations
-			// 
-			this.integerTrackbarControlMaxIterations.Location = new System.Drawing.Point(145, 28);
-			this.integerTrackbarControlMaxIterations.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.integerTrackbarControlMaxIterations.MinimumSize = new System.Drawing.Size(70, 20);
-			this.integerTrackbarControlMaxIterations.Name = "integerTrackbarControlMaxIterations";
-			this.integerTrackbarControlMaxIterations.RangeMin = 0;
-			this.integerTrackbarControlMaxIterations.Size = new System.Drawing.Size(200, 20);
-			this.integerTrackbarControlMaxIterations.TabIndex = 3;
-			this.integerTrackbarControlMaxIterations.Value = 200;
-			this.integerTrackbarControlMaxIterations.VisibleRangeMax = 200;
-			this.integerTrackbarControlMaxIterations.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlMaxIterations_ValueChanged);
-			// 
-			// floatTrackbarControlGradientTolerance
-			// 
-			this.floatTrackbarControlGradientTolerance.Location = new System.Drawing.Point(145, 80);
-			this.floatTrackbarControlGradientTolerance.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.floatTrackbarControlGradientTolerance.MinimumSize = new System.Drawing.Size(70, 20);
-			this.floatTrackbarControlGradientTolerance.Name = "floatTrackbarControlGradientTolerance";
-			this.floatTrackbarControlGradientTolerance.RangeMax = 0F;
-			this.floatTrackbarControlGradientTolerance.RangeMin = -10F;
-			this.floatTrackbarControlGradientTolerance.Size = new System.Drawing.Size(200, 20);
-			this.floatTrackbarControlGradientTolerance.TabIndex = 2;
-			this.floatTrackbarControlGradientTolerance.Value = -6F;
-			this.floatTrackbarControlGradientTolerance.VisibleRangeMax = 0F;
-			this.floatTrackbarControlGradientTolerance.VisibleRangeMin = -8F;
-			this.floatTrackbarControlGradientTolerance.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlGradientTolerance_ValueChanged);
-			// 
-			// floatTrackbarControlGoalTolerance
-			// 
-			this.floatTrackbarControlGoalTolerance.Location = new System.Drawing.Point(145, 54);
-			this.floatTrackbarControlGoalTolerance.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.floatTrackbarControlGoalTolerance.MinimumSize = new System.Drawing.Size(70, 20);
-			this.floatTrackbarControlGoalTolerance.Name = "floatTrackbarControlGoalTolerance";
-			this.floatTrackbarControlGoalTolerance.RangeMax = 0F;
-			this.floatTrackbarControlGoalTolerance.RangeMin = -10F;
-			this.floatTrackbarControlGoalTolerance.Size = new System.Drawing.Size(200, 20);
-			this.floatTrackbarControlGoalTolerance.TabIndex = 2;
-			this.floatTrackbarControlGoalTolerance.Value = -6F;
-			this.floatTrackbarControlGoalTolerance.VisibleRangeMax = 0F;
-			this.floatTrackbarControlGoalTolerance.VisibleRangeMin = -8F;
-			this.floatTrackbarControlGoalTolerance.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlGoalTolerance_ValueChanged);
-			// 
-			// integerTrackbarControlViewScatteringOrder
-			// 
-			this.integerTrackbarControlViewScatteringOrder.Location = new System.Drawing.Point(111, 623);
-			this.integerTrackbarControlViewScatteringOrder.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.integerTrackbarControlViewScatteringOrder.MinimumSize = new System.Drawing.Size(70, 20);
-			this.integerTrackbarControlViewScatteringOrder.Name = "integerTrackbarControlViewScatteringOrder";
-			this.integerTrackbarControlViewScatteringOrder.RangeMax = 4;
-			this.integerTrackbarControlViewScatteringOrder.RangeMin = 1;
-			this.integerTrackbarControlViewScatteringOrder.Size = new System.Drawing.Size(200, 20);
-			this.integerTrackbarControlViewScatteringOrder.TabIndex = 3;
-			this.integerTrackbarControlViewScatteringOrder.Value = 2;
-			this.integerTrackbarControlViewScatteringOrder.VisibleRangeMax = 4;
-			this.integerTrackbarControlViewScatteringOrder.VisibleRangeMin = 1;
-			this.integerTrackbarControlViewScatteringOrder.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlViewScatteringOrder_ValueChanged);
-			// 
-			// floatTrackbarControlInit_MaskingImportance
-			// 
-			this.floatTrackbarControlInit_MaskingImportance.Location = new System.Drawing.Point(122, 0);
-			this.floatTrackbarControlInit_MaskingImportance.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.floatTrackbarControlInit_MaskingImportance.MinimumSize = new System.Drawing.Size(70, 20);
-			this.floatTrackbarControlInit_MaskingImportance.Name = "floatTrackbarControlInit_MaskingImportance";
-			this.floatTrackbarControlInit_MaskingImportance.RangeMax = 1F;
-			this.floatTrackbarControlInit_MaskingImportance.RangeMin = 0F;
-			this.floatTrackbarControlInit_MaskingImportance.Size = new System.Drawing.Size(200, 20);
-			this.floatTrackbarControlInit_MaskingImportance.TabIndex = 2;
-			this.floatTrackbarControlInit_MaskingImportance.Value = 1F;
-			this.floatTrackbarControlInit_MaskingImportance.VisibleRangeMax = 1F;
-			this.floatTrackbarControlInit_MaskingImportance.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlInit_MaskingImportance_ValueChanged);
-			// 
-			// floatTrackbarControlInit_Flatten
-			// 
-			this.floatTrackbarControlInit_Flatten.Location = new System.Drawing.Point(119, 1);
-			this.floatTrackbarControlInit_Flatten.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.floatTrackbarControlInit_Flatten.MinimumSize = new System.Drawing.Size(70, 20);
-			this.floatTrackbarControlInit_Flatten.Name = "floatTrackbarControlInit_Flatten";
-			this.floatTrackbarControlInit_Flatten.RangeMax = 10F;
-			this.floatTrackbarControlInit_Flatten.RangeMin = 0F;
-			this.floatTrackbarControlInit_Flatten.Size = new System.Drawing.Size(200, 20);
-			this.floatTrackbarControlInit_Flatten.TabIndex = 2;
-			this.toolTip1.SetToolTip(this.floatTrackbarControlInit_Flatten, "Specifies the lobe\'s flattening to start with (diffuse lobes tend to be flatter)");
-			this.floatTrackbarControlInit_Flatten.Value = 0.5F;
-			this.floatTrackbarControlInit_Flatten.VisibleRangeMax = 1F;
-			this.floatTrackbarControlInit_Flatten.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlInit_Flatten_ValueChanged);
-			// 
-			// floatTrackbarControlInit_Scale
-			// 
-			this.floatTrackbarControlInit_Scale.Location = new System.Drawing.Point(119, 21);
-			this.floatTrackbarControlInit_Scale.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.floatTrackbarControlInit_Scale.MinimumSize = new System.Drawing.Size(70, 20);
-			this.floatTrackbarControlInit_Scale.Name = "floatTrackbarControlInit_Scale";
-			this.floatTrackbarControlInit_Scale.RangeMax = 1F;
-			this.floatTrackbarControlInit_Scale.RangeMin = 0F;
-			this.floatTrackbarControlInit_Scale.Size = new System.Drawing.Size(200, 20);
-			this.floatTrackbarControlInit_Scale.TabIndex = 2;
-			this.toolTip1.SetToolTip(this.floatTrackbarControlInit_Scale, "Specifies the percentage of the size of the simulated lobe to start with (smaller" +
-        " initial lobes make simulation converge faster)");
-			this.floatTrackbarControlInit_Scale.Value = 0.05F;
-			this.floatTrackbarControlInit_Scale.VisibleRangeMax = 1F;
-			this.floatTrackbarControlInit_Scale.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlInit_Scale_ValueChanged);
-			// 
-			// floatTrackbarControlInit_CustomRoughness
-			// 
-			this.floatTrackbarControlInit_CustomRoughness.Enabled = false;
-			this.floatTrackbarControlInit_CustomRoughness.Location = new System.Drawing.Point(125, 22);
-			this.floatTrackbarControlInit_CustomRoughness.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.floatTrackbarControlInit_CustomRoughness.MinimumSize = new System.Drawing.Size(70, 20);
-			this.floatTrackbarControlInit_CustomRoughness.Name = "floatTrackbarControlInit_CustomRoughness";
-			this.floatTrackbarControlInit_CustomRoughness.RangeMax = 1F;
-			this.floatTrackbarControlInit_CustomRoughness.RangeMin = 0F;
-			this.floatTrackbarControlInit_CustomRoughness.Size = new System.Drawing.Size(200, 20);
-			this.floatTrackbarControlInit_CustomRoughness.TabIndex = 2;
-			this.floatTrackbarControlInit_CustomRoughness.Value = 0.5F;
-			this.floatTrackbarControlInit_CustomRoughness.VisibleRangeMax = 1F;
-			this.floatTrackbarControlInit_CustomRoughness.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlInit_CustomRoughness_ValueChanged);
-			// 
-			// saveAsToolStripMenuItem
-			// 
-			this.saveAsToolStripMenuItem.Name = "saveAsToolStripMenuItem";
-			this.saveAsToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)(((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.Shift) 
-            | System.Windows.Forms.Keys.S)));
-			this.saveAsToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
-			this.saveAsToolStripMenuItem.Text = "Save As...";
-			this.saveAsToolStripMenuItem.Click += new System.EventHandler(this.saveAsToolStripMenuItem_Click);
 			// 
 			// completionArrayControl
 			// 
@@ -1734,9 +1710,6 @@
 		private System.Windows.Forms.ToolStripMenuItem openToolStripMenuItem;
 		private System.Windows.Forms.ToolStripMenuItem saveToolStripMenuItem;
 		private System.Windows.Forms.ToolStripMenuItem resultsToolStripMenuItem;
-		private System.Windows.Forms.ToolStripMenuItem loadToolStripMenuItem;
-		private System.Windows.Forms.ToolStripMenuItem saveToolStripMenuItem1;
-		private System.Windows.Forms.ToolStripSeparator toolStripMenuItem1;
 		private System.Windows.Forms.ToolStripMenuItem exportToolStripMenuItem;
 		private System.Windows.Forms.ToolStripSeparator toolStripMenuItem2;
 		private System.Windows.Forms.ToolStripMenuItem recentToolStripMenuItem;
