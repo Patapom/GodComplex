@@ -1183,7 +1183,11 @@ namespace TestMSBSDF
 		}
 
 		private void buttonAutomation_Click( object sender, EventArgs e ) {
-			m_automation.Visible = !m_automation.Visible;	// Simply toggle show/hide, the form is always there, never disposed except when we are...
+			// Simply toggle show/hide, the form is always there, never disposed except when we are...
+			if ( !m_automation.Visible )
+				m_automation.Show( this );
+			else
+				m_automation.Visible = false;
 		}
 	}
 }

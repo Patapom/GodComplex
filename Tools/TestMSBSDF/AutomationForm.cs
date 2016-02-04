@@ -219,12 +219,14 @@ namespace TestMSBSDF
 				}
 
 				public	SurfaceParameters() {
-					m_incomingAngle = new Parameter( this, 0, 90.0f, 30 );
+					m_incomingAngle = new Parameter( this, 0, 90.0f, 20 );
 					m_roughness = new Parameter( this, 0, 1.0f, 10 );
 					m_albedoF0 = new Parameter( this, 0, 1.0f, 4 );
 					m_scatteringOrders = new Parameter( this, 1, 4, 1 );
 					m_scatteringOrders.ValueChanged += m_scatteringOrders_ValueChanged;
 
+					m_roughness.Min = 1.0f;
+					m_roughness.Max = 0.0f;
 					m_roughness.InclusiveMax = true;	// Roughness must be simulated all the way!
 					m_albedoF0.Min = 1.0f;
 					m_albedoF0.Max = 0.0f;
@@ -399,9 +401,9 @@ namespace TestMSBSDF
 						bool			reflected = this == _owner.m_reflected;	// Are we the reflected or refracted lobe result?
 						LobeParameters	previousParams = null;
 						if ( _owner.m_Y > 0 ) {
-							Result		previousResult = _owner.m_owner.m_results[_owner.ScatteringOrder][_owner.m_X, _owner.m_Y-1, _owner.m_Z];
+							Result		previousResult = _owner.m_owner.GetResultsForOrder( _owner.ScatteringOrder )[_owner.m_X, _owner.m_Y-1, _owner.m_Z];
 							previousParams = reflected ? previousResult.m_reflected : previousResult.m_refracted;
-						}
+are they valid??						}
 
 						//////////////////////////////////////////////////////////////////////////
 						// Initialize theta
@@ -503,8 +505,8 @@ namespace TestMSBSDF
 				int				m_X;
 				int				m_Y;
 				int				m_Z;
-				float			m_state = 0.0f;
-				public string	m_error = null;
+				float			m_state = 0.0f;		// Not computed yet!
+				public string	m_error = null;		// No error yet...
 
 				// Input parameters
 				float			m_incomingAngleTheta;
@@ -609,6 +611,8 @@ namespace TestMSBSDF
 				int	dimY = m_surface.m_roughness.StepsCount;
 				int	dimZ = m_surface.m_albedoF0.StepsCount;
 
+				int	minOrder = m_surface.ScatteringOrderMin;
+
 				float	incomingAnglePhi = 0.0f;	//@TODO?? We don't care about anisotropy anyway...
 
 				m_results = new Result[orders][,,];
@@ -619,7 +623,7 @@ namespace TestMSBSDF
 					float	incomingAngleMin, incomingAngleStep;
 					m_surface.m_incomingAngle.BuildMinStep( out incomingAngleMin, out incomingAngleStep );
 					float	roughnessMin, roughnessStep;
-					m_surface.m_incomingAngle.BuildMinStep( out roughnessMin, out roughnessStep );
+					m_surface.m_roughness.BuildMinStep( out roughnessMin, out roughnessStep );
 					float	albedoF0Min, albedoF0Step;
 					m_surface.m_albedoF0.BuildMinStep( out albedoF0Min, out albedoF0Step );
 
@@ -629,15 +633,24 @@ namespace TestMSBSDF
 						for ( int Y=0; Y < dimY; Y++, roughness+=roughnessStep ) {
 							float	incomingAngle = incomingAngleMin;
 							for ( int X=0; X < dimX; X++, incomingAngle+=incomingAngleStep ) {
-								Result	R = new Result( this, order, X, Y, Z, incomingAngle * (float) Math.PI / 180.0f, incomingAnglePhi, roughness, albedoF0 );
+								Result	R = new Result( this, minOrder + order, X, Y, Z, incomingAngle * (float) Math.PI / 180.0f, incomingAnglePhi, roughness, albedoF0 );
 								m_results[order][X,Y,Z] = R;
-
-								R.State = 0.0f;			// Not computed yet!
-								R.m_error = null;		// No error yet...
 							}
 						}
 					}
 				}
+			}
+
+			/// <summary>
+			/// Gets the array of results for the specific scattering order
+			/// </summary>
+			/// <param name="_order"></param>
+			/// <returns></returns>
+			public Result[,,]	GetResultsForOrder( int _order ) {
+				if ( _order < m_surface.ScatteringOrderMin || _order > m_surface.ScatteringOrderMax )
+					return null;
+
+				return m_results[_order - m_surface.ScatteringOrderMin];
 			}
 
 			public void		Save( XmlDocument _doc ) {
@@ -833,7 +846,7 @@ namespace TestMSBSDF
 
 			LobeModel.LOBE_TYPE	lobeType = m_document.m_settings.m_lobeModel;
 
-			Document.Result.LobeParameters	lobeResults = _reflected ? _result.m_reflected : _result.m_refracted;
+move up			Document.Result.LobeParameters	lobeResults = _reflected ? _result.m_reflected : _result.m_refracted;
 
 			lobeResults.Initialize( _result, m_lobeModel, _reflected ? reflectedDirection : refractedDirection );
 
@@ -841,10 +854,13 @@ namespace TestMSBSDF
 			m_lobeModel.InitLobeData( lobeType, incomingDirection, lobeResults.m_theta, lobeResults.m_roughness, lobeResults.m_scale, lobeResults.m_flatten, lobeResults.m_masking, m_document.m_settings.m_oversizeFactor, true );
 
 			// Peform fitting
-			for ( m_retriesCount=1; m_retriesCount <= m_document.m_settings.m_maxRetries; m_retriesCount++ ) {
+			for ( m_retriesCount=0; m_retriesCount < m_document.m_settings.m_maxRetries; m_retriesCount++ ) {
 				m_fitter.Minimize( m_lobeModel );
-				if ( m_fitter.IterationsCount < m_document.m_settings.m_maxIterations )
-					break;	// Finished!
+				if ( m_fitter.IterationsCount < m_document.m_settings.m_maxIterations ) {
+					// Finished!
+					m_retriesCount++:
+					break;
+				}
 			}
 		}
 
@@ -898,7 +914,6 @@ namespace TestMSBSDF
 		/// Mirrors the document's values to the UI
 		/// </summary>
 		void	Document2UI() {
-
 			DocumentSurface2UI();
 			DocumentLobeSettings2UI();
 			DocumentSettings2UI();
@@ -924,9 +939,12 @@ namespace TestMSBSDF
 			integerTrackbarControlParam1_Steps.Value = m_document.m_surface.m_roughness.StepsCount;
 			floatTrackbarControlParam2_Min.Value = m_document.m_surface.m_albedoF0.Min;
 			floatTrackbarControlParam2_Max.Value = m_document.m_surface.m_albedoF0.Max;
+			integerTrackbarControlViewAlbedoSlice.RangeMax = m_document.m_surface.m_albedoF0.StepsCount-1;
 			integerTrackbarControlParam2_Steps.Value = m_document.m_surface.m_albedoF0.StepsCount;
 			integerTrackbarControlScatteringOrder_Min.Value = m_document.m_surface.ScatteringOrderMin;
+			integerTrackbarControlScatteringOrder_Min.RangeMax = m_document.m_surface.ScatteringOrderMax;
 			integerTrackbarControlScatteringOrder_Max.Value = m_document.m_surface.ScatteringOrderMax;
+			integerTrackbarControlScatteringOrder_Max.RangeMin = m_document.m_surface.ScatteringOrderMin;
 			integerTrackbarControlRayCastingIterations.Value = m_document.m_surface.m_rayTracingIterationsCount;
 			checkBoxParam0_InclusiveStart.Checked = m_document.m_surface.m_incomingAngle.InclusiveMin;
 			checkBoxParam0_InclusiveEnd.Checked = m_document.m_surface.m_incomingAngle.InclusiveMax;
@@ -1004,7 +1022,7 @@ namespace TestMSBSDF
 			int	stepsCountZ = m_document.m_surface.m_albedoF0.StepsCount;
 			completionArrayControl.Init( stepsCountX, stepsCountY, stepsCountZ );
 
-			Document.Result[,,]	layerResults = m_document.m_results[SelectedScatteringOrder];
+			Document.Result[,,]	layerResults = m_document.GetResultsForOrder( SelectedScatteringOrder );
 
 			for ( int Z=0; Z < stepsCountZ; Z++ )
 				for ( int Y=0; Y < stepsCountY; Y++ )
@@ -1020,6 +1038,11 @@ namespace TestMSBSDF
 
 			// Rebuild results
 			m_document.InitializeResults();
+
+			// Update UI
+			integerTrackbarControlViewScatteringOrder.RangeMin = m_document.m_surface.ScatteringOrderMin;
+			integerTrackbarControlViewScatteringOrder.RangeMax = m_document.m_surface.ScatteringOrderMax;
+
 			DocumentResults2UI();
 		}
 
@@ -1077,23 +1100,26 @@ namespace TestMSBSDF
 		void	ClearLog() {
 			m_log = new List< string >();
 			textBoxLog.Text = "";
+			textBoxLog.Refresh();
 		}
 		void	Log( string _text ) {
 			m_log.Add( _text );
 			textBoxLog.AppendText( _text );
+			textBoxLog.Refresh();
 		}
 		void	LogLine( string _text ) {
 			_text += "\r\n";
 			m_log.Add( _text );
 			textBoxLog.AppendText( _text );
+			textBoxLog.Refresh();
 		}
 
 		string	FormatTime( DateTime _time ) {
-			return _time.ToString( "HH:mm:ss" );
+			return _time.ToString( @"hh\:mm\:ss" );
 		}
 
 		string	FormatDuration( TimeSpan _duration ) {
-			return _duration.ToString( "HH:mm:ss" );
+			return _duration.ToString( @"hh\:mm\:ss\" ) + ":" + _duration.Milliseconds.ToString( "G03" );
 		}
 
 		#endregion
@@ -1155,6 +1181,10 @@ namespace TestMSBSDF
 				UpdateSurfaceRoughness( SelectedResult );
 				Simulate( SelectedResult );
 
+				DateTime	simulationEnd = DateTime.Now;
+				TimeSpan	simulationDuration = simulationEnd - m_simulationStart;
+				LogLine( "	• Simulation Duration = " + FormatDuration( simulationDuration ) );
+
 				// Fit reflected lobe...
 				PerformLobeFitting( SelectedResult, true );
 				LogLine( "	## Reflected lobe - Fit minimum reached = " + m_fitter.FunctionMinimum + " after " + m_retriesCount + " attempts" );
@@ -1184,7 +1214,7 @@ namespace TestMSBSDF
 
 				TimeSpan	duration = m_simulationEnd - m_simulationStart;
 				LogLine( "	• End Time = " + FormatTime( m_simulationEnd ) + " (Duration: " + FormatDuration( duration ) + ")" );
-				LogLine( "== Simulation Ended ==" );
+				LogLine( "== Fitting Ended ==" );
 				LogLine( "" );
 				LogLine( "" );
 			}
@@ -1266,7 +1296,7 @@ namespace TestMSBSDF
 		}
 
 		private void completionArrayControl_SelectionChanged( CompletionArrayControl _Sender ) {
-			Document.Result[,,]	layerResults = m_document.m_results[integerTrackbarControlViewScatteringOrder.Value];
+			Document.Result[,,]	layerResults = m_document.GetResultsForOrder( integerTrackbarControlViewScatteringOrder.Value );
 			SelectedResult = layerResults[_Sender.SelectedX,_Sender.SelectedY, _Sender.SelectedZ];
 		}
 
@@ -1274,7 +1304,7 @@ namespace TestMSBSDF
 			// Update UI & selection
 			DocumentResults2UI();
 
-			Document.Result[,,]	layerResults = m_document.m_results[_Sender.Value];
+			Document.Result[,,]	layerResults = m_document.GetResultsForOrder( _Sender.Value );
 
 			SelectedResult = layerResults[completionArrayControl.SelectedX, completionArrayControl.SelectedY, completionArrayControl.SelectedZ];
 		}
@@ -1394,7 +1424,8 @@ namespace TestMSBSDF
 			labelParm2.Text = SurfaceType == TestForm.SURFACE_TYPE.DIFFUSE ? "Albedo" : "F0";
 
 			// Also update surface type in the main form
-			m_owner.SetSurfaceType( m_document.m_surface.m_type );
+			if ( m_owner != null )
+				m_owner.SetSurfaceType( m_document.m_surface.m_type );
 		}
 
 		private void floatTrackbarControlParam0_Min_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
@@ -1444,18 +1475,27 @@ namespace TestMSBSDF
 			m_document.m_surface.m_albedoF0.StepsCount = integerTrackbarControlParam2_Steps.Value;
 			DocumentResults2UI();
 
-			integerTrackbarControlViewAlbedoSlice.RangeMax = _Sender.Value - 1;
+			integerTrackbarControlViewAlbedoSlice.RangeMax = m_document.m_surface.m_albedoF0.StepsCount - 1;
+			integerTrackbarControlViewAlbedoSlice.VisibleRangeMax = integerTrackbarControlViewAlbedoSlice.RangeMax;
 		}
 
 		private void integerTrackbarControlScatteringOrder_Min_ValueChanged( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue )
 		{
 			m_document.m_surface.ScatteringOrderMin = integerTrackbarControlScatteringOrder_Min.Value;
+
+			integerTrackbarControlScatteringOrder_Max.RangeMin = m_document.m_surface.ScatteringOrderMin;	// Max scattering can't go lower than this
+			integerTrackbarControlScatteringOrder_Max.VisibleRangeMin = m_document.m_surface.ScatteringOrderMin;
+			integerTrackbarControlViewScatteringOrder.RangeMin = _Sender.Value;
 			integerTrackbarControlViewScatteringOrder.VisibleRangeMin = _Sender.Value;
 		}
 
 		private void integerTrackbarControlScatteringOrder_Max_ValueChanged( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue )
 		{
 			m_document.m_surface.ScatteringOrderMax = integerTrackbarControlScatteringOrder_Max.Value;
+
+			integerTrackbarControlScatteringOrder_Min.RangeMax = m_document.m_surface.ScatteringOrderMax;	// Min scattering can't go higher than this
+			integerTrackbarControlScatteringOrder_Min.VisibleRangeMax = m_document.m_surface.ScatteringOrderMax;
+			integerTrackbarControlViewScatteringOrder.RangeMax = _Sender.Value;
 			integerTrackbarControlViewScatteringOrder.VisibleRangeMax = _Sender.Value;
 		}
 

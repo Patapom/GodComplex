@@ -108,12 +108,14 @@ namespace Nuaj.Cirrus.Utility
 				m_bInternalChange = true;
 
 				m_RangeMin = value;
-				Value = Math.Max( Value, m_RangeMin );	// Clamp value if needed
+				m_VisibleRangeMin = Math.Max( m_VisibleRangeMin, m_RangeMin );
 
 				// Update GUI
 				Invalidate();
 
 				m_bInternalChange = false;
+
+				Value = Math.Max( m_Value, m_RangeMin );	// Clamp value if needed
 			}
 		}
 
@@ -128,12 +130,14 @@ namespace Nuaj.Cirrus.Utility
 				m_bInternalChange = true;
 
 				m_RangeMax = value;
-				Value = Math.Min( Value, m_RangeMax );	// Clamp value if needed
+				m_VisibleRangeMax = Math.Min( m_VisibleRangeMax, m_RangeMax );
 
 				// Update GUI
 				Invalidate();
 
 				m_bInternalChange = false;
+
+				Value = Math.Min( m_Value, m_RangeMax );	// Clamp value if needed
 			}
 		}
 
