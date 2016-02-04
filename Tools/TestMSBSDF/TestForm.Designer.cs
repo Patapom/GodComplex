@@ -107,9 +107,9 @@
 			this.groupBox1 = new System.Windows.Forms.GroupBox();
 			this.checkBoxCompensateScatteringFactor = new System.Windows.Forms.CheckBox();
 			this.checkBoxShowXRay = new System.Windows.Forms.CheckBox();
-			this.panelOutput = new TestMSBSDF.PanelOutput3D(this.components);
 			this.buttonAutomation = new System.Windows.Forms.Button();
 			this.buttonTestImage = new System.Windows.Forms.Button();
+			this.panelOutput = new TestMSBSDF.PanelOutput3D(this.components);
 			this.groupBoxDisplay.SuspendLayout();
 			this.panel2.SuspendLayout();
 			this.groupBoxSurface.SuspendLayout();
@@ -418,7 +418,6 @@
 			this.floatTrackbarControlAnalyticalLobeRoughness.TabIndex = 2;
 			this.floatTrackbarControlAnalyticalLobeRoughness.Value = 0.9444F;
 			this.floatTrackbarControlAnalyticalLobeRoughness.VisibleRangeMax = 1F;
-			this.floatTrackbarControlAnalyticalLobeRoughness.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlBeckmannRoughness_ValueChanged);
 			// 
 			// floatTrackbarControlLobeScaleR
 			// 
@@ -1013,16 +1012,6 @@
 			this.checkBoxShowXRay.Text = "Show X-Ray";
 			this.checkBoxShowXRay.UseVisualStyleBackColor = true;
 			// 
-			// panelOutput
-			// 
-			this.panelOutput.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-			this.panelOutput.Location = new System.Drawing.Point(12, 12);
-			this.panelOutput.Name = "panelOutput";
-			this.panelOutput.Size = new System.Drawing.Size(876, 835);
-			this.panelOutput.TabIndex = 0;
-			// 
 			// buttonAutomation
 			// 
 			this.buttonAutomation.Location = new System.Drawing.Point(1205, 848);
@@ -1042,6 +1031,16 @@
 			this.buttonTestImage.Text = "Test Image";
 			this.buttonTestImage.UseVisualStyleBackColor = true;
 			this.buttonTestImage.Click += new System.EventHandler(this.buttonTestImage_Click);
+			// 
+			// panelOutput
+			// 
+			this.panelOutput.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+			this.panelOutput.Location = new System.Drawing.Point(12, 12);
+			this.panelOutput.Name = "panelOutput";
+			this.panelOutput.Size = new System.Drawing.Size(876, 835);
+			this.panelOutput.TabIndex = 0;
 			// 
 			// TestForm
 			// 
