@@ -109,6 +109,7 @@
 			this.checkBoxShowXRay = new System.Windows.Forms.CheckBox();
 			this.panelOutput = new TestMSBSDF.PanelOutput3D(this.components);
 			this.buttonAutomation = new System.Windows.Forms.Button();
+			this.buttonTestImage = new System.Windows.Forms.Button();
 			this.groupBoxDisplay.SuspendLayout();
 			this.panel2.SuspendLayout();
 			this.groupBoxSurface.SuspendLayout();
@@ -611,6 +612,7 @@
 			// groupBoxSurface
 			// 
 			this.groupBoxSurface.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+			this.groupBoxSurface.Controls.Add(this.buttonTestImage);
 			this.groupBoxSurface.Controls.Add(this.panelDielectric);
 			this.groupBoxSurface.Controls.Add(this.radioButtonDiffuse);
 			this.groupBoxSurface.Controls.Add(this.radioButtonDielectric);
@@ -1031,6 +1033,16 @@
 			this.buttonAutomation.UseVisualStyleBackColor = true;
 			this.buttonAutomation.Click += new System.EventHandler(this.buttonAutomation_Click);
 			// 
+			// buttonTestImage
+			// 
+			this.buttonTestImage.Location = new System.Drawing.Point(298, 126);
+			this.buttonTestImage.Name = "buttonTestImage";
+			this.buttonTestImage.Size = new System.Drawing.Size(75, 23);
+			this.buttonTestImage.TabIndex = 6;
+			this.buttonTestImage.Text = "Test Image";
+			this.buttonTestImage.UseVisualStyleBackColor = true;
+			this.buttonTestImage.Click += new System.EventHandler(this.buttonTestImage_Click);
+			// 
 			// TestForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -1150,6 +1162,7 @@
 		private System.Windows.Forms.Label label21;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlLobeMaskingImportance_T;
 		private System.Windows.Forms.Button buttonAutomation;
+		private System.Windows.Forms.Button buttonTestImage;
 	}
 }
 

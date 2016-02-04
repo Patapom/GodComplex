@@ -581,7 +581,7 @@ namespace TestMSBSDF
 //						Content[X,Y].Set( R / 255.0f, G / 255.0f, B / 255.0f, A / 255.0f );
 
 // But assuming it's a height field, we only store one component into alpha
-						Content[X,Y].Set( 0, 0, 0, R );	// Use Red as height
+						Content[X,Y].Set( 0, 0, 0, R / 255.0f );	// Use Red as height
 					}
 				}
 				BM.UnlockBits( LockedBitmap );
@@ -1275,6 +1275,11 @@ namespace TestMSBSDF
 				m_automation.Show( this );
 			else
 				m_automation.Visible = false;
+		}
+
+		private void buttonTestImage_Click( object sender, EventArgs e )
+		{
+			BuildSurfaceFromTexture( "TestSurface.png", 1.0f );
 		}
 	}
 }
