@@ -29,6 +29,7 @@ namespace TestMSBSDF
 		protected int				m_dimensionY = 4;
 		protected int				m_dimensionZ = 1;
 		protected float[,,]			m_states = null;
+		protected string[,,]		m_errors = null;
 
 		protected int				m_selectedX = 0;
 		protected int				m_selectedY = 0;
@@ -96,6 +97,14 @@ namespace TestMSBSDF
 			get { return m_states[m_selectedX, m_selectedY, m_selectedZ]; }
 			set {
 				m_states[m_selectedX, m_selectedY, m_selectedZ] = value;
+				Invalidate();
+			}
+		}
+
+		public string			SelectedError {
+			get { return m_errors[m_selectedX, m_selectedY, m_selectedZ]; }
+			set {
+				m_errors[m_selectedX, m_selectedY, m_selectedZ] = value;
 				Invalidate();
 			}
 		}
@@ -192,6 +201,7 @@ namespace TestMSBSDF
 			m_dimensionY = _dimensionY;
 			m_dimensionZ = _dimensionZ;
 			m_states = new float[m_dimensionX,m_dimensionY,m_dimensionZ];
+			m_errors = new string[m_dimensionX,m_dimensionY,m_dimensionZ];
 
 			m_selectedX = 0;
 			m_selectedY = 0;
@@ -212,14 +222,26 @@ namespace TestMSBSDF
 		}
 
 		/// <summary>
+		/// Gets a state error
+		/// </summary>
+		/// <param name="_X"></param>
+		/// <param name="_Y"></param>
+		/// <param name="_Z"></param>
+		/// <returns></returns>
+		public string			GetError( int _X, int _Y, int _Z ) {
+			return m_errors[_X, _Y, _Z];
+		}
+
+		/// <summary>
 		/// Sets a state
 		/// </summary>
 		/// <param name="_X"></param>
 		/// <param name="_Y"></param>
 		/// <param name="_Z"></param>
 		/// <param name="_state"></param>
-		public void				SetState( int _X, int _Y, int _Z, float _state ) {
+		public void				SetState( int _X, int _Y, int _Z, float _state, string _error ) {
 			m_states[_X, _Y, _Z] = _state;
+			m_errors[_X, _Y, _Z] = _error;
 			Invalidate();
 		}
 
@@ -258,13 +280,27 @@ namespace TestMSBSDF
 			return true;
 		}
 
+		public void				SelectAt( Point _clientPos ) {
+			Select( _clientPos.X * m_dimensionX / Width, _clientPos.Y * m_dimensionY / Height, m_selectedZ );
+		}
+
+		public bool				GetXYAt( Point _clientPos, out int _X, out int _Y ) {
+			_X = _clientPos.X * m_dimensionX / Width;
+			_Y = _clientPos.Y * Math.Max( 8, m_dimensionY ) / Height;
+			if ( _X < 0 || _X >= m_dimensionX )
+				return false;
+			if ( _Y < 0 || _Y >= m_dimensionY )
+				return false;
+
+			return true;
+		}
+
 		#region Control Members
 
 		protected override void OnMouseDown( MouseEventArgs e )
 		{
 			base.OnMouseDown( e );
-
-			Select( e.X * m_dimensionX / Width, e.Y * m_dimensionY / Height, m_selectedZ );
+			SelectAt( e.Location );
 		}
 
 		protected override void OnEnabledChanged( EventArgs e )
@@ -450,6 +486,22 @@ namespace TestMSBSDF
 		#endregion
 
 		#region EVENT HANDLERS
+
+		private void toolTip1_Popup( object sender, PopupEventArgs e ) {
+			Point	P = PointToClient( Control.MousePosition );
+			int		X, Y;
+			if ( !GetXYAt( P, out X, out Y ) ) {
+				e.Cancel = true;
+			}
+
+			float	state = m_states[X,Y,m_selectedZ];
+			string	error = m_errors[X,Y,m_selectedZ];
+
+			if ( state > 0.0f )
+				toolTip1.SetToolTip( this, "Progress " + ((int) (100 * state)).ToString() + "%" );
+			else
+				toolTip1.SetToolTip( this, "Error: " + (error != null ? error : "unknown") );
+		}
 
 		#endregion
 	}

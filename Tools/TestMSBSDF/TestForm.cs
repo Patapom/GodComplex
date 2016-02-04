@@ -797,6 +797,18 @@ namespace TestMSBSDF
 
 		}
 
+		/// <summary>
+		/// Called by the automation form to change the surface type
+		/// </summary>
+		/// <param name="_type"></param>
+		public void	SetSurfaceType( SURFACE_TYPE _type ) {
+			switch ( _type ) {
+				case SURFACE_TYPE.CONDUCTOR: radioButtonConductor.Checked = true; break;
+				case SURFACE_TYPE.DIELECTRIC: radioButtonDielectric.Checked = true; break;
+				case SURFACE_TYPE.DIFFUSE: radioButtonDiffuse.Checked = true; break;
+			}
+		}
+
 		public void	UpdateApplication() {
 			panelOutput.Refresh();
 			Application_Idle( null, EventArgs.Empty );

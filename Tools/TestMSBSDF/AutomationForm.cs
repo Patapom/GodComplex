@@ -377,6 +377,16 @@ namespace TestMSBSDF
 					public double	m_flatten = 0.5;
 					public double	m_masking = 1.0;
 
+					public double[]	AsArray {
+						get { return new double[] {	m_theta,
+													m_roughness,
+													m_scale,
+													m_flatten,
+													m_masking
+												  };
+						}
+					}
+
 					/// <summary>
 					/// Initializes the lobe results based on current settings
 					/// </summary>
@@ -497,19 +507,24 @@ namespace TestMSBSDF
 				public string	m_error = null;
 
 				// Input parameters
-				public float	m_incomingAngleTheta;
-				public float	m_incomingAnglePhi;
-				public float	m_surfaceRoughness;
-				public float	m_surfaceAlbedoF0;
+				float			m_incomingAngleTheta;
+				float			m_incomingAnglePhi;
+				float			m_surfaceRoughness;
+				float			m_surfaceAlbedoF0;
 
 				// Fitted parameters
 				public LobeParameters		m_reflected = new LobeParameters();
 				public LobeParameters		m_refracted = new LobeParameters();
 
-				public int		ScatteringOrder	{ get { return m_order; } }
-				public int		X				{ get { return m_X; } }
-				public int		Y				{ get { return m_Y; } }
-				public int		Z				{ get { return m_Z; } }
+				public int		ScatteringOrder		{ get { return m_order; } }
+				public int		X					{ get { return m_X; } }
+				public int		Y					{ get { return m_Y; } }
+				public int		Z					{ get { return m_Z; } }
+
+				public float	IncomingAngleTheta	{ get { return m_incomingAngleTheta; } }
+				public float	IncomingAnglePhi	{ get { return m_incomingAnglePhi; } }
+				public float	SurfaceRoughness	{ get { return m_surfaceRoughness; } }
+				public float	SurfaceAlbedoF0		{ get { return m_surfaceAlbedoF0; } }
 
 				public float	State {
 					get { return m_state; }
@@ -536,12 +551,16 @@ namespace TestMSBSDF
 					}
 				}
 
-				public Result( Document _owner, int _order, int _X, int _Y, int _Z ) {
+				public Result( Document _owner, int _order, int _X, int _Y, int _Z, float _theta, float _phi, float _roughness, float _albedoF0 ) {
 					m_owner = _owner;
 					m_order = _order;
 					m_X = _X;
 					m_Y = _Y;
 					m_Z = _Z;
+					m_incomingAngleTheta = _theta;
+					m_incomingAnglePhi = _phi;
+					m_surfaceRoughness = _roughness;
+					m_surfaceAlbedoF0 = _albedoF0;
 				}
 
 				public void		Save( XmlElement _parent ) {
@@ -578,11 +597,11 @@ namespace TestMSBSDF
 			public event ResultStateChangedEventHandler	ResultStateChanged;
 
 			public Document() {
-
+				InitializeResults();
 			}
 
 			/// <summary>
-			/// Initializes the array of results of the correct dimensions using the current settings and locks the surface (i.e. simulation parameters can't be modified anymore once computation has begun)
+			/// Initializes the array of results of the correct dimensions using the current settings
 			/// </summary>
 			public void		InitializeResults() {
 				int	orders = m_surface.ScatteringOrdersCount;
@@ -610,23 +629,15 @@ namespace TestMSBSDF
 						for ( int Y=0; Y < dimY; Y++, roughness+=roughnessStep ) {
 							float	incomingAngle = incomingAngleMin;
 							for ( int X=0; X < dimX; X++, incomingAngle+=incomingAngleStep ) {
-								Result	R = new Result( this, order, X, Y, Z );
+								Result	R = new Result( this, order, X, Y, Z, incomingAngle * (float) Math.PI / 180.0f, incomingAnglePhi, roughness, albedoF0 );
 								m_results[order][X,Y,Z] = R;
 
 								R.State = 0.0f;			// Not computed yet!
 								R.m_error = null;		// No error yet...
-
-								R.m_incomingAngleTheta = incomingAngle * (float) Math.PI / 180.0f;
-								R.m_incomingAnglePhi = incomingAnglePhi;
-								R.m_surfaceRoughness = roughness;
-								R.m_surfaceAlbedoF0 = albedoF0;
 							}
 						}
 					}
 				}
-
-				// Lock the surface!
-				m_surface.Lock();
 			}
 
 			public void		Save( XmlDocument _doc ) {
@@ -704,7 +715,7 @@ namespace TestMSBSDF
 		bool			m_isReflectedLobe = true;
 		Document.Result.LobeParameters	m_currentFittedResult = null;
 
-		Document			m_document = null;
+		Document		m_document = null;
 		Document.Result	m_selectedResult = null;		// Current selection
 
 		public new TestForm		Owner {
@@ -727,7 +738,19 @@ namespace TestMSBSDF
 					return;
 
 				completionArrayControl.Select( m_selectedResult.X, m_selectedResult.Y, m_selectedResult.Z );
+
+				// Show lobe parameters in main form
+				m_owner.UpdateLobeParameters( m_selectedResult.m_reflected.AsArray, true );
+				m_owner.UpdateLobeParameters( m_selectedResult.m_refracted.AsArray, false );
 			}
+		}
+
+		/// <summary>
+		/// Use the view trackbar as the official selected scattering order
+		/// </summary>
+		int				SelectedScatteringOrder {
+			get { return integerTrackbarControlViewScatteringOrder.Value; }
+			set { integerTrackbarControlViewScatteringOrder.Value = value; }
 		}
 
 		TestForm.SURFACE_TYPE	SurfaceType {
@@ -769,7 +792,7 @@ namespace TestMSBSDF
 		/// </summary>
 		/// <param name="_result"></param>
 		void	UpdateSurfaceRoughness( Document.Result _result ) {
-			m_owner.BuildBeckmannSurfaceTexture( (float) _result.m_surfaceRoughness );
+			m_owner.BuildBeckmannSurfaceTexture( (float) _result.SurfaceRoughness );
 		}
 
 		/// <summary>
@@ -777,10 +800,10 @@ namespace TestMSBSDF
 		/// </summary>
 		void	Simulate( Document.Result _result ) {
 
-			float	albedo = _result.m_surfaceAlbedoF0;
-			float	F0 = _result.m_surfaceAlbedoF0;
+			float	albedo = _result.SurfaceAlbedoF0;
+			float	F0 = _result.SurfaceAlbedoF0;
 
-			m_owner.RayTraceSurface( _result.m_surfaceRoughness, albedo, F0, m_document.m_surface.m_type, _result.m_incomingAngleTheta, _result.m_incomingAnglePhi, m_document.m_surface.m_rayTracingIterationsCount );
+			m_owner.RayTraceSurface( _result.SurfaceRoughness, albedo, F0, m_document.m_surface.m_type, _result.IncomingAngleTheta, _result.IncomingAnglePhi, m_document.m_surface.m_rayTracingIterationsCount );
 		}
 
 		/// <summary>
@@ -788,6 +811,7 @@ namespace TestMSBSDF
 		/// </summary>
 		/// <param name="_result"></param>
 		/// <param name="_reflected"></param>
+		int		m_retriesCount = 0;
 		void	PerformLobeFitting( Document.Result _result, bool _reflected ) {
 
 			m_isReflectedLobe = _reflected;	// Global flag for current fitting
@@ -805,7 +829,7 @@ namespace TestMSBSDF
 			float3				reflectedDirection = incomingDirection;
 								reflectedDirection.z = -reflectedDirection.z;	// Mirror against surface
 
-			float3				refractedDirection = TestForm.Refract( -incomingDirection, float3.UnitZ, 1.0f / TestForm.Fresnel_IORFromF0( _result.m_surfaceAlbedoF0 ) );
+			float3				refractedDirection = TestForm.Refract( -incomingDirection, float3.UnitZ, 1.0f / TestForm.Fresnel_IORFromF0( _result.SurfaceAlbedoF0 ) );
 
 			LobeModel.LOBE_TYPE	lobeType = m_document.m_settings.m_lobeModel;
 
@@ -817,7 +841,11 @@ namespace TestMSBSDF
 			m_lobeModel.InitLobeData( lobeType, incomingDirection, lobeResults.m_theta, lobeResults.m_roughness, lobeResults.m_scale, lobeResults.m_flatten, lobeResults.m_masking, m_document.m_settings.m_oversizeFactor, true );
 
 			// Peform fitting
-			m_fitter.Minimize( m_lobeModel );
+			for ( m_retriesCount=1; m_retriesCount <= m_document.m_settings.m_maxRetries; m_retriesCount++ ) {
+				m_fitter.Minimize( m_lobeModel );
+				if ( m_fitter.IterationsCount < m_document.m_settings.m_maxIterations )
+					break;	// Finished!
+			}
 		}
 
 		#endregion
@@ -874,6 +902,7 @@ namespace TestMSBSDF
 			DocumentSurface2UI();
 			DocumentLobeSettings2UI();
 			DocumentSettings2UI();
+			DocumentResults2UI();
 		}
 
 		/// <summary>
@@ -966,28 +995,73 @@ namespace TestMSBSDF
 			integerTrackbarControlRetries.Value = m_document.m_settings.m_maxRetries;
 		}
 
-		void m_surface_ScatteringOrdersCountChanged()
-		{
-//			throw new NotImplementedException();
-			//@TODO: Update 
+		/// <summary>
+		/// Mirrors the document's results to the UI
+		/// </summary>
+		void	DocumentResults2UI() {
+			int	stepsCountX = m_document.m_surface.m_incomingAngle.StepsCount;
+			int	stepsCountY = m_document.m_surface.m_roughness.StepsCount;
+			int	stepsCountZ = m_document.m_surface.m_albedoF0.StepsCount;
+			completionArrayControl.Init( stepsCountX, stepsCountY, stepsCountZ );
+
+			Document.Result[,,]	layerResults = m_document.m_results[SelectedScatteringOrder];
+
+			for ( int Z=0; Z < stepsCountZ; Z++ )
+				for ( int Y=0; Y < stepsCountY; Y++ )
+					for ( int X=0; X < stepsCountX; X++ ) {
+						Document.Result	result = layerResults[X,Y,Z];
+						completionArrayControl.SetState( X, Y, Z, result.State, result.m_error );
+					}
 		}
 
-		void m_simulationParameter_ValueChanged( AutomationForm.Document.SurfaceParameters.Parameter _P )
-		{
-			throw new NotImplementedException();
-			//@TODO: Update completion control dimensions
+		void m_surface_ScatteringOrdersCountChanged() {
+			if ( m_internalDocumentChange )
+				return;
+
+			// Rebuild results
+			m_document.InitializeResults();
+			DocumentResults2UI();
+		}
+
+		void m_simulationParameter_ValueChanged( AutomationForm.Document.SurfaceParameters.Parameter _P ) {
+			if ( m_internalDocumentChange )
+				return;
+
+// Must be updated nonetheless since individual results' data may have changed
+// 			int	dimX = m_document.m_surface.m_incomingAngle.StepsCount;
+// 			int	dimY = m_document.m_surface.m_roughness.StepsCount;
+// 			int	dimZ = m_document.m_surface.m_albedoF0.StepsCount;
+// 
+// 			if (	m_document.m_results[0].GetLength( 0 ) == dimX
+// 				&&	m_document.m_results[0].GetLength( 1 ) == dimY
+// 				&&	m_document.m_results[0].GetLength( 2 ) == dimZ )
+// 				return;	// No need to resize results!
+
+			m_document.InitializeResults();
+			DocumentResults2UI();
 		}
 
 		void m_surface_LockStateChanged() {
 			groupBoxSimulationParameters.Enabled = !m_document.m_surface.IsLocked;
 		}
 
-		void m_results_ResultStateChanged( AutomationForm.Document.Result _result )
-		{
-			throw new NotImplementedException();
+		void m_results_ResultStateChanged( AutomationForm.Document.Result _result ) {
+			if ( m_internalDocumentChange )
+				return;
+
+			if ( _result.ScatteringOrder == SelectedScatteringOrder )
+				completionArrayControl.SetState( _result.X, _result.Y, _result.Z, _result.State, _result.m_error );	// Only update UI if it's showing the result's scattering order
 		}
 
 		#endregion
+
+		protected override void OnFormClosing( FormClosingEventArgs e ) {
+			Visible = false;	// Only hide, don't close!
+			e.Cancel = true;
+			base.OnFormClosing( e );
+		}
+
+		#region User Information
 
 		DialogResult	MessageBox( string _Text ) {
 			return MessageBox( _Text, MessageBoxButtons.OK, MessageBoxIcon.Error );
@@ -999,23 +1073,43 @@ namespace TestMSBSDF
 			return System.Windows.Forms.MessageBox.Show( _Text, "MS BSDF Automation", _Buttons, _Icon, _defaultButton );
 		}
 
-		protected override void OnFormClosing( FormClosingEventArgs e ) {
-			Visible = false;	// Only hide, don't close!
-			e.Cancel = true;
-			base.OnFormClosing( e );
+		List< string >	m_log = new List< string >();
+		void	ClearLog() {
+			m_log = new List< string >();
+			textBoxLog.Text = "";
+		}
+		void	Log( string _text ) {
+			m_log.Add( _text );
+			textBoxLog.AppendText( _text );
+		}
+		void	LogLine( string _text ) {
+			_text += "\r\n";
+			m_log.Add( _text );
+			textBoxLog.AppendText( _text );
 		}
 
-		private void radioButtonInit_UseCustomRoughness_CheckedChanged( object sender, EventArgs e )
-		{
-// 			floatTrackbarControlInit_CustomRoughness.Enabled = radioButtonInit_UseCustomRoughness.Checked;
+		string	FormatTime( DateTime _time ) {
+			return _time.ToString( "HH:mm:ss" );
 		}
 
+		string	FormatDuration( TimeSpan _duration ) {
+			return _duration.ToString( "HH:mm:ss" );
+		}
+
+		#endregion
+
+		DateTime	m_simulationStart;
+		DateTime	m_simulationEnd;
 		private void buttonCompute_Click( object sender, EventArgs e )
 		{
 			if ( m_computing )
 				throw new CanceledException();
 
 //				MessageBox( "Fitting succeeded after " + m_Fitter.IterationsCount + " iterations.\r\nReached minimum: " + m_Fitter.FunctionMinimum, MessageBoxButtons.OK, MessageBoxIcon.Information );
+
+			// Lock surface, we can't change dimensions now that we're started!
+			if ( !m_document.m_surface.IsLocked )
+				m_document.m_surface.Lock();
 
 			// @TODO
 			throw new Exception( );
@@ -1035,6 +1129,67 @@ namespace TestMSBSDF
 			}
 		}
 
+
+		private void completionArrayControl_MouseDoubleClick( object sender, MouseEventArgs e ) {
+			if ( !completionArrayControl.IsPointValid( e.Location ) )
+				return;	// Not a valid candidate for simulation
+
+			// Change selection to clicked
+			completionArrayControl.SelectAt( e.Location );
+
+			// Lock surface, we can't change dimensions now that we're started!
+			if ( !m_document.m_surface.IsLocked )
+				m_document.m_surface.Lock();
+
+			m_simulationStart = DateTime.Now;
+			SelectedResult.m_error = null;
+			SelectedResult.State = 0.0f;
+
+			// Compute a single value
+			try {
+				LogLine( "== Starting Order " + SelectedResult.ScatteringOrder + " (" + SelectedResult.X + ", " + SelectedResult.Y + ", " + SelectedResult.Z + ") ==" );
+				LogLine( "	• Angle = " + (SelectedResult.IncomingAngleTheta * 180.0 / Math.PI).ToString( "G3" ) + " - Roughness = " + SelectedResult.SurfaceRoughness.ToString( "G3" ) + " - " + (m_document.m_surface.m_type == TestForm.SURFACE_TYPE.DIFFUSE ? "Albedo" : "F0") + " = " + SelectedResult.SurfaceAlbedoF0.ToString( "G3" ) );
+				LogLine( "	• Start Time = " + FormatTime( m_simulationStart ) );
+
+				PrepareFitter();
+				UpdateSurfaceRoughness( SelectedResult );
+				Simulate( SelectedResult );
+
+				// Fit reflected lobe...
+				PerformLobeFitting( SelectedResult, true );
+				LogLine( "	## Reflected lobe - Fit minimum reached = " + m_fitter.FunctionMinimum + " after " + m_retriesCount + " attempts" );
+
+				if ( m_document.m_surface.m_type == TestForm.SURFACE_TYPE.DIELECTRIC ) {
+					// Fit refracted lobe now...
+					SelectedResult.State = 0.5f;
+
+					PerformLobeFitting( SelectedResult, false );
+					LogLine( "	## Refracted lobe - Fit minimum reached = " + m_fitter.FunctionMinimum + " after " + m_retriesCount + " attempts" );
+				}
+
+				SelectedResult.State = 1.0f;
+
+			} catch ( CanceledException ) {
+				LogLine( "Canceled" );
+				SelectedResult.m_error = "Canceled";
+				SelectedResult.State = -1.0f;
+			} catch ( Exception _e ) {
+				string	errorText = "An error occurred during fitting: " + _e.Message;
+				LogLine( errorText );
+				SelectedResult.m_error = errorText;
+				SelectedResult.State = -1.0f;
+			} finally {
+
+				m_simulationEnd = DateTime.Now;
+
+				TimeSpan	duration = m_simulationEnd - m_simulationStart;
+				LogLine( "	• End Time = " + FormatTime( m_simulationEnd ) + " (Duration: " + FormatDuration( duration ) + ")" );
+				LogLine( "== Simulation Ended ==" );
+				LogLine( "" );
+				LogLine( "" );
+			}
+		}
+
 		void m_lobeModel_ParametersChanged( double[] _parameters ) {
 
 			// Store new parameters
@@ -1048,21 +1203,12 @@ namespace TestMSBSDF
 			m_owner.UpdateLobeParameters( _parameters, m_isReflectedLobe );
 		}
 
-		private void completionArrayControl_MouseDoubleClick( object sender, MouseEventArgs e ) {
-			if ( !completionArrayControl.IsPointValid( e.Location ) )
-				return;	// Not a valid candidate for simulation
-
-			// Compute a single value
-			m_document.InitializeResults();
-
-
-			PrepareFitter();
-			UpdateSurfaceRoughness( SelectedResult );
-			Simulate( SelectedResult );
-			PerformLobeFitting( SelectedResult, true );	// Fit reflected lobe...
-		}
-
 		private void buttonClearResults_Click( object sender, EventArgs e ) {
+			if ( !m_document.m_surface.IsLocked ) {
+				MessageBox( "No results are computed yet, there is nothing to clear", MessageBoxButtons.OK, MessageBoxIcon.Information );
+				return;
+			}
+
 			if ( MessageBox( "Are you sure you want to erase current results?", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2 ) != DialogResult.Yes )
 				return;
 
@@ -1119,21 +1265,21 @@ namespace TestMSBSDF
 			}
 		}
 
-		private void completionArrayControl_SelectionChanged( CompletionArrayControl _Sender )
-		{
+		private void completionArrayControl_SelectionChanged( CompletionArrayControl _Sender ) {
 			Document.Result[,,]	layerResults = m_document.m_results[integerTrackbarControlViewScatteringOrder.Value];
 			SelectedResult = layerResults[_Sender.SelectedX,_Sender.SelectedY, _Sender.SelectedZ];
 		}
 
-		private void integerTrackbarControlViewScatteringOrder_ValueChanged( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue )
-		{
+		private void integerTrackbarControlViewScatteringOrder_ValueChanged( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue ) {
+			// Update UI & selection
+			DocumentResults2UI();
+
 			Document.Result[,,]	layerResults = m_document.m_results[_Sender.Value];
 
 			SelectedResult = layerResults[completionArrayControl.SelectedX, completionArrayControl.SelectedY, completionArrayControl.SelectedZ];
 		}
 
-		private void integerTrackbarControlViewAlbedoSlice_ValueChanged( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue )
-		{
+		private void integerTrackbarControlViewAlbedoSlice_ValueChanged( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue ) {
 			completionArrayControl.SelectedZ = _Sender.Value;
 		}
 
@@ -1240,11 +1386,15 @@ namespace TestMSBSDF
 
 		private void radioButtonSurfaceType_CheckedChanged( object sender, EventArgs e )
 		{
-			labelParm2.Text = SurfaceType == TestForm.SURFACE_TYPE.DIFFUSE ? "Albedo" : "F0";
-
 			m_document.m_surface.m_type = radioButtonSurfaceTypeConductor.Checked ?	TestForm.SURFACE_TYPE.CONDUCTOR : (
 										radioButtonSurfaceTypeDielectric.Checked ?	TestForm.SURFACE_TYPE.DIELECTRIC :
 																					TestForm.SURFACE_TYPE.DIFFUSE);
+
+			// Update UI
+			labelParm2.Text = SurfaceType == TestForm.SURFACE_TYPE.DIFFUSE ? "Albedo" : "F0";
+
+			// Also update surface type in the main form
+			m_owner.SetSurfaceType( m_document.m_surface.m_type );
 		}
 
 		private void floatTrackbarControlParam0_Min_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
@@ -1260,7 +1410,7 @@ namespace TestMSBSDF
 		private void integerTrackbarControlParam0_Steps_ValueChanged( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue )
 		{
 			m_document.m_surface.m_incomingAngle.StepsCount = integerTrackbarControlParam0_Steps.Value;
-			completionArrayControl.Init( m_document.m_surface.m_incomingAngle.StepsCount, m_document.m_surface.m_roughness.StepsCount, m_document.m_surface.m_albedoF0.StepsCount );
+			DocumentResults2UI();
 		}
 
 		private void floatTrackbarControlParam1_Min_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
@@ -1276,7 +1426,7 @@ namespace TestMSBSDF
 		private void integerTrackbarControlParam1_Steps_ValueChanged( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue )
 		{
 			m_document.m_surface.m_roughness.StepsCount = integerTrackbarControlParam1_Steps.Value;
-			completionArrayControl.Init( m_document.m_surface.m_incomingAngle.StepsCount, m_document.m_surface.m_roughness.StepsCount, m_document.m_surface.m_albedoF0.StepsCount );
+			DocumentResults2UI();
 		}
 
 		private void floatTrackbarControlParam2_Min_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
@@ -1292,7 +1442,8 @@ namespace TestMSBSDF
 		private void integerTrackbarControlParam2_Steps_ValueChanged( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue )
 		{
 			m_document.m_surface.m_albedoF0.StepsCount = integerTrackbarControlParam2_Steps.Value;
-			completionArrayControl.Init( m_document.m_surface.m_incomingAngle.StepsCount, m_document.m_surface.m_roughness.StepsCount, m_document.m_surface.m_albedoF0.StepsCount );
+			DocumentResults2UI();
+
 			integerTrackbarControlViewAlbedoSlice.RangeMax = _Sender.Value - 1;
 		}
 
@@ -1308,7 +1459,7 @@ namespace TestMSBSDF
 			integerTrackbarControlViewScatteringOrder.VisibleRangeMax = _Sender.Value;
 		}
 
-		private void integerTrackbarControlRayCastingIterations_ValueChanged(Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue)
+		private void integerTrackbarControlRayCastingIterations_ValueChanged( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue )
 		{
 			m_document.m_surface.m_rayTracingIterationsCount = integerTrackbarControlRayCastingIterations.Value;
 

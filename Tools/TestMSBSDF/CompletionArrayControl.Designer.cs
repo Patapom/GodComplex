@@ -15,7 +15,13 @@ namespace TestMSBSDF
 		/// </summary>
 		private void InitializeComponent()
 		{
+			this.components = new System.ComponentModel.Container();
+			this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
 			this.SuspendLayout();
+			// 
+			// toolTip1
+			// 
+			this.toolTip1.Popup += new System.Windows.Forms.PopupEventHandler(this.toolTip1_Popup);
 			// 
 			// CompletionArrayControl
 			// 
@@ -26,6 +32,8 @@ namespace TestMSBSDF
 		}
 
 		#endregion
+
+		private System.Windows.Forms.ToolTip toolTip1;
 
 	}
 }
