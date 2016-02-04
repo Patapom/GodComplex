@@ -864,6 +864,10 @@ namespace TestMSBSDF
 
 		#endregion
 
+		public void	SetCurrentScatteringOrder( int _scatteringOrder ) {
+			integerTrackbarControlScatteringOrder.Value = _scatteringOrder;
+		}
+
 		public void	UpdateLobeParameters( double[] _parameters, bool _isReflectedLobe ) {
 
 			checkBoxShowAnalyticalLobe.Checked = true;
@@ -874,14 +878,14 @@ namespace TestMSBSDF
 				floatTrackbarControlAnalyticalLobeRoughness.Value = (float) _parameters[1];
 				floatTrackbarControlLobeScaleT.Value = (float) _parameters[2];
 				floatTrackbarControlLobeScaleR.Value = (float) _parameters[3];
-//						floatTrackbarControlLobeScaleB.Value = (float) m_parameters[4];
+//				floatTrackbarControlLobeScaleB.Value = (float) m_parameters[4];
 				floatTrackbarControlLobeMaskingImportance.Value = (float) _parameters[4];
 			} else {
 				floatTrackbarControlAnalyticalLobeTheta_T.Value = (float) (180.0 * _parameters[0] / Math.PI);
 				floatTrackbarControlAnalyticalLobeRoughness_T.Value = (float) _parameters[1];
 				floatTrackbarControlLobeScaleT_T.Value = (float) _parameters[2];
 				floatTrackbarControlLobeScaleR_T.Value = (float) _parameters[3];
-//						floatTrackbarControlLobeScaleB_T.Value = (float) m_parameters[4];
+//				floatTrackbarControlLobeScaleB_T.Value = (float) m_parameters[4];
 				floatTrackbarControlLobeMaskingImportance_T.Value = (float) _parameters[4];
 			}
 

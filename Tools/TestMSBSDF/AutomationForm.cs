@@ -193,7 +193,7 @@ namespace TestMSBSDF
 				#endregion
 
 				public int						m_rayTracingIterationsCount = 1024;
-				public TestForm.SURFACE_TYPE	m_type = TestForm.SURFACE_TYPE.CONDUCTOR;
+				public TestForm.SURFACE_TYPE	m_type = TestForm.SURFACE_TYPE.DIFFUSE;
 				private bool					m_locked = false;	// Once computations have started, we can't touch the settings anymore!
 				public Parameter				m_incomingAngle = null;
 				public Parameter				m_roughness = null;
@@ -769,9 +769,6 @@ namespace TestMSBSDF
 		LobeModel		m_lobeModel = null;
 		WMath.BFGS		m_fitter = new WMath.BFGS();
 
-		bool			m_isReflectedLobe = true;
-		Document.Result.LobeParameters	m_currentFittedResult = null;
-
 		FileInfo		m_documentFileName = null;
 		Document		m_document = null;
 		Document.Result	m_selectedResult = null;		// Current selection
@@ -869,13 +866,16 @@ namespace TestMSBSDF
 		/// </summary>
 		/// <param name="_result"></param>
 		/// <param name="_reflected"></param>
-		int		m_retriesCount = 0;
+		int				m_retriesCount = 0;
+		bool			m_fittingLobe_IsReflected = true;
+		Document.Result.LobeParameters	m_fittingLobe_Parameters = null;
+
 		void	PerformLobeFitting( Document.Result _result, bool _reflected ) {
 
 			Document.Result.LobeParameters	lobeResults = _reflected ? _result.m_reflected : _result.m_refracted;
 
-			m_isReflectedLobe = _reflected;	// Global flag for current fitting
-			m_currentFittedResult = lobeResults;
+			m_fittingLobe_IsReflected = _reflected;	// Global flag for current fitting
+			m_fittingLobe_Parameters = lobeResults;
 
 			// Read back histogram to CPU for fitting
 			Texture2D	Tex_SimulatedLobeHistogram = m_owner.GetSimulationHistogram( _reflected );
@@ -1181,6 +1181,8 @@ namespace TestMSBSDF
 			groupBoxAnalyticalLobeModel.Enabled = false;
 			groupBoxLobeFitterConfig.Enabled = false;
 			completionArrayControl.Enabled = false;		// Musn't change selection!
+			integerTrackbarControlViewScatteringOrder.Enabled = false;
+			integerTrackbarControlViewAlbedoSlice.Enabled = false;
 
 			// Lock surface, we can't change dimensions now that we're started!
 			if ( !m_document.m_surface.IsLocked )
@@ -1196,14 +1198,15 @@ namespace TestMSBSDF
 			groupBoxAnalyticalLobeModel.Enabled = true;
 			groupBoxLobeFitterConfig.Enabled = true;
 			completionArrayControl.Enabled = true;
+			integerTrackbarControlViewScatteringOrder.Enabled = true;
+			integerTrackbarControlViewAlbedoSlice.Enabled = true;
 		}
 
 		DateTime	m_computationStart;
 		DateTime	m_computationEnd;
 		DateTime	m_simulationStart;
 		DateTime	m_simulationEnd;
-		private void buttonCompute_Click( object sender, EventArgs e )
-		{
+		private void buttonCompute_Click( object sender, EventArgs e ) {
 			if ( m_computing )
 				throw new CanceledException();
 
@@ -1213,6 +1216,7 @@ namespace TestMSBSDF
 					MessageBox( "You cannot start a computation without specifying a filename otherwise auto-save feature won't be available and you might lose your results if a crash occurs during automation!" );
 					return;
 				}
+				m_documentFileName = new FileInfo( FileName );
 			}
 
 			ComputeAll( 0, 0, 0, 0 );
@@ -1226,9 +1230,15 @@ namespace TestMSBSDF
 				EnterComputationMode();
 
 				int	orderMax = m_document.m_surface.ScatteringOrderMax;
+				int	orderMin = _startOrder > 0 && _startOrder <= orderMax ? _startOrder : m_document.m_surface.ScatteringOrderMin;
+
 				int	dimX = m_document.m_surface.m_incomingAngle.StepsCount;
 				int	dimY = m_document.m_surface.m_roughness.StepsCount;
 				int	dimZ = m_document.m_surface.m_albedoF0.StepsCount;
+
+				_startX = Math.Max( 0, Math.Min( dimX-1, _startX ) );
+				_startY = Math.Max( 0, Math.Min( dimY-1, _startY ) );
+				_startZ = Math.Max( 0, Math.Min( dimZ-1, _startZ ) );
 
 				m_computationStart = DateTime.Now;
 
@@ -1240,8 +1250,11 @@ namespace TestMSBSDF
 
 				int	runCounter = 0;
 
-				for ( int order=_startOrder; order <= orderMax; order++ ) {
+				for ( int order=orderMin; order <= orderMax; order++ ) {
 					Document.Result[,,]	results = m_document.GetResultsForOrder( order );
+
+					m_owner.SetCurrentScatteringOrder( order );
+
 					for ( int Z=_startZ; Z < dimZ; Z++ ) {
 						_startZ = 0;
 						for ( int Y=_startY; Y < dimY; Y++ ) {
@@ -1352,6 +1365,8 @@ namespace TestMSBSDF
 				SelectedResult.m_error = null;
 				SelectedResult.State = 0.0f;
 
+				m_owner.SetCurrentScatteringOrder( SelectedResult.ScatteringOrder );
+
 				LogLine( "== Starting Order " + SelectedResult.ScatteringOrder + " (" + SelectedResult.X + ", " + SelectedResult.Y + ", " + SelectedResult.Z + ") ==" );
 				LogLine( "	• Angle = " + (SelectedResult.IncomingAngleTheta * 180.0 / Math.PI).ToString( "G3" ) + " - Roughness = " + SelectedResult.SurfaceRoughness.ToString( "G3" ) + " - " + (m_document.m_surface.m_type == TestForm.SURFACE_TYPE.DIFFUSE ? "Albedo" : "F0") + " = " + SelectedResult.SurfaceAlbedoF0.ToString( "G3" ) );
 				LogLine( "	• Start Time = " + FormatTime( m_simulationStart ) );
@@ -1406,14 +1421,14 @@ namespace TestMSBSDF
 		void m_lobeModel_ParametersChanged( double[] _parameters ) {
 
 			// Store new parameters
-			m_currentFittedResult.m_theta = _parameters[0];
-			m_currentFittedResult.m_roughness = _parameters[1];
-			m_currentFittedResult.m_scale = _parameters[2];
-			m_currentFittedResult.m_flatten = _parameters[3];
-			m_currentFittedResult.m_masking = _parameters[4];
+			m_fittingLobe_Parameters.m_theta = _parameters[0];
+			m_fittingLobe_Parameters.m_roughness = _parameters[1];
+			m_fittingLobe_Parameters.m_scale = _parameters[2];
+			m_fittingLobe_Parameters.m_flatten = _parameters[3];
+			m_fittingLobe_Parameters.m_masking = _parameters[4];
 
 			// Update 3D rendering
-			m_owner.UpdateLobeParameters( _parameters, m_isReflectedLobe );
+			m_owner.UpdateLobeParameters( _parameters, m_fittingLobe_IsReflected );
 		}
 
 		#region Menu
@@ -1453,7 +1468,8 @@ namespace TestMSBSDF
 
 				m_AppKey.SetValue( "LastDocFileName", saveFileDialogResults.FileName );
 
-				MessageBox( "Success!", MessageBoxButtons.OK, MessageBoxIcon.Information );
+				if ( !m_computing )
+					MessageBox( "Success!", MessageBoxButtons.OK, MessageBoxIcon.Information );
 			} catch ( Exception _e ) {
 				MessageBox( "An error occurred while saving results:\r\n" + _e );
 			}
@@ -1513,13 +1529,13 @@ namespace TestMSBSDF
 		}
 
 		private void startFromHereToolStripMenuItem_Click( object sender, EventArgs e ) {
-
 			if ( m_documentFileName == null ) {
 				string	FileName = AskForFileName();
 				if ( FileName == null ) {
 					MessageBox( "You cannot start a computation without specifying a filename otherwise auto-save feature won't be available and you might lose your results if a crash occurs during automation!" );
 					return;
 				}
+				m_documentFileName = new FileInfo( FileName );
 			}
 
 			ComputeAll( SelectedScatteringOrder, SelectedResult.X, SelectedResult.Y, SelectedResult.Z );

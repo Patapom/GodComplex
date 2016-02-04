@@ -178,19 +178,21 @@
 			this.groupBoxSimulationParameters.Controls.Add(this.integerTrackbarControlScatteringOrder_Min);
 			this.groupBoxSimulationParameters.Controls.Add(this.panelIncidentAngle);
 			this.groupBoxSimulationParameters.Controls.Add(this.label20);
+			this.groupBoxSimulationParameters.Controls.Add(this.panel1);
 			this.groupBoxSimulationParameters.Controls.Add(this.label22);
 			this.groupBoxSimulationParameters.Controls.Add(this.labelTotalRaysCount);
 			this.groupBoxSimulationParameters.Controls.Add(this.label11);
 			this.groupBoxSimulationParameters.Controls.Add(this.label21);
-			this.groupBoxSimulationParameters.Location = new System.Drawing.Point(0, 48);
+			this.groupBoxSimulationParameters.Location = new System.Drawing.Point(12, 31);
 			this.groupBoxSimulationParameters.Name = "groupBoxSimulationParameters";
-			this.groupBoxSimulationParameters.Size = new System.Drawing.Size(616, 325);
+			this.groupBoxSimulationParameters.Size = new System.Drawing.Size(616, 344);
 			this.groupBoxSimulationParameters.TabIndex = 0;
 			this.groupBoxSimulationParameters.TabStop = false;
 			this.groupBoxSimulationParameters.Text = "Simulation Parameters";
 			// 
 			// panel6
 			// 
+			this.panel6.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
 			this.panel6.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
 			this.panel6.Controls.Add(this.checkBoxParam2_InclusiveStart);
 			this.panel6.Controls.Add(this.checkBoxParam2_InclusiveEnd);
@@ -201,7 +203,7 @@
 			this.panel6.Controls.Add(this.label16);
 			this.panel6.Controls.Add(this.label17);
 			this.panel6.Controls.Add(this.labelParm2);
-			this.panel6.Location = new System.Drawing.Point(12, 155);
+			this.panel6.Location = new System.Drawing.Point(12, 174);
 			this.panel6.Name = "panel6";
 			this.panel6.Size = new System.Drawing.Size(594, 62);
 			this.panel6.TabIndex = 0;
@@ -316,6 +318,7 @@
 			// 
 			// panel5
 			// 
+			this.panel5.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
 			this.panel5.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
 			this.panel5.Controls.Add(this.checkBoxParam1_InclusiveStart);
 			this.panel5.Controls.Add(this.checkBoxParam1_InclusiveEnd);
@@ -326,7 +329,7 @@
 			this.panel5.Controls.Add(this.label12);
 			this.panel5.Controls.Add(this.label13);
 			this.panel5.Controls.Add(this.label14);
-			this.panel5.Location = new System.Drawing.Point(12, 87);
+			this.panel5.Location = new System.Drawing.Point(12, 106);
 			this.panel5.Name = "panel5";
 			this.panel5.Size = new System.Drawing.Size(594, 62);
 			this.panel5.TabIndex = 0;
@@ -443,7 +446,8 @@
 			// 
 			// integerTrackbarControlScatteringOrder_Max
 			// 
-			this.integerTrackbarControlScatteringOrder_Max.Location = new System.Drawing.Point(398, 242);
+			this.integerTrackbarControlScatteringOrder_Max.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+			this.integerTrackbarControlScatteringOrder_Max.Location = new System.Drawing.Point(398, 261);
 			this.integerTrackbarControlScatteringOrder_Max.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.integerTrackbarControlScatteringOrder_Max.MinimumSize = new System.Drawing.Size(70, 20);
 			this.integerTrackbarControlScatteringOrder_Max.Name = "integerTrackbarControlScatteringOrder_Max";
@@ -458,7 +462,8 @@
 			// 
 			// integerTrackbarControlRayCastingIterations
 			// 
-			this.integerTrackbarControlRayCastingIterations.Location = new System.Drawing.Point(162, 292);
+			this.integerTrackbarControlRayCastingIterations.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+			this.integerTrackbarControlRayCastingIterations.Location = new System.Drawing.Point(162, 311);
 			this.integerTrackbarControlRayCastingIterations.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.integerTrackbarControlRayCastingIterations.MinimumSize = new System.Drawing.Size(70, 20);
 			this.integerTrackbarControlRayCastingIterations.Name = "integerTrackbarControlRayCastingIterations";
@@ -473,7 +478,8 @@
 			// 
 			// integerTrackbarControlScatteringOrder_Min
 			// 
-			this.integerTrackbarControlScatteringOrder_Min.Location = new System.Drawing.Point(163, 242);
+			this.integerTrackbarControlScatteringOrder_Min.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+			this.integerTrackbarControlScatteringOrder_Min.Location = new System.Drawing.Point(163, 261);
 			this.integerTrackbarControlScatteringOrder_Min.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.integerTrackbarControlScatteringOrder_Min.MinimumSize = new System.Drawing.Size(70, 20);
 			this.integerTrackbarControlScatteringOrder_Min.Name = "integerTrackbarControlScatteringOrder_Min";
@@ -488,6 +494,7 @@
 			// 
 			// panelIncidentAngle
 			// 
+			this.panelIncidentAngle.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
 			this.panelIncidentAngle.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
 			this.panelIncidentAngle.Controls.Add(this.checkBoxParam0_InclusiveStart);
 			this.panelIncidentAngle.Controls.Add(this.checkBoxParam0_InclusiveEnd);
@@ -498,7 +505,7 @@
 			this.panelIncidentAngle.Controls.Add(this.label5);
 			this.panelIncidentAngle.Controls.Add(this.label3);
 			this.panelIncidentAngle.Controls.Add(this.label2);
-			this.panelIncidentAngle.Location = new System.Drawing.Point(12, 19);
+			this.panelIncidentAngle.Location = new System.Drawing.Point(12, 38);
 			this.panelIncidentAngle.Name = "panelIncidentAngle";
 			this.panelIncidentAngle.Size = new System.Drawing.Size(594, 62);
 			this.panelIncidentAngle.TabIndex = 0;
@@ -612,10 +619,11 @@
 			// 
 			// label20
 			// 
+			this.label20.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
 			this.label20.BackColor = System.Drawing.Color.Orange;
 			this.label20.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
 			this.label20.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-			this.label20.Location = new System.Drawing.Point(18, 231);
+			this.label20.Location = new System.Drawing.Point(18, 250);
 			this.label20.Name = "label20";
 			this.label20.Size = new System.Drawing.Size(102, 42);
 			this.label20.TabIndex = 1;
@@ -624,8 +632,9 @@
 			// 
 			// label22
 			// 
+			this.label22.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
 			this.label22.AutoSize = true;
-			this.label22.Location = new System.Drawing.Point(368, 246);
+			this.label22.Location = new System.Drawing.Point(368, 265);
 			this.label22.Name = "label22";
 			this.label22.Size = new System.Drawing.Size(27, 13);
 			this.label22.TabIndex = 1;
@@ -633,8 +642,9 @@
 			// 
 			// labelTotalRaysCount
 			// 
+			this.labelTotalRaysCount.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
 			this.labelTotalRaysCount.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
-			this.labelTotalRaysCount.Location = new System.Drawing.Point(371, 291);
+			this.labelTotalRaysCount.Location = new System.Drawing.Point(371, 310);
 			this.labelTotalRaysCount.Name = "labelTotalRaysCount";
 			this.labelTotalRaysCount.Size = new System.Drawing.Size(210, 23);
 			this.labelTotalRaysCount.TabIndex = 1;
@@ -643,8 +653,9 @@
 			// 
 			// label11
 			// 
+			this.label11.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
 			this.label11.AutoSize = true;
-			this.label11.Location = new System.Drawing.Point(18, 295);
+			this.label11.Location = new System.Drawing.Point(18, 314);
 			this.label11.Name = "label11";
 			this.label11.Size = new System.Drawing.Size(142, 13);
 			this.label11.TabIndex = 1;
@@ -652,8 +663,9 @@
 			// 
 			// label21
 			// 
+			this.label21.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
 			this.label21.AutoSize = true;
-			this.label21.Location = new System.Drawing.Point(127, 244);
+			this.label21.Location = new System.Drawing.Point(127, 263);
 			this.label21.Name = "label21";
 			this.label21.Size = new System.Drawing.Size(24, 13);
 			this.label21.TabIndex = 1;
@@ -665,13 +677,11 @@
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
 			this.panelParameters.Controls.Add(this.textBoxLog);
-			this.panelParameters.Controls.Add(this.groupBoxSimulationParameters);
 			this.panelParameters.Controls.Add(this.integerTrackbarControlViewAlbedoSlice);
 			this.panelParameters.Controls.Add(this.groupBoxLobeFitterConfig);
 			this.panelParameters.Controls.Add(this.integerTrackbarControlViewScatteringOrder);
 			this.panelParameters.Controls.Add(this.groupBoxAnalyticalLobeModel);
 			this.panelParameters.Controls.Add(this.label30);
-			this.panelParameters.Controls.Add(this.panel1);
 			this.panelParameters.Controls.Add(this.label29);
 			this.panelParameters.Location = new System.Drawing.Point(12, 27);
 			this.panelParameters.Name = "panelParameters";
@@ -715,7 +725,7 @@
 			this.groupBoxLobeFitterConfig.Controls.Add(this.integerTrackbarControlMaxIterations);
 			this.groupBoxLobeFitterConfig.Controls.Add(this.floatTrackbarControlGradientTolerance);
 			this.groupBoxLobeFitterConfig.Controls.Add(this.floatTrackbarControlGoalTolerance);
-			this.groupBoxLobeFitterConfig.Location = new System.Drawing.Point(622, 546);
+			this.groupBoxLobeFitterConfig.Location = new System.Drawing.Point(622, 507);
 			this.groupBoxLobeFitterConfig.Name = "groupBoxLobeFitterConfig";
 			this.groupBoxLobeFitterConfig.Size = new System.Drawing.Size(395, 169);
 			this.groupBoxLobeFitterConfig.TabIndex = 2;
@@ -857,7 +867,7 @@
 			this.integerTrackbarControlViewScatteringOrder.RangeMin = 1;
 			this.integerTrackbarControlViewScatteringOrder.Size = new System.Drawing.Size(200, 20);
 			this.integerTrackbarControlViewScatteringOrder.TabIndex = 3;
-			this.integerTrackbarControlViewScatteringOrder.Value = 2;
+			this.integerTrackbarControlViewScatteringOrder.Value = 1;
 			this.integerTrackbarControlViewScatteringOrder.VisibleRangeMax = 4;
 			this.integerTrackbarControlViewScatteringOrder.VisibleRangeMin = 1;
 			this.integerTrackbarControlViewScatteringOrder.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlViewScatteringOrder_ValueChanged);
@@ -866,7 +876,7 @@
 			// 
 			this.groupBoxAnalyticalLobeModel.Controls.Add(this.groupBoxCustomInitialGuesses);
 			this.groupBoxAnalyticalLobeModel.Controls.Add(this.panel2);
-			this.groupBoxAnalyticalLobeModel.Location = new System.Drawing.Point(622, 43);
+			this.groupBoxAnalyticalLobeModel.Location = new System.Drawing.Point(622, 4);
 			this.groupBoxAnalyticalLobeModel.Name = "groupBoxAnalyticalLobeModel";
 			this.groupBoxAnalyticalLobeModel.Size = new System.Drawing.Size(395, 497);
 			this.groupBoxAnalyticalLobeModel.TabIndex = 0;
@@ -1347,7 +1357,7 @@
 			this.panel1.Controls.Add(this.radioButtonSurfaceTypeDiffuse);
 			this.panel1.Controls.Add(this.radioButtonSurfaceTypeDielectric);
 			this.panel1.Controls.Add(this.radioButtonSurfaceTypeConductor);
-			this.panel1.Location = new System.Drawing.Point(15, 15);
+			this.panel1.Location = new System.Drawing.Point(12, 14);
 			this.panel1.Name = "panel1";
 			this.panel1.Size = new System.Drawing.Size(307, 27);
 			this.panel1.TabIndex = 1;
@@ -1568,14 +1578,14 @@
 			this.completionArrayControl.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
 			this.completionArrayControl.ContextMenuStrip = this.contextMenuStripSelection;
 			this.completionArrayControl.GridColor = System.Drawing.Color.Black;
-			this.completionArrayControl.Location = new System.Drawing.Point(12, 406);
+			this.completionArrayControl.Location = new System.Drawing.Point(12, 381);
 			this.completionArrayControl.Name = "completionArrayControl";
 			this.completionArrayControl.SelectedError = null;
 			this.completionArrayControl.SelectedState = 1F;
 			this.completionArrayControl.SelectedX = 0;
 			this.completionArrayControl.SelectedY = 0;
 			this.completionArrayControl.SelectedZ = 0;
-			this.completionArrayControl.Size = new System.Drawing.Size(616, 238);
+			this.completionArrayControl.Size = new System.Drawing.Size(616, 263);
 			this.completionArrayControl.TabIndex = 3;
 			this.completionArrayControl.SelectionChanged += new TestMSBSDF.CompletionArrayControl.SelectionChangedEventHandler(this.completionArrayControl_SelectionChanged);
 			this.completionArrayControl.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.completionArrayControl_MouseDoubleClick);
@@ -1585,6 +1595,7 @@
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1057, 840);
+			this.Controls.Add(this.groupBoxSimulationParameters);
 			this.Controls.Add(this.completionArrayControl);
 			this.Controls.Add(this.buttonClearResults);
 			this.Controls.Add(this.buttonCompute);
