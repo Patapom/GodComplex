@@ -161,6 +161,12 @@ namespace TestMSBSDF
 
 		private AutomationForm		m_automation = new AutomationForm();
 
+		bool						m_fitting = false;
+		public bool		FittingMode {
+			get { return m_fitting; }
+			set { m_fitting = value; }
+		}
+
 		#endregion
 
 		public TestForm() {
@@ -1220,7 +1226,6 @@ namespace TestMSBSDF
 
 		#endregion
 
-		bool		m_fitting = false;
 		private void buttonFit_Click( object sender, EventArgs e ) {
 			if ( m_fitting )
 				throw new Exception( "Canceled!" );
