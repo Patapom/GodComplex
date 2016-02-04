@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
+using System.Drawing.Imaging;
 using System.Linq;
 using System.Text;
 using System.Windows.Forms;
@@ -15,14 +16,18 @@ namespace TestMSBSDF
 {
 	public partial class TestForm : Form
 	{
-		const int				HEIGHTFIELD_SIZE = 512;						//  (must match HLSL declaration)
-		const int				MAX_SCATTERING_ORDER = 4;
-		const int				LOBES_COUNT_THETA = 128;					// (must match HLSL declaration)
-		const int				LOBES_COUNT_PHI = 2 * LOBES_COUNT_THETA;
+		#region CONSTANTS
+
+		public const int				HEIGHTFIELD_SIZE = 512;						//  (must match HLSL declaration)
+		public const int				MAX_SCATTERING_ORDER = 4;
+		public const int				LOBES_COUNT_THETA = 128;					// (must match HLSL declaration)
+		public const int				LOBES_COUNT_PHI = 2 * LOBES_COUNT_THETA;
 
 		static readonly double	SQRT2 = Math.Sqrt( 2.0 );
 
-		private Device		m_Device = new Device();
+		#endregion
+
+		#region NESTED TYPES
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
 		private struct CB_Main {
@@ -84,6 +89,7 @@ namespace TestMSBSDF
 			public float		_ScaleR;
 			public float		_ScaleT;
 			public float		_ScaleB;
+			public float		_MaskingImportance;
 		}
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
@@ -94,11 +100,17 @@ namespace TestMSBSDF
 			public float		_Radius;
 		}
 		
-		enum SURFACE_TYPE {
+		public enum SURFACE_TYPE {
 			CONDUCTOR,
 			DIELECTRIC,
 			DIFFUSE,
 		}
+
+		#endregion
+
+		#region FIELDS
+
+		private Device			m_Device = new Device();
 
 		private ConstantBuffer<CB_Main>				m_CB_Main = null;
 		private ConstantBuffer<CB_Camera>			m_CB_Camera = null;
@@ -114,6 +126,7 @@ namespace TestMSBSDF
 		private ComputeShader		m_Shader_ComputeBeckmannSurface = null;
 		private ComputeShader		m_Shader_RayTraceSurface_Conductor = null;
 		private ComputeShader		m_Shader_RayTraceSurface_Dielectric = null;
+		private ComputeShader		m_Shader_RayTraceSurface_Diffuse = null;
 		private ComputeShader		m_Shader_AccumulateOutgoingDirections = null;
 		private ComputeShader		m_Shader_FinalizeOutgoingDirections = null;
 		private Shader				m_Shader_RenderHeightField = null;
@@ -146,8 +159,14 @@ namespace TestMSBSDF
 		private SURFACE_TYPE		m_lastComputedSurfaceType;
 		private int					m_lastComputedHistogramIterationsCount = 1;
 
+		private AutomationForm		m_automation = new AutomationForm();
+
+		#endregion
+
 		public TestForm() {
 			InitializeComponent();
+
+			m_automation.Owner = this;
 
 			m_Camera.CameraTransformChanged += new EventHandler( Camera_CameraTransformChanged );
 
@@ -181,6 +200,7 @@ namespace TestMSBSDF
 				m_Shader_ComputeBeckmannSurface = new ComputeShader( m_Device, new ShaderFile( new FileInfo( "Shaders/ComputeBeckmannSurface.hlsl" ) ), "CS", null );
 				m_Shader_RayTraceSurface_Conductor = new ComputeShader( m_Device, new ShaderFile( new FileInfo( "Shaders/RayTraceSurface.hlsl" ) ), "CS_Conductor", null );
 				m_Shader_RayTraceSurface_Dielectric = new ComputeShader( m_Device, new ShaderFile( new FileInfo( "Shaders/RayTraceSurface.hlsl" ) ), "CS_Dielectric", null );
+				m_Shader_RayTraceSurface_Diffuse = new ComputeShader( m_Device, new ShaderFile( new FileInfo( "Shaders/RayTraceSurface.hlsl" ) ), "CS_Diffuse", null );
 				m_Shader_AccumulateOutgoingDirections = new ComputeShader( m_Device, new ShaderFile( new FileInfo( "Shaders/AccumulateOutgoingDirections.hlsl" ) ), "CS", null );
 				m_Shader_FinalizeOutgoingDirections = new ComputeShader( m_Device, new ShaderFile( new FileInfo( "Shaders/AccumulateOutgoingDirections.hlsl" ) ), "CS_Finalize", null );
 				m_Shader_RenderHeightField = new Shader( m_Device, new ShaderFile( new FileInfo( "Shaders/RenderHeightField.hlsl" ) ), VERTEX_FORMAT.P3, "VS", null, "PS", null );
@@ -231,6 +251,7 @@ namespace TestMSBSDF
 			m_Shader_RenderHeightField.Dispose();
 			m_Shader_FinalizeOutgoingDirections.Dispose();
 			m_Shader_AccumulateOutgoingDirections.Dispose();
+			m_Shader_RayTraceSurface_Diffuse.Dispose();
 			m_Shader_RayTraceSurface_Dielectric.Dispose();
 			m_Shader_RayTraceSurface_Conductor.Dispose();
 			m_Shader_ComputeBeckmannSurface.Dispose();
@@ -408,6 +429,8 @@ namespace TestMSBSDF
 
 		#endregion
 
+		#region Textures Generation
+
 		double	GenerateNormalDistributionHeight() {
 			double	U = WMath.SimpleRNG.GetUniform();	// Uniform distribution in ]0,1[
 			double	errfinv = WMath.Functions.erfinv( 2.0 * U - 1.0 );
@@ -446,7 +469,7 @@ namespace TestMSBSDF
 		///	From "2015 Heitz - Generating Procedural Beckmann Surfaces"
 		/// </summary>
 		/// <remarks>Only isotropic roughness is supported</remarks>
-		void	BuildBeckmannSurfaceTexture( float _roughness ) {
+		public void	BuildBeckmannSurfaceTexture( float _roughness ) {
 
 			// Precompute stuff that resemble a lot to the Box-Muller algorithm to generate normal distribution random values
 			WMath.SimpleRNG.SetSeed( 521288629, 362436069 );
@@ -523,11 +546,101 @@ namespace TestMSBSDF
 			#endif
 		}
 
+		/// <summary>
+		/// Builds the surface texture from an actual image file
+		/// </summary>
+		/// <param name="_textureFileName"></param>
+		/// <param name="_pixelSize">Size of a pixel, assuming the maximum height is 1</param>
+		public unsafe void	BuildSurfaceFromTexture( string _textureFileName, float _pixelSize ) {
+
+			if ( m_Tex_Heightfield != null )
+				m_Tex_Heightfield.Dispose();	// We will create a new one so dispose of the old one...
+
+			// Read the bitmap
+			int			W, H;
+			float4[,]	Content = null;
+			using ( Bitmap BM = Bitmap.FromFile( _textureFileName ) as Bitmap ) {
+				W = BM.Width;
+				H = BM.Height;
+				Content = new float4[W,H];
+
+				BitmapData	LockedBitmap = BM.LockBits( new Rectangle( 0, 0, W, H ), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb );
+
+				byte	R, G, B, A;
+				for ( int Y=0; Y < H; Y++ ) {
+					byte*	pScanline = (byte*) LockedBitmap.Scan0.ToPointer() + Y*LockedBitmap.Stride;
+					for ( int X=0; X < W; X++ ) {
+
+						// Read in shitty order
+						B = *pScanline++;
+						G = *pScanline++;
+						R = *pScanline++;
+						A = *pScanline++;
+
+// Use this if you really need RGBA data
+//						Content[X,Y].Set( R / 255.0f, G / 255.0f, B / 255.0f, A / 255.0f );
+
+// But assuming it's a height field, we only store one component into alpha
+						Content[X,Y].Set( 0, 0, 0, R / 255.0f );	// Use Red as height
+					}
+				}
+				BM.UnlockBits( LockedBitmap );
+			}
+
+			// Build normal (shitty version)
+			float	Hx0, Hx1, Hy0, Hy1;
+			float3	dNx = new float3( 2.0f * _pixelSize, 0, 0 );
+			float3	dNy = new float3( 0, 2.0f * _pixelSize, 0 );
+			float3	N;
+			for ( int Y=0; Y < H; Y++ ) {
+				int	pY = (Y+H-1) % H;
+				int	nY = (Y+1) % H;
+				for ( int X=0; X < W; X++ ) {
+					int	pX = (X+W-1) % W;
+					int	nX = (X+1) % W;
+
+					Hx0 = Content[pX,Y].w;
+					Hx1 = Content[nX,Y].w;
+					Hy0 = Content[X,pY].w;
+					Hy1 = Content[X,nY].w;
+
+					dNx.z = Hx1 - Hx0;
+					dNy.z = Hy0 - Hy1;	// Assuming +Y is upward
+
+					N = dNx.Cross( dNy );
+					N = N.Normalized;
+
+					Content[X,Y].x = N.x;
+					Content[X,Y].y = N.y;
+					Content[X,Y].z = N.z;
+				}
+			}
+
+			// Build the texture from the array
+			PixelsBuffer	Buf = new PixelsBuffer( W*H*16 );
+			using ( BinaryWriter Writer = Buf.OpenStreamWrite() )
+				for ( int Y=0; Y < H; Y++ )
+					for ( int X=0; X < W; X++ ) {
+						float4	pixel = Content[X,Y];
+						Writer.Write( pixel.x );
+						Writer.Write( pixel.y );
+						Writer.Write( pixel.z );
+						Writer.Write( pixel.w );
+					}
+			Buf.CloseStream();
+
+			m_Tex_Heightfield = new Texture2D( m_Device, W, H, 1, 1, PIXEL_FORMAT.RGBA32_FLOAT, false, false, new PixelsBuffer[] { Buf } );
+		}
+
+		#endregion
+
+		#region Ray-Tracing Simulation
+
 		// Assuming n1=1 (air) we get:
 		//	F0 = ((n2 - n1) / (n2 + n1))²
 		//	=> n2 = (1 + sqrt(F0)) / (1 - sqrt(F0))
 		//
-		float	Fresnel_IORFromF0( float _F0 ) {
+		public static float	Fresnel_IORFromF0( float _F0 ) {
 			double	SqrtF0 = Math.Sqrt( _F0 );
 			return (float) ((1.0 + SqrtF0) / (1.00000001 - SqrtF0));
 		}
@@ -536,7 +649,7 @@ namespace TestMSBSDF
 		// Expects _incoming pointing AWAY from the surface
 		// eta = IOR_over / IOR_under
 		//
-		static float3	Refract( float3 _incoming, float3 _normal, float _eta ) {
+		public static float3	Refract( float3 _incoming, float3 _normal, float _eta ) {
 			float	c = _incoming.Dot( _normal );
 			float	k = (float) (_eta * c - Math.Sign(c) * Math.Sqrt( 1.0 + _eta * (c*c - 1.0)));
 			return  k * _normal - _eta * _incoming;
@@ -557,7 +670,7 @@ namespace TestMSBSDF
 		/// <param name="_theta">Vertical angle of incidence</param>
 		/// <param name="_phi">Azimuthal angle of incidence</param>
 		/// <param name="_iterationsCount">Amount of iterations of beam tracing</param>
-		void	RayTraceSurface( float _roughness, float _albedo, float _F0, SURFACE_TYPE _surfaceType, float _theta, float _phi, int _iterationsCount ) {
+		public void	RayTraceSurface( float _roughness, float _albedo, float _F0, SURFACE_TYPE _surfaceType, float _theta, float _phi, int _iterationsCount ) {
 
 			float	sinTheta = (float) Math.Sin( _theta );
 			float	cosTheta = (float) Math.Cos( _theta );
@@ -670,6 +783,37 @@ namespace TestMSBSDF
 						}
 						break;
 
+					case SURFACE_TYPE.DIFFUSE:
+						if ( m_Shader_RayTraceSurface_Diffuse.Use() ) {
+							// Update trace offset
+							m_CB_RayTrace.m._Offset.Set( (float) sequence[iterationIndex,0], (float) sequence[iterationIndex,1] );
+							m_CB_RayTrace.UpdateData();
+
+							m_Device.Clear( m_Tex_OutgoingDirections_Reflected, float4.Zero );	// Clear target directions and weights
+
+							m_Tex_Heightfield.SetCS( 0 );
+							m_Tex_Random.SetCS( 1 );
+							m_Tex_OutgoingDirections_Reflected.SetCSUAV( 0 );	// New target buffer where to accumulate
+
+							m_Shader_RayTraceSurface_Diffuse.Dispatch( HEIGHTFIELD_SIZE >> 4, HEIGHTFIELD_SIZE >> 4, 1 );
+
+							m_Tex_OutgoingDirections_Reflected.RemoveFromLastAssignedSlotUAV();
+						}
+
+						// 2] Accumulate into target histogram
+						if ( m_Shader_AccumulateOutgoingDirections.Use() ) {
+							m_Tex_OutgoingDirections_Reflected.SetCS( 0 );
+							m_Tex_LobeHistogram_Reflected_Decimal.SetCSUAV( 0 );
+							m_Tex_LobeHistogram_Reflected_Integer.SetCSUAV( 1 );
+
+							m_Shader_AccumulateOutgoingDirections.Dispatch( HEIGHTFIELD_SIZE >> 4, HEIGHTFIELD_SIZE >> 4, MAX_SCATTERING_ORDER );
+
+ 							m_Tex_LobeHistogram_Reflected_Decimal.RemoveFromLastAssignedSlotUAV();
+ 							m_Tex_LobeHistogram_Reflected_Integer.RemoveFromLastAssignedSlotUAV();
+							m_Tex_OutgoingDirections_Reflected.RemoveFromLastAssignedSlots();
+						}
+						break;
+
 					default:
 						throw new Exception( "Not implemented!" );
 				}
@@ -701,8 +845,61 @@ namespace TestMSBSDF
  					m_Tex_LobeHistogram_Transmitted_Decimal.RemoveFromLastAssignedSlotUAV();
  					m_Tex_LobeHistogram_Transmitted_Integer.RemoveFromLastAssignedSlotUAV();
 					m_Tex_LobeHistogram_Transmitted.RemoveFromLastAssignedSlotUAV();
+				} else {
+					m_Device.Clear( m_Tex_LobeHistogram_Transmitted, float4.Zero );
 				}
 			}
+		}
+
+		public Texture2D	GetSimulationHistogram( bool _reflectedLobe ) {
+			m_Tex_LobeHistogram_CPU.CopyFrom( _reflectedLobe ? m_Tex_LobeHistogram_Reflected : m_Tex_LobeHistogram_Transmitted );
+			return m_Tex_LobeHistogram_CPU;
+		}
+
+		#endregion
+
+		public void	UpdateLobeParameters( double[] _parameters, bool _isReflectedLobe ) {
+
+			checkBoxShowAnalyticalLobe.Checked = true;
+
+			// Update track bar parameters
+			if ( _isReflectedLobe ) {
+				floatTrackbarControlAnalyticalLobeTheta.Value = (float) (180.0 * _parameters[0] / Math.PI);
+				floatTrackbarControlAnalyticalLobeRoughness.Value = (float) _parameters[1];
+				floatTrackbarControlLobeScaleT.Value = (float) _parameters[2];
+				floatTrackbarControlLobeScaleR.Value = (float) _parameters[3];
+//						floatTrackbarControlLobeScaleB.Value = (float) m_parameters[4];
+				floatTrackbarControlLobeMaskingImportance.Value = (float) _parameters[4];
+			} else {
+				floatTrackbarControlAnalyticalLobeTheta_T.Value = (float) (180.0 * _parameters[0] / Math.PI);
+				floatTrackbarControlAnalyticalLobeRoughness_T.Value = (float) _parameters[1];
+				floatTrackbarControlLobeScaleT_T.Value = (float) _parameters[2];
+				floatTrackbarControlLobeScaleR_T.Value = (float) _parameters[3];
+//						floatTrackbarControlLobeScaleB_T.Value = (float) m_parameters[4];
+				floatTrackbarControlLobeMaskingImportance_T.Value = (float) _parameters[4];
+			}
+
+			// Repaint
+			UpdateApplication();
+
+		}
+
+		/// <summary>
+		/// Called by the automation form to change the surface type
+		/// </summary>
+		/// <param name="_type"></param>
+		public void	SetSurfaceType( SURFACE_TYPE _type ) {
+			switch ( _type ) {
+				case SURFACE_TYPE.CONDUCTOR: radioButtonConductor.Checked = true; break;
+				case SURFACE_TYPE.DIELECTRIC: radioButtonDielectric.Checked = true; break;
+				case SURFACE_TYPE.DIFFUSE: radioButtonDiffuse.Checked = true; break;
+			}
+		}
+
+		public void	UpdateApplication() {
+			panelOutput.Refresh();
+			Application_Idle( null, EventArgs.Empty );
+			Application.DoEvents();	// Force processing events for refresh
 		}
 
 		bool	m_pauseRendering = false;
@@ -796,6 +993,7 @@ namespace TestMSBSDF
 					m_CB_RenderLobe.m._ScaleR = floatTrackbarControlLobeScaleR.Value;
 					m_CB_RenderLobe.m._ScaleT = floatTrackbarControlLobeScaleT.Value;
 					m_CB_RenderLobe.m._ScaleB = floatTrackbarControlLobeScaleB.Value;
+					m_CB_RenderLobe.m._MaskingImportance = floatTrackbarControlLobeMaskingImportance.Value;
 					m_CB_RenderLobe.UpdateData();
 
 					m_Prim_Lobe.Render( m_Shader_RenderLobe );
@@ -808,6 +1006,7 @@ namespace TestMSBSDF
 						m_CB_RenderLobe.m._ScaleR = floatTrackbarControlLobeScaleR_T.Value;
 						m_CB_RenderLobe.m._ScaleT = floatTrackbarControlLobeScaleT_T.Value;
 						m_CB_RenderLobe.m._ScaleB = floatTrackbarControlLobeScaleB_T.Value;
+						m_CB_RenderLobe.m._MaskingImportance = floatTrackbarControlLobeMaskingImportance_T.Value;
 						m_CB_RenderLobe.UpdateData();
 
 						m_Prim_Lobe.Render( m_Shader_RenderLobe );
@@ -933,13 +1132,11 @@ namespace TestMSBSDF
 			panelOutput.Invalidate();
 		}
 
-		private void buttonReload_Click( object sender, EventArgs e )
-		{
+		private void buttonReload_Click( object sender, EventArgs e ) {
 			m_Device.ReloadModifiedShaders();
 		}
 
-		private void floatTrackbarControlBeckmannRoughness_ValueChanged( FloatTrackbarControl _Sender, float _fFormerValue )
-		{
+		private void floatTrackbarControlBeckmannRoughness_ValueChanged( FloatTrackbarControl _Sender, float _fFormerValue ) {
 			try {
 				m_pauseRendering = true;
 				BuildBeckmannSurfaceTexture( floatTrackbarControlBeckmannRoughness.Value );
@@ -953,8 +1150,7 @@ namespace TestMSBSDF
 			panelDielectric.Enabled = radioButtonDielectric.Checked;
 		}
 
-		private void buttonRayTrace_Click( object sender, EventArgs e )
-		{
+		private void buttonRayTrace_Click( object sender, EventArgs e ) {
 			try {
 				m_pauseRendering = true;
 
@@ -977,381 +1173,10 @@ namespace TestMSBSDF
 
 		#region Lobe Fitting
 
-		class	LobeModel : WMath.BFGS.Model {
-
-			TestForm	m_owner = null;
-			float3		m_direction;
-			float3		m_centerOfMass;
-			double		m_IOR;
-			double		m_incomingDirection_CosPhi;
-			double		m_incomingDirection_SinPhi;
-			double		m_toleranceFactor;
-			bool		m_fittingReflectedLobe;
-			int			m_lobeType;
-			double[,]	m_histogramData;
-
-			int			m_iterationsCount = 0;
-
-			double[]	m_parameters = new double[3];
-
-			public LobeModel( TestForm _owner ) {
-				m_owner = _owner;
-			}
-
-			public void		Init( float3 _incomingDirection, double _theta, bool _computeInitialThetaUsingCenterOfMass, double _roughness, double _IOR, double _scaleT, double _scaleB, double _scaleN, double _toleranceFactor, Texture2D _texHistogram_CPU, int _scatteringOrder, bool _fittingReflectedLobe ) {
-				int	scattMin = _scatteringOrder-1;		// Because scattering order 1 is actually stored in first slice of the texture array
-				int	scattMax = scattMin+1;				// To simulate a single scattering order
-//				int	scattMax = MAX_SCATTERING_ORDER;	// To simulate all scattering orders accumulated
-
-				// =========================================================================
-				// 1] Readback lobe texture data into an array
-				int	W = _texHistogram_CPU.Width;
-				int	H = _texHistogram_CPU.Height;
-				m_histogramData = new double[W,H];
-
-				for ( int scatteringOrder=scattMin; scatteringOrder < scattMax; scatteringOrder++ ) {
-					PixelsBuffer	Content = _texHistogram_CPU.Map( 0, scatteringOrder );
-					using ( BinaryReader R = Content.OpenStreamRead() )
-						for ( int Y=0; Y < H; Y++ )
-							for ( int X=0; X < W; X++ )
-								m_histogramData[X,Y] += W * H * R.ReadSingle();
-					Content.CloseStream();
-					_texHistogram_CPU.UnMap( 0, scatteringOrder );
-				}
-
-
-				// =========================================================================
-				// 2] Compute center of mass from which we'll measure distances
-				m_centerOfMass = float3.Zero;
-				float3	wsOutgoingDirection = float3.Zero;
-				for ( int Y=0; Y < H; Y++ ) {
-					// Y = theta bin index = 2.0 * LOBES_COUNT_THETA * pow2( sin( 0.5 * theta ) )
-					// We need theta:
-					double	theta = 2.0 * Math.Asin( Math.Sqrt( 0.5 * Y / LOBES_COUNT_THETA ) );
-					double	cosTheta = Math.Cos( theta );
-					double	sinTheta = Math.Sin( theta );
-
-					for ( int X=0; X < W; X++ ) {
-
-						// X = phi bin index = LOBES_COUNT_PHI * X / (2PI)
-						// We need phi:
-						double	phi = 2.0 * Math.PI * X / LOBES_COUNT_PHI;
-						double	cosPhi = Math.Cos( phi );
-						double	sinPhi = Math.Sin( phi );
-
-						// Build simulated microfacet reflection direction in macro-surface space
-						double	outgoingIntensity = m_histogramData[X,Y];
-						wsOutgoingDirection.Set( (float) (outgoingIntensity * cosPhi * sinTheta), (float) (outgoingIntensity * sinPhi * sinTheta), (float) (outgoingIntensity * cosTheta) );
-
-						// Accumulate lobe position
-						m_centerOfMass += wsOutgoingDirection;
-					}
-				}
-				m_centerOfMass /= W*H;
-
-				// =========================================================================
-				// 3] Optionally override theta to use the direction of the center of mass
-				// (quite intuitive to start by aligning our lobe along the main simulated lobe direction!)
-				if ( _computeInitialThetaUsingCenterOfMass ) {
-					float3	towardCenterOfMass = m_centerOfMass.Normalized;
-					_theta = Math.Acos( towardCenterOfMass.z );
-					_scaleN = 2.0 * m_centerOfMass.Length;		// Also assume we should matche the simulated lobe's length
-//					_scaleN *= 0.5;
-				}
-
-				// =========================================================================
-				// 4] Setup initial parameters
-				m_direction = _incomingDirection;
-				m_direction.z = -m_direction.z;	// Mirror against surface to obtain reflected direction against which we'll compute masking/shadowing of incoming ray
-
-				m_IOR = _IOR;
-
-				double	incomingPhi = Math.Atan2( m_direction.y, m_direction.x );
-				m_incomingDirection_CosPhi = Math.Cos( incomingPhi );
-				m_incomingDirection_SinPhi = Math.Sin( incomingPhi );
-
-				m_toleranceFactor = _toleranceFactor;
-				m_fittingReflectedLobe = _fittingReflectedLobe;
-				m_lobeType = m_owner.radioButtonAnalyticalPhong.Checked ? 0 : (m_owner.radioButtonAnalyticalBeckmann.Checked ? 1 : 2);
-
-
-				Parameters = new double[] { _theta, _roughness, _scaleN };//, _scaleT, _scaleB };
-//Parameters = new double[] { 39.5 * Math.PI / 180, 0.9646, 0.2222, 0.2384, 0.7758 };
-//Parameters = new double[] { 0.0 * Math.PI / 180, 0.9444, 0.1666 };	// 0° start for matching a 0.8 roughness
-
-			}
-
-			#region Model Implementation
-
-			public double[]		Parameters {
-				get { return m_parameters; }
-				set {
-					m_parameters = value;
-
-					// Update track bar parameters
-					if ( m_fittingReflectedLobe ) {
-						m_owner.floatTrackbarControlAnalyticalLobeTheta.Value = (float) (180.0 * m_parameters[0] / Math.PI);
-						m_owner.floatTrackbarControlAnalyticalLobeRoughness.Value = (float) m_parameters[1];
-						m_owner.floatTrackbarControlLobeScaleR.Value = (float) m_parameters[2];
-//						m_owner.floatTrackbarControlLobeScaleT.Value = (float) m_parameters[3];
-//						m_owner.floatTrackbarControlLobeScaleB.Value = (float) m_parameters[4];
-					} else {
-						m_owner.floatTrackbarControlAnalyticalLobeTheta_T.Value = (float) (180.0 * m_parameters[0] / Math.PI);
-						m_owner.floatTrackbarControlAnalyticalLobeRoughness_T.Value = (float) m_parameters[1];
-						m_owner.floatTrackbarControlLobeScaleR_T.Value = (float) m_parameters[2];
-//						m_owner.floatTrackbarControlLobeScaleT_T.Value = (float) m_parameters[3];
-//						m_owner.floatTrackbarControlLobeScaleB_T.Value = (float) m_parameters[4];
-					}
-
-					// Repaint every N iterations
-					m_iterationsCount++;
-//					if ( m_iterationsCount == 5 ) {
-						m_iterationsCount = 0;
-						m_owner.panelOutput.Refresh();
-						m_owner.Application_Idle( null, EventArgs.Empty );
-						Application.DoEvents();	// Force processing events for refresh
-//					}
-				}
-			}
-
-			public double Eval( double[] _newParameters ) {
-
-				double	lobeTheta = _newParameters[0];
-				double	lobeRoughness = _newParameters[1];
-				double	lobeScaleN = _newParameters[2];
-
-				double	invLobeScaleN = 1.0 / lobeScaleN;
-
-				// Compute constant masking term due to incoming direction
- 				double	maskingIncoming = Masking( m_direction.z, lobeRoughness );		// Masking( incoming )
-
-				// Compute lobe's reflection vector and tangent space using new parameters
-				double	cosTheta = Math.Cos( lobeTheta );
-				double	sinTheta = Math.Sin( lobeTheta );
-
-				float3	lobe_normal = new float3( (float) (sinTheta * m_incomingDirection_CosPhi), (float) (sinTheta * m_incomingDirection_SinPhi), (float) cosTheta );
-// 				if ( !m_fittingReflectedLobe ) {
-// 					lobe_normal = Refract( lobe_normal, float3.UnitZ, (float) m_IOR );
-// 					lobe_normal.z = -lobe_normal.z;
-// 				}
-
-				float3	lobe_tangent = new float3( (float) -m_incomingDirection_SinPhi, (float) m_incomingDirection_CosPhi, 0.0f );	// Always lying in the X^Y plane
-				float3	lobe_biTangent = lobe_normal.Cross( lobe_tangent );
-
-				// Compute sum
-				double	phi, theta, cosPhi, sinPhi;
-				double	outgoingIntensity_Simulated, length;
-				double	outgoingIntensity_Analytical, lobeIntensity;
-				double	difference;
-				float3	wsOutgoingDirection = float3.Zero;
-				float3	wsOutgoingDirection2 = float3.Zero;
-				float3	lsOutgoingDirection = float3.Zero;
-				double	maskingOutGoing = 0.0;
-
-				double	sum = 0.0;
-				double	sum_Simulated = 0.0;
-				double	sum_Analytical = 0.0;
-				double	sqSum_Simulated = 0.0;
-				double	sqSum_Analytical = 0.0;
-				for ( int Y=0; Y < LOBES_COUNT_THETA; Y++ ) {
-
-					// Y = theta bin index = 2.0 * LOBES_COUNT_THETA * pow2( sin( 0.5 * theta ) )
-					// We need theta:
-					theta = 2.0 * Math.Asin( Math.Sqrt( 0.5 * Y / LOBES_COUNT_THETA ) );
-					cosTheta = Math.Cos( theta );
-					sinTheta = Math.Sin( theta );
-
-					for ( int X=0; X < LOBES_COUNT_PHI; X++ ) {
-
-						// X = phi bin index = LOBES_COUNT_PHI * X / (2PI)
-						// We need phi:
-						phi = 2.0 * Math.PI * X / LOBES_COUNT_PHI;
-						cosPhi = Math.Cos( phi );
-						sinPhi = Math.Sin( phi );
-
-						// Build simulated microfacet reflection direction in macro-surface space
-						outgoingIntensity_Simulated = m_histogramData[X,Y];
-						wsOutgoingDirection.Set( (float) (cosPhi * sinTheta), (float) (sinPhi * sinTheta), (float) cosTheta );
-
-						// Compute maksing term due to outgoing direction
-						maskingOutGoing = Masking( wsOutgoingDirection.z, lobeRoughness );		// Masking( outgoing )
-
-						// Compute projection of world space direction onto reflected direction
-						float	Vz = wsOutgoingDirection.Dot( lobe_normal );
-
-//Vz = Math.Min( 0.99f, Vz );
-
-						float	cosTheta_M = Math.Max( 1e-6f, Vz );
-
-						// Compute the lobe intensity in local space
-						lobeIntensity = NDF( cosTheta_M, lobeRoughness );
- 						lobeIntensity *= maskingIncoming * maskingOutGoing;				// * Masking terms
-
-						// Apply additional lobe scaling
-						// This scale computed like this:
-						//
-						// We know that in the shader, local lobe coordinates are transformed into world space by doing:
-						//	wsDirection_Scaled = float3( lsDirection.x, lsDirection.y, Scale * lsDirection.z );
-						//	float	L = length( wsDirection_Scaled );
-						//	wsDirection = wsDirection_Scaled / L;
-						//
-						// We need to compute L so we write:
-						//
-						//	lsDirection.x = L * wsDirection.x
-						//	lsDirection.y = L * wsDirection.y
-						//	lsDirection.z = L * wsDirection.z / Scale
-						//
-						// We know that:
-						//	sqrt( lsDirection.x*lsDirection.x + lsDirection.y*lsDirection.y + lsDirection.z*lsDirection.z ) = 1
-						//
-						// So:
-						//	L * sqrt( wsDirection.x*wsDirection.x + wsDirection.y*wsDirection.y + wsDirection.z*wsDirection.z / (Scale*Scale) ) = 1
-						//
-						// And:
-						//	L = 1 / sqrt( 1 - wsDirection.z*wsDirection.x + wsDirection.z*wsDirection.z / (Scale*Scale) )
-						//
-						// So finally:
-						//	L = 1 / sqrt( 1 + wsDirection.z*wsDirection.x * (1 / (Scale*Scale) - 1) )
-						//
-						length = 1.0 / Math.Sqrt( 1.0 + Vz*Vz * (invLobeScaleN*invLobeScaleN - 1.0) );
-
-						outgoingIntensity_Analytical = lobeIntensity * length;	// Lobe intensity was estimated in lobe space, account for scaling when converting back in world space
-
-						// Sum the difference between simulated intensity and lobe intensity
-						outgoingIntensity_Analytical *= m_toleranceFactor;	// Apply tolerance factor so we're always a bit smaller than the simulated lobe
-
-
-//						#if true	// Use center of mass?
-						if ( m_owner.checkBoxTest.Checked ) {
-							double	difference0 = outgoingIntensity_Simulated - outgoingIntensity_Analytical;
-
-							float3	wsLobePosition_Simulated = (float) outgoingIntensity_Simulated * wsOutgoingDirection;
-							float3	wsLobePosition_Analytical = (float) outgoingIntensity_Analytical * wsOutgoingDirection;
-							// Subtract center of mass
-							wsLobePosition_Simulated -= m_centerOfMass;
-							wsLobePosition_Analytical -= m_centerOfMass;
-							// Compute new intensities, relative to center of mass
-							outgoingIntensity_Simulated = wsLobePosition_Simulated.Length;
-							outgoingIntensity_Analytical = wsLobePosition_Analytical.Length;
-
-							double	difference1 = outgoingIntensity_Simulated - outgoingIntensity_Analytical;
-
-							difference = 0.5 * difference0 + 0.5 * difference1;
-
-//							difference *= (wsLobePosition_Simulated - wsLobePosition_Analytical).Length;
-//							difference += (wsLobePosition_Simulated - wsLobePosition_Analytical).Length;	// We also add the distance between lobe positions so it goes to the best of the 2 minima!
-
-						} else {
-							difference = outgoingIntensity_Simulated - outgoingIntensity_Analytical;
-//							difference = outgoingIntensity_Simulated / Math.Max( 1e-6, outgoingIntensity_Analytical ) - 1.0;
-//							difference = outgoingIntensity_Analytical / Math.Max( 1e-6, outgoingIntensity_Simulated ) - 1.0;
-						}
-//						#endif
-
-
-						sum += difference * difference;
-
-						sum_Simulated += outgoingIntensity_Simulated;
-						sum_Analytical += outgoingIntensity_Analytical;
-						sqSum_Simulated += outgoingIntensity_Simulated*outgoingIntensity_Simulated;
-						sqSum_Analytical += outgoingIntensity_Analytical*outgoingIntensity_Analytical;
-					}
-				}
-				sum /= LOBES_COUNT_THETA * LOBES_COUNT_PHI;	// Not very useful since BFGS won't care but I'm doing it anyway to have some sort of normalized sum, better for us humans
-
-				return sum;
-			}
-
-			public void Constrain( double[] _Parameters ) {
-				_Parameters[0] = Math.Max( 0.0, Math.Min( 0.4999 * Math.PI, _Parameters[0] ) );
-				_Parameters[1] = Math.Max( 1e-4, Math.Min( 1.0, _Parameters[1] ) );
-				_Parameters[2] = Math.Max( 1e-3, Math.Min( 10.0, _Parameters[2] ) );
-//				_Parameters[3] = Math.Max( 1e-6, _Parameters[3] );
-//				_Parameters[4] = Math.Max( 1e-6, _Parameters[4] );
-			}
-
-			#endregion
-
-			double	Masking( double _cosTheta_V, double _roughness ) {
-				switch ( m_lobeType ) {
-					case 1:		return BeckmannG1( _cosTheta_V, _roughness );
-					case 2:		return GGXG1( _cosTheta_V, _roughness );
-					default:	return PhongG1( _cosTheta_V, _roughness );
-				}
-			}
-
-			double	NDF( double _cosTheta_M, double _roughness ) {
-				switch ( m_lobeType ) {
-					case 1:		return BeckmannNDF( _cosTheta_M, _roughness );
-					case 2:		return GGXNDF( _cosTheta_M, _roughness );
-					default:	return PhongNDF( _cosTheta_M, _roughness );
-				}
-			}
-
-			double	Roughness2PhongExponent( double _roughness ) {
-//				return Math.Pow( 2.0, 10.0 * (1.0 - _roughness) + 1.0 );	// From https://seblagarde.wordpress.com/2011/08/17/hello-world/
-				return Math.Pow( 2.0, 10.0 * (1.0 - _roughness) + 0.5 );	// Actually, we'd like some fatter rough lobes
-			}
-
-			// D(m) = a² / (PI * cos(theta_m)^4 * (a² + tan(theta_m)²)²)
-			// Simplified into  D(m) = a² / (PI * (cos(theta_m)²*(a²-1) + 1)²)
-			double	PhongNDF( double _cosTheta_M, double _roughness ) {
-				double	n = Roughness2PhongExponent( _roughness );
-				return (n+2)*Math.Pow( _cosTheta_M, n ) / Math.PI;
-			}
-
-			// Same as Beckmann but with a modified a bit
-			double	PhongG1( double _cosTheta_V, double _roughness ) {
-				double	n = Roughness2PhongExponent( _roughness );
-				double	sqCosTheta_V = _cosTheta_V * _cosTheta_V;
-				double	tanThetaV = Math.Sqrt( (1.0 - sqCosTheta_V) / sqCosTheta_V );
-				double	a = Math.Sqrt( 1.0 + 0.5 * n ) / tanThetaV;
-				return a < 1.6 ? (3.535 * a + 2.181 * a*a) / (1.0 + 2.276 * a + 2.577 * a*a) : 1.0;
-			}
-
-			// From Walter 2007
-			// D(m) = exp( -tan( theta_m )² / a² ) / (PI * a² * cos(theta_m)^4)
-			double	BeckmannNDF( double _cosTheta_M, double _roughness ) {
-				double	sqCosTheta_M = _cosTheta_M * _cosTheta_M;
-				double	a2 = _roughness*_roughness;
-				return Math.Exp( -(1.0 - sqCosTheta_M) / (sqCosTheta_M * a2) ) / (Math.PI * a2 * sqCosTheta_M*sqCosTheta_M);
-			}
-
-			// Masking G1(v,m) = 2 / (1 + erf( 1/(a * tan(theta_v)) ) + exp(-a²) / (a*sqrt(PI)))
-			double	BeckmannG1( double _cosTheta_V, double _roughness ) {
-				double	sqCosTheta_V = _cosTheta_V * _cosTheta_V;
-				double	tanThetaV = Math.Sqrt( (1.0 - sqCosTheta_V) / sqCosTheta_V );
-				double	a = 1.0 / (_roughness * tanThetaV);
-
-				#if true	// Simplified numeric version
-					return a < 1.6 ? (3.535 * a + 2.181 * a*a) / (1.0 + 2.276 * a + 2.577 * a*a) : 1.0;
-				#else	// Analytical
-					return 2.0 / (1.0 + erf( a ) + exp( -a*a ) / (a * SQRTPI));
-				#endif
-			}
-
-			// D(m) = a² / (PI * cos(theta_m)^4 * (a² + tan(theta_m)²)²)
-			// Simplified into  D(m) = a² / (PI * (cos(theta_m)²*(a²-1) + 1)²)
-			double	GGXNDF( double _cosTheta_M, double _roughness ) {
-				double	sqCosTheta_M = _cosTheta_M * _cosTheta_M;
-				double	a2 = _roughness*_roughness;
-//				return a2 / (Math.PI * sqCosTheta_M*sqCosTheta_M * pow2( a2 + (1.0-sqCosTheta_M)/sqCosTheta_M ));
-				return a2 / (Math.PI * Math.Pow( sqCosTheta_M * (a2-1.0) + 1.0, 2.0 ));
-			}
-
-			// Masking G1(v,m) = 2 / (1 + sqrt( 1 + a² * tan(theta_v)² ))
-			// Simplified into G1(v,m) = 2*cos(theta_v) / (1 + sqrt( cos(theta_v)² * (1-a²) + a² ))
-			double	GGXG1( double _cosTheta_V, double _roughness ) {
-				double	sqCosTheta_V = _cosTheta_V * _cosTheta_V;
-				double	a2 = _roughness*_roughness;
-				return 2.0 * _cosTheta_V / (1.0 + Math.Sqrt( sqCosTheta_V * (1.0 - a2) + a2 ));
-			}
-		}
-
 		LobeModel	m_lobeModel = null;
 		WMath.BFGS	m_Fitter = new WMath.BFGS();
 
-		void	PerformLobeFitting( float3 _incomingDirection, float _theta, bool _computeInitialThetaUsingCenterOfMass, float _roughness, float _IOR, float _scaleT, float _scaleB, float _scaleN, float _ToleranceFactor, int _scatteringOrder, bool _reflected ) {
+		void	PerformLobeFitting( float3 _incomingDirection, float _theta, bool _computeInitialThetaUsingCenterOfMass, float _roughness, float _IOR, float _scale, float _flatteningFactor, float _MaskingImportance, float _OversizeFactor, int _scatteringOrder, bool _reflected ) {
 
 			checkBoxShowAnalyticalLobe.Checked = true;
 
@@ -1359,8 +1184,28 @@ namespace TestMSBSDF
 			m_Tex_LobeHistogram_CPU.CopyFrom( _reflected ? m_Tex_LobeHistogram_Reflected : m_Tex_LobeHistogram_Transmitted );
 
 			// Initialize lobe model
-			m_lobeModel = new LobeModel( this );
-			m_lobeModel.Init( _incomingDirection, _theta, _computeInitialThetaUsingCenterOfMass, _roughness, _IOR, _scaleT, _scaleB, _scaleN, _ToleranceFactor,  m_Tex_LobeHistogram_CPU, _scatteringOrder, _reflected );
+			if ( m_lobeModel == null ) {
+				m_lobeModel = new LobeModel();
+				m_lobeModel.ParametersChanged += ( double[] _parameters ) => {
+					UpdateLobeParameters( _parameters, _reflected );
+				};
+			}
+
+			m_lobeModel.InitTargetData( m_Tex_LobeHistogram_CPU, _scatteringOrder );
+
+			if ( _computeInitialThetaUsingCenterOfMass ) {
+				// Optionally override theta to use the direction of the center of mass
+				// (quite intuitive to start by aligning our lobe along the main simulated lobe direction!)
+				float3	towardCenterOfMass = m_lobeModel.CenterOfMass.Normalized;
+				_theta = (float) Math.Acos( towardCenterOfMass.z );
+//				_scale = 2.0 * m_centerOfMass.Length;				// Also assume we should match the simulated lobe's length
+				_flatteningFactor = 0.5f;							// Start from a semi-flattened shape so it can choose either direction...
+				_scale = 0.01f * m_lobeModel.CenterOfMass.Length;	// In fact, I realized the algorithm converged much faster starting from a very small lobe!! (~20 iterations compared to 200 otherwise, because the gradient leads the algorithm in the wrong direction too fast and it takes hell of a time to get back on tracks afterwards if we start from too large a lobe!)
+			}
+
+			LobeModel.LOBE_TYPE	lobeType = radioButtonAnalyticalPhong.Checked ? LobeModel.LOBE_TYPE.MODIFIED_PHONG : (radioButtonAnalyticalBeckmann.Checked ? LobeModel.LOBE_TYPE.BECKMANN : LobeModel.LOBE_TYPE.GGX);
+
+			m_lobeModel.InitLobeData( lobeType, _incomingDirection, _theta, _roughness, _scale, _flatteningFactor, _MaskingImportance, _OversizeFactor, checkBoxTest.Checked );
 
 // 			if ( !checkBoxTest.Checked ) {
 // 				m_Fitter.SuccessTolerance = 1e-4;
@@ -1376,8 +1221,7 @@ namespace TestMSBSDF
 		#endregion
 
 		bool		m_fitting = false;
-		private void buttonFit_Click( object sender, EventArgs e )
-		{
+		private void buttonFit_Click( object sender, EventArgs e ) {
 			if ( m_fitting )
 				throw new Exception( "Canceled!" );
 
@@ -1388,6 +1232,7 @@ namespace TestMSBSDF
 			float	scaleT = fittingReflectedLobe ? floatTrackbarControlLobeScaleT.Value : floatTrackbarControlLobeScaleT_T.Value;
 			float	scaleB = fittingReflectedLobe ? floatTrackbarControlLobeScaleB.Value : floatTrackbarControlLobeScaleB_T.Value;
 			float	scaleR = fittingReflectedLobe ? floatTrackbarControlLobeScaleR.Value : floatTrackbarControlLobeScaleR_T.Value;
+			float	maskingImportance = fittingReflectedLobe ? floatTrackbarControlLobeMaskingImportance.Value : floatTrackbarControlLobeMaskingImportance_T.Value;
 
 			if ( checkBoxInitializeDirectionTowardCenterOfMass.Checked ) {
 				roughness = floatTrackbarControlBeckmannRoughness.Value;
@@ -1404,13 +1249,13 @@ namespace TestMSBSDF
 									checkBoxInitializeDirectionTowardCenterOfMass.Checked,
 									roughness,
 									m_lastComputedIOR,
-									scaleT,
-									scaleB,
 									scaleR,
-									floatTrackbarControlFitTolerance.Value,
+									scaleT,
+									maskingImportance,
+									floatTrackbarControlFitOversize.Value,
 									integerTrackbarControlScatteringOrder.Value,
 									fittingReflectedLobe
-									);
+								);
 
 				MessageBox( "Fitting succeeded after " + m_Fitter.IterationsCount + " iterations.\r\nReached minimum: " + m_Fitter.FunctionMinimum, MessageBoxButtons.OK, MessageBoxIcon.Information );
 
@@ -1422,6 +1267,19 @@ namespace TestMSBSDF
 				m_fitting = false;
 				groupBoxAnalyticalLobe.Enabled = true;
 			}
+		}
+
+		private void buttonAutomation_Click( object sender, EventArgs e ) {
+			// Simply toggle show/hide, the form is always there, never disposed except when we are...
+			if ( !m_automation.Visible )
+				m_automation.Show( this );
+			else
+				m_automation.Visible = false;
+		}
+
+		private void buttonTestImage_Click( object sender, EventArgs e )
+		{
+			BuildSurfaceFromTexture( "TestSurface.png", 1.0f );
 		}
 	}
 }

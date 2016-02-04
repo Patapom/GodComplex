@@ -97,18 +97,11 @@ void	DEBUG_DisplayLuminanceHistogram( float _white_level, float2 _UV, float2 _mo
 				GraduationColor = lerp( GraduationColor, BackgroundColor, _UV.y );						// Make a nice gradient to avoid painting dull graduations
 
 		#if 1	// ==== Paint the integral ====
-			float	CurrentFrameTargetBucket = 0;//ComputeStickyIntegralTargetBucket( Adaptation );
 			float	Integral = 0.0;
 			for ( int BucketIndex=0; BucketIndex < MonitorBucketsCount; BucketIndex++ ) {
-				uint	CurrentHistoValue = _texHistogram[uint2( HistoBucketIndex.x+BucketIndex, 0)].x;
-				float	Weight = ComputeStickyIntegralWeight( BucketIndex - CurrentFrameTargetBucket );
-
-				Integral += Weight * CurrentHistoValue;
+				Integral += _texHistogram[uint2( HistoBucketIndex.x+BucketIndex, 0)].x;
 			}
 			Integral *= 0.5 / (AveragePixelsCount * MonitorBucketsCount);
-
-//Integral = 0.2 * ComputeStickyIntegralWeight( fHistoBucketIndex - CurrentFrameTargetBucket );
-
 			BackgroundColor = lerp( _UV.y < Integral ? float3( 0.5, 0.3, 0.0 ) : BackgroundColor, BackgroundColor, 0.5 );
 		#endif
 

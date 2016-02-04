@@ -82,6 +82,7 @@
 			this.openFileDialogPreset = new System.Windows.Forms.OpenFileDialog();
 			this.buttonLoadPreset = new System.Windows.Forms.Button();
 			this.buttonSavePreset = new System.Windows.Forms.Button();
+			this.buttonShowAdvancedParms = new System.Windows.Forms.Button();
 			this.tabControlToneMappingTypes.SuspendLayout();
 			this.tabPageCustom.SuspendLayout();
 			this.tabPageToneMappingHabble.SuspendLayout();
@@ -357,7 +358,7 @@
 			// floatTrackbarControlExposure
 			// 
 			this.floatTrackbarControlExposure.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-			this.floatTrackbarControlExposure.Location = new System.Drawing.Point(1170, 587);
+			this.floatTrackbarControlExposure.Location = new System.Drawing.Point(1170, 588);
 			this.floatTrackbarControlExposure.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlExposure.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlExposure.Name = "floatTrackbarControlExposure";
@@ -620,7 +621,7 @@
 			// outputPanelHammersley1
 			// 
 			this.outputPanelHammersley1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-			this.outputPanelHammersley1.Location = new System.Drawing.Point(1387, 587);
+			this.outputPanelHammersley1.Location = new System.Drawing.Point(1209, 714);
 			this.outputPanelHammersley1.Name = "outputPanelHammersley1";
 			this.outputPanelHammersley1.Size = new System.Drawing.Size(106, 103);
 			this.outputPanelHammersley1.TabIndex = 3;
@@ -698,11 +699,22 @@
 			this.buttonSavePreset.UseVisualStyleBackColor = true;
 			this.buttonSavePreset.Click += new System.EventHandler(this.buttonSavePreset_Click);
 			// 
+			// buttonShowAdvancedParms
+			// 
+			this.buttonShowAdvancedParms.Location = new System.Drawing.Point(1376, 586);
+			this.buttonShowAdvancedParms.Name = "buttonShowAdvancedParms";
+			this.buttonShowAdvancedParms.Size = new System.Drawing.Size(75, 23);
+			this.buttonShowAdvancedParms.TabIndex = 9;
+			this.buttonShowAdvancedParms.Text = "Advanced";
+			this.buttonShowAdvancedParms.UseVisualStyleBackColor = true;
+			this.buttonShowAdvancedParms.Click += new System.EventHandler(this.buttonShowAdvancedParms_Click);
+			// 
 			// Form1
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1532, 829);
+			this.Controls.Add(this.buttonShowAdvancedParms);
 			this.Controls.Add(this.buttonSavePreset);
 			this.Controls.Add(this.buttonLoadPreset);
 			this.Controls.Add(this.tabControlToneMappingTypes);
@@ -793,6 +805,7 @@
 		private System.Windows.Forms.OpenFileDialog openFileDialogPreset;
 		private System.Windows.Forms.Button buttonLoadPreset;
 		private System.Windows.Forms.Button buttonSavePreset;
+		private System.Windows.Forms.Button buttonShowAdvancedParms;
 	}
 }
 

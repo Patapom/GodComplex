@@ -17,6 +17,9 @@
 			{
 				components.Dispose();
 			}
+
+			m_automation.Dispose();
+
 			base.Dispose( disposing );
 		}
 
@@ -67,7 +70,7 @@
 			this.floatTrackbarControlBeckmannSizeFactor = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.floatTrackbarControlBeckmannRoughness = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label9 = new System.Windows.Forms.Label();
-			this.floatTrackbarControlFitTolerance = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlFitOversize = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label10 = new System.Windows.Forms.Label();
 			this.checkBoxTest = new System.Windows.Forms.CheckBox();
 			this.floatTrackbarControlSurfaceAlbedo = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
@@ -81,12 +84,15 @@
 			this.radioButtonConductor = new System.Windows.Forms.RadioButton();
 			this.groupBoxSimulation = new System.Windows.Forms.GroupBox();
 			this.groupBoxAnalyticalLobe = new System.Windows.Forms.GroupBox();
-			this.label14 = new System.Windows.Forms.Label();
-			this.label13 = new System.Windows.Forms.Label();
-			this.groupBox1 = new System.Windows.Forms.GroupBox();
 			this.tabControlAnalyticalLobes = new System.Windows.Forms.TabControl();
 			this.tabPageReflectedLobe = new System.Windows.Forms.TabPage();
+			this.label20 = new System.Windows.Forms.Label();
+			this.label13 = new System.Windows.Forms.Label();
+			this.floatTrackbarControlLobeMaskingImportance = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.label14 = new System.Windows.Forms.Label();
 			this.tabPageTransmittedLobe = new System.Windows.Forms.TabPage();
+			this.label21 = new System.Windows.Forms.Label();
+			this.floatTrackbarControlLobeMaskingImportance_T = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label15 = new System.Windows.Forms.Label();
 			this.floatTrackbarControlLobeScaleB_T = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.floatTrackbarControlAnalyticalLobeTheta_T = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
@@ -97,20 +103,23 @@
 			this.floatTrackbarControlLobeScaleR_T = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label19 = new System.Windows.Forms.Label();
 			this.floatTrackbarControlAnalyticalLobeRoughness_T = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.checkBoxInitializeDirectionTowardCenterOfMass = new System.Windows.Forms.CheckBox();
+			this.groupBox1 = new System.Windows.Forms.GroupBox();
 			this.checkBoxCompensateScatteringFactor = new System.Windows.Forms.CheckBox();
 			this.checkBoxShowXRay = new System.Windows.Forms.CheckBox();
+			this.buttonAutomation = new System.Windows.Forms.Button();
+			this.buttonTestImage = new System.Windows.Forms.Button();
 			this.panelOutput = new TestMSBSDF.PanelOutput3D(this.components);
-			this.checkBoxInitializeDirectionTowardCenterOfMass = new System.Windows.Forms.CheckBox();
 			this.groupBoxDisplay.SuspendLayout();
 			this.panel2.SuspendLayout();
 			this.groupBoxSurface.SuspendLayout();
 			this.panelDielectric.SuspendLayout();
 			this.groupBoxSimulation.SuspendLayout();
 			this.groupBoxAnalyticalLobe.SuspendLayout();
-			this.groupBox1.SuspendLayout();
 			this.tabControlAnalyticalLobes.SuspendLayout();
 			this.tabPageReflectedLobe.SuspendLayout();
 			this.tabPageTransmittedLobe.SuspendLayout();
+			this.groupBox1.SuspendLayout();
 			this.SuspendLayout();
 			// 
 			// timer1
@@ -253,7 +262,7 @@
 			// buttonFit
 			// 
 			this.buttonFit.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-			this.buttonFit.Location = new System.Drawing.Point(1048, 822);
+			this.buttonFit.Location = new System.Drawing.Point(1048, 847);
 			this.buttonFit.Name = "buttonFit";
 			this.buttonFit.Size = new System.Drawing.Size(97, 25);
 			this.buttonFit.TabIndex = 11;
@@ -386,7 +395,6 @@
 			// 
 			// floatTrackbarControlLobeScaleT
 			// 
-			this.floatTrackbarControlLobeScaleT.Enabled = false;
 			this.floatTrackbarControlLobeScaleT.Location = new System.Drawing.Point(123, 84);
 			this.floatTrackbarControlLobeScaleT.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlLobeScaleT.MinimumSize = new System.Drawing.Size(70, 20);
@@ -410,7 +418,6 @@
 			this.floatTrackbarControlAnalyticalLobeRoughness.TabIndex = 2;
 			this.floatTrackbarControlAnalyticalLobeRoughness.Value = 0.9444F;
 			this.floatTrackbarControlAnalyticalLobeRoughness.VisibleRangeMax = 1F;
-			this.floatTrackbarControlAnalyticalLobeRoughness.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlBeckmannRoughness_ValueChanged);
 			// 
 			// floatTrackbarControlLobeScaleR
 			// 
@@ -543,35 +550,35 @@
 			this.label9.TabIndex = 3;
 			this.label9.Text = "Angle";
 			// 
-			// floatTrackbarControlFitTolerance
+			// floatTrackbarControlFitOversize
 			// 
-			this.floatTrackbarControlFitTolerance.Location = new System.Drawing.Point(123, 248);
-			this.floatTrackbarControlFitTolerance.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.floatTrackbarControlFitTolerance.MinimumSize = new System.Drawing.Size(70, 20);
-			this.floatTrackbarControlFitTolerance.Name = "floatTrackbarControlFitTolerance";
-			this.floatTrackbarControlFitTolerance.RangeMax = 2F;
-			this.floatTrackbarControlFitTolerance.RangeMin = 0F;
-			this.floatTrackbarControlFitTolerance.Size = new System.Drawing.Size(238, 20);
-			this.floatTrackbarControlFitTolerance.TabIndex = 5;
-			this.floatTrackbarControlFitTolerance.Value = 1.02F;
-			this.floatTrackbarControlFitTolerance.VisibleRangeMax = 1.1F;
-			this.floatTrackbarControlFitTolerance.VisibleRangeMin = 1F;
+			this.floatTrackbarControlFitOversize.Location = new System.Drawing.Point(122, 274);
+			this.floatTrackbarControlFitOversize.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlFitOversize.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlFitOversize.Name = "floatTrackbarControlFitOversize";
+			this.floatTrackbarControlFitOversize.RangeMax = 2F;
+			this.floatTrackbarControlFitOversize.RangeMin = 0F;
+			this.floatTrackbarControlFitOversize.Size = new System.Drawing.Size(238, 20);
+			this.floatTrackbarControlFitOversize.TabIndex = 5;
+			this.floatTrackbarControlFitOversize.Value = 1.02F;
+			this.floatTrackbarControlFitOversize.VisibleRangeMax = 1.1F;
+			this.floatTrackbarControlFitOversize.VisibleRangeMin = 1F;
 			// 
 			// label10
 			// 
 			this.label10.AutoSize = true;
-			this.label10.Location = new System.Drawing.Point(9, 253);
+			this.label10.Location = new System.Drawing.Point(8, 278);
 			this.label10.Name = "label10";
-			this.label10.Size = new System.Drawing.Size(86, 13);
+			this.label10.Size = new System.Drawing.Size(112, 13);
 			this.label10.TabIndex = 3;
-			this.label10.Text = "Fitting Tolerance";
+			this.label10.Text = "Fitting Oversize Factor";
 			// 
 			// checkBoxTest
 			// 
 			this.checkBoxTest.AutoSize = true;
 			this.checkBoxTest.Checked = true;
 			this.checkBoxTest.CheckState = System.Windows.Forms.CheckState.Checked;
-			this.checkBoxTest.Location = new System.Drawing.Point(9, 225);
+			this.checkBoxTest.Location = new System.Drawing.Point(8, 251);
 			this.checkBoxTest.Name = "checkBoxTest";
 			this.checkBoxTest.Size = new System.Drawing.Size(196, 17);
 			this.checkBoxTest.TabIndex = 9;
@@ -604,6 +611,7 @@
 			// groupBoxSurface
 			// 
 			this.groupBoxSurface.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+			this.groupBoxSurface.Controls.Add(this.buttonTestImage);
 			this.groupBoxSurface.Controls.Add(this.panelDielectric);
 			this.groupBoxSurface.Controls.Add(this.radioButtonDiffuse);
 			this.groupBoxSurface.Controls.Add(this.radioButtonDielectric);
@@ -657,8 +665,7 @@
 			// radioButtonDiffuse
 			// 
 			this.radioButtonDiffuse.AutoSize = true;
-			this.radioButtonDiffuse.Enabled = false;
-			this.radioButtonDiffuse.Location = new System.Drawing.Point(163, 126);
+			this.radioButtonDiffuse.Location = new System.Drawing.Point(163, 130);
 			this.radioButtonDiffuse.Name = "radioButtonDiffuse";
 			this.radioButtonDiffuse.Size = new System.Drawing.Size(58, 17);
 			this.radioButtonDiffuse.TabIndex = 4;
@@ -669,7 +676,7 @@
 			// radioButtonDielectric
 			// 
 			this.radioButtonDielectric.AutoSize = true;
-			this.radioButtonDielectric.Location = new System.Drawing.Point(89, 126);
+			this.radioButtonDielectric.Location = new System.Drawing.Point(89, 130);
 			this.radioButtonDielectric.Name = "radioButtonDielectric";
 			this.radioButtonDielectric.Size = new System.Drawing.Size(69, 17);
 			this.radioButtonDielectric.TabIndex = 4;
@@ -681,7 +688,7 @@
 			// 
 			this.radioButtonConductor.AutoSize = true;
 			this.radioButtonConductor.Checked = true;
-			this.radioButtonConductor.Location = new System.Drawing.Point(9, 126);
+			this.radioButtonConductor.Location = new System.Drawing.Point(9, 130);
 			this.radioButtonConductor.Name = "radioButtonConductor";
 			this.radioButtonConductor.Size = new System.Drawing.Size(74, 17);
 			this.radioButtonConductor.TabIndex = 4;
@@ -714,14 +721,77 @@
 			this.groupBoxAnalyticalLobe.Controls.Add(this.checkBoxShowAnalyticalLobe);
 			this.groupBoxAnalyticalLobe.Controls.Add(this.checkBoxInitializeDirectionTowardCenterOfMass);
 			this.groupBoxAnalyticalLobe.Controls.Add(this.checkBoxTest);
-			this.groupBoxAnalyticalLobe.Controls.Add(this.floatTrackbarControlFitTolerance);
+			this.groupBoxAnalyticalLobe.Controls.Add(this.floatTrackbarControlFitOversize);
 			this.groupBoxAnalyticalLobe.Controls.Add(this.label10);
 			this.groupBoxAnalyticalLobe.Location = new System.Drawing.Point(894, 534);
 			this.groupBoxAnalyticalLobe.Name = "groupBoxAnalyticalLobe";
-			this.groupBoxAnalyticalLobe.Size = new System.Drawing.Size(386, 282);
+			this.groupBoxAnalyticalLobe.Size = new System.Drawing.Size(386, 307);
 			this.groupBoxAnalyticalLobe.TabIndex = 12;
 			this.groupBoxAnalyticalLobe.TabStop = false;
 			this.groupBoxAnalyticalLobe.Text = "Analytical Lobe";
+			// 
+			// tabControlAnalyticalLobes
+			// 
+			this.tabControlAnalyticalLobes.Controls.Add(this.tabPageReflectedLobe);
+			this.tabControlAnalyticalLobes.Controls.Add(this.tabPageTransmittedLobe);
+			this.tabControlAnalyticalLobes.Location = new System.Drawing.Point(5, 42);
+			this.tabControlAnalyticalLobes.Name = "tabControlAnalyticalLobes";
+			this.tabControlAnalyticalLobes.SelectedIndex = 0;
+			this.tabControlAnalyticalLobes.Size = new System.Drawing.Size(374, 193);
+			this.tabControlAnalyticalLobes.TabIndex = 14;
+			// 
+			// tabPageReflectedLobe
+			// 
+			this.tabPageReflectedLobe.Controls.Add(this.label9);
+			this.tabPageReflectedLobe.Controls.Add(this.floatTrackbarControlLobeScaleB);
+			this.tabPageReflectedLobe.Controls.Add(this.floatTrackbarControlAnalyticalLobeTheta);
+			this.tabPageReflectedLobe.Controls.Add(this.label8);
+			this.tabPageReflectedLobe.Controls.Add(this.floatTrackbarControlLobeScaleT);
+			this.tabPageReflectedLobe.Controls.Add(this.label20);
+			this.tabPageReflectedLobe.Controls.Add(this.label7);
+			this.tabPageReflectedLobe.Controls.Add(this.label13);
+			this.tabPageReflectedLobe.Controls.Add(this.floatTrackbarControlLobeMaskingImportance);
+			this.tabPageReflectedLobe.Controls.Add(this.floatTrackbarControlLobeScaleR);
+			this.tabPageReflectedLobe.Controls.Add(this.label14);
+			this.tabPageReflectedLobe.Controls.Add(this.floatTrackbarControlAnalyticalLobeRoughness);
+			this.tabPageReflectedLobe.Location = new System.Drawing.Point(4, 22);
+			this.tabPageReflectedLobe.Name = "tabPageReflectedLobe";
+			this.tabPageReflectedLobe.Padding = new System.Windows.Forms.Padding(3);
+			this.tabPageReflectedLobe.Size = new System.Drawing.Size(366, 167);
+			this.tabPageReflectedLobe.TabIndex = 0;
+			this.tabPageReflectedLobe.Text = "Reflected";
+			this.tabPageReflectedLobe.UseVisualStyleBackColor = true;
+			// 
+			// label20
+			// 
+			this.label20.AutoSize = true;
+			this.label20.Location = new System.Drawing.Point(6, 141);
+			this.label20.Name = "label20";
+			this.label20.Size = new System.Drawing.Size(103, 13);
+			this.label20.TabIndex = 3;
+			this.label20.Text = "Masking Importance";
+			// 
+			// label13
+			// 
+			this.label13.AutoSize = true;
+			this.label13.Location = new System.Drawing.Point(6, 88);
+			this.label13.Name = "label13";
+			this.label13.Size = new System.Drawing.Size(67, 13);
+			this.label13.TabIndex = 3;
+			this.label13.Text = "Global Scale";
+			// 
+			// floatTrackbarControlLobeMaskingImportance
+			// 
+			this.floatTrackbarControlLobeMaskingImportance.Location = new System.Drawing.Point(123, 136);
+			this.floatTrackbarControlLobeMaskingImportance.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlLobeMaskingImportance.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlLobeMaskingImportance.Name = "floatTrackbarControlLobeMaskingImportance";
+			this.floatTrackbarControlLobeMaskingImportance.RangeMax = 1F;
+			this.floatTrackbarControlLobeMaskingImportance.RangeMin = 0F;
+			this.floatTrackbarControlLobeMaskingImportance.Size = new System.Drawing.Size(238, 20);
+			this.floatTrackbarControlLobeMaskingImportance.TabIndex = 5;
+			this.floatTrackbarControlLobeMaskingImportance.Value = 1F;
+			this.floatTrackbarControlLobeMaskingImportance.VisibleRangeMax = 1F;
 			// 
 			// label14
 			// 
@@ -733,65 +803,10 @@
 			this.label14.TabIndex = 3;
 			this.label14.Text = "Scale BiTangent";
 			// 
-			// label13
-			// 
-			this.label13.AutoSize = true;
-			this.label13.Enabled = false;
-			this.label13.Location = new System.Drawing.Point(6, 88);
-			this.label13.Name = "label13";
-			this.label13.Size = new System.Drawing.Size(77, 13);
-			this.label13.TabIndex = 3;
-			this.label13.Text = "Scale Tangent";
-			// 
-			// groupBox1
-			// 
-			this.groupBox1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-			this.groupBox1.Controls.Add(this.floatTrackbarControlLobeIntensity);
-			this.groupBox1.Controls.Add(this.integerTrackbarControlScatteringOrder);
-			this.groupBox1.Controls.Add(this.checkBoxCompensateScatteringFactor);
-			this.groupBox1.Controls.Add(this.checkBoxShowXRay);
-			this.groupBox1.Controls.Add(this.checkBoxShowWireframe);
-			this.groupBox1.Controls.Add(this.label5);
-			this.groupBox1.Controls.Add(this.checkBoxShowLobe);
-			this.groupBox1.Location = new System.Drawing.Point(894, 427);
-			this.groupBox1.Name = "groupBox1";
-			this.groupBox1.Size = new System.Drawing.Size(386, 101);
-			this.groupBox1.TabIndex = 13;
-			this.groupBox1.TabStop = false;
-			this.groupBox1.Text = "Simulated Lobe Display";
-			// 
-			// tabControlAnalyticalLobes
-			// 
-			this.tabControlAnalyticalLobes.Controls.Add(this.tabPageReflectedLobe);
-			this.tabControlAnalyticalLobes.Controls.Add(this.tabPageTransmittedLobe);
-			this.tabControlAnalyticalLobes.Location = new System.Drawing.Point(5, 45);
-			this.tabControlAnalyticalLobes.Name = "tabControlAnalyticalLobes";
-			this.tabControlAnalyticalLobes.SelectedIndex = 0;
-			this.tabControlAnalyticalLobes.Size = new System.Drawing.Size(374, 164);
-			this.tabControlAnalyticalLobes.TabIndex = 14;
-			// 
-			// tabPageReflectedLobe
-			// 
-			this.tabPageReflectedLobe.Controls.Add(this.label9);
-			this.tabPageReflectedLobe.Controls.Add(this.floatTrackbarControlLobeScaleB);
-			this.tabPageReflectedLobe.Controls.Add(this.floatTrackbarControlAnalyticalLobeTheta);
-			this.tabPageReflectedLobe.Controls.Add(this.label8);
-			this.tabPageReflectedLobe.Controls.Add(this.floatTrackbarControlLobeScaleT);
-			this.tabPageReflectedLobe.Controls.Add(this.label7);
-			this.tabPageReflectedLobe.Controls.Add(this.label13);
-			this.tabPageReflectedLobe.Controls.Add(this.floatTrackbarControlLobeScaleR);
-			this.tabPageReflectedLobe.Controls.Add(this.label14);
-			this.tabPageReflectedLobe.Controls.Add(this.floatTrackbarControlAnalyticalLobeRoughness);
-			this.tabPageReflectedLobe.Location = new System.Drawing.Point(4, 22);
-			this.tabPageReflectedLobe.Name = "tabPageReflectedLobe";
-			this.tabPageReflectedLobe.Padding = new System.Windows.Forms.Padding(3);
-			this.tabPageReflectedLobe.Size = new System.Drawing.Size(366, 138);
-			this.tabPageReflectedLobe.TabIndex = 0;
-			this.tabPageReflectedLobe.Text = "Reflected";
-			this.tabPageReflectedLobe.UseVisualStyleBackColor = true;
-			// 
 			// tabPageTransmittedLobe
 			// 
+			this.tabPageTransmittedLobe.Controls.Add(this.label21);
+			this.tabPageTransmittedLobe.Controls.Add(this.floatTrackbarControlLobeMaskingImportance_T);
 			this.tabPageTransmittedLobe.Controls.Add(this.label15);
 			this.tabPageTransmittedLobe.Controls.Add(this.floatTrackbarControlLobeScaleB_T);
 			this.tabPageTransmittedLobe.Controls.Add(this.floatTrackbarControlAnalyticalLobeTheta_T);
@@ -805,10 +820,32 @@
 			this.tabPageTransmittedLobe.Location = new System.Drawing.Point(4, 22);
 			this.tabPageTransmittedLobe.Name = "tabPageTransmittedLobe";
 			this.tabPageTransmittedLobe.Padding = new System.Windows.Forms.Padding(3);
-			this.tabPageTransmittedLobe.Size = new System.Drawing.Size(366, 138);
+			this.tabPageTransmittedLobe.Size = new System.Drawing.Size(366, 167);
 			this.tabPageTransmittedLobe.TabIndex = 1;
 			this.tabPageTransmittedLobe.Text = "Transmitted";
 			this.tabPageTransmittedLobe.UseVisualStyleBackColor = true;
+			// 
+			// label21
+			// 
+			this.label21.AutoSize = true;
+			this.label21.Location = new System.Drawing.Point(6, 141);
+			this.label21.Name = "label21";
+			this.label21.Size = new System.Drawing.Size(103, 13);
+			this.label21.TabIndex = 16;
+			this.label21.Text = "Masking Importance";
+			// 
+			// floatTrackbarControlLobeMaskingImportance_T
+			// 
+			this.floatTrackbarControlLobeMaskingImportance_T.Location = new System.Drawing.Point(123, 136);
+			this.floatTrackbarControlLobeMaskingImportance_T.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlLobeMaskingImportance_T.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlLobeMaskingImportance_T.Name = "floatTrackbarControlLobeMaskingImportance_T";
+			this.floatTrackbarControlLobeMaskingImportance_T.RangeMax = 1F;
+			this.floatTrackbarControlLobeMaskingImportance_T.RangeMin = 0F;
+			this.floatTrackbarControlLobeMaskingImportance_T.Size = new System.Drawing.Size(238, 20);
+			this.floatTrackbarControlLobeMaskingImportance_T.TabIndex = 17;
+			this.floatTrackbarControlLobeMaskingImportance_T.Value = 1F;
+			this.floatTrackbarControlLobeMaskingImportance_T.VisibleRangeMax = 1F;
 			// 
 			// label15
 			// 
@@ -857,7 +894,6 @@
 			// 
 			// floatTrackbarControlLobeScaleT_T
 			// 
-			this.floatTrackbarControlLobeScaleT_T.Enabled = false;
 			this.floatTrackbarControlLobeScaleT_T.Location = new System.Drawing.Point(123, 84);
 			this.floatTrackbarControlLobeScaleT_T.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlLobeScaleT_T.MinimumSize = new System.Drawing.Size(70, 20);
@@ -881,12 +917,11 @@
 			// label18
 			// 
 			this.label18.AutoSize = true;
-			this.label18.Enabled = false;
 			this.label18.Location = new System.Drawing.Point(6, 88);
 			this.label18.Name = "label18";
-			this.label18.Size = new System.Drawing.Size(77, 13);
+			this.label18.Size = new System.Drawing.Size(67, 13);
 			this.label18.TabIndex = 10;
-			this.label18.Text = "Scale Tangent";
+			this.label18.Text = "Global Scale";
 			// 
 			// floatTrackbarControlLobeScaleR_T
 			// 
@@ -924,6 +959,35 @@
 			this.floatTrackbarControlAnalyticalLobeRoughness_T.Value = 0.9444F;
 			this.floatTrackbarControlAnalyticalLobeRoughness_T.VisibleRangeMax = 1F;
 			// 
+			// checkBoxInitializeDirectionTowardCenterOfMass
+			// 
+			this.checkBoxInitializeDirectionTowardCenterOfMass.AutoSize = true;
+			this.checkBoxInitializeDirectionTowardCenterOfMass.Checked = true;
+			this.checkBoxInitializeDirectionTowardCenterOfMass.CheckState = System.Windows.Forms.CheckState.Checked;
+			this.checkBoxInitializeDirectionTowardCenterOfMass.Location = new System.Drawing.Point(210, 251);
+			this.checkBoxInitializeDirectionTowardCenterOfMass.Name = "checkBoxInitializeDirectionTowardCenterOfMass";
+			this.checkBoxInitializeDirectionTowardCenterOfMass.Size = new System.Drawing.Size(176, 17);
+			this.checkBoxInitializeDirectionTowardCenterOfMass.TabIndex = 9;
+			this.checkBoxInitializeDirectionTowardCenterOfMass.Text = "Initial Dir. Toward Cent. of Mass";
+			this.checkBoxInitializeDirectionTowardCenterOfMass.UseVisualStyleBackColor = true;
+			// 
+			// groupBox1
+			// 
+			this.groupBox1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+			this.groupBox1.Controls.Add(this.floatTrackbarControlLobeIntensity);
+			this.groupBox1.Controls.Add(this.integerTrackbarControlScatteringOrder);
+			this.groupBox1.Controls.Add(this.checkBoxCompensateScatteringFactor);
+			this.groupBox1.Controls.Add(this.checkBoxShowXRay);
+			this.groupBox1.Controls.Add(this.checkBoxShowWireframe);
+			this.groupBox1.Controls.Add(this.label5);
+			this.groupBox1.Controls.Add(this.checkBoxShowLobe);
+			this.groupBox1.Location = new System.Drawing.Point(894, 427);
+			this.groupBox1.Name = "groupBox1";
+			this.groupBox1.Size = new System.Drawing.Size(386, 101);
+			this.groupBox1.TabIndex = 13;
+			this.groupBox1.TabStop = false;
+			this.groupBox1.Text = "Simulated Lobe Display";
+			// 
 			// checkBoxCompensateScatteringFactor
 			// 
 			this.checkBoxCompensateScatteringFactor.AutoSize = true;
@@ -931,9 +995,9 @@
 			this.checkBoxCompensateScatteringFactor.CheckState = System.Windows.Forms.CheckState.Checked;
 			this.checkBoxCompensateScatteringFactor.Location = new System.Drawing.Point(142, 74);
 			this.checkBoxCompensateScatteringFactor.Name = "checkBoxCompensateScatteringFactor";
-			this.checkBoxCompensateScatteringFactor.Size = new System.Drawing.Size(247, 17);
+			this.checkBoxCompensateScatteringFactor.Size = new System.Drawing.Size(241, 17);
 			this.checkBoxCompensateScatteringFactor.TabIndex = 9;
-			this.checkBoxCompensateScatteringFactor.Text = "Use pow( 10, scattering ) Compensation Factor";
+			this.checkBoxCompensateScatteringFactor.Text = "Use pow( 3, scattering ) Compensation Factor";
 			this.checkBoxCompensateScatteringFactor.UseVisualStyleBackColor = true;
 			// 
 			// checkBoxShowXRay
@@ -948,6 +1012,26 @@
 			this.checkBoxShowXRay.Text = "Show X-Ray";
 			this.checkBoxShowXRay.UseVisualStyleBackColor = true;
 			// 
+			// buttonAutomation
+			// 
+			this.buttonAutomation.Location = new System.Drawing.Point(1205, 848);
+			this.buttonAutomation.Name = "buttonAutomation";
+			this.buttonAutomation.Size = new System.Drawing.Size(75, 23);
+			this.buttonAutomation.TabIndex = 14;
+			this.buttonAutomation.Text = "&Automation";
+			this.buttonAutomation.UseVisualStyleBackColor = true;
+			this.buttonAutomation.Click += new System.EventHandler(this.buttonAutomation_Click);
+			// 
+			// buttonTestImage
+			// 
+			this.buttonTestImage.Location = new System.Drawing.Point(298, 126);
+			this.buttonTestImage.Name = "buttonTestImage";
+			this.buttonTestImage.Size = new System.Drawing.Size(75, 23);
+			this.buttonTestImage.TabIndex = 6;
+			this.buttonTestImage.Text = "Test Image";
+			this.buttonTestImage.UseVisualStyleBackColor = true;
+			this.buttonTestImage.Click += new System.EventHandler(this.buttonTestImage_Click);
+			// 
 			// panelOutput
 			// 
 			this.panelOutput.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
@@ -958,23 +1042,12 @@
 			this.panelOutput.Size = new System.Drawing.Size(876, 835);
 			this.panelOutput.TabIndex = 0;
 			// 
-			// checkBoxInitializeDirectionTowardCenterOfMass
-			// 
-			this.checkBoxInitializeDirectionTowardCenterOfMass.AutoSize = true;
-			this.checkBoxInitializeDirectionTowardCenterOfMass.Checked = true;
-			this.checkBoxInitializeDirectionTowardCenterOfMass.CheckState = System.Windows.Forms.CheckState.Checked;
-			this.checkBoxInitializeDirectionTowardCenterOfMass.Location = new System.Drawing.Point(211, 225);
-			this.checkBoxInitializeDirectionTowardCenterOfMass.Name = "checkBoxInitializeDirectionTowardCenterOfMass";
-			this.checkBoxInitializeDirectionTowardCenterOfMass.Size = new System.Drawing.Size(176, 17);
-			this.checkBoxInitializeDirectionTowardCenterOfMass.TabIndex = 9;
-			this.checkBoxInitializeDirectionTowardCenterOfMass.Text = "Initial Dir. Toward Cent. of Mass";
-			this.checkBoxInitializeDirectionTowardCenterOfMass.UseVisualStyleBackColor = true;
-			// 
 			// TestForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1287, 884);
+			this.Controls.Add(this.buttonAutomation);
 			this.Controls.Add(this.groupBoxAnalyticalLobe);
 			this.Controls.Add(this.groupBox1);
 			this.Controls.Add(this.buttonFit);
@@ -998,13 +1071,13 @@
 			this.groupBoxSimulation.PerformLayout();
 			this.groupBoxAnalyticalLobe.ResumeLayout(false);
 			this.groupBoxAnalyticalLobe.PerformLayout();
-			this.groupBox1.ResumeLayout(false);
-			this.groupBox1.PerformLayout();
 			this.tabControlAnalyticalLobes.ResumeLayout(false);
 			this.tabPageReflectedLobe.ResumeLayout(false);
 			this.tabPageReflectedLobe.PerformLayout();
 			this.tabPageTransmittedLobe.ResumeLayout(false);
 			this.tabPageTransmittedLobe.PerformLayout();
+			this.groupBox1.ResumeLayout(false);
+			this.groupBox1.PerformLayout();
 			this.ResumeLayout(false);
 
 		}
@@ -1049,7 +1122,7 @@
 		private System.Windows.Forms.Label label8;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlAnalyticalLobeRoughness;
 		private System.Windows.Forms.Button buttonFit;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlFitTolerance;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlFitOversize;
 		private System.Windows.Forms.Label label9;
 		private System.Windows.Forms.Label label10;
 		private System.Windows.Forms.CheckBox checkBoxTest;
@@ -1083,6 +1156,12 @@
 		private System.Windows.Forms.CheckBox checkBoxCompensateScatteringFactor;
 		private System.Windows.Forms.CheckBox checkBoxShowXRay;
 		private System.Windows.Forms.CheckBox checkBoxInitializeDirectionTowardCenterOfMass;
+		private System.Windows.Forms.Label label20;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlLobeMaskingImportance;
+		private System.Windows.Forms.Label label21;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlLobeMaskingImportance_T;
+		private System.Windows.Forms.Button buttonAutomation;
+		private System.Windows.Forms.Button buttonTestImage;
 	}
 }
 

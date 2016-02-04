@@ -177,6 +177,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AdvancedParmsForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="AdvancedParmsForm.Designer.cs">
+      <DependentUpon>AdvancedParmsForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="BImage.cs" />
     <Compile Include="OutputPanelFilmic_Insomniac.cs">
       <SubType>Component</SubType>
@@ -207,6 +213,9 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <EmbeddedResource Include="AdvancedParmsForm.resx">
+      <DependentUpon>AdvancedParmsForm.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Form1.resx">
       <DependentUpon>Form1.cs</DependentUpon>
     </EmbeddedResource>

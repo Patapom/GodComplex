@@ -27,6 +27,29 @@ RWTexture2DArray< float4 >	_Tex_OutgoingDirections_Reflected : register( u0 );
 RWTexture2DArray< float4 >	_Tex_OutgoingDirections_Transmitted : register( u1 );
 
 
+// Introduces random variations in the initial random number based on the pixel offset
+// This is important otherwise a completely flat surface (i.e. roughness == 0) will never
+//	output a different result, whatever the iteration number...
+float4	JitterRandom( float4 _initialRandom, float2 _pixelOffset ) {
+
+	// Use 4th slice of random, sampled by the jitter offset in [0,1]², as an offset to the existing random
+	// Each iteration will yield a different offset and we will sample the random texture at a different spot,
+	//	yielding completely different random values at each iteration...
+	float4	randomOffset = _Tex_Random.SampleLevel( LinearWrap, float3( _pixelOffset, 3 ), 0.0 );
+	return frac( _initialRandom + randomOffset );
+
+// This solution is much too biased! iQ's rand generator is not robust enough for so many rays... Or I'm using it badly...
+//	float	offset = 13498.0 * _pixelOffset.x + 91132.0 * _pixelOffset.y;
+//	float4	newRandom;
+//	newRandom.x = rand( _initialRandom.x + offset );
+//	newRandom.y = rand( _initialRandom.y + offset );
+//	newRandom.z = rand( _initialRandom.z + offset );
+//	newRandom.w = rand( _initialRandom.w + offset );
+//
+//	return newRandom;
+}
+
+
 //////////////////////////////////////////////////////////////////////////
 // Ray-traces the height field
 //	_position, _direction, the ray to trace through the height field
@@ -35,7 +58,7 @@ RWTexture2DArray< float4 >	_Tex_OutgoingDirections_Transmitted : register( u1 );
 float4	RayTrace( float3 _position, float3 _direction, out float3 _normal, bool _aboveSurface ) {
 
 	// Compute maximum ray distance
-	float	maxDistance = min(	1.0 * HEIGHTFIELD_SIZE,					// Anyway, can't ray-trace more than this size
+	float	maxDistance = min(	0.2 * HEIGHTFIELD_SIZE,					// Anyway, can't ray-trace more than this size
 								2.0 * MAX_HEIGHT / abs( _direction.z )	// How long does it take, using the current ray direction, to move from -MAX_HEIGHT to +MAX_HEIGHT ?
 							);
 
@@ -134,6 +157,8 @@ void	CS_Conductor( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPT
 
 	float4	random = _Tex_Random[uint3(pixelPosition,0)];
 
+	random = JitterRandom( random, _offset );
+
 	[loop]
 	[fastopt]
 	for ( ; scatteringIndex < 4; scatteringIndex++ ) {
@@ -161,7 +186,7 @@ void	CS_Conductor( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPT
 		#if 1
 			float4	NH = _Tex_HeightField.SampleLevel( LinearWrap, INV_HEIGHTFIELD_SIZE * position.xy, 0.0 );	// Normal + Height
 			if ( position.z < NH.w-1e-2 ) {
-				position.z = NH.w+1e-2;				// Ensure make sure we're always ABOVE the surface!
+				position.z = NH.w+1e-2;				// Ensure we're always ABOVE the surface!
 //				direction = float3( 0, 0, -1 );
 //				break;
 			}
@@ -230,6 +255,9 @@ void	CS_Dielectric( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUP
 	float4	random = _Tex_Random[uint3(pixelPosition,0)];
 	float4	random2 = _Tex_Random[uint3(pixelPosition,1)];
 
+	random = JitterRandom( random, _offset );
+	random2 = JitterRandom( random2, _offset );
+
 	float	IOR = _IOR;
 
 	[loop]
@@ -248,7 +276,7 @@ void	CS_Dielectric( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUP
 		float	F = FresnelAccurate( IOR, cosTheta );						// 1 for grazing angles or very large IOR, like metals
 
 		// Randomly reflect or refract depending on Fresnel
-		if ( random2.x < F ) {
+		if ( random.x < F ) {
 			// Reflect off the surface
 			direction = reflect( direction, orientedNormal );
 		} else {
@@ -263,12 +291,8 @@ void	CS_Dielectric( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUP
 		position = GetOffSurface( position, direction, orientedNormal, OFF_SURFACE_DISTANCE );
 
 		// Update random seeds
-		random.xy = random.zw;
-		random.z = rand( random.z );
-		random.w = rand( random.w );
-
-		random2.xyz = random2.yzw;
-		random2.w = rand( random2.w );
+		random = float4( random.yzw, random2.x );
+		random2 = float4( random2.yzw, rand( random2.w ) );
 	}
 
 // Actually, don't do that as it changes the lobe a lot!!
@@ -284,4 +308,83 @@ void	CS_Dielectric( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUP
 		_Tex_OutgoingDirections_Reflected[uint3( pixelPosition, scatteringIndex-1 )] = float4( direction, weight );
 	else
 		_Tex_OutgoingDirections_Transmitted[uint3( pixelPosition, scatteringIndex-1 )] = float4( direction.xy, -direction.z, -weight );
+}
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Diffuse Ray-Tracing
+// We only account for albedo
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+[numthreads( 16, 16, 1 )]
+void	CS_Diffuse( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, uint3 _DispatchThreadID : SV_DISPATCHTHREADID ) {
+
+	uint2	pixelPosition = _DispatchThreadID.xy;
+
+	float3	targetPosition = float3( pixelPosition + _offset, 0.0 );					// The target point of our ray is the heightfield's texel
+	float3	position = targetPosition + (INITIAL_HEIGHT / _direction.z) * _direction;	// So start from there and go back along the ray direction to reach the start height
+	float3	direction = _direction;
+	float	weight = 1.0;
+
+	uint	scatteringIndex = 0;	// No scattering yet
+	float4	hitPosition = float4( position, 0 );
+	float3	normal;
+
+	float4	random = _Tex_Random[uint3(pixelPosition,0)];
+	float4	random2 = _Tex_Random[uint3(pixelPosition,1)];
+
+	random = JitterRandom( random, _offset );
+	random2 = JitterRandom( random2, _offset );
+
+	[loop]
+	[fastopt]
+	for ( ; scatteringIndex < 4; scatteringIndex++ ) {
+		hitPosition = RayTrace( position, direction, normal, true );
+		if ( hitPosition.w > 1e3 )
+			break;	// The ray escaped the surface!
+
+		// Walk to hit
+		position = hitPosition.xyz;
+
+		// Bounce off the surface using random direction
+		float3	tangent, biTangent;
+		BuildOrthonormalBasis( normal, tangent, biTangent );
+//		biTangent = normalize( cross( normal, float3( 1, 0, 0 ) ) );
+//		tangent = cross( biTangent, normal );
+
+
+//normal = float3( 0, 0, 1 );
+//tangent = float3( 1, 0, 0 );
+//biTangent = float3( 0, 1, 0 );
+
+		float	theta = 2.0 * asin( sqrt( 0.5 * random.x ) );
+		float	cosTheta = cos( theta );
+		float	sinTheta = sqrt( 1.0 - cosTheta*cosTheta );
+		float2	scPhi;
+		sincos( 2.0 * PI * random.y, scPhi.x, scPhi.y );
+
+		float3	lsDirection = float3( sinTheta * scPhi.y, sinTheta * scPhi.x, cosTheta );
+		direction = lsDirection.x * tangent + lsDirection.y * biTangent + lsDirection.z * normal;
+
+		// Each bump into the surface decreases the weight by the albedo
+		// 2 bumps we have albedo², 3 bumps we have albedo^3, etc. That explains the saturation of colors!
+		weight *= _albedo;
+
+		// Now, walk a little to avoid hitting the surface again
+		position = GetOffSurface( position, direction, normal, OFF_SURFACE_DISTANCE );
+
+		#if 1
+			float4	NH = _Tex_HeightField.SampleLevel( LinearWrap, INV_HEIGHTFIELD_SIZE * position.xy, 0.0 );	// Normal + Height
+			if ( position.z < NH.w-1e-2 ) {
+				position.z = NH.w+1e-2;				// Ensure we're always ABOVE the surface!
+			}
+
+		#endif
+
+		// Update random seed
+		random = float4( random.zw, random2.xy );
+		random2 = float4( random2.zw, rand( random2.z ), rand( random2.w ) );
+	}
+
+	_Tex_OutgoingDirections_Reflected[uint3( pixelPosition, scatteringIndex-1 )] = float4( direction, weight );	// Don't accumulate! This is done by the histogram generation!
 }
