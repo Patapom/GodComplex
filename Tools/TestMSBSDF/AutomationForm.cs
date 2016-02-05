@@ -869,7 +869,6 @@ namespace TestMSBSDF
 
 					ElmOrderResults = ElmOrderResults.NextSibling as XmlElement;	// Next order...
 				}
-
 			}
 
 			#region XML Helpers
@@ -961,6 +960,9 @@ namespace TestMSBSDF
 					return;
 
 				completionArrayControl.Select( m_selectedResult.X, m_selectedResult.Y, m_selectedResult.Z );
+
+				integerTrackbarControlViewScatteringOrder.Value = m_selectedResult.ScatteringOrder;
+				integerTrackbarControlViewAlbedoSlice.Value = m_selectedResult.Z;
 
 				// Show lobe parameters in main form
 				m_owner.UpdateLobeParameters( m_selectedResult.m_reflected.AsArray, true );
