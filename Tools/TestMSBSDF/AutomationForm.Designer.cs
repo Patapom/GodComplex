@@ -152,8 +152,10 @@
 			this.saveFileDialogExport = new System.Windows.Forms.SaveFileDialog();
 			this.integerTrackbarControlThreadsCount = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
 			this.label31 = new System.Windows.Forms.Label();
-			this.completionArrayControl = new TestMSBSDF.CompletionArrayControl();
 			this.clearSliceFromHereToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.completionArrayControl = new TestMSBSDF.CompletionArrayControl();
+			this.clearColumnToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.clearRowToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.groupBoxSimulationParameters.SuspendLayout();
 			this.panel6.SuspendLayout();
 			this.panel5.SuspendLayout();
@@ -1426,9 +1428,11 @@
             this.startFromHereToolStripMenuItem,
             this.toolStripMenuItem3,
             this.clearToolStripMenuItem,
+            this.clearColumnToolStripMenuItem,
+            this.clearRowToolStripMenuItem,
             this.clearSliceFromHereToolStripMenuItem});
 			this.contextMenuStripSelection.Name = "contextMenuStripSelection";
-			this.contextMenuStripSelection.Size = new System.Drawing.Size(186, 120);
+			this.contextMenuStripSelection.Size = new System.Drawing.Size(205, 164);
 			this.contextMenuStripSelection.Opening += new System.ComponentModel.CancelEventHandler(this.contextMenuStripSelection_Opening);
 			// 
 			// computeToolStripMenuItem
@@ -1453,8 +1457,8 @@
 			// clearToolStripMenuItem
 			// 
 			this.clearToolStripMenuItem.Name = "clearToolStripMenuItem";
-			this.clearToolStripMenuItem.Size = new System.Drawing.Size(185, 22);
-			this.clearToolStripMenuItem.Text = "Clea&r";
+			this.clearToolStripMenuItem.Size = new System.Drawing.Size(204, 22);
+			this.clearToolStripMenuItem.Text = "Clea&r Single Result";
 			this.clearToolStripMenuItem.Click += new System.EventHandler(this.clearToolStripMenuItem_Click);
 			// 
 			// menuStrip1
@@ -1605,6 +1609,13 @@
 			this.label31.TabIndex = 1;
 			this.label31.Text = "Threads Count";
 			// 
+			// clearSliceFromHereToolStripMenuItem
+			// 
+			this.clearSliceFromHereToolStripMenuItem.Name = "clearSliceFromHereToolStripMenuItem";
+			this.clearSliceFromHereToolStripMenuItem.Size = new System.Drawing.Size(185, 22);
+			this.clearSliceFromHereToolStripMenuItem.Text = "Clear Slice from Here";
+			this.clearSliceFromHereToolStripMenuItem.Click += new System.EventHandler(this.clearSliceFromHereToolStripMenuItem_Click);
+			// 
 			// completionArrayControl
 			// 
 			this.completionArrayControl.BackColor = System.Drawing.SystemColors.ControlLight;
@@ -1623,12 +1634,19 @@
 			this.completionArrayControl.SelectionChanged += new TestMSBSDF.CompletionArrayControl.SelectionChangedEventHandler(this.completionArrayControl_SelectionChanged);
 			this.completionArrayControl.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.completionArrayControl_MouseDoubleClick);
 			// 
-			// clearSliceFromHereToolStripMenuItem
+			// clearColumnToolStripMenuItem
 			// 
-			this.clearSliceFromHereToolStripMenuItem.Name = "clearSliceFromHereToolStripMenuItem";
-			this.clearSliceFromHereToolStripMenuItem.Size = new System.Drawing.Size(185, 22);
-			this.clearSliceFromHereToolStripMenuItem.Text = "Clear Slice from Here";
-			this.clearSliceFromHereToolStripMenuItem.Click += new System.EventHandler(this.clearSliceFromHereToolStripMenuItem_Click);
+			this.clearColumnToolStripMenuItem.Name = "clearColumnToolStripMenuItem";
+			this.clearColumnToolStripMenuItem.Size = new System.Drawing.Size(204, 22);
+			this.clearColumnToolStripMenuItem.Text = "Clear Column from Here";
+			this.clearColumnToolStripMenuItem.Click += new System.EventHandler(this.clearColumnToolStripMenuItem_Click);
+			// 
+			// clearRowToolStripMenuItem
+			// 
+			this.clearRowToolStripMenuItem.Name = "clearRowToolStripMenuItem";
+			this.clearRowToolStripMenuItem.Size = new System.Drawing.Size(204, 22);
+			this.clearRowToolStripMenuItem.Text = "Clear Row from Here";
+			this.clearRowToolStripMenuItem.Click += new System.EventHandler(this.clearRowToolStripMenuItem_Click);
 			// 
 			// AutomationForm
 			// 
@@ -1811,5 +1829,7 @@
 		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlThreadsCount;
 		private System.Windows.Forms.Label label31;
 		private System.Windows.Forms.ToolStripMenuItem clearSliceFromHereToolStripMenuItem;
+		private System.Windows.Forms.ToolStripMenuItem clearColumnToolStripMenuItem;
+		private System.Windows.Forms.ToolStripMenuItem clearRowToolStripMenuItem;
 	}
 }

@@ -956,6 +956,9 @@ namespace TestMSBSDF
 				get { return m_index; }
 			}
 
+			/// <summary>
+			/// Gets or sets the Done state
+			/// </summary>
 			public bool			Done {
 				get {
 					lock( this ) {
@@ -967,6 +970,27 @@ namespace TestMSBSDF
 						m_done = value;
 					}	
 				}
+			}
+
+			/// <summary>
+			/// Gets the lobe model used for the computation
+			/// </summary>
+			public LobeModel	LobeModel {
+				get { return m_lobeModel; }
+			}
+
+			/// <summary>
+			/// Gets the BFGS fitter used for the computation
+			/// </summary>
+			public WMath.BFGS	Fitter {
+				get { return m_fitter; }
+			}
+
+			/// <summary>
+			/// Gets the amount of retries used for the last fitted lobe
+			/// </summary>
+			public int			RetriesCount {
+				get { return m_retriesCount; }
 			}
 
 			Document			Doc {
@@ -1070,7 +1094,7 @@ namespace TestMSBSDF
 			/// <summary>
 			/// Prepare the fitter for a new result
 			/// </summary>
-			void	PrepareFitter( bool _reflected, int _maxIterations, double _goalTolerance, double _gradientTolerance ) {
+			public void	PrepareFitter( bool _reflected, int _maxIterations, double _goalTolerance, double _gradientTolerance ) {
 
 				m_isReflectedLobe = _reflected;
 				m_parameters = m_isReflectedLobe ? m_result.m_reflected : m_result.m_refracted;
@@ -1088,7 +1112,7 @@ namespace TestMSBSDF
 			/// </summary>
 			/// <param name="_result"></param>
 			/// <param name="_reflected"></param>
-			void	PerformLobeFitting() {
+			public void	PerformLobeFitting() {
 
 				// Initialize preliminary lobe results
 				float3				incomingDirection = m_result.IncomingDirection;
@@ -1728,7 +1752,7 @@ namespace TestMSBSDF
 		/// Computes a single value
 		/// </summary>
 		void	ComputeSelectedResult() {
-/*
+			ComputationThread	T = null;
 			try {
 				EnterComputationMode();
 
@@ -1736,13 +1760,19 @@ namespace TestMSBSDF
 				SelectedResult.m_error = null;
 				SelectedResult.State = 0.0f;
 
+				T = QueryComputeThread();
+				if ( T == null )
+					throw new Exception( "No available idle thread for computation!" );
+
+				double	functionMinimumTolerance = Math.Pow( 10.0, m_document.m_settings.m_logTolerance_Minimum );
+				double	gradientTolerance = Math.Pow( 10.0, m_document.m_settings.m_logTolerance_Gradient );
+
 				m_owner.SetCurrentScatteringOrder( SelectedResult.ScatteringOrder );
 
 				LogLine( "== Starting Order " + SelectedResult.ScatteringOrder + " (" + SelectedResult.X + ", " + SelectedResult.Y + ", " + SelectedResult.Z + ") ==" );
 				LogLine( "	• Angle = " + (SelectedResult.IncomingAngleTheta * 180.0 / Math.PI).ToString( "G3" ) + " - Roughness = " + SelectedResult.SurfaceRoughness.ToString( "G3" ) + " - " + (m_document.m_surface.m_type == TestForm.SURFACE_TYPE.DIFFUSE ? "Albedo" : "F0") + " = " + SelectedResult.SurfaceAlbedoF0.ToString( "G3" ) );
 				LogLine( "	• Start Time = " + FormatTime( m_simulationStart ) );
 
-				PrepareFitter();
 				UpdateSurfaceRoughness( SelectedResult );
 				Simulate( SelectedResult );
 
@@ -1751,15 +1781,19 @@ namespace TestMSBSDF
 				LogLine( "	• Simulation Duration = " + FormatDuration( simulationDuration ) );
 
 				// Fit reflected lobe...
-				PerformLobeFitting( SelectedResult, true );
-				LogLine( "	## Reflected lobe - Fit minimum reached = " + m_fitter.FunctionMinimum + " after " + m_retriesCount + " attempts" );
+				T.Result = SelectedResult;
+				T.InitializeLobeTargetData();
+				T.PrepareFitter( true, m_document.m_settings.m_maxIterations, functionMinimumTolerance, gradientTolerance );
+				T.PerformLobeFitting();
+				LogLine( "	## Reflected lobe - Fit minimum reached = " + T.Fitter.FunctionMinimum + " after " + T.RetriesCount + " attempts" );
 
 				if ( m_document.m_surface.m_type == TestForm.SURFACE_TYPE.DIELECTRIC ) {
 					// Fit refracted lobe now...
 					SelectedResult.State = 0.5f;
 
-					PerformLobeFitting( SelectedResult, false );
-					LogLine( "	## Refracted lobe - Fit minimum reached = " + m_fitter.FunctionMinimum + " after " + m_retriesCount + " attempts" );
+					T.PrepareFitter( true, m_document.m_settings.m_maxIterations, functionMinimumTolerance, gradientTolerance );
+					T.PerformLobeFitting();
+					LogLine( "	## Refracted lobe - Fit minimum reached = " + T.Fitter.FunctionMinimum + " after " + T.RetriesCount + " attempts" );
 				}
 
 				SelectedResult.State = 1.0f;
@@ -1776,6 +1810,9 @@ namespace TestMSBSDF
 				MessageBox( errorText );
 			} finally {
 
+				if ( T != null )
+					T.Done = true;	// Available again!
+
 				m_simulationEnd = DateTime.Now;
 
 				TimeSpan	duration = m_simulationEnd - m_simulationStart;
@@ -1787,7 +1824,6 @@ namespace TestMSBSDF
 				// Done!
 				ExitComputationMode();
 			}
-*/
 		}
 
 		#region Menu
@@ -1975,17 +2011,33 @@ namespace TestMSBSDF
 			SelectedResult.Clear();
 		}
 
+		private void clearColumnToolStripMenuItem_Click( object sender, EventArgs e ) {
+			if ( MessageBox( "Are you sure?", MessageBoxButtons.OKCancel, MessageBoxIcon.Question, MessageBoxDefaultButton.Button2 ) != DialogResult.OK )
+				return;
+
+			Document.Result[,,]	results = m_document.GetResultsForOrder( SelectedResult.ScatteringOrder );
+			for ( int Y=SelectedResult.Y; Y < m_document.m_surface.m_roughness.StepsCount; Y++ )
+				results[SelectedResult.X,Y,SelectedResult.Z].Clear();
+		}
+
+		private void clearRowToolStripMenuItem_Click( object sender, EventArgs e ) {
+			if ( MessageBox( "Are you sure?", MessageBoxButtons.OKCancel, MessageBoxIcon.Question, MessageBoxDefaultButton.Button2 ) != DialogResult.OK )
+				return;
+
+			Document.Result[,,]	results = m_document.GetResultsForOrder( SelectedResult.ScatteringOrder );
+			for ( int X=SelectedResult.X; X < m_document.m_surface.m_incomingAngle.StepsCount; X++ )
+				results[X,SelectedResult.Y,SelectedResult.Z].Clear();
+		}
+
 		private void clearSliceFromHereToolStripMenuItem_Click( object sender, EventArgs e )
 		{
-			if ( SelectedResult.IsValid ) {
-				if ( MessageBox( "Are you sure?", MessageBoxButtons.OKCancel, MessageBoxIcon.Question, MessageBoxDefaultButton.Button2 ) != DialogResult.OK )
-					return;
-			} else {
-				MessageBox( "Result already cleared!", MessageBoxButtons.OK, MessageBoxIcon.Information );
+			if ( MessageBox( "Are you sure?", MessageBoxButtons.OKCancel, MessageBoxIcon.Question, MessageBoxDefaultButton.Button2 ) != DialogResult.OK )
 				return;
-			}
 
-			throw new Exception( "@TODO!" );
+			Document.Result[,,]	results = m_document.GetResultsForOrder( SelectedResult.ScatteringOrder );
+			for ( int Y=SelectedResult.Y; Y < m_document.m_surface.m_roughness.StepsCount; Y++ )
+				for ( int X=SelectedResult.X; X < m_document.m_surface.m_incomingAngle.StepsCount; X++ )
+					results[X,Y,SelectedResult.Z].Clear();
 		}
 
 		#endregion
