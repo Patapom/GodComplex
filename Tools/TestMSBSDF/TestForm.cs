@@ -152,6 +152,8 @@ namespace TestMSBSDF
 		private Camera				m_Camera = new Camera();
 		private CameraManipulator	m_Manipulator = new CameraManipulator();
 
+		private string              m_loadTextureFileName = "";
+
 		private float3				m_lastComputedDirection;
 		private float				m_lastComputedRoughness;
 		private float				m_lastComputedAlbedo;
@@ -581,7 +583,8 @@ namespace TestMSBSDF
 //						Content[X,Y].Set( R / 255.0f, G / 255.0f, B / 255.0f, A / 255.0f );
 
 // But assuming it's a height field, we only store one component into alpha
-						Content[X,Y].Set( 0, 0, 0, R / 255.0f );	// Use Red as height
+						// Add a scale factor
+						Content[X,Y].Set( 0, 0, 0, floatTrackbarScale.Value * R / 255.0f );	// Use Red as height
 					}
 				}
 				BM.UnlockBits( LockedBitmap );
@@ -1279,7 +1282,70 @@ namespace TestMSBSDF
 
 		private void buttonTestImage_Click( object sender, EventArgs e )
 		{
-			BuildSurfaceFromTexture( "TestSurface.png", 1.0f );
+			OpenFileDialog ofd = new OpenFileDialog();
+			ofd.Title = "Select your texture";
+			ofd.Filter = "PNG files|*.png";
+			ofd.InitialDirectory = @"C:\";
+
+			if ( ofd.ShowDialog() == DialogResult.OK )
+			{
+				m_loadTextureFileName = ofd.FileName;
+				BuildSurfaceFromTexture( m_loadTextureFileName, 1.0f );
+			}
+		}
+
+		private void label4_Click( object sender, EventArgs e )
+		{
+
+		}
+
+		private void label1_Click( object sender, EventArgs e )
+		{
+
+		}
+
+		private void label22_Click( object sender, EventArgs e )
+		{
+
+		}
+
+		private void tabControl1_SelectedIndexChanged( object sender, EventArgs e )
+		{
+			if(tabControl1.SelectedIndex == 0)
+			{
+				if(m_Tex_Heightfield != null)
+				{
+					m_Tex_Heightfield.Dispose();
+					m_Tex_Heightfield = null;	
+				}
+				BuildBeckmannSurfaceTexture(floatTrackbarControlBeckmannRoughness.Value);	
+			}
+			else if(tabControl1.SelectedIndex == 1)
+			{
+				if(m_loadTextureFileName.Length !=0)
+					BuildSurfaceFromTexture(m_loadTextureFileName, 1.0f);
+
+
+				// Nota : because we want to keep a texture unyill we load a file the texture manipulation is done in BuildTextureSurface
+			}
+		}
+
+		private void floatTrackbarControl1_ValueChanged( FloatTrackbarControl _Sender, float _fFormerValue )
+		{
+			try
+			{
+				m_pauseRendering = true;
+				if(m_loadTextureFileName.Length != 0)
+					BuildSurfaceFromTexture( m_loadTextureFileName, 1.0f );
+			}
+			catch ( Exception )
+			{
+			}
+			finally
+			{
+				m_pauseRendering = false;
+			}
+
 		}
 	}
 }
