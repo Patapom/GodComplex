@@ -16,6 +16,8 @@ namespace TestMSBSDF
 {
 	public partial class AutomationForm : Form
 	{
+		const int		AUTO_SAVE_EVERY_N_RUNS = 5;	// Save results every 5 computation
+
 		#region NESTED TYPES
 
 		class CanceledException : Exception {}
@@ -44,6 +46,7 @@ namespace TestMSBSDF
 				public delegate void	LockStateChangedEventHandler();
 				public delegate void	ScatteringOrdersCountChangedEventHandler();
 
+				[System.Diagnostics.DebuggerDisplay( "Range=[{m_min}, {m_max}] Steps={m_stepsCount}" )]
 				public class	Parameter {
 
 					public delegate	void	ValueChangedEventHandler( Parameter _P );
@@ -171,26 +174,36 @@ namespace TestMSBSDF
 					}
 
 					public void		Save( XmlElement _parent ) {
-						_parent.SetAttribute( "Min", m_min.ToString() );
-						_parent.SetAttribute( "Max", m_max.ToString() );
-						_parent.SetAttribute( "Steps", m_stepsCount.ToString() );
-						_parent.SetAttribute( "InclusiveMin", m_inclusiveMin.ToString() );
-						_parent.SetAttribute( "InclusiveMax", m_inclusiveMax.ToString() );
+						Attrib( _parent, "Min", m_min );
+						Attrib( _parent, "Max", m_max );
+						Attrib( _parent, "Steps", m_stepsCount );
+						Attrib( _parent, "InclusiveMin", m_inclusiveMin );
+						Attrib( _parent, "InclusiveMax", m_inclusiveMax );
+// 						_parent.SetAttribute( "Min", m_min.ToString() );
+// 						_parent.SetAttribute( "Max", m_max.ToString() );
+// 						_parent.SetAttribute( "Steps", m_stepsCount.ToString() );
+// 						_parent.SetAttribute( "InclusiveMin", m_inclusiveMin.ToString() );
+// 						_parent.SetAttribute( "InclusiveMax", m_inclusiveMax.ToString() );
 					}
 
 					public void		Load( XmlElement _parent ) {
-						float.TryParse( _parent.GetAttribute( "Min" ), out m_min );
-						float.TryParse( _parent.GetAttribute( "Max" ), out m_max );
-						int.TryParse( _parent.GetAttribute( "Steps" ), out m_stepsCount );
-						bool.TryParse( _parent.GetAttribute( "InclusiveMin" ), out m_inclusiveMin );
-						bool.TryParse( _parent.GetAttribute( "InclusiveMax" ), out m_inclusiveMax );
+						Attrib( _parent, "Min", ref m_min );
+						Attrib( _parent, "Max", ref m_max );
+						Attrib( _parent, "Steps", ref m_stepsCount );
+						Attrib( _parent, "InclusiveMin", ref m_inclusiveMin );
+						Attrib( _parent, "InclusiveMax", ref m_inclusiveMax );
+// 						float.TryParse( _parent.GetAttribute( "Min" ), out m_min );
+// 						float.TryParse( _parent.GetAttribute( "Max" ), out m_max );
+// 						int.TryParse( _parent.GetAttribute( "Steps" ), out m_stepsCount );
+// 						bool.TryParse( _parent.GetAttribute( "InclusiveMin" ), out m_inclusiveMin );
+// 						bool.TryParse( _parent.GetAttribute( "InclusiveMax" ), out m_inclusiveMax );
 					}
 				}
 
 				#endregion
 
 				public int						m_rayTracingIterationsCount = 1024;
-				public TestForm.SURFACE_TYPE	m_type = TestForm.SURFACE_TYPE.CONDUCTOR;
+				public TestForm.SURFACE_TYPE	m_type = TestForm.SURFACE_TYPE.DIFFUSE;
 				private bool					m_locked = false;	// Once computations have started, we can't touch the settings anymore!
 				public Parameter				m_incomingAngle = null;
 				public Parameter				m_roughness = null;
@@ -243,8 +256,8 @@ namespace TestMSBSDF
 				}
 
 				public void		Save( XmlElement _parent ) {
-					Attrib( _parent, "Surface Type", m_type );
-					Attrib( _parent, "RayTrace Iterations", m_rayTracingIterationsCount );
+					Attrib( _parent, "SurfaceType", m_type );
+					Attrib( _parent, "RayTraceIterations", m_rayTracingIterationsCount );
 					Attrib( _parent, "Locked", m_locked );
 
 					XmlElement ElemParm0 = AppendChild( _parent, "IncomingAngle" );
@@ -256,12 +269,26 @@ namespace TestMSBSDF
 					XmlElement ElemParm2 = AppendChild( _parent, "AlbedoF0" );
 					m_albedoF0.Save( ElemParm2 );
 
-					XmlElement ElemParm3 = AppendChild( _parent, "IncomingAngle" );
+					XmlElement ElemParm3 = AppendChild( _parent, "ScatteringOrders" );
 					m_scatteringOrders.Save( ElemParm3 );
 				}
 
 				public void		Load( XmlElement _parent ) {
+					Attrib( _parent, "SurfaceType", ref m_type );
+					Attrib( _parent, "RayTraceIterations", ref m_rayTracingIterationsCount );
+					Attrib( _parent, "Locked", ref m_locked );
 
+					XmlElement ElemParm0 = _parent["IncomingAngle"];
+					m_incomingAngle.Load( ElemParm0 );
+
+					XmlElement ElemParm1 = _parent["SurfaceRoughness"];
+					m_roughness.Load( ElemParm1 );
+
+					XmlElement ElemParm2 = _parent["AlbedoF0"];
+					m_albedoF0.Load( ElemParm2 );
+
+					XmlElement ElemParm3 = _parent["ScatteringOrders"];
+					m_scatteringOrders.Load( ElemParm3 );
 				}
 
 				// Simple forward
@@ -347,7 +374,7 @@ namespace TestMSBSDF
 					// Lobe parameters
 					XmlElement	ElemLobeParms = AppendChild( _parent, "LobeParameters" );
 
-					Attrib( ElemLobeParms, "Model", m_lobeModel );
+					Attrib( ElemLobeParms, "Model",				m_lobeModel );
 					Attrib( ElemLobeParms, "initialDirection",	m_initialDirection );
 					Attrib( ElemLobeParms, "inheritDirection",	m_inheritDirection );
 					Attrib( ElemLobeParms, "initialRoughness",	m_initialRoughness );
@@ -366,12 +393,42 @@ namespace TestMSBSDF
 
 				public void		Load( XmlElement _parent ) {
 
+					// Fitter parameters
+					XmlElement	ElemFitterParms = _parent["FitterParameters"];
+
+					Attrib( ElemFitterParms, "MaxIterations", ref m_maxIterations );
+					Attrib( ElemFitterParms, "logToleranceMinimum", ref m_logTolerance_Minimum );
+					Attrib( ElemFitterParms, "logToleranceGradient", ref m_logTolerance_Gradient );
+					Attrib( ElemFitterParms, "MaxRetries", ref m_maxRetries );
+					Attrib( ElemFitterParms, "OversizeFactor", ref m_oversizeFactor );
+
+					// Lobe parameters
+					XmlElement	ElemLobeParms = _parent["LobeParameters"];
+
+					Attrib( ElemLobeParms, "Model",				ref m_lobeModel );
+					Attrib( ElemLobeParms, "initialDirection",	ref m_initialDirection );
+					Attrib( ElemLobeParms, "inheritDirection",	ref m_inheritDirection );
+					Attrib( ElemLobeParms, "initialRoughness",	ref m_initialRoughness );
+					Attrib( ElemLobeParms, "inheritRoughness",	ref m_inheritRoughness );
+					Attrib( ElemLobeParms, "customRoughness",	ref m_customRoughness );
+					Attrib( ElemLobeParms, "initialScale",		ref m_initialScale );
+					Attrib( ElemLobeParms, "inheritScale",		ref m_inheritScale );
+					Attrib( ElemLobeParms, "customScale",		ref m_customScale );
+					Attrib( ElemLobeParms, "initialFlatten",	ref m_initialFlatten );
+					Attrib( ElemLobeParms, "inheritFlatten",	ref m_inheritFlatten );
+					Attrib( ElemLobeParms, "customFlatten",		ref m_customFlatten );
+					Attrib( ElemLobeParms, "initialMasking",	ref m_initialMasking );
+					Attrib( ElemLobeParms, "inheritMasking",	ref m_inheritMasking );
+					Attrib( ElemLobeParms, "customMasking",		ref m_customMasking );
 				}
 			}
 
+			[System.Diagnostics.DebuggerDisplay( "Order={m_order} ({m_X}, {m_Y}, {m_Z}) Theta={m_incomingAngleTheta} Rho={m_surfaceRoughness} F0={m_surfaceAlbedoF0} State={m_state}" )]
 			public class	Result {
+
 				#region NESTED TYPES
 
+				[System.Diagnostics.DebuggerDisplay( "Theta={m_theta} Rho={m_roughness} Scale={m_scale} Flatten={m_flatten} Masking={m_masking}" )]
 				public class	LobeParameters {
 					public double	m_theta = -1.0;		// -1 means invalid
 					public double	m_roughness = 0.8;
@@ -503,7 +560,11 @@ namespace TestMSBSDF
 					}
 
 					public void		Load( XmlElement _parent ) {
-
+						Attrib( _parent, "theta", ref m_theta );
+						Attrib( _parent, "roughness", ref m_roughness );
+						Attrib( _parent, "scale", ref m_scale );
+						Attrib( _parent, "flatten", ref m_flatten );
+						Attrib( _parent, "masking", ref m_masking );
 					}
 				}
 
@@ -562,6 +623,10 @@ namespace TestMSBSDF
 					}
 				}
 
+				public bool		IsValid {
+					get { return m_reflected.IsValid && (m_refracted.IsValid | m_owner.m_surface.m_type != TestForm.SURFACE_TYPE.DIELECTRIC); }
+				}
+
 				public Result( Document _owner, int _order, int _X, int _Y, int _Z, float _theta, float _phi, float _roughness, float _albedoF0 ) {
 					m_owner = _owner;
 					m_order = _order;
@@ -574,27 +639,52 @@ namespace TestMSBSDF
 					m_surfaceAlbedoF0 = _albedoF0;
 				}
 
+				/// <summary>
+				/// Clears the result
+				/// </summary>
+				public void		Clear() {
+					State = 0.0f;
+					m_reflected.m_theta = -1.0;
+					m_refracted.m_theta = -1.0;
+				}
+
 				public void		Save( XmlElement _parent ) {
-					Attrib( _parent, "Index", "(" + m_X + "," + m_Y + ", " + m_Z + ")" );
+					Attrib( _parent, "Index", "(" + m_X + "," + m_Y + "," + m_Z + ")" );
 					Attrib( _parent, "State", m_state );
 					Attrib( _parent, "Error", m_error != null ? m_error : "" );
 
 					// Store surface parameters
-					Attrib( _parent, "incomingTheta", m_incomingAngleTheta );
-					Attrib( _parent, "incomingPhi", m_incomingAnglePhi );
-					Attrib( _parent, "surfaceRoughness", m_surfaceRoughness );
+					Attrib( _parent, "theta", m_incomingAngleTheta );
+					Attrib( _parent, "phi", m_incomingAnglePhi );
+					Attrib( _parent, "roughness", m_surfaceRoughness );
 					Attrib( _parent, "albedoF0", m_surfaceAlbedoF0 );
 
 					XmlElement	ElemReflected = AppendChild( _parent, "LobeReflected" );
 					m_reflected.Save( ElemReflected );
 					if ( m_owner.m_surface.m_type == TestForm.SURFACE_TYPE.DIELECTRIC ) {
 						XmlElement	ElemRefracted = AppendChild( _parent, "LobeRefracted" );
-						m_reflected.Save( ElemReflected );
+						m_refracted.Save( ElemReflected );
 					}
 				}
 
 				public void		Load( XmlElement _parent ) {
+					Attrib( _parent, "State", ref m_state );
+					m_error = Attrib( _parent, "Error" );
+					if ( m_error == "" )
+						m_error = null;
 
+					// Store surface parameters
+					Attrib( _parent, "theta", ref m_incomingAngleTheta );
+					Attrib( _parent, "phi", ref m_incomingAnglePhi );
+					Attrib( _parent, "roughness", ref m_surfaceRoughness );
+					Attrib( _parent, "albedoF0", ref m_surfaceAlbedoF0 );
+
+					XmlElement	ElemReflected = _parent["LobeReflected"];
+					m_reflected.Load( ElemReflected );
+					if ( m_owner.m_surface.m_type == TestForm.SURFACE_TYPE.DIELECTRIC ) {
+						XmlElement	ElemRefracted = _parent["LobeRefracted"];
+						m_refracted.Load( ElemRefracted );
+					}
 				}
 
 			}
@@ -624,17 +714,17 @@ namespace TestMSBSDF
 
 				float	incomingAnglePhi = 0.0f;	//@TODO?? We don't care about anisotropy anyway...
 
+				float	incomingAngleMin, incomingAngleStep;
+				m_surface.m_incomingAngle.BuildMinStep( out incomingAngleMin, out incomingAngleStep );
+				float	roughnessMin, roughnessStep;
+				m_surface.m_roughness.BuildMinStep( out roughnessMin, out roughnessStep );
+				float	albedoF0Min, albedoF0Step;
+				m_surface.m_albedoF0.BuildMinStep( out albedoF0Min, out albedoF0Step );
+
 				m_results = new Result[orders][,,];
 				for ( int order=0; order < orders; order++ ) {
 
 					m_results[order] = new Result[dimX,dimY,dimZ];
-
-					float	incomingAngleMin, incomingAngleStep;
-					m_surface.m_incomingAngle.BuildMinStep( out incomingAngleMin, out incomingAngleStep );
-					float	roughnessMin, roughnessStep;
-					m_surface.m_roughness.BuildMinStep( out roughnessMin, out roughnessStep );
-					float	albedoF0Min, albedoF0Step;
-					m_surface.m_albedoF0.BuildMinStep( out albedoF0Min, out albedoF0Step );
 
 					float	albedoF0 = albedoF0Min;
 					for ( int Z=0; Z < dimZ; Z++, albedoF0+=albedoF0Step ) {
@@ -662,9 +752,26 @@ namespace TestMSBSDF
 				return m_results[_order - m_surface.ScatteringOrderMin];
 			}
 
+			/// <summary>
+			/// Clears the results
+			/// </summary>
+			public void		Clear() {
+				for ( int order=0; order < m_results.Length; order++ ) {
+					Result[,,]	orderResults = m_results[order];
+					int	W = orderResults.GetLength(0);
+					int	H = orderResults.GetLength(1);
+					int	D = orderResults.GetLength(2);
+					for ( int Z=0; Z < D; Z++ )
+						for ( int Y=0; Y < H; Y++ )
+							for ( int X=0; X < W; X++ ) {
+								orderResults[X,Y,Z].Clear();
+							}
+				}
+			}
+
 			public void		Save( XmlDocument _doc ) {
 
-				XmlElement	Root = _doc.CreateElement( "Root" );
+				XmlElement	Root = AppendChild( _doc, "Root" );
 
 				XmlElement	ElmSurface = AppendChild( Root, "SurfaceParameters" );
 				m_surface.Save( ElmSurface );
@@ -678,9 +785,11 @@ namespace TestMSBSDF
 				int	orders = m_results.Length;
 				Attrib( ElmResults, "OrdersCount", orders );
 
+				int	minOrder = m_surface.ScatteringOrderMin;
+
 				for ( int order=0; order < orders; order++ ) {
 					XmlElement	ElmOrderResults = AppendChild( ElmResults, "Order" );
-					Attrib( ElmOrderResults, "Index", order );
+					Attrib( ElmOrderResults, "Index", minOrder + order );
 
 					Result[,,]	orderResults = m_results[order];
 
@@ -701,6 +810,65 @@ namespace TestMSBSDF
 
 			public void		Load( XmlDocument _doc ) {
 
+				XmlElement	Root = _doc["Root"];
+
+				XmlElement	ElmSurface = Root["SurfaceParameters"];
+				m_surface.Load( ElmSurface );
+				InitializeResults();
+
+				XmlElement	ElmSettings = Root["Settings"];
+				m_settings.Load( ElmSettings );
+
+				// Load results from an array
+				XmlElement	ElmResults = Root["Results"];
+
+				int	orders = 0;
+				Attrib( ElmResults, "OrdersCount", ref orders );
+				if ( orders != m_results.Length )
+					throw new Exception( "Stored scattering orders count and size of results array mismatch!" );
+
+				XmlElement	ElmOrderResults = ElmResults.FirstChild as XmlElement;
+				while ( ElmOrderResults != null ) {
+					if ( ElmOrderResults.Name != "Order" )
+						throw new Exception( "Unexpected XmlElement: expected \"Order\" element but found \"" + ElmOrderResults.Name + "\" instead!" );
+
+					int	orderIndex = 1;
+					if ( !Attrib( ElmOrderResults, "Index", ref orderIndex ) )
+						throw new Exception( "Failed to retrieve order index attribute! Can't assign results..." );
+
+					Result[,,]	orderResults = GetResultsForOrder( orderIndex );
+					if ( orderResults == null )
+						throw new Exception( "Unsupported scattering order " + orderIndex + " (max is " + m_surface.ScatteringOrderMax + ")! Can't assign results..." );
+
+					int	W = orderResults.GetLength(0);
+					int	H = orderResults.GetLength(1);
+					int	D = orderResults.GetLength(2);
+					Attrib( ElmResults, "SizeX", ref W );
+					Attrib( ElmResults, "SizeY", ref H );
+					Attrib( ElmResults, "SizeZ", ref D );
+					if ( W != orderResults.GetLength( 0 ) )
+						throw new Exception( "Results length for incoming angle parameter mismatch!" );
+					if ( H != orderResults.GetLength( 1 ) )
+						throw new Exception( "Results length for roughness parameter mismatch!" );
+					if ( D != orderResults.GetLength( 2 ) )
+						throw new Exception( "Results length for albedo/F0 parameter mismatch!" );
+
+					XmlElement	ElmResult = ElmOrderResults.FirstChild as XmlElement;
+					for ( int Z=0; Z < D; Z++ )
+						for ( int Y=0; Y < H; Y++ )
+							for ( int X=0; X < W; X++ ) {
+								if ( ElmResult == null )
+									throw new Exception( "Unexpected end of array while reading results!" );
+								if ( ElmResult.Name != "Result" )
+									throw new Exception( "Unexpected XmlElement: expected \"Result\" element but found \"" + ElmResult.Name + "\" instead!" );
+
+								orderResults[X,Y,Z].Load( ElmResult );
+
+								ElmResult = ElmResult.NextSibling as XmlElement;
+							}
+
+					ElmOrderResults = ElmOrderResults.NextSibling as XmlElement;	// Next order...
+				}
 			}
 
 			#region XML Helpers
@@ -721,6 +889,41 @@ namespace TestMSBSDF
 				_parent.SetAttribute( _name, _value.ToString() );
 			}
 
+			static string		Attrib( XmlElement _parent, string _name ) {
+				if ( !_parent.HasAttribute( _name ) )
+					return null;
+
+				return _parent.GetAttribute( _name );
+			}
+
+			static bool			Attrib( XmlElement _parent, string _name, ref bool _value ) {
+				string	value = Attrib( _parent, _name );
+				return value != null ? bool.TryParse( value, out _value ) : false;
+			}
+
+			static bool			Attrib( XmlElement _parent, string _name, ref int _value ) {
+				string	value = Attrib( _parent, _name );
+				return value != null ? int.TryParse( value, out _value ) : false;
+			}
+
+			static bool			Attrib( XmlElement _parent, string _name, ref float _value ) {
+				string	value = Attrib( _parent, _name );
+				return value != null ? float.TryParse( value, out _value ) : false;
+			}
+
+			static bool			Attrib( XmlElement _parent, string _name, ref double _value ) {
+				string	value = Attrib( _parent, _name );
+				return value != null ? double.TryParse( value, out _value ) : false;
+			}
+
+			static bool			Attrib<TEnum>( XmlElement _parent, string _name, ref TEnum _value ) where TEnum:struct {
+				string	value = Attrib( _parent, _name );
+				if ( value == null )
+					return false;
+
+				return Enum.TryParse( value, out _value );
+			}
+
 			#endregion
 		}
 
@@ -732,10 +935,6 @@ namespace TestMSBSDF
 
 		LobeModel		m_lobeModel = null;
 		WMath.BFGS		m_fitter = new WMath.BFGS();
-
-		bool			m_computing = false;
-		bool			m_isReflectedLobe = true;
-		Document.Result.LobeParameters	m_currentFittedResult = null;
 
 		FileInfo		m_documentFileName = null;
 		Document		m_document = null;
@@ -761,6 +960,9 @@ namespace TestMSBSDF
 					return;
 
 				completionArrayControl.Select( m_selectedResult.X, m_selectedResult.Y, m_selectedResult.Z );
+
+				integerTrackbarControlViewScatteringOrder.Value = m_selectedResult.ScatteringOrder;
+				integerTrackbarControlViewAlbedoSlice.Value = m_selectedResult.Z;
 
 				// Show lobe parameters in main form
 				m_owner.UpdateLobeParameters( m_selectedResult.m_reflected.AsArray, true );
@@ -830,17 +1032,20 @@ namespace TestMSBSDF
 		}
 
 		/// <summary>
-		/// Perform lobe fitting of the simulated data
+		/// Perform lobe fitting of the simulated data (core routine)
 		/// </summary>
 		/// <param name="_result"></param>
 		/// <param name="_reflected"></param>
-		int		m_retriesCount = 0;
+		int				m_retriesCount = 0;
+		bool			m_fittingLobe_IsReflected = true;
+		Document.Result.LobeParameters	m_fittingLobe_Parameters = null;
+
 		void	PerformLobeFitting( Document.Result _result, bool _reflected ) {
 
 			Document.Result.LobeParameters	lobeResults = _reflected ? _result.m_reflected : _result.m_refracted;
 
-			m_isReflectedLobe = _reflected;	// Global flag for current fitting
-			m_currentFittedResult = lobeResults;
+			m_fittingLobe_IsReflected = _reflected;	// Global flag for current fitting
+			m_fittingLobe_Parameters = lobeResults;
 
 			// Read back histogram to CPU for fitting
 			Texture2D	Tex_SimulatedLobeHistogram = m_owner.GetSimulationHistogram( _reflected );
@@ -1034,6 +1239,8 @@ namespace TestMSBSDF
 
 			Document.Result[,,]	layerResults = m_document.GetResultsForOrder( SelectedScatteringOrder );
 
+			m_selectedResult = layerResults[0,0,0];
+
 			for ( int Z=0; Z < stepsCountZ; Z++ )
 				for ( int Y=0; Y < stepsCountY; Y++ )
 					for ( int X=0; X < stepsCountX; X++ ) {
@@ -1129,60 +1336,207 @@ namespace TestMSBSDF
 		}
 
 		string	FormatDuration( TimeSpan _duration ) {
-			return _duration.ToString( @"hh\:mm\:ss\" ) + ":" + _duration.Milliseconds.ToString( "G03" );
+			return _duration.ToString( @"hh\:mm\:ss" ) + ":" + _duration.Milliseconds.ToString( "G03" );
 		}
 
 		#endregion
 
+		bool		m_computing = false;
+		void		EnterComputationMode() {
+			m_computing = true;
+			m_owner.FittingMode = true;
+			buttonCompute.Text = "Cancel";
+			buttonCompute.BackColor = Color.IndianRed;
+
+			groupBoxAnalyticalLobeModel.Enabled = false;
+			groupBoxLobeFitterConfig.Enabled = false;
+			completionArrayControl.Enabled = false;		// Musn't change selection!
+			integerTrackbarControlViewScatteringOrder.Enabled = false;
+			integerTrackbarControlViewAlbedoSlice.Enabled = false;
+
+			// Lock surface, we can't change dimensions now that we're started!
+			if ( !m_document.m_surface.IsLocked )
+				m_document.m_surface.Lock();
+		}
+
+		void		ExitComputationMode() {
+			m_computing = false;
+			m_owner.FittingMode = false;
+			buttonCompute.Text = "Start";
+			buttonCompute.BackColor = Color.MediumAquamarine;
+
+			groupBoxAnalyticalLobeModel.Enabled = true;
+			groupBoxLobeFitterConfig.Enabled = true;
+			completionArrayControl.Enabled = true;
+			integerTrackbarControlViewScatteringOrder.Enabled = true;
+			integerTrackbarControlViewAlbedoSlice.Enabled = true;
+		}
+
+		DateTime	m_computationStart;
+		DateTime	m_computationEnd;
 		DateTime	m_simulationStart;
 		DateTime	m_simulationEnd;
-		private void buttonCompute_Click( object sender, EventArgs e )
-		{
+		private void buttonCompute_Click( object sender, EventArgs e ) {
 			if ( m_computing )
 				throw new CanceledException();
 
-//				MessageBox( "Fitting succeeded after " + m_Fitter.IterationsCount + " iterations.\r\nReached minimum: " + m_Fitter.FunctionMinimum, MessageBoxButtons.OK, MessageBoxIcon.Information );
+			if ( m_documentFileName == null ) {
+				string	FileName = AskForFileName();
+				if ( FileName == null ) {
+					MessageBox( "You cannot start a computation without specifying a filename otherwise auto-save feature won't be available and you might lose your results if a crash occurs during automation!" );
+					return;
+				}
+				m_documentFileName = new FileInfo( FileName );
+			}
 
-			// Lock surface, we can't change dimensions now that we're started!
-			if ( !m_document.m_surface.IsLocked )
-				m_document.m_surface.Lock();
+			ComputeAll( 0, 0, 0, 0 );
+		}
 
-			// @TODO
-			throw new Exception( );
-
+		/// <summary>
+		/// Main computation routine
+		/// </summary>
+		void	ComputeAll( int _startOrder, int _startX, int _startY, int _startZ ) {
 			try {
+				EnterComputationMode();
+
+				int	orderMax = m_document.m_surface.ScatteringOrderMax;
+				int	orderMin = _startOrder > 0 && _startOrder <= orderMax ? _startOrder : m_document.m_surface.ScatteringOrderMin;
+
+				int	dimX = m_document.m_surface.m_incomingAngle.StepsCount;
+				int	dimY = m_document.m_surface.m_roughness.StepsCount;
+				int	dimZ = m_document.m_surface.m_albedoF0.StepsCount;
+
+				_startX = Math.Max( 0, Math.Min( dimX-1, _startX ) );
+				_startY = Math.Max( 0, Math.Min( dimY-1, _startY ) );
+				_startZ = Math.Max( 0, Math.Min( dimZ-1, _startZ ) );
+
+				m_computationStart = DateTime.Now;
+
+				LogLine( "########## Computation Started ##########" );
+				LogLine( "	• Start Time = " + FormatTime( m_simulationStart ) );
+				LogLine( "########################################" );
+				LogLine( "" );
+				LogLine( "" );
+
+				int	runCounter = 0;
+
+				for ( int order=orderMin; order <= orderMax; order++ ) {
+					Document.Result[,,]	results = m_document.GetResultsForOrder( order );
+
+					m_owner.SetCurrentScatteringOrder( order );
+
+					for ( int Z=_startZ; Z < dimZ; Z++ ) {
+						_startZ = 0;
+						for ( int Y=_startY; Y < dimY; Y++ ) {
+							_startY = 0;
+							for ( int X=_startX; X < dimX; X++ ) {
+								_startX = 0;
+
+								Document.Result	R = results[X,Y,Z];
+
+								SelectedResult = R;
+
+								if ( R.IsValid )
+									continue;	// Already valid
+
+								try {
+
+									m_simulationStart = DateTime.Now;
+									SelectedResult.m_error = null;
+									SelectedResult.State = 0.0f;
+
+									LogLine( " == Starting Order " + SelectedResult.ScatteringOrder + " (" + SelectedResult.X + ", " + SelectedResult.Y + ", " + SelectedResult.Z + ") ==" );
+									LogLine( "	• Angle = " + (SelectedResult.IncomingAngleTheta * 180.0 / Math.PI).ToString( "G3" ) + " - Roughness = " + SelectedResult.SurfaceRoughness.ToString( "G3" ) + " - " + (m_document.m_surface.m_type == TestForm.SURFACE_TYPE.DIFFUSE ? "Albedo" : "F0") + " = " + SelectedResult.SurfaceAlbedoF0.ToString( "G3" ) );
+									LogLine( "	• Start Time = " + FormatTime( m_simulationStart ) );
 
 
+									PrepareFitter();
+									UpdateSurfaceRoughness( SelectedResult );
+									Simulate( SelectedResult );
 
+									DateTime	simulationEnd = DateTime.Now;
+									TimeSpan	simulationDuration = simulationEnd - m_simulationStart;
+									LogLine( "	• Simulation Duration = " + FormatDuration( simulationDuration ) );
 
+									// Fit reflected lobe...
+									PerformLobeFitting( SelectedResult, true );
+									LogLine( "	## Reflected lobe - Fit minimum reached = " + m_fitter.FunctionMinimum + " after " + (m_retriesCount * m_fitter.MaxIterations + m_fitter.IterationsCount) + " iterations (" + m_retriesCount + " attempts)" );
 
+									if ( m_document.m_surface.m_type == TestForm.SURFACE_TYPE.DIELECTRIC ) {
+										// Fit refracted lobe now...
+										SelectedResult.State = 0.5f;
+
+										PerformLobeFitting( SelectedResult, false );
+										LogLine( "	## Refracted lobe - Fit minimum reached = " + m_fitter.FunctionMinimum + " after " + (m_retriesCount * m_fitter.MaxIterations + m_fitter.IterationsCount) + " iterations (" + m_retriesCount + " attempts)" );
+									}
+
+									SelectedResult.State = 1.0f;
+
+									runCounter++;
+									if ( runCounter > AUTO_SAVE_EVERY_N_RUNS ) {
+										runCounter = 0;
+										saveToolStripMenuItem_Click( null, EventArgs.Empty );
+									}
+
+								} catch ( Exception _e ) {
+									string	errorText = "An error occurred during fitting: " + _e.Message;
+									SelectedResult.m_error = errorText;
+									SelectedResult.State = -1.0f;
+								} finally {
+
+									m_simulationEnd = DateTime.Now;
+
+									TimeSpan	duration = m_simulationEnd - m_simulationStart;
+									LogLine( "	• End Time = " + FormatTime( m_simulationEnd ) + " (Duration: " + FormatDuration( duration ) + ")" );
+									LogLine( " == Fitting Ended ==" );
+									LogLine( "" );
+									LogLine( "" );
+								}
+							}
+						}
+					}
+				}
+
+			} catch ( CanceledException ) {
+				LogLine( "Canceled!" );
+				SelectedResult.m_error = "Canceled";
+				SelectedResult.State = -1.0f;
 			} catch ( Exception _e ) {
-				bool	canceled = _e is CanceledException;
-				string	Text = canceled ? "User canceled...\r\n" : "An error occurred while performing lobe fitting:\r\n" + _e.Message;
-//				MessageBox( Text + "\r\n\r\nLast minimum: " + m_Fitter.FunctionMinimum + " after " + m_Fitter.IterationsCount + " iterations..." );
-				
+				string	errorText = "An error occurred during fitting: " + _e.Message;
+				LogLine( errorText );
+				MessageBox( errorText );
 			} finally {
+
+				m_computationEnd = DateTime.Now;
+
+				TimeSpan	duration = m_computationEnd - m_computationStart;
+
+				LogLine( "" );
+				LogLine( "" );
+				LogLine( "########################################" );
+				LogLine( "	• End Time = " + FormatTime( m_computationEnd ) + " (Duration: " + FormatDuration( duration ) + ")" );
+				LogLine( "########## Computation Ended ##########" );
+				LogLine( "" );
+				LogLine( "" );
+
+				// Done!
+				ExitComputationMode();
 			}
 		}
 
-
-		private void completionArrayControl_MouseDoubleClick( object sender, MouseEventArgs e ) {
-			if ( !completionArrayControl.IsPointValid( e.Location ) )
-				return;	// Not a valid candidate for simulation
-
-			// Change selection to clicked
-			completionArrayControl.SelectAt( e.Location );
-
-			// Lock surface, we can't change dimensions now that we're started!
-			if ( !m_document.m_surface.IsLocked )
-				m_document.m_surface.Lock();
-
-			m_simulationStart = DateTime.Now;
-			SelectedResult.m_error = null;
-			SelectedResult.State = 0.0f;
-
-			// Compute a single value
+		/// <summary>
+		/// Computes a single value
+		/// </summary>
+		void	ComputeSelectedResult() {
 			try {
+				EnterComputationMode();
+
+				m_simulationStart = DateTime.Now;
+				SelectedResult.m_error = null;
+				SelectedResult.State = 0.0f;
+
+				m_owner.SetCurrentScatteringOrder( SelectedResult.ScatteringOrder );
+
 				LogLine( "== Starting Order " + SelectedResult.ScatteringOrder + " (" + SelectedResult.X + ", " + SelectedResult.Y + ", " + SelectedResult.Z + ") ==" );
 				LogLine( "	• Angle = " + (SelectedResult.IncomingAngleTheta * 180.0 / Math.PI).ToString( "G3" ) + " - Roughness = " + SelectedResult.SurfaceRoughness.ToString( "G3" ) + " - " + (m_document.m_surface.m_type == TestForm.SURFACE_TYPE.DIFFUSE ? "Albedo" : "F0") + " = " + SelectedResult.SurfaceAlbedoF0.ToString( "G3" ) );
 				LogLine( "	• Start Time = " + FormatTime( m_simulationStart ) );
@@ -1210,7 +1564,7 @@ namespace TestMSBSDF
 				SelectedResult.State = 1.0f;
 
 			} catch ( CanceledException ) {
-				LogLine( "Canceled" );
+				LogLine( "Canceled!" );
 				SelectedResult.m_error = "Canceled";
 				SelectedResult.State = -1.0f;
 			} catch ( Exception _e ) {
@@ -1218,6 +1572,7 @@ namespace TestMSBSDF
 				LogLine( errorText );
 				SelectedResult.m_error = errorText;
 				SelectedResult.State = -1.0f;
+				MessageBox( errorText );
 			} finally {
 
 				m_simulationEnd = DateTime.Now;
@@ -1227,77 +1582,106 @@ namespace TestMSBSDF
 				LogLine( "== Fitting Ended ==" );
 				LogLine( "" );
 				LogLine( "" );
+
+				// Done!
+				ExitComputationMode();
 			}
 		}
 
 		void m_lobeModel_ParametersChanged( double[] _parameters ) {
 
 			// Store new parameters
-			m_currentFittedResult.m_theta = _parameters[0];
-			m_currentFittedResult.m_roughness = _parameters[1];
-			m_currentFittedResult.m_scale = _parameters[2];
-			m_currentFittedResult.m_flatten = _parameters[3];
-			m_currentFittedResult.m_masking = _parameters[4];
+			m_fittingLobe_Parameters.m_theta = _parameters[0];
+			m_fittingLobe_Parameters.m_roughness = _parameters[1];
+			m_fittingLobe_Parameters.m_scale = _parameters[2];
+			m_fittingLobe_Parameters.m_flatten = _parameters[3];
+			m_fittingLobe_Parameters.m_masking = _parameters[4];
+
+			// Update progress
+			SelectedResult.State = (m_retriesCount + (float) m_fitter.IterationsCount / m_fitter.MaxIterations) / m_document.m_settings.m_maxRetries;
 
 			// Update 3D rendering
-			m_owner.UpdateLobeParameters( _parameters, m_isReflectedLobe );
+			m_owner.UpdateLobeParameters( _parameters, m_fittingLobe_IsReflected );
 		}
 
-		private void buttonClearResults_Click( object sender, EventArgs e ) {
-			if ( !m_document.m_surface.IsLocked ) {
-				MessageBox( "No results are computed yet, there is nothing to clear", MessageBoxButtons.OK, MessageBoxIcon.Information );
-				return;
-			}
-
-			if ( MessageBox( "Are you sure you want to erase current results?", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2 ) != DialogResult.Yes )
-				return;
-
-			//@TODO
-			throw new Exception();
-		}
+		#region Menu
 
 		private void newToolStripMenuItem_Click( object sender, EventArgs e ) {
-			if ( MessageBox( "Are you sure you want to start a new document and lose existing results?", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2 ) != DialogResult.Yes )
+			if ( m_document.m_surface.IsLocked && MessageBox( "Are you sure you want to start a new document and lose existing results?", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2 ) != DialogResult.Yes )
 				return;
 
+			m_documentFileName = null;
 			AttachDocument( new Document() );
 		}
 
-		private void saveToolStripMenuItem1_Click( object sender, EventArgs e ) {
-			try {
-				string	FileName = m_AppKey.GetValue( "LastResultsFileName", new System.IO.FileInfo( "results.xml" ).FullName ) as string;
-				saveFileDialogResults.FileName = Path.GetFileName( FileName );
-				saveFileDialogResults.InitialDirectory = Path.GetDirectoryName( FileName );
-				if ( saveFileDialogResults.ShowDialog( this ) != DialogResult.OK )
+		string	AskForFileName() {
+			string	fileName = m_AppKey.GetValue( "LastDocFileName", new System.IO.FileInfo( "results.xml" ).FullName ) as string;
+			saveFileDialogResults.FileName = Path.GetFileName( fileName );
+			saveFileDialogResults.InitialDirectory = Path.GetDirectoryName( fileName );
+			if ( saveFileDialogResults.ShowDialog( this ) != DialogResult.OK )
+				return null;
+
+			return fileName;
+		}
+
+		private void saveToolStripMenuItem_Click( object sender, EventArgs e ) {
+			if ( m_documentFileName == null ) {
+				string	FileName = AskForFileName();
+				if ( FileName == null )
 					return;
+				m_documentFileName = new FileInfo( FileName );
+			}
+
+			try {
+
+				if ( File.Exists( m_documentFileName.FullName ) ) {
+					string	BackupFileName = m_documentFileName.FullName + ".bak";
+					File.Delete( BackupFileName );
+					File.Copy( m_documentFileName.FullName, BackupFileName );	// Backup first...
+				}
 
 				XmlDocument	Doc = new XmlDocument();
 				m_document.Save( Doc );
 
-				Doc.Save( FileName );
+				Doc.Save( m_documentFileName.FullName );
 
-				m_AppKey.SetValue( "LastResultsFileName", saveFileDialogResults.FileName );
+				m_AppKey.SetValue( "LastDocFileName", saveFileDialogResults.FileName );
 
-				MessageBox( "Success!", MessageBoxButtons.OK, MessageBoxIcon.Information );
+				if ( !m_computing )
+					MessageBox( "Success!", MessageBoxButtons.OK, MessageBoxIcon.Information );
 			} catch ( Exception _e ) {
+				if ( m_computing )
+					throw _e;
 				MessageBox( "An error occurred while saving results:\r\n" + _e );
 			}
 		}
 
-		private void loadToolStripMenuItem_Click(object sender, EventArgs e) {
+		private void saveAsToolStripMenuItem_Click( object sender, EventArgs e ) {
+			string	FileName = AskForFileName();
+			if ( FileName == null )
+				return;
+
+			m_documentFileName = new FileInfo( FileName );
+			saveToolStripMenuItem_Click( sender, e );
+		}
+
+		private void openToolStripMenuItem_Click( object sender, EventArgs e ) {
 			try {
-				string	FileName = m_AppKey.GetValue( "LastResultsFileName", new System.IO.FileInfo( "results.xml" ).FullName ) as string;
+				string	FileName = m_AppKey.GetValue( "LastDocFileName", new System.IO.FileInfo( "results.xml" ).FullName ) as string;
 				openFileDialogResults.FileName = Path.GetFileName( FileName );
 				openFileDialogResults.InitialDirectory = Path.GetDirectoryName( FileName );
 				if ( openFileDialogResults.ShowDialog( this ) != DialogResult.OK )
 					return;
 
-				XmlDocument	Doc = new XmlDocument();
-				Doc.Load( FileName );
+				XmlDocument	XmlDoc = new XmlDocument();
+				XmlDoc.Load( FileName );
+				Document	Doc = new Document();
+				Doc.Load( XmlDoc );
 
-				m_document.Load( Doc );
+				m_documentFileName = new FileInfo( FileName );
+				AttachDocument( Doc );
 
-				m_AppKey.SetValue( "LastResultsFileName", openFileDialogResults.FileName );
+				m_AppKey.SetValue( "LastDocFileName", openFileDialogResults.FileName );
 
 				MessageBox( "Success!", MessageBoxButtons.OK, MessageBoxIcon.Information );
 			} catch ( Exception _e ) {
@@ -1305,32 +1689,48 @@ namespace TestMSBSDF
 			}
 		}
 
-		private void completionArrayControl_SelectionChanged( CompletionArrayControl _Sender ) {
-			Document.Result[,,]	layerResults = m_document.GetResultsForOrder( integerTrackbarControlViewScatteringOrder.Value );
-			SelectedResult = layerResults[_Sender.SelectedX,_Sender.SelectedY, _Sender.SelectedZ];
+		private void exportToolStripMenuItem_Click( object sender, EventArgs e ) {
+			//@TODO!
 		}
 
-		private void integerTrackbarControlViewScatteringOrder_ValueChanged( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue ) {
-			// Update UI & selection
-			DocumentResults2UI();
+		#endregion
 
-			Document.Result[,,]	layerResults = m_document.GetResultsForOrder( _Sender.Value );
+		#region Context Menu
 
-			SelectedResult = layerResults[completionArrayControl.SelectedX, completionArrayControl.SelectedY, completionArrayControl.SelectedZ];
+		private void contextMenuStripSelection_Opening( object sender, CancelEventArgs e ) {
+			e.Cancel = SelectedResult == null;
 		}
 
-		private void integerTrackbarControlViewAlbedoSlice_ValueChanged( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue ) {
-			completionArrayControl.SelectedZ = _Sender.Value;
+		private void computeToolStripMenuItem_Click( object sender, EventArgs e ) {
+			ComputeSelectedResult();	// Same as double-clicking
 		}
 
-		private void contextMenuStripSelection_Opening( object sender, CancelEventArgs e )
-		{
-			if ( SelectedResult == null )
-				e.Cancel = true;
+		private void startFromHereToolStripMenuItem_Click( object sender, EventArgs e ) {
+			if ( m_documentFileName == null ) {
+				string	FileName = AskForFileName();
+				if ( FileName == null ) {
+					MessageBox( "You cannot start a computation without specifying a filename otherwise auto-save feature won't be available and you might lose your results if a crash occurs during automation!" );
+					return;
+				}
+				m_documentFileName = new FileInfo( FileName );
+			}
 
-			//@TODO: Handle selection
+			ComputeAll( SelectedScatteringOrder, SelectedResult.X, SelectedResult.Y, SelectedResult.Z );
 		}
 
+		private void clearToolStripMenuItem_Click( object sender, EventArgs e ) {
+			if ( SelectedResult.IsValid ) {
+				if ( MessageBox( "Are you sure?", MessageBoxButtons.OKCancel, MessageBoxIcon.Question, MessageBoxDefaultButton.Button2 ) != DialogResult.OK )
+					return;
+			} else {
+				MessageBox( "Result already cleared!", MessageBoxButtons.OK, MessageBoxIcon.Information );
+				return;
+			}
+
+			SelectedResult.Clear();
+		}
+
+		#endregion
 		
 		#region UI => Document Mirroring
 
@@ -1588,5 +1988,46 @@ namespace TestMSBSDF
 		#endregion
 
 		#endregion
+
+		// Double-clicking builds a single result
+		private void completionArrayControl_MouseDoubleClick( object sender, MouseEventArgs e ) {
+			if ( !completionArrayControl.IsPointValid( e.Location ) )
+				return;	// Not a valid candidate for simulation
+
+			// Change selection to clicked cell
+			completionArrayControl.SelectAt( e.Location );
+
+			ComputeSelectedResult();
+		}
+
+		private void buttonClearResults_Click( object sender, EventArgs e ) {
+			if ( !m_document.m_surface.IsLocked ) {
+				MessageBox( "No results are computed yet, there is nothing to clear", MessageBoxButtons.OK, MessageBoxIcon.Information );
+				return;
+			}
+
+			if ( MessageBox( "Are you sure you want to erase current results?", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2 ) != DialogResult.Yes )
+				return;
+
+			m_document.Clear();
+		}
+
+		private void completionArrayControl_SelectionChanged( CompletionArrayControl _Sender ) {
+			Document.Result[,,]	layerResults = m_document.GetResultsForOrder( integerTrackbarControlViewScatteringOrder.Value );
+			SelectedResult = layerResults[_Sender.SelectedX,_Sender.SelectedY, _Sender.SelectedZ];
+		}
+
+		private void integerTrackbarControlViewScatteringOrder_ValueChanged( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue ) {
+			// Update UI & selection
+			DocumentResults2UI();
+
+			Document.Result[,,]	layerResults = m_document.GetResultsForOrder( _Sender.Value );
+
+			SelectedResult = layerResults[completionArrayControl.SelectedX, completionArrayControl.SelectedY, completionArrayControl.SelectedZ];
+		}
+
+		private void integerTrackbarControlViewAlbedoSlice_ValueChanged( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue ) {
+			completionArrayControl.SelectedZ = _Sender.Value;
+		}
 	}
 }

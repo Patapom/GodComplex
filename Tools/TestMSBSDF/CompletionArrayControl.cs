@@ -299,8 +299,43 @@ namespace TestMSBSDF
 
 		protected override void OnMouseDown( MouseEventArgs e )
 		{
+			Focus();
 			base.OnMouseDown( e );
 			SelectAt( e.Location );
+		}
+
+		protected override bool IsInputKey( Keys keyData ) {
+			switch ( keyData ) {
+				case Keys.Right:
+				case Keys.Left:
+				case Keys.Up:
+				case Keys.Down:
+					return true;
+// 				case Keys.Shift | Keys.Right:
+// 				case Keys.Shift | Keys.Left:
+// 				case Keys.Shift | Keys.Up:
+// 				case Keys.Shift | Keys.Down:
+// 					return true;
+			}
+			return base.IsInputKey( keyData );
+		}
+
+ 		protected override void OnKeyDown( KeyEventArgs e )
+		{
+			base.OnKeyDown( e );
+
+			if ( e.KeyCode == Keys.Left && m_selectedX > 0 )
+				Select( m_selectedX-1, m_selectedY, m_selectedZ );
+			if ( e.KeyCode == Keys.Right && m_selectedX < m_dimensionX-1 )
+				Select( m_selectedX+1, m_selectedY, m_selectedZ );
+			if ( e.KeyCode == Keys.Up && m_selectedY > 0 )
+				Select( m_selectedX, m_selectedY-1, m_selectedZ );
+			if ( e.KeyCode == Keys.Down && m_selectedY < m_dimensionY-1 )
+				Select( m_selectedX, m_selectedY+1, m_selectedZ );
+			if ( e.KeyCode == Keys.PageUp && m_selectedZ > 0 )
+				Select( m_selectedX, m_selectedY, m_selectedZ-1 );
+			if ( e.KeyCode == Keys.PageDown && m_selectedZ < m_dimensionZ-1 )
+				Select( m_selectedX, m_selectedY, m_selectedZ+1 );
 		}
 
 		protected override void OnEnabledChanged( EventArgs e )

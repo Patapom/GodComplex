@@ -163,6 +163,12 @@ namespace TestMSBSDF
 
 		private AutomationForm		m_automation = new AutomationForm();
 
+		bool						m_fitting = false;
+		public bool		FittingMode {
+			get { return m_fitting; }
+			set { m_fitting = value; }
+		}
+
 		#endregion
 
 		public TestForm() {
@@ -472,6 +478,9 @@ namespace TestMSBSDF
 		/// </summary>
 		/// <remarks>Only isotropic roughness is supported</remarks>
 		public void	BuildBeckmannSurfaceTexture( float _roughness ) {
+
+			// Mirror current roughness
+			floatTrackbarControlBeckmannRoughness.Value = _roughness;
 
 			// Precompute stuff that resemble a lot to the Box-Muller algorithm to generate normal distribution random values
 			WMath.SimpleRNG.SetSeed( 521288629, 362436069 );
@@ -861,6 +870,10 @@ namespace TestMSBSDF
 
 		#endregion
 
+		public void	SetCurrentScatteringOrder( int _scatteringOrder ) {
+			integerTrackbarControlScatteringOrder.Value = _scatteringOrder;
+		}
+
 		public void	UpdateLobeParameters( double[] _parameters, bool _isReflectedLobe ) {
 
 			checkBoxShowAnalyticalLobe.Checked = true;
@@ -871,14 +884,14 @@ namespace TestMSBSDF
 				floatTrackbarControlAnalyticalLobeRoughness.Value = (float) _parameters[1];
 				floatTrackbarControlLobeScaleT.Value = (float) _parameters[2];
 				floatTrackbarControlLobeScaleR.Value = (float) _parameters[3];
-//						floatTrackbarControlLobeScaleB.Value = (float) m_parameters[4];
+//				floatTrackbarControlLobeScaleB.Value = (float) m_parameters[4];
 				floatTrackbarControlLobeMaskingImportance.Value = (float) _parameters[4];
 			} else {
 				floatTrackbarControlAnalyticalLobeTheta_T.Value = (float) (180.0 * _parameters[0] / Math.PI);
 				floatTrackbarControlAnalyticalLobeRoughness_T.Value = (float) _parameters[1];
 				floatTrackbarControlLobeScaleT_T.Value = (float) _parameters[2];
 				floatTrackbarControlLobeScaleR_T.Value = (float) _parameters[3];
-//						floatTrackbarControlLobeScaleB_T.Value = (float) m_parameters[4];
+//				floatTrackbarControlLobeScaleB_T.Value = (float) m_parameters[4];
 				floatTrackbarControlLobeMaskingImportance_T.Value = (float) _parameters[4];
 			}
 
@@ -1223,7 +1236,6 @@ namespace TestMSBSDF
 
 		#endregion
 
-		bool		m_fitting = false;
 		private void buttonFit_Click( object sender, EventArgs e ) {
 			if ( m_fitting )
 				throw new Exception( "Canceled!" );
