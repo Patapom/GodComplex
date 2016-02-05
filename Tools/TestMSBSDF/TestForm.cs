@@ -477,6 +477,7 @@ namespace TestMSBSDF
 		/// <param name="_roughness"></param>
 		/// <remarks>Only isotropic roughness is supported</remarks>
 		public void	BuildBeckmannSurfaceTexture( float _roughness ) {
+			m_internalChange = true;	// Shouldn't happen but modifying the slider value may trigger a call to this function again, this flag prevents it
 
 			// Mirror current roughness
 			floatTrackbarControlBeckmannRoughness.Value = _roughness;
@@ -554,6 +555,8 @@ namespace TestMSBSDF
 
 				m_Tex_Heightfield = new Texture2D( m_Device, HEIGHTFIELD_SIZE, HEIGHTFIELD_SIZE, 1, 1, PIXEL_FORMAT.R32_FLOAT, false, false, new PixelsBuffer[] { Content } );
 			#endif
+
+			m_internalChange = false;
 		}
 
 		/// <summary>
@@ -904,6 +907,17 @@ namespace TestMSBSDF
 
 		}
 
+		public void	 UpdateSurfaceParameters( float3 _incomingDirection, float _roughness, float _albedoF0 ) {
+			m_internalChange = true;	// So the Beckmann surface is not recomputed again!
+
+			float	theta = (float) (180.0 * Math.Acos( -_incomingDirection.z ) / Math.PI);
+			floatTrackbarControlTheta.Value = theta;
+			floatTrackbarControlBeckmannRoughness.Value = _roughness;
+			floatTrackbarControlSurfaceAlbedo.Value = _albedoF0;
+
+			m_internalChange = false;
+		}
+
 		/// <summary>
 		/// Called by the automation form to change the surface type
 		/// </summary>
@@ -1156,7 +1170,11 @@ namespace TestMSBSDF
 			m_Device.ReloadModifiedShaders();
 		}
 
+		bool	m_internalChange = false;
 		private void floatTrackbarControlBeckmannRoughness_ValueChanged( FloatTrackbarControl _Sender, float _fFormerValue ) {
+			if ( m_internalChange )
+				return;
+
 			try {
 				m_pauseRendering = true;
 				BuildBeckmannSurfaceTexture( floatTrackbarControlBeckmannRoughness.Value );

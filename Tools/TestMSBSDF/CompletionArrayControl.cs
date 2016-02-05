@@ -328,10 +328,18 @@ namespace TestMSBSDF
 				Select( m_selectedX-1, m_selectedY, m_selectedZ );
 			if ( e.KeyCode == Keys.Right && m_selectedX < m_dimensionX-1 )
 				Select( m_selectedX+1, m_selectedY, m_selectedZ );
-			if ( e.KeyCode == Keys.Up && m_selectedY > 0 )
-				Select( m_selectedX, m_selectedY-1, m_selectedZ );
-			if ( e.KeyCode == Keys.Down && m_selectedY < m_dimensionY-1 )
-				Select( m_selectedX, m_selectedY+1, m_selectedZ );
+			if ( e.KeyCode == Keys.Up ) {
+				if ( m_selectedY > 0 )
+					Select( m_selectedX, m_selectedY-1, m_selectedZ );
+				else
+					Select( m_selectedX, m_dimensionY-1, m_selectedZ-1 );
+			}
+			if ( e.KeyCode == Keys.Down ) {
+				if ( m_selectedY < m_dimensionY-1 )
+					Select( m_selectedX, m_selectedY+1, m_selectedZ );
+				else
+					Select( m_selectedX, 0, m_selectedZ+1 );
+			}
 			if ( e.KeyCode == Keys.PageUp && m_selectedZ > 0 )
 				Select( m_selectedX, m_selectedY, m_selectedZ-1 );
 			if ( e.KeyCode == Keys.PageDown && m_selectedZ < m_dimensionZ-1 )

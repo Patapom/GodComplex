@@ -1210,6 +1210,7 @@ namespace TestMSBSDF
 				// Show lobe parameters in main form
 				m_owner.UpdateLobeParameters( m_selectedResult.m_reflected.AsArray, true );
 				m_owner.UpdateLobeParameters( m_selectedResult.m_refracted.AsArray, false );
+				m_owner.UpdateSurfaceParameters( m_selectedResult.IncomingDirection, m_selectedResult.SurfaceRoughness, m_selectedResult.SurfaceAlbedoF0 );
 			}
 		}
 
