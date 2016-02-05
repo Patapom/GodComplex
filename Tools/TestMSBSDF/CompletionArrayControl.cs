@@ -338,6 +338,16 @@ namespace TestMSBSDF
 				Select( m_selectedX, m_selectedY, m_selectedZ+1 );
 		}
 
+		protected override void OnMouseWheel( MouseEventArgs e )
+		{
+			base.OnMouseWheel( e );
+
+			if ( e.Delta > 0 )
+				SelectedZ--;
+			else
+				SelectedZ++;
+		}
+
 		protected override void OnEnabledChanged( EventArgs e )
 		{
 			base.OnEnabledChanged( e );

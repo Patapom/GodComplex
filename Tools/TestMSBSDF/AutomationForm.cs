@@ -1334,6 +1334,8 @@ namespace TestMSBSDF
 				case TestForm.SURFACE_TYPE.DIFFUSE: radioButtonSurfaceTypeDiffuse.Checked = true; break;
 			}
 
+			groupBoxSimulationParameters.Enabled = !m_document.m_surface.IsLocked;	// Most important!
+
 			floatTrackbarControlParam0_Min.Value = m_document.m_surface.m_incomingAngle.Min;
 			floatTrackbarControlParam0_Max.Value = m_document.m_surface.m_incomingAngle.Max;
 			integerTrackbarControlParam0_Steps.Value = m_document.m_surface.m_incomingAngle.StepsCount;
