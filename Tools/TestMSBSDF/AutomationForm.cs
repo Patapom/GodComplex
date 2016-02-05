@@ -9,6 +9,7 @@ using System.Windows.Forms;
 using System.IO;
 using System.Xml;
 using Microsoft.Win32;
+using System.Threading;
 
 using RendererManaged;
 
@@ -17,6 +18,7 @@ namespace TestMSBSDF
 	public partial class AutomationForm : Form
 	{
 		const int		AUTO_SAVE_EVERY_N_RUNS = 5;	// Save results every 5 computation
+		const int		THREADS_COUNT = 4;			// Multithreading
 
 		#region NESTED TYPES
 
@@ -179,11 +181,6 @@ namespace TestMSBSDF
 						Attrib( _parent, "Steps", m_stepsCount );
 						Attrib( _parent, "InclusiveMin", m_inclusiveMin );
 						Attrib( _parent, "InclusiveMax", m_inclusiveMax );
-// 						_parent.SetAttribute( "Min", m_min.ToString() );
-// 						_parent.SetAttribute( "Max", m_max.ToString() );
-// 						_parent.SetAttribute( "Steps", m_stepsCount.ToString() );
-// 						_parent.SetAttribute( "InclusiveMin", m_inclusiveMin.ToString() );
-// 						_parent.SetAttribute( "InclusiveMax", m_inclusiveMax.ToString() );
 					}
 
 					public void		Load( XmlElement _parent ) {
@@ -192,11 +189,6 @@ namespace TestMSBSDF
 						Attrib( _parent, "Steps", ref m_stepsCount );
 						Attrib( _parent, "InclusiveMin", ref m_inclusiveMin );
 						Attrib( _parent, "InclusiveMax", ref m_inclusiveMax );
-// 						float.TryParse( _parent.GetAttribute( "Min" ), out m_min );
-// 						float.TryParse( _parent.GetAttribute( "Max" ), out m_max );
-// 						int.TryParse( _parent.GetAttribute( "Steps" ), out m_stepsCount );
-// 						bool.TryParse( _parent.GetAttribute( "InclusiveMin" ), out m_inclusiveMin );
-// 						bool.TryParse( _parent.GetAttribute( "InclusiveMax" ), out m_inclusiveMax );
 					}
 				}
 
@@ -624,7 +616,7 @@ namespace TestMSBSDF
 				}
 
 				public bool		IsValid {
-					get { return m_reflected.IsValid && (m_refracted.IsValid | m_owner.m_surface.m_type != TestForm.SURFACE_TYPE.DIELECTRIC); }
+					get { return Math.Abs( m_state - 1.0f ) < 1e-4f && m_reflected.IsValid && (m_refracted.IsValid | m_owner.m_surface.m_type != TestForm.SURFACE_TYPE.DIELECTRIC); }
 				}
 
 				public Result( Document _owner, int _order, int _X, int _Y, int _Z, float _theta, float _phi, float _roughness, float _albedoF0 ) {
@@ -929,16 +921,243 @@ namespace TestMSBSDF
 
 		#endregion
 
-		TestForm		m_owner;
+		#region Multi Threading Nested Type
 
-		RegistryKey		m_AppKey;
+		/// <summary>
+		/// Represents a computation thread working to fit a single lobe
+		/// </summary>
+		class	ComputationThread {
 
-		LobeModel		m_lobeModel = null;
-		WMath.BFGS		m_fitter = new WMath.BFGS();
+			AutomationForm					m_owner = null;
+			int								m_index = 0;
+			Thread							m_thread = null;
+			bool							m_done = true;
 
-		FileInfo		m_documentFileName = null;
-		Document		m_document = null;
-		Document.Result	m_selectedResult = null;		// Current selection
+			LobeModel						m_lobeModel = null;
+			WMath.BFGS						m_fitter = new WMath.BFGS();
+
+			bool							m_fitRefractedLobe;
+			int								m_maxIterations;
+			double							m_goalTolerance;
+			double							m_gradientTolerance;
+
+			int								m_retriesCount = 0;
+			float							m_progressSize = 1.0f;
+			float							m_progressOffset = 0.0f;
+
+			Document.Result					m_result = null;
+			Document.Result.LobeParameters	m_parameters = null;
+			bool							m_isReflectedLobe = true;
+
+			/// <summary>
+			/// Gets the thread index
+			/// </summary>
+			public int			Index {
+				get { return m_index; }
+			}
+
+			public bool			Done {
+				get {
+					lock( this ) {
+						return m_done;
+					}	
+				}
+				set {
+					lock( this ) {
+						m_done = value;
+					}	
+				}
+			}
+
+			Document			Doc {
+				get { return m_owner.m_document; }
+			}
+
+			/// <summary>
+			/// Gets or sets the result we're trying to fit
+			/// </summary>
+			public Document.Result		Result {
+				get { return m_result; }
+				set { m_result = value; }
+			}
+
+
+			public ComputationThread( AutomationForm _owner, int _index ) {
+				m_owner = _owner;
+				m_index = _index;
+
+				// Initialize the lobe model
+				m_lobeModel = new LobeModel();
+				m_lobeModel.ParametersChanged += m_lobeModel_ParametersChanged;
+			}
+
+			/// <summary>
+			/// Starts the lobe fitting
+			/// </summary>
+			/// <param name="_fitRefractedLobe"></param>
+			public void	Start( bool _fitRefractedLobe, int _maxIterations, double _goalTolerance, double _gradientTolerance ) {
+				m_fitRefractedLobe = _fitRefractedLobe;
+				m_maxIterations = _maxIterations;
+				m_goalTolerance = _goalTolerance;
+				m_gradientTolerance = _gradientTolerance;
+
+				// Create the thread
+				m_thread = new Thread( () => {
+					Main();
+				} );
+				m_thread.Name = "Worker" + m_index;
+				m_thread.Start();
+			}
+
+			/// <summary>
+			/// Main thread function
+			/// </summary>
+			void	Main() {
+				m_progressSize = m_fitRefractedLobe ? 0.5f : 1.0f;
+
+				try {
+					// Fit reflected lobe...
+					m_progressOffset = 0.0f;
+					PrepareFitter( true, m_maxIterations, m_goalTolerance, m_gradientTolerance );
+					PerformLobeFitting();
+
+					m_owner.LogLine( m_index + ">	## Reflected lobe - Fit minimum reached = " + m_fitter.FunctionMinimum + " after " + (m_retriesCount * m_fitter.MaxIterations + m_fitter.IterationsCount) + " iterations (" + m_retriesCount + " attempts)" );
+
+					// Fit refracted lobe now...
+					if ( m_fitRefractedLobe ) {
+						m_progressOffset = 0.5f;
+						PrepareFitter( false, m_maxIterations, m_goalTolerance, m_gradientTolerance );
+						PerformLobeFitting();
+
+						m_owner.LogLine( m_index + ">	## Refracted lobe - Fit minimum reached = " + m_fitter.FunctionMinimum + " after " + (m_retriesCount * m_fitter.MaxIterations + m_fitter.IterationsCount) + " iterations (" + m_retriesCount + " attempts)" );
+					}
+
+					m_result.State = 1.0f;	// Whatever, we're done now!
+
+// 					// Auto-save
+// 					runCounter++;
+// 					if ( runCounter > AUTO_SAVE_EVERY_N_RUNS ) {
+// 						runCounter = 0;
+// 						saveToolStripMenuItem_Click( null, EventArgs.Empty );
+// 					}
+				} catch ( CanceledException ) {
+					m_result.m_error = "Canceled";
+					m_result.State = -1.0f;
+				} catch ( Exception _e ) {
+					m_result.m_error = _e.Message;
+					m_result.State = -1.0f;
+				} finally {
+					m_thread = null;
+					Done = true;
+				}
+			}
+
+			#region Automation Core
+
+			/// <summary>
+			/// Initializes the target data we need to fit from the CPU-readable histogram texture
+			/// </summary>
+			/// <param name="_texSimulatedLobeHistogram"></param>
+			public void	InitializeLobeTargetData() {
+
+				// Read back histogram to CPU for fitting
+				Texture2D	Tex_SimulatedLobeHistogram = m_owner.m_owner.GetSimulationHistogram( m_isReflectedLobe );
+
+				// Initialize lobe data & compute center of mass
+				m_lobeModel.InitTargetData( Tex_SimulatedLobeHistogram, m_result.ScatteringOrder );
+			}
+
+			/// <summary>
+			/// Prepare the fitter for a new result
+			/// </summary>
+			void	PrepareFitter( bool _reflected, int _maxIterations, double _goalTolerance, double _gradientTolerance ) {
+
+				m_isReflectedLobe = _reflected;
+				m_parameters = m_isReflectedLobe ? m_result.m_reflected : m_result.m_refracted;
+
+				double	functionMinimumTolerance = Math.Pow( 10.0, Doc.m_settings.m_logTolerance_Minimum );
+				double	gradientTolerance = Math.Pow( 10.0, Doc.m_settings.m_logTolerance_Gradient );
+
+				m_fitter.MaxIterations = Doc.m_settings.m_maxIterations;
+				m_fitter.SuccessTolerance = functionMinimumTolerance;
+				m_fitter.GradientSuccessTolerance = gradientTolerance;
+			}
+
+			/// <summary>
+			/// Perform lobe fitting of the simulated data (core routine)
+			/// </summary>
+			/// <param name="_result"></param>
+			/// <param name="_reflected"></param>
+			void	PerformLobeFitting() {
+
+				// Initialize preliminary lobe results
+				float3				incomingDirection = m_result.IncomingDirection;
+
+				float3				reflectedDirection = incomingDirection;
+									reflectedDirection.z = -reflectedDirection.z;	// Mirror against surface
+
+				float3				refractedDirection = TestForm.Refract( -incomingDirection, float3.UnitZ, 1.0f / TestForm.Fresnel_IORFromF0( m_result.SurfaceAlbedoF0 ) );
+
+				m_parameters.Initialize( m_result, m_lobeModel, m_isReflectedLobe ? reflectedDirection : refractedDirection );
+
+				// Initialize lobe model using initialized lobe results
+				m_lobeModel.InitLobeData( Doc.m_settings.m_lobeModel, incomingDirection, m_parameters.m_theta, m_parameters.m_roughness, m_parameters.m_scale, m_parameters.m_flatten, m_parameters.m_masking, Doc.m_settings.m_oversizeFactor, true );
+
+				// Peform fitting
+				for ( m_retriesCount=0; m_retriesCount < Doc.m_settings.m_maxRetries; m_retriesCount++ ) {
+					m_fitter.Minimize( m_lobeModel );
+					if ( m_fitter.IterationsCount < Doc.m_settings.m_maxIterations ) {
+						// Finished!
+						m_retriesCount++;
+						break;
+					}
+				}
+			}
+
+			#endregion
+
+			#region EVENT HANDLERS
+
+			void m_lobeModel_ParametersChanged( double[] _parameters ) {
+
+				if ( m_owner.m_canceled )
+					throw new CanceledException();
+
+				// Store new parameters
+				m_parameters.m_theta = _parameters[0];
+				m_parameters.m_roughness = _parameters[1];
+				m_parameters.m_scale = _parameters[2];
+				m_parameters.m_flatten = _parameters[3];
+				m_parameters.m_masking = _parameters[4];
+
+				// Update progress
+				m_result.State = m_progressOffset + m_progressSize * (m_retriesCount + (float) m_fitter.IterationsCount / m_fitter.MaxIterations) / Doc.m_settings.m_maxRetries;
+
+				if ( m_index == 0 ) {
+					m_owner.UpdateUI( m_result, m_isReflectedLobe );	// Only thread 0 can update the UI!
+				}
+			}
+
+			#endregion
+		}
+
+		#endregion
+
+		#region FIELDS
+
+		TestForm			m_owner;
+
+		RegistryKey			m_AppKey;
+
+		ComputationThread[]	m_threads = new ComputationThread[THREADS_COUNT];
+
+		FileInfo			m_documentFileName = null;
+		Document			m_document = null;
+		Document.Result		m_selectedResult = null;		// Current selection
+
+		#endregion
+
+		#region PROPERTIES
 
 		public new TestForm		Owner {
 			get { return m_owner; }
@@ -978,38 +1197,33 @@ namespace TestMSBSDF
 			set { integerTrackbarControlViewScatteringOrder.Value = value; }
 		}
 
+		FileInfo				DocumentFileName {
+			get { return m_documentFileName; }
+			set {
+				m_documentFileName = value;
+				Text = "Automation Form" + (m_documentFileName != null ? " - " + m_documentFileName.FullName : "");
+			}
+		}
+
 		TestForm.SURFACE_TYPE	SurfaceType {
 			get {
 				return radioButtonSurfaceTypeConductor.Checked ? TestForm.SURFACE_TYPE.CONDUCTOR : (radioButtonSurfaceTypeDielectric.Checked ? TestForm.SURFACE_TYPE.DIELECTRIC : TestForm.SURFACE_TYPE.DIFFUSE);
 			}
 		}
 
+		#endregion
+
 		public AutomationForm() {
 			InitializeComponent();
 
 			m_AppKey = Microsoft.Win32.Registry.CurrentUser.CreateSubKey( @"Software\Patapom\MSBRDF" );
 
-			// Initialize the lobe model
-			m_lobeModel = new LobeModel();
-			m_lobeModel.ParametersChanged += m_lobeModel_ParametersChanged;
+			// Create the computation threads
+			for ( int i=0; i < THREADS_COUNT; i++ )
+				m_threads[i] = new ComputationThread( this, i );
 
 			// Attach a default document
 			AttachDocument( new Document() );
-		}
-
-		#region Automation Core
-
-		/// <summary>
-		/// Prepare the fitter using current settings
-		/// </summary>
-		void	PrepareFitter() {
-
-			double	functionMinimumTolerance = Math.Pow( 10.0, m_document.m_settings.m_logTolerance_Minimum );
-			double	gradientTolerance = Math.Pow( 10.0, m_document.m_settings.m_logTolerance_Gradient );
-
-			m_fitter.MaxIterations = m_document.m_settings.m_maxIterations;
-			m_fitter.SuccessTolerance = functionMinimumTolerance;
-			m_fitter.GradientSuccessTolerance = gradientTolerance;
 		}
 
 		/// <summary>
@@ -1030,56 +1244,6 @@ namespace TestMSBSDF
 
 			m_owner.RayTraceSurface( _result.SurfaceRoughness, albedo, F0, m_document.m_surface.m_type, _result.IncomingAngleTheta, _result.IncomingAnglePhi, m_document.m_surface.m_rayTracingIterationsCount );
 		}
-
-		/// <summary>
-		/// Perform lobe fitting of the simulated data (core routine)
-		/// </summary>
-		/// <param name="_result"></param>
-		/// <param name="_reflected"></param>
-		int				m_retriesCount = 0;
-		bool			m_fittingLobe_IsReflected = true;
-		Document.Result.LobeParameters	m_fittingLobe_Parameters = null;
-
-		void	PerformLobeFitting( Document.Result _result, bool _reflected ) {
-
-			Document.Result.LobeParameters	lobeResults = _reflected ? _result.m_reflected : _result.m_refracted;
-
-			m_fittingLobe_IsReflected = _reflected;	// Global flag for current fitting
-			m_fittingLobe_Parameters = lobeResults;
-
-			// Read back histogram to CPU for fitting
-			Texture2D	Tex_SimulatedLobeHistogram = m_owner.GetSimulationHistogram( _reflected );
-
-			// Initialize lobe data & compute center of mass
-			m_lobeModel.InitTargetData( Tex_SimulatedLobeHistogram, _result.ScatteringOrder );
-
-			// Initialize preliminary lobe results
-			float3				incomingDirection = _result.IncomingDirection;
-
-			float3				reflectedDirection = incomingDirection;
-								reflectedDirection.z = -reflectedDirection.z;	// Mirror against surface
-
-			float3				refractedDirection = TestForm.Refract( -incomingDirection, float3.UnitZ, 1.0f / TestForm.Fresnel_IORFromF0( _result.SurfaceAlbedoF0 ) );
-
-			LobeModel.LOBE_TYPE	lobeType = m_document.m_settings.m_lobeModel;
-
-			lobeResults.Initialize( _result, m_lobeModel, _reflected ? reflectedDirection : refractedDirection );
-
-			// Initialize lobe model using initialized lobe results
-			m_lobeModel.InitLobeData( lobeType, incomingDirection, lobeResults.m_theta, lobeResults.m_roughness, lobeResults.m_scale, lobeResults.m_flatten, lobeResults.m_masking, m_document.m_settings.m_oversizeFactor, true );
-
-			// Peform fitting
-			for ( m_retriesCount=0; m_retriesCount < m_document.m_settings.m_maxRetries; m_retriesCount++ ) {
-				m_fitter.Minimize( m_lobeModel );
-				if ( m_fitter.IterationsCount < m_document.m_settings.m_maxIterations ) {
-					// Finished!
-					m_retriesCount++;
-					break;
-				}
-			}
-		}
-
-		#endregion
 
 		#region Document Management
 
@@ -1286,11 +1450,15 @@ namespace TestMSBSDF
 		}
 
 		void m_results_ResultStateChanged( AutomationForm.Document.Result _result ) {
+// 			if ( InvokeRequired ) {
+// //				BeginInvoke( new Document.ResultStateChangedEventHandler( m_results_ResultStateChanged ), new object[] { _result });
+// 				return;
+// 			}
+
 			if ( m_internalDocumentChange )
 				return;
 
-			if ( _result.ScatteringOrder == SelectedScatteringOrder )
-				completionArrayControl.SetState( _result.X, _result.Y, _result.Z, _result.State, _result.m_error );	// Only update UI if it's showing the result's scattering order
+			completionArrayControl.SetState( _result.X, _result.Y, _result.Z, _result.State, _result.m_error );	// Only update UI if it's showing the result's scattering order
 		}
 
 		#endregion
@@ -1319,13 +1487,17 @@ namespace TestMSBSDF
 			textBoxLog.Text = "";
 			textBoxLog.Refresh();
 		}
-		void	Log( string _text ) {
-			m_log.Add( _text );
-			textBoxLog.AppendText( _text );
-			textBoxLog.Refresh();
-		}
 		void	LogLine( string _text ) {
-			_text += "\r\n";
+			Log( _text + "\r\n" );
+		}
+		void	Log( string _text ) {
+			if ( InvokeRequired ) {
+				BeginInvoke( (Action) (() => {
+					Log( _text );
+				} ) );
+				return;
+			}
+
 			m_log.Add( _text );
 			textBoxLog.AppendText( _text );
 			textBoxLog.Refresh();
@@ -1342,8 +1514,10 @@ namespace TestMSBSDF
 		#endregion
 
 		bool		m_computing = false;
+		bool		m_canceled = false;
 		void		EnterComputationMode() {
 			m_computing = true;
+			m_canceled = false;
 			m_owner.FittingMode = true;
 			buttonCompute.Text = "Cancel";
 			buttonCompute.BackColor = Color.IndianRed;
@@ -1372,6 +1546,33 @@ namespace TestMSBSDF
 			integerTrackbarControlViewAlbedoSlice.Enabled = true;
 		}
 
+		/// <summary>
+		/// Checks if there is a nested CancelException in the provided exception
+		/// </summary>
+		/// <param name="_e"></param>
+		/// <returns></returns>
+		bool	IsNestedCanceledException( Exception _e ) {
+			if ( _e is CanceledException )
+				return true;
+
+			return _e.InnerException != null ? IsNestedCanceledException( _e.InnerException ) : false;
+		}
+
+		/// <summary>
+		/// Called by thread 0 when new parameters/states are available
+		/// </summary>
+		void		UpdateUI( Document.Result _result, bool _isReflectedLobe ) {
+			if ( InvokeRequired ) {
+				BeginInvoke( (Action) (() => { UpdateUI( _result, _isReflectedLobe ); }) );	// Repost for main thread
+				return;
+			}
+
+			Document.Result.LobeParameters	parameters = _isReflectedLobe ? _result.m_reflected : _result.m_refracted;
+			m_owner.UpdateLobeParameters( parameters.AsArray, _isReflectedLobe );		// Update 3D rendering
+			integerTrackbarControlViewScatteringOrder.Value = _result.ScatteringOrder;	// Update scattering order
+			completionArrayControl.Select( _result.X, _result.Y, _result.Z );			// Update selected result
+		}
+
 		DateTime	m_computationStart;
 		DateTime	m_computationEnd;
 		DateTime	m_simulationStart;
@@ -1393,6 +1594,22 @@ namespace TestMSBSDF
 		}
 
 		/// <summary>
+		/// Tries to return an idle thread
+		/// </summary>
+		/// <returns></returns>
+		ComputationThread	QueryComputeThread() {
+			int	threadsCount = Math.Min( m_threads.Length, integerTrackbarControlThreadsCount.Value );
+			for ( int i=0; i < threadsCount; i++ ) {
+				if ( m_threads[i].Done ) {
+					m_threads[i].Done = false;
+					return m_threads[i];
+				}
+			}
+
+			return null;
+		}
+
+		/// <summary>
 		/// Main computation routine
 		/// </summary>
 		void	ComputeAll( int _startOrder, int _startX, int _startY, int _startZ ) {
@@ -1410,6 +1627,9 @@ namespace TestMSBSDF
 				_startY = Math.Max( 0, Math.Min( dimY-1, _startY ) );
 				_startZ = Math.Max( 0, Math.Min( dimZ-1, _startZ ) );
 
+				double	functionMinimumTolerance = Math.Pow( 10.0, m_document.m_settings.m_logTolerance_Minimum );
+				double	gradientTolerance = Math.Pow( 10.0, m_document.m_settings.m_logTolerance_Gradient );
+
 				m_computationStart = DateTime.Now;
 
 				LogLine( "########## Computation Started ##########" );
@@ -1419,6 +1639,7 @@ namespace TestMSBSDF
 				LogLine( "" );
 
 				int	runCounter = 0;
+				Document.Result	R = null;
 
 				for ( int order=orderMin; order <= orderMax; order++ ) {
 					Document.Result[,,]	results = m_document.GetResultsForOrder( order );
@@ -1432,79 +1653,58 @@ namespace TestMSBSDF
 							for ( int X=_startX; X < dimX; X++ ) {
 								_startX = 0;
 
-								Document.Result	R = results[X,Y,Z];
-
-								SelectedResult = R;
-
+								R = results[X,Y,Z];
 								if ( R.IsValid )
-									continue;	// Already valid
+									continue;	// Already valid, no need to recompute...
 
-								try {
-
-									m_simulationStart = DateTime.Now;
-									SelectedResult.m_error = null;
-									SelectedResult.State = 0.0f;
-
-									LogLine( " == Starting Order " + SelectedResult.ScatteringOrder + " (" + SelectedResult.X + ", " + SelectedResult.Y + ", " + SelectedResult.Z + ") ==" );
-									LogLine( "	• Angle = " + (SelectedResult.IncomingAngleTheta * 180.0 / Math.PI).ToString( "G3" ) + " - Roughness = " + SelectedResult.SurfaceRoughness.ToString( "G3" ) + " - " + (m_document.m_surface.m_type == TestForm.SURFACE_TYPE.DIFFUSE ? "Albedo" : "F0") + " = " + SelectedResult.SurfaceAlbedoF0.ToString( "G3" ) );
-									LogLine( "	• Start Time = " + FormatTime( m_simulationStart ) );
-
-
-									PrepareFitter();
-									UpdateSurfaceRoughness( SelectedResult );
-									Simulate( SelectedResult );
-
-									DateTime	simulationEnd = DateTime.Now;
-									TimeSpan	simulationDuration = simulationEnd - m_simulationStart;
-									LogLine( "	• Simulation Duration = " + FormatDuration( simulationDuration ) );
-
-									// Fit reflected lobe...
-									PerformLobeFitting( SelectedResult, true );
-									LogLine( "	## Reflected lobe - Fit minimum reached = " + m_fitter.FunctionMinimum + " after " + (m_retriesCount * m_fitter.MaxIterations + m_fitter.IterationsCount) + " iterations (" + m_retriesCount + " attempts)" );
-
-									if ( m_document.m_surface.m_type == TestForm.SURFACE_TYPE.DIELECTRIC ) {
-										// Fit refracted lobe now...
-										SelectedResult.State = 0.5f;
-
-										PerformLobeFitting( SelectedResult, false );
-										LogLine( "	## Refracted lobe - Fit minimum reached = " + m_fitter.FunctionMinimum + " after " + (m_retriesCount * m_fitter.MaxIterations + m_fitter.IterationsCount) + " iterations (" + m_retriesCount + " attempts)" );
+								// Query a free computation thread for fitting
+								ComputationThread	T = null;
+								while ( T == null ) {
+									T = QueryComputeThread();
+									Application.DoEvents();	// Give a chance to the app to process messages!
+									if ( T == null ) {
+										Thread.Sleep( 50 );
 									}
-
-									SelectedResult.State = 1.0f;
-
-									runCounter++;
-									if ( runCounter > AUTO_SAVE_EVERY_N_RUNS ) {
-										runCounter = 0;
-										saveToolStripMenuItem_Click( null, EventArgs.Empty );
-									}
-
-								} catch ( Exception _e ) {
-									string	errorText = "An error occurred during fitting: " + _e.Message;
-									SelectedResult.m_error = errorText;
-									SelectedResult.State = -1.0f;
-								} finally {
-
-									m_simulationEnd = DateTime.Now;
-
-									TimeSpan	duration = m_simulationEnd - m_simulationStart;
-									LogLine( "	• End Time = " + FormatTime( m_simulationEnd ) + " (Duration: " + FormatDuration( duration ) + ")" );
-									LogLine( " == Fitting Ended ==" );
-									LogLine( "" );
-									LogLine( "" );
 								}
+
+								// Log start time
+								m_simulationStart = DateTime.Now;
+								R.m_error = null;
+								R.State = 0.0f;
+
+								LogLine( T.Index + "> == Starting Order " + R.ScatteringOrder + " (" + R.X + ", " + R.Y + ", " + R.Z + ") ==" );
+								LogLine( T.Index + ">	• Angle = " + (R.IncomingAngleTheta * 180.0 / Math.PI).ToString( "G3" ) + " - Roughness = " + R.SurfaceRoughness.ToString( "G3" ) + " - " + (m_document.m_surface.m_type == TestForm.SURFACE_TYPE.DIFFUSE ? "Albedo" : "F0") + " = " + R.SurfaceAlbedoF0.ToString( "G3" ) );
+								LogLine( T.Index + ">	• Start Time = " + FormatTime( m_simulationStart ) );
+
+								// Perform simulation
+								UpdateSurfaceRoughness( R );
+								Simulate( R );
+
+								m_simulationEnd = DateTime.Now;
+								TimeSpan	simulationDuration = m_simulationEnd - m_simulationStart;
+								LogLine( T.Index + ">	• Simulation Duration = " + FormatDuration( simulationDuration ) );
+
+								// Perform fitting on working thread
+								T.Result = R;
+								T.InitializeLobeTargetData();
+								T.Start( m_document.m_surface.m_type == TestForm.SURFACE_TYPE.DIELECTRIC, m_document.m_settings.m_maxIterations, functionMinimumTolerance, gradientTolerance );
 							}
 						}
 					}
 				}
 
 			} catch ( CanceledException ) {
+				m_canceled = true;
 				LogLine( "Canceled!" );
-				SelectedResult.m_error = "Canceled";
-				SelectedResult.State = -1.0f;
 			} catch ( Exception _e ) {
-				string	errorText = "An error occurred during fitting: " + _e.Message;
-				LogLine( errorText );
-				MessageBox( errorText );
+				if ( IsNestedCanceledException( _e ) ) {
+					m_canceled = true;
+					LogLine( "Canceled!" );
+				} else {
+					string	errorText = "An error occurred during fitting: " + _e.Message;
+					LogLine( errorText );
+					MessageBox( errorText );
+				}
 			} finally {
 
 				m_computationEnd = DateTime.Now;
@@ -1528,6 +1728,7 @@ namespace TestMSBSDF
 		/// Computes a single value
 		/// </summary>
 		void	ComputeSelectedResult() {
+/*
 			try {
 				EnterComputationMode();
 
@@ -1586,22 +1787,7 @@ namespace TestMSBSDF
 				// Done!
 				ExitComputationMode();
 			}
-		}
-
-		void m_lobeModel_ParametersChanged( double[] _parameters ) {
-
-			// Store new parameters
-			m_fittingLobe_Parameters.m_theta = _parameters[0];
-			m_fittingLobe_Parameters.m_roughness = _parameters[1];
-			m_fittingLobe_Parameters.m_scale = _parameters[2];
-			m_fittingLobe_Parameters.m_flatten = _parameters[3];
-			m_fittingLobe_Parameters.m_masking = _parameters[4];
-
-			// Update progress
-			SelectedResult.State = (m_retriesCount + (float) m_fitter.IterationsCount / m_fitter.MaxIterations) / m_document.m_settings.m_maxRetries;
-
-			// Update 3D rendering
-			m_owner.UpdateLobeParameters( _parameters, m_fittingLobe_IsReflected );
+*/
 		}
 
 		#region Menu
@@ -1610,7 +1796,7 @@ namespace TestMSBSDF
 			if ( m_document.m_surface.IsLocked && MessageBox( "Are you sure you want to start a new document and lose existing results?", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2 ) != DialogResult.Yes )
 				return;
 
-			m_documentFileName = null;
+			DocumentFileName = null;
 			AttachDocument( new Document() );
 		}
 
@@ -1621,7 +1807,7 @@ namespace TestMSBSDF
 			if ( saveFileDialogResults.ShowDialog( this ) != DialogResult.OK )
 				return null;
 
-			return fileName;
+			return saveFileDialogResults.FileName;
 		}
 
 		private void saveToolStripMenuItem_Click( object sender, EventArgs e ) {
@@ -1629,7 +1815,7 @@ namespace TestMSBSDF
 				string	FileName = AskForFileName();
 				if ( FileName == null )
 					return;
-				m_documentFileName = new FileInfo( FileName );
+				DocumentFileName = new FileInfo( FileName );
 			}
 
 			try {
@@ -1645,7 +1831,7 @@ namespace TestMSBSDF
 
 				Doc.Save( m_documentFileName.FullName );
 
-				m_AppKey.SetValue( "LastDocFileName", saveFileDialogResults.FileName );
+				m_AppKey.SetValue( "LastDocFileName", m_documentFileName.FullName );
 
 				if ( !m_computing )
 					MessageBox( "Success!", MessageBoxButtons.OK, MessageBoxIcon.Information );
@@ -1657,11 +1843,11 @@ namespace TestMSBSDF
 		}
 
 		private void saveAsToolStripMenuItem_Click( object sender, EventArgs e ) {
-			string	FileName = AskForFileName();
-			if ( FileName == null )
+			string	fileName = AskForFileName();
+			if ( fileName == null )
 				return;
 
-			m_documentFileName = new FileInfo( FileName );
+			DocumentFileName = new FileInfo( fileName );
 			saveToolStripMenuItem_Click( sender, e );
 		}
 
@@ -1678,7 +1864,7 @@ namespace TestMSBSDF
 				Document	Doc = new Document();
 				Doc.Load( XmlDoc );
 
-				m_documentFileName = new FileInfo( FileName );
+				DocumentFileName = new FileInfo( FileName );
 				AttachDocument( Doc );
 
 				m_AppKey.SetValue( "LastDocFileName", openFileDialogResults.FileName );
@@ -1690,7 +1876,66 @@ namespace TestMSBSDF
 		}
 
 		private void exportToolStripMenuItem_Click( object sender, EventArgs e ) {
-			//@TODO!
+			string	fileName = m_AppKey.GetValue( "LastExportFileName", new System.IO.FileInfo( "results.bin" ).FullName ) as string;
+			saveFileDialogExport.FileName = Path.GetFileName( fileName );
+			saveFileDialogExport.InitialDirectory = Path.GetDirectoryName( fileName );
+			if ( saveFileDialogExport.ShowDialog( this ) != DialogResult.OK )
+				return;
+
+			try {
+
+				fileName = saveFileDialogExport.FileName;
+				string	fileNameNoExt = Path.GetFileNameWithoutExtension( fileName );
+				string	extension = Path.GetExtension( fileName );
+
+				//@TODO: Support extented export formats
+				for ( int order=0; order < m_document.m_results.Length; order++ ) {
+					Document.Result[,,]	results = m_document.m_results[order];
+
+					int	W = results.GetLength( 0 );
+					int	H = results.GetLength( 1 );
+					int	slicesCount = results.GetLength( 2 );
+					for ( int sliceIndex=0; sliceIndex < slicesCount; sliceIndex++ ) {
+						// Write results for reflected lobe
+						string	sliceFileName = fileNameNoExt + "_order" + (m_document.m_surface.ScatteringOrderMin + order) + "_slice" + sliceIndex.ToString( "G02" ) + extension;
+						using ( FileStream S = new FileInfo( sliceFileName ).Create() )
+							using ( BinaryWriter Writer = new BinaryWriter( S ) )
+								for ( int Y=0; Y < H; Y++ )
+									for ( int X=0; X < W; X++ ) {
+										Document.Result	R = results[X,Y,sliceIndex];
+										Writer.Write( R.m_reflected.m_theta );
+										Writer.Write( R.m_reflected.m_roughness );
+										Writer.Write( R.m_reflected.m_scale );
+										Writer.Write( R.m_reflected.m_flatten );
+										Writer.Write( R.m_reflected.m_masking );
+									}
+
+						// Write results for refracted lobe
+						if ( m_document.m_surface.m_type != TestForm.SURFACE_TYPE.DIFFUSE ) {
+							sliceFileName = fileNameNoExt + "_order" + (m_document.m_surface.ScatteringOrderMin + order) + "_slice" + sliceIndex.ToString( "G02" ) + "_refracted" + extension;
+							using ( FileStream S = new FileInfo( sliceFileName ).Create() )
+								using ( BinaryWriter Writer = new BinaryWriter( S ) )
+									for ( int Y=0; Y < H; Y++ )
+										for ( int X=0; X < W; X++ ) {
+											Document.Result	R = results[X,Y,sliceIndex];
+											Writer.Write( R.m_refracted.m_theta );
+											Writer.Write( R.m_refracted.m_roughness );
+											Writer.Write( R.m_refracted.m_scale );
+											Writer.Write( R.m_refracted.m_flatten );
+											Writer.Write( R.m_refracted.m_masking );
+										}
+						}
+					}
+				}
+
+				m_AppKey.SetValue( "LastExportFileName", saveFileDialogExport.FileName );
+
+				MessageBox( "Success!", MessageBoxButtons.OK, MessageBoxIcon.Information );
+
+			} catch ( Exception _e ) {
+				MessageBox( "An error occurred while exporting results:\r\n" + _e );
+			}
+
 		}
 
 		#endregion
@@ -1712,7 +1957,7 @@ namespace TestMSBSDF
 					MessageBox( "You cannot start a computation without specifying a filename otherwise auto-save feature won't be available and you might lose your results if a crash occurs during automation!" );
 					return;
 				}
-				m_documentFileName = new FileInfo( FileName );
+				DocumentFileName = new FileInfo( FileName );
 			}
 
 			ComputeAll( SelectedScatteringOrder, SelectedResult.X, SelectedResult.Y, SelectedResult.Z );
@@ -1728,6 +1973,19 @@ namespace TestMSBSDF
 			}
 
 			SelectedResult.Clear();
+		}
+
+		private void clearSliceFromHereToolStripMenuItem_Click( object sender, EventArgs e )
+		{
+			if ( SelectedResult.IsValid ) {
+				if ( MessageBox( "Are you sure?", MessageBoxButtons.OKCancel, MessageBoxIcon.Question, MessageBoxDefaultButton.Button2 ) != DialogResult.OK )
+					return;
+			} else {
+				MessageBox( "Result already cleared!", MessageBoxButtons.OK, MessageBoxIcon.Information );
+				return;
+			}
+
+			throw new Exception( "@TODO!" );
 		}
 
 		#endregion

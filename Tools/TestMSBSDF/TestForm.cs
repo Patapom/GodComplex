@@ -474,6 +474,7 @@ namespace TestMSBSDF
 		///	
 		///	From "2015 Heitz - Generating Procedural Beckmann Surfaces"
 		/// </summary>
+		/// <param name="_roughness"></param>
 		/// <remarks>Only isotropic roughness is supported</remarks>
 		public void	BuildBeckmannSurfaceTexture( float _roughness ) {
 
@@ -872,6 +873,12 @@ namespace TestMSBSDF
 		}
 
 		public void	UpdateLobeParameters( double[] _parameters, bool _isReflectedLobe ) {
+			if ( InvokeRequired ) {
+				BeginInvoke( (Action) (() => {
+					UpdateLobeParameters( _parameters, _isReflectedLobe );
+				}) );
+				return;
+			}
 
 			checkBoxShowAnalyticalLobe.Checked = true;
 

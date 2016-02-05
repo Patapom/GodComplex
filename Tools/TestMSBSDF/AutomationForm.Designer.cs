@@ -64,6 +64,11 @@
 			this.label3 = new System.Windows.Forms.Label();
 			this.label2 = new System.Windows.Forms.Label();
 			this.label20 = new System.Windows.Forms.Label();
+			this.panel1 = new System.Windows.Forms.Panel();
+			this.label1 = new System.Windows.Forms.Label();
+			this.radioButtonSurfaceTypeDiffuse = new System.Windows.Forms.RadioButton();
+			this.radioButtonSurfaceTypeDielectric = new System.Windows.Forms.RadioButton();
+			this.radioButtonSurfaceTypeConductor = new System.Windows.Forms.RadioButton();
 			this.label22 = new System.Windows.Forms.Label();
 			this.labelTotalRaysCount = new System.Windows.Forms.Label();
 			this.label11 = new System.Windows.Forms.Label();
@@ -123,11 +128,6 @@
 			this.radioButtonLobe_Beckmann = new System.Windows.Forms.RadioButton();
 			this.radioButtonLobe_ModifiedPhong = new System.Windows.Forms.RadioButton();
 			this.label30 = new System.Windows.Forms.Label();
-			this.panel1 = new System.Windows.Forms.Panel();
-			this.label1 = new System.Windows.Forms.Label();
-			this.radioButtonSurfaceTypeDiffuse = new System.Windows.Forms.RadioButton();
-			this.radioButtonSurfaceTypeDielectric = new System.Windows.Forms.RadioButton();
-			this.radioButtonSurfaceTypeConductor = new System.Windows.Forms.RadioButton();
 			this.label29 = new System.Windows.Forms.Label();
 			this.contextMenuStripSelection = new System.Windows.Forms.ContextMenuStrip(this.components);
 			this.computeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -149,11 +149,16 @@
 			this.buttonClearResults = new System.Windows.Forms.Button();
 			this.openFileDialogResults = new System.Windows.Forms.OpenFileDialog();
 			this.saveFileDialogResults = new System.Windows.Forms.SaveFileDialog();
+			this.saveFileDialogExport = new System.Windows.Forms.SaveFileDialog();
+			this.integerTrackbarControlThreadsCount = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
+			this.label31 = new System.Windows.Forms.Label();
 			this.completionArrayControl = new TestMSBSDF.CompletionArrayControl();
+			this.clearSliceFromHereToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.groupBoxSimulationParameters.SuspendLayout();
 			this.panel6.SuspendLayout();
 			this.panel5.SuspendLayout();
 			this.panelIncidentAngle.SuspendLayout();
+			this.panel1.SuspendLayout();
 			this.panelParameters.SuspendLayout();
 			this.groupBoxLobeFitterConfig.SuspendLayout();
 			this.groupBoxAnalyticalLobeModel.SuspendLayout();
@@ -164,7 +169,6 @@
 			this.panel4.SuspendLayout();
 			this.panel3.SuspendLayout();
 			this.panel2.SuspendLayout();
-			this.panel1.SuspendLayout();
 			this.contextMenuStripSelection.SuspendLayout();
 			this.menuStrip1.SuspendLayout();
 			this.SuspendLayout();
@@ -629,6 +633,61 @@
 			this.label20.TabIndex = 1;
 			this.label20.Text = "Scattering Orders";
 			this.label20.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+			// 
+			// panel1
+			// 
+			this.panel1.Controls.Add(this.label1);
+			this.panel1.Controls.Add(this.radioButtonSurfaceTypeDiffuse);
+			this.panel1.Controls.Add(this.radioButtonSurfaceTypeDielectric);
+			this.panel1.Controls.Add(this.radioButtonSurfaceTypeConductor);
+			this.panel1.Location = new System.Drawing.Point(12, 14);
+			this.panel1.Name = "panel1";
+			this.panel1.Size = new System.Drawing.Size(307, 27);
+			this.panel1.TabIndex = 1;
+			// 
+			// label1
+			// 
+			this.label1.AutoSize = true;
+			this.label1.Location = new System.Drawing.Point(3, 5);
+			this.label1.Name = "label1";
+			this.label1.Size = new System.Drawing.Size(74, 13);
+			this.label1.TabIndex = 1;
+			this.label1.Text = "Surface Type:";
+			// 
+			// radioButtonSurfaceTypeDiffuse
+			// 
+			this.radioButtonSurfaceTypeDiffuse.AutoSize = true;
+			this.radioButtonSurfaceTypeDiffuse.Checked = true;
+			this.radioButtonSurfaceTypeDiffuse.Location = new System.Drawing.Point(238, 3);
+			this.radioButtonSurfaceTypeDiffuse.Name = "radioButtonSurfaceTypeDiffuse";
+			this.radioButtonSurfaceTypeDiffuse.Size = new System.Drawing.Size(58, 17);
+			this.radioButtonSurfaceTypeDiffuse.TabIndex = 0;
+			this.radioButtonSurfaceTypeDiffuse.TabStop = true;
+			this.radioButtonSurfaceTypeDiffuse.Text = "Diffuse";
+			this.radioButtonSurfaceTypeDiffuse.UseVisualStyleBackColor = true;
+			this.radioButtonSurfaceTypeDiffuse.CheckedChanged += new System.EventHandler(this.radioButtonSurfaceType_CheckedChanged);
+			// 
+			// radioButtonSurfaceTypeDielectric
+			// 
+			this.radioButtonSurfaceTypeDielectric.AutoSize = true;
+			this.radioButtonSurfaceTypeDielectric.Location = new System.Drawing.Point(163, 3);
+			this.radioButtonSurfaceTypeDielectric.Name = "radioButtonSurfaceTypeDielectric";
+			this.radioButtonSurfaceTypeDielectric.Size = new System.Drawing.Size(69, 17);
+			this.radioButtonSurfaceTypeDielectric.TabIndex = 0;
+			this.radioButtonSurfaceTypeDielectric.Text = "Dielectric";
+			this.radioButtonSurfaceTypeDielectric.UseVisualStyleBackColor = true;
+			this.radioButtonSurfaceTypeDielectric.CheckedChanged += new System.EventHandler(this.radioButtonSurfaceType_CheckedChanged);
+			// 
+			// radioButtonSurfaceTypeConductor
+			// 
+			this.radioButtonSurfaceTypeConductor.AutoSize = true;
+			this.radioButtonSurfaceTypeConductor.Location = new System.Drawing.Point(83, 3);
+			this.radioButtonSurfaceTypeConductor.Name = "radioButtonSurfaceTypeConductor";
+			this.radioButtonSurfaceTypeConductor.Size = new System.Drawing.Size(74, 17);
+			this.radioButtonSurfaceTypeConductor.TabIndex = 0;
+			this.radioButtonSurfaceTypeConductor.Text = "Conductor";
+			this.radioButtonSurfaceTypeConductor.UseVisualStyleBackColor = true;
+			this.radioButtonSurfaceTypeConductor.CheckedChanged += new System.EventHandler(this.radioButtonSurfaceType_CheckedChanged);
 			// 
 			// label22
 			// 
@@ -1351,61 +1410,6 @@
 			this.label30.TabIndex = 1;
 			this.label30.Text = "albedo/F0 slice";
 			// 
-			// panel1
-			// 
-			this.panel1.Controls.Add(this.label1);
-			this.panel1.Controls.Add(this.radioButtonSurfaceTypeDiffuse);
-			this.panel1.Controls.Add(this.radioButtonSurfaceTypeDielectric);
-			this.panel1.Controls.Add(this.radioButtonSurfaceTypeConductor);
-			this.panel1.Location = new System.Drawing.Point(12, 14);
-			this.panel1.Name = "panel1";
-			this.panel1.Size = new System.Drawing.Size(307, 27);
-			this.panel1.TabIndex = 1;
-			// 
-			// label1
-			// 
-			this.label1.AutoSize = true;
-			this.label1.Location = new System.Drawing.Point(3, 5);
-			this.label1.Name = "label1";
-			this.label1.Size = new System.Drawing.Size(74, 13);
-			this.label1.TabIndex = 1;
-			this.label1.Text = "Surface Type:";
-			// 
-			// radioButtonSurfaceTypeDiffuse
-			// 
-			this.radioButtonSurfaceTypeDiffuse.AutoSize = true;
-			this.radioButtonSurfaceTypeDiffuse.Checked = true;
-			this.radioButtonSurfaceTypeDiffuse.Location = new System.Drawing.Point(238, 3);
-			this.radioButtonSurfaceTypeDiffuse.Name = "radioButtonSurfaceTypeDiffuse";
-			this.radioButtonSurfaceTypeDiffuse.Size = new System.Drawing.Size(58, 17);
-			this.radioButtonSurfaceTypeDiffuse.TabIndex = 0;
-			this.radioButtonSurfaceTypeDiffuse.TabStop = true;
-			this.radioButtonSurfaceTypeDiffuse.Text = "Diffuse";
-			this.radioButtonSurfaceTypeDiffuse.UseVisualStyleBackColor = true;
-			this.radioButtonSurfaceTypeDiffuse.CheckedChanged += new System.EventHandler(this.radioButtonSurfaceType_CheckedChanged);
-			// 
-			// radioButtonSurfaceTypeDielectric
-			// 
-			this.radioButtonSurfaceTypeDielectric.AutoSize = true;
-			this.radioButtonSurfaceTypeDielectric.Location = new System.Drawing.Point(163, 3);
-			this.radioButtonSurfaceTypeDielectric.Name = "radioButtonSurfaceTypeDielectric";
-			this.radioButtonSurfaceTypeDielectric.Size = new System.Drawing.Size(69, 17);
-			this.radioButtonSurfaceTypeDielectric.TabIndex = 0;
-			this.radioButtonSurfaceTypeDielectric.Text = "Dielectric";
-			this.radioButtonSurfaceTypeDielectric.UseVisualStyleBackColor = true;
-			this.radioButtonSurfaceTypeDielectric.CheckedChanged += new System.EventHandler(this.radioButtonSurfaceType_CheckedChanged);
-			// 
-			// radioButtonSurfaceTypeConductor
-			// 
-			this.radioButtonSurfaceTypeConductor.AutoSize = true;
-			this.radioButtonSurfaceTypeConductor.Location = new System.Drawing.Point(83, 3);
-			this.radioButtonSurfaceTypeConductor.Name = "radioButtonSurfaceTypeConductor";
-			this.radioButtonSurfaceTypeConductor.Size = new System.Drawing.Size(74, 17);
-			this.radioButtonSurfaceTypeConductor.TabIndex = 0;
-			this.radioButtonSurfaceTypeConductor.Text = "Conductor";
-			this.radioButtonSurfaceTypeConductor.UseVisualStyleBackColor = true;
-			this.radioButtonSurfaceTypeConductor.CheckedChanged += new System.EventHandler(this.radioButtonSurfaceType_CheckedChanged);
-			// 
 			// label29
 			// 
 			this.label29.AutoSize = true;
@@ -1421,34 +1425,35 @@
             this.computeToolStripMenuItem,
             this.startFromHereToolStripMenuItem,
             this.toolStripMenuItem3,
-            this.clearToolStripMenuItem});
+            this.clearToolStripMenuItem,
+            this.clearSliceFromHereToolStripMenuItem});
 			this.contextMenuStripSelection.Name = "contextMenuStripSelection";
-			this.contextMenuStripSelection.Size = new System.Drawing.Size(154, 76);
+			this.contextMenuStripSelection.Size = new System.Drawing.Size(186, 120);
 			this.contextMenuStripSelection.Opening += new System.ComponentModel.CancelEventHandler(this.contextMenuStripSelection_Opening);
 			// 
 			// computeToolStripMenuItem
 			// 
 			this.computeToolStripMenuItem.Name = "computeToolStripMenuItem";
-			this.computeToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
+			this.computeToolStripMenuItem.Size = new System.Drawing.Size(185, 22);
 			this.computeToolStripMenuItem.Text = "&Compute";
 			this.computeToolStripMenuItem.Click += new System.EventHandler(this.computeToolStripMenuItem_Click);
 			// 
 			// startFromHereToolStripMenuItem
 			// 
 			this.startFromHereToolStripMenuItem.Name = "startFromHereToolStripMenuItem";
-			this.startFromHereToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
-			this.startFromHereToolStripMenuItem.Text = "&Start from here";
+			this.startFromHereToolStripMenuItem.Size = new System.Drawing.Size(185, 22);
+			this.startFromHereToolStripMenuItem.Text = "&Start from Here";
 			this.startFromHereToolStripMenuItem.Click += new System.EventHandler(this.startFromHereToolStripMenuItem_Click);
 			// 
 			// toolStripMenuItem3
 			// 
 			this.toolStripMenuItem3.Name = "toolStripMenuItem3";
-			this.toolStripMenuItem3.Size = new System.Drawing.Size(150, 6);
+			this.toolStripMenuItem3.Size = new System.Drawing.Size(182, 6);
 			// 
 			// clearToolStripMenuItem
 			// 
 			this.clearToolStripMenuItem.Name = "clearToolStripMenuItem";
-			this.clearToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
+			this.clearToolStripMenuItem.Size = new System.Drawing.Size(185, 22);
 			this.clearToolStripMenuItem.Text = "Clea&r";
 			this.clearToolStripMenuItem.Click += new System.EventHandler(this.clearToolStripMenuItem_Click);
 			// 
@@ -1544,7 +1549,7 @@
 			this.buttonCompute.Name = "buttonCompute";
 			this.buttonCompute.Size = new System.Drawing.Size(170, 39);
 			this.buttonCompute.TabIndex = 3;
-			this.buttonCompute.Text = "Start";
+			this.buttonCompute.Text = "&Start";
 			this.buttonCompute.UseVisualStyleBackColor = false;
 			this.buttonCompute.Click += new System.EventHandler(this.buttonCompute_Click);
 			// 
@@ -1572,6 +1577,34 @@
 			this.saveFileDialogResults.Filter = "Result Files (*.xml)|*.xml|All Files|*.*";
 			this.saveFileDialogResults.Title = "Choose an XML results file to save";
 			// 
+			// saveFileDialogExport
+			// 
+			this.saveFileDialogExport.DefaultExt = "*.bin";
+			this.saveFileDialogExport.Filter = "Binary Results (*.bin)|*.bin|All Files|*.*";
+			// 
+			// integerTrackbarControlThreadsCount
+			// 
+			this.integerTrackbarControlThreadsCount.Location = new System.Drawing.Point(253, 800);
+			this.integerTrackbarControlThreadsCount.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.integerTrackbarControlThreadsCount.MinimumSize = new System.Drawing.Size(70, 20);
+			this.integerTrackbarControlThreadsCount.Name = "integerTrackbarControlThreadsCount";
+			this.integerTrackbarControlThreadsCount.RangeMax = 16;
+			this.integerTrackbarControlThreadsCount.RangeMin = 1;
+			this.integerTrackbarControlThreadsCount.Size = new System.Drawing.Size(130, 20);
+			this.integerTrackbarControlThreadsCount.TabIndex = 3;
+			this.integerTrackbarControlThreadsCount.Value = 1;
+			this.integerTrackbarControlThreadsCount.VisibleRangeMax = 4;
+			this.integerTrackbarControlThreadsCount.VisibleRangeMin = 1;
+			// 
+			// label31
+			// 
+			this.label31.AutoSize = true;
+			this.label31.Location = new System.Drawing.Point(171, 803);
+			this.label31.Name = "label31";
+			this.label31.Size = new System.Drawing.Size(77, 13);
+			this.label31.TabIndex = 1;
+			this.label31.Text = "Threads Count";
+			// 
 			// completionArrayControl
 			// 
 			this.completionArrayControl.BackColor = System.Drawing.SystemColors.ControlLight;
@@ -1590,6 +1623,13 @@
 			this.completionArrayControl.SelectionChanged += new TestMSBSDF.CompletionArrayControl.SelectionChangedEventHandler(this.completionArrayControl_SelectionChanged);
 			this.completionArrayControl.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.completionArrayControl_MouseDoubleClick);
 			// 
+			// clearSliceFromHereToolStripMenuItem
+			// 
+			this.clearSliceFromHereToolStripMenuItem.Name = "clearSliceFromHereToolStripMenuItem";
+			this.clearSliceFromHereToolStripMenuItem.Size = new System.Drawing.Size(185, 22);
+			this.clearSliceFromHereToolStripMenuItem.Text = "Clear Slice from Here";
+			this.clearSliceFromHereToolStripMenuItem.Click += new System.EventHandler(this.clearSliceFromHereToolStripMenuItem_Click);
+			// 
 			// AutomationForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -1597,8 +1637,10 @@
 			this.ClientSize = new System.Drawing.Size(1057, 840);
 			this.Controls.Add(this.groupBoxSimulationParameters);
 			this.Controls.Add(this.completionArrayControl);
+			this.Controls.Add(this.integerTrackbarControlThreadsCount);
 			this.Controls.Add(this.buttonClearResults);
 			this.Controls.Add(this.buttonCompute);
+			this.Controls.Add(this.label31);
 			this.Controls.Add(this.panelParameters);
 			this.Controls.Add(this.menuStrip1);
 			this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.SizableToolWindow;
@@ -1614,6 +1656,8 @@
 			this.panel5.PerformLayout();
 			this.panelIncidentAngle.ResumeLayout(false);
 			this.panelIncidentAngle.PerformLayout();
+			this.panel1.ResumeLayout(false);
+			this.panel1.PerformLayout();
 			this.panelParameters.ResumeLayout(false);
 			this.panelParameters.PerformLayout();
 			this.groupBoxLobeFitterConfig.ResumeLayout(false);
@@ -1632,8 +1676,6 @@
 			this.panel3.PerformLayout();
 			this.panel2.ResumeLayout(false);
 			this.panel2.PerformLayout();
-			this.panel1.ResumeLayout(false);
-			this.panel1.PerformLayout();
 			this.contextMenuStripSelection.ResumeLayout(false);
 			this.menuStrip1.ResumeLayout(false);
 			this.menuStrip1.PerformLayout();
@@ -1765,5 +1807,9 @@
 		private System.Windows.Forms.ToolStripMenuItem clearToolStripMenuItem;
 		private Nuaj.Cirrus.Utility.LogTextBox textBoxLog;
 		private System.Windows.Forms.ToolStripMenuItem saveAsToolStripMenuItem;
+		private System.Windows.Forms.SaveFileDialog saveFileDialogExport;
+		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlThreadsCount;
+		private System.Windows.Forms.Label label31;
+		private System.Windows.Forms.ToolStripMenuItem clearSliceFromHereToolStripMenuItem;
 	}
 }
