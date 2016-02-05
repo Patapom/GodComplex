@@ -477,6 +477,9 @@ namespace TestMSBSDF
 		/// <remarks>Only isotropic roughness is supported</remarks>
 		public void	BuildBeckmannSurfaceTexture( float _roughness ) {
 
+			// Mirror current roughness
+			floatTrackbarControlBeckmannRoughness.Value = _roughness;
+
 			// Precompute stuff that resemble a lot to the Box-Muller algorithm to generate normal distribution random values
 			WMath.SimpleRNG.SetSeed( 521288629, 362436069 );
 			for ( int i=0; i < m_SB_Beckmann.m.Length; i++ ) {

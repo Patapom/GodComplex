@@ -174,19 +174,29 @@ namespace TestMSBSDF
 					}
 
 					public void		Save( XmlElement _parent ) {
-						_parent.SetAttribute( "Min", m_min.ToString() );
-						_parent.SetAttribute( "Max", m_max.ToString() );
-						_parent.SetAttribute( "Steps", m_stepsCount.ToString() );
-						_parent.SetAttribute( "InclusiveMin", m_inclusiveMin.ToString() );
-						_parent.SetAttribute( "InclusiveMax", m_inclusiveMax.ToString() );
+						Attrib( _parent, "Min", m_min );
+						Attrib( _parent, "Max", m_max );
+						Attrib( _parent, "Steps", m_stepsCount );
+						Attrib( _parent, "InclusiveMin", m_inclusiveMin );
+						Attrib( _parent, "InclusiveMax", m_inclusiveMax );
+// 						_parent.SetAttribute( "Min", m_min.ToString() );
+// 						_parent.SetAttribute( "Max", m_max.ToString() );
+// 						_parent.SetAttribute( "Steps", m_stepsCount.ToString() );
+// 						_parent.SetAttribute( "InclusiveMin", m_inclusiveMin.ToString() );
+// 						_parent.SetAttribute( "InclusiveMax", m_inclusiveMax.ToString() );
 					}
 
 					public void		Load( XmlElement _parent ) {
-						float.TryParse( _parent.GetAttribute( "Min" ), out m_min );
-						float.TryParse( _parent.GetAttribute( "Max" ), out m_max );
-						int.TryParse( _parent.GetAttribute( "Steps" ), out m_stepsCount );
-						bool.TryParse( _parent.GetAttribute( "InclusiveMin" ), out m_inclusiveMin );
-						bool.TryParse( _parent.GetAttribute( "InclusiveMax" ), out m_inclusiveMax );
+						Attrib( _parent, "Min", ref m_min );
+						Attrib( _parent, "Max", ref m_max );
+						Attrib( _parent, "Steps", ref m_stepsCount );
+						Attrib( _parent, "InclusiveMin", ref m_inclusiveMin );
+						Attrib( _parent, "InclusiveMax", ref m_inclusiveMax );
+// 						float.TryParse( _parent.GetAttribute( "Min" ), out m_min );
+// 						float.TryParse( _parent.GetAttribute( "Max" ), out m_max );
+// 						int.TryParse( _parent.GetAttribute( "Steps" ), out m_stepsCount );
+// 						bool.TryParse( _parent.GetAttribute( "InclusiveMin" ), out m_inclusiveMin );
+// 						bool.TryParse( _parent.GetAttribute( "InclusiveMax" ), out m_inclusiveMax );
 					}
 				}
 
@@ -259,12 +269,26 @@ namespace TestMSBSDF
 					XmlElement ElemParm2 = AppendChild( _parent, "AlbedoF0" );
 					m_albedoF0.Save( ElemParm2 );
 
-					XmlElement ElemParm3 = AppendChild( _parent, "IncomingAngle" );
+					XmlElement ElemParm3 = AppendChild( _parent, "ScatteringOrders" );
 					m_scatteringOrders.Save( ElemParm3 );
 				}
 
 				public void		Load( XmlElement _parent ) {
+					Attrib( _parent, "SurfaceType", ref m_type );
+					Attrib( _parent, "RayTraceIterations", ref m_rayTracingIterationsCount );
+					Attrib( _parent, "Locked", ref m_locked );
 
+					XmlElement ElemParm0 = _parent["IncomingAngle"];
+					m_incomingAngle.Load( ElemParm0 );
+
+					XmlElement ElemParm1 = _parent["SurfaceRoughness"];
+					m_roughness.Load( ElemParm1 );
+
+					XmlElement ElemParm2 = _parent["AlbedoF0"];
+					m_albedoF0.Load( ElemParm2 );
+
+					XmlElement ElemParm3 = _parent["ScatteringOrders"];
+					m_scatteringOrders.Load( ElemParm3 );
 				}
 
 				// Simple forward
@@ -350,7 +374,7 @@ namespace TestMSBSDF
 					// Lobe parameters
 					XmlElement	ElemLobeParms = AppendChild( _parent, "LobeParameters" );
 
-					Attrib( ElemLobeParms, "Model", m_lobeModel );
+					Attrib( ElemLobeParms, "Model",				m_lobeModel );
 					Attrib( ElemLobeParms, "initialDirection",	m_initialDirection );
 					Attrib( ElemLobeParms, "inheritDirection",	m_inheritDirection );
 					Attrib( ElemLobeParms, "initialRoughness",	m_initialRoughness );
@@ -369,6 +393,33 @@ namespace TestMSBSDF
 
 				public void		Load( XmlElement _parent ) {
 
+					// Fitter parameters
+					XmlElement	ElemFitterParms = _parent["FitterParameters"];
+
+					Attrib( ElemFitterParms, "MaxIterations", ref m_maxIterations );
+					Attrib( ElemFitterParms, "logToleranceMinimum", ref m_logTolerance_Minimum );
+					Attrib( ElemFitterParms, "logToleranceGradient", ref m_logTolerance_Gradient );
+					Attrib( ElemFitterParms, "MaxRetries", ref m_maxRetries );
+					Attrib( ElemFitterParms, "OversizeFactor", ref m_oversizeFactor );
+
+					// Lobe parameters
+					XmlElement	ElemLobeParms = _parent["LobeParameters"];
+
+					Attrib( ElemLobeParms, "Model",				ref m_lobeModel );
+					Attrib( ElemLobeParms, "initialDirection",	ref m_initialDirection );
+					Attrib( ElemLobeParms, "inheritDirection",	ref m_inheritDirection );
+					Attrib( ElemLobeParms, "initialRoughness",	ref m_initialRoughness );
+					Attrib( ElemLobeParms, "inheritRoughness",	ref m_inheritRoughness );
+					Attrib( ElemLobeParms, "customRoughness",	ref m_customRoughness );
+					Attrib( ElemLobeParms, "initialScale",		ref m_initialScale );
+					Attrib( ElemLobeParms, "inheritScale",		ref m_inheritScale );
+					Attrib( ElemLobeParms, "customScale",		ref m_customScale );
+					Attrib( ElemLobeParms, "initialFlatten",	ref m_initialFlatten );
+					Attrib( ElemLobeParms, "inheritFlatten",	ref m_inheritFlatten );
+					Attrib( ElemLobeParms, "customFlatten",		ref m_customFlatten );
+					Attrib( ElemLobeParms, "initialMasking",	ref m_initialMasking );
+					Attrib( ElemLobeParms, "inheritMasking",	ref m_inheritMasking );
+					Attrib( ElemLobeParms, "customMasking",		ref m_customMasking );
 				}
 			}
 
@@ -509,7 +560,11 @@ namespace TestMSBSDF
 					}
 
 					public void		Load( XmlElement _parent ) {
-
+						Attrib( _parent, "theta", ref m_theta );
+						Attrib( _parent, "roughness", ref m_roughness );
+						Attrib( _parent, "scale", ref m_scale );
+						Attrib( _parent, "flatten", ref m_flatten );
+						Attrib( _parent, "masking", ref m_masking );
 					}
 				}
 
@@ -608,12 +663,28 @@ namespace TestMSBSDF
 					m_reflected.Save( ElemReflected );
 					if ( m_owner.m_surface.m_type == TestForm.SURFACE_TYPE.DIELECTRIC ) {
 						XmlElement	ElemRefracted = AppendChild( _parent, "LobeRefracted" );
-						m_reflected.Save( ElemReflected );
+						m_refracted.Save( ElemReflected );
 					}
 				}
 
 				public void		Load( XmlElement _parent ) {
+					Attrib( _parent, "State", ref m_state );
+					m_error = Attrib( _parent, "Error" );
+					if ( m_error == "" )
+						m_error = null;
 
+					// Store surface parameters
+					Attrib( _parent, "theta", ref m_incomingAngleTheta );
+					Attrib( _parent, "phi", ref m_incomingAnglePhi );
+					Attrib( _parent, "roughness", ref m_surfaceRoughness );
+					Attrib( _parent, "albedoF0", ref m_surfaceAlbedoF0 );
+
+					XmlElement	ElemReflected = _parent["LobeReflected"];
+					m_reflected.Load( ElemReflected );
+					if ( m_owner.m_surface.m_type == TestForm.SURFACE_TYPE.DIELECTRIC ) {
+						XmlElement	ElemRefracted = _parent["LobeRefracted"];
+						m_refracted.Load( ElemRefracted );
+					}
 				}
 
 			}
@@ -714,9 +785,11 @@ namespace TestMSBSDF
 				int	orders = m_results.Length;
 				Attrib( ElmResults, "OrdersCount", orders );
 
+				int	minOrder = m_surface.ScatteringOrderMin;
+
 				for ( int order=0; order < orders; order++ ) {
 					XmlElement	ElmOrderResults = AppendChild( ElmResults, "Order" );
-					Attrib( ElmOrderResults, "Index", order );
+					Attrib( ElmOrderResults, "Index", minOrder + order );
 
 					Result[,,]	orderResults = m_results[order];
 
@@ -737,6 +810,66 @@ namespace TestMSBSDF
 
 			public void		Load( XmlDocument _doc ) {
 
+				XmlElement	Root = _doc["Root"];
+
+				XmlElement	ElmSurface = Root["SurfaceParameters"];
+				m_surface.Load( ElmSurface );
+				InitializeResults();
+
+				XmlElement	ElmSettings = Root["Settings"];
+				m_settings.Load( ElmSettings );
+
+				// Load results from an array
+				XmlElement	ElmResults = Root["Results"];
+
+				int	orders = 0;
+				Attrib( ElmResults, "OrdersCount", ref orders );
+				if ( orders != m_results.Length )
+					throw new Exception( "Stored scattering orders count and size of results array mismatch!" );
+
+				XmlElement	ElmOrderResults = ElmResults.FirstChild as XmlElement;
+				while ( ElmOrderResults != null ) {
+					if ( ElmOrderResults.Name != "Order" )
+						throw new Exception( "Unexpected XmlElement: expected \"Order\" element but found \"" + ElmOrderResults.Name + "\" instead!" );
+
+					int	orderIndex = 1;
+					if ( !Attrib( ElmOrderResults, "Index", ref orderIndex ) )
+						throw new Exception( "Failed to retrieve order index attribute! Can't assign results..." );
+
+					Result[,,]	orderResults = GetResultsForOrder( orderIndex );
+					if ( orderResults == null )
+						throw new Exception( "Unsupported scattering order " + orderIndex + " (max is " + m_surface.ScatteringOrderMax + ")! Can't assign results..." );
+
+					int	W = orderResults.GetLength(0);
+					int	H = orderResults.GetLength(1);
+					int	D = orderResults.GetLength(2);
+					Attrib( ElmResults, "SizeX", ref W );
+					Attrib( ElmResults, "SizeY", ref H );
+					Attrib( ElmResults, "SizeZ", ref D );
+					if ( W != orderResults.GetLength( 0 ) )
+						throw new Exception( "Results length for incoming angle parameter mismatch!" );
+					if ( H != orderResults.GetLength( 1 ) )
+						throw new Exception( "Results length for roughness parameter mismatch!" );
+					if ( D != orderResults.GetLength( 2 ) )
+						throw new Exception( "Results length for albedo/F0 parameter mismatch!" );
+
+					XmlElement	ElmResult = ElmOrderResults.FirstChild as XmlElement;
+					for ( int Z=0; Z < D; Z++ )
+						for ( int Y=0; Y < H; Y++ )
+							for ( int X=0; X < W; X++ ) {
+								if ( ElmResult == null )
+									throw new Exception( "Unexpected end of array while reading results!" );
+								if ( ElmResult.Name != "Result" )
+									throw new Exception( "Unexpected XmlElement: expected \"Result\" element but found \"" + ElmResult.Name + "\" instead!" );
+
+								orderResults[X,Y,Z].Load( ElmResult );
+
+								ElmResult = ElmResult.NextSibling as XmlElement;
+							}
+
+					ElmOrderResults = ElmOrderResults.NextSibling as XmlElement;	// Next order...
+				}
+
 			}
 
 			#region XML Helpers
@@ -755,6 +888,41 @@ namespace TestMSBSDF
 
 			static void			Attrib( XmlElement _parent, string _name, object _value ) {
 				_parent.SetAttribute( _name, _value.ToString() );
+			}
+
+			static string		Attrib( XmlElement _parent, string _name ) {
+				if ( !_parent.HasAttribute( _name ) )
+					return null;
+
+				return _parent.GetAttribute( _name );
+			}
+
+			static bool			Attrib( XmlElement _parent, string _name, ref bool _value ) {
+				string	value = Attrib( _parent, _name );
+				return value != null ? bool.TryParse( value, out _value ) : false;
+			}
+
+			static bool			Attrib( XmlElement _parent, string _name, ref int _value ) {
+				string	value = Attrib( _parent, _name );
+				return value != null ? int.TryParse( value, out _value ) : false;
+			}
+
+			static bool			Attrib( XmlElement _parent, string _name, ref float _value ) {
+				string	value = Attrib( _parent, _name );
+				return value != null ? float.TryParse( value, out _value ) : false;
+			}
+
+			static bool			Attrib( XmlElement _parent, string _name, ref double _value ) {
+				string	value = Attrib( _parent, _name );
+				return value != null ? double.TryParse( value, out _value ) : false;
+			}
+
+			static bool			Attrib<TEnum>( XmlElement _parent, string _name, ref TEnum _value ) where TEnum:struct {
+				string	value = Attrib( _parent, _name );
+				if ( value == null )
+					return false;
+
+				return Enum.TryParse( value, out _value );
 			}
 
 			#endregion
@@ -1290,14 +1458,14 @@ namespace TestMSBSDF
 
 									// Fit reflected lobe...
 									PerformLobeFitting( SelectedResult, true );
-									LogLine( "	## Reflected lobe - Fit minimum reached = " + m_fitter.FunctionMinimum + " after " + m_retriesCount + " attempts" );
+									LogLine( "	## Reflected lobe - Fit minimum reached = " + m_fitter.FunctionMinimum + " after " + (m_retriesCount * m_fitter.MaxIterations + m_fitter.IterationsCount) + " iterations (" + m_retriesCount + " attempts)" );
 
 									if ( m_document.m_surface.m_type == TestForm.SURFACE_TYPE.DIELECTRIC ) {
 										// Fit refracted lobe now...
 										SelectedResult.State = 0.5f;
 
 										PerformLobeFitting( SelectedResult, false );
-										LogLine( "	## Refracted lobe - Fit minimum reached = " + m_fitter.FunctionMinimum + " after " + m_retriesCount + " attempts" );
+										LogLine( "	## Refracted lobe - Fit minimum reached = " + m_fitter.FunctionMinimum + " after " + (m_retriesCount * m_fitter.MaxIterations + m_fitter.IterationsCount) + " iterations (" + m_retriesCount + " attempts)" );
 									}
 
 									SelectedResult.State = 1.0f;
@@ -1427,6 +1595,9 @@ namespace TestMSBSDF
 			m_fittingLobe_Parameters.m_flatten = _parameters[3];
 			m_fittingLobe_Parameters.m_masking = _parameters[4];
 
+			// Update progress
+			SelectedResult.State = (m_retriesCount + (float) m_fitter.IterationsCount / m_fitter.MaxIterations) / m_document.m_settings.m_maxRetries;
+
 			// Update 3D rendering
 			m_owner.UpdateLobeParameters( _parameters, m_fittingLobe_IsReflected );
 		}
@@ -1461,6 +1632,12 @@ namespace TestMSBSDF
 
 			try {
 
+				if ( File.Exists( m_documentFileName.FullName ) ) {
+					string	BackupFileName = m_documentFileName.FullName + ".bak";
+					File.Delete( BackupFileName );
+					File.Copy( m_documentFileName.FullName, BackupFileName );	// Backup first...
+				}
+
 				XmlDocument	Doc = new XmlDocument();
 				m_document.Save( Doc );
 
@@ -1471,6 +1648,8 @@ namespace TestMSBSDF
 				if ( !m_computing )
 					MessageBox( "Success!", MessageBoxButtons.OK, MessageBoxIcon.Information );
 			} catch ( Exception _e ) {
+				if ( m_computing )
+					throw _e;
 				MessageBox( "An error occurred while saving results:\r\n" + _e );
 			}
 		}
@@ -1491,10 +1670,6 @@ namespace TestMSBSDF
 				openFileDialogResults.InitialDirectory = Path.GetDirectoryName( FileName );
 				if ( openFileDialogResults.ShowDialog( this ) != DialogResult.OK )
 					return;
-
-				if ( File.Exists( FileName ) ) {
-					File.Copy( FileName, FileName + ".bak" );	// Backup first...
-				}
 
 				XmlDocument	XmlDoc = new XmlDocument();
 				XmlDoc.Load( FileName );
