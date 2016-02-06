@@ -608,7 +608,7 @@
       <Result Index="(18,9,0)" State="1" Error="" theta="1.413717" phi="0" roughness="4.470348E-08" albedoF0="1">
         <LobeReflected theta="3.37402579928384E-05" roughness="0.999934550764865" scale="1.57163631409498" flatten="0.999061958404715" masking="0" />
       </Result>
-      <Result Index="(19,9,0)" State="-1" Error="An error occurred during fitting: No available idle thread for computation!" theta="1.492257" phi="0" roughness="4.470348E-08" albedoF0="1">
+      <Result Index="(19,9,0)" State="-1" Error="Linear search eval returned NaN!" theta="1.492257" phi="0" roughness="4.470348E-08" albedoF0="1">
         <LobeReflected theta="NaN" roughness="1" scale="0" flatten="0.5" masking="0" />
       </Result>
       <Result Index="(0,0,1)" State="1" Error="" theta="0" phi="0" roughness="1" albedoF0="0.75">
@@ -971,245 +971,245 @@
       <Result Index="(19,5,1)" State="1" Error="" theta="1.492257" phi="0" roughness="0.4444445" albedoF0="0.75">
         <LobeReflected theta="0.572456146556358" roughness="1" scale="1.35659190162428" flatten="1.04057019643875" masking="0.526706316066387" />
       </Result>
-      <Result Index="(0,6,1)" State="0" Error="" theta="0" phi="0" roughness="0.3333334" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="1" scale="1.4396303367876" flatten="0.742998875202961" masking="0.977039448781125" />
+      <Result Index="(0,6,1)" State="1" Error="" theta="0" phi="0" roughness="0.3333334" albedoF0="0.75">
+        <LobeReflected theta="0.000168554572374845" roughness="0.914691748338849" scale="3.04508191120761" flatten="0.263659680097818" masking="0.420079322199608" />
       </Result>
-      <Result Index="(1,6,1)" State="0" Error="" theta="0.07853982" phi="0" roughness="0.3333334" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="1" scale="1.33081356392443" flatten="0.860407701298503" masking="0.970528809936581" />
+      <Result Index="(1,6,1)" State="1" Error="" theta="0.07853982" phi="0" roughness="0.3333334" albedoF0="0.75">
+        <LobeReflected theta="0" roughness="0.915087939110995" scale="2.85454869807311" flatten="0.284280756808916" masking="0.355483667944504" />
       </Result>
-      <Result Index="(2,6,1)" State="0" Error="" theta="0.1570796" phi="0" roughness="0.3333334" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="1" scale="1.33720061106057" flatten="0.852544049927233" masking="0.971230821899384" />
+      <Result Index="(2,6,1)" State="1" Error="" theta="0.1570796" phi="0" roughness="0.3333334" albedoF0="0.75">
+        <LobeReflected theta="0" roughness="0.913174998744292" scale="3.3155148853394" flatten="0.242110180473858" masking="0.466465860469969" />
       </Result>
-      <Result Index="(3,6,1)" State="0" Error="" theta="0.2356195" phi="0" roughness="0.3333334" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="1" scale="1.43461035593995" flatten="0.750766718848863" masking="0.980624943591752" />
+      <Result Index="(3,6,1)" State="1" Error="" theta="0.2356195" phi="0" roughness="0.3333334" albedoF0="0.75">
+        <LobeReflected theta="0" roughness="0.914218874780247" scale="3.07134848818442" flatten="0.261902072550559" masking="0.422187628368373" />
       </Result>
-      <Result Index="(4,6,1)" State="0" Error="" theta="0.3141593" phi="0" roughness="0.3333334" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="1" scale="1.31726467471555" flatten="0.86393041592836" masking="0.967378061098649" />
+      <Result Index="(4,6,1)" State="1" Error="" theta="0.3141593" phi="0" roughness="0.3333334" albedoF0="0.75">
+        <LobeReflected theta="0" roughness="0.910276619529665" scale="2.71063036666887" flatten="0.297046798984695" masking="0.108740666521365" />
       </Result>
-      <Result Index="(5,6,1)" State="0" Error="" theta="0.3926991" phi="0" roughness="0.3333334" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="1" scale="1.32102250316247" flatten="0.871453150675441" masking="0.967939996532243" />
+      <Result Index="(5,6,1)" State="1" Error="" theta="0.3926991" phi="0" roughness="0.3333334" albedoF0="0.75">
+        <LobeReflected theta="0" roughness="0.90917278909849" scale="2.99003385112787" flatten="0.268008211663161" masking="0.197893556935301" />
       </Result>
-      <Result Index="(6,6,1)" State="0" Error="" theta="0.4712389" phi="0" roughness="0.3333334" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="1" scale="1.33950460690816" flatten="0.853104404383544" masking="0.970611362375563" />
+      <Result Index="(6,6,1)" State="1" Error="" theta="0.4712389" phi="0" roughness="0.3333334" albedoF0="0.75">
+        <LobeReflected theta="0" roughness="0.91845455752503" scale="2.54884436075215" flatten="0.321240744155576" masking="0.330614870729373" />
       </Result>
-      <Result Index="(7,6,1)" State="0" Error="" theta="0.5497787" phi="0" roughness="0.3333334" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="1" scale="1.42803598356713" flatten="0.758354743211683" masking="0.972444055638008" />
+      <Result Index="(7,6,1)" State="1" Error="" theta="0.5497787" phi="0" roughness="0.3333334" albedoF0="0.75">
+        <LobeReflected theta="0" roughness="0.911639908740553" scale="3.58283953498975" flatten="0.22252439165724" masking="0.497320019786856" />
       </Result>
-      <Result Index="(8,6,1)" State="0" Error="" theta="0.6283185" phi="0" roughness="0.3333334" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="1" scale="1.42002348787235" flatten="0.771025498005388" masking="0.971764358588174" />
+      <Result Index="(8,6,1)" State="1" Error="" theta="0.6283185" phi="0" roughness="0.3333334" albedoF0="0.75">
+        <LobeReflected theta="0" roughness="0.910868908099574" scale="3.71025979112747" flatten="0.214611613888638" masking="0.509073688593652" />
       </Result>
-      <Result Index="(9,6,1)" State="0" Error="" theta="0.7068584" phi="0" roughness="0.3333334" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="1" scale="1.34491071829012" flatten="0.858171583451258" masking="0.968954640342431" />
+      <Result Index="(9,6,1)" State="1" Error="" theta="0.7068584" phi="0" roughness="0.3333334" albedoF0="0.75">
+        <LobeReflected theta="0" roughness="0.915620643866771" scale="2.77975994409549" flatten="0.291826571375068" masking="0.347712095264804" />
       </Result>
-      <Result Index="(10,6,1)" State="0" Error="" theta="0.7853982" phi="0" roughness="0.3333334" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="1" scale="1.3646277092823" flatten="0.854664612158006" masking="0.967490333724673" />
+      <Result Index="(10,6,1)" State="1" Error="" theta="0.7853982" phi="0" roughness="0.3333334" albedoF0="0.75">
+        <LobeReflected theta="0" roughness="0.912975374212091" scale="2.9394021199189" flatten="0.274607336398782" masking="0.324945479883251" />
       </Result>
-      <Result Index="(11,6,1)" State="0" Error="" theta="0.863938" phi="0" roughness="0.3333334" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="1" scale="1.49230241462413" flatten="0.755024954384327" masking="0.974778964079066" />
+      <Result Index="(11,6,1)" State="1" Error="" theta="0.863938" phi="0" roughness="0.3333334" albedoF0="0.75">
+        <LobeReflected theta="0" roughness="0.918656027844302" scale="2.60632490797998" flatten="0.316510027837094" masking="0.35411872038598" />
       </Result>
-      <Result Index="(12,6,1)" State="0" Error="" theta="0.9424778" phi="0" roughness="0.3333334" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="1" scale="1.44188412865504" flatten="0.848724751789029" masking="0.949017737708887" />
+      <Result Index="(12,6,1)" State="1" Error="" theta="0.9424778" phi="0" roughness="0.3333334" albedoF0="0.75">
+        <LobeReflected theta="0" roughness="0.923935919372887" scale="1.91048222213416" flatten="0.446633735295071" masking="0.0355694964040137" />
       </Result>
-      <Result Index="(13,6,1)" State="0" Error="" theta="1.021018" phi="0" roughness="0.3333334" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="1" scale="1.48889945839885" flatten="0.85658169589887" masking="0.944661668877244" />
+      <Result Index="(13,6,1)" State="1" Error="" theta="1.021018" phi="0" roughness="0.3333334" albedoF0="0.75">
+        <LobeReflected theta="0" roughness="0.913247934116546" scale="2.71661236746792" flatten="0.302575292361355" masking="0.213180807291258" />
       </Result>
-      <Result Index="(14,6,1)" State="0" Error="" theta="1.099557" phi="0" roughness="0.3333334" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="1" scale="1.55779526454118" flatten="0.851152661862543" masking="0.926552721971209" />
+      <Result Index="(14,6,1)" State="1" Error="" theta="1.099557" phi="0" roughness="0.3333334" albedoF0="0.75">
+        <LobeReflected theta="0" roughness="0.913847190784241" scale="2.66956778325142" flatten="0.311365478813098" masking="0.2069030457897" />
       </Result>
-      <Result Index="(15,6,1)" State="0" Error="" theta="1.178097" phi="0" roughness="0.3333334" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="1" scale="1.25010218006319" flatten="1.36711010157733" masking="0.759978439332079" />
+      <Result Index="(15,6,1)" State="1" Error="" theta="1.178097" phi="0" roughness="0.3333334" albedoF0="0.75">
+        <LobeReflected theta="0" roughness="0.933863310434924" scale="1.66483849347597" flatten="0.550852594222282" masking="0.0945060062267507" />
       </Result>
-      <Result Index="(16,6,1)" State="0" Error="" theta="1.256637" phi="0" roughness="0.3333334" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="1" scale="1.54946085688543" flatten="1.09865928529149" masking="0.840914842105438" />
+      <Result Index="(16,6,1)" State="1" Error="" theta="1.256637" phi="0" roughness="0.3333334" albedoF0="0.75">
+        <LobeReflected theta="0" roughness="0.937447918474892" scale="1.60128988076599" flatten="0.589986102647732" masking="0.121759906953898" />
       </Result>
-      <Result Index="(17,6,1)" State="0" Error="" theta="1.335177" phi="0" roughness="0.3333334" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="1" scale="1.58313983472367" flatten="1.20060327922076" masking="0.824032563739915" />
+      <Result Index="(17,6,1)" State="1" Error="" theta="1.335177" phi="0" roughness="0.3333334" albedoF0="0.75">
+        <LobeReflected theta="0" roughness="0.938542425268432" scale="1.62782329831294" flatten="0.587588994943976" masking="0.134411288019966" />
       </Result>
-      <Result Index="(18,6,1)" State="0" Error="" theta="1.413717" phi="0" roughness="0.3333334" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="0.964095412514984" scale="1.83631932207956" flatten="0.806148433476261" masking="0.564931729534354" />
+      <Result Index="(18,6,1)" State="1" Error="" theta="1.413717" phi="0" roughness="0.3333334" albedoF0="0.75">
+        <LobeReflected theta="0" roughness="0.941039384618512" scale="1.62269984197368" flatten="0.619487510323397" masking="0.140836960291043" />
       </Result>
-      <Result Index="(19,6,1)" State="0" Error="" theta="1.492257" phi="0" roughness="0.3333334" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="1" scale="1.35369064165926" flatten="1.03996792223312" masking="0.550322654974728" />
+      <Result Index="(19,6,1)" State="1" Error="" theta="1.492257" phi="0" roughness="0.3333334" albedoF0="0.75">
+        <LobeReflected theta="0" roughness="0.941239304576628" scale="1.38935902809223" flatten="0.555071032611606" masking="0.122784314675123" />
       </Result>
-      <Result Index="(0,7,1)" State="0" Error="" theta="0" phi="0" roughness="0.2222223" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="1" scale="1.48558212878778" flatten="0.746456380066288" masking="0.908286891213881" />
+      <Result Index="(0,7,1)" State="1" Error="" theta="0" phi="0" roughness="0.2222223" albedoF0="0.75">
+        <LobeReflected theta="8.08799865473782E-05" roughness="0.926190187757334" scale="2.26898701370147" flatten="0.37026416049398" masking="0" />
       </Result>
-      <Result Index="(1,7,1)" State="0" Error="" theta="0.07853982" phi="0" roughness="0.2222223" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="1" scale="1.37350291192572" flatten="0.850351725506789" masking="0.912304973513082" />
+      <Result Index="(1,7,1)" State="1" Error="" theta="0.07853982" phi="0" roughness="0.2222223" albedoF0="0.75">
+        <LobeReflected theta="6.65922193407975E-05" roughness="0.931350344134549" scale="2.0350382378856" flatten="0.424469045237337" masking="0" />
       </Result>
-      <Result Index="(2,7,1)" State="0" Error="" theta="0.1570796" phi="0" roughness="0.2222223" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="1" scale="1.38177019328931" flatten="0.844189408682772" masking="0.91179879958211" />
+      <Result Index="(2,7,1)" State="1" Error="" theta="0.1570796" phi="0" roughness="0.2222223" albedoF0="0.75">
+        <LobeReflected theta="0" roughness="0.922305455833576" scale="2.48979336954531" flatten="0.333127601940635" masking="0" />
       </Result>
-      <Result Index="(3,7,1)" State="0" Error="" theta="0.2356195" phi="0" roughness="0.2222223" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="1" scale="1.47917789112269" flatten="0.745963373065567" masking="0.90645945977559" />
+      <Result Index="(3,7,1)" State="1" Error="" theta="0.2356195" phi="0" roughness="0.2222223" albedoF0="0.75">
+        <LobeReflected theta="0" roughness="0.907946999300449" scale="3.8497215767426" flatten="0.208355759531514" masking="0.000575962513179633" />
       </Result>
-      <Result Index="(4,7,1)" State="0" Error="" theta="0.3141593" phi="0" roughness="0.2222223" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="1" scale="1.39532312433198" flatten="0.840791380002256" masking="0.857497882363208" />
+      <Result Index="(4,7,1)" State="1" Error="" theta="0.3141593" phi="0" roughness="0.2222223" albedoF0="0.75">
+        <LobeReflected theta="0" roughness="0.908484597147194" scale="3.79034645676851" flatten="0.211726614032631" masking="0.00572598449320967" />
       </Result>
-      <Result Index="(5,7,1)" State="0" Error="" theta="0.3926991" phi="0" roughness="0.2222223" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="1" scale="1.36030548096334" flatten="0.858854975481948" masking="0.912604744429632" />
+      <Result Index="(5,7,1)" State="1" Error="" theta="0.3926991" phi="0" roughness="0.2222223" albedoF0="0.75">
+        <LobeReflected theta="0" roughness="0.908399087780085" scale="3.79415762595201" flatten="0.211560334451044" masking="0.000754085402557753" />
       </Result>
-      <Result Index="(6,7,1)" State="0" Error="" theta="0.4712389" phi="0" roughness="0.2222223" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="1" scale="1.37938429057709" flatten="0.8430204713586" masking="0.914645712191902" />
+      <Result Index="(6,7,1)" State="1" Error="" theta="0.4712389" phi="0" roughness="0.2222223" albedoF0="0.75">
+        <LobeReflected theta="0" roughness="0.908478187063339" scale="3.78231443612455" flatten="0.212332410711349" masking="0.00176340723720704" />
       </Result>
-      <Result Index="(7,7,1)" State="0" Error="" theta="0.5497787" phi="0" roughness="0.2222223" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="1" scale="1.46883574402773" flatten="0.752063503455355" masking="0.90487605951869" />
+      <Result Index="(7,7,1)" State="1" Error="" theta="0.5497787" phi="0" roughness="0.2222223" albedoF0="0.75">
+        <LobeReflected theta="0" roughness="0.911409741805618" scale="3.9404275410491" flatten="0.204389922891656" masking="0.176910052450224" />
       </Result>
-      <Result Index="(8,7,1)" State="0" Error="" theta="0.6283185" phi="0" roughness="0.2222223" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="1" scale="1.48363539711627" flatten="0.779159197257583" masking="0.889120004805591" />
+      <Result Index="(8,7,1)" State="1" Error="" theta="0.6283185" phi="0" roughness="0.2222223" albedoF0="0.75">
+        <LobeReflected theta="0" roughness="0.911100809824259" scale="3.7468690224058" flatten="0.214878541889495" masking="0.107501750400107" />
       </Result>
-      <Result Index="(9,7,1)" State="0" Error="" theta="0.7068584" phi="0" roughness="0.2222223" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="1" scale="1.38808537678717" flatten="0.847980097141757" masking="0.908627479442759" />
+      <Result Index="(9,7,1)" State="1" Error="" theta="0.7068584" phi="0" roughness="0.2222223" albedoF0="0.75">
+        <LobeReflected theta="0" roughness="0.925871511736583" scale="2.27734385618235" flatten="0.369010140142662" masking="0" />
       </Result>
-      <Result Index="(10,7,1)" State="0" Error="" theta="0.7853982" phi="0" roughness="0.2222223" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="1" scale="1.42771623390488" flatten="0.837089848392501" masking="0.872307021941974" />
+      <Result Index="(10,7,1)" State="1" Error="" theta="0.7853982" phi="0" roughness="0.2222223" albedoF0="0.75">
+        <LobeReflected theta="0" roughness="0.908369577039752" scale="3.80160597874152" flatten="0.211049431925765" masking="0.000270558567502463" />
       </Result>
-      <Result Index="(11,7,1)" State="0" Error="" theta="0.863938" phi="0" roughness="0.2222223" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="1" scale="1.53890113251911" flatten="0.756386731430864" masking="0.897127085843786" />
+      <Result Index="(11,7,1)" State="1" Error="" theta="0.863938" phi="0" roughness="0.2222223" albedoF0="0.75">
+        <LobeReflected theta="0" roughness="0.90832748498241" scale="3.80236088255629" flatten="0.21113027984072" masking="0" />
       </Result>
-      <Result Index="(12,7,1)" State="0" Error="" theta="0.9424778" phi="0" roughness="0.2222223" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="1" scale="1.49566409455814" flatten="0.845883075534481" masking="0.871555474121388" />
+      <Result Index="(12,7,1)" State="1" Error="" theta="0.9424778" phi="0" roughness="0.2222223" albedoF0="0.75">
+        <LobeReflected theta="0" roughness="0.908424437635918" scale="3.77982932259321" flatten="0.212467872751152" masking="0" />
       </Result>
-      <Result Index="(13,7,1)" State="0" Error="" theta="1.021018" phi="0" roughness="0.2222223" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="1" scale="1.54754726259325" flatten="0.844807536160877" masking="0.845956444206724" />
+      <Result Index="(13,7,1)" State="1" Error="" theta="1.021018" phi="0" roughness="0.2222223" albedoF0="0.75">
+        <LobeReflected theta="0" roughness="0.908365923976907" scale="3.79442658070593" flatten="0.21148102087451" masking="0" />
       </Result>
-      <Result Index="(14,7,1)" State="0" Error="" theta="1.099557" phi="0" roughness="0.2222223" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="1" scale="1.59950876089889" flatten="0.854863924302081" masking="0.861615889497375" />
+      <Result Index="(14,7,1)" State="1" Error="" theta="1.099557" phi="0" roughness="0.2222223" albedoF0="0.75">
+        <LobeReflected theta="0" roughness="0.908169104421572" scale="3.82880058719931" flatten="0.209704421655026" masking="0.000165206975780601" />
       </Result>
-      <Result Index="(15,7,1)" State="0" Error="" theta="1.178097" phi="0" roughness="0.2222223" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="1" scale="1.29685648958325" flatten="1.33359631450928" masking="0.693241883753396" />
+      <Result Index="(15,7,1)" State="1" Error="" theta="1.178097" phi="0" roughness="0.2222223" albedoF0="0.75">
+        <LobeReflected theta="0" roughness="0.926855779643909" scale="2.24415444172277" flatten="0.376088823814263" masking="0" />
       </Result>
-      <Result Index="(16,7,1)" State="0" Error="" theta="1.256637" phi="0" roughness="0.2222223" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="1" scale="1.58027512674029" flatten="1.0956931030929" masking="0.789859507050395" />
+      <Result Index="(16,7,1)" State="1" Error="" theta="1.256637" phi="0" roughness="0.2222223" albedoF0="0.75">
+        <LobeReflected theta="0" roughness="0.931983493746243" scale="2.10152967208463" flatten="0.414776383139051" masking="0.0416167304871645" />
       </Result>
-      <Result Index="(17,7,1)" State="0" Error="" theta="1.335177" phi="0" roughness="0.2222223" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="1" scale="1.61036123035615" flatten="1.20470321506203" masking="0.777723686930585" />
+      <Result Index="(17,7,1)" State="1" Error="" theta="1.335177" phi="0" roughness="0.2222223" albedoF0="0.75">
+        <LobeReflected theta="0" roughness="0.932440657453774" scale="2.12305930197873" flatten="0.415358892774584" masking="0.058957485377692" />
       </Result>
-      <Result Index="(18,7,1)" State="0" Error="" theta="1.413717" phi="0" roughness="0.2222223" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="0.949862988983702" scale="1.99632134776792" flatten="0.547642651169564" masking="0.327296295700295" />
+      <Result Index="(18,7,1)" State="1" Error="" theta="1.413717" phi="0" roughness="0.2222223" albedoF0="0.75">
+        <LobeReflected theta="0" roughness="0.934310759582548" scale="2.08483792164671" flatten="0.434250662610391" masking="0.0749705025590384" />
       </Result>
-      <Result Index="(19,7,1)" State="0" Error="" theta="1.492257" phi="0" roughness="0.2222223" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="1" scale="1.34805712305347" flatten="1.03694012758946" masking="0.570483283362905" />
+      <Result Index="(19,7,1)" State="1" Error="" theta="1.492257" phi="0" roughness="0.2222223" albedoF0="0.75">
+        <LobeReflected theta="0" roughness="0.94371818330386" scale="1.3225274122196" flatten="0.500237832124466" masking="0.075692676164832" />
       </Result>
-      <Result Index="(0,8,1)" State="0" Error="" theta="0" phi="0" roughness="0.1111112" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="1" scale="1.56072369117841" flatten="0.747836034223136" masking="0.764095850551307" />
+      <Result Index="(0,8,1)" State="1" Error="" theta="0" phi="0" roughness="0.1111112" albedoF0="0.75">
+        <LobeReflected theta="0" roughness="0.955981681240483" scale="1.69083943495844" flatten="0.548513858434202" masking="0" />
       </Result>
-      <Result Index="(1,8,1)" State="0" Error="" theta="0.07853982" phi="0" roughness="0.1111112" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="1" scale="1.4527724972489" flatten="0.838718143177142" masking="0.777082688946506" />
+      <Result Index="(1,8,1)" State="1" Error="" theta="0.07853982" phi="0" roughness="0.1111112" albedoF0="0.75">
+        <LobeReflected theta="0" roughness="0.954807608973616" scale="1.7235968104021" flatten="0.533973813198897" masking="0" />
       </Result>
-      <Result Index="(2,8,1)" State="0" Error="" theta="0.1570796" phi="0" roughness="0.1111112" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="1" scale="1.45814094762687" flatten="0.831027944519578" masking="0.776737104730489" />
+      <Result Index="(2,8,1)" State="1" Error="" theta="0.1570796" phi="0" roughness="0.1111112" albedoF0="0.75">
+        <LobeReflected theta="0.000141634013128179" roughness="0.956078548565169" scale="1.69080430439062" flatten="0.548804705416898" masking="0" />
       </Result>
-      <Result Index="(3,8,1)" State="0" Error="" theta="0.2356195" phi="0" roughness="0.1111112" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="1" scale="1.5526148662513" flatten="0.752581118518553" masking="0.774954835300115" />
+      <Result Index="(3,8,1)" State="1" Error="" theta="0.2356195" phi="0" roughness="0.1111112" albedoF0="0.75">
+        <LobeReflected theta="0" roughness="0.955175477469023" scale="1.71241084206932" flatten="0.538604772379545" masking="0" />
       </Result>
-      <Result Index="(4,8,1)" State="0" Error="" theta="0.3141593" phi="0" roughness="0.1111112" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="1" scale="1.45346158001788" flatten="0.814622565470664" masking="0.736781818795074" />
+      <Result Index="(4,8,1)" State="1" Error="" theta="0.3141593" phi="0" roughness="0.1111112" albedoF0="0.75">
+        <LobeReflected theta="0" roughness="0.955519622828788" scale="1.70178128411723" flatten="0.543747044041485" masking="0" />
       </Result>
-      <Result Index="(5,8,1)" State="0" Error="" theta="0.3926991" phi="0" roughness="0.1111112" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="1" scale="1.4457614270831" flatten="0.850923755419003" masking="0.776817918111152" />
+      <Result Index="(5,8,1)" State="1" Error="" theta="0.3926991" phi="0" roughness="0.1111112" albedoF0="0.75">
+        <LobeReflected theta="0" roughness="0.955271642890369" scale="1.71075343125362" flatten="0.539648762276942" masking="0" />
       </Result>
-      <Result Index="(6,8,1)" State="0" Error="" theta="0.4712389" phi="0" roughness="0.1111112" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="1" scale="1.46005084093182" flatten="0.833393662043609" masking="0.77804090559491" />
+      <Result Index="(6,8,1)" State="1" Error="" theta="0.4712389" phi="0" roughness="0.1111112" albedoF0="0.75">
+        <LobeReflected theta="0" roughness="0.955909806082683" scale="1.69312887692832" flatten="0.547790258013488" masking="0" />
       </Result>
-      <Result Index="(7,8,1)" State="0" Error="" theta="0.5497787" phi="0" roughness="0.1111112" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="1" scale="1.54543545754558" flatten="0.760706822658396" masking="0.773609536220346" />
+      <Result Index="(7,8,1)" State="1" Error="" theta="0.5497787" phi="0" roughness="0.1111112" albedoF0="0.75">
+        <LobeReflected theta="0" roughness="0.955429836391052" scale="1.70560247444468" flatten="0.541767534968328" masking="0" />
       </Result>
-      <Result Index="(8,8,1)" State="0" Error="" theta="0.6283185" phi="0" roughness="0.1111112" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="1" scale="1.51947209011124" flatten="0.736938215587603" masking="0.761050395397581" />
+      <Result Index="(8,8,1)" State="1" Error="" theta="0.6283185" phi="0" roughness="0.1111112" albedoF0="0.75">
+        <LobeReflected theta="0" roughness="0.955258965913501" scale="1.7102361221837" flatten="0.539984954625449" masking="0" />
       </Result>
-      <Result Index="(9,8,1)" State="0" Error="" theta="0.7068584" phi="0" roughness="0.1111112" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="1" scale="1.46674487348138" flatten="0.836162215671212" masking="0.77088394774851" />
+      <Result Index="(9,8,1)" State="1" Error="" theta="0.7068584" phi="0" roughness="0.1111112" albedoF0="0.75">
+        <LobeReflected theta="0" roughness="0.955680424656849" scale="1.70097412381228" flatten="0.544061556143941" masking="0" />
       </Result>
-      <Result Index="(10,8,1)" State="0" Error="" theta="0.7853982" phi="0" roughness="0.1111112" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="1" scale="1.48737538572019" flatten="0.812505789324011" masking="0.743051809642895" />
+      <Result Index="(10,8,1)" State="1" Error="" theta="0.7853982" phi="0" roughness="0.1111112" albedoF0="0.75">
+        <LobeReflected theta="0" roughness="0.955658885956445" scale="1.70053614706992" flatten="0.544686881047949" masking="0" />
       </Result>
-      <Result Index="(11,8,1)" State="0" Error="" theta="0.863938" phi="0" roughness="0.1111112" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="1" scale="1.60653732399324" flatten="0.750033886017141" masking="0.746286494322777" />
+      <Result Index="(11,8,1)" State="1" Error="" theta="0.863938" phi="0" roughness="0.1111112" albedoF0="0.75">
+        <LobeReflected theta="0" roughness="0.955576099063423" scale="1.70284129957405" flatten="0.542945167401824" masking="0" />
       </Result>
-      <Result Index="(12,8,1)" State="0" Error="" theta="0.9424778" phi="0" roughness="0.1111112" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="1" scale="1.54150488660945" flatten="0.810474161422451" masking="0.738246745524068" />
+      <Result Index="(12,8,1)" State="1" Error="" theta="0.9424778" phi="0" roughness="0.1111112" albedoF0="0.75">
+        <LobeReflected theta="0" roughness="0.954176222213555" scale="1.74111280521155" flatten="0.5256266336944" masking="0" />
       </Result>
-      <Result Index="(13,8,1)" State="0" Error="" theta="1.021018" phi="0" roughness="0.1111112" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="1" scale="1.58807858225703" flatten="0.806391804800561" masking="0.71429371541387" />
+      <Result Index="(13,8,1)" State="1" Error="" theta="1.021018" phi="0" roughness="0.1111112" albedoF0="0.75">
+        <LobeReflected theta="0" roughness="0.95506319712006" scale="1.71642724139167" flatten="0.537831195593373" masking="0" />
       </Result>
-      <Result Index="(14,8,1)" State="0" Error="" theta="1.099557" phi="0" roughness="0.1111112" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="1" scale="1.65346490726447" flatten="0.83310421193633" masking="0.715293478088892" />
+      <Result Index="(14,8,1)" State="1" Error="" theta="1.099557" phi="0" roughness="0.1111112" albedoF0="0.75">
+        <LobeReflected theta="0" roughness="0.955196575174794" scale="1.71086162866848" flatten="0.540096902550319" masking="0" />
       </Result>
-      <Result Index="(15,8,1)" State="0" Error="" theta="1.178097" phi="0" roughness="0.1111112" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="1" scale="1.33402991558798" flatten="1.2881282112961" masking="0.598268888476659" />
+      <Result Index="(15,8,1)" State="1" Error="" theta="1.178097" phi="0" roughness="0.1111112" albedoF0="0.75">
+        <LobeReflected theta="0" roughness="0.954734671412193" scale="1.72715173194595" flatten="0.53072124360039" masking="0" />
       </Result>
-      <Result Index="(16,8,1)" State="0" Error="" theta="1.256637" phi="0" roughness="0.1111112" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="1" scale="1.59805012447451" flatten="1.08734214397991" masking="0.742694409186655" />
+      <Result Index="(16,8,1)" State="1" Error="" theta="1.256637" phi="0" roughness="0.1111112" albedoF0="0.75">
+        <LobeReflected theta="0" roughness="0.950536155405772" scale="1.84517672220675" flatten="0.483453471810807" masking="0" />
       </Result>
-      <Result Index="(17,8,1)" State="0" Error="" theta="1.335177" phi="0" roughness="0.1111112" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="1" scale="1.63080516060885" flatten="1.20483974661009" masking="0.733118846860046" />
+      <Result Index="(17,8,1)" State="1" Error="" theta="1.335177" phi="0" roughness="0.1111112" albedoF0="0.75">
+        <LobeReflected theta="0" roughness="0.949491912796254" scale="1.87177804947181" flatten="0.477425584615924" masking="0" />
       </Result>
-      <Result Index="(18,8,1)" State="0" Error="" theta="1.413717" phi="0" roughness="0.1111112" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="0.948789325239966" scale="1.9722794310455" flatten="0.458562237645854" masking="0.0539417589939105" />
+      <Result Index="(18,8,1)" State="1" Error="" theta="1.413717" phi="0" roughness="0.1111112" albedoF0="0.75">
+        <LobeReflected theta="0" roughness="0.955343375832595" scale="1.7114569263703" flatten="0.539149248714395" masking="0.000878495895507543" />
       </Result>
-      <Result Index="(19,8,1)" State="0" Error="" theta="1.492257" phi="0" roughness="0.1111112" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="1" scale="1.33155372687547" flatten="1.02700127155855" masking="0.605815323799043" />
+      <Result Index="(19,8,1)" State="1" Error="" theta="1.492257" phi="0" roughness="0.1111112" albedoF0="0.75">
+        <LobeReflected theta="0" roughness="0.952791119343237" scale="1.18611681754608" flatten="0.474888127287713" masking="0.0369502255054063" />
       </Result>
-      <Result Index="(0,9,1)" State="0" Error="" theta="0" phi="0" roughness="4.470348E-08" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="1" scale="1.55733063257117" flatten="0.68902574405141" masking="0.648526646815958" />
+      <Result Index="(0,9,1)" State="1" Error="" theta="0" phi="0" roughness="4.470348E-08" albedoF0="0.75">
+        <LobeReflected theta="9.69565094172875E-05" roughness="1" scale="1.1932511074509" flatten="0.97883347174194" masking="0.0292192137556705" />
       </Result>
-      <Result Index="(1,9,1)" State="0" Error="" theta="0.07853982" phi="0" roughness="4.470348E-08" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="1" scale="1.46158350321392" flatten="0.791060861347097" masking="0.662715245128751" />
+      <Result Index="(1,9,1)" State="1" Error="" theta="0.07853982" phi="0" roughness="4.470348E-08" albedoF0="0.75">
+        <LobeReflected theta="9.69565094172875E-05" roughness="1" scale="1.1932511074509" flatten="0.97883347174194" masking="0.0292192137556705" />
       </Result>
-      <Result Index="(2,9,1)" State="0" Error="" theta="0.1570796" phi="0" roughness="4.470348E-08" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="1" scale="1.46806363797263" flatten="0.784447809510532" masking="0.661781374820939" />
+      <Result Index="(2,9,1)" State="1" Error="" theta="0.1570796" phi="0" roughness="4.470348E-08" albedoF0="0.75">
+        <LobeReflected theta="9.69565094172875E-05" roughness="1" scale="1.1932511074509" flatten="0.97883347174194" masking="0.0292192137556705" />
       </Result>
-      <Result Index="(3,9,1)" State="0" Error="" theta="0.2356195" phi="0" roughness="4.470348E-08" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="1" scale="1.55250894687522" flatten="0.696581425350592" masking="0.65664256843255" />
+      <Result Index="(3,9,1)" State="1" Error="" theta="0.2356195" phi="0" roughness="4.470348E-08" albedoF0="0.75">
+        <LobeReflected theta="9.69565094172875E-05" roughness="1" scale="1.1932511074509" flatten="0.97883347174194" masking="0.0292192137556705" />
       </Result>
-      <Result Index="(4,9,1)" State="0" Error="" theta="0.3141593" phi="0" roughness="4.470348E-08" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="1" scale="1.47259129863542" flatten="0.778876824253179" masking="0.626840486314606" />
+      <Result Index="(4,9,1)" State="1" Error="" theta="0.3141593" phi="0" roughness="4.470348E-08" albedoF0="0.75">
+        <LobeReflected theta="9.69565094172875E-05" roughness="1" scale="1.1932511074509" flatten="0.97883347174194" masking="0.0292192137556705" />
       </Result>
-      <Result Index="(5,9,1)" State="0" Error="" theta="0.3926991" phi="0" roughness="4.470348E-08" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="1" scale="1.4518582513478" flatten="0.800921512617405" masking="0.663735104955498" />
+      <Result Index="(5,9,1)" State="1" Error="" theta="0.3926991" phi="0" roughness="4.470348E-08" albedoF0="0.75">
+        <LobeReflected theta="9.69565094172875E-05" roughness="1" scale="1.1932511074509" flatten="0.97883347174194" masking="0.0292192137556705" />
       </Result>
-      <Result Index="(6,9,1)" State="0" Error="" theta="0.4712389" phi="0" roughness="4.470348E-08" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="1" scale="1.46738384029292" flatten="0.784382903050484" masking="0.66348499917434" />
+      <Result Index="(6,9,1)" State="1" Error="" theta="0.4712389" phi="0" roughness="4.470348E-08" albedoF0="0.75">
+        <LobeReflected theta="9.69565094172875E-05" roughness="1" scale="1.1932511074509" flatten="0.97883347174194" masking="0.0292192137556705" />
       </Result>
-      <Result Index="(7,9,1)" State="0" Error="" theta="0.5497787" phi="0" roughness="4.470348E-08" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="1" scale="1.54403489432554" flatten="0.703451682493811" masking="0.656555947532981" />
+      <Result Index="(7,9,1)" State="1" Error="" theta="0.5497787" phi="0" roughness="4.470348E-08" albedoF0="0.75">
+        <LobeReflected theta="9.69565094172875E-05" roughness="1" scale="1.1932511074509" flatten="0.97883347174194" masking="0.0292192137556705" />
       </Result>
-      <Result Index="(8,9,1)" State="0" Error="" theta="0.6283185" phi="0" roughness="4.470348E-08" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="1" scale="1.5506497514431" flatten="0.719031899404143" masking="0.643342936007447" />
+      <Result Index="(8,9,1)" State="1" Error="" theta="0.6283185" phi="0" roughness="4.470348E-08" albedoF0="0.75">
+        <LobeReflected theta="3.56487382806066E-05" roughness="1" scale="1.19355934676592" flatten="0.978547895889758" masking="0.0295956946646843" />
       </Result>
-      <Result Index="(9,9,1)" State="0" Error="" theta="0.7068584" phi="0" roughness="4.470348E-08" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="1" scale="1.47421652017364" flatten="0.787898443475332" masking="0.657641315956061" />
+      <Result Index="(9,9,1)" State="1" Error="" theta="0.7068584" phi="0" roughness="4.470348E-08" albedoF0="0.75">
+        <LobeReflected theta="5.67978505374978E-07" roughness="1" scale="1.19500734877862" flatten="0.976361160801633" masking="0.0301174751403542" />
       </Result>
-      <Result Index="(10,9,1)" State="0" Error="" theta="0.7853982" phi="0" roughness="4.470348E-08" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="1" scale="1.50237305530192" flatten="0.773313690911903" masking="0.631725412047625" />
+      <Result Index="(10,9,1)" State="1" Error="" theta="0.7853982" phi="0" roughness="4.470348E-08" albedoF0="0.75">
+        <LobeReflected theta="5.48836967812676E-05" roughness="1" scale="1.19628500010956" flatten="0.975451747550488" masking="0.0317977163130692" />
       </Result>
-      <Result Index="(11,9,1)" State="0" Error="" theta="0.863938" phi="0" roughness="4.470348E-08" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="1" scale="1.60282215745015" flatten="0.693063396262895" masking="0.635166048892407" />
+      <Result Index="(11,9,1)" State="1" Error="" theta="0.863938" phi="0" roughness="4.470348E-08" albedoF0="0.75">
+        <LobeReflected theta="5.84107656199648E-05" roughness="1" scale="1.19732945844654" flatten="0.975693283657487" masking="0.0347402151155179" />
       </Result>
-      <Result Index="(12,9,1)" State="0" Error="" theta="0.9424778" phi="0" roughness="4.470348E-08" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="1" scale="1.55771759163491" flatten="0.773880491171555" masking="0.625368356133824" />
+      <Result Index="(12,9,1)" State="1" Error="" theta="0.9424778" phi="0" roughness="4.470348E-08" albedoF0="0.75">
+        <LobeReflected theta="7.45349996797254E-05" roughness="1" scale="1.20098811642668" flatten="0.972201937217649" masking="0.0380185436803407" />
       </Result>
-      <Result Index="(13,9,1)" State="0" Error="" theta="1.021018" phi="0" roughness="4.470348E-08" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="1" scale="1.60075181949304" flatten="0.768763353076721" masking="0.60624519693499" />
+      <Result Index="(13,9,1)" State="1" Error="" theta="1.021018" phi="0" roughness="4.470348E-08" albedoF0="0.75">
+        <LobeReflected theta="6.32487720327682E-05" roughness="1" scale="1.20463426597867" flatten="0.970199193092519" masking="0.0423194882265077" />
       </Result>
-      <Result Index="(14,9,1)" State="0" Error="" theta="1.099557" phi="0" roughness="4.470348E-08" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="1" scale="1.64963217859326" flatten="0.779996239288708" masking="0.616892144353739" />
+      <Result Index="(14,9,1)" State="1" Error="" theta="1.099557" phi="0" roughness="4.470348E-08" albedoF0="0.75">
+        <LobeReflected theta="0.000123588733219809" roughness="1" scale="1.20818223665369" flatten="0.971108545906023" masking="0.0486987202665276" />
       </Result>
-      <Result Index="(15,9,1)" State="0" Error="" theta="1.178097" phi="0" roughness="4.470348E-08" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="1" scale="1.3418507900293" flatten="1.2509107101295" masking="0.523745072261272" />
+      <Result Index="(15,9,1)" State="1" Error="" theta="1.178097" phi="0" roughness="4.470348E-08" albedoF0="0.75">
+        <LobeReflected theta="1.45137026019928E-06" roughness="1" scale="1.21661445961679" flatten="0.965585025222179" masking="0.0544462348176183" />
       </Result>
-      <Result Index="(16,9,1)" State="0" Error="" theta="1.256637" phi="0" roughness="4.470348E-08" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="1" scale="1.60823891335502" flatten="1.07812559747827" masking="0.696801046524563" />
+      <Result Index="(16,9,1)" State="1" Error="" theta="1.256637" phi="0" roughness="4.470348E-08" albedoF0="0.75">
+        <LobeReflected theta="0" roughness="1" scale="1.2249898588568" flatten="0.966689711940063" masking="0.0634944319740347" />
       </Result>
-      <Result Index="(17,9,1)" State="0" Error="" theta="1.335177" phi="0" roughness="4.470348E-08" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="1" scale="1.64433887192044" flatten="1.20192013322233" masking="0.690217892379065" />
+      <Result Index="(17,9,1)" State="1" Error="" theta="1.335177" phi="0" roughness="4.470348E-08" albedoF0="0.75">
+        <LobeReflected theta="7.54503756450116E-05" roughness="1" scale="1.23689432081332" flatten="0.966316055671462" masking="0.073223292514615" />
       </Result>
-      <Result Index="(18,9,1)" State="0" Error="" theta="1.413717" phi="0" roughness="4.470348E-08" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="1" scale="1.71046563741619" flatten="0.843245360987974" masking="0.427057911325897" />
+      <Result Index="(18,9,1)" State="1" Error="" theta="1.413717" phi="0" roughness="4.470348E-08" albedoF0="0.75">
+        <LobeReflected theta="2.524974731776E-06" roughness="1" scale="1.25773669651865" flatten="0.971245680989141" masking="0.0824841119994295" />
       </Result>
-      <Result Index="(19,9,1)" State="0" Error="" theta="1.492257" phi="0" roughness="4.470348E-08" albedoF0="0.75">
-        <LobeReflected theta="-1" roughness="1" scale="0.001" flatten="1E-06" masking="0.956851354550087" />
+      <Result Index="(19,9,1)" State="-1" Error="Linear search eval returned NaN!" theta="1.492257" phi="0" roughness="4.470348E-08" albedoF0="0.75">
+        <LobeReflected theta="NaN" roughness="1" scale="0" flatten="0.5" masking="0" />
       </Result>
       <Result Index="(0,0,2)" State="1" Error="" theta="0" phi="0" roughness="1" albedoF0="0.5">
         <LobeReflected theta="0" roughness="0.919785921796204" scale="0.68833073534046" flatten="0.789603938024337" masking="0.565776084378548" />
@@ -1571,245 +1571,245 @@
       <Result Index="(19,5,2)" State="1" Error="" theta="1.492257" phi="0" roughness="0.4444445" albedoF0="0.5">
         <LobeReflected theta="0.609967304239267" roughness="1" scale="1.24621295251126" flatten="1.01748372643683" masking="0.720422782716071" />
       </Result>
-      <Result Index="(0,6,2)" State="0" Error="" theta="0" phi="0" roughness="0.3333334" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="0.91767317325872" scale="1.65541174430036" flatten="0.32873690941647" masking="0.249850735442246" />
+      <Result Index="(0,6,2)" State="1" Error="" theta="0" phi="0" roughness="0.3333334" albedoF0="0.5">
+        <LobeReflected theta="3.53951535953257E-05" roughness="0.916340212714521" scale="1.84750810748656" flatten="0.291806687126039" masking="0.359419371209311" />
       </Result>
-      <Result Index="(1,6,2)" State="0" Error="" theta="0.07853982" phi="0" roughness="0.3333334" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="0.916045283297146" scale="1.70718098718788" flatten="0.319544198250609" masking="0.236390552898804" />
+      <Result Index="(1,6,2)" State="1" Error="" theta="0.07853982" phi="0" roughness="0.3333334" albedoF0="0.5">
+        <LobeReflected theta="0" roughness="0.916135035276317" scale="1.89754312854894" flatten="0.285567945817548" masking="0.390601104746526" />
       </Result>
-      <Result Index="(2,6,2)" State="0" Error="" theta="0.1570796" phi="0" roughness="0.3333334" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="0.914070199051307" scale="2.04797721046353" flatten="0.26244632389656" masking="0.411486190999309" />
+      <Result Index="(2,6,2)" State="1" Error="" theta="0.1570796" phi="0" roughness="0.3333334" albedoF0="0.5">
+        <LobeReflected theta="0" roughness="0.914270072422732" scale="2.08319313716922" flatten="0.257827776804047" masking="0.438172421126602" />
       </Result>
-      <Result Index="(3,6,2)" State="0" Error="" theta="0.2356195" phi="0" roughness="0.3333334" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="0.918059359596633" scale="1.59387991089506" flatten="0.34320269479378" masking="0.204535597471759" />
+      <Result Index="(3,6,2)" State="1" Error="" theta="0.2356195" phi="0" roughness="0.3333334" albedoF0="0.5">
+        <LobeReflected theta="0" roughness="0.918372181754983" scale="1.69032681445655" flatten="0.322802556443988" masking="0.315230845978675" />
       </Result>
-      <Result Index="(4,6,2)" State="0" Error="" theta="0.3141593" phi="0" roughness="0.3333334" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="0.924417306885158" scale="1.35806235571273" flatten="0.413780899454907" masking="0.179339655129602" />
+      <Result Index="(4,6,2)" State="1" Error="" theta="0.3141593" phi="0" roughness="0.3333334" albedoF0="0.5">
+        <LobeReflected theta="0" roughness="0.909349761764785" scale="1.84722595931675" flatten="0.289617467999646" masking="0.0923081281708042" />
       </Result>
-      <Result Index="(5,6,2)" State="0" Error="" theta="0.3926991" phi="0" roughness="0.3333334" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="0.952642573856326" scale="1.19712474887571" flatten="0.505327501534413" masking="0.70674602211249" />
+      <Result Index="(5,6,2)" State="1" Error="" theta="0.3926991" phi="0" roughness="0.3333334" albedoF0="0.5">
+        <LobeReflected theta="0" roughness="0.911089880520272" scale="1.7082425839989" flatten="0.315964256229103" masking="0.0436516903173581" />
       </Result>
-      <Result Index="(6,6,2)" State="0" Error="" theta="0.4712389" phi="0" roughness="0.3333334" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="0.915984155239583" scale="1.77217363185179" flatten="0.306221915316436" masking="0.30111728954038" />
+      <Result Index="(6,6,2)" State="1" Error="" theta="0.4712389" phi="0" roughness="0.3333334" albedoF0="0.5">
+        <LobeReflected theta="0" roughness="0.91055377197062" scale="1.68678857363104" flatten="0.320360502662517" masking="4.18192856497848E-06" />
       </Result>
-      <Result Index="(7,6,2)" State="0" Error="" theta="0.5497787" phi="0" roughness="0.3333334" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="0.919191201947164" scale="1.5569092859262" flatten="0.353004267206438" masking="0.225299035416684" />
+      <Result Index="(7,6,2)" State="1" Error="" theta="0.5497787" phi="0" roughness="0.3333334" albedoF0="0.5">
+        <LobeReflected theta="0" roughness="0.911568767205249" scale="1.69754101812064" flatten="0.318211427566609" masking="0.0533974969987145" />
       </Result>
-      <Result Index="(8,6,2)" State="0" Error="" theta="0.6283185" phi="0" roughness="0.3333334" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="0.913747372935154" scale="1.84059630694253" flatten="0.292676501634475" masking="0.279260271065128" />
+      <Result Index="(8,6,2)" State="1" Error="" theta="0.6283185" phi="0" roughness="0.3333334" albedoF0="0.5">
+        <LobeReflected theta="0" roughness="0.914291722303883" scale="1.99630733239554" flatten="0.26914411445518" masking="0.39779012980565" />
       </Result>
-      <Result Index="(9,6,2)" State="0" Error="" theta="0.7068584" phi="0" roughness="0.3333334" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="0.931258598941799" scale="1.50551385579499" flatten="0.373156235730107" masking="0.551522124449727" />
+      <Result Index="(9,6,2)" State="1" Error="" theta="0.7068584" phi="0" roughness="0.3333334" albedoF0="0.5">
+        <LobeReflected theta="0" roughness="0.909598340560591" scale="1.82675248308484" flatten="0.293649052540301" masking="0.0869381837937928" />
       </Result>
-      <Result Index="(10,6,2)" State="0" Error="" theta="0.7853982" phi="0" roughness="0.3333334" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="1" scale="0.968639920410151" flatten="0.756780646329986" masking="0.97636698510788" />
+      <Result Index="(10,6,2)" State="1" Error="" theta="0.7853982" phi="0" roughness="0.3333334" albedoF0="0.5">
+        <LobeReflected theta="0" roughness="0.913700093811421" scale="1.5990751848188" flatten="0.340120911813073" masking="0.0494719908189528" />
       </Result>
-      <Result Index="(11,6,2)" State="0" Error="" theta="0.863938" phi="0" roughness="0.3333334" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="1" scale="0.981606673868692" flatten="0.764596658286554" masking="0.964435422563643" />
+      <Result Index="(11,6,2)" State="1" Error="" theta="0.863938" phi="0" roughness="0.3333334" albedoF0="0.5">
+        <LobeReflected theta="0" roughness="0.910674929569972" scale="1.73702197868743" flatten="0.311156843794339" masking="0.0810680262418729" />
       </Result>
-      <Result Index="(12,6,2)" State="0" Error="" theta="0.9424778" phi="0" roughness="0.3333334" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="0.924602427512262" scale="1.86166545418472" flatten="0.302646018912684" masking="0.616937760699714" />
+      <Result Index="(12,6,2)" State="1" Error="" theta="0.9424778" phi="0" roughness="0.3333334" albedoF0="0.5">
+        <LobeReflected theta="0" roughness="0.918907558002495" scale="1.35753958305051" flatten="0.414831449905081" masking="0.0277517417695626" />
       </Result>
-      <Result Index="(13,6,2)" State="0" Error="" theta="1.021018" phi="0" roughness="0.3333334" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="1" scale="1.06605115482453" flatten="0.75759874767166" masking="0.966039872761422" />
+      <Result Index="(13,6,2)" State="1" Error="" theta="1.021018" phi="0" roughness="0.3333334" albedoF0="0.5">
+        <LobeReflected theta="0" roughness="0.913628088549456" scale="1.63939075056416" flatten="0.337709311748007" masking="0.110302193826213" />
       </Result>
-      <Result Index="(14,6,2)" State="0" Error="" theta="1.099557" phi="0" roughness="0.3333334" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="1" scale="1.00504642130421" flatten="0.944236437297587" masking="0.947633293517329" />
+      <Result Index="(14,6,2)" State="1" Error="" theta="1.099557" phi="0" roughness="0.3333334" albedoF0="0.5">
+        <LobeReflected theta="0" roughness="0.915930240347725" scale="1.68411922581063" flatten="0.330485801515052" masking="0.197699628505211" />
       </Result>
-      <Result Index="(15,6,2)" State="0" Error="" theta="1.178097" phi="0" roughness="0.3333334" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="1" scale="1.14426423372766" flatten="0.848563967100902" masking="0.955102730534097" />
+      <Result Index="(15,6,2)" State="1" Error="" theta="1.178097" phi="0" roughness="0.3333334" albedoF0="0.5">
+        <LobeReflected theta="0" roughness="0.916773516650131" scale="1.77256943269266" flatten="0.323100950543145" masking="0.291898500486126" />
       </Result>
-      <Result Index="(16,6,2)" State="0" Error="" theta="1.256637" phi="0" roughness="0.3333334" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="1" scale="1.15706581441805" flatten="0.917395308807804" masking="0.909387415202556" />
+      <Result Index="(16,6,2)" State="1" Error="" theta="1.256637" phi="0" roughness="0.3333334" albedoF0="0.5">
+        <LobeReflected theta="0" roughness="0.927298219489574" scale="1.21029682234454" flatten="0.500382906477105" masking="0.136131273283771" />
       </Result>
-      <Result Index="(17,6,2)" State="0" Error="" theta="1.335177" phi="0" roughness="0.3333334" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="1" scale="1.30721315337861" flatten="0.90097237878409" masking="0.864978154768454" />
+      <Result Index="(17,6,2)" State="1" Error="" theta="1.335177" phi="0" roughness="0.3333334" albedoF0="0.5">
+        <LobeReflected theta="0" roughness="0.935761362149795" scale="1.12192828724635" flatten="0.567637956778255" masking="0.16832916735687" />
       </Result>
-      <Result Index="(18,6,2)" State="0" Error="" theta="1.413717" phi="0" roughness="0.3333334" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="1" scale="1.39446947663066" flatten="1.06950511546462" masking="0.831175177057454" />
+      <Result Index="(18,6,2)" State="1" Error="" theta="1.413717" phi="0" roughness="0.3333334" albedoF0="0.5">
+        <LobeReflected theta="0" roughness="0.963453606929893" scale="0.890502107298293" flatten="0.975851956902122" masking="0.284966545307788" />
       </Result>
-      <Result Index="(19,6,2)" State="0" Error="" theta="1.492257" phi="0" roughness="0.3333334" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="1" scale="1.2473873902429" flatten="1.0164065522242" masking="0.728773551047033" />
+      <Result Index="(19,6,2)" State="1" Error="" theta="1.492257" phi="0" roughness="0.3333334" albedoF0="0.5">
+        <LobeReflected theta="0" roughness="0.934677959541454" scale="0.891449325527009" flatten="0.529014588315122" masking="0.0366793942897333" />
       </Result>
-      <Result Index="(0,7,2)" State="0" Error="" theta="0" phi="0" roughness="0.2222223" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="0.918769342283147" scale="1.79541517565679" flatten="0.306155405990297" masking="0" />
+      <Result Index="(0,7,2)" State="1" Error="" theta="0" phi="0" roughness="0.2222223" albedoF0="0.5">
+        <LobeReflected theta="2.1868052310678E-05" roughness="0.910550212208381" scale="2.33791169734527" flatten="0.229463436086843" masking="0" />
       </Result>
-      <Result Index="(1,7,2)" State="0" Error="" theta="0.07853982" phi="0" roughness="0.2222223" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="0.917951527685527" scale="1.83885270441731" flatten="0.298866788742303" masking="0" />
+      <Result Index="(1,7,2)" State="1" Error="" theta="0.07853982" phi="0" roughness="0.2222223" albedoF0="0.5">
+        <LobeReflected theta="0" roughness="0.909732137152328" scale="2.40541088018351" flatten="0.223253187739216" masking="4.57053014288402E-05" />
       </Result>
-      <Result Index="(2,7,2)" State="0" Error="" theta="0.1570796" phi="0" roughness="0.2222223" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="0.912004992621898" scale="2.21354940305881" flatten="0.243954136723292" masking="0" />
+      <Result Index="(2,7,2)" State="1" Error="" theta="0.1570796" phi="0" roughness="0.2222223" albedoF0="0.5">
+        <LobeReflected theta="0" roughness="0.908668034629797" scale="2.50189095733634" flatten="0.214266416480658" masking="0.00170920227585018" />
       </Result>
-      <Result Index="(3,7,2)" State="0" Error="" theta="0.2356195" phi="0" roughness="0.2222223" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="0.920196847005145" scale="1.73408160953626" flatten="0.319770321534745" masking="0" />
+      <Result Index="(3,7,2)" State="1" Error="" theta="0.2356195" phi="0" roughness="0.2222223" albedoF0="0.5">
+        <LobeReflected theta="0" roughness="0.909022211008151" scale="2.52250359513973" flatten="0.21228193793353" masking="0.0275250976692398" />
       </Result>
-      <Result Index="(4,7,2)" State="0" Error="" theta="0.3141593" phi="0" roughness="0.2222223" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="0.92522643128803" scale="1.54914710154138" flatten="0.361931887526012" masking="0" />
+      <Result Index="(4,7,2)" State="1" Error="" theta="0.3141593" phi="0" roughness="0.2222223" albedoF0="0.5">
+        <LobeReflected theta="0" roughness="0.915848249952639" scale="1.934492712515" flatten="0.282769418133793" masking="0" />
       </Result>
-      <Result Index="(5,7,2)" State="0" Error="" theta="0.3926991" phi="0" roughness="0.2222223" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="0.936978752120142" scale="1.22320827223715" flatten="0.485355956782554" masking="0" />
+      <Result Index="(5,7,2)" State="1" Error="" theta="0.3926991" phi="0" roughness="0.2222223" albedoF0="0.5">
+        <LobeReflected theta="0" roughness="0.908832536651712" scale="2.49559194197886" flatten="0.214761694848489" masking="0.00519145203113958" />
       </Result>
-      <Result Index="(6,7,2)" State="0" Error="" theta="0.4712389" phi="0" roughness="0.2222223" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="0.91701509693421" scale="1.91015936667492" flatten="0.285535610709639" masking="0" />
+      <Result Index="(6,7,2)" State="1" Error="" theta="0.4712389" phi="0" roughness="0.2222223" albedoF0="0.5">
+        <LobeReflected theta="0" roughness="0.90870254537938" scale="2.51623571668503" flatten="0.212761945702561" masking="0.00832792042432117" />
       </Result>
-      <Result Index="(7,7,2)" State="0" Error="" theta="0.5497787" phi="0" roughness="0.2222223" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="0.921489165130198" scale="1.69286937125072" flatten="0.327792107851447" masking="0" />
+      <Result Index="(7,7,2)" State="1" Error="" theta="0.5497787" phi="0" roughness="0.2222223" albedoF0="0.5">
+        <LobeReflected theta="0" roughness="0.908369065472542" scale="2.52660779684524" flatten="0.211836220976416" masking="0" />
       </Result>
-      <Result Index="(8,7,2)" State="0" Error="" theta="0.6283185" phi="0" roughness="0.2222223" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="0.915772145335511" scale="1.98022276309216" flatten="0.274189807504915" masking="0" />
+      <Result Index="(8,7,2)" State="1" Error="" theta="0.6283185" phi="0" roughness="0.2222223" albedoF0="0.5">
+        <LobeReflected theta="0" roughness="0.908238824684078" scale="2.52858223474624" flatten="0.211728555792601" masking="0" />
       </Result>
-      <Result Index="(9,7,2)" State="0" Error="" theta="0.7068584" phi="0" roughness="0.2222223" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="0.923215379530042" scale="1.62821694102093" flatten="0.340815675357409" masking="0" />
+      <Result Index="(9,7,2)" State="1" Error="" theta="0.7068584" phi="0" roughness="0.2222223" albedoF0="0.5">
+        <LobeReflected theta="0" roughness="0.908515187448249" scale="2.51391874442791" flatten="0.212894910022816" masking="0" />
       </Result>
-      <Result Index="(10,7,2)" State="0" Error="" theta="0.7853982" phi="0" roughness="0.2222223" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="1" scale="1.02581355703143" flatten="0.761479321564385" masking="0.920688038478326" />
+      <Result Index="(10,7,2)" State="1" Error="" theta="0.7853982" phi="0" roughness="0.2222223" albedoF0="0.5">
+        <LobeReflected theta="0" roughness="0.918981689114389" scale="1.80422498089398" flatten="0.303867318646932" masking="0.00133052546729101" />
       </Result>
-      <Result Index="(11,7,2)" State="0" Error="" theta="0.863938" phi="0" roughness="0.2222223" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="1" scale="1.03675538561315" flatten="0.771643714453564" masking="0.913380642448603" />
+      <Result Index="(11,7,2)" State="1" Error="" theta="0.863938" phi="0" roughness="0.2222223" albedoF0="0.5">
+        <LobeReflected theta="0" roughness="0.911558670516062" scale="2.74093687224059" flatten="0.196470691879907" masking="0.219425728547201" />
       </Result>
-      <Result Index="(12,7,2)" State="0" Error="" theta="0.9424778" phi="0" roughness="0.2222223" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="0.914269852024131" scale="2.0025414117262" flatten="0.2716669486488" masking="0" />
+      <Result Index="(12,7,2)" State="1" Error="" theta="0.9424778" phi="0" roughness="0.2222223" albedoF0="0.5">
+        <LobeReflected theta="0" roughness="0.910005426371862" scale="2.61932842151635" flatten="0.205717250129757" masking="0.117554377228734" />
       </Result>
-      <Result Index="(13,7,2)" State="0" Error="" theta="1.021018" phi="0" roughness="0.2222223" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="1" scale="1.10972095929077" flatten="0.759658967607906" masking="0.90756748240714" />
+      <Result Index="(13,7,2)" State="1" Error="" theta="1.021018" phi="0" roughness="0.2222223" albedoF0="0.5">
+        <LobeReflected theta="0" roughness="0.908635877228615" scale="2.5083916176915" flatten="0.213323162086468" masking="0.000861409620361206" />
       </Result>
-      <Result Index="(14,7,2)" State="0" Error="" theta="1.099557" phi="0" roughness="0.2222223" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="1" scale="1.18800712986417" flatten="0.699930156648009" masking="0.876752227276546" />
+      <Result Index="(14,7,2)" State="1" Error="" theta="1.099557" phi="0" roughness="0.2222223" albedoF0="0.5">
+        <LobeReflected theta="0" roughness="0.927688917621832" scale="1.48543336830849" flatten="0.37877236063495" masking="0.0051057998035194" />
       </Result>
-      <Result Index="(15,7,2)" State="0" Error="" theta="1.178097" phi="0" roughness="0.2222223" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="1" scale="1.17378407655437" flatten="0.81458959042978" masking="0.874439865286952" />
+      <Result Index="(15,7,2)" State="1" Error="" theta="1.178097" phi="0" roughness="0.2222223" albedoF0="0.5">
+        <LobeReflected theta="0" roughness="0.917005373812056" scale="2.05911712634585" flatten="0.266613078388536" masking="0.0758191148581046" />
       </Result>
-      <Result Index="(16,7,2)" State="0" Error="" theta="1.256637" phi="0" roughness="0.2222223" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="1" scale="1.18587104139544" flatten="0.92664796150779" masking="0.871945203480066" />
+      <Result Index="(16,7,2)" State="1" Error="" theta="1.256637" phi="0" roughness="0.2222223" albedoF0="0.5">
+        <LobeReflected theta="0" roughness="0.909240051455174" scale="2.58394936213449" flatten="0.210070674609271" masking="0.0575410628542644" />
       </Result>
-      <Result Index="(17,7,2)" State="0" Error="" theta="1.335177" phi="0" roughness="0.2222223" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="1" scale="1.33374267341398" flatten="0.9122345727138" masking="0.823367167969912" />
+      <Result Index="(17,7,2)" State="1" Error="" theta="1.335177" phi="0" roughness="0.2222223" albedoF0="0.5">
+        <LobeReflected theta="0" roughness="0.908608872921361" scale="2.77749424685065" flatten="0.199944139344393" masking="0.106733742106922" />
       </Result>
-      <Result Index="(18,7,2)" State="0" Error="" theta="1.413717" phi="0" roughness="0.2222223" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="1" scale="1.41835064125633" flatten="1.07463454335329" masking="0.781659305677552" />
+      <Result Index="(18,7,2)" State="1" Error="" theta="1.413717" phi="0" roughness="0.2222223" albedoF0="0.5">
+        <LobeReflected theta="0" roughness="0.909764381946368" scale="2.76634340460681" flatten="0.206474132174156" masking="0.126906017798377" />
       </Result>
-      <Result Index="(19,7,2)" State="0" Error="" theta="1.492257" phi="0" roughness="0.2222223" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="1" scale="1.2418334013268" flatten="1.01250776292688" masking="0.746574304150494" />
+      <Result Index="(19,7,2)" State="1" Error="" theta="1.492257" phi="0" roughness="0.2222223" albedoF0="0.5">
+        <LobeReflected theta="0" roughness="0.943434829776019" scale="0.835791262388855" flatten="0.506779223674028" masking="0.0206220932795676" />
       </Result>
-      <Result Index="(0,8,2)" State="0" Error="" theta="0" phi="0" roughness="0.1111112" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="0.901742945646179" scale="6.35562273422971" flatten="0.0828590558194964" masking="0" />
+      <Result Index="(0,8,2)" State="1" Error="" theta="0" phi="0" roughness="0.1111112" albedoF0="0.5">
+        <LobeReflected theta="0.000453849832045027" roughness="0.955414267502891" scale="1.13728219403664" flatten="0.541283326553125" masking="0" />
       </Result>
-      <Result Index="(1,8,2)" State="0" Error="" theta="0.07853982" phi="0" roughness="0.1111112" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="0.903107299732628" scale="5.7200548872266" flatten="0.0919291628341146" masking="0" />
+      <Result Index="(1,8,2)" State="1" Error="" theta="0.07853982" phi="0" roughness="0.1111112" albedoF0="0.5">
+        <LobeReflected theta="0.000223147574202074" roughness="0.955987810999342" scale="1.12762292057489" flatten="0.548504639127876" masking="0" />
       </Result>
-      <Result Index="(2,8,2)" State="0" Error="" theta="0.1570796" phi="0" roughness="0.1111112" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="0.903142843780952" scale="5.70828166413936" flatten="0.0921078775532769" masking="0" />
+      <Result Index="(2,8,2)" State="1" Error="" theta="0.1570796" phi="0" roughness="0.1111112" albedoF0="0.5">
+        <LobeReflected theta="0" roughness="0.95610888781134" scale="1.12717847694651" flatten="0.548271483969326" masking="0" />
       </Result>
-      <Result Index="(3,8,2)" State="0" Error="" theta="0.2356195" phi="0" roughness="0.1111112" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="0.903288298382706" scale="5.64735222417631" flatten="0.0930809231794303" masking="0" />
+      <Result Index="(3,8,2)" State="1" Error="" theta="0.2356195" phi="0" roughness="0.1111112" albedoF0="0.5">
+        <LobeReflected theta="0" roughness="0.955833494285667" scale="1.13090501597316" flatten="0.54615766783824" masking="0" />
       </Result>
-      <Result Index="(4,8,2)" State="0" Error="" theta="0.3141593" phi="0" roughness="0.1111112" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="0.93827500677868" scale="1.5500616244294" flatten="0.362308555782154" masking="0" />
+      <Result Index="(4,8,2)" State="1" Error="" theta="0.3141593" phi="0" roughness="0.1111112" albedoF0="0.5">
+        <LobeReflected theta="0" roughness="0.955349760826888" scale="1.13952579977262" flatten="0.539712944356199" masking="0" />
       </Result>
-      <Result Index="(5,8,2)" State="0" Error="" theta="0.3926991" phi="0" roughness="0.1111112" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="0.955610968787806" scale="1.13521813267334" flatten="0.543180747877662" masking="0" />
+      <Result Index="(5,8,2)" State="1" Error="" theta="0.3926991" phi="0" roughness="0.1111112" albedoF0="0.5">
+        <LobeReflected theta="0" roughness="0.955994734276576" scale="1.12781568017997" flatten="0.548213639620076" masking="0" />
       </Result>
-      <Result Index="(6,8,2)" State="0" Error="" theta="0.4712389" phi="0" roughness="0.1111112" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="0.903163310415055" scale="5.69995120054756" flatten="0.0922586211717586" masking="0" />
+      <Result Index="(6,8,2)" State="1" Error="" theta="0.4712389" phi="0" roughness="0.1111112" albedoF0="0.5">
+        <LobeReflected theta="0" roughness="0.955659651006386" scale="1.13428576103245" flatten="0.544131161668283" masking="0" />
       </Result>
-      <Result Index="(7,8,2)" State="0" Error="" theta="0.5497787" phi="0" roughness="0.1111112" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="0.903541423551427" scale="5.6499733058612" flatten="0.0930668746294656" masking="0.0120798780064971" />
+      <Result Index="(7,8,2)" State="1" Error="" theta="0.5497787" phi="0" roughness="0.1111112" albedoF0="0.5">
+        <LobeReflected theta="0" roughness="0.956060529072421" scale="1.12872212443598" flatten="0.547888061604493" masking="0" />
       </Result>
-      <Result Index="(8,8,2)" State="0" Error="" theta="0.6283185" phi="0" roughness="0.1111112" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="0.903126762339017" scale="5.72099467145968" flatten="0.0919123100007642" masking="0" />
+      <Result Index="(8,8,2)" State="1" Error="" theta="0.6283185" phi="0" roughness="0.1111112" albedoF0="0.5">
+        <LobeReflected theta="0" roughness="0.956211437472721" scale="1.12426521208758" flatten="0.550876354312146" masking="0" />
       </Result>
-      <Result Index="(9,8,2)" State="0" Error="" theta="0.7068584" phi="0" roughness="0.1111112" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="0.935929794239511" scale="1.63014129955124" flatten="0.341215870271444" masking="0" />
+      <Result Index="(9,8,2)" State="1" Error="" theta="0.7068584" phi="0" roughness="0.1111112" albedoF0="0.5">
+        <LobeReflected theta="0" roughness="0.953271725086118" scale="1.17919829702353" flatten="0.514592590478024" masking="0.00232154835693427" />
       </Result>
-      <Result Index="(10,8,2)" State="0" Error="" theta="0.7853982" phi="0" roughness="0.1111112" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="1" scale="1.0784221499001" flatten="0.718626369939117" masking="0.779603122544295" />
+      <Result Index="(10,8,2)" State="1" Error="" theta="0.7853982" phi="0" roughness="0.1111112" albedoF0="0.5">
+        <LobeReflected theta="0" roughness="0.95463988294794" scale="1.1548300572127" flatten="0.529442052896423" masking="0.000107538618414958" />
       </Result>
-      <Result Index="(11,8,2)" State="0" Error="" theta="0.863938" phi="0" roughness="0.1111112" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="1" scale="1.08932462234993" flatten="0.729015938845725" masking="0.771565555221037" />
+      <Result Index="(11,8,2)" State="1" Error="" theta="0.863938" phi="0" roughness="0.1111112" albedoF0="0.5">
+        <LobeReflected theta="0" roughness="0.954919394060963" scale="1.14750267106115" flatten="0.534537672798882" masking="0" />
       </Result>
-      <Result Index="(12,8,2)" State="0" Error="" theta="0.9424778" phi="0" roughness="0.1111112" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="0.903179667093558" scale="5.70131609842491" flatten="0.0922361679501689" masking="0" />
+      <Result Index="(12,8,2)" State="1" Error="" theta="0.9424778" phi="0" roughness="0.1111112" albedoF0="0.5">
+        <LobeReflected theta="0" roughness="0.955816828662468" scale="1.13175391904736" flatten="0.545893719938602" masking="0" />
       </Result>
-      <Result Index="(13,8,2)" State="0" Error="" theta="1.021018" phi="0" roughness="0.1111112" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="1" scale="1.15907295323474" flatten="0.73507355368865" masking="0.779776918797995" />
+      <Result Index="(13,8,2)" State="1" Error="" theta="1.021018" phi="0" roughness="0.1111112" albedoF0="0.5">
+        <LobeReflected theta="0" roughness="0.956036275122802" scale="1.12937800084839" flatten="0.54755286880994" masking="0" />
       </Result>
-      <Result Index="(14,8,2)" State="0" Error="" theta="1.099557" phi="0" roughness="0.1111112" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="1" scale="1.21389864244863" flatten="0.701427432759504" masking="0.825291720438289" />
+      <Result Index="(14,8,2)" State="1" Error="" theta="1.099557" phi="0" roughness="0.1111112" albedoF0="0.5">
+        <LobeReflected theta="0" roughness="0.955616718780777" scale="1.1349977393626" flatten="0.544000867740384" masking="0" />
       </Result>
-      <Result Index="(15,8,2)" State="0" Error="" theta="1.178097" phi="0" roughness="0.1111112" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="1" scale="1.20988446158868" flatten="0.806578777923317" masking="0.795379923635816" />
+      <Result Index="(15,8,2)" State="1" Error="" theta="1.178097" phi="0" roughness="0.1111112" albedoF0="0.5">
+        <LobeReflected theta="0" roughness="0.955598634323648" scale="1.13646797068983" flatten="0.541850362157502" masking="0" />
       </Result>
-      <Result Index="(16,8,2)" State="0" Error="" theta="1.256637" phi="0" roughness="0.1111112" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="1" scale="1.20471162115585" flatten="0.928866268220621" masking="0.831091688606123" />
+      <Result Index="(16,8,2)" State="1" Error="" theta="1.256637" phi="0" roughness="0.1111112" albedoF0="0.5">
+        <LobeReflected theta="0" roughness="0.950761450129167" scale="1.2277470489583" flatten="0.484615537284355" masking="0" />
       </Result>
-      <Result Index="(17,8,2)" State="0" Error="" theta="1.335177" phi="0" roughness="0.1111112" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="1" scale="1.34913630825387" flatten="0.913862678546871" masking="0.781436717981379" />
+      <Result Index="(17,8,2)" State="1" Error="" theta="1.335177" phi="0" roughness="0.1111112" albedoF0="0.5">
+        <LobeReflected theta="0" roughness="0.953399308747431" scale="1.17351228147009" flatten="0.517130496390118" masking="0" />
       </Result>
-      <Result Index="(18,8,2)" State="0" Error="" theta="1.413717" phi="0" roughness="0.1111112" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="1" scale="1.43377394366847" flatten="1.07152214239287" masking="0.736502497720884" />
+      <Result Index="(18,8,2)" State="1" Error="" theta="1.413717" phi="0" roughness="0.1111112" albedoF0="0.5">
+        <LobeReflected theta="0" roughness="0.95398080525403" scale="1.15822213176444" flatten="0.524053423273386" masking="0" />
       </Result>
-      <Result Index="(19,8,2)" State="0" Error="" theta="1.492257" phi="0" roughness="0.1111112" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="1" scale="1.22309873578061" flatten="1.0006237884547" masking="0.789073298134135" />
+      <Result Index="(19,8,2)" State="1" Error="" theta="1.492257" phi="0" roughness="0.1111112" albedoF0="0.5">
+        <LobeReflected theta="0" roughness="0.967496782332263" scale="0.632311305089122" flatten="0.647774557624533" masking="0.0287865165025712" />
       </Result>
-      <Result Index="(0,9,2)" State="0" Error="" theta="0" phi="0" roughness="4.470348E-08" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="0.913818637586584" scale="10" flatten="0.0505740502646943" masking="0.233177869649392" />
+      <Result Index="(0,9,2)" State="1" Error="" theta="0" phi="0" roughness="4.470348E-08" albedoF0="0.5">
+        <LobeReflected theta="5.67483929601757E-05" roughness="1" scale="0.79239456325277" flatten="0.99212613626349" masking="0.0237100089663263" />
       </Result>
-      <Result Index="(1,9,2)" State="0" Error="" theta="0.07853982" phi="0" roughness="4.470348E-08" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="0.910166352961427" scale="10" flatten="0.0505040669851335" masking="0.0959095479113679" />
+      <Result Index="(1,9,2)" State="1" Error="" theta="0.07853982" phi="0" roughness="4.470348E-08" albedoF0="0.5">
+        <LobeReflected theta="5.67483929601757E-05" roughness="1" scale="0.79239456325277" flatten="0.99212613626349" masking="0.0237100089663263" />
       </Result>
-      <Result Index="(2,9,2)" State="0" Error="" theta="0.1570796" phi="0" roughness="4.470348E-08" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="0.917708861023129" scale="10" flatten="0.0501498949539215" masking="0.321304087009205" />
+      <Result Index="(2,9,2)" State="1" Error="" theta="0.1570796" phi="0" roughness="4.470348E-08" albedoF0="0.5">
+        <LobeReflected theta="5.67483929601757E-05" roughness="1" scale="0.79239456325277" flatten="0.99212613626349" masking="0.0237100089663263" />
       </Result>
-      <Result Index="(3,9,2)" State="0" Error="" theta="0.2356195" phi="0" roughness="4.470348E-08" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="0.924184669073513" scale="10" flatten="0.0508629907932435" masking="0.52633189883096" />
+      <Result Index="(3,9,2)" State="1" Error="" theta="0.2356195" phi="0" roughness="4.470348E-08" albedoF0="0.5">
+        <LobeReflected theta="5.67483929601757E-05" roughness="1" scale="0.79239456325277" flatten="0.99212613626349" masking="0.0237100089663263" />
       </Result>
-      <Result Index="(4,9,2)" State="0" Error="" theta="0.3141593" phi="0" roughness="4.470348E-08" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="1" scale="0.830176859173156" flatten="0.930995592240615" masking="0.10968740370918" />
+      <Result Index="(4,9,2)" State="1" Error="" theta="0.3141593" phi="0" roughness="4.470348E-08" albedoF0="0.5">
+        <LobeReflected theta="5.67483929601757E-05" roughness="1" scale="0.79239456325277" flatten="0.99212613626349" masking="0.0237100089663263" />
       </Result>
-      <Result Index="(5,9,2)" State="0" Error="" theta="0.3926991" phi="0" roughness="4.470348E-08" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="1" scale="0.805612770653837" flatten="0.967571169361754" masking="0.0547282004301494" />
+      <Result Index="(5,9,2)" State="1" Error="" theta="0.3926991" phi="0" roughness="4.470348E-08" albedoF0="0.5">
+        <LobeReflected theta="5.67483929601757E-05" roughness="1" scale="0.79239456325277" flatten="0.99212613626349" masking="0.0237100089663263" />
       </Result>
-      <Result Index="(6,9,2)" State="0" Error="" theta="0.4712389" phi="0" roughness="4.470348E-08" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="0.924301937855132" scale="10" flatten="0.0509615920204193" masking="0.52705110003999" />
+      <Result Index="(6,9,2)" State="1" Error="" theta="0.4712389" phi="0" roughness="4.470348E-08" albedoF0="0.5">
+        <LobeReflected theta="5.67483929601757E-05" roughness="1" scale="0.79239456325277" flatten="0.99212613626349" masking="0.0237100089663263" />
       </Result>
-      <Result Index="(7,9,2)" State="0" Error="" theta="0.5497787" phi="0" roughness="4.470348E-08" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="0.92200968790348" scale="10" flatten="0.0508734858287504" masking="0.486401618442925" />
+      <Result Index="(7,9,2)" State="1" Error="" theta="0.5497787" phi="0" roughness="4.470348E-08" albedoF0="0.5">
+        <LobeReflected theta="5.67483929601757E-05" roughness="1" scale="0.79239456325277" flatten="0.99212613626349" masking="0.0237100089663263" />
       </Result>
-      <Result Index="(8,9,2)" State="0" Error="" theta="0.6283185" phi="0" roughness="4.470348E-08" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="0.907411135708143" scale="10" flatten="0.0508509365099925" masking="0" />
+      <Result Index="(8,9,2)" State="1" Error="" theta="0.6283185" phi="0" roughness="4.470348E-08" albedoF0="0.5">
+        <LobeReflected theta="4.60130799519083E-05" roughness="1" scale="0.793804350663551" flatten="0.988481714076602" masking="0.0229878333642959" />
       </Result>
-      <Result Index="(9,9,2)" State="0" Error="" theta="0.7068584" phi="0" roughness="4.470348E-08" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="1" scale="0.818427012995046" flatten="0.952589621579471" masking="0.0870885674859273" />
+      <Result Index="(9,9,2)" State="1" Error="" theta="0.7068584" phi="0" roughness="4.470348E-08" albedoF0="0.5">
+        <LobeReflected theta="0.000222016286273431" roughness="1" scale="0.790033452243192" flatten="0.991974271175793" masking="0.0230603799623664" />
       </Result>
-      <Result Index="(10,9,2)" State="0" Error="" theta="0.7853982" phi="0" roughness="4.470348E-08" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="1" scale="1.08164750841366" flatten="0.665748661153915" masking="0.656515460900896" />
+      <Result Index="(10,9,2)" State="1" Error="" theta="0.7853982" phi="0" roughness="4.470348E-08" albedoF0="0.5">
+        <LobeReflected theta="8.95909291329348E-05" roughness="1" scale="0.790671711972234" flatten="0.990712058941997" masking="0.026358072125868" />
       </Result>
-      <Result Index="(11,9,2)" State="0" Error="" theta="0.863938" phi="0" roughness="4.470348E-08" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="1" scale="1.0879369783742" flatten="0.67339361187433" masking="0.652030178951677" />
+      <Result Index="(11,9,2)" State="1" Error="" theta="0.863938" phi="0" roughness="4.470348E-08" albedoF0="0.5">
+        <LobeReflected theta="0.000156131837062702" roughness="1" scale="0.793910441230694" flatten="0.986913683633203" masking="0.0257773407197786" />
       </Result>
-      <Result Index="(12,9,2)" State="0" Error="" theta="0.9424778" phi="0" roughness="4.470348E-08" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="0.907265638740097" scale="10" flatten="0.0504633319543885" masking="0.00161377426581263" />
+      <Result Index="(12,9,2)" State="1" Error="" theta="0.9424778" phi="0" roughness="4.470348E-08" albedoF0="0.5">
+        <LobeReflected theta="0.000683809013659445" roughness="1" scale="0.789178748147407" flatten="1.00376211070159" masking="0.0268753634491341" />
       </Result>
-      <Result Index="(13,9,2)" State="0" Error="" theta="1.021018" phi="0" roughness="4.470348E-08" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="1" scale="1.14789668805729" flatten="0.690991390741321" masking="0.70176387882843" />
+      <Result Index="(13,9,2)" State="1" Error="" theta="1.021018" phi="0" roughness="4.470348E-08" albedoF0="0.5">
+        <LobeReflected theta="0.000253040442556803" roughness="1" scale="0.791162985156924" flatten="0.99874769770817" masking="0.0289157357910696" />
       </Result>
-      <Result Index="(14,9,2)" State="0" Error="" theta="1.099557" phi="0" roughness="4.470348E-08" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="1" scale="1.24869180469932" flatten="0.676918715036948" masking="0.66755837009243" />
+      <Result Index="(14,9,2)" State="1" Error="" theta="1.099557" phi="0" roughness="4.470348E-08" albedoF0="0.5">
+        <LobeReflected theta="9.92825498911319E-05" roughness="1" scale="0.796598607708966" flatten="0.983977780715099" masking="0.0314780278843122" />
       </Result>
-      <Result Index="(15,9,2)" State="0" Error="" theta="1.178097" phi="0" roughness="4.470348E-08" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="1" scale="1.21632015143628" flatten="0.758202027231268" masking="0.667856536124569" />
+      <Result Index="(15,9,2)" State="1" Error="" theta="1.178097" phi="0" roughness="4.470348E-08" albedoF0="0.5">
+        <LobeReflected theta="9.83933778418675E-07" roughness="1" scale="0.797622008555316" flatten="0.988758674291634" masking="0.0344600939632194" />
       </Result>
-      <Result Index="(16,9,2)" State="0" Error="" theta="1.256637" phi="0" roughness="4.470348E-08" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="1" scale="1.21528286972838" flatten="0.926032733285912" masking="0.784765278235359" />
+      <Result Index="(16,9,2)" State="1" Error="" theta="1.256637" phi="0" roughness="4.470348E-08" albedoF0="0.5">
+        <LobeReflected theta="0.000637826923123206" roughness="1" scale="0.800773331508724" flatten="0.988396466940236" masking="0.0378539233146205" />
       </Result>
-      <Result Index="(17,9,2)" State="0" Error="" theta="1.335177" phi="0" roughness="4.470348E-08" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="1" scale="1.35568638707636" flatten="0.909071272647268" masking="0.736868200295399" />
+      <Result Index="(17,9,2)" State="1" Error="" theta="1.335177" phi="0" roughness="4.470348E-08" albedoF0="0.5">
+        <LobeReflected theta="0.000280745338506567" roughness="1" scale="0.807661424310743" flatten="0.981537800774409" masking="0.041433866594456" />
       </Result>
-      <Result Index="(18,9,2)" State="0" Error="" theta="1.413717" phi="0" roughness="4.470348E-08" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="1" scale="1.43798753294818" flatten="1.0622709364544" masking="0.69972351965531" />
+      <Result Index="(18,9,2)" State="1" Error="" theta="1.413717" phi="0" roughness="4.470348E-08" albedoF0="0.5">
+        <LobeReflected theta="0" roughness="1" scale="0.812285392749848" flatten="0.991334770972235" masking="0.0466533693272024" />
       </Result>
-      <Result Index="(19,9,2)" State="0" Error="" theta="1.492257" phi="0" roughness="4.470348E-08" albedoF0="0.5">
-        <LobeReflected theta="-1" roughness="0.999545579795193" scale="0.001" flatten="1E-06" masking="0.955379197445055" />
+      <Result Index="(19,9,2)" State="-1" Error="Linear search eval returned NaN!" theta="1.492257" phi="0" roughness="4.470348E-08" albedoF0="0.5">
+        <LobeReflected theta="NaN" roughness="1" scale="0" flatten="0.5" masking="0" />
       </Result>
       <Result Index="(0,0,3)" State="1" Error="" theta="0" phi="0" roughness="1" albedoF0="0.25">
         <LobeReflected theta="0" roughness="0.928620065695814" scale="0.328841346047115" flatten="0.858972381608523" masking="0.702048563114092" />
@@ -2171,245 +2171,245 @@
       <Result Index="(19,5,3)" State="1" Error="" theta="1.492257" phi="0" roughness="0.4444445" albedoF0="0.25">
         <LobeReflected theta="0.596485317083207" roughness="1" scale="1.19016076178848" flatten="0.928023651332279" masking="0.953421749834423" />
       </Result>
-      <Result Index="(0,6,3)" State="0" Error="" theta="0" phi="0" roughness="0.3333334" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="0.918911701064261" scale="0.713530166962366" flatten="0.387156005308433" masking="0.0450223604531271" />
+      <Result Index="(0,6,3)" State="1" Error="" theta="0" phi="0" roughness="0.3333334" albedoF0="0.25">
+        <LobeReflected theta="9.95936465933073E-05" roughness="0.914841033208301" scale="0.990537259630894" flatten="0.270553991084559" masking="0.395797322378464" />
       </Result>
-      <Result Index="(1,6,3)" State="0" Error="" theta="0.07853982" phi="0" roughness="0.3333334" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="0.975878825120148" scale="0.515653789743009" flatten="0.642197851917542" masking="0.837754659314456" />
+      <Result Index="(1,6,3)" State="1" Error="" theta="0.07853982" phi="0" roughness="0.3333334" albedoF0="0.25">
+        <LobeReflected theta="0" roughness="0.913749457371931" scale="0.97902231508146" flatten="0.275382425106815" masking="0.343423314805571" />
       </Result>
-      <Result Index="(2,6,3)" State="0" Error="" theta="0.1570796" phi="0" roughness="0.3333334" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="0.918497296089989" scale="0.845813634801435" flatten="0.323390629644167" masking="0.313887124502185" />
+      <Result Index="(2,6,3)" State="1" Error="" theta="0.1570796" phi="0" roughness="0.3333334" albedoF0="0.25">
+        <LobeReflected theta="0" roughness="0.914170680290207" scale="1.03343429908609" flatten="0.259963377978008" masking="0.425880945424821" />
       </Result>
-      <Result Index="(3,6,3)" State="0" Error="" theta="0.2356195" phi="0" roughness="0.3333334" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="1" scale="0.480329954823702" flatten="0.745117569361011" masking="0.985723836768272" />
+      <Result Index="(3,6,3)" State="1" Error="" theta="0.2356195" phi="0" roughness="0.3333334" albedoF0="0.25">
+        <LobeReflected theta="0" roughness="0.915648350125049" scale="0.966898954768449" flatten="0.278652126757594" masking="0.402126393097863" />
       </Result>
-      <Result Index="(4,6,3)" State="0" Error="" theta="0.3141593" phi="0" roughness="0.3333334" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="0.914608986474744" scale="0.938218391744595" flatten="0.287248620757899" masking="0.332590831414993" />
+      <Result Index="(4,6,3)" State="1" Error="" theta="0.3141593" phi="0" roughness="0.3333334" albedoF0="0.25">
+        <LobeReflected theta="0" roughness="0.914572974032984" scale="0.939229531252322" flatten="0.286578988944854" masking="0.329703690141802" />
       </Result>
-      <Result Index="(5,6,3)" State="0" Error="" theta="0.3926991" phi="0" roughness="0.3333334" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="0.914901937438759" scale="0.910674298977968" flatten="0.296780251752077" masking="0.301646112461164" />
+      <Result Index="(5,6,3)" State="1" Error="" theta="0.3926991" phi="0" roughness="0.3333334" albedoF0="0.25">
+        <LobeReflected theta="0" roughness="0.917497721451116" scale="0.840593247753645" flatten="0.324495489566215" masking="0.277854277467847" />
       </Result>
-      <Result Index="(6,6,3)" State="0" Error="" theta="0.4712389" phi="0" roughness="0.3333334" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="1" scale="0.469126802726731" flatten="0.766916408631903" masking="0.96141187628241" />
+      <Result Index="(6,6,3)" State="1" Error="" theta="0.4712389" phi="0" roughness="0.3333334" albedoF0="0.25">
+        <LobeReflected theta="0" roughness="0.915177415425021" scale="0.947220457812647" flatten="0.284951107984564" masking="0.361243790547623" />
       </Result>
-      <Result Index="(7,6,3)" State="0" Error="" theta="0.5497787" phi="0" roughness="0.3333334" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="1" scale="0.473200818833698" flatten="0.759582709681176" masking="0.966402934480205" />
+      <Result Index="(7,6,3)" State="1" Error="" theta="0.5497787" phi="0" roughness="0.3333334" albedoF0="0.25">
+        <LobeReflected theta="0" roughness="0.910478570302549" scale="0.887966031556714" flatten="0.303080008921848" masking="0.0813544644874365" />
       </Result>
-      <Result Index="(8,6,3)" State="0" Error="" theta="0.6283185" phi="0" roughness="0.3333334" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="1" scale="0.467745970683923" flatten="0.772273594095851" masking="0.954763947617359" />
+      <Result Index="(8,6,3)" State="1" Error="" theta="0.6283185" phi="0" roughness="0.3333334" albedoF0="0.25">
+        <LobeReflected theta="0" roughness="0.915129083365438" scale="0.927732720506307" flatten="0.291004439317757" masking="0.333285922538568" />
       </Result>
-      <Result Index="(9,6,3)" State="0" Error="" theta="0.7068584" phi="0" roughness="0.3333334" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="1" scale="0.473349581639774" flatten="0.770680131034779" masking="0.959291109847375" />
+      <Result Index="(9,6,3)" State="1" Error="" theta="0.7068584" phi="0" roughness="0.3333334" albedoF0="0.25">
+        <LobeReflected theta="0" roughness="0.911756351009327" scale="0.973593092924532" flatten="0.275602438631878" masking="0.278253794753137" />
       </Result>
-      <Result Index="(10,6,3)" State="0" Error="" theta="0.7853982" phi="0" roughness="0.3333334" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="1" scale="0.484593087267046" flatten="0.754839511414929" masking="0.973312025832199" />
+      <Result Index="(10,6,3)" State="1" Error="" theta="0.7853982" phi="0" roughness="0.3333334" albedoF0="0.25">
+        <LobeReflected theta="0" roughness="0.912249025831989" scale="1.07162725353465" flatten="0.250663277017113" masking="0.419187390838566" />
       </Result>
-      <Result Index="(11,6,3)" State="0" Error="" theta="0.863938" phi="0" roughness="0.3333334" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="1" scale="0.47982878728099" flatten="0.789610692792868" masking="0.943007420469058" />
+      <Result Index="(11,6,3)" State="1" Error="" theta="0.863938" phi="0" roughness="0.3333334" albedoF0="0.25">
+        <LobeReflected theta="0" roughness="0.914804798755768" scale="0.977080851686256" flatten="0.277916447737596" masking="0.381953178212943" />
       </Result>
-      <Result Index="(12,6,3)" State="0" Error="" theta="0.9424778" phi="0" roughness="0.3333334" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="0.977245403958205" scale="0.54137540763698" flatten="0.648770685917332" masking="0.85707191293164" />
+      <Result Index="(12,6,3)" State="1" Error="" theta="0.9424778" phi="0" roughness="0.3333334" albedoF0="0.25">
+        <LobeReflected theta="0" roughness="0.910365866467548" scale="0.897212604021003" flatten="0.301360579708567" masking="0.0993613638519823" />
       </Result>
-      <Result Index="(13,6,3)" State="0" Error="" theta="1.021018" phi="0" roughness="0.3333334" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="0.912611056400539" scale="1.02583330907509" flatten="0.268073657221145" masking="0.352675263398211" />
+      <Result Index="(13,6,3)" State="1" Error="" theta="1.021018" phi="0" roughness="0.3333334" albedoF0="0.25">
+        <LobeReflected theta="0" roughness="0.911097576860712" scale="0.901868058873927" flatten="0.301228250953007" masking="0.128865654892486" />
       </Result>
-      <Result Index="(14,6,3)" State="0" Error="" theta="1.099557" phi="0" roughness="0.3333334" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="0.970754395022422" scale="0.598481883043214" flatten="0.616544192433387" masking="0.829592948170909" />
+      <Result Index="(14,6,3)" State="1" Error="" theta="1.099557" phi="0" roughness="0.3333334" albedoF0="0.25">
+        <LobeReflected theta="0" roughness="0.929193232494057" scale="0.539678003022085" flatten="0.553659729491693" masking="0.00544801658886666" />
       </Result>
-      <Result Index="(15,6,3)" State="0" Error="" theta="1.178097" phi="0" roughness="0.3333334" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="1" scale="0.566347552535773" flatten="0.834267375321804" masking="0.927129971522994" />
+      <Result Index="(15,6,3)" State="1" Error="" theta="1.178097" phi="0" roughness="0.3333334" albedoF0="0.25">
+        <LobeReflected theta="0" roughness="0.912059674131154" scale="0.98189969575935" flatten="0.285129673242417" masking="0.253266696259251" />
       </Result>
-      <Result Index="(16,6,3)" State="0" Error="" theta="1.256637" phi="0" roughness="0.3333334" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="1" scale="0.634121944497246" flatten="0.828820667007309" masking="0.94988864912841" />
+      <Result Index="(16,6,3)" State="1" Error="" theta="1.256637" phi="0" roughness="0.3333334" albedoF0="0.25">
+        <LobeReflected theta="0" roughness="0.926619848313076" scale="0.627543977752387" flatten="0.462007489327476" masking="0.0940038863871511" />
       </Result>
-      <Result Index="(17,6,3)" State="0" Error="" theta="1.335177" phi="0" roughness="0.3333334" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="1" scale="0.710301922395228" flatten="0.876387692414212" masking="0.950279907455339" />
+      <Result Index="(17,6,3)" State="1" Error="" theta="1.335177" phi="0" roughness="0.3333334" albedoF0="0.25">
+        <LobeReflected theta="0" roughness="0.926277146442735" scale="0.790542923341811" flatten="0.421934524049847" masking="0.402799743025836" />
       </Result>
-      <Result Index="(18,6,3)" State="0" Error="" theta="1.413717" phi="0" roughness="0.3333334" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="1" scale="0.972351578183305" flatten="0.686384777986336" masking="0.906685791363909" />
+      <Result Index="(18,6,3)" State="1" Error="" theta="1.413717" phi="0" roughness="0.3333334" albedoF0="0.25">
+        <LobeReflected theta="0" roughness="0.934670315485073" scale="0.531550118236084" flatten="0.588642812650424" masking="0.063923016725396" />
       </Result>
-      <Result Index="(19,6,3)" State="0" Error="" theta="1.492257" phi="0" roughness="0.3333334" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="1" scale="1.18777297269698" flatten="0.925427327887632" masking="0.957689344685315" />
+      <Result Index="(19,6,3)" State="1" Error="" theta="1.492257" phi="0" roughness="0.3333334" albedoF0="0.25">
+        <LobeReflected theta="0" roughness="0.936140493351407" scale="0.412577300344678" flatten="0.551678610466016" masking="0.0182367768679185" />
       </Result>
-      <Result Index="(0,7,3)" State="0" Error="" theta="0" phi="0" roughness="0.2222223" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="0.9225967934239" scale="0.818095205178478" flatten="0.338884919664994" masking="0" />
+      <Result Index="(0,7,3)" State="1" Error="" theta="0" phi="0" roughness="0.2222223" albedoF0="0.25">
+        <LobeReflected theta="4.81114578259645E-05" roughness="0.912292865179159" scale="1.1040806629774" flatten="0.243839468446557" masking="0" />
       </Result>
-      <Result Index="(1,7,3)" State="0" Error="" theta="0.07853982" phi="0" roughness="0.2222223" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="0.996990267876353" scale="0.520489364684483" flatten="0.677268367673602" masking="0.835565622948553" />
+      <Result Index="(1,7,3)" State="1" Error="" theta="0.07853982" phi="0" roughness="0.2222223" albedoF0="0.25">
+        <LobeReflected theta="0" roughness="0.912464890091523" scale="1.10781252592192" flatten="0.24339468563495" masking="0.0080179492625662" />
       </Result>
-      <Result Index="(2,7,3)" State="0" Error="" theta="0.1570796" phi="0" roughness="0.2222223" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="0.911920006443511" scale="1.11521840758312" flatten="0.241760951373298" masking="0" />
+      <Result Index="(2,7,3)" State="1" Error="" theta="0.1570796" phi="0" roughness="0.2222223" albedoF0="0.25">
+        <LobeReflected theta="0" roughness="0.91195616992441" scale="1.1159266788273" flatten="0.241677401494279" masking="1.23082351283474E-06" />
       </Result>
-      <Result Index="(3,7,3)" State="0" Error="" theta="0.2356195" phi="0" roughness="0.2222223" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="1" scale="0.523222231999262" flatten="0.675562391843805" masking="0.870063247808625" />
+      <Result Index="(3,7,3)" State="1" Error="" theta="0.2356195" phi="0" roughness="0.2222223" albedoF0="0.25">
+        <LobeReflected theta="0" roughness="0.91182181560731" scale="1.12040001554783" flatten="0.240471273966166" masking="0.000245128302286516" />
       </Result>
-      <Result Index="(4,7,3)" State="0" Error="" theta="0.3141593" phi="0" roughness="0.2222223" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="0.909593382520731" scale="1.20545526754915" flatten="0.222292434289845" masking="0" />
+      <Result Index="(4,7,3)" State="1" Error="" theta="0.3141593" phi="0" roughness="0.2222223" albedoF0="0.25">
+        <LobeReflected theta="0" roughness="0.91070744012732" scale="1.16809769241642" flatten="0.229865072621773" masking="0.00786323341854509" />
       </Result>
-      <Result Index="(5,7,3)" State="0" Error="" theta="0.3926991" phi="0" roughness="0.2222223" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="0.910381202276479" scale="1.17161511207967" flatten="0.229250470648263" masking="0" />
+      <Result Index="(5,7,3)" State="1" Error="" theta="0.3926991" phi="0" roughness="0.2222223" albedoF0="0.25">
+        <LobeReflected theta="0" roughness="0.911074322767252" scale="1.15026402525199" flatten="0.233740828040241" masking="0.00106204416475247" />
       </Result>
-      <Result Index="(6,7,3)" State="0" Error="" theta="0.4712389" phi="0" roughness="0.2222223" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="1" scale="0.513843161214743" flatten="0.693390692617543" masking="0.851673021912242" />
+      <Result Index="(6,7,3)" State="1" Error="" theta="0.4712389" phi="0" roughness="0.2222223" albedoF0="0.25">
+        <LobeReflected theta="0" roughness="0.914445186930809" scale="1.03867697555798" flatten="0.260416162262679" masking="0" />
       </Result>
-      <Result Index="(7,7,3)" State="0" Error="" theta="0.5497787" phi="0" roughness="0.2222223" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="1" scale="0.516043465671166" flatten="0.689887065706456" masking="0.857935026453026" />
+      <Result Index="(7,7,3)" State="1" Error="" theta="0.5497787" phi="0" roughness="0.2222223" albedoF0="0.25">
+        <LobeReflected theta="0" roughness="0.910204202728379" scale="1.19611100004345" flatten="0.224460058023379" masking="0.014627471107097" />
       </Result>
-      <Result Index="(8,7,3)" State="0" Error="" theta="0.6283185" phi="0" roughness="0.2222223" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="1" scale="0.511806172466286" flatten="0.699978388891135" masking="0.849288386075944" />
+      <Result Index="(8,7,3)" State="1" Error="" theta="0.6283185" phi="0" roughness="0.2222223" albedoF0="0.25">
+        <LobeReflected theta="0" roughness="0.908665939178573" scale="1.25774391058891" flatten="0.212775244582593" masking="0.00906488632977606" />
       </Result>
-      <Result Index="(9,7,3)" State="0" Error="" theta="0.7068584" phi="0" roughness="0.2222223" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="1" scale="0.516367976522574" flatten="0.698068486964674" masking="0.850451689874434" />
+      <Result Index="(9,7,3)" State="1" Error="" theta="0.7068584" phi="0" roughness="0.2222223" albedoF0="0.25">
+        <LobeReflected theta="0" roughness="0.909359568201879" scale="1.24666174800553" flatten="0.214917853768561" masking="0.0301233953915234" />
       </Result>
-      <Result Index="(10,7,3)" State="0" Error="" theta="0.7853982" phi="0" roughness="0.2222223" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="1" scale="0.527459554027018" flatten="0.688253794627431" masking="0.86237469308496" />
+      <Result Index="(10,7,3)" State="1" Error="" theta="0.7853982" phi="0" roughness="0.2222223" albedoF0="0.25">
+        <LobeReflected theta="0" roughness="0.908420622294548" scale="1.26116509924218" flatten="0.212110134408557" masking="4.4009056134205E-09" />
       </Result>
-      <Result Index="(11,7,3)" State="0" Error="" theta="0.863938" phi="0" roughness="0.2222223" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="1" scale="0.523036384804098" flatten="0.715588590949199" masking="0.838769024608643" />
+      <Result Index="(11,7,3)" State="1" Error="" theta="0.863938" phi="0" roughness="0.2222223" albedoF0="0.25">
+        <LobeReflected theta="0" roughness="0.916608359511854" scale="1.03217366141173" flatten="0.26359435575745" masking="0.0842709451131756" />
       </Result>
-      <Result Index="(12,7,3)" State="0" Error="" theta="0.9424778" phi="0" roughness="0.2222223" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="1" scale="0.55311622499477" flatten="0.685409786694262" masking="0.867217425924533" />
+      <Result Index="(12,7,3)" State="1" Error="" theta="0.9424778" phi="0" roughness="0.2222223" albedoF0="0.25">
+        <LobeReflected theta="0" roughness="0.916769211317831" scale="1.01805964927108" flatten="0.2677430512165" masking="0.0781226200240406" />
       </Result>
-      <Result Index="(13,7,3)" State="0" Error="" theta="1.021018" phi="0" roughness="0.2222223" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="0.907555638270174" scale="1.30775932734614" flatten="0.204217959725158" masking="0.00473597522873507" />
+      <Result Index="(13,7,3)" State="1" Error="" theta="1.021018" phi="0" roughness="0.2222223" albedoF0="0.25">
+        <LobeReflected theta="0" roughness="0.908434694202513" scale="1.26661473631853" flatten="0.211076973299935" masking="0" />
       </Result>
-      <Result Index="(14,7,3)" State="0" Error="" theta="1.099557" phi="0" roughness="0.2222223" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="0.948968024872379" scale="0.767895980239824" flatten="0.413770415604" masking="0.582028301187685" />
+      <Result Index="(14,7,3)" State="1" Error="" theta="1.099557" phi="0" roughness="0.2222223" albedoF0="0.25">
+        <LobeReflected theta="0" roughness="0.908483556278618" scale="1.26584571665689" flatten="0.211158868532652" masking="0" />
       </Result>
-      <Result Index="(15,7,3)" State="0" Error="" theta="1.178097" phi="0" roughness="0.2222223" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="1" scale="0.647950925939818" flatten="0.688106161609646" masking="0.886754610420884" />
+      <Result Index="(15,7,3)" State="1" Error="" theta="1.178097" phi="0" roughness="0.2222223" albedoF0="0.25">
+        <LobeReflected theta="0" roughness="0.944696908939494" scale="0.542739088095524" flatten="0.573810987537938" masking="0.00205707505659601" />
       </Result>
-      <Result Index="(16,7,3)" State="0" Error="" theta="1.256637" phi="0" roughness="0.2222223" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="1" scale="0.659988362862349" flatten="0.83472830777963" masking="0.92676360093141" />
+      <Result Index="(16,7,3)" State="1" Error="" theta="1.256637" phi="0" roughness="0.2222223" albedoF0="0.25">
+        <LobeReflected theta="0" roughness="0.908484013991091" scale="1.27020602447527" flatten="0.210214372376824" masking="0" />
       </Result>
-      <Result Index="(17,7,3)" State="0" Error="" theta="1.335177" phi="0" roughness="0.2222223" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="1" scale="0.744740642558054" flatten="0.883110364295727" masking="0.911842200365349" />
+      <Result Index="(17,7,3)" State="1" Error="" theta="1.335177" phi="0" roughness="0.2222223" albedoF0="0.25">
+        <LobeReflected theta="0" roughness="0.942531665053013" scale="0.547015539695148" flatten="0.573306246684261" masking="0.00410148873173073" />
       </Result>
-      <Result Index="(18,7,3)" State="0" Error="" theta="1.413717" phi="0" roughness="0.2222223" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="1" scale="0.975177677230134" flatten="0.689302100535248" masking="0.902564684184809" />
+      <Result Index="(18,7,3)" State="1" Error="" theta="1.413717" phi="0" roughness="0.2222223" albedoF0="0.25">
+        <LobeReflected theta="0" roughness="0.942104779291322" scale="0.548482847661676" flatten="0.57433932660835" masking="0.00611926233365683" />
       </Result>
-      <Result Index="(19,7,3)" State="0" Error="" theta="1.492257" phi="0" roughness="0.2222223" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="1" scale="1.17942137245862" flatten="0.919271702152837" masking="0.975103688425278" />
+      <Result Index="(19,7,3)" State="1" Error="" theta="1.492257" phi="0" roughness="0.2222223" albedoF0="0.25">
+        <LobeReflected theta="0" roughness="0.945782136751929" scale="0.394255213841153" flatten="0.538069125806628" masking="0.0176652996671568" />
       </Result>
-      <Result Index="(0,8,3)" State="0" Error="" theta="0" phi="0" roughness="0.1111112" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="0.903487988682262" scale="2.77791924783667" flatten="0.0946151076730255" masking="6.11037246616602E-09" />
+      <Result Index="(0,8,3)" State="1" Error="" theta="0" phi="0" roughness="0.1111112" albedoF0="0.25">
+        <LobeReflected theta="0.000105050731522178" roughness="0.95603015746166" scale="0.563567414425627" flatten="0.548737830661727" masking="0" />
       </Result>
-      <Result Index="(1,8,3)" State="0" Error="" theta="0.07853982" phi="0" roughness="0.1111112" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="0.939763469543436" scale="0.745505061507361" flatten="0.378093342035435" masking="0" />
+      <Result Index="(1,8,3)" State="1" Error="" theta="0.07853982" phi="0" roughness="0.1111112" albedoF0="0.25">
+        <LobeReflected theta="0" roughness="0.956020670748753" scale="0.563737812979868" flatten="0.548426916006976" masking="0" />
       </Result>
-      <Result Index="(2,8,3)" State="0" Error="" theta="0.1570796" phi="0" roughness="0.1111112" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="0.904224361683072" scale="2.65782861385296" flatten="0.0987519621000458" masking="0" />
+      <Result Index="(2,8,3)" State="1" Error="" theta="0.1570796" phi="0" roughness="0.1111112" albedoF0="0.25">
+        <LobeReflected theta="0" roughness="0.956138633523758" scale="0.562672955836153" flatten="0.55004098243607" masking="0" />
       </Result>
-      <Result Index="(3,8,3)" State="0" Error="" theta="0.2356195" phi="0" roughness="0.1111112" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="0.942178199431723" scale="0.703139021311762" flatten="0.405562452247601" masking="0" />
+      <Result Index="(3,8,3)" State="1" Error="" theta="0.2356195" phi="0" roughness="0.1111112" albedoF0="0.25">
+        <LobeReflected theta="0" roughness="0.956187031225013" scale="0.562147469703965" flatten="0.550470868910185" masking="0" />
       </Result>
-      <Result Index="(4,8,3)" State="0" Error="" theta="0.3141593" phi="0" roughness="0.1111112" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="0.903733799774038" scale="2.73225511238602" flatten="0.0961756871561091" masking="0" />
+      <Result Index="(4,8,3)" State="1" Error="" theta="0.3141593" phi="0" roughness="0.1111112" albedoF0="0.25">
+        <LobeReflected theta="0" roughness="0.956208046646521" scale="0.562033837269833" flatten="0.550470117438864" masking="0" />
       </Result>
-      <Result Index="(5,8,3)" State="0" Error="" theta="0.3926991" phi="0" roughness="0.1111112" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="0.903649377716115" scale="2.74839203925779" flatten="0.0956247956949061" masking="0" />
+      <Result Index="(5,8,3)" State="1" Error="" theta="0.3926991" phi="0" roughness="0.1111112" albedoF0="0.25">
+        <LobeReflected theta="0" roughness="0.956120902260193" scale="0.56317484976725" flatten="0.549319302993483" masking="0" />
       </Result>
-      <Result Index="(6,8,3)" State="0" Error="" theta="0.4712389" phi="0" roughness="0.1111112" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="0.946331964605822" scale="0.642747339041114" flatten="0.453379244763663" masking="0" />
+      <Result Index="(6,8,3)" State="1" Error="" theta="0.4712389" phi="0" roughness="0.1111112" albedoF0="0.25">
+        <LobeReflected theta="0" roughness="0.955917186162752" scale="0.564393381788013" flatten="0.547919661983644" masking="0" />
       </Result>
-      <Result Index="(7,8,3)" State="0" Error="" theta="0.5497787" phi="0" roughness="0.1111112" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="0.950837303612724" scale="0.613731199740303" flatten="0.469819558891206" masking="0" />
+      <Result Index="(7,8,3)" State="1" Error="" theta="0.5497787" phi="0" roughness="0.1111112" albedoF0="0.25">
+        <LobeReflected theta="0" roughness="0.9561866382327" scale="0.56255594844517" flatten="0.55040154420453" masking="4.08458247051629E-08" />
       </Result>
-      <Result Index="(8,8,3)" State="0" Error="" theta="0.6283185" phi="0" roughness="0.1111112" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="0.939664329256236" scale="0.735364904831544" flatten="0.384873973126842" masking="0" />
+      <Result Index="(8,8,3)" State="1" Error="" theta="0.6283185" phi="0" roughness="0.1111112" albedoF0="0.25">
+        <LobeReflected theta="0" roughness="0.95599979857035" scale="0.56413734154659" flatten="0.548093762216404" masking="0" />
       </Result>
-      <Result Index="(9,8,3)" State="0" Error="" theta="0.7068584" phi="0" roughness="0.1111112" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="0.946497100676886" scale="0.648773858201" flatten="0.458916555256478" masking="0" />
+      <Result Index="(9,8,3)" State="1" Error="" theta="0.7068584" phi="0" roughness="0.1111112" albedoF0="0.25">
+        <LobeReflected theta="0" roughness="0.955822700793253" scale="0.565265689150986" flatten="0.546285072996393" masking="0" />
       </Result>
-      <Result Index="(10,8,3)" State="0" Error="" theta="0.7853982" phi="0" roughness="0.1111112" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="0.939433552320666" scale="0.747389012439112" flatten="0.377176352473723" masking="0" />
+      <Result Index="(10,8,3)" State="1" Error="" theta="0.7853982" phi="0" roughness="0.1111112" albedoF0="0.25">
+        <LobeReflected theta="0" roughness="0.955899945491435" scale="0.565167512863405" flatten="0.546911917302477" masking="0" />
       </Result>
-      <Result Index="(11,8,3)" State="0" Error="" theta="0.863938" phi="0" roughness="0.1111112" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="0.948502372193721" scale="0.637698235034801" flatten="0.453935365809758" masking="0" />
+      <Result Index="(11,8,3)" State="1" Error="" theta="0.863938" phi="0" roughness="0.1111112" albedoF0="0.25">
+        <LobeReflected theta="0" roughness="0.956019535233122" scale="0.564197118081597" flatten="0.547972692814219" masking="0" />
       </Result>
-      <Result Index="(12,8,3)" State="0" Error="" theta="0.9424778" phi="0" roughness="0.1111112" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="0.939569729778574" scale="0.752226708184977" flatten="0.374032631077162" masking="0" />
+      <Result Index="(12,8,3)" State="1" Error="" theta="0.9424778" phi="0" roughness="0.1111112" albedoF0="0.25">
+        <LobeReflected theta="0" roughness="0.9558878169571" scale="0.565128987698985" flatten="0.5467604423009" masking="0" />
       </Result>
-      <Result Index="(13,8,3)" State="0" Error="" theta="1.021018" phi="0" roughness="0.1111112" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="0.903219353129299" scale="2.84708092356608" flatten="0.0923414803853123" masking="0" />
+      <Result Index="(13,8,3)" State="1" Error="" theta="1.021018" phi="0" roughness="0.1111112" albedoF0="0.25">
+        <LobeReflected theta="0" roughness="0.956029638322904" scale="0.564238749433713" flatten="0.547999589630781" masking="0" />
       </Result>
-      <Result Index="(14,8,3)" State="0" Error="" theta="1.099557" phi="0" roughness="0.1111112" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="0.954501984328467" scale="0.573825242385167" flatten="0.531270552810045" masking="0" />
+      <Result Index="(14,8,3)" State="1" Error="" theta="1.099557" phi="0" roughness="0.1111112" albedoF0="0.25">
+        <LobeReflected theta="0" roughness="0.958525713165354" scale="0.542676065506219" flatten="0.579670665297648" masking="0" />
       </Result>
-      <Result Index="(15,8,3)" State="0" Error="" theta="1.178097" phi="0" roughness="0.1111112" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="0.962754145753045" scale="0.507123959046794" flatten="0.631016404768066" masking="0" />
+      <Result Index="(15,8,3)" State="1" Error="" theta="1.178097" phi="0" roughness="0.1111112" albedoF0="0.25">
+        <LobeReflected theta="0" roughness="0.955904122361499" scale="0.565819991581658" flatten="0.545325459497177" masking="0" />
       </Result>
-      <Result Index="(16,8,3)" State="0" Error="" theta="1.256637" phi="0" roughness="0.1111112" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="1" scale="0.683726495772904" flatten="0.83385686824931" masking="0.8771031514728" />
+      <Result Index="(16,8,3)" State="1" Error="" theta="1.256637" phi="0" roughness="0.1111112" albedoF0="0.25">
+        <LobeReflected theta="0" roughness="0.956107063888922" scale="0.563897250445207" flatten="0.548163339229231" masking="0" />
       </Result>
-      <Result Index="(17,8,3)" State="0" Error="" theta="1.335177" phi="0" roughness="0.1111112" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="1" scale="0.762388212653529" flatten="0.876022894259832" masking="0.859781041294835" />
+      <Result Index="(17,8,3)" State="1" Error="" theta="1.335177" phi="0" roughness="0.1111112" albedoF0="0.25">
+        <LobeReflected theta="0" roughness="0.958635984535585" scale="0.542270433354751" flatten="0.580078774263415" masking="0" />
       </Result>
-      <Result Index="(18,8,3)" State="0" Error="" theta="1.413717" phi="0" roughness="0.1111112" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="1" scale="0.999202575422436" flatten="0.705861866054578" masking="0.851764854268421" />
+      <Result Index="(18,8,3)" State="1" Error="" theta="1.413717" phi="0" roughness="0.1111112" albedoF0="0.25">
+        <LobeReflected theta="0" roughness="0.958725246837084" scale="0.542185565869866" flatten="0.580393342681341" masking="0.000269590039002243" />
       </Result>
-      <Result Index="(19,8,3)" State="0" Error="" theta="1.492257" phi="0" roughness="0.1111112" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="1" scale="1.16656383050035" flatten="0.910057007239594" masking="0.990127783593152" />
+      <Result Index="(19,8,3)" State="1" Error="" theta="1.492257" phi="0" roughness="0.1111112" albedoF0="0.25">
+        <LobeReflected theta="0" roughness="0.967296050737743" scale="0.31654058490579" flatten="0.648063011683977" masking="0.030392896554627" />
       </Result>
-      <Result Index="(0,9,3)" State="0" Error="" theta="0" phi="0" roughness="4.470348E-08" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="0.923376786248241" scale="10" flatten="0.0258070809599182" masking="0.61766468158151" />
+      <Result Index="(0,9,3)" State="1" Error="" theta="0" phi="0" roughness="4.470348E-08" albedoF0="0.25">
+        <LobeReflected theta="0.0043399375882208" roughness="1" scale="0.398974908850883" flatten="0.972424924958573" masking="0.0457810094938368" />
       </Result>
-      <Result Index="(1,9,3)" State="0" Error="" theta="0.07853982" phi="0" roughness="4.470348E-08" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="1" scale="0.397820312029506" flatten="0.975516507456636" masking="0.0316458311944202" />
+      <Result Index="(1,9,3)" State="1" Error="" theta="0.07853982" phi="0" roughness="4.470348E-08" albedoF0="0.25">
+        <LobeReflected theta="0.0043399375882208" roughness="1" scale="0.398974908850883" flatten="0.972424924958573" masking="0.0457810094938368" />
       </Result>
-      <Result Index="(2,9,3)" State="0" Error="" theta="0.1570796" phi="0" roughness="4.470348E-08" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="0.92036174816301" scale="10" flatten="0.025859983447961" masking="0.547173969070956" />
+      <Result Index="(2,9,3)" State="1" Error="" theta="0.1570796" phi="0" roughness="4.470348E-08" albedoF0="0.25">
+        <LobeReflected theta="0.0043399375882208" roughness="1" scale="0.398974908850883" flatten="0.972424924958573" masking="0.0457810094938368" />
       </Result>
-      <Result Index="(3,9,3)" State="0" Error="" theta="0.2356195" phi="0" roughness="4.470348E-08" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="1" scale="0.39765208216682" flatten="0.979653966277623" masking="0.0324878250691586" />
+      <Result Index="(3,9,3)" State="1" Error="" theta="0.2356195" phi="0" roughness="4.470348E-08" albedoF0="0.25">
+        <LobeReflected theta="0.0043399375882208" roughness="1" scale="0.398974908850883" flatten="0.972424924958573" masking="0.0457810094938368" />
       </Result>
-      <Result Index="(4,9,3)" State="0" Error="" theta="0.3141593" phi="0" roughness="4.470348E-08" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="0.917039122552756" scale="10" flatten="0.0254714992850197" masking="0.471086759291632" />
+      <Result Index="(4,9,3)" State="1" Error="" theta="0.3141593" phi="0" roughness="4.470348E-08" albedoF0="0.25">
+        <LobeReflected theta="0.0043399375882208" roughness="1" scale="0.398974908850883" flatten="0.972424924958573" masking="0.0457810094938368" />
       </Result>
-      <Result Index="(5,9,3)" State="0" Error="" theta="0.3926991" phi="0" roughness="4.470348E-08" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="0.909683483303379" scale="10" flatten="0.0256532160523965" masking="0.227938682702714" />
+      <Result Index="(5,9,3)" State="1" Error="" theta="0.3926991" phi="0" roughness="4.470348E-08" albedoF0="0.25">
+        <LobeReflected theta="0.0043399375882208" roughness="1" scale="0.398974908850883" flatten="0.972424924958573" masking="0.0457810094938368" />
       </Result>
-      <Result Index="(6,9,3)" State="0" Error="" theta="0.4712389" phi="0" roughness="4.470348E-08" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="1" scale="0.398512390440324" flatten="0.975937989097473" masking="0.0302229609131147" />
+      <Result Index="(6,9,3)" State="1" Error="" theta="0.4712389" phi="0" roughness="4.470348E-08" albedoF0="0.25">
+        <LobeReflected theta="0.0043399375882208" roughness="1" scale="0.398974908850883" flatten="0.972424924958573" masking="0.0457810094938368" />
       </Result>
-      <Result Index="(7,9,3)" State="0" Error="" theta="0.5497787" phi="0" roughness="4.470348E-08" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="1" scale="0.397399729285264" flatten="0.980480836817645" masking="0.0316266549803481" />
+      <Result Index="(7,9,3)" State="1" Error="" theta="0.5497787" phi="0" roughness="4.470348E-08" albedoF0="0.25">
+        <LobeReflected theta="0.0043399375882208" roughness="1" scale="0.398974908850883" flatten="0.972424924958573" masking="0.0457810094938368" />
       </Result>
-      <Result Index="(8,9,3)" State="0" Error="" theta="0.6283185" phi="0" roughness="4.470348E-08" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="1" scale="0.398151735428118" flatten="0.986787317790279" masking="0.0296302930313809" />
+      <Result Index="(8,9,3)" State="1" Error="" theta="0.6283185" phi="0" roughness="4.470348E-08" albedoF0="0.25">
+        <LobeReflected theta="0.000198893518930785" roughness="1" scale="0.396225674062172" flatten="0.984231611727972" masking="0.0227710339091038" />
       </Result>
-      <Result Index="(9,9,3)" State="0" Error="" theta="0.7068584" phi="0" roughness="4.470348E-08" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="1" scale="0.397595988646219" flatten="0.980307734614701" masking="0.0305294772237654" />
+      <Result Index="(9,9,3)" State="1" Error="" theta="0.7068584" phi="0" roughness="4.470348E-08" albedoF0="0.25">
+        <LobeReflected theta="0.000756327628437652" roughness="1" scale="0.396459473764723" flatten="0.983558353343724" masking="0.0208588853818433" />
       </Result>
-      <Result Index="(10,9,3)" State="0" Error="" theta="0.7853982" phi="0" roughness="4.470348E-08" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="1" scale="0.411023967188748" flatten="0.933526599192411" masking="0.0895779538918469" />
+      <Result Index="(10,9,3)" State="1" Error="" theta="0.7853982" phi="0" roughness="4.470348E-08" albedoF0="0.25">
+        <LobeReflected theta="0.000768535879614635" roughness="1" scale="0.396644747339485" flatten="0.983059980964999" masking="0.0226299552360528" />
       </Result>
-      <Result Index="(11,9,3)" State="0" Error="" theta="0.863938" phi="0" roughness="4.470348E-08" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="1" scale="0.39407758473738" flatten="0.995089543138987" masking="0.0364091130328639" />
+      <Result Index="(11,9,3)" State="1" Error="" theta="0.863938" phi="0" roughness="4.470348E-08" albedoF0="0.25">
+        <LobeReflected theta="0.000450560854438753" roughness="1" scale="0.396946624323122" flatten="0.993203523497907" masking="0.0249250529165388" />
       </Result>
-      <Result Index="(12,9,3)" State="0" Error="" theta="0.9424778" phi="0" roughness="4.470348E-08" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="1" scale="0.401174606998772" flatten="0.979088597563038" masking="0.0462412249901912" />
+      <Result Index="(12,9,3)" State="1" Error="" theta="0.9424778" phi="0" roughness="4.470348E-08" albedoF0="0.25">
+        <LobeReflected theta="0.00251174359526188" roughness="1" scale="0.396622019394428" flatten="1.00901283667607" masking="0.0340985080943091" />
       </Result>
-      <Result Index="(13,9,3)" State="0" Error="" theta="1.021018" phi="0" roughness="4.470348E-08" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="0.904072996877281" scale="10" flatten="0.0253524460158684" masking="0.0115623052756588" />
+      <Result Index="(13,9,3)" State="1" Error="" theta="1.021018" phi="0" roughness="4.470348E-08" albedoF0="0.25">
+        <LobeReflected theta="0.000903525380758524" roughness="1" scale="0.398671339584695" flatten="0.982720569518916" masking="0.027755931160364" />
       </Result>
-      <Result Index="(14,9,3)" State="0" Error="" theta="1.099557" phi="0" roughness="4.470348E-08" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="1" scale="0.401490120692175" flatten="0.979976986864494" masking="0.0400631967698747" />
+      <Result Index="(14,9,3)" State="1" Error="" theta="1.099557" phi="0" roughness="4.470348E-08" albedoF0="0.25">
+        <LobeReflected theta="5.62780645494298E-05" roughness="1" scale="0.398161451673578" flatten="0.986849978412449" masking="0.0288408735527989" />
       </Result>
-      <Result Index="(15,9,3)" State="0" Error="" theta="1.178097" phi="0" roughness="4.470348E-08" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="1" scale="0.399526322602936" flatten="0.985515960138047" masking="0.0302046889569905" />
+      <Result Index="(15,9,3)" State="1" Error="" theta="1.178097" phi="0" roughness="4.470348E-08" albedoF0="0.25">
+        <LobeReflected theta="0.000447930570893537" roughness="1" scale="0.399951406820032" flatten="0.981441059690035" masking="0.0315770338421599" />
       </Result>
-      <Result Index="(16,9,3)" State="0" Error="" theta="1.256637" phi="0" roughness="4.470348E-08" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="1" scale="0.673650191431847" flatten="0.819363896385019" masking="0.826898078281475" />
+      <Result Index="(16,9,3)" State="1" Error="" theta="1.256637" phi="0" roughness="4.470348E-08" albedoF0="0.25">
+        <LobeReflected theta="0.00117886620075965" roughness="1" scale="0.399265899049959" flatten="1.00699512142318" masking="0.0375545127142836" />
       </Result>
-      <Result Index="(17,9,3)" State="0" Error="" theta="1.335177" phi="0" roughness="4.470348E-08" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="1" scale="0.751958758934164" flatten="0.856071061670847" masking="0.808883543526648" />
+      <Result Index="(17,9,3)" State="1" Error="" theta="1.335177" phi="0" roughness="4.470348E-08" albedoF0="0.25">
+        <LobeReflected theta="0.000770204087624203" roughness="1" scale="0.403713581526752" flatten="0.982936755429754" masking="0.0415723388047616" />
       </Result>
-      <Result Index="(18,9,3)" State="0" Error="" theta="1.413717" phi="0" roughness="4.470348E-08" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="1" scale="1.00263907978922" flatten="0.705903301090085" masking="0.820729010761167" />
+      <Result Index="(18,9,3)" State="1" Error="" theta="1.413717" phi="0" roughness="4.470348E-08" albedoF0="0.25">
+        <LobeReflected theta="0.000126813948432479" roughness="1" scale="0.407559904056734" flatten="0.984235607710357" masking="0.0493793796290632" />
       </Result>
-      <Result Index="(19,9,3)" State="0" Error="" theta="1.492257" phi="0" roughness="4.470348E-08" albedoF0="0.25">
-        <LobeReflected theta="-1" roughness="1" scale="0.001" flatten="1E-06" masking="0.94349413061389" />
+      <Result Index="(19,9,3)" State="-1" Error="Linear search eval returned NaN!" theta="1.492257" phi="0" roughness="4.470348E-08" albedoF0="0.25">
+        <LobeReflected theta="NaN" roughness="1" scale="0" flatten="0.5" masking="0" />
       </Result>
     </Order>
     <Order Index="2">
@@ -3553,8 +3553,8 @@
       <Result Index="(19,8,1)" State="1" Error="" theta="1.492257" phi="0" roughness="0.1111112" albedoF0="0.75">
         <LobeReflected theta="0" roughness="0.963299295466978" scale="0.0456483968461617" flatten="0.59643091402676" masking="0.39999424854424" />
       </Result>
-      <Result Index="(0,9,1)" State="-1" Error="Direction is a zero vector!" theta="0" phi="0" roughness="4.470348E-08" albedoF0="0.75">
-        <LobeReflected theta="0.000758494990249988" roughness="0.437572350531266" scale="0.001" flatten="1E-06" masking="0.282193084727089" />
+      <Result Index="(0,9,1)" State="-1" Error="Linear search eval returned NaN!" theta="0" phi="0" roughness="4.470348E-08" albedoF0="0.75">
+        <LobeReflected theta="NaN" roughness="1" scale="0" flatten="0.5" masking="0" />
       </Result>
       <Result Index="(1,9,1)" State="1" Error="" theta="0.07853982" phi="0" roughness="4.470348E-08" albedoF0="0.75">
         <LobeReflected theta="0.000218971358441791" roughness="0.530326667621525" scale="0.00256199286932309" flatten="1E-06" masking="0.650887951168774" />
@@ -3562,26 +3562,26 @@
       <Result Index="(2,9,1)" State="1" Error="" theta="0.1570796" phi="0" roughness="4.470348E-08" albedoF0="0.75">
         <LobeReflected theta="7.89937399213055E-05" roughness="0.0001" scale="0.001" flatten="1E-06" masking="0.0471326294785389" />
       </Result>
-      <Result Index="(3,9,1)" State="-1" Error="Direction is a zero vector!" theta="0.2356195" phi="0" roughness="4.470348E-08" albedoF0="0.75">
-        <LobeReflected theta="0.000236396723501377" roughness="0.507276671440629" scale="0.001" flatten="1E-06" masking="0.593327403020404" />
+      <Result Index="(3,9,1)" State="-1" Error="Linear search eval returned NaN!" theta="0.2356195" phi="0" roughness="4.470348E-08" albedoF0="0.75">
+        <LobeReflected theta="NaN" roughness="1" scale="0" flatten="0.5" masking="0" />
       </Result>
-      <Result Index="(4,9,1)" State="-1" Error="Direction is a zero vector!" theta="0.3141593" phi="0" roughness="4.470348E-08" albedoF0="0.75">
-        <LobeReflected theta="6.76548743275277E-06" roughness="0.475989217603433" scale="0.001" flatten="1E-06" masking="0.48948552227854" />
+      <Result Index="(4,9,1)" State="-1" Error="Linear search eval returned NaN!" theta="0.3141593" phi="0" roughness="4.470348E-08" albedoF0="0.75">
+        <LobeReflected theta="NaN" roughness="1" scale="0" flatten="0.5" masking="0" />
       </Result>
       <Result Index="(5,9,1)" State="1" Error="" theta="0.3926991" phi="0" roughness="4.470348E-08" albedoF0="0.75">
         <LobeReflected theta="0.012731418876793" roughness="0.0001" scale="0.0013716769909629" flatten="1E-06" masking="1" />
       </Result>
-      <Result Index="(6,9,1)" State="-1" Error="Direction is a zero vector!" theta="0.4712389" phi="0" roughness="4.470348E-08" albedoF0="0.75">
-        <LobeReflected theta="0.000690652664226557" roughness="0.495017323682947" scale="0.001" flatten="1E-06" masking="0.554068261518117" />
+      <Result Index="(6,9,1)" State="-1" Error="Linear search eval returned NaN!" theta="0.4712389" phi="0" roughness="4.470348E-08" albedoF0="0.75">
+        <LobeReflected theta="NaN" roughness="1" scale="0" flatten="0.5" masking="0" />
       </Result>
-      <Result Index="(7,9,1)" State="-1" Error="Direction is a zero vector!" theta="0.5497787" phi="0" roughness="4.470348E-08" albedoF0="0.75">
-        <LobeReflected theta="3.62760252628733E-05" roughness="0.522888011758244" scale="0.001" flatten="1E-06" masking="0.636490721995532" />
+      <Result Index="(7,9,1)" State="-1" Error="Linear search eval returned NaN!" theta="0.5497787" phi="0" roughness="4.470348E-08" albedoF0="0.75">
+        <LobeReflected theta="NaN" roughness="1" scale="0" flatten="0.5" masking="0" />
       </Result>
-      <Result Index="(8,9,1)" State="-1" Error="Direction is a zero vector!" theta="0.6283185" phi="0" roughness="4.470348E-08" albedoF0="0.75">
-        <LobeReflected theta="0" roughness="0.521669716404035" scale="0.001" flatten="1E-06" masking="0.634673616665154" />
+      <Result Index="(8,9,1)" State="-1" Error="Linear search eval returned NaN!" theta="0.6283185" phi="0" roughness="4.470348E-08" albedoF0="0.75">
+        <LobeReflected theta="NaN" roughness="1" scale="0" flatten="0.5" masking="0" />
       </Result>
-      <Result Index="(9,9,1)" State="-1" Error="Direction is a zero vector!" theta="0.7068584" phi="0" roughness="4.470348E-08" albedoF0="0.75">
-        <LobeReflected theta="0" roughness="0.499632129175426" scale="0.001" flatten="1E-06" masking="0.560341578197161" />
+      <Result Index="(9,9,1)" State="-1" Error="Linear search eval returned NaN!" theta="0.7068584" phi="0" roughness="4.470348E-08" albedoF0="0.75">
+        <LobeReflected theta="NaN" roughness="1" scale="0" flatten="0.5" masking="0" />
       </Result>
       <Result Index="(10,9,1)" State="1" Error="" theta="0.7853982" phi="0" roughness="4.470348E-08" albedoF0="0.75">
         <LobeReflected theta="0.000327504108740815" roughness="0.356249795829448" scale="0.001" flatten="1E-06" masking="0.0165954114683792" />
@@ -3592,8 +3592,8 @@
       <Result Index="(12,9,1)" State="1" Error="" theta="0.9424778" phi="0" roughness="4.470348E-08" albedoF0="0.75">
         <LobeReflected theta="4.6276612996364E-06" roughness="0.352269497689259" scale="0.001" flatten="1E-06" masking="0.0173938212298889" />
       </Result>
-      <Result Index="(13,9,1)" State="-1" Error="Direction is a zero vector!" theta="1.021018" phi="0" roughness="4.470348E-08" albedoF0="0.75">
-        <LobeReflected theta="0" roughness="0.528848236326607" scale="0.001" flatten="1E-06" masking="0.595100794179229" />
+      <Result Index="(13,9,1)" State="-1" Error="Linear search eval returned NaN!" theta="1.021018" phi="0" roughness="4.470348E-08" albedoF0="0.75">
+        <LobeReflected theta="NaN" roughness="1" scale="0" flatten="0.5" masking="0" />
       </Result>
       <Result Index="(14,9,1)" State="1" Error="" theta="1.099557" phi="0" roughness="4.470348E-08" albedoF0="0.75">
         <LobeReflected theta="0.000105324168715224" roughness="0.609389123772884" scale="0.001" flatten="1E-06" masking="0.668198143508254" />
@@ -3601,14 +3601,14 @@
       <Result Index="(15,9,1)" State="1" Error="" theta="1.178097" phi="0" roughness="4.470348E-08" albedoF0="0.75">
         <LobeReflected theta="0" roughness="0.341748793067668" scale="0.001" flatten="1E-06" masking="0.0324493090094402" />
       </Result>
-      <Result Index="(16,9,1)" State="-1" Error="Direction is a zero vector!" theta="1.256637" phi="0" roughness="4.470348E-08" albedoF0="0.75">
-        <LobeReflected theta="0" roughness="0.595347056706655" scale="0.001" flatten="1E-06" masking="0.781327042558147" />
+      <Result Index="(16,9,1)" State="-1" Error="Linear search eval returned NaN!" theta="1.256637" phi="0" roughness="4.470348E-08" albedoF0="0.75">
+        <LobeReflected theta="NaN" roughness="1" scale="0" flatten="0.5" masking="0" />
       </Result>
-      <Result Index="(17,9,1)" State="-1" Error="Direction is a zero vector!" theta="1.335177" phi="0" roughness="4.470348E-08" albedoF0="0.75">
-        <LobeReflected theta="0" roughness="0.508642963559847" scale="0.001" flatten="1E-06" masking="0.617581778722902" />
+      <Result Index="(17,9,1)" State="-1" Error="Linear search eval returned NaN!" theta="1.335177" phi="0" roughness="4.470348E-08" albedoF0="0.75">
+        <LobeReflected theta="NaN" roughness="1" scale="0" flatten="0.5" masking="0" />
       </Result>
-      <Result Index="(18,9,1)" State="-1" Error="Direction is a zero vector!" theta="1.413717" phi="0" roughness="4.470348E-08" albedoF0="0.75">
-        <LobeReflected theta="0" roughness="0.412897821935199" scale="0.001" flatten="1E-06" masking="0.325786730392078" />
+      <Result Index="(18,9,1)" State="-1" Error="Linear search eval returned NaN!" theta="1.413717" phi="0" roughness="4.470348E-08" albedoF0="0.75">
+        <LobeReflected theta="NaN" roughness="1" scale="0" flatten="0.5" masking="0" />
       </Result>
       <Result Index="(19,9,1)" State="1" Error="" theta="1.492257" phi="0" roughness="4.470348E-08" albedoF0="0.75">
         <LobeReflected theta="2.10280666504077E-08" roughness="0.830729179910945" scale="0.001" flatten="0.552375645199554" masking="0.456630886111599" />
@@ -4153,8 +4153,8 @@
       <Result Index="(19,8,2)" State="1" Error="" theta="1.492257" phi="0" roughness="0.1111112" albedoF0="0.5">
         <LobeReflected theta="0" roughness="0.557297737252918" scale="0.001" flatten="1E-06" masking="0.686666959653976" />
       </Result>
-      <Result Index="(0,9,2)" State="-1" Error="Direction is a zero vector!" theta="0" phi="0" roughness="4.470348E-08" albedoF0="0.5">
-        <LobeReflected theta="0.000410913643790194" roughness="0.604747888060046" scale="0.001" flatten="1E-06" masking="0.52648705300441" />
+      <Result Index="(0,9,2)" State="-1" Error="Linear search eval returned NaN!" theta="0" phi="0" roughness="4.470348E-08" albedoF0="0.5">
+        <LobeReflected theta="NaN" roughness="1" scale="0" flatten="0.5" masking="0" />
       </Result>
       <Result Index="(1,9,2)" State="1" Error="" theta="0.07853982" phi="0" roughness="4.470348E-08" albedoF0="0.5">
         <LobeReflected theta="0.000311136091749006" roughness="0.00040437364973811" scale="0.001" flatten="1E-06" masking="1" />
@@ -4168,14 +4168,14 @@
       <Result Index="(4,9,2)" State="1" Error="" theta="0.3141593" phi="0" roughness="4.470348E-08" albedoF0="0.5">
         <LobeReflected theta="0.000151866020334111" roughness="0.0001" scale="0.001" flatten="1E-06" masking="1" />
       </Result>
-      <Result Index="(5,9,2)" State="-1" Error="Direction is a zero vector!" theta="0.3926991" phi="0" roughness="4.470348E-08" albedoF0="0.5">
-        <LobeReflected theta="0" roughness="0.709668480224608" scale="0.001" flatten="1E-06" masking="0.706037754531326" />
+      <Result Index="(5,9,2)" State="-1" Error="Linear search eval returned NaN!" theta="0.3926991" phi="0" roughness="4.470348E-08" albedoF0="0.5">
+        <LobeReflected theta="NaN" roughness="1" scale="0" flatten="0.5" masking="0" />
       </Result>
-      <Result Index="(6,9,2)" State="-1" Error="Direction is a zero vector!" theta="0.4712389" phi="0" roughness="4.470348E-08" albedoF0="0.5">
-        <LobeReflected theta="9.16719797897219E-05" roughness="0.612214843147037" scale="0.001" flatten="1E-06" masking="0.64480578096956" />
+      <Result Index="(6,9,2)" State="-1" Error="Linear search eval returned NaN!" theta="0.4712389" phi="0" roughness="4.470348E-08" albedoF0="0.5">
+        <LobeReflected theta="NaN" roughness="1" scale="0" flatten="0.5" masking="0" />
       </Result>
-      <Result Index="(7,9,2)" State="-1" Error="Direction is a zero vector!" theta="0.5497787" phi="0" roughness="4.470348E-08" albedoF0="0.5">
-        <LobeReflected theta="8.92525237966645E-06" roughness="0.607832524242951" scale="0.001" flatten="1E-06" masking="0.565014509220529" />
+      <Result Index="(7,9,2)" State="-1" Error="Linear search eval returned NaN!" theta="0.5497787" phi="0" roughness="4.470348E-08" albedoF0="0.5">
+        <LobeReflected theta="NaN" roughness="1" scale="0" flatten="0.5" masking="0" />
       </Result>
       <Result Index="(8,9,2)" State="1" Error="" theta="0.6283185" phi="0" roughness="4.470348E-08" albedoF0="0.5">
         <LobeReflected theta="5.41009918107865E-05" roughness="0.0581221104397449" scale="0.001" flatten="1E-06" masking="0.65843872475016" />
@@ -4183,26 +4183,26 @@
       <Result Index="(9,9,2)" State="1" Error="" theta="0.7068584" phi="0" roughness="4.470348E-08" albedoF0="0.5">
         <LobeReflected theta="0.00231493929115804" roughness="0.5847974102986" scale="0.001" flatten="1E-06" masking="0.633642204502525" />
       </Result>
-      <Result Index="(10,9,2)" State="-1" Error="Direction is a zero vector!" theta="0.7853982" phi="0" roughness="4.470348E-08" albedoF0="0.5">
-        <LobeReflected theta="0.000237784092313418" roughness="0.624265923250249" scale="0.001" flatten="1E-06" masking="0.686292351838422" />
+      <Result Index="(10,9,2)" State="-1" Error="Linear search eval returned NaN!" theta="0.7853982" phi="0" roughness="4.470348E-08" albedoF0="0.5">
+        <LobeReflected theta="NaN" roughness="1" scale="0" flatten="0.5" masking="0" />
       </Result>
-      <Result Index="(11,9,2)" State="-1" Error="Direction is a zero vector!" theta="0.863938" phi="0" roughness="4.470348E-08" albedoF0="0.5">
-        <LobeReflected theta="8.83534597680556E-05" roughness="0.629329921144839" scale="0.001" flatten="1E-06" masking="0.681548813875016" />
+      <Result Index="(11,9,2)" State="-1" Error="Linear search eval returned NaN!" theta="0.863938" phi="0" roughness="4.470348E-08" albedoF0="0.5">
+        <LobeReflected theta="NaN" roughness="1" scale="0" flatten="0.5" masking="0" />
       </Result>
-      <Result Index="(12,9,2)" State="-1" Error="Direction is a zero vector!" theta="0.9424778" phi="0" roughness="4.470348E-08" albedoF0="0.5">
-        <LobeReflected theta="0" roughness="0.628237439702696" scale="0.001" flatten="1E-06" masking="0.629801410538356" />
+      <Result Index="(12,9,2)" State="-1" Error="Linear search eval returned NaN!" theta="0.9424778" phi="0" roughness="4.470348E-08" albedoF0="0.5">
+        <LobeReflected theta="NaN" roughness="1" scale="0" flatten="0.5" masking="0" />
       </Result>
-      <Result Index="(13,9,2)" State="-1" Error="Direction is a zero vector!" theta="1.021018" phi="0" roughness="4.470348E-08" albedoF0="0.5">
-        <LobeReflected theta="5.69647748397896E-05" roughness="0.723760722913692" scale="0.001" flatten="1E-06" masking="0.752197663342216" />
+      <Result Index="(13,9,2)" State="-1" Error="Linear search eval returned NaN!" theta="1.021018" phi="0" roughness="4.470348E-08" albedoF0="0.5">
+        <LobeReflected theta="NaN" roughness="1" scale="0" flatten="0.5" masking="0" />
       </Result>
-      <Result Index="(14,9,2)" State="-1" Error="Direction is a zero vector!" theta="1.099557" phi="0" roughness="4.470348E-08" albedoF0="0.5">
-        <LobeReflected theta="0" roughness="0.636552125513663" scale="0.001" flatten="1E-06" masking="0.630262754323394" />
+      <Result Index="(14,9,2)" State="-1" Error="Linear search eval returned NaN!" theta="1.099557" phi="0" roughness="4.470348E-08" albedoF0="0.5">
+        <LobeReflected theta="NaN" roughness="1" scale="0" flatten="0.5" masking="0" />
       </Result>
       <Result Index="(15,9,2)" State="1" Error="" theta="1.178097" phi="0" roughness="4.470348E-08" albedoF0="0.5">
         <LobeReflected theta="0" roughness="0.999688180091828" scale="0.001" flatten="1E-06" masking="1" />
       </Result>
-      <Result Index="(16,9,2)" State="-1" Error="Direction is a zero vector!" theta="1.256637" phi="0" roughness="4.470348E-08" albedoF0="0.5">
-        <LobeReflected theta="0" roughness="0.658931754797041" scale="0.001" flatten="1E-06" masking="0.747536061313086" />
+      <Result Index="(16,9,2)" State="-1" Error="Linear search eval returned NaN!" theta="1.256637" phi="0" roughness="4.470348E-08" albedoF0="0.5">
+        <LobeReflected theta="NaN" roughness="1" scale="0" flatten="0.5" masking="0" />
       </Result>
       <Result Index="(17,9,2)" State="1" Error="" theta="1.335177" phi="0" roughness="4.470348E-08" albedoF0="0.5">
         <LobeReflected theta="0" roughness="0.495918713938568" scale="0.001" flatten="1E-06" masking="0.37731861636448" />
@@ -4210,8 +4210,8 @@
       <Result Index="(18,9,2)" State="1" Error="" theta="1.413717" phi="0" roughness="4.470348E-08" albedoF0="0.5">
         <LobeReflected theta="1.97551913951253E-07" roughness="0.828951464015989" scale="0.001" flatten="0.49715384912123" masking="0.544210391749999" />
       </Result>
-      <Result Index="(19,9,2)" State="-1" Error="Direction is a zero vector!" theta="1.492257" phi="0" roughness="4.470348E-08" albedoF0="0.5">
-        <LobeReflected theta="0" roughness="0.557297737252918" scale="0.001" flatten="1E-06" masking="0.686666959653976" />
+      <Result Index="(19,9,2)" State="-1" Error="Linear search eval returned NaN!" theta="1.492257" phi="0" roughness="4.470348E-08" albedoF0="0.5">
+        <LobeReflected theta="NaN" roughness="1" scale="0" flatten="0.5" masking="0" />
       </Result>
       <Result Index="(0,0,3)" State="1" Error="" theta="0" phi="0" roughness="1" albedoF0="0.25">
         <LobeReflected theta="0" roughness="0.911667975779182" scale="0.0323619190400686" flatten="0.804761531551492" masking="0.608565955405412" />
@@ -5382,8 +5382,8 @@
       <Result Index="(8,9,0)" State="1" Error="" theta="0.6283185" phi="0" roughness="4.470348E-08" albedoF0="1">
         <LobeReflected theta="0.000956359447035374" roughness="0.263797269753727" scale="0.001" flatten="1E-06" masking="0.926768106527431" />
       </Result>
-      <Result Index="(9,9,0)" State="-1" Error="Direction is a zero vector!" theta="0.7068584" phi="0" roughness="4.470348E-08" albedoF0="1">
-        <LobeReflected theta="0.000259687315686083" roughness="0.691803864496725" scale="0.001" flatten="1E-06" masking="0.783016400973942" />
+      <Result Index="(9,9,0)" State="-1" Error="Linear search eval returned NaN!" theta="0.7068584" phi="0" roughness="4.470348E-08" albedoF0="1">
+        <LobeReflected theta="NaN" roughness="1" scale="0" flatten="0.5" masking="0" />
       </Result>
       <Result Index="(10,9,0)" State="1" Error="" theta="0.7853982" phi="0" roughness="4.470348E-08" albedoF0="1">
         <LobeReflected theta="3.67027705488273E-07" roughness="0.793202742892813" scale="0.001" flatten="1E-06" masking="0.879586886961383" />
@@ -5394,17 +5394,17 @@
       <Result Index="(12,9,0)" State="1" Error="" theta="0.9424778" phi="0" roughness="4.470348E-08" albedoF0="1">
         <LobeReflected theta="0.00255168216251816" roughness="0.88262141471047" scale="0.001" flatten="0.767903163745246" masking="0.547351307058852" />
       </Result>
-      <Result Index="(13,9,0)" State="-1" Error="Direction is a zero vector!" theta="1.021018" phi="0" roughness="4.470348E-08" albedoF0="1">
-        <LobeReflected theta="0.000488483296135106" roughness="0.70375386174539" scale="0.001" flatten="1E-06" masking="0.871041399899635" />
+      <Result Index="(13,9,0)" State="-1" Error="Linear search eval returned NaN!" theta="1.021018" phi="0" roughness="4.470348E-08" albedoF0="1">
+        <LobeReflected theta="NaN" roughness="1" scale="0" flatten="0.5" masking="0" />
       </Result>
       <Result Index="(14,9,0)" State="1" Error="" theta="1.099557" phi="0" roughness="4.470348E-08" albedoF0="1">
         <LobeReflected theta="0" roughness="0.739280477391413" scale="0.001" flatten="1E-06" masking="1" />
       </Result>
-      <Result Index="(15,9,0)" State="-1" Error="Direction is a zero vector!" theta="1.178097" phi="0" roughness="4.470348E-08" albedoF0="1">
-        <LobeReflected theta="0.000248384823629678" roughness="0.725453117747676" scale="0.001" flatten="1E-06" masking="0.887964185607646" />
+      <Result Index="(15,9,0)" State="-1" Error="Linear search eval returned NaN!" theta="1.178097" phi="0" roughness="4.470348E-08" albedoF0="1">
+        <LobeReflected theta="NaN" roughness="1" scale="0" flatten="0.5" masking="0" />
       </Result>
-      <Result Index="(16,9,0)" State="-1" Error="Direction is a zero vector!" theta="1.256637" phi="0" roughness="4.470348E-08" albedoF0="1">
-        <LobeReflected theta="0" roughness="0.746317598721455" scale="0.001" flatten="1E-06" masking="0.957595116709278" />
+      <Result Index="(16,9,0)" State="-1" Error="Linear search eval returned NaN!" theta="1.256637" phi="0" roughness="4.470348E-08" albedoF0="1">
+        <LobeReflected theta="NaN" roughness="1" scale="0" flatten="0.5" masking="0" />
       </Result>
       <Result Index="(17,9,0)" State="1" Error="" theta="1.335177" phi="0" roughness="4.470348E-08" albedoF0="1">
         <LobeReflected theta="0.0154830989987764" roughness="0.999535415409005" scale="0.001" flatten="1E-06" masking="1" />
@@ -6006,8 +6006,8 @@
       <Result Index="(16,9,1)" State="1" Error="" theta="1.256637" phi="0" roughness="4.470348E-08" albedoF0="0.75">
         <LobeReflected theta="0" roughness="0.799672228529907" scale="0.001" flatten="1E-06" masking="1" />
       </Result>
-      <Result Index="(17,9,1)" State="-1" Error="Direction is a zero vector!" theta="1.335177" phi="0" roughness="4.470348E-08" albedoF0="0.75">
-        <LobeReflected theta="0" roughness="0.851660098754636" scale="0.001" flatten="1E-06" masking="0.925868361667523" />
+      <Result Index="(17,9,1)" State="-1" Error="Linear search eval returned NaN!" theta="1.335177" phi="0" roughness="4.470348E-08" albedoF0="0.75">
+        <LobeReflected theta="NaN" roughness="1" scale="0" flatten="0.5" masking="0" />
       </Result>
       <Result Index="(18,9,1)" State="1" Error="" theta="1.413717" phi="0" roughness="4.470348E-08" albedoF0="0.75">
         <LobeReflected theta="0.000783960139055343" roughness="0.579642442552006" scale="0.001" flatten="1E-06" masking="1" />
@@ -7206,11 +7206,11 @@
       <Result Index="(16,9,3)" State="1" Error="" theta="1.256637" phi="0" roughness="4.470348E-08" albedoF0="0.25">
         <LobeReflected theta="0.040868858770479" roughness="0.99641348120457" scale="0.001" flatten="0.48197285601859" masking="1" />
       </Result>
-      <Result Index="(17,9,3)" State="-1" Error="Direction is a zero vector!" theta="1.335177" phi="0" roughness="4.470348E-08" albedoF0="0.25">
-        <LobeReflected theta="0.0295334054105165" roughness="1" scale="0.001" flatten="1E-06" masking="0.999991830472063" />
+      <Result Index="(17,9,3)" State="-1" Error="Linear search eval returned NaN!" theta="1.335177" phi="0" roughness="4.470348E-08" albedoF0="0.25">
+        <LobeReflected theta="NaN" roughness="1" scale="0" flatten="0.5" masking="0" />
       </Result>
-      <Result Index="(18,9,3)" State="-1" Error="Direction is a zero vector!" theta="1.413717" phi="0" roughness="4.470348E-08" albedoF0="0.25">
-        <LobeReflected theta="0.033325455237099" roughness="1" scale="0.001" flatten="1E-06" masking="0.999975137730273" />
+      <Result Index="(18,9,3)" State="-1" Error="Linear search eval returned NaN!" theta="1.413717" phi="0" roughness="4.470348E-08" albedoF0="0.25">
+        <LobeReflected theta="NaN" roughness="1" scale="0" flatten="0.5" masking="0" />
       </Result>
       <Result Index="(19,9,3)" State="1" Error="" theta="1.492257" phi="0" roughness="4.470348E-08" albedoF0="0.25">
         <LobeReflected theta="0.0237488987916841" roughness="0.999999942556065" scale="0.001" flatten="1E-06" masking="0.999992336660003" />
@@ -9008,14 +9008,14 @@
       <Result Index="(16,9,2)" State="1" Error="" theta="1.256637" phi="0" roughness="4.470348E-08" albedoF0="0.5">
         <LobeReflected theta="0.0179319493483808" roughness="0.999920602218015" scale="0.001" flatten="0.403978701748304" masking="1" />
       </Result>
-      <Result Index="(17,9,2)" State="-1" Error="Direction is a zero vector!" theta="1.335177" phi="0" roughness="4.470348E-08" albedoF0="0.5">
-        <LobeReflected theta="0.00132194006003722" roughness="1" scale="0.001" flatten="1E-06" masking="1" />
+      <Result Index="(17,9,2)" State="-1" Error="Linear search eval returned NaN!" theta="1.335177" phi="0" roughness="4.470348E-08" albedoF0="0.5">
+        <LobeReflected theta="NaN" roughness="1" scale="0" flatten="0.5" masking="0" />
       </Result>
       <Result Index="(18,9,2)" State="1" Error="" theta="1.413717" phi="0" roughness="4.470348E-08" albedoF0="0.5">
         <LobeReflected theta="0.00653931147347073" roughness="0.991474176290583" scale="0.001" flatten="1E-06" masking="1" />
       </Result>
-      <Result Index="(19,9,2)" State="-1" Error="Direction is a zero vector!" theta="1.492257" phi="0" roughness="4.470348E-08" albedoF0="0.5">
-        <LobeReflected theta="0.00228372663577806" roughness="1" scale="0.001" flatten="1E-06" masking="1" />
+      <Result Index="(19,9,2)" State="-1" Error="Linear search eval returned NaN!" theta="1.492257" phi="0" roughness="4.470348E-08" albedoF0="0.5">
+        <LobeReflected theta="NaN" roughness="1" scale="0" flatten="0.5" masking="0" />
       </Result>
       <Result Index="(0,0,3)" State="1" Error="" theta="0" phi="0" roughness="1" albedoF0="0.25">
         <LobeReflected theta="0.00168393621726774" roughness="0.949576127707073" scale="0.001" flatten="0.445987168883591" masking="0.9819218799106" />
