@@ -29,7 +29,7 @@ namespace TestMSBSDF
 		protected int				m_dimensionY = 4;
 		protected int				m_dimensionZ = 1;
 		protected float[,,]			m_states = null;
-		protected string[,,]		m_errors = null;
+		protected string[,,]		m_texts = null;
 
 		protected int				m_selectedX = 0;
 		protected int				m_selectedY = 0;
@@ -101,10 +101,10 @@ namespace TestMSBSDF
 			}
 		}
 
-		public string			SelectedError {
-			get { return m_errors[m_selectedX, m_selectedY, m_selectedZ]; }
+		public string			SelectedText {
+			get { return m_texts[m_selectedX, m_selectedY, m_selectedZ]; }
 			set {
-				m_errors[m_selectedX, m_selectedY, m_selectedZ] = value;
+				m_texts[m_selectedX, m_selectedY, m_selectedZ] = value;
 				Invalidate();
 			}
 		}
@@ -201,7 +201,7 @@ namespace TestMSBSDF
 			m_dimensionY = _dimensionY;
 			m_dimensionZ = _dimensionZ;
 			m_states = new float[m_dimensionX,m_dimensionY,m_dimensionZ];
-			m_errors = new string[m_dimensionX,m_dimensionY,m_dimensionZ];
+			m_texts = new string[m_dimensionX,m_dimensionY,m_dimensionZ];
 
 			m_selectedX = 0;
 			m_selectedY = 0;
@@ -228,8 +228,8 @@ namespace TestMSBSDF
 		/// <param name="_Y"></param>
 		/// <param name="_Z"></param>
 		/// <returns></returns>
-		public string			GetError( int _X, int _Y, int _Z ) {
-			return m_errors[_X, _Y, _Z];
+		public string			GetText( int _X, int _Y, int _Z ) {
+			return m_texts[_X, _Y, _Z];
 		}
 
 		/// <summary>
@@ -239,9 +239,9 @@ namespace TestMSBSDF
 		/// <param name="_Y"></param>
 		/// <param name="_Z"></param>
 		/// <param name="_state"></param>
-		public void				SetState( int _X, int _Y, int _Z, float _state, string _error ) {
+		public void				SetState( int _X, int _Y, int _Z, float _state, string _text ) {
 			m_states[_X, _Y, _Z] = _state;
-			m_errors[_X, _Y, _Z] = _error;
+			m_texts[_X, _Y, _Z] = _text;
 			Invalidate();
 		}
 
@@ -297,11 +297,64 @@ namespace TestMSBSDF
 
 		#region Control Members
 
-		protected override void OnMouseDown( MouseEventArgs e )
-		{
+		protected override void OnMouseDown( MouseEventArgs e ) {
 			Focus();
 			base.OnMouseDown( e );
 			SelectAt( e.Location );
+		}
+
+		Point		m_lastMousePosition;
+		DateTime	m_lastStaticTime;
+		protected override void OnMouseMove( MouseEventArgs e ) {
+			base.OnMouseMove( e );
+
+			if ( e.X == m_lastMousePosition.X
+				&& e.Y == m_lastMousePosition.Y ) {
+				// Didn't move...
+				if ( (DateTime.Now - m_lastStaticTime).TotalMilliseconds < 100 )
+					return;	// Too soon
+
+				// Reshow tooltip
+				int	X, Y;
+				if ( !GetXYAt( PointToClient( Control.MousePosition ), out X, out Y ) )
+					return;
+
+				float	state = m_states[X,Y,m_selectedZ];
+				string	text = m_texts[X,Y,m_selectedZ];
+
+				toolTip1.ToolTipTitle = "(" + X + ", " + Y + ", " + SelectedZ + ")";
+				if ( state > 0.0f )
+					toolTip1.Show( "Progress " + ((int) (100 * state)).ToString() + "%\r\n" + (text != null ? text : "unknown"), this );
+				else
+					toolTip1.Show( (text != null ? text : "unknown"), this );
+			}
+
+			m_lastMousePosition = e.Location;
+			m_lastStaticTime = DateTime.Now;
+
+// 			if (	Math.Abs( e.X - m_mousePositionOnTimer.X ) > 4
+// 				||	Math.Abs( e.Y - m_mousePositionOnTimer.Y ) > 4 )
+// 				return;	// Mouse moved
+// 
+// 			// Reshow tooltip
+// 			int	X, Y;
+// 			if ( !GetXYAt( PointToClient( Control.MousePosition ), out X, out Y ) )
+// 				return;
+// 
+// 			float	state = m_states[X,Y,m_selectedZ];
+// 			string	text = m_texts[X,Y,m_selectedZ];
+// 
+// 			toolTip1.ToolTipTitle = "(" + X + ", " + Y + ", " + SelectedZ + ")";
+// 			if ( state > 0.0f )
+// 				toolTip1.Show( "Progress " + ((int) (100 * state)).ToString() + "%\r\n" + (text != null ? text : "unknown"), this );
+// 			else
+// 				toolTip1.Show( (text != null ? text : "unknown"), this );
+// 
+// 			m_mousePositionOnTimer = Point.Empty;
+		}
+
+		protected override void OnMouseHover( EventArgs e ) {
+			base.OnMouseHover( e );
 		}
 
 		protected override bool IsInputKey( Keys keyData ) {
@@ -356,13 +409,7 @@ namespace TestMSBSDF
 				SelectedZ++;
 		}
 
-		protected override void OnEnabledChanged( EventArgs e )
-		{
-			base.OnEnabledChanged( e );
-		}
-
-		protected override void OnResize( EventArgs eventargs )
-		{
+		protected override void OnResize( EventArgs eventargs ) {
 			base.OnResize( eventargs );
 		}
 
@@ -540,20 +587,9 @@ namespace TestMSBSDF
 
 		#region EVENT HANDLERS
 
-		private void toolTip1_Popup( object sender, PopupEventArgs e ) {
-			Point	P = PointToClient( Control.MousePosition );
-			int		X, Y;
-			if ( !GetXYAt( P, out X, out Y ) ) {
-				e.Cancel = true;
-			}
-
-			float	state = m_states[X,Y,m_selectedZ];
-			string	error = m_errors[X,Y,m_selectedZ];
-
-			if ( state > 0.0f )
-				toolTip1.SetToolTip( this, "Progress " + ((int) (100 * state)).ToString() + "%" );
-			else
-				toolTip1.SetToolTip( this, "Error: " + (error != null ? error : "unknown") );
+		Point	m_mousePositionOnTimer;
+		private void timer1_Tick( object sender, EventArgs e ) {
+			m_mousePositionOnTimer = PointToClient( Control.MousePosition );
 		}
 
 		#endregion

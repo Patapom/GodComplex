@@ -1624,7 +1624,6 @@
 			this.completionArrayControl.GridColor = System.Drawing.Color.Black;
 			this.completionArrayControl.Location = new System.Drawing.Point(12, 381);
 			this.completionArrayControl.Name = "completionArrayControl";
-			this.completionArrayControl.SelectedError = null;
 			this.completionArrayControl.SelectedState = 1F;
 			this.completionArrayControl.SelectedX = 0;
 			this.completionArrayControl.SelectedY = 0;

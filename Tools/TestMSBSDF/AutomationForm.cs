@@ -601,6 +601,16 @@ namespace TestMSBSDF
 					}
 				}
 
+				public string	UserText {
+					get {
+						return	"Theta = " + ((int) (180.0 * m_incomingAngleTheta / Math.PI)).ToString( "G3" ) + "°\n"
+							+	"Roughness = " + m_surfaceRoughness.ToString( "G4" ) + "\n"
+							+	"Albedo/F0 = " + m_surfaceAlbedoF0.ToString( "G4" ) + "\n"
+							+	"\n"
+							+ m_error;
+					}
+				}
+
 				/// <summary>
 				/// Gets the incoming direction, pointing toward the surface
 				/// </summary>
@@ -1438,7 +1448,7 @@ namespace TestMSBSDF
 				for ( int Y=0; Y < stepsCountY; Y++ )
 					for ( int X=0; X < stepsCountX; X++ ) {
 						Document.Result	result = layerResults[X,Y,Z];
-						completionArrayControl.SetState( X, Y, Z, result.State, result.m_error );
+						completionArrayControl.SetState( X, Y, Z, result.State, result.UserText );
 					}
 		}
 
@@ -1487,7 +1497,7 @@ namespace TestMSBSDF
 			if ( m_internalDocumentChange )
 				return;
 
-			completionArrayControl.SetState( _result.X, _result.Y, _result.Z, _result.State, _result.m_error );	// Only update UI if it's showing the result's scattering order
+			completionArrayControl.SetState( _result.X, _result.Y, _result.Z, _result.State, _result.UserText );	// Only update UI if it's showing the result's scattering order
 		}
 
 		#endregion
