@@ -1,0 +1,198 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 10.0' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[      5607,        189]
+NotebookOptionsPosition[      5140,        169]
+NotebookOutlinePosition[      5488,        184]
+CellTagsIndexPosition[      5445,        181]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+
+Cell[CellGroupData[{
+Cell["\<\
+Finding a Parametrization for the Rough Diffuse Surface Simulation\
+\>", "Title",
+ CellChangeTimes->{{3.663754510825287*^9, 3.6637545195194197`*^9}, {
+  3.6637545562532988`*^9, 3.6637545911168585`*^9}}],
+
+Cell["\<\
+We wrote a program that is capable of generating or loading a microsurface \
+and ray-tracing that surface using a very large amount of rays (several \
+hundred millions), thus obtaining the distribution of outgoing directions \
+after 1 or more scattering events (up to 4).
+We gathered the outgoing lobes for different parameters of the surface:
+\t\[Bullet] Angle of incidence
+\t\[Bullet] Roughness
+\t\[Bullet] Albedo\
+\>", "Text",
+ CellChangeTimes->{{3.6637545061249533`*^9, 3.663754506669348*^9}, {
+  3.66375460454135*^9, 3.663754744418909*^9}, {3.66375628129113*^9, 
+  3.663756301587434*^9}}],
+
+Cell[TextData[{
+ "Then we performed a fitting of the simulated data using a modified cosine \
+lobel model that uses non-uniform scaling and a local tangent space.\nThe \
+matrix ",
+ StyleBox["M",
+  FontWeight->"Bold"],
+ " allows to transform from local lobe space to surface space:\n\t",
+ Cell[BoxData[
+  FormBox[
+   RowBox[{
+    StyleBox["M",
+     FontWeight->"Bold"], 
+    StyleBox["=",
+     FontWeight->"Plain"], 
+    RowBox[{"(", GridBox[{
+       {
+        StyleBox["T",
+         FontWeight->"Bold"]},
+       {
+        StyleBox["B",
+         FontWeight->"Bold"]},
+       {
+        RowBox[{
+         StyleBox[
+          SubscriptBox[
+           StyleBox["\[Sigma]",
+            FontWeight->"Plain"], "n"],
+          FontWeight->"Plain"], 
+         StyleBox["N",
+          FontWeight->"Bold"]}]}
+      }], ")"}]}], TraditionalForm]],
+  FormatType->"TraditionalForm"],
+ "\n\t",
+ Cell[BoxData[
+  FormBox[
+   RowBox[{
+    StyleBox[
+     SubscriptBox["v", "w"],
+     FontWeight->"Bold"], "="}], TraditionalForm]],
+  FormatType->"TraditionalForm"],
+ " ",
+ Cell[BoxData[
+  FormBox[
+   StyleBox[
+    FractionBox[
+     StyleBox[
+      RowBox[{
+       SubscriptBox["v", "l"], " ", "M"}],
+      FontWeight->"Bold"], 
+     RowBox[{"\[LeftBracketingBar]", 
+      RowBox[{
+       SubscriptBox["v", "l"], " ", "M"}], "\[RightBracketingBar]"}]],
+    FontWeight->"Bold"], TraditionalForm]],
+  FormatType->"TraditionalForm"],
+ "\n\n",
+ Cell[BoxData[
+  FormBox[
+   SubscriptBox["v", "l"], TraditionalForm]],
+  FontWeight->"Bold"],
+ StyleBox[" ",
+  FontWeight->"Bold"],
+ "is the local lobe-space unit vector\n",
+ Cell[BoxData[
+  FormBox[
+   SubscriptBox["v", "w"], TraditionalForm]],
+  FontWeight->"Bold"],
+ StyleBox[" ",
+  FontWeight->"Bold"],
+ "is the surface-space unit vector after renormalization\n",
+ Cell[BoxData[
+  FormBox[
+   StyleBox[
+    SubscriptBox[
+     StyleBox["\[Sigma]",
+      FontWeight->"Plain"], "n"],
+    FontWeight->"Plain"], TraditionalForm]]],
+ " is a non-uniform scaling factor along the lobe\[CloseCurlyQuote]s \
+principal direction"
+}], "Text",
+ CellChangeTimes->{{3.663756816349247*^9, 3.663756891911521*^9}, {
+  3.663756938926691*^9, 3.663756987497876*^9}, {3.6637570379584436`*^9, 
+  3.6637570756900425`*^9}, {3.6637571073413444`*^9, 3.663757108152934*^9}, {
+  3.663757181586692*^9, 3.663757181586692*^9}, {3.6637572176851187`*^9, 
+  3.663757266061214*^9}, {3.6637573516565475`*^9, 3.663757400885263*^9}}],
+
+Cell[TextData[{
+ "\n\t",
+ Cell[BoxData[
+  FormBox[
+   RowBox[{
+    RowBox[{"\[Alpha]", "(", "\[Rho]", ")"}], "=", " ", 
+    RowBox[{
+     SuperscriptBox["2", 
+      RowBox[{"10", 
+       RowBox[{"(", 
+        RowBox[{"1", "-", "\[Rho]"}], ")"}]}]], "-", "1"}]}], 
+   TraditionalForm]]],
+ "\t\t\tDefines the exponent based on the surface\[CloseCurlyQuote]s \
+roughness, notice the -1 in the end that allows use to have a 0 exponent to \
+make constant lobes\n\tf(\[Theta],\[Rho],\[Sigma]) = \[Sigma] ",
+ Cell[BoxData[
+  FormBox[
+   FractionBox[
+    RowBox[{"2", "+", 
+     RowBox[{"\[Alpha]", "(", "\[Rho]", ")"}]}], "\[Pi]"], TraditionalForm]]],
+ " ",
+ Cell[BoxData[
+  FormBox[
+   SuperscriptBox[
+    RowBox[{"cos", "(", "\[Theta]", ")"}], 
+    RowBox[{"\[Alpha]", "(", "\[Rho]", ")"}]], TraditionalForm]]],
+ "\tDefines the cosine lobe using roughness, angle from local normal axis and \
+global scale\n"
+}], "Text",
+ CellChangeTimes->{{3.663757028326655*^9, 3.663757028414719*^9}, 
+   3.6637573384092183`*^9}],
+
+Cell[BoxData["qsd"], "Input",
+ CellChangeTimes->{{3.663757021784042*^9, 3.6637570218250837`*^9}}],
+
+Cell[BoxData[
+ StyleBox["qsd", "Text",
+  FontWeight->"Plain"]], "Input",
+ CellChangeTimes->{{3.663756906104509*^9, 3.6637569269932327`*^9}, {
+  3.663756994515828*^9, 3.6637570127046432`*^9}}]
+}, Open  ]]
+},
+WindowSize->{1920, 1127},
+WindowMargins->{{-8, Automatic}, {Automatic, -8}},
+FrontEndVersion->"10.0 for Microsoft Windows (64-bit) (September 9, 2014)",
+StyleDefinitions->"Default.nb"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[CellGroupData[{
+Cell[580, 22, 212, 4, 90, "Title"],
+Cell[795, 28, 603, 12, 106, "Text"],
+Cell[1401, 42, 2418, 83, 216, "Text"],
+Cell[3822, 127, 1008, 30, 103, "Text"],
+Cell[4833, 159, 97, 1, 31, "Input"],
+Cell[4933, 162, 191, 4, 31, "Input"]
+}, Open  ]]
+}
+]
+*)
+
+(* End of internal cache information *)
