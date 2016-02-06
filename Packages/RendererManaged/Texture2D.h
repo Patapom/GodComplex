@@ -26,6 +26,7 @@ namespace RendererManaged {
 		View2D( Texture2D^ _Owner, int _MipLevelStart, int _MipLevelsCount, int _ArrayStart, int _ArraySize, bool _AsArray ) : m_Owner( _Owner ), m_MipLevelStart( _MipLevelStart ), m_MipLevelsCount( _MipLevelsCount ), m_ArrayStart( _ArrayStart ), m_ArraySize( _ArraySize ), m_AsArray( _AsArray ) {}
 
 	public:
+
 		virtual property int	Width				{ int get(); }
 		virtual property int	Height				{ int get(); }
 		virtual property int	ArraySizeOrDepth	{ int get(); }

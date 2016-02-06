@@ -933,7 +933,12 @@ namespace TestMSBSDF
 		public void	UpdateApplication() {
 			panelOutput.Refresh();
 			Application_Idle( null, EventArgs.Empty );
-			Application.DoEvents();	// Force processing events for refresh
+			try {
+				Application.DoEvents();	// Give a chance to the app to process messages!
+			}
+			catch ( Exception _e ) {
+				throw _e;
+			}
 		}
 
 		bool	m_pauseRendering = false;

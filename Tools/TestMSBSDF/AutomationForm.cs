@@ -1688,7 +1688,12 @@ namespace TestMSBSDF
 								ComputationThread	T = null;
 								while ( T == null ) {
 									T = QueryComputeThread();
-									Application.DoEvents();	// Give a chance to the app to process messages!
+									try {
+										Application.DoEvents();	// Give a chance to the app to process messages!
+									}
+									catch ( Exception _e ) {
+										throw _e;
+									}
 									if ( T == null ) {
 										Thread.Sleep( 50 );
 									}
