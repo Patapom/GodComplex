@@ -134,6 +134,9 @@
 			this.startFromHereToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.toolStripMenuItem3 = new System.Windows.Forms.ToolStripSeparator();
 			this.clearToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.clearColumnToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.clearRowToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.clearSliceFromHereToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
 			this.menuStrip1 = new System.Windows.Forms.MenuStrip();
 			this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -152,10 +155,7 @@
 			this.saveFileDialogExport = new System.Windows.Forms.SaveFileDialog();
 			this.integerTrackbarControlThreadsCount = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
 			this.label31 = new System.Windows.Forms.Label();
-			this.clearSliceFromHereToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.completionArrayControl = new TestMSBSDF.CompletionArrayControl();
-			this.clearColumnToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-			this.clearRowToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.groupBoxSimulationParameters.SuspendLayout();
 			this.panel6.SuspendLayout();
 			this.panel5.SuspendLayout();
@@ -1432,27 +1432,27 @@
             this.clearRowToolStripMenuItem,
             this.clearSliceFromHereToolStripMenuItem});
 			this.contextMenuStripSelection.Name = "contextMenuStripSelection";
-			this.contextMenuStripSelection.Size = new System.Drawing.Size(205, 164);
+			this.contextMenuStripSelection.Size = new System.Drawing.Size(209, 164);
 			this.contextMenuStripSelection.Opening += new System.ComponentModel.CancelEventHandler(this.contextMenuStripSelection_Opening);
 			// 
 			// computeToolStripMenuItem
 			// 
 			this.computeToolStripMenuItem.Name = "computeToolStripMenuItem";
-			this.computeToolStripMenuItem.Size = new System.Drawing.Size(185, 22);
+			this.computeToolStripMenuItem.Size = new System.Drawing.Size(204, 22);
 			this.computeToolStripMenuItem.Text = "&Compute";
 			this.computeToolStripMenuItem.Click += new System.EventHandler(this.computeToolStripMenuItem_Click);
 			// 
 			// startFromHereToolStripMenuItem
 			// 
 			this.startFromHereToolStripMenuItem.Name = "startFromHereToolStripMenuItem";
-			this.startFromHereToolStripMenuItem.Size = new System.Drawing.Size(185, 22);
-			this.startFromHereToolStripMenuItem.Text = "&Start from Here";
+			this.startFromHereToolStripMenuItem.Size = new System.Drawing.Size(208, 22);
+			this.startFromHereToolStripMenuItem.Text = "Compute &Slice from Here";
 			this.startFromHereToolStripMenuItem.Click += new System.EventHandler(this.startFromHereToolStripMenuItem_Click);
 			// 
 			// toolStripMenuItem3
 			// 
 			this.toolStripMenuItem3.Name = "toolStripMenuItem3";
-			this.toolStripMenuItem3.Size = new System.Drawing.Size(182, 6);
+			this.toolStripMenuItem3.Size = new System.Drawing.Size(201, 6);
 			// 
 			// clearToolStripMenuItem
 			// 
@@ -1460,6 +1460,27 @@
 			this.clearToolStripMenuItem.Size = new System.Drawing.Size(204, 22);
 			this.clearToolStripMenuItem.Text = "Clea&r Single Result";
 			this.clearToolStripMenuItem.Click += new System.EventHandler(this.clearToolStripMenuItem_Click);
+			// 
+			// clearColumnToolStripMenuItem
+			// 
+			this.clearColumnToolStripMenuItem.Name = "clearColumnToolStripMenuItem";
+			this.clearColumnToolStripMenuItem.Size = new System.Drawing.Size(204, 22);
+			this.clearColumnToolStripMenuItem.Text = "Clear Column from Here";
+			this.clearColumnToolStripMenuItem.Click += new System.EventHandler(this.clearColumnToolStripMenuItem_Click);
+			// 
+			// clearRowToolStripMenuItem
+			// 
+			this.clearRowToolStripMenuItem.Name = "clearRowToolStripMenuItem";
+			this.clearRowToolStripMenuItem.Size = new System.Drawing.Size(204, 22);
+			this.clearRowToolStripMenuItem.Text = "Clear Row from Here";
+			this.clearRowToolStripMenuItem.Click += new System.EventHandler(this.clearRowToolStripMenuItem_Click);
+			// 
+			// clearSliceFromHereToolStripMenuItem
+			// 
+			this.clearSliceFromHereToolStripMenuItem.Name = "clearSliceFromHereToolStripMenuItem";
+			this.clearSliceFromHereToolStripMenuItem.Size = new System.Drawing.Size(204, 22);
+			this.clearSliceFromHereToolStripMenuItem.Text = "Clear Slice from Here";
+			this.clearSliceFromHereToolStripMenuItem.Click += new System.EventHandler(this.clearSliceFromHereToolStripMenuItem_Click);
 			// 
 			// menuStrip1
 			// 
@@ -1609,13 +1630,6 @@
 			this.label31.TabIndex = 1;
 			this.label31.Text = "Threads Count";
 			// 
-			// clearSliceFromHereToolStripMenuItem
-			// 
-			this.clearSliceFromHereToolStripMenuItem.Name = "clearSliceFromHereToolStripMenuItem";
-			this.clearSliceFromHereToolStripMenuItem.Size = new System.Drawing.Size(185, 22);
-			this.clearSliceFromHereToolStripMenuItem.Text = "Clear Slice from Here";
-			this.clearSliceFromHereToolStripMenuItem.Click += new System.EventHandler(this.clearSliceFromHereToolStripMenuItem_Click);
-			// 
 			// completionArrayControl
 			// 
 			this.completionArrayControl.BackColor = System.Drawing.SystemColors.ControlLight;
@@ -1625,6 +1639,7 @@
 			this.completionArrayControl.Location = new System.Drawing.Point(12, 381);
 			this.completionArrayControl.Name = "completionArrayControl";
 			this.completionArrayControl.SelectedState = 1F;
+			this.completionArrayControl.SelectedText = null;
 			this.completionArrayControl.SelectedX = 0;
 			this.completionArrayControl.SelectedY = 0;
 			this.completionArrayControl.SelectedZ = 0;
@@ -1632,20 +1647,6 @@
 			this.completionArrayControl.TabIndex = 3;
 			this.completionArrayControl.SelectionChanged += new TestMSBSDF.CompletionArrayControl.SelectionChangedEventHandler(this.completionArrayControl_SelectionChanged);
 			this.completionArrayControl.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.completionArrayControl_MouseDoubleClick);
-			// 
-			// clearColumnToolStripMenuItem
-			// 
-			this.clearColumnToolStripMenuItem.Name = "clearColumnToolStripMenuItem";
-			this.clearColumnToolStripMenuItem.Size = new System.Drawing.Size(204, 22);
-			this.clearColumnToolStripMenuItem.Text = "Clear Column from Here";
-			this.clearColumnToolStripMenuItem.Click += new System.EventHandler(this.clearColumnToolStripMenuItem_Click);
-			// 
-			// clearRowToolStripMenuItem
-			// 
-			this.clearRowToolStripMenuItem.Name = "clearRowToolStripMenuItem";
-			this.clearRowToolStripMenuItem.Size = new System.Drawing.Size(204, 22);
-			this.clearRowToolStripMenuItem.Text = "Clear Row from Here";
-			this.clearRowToolStripMenuItem.Click += new System.EventHandler(this.clearRowToolStripMenuItem_Click);
 			// 
 			// AutomationForm
 			// 

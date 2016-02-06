@@ -1631,7 +1631,7 @@ namespace TestMSBSDF
 				m_documentFileName = new FileInfo( FileName );
 			}
 
-			ComputeAll( 0, 0, 0, 0 );
+			ComputeAll( 0, 0, 0, 0, false );
 		}
 
 		/// <summary>
@@ -1653,12 +1653,14 @@ namespace TestMSBSDF
 		/// <summary>
 		/// Main computation routine
 		/// </summary>
-		void	ComputeAll( int _startOrder, int _startX, int _startY, int _startZ ) {
+		void	ComputeAll( int _startOrder, int _startX, int _startY, int _startZ, bool _singleSlice ) {
 			try {
 				EnterComputationMode();
 
 				int	orderMax = m_document.m_surface.ScatteringOrderMax;
 				int	orderMin = _startOrder > 0 && _startOrder <= orderMax ? _startOrder : m_document.m_surface.ScatteringOrderMin;
+				if ( _singleSlice )
+					orderMax = orderMin;	// Single order if single slice...
 
 				int	dimX = m_document.m_surface.m_incomingAngle.StepsCount;
 				int	dimY = m_document.m_surface.m_roughness.StepsCount;
@@ -1667,6 +1669,7 @@ namespace TestMSBSDF
 				_startX = Math.Max( 0, Math.Min( dimX-1, _startX ) );
 				_startY = Math.Max( 0, Math.Min( dimY-1, _startY ) );
 				_startZ = Math.Max( 0, Math.Min( dimZ-1, _startZ ) );
+				int	endZ = _singleSlice ? _startZ+1 : dimZ;
 
 				double	functionMinimumTolerance = Math.Pow( 10.0, m_document.m_settings.m_logTolerance_Minimum );
 				double	gradientTolerance = Math.Pow( 10.0, m_document.m_settings.m_logTolerance_Gradient );
@@ -1687,7 +1690,7 @@ namespace TestMSBSDF
 
 					m_owner.SetCurrentScatteringOrder( order );
 
-					for ( int Z=_startZ; Z < dimZ; Z++ ) {
+					for ( int Z=_startZ; Z < endZ; Z++ ) {
 						_startZ = 0;
 						for ( int Y=_startY; Y < dimY; Y++ ) {
 							_startY = 0;
@@ -2012,7 +2015,7 @@ namespace TestMSBSDF
 				DocumentFileName = new FileInfo( FileName );
 			}
 
-			ComputeAll( SelectedScatteringOrder, SelectedResult.X, SelectedResult.Y, SelectedResult.Z );
+			ComputeAll( SelectedScatteringOrder, SelectedResult.X, SelectedResult.Y, SelectedResult.Z, true );
 		}
 
 		private void clearToolStripMenuItem_Click( object sender, EventArgs e ) {
