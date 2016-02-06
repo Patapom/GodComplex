@@ -169,6 +169,8 @@
 			this.floatTrackbarControlInit_FixedMasking = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.radioButtonInitMasking_Fixed = new System.Windows.Forms.RadioButton();
 			this.completionArrayControl = new TestMSBSDF.CompletionArrayControl();
+			this.floatTrackbarControlInit_FixedDirection = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.radioButtonInitDirection_Fixed = new System.Windows.Forms.RadioButton();
 			this.groupBoxSimulationParameters.SuspendLayout();
 			this.panel6.SuspendLayout();
 			this.panel5.SuspendLayout();
@@ -1210,9 +1212,11 @@
 			// panel4
 			// 
 			this.panel4.Controls.Add(this.radioButtonInitDirection_TowardCoM);
+			this.panel4.Controls.Add(this.radioButtonInitDirection_Fixed);
 			this.panel4.Controls.Add(this.radioButtonInitDirection_NoChange);
 			this.panel4.Controls.Add(this.radioButtonInitDirection_TowardReflected);
 			this.panel4.Controls.Add(this.checkBoxInitDirection_InheritLeft);
+			this.panel4.Controls.Add(this.floatTrackbarControlInit_FixedDirection);
 			this.panel4.Controls.Add(this.checkBoxInitDirection_Inherit);
 			this.panel4.Controls.Add(this.label10);
 			this.panel4.Location = new System.Drawing.Point(3, 19);
@@ -1594,7 +1598,7 @@
 			// 
 			// buttonCompute
 			// 
-			this.buttonCompute.Anchor = System.Windows.Forms.AnchorStyles.Bottom;
+			this.buttonCompute.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
 			this.buttonCompute.BackColor = System.Drawing.Color.MediumAquamarine;
 			this.buttonCompute.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
 			this.buttonCompute.Location = new System.Drawing.Point(443, 789);
@@ -1636,6 +1640,7 @@
 			// 
 			// integerTrackbarControlThreadsCount
 			// 
+			this.integerTrackbarControlThreadsCount.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
 			this.integerTrackbarControlThreadsCount.Location = new System.Drawing.Point(253, 800);
 			this.integerTrackbarControlThreadsCount.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.integerTrackbarControlThreadsCount.MinimumSize = new System.Drawing.Size(70, 20);
@@ -1650,6 +1655,7 @@
 			// 
 			// label31
 			// 
+			this.label31.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
 			this.label31.AutoSize = true;
 			this.label31.Location = new System.Drawing.Point(171, 803);
 			this.label31.Name = "label31";
@@ -1666,7 +1672,7 @@
 			this.checkBoxInitDirection_InheritLeft.TabIndex = 4;
 			this.checkBoxInitDirection_InheritLeft.Text = "Inherit Left";
 			this.checkBoxInitDirection_InheritLeft.UseVisualStyleBackColor = true;
-			this.checkBoxInitDirection_InheritLeft.CheckedChanged += new System.EventHandler(this.checkBoxInitDirection_Inherit_CheckedChanged);
+			this.checkBoxInitDirection_InheritLeft.CheckedChanged += new System.EventHandler(this.checkBoxInitDirection_InheritLeft_CheckedChanged);
 			// 
 			// checkBoxInitScale_InheritLeft
 			// 
@@ -1677,7 +1683,7 @@
 			this.checkBoxInitScale_InheritLeft.TabIndex = 4;
 			this.checkBoxInitScale_InheritLeft.Text = "Inherit Left";
 			this.checkBoxInitScale_InheritLeft.UseVisualStyleBackColor = true;
-			this.checkBoxInitScale_InheritLeft.CheckedChanged += new System.EventHandler(this.checkBoxInitScale_Inherit_CheckedChanged);
+			this.checkBoxInitScale_InheritLeft.CheckedChanged += new System.EventHandler(this.checkBoxInitScale_InheritLeft_CheckedChanged);
 			// 
 			// checkBoxInitFlatten_InheritLeft
 			// 
@@ -1688,7 +1694,7 @@
 			this.checkBoxInitFlatten_InheritLeft.TabIndex = 4;
 			this.checkBoxInitFlatten_InheritLeft.Text = "Inherit Left";
 			this.checkBoxInitFlatten_InheritLeft.UseVisualStyleBackColor = true;
-			this.checkBoxInitFlatten_InheritLeft.CheckedChanged += new System.EventHandler(this.checkBoxInitFlatten_Inherit_CheckedChanged);
+			this.checkBoxInitFlatten_InheritLeft.CheckedChanged += new System.EventHandler(this.checkBoxInitFlatten_InheritLeft_CheckedChanged);
 			// 
 			// checkBoxInitRoughness_InheritLeft
 			// 
@@ -1699,7 +1705,7 @@
 			this.checkBoxInitRoughness_InheritLeft.TabIndex = 4;
 			this.checkBoxInitRoughness_InheritLeft.Text = "Inherit Left";
 			this.checkBoxInitRoughness_InheritLeft.UseVisualStyleBackColor = true;
-			this.checkBoxInitRoughness_InheritLeft.CheckedChanged += new System.EventHandler(this.checkBoxInitRoughness_Inherit_CheckedChanged);
+			this.checkBoxInitRoughness_InheritLeft.CheckedChanged += new System.EventHandler(this.checkBoxInitRoughness_InheritLeft_CheckedChanged);
 			// 
 			// checkBoxInitMasking_InheritLeft
 			// 
@@ -1710,7 +1716,7 @@
 			this.checkBoxInitMasking_InheritLeft.TabIndex = 4;
 			this.checkBoxInitMasking_InheritLeft.Text = "Inherit Left";
 			this.checkBoxInitMasking_InheritLeft.UseVisualStyleBackColor = true;
-			this.checkBoxInitMasking_InheritLeft.CheckedChanged += new System.EventHandler(this.checkBoxInitMasking_Inherit_CheckedChanged);
+			this.checkBoxInitMasking_InheritLeft.CheckedChanged += new System.EventHandler(this.checkBoxInitMasking_InheritLeft_CheckedChanged);
 			// 
 			// radioButtonInitScale_Fixed
 			// 
@@ -1833,6 +1839,32 @@
 			this.completionArrayControl.TabIndex = 3;
 			this.completionArrayControl.SelectionChanged += new TestMSBSDF.CompletionArrayControl.SelectionChangedEventHandler(this.completionArrayControl_SelectionChanged);
 			this.completionArrayControl.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.completionArrayControl_MouseDoubleClick);
+			// 
+			// floatTrackbarControlInit_FixedDirection
+			// 
+			this.floatTrackbarControlInit_FixedDirection.Enabled = false;
+			this.floatTrackbarControlInit_FixedDirection.Location = new System.Drawing.Point(158, 61);
+			this.floatTrackbarControlInit_FixedDirection.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlInit_FixedDirection.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlInit_FixedDirection.Name = "floatTrackbarControlInit_FixedDirection";
+			this.floatTrackbarControlInit_FixedDirection.RangeMax = 90F;
+			this.floatTrackbarControlInit_FixedDirection.RangeMin = 0F;
+			this.floatTrackbarControlInit_FixedDirection.Size = new System.Drawing.Size(164, 20);
+			this.floatTrackbarControlInit_FixedDirection.TabIndex = 2;
+			this.floatTrackbarControlInit_FixedDirection.Value = 0F;
+			this.floatTrackbarControlInit_FixedDirection.VisibleRangeMax = 90F;
+			this.floatTrackbarControlInit_FixedDirection.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlInit_FixedDirection_ValueChanged);
+			// 
+			// radioButtonInitDirection_Fixed
+			// 
+			this.radioButtonInitDirection_Fixed.AutoSize = true;
+			this.radioButtonInitDirection_Fixed.Location = new System.Drawing.Point(102, 63);
+			this.radioButtonInitDirection_Fixed.Name = "radioButtonInitDirection_Fixed";
+			this.radioButtonInitDirection_Fixed.Size = new System.Drawing.Size(50, 17);
+			this.radioButtonInitDirection_Fixed.TabIndex = 0;
+			this.radioButtonInitDirection_Fixed.Text = "Fixed";
+			this.radioButtonInitDirection_Fixed.UseVisualStyleBackColor = true;
+			this.radioButtonInitDirection_Fixed.CheckedChanged += new System.EventHandler(this.radioButtonInitDirection_CheckedChanged);
 			// 
 			// AutomationForm
 			// 
@@ -2030,5 +2062,7 @@
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlInit_FixedRoughness;
 		private System.Windows.Forms.RadioButton radioButtonInitMasking_Fixed;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlInit_FixedMasking;
+		private System.Windows.Forms.RadioButton radioButtonInitDirection_Fixed;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlInit_FixedDirection;
 	}
 }

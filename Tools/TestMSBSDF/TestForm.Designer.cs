@@ -76,6 +76,7 @@
 			this.floatTrackbarControlSurfaceAlbedo = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label11 = new System.Windows.Forms.Label();
 			this.groupBoxSurface = new System.Windows.Forms.GroupBox();
+			this.buttonTestImage = new System.Windows.Forms.Button();
 			this.panelDielectric = new System.Windows.Forms.Panel();
 			this.floatTrackbarControlF0 = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label12 = new System.Windows.Forms.Label();
@@ -108,7 +109,6 @@
 			this.checkBoxCompensateScatteringFactor = new System.Windows.Forms.CheckBox();
 			this.checkBoxShowXRay = new System.Windows.Forms.CheckBox();
 			this.buttonAutomation = new System.Windows.Forms.Button();
-			this.buttonTestImage = new System.Windows.Forms.Button();
 			this.panelOutput = new TestMSBSDF.PanelOutput3D(this.components);
 			this.groupBoxDisplay.SuspendLayout();
 			this.panel2.SuspendLayout();
@@ -373,7 +373,7 @@
 			// label7
 			// 
 			this.label7.AutoSize = true;
-			this.label7.Location = new System.Drawing.Point(6, 63);
+			this.label7.Location = new System.Drawing.Point(6, 89);
 			this.label7.Name = "label7";
 			this.label7.Size = new System.Drawing.Size(70, 13);
 			this.label7.TabIndex = 3;
@@ -382,7 +382,7 @@
 			// floatTrackbarControlLobeScaleB
 			// 
 			this.floatTrackbarControlLobeScaleB.Enabled = false;
-			this.floatTrackbarControlLobeScaleB.Location = new System.Drawing.Point(123, 110);
+			this.floatTrackbarControlLobeScaleB.Location = new System.Drawing.Point(123, 141);
 			this.floatTrackbarControlLobeScaleB.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlLobeScaleB.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlLobeScaleB.Name = "floatTrackbarControlLobeScaleB";
@@ -391,11 +391,12 @@
 			this.floatTrackbarControlLobeScaleB.Size = new System.Drawing.Size(238, 20);
 			this.floatTrackbarControlLobeScaleB.TabIndex = 5;
 			this.floatTrackbarControlLobeScaleB.Value = 1F;
+			this.floatTrackbarControlLobeScaleB.Visible = false;
 			this.floatTrackbarControlLobeScaleB.VisibleRangeMax = 1F;
 			// 
 			// floatTrackbarControlLobeScaleT
 			// 
-			this.floatTrackbarControlLobeScaleT.Location = new System.Drawing.Point(123, 84);
+			this.floatTrackbarControlLobeScaleT.Location = new System.Drawing.Point(123, 58);
 			this.floatTrackbarControlLobeScaleT.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlLobeScaleT.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlLobeScaleT.Name = "floatTrackbarControlLobeScaleT";
@@ -421,7 +422,7 @@
 			// 
 			// floatTrackbarControlLobeScaleR
 			// 
-			this.floatTrackbarControlLobeScaleR.Location = new System.Drawing.Point(123, 58);
+			this.floatTrackbarControlLobeScaleR.Location = new System.Drawing.Point(123, 84);
 			this.floatTrackbarControlLobeScaleR.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlLobeScaleR.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlLobeScaleR.Name = "floatTrackbarControlLobeScaleR";
@@ -629,6 +630,16 @@
 			this.groupBoxSurface.TabStop = false;
 			this.groupBoxSurface.Text = "Beckmann Surface Parameters";
 			// 
+			// buttonTestImage
+			// 
+			this.buttonTestImage.Location = new System.Drawing.Point(298, 126);
+			this.buttonTestImage.Name = "buttonTestImage";
+			this.buttonTestImage.Size = new System.Drawing.Size(75, 23);
+			this.buttonTestImage.TabIndex = 6;
+			this.buttonTestImage.Text = "Test Image";
+			this.buttonTestImage.UseVisualStyleBackColor = true;
+			this.buttonTestImage.Click += new System.EventHandler(this.buttonTestImage_Click);
+			// 
 			// panelDielectric
 			// 
 			this.panelDielectric.Controls.Add(this.floatTrackbarControlF0);
@@ -765,7 +776,7 @@
 			// label20
 			// 
 			this.label20.AutoSize = true;
-			this.label20.Location = new System.Drawing.Point(6, 141);
+			this.label20.Location = new System.Drawing.Point(6, 115);
 			this.label20.Name = "label20";
 			this.label20.Size = new System.Drawing.Size(103, 13);
 			this.label20.TabIndex = 3;
@@ -774,7 +785,7 @@
 			// label13
 			// 
 			this.label13.AutoSize = true;
-			this.label13.Location = new System.Drawing.Point(6, 88);
+			this.label13.Location = new System.Drawing.Point(6, 62);
 			this.label13.Name = "label13";
 			this.label13.Size = new System.Drawing.Size(67, 13);
 			this.label13.TabIndex = 3;
@@ -782,7 +793,7 @@
 			// 
 			// floatTrackbarControlLobeMaskingImportance
 			// 
-			this.floatTrackbarControlLobeMaskingImportance.Location = new System.Drawing.Point(123, 136);
+			this.floatTrackbarControlLobeMaskingImportance.Location = new System.Drawing.Point(123, 110);
 			this.floatTrackbarControlLobeMaskingImportance.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlLobeMaskingImportance.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlLobeMaskingImportance.Name = "floatTrackbarControlLobeMaskingImportance";
@@ -797,11 +808,12 @@
 			// 
 			this.label14.AutoSize = true;
 			this.label14.Enabled = false;
-			this.label14.Location = new System.Drawing.Point(6, 114);
+			this.label14.Location = new System.Drawing.Point(6, 145);
 			this.label14.Name = "label14";
 			this.label14.Size = new System.Drawing.Size(86, 13);
 			this.label14.TabIndex = 3;
 			this.label14.Text = "Scale BiTangent";
+			this.label14.Visible = false;
 			// 
 			// tabPageTransmittedLobe
 			// 
@@ -1021,16 +1033,6 @@
 			this.buttonAutomation.Text = "&Automation";
 			this.buttonAutomation.UseVisualStyleBackColor = true;
 			this.buttonAutomation.Click += new System.EventHandler(this.buttonAutomation_Click);
-			// 
-			// buttonTestImage
-			// 
-			this.buttonTestImage.Location = new System.Drawing.Point(298, 126);
-			this.buttonTestImage.Name = "buttonTestImage";
-			this.buttonTestImage.Size = new System.Drawing.Size(75, 23);
-			this.buttonTestImage.TabIndex = 6;
-			this.buttonTestImage.Text = "Test Image";
-			this.buttonTestImage.UseVisualStyleBackColor = true;
-			this.buttonTestImage.Click += new System.EventHandler(this.buttonTestImage_Click);
 			// 
 			// panelOutput
 			// 

@@ -300,6 +300,7 @@ namespace TestMSBSDF
 					CENTER_OF_MASS,
 					REFLECTED_DIRECTION,
 					NO_CHANGE,				// Means no change from last computation
+					FIXED,					// Means constrained to specified value
 				}
 
 				public enum GUESS_INITIAL_ROUGHNESS {
@@ -339,6 +340,7 @@ namespace TestMSBSDF
 				public GUESS_INITIAL_DIRECTION	m_initialDirection = GUESS_INITIAL_DIRECTION.CENTER_OF_MASS;
 				public bool						m_inheritDirection_Top = true;
 				public bool						m_inheritDirection_Left = false;
+				public float					m_fixedTheta = 0.0f;
 				public GUESS_INITIAL_ROUGHNESS	m_initialRoughness = GUESS_INITIAL_ROUGHNESS.SURFACE;
 				public bool						m_inheritRoughness_Top = true;
 				public bool						m_inheritRoughness_Left = false;
@@ -383,6 +385,7 @@ namespace TestMSBSDF
 					Attrib( ElemLobeParms, "initialDirection",	m_initialDirection );
 					Attrib( ElemLobeParms, "inheritDirection",	m_inheritDirection_Top );
 					Attrib( ElemLobeParms, "inheritDirectionLeft",	m_inheritDirection_Left );
+					Attrib( ElemLobeParms, "fixedTheta",		m_fixedTheta );
 					Attrib( ElemLobeParms, "initialRoughness",	m_initialRoughness );
 					Attrib( ElemLobeParms, "inheritRoughness",	m_inheritRoughness_Top );
 					Attrib( ElemLobeParms, "inheritRoughnessLeft",	m_inheritRoughness_Left );
@@ -422,6 +425,7 @@ namespace TestMSBSDF
 					Attrib( ElemLobeParms, "Model",				ref m_lobeModel );
 					Attrib( ElemLobeParms, "initialDirection",	ref m_initialDirection );
 					Attrib( ElemLobeParms, "inheritDirection",	ref m_inheritDirection_Top );
+					Attrib( ElemLobeParms, "fixedTheta",		ref m_fixedTheta );
 					Attrib( ElemLobeParms, "initialRoughness",	ref m_initialRoughness );
 					Attrib( ElemLobeParms, "inheritRoughness",	ref m_inheritRoughness_Top );
 					Attrib( ElemLobeParms, "customRoughness",	ref m_customRoughness );
@@ -493,8 +497,8 @@ namespace TestMSBSDF
 
 						//////////////////////////////////////////////////////////////////////////
 						// Initialize theta
-						int				prevParmX = S.m_inheritDirection_Left ? _owner.m_X-1 : (S.m_inheritDirection_Left ? 0 : -1);
-						int				prevParmY = S.m_inheritDirection_Top ? _owner.m_Y-1 : (S.m_inheritDirection_Left ? 0 : -1);
+						int				prevParmX = S.m_inheritDirection_Left ? _owner.m_X-1 : (S.m_inheritDirection_Top ? _owner.m_X : -1);
+						int				prevParmY = S.m_inheritDirection_Top ? _owner.m_Y-1 : (S.m_inheritDirection_Left ? _owner.m_Y : -1);
 						if ( prevParmX > 0 && prevParmY > 0 ) {
 							Result		previousResult = _owner.m_owner.GetResultsForOrder( _owner.ScatteringOrder )[prevParmX, prevParmY, _owner.m_Z];
 							previousParams = reflected ? previousResult.m_reflected : previousResult.m_refracted;
@@ -509,21 +513,32 @@ namespace TestMSBSDF
 								case Settings.GUESS_INITIAL_DIRECTION.CENTER_OF_MASS: {
 									// Override theta to use the direction of the center of mass
 									// (it's quite intuitive to start by aligning our lobe along the main simulated lobe direction!)
-									float3	towardCenterOfMass = _lobe.CenterOfMass.Normalized;
-									m_theta = (float) Math.Acos( towardCenterOfMass.z );
+									if ( _lobe.CenterOfMass.Length > 1e-6 ) {
+										float3	towardCenterOfMass = _lobe.CenterOfMass.Normalized;
+										m_theta = (float) Math.Acos( towardCenterOfMass.z );
+									} else {
+										m_theta = 0.0f;
+									}
 									break;
 								}
 								case Settings.GUESS_INITIAL_DIRECTION.REFLECTED_DIRECTION:
 									m_theta = Math.Acos( _reflectedDirection.z );
 									break;
+								case Settings.GUESS_INITIAL_DIRECTION.FIXED:
+									m_theta = S.m_fixedTheta;
+									break;
 							}
 						}
 
+						_lobe.SetConstraint( 0,	S.m_initialDirection == Settings.GUESS_INITIAL_DIRECTION.FIXED ? S.m_fixedTheta : 0.0,
+												S.m_initialDirection == Settings.GUESS_INITIAL_DIRECTION.FIXED ? S.m_fixedTheta : 0.4999 * Math.PI );
+
+
 						//////////////////////////////////////////////////////////////////////////
 						// Initialize roughness
-						prevParmX = S.m_inheritRoughness_Left ? _owner.m_X-1 : (S.m_inheritRoughness_Top ? 0 : -1);
-						prevParmY = S.m_inheritRoughness_Top ? _owner.m_Y-1 : (S.m_inheritRoughness_Left ? 0 : -1);
-						if ( prevParmX > 0 && prevParmY > 0 ) {
+						prevParmX = S.m_inheritRoughness_Left ? _owner.m_X-1 : (S.m_inheritRoughness_Top ? _owner.m_X : -1);
+						prevParmY = S.m_inheritRoughness_Top ? _owner.m_Y-1 : (S.m_inheritRoughness_Left ? _owner.m_Y : -1);
+						if ( prevParmX >= 0 && prevParmY >= 0 ) {
 							Result		previousResult = _owner.m_owner.GetResultsForOrder( _owner.ScatteringOrder )[prevParmX, prevParmY, _owner.m_Z];
 							previousParams = reflected ? previousResult.m_reflected : previousResult.m_refracted;
 							if ( !previousParams.IsValid )
@@ -541,6 +556,9 @@ namespace TestMSBSDF
 								case Settings.GUESS_INITIAL_ROUGHNESS.CUSTOM:
 									m_roughness = S.m_customRoughness;
 									break;
+								case Settings.GUESS_INITIAL_ROUGHNESS.FIXED:
+									m_roughness = S.m_fixedRoughness;
+									break;
 							}
 						}
 
@@ -550,9 +568,9 @@ namespace TestMSBSDF
 
 						//////////////////////////////////////////////////////////////////////////
 						// Initialize scale
-						prevParmX = S.m_inheritScale_Left ? _owner.m_X-1 : (S.m_inheritScale_Top ? -1 : 0);
-						prevParmY = S.m_inheritScale_Top ? _owner.m_Y-1 : (S.m_inheritScale_Left ? 0 : -1);
-						if ( prevParmX > 0 && prevParmY > 0 ) {
+						prevParmX = S.m_inheritScale_Left ? _owner.m_X-1 : (S.m_inheritScale_Top ? _owner.m_X : -1);
+						prevParmY = S.m_inheritScale_Top ? _owner.m_Y-1 : (S.m_inheritScale_Left ? _owner.m_Y : -1);
+						if ( prevParmX >= 0 && prevParmY >= 0 ) {
 							Result		previousResult = _owner.m_owner.GetResultsForOrder( _owner.ScatteringOrder )[prevParmX, prevParmY, _owner.m_Z];
 							previousParams = reflected ? previousResult.m_reflected : previousResult.m_refracted;
 							if ( !previousParams.IsValid )
@@ -571,6 +589,9 @@ namespace TestMSBSDF
 																//	of a time to get back on tracks afterwards if we start from too large a lobe!)
 									break;
 								}
+								case Settings.GUESS_INITIAL_SCALE.FIXED:
+									m_scale = S.m_fixedScale;
+									break;
 							}
 						}
 
@@ -580,9 +601,9 @@ namespace TestMSBSDF
 
 						//////////////////////////////////////////////////////////////////////////
 						// Initialize flattening factor
-						prevParmX = S.m_inheritFlatten_Left ? _owner.m_X-1 : (S.m_inheritFlatten_Top ? 0 : -1);
-						prevParmY = S.m_inheritFlatten_Top ? _owner.m_Y-1 : (S.m_inheritFlatten_Left ? 0 : -1);
-						if ( prevParmX > 0 && prevParmY > 0 ) {
+						prevParmX = S.m_inheritFlatten_Left ? _owner.m_X-1 : (S.m_inheritFlatten_Top ? _owner.m_X : -1);
+						prevParmY = S.m_inheritFlatten_Top ? _owner.m_Y-1 : (S.m_inheritFlatten_Left ? _owner.m_Y : -1);
+						if ( prevParmX >= 0 && prevParmY >= 0 ) {
 							Result		previousResult = _owner.m_owner.GetResultsForOrder( _owner.ScatteringOrder )[prevParmX, prevParmY, _owner.m_Z];
 							previousParams = reflected ? previousResult.m_reflected : previousResult.m_refracted;
 							if ( !previousParams.IsValid )
@@ -597,6 +618,9 @@ namespace TestMSBSDF
 								case Settings.GUESS_INITIAL_FLATTEN.CUSTOM:
 									m_flatten = S.m_customFlatten;
 									break;
+								case Settings.GUESS_INITIAL_FLATTEN.FIXED:
+									m_flatten = S.m_fixedFlatten;
+									break;
 							}
 						}
 
@@ -606,9 +630,9 @@ namespace TestMSBSDF
 
 						//////////////////////////////////////////////////////////////////////////
 						// Initialize masking importance
-						prevParmX = S.m_inheritMasking_Left ? _owner.m_X-1 : (S.m_inheritMasking_Top ? 0 : -1);
-						prevParmY = S.m_inheritMasking_Top ? _owner.m_Y-1 : (S.m_inheritMasking_Left ? 0 : -1);
-						if ( prevParmX > 0 && prevParmY > 0 ) {
+						prevParmX = S.m_inheritMasking_Left ? _owner.m_X-1 : (S.m_inheritMasking_Top ? _owner.m_X : -1);
+						prevParmY = S.m_inheritMasking_Top ? _owner.m_Y-1 : (S.m_inheritMasking_Left ? _owner.m_Y : -1);
+						if ( prevParmX >= 0 && prevParmY >= 0 ) {
 							Result		previousResult = _owner.m_owner.GetResultsForOrder( _owner.ScatteringOrder )[prevParmX, prevParmY, _owner.m_Z];
 							previousParams = reflected ? previousResult.m_reflected : previousResult.m_refracted;
 							if ( !previousParams.IsValid )
@@ -622,6 +646,9 @@ namespace TestMSBSDF
 							switch ( S.m_initialMasking ) {
 								case Settings.GUESS_INITIAL_MASKING.CUSTOM:
 									m_masking = S.m_customMasking;
+									break;
+								case Settings.GUESS_INITIAL_MASKING.FIXED:
+									m_masking = S.m_fixedMasking;
 									break;
 							}
 						}
@@ -1350,19 +1377,15 @@ namespace TestMSBSDF
 		/// Recomputes the surface heightfield for the specified roughness
 		/// </summary>
 		/// <param name="_result"></param>
-		void	UpdateSurfaceRoughness( Document.Result _result ) {
-			m_owner.BuildBeckmannSurfaceTexture( (float) _result.SurfaceRoughness );
+		void	UpdateSurfaceRoughness( float _surfaceRoughness ) {
+			m_owner.BuildBeckmannSurfaceTexture( _surfaceRoughness );
 		}
 
 		/// <summary>
 		/// Simulates incoming rays on surface (core routine)
 		/// </summary>
-		void	Simulate( Document.Result _result ) {
-
-			float	albedo = _result.SurfaceAlbedoF0;
-			float	F0 = _result.SurfaceAlbedoF0;
-
-			m_owner.RayTraceSurface( _result.SurfaceRoughness, albedo, F0, m_document.m_surface.m_type, _result.IncomingAngleTheta, _result.IncomingAnglePhi, m_document.m_surface.m_rayTracingIterationsCount );
+		void	Simulate( float _theta, float _phi, float _surfaceRoughness, float _albedoF0 ) {
+			m_owner.RayTraceSurface( _surfaceRoughness, _albedoF0, _albedoF0, m_document.m_surface.m_type, _theta, _phi, m_document.m_surface.m_rayTracingIterationsCount );
 		}
 
 		#region Document Management
@@ -1509,6 +1532,7 @@ namespace TestMSBSDF
 			floatTrackbarControlInit_CustomFlatten.Value = m_document.m_settings.m_customFlatten;
 			floatTrackbarControlInit_CustomRoughness.Value = m_document.m_settings.m_customRoughness;
 			floatTrackbarControlInit_CustomMaskingImportance.Value = m_document.m_settings.m_customMasking;
+			floatTrackbarControlInit_FixedDirection.Value = m_document.m_settings.m_fixedTheta * 180.0f / (float) Math.PI;
 			floatTrackbarControlInit_FixedRoughness.Value = m_document.m_settings.m_fixedRoughness;
 			floatTrackbarControlInit_FixedScale.Value = m_document.m_settings.m_fixedScale;
 			floatTrackbarControlInit_FixedFlatten.Value = m_document.m_settings.m_fixedFlatten;
@@ -1777,23 +1801,57 @@ namespace TestMSBSDF
 				LogLine( "" );
 
 				int	runCounter = 0;
-				Document.Result	R = null;
 
-				for ( int order=orderMin; order <= orderMax; order++ ) {
-					Document.Result[,,]	results = m_document.GetResultsForOrder( order );
+				m_owner.SetCurrentScatteringOrder( SelectedScatteringOrder );	// Show the selected order...
 
-					m_owner.SetCurrentScatteringOrder( order );
+				for ( int Z=_startZ; Z < endZ; Z++ ) {
+					_startZ = 0;
+					for ( int Y=_startY; Y < dimY; Y++ ) {
+						_startY = 0;
+						for ( int X=_startX; X < dimX; X++ ) {
+							_startX = 0;
 
-					for ( int Z=_startZ; Z < endZ; Z++ ) {
-						_startZ = 0;
-						for ( int Y=_startY; Y < dimY; Y++ ) {
-							_startY = 0;
-							for ( int X=_startX; X < dimX; X++ ) {
-								_startX = 0;
+							// Check if all results from all orders are valid
+							bool	allResultsValid = true;
+							for ( int order=orderMin; order <= orderMax; order++ ) {
+								Document.Result[,,]	results = m_document.GetResultsForOrder( order );
 
-								R = results[X,Y,Z];
-								if ( R.IsValid )
-									continue;	// Already valid, no need to recompute...
+								if ( !results[X,Y,Z].IsValid ) {
+									allResultsValid = false;	// That result is not valid! Worth a computation...
+									break;
+								}
+							}
+							if ( allResultsValid )
+								continue;	// Already valid, no need to recompute...
+
+
+							//////////////////////////////////////////////////////////////////////////
+							// Perform simulation only once
+							m_simulationStart = DateTime.Now;
+
+							Document.Result	sampleResult = m_document.m_results[0][X,Y,Z];	// This is just a sample result to retrieve the current parameters we're simulating
+
+							LogLine( " == Starting Simulation (" + X + ", " + Y + ", " + Z + ") ==" );
+							LogLine( "	• Angle = " + (sampleResult.IncomingAngleTheta * 180.0 / Math.PI).ToString( "G3" ) + " - Roughness = " + sampleResult.SurfaceRoughness.ToString( "G3" ) + " - " + (m_document.m_surface.m_type == TestForm.SURFACE_TYPE.DIFFUSE ? "Albedo" : "F0") + " = " + sampleResult.SurfaceAlbedoF0.ToString( "G3" ) );
+							LogLine( "	• Start Time = " + FormatTime( m_simulationStart ) );
+
+							UpdateSurfaceRoughness( sampleResult.SurfaceRoughness );
+							Simulate( sampleResult.IncomingAngleTheta, sampleResult.IncomingAnglePhi, sampleResult.SurfaceRoughness, sampleResult.SurfaceAlbedoF0 );
+
+							m_simulationEnd = DateTime.Now;
+							TimeSpan	simulationDuration = m_simulationEnd - m_simulationStart;
+							LogLine( "	• Simulation Duration = " + FormatDuration( simulationDuration ) );
+
+
+							//////////////////////////////////////////////////////////////////////////
+							// Fit lobes for all orders
+							for ( int order=orderMin; order <= orderMax; order++ ) {
+								Document.Result[,,]	results = m_document.GetResultsForOrder( order );
+								Document.Result		R = results[X,Y,Z];
+
+								// Reset state
+								R.m_error = null;
+								R.State = 0.0f;
 
 								// Query a free computation thread for fitting
 								ComputationThread	T = null;
@@ -1806,23 +1864,6 @@ namespace TestMSBSDF
 										Thread.Sleep( 50 );
 									}
 								}
-
-								// Log start time
-								m_simulationStart = DateTime.Now;
-								R.m_error = null;
-								R.State = 0.0f;
-
-								LogLine( T.Index + "> == Starting Order " + R.ScatteringOrder + " (" + R.X + ", " + R.Y + ", " + R.Z + ") ==" );
-								LogLine( T.Index + ">	• Angle = " + (R.IncomingAngleTheta * 180.0 / Math.PI).ToString( "G3" ) + " - Roughness = " + R.SurfaceRoughness.ToString( "G3" ) + " - " + (m_document.m_surface.m_type == TestForm.SURFACE_TYPE.DIFFUSE ? "Albedo" : "F0") + " = " + R.SurfaceAlbedoF0.ToString( "G3" ) );
-								LogLine( T.Index + ">	• Start Time = " + FormatTime( m_simulationStart ) );
-
-								// Perform simulation
-								UpdateSurfaceRoughness( R );
-								Simulate( R );
-
-								m_simulationEnd = DateTime.Now;
-								TimeSpan	simulationDuration = m_simulationEnd - m_simulationStart;
-								LogLine( T.Index + ">	• Simulation Duration = " + FormatDuration( simulationDuration ) );
 
 								// Perform fitting on working thread
 								T.Result = R;
@@ -1891,8 +1932,8 @@ namespace TestMSBSDF
 				LogLine( "	• Angle = " + (SelectedResult.IncomingAngleTheta * 180.0 / Math.PI).ToString( "G3" ) + " - Roughness = " + SelectedResult.SurfaceRoughness.ToString( "G3" ) + " - " + (m_document.m_surface.m_type == TestForm.SURFACE_TYPE.DIFFUSE ? "Albedo" : "F0") + " = " + SelectedResult.SurfaceAlbedoF0.ToString( "G3" ) );
 				LogLine( "	• Start Time = " + FormatTime( m_simulationStart ) );
 
-				UpdateSurfaceRoughness( SelectedResult );
-				Simulate( SelectedResult );
+				UpdateSurfaceRoughness( SelectedResult.SurfaceRoughness );
+				Simulate( SelectedResult.IncomingAngleTheta, SelectedResult.IncomingAnglePhi, SelectedResult.SurfaceRoughness, SelectedResult.SurfaceAlbedoF0 );
 
 				DateTime	simulationEnd = DateTime.Now;
 				TimeSpan	simulationDuration = simulationEnd - m_simulationStart;
@@ -2178,7 +2219,8 @@ namespace TestMSBSDF
 		{
 			m_document.m_settings.m_initialDirection = radioButtonInitDirection_TowardCoM.Checked ?		Document.Settings.GUESS_INITIAL_DIRECTION.CENTER_OF_MASS :
 													(radioButtonInitDirection_TowardReflected.Checked ?	Document.Settings.GUESS_INITIAL_DIRECTION.REFLECTED_DIRECTION :
-																										Document.Settings.GUESS_INITIAL_DIRECTION.NO_CHANGE);
+													(radioButtonInitDirection_Fixed.Checked ?			Document.Settings.GUESS_INITIAL_DIRECTION.FIXED :
+																										Document.Settings.GUESS_INITIAL_DIRECTION.NO_CHANGE));
 		}
 
 		private void radioButtonInitRoughness_CheckedChanged( object sender, EventArgs e )
@@ -2230,24 +2272,45 @@ namespace TestMSBSDF
 		private void checkBoxInitScale_Inherit_CheckedChanged( object sender, EventArgs e )
 		{
 			m_document.m_settings.m_inheritScale_Top = checkBoxInitScale_Inherit.Checked;
-			m_document.m_settings.m_inheritScale_Left = checkBoxInitScale_InheritLeft.Checked;
 		}
 
 		private void checkBoxInitFlatten_Inherit_CheckedChanged( object sender, EventArgs e )
 		{
 			m_document.m_settings.m_inheritFlatten_Top = checkBoxInitFlatten_Inherit.Checked;
-			m_document.m_settings.m_inheritFlatten_Left = checkBoxInitFlatten_InheritLeft.Checked;
 		}
 
 		private void checkBoxInitRoughness_Inherit_CheckedChanged( object sender, EventArgs e )
 		{
 			m_document.m_settings.m_inheritRoughness_Top = checkBoxInitRoughness_Inherit.Checked;
-			m_document.m_settings.m_inheritRoughness_Left = checkBoxInitRoughness_InheritLeft.Checked;
 		}
 
 		private void checkBoxInitMasking_Inherit_CheckedChanged( object sender, EventArgs e )
 		{
 			m_document.m_settings.m_inheritMasking_Top = checkBoxInitMasking_Inherit.Checked;
+		}
+
+		private void checkBoxInitDirection_InheritLeft_CheckedChanged( object sender, EventArgs e )
+		{
+			m_document.m_settings.m_inheritDirection_Left = checkBoxInitDirection_InheritLeft.Checked;
+		}
+
+		private void checkBoxInitRoughness_InheritLeft_CheckedChanged( object sender, EventArgs e )
+		{
+			m_document.m_settings.m_inheritRoughness_Left = checkBoxInitRoughness_InheritLeft.Checked;
+		}
+
+		private void checkBoxInitScale_InheritLeft_CheckedChanged( object sender, EventArgs e )
+		{
+			m_document.m_settings.m_inheritScale_Left = checkBoxInitScale_InheritLeft.Checked;
+		}
+
+		private void checkBoxInitFlatten_InheritLeft_CheckedChanged( object sender, EventArgs e )
+		{
+			m_document.m_settings.m_inheritFlatten_Left = checkBoxInitFlatten_InheritLeft.Checked;
+		}
+
+		private void checkBoxInitMasking_InheritLeft_CheckedChanged( object sender, EventArgs e )
+		{
 			m_document.m_settings.m_inheritMasking_Left = checkBoxInitMasking_InheritLeft.Checked;
 		}
 
@@ -2269,6 +2332,11 @@ namespace TestMSBSDF
 		private void floatTrackbarControlInit_MaskingImportance_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
 		{
 			m_document.m_settings.m_customMasking = _Sender.Value;
+		}
+
+		private void floatTrackbarControlInit_FixedDirection_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
+		{
+			m_document.m_settings.m_fixedTheta = (float) (Math.PI * floatTrackbarControlInit_FixedDirection.Value / 180.0);
 		}
 
 		private void floatTrackbarControlInit_FixedRoughness_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
