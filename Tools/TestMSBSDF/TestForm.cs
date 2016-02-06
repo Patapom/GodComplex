@@ -911,8 +911,8 @@ namespace TestMSBSDF
 			UpdateApplication();
 		}
 
-		public void	 UpdateSurfaceParameters( float3 _incomingDirection, float _roughness, float _albedoF0 ) {
-			m_internalChange = true;	// So the Beckmann surface is not recomputed again!
+		public void	 UpdateSurfaceParameters( float3 _incomingDirection, float _roughness, float _albedoF0, bool _rebuildBeckmannSurface ) {
+			m_internalChange = !_rebuildBeckmannSurface;	// So the Beckmann surface is not recomputed again!
 
 			float	theta = (float) (180.0 * Math.Acos( -_incomingDirection.z ) / Math.PI);
 			floatTrackbarControlTheta.Value = theta;
@@ -984,10 +984,15 @@ namespace TestMSBSDF
 				float	sinPhi = (float) Math.Sin( phi );
 				float	cosPhi = (float) Math.Cos( phi );
 
-				float	theta = (float) Math.PI * floatTrackbarControlAnalyticalLobeTheta.Value / 180.0f;
+				float	theta = (float) Math.PI * floatTrackbarControlTheta.Value / 180.0f;
 				float	sinTheta = (float) Math.Sin( theta );
 				float	cosTheta = (float) Math.Cos( theta );
-				float3	analyticalReflectedDirection = new float3( -sinTheta * cosPhi, -sinTheta * sinPhi, -cosTheta );		// Minus sign because we need the direction pointing TOWARD the surface (i.e. z < 0)
+				float3	currentDirection = new float3( -sinTheta * cosPhi, -sinTheta * sinPhi, -cosTheta );		// Minus sign because we need the direction pointing TOWARD the surface (i.e. z < 0)
+
+						theta = (float) Math.PI * floatTrackbarControlAnalyticalLobeTheta.Value / 180.0f;
+						sinTheta = (float) Math.Sin( theta );
+						cosTheta = (float) Math.Cos( theta );
+				float3	analyticalReflectedDirection = new float3( -sinTheta * cosPhi, -sinTheta * sinPhi, -cosTheta );
 						analyticalReflectedDirection.z = -analyticalReflectedDirection.z;	// Mirror against surface
 
 						theta = (float) Math.PI * floatTrackbarControlAnalyticalLobeTheta_T.Value / 180.0f;
@@ -1004,7 +1009,6 @@ namespace TestMSBSDF
 				float3	simulatedTransmittedDirection = Refract( -m_lastComputedDirection, float3.UnitZ, 1.0f / m_lastComputedIOR );
 
 
-				m_CB_RenderLobe.m._Direction = m_lastComputedDirection;
 				m_CB_RenderLobe.m._LobeIntensity = floatTrackbarControlLobeIntensity.Value;
 				m_CB_RenderLobe.m._ScatteringOrder = (uint) integerTrackbarControlScatteringOrder.Value - 1;
 
@@ -1026,6 +1030,7 @@ namespace TestMSBSDF
 				if ( checkBoxShowAnalyticalLobe.Checked ) {
 					m_Device.SetRenderStates( RASTERIZER_STATE.NOCHANGE, DEPTHSTENCIL_STATE.READ_WRITE_DEPTH_LESS, BLEND_STATE.DISABLED );
 					m_CB_RenderLobe.m._Flags = 2U | generalDisplayFlags | flags;
+					m_CB_RenderLobe.m._Direction = currentDirection;
 					m_CB_RenderLobe.m._ReflectedDirection = analyticalReflectedDirection;
 					m_CB_RenderLobe.m._Roughness = floatTrackbarControlAnalyticalLobeRoughness.Value;
 					m_CB_RenderLobe.m._ScaleR = floatTrackbarControlLobeScaleR.Value;
@@ -1057,6 +1062,7 @@ namespace TestMSBSDF
 						m_Device.SetRenderStates( RASTERIZER_STATE.NOCHANGE, DEPTHSTENCIL_STATE.READ_DEPTH_LESS_EQUAL, BLEND_STATE.ALPHA_BLEND );	// Show as transparent during fitting...
 
 					m_CB_RenderLobe.m._Flags = generalDisplayFlags | 0U;
+					m_CB_RenderLobe.m._Direction = m_lastComputedDirection;
 					m_CB_RenderLobe.m._ReflectedDirection = simulatedReflectedDirection;
 					m_CB_RenderLobe.UpdateData();
 
@@ -1081,6 +1087,7 @@ namespace TestMSBSDF
 					// Render analytical lobes
 					if ( checkBoxShowAnalyticalLobe.Checked ) {
 						m_CB_RenderLobe.m._Flags = generalDisplayFlags | 1U | 2U | flags;
+						m_CB_RenderLobe.m._Direction = currentDirection;
 						m_CB_RenderLobe.m._ReflectedDirection = analyticalReflectedDirection;
 						m_CB_RenderLobe.m._Roughness = floatTrackbarControlAnalyticalLobeRoughness.Value;
 						m_CB_RenderLobe.m._ScaleR = floatTrackbarControlLobeScaleR.Value;
@@ -1108,6 +1115,7 @@ namespace TestMSBSDF
 					if ( checkBoxShowLobe.Checked ) {
 
 						m_CB_RenderLobe.m._Flags = generalDisplayFlags | 1U;	// Wireframe mode
+						m_CB_RenderLobe.m._Direction = m_lastComputedDirection;
 						m_CB_RenderLobe.m._ReflectedDirection = simulatedReflectedDirection;
 						m_CB_RenderLobe.UpdateData();
 

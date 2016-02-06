@@ -1154,9 +1154,7 @@ namespace TestMSBSDF
 
 			void m_lobeModel_ParametersChanged( double[] _parameters ) {
 				if ( m_owner.m_canceled ) {
-					m_result.State = -1;
-					m_result.m_error = "Canceled";
-					return;
+					throw new CanceledException();
 				}
 
 				// Store new parameters
@@ -1222,7 +1220,7 @@ namespace TestMSBSDF
 				// Show lobe parameters in main form
 				m_owner.UpdateLobeParameters( m_selectedResult.m_reflected.AsArray, true );
 				m_owner.UpdateLobeParameters( m_selectedResult.m_refracted.AsArray, false );
-				m_owner.UpdateSurfaceParameters( m_selectedResult.IncomingDirection, m_selectedResult.SurfaceRoughness, m_selectedResult.SurfaceAlbedoF0 );
+				m_owner.UpdateSurfaceParameters( m_selectedResult.IncomingDirection, m_selectedResult.SurfaceRoughness, m_selectedResult.SurfaceAlbedoF0, !m_computing );
 			}
 		}
 
@@ -1341,6 +1339,7 @@ namespace TestMSBSDF
 		/// </summary>
 		void	DocumentSurface2UI() {
 
+			radioButtonSurfaceTypeConductor.Checked = true;
 			switch ( m_document.m_surface.m_type ) {
 				case TestForm.SURFACE_TYPE.CONDUCTOR: radioButtonSurfaceTypeConductor.Checked = true; break;
 				case TestForm.SURFACE_TYPE.DIELECTRIC: radioButtonSurfaceTypeDielectric.Checked = true; break;
