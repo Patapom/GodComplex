@@ -1940,6 +1940,7 @@ namespace TestMSBSDF
 			try {
 
 				fileName = saveFileDialogExport.FileName;
+				string	directory = Path.GetDirectoryName( fileName );
 				string	fileNameNoExt = Path.GetFileNameWithoutExtension( fileName );
 				string	extension = Path.GetExtension( fileName );
 
@@ -1952,7 +1953,7 @@ namespace TestMSBSDF
 					int	slicesCount = results.GetLength( 2 );
 					for ( int sliceIndex=0; sliceIndex < slicesCount; sliceIndex++ ) {
 						// Write results for reflected lobe
-						string	sliceFileName = fileNameNoExt + "_order" + (m_document.m_surface.ScatteringOrderMin + order) + "_slice" + sliceIndex.ToString( "G02" ) + extension;
+						string	sliceFileName = Path.Combine( directory, fileNameNoExt + "_order" + (m_document.m_surface.ScatteringOrderMin + order) + "_slice" + sliceIndex.ToString( "G02" ) + extension );
 						using ( FileStream S = new FileInfo( sliceFileName ).Create() )
 							using ( BinaryWriter Writer = new BinaryWriter( S ) )
 								for ( int Y=0; Y < H; Y++ )
@@ -1966,8 +1967,8 @@ namespace TestMSBSDF
 									}
 
 						// Write results for refracted lobe
-						if ( m_document.m_surface.m_type != TestForm.SURFACE_TYPE.DIFFUSE ) {
-							sliceFileName = fileNameNoExt + "_order" + (m_document.m_surface.ScatteringOrderMin + order) + "_slice" + sliceIndex.ToString( "G02" ) + "_refracted" + extension;
+						if ( m_document.m_surface.m_type == TestForm.SURFACE_TYPE.DIELECTRIC ) {
+							sliceFileName = Path.Combine( directory, fileNameNoExt + "_order" + (m_document.m_surface.ScatteringOrderMin + order) + "_slice" + sliceIndex.ToString( "G02" ) + "_refracted" + extension );
 							using ( FileStream S = new FileInfo( sliceFileName ).Create() )
 								using ( BinaryWriter Writer = new BinaryWriter( S ) )
 									for ( int Y=0; Y < H; Y++ )
