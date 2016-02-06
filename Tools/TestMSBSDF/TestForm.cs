@@ -911,9 +911,10 @@ namespace TestMSBSDF
 			UpdateApplication();
 		}
 
-		public void	 UpdateSurfaceParameters( float3 _incomingDirection, float _roughness, float _albedoF0, bool _rebuildBeckmannSurface ) {
+		public void	 UpdateSurfaceParameters( int _scatteringOrder, float3 _incomingDirection, float _roughness, float _albedoF0, bool _rebuildBeckmannSurface ) {
 			m_internalChange = !_rebuildBeckmannSurface;	// So the Beckmann surface is not recomputed again!
 
+			integerTrackbarControlScatteringOrder.Value = _scatteringOrder;
 			float	theta = (float) (180.0 * Math.Acos( -_incomingDirection.z ) / Math.PI);
 			floatTrackbarControlTheta.Value = theta;
 			floatTrackbarControlBeckmannRoughness.Value = _roughness;
