@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[      5607,        189]
-NotebookOptionsPosition[      5140,        169]
-NotebookOutlinePosition[      5488,        184]
-CellTagsIndexPosition[      5445,        181]
+NotebookDataLength[     13291,        432]
+NotebookOptionsPosition[     12820,        412]
+NotebookOutlinePosition[     13168,        427]
+CellTagsIndexPosition[     13125,        424]
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -46,11 +46,11 @@ lobel model that uses non-uniform scaling and a local tangent space.\nThe \
 matrix ",
  StyleBox["M",
   FontWeight->"Bold"],
- " allows to transform from local lobe space to surface space:\n\t",
+ " allows to transform from local lobe space to surface space:\n\n\t",
  Cell[BoxData[
   FormBox[
    RowBox[{
-    StyleBox["M",
+    StyleBox["A",
      FontWeight->"Bold"], 
     StyleBox["=",
      FontWeight->"Plain"], 
@@ -68,8 +68,18 @@ matrix ",
            StyleBox["\[Sigma]",
             FontWeight->"Plain"], "n"],
           FontWeight->"Plain"], 
-         StyleBox["N",
-          FontWeight->"Bold"]}]}
+         RowBox[{
+          StyleBox["R",
+           FontWeight->"Bold"], 
+          StyleBox["(",
+           FontWeight->"Plain"], 
+          StyleBox[
+           SubscriptBox[
+            StyleBox["\[Theta]",
+             FontWeight->"Plain"], "l"],
+           FontWeight->"Plain"], 
+          StyleBox[")",
+           FontWeight->"Plain"]}]}]}
       }], ")"}]}], TraditionalForm]],
   FormatType->"TraditionalForm"],
  "\n\t",
@@ -77,7 +87,9 @@ matrix ",
   FormBox[
    RowBox[{
     StyleBox[
-     SubscriptBox["v", "w"],
+     SubscriptBox["\[Omega]", 
+      StyleBox["w",
+       FontWeight->"Plain"]],
      FontWeight->"Bold"], "="}], TraditionalForm]],
   FormatType->"TraditionalForm"],
  " ",
@@ -85,30 +97,88 @@ matrix ",
   FormBox[
    StyleBox[
     FractionBox[
-     StyleBox[
+     RowBox[{
+      SubscriptBox["\[Omega]", "l"], 
+      StyleBox[" ",
+       FontWeight->"Bold"], 
+      StyleBox["A",
+       FontWeight->"Bold"]}], 
+     RowBox[{
+      StyleBox["\[LeftBracketingBar]",
+       FontWeight->"Plain"], 
       RowBox[{
-       SubscriptBox["v", "l"], " ", "M"}],
-      FontWeight->"Bold"], 
-     RowBox[{"\[LeftBracketingBar]", 
-      RowBox[{
-       SubscriptBox["v", "l"], " ", "M"}], "\[RightBracketingBar]"}]],
+       SubscriptBox["\[Omega]", "l"], " ", "A"}], 
+      StyleBox["\[RightBracketingBar]",
+       FontWeight->"Plain"]}]],
     FontWeight->"Bold"], TraditionalForm]],
   FormatType->"TraditionalForm"],
- "\n\n",
+ "\n\t",
  Cell[BoxData[
   FormBox[
-   SubscriptBox["v", "l"], TraditionalForm]],
-  FontWeight->"Bold"],
+   RowBox[{
+    StyleBox[
+     SubscriptBox["\[Omega]", 
+      StyleBox["l",
+       FontWeight->"Plain"]],
+     FontWeight->"Bold"], "="}], TraditionalForm]],
+  FormatType->"TraditionalForm"],
+ " ",
+ Cell[BoxData[
+  FormBox[
+   StyleBox[
+    FractionBox[
+     RowBox[{
+      SubscriptBox["\[Omega]", "w"], 
+      StyleBox[" ",
+       FontWeight->"Bold"], 
+      StyleBox[
+       SuperscriptBox[
+        StyleBox["A",
+         FontWeight->"Bold"], 
+        RowBox[{"-", "1"}]],
+       FontWeight->"Bold"]}], 
+     RowBox[{
+      StyleBox["\[LeftBracketingBar]",
+       FontWeight->"Plain"], 
+      RowBox[{
+       SubscriptBox["\[Omega]", "w"], " ", 
+       SuperscriptBox["A", 
+        RowBox[{"-", "1"}]]}], 
+      StyleBox["\[RightBracketingBar]",
+       FontWeight->"Plain"]}]],
+    FontWeight->"Bold"], TraditionalForm]],
+  FormatType->"TraditionalForm"],
+ "\n\t\n",
+ Cell[BoxData[
+  FormBox[
+   SubscriptBox["\[Omega]", "l"], TraditionalForm]]],
  StyleBox[" ",
   FontWeight->"Bold"],
  "is the local lobe-space unit vector\n",
  Cell[BoxData[
   FormBox[
-   SubscriptBox["v", "w"], TraditionalForm]],
+   SubscriptBox["\[Omega]", "w"], TraditionalForm]],
   FontWeight->"Bold"],
  StyleBox[" ",
   FontWeight->"Bold"],
  "is the surface-space unit vector after renormalization\n",
+ StyleBox["R",
+  FontWeight->"Bold"],
+ "(",
+ Cell[BoxData[
+  FormBox[
+   SubscriptBox["\[Theta]", "l"], TraditionalForm]],
+  FormatType->"TraditionalForm"],
+ ") is the lobe\[CloseCurlyQuote]s principal axis (usually, the reflected \
+incoming direction). It\[CloseCurlyQuote]s defined by one of the parameters \
+of the lobe model ",
+ Cell[BoxData[
+  FormBox[
+   SubscriptBox["\[Theta]", "l"], TraditionalForm]]],
+ "\n",
+ StyleBox["T, B",
+  FontWeight->"Bold"],
+ " are the complementary vectors forming an orthonormal basis with N\n",
  Cell[BoxData[
   FormBox[
    StyleBox[
@@ -117,29 +187,135 @@ matrix ",
       FontWeight->"Plain"], "n"],
     FontWeight->"Plain"], TraditionalForm]]],
  " is a non-uniform scaling factor along the lobe\[CloseCurlyQuote]s \
-principal direction"
+principal direction and another one of the parameters of the lobe model"
 }], "Text",
  CellChangeTimes->{{3.663756816349247*^9, 3.663756891911521*^9}, {
-  3.663756938926691*^9, 3.663756987497876*^9}, {3.6637570379584436`*^9, 
-  3.6637570756900425`*^9}, {3.6637571073413444`*^9, 3.663757108152934*^9}, {
-  3.663757181586692*^9, 3.663757181586692*^9}, {3.6637572176851187`*^9, 
-  3.663757266061214*^9}, {3.6637573516565475`*^9, 3.663757400885263*^9}}],
+   3.663756938926691*^9, 3.663756987497876*^9}, {3.6637570379584436`*^9, 
+   3.6637570756900425`*^9}, {3.6637571073413444`*^9, 3.663757108152934*^9}, {
+   3.663757181586692*^9, 3.663757181586692*^9}, {3.6637572176851187`*^9, 
+   3.663757266061214*^9}, {3.6637573516565475`*^9, 3.663757400885263*^9}, {
+   3.6637576726107597`*^9, 3.663757756626975*^9}, {3.663757834728038*^9, 
+   3.6637578386648006`*^9}, {3.6637579890758085`*^9, 3.663758043348063*^9}, 
+   3.6637580770167923`*^9, {3.663758250919363*^9, 3.663758291109692*^9}, {
+   3.6637590403357687`*^9, 3.6637591190122128`*^9}}],
 
 Cell[TextData[{
- "\n\t",
+ "Once in local lobe-space, the intensity of the lobe is given by:\n\n\tf(",
+ Cell[BoxData[
+  FormBox[
+   StyleBox[
+    SubscriptBox["\[Omega]", "o"],
+    FontWeight->"Bold"], TraditionalForm]],
+  FormatType->"TraditionalForm"],
+ ",",
+ Cell[BoxData[
+  FormBox[
+   StyleBox[
+    SubscriptBox["\[Omega]", "i"],
+    FontWeight->"Bold"], TraditionalForm]],
+  FormatType->"TraditionalForm"],
+ ",\[Rho],\[Sigma],\[Mu]) = \[Sigma] [(1-\[Mu]) + \[Mu] G(",
  Cell[BoxData[
   FormBox[
    RowBox[{
-    RowBox[{"\[Alpha]", "(", "\[Rho]", ")"}], "=", " ", 
-    RowBox[{
-     SuperscriptBox["2", 
-      RowBox[{"10", 
-       RowBox[{"(", 
-        RowBox[{"1", "-", "\[Rho]"}], ")"}]}]], "-", "1"}]}], 
-   TraditionalForm]]],
- "\t\t\tDefines the exponent based on the surface\[CloseCurlyQuote]s \
-roughness, notice the -1 in the end that allows use to have a 0 exponent to \
-make constant lobes\n\tf(\[Theta],\[Rho],\[Sigma]) = \[Sigma] ",
+    SubscriptBox["\[Omega]", "o"], 
+    StyleBox[".",
+     FontWeight->"Plain"], "N"}], TraditionalForm]],
+  FontWeight->"Bold"],
+ ",\[Rho]) G(",
+ Cell[BoxData[
+  FormBox[
+   RowBox[{
+    SubscriptBox["\[Omega]", "i"], 
+    StyleBox[".",
+     FontWeight->"Plain"], "N"}], TraditionalForm]],
+  FontWeight->"Bold"],
+ ",\[Rho])] N( ",
+ Cell[BoxData[
+  FormBox[
+   StyleBox[
+    SubscriptBox["\[Omega]", "i"],
+    FontWeight->"Bold"], TraditionalForm]]],
+ ", \[Rho] )\n\t\n\tG(",
+ Cell[BoxData[
+  FormBox["\[Theta]", TraditionalForm]]],
+ ",\[Rho]) = ",
+ Cell[BoxData[
+  FormBox[
+   TagBox[GridBox[{
+      {"\[Piecewise]", GridBox[{
+         {
+          FractionBox[
+           RowBox[{
+            RowBox[{"3.535", " ", "a"}], " ", "+", " ", 
+            RowBox[{"2.181", " ", 
+             SuperscriptBox["a", "2"]}]}], 
+           RowBox[{"1.0", " ", "+", " ", 
+            RowBox[{"2.276", " ", "a"}], " ", "+", " ", 
+            RowBox[{"2.577", " ", 
+             SuperscriptBox["a", "2"]}]}]], 
+          RowBox[{
+           RowBox[{"a", "(", 
+            RowBox[{"\[Theta]", ",", "\[Rho]"}], ")"}], " ", "<", " ", 
+           "1.6"}]},
+         {"1", 
+          RowBox[{"otherwise", " "}]}
+        },
+        AllowedDimensions->{2, Automatic},
+        Editable->True,
+        GridBoxAlignment->{
+         "Columns" -> {{Left}}, "ColumnsIndexed" -> {}, 
+          "Rows" -> {{Baseline}}, "RowsIndexed" -> {}},
+        GridBoxItemSize->{
+         "Columns" -> {{Automatic}}, "ColumnsIndexed" -> {}, "Rows" -> {{1.}},
+           "RowsIndexed" -> {}},
+        GridBoxSpacings->{"Columns" -> {
+            Offset[0.27999999999999997`], {
+             Offset[0.84]}, 
+            Offset[0.27999999999999997`]}, "ColumnsIndexed" -> {}, "Rows" -> {
+            Offset[0.2], {
+             Offset[0.4]}, 
+            Offset[0.2]}, "RowsIndexed" -> {}},
+        Selectable->True]}
+     },
+     GridBoxAlignment->{
+      "Columns" -> {{Left}}, "ColumnsIndexed" -> {}, "Rows" -> {{Baseline}}, 
+       "RowsIndexed" -> {}},
+     GridBoxItemSize->{
+      "Columns" -> {{Automatic}}, "ColumnsIndexed" -> {}, "Rows" -> {{1.}}, 
+       "RowsIndexed" -> {}},
+     GridBoxSpacings->{"Columns" -> {
+         Offset[0.27999999999999997`], {
+          Offset[0.35]}, 
+         Offset[0.27999999999999997`]}, "ColumnsIndexed" -> {}, "Rows" -> {
+         Offset[0.2], {
+          Offset[0.4]}, 
+         Offset[0.2]}, "RowsIndexed" -> {}}],
+    "Piecewise",
+    DeleteWithContents->True,
+    Editable->False,
+    SelectWithContents->True,
+    Selectable->False], TraditionalForm]],
+  FormatType->"TraditionalForm"],
+ "\n\ta(",
+ "\[Theta],",
+ "\[Rho]) = ",
+ Cell[BoxData[
+  FormBox[
+   FractionBox[
+    SqrtBox[
+     RowBox[{"1", "+", 
+      FractionBox[
+       RowBox[{"\[Alpha]", "(", "\[Rho]", ")"}], "2"]}]], 
+    RowBox[{"tan", "(", "\[Theta]", ")"}]], TraditionalForm]],
+  FormatType->"TraditionalForm"],
+ "\n\tN( ",
+ Cell[BoxData[
+  FormBox[
+   StyleBox[
+    SubscriptBox["\[Omega]", "i"],
+    FontWeight->"Bold"], TraditionalForm]]],
+ ", \[Rho] ) =  ",
  Cell[BoxData[
   FormBox[
    FractionBox[
@@ -149,13 +325,80 @@ make constant lobes\n\tf(\[Theta],\[Rho],\[Sigma]) = \[Sigma] ",
  Cell[BoxData[
   FormBox[
    SuperscriptBox[
-    RowBox[{"cos", "(", "\[Theta]", ")"}], 
+    RowBox[{"[", 
+     RowBox[{
+      StyleBox[
+       FractionBox[
+        RowBox[{
+         SubscriptBox["\[Omega]", "i"], 
+         StyleBox[" ",
+          FontWeight->"Bold"], 
+         StyleBox[
+          SuperscriptBox[
+           StyleBox["A",
+            FontWeight->"Bold"], 
+           RowBox[{"-", "1"}]],
+          FontWeight->"Bold"]}], 
+        RowBox[{
+         StyleBox["\[LeftBracketingBar]",
+          FontWeight->"Plain"], 
+         RowBox[{
+          SubscriptBox["\[Omega]", "i"], " ", 
+          SuperscriptBox["A", 
+           RowBox[{"-", "1"}]]}], 
+         StyleBox["\[RightBracketingBar]",
+          FontWeight->"Plain"]}]],
+       FontWeight->"Bold"], 
+      StyleBox[".",
+       FontWeight->"Plain"], 
+      StyleBox["Z",
+       FontWeight->"Bold"]}], "]"}], 
     RowBox[{"\[Alpha]", "(", "\[Rho]", ")"}]], TraditionalForm]]],
- "\tDefines the cosine lobe using roughness, angle from local normal axis and \
-global scale\n"
+ "\t\n\t",
+ Cell[BoxData[
+  FormBox[
+   RowBox[{
+    RowBox[{"\[Alpha]", "(", "\[Rho]", ")"}], "=", " ", 
+    RowBox[{
+     SuperscriptBox["2", 
+      RowBox[{"10", 
+       RowBox[{"(", 
+        RowBox[{"1", "-", "\[Rho]"}], ")"}]}]], 
+     StyleBox["-",
+      FontWeight->"Bold"], "1"}]}], TraditionalForm]]],
+ "\t\t\t\n\t\n\t\[Sigma] is the global scale factor\n\t\[Mu] is the masking \
+importance factor in [0,1] that allows to bypass the masking term (\[Mu]=0) \
+completely.\n\tG(",
+ Cell[BoxData[
+  FormBox[
+   RowBox[{"\[Theta]", ",", "\[Rho]"}], TraditionalForm]]],
+ ") is the masking term for the Phong model\n\tN( ",
+ Cell[BoxData[
+  FormBox[
+   StyleBox[
+    SubscriptBox["\[Omega]", "i"],
+    FontWeight->"Bold"], TraditionalForm]]],
+ ", \[Rho] ) defines the cosine lobe\[CloseCurlyQuote]s intensity using \
+roughness, angle from local normal axis and global scale\n\t\[Alpha](\[Rho]) \
+defines the exponent based on the surface\[CloseCurlyQuote]s roughness \
+(notice the -1 in the end that allows use to have a 0 exponent to make \
+constant lobes)\n\t",
+ StyleBox["Z",
+  FontWeight->"Bold"],
+ " is the unit Z-up vector ",
+ StyleBox["(0,0,1)",
+  FontWeight->"Bold"],
+ "\n"
 }], "Text",
  CellChangeTimes->{{3.663757028326655*^9, 3.663757028414719*^9}, 
-   3.6637573384092183`*^9}],
+   3.6637573384092183`*^9, {3.6637574408954678`*^9, 3.663757448556851*^9}, {
+   3.6637574785980377`*^9, 3.663757567756855*^9}, {3.6637576146369104`*^9, 
+   3.663757663501338*^9}, {3.6637577602925577`*^9, 3.663757770915061*^9}, {
+   3.6637578091660175`*^9, 3.6637579674035344`*^9}, {3.6637580742428474`*^9, 
+   3.663758181287289*^9}, {3.6637582207611065`*^9, 3.663758224997095*^9}, {
+   3.6637583017261868`*^9, 3.663758558879424*^9}, {3.6637586603919797`*^9, 
+   3.6637587592266273`*^9}, {3.663758796398837*^9, 3.663758951007799*^9}, {
+   3.663759014030218*^9, 3.663759015254094*^9}}],
 
 Cell[BoxData["qsd"], "Input",
  CellChangeTimes->{{3.663757021784042*^9, 3.6637570218250837`*^9}}],
@@ -186,10 +429,10 @@ Notebook[{
 Cell[CellGroupData[{
 Cell[580, 22, 212, 4, 90, "Title"],
 Cell[795, 28, 603, 12, 106, "Text"],
-Cell[1401, 42, 2418, 83, 216, "Text"],
-Cell[3822, 127, 1008, 30, 103, "Text"],
-Cell[4833, 159, 97, 1, 31, "Input"],
-Cell[4933, 162, 191, 4, 31, "Input"]
+Cell[1401, 42, 4669, 157, 315, "Text"],
+Cell[6073, 201, 6437, 199, 417, "Text"],
+Cell[12513, 402, 97, 1, 31, "Input"],
+Cell[12613, 405, 191, 4, 31, "Input"]
 }, Open  ]]
 }
 ]
