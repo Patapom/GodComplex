@@ -1339,8 +1339,9 @@ namespace TestMSBSDF
 		/// </summary>
 		void	DocumentSurface2UI() {
 
-			radioButtonSurfaceTypeConductor.Checked = true;
-			switch ( m_document.m_surface.m_type ) {
+			TestForm.SURFACE_TYPE	actualType = m_document.m_surface.m_type;
+			radioButtonSurfaceTypeConductor.Checked = true;	// Make sure we change it and assign actual value again so main form is notified
+			switch ( actualType ) {
 				case TestForm.SURFACE_TYPE.CONDUCTOR: radioButtonSurfaceTypeConductor.Checked = true; break;
 				case TestForm.SURFACE_TYPE.DIELECTRIC: radioButtonSurfaceTypeDielectric.Checked = true; break;
 				case TestForm.SURFACE_TYPE.DIFFUSE: radioButtonSurfaceTypeDiffuse.Checked = true; break;
@@ -1412,7 +1413,7 @@ namespace TestMSBSDF
 			checkBoxInitDirection_Inherit.Checked = m_document.m_settings.m_inheritDirection;
 			checkBoxInitScale_Inherit.Checked = m_document.m_settings.m_inheritScale;
 			checkBoxInitFlatten_Inherit.Checked = m_document.m_settings.m_inheritFlatten;
-			checkBoxInitScale_Inherit.Checked = m_document.m_settings.m_inheritRoughness;
+			checkBoxInitRoughness_Inherit.Checked = m_document.m_settings.m_inheritRoughness;
 			checkBoxInitMasking_Inherit.Checked = m_document.m_settings.m_inheritMasking;
 			floatTrackbarControlInit_Scale.Value = m_document.m_settings.m_customScale;
 			floatTrackbarControlInit_Flatten.Value = m_document.m_settings.m_customFlatten;
@@ -2117,7 +2118,7 @@ namespace TestMSBSDF
 
 		private void checkBoxInitRoughness_Inherit_CheckedChanged( object sender, EventArgs e )
 		{
-			m_document.m_settings.m_inheritRoughness = checkBoxInitScale_Inherit.Checked;
+			m_document.m_settings.m_inheritRoughness = checkBoxInitRoughness_Inherit.Checked;
 		}
 
 		private void checkBoxInitMasking_Inherit_CheckedChanged( object sender, EventArgs e )
