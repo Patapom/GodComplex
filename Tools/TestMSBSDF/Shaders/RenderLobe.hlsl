@@ -36,8 +36,8 @@ float	BeckmannNDF( float _cosTheta_M, float _roughness ) {
 }
 
 // Masking G1(v,m) = 2 / (1 + erf( 1/(a * tan(theta_v)) ) + exp(-a²) / (a*sqrt(PI)))
-float	BeckmannG1( float _cosTheta_V, float _roughness ) {
-	float	sqCosTheta_V = _cosTheta_V * _cosTheta_V;
+float	BeckmannG1( float _cosTheta, float _roughness ) {
+	float	sqCosTheta_V = _cosTheta * _cosTheta;
 	float	tanThetaV = sqrt( (1.0 - sqCosTheta_V) / sqCosTheta_V );
 	float	a = 1.0 / (_roughness * tanThetaV);
 
@@ -59,10 +59,10 @@ float	GGXNDF( float _cosTheta_M, float _roughness ) {
 
 // Masking G1(v,m) = 2 / (1 + sqrt( 1 + a² * tan(theta_v)² ))
 // Simplified into G1(v,m) = 2*cos(theta_v) / (1 + sqrt( cos(theta_v)² * (1-a²) + a² ))
-float	GGXG1( float _cosTheta_V, float _roughness ) {
-	float	sqCosTheta_V = _cosTheta_V * _cosTheta_V;
+float	GGXG1( float _cosTheta, float _roughness ) {
+	float	sqCosTheta_V = _cosTheta * _cosTheta;
 	float	a2 = _roughness*_roughness;
-	return 2.0 * _cosTheta_V / (1.0 + sqrt( sqCosTheta_V * (1.0 - a2) + a2 ));
+	return 2.0 * _cosTheta / (1.0 + sqrt( sqCosTheta_V * (1.0 - a2) + a2 ));
 }
 
 float	Roughness2PhongExponent( float _roughness ) {
@@ -78,9 +78,9 @@ float	PhongNDF( float _cosTheta_M, float _roughness ) {
 }
 
 // Same as Beckmann but modified a bit
-float	PhongG1( float _cosTheta_V, float _roughness ) {
+float	PhongG1( float _cosTheta, float _roughness ) {
 	float	n = Roughness2PhongExponent( _roughness );
-	float	sqCosTheta_V = _cosTheta_V * _cosTheta_V;
+	float	sqCosTheta_V = _cosTheta * _cosTheta;
 	float	tanThetaV = sqrt( (1.0 - sqCosTheta_V) / sqCosTheta_V );
 	float	a = sqrt( 1.0 + 0.5 * n ) / tanThetaV;
 	return a < 1.6 ? (3.535 * a + 2.181 * a*a) / (1.0 + 2.276 * a + 2.577 * a*a) : 1.0;

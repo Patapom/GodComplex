@@ -301,37 +301,53 @@ namespace TestMSBSDF
 			Focus();
 			base.OnMouseDown( e );
 			SelectAt( e.Location );
+
+
+			// Show tooltip
+			int	X, Y;
+			if ( !GetXYAt( PointToClient( Control.MousePosition ), out X, out Y ) )
+				return;
+
+			float	state = m_states[X,Y,m_selectedZ];
+			string	text = m_texts[X,Y,m_selectedZ];
+
+			toolTip1.ToolTipTitle = "(" + X + ", " + Y + ", " + SelectedZ + ")";
+			if ( state > 0.0f )
+				toolTip1.Show( "Progress " + ((int) (100 * state)).ToString() + "%\r\n" + (text != null ? text : "unknown"), this );
+			else
+				toolTip1.Show( (text != null ? text : "unknown"), this );
+
 		}
 
-		Point		m_lastMousePosition;
-		DateTime	m_lastStaticTime;
+// 		Point		m_lastMousePosition;
+// 		DateTime	m_lastStaticTime;
 		protected override void OnMouseMove( MouseEventArgs e ) {
 			base.OnMouseMove( e );
 
-			if ( e.X == m_lastMousePosition.X
-				&& e.Y == m_lastMousePosition.Y ) {
-				// Didn't move...
-				if ( (DateTime.Now - m_lastStaticTime).TotalMilliseconds < 100 )
-					return;	// Too soon
-
-				// Reshow tooltip
-				int	X, Y;
-				if ( !GetXYAt( PointToClient( Control.MousePosition ), out X, out Y ) )
-					return;
-
-				float	state = m_states[X,Y,m_selectedZ];
-				string	text = m_texts[X,Y,m_selectedZ];
-
-				toolTip1.ToolTipTitle = "(" + X + ", " + Y + ", " + SelectedZ + ")";
-				if ( state > 0.0f )
-					toolTip1.Show( "Progress " + ((int) (100 * state)).ToString() + "%\r\n" + (text != null ? text : "unknown"), this );
-				else
-					toolTip1.Show( (text != null ? text : "unknown"), this );
-			}
-
-			m_lastMousePosition = e.Location;
-			m_lastStaticTime = DateTime.Now;
-
+// 			if ( e.X == m_lastMousePosition.X
+// 				&& e.Y == m_lastMousePosition.Y ) {
+// 				// Didn't move...
+// 				if ( (DateTime.Now - m_lastStaticTime).TotalMilliseconds < 100 )
+// 					return;	// Too soon
+// 
+// 				// Reshow tooltip
+// 				int	X, Y;
+// 				if ( !GetXYAt( PointToClient( Control.MousePosition ), out X, out Y ) )
+// 					return;
+// 
+// 				float	state = m_states[X,Y,m_selectedZ];
+// 				string	text = m_texts[X,Y,m_selectedZ];
+// 
+// 				toolTip1.ToolTipTitle = "(" + X + ", " + Y + ", " + SelectedZ + ")";
+// 				if ( state > 0.0f )
+// 					toolTip1.Show( "Progress " + ((int) (100 * state)).ToString() + "%\r\n" + (text != null ? text : "unknown"), this );
+// 				else
+// 					toolTip1.Show( (text != null ? text : "unknown"), this );
+// 			}
+// 
+// 			m_lastMousePosition = e.Location;
+// 			m_lastStaticTime = DateTime.Now;
+// 
 // 			if (	Math.Abs( e.X - m_mousePositionOnTimer.X ) > 4
 // 				||	Math.Abs( e.Y - m_mousePositionOnTimer.Y ) > 4 )
 // 				return;	// Mouse moved

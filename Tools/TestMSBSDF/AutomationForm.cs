@@ -183,7 +183,7 @@ namespace TestMSBSDF
 						Attrib( _parent, "InclusiveMax", m_inclusiveMax );
 					}
 
-					public void		Load( XmlElement _parent ) {
+					public void		Load( XmlElement _parent, int _version ) {
 						Attrib( _parent, "Min", ref m_min );
 						Attrib( _parent, "Max", ref m_max );
 						Attrib( _parent, "Steps", ref m_stepsCount );
@@ -265,22 +265,22 @@ namespace TestMSBSDF
 					m_scatteringOrders.Save( ElemParm3 );
 				}
 
-				public void		Load( XmlElement _parent ) {
+				public void		Load( XmlElement _parent, int _version ) {
 					Attrib( _parent, "SurfaceType", ref m_type );
 					Attrib( _parent, "RayTraceIterations", ref m_rayTracingIterationsCount );
 					Attrib( _parent, "Locked", ref m_locked );
 
 					XmlElement ElemParm0 = _parent["IncomingAngle"];
-					m_incomingAngle.Load( ElemParm0 );
+					m_incomingAngle.Load( ElemParm0, _version );
 
 					XmlElement ElemParm1 = _parent["SurfaceRoughness"];
-					m_roughness.Load( ElemParm1 );
+					m_roughness.Load( ElemParm1, _version );
 
 					XmlElement ElemParm2 = _parent["AlbedoF0"];
-					m_albedoF0.Load( ElemParm2 );
+					m_albedoF0.Load( ElemParm2, _version );
 
 					XmlElement ElemParm3 = _parent["ScatteringOrders"];
-					m_scatteringOrders.Load( ElemParm3 );
+					m_scatteringOrders.Load( ElemParm3, _version );
 				}
 
 				// Simple forward
@@ -306,21 +306,25 @@ namespace TestMSBSDF
 					SURFACE,
 					CUSTOM,
 					NO_CHANGE,				// Means no change from last computation
+					FIXED,					// Means constrained to specified value
 				}
 
 				public enum GUESS_INITIAL_SCALE {
 					FACTOR_CENTER_OF_MASS,
 					NO_CHANGE,				// Means no change from last computation
+					FIXED,					// Means constrained to specified value
 				}
 
 				public enum GUESS_INITIAL_FLATTEN {
 					CUSTOM,
 					NO_CHANGE,				// Means no change from last computation
+					FIXED,					// Means constrained to specified value
 				}
 
 				public enum GUESS_INITIAL_MASKING {
 					CUSTOM,
 					NO_CHANGE,				// Means no change from last computation
+					FIXED,					// Means constrained to specified value
 				}
 
 				// Fitter parameters
@@ -333,19 +337,28 @@ namespace TestMSBSDF
 				// Lobe parameters
 				public LobeModel.LOBE_TYPE		m_lobeModel = LobeModel.LOBE_TYPE.MODIFIED_PHONG;
 				public GUESS_INITIAL_DIRECTION	m_initialDirection = GUESS_INITIAL_DIRECTION.CENTER_OF_MASS;
-				public bool						m_inheritDirection = true;
+				public bool						m_inheritDirection_Top = true;
+				public bool						m_inheritDirection_Left = false;
 				public GUESS_INITIAL_ROUGHNESS	m_initialRoughness = GUESS_INITIAL_ROUGHNESS.SURFACE;
-				public bool						m_inheritRoughness = true;
+				public bool						m_inheritRoughness_Top = true;
+				public bool						m_inheritRoughness_Left = false;
 				public float					m_customRoughness = 0.8f;
+				public float					m_fixedRoughness = 1.0f;
 				public GUESS_INITIAL_SCALE		m_initialScale = GUESS_INITIAL_SCALE.FACTOR_CENTER_OF_MASS;
-				public bool						m_inheritScale = true;
+				public bool						m_inheritScale_Top = true;
+				public bool						m_inheritScale_Left = false;
 				public float					m_customScale = 0.05f;
+				public float					m_fixedScale = 1.0f;
 				public GUESS_INITIAL_FLATTEN	m_initialFlatten = GUESS_INITIAL_FLATTEN.CUSTOM;
-				public bool						m_inheritFlatten = true;
+				public bool						m_inheritFlatten_Top = true;
+				public bool						m_inheritFlatten_Left = false;
 				public float					m_customFlatten = 0.5f;
+				public float					m_fixedFlatten = 1.0f;
 				public GUESS_INITIAL_MASKING	m_initialMasking = GUESS_INITIAL_MASKING.CUSTOM;
-				public bool						m_inheritMasking = true;
+				public bool						m_inheritMasking_Top = true;
+				public bool						m_inheritMasking_Left = false;
 				public float					m_customMasking = 1.0f;
+				public float					m_fixedMasking = 1.0f;
 
 
 				public	Settings() {
@@ -368,22 +381,31 @@ namespace TestMSBSDF
 
 					Attrib( ElemLobeParms, "Model",				m_lobeModel );
 					Attrib( ElemLobeParms, "initialDirection",	m_initialDirection );
-					Attrib( ElemLobeParms, "inheritDirection",	m_inheritDirection );
+					Attrib( ElemLobeParms, "inheritDirection",	m_inheritDirection_Top );
+					Attrib( ElemLobeParms, "inheritDirectionLeft",	m_inheritDirection_Left );
 					Attrib( ElemLobeParms, "initialRoughness",	m_initialRoughness );
-					Attrib( ElemLobeParms, "inheritRoughness",	m_inheritRoughness );
+					Attrib( ElemLobeParms, "inheritRoughness",	m_inheritRoughness_Top );
+					Attrib( ElemLobeParms, "inheritRoughnessLeft",	m_inheritRoughness_Left );
 					Attrib( ElemLobeParms, "customRoughness",	m_customRoughness );
+					Attrib( ElemLobeParms, "fixedRoughness",	m_fixedRoughness );
 					Attrib( ElemLobeParms, "initialScale",		m_initialScale );
-					Attrib( ElemLobeParms, "inheritScale",		m_inheritScale );
+					Attrib( ElemLobeParms, "inheritScale",		m_inheritScale_Top );
+					Attrib( ElemLobeParms, "inheritScaleLeft",	m_inheritScale_Left );
 					Attrib( ElemLobeParms, "customScale",		m_customScale );
+					Attrib( ElemLobeParms, "fixedScale",		m_fixedScale );
 					Attrib( ElemLobeParms, "initialFlatten",	m_initialFlatten );
-					Attrib( ElemLobeParms, "inheritFlatten",	m_inheritFlatten );
+					Attrib( ElemLobeParms, "inheritFlatten",	m_inheritFlatten_Top );
+					Attrib( ElemLobeParms, "inheritFlattenLeft",m_inheritFlatten_Left );
 					Attrib( ElemLobeParms, "customFlatten",		m_customFlatten );
+					Attrib( ElemLobeParms, "fixedFlatten",		m_fixedFlatten );
 					Attrib( ElemLobeParms, "initialMasking",	m_initialMasking );
-					Attrib( ElemLobeParms, "inheritMasking",	m_inheritMasking );
+					Attrib( ElemLobeParms, "inheritMasking",	m_inheritMasking_Top );
+					Attrib( ElemLobeParms, "inheritMaskingLeft",m_inheritMasking_Left );
 					Attrib( ElemLobeParms, "customMasking",		m_customMasking );
+					Attrib( ElemLobeParms, "fixedMasking",		m_fixedMasking );
 				}
 
-				public void		Load( XmlElement _parent ) {
+				public void		Load( XmlElement _parent, int _version ) {
 
 					// Fitter parameters
 					XmlElement	ElemFitterParms = _parent["FitterParameters"];
@@ -399,19 +421,31 @@ namespace TestMSBSDF
 
 					Attrib( ElemLobeParms, "Model",				ref m_lobeModel );
 					Attrib( ElemLobeParms, "initialDirection",	ref m_initialDirection );
-					Attrib( ElemLobeParms, "inheritDirection",	ref m_inheritDirection );
+					Attrib( ElemLobeParms, "inheritDirection",	ref m_inheritDirection_Top );
 					Attrib( ElemLobeParms, "initialRoughness",	ref m_initialRoughness );
-					Attrib( ElemLobeParms, "inheritRoughness",	ref m_inheritRoughness );
+					Attrib( ElemLobeParms, "inheritRoughness",	ref m_inheritRoughness_Top );
 					Attrib( ElemLobeParms, "customRoughness",	ref m_customRoughness );
 					Attrib( ElemLobeParms, "initialScale",		ref m_initialScale );
-					Attrib( ElemLobeParms, "inheritScale",		ref m_inheritScale );
+					Attrib( ElemLobeParms, "inheritScale",		ref m_inheritScale_Top );
 					Attrib( ElemLobeParms, "customScale",		ref m_customScale );
 					Attrib( ElemLobeParms, "initialFlatten",	ref m_initialFlatten );
-					Attrib( ElemLobeParms, "inheritFlatten",	ref m_inheritFlatten );
+					Attrib( ElemLobeParms, "inheritFlatten",	ref m_inheritFlatten_Top );
 					Attrib( ElemLobeParms, "customFlatten",		ref m_customFlatten );
 					Attrib( ElemLobeParms, "initialMasking",	ref m_initialMasking );
-					Attrib( ElemLobeParms, "inheritMasking",	ref m_inheritMasking );
+					Attrib( ElemLobeParms, "inheritMasking",	ref m_inheritMasking_Top );
 					Attrib( ElemLobeParms, "customMasking",		ref m_customMasking );
+
+					if ( _version >= 1 ) {
+						Attrib( ElemLobeParms, "inheritDirectionLeft",	ref m_inheritDirection_Left );
+						Attrib( ElemLobeParms, "inheritRoughnessLeft",	ref m_inheritRoughness_Left );
+						Attrib( ElemLobeParms, "inheritScaleLeft",	ref m_inheritScale_Left );
+						Attrib( ElemLobeParms, "inheritFlattenLeft",ref m_inheritFlatten_Left );
+						Attrib( ElemLobeParms, "inheritMaskingLeft",ref m_inheritMasking_Left );
+						Attrib( ElemLobeParms, "fixedRoughness",	ref m_fixedRoughness );
+						Attrib( ElemLobeParms, "fixedScale",		ref m_fixedScale );
+						Attrib( ElemLobeParms, "fixedFlatten",		ref m_fixedFlatten );
+						Attrib( ElemLobeParms, "fixedMasking",		ref m_fixedMasking );
+					}
 				}
 			}
 
@@ -456,16 +490,18 @@ namespace TestMSBSDF
 
 						bool			reflected = this == _owner.m_reflected;	// Are we the reflected or refracted lobe result?
 						LobeParameters	previousParams = null;
-						if ( _owner.m_Y > 0 ) {
-							Result		previousResult = _owner.m_owner.GetResultsForOrder( _owner.ScatteringOrder )[_owner.m_X, _owner.m_Y-1, _owner.m_Z];
+
+						//////////////////////////////////////////////////////////////////////////
+						// Initialize theta
+						int				prevParmX = S.m_inheritDirection_Left ? _owner.m_X-1 : (S.m_inheritDirection_Left ? 0 : -1);
+						int				prevParmY = S.m_inheritDirection_Top ? _owner.m_Y-1 : (S.m_inheritDirection_Left ? 0 : -1);
+						if ( prevParmX > 0 && prevParmY > 0 ) {
+							Result		previousResult = _owner.m_owner.GetResultsForOrder( _owner.ScatteringOrder )[prevParmX, prevParmY, _owner.m_Z];
 							previousParams = reflected ? previousResult.m_reflected : previousResult.m_refracted;
 							if ( !previousParams.IsValid )
 								previousParams = null;		// Can't use if the results are invalid!
 						}
-
-						//////////////////////////////////////////////////////////////////////////
-						// Initialize theta
-						if ( S.m_inheritDirection && previousParams != null ) {
+						if ( previousParams != null ) {
 							// Re-use last fitted direction with the same angle of incidence but different roughness
 							m_theta = previousParams.m_theta;
 						} else {
@@ -485,7 +521,16 @@ namespace TestMSBSDF
 
 						//////////////////////////////////////////////////////////////////////////
 						// Initialize roughness
-						if ( S.m_inheritRoughness && previousParams != null ) {
+						prevParmX = S.m_inheritRoughness_Left ? _owner.m_X-1 : (S.m_inheritRoughness_Top ? 0 : -1);
+						prevParmY = S.m_inheritRoughness_Top ? _owner.m_Y-1 : (S.m_inheritRoughness_Left ? 0 : -1);
+						if ( prevParmX > 0 && prevParmY > 0 ) {
+							Result		previousResult = _owner.m_owner.GetResultsForOrder( _owner.ScatteringOrder )[prevParmX, prevParmY, _owner.m_Z];
+							previousParams = reflected ? previousResult.m_reflected : previousResult.m_refracted;
+							if ( !previousParams.IsValid )
+								previousParams = null;		// Can't use if the results are invalid!
+						} else
+							previousParams = null;
+						if ( previousParams != null ) {
 							// Re-use last fitted roughness with the same angle of incidence but different roughness
 							m_roughness = previousParams.m_roughness;
 						} else {
@@ -499,9 +544,22 @@ namespace TestMSBSDF
 							}
 						}
 
+						_lobe.SetConstraint( 1,	S.m_initialRoughness == Settings.GUESS_INITIAL_ROUGHNESS.FIXED ? S.m_fixedRoughness : 1e-4,
+												S.m_initialRoughness == Settings.GUESS_INITIAL_ROUGHNESS.FIXED ? S.m_fixedRoughness : 1.0 );
+
+
 						//////////////////////////////////////////////////////////////////////////
 						// Initialize scale
-						if ( S.m_inheritScale && previousParams != null ) {
+						prevParmX = S.m_inheritScale_Left ? _owner.m_X-1 : (S.m_inheritScale_Top ? -1 : 0);
+						prevParmY = S.m_inheritScale_Top ? _owner.m_Y-1 : (S.m_inheritScale_Left ? 0 : -1);
+						if ( prevParmX > 0 && prevParmY > 0 ) {
+							Result		previousResult = _owner.m_owner.GetResultsForOrder( _owner.ScatteringOrder )[prevParmX, prevParmY, _owner.m_Z];
+							previousParams = reflected ? previousResult.m_reflected : previousResult.m_refracted;
+							if ( !previousParams.IsValid )
+								previousParams = null;		// Can't use if the results are invalid!
+						} else
+							previousParams = null;
+						if ( previousParams != null ) {
 							// Re-use last fitted scale with the same angle of incidence but different roughness
 							m_scale = previousParams.m_scale;
 						} else {
@@ -516,9 +574,22 @@ namespace TestMSBSDF
 							}
 						}
 
+						_lobe.SetConstraint( 2, S.m_initialScale == Settings.GUESS_INITIAL_SCALE.FIXED ? S.m_fixedScale : 1e-6,
+												S.m_initialScale == Settings.GUESS_INITIAL_SCALE.FIXED ? S.m_fixedScale : 10.0 );
+
+
 						//////////////////////////////////////////////////////////////////////////
 						// Initialize flattening factor
-						if ( S.m_inheritFlatten && previousParams != null ) {
+						prevParmX = S.m_inheritFlatten_Left ? _owner.m_X-1 : (S.m_inheritFlatten_Top ? 0 : -1);
+						prevParmY = S.m_inheritFlatten_Top ? _owner.m_Y-1 : (S.m_inheritFlatten_Left ? 0 : -1);
+						if ( prevParmX > 0 && prevParmY > 0 ) {
+							Result		previousResult = _owner.m_owner.GetResultsForOrder( _owner.ScatteringOrder )[prevParmX, prevParmY, _owner.m_Z];
+							previousParams = reflected ? previousResult.m_reflected : previousResult.m_refracted;
+							if ( !previousParams.IsValid )
+								previousParams = null;		// Can't use if the results are invalid!
+						} else
+							previousParams = null;
+						if ( previousParams != null ) {
 							// Re-use last fitted flatten with the same angle of incidence but different roughness
 							m_flatten = previousParams.m_flatten;
 						} else {
@@ -529,9 +600,22 @@ namespace TestMSBSDF
 							}
 						}
 
+						_lobe.SetConstraint( 3, S.m_initialFlatten == Settings.GUESS_INITIAL_FLATTEN.FIXED ? S.m_fixedFlatten : 1e-3,
+												S.m_initialFlatten == Settings.GUESS_INITIAL_FLATTEN.FIXED ? S.m_fixedFlatten : 10.0 );
+
+
 						//////////////////////////////////////////////////////////////////////////
 						// Initialize masking importance
-						if ( S.m_inheritMasking && previousParams != null ) {
+						prevParmX = S.m_inheritMasking_Left ? _owner.m_X-1 : (S.m_inheritMasking_Top ? 0 : -1);
+						prevParmY = S.m_inheritMasking_Top ? _owner.m_Y-1 : (S.m_inheritMasking_Left ? 0 : -1);
+						if ( prevParmX > 0 && prevParmY > 0 ) {
+							Result		previousResult = _owner.m_owner.GetResultsForOrder( _owner.ScatteringOrder )[prevParmX, prevParmY, _owner.m_Z];
+							previousParams = reflected ? previousResult.m_reflected : previousResult.m_refracted;
+							if ( !previousParams.IsValid )
+								previousParams = null;		// Can't use if the results are invalid!
+						} else
+							previousParams = null;
+						if ( previousParams != null ) {
 							// Re-use last fitted masking with the same angle of incidence but different roughness
 							m_masking = previousParams.m_masking;
 						} else {
@@ -541,6 +625,9 @@ namespace TestMSBSDF
 									break;
 							}
 						}
+
+						_lobe.SetConstraint( 4, S.m_initialMasking == Settings.GUESS_INITIAL_MASKING.FIXED ? S.m_fixedMasking : 0.0,
+												S.m_initialMasking == Settings.GUESS_INITIAL_MASKING.FIXED ? S.m_fixedMasking : 1.0 );
 					}
 
 					public void		Save( XmlElement _parent ) {
@@ -551,7 +638,7 @@ namespace TestMSBSDF
 						Attrib( _parent, "masking", m_masking );
 					}
 
-					public void		Load( XmlElement _parent ) {
+					public void		Load( XmlElement _parent, int _version ) {
 						Attrib( _parent, "theta", ref m_theta );
 						Attrib( _parent, "roughness", ref m_roughness );
 						Attrib( _parent, "scale", ref m_scale );
@@ -669,7 +756,7 @@ namespace TestMSBSDF
 					}
 				}
 
-				public void		Load( XmlElement _parent ) {
+				public void		Load( XmlElement _parent, int _version ) {
 					Attrib( _parent, "State", ref m_state );
 					m_error = Attrib( _parent, "Error" );
 					if ( m_error == "" )
@@ -682,10 +769,10 @@ namespace TestMSBSDF
 					Attrib( _parent, "albedoF0", ref m_surfaceAlbedoF0 );
 
 					XmlElement	ElemReflected = _parent["LobeReflected"];
-					m_reflected.Load( ElemReflected );
+					m_reflected.Load( ElemReflected, _version );
 					if ( m_owner.m_surface.m_type == TestForm.SURFACE_TYPE.DIELECTRIC ) {
 						XmlElement	ElemRefracted = _parent["LobeRefracted"];
-						m_refracted.Load( ElemRefracted );
+						m_refracted.Load( ElemRefracted, _version );
 					}
 				}
 
@@ -774,6 +861,7 @@ namespace TestMSBSDF
 			public void		Save( XmlDocument _doc ) {
 
 				XmlElement	Root = AppendChild( _doc, "Root" );
+				Attrib( Root, "Version", (int) 1 );
 
 				XmlElement	ElmSurface = AppendChild( Root, "SurfaceParameters" );
 				m_surface.Save( ElmSurface );
@@ -814,12 +902,15 @@ namespace TestMSBSDF
 
 				XmlElement	Root = _doc["Root"];
 
+				int	version = 0;
+				Attrib( Root, "Version", ref version );
+
 				XmlElement	ElmSurface = Root["SurfaceParameters"];
-				m_surface.Load( ElmSurface );
+				m_surface.Load( ElmSurface, version );
 				InitializeResults();
 
 				XmlElement	ElmSettings = Root["Settings"];
-				m_settings.Load( ElmSettings );
+				m_settings.Load( ElmSettings, version );
 
 				// Load results from an array
 				XmlElement	ElmResults = Root["Results"];
@@ -864,7 +955,7 @@ namespace TestMSBSDF
 								if ( ElmResult.Name != "Result" )
 									throw new Exception( "Unexpected XmlElement: expected \"Result\" element but found \"" + ElmResult.Name + "\" instead!" );
 
-								orderResults[X,Y,Z].Load( ElmResult );
+								orderResults[X,Y,Z].Load( ElmResult, version );
 
 								ElmResult = ElmResult.NextSibling as XmlElement;
 							}
@@ -1068,12 +1159,6 @@ namespace TestMSBSDF
 
 					m_result.State = 1.0f;	// Whatever, we're done now!
 
-// 					// Auto-save
-// 					runCounter++;
-// 					if ( runCounter > AUTO_SAVE_EVERY_N_RUNS ) {
-// 						runCounter = 0;
-// 						saveToolStripMenuItem_Click( null, EventArgs.Empty );
-// 					}
 				} catch ( CanceledException ) {
 					m_result.m_error = "Canceled";
 					m_result.State = -1.0f;
@@ -1410,15 +1495,24 @@ namespace TestMSBSDF
 				case Document.Settings.GUESS_INITIAL_DIRECTION.NO_CHANGE: radioButtonInitDirection_NoChange.Checked = true; break;
 			}
 
-			checkBoxInitDirection_Inherit.Checked = m_document.m_settings.m_inheritDirection;
-			checkBoxInitScale_Inherit.Checked = m_document.m_settings.m_inheritScale;
-			checkBoxInitFlatten_Inherit.Checked = m_document.m_settings.m_inheritFlatten;
-			checkBoxInitRoughness_Inherit.Checked = m_document.m_settings.m_inheritRoughness;
-			checkBoxInitMasking_Inherit.Checked = m_document.m_settings.m_inheritMasking;
+			checkBoxInitDirection_Inherit.Checked = m_document.m_settings.m_inheritDirection_Top;
+			checkBoxInitScale_Inherit.Checked = m_document.m_settings.m_inheritScale_Top;
+			checkBoxInitFlatten_Inherit.Checked = m_document.m_settings.m_inheritFlatten_Top;
+			checkBoxInitRoughness_Inherit.Checked = m_document.m_settings.m_inheritRoughness_Top;
+			checkBoxInitMasking_Inherit.Checked = m_document.m_settings.m_inheritMasking_Top;
+			checkBoxInitDirection_InheritLeft.Checked = m_document.m_settings.m_inheritDirection_Left;
+			checkBoxInitScale_InheritLeft.Checked = m_document.m_settings.m_inheritScale_Left;
+			checkBoxInitFlatten_InheritLeft.Checked = m_document.m_settings.m_inheritFlatten_Left;
+			checkBoxInitRoughness_InheritLeft.Checked = m_document.m_settings.m_inheritRoughness_Left;
+			checkBoxInitMasking_InheritLeft.Checked = m_document.m_settings.m_inheritMasking_Left;
 			floatTrackbarControlInit_Scale.Value = m_document.m_settings.m_customScale;
-			floatTrackbarControlInit_Flatten.Value = m_document.m_settings.m_customFlatten;
+			floatTrackbarControlInit_CustomFlatten.Value = m_document.m_settings.m_customFlatten;
 			floatTrackbarControlInit_CustomRoughness.Value = m_document.m_settings.m_customRoughness;
-			floatTrackbarControlInit_MaskingImportance.Value = m_document.m_settings.m_customMasking;
+			floatTrackbarControlInit_CustomMaskingImportance.Value = m_document.m_settings.m_customMasking;
+			floatTrackbarControlInit_FixedRoughness.Value = m_document.m_settings.m_fixedRoughness;
+			floatTrackbarControlInit_FixedScale.Value = m_document.m_settings.m_fixedScale;
+			floatTrackbarControlInit_FixedFlatten.Value = m_document.m_settings.m_fixedFlatten;
+			floatTrackbarControlInit_FixedMasking.Value = m_document.m_settings.m_fixedMasking;
 		}
 
 		/// <summary>
@@ -1734,6 +1828,13 @@ namespace TestMSBSDF
 								T.Result = R;
 								T.InitializeLobeTargetData();
 								T.Start( m_document.m_surface.m_type == TestForm.SURFACE_TYPE.DIELECTRIC, m_document.m_settings.m_maxIterations, functionMinimumTolerance, gradientTolerance );
+
+								// Auto-save
+								runCounter++;
+								if ( runCounter > AUTO_SAVE_EVERY_N_RUNS ) {
+									runCounter = 0;
+									saveToolStripMenuItem_Click( null, EventArgs.Empty );
+								}
 							}
 						}
 					}
@@ -2073,31 +2174,6 @@ namespace TestMSBSDF
 												LobeModel.LOBE_TYPE.GGX);
 		}
 
-		private void radioButtonInitRoughness_CheckedChanged( object sender, EventArgs e )
-		{
-			m_document.m_settings.m_initialRoughness = radioButtonInitRoughness_UseSurface.Checked ?	Document.Settings.GUESS_INITIAL_ROUGHNESS.SURFACE :
-													(radioButtonInitRoughness_Custom.Checked ?		Document.Settings.GUESS_INITIAL_ROUGHNESS.CUSTOM :
-																									Document.Settings.GUESS_INITIAL_ROUGHNESS.NO_CHANGE);
-		}
-
-		private void radioButtonInitMasking_CheckedChanged( object sender, EventArgs e )
-		{
-			m_document.m_settings.m_initialMasking = radioButtonInitMasking_Custom.Checked ?	Document.Settings.GUESS_INITIAL_MASKING.CUSTOM :
-																							Document.Settings.GUESS_INITIAL_MASKING.NO_CHANGE;
-		}
-
-		private void radioButtonInitFlatten_CheckedChanged( object sender, EventArgs e )
-		{
-			m_document.m_settings.m_initialFlatten = radioButtonInitFlatten_Custom.Checked ?	Document.Settings.GUESS_INITIAL_FLATTEN.CUSTOM :
-																							Document.Settings.GUESS_INITIAL_FLATTEN.NO_CHANGE;
-		}
-
-		private void radioButtonInitScale_CheckedChanged( object sender, EventArgs e )
-		{
-			m_document.m_settings.m_initialScale = radioButtonInitScale_CoMFactor.Checked ?	Document.Settings.GUESS_INITIAL_SCALE.FACTOR_CENTER_OF_MASS :
-																							Document.Settings.GUESS_INITIAL_SCALE.NO_CHANGE;
-		}
-
 		private void radioButtonInitDirection_CheckedChanged( object sender, EventArgs e )
 		{
 			m_document.m_settings.m_initialDirection = radioButtonInitDirection_TowardCoM.Checked ?		Document.Settings.GUESS_INITIAL_DIRECTION.CENTER_OF_MASS :
@@ -2105,29 +2181,74 @@ namespace TestMSBSDF
 																										Document.Settings.GUESS_INITIAL_DIRECTION.NO_CHANGE);
 		}
 
+		private void radioButtonInitRoughness_CheckedChanged( object sender, EventArgs e )
+		{
+			m_document.m_settings.m_initialRoughness = radioButtonInitRoughness_UseSurface.Checked ?	Document.Settings.GUESS_INITIAL_ROUGHNESS.SURFACE :
+													(radioButtonInitRoughness_Custom.Checked ?			Document.Settings.GUESS_INITIAL_ROUGHNESS.CUSTOM :
+													(radioButtonInitRoughness_NoChange.Checked ?		Document.Settings.GUESS_INITIAL_ROUGHNESS.NO_CHANGE :
+																										Document.Settings.GUESS_INITIAL_ROUGHNESS.FIXED));
+
+			floatTrackbarControlInit_CustomRoughness.Enabled = m_document.m_settings.m_initialRoughness == Document.Settings.GUESS_INITIAL_ROUGHNESS.CUSTOM;
+			floatTrackbarControlInit_FixedRoughness.Enabled = m_document.m_settings.m_initialRoughness == Document.Settings.GUESS_INITIAL_ROUGHNESS.FIXED;
+		}
+
+		private void radioButtonInitScale_CheckedChanged( object sender, EventArgs e )
+		{
+			m_document.m_settings.m_initialScale = radioButtonInitScale_CoMFactor.Checked ?		Document.Settings.GUESS_INITIAL_SCALE.FACTOR_CENTER_OF_MASS :
+													(radioButtonInitScale_NoChange.Checked ?	Document.Settings.GUESS_INITIAL_SCALE.NO_CHANGE :
+																								Document.Settings.GUESS_INITIAL_SCALE.FIXED);
+
+			floatTrackbarControlInit_Scale.Enabled = m_document.m_settings.m_initialScale == Document.Settings.GUESS_INITIAL_SCALE.FACTOR_CENTER_OF_MASS;
+			floatTrackbarControlInit_FixedScale.Enabled = m_document.m_settings.m_initialScale == Document.Settings.GUESS_INITIAL_SCALE.FIXED;
+		}
+
+		private void radioButtonInitFlatten_CheckedChanged( object sender, EventArgs e )
+		{
+			m_document.m_settings.m_initialFlatten = radioButtonInitFlatten_Custom.Checked ?	Document.Settings.GUESS_INITIAL_FLATTEN.CUSTOM :
+													(radioButtonInitFlatten_NoChange.Checked ?	Document.Settings.GUESS_INITIAL_FLATTEN.NO_CHANGE :
+																								Document.Settings.GUESS_INITIAL_FLATTEN.FIXED);
+
+			floatTrackbarControlInit_CustomFlatten.Enabled = m_document.m_settings.m_initialFlatten == Document.Settings.GUESS_INITIAL_FLATTEN.CUSTOM;
+			floatTrackbarControlInit_FixedFlatten.Enabled = m_document.m_settings.m_initialFlatten == Document.Settings.GUESS_INITIAL_FLATTEN.FIXED;
+		}
+
+		private void radioButtonInitMasking_CheckedChanged( object sender, EventArgs e )
+		{
+			m_document.m_settings.m_initialMasking = radioButtonInitMasking_Custom.Checked ?	Document.Settings.GUESS_INITIAL_MASKING.CUSTOM :
+													(radioButtonInitMasking_NoChange.Checked ?	Document.Settings.GUESS_INITIAL_MASKING.NO_CHANGE :
+																								Document.Settings.GUESS_INITIAL_MASKING.FIXED);
+
+			floatTrackbarControlInit_CustomMaskingImportance.Enabled = m_document.m_settings.m_initialMasking == Document.Settings.GUESS_INITIAL_MASKING.CUSTOM;
+			floatTrackbarControlInit_FixedMasking.Enabled = m_document.m_settings.m_initialMasking == Document.Settings.GUESS_INITIAL_MASKING.FIXED;
+		}
+
 		private void checkBoxInitDirection_Inherit_CheckedChanged( object sender, EventArgs e )
 		{
-			m_document.m_settings.m_inheritDirection = checkBoxInitDirection_Inherit.Checked;
+			m_document.m_settings.m_inheritDirection_Top = checkBoxInitDirection_Inherit.Checked;
 		}
 
 		private void checkBoxInitScale_Inherit_CheckedChanged( object sender, EventArgs e )
 		{
-			m_document.m_settings.m_inheritScale = checkBoxInitScale_Inherit.Checked;
+			m_document.m_settings.m_inheritScale_Top = checkBoxInitScale_Inherit.Checked;
+			m_document.m_settings.m_inheritScale_Left = checkBoxInitScale_InheritLeft.Checked;
 		}
 
 		private void checkBoxInitFlatten_Inherit_CheckedChanged( object sender, EventArgs e )
 		{
-			m_document.m_settings.m_inheritFlatten = checkBoxInitFlatten_Inherit.Checked;
+			m_document.m_settings.m_inheritFlatten_Top = checkBoxInitFlatten_Inherit.Checked;
+			m_document.m_settings.m_inheritFlatten_Left = checkBoxInitFlatten_InheritLeft.Checked;
 		}
 
 		private void checkBoxInitRoughness_Inherit_CheckedChanged( object sender, EventArgs e )
 		{
-			m_document.m_settings.m_inheritRoughness = checkBoxInitRoughness_Inherit.Checked;
+			m_document.m_settings.m_inheritRoughness_Top = checkBoxInitRoughness_Inherit.Checked;
+			m_document.m_settings.m_inheritRoughness_Left = checkBoxInitRoughness_InheritLeft.Checked;
 		}
 
 		private void checkBoxInitMasking_Inherit_CheckedChanged( object sender, EventArgs e )
 		{
-			m_document.m_settings.m_inheritMasking = checkBoxInitMasking_Inherit.Checked;
+			m_document.m_settings.m_inheritMasking_Top = checkBoxInitMasking_Inherit.Checked;
+			m_document.m_settings.m_inheritMasking_Left = checkBoxInitMasking_InheritLeft.Checked;
 		}
 
 		private void floatTrackbarControlInit_Scale_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
@@ -2148,6 +2269,26 @@ namespace TestMSBSDF
 		private void floatTrackbarControlInit_MaskingImportance_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
 		{
 			m_document.m_settings.m_customMasking = _Sender.Value;
+		}
+
+		private void floatTrackbarControlInit_FixedRoughness_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
+		{
+			m_document.m_settings.m_fixedRoughness = floatTrackbarControlInit_FixedRoughness.Value;
+		}
+
+		private void floatTrackbarControlInit_FixedScale_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
+		{
+			m_document.m_settings.m_fixedScale = floatTrackbarControlInit_FixedScale.Value;
+		}
+
+		private void floatTrackbarControlInit_FixedFlatten_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
+		{
+			m_document.m_settings.m_fixedFlatten = floatTrackbarControlInit_FixedFlatten.Value;
+		}
+
+		private void floatTrackbarControlInit_FixedMasking_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
+		{
+			m_document.m_settings.m_fixedMasking = floatTrackbarControlInit_FixedMasking.Value;
 		}
 
 		#endregion
