@@ -18,7 +18,7 @@ namespace TestMSBSDF
 	public partial class AutomationForm : Form
 	{
 		const int		AUTO_SAVE_EVERY_N_RUNS = 5;	// Save results every 5 computation
-		const int		THREADS_COUNT = 4;			// Multithreading
+		const int		THREADS_COUNT = 16;			// Multithreading
 
 		#region NESTED TYPES
 
