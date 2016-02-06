@@ -248,6 +248,11 @@ namespace TestMSBSDF
 			}
 		}
 
+		protected override void OnFormClosing( FormClosingEventArgs e ) {
+			e.Cancel = false;
+			base.OnFormClosing( e );
+		}
+
 		protected override void OnFormClosed( FormClosedEventArgs e ) {
 			if ( m_Device == null )
 				return;
@@ -904,7 +909,6 @@ namespace TestMSBSDF
 
 			// Repaint
 			UpdateApplication();
-
 		}
 
 		public void	 UpdateSurfaceParameters( float3 _incomingDirection, float _roughness, float _albedoF0 ) {
@@ -933,12 +937,7 @@ namespace TestMSBSDF
 		public void	UpdateApplication() {
 			panelOutput.Refresh();
 			Application_Idle( null, EventArgs.Empty );
-			try {
-				Application.DoEvents();	// Give a chance to the app to process messages!
-			}
-			catch ( Exception _e ) {
-				throw _e;
-			}
+			Application.DoEvents();	// Give a chance to the app to process messages!
 		}
 
 		bool	m_pauseRendering = false;

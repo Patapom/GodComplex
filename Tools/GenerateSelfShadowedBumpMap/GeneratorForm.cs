@@ -171,6 +171,7 @@ tabControlGenerators.TabPages.RemoveAt( 1 );
 			} catch ( Exception ) {
 			}
 
+			e.Cancel = false;
 			base.OnClosing( e );
 		}
 

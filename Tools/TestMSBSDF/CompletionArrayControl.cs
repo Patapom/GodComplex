@@ -331,13 +331,13 @@ namespace TestMSBSDF
 			if ( e.KeyCode == Keys.Up ) {
 				if ( m_selectedY > 0 )
 					Select( m_selectedX, m_selectedY-1, m_selectedZ );
-				else
+				else if ( m_selectedZ > 0 )
 					Select( m_selectedX, m_dimensionY-1, m_selectedZ-1 );
 			}
 			if ( e.KeyCode == Keys.Down ) {
 				if ( m_selectedY < m_dimensionY-1 )
 					Select( m_selectedX, m_selectedY+1, m_selectedZ );
-				else
+				else if ( m_selectedZ < m_dimensionZ-1 )
 					Select( m_selectedX, 0, m_selectedZ+1 );
 			}
 			if ( e.KeyCode == Keys.PageUp && m_selectedZ > 0 )

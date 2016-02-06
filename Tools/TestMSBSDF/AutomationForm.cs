@@ -1143,9 +1143,11 @@ namespace TestMSBSDF
 			#region EVENT HANDLERS
 
 			void m_lobeModel_ParametersChanged( double[] _parameters ) {
-
-				if ( m_owner.m_canceled )
-					throw new CanceledException();
+				if ( m_owner.m_canceled ) {
+					m_result.State = -1;
+					m_result.m_error = "Canceled";
+					return;
+				}
 
 				// Store new parameters
 				m_parameters.m_theta = _parameters[0];
@@ -1605,8 +1607,10 @@ namespace TestMSBSDF
 		DateTime	m_simulationStart;
 		DateTime	m_simulationEnd;
 		private void buttonCompute_Click( object sender, EventArgs e ) {
-			if ( m_computing )
-				throw new CanceledException();
+			if ( m_computing ) {
+				m_canceled = true;	// Raising that flag will throw the exception in the main thread as soon as possible
+				return;
+			}
 
 			if ( m_documentFileName == null ) {
 				string	FileName = AskForFileName();
@@ -1688,12 +1692,9 @@ namespace TestMSBSDF
 								ComputationThread	T = null;
 								while ( T == null ) {
 									T = QueryComputeThread();
-									try {
-										Application.DoEvents();	// Give a chance to the app to process messages!
-									}
-									catch ( Exception _e ) {
-										throw _e;
-									}
+									Application.DoEvents();				// Give a chance to the app to process messages!
+									if ( m_canceled )
+										throw new CanceledException();	// Was the cancel button pushed?
 									if ( T == null ) {
 										Thread.Sleep( 50 );
 									}
@@ -1729,14 +1730,9 @@ namespace TestMSBSDF
 				m_canceled = true;
 				LogLine( "Canceled!" );
 			} catch ( Exception _e ) {
-				if ( IsNestedCanceledException( _e ) ) {
-					m_canceled = true;
-					LogLine( "Canceled!" );
-				} else {
-					string	errorText = "An error occurred during fitting: " + _e.Message;
-					LogLine( errorText );
-					MessageBox( errorText );
-				}
+				string	errorText = "An error occurred during fitting: " + _e.Message;
+				LogLine( errorText );
+				MessageBox( errorText );
 			} finally {
 
 				m_computationEnd = DateTime.Now;
@@ -1897,18 +1893,20 @@ namespace TestMSBSDF
 
 		private void openToolStripMenuItem_Click( object sender, EventArgs e ) {
 			try {
-				string	FileName = m_AppKey.GetValue( "LastDocFileName", new System.IO.FileInfo( "results.xml" ).FullName ) as string;
-				openFileDialogResults.FileName = Path.GetFileName( FileName );
-				openFileDialogResults.InitialDirectory = Path.GetDirectoryName( FileName );
+				string	fileName = m_AppKey.GetValue( "LastDocFileName", new System.IO.FileInfo( "results.xml" ).FullName ) as string;
+				openFileDialogResults.FileName = Path.GetFileName( fileName );
+				openFileDialogResults.InitialDirectory = Path.GetDirectoryName( fileName );
 				if ( openFileDialogResults.ShowDialog( this ) != DialogResult.OK )
 					return;
 
+				fileName = openFileDialogResults.FileName;
+
 				XmlDocument	XmlDoc = new XmlDocument();
-				XmlDoc.Load( FileName );
+				XmlDoc.Load( fileName );
 				Document	Doc = new Document();
 				Doc.Load( XmlDoc );
 
-				DocumentFileName = new FileInfo( FileName );
+				DocumentFileName = new FileInfo( fileName );
 				AttachDocument( Doc );
 
 				m_AppKey.SetValue( "LastDocFileName", openFileDialogResults.FileName );
