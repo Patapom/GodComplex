@@ -1173,7 +1173,7 @@ namespace TestMSBSDF
 					PrepareFitter( true, m_maxIterations, m_goalTolerance, m_gradientTolerance );
 					PerformLobeFitting();
 
-					m_owner.LogLine( m_index + ">	## Reflected lobe - Fit minimum reached = " + m_fitter.FunctionMinimum + " after " + (m_retriesCount * m_fitter.MaxIterations + m_fitter.IterationsCount) + " iterations (" + m_retriesCount + " attempts)" );
+					m_owner.LogLine( m_index + ">	## Reflected lobe - Fit minimum reached = " + m_fitter.FunctionMinimum + " after " + ((m_retriesCount-1) * m_fitter.MaxIterations + m_fitter.IterationsCount) + " iterations (" + m_retriesCount + " attempts)" );
 
 					// Fit refracted lobe now...
 					if ( m_fitRefractedLobe ) {
@@ -1181,7 +1181,7 @@ namespace TestMSBSDF
 						PrepareFitter( false, m_maxIterations, m_goalTolerance, m_gradientTolerance );
 						PerformLobeFitting();
 
-						m_owner.LogLine( m_index + ">	## Refracted lobe - Fit minimum reached = " + m_fitter.FunctionMinimum + " after " + (m_retriesCount * m_fitter.MaxIterations + m_fitter.IterationsCount) + " iterations (" + m_retriesCount + " attempts)" );
+						m_owner.LogLine( m_index + ">	## Refracted lobe - Fit minimum reached = " + m_fitter.FunctionMinimum + " after " + ((m_retriesCount-1) * m_fitter.MaxIterations + m_fitter.IterationsCount) + " iterations (" + m_retriesCount + " attempts)" );
 					}
 
 					m_result.State = 1.0f;	// Whatever, we're done now!
@@ -1607,15 +1607,11 @@ namespace TestMSBSDF
 		}
 
 		void m_results_ResultStateChanged( AutomationForm.Document.Result _result ) {
-// 			if ( InvokeRequired ) {
-// //				BeginInvoke( new Document.ResultStateChangedEventHandler( m_results_ResultStateChanged ), new object[] { _result });
-// 				return;
-// 			}
-
 			if ( m_internalDocumentChange )
 				return;
 
-			completionArrayControl.SetState( _result.X, _result.Y, _result.Z, _result.State, _result.UserText );	// Only update UI if it's showing the result's scattering order
+			if ( _result.ScatteringOrder == integerTrackbarControlViewScatteringOrder.Value )
+				completionArrayControl.SetState( _result.X, _result.Y, _result.Z, _result.State, _result.UserText );	// Only update UI if it's showing the result's scattering order
 		}
 
 		#endregion
@@ -1848,6 +1844,9 @@ namespace TestMSBSDF
 							for ( int order=orderMin; order <= orderMax; order++ ) {
 								Document.Result[,,]	results = m_document.GetResultsForOrder( order );
 								Document.Result		R = results[X,Y,Z];
+
+								if ( R.IsValid )
+									continue;	// No need to recompute that one
 
 								// Reset state
 								R.m_error = null;

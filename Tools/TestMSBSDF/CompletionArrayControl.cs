@@ -302,6 +302,8 @@ namespace TestMSBSDF
 			base.OnMouseDown( e );
 			SelectAt( e.Location );
 
+			if ( e.Button != MouseButtons.Left )
+				return;
 
 			// Show tooltip
 			int	X, Y;
