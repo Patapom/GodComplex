@@ -314,6 +314,7 @@ namespace TestMSBSDF
 					FACTOR_CENTER_OF_MASS,
 					NO_CHANGE,				// Means no change from last computation
 					FIXED,					// Means constrained to specified value
+					ANALYTICAL,				// Means we use the analytical function we managed to fit with Mathematica so this parameter is not free anymore!
 				}
 
 				public enum GUESS_INITIAL_FLATTEN {
@@ -596,8 +597,14 @@ namespace TestMSBSDF
 							}
 						}
 
-						_lobe.SetConstraint( 2, S.m_initialScale == Settings.GUESS_INITIAL_SCALE.FIXED ? S.m_fixedScale : 1e-6,
-												S.m_initialScale == Settings.GUESS_INITIAL_SCALE.FIXED ? S.m_fixedScale : 10.0 );
+						if ( S.m_initialScale == Settings.GUESS_INITIAL_SCALE.ANALYTICAL ) {
+							// We now have an analytical expression for the scale parameter!
+							float	scale = ComputeAnalyticalScaleParameter( _owner.IncomingAngleTheta, _owner.SurfaceRoughness, _owner.SurfaceAlbedoF0 );
+							_lobe.SetConstraint( 2, scale, scale );
+						} else {
+							_lobe.SetConstraint( 2, S.m_initialScale == Settings.GUESS_INITIAL_SCALE.FIXED ? S.m_fixedScale : 1e-6,
+													S.m_initialScale == Settings.GUESS_INITIAL_SCALE.FIXED ? S.m_fixedScale : 10.0 );
+						}
 
 
 						//////////////////////////////////////////////////////////////////////////
@@ -681,6 +688,24 @@ namespace TestMSBSDF
 					}
 
 					#region Analytical Expressions
+
+					/// <summary>
+					/// Computes the scale parameter analytically using the fitting we found using Mathematica
+					/// </summary>
+					/// <param name="_theta"></param>
+					/// <param name="_roughness"></param>
+					/// <returns></returns>
+ 					float	ComputeAnalyticalScaleParameter( float _theta, float _roughness, float _albedo ) {
+						// Here are the mathematica expressions giving us the scale parameter as a function of theta, roughness and albedo:
+						// k(\[Rho]) = 1-2(1-\[Rho])+(1-\[Rho])^2
+						// f( \[Sigma], \[Rho] ) = k(\[Rho]) [0.587595 +0.128391 (1-\[Alpha])+0.320232 (1-\[Alpha])^2-1.04001 (1-\[Alpha])^3]
+						//
+						_roughness = 1.0f - _roughness;
+						double	k = 1 - 2 * _albedo + _albedo*_albedo;
+						double	f = 0.587595 + 0.128391 * _roughness + 0.320232 * _roughness*_roughness - 1.04001 * _roughness*_roughness*_roughness;
+								f *= k;	// Dependence on albedo
+						return (float) f;
+					}
 
 					/// <summary>
 					/// Computes the flattening parameter analytically using the fitting we found using Mathematica
@@ -1527,6 +1552,13 @@ namespace TestMSBSDF
 				case LobeModel.LOBE_TYPE.GGX: radioButtonLobe_GGX.Checked = true; break;
 			}
 
+			switch ( m_document.m_settings.m_initialDirection ) {
+				case Document.Settings.GUESS_INITIAL_DIRECTION.CENTER_OF_MASS: radioButtonInitDirection_TowardCoM.Checked = true; break;
+				case Document.Settings.GUESS_INITIAL_DIRECTION.REFLECTED_DIRECTION: radioButtonInitDirection_TowardReflected.Checked = true; break;
+				case Document.Settings.GUESS_INITIAL_DIRECTION.NO_CHANGE: radioButtonInitDirection_NoChange.Checked = true; break;
+				case Document.Settings.GUESS_INITIAL_DIRECTION.FIXED: radioButtonInitDirection_Fixed.Checked = true; break;
+			}
+
 			switch ( m_document.m_settings.m_initialRoughness ) {
 				case Document.Settings.GUESS_INITIAL_ROUGHNESS.SURFACE: radioButtonInitRoughness_UseSurface.Checked = true; break;
 				case Document.Settings.GUESS_INITIAL_ROUGHNESS.CUSTOM: radioButtonInitRoughness_Custom.Checked = true; break;
@@ -1534,10 +1566,11 @@ namespace TestMSBSDF
 				case Document.Settings.GUESS_INITIAL_ROUGHNESS.FIXED: radioButtonInitRoughness_Fixed.Checked = true; break;
 			}
 
-			switch ( m_document.m_settings.m_initialMasking ) {
-				case Document.Settings.GUESS_INITIAL_MASKING.CUSTOM: radioButtonInitMasking_Custom.Checked = true; break;
-				case Document.Settings.GUESS_INITIAL_MASKING.NO_CHANGE: radioButtonInitMasking_NoChange.Checked = true; break;
-				case Document.Settings.GUESS_INITIAL_MASKING.FIXED: radioButtonInitMasking_Fixed.Checked = true; break;
+			switch ( m_document.m_settings.m_initialScale ) {
+				case Document.Settings.GUESS_INITIAL_SCALE.FACTOR_CENTER_OF_MASS: radioButtonInitScale_CoMFactor.Checked = true; break;
+				case Document.Settings.GUESS_INITIAL_SCALE.NO_CHANGE: radioButtonInitScale_NoChange.Checked = true; break;
+				case Document.Settings.GUESS_INITIAL_SCALE.FIXED: radioButtonInitScale_Fixed.Checked = true; break;
+				case Document.Settings.GUESS_INITIAL_SCALE.ANALYTICAL: radioButtonInitScale_Analytical.Checked = true; break;
 			}
 
 			switch ( m_document.m_settings.m_initialFlatten ) {
@@ -1547,17 +1580,10 @@ namespace TestMSBSDF
 				case Document.Settings.GUESS_INITIAL_FLATTEN.ANALYTICAL: radioButtonInitFlatten_Analytical.Checked = true; break;
 			}
 
-			switch ( m_document.m_settings.m_initialScale ) {
-				case Document.Settings.GUESS_INITIAL_SCALE.FACTOR_CENTER_OF_MASS: radioButtonInitScale_CoMFactor.Checked = true; break;
-				case Document.Settings.GUESS_INITIAL_SCALE.NO_CHANGE: radioButtonInitScale_NoChange.Checked = true; break;
-				case Document.Settings.GUESS_INITIAL_SCALE.FIXED: radioButtonInitScale_Fixed.Checked = true; break;
-			}
-
-			switch ( m_document.m_settings.m_initialDirection ) {
-				case Document.Settings.GUESS_INITIAL_DIRECTION.CENTER_OF_MASS: radioButtonInitDirection_TowardCoM.Checked = true; break;
-				case Document.Settings.GUESS_INITIAL_DIRECTION.REFLECTED_DIRECTION: radioButtonInitDirection_TowardReflected.Checked = true; break;
-				case Document.Settings.GUESS_INITIAL_DIRECTION.NO_CHANGE: radioButtonInitDirection_NoChange.Checked = true; break;
-				case Document.Settings.GUESS_INITIAL_DIRECTION.FIXED: radioButtonInitDirection_Fixed.Checked = true; break;
+			switch ( m_document.m_settings.m_initialMasking ) {
+				case Document.Settings.GUESS_INITIAL_MASKING.CUSTOM: radioButtonInitMasking_Custom.Checked = true; break;
+				case Document.Settings.GUESS_INITIAL_MASKING.NO_CHANGE: radioButtonInitMasking_NoChange.Checked = true; break;
+				case Document.Settings.GUESS_INITIAL_MASKING.FIXED: radioButtonInitMasking_Fixed.Checked = true; break;
 			}
 
 			checkBoxInitDirection_Inherit.Checked = m_document.m_settings.m_inheritDirection_Top;
@@ -2303,7 +2329,8 @@ namespace TestMSBSDF
 		{
 			m_document.m_settings.m_initialScale = radioButtonInitScale_CoMFactor.Checked ?		Document.Settings.GUESS_INITIAL_SCALE.FACTOR_CENTER_OF_MASS :
 													(radioButtonInitScale_NoChange.Checked ?	Document.Settings.GUESS_INITIAL_SCALE.NO_CHANGE :
-																								Document.Settings.GUESS_INITIAL_SCALE.FIXED);
+													(radioButtonInitScale_Fixed.Checked ?		Document.Settings.GUESS_INITIAL_SCALE.FIXED :
+																								Document.Settings.GUESS_INITIAL_SCALE.ANALYTICAL));
 
 			floatTrackbarControlInit_Scale.Enabled = m_document.m_settings.m_initialScale == Document.Settings.GUESS_INITIAL_SCALE.FACTOR_CENTER_OF_MASS;
 			floatTrackbarControlInit_FixedScale.Enabled = m_document.m_settings.m_initialScale == Document.Settings.GUESS_INITIAL_SCALE.FIXED;

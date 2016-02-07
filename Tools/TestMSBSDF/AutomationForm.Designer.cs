@@ -102,6 +102,7 @@
 			this.label8 = new System.Windows.Forms.Label();
 			this.panel8 = new System.Windows.Forms.Panel();
 			this.radioButtonInitFlatten_Custom = new System.Windows.Forms.RadioButton();
+			this.radioButtonInitFlatten_Analytical = new System.Windows.Forms.RadioButton();
 			this.radioButtonInitFlatten_Fixed = new System.Windows.Forms.RadioButton();
 			this.radioButtonInitFlatten_NoChange = new System.Windows.Forms.RadioButton();
 			this.checkBoxInitFlatten_InheritLeft = new System.Windows.Forms.CheckBox();
@@ -171,7 +172,7 @@
 			this.integerTrackbarControlThreadsCount = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
 			this.label31 = new System.Windows.Forms.Label();
 			this.completionArrayControl = new TestMSBSDF.CompletionArrayControl();
-			this.radioButtonInitFlatten_Analytical = new System.Windows.Forms.RadioButton();
+			this.radioButtonInitScale_Analytical = new System.Windows.Forms.RadioButton();
 			this.groupBoxSimulationParameters.SuspendLayout();
 			this.panel6.SuspendLayout();
 			this.panel5.SuspendLayout();
@@ -985,7 +986,7 @@
 			this.panel9.Controls.Add(this.checkBoxInitMasking_Inherit);
 			this.panel9.Controls.Add(this.floatTrackbarControlInit_CustomMaskingImportance);
 			this.panel9.Controls.Add(this.label8);
-			this.panel9.Location = new System.Drawing.Point(3, 412);
+			this.panel9.Location = new System.Drawing.Point(3, 439);
 			this.panel9.Name = "panel9";
 			this.panel9.Size = new System.Drawing.Size(355, 71);
 			this.panel9.TabIndex = 9;
@@ -994,7 +995,7 @@
 			// 
 			this.radioButtonInitMasking_Custom.AutoSize = true;
 			this.radioButtonInitMasking_Custom.Checked = true;
-			this.radioButtonInitMasking_Custom.Location = new System.Drawing.Point(105, 4);
+			this.radioButtonInitMasking_Custom.Location = new System.Drawing.Point(102, 4);
 			this.radioButtonInitMasking_Custom.Name = "radioButtonInitMasking_Custom";
 			this.radioButtonInitMasking_Custom.Size = new System.Drawing.Size(14, 13);
 			this.radioButtonInitMasking_Custom.TabIndex = 0;
@@ -1005,7 +1006,7 @@
 			// radioButtonInitMasking_Fixed
 			// 
 			this.radioButtonInitMasking_Fixed.AutoSize = true;
-			this.radioButtonInitMasking_Fixed.Location = new System.Drawing.Point(105, 49);
+			this.radioButtonInitMasking_Fixed.Location = new System.Drawing.Point(102, 49);
 			this.radioButtonInitMasking_Fixed.Name = "radioButtonInitMasking_Fixed";
 			this.radioButtonInitMasking_Fixed.Size = new System.Drawing.Size(50, 17);
 			this.radioButtonInitMasking_Fixed.TabIndex = 0;
@@ -1016,7 +1017,7 @@
 			// radioButtonInitMasking_NoChange
 			// 
 			this.radioButtonInitMasking_NoChange.AutoSize = true;
-			this.radioButtonInitMasking_NoChange.Location = new System.Drawing.Point(105, 26);
+			this.radioButtonInitMasking_NoChange.Location = new System.Drawing.Point(102, 26);
 			this.radioButtonInitMasking_NoChange.Name = "radioButtonInitMasking_NoChange";
 			this.radioButtonInitMasking_NoChange.Size = new System.Drawing.Size(139, 17);
 			this.radioButtonInitMasking_NoChange.TabIndex = 0;
@@ -1038,7 +1039,7 @@
 			// floatTrackbarControlInit_FixedMasking
 			// 
 			this.floatTrackbarControlInit_FixedMasking.Enabled = false;
-			this.floatTrackbarControlInit_FixedMasking.Location = new System.Drawing.Point(161, 47);
+			this.floatTrackbarControlInit_FixedMasking.Location = new System.Drawing.Point(158, 47);
 			this.floatTrackbarControlInit_FixedMasking.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlInit_FixedMasking.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlInit_FixedMasking.Name = "floatTrackbarControlInit_FixedMasking";
@@ -1067,7 +1068,7 @@
 			// 
 			// floatTrackbarControlInit_CustomMaskingImportance
 			// 
-			this.floatTrackbarControlInit_CustomMaskingImportance.Location = new System.Drawing.Point(122, 1);
+			this.floatTrackbarControlInit_CustomMaskingImportance.Location = new System.Drawing.Point(119, 1);
 			this.floatTrackbarControlInit_CustomMaskingImportance.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlInit_CustomMaskingImportance.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlInit_CustomMaskingImportance.Name = "floatTrackbarControlInit_CustomMaskingImportance";
@@ -1100,7 +1101,7 @@
 			this.panel8.Controls.Add(this.checkBoxInitFlatten_Inherit);
 			this.panel8.Controls.Add(this.floatTrackbarControlInit_CustomFlatten);
 			this.panel8.Controls.Add(this.label28);
-			this.panel8.Location = new System.Drawing.Point(3, 311);
+			this.panel8.Location = new System.Drawing.Point(3, 338);
 			this.panel8.Name = "panel8";
 			this.panel8.Size = new System.Drawing.Size(353, 95);
 			this.panel8.TabIndex = 8;
@@ -1116,6 +1117,17 @@
 			this.radioButtonInitFlatten_Custom.TabStop = true;
 			this.radioButtonInitFlatten_Custom.UseVisualStyleBackColor = true;
 			this.radioButtonInitFlatten_Custom.CheckedChanged += new System.EventHandler(this.radioButtonInitFlatten_CheckedChanged);
+			// 
+			// radioButtonInitFlatten_Analytical
+			// 
+			this.radioButtonInitFlatten_Analytical.AutoSize = true;
+			this.radioButtonInitFlatten_Analytical.Location = new System.Drawing.Point(102, 72);
+			this.radioButtonInitFlatten_Analytical.Name = "radioButtonInitFlatten_Analytical";
+			this.radioButtonInitFlatten_Analytical.Size = new System.Drawing.Size(146, 17);
+			this.radioButtonInitFlatten_Analytical.TabIndex = 0;
+			this.radioButtonInitFlatten_Analytical.Text = "Use Analytical Expression";
+			this.radioButtonInitFlatten_Analytical.UseVisualStyleBackColor = true;
+			this.radioButtonInitFlatten_Analytical.CheckedChanged += new System.EventHandler(this.radioButtonInitFlatten_CheckedChanged);
 			// 
 			// radioButtonInitFlatten_Fixed
 			// 
@@ -1208,6 +1220,7 @@
 			// panel7
 			// 
 			this.panel7.Controls.Add(this.radioButtonInitScale_CoMFactor);
+			this.panel7.Controls.Add(this.radioButtonInitScale_Analytical);
 			this.panel7.Controls.Add(this.radioButtonInitScale_Fixed);
 			this.panel7.Controls.Add(this.radioButtonInitScale_NoChange);
 			this.panel7.Controls.Add(this.floatTrackbarControlInit_FixedScale);
@@ -1217,7 +1230,7 @@
 			this.panel7.Controls.Add(this.label27);
 			this.panel7.Location = new System.Drawing.Point(3, 214);
 			this.panel7.Name = "panel7";
-			this.panel7.Size = new System.Drawing.Size(353, 91);
+			this.panel7.Size = new System.Drawing.Size(353, 118);
 			this.panel7.TabIndex = 7;
 			// 
 			// radioButtonInitScale_CoMFactor
@@ -1868,16 +1881,16 @@
 			this.completionArrayControl.SelectionChanged += new TestMSBSDF.CompletionArrayControl.SelectionChangedEventHandler(this.completionArrayControl_SelectionChanged);
 			this.completionArrayControl.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.completionArrayControl_MouseDoubleClick);
 			// 
-			// radioButtonInitFlatten_Analytical
+			// radioButtonInitScale_Analytical
 			// 
-			this.radioButtonInitFlatten_Analytical.AutoSize = true;
-			this.radioButtonInitFlatten_Analytical.Location = new System.Drawing.Point(102, 72);
-			this.radioButtonInitFlatten_Analytical.Name = "radioButtonInitFlatten_Analytical";
-			this.radioButtonInitFlatten_Analytical.Size = new System.Drawing.Size(146, 17);
-			this.radioButtonInitFlatten_Analytical.TabIndex = 0;
-			this.radioButtonInitFlatten_Analytical.Text = "Use Analytical Expression";
-			this.radioButtonInitFlatten_Analytical.UseVisualStyleBackColor = true;
-			this.radioButtonInitFlatten_Analytical.CheckedChanged += new System.EventHandler(this.radioButtonInitFlatten_CheckedChanged);
+			this.radioButtonInitScale_Analytical.AutoSize = true;
+			this.radioButtonInitScale_Analytical.Location = new System.Drawing.Point(102, 93);
+			this.radioButtonInitScale_Analytical.Name = "radioButtonInitScale_Analytical";
+			this.radioButtonInitScale_Analytical.Size = new System.Drawing.Size(146, 17);
+			this.radioButtonInitScale_Analytical.TabIndex = 0;
+			this.radioButtonInitScale_Analytical.Text = "Use Analytical Expression";
+			this.radioButtonInitScale_Analytical.UseVisualStyleBackColor = true;
+			this.radioButtonInitScale_Analytical.CheckedChanged += new System.EventHandler(this.radioButtonInitScale_CheckedChanged);
 			// 
 			// AutomationForm
 			// 
@@ -2078,5 +2091,6 @@
 		private System.Windows.Forms.RadioButton radioButtonInitDirection_Fixed;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlInit_FixedDirection;
 		private System.Windows.Forms.RadioButton radioButtonInitFlatten_Analytical;
+		private System.Windows.Forms.RadioButton radioButtonInitScale_Analytical;
 	}
 }
