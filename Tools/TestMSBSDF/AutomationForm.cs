@@ -1505,6 +1505,8 @@ namespace TestMSBSDF
 			integerTrackbarControlScatteringOrder_Min.RangeMax = m_document.m_surface.ScatteringOrderMax;
 			integerTrackbarControlScatteringOrder_Max.Value = m_document.m_surface.ScatteringOrderMax;
 			integerTrackbarControlScatteringOrder_Max.RangeMin = m_document.m_surface.ScatteringOrderMin;
+			integerTrackbarControlViewScatteringOrder.RangeMin = m_document.m_surface.ScatteringOrderMin;
+			integerTrackbarControlViewScatteringOrder.RangeMax = m_document.m_surface.ScatteringOrderMax;
 			integerTrackbarControlRayCastingIterations.Value = m_document.m_surface.m_rayTracingIterationsCount;
 			checkBoxParam0_InclusiveStart.Checked = m_document.m_surface.m_incomingAngle.InclusiveMin;
 			checkBoxParam0_InclusiveEnd.Checked = m_document.m_surface.m_incomingAngle.InclusiveMax;
@@ -1805,6 +1807,25 @@ namespace TestMSBSDF
 		}
 
 		/// <summary>
+		/// Waits for all threads to terminate
+		/// </summary>
+		void	WaitForAllThreads() {
+			bool	allThreadsDone = false;
+			while ( !allThreadsDone ) {
+				allThreadsDone = true;
+				for ( int i=0; i < m_threads.Length; i++ ) {
+					if ( !m_threads[i].Done ) {
+						allThreadsDone = false;
+						break;
+					}
+				}
+				if ( !allThreadsDone )
+					Thread.Sleep( 50 );
+			}
+		}
+
+
+		/// <summary>
 		/// Main computation routine
 		/// </summary>
 		void	ComputeAll( int _startOrder, int _startX, int _startY, int _startZ, bool _singleSlice ) {
@@ -1929,6 +1950,8 @@ namespace TestMSBSDF
 				LogLine( errorText );
 				MessageBox( errorText );
 			} finally {
+
+				WaitForAllThreads();
 
 				m_computationEnd = DateTime.Now;
 
@@ -2261,6 +2284,8 @@ namespace TestMSBSDF
 													(radioButtonInitDirection_TowardReflected.Checked ?	Document.Settings.GUESS_INITIAL_DIRECTION.REFLECTED_DIRECTION :
 													(radioButtonInitDirection_Fixed.Checked ?			Document.Settings.GUESS_INITIAL_DIRECTION.FIXED :
 																										Document.Settings.GUESS_INITIAL_DIRECTION.NO_CHANGE));
+
+			floatTrackbarControlInit_FixedDirection.Enabled = m_document.m_settings.m_initialDirection == Document.Settings.GUESS_INITIAL_DIRECTION.FIXED;
 		}
 
 		private void radioButtonInitRoughness_CheckedChanged( object sender, EventArgs e )
@@ -2420,73 +2445,89 @@ namespace TestMSBSDF
 
 		private void floatTrackbarControlParam0_Min_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
 		{
-			m_document.m_surface.m_incomingAngle.Min = floatTrackbarControlParam0_Min.Value;
+			if ( !m_internalDocumentChange )
+				m_document.m_surface.m_incomingAngle.Min = floatTrackbarControlParam0_Min.Value;
 		}
 
 		private void floatTrackbarControlParam0_Max_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
 		{
-			m_document.m_surface.m_incomingAngle.Max = floatTrackbarControlParam0_Max.Value;
+			if ( !m_internalDocumentChange )
+				m_document.m_surface.m_incomingAngle.Max = floatTrackbarControlParam0_Max.Value;
 		}
 
 		private void integerTrackbarControlParam0_Steps_ValueChanged( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue )
 		{
-			m_document.m_surface.m_incomingAngle.StepsCount = integerTrackbarControlParam0_Steps.Value;
-			DocumentResults2UI();
+			if ( !m_internalDocumentChange ) {
+				m_document.m_surface.m_incomingAngle.StepsCount = integerTrackbarControlParam0_Steps.Value;
+				DocumentResults2UI();
+			}
 		}
 
 		private void floatTrackbarControlParam1_Min_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
 		{
-			m_document.m_surface.m_roughness.Min = floatTrackbarControlParam1_Min.Value;
+			if ( !m_internalDocumentChange )
+				m_document.m_surface.m_roughness.Min = floatTrackbarControlParam1_Min.Value;
 		}
 
 		private void floatTrackbarControlParam1_Max_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
 		{
-			m_document.m_surface.m_roughness.Max = floatTrackbarControlParam1_Max.Value;
+			if ( !m_internalDocumentChange )
+				m_document.m_surface.m_roughness.Max = floatTrackbarControlParam1_Max.Value;
 		}
 
 		private void integerTrackbarControlParam1_Steps_ValueChanged( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue )
 		{
-			m_document.m_surface.m_roughness.StepsCount = integerTrackbarControlParam1_Steps.Value;
-			DocumentResults2UI();
+			if ( !m_internalDocumentChange ) {
+				m_document.m_surface.m_roughness.StepsCount = integerTrackbarControlParam1_Steps.Value;
+				DocumentResults2UI();
+			}
 		}
 
 		private void floatTrackbarControlParam2_Min_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
 		{
-			m_document.m_surface.m_albedoF0.Min = floatTrackbarControlParam2_Min.Value;
+			if ( !m_internalDocumentChange )
+				m_document.m_surface.m_albedoF0.Min = floatTrackbarControlParam2_Min.Value;
 		}
 
 		private void floatTrackbarControlParam2_Max_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
 		{
-			m_document.m_surface.m_albedoF0.Max = floatTrackbarControlParam2_Max.Value;
+			if ( !m_internalDocumentChange )
+				m_document.m_surface.m_albedoF0.Max = floatTrackbarControlParam2_Max.Value;
 		}
 
 		private void integerTrackbarControlParam2_Steps_ValueChanged( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue )
 		{
-			m_document.m_surface.m_albedoF0.StepsCount = integerTrackbarControlParam2_Steps.Value;
-			DocumentResults2UI();
+			if ( !m_internalDocumentChange ) {
+				m_document.m_surface.m_albedoF0.StepsCount = integerTrackbarControlParam2_Steps.Value;
+				DocumentResults2UI();
 
-			integerTrackbarControlViewAlbedoSlice.RangeMax = m_document.m_surface.m_albedoF0.StepsCount - 1;
-			integerTrackbarControlViewAlbedoSlice.VisibleRangeMax = integerTrackbarControlViewAlbedoSlice.RangeMax;
+				integerTrackbarControlViewAlbedoSlice.RangeMax = m_document.m_surface.m_albedoF0.StepsCount - 1;
+				integerTrackbarControlViewAlbedoSlice.VisibleRangeMax = integerTrackbarControlViewAlbedoSlice.RangeMax;
+			}
 		}
 
 		private void integerTrackbarControlScatteringOrder_Min_ValueChanged( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue )
 		{
-			m_document.m_surface.ScatteringOrderMin = integerTrackbarControlScatteringOrder_Min.Value;
+			if ( !m_internalDocumentChange ) {
+				m_document.m_surface.ScatteringOrderMin = integerTrackbarControlScatteringOrder_Min.Value;
 
-			integerTrackbarControlScatteringOrder_Max.RangeMin = m_document.m_surface.ScatteringOrderMin;	// Max scattering can't go lower than this
-			integerTrackbarControlScatteringOrder_Max.VisibleRangeMin = m_document.m_surface.ScatteringOrderMin;
-			integerTrackbarControlViewScatteringOrder.RangeMin = _Sender.Value;
-			integerTrackbarControlViewScatteringOrder.VisibleRangeMin = _Sender.Value;
+				integerTrackbarControlScatteringOrder_Max.RangeMin = m_document.m_surface.ScatteringOrderMin;	// Max scattering can't go lower than this
+				integerTrackbarControlScatteringOrder_Max.VisibleRangeMin = m_document.m_surface.ScatteringOrderMin;
+				integerTrackbarControlViewScatteringOrder.RangeMin = _Sender.Value;
+				integerTrackbarControlViewScatteringOrder.VisibleRangeMin = _Sender.Value;
+			}
 		}
 
 		private void integerTrackbarControlScatteringOrder_Max_ValueChanged( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue )
 		{
-			m_document.m_surface.ScatteringOrderMax = integerTrackbarControlScatteringOrder_Max.Value;
+			if ( !m_internalDocumentChange ) {
+				m_document.m_surface.ScatteringOrderMax = integerTrackbarControlScatteringOrder_Max.Value;
 
-			integerTrackbarControlScatteringOrder_Min.RangeMax = m_document.m_surface.ScatteringOrderMax;	// Min scattering can't go higher than this
-			integerTrackbarControlScatteringOrder_Min.VisibleRangeMax = m_document.m_surface.ScatteringOrderMax;
-			integerTrackbarControlViewScatteringOrder.RangeMax = _Sender.Value;
-			integerTrackbarControlViewScatteringOrder.VisibleRangeMax = _Sender.Value;
+				integerTrackbarControlScatteringOrder_Min.RangeMax = m_document.m_surface.ScatteringOrderMax;	// Min scattering can't go higher than this
+				integerTrackbarControlScatteringOrder_Min.VisibleRangeMax = m_document.m_surface.ScatteringOrderMax;
+				integerTrackbarControlViewScatteringOrder.RangeMax = _Sender.Value;
+				integerTrackbarControlViewScatteringOrder.VisibleRangeMax = _Sender.Value;
+			}
 		}
 
 		private void integerTrackbarControlRayCastingIterations_ValueChanged( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue )
