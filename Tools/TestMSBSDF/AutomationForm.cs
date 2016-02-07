@@ -320,6 +320,7 @@ namespace TestMSBSDF
 					CUSTOM,
 					NO_CHANGE,				// Means no change from last computation
 					FIXED,					// Means constrained to specified value
+					ANALYTICAL,				// Means we use the analytical function we managed to fit with Mathematica so this parameter is not free anymore!
 				}
 
 				public enum GUESS_INITIAL_MASKING {
@@ -624,8 +625,14 @@ namespace TestMSBSDF
 							}
 						}
 
-						_lobe.SetConstraint( 3, S.m_initialFlatten == Settings.GUESS_INITIAL_FLATTEN.FIXED ? S.m_fixedFlatten : 1e-3,
-												S.m_initialFlatten == Settings.GUESS_INITIAL_FLATTEN.FIXED ? S.m_fixedFlatten : 10.0 );
+						if ( S.m_initialFlatten == Settings.GUESS_INITIAL_FLATTEN.ANALYTICAL ) {
+							// We now have an analytical expression for the flattening parameter!
+							float	flatten = ComputeAnalyticalFlattenParameter( _owner.IncomingAngleTheta, _owner.SurfaceRoughness );
+							_lobe.SetConstraint( 3, flatten, flatten );
+						} else {
+							_lobe.SetConstraint( 3, S.m_initialFlatten == Settings.GUESS_INITIAL_FLATTEN.FIXED ? S.m_fixedFlatten : 1e-3,
+													S.m_initialFlatten == Settings.GUESS_INITIAL_FLATTEN.FIXED ? S.m_fixedFlatten : 10.0 );
+						}
 
 
 						//////////////////////////////////////////////////////////////////////////
@@ -672,6 +679,33 @@ namespace TestMSBSDF
 						Attrib( _parent, "flatten", ref m_flatten );
 						Attrib( _parent, "masking", ref m_masking );
 					}
+
+					#region Analytical Expressions
+
+					/// <summary>
+					/// Computes the flattening parameter analytically using the fitting we found using Mathematica
+					/// </summary>
+					/// <param name="_theta"></param>
+					/// <param name="_roughness"></param>
+					/// <returns></returns>
+					float	ComputeAnalyticalFlattenParameter( float _theta, float _roughness ) {
+						// Here are the mathematica expressions giving us the flattening parameter as a function of theta and roughness:
+						// a(\[Rho]) = 0.697462  - 0.479278 (1-\[Rho])
+						// b(\[Rho]) = 0.287646  - 0.293594 (1-\[Rho])
+						// c(\[Rho]) = 5.69744  + 6.61321 (1-\[Rho])
+						// \[Mu] = cos(\[Theta])
+						// f( \[Mu], \[Rho] ) = a(\[Rho]) + b(\[Rho]) e^(-c(\[Rho])  \[Mu])
+						//
+						_roughness = 1.0f - _roughness;
+						double	cosTheta = Math.Cos( _theta );
+						double	a = 0.697462 - 0.479278 * _roughness;
+						double	b = 0.287646 - 0.293594 * _roughness;
+						double	c = 5.697440 + 6.613210 * _roughness;
+						double	f = a + b * Math.Exp( -c * cosTheta );
+						return (float) f;
+					}
+
+					#endregion
 				}
 
 				#endregion
@@ -1495,27 +1529,33 @@ namespace TestMSBSDF
 				case Document.Settings.GUESS_INITIAL_ROUGHNESS.SURFACE: radioButtonInitRoughness_UseSurface.Checked = true; break;
 				case Document.Settings.GUESS_INITIAL_ROUGHNESS.CUSTOM: radioButtonInitRoughness_Custom.Checked = true; break;
 				case Document.Settings.GUESS_INITIAL_ROUGHNESS.NO_CHANGE: radioButtonInitRoughness_NoChange.Checked = true; break;
+				case Document.Settings.GUESS_INITIAL_ROUGHNESS.FIXED: radioButtonInitRoughness_Fixed.Checked = true; break;
 			}
 
 			switch ( m_document.m_settings.m_initialMasking ) {
 				case Document.Settings.GUESS_INITIAL_MASKING.CUSTOM: radioButtonInitMasking_Custom.Checked = true; break;
 				case Document.Settings.GUESS_INITIAL_MASKING.NO_CHANGE: radioButtonInitMasking_NoChange.Checked = true; break;
+				case Document.Settings.GUESS_INITIAL_MASKING.FIXED: radioButtonInitMasking_Fixed.Checked = true; break;
 			}
 
 			switch ( m_document.m_settings.m_initialFlatten ) {
 				case Document.Settings.GUESS_INITIAL_FLATTEN.CUSTOM: radioButtonInitFlatten_Custom.Checked = true; break;
 				case Document.Settings.GUESS_INITIAL_FLATTEN.NO_CHANGE: radioButtonInitFlatten_NoChange.Checked = true; break;
+				case Document.Settings.GUESS_INITIAL_FLATTEN.FIXED: radioButtonInitFlatten_Fixed.Checked = true; break;
+				case Document.Settings.GUESS_INITIAL_FLATTEN.ANALYTICAL: radioButtonInitFlatten_Analytical.Checked = true; break;
 			}
 
 			switch ( m_document.m_settings.m_initialScale ) {
 				case Document.Settings.GUESS_INITIAL_SCALE.FACTOR_CENTER_OF_MASS: radioButtonInitScale_CoMFactor.Checked = true; break;
 				case Document.Settings.GUESS_INITIAL_SCALE.NO_CHANGE: radioButtonInitScale_NoChange.Checked = true; break;
+				case Document.Settings.GUESS_INITIAL_SCALE.FIXED: radioButtonInitScale_Fixed.Checked = true; break;
 			}
 
 			switch ( m_document.m_settings.m_initialDirection ) {
 				case Document.Settings.GUESS_INITIAL_DIRECTION.CENTER_OF_MASS: radioButtonInitDirection_TowardCoM.Checked = true; break;
 				case Document.Settings.GUESS_INITIAL_DIRECTION.REFLECTED_DIRECTION: radioButtonInitDirection_TowardReflected.Checked = true; break;
 				case Document.Settings.GUESS_INITIAL_DIRECTION.NO_CHANGE: radioButtonInitDirection_NoChange.Checked = true; break;
+				case Document.Settings.GUESS_INITIAL_DIRECTION.FIXED: radioButtonInitDirection_Fixed.Checked = true; break;
 			}
 
 			checkBoxInitDirection_Inherit.Checked = m_document.m_settings.m_inheritDirection_Top;
@@ -1770,6 +1810,7 @@ namespace TestMSBSDF
 		void	ComputeAll( int _startOrder, int _startX, int _startY, int _startZ, bool _singleSlice ) {
 			try {
 				EnterComputationMode();
+				ClearLog();
 
 				int	orderMax = m_document.m_surface.ScatteringOrderMax;
 				int	orderMin = _startOrder > 0 && _startOrder <= orderMax ? _startOrder : m_document.m_surface.ScatteringOrderMin;
@@ -2247,7 +2288,8 @@ namespace TestMSBSDF
 		{
 			m_document.m_settings.m_initialFlatten = radioButtonInitFlatten_Custom.Checked ?	Document.Settings.GUESS_INITIAL_FLATTEN.CUSTOM :
 													(radioButtonInitFlatten_NoChange.Checked ?	Document.Settings.GUESS_INITIAL_FLATTEN.NO_CHANGE :
-																								Document.Settings.GUESS_INITIAL_FLATTEN.FIXED);
+													(radioButtonInitFlatten_Fixed.Checked ?		Document.Settings.GUESS_INITIAL_FLATTEN.FIXED :
+																								Document.Settings.GUESS_INITIAL_FLATTEN.ANALYTICAL));
 
 			floatTrackbarControlInit_CustomFlatten.Enabled = m_document.m_settings.m_initialFlatten == Document.Settings.GUESS_INITIAL_FLATTEN.CUSTOM;
 			floatTrackbarControlInit_FixedFlatten.Enabled = m_document.m_settings.m_initialFlatten == Document.Settings.GUESS_INITIAL_FLATTEN.FIXED;
