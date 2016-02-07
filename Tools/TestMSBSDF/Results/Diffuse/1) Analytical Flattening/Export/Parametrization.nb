@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[    985370,      17299]
-NotebookOptionsPosition[    981482,      17168]
-NotebookOutlinePosition[    981829,      17183]
-CellTagsIndexPosition[    981786,      17180]
+NotebookDataLength[    985437,      17302]
+NotebookOptionsPosition[    981549,      17171]
+NotebookOutlinePosition[    981896,      17186]
+CellTagsIndexPosition[    981853,      17183]
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -8547,8 +8547,7 @@ scale factor:\n\nk(\[Rho]) = ",
       RowBox[{"1", "-", "\[Rho]"}], ")"}]}], "+", 
     SuperscriptBox[
      RowBox[{"(", 
-      RowBox[{"1", "-", "\[Rho]"}], ")"}], "2"]}], TraditionalForm]],
-  FormatType->"TraditionalForm"],
+      RowBox[{"1", "-", "\[Rho]"}], ")"}], "2"]}], TraditionalForm]]],
  "\nf( \[Sigma], \[Rho] ) = k(\[Rho]) [",
  Cell[BoxData[
   RowBox[{"0.5875953026520264`", "\[VeryThinSpace]", "+", 
@@ -11373,7 +11372,8 @@ ysegPOccnZtxr/eAJ/Vz+ycXL0Wp
   Ticks->{Automatic, Automatic, Automatic},
   ViewPoint->{-3.2665525455869786`, 0.7167562744939392, 0.5156499877754216},
   ViewVertical->{0., 0., 1.}]], "Output",
- CellChangeTimes->{3.6638552884337945`*^9, 3.663856702032587*^9}],
+ CellChangeTimes->{3.6638552884337945`*^9, 3.663856702032587*^9, 
+  3.663857050551243*^9}],
 
 Cell[BoxData[
  Graphics3DBox[{GraphicsComplex3DBox[CompressedData["
@@ -13312,7 +13312,8 @@ GNRzfrRuNuoH62aCz9t/AGynkaY=
   Ticks->{Automatic, Automatic, Automatic},
   ViewPoint->{-3.2665525455869786`, 0.7167562744939392, 0.5156499877754216},
   ViewVertical->{0., 0., 1.}]], "Output",
- CellChangeTimes->{3.6638552884337945`*^9, 3.6638567020996475`*^9}],
+ CellChangeTimes->{3.6638552884337945`*^9, 3.663856702032587*^9, 
+  3.6638570506573067`*^9}],
 
 Cell[BoxData[
  Graphics3DBox[{GraphicsComplex3DBox[CompressedData["
@@ -15248,7 +15249,8 @@ QI+SA3pUANCj7ndTN4M8mepmoh3s34OWHv8=
   Ticks->{Automatic, Automatic, Automatic},
   ViewPoint->{-3.2665525455869786`, 0.7167562744939392, 0.5156499877754216},
   ViewVertical->{0., 0., 1.}]], "Output",
- CellChangeTimes->{3.6638552884337945`*^9, 3.6638567021706996`*^9}],
+ CellChangeTimes->{3.6638552884337945`*^9, 3.663856702032587*^9, 
+  3.6638570507463703`*^9}],
 
 Cell[BoxData[
  Graphics3DBox[{GraphicsComplex3DBox[CompressedData["
@@ -17160,7 +17162,8 @@ o+4L2aOygR4VAfQo6N4rrI+/kD5QlxN1H4Pu2/+Ubgb9v54v1dOg722Z6mzQ
   Ticks->{Automatic, Automatic, Automatic},
   ViewPoint->{-3.2665525455869786`, 0.7167562744939392, 0.5156499877754216},
   ViewVertical->{0., 0., 1.}]], "Output",
- CellChangeTimes->{3.6638552884337945`*^9, 3.6638567022517433`*^9}]
+ CellChangeTimes->{3.6638552884337945`*^9, 3.663856702032587*^9, 
+  3.6638570508164177`*^9}]
 }, Open  ]]
 }, Open  ]]
 }, Open  ]]
@@ -17284,19 +17287,19 @@ Cell[449239, 8363, 9369, 166, 253, "Output"]
 }, Open  ]],
 Cell[CellGroupData[{
 Cell[458657, 8535, 106, 1, 62, "Subchapter"],
-Cell[458766, 8538, 1688, 39, 90, "Text"],
+Cell[458766, 8538, 1655, 38, 90, "Text"],
 Cell[CellGroupData[{
-Cell[460479, 8581, 1705, 47, 75, "Input"],
-Cell[462187, 8630, 40230, 658, 457, "Output"]
+Cell[460446, 8580, 1705, 47, 75, "Input"],
+Cell[462154, 8629, 40230, 658, 424, "Output"]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[502454, 9293, 111, 1, 43, "Subsection"],
+Cell[502421, 9292, 111, 1, 43, "Subsection"],
 Cell[CellGroupData[{
-Cell[502590, 9298, 4749, 131, 420, "Input"],
-Cell[507342, 9431, 119282, 1944, 393, "Output"],
-Cell[626627, 11377, 118913, 1937, 393, "Output"],
-Cell[745543, 13316, 118666, 1934, 393, "Output"],
-Cell[864212, 15252, 117218, 1910, 393, "Output"]
+Cell[502557, 9297, 4749, 131, 420, "Input"],
+Cell[507309, 9430, 119307, 1945, 393, "Output"],
+Cell[626619, 11377, 118938, 1938, 393, "Output"],
+Cell[745560, 13317, 118691, 1935, 393, "Output"],
+Cell[864254, 15254, 117243, 1911, 426, "Output"]
 }, Open  ]]
 }, Open  ]]
 }, Open  ]]

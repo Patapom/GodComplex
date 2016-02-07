@@ -701,6 +701,7 @@ namespace TestMSBSDF
 						// f( \[Sigma], \[Rho] ) = k(\[Rho]) [0.587595 +0.128391 (1-\[Alpha])+0.320232 (1-\[Alpha])^2-1.04001 (1-\[Alpha])^3]
 						//
 						_roughness = 1.0f - _roughness;
+						_albedo = 1.0f - _albedo;
 						double	k = 1 - 2 * _albedo + _albedo*_albedo;
 						double	f = 0.587595 + 0.128391 * _roughness + 0.320232 * _roughness*_roughness - 1.04001 * _roughness*_roughness*_roughness;
 								f *= k;	// Dependence on albedo
@@ -728,6 +729,22 @@ namespace TestMSBSDF
 						double	c = 5.697440 + 6.613210 * _roughness;
 						double	f = a + b * Math.Exp( -c * cosTheta );
 						return (float) f;
+					}
+
+					float	ComputeAnalyticalRoughness( float _roughness ) {
+						// Here are the mathematica expressions giving us the lobe roughness parameter as a function of surface roughness:
+						// roughness[\[Alpha]_] = 0.9168937073335606 - 0.013091709358763996 \[Alpha]
+						//
+						double	exponent = 0.9168937073335606 - 0.013091709358763996 * _roughness;
+						return (float) exponent;
+					}
+
+					float	ComputeAnalyticalExponent( float _roughness ) {
+						// Here are the mathematica expressions giving us the exponent parameter as a function of roughness:
+						// exponent[\[Alpha]_] = 0.7782894918463 + 0.1683172467667511 \[Alpha]
+						//
+						double	exponent = 0.7782894918463 + 0.1683172467667511 * _roughness;
+						return (float) exponent;
 					}
 
 					#endregion
