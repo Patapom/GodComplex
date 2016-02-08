@@ -86,6 +86,66 @@ float	PhongG1( float _cosTheta, float _roughness ) {
 	return a < 1.6 ? (3.535 * a + 2.181 * a*a) / (1.0 + 2.276 * a + 2.577 * a*a) : 1.0;
 }
 
+// Finally, our long awaited diffuse lobe for 2nd scattering order
+//  
+//  After fitting each parameter one after another, we noticed that:
+// 	\[Bullet] Incident light angle \[Theta] has no effect on fitted lobe, assuming we ignore the backscattering that is visible at highly grazing angles and that would be better fitted using maybe a GGX lobe that features a nice backscatter property.
+// 	\[Bullet] Final masking importance m is 0 after all
+// 	\[Bullet] There is only a dependency on albedo \[Rho] for the scale factor (that was expected) and it is proportional to \[Rho]^2 which was also expected.
+// 	
+// Finally, we obtain the following analytical model for 2nd order scattering of a rough diffuse surface:
+// 
+// 	f(Subscript[\[Omega], o],\[Alpha],\[Rho]) = \[Sigma](\[Rho]) \[Mu]^\[Eta](\[Alpha])
+// 	
+// 	\[Mu] = Subscript[\[Omega], o]\[CenterDot]Z
+// 	\[Sigma](\[Alpha], \[Rho]) = k(\[Rho]) [0.587595 +0.128391 (1-\[Alpha])+0.320232 (1-\[Alpha])^2-1.04001 (1-\[Alpha])^3]	the fitted scale factor with a dependency on albedo and roughness
+// 	\[Eta](\[Alpha]) = 0.7782894918463 + 0.1683172467667511 \[Alpha]						the fitted exponent with a dependency on roughness alone
+// 	k(\[Rho]) = 1-2(1-\[Rho])+(1-\[Rho])^2										the factor applied to scale depending on \[Rho] and, most importantly, \[Rho]^2, that will give use the expected color saturation
+// 	
+// The flattening factor along the main lobe direction Z is the most expensive to compute:
+// 	a(\[Alpha]) = 0.697462  - 0.479278 \[Alpha]
+// 	b(\[Alpha]) = 0.287646  - 0.293594 \[Alpha]
+// 	c(\[Alpha]) = 5.69744  + 6.61321 \[Alpha]
+// 	Subscript[\[Sigma], n](\[Mu], \[Alpha]) = a(\[Alpha]) + b(\[Alpha]) e^(-c(\[Alpha])  \[Mu])
+// 
+// An alternate model is possible using a power of 2:
+// 	c^\[Prime](\[Alpha]) = 8.21968  + 9.54087 \[Alpha]
+// 	Subscript[\[Sigma], n]^\[Prime](\[Mu], \[Alpha]) = a(\[Alpha]) + b(\[Alpha]) 2^(-c^\[Prime](\[Alpha])  \[Mu])
+// 	
+// So the world-space intensity of the fitted lobe is obtained by multiplying the lobe-space intensity with the scale factor:
+// 
+// 	Subscript[f, w](Subscript[\[Omega], o],\[Alpha],\[Rho]) = L(\[Mu],Subscript[\[Sigma], n](\[Mu], \[Alpha])) f(Subscript[\[Omega], o],\[Alpha],\[Rho])
+// 	
+// 	L(\[Mu], Subscript[\[Sigma], n](\[Mu], \[Alpha])) = 1/Sqrt[1+\[Mu]^2 (1/Subscript[\[Sigma], n](\[Mu],\[Alpha])^2-1)]
+//
+float	ComputeDiffuseModel( float3 _wsOutgoingDirection, float _roughness, float _albedo ) {
+	_albedo = 1.0 - _albedo;
+	float	gloss = 1.0 - _roughness;
+
+	float	cosTheta = saturate( _wsOutgoingDirection.z );
+
+	// Compute sigma, the global scale factor
+	float	k = 1.0 + _albedo * (-2.0 + _albedo);
+	float	sigma = 0.587595 + gloss * (0.128391 + gloss * (0.320232 - 1.04001 * gloss));
+			sigma *= k;	// Dependence on albedo²
+
+	// Compute lobe exponent
+	float	eta = 0.7782894918463 + 0.1683172467667511 * _roughness;
+
+	// Compute unscaled lobe intensity
+	float	intensity = sigma * pow( cosTheta, eta );
+
+	// Compute flattening
+	float3	abc = float3(	0.697462 - 0.479278 * gloss,
+							0.287646 - 0.293594 * gloss,
+							8.219680 + 9.540870 * gloss );
+	float	sigma_n = abc.x + abc.y * exp2( -abc.z * cosTheta );
+	float	L = rsqrt( 1.0 + cosTheta*cosTheta * (1.0 / pow2( sigma_n ) - 1.0)  );
+
+	return  L * intensity;
+}
+
+
 
 PS_IN	VS( VS_IN _In ) {
 
@@ -129,6 +189,13 @@ PS_IN	VS( VS_IN _In ) {
 			lobeIntensity = GGXNDF( cosTheta_M, _Roughness );					// NDF
 			maskingShadowing = GGXG1( wsIncomingDirection.z, _Roughness );		// * Masking( incoming )
 			maskingShadowing *= GGXG1( wsDirection.z, _Roughness );				// * Masking( outgoing )
+			break;
+		case 3:
+			// Diffuse Lobe Model
+			wsDirection = lsPosition;// normalize( lsPosition.x * wsTangent + lsPosition.y * wsBiTangent + lsPosition.z * wsReflectedDirection );	// No scaling for that model
+			wsScaledDirection = wsDirection;
+			lobeIntensity = ComputeDiffuseModel( wsDirection, _Roughness, _ScaleR );	// _ScaleR is the surface's albedo in this case
+			maskingShadowing = 1.0;	// No masking/shadowing
 			break;
 		default:
 			// Beckmann
@@ -192,17 +259,26 @@ PS_IN	VS( VS_IN _In ) {
 float4	PS( PS_IN _In ) : SV_TARGET0 {
 	float	solidAlpha = 0.5;
 	float	wireframeAlpha = 0.1;
-	if ( _Flags & 4 ) {
-		// Transmitted lobe
-		if ( _Flags & 2 )
-			return _Flags & 1 ? float4( 0.1, 0.1, 0, wireframeAlpha ) : float4( _In.Color * float3( 1.0, 1.0, 0.5 ), solidAlpha );
-		else
-			return _Flags & 1 ? float4( 0, 0, 0.1, wireframeAlpha ) : float4( _In.Color, solidAlpha );
-	} else {
-		// Reflected lobe
-		if ( _Flags & 2 )
-			return _Flags & 1 ? float4( 0, 0.1, 0, wireframeAlpha ) : float4( _In.Color * float3( 0.5, 1.0, 0.5 ), solidAlpha );
-		else
-			return _Flags & 1 ? float4( 0.1, 0, 0, wireframeAlpha ) : float4( _In.Color, solidAlpha );
+	bool	isWireframe = _Flags & 1U;
+	bool	isAnalytical = _Flags & 2U;
+	bool	isTransmittedLobe = _Flags & 4U;
+
+	float4	simulatedLobeColor = float4( _In.Color, solidAlpha );
+	float4	analyticalLobeColor = isTransmittedLobe ? float4( _In.Color * float3( 0.5, 0.5, 1.0 ), solidAlpha )
+													: float4( _In.Color * float3( 0.5, 1.0, 0.5 ), solidAlpha );
+	float4	simulatedLobeWireColor = isTransmittedLobe	? float4( 0, 0, 0.1, wireframeAlpha )
+														: float4( 0.1, 0, 0, wireframeAlpha );
+	float4	analyticalLobeWireColor = isTransmittedLobe	? float4( 0, 0, 0.1, wireframeAlpha )
+														: float4( 0, 0.1, 0, wireframeAlpha );
+
+	bool	isDiffuseModel = (_Flags >> 4) == 3U;
+	if ( isDiffuseModel ) {
+		analyticalLobeColor = float4( _In.Color * float3( 1.0, 1.0, 0.5 ), 0.9 );
+		analyticalLobeWireColor = float4( 0.1, 0.1, 0, wireframeAlpha );
 	}
+
+	if ( isAnalytical )
+		return isWireframe ? analyticalLobeWireColor : analyticalLobeColor;
+	else
+		return isWireframe ? simulatedLobeWireColor : simulatedLobeColor;
 }

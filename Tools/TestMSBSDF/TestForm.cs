@@ -1053,9 +1053,9 @@ namespace TestMSBSDF
 
 				// Flags for analytical lobe rendering
 				uint	flags = 0U;
-				if ( radioButtonAnalyticalBeckmann.Checked ) flags = 00U;
-				else if ( radioButtonAnalyticalGGX.Checked ) flags = 01U;
-				else if ( radioButtonAnalyticalPhong.Checked ) flags = 02U;
+				if ( radioButtonAnalyticalBeckmann.Checked ) flags = 0U;
+				else if ( radioButtonAnalyticalGGX.Checked ) flags = 1U;
+				else if ( radioButtonAnalyticalPhong.Checked ) flags = 2U;
 //					else if ( radioButtonAnalyticalPhong.Checked ) flags = 03U;	// Other
 				flags <<= 4;	// First 3 bits are reserved!
 
@@ -1088,6 +1088,22 @@ namespace TestMSBSDF
 						m_CB_RenderLobe.m._ScaleR = floatTrackbarControlLobeScaleR_T.Value;
 						m_CB_RenderLobe.m._ScaleT = floatTrackbarControlLobeScaleT_T.Value;
 						m_CB_RenderLobe.m._ScaleB = floatTrackbarControlLobeScaleB_T.Value;
+						m_CB_RenderLobe.m._MaskingImportance = floatTrackbarControlLobeMaskingImportance_T.Value;
+						m_CB_RenderLobe.UpdateData();
+
+						m_Prim_Lobe.Render( m_Shader_RenderLobe );
+					}
+
+					if ( checkBoxShowDiffuseModel.Checked ) {
+						// Show analytical diffuse model lobe
+						m_Device.SetRenderStates( RASTERIZER_STATE.NOCHANGE, DEPTHSTENCIL_STATE.NOCHANGE, checkBoxShowXRay.Checked ? BLEND_STATE.ALPHA_BLEND : BLEND_STATE.DISABLED );
+
+						m_CB_RenderLobe.m._Flags = 2U | generalDisplayFlags | (3U << 4);
+						m_CB_RenderLobe.m._ReflectedDirection = analyticalReflectedDirection;
+						m_CB_RenderLobe.m._Roughness = floatTrackbarControlBeckmannRoughness.Value;
+						m_CB_RenderLobe.m._ScaleR = floatTrackbarControlSurfaceAlbedo.Value;
+						m_CB_RenderLobe.m._ScaleT = 1.0f;
+						m_CB_RenderLobe.m._ScaleB = 0.0f;
 						m_CB_RenderLobe.m._MaskingImportance = floatTrackbarControlLobeMaskingImportance_T.Value;
 						m_CB_RenderLobe.UpdateData();
 
@@ -1144,6 +1160,20 @@ namespace TestMSBSDF
 							m_CB_RenderLobe.m._ScaleR = floatTrackbarControlLobeScaleR_T.Value;
 							m_CB_RenderLobe.m._ScaleT = floatTrackbarControlLobeScaleT_T.Value;
 							m_CB_RenderLobe.m._ScaleB = floatTrackbarControlLobeScaleB_T.Value;
+							m_CB_RenderLobe.UpdateData();
+
+							m_Prim_Lobe.Render( m_Shader_RenderLobe );
+						}
+
+						if ( checkBoxShowDiffuseModel.Checked ) {
+							// Show analytical diffuse model lobe
+							m_CB_RenderLobe.m._Flags = 1U | 2U | generalDisplayFlags | (3U << 4);
+							m_CB_RenderLobe.m._ReflectedDirection = analyticalReflectedDirection;
+							m_CB_RenderLobe.m._Roughness = floatTrackbarControlBeckmannRoughness.Value;
+							m_CB_RenderLobe.m._ScaleR = floatTrackbarControlSurfaceAlbedo.Value;
+							m_CB_RenderLobe.m._ScaleT = 1.0f;
+							m_CB_RenderLobe.m._ScaleB = 0.0f;
+							m_CB_RenderLobe.m._MaskingImportance = floatTrackbarControlLobeMaskingImportance_T.Value;
 							m_CB_RenderLobe.UpdateData();
 
 							m_Prim_Lobe.Render( m_Shader_RenderLobe );

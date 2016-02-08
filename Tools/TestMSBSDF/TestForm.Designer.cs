@@ -110,6 +110,7 @@
 			this.checkBoxShowXRay = new System.Windows.Forms.CheckBox();
 			this.buttonAutomation = new System.Windows.Forms.Button();
 			this.panelOutput = new TestMSBSDF.PanelOutput3D(this.components);
+			this.checkBoxShowDiffuseModel = new System.Windows.Forms.CheckBox();
 			this.groupBoxDisplay.SuspendLayout();
 			this.panel2.SuspendLayout();
 			this.groupBoxSurface.SuspendLayout();
@@ -729,6 +730,7 @@
 			// 
 			this.groupBoxAnalyticalLobe.Controls.Add(this.panel2);
 			this.groupBoxAnalyticalLobe.Controls.Add(this.tabControlAnalyticalLobes);
+			this.groupBoxAnalyticalLobe.Controls.Add(this.checkBoxShowDiffuseModel);
 			this.groupBoxAnalyticalLobe.Controls.Add(this.checkBoxShowAnalyticalLobe);
 			this.groupBoxAnalyticalLobe.Controls.Add(this.checkBoxInitializeDirectionTowardCenterOfMass);
 			this.groupBoxAnalyticalLobe.Controls.Add(this.checkBoxTest);
@@ -1044,6 +1046,16 @@
 			this.panelOutput.Size = new System.Drawing.Size(876, 835);
 			this.panelOutput.TabIndex = 0;
 			// 
+			// checkBoxShowDiffuseModel
+			// 
+			this.checkBoxShowDiffuseModel.AutoSize = true;
+			this.checkBoxShowDiffuseModel.Location = new System.Drawing.Point(272, 19);
+			this.checkBoxShowDiffuseModel.Name = "checkBoxShowDiffuseModel";
+			this.checkBoxShowDiffuseModel.Size = new System.Drawing.Size(121, 17);
+			this.checkBoxShowDiffuseModel.TabIndex = 9;
+			this.checkBoxShowDiffuseModel.Text = "Show Diffuse Model";
+			this.checkBoxShowDiffuseModel.UseVisualStyleBackColor = true;
+			// 
 			// TestForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -1164,6 +1176,7 @@
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlLobeMaskingImportance_T;
 		private System.Windows.Forms.Button buttonAutomation;
 		private System.Windows.Forms.Button buttonTestImage;
+		private System.Windows.Forms.CheckBox checkBoxShowDiffuseModel;
 	}
 }
 
