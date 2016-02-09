@@ -35,14 +35,16 @@
 			this.timer = new System.Windows.Forms.Timer(this.components);
 			this.checkBoxShowWeights = new System.Windows.Forms.CheckBox();
 			this.checkBoxSmoothStep = new System.Windows.Forms.CheckBox();
-			this.panelOutput = new ShaderToy.PanelOutput(this.components);
 			this.floatTrackbarControlParm = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.checkBoxShowOrder3 = new System.Windows.Forms.CheckBox();
+			this.checkBoxShowOnlyMS = new System.Windows.Forms.CheckBox();
+			this.panelOutput = new ShaderToy.PanelOutput(this.components);
 			this.SuspendLayout();
 			// 
 			// floatTrackbarControlWeightMultiplier
 			// 
 			this.floatTrackbarControlWeightMultiplier.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-			this.floatTrackbarControlWeightMultiplier.Location = new System.Drawing.Point(1020, 61);
+			this.floatTrackbarControlWeightMultiplier.Location = new System.Drawing.Point(1020, 105);
 			this.floatTrackbarControlWeightMultiplier.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlWeightMultiplier.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlWeightMultiplier.Name = "floatTrackbarControlWeightMultiplier";
@@ -90,6 +92,40 @@
 			this.checkBoxSmoothStep.Text = "Use MS Diffuse Model";
 			this.checkBoxSmoothStep.UseVisualStyleBackColor = true;
 			// 
+			// floatTrackbarControlParm
+			// 
+			this.floatTrackbarControlParm.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+			this.floatTrackbarControlParm.Location = new System.Drawing.Point(1020, 131);
+			this.floatTrackbarControlParm.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlParm.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlParm.Name = "floatTrackbarControlParm";
+			this.floatTrackbarControlParm.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlParm.TabIndex = 1;
+			this.floatTrackbarControlParm.Value = 0F;
+			this.floatTrackbarControlParm.VisibleRangeMax = 1F;
+			// 
+			// checkBoxShowOrder3
+			// 
+			this.checkBoxShowOrder3.AutoSize = true;
+			this.checkBoxShowOrder3.Checked = true;
+			this.checkBoxShowOrder3.CheckState = System.Windows.Forms.CheckState.Checked;
+			this.checkBoxShowOrder3.Location = new System.Drawing.Point(1020, 58);
+			this.checkBoxShowOrder3.Name = "checkBoxShowOrder3";
+			this.checkBoxShowOrder3.Size = new System.Drawing.Size(83, 17);
+			this.checkBoxShowOrder3.TabIndex = 3;
+			this.checkBoxShowOrder3.Text = "Use Order 3";
+			this.checkBoxShowOrder3.UseVisualStyleBackColor = true;
+			// 
+			// checkBoxShowOnlyMS
+			// 
+			this.checkBoxShowOnlyMS.AutoSize = true;
+			this.checkBoxShowOnlyMS.Location = new System.Drawing.Point(1158, 35);
+			this.checkBoxShowOnlyMS.Name = "checkBoxShowOnlyMS";
+			this.checkBoxShowOnlyMS.Size = new System.Drawing.Size(47, 17);
+			this.checkBoxShowOnlyMS.TabIndex = 3;
+			this.checkBoxShowOnlyMS.Text = "Only";
+			this.checkBoxShowOnlyMS.UseVisualStyleBackColor = true;
+			// 
 			// panelOutput
 			// 
 			this.panelOutput.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
@@ -103,24 +139,14 @@
 			this.panelOutput.MouseMove += new System.Windows.Forms.MouseEventHandler(this.panelOutput_MouseMove);
 			this.panelOutput.MouseUp += new System.Windows.Forms.MouseEventHandler(this.panelOutput_MouseUp);
 			// 
-			// floatTrackbarControlParm
-			// 
-			this.floatTrackbarControlParm.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-			this.floatTrackbarControlParm.Location = new System.Drawing.Point(1020, 87);
-			this.floatTrackbarControlParm.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.floatTrackbarControlParm.MinimumSize = new System.Drawing.Size(70, 20);
-			this.floatTrackbarControlParm.Name = "floatTrackbarControlParm";
-			this.floatTrackbarControlParm.Size = new System.Drawing.Size(200, 20);
-			this.floatTrackbarControlParm.TabIndex = 1;
-			this.floatTrackbarControlParm.Value = 0F;
-			this.floatTrackbarControlParm.VisibleRangeMax = 1F;
-			// 
 			// ShaderToyForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1232, 666);
 			this.Controls.Add(this.checkBoxSmoothStep);
+			this.Controls.Add(this.checkBoxShowOnlyMS);
+			this.Controls.Add(this.checkBoxShowOrder3);
 			this.Controls.Add(this.checkBoxShowWeights);
 			this.Controls.Add(this.buttonReload);
 			this.Controls.Add(this.floatTrackbarControlParm);
@@ -144,6 +170,8 @@
 		private System.Windows.Forms.CheckBox checkBoxShowWeights;
 		private System.Windows.Forms.CheckBox checkBoxSmoothStep;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlParm;
+		private System.Windows.Forms.CheckBox checkBoxShowOrder3;
+		private System.Windows.Forms.CheckBox checkBoxShowOnlyMS;
 	}
 }
 

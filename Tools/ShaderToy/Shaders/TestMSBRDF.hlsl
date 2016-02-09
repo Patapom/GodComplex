@@ -205,55 +205,74 @@ float	Smith_GGX( float _dot, float _alpha2 ) {
 }
 	
 
-// Finally, our long awaited diffuse lobe for 2nd scattering order
+// Finally, our long awaited diffuse lobe for 2nd and 3rd scattering orders!
 //  
-// After fitting each parameter one after another, we noticed that:
-// 	\[Bullet] Incident light angle \[Theta] has no effect on fitted lobe, assuming we ignore the backscattering that is visible at highly grazing angles and that would be better fitted using maybe a GGX lobe that features a nice backscatter property.
-// 	\[Bullet] Final masking importance m is 0 after all
-// 	\[Bullet] There is only a dependency on albedo \[Rho] for the scale factor (that was expected) and it is proportional to \[Rho]^2 which was also expected.
-// 	
-// Finally, we obtain the following analytical model for 2nd order scattering of a rough diffuse surface:
-// 
-// 	f(Subscript[\[Omega], o],\[Alpha],\[Rho]) = \[Sigma](\[Rho]) \[Mu]^\[Eta](\[Alpha])
-// 	
-// 	\[Mu] = Subscript[\[Omega], o]\[CenterDot]Z
-// 	\[Sigma](\[Alpha], \[Rho]) = k(\[Rho]) [0.587595 +0.128391 (1-\[Alpha])+0.320232 (1-\[Alpha])^2-1.04001 (1-\[Alpha])^3]	the fitted scale factor with a dependency on albedo and roughness
-// 	\[Eta](\[Alpha]) = 0.7782894918463 + 0.1683172467667511 \[Alpha]						the fitted exponent with a dependency on roughness alone
-// 	k(\[Rho]) = 1-2(1-\[Rho])+(1-\[Rho])^2										the factor applied to scale depending on \[Rho] and, most importantly, \[Rho]^2, that will give use the expected color saturation
-// 	
-// The flattening factor along the main lobe direction Z is the most expensive to compute:
-// 	a(\[Alpha]) = 0.697462  - 0.479278 (1-\[Alpha])
-// 	b(\[Alpha]) = 0.287646  - 0.293594 (1-\[Alpha])
-// 	c(\[Alpha]) = 5.69744  + 6.61321 (1-\[Alpha])
-// 	Subscript[\[Sigma], n](\[Mu], \[Alpha]) = a(\[Alpha]) + b(\[Alpha]) e^(-c(\[Alpha])  \[Mu])
-// 
-// An alternate model is possible using a power of 2:
-// 	c^\[Prime](\[Alpha]) = 8.21968  + 9.54087 (1-\[Alpha])
-// 	Subscript[\[Sigma], n]^\[Prime](\[Mu], \[Alpha]) = a(\[Alpha]) + b(\[Alpha]) 2^(-c^\[Prime](\[Alpha])  \[Mu])
-// 	
-// So the world-space intensity of the fitted lobe is obtained by multiplying the lobe-space intensity with the scale factor:
-// 
-// 	Subscript[f, w](Subscript[\[Omega], o],\[Alpha],\[Rho]) = L(\[Mu],Subscript[\[Sigma], n](\[Mu], \[Alpha])) f(Subscript[\[Omega], o],\[Alpha],\[Rho])
-// 	
-// 	L(\[Mu], Subscript[\[Sigma], n](\[Mu], \[Alpha])) = 1/Sqrt[1+\[Mu]^2 (1/Subscript[\[Sigma], n](\[Mu],\[Alpha])^2-1)]
-// 	
+// Resulting Model
+//	
+//	After fitting each parameter one after another, we noticed that:
+//		\[Bullet] Incident light angle \[Theta] has no effect on fitted lobe, assuming we ignore the backscattering that is visible at highly grazing angles and that would be better fitted using maybe a GGX lobe that features a nice backscatter property.
+//		\[Bullet] Final masking importance m is 0 after all
+//		\[Bullet] There is only a dependency on albedo \[Rho] for the scale factor (that was expected) and it is proportional to \[Rho]^2 which was also expected.
+//		
+//	Finally, we obtain the following analytical model for 2nd order scattering of a rough diffuse surface:
+//	
+//		Subscript[f, 2](Subscript[\[Omega], o],\[Alpha],\[Rho]) = Subscript[\[Sigma], 2](\[Rho]) \[Mu]^\[Eta](\[Alpha])
+//		
+//		\[Mu] = Subscript[\[Omega], o]\[CenterDot]Z
+//		\[Eta](\[Alpha]) = 0.7782894918463 + 0.1683172467667511 \[Alpha]		the fitted exponent with a dependency on roughness alone
+//		Subscript[\[Sigma], 2]( \[Alpha], \[Rho] ) = k(\[Rho]) [2.32484 \[Alpha]-2.75021 \[Alpha]^2+1.01261 \[Alpha]^3]	the fitted scale factor with a dependency on albedo and roughness
+//		Subscript[k, 2](\[Rho]) = \[Rho]^2								the factor applied to scale that will give use the expected color saturation
+//		
+//	The flattening factor along the main lobe direction Z is the most expensive to compute:
+//		a(\[Alpha]) = 0.697462  - 0.479278 (1-\[Alpha])
+//		b(\[Alpha]) = 0.287646  - 0.293594 (1-\[Alpha])
+//		c(\[Alpha]) = 5.69744  + 6.61321 (1-\[Alpha])
+//		Subscript[\[Sigma], n](\[Mu], \[Alpha]) = a(\[Alpha]) + b(\[Alpha]) e^(-c(\[Alpha])  \[Mu])
+//	
+//	An alternate model is possible using a power of 2:
+//		c^\[Prime](\[Alpha]) = 8.21968  + 9.54087 (1-\[Alpha])
+//		Subscript[\[Sigma], n]^\[Prime](\[Mu], \[Alpha]) = a(\[Alpha]) + b(\[Alpha]) 2^(-c^\[Prime](\[Alpha])  \[Mu])
+//		
+//	So the world-space intensity of the fitted lobe is obtained by multiplying the lobe-space intensity with the scale factor:
+//	
+//		Subscript[f, w](Subscript[\[Omega], o],\[Alpha],\[Rho]) = L(\[Mu],Subscript[\[Sigma], n](\[Mu], \[Alpha])) Subscript[f, 2](Subscript[\[Omega], o],\[Alpha],\[Rho])
+//		
+//		L(\[Mu], Subscript[\[Sigma], n](\[Mu], \[Alpha])) = 1/Sqrt[1+\[Mu]^2 (1/Subscript[\[Sigma], n](\[Mu],\[Alpha])^2-1)]
+//	
+//	
+//	Additional Scaling for 3rd Order Lobes
+//	
+//	Using the same analytical model for 3rd order scattering lobes but letting the \[Sigma] parameter free for new evaluation, we obtain a pretty good fit for a new Subscript[\[Sigma], 3](\[Alpha], \[Rho])
+//	
+//		Subscript[\[Sigma], 3](\[Alpha], \[Rho]) = Subscript[k, 3](\[Rho]) [-0.00602406+0.252628 \[Alpha]+0.390207 \[Alpha]^2-0.382049 \[Alpha]^3]	the fitted scale factor with a dependency on albedo and roughness
+//		Subscript[k, 3](\[Rho]) = \[Rho]^3											the factor applied to scale that will give use the expected color saturation
+//		
+//	
 //
 float3	ComputeDiffuseModel( float3 _wsOutgoingDirection, float _roughness, float3 _albedo ) {
-	_albedo = 1.0 - _albedo;
 	float	gloss = 1.0 - _roughness;
 
 	float	cosTheta = saturate( _wsOutgoingDirection.z );
 
 	// Compute sigma, the global scale factor
-	float3	k = 1.0 + _albedo * (-2.0 + _albedo);
-	float3	sigma = 0.587595 + gloss * (0.128391 + gloss * (0.320232 - 1.04001 * gloss));
-			sigma *= k;	// Dependence on albedo²
+	float3	k2 = _albedo*_albedo;	// Dependence on albedo²
+	float3	sigma2 = _roughness * (2.324842464398671 + _roughness * (-2.7502131990906116 + _roughness * 1.012605093077086));
+			sigma2 *= k2;
+
+	float3	k3 = _albedo*_albedo*_albedo;	// Dependence on albedo^3
+	float3	sigma3 = _roughness * (0.25262765805538445 + _roughness * (0.3902065605355212 - _roughness * 0.3820487315212411));
+			sigma3 *= k3;
+
+//sigma2 *= 0;
+
+	if ( (_DebugFlags & 4) == 0 )
+		sigma3 = 0;	// Don't use the 3rd order term
 
 	// Compute lobe exponent
 	float	eta = 0.7782894918463 + 0.1683172467667511 * _roughness;
 
 	// Compute unscaled lobe intensity
-	float3	intensity = sigma * pow( cosTheta, eta );
+	float3	intensity = (sigma2 + sigma3) * pow( cosTheta, eta );
 
 	// Compute flattening
 	float3	abc = float3(	0.697462 - 0.479278 * gloss,
@@ -346,6 +365,13 @@ float3	ComputeLighting( float3 _pos, float3 _normal, float3 _view, out float3 _f
 	float3	specularBRDF = _fresnel * Smith * GGX / (1e-6 + 4.0 * LdotN * VdotN);
 	float3	specularTerm = specularBRDF * LdotN * shadow * lightColor;
 
+	// Compute ambient term
+	float3	ambientTerm = GetSkyColor( _normal );
+			ambientTerm *= (albedo / PI);
+			ambientTerm *= 1.0;
+			ambientTerm *= AO( _pos, _normal, 20.0, 0.1 );
+//			ambientTerm *= 1.0 - _fresnel;	// Should be diffuse fresnel
+
 	// Compute diffuse term
 	float3	diffuseBRDF = (1-_fresnel) * (albedo / PI);
 	float3	diffuseTerm = diffuseBRDF * LdotN * shadow * lightColor;
@@ -362,15 +388,14 @@ float3	ComputeLighting( float3 _pos, float3 _normal, float3 _view, out float3 _f
 //				shadow2 *= saturate( 0.2 + 0.8 * dot( light, _normal ) );	// Larger L.N, eating into the backfaces
 				shadow2 *= LdotN;
 
+if ( _DebugFlags & 8 ) {
+	ambientTerm = 0.0;
+	diffuseTerm = 0.0;
+	specularTerm = 0.0;
+}
+
 		diffuseTerm += (ComputeDiffuseModel( _view, roughness, albedo ) / PI) * shadow2 * lightColor;
 	}
-
-	// Compute ambient term
-	float3	ambientTerm = GetSkyColor( _normal );
-			ambientTerm *= (albedo / PI);
-			ambientTerm *= 1.0;
-			ambientTerm *= AO( _pos, _normal, 20.0, 0.1 );
-//			ambientTerm *= 1.0 - _fresnel;	// Should be diffuse fresnel
 
 //return HdotN;
 //return 1-FresnelAccurate( IOR, HdotN );
@@ -382,7 +407,7 @@ _fresnel *= pow2( 1-roughness );
 	return ambientTerm + diffuseTerm + specularTerm;
 }
 
-float3	Shader( float2 _UV ) {
+float3	Shader( float2 _UV, bool _useModel ) {
 	float	AspectRatio = iResolution.x / iResolution.y;
 	float	pixelRadius = 2.0 * SQRT2 * TAN_HALF_FOV / iResolution.y;
 	float3	csView = normalize( float3( AspectRatio * TAN_HALF_FOV * (2.0 * _UV.x - 1.0), TAN_HALF_FOV * (1.0 - 2.0 * _UV.y), 1.0 ) );
@@ -391,7 +416,7 @@ float3	Shader( float2 _UV ) {
 
 	float3	color = 0.0;
 
-	bool	useModel = (_DebugFlags & 2) && _UV.x > _MousePosition.x;
+	bool	useModel = _useModel && _UV.x > _MousePosition.x;
 
 	float3	fresnel = 0.0;
 	uint	materialID;
@@ -426,7 +451,16 @@ color = Lighting;
 
 float3	PS( VS_IN _In ) : SV_TARGET0 {
 	float2	UV = _In.__Position.xy / iResolution.xy;
-	float3	Color = Shader( UV );
+	float3	Color = Shader( UV, (_DebugFlags & 2) );
+
+/*if ( (_DebugFlags & 4) ) {
+	float3	colorWithout = Shader( UV, false );
+//	Color -= colorWithout;
+//	Color = (Color - colorWithout) / max( 1e-6, colorWithout );
+	Color = (Color - colorWithout) / 8.0;
+}*/
+
+
 //if ( any(Color < 0.0) ) Color = float3( 1, 0, 1 );
 	
 Color = pow( max( 0.0, Color ), 1.0 / 2.2 );	// Gamma-correct

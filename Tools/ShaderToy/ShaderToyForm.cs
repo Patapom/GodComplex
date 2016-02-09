@@ -470,7 +470,7 @@ namespace ShaderToy
 				m_CB_Main.m.iResolution = new float3( panelOutput.Width, panelOutput.Height, 0 );
 				m_CB_Main.m.iGlobalTime = m_CurrentGameTime - m_StartGameTime;
 				m_CB_Main.m._WeightMultiplier = floatTrackbarControlWeightMultiplier.Value;
-				m_CB_Main.m._ShowWeights = (uint) ((checkBoxShowWeights.Checked ? 1 : 0) | (checkBoxSmoothStep.Checked ? 2 : 0));
+				m_CB_Main.m._ShowWeights = (uint) ((checkBoxShowWeights.Checked ? 1 : 0) | (checkBoxSmoothStep.Checked ? 2 : 0) | (checkBoxShowOrder3.Checked ? 4 : 0) | (checkBoxShowOnlyMS.Checked ? 8 : 0));
 				m_CB_Main.m._DebugParm = floatTrackbarControlParm.Value;
 				m_CB_Main.UpdateData();
 

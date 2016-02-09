@@ -161,7 +161,7 @@ void	CS_Conductor( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPT
 
 	[loop]
 	[fastopt]
-	for ( ; scatteringIndex < 4; scatteringIndex++ ) {
+	for ( ; scatteringIndex < 5; scatteringIndex++ ) {
 		hitPosition = RayTrace( position, direction, normal, true );
 		if ( hitPosition.w > 1e3 )
 			break;	// The ray escaped the surface!
@@ -210,7 +210,8 @@ void	CS_Conductor( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPT
 //direction = normal;
 //direction = hitPosition.xyz;
 
-	_Tex_OutgoingDirections_Reflected[uint3( pixelPosition, scatteringIndex-1 )] = float4( direction, weight );	// Don't accumulate! This is done by the histogram generation!
+	if ( scatteringIndex <= 4 )
+		_Tex_OutgoingDirections_Reflected[uint3( pixelPosition, scatteringIndex-1 )] = float4( direction, weight );	// Don't accumulate! This is done by the histogram generation!
 }
 
 
@@ -262,7 +263,7 @@ void	CS_Dielectric( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUP
 
 	[loop]
 	[fastopt]
-	for ( ; scatteringIndex < 4; scatteringIndex++ ) {
+	for ( ; scatteringIndex < 5; scatteringIndex++ ) {
 		hitPosition = RayTrace( position, direction, normal, weight >= 0.0 );
 		if ( hitPosition.w > 1e3 )
 			break;	// The ray escaped the surface!
@@ -304,10 +305,12 @@ void	CS_Dielectric( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUP
 									// For example, we could have a downward direction in the upper lobe, or an upward direction in the lower lobe...
 
 	// Don't accumulate! This is done by the histogram generation!
-	if ( weight >= 0.0 )
-		_Tex_OutgoingDirections_Reflected[uint3( pixelPosition, scatteringIndex-1 )] = float4( direction, weight );
-	else
-		_Tex_OutgoingDirections_Transmitted[uint3( pixelPosition, scatteringIndex-1 )] = float4( direction.xy, -direction.z, -weight );
+	if ( scatteringIndex <= 4 ) {
+		if ( weight >= 0.0 )
+			_Tex_OutgoingDirections_Reflected[uint3( pixelPosition, scatteringIndex-1 )] = float4( direction, weight );
+		else
+			_Tex_OutgoingDirections_Transmitted[uint3( pixelPosition, scatteringIndex-1 )] = float4( direction.xy, -direction.z, -weight );
+	}
 }
 
 
@@ -338,7 +341,7 @@ void	CS_Diffuse( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHR
 
 	[loop]
 	[fastopt]
-	for ( ; scatteringIndex < 4; scatteringIndex++ ) {
+	for ( ; scatteringIndex < 5; scatteringIndex++ ) {
 		hitPosition = RayTrace( position, direction, normal, true );
 		if ( hitPosition.w > 1e3 )
 			break;	// The ray escaped the surface!
@@ -386,5 +389,6 @@ void	CS_Diffuse( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHR
 		random2 = float4( random2.zw, rand( random2.z ), rand( random2.w ) );
 	}
 
-	_Tex_OutgoingDirections_Reflected[uint3( pixelPosition, scatteringIndex-1 )] = float4( direction, weight );	// Don't accumulate! This is done by the histogram generation!
+	if ( scatteringIndex <= 4 )
+		_Tex_OutgoingDirections_Reflected[uint3( pixelPosition, scatteringIndex-1 )] = float4( direction, weight );	// Don't accumulate! This is done by the histogram generation!
 }

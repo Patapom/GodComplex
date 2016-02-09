@@ -112,6 +112,7 @@
 			this.label28 = new System.Windows.Forms.Label();
 			this.panel7 = new System.Windows.Forms.Panel();
 			this.radioButtonInitScale_CoMFactor = new System.Windows.Forms.RadioButton();
+			this.radioButtonInitScale_Analytical = new System.Windows.Forms.RadioButton();
 			this.radioButtonInitScale_Fixed = new System.Windows.Forms.RadioButton();
 			this.radioButtonInitScale_NoChange = new System.Windows.Forms.RadioButton();
 			this.floatTrackbarControlInit_FixedScale = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
@@ -172,7 +173,7 @@
 			this.integerTrackbarControlThreadsCount = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
 			this.label31 = new System.Windows.Forms.Label();
 			this.completionArrayControl = new TestMSBSDF.CompletionArrayControl();
-			this.radioButtonInitScale_Analytical = new System.Windows.Forms.RadioButton();
+			this.radioButtonInitRoughness_Analytical = new System.Windows.Forms.RadioButton();
 			this.groupBoxSimulationParameters.SuspendLayout();
 			this.panel6.SuspendLayout();
 			this.panel5.SuspendLayout();
@@ -803,16 +804,16 @@
 			this.groupBoxLobeFitterConfig.Controls.Add(this.integerTrackbarControlMaxIterations);
 			this.groupBoxLobeFitterConfig.Controls.Add(this.floatTrackbarControlGradientTolerance);
 			this.groupBoxLobeFitterConfig.Controls.Add(this.floatTrackbarControlGoalTolerance);
-			this.groupBoxLobeFitterConfig.Location = new System.Drawing.Point(622, 584);
+			this.groupBoxLobeFitterConfig.Location = new System.Drawing.Point(622, 601);
 			this.groupBoxLobeFitterConfig.Name = "groupBoxLobeFitterConfig";
-			this.groupBoxLobeFitterConfig.Size = new System.Drawing.Size(395, 169);
+			this.groupBoxLobeFitterConfig.Size = new System.Drawing.Size(395, 152);
 			this.groupBoxLobeFitterConfig.TabIndex = 2;
 			this.groupBoxLobeFitterConfig.TabStop = false;
 			this.groupBoxLobeFitterConfig.Text = "Lobe Fitter Configuration";
 			// 
 			// floatTrackbarControlFitOversize
 			// 
-			this.floatTrackbarControlFitOversize.Location = new System.Drawing.Point(145, 132);
+			this.floatTrackbarControlFitOversize.Location = new System.Drawing.Point(146, 122);
 			this.floatTrackbarControlFitOversize.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlFitOversize.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlFitOversize.Name = "floatTrackbarControlFitOversize";
@@ -828,7 +829,7 @@
 			// label26
 			// 
 			this.label26.AutoSize = true;
-			this.label26.Location = new System.Drawing.Point(6, 137);
+			this.label26.Location = new System.Drawing.Point(7, 127);
 			this.label26.Name = "label26";
 			this.label26.Size = new System.Drawing.Size(112, 13);
 			this.label26.TabIndex = 6;
@@ -837,7 +838,7 @@
 			// label23
 			// 
 			this.label23.AutoSize = true;
-			this.label23.Location = new System.Drawing.Point(6, 84);
+			this.label23.Location = new System.Drawing.Point(7, 74);
 			this.label23.Name = "label23";
 			this.label23.Size = new System.Drawing.Size(133, 13);
 			this.label23.TabIndex = 1;
@@ -846,7 +847,7 @@
 			// label19
 			// 
 			this.label19.AutoSize = true;
-			this.label19.Location = new System.Drawing.Point(6, 58);
+			this.label19.Location = new System.Drawing.Point(7, 48);
 			this.label19.Name = "label19";
 			this.label19.Size = new System.Drawing.Size(115, 13);
 			this.label19.TabIndex = 1;
@@ -854,7 +855,7 @@
 			// 
 			// integerTrackbarControlRetries
 			// 
-			this.integerTrackbarControlRetries.Location = new System.Drawing.Point(211, 106);
+			this.integerTrackbarControlRetries.Location = new System.Drawing.Point(212, 96);
 			this.integerTrackbarControlRetries.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.integerTrackbarControlRetries.MinimumSize = new System.Drawing.Size(70, 20);
 			this.integerTrackbarControlRetries.Name = "integerTrackbarControlRetries";
@@ -868,7 +869,7 @@
 			// 
 			// label24
 			// 
-			this.label24.Location = new System.Drawing.Point(6, 109);
+			this.label24.Location = new System.Drawing.Point(7, 99);
 			this.label24.Name = "label24";
 			this.label24.Size = new System.Drawing.Size(209, 17);
 			this.label24.TabIndex = 1;
@@ -886,7 +887,7 @@
 			// label18
 			// 
 			this.label18.AutoSize = true;
-			this.label18.Location = new System.Drawing.Point(6, 33);
+			this.label18.Location = new System.Drawing.Point(7, 23);
 			this.label18.Name = "label18";
 			this.label18.Size = new System.Drawing.Size(97, 13);
 			this.label18.TabIndex = 1;
@@ -894,7 +895,7 @@
 			// 
 			// integerTrackbarControlMaxIterations
 			// 
-			this.integerTrackbarControlMaxIterations.Location = new System.Drawing.Point(145, 28);
+			this.integerTrackbarControlMaxIterations.Location = new System.Drawing.Point(146, 18);
 			this.integerTrackbarControlMaxIterations.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.integerTrackbarControlMaxIterations.MinimumSize = new System.Drawing.Size(70, 20);
 			this.integerTrackbarControlMaxIterations.Name = "integerTrackbarControlMaxIterations";
@@ -907,7 +908,7 @@
 			// 
 			// floatTrackbarControlGradientTolerance
 			// 
-			this.floatTrackbarControlGradientTolerance.Location = new System.Drawing.Point(145, 80);
+			this.floatTrackbarControlGradientTolerance.Location = new System.Drawing.Point(146, 70);
 			this.floatTrackbarControlGradientTolerance.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlGradientTolerance.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlGradientTolerance.Name = "floatTrackbarControlGradientTolerance";
@@ -922,7 +923,7 @@
 			// 
 			// floatTrackbarControlGoalTolerance
 			// 
-			this.floatTrackbarControlGoalTolerance.Location = new System.Drawing.Point(145, 54);
+			this.floatTrackbarControlGoalTolerance.Location = new System.Drawing.Point(146, 44);
 			this.floatTrackbarControlGoalTolerance.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlGoalTolerance.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlGoalTolerance.Name = "floatTrackbarControlGoalTolerance";
@@ -956,7 +957,7 @@
 			this.groupBoxAnalyticalLobeModel.Controls.Add(this.panel2);
 			this.groupBoxAnalyticalLobeModel.Location = new System.Drawing.Point(622, 4);
 			this.groupBoxAnalyticalLobeModel.Name = "groupBoxAnalyticalLobeModel";
-			this.groupBoxAnalyticalLobeModel.Size = new System.Drawing.Size(395, 574);
+			this.groupBoxAnalyticalLobeModel.Size = new System.Drawing.Size(395, 591);
 			this.groupBoxAnalyticalLobeModel.TabIndex = 0;
 			this.groupBoxAnalyticalLobeModel.TabStop = false;
 			this.groupBoxAnalyticalLobeModel.Text = "Analytical Lobe Model";
@@ -971,7 +972,7 @@
 			this.groupBoxCustomInitialGuesses.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
 			this.groupBoxCustomInitialGuesses.Location = new System.Drawing.Point(6, 52);
 			this.groupBoxCustomInitialGuesses.Name = "groupBoxCustomInitialGuesses";
-			this.groupBoxCustomInitialGuesses.Size = new System.Drawing.Size(377, 516);
+			this.groupBoxCustomInitialGuesses.Size = new System.Drawing.Size(377, 539);
 			this.groupBoxCustomInitialGuesses.TabIndex = 2;
 			this.groupBoxCustomInitialGuesses.TabStop = false;
 			this.groupBoxCustomInitialGuesses.Text = "Initial Guesses for Parameters";
@@ -986,7 +987,7 @@
 			this.panel9.Controls.Add(this.checkBoxInitMasking_Inherit);
 			this.panel9.Controls.Add(this.floatTrackbarControlInit_CustomMaskingImportance);
 			this.panel9.Controls.Add(this.label8);
-			this.panel9.Location = new System.Drawing.Point(3, 439);
+			this.panel9.Location = new System.Drawing.Point(3, 464);
 			this.panel9.Name = "panel9";
 			this.panel9.Size = new System.Drawing.Size(355, 71);
 			this.panel9.TabIndex = 9;
@@ -1101,7 +1102,7 @@
 			this.panel8.Controls.Add(this.checkBoxInitFlatten_Inherit);
 			this.panel8.Controls.Add(this.floatTrackbarControlInit_CustomFlatten);
 			this.panel8.Controls.Add(this.label28);
-			this.panel8.Location = new System.Drawing.Point(3, 338);
+			this.panel8.Location = new System.Drawing.Point(3, 363);
 			this.panel8.Name = "panel8";
 			this.panel8.Size = new System.Drawing.Size(353, 95);
 			this.panel8.TabIndex = 8;
@@ -1228,7 +1229,7 @@
 			this.panel7.Controls.Add(this.checkBoxInitScale_InheritLeft);
 			this.panel7.Controls.Add(this.checkBoxInitScale_Inherit);
 			this.panel7.Controls.Add(this.label27);
-			this.panel7.Location = new System.Drawing.Point(3, 214);
+			this.panel7.Location = new System.Drawing.Point(3, 239);
 			this.panel7.Name = "panel7";
 			this.panel7.Size = new System.Drawing.Size(353, 118);
 			this.panel7.TabIndex = 7;
@@ -1245,6 +1246,17 @@
 			this.radioButtonInitScale_CoMFactor.Text = "Factor of Center of Mass Vector\'s Length";
 			this.radioButtonInitScale_CoMFactor.UseVisualStyleBackColor = true;
 			this.radioButtonInitScale_CoMFactor.CheckedChanged += new System.EventHandler(this.radioButtonInitScale_CheckedChanged);
+			// 
+			// radioButtonInitScale_Analytical
+			// 
+			this.radioButtonInitScale_Analytical.AutoSize = true;
+			this.radioButtonInitScale_Analytical.Location = new System.Drawing.Point(102, 93);
+			this.radioButtonInitScale_Analytical.Name = "radioButtonInitScale_Analytical";
+			this.radioButtonInitScale_Analytical.Size = new System.Drawing.Size(146, 17);
+			this.radioButtonInitScale_Analytical.TabIndex = 0;
+			this.radioButtonInitScale_Analytical.Text = "Use Analytical Expression";
+			this.radioButtonInitScale_Analytical.UseVisualStyleBackColor = true;
+			this.radioButtonInitScale_Analytical.CheckedChanged += new System.EventHandler(this.radioButtonInitScale_CheckedChanged);
 			// 
 			// radioButtonInitScale_Fixed
 			// 
@@ -1453,6 +1465,7 @@
 			// panel3
 			// 
 			this.panel3.Controls.Add(this.floatTrackbarControlInit_CustomRoughness);
+			this.panel3.Controls.Add(this.radioButtonInitRoughness_Analytical);
 			this.panel3.Controls.Add(this.radioButtonInitRoughness_Fixed);
 			this.panel3.Controls.Add(this.radioButtonInitRoughness_NoChange);
 			this.panel3.Controls.Add(this.radioButtonInitRoughness_UseSurface);
@@ -1463,7 +1476,7 @@
 			this.panel3.Controls.Add(this.label9);
 			this.panel3.Location = new System.Drawing.Point(3, 112);
 			this.panel3.Name = "panel3";
-			this.panel3.Size = new System.Drawing.Size(356, 96);
+			this.panel3.Size = new System.Drawing.Size(356, 121);
 			this.panel3.TabIndex = 5;
 			// 
 			// floatTrackbarControlInit_CustomRoughness
@@ -1881,16 +1894,16 @@
 			this.completionArrayControl.SelectionChanged += new TestMSBSDF.CompletionArrayControl.SelectionChangedEventHandler(this.completionArrayControl_SelectionChanged);
 			this.completionArrayControl.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.completionArrayControl_MouseDoubleClick);
 			// 
-			// radioButtonInitScale_Analytical
+			// radioButtonInitRoughness_Analytical
 			// 
-			this.radioButtonInitScale_Analytical.AutoSize = true;
-			this.radioButtonInitScale_Analytical.Location = new System.Drawing.Point(102, 93);
-			this.radioButtonInitScale_Analytical.Name = "radioButtonInitScale_Analytical";
-			this.radioButtonInitScale_Analytical.Size = new System.Drawing.Size(146, 17);
-			this.radioButtonInitScale_Analytical.TabIndex = 0;
-			this.radioButtonInitScale_Analytical.Text = "Use Analytical Expression";
-			this.radioButtonInitScale_Analytical.UseVisualStyleBackColor = true;
-			this.radioButtonInitScale_Analytical.CheckedChanged += new System.EventHandler(this.radioButtonInitScale_CheckedChanged);
+			this.radioButtonInitRoughness_Analytical.AutoSize = true;
+			this.radioButtonInitRoughness_Analytical.Location = new System.Drawing.Point(105, 95);
+			this.radioButtonInitRoughness_Analytical.Name = "radioButtonInitRoughness_Analytical";
+			this.radioButtonInitRoughness_Analytical.Size = new System.Drawing.Size(146, 17);
+			this.radioButtonInitRoughness_Analytical.TabIndex = 0;
+			this.radioButtonInitRoughness_Analytical.Text = "Use Analytical Expression";
+			this.radioButtonInitRoughness_Analytical.UseVisualStyleBackColor = true;
+			this.radioButtonInitRoughness_Analytical.CheckedChanged += new System.EventHandler(this.radioButtonInitRoughness_CheckedChanged);
 			// 
 			// AutomationForm
 			// 
@@ -2092,5 +2105,6 @@
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlInit_FixedDirection;
 		private System.Windows.Forms.RadioButton radioButtonInitFlatten_Analytical;
 		private System.Windows.Forms.RadioButton radioButtonInitScale_Analytical;
+		private System.Windows.Forms.RadioButton radioButtonInitRoughness_Analytical;
 	}
 }

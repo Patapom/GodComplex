@@ -86,6 +86,82 @@ float	PhongG1( float _cosTheta, float _roughness ) {
 	return a < 1.6 ? (3.535 * a + 2.181 * a*a) / (1.0 + 2.276 * a + 2.577 * a*a) : 1.0;
 }
 
+#if 1
+// Finally, our long awaited diffuse lobe for 2nd and 3rd scattering orders!
+//  
+// Resulting Model
+//	
+//	After fitting each parameter one after another, we noticed that:
+//		\[Bullet] Incident light angle \[Theta] has no effect on fitted lobe, assuming we ignore the backscattering that is visible at highly grazing angles and that would be better fitted using maybe a GGX lobe that features a nice backscatter property.
+//		\[Bullet] Final masking importance m is 0 after all
+//		\[Bullet] There is only a dependency on albedo \[Rho] for the scale factor (that was expected) and it is proportional to \[Rho]^2 which was also expected.
+//		
+//	Finally, we obtain the following analytical model for 2nd order scattering of a rough diffuse surface:
+//	
+//		Subscript[f, 2](Subscript[\[Omega], o],\[Alpha],\[Rho]) = Subscript[\[Sigma], 2](\[Rho]) \[Mu]^\[Eta](\[Alpha])
+//		
+//		\[Mu] = Subscript[\[Omega], o]\[CenterDot]Z
+//		\[Eta](\[Alpha]) = 0.7782894918463 + 0.1683172467667511 \[Alpha]		the fitted exponent with a dependency on roughness alone
+//		Subscript[\[Sigma], 2]( \[Alpha], \[Rho] ) = k(\[Rho]) [2.32484 \[Alpha]-2.75021 \[Alpha]^2+1.01261 \[Alpha]^3]	the fitted scale factor with a dependency on albedo and roughness
+//		Subscript[k, 2](\[Rho]) = \[Rho]^2								the factor applied to scale that will give use the expected color saturation
+//		
+//	The flattening factor along the main lobe direction Z is the most expensive to compute:
+//		a(\[Alpha]) = 0.697462  - 0.479278 (1-\[Alpha])
+//		b(\[Alpha]) = 0.287646  - 0.293594 (1-\[Alpha])
+//		c(\[Alpha]) = 5.69744  + 6.61321 (1-\[Alpha])
+//		Subscript[\[Sigma], n](\[Mu], \[Alpha]) = a(\[Alpha]) + b(\[Alpha]) e^(-c(\[Alpha])  \[Mu])
+//	
+//	An alternate model is possible using a power of 2:
+//		c^\[Prime](\[Alpha]) = 8.21968  + 9.54087 (1-\[Alpha])
+//		Subscript[\[Sigma], n]^\[Prime](\[Mu], \[Alpha]) = a(\[Alpha]) + b(\[Alpha]) 2^(-c^\[Prime](\[Alpha])  \[Mu])
+//		
+//	So the world-space intensity of the fitted lobe is obtained by multiplying the lobe-space intensity with the scale factor:
+//	
+//		Subscript[f, w](Subscript[\[Omega], o],\[Alpha],\[Rho]) = L(\[Mu],Subscript[\[Sigma], n](\[Mu], \[Alpha])) Subscript[f, 2](Subscript[\[Omega], o],\[Alpha],\[Rho])
+//		
+//		L(\[Mu], Subscript[\[Sigma], n](\[Mu], \[Alpha])) = 1/Sqrt[1+\[Mu]^2 (1/Subscript[\[Sigma], n](\[Mu],\[Alpha])^2-1)]
+//	
+//	
+//	Additional Scaling for 3rd Order Lobes
+//	
+//	Using the same analytical model for 3rd order scattering lobes but letting the \[Sigma] parameter free for new evaluation, we obtain a pretty good fit for a new Subscript[\[Sigma], 3](\[Alpha], \[Rho])
+//	
+//		Subscript[\[Sigma], 3](\[Alpha], \[Rho]) = Subscript[k, 3](\[Rho]) [-0.00602406+0.252628 \[Alpha]+0.390207 \[Alpha]^2-0.382049 \[Alpha]^3]	the fitted scale factor with a dependency on albedo and roughness
+//		Subscript[k, 3](\[Rho]) = \[Rho]^3											the factor applied to scale that will give use the expected color saturation
+//		
+//	
+//
+float3	ComputeDiffuseModel( float3 _wsOutgoingDirection, float _roughness, float3 _albedo ) {
+	float	gloss = 1.0 - _roughness;
+
+	float	cosTheta = saturate( _wsOutgoingDirection.z );
+
+	// Compute sigma, the global scale factor
+	float3	sigma2 = _roughness * (2.324842464398671 + _roughness * (-2.7502131990906116 + _roughness * 1.012605093077086));
+			sigma2 *= _albedo*_albedo;	// Dependence on albedo²
+
+	float3	sigma3 = _roughness * (0.25262765805538445 + _roughness * (0.3902065605355212 - _roughness * 0.3820487315212411));
+			sigma3 *= _albedo*_albedo*_albedo;	// Dependence on albedo^3
+
+sigma2 *= _ScatteringOrder == 1 ? 1 : 0;
+sigma3 *= _ScatteringOrder == 2 ? 1 : 0;
+
+	// Compute lobe exponent
+	float	eta = 0.7782894918463 + 0.1683172467667511 * _roughness;
+
+	// Compute unscaled lobe intensity
+	float3	intensity = (sigma2 + sigma3) * pow( cosTheta, eta );
+
+	// Compute flattening
+	float3	abc = float3(	0.697462 - 0.479278 * gloss,
+							0.287646 - 0.293594 * gloss,
+							8.219680 + 9.540870 * gloss );
+	float	sigma_n = abc.x + abc.y * exp2( -abc.z * cosTheta );
+	float	L = rsqrt( 1.0 + cosTheta*cosTheta * (1.0 / pow2( sigma_n ) - 1.0)  );
+
+	return  L * intensity;
+}
+#else
 // Finally, our long awaited diffuse lobe for 2nd scattering order
 //  
 // After fitting each parameter one after another, we noticed that:
@@ -145,8 +221,7 @@ float	ComputeDiffuseModel( float3 _wsOutgoingDirection, float _roughness, float 
 
 	return  L * intensity;
 }
-
-
+#endif
 
 PS_IN	VS( VS_IN _In ) {
 
@@ -195,7 +270,7 @@ PS_IN	VS( VS_IN _In ) {
 			// Diffuse Lobe Model
 			wsDirection = lsPosition;// normalize( lsPosition.x * wsTangent + lsPosition.y * wsBiTangent + lsPosition.z * wsReflectedDirection );	// No scaling for that model
 			wsScaledDirection = wsDirection;
-			lobeIntensity = ComputeDiffuseModel( wsDirection, _Roughness, _ScaleR );	// _ScaleR is the surface's albedo in this case
+			lobeIntensity = ComputeDiffuseModel( wsDirection, _Roughness, _ScaleR ).x;	// _ScaleR is the surface's albedo in this case
 			maskingShadowing = 1.0;	// No masking/shadowing
 			break;
 		default:

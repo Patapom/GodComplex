@@ -247,6 +247,19 @@ namespace TestMSBSDF
 						LockStateChanged();
 				}
 
+				/// <summary>
+				/// WARNING: Only use this when results are cleared otherwise the user can lose results!
+				/// </summary>
+				public void		Unlock() {
+					if ( !m_locked )
+						throw new Exception( "Surface is not locked!" );
+
+					m_locked = false;
+
+					if ( LockStateChanged != null )
+						LockStateChanged();
+				}
+
 				public void		Save( XmlElement _parent ) {
 					Attrib( _parent, "SurfaceType", m_type );
 					Attrib( _parent, "RayTraceIterations", m_rayTracingIterationsCount );
@@ -308,6 +321,7 @@ namespace TestMSBSDF
 					CUSTOM,
 					NO_CHANGE,				// Means no change from last computation
 					FIXED,					// Means constrained to specified value
+					ANALYTICAL,				// Means we use the analytical function we managed to fit with Mathematica so this parameter is not free anymore!
 				}
 
 				public enum GUESS_INITIAL_SCALE {
@@ -564,8 +578,14 @@ namespace TestMSBSDF
 							}
 						}
 
-						_lobe.SetConstraint( 1,	S.m_initialRoughness == Settings.GUESS_INITIAL_ROUGHNESS.FIXED ? S.m_fixedRoughness : 1e-4,
-												S.m_initialRoughness == Settings.GUESS_INITIAL_ROUGHNESS.FIXED ? S.m_fixedRoughness : 1.0 );
+						if ( S.m_initialRoughness == Settings.GUESS_INITIAL_ROUGHNESS.ANALYTICAL ) {
+							// We now have an analytical expression for the roughness parameter!
+							float	roughness = ComputeAnalyticalRoughnessParameter( _owner.SurfaceRoughness );
+							_lobe.SetConstraint( 1, roughness, roughness );
+						} else {
+							_lobe.SetConstraint( 1,	S.m_initialRoughness == Settings.GUESS_INITIAL_ROUGHNESS.FIXED ? S.m_fixedRoughness : 1e-4,
+													S.m_initialRoughness == Settings.GUESS_INITIAL_ROUGHNESS.FIXED ? S.m_fixedRoughness : 1.0 );
+						}
 
 
 						//////////////////////////////////////////////////////////////////////////
@@ -731,12 +751,12 @@ namespace TestMSBSDF
 						return (float) f;
 					}
 
-					float	ComputeAnalyticalRoughness( float _roughness ) {
+					float	ComputeAnalyticalRoughnessParameter( float _roughness ) {
 						// Here are the mathematica expressions giving us the lobe roughness parameter as a function of surface roughness:
 						// roughness[\[Alpha]_] = 0.9168937073335606 - 0.013091709358763996 \[Alpha]
 						//
-						double	exponent = 0.9168937073335606 - 0.013091709358763996 * _roughness;
-						return (float) exponent;
+						double	roughness = 0.9168937073335606 - 0.013091709358763996 * _roughness;
+						return (float) roughness;
 					}
 
 					float	ComputeAnalyticalExponent( float _roughness ) {
@@ -959,6 +979,7 @@ namespace TestMSBSDF
 								orderResults[X,Y,Z].Clear();
 							}
 				}
+				m_surface.Unlock();
 			}
 
 			public void		Save( XmlDocument _doc ) {
@@ -1541,14 +1562,7 @@ namespace TestMSBSDF
 			integerTrackbarControlParam1_Steps.Value = m_document.m_surface.m_roughness.StepsCount;
 			floatTrackbarControlParam2_Min.Value = m_document.m_surface.m_albedoF0.Min;
 			floatTrackbarControlParam2_Max.Value = m_document.m_surface.m_albedoF0.Max;
-			integerTrackbarControlViewAlbedoSlice.RangeMax = m_document.m_surface.m_albedoF0.StepsCount-1;
 			integerTrackbarControlParam2_Steps.Value = m_document.m_surface.m_albedoF0.StepsCount;
-			integerTrackbarControlScatteringOrder_Min.Value = m_document.m_surface.ScatteringOrderMin;
-			integerTrackbarControlScatteringOrder_Min.RangeMax = m_document.m_surface.ScatteringOrderMax;
-			integerTrackbarControlScatteringOrder_Max.Value = m_document.m_surface.ScatteringOrderMax;
-			integerTrackbarControlScatteringOrder_Max.RangeMin = m_document.m_surface.ScatteringOrderMin;
-			integerTrackbarControlViewScatteringOrder.RangeMin = m_document.m_surface.ScatteringOrderMin;
-			integerTrackbarControlViewScatteringOrder.RangeMax = m_document.m_surface.ScatteringOrderMax;
 			integerTrackbarControlRayCastingIterations.Value = m_document.m_surface.m_rayTracingIterationsCount;
 			checkBoxParam0_InclusiveStart.Checked = m_document.m_surface.m_incomingAngle.InclusiveMin;
 			checkBoxParam0_InclusiveEnd.Checked = m_document.m_surface.m_incomingAngle.InclusiveMax;
@@ -1556,6 +1570,22 @@ namespace TestMSBSDF
 			checkBoxParam1_InclusiveEnd.Checked = m_document.m_surface.m_roughness.InclusiveMax;
 			checkBoxParam2_InclusiveStart.Checked = m_document.m_surface.m_albedoF0.InclusiveMin;
 			checkBoxParam2_InclusiveEnd.Checked = m_document.m_surface.m_albedoF0.InclusiveMax;
+
+			// Update range sliders
+			integerTrackbarControlViewAlbedoSlice.RangeMax = m_document.m_surface.m_albedoF0.StepsCount - 1;
+			integerTrackbarControlViewAlbedoSlice.VisibleRangeMax = integerTrackbarControlViewAlbedoSlice.RangeMax;
+
+			integerTrackbarControlScatteringOrder_Min.RangeMax = m_document.m_surface.ScatteringOrderMax;	// Min scattering can't go higher than this
+			integerTrackbarControlScatteringOrder_Min.VisibleRangeMax = m_document.m_surface.ScatteringOrderMax;
+			integerTrackbarControlScatteringOrder_Min.Value = m_document.m_surface.ScatteringOrderMin;
+			integerTrackbarControlScatteringOrder_Max.RangeMin = m_document.m_surface.ScatteringOrderMin;	// Max scattering can't go lower than this
+			integerTrackbarControlScatteringOrder_Max.VisibleRangeMin = m_document.m_surface.ScatteringOrderMin;
+			integerTrackbarControlScatteringOrder_Max.Value = m_document.m_surface.ScatteringOrderMax;
+
+			integerTrackbarControlViewScatteringOrder.RangeMin = m_document.m_surface.ScatteringOrderMin;
+			integerTrackbarControlViewScatteringOrder.VisibleRangeMin = m_document.m_surface.ScatteringOrderMin;
+			integerTrackbarControlViewScatteringOrder.RangeMax = m_document.m_surface.ScatteringOrderMax;
+			integerTrackbarControlViewScatteringOrder.VisibleRangeMax = m_document.m_surface.ScatteringOrderMax;
 		}
 
 		/// <summary>
@@ -1581,6 +1611,7 @@ namespace TestMSBSDF
 				case Document.Settings.GUESS_INITIAL_ROUGHNESS.CUSTOM: radioButtonInitRoughness_Custom.Checked = true; break;
 				case Document.Settings.GUESS_INITIAL_ROUGHNESS.NO_CHANGE: radioButtonInitRoughness_NoChange.Checked = true; break;
 				case Document.Settings.GUESS_INITIAL_ROUGHNESS.FIXED: radioButtonInitRoughness_Fixed.Checked = true; break;
+				case Document.Settings.GUESS_INITIAL_ROUGHNESS.ANALYTICAL: radioButtonInitRoughness_Analytical.Checked = true; break;
 			}
 
 			switch ( m_document.m_settings.m_initialScale ) {
@@ -2336,7 +2367,8 @@ namespace TestMSBSDF
 			m_document.m_settings.m_initialRoughness = radioButtonInitRoughness_UseSurface.Checked ?	Document.Settings.GUESS_INITIAL_ROUGHNESS.SURFACE :
 													(radioButtonInitRoughness_Custom.Checked ?			Document.Settings.GUESS_INITIAL_ROUGHNESS.CUSTOM :
 													(radioButtonInitRoughness_NoChange.Checked ?		Document.Settings.GUESS_INITIAL_ROUGHNESS.NO_CHANGE :
-																										Document.Settings.GUESS_INITIAL_ROUGHNESS.FIXED));
+													(radioButtonInitRoughness_Fixed.Checked ?			Document.Settings.GUESS_INITIAL_ROUGHNESS.FIXED :
+																										Document.Settings.GUESS_INITIAL_ROUGHNESS.ANALYTICAL)));
 
 			floatTrackbarControlInit_CustomRoughness.Enabled = m_document.m_settings.m_initialRoughness == Document.Settings.GUESS_INITIAL_ROUGHNESS.CUSTOM;
 			floatTrackbarControlInit_FixedRoughness.Enabled = m_document.m_settings.m_initialRoughness == Document.Settings.GUESS_INITIAL_ROUGHNESS.FIXED;
@@ -2557,8 +2589,8 @@ namespace TestMSBSDF
 
 				integerTrackbarControlScatteringOrder_Max.RangeMin = m_document.m_surface.ScatteringOrderMin;	// Max scattering can't go lower than this
 				integerTrackbarControlScatteringOrder_Max.VisibleRangeMin = m_document.m_surface.ScatteringOrderMin;
-				integerTrackbarControlViewScatteringOrder.RangeMin = _Sender.Value;
-				integerTrackbarControlViewScatteringOrder.VisibleRangeMin = _Sender.Value;
+				integerTrackbarControlViewScatteringOrder.RangeMin = m_document.m_surface.ScatteringOrderMin;
+				integerTrackbarControlViewScatteringOrder.VisibleRangeMin = m_document.m_surface.ScatteringOrderMin;
 			}
 		}
 
@@ -2569,8 +2601,8 @@ namespace TestMSBSDF
 
 				integerTrackbarControlScatteringOrder_Min.RangeMax = m_document.m_surface.ScatteringOrderMax;	// Min scattering can't go higher than this
 				integerTrackbarControlScatteringOrder_Min.VisibleRangeMax = m_document.m_surface.ScatteringOrderMax;
-				integerTrackbarControlViewScatteringOrder.RangeMax = _Sender.Value;
-				integerTrackbarControlViewScatteringOrder.VisibleRangeMax = _Sender.Value;
+				integerTrackbarControlViewScatteringOrder.RangeMax = m_document.m_surface.ScatteringOrderMax;
+				integerTrackbarControlViewScatteringOrder.VisibleRangeMax = m_document.m_surface.ScatteringOrderMax;
 			}
 		}
 
