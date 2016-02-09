@@ -12,6 +12,43 @@ using System.IO;
 using RendererManaged;
 using Nuaj.Cirrus.Utility;
 
+
+/*
+Render analytical lobe:
+ 
+After fitting each parameter one after another, we noticed that:
+	\[Bullet] Incident light angle \[Theta] has no effect on fitted lobe, assuming we ignore the backscattering that is visible at highly grazing angles and that would be better fitted using maybe a GGX lobe that features a nice backscatter property.
+	\[Bullet] Final masking importance m is 0 after all
+	\[Bullet] There is only a dependency on albedo \[Rho] for the scale factor (that was expected) and it is proportional to \[Rho]^2 which was also expected.
+	
+Finally, we obtain the following analytical model for 2nd order scattering of a rough diffuse surface:
+
+	f(Subscript[\[Omega], o],\[Alpha],\[Rho]) = \[Sigma](\[Rho]) \[Mu]^\[Eta](\[Alpha])
+	
+	\[Mu] = Subscript[\[Omega], o]\[CenterDot]Z
+	\[Sigma](\[Alpha], \[Rho]) = k(\[Rho]) [0.587595 +0.128391 (1-\[Alpha])+0.320232 (1-\[Alpha])^2-1.04001 (1-\[Alpha])^3]	the fitted scale factor with a dependency on albedo and roughness
+	\[Eta](\[Alpha]) = 0.7782894918463 + 0.1683172467667511 \[Alpha]						the fitted exponent with a dependency on roughness alone
+	k(\[Rho]) = 1-2(1-\[Rho])+(1-\[Rho])^2										the factor applied to scale depending on \[Rho] and, most importantly, \[Rho]^2, that will give use the expected color saturation
+	
+The flattening factor along the main lobe direction Z is the most expensive to compute:
+	a(\[Alpha]) = 0.697462  - 0.479278 (1-\[Alpha])
+	b(\[Alpha]) = 0.287646  - 0.293594 (1-\[Alpha])
+	c(\[Alpha]) = 5.69744  + 6.61321 (1-\[Alpha])
+	Subscript[\[Sigma], n](\[Mu], \[Alpha]) = a(\[Alpha]) + b(\[Alpha]) e^(-c(\[Alpha])  \[Mu])
+
+An alternate model is possible using a power of 2:
+	c^\[Prime](\[Alpha]) = 8.21968  + 9.54087 (1-\[Alpha])
+	Subscript[\[Sigma], n]^\[Prime](\[Mu], \[Alpha]) = a(\[Alpha]) + b(\[Alpha]) 2^(-c^\[Prime](\[Alpha])  \[Mu])
+	
+So the world-space intensity of the fitted lobe is obtained by multiplying the lobe-space intensity with the scale factor:
+
+	Subscript[f, w](Subscript[\[Omega], o],\[Alpha],\[Rho]) = L(\[Mu],Subscript[\[Sigma], n](\[Mu], \[Alpha])) f(Subscript[\[Omega], o],\[Alpha],\[Rho])
+	
+	L(\[Mu], Subscript[\[Sigma], n](\[Mu], \[Alpha])) = 1/Sqrt[1+\[Mu]^2 (1/Subscript[\[Sigma], n](\[Mu],\[Alpha])^2-1)]
+	
+
+*/
+
 namespace TestMSBSDF
 {
 	public partial class TestForm : Form
@@ -250,6 +287,11 @@ namespace TestMSBSDF
 			}
 		}
 
+		protected override void OnFormClosing( FormClosingEventArgs e ) {
+			e.Cancel = false;
+			base.OnFormClosing( e );
+		}
+
 		protected override void OnFormClosed( FormClosedEventArgs e ) {
 			if ( m_Device == null )
 				return;
@@ -476,8 +518,10 @@ namespace TestMSBSDF
 		///	
 		///	From "2015 Heitz - Generating Procedural Beckmann Surfaces"
 		/// </summary>
+		/// <param name="_roughness"></param>
 		/// <remarks>Only isotropic roughness is supported</remarks>
 		public void	BuildBeckmannSurfaceTexture( float _roughness ) {
+			m_internalChange = true;	// Shouldn't happen but modifying the slider value may trigger a call to this function again, this flag prevents it
 
 			// Mirror current roughness
 			floatTrackbarControlBeckmannRoughness.Value = _roughness;
@@ -555,6 +599,8 @@ namespace TestMSBSDF
 
 				m_Tex_Heightfield = new Texture2D( m_Device, HEIGHTFIELD_SIZE, HEIGHTFIELD_SIZE, 1, 1, PIXEL_FORMAT.R32_FLOAT, false, false, new PixelsBuffer[] { Content } );
 			#endif
+
+			m_internalChange = false;
 		}
 
 		/// <summary>
@@ -875,6 +921,12 @@ namespace TestMSBSDF
 		}
 
 		public void	UpdateLobeParameters( double[] _parameters, bool _isReflectedLobe ) {
+			if ( InvokeRequired ) {
+				BeginInvoke( (Action) (() => {
+					UpdateLobeParameters( _parameters, _isReflectedLobe );
+				}) );
+				return;
+			}
 
 			checkBoxShowAnalyticalLobe.Checked = true;
 
@@ -897,7 +949,18 @@ namespace TestMSBSDF
 
 			// Repaint
 			UpdateApplication();
+		}
 
+		public void	 UpdateSurfaceParameters( int _scatteringOrder, float3 _incomingDirection, float _roughness, float _albedoF0, bool _rebuildBeckmannSurface ) {
+			m_internalChange = !_rebuildBeckmannSurface;	// So the Beckmann surface is not recomputed again!
+
+			integerTrackbarControlScatteringOrder.Value = _scatteringOrder;
+			float	theta = (float) (180.0 * Math.Acos( -_incomingDirection.z ) / Math.PI);
+			floatTrackbarControlTheta.Value = theta;
+			floatTrackbarControlBeckmannRoughness.Value = _roughness;
+			floatTrackbarControlSurfaceAlbedo.Value = _albedoF0;
+
+			m_internalChange = false;
 		}
 
 		/// <summary>
@@ -915,7 +978,7 @@ namespace TestMSBSDF
 		public void	UpdateApplication() {
 			panelOutput.Refresh();
 			Application_Idle( null, EventArgs.Empty );
-			Application.DoEvents();	// Force processing events for refresh
+			Application.DoEvents();	// Give a chance to the app to process messages!
 		}
 
 		bool	m_pauseRendering = false;
@@ -962,10 +1025,15 @@ namespace TestMSBSDF
 				float	sinPhi = (float) Math.Sin( phi );
 				float	cosPhi = (float) Math.Cos( phi );
 
-				float	theta = (float) Math.PI * floatTrackbarControlAnalyticalLobeTheta.Value / 180.0f;
+				float	theta = (float) Math.PI * floatTrackbarControlTheta.Value / 180.0f;
 				float	sinTheta = (float) Math.Sin( theta );
 				float	cosTheta = (float) Math.Cos( theta );
-				float3	analyticalReflectedDirection = new float3( -sinTheta * cosPhi, -sinTheta * sinPhi, -cosTheta );		// Minus sign because we need the direction pointing TOWARD the surface (i.e. z < 0)
+				float3	currentDirection = new float3( -sinTheta * cosPhi, -sinTheta * sinPhi, -cosTheta );		// Minus sign because we need the direction pointing TOWARD the surface (i.e. z < 0)
+
+						theta = (float) Math.PI * floatTrackbarControlAnalyticalLobeTheta.Value / 180.0f;
+						sinTheta = (float) Math.Sin( theta );
+						cosTheta = (float) Math.Cos( theta );
+				float3	analyticalReflectedDirection = new float3( -sinTheta * cosPhi, -sinTheta * sinPhi, -cosTheta );
 						analyticalReflectedDirection.z = -analyticalReflectedDirection.z;	// Mirror against surface
 
 						theta = (float) Math.PI * floatTrackbarControlAnalyticalLobeTheta_T.Value / 180.0f;
@@ -982,15 +1050,14 @@ namespace TestMSBSDF
 				float3	simulatedTransmittedDirection = Refract( -m_lastComputedDirection, float3.UnitZ, 1.0f / m_lastComputedIOR );
 
 
-				m_CB_RenderLobe.m._Direction = m_lastComputedDirection;
 				m_CB_RenderLobe.m._LobeIntensity = floatTrackbarControlLobeIntensity.Value;
 				m_CB_RenderLobe.m._ScatteringOrder = (uint) integerTrackbarControlScatteringOrder.Value - 1;
 
 				// Flags for analytical lobe rendering
 				uint	flags = 0U;
-				if ( radioButtonAnalyticalBeckmann.Checked ) flags = 00U;
-				else if ( radioButtonAnalyticalGGX.Checked ) flags = 01U;
-				else if ( radioButtonAnalyticalPhong.Checked ) flags = 02U;
+				if ( radioButtonAnalyticalBeckmann.Checked ) flags = 0U;
+				else if ( radioButtonAnalyticalGGX.Checked ) flags = 1U;
+				else if ( radioButtonAnalyticalPhong.Checked ) flags = 2U;
 //					else if ( radioButtonAnalyticalPhong.Checked ) flags = 03U;	// Other
 				flags <<= 4;	// First 3 bits are reserved!
 
@@ -1004,6 +1071,7 @@ namespace TestMSBSDF
 				if ( checkBoxShowAnalyticalLobe.Checked ) {
 					m_Device.SetRenderStates( RASTERIZER_STATE.NOCHANGE, DEPTHSTENCIL_STATE.READ_WRITE_DEPTH_LESS, BLEND_STATE.DISABLED );
 					m_CB_RenderLobe.m._Flags = 2U | generalDisplayFlags | flags;
+					m_CB_RenderLobe.m._Direction = currentDirection;
 					m_CB_RenderLobe.m._ReflectedDirection = analyticalReflectedDirection;
 					m_CB_RenderLobe.m._Roughness = floatTrackbarControlAnalyticalLobeRoughness.Value;
 					m_CB_RenderLobe.m._ScaleR = floatTrackbarControlLobeScaleR.Value;
@@ -1027,6 +1095,22 @@ namespace TestMSBSDF
 
 						m_Prim_Lobe.Render( m_Shader_RenderLobe );
 					}
+
+					if ( checkBoxShowDiffuseModel.Checked ) {
+						// Show analytical diffuse model lobe
+						m_Device.SetRenderStates( RASTERIZER_STATE.NOCHANGE, DEPTHSTENCIL_STATE.NOCHANGE, checkBoxShowXRay.Checked ? BLEND_STATE.ALPHA_BLEND : BLEND_STATE.DISABLED );
+
+						m_CB_RenderLobe.m._Flags = 2U | generalDisplayFlags | (3U << 4);
+						m_CB_RenderLobe.m._ReflectedDirection = analyticalReflectedDirection;
+						m_CB_RenderLobe.m._Roughness = floatTrackbarControlBeckmannRoughness.Value;
+						m_CB_RenderLobe.m._ScaleR = floatTrackbarControlSurfaceAlbedo.Value;
+						m_CB_RenderLobe.m._ScaleT = 1.0f;
+						m_CB_RenderLobe.m._ScaleB = 0.0f;
+						m_CB_RenderLobe.m._MaskingImportance = floatTrackbarControlLobeMaskingImportance_T.Value;
+						m_CB_RenderLobe.UpdateData();
+
+						m_Prim_Lobe.Render( m_Shader_RenderLobe );
+					}
 				}
 
 				// Render simulated lobes
@@ -1035,6 +1119,7 @@ namespace TestMSBSDF
 						m_Device.SetRenderStates( RASTERIZER_STATE.NOCHANGE, DEPTHSTENCIL_STATE.READ_DEPTH_LESS_EQUAL, BLEND_STATE.ALPHA_BLEND );	// Show as transparent during fitting...
 
 					m_CB_RenderLobe.m._Flags = generalDisplayFlags | 0U;
+					m_CB_RenderLobe.m._Direction = m_lastComputedDirection;
 					m_CB_RenderLobe.m._ReflectedDirection = simulatedReflectedDirection;
 					m_CB_RenderLobe.UpdateData();
 
@@ -1059,6 +1144,7 @@ namespace TestMSBSDF
 					// Render analytical lobes
 					if ( checkBoxShowAnalyticalLobe.Checked ) {
 						m_CB_RenderLobe.m._Flags = generalDisplayFlags | 1U | 2U | flags;
+						m_CB_RenderLobe.m._Direction = currentDirection;
 						m_CB_RenderLobe.m._ReflectedDirection = analyticalReflectedDirection;
 						m_CB_RenderLobe.m._Roughness = floatTrackbarControlAnalyticalLobeRoughness.Value;
 						m_CB_RenderLobe.m._ScaleR = floatTrackbarControlLobeScaleR.Value;
@@ -1080,12 +1166,27 @@ namespace TestMSBSDF
 
 							m_Prim_Lobe.Render( m_Shader_RenderLobe );
 						}
+
+						if ( checkBoxShowDiffuseModel.Checked ) {
+							// Show analytical diffuse model lobe
+							m_CB_RenderLobe.m._Flags = 1U | 2U | generalDisplayFlags | (3U << 4);
+							m_CB_RenderLobe.m._ReflectedDirection = analyticalReflectedDirection;
+							m_CB_RenderLobe.m._Roughness = floatTrackbarControlBeckmannRoughness.Value;
+							m_CB_RenderLobe.m._ScaleR = floatTrackbarControlSurfaceAlbedo.Value;
+							m_CB_RenderLobe.m._ScaleT = 1.0f;
+							m_CB_RenderLobe.m._ScaleB = 0.0f;
+							m_CB_RenderLobe.m._MaskingImportance = floatTrackbarControlLobeMaskingImportance_T.Value;
+							m_CB_RenderLobe.UpdateData();
+
+							m_Prim_Lobe.Render( m_Shader_RenderLobe );
+						}
 					}
 
 					// Render simulated lobes
 					if ( checkBoxShowLobe.Checked ) {
 
 						m_CB_RenderLobe.m._Flags = generalDisplayFlags | 1U;	// Wireframe mode
+						m_CB_RenderLobe.m._Direction = m_lastComputedDirection;
 						m_CB_RenderLobe.m._ReflectedDirection = simulatedReflectedDirection;
 						m_CB_RenderLobe.UpdateData();
 
@@ -1152,7 +1253,11 @@ namespace TestMSBSDF
 			m_Device.ReloadModifiedShaders();
 		}
 
+		bool	m_internalChange = false;
 		private void floatTrackbarControlBeckmannRoughness_ValueChanged( FloatTrackbarControl _Sender, float _fFormerValue ) {
+			if ( m_internalChange )
+				return;
+
 			try {
 				m_pauseRendering = true;
 				BuildBeckmannSurfaceTexture( floatTrackbarControlBeckmannRoughness.Value );

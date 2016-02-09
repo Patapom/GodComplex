@@ -309,6 +309,9 @@ namespace WMath
 				m_model.Constrain( _xout );
 
 				double	fx_alpha = m_model.Eval( _xout );
+				if ( double.IsNaN( fx_alpha ) )
+					throw new Exception( "Linear search eval returned NaN!" );
+
 //				System.out.println (i + " _FunctionMinimum = " + fx_alpha);
 
 				if ( fx_alpha < _FunctionMinimum + SIGMA * alpha * p )

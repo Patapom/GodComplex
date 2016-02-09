@@ -33,6 +33,7 @@ namespace ShaderToy
 			public float		_WeightMultiplier;
 			public uint			_ShowWeights;
 			public float		_DebugParm;
+			public float2		_MousePosition;
 		}
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
@@ -55,6 +56,7 @@ namespace ShaderToy
 
 		private Camera						m_Camera = new Camera();
 		private CameraManipulator			m_Manipulator = new CameraManipulator();
+		private bool						m_moveSeparator = false;
 
 		//////////////////////////////////////////////////////////////////////////
 		// Timing
@@ -365,7 +367,8 @@ namespace ShaderToy
 //				m_Shader = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/Christmas.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );;
 //				m_Shader = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/Airlight.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );;
 //				m_Shader = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/VoronoiInterpolation.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );;
-				m_Shader = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/Room.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );;
+//				m_Shader = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/Room.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );;
+				m_Shader = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/TestMSBRDF.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );;
 			}
 			catch ( Exception _e ) {
 				MessageBox.Show( "Shader failed to compile!\n\n" + _e.Message, "ShaderToy", MessageBoxButtons.OK, MessageBoxIcon.Error );
@@ -381,6 +384,7 @@ namespace ShaderToy
 			m_CB_Main.m._NeighborPosition1 = new float2( 0.6f, -0.4f );
 			m_CB_Main.m._NeighborPosition2 = new float2( -0.2f, 0.8f );
 			m_CB_Main.m._NeighborPosition3 = new float2( -0.6f, 0.14f );
+			m_CB_Main.m._MousePosition.Set( 0.5f, 0.5f );
 
 			// Setup camera
 			m_Camera.CreatePerspectiveCamera( (float) (60.0 * Math.PI / 180.0), (float) panelOutput.Width / panelOutput.Height, 0.01f, 100.0f );
@@ -507,6 +511,8 @@ namespace ShaderToy
 			if ( e.Button != MouseButtons.Left)
 				return;
 
+			m_moveSeparator = !m_moveSeparator;
+
 			m_MouseDown = true;
 			m_ButtonDownMouseUV = Client2UV( e.Location );
 
@@ -533,6 +539,9 @@ namespace ShaderToy
 
 		private void panelOutput_MouseMove( object sender, MouseEventArgs e )
 		{
+			if ( m_moveSeparator )
+				m_CB_Main.m._MousePosition.Set( (float) e.X / panelOutput.Width, (float) e.Y / panelOutput.Height );
+
 			if ( !m_MouseDown )
 				return;
 

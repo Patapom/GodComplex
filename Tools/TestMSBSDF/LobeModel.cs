@@ -40,6 +40,9 @@ namespace TestMSBSDF
 		// The lobe parameters we need to find
 		double[]	m_parameters = new double[5];
 
+		double[]	m_constraintMin = new double[5] { 0.0, 1e-4, 1e-6, 1e-3, 0.0 };				// Used to be { 0.0, 1e-4, 1e-3, 1e-6, 0.0 }
+		double[]	m_constraintMax = new double[5] { 0.4999 * Math.PI, 1.0, 10.0, 10.0, 1.0 };
+
 		#endregion
 
 		#region PROPERTIES
@@ -49,6 +52,9 @@ namespace TestMSBSDF
 			set { m_centerOfMass = value; }
 		}
 
+		public double[]	ConstrainMin { get { return m_constraintMin; } }
+		public double[]	ConstrainMax { get { return m_constraintMax; } }
+
 		public event ParametersChangedEventHandler	ParametersChanged;
 
 		#endregion
@@ -56,6 +62,17 @@ namespace TestMSBSDF
 		#region METHODS
 
 		public LobeModel() {
+		}
+
+		/// <summary>
+		/// Sets the contraints for each parameter
+		/// </summary>
+		/// <param name="_parameterIndex"></param>
+		/// <param name="_min"></param>
+		/// <param name="_max"></param>
+		public void		SetConstraint( int _parameterIndex, double _min, double _max ) {
+			m_constraintMin[_parameterIndex] = _min;
+			m_constraintMax[_parameterIndex] = _max;
 		}
 
 		/// <summary>
@@ -273,7 +290,7 @@ namespace TestMSBSDF
 					//	L = 1 / sqrt( 1 - wsDirection.z*wsDirection.x + wsDirection.z*wsDirection.z / (Scale*Scale) )
 					//
 					// So finally:
-					//	L = 1 / sqrt( 1 + wsDirection.z*wsDirection.x * (1 / (Scale*Scale) - 1) )
+					//	L = 1 / sqrt( 1 + wsDirection.z*wsDirection.z * (1 / (Scale*Scale) - 1) )
 					//
 					length = 1.0 / Math.Sqrt( 1.0 + Vz*Vz * (invLobeFlatten*invLobeFlatten - 1.0) );
 
@@ -323,11 +340,11 @@ namespace TestMSBSDF
 		}
 
 		public void Constrain( double[] _Parameters ) {
-			_Parameters[0] = Math.Max( 0.0, Math.Min( 0.4999 * Math.PI, _Parameters[0] ) );
-			_Parameters[1] = Math.Max( 1e-4, Math.Min( 1.0, _Parameters[1] ) );
-			_Parameters[2] = Math.Max( 1e-3, Math.Min( 10.0, _Parameters[2] ) );
-			_Parameters[3] = Math.Max( 1e-6, Math.Min( 10.0, _Parameters[3] ) );
-			_Parameters[4] = Math.Max( 0.0, Math.Min( 1.0, _Parameters[4] ) );
+			_Parameters[0] = Math.Max( m_constraintMin[0], Math.Min( m_constraintMax[0], _Parameters[0] ) );
+			_Parameters[1] = Math.Max( m_constraintMin[1], Math.Min( m_constraintMax[1], _Parameters[1] ) );
+			_Parameters[2] = Math.Max( m_constraintMin[2], Math.Min( m_constraintMax[2], _Parameters[2] ) );
+			_Parameters[3] = Math.Max( m_constraintMin[3], Math.Min( m_constraintMax[3], _Parameters[3] ) );
+			_Parameters[4] = Math.Max( m_constraintMin[4], Math.Min( m_constraintMax[4], _Parameters[4] ) );
 		}
 
 		#endregion

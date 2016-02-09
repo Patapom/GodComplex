@@ -104,6 +104,7 @@
 			this.floatTrackbarControlLobeScaleR_T = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label19 = new System.Windows.Forms.Label();
 			this.floatTrackbarControlAnalyticalLobeRoughness_T = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.checkBoxShowDiffuseModel = new System.Windows.Forms.CheckBox();
 			this.checkBoxInitializeDirectionTowardCenterOfMass = new System.Windows.Forms.CheckBox();
 			this.groupBox1 = new System.Windows.Forms.GroupBox();
 			this.checkBoxCompensateScatteringFactor = new System.Windows.Forms.CheckBox();
@@ -112,9 +113,9 @@
 			this.tabControl1 = new System.Windows.Forms.TabControl();
 			this.tabBeckmann = new System.Windows.Forms.TabPage();
 			this.tabLoadTex = new System.Windows.Forms.TabPage();
-			this.bindingSource1 = new System.Windows.Forms.BindingSource(this.components);
-			this.floatTrackbarScale = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.Scale = new System.Windows.Forms.Label();
+			this.floatTrackbarScale = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.bindingSource1 = new System.Windows.Forms.BindingSource(this.components);
 			this.panelOutput = new TestMSBSDF.PanelOutput3D(this.components);
 			this.groupBoxDisplay.SuspendLayout();
 			this.panel2.SuspendLayout();
@@ -302,7 +303,7 @@
 			this.panel2.Controls.Add(this.radioButtonAnalyticalPhong);
 			this.panel2.Controls.Add(this.radioButtonAnalyticalGGX);
 			this.panel2.Controls.Add(this.radioButtonAnalyticalBeckmann);
-			this.panel2.Location = new System.Drawing.Point(95, 19);
+			this.panel2.Location = new System.Drawing.Point(81, 19);
 			this.panel2.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
 			this.panel2.Name = "panel2";
 			this.panel2.Size = new System.Drawing.Size(297, 34);
@@ -429,6 +430,7 @@
 			this.floatTrackbarControlLobeScaleB.Size = new System.Drawing.Size(357, 31);
 			this.floatTrackbarControlLobeScaleB.TabIndex = 5;
 			this.floatTrackbarControlLobeScaleB.Value = 1F;
+			this.floatTrackbarControlLobeScaleB.Visible = false;
 			this.floatTrackbarControlLobeScaleB.VisibleRangeMax = 1F;
 			// 
 			// floatTrackbarControlLobeScaleT
@@ -789,6 +791,7 @@
 			// 
 			this.groupBoxAnalyticalLobe.Controls.Add(this.panel2);
 			this.groupBoxAnalyticalLobe.Controls.Add(this.tabControlAnalyticalLobes);
+			this.groupBoxAnalyticalLobe.Controls.Add(this.checkBoxShowDiffuseModel);
 			this.groupBoxAnalyticalLobe.Controls.Add(this.checkBoxShowAnalyticalLobe);
 			this.groupBoxAnalyticalLobe.Controls.Add(this.checkBoxInitializeDirectionTowardCenterOfMass);
 			this.groupBoxAnalyticalLobe.Controls.Add(this.checkBoxTest);
@@ -881,6 +884,7 @@
 			this.label14.Size = new System.Drawing.Size(126, 20);
 			this.label14.TabIndex = 3;
 			this.label14.Text = "Scale BiTangent";
+			this.label14.Visible = false;
 			// 
 			// tabPageTransmittedLobe
 			// 
@@ -1051,6 +1055,16 @@
 			this.floatTrackbarControlAnalyticalLobeRoughness_T.Value = 0.9444F;
 			this.floatTrackbarControlAnalyticalLobeRoughness_T.VisibleRangeMax = 1F;
 			// 
+			// checkBoxShowDiffuseModel
+			// 
+			this.checkBoxShowDiffuseModel.AutoSize = true;
+			this.checkBoxShowDiffuseModel.Location = new System.Drawing.Point(390, 27);
+			this.checkBoxShowDiffuseModel.Name = "checkBoxShowDiffuseModel";
+			this.checkBoxShowDiffuseModel.Size = new System.Drawing.Size(177, 24);
+			this.checkBoxShowDiffuseModel.TabIndex = 9;
+			this.checkBoxShowDiffuseModel.Text = "Show Diffuse Model";
+			this.checkBoxShowDiffuseModel.UseVisualStyleBackColor = true;
+			// 
 			// checkBoxInitializeDirectionTowardCenterOfMass
 			// 
 			this.checkBoxInitializeDirectionTowardCenterOfMass.AutoSize = true;
@@ -1150,10 +1164,20 @@
 			this.tabLoadTex.Location = new System.Drawing.Point(4, 29);
 			this.tabLoadTex.Name = "tabLoadTex";
 			this.tabLoadTex.Padding = new System.Windows.Forms.Padding(3);
-			this.tabLoadTex.Size = new System.Drawing.Size(569, 242);
+			this.tabLoadTex.Size = new System.Drawing.Size(569, 161);
 			this.tabLoadTex.TabIndex = 1;
 			this.tabLoadTex.Text = "LoadTex";
 			this.tabLoadTex.UseVisualStyleBackColor = true;
+			// 
+			// Scale
+			// 
+			this.Scale.AutoSize = true;
+			this.Scale.Location = new System.Drawing.Point(23, 26);
+			this.Scale.Name = "Scale";
+			this.Scale.Size = new System.Drawing.Size(49, 20);
+			this.Scale.TabIndex = 1;
+			this.Scale.Text = "Scale";
+			this.Scale.Click += new System.EventHandler(this.label22_Click);
 			// 
 			// floatTrackbarScale
 			// 
@@ -1167,16 +1191,6 @@
 			this.floatTrackbarScale.TabIndex = 0;
 			this.floatTrackbarScale.Value = 1F;
 			this.floatTrackbarScale.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControl1_ValueChanged);
-			// 
-			// Scale
-			// 
-			this.Scale.AutoSize = true;
-			this.Scale.Location = new System.Drawing.Point(23, 26);
-			this.Scale.Name = "Scale";
-			this.Scale.Size = new System.Drawing.Size(49, 20);
-			this.Scale.TabIndex = 1;
-			this.Scale.Text = "Scale";
-			this.Scale.Click += new System.EventHandler(this.label22_Click);
 			// 
 			// panelOutput
 			// 
@@ -1193,7 +1207,7 @@
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 20F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-			this.ClientSize = new System.Drawing.Size(1930, 1360);
+			this.ClientSize = new System.Drawing.Size(1912, 1158);
 			this.Controls.Add(this.panelDielectric);
 			this.Controls.Add(this.tabControl1);
 			this.Controls.Add(this.radioButtonConductor);
@@ -1326,6 +1340,7 @@
 		private System.Windows.Forms.Label Scale;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarScale;
 		private System.Windows.Forms.BindingSource bindingSource1;
+		private System.Windows.Forms.CheckBox checkBoxShowDiffuseModel;
 	}
 }
 
