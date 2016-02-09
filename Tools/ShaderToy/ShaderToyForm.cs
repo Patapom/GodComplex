@@ -33,6 +33,7 @@ namespace ShaderToy
 			public float		_WeightMultiplier;
 			public uint			_ShowWeights;
 			public float		_DebugParm;
+			public float2		_MousePosition;
 		}
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
@@ -365,7 +366,8 @@ namespace ShaderToy
 //				m_Shader = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/Christmas.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );;
 //				m_Shader = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/Airlight.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );;
 //				m_Shader = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/VoronoiInterpolation.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );;
-				m_Shader = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/Room.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );;
+//				m_Shader = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/Room.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );;
+				m_Shader = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/TestMSBRDF.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );;
 			}
 			catch ( Exception _e ) {
 				MessageBox.Show( "Shader failed to compile!\n\n" + _e.Message, "ShaderToy", MessageBoxButtons.OK, MessageBoxIcon.Error );
@@ -533,6 +535,8 @@ namespace ShaderToy
 
 		private void panelOutput_MouseMove( object sender, MouseEventArgs e )
 		{
+			m_CB_Main.m._MousePosition.Set( (float) e.X / panelOutput.Width, (float) e.Y / panelOutput.Height );
+
 			if ( !m_MouseDown )
 				return;
 

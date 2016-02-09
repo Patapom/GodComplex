@@ -105,9 +105,17 @@
   <ItemGroup>
     <None Include="Shaders\Room.hlsl" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <None Include="Shaders\TestMSBRDF.hlsl" />
+  </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\Includes\AreaLight.hlsl" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Shaders\Includes\DistanceFieldHelpers.hlsl" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Shaders\TestMSBRDF2.hlsl" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

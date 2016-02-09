@@ -88,7 +88,7 @@ float	PhongG1( float _cosTheta, float _roughness ) {
 
 // Finally, our long awaited diffuse lobe for 2nd scattering order
 //  
-//  After fitting each parameter one after another, we noticed that:
+// After fitting each parameter one after another, we noticed that:
 // 	\[Bullet] Incident light angle \[Theta] has no effect on fitted lobe, assuming we ignore the backscattering that is visible at highly grazing angles and that would be better fitted using maybe a GGX lobe that features a nice backscatter property.
 // 	\[Bullet] Final masking importance m is 0 after all
 // 	\[Bullet] There is only a dependency on albedo \[Rho] for the scale factor (that was expected) and it is proportional to \[Rho]^2 which was also expected.
@@ -103,13 +103,13 @@ float	PhongG1( float _cosTheta, float _roughness ) {
 // 	k(\[Rho]) = 1-2(1-\[Rho])+(1-\[Rho])^2										the factor applied to scale depending on \[Rho] and, most importantly, \[Rho]^2, that will give use the expected color saturation
 // 	
 // The flattening factor along the main lobe direction Z is the most expensive to compute:
-// 	a(\[Alpha]) = 0.697462  - 0.479278 \[Alpha]
-// 	b(\[Alpha]) = 0.287646  - 0.293594 \[Alpha]
-// 	c(\[Alpha]) = 5.69744  + 6.61321 \[Alpha]
+// 	a(\[Alpha]) = 0.697462  - 0.479278 (1-\[Alpha])
+// 	b(\[Alpha]) = 0.287646  - 0.293594 (1-\[Alpha])
+// 	c(\[Alpha]) = 5.69744  + 6.61321 (1-\[Alpha])
 // 	Subscript[\[Sigma], n](\[Mu], \[Alpha]) = a(\[Alpha]) + b(\[Alpha]) e^(-c(\[Alpha])  \[Mu])
 // 
 // An alternate model is possible using a power of 2:
-// 	c^\[Prime](\[Alpha]) = 8.21968  + 9.54087 \[Alpha]
+// 	c^\[Prime](\[Alpha]) = 8.21968  + 9.54087 (1-\[Alpha])
 // 	Subscript[\[Sigma], n]^\[Prime](\[Mu], \[Alpha]) = a(\[Alpha]) + b(\[Alpha]) 2^(-c^\[Prime](\[Alpha])  \[Mu])
 // 	
 // So the world-space intensity of the fitted lobe is obtained by multiplying the lobe-space intensity with the scale factor:
@@ -117,6 +117,7 @@ float	PhongG1( float _cosTheta, float _roughness ) {
 // 	Subscript[f, w](Subscript[\[Omega], o],\[Alpha],\[Rho]) = L(\[Mu],Subscript[\[Sigma], n](\[Mu], \[Alpha])) f(Subscript[\[Omega], o],\[Alpha],\[Rho])
 // 	
 // 	L(\[Mu], Subscript[\[Sigma], n](\[Mu], \[Alpha])) = 1/Sqrt[1+\[Mu]^2 (1/Subscript[\[Sigma], n](\[Mu],\[Alpha])^2-1)]
+// 	
 //
 float	ComputeDiffuseModel( float3 _wsOutgoingDirection, float _roughness, float _albedo ) {
 	_albedo = 1.0 - _albedo;
