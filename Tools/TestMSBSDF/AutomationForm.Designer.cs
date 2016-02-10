@@ -174,6 +174,7 @@
 			this.integerTrackbarControlThreadsCount = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
 			this.label31 = new System.Windows.Forms.Label();
 			this.completionArrayControl = new TestMSBSDF.CompletionArrayControl();
+			this.radioButtonLobe_ModifiedPhongAniso = new System.Windows.Forms.RadioButton();
 			this.groupBoxSimulationParameters.SuspendLayout();
 			this.panel6.SuspendLayout();
 			this.panel5.SuspendLayout();
@@ -604,7 +605,7 @@
 			this.floatTrackbarControlParam0_Min.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlParam0_Min.Name = "floatTrackbarControlParam0_Min";
 			this.floatTrackbarControlParam0_Min.RangeMax = 90F;
-			this.floatTrackbarControlParam0_Min.RangeMin = 0F;
+			this.floatTrackbarControlParam0_Min.RangeMin = -90F;
 			this.floatTrackbarControlParam0_Min.Size = new System.Drawing.Size(200, 20);
 			this.floatTrackbarControlParam0_Min.TabIndex = 2;
 			this.floatTrackbarControlParam0_Min.Value = 0F;
@@ -1168,12 +1169,12 @@
 			this.floatTrackbarControlInit_FixedFlatten.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlInit_FixedFlatten.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlInit_FixedFlatten.Name = "floatTrackbarControlInit_FixedFlatten";
-			this.floatTrackbarControlInit_FixedFlatten.RangeMax = 1F;
+			this.floatTrackbarControlInit_FixedFlatten.RangeMax = 2F;
 			this.floatTrackbarControlInit_FixedFlatten.RangeMin = 0F;
 			this.floatTrackbarControlInit_FixedFlatten.Size = new System.Drawing.Size(164, 20);
 			this.floatTrackbarControlInit_FixedFlatten.TabIndex = 2;
 			this.floatTrackbarControlInit_FixedFlatten.Value = 1F;
-			this.floatTrackbarControlInit_FixedFlatten.VisibleRangeMax = 1F;
+			this.floatTrackbarControlInit_FixedFlatten.VisibleRangeMax = 2F;
 			this.floatTrackbarControlInit_FixedFlatten.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlInit_FixedFlatten_ValueChanged);
 			// 
 			// checkBoxInitFlatten_Inherit
@@ -1195,13 +1196,13 @@
 			this.floatTrackbarControlInit_CustomFlatten.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlInit_CustomFlatten.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlInit_CustomFlatten.Name = "floatTrackbarControlInit_CustomFlatten";
-			this.floatTrackbarControlInit_CustomFlatten.RangeMax = 10F;
+			this.floatTrackbarControlInit_CustomFlatten.RangeMax = 2F;
 			this.floatTrackbarControlInit_CustomFlatten.RangeMin = 0F;
 			this.floatTrackbarControlInit_CustomFlatten.Size = new System.Drawing.Size(200, 20);
 			this.floatTrackbarControlInit_CustomFlatten.TabIndex = 2;
 			this.toolTip1.SetToolTip(this.floatTrackbarControlInit_CustomFlatten, "Specifies the lobe\'s flattening to start with (diffuse lobes tend to be flatter)");
 			this.floatTrackbarControlInit_CustomFlatten.Value = 0.5F;
-			this.floatTrackbarControlInit_CustomFlatten.VisibleRangeMax = 1F;
+			this.floatTrackbarControlInit_CustomFlatten.VisibleRangeMax = 2F;
 			this.floatTrackbarControlInit_CustomFlatten.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlInit_Flatten_ValueChanged);
 			// 
 			// label28
@@ -1594,6 +1595,7 @@
 			// 
 			this.panel2.Controls.Add(this.label7);
 			this.panel2.Controls.Add(this.radioButtonLobe_GGX);
+			this.panel2.Controls.Add(this.radioButtonLobe_ModifiedPhongAniso);
 			this.panel2.Controls.Add(this.radioButtonLobe_Beckmann);
 			this.panel2.Controls.Add(this.radioButtonLobe_ModifiedPhong);
 			this.panel2.Location = new System.Drawing.Point(6, 19);
@@ -1615,7 +1617,7 @@
 			// 
 			this.radioButtonLobe_GGX.AutoSize = true;
 			this.radioButtonLobe_GGX.Enabled = false;
-			this.radioButtonLobe_GGX.Location = new System.Drawing.Point(292, 3);
+			this.radioButtonLobe_GGX.Location = new System.Drawing.Point(323, 3);
 			this.radioButtonLobe_GGX.Name = "radioButtonLobe_GGX";
 			this.radioButtonLobe_GGX.Size = new System.Drawing.Size(48, 17);
 			this.radioButtonLobe_GGX.TabIndex = 0;
@@ -1627,7 +1629,7 @@
 			// 
 			this.radioButtonLobe_Beckmann.AutoSize = true;
 			this.radioButtonLobe_Beckmann.Enabled = false;
-			this.radioButtonLobe_Beckmann.Location = new System.Drawing.Point(210, 3);
+			this.radioButtonLobe_Beckmann.Location = new System.Drawing.Point(244, 3);
 			this.radioButtonLobe_Beckmann.Name = "radioButtonLobe_Beckmann";
 			this.radioButtonLobe_Beckmann.Size = new System.Drawing.Size(76, 17);
 			this.radioButtonLobe_Beckmann.TabIndex = 0;
@@ -1639,12 +1641,12 @@
 			// 
 			this.radioButtonLobe_ModifiedPhong.AutoSize = true;
 			this.radioButtonLobe_ModifiedPhong.Checked = true;
-			this.radioButtonLobe_ModifiedPhong.Location = new System.Drawing.Point(105, 3);
+			this.radioButtonLobe_ModifiedPhong.Location = new System.Drawing.Point(83, 3);
 			this.radioButtonLobe_ModifiedPhong.Name = "radioButtonLobe_ModifiedPhong";
-			this.radioButtonLobe_ModifiedPhong.Size = new System.Drawing.Size(99, 17);
+			this.radioButtonLobe_ModifiedPhong.Size = new System.Drawing.Size(73, 17);
 			this.radioButtonLobe_ModifiedPhong.TabIndex = 0;
 			this.radioButtonLobe_ModifiedPhong.TabStop = true;
-			this.radioButtonLobe_ModifiedPhong.Text = "Modified Phong";
+			this.radioButtonLobe_ModifiedPhong.Text = "Phong Iso";
 			this.radioButtonLobe_ModifiedPhong.UseVisualStyleBackColor = true;
 			this.radioButtonLobe_ModifiedPhong.CheckedChanged += new System.EventHandler(this.LobeTypeCheckChanged);
 			// 
@@ -1895,6 +1897,17 @@
 			this.completionArrayControl.SelectionChanged += new TestMSBSDF.CompletionArrayControl.SelectionChangedEventHandler(this.completionArrayControl_SelectionChanged);
 			this.completionArrayControl.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.completionArrayControl_MouseDoubleClick);
 			// 
+			// radioButtonLobe_ModifiedPhongAniso
+			// 
+			this.radioButtonLobe_ModifiedPhongAniso.AutoSize = true;
+			this.radioButtonLobe_ModifiedPhongAniso.Location = new System.Drawing.Point(153, 3);
+			this.radioButtonLobe_ModifiedPhongAniso.Name = "radioButtonLobe_ModifiedPhongAniso";
+			this.radioButtonLobe_ModifiedPhongAniso.Size = new System.Drawing.Size(85, 17);
+			this.radioButtonLobe_ModifiedPhongAniso.TabIndex = 0;
+			this.radioButtonLobe_ModifiedPhongAniso.Text = "Phong Aniso";
+			this.radioButtonLobe_ModifiedPhongAniso.UseVisualStyleBackColor = true;
+			this.radioButtonLobe_ModifiedPhongAniso.CheckedChanged += new System.EventHandler(this.LobeTypeCheckChanged);
+			// 
 			// AutomationForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -2096,5 +2109,6 @@
 		private System.Windows.Forms.RadioButton radioButtonInitFlatten_Analytical;
 		private System.Windows.Forms.RadioButton radioButtonInitScale_Analytical;
 		private System.Windows.Forms.RadioButton radioButtonInitRoughness_Analytical;
+		private System.Windows.Forms.RadioButton radioButtonLobe_ModifiedPhongAniso;
 	}
 }

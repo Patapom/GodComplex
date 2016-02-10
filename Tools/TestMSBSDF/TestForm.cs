@@ -1017,8 +1017,8 @@ namespace TestMSBSDF
 				if ( radioButtonAnalyticalBeckmann.Checked ) flags = 0U;
 				else if ( radioButtonAnalyticalGGX.Checked ) flags = 1U;
 				else if ( radioButtonAnalyticalPhong.Checked ) flags = 2U;
-//					else if ( radioButtonAnalyticalPhong.Checked ) flags = 03U;	// Other
-				flags <<= 4;	// First 3 bits are reserved!
+				else if ( radioButtonAnalyticalPhongAnisotropic.Checked ) flags = 3U;
+				flags <<= 4;	// First 4 bits are reserved!
 
 				uint	generalDisplayFlags = checkBoxCompensateScatteringFactor.Checked ? 08U : 0U;	// Apply scattering order compensation factor
 
@@ -1059,7 +1059,7 @@ namespace TestMSBSDF
 						// Show analytical diffuse model lobe
 						m_Device.SetRenderStates( RASTERIZER_STATE.NOCHANGE, DEPTHSTENCIL_STATE.NOCHANGE, checkBoxShowXRay.Checked ? BLEND_STATE.ALPHA_BLEND : BLEND_STATE.DISABLED );
 
-						m_CB_RenderLobe.m._Flags = 2U | generalDisplayFlags | (3U << 4);
+						m_CB_RenderLobe.m._Flags = 2U | generalDisplayFlags | (4U << 4);
 						m_CB_RenderLobe.m._ReflectedDirection = analyticalReflectedDirection;
 						m_CB_RenderLobe.m._Roughness = floatTrackbarControlBeckmannRoughness.Value;
 						m_CB_RenderLobe.m._ScaleR = floatTrackbarControlSurfaceAlbedo.Value;
@@ -1128,7 +1128,7 @@ namespace TestMSBSDF
 
 						if ( checkBoxShowDiffuseModel.Checked ) {
 							// Show analytical diffuse model lobe
-							m_CB_RenderLobe.m._Flags = 1U | 2U | generalDisplayFlags | (3U << 4);
+							m_CB_RenderLobe.m._Flags = 1U | 2U | generalDisplayFlags | (4U << 4);
 							m_CB_RenderLobe.m._ReflectedDirection = analyticalReflectedDirection;
 							m_CB_RenderLobe.m._Roughness = floatTrackbarControlBeckmannRoughness.Value;
 							m_CB_RenderLobe.m._ScaleR = floatTrackbarControlSurfaceAlbedo.Value;
@@ -1268,21 +1268,23 @@ namespace TestMSBSDF
 			double[,]	histogramData = LobeModel.HistogramTexture2Array( m_Tex_LobeHistogram_CPU, _scatteringOrder );
 			m_lobeModel.InitTargetData( histogramData );
 
+			LobeModel.LOBE_TYPE	lobeType =	radioButtonAnalyticalPhong.Checked ? LobeModel.LOBE_TYPE.MODIFIED_PHONG :
+											(radioButtonAnalyticalPhongAnisotropic.Checked ? LobeModel.LOBE_TYPE.MODIFIED_PHONG_ANISOTROPIC :
+											(radioButtonAnalyticalBeckmann.Checked ? LobeModel.LOBE_TYPE.BECKMANN : LobeModel.LOBE_TYPE.GGX));
+
 			if ( _computeInitialThetaUsingCenterOfMass ) {
 				// Optionally override theta to use the direction of the center of mass
 				// (quite intuitive to start by aligning our lobe along the main simulated lobe direction!)
 				float3	towardCenterOfMass = m_lobeModel.CenterOfMass.Normalized;
 				_theta = (float) Math.Acos( towardCenterOfMass.z );
 //				_scale = 2.0 * m_centerOfMass.Length;				// Also assume we should match the simulated lobe's length
-				_flatteningFactor = 0.5f;							// Start from a semi-flattened shape so it can choose either direction...
+				_flatteningFactor = lobeType == LobeModel.LOBE_TYPE.MODIFIED_PHONG ? 0.5f : 1.0f;	// Start from a semi-flattened shape so it can choose either direction...
 				_scale = 0.01f * m_lobeModel.CenterOfMass.Length;	// In fact, I realized the algorithm converged much faster starting from a very small lobe!! (~20 iterations compared to 200 otherwise, because the gradient leads the algorithm in the wrong direction too fast and it takes hell of a time to get back on tracks afterwards if we start from too large a lobe!)
 			}
 
-			LobeModel.LOBE_TYPE	lobeType = radioButtonAnalyticalPhong.Checked ? LobeModel.LOBE_TYPE.MODIFIED_PHONG : (radioButtonAnalyticalBeckmann.Checked ? LobeModel.LOBE_TYPE.BECKMANN : LobeModel.LOBE_TYPE.GGX);
+			m_lobeModel.InitLobeData( lobeType, _incomingDirection, _theta, _roughness, _scale, _flatteningFactor, _MaskingImportance, _OversizeFactor, checkBoxUseCenterOfMassForBetterFitting.Checked );
 
-			m_lobeModel.InitLobeData( lobeType, _incomingDirection, _theta, _roughness, _scale, _flatteningFactor, _MaskingImportance, _OversizeFactor, _computeInitialThetaUsingCenterOfMass );
-
-// 			if ( !checkBoxTest.Checked ) {
+// 			if ( !checkBoxUseCenterOfMassForBetterFitting.Checked ) {
 // 				m_Fitter.SuccessTolerance = 1e-4;
 // 				m_Fitter.GradientSuccessTolerance = 1e-4;
 // 			}
@@ -1334,6 +1336,7 @@ namespace TestMSBSDF
 				MessageBox( "Fitting succeeded after " + m_Fitter.IterationsCount + " iterations.\r\nReached minimum: " + m_Fitter.FunctionMinimum, MessageBoxButtons.OK, MessageBoxIcon.Information );
 			} catch ( AutomationForm.CanceledException ) {
 				// Simply cancel...
+				MessageBox( "Lobe fitting was canceled.\r\n\r\nLast minimum: " + m_Fitter.FunctionMinimum + " after " + m_Fitter.IterationsCount + " iterations..." );
 			} catch ( Exception _e ) {
 				MessageBox( "An error occurred while performing lobe fitting:\r\n" + _e.Message + "\r\n\r\nLast minimum: " + m_Fitter.FunctionMinimum + " after " + m_Fitter.IterationsCount + " iterations..." );
 			} finally {

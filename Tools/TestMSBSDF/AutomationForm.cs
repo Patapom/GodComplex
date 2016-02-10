@@ -546,7 +546,7 @@ namespace TestMSBSDF
 							}
 						}
 
-						_lobe.SetConstraint( 0,	S.m_initialDirection == Settings.GUESS_INITIAL_DIRECTION.FIXED ? S.m_fixedTheta : 0.0,
+						_lobe.SetConstraint( 0,	S.m_initialDirection == Settings.GUESS_INITIAL_DIRECTION.FIXED ? S.m_fixedTheta : -0.4999 * Math.PI,
 												S.m_initialDirection == Settings.GUESS_INITIAL_DIRECTION.FIXED ? S.m_fixedTheta : 0.4999 * Math.PI );
 
 
@@ -623,7 +623,7 @@ namespace TestMSBSDF
 							_lobe.SetConstraint( 2, scale, scale );
 						} else {
 							_lobe.SetConstraint( 2, S.m_initialScale == Settings.GUESS_INITIAL_SCALE.FIXED ? S.m_fixedScale : 1e-6,
-													S.m_initialScale == Settings.GUESS_INITIAL_SCALE.FIXED ? S.m_fixedScale : 10.0 );
+													S.m_initialScale == Settings.GUESS_INITIAL_SCALE.FIXED ? S.m_fixedScale : 2.0 );
 						}
 
 
@@ -2363,9 +2363,10 @@ namespace TestMSBSDF
 
 		private void LobeTypeCheckChanged( object sender, EventArgs e )
 		{
-			m_document.m_settings.m_lobeModel =	radioButtonLobe_ModifiedPhong.Checked ? LobeModel.LOBE_TYPE.MODIFIED_PHONG :
-												(radioButtonLobe_Beckmann.Checked ? LobeModel.LOBE_TYPE.BECKMANN :
-												LobeModel.LOBE_TYPE.GGX);
+			m_document.m_settings.m_lobeModel =	radioButtonLobe_ModifiedPhong.Checked ?			LobeModel.LOBE_TYPE.MODIFIED_PHONG :
+												(radioButtonLobe_ModifiedPhongAniso.Checked ?	LobeModel.LOBE_TYPE.MODIFIED_PHONG_ANISOTROPIC :
+												(radioButtonLobe_Beckmann.Checked ?				LobeModel.LOBE_TYPE.BECKMANN :
+																								LobeModel.LOBE_TYPE.GGX));
 		}
 
 		private void radioButtonInitDirection_CheckedChanged( object sender, EventArgs e )
@@ -2537,6 +2538,7 @@ namespace TestMSBSDF
 			if ( !m_internalDocumentChange ) {
 				switch ( m_document.m_surface.m_type ) {
 					case TestForm.SURFACE_TYPE.DIFFUSE:
+						m_document.m_settings.m_lobeModel = LobeModel.LOBE_TYPE.MODIFIED_PHONG;
 						m_document.m_settings.m_customScale = 0.05f;
 						m_document.m_settings.m_initialRoughness = Document.Settings.GUESS_INITIAL_ROUGHNESS.CUSTOM;
 						m_document.m_settings.m_customRoughness = 0.8f;
@@ -2545,6 +2547,7 @@ namespace TestMSBSDF
 						break;
 
 					default:
+						m_document.m_settings.m_lobeModel = LobeModel.LOBE_TYPE.MODIFIED_PHONG_ANISOTROPIC;
 						m_document.m_settings.m_customScale = 0.1f;
 						m_document.m_settings.m_initialRoughness = Document.Settings.GUESS_INITIAL_ROUGHNESS.CUSTOM;
 						m_document.m_settings.m_customRoughness = 0.8f;

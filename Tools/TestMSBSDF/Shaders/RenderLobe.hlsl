@@ -242,8 +242,22 @@ PS_IN	VS( VS_IN _In ) {
 	float3	wsPosition;
 	if ( _Flags & 2 ) {
 		// Show analytical lobe
-//		float3	wsScaledDirection = _ScaleT * lsPosition.x * wsTangent + _ScaleB * lsPosition.y * wsBiTangent + _ScaleR * lsPosition.z * wsReflectedDirection;	// World space direction, aligned with reflected ray
-		float3	wsScaledDirection = lsPosition.x * wsTangent + lsPosition.y * wsBiTangent + _ScaleR * lsPosition.z * wsReflectedDirection;	// World space direction, aligned with reflected ray
+
+		float	scaleT = 1.0;
+		float	scaleB = 1.0;
+		float	scaleR = _ScaleR;	// Isotropic with flattening along normal
+
+		uint	lobeModel = _Flags >> 4;
+		if ( lobeModel == 3U ) {
+			// Anisotropic lobe model
+			float	s = exp2( 4.0 * (_ScaleR - 1.0) );	// From 2e-4 to 2e4
+			scaleT = s;
+			scaleB = 1.0 / s;
+			scaleR = 1.0;
+		}
+
+		float3	wsScaledDirection = scaleT * lsPosition.x * wsTangent + scaleB * lsPosition.y * wsBiTangent + scaleR * lsPosition.z * wsReflectedDirection;	// World space direction, aligned with reflected ray
+
 		float3	wsDirection = normalize( wsScaledDirection );
 
 		float	cosTheta_M = saturate( dot( wsDirection, wsReflectedDirection ) );	// Theta_M = angle between reflected direction and the lobe's current direction
@@ -253,26 +267,34 @@ PS_IN	VS( VS_IN _In ) {
 //cosTheta_M = saturate( _ScaleR * lsPosition.z / sqrt( 1.0 + (_ScaleR*_ScaleR - 1) * lsPosition.z*lsPosition.z ) );
 
 		float	maskingShadowing = 1.0;
-		switch ( (_Flags >> 4) ) {
-		case 2:
-			// Phong
-			lobeIntensity = PhongNDF( cosTheta_M, _Roughness );					// NDF
-			maskingShadowing = PhongG1( wsIncomingDirection.z, _Roughness );	// * Masking( incoming )
-			maskingShadowing *= PhongG1( wsDirection.z, _Roughness );			// * Masking( outgoing )
-			break;
+		switch ( lobeModel ) {
 		case 1:
 			// GGX
 			lobeIntensity = GGXNDF( cosTheta_M, _Roughness );					// NDF
 			maskingShadowing = GGXG1( wsIncomingDirection.z, _Roughness );		// * Masking( incoming )
 			maskingShadowing *= GGXG1( wsDirection.z, _Roughness );				// * Masking( outgoing )
 			break;
+		case 2:
+			// Isotropic Phong
+			lobeIntensity = PhongNDF( cosTheta_M, _Roughness );					// NDF
+			maskingShadowing = PhongG1( wsIncomingDirection.z, _Roughness );	// * Masking( incoming )
+			maskingShadowing *= PhongG1( wsDirection.z, _Roughness );			// * Masking( outgoing )
+			break;
 		case 3:
+			// Anisotropic Phong
+			lobeIntensity = PhongNDF( cosTheta_M, _Roughness );					// NDF
+			maskingShadowing = PhongG1( wsIncomingDirection.z, _Roughness );	// * Masking( incoming )
+			maskingShadowing *= PhongG1( wsDirection.z, _Roughness );			// * Masking( outgoing )
+			break;
+
+		case 4:
 			// Diffuse Lobe Model
 			wsDirection = lsPosition;// normalize( lsPosition.x * wsTangent + lsPosition.y * wsBiTangent + lsPosition.z * wsReflectedDirection );	// No scaling for that model
 			wsScaledDirection = wsDirection;
 			lobeIntensity = ComputeDiffuseModel( wsDirection, _Roughness, _ScaleR ).x;	// _ScaleR is the surface's albedo in this case
 			maskingShadowing = 1.0;	// No masking/shadowing
 			break;
+
 		default:
 			// Beckmann
 			lobeIntensity = BeckmannNDF( cosTheta_M, _Roughness );				// NDF
@@ -285,11 +307,7 @@ PS_IN	VS( VS_IN _In ) {
 
 		lobeIntensity *= _ScaleT;	// Now used as "global scale factor"
 
-
-//		float	IOR = Fresnel_IORFromF0( 0.04 );
-//		lobeIntensity *= FresnelAccurate( IOR, lsDirection.y ).x;
-
-		lobeIntensity *= (lobeSign * wsDirection.z) < 0.0 ? 0.0 : 1.0;		// Nullify all "below the surface" directions
+		lobeIntensity *= (lobeSign * wsDirection.z) < 0.0 ? 0.0 : 1.0;			// Nullify all "below the surface" directions
 
 		lobeIntensity *= intensityMultiplier;	// So we match the simulated lobe's intensity scale
 
@@ -347,7 +365,7 @@ float4	PS( PS_IN _In ) : SV_TARGET0 {
 	float4	analyticalLobeWireColor = isTransmittedLobe	? float4( 0.05, 0, 0.1, wireframeAlpha )
 														: float4( 0, 0.1, 0, wireframeAlpha );
 
-	bool	isDiffuseModel = (_Flags >> 4) == 3U;
+	bool	isDiffuseModel = (_Flags >> 4) == 4U;
 	if ( isDiffuseModel ) {
 		analyticalLobeColor = float4( _In.Color * float3( 1.0, 1.0, 0.5 ), 0.9 );
 		analyticalLobeWireColor = float4( 0.1, 0.1, 0, wireframeAlpha );

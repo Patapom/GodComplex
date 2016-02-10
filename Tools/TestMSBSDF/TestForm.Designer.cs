@@ -72,7 +72,7 @@
 			this.label9 = new System.Windows.Forms.Label();
 			this.floatTrackbarControlFitOversize = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label10 = new System.Windows.Forms.Label();
-			this.checkBoxTest = new System.Windows.Forms.CheckBox();
+			this.checkBoxUseCenterOfMassForBetterFitting = new System.Windows.Forms.CheckBox();
 			this.floatTrackbarControlSurfaceAlbedo = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label11 = new System.Windows.Forms.Label();
 			this.groupBoxSurface = new System.Windows.Forms.GroupBox();
@@ -107,6 +107,7 @@
 			this.checkBoxCompensateScatteringFactor = new System.Windows.Forms.CheckBox();
 			this.checkBoxShowXRay = new System.Windows.Forms.CheckBox();
 			this.buttonAutomation = new System.Windows.Forms.Button();
+			this.radioButtonAnalyticalPhongAnisotropic = new System.Windows.Forms.RadioButton();
 			this.panelOutput = new TestMSBSDF.PanelOutput3D(this.components);
 			this.groupBoxDisplay.SuspendLayout();
 			this.panel2.SuspendLayout();
@@ -270,11 +271,12 @@
 			// panel2
 			// 
 			this.panel2.Controls.Add(this.radioButtonAnalyticalPhong);
+			this.panel2.Controls.Add(this.radioButtonAnalyticalPhongAnisotropic);
 			this.panel2.Controls.Add(this.radioButtonAnalyticalGGX);
 			this.panel2.Controls.Add(this.radioButtonAnalyticalBeckmann);
 			this.panel2.Location = new System.Drawing.Point(68, 16);
 			this.panel2.Name = "panel2";
-			this.panel2.Size = new System.Drawing.Size(198, 22);
+			this.panel2.Size = new System.Drawing.Size(292, 22);
 			this.panel2.TabIndex = 10;
 			// 
 			// radioButtonAnalyticalPhong
@@ -352,7 +354,7 @@
 			this.floatTrackbarControlAnalyticalLobeTheta.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlAnalyticalLobeTheta.Name = "floatTrackbarControlAnalyticalLobeTheta";
 			this.floatTrackbarControlAnalyticalLobeTheta.RangeMax = 89.999F;
-			this.floatTrackbarControlAnalyticalLobeTheta.RangeMin = 0F;
+			this.floatTrackbarControlAnalyticalLobeTheta.RangeMin = -89.999F;
 			this.floatTrackbarControlAnalyticalLobeTheta.Size = new System.Drawing.Size(238, 20);
 			this.floatTrackbarControlAnalyticalLobeTheta.TabIndex = 5;
 			this.floatTrackbarControlAnalyticalLobeTheta.Value = 0F;
@@ -372,14 +374,14 @@
 			this.label7.AutoSize = true;
 			this.label7.Location = new System.Drawing.Point(6, 89);
 			this.label7.Name = "label7";
-			this.label7.Size = new System.Drawing.Size(70, 13);
+			this.label7.Size = new System.Drawing.Size(53, 13);
 			this.label7.TabIndex = 3;
-			this.label7.Text = "Scale Normal";
+			this.label7.Text = "Flattening";
 			// 
 			// floatTrackbarControlLobeScaleB
 			// 
 			this.floatTrackbarControlLobeScaleB.Enabled = false;
-			this.floatTrackbarControlLobeScaleB.Location = new System.Drawing.Point(123, 141);
+			this.floatTrackbarControlLobeScaleB.Location = new System.Drawing.Point(123, 136);
 			this.floatTrackbarControlLobeScaleB.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlLobeScaleB.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlLobeScaleB.Name = "floatTrackbarControlLobeScaleB";
@@ -427,8 +429,8 @@
 			this.floatTrackbarControlLobeScaleR.RangeMin = 0F;
 			this.floatTrackbarControlLobeScaleR.Size = new System.Drawing.Size(238, 20);
 			this.floatTrackbarControlLobeScaleR.TabIndex = 5;
-			this.floatTrackbarControlLobeScaleR.Value = 0.1666F;
-			this.floatTrackbarControlLobeScaleR.VisibleRangeMax = 1F;
+			this.floatTrackbarControlLobeScaleR.Value = 1F;
+			this.floatTrackbarControlLobeScaleR.VisibleRangeMax = 2F;
 			// 
 			// floatTrackbarControlLobeIntensity
 			// 
@@ -571,17 +573,17 @@
 			this.label10.TabIndex = 3;
 			this.label10.Text = "Fitting Oversize Factor";
 			// 
-			// checkBoxTest
+			// checkBoxUseCenterOfMassForBetterFitting
 			// 
-			this.checkBoxTest.AutoSize = true;
-			this.checkBoxTest.Checked = true;
-			this.checkBoxTest.CheckState = System.Windows.Forms.CheckState.Checked;
-			this.checkBoxTest.Location = new System.Drawing.Point(8, 251);
-			this.checkBoxTest.Name = "checkBoxTest";
-			this.checkBoxTest.Size = new System.Drawing.Size(196, 17);
-			this.checkBoxTest.TabIndex = 9;
-			this.checkBoxTest.Text = "Use Center of Mass for Better Fitting";
-			this.checkBoxTest.UseVisualStyleBackColor = true;
+			this.checkBoxUseCenterOfMassForBetterFitting.AutoSize = true;
+			this.checkBoxUseCenterOfMassForBetterFitting.Checked = true;
+			this.checkBoxUseCenterOfMassForBetterFitting.CheckState = System.Windows.Forms.CheckState.Checked;
+			this.checkBoxUseCenterOfMassForBetterFitting.Location = new System.Drawing.Point(8, 251);
+			this.checkBoxUseCenterOfMassForBetterFitting.Name = "checkBoxUseCenterOfMassForBetterFitting";
+			this.checkBoxUseCenterOfMassForBetterFitting.Size = new System.Drawing.Size(196, 17);
+			this.checkBoxUseCenterOfMassForBetterFitting.TabIndex = 9;
+			this.checkBoxUseCenterOfMassForBetterFitting.Text = "Use Center of Mass for Better Fitting";
+			this.checkBoxUseCenterOfMassForBetterFitting.UseVisualStyleBackColor = true;
 			// 
 			// floatTrackbarControlSurfaceAlbedo
 			// 
@@ -692,7 +694,7 @@
 			this.groupBoxAnalyticalLobe.Controls.Add(this.checkBoxShowDiffuseModel);
 			this.groupBoxAnalyticalLobe.Controls.Add(this.checkBoxShowAnalyticalLobe);
 			this.groupBoxAnalyticalLobe.Controls.Add(this.checkBoxInitializeDirectionTowardCenterOfMass);
-			this.groupBoxAnalyticalLobe.Controls.Add(this.checkBoxTest);
+			this.groupBoxAnalyticalLobe.Controls.Add(this.checkBoxUseCenterOfMassForBetterFitting);
 			this.groupBoxAnalyticalLobe.Controls.Add(this.floatTrackbarControlFitOversize);
 			this.groupBoxAnalyticalLobe.Controls.Add(this.label10);
 			this.groupBoxAnalyticalLobe.Location = new System.Drawing.Point(894, 496);
@@ -769,7 +771,7 @@
 			// 
 			this.label14.AutoSize = true;
 			this.label14.Enabled = false;
-			this.label14.Location = new System.Drawing.Point(6, 145);
+			this.label14.Location = new System.Drawing.Point(6, 140);
 			this.label14.Name = "label14";
 			this.label14.Size = new System.Drawing.Size(86, 13);
 			this.label14.TabIndex = 3;
@@ -801,7 +803,7 @@
 			// label21
 			// 
 			this.label21.AutoSize = true;
-			this.label21.Location = new System.Drawing.Point(6, 141);
+			this.label21.Location = new System.Drawing.Point(6, 115);
 			this.label21.Name = "label21";
 			this.label21.Size = new System.Drawing.Size(103, 13);
 			this.label21.TabIndex = 16;
@@ -809,7 +811,7 @@
 			// 
 			// floatTrackbarControlLobeMaskingImportance_T
 			// 
-			this.floatTrackbarControlLobeMaskingImportance_T.Location = new System.Drawing.Point(123, 136);
+			this.floatTrackbarControlLobeMaskingImportance_T.Location = new System.Drawing.Point(123, 110);
 			this.floatTrackbarControlLobeMaskingImportance_T.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlLobeMaskingImportance_T.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlLobeMaskingImportance_T.Name = "floatTrackbarControlLobeMaskingImportance_T";
@@ -832,7 +834,7 @@
 			// floatTrackbarControlLobeScaleB_T
 			// 
 			this.floatTrackbarControlLobeScaleB_T.Enabled = false;
-			this.floatTrackbarControlLobeScaleB_T.Location = new System.Drawing.Point(123, 110);
+			this.floatTrackbarControlLobeScaleB_T.Location = new System.Drawing.Point(123, 136);
 			this.floatTrackbarControlLobeScaleB_T.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlLobeScaleB_T.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlLobeScaleB_T.Name = "floatTrackbarControlLobeScaleB_T";
@@ -850,7 +852,7 @@
 			this.floatTrackbarControlAnalyticalLobeTheta_T.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlAnalyticalLobeTheta_T.Name = "floatTrackbarControlAnalyticalLobeTheta_T";
 			this.floatTrackbarControlAnalyticalLobeTheta_T.RangeMax = 89.999F;
-			this.floatTrackbarControlAnalyticalLobeTheta_T.RangeMin = 0F;
+			this.floatTrackbarControlAnalyticalLobeTheta_T.RangeMin = -89.999F;
 			this.floatTrackbarControlAnalyticalLobeTheta_T.Size = new System.Drawing.Size(238, 20);
 			this.floatTrackbarControlAnalyticalLobeTheta_T.TabIndex = 13;
 			this.floatTrackbarControlAnalyticalLobeTheta_T.Value = 0F;
@@ -867,7 +869,7 @@
 			// 
 			// floatTrackbarControlLobeScaleT_T
 			// 
-			this.floatTrackbarControlLobeScaleT_T.Location = new System.Drawing.Point(123, 84);
+			this.floatTrackbarControlLobeScaleT_T.Location = new System.Drawing.Point(123, 58);
 			this.floatTrackbarControlLobeScaleT_T.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlLobeScaleT_T.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlLobeScaleT_T.Name = "floatTrackbarControlLobeScaleT_T";
@@ -881,16 +883,16 @@
 			// label17
 			// 
 			this.label17.AutoSize = true;
-			this.label17.Location = new System.Drawing.Point(6, 63);
+			this.label17.Location = new System.Drawing.Point(6, 89);
 			this.label17.Name = "label17";
-			this.label17.Size = new System.Drawing.Size(70, 13);
+			this.label17.Size = new System.Drawing.Size(53, 13);
 			this.label17.TabIndex = 9;
-			this.label17.Text = "Scale Normal";
+			this.label17.Text = "Flattening";
 			// 
 			// label18
 			// 
 			this.label18.AutoSize = true;
-			this.label18.Location = new System.Drawing.Point(6, 88);
+			this.label18.Location = new System.Drawing.Point(6, 62);
 			this.label18.Name = "label18";
 			this.label18.Size = new System.Drawing.Size(67, 13);
 			this.label18.TabIndex = 10;
@@ -898,22 +900,22 @@
 			// 
 			// floatTrackbarControlLobeScaleR_T
 			// 
-			this.floatTrackbarControlLobeScaleR_T.Location = new System.Drawing.Point(123, 58);
+			this.floatTrackbarControlLobeScaleR_T.Location = new System.Drawing.Point(123, 84);
 			this.floatTrackbarControlLobeScaleR_T.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlLobeScaleR_T.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlLobeScaleR_T.Name = "floatTrackbarControlLobeScaleR_T";
-			this.floatTrackbarControlLobeScaleR_T.RangeMax = 10000F;
+			this.floatTrackbarControlLobeScaleR_T.RangeMax = 2F;
 			this.floatTrackbarControlLobeScaleR_T.RangeMin = 0F;
 			this.floatTrackbarControlLobeScaleR_T.Size = new System.Drawing.Size(238, 20);
 			this.floatTrackbarControlLobeScaleR_T.TabIndex = 15;
-			this.floatTrackbarControlLobeScaleR_T.Value = 0.1666F;
-			this.floatTrackbarControlLobeScaleR_T.VisibleRangeMax = 1F;
+			this.floatTrackbarControlLobeScaleR_T.Value = 1F;
+			this.floatTrackbarControlLobeScaleR_T.VisibleRangeMax = 2F;
 			// 
 			// label19
 			// 
 			this.label19.AutoSize = true;
 			this.label19.Enabled = false;
-			this.label19.Location = new System.Drawing.Point(6, 114);
+			this.label19.Location = new System.Drawing.Point(6, 140);
 			this.label19.Name = "label19";
 			this.label19.Size = new System.Drawing.Size(86, 13);
 			this.label19.TabIndex = 11;
@@ -935,7 +937,7 @@
 			// checkBoxShowDiffuseModel
 			// 
 			this.checkBoxShowDiffuseModel.AutoSize = true;
-			this.checkBoxShowDiffuseModel.Location = new System.Drawing.Point(272, 19);
+			this.checkBoxShowDiffuseModel.Location = new System.Drawing.Point(272, 0);
 			this.checkBoxShowDiffuseModel.Name = "checkBoxShowDiffuseModel";
 			this.checkBoxShowDiffuseModel.Size = new System.Drawing.Size(121, 17);
 			this.checkBoxShowDiffuseModel.TabIndex = 9;
@@ -1004,6 +1006,16 @@
 			this.buttonAutomation.Text = "&Automation";
 			this.buttonAutomation.UseVisualStyleBackColor = true;
 			this.buttonAutomation.Click += new System.EventHandler(this.buttonAutomation_Click);
+			// 
+			// radioButtonAnalyticalPhongAnisotropic
+			// 
+			this.radioButtonAnalyticalPhongAnisotropic.AutoSize = true;
+			this.radioButtonAnalyticalPhongAnisotropic.Location = new System.Drawing.Point(202, 2);
+			this.radioButtonAnalyticalPhongAnisotropic.Name = "radioButtonAnalyticalPhongAnisotropic";
+			this.radioButtonAnalyticalPhongAnisotropic.Size = new System.Drawing.Size(85, 17);
+			this.radioButtonAnalyticalPhongAnisotropic.TabIndex = 0;
+			this.radioButtonAnalyticalPhongAnisotropic.Text = "Phong Aniso";
+			this.radioButtonAnalyticalPhongAnisotropic.UseVisualStyleBackColor = true;
 			// 
 			// panelOutput
 			// 
@@ -1096,7 +1108,7 @@
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlFitOversize;
 		private System.Windows.Forms.Label label9;
 		private System.Windows.Forms.Label label10;
-		private System.Windows.Forms.CheckBox checkBoxTest;
+		private System.Windows.Forms.CheckBox checkBoxUseCenterOfMassForBetterFitting;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlSurfaceAlbedo;
 		private System.Windows.Forms.Label label11;
 		private System.Windows.Forms.GroupBox groupBoxSurface;
@@ -1131,6 +1143,7 @@
 		private System.Windows.Forms.Button buttonAutomation;
 		private System.Windows.Forms.Button buttonTestImage;
 		private System.Windows.Forms.CheckBox checkBoxShowDiffuseModel;
+		private System.Windows.Forms.RadioButton radioButtonAnalyticalPhongAnisotropic;
 	}
 }
 

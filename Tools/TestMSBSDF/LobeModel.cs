@@ -14,11 +14,14 @@ namespace TestMSBSDF
 
 		public enum		LOBE_TYPE {
 			MODIFIED_PHONG,
+			MODIFIED_PHONG_ANISOTROPIC,
 			BECKMANN,
 			GGX,
 		}
 
 		public delegate void	ParametersChangedEventHandler( double[] _parameters );
+
+		private delegate double	ComputeFlatteningFactor( float _Vx, float _Vy, float _Vz, double _scale, double _invScale );
 
 		#endregion
 
@@ -28,7 +31,6 @@ namespace TestMSBSDF
 		float3		m_direction;
 		float3		m_centerOfMass;
 		bool		m_fitUsingCenterOfMass;
-//		double		m_IOR;
 		double		m_incomingDirection_CosPhi;
 		double		m_incomingDirection_SinPhi;
 		double		m_oversizeFactor;
@@ -40,8 +42,10 @@ namespace TestMSBSDF
 		// The lobe parameters we need to find
 		double[]	m_parameters = new double[5];
 
-		double[]	m_constraintMin = new double[5] { 0.0, 1e-4, 1e-6, 1e-3, 0.0 };				// Used to be { 0.0, 1e-4, 1e-3, 1e-6, 0.0 }
+		double[]	m_constraintMin = new double[5] { -0.4999 * Math.PI, 1e-4, 1e-6, 1e-3, 0.0 };				// Used to be { 0.0, 1e-4, 1e-3, 1e-6, 0.0 }
 		double[]	m_constraintMax = new double[5] { 0.4999 * Math.PI, 1.0, 10.0, 10.0, 1.0 };
+
+		ComputeFlatteningFactor	m_flatteningEval;
 
 		#endregion
 
@@ -160,7 +164,6 @@ namespace TestMSBSDF
 										float3 _incomingDirection,
 										double _theta,
 										double _roughness,
-//										double _IOR,
 										double _scale,
 										double _flatteningFactor,
 										double _maskingImportance,
@@ -171,11 +174,13 @@ namespace TestMSBSDF
 			// =========================================================================
 			// 4] Setup initial parameters
 			m_lobeType = _lobeType;
+			if ( m_lobeType == LOBE_TYPE.MODIFIED_PHONG_ANISOTROPIC )
+				m_flatteningEval = EvalAnisotropicFlattening;
+			else
+				m_flatteningEval = EvalIsotropicFlattening;
 
 			m_direction = _incomingDirection;
 			m_direction.z = -m_direction.z;	// Mirror against surface to obtain reflected direction against which we'll compute masking/shadowing of incoming ray
-
-//			m_IOR = _IOR;
 
 			double	incomingPhi = Math.Atan2( m_direction.y, m_direction.x );
 			m_incomingDirection_CosPhi = Math.Cos( incomingPhi );
@@ -185,6 +190,62 @@ namespace TestMSBSDF
 			m_fitUsingCenterOfMass = _fitUsingCenterOfMass;
 
 			Parameters = new double[] { _theta, _roughness, _scale, _flatteningFactor, _maskingImportance };
+		}
+
+		// We know that in the shader, local lobe coordinates are transformed into world space by doing:
+		//	wsDirection_Scaled = float3( lsDirection.x, lsDirection.y, Scale * lsDirection.z );
+		//	float	L = length( wsDirection_Scaled );
+		//	wsDirection = wsDirection_Scaled / L;
+		//
+		// We need to compute L so we write:
+		//
+		//	lsDirection.x = L * wsDirection.x
+		//	lsDirection.y = L * wsDirection.y
+		//	lsDirection.z = L * wsDirection.z / Scale
+		//
+		// We know that:
+		//	sqrt( lsDirection.x*lsDirection.x + lsDirection.y*lsDirection.y + lsDirection.z*lsDirection.z ) = 1
+		//
+		// So:
+		//	L * sqrt( wsDirection.x*wsDirection.x + wsDirection.y*wsDirection.y + wsDirection.z*wsDirection.z / (Scale*Scale) ) = 1
+		//
+		// And:
+		//	L = 1 / sqrt( 1 - wsDirection.z*wsDirection.x + wsDirection.z*wsDirection.z / (Scale*Scale) )
+		//
+		// So finally:
+		//	L = 1 / sqrt( 1 + wsDirection.z*wsDirection.z * (1 / (Scale*Scale) - 1) )
+		//
+		double	EvalIsotropicFlattening( float _Vx, float _Vy, float _Vz, double _scale, double _invScale ) {
+			double	length = 1.0 / Math.Sqrt( 1.0 + _Vz*_Vz * (_invScale*_invScale - 1.0) );
+			return length;
+		}
+
+		// We know that in the shader, local lobe coordinates are transformed into world space by doing:
+		//	wsDirection_Scaled = float3( ScaleX * lsDirection.x, ScaleY * lsDirection.y, lsDirection.z );
+		//	float	L = length( wsDirection_Scaled );
+		//	wsDirection = wsDirection_Scaled / L;
+		//
+		// We're looking for the inverse, meaning we're given the normalized world space direction
+		//	and we need to retrieve L, the length by which it was scaled, to obtain the lobe scaling factor we need to apply.
+		//
+		// We then write:
+		//
+		//	lsDirection.x = L * wsDirection.x / ScaleX
+		//	lsDirection.y = L * wsDirection.y / ScaleY
+		//	lsDirection.z = L * wsDirection.z
+		//
+		// We know that:
+		//	sqrt( lsDirection.x*lsDirection.x + lsDirection.y*lsDirection.y + lsDirection.z*lsDirection.z ) = 1
+		//
+		// So:
+		//	L * sqrt( wsDirection.x*wsDirection.x / (ScaleX*ScaleX) + wsDirection.y*wsDirection.y / (ScaleY*ScaleY) + wsDirection.z*wsDirection.z ) = 1
+		//
+		// And:
+		//	L = 1 / sqrt( wsDirection.x*wsDirection.x / (ScaleX*ScaleX) + wsDirection.y*wsDirection.y / (ScaleY*ScaleY) + wsDirection.z*wsDirection.z )
+		//
+		double	EvalAnisotropicFlattening( float _Vx, float _Vy, float _Vz, double _scale, double _invScale ) {
+			double	length = 1.0 / Math.Sqrt( _invScale*_invScale*_Vx*_Vx + _scale*_scale*_Vy*_Vy + _Vz*_Vz );
+			return length;
 		}
 
 		#region Model Implementation
@@ -205,6 +266,12 @@ namespace TestMSBSDF
 			double	lobeFlatten = _newParameters[3];
 			double	maskingImportance = _newParameters[4];
 
+
+			// Flattening is not linear when using the anisotropic lobe model!
+			if ( m_lobeType == LOBE_TYPE.MODIFIED_PHONG_ANISOTROPIC )
+				lobeFlatten = Math.Pow( 2.0, 4.0 * (lobeFlatten - 1.0));	// in [2e-4, 2e4], log space
+
+
 			double	invLobeFlatten = 1.0 / lobeFlatten;
 
 			// Compute constant masking term due to incoming direction
@@ -215,11 +282,6 @@ namespace TestMSBSDF
 			double	sinTheta = Math.Sin( lobeTheta );
 
 			float3	lobe_normal = new float3( (float) (sinTheta * m_incomingDirection_CosPhi), (float) (sinTheta * m_incomingDirection_SinPhi), (float) cosTheta );
-// 			if ( !m_fittingReflectedLobe ) {
-// 				lobe_normal = Refract( lobe_normal, float3.UnitZ, (float) m_IOR );
-// 				lobe_normal.z = -lobe_normal.z;
-// 			}
-
 			float3	lobe_tangent = new float3( (float) -m_incomingDirection_SinPhi, (float) m_incomingDirection_CosPhi, 0.0f );	// Always lying in the X^Y plane
 			float3	lobe_biTangent = lobe_normal.Cross( lobe_tangent );
 
@@ -232,6 +294,7 @@ namespace TestMSBSDF
 			float3	wsOutgoingDirection2 = float3.Zero;
 			float3	lsOutgoingDirection = float3.Zero;
 			double	maskingOutGoing = 0.0;
+			double	maskingShadowing;
 
 			double	sum = 0.0;
 			double	sum_Simulated = 0.0;
@@ -262,6 +325,8 @@ namespace TestMSBSDF
 					maskingOutGoing = Masking( wsOutgoingDirection.z, lobeRoughness );		// Masking( outgoing )
 
 					// Compute projection of world space direction onto reflected direction
+					float	Vx = wsOutgoingDirection.Dot( lobe_tangent );
+					float	Vy = wsOutgoingDirection.Dot( lobe_biTangent );
 					float	Vz = wsOutgoingDirection.Dot( lobe_normal );
 
 //Vz = Math.Min( 0.99f, Vz );
@@ -271,38 +336,13 @@ namespace TestMSBSDF
 					// Compute the lobe intensity in local space
 					lobeIntensity = NDF( cosTheta_M, lobeRoughness );
 
-					double	maskingShadowing = 1.0 + maskingImportance * (maskingIncoming * maskingOutGoing - 1.0);	// = 1 when importance = 0, = masking when importance = 1
+					maskingShadowing = 1.0 + maskingImportance * (maskingIncoming * maskingOutGoing - 1.0);	// = 1 when importance = 0, = masking when importance = 1
  					lobeIntensity *= maskingShadowing;	// * Masking terms
 
 					lobeIntensity *= lobeGlobalScale;
 
-					// Apply additional lobe scaling/flattening along the normal
-					// This scale is computed like this:
-					//
-					// We know that in the shader, local lobe coordinates are transformed into world space by doing:
-					//	wsDirection_Scaled = float3( lsDirection.x, lsDirection.y, Scale * lsDirection.z );
-					//	float	L = length( wsDirection_Scaled );
-					//	wsDirection = wsDirection_Scaled / L;
-					//
-					// We need to compute L so we write:
-					//
-					//	lsDirection.x = L * wsDirection.x
-					//	lsDirection.y = L * wsDirection.y
-					//	lsDirection.z = L * wsDirection.z / Scale
-					//
-					// We know that:
-					//	sqrt( lsDirection.x*lsDirection.x + lsDirection.y*lsDirection.y + lsDirection.z*lsDirection.z ) = 1
-					//
-					// So:
-					//	L * sqrt( wsDirection.x*wsDirection.x + wsDirection.y*wsDirection.y + wsDirection.z*wsDirection.z / (Scale*Scale) ) = 1
-					//
-					// And:
-					//	L = 1 / sqrt( 1 - wsDirection.z*wsDirection.x + wsDirection.z*wsDirection.z / (Scale*Scale) )
-					//
-					// So finally:
-					//	L = 1 / sqrt( 1 + wsDirection.z*wsDirection.z * (1 / (Scale*Scale) - 1) )
-					//
-					length = 1.0 / Math.Sqrt( 1.0 + Vz*Vz * (invLobeFlatten*invLobeFlatten - 1.0) );
+					// Apply additional lobe scaling/flattening
+					length = m_flatteningEval( Vx, Vy, Vz, lobeFlatten, invLobeFlatten );
 
 					outgoingIntensity_Analytical = lobeIntensity * length;	// Lobe intensity was estimated in lobe space, account for scaling when converting back in world space
 
