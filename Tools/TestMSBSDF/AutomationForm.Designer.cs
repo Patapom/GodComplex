@@ -605,7 +605,7 @@
 			this.floatTrackbarControlParam0_Min.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlParam0_Min.Name = "floatTrackbarControlParam0_Min";
 			this.floatTrackbarControlParam0_Min.RangeMax = 90F;
-			this.floatTrackbarControlParam0_Min.RangeMin = -90F;
+			this.floatTrackbarControlParam0_Min.RangeMin = 0F;
 			this.floatTrackbarControlParam0_Min.Size = new System.Drawing.Size(200, 20);
 			this.floatTrackbarControlParam0_Min.TabIndex = 2;
 			this.floatTrackbarControlParam0_Min.Value = 0F;
