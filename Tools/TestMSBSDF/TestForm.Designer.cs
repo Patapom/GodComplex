@@ -77,9 +77,6 @@
 			this.label11 = new System.Windows.Forms.Label();
 			this.groupBoxSurface = new System.Windows.Forms.GroupBox();
 			this.buttonTestImage = new System.Windows.Forms.Button();
-			this.panelDielectric = new System.Windows.Forms.Panel();
-			this.floatTrackbarControlF0 = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.label12 = new System.Windows.Forms.Label();
 			this.radioButtonDiffuse = new System.Windows.Forms.RadioButton();
 			this.radioButtonDielectric = new System.Windows.Forms.RadioButton();
 			this.radioButtonConductor = new System.Windows.Forms.RadioButton();
@@ -104,17 +101,16 @@
 			this.floatTrackbarControlLobeScaleR_T = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label19 = new System.Windows.Forms.Label();
 			this.floatTrackbarControlAnalyticalLobeRoughness_T = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.checkBoxShowDiffuseModel = new System.Windows.Forms.CheckBox();
 			this.checkBoxInitializeDirectionTowardCenterOfMass = new System.Windows.Forms.CheckBox();
 			this.groupBox1 = new System.Windows.Forms.GroupBox();
 			this.checkBoxCompensateScatteringFactor = new System.Windows.Forms.CheckBox();
 			this.checkBoxShowXRay = new System.Windows.Forms.CheckBox();
 			this.buttonAutomation = new System.Windows.Forms.Button();
 			this.panelOutput = new TestMSBSDF.PanelOutput3D(this.components);
-			this.checkBoxShowDiffuseModel = new System.Windows.Forms.CheckBox();
 			this.groupBoxDisplay.SuspendLayout();
 			this.panel2.SuspendLayout();
 			this.groupBoxSurface.SuspendLayout();
-			this.panelDielectric.SuspendLayout();
 			this.groupBoxSimulation.SuspendLayout();
 			this.groupBoxAnalyticalLobe.SuspendLayout();
 			this.tabControlAnalyticalLobes.SuspendLayout();
@@ -253,7 +249,7 @@
 			this.groupBoxDisplay.Controls.Add(this.checkBoxShowNormals);
 			this.groupBoxDisplay.Controls.Add(this.checkBoxShowTransmittedDirectionsHistogram);
 			this.groupBoxDisplay.Controls.Add(this.checkBoxShowReflectedDirectionsHistogram);
-			this.groupBoxDisplay.Location = new System.Drawing.Point(894, 323);
+			this.groupBoxDisplay.Location = new System.Drawing.Point(894, 289);
 			this.groupBoxDisplay.Name = "groupBoxDisplay";
 			this.groupBoxDisplay.Size = new System.Drawing.Size(386, 94);
 			this.groupBoxDisplay.TabIndex = 9;
@@ -606,15 +602,14 @@
 			this.label11.AutoSize = true;
 			this.label11.Location = new System.Drawing.Point(6, 73);
 			this.label11.Name = "label11";
-			this.label11.Size = new System.Drawing.Size(40, 13);
+			this.label11.Size = new System.Drawing.Size(63, 13);
 			this.label11.TabIndex = 3;
-			this.label11.Text = "Albedo";
+			this.label11.Text = "Albedo / F0";
 			// 
 			// groupBoxSurface
 			// 
 			this.groupBoxSurface.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
 			this.groupBoxSurface.Controls.Add(this.buttonTestImage);
-			this.groupBoxSurface.Controls.Add(this.panelDielectric);
 			this.groupBoxSurface.Controls.Add(this.radioButtonDiffuse);
 			this.groupBoxSurface.Controls.Add(this.radioButtonDielectric);
 			this.groupBoxSurface.Controls.Add(this.radioButtonConductor);
@@ -626,14 +621,14 @@
 			this.groupBoxSurface.Controls.Add(this.label11);
 			this.groupBoxSurface.Location = new System.Drawing.Point(894, 12);
 			this.groupBoxSurface.Name = "groupBoxSurface";
-			this.groupBoxSurface.Size = new System.Drawing.Size(386, 162);
+			this.groupBoxSurface.Size = new System.Drawing.Size(386, 128);
 			this.groupBoxSurface.TabIndex = 10;
 			this.groupBoxSurface.TabStop = false;
 			this.groupBoxSurface.Text = "Beckmann Surface Parameters";
 			// 
 			// buttonTestImage
 			// 
-			this.buttonTestImage.Location = new System.Drawing.Point(298, 126);
+			this.buttonTestImage.Location = new System.Drawing.Point(298, 93);
 			this.buttonTestImage.Name = "buttonTestImage";
 			this.buttonTestImage.Size = new System.Drawing.Size(75, 23);
 			this.buttonTestImage.TabIndex = 6;
@@ -641,73 +636,37 @@
 			this.buttonTestImage.UseVisualStyleBackColor = true;
 			this.buttonTestImage.Click += new System.EventHandler(this.buttonTestImage_Click);
 			// 
-			// panelDielectric
-			// 
-			this.panelDielectric.Controls.Add(this.floatTrackbarControlF0);
-			this.panelDielectric.Controls.Add(this.label12);
-			this.panelDielectric.Enabled = false;
-			this.panelDielectric.Location = new System.Drawing.Point(6, 97);
-			this.panelDielectric.Name = "panelDielectric";
-			this.panelDielectric.Size = new System.Drawing.Size(365, 23);
-			this.panelDielectric.TabIndex = 5;
-			// 
-			// floatTrackbarControlF0
-			// 
-			this.floatTrackbarControlF0.Location = new System.Drawing.Point(117, 0);
-			this.floatTrackbarControlF0.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.floatTrackbarControlF0.MinimumSize = new System.Drawing.Size(70, 20);
-			this.floatTrackbarControlF0.Name = "floatTrackbarControlF0";
-			this.floatTrackbarControlF0.RangeMax = 1F;
-			this.floatTrackbarControlF0.RangeMin = 0F;
-			this.floatTrackbarControlF0.Size = new System.Drawing.Size(238, 20);
-			this.floatTrackbarControlF0.TabIndex = 2;
-			this.floatTrackbarControlF0.Value = 1F;
-			this.floatTrackbarControlF0.VisibleRangeMax = 1F;
-			this.floatTrackbarControlF0.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlBeckmannRoughness_ValueChanged);
-			// 
-			// label12
-			// 
-			this.label12.AutoSize = true;
-			this.label12.Location = new System.Drawing.Point(0, 0);
-			this.label12.Name = "label12";
-			this.label12.Size = new System.Drawing.Size(19, 13);
-			this.label12.TabIndex = 3;
-			this.label12.Text = "F0";
-			// 
 			// radioButtonDiffuse
 			// 
 			this.radioButtonDiffuse.AutoSize = true;
-			this.radioButtonDiffuse.Location = new System.Drawing.Point(163, 130);
+			this.radioButtonDiffuse.Location = new System.Drawing.Point(163, 97);
 			this.radioButtonDiffuse.Name = "radioButtonDiffuse";
 			this.radioButtonDiffuse.Size = new System.Drawing.Size(58, 17);
 			this.radioButtonDiffuse.TabIndex = 4;
 			this.radioButtonDiffuse.Text = "Diffuse";
 			this.radioButtonDiffuse.UseVisualStyleBackColor = true;
-			this.radioButtonDiffuse.CheckedChanged += new System.EventHandler(this.radioButtonSurfaceTypeChanged);
 			// 
 			// radioButtonDielectric
 			// 
 			this.radioButtonDielectric.AutoSize = true;
-			this.radioButtonDielectric.Location = new System.Drawing.Point(89, 130);
+			this.radioButtonDielectric.Location = new System.Drawing.Point(89, 97);
 			this.radioButtonDielectric.Name = "radioButtonDielectric";
 			this.radioButtonDielectric.Size = new System.Drawing.Size(69, 17);
 			this.radioButtonDielectric.TabIndex = 4;
 			this.radioButtonDielectric.Text = "Dielectric";
 			this.radioButtonDielectric.UseVisualStyleBackColor = true;
-			this.radioButtonDielectric.CheckedChanged += new System.EventHandler(this.radioButtonSurfaceTypeChanged);
 			// 
 			// radioButtonConductor
 			// 
 			this.radioButtonConductor.AutoSize = true;
 			this.radioButtonConductor.Checked = true;
-			this.radioButtonConductor.Location = new System.Drawing.Point(9, 130);
+			this.radioButtonConductor.Location = new System.Drawing.Point(9, 97);
 			this.radioButtonConductor.Name = "radioButtonConductor";
 			this.radioButtonConductor.Size = new System.Drawing.Size(74, 17);
 			this.radioButtonConductor.TabIndex = 4;
 			this.radioButtonConductor.TabStop = true;
 			this.radioButtonConductor.Text = "Conductor";
 			this.radioButtonConductor.UseVisualStyleBackColor = true;
-			this.radioButtonConductor.CheckedChanged += new System.EventHandler(this.radioButtonSurfaceTypeChanged);
 			// 
 			// groupBoxSimulation
 			// 
@@ -719,7 +678,7 @@
 			this.groupBoxSimulation.Controls.Add(this.label4);
 			this.groupBoxSimulation.Controls.Add(this.floatTrackbarControlPhi);
 			this.groupBoxSimulation.Controls.Add(this.label3);
-			this.groupBoxSimulation.Location = new System.Drawing.Point(894, 180);
+			this.groupBoxSimulation.Location = new System.Drawing.Point(894, 146);
 			this.groupBoxSimulation.Name = "groupBoxSimulation";
 			this.groupBoxSimulation.Size = new System.Drawing.Size(386, 137);
 			this.groupBoxSimulation.TabIndex = 11;
@@ -736,7 +695,7 @@
 			this.groupBoxAnalyticalLobe.Controls.Add(this.checkBoxTest);
 			this.groupBoxAnalyticalLobe.Controls.Add(this.floatTrackbarControlFitOversize);
 			this.groupBoxAnalyticalLobe.Controls.Add(this.label10);
-			this.groupBoxAnalyticalLobe.Location = new System.Drawing.Point(894, 534);
+			this.groupBoxAnalyticalLobe.Location = new System.Drawing.Point(894, 496);
 			this.groupBoxAnalyticalLobe.Name = "groupBoxAnalyticalLobe";
 			this.groupBoxAnalyticalLobe.Size = new System.Drawing.Size(386, 307);
 			this.groupBoxAnalyticalLobe.TabIndex = 12;
@@ -973,6 +932,16 @@
 			this.floatTrackbarControlAnalyticalLobeRoughness_T.Value = 0.9444F;
 			this.floatTrackbarControlAnalyticalLobeRoughness_T.VisibleRangeMax = 1F;
 			// 
+			// checkBoxShowDiffuseModel
+			// 
+			this.checkBoxShowDiffuseModel.AutoSize = true;
+			this.checkBoxShowDiffuseModel.Location = new System.Drawing.Point(272, 19);
+			this.checkBoxShowDiffuseModel.Name = "checkBoxShowDiffuseModel";
+			this.checkBoxShowDiffuseModel.Size = new System.Drawing.Size(121, 17);
+			this.checkBoxShowDiffuseModel.TabIndex = 9;
+			this.checkBoxShowDiffuseModel.Text = "Show Diffuse Model";
+			this.checkBoxShowDiffuseModel.UseVisualStyleBackColor = true;
+			// 
 			// checkBoxInitializeDirectionTowardCenterOfMass
 			// 
 			this.checkBoxInitializeDirectionTowardCenterOfMass.AutoSize = true;
@@ -995,7 +964,7 @@
 			this.groupBox1.Controls.Add(this.checkBoxShowWireframe);
 			this.groupBox1.Controls.Add(this.label5);
 			this.groupBox1.Controls.Add(this.checkBoxShowLobe);
-			this.groupBox1.Location = new System.Drawing.Point(894, 427);
+			this.groupBox1.Location = new System.Drawing.Point(894, 389);
 			this.groupBox1.Name = "groupBox1";
 			this.groupBox1.Size = new System.Drawing.Size(386, 101);
 			this.groupBox1.TabIndex = 13;
@@ -1046,16 +1015,6 @@
 			this.panelOutput.Size = new System.Drawing.Size(876, 835);
 			this.panelOutput.TabIndex = 0;
 			// 
-			// checkBoxShowDiffuseModel
-			// 
-			this.checkBoxShowDiffuseModel.AutoSize = true;
-			this.checkBoxShowDiffuseModel.Location = new System.Drawing.Point(272, 19);
-			this.checkBoxShowDiffuseModel.Name = "checkBoxShowDiffuseModel";
-			this.checkBoxShowDiffuseModel.Size = new System.Drawing.Size(121, 17);
-			this.checkBoxShowDiffuseModel.TabIndex = 9;
-			this.checkBoxShowDiffuseModel.Text = "Show Diffuse Model";
-			this.checkBoxShowDiffuseModel.UseVisualStyleBackColor = true;
-			// 
 			// TestForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -1079,8 +1038,6 @@
 			this.panel2.PerformLayout();
 			this.groupBoxSurface.ResumeLayout(false);
 			this.groupBoxSurface.PerformLayout();
-			this.panelDielectric.ResumeLayout(false);
-			this.panelDielectric.PerformLayout();
 			this.groupBoxSimulation.ResumeLayout(false);
 			this.groupBoxSimulation.PerformLayout();
 			this.groupBoxAnalyticalLobe.ResumeLayout(false);
@@ -1143,14 +1100,11 @@
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlSurfaceAlbedo;
 		private System.Windows.Forms.Label label11;
 		private System.Windows.Forms.GroupBox groupBoxSurface;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlF0;
-		private System.Windows.Forms.Label label12;
 		private System.Windows.Forms.GroupBox groupBoxSimulation;
 		private System.Windows.Forms.GroupBox groupBoxAnalyticalLobe;
 		private System.Windows.Forms.GroupBox groupBox1;
 		private System.Windows.Forms.Label label14;
 		private System.Windows.Forms.Label label13;
-		private System.Windows.Forms.Panel panelDielectric;
 		private System.Windows.Forms.RadioButton radioButtonConductor;
 		private System.Windows.Forms.RadioButton radioButtonDielectric;
 		private System.Windows.Forms.RadioButton radioButtonDiffuse;

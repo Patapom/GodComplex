@@ -340,11 +340,11 @@ float4	PS( PS_IN _In ) : SV_TARGET0 {
 	bool	isTransmittedLobe = _Flags & 4U;
 
 	float4	simulatedLobeColor = float4( _In.Color, solidAlpha );
-	float4	analyticalLobeColor = isTransmittedLobe ? float4( _In.Color * float3( 0.5, 0.5, 1.0 ), solidAlpha )
+	float4	analyticalLobeColor = isTransmittedLobe ? float4( _In.Color * float3( 1.0, 0.5, 1.0 ), solidAlpha )
 													: float4( _In.Color * float3( 0.5, 1.0, 0.5 ), solidAlpha );
 	float4	simulatedLobeWireColor = isTransmittedLobe	? float4( 0, 0, 0.1, wireframeAlpha )
 														: float4( 0.1, 0, 0, wireframeAlpha );
-	float4	analyticalLobeWireColor = isTransmittedLobe	? float4( 0, 0, 0.1, wireframeAlpha )
+	float4	analyticalLobeWireColor = isTransmittedLobe	? float4( 0.05, 0, 0.1, wireframeAlpha )
 														: float4( 0, 0.1, 0, wireframeAlpha );
 
 	bool	isDiffuseModel = (_Flags >> 4) == 3U;

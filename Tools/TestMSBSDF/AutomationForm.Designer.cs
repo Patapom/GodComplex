@@ -131,6 +131,7 @@
 			this.label10 = new System.Windows.Forms.Label();
 			this.panel3 = new System.Windows.Forms.Panel();
 			this.floatTrackbarControlInit_CustomRoughness = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.radioButtonInitRoughness_Analytical = new System.Windows.Forms.RadioButton();
 			this.radioButtonInitRoughness_Fixed = new System.Windows.Forms.RadioButton();
 			this.radioButtonInitRoughness_NoChange = new System.Windows.Forms.RadioButton();
 			this.radioButtonInitRoughness_UseSurface = new System.Windows.Forms.RadioButton();
@@ -173,7 +174,6 @@
 			this.integerTrackbarControlThreadsCount = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
 			this.label31 = new System.Windows.Forms.Label();
 			this.completionArrayControl = new TestMSBSDF.CompletionArrayControl();
-			this.radioButtonInitRoughness_Analytical = new System.Windows.Forms.RadioButton();
 			this.groupBoxSimulationParameters.SuspendLayout();
 			this.panel6.SuspendLayout();
 			this.panel5.SuspendLayout();
@@ -855,13 +855,13 @@
 			// 
 			// integerTrackbarControlRetries
 			// 
-			this.integerTrackbarControlRetries.Location = new System.Drawing.Point(212, 96);
+			this.integerTrackbarControlRetries.Location = new System.Drawing.Point(197, 96);
 			this.integerTrackbarControlRetries.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.integerTrackbarControlRetries.MinimumSize = new System.Drawing.Size(70, 20);
 			this.integerTrackbarControlRetries.Name = "integerTrackbarControlRetries";
 			this.integerTrackbarControlRetries.RangeMax = 10;
 			this.integerTrackbarControlRetries.RangeMin = 0;
-			this.integerTrackbarControlRetries.Size = new System.Drawing.Size(134, 20);
+			this.integerTrackbarControlRetries.Size = new System.Drawing.Size(149, 20);
 			this.integerTrackbarControlRetries.TabIndex = 3;
 			this.integerTrackbarControlRetries.Value = 2;
 			this.integerTrackbarControlRetries.VisibleRangeMax = 4;
@@ -871,14 +871,14 @@
 			// 
 			this.label24.Location = new System.Drawing.Point(7, 99);
 			this.label24.Name = "label24";
-			this.label24.Size = new System.Drawing.Size(209, 17);
+			this.label24.Size = new System.Drawing.Size(199, 17);
 			this.label24.TabIndex = 1;
-			this.label24.Text = "If fitting fails, retry from current position for ";
+			this.label24.Text = "If fitting fails, retry from current position";
 			// 
 			// label25
 			// 
 			this.label25.AutoSize = true;
-			this.label25.Location = new System.Drawing.Point(351, 109);
+			this.label25.Location = new System.Drawing.Point(352, 99);
 			this.label25.Name = "label25";
 			this.label25.Size = new System.Drawing.Size(31, 13);
 			this.label25.TabIndex = 1;
@@ -1055,8 +1055,6 @@
 			// checkBoxInitMasking_Inherit
 			// 
 			this.checkBoxInitMasking_Inherit.AutoSize = true;
-			this.checkBoxInitMasking_Inherit.Checked = true;
-			this.checkBoxInitMasking_Inherit.CheckState = System.Windows.Forms.CheckState.Checked;
 			this.checkBoxInitMasking_Inherit.Location = new System.Drawing.Point(9, 23);
 			this.checkBoxInitMasking_Inherit.Name = "checkBoxInitMasking_Inherit";
 			this.checkBoxInitMasking_Inherit.Size = new System.Drawing.Size(77, 17);
@@ -1181,8 +1179,6 @@
 			// checkBoxInitFlatten_Inherit
 			// 
 			this.checkBoxInitFlatten_Inherit.AutoSize = true;
-			this.checkBoxInitFlatten_Inherit.Checked = true;
-			this.checkBoxInitFlatten_Inherit.CheckState = System.Windows.Forms.CheckState.Checked;
 			this.checkBoxInitFlatten_Inherit.Location = new System.Drawing.Point(6, 21);
 			this.checkBoxInitFlatten_Inherit.Name = "checkBoxInitFlatten_Inherit";
 			this.checkBoxInitFlatten_Inherit.Size = new System.Drawing.Size(77, 17);
@@ -1325,8 +1321,6 @@
 			// checkBoxInitScale_Inherit
 			// 
 			this.checkBoxInitScale_Inherit.AutoSize = true;
-			this.checkBoxInitScale_Inherit.Checked = true;
-			this.checkBoxInitScale_Inherit.CheckState = System.Windows.Forms.CheckState.Checked;
 			this.checkBoxInitScale_Inherit.Location = new System.Drawing.Point(6, 24);
 			this.checkBoxInitScale_Inherit.Name = "checkBoxInitScale_Inherit";
 			this.checkBoxInitScale_Inherit.Size = new System.Drawing.Size(77, 17);
@@ -1440,8 +1434,6 @@
 			// checkBoxInitDirection_Inherit
 			// 
 			this.checkBoxInitDirection_Inherit.AutoSize = true;
-			this.checkBoxInitDirection_Inherit.Checked = true;
-			this.checkBoxInitDirection_Inherit.CheckState = System.Windows.Forms.CheckState.Checked;
 			this.checkBoxInitDirection_Inherit.Location = new System.Drawing.Point(6, 22);
 			this.checkBoxInitDirection_Inherit.Name = "checkBoxInitDirection_Inherit";
 			this.checkBoxInitDirection_Inherit.Size = new System.Drawing.Size(77, 17);
@@ -1493,6 +1485,17 @@
 			this.floatTrackbarControlInit_CustomRoughness.Value = 0.5F;
 			this.floatTrackbarControlInit_CustomRoughness.VisibleRangeMax = 1F;
 			this.floatTrackbarControlInit_CustomRoughness.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlInit_CustomRoughness_ValueChanged);
+			// 
+			// radioButtonInitRoughness_Analytical
+			// 
+			this.radioButtonInitRoughness_Analytical.AutoSize = true;
+			this.radioButtonInitRoughness_Analytical.Location = new System.Drawing.Point(105, 95);
+			this.radioButtonInitRoughness_Analytical.Name = "radioButtonInitRoughness_Analytical";
+			this.radioButtonInitRoughness_Analytical.Size = new System.Drawing.Size(146, 17);
+			this.radioButtonInitRoughness_Analytical.TabIndex = 0;
+			this.radioButtonInitRoughness_Analytical.Text = "Use Analytical Expression";
+			this.radioButtonInitRoughness_Analytical.UseVisualStyleBackColor = true;
+			this.radioButtonInitRoughness_Analytical.CheckedChanged += new System.EventHandler(this.radioButtonInitRoughness_CheckedChanged);
 			// 
 			// radioButtonInitRoughness_Fixed
 			// 
@@ -1558,8 +1561,6 @@
 			// checkBoxInitRoughness_Inherit
 			// 
 			this.checkBoxInitRoughness_Inherit.AutoSize = true;
-			this.checkBoxInitRoughness_Inherit.Checked = true;
-			this.checkBoxInitRoughness_Inherit.CheckState = System.Windows.Forms.CheckState.Checked;
 			this.checkBoxInitRoughness_Inherit.Location = new System.Drawing.Point(9, 25);
 			this.checkBoxInitRoughness_Inherit.Name = "checkBoxInitRoughness_Inherit";
 			this.checkBoxInitRoughness_Inherit.Size = new System.Drawing.Size(77, 17);
@@ -1893,17 +1894,6 @@
 			this.completionArrayControl.TabIndex = 3;
 			this.completionArrayControl.SelectionChanged += new TestMSBSDF.CompletionArrayControl.SelectionChangedEventHandler(this.completionArrayControl_SelectionChanged);
 			this.completionArrayControl.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.completionArrayControl_MouseDoubleClick);
-			// 
-			// radioButtonInitRoughness_Analytical
-			// 
-			this.radioButtonInitRoughness_Analytical.AutoSize = true;
-			this.radioButtonInitRoughness_Analytical.Location = new System.Drawing.Point(105, 95);
-			this.radioButtonInitRoughness_Analytical.Name = "radioButtonInitRoughness_Analytical";
-			this.radioButtonInitRoughness_Analytical.Size = new System.Drawing.Size(146, 17);
-			this.radioButtonInitRoughness_Analytical.TabIndex = 0;
-			this.radioButtonInitRoughness_Analytical.Text = "Use Analytical Expression";
-			this.radioButtonInitRoughness_Analytical.UseVisualStyleBackColor = true;
-			this.radioButtonInitRoughness_Analytical.CheckedChanged += new System.EventHandler(this.radioButtonInitRoughness_CheckedChanged);
 			// 
 			// AutomationForm
 			// 

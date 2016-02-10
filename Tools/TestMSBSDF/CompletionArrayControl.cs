@@ -25,9 +25,9 @@ namespace TestMSBSDF
 
 		#region FIELDS
 
-		protected int				m_dimensionX = 10;
-		protected int				m_dimensionY = 4;
-		protected int				m_dimensionZ = 1;
+		protected int				m_dimensionX = -1;
+		protected int				m_dimensionY = -1;
+		protected int				m_dimensionZ = -1;
 		protected float[,,]			m_states = null;
 		protected string[,,]		m_texts = null;
 
@@ -162,8 +162,7 @@ namespace TestMSBSDF
 			InitializeGraphics();
 
 			// Init
-			Init( m_dimensionX, m_dimensionY, m_dimensionZ );
-
+			Init( 10, 4, 1 );
 //			if ( DesignMode ) {
 				for ( int Y=0; Y < m_dimensionY-2; Y++ )
 					for ( int X=0; X < m_dimensionX; X++ )
@@ -197,6 +196,9 @@ namespace TestMSBSDF
 		/// <param name="_dimensionY"></param>
 		/// <param name="_dimensionZ"></param>
 		public void				Init( int _dimensionX, int _dimensionY, int _dimensionZ ) {
+			if ( _dimensionX == m_dimensionX && _dimensionY == m_dimensionY && _dimensionZ == m_dimensionZ )
+				return;	// No change
+
 			m_dimensionX = _dimensionX;
 			m_dimensionY = _dimensionY;
 			m_dimensionZ = _dimensionZ;

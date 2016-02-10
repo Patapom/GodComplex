@@ -682,13 +682,12 @@ namespace TestMSBSDF
 		///  we end up ray-tracing the entire surface finely (hopefully, the full surface can be traced using enough terationsi)
 		/// </summary>
 		/// <param name="_roughness">Surface roughness</param>
-		/// <param name="_albedo">Surface albedo</param>
-		/// <param name="_F0">Surface Fresnel reflectance at 0°</param>
+		/// <param name="_albedo">Surface albedo for diffuse or F0 for dielectrics</param>
 		/// <param name="_surfaceType">Type of surface we're simulating</param>
 		/// <param name="_theta">Vertical angle of incidence</param>
 		/// <param name="_phi">Azimuthal angle of incidence</param>
 		/// <param name="_iterationsCount">Amount of iterations of beam tracing</param>
-		public void	RayTraceSurface( float _roughness, float _albedo, float _F0, SURFACE_TYPE _surfaceType, float _theta, float _phi, int _iterationsCount ) {
+		public void	RayTraceSurface( float _roughness, float _albedoF0, SURFACE_TYPE _surfaceType, float _theta, float _phi, int _iterationsCount ) {
 
 			float	sinTheta = (float) Math.Sin( _theta );
 			float	cosTheta = (float) Math.Cos( _theta );
@@ -697,8 +696,8 @@ namespace TestMSBSDF
 
 			m_lastComputedDirection.Set( -sinTheta * cosPhi, -sinTheta * sinPhi, -cosTheta );	// Minus sign because we need the direction pointing TOWARD the surface (i.e. z < 0)
 			m_lastComputedRoughness = _roughness;
-			m_lastComputedAlbedo = _albedo;
-			m_lastComputedIOR = Fresnel_IORFromF0( _F0 );
+			m_lastComputedAlbedo = _albedoF0;
+			m_lastComputedIOR = Fresnel_IORFromF0( _albedoF0 );
 			m_lastComputedSurfaceType = _surfaceType;
 
 
@@ -1227,10 +1226,6 @@ namespace TestMSBSDF
 			}
 		}
 
-		private void radioButtonSurfaceTypeChanged( object sender, EventArgs e ) {
-			panelDielectric.Enabled = radioButtonDielectric.Checked;
-		}
-
 		private void buttonRayTrace_Click( object sender, EventArgs e ) {
 			try {
 				m_pauseRendering = true;
@@ -1241,7 +1236,7 @@ namespace TestMSBSDF
 				else if ( radioButtonDiffuse.Checked )
 					surfaceType = SURFACE_TYPE.DIFFUSE;
 
-				RayTraceSurface( floatTrackbarControlBeckmannRoughness.Value, floatTrackbarControlSurfaceAlbedo.Value, floatTrackbarControlF0.Value, surfaceType, (float) Math.PI * floatTrackbarControlTheta.Value / 180.0f, (float) Math.PI * floatTrackbarControlPhi.Value / 180.0f, integerTrackbarControlIterationsCount.Value );
+				RayTraceSurface( floatTrackbarControlBeckmannRoughness.Value, floatTrackbarControlSurfaceAlbedo.Value, surfaceType, (float) Math.PI * floatTrackbarControlTheta.Value / 180.0f, (float) Math.PI * floatTrackbarControlPhi.Value / 180.0f, integerTrackbarControlIterationsCount.Value );
 				m_pauseRendering = false;
 			} catch ( Exception _e ) {
 				MessageBox( "An error occurred while ray-tracing the surface using " + integerTrackbarControlIterationsCount.Value + " iterations:\r\n" + _e.Message + "\r\n\r\nDisabling device..." );
@@ -1265,14 +1260,13 @@ namespace TestMSBSDF
 			m_Tex_LobeHistogram_CPU.CopyFrom( _reflected ? m_Tex_LobeHistogram_Reflected : m_Tex_LobeHistogram_Transmitted );
 
 			// Initialize lobe model
-			if ( m_lobeModel == null ) {
-				m_lobeModel = new LobeModel();
-				m_lobeModel.ParametersChanged += ( double[] _parameters ) => {
-					UpdateLobeParameters( _parameters, _reflected );
-				};
-			}
+			m_lobeModel = new LobeModel();
+			m_lobeModel.ParametersChanged += ( double[] _parameters ) => {
+				UpdateLobeParameters( _parameters, _reflected );
+			};
 
-			m_lobeModel.InitTargetData( m_Tex_LobeHistogram_CPU, _scatteringOrder );
+			double[,]	histogramData = LobeModel.HistogramTexture2Array( m_Tex_LobeHistogram_CPU, _scatteringOrder );
+			m_lobeModel.InitTargetData( histogramData );
 
 			if ( _computeInitialThetaUsingCenterOfMass ) {
 				// Optionally override theta to use the direction of the center of mass
@@ -1286,7 +1280,7 @@ namespace TestMSBSDF
 
 			LobeModel.LOBE_TYPE	lobeType = radioButtonAnalyticalPhong.Checked ? LobeModel.LOBE_TYPE.MODIFIED_PHONG : (radioButtonAnalyticalBeckmann.Checked ? LobeModel.LOBE_TYPE.BECKMANN : LobeModel.LOBE_TYPE.GGX);
 
-			m_lobeModel.InitLobeData( lobeType, _incomingDirection, _theta, _roughness, _scale, _flatteningFactor, _MaskingImportance, _OversizeFactor, checkBoxTest.Checked );
+			m_lobeModel.InitLobeData( lobeType, _incomingDirection, _theta, _roughness, _scale, _flatteningFactor, _MaskingImportance, _OversizeFactor, _computeInitialThetaUsingCenterOfMass );
 
 // 			if ( !checkBoxTest.Checked ) {
 // 				m_Fitter.SuccessTolerance = 1e-4;
@@ -1303,7 +1297,7 @@ namespace TestMSBSDF
 
 		private void buttonFit_Click( object sender, EventArgs e ) {
 			if ( m_fitting )
-				throw new Exception( "Canceled!" );
+				throw new AutomationForm.CanceledException();
 
 			bool	fittingTransmittedLobe = m_lastComputedSurfaceType == SURFACE_TYPE.DIELECTRIC && tabControlAnalyticalLobes.SelectedTab == tabPageTransmittedLobe;
 			bool	fittingReflectedLobe = !fittingTransmittedLobe;
@@ -1338,7 +1332,8 @@ namespace TestMSBSDF
 								);
 
 				MessageBox( "Fitting succeeded after " + m_Fitter.IterationsCount + " iterations.\r\nReached minimum: " + m_Fitter.FunctionMinimum, MessageBoxButtons.OK, MessageBoxIcon.Information );
-
+			} catch ( AutomationForm.CanceledException ) {
+				// Simply cancel...
 			} catch ( Exception _e ) {
 				MessageBox( "An error occurred while performing lobe fitting:\r\n" + _e.Message + "\r\n\r\nLast minimum: " + m_Fitter.FunctionMinimum + " after " + m_Fitter.IterationsCount + " iterations..." );
 			} finally {

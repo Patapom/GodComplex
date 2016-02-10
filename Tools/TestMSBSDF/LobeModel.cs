@@ -81,31 +81,13 @@ namespace TestMSBSDF
 		/// </summary>
 		/// <param name="_texHistogram_CPU"></param>
 		/// <param name="_scatteringOrder"></param>
-		public void		InitTargetData(	Texture2D _texHistogram_CPU,
-										int _scatteringOrder ) {
+		public void		InitTargetData(	double[,] _histogramData ) {
 
-			int	scattMin = _scatteringOrder-1;		// Because scattering order 1 is actually stored in first slice of the texture array
-			int	scattMax = scattMin+1;				// To simulate a single scattering order
-//			int	scattMax = MAX_SCATTERING_ORDER;	// To simulate all scattering orders accumulated
+			m_histogramData = _histogramData;
+			W = m_histogramData.GetLength( 0 );
+			H = m_histogramData.GetLength( 1 );
 
-			// =========================================================================
-			// 1] Readback lobe texture data into an array
-			W = _texHistogram_CPU.Width;
-			H = _texHistogram_CPU.Height;
-			m_histogramData = new double[W,H];
-
-			for ( int scatteringOrder=scattMin; scatteringOrder < scattMax; scatteringOrder++ ) {
-				PixelsBuffer	Content = _texHistogram_CPU.Map( 0, scatteringOrder );
-				using ( BinaryReader R = Content.OpenStreamRead() )
-					for ( int Y=0; Y < H; Y++ )
-						for ( int X=0; X < W; X++ )
-							m_histogramData[X,Y] += W * H * R.ReadSingle();
-				Content.CloseStream();
-				_texHistogram_CPU.UnMap( 0, scatteringOrder );
-			}
-
-			// =========================================================================
-			// 2] Compute center of mass from which we'll measure distances
+			// Compute center of mass from which we'll measure distances
 			m_centerOfMass = float3.Zero;
 			float3	wsOutgoingDirection = float3.Zero;
 			for ( int Y=0; Y < H; Y++ ) {
@@ -132,6 +114,34 @@ namespace TestMSBSDF
 				}
 			}
 			m_centerOfMass /= W*H;
+		}
+
+		/// <summary>
+		/// Reads back a lobe texture histogram into an array
+		/// </summary>
+		/// <param name="_texHistogram_CPU"></param>
+		/// <param name="_scatteringOrder"></param>
+		/// <returns></returns>
+		public static double[,]	HistogramTexture2Array( Texture2D _texHistogram_CPU, int _scatteringOrder ) {
+			int	scattMin = _scatteringOrder-1;		// Because scattering order 1 is actually stored in first slice of the texture array
+			int	scattMax = scattMin+1;				// To simulate a single scattering order
+//			int	scattMax = MAX_SCATTERING_ORDER;	// To simulate all scattering orders accumulated
+
+			int			W = _texHistogram_CPU.Width;
+			int			H = _texHistogram_CPU.Height;
+			double[,]	histogramData = new double[W,H];
+
+			for ( int scatteringOrder=scattMin; scatteringOrder < scattMax; scatteringOrder++ ) {
+				PixelsBuffer	Content = _texHistogram_CPU.Map( 0, scatteringOrder );
+				using ( BinaryReader R = Content.OpenStreamRead() )
+					for ( int Y=0; Y < H; Y++ )
+						for ( int X=0; X < W; X++ )
+							histogramData[X,Y] += W * H * R.ReadSingle();
+				Content.CloseStream();
+				_texHistogram_CPU.UnMap( 0, scatteringOrder );
+			}
+
+			return histogramData;
 		}
 
 		/// <summary>

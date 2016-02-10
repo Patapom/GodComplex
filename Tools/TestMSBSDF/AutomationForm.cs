@@ -22,7 +22,7 @@ namespace TestMSBSDF
 
 		#region NESTED TYPES
 
-		class CanceledException : Exception {}
+		public class CanceledException : Exception {}
 
 		/// <summary>
 		/// The main automation document class
@@ -354,26 +354,26 @@ namespace TestMSBSDF
 				// Lobe parameters
 				public LobeModel.LOBE_TYPE		m_lobeModel = LobeModel.LOBE_TYPE.MODIFIED_PHONG;
 				public GUESS_INITIAL_DIRECTION	m_initialDirection = GUESS_INITIAL_DIRECTION.CENTER_OF_MASS;
-				public bool						m_inheritDirection_Top = true;
+				public bool						m_inheritDirection_Top = false;
 				public bool						m_inheritDirection_Left = false;
 				public float					m_fixedTheta = 0.0f;
 				public GUESS_INITIAL_ROUGHNESS	m_initialRoughness = GUESS_INITIAL_ROUGHNESS.SURFACE;
-				public bool						m_inheritRoughness_Top = true;
+				public bool						m_inheritRoughness_Top = false;
 				public bool						m_inheritRoughness_Left = false;
 				public float					m_customRoughness = 0.8f;
 				public float					m_fixedRoughness = 1.0f;
 				public GUESS_INITIAL_SCALE		m_initialScale = GUESS_INITIAL_SCALE.FACTOR_CENTER_OF_MASS;
-				public bool						m_inheritScale_Top = true;
+				public bool						m_inheritScale_Top = false;
 				public bool						m_inheritScale_Left = false;
 				public float					m_customScale = 0.05f;
 				public float					m_fixedScale = 1.0f;
 				public GUESS_INITIAL_FLATTEN	m_initialFlatten = GUESS_INITIAL_FLATTEN.CUSTOM;
-				public bool						m_inheritFlatten_Top = true;
+				public bool						m_inheritFlatten_Top = false;
 				public bool						m_inheritFlatten_Left = false;
 				public float					m_customFlatten = 0.5f;
 				public float					m_fixedFlatten = 1.0f;
 				public GUESS_INITIAL_MASKING	m_initialMasking = GUESS_INITIAL_MASKING.CUSTOM;
-				public bool						m_inheritMasking_Top = true;
+				public bool						m_inheritMasking_Top = false;
 				public bool						m_inheritMasking_Left = false;
 				public float					m_customMasking = 1.0f;
 				public float					m_fixedMasking = 1.0f;
@@ -1161,18 +1161,25 @@ namespace TestMSBSDF
 			LobeModel						m_lobeModel = null;
 			WMath.BFGS						m_fitter = new WMath.BFGS();
 
-			bool							m_fitRefractedLobe;
 			int								m_maxIterations;
 			double							m_goalTolerance;
 			double							m_gradientTolerance;
 
+			// The data to fit
+			bool							m_fitBothLobes;
+			double[,]						m_histogramReflected = null;
+			double[,]						m_histogramTransmitted = null;
+
+			// Current fitting data
+			Document.Result					m_result = null;
+			Document.Result.LobeParameters	m_parameters = null;
+			bool							m_isReflectedLobe = true;
+
+			// Feedback
 			int								m_retriesCount = 0;
 			float							m_progressSize = 1.0f;
 			float							m_progressOffset = 0.0f;
 
-			Document.Result					m_result = null;
-			Document.Result.LobeParameters	m_parameters = null;
-			bool							m_isReflectedLobe = true;
 
 			/// <summary>
 			/// Gets the thread index
@@ -1230,6 +1237,13 @@ namespace TestMSBSDF
 				set { m_result = value; }
 			}
 
+			/// <summary>
+			/// Tells if the thread should be used to fit both reflected and transmitted lobes
+			/// </summary>
+			public bool			FitBothLobes {
+				get { return m_fitBothLobes; }
+				set { m_fitBothLobes = value; }
+			}
 
 			public ComputationThread( AutomationForm _owner, int _index ) {
 				m_owner = _owner;
@@ -1244,25 +1258,28 @@ namespace TestMSBSDF
 			/// Starts the lobe fitting
 			/// </summary>
 			/// <param name="_fitRefractedLobe"></param>
-			public void	Start( bool _fitRefractedLobe, int _maxIterations, double _goalTolerance, double _gradientTolerance ) {
-				m_fitRefractedLobe = _fitRefractedLobe;
+			public void	Start( int _maxIterations, double _goalTolerance, double _gradientTolerance, bool _startThread ) {
 				m_maxIterations = _maxIterations;
 				m_goalTolerance = _goalTolerance;
 				m_gradientTolerance = _gradientTolerance;
 
 				// Create the thread
-				m_thread = new Thread( () => {
-					Main();
-				} );
-				m_thread.Name = "Worker" + m_index;
-				m_thread.Start();
+				if ( _startThread ) {
+					m_thread = new Thread( () => {
+						Main();
+					} );
+					m_thread.Name = "Worker" + m_index;
+					m_thread.Start();
+				} else {
+					Main();	// Simply run on the main thread...
+				}
 			}
 
 			/// <summary>
 			/// Main thread function
 			/// </summary>
 			void	Main() {
-				m_progressSize = m_fitRefractedLobe ? 0.5f : 1.0f;
+				m_progressSize = m_fitBothLobes ? 0.5f : 1.0f;
 
 				try {
 					// Fit reflected lobe...
@@ -1273,7 +1290,7 @@ namespace TestMSBSDF
 					m_owner.LogLine( m_index + ">	## Reflected lobe - Fit minimum reached = " + m_fitter.FunctionMinimum + " after " + ((m_retriesCount-1) * m_fitter.MaxIterations + m_fitter.IterationsCount) + " iterations (" + m_retriesCount + " attempts)" );
 
 					// Fit refracted lobe now...
-					if ( m_fitRefractedLobe ) {
+					if ( m_fitBothLobes ) {
 						m_progressOffset = 0.5f;
 						PrepareFitter( false, m_maxIterations, m_goalTolerance, m_gradientTolerance );
 						PerformLobeFitting();
@@ -1300,22 +1317,26 @@ namespace TestMSBSDF
 			/// <summary>
 			/// Initializes the target data we need to fit from the CPU-readable histogram texture
 			/// </summary>
-			/// <param name="_texSimulatedLobeHistogram"></param>
 			public void	InitializeLobeTargetData() {
 
 				// Read back histogram to CPU for fitting
-				Texture2D	Tex_SimulatedLobeHistogram = m_owner.m_owner.GetSimulationHistogram( m_isReflectedLobe );
+				Texture2D	Tex_SimulatedLobeHistogram = m_owner.m_owner.GetSimulationHistogram( true );
+				m_histogramReflected = LobeModel.HistogramTexture2Array( Tex_SimulatedLobeHistogram, m_result.ScatteringOrder );
 
-				// Initialize lobe data & compute center of mass
-				m_lobeModel.InitTargetData( Tex_SimulatedLobeHistogram, m_result.ScatteringOrder );
+				if ( m_fitBothLobes ) {
+					// Also read back transmitted lobe
+					Tex_SimulatedLobeHistogram = m_owner.m_owner.GetSimulationHistogram( false );
+					m_histogramTransmitted = LobeModel.HistogramTexture2Array( Tex_SimulatedLobeHistogram, m_result.ScatteringOrder );
+				} else
+					m_histogramTransmitted = null;
 			}
 
 			/// <summary>
 			/// Prepare the fitter for a new result
 			/// </summary>
-			public void	PrepareFitter( bool _reflected, int _maxIterations, double _goalTolerance, double _gradientTolerance ) {
+			public void	PrepareFitter( bool _fitReflectedLobe, int _maxIterations, double _goalTolerance, double _gradientTolerance ) {
 
-				m_isReflectedLobe = _reflected;
+				m_isReflectedLobe = _fitReflectedLobe;
 				m_parameters = m_isReflectedLobe ? m_result.m_reflected : m_result.m_refracted;
 
 				double	functionMinimumTolerance = Math.Pow( 10.0, Doc.m_settings.m_logTolerance_Minimum );
@@ -1324,6 +1345,9 @@ namespace TestMSBSDF
 				m_fitter.MaxIterations = Doc.m_settings.m_maxIterations;
 				m_fitter.SuccessTolerance = functionMinimumTolerance;
 				m_fitter.GradientSuccessTolerance = gradientTolerance;
+
+				// Initialize lobe data & compute center of mass
+				m_lobeModel.InitTargetData( m_isReflectedLobe ? m_histogramReflected : m_histogramTransmitted );
 			}
 
 			/// <summary>
@@ -1482,7 +1506,7 @@ namespace TestMSBSDF
 		/// Simulates incoming rays on surface (core routine)
 		/// </summary>
 		void	Simulate( float _theta, float _phi, float _surfaceRoughness, float _albedoF0 ) {
-			m_owner.RayTraceSurface( _surfaceRoughness, _albedoF0, _albedoF0, m_document.m_surface.m_type, _theta, _phi, m_document.m_surface.m_rayTracingIterationsCount );
+			m_owner.RayTraceSurface( _surfaceRoughness, _albedoF0, m_document.m_surface.m_type, _theta, _phi, m_document.m_surface.m_rayTracingIterationsCount );
 		}
 
 		#region Document Management
@@ -1927,7 +1951,7 @@ namespace TestMSBSDF
 				m_computationStart = DateTime.Now;
 
 				LogLine( "########## Computation Started ##########" );
-				LogLine( "	• Start Time = " + FormatTime( m_simulationStart ) );
+				LogLine( "	• Start Time = " + FormatTime( m_computationStart ) );
 				LogLine( "########################################" );
 				LogLine( "" );
 				LogLine( "" );
@@ -2002,8 +2026,9 @@ namespace TestMSBSDF
 
 								// Perform fitting on working thread
 								T.Result = R;
+								T.FitBothLobes = m_document.m_surface.m_type == TestForm.SURFACE_TYPE.DIELECTRIC;
 								T.InitializeLobeTargetData();
-								T.Start( m_document.m_surface.m_type == TestForm.SURFACE_TYPE.DIELECTRIC, m_document.m_settings.m_maxIterations, functionMinimumTolerance, gradientTolerance );
+								T.Start( m_document.m_settings.m_maxIterations, functionMinimumTolerance, gradientTolerance, true );
 
 								// Auto-save
 								runCounter++;
@@ -2052,6 +2077,8 @@ namespace TestMSBSDF
 			try {
 				EnterComputationMode();
 
+				ClearLog();
+
 				m_simulationStart = DateTime.Now;
 				SelectedResult.m_error = null;
 				SelectedResult.State = 0.0f;
@@ -2076,23 +2103,12 @@ namespace TestMSBSDF
 				TimeSpan	simulationDuration = simulationEnd - m_simulationStart;
 				LogLine( "	• Simulation Duration = " + FormatDuration( simulationDuration ) );
 
+
 				// Fit reflected lobe...
 				T.Result = SelectedResult;
+				T.FitBothLobes = m_document.m_surface.m_type == TestForm.SURFACE_TYPE.DIELECTRIC;
 				T.InitializeLobeTargetData();
-				T.PrepareFitter( true, m_document.m_settings.m_maxIterations, functionMinimumTolerance, gradientTolerance );
-				T.PerformLobeFitting();
-				LogLine( "	## Reflected lobe - Fit minimum reached = " + T.Fitter.FunctionMinimum + " after " + T.RetriesCount + " attempts" );
-
-				if ( m_document.m_surface.m_type == TestForm.SURFACE_TYPE.DIELECTRIC ) {
-					// Fit refracted lobe now...
-					SelectedResult.State = 0.5f;
-
-					T.PrepareFitter( true, m_document.m_settings.m_maxIterations, functionMinimumTolerance, gradientTolerance );
-					T.PerformLobeFitting();
-					LogLine( "	## Refracted lobe - Fit minimum reached = " + T.Fitter.FunctionMinimum + " after " + T.RetriesCount + " attempts" );
-				}
-
-				SelectedResult.State = 1.0f;
+				T.Start( m_document.m_settings.m_maxIterations, functionMinimumTolerance, gradientTolerance, false );	// Start on the main thread here...
 
 			} catch ( CanceledException ) {
 				LogLine( "Canceled!" );
@@ -2505,8 +2521,7 @@ namespace TestMSBSDF
 
 		#region Surface
 
-		private void radioButtonSurfaceType_CheckedChanged( object sender, EventArgs e )
-		{
+		private void radioButtonSurfaceType_CheckedChanged( object sender, EventArgs e ) {
 			m_document.m_surface.m_type = radioButtonSurfaceTypeConductor.Checked ?	TestForm.SURFACE_TYPE.CONDUCTOR : (
 										radioButtonSurfaceTypeDielectric.Checked ?	TestForm.SURFACE_TYPE.DIELECTRIC :
 																					TestForm.SURFACE_TYPE.DIFFUSE);
@@ -2517,6 +2532,27 @@ namespace TestMSBSDF
 			// Also update surface type in the main form
 			if ( m_owner != null )
 				m_owner.SetSurfaceType( m_document.m_surface.m_type );
+
+			// Also update initial guesses based on surface type
+			if ( !m_internalDocumentChange ) {
+				switch ( m_document.m_surface.m_type ) {
+					case TestForm.SURFACE_TYPE.DIFFUSE:
+						m_document.m_settings.m_customScale = 0.05f;
+						m_document.m_settings.m_initialRoughness = Document.Settings.GUESS_INITIAL_ROUGHNESS.CUSTOM;
+						m_document.m_settings.m_customRoughness = 0.8f;
+						m_document.m_settings.m_customFlatten = 0.5f;
+						m_document.m_settings.m_customMasking = 0.0f;
+						break;
+
+					default:
+						m_document.m_settings.m_customScale = 0.1f;
+						m_document.m_settings.m_initialRoughness = Document.Settings.GUESS_INITIAL_ROUGHNESS.CUSTOM;
+						m_document.m_settings.m_customRoughness = 0.8f;
+						m_document.m_settings.m_customFlatten = 1.0f;
+						m_document.m_settings.m_customMasking = 1.0f;
+						break;
+				}
+			}
 		}
 
 		private void floatTrackbarControlParam0_Min_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
@@ -2625,32 +2661,38 @@ namespace TestMSBSDF
 
 		private void checkBoxParam0_InclusiveStart_CheckedChanged( object sender, EventArgs e )
 		{
-			m_document.m_surface.m_incomingAngle.InclusiveMin = checkBoxParam0_InclusiveStart.Checked;
+			if ( !m_internalDocumentChange )
+				m_document.m_surface.m_incomingAngle.InclusiveMin = checkBoxParam0_InclusiveStart.Checked;
 		}
 
 		private void checkBoxParam0_InclusiveEnd_CheckedChanged( object sender, EventArgs e )
 		{
-			m_document.m_surface.m_incomingAngle.InclusiveMax = checkBoxParam0_InclusiveEnd.Checked;
+			if ( !m_internalDocumentChange )
+				m_document.m_surface.m_incomingAngle.InclusiveMax = checkBoxParam0_InclusiveEnd.Checked;
 		}
 
 		private void checkBoxParm1_InclusiveStart_CheckedChanged( object sender, EventArgs e )
 		{
-			m_document.m_surface.m_roughness.InclusiveMin = checkBoxParam1_InclusiveStart.Checked;
+			if ( !m_internalDocumentChange )
+				m_document.m_surface.m_roughness.InclusiveMin = checkBoxParam1_InclusiveStart.Checked;
 		}
 
 		private void checkBoxParam1_InclusiveEnd_CheckedChanged( object sender, EventArgs e )
 		{
-			m_document.m_surface.m_roughness.InclusiveMax = checkBoxParam1_InclusiveEnd.Checked;
+			if ( !m_internalDocumentChange )
+				m_document.m_surface.m_roughness.InclusiveMax = checkBoxParam1_InclusiveEnd.Checked;
 		}
 
 		private void checkBoxParm2_InclusiveStart_CheckedChanged( object sender, EventArgs e )
 		{
-			m_document.m_surface.m_albedoF0.InclusiveMin = checkBoxParam2_InclusiveStart.Checked;
+			if ( !m_internalDocumentChange )
+				m_document.m_surface.m_albedoF0.InclusiveMin = checkBoxParam2_InclusiveStart.Checked;
 		}
 
 		private void checkBoxParm2_InclusiveEnd_CheckedChanged( object sender, EventArgs e )
 		{
-			m_document.m_surface.m_albedoF0.InclusiveMax = checkBoxParam2_InclusiveEnd.Checked;
+			if ( !m_internalDocumentChange )
+				m_document.m_surface.m_albedoF0.InclusiveMax = checkBoxParam2_InclusiveEnd.Checked;
 		}
 
 		#endregion
