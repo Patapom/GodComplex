@@ -360,7 +360,7 @@ void	CS_Diffuse( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHR
 //tangent = float3( 1, 0, 0 );
 //biTangent = float3( 0, 1, 0 );
 
-		float	theta = 2.0 * asin( sqrt( 0.5 * random.x ) );
+		float	theta = acos( random.x );	// Uniform distribution on theta
 		float	cosTheta = cos( theta );
 		float	sinTheta = sqrt( 1.0 - cosTheta*cosTheta );
 		float2	scPhi;

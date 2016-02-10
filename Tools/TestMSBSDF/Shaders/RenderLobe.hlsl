@@ -9,9 +9,9 @@ cbuffer CB_Render : register(b10) {
 
 	// Analytical Beckmann lobe
 	float	_Roughness;
-	float	_ScaleR;			// Scale factor along reflected ray
-	float	_ScaleT;			// Scale factor along tangential axis
-	float	_ScaleB;			// Scale factor along bi-tangential axis
+	float	_Flattening;		// Scale factor along main lobe direction for isotropic lobe model, or along orthogonal directions for anisotropic lobe model
+	float	_Scale;		// Global scale factor for the entire lobe
+	float	_ScaleB;			// Not used
 	float	_MaskingImportance;	// Importance of the masking function
 }
 
@@ -86,7 +86,6 @@ float	PhongG1( float _cosTheta, float _roughness ) {
 	return a < 1.6 ? (3.535 * a + 2.181 * a*a) / (1.0 + 2.276 * a + 2.577 * a*a) : 1.0;
 }
 
-#if 1
 // Finally, our long awaited diffuse lobe for 2nd and 3rd scattering orders!
 //  
 // Resulting Model
@@ -161,67 +160,7 @@ sigma3 *= _ScatteringOrder == 2 ? 1 : 0;
 
 	return  L * intensity;
 }
-#else
-// Finally, our long awaited diffuse lobe for 2nd scattering order
-//  
-// After fitting each parameter one after another, we noticed that:
-// 	\[Bullet] Incident light angle \[Theta] has no effect on fitted lobe, assuming we ignore the backscattering that is visible at highly grazing angles and that would be better fitted using maybe a GGX lobe that features a nice backscatter property.
-// 	\[Bullet] Final masking importance m is 0 after all
-// 	\[Bullet] There is only a dependency on albedo \[Rho] for the scale factor (that was expected) and it is proportional to \[Rho]^2 which was also expected.
-// 	
-// Finally, we obtain the following analytical model for 2nd order scattering of a rough diffuse surface:
-// 
-// 	f(Subscript[\[Omega], o],\[Alpha],\[Rho]) = \[Sigma](\[Rho]) \[Mu]^\[Eta](\[Alpha])
-// 	
-// 	\[Mu] = Subscript[\[Omega], o]\[CenterDot]Z
-// 	\[Sigma](\[Alpha], \[Rho]) = k(\[Rho]) [0.587595 +0.128391 (1-\[Alpha])+0.320232 (1-\[Alpha])^2-1.04001 (1-\[Alpha])^3]	the fitted scale factor with a dependency on albedo and roughness
-// 	\[Eta](\[Alpha]) = 0.7782894918463 + 0.1683172467667511 \[Alpha]						the fitted exponent with a dependency on roughness alone
-// 	k(\[Rho]) = 1-2(1-\[Rho])+(1-\[Rho])^2										the factor applied to scale depending on \[Rho] and, most importantly, \[Rho]^2, that will give use the expected color saturation
-// 	
-// The flattening factor along the main lobe direction Z is the most expensive to compute:
-// 	a(\[Alpha]) = 0.697462  - 0.479278 (1-\[Alpha])
-// 	b(\[Alpha]) = 0.287646  - 0.293594 (1-\[Alpha])
-// 	c(\[Alpha]) = 5.69744  + 6.61321 (1-\[Alpha])
-// 	Subscript[\[Sigma], n](\[Mu], \[Alpha]) = a(\[Alpha]) + b(\[Alpha]) e^(-c(\[Alpha])  \[Mu])
-// 
-// An alternate model is possible using a power of 2:
-// 	c^\[Prime](\[Alpha]) = 8.21968  + 9.54087 (1-\[Alpha])
-// 	Subscript[\[Sigma], n]^\[Prime](\[Mu], \[Alpha]) = a(\[Alpha]) + b(\[Alpha]) 2^(-c^\[Prime](\[Alpha])  \[Mu])
-// 	
-// So the world-space intensity of the fitted lobe is obtained by multiplying the lobe-space intensity with the scale factor:
-// 
-// 	Subscript[f, w](Subscript[\[Omega], o],\[Alpha],\[Rho]) = L(\[Mu],Subscript[\[Sigma], n](\[Mu], \[Alpha])) f(Subscript[\[Omega], o],\[Alpha],\[Rho])
-// 	
-// 	L(\[Mu], Subscript[\[Sigma], n](\[Mu], \[Alpha])) = 1/Sqrt[1+\[Mu]^2 (1/Subscript[\[Sigma], n](\[Mu],\[Alpha])^2-1)]
-// 	
-//
-float	ComputeDiffuseModel( float3 _wsOutgoingDirection, float _roughness, float _albedo ) {
-	_albedo = 1.0 - _albedo;
-	float	gloss = 1.0 - _roughness;
 
-	float	cosTheta = saturate( _wsOutgoingDirection.z );
-
-	// Compute sigma, the global scale factor
-	float	k = 1.0 + _albedo * (-2.0 + _albedo);
-	float	sigma = 0.587595 + gloss * (0.128391 + gloss * (0.320232 - 1.04001 * gloss));
-			sigma *= k;	// Dependence on albedo²
-
-	// Compute lobe exponent
-	float	eta = 0.7782894918463 + 0.1683172467667511 * _roughness;
-
-	// Compute unscaled lobe intensity
-	float	intensity = sigma * pow( cosTheta, eta );
-
-	// Compute flattening
-	float3	abc = float3(	0.697462 - 0.479278 * gloss,
-							0.287646 - 0.293594 * gloss,
-							8.219680 + 9.540870 * gloss );
-	float	sigma_n = abc.x + abc.y * exp2( -abc.z * cosTheta );
-	float	L = rsqrt( 1.0 + cosTheta*cosTheta * (1.0 / pow2( sigma_n ) - 1.0)  );
-
-	return  L * intensity;
-}
-#endif
 
 PS_IN	VS( VS_IN _In ) {
 
@@ -245,12 +184,12 @@ PS_IN	VS( VS_IN _In ) {
 
 		float	scaleT = 1.0;
 		float	scaleB = 1.0;
-		float	scaleR = _ScaleR;	// Isotropic with flattening along normal
+		float	scaleR = _Flattening;	// Isotropic with flattening along normal
 
 		uint	lobeModel = _Flags >> 4;
 		if ( lobeModel == 3U ) {
 			// Anisotropic lobe model
-			float	s = exp2( 4.0 * (_ScaleR - 1.0) );	// From 2e-4 to 2e4
+			float	s = exp2( 4.0 * (_Flattening - 1.0) );	// From 2e-4 to 2e4
 			scaleT = s;
 			scaleB = 1.0 / s;
 			scaleR = 1.0;
@@ -262,9 +201,6 @@ PS_IN	VS( VS_IN _In ) {
 
 		float	cosTheta_M = saturate( dot( wsDirection, wsReflectedDirection ) );	// Theta_M = angle between reflected direction and the lobe's current direction
 																					// (we simply made the lobe BEND toward the reflected direction, as if it was the new surface's normal)
-
-//cosTheta_M = saturate( _ScaleR * lsPosition.z / sqrt( pow2( _ScaleT * lsPosition.x ) + pow2( _ScaleB * lsPosition.y ) + pow2( _ScaleR * lsPosition.z ) ) );
-//cosTheta_M = saturate( _ScaleR * lsPosition.z / sqrt( 1.0 + (_ScaleR*_ScaleR - 1) * lsPosition.z*lsPosition.z ) );
 
 		float	maskingShadowing = 1.0;
 		switch ( lobeModel ) {
@@ -291,7 +227,7 @@ PS_IN	VS( VS_IN _In ) {
 			// Diffuse Lobe Model
 			wsDirection = lsPosition;// normalize( lsPosition.x * wsTangent + lsPosition.y * wsBiTangent + lsPosition.z * wsReflectedDirection );	// No scaling for that model
 			wsScaledDirection = wsDirection;
-			lobeIntensity = ComputeDiffuseModel( wsDirection, _Roughness, _ScaleR ).x;	// _ScaleR is the surface's albedo in this case
+			lobeIntensity = ComputeDiffuseModel( wsDirection, _Roughness, _Flattening ).x;	// _Flattening is the surface's albedo in this case
 			maskingShadowing = 1.0;	// No masking/shadowing
 			break;
 
@@ -305,7 +241,7 @@ PS_IN	VS( VS_IN _In ) {
 
 		lobeIntensity *= lerp( 1.0, maskingShadowing, _MaskingImportance );
 
-		lobeIntensity *= _ScaleT;	// Now used as "global scale factor"
+		lobeIntensity *= _Scale;
 
 		lobeIntensity *= (lobeSign * wsDirection.z) < 0.0 ? 0.0 : 1.0;			// Nullify all "below the surface" directions
 
@@ -319,26 +255,23 @@ PS_IN	VS( VS_IN _In ) {
 		float3	wsDirection = lsPosition.x * wsTangent + lsPosition.y * wsBiTangent + lsPosition.z * wsReflectedDirection;	// Direction in world space, aligned with reflected ray
 
 		float	cosTheta_M = lobeSign * wsDirection.z;
-		float	theta = acos( clamp( cosTheta_M, -1.0, 1.0 ) );
 		float	phi = fmod( 2.0 * PI + atan2( wsDirection.y, wsDirection.x ), 2.0 * PI );
 
-		float	thetaBinIndex = 2.0 * LOBES_COUNT_THETA * pow2( sin( 0.5 * theta ) );		// Inverse of 2*asin( sqrt( i / (2 * N) ) )
+//		float	theta = acos( clamp( cosTheta_M, -1.0, 1.0 ) );
+//		float	thetaBinIndex = 2.0 * LOBES_COUNT_THETA * pow2( sin( 0.5 * theta ) );	// Inverse of theta = 2*asin( sqrt( i / (2 * N) ) )
+		float	thetaBinIndex = LOBES_COUNT_THETA * (1.0 - cosTheta_M);					// Inverse of theta = acos( 1 - i / N )
+
 		float2	UV = float2( phi / (2.0 * PI), thetaBinIndex / LOBES_COUNT_THETA );
 
-//		lobeIntensity = _Tex_DirectionsHistogram_Reflected.SampleLevel( PointClamp, float3( UV, _ScatteringOrder ), 0.0 );
 		lobeIntensity = (_Flags & 4U) ? _Tex_DirectionsHistogram_Transmitted.SampleLevel( LinearClamp, float3( UV, _ScatteringOrder ), 0.0 )
 									  : _Tex_DirectionsHistogram_Reflected.SampleLevel( LinearClamp, float3( UV, _ScatteringOrder ), 0.0 );
 
-		lobeIntensity *= LOBES_COUNT_THETA * LOBES_COUNT_PHI;	// Re-scale due to lobe's discretization
+		lobeIntensity *= LOBES_COUNT_THETA * LOBES_COUNT_PHI;			// Re-scale due to lobe's discretization
 
-//lobeIntensity = 100000 * _Tex_DirectionsHistogram_Transmitted.SampleLevel( LinearClamp, float3( UV, _ScatteringOrder ), 0.0 );
+		lobeIntensity *= intensityMultiplier;							// Manual intensity scale
+		lobeIntensity = max( 0.01, lobeIntensity );						// So we always at least see a little something
 
-//lobeIntensity = 1.0;
-
-		lobeIntensity *= intensityMultiplier;				// Manual intensity scale
-		lobeIntensity = max( 0.01, lobeIntensity );			// So we always at least see something
-
-		lobeIntensity *= (lobeSign * wsDirection.z) < 0.0 ? 0.0 : 1.0;		// Nullify all "below the surface" directions
+		lobeIntensity *= (lobeSign * wsDirection.z) < 0.0 ? 0.0 : 1.0;	// Nullify all "below the surface" directions
 
 		wsPosition = lobeIntensity * float3( wsDirection.x, wsDirection.z, -wsDirection.y );	// Vertex position in Y-up
 	}

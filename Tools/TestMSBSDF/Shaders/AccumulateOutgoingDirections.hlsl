@@ -21,11 +21,18 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 
 	float4	directionWeight = _Tex_OutgoingDirections[uint3( pixelPosition, scatteringOrder )];
 
-	float	theta = acos( clamp( directionWeight.z, -1.0, 1.0 ) );
-	float	phi = fmod( 2.0 * PI + atan2( directionWeight.y, directionWeight.x ), 2.0 * PI );
+	directionWeight.xyz = normalize( directionWeight.xyz );
 
-	uint	iTheta = uint( floor( 2.0 * LOBES_COUNT_THETA * pow2( sin( 0.5 * theta ) ) ) );	// Inverse of 2*asin( sqrt( i / (2 * N) ) )
+	float	phi = fmod( 2.0 * PI + atan2( directionWeight.y, directionWeight.x ), 2.0 * PI );
 	uint	iPhi = uint( floor( LOBES_COUNT_PHI * phi / (2.0 * PI) ) );
+
+// Formerly, I used the wrong discretization for histogram bins based on cosine-lobe weighted theta = 2*asin( sqrt( i / (2*N) ))
+//	float	theta = acos( clamp( directionWeight.z, -1.0, 1.0 ) );
+//	uint	iTheta = uint( floor( 2.0 * LOBES_COUNT_THETA * pow2( sin( 0.5 * theta ) ) ) );	// Inverse of 2*asin( sqrt( i / (2 * N) ) )
+
+	// Now we're using simply theta = acos( 1 - i / N )
+	// And so, to retrieve the bin index from theta we have i = N * (1 - cos( theta ))
+	uint	iTheta = uint( floor( LOBES_COUNT_THETA * (1.0 - directionWeight.z) ) );
 
 
 //iPhi = pixelPosition.x * LOBES_COUNT_PHI / HEIGHTFIELD_SIZE;
@@ -45,6 +52,7 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 }
 
 // Finalize the histogram into a nice float texture
+// This code is a bit tricky as accumulation was performed into 2 UINT32 UAVs just because we needed to account for values larger than 2^32 (that's because we encode the weight on 8 bits)
 [numthreads( 16, 16, 1 )]
 void	CS_Finalize( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, uint3 _DispatchThreadID : SV_DISPATCHTHREADID ) {
 

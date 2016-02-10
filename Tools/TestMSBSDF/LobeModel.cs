@@ -303,9 +303,14 @@ namespace TestMSBSDF
 			double	sqSum_Analytical = 0.0;
 			for ( int Y=0; Y < H; Y++ ) {
 
-				// Y = theta bin index = 2.0 * LOBES_COUNT_THETA * pow2( sin( 0.5 * theta ) )
-				// We need theta:
-				theta = 2.0 * Math.Asin( Math.Sqrt( 0.5 * Y / H ) );
+// Formerly used wrong stuff!
+// 				// Y = theta bin index = 2.0 * LOBES_COUNT_THETA * pow2( sin( 0.5 * theta ) )
+// 				// We need theta:
+//				theta = 2.0 * Math.Asin( Math.Sqrt( 0.5 * Y / H ) );
+
+				// Y = theta bin index = LOBES_COUNT_THETA * (1 - cos( theta ) )
+// 				// We need theta:
+				theta = Math.Acos( 1.0 - (float) Y / H );
 				cosTheta = Math.Cos( theta );
 				sinTheta = Math.Sin( theta );
 

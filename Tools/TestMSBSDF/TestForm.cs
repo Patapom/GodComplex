@@ -987,12 +987,12 @@ namespace TestMSBSDF
 				float	theta = (float) Math.PI * floatTrackbarControlTheta.Value / 180.0f;
 				float	sinTheta = (float) Math.Sin( theta );
 				float	cosTheta = (float) Math.Cos( theta );
-				float3	currentDirection = new float3( -sinTheta * cosPhi, -sinTheta * sinPhi, -cosTheta );		// Minus sign because we need the direction pointing TOWARD the surface (i.e. z < 0)
+				float3	currentDirection = -new float3( sinTheta * cosPhi, sinTheta * sinPhi, cosTheta );		// Minus sign because we need the direction pointing TOWARD the surface (i.e. z < 0)
 
 						theta = (float) Math.PI * floatTrackbarControlAnalyticalLobeTheta.Value / 180.0f;
 						sinTheta = (float) Math.Sin( theta );
 						cosTheta = (float) Math.Cos( theta );
-				float3	analyticalReflectedDirection = new float3( -sinTheta * cosPhi, -sinTheta * sinPhi, -cosTheta );
+				float3	analyticalReflectedDirection = -new float3( sinTheta * cosPhi, sinTheta * sinPhi, cosTheta );
 						analyticalReflectedDirection.z = -analyticalReflectedDirection.z;	// Mirror against surface
 
 						theta = (float) Math.PI * floatTrackbarControlAnalyticalLobeTheta_T.Value / 180.0f;
