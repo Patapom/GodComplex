@@ -252,6 +252,11 @@ PS_IN	VS( VS_IN _In ) {
 
 	} else {
 		// Show simulated lobe
+
+//wsTangent = float3( 1, 0, 0 );
+//wsBiTangent = float3( 0, 1, 0 );
+//wsReflectedDirection = float3( 0, 0, 1 );
+
 		float3	wsDirection = lsPosition.x * wsTangent + lsPosition.y * wsBiTangent + lsPosition.z * wsReflectedDirection;	// Direction in world space, aligned with reflected ray
 
 		float	cosTheta_M = lobeSign * wsDirection.z;

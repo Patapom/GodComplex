@@ -663,14 +663,15 @@ namespace TestMSBSDF
 			return (float) ((1.0 + SqrtF0) / (1.00000001 - SqrtF0));
 		}
 
-		// From Walter 2007
+		// From Walter 2007 eq. 40
 		// Expects _incoming pointing AWAY from the surface
 		// eta = IOR_over / IOR_under
 		//
 		public static float3	Refract( float3 _incoming, float3 _normal, float _eta ) {
 			float	c = _incoming.Dot( _normal );
-			float	k = (float) (_eta * c - Math.Sign(c) * Math.Sqrt( 1.0 + _eta * (c*c - 1.0)));
-			return  k * _normal - _eta * _incoming;
+			float	k = (float) (_eta * c - Math.Sign(c) * Math.Sqrt( 1.0 + _eta * (c*c - 1.0) ));
+			float3	R = k * _normal - _eta * _incoming;
+			return R.Normalized;
 		}
 
 		/// <summary>
