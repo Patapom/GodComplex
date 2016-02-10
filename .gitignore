@@ -326,3 +326,7 @@ obj
 /*.sdf
 /*.suo
 /Tools/ShaderToy/Publish
+/Tools/SharpMath.dll
+/Tools/BRDFLafortuneFitting.exe
+/Tools/BRDFSlices.exe
+/Tools/Cirrus.Utility.dll
