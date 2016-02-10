@@ -43,7 +43,7 @@ namespace TestMSBSDF
 		double[]	m_parameters = new double[5];
 
 		double[]	m_constraintMin = new double[5] { -0.4999 * Math.PI, 1e-4, 1e-6, 1e-3, 0.0 };				// Used to be { 0.0, 1e-4, 1e-3, 1e-6, 0.0 }
-		double[]	m_constraintMax = new double[5] { 0.4999 * Math.PI, 1.0, 10.0, 10.0, 1.0 };
+		double[]	m_constraintMax = new double[5] { 0.4999 * Math.PI, 1.0, 10.0, 2.0, 1.0 };
 
 		ComputeFlatteningFactor	m_flatteningEval;
 
@@ -172,7 +172,7 @@ namespace TestMSBSDF
 
 
 			// =========================================================================
-			// 4] Setup initial parameters
+			// Setup initial parameters
 			m_lobeType = _lobeType;
 			if ( m_lobeType == LOBE_TYPE.MODIFIED_PHONG_ANISOTROPIC )
 				m_flatteningEval = EvalAnisotropicFlattening;

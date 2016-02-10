@@ -623,7 +623,7 @@ namespace TestMSBSDF
 							_lobe.SetConstraint( 2, scale, scale );
 						} else {
 							_lobe.SetConstraint( 2, S.m_initialScale == Settings.GUESS_INITIAL_SCALE.FIXED ? S.m_fixedScale : 1e-6,
-													S.m_initialScale == Settings.GUESS_INITIAL_SCALE.FIXED ? S.m_fixedScale : 2.0 );
+													S.m_initialScale == Settings.GUESS_INITIAL_SCALE.FIXED ? S.m_fixedScale : 10.0 );
 						}
 
 
@@ -658,7 +658,7 @@ namespace TestMSBSDF
 							_lobe.SetConstraint( 3, flatten, flatten );
 						} else {
 							_lobe.SetConstraint( 3, S.m_initialFlatten == Settings.GUESS_INITIAL_FLATTEN.FIXED ? S.m_fixedFlatten : 1e-3,
-													S.m_initialFlatten == Settings.GUESS_INITIAL_FLATTEN.FIXED ? S.m_fixedFlatten : 10.0 );
+													S.m_initialFlatten == Settings.GUESS_INITIAL_FLATTEN.FIXED ? S.m_fixedFlatten : 2.0 );
 						}
 
 
@@ -1619,6 +1619,7 @@ namespace TestMSBSDF
 
 			switch ( m_document.m_settings.m_lobeModel ) {
 				case LobeModel.LOBE_TYPE.MODIFIED_PHONG: radioButtonLobe_ModifiedPhong.Checked = true; break;
+				case LobeModel.LOBE_TYPE.MODIFIED_PHONG_ANISOTROPIC: radioButtonLobe_ModifiedPhongAniso.Checked = true; break;
 				case LobeModel.LOBE_TYPE.BECKMANN: radioButtonLobe_Beckmann.Checked = true; break;
 				case LobeModel.LOBE_TYPE.GGX: radioButtonLobe_GGX.Checked = true; break;
 			}
@@ -1687,6 +1688,7 @@ namespace TestMSBSDF
 			floatTrackbarControlGoalTolerance.Value = m_document.m_settings.m_logTolerance_Minimum;
 			floatTrackbarControlGradientTolerance.Value = m_document.m_settings.m_logTolerance_Gradient;
 			integerTrackbarControlRetries.Value = m_document.m_settings.m_maxRetries;
+			floatTrackbarControlFitOversize.Value = m_document.m_settings.m_oversizeFactor;
 		}
 
 		/// <summary>
