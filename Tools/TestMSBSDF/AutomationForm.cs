@@ -875,7 +875,7 @@ namespace TestMSBSDF
 					m_reflected.Save( ElemReflected );
 					if ( m_owner.m_surface.m_type == TestForm.SURFACE_TYPE.DIELECTRIC ) {
 						XmlElement	ElemRefracted = AppendChild( _parent, "LobeRefracted" );
-						m_refracted.Save( ElemReflected );
+						m_refracted.Save( ElemRefracted );
 					}
 				}
 
@@ -895,7 +895,8 @@ namespace TestMSBSDF
 					m_reflected.Load( ElemReflected, _version );
 					if ( m_owner.m_surface.m_type == TestForm.SURFACE_TYPE.DIELECTRIC ) {
 						XmlElement	ElemRefracted = _parent["LobeRefracted"];
-						m_refracted.Load( ElemRefracted, _version );
+						if ( ElemRefracted != null )
+							m_refracted.Load( ElemRefracted, _version );
 					}
 				}
 
@@ -2241,7 +2242,7 @@ namespace TestMSBSDF
 				string	fileNameNoExt = Path.GetFileNameWithoutExtension( fileName );
 				string	extension = Path.GetExtension( fileName );
 
-				//@TODO: Support extented export formats
+				//@TODO: Support extended export formats
 				for ( int order=0; order < m_document.m_results.Length; order++ ) {
 					Document.Result[,,]	results = m_document.m_results[order];
 
@@ -2288,7 +2289,70 @@ namespace TestMSBSDF
 			} catch ( Exception _e ) {
 				MessageBox( "An error occurred while exporting results:\r\n" + _e );
 			}
+		}
 
+		private void importToolStripMenuItem_Click( object sender, EventArgs e ) {
+			string	fileName = m_AppKey.GetValue( "LastExportFileName", new System.IO.FileInfo( "results.bin" ).FullName ) as string;
+			openFileDialogExport.FileName = Path.GetFileName( fileName );
+			openFileDialogExport.InitialDirectory = Path.GetDirectoryName( fileName );
+			if ( openFileDialogExport.ShowDialog( this ) != DialogResult.OK )
+				return;
+
+			try {
+
+				fileName = openFileDialogExport.FileName;
+				string	directory = Path.GetDirectoryName( fileName );
+				string	fileNameNoExt = Path.GetFileNameWithoutExtension( fileName );
+				string	extension = Path.GetExtension( fileName );
+
+				for ( int order=0; order < m_document.m_results.Length; order++ ) {
+					Document.Result[,,]	results = m_document.m_results[order];
+
+					int	W = results.GetLength( 0 );
+					int	H = results.GetLength( 1 );
+					int	slicesCount = results.GetLength( 2 );
+					for ( int sliceIndex=0; sliceIndex < slicesCount; sliceIndex++ ) {
+						// Read results for reflected lobe
+						string	sliceFileName = Path.Combine( directory, fileNameNoExt + "_order" + (m_document.m_surface.ScatteringOrderMin + order) + "_slice" + sliceIndex.ToString( "G02" ) + extension );
+						using ( FileStream S = new FileInfo( sliceFileName ).OpenRead() )
+							using ( BinaryReader Reader = new BinaryReader( S ) )
+								for ( int Y=0; Y < H; Y++ )
+									for ( int X=0; X < W; X++ ) {
+										Document.Result	R = results[X,Y,sliceIndex];
+										R.m_reflected.m_theta = Reader.ReadDouble();
+										R.m_reflected.m_roughness = Reader.ReadDouble();
+										R.m_reflected.m_scale = Reader.ReadDouble();
+										R.m_reflected.m_flatten = Reader.ReadDouble();
+										R.m_reflected.m_masking = Reader.ReadDouble();
+										R.State = 1;
+									}
+
+						// Read results for refracted lobe
+						if ( m_document.m_surface.m_type == TestForm.SURFACE_TYPE.DIELECTRIC ) {
+							sliceFileName = Path.Combine( directory, fileNameNoExt + "_order" + (m_document.m_surface.ScatteringOrderMin + order) + "_slice" + sliceIndex.ToString( "G02" ) + "_refracted" + extension );
+							using ( FileStream S = new FileInfo( sliceFileName ).OpenRead() )
+								using ( BinaryReader Reader = new BinaryReader( S ) )
+									for ( int Y=0; Y < H; Y++ )
+										for ( int X=0; X < W; X++ ) {
+											Document.Result	R = results[X,Y,sliceIndex];
+											R.m_refracted.m_theta = Reader.ReadDouble();
+											R.m_refracted.m_roughness = Reader.ReadDouble();
+											R.m_refracted.m_scale = Reader.ReadDouble();
+											R.m_refracted.m_flatten = Reader.ReadDouble();
+											R.m_refracted.m_masking = Reader.ReadDouble();
+											R.State = 1;
+										}
+						}
+					}
+				}
+
+				m_AppKey.SetValue( "LastExportFileName", openFileDialogExport.FileName );
+
+				MessageBox( "Success!", MessageBoxButtons.OK, MessageBoxIcon.Information );
+
+			} catch ( Exception _e ) {
+				MessageBox( "An error occurred while importing results:\r\n" + _e );
+			}
 		}
 
 		#endregion

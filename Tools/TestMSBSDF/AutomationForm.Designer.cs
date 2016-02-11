@@ -143,6 +143,7 @@
 			this.panel2 = new System.Windows.Forms.Panel();
 			this.label7 = new System.Windows.Forms.Label();
 			this.radioButtonLobe_GGX = new System.Windows.Forms.RadioButton();
+			this.radioButtonLobe_ModifiedPhongAniso = new System.Windows.Forms.RadioButton();
 			this.radioButtonLobe_Beckmann = new System.Windows.Forms.RadioButton();
 			this.radioButtonLobe_ModifiedPhong = new System.Windows.Forms.RadioButton();
 			this.label30 = new System.Windows.Forms.Label();
@@ -173,8 +174,9 @@
 			this.saveFileDialogExport = new System.Windows.Forms.SaveFileDialog();
 			this.integerTrackbarControlThreadsCount = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
 			this.label31 = new System.Windows.Forms.Label();
+			this.importToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.openFileDialogExport = new System.Windows.Forms.OpenFileDialog();
 			this.completionArrayControl = new TestMSBSDF.CompletionArrayControl();
-			this.radioButtonLobe_ModifiedPhongAniso = new System.Windows.Forms.RadioButton();
 			this.groupBoxSimulationParameters.SuspendLayout();
 			this.panel6.SuspendLayout();
 			this.panel5.SuspendLayout();
@@ -1625,6 +1627,17 @@
 			this.radioButtonLobe_GGX.UseVisualStyleBackColor = true;
 			this.radioButtonLobe_GGX.CheckedChanged += new System.EventHandler(this.LobeTypeCheckChanged);
 			// 
+			// radioButtonLobe_ModifiedPhongAniso
+			// 
+			this.radioButtonLobe_ModifiedPhongAniso.AutoSize = true;
+			this.radioButtonLobe_ModifiedPhongAniso.Location = new System.Drawing.Point(153, 3);
+			this.radioButtonLobe_ModifiedPhongAniso.Name = "radioButtonLobe_ModifiedPhongAniso";
+			this.radioButtonLobe_ModifiedPhongAniso.Size = new System.Drawing.Size(85, 17);
+			this.radioButtonLobe_ModifiedPhongAniso.TabIndex = 0;
+			this.radioButtonLobe_ModifiedPhongAniso.Text = "Phong Aniso";
+			this.radioButtonLobe_ModifiedPhongAniso.UseVisualStyleBackColor = true;
+			this.radioButtonLobe_ModifiedPhongAniso.CheckedChanged += new System.EventHandler(this.LobeTypeCheckChanged);
+			// 
 			// radioButtonLobe_Beckmann
 			// 
 			this.radioButtonLobe_Beckmann.AutoSize = true;
@@ -1800,7 +1813,8 @@
 			// resultsToolStripMenuItem
 			// 
 			this.resultsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.exportToolStripMenuItem});
+            this.exportToolStripMenuItem,
+            this.importToolStripMenuItem});
 			this.resultsToolStripMenuItem.Name = "resultsToolStripMenuItem";
 			this.resultsToolStripMenuItem.Size = new System.Drawing.Size(56, 20);
 			this.resultsToolStripMenuItem.Text = "&Results";
@@ -1808,7 +1822,7 @@
 			// exportToolStripMenuItem
 			// 
 			this.exportToolStripMenuItem.Name = "exportToolStripMenuItem";
-			this.exportToolStripMenuItem.Size = new System.Drawing.Size(107, 22);
+			this.exportToolStripMenuItem.Size = new System.Drawing.Size(110, 22);
 			this.exportToolStripMenuItem.Text = "E&xport";
 			this.exportToolStripMenuItem.Click += new System.EventHandler(this.exportToolStripMenuItem_Click);
 			// 
@@ -1879,6 +1893,21 @@
 			this.label31.TabIndex = 1;
 			this.label31.Text = "Threads Count";
 			// 
+			// importToolStripMenuItem
+			// 
+			this.importToolStripMenuItem.Name = "importToolStripMenuItem";
+			this.importToolStripMenuItem.Size = new System.Drawing.Size(110, 22);
+			this.importToolStripMenuItem.Text = "&Import";
+			this.importToolStripMenuItem.Click += new System.EventHandler(this.importToolStripMenuItem_Click);
+			// 
+			// openFileDialogExport
+			// 
+			this.openFileDialogExport.CheckFileExists = false;
+			this.openFileDialogExport.DefaultExt = "*.bin";
+			this.openFileDialogExport.FileName = "result.xml";
+			this.openFileDialogExport.Filter = "Binary Results (*.bin)|*.bin|All Files|*.*";
+			this.openFileDialogExport.Title = "Choose a BIN results file to import";
+			// 
 			// completionArrayControl
 			// 
 			this.completionArrayControl.BackColor = System.Drawing.SystemColors.ControlLight;
@@ -1896,17 +1925,6 @@
 			this.completionArrayControl.TabIndex = 3;
 			this.completionArrayControl.SelectionChanged += new TestMSBSDF.CompletionArrayControl.SelectionChangedEventHandler(this.completionArrayControl_SelectionChanged);
 			this.completionArrayControl.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.completionArrayControl_MouseDoubleClick);
-			// 
-			// radioButtonLobe_ModifiedPhongAniso
-			// 
-			this.radioButtonLobe_ModifiedPhongAniso.AutoSize = true;
-			this.radioButtonLobe_ModifiedPhongAniso.Location = new System.Drawing.Point(153, 3);
-			this.radioButtonLobe_ModifiedPhongAniso.Name = "radioButtonLobe_ModifiedPhongAniso";
-			this.radioButtonLobe_ModifiedPhongAniso.Size = new System.Drawing.Size(85, 17);
-			this.radioButtonLobe_ModifiedPhongAniso.TabIndex = 0;
-			this.radioButtonLobe_ModifiedPhongAniso.Text = "Phong Aniso";
-			this.radioButtonLobe_ModifiedPhongAniso.UseVisualStyleBackColor = true;
-			this.radioButtonLobe_ModifiedPhongAniso.CheckedChanged += new System.EventHandler(this.LobeTypeCheckChanged);
 			// 
 			// AutomationForm
 			// 
@@ -2110,5 +2128,7 @@
 		private System.Windows.Forms.RadioButton radioButtonInitScale_Analytical;
 		private System.Windows.Forms.RadioButton radioButtonInitRoughness_Analytical;
 		private System.Windows.Forms.RadioButton radioButtonLobe_ModifiedPhongAniso;
+		private System.Windows.Forms.ToolStripMenuItem importToolStripMenuItem;
+		private System.Windows.Forms.OpenFileDialog openFileDialogExport;
 	}
 }

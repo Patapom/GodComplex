@@ -1116,25 +1116,27 @@ namespace TestMSBSDF
 
 					// Render analytical lobes
 					if ( checkBoxShowAnalyticalLobe.Checked ) {
-						m_CB_RenderLobe.m._Flags = generalDisplayFlags | 1U | 2U | flags;
+						m_CB_RenderLobe.m._Flags = 1U | 2U | generalDisplayFlags | flags;
 						m_CB_RenderLobe.m._Direction = currentDirection;
 						m_CB_RenderLobe.m._ReflectedDirection = analyticalReflectedDirection;
 						m_CB_RenderLobe.m._Roughness = floatTrackbarControlAnalyticalLobeRoughness.Value;
 						m_CB_RenderLobe.m._ScaleR = floatTrackbarControlLobeScaleR.Value;
 						m_CB_RenderLobe.m._ScaleT = floatTrackbarControlLobeScaleT.Value;
 						m_CB_RenderLobe.m._ScaleB = floatTrackbarControlLobeScaleB.Value;
+						m_CB_RenderLobe.m._MaskingImportance = floatTrackbarControlLobeMaskingImportance.Value;
 						m_CB_RenderLobe.UpdateData();
 
 						m_Prim_Lobe.Render( m_Shader_RenderLobe );
 
 						if ( m_lastComputedSurfaceType == SURFACE_TYPE.DIELECTRIC ) {
 							// Show transmitted lobe
-							m_CB_RenderLobe.m._Flags = generalDisplayFlags | 1U | 2U | 4U | flags;
+							m_CB_RenderLobe.m._Flags = 1U | 2U | 4U | generalDisplayFlags | flags;
 							m_CB_RenderLobe.m._ReflectedDirection = analyticalTransmittedDirection;
 							m_CB_RenderLobe.m._Roughness = floatTrackbarControlAnalyticalLobeRoughness_T.Value;
 							m_CB_RenderLobe.m._ScaleR = floatTrackbarControlLobeScaleR_T.Value;
 							m_CB_RenderLobe.m._ScaleT = floatTrackbarControlLobeScaleT_T.Value;
 							m_CB_RenderLobe.m._ScaleB = floatTrackbarControlLobeScaleB_T.Value;
+							m_CB_RenderLobe.m._MaskingImportance = floatTrackbarControlLobeMaskingImportance_T.Value;
 							m_CB_RenderLobe.UpdateData();
 
 							m_Prim_Lobe.Render( m_Shader_RenderLobe );
