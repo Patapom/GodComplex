@@ -2369,6 +2369,8 @@ namespace TestMSBSDF
 												(radioButtonLobe_ModifiedPhongAniso.Checked ?	LobeModel.LOBE_TYPE.MODIFIED_PHONG_ANISOTROPIC :
 												(radioButtonLobe_Beckmann.Checked ?				LobeModel.LOBE_TYPE.BECKMANN :
 																								LobeModel.LOBE_TYPE.GGX));
+
+			m_owner.SetLobeType( m_document.m_settings.m_lobeModel );
 		}
 
 		private void radioButtonInitDirection_CheckedChanged( object sender, EventArgs e )

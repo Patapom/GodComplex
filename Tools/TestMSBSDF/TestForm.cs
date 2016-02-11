@@ -935,6 +935,19 @@ namespace TestMSBSDF
 			}
 		}
 
+		/// <summary>
+		/// Called by the automation form to change the lobe type
+		/// </summary>
+		/// <param name="_type"></param>
+		public void SetLobeType( LobeModel.LOBE_TYPE _type ) {
+			switch ( _type ) {
+				case LobeModel.LOBE_TYPE.MODIFIED_PHONG: radioButtonAnalyticalPhong.Checked = true; break;
+				case LobeModel.LOBE_TYPE.MODIFIED_PHONG_ANISOTROPIC: radioButtonAnalyticalPhongAnisotropic.Checked = true; break;
+				case LobeModel.LOBE_TYPE.BECKMANN: radioButtonAnalyticalBeckmann.Checked = true; break;
+				case LobeModel.LOBE_TYPE.GGX: radioButtonAnalyticalGGX.Checked = true; break;
+			}
+		}
+
 		public void	UpdateApplication() {
 			panelOutput.Refresh();
 			Application_Idle( null, EventArgs.Empty );
