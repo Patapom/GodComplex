@@ -735,36 +735,58 @@ namespace TestMSBSDF
 					/// <param name="_roughness"></param>
 					/// <returns></returns>
 					float	ComputeAnalyticalFlattenParameter( float _theta, float _roughness ) {
-						// Here are the mathematica expressions giving us the flattening parameter as a function of theta and roughness:
-						// a(\[Rho]) = 0.697462  - 0.479278 (1-\[Rho])
-						// b(\[Rho]) = 0.287646  - 0.293594 (1-\[Rho])
-						// c(\[Rho]) = 5.69744  + 6.61321 (1-\[Rho])
-						// \[Mu] = cos(\[Theta])
-						// f( \[Mu], \[Rho] ) = a(\[Rho]) + b(\[Rho]) e^(-c(\[Rho])  \[Mu])
-						//
-						_roughness = 1.0f - _roughness;
-						double	cosTheta = Math.Cos( _theta );
-						double	a = 0.697462 - 0.479278 * _roughness;
-						double	b = 0.287646 - 0.293594 * _roughness;
-						double	c = 5.697440 + 6.613210 * _roughness;
-						double	f = a + b * Math.Exp( -c * cosTheta );
-						return (float) f;
+						#if true
+							// Here is the new updated (and much simpler) mathematica expression for the flattening parameter that is now only dependent on roughness:
+							// f[ \[Mu]_, \[Alpha]_] = 0.5 + 0.1533059468269667` \!\(TraditionalForm\\*SuperscriptBox[\(\[Alpha]\), \(2\)]\)
+							//
+							double	f = 0.5 + 0.1533059468269667 * _roughness*_roughness;
+							return (float) f;
+						#else
+							// Here are the mathematica expressions giving us the flattening parameter as a function of theta and roughness:
+							// a(\[Rho]) = 0.697462  - 0.479278 (1-\[Rho])
+							// b(\[Rho]) = 0.287646  - 0.293594 (1-\[Rho])
+							// c(\[Rho]) = 5.69744  + 6.61321 (1-\[Rho])
+							// \[Mu] = cos(\[Theta])
+							// f( \[Mu], \[Rho] ) = a(\[Rho]) + b(\[Rho]) e^(-c(\[Rho])  \[Mu])
+							//
+							_roughness = 1.0f - _roughness;
+							double	cosTheta = Math.Cos( _theta );
+							double	a = 0.697462 - 0.479278 * _roughness;
+							double	b = 0.287646 - 0.293594 * _roughness;
+							double	c = 5.697440 + 6.613210 * _roughness;
+							double	f = a + b * Math.Exp( -c * cosTheta );
+							return (float) f;
+						#endif
 					}
 
 					float	ComputeAnalyticalRoughnessParameter( float _roughness ) {
-						// Here are the mathematica expressions giving us the lobe roughness parameter as a function of surface roughness:
-						// roughness[\[Alpha]_] = 0.9168937073335606 - 0.013091709358763996 \[Alpha]
-						//
-						double	roughness = 0.9168937073335606 - 0.013091709358763996 * _roughness;
-						return (float) roughness;
+						#if true
+							// Here is the new updated mathematica expression for the exponent parameter that is now only dependent on roughness:
+							// roughness[\[Alpha]_] = 1 - 0.291525 \[Alpha] + 0.226275 \[Alpha]^2 - 0.0520231 \[Alpha]^3
+							double	roughness = 1.0 - 0.291524598275295 * _roughness + 0.226275283382124 * _roughness*_roughness - 0.052023116371438 * _roughness*_roughness*_roughness;
+							return (float) roughness;
+						#else
+							// Here are the mathematica expressions giving us the lobe roughness parameter as a function of surface roughness:
+							// roughness[\[Alpha]_] = 0.9168937073335606 - 0.013091709358763996 \[Alpha]
+							//
+							double	roughness = 0.9168937073335606 - 0.013091709358763996 * _roughness;
+							return (float) roughness;
+						#endif
 					}
 
 					float	ComputeAnalyticalExponent( float _roughness ) {
-						// Here are the mathematica expressions giving us the exponent parameter as a function of roughness:
-						// exponent[\[Alpha]_] = 0.7782894918463 + 0.1683172467667511 \[Alpha]
-						//
-						double	exponent = 0.7782894918463 + 0.1683172467667511 * _roughness;
-						return (float) exponent;
+						#if true
+							// Here is the new updated mathematica expression for the exponent parameter that is now only dependent on roughness:
+							// f[\[Alpha]_] = 2.71026 \[Alpha] - 1.69142 \[Alpha]^2 + 0.260868 \[Alpha]^3
+							double	exponent = 2.710256688555572 * _roughness - 1.691421934763379*_roughness*_roughness + 0.26086819450332044*_roughness*_roughness*_roughness;
+							return (float) exponent;
+						#else
+							// Here are the mathematica expressions giving us the exponent parameter as a function of roughness:
+							// exponent[\[Alpha]_] = 0.7782894918463 + 0.1683172467667511 \[Alpha]
+							//
+							double	exponent = 0.7782894918463 + 0.1683172467667511 * _roughness;
+							return (float) exponent;
+						#endif
 					}
 
 					#endregion
@@ -875,7 +897,7 @@ namespace TestMSBSDF
 					m_reflected.Save( ElemReflected );
 					if ( m_owner.m_surface.m_type == TestForm.SURFACE_TYPE.DIELECTRIC ) {
 						XmlElement	ElemRefracted = AppendChild( _parent, "LobeRefracted" );
-						m_refracted.Save( ElemReflected );
+						m_refracted.Save( ElemRefracted );
 					}
 				}
 
@@ -895,7 +917,8 @@ namespace TestMSBSDF
 					m_reflected.Load( ElemReflected, _version );
 					if ( m_owner.m_surface.m_type == TestForm.SURFACE_TYPE.DIELECTRIC ) {
 						XmlElement	ElemRefracted = _parent["LobeRefracted"];
-						m_refracted.Load( ElemRefracted, _version );
+						if ( ElemRefracted != null )
+							m_refracted.Load( ElemRefracted, _version );
 					}
 				}
 
@@ -2241,7 +2264,7 @@ namespace TestMSBSDF
 				string	fileNameNoExt = Path.GetFileNameWithoutExtension( fileName );
 				string	extension = Path.GetExtension( fileName );
 
-				//@TODO: Support extented export formats
+				//@TODO: Support extended export formats
 				for ( int order=0; order < m_document.m_results.Length; order++ ) {
 					Document.Result[,,]	results = m_document.m_results[order];
 
@@ -2288,7 +2311,70 @@ namespace TestMSBSDF
 			} catch ( Exception _e ) {
 				MessageBox( "An error occurred while exporting results:\r\n" + _e );
 			}
+		}
 
+		private void importToolStripMenuItem_Click( object sender, EventArgs e ) {
+			string	fileName = m_AppKey.GetValue( "LastExportFileName", new System.IO.FileInfo( "results.bin" ).FullName ) as string;
+			openFileDialogExport.FileName = Path.GetFileName( fileName );
+			openFileDialogExport.InitialDirectory = Path.GetDirectoryName( fileName );
+			if ( openFileDialogExport.ShowDialog( this ) != DialogResult.OK )
+				return;
+
+			try {
+
+				fileName = openFileDialogExport.FileName;
+				string	directory = Path.GetDirectoryName( fileName );
+				string	fileNameNoExt = Path.GetFileNameWithoutExtension( fileName );
+				string	extension = Path.GetExtension( fileName );
+
+				for ( int order=0; order < m_document.m_results.Length; order++ ) {
+					Document.Result[,,]	results = m_document.m_results[order];
+
+					int	W = results.GetLength( 0 );
+					int	H = results.GetLength( 1 );
+					int	slicesCount = results.GetLength( 2 );
+					for ( int sliceIndex=0; sliceIndex < slicesCount; sliceIndex++ ) {
+						// Read results for reflected lobe
+						string	sliceFileName = Path.Combine( directory, fileNameNoExt + "_order" + (m_document.m_surface.ScatteringOrderMin + order) + "_slice" + sliceIndex.ToString( "G02" ) + extension );
+						using ( FileStream S = new FileInfo( sliceFileName ).OpenRead() )
+							using ( BinaryReader Reader = new BinaryReader( S ) )
+								for ( int Y=0; Y < H; Y++ )
+									for ( int X=0; X < W; X++ ) {
+										Document.Result	R = results[X,Y,sliceIndex];
+										R.m_reflected.m_theta = Reader.ReadDouble();
+										R.m_reflected.m_roughness = Reader.ReadDouble();
+										R.m_reflected.m_scale = Reader.ReadDouble();
+										R.m_reflected.m_flatten = Reader.ReadDouble();
+										R.m_reflected.m_masking = Reader.ReadDouble();
+										R.State = 1;
+									}
+
+						// Read results for refracted lobe
+						if ( m_document.m_surface.m_type == TestForm.SURFACE_TYPE.DIELECTRIC ) {
+							sliceFileName = Path.Combine( directory, fileNameNoExt + "_order" + (m_document.m_surface.ScatteringOrderMin + order) + "_slice" + sliceIndex.ToString( "G02" ) + "_refracted" + extension );
+							using ( FileStream S = new FileInfo( sliceFileName ).OpenRead() )
+								using ( BinaryReader Reader = new BinaryReader( S ) )
+									for ( int Y=0; Y < H; Y++ )
+										for ( int X=0; X < W; X++ ) {
+											Document.Result	R = results[X,Y,sliceIndex];
+											R.m_refracted.m_theta = Reader.ReadDouble();
+											R.m_refracted.m_roughness = Reader.ReadDouble();
+											R.m_refracted.m_scale = Reader.ReadDouble();
+											R.m_refracted.m_flatten = Reader.ReadDouble();
+											R.m_refracted.m_masking = Reader.ReadDouble();
+											R.State = 1;
+										}
+						}
+					}
+				}
+
+				m_AppKey.SetValue( "LastExportFileName", openFileDialogExport.FileName );
+
+				MessageBox( "Success!", MessageBoxButtons.OK, MessageBoxIcon.Information );
+
+			} catch ( Exception _e ) {
+				MessageBox( "An error occurred while importing results:\r\n" + _e );
+			}
 		}
 
 		#endregion
@@ -2369,6 +2455,8 @@ namespace TestMSBSDF
 												(radioButtonLobe_ModifiedPhongAniso.Checked ?	LobeModel.LOBE_TYPE.MODIFIED_PHONG_ANISOTROPIC :
 												(radioButtonLobe_Beckmann.Checked ?				LobeModel.LOBE_TYPE.BECKMANN :
 																								LobeModel.LOBE_TYPE.GGX));
+
+			m_owner.SetLobeType( m_document.m_settings.m_lobeModel );
 		}
 
 		private void radioButtonInitDirection_CheckedChanged( object sender, EventArgs e )

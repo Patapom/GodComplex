@@ -175,13 +175,12 @@ PS_IN	VS( VS_IN _In ) {
 
 	float	lobeSign = _Flags & 4U ? -1.0 : 1.0;	// -1 for transmitted lobe, +1 for reflected lobe
 
-	float	intensityMultiplier = _Intensity * (_Flags & 8 ? pow( 3.0, _ScatteringOrder ) : 1.0);
+	float	intensityMultiplier = _Intensity * (_Flags & 8U ? pow( 3.0, _ScatteringOrder ) : 1.0);
 
 	float	lobeIntensity;
 	float3	wsPosition;
 	if ( _Flags & 2 ) {
 		// Show analytical lobe
-
 		float	scaleT = 1.0;
 		float	scaleB = 1.0;
 		float	scaleR = _Flattening;	// Isotropic with flattening along normal
@@ -211,13 +210,8 @@ PS_IN	VS( VS_IN _In ) {
 			maskingShadowing *= GGXG1( wsDirection.z, _Roughness );				// * Masking( outgoing )
 			break;
 		case 2:
-			// Isotropic Phong
-			lobeIntensity = PhongNDF( cosTheta_M, _Roughness );					// NDF
-			maskingShadowing = PhongG1( wsIncomingDirection.z, _Roughness );	// * Masking( incoming )
-			maskingShadowing *= PhongG1( wsDirection.z, _Roughness );			// * Masking( outgoing )
-			break;
 		case 3:
-			// Anisotropic Phong
+			// Phong
 			lobeIntensity = PhongNDF( cosTheta_M, _Roughness );					// NDF
 			maskingShadowing = PhongG1( wsIncomingDirection.z, _Roughness );	// * Masking( incoming )
 			maskingShadowing *= PhongG1( wsDirection.z, _Roughness );			// * Masking( outgoing )
@@ -245,7 +239,7 @@ PS_IN	VS( VS_IN _In ) {
 
 		lobeIntensity *= (lobeSign * wsDirection.z) < 0.0 ? 0.0 : 1.0;			// Nullify all "below the surface" directions
 
-		lobeIntensity *= intensityMultiplier;	// So we match the simulated lobe's intensity scale
+		lobeIntensity *= intensityMultiplier;									// So we match the simulated lobe's intensity scale
 
 		wsDirection = wsScaledDirection;
 		wsPosition = lobeIntensity * float3( wsDirection.x, wsDirection.z, -wsDirection.y );	// Vertex position in Y-up
