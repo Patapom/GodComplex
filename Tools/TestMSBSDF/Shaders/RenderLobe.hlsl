@@ -90,47 +90,91 @@ float	PhongG1( float _cosTheta, float _roughness ) {
 //  
 // Resulting Model
 //	
-//	After fitting each parameter one after another, we noticed that:
-//		\[Bullet] Incident light angle \[Theta] has no effect on fitted lobe, assuming we ignore the backscattering that is visible at highly grazing angles and that would be better fitted using maybe a GGX lobe that features a nice backscatter property.
-//		\[Bullet] Final masking importance m is 0 after all
-//		\[Bullet] There is only a dependency on albedo \[Rho] for the scale factor (that was expected) and it is proportional to \[Rho]^2 which was also expected.
-//		
-//	Finally, we obtain the following analytical model for 2nd order scattering of a rough diffuse surface:
-//	
-//		Subscript[f, 2](Subscript[\[Omega], o],\[Alpha],\[Rho]) = Subscript[\[Sigma], 2](\[Rho]) \[Mu]^\[Eta](\[Alpha])
-//		
-//		\[Mu] = Subscript[\[Omega], o]\[CenterDot]Z
-//		\[Eta](\[Alpha]) = 0.7782894918463 + 0.1683172467667511 \[Alpha]		the fitted exponent with a dependency on roughness alone
-//		Subscript[\[Sigma], 2]( \[Alpha], \[Rho] ) = k(\[Rho]) [2.32484 \[Alpha]-2.75021 \[Alpha]^2+1.01261 \[Alpha]^3]	the fitted scale factor with a dependency on albedo and roughness
-//		Subscript[k, 2](\[Rho]) = \[Rho]^2								the factor applied to scale that will give use the expected color saturation
-//		
-//	The flattening factor along the main lobe direction Z is the most expensive to compute:
-//		a(\[Alpha]) = 0.697462  - 0.479278 (1-\[Alpha])
-//		b(\[Alpha]) = 0.287646  - 0.293594 (1-\[Alpha])
-//		c(\[Alpha]) = 5.69744  + 6.61321 (1-\[Alpha])
-//		Subscript[\[Sigma], n](\[Mu], \[Alpha]) = a(\[Alpha]) + b(\[Alpha]) e^(-c(\[Alpha])  \[Mu])
-//	
-//	An alternate model is possible using a power of 2:
-//		c^\[Prime](\[Alpha]) = 8.21968  + 9.54087 (1-\[Alpha])
-//		Subscript[\[Sigma], n]^\[Prime](\[Mu], \[Alpha]) = a(\[Alpha]) + b(\[Alpha]) 2^(-c^\[Prime](\[Alpha])  \[Mu])
-//		
-//	So the world-space intensity of the fitted lobe is obtained by multiplying the lobe-space intensity with the scale factor:
-//	
-//		Subscript[f, w](Subscript[\[Omega], o],\[Alpha],\[Rho]) = L(\[Mu],Subscript[\[Sigma], n](\[Mu], \[Alpha])) Subscript[f, 2](Subscript[\[Omega], o],\[Alpha],\[Rho])
-//		
-//		L(\[Mu], Subscript[\[Sigma], n](\[Mu], \[Alpha])) = 1/Sqrt[1+\[Mu]^2 (1/Subscript[\[Sigma], n](\[Mu],\[Alpha])^2-1)]
-//	
-//	
-//	Additional Scaling for 3rd Order Lobes
-//	
-//	Using the same analytical model for 3rd order scattering lobes but letting the \[Sigma] parameter free for new evaluation, we obtain a pretty good fit for a new Subscript[\[Sigma], 3](\[Alpha], \[Rho])
-//	
-//		Subscript[\[Sigma], 3](\[Alpha], \[Rho]) = Subscript[k, 3](\[Rho]) [-0.00602406+0.252628 \[Alpha]+0.390207 \[Alpha]^2-0.382049 \[Alpha]^3]	the fitted scale factor with a dependency on albedo and roughness
-//		Subscript[k, 3](\[Rho]) = \[Rho]^3											the factor applied to scale that will give use the expected color saturation
-//		
-//	
+// After fitting each parameter one after another, we noticed that:
+// 	\[Bullet] Incident light angle \[Theta] has no effect on fitted lobe, assuming we ignore the backscattering that is visible at highly grazing angles and that would be better fitted using maybe a GGX lobe that features a nice backscatter property.
+// 	\[Bullet] Final masking importance m is 0 after all
+// 	\[Bullet] There is only a dependency on albedo \[Rho] for the scale factor (that was expected) and it is proportional to \[Rho]^2 which was also expected.
+// 	
+// Finally, we obtain the following analytical model for 2nd order scattering of a rough diffuse surface:
+// 
+// 	Subscript[f, 2](Subscript[\[Omega], o],\[Alpha],\[Rho]) = Subscript[\[Sigma], 2](\[Rho]) \[Mu]^\[Eta](\[Alpha])
+// 	\[Mu] = Subscript[\[Omega], o]\[CenterDot]Z
+// 	
+// The exponent \[Eta] is given as a function of surface roughness by:
+// 
+// 	\[Eta](Subscript[\[Alpha], s]) = 2.5958 \[Alpha]-1.32697 \[Alpha]^2
+// 	
+// The scale factor \[Sigma] is given by:
+// 
+// 	Subscript[\[Sigma], 2](\[Mu],Subscript[\[Alpha], s], \[Rho]) =(\[Rho]^2) [a(Subscript[\[Alpha], s]) + b(Subscript[\[Alpha], s])\[Mu] + c(Subscript[\[Alpha], s]) \[Mu]^2 + d(Subscript[\[Alpha], s]) \[Mu]^3] 
+// 	
+// 	a(\[Alpha])= 0.0166734 -0.52521 \[Alpha]+5.2422 \[Alpha]^2-3.56901 \[Alpha]^3
+// 	b(\[Alpha])= -0.10099+7.22596 \[Alpha]-19.4905 \[Alpha]^2+10.7698 \[Alpha]^3
+// 	c(\[Alpha])= 0.139826 -11.4291 \[Alpha]+30.1773 \[Alpha]^2-16.7894 \[Alpha]^3
+// 	d(\[Alpha])=-0.0650245+5.73125 \[Alpha]-14.9975 \[Alpha]^2+8.3291 \[Alpha]^3
+// 
+// The flattening factor Subscript[\[Sigma], n] along the main lobe direction Z is given by:
+// 
+// 	Subscript[\[Sigma], n](\[Mu],Subscript[\[Alpha], s]) =a(Subscript[\[Alpha], s]) + b(Subscript[\[Alpha], s])\[Mu] + c(Subscript[\[Alpha], s]) \[Mu]^2 + d(Subscript[\[Alpha], s]) (\[Mu]^3) 
+// 	
+// 	a(\[Alpha])= 0.913643 -1.65548 \[Alpha]+1.39617 \[Alpha]^2-0.320331 \[Alpha]^3
+// 	b(\[Alpha])= 0.0447239 +0.62474 \[Alpha]
+// 	c(\[Alpha])= -0.118844-0.973213 \[Alpha]+0.36902 \[Alpha]^2
+// 	d(\[Alpha])=0.132577 +0.16975 \[Alpha]
+// 	
+// So the world-space intensity of the fitted lobe is obtained by multiplying the lobe-space intensity with the scale factor:
+// 
+// 	Subscript[f, w](Subscript[\[Omega], o],\[Alpha],\[Rho]) = L(\[Mu],Subscript[\[Sigma], n](\[Mu], \[Alpha])) Subscript[f, 2](Subscript[\[Omega], o],\[Alpha],\[Rho])
+// 	
+// 	L(\[Mu], Subscript[\[Sigma], n](\[Mu], \[Alpha])) = 1/Sqrt[1+\[Mu]^2 (1/Subscript[\[Sigma], n](\[Mu],\[Alpha])^2-1)]
+// 
+// Additionally, the fitted lobe roughness \[Alpha] as a function of surface roughness Subscript[\[Alpha], s] is given by:
+// 
+// 	 \[Alpha](Subscript[\[Alpha], s])= 1-0.2687 \[Alpha]+0.153596 \[Alpha]^2
 //
 float3	ComputeDiffuseModel( float3 _wsOutgoingDirection, float _roughness, float3 _albedo ) {
+#if 1
+	float	mu = saturate( _wsOutgoingDirection.z );
+	float	mu2 = mu*mu;
+	float	mu3 = mu2*mu;
+
+	float	r = _roughness;
+	float	r2 = r*r;
+	float	r3 = r*r2;
+
+	float4	abcd = float4(	0.016673375075225604 - 0.525209545615772 * _roughness + 5.24220269537287 * r2 - 3.5690085024568186 * r3,
+							-0.10099003574844712 + 7.225961805352702 * _roughness - 19.49049342659228 * r2 + 10.769848952215131 * r3,
+							0.13982571795990942 - 11.429145510606348 * _roughness + 30.177292378971725 * r2 - 16.789426306986503 * r3,
+							-0.065024475640786 + 5.731247014927747 * _roughness - 14.997450899818153 * r2 + 8.3291032822247 * r3
+						);
+	float	sigma2 = abcd.x + abcd.y * mu + abcd.z * mu2 + abcd.w * mu3;
+
+float	sigma3 = sigma2;	//@TODO!
+
+sigma2 *= _ScatteringOrder == 1 ? 1 : 0;
+sigma3 *= _ScatteringOrder == 2 ? 1 : 0;
+
+
+	// Compute lobe exponent
+	float	eta = 2.595802425876429 * r - 1.3269737218543278 * r2;
+
+	// Compute unscaled lobe intensity
+	float3	intensity = (sigma2 + sigma3) * pow( mu, eta );
+
+	// Compute flattening factor
+	abcd = float4(	0.9136434030473861 - 1.6554846256054254 * r + 1.396170391613371 * r2 - 0.3203305249468263 * r3,
+					0.044723925680673265 + 0.6247396225423497 * r,
+					-0.11884367470512597 - 0.973212684779483 * r + 0.36902017638601514 * r2,
+					0.13257717032932556 + 0.1697498085943817 * r
+				);
+	float	sigma_n = abcd.x + abcd.y * mu + abcd.z * mu2 + abcd.w * mu3;
+
+	float	L = rsqrt( 1.0 + mu2 * (1.0 / pow2( sigma_n ) - 1.0)  );
+
+	return  L * intensity;
+
+#else
+	// Formerly, when we had bad hitsogram bins, we got this:
 	float	gloss = 1.0 - _roughness;
 
 	float	cosTheta = saturate( _wsOutgoingDirection.z );
@@ -152,13 +196,14 @@ sigma3 *= _ScatteringOrder == 2 ? 1 : 0;
 	float3	intensity = (sigma2 + sigma3) * pow( cosTheta, eta );
 
 	// Compute flattening
-	float3	abc = float3(	0.697462 - 0.479278 * gloss,
+	float4	abcd = float4(	0.697462 - 0.479278 * gloss,
 							0.287646 - 0.293594 * gloss,
 							8.219680 + 9.540870 * gloss );
 	float	sigma_n = abc.x + abc.y * exp2( -abc.z * cosTheta );
 	float	L = rsqrt( 1.0 + cosTheta*cosTheta * (1.0 / pow2( sigma_n ) - 1.0)  );
 
 	return  L * intensity;
+#endif
 }
 
 
