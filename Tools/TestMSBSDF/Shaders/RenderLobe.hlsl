@@ -136,30 +136,40 @@ float3	ComputeDiffuseModel( float3 _wsOutgoingDirection, float _roughness, float
 #if 1
 	float	mu = saturate( _wsOutgoingDirection.z );
 	float	mu2 = mu*mu;
-	float	mu3 = mu2*mu;
+	float	mu3 = mu*mu2;
 
 	float	r = _roughness;
 	float	r2 = r*r;
 	float	r3 = r*r2;
 
-	float4	abcd = float4(	0.016673375075225604 - 0.525209545615772 * _roughness + 5.24220269537287 * r2 - 3.5690085024568186 * r3,
-							-0.10099003574844712 + 7.225961805352702 * _roughness - 19.49049342659228 * r2 + 10.769848952215131 * r3,
-							0.13982571795990942 - 11.429145510606348 * _roughness + 30.177292378971725 * r2 - 16.789426306986503 * r3,
-							-0.065024475640786 + 5.731247014927747 * _roughness - 14.997450899818153 * r2 + 8.3291032822247 * r3
+	float4	abcd = float4(	0.016673375075225604 - 0.525209545615772 * r + 5.24220269537287 * r2 - 3.5690085024568186 * r3,
+							-0.10099003574844712 + 7.225961805352702 * r - 19.49049342659228 * r2 + 10.769848952215131 * r3,
+							0.13982571795990942 - 11.429145510606348 * r + 30.177292378971725 * r2 - 16.789426306986503 * r3,
+							-0.065024475640786 + 5.731247014927747 * r - 14.997450899818153 * r2 + 8.3291032822247 * r3
 						);
-	float	sigma2 = abcd.x + abcd.y * mu + abcd.z * mu2 + abcd.w * mu3;
+	float3	sigma2 = abcd.x + abcd.y * mu + abcd.z * mu2 + abcd.w * mu3;
+			sigma2 *= _albedo*_albedo;	// Dependence on albedo²
 
-float	sigma3 = sigma2;	//@TODO!
+float3	sigma3 = 0;//sigma2;	//@TODO!
+		sigma3 *= _albedo*_albedo*_albedo;	// Dependence on albedo^3
 
 sigma2 *= _ScatteringOrder == 1 ? 1 : 0;
 sigma3 *= _ScatteringOrder == 2 ? 1 : 0;
 
 
 	// Compute lobe exponent
-	float	eta = 2.595802425876429 * r - 1.3269737218543278 * r2;
+	float	eta = 2.588380909161985 * r - 1.3549594389004276 *r2;
+
+eta = Roughness2PhongExponent( 0.9109 );
+//eta = Roughness2PhongExponent( 1 - 0.2687 * r + 0.153596 * r2 );
+
+
+sigma2 = 0.4923;
+
 
 	// Compute unscaled lobe intensity
-	float3	intensity = (sigma2 + sigma3) * pow( mu, eta );
+//	float3	intensity = (sigma2 + sigma3) * pow( mu, eta );
+	float3	intensity = (sigma2 + sigma3) * (eta+2) * pow( mu, eta ) / PI;
 
 	// Compute flattening factor
 	abcd = float4(	0.9136434030473861 - 1.6554846256054254 * r + 1.396170391613371 * r2 - 0.3203305249468263 * r3,
@@ -168,6 +178,10 @@ sigma3 *= _ScatteringOrder == 2 ? 1 : 0;
 					0.13257717032932556 + 0.1697498085943817 * r
 				);
 	float	sigma_n = abcd.x + abcd.y * mu + abcd.z * mu2 + abcd.w * mu3;
+
+
+sigma_n = 0.3899;
+
 
 	float	L = rsqrt( 1.0 + mu2 * (1.0 / pow2( sigma_n ) - 1.0)  );
 

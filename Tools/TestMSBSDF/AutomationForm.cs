@@ -724,7 +724,8 @@ namespace TestMSBSDF
 							// d(Subscript[\[Alpha], s])=-0.0650245+5.73125 \[Alpha]-14.9975 \[Alpha]^2+8.3291 \[Alpha]^3
 							// k(\[Rho]) = \[Rho]^2
 							// 	
-							// \[Sigma](\[Mu],Subscript[\[Sigma], s]) =a(Subscript[\[Alpha], s]) + b(Subscript[\[Alpha], s])\[Mu] + c(Subscript[\[Alpha], s]) \[Mu]^2 + d(Subscript[\[Alpha], s]) (\[Mu]^3) 						//
+							// \[Sigma](\[Mu],Subscript[\[Sigma], s]) =a(Subscript[\[Alpha], s]) + b(Subscript[\[Alpha], s])\[Mu] + c(Subscript[\[Alpha], s]) \[Mu]^2 + d(Subscript[\[Alpha], s]) (\[Mu]^3)
+							//
 							double	mu = Math.Cos( _theta );
 							double	r2 = _roughness * _roughness;
 							double	r3 = r2 * _roughness;
@@ -795,7 +796,7 @@ namespace TestMSBSDF
 						#if true
 							// Here is the new updated mathematica expression for the exponent parameter that is now only dependent on roughness:
 							// roughness[\[Alpha]_] = 1 - 0.2686997865426857` \[Alpha] + 0.1535959296279097` \[Alpha]^2;
-							double	roughness = 1.0 - 0.2686997865426857 * _roughness + + 0.1535959296279097 * _roughness*_roughness;
+							double	roughness = 1.0 - 0.2686997865426857 * _roughness + 0.1535959296279097 * _roughness*_roughness;
 							return (float) roughness;
 						#else
 							// Here are the mathematica expressions giving us the lobe roughness parameter as a function of surface roughness:
@@ -809,8 +810,8 @@ namespace TestMSBSDF
 					float	ComputeAnalyticalExponent( float _roughness ) {
 						#if true
 							// Here is the new updated mathematica expression for the exponent parameter that is now only dependent on roughness:
-							// fEta[\[Alpha]_] = 2.595802425876429` \[Alpha] - 1.3269737218543278` \[Alpha]^2;
-							double	exponent = 2.595802425876429 * _roughness - 1.3269737218543278 * _roughness*_roughness;
+							// fEta[\[Alpha]_] = 2.588380909161985` \[Alpha] - 1.3549594389004276` \[Alpha]^2;
+							double	exponent = 2.588380909161985 * _roughness - 1.3549594389004276 * _roughness*_roughness;
 							return (float) exponent;
 						#else
 							// Here are the mathematica expressions giving us the exponent parameter as a function of roughness:
