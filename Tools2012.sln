@@ -755,7 +755,6 @@ Global
 		{2AA334BB-68D9-430F-A357-4E4EE916E75E}.Release|x64.ActiveCfg = Release|x64
 		{2AA334BB-68D9-430F-A357-4E4EE916E75E}.Release|x64.Build.0 = Release|x64
 		{2AA334BB-68D9-430F-A357-4E4EE916E75E}.Release|x86.ActiveCfg = Release|x86
-		{2AA334BB-68D9-430F-A357-4E4EE916E75E}.Release|x86.Build.0 = Release|x86
 		{4609B718-96F6-4755-997C-AE7AF5BCBD0F}.Debug DirectX10|Any CPU.ActiveCfg = Debug DirectX10|x86
 		{4609B718-96F6-4755-997C-AE7AF5BCBD0F}.Debug DirectX10|Mixed Platforms.ActiveCfg = Debug DirectX10|x86
 		{4609B718-96F6-4755-997C-AE7AF5BCBD0F}.Debug DirectX10|Mixed Platforms.Build.0 = Debug DirectX10|x86
@@ -1485,7 +1484,6 @@ Global
 		{04040D82-8A53-498E-86A6-305724AB523E}.Release|x64.ActiveCfg = Release|x64
 		{04040D82-8A53-498E-86A6-305724AB523E}.Release|x64.Build.0 = Release|x64
 		{04040D82-8A53-498E-86A6-305724AB523E}.Release|x86.ActiveCfg = Release|x86
-		{04040D82-8A53-498E-86A6-305724AB523E}.Release|x86.Build.0 = Release|x86
 		{6B76A5BB-37D1-4EE7-A870-444C0C87CC59}.Debug DirectX10|Any CPU.ActiveCfg = Debug|x86
 		{6B76A5BB-37D1-4EE7-A870-444C0C87CC59}.Debug DirectX10|Mixed Platforms.ActiveCfg = Debug|x86
 		{6B76A5BB-37D1-4EE7-A870-444C0C87CC59}.Debug DirectX10|Mixed Platforms.Build.0 = Debug|x86
@@ -2036,7 +2034,6 @@ Global
 		{06210761-A819-4969-BACA-96E34DFEF164}.Release|x64.ActiveCfg = Release|x64
 		{06210761-A819-4969-BACA-96E34DFEF164}.Release|x64.Build.0 = Release|x64
 		{06210761-A819-4969-BACA-96E34DFEF164}.Release|x86.ActiveCfg = Release|x86
-		{06210761-A819-4969-BACA-96E34DFEF164}.Release|x86.Build.0 = Release|x86
 		{DCEB6C30-109E-4672-8B6F-9A6C84B41DED}.Debug DirectX10|Any CPU.ActiveCfg = Debug|x86
 		{DCEB6C30-109E-4672-8B6F-9A6C84B41DED}.Debug DirectX10|Mixed Platforms.ActiveCfg = Debug|x86
 		{DCEB6C30-109E-4672-8B6F-9A6C84B41DED}.Debug DirectX10|Mixed Platforms.Build.0 = Debug|x86
@@ -2123,7 +2120,6 @@ Global
 		{F69DD10A-13F1-46AB-84B7-EDA2402E8ACD}.Release|x64.ActiveCfg = Release|x64
 		{F69DD10A-13F1-46AB-84B7-EDA2402E8ACD}.Release|x64.Build.0 = Release|x64
 		{F69DD10A-13F1-46AB-84B7-EDA2402E8ACD}.Release|x86.ActiveCfg = Release|x86
-		{F69DD10A-13F1-46AB-84B7-EDA2402E8ACD}.Release|x86.Build.0 = Release|x86
 		{DEF12A8C-1FB1-406E-A580-37F020097414}.Debug DirectX10|Any CPU.ActiveCfg = Debug|x86
 		{DEF12A8C-1FB1-406E-A580-37F020097414}.Debug DirectX10|Mixed Platforms.ActiveCfg = Debug|x86
 		{DEF12A8C-1FB1-406E-A580-37F020097414}.Debug DirectX10|Mixed Platforms.Build.0 = Debug|x86
