@@ -423,7 +423,7 @@ namespace TestMSBSDF
 		#region Phong Lobe
 
 		double	Roughness2PhongExponent( double _roughness ) {
-//				return Math.Pow( 2.0, 10.0 * (1.0 - _roughness) + 1.0 );		// From https://seblagarde.wordpress.com/2011/08/17/hello-world/
+//			return Math.Pow( 2.0, 10.0 * (1.0 - _roughness) + 1.0 );		// From https://seblagarde.wordpress.com/2011/08/17/hello-world/
 			return Math.Pow( 2.0, 10.0 * (1.0 - _roughness) + 0.0 ) - 1.0;	// Actually, we'd like some fatter rough lobes
 		}
 

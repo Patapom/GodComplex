@@ -132,9 +132,12 @@ float	PhongG1( float _cosTheta, float _roughness ) {
 // 
 // 	 \[Alpha](Subscript[\[Alpha], s])= 1-0.2687 \[Alpha]+0.153596 \[Alpha]^2
 //
-float3	ComputeDiffuseModel( float3 _wsOutgoingDirection, float _roughness, float3 _albedo ) {
+float3	ComputeDiffuseModel( float3 _wsIncomingDirection, float3 _wsOutgoingDirection, float _roughness, float3 _albedo ) {
 #if 1
-	float	mu = saturate( _wsOutgoingDirection.z );
+
+	float	cosTheta = saturate( _wsOutgoingDirection.z );
+
+	float	mu = saturate( _wsIncomingDirection.z );
 	float	mu2 = mu*mu;
 	float	mu3 = mu*mu2;
 
@@ -142,11 +145,12 @@ float3	ComputeDiffuseModel( float3 _wsOutgoingDirection, float _roughness, float
 	float	r2 = r*r;
 	float	r3 = r*r2;
 
-	float4	abcd = float4(	0.016673375075225604 - 0.525209545615772 * r + 5.24220269537287 * r2 - 3.5690085024568186 * r3,
-							-0.10099003574844712 + 7.225961805352702 * r - 19.49049342659228 * r2 + 10.769848952215131 * r3,
-							0.13982571795990942 - 11.429145510606348 * r + 30.177292378971725 * r2 - 16.789426306986503 * r3,
-							-0.065024475640786 + 5.731247014927747 * r - 14.997450899818153 * r2 + 8.3291032822247 * r3
+	float4	abcd = float4(	 0.028813261153483097 - 0.9215374811620882 * r + 6.632726114385572  * r2 - 4.5957022306534    * r3,
+							-0.09663259042197028  + 7.214143602200921  * r - 19.786845117100626 * r2 + 11.042058883797509 * r3,
+							 0.10935692546815767  - 10.790405157520944 * r + 28.50803667636733  * r2 - 15.665258273262731 * r3,
+							-0.04376425480146207  + 5.2491960091879    * r - 13.582707339717146 * r2 + 7.348408854602616  * r3
 						);
+
 	float3	sigma2 = abcd.x + abcd.y * mu + abcd.z * mu2 + abcd.w * mu3;
 			sigma2 *= _albedo*_albedo;	// Dependence on albedo²
 
@@ -158,37 +162,27 @@ sigma3 *= _ScatteringOrder == 2 ? 1 : 0;
 
 
 	// Compute lobe exponent
-	float	eta = 2.588380909161985 * r - 1.3549594389004276 *r2;
-
-eta = Roughness2PhongExponent( 0.9109 );
+	float	eta = 2.588380909161985 * r - 1.3549594389004276 * r2;
 //eta = Roughness2PhongExponent( 1 - 0.2687 * r + 0.153596 * r2 );
 
-
-sigma2 = 0.4923;
-
-
 	// Compute unscaled lobe intensity
-//	float3	intensity = (sigma2 + sigma3) * pow( mu, eta );
-	float3	intensity = (sigma2 + sigma3) * (eta+2) * pow( mu, eta ) / PI;
+	float3	intensity = (sigma2 + sigma3) * (eta+2) * pow( cosTheta, eta ) / PI;
 
 	// Compute flattening factor
-	abcd = float4(	0.9136434030473861 - 1.6554846256054254 * r + 1.396170391613371 * r2 - 0.3203305249468263 * r3,
-					0.044723925680673265 + 0.6247396225423497 * r,
-					-0.11884367470512597 - 0.973212684779483 * r + 0.36902017638601514 * r2,
-					0.13257717032932556 + 0.1697498085943817 * r
+	abcd = float4(	   0.8850557867448499    - 1.2109761138443194 * r + 0.22569832413951335 * r2 + 0.4498256199595464 * r3,
+					   0.0856807009397115    + 0.5659031384072539 * r,
+					  -0.07707463071513312   - 1.384614678037336  * r + 0.8565888280926491  * r2,
+					   0.010423083821992304  + 0.8525591060832015 * r - 0.6844738691665317  * r2
 				);
+
 	float	sigma_n = abcd.x + abcd.y * mu + abcd.z * mu2 + abcd.w * mu3;
 
-
-sigma_n = 0.3899;
-
-
-	float	L = rsqrt( 1.0 + mu2 * (1.0 / pow2( sigma_n ) - 1.0)  );
+	float	L = rsqrt( 1.0 + cosTheta*cosTheta * (1.0 / pow2( sigma_n ) - 1.0)  );
 
 	return  L * intensity;
 
 #else
-	// Formerly, when we had bad hitsogram bins, we got this:
+	// Formerly, when we had bad histogram bins, we got this:
 	float	gloss = 1.0 - _roughness;
 
 	float	cosTheta = saturate( _wsOutgoingDirection.z );
@@ -280,7 +274,7 @@ PS_IN	VS( VS_IN _In ) {
 			// Diffuse Lobe Model
 			wsDirection = lsPosition;// normalize( lsPosition.x * wsTangent + lsPosition.y * wsBiTangent + lsPosition.z * wsReflectedDirection );	// No scaling for that model
 			wsScaledDirection = wsDirection;
-			lobeIntensity = ComputeDiffuseModel( wsDirection, _Roughness, _Flattening ).x;	// _Flattening is the surface's albedo in this case
+			lobeIntensity = ComputeDiffuseModel( wsIncomingDirection, wsDirection, _Roughness, _Flattening ).x;	// _Flattening is the surface's albedo in this case
 			maskingShadowing = 1.0;	// No masking/shadowing
 			break;
 
