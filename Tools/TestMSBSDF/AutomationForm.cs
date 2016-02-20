@@ -718,21 +718,23 @@ namespace TestMSBSDF
  					float	ComputeAnalyticalScaleParameter( float _theta, float _roughness, float _albedo ) {
 						#if true
 							// Here are the mathematica expressions giving us the scale parameter as a function of theta, roughness and albedo:
-							// a(Subscript[\[Alpha], s])= 0.0166734 -0.52521 \[Alpha]+5.2422 \[Alpha]^2-3.56901 \[Alpha]^3
-							// b(Subscript[\[Alpha], s])= -0.10099+7.22596 \[Alpha]-19.4905 \[Alpha]^2+10.7698 \[Alpha]^3
-							// c(Subscript[\[Alpha], s])= 0.139826 -11.4291 \[Alpha]+30.1773 \[Alpha]^2-16.7894 \[Alpha]^3
-							// d(Subscript[\[Alpha], s])=-0.0650245+5.73125 \[Alpha]-14.9975 \[Alpha]^2+8.3291 \[Alpha]^3
+							// a(Subscript[\[Alpha], s])= 0.0288133 -0.921537 \[Alpha]+6.63273 \[Alpha]^2-4.5957 \[Alpha]^3
+							// b(Subscript[\[Alpha], s])= -0.0966326+7.21414 \[Alpha]-19.7868 \[Alpha]^2+11.0421 \[Alpha]^3
+							// c(Subscript[\[Alpha], s])= 0.109357 -10.7904 \[Alpha]+28.508 \[Alpha]^2-15.6653 \[Alpha]^3
+							// d(Subscript[\[Alpha], s])=-0.0437643+5.2492 \[Alpha]-13.5827 \[Alpha]^2+7.34841 \[Alpha]^3
 							// k(\[Rho]) = \[Rho]^2
 							// 	
 							// \[Sigma](\[Mu],Subscript[\[Sigma], s]) =a(Subscript[\[Alpha], s]) + b(Subscript[\[Alpha], s])\[Mu] + c(Subscript[\[Alpha], s]) \[Mu]^2 + d(Subscript[\[Alpha], s]) (\[Mu]^3)
 							//
 							double	mu = Math.Cos( _theta );
-							double	r2 = _roughness * _roughness;
-							double	r3 = r2 * _roughness;
-							double	a = 0.016673375075225604 - 0.525209545615772 * _roughness + 5.24220269537287 * r2 - 3.5690085024568186 * r3;
-							double	b = -0.10099003574844712 + 7.225961805352702 * _roughness - 19.49049342659228 * r2 + 10.769848952215131 * r3;
-							double	c = 0.13982571795990942 - 11.429145510606348 * _roughness + 30.177292378971725 * r2 - 16.789426306986503 * r3;
-							double	d = -0.065024475640786 + 5.731247014927747 * _roughness - 14.997450899818153 * r2 + 8.3291032822247 * r3;
+							double	r = _roughness;
+							double	r2 = r * r;
+							double	r3 = r2 * r;
+							double	a =  0.028813261153483097 - 0.9215374811620882 * r + 6.632726114385572  * r2 - 4.5957022306534    * r3;
+							double	b = -0.09663259042197028  + 7.214143602200921  * r - 19.786845117100626 * r2 + 11.042058883797509 * r3;
+							double	c =  0.10935692546815767  - 10.790405157520944 * r + 28.50803667636733  * r2 - 15.665258273262731 * r3;
+							double	d = -0.04376425480146207  + 5.2491960091879    * r - 13.582707339717146 * r2 + 7.348408854602616  * r3;
+
 							double	f = a + b * mu + c * mu*mu + d * mu*mu*mu;
 							return (float) f;
 						#else
@@ -759,19 +761,21 @@ namespace TestMSBSDF
 					float	ComputeAnalyticalFlattenParameter( float _theta, float _roughness ) {
 						#if true
 							// Here is the new updated mathematica expression for the flattening parameter:
-							// fA[\[Alpha]_]= 0.9136434030473861` -1.6554846256054254` \[Alpha]+1.396170391613371` \[Alpha]^2-0.3203305249468263` \[Alpha]^3;
-							// fB[\[Alpha]_]= 0.044723925680673265` +0.6247396225423497` \[Alpha];
-							// fC[\[Alpha]_]= -0.11884367470512597`-0.973212684779483` \[Alpha]+0.36902017638601514` \[Alpha]^2;
-							// fD[\[Alpha]_]= 0.13257717032932556` +0.1697498085943817` \[Alpha]
+							// a(Subscript[\[Alpha], s])= 0.885056 -1.21098 \[Alpha]+0.225698 \[Alpha]^2+0.449826 \[Alpha]^3
+							// b(Subscript[\[Alpha], s])=0.0856807 +0.565903 \[Alpha]
+							// c(Subscript[\[Alpha], s])= -0.0770746-1.38461 \[Alpha]+0.856589 \[Alpha]^2
+							// d(Subscript[\[Alpha], s])=0.0104231 +0.852559 \[Alpha]-0.684474 \[Alpha]^2
 							// fFlat[\[Mu]_, \[Alpha]_] = fA[\[Alpha]] + fB[\[Alpha]] \[Mu] + fC[\[Alpha]] \[Mu]^2 + fD[\[Alpha]] \[Mu]^3
 							//
 							double	mu = Math.Cos( _theta );
-							double	r2 = _roughness * _roughness;
-							double	r3 = r2 * _roughness;
-							double	a = 0.9136434030473861 - 1.6554846256054254 * _roughness + 1.396170391613371 * r2 - 0.3203305249468263 * r3;
-							double	b = 0.044723925680673265 + 0.6247396225423497 * _roughness;
-							double	c = -0.11884367470512597 - 0.973212684779483 * _roughness + 0.36902017638601514 * r2;
-							double	d = 0.13257717032932556 + 0.1697498085943817 * _roughness;
+							double	r = _roughness;
+							double	r2 = r * r;
+							double	r3 = r2 * r;
+							double	a = 0.8850557867448499    - 1.2109761138443194 * r + 0.22569832413951335 * r2 + 0.4498256199595464 * r3;
+							double	b = 0.0856807009397115    + 0.5659031384072539 * r;
+							double	c = -0.07707463071513312  - 1.384614678037336  * r + 0.8565888280926491  * r2;
+							double	d = 0.010423083821992304  + 0.8525591060832015 * r - 0.6844738691665317  * r2;
+
 							double	f = a + b * mu + c * mu*mu + d * mu*mu*mu;
 							return (float) f;
 						#else

@@ -154,8 +154,9 @@ float3	ComputeDiffuseModel( float3 _wsIncomingDirection, float3 _wsOutgoingDirec
 	float3	sigma2 = abcd.x + abcd.y * mu + abcd.z * mu2 + abcd.w * mu3;
 			sigma2 *= _albedo*_albedo;	// Dependence on albedo²
 
-float3	sigma3 = 0;//sigma2;	//@TODO!
-		sigma3 *= _albedo*_albedo*_albedo;	// Dependence on albedo^3
+	float3	sigma3 = 0;//sigma2;	//@TODO!
+			sigma3 *= _albedo*_albedo*_albedo;	// Dependence on albedo^3
+
 
 sigma2 *= _ScatteringOrder == 1 ? 1 : 0;
 sigma3 *= _ScatteringOrder == 2 ? 1 : 0;
