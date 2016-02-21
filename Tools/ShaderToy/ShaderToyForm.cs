@@ -368,7 +368,7 @@ namespace ShaderToy
 //				m_Shader = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/Airlight.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );;
 //				m_Shader = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/VoronoiInterpolation.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );;
 //				m_Shader = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/Room.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );;
-				m_Shader = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/TestMSBRDF.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );;
+				m_Shader = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/TestMSBRDF2.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );;
 			}
 			catch ( Exception _e ) {
 				MessageBox.Show( "Shader failed to compile!\n\n" + _e.Message, "ShaderToy", MessageBoxButtons.OK, MessageBoxIcon.Error );
@@ -511,8 +511,6 @@ namespace ShaderToy
 			if ( e.Button != MouseButtons.Left)
 				return;
 
-			m_moveSeparator = !m_moveSeparator;
-
 			m_MouseDown = true;
 			m_ButtonDownMouseUV = Client2UV( e.Location );
 
@@ -569,6 +567,12 @@ namespace ShaderToy
 		private void panelOutput_MouseUp( object sender, MouseEventArgs e )
 		{
 			m_MouseDown = false;
+		}
+
+		private void panelOutput_PreviewKeyDown( object sender, PreviewKeyDownEventArgs e )
+		{
+			if ( e.KeyCode == Keys.Space )
+				m_moveSeparator = !m_moveSeparator;
 		}
 	}
 }

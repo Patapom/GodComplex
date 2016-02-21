@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[     39294,       1238]
-NotebookOptionsPosition[     38336,       1203]
-NotebookOutlinePosition[     38684,       1218]
-CellTagsIndexPosition[     38641,       1215]
+NotebookDataLength[     38582,       1229]
+NotebookOptionsPosition[     37669,       1195]
+NotebookOutlinePosition[     38017,       1210]
+CellTagsIndexPosition[     37974,       1207]
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -857,26 +857,37 @@ model for 2nd order scattering of a rough diffuse surface:\n\n\t",
  Cell[BoxData[
   FormBox[
    RowBox[{
+    RowBox[{"\[Sigma]", "(", 
+     RowBox[{"\[Mu]", ",", 
+      SubscriptBox["\[Alpha]", "s"], ",", " ", "\[Rho]"}], ")"}], " ", "=", 
+    RowBox[{
+     RowBox[{"a", "(", 
+      SubscriptBox["\[Alpha]", "s"], ")"}], " ", "+", " ", 
+     RowBox[{
+      RowBox[{"b", "(", 
+       SubscriptBox["\[Alpha]", "s"], ")"}], "\[Mu]"}], " ", "+", " ", 
+     RowBox[{
+      RowBox[{"c", "(", 
+       SubscriptBox["\[Alpha]", "s"], ")"}], " ", 
+      SuperscriptBox["\[Mu]", "2"]}], " ", "+", " ", 
+     RowBox[{
+      RowBox[{"d", "(", 
+       SubscriptBox["\[Alpha]", "s"], ")"}], " ", 
+      SuperscriptBox["\[Mu]", "3"], " "}]}]}], TraditionalForm]]],
+ "\n\t",
+ Cell[BoxData[
+  FormBox[
+   RowBox[{
     RowBox[{
      SubscriptBox["\[Sigma]", "2"], "(", 
      RowBox[{"\[Mu]", ",", 
       SubscriptBox["\[Alpha]", "s"], ",", " ", "\[Rho]"}], ")"}], " ", "=", 
     RowBox[{
-     SuperscriptBox["\[Rho]", "2"], " ", "[", 
-     RowBox[{
-      RowBox[{"a", "(", 
-       SubscriptBox["\[Alpha]", "s"], ")"}], " ", "+", " ", 
-      RowBox[{
-       RowBox[{"b", "(", 
-        SubscriptBox["\[Alpha]", "s"], ")"}], "\[Mu]"}], " ", "+", " ", 
-      RowBox[{
-       RowBox[{"c", "(", 
-        SubscriptBox["\[Alpha]", "s"], ")"}], " ", 
-       SuperscriptBox["\[Mu]", "2"]}], " ", "+", " ", 
-      RowBox[{
-       RowBox[{"d", "(", 
-        SubscriptBox["\[Alpha]", "s"], ")"}], " ", 
-       SuperscriptBox["\[Mu]", "3"]}]}], "]"}], " "}], TraditionalForm]]],
+     SuperscriptBox["\[Rho]", "2"], " ", 
+     RowBox[{"\[Sigma]", "(", 
+      RowBox[{"\[Mu]", ",", 
+       SubscriptBox["\[Alpha]", "s"], ",", " ", "\[Rho]"}], ")"}], " "}]}], 
+   TraditionalForm]]],
  "\n\n\t",
  Cell[BoxData[
   FormBox[
@@ -1094,7 +1105,8 @@ surface roughness ",
    3.664697629538337*^9}, {3.664782782807771*^9, 3.6647828146933756`*^9}, {
    3.6649602858660836`*^9, 3.664960294989828*^9}, {3.6649603414787455`*^9, 
    3.664960400672295*^9}, {3.66496043305513*^9, 3.664960442929887*^9}, {
-   3.6649604924878993`*^9, 3.6649604947850647`*^9}}],
+   3.6649604924878993`*^9, 3.6649604947850647`*^9}, {3.665043307869348*^9, 
+   3.6650433296807737`*^9}}],
 
 Cell[BoxData[
  RowBox[{"\t", 
@@ -1143,13 +1155,10 @@ Cell[BoxData[""], "Input",
    3.664960793910658*^9}]
 }, Open  ]],
 
-Cell["Additional Scaling for 3rd Order Lobes", "Section",
- CellChangeTimes->{{3.6640313513070498`*^9, 3.6640313684351215`*^9}}],
-
 Cell[CellGroupData[{
 
-Cell["TODO!! Don\[CloseCurlyQuote]t use that! Not done yet...", "Subchapter",
- CellChangeTimes->{{3.664446798005183*^9, 3.6644468063679323`*^9}}],
+Cell["Additional Scaling for 3rd Order Lobes", "Section",
+ CellChangeTimes->{{3.6640313513070498`*^9, 3.6640313684351215`*^9}}],
 
 Cell[TextData[{
  "Using the same analytical model for 3rd order scattering lobes but letting \
@@ -1161,43 +1170,26 @@ for a new ",
  "(\[Alpha], \[Rho])\n\n\t",
  Cell[BoxData[
   FormBox[
-   SubscriptBox["\[Sigma]", "3"], TraditionalForm]]],
- "(\[Alpha], \[Rho]) = ",
- Cell[BoxData[
-  FormBox[
-   SubscriptBox["k", "3"], TraditionalForm]]],
- "(\[Rho]) [",
- Cell[BoxData[
-  RowBox[{
-   RowBox[{"-", "0.006024064722416875`"}], "+", 
-   RowBox[{"0.25262765805538445`", " ", "\[Alpha]"}], "+", 
-   RowBox[{"0.3902065605355212`", " ", 
-    SuperscriptBox["\[Alpha]", "2"]}], "-", 
-   RowBox[{"0.3820487315212411`", " ", 
-    SuperscriptBox["\[Alpha]", "3"]}]}]],
-  CellChangeTimes->{
-   3.663843074532931*^9, 3.6638431089902077`*^9, {3.6638431834807553`*^9, 
-    3.6638432108560576`*^9}, 3.6638440069270935`*^9, 3.6638441265584106`*^9, {
-    3.6638441664695516`*^9, 3.663844274652804*^9}, {3.6638443065903015`*^9, 
-    3.663844406178506*^9}, 3.663844456376876*^9, {3.663844545451659*^9, 
-    3.66384456687778*^9}, {3.663844597270198*^9, 3.663844613880887*^9}, {
-    3.663844646425824*^9, 3.6638446887776756`*^9}, 3.663845287024764*^9, 
-    3.6638528526948395`*^9, {3.663852980263752*^9, 3.663852991806941*^9}}],
- "]\tthe fitted scale factor with a dependency on albedo and roughness\n\t",
- Cell[BoxData[
-  FormBox[
-   SubscriptBox["k", "3"], TraditionalForm]]],
- "(\[Rho]) = ",
+   SubscriptBox["\[Sigma]", "3"], TraditionalForm]],
+  FormatType->"TraditionalForm"],
+ "(\[Mu],\[Alpha], \[Rho]) = ",
  Cell[BoxData[
   FormBox[
    SuperscriptBox["\[Rho]", "3"], TraditionalForm]]],
- "\t\t\t\t\t\t\t\t\t\t\tthe factor applied to scale that will give use the \
-expected color saturation\n\t\n"
+ " [0.363902 * ",
+ Cell[BoxData[
+  FormBox[
+   RowBox[{"\[Sigma]", "(", 
+    RowBox[{"\[Mu]", ",", "\[Alpha]"}], ")"}], TraditionalForm]],
+  FormatType->"TraditionalForm"],
+ "]\n\t\n"
 }], "Text",
  CellChangeTimes->{{3.664031372630095*^9, 3.6640315432433295`*^9}, {
    3.664031755893241*^9, 3.6640318222970138`*^9}, {3.6640347381961155`*^9, 
    3.664034779200019*^9}, {3.664035536119508*^9, 3.6640355383470783`*^9}, {
-   3.664035598387396*^9, 3.6640355988187*^9}, 3.6644467909600134`*^9}]
+   3.664035598387396*^9, 3.6640355988187*^9}, 3.6644467909600134`*^9, {
+   3.6650432412272835`*^9, 3.6650432447617826`*^9}, {3.6650433371300135`*^9, 
+   3.66504334858813*^9}}]
 }, Open  ]]
 }, Open  ]]
 },
@@ -1230,14 +1222,13 @@ Cell[20665, 686, 2511, 96, 289, "Text"]
 }, Open  ]],
 Cell[CellGroupData[{
 Cell[23213, 787, 104, 1, 63, "Section"],
-Cell[23320, 790, 11030, 306, 890, "Text"],
-Cell[34353, 1098, 1518, 40, 112, "Input"],
-Cell[35874, 1140, 120, 2, 31, "Input"]
+Cell[23320, 790, 11398, 318, 907, "Text"],
+Cell[34721, 1110, 1518, 40, 112, "Input"],
+Cell[36242, 1152, 120, 2, 31, "Input"]
 }, Open  ]],
-Cell[36009, 1145, 127, 1, 63, "Section"],
 Cell[CellGroupData[{
-Cell[36161, 1150, 145, 1, 46, "Subchapter"],
-Cell[36309, 1153, 1999, 46, 128, "Text"]
+Cell[36399, 1159, 127, 1, 63, "Section"],
+Cell[36529, 1162, 1112, 29, 108, "Text"]
 }, Open  ]]
 }, Open  ]]
 }

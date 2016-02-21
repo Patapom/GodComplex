@@ -101,7 +101,7 @@
 			this.floatTrackbarControlParm.Name = "floatTrackbarControlParm";
 			this.floatTrackbarControlParm.Size = new System.Drawing.Size(200, 20);
 			this.floatTrackbarControlParm.TabIndex = 1;
-			this.floatTrackbarControlParm.Value = 0F;
+			this.floatTrackbarControlParm.Value = 1F;
 			this.floatTrackbarControlParm.VisibleRangeMax = 1F;
 			// 
 			// checkBoxShowOrder3
@@ -138,6 +138,7 @@
 			this.panelOutput.MouseDown += new System.Windows.Forms.MouseEventHandler(this.panelOutput_MouseDown);
 			this.panelOutput.MouseMove += new System.Windows.Forms.MouseEventHandler(this.panelOutput_MouseMove);
 			this.panelOutput.MouseUp += new System.Windows.Forms.MouseEventHandler(this.panelOutput_MouseUp);
+			this.panelOutput.PreviewKeyDown += new System.Windows.Forms.PreviewKeyDownEventHandler(this.panelOutput_PreviewKeyDown);
 			// 
 			// ShaderToyForm
 			// 

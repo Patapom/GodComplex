@@ -132,6 +132,9 @@ float	PhongG1( float _cosTheta, float _roughness ) {
 // 
 // 	 \[Alpha](Subscript[\[Alpha], s])= 1-0.2687 \[Alpha]+0.153596 \[Alpha]^2
 //
+// We also fit order 3 using the order 2 scale curve and we obtained the following expression:
+//	fScale3[ \[Mu]_, \[Alpha]_, \[Rho]_] = \[Rho]^3 * (0.363902052363025`* fScale[\[Mu], \[Alpha]]);
+//
 float3	ComputeDiffuseModel( float3 _wsIncomingDirection, float3 _wsOutgoingDirection, float _roughness, float3 _albedo ) {
 #if 1
 
@@ -152,9 +155,8 @@ float3	ComputeDiffuseModel( float3 _wsIncomingDirection, float3 _wsOutgoingDirec
 						);
 
 	float3	sigma2 = abcd.x + abcd.y * mu + abcd.z * mu2 + abcd.w * mu3;
-			sigma2 *= _albedo*_albedo;	// Dependence on albedo²
-
-	float3	sigma3 = 0;//sigma2;	//@TODO!
+	float3	sigma3 = 0.363902052363025 * sigma2;
+			sigma2 *= _albedo*_albedo;			// Dependence on albedo²
 			sigma3 *= _albedo*_albedo*_albedo;	// Dependence on albedo^3
 
 
