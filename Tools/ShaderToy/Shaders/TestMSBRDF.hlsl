@@ -546,7 +546,5 @@ float3	PS( VS_IN _In ) : SV_TARGET0 {
 
 //if ( any(Color < 0.0) ) Color = float3( 1, 0, 1 );
 	
-Color = pow( max( 0.0, Color ), 1.0 / 2.2 );	// Gamma-correct
-
 	return Color;
 }
