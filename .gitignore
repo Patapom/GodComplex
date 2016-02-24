@@ -330,3 +330,11 @@ obj
 /Tools/BRDFLafortuneFitting.exe
 /Tools/BRDFSlices.exe
 /Tools/Cirrus.Utility.dll
+/Tools/TestFilmCurve/Publish/Cirrus.Utility.dll
+/Tools/TestFilmCurve/Publish/DirectXTexManaged.dll
+/Tools/TestFilmCurve/Publish/RendererManaged.dll
+/Tools/TestFilmCurve/Publish/SharpMath.dll
+/Tools/TestFilmCurve/Publish/TestFilmCurve.exe
+/Tools/TestFilmCurve/Publish/ToneMapping.rar
+/Tools/TestFilmCurve/default.xml
+/Packages/FBXImporterManaged/Release

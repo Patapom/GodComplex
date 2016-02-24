@@ -1,6 +1,9 @@
 
 // We assume a "map()" function exists later
-float	map( float3 p );
+// The map function must return the distance to the scene in the X component of
+//	the float2 and the material index in the Y component
+//
+float2	map( float3 p );
 
 
 float	subtract( float a, float b ) { return max( a, -b ); }
@@ -161,15 +164,196 @@ float	sphereConvex4( float3 p, float r, const float dAngle = PI / 10.0 ) {
 
 
 /////////////////////////////////////////////////////////////////////////////////
+// Created by inigo quilez - iq/2013
+// License Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License.
+//
+// A list of useful distance function to simple primitives, and an example on how to 
+// do some interesting boolean operations, repetition and displacement.
+//
+// More info here: http://www.iquilezles.org/www/articles/distfunctions/distfunctions.htm
+//
+float sdPlane( float3 p )
+{
+	return p.y;
+}
+
+float sdSphere( float3 p, float s )
+{
+    return length(p)-s;
+}
+
+float sdBox( float3 p, float3 b )
+{
+  float3 d = abs(p) - b;
+  return min(max(d.x,max(d.y,d.z)),0.0) + length(max(d,0.0));
+}
+
+float sdEllipsoid( in float3 p, in float3 r )
+{
+    return (length( p/r ) - 1.0) * min(min(r.x,r.y),r.z);
+}
+
+float udRoundBox( float3 p, float3 b, float r )
+{
+  return length(max(abs(p)-b,0.0))-r;
+}
+
+float sdTorus( float3 p, float2 t )
+{
+  return length( float2(length(p.xz)-t.x,p.y) )-t.y;
+}
+
+float sdHexPrism( float3 p, float2 h )
+{
+    float3 q = abs(p);
+#if 0
+    return max(q.z-h.y,max((q.x*0.866025+q.y*0.5),q.y)-h.x);
+#else
+    float d1 = q.z-h.y;
+    float d2 = max((q.x*0.866025+q.y*0.5),q.y)-h.x;
+    return length(max(float2(d1,d2),0.0)) + min(max(d1,d2), 0.);
+#endif
+}
+
+float sdCapsule( float3 p, float3 a, float3 b, float r )
+{
+	float3 pa = p-a, ba = b-a;
+	float h = clamp( dot(pa,ba)/dot(ba,ba), 0.0, 1.0 );
+	return length( pa - ba*h ) - r;
+}
+
+float sdTriPrism( float3 p, float2 h )
+{
+    float3 q = abs(p);
+#if 0
+    return max(q.z-h.y,max(q.x*0.866025+p.y*0.5,-p.y)-h.x*0.5);
+#else
+    float d1 = q.z-h.y;
+    float d2 = max(q.x*0.866025+p.y*0.5,-p.y)-h.x*0.5;
+    return length(max(float2(d1,d2),0.0)) + min(max(d1,d2), 0.);
+#endif
+}
+
+float sdCylinder( float3 p, float2 h )
+{
+  float2 d = abs(float2(length(p.xz),p.y)) - h;
+  return min(max(d.x,d.y),0.0) + length(max(d,0.0));
+}
+
+float sdCone( in float3 p, in float3 c )
+{
+    float2 q = float2( length(p.xz), p.y );
+    float d1 = -q.y-c.z;
+    float d2 = max( dot(q,c.xy), q.y);
+    return length(max(float2(d1,d2),0.0)) + min(max(d1,d2), 0.);
+}
+
+float sdConeSection( in float3 p, in float h, in float r1, in float r2 )
+{
+    float d1 = -p.y - h;
+    float q = p.y - h;
+    float si = 0.5*(r1-r2)/h;
+    float d2 = max( sqrt( dot(p.xz,p.xz)*(1.0-si*si)) + q*si - r2, q );
+    return length(max(float2(d1,d2),0.0)) + min(max(d1,d2), 0.);
+}
+
+
+float length2( float2 p )
+{
+	return sqrt( p.x*p.x + p.y*p.y );
+}
+
+float length6( float2 p )
+{
+	p = p*p*p; p = p*p;
+	return pow( p.x + p.y, 1.0/6.0 );
+}
+
+float length8( float2 p )
+{
+	p = p*p; p = p*p; p = p*p;
+	return pow( p.x + p.y, 1.0/8.0 );
+}
+
+float sdTorus82( float3 p, float2 t )
+{
+  float2 q = float2(length2(p.xz)-t.x,p.y);
+  return length8(q)-t.y;
+}
+
+float sdTorus88( float3 p, float2 t )
+{
+  float2 q = float2(length8(p.xz)-t.x,p.y);
+  return length8(q)-t.y;
+}
+
+float sdCylinder6( float3 p, float2 h )
+{
+  return max( length6(p.xz)-h.x, abs(p.y)-h.y );
+}
+
+//----------------------------------------------------------------------
+
+float opS( float d1, float d2 ) {
+	return max(-d2,d1);
+}
+
+float2 opU( float2 d1, float2 d2 ) {
+	return (d1.x<d2.x) ? d1 : d2;
+}
+
+float3 opRep( float3 p, float3 c ) {
+	return fmod(p,c)-0.5*c;
+}
+
+float3 opTwist( float3 p ) {
+	float		c = cos(10.0*p.y+10.0);
+	float		s = sin(10.0*p.y+10.0);
+	float2x2	m = float2x2(c,-s,s,c);
+	return float3( mul( p.xz, m ),p.y );
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////
 // map-dependent Functions
 //
-float3	normal( float3 p, const float _eps=0.01 ) {
+float3	calcNormal( float3 p, const float _eps=0.01 ) {
 	const float2	e = float2( _eps, 0.0 );
 	return normalize( float3(
-			map( p + e.xyy ) - map( p - e.xyy ),
-			map( p + e.yxy ) - map( p - e.yxy ),
-			map( p + e.yyx ) - map( p - e.yyx )
+			map( p + e.xyy ).x - map( p - e.xyy ).x,
+			map( p + e.yxy ).x - map( p - e.yxy ).x,
+			map( p + e.yyx ).x - map( p - e.yyx ).x
 		) );
+}
+
+float softshadow( in float3 ro, in float3 rd, in float mint, in float tmax ) {
+	float res = 1.0;
+    float t = mint;
+    for( int i=0; i<16; i++ )
+    {
+		float h = map( ro + rd*t ).x;
+        res = min( res, 8.0*h/t );
+        t += clamp( h, 0.02, 0.10 );
+        if( h<0.001 || t>tmax ) break;
+    }
+    return clamp( res, 0.0, 1.0 );
+
+}
+
+
+float calcAO( in float3 pos, in float3 nor )
+{
+	float occ = 0.0;
+    float sca = 1.0;
+    for( int i=0; i<5; i++ )
+    {
+        float hr = 0.01 + 0.12*float(i)/4.0;
+        float3 aopos =  nor * hr + pos;
+        float dd = map( aopos ).x;
+        occ += -(dd-hr)*sca;
+        sca *= 0.95;
+    }
+    return saturate( 1.0 - 3.0*occ );
 }
 
 float	AO( float3 p, float3 n, float _strength, const float _stepSize=0.1, const uint _stepsCount=5 ) {
@@ -181,7 +365,7 @@ float	AO( float3 p, float3 n, float _strength, const float _stepSize=0.1, const 
 	float	sumAO = 0.0;
 	float	den = 1.0;
 	for ( uint i=0; i < _stepsCount; i++ ) {
-		float	distance = max( 0.0, map( pos.xyz ) );
+		float	distance = max( 0.0, map( pos.xyz ) ).x;
 		sumAO += (pos.w - distance) * den;
 		den *= 0.5;
 		pos += dir;
@@ -207,7 +391,7 @@ float3	DebugPlane( float3 _color, float3 pos, float3 dir, float _rayHitDistance 
 	if ( planeHitDistance < 0.0 || planeHitDistance > _rayHitDistance )
 		return _color;
 
-	float	d = map( pos + planeHitDistance * dir );
+	float	d = map( pos + planeHitDistance * dir ).x;
 	float	i0 = saturate( d );
 	float	i1 = saturate( d - 1.0 );
 	float	i2 = saturate( d - 2.0 );
@@ -229,4 +413,32 @@ float3	DebugPlane( float3 _color, float3 pos, float3 dir, float _rayHitDistance 
 	_color = lerp( _color, float3( 0, 0, 0 ), saturate( isGraduation + isLargeGraduation ) );
 
 	return _color;
+}
+
+// iQ's standard ray-marching routing
+float2 castRay( in float3 ro, in float3 rd, const float tmin=0.01, const float tmax=20.0 ) {
+   
+#if 0
+    float tp1 = (0.0-ro.y)/rd.y; if( tp1>0.0 ) tmax = min( tmax, tp1 );
+    float tp2 = (1.6-ro.y)/rd.y; if( tp2>0.0 ) {
+		if( ro.y>1.6 ) tmin = max( tmin, tp2 );
+		else           tmax = min( tmax, tp2 );
+	}
+#endif
+    
+	float precis = 0.002;
+    float t = tmin;
+    float m = -1.0;
+    for( int i=0; i<50; i++ ) {
+	    float2 res = map( ro+rd*t );
+        if( res.x<precis || t>tmax )
+			break;
+        t += res.x;
+	    m = res.y;
+    }
+
+    if( t>tmax )
+		m = -1.0;	// Sky
+
+    return float2( t, m );
 }

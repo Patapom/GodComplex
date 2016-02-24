@@ -716,16 +716,40 @@ namespace TestMSBSDF
 					/// <param name="_roughness"></param>
 					/// <returns></returns>
  					float	ComputeAnalyticalScaleParameter( float _theta, float _roughness, float _albedo ) {
+						#if true
+							// Here are the mathematica expressions giving us the scale parameter as a function of theta, roughness and albedo:
+							// a(Subscript[\[Alpha], s])= 0.0288133 -0.921537 \[Alpha]+6.63273 \[Alpha]^2-4.5957 \[Alpha]^3
+							// b(Subscript[\[Alpha], s])= -0.0966326+7.21414 \[Alpha]-19.7868 \[Alpha]^2+11.0421 \[Alpha]^3
+							// c(Subscript[\[Alpha], s])= 0.109357 -10.7904 \[Alpha]+28.508 \[Alpha]^2-15.6653 \[Alpha]^3
+							// d(Subscript[\[Alpha], s])=-0.0437643+5.2492 \[Alpha]-13.5827 \[Alpha]^2+7.34841 \[Alpha]^3
+							// k(\[Rho]) = \[Rho]^2
+							// 	
+							// \[Sigma](\[Mu],Subscript[\[Sigma], s]) =a(Subscript[\[Alpha], s]) + b(Subscript[\[Alpha], s])\[Mu] + c(Subscript[\[Alpha], s]) \[Mu]^2 + d(Subscript[\[Alpha], s]) (\[Mu]^3)
+							//
+							double	mu = Math.Cos( _theta );
+							double	r = _roughness;
+							double	r2 = r * r;
+							double	r3 = r2 * r;
+							double	a =  0.028813261153483097 - 0.9215374811620882 * r + 6.632726114385572  * r2 - 4.5957022306534    * r3;
+							double	b = -0.09663259042197028  + 7.214143602200921  * r - 19.786845117100626 * r2 + 11.042058883797509 * r3;
+							double	c =  0.10935692546815767  - 10.790405157520944 * r + 28.50803667636733  * r2 - 15.665258273262731 * r3;
+							double	d = -0.04376425480146207  + 5.2491960091879    * r - 13.582707339717146 * r2 + 7.348408854602616  * r3;
+
+							double	f = a + b * mu + c * mu*mu + d * mu*mu*mu;
+							return (float) f;
+						#else
 						// Here are the mathematica expressions giving us the scale parameter as a function of theta, roughness and albedo:
 						// k(\[Rho]) = 1-2(1-\[Rho])+(1-\[Rho])^2
 						// f( \[Sigma], \[Rho] ) = k(\[Rho]) [0.587595 +0.128391 (1-\[Alpha])+0.320232 (1-\[Alpha])^2-1.04001 (1-\[Alpha])^3]
 						//
 						_roughness = 1.0f - _roughness;
-						_albedo = 1.0f - _albedo;
-						double	k = 1 - 2 * _albedo + _albedo*_albedo;
+//						_albedo = 1.0f - _albedo;
+//						double	k = 1 - 2 * _albedo + _albedo*_albedo;
+						double	k = _albedo*_albedo;
 						double	f = 0.587595 + 0.128391 * _roughness + 0.320232 * _roughness*_roughness - 1.04001 * _roughness*_roughness*_roughness;
 								f *= k;	// Dependence on albedo
 						return (float) f;
+						#endif
 					}
 
 					/// <summary>
@@ -736,10 +760,23 @@ namespace TestMSBSDF
 					/// <returns></returns>
 					float	ComputeAnalyticalFlattenParameter( float _theta, float _roughness ) {
 						#if true
-							// Here is the new updated (and much simpler) mathematica expression for the flattening parameter that is now only dependent on roughness:
-							// f[ \[Mu]_, \[Alpha]_] = 0.5 + 0.1533059468269667` \!\(TraditionalForm\\*SuperscriptBox[\(\[Alpha]\), \(2\)]\)
+							// Here is the new updated mathematica expression for the flattening parameter:
+							// a(Subscript[\[Alpha], s])= 0.885056 -1.21098 \[Alpha]+0.225698 \[Alpha]^2+0.449826 \[Alpha]^3
+							// b(Subscript[\[Alpha], s])=0.0856807 +0.565903 \[Alpha]
+							// c(Subscript[\[Alpha], s])= -0.0770746-1.38461 \[Alpha]+0.856589 \[Alpha]^2
+							// d(Subscript[\[Alpha], s])=0.0104231 +0.852559 \[Alpha]-0.684474 \[Alpha]^2
+							// fFlat[\[Mu]_, \[Alpha]_] = fA[\[Alpha]] + fB[\[Alpha]] \[Mu] + fC[\[Alpha]] \[Mu]^2 + fD[\[Alpha]] \[Mu]^3
 							//
-							double	f = 0.5 + 0.1533059468269667 * _roughness*_roughness;
+							double	mu = Math.Cos( _theta );
+							double	r = _roughness;
+							double	r2 = r * r;
+							double	r3 = r2 * r;
+							double	a = 0.8850557867448499    - 1.2109761138443194 * r + 0.22569832413951335 * r2 + 0.4498256199595464 * r3;
+							double	b = 0.0856807009397115    + 0.5659031384072539 * r;
+							double	c = -0.07707463071513312  - 1.384614678037336  * r + 0.8565888280926491  * r2;
+							double	d = 0.010423083821992304  + 0.8525591060832015 * r - 0.6844738691665317  * r2;
+
+							double	f = a + b * mu + c * mu*mu + d * mu*mu*mu;
 							return (float) f;
 						#else
 							// Here are the mathematica expressions giving us the flattening parameter as a function of theta and roughness:
@@ -750,11 +787,11 @@ namespace TestMSBSDF
 							// f( \[Mu], \[Rho] ) = a(\[Rho]) + b(\[Rho]) e^(-c(\[Rho])  \[Mu])
 							//
 							_roughness = 1.0f - _roughness;
-							double	cosTheta = Math.Cos( _theta );
+							double	mu = Math.Cos( _theta );
 							double	a = 0.697462 - 0.479278 * _roughness;
 							double	b = 0.287646 - 0.293594 * _roughness;
 							double	c = 5.697440 + 6.613210 * _roughness;
-							double	f = a + b * Math.Exp( -c * cosTheta );
+							double	f = a + b * Math.Exp( -c * mu );
 							return (float) f;
 						#endif
 					}
@@ -762,8 +799,8 @@ namespace TestMSBSDF
 					float	ComputeAnalyticalRoughnessParameter( float _roughness ) {
 						#if true
 							// Here is the new updated mathematica expression for the exponent parameter that is now only dependent on roughness:
-							// roughness[\[Alpha]_] = 1 - 0.291525 \[Alpha] + 0.226275 \[Alpha]^2 - 0.0520231 \[Alpha]^3
-							double	roughness = 1.0 - 0.291524598275295 * _roughness + 0.226275283382124 * _roughness*_roughness - 0.052023116371438 * _roughness*_roughness*_roughness;
+							// roughness[\[Alpha]_] = 1 - 0.2686997865426857` \[Alpha] + 0.1535959296279097` \[Alpha]^2;
+							double	roughness = 1.0 - 0.2686997865426857 * _roughness + 0.1535959296279097 * _roughness*_roughness;
 							return (float) roughness;
 						#else
 							// Here are the mathematica expressions giving us the lobe roughness parameter as a function of surface roughness:
@@ -777,8 +814,8 @@ namespace TestMSBSDF
 					float	ComputeAnalyticalExponent( float _roughness ) {
 						#if true
 							// Here is the new updated mathematica expression for the exponent parameter that is now only dependent on roughness:
-							// f[\[Alpha]_] = 2.71026 \[Alpha] - 1.69142 \[Alpha]^2 + 0.260868 \[Alpha]^3
-							double	exponent = 2.710256688555572 * _roughness - 1.691421934763379*_roughness*_roughness + 0.26086819450332044*_roughness*_roughness*_roughness;
+							// fEta[\[Alpha]_] = 2.588380909161985` \[Alpha] - 1.3549594389004276` \[Alpha]^2;
+							double	exponent = 2.588380909161985 * _roughness - 1.3549594389004276 * _roughness*_roughness;
 							return (float) exponent;
 						#else
 							// Here are the mathematica expressions giving us the exponent parameter as a function of roughness:

@@ -49,6 +49,16 @@ float4	JitterRandom( float4 _initialRandom, float2 _pixelOffset ) {
 //	return newRandom;
 }
 
+float4	SampleNormalHeight( float2 _pos ) {
+	float4	NH = _Tex_HeightField.SampleLevel( LinearWrap, INV_HEIGHTFIELD_SIZE * _pos, 0.0 );
+
+// Poor attempt at compensating for size factor...
+//	NH.w *= 0.5;
+//	NH.xyz = normalize( float3( NH.xy, 2.0 * NH.z ) );
+
+	return NH;
+}
+
 
 //////////////////////////////////////////////////////////////////////////
 // Ray-traces the height field
@@ -71,7 +81,7 @@ float4	RayTrace( float3 _position, float3 _direction, out float3 _normal, bool _
 	float4	ppos;
 
 	// Sample initial height and normal
-	float4	NH = _Tex_HeightField.SampleLevel( LinearWrap, INV_HEIGHTFIELD_SIZE * pos.xy, 0.0 );	// Normal + Height
+	float4	NH = SampleNormalHeight( pos.xy );	// Normal + Height
 	float4	pNH;
 
 	_normal = NH.xyz;
@@ -89,7 +99,7 @@ float4	RayTrace( float3 _position, float3 _direction, out float3 _normal, bool _
 
 		// March one step and sample heightfield again
 		pos += step;
-		NH =_Tex_HeightField.SampleLevel( LinearWrap, INV_HEIGHTFIELD_SIZE * pos.xy, 0.0 );	// New height field's normal + height
+		NH = SampleNormalHeight( pos.xy );	// New height field's normal + height
 
 		// Compute possible intersection between the 2 segments (i.e. heightfield segment versus ray segment)
 		float	deltaP = step.z;//pos.z - ppos.z;			// Difference in ray height
@@ -184,7 +194,7 @@ void	CS_Conductor( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPT
 		position = GetOffSurface( position, direction, normal, OFF_SURFACE_DISTANCE );
 
 		#if 1
-			float4	NH = _Tex_HeightField.SampleLevel( LinearWrap, INV_HEIGHTFIELD_SIZE * position.xy, 0.0 );	// Normal + Height
+			float4	NH = SampleNormalHeight( position.xy );	// Normal + Height
 			if ( position.z < NH.w-1e-2 ) {
 				position.z = NH.w+1e-2;				// Ensure we're always ABOVE the surface!
 //				direction = float3( 0, 0, -1 );
@@ -377,7 +387,7 @@ void	CS_Diffuse( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHR
 		position = GetOffSurface( position, direction, normal, OFF_SURFACE_DISTANCE );
 
 		#if 1
-			float4	NH = _Tex_HeightField.SampleLevel( LinearWrap, INV_HEIGHTFIELD_SIZE * position.xy, 0.0 );	// Normal + Height
+			float4	NH = SampleNormalHeight( position.xy );	// Normal + Height
 			if ( position.z < NH.w-1e-2 ) {
 				position.z = NH.w+1e-2;				// Ensure we're always ABOVE the surface!
 			}

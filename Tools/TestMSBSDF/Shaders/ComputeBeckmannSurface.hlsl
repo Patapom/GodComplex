@@ -42,5 +42,9 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 	slope *= scale;
 	height *= scale;
 
-	_Tex_HeightField[pixelPosition] = float4( normalize( float3( -slope, 1.0 ) ), height );
+//	_Tex_HeightField[pixelPosition] = float4( normalize( float3( -slope, 1.0 ) ), height );
+
+// Poor attempt at compensating for size factor...
+	float	s = _HeightFieldResolution.x / _size.x;
+	_Tex_HeightField[pixelPosition] = float4( normalize( float3( -s * slope, 1.0 ) ), s * height );
 }

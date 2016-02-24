@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[     36987,       1178]
-NotebookOptionsPosition[     36113,       1145]
-NotebookOutlinePosition[     36460,       1160]
-CellTagsIndexPosition[     36417,       1157]
+NotebookDataLength[     38582,       1229]
+NotebookOptionsPosition[     37669,       1195]
+NotebookOutlinePosition[     38017,       1210]
+CellTagsIndexPosition[     37974,       1207]
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -819,6 +819,13 @@ model for 2nd order scattering of a rough diffuse surface:\n\n\t",
  "(\[Rho]) ",
  Cell[BoxData[
   FormBox[
+   FractionBox[
+    RowBox[{"2", "+", 
+     RowBox[{"\[Eta]", 
+      RowBox[{"(", "\[Alpha]", ")"}]}]}], "\[Pi]"], TraditionalForm]]],
+ " ",
+ Cell[BoxData[
+  FormBox[
    SuperscriptBox["\[Mu]", 
     RowBox[{"\[Eta]", "(", "\[Alpha]", ")"}]], TraditionalForm]]],
  "\n\t\[Mu] = ",
@@ -832,20 +839,42 @@ model for 2nd order scattering of a rough diffuse surface:\n\n\t",
  Cell[BoxData[
   FormBox[
    RowBox[{"\[Eta]", "(", 
-    SubscriptBox["\[Alpha]", "s"]}], TraditionalForm]],
-  FormatType->"TraditionalForm"],
+    SubscriptBox["\[Alpha]", "s"]}], TraditionalForm]]],
  ") = ",
  Cell[BoxData[
   RowBox[{
-   RowBox[{"2.595802425876429`", " ", "\[Alpha]"}], "-", 
-   RowBox[{"1.3269737218543278`", " ", 
+   RowBox[{"2.588380909161985`", " ", "\[Alpha]"}], "-", 
+   RowBox[{"1.3549594389004276`", " ", 
     SuperscriptBox["\[Alpha]", "2"]}]}]],
   CellChangeTimes->{{3.6643498853833914`*^9, 3.6643499216379285`*^9}, {
     3.664349990298321*^9, 3.6643500922472153`*^9}, 3.6643502427072763`*^9, 
     3.664350285494384*^9, {3.6643514547884827`*^9, 3.6643515162508*^9}, {
     3.6643518318682547`*^9, 3.6643518554748955`*^9}, 3.664445760910492*^9, {
-    3.664446336660553*^9, 3.664446347747843*^9}}],
+    3.664446336660553*^9, 3.664446347747843*^9}, 3.664616923128808*^9, 
+    3.6646965797522926`*^9, {3.6646966205866284`*^9, 3.664696632533312*^9}, 
+    3.6647812587886953`*^9, 3.664781726341114*^9, 3.6647826466559563`*^9}],
  "\n\t\nThe scale factor \[Sigma] is given by:\n\n\t",
+ Cell[BoxData[
+  FormBox[
+   RowBox[{
+    RowBox[{"\[Sigma]", "(", 
+     RowBox[{"\[Mu]", ",", 
+      SubscriptBox["\[Alpha]", "s"], ",", " ", "\[Rho]"}], ")"}], " ", "=", 
+    RowBox[{
+     RowBox[{"a", "(", 
+      SubscriptBox["\[Alpha]", "s"], ")"}], " ", "+", " ", 
+     RowBox[{
+      RowBox[{"b", "(", 
+       SubscriptBox["\[Alpha]", "s"], ")"}], "\[Mu]"}], " ", "+", " ", 
+     RowBox[{
+      RowBox[{"c", "(", 
+       SubscriptBox["\[Alpha]", "s"], ")"}], " ", 
+      SuperscriptBox["\[Mu]", "2"]}], " ", "+", " ", 
+     RowBox[{
+      RowBox[{"d", "(", 
+       SubscriptBox["\[Alpha]", "s"], ")"}], " ", 
+      SuperscriptBox["\[Mu]", "3"], " "}]}]}], TraditionalForm]]],
+ "\n\t",
  Cell[BoxData[
   FormBox[
    RowBox[{
@@ -854,74 +883,65 @@ model for 2nd order scattering of a rough diffuse surface:\n\n\t",
      RowBox[{"\[Mu]", ",", 
       SubscriptBox["\[Alpha]", "s"], ",", " ", "\[Rho]"}], ")"}], " ", "=", 
     RowBox[{
-     SuperscriptBox["\[Rho]", "2"], " ", "[", 
-     RowBox[{
-      RowBox[{"a", "(", 
-       SubscriptBox["\[Alpha]", "s"], ")"}], " ", "+", " ", 
-      RowBox[{
-       RowBox[{"b", "(", 
-        SubscriptBox["\[Alpha]", "s"], ")"}], "\[Mu]"}], " ", "+", " ", 
-      RowBox[{
-       RowBox[{"c", "(", 
-        SubscriptBox["\[Alpha]", "s"], ")"}], " ", 
-       SuperscriptBox["\[Mu]", "2"]}], " ", "+", " ", 
-      RowBox[{
-       RowBox[{"d", "(", 
-        SubscriptBox["\[Alpha]", "s"], ")"}], " ", 
-       SuperscriptBox["\[Mu]", "3"]}]}], "]"}], " "}], TraditionalForm]],
-  FormatType->"TraditionalForm"],
- "\n\t\n\t",
+     SuperscriptBox["\[Rho]", "2"], " ", 
+     RowBox[{"\[Sigma]", "(", 
+      RowBox[{"\[Mu]", ",", 
+       SubscriptBox["\[Alpha]", "s"], ",", " ", "\[Rho]"}], ")"}], " "}]}], 
+   TraditionalForm]]],
+ "\n\n\t",
  Cell[BoxData[
   FormBox[
    RowBox[{
-    RowBox[{"a", "(", "\[Alpha]", ")"}], "=", " ", 
-    RowBox[{"0.016673375075225604`", "\[VeryThinSpace]", "-", 
-     RowBox[{"0.525209545615772`", " ", "\[Alpha]"}], "+", 
-     RowBox[{"5.24220269537287`", " ", 
+    RowBox[{"a", "(", 
+     SubscriptBox["\[Alpha]", "s"], ")"}], "=", " ", 
+    RowBox[{"0.028813261153483097`", "\[VeryThinSpace]", "-", 
+     RowBox[{"0.9215374811620882`", " ", "\[Alpha]"}], "+", 
+     RowBox[{"6.632726114385572`", " ", 
       SuperscriptBox["\[Alpha]", "2"]}], "-", 
-     RowBox[{"3.5690085024568186`", " ", 
-      SuperscriptBox["\[Alpha]", "3"]}]}]}], TraditionalForm]],
-  FormatType->"TraditionalForm"],
- "\n\t",
- Cell[BoxData[
-  FormBox[
-   RowBox[{
-    RowBox[{"b", "(", "\[Alpha]", ")"}], "=", " ", 
-    RowBox[{
-     RowBox[{"-", "0.10099003574844712`"}], "+", 
-     RowBox[{"7.225961805352702`", " ", "\[Alpha]"}], "-", 
-     RowBox[{"19.49049342659228`", " ", 
-      SuperscriptBox["\[Alpha]", "2"]}], "+", 
-     RowBox[{"10.769848952215131`", " ", 
+     RowBox[{"4.5957022306534`", " ", 
       SuperscriptBox["\[Alpha]", "3"]}]}]}], TraditionalForm]]],
  "\n\t",
  Cell[BoxData[
   FormBox[
    RowBox[{
-    RowBox[{"c", "(", "\[Alpha]", ")"}], "=", " ", 
-    RowBox[{"0.13982571795990942`", "\[VeryThinSpace]", "-", 
-     RowBox[{"11.429145510606348`", " ", "\[Alpha]"}], "+", 
-     RowBox[{"30.177292378971725`", " ", 
-      SuperscriptBox["\[Alpha]", "2"]}], "-", 
-     RowBox[{"16.789426306986503`", " ", 
+    RowBox[{"b", "(", 
+     SubscriptBox["\[Alpha]", "s"], ")"}], "=", " ", 
+    RowBox[{
+     RowBox[{"-", "0.09663259042197028`"}], "+", 
+     RowBox[{"7.214143602200921`", " ", "\[Alpha]"}], "-", 
+     RowBox[{"19.786845117100626`", " ", 
+      SuperscriptBox["\[Alpha]", "2"]}], "+", 
+     RowBox[{"11.042058883797509`", " ", 
       SuperscriptBox["\[Alpha]", "3"]}]}]}], TraditionalForm]]],
  "\n\t",
  Cell[BoxData[
   FormBox[
    RowBox[{
-    RowBox[{"d", "(", "\[Alpha]", ")"}], "=", 
+    RowBox[{"c", "(", 
+     SubscriptBox["\[Alpha]", "s"], ")"}], "=", " ", 
+    RowBox[{"0.10935692546815767`", "\[VeryThinSpace]", "-", 
+     RowBox[{"10.790405157520944`", " ", "\[Alpha]"}], "+", 
+     RowBox[{"28.50803667636733`", " ", 
+      SuperscriptBox["\[Alpha]", "2"]}], "-", 
+     RowBox[{"15.665258273262731`", " ", 
+      SuperscriptBox["\[Alpha]", "3"]}]}]}], TraditionalForm]]],
+ "\n\t",
+ Cell[BoxData[
+  FormBox[
+   RowBox[{
+    RowBox[{"d", "(", 
+     SubscriptBox["\[Alpha]", "s"], ")"}], "=", 
     RowBox[{
-     RowBox[{"-", "0.065024475640786`"}], "+", 
-     RowBox[{"5.731247014927747`", " ", "\[Alpha]"}], "-", 
-     RowBox[{"14.997450899818153`", " ", 
+     RowBox[{"-", "0.04376425480146207`"}], "+", 
+     RowBox[{"5.2491960091879`", " ", "\[Alpha]"}], "-", 
+     RowBox[{"13.582707339717146`", " ", 
       SuperscriptBox["\[Alpha]", "2"]}], "+", 
-     RowBox[{"8.3291032822247`", " ", 
+     RowBox[{"7.348408854602616`", " ", 
       SuperscriptBox["\[Alpha]", "3"]}]}]}], TraditionalForm]]],
  "\n\nThe flattening factor ",
  Cell[BoxData[
   FormBox[
-   SubscriptBox["\[Sigma]", "n"], TraditionalForm]],
-  FormatType->"TraditionalForm"],
+   SubscriptBox["\[Sigma]", "n"], TraditionalForm]]],
  " along the main lobe direction ",
  StyleBox["Z",
   FontWeight->"Bold"],
@@ -946,44 +966,48 @@ model for 2nd order scattering of a rough diffuse surface:\n\n\t",
      RowBox[{
       RowBox[{"d", "(", 
        SubscriptBox["\[Alpha]", "s"], ")"}], " ", 
-      SuperscriptBox["\[Mu]", "3"], " "}]}]}], TraditionalForm]],
-  FormatType->"TraditionalForm"],
+      SuperscriptBox["\[Mu]", "3"], " "}]}]}], TraditionalForm]]],
  "\n\t\n\t",
  Cell[BoxData[
   FormBox[
    RowBox[{
-    RowBox[{"a", "(", "\[Alpha]", ")"}], "=", " ", 
-    RowBox[{"0.9136434030473861`", "\[VeryThinSpace]", "-", 
-     RowBox[{"1.6554846256054254`", " ", "\[Alpha]"}], "+", 
-     RowBox[{"1.396170391613371`", " ", 
-      SuperscriptBox["\[Alpha]", "2"]}], "-", 
-     RowBox[{"0.3203305249468263`", " ", 
-      SuperscriptBox["\[Alpha]", "3"]}]}]}], TraditionalForm]],
-  FormatType->"TraditionalForm"],
+    RowBox[{"a", "(", 
+     SubscriptBox["\[Alpha]", "s"], ")"}], "=", " ", 
+    RowBox[{"0.8850557867448499`", "\[VeryThinSpace]", "-", 
+     RowBox[{"1.2109761138443194`", " ", "\[Alpha]"}], "+", 
+     RowBox[{"0.22569832413951335`", " ", 
+      SuperscriptBox["\[Alpha]", "2"]}], "+", 
+     RowBox[{"0.4498256199595464`", " ", 
+      SuperscriptBox["\[Alpha]", "3"]}]}]}], TraditionalForm]]],
  "\n\t",
  Cell[BoxData[
   FormBox[
    RowBox[{
-    RowBox[{"b", "(", "\[Alpha]", ")"}], "=", " ", 
-    RowBox[{"0.044723925680673265`", "\[VeryThinSpace]", "+", 
-     RowBox[{"0.6247396225423497`", " ", "\[Alpha]"}]}]}], TraditionalForm]]],
+    RowBox[{"b", "(", 
+     SubscriptBox["\[Alpha]", "s"], ")"}], "=", 
+    RowBox[{"0.0856807009397115`", "\[VeryThinSpace]", "+", 
+     RowBox[{"0.5659031384072539`", " ", "\[Alpha]"}]}]}], TraditionalForm]]],
  "\n\t",
  Cell[BoxData[
   FormBox[
    RowBox[{
-    RowBox[{"c", "(", "\[Alpha]", ")"}], "=", " ", 
+    RowBox[{"c", "(", 
+     SubscriptBox["\[Alpha]", "s"], ")"}], "=", " ", 
     RowBox[{
-     RowBox[{"-", "0.11884367470512597`"}], "-", 
-     RowBox[{"0.973212684779483`", " ", "\[Alpha]"}], "+", 
-     RowBox[{"0.36902017638601514`", " ", 
+     RowBox[{"-", "0.07707463071513312`"}], "-", 
+     RowBox[{"1.384614678037336`", " ", "\[Alpha]"}], "+", 
+     RowBox[{"0.8565888280926491`", " ", 
       SuperscriptBox["\[Alpha]", "2"]}]}]}], TraditionalForm]]],
  "\n\t",
  Cell[BoxData[
   FormBox[
    RowBox[{
-    RowBox[{"d", "(", "\[Alpha]", ")"}], "=", 
-    RowBox[{"0.13257717032932556`", "\[VeryThinSpace]", "+", 
-     RowBox[{"0.1697498085943817`", " ", "\[Alpha]"}]}]}], TraditionalForm]]],
+    RowBox[{"d", "(", 
+     SubscriptBox["\[Alpha]", "s"], ")"}], "=", 
+    RowBox[{"0.010423083821992304`", "\[VeryThinSpace]", "+", 
+     RowBox[{"0.8525591060832015`", " ", "\[Alpha]"}], "-", 
+     RowBox[{"0.6844738691665317`", " ", 
+      SuperscriptBox["\[Alpha]", "2"]}]}]}], TraditionalForm]]],
  "\n\t\nSo the world-space intensity of the fitted lobe is obtained by \
 multiplying the lobe-space intensity with the scale factor:\n\n\t",
  Cell[BoxData[
@@ -1046,23 +1070,18 @@ multiplying the lobe-space intensity with the scale factor:\n\n\t",
 surface roughness ",
  Cell[BoxData[
   FormBox[
-   SubscriptBox["\[Alpha]", "s"], TraditionalForm]],
-  FormatType->"TraditionalForm"],
+   SubscriptBox["\[Alpha]", "s"], TraditionalForm]]],
  " is given by:\n\n\t",
  Cell[BoxData[
-  RowBox[{
-   RowBox[{"\[Alpha]", 
-    RowBox[{"(", 
-     SubscriptBox["\[Alpha]", "s"], ")"}]}], "=", " ", 
-   RowBox[{"1", "-", 
-    RowBox[{"0.291525", " ", 
-     SubscriptBox["\[Alpha]", "s"]}], "+", 
-    RowBox[{"0.226275", " ", 
-     SuperscriptBox[
-      SubscriptBox["\[Alpha]", "s"], "2"]}], "-", 
-    RowBox[{"0.05202311637143821`", " ", 
-     SuperscriptBox[
-      SubscriptBox["\[Alpha]", "s"], "3"]}]}]}]],
+  RowBox[{" ", 
+   RowBox[{
+    RowBox[{"\[Alpha]", 
+     RowBox[{"(", 
+      SubscriptBox["\[Alpha]", "s"], ")"}]}], "=", " ", 
+    RowBox[{"1", "-", 
+     RowBox[{"0.26869978654268545`", " ", "\[Alpha]"}], "+", 
+     RowBox[{"0.15359592962790927`", " ", 
+      SuperscriptBox["\[Alpha]", "2"]}]}]}]}]],
   CellChangeTimes->{{3.6643548923103323`*^9, 3.6643549797799826`*^9}, {
     3.66435503989739*^9, 3.6643550554323096`*^9}, 3.6644457605198526`*^9}],
  "\n"
@@ -1082,16 +1101,64 @@ surface roughness ",
    3.6644453528947506`*^9, 3.6644454970719223`*^9}, {3.664445988207562*^9, 
    3.6644460098912945`*^9}, {3.6644460493033037`*^9, 
    3.6644460776886897`*^9}, {3.664446285077459*^9, 3.664446316597531*^9}, {
-   3.6644464068958273`*^9, 3.6644465007911654`*^9}}]
-}, Open  ]],
+   3.6644464068958273`*^9, 3.6644465007911654`*^9}, {3.664697623443989*^9, 
+   3.664697629538337*^9}, {3.664782782807771*^9, 3.6647828146933756`*^9}, {
+   3.6649602858660836`*^9, 3.664960294989828*^9}, {3.6649603414787455`*^9, 
+   3.664960400672295*^9}, {3.66496043305513*^9, 3.664960442929887*^9}, {
+   3.6649604924878993`*^9, 3.6649604947850647`*^9}, {3.665043307869348*^9, 
+   3.6650433296807737`*^9}}],
 
-Cell["Additional Scaling for 3rd Order Lobes", "Section",
- CellChangeTimes->{{3.6640313513070498`*^9, 3.6640313684351215`*^9}}],
+Cell[BoxData[
+ RowBox[{"\t", 
+  RowBox[{
+   FormBox[
+    RowBox[{
+     RowBox[{"a", "(", 
+      SubscriptBox["\[Alpha]", "s"], ")"}], "=", " ", 
+     RowBox[{"0.8850557867448499`", "\[VeryThinSpace]", "-", 
+      RowBox[{"1.2109761138443194`", " ", "\[Alpha]"}], "+", 
+      RowBox[{"0.22569832413951335`", " ", 
+       SuperscriptBox["\[Alpha]", "2"]}], "+", 
+      RowBox[{"0.4498256199595464`", " ", 
+       SuperscriptBox["\[Alpha]", "3"]}]}]}],
+    TraditionalForm], "\n", "\t", 
+   FormBox[
+    RowBox[{
+     RowBox[{"b", "(", 
+      SubscriptBox["\[Alpha]", "s"], ")"}], "=", 
+     RowBox[{"0.0856807009397115`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.5659031384072539`", " ", "\[Alpha]"}]}]}],
+    TraditionalForm], "\n", "\t", 
+   FormBox[
+    RowBox[{
+     RowBox[{"c", "(", 
+      SubscriptBox["\[Alpha]", "s"], ")"}], "=", " ", 
+     RowBox[{
+      RowBox[{"-", "0.07707463071513312`"}], "-", 
+      RowBox[{"1.384614678037336`", " ", "\[Alpha]"}], "+", 
+      RowBox[{"0.8565888280926491`", " ", 
+       SuperscriptBox["\[Alpha]", "2"]}]}]}],
+    TraditionalForm], "\n", "\t", 
+   FormBox[
+    RowBox[{
+     RowBox[{"d", "(", 
+      SubscriptBox["\[Alpha]", "s"], ")"}], "=", 
+     RowBox[{"0.010423083821992304`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.8525591060832015`", " ", "\[Alpha]"}], "-", 
+      RowBox[{"0.6844738691665317`", " ", 
+       SuperscriptBox["\[Alpha]", "2"]}]}]}],
+    TraditionalForm], "\n"}]}]], "Input",
+ CellChangeTimes->{{3.6649607999791756`*^9, 3.664960799983178*^9}}],
+
+Cell[BoxData[""], "Input",
+ CellChangeTimes->{{3.6649605426767526`*^9, 3.664960543139925*^9}, 
+   3.664960793910658*^9}]
+}, Open  ]],
 
 Cell[CellGroupData[{
 
-Cell["TODO!! Don\[CloseCurlyQuote]t use that! Not done yet...", "Subchapter",
- CellChangeTimes->{{3.664446798005183*^9, 3.6644468063679323`*^9}}],
+Cell["Additional Scaling for 3rd Order Lobes", "Section",
+ CellChangeTimes->{{3.6640313513070498`*^9, 3.6640313684351215`*^9}}],
 
 Cell[TextData[{
  "Using the same analytical model for 3rd order scattering lobes but letting \
@@ -1103,48 +1170,31 @@ for a new ",
  "(\[Alpha], \[Rho])\n\n\t",
  Cell[BoxData[
   FormBox[
-   SubscriptBox["\[Sigma]", "3"], TraditionalForm]]],
- "(\[Alpha], \[Rho]) = ",
- Cell[BoxData[
-  FormBox[
-   SubscriptBox["k", "3"], TraditionalForm]]],
- "(\[Rho]) [",
- Cell[BoxData[
-  RowBox[{
-   RowBox[{"-", "0.006024064722416875`"}], "+", 
-   RowBox[{"0.25262765805538445`", " ", "\[Alpha]"}], "+", 
-   RowBox[{"0.3902065605355212`", " ", 
-    SuperscriptBox["\[Alpha]", "2"]}], "-", 
-   RowBox[{"0.3820487315212411`", " ", 
-    SuperscriptBox["\[Alpha]", "3"]}]}]],
-  CellChangeTimes->{
-   3.663843074532931*^9, 3.6638431089902077`*^9, {3.6638431834807553`*^9, 
-    3.6638432108560576`*^9}, 3.6638440069270935`*^9, 3.6638441265584106`*^9, {
-    3.6638441664695516`*^9, 3.663844274652804*^9}, {3.6638443065903015`*^9, 
-    3.663844406178506*^9}, 3.663844456376876*^9, {3.663844545451659*^9, 
-    3.66384456687778*^9}, {3.663844597270198*^9, 3.663844613880887*^9}, {
-    3.663844646425824*^9, 3.6638446887776756`*^9}, 3.663845287024764*^9, 
-    3.6638528526948395`*^9, {3.663852980263752*^9, 3.663852991806941*^9}}],
- "]\tthe fitted scale factor with a dependency on albedo and roughness\n\t",
- Cell[BoxData[
-  FormBox[
-   SubscriptBox["k", "3"], TraditionalForm]]],
- "(\[Rho]) = ",
+   SubscriptBox["\[Sigma]", "3"], TraditionalForm]],
+  FormatType->"TraditionalForm"],
+ "(\[Mu],\[Alpha], \[Rho]) = ",
  Cell[BoxData[
   FormBox[
    SuperscriptBox["\[Rho]", "3"], TraditionalForm]]],
- "\t\t\t\t\t\t\t\t\t\t\tthe factor applied to scale that will give use the \
-expected color saturation\n\t\n"
+ " [0.363902 * ",
+ Cell[BoxData[
+  FormBox[
+   RowBox[{"\[Sigma]", "(", 
+    RowBox[{"\[Mu]", ",", "\[Alpha]"}], ")"}], TraditionalForm]],
+  FormatType->"TraditionalForm"],
+ "]\n\t\n"
 }], "Text",
  CellChangeTimes->{{3.664031372630095*^9, 3.6640315432433295`*^9}, {
    3.664031755893241*^9, 3.6640318222970138`*^9}, {3.6640347381961155`*^9, 
    3.664034779200019*^9}, {3.664035536119508*^9, 3.6640355383470783`*^9}, {
-   3.664035598387396*^9, 3.6640355988187*^9}, 3.6644467909600134`*^9}]
+   3.664035598387396*^9, 3.6640355988187*^9}, 3.6644467909600134`*^9, {
+   3.6650432412272835`*^9, 3.6650432447617826`*^9}, {3.6650433371300135`*^9, 
+   3.66504334858813*^9}}]
 }, Open  ]]
 }, Open  ]]
 },
-WindowSize->{1904, 1127},
-WindowMargins->{{-8, Automatic}, {Automatic, 0}},
+WindowSize->{1920, 1127},
+WindowMargins->{{-8, Automatic}, {Automatic, -8}},
 FrontEndVersion->"10.0 for Microsoft Windows (64-bit) (September 9, 2014)",
 StyleDefinitions->"Default.nb"
 ]
@@ -1172,12 +1222,13 @@ Cell[20665, 686, 2511, 96, 289, "Text"]
 }, Open  ]],
 Cell[CellGroupData[{
 Cell[23213, 787, 104, 1, 63, "Section"],
-Cell[23320, 790, 10451, 294, 878, "Text"]
+Cell[23320, 790, 11398, 318, 907, "Text"],
+Cell[34721, 1110, 1518, 40, 112, "Input"],
+Cell[36242, 1152, 120, 2, 31, "Input"]
 }, Open  ]],
-Cell[33786, 1087, 127, 1, 63, "Section"],
 Cell[CellGroupData[{
-Cell[33938, 1092, 145, 1, 46, "Subchapter"],
-Cell[34086, 1095, 1999, 46, 128, "Text"]
+Cell[36399, 1159, 127, 1, 63, "Section"],
+Cell[36529, 1162, 1112, 29, 108, "Text"]
 }, Open  ]]
 }, Open  ]]
 }

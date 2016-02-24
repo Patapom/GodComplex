@@ -33,6 +33,7 @@ namespace RendererManaged {
 
 		DISABLED,
 		ALPHA_BLEND,
+		PREMULTIPLIED_ALPHA,
 		ADDITIVE,
 	};
 }

@@ -86,7 +86,7 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
     <None Include="Shaders\Airlight.hlsl" />
-    <None Include="Shaders\Christmas.hlsl" />
+    <None Include="Shaders\PostProcess.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Packages\Cirrus.Utility\Utility.csproj">
@@ -119,6 +119,15 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\TestMSBRDF2.hlsl" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Shaders\DownSample.hlsl" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Shaders\Includes\Global.hlsl" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Shaders\TestMSBRDF_Glass.hlsl" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
