@@ -665,7 +665,7 @@ namespace TestMSBSDF
 
 		// From Walter 2007 eq. 40
 		// Expects _incoming pointing AWAY from the surface
-		// eta = IOR_over / IOR_under
+		// eta = IOR_above / IOR_below
 		//
 		public static float3	Refract( float3 _incoming, float3 _normal, float _eta ) {
 			float	c = _incoming.Dot( _normal );

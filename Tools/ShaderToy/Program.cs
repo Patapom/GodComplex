@@ -15,7 +15,7 @@ namespace ShaderToy
 		{
 			Application.EnableVisualStyles();
 			Application.SetCompatibleTextRenderingDefault( false );
-			Application.Run( new ShaderToyForm() );
+			Application.Run( new ShaderToyFor() );
 		}
 	}
 }

@@ -14,7 +14,7 @@ using Nuaj.Cirrus.Utility;
 
 namespace ShaderToy
 {
-	public partial class ShaderToyForm : Form
+	public partial class ShaderToyFor : Form
 	{
 		private Device		m_Device = new Device();
 
@@ -34,6 +34,11 @@ namespace ShaderToy
 			public uint			_ShowWeights;
 			public float		_DebugParm;
 			public float2		_MousePosition;
+
+			public float		_GlassThickness;
+			public float		_GlassRoughness;
+			public float		_GlassF0;
+			public float		_GlassOpacity;
 		}
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
@@ -77,7 +82,7 @@ namespace ShaderToy
 		public int							m_SumFrames = 0;
 		public float						m_AverageFrameTime = 0.0f;
 
-		public ShaderToyForm()
+		public ShaderToyFor()
 		{
 			InitializeComponent();
 
@@ -519,6 +524,12 @@ namespace ShaderToy
 //s				m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.PREMULTIPLIED_ALPHA );
 
 				m_Tex_TempBuffer.Set( 0, m_Tex_TempBuffer.GetView( 0, 0, 0, 0 ) );
+
+				m_CB_Main.m._GlassThickness = Math.Max( 1e-2f, floatTrackbarControlGlassThickness.Value );
+				m_CB_Main.m._GlassRoughness = floatTrackbarControlGlassRoughness.Value;
+				m_CB_Main.m._GlassF0 = floatTrackbarControlGlassF0.Value;
+				m_CB_Main.m._GlassOpacity = floatTrackbarControlGlassOpacity.Value;
+				m_CB_Main.UpdateData();
 
 				m_Shader_Glass.Use();
 				m_Prim_Quad.Render( m_Shader_Glass );

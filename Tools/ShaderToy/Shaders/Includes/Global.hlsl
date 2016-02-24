@@ -21,6 +21,11 @@ cbuffer CB_Main : register(b0) {
 	uint	_DebugFlags;
 	float	_DebugParm;
 	float2	_MousePosition;
+
+	float	_GlassThickness;
+	float	_GlassRoughness;
+	float	_GlassF0;
+	float	_GlassOpacity;
 };
 
 cbuffer CB_Camera : register(b1) {

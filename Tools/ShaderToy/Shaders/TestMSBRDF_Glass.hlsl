@@ -5,7 +5,6 @@ Texture2DArray<float4>	_TexSource : register(t0);
 
 static const float	TAN_HALF_FOV = 0.57735026918962576450914878050196;	// tan( 60° / 2 )
 
-
 //----------------------------------------------------------------------
 
 float2 map( in float3 pos ) {
@@ -21,6 +20,86 @@ float2 map( in float3 pos ) {
     return res;
 }
 
+//----------------------------------------------------------------------
+// From Walter 2007 eq. 40
+// Expects _incoming pointing AWAY from the surface
+// eta = IOR_above / IOR_below
+//
+float3	Refract( float3 _incoming, float3 _normal, float _eta ) {
+	float	c = dot( _incoming, _normal );
+	float	b = 1.0 + _eta * (c*c - 1.0);
+	if ( b >= 0.0 ) {
+		float	k = _eta * c - sign(c) * sqrt( b );
+		float3	R = k * _normal - _eta * _incoming;
+		return normalize( R );
+	} else {
+		return 0.0;	// Total internal reflection
+	}
+}
+
+// _wsView, pointing toward the camera
+float3	ComputeGlassColor( float3 _wsPosition, float3 _wsNormal, float3 _wsView, float3 _wsGeometricNormal, float _sceneZ, float3 _transmittanceColor, float _thickness, float _roughness, float _IOR, out float3 _transmittance ) {
+
+	// Compute a "mirrored" local normal
+	float3	wsNormal_Back = _wsNormal - 2.0 * dot( _wsNormal, _wsGeometricNormal ) * _wsGeometricNormal;
+
+	// Compute refracted direction
+	float3	refractedView_inside = Refract( -_wsView, _wsNormal, 1.0 / _IOR );
+
+	// Compute intersection with a plane of specified thickness
+	float	orthoThickness = _thickness;
+	float	orthoView = dot( refractedView_inside, _wsGeometricNormal );
+	float	thickness = -orthoThickness / orthoView;
+	float3	wsPosition_Back = _wsPosition + thickness * refractedView_inside;	// This is where we'll hit the back of the surface
+
+	// Refract again
+	float3	refractedView = Refract( refractedView_inside, wsNormal_Back, _IOR );
+
+	// Now, compute the intersection of that final refracted ray with the plane at "scene Z" (here we should intersect with a sphere since we're given the distance, not the Z, but I don't care)
+	float3	wsCameraPos = _Camera2World[3].xyz;
+	float3	wsCameraZ = _Camera2World[2].xyz;
+	float	orthoDistance = _sceneZ - dot( wsPosition_Back - wsCameraPos, wsCameraZ );
+	float	sceneHitDistance = orthoDistance / dot( refractedView, wsCameraZ );
+	float3	wsScenePosition = wsPosition_Back + sceneHitDistance * refractedView;
+
+	// Project into camera clip space
+	float4	projScenePosition = mul( float4( wsScenePosition, 1.0 ), _World2Proj );
+			projScenePosition /= projScenePosition.w;
+	float2	UV_back = float2( 0.5 * (1.0 + projScenePosition.x), 0.5 * (1.0 - projScenePosition.y) );
+
+	// Use the same formula linking roughness to lobe aperture half-angle to compute the radius of the disc that represents the intersection of the rough cone with the back plane
+	float	lobeApertureHalfAngle = 0.0003474660443456835 + _roughness * (1.3331290497744692 - _roughness * 0.5040552688878546);
+	float	discRadius = sceneHitDistance * tan( lobeApertureHalfAngle );
+
+	// Compute the projected radius and retrieve mip level
+	float	screenRadius = _sceneZ * TAN_HALF_FOV;						// The "redius" of the screen at the specified Z
+	float	coveredPixels = iResolution.y * discRadius / screenRadius;	// The amount of pixels covered by the rough cone
+	float	mipLevel = log2( coveredPixels );
+
+	// Sample background at specified position and mip
+	float3	backColor = _TexSource.SampleLevel( LinearMirror, float3( UV_back, 0.0 ), mipLevel ).xyz;
+
+	// Now that we have the back color properly blurred, we need to compute its transmittance.
+	// The back color is light passing through a slab of glass of a specified thickness so it gets influenced by:
+	//	• The absorption of the material
+	//	• The Fresnel reflectance of the material at both the entry point on the back side and the exit point on the front side
+
+	// Compute Fresnel reflectances
+	// We need to compute 2 distinct reflectances here:
+	float	Fresnel_transmitted_back = 1.0 - FresnelAccurate( _IOR, dot( refractedView, wsNormal_Back ) );				//	1) What has NOT been reflected by the back of the surface
+	float	Fresnel_transmitted_front = 1.0 - FresnelAccurate( 1.0 / _IOR, -dot( refractedView_inside, _wsNormal ) );	//	2) What has NOT been reflected by the inside of the front of the surface and transmitted through to the front where it can be viewed by the camera
+
+	// Compute absorption
+	float3	sigma_t = -log( 1e-3 + _transmittanceColor ) / _thickness;	// Artists can make the glass more or less colored by varying its thickness
+	float3	absorption = exp( -sigma_t * thickness );
+
+	_transmittance = Fresnel_transmitted_back * absorption * Fresnel_transmitted_front;
+
+	return backColor;
+}
+
+//----------------------------------------------------------------------
+
 float4 render( in float2 _pixelPos, in float _sceneDistance, in float3 ro, in float3 rd, bool _useModel, out float _distance ) { 
 	float2	res = castRay( ro, rd );
 	float	t = res.x;
@@ -31,12 +110,14 @@ float4 render( in float2 _pixelPos, in float _sceneDistance, in float3 ro, in fl
 	}
 
 	float3 pos = ro + t*rd;
-	float3 nor = calcNormal( pos );
-	float3 ref = reflect( rd, nor );
+	float3 wsNormal = calcNormal( pos );
+	float3 wsView = -rd;
+	float3 ref = reflect( rd, wsNormal );
         
 	// material        
 	float3	albedo = 0.45 + 0.4*cos( float3(0.08,0.05,0.1)*(m-1.0) );
 	float	roughness = 0.5 + 0.5 * sin( 0.1 * (m-1.0) );
+roughness = _GlassRoughness;
 		
 	if ( m < 1.5 ) {
 		// Floor
@@ -46,22 +127,24 @@ float4 render( in float2 _pixelPos, in float _sceneDistance, in float3 ro, in fl
 	}
 
 	// lighting        
-	float	occ = calcAO( pos, nor );
-	float3	lig = normalize( float3(-0.6, 0.7, -0.5) );
-	float3	lig2 = normalize(float3(-lig.x,0.0,-lig.z));	// For backlighting
+	float	occ = calcAO( pos, wsNormal );
+	float3	wsLight = normalize( float3(-0.6, 0.7, -0.5) );
+	float3	lig2 = normalize(float3(-wsLight.x,0.0,-wsLight.z));	// For backlighting
 	float3	lightIntensity = 1.2 * float3(1.0,0.85,0.55);
 	float3	lightIntensity2 = 0.3;// * float3(1.0,0.85,0.55);
 
-	float	amb = saturate( 0.5+0.5*nor.y );
-	float	LdotN = saturate( dot( nor, lig ) );
-	float	LdotN2 = saturate( dot( nor, lig2 ) ) * saturate( 1.0-pos.y );
+	float	amb = saturate( 0.5+0.5*wsNormal.y );
+	float	LdotN = saturate( dot( wsNormal, wsLight ) );
+	float	LdotN2 = saturate( dot( wsNormal, lig2 ) ) * saturate( 1.0-pos.y );
 	float	dom = smoothstep( -0.1, 0.1, ref.y );
-	float	fre = pow( saturate( 1.0+dot(nor,rd) ), 2.0 );
-	float	spe = pow( saturate( dot( ref, lig ) ), 16.0 );
+	float	fre = pow( saturate( 1.0+dot(wsNormal,rd) ), 2.0 );
+	float	spe = pow( saturate( dot( ref, wsLight ) ), 16.0 );
         
-	float	shadow = softshadow( pos, lig, 0.02, 2.5 );
+	float	shadow = softshadow( pos, wsLight, 0.02, 2.5 );
 	float	shadow_ref = softshadow( pos, ref, 0.02, 2.5 );
 	dom *= shadow_ref;
+
+
 
 	// Add rough diffuse model
 	float3	dif2 = 0.0;
@@ -79,7 +162,7 @@ float4 render( in float2 _pixelPos, in float _sceneDistance, in float3 ro, in fl
 //				shadow2 = 1.0 - shadow2;
 ////				shadow2 *= saturate( 0.2 + 0.8 * LdotN );	// Larger L.N, eating into the backfaces
 //
-//		dif2 = ComputeDiffuseModel( lig, -rd, roughness, albedo ) * lightIntensity * shadow * LdotN;
+//		dif2 = ComputeDiffuseModel( wsLight, -rd, roughness, albedo ) * lightIntensity * shadow * LdotN;
 //
 //		// 2nd light
 //		shadow2 = lerp( 1.0, shadow, saturate( 10.0 * (LdotN2-0.2) ) );	// This removes shadowing on back faces
@@ -94,18 +177,52 @@ float4 render( in float2 _pixelPos, in float _sceneDistance, in float3 ro, in fl
 //		dif2 += ComputeDiffuseModel( lig2, -ref, roughness, albedo ) * lightIntensity2 * shadow * LdotN2;
 //	}
 
-	float3 lin = float3(0,0,0);
+	float3	wsGeometricNormal = wsNormal;
+	float	opacity = _GlassOpacity;	// @TODO: modulation over surface...
+
+	float3	diffuseAlbedo = albedo * opacity;					// The more transparent it gets, the less diffuse lighting is visible
+	float3	transmittanceColor = (1.0 - opacity) * albedo;		// The more transparent it gets, the more the diffuse albedo is used as a transmittance color
+
+	// NOTE: We could split R, G and B into 3 distinct rays depending on a RGB F0 but we need a single value here
+	float	IOR = Fresnel_IORFromF0( _GlassF0 );							// Artists control the glass's IOR by changing the "F0" value which is the "specular reflectance for dielectrics" (a single color for the entire material)
+
+	// Compute Fresnel reflectance
+	float3	H = normalize( wsLight + wsView );
+	float	HdotN = saturate( dot( H, wsNormal ) );
+	float	Fresnel_specular = FresnelAccurate( IOR, HdotN );
+	float	Fresnel_diffuse = 1.0 - Fresnel_specular;	// What is not specularly reflected
+
+	// Compute specular reflectance
+	float	exponent = exp2( 10 * (1.0 - roughness) );	// Phong lobe
+	float	BRDF_spec = ((2+exponent) / PI) * pow( HdotN, exponent );
+	float3	L_specular = Fresnel_specular * lightIntensity * shadow * BRDF_spec * LdotN;
+
+	// Compute diffuse reflectance
+	float3	BRDF_diffuse = diffuseAlbedo / PI;
+	float3	L_diffuse = Fresnel_diffuse * lightIntensity * shadow * BRDF_diffuse * LdotN;
+
+	// Compute rough transmittance
+	float3	transmittance;
+	float3	L_transmitted = ComputeGlassColor( pos, wsNormal, wsView, wsGeometricNormal, _sceneDistance, transmittanceColor, _GlassThickness, roughness, IOR, transmittance );
+			L_transmitted *= transmittance;
+
+	float3	col = lerp( L_transmitted, L_diffuse, opacity );	// Either use diffusely-reflected light, or transmitted light
+			col += L_specular;
+
+/*	float3 lin = float3(0,0,0);
 	lin += lightIntensity * shadow * LdotN;
 	lin += lightIntensity * shadow * spe * LdotN;
 	lin += 0.20*amb*float3(0.50,0.70,1.00)*occ;
 	lin += 0.30*dom*float3(0.50,0.70,1.00)*occ;
-	lin += lightIntensity2 * LdotN2*float3(0.25,0.25,0.25)*occ;
+	lin += lightIntensity2 * LdotN2*float3(0.25,0.25,0.25) * occ;
 	lin += 0.40*fre*float3(1.00,1.00,1.00)*occ;
 
 	float3	col = 0;//float3(0.7, 0.9, 1.0) + rd.y*0.8;	// Sky color
 	col = albedo * lin;
 
 	col += dif2;
+*/
+
 
 	// Add some fog
 	col = lerp( col, float3(0.8,0.9,1.0), 1.0-exp( -0.002*t*t ) );
