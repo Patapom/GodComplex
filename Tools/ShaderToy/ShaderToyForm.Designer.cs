@@ -38,7 +38,6 @@
 			this.checkBoxShowOnlyMS = new System.Windows.Forms.CheckBox();
 			this.floatTrackbarControlParm = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.floatTrackbarControlWeightMultiplier = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.panelOutput = new ShaderToy.PanelOutput(this.components);
 			this.label1 = new System.Windows.Forms.Label();
 			this.label2 = new System.Windows.Forms.Label();
 			this.floatTrackbarControlGlassThickness = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
@@ -48,6 +47,9 @@
 			this.floatTrackbarControlGlassF0 = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label5 = new System.Windows.Forms.Label();
 			this.floatTrackbarControlGlassOpacity = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.label6 = new System.Windows.Forms.Label();
+			this.floatTrackbarControlGlassColoringFactor = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.panelOutput = new ShaderToy.PanelOutput(this.components);
 			this.SuspendLayout();
 			// 
 			// buttonReload
@@ -135,17 +137,6 @@
 			this.floatTrackbarControlWeightMultiplier.VisibleRangeMax = 1F;
 			this.floatTrackbarControlWeightMultiplier.VisibleRangeMin = -1F;
 			// 
-			// panelOutput
-			// 
-			this.panelOutput.Location = new System.Drawing.Point(12, 12);
-			this.panelOutput.Name = "panelOutput";
-			this.panelOutput.Size = new System.Drawing.Size(1000, 640);
-			this.panelOutput.TabIndex = 0;
-			this.panelOutput.MouseDown += new System.Windows.Forms.MouseEventHandler(this.panelOutput_MouseDown);
-			this.panelOutput.MouseMove += new System.Windows.Forms.MouseEventHandler(this.panelOutput_MouseMove);
-			this.panelOutput.MouseUp += new System.Windows.Forms.MouseEventHandler(this.panelOutput_MouseUp);
-			this.panelOutput.PreviewKeyDown += new System.Windows.Forms.PreviewKeyDownEventHandler(this.panelOutput_PreviewKeyDown);
-			// 
 			// label1
 			// 
 			this.label1.AutoSize = true;
@@ -180,7 +171,7 @@
 			// label3
 			// 
 			this.label3.AutoSize = true;
-			this.label3.Location = new System.Drawing.Point(1016, 151);
+			this.label3.Location = new System.Drawing.Point(1016, 177);
 			this.label3.Name = "label3";
 			this.label3.Size = new System.Drawing.Size(90, 13);
 			this.label3.TabIndex = 4;
@@ -189,7 +180,7 @@
 			// floatTrackbarControlGlassRoughness
 			// 
 			this.floatTrackbarControlGlassRoughness.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-			this.floatTrackbarControlGlassRoughness.Location = new System.Drawing.Point(1116, 148);
+			this.floatTrackbarControlGlassRoughness.Location = new System.Drawing.Point(1116, 174);
 			this.floatTrackbarControlGlassRoughness.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlGlassRoughness.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlGlassRoughness.Name = "floatTrackbarControlGlassRoughness";
@@ -203,7 +194,7 @@
 			// label4
 			// 
 			this.label4.AutoSize = true;
-			this.label4.Location = new System.Drawing.Point(1016, 177);
+			this.label4.Location = new System.Drawing.Point(1016, 203);
 			this.label4.Name = "label4";
 			this.label4.Size = new System.Drawing.Size(48, 13);
 			this.label4.TabIndex = 4;
@@ -212,7 +203,7 @@
 			// floatTrackbarControlGlassF0
 			// 
 			this.floatTrackbarControlGlassF0.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-			this.floatTrackbarControlGlassF0.Location = new System.Drawing.Point(1116, 174);
+			this.floatTrackbarControlGlassF0.Location = new System.Drawing.Point(1116, 200);
 			this.floatTrackbarControlGlassF0.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlGlassF0.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlGlassF0.Name = "floatTrackbarControlGlassF0";
@@ -226,7 +217,7 @@
 			// label5
 			// 
 			this.label5.AutoSize = true;
-			this.label5.Location = new System.Drawing.Point(1016, 203);
+			this.label5.Location = new System.Drawing.Point(1016, 229);
 			this.label5.Name = "label5";
 			this.label5.Size = new System.Drawing.Size(72, 13);
 			this.label5.TabIndex = 4;
@@ -235,7 +226,7 @@
 			// floatTrackbarControlGlassOpacity
 			// 
 			this.floatTrackbarControlGlassOpacity.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-			this.floatTrackbarControlGlassOpacity.Location = new System.Drawing.Point(1116, 200);
+			this.floatTrackbarControlGlassOpacity.Location = new System.Drawing.Point(1116, 226);
 			this.floatTrackbarControlGlassOpacity.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlGlassOpacity.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlGlassOpacity.Name = "floatTrackbarControlGlassOpacity";
@@ -245,6 +236,39 @@
 			this.floatTrackbarControlGlassOpacity.TabIndex = 1;
 			this.floatTrackbarControlGlassOpacity.Value = 0F;
 			this.floatTrackbarControlGlassOpacity.VisibleRangeMax = 1F;
+			// 
+			// label6
+			// 
+			this.label6.AutoSize = true;
+			this.label6.Location = new System.Drawing.Point(1016, 151);
+			this.label6.Name = "label6";
+			this.label6.Size = new System.Drawing.Size(74, 13);
+			this.label6.TabIndex = 4;
+			this.label6.Text = "Glass Coloring";
+			// 
+			// floatTrackbarControlGlassColoringFactor
+			// 
+			this.floatTrackbarControlGlassColoringFactor.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+			this.floatTrackbarControlGlassColoringFactor.Location = new System.Drawing.Point(1116, 148);
+			this.floatTrackbarControlGlassColoringFactor.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlGlassColoringFactor.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlGlassColoringFactor.Name = "floatTrackbarControlGlassColoringFactor";
+			this.floatTrackbarControlGlassColoringFactor.RangeMin = 0F;
+			this.floatTrackbarControlGlassColoringFactor.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlGlassColoringFactor.TabIndex = 1;
+			this.floatTrackbarControlGlassColoringFactor.Value = 0.02F;
+			this.floatTrackbarControlGlassColoringFactor.VisibleRangeMax = 0.05F;
+			// 
+			// panelOutput
+			// 
+			this.panelOutput.Location = new System.Drawing.Point(12, 12);
+			this.panelOutput.Name = "panelOutput";
+			this.panelOutput.Size = new System.Drawing.Size(1000, 640);
+			this.panelOutput.TabIndex = 0;
+			this.panelOutput.MouseDown += new System.Windows.Forms.MouseEventHandler(this.panelOutput_MouseDown);
+			this.panelOutput.MouseMove += new System.Windows.Forms.MouseEventHandler(this.panelOutput_MouseMove);
+			this.panelOutput.MouseUp += new System.Windows.Forms.MouseEventHandler(this.panelOutput_MouseUp);
+			this.panelOutput.PreviewKeyDown += new System.Windows.Forms.PreviewKeyDownEventHandler(this.panelOutput_PreviewKeyDown);
 			// 
 			// ShaderToyFor
 			// 
@@ -258,10 +282,12 @@
 			this.Controls.Add(this.buttonReload);
 			this.Controls.Add(this.floatTrackbarControlParm);
 			this.Controls.Add(this.floatTrackbarControlGlassF0);
+			this.Controls.Add(this.floatTrackbarControlGlassColoringFactor);
 			this.Controls.Add(this.floatTrackbarControlGlassRoughness);
 			this.Controls.Add(this.floatTrackbarControlGlassOpacity);
 			this.Controls.Add(this.floatTrackbarControlGlassThickness);
 			this.Controls.Add(this.label4);
+			this.Controls.Add(this.label6);
 			this.Controls.Add(this.floatTrackbarControlWeightMultiplier);
 			this.Controls.Add(this.label3);
 			this.Controls.Add(this.label5);
@@ -297,6 +323,8 @@
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlGlassF0;
 		private System.Windows.Forms.Label label5;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlGlassOpacity;
+		private System.Windows.Forms.Label label6;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlGlassColoringFactor;
 	}
 }
 

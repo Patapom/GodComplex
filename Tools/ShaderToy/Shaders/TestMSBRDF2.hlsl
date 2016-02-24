@@ -267,6 +267,11 @@ float3 render( in float3 ro, in float3 rd, bool _useModel, out float _distance )
 
 	col += dif2;
 
+
+//col = 0.1 * pos;
+
+
+
 	// Add some fog
 	col = lerp( col, float3(0.8,0.9,1.0), 1.0-exp( -0.002*t*t ) );
 

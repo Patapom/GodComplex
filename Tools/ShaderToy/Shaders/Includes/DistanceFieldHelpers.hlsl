@@ -317,7 +317,7 @@ float3 opTwist( float3 p ) {
 /////////////////////////////////////////////////////////////////////////////////
 // map-dependent Functions
 //
-float3	calcNormal( float3 p, const float _eps=0.01 ) {
+float3	calcNormal( float3 p, const float _eps=0.001 ) {
 	const float2	e = float2( _eps, 0.0 );
 	return normalize( float3(
 			map( p + e.xyy ).x - map( p - e.xyy ).x,

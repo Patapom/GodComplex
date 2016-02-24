@@ -23,6 +23,7 @@ cbuffer CB_Main : register(b0) {
 	float2	_MousePosition;
 
 	float	_GlassThickness;
+	float	_GlassColoring;
 	float	_GlassRoughness;
 	float	_GlassF0;
 	float	_GlassOpacity;

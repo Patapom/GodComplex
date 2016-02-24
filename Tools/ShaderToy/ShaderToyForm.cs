@@ -36,6 +36,7 @@ namespace ShaderToy
 			public float2		_MousePosition;
 
 			public float		_GlassThickness;
+			public float		_GlassColoring;
 			public float		_GlassRoughness;
 			public float		_GlassF0;
 			public float		_GlassOpacity;
@@ -409,7 +410,7 @@ namespace ShaderToy
 			// Setup camera
 			m_Camera.CreatePerspectiveCamera( (float) (60.0 * Math.PI / 180.0), (float) panelOutput.Width / panelOutput.Height, 0.01f, 100.0f );
 			m_Manipulator.Attach( panelOutput, m_Camera );
-			m_Manipulator.InitializeCamera( new float3( 0, 1, 2.5f ), new float3( 0, 1, 0 ), float3.UnitY );
+			m_Manipulator.InitializeCamera( new float3( 0, 1, -2.5f ), new float3( 0, 1, 0 ), float3.UnitY );
 
 			// Start game time
 			m_Ticks2Seconds = 1.0 / System.Diagnostics.Stopwatch.Frequency;
@@ -526,6 +527,7 @@ namespace ShaderToy
 				m_Tex_TempBuffer.Set( 0, m_Tex_TempBuffer.GetView( 0, 0, 0, 0 ) );
 
 				m_CB_Main.m._GlassThickness = Math.Max( 1e-2f, floatTrackbarControlGlassThickness.Value );
+				m_CB_Main.m._GlassColoring = floatTrackbarControlGlassColoringFactor.Value;
 				m_CB_Main.m._GlassRoughness = floatTrackbarControlGlassRoughness.Value;
 				m_CB_Main.m._GlassF0 = floatTrackbarControlGlassF0.Value;
 				m_CB_Main.m._GlassOpacity = floatTrackbarControlGlassOpacity.Value;
