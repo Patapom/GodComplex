@@ -43,11 +43,6 @@ namespace ShaderToy
 		}
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
-		private struct CB_Downsample {
-			public float2		sourceSize;
-		};
-
-		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
 		private struct CB_Camera {
 			public float4x4		_Camera2World;
 			public float4x4		_World2Camera;

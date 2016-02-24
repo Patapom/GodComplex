@@ -71,7 +71,8 @@ float3	ComputeGlassColor( float3 _wsPosition, float3 _wsNormalFront, float3 _wsN
 //	float3	refractedView = Refract( refractedView_inside, -_wsNormalBack, _IOR );
 	float3	refractedView = refractedView_inside;	// Keep same direction
 
-	// Now, compute the intersection of that final refracted ray with the plane at "scene Z" (here we should intersect with a sphere since we're given the distance, not the Z, but I don't care)
+	// Now, compute the intersection of that final refracted ray with the plane at "scene Z"
+	// (here we should intersect with a sphere since we're given the distance, not the Z, but I don't care)
 	float3	wsCameraPos = _Camera2World[3].xyz;
 	float3	wsCameraZ = _Camera2World[2].xyz;
 	float	orthoDistance = _sceneZ - dot( wsPosition_Back - wsCameraPos, wsCameraZ );
@@ -83,17 +84,18 @@ float3	ComputeGlassColor( float3 _wsPosition, float3 _wsNormalFront, float3 _wsN
 			projScenePosition /= projScenePosition.w;
 	float2	UV_back = float2( 0.5 * (1.0 + projScenePosition.x), 0.5 * (1.0 - projScenePosition.y) );
 
-	// Use the same formula linking roughness to lobe aperture half-angle to compute the radius of the disc that represents the intersection of the rough cone with the back plane
-	float	lobeApertureHalfAngle = 0.0003474660443456835 + _roughness * (1.3331290497744692 - _roughness * 0.5040552688878546);
+	// Use the formula linking roughness to lobe aperture half-angle to compute the radius
+	//	of the disc that represents the intersection of the rough cone with the back plane
+	float	lobeApertureHalfAngle = _roughness * (1.3331290497744692 - _roughness * 0.5040552688878546);
 	float	discRadius = sceneHitDistance * tan( lobeApertureHalfAngle );
 
 	// Compute the projected radius and retrieve mip level
-	float	screenRadius = _sceneZ * TAN_HALF_FOV;						// The "redius" of the screen at the specified Z
+	float	screenRadius = _sceneZ * TAN_HALF_FOV;						// The "radius" of the screen at the specified Z
 	float	coveredPixels = iResolution.y * discRadius / screenRadius;	// The amount of pixels covered by the rough cone
-	float	discRadius_UV = 0.5 * discRadius / screenRadius;
-	float	mipLevel = log2( coveredPixels );
+	float	mipLevel = log2( 1e-6 + coveredPixels );
 
 	// Sample background at specified position and mip
+	float	discRadius_UV = 0.5 * discRadius / screenRadius;
 	UV_back -= discRadius_UV * float2( iResolution.y / iResolution.x, 1.0 );	// Because our blur is centered on top-left pixel
 	float3	backColor = _TexSource.SampleLevel( LinearMirror, float3( UV_back, 0.0 ), mipLevel ).xyz;
 
@@ -114,9 +116,13 @@ float3	ComputeGlassColor( float3 _wsPosition, float3 _wsNormalFront, float3 _wsN
 	_transmittance = Fresnel_transmitted_back * absorption * Fresnel_transmitted_front;
 
 
-
-//backColor = wsNormal_Back;
-//backColor = 0.5 * length( wsNormal_Back );
+//_transmittance = 1.0;
+//return backColor;
+//return 0.1 * mipLevel;
+//return dot( refractedView, wsCameraZ );
+//return 0.1 * (_sceneZ - dot( wsPosition_Back - wsCameraPos, wsCameraZ ));
+//return 0.1 * sceneHitDistance;
+//return 0.1 * coveredPixels;
 //return Refract( _wsView, _wsNormalFront, 1.0 / _IOR );
 //return refractedView;
 //return thickness;
@@ -154,12 +160,16 @@ float4 render( in float2 _pixelPos, in float _sceneDistance, in float3 ro, in fl
 	float	roughness = 0.5 + 0.5 * sin( 0.1 * (m-1.0) );
 roughness = _GlassRoughness;
 		
-	if ( m < 1.5 ) {
-		// Floor
-		float f = abs( fmod( floor(5.0*pos.z) + floor(5.0*pos.x), 2.0 ) );
-		albedo = 0.4 + 0.1*f;
-		roughness = 0.4 + 0.6 * abs( f );
-	}
+
+roughness *= roughness;	// More linear feel
+
+
+//	if ( m < 1.5 ) {
+//		// Floor
+//		float f = abs( fmod( floor(5.0*pos.z) + floor(5.0*pos.x), 2.0 ) );
+//		albedo = 0.4 + 0.1*f;
+//		roughness = 0.4 + 0.6 * abs( f );
+//	}
 
 	// lighting        
 	float	occ = calcAO( pos, wsNormal );
@@ -221,6 +231,14 @@ roughness = _GlassRoughness;
 	// NOTE: We could split R, G and B into 3 distinct rays depending on a RGB F0 but we need a single value here
 	float	IOR = Fresnel_IORFromF0( _GlassF0 );							// Artists control the glass's IOR by changing the "F0" value which is the "specular reflectance for dielectrics" (a single color for the entire material)
 
+	// Sample scene based on roughness
+	float	mipLevel = 6*roughness;
+	float2	UV = _pixelPos / iResolution.xy;
+			UV -= exp2( mipLevel-1 ) / iResolution.y;
+	float	backgroundDistance = _TexSource.SampleLevel( LinearClamp, float3( UV, 1 ), mipLevel ).x;
+
+//return float4( 0.1 * backgroundDistance.xxx, 0 );
+
 	// Compute Fresnel reflectance
 	float3	H = normalize( wsLight + wsView );
 	float	HdotN = saturate( dot( H, wsNormal ) );
@@ -239,10 +257,13 @@ roughness = _GlassRoughness;
 	// Compute rough transmittance
 	float3	wsNormal_Back = wsNormal - 2.0 * dot( wsNormal, wsGeometricNormal ) * wsGeometricNormal;
 
+	float	MaxColorThickness = lerp( 1.0, _GlassColoring, saturate( 2.0 * (IOR-1.0) ) );
+
 	float3	transmittance;
-	float3	L_transmitted = ComputeGlassColor( pos, wsNormal, wsNormal_Back, wsGeometricNormal, wsView, _sceneDistance, transmittanceColor, _GlassThickness, _GlassColoring, roughness, IOR, transmittance );
+	float3	L_transmitted = ComputeGlassColor( pos, wsNormal, wsNormal_Back, wsGeometricNormal, wsView, backgroundDistance, transmittanceColor, _GlassThickness, MaxColorThickness, roughness, IOR, transmittance );
 
 //L_transmitted = 0.0;
+//transmittance = 1;
 
 	float3	col = lerp( L_transmitted * transmittance, L_diffuse, opacity );	// Either use diffusely-reflected light, or transmitted light
 			col += L_specular;
