@@ -718,10 +718,11 @@ namespace TestMSBSDF
  					float	ComputeAnalyticalScaleParameter( float _theta, float _roughness, float _albedo ) {
 						#if true
 							// Here are the mathematica expressions giving us the scale parameter as a function of theta, roughness and albedo:
-							// a(Subscript[\[Alpha], s])= 0.0288133 -0.921537 \[Alpha]+6.63273 \[Alpha]^2-4.5957 \[Alpha]^3
-							// b(Subscript[\[Alpha], s])= -0.0966326+7.21414 \[Alpha]-19.7868 \[Alpha]^2+11.0421 \[Alpha]^3
-							// c(Subscript[\[Alpha], s])= 0.109357 -10.7904 \[Alpha]+28.508 \[Alpha]^2-15.6653 \[Alpha]^3
-							// d(Subscript[\[Alpha], s])=-0.0437643+5.2492 \[Alpha]-13.5827 \[Alpha]^2+7.34841 \[Alpha]^3
+							// 	a(Subscript[\[Alpha], s])= 0.0576265 -1.84307 \[Alpha]+13.2655 \[Alpha]^2-9.1914 \[Alpha]^3
+							// 	b(Subscript[\[Alpha], s])= -0.193265+14.4283 \[Alpha]-39.5737 \[Alpha]^2+22.0841 \[Alpha]^3
+							// 	c(Subscript[\[Alpha], s])= 0.218714 -21.5808 \[Alpha]+57.0161 \[Alpha]^2-31.3305 \[Alpha]^3
+							// 	d(Subscript[\[Alpha], s])=-0.0875285+10.4984 \[Alpha]-27.1654 \[Alpha]^2+14.6968 \[Alpha]^3
+							// 
 							// k(\[Rho]) = \[Rho]^2
 							// 	
 							// \[Sigma](\[Mu],Subscript[\[Sigma], s]) =a(Subscript[\[Alpha], s]) + b(Subscript[\[Alpha], s])\[Mu] + c(Subscript[\[Alpha], s]) \[Mu]^2 + d(Subscript[\[Alpha], s]) (\[Mu]^3)
@@ -730,10 +731,10 @@ namespace TestMSBSDF
 							double	r = _roughness;
 							double	r2 = r * r;
 							double	r3 = r2 * r;
-							double	a =  0.028813261153483097 - 0.9215374811620882 * r + 6.632726114385572  * r2 - 4.5957022306534    * r3;
-							double	b = -0.09663259042197028  + 7.214143602200921  * r - 19.786845117100626 * r2 + 11.042058883797509 * r3;
-							double	c =  0.10935692546815767  - 10.790405157520944 * r + 28.50803667636733  * r2 - 15.665258273262731 * r3;
-							double	d = -0.04376425480146207  + 5.2491960091879    * r - 13.582707339717146 * r2 + 7.348408854602616  * r3;
+							double	a =  0.057626522306966195 - 1.8430749623241764 * r + 13.265452228771144 * r2 - 9.1914044613068    * r3;
+							double	b = -0.19326518084394056  + 14.428287204401842 * r - 39.57369023420125  * r2 + 22.084117767595018 * r3;
+							double	c =  0.21871385093630663  - 21.580810315041887 * r + 57.01607335273474  * r2 - 31.33051654652553  * r3;
+							double	d = -0.08752850960291476  + 10.498392018375801 * r - 27.165414679434377 * r2 + 14.696817709205297 * r3;
 
 							double	f = a + b * mu + c * mu*mu + d * mu*mu*mu;
 							return (float) f;

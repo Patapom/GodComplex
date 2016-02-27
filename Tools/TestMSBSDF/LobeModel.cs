@@ -427,11 +427,10 @@ namespace TestMSBSDF
 			return Math.Pow( 2.0, 10.0 * (1.0 - _roughness) + 0.0 ) - 1.0;	// Actually, we'd like some fatter rough lobes
 		}
 
-		// D(m) = a² / (PI * cos(theta_m)^4 * (a² + tan(theta_m)²)²)
-		// Simplified into  D(m) = a² / (PI * (cos(theta_m)²*(a²-1) + 1)²)
+		// D(m) = (n+2)/(2*PI) * cos(theta_m)^n
 		double	PhongNDF( double _cosTheta_M, double _roughness ) {
 			double	n = Roughness2PhongExponent( _roughness );
-			return (n+2)*Math.Pow( _cosTheta_M, n ) / Math.PI;
+			return (n+2)*Math.Pow( _cosTheta_M, n ) / (2*Math.PI);
 		}
 
 		// Same as Beckmann but with a modified a bit

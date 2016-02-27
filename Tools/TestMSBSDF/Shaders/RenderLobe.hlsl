@@ -70,11 +70,10 @@ float	Roughness2PhongExponent( float _roughness ) {
 	return exp2( 10.0 * (1.0 - _roughness) + 0.0 ) - 1.0;	// Actually, we'd like some fatter rough lobes
 }
 
-// D(m) = a² / (PI * cos(theta_m)^4 * (a² + tan(theta_m)²)²)
-// Simplified into  D(m) = a² / (PI * (cos(theta_m)²*(a²-1) + 1)²)
+// D(m) = (n+2)/(2*PI) * cos(theta_m)^n
 float	PhongNDF( float _cosTheta_M, float _roughness ) {
 	float	n = Roughness2PhongExponent( _roughness );
-	return (n+2)*pow( _cosTheta_M, n ) / PI;
+	return (n+2)*pow( _cosTheta_M, n ) / (2.0*PI);
 }
 
 // Same as Beckmann but modified a bit
@@ -106,12 +105,13 @@ float	PhongG1( float _cosTheta, float _roughness ) {
 // 	
 // The scale factor \[Sigma] is given by:
 // 
-// 	Subscript[\[Sigma], 2](\[Mu],Subscript[\[Alpha], s], \[Rho]) =(\[Rho]^2) [a(Subscript[\[Alpha], s]) + b(Subscript[\[Alpha], s])\[Mu] + c(Subscript[\[Alpha], s]) \[Mu]^2 + d(Subscript[\[Alpha], s]) \[Mu]^3] 
-// 	
-// 	a(\[Alpha])= 0.0166734 -0.52521 \[Alpha]+5.2422 \[Alpha]^2-3.56901 \[Alpha]^3
-// 	b(\[Alpha])= -0.10099+7.22596 \[Alpha]-19.4905 \[Alpha]^2+10.7698 \[Alpha]^3
-// 	c(\[Alpha])= 0.139826 -11.4291 \[Alpha]+30.1773 \[Alpha]^2-16.7894 \[Alpha]^3
-// 	d(\[Alpha])=-0.0650245+5.73125 \[Alpha]-14.9975 \[Alpha]^2+8.3291 \[Alpha]^3
+// 	\[Sigma](\[Mu],Subscript[\[Alpha], s], \[Rho]) =a(Subscript[\[Alpha], s]) + b(Subscript[\[Alpha], s])\[Mu] + c(Subscript[\[Alpha], s]) \[Mu]^2 + d(Subscript[\[Alpha], s]) (\[Mu]^3) 
+// 	Subscript[\[Sigma], 2](\[Mu],Subscript[\[Alpha], s], \[Rho]) =(\[Rho]^2) \[Sigma](\[Mu],Subscript[\[Alpha], s], \[Rho]) 
+// 
+// 	a(Subscript[\[Alpha], s])= 0.0576265 -1.84307 \[Alpha]+13.2655 \[Alpha]^2-9.1914 \[Alpha]^3
+// 	b(Subscript[\[Alpha], s])= -0.193265+14.4283 \[Alpha]-39.5737 \[Alpha]^2+22.0841 \[Alpha]^3
+// 	c(Subscript[\[Alpha], s])= 0.218714 -21.5808 \[Alpha]+57.0161 \[Alpha]^2-31.3305 \[Alpha]^3
+// 	d(Subscript[\[Alpha], s])=-0.0875285+10.4984 \[Alpha]-27.1654 \[Alpha]^2+14.6968 \[Alpha]^3
 // 
 // The flattening factor Subscript[\[Sigma], n] along the main lobe direction Z is given by:
 // 
@@ -148,10 +148,10 @@ float3	ComputeDiffuseModel( float3 _wsIncomingDirection, float3 _wsOutgoingDirec
 	float	r2 = r*r;
 	float	r3 = r*r2;
 
-	float4	abcd = float4(	 0.028813261153483097 - 0.9215374811620882 * r + 6.632726114385572  * r2 - 4.5957022306534    * r3,
-							-0.09663259042197028  + 7.214143602200921  * r - 19.786845117100626 * r2 + 11.042058883797509 * r3,
-							 0.10935692546815767  - 10.790405157520944 * r + 28.50803667636733  * r2 - 15.665258273262731 * r3,
-							-0.04376425480146207  + 5.2491960091879    * r - 13.582707339717146 * r2 + 7.348408854602616  * r3
+	float4	abcd = float4(	 0.057626522306966195 - 1.8430749623241764 * r + 13.265452228771144 * r2 - 9.1914044613068    * r3,
+							-0.19326518084394056  + 14.428287204401842 * r - 39.57369023420125  * r2 + 22.084117767595018 * r3,
+							 0.21871385093630663  - 21.580810315041887 * r + 57.01607335273474  * r2 - 31.33051654652553  * r3,
+							-0.08752850960291476  + 10.498392018375801 * r - 27.165414679434377 * r2 + 14.696817709205297 * r3
 						);
 
 	float3	sigma2 = abcd.x + abcd.y * mu + abcd.z * mu2 + abcd.w * mu3;
@@ -169,7 +169,7 @@ sigma3 *= _ScatteringOrder == 2 ? 1 : 0;
 //eta = Roughness2PhongExponent( 1 - 0.2687 * r + 0.153596 * r2 );
 
 	// Compute unscaled lobe intensity
-	float3	intensity = (sigma2 + sigma3) * (eta+2) * pow( cosTheta, eta ) / PI;
+	float3	intensity = (sigma2 + sigma3) * (eta+2) * pow( cosTheta, eta ) / (2.0*PI);
 
 	// Compute flattening factor
 	abcd = float4(	   0.8850557867448499    - 1.2109761138443194 * r + 0.22569832413951335 * r2 + 0.4498256199595464 * r3,
