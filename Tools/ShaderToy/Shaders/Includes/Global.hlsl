@@ -27,6 +27,7 @@ cbuffer CB_Main : register(b0) {
 	float	_GlassRoughness;
 	float	_GlassF0;
 	float	_GlassOpacity;
+	float	_GlassCurvature;
 };
 
 cbuffer CB_Camera : register(b1) {

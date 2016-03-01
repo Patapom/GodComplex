@@ -37,16 +37,24 @@ float3	Refract( float3 _incoming, float3 _normal, float _eta ) {
 	}
 }
 
+float	ComputeSphereHitDistance( float3 _wsPosition, float3 _wsView, float3 _wsCenter, float _radius ) {
+	float3	D = _wsPosition - _wsCenter;
+	float	c = dot( D, D ) - _radius*_radius;
+	float	b = dot( D, _wsView );
+
+	float	delta = b*b - c;
+	return delta >= 0.0 ? -b - sign(c) * sqrt(delta) : 1e8;
+}
+
 //----------------------------------------------------------------------
 // Computes the blurred background color and attenuation of this color when a camera ray enters a rough dielectric material of a given thickness
 //
 //	_wsPosition, the world-space position of the pixel
 //	_wsNormalFront, the world-space normal of the pixel on the front-side of the material (coming from the normal map)
-//	_wsNormalBack, the world-space normal of the pixel on the back-side of the material
-//	_wsGeometricNormal, the world-space geometric normal (coming from the vertex shader)
 //	_wsView, the world-space view vector pointing toward the camera
 //	_sceneZ, the Z of the scene behind the pixels
 //	_transmittanceColor, target color for the dielectric
+//	_surfaceCurvature, the surface's curvature in [-1,+1]. -1 makes a concave lens, +1 for a convex lens, 0 for a plane
 //	_thickness, thickness (in meters) of the dielectric material
 //	_thicknessFullColor, thickness (in meters) at which the material reaches the specified transmitance color
 //	_roughness, roughness of the material
@@ -56,20 +64,31 @@ float3	Refract( float3 _incoming, float3 _normal, float _eta ) {
 //	the non-attenuated color of the blurred background
 //	_transmittance, the transmittance of the material
 // 
-float3	ComputeGlassColor( float3 _wsPosition, float3 _wsNormalFront, float3 _wsNormalBack, float3 _wsGeometricNormal, float3 _wsView, float _sceneZ, float3 _transmittanceColor, float _thickness, float _thicknessFullColor, float _roughness, float _IOR, out float3 _transmittance ) {
+float3	ComputeGlassColor( float3 _wsPosition, float3 _wsNormalFront, float3 _wsView, float _sceneZ, float3 _transmittanceColor, float _surfaceCurvature, float _thickness, float _thicknessFullColor, float _roughness, float _IOR, out float3 _transmittance ) {
 
 	// Compute direction refracted against the front surface
 	float3	refractedView_inside = Refract( _wsView, _wsNormalFront, 1.0 / _IOR );
 
-	// Compute intersection with a plane of specified thickness
-	float	orthoThickness = _thickness;
-	float	orthoView = dot( refractedView_inside, _wsGeometricNormal );
-	float	thickness = -orthoThickness / orthoView;
+	// Compute intersection with a sphere whose radius and center is computed depending on surface's curvature
+	const float	MIN_RADIUS = 1.0;
+	const float	MAX_RADIUS = 1000.0;
+	float	sphereRadius = 1.0 / lerp( (1.0 / MAX_RADIUS), (1.0 / MIN_RADIUS), _surfaceCurvature );
+
+	float3	wsSphereCenter = _wsPosition - (_thickness + sphereRadius) * _wsNormalFront;
+	float	thickness = ComputeSphereHitDistance( _wsPosition, refractedView_inside, wsSphereCenter, abs(sphereRadius) );
 	float3	wsPosition_Back = _wsPosition + thickness * refractedView_inside;	// This is where we'll hit the back of the surface
 
+	// Compute back normal
+	float3	wsNormalBack = (wsSphereCenter - wsPosition_Back) / sphereRadius;
+
+//	float	orthoThickness = _thickness;
+//	float	orthoView = dot( refractedView_inside, _wsGeometricNormal );
+//	float	thickness = -orthoThickness / orthoView;
+//	float3	wsPosition_Back = _wsPosition + thickness * refractedView_inside;	// This is where we'll hit the back of the surface
+
 	// Refract against back surface
-//	float3	refractedView = Refract( refractedView_inside, -_wsNormalBack, _IOR );
-	float3	refractedView = refractedView_inside;	// Keep same direction
+	float3	refractedView = Refract( -refractedView_inside, -wsNormalBack, _IOR );
+//	float3	refractedView = refractedView_inside;	// Keep same direction
 
 	// Now, compute the intersection of that final refracted ray with the plane at "scene Z"
 	// (here we should intersect with a sphere since we're given the distance, not the Z, but I don't care)
@@ -106,7 +125,7 @@ float3	ComputeGlassColor( float3 _wsPosition, float3 _wsNormalFront, float3 _wsN
 
 	// Compute Fresnel reflectances
 	// We need to compute 2 distinct reflectances here:
-	float	Fresnel_transmitted_back = 1.0 - FresnelAccurate( _IOR, dot( refractedView, _wsNormalBack ) );				//	1) What has NOT been reflected by the back of the surface
+	float	Fresnel_transmitted_back = 1.0 - FresnelAccurate( _IOR, dot( refractedView, wsNormalBack ) );					//	1) What has NOT been reflected by the back of the surface
 	float	Fresnel_transmitted_front = 1.0 - FresnelAccurate( 1.0 / _IOR, -dot( refractedView_inside, _wsNormalFront ) );	//	2) What has NOT been reflected by the inside of the front of the surface and transmitted through to the front where it can be viewed by the camera
 
 	// Compute absorption
@@ -125,7 +144,12 @@ float3	ComputeGlassColor( float3 _wsPosition, float3 _wsNormalFront, float3 _wsN
 //return 0.1 * coveredPixels;
 //return Refract( _wsView, _wsNormalFront, 1.0 / _IOR );
 //return refractedView;
+//return _surfaceCurvature;
+//return 0.1 * thickness;
 //return thickness;
+//return refractedView_inside;
+//return refractedView;
+//return wsNormalBack;
 //return sceneHitDistance;
 //return discRadius;
 //return 0.1 * mipLevel;
@@ -233,6 +257,9 @@ roughness *= roughness;	// More linear feel
 
 	// Sample scene based on roughness
 	float	mipLevel = 6*roughness;
+
+mipLevel = 8;
+
 	float2	UV = _pixelPos / iResolution.xy;
 			UV -= exp2( mipLevel-1 ) / iResolution.y;
 	float	backgroundDistance = _TexSource.SampleLevel( LinearClamp, float3( UV, 1 ), mipLevel ).x;
@@ -260,10 +287,12 @@ roughness *= roughness;	// More linear feel
 	float	MaxColorThickness = lerp( 1.0, _GlassColoring, saturate( 2.0 * (IOR-1.0) ) );
 
 	float3	transmittance;
-	float3	L_transmitted = ComputeGlassColor( pos, wsNormal, wsNormal_Back, wsGeometricNormal, wsView, backgroundDistance, transmittanceColor, _GlassThickness, MaxColorThickness, roughness, IOR, transmittance );
+	float3	L_transmitted = ComputeGlassColor( pos, wsNormal, wsView, backgroundDistance, transmittanceColor, _GlassCurvature, _GlassThickness, MaxColorThickness, roughness, IOR, transmittance );
 
 //L_transmitted = 0.0;
 //transmittance = 1;
+
+//return float4( L_transmitted, 0.0 );
 
 	float3	col = lerp( L_transmitted * transmittance, L_diffuse, opacity );	// Either use diffusely-reflected light, or transmitted light
 			col += L_specular;

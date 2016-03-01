@@ -40,6 +40,7 @@ namespace ShaderToy
 			public float		_GlassRoughness;
 			public float		_GlassF0;
 			public float		_GlassOpacity;
+			public float		_GlassCurvature;
 		}
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
@@ -526,6 +527,7 @@ namespace ShaderToy
 				m_CB_Main.m._GlassRoughness = floatTrackbarControlGlassRoughness.Value;
 				m_CB_Main.m._GlassF0 = floatTrackbarControlGlassF0.Value;
 				m_CB_Main.m._GlassOpacity = floatTrackbarControlGlassOpacity.Value;
+				m_CB_Main.m._GlassCurvature = floatTrackbarControlGlassCurvature.Value;
 				m_CB_Main.UpdateData();
 
 				m_Shader_Glass.Use();
