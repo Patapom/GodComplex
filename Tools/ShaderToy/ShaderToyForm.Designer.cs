@@ -49,9 +49,9 @@
 			this.floatTrackbarControlGlassOpacity = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label6 = new System.Windows.Forms.Label();
 			this.floatTrackbarControlGlassColoringFactor = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.panelOutput = new ShaderToy.PanelOutput(this.components);
 			this.label7 = new System.Windows.Forms.Label();
 			this.floatTrackbarControlGlassCurvature = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.panelOutput = new ShaderToy.PanelOutput(this.components);
 			this.SuspendLayout();
 			// 
 			// buttonReload
@@ -255,22 +255,12 @@
 			this.floatTrackbarControlGlassColoringFactor.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlGlassColoringFactor.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlGlassColoringFactor.Name = "floatTrackbarControlGlassColoringFactor";
+			this.floatTrackbarControlGlassColoringFactor.RangeMax = 1F;
 			this.floatTrackbarControlGlassColoringFactor.RangeMin = 0F;
 			this.floatTrackbarControlGlassColoringFactor.Size = new System.Drawing.Size(200, 20);
 			this.floatTrackbarControlGlassColoringFactor.TabIndex = 1;
-			this.floatTrackbarControlGlassColoringFactor.Value = 0.02F;
-			this.floatTrackbarControlGlassColoringFactor.VisibleRangeMax = 0.05F;
-			// 
-			// panelOutput
-			// 
-			this.panelOutput.Location = new System.Drawing.Point(12, 12);
-			this.panelOutput.Name = "panelOutput";
-			this.panelOutput.Size = new System.Drawing.Size(1000, 640);
-			this.panelOutput.TabIndex = 0;
-			this.panelOutput.MouseDown += new System.Windows.Forms.MouseEventHandler(this.panelOutput_MouseDown);
-			this.panelOutput.MouseMove += new System.Windows.Forms.MouseEventHandler(this.panelOutput_MouseMove);
-			this.panelOutput.MouseUp += new System.Windows.Forms.MouseEventHandler(this.panelOutput_MouseUp);
-			this.panelOutput.PreviewKeyDown += new System.Windows.Forms.PreviewKeyDownEventHandler(this.panelOutput_PreviewKeyDown);
+			this.floatTrackbarControlGlassColoringFactor.Value = 1F;
+			this.floatTrackbarControlGlassColoringFactor.VisibleRangeMax = 1F;
 			// 
 			// label7
 			// 
@@ -295,6 +285,17 @@
 			this.floatTrackbarControlGlassCurvature.Value = 0F;
 			this.floatTrackbarControlGlassCurvature.VisibleRangeMax = 1F;
 			this.floatTrackbarControlGlassCurvature.VisibleRangeMin = -1F;
+			// 
+			// panelOutput
+			// 
+			this.panelOutput.Location = new System.Drawing.Point(12, 12);
+			this.panelOutput.Name = "panelOutput";
+			this.panelOutput.Size = new System.Drawing.Size(1000, 640);
+			this.panelOutput.TabIndex = 0;
+			this.panelOutput.MouseDown += new System.Windows.Forms.MouseEventHandler(this.panelOutput_MouseDown);
+			this.panelOutput.MouseMove += new System.Windows.Forms.MouseEventHandler(this.panelOutput_MouseMove);
+			this.panelOutput.MouseUp += new System.Windows.Forms.MouseEventHandler(this.panelOutput_MouseUp);
+			this.panelOutput.PreviewKeyDown += new System.Windows.Forms.PreviewKeyDownEventHandler(this.panelOutput_PreviewKeyDown);
 			// 
 			// ShaderToyFor
 			// 

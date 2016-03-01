@@ -69,11 +69,11 @@ float	pow3( float x ) { return x * x * x; }
 //
 float	Fresnel_IORFromF0( float _F0 ) {
 	float	SqrtF0 = sqrt( _F0 );
-	return (1.0 + SqrtF0) / (1.00001 - SqrtF0);
+	return (1.0 + SqrtF0) / (1.0 - SqrtF0);
 }
 float3	Fresnel_IORFromF0( float3 _F0 ) {
 	float3	SqrtF0 = sqrt( _F0 );
-	return (1.0 + SqrtF0) / (1.00001 - SqrtF0);
+	return (1.0 + SqrtF0) / (1.0 - SqrtF0);
 }
 
 // Assuming n1=1 (air) we get:
