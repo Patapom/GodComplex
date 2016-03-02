@@ -42,6 +42,12 @@
 			this.checkBoxDebugLine = new System.Windows.Forms.CheckBox();
 			this.integerTrackbarControlVertex = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
 			this.checkBoxDebugVertex = new System.Windows.Forms.CheckBox();
+			this.textBoxLineInfos = new System.Windows.Forms.TextBox();
+			this.label1 = new System.Windows.Forms.Label();
+			this.textBoxVertexInfos = new System.Windows.Forms.TextBox();
+			this.label2 = new System.Windows.Forms.Label();
+			this.textBoxPlaneInfos = new System.Windows.Forms.TextBox();
+			this.label3 = new System.Windows.Forms.Label();
 			this.SuspendLayout();
 			// 
 			// panelOutput
@@ -80,7 +86,7 @@
 			// floatTrackbarControlParm
 			// 
 			this.floatTrackbarControlParm.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-			this.floatTrackbarControlParm.Location = new System.Drawing.Point(1095, 312);
+			this.floatTrackbarControlParm.Location = new System.Drawing.Point(1039, 563);
 			this.floatTrackbarControlParm.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlParm.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlParm.Name = "floatTrackbarControlParm";
@@ -91,7 +97,6 @@
 			// 
 			// integerTrackbarControlCell
 			// 
-			this.integerTrackbarControlCell.Enabled = false;
 			this.integerTrackbarControlCell.Location = new System.Drawing.Point(1168, 12);
 			this.integerTrackbarControlCell.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.integerTrackbarControlCell.MinimumSize = new System.Drawing.Size(70, 20);
@@ -101,6 +106,7 @@
 			this.integerTrackbarControlCell.TabIndex = 4;
 			this.integerTrackbarControlCell.Value = 0;
 			this.integerTrackbarControlCell.VisibleRangeMax = 10;
+			this.integerTrackbarControlCell.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlCell_ValueChanged);
 			// 
 			// checkBoxDebugCell
 			// 
@@ -114,7 +120,6 @@
 			// 
 			// integerTrackbarControlPlane
 			// 
-			this.integerTrackbarControlPlane.Enabled = false;
 			this.integerTrackbarControlPlane.Location = new System.Drawing.Point(1168, 35);
 			this.integerTrackbarControlPlane.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.integerTrackbarControlPlane.MinimumSize = new System.Drawing.Size(70, 20);
@@ -124,6 +129,7 @@
 			this.integerTrackbarControlPlane.TabIndex = 4;
 			this.integerTrackbarControlPlane.Value = 0;
 			this.integerTrackbarControlPlane.VisibleRangeMax = 10;
+			this.integerTrackbarControlPlane.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlPlane_ValueChanged);
 			// 
 			// checkBoxDebugPlane
 			// 
@@ -137,7 +143,6 @@
 			// 
 			// integerTrackbarControlLine
 			// 
-			this.integerTrackbarControlLine.Enabled = false;
 			this.integerTrackbarControlLine.Location = new System.Drawing.Point(1168, 58);
 			this.integerTrackbarControlLine.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.integerTrackbarControlLine.MinimumSize = new System.Drawing.Size(70, 20);
@@ -147,6 +152,7 @@
 			this.integerTrackbarControlLine.TabIndex = 4;
 			this.integerTrackbarControlLine.Value = 0;
 			this.integerTrackbarControlLine.VisibleRangeMax = 10;
+			this.integerTrackbarControlLine.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlLine_ValueChanged);
 			// 
 			// checkBoxDebugLine
 			// 
@@ -160,7 +166,6 @@
 			// 
 			// integerTrackbarControlVertex
 			// 
-			this.integerTrackbarControlVertex.Enabled = false;
 			this.integerTrackbarControlVertex.Location = new System.Drawing.Point(1168, 81);
 			this.integerTrackbarControlVertex.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.integerTrackbarControlVertex.MinimumSize = new System.Drawing.Size(70, 20);
@@ -171,6 +176,7 @@
 			this.integerTrackbarControlVertex.TabIndex = 4;
 			this.integerTrackbarControlVertex.Value = 0;
 			this.integerTrackbarControlVertex.VisibleRangeMax = 1;
+			this.integerTrackbarControlVertex.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlVertex_ValueChanged);
 			// 
 			// checkBoxDebugVertex
 			// 
@@ -182,11 +188,77 @@
 			this.checkBoxDebugVertex.Text = "Enable debugging of vertex";
 			this.checkBoxDebugVertex.UseVisualStyleBackColor = true;
 			// 
+			// textBoxLineInfos
+			// 
+			this.textBoxLineInfos.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+			this.textBoxLineInfos.Location = new System.Drawing.Point(1018, 249);
+			this.textBoxLineInfos.Multiline = true;
+			this.textBoxLineInfos.Name = "textBoxLineInfos";
+			this.textBoxLineInfos.ReadOnly = true;
+			this.textBoxLineInfos.Size = new System.Drawing.Size(276, 112);
+			this.textBoxLineInfos.TabIndex = 6;
+			// 
+			// label1
+			// 
+			this.label1.AutoSize = true;
+			this.label1.Location = new System.Drawing.Point(1018, 233);
+			this.label1.Name = "label1";
+			this.label1.Size = new System.Drawing.Size(53, 13);
+			this.label1.TabIndex = 7;
+			this.label1.Text = "Line Infos";
+			// 
+			// textBoxVertexInfos
+			// 
+			this.textBoxVertexInfos.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+			this.textBoxVertexInfos.Location = new System.Drawing.Point(1018, 380);
+			this.textBoxVertexInfos.Multiline = true;
+			this.textBoxVertexInfos.Name = "textBoxVertexInfos";
+			this.textBoxVertexInfos.ReadOnly = true;
+			this.textBoxVertexInfos.Size = new System.Drawing.Size(276, 112);
+			this.textBoxVertexInfos.TabIndex = 6;
+			// 
+			// label2
+			// 
+			this.label2.AutoSize = true;
+			this.label2.Location = new System.Drawing.Point(1018, 364);
+			this.label2.Name = "label2";
+			this.label2.Size = new System.Drawing.Size(63, 13);
+			this.label2.TabIndex = 7;
+			this.label2.Text = "Vertex Infos";
+			// 
+			// textBoxPlaneInfos
+			// 
+			this.textBoxPlaneInfos.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+			this.textBoxPlaneInfos.Location = new System.Drawing.Point(1018, 118);
+			this.textBoxPlaneInfos.Multiline = true;
+			this.textBoxPlaneInfos.Name = "textBoxPlaneInfos";
+			this.textBoxPlaneInfos.ReadOnly = true;
+			this.textBoxPlaneInfos.Size = new System.Drawing.Size(276, 112);
+			this.textBoxPlaneInfos.TabIndex = 6;
+			// 
+			// label3
+			// 
+			this.label3.AutoSize = true;
+			this.label3.Location = new System.Drawing.Point(1018, 102);
+			this.label3.Name = "label3";
+			this.label3.Size = new System.Drawing.Size(60, 13);
+			this.label3.TabIndex = 7;
+			this.label3.Text = "Plane Infos";
+			// 
 			// DebuggerForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1307, 663);
+			this.Controls.Add(this.label2);
+			this.Controls.Add(this.textBoxVertexInfos);
+			this.Controls.Add(this.label3);
+			this.Controls.Add(this.textBoxPlaneInfos);
+			this.Controls.Add(this.label1);
+			this.Controls.Add(this.textBoxLineInfos);
 			this.Controls.Add(this.integerTrackbarControlVertex);
 			this.Controls.Add(this.checkBoxDebugLine);
 			this.Controls.Add(this.integerTrackbarControlLine);
@@ -221,6 +293,12 @@
 		private System.Windows.Forms.CheckBox checkBoxDebugLine;
 		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlVertex;
 		private System.Windows.Forms.CheckBox checkBoxDebugVertex;
+		private System.Windows.Forms.TextBox textBoxLineInfos;
+		private System.Windows.Forms.Label label1;
+		private System.Windows.Forms.TextBox textBoxVertexInfos;
+		private System.Windows.Forms.Label label2;
+		private System.Windows.Forms.TextBox textBoxPlaneInfos;
+		private System.Windows.Forms.Label label3;
 	}
 }
 

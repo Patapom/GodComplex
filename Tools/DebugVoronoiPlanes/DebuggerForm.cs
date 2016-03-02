@@ -112,7 +112,7 @@ namespace DebugVoronoiPlanes
 						const float	offset = 0.1f;
 
 						float4	color = _isRemovedLine ? new float4( 1, 0, 0, 0.25f ) : new float4( 1, 1, 0, 1 );
-						if ( _isSelected && _owner.checkBoxDebugPlane.Checked )
+						if ( _isSelected && _owner.checkBoxDebugLine.Checked )
 							color = _owner.SelectedLineColor( color );
 
 						float3	wsPosition = m_wsPosition + offset * m_wsOrthoDirection;
@@ -295,6 +295,8 @@ namespace DebugVoronoiPlanes
 
 			m_MMF = MemoryMappedFile.CreateOrOpen( @"VoronoiDebugger", 1 << 20, MemoryMappedFileAccess.ReadWrite );
 			m_View = m_MMF.CreateViewAccessor( 0, 1 << 20, MemoryMappedFileAccess.ReadWrite );	// Open in R/W even though we won't write into it, just because we need to have the same access privileges as the writer otherwise we make the writer crash when it attempts to open the file in R/W mode!
+
+			integerTrackbarControlCell_ValueChanged( null, 0 );
 		}
 
 		private void	BuildQuad()
@@ -348,6 +350,9 @@ namespace DebugVoronoiPlanes
 					}
 					m_cells[cellIndex].Read( R );
 				}
+
+			// Update text that is now maybe valid?
+			UpdatePlaneInfos();
 		}
 
 		ulong	ComputeCheckSum( byte[] _buffer, int _offset, ulong _length ) {
@@ -465,7 +470,7 @@ namespace DebugVoronoiPlanes
 				return;
 
 			TimeSpan	totalTime = DateTime.Now - m_startTime;
-			m_cycle = 0.5f * (1.0f + (float) Math.Sin( totalTime.TotalSeconds ));
+			m_cycle = 0.5f * (1.0f + (float) Math.Sin( 6.0 * totalTime.TotalSeconds ));
 
 			Camera_CameraTransformChanged( m_Camera, EventArgs.Empty );
 
@@ -489,6 +494,63 @@ namespace DebugVoronoiPlanes
 
 			// Update structure
 			UpdatePlanes();
+		}
+
+		cell_t	SelectedCell {
+			get { return integerTrackbarControlCell.Value < m_cells.Count ? m_cells[integerTrackbarControlCell.Value] : null; }
+		}
+		cell_t.plane_t	SelectedPlane {
+			get {
+				cell_t	C = SelectedCell;
+				return C != null && integerTrackbarControlPlane.Value < C.m_planes.Count ? C.m_planes[integerTrackbarControlPlane.Value] : null;
+			}
+		}
+		cell_t.plane_t.line_t	SelectedLine {
+			get {
+				cell_t.plane_t	P = SelectedPlane;
+				return P != null && integerTrackbarControlLine.Value < P.m_lines.Count ? P.m_lines[integerTrackbarControlLine.Value] : null;
+			}
+		}
+		string	PrintFloat3( float3 v ) {
+			return "{ " + v.x + ", " + v.y + ", " + v.z + " }";
+		}
+		void	UpdatePlaneInfos() {
+			cell_t.plane_t	P = SelectedPlane;
+			if ( P == null ) {
+				textBoxPlaneInfos.Text = "";
+				return;
+			}
+
+			textBoxPlaneInfos.Text = "Plane #" + P.m_index + "\r\n";
+			textBoxPlaneInfos.Text += " isNatural = " + P.m_isNatural + " isValid = " + P.m_isValid + " isClosing = " + P.m_isClosing + "\r\n";
+			textBoxPlaneInfos.Text += " Lines " + P.m_lines.Count + " - Removed Lines " + P.m_removedLines.Count + "\r\n";
+			textBoxPlaneInfos.Text += " Pos = " + PrintFloat3( P.m_wsPosition ) + "\r\n";
+			textBoxPlaneInfos.Text += " Normal = " + PrintFloat3( P.m_wsNormal ) + "\r\n";
+		}
+		void	UpdateLineInfos() {
+			cell_t.plane_t.line_t	L = SelectedLine;
+			if ( L == null ) {
+				textBoxLineInfos.Text = "";
+				return;
+			}
+
+			textBoxLineInfos.Text = "Plane Indices = { " + L.m_planeIndices[0] + ", " + L.m_planeIndices[1] + " }\r\n";
+			textBoxLineInfos.Text += " Clipper Index = " + L.m_clipperPlaneIndex + "\r\n";
+			textBoxLineInfos.Text += " Pos = " + PrintFloat3( L.m_wsPosition ) + "\r\n";
+			textBoxLineInfos.Text += " Dir = " + PrintFloat3( L.m_wsDirection ) + "\r\n";
+			textBoxLineInfos.Text += " Ortho = " + PrintFloat3( L.m_wsOrthoDirection ) + "\r\n";
+		}
+		void	UpdateVertexInfos() {
+			cell_t.plane_t.line_t	L = SelectedLine;
+			if ( L == null ) {
+				textBoxLineInfos.Text = "";
+				return;
+			}
+			cell_t.plane_t.line_t.vertex_t	V = integerTrackbarControlVertex.Value == 0 ? L.m_vertices[0] : L.m_vertices[1];
+
+			textBoxVertexInfos.Text = "Vertex #" + integerTrackbarControlVertex.Value + "\r\n";
+			textBoxVertexInfos.Text += " Line Position = " + V.m_linePosition + "\r\n";
+			textBoxVertexInfos.Text = " Plane Indices = { " + V.m_planeIndices[0] + ", " + V.m_planeIndices[1] + ", " + V.m_planeIndices[2] + " }\r\n";
 		}
 
 		private void buttonReload_Click(object sender, EventArgs e)
@@ -581,6 +643,31 @@ namespace DebugVoronoiPlanes
 		{
 			m_cells.Clear();
 			UpdatePlanes();
+		}
+
+		private void integerTrackbarControlCell_ValueChanged(IntegerTrackbarControl _Sender, int _FormerValue)
+		{
+			UpdatePlaneInfos();
+			UpdateLineInfos();
+			UpdateVertexInfos();
+		}
+
+		private void integerTrackbarControlPlane_ValueChanged(IntegerTrackbarControl _Sender, int _FormerValue)
+		{
+			UpdatePlaneInfos();
+			UpdateLineInfos();
+			UpdateVertexInfos();
+		}
+
+		private void integerTrackbarControlLine_ValueChanged(IntegerTrackbarControl _Sender, int _FormerValue)
+		{
+			UpdateLineInfos();
+			UpdateVertexInfos();
+		}
+
+		private void integerTrackbarControlVertex_ValueChanged(IntegerTrackbarControl _Sender, int _FormerValue)
+		{
+			UpdateVertexInfos();
 		}
 	}
 }
