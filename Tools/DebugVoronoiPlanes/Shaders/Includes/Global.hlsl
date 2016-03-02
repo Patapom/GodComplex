@@ -33,13 +33,14 @@ struct VS_IN {
 	float3	Position : POSITION;
 	float3	Normal : NORMAL;
 	float3	Tangent : TANGENT;
+	float2	UV : TEXCOORD0;
 };
 
 struct PS_IN {
 	float4	__Position : SV_POSITION;
 	float3	wsPosition : POSITION;
 	float3	wsNormal : NORMAL;
-	float2	UV : TEXCOORDS0;
+	float2	UV : TEXCOORD0;
 };
 
 float	pow2( float x ) { return x * x; }

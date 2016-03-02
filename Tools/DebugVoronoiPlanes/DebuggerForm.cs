@@ -40,10 +40,24 @@ namespace DebugVoronoiPlanes
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
 		private struct CB_Plane {
 			public float3		_wsPosition;
-			public float		_PlaneSize;
+			public float		_sizeX0;
 			public float3		_wsNormal;
-			float				__PAD;
+			public float		_sizeX1;
 			public float3		_wsTangent;
+			public float		_sizeY;
+			public float4		_color;
+			public uint			_flags;
+		}
+
+		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
+		private struct CB_Line {
+			public float3		_wsPosition0;
+			public float		_thickness;
+			public float3		_wsPosition1;
+			float				__PAD;
+			public float3		_wsOrtho;
+			float				__PAD2;
+			public float4		_color;
 		}
 
 		public class	cell_t {
@@ -61,6 +75,7 @@ namespace DebugVoronoiPlanes
 						}
 					}
 
+					plane_t				m_owner;
 					public float3		m_wsPosition;
 					public float3		m_wsDirection;
 					public float3		m_wsOrthoDirection;
@@ -73,6 +88,10 @@ namespace DebugVoronoiPlanes
 					public uint[]		m_planeIndices = new uint[2];
 
 					public uint			m_clipperPlaneIndex;
+
+					public line_t( plane_t _owner ) {
+						m_owner = _owner;
+					}
 
 					public void		Read( BinaryReader _R ) {
 						m_wsPosition.Set( _R.ReadSingle(), _R.ReadSingle(), _R.ReadSingle() );
@@ -87,8 +106,72 @@ namespace DebugVoronoiPlanes
 
 						m_clipperPlaneIndex = _R.ReadUInt32();
 					}
+
+					public void		Draw( DebuggerForm _owner, bool _isRemovedLine, bool _isSelected ) {
+
+						const float	offset = 0.1f;
+
+						float4	color = _isRemovedLine ? new float4( 1, 0, 0, 0.25f ) : new float4( 1, 1, 0, 1 );
+						if ( _isSelected && _owner.checkBoxDebugPlane.Checked )
+							color = _owner.SelectedLineColor( color );
+
+						float3	wsPosition = m_wsPosition + offset * m_wsOrthoDirection;
+						float	length0 = Math.Max( -1000.0f, m_vertices[0].m_linePosition ) + offset;
+						float	length1 = Math.Min(  1000.0f, m_vertices[1].m_linePosition ) - offset;
+
+						float3	wsStart = wsPosition + length0 * m_wsDirection;
+						float3	wsEnd = wsPosition + length1 * m_wsDirection;
+
+						_owner.DrawLine( wsStart, wsEnd, m_wsOrthoDirection, -1.0f, color );	// Draw directed line
+
+						// Draw tangent arrow pointing inward
+						const float	arrowSize = 0.2f;
+						float3	wsCenter = 0.5f * (wsStart + wsEnd);
+						_owner.DrawArrow( wsCenter, wsCenter + arrowSize * m_wsOrthoDirection, m_owner.m_wsNormal, color );
+						_owner.DrawArrow( wsCenter, wsCenter + m_wsDirection, m_wsOrthoDirection, color );	// Draw line direction
+
+						if ( _isRemovedLine )
+							return;
+
+						// Draw vertices
+						bool	isInvalidStart = false;
+						float4	startVertexColor;
+						if ( m_vertices[0].m_planeIndices[2] == ~0U )
+							startVertexColor = new float4( 1, 1, 1, 0.2f );
+						else {
+							plane_t	cuttingPlane = m_owner.m_owner.m_planes[(int) m_vertices[0].m_planeIndices[2]];
+							if ( cuttingPlane.m_isValid )
+								startVertexColor = new float4( 0, 1, 0, 0.5f );
+							else {
+								startVertexColor = new float4( 1, 0, 0, 1.0f );
+								isInvalidStart = true;
+							}
+						}
+						if ( _isSelected && _owner.checkBoxDebugVertex.Checked && _owner.integerTrackbarControlVertex.Value == 0 )
+							startVertexColor = _owner.SelectedVertexColor( startVertexColor );
+
+						bool	isInvalidEnd = false;
+						float4	endVertexColor;
+						if ( m_vertices[1].m_planeIndices[2] == ~0U )
+							endVertexColor = new float4( 1, 1, 1, 0.2f );
+						else {
+							plane_t	cuttingPlane = m_owner.m_owner.m_planes[(int) m_vertices[1].m_planeIndices[2]];
+							if ( cuttingPlane.m_isValid )
+								endVertexColor = new float4( 0, 1, 0, 0.5f );
+							else {
+								endVertexColor = new float4( 1, 0, 0, 1.0f );
+								isInvalidEnd = true;
+							}
+						}
+						if ( _isSelected && _owner.checkBoxDebugVertex.Checked && _owner.integerTrackbarControlVertex.Value == 1 )
+							endVertexColor = _owner.SelectedVertexColor( endVertexColor );
+
+						_owner.DrawPoint( wsStart, isInvalidStart ? -8.0f : -4.0f, startVertexColor );
+						_owner.DrawPoint( wsEnd, isInvalidEnd ? -8.0f : -4.0f, endVertexColor );
+					}
 				};
 
+				cell_t			m_owner;
 				public int		m_index;
 				public bool		m_isValid;
 				public bool		m_isNatural;
@@ -99,6 +182,10 @@ namespace DebugVoronoiPlanes
 
 				public List< line_t >	m_lines = new List< line_t >();
 				public List< line_t >	m_removedLines = new List< line_t >();
+
+				public plane_t( cell_t _owner ) {
+					m_owner = _owner;
+				}
 
 				public void		Read( BinaryReader _R ) {
 					m_index = _R.ReadInt32();
@@ -114,28 +201,36 @@ namespace DebugVoronoiPlanes
 
 					int	linesCount = _R.ReadInt32();
 					for ( int lineIndex=0; lineIndex < linesCount; lineIndex++ ) {
-						line_t	L = new line_t();
+						line_t	L = new line_t( this );
 						m_lines.Add( L );
 						L.Read( _R );
 					}
 
 					int	removedLinesCount = _R.ReadInt32();
 					for ( int removedLinesIndex=0; removedLinesIndex < removedLinesCount; removedLinesIndex++ ) {
-						line_t	L = new line_t();
+						line_t	L = new line_t( this );
 						m_removedLines.Add( L );
 						L.Read( _R );
 					}
 				}
 
-				public void		Draw( DebuggerForm _owner ) {
+				public void		Draw( DebuggerForm _owner, bool _isSelected ) {
 
-					_owner.m_CB_Plane.m._wsPosition = m_wsPosition;
-					_owner.m_CB_Plane.m._wsNormal = m_wsNormal;
-					_owner.m_CB_Plane.m._wsTangent = ComputeTangent();
-					_owner.m_CB_Plane.m._PlaneSize = 10.0f;
-					_owner.m_CB_Plane.UpdateData();
+					// Render the plane
+					float4	color = m_isValid ? m_isClosing ? new float4( 1, 0.5f, 0.2f, 0.2f ) : new float4( 1, 1, 1, 0.2f ) : new float4( 1, 0, 0, 0.2f );
+					if ( _isSelected && _owner.checkBoxDebugPlane.Checked )
+						color = _owner.SelectedPlaneColor( color );
 
-					_owner.m_Prim_Quad.Render( _owner.m_Shader_Plane );
+					_owner.DrawPlane( m_wsPosition, m_wsNormal, ComputeTangent(), 10.0f, 10.0f, 10.0f, color, false );
+
+					// Render the lines
+					for ( int lineIndex=0; lineIndex < m_lines.Count; lineIndex++ ) {
+						m_lines[lineIndex].Draw( _owner, !m_isValid, _isSelected && lineIndex == _owner.integerTrackbarControlLine.Value );
+					}
+
+					for ( int lineIndex=0; lineIndex < m_removedLines.Count; lineIndex++ ) {
+						m_removedLines[lineIndex].Draw( _owner, true, false );
+					}
 				}
 
 				float3	ComputeTangent() {
@@ -150,21 +245,29 @@ namespace DebugVoronoiPlanes
 			}
 
 			public int				m_index;
+			public float3			m_wsPosition;
 			public List< plane_t >	m_planes = new List< plane_t >();
 
 			public void		Read( BinaryReader _R ) {
+				m_wsPosition.Set( _R.ReadSingle(), _R.ReadSingle(), _R.ReadSingle() );
+
 				m_planes.Clear();
 				int		planesCount = _R.ReadInt32();
 				for ( int planeIndex=0; planeIndex < planesCount; planeIndex++ ) {
-					plane_t	P = new plane_t();
+					plane_t	P = new plane_t( this );
 					m_planes.Add( P );
 					P.Read( _R );
 				}
 			}
 
-			public void		Draw( DebuggerForm _owner ) {
+			public void		Draw( DebuggerForm _owner, bool _isSelected ) {
+				float4	cellColor = new float4( 1, 0, 0, 1 );
+				if ( _isSelected && _owner.checkBoxDebugCell.Checked )
+					cellColor = _owner.SelectedCellColor( cellColor );
+				_owner.DrawPoint( m_wsPosition, -10.0f, cellColor );
+
 				for ( int planeIndex=0; planeIndex < m_planes.Count; planeIndex++ )
-					m_planes[planeIndex].Draw( _owner );
+					m_planes[planeIndex].Draw( _owner, _isSelected && planeIndex == _owner.integerTrackbarControlPlane.Value );
 			}
 		}
 
@@ -175,7 +278,9 @@ namespace DebugVoronoiPlanes
 		private ConstantBuffer<CB_Main>		m_CB_Main = null;
 		private ConstantBuffer<CB_Camera>	m_CB_Camera = null;
 		private ConstantBuffer<CB_Plane>	m_CB_Plane = null;
+		private ConstantBuffer<CB_Line>		m_CB_Line = null;
 		private Shader						m_Shader_Plane = null;
+		private Shader						m_Shader_Line = null;
 		private Primitive					m_Prim_Quad = null;
 
 		private Camera						m_Camera = new Camera();
@@ -188,8 +293,8 @@ namespace DebugVoronoiPlanes
 		public DebuggerForm() {
 			InitializeComponent();
 
-			m_MMF = MemoryMappedFile.CreateOrOpen( @"VoronoiDebugger", 1 << 20, MemoryMappedFileAccess.Read );
-			m_View = m_MMF.CreateViewAccessor( 0, 1 << 20, MemoryMappedFileAccess.Read );
+			m_MMF = MemoryMappedFile.CreateOrOpen( @"VoronoiDebugger", 1 << 20, MemoryMappedFileAccess.ReadWrite );
+			m_View = m_MMF.CreateViewAccessor( 0, 1 << 20, MemoryMappedFileAccess.ReadWrite );	// Open in R/W even though we won't write into it, just because we need to have the same access privileges as the writer otherwise we make the writer crash when it attempts to open the file in R/W mode!
 		}
 
 		private void	BuildQuad()
@@ -233,14 +338,15 @@ namespace DebugVoronoiPlanes
 					int	cellIndex = R.ReadInt32();
 
 					cell_t	C = null;
-					if ( cellIndex < m_cells.Count )
-						C = m_cells[cellIndex];
-					else {
+					while ( m_cells.Count <= cellIndex ) {
 						C = new cell_t();
-						C.m_index = cellIndex;
+						C.m_index = m_cells.Count;
+						C.m_wsPosition = new float3( -10000, -10000, -10000 );
 						m_cells.Add( C );
+
+						integerTrackbarControlCell.Value = C.m_index;	// Always track last cell
 					}
-					C.Read( R );
+					m_cells[cellIndex].Read( R );
 				}
 		}
 
@@ -261,14 +367,14 @@ namespace DebugVoronoiPlanes
 				_length -= 8;
 				checkSum += block;
 			}
-			ulong	remainder = 0;
-			while ( _length > 0 ) {
-				remainder <<= 8;
-				remainder |= (ulong) _buffer[_offset];
-				_offset++;
-				_length--;
-			}
-			checkSum += remainder;
+// 			ulong	remainder = 0;
+// 			while ( _length > 0 ) {
+// 				int	shift = 8 * (7-(int)_length);
+// 				remainder |= ((ulong) _buffer[_offset]) << shift;
+// 				_offset++;
+// 				_length--;
+// 			}
+// 			checkSum += remainder;
 
 			return checkSum;
 		}
@@ -286,7 +392,7 @@ namespace DebugVoronoiPlanes
 			catch ( Exception _e )
 			{
 				m_Device = null;
-				MessageBox.Show( "Failed to initialize DX device!\n\n" + _e.Message, "ShaderToy", MessageBoxButtons.OK, MessageBoxIcon.Error );
+				MessageBox.Show( "Failed to initialize DX device!\n\n" + _e.Message, "Voronoi Debugger", MessageBoxButtons.OK, MessageBoxIcon.Error );
 				return;
 			}
 
@@ -294,17 +400,19 @@ namespace DebugVoronoiPlanes
 
 			try {
 				m_Shader_Plane = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/RenderPlane.hlsl" ) ), VERTEX_FORMAT.P3N3G3T2, "VS", null, "PS", null );
+				m_Shader_Line = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/RenderLine.hlsl" ) ), VERTEX_FORMAT.P3N3G3T2, "VS", null, "PS", null );
 			} catch ( Exception _e ) {
-				MessageBox.Show( "Shader failed to compile!\n\n" + _e.Message, "ShaderToy", MessageBoxButtons.OK, MessageBoxIcon.Error );
+				MessageBox.Show( "Shader failed to compile!\n\n" + _e.Message, "Voronoi Debugger", MessageBoxButtons.OK, MessageBoxIcon.Error );
 				m_Shader_Plane = null;
 			}
 
 			m_CB_Main = new ConstantBuffer<CB_Main>( m_Device, 0 );
 			m_CB_Camera = new ConstantBuffer<CB_Camera>( m_Device, 1 );
 			m_CB_Plane = new ConstantBuffer<CB_Plane>( m_Device, 2 );
+			m_CB_Line = new ConstantBuffer<CB_Line>( m_Device, 2 );
 
 			// Setup camera
-			m_Camera.CreatePerspectiveCamera( (float) (60.0 * Math.PI / 180.0), (float) panelOutput.Width / panelOutput.Height, 0.01f, 100.0f );
+			m_Camera.CreatePerspectiveCamera( (float) (60.0 * Math.PI / 180.0), (float) panelOutput.Width / panelOutput.Height, 0.01f, 1000.0f );
 			m_Manipulator.Attach( panelOutput, m_Camera );
 			m_Manipulator.InitializeCamera( new float3( 0, 1, -2.5f ), new float3( 0, 1, 0 ), float3.UnitY );
 
@@ -315,6 +423,7 @@ namespace DebugVoronoiPlanes
 			if ( m_Device == null )
 				return;
 
+			m_CB_Line.Dispose();
 			m_CB_Plane.Dispose();
 			m_CB_Camera.Dispose();
 			m_CB_Main.Dispose();
@@ -348,10 +457,15 @@ namespace DebugVoronoiPlanes
 			m_CB_Camera.UpdateData();
 		}
 
+		DateTime	m_startTime = DateTime.Now;
+		float		m_cycle;
 		void Application_Idle( object sender, EventArgs e )
 		{
 			if ( m_Device == null )
 				return;
+
+			TimeSpan	totalTime = DateTime.Now - m_startTime;
+			m_cycle = 0.5f * (1.0f + (float) Math.Sin( totalTime.TotalSeconds ));
 
 			Camera_CameraTransformChanged( m_Camera, EventArgs.Empty );
 
@@ -366,7 +480,7 @@ namespace DebugVoronoiPlanes
 				m_CB_Main.UpdateData();
 
 				for ( int cellIndex=0; cellIndex < m_cells.Count; cellIndex++ ) {
-					m_cells[cellIndex].Draw( this );
+					m_cells[cellIndex].Draw( this, cellIndex == integerTrackbarControlCell.Value );
 				}
 			}
 
@@ -380,6 +494,93 @@ namespace DebugVoronoiPlanes
 		private void buttonReload_Click(object sender, EventArgs e)
 		{
 			m_Device.ReloadModifiedShaders();
+		}
+
+		void	DrawLine( float3 _start, float3 _end, float3 _ortho, float _thickness, float4 _color ) {
+			if ( _thickness <= 0.0f ) {
+				// Compute the world size of a pixel for the farthest extremity of the line
+				float3	wsCameraPos = (float3) m_Camera.World2Camera.GetRow( 3 );
+				float3	wsDir = _end - _start;
+				float	t = -wsDir.Dot( _start - wsCameraPos ) / wsDir.Dot( wsDir );
+						t = Math.Max( 0.0f, Math.Min( 1.0f, t ) );
+				float3	wsNearest = _start + t * wsDir;
+				float4	csNearest = new float4( wsNearest, 1 ) * m_Camera.World2Camera;
+				float	worldSize = 2.0f * (float) Math.Tan( 0.5f * m_Camera.PerspectiveFOV ) * csNearest.z;
+				_thickness *= -worldSize / panelOutput.Height;
+			}
+
+			m_CB_Line.m._wsPosition0 = _start;
+			m_CB_Line.m._thickness = _thickness;
+			m_CB_Line.m._wsPosition1 = _end;
+			m_CB_Line.m._wsOrtho = _ortho;
+			m_CB_Line.m._color = _color;
+			m_CB_Line.UpdateData();
+
+			m_Shader_Line.Use();
+			m_Prim_Quad.Render( m_Shader_Line );
+		}
+
+		void	DrawPlane( float3 _position, float3 _normal, float3 _tangent, float _sizeTop, float _sizeBottom, float _sizeY, float4 _color, bool _circle ) {
+			m_CB_Plane.m._wsPosition = _position;
+			m_CB_Plane.m._wsNormal = _normal;
+			m_CB_Plane.m._wsTangent = _tangent;
+			m_CB_Plane.m._sizeX0 = _sizeTop;
+			m_CB_Plane.m._sizeX1 = _sizeBottom;
+			m_CB_Plane.m._sizeY = _sizeY;
+			m_CB_Plane.m._color = _color;
+			m_CB_Plane.m._flags = (uint) (_circle ? 1 : 0);
+			m_CB_Plane.UpdateData();
+
+			m_Shader_Plane.Use();
+			m_Prim_Quad.Render( m_Shader_Plane );
+		}
+
+		void	DrawPoint( float3 _position, float _size, float4 _color ) {
+			if ( _size <= 0.0f ) {
+				// Compute the world size of a pixel for the given position
+				float4	csPos = new float4( _position, 1 ) * m_Camera.World2Camera;
+				float	worldSize = 2.0f * (float) Math.Tan( 0.5f * m_Camera.PerspectiveFOV ) * csPos.z;
+				_size *= -worldSize / panelOutput.Height;
+			}
+
+			float3	wsNormal = -(float3) m_Camera.Camera2World.GetRow( 2 );
+			float3	wsTangent = (float3) m_Camera.Camera2World.GetRow( 0 );
+
+			DrawPlane( _position, wsNormal, wsTangent, _size, _size, _size, _color, true );
+		}
+
+		void	DrawArrow( float3 _start, float3 _end, float3 _ortho, float4 _color ) {
+			DrawLine( _start, _end, _ortho, -1.0f, _color );
+
+			float3	dir = _end - _start;
+			float	size = dir.Length;
+					dir /= size;
+
+			size *= 0.1f;
+
+			DrawPlane( _end - 0.5f * size * dir, _ortho, dir.Cross( _ortho ), 0.0f, 0.5f * size, size, _color, false );
+		}
+
+		float4	Lerp( float4 a, float4 b, float t ) {
+			return a + t * (b-a);
+		}
+		float4	SelectedCellColor( float4 _in ) {
+			return Lerp( _in, new float4( 1, 1, 0, 1 ), m_cycle );
+		}
+		float4	SelectedPlaneColor( float4 _in ) {
+			return Lerp( _in, new float4( 0, 1, 0, 1 ), m_cycle );
+		}
+		float4	SelectedLineColor( float4 _in ) {
+			return Lerp( _in, new float4( 0, 1, 1, 1 ), m_cycle );
+		}
+		float4	SelectedVertexColor( float4 _in ) {
+			return Lerp( _in, new float4( 1, 0, 1, 1 ), m_cycle );
+		}
+
+		private void buttonClean_Click(object sender, EventArgs e)
+		{
+			m_cells.Clear();
+			UpdatePlanes();
 		}
 	}
 }
