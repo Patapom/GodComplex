@@ -167,8 +167,8 @@
 			this.floatTrackbarControlGlassThickness.RangeMin = 0F;
 			this.floatTrackbarControlGlassThickness.Size = new System.Drawing.Size(200, 20);
 			this.floatTrackbarControlGlassThickness.TabIndex = 1;
-			this.floatTrackbarControlGlassThickness.Value = 0.01F;
-			this.floatTrackbarControlGlassThickness.VisibleRangeMax = 0.02F;
+			this.floatTrackbarControlGlassThickness.Value = 0.2F;
+			this.floatTrackbarControlGlassThickness.VisibleRangeMax = 1F;
 			// 
 			// label3
 			// 

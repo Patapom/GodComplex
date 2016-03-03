@@ -248,7 +248,7 @@ roughness *= roughness;	// More linear feel
 	float	IOR = Fresnel_IORFromF0( _GlassF0 );				// Artists control the glass's IOR by changing the "F0" value which is the "specular reflectance for dielectrics" (a single color for the entire material)
 
 	// Sample scene based on roughness
-	float	mipLevel = 8*roughness;
+	float	mipLevel = 4*roughness;
 
 //mipLevel = 4;
 

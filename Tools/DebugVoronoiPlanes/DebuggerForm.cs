@@ -114,6 +114,10 @@ namespace DebugVoronoiPlanes
 						float4	color = _isRemovedLine ? new float4( 1, 0, 0, 0.25f ) : new float4( 1, 1, 0, 1 );
 						if ( _isSelected && _owner.checkBoxDebugLine.Checked )
 							color = _owner.SelectedLineColor( color );
+						if ( !_isRemovedLine ) {
+							if ( !m_owner.m_owner.m_planes[(int)m_planeIndices[1]].m_isValid )
+								color = _owner.FlashError( color );	// It's an error for a line to reference an invalid plane and still be part of this plane!
+						}
 
 						float3	wsPosition = m_wsPosition + offset * m_wsOrthoDirection;
 						float	length0 = Math.Max( -1000.0f, m_vertices[0].m_linePosition ) + offset;
@@ -135,15 +139,13 @@ namespace DebugVoronoiPlanes
 
 						// Draw vertices
 						bool	isInvalidStart = false;
-						float4	startVertexColor;
+						float4	startVertexColor = new float4( 0, 1, 0, 0.5f );
 						if ( m_vertices[0].m_planeIndices[2] == ~0U )
 							startVertexColor = new float4( 1, 1, 1, 0.2f );
 						else {
 							plane_t	cuttingPlane = m_owner.m_owner.m_planes[(int) m_vertices[0].m_planeIndices[2]];
-							if ( cuttingPlane.m_isValid )
-								startVertexColor = new float4( 0, 1, 0, 0.5f );
-							else {
-								startVertexColor = new float4( 1, 0, 0, 1.0f );
+							if ( !cuttingPlane.m_isValid ) {
+								startVertexColor = _owner.FlashError( startVertexColor );	// It's an error for a vertex to reference an invalid plane and still be part of this plane!
 								isInvalidStart = true;
 							}
 						}
@@ -151,15 +153,13 @@ namespace DebugVoronoiPlanes
 							startVertexColor = _owner.SelectedVertexColor( startVertexColor );
 
 						bool	isInvalidEnd = false;
-						float4	endVertexColor;
+						float4	endVertexColor = new float4( 0, 1, 0, 0.5f );
 						if ( m_vertices[1].m_planeIndices[2] == ~0U )
 							endVertexColor = new float4( 1, 1, 1, 0.2f );
 						else {
 							plane_t	cuttingPlane = m_owner.m_owner.m_planes[(int) m_vertices[1].m_planeIndices[2]];
-							if ( cuttingPlane.m_isValid )
-								endVertexColor = new float4( 0, 1, 0, 0.5f );
-							else {
-								endVertexColor = new float4( 1, 0, 0, 1.0f );
+							if ( !cuttingPlane.m_isValid ) {
+								endVertexColor = _owner.FlashError( endVertexColor );	// It's an error for a vertex to reference an invalid plane and still be part of this plane!
 								isInvalidEnd = true;
 							}
 						}
@@ -349,6 +349,8 @@ namespace DebugVoronoiPlanes
 						integerTrackbarControlCell.Value = C.m_index;	// Always track last cell
 					}
 					m_cells[cellIndex].Read( R );
+
+					m_lastReadVersion = version;
 				}
 
 			// Update text that is now maybe valid?
@@ -463,7 +465,7 @@ namespace DebugVoronoiPlanes
 		}
 
 		DateTime	m_startTime = DateTime.Now;
-		float		m_cycle;
+		float		m_cycle, m_cycle2, m_cycle3, m_cycleError;
 		void Application_Idle( object sender, EventArgs e )
 		{
 			if ( m_Device == null )
@@ -471,6 +473,9 @@ namespace DebugVoronoiPlanes
 
 			TimeSpan	totalTime = DateTime.Now - m_startTime;
 			m_cycle = 0.5f * (1.0f + (float) Math.Sin( 6.0 * totalTime.TotalSeconds ));
+			m_cycle2 = 0.5f * (1.0f + (float) Math.Sin( 1*Math.PI/3 + 6.0 * totalTime.TotalSeconds ));
+			m_cycle3 = 0.5f * (1.0f + (float) Math.Sin( 2*Math.PI/3 + 6.0 * totalTime.TotalSeconds ));
+			m_cycleError = 0.5f * (1.0f + (float) Math.Sin( 20.0 * totalTime.TotalSeconds ));	// Super fast!
 
 			Camera_CameraTransformChanged( m_Camera, EventArgs.Empty );
 
@@ -516,29 +521,27 @@ namespace DebugVoronoiPlanes
 		}
 		void	UpdatePlaneInfos() {
 			cell_t.plane_t	P = SelectedPlane;
-			if ( P == null ) {
-				textBoxPlaneInfos.Text = "";
-				return;
+			textBoxPlaneInfos.Text = "";
+			if ( P != null ) {
+				textBoxPlaneInfos.Text = "Plane #" + P.m_index + "\r\n";
+				textBoxPlaneInfos.Text += " isNatural = " + P.m_isNatural + " isValid = " + P.m_isValid + " isClosing = " + P.m_isClosing + "\r\n";
+				textBoxPlaneInfos.Text += " Lines " + P.m_lines.Count + " - Removed Lines " + P.m_removedLines.Count + "\r\n";
+				textBoxPlaneInfos.Text += " Pos = " + PrintFloat3( P.m_wsPosition ) + "\r\n";
+				textBoxPlaneInfos.Text += " Normal = " + PrintFloat3( P.m_wsNormal ) + "\r\n";
 			}
-
-			textBoxPlaneInfos.Text = "Plane #" + P.m_index + "\r\n";
-			textBoxPlaneInfos.Text += " isNatural = " + P.m_isNatural + " isValid = " + P.m_isValid + " isClosing = " + P.m_isClosing + "\r\n";
-			textBoxPlaneInfos.Text += " Lines " + P.m_lines.Count + " - Removed Lines " + P.m_removedLines.Count + "\r\n";
-			textBoxPlaneInfos.Text += " Pos = " + PrintFloat3( P.m_wsPosition ) + "\r\n";
-			textBoxPlaneInfos.Text += " Normal = " + PrintFloat3( P.m_wsNormal ) + "\r\n";
+			UpdateLineInfos();
 		}
 		void	UpdateLineInfos() {
 			cell_t.plane_t.line_t	L = SelectedLine;
-			if ( L == null ) {
-				textBoxLineInfos.Text = "";
-				return;
+			textBoxLineInfos.Text = "";
+			if ( L != null ) {
+				textBoxLineInfos.Text = "Plane Indices = { " + L.m_planeIndices[0] + ", " + L.m_planeIndices[1] + " }\r\n";
+				textBoxLineInfos.Text += " Clipper Index = " + L.m_clipperPlaneIndex + "\r\n";
+				textBoxLineInfos.Text += " Pos = " + PrintFloat3( L.m_wsPosition ) + "\r\n";
+				textBoxLineInfos.Text += " Dir = " + PrintFloat3( L.m_wsDirection ) + "\r\n";
+				textBoxLineInfos.Text += " Ortho = " + PrintFloat3( L.m_wsOrthoDirection ) + "\r\n";
 			}
-
-			textBoxLineInfos.Text = "Plane Indices = { " + L.m_planeIndices[0] + ", " + L.m_planeIndices[1] + " }\r\n";
-			textBoxLineInfos.Text += " Clipper Index = " + L.m_clipperPlaneIndex + "\r\n";
-			textBoxLineInfos.Text += " Pos = " + PrintFloat3( L.m_wsPosition ) + "\r\n";
-			textBoxLineInfos.Text += " Dir = " + PrintFloat3( L.m_wsDirection ) + "\r\n";
-			textBoxLineInfos.Text += " Ortho = " + PrintFloat3( L.m_wsOrthoDirection ) + "\r\n";
+			UpdateVertexInfos();
 		}
 		void	UpdateVertexInfos() {
 			cell_t.plane_t.line_t	L = SelectedLine;
@@ -633,10 +636,13 @@ namespace DebugVoronoiPlanes
 			return Lerp( _in, new float4( 0, 1, 0, 1 ), m_cycle );
 		}
 		float4	SelectedLineColor( float4 _in ) {
-			return Lerp( _in, new float4( 0, 1, 1, 1 ), m_cycle );
+			return Lerp( _in, new float4( 0, 1, 1, 1 ), m_cycle2 );
 		}
 		float4	SelectedVertexColor( float4 _in ) {
-			return Lerp( _in, new float4( 1, 0, 1, 1 ), m_cycle );
+			return Lerp( _in, new float4( 1, 0, 1, 1 ), m_cycle3 );
+		}
+		float4	FlashError( float4 _in ) {
+			return Lerp( _in, new float4( 10, 0, 0, 1 ), m_cycleError );
 		}
 
 		private void buttonClean_Click(object sender, EventArgs e)
@@ -648,21 +654,16 @@ namespace DebugVoronoiPlanes
 		private void integerTrackbarControlCell_ValueChanged(IntegerTrackbarControl _Sender, int _FormerValue)
 		{
 			UpdatePlaneInfos();
-			UpdateLineInfos();
-			UpdateVertexInfos();
 		}
 
 		private void integerTrackbarControlPlane_ValueChanged(IntegerTrackbarControl _Sender, int _FormerValue)
 		{
 			UpdatePlaneInfos();
-			UpdateLineInfos();
-			UpdateVertexInfos();
 		}
 
 		private void integerTrackbarControlLine_ValueChanged(IntegerTrackbarControl _Sender, int _FormerValue)
 		{
 			UpdateLineInfos();
-			UpdateVertexInfos();
 		}
 
 		private void integerTrackbarControlVertex_ValueChanged(IntegerTrackbarControl _Sender, int _FormerValue)
