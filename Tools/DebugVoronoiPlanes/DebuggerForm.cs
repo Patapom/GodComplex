@@ -65,13 +65,13 @@ namespace DebugVoronoiPlanes
 				public class	line_t {
 					public class	vertex_t {
 						public float	m_linePosition;
-						public uint[]	m_planeIndices = new uint[3];
+						public float	m_lastCutDot;
+						public uint		m_planeIndex = ~0U;
 
 						public void		Read( BinaryReader _R ) {
 							m_linePosition = _R.ReadSingle();
-							m_planeIndices[0] = _R.ReadUInt32();
-							m_planeIndices[1] = _R.ReadUInt32();
-							m_planeIndices[2] = _R.ReadUInt32();
+							m_lastCutDot = _R.ReadSingle();
+							m_planeIndex = _R.ReadUInt32();
 						}
 					}
 
@@ -108,10 +108,12 @@ namespace DebugVoronoiPlanes
 					}
 
 					public void		Draw( DebuggerForm _owner, bool _isRemovedLine, bool _isSelected ) {
+						if ( _owner.checkBoxHideNonPlaneLines.Checked && m_owner.m_index != _owner.integerTrackbarControlPlane.Value )
+							return;	// Hide lines that are not part of the currently selected plane
 
-						const float	offset = 0.1f;
+						float	offset = _owner.floatTrackbarControlLinesOffset.Value;
 
-						float4	color = _isRemovedLine ? new float4( 1, 0, 0, 0.25f ) : new float4( 1, 1, 0, 1 );
+						float4	color = _isRemovedLine ? new float4( 1, 0, 0, 0.25f ) : (m_clipperPlaneIndex == ~0U ? new float4( 1, 1, 0, 1 ) : new float4( 0.1f, 0.5f, 0, 1 ));
 						if ( _isSelected && _owner.checkBoxDebugLine.Checked )
 							color = _owner.SelectedLineColor( color );
 						if ( !_isRemovedLine ) {
@@ -126,13 +128,15 @@ namespace DebugVoronoiPlanes
 						float3	wsStart = wsPosition + length0 * m_wsDirection;
 						float3	wsEnd = wsPosition + length1 * m_wsDirection;
 
-						_owner.DrawLine( wsStart, wsEnd, m_wsOrthoDirection, -1.0f, color );	// Draw directed line
+						_owner.DrawLine( wsStart, wsEnd, m_wsOrthoDirection, -1.0f, color );
 
-						// Draw tangent arrow pointing inward
+						// Draw ortho arrow pointing inward
 						const float	arrowSize = 0.2f;
 						float3	wsCenter = 0.5f * (wsStart + wsEnd);
-						_owner.DrawArrow( wsCenter, wsCenter + arrowSize * m_wsOrthoDirection, m_owner.m_wsNormal, color );
-						_owner.DrawArrow( wsCenter, wsCenter + m_wsDirection, m_wsOrthoDirection, color );	// Draw line direction
+						if ( _owner.checkBoxShowLineNormals.Checked )
+							_owner.DrawArrow( wsCenter, wsCenter + arrowSize * m_wsOrthoDirection, m_owner.m_wsNormal, color );
+						if ( _owner.checkBoxShowLineDirections.Checked )
+							_owner.DrawArrow( wsCenter, wsCenter + m_wsDirection, m_wsOrthoDirection, color );	// Draw line direction
 
 						if ( _isRemovedLine )
 							return;
@@ -140,10 +144,10 @@ namespace DebugVoronoiPlanes
 						// Draw vertices
 						bool	isInvalidStart = false;
 						float4	startVertexColor = new float4( 0, 1, 0, 0.5f );
-						if ( m_vertices[0].m_planeIndices[2] == ~0U )
+						if ( m_vertices[0].m_planeIndex == ~0U )
 							startVertexColor = new float4( 1, 1, 1, 0.2f );
 						else {
-							plane_t	cuttingPlane = m_owner.m_owner.m_planes[(int) m_vertices[0].m_planeIndices[2]];
+							plane_t	cuttingPlane = m_owner.m_owner.m_planes[(int) m_vertices[0].m_planeIndex];
 							if ( !cuttingPlane.m_isValid ) {
 								startVertexColor = _owner.FlashError( startVertexColor );	// It's an error for a vertex to reference an invalid plane and still be part of this plane!
 								isInvalidStart = true;
@@ -154,10 +158,10 @@ namespace DebugVoronoiPlanes
 
 						bool	isInvalidEnd = false;
 						float4	endVertexColor = new float4( 0, 1, 0, 0.5f );
-						if ( m_vertices[1].m_planeIndices[2] == ~0U )
+						if ( m_vertices[1].m_planeIndex == ~0U )
 							endVertexColor = new float4( 1, 1, 1, 0.2f );
 						else {
-							plane_t	cuttingPlane = m_owner.m_owner.m_planes[(int) m_vertices[1].m_planeIndices[2]];
+							plane_t	cuttingPlane = m_owner.m_owner.m_planes[(int) m_vertices[1].m_planeIndex];
 							if ( !cuttingPlane.m_isValid ) {
 								endVertexColor = _owner.FlashError( endVertexColor );	// It's an error for a vertex to reference an invalid plane and still be part of this plane!
 								isInvalidEnd = true;
@@ -221,16 +225,18 @@ namespace DebugVoronoiPlanes
 					if ( _isSelected && _owner.checkBoxDebugPlane.Checked )
 						color = _owner.SelectedPlaneColor( color );
 
-					_owner.DrawPlane( m_wsPosition, m_wsNormal, ComputeTangent(), 10.0f, 10.0f, 10.0f, color, false );
+					if ( !_owner.checkBoxHidePlanes.Checked || _isSelected )
+						_owner.DrawPlane( m_wsPosition, m_wsNormal, ComputeTangent(), 10.0f, 10.0f, 10.0f, color, false );
 
 					// Render the lines
 					for ( int lineIndex=0; lineIndex < m_lines.Count; lineIndex++ ) {
 						m_lines[lineIndex].Draw( _owner, !m_isValid, _isSelected && lineIndex == _owner.integerTrackbarControlLine.Value );
 					}
 
-					for ( int lineIndex=0; lineIndex < m_removedLines.Count; lineIndex++ ) {
-						m_removedLines[lineIndex].Draw( _owner, true, false );
-					}
+					if ( !_owner.checkBoxHideRemovedLines.Checked || (_isSelected && _owner.checkBoxDebugPlane.Checked) )
+						for ( int lineIndex=0; lineIndex < m_removedLines.Count; lineIndex++ ) {
+							m_removedLines[lineIndex].Draw( _owner, true, false );
+						}
 				}
 
 				float3	ComputeTangent() {
@@ -489,8 +495,12 @@ namespace DebugVoronoiPlanes
 				m_CB_Main.m.iResolution = new float3( panelOutput.Width, panelOutput.Height, 0 );
 				m_CB_Main.UpdateData();
 
-				for ( int cellIndex=0; cellIndex < m_cells.Count; cellIndex++ ) {
-					m_cells[cellIndex].Draw( this, cellIndex == integerTrackbarControlCell.Value );
+				if ( checkBoxDebugCell.Checked && integerTrackbarControlCell.Value < m_cells.Count )
+					m_cells[integerTrackbarControlCell.Value].Draw( this, true );
+				else {
+					for ( int cellIndex=0; cellIndex < m_cells.Count; cellIndex++ ) {
+						m_cells[cellIndex].Draw( this, cellIndex == integerTrackbarControlCell.Value );
+					}
 				}
 			}
 
@@ -521,8 +531,10 @@ namespace DebugVoronoiPlanes
 		}
 		void	UpdatePlaneInfos() {
 			cell_t.plane_t	P = SelectedPlane;
+			labelPlaneInfo.Text = "Plane Info";
 			textBoxPlaneInfos.Text = "";
 			if ( P != null ) {
+				labelPlaneInfo.Text += " for plane " + P.m_index + "/" + SelectedCell.m_planes.Count;
 				textBoxPlaneInfos.Text = "Plane #" + P.m_index + "\r\n";
 				textBoxPlaneInfos.Text += " isNatural = " + P.m_isNatural + " isValid = " + P.m_isValid + " isClosing = " + P.m_isClosing + "\r\n";
 				textBoxPlaneInfos.Text += " Lines " + P.m_lines.Count + " - Removed Lines " + P.m_removedLines.Count + "\r\n";
@@ -553,7 +565,8 @@ namespace DebugVoronoiPlanes
 
 			textBoxVertexInfos.Text = "Vertex #" + integerTrackbarControlVertex.Value + "\r\n";
 			textBoxVertexInfos.Text += " Line Position = " + V.m_linePosition + "\r\n";
-			textBoxVertexInfos.Text = " Plane Indices = { " + V.m_planeIndices[0] + ", " + V.m_planeIndices[1] + ", " + V.m_planeIndices[2] + " }\r\n";
+			textBoxVertexInfos.Text += " Last Cut Dot = " + V.m_lastCutDot + "\r\n";
+			textBoxVertexInfos.Text += " Plane Index = " + V.m_planeIndex + "\r\n";
 		}
 
 		private void buttonReload_Click(object sender, EventArgs e)
@@ -645,9 +658,9 @@ namespace DebugVoronoiPlanes
 			return Lerp( _in, new float4( 10, 0, 0, 1 ), m_cycleError );
 		}
 
-		private void buttonClean_Click(object sender, EventArgs e)
-		{
+		private void buttonClean_Click(object sender, EventArgs e) {
 			m_cells.Clear();
+			m_lastReadVersion = 0;
 			UpdatePlanes();
 		}
 

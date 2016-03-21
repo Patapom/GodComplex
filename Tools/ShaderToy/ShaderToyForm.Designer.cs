@@ -51,6 +51,7 @@
 			this.floatTrackbarControlGlassColoringFactor = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label7 = new System.Windows.Forms.Label();
 			this.floatTrackbarControlGlassCurvature = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.outputPanelFermat1 = new ShaderToy.OutputPanelFermat(this.components);
 			this.panelOutput = new ShaderToy.PanelOutput(this.components);
 			this.SuspendLayout();
 			// 
@@ -286,6 +287,13 @@
 			this.floatTrackbarControlGlassCurvature.VisibleRangeMax = 1F;
 			this.floatTrackbarControlGlassCurvature.VisibleRangeMin = -1F;
 			// 
+			// outputPanelFermat1
+			// 
+			this.outputPanelFermat1.Location = new System.Drawing.Point(1057, 374);
+			this.outputPanelFermat1.Name = "outputPanelFermat1";
+			this.outputPanelFermat1.Size = new System.Drawing.Size(228, 208);
+			this.outputPanelFermat1.TabIndex = 5;
+			// 
 			// panelOutput
 			// 
 			this.panelOutput.Location = new System.Drawing.Point(12, 12);
@@ -302,6 +310,7 @@
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1319, 666);
+			this.Controls.Add(this.outputPanelFermat1);
 			this.Controls.Add(this.checkBoxSmoothStep);
 			this.Controls.Add(this.checkBoxShowOnlyMS);
 			this.Controls.Add(this.checkBoxShowOrder3);
@@ -356,6 +365,7 @@
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlGlassColoringFactor;
 		private System.Windows.Forms.Label label7;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlGlassCurvature;
+		private OutputPanelFermat outputPanelFermat1;
 	}
 }
 

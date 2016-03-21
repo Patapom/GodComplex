@@ -51,6 +51,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="OutputPanelFermat.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="OutputPanelFermat.Designer.cs">
+      <DependentUpon>OutputPanelFermat.cs</DependentUpon>
+    </Compile>
     <Compile Include="PanelOutput.cs">
       <SubType>Component</SubType>
     </Compile>

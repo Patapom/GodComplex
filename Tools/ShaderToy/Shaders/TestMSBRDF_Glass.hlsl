@@ -275,7 +275,7 @@ roughness *= roughness;	// More linear feel
 	float3	L_diffuse = Fresnel_diffuse * lightIntensity * shadow * BRDF_diffuse * LdotN;
 
 	// Compute rough transmittance
-	float3	wsNormal_Back = wsNormal - 2.0 * dot( wsNormal, wsGeometricNormal ) * wsGeometricNormal;
+//	float3	wsNormal_Back = wsNormal - 2.0 * dot( wsNormal, wsGeometricNormal ) * wsGeometricNormal;
 
 //	float	MaxColorThickness = lerp( 1.0, _GlassThickness / (1e-4 + _GlassColoring*_GlassColoring), saturate( 2.0 * (IOR-1.0) ) );
 	float	MaxColorThickness = _GlassThickness / (1e-4 + _GlassColoring*_GlassColoring);
