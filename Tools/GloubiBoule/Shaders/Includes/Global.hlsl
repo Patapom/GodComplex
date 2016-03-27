@@ -1,33 +1,19 @@
 
+
+static const float	ASPECT_RATIO = 16.0 / 9.0;
+
 static const float	PI = 3.1415926535897932384626433832795;
+static const float	TWOPI = 6.283185307179586476925286766559;
+static const float	FOURPI = 12.566370614359172953850573533118;
 static const float	INVPI = 0.31830988618379067153776752674503;
 static const float	SQRTPI = 1.7724538509055160272981674833411;
 static const float	INFINITY = 1e6;
 static const float	SQRT2 = 1.4142135623730950488016887242097;
 static const float3	LUMINANCE = float3( 0.2126, 0.7152, 0.0722 );	// D65 Illuminant and 2° observer (cf. http://wiki.nuaj.net/index.php?title=Colorimetry)
 
-cbuffer CB_Main : register(b0) {
-	float3	iResolution;	// viewport resolution (in pixels)
-	float	iGlobalTime;	// shader playback time (in seconds)
-
-	float2	_OnSenFout0;
-	float2	_OnSenFout1;
-	float2	_OnSenFout2;
-	float2	_OnSenFout3;
-	float2	_OnSenFout4;
-
-	uint	_OnSenFout5;
-	float	_DebugPlaneHeight;
-	uint	_DebugFlags;
-	float	_DebugParm;
-	float2	_MousePosition;
-
-	float	_GlassThickness;
-	float	_GlassColoring;
-	float	_GlassRoughness;
-	float	_GlassF0;
-	float	_GlassOpacity;
-	float	_GlassCurvature;
+cbuffer CB_Global : register(b0) {
+	float4		_ScreenSize;	// viewport resolution (in pixels)
+	float		_Time;
 };
 
 cbuffer CB_Camera : register(b1) {
@@ -46,15 +32,6 @@ SamplerState PointWrap		: register( s3 );
 SamplerState LinearMirror	: register( s4 );
 SamplerState PointMirror	: register( s5 );
 SamplerState LinearBorder	: register( s6 );	// Black border
-
-
-struct VS_IN {
-	float4	__Position : SV_POSITION;
-};
-
-VS_IN	VS( VS_IN _In ) {
-	return _In;
-}
 
 
 float	pow2( float x ) { return x * x; }
@@ -188,3 +165,14 @@ float erf( float x ) {
  
     return sign*y;
 }
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+// Phase functions
+float	PhaseFunctionRayleigh( float _CosPhaseAngle ) {
+    return (3.0 / (16.0 * PI)) * (1.0 + _CosPhaseAngle * _CosPhaseAngle);
+}
+
+float	PhaseFunctionMie( float _CosPhaseAngle, float g ) {
+	return 1.5 * 1.0 / (4.0 * PI) * (1.0 - g*g) * pow( max( 0.0, 1.0 + (g*g) - 2.0*g*_CosPhaseAngle ), -1.5 ) * (1.0 + _CosPhaseAngle * _CosPhaseAngle) / (2.0 + g*g);
+}
+

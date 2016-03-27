@@ -20,10 +20,17 @@ namespace GloubiBoule
 
 		const int	VOLUME_SIZE = 128;
 		const int	NOISE_SIZE = 64;
+		const int	PHOTONS_COUNT = 128 * 1024;
 
 		#endregion
 
 		#region NESTED TYPES
+
+		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
+		private struct CB_Global {
+			public float4		_ScreenSize;
+			public float		_Time;
+		}
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
 		private struct CB_Camera {
@@ -36,38 +43,77 @@ namespace GloubiBoule
 		}
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
-		private struct CB_PostProcess {
-			public float2		_ScreenSize;
+		private struct CB_RayMarch {
+			public float		_Sigma_t;
+			public float		_Sigma_s;
+			public float		_Phase_g;
 		}
+
+		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
+		private struct CB_PostProcess {
+		}
+
+
+		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
+		struct SB_PhotonInfo_t {
+			public float3	wsStartPosition;
+			public float3	wsDirection;
+			public float	RadiusDivergence;
+		};
+
+		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
+		struct SB_Photon_t {
+			public float3	wsPosition;
+			public float	Radius;
+		};
+
 
 		#endregion
 
 		#region FIELDS
 
-		private Device				m_Device = new Device();
+		private Device						m_Device = new Device();
 
-		Primitive					m_Prim_Sphere;
-		Primitive					m_Prim_Cube;
-		Primitive					m_Prim_Quad;
+		Primitive							m_Prim_Sphere;
+		Primitive							m_Prim_Cube;
+		Primitive							m_Prim_Quad;
 
-		Texture2D					m_Tex_HeightMap;
-		Texture2D					m_Tex_Scattering;
-		Texture2D					m_Tex_AccumPhotonCube;
-		Texture3D					m_Tex_AccumPhoton3D;
-		Texture3D					m_Tex_Noise;
+		Texture2D							m_Tex_HeightMap;
+		Texture2D							m_Tex_Scattering;
+		Texture2D							m_Tex_AccumPhotonCube;
+		Texture3D							m_Tex_AccumPhoton3D;
+		Texture3D							m_Tex_Noise;
 
-		ComputeShader				m_Shader_DeformSphere;
-		ComputeShader				m_Shader_TracePhotons;
-		Shader						m_Shader_Room;
-		Shader						m_Shader_RenderSphere;
-		Shader						m_Shader_RayMarcher;
-		Shader						m_Shader_PostProcess;
+		ComputeShader						m_Shader_DeformSphere;
+		ComputeShader						m_Shader_ClearAccumulator;
+		ComputeShader						m_Shader_InitPhotons;
+		ComputeShader						m_Shader_TracePhotons;
+		Shader								m_Shader_Room;
+		Shader								m_Shader_RenderSphere;
+		Shader								m_Shader_RayMarcher;
+		Shader								m_Shader_PostProcess;
 
-		Camera						m_Camera;
-		CameraManipulator			m_Manipulator;
+		Camera								m_Camera = new Camera();
+		CameraManipulator					m_Manipulator = new CameraManipulator();
 
-		ConstantBuffer<CB_Camera>		m_CB_Camera;
-		ConstantBuffer<CB_PostProcess>	m_CB_PostProcess;
+		ConstantBuffer<CB_Global>			m_CB_Global;
+		ConstantBuffer<CB_Camera>			m_CB_Camera;
+		ConstantBuffer<CB_RayMarch>			m_CB_RayMarch;
+		ConstantBuffer<CB_PostProcess>		m_CB_PostProcess;
+
+		StructuredBuffer< SB_PhotonInfo_t >	m_SB_PhotonInfos;
+		StructuredBuffer< SB_Photon_t >[]	m_SB_Photons = new StructuredBuffer< SB_Photon_t >[2];
+
+
+		//////////////////////////////////////////////////////////////////////////
+		// Timing
+		public System.Diagnostics.Stopwatch	m_StopWatch = new System.Diagnostics.Stopwatch();
+		private double						m_Ticks2Seconds;
+		public float						m_StartGameTime = 0;
+		public float						m_CurrentGameTime = 0;
+		public float						m_StartFPSTime = 0;
+		public int							m_SumFrames = 0;
+		public float						m_AverageFrameTime = 0.0f;
 
 		#endregion
 
@@ -82,8 +128,7 @@ namespace GloubiBoule
 		{
 			base.OnLoad( e );
 
-			try
-			{
+			try {
 				m_Device.Init( panelOutput.Handle, false, true );
 			} catch ( Exception _e ) {
 				m_Device = null;
@@ -92,22 +137,34 @@ namespace GloubiBoule
 			}
 
 			try {
-//				m_ShaderDownsample = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/Downsample.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
-//				m_Shader_RayMarcher = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/TestMSBRDF2.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+				m_Shader_ClearAccumulator = new ComputeShader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/TracePhotons.hlsl" ) ), "CS_ClearAccumulator", null );
+				m_Shader_InitPhotons = new ComputeShader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/TracePhotons.hlsl" ) ), "CS_InitPhotons", null );
+				m_Shader_TracePhotons = new ComputeShader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/TracePhotons.hlsl" ) ), "CS_TracePhotons", null );
+
+				m_Shader_RayMarcher = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/RayMarch.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 				m_Shader_PostProcess = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/PostProcess.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+
+//				m_ShaderDownsample = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/Downsample.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 			}
 			catch ( Exception _e ) {
 				MessageBox.Show( "Shader failed to compile!\n\n" + _e.Message, "ShaderToy", MessageBoxButtons.OK, MessageBoxIcon.Error );
 			}
 
+			m_CB_Global = new ConstantBuffer<CB_Global>( m_Device, 0 );
 			m_CB_Camera = new ConstantBuffer<CB_Camera>( m_Device, 1 );
 			m_CB_PostProcess = new ConstantBuffer<CB_PostProcess>( m_Device, 2 );
+			m_CB_RayMarch = new ConstantBuffer<CB_RayMarch>( m_Device, 2 );
 
-//			m_Tex_HeightMap = new Texture2D( m_Device );
+			m_Tex_HeightMap = new Texture2D( m_Device, 64, 64, 2, 1,  PIXEL_FORMAT.R16_FLOAT, false, true, null );
 			m_Tex_Scattering = new Texture2D( m_Device, panelOutput.Width, panelOutput.Height, 2, 1, PIXEL_FORMAT.RGBA16_FLOAT, false, false, null );
 			m_Tex_AccumPhotonCube = new Texture2D( m_Device, 256, 256, -6, 1, PIXEL_FORMAT.RGBA16_FLOAT, false, true, null );;
 			m_Tex_AccumPhoton3D = new Texture3D( m_Device, VOLUME_SIZE, VOLUME_SIZE, VOLUME_SIZE, 1, PIXEL_FORMAT.R32_UINT, false, true, null );;
 			m_Tex_Noise = BuildNoiseTexture();
+
+			// Structured buffer
+			m_SB_PhotonInfos = new StructuredBuffer< SB_PhotonInfo_t >( m_Device, PHOTONS_COUNT, false );
+			m_SB_Photons[0] = new StructuredBuffer<SB_Photon_t>( m_Device, PHOTONS_COUNT, false );
+			m_SB_Photons[1] = new StructuredBuffer<SB_Photon_t>( m_Device, PHOTONS_COUNT, false );
 
 			BuildPrimitives();
 
@@ -117,19 +174,22 @@ namespace GloubiBoule
 			m_Manipulator.InitializeCamera( new float3( 0, 1, -2.5f ), new float3( 0, 1, 0 ), float3.UnitY );
 
 			// Start game time
-// 			m_Ticks2Seconds = 1.0 / System.Diagnostics.Stopwatch.Frequency;
-// 			m_StopWatch.Start();
-// 			m_StartGameTime = GetGameTime();
+			m_Ticks2Seconds = 1.0 / System.Diagnostics.Stopwatch.Frequency;
+			m_StopWatch.Start();
+			m_StartGameTime = GetGameTime();
 		}
 
-		protected override void OnFormClosed( FormClosedEventArgs e )
-		{
+		protected override void OnFormClosed( FormClosedEventArgs e ) {
 			if ( m_Device == null )
 				return;
 
 			m_Prim_Cube.Dispose();
 			m_Prim_Sphere.Dispose();
 			m_Prim_Quad.Dispose();
+
+			m_SB_Photons[1].Dispose();
+			m_SB_Photons[0].Dispose();
+			m_SB_PhotonInfos.Dispose();
 
 			m_Tex_Noise.Dispose();
 			m_Tex_AccumPhoton3D.Dispose();
@@ -138,9 +198,15 @@ namespace GloubiBoule
 			m_Tex_HeightMap.Dispose();
 
 			m_CB_PostProcess.Dispose();
+			m_CB_RayMarch.Dispose();
 			m_CB_Camera.Dispose();
+			m_CB_Global.Dispose();
 
 			m_Shader_PostProcess.Dispose();
+			m_Shader_RayMarcher.Dispose();
+			m_Shader_TracePhotons.Dispose();
+			m_Shader_InitPhotons.Dispose();
+			m_Shader_ClearAccumulator.Dispose();
 
 			m_Device.Exit();
 
@@ -310,68 +376,109 @@ namespace GloubiBoule
 			m_CB_Camera.UpdateData();
 		}
 
+		/// <summary>
+		/// Gets the current game time in seconds
+		/// </summary>
+		/// <returns></returns>
+		public float	GetGameTime() {
+			long	Ticks = m_StopWatch.ElapsedTicks;
+			float	Time = (float) (Ticks * m_Ticks2Seconds);
+			return Time;
+		}
+
 		void Application_Idle( object sender, EventArgs e ) {
 			if ( m_Device == null )
 				return;
 
-// 			float	lastGameTime = m_CurrentGameTime;
-// 			m_CurrentGameTime = GetGameTime();
-// 			
-// 			if ( m_CurrentGameTime - m_StartFPSTime > 1.0f ) {
-// 				m_AverageFrameTime = (m_CurrentGameTime - m_StartFPSTime) / Math.Max( 1, m_SumFrames );
-// 				m_SumFrames = 0;
-// 				m_StartFPSTime = m_CurrentGameTime;
-// 			}
-// 			m_SumFrames++;
+			int	W = panelOutput.Width;
+			int	H = panelOutput.Height;
+
+			// Timer
+			float	lastGameTime = m_CurrentGameTime;
+			m_CurrentGameTime = GetGameTime();
+			
+			if ( m_CurrentGameTime - m_StartFPSTime > 1.0f ) {
+				m_AverageFrameTime = (m_CurrentGameTime - m_StartFPSTime) / Math.Max( 1, m_SumFrames );
+				m_SumFrames = 0;
+				m_StartFPSTime = m_CurrentGameTime;
+			}
+			m_SumFrames++;
+
+			m_CB_Global.m._ScreenSize.Set( W, H, 1.0f / W, 1.0f / H );
+			m_CB_Global.m._Time = m_CurrentGameTime;
+			m_CB_Global.UpdateData();
 
 			Camera_CameraTransformChanged( m_Camera, EventArgs.Empty );
 
-// 			// Render opaque
-// 			if ( m_Shader != null ) {
-// 				m_Device.SetRenderTargets( m_Tex_TempBuffer.Width, m_Tex_TempBuffer.Height, new IView[] { m_Tex_TempBuffer.GetView( 0, 1, 0, 1 ), m_Tex_TempBuffer.GetView( 0, 1, 1, 1 ) }, null );
-// 				m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
-// 
-// // 				m_CB_Main.m.iResolution = new float3( panelOutput.Width, panelOutput.Height, 0 );
-// // 				m_CB_Main.m.iGlobalTime = m_CurrentGameTime - m_StartGameTime;
-// // 				m_CB_Main.m._WeightMultiplier = floatTrackbarControlWeightMultiplier.Value;
-// // 				m_CB_Main.m._ShowWeights = (uint) ((checkBoxShowWeights.Checked ? 1 : 0) | (checkBoxSmoothStep.Checked ? 2 : 0) | (checkBoxShowOrder3.Checked ? 4 : 0) | (checkBoxShowOnlyMS.Checked ? 8 : 0));
-// // 				m_CB_Main.m._DebugParm = floatTrackbarControlParm.Value;
-// // 				m_CB_Main.UpdateData();
-// 
-// 				m_Shader.Use();
-// 				m_Prim_Quad.Render( m_Shader );
-// 			} else {
-// 				m_Device.Clear( new float4( 1.0f, 0, 0, 0 ) );
-// 			}
+			//////////////////////////////////////////////////////////////////////////
+			// Splat photons
+			{
+				int	GroupsCount = PHOTONS_COUNT >> 8;	// 256 threads per group
 
-// 			// Perform buffer downsampling
-// 			if ( m_ShaderDownsample.Use() ) {
-// 				for ( int mipLevel=1; mipLevel < m_Tex_TempBuffer.MipLevelsCount; mipLevel++ ) {
-// 					View2D	sourceView = m_Tex_TempBuffer.GetView( mipLevel-1, 1, 0, 0 );
-// 					View2D	targetView0 = m_Tex_TempBuffer.GetView( mipLevel, 1, 0, 1 );
-// 					View2D	targetView1 = m_Tex_TempBuffer.GetView( mipLevel, 1, 1, 1 );
-// 					m_Device.SetRenderTargets( targetView0.Width, targetView0.Height, new IView[] { targetView0, targetView1 }, null );
-// 					m_Tex_TempBuffer.Set( 0, sourceView );
-// 					m_Prim_Quad.Render( m_ShaderDownsample );
-// 				}
-// 			}
+				m_Tex_AccumPhoton3D.RemoveFromLastAssignedSlots();
+				m_Tex_AccumPhoton3D.SetCSUAV( 2 );
+
+				// Clear
+				if ( m_Shader_ClearAccumulator.Use() ) {
+					m_Shader_ClearAccumulator.Dispatch( VOLUME_SIZE >> 2, VOLUME_SIZE >> 2, VOLUME_SIZE >> 2 );
+				}
+
+				// Init
+				if ( m_Shader_InitPhotons.Use() ) {
+					m_SB_PhotonInfos.SetOutput( 0 );
+					m_SB_Photons[0].SetOutput( 1 );
+					m_Shader_InitPhotons.Dispatch( GroupsCount, 1, 1 );
+				}
+
+				// Trace
+				if ( m_Shader_TracePhotons.Use() ) {
+					m_SB_PhotonInfos.SetInput( 0 );
+					m_SB_Photons[0].SetInput( 1 );
+					m_Shader_TracePhotons.Dispatch( GroupsCount, 1, 1 );
+				}
+
+				m_Tex_AccumPhoton3D.RemoveFromLastAssignedSlotUAV();
+			}
+
+			if ( m_Shader_RayMarcher.Use() ) {
+				m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
+				m_Device.SetRenderTargets( W, H, new IView[] { m_Tex_Scattering.GetView( 0, 1, 0, 1 ), m_Tex_Scattering.GetView( 0, 1, 1, 1 ) }, null );
+
+				m_Tex_Noise.Set( 0 );
+				m_Tex_AccumPhoton3D.Set( 1 );
+
+				m_CB_RayMarch.m._Sigma_t = floatTrackbarControlExtinction.Value;
+				m_CB_RayMarch.m._Sigma_s = floatTrackbarControlExtinction.Value * floatTrackbarControlAlbedo.Value;
+				m_CB_RayMarch.m._Phase_g = floatTrackbarControlPhaseAnisotropy.Value;
+				m_CB_RayMarch.UpdateData();
+
+				m_Prim_Quad.Render( m_Shader_RayMarcher );
+			}
 
 			// Post-process
 			if ( m_Shader_PostProcess.Use() ) {
+				m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
 				m_Device.SetRenderTarget( m_Device.DefaultTarget, null );
 
-// 				m_Tex_TempBuffer2.SetPS( 0 );
+//				m_CB_PostProcess.UpdateData();
+
+ 				m_Tex_Scattering.SetPS( 0 );
 
 				m_Prim_Quad.Render( m_Shader_PostProcess );
 
-//				m_Tex_TempBuffer.RemoveFromLastAssignedSlots();
+				m_Tex_Scattering.RemoveFromLastAssignedSlots();
 			}
 
 			// Show!
 			m_Device.Present( false );
 
 			// Update window text
-//			Text = "ShaderToy - Avg. Frame Time " + (1000.0f * m_AverageFrameTime).ToString( "G5" ) + " ms (" + (1.0f / m_AverageFrameTime).ToString( "G5" ) + " FPS)";
+			Text = "GloubiBoule - Avg. Frame Time " + (1000.0f * m_AverageFrameTime).ToString( "G5" ) + " ms (" + (1.0f / m_AverageFrameTime).ToString( "G5" ) + " FPS)";
+		}
+
+		private void buttonReload_Click( object sender, EventArgs e )
+		{
+			m_Device.ReloadModifiedShaders();
 		}
 	}
 }
