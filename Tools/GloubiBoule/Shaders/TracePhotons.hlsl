@@ -1,6 +1,7 @@
 #include "Includes/global.hlsl"
 #include "Includes/Photons.hlsl"
 #include "Includes/Room.hlsl"
+#include "Includes/Noise.hlsl"
 
 #define	NUM_THREADSX	256
 #define	NUM_THREADSY	1
@@ -32,6 +33,12 @@ void	CS_InitPhotons( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROU
 
 	float	phi = TWOPI * e1;
 	float	theta = 2.0 * acos( sqrt( 1.0 - e2 ) );
+
+
+//theta += 0.1 * sin( 0.37 * _Time + PhotonIndex );
+phi += 0.5 * sin( 4.0 * _Time + 0.001 * PhotonIndex );
+
+
 	float2	scPhi, scTheta;
 	sincos( phi, scPhi.x, scPhi.y );
 	sincos( theta, scTheta.x, scTheta.y );
@@ -45,7 +52,7 @@ void	CS_InitPhotons( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROU
 	Info.wsDirection = wsDir;
 	Info.RadiusDivergence = 0.0;
 
-	Photon_t		P;
+	Photon_t	P;
 	P.wsPosition = 0.0;
 	P.Radius = 1.0;
 
@@ -61,9 +68,10 @@ void	CS_TracePhotons( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GRO
 	Photon_t		P = _Buf_PhotonsIn[PhotonIndex];
 
 	// Iterate
+	float3	wsStep = 0.1 * Info.wsDirection;
 	for ( uint stepIndex=0; stepIndex < 64; stepIndex++ ) {
 		// Update the photon
-		P.wsPosition += Info.wsDirection;
+		P.wsPosition += wsStep;
 		P.Radius += Info.RadiusDivergence;
 		
 		// Splat energy

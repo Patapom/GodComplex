@@ -20,3 +20,9 @@ float3	World2RoomUVW( float3 _wsPosition ) {
 	float3	wsDelta = _wsPosition - ROOM_MIN;
 	return wsDelta * ROOM_INV_SIZE;
 }
+
+// Converts a cell index into a world space position
+// The returned position is in the middle of the cell
+float3	RoomCellIndex2World( uint3 _cellIndex ) {
+	return ROOM_MIN + (_cellIndex + 0.5) * (ROOM_SIZE * ROOM_INV_VOLUME_SIZE);
+}

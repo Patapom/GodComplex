@@ -1,6 +1,7 @@
 #include "Includes/global.hlsl"
 #include "Includes/Photons.hlsl"
 #include "Includes/Room.hlsl"
+#include "Includes/Noise.hlsl"
 
 static const uint	STEPS_COUNT = 128;
 
@@ -25,15 +26,7 @@ VS_IN	VS( VS_IN _In ) {
 	return _In;
 }
 
-Texture3D< float4 >		_TexNoise : register(t0);
 Texture3D< uint >		_Tex_PhotonAccumulator : register(t1);
-
-float	SampleDensity( float3 _wsPosition ) {
-	float3	UVW_Offset = float3( _Time, 0, 0 );
-
-	float4	V = _TexNoise.Sample( LinearWrap, 0.1 * (_wsPosition + UVW_Offset) );
-	return V.x;
-}
 
 PS_OUT	PS( VS_IN _In ) {
 	float2	UV = _In.__Position.xy * _ScreenSize.zw;
@@ -44,6 +37,7 @@ PS_OUT	PS( VS_IN _In ) {
 			csView /= Z2Distance;
 	float3	wsView = mul( float4( csView, 0.0 ), _Camera2World ).xyz;
 
+	float	stepOffset = rand( _In.__Position.x + 13249.7 * _In.__Position.y );
 
 	PS_OUT	Out;
 	Out.Scattering = 0.0;
@@ -52,12 +46,12 @@ PS_OUT	PS( VS_IN _In ) {
 	float4	wsPos = float4( _Camera2World[3].xyz, 0.0 );
 	float4	wsDir = 0.1 * float4( wsView, 1.0 );
 
-	wsPos += wsDir;
+	wsPos += stepOffset * wsDir;
 	float	previousDensity;
 	float	density = 0.0;
 	for ( uint stepIndex=0; stepIndex < STEPS_COUNT; stepIndex++ ) {
 		previousDensity = density;
-		float	density = SampleDensity( wsPos.xyz );
+		float	density = SampleNoiseDensity( wsPos.xyz );
 
 		// Compute local lighting
 		float	opticalDepth = exp( -_Sigma_t * density * wsDir.w );
@@ -72,7 +66,7 @@ PS_OUT	PS( VS_IN _In ) {
 
 //float	PhotonPower = _Tex_PhotonAccumulator.SampleLevel( LinearClamp, World2RoomUVW( wsPos.xyz ), 0.0 ) / 65536.0;
 float	PhotonPower = _Tex_PhotonAccumulator[World2RoomCellIndex( wsPos.xyz )] / 65536.0;
-Radiance = 0.0001 * PhotonPower;
+Radiance = 0.1 * PhotonPower;
 
 		float3	Scat = Radiance * _Sigma_s * Phase * wsDir.w;
 				Scat += 0.001 * float3( 0.03, 0.3, 0.9 );

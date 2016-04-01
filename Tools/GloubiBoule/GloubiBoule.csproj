@@ -123,9 +123,6 @@
     <None Include="Shaders\Temp\DownSample.hlsl" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Shaders\Includes\AreaLight.hlsl" />
-  </ItemGroup>
-  <ItemGroup>
     <None Include="Shaders\Includes\DistanceFieldHelpers.hlsl" />
   </ItemGroup>
   <ItemGroup>
@@ -163,6 +160,21 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\RenderRoom.hlsl" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Shaders\Includes\Noise.hlsl" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Shaders\RenderSphere.hlsl" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Shaders\Includes\HeightMap.hlsl" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Shaders\UpdateHeightMap.hlsl" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Shaders\GenerateDensity.hlsl" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

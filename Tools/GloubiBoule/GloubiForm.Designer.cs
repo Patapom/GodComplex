@@ -49,8 +49,8 @@
 			this.floatTrackbarControlExtinction.RangeMin = 0F;
 			this.floatTrackbarControlExtinction.Size = new System.Drawing.Size(200, 20);
 			this.floatTrackbarControlExtinction.TabIndex = 0;
-			this.floatTrackbarControlExtinction.Value = 0.1F;
-			this.floatTrackbarControlExtinction.VisibleRangeMax = 0.1F;
+			this.floatTrackbarControlExtinction.Value = 0F;
+			this.floatTrackbarControlExtinction.VisibleRangeMax = 1F;
 			// 
 			// panelOutput
 			// 
