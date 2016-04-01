@@ -49,6 +49,11 @@ namespace GloubiBoule
 		}
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
+		private struct CB_TracePhotons {
+			public float		_Sigma_t;
+		}
+
+		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
 		private struct CB_RenderRoom {
 		}
 
@@ -117,6 +122,7 @@ namespace GloubiBoule
 		ConstantBuffer<CB_Global>			m_CB_Global;
 		ConstantBuffer<CB_Camera>			m_CB_Camera;
 		ConstantBuffer<CB_GenerateDensity>	m_CB_GenerateDensity;
+		ConstantBuffer<CB_TracePhotons>		m_CB_TracePhotons;
 		ConstantBuffer<CB_RenderRoom>		m_CB_RenderRoom;
 		ConstantBuffer<CB_RenderSphere>		m_CB_RenderSphere;
 		ConstantBuffer<CB_RayMarch>			m_CB_RayMarch;
@@ -141,6 +147,15 @@ namespace GloubiBoule
 		public GloubiForm()
 		{
 			InitializeComponent();
+
+// 			// Build 8 random rotation matrices
+// 			string[]	randomRotations = new string[8];
+// 			Random	RNG = new Random( 1 );
+// 			for ( int i=0; i < 8; i++ ) {
+// 				WMath.Matrix3x3	rot = new WMath.Matrix3x3();
+// 				rot.FromEuler( new WMath.Vector( (float) RNG.NextDouble(), (float) RNG.NextDouble(), (float) RNG.NextDouble() ) );
+// 				randomRotations[i] = rot.ToString();
+// 			}
 
 			Application.Idle += new EventHandler( Application_Idle );
 		}
@@ -181,6 +196,7 @@ namespace GloubiBoule
 			m_CB_Global = new ConstantBuffer<CB_Global>( m_Device, 0 );
 			m_CB_Camera = new ConstantBuffer<CB_Camera>( m_Device, 1 );
 			m_CB_GenerateDensity = new ConstantBuffer<CB_GenerateDensity>( m_Device, 2 );
+			m_CB_TracePhotons = new ConstantBuffer<CB_TracePhotons>( m_Device, 2 );
 			m_CB_RenderRoom = new ConstantBuffer<CB_RenderRoom>( m_Device, 2 );
 			m_CB_RenderSphere = new ConstantBuffer<CB_RenderSphere>( m_Device, 2 );
 			m_CB_PostProcess = new ConstantBuffer<CB_PostProcess>( m_Device, 2 );
@@ -237,6 +253,7 @@ namespace GloubiBoule
 			m_CB_RayMarch.Dispose();
 			m_CB_RenderSphere.Dispose();
 			m_CB_RenderRoom.Dispose();
+			m_CB_TracePhotons.Dispose();
 			m_CB_GenerateDensity.Dispose();
 			m_CB_Camera.Dispose();
 			m_CB_Global.Dispose();
@@ -463,6 +480,12 @@ namespace GloubiBoule
 			m_Tex_Noise.Set( 8 );
 			m_Tex_Noise4D.Set( 9 );
 
+
+			float	sigma_t = floatTrackbarControlExtinction.Value;
+			float	sigma_s = floatTrackbarControlExtinction.Value * floatTrackbarControlAlbedo.Value;
+			float	phase_g = floatTrackbarControlPhaseAnisotropy.Value;
+
+
 			//////////////////////////////////////////////////////////////////////////
 			// Build Deforming Height Map
 			if ( m_Shader_UpdateHeightMap.Use() ) {
@@ -484,12 +507,12 @@ namespace GloubiBoule
 				m_CB_GenerateDensity.m._wsOffset.Set( 0.5f * m_CurrentGameTime, 0, 0 );
 				m_CB_GenerateDensity.UpdateData();
 
+				m_Tex_VolumeDensity.RemoveFromLastAssignedSlots();
 				m_Tex_VolumeDensity.SetCSUAV( 0 );
 
 				m_shader_GenerateDensity.Dispatch( GroupsCount, GroupsCount, GroupsCount );
 
 				m_Tex_VolumeDensity.RemoveFromLastAssignedSlotUAV();
-				m_Tex_VolumeDensity.Set( 10 );
 			}
 
 			//////////////////////////////////////////////////////////////////////////
@@ -511,14 +534,20 @@ namespace GloubiBoule
 					m_SB_Photons[0].RemoveFromLastAssignedSlots();
 
 					m_SB_PhotonInfos.SetOutput( 0 );
-					m_SB_Photons[0].SetOutput( 1 );
+//					m_SB_Photons[0].SetOutput( 1 );
 					m_Shader_InitPhotons.Dispatch( GroupsCount, 1, 1 );
 				}
 
 				// Trace
 				if ( m_Shader_TracePhotons.Use() ) {
+
+					m_CB_TracePhotons.m._Sigma_t = sigma_t;
+					m_CB_TracePhotons.UpdateData();
+
 					m_SB_PhotonInfos.SetInput( 0 );
 					m_SB_Photons[0].SetInput( 1 );
+					m_Tex_VolumeDensity.Set( 10 );
+
 					m_Shader_TracePhotons.Dispatch( GroupsCount, 1, 1 );
 				}
 
@@ -555,9 +584,9 @@ namespace GloubiBoule
 
 				m_Tex_AccumPhoton3D.Set( 1 );
 
-				m_CB_RayMarch.m._Sigma_t = floatTrackbarControlExtinction.Value;
-				m_CB_RayMarch.m._Sigma_s = floatTrackbarControlExtinction.Value * floatTrackbarControlAlbedo.Value;
-				m_CB_RayMarch.m._Phase_g = floatTrackbarControlPhaseAnisotropy.Value;
+				m_CB_RayMarch.m._Sigma_t = sigma_t;
+				m_CB_RayMarch.m._Sigma_s = sigma_s;
+				m_CB_RayMarch.m._Phase_g = phase_g;
 				m_CB_RayMarch.UpdateData();
 
 				m_Prim_Quad.Render( m_Shader_RayMarcher );

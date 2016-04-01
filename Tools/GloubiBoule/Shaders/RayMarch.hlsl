@@ -1,10 +1,9 @@
 #include "Includes/global.hlsl"
 #include "Includes/Photons.hlsl"
 #include "Includes/Room.hlsl"
-#include "Includes/Noise.hlsl"
+#include "Includes/VolumeDensity.hlsl"
 
 static const uint	STEPS_COUNT = 128;
-
 
 cbuffer CB_RayMarch : register(b2) {
 	float	_Sigma_t;
@@ -51,7 +50,7 @@ PS_OUT	PS( VS_IN _In ) {
 	float	density = 0.0;
 	for ( uint stepIndex=0; stepIndex < STEPS_COUNT; stepIndex++ ) {
 		previousDensity = density;
-		float	density = SampleNoiseDensity( wsPos.xyz );
+		float	density = SampleVolumeDensity( wsPos.xyz );
 
 		// Compute local lighting
 		float	opticalDepth = exp( -_Sigma_t * density * wsDir.w );

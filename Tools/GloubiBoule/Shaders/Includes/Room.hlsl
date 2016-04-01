@@ -2,6 +2,9 @@
 // Room Definition
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
+#ifndef _ROOM_INCLUDED
+#define _ROOM_INCLUDED
+
 static const float3		ROOM_CENTER = 0.0;
 static const float3		ROOM_HALF_SIZE = 4.0;
 static const float3		ROOM_SIZE = 2 * ROOM_HALF_SIZE;
@@ -26,3 +29,5 @@ float3	World2RoomUVW( float3 _wsPosition ) {
 float3	RoomCellIndex2World( uint3 _cellIndex ) {
 	return ROOM_MIN + (_cellIndex + 0.5) * (ROOM_SIZE * ROOM_INV_VOLUME_SIZE);
 }
+
+#endif
