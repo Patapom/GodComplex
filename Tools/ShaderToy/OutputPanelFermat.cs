@@ -222,7 +222,8 @@ m_mousePosition = new PointF( Xc + radius * (float) (Math.Cos( 0.37 * m_bisou ) 
 						float	turnIndex = (float) Math.Floor( r * r / (2.0 * Math.PI) );	// Amount of integer turns
 						float	theta = (float) (2.0 * Math.PI * turnIndex + dTheta);
 
-theta = r*r + dTheta;
+//theta = r*r + dTheta;
+theta = (r + dTheta)*(r + dTheta);
 
 						int		selectedFloretIndex = (int) Math.Floor( theta / PHI );
 
