@@ -187,26 +187,33 @@ namespace ShaderToy
 //						G.DrawString( "dturn " + dTurn.ToString( "G3" ), Font, Brushes.Red, 0, Height-12 );
 					}
 
-			#else
+				#else
 					const float		C = 2.0f;	// Growth of the spiral, in pixels...
 
 					for ( int floretIndex=0; floretIndex < 1024; floretIndex++ ) {
 
 						float	theta = floretIndex * PHI;
-// 						float	r = C * (float) Math.Sqrt( floretIndex );
 						float	r = C * (float) Math.Sqrt( theta );
+
+//						float	r = C * (float) Math.Sqrt( floretIndex );
+// 						float	theta = r * r * PHI;
+
 						float	Dx = r * (float) Math.Cos( theta );
 						float	Dy = r * (float) Math.Sin( theta );
 
 						float	X = Xc + Dx;
 						float	Y = Yc - Dy;
-						G.FillEllipse( Brushes.Black, X-2, Y-2, 4, 4 );
+						G.FillEllipse( Brushes.DarkGray, X-2, Y-2, 4, 4 );
 //						G.FillEllipse( Brushes.Black, X-1, Y-1, 2, 2 );
 					}
 
 					// Draw special floret index based on mouse position
 					{
-m_bisou += 0.01f;
+//m_bisou += 0.01f;
+
+//m_bisou = 35.0f;
+m_bisou = 39.0f;
+
 const float	radius = 80.0f;
 m_mousePosition = new PointF( Xc + radius * (float) (Math.Cos( 0.37 * m_bisou ) * Math.Sin( -0.78 * m_bisou )),
 							  Yc + radius * (float) (Math.Cos( 0.56 * m_bisou ) * Math.Sin( 0.94 * m_bisou )) );
@@ -215,14 +222,16 @@ m_mousePosition = new PointF( Xc + radius * (float) (Math.Cos( 0.37 * m_bisou ) 
 						float	Dx = m_mousePosition.X - Xc;
 						float	Dy = Yc - m_mousePosition.Y;
 
- 						float	r = (float) Math.Sqrt( Dx*Dx + Dy*Dy ) / C;
- 						float	dTheta = (float) ((Math.Atan2( Dy, Dx ) + 2.0 * Math.PI) % (2.0 * Math.PI));
+						float	r = (float) Math.Sqrt( Dx*Dx + Dy*Dy ) / C;
+						float	dTheta = (float) ((Math.Atan2( Dy, Dx ) + 2.0 * Math.PI) % (2.0 * Math.PI));
+//						float	dTheta = (float) Math.Atan2( Dy, Dx );
 
 #if true
 						float	turnIndex = (float) Math.Floor( r * r / (2.0 * Math.PI) );	// Amount of integer turns
 						float	theta = (float) (2.0 * Math.PI * turnIndex + dTheta);
 
 //theta = r*r + dTheta;
+//theta = r*r;
 theta = (r + dTheta)*(r + dTheta);
 
 						int		selectedFloretIndex = (int) Math.Floor( theta / PHI );
@@ -258,23 +267,53 @@ theta = (r + dTheta)*(r + dTheta);
 						theta = selectedFloretIndex * PHI;	// Golden angle (137.5077640500378546463487°)
 #endif
 
+						// Debug all florets in the current circle
+						Pen	P = Pens.Red;
+						switch ( m_gna ) {
+							case 1: turnIndex--; P = Pens.DarkRed; break;
+							case 2: turnIndex++; P = Pens.OrangeRed; break;
+							case 3: turnIndex-=2; P = Pens.Goldenrod; break;
+							case 4: turnIndex+=2; P = Pens.LimeGreen; break;
+						}
+
+						int		floretIndexMin = (int) Math.Floor( (2.0 * Math.PI * turnIndex) / PHI );
+						int		floretIndexMax = (int) Math.Ceiling( (2.0 * Math.PI * (turnIndex+1)) / PHI );
+						for ( int i=floretIndexMin; i < floretIndexMax; i++ ) {
+							float	theta2 = i * PHI;
+							float	r2 = C * (float) Math.Sqrt( theta2 );
+							float	Dx2 = r2 * (float) Math.Cos( theta2 );
+							float	Dy2 = r2 * (float) Math.Sin( theta2 );
+
+							float	X2 = Xc + Dx2;
+							float	Y2 = Yc - Dy2;
+							G.DrawLine( P, Xc, Yc, X2, Y2 );
+						}
+
+
+
 						Dx = r * (float) Math.Cos( theta );
 						Dy = r * (float) Math.Sin( theta );
 
 						float	X = Xc + Dx;
 						float	Y = Yc - Dy;
-						G.FillEllipse( Brushes.Red, X-2, Y-2, 4, 4 );
+						G.FillEllipse( Brushes.Red, X-4, Y-4, 8, 8 );
 
 X = m_mousePosition.X;
 Y = m_mousePosition.Y;
-G.FillEllipse( Brushes.Green, X-2, Y-2, 4, 4 );
+G.FillEllipse( Brushes.Green, X-4, Y-4, 8, 8 );
 					}
 				#endif
 			}
 
 			Invalidate();
 		}
- float	m_bisou = 0.0f;
+float	m_bisou = 0.0f;
+int		m_gna = 0;
+protected override void OnMouseDown( MouseEventArgs e ) {
+	base.OnMouseDown( e );
+
+	m_gna = (m_gna + 1) % 5;
+}
 
 		protected override void OnSizeChanged( EventArgs e ) {
 			if ( m_Bitmap != null )
