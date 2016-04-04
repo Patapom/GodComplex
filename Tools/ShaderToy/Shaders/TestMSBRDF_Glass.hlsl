@@ -20,6 +20,53 @@ float2 map( in float3 pos ) {
     return res;
 }
 
+
+// Returns the depth from the downsampled depth buffer given a screen space camera position
+float	SampleSceneZ( float3 _csPos, float _mipLevel ) {
+	float4	projPos = mul( float4( _csPos, 1.0 ), _Camera2Proj );
+			projPos.xy /= projPos.w;
+	float2	UV = float2( 0.5*(1.0+projPos.x), 0.5*(1.0-projPos.y) );
+	return _TexSource.SampleLevel( LinearClamp, float3( UV, 1.0 ), _mipLevel ).x;
+}
+
+//----------------------------------------------------------------------
+// Super rough screen-space intersection with a low-res depth buffer
+float	ComputeSceneHitDistance( float3 _wsPosition, float3 _wsDirection, float _mipLevel ) {
+
+	// Start ray-marching from back position
+	float4	csPosition = mul( float4( _wsPosition, 1.0 ), _World2Camera );
+			csPosition.w = 0.0;					// Initial walked distance
+	float4	csStep = mul( float4( _wsDirection, 0.0 ), _World2Camera );
+			csStep.w = 1.0;						// Default step length
+			csStep /= csStep.z;					// Scale the step so it's always a unit increment in Z
+
+ 	float	previousPositionZ = 0.0;
+ 	float	previousSceneZ = 0.0;
+	float	sceneZ = SampleSceneZ( csPosition.xyz, _mipLevel );
+
+	float	deltaZ = sceneZ - csPosition.z;		// First step is large so we reach the scene's Z immediately
+
+	for ( uint stepIndex=0; stepIndex < 4; stepIndex++ ) { 
+
+		// March one step
+		previousPositionZ = csPosition.z;
+		csPosition += deltaZ * csStep;
+
+		// Re-sample scene Z at new position
+ 		previousSceneZ = sceneZ;
+		sceneZ = SampleSceneZ( csPosition.xyz, _mipLevel );
+
+		// Compute delta Z so it's the intersection of the (prev_csPosZ, current_csPosZ) segment with the (prev_sceneZ, current_sceneZ) segment
+		float	dPz = csPosition.z - previousPositionZ;
+		float	dSz = sceneZ - previousSceneZ;
+		float	t = (previousSceneZ - previousPositionZ) / (dPz - dSz);	// Indicates where the 2 segments should intersect
+
+		deltaZ = saturate( t ) * dSz;
+	}
+
+	return csPosition.w;
+}
+
 //----------------------------------------------------------------------
 // From Walter 2007 eq. 40
 // Expects _incoming pointing AWAY from the surface
@@ -52,7 +99,6 @@ float	ComputeSphereHitDistance( float3 _wsPosition, float3 _wsView, float3 _wsCe
 //	_wsPosition, the world-space position of the pixel
 //	_wsNormalFront, the world-space normal of the pixel on the front-side of the material (coming from the normal map)
 //	_wsView, the world-space view vector pointing toward the camera
-//	_sceneZ, the Z of the scene behind the pixels
 //	_transmittanceColor, target color for the dielectric
 //	_surfaceCurvature, the surface's curvature in [-1,+1]. -1 makes a concave lens, +1 for a convex lens, 0 for a plane
 //	_thickness, thickness (in meters) of the dielectric material
@@ -63,10 +109,26 @@ float	ComputeSphereHitDistance( float3 _wsPosition, float3 _wsView, float3 _wsCe
 // Returns:
 //	the attenuated color of the blurred background
 // 
-float3	ComputeGlassColor( float3 _wsPosition, float3 _wsNormalFront, float3 _wsView, float _sceneZ, float3 _transmittanceColor, float _surfaceCurvature, float _thickness, float _thicknessFullColor, float _roughness, float _IOR ) {
+float3	ComputeGlassColor( float3 _wsPosition, float3 _wsNormalFront, float3 _wsView, float3 _transmittanceColor, float _surfaceCurvature, float _thickness, float _thicknessFullColor, float _roughness, float _IOR ) {
+
+
+_roughness *= _roughness;	// More linear look...
+
+
+// 	// Sample scene based on roughness
+// 	float	mipLevel = 4*roughness;
+// 
+// //mipLevel = 4;
+// 
+// 	float2	UV = _pixelPos / iResolution.xy;
+// 			UV -= exp2( mipLevel-1 ) / iResolution.y;
+// 	float	backgroundDistance = _TexSource.SampleLevel( LinearClamp, float3( UV, 1 ), mipLevel ).x;
+// 
+// //return float4( 0.1 * backgroundDistance.xxx, 0 );
+
 
 	// Compute direction refracted against the front surface
-	float3	refractedView_inside = Refract( _wsView, _wsNormalFront, 1.0 / _IOR );
+	float3	wsRefractedView_inside = Refract( _wsView, _wsNormalFront, 1.0 / _IOR );
 
 	// Compute intersection with a sphere whose radius and center is computed depending on surface's curvature
 	const float	MIN_RADIUS = 0.4;
@@ -74,23 +136,30 @@ float3	ComputeGlassColor( float3 _wsPosition, float3 _wsNormalFront, float3 _wsV
 	float	sphereRadius = 1.0 / lerp( (1.0 / MAX_RADIUS), (1.0 / MIN_RADIUS), _surfaceCurvature );
 
 	float3	wsSphereCenter = _wsPosition - (_thickness + sphereRadius) * _wsNormalFront;
-	float	thickness = ComputeSphereHitDistance( _wsPosition, refractedView_inside, wsSphereCenter, sphereRadius );
-	float3	wsPosition_Back = _wsPosition + thickness * refractedView_inside;	// This is where we'll hit the back of the surface
+	float	thickness = ComputeSphereHitDistance( _wsPosition, wsRefractedView_inside, wsSphereCenter, sphereRadius );
+	float3	wsPosition_Back = _wsPosition + thickness * wsRefractedView_inside;	// This is where we'll hit the back of the surface
 
 	// Compute back normal
 	float3	wsNormalBack = (wsSphereCenter - wsPosition_Back) / sphereRadius;
 
 	// Refract against back surface
-	float3	refractedView = Refract( -refractedView_inside, -wsNormalBack, _IOR );
-//	float3	refractedView = refractedView_inside;	// Keep same direction
+	float3	wsRefractedView = Refract( -wsRefractedView_inside, -wsNormalBack, _IOR );
+//	float3	wsRefractedView = wsRefractedView_inside;	// Keep same direction
 
-	// Now, compute the intersection of that final refracted ray with the plane at "scene Z"
-	// (here we should intersect with a sphere since we're given the distance, not the Z, but I don't care)
-	float3	wsCameraPos = _Camera2World[3].xyz;
-	float3	wsCameraZ = _Camera2World[2].xyz;	// "At" vector
-	float	orthoDistance = _sceneZ - dot( wsPosition_Back - wsCameraPos, wsCameraZ );
-	float	sceneHitDistance = orthoDistance / dot( refractedView, wsCameraZ );
-	float3	wsScenePosition = wsPosition_Back + sceneHitDistance * refractedView;
+	#if 1
+		// Compute the rough intersection of the refracted ray with the scene
+ 		float	depthMipLevel = 5.0 * _roughness;	// Arbitrary! :D
+		float	sceneHitDistance = ComputeSceneHitDistance( wsPosition_Back, wsRefractedView, depthMipLevel );
+		float3	wsScenePosition = wsPosition_Back + sceneHitDistance * wsRefractedView;
+	#else
+		// Now, compute the intersection of that final refracted ray with the plane at "scene Z"
+		// (here we should intersect with a sphere since we're given the distance, not the Z, but I don't care)
+		float3	wsCameraPos = _Camera2World[3].xyz;
+		float3	wsCameraZ = _Camera2World[2].xyz;	// "At" vector
+		float	orthoDistance = _sceneZ - dot( wsPosition_Back - wsCameraPos, wsCameraZ );
+		float	sceneHitDistance = orthoDistance / dot( wsRefractedView, wsCameraZ );
+		float3	wsScenePosition = wsPosition_Back + sceneHitDistance * wsRefractedView;
+	#endif
 
 	// Project into camera clip space
 	float4	projScenePosition = mul( float4( wsScenePosition, 1.0 ), _World2Proj );
@@ -103,7 +172,8 @@ float3	ComputeGlassColor( float3 _wsPosition, float3 _wsNormalFront, float3 _wsV
 	float	discRadius = sceneHitDistance * tan( lobeApertureHalfAngle );
 
 	// Compute the projected radius and retrieve mip level
-	float	screenRadius = _sceneZ * TAN_HALF_FOV;				// The "radius" of the screen at the specified Z
+	float	sceneZ = sceneHitDistance;							// Use distance as Z although we shoud rescale it!
+	float	screenRadius = sceneZ * TAN_HALF_FOV;				// The "radius" of the screen at the specified Z
 	float	discRadius_UV = 0.5 * discRadius / screenRadius;
 	float	coveredPixels = iResolution.y * discRadius_UV;		// The amount of pixels covered by the rough cone
 	float	mipLevel = log2( 1e-6 + coveredPixels );
@@ -119,23 +189,23 @@ float3	ComputeGlassColor( float3 _wsPosition, float3 _wsNormalFront, float3 _wsV
 
 	// Compute Fresnel reflectances
 	// We need to compute 2 distinct reflectances here:
-// 	float	Fresnel_transmitted_back = 1.0 - FresnelAccurate( _IOR, dot( refractedView, wsNormalBack ) );					//	1) What has NOT been reflected by the back of the surface
-// 	float	Fresnel_transmitted_front = 1.0 - FresnelAccurate( 1.0 / _IOR, -dot( refractedView_inside, _wsNormalFront ) );	//	2) What has NOT been reflected by the inside of the front of the surface and transmitted through to the front where it can be viewed by the camera
-	float	Fresnel_transmitted_back = 1.0 - FresnelAccurate( _IOR, saturate( dot( refractedView, wsNormalBack ) ) );					//	1) What has NOT been reflected by the back of the surface
-	float	Fresnel_transmitted_front = 1.0 - FresnelAccurate( 1.0 / _IOR, saturate( -dot( refractedView_inside, _wsNormalFront ) ) );	//	2) What has NOT been reflected by the inside of the front of the surface and transmitted through to the front where it can be viewed by the camera
+// 	float	Fresnel_transmitted_back = 1.0 - FresnelAccurate( _IOR, dot( wsRefractedView, wsNormalBack ) );					//	1) What has NOT been reflected by the back of the surface
+// 	float	Fresnel_transmitted_front = 1.0 - FresnelAccurate( 1.0 / _IOR, -dot( wsRefractedView_inside, _wsNormalFront ) );	//	2) What has NOT been reflected by the inside of the front of the surface and transmitted through to the front where it can be viewed by the camera
+	float	Fresnel_transmitted_back = 1.0 - FresnelAccurate( _IOR, saturate( dot( wsRefractedView, wsNormalBack ) ) );					//	1) What has NOT been reflected by the back of the surface
+	float	Fresnel_transmitted_front = 1.0 - FresnelAccurate( 1.0 / _IOR, saturate( -dot( wsRefractedView_inside, _wsNormalFront ) ) );	//	2) What has NOT been reflected by the inside of the front of the surface and transmitted through to the front where it can be viewed by the camera
 
 
-//float	Fresnel_transmitted_front = 1.0 - FresnelAccurate( 1.0 / _IOR, saturate( -dot( refractedView_inside, _wsNormalFront ) ) );	//	2) What has NOT been reflected by the inside of the front of the surface and transmitted through to the front where it can be viewed by the camera
+//float	Fresnel_transmitted_front = 1.0 - FresnelAccurate( 1.0 / _IOR, saturate( -dot( wsRefractedView_inside, _wsNormalFront ) ) );	//	2) What has NOT been reflected by the inside of the front of the surface and transmitted through to the front where it can be viewed by the camera
 
 
 	// Compute absorption factor based on refraction indices (eq. 21 in Walter 2007)
-	float3	Ht = normalize( -_wsView - _IOR * refractedView_inside );	// Transmitted half vector
-	float	absorptionCoeff = abs( dot( _wsView, Ht ) * dot( refractedView_inside, Ht ) ) * _IOR * _IOR
-							/ pow2( dot( _wsView, Ht ) + _IOR * dot( refractedView_inside, Ht ) );
+	float3	Ht = normalize( -_wsView - _IOR * wsRefractedView_inside );	// Transmitted half vector
+	float	absorptionCoeff = abs( dot( _wsView, Ht ) * dot( wsRefractedView_inside, Ht ) ) * _IOR * _IOR
+							/ pow2( dot( _wsView, Ht ) + _IOR * dot( wsRefractedView_inside, Ht ) );
 
-			Ht = normalize( _IOR * refractedView_inside - refractedView );	// Transmitted half vector
-			absorptionCoeff *= abs( dot( refractedView_inside, Ht ) * dot( refractedView, Ht ) )
-							/ pow2( _IOR * dot( refractedView_inside, Ht ) + dot( refractedView, Ht ) );
+			Ht = normalize( _IOR * wsRefractedView_inside - wsRefractedView );	// Transmitted half vector
+			absorptionCoeff *= abs( dot( wsRefractedView_inside, Ht ) * dot( wsRefractedView, Ht ) )
+							/ pow2( _IOR * dot( wsRefractedView_inside, Ht ) + dot( wsRefractedView, Ht ) );
 
 	absorptionCoeff = lerp( 1.0, absorptionCoeff, saturate( 1.0 * (_IOR-1.0) ) );	// This is to counterbalance the ill-behaved coeff when IOR->1
 //absorptionCoeff = 1.0;
@@ -251,18 +321,6 @@ roughness *= roughness;	// More linear feel
 	// NOTE: We could split R, G and B into 3 distinct rays depending on a RGB F0 but we need a single value here
 	float	IOR = Fresnel_IORFromF0( _GlassF0 );				// Artists control the glass's IOR by changing the "F0" value which is the "specular reflectance for dielectrics" (a single color for the entire material)
 
-	// Sample scene based on roughness
-	float	mipLevel = 4*roughness;
-
-//mipLevel = 4;
-
-	float2	UV = _pixelPos / iResolution.xy;
-			UV -= exp2( mipLevel-1 ) / iResolution.y;
-	float	backgroundDistance = _TexSource.SampleLevel( LinearClamp, float3( UV, 1 ), mipLevel ).x;
-
-//return float4( 0.1 * backgroundDistance.xxx, 0 );
-
-
 	// Compute Fresnel reflectance
 	float3	H = normalize( wsLight + wsView );
 	float	HdotN = saturate( dot( H, wsNormal ) );
@@ -284,7 +342,7 @@ roughness *= roughness;	// More linear feel
 //	float	MaxColorThickness = lerp( 1.0, _GlassThickness / (1e-4 + _GlassColoring*_GlassColoring), saturate( 2.0 * (IOR-1.0) ) );
 	float	MaxColorThickness = _GlassThickness / (1e-4 + _GlassColoring*_GlassColoring);
 
-	float3	L_transmitted = ComputeGlassColor( pos, wsNormal, wsView, backgroundDistance, transmittanceColor, _GlassCurvature, _GlassThickness, MaxColorThickness, roughness, IOR );
+	float3	L_transmitted = ComputeGlassColor( pos, wsNormal, wsView, transmittanceColor, _GlassCurvature, _GlassThickness, MaxColorThickness, roughness, IOR );
 
 //L_transmitted = 0.0;
 //transmittance = 1;
