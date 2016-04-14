@@ -79,14 +79,18 @@ namespace GenerateSelfShadowedBumpMap
 			Application.Idle += new EventHandler( Application_Idle );
 		}
 
+		bool	m_closed = false;
 		public void Exit()
 		{
+			m_closed = true;
 			m_CB_Display.Dispose();
 			m_PS_Display.Dispose();
 		}
 
-		protected override void OnFormClosing( FormClosingEventArgs e )
-		{
+		protected override void OnFormClosing( FormClosingEventArgs e ) {
+			if ( m_closed )
+				return;	// Parent form is closing
+
 			e.Cancel = true;
 			Visible = false;	// Only hide...
 			base.OnFormClosing( e );

@@ -208,7 +208,7 @@ namespace VoronoiVisualizer
 			WMath.Vector[]	Directions = null;
 			if ( radioButtonHammersley.Checked ) {
 				double[,]		Samples = m_Hammersley.BuildSequence( NeighborsCount, 2 );
-				Directions = m_Hammersley.MapSequenceToSphere( Samples, false );
+				Directions = m_Hammersley.MapSequenceToSphere( Samples );
 			} else {
 				Random	TempRNG = new Random();
 				Directions = new WMath.Vector[NeighborsCount];

@@ -786,7 +786,7 @@ throw new Exception( "More than 10% invalid pixels with inverted normals in that
 			// Build a sequence of quasi-random vectors on a sphere using Hammersley distribution
 			WMath.Hammersley	QRNG = new WMath.Hammersley();
 			double[,]			HammersleySequence = QRNG.BuildSequence( K, 2 );
-			WMath.Vector[]		InitialSetDirections = QRNG.MapSequenceToSphere( HammersleySequence, false );
+			WMath.Vector[]		InitialSetDirections = QRNG.MapSequenceToSphere( HammersleySequence );
 
 			// Determine a cosine power to focus on points in the initial spherical zone
 //			float	CosinePower = K - 1;	// A single point covers the entire sphere, we're assuming the lobe grows linearly with k...

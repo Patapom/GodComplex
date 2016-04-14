@@ -146,8 +146,12 @@ tabControlGenerators.TabPages.RemoveAt( 1 );
 			}
 		}
 
-		protected override void OnClosing( CancelEventArgs e )
-		{
+		protected override void OnFormClosing(FormClosingEventArgs e) {
+			e.Cancel = false;
+			base.OnFormClosing(e);
+		}
+
+		protected override void OnClosing( CancelEventArgs e ) {
 			try {
 				m_viewerForm.Exit();
 
@@ -168,6 +172,7 @@ tabControlGenerators.TabPages.RemoveAt( 1 );
 					m_TextureSource.Dispose();
 
 				m_Device.Dispose();
+				m_Device = null;
 			} catch ( Exception ) {
 			}
 
