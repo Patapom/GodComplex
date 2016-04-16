@@ -338,3 +338,6 @@ obj
 /Tools/TestFilmCurve/Publish/ToneMapping.rar
 /Tools/TestFilmCurve/default.xml
 /Packages/FBXImporterManaged/Release
+/Tools/GenerateAmbientOcclusionMap/Publish
+/Tools/GenerateSelfShadowedBumpMap/Publish
+/Tools/ImageSizeChecker/Publish
