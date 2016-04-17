@@ -1,4 +1,4 @@
-﻿////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 // SSBumpMap generator
 // This compute shader will generate the directional and ambient occlusion over a specific texel
 //	and store the result into a target UAV
@@ -7,6 +7,8 @@
 static const uint	MAX_THREADS = 1024;
 
 static const float	PI = 3.1415926535897932384626433832795;
+
+SamplerState LinearClamp	: register( s0 );
 
 cbuffer	CBInput : register( b0 )
 {
@@ -52,7 +54,8 @@ float	ComputeDirectionalOcclusion( float2 _TextureDimensions, float2 _PixelPosit
 				break;
 		}
 
-		float	H = _Source.Load( int3( Position.xy, 0 ) ).x;
+//		float	H = _Source.Load( int3( Position.xy, 0 ) ).x;
+		float	H = _Source.SampleLevel( LinearClamp, Position.xy / _TextureDimensions, 0 );
 // 		Occlusion *= 1.0 - saturate( _AOFactor * (H - Position.z) );	// Will get darker as soon as height map goes above ray position
 // 		if ( Occlusion < 1e-3 )
 // 			return 0.0;

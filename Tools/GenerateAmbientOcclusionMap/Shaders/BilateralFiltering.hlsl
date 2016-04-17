@@ -1,4 +1,4 @@
-﻿////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 // Bilateral Filtering
 // This compute shader applies bilateral filtering to the input height map to smooth out 
 //	noise while conserving main features.
@@ -12,8 +12,10 @@ static const uint	KERNEL_AREA = (2*THREADS_COUNT)*(2*THREADS_COUNT);
 cbuffer	CBInput : register( b0 )
 {
 	uint	_Y0;				// Start scanline for this group
-	float	_Radius;			// Bilateral filtering radius
-	float	_Tolerance;			// Bilateral filtering range tolerance
+//	float	_Radius;			// Bilateral filtering radius
+//	float	_Tolerance;			// Bilateral filtering range tolerance
+	float	_Sigma_Domain;		// = -0.5 * pow( FilteringRadius / 3.0f, -2.0 );
+	float	_Sigma_Range;		// = -0.5 * pow( RangeTolerance, -2.0 )
 	bool	_Tile;				// Tiling flag
 }
 
@@ -33,14 +35,16 @@ float2	GaussianSample( int2 _Dimensions, int2 _PixelPosition, int2 _PixelOffset,
 	float	H = _Source.Load( int3( _PixelPosition, 0 ) ).x;
 
 	// Domain filter
-	const float	SIGMA_DOMAIN = -0.5 * pow( _Radius / 3.0f, -2.0 );
+//	const float	SIGMA_DOMAIN = -0.5 * pow( _Radius / 3.0f, -2.0 );
+	const float	SIGMA_DOMAIN = _Sigma_Domain;
 	float	DomainGauss = exp( dot( _PixelOffset, _PixelOffset ) * SIGMA_DOMAIN );
 
 //DomainGauss = 1.0;
 //return DomainGauss * float2( H, 1.0 );
 
 	// Range filter
-	const float	SIGMA_RANGE = -0.5 * pow( _Tolerance, -2.0 );
+//	const float	SIGMA_RANGE = -0.5 * pow( _Tolerance, -2.0 );
+	const float	SIGMA_RANGE = _Sigma_Range;
 
 	float	Diff = abs( H - _H0 );
 	float	RangeGauss = exp( Diff*Diff * SIGMA_RANGE );
@@ -63,7 +67,7 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID )
 
 	float	H0 =  _Source.Load( uint3( PixelPosition, 0 ) ).x;
 
-	// Each thred processes 4 samples
+	// Each thread processes 4 samples
 	uint	SampleOffset = GetSampleIndex( 2*ThreadIndex );
 	int2	PixelOffset = 2*int2(ThreadIndex) - int(THREADS_COUNT);
 	gs_Samples[SampleOffset+0] = GaussianSample( Dimensions, PixelPosition, PixelOffset, H0 );					PixelOffset.x++;

@@ -63,6 +63,8 @@ namespace ImageUtility
 	// That may seem like a lot of stupid operations queued together to amount to nothing, but these are merely here to circumvent a physical
 	//  property of the screens (which should have been handled by the screen constructors a long time ago IMHO).
 	// 
+	// Addendum (2016-04-16): Stupid Patapom from the past! Gamma correction in files is NOT only to circumvent screen "problems" but mainly to
+	//	have more range in the shadow values to which the eye is more sensitive to!
 	// 
 	// The complete article you should read to make up your mind about gamma : http://http.developer.nvidia.com/GPUGems3/gpugems3_ch24.html
 	#endregion
@@ -71,27 +73,27 @@ namespace ImageUtility
 	/// The Bitmap class should be used to replace the standard System.Drawing.Bitmap
 	/// The big advantage of the Bitmap class is to accurately read back the color profile and gamma correction data stored in the image's metadata
 	/// so that, internally, the image is stored:
-	///		* As device-independent CIE XYZ (http://en.wikipedia.org/wiki/CIE_1931_color_space) format, our Profile Connection Space
-	///		* In linear space (i.e. no gamma curve is applied)
-	///		* NOT pre-multiplied alpha (you can later re-pre-multiply if needed)
+	///		• As device-independent CIE XYZ (http://en.wikipedia.org/wiki/CIE_1931_color_space) format, our Profile Connection Space
+	///		• In linear space (i.e. no gamma curve is applied)
+	///		• NOT pre-multiplied alpha (you can later re-pre-multiply if needed)
 	///	
 	/// This helps to ensure that whatever the source image format stored on disk, you always deal with a uniformized image internally.
 	/// 
 	/// Later, you can cast from the CIE XYZ device-independent format into any number of pre-defined texture profiles:
-	///		* sRGB or Linear space textures (for 8bits per component images only)
-	///		* Compressed (BC1-BC5) or uncompressed (for 8bits per component images only)
-	///		* 8-, 16-, 16F- 32- or 32F-bits per component
-	///		* Pre-multiplied alpha or not
+	///		• sRGB or Linear space textures (for 8bits per component images only)
+	///		• Compressed (BC1-BC5) or uncompressed (for 8bits per component images only)
+	///		• 8-, 16-, 16F- 32- or 32F-bits per component
+	///		• Pre-multiplied alpha or not
 	/// 
 	/// The following image formats are currently supported:
-	///		* JPG
-	///		* PNG
-	///		* TIFF
-	///		* TGA
-	///		* BMP
-	///		* GIF
-	///		* HDR
-	///		* Any RAW camera format supported by the LibRaw library
+	///		• JPG
+	///		• PNG
+	///		• TIFF
+	///		• TGA
+	///		• BMP
+	///		• GIF
+	///		• HDR
+	///		• Any RAW camera format supported by the LibRaw library
 	/// </summary>
 	/// <remarks>The Bitmap class has been tested with various formats, various bit depths and color profiles all created from Adobe Photoshop CS4 using
 	/// the "Save As" dialog and the "Save for Web & Devices" dialog box.
@@ -210,8 +212,19 @@ namespace ImageUtility
 		/// <summary>
 		/// Gets the image content stored as CIEXYZ + Alpha
 		/// </summary>
-		/// <remarks>You cannot use XYZ content directly : you must use the ColorProfile to perform color transformations</remarks>
 		public float4[,]	ContentXYZ				{ get { return m_Bitmap; } }
+
+		/// <summary>
+		/// Gets the image content as RGB using the color profile of the image as the reference transformation
+		/// </summary>
+		/// <remarks>Warning! This does a XYZ->RGB transform on the fly and is quite heavy</remarks>
+		public float4[,]	ConvertedContentRGB {
+			get {
+				float4[,]	Result = new float4[m_Width,m_Height];
+				m_ColorProfile.XYZ2RGB( m_Bitmap, Result );
+				return Result;
+			}
+		}
 
 		/// <summary>
 		/// Gets or sets the image's color profile
