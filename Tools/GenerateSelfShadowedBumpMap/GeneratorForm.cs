@@ -14,6 +14,8 @@ using System.Text;
 using System.Windows.Forms;
 using Microsoft.Win32;
 
+using RendererManaged;
+
 namespace GenerateSelfShadowedBumpMap
 {
 	public partial class GeneratorForm : Form
@@ -47,6 +49,26 @@ namespace GenerateSelfShadowedBumpMap
 			public UInt32	Tile;				// Tiling flag
 		}
 
+		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
+		public struct	CBDisplay {
+			public uint		_Width;
+			public uint		_Height;
+			public float	_Time;
+			public uint		_Flags;
+
+			public float3	_Light;
+			public float	_Height_mm;
+
+			public float3	_CameraPos;
+			public float	_Size_mm;
+
+			public float3	_CameraTarget;
+			float			__PAD;
+
+			public float3	_CameraUp;
+			float			__PAD2;
+		}
+
 		#endregion
 
 		#region FIELDS
@@ -60,20 +82,24 @@ namespace GenerateSelfShadowedBumpMap
 		private int								W, H;
 		private ImageUtility.Bitmap				m_BitmapSource = null;
 
-		internal RendererManaged.Device			m_Device = new RendererManaged.Device();
-		internal RendererManaged.Texture2D		m_TextureSource = null;
-		internal RendererManaged.Texture2D		m_TextureTarget0 = null;
-		internal RendererManaged.Texture2D		m_TextureTarget1 = null;
-		internal RendererManaged.Texture2D		m_TextureTarget_CPU = null;
+		internal Device							m_Device = new Device();
+		internal Texture2D						m_TextureSource = null;
+		internal Texture2D						m_TextureTarget0 = null;
+		internal Texture2D						m_TextureTarget1 = null;
+		internal Texture2D						m_TextureTarget_CPU = null;
 
 		// SSBump Generation
-		private RendererManaged.ConstantBuffer<CBInput>						m_CB_Input;
-		private RendererManaged.StructuredBuffer<RendererManaged.float3>	m_SB_Rays = null;
-		private RendererManaged.ComputeShader								m_CS_GenerateSSBumpMap = null;
+		private ConstantBuffer<CBInput>			m_CB_Input;
+		private StructuredBuffer<float3>		m_SB_Rays = null;
+		private ComputeShader					m_CS_GenerateSSBumpMap = null;
 
 		// Bilateral filtering pre-processing
 		private RendererManaged.ConstantBuffer<CBFilter>	m_CB_Filter;
 		private RendererManaged.ComputeShader	m_CS_BilateralFilter = null;
+
+		// Display
+		public ConstantBuffer<CBDisplay>		m_CB_Display;
+		public Shader							m_PS_Display;
 
 		private ImageUtility.ColorProfile		m_LinearProfile = new ImageUtility.ColorProfile( ImageUtility.ColorProfile.Chromaticities.sRGB, ImageUtility.ColorProfile.GAMMA_CURVE.STANDARD, 1.0f );
 		private ImageUtility.Bitmap				m_BitmapResult = null;
@@ -118,23 +144,28 @@ tabControlGenerators.TabPages.RemoveAt( 1 );
 			try {
 				m_Device.Init( m_viewerForm.Handle, false, true );
 
-				m_viewerForm.Init();
-
 				// Create our compute shaders
 				#if DEBUG
-					m_CS_BilateralFilter = new RendererManaged.ComputeShader( m_Device, new RendererManaged.ShaderFile( new System.IO.FileInfo( "./Shaders/BilateralFiltering.hlsl" ) ), "CS", null );
-					m_CS_GenerateSSBumpMap = new RendererManaged.ComputeShader( m_Device, new RendererManaged.ShaderFile( new System.IO.FileInfo( "./Shaders/GenerateSSBumpMap.hlsl" ) ), "CS", null );
+					m_CS_BilateralFilter = new ComputeShader( m_Device, new ShaderFile( new System.IO.FileInfo( "./Shaders/BilateralFiltering.hlsl" ) ), "CS", null );
+					m_CS_GenerateSSBumpMap = new ComputeShader( m_Device, new ShaderFile( new System.IO.FileInfo( "./Shaders/GenerateSSBumpMap.hlsl" ) ), "CS", null );
+					m_PS_Display = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "./Shaders/Display.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 				#else
-					m_CS_BilateralFilter = RendererManaged.ComputeShader.CreateFromBinaryBlob( m_Device, new System.IO.FileInfo( "./Shaders/Binary/BilateralFiltering.fxbin" ), "CS" );
-					m_CS_GenerateSSBumpMap = RendererManaged.ComputeShader.CreateFromBinaryBlob( m_Device, new System.IO.FileInfo( "./Shaders/Binary/GenerateSSBumpMap.fxbin" ), "CS" );
+					m_CS_BilateralFilter = ComputeShader.CreateFromBinaryBlob( m_Device, new System.IO.FileInfo( "./Shaders/Binary/BilateralFiltering.fxbin" ), "CS" );
+					m_CS_GenerateSSBumpMap = ComputeShader.CreateFromBinaryBlob( m_Device, new System.IO.FileInfo( "./Shaders/Binary/GenerateSSBumpMap.fxbin" ), "CS" );
+					m_PS_Display = Shader.CreateFromBinaryBlob( m_Device, new System.IO.FileInfo( "./Shaders/Display.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS" );
 				#endif
+
 
 				// Create our constant buffers
 				m_CB_Input = new RendererManaged.ConstantBuffer<CBInput>( m_Device, 0 );
 				m_CB_Filter = new RendererManaged.ConstantBuffer<CBFilter>( m_Device, 0 );
 
+				m_CB_Display = new ConstantBuffer<CBDisplay>( m_Device, 0 );
+				m_CB_Display.m._Width = (uint) m_viewerForm.Width;
+				m_CB_Display.m._Height = (uint) m_viewerForm.Height;
+
 				// Create our structured buffer containing the rays
-				m_SB_Rays = new RendererManaged.StructuredBuffer<RendererManaged.float3>( m_Device, 3 * MAX_THREADS, true );
+				m_SB_Rays = new RendererManaged.StructuredBuffer<RendererManaged.float3>( m_Device, 3*MAX_THREADS, true );
 				integerTrackbarControlRaysCount_SliderDragStop( integerTrackbarControlRaysCount, 0 );
 
 //				LoadHeightMap( new System.IO.FileInfo( "eye_generic_01_disp.png" ) );
@@ -153,14 +184,14 @@ tabControlGenerators.TabPages.RemoveAt( 1 );
 
 		protected override void OnClosing( CancelEventArgs e ) {
 			try {
-				m_viewerForm.Exit();
-
-				m_CS_GenerateSSBumpMap.Dispose();
-				m_CS_BilateralFilter.Dispose();
-
 				m_SB_Rays.Dispose();
+				m_CB_Display.Dispose();
 				m_CB_Filter.Dispose();
 				m_CB_Input.Dispose();
+
+				m_PS_Display.Dispose();
+				m_CS_GenerateSSBumpMap.Dispose();
+				m_CS_BilateralFilter.Dispose();
 
 				if ( m_TextureTarget_CPU != null )
 					m_TextureTarget_CPU.Dispose();
@@ -173,8 +204,14 @@ tabControlGenerators.TabPages.RemoveAt( 1 );
 
 				m_Device.Dispose();
 				m_Device = null;
-			} catch ( Exception ) {
+
+			} catch ( Exception _e ) {
+				MessageBox( "Failed to close:\r\n", _e );
 			}
+
+// FFS!!!
+System.Diagnostics.Process	P = System.Diagnostics.Process.GetCurrentProcess();
+P.Kill();
 
 			e.Cancel = false;
 			base.OnClosing( e );
@@ -702,7 +739,7 @@ tabControlGenerators.TabPages.RemoveAt( 1 );
 			return Result;
 		}
 
-		private DialogResult	MessageBox( string _Text )
+		public DialogResult	MessageBox( string _Text )
 		{
 			return MessageBox( _Text, MessageBoxButtons.OK );
 		}

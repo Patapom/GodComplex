@@ -111,9 +111,9 @@ namespace GenerateSelfShadowedBumpMap
 			catch ( Exception _e ) {
 				Console.WriteLine( "Unexpected argument parsing error: " + _e.Message + "\r\n\r\n"
 					+ "Usage: GenerateAmbientOcclusionMap.exe"
-					+ " [-height \"path/to/heightmap\"]"
+					+ " -height \"path/to/heightmap\""
+					+ " -ao \"path/to/target/aomap\""
 					+ " [-normal \"path/to/normalmap\"]"
-					+ " [-ao \"path/to/target/aomap\"]"
 					+ " [-texSize <physical texture size, in centimeters>]"
 					+ " [-dispSize <displacement size encoded by height map, in centimeters>]"
 					+ " [-raysCount <amount of rays per pixel>]"

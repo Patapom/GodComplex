@@ -429,7 +429,7 @@
 			this.outputPanelInputHeightMap.Name = "outputPanelInputHeightMap";
 			this.outputPanelInputHeightMap.Size = new System.Drawing.Size(512, 512);
 			this.outputPanelInputHeightMap.TabIndex = 0;
-			this.outputPanelInputHeightMap.ViewLinear = false;
+			this.outputPanelInputHeightMap.ViewLinear = true;
 			this.outputPanelInputHeightMap.Click += new System.EventHandler(this.outputPanelInputHeightMap_Click);
 			this.outputPanelInputHeightMap.DragDrop += new System.Windows.Forms.DragEventHandler(this.outputPanelInputHeightMap_DragDrop);
 			this.outputPanelInputHeightMap.DragEnter += new System.Windows.Forms.DragEventHandler(this.outputPanelInputHeightMap_DragEnter);
