@@ -14,25 +14,7 @@ namespace GenerateSelfShadowedBumpMap
 {
 	public partial class ViewerForm : Form
 	{
-		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
-		private struct	CBDisplay {
-			public uint		_Width;
-			public uint		_Height;
-			public float	_Time;
-			public uint		_Flags;
-			public float3	_Light;
-			public float	_Height_mm;
-			public float3	_CameraPos;
-			public float	_Size_mm;
-			public float3	_CameraTarget;
-			float			__PAD;
-			public float3	_CameraUp;
-		}
-
 		private GeneratorForm				m_Owner;
-
-		private ConstantBuffer<CBDisplay>	m_CB_Display;
-		private Shader						m_PS_Display;
 
 		private DateTime					m_StartTime = DateTime.Now;
 
@@ -54,19 +36,6 @@ namespace GenerateSelfShadowedBumpMap
 		{
 			InitializeComponent();
 			m_Owner = _Owner;
-		}
-
-		public void Init()
-		{
-			#if DEBUG
-				m_PS_Display = new Shader( Device, new ShaderFile( new System.IO.FileInfo( "./Shaders/Display.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
-			#else
-				m_PS_Display = Shader.CreateFromBinaryBlob( Device, new System.IO.FileInfo( "./Shaders/Display.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS" );
-			#endif
-
-			m_CB_Display = new ConstantBuffer<CBDisplay>( Device, 0 );
-			m_CB_Display.m._Width = (uint) Width;
-			m_CB_Display.m._Height = (uint) Height;
 
 			// Setup camera
 			m_Camera.CreatePerspectiveCamera( (float) (60.0 * Math.PI / 180.0), (float) Width / Height, 0.01f, 100.0f );
@@ -74,23 +43,12 @@ namespace GenerateSelfShadowedBumpMap
 			m_Manipulator.InitializeCamera( new float3( 0, 1, 1 ), new float3( 0, 0, 0 ), float3.UnitY );
 			m_Camera.CameraTransformChanged += new EventHandler( Camera_CameraTransformChanged );
 			m_Manipulator.EnableMouseAction += new CameraManipulator.EnableMouseActionEventHandler( m_Manipulator_EnableMouseAction );
-			Camera_CameraTransformChanged( m_Manipulator, EventArgs.Empty );
+//			Camera_CameraTransformChanged( m_Manipulator, EventArgs.Empty );
 
 			Application.Idle += new EventHandler( Application_Idle );
 		}
 
-		bool	m_closed = false;
-		public void Exit()
-		{
-			m_closed = true;
-			m_CB_Display.Dispose();
-			m_PS_Display.Dispose();
-		}
-
 		protected override void OnFormClosing( FormClosingEventArgs e ) {
-			if ( m_closed )
-				return;	// Parent form is closing
-
 			e.Cancel = true;
 			Visible = false;	// Only hide...
 			base.OnFormClosing( e );
@@ -103,9 +61,9 @@ namespace GenerateSelfShadowedBumpMap
 
 		void Camera_CameraTransformChanged( object sender, EventArgs e )
 		{
-			m_CB_Display.m._CameraPos = m_Manipulator.CameraPosition;
-			m_CB_Display.m._CameraTarget = m_Manipulator.TargetPosition;
-			m_CB_Display.m._CameraUp = (float3) m_Camera.Camera2World.r1;
+			m_Owner.m_CB_Display.m._CameraPos = m_Manipulator.CameraPosition;
+			m_Owner.m_CB_Display.m._CameraTarget = m_Manipulator.TargetPosition;
+			m_Owner.m_CB_Display.m._CameraUp = (float3) m_Camera.Camera2World.r1;
 		}
 
 		void Application_Idle( object sender, EventArgs e )
@@ -115,32 +73,32 @@ namespace GenerateSelfShadowedBumpMap
 
 			// Update constants
 			DateTime	CurrentTime = DateTime.Now;
-			m_CB_Display.m._Time = (float) (CurrentTime - m_StartTime).TotalSeconds;
+			m_Owner.m_CB_Display.m._Time = (float) (CurrentTime - m_StartTime).TotalSeconds;
 
-//			m_CB_Display.m._Light = new float3( m_LightDistance * (float) (Math.Sin( m_LightTheta ) * Math.Sin( m_LightPhi )), m_LightDistance * (float) Math.Cos( m_LightTheta ), m_LightDistance * (float) (Math.Sin( m_LightTheta ) * Math.Cos( m_LightPhi )) );
-			m_CB_Display.m._Light = m_LightPos;
+//			m_Owner.m_CB_Display.m._Light = new float3( m_LightDistance * (float) (Math.Sin( m_LightTheta ) * Math.Sin( m_LightPhi )), m_LightDistance * (float) Math.Cos( m_LightTheta ), m_LightDistance * (float) (Math.Sin( m_LightTheta ) * Math.Cos( m_LightPhi )) );
+			m_Owner.m_CB_Display.m._Light = m_LightPos;
 
 // 			const float	CAMERA_ANGLE = 45.0f * (float) Math.PI / 180.0f;
-// 			m_CB_Display.m._CameraPos = new float3( 0.0f, m_CameraDistance * (float) Math.Sin( CAMERA_ANGLE ), m_CameraDistance * (float) Math.Cos( CAMERA_ANGLE ) );
+// 			m_Owner.m_CB_Display.m._CameraPos = new float3( 0.0f, m_CameraDistance * (float) Math.Sin( CAMERA_ANGLE ), m_CameraDistance * (float) Math.Cos( CAMERA_ANGLE ) );
 
-			m_CB_Display.m._Height_mm = m_Owner.TextureHeight_mm;
-			m_CB_Display.m._Size_mm = m_Owner.TextureSize_mm;
-			m_CB_Display.UpdateData();
+			m_Owner.m_CB_Display.m._Height_mm = m_Owner.TextureHeight_mm;
+			m_Owner.m_CB_Display.m._Size_mm = m_Owner.TextureSize_mm;
+			m_Owner.m_CB_Display.UpdateData();
 
 			// Render
 			Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
 			Device.SetRenderTarget( Device.DefaultTarget, null );
 
-			if ( m_PS_Display.Use() ) {
+			if ( m_Owner.m_PS_Display.Use() ) {
 
-				m_CB_Display.m._Flags &= ~1U;
+				m_Owner.m_CB_Display.m._Flags &= ~1U;
  				if ( m_Owner.m_TextureTarget1 != null ) {
  					m_Owner.m_TextureTarget0.SetPS( 0 );
  					m_Owner.m_TextureTarget1.SetPS( 1 );
-					m_CB_Display.m._Flags |= 1U;
+					m_Owner.m_CB_Display.m._Flags |= 1U;
 				}
 
-				Device.RenderFullscreenQuad( m_PS_Display );
+				Device.RenderFullscreenQuad( m_Owner.m_PS_Display );
 			}
 
 			Device.Present( false );
@@ -194,9 +152,9 @@ namespace GenerateSelfShadowedBumpMap
 		private void ViewerForm_KeyDown( object sender, KeyEventArgs e )
 		{
 			if ( e.KeyCode == Keys.Return )
-				m_CB_Display.m._Flags ^= 2U;
+				m_Owner.m_CB_Display.m._Flags ^= 2U;
 			else if ( e.KeyCode == Keys.Back )
-				m_CB_Display.m._Flags ^= 4U;
+				m_Owner.m_CB_Display.m._Flags ^= 4U;
 		}
 	}
 }

@@ -41,14 +41,11 @@ float	ComputeDirectionalOcclusion( float2 _TextureDimensions, float2 _PixelPosit
 	{
 		Position += _Dir;	
 		if ( Position.z >= 1.0 )
-			break;
+			break;	// The ray escaped...
 
-		if ( _Tile )
-		{
+		if ( _Tile ) {
 			Position.xy = fmod( Position.xy + _TextureDimensions, _TextureDimensions );
-		}
-		else
-		{
+		} else {
 			if (	Position.x < 0 || Position.x >= _TextureDimensions.x
 				||	Position.y < 0 || Position.y >= _TextureDimensions.y )
 				break;
@@ -61,7 +58,7 @@ float	ComputeDirectionalOcclusion( float2 _TextureDimensions, float2 _PixelPosit
 // 			return 0.0;
 
  		if ( H > Position.z )
-    		return 0.0;
+    		return 0.0;	// Occlusion!
 	}
 
 	return Occlusion;
@@ -74,14 +71,14 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID )
 
 	uint	RayIndex = _GroupThreadID.x;
 
-	if ( RayIndex < _RaysCount )
-	{
-		float2	fPixelPosition = PixelPosition;
+	if ( RayIndex < _RaysCount ) {
+		float2	fPixelPosition = 0.5 + PixelPosition;
 
 		uint2	Dimensions;
 		_Source.GetDimensions( Dimensions.x, Dimensions.y );
 
 		float	H0 = _Source.Load( int3( PixelPosition, 0 ) ).x;
+				H0 += 1e-3;	// Avoid acnea on flat surfaces
 
 // 		// Offset start position by normal
 // 		float	Hx0 = _Source.Load( int3( PixelPosition-uint2(1,0), 0 ) ).x;
