@@ -102,6 +102,17 @@ namespace GenerateSelfShadowedBumpMap
  			m_AppKey = Registry.CurrentUser.CreateSubKey( @"Software\GodComplex\AOMapGenerator" );
 			m_ApplicationPath = System.IO.Path.GetDirectoryName( Application.ExecutablePath );
 
+// N.Silvagni test with Adobe RGB
+//			ImageUtility.Bitmap	Test = new ImageUtility.Bitmap( 1, 1, new ImageUtility.ColorProfile( ImageUtility.ColorProfile.STANDARD_PROFILE.sRGB ) );
+//			Test.ContentXYZ[0,0] = Test.Profile.RGB2XYZ( new ImageUtility.float4( 0, 1, 0, 1 ) );
+//			ImageUtility.ColorProfile	AdobeProfile = new ImageUtility.ColorProfile( ImageUtility.ColorProfile.STANDARD_PROFILE.ADOBE_RGB_D65 );
+//			ImageUtility.ColorProfile	AdobeProfile2 = new ImageUtility.ColorProfile( ImageUtility.ColorProfile.STANDARD_PROFILE.ADOBE_RGB_D50 );
+//
+//
+//			ImageUtility.float4	Glou0 = AdobeProfile.XYZ2RGB( Test.ContentXYZ[0,0] );
+//			ImageUtility.float4	Glou1 = AdobeProfile2.XYZ2RGB( Test.ContentXYZ[0,0] );
+//			ImageUtility.float4	Glou2 = Test.Profile.XYZ2RGB( Test.ContentXYZ[0,0] );
+
 			#if DEBUG
 				buttonReload.Visible = true;
 			#endif

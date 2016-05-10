@@ -341,3 +341,6 @@ obj
 /Tools/GenerateAmbientOcclusionMap/Publish
 /Tools/GenerateSelfShadowedBumpMap/Publish
 /Tools/ImageSizeChecker/Publish
+/Packages/FBXImporterManaged/Release (SDK v2011.3.1)
+/Packages/FBXImporterManaged/Debug (SDK v2011.3.1)
+/Packages/FBXImporterManaged/Release
