@@ -120,7 +120,6 @@ public:	 // METHODS
 	void	SetRenderTarget( const Texture3D& _Target, const Texture2D* _pDepthStencil=NULL, const D3D11_VIEWPORT* _pViewport=NULL );
 	void	SetRenderTarget( int _Width, int _Height, const ID3D11RenderTargetView& _Target, ID3D11DepthStencilView* _pDepthStencil=NULL, const D3D11_VIEWPORT* _pViewport=NULL );
 	void	SetRenderTargets( int _Width, int _Height, int _TargetsCount, ID3D11RenderTargetView* const * _ppTargets, ID3D11DepthStencilView* _pDepthStencil=NULL, const D3D11_VIEWPORT* _pViewport=NULL );
-	void	RemoveRenderTargets();
 	void	SetStates( RasterizerState* _pRasterizerState, DepthStencilState* _pDepthStencilState, BlendState* _pBlendState );
 	void	SetStatesReferences( const float4& _BlendMasks, U32 _BlendSampleMask, U8 _StencilRef );
 	void	SetScissorRect( const D3D11_RECT* _pScissor=NULL );
@@ -129,6 +128,9 @@ public:	 // METHODS
 	// Useful to cleanup textures that may otherwise be considered as required by shaders that don't really need them.
 	// Helps to clear up resource contention for draw calls
 	void	RemoveShaderResources( int _SlotIndex, int _SlotsCount=1, U32 _ShaderStages=SSF_ALL );
+
+	void	RemoveRenderTargets();
+	void	RemoveUAVs();
 
 private:
 

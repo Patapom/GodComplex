@@ -410,6 +410,13 @@ void	Device::RemoveRenderTargets()
 	m_pDeviceContext->OMSetRenderTargets( 8, ppEmpty, NULL );
 }
 
+void	Device::RemoveUAVs() {
+	static ID3D11UnorderedAccessView*	ppEmpty[8] = { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, };
+	UINT	pInitialCount[8] = { -1 };
+	m_pDeviceContext->OMSetRenderTargetsAndUnorderedAccessViews( D3D11_KEEP_RENDER_TARGETS_AND_DEPTH_STENCIL, NULL, NULL, 0, 8, ppEmpty, pInitialCount );
+	m_pDeviceContext->CSSetUnorderedAccessViews( 0, 8, ppEmpty, pInitialCount );
+}
+
 void	Device::SetStates( RasterizerState* _pRasterizerState, DepthStencilState* _pDepthStencilState, BlendState* _pBlendState )
 {
 	if ( _pRasterizerState != NULL && _pRasterizerState != m_pCurrentRasterizerState )

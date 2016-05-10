@@ -55,14 +55,27 @@ namespace ShaderToy
 			public float4x4		_OldCamera2NewCamera;
 		}
 
+		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
+		private struct CB_Downsample {
+			public uint			_depthBufferSizeX;
+			public uint			_depthBufferSizeY;
+		}
+
 		private ConstantBuffer<CB_Main>		m_CB_Main = null;
 		private ConstantBuffer<CB_Camera>	m_CB_Camera = null;
+		private ConstantBuffer<CB_Downsample>	m_CB_Downsample = null;
 		private Shader						m_Shader = null;
 		private Shader						m_Shader_Glass = null;
-		private Shader						m_ShaderDownsample = null;
+//		private Shader						m_ShaderDownsample = null;
+		private ComputeShader				m_ShaderDownsampleCS = null;
 		private Shader						m_ShaderPostProcess = null;
+
 		private Texture2D					m_Tex_TempBuffer = null;
 		private Texture2D					m_Tex_TempBuffer2 = null;
+
+		private Texture2D					m_Tex_LinearDepth = null;
+		private Texture2D					m_Tex_DownsampledDepth = null;
+
 		private Primitive					m_Prim_Quad = null;
 
 		private Camera						m_Camera = new Camera();
@@ -373,15 +386,21 @@ namespace ShaderToy
 			BuildQuad();
 
 			try {
-				m_ShaderDownsample = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/Downsample.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+//				m_ShaderDownsample = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/Downsample.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+				m_ShaderDownsampleCS = new ComputeShader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/DownsampleCS.hlsl" ) ), "CS", null );
 				m_ShaderPostProcess = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/PostProcess.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 
 //				m_Shader = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/Airlight.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 //				m_Shader = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/VoronoiInterpolation.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 //				m_Shader = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/Room.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 
+#if false
+				m_Shader = Shader.CreateFromBinaryBlob( m_Device, new System.IO.FileInfo( "Shaders/Binary/TestMSBRDF2.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS" );
+				m_Shader_Glass = Shader.CreateFromBinaryBlob( m_Device, new System.IO.FileInfo( "Shaders/TestMSBRDF_Glass.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS" );
+#else
 				m_Shader = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/TestMSBRDF2.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 				m_Shader_Glass = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/TestMSBRDF_Glass.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+#endif
 			}
 			catch ( Exception _e ) {
 				MessageBox.Show( "Shader failed to compile!\n\n" + _e.Message, "ShaderToy", MessageBoxButtons.OK, MessageBoxIcon.Error );
@@ -390,9 +409,16 @@ namespace ShaderToy
 
 			m_CB_Main = new ConstantBuffer<CB_Main>( m_Device, 0 );
 			m_CB_Camera = new ConstantBuffer<CB_Camera>( m_Device, 1 );
+			m_CB_Downsample = new ConstantBuffer<CB_Downsample>( m_Device, 2 );
 
-			m_Tex_TempBuffer = new Texture2D( m_Device, panelOutput.Width, panelOutput.Height, 2, 0, PIXEL_FORMAT.RGBA16_FLOAT, false, false, null );
-			m_Tex_TempBuffer2 = new Texture2D( m_Device, panelOutput.Width, panelOutput.Height, 2, 0, PIXEL_FORMAT.RGBA16_FLOAT, false, false, null );
+			m_Tex_TempBuffer = new Texture2D( m_Device, panelOutput.Width, panelOutput.Height, 2, 1, PIXEL_FORMAT.RGBA32_FLOAT, false, false, null );
+			m_Tex_TempBuffer2 = new Texture2D( m_Device, panelOutput.Width, panelOutput.Height, 2, 1, PIXEL_FORMAT.RGBA32_FLOAT, false, false, null );
+
+			// Build linear and downsampled depth buffers
+			m_Tex_LinearDepth = new Texture2D( m_Device, panelOutput.Width, panelOutput.Height, 1, 1, PIXEL_FORMAT.R32_FLOAT, false, true, null );
+			int	safeWidth = ((panelOutput.Width + 15) & ~15) >> 1;
+			int	safeHeight = ((panelOutput.Height + 15) & ~15) >> 1;
+			m_Tex_DownsampledDepth = new Texture2D( m_Device, safeWidth, safeHeight, 1, 4, PIXEL_FORMAT.RGBA16_FLOAT, false, true, null );
 
 			// Initialize Voronoï neighbor positions
 			m_CB_Main.m._MainPosition = new float2( 0.0f, 0.0f );
@@ -413,22 +439,26 @@ namespace ShaderToy
 			m_StartGameTime = GetGameTime();
 		}
 
-		protected override void OnFormClosed( FormClosedEventArgs e )
-		{
+		protected override void OnFormClosed( FormClosedEventArgs e ) {
 			if ( m_Device == null )
 				return;
 
+			m_CB_Downsample.Dispose();
 			m_CB_Camera.Dispose();
 			m_CB_Main.Dispose();
+
+			m_Tex_DownsampledDepth.Dispose();
+			m_Tex_LinearDepth.Dispose();
 
 			m_Tex_TempBuffer2.Dispose();
 			m_Tex_TempBuffer.Dispose();
 
 			if ( m_Shader != null ) {
-				m_ShaderPostProcess.Dispose();
-				m_ShaderDownsample.Dispose();
 				m_Shader_Glass.Dispose();
 				m_Shader.Dispose();
+				m_ShaderPostProcess.Dispose();
+//				m_ShaderDownsample.Dispose();
+				m_ShaderDownsampleCS.Dispose();
 			}
 			m_Prim_Quad.Dispose();
 
@@ -501,16 +531,40 @@ namespace ShaderToy
 				m_Device.Clear( new float4( 1.0f, 0, 0, 0 ) );
 			}
 
-			// Perform buffer downsampling
-			if ( m_ShaderDownsample.Use() ) {
-				for ( int mipLevel=1; mipLevel < m_Tex_TempBuffer.MipLevelsCount; mipLevel++ ) {
-					View2D	sourceView = m_Tex_TempBuffer.GetView( mipLevel-1, 1, 0, 0 );
-					View2D	targetView0 = m_Tex_TempBuffer.GetView( mipLevel, 1, 0, 1 );
-					View2D	targetView1 = m_Tex_TempBuffer.GetView( mipLevel, 1, 1, 1 );
-					m_Device.SetRenderTargets( targetView0.Width, targetView0.Height, new IView[] { targetView0, targetView1 }, null );
-					m_Tex_TempBuffer.Set( 0, sourceView );
-					m_Prim_Quad.Render( m_ShaderDownsample );
-				}
+			// Perform depth buffer linearizing and downsampling
+// 			if ( m_ShaderDownsample.Use() ) {
+// 				for ( int mipLevel=1; mipLevel < m_Tex_TempBuffer.MipLevelsCount; mipLevel++ ) {
+// 					View2D	sourceView = m_Tex_TempBuffer.GetView( mipLevel-1, 1, 0, 0 );
+// 					View2D	targetView0 = m_Tex_TempBuffer.GetView( mipLevel, 1, 0, 1 );
+// 					View2D	targetView1 = m_Tex_TempBuffer.GetView( mipLevel, 1, 1, 1 );
+// 					m_Device.SetRenderTargets( targetView0.Width, targetView0.Height, new IView[] { targetView0, targetView1 }, null );
+// 					m_Tex_TempBuffer.Set( 0, sourceView );
+// 					m_Prim_Quad.Render( m_ShaderDownsample );
+// 				}
+// 			}
+			if ( m_ShaderDownsampleCS.Use() ) {
+				int	width = m_Tex_TempBuffer.Width;
+				int	height = m_Tex_TempBuffer.Height;
+				int	groupsCountX = (width + 15) >> 4;
+				int	groupsCountY = (height + 15) >> 4;
+
+				m_Device.RemoveRenderTargets();	// So we can bind it as input
+
+				m_Tex_TempBuffer.SetCS( 0, m_Tex_TempBuffer.GetView( 0, 1, 1, 1 ) );
+				m_Tex_LinearDepth.SetCSUAV( 0 );
+				m_Tex_DownsampledDepth.SetCSUAV( 1, m_Tex_DownsampledDepth.GetView( 0, 1, 0, 1 ) );
+				m_Tex_DownsampledDepth.SetCSUAV( 2, m_Tex_DownsampledDepth.GetView( 1, 1, 0, 1 ) );
+				m_Tex_DownsampledDepth.SetCSUAV( 3, m_Tex_DownsampledDepth.GetView( 2, 1, 0, 1 ) );
+				m_Tex_DownsampledDepth.SetCSUAV( 4, m_Tex_DownsampledDepth.GetView( 3, 1, 0, 1 ) );
+
+				m_CB_Downsample.m._depthBufferSizeX = (uint) width;
+				m_CB_Downsample.m._depthBufferSizeY = (uint) height;
+				m_CB_Downsample.UpdateData();
+
+				m_ShaderDownsampleCS.Dispatch( groupsCountX, groupsCountY, 1 );
+
+//				m_Tex_LinearDepth.RemoveFromLastAssignedSlotUAV();
+				m_Device.RemoveUAVs();
 			}
 
 			// Render transparents
@@ -520,6 +574,8 @@ namespace ShaderToy
 //s				m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.PREMULTIPLIED_ALPHA );
 
 				m_Tex_TempBuffer.Set( 0, m_Tex_TempBuffer.GetView( 0, 0, 0, 0 ) );
+				m_Tex_LinearDepth.Set( 1 );
+				m_Tex_DownsampledDepth.Set( 2 );
 
 				m_CB_Main.m._GlassThickness = Math.Max( 1e-2f, floatTrackbarControlGlassThickness.Value );
 				m_CB_Main.m._GlassColoring = floatTrackbarControlGlassColoringFactor.Value;
@@ -539,11 +595,14 @@ namespace ShaderToy
 			if ( m_ShaderPostProcess.Use() ) {
 				m_Device.SetRenderTarget( m_Device.DefaultTarget, null );
 
-				m_Tex_TempBuffer2.SetPS( 0 );
+//				m_Tex_TempBuffer2.SetPS( 0 );
+				m_Tex_TempBuffer.SetPS( 0 );
 
 				m_Prim_Quad.Render( m_ShaderPostProcess );
 
 				m_Tex_TempBuffer.RemoveFromLastAssignedSlots();
+				m_Tex_LinearDepth.RemoveFromLastAssignedSlots();
+				m_Tex_DownsampledDepth.RemoveFromLastAssignedSlots();
 			}
 
 			// Show!

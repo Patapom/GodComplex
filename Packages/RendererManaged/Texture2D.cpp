@@ -34,13 +34,14 @@ namespace RendererManaged {
 		m_pTexture = new ::Texture2D( *_Device->m_pDevice, _Width, _Height, *pDescriptor, _ArraySize );
 	}
 
-	void	Texture2D::Set( int _SlotIndex, View2D^ _view )		{ m_pTexture->Set( _SlotIndex, true, _view != nullptr ? _view->SRV : NULL ); }
-	void	Texture2D::SetVS( int _SlotIndex, View2D^ _view )	{ m_pTexture->SetVS( _SlotIndex, true, _view != nullptr ? _view->SRV : NULL ); }
-	void	Texture2D::SetHS( int _SlotIndex, View2D^ _view )	{ m_pTexture->SetHS( _SlotIndex, true, _view != nullptr ? _view->SRV : NULL ); }
-	void	Texture2D::SetDS( int _SlotIndex, View2D^ _view )	{ m_pTexture->SetDS( _SlotIndex, true, _view != nullptr ? _view->SRV : NULL ); }
-	void	Texture2D::SetGS( int _SlotIndex, View2D^ _view )	{ m_pTexture->SetGS( _SlotIndex, true, _view != nullptr ? _view->SRV : NULL ); }
-	void	Texture2D::SetPS( int _SlotIndex, View2D^ _view )	{ m_pTexture->SetPS( _SlotIndex, true, _view != nullptr ? _view->SRV : NULL ); }
-	void	Texture2D::SetCS( int _SlotIndex, View2D^ _view )	{ m_pTexture->SetCS( _SlotIndex, true, _view != nullptr ? _view->SRV : NULL ); }
+	void	Texture2D::Set( int _SlotIndex, View2D^ _view )			{ m_pTexture->Set( _SlotIndex, true, _view != nullptr ? _view->SRV : NULL ); }
+	void	Texture2D::SetVS( int _SlotIndex, View2D^ _view )		{ m_pTexture->SetVS( _SlotIndex, true, _view != nullptr ? _view->SRV : NULL ); }
+	void	Texture2D::SetHS( int _SlotIndex, View2D^ _view )		{ m_pTexture->SetHS( _SlotIndex, true, _view != nullptr ? _view->SRV : NULL ); }
+	void	Texture2D::SetDS( int _SlotIndex, View2D^ _view )		{ m_pTexture->SetDS( _SlotIndex, true, _view != nullptr ? _view->SRV : NULL ); }
+	void	Texture2D::SetGS( int _SlotIndex, View2D^ _view )		{ m_pTexture->SetGS( _SlotIndex, true, _view != nullptr ? _view->SRV : NULL ); }
+	void	Texture2D::SetPS( int _SlotIndex, View2D^ _view )		{ m_pTexture->SetPS( _SlotIndex, true, _view != nullptr ? _view->SRV : NULL ); }
+	void	Texture2D::SetCS( int _SlotIndex, View2D^ _view )		{ m_pTexture->SetCS( _SlotIndex, true, _view != nullptr ? _view->SRV : NULL ); }
+	void	Texture2D::SetCSUAV( int _SlotIndex, View2D^ _view )	{ m_pTexture->SetCSUAV( _SlotIndex, _view != nullptr ? _view->UAV : NULL ); }
 
 
 	int								View2D::Width::get() { return m_Owner->Width; }

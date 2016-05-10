@@ -94,7 +94,8 @@ namespace RendererManaged {
 		void	SetRenderTarget( Texture2D^ _RenderTarget, Texture2D^ _DepthStencilTarget );
 		void	SetRenderTargets( int _Width, int _Height, cli::array<IView^>^ _RenderTargetViews, Texture2D^ _DepthStencilTarget );
 
-		void	RemoveRenderTargets() { m_pDevice->RemoveRenderTargets(); }
+		void	RemoveRenderTargets()	{ m_pDevice->RemoveRenderTargets(); }
+		void	RemoveUAVs()			{ m_pDevice->RemoveUAVs(); }
 
 		void	RenderFullscreenQuad( Shader^ _Shader );
 

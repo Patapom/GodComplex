@@ -182,18 +182,19 @@ _wsOutgoingDirection = float3( _wsOutgoingDirection.x, -_wsOutgoingDirection.z, 
 	return  L * intensity * _albedo*_albedo * (sigma2 + _albedo*sigma3);
 }
 
-float3 render( in float3 ro, in float3 rd, bool _useModel, out float _distance ) { 
+float3 render( in float3 ro, in float3 rd, bool _useModel, out float3 _normal, out float _distance ) { 
 	float3	col = float3(0.7, 0.9, 1.0) + rd.y*0.8;	// Sky color
 	float2	res = castRay(ro,rd);
 	float	t = res.x;
 	float	m = res.y;
+	_normal = float3( 0, 1, 0 );
 	_distance = t;
 	if( m <= -0.5 )
 		return saturate( col );
 
 	float3 pos = ro + t*rd;
-	float3 nor = calcNormal( pos );
-	float3 ref = reflect( rd, nor );
+	_normal = calcNormal( pos );
+	float3 ref = reflect( rd, _normal );
         
 	// material        
 	float3	albedo = 0.45 + 0.3*sin( float3(0.05,0.08,0.10)*(m-1.0) );
@@ -207,17 +208,17 @@ float3 render( in float3 ro, in float3 rd, bool _useModel, out float _distance )
 	}
 
 	// lighting        
-	float	occ = calcAO( pos, nor );
+	float	occ = calcAO( pos, _normal );
 	float3	lig = normalize( float3(-0.6, 0.7, -0.5) );
 	float3	lig2 = normalize(float3(-lig.x,0.0,-lig.z));	// For backlighting
 	float3	lightIntensity = 1.2 * float3(1.0,0.85,0.55);
 	float3	lightIntensity2 = 0.3;// * float3(1.0,0.85,0.55);
 
-	float	amb = saturate( 0.5+0.5*nor.y );
-	float	LdotN = saturate( dot( nor, lig ) );
-	float	LdotN2 = saturate( dot( nor, lig2 ) ) * saturate( 1.0-pos.y );
+	float	amb = saturate( 0.5+0.5*_normal.y );
+	float	LdotN = saturate( dot( _normal, lig ) );
+	float	LdotN2 = saturate( dot( _normal, lig2 ) ) * saturate( 1.0-pos.y );
 	float	dom = smoothstep( -0.1, 0.1, ref.y );
-	float	fre = pow( saturate( 1.0+dot(nor,rd) ), 2.0 );
+	float	fre = pow( saturate( 1.0+dot(_normal,rd) ), 2.0 );
 	float	spe = pow( saturate( dot( ref, lig ) ), 16.0 );
         
 	float	shadow = softshadow( pos, lig, 0.02, 2.5 );
@@ -295,7 +296,7 @@ float3x3 setCamera( in float3 ro, in float3 ta, float cr )
 
 struct PS_OUT {
 	float4	Color : SV_TARGET0;
-	float4	Depth : SV_TARGET1;
+	float4	NormalDepth : SV_TARGET1;
 };
 
 PS_OUT PS( VS_IN _In ) {
@@ -332,8 +333,16 @@ PS_OUT PS( VS_IN _In ) {
 
 	// Render
 	PS_OUT	Out;
+	float3	normal;
 	float	distance;
-	Out.Color = float4( render( ro, rd, useModel, distance ), distance );
-	Out.Depth = distance;
+	Out.Color = float4( render( ro, rd, useModel, normal, distance ), distance );
+//	Out.NormalDepth = float4( normal, _In.__Position.z );	// SV_Position.z = post-perspective Z/W  |  SV_Position.w = 1/W
+
+	float4	projPosition = mul( float4( ro + distance * rd, 1.0 ), _World2Proj );
+	Out.NormalDepth = float4( normal, projPosition.z / projPosition.w );
+
+//	float4	csPosition = mul( float4( ro + distance * rd, 1.0 ), _World2Camera );
+//	Out.NormalDepth = float4( normal, csPosition.z );
+
 	return Out;
 }

@@ -100,7 +100,8 @@ namespace RendererManaged {
 		void		RemoveFromLastAssignedSlots()	{ m_pTexture->RemoveFromLastAssignedSlots(); }
 
 		// Upload the texture as a UAV for a compute shader
-		void		SetCSUAV( int _SlotIndex )		{ m_pTexture->SetCSUAV( _SlotIndex ); }
+		void		SetCSUAV( int _SlotIndex )					{ m_pTexture->SetCSUAV( _SlotIndex ); }
+		void		SetCSUAV( int _SlotIndex, View2D^ _view  );
 		void		RemoveFromLastAssignedSlotUAV()	{ m_pTexture->RemoveFromLastAssignedSlotUAV(); }
 
 	internal:

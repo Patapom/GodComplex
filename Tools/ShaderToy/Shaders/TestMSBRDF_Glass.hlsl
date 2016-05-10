@@ -2,6 +2,8 @@
 #include "Includes/DistanceFieldHelpers.hlsl"
 
 Texture2DArray<float4>	_TexSource : register(t0);
+Texture2D<float>		_TexLinearDepth : register(t1);
+Texture2D<float4>		_TexDownsampledDepth : register(t2);
 
 static const float	TAN_HALF_FOV = 0.57735026918962576450914878050196;	// tan( 60° / 2 )
 
@@ -418,8 +420,9 @@ float3	PS( VS_IN _In ) : SV_TARGET0 {
 	bool	useModel = _DebugFlags & 2;// && UV.x > _MousePosition.x;
 
 
-	float	backgroundDistance = _TexSource[uint3( _In.__Position.xy, 1 )].x;
-	float3	backgroundColor = _TexSource[uint3( _In.__Position.xy, 0 )].xyz;
+	float4	background = _TexSource[uint3( _In.__Position.xy, 0 )];
+	float3	backgroundColor = background.xyz;
+	float	backgroundDistance = background.w;
 
 	float	distance;
 	float4	Color = render( _In.__Position.xy, backgroundDistance, ro, rd, useModel, distance );
