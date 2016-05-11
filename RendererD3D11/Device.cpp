@@ -15,8 +15,7 @@ Device::Device()
 	, m_pCurrentBlendState( NULL )
 	, m_BlendFactors( 1, 1, 1, 1 )
 	, m_BlendMasks( ~0 )
-	, m_StencilRef( 0 )
-{
+	, m_StencilRef( 0 ) {
 }
 
 int		Device::ComponentsCount() const

@@ -1,5 +1,4 @@
 // RendererManaged.h
-
 #pragma once
 
 #pragma unmanaged

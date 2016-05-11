@@ -1,6 +1,7 @@
 #pragma once
 #include "Renderer.h"
 
+
 //#define NSIGHT			// Define this if you're debugging the app using Nvidia Nsight
 
 //#define DIRECTX10		// Define this to use DX10, otherwise DX11 will be used
