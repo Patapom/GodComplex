@@ -14,36 +14,45 @@ cbuffer CB_Downsample : register(b2) {
 	uint2	_depthBufferSize;
 };
 
-Texture2D<float4>	_texDepthBuffer				: register(t0);	// SRV, projected depth
-RWTexture2D<float>	_texDepthBufferUAV			: register(u0);	// UAV, full-res linear depth in [ZNear, ZFar]
-RWTexture2D<float4>	_downsampledDepthBufferMip0	: register(u1);	// UAV, half-res average/min/max depth
-RWTexture2D<float4>	_downsampledDepthBufferMip1	: register(u2);	// UAV, quarter-res average/min/max depth
-RWTexture2D<float4>	_downsampledDepthBufferMip2	: register(u3);	// UAV, 1/8th average/min/max depth
-RWTexture2D<float4>	_downsampledDepthBufferMip3	: register(u4);	// UAV, 1/16th average/min/max depth
+Texture2D<float>	_texDepthBuffer				: register(t0);	// SRV, linear depth
+RWTexture2D<float4>	_downsampledDepthBufferMip0	: register(u0);	// UAV, half-res average/min/max depth
+RWTexture2D<float4>	_downsampledDepthBufferMip1	: register(u1);	// UAV, quarter-res average/min/max depth
+RWTexture2D<float4>	_downsampledDepthBufferMip2	: register(u2);	// UAV, 1/8th average/min/max depth
+RWTexture2D<float4>	_downsampledDepthBufferMip3	: register(u3);	// UAV, 1/16th average/min/max depth
+
 
 float	ComputeLinearZ( float _projZ ) {
 	float	temp = _Proj2Camera[2].w * _projZ + _Proj2Camera[3].w;
 	return _projZ / temp;
 }
 
+//////////////////////////////////////////////////////////////////////////////////////////////
+// Actual downsampling
 groupshared float4	gs_Samples[NUMTHREADX * NUMTHREADY];
 
 [numthreads( NUMTHREADX, NUMTHREADY, 1 )]
 void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, uint3 _DispatchThreadID : SV_DISPATCHTHREADID ) {
-
 	uint2	position = _DispatchThreadID.xy;				// Pixel position
 			position = min( position, _depthBufferSize-1 );	// Clamp to avoid fetching crap
 
-	// Linearizes the projected [0,1] Z coordinates to [Znear, Zfar] range
-	float	rawZ = _texDepthBuffer.Load( uint3( position, 0 ) ).w;		// Depth is stored in the W component
-	float4	linearZ = float4( 0.0, ComputeLinearZ( rawZ ).xx, 0.0 );	// Notice that X component is not available until we make sure we're in image range
-	if ( all( _DispatchThreadID.xy < _depthBufferSize ) ) {
-		// Only write if we're in range
-		linearZ.x = linearZ.y;											// Make X component available for averaging, so out of range values are only accounted for min/max-ing, but not averaging
-		_texDepthBufferUAV[position] = linearZ.x;
-	}
+	#if 1
+		// ======================================================================
+		// Full-res sampling
+		float	linearZ = _texDepthBuffer.Load( uint3( position, 0 ) );		// Original size linear Z
 
- 	// ======================================================================
+	#else
+		// ======================================================================
+		// Linearizes the projected [0,1] Z coordinates to [Znear, Zfar] range
+		float	rawZ = _texDepthBuffer.Load( uint3( position, 0 ) ).w;		// Depth is stored in the W component
+		float4	linearZ = float4( 0.0, ComputeLinearZ( rawZ ).xx, 0.0 );	// Notice that X component is not available until we make sure we're in image range
+		if ( all( _DispatchThreadID.xy < _depthBufferSize ) ) {
+			// Only write if we're in range
+			linearZ.x = linearZ.y;											// Make X component available for averaging, so out of range values are only accounted for min/max-ing, but not averaging
+			_texDepthBufferUAV[position] = linearZ.x;
+		}
+	#endif
+
+	// ======================================================================
 	// Build thread indices so each thread addresses groups of 2x2 pixels in shared memory
 	uint2	threadPos = _GroupThreadID.xy;	// Thread position within group
 	uint	threadIndex = NUMTHREADY * threadPos.y + threadPos.x;
@@ -52,6 +61,11 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 	uint	threadIndex01 = threadIndex00 + 1;			// Right pixel
 	uint	threadIndex11 = threadIndex01 + NUMTHREADX;	// Bottom-Right pixel
 	uint	threadIndex10 = threadIndex11 - 1;			// Bottom pixel
+
+// threadIndex00 = threadIndex;
+// threadIndex01 = threadIndex + 16;
+// threadIndex11 = threadIndex;
+// threadIndex10 = threadIndex;
 
 	gs_Samples[threadIndex] = linearZ;	// Write to shared memory for gathering later
 
@@ -62,8 +76,8 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
  	// ======================================================================
 	// Compute mip 0 (half res of original buffer)
 	// This is the first mip for which we can build average, min and max Z values...
-	if ( all( threadPos < 8 ) ) {
-		// Threads in range { [0,8[, [0,8[ } will each span 4 samples in range { [0,16[, [0,16[ }
+	if ( all( threadPos < 8U ) ) {
+		// Threads in range [{0,0},{8,8}[ will each span 4 samples in range [{0,0},{16,16}[
 		float4	ZAvgMinMax00 = gs_Samples[threadIndex00];
 		float4	ZAvgMinMax01 = gs_Samples[threadIndex01];
 		float4	ZAvgMinMax11 = gs_Samples[threadIndex11];
@@ -87,8 +101,8 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 
  	// ======================================================================
 	// Compute mip 1 (quarter res of original buffer)
-	if ( all( threadPos < 4 ) ) {
-		// Threads in range { [0,4[, [0,4[ } will each span 4 samples in range { [0,8[, [0,8[ }
+	if ( all( threadPos < 4U ) ) {
+		// Threads in range [{0,0},{4,4}[ will each span 4 samples in range [{0,0},{8,8}[
 		float4	ZAvgMinMax00 = gs_Samples[threadIndex00];
 		float4	ZAvgMinMax01 = gs_Samples[threadIndex01];
 		float4	ZAvgMinMax11 = gs_Samples[threadIndex11];
@@ -112,8 +126,8 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 
  	// ======================================================================
 	// Compute mip 2 (1/8th res of original buffer)
-	if ( all( threadPos < 2 ) ) {
-		// Threads in range { [0,2[, [0,2[ } will each span 4 samples in range { [0,4[, [0,4[ }
+	if ( all( threadPos < 2U ) ) {
+		// Threads in range [{0,0},{2,2}[ will each span 4 samples in range [{0,0},{4,4}[
 		float4	ZAvgMinMax00 = gs_Samples[threadIndex00];
 		float4	ZAvgMinMax01 = gs_Samples[threadIndex01];
 		float4	ZAvgMinMax11 = gs_Samples[threadIndex11];
@@ -138,7 +152,7 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
  	// ======================================================================
 	// Compute mip 3 (1/16th res of original buffer)
 	if ( threadIndex == 0 ) {
-		// Thread 0 will each span 4 samples in range { [0,2[, [0,2[ }
+		// Thread 0 will each span 4 samples in range [{0,0},{2,2}[
 		float4	ZAvgMinMax00 = gs_Samples[threadIndex00];
 		float4	ZAvgMinMax01 = gs_Samples[threadIndex01];
 		float4	ZAvgMinMax11 = gs_Samples[threadIndex11];

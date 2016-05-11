@@ -67,6 +67,7 @@ namespace ShaderToy
 		private Shader						m_Shader = null;
 		private Shader						m_Shader_Glass = null;
 //		private Shader						m_ShaderDownsample = null;
+		private ComputeShader				m_ShaderLinearizeDepthCS = null;
 		private ComputeShader				m_ShaderDownsampleCS = null;
 		private Shader						m_ShaderPostProcess = null;
 
@@ -387,6 +388,7 @@ namespace ShaderToy
 
 			try {
 //				m_ShaderDownsample = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/Downsample.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+				m_ShaderLinearizeDepthCS = new ComputeShader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/LinearizeCS.hlsl" ) ), "CS", null );
 				m_ShaderDownsampleCS = new ComputeShader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/DownsampleCS.hlsl" ) ), "CS", null );
 				m_ShaderPostProcess = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/PostProcess.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 
@@ -459,6 +461,7 @@ namespace ShaderToy
 				m_ShaderPostProcess.Dispose();
 //				m_ShaderDownsample.Dispose();
 				m_ShaderDownsampleCS.Dispose();
+				m_ShaderLinearizeDepthCS.Dispose();
 			}
 			m_Prim_Quad.Dispose();
 
@@ -542,28 +545,42 @@ namespace ShaderToy
 // 					m_Prim_Quad.Render( m_ShaderDownsample );
 // 				}
 // 			}
+
+			m_CB_Downsample.m._depthBufferSizeX = (uint) m_Tex_TempBuffer.Width;
+			m_CB_Downsample.m._depthBufferSizeY = (uint) m_Tex_TempBuffer.Height;
+			m_CB_Downsample.UpdateData();
+
+			if ( m_ShaderLinearizeDepthCS.Use() ) {
+				int	width = m_Tex_TempBuffer.Width;
+				int	height = m_Tex_TempBuffer.Height;
+				int	groupsCountX = (width + 7) >> 3;
+				int	groupsCountY = (height + 7) >> 3;
+
+				m_Device.RemoveRenderTargets();	// So we can bind it as input
+
+				m_Tex_TempBuffer.SetCS( 0, m_Tex_TempBuffer.GetView( 0, 1, 1, 1 ) );
+				m_Tex_LinearDepth.SetCSUAV( 0 );
+
+				m_ShaderLinearizeDepthCS.Dispatch( groupsCountX, groupsCountY, 1 );
+
+				m_Tex_LinearDepth.RemoveFromLastAssignedSlotUAV();
+			}
+
 			if ( m_ShaderDownsampleCS.Use() ) {
 				int	width = m_Tex_TempBuffer.Width;
 				int	height = m_Tex_TempBuffer.Height;
 				int	groupsCountX = (width + 15) >> 4;
 				int	groupsCountY = (height + 15) >> 4;
 
-				m_Device.RemoveRenderTargets();	// So we can bind it as input
-
-				m_Tex_TempBuffer.SetCS( 0, m_Tex_TempBuffer.GetView( 0, 1, 1, 1 ) );
-				m_Tex_LinearDepth.SetCSUAV( 0 );
-				m_Tex_DownsampledDepth.SetCSUAV( 1, m_Tex_DownsampledDepth.GetView( 0, 1, 0, 1 ) );
-				m_Tex_DownsampledDepth.SetCSUAV( 2, m_Tex_DownsampledDepth.GetView( 1, 1, 0, 1 ) );
-				m_Tex_DownsampledDepth.SetCSUAV( 3, m_Tex_DownsampledDepth.GetView( 2, 1, 0, 1 ) );
-				m_Tex_DownsampledDepth.SetCSUAV( 4, m_Tex_DownsampledDepth.GetView( 3, 1, 0, 1 ) );
-
-				m_CB_Downsample.m._depthBufferSizeX = (uint) width;
-				m_CB_Downsample.m._depthBufferSizeY = (uint) height;
-				m_CB_Downsample.UpdateData();
+//				m_Tex_TempBuffer.SetCS( 0, m_Tex_TempBuffer.GetView( 0, 1, 1, 1 ) );
+				m_Tex_LinearDepth.SetCS( 0 );
+				m_Tex_DownsampledDepth.SetCSUAV( 0, m_Tex_DownsampledDepth.GetView( 0, 1, 0, 1 ) );
+				m_Tex_DownsampledDepth.SetCSUAV( 1, m_Tex_DownsampledDepth.GetView( 1, 1, 0, 1 ) );
+				m_Tex_DownsampledDepth.SetCSUAV( 2, m_Tex_DownsampledDepth.GetView( 2, 1, 0, 1 ) );
+				m_Tex_DownsampledDepth.SetCSUAV( 3, m_Tex_DownsampledDepth.GetView( 3, 1, 0, 1 ) );
 
 				m_ShaderDownsampleCS.Dispatch( groupsCountX, groupsCountY, 1 );
 
-//				m_Tex_LinearDepth.RemoveFromLastAssignedSlotUAV();
 				m_Device.RemoveUAVs();
 			}
 
