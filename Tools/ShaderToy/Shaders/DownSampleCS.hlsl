@@ -7,8 +7,8 @@
 //
 #include "Includes/Global.hlsl"
 
-#define	NUMTHREADX	8
-#define	NUMTHREADY	8
+#define	NUMTHREADX	16
+#define	NUMTHREADY	16
 
 cbuffer CB_Downsample : register(b2) {
 	uint2	_depthBufferSize;
