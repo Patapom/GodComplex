@@ -389,7 +389,7 @@ namespace ShaderToy
 			try {
 //				m_ShaderDownsample = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/Downsample.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 				m_ShaderLinearizeDepthCS = new ComputeShader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/LinearizeCS.hlsl" ) ), "CS", null );
-				m_ShaderDownsampleCS = new ComputeShader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/DownsampleCS.hlsl" ) ), "CS", null );
+				m_ShaderDownsampleCS = new ComputeShader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/DownsampleCS2.hlsl" ) ), "CS", null );
 				m_ShaderPostProcess = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/PostProcess.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 
 //				m_Shader = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/Airlight.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
@@ -570,7 +570,14 @@ namespace ShaderToy
 				int	width = m_Tex_TempBuffer.Width;
 				int	height = m_Tex_TempBuffer.Height;
 
-				#if true	// 16x16 thread groups version (4 mips) PROBLEMS! :(
+				#if false	// 16x16 thread groups version (4 mips) PROBLEMS! :(
+					int	groupsCountX = (width + 15) >> 4;	// Assuming 16x16 threads per group
+					int	groupsCountY = (height + 15) >> 4;
+					m_Tex_DownsampledDepth.SetCSUAV( 0, m_Tex_DownsampledDepth.GetView( 0, 1, 0, 1 ) );
+					m_Tex_DownsampledDepth.SetCSUAV( 1, m_Tex_DownsampledDepth.GetView( 1, 1, 0, 1 ) );
+					m_Tex_DownsampledDepth.SetCSUAV( 2, m_Tex_DownsampledDepth.GetView( 2, 1, 0, 1 ) );
+					m_Tex_DownsampledDepth.SetCSUAV( 3, m_Tex_DownsampledDepth.GetView( 3, 1, 0, 1 ) );
+				#elif true		// 8x8 threads per group, each thread processes 4 texels (4 mips) OK!
 					int	groupsCountX = (width + 15) >> 4;	// Assuming 16x16 threads per group
 					int	groupsCountY = (height + 15) >> 4;
 					m_Tex_DownsampledDepth.SetCSUAV( 0, m_Tex_DownsampledDepth.GetView( 0, 1, 0, 1 ) );

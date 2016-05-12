@@ -36,7 +36,9 @@ Depth = _TexSource.SampleLevel( LinearClamp, float3( UV, 1.0 ), 1.0 );
 uint	mipLevel = 2;
 uint2	pixelPos = _In.__Position.xy;
 		pixelPos >>= mipLevel;
-return 0.1 * (mipLevel > 0 ? _TexDownsampledDepth.mips[mipLevel-1][pixelPos].xyz : _TexLinearDepth.SampleLevel( LinearClamp, UV, 0.0 ));
+float3	V = mipLevel > 0 ? _TexDownsampledDepth.mips[mipLevel-1][pixelPos].xyz : _TexLinearDepth.SampleLevel( LinearClamp, UV, 0.0 );
+//return 1.0 * (V.z - V.y);
+return 0.1 * V;
 
 	return Color;
 }
