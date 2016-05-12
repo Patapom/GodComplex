@@ -569,15 +569,17 @@ namespace ShaderToy
 			if ( m_ShaderDownsampleCS.Use() ) {
 				int	width = m_Tex_TempBuffer.Width;
 				int	height = m_Tex_TempBuffer.Height;
-				int	groupsCountX = (width + 15) >> 4;
-				int	groupsCountY = (height + 15) >> 4;
+// 				int	groupsCountX = (width + 15) >> 4;	// Assuming 16x16 threads per group
+// 				int	groupsCountY = (height + 15) >> 4;
+				int	groupsCountX = (width + 7) >> 3;	// Assuming 8x8 threads per group
+				int	groupsCountY = (height + 7) >> 3;
 
 //				m_Tex_TempBuffer.SetCS( 0, m_Tex_TempBuffer.GetView( 0, 1, 1, 1 ) );
 				m_Tex_LinearDepth.SetCS( 0 );
-				m_Tex_DownsampledDepth.SetCSUAV( 0, m_Tex_DownsampledDepth.GetView( 0, 1, 0, 1 ) );
-				m_Tex_DownsampledDepth.SetCSUAV( 1, m_Tex_DownsampledDepth.GetView( 1, 1, 0, 1 ) );
-				m_Tex_DownsampledDepth.SetCSUAV( 2, m_Tex_DownsampledDepth.GetView( 2, 1, 0, 1 ) );
-				m_Tex_DownsampledDepth.SetCSUAV( 3, m_Tex_DownsampledDepth.GetView( 3, 1, 0, 1 ) );
+				m_Tex_DownsampledDepth.SetCSUAV( 1, m_Tex_DownsampledDepth.GetView( 0, 1, 0, 1 ) );
+				m_Tex_DownsampledDepth.SetCSUAV( 2, m_Tex_DownsampledDepth.GetView( 1, 1, 0, 1 ) );
+				m_Tex_DownsampledDepth.SetCSUAV( 3, m_Tex_DownsampledDepth.GetView( 2, 1, 0, 1 ) );
+//				m_Tex_DownsampledDepth.SetCSUAV( 3, m_Tex_DownsampledDepth.GetView( 3, 1, 0, 1 ) );
 
 				m_ShaderDownsampleCS.Dispatch( groupsCountX, groupsCountY, 1 );
 

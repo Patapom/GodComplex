@@ -7,8 +7,8 @@
 //
 #include "Includes/Global.hlsl"
 
-#define	NUMTHREADX	16
-#define	NUMTHREADY	16
+#define	NUMTHREADX	8
+#define	NUMTHREADY	8
 
 cbuffer CB_Downsample : register(b2) {
 	uint2	_depthBufferSize;
@@ -62,14 +62,7 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 	uint	threadIndex11 = threadIndex01 + NUMTHREADX;	// Bottom-Right pixel
 	uint	threadIndex10 = threadIndex11 - 1;			// Bottom pixel
 
-// threadIndex00 = threadIndex;
-// threadIndex01 = threadIndex + 16;
-// threadIndex11 = threadIndex;
-// threadIndex10 = threadIndex;
-
 	gs_Samples[threadIndex] = linearZ;	// Write to shared memory for gathering later
-
-//gs_Samples[threadIndex] = float4( threadPos, 0, 0 );
 
 	GroupMemoryBarrierWithGroupSync();	// We wait until all samples from the group are available
 
