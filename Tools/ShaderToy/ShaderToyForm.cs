@@ -61,9 +61,15 @@ namespace ShaderToy
 			public uint			_depthBufferSizeY;
 		}
 
+		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
+		private struct CB_PostProcess {
+			public float2		_UVFactor;
+		}
+
 		private ConstantBuffer<CB_Main>		m_CB_Main = null;
 		private ConstantBuffer<CB_Camera>	m_CB_Camera = null;
 		private ConstantBuffer<CB_Downsample>	m_CB_Downsample = null;
+		private ConstantBuffer<CB_PostProcess>	m_CB_PostProcess = null;
 		private Shader						m_Shader = null;
 		private Shader						m_Shader_Glass = null;
 //		private Shader						m_ShaderDownsample = null;
@@ -396,7 +402,7 @@ namespace ShaderToy
 //				m_Shader = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/VoronoiInterpolation.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 //				m_Shader = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/Room.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 
-#if false
+#if true
 				m_Shader = Shader.CreateFromBinaryBlob( m_Device, new System.IO.FileInfo( "Shaders/Binary/TestMSBRDF2.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS" );
 				m_Shader_Glass = Shader.CreateFromBinaryBlob( m_Device, new System.IO.FileInfo( "Shaders/TestMSBRDF_Glass.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS" );
 #else
@@ -412,6 +418,7 @@ namespace ShaderToy
 			m_CB_Main = new ConstantBuffer<CB_Main>( m_Device, 0 );
 			m_CB_Camera = new ConstantBuffer<CB_Camera>( m_Device, 1 );
 			m_CB_Downsample = new ConstantBuffer<CB_Downsample>( m_Device, 2 );
+			m_CB_PostProcess = new ConstantBuffer<CB_PostProcess>( m_Device, 2 );
 
 			m_Tex_TempBuffer = new Texture2D( m_Device, panelOutput.Width, panelOutput.Height, 2, 1, PIXEL_FORMAT.RGBA32_FLOAT, false, false, null );
 			m_Tex_TempBuffer2 = new Texture2D( m_Device, panelOutput.Width, panelOutput.Height, 2, 1, PIXEL_FORMAT.RGBA32_FLOAT, false, false, null );
@@ -433,7 +440,7 @@ namespace ShaderToy
 			// Setup camera
 			m_Camera.CreatePerspectiveCamera( (float) (60.0 * Math.PI / 180.0), (float) panelOutput.Width / panelOutput.Height, 0.01f, 100.0f );
 			m_Manipulator.Attach( panelOutput, m_Camera );
-			m_Manipulator.InitializeCamera( new float3( 0, 1, -2.5f ), new float3( 0, 1, 0 ), float3.UnitY );
+			m_Manipulator.InitializeCamera( new float3( 0, 0.5f, 2.5f ), new float3( 0, 0.5f, 0 ), float3.UnitY );
 
 			// Start game time
 			m_Ticks2Seconds = 1.0 / System.Diagnostics.Stopwatch.Frequency;
@@ -445,6 +452,7 @@ namespace ShaderToy
 			if ( m_Device == null )
 				return;
 
+			m_CB_PostProcess.Dispose();
 			m_CB_Downsample.Dispose();
 			m_CB_Camera.Dispose();
 			m_CB_Main.Dispose();
@@ -631,6 +639,10 @@ namespace ShaderToy
 
 //				m_Tex_TempBuffer2.SetPS( 0 );
 				m_Tex_TempBuffer.SetPS( 0 );
+
+				m_CB_PostProcess.m._UVFactor.Set(	(float) m_Tex_TempBuffer.Width / (2.0f * m_Tex_DownsampledDepth.Width),
+													(float) m_Tex_TempBuffer.Height / (2.0f * m_Tex_DownsampledDepth.Height) );
+				m_CB_PostProcess.UpdateData();
 
 				m_Prim_Quad.Render( m_ShaderPostProcess );
 

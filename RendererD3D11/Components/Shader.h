@@ -121,15 +121,15 @@ private:	// FIELDS
 
 	bool					m_bHasErrors;
 
-#ifndef GODCOMPLEX
-	ShaderConstants			m_VSConstants;
-	ShaderConstants			m_HSConstants;
-	ShaderConstants			m_DSConstants;
-	ShaderConstants			m_GSConstants;
-	ShaderConstants			m_PSConstants;
+	#ifndef GODCOMPLEX
+		ShaderConstants			m_VSConstants;
+		ShaderConstants			m_HSConstants;
+		ShaderConstants			m_DSConstants;
+		ShaderConstants			m_GSConstants;
+		ShaderConstants			m_PSConstants;
 
-	Dictionary<const char*>	m_Pointer2FileName;
-#endif
+		Dictionary<const char*>	m_Pointer2FileName;
+	#endif
 
 
 public:

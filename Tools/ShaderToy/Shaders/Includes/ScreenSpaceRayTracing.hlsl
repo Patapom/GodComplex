@@ -28,7 +28,7 @@ float ComputeSceneZThickness( float _sceneZMin, float4 _zThicknessFactors, float
 //	_UV, the normalized UV coordinates where the hit occurred
 // Returns a blend factor in [0,1] to blend the reflection with default sky reflection
 //
-float	ScreenSpaceRayTrace( float3 _csPosition, float3 _csDirection, float _RayLength, Texture2D<float4> _TexDownsampledDepth, uint2 _TexSize, float4x4 _Camera2Proj, uint _MaxStepsCount, out float _HitDistance, out float2 _UV ) {
+float	ScreenSpaceRayTrace( float3 _csPosition, float3 _csDirection, float _RayLength, Texture2D<float4> _TexDownsampledDepth, uint2 _TexSize, float4x4 _Camera2Proj, uint _MaxStepsCount, out float _HitDistance, out float2 _UV, out float3 _DEBUG ) {
 
 	_HitDistance = 0.0;
 	_UV = 0.0;
@@ -52,43 +52,51 @@ const float		ZThicknessPow = 1.0;
 	H0.xy = float2( 0.5 * (1.0 + H0.x), 0.5 * (1.0 - H0.y) );
 	H1.xy = float2( 0.5 * (1.0 + H1.x), 0.5 * (1.0 - H1.y) );
 
-	H0.xy *= _TexSize;	// In pixels
+H0.xy = saturate( H0.xy );
+H1.xy = saturate( H1.xy );
+
+	H0.xy *= _TexSize;	// Now in pixels
 	H1.xy *= _TexSize;
 
 	float2	Delta = H1.xy - H0.xy;
 	float	PixelsCount = max( abs( Delta.x ), abs( Delta.y ) );
 
-	float4	P0 = float4( H0, _csPosition.z * k0, k0 );
-	float4	P1 = float4( H1, csEndPos.z * k1, k1 );
+	float4	P0 = float4( H0.xy, _csPosition.z * k0, k0 );			// We compose our screen-interpolable "P" as { XY=Pixel index, Z=Z/W, W=1/W }
+	float4	P1 = float4( H1.xy, csEndPos.z * k1, k1 );
 
-	float4	Slope = (P1 - P0) / PixelsCount;						// Slope, with at least one of the 2 components equal to +1 or -1
+	float4	Slope = (P1 - P0) / PixelsCount;						// Slope, with at least one of the 2 XY components equal to +1 or -1 (so adding the slope makes us advance an entire pixel)
 	float2	BorderOffset = float2(	Slope.x > 0.0 ? 1.0 : 0.0,		// If we're tracing to the right, then the next pixel border is +1, otherwise it's 0
 									Slope.y > 0.0 ? 1.0 : 0.0 );	// If we're tracing to the bottom, then the next pixel border is +1, otherwise it's 0
 
-	float2	InvSlope = abs( Slope );
-			InvSlope = sign( Slope ) / max( 1e-6, InvSlope );
+
+_DEBUG = float3( Slope.xy, 0 );
+_DEBUG = float3( Delta.xy, 0 );
+_DEBUG = float3( H0.xy / _TexSize, 0 );
+_DEBUG = float3( H1.xy / _TexSize, 0 );
+return 0.0;
+
+
+	float2	InvSlope = abs( Slope.xy );
+			InvSlope = sign( Slope.xy ) / max( 1e-6, InvSlope );
 
 	uint	MipLevel = SSR_MIP_MAX;			// Start at coaresest mip
 	float	PixelSize = 1U << MipLevel;		// That's the size of a pixel at this mip
 	float	ScaleFactor = 1.0 / PixelSize;	// That's the scale factor to apply to a mip 0 pixel to obtain its position in the current mip's pixel
 
-	float2	PixelPos = ScaleFactor * P0;
-	float2	PixelBorder = floor( PixelPos ) + BorderOffset;	// This is our target boundary
-	float2	Distance2Border = PixelBorder - PixelPos;
-
-	uint	StepsCount = min( PixelsCount, _MaxStepsCount );
-	uint	StepIndex = 0;
+	uint	StepsCount = min( ceil( PixelsCount ), _MaxStepsCount );
+	uint	StepIndex = 0U;
 	bool	InInterval = false;
 
-	while ( stepIndex < StepsCount ) {
+	while ( StepIndex < StepsCount ) {
 
 		// Sample at current position & current mip
-		float3	ZAvgMinMax = _TexDownsampledDepth.mips[MipLevel][uint2(PixelPos)].xyz;
+		float2	PixelPos = ScaleFactor * P0.xy;
+		float3	ZAvgMinMax = _TexDownsampledDepth.mips[MipLevel][uint2(PixelPos)].xyz;						// Assuming we're receiving X=Average Z, Y=Min Z, Z=Max Z, W=unused
 				ZAvgMinMax.z = ComputeSceneZThickness( ZAvgMinMax.z, ZThicknessFactors, ZThicknessPow );	// Grow the interval with artificial scene thickness
 
 		// Check if we're in the thickness interval
 		float	Z = P0.z / P0.w;
-		bool	InInterval = Z >= ZAvgMinMax.y && Z <= ZAvgMinMax.z;
+		InInterval = Z >= ZAvgMinMax.y && Z <= ZAvgMinMax.z;
 		if ( InInterval ) {
 			if ( MipLevel == 0U ) {
 				// We have an intersection at finest mip!
@@ -101,40 +109,32 @@ const float		ZThicknessPow = 1.0;
 			PixelSize *= 0.5;	// Smaller pixels
 			ScaleFactor *= 2.0;	// Larger scale
 
-			// Recompute pixel position and next intersection border
-			PixelPos = ScaleFactor * P0.xy;
-			PixelBorder = floor( PixelPos ) + BorderOffset;
-			Distance2Border = PixelBorder - PixelPos;
-
 			// We can't march yet as we don't know if we intersect something in finer mip!
 			continue;
 		}
 
 		// No intersection!
 		// It means we can safely march forward a full pixel!
+		float2	PixelBorder = floor( PixelPos ) + BorderOffset;
+		float2	Distance2Border = PixelBorder - PixelPos;
 		float2	T = Distance2Border * InvSlope;	// "Time" to intersect, on both X and Y, to reach either next left/right pixel, or top/bottom pixel
 		float	t = min( T.x, T.y );			// Choose the closest intersection
 
 		P0 += t * PixelSize * Slope;
-		PixelPos += t * Slope.xy;
-		PixelBorder = floor( PixelPos ) + BorderOffset;
-		Distance2Border = PixelBorder - PixelPos;
-//		StepIndex++;			// Count actual steps
-		StepIndex += PixelSize;	// Or count actual pixels on screen
 
+		StepIndex++;			// Count actual steps
+//		StepIndex += PixelSize;	// Or count actual pixels on screen
 
 		// Attempt to trace at coarser resolution (faster steps)
 		if ( MipLevel < SSR_MIP_MAX ) {
 			MipLevel++;
 			PixelSize *= 2.0;	// Larger pixels
 			ScaleFactor *= 0.5;	// Smaller scale
-
-			// Recompute pixel position and next intersection border
-			PixelPos = ScaleFactor * P0.xy;
-			PixelBorder = floor( PixelPos ) + BorderOffset;
-			Distance2Border = PixelBorder - PixelPos;
 		}
 	}
+
+	// Recompute hit distance and UVs
+
 
 	return InInterval ? 1.0 : 0.0;
 }

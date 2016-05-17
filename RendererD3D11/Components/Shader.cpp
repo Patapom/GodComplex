@@ -125,21 +125,20 @@ Shader::Shader( Device& _Device, const char* _pShaderFileName, const IVertexForm
 	CompileShaders( NULL, _pVS, _pHS, _pDS, _pGS, _pPS );
 }
 
-Shader::~Shader()
-{
-#ifdef MATERIAL_COMPILE_THREADED
-	// Destroy mutex
-	CloseHandle( m_hCompileMutex );
-#endif
+Shader::~Shader() {
+	#ifdef MATERIAL_COMPILE_THREADED
+		// Destroy mutex
+		CloseHandle( m_hCompileMutex );
+	#endif
 
-#ifdef _DEBUG
-	// Unregister as a watched shader
-	if ( m_pShaderFileName != NULL )
-	{
-		ms_WatchedShaders.Remove( m_pShaderFileName );
-		delete[] m_pShaderFileName;
-	}
-#endif
+	#ifdef _DEBUG
+		// Unregister as a watched shader
+		if ( m_pShaderFileName != NULL )
+		{
+			ms_WatchedShaders.Remove( m_pShaderFileName );
+			delete[] m_pShaderFileName;
+		}
+	#endif
 
 	if ( m_pShaderPath != NULL )	{ delete[] m_pShaderPath; m_pShaderPath = NULL; }
 	if ( m_pVertexLayout != NULL )	{ m_pVertexLayout->Release(); m_pVertexLayout = NULL; }
@@ -151,159 +150,168 @@ Shader::~Shader()
 	if ( m_pMacros != NULL )		{ delete[] m_pMacros; m_pMacros = NULL; }
 }
 
-void	Shader::CompileShaders( const char* _pShaderCode, ID3DBlob* _pVS, ID3DBlob* _pHS, ID3DBlob* _pDS, ID3DBlob* _pGS, ID3DBlob* _pPS )
-{
-	// Release any pre-existing shader
-	if ( m_pVertexLayout != NULL )	{ m_pVertexLayout->Release(); m_pVertexLayout = NULL; }
-	if ( m_pVS != NULL )			{ m_pVS->Release(); m_pVS = NULL; }
-	if ( m_pHS != NULL )			{ m_pHS->Release(); m_pHS = NULL; }
-	if ( m_pDS != NULL )			{ m_pDS->Release(); m_pDS = NULL; }
-	if ( m_pGS != NULL )			{ m_pGS->Release(); m_pGS = NULL; }
-	if ( m_pPS != NULL )			{ m_pPS->Release(); m_pPS = NULL; }
+void	Shader::CompileShaders( const char* _pShaderCode, ID3DBlob* _pVS, ID3DBlob* _pHS, ID3DBlob* _pDS, ID3DBlob* _pGS, ID3DBlob* _pPS ) {
 
-	bool	bHasErrors = false;
+	m_bHasErrors = false;
+
+	ID3DBlob*   pShaderVS = NULL;
+	ID3DBlob*   pShaderHS = NULL;
+	ID3DBlob*   pShaderDS = NULL;
+	ID3DBlob*   pShaderGS = NULL;
+	ID3DBlob*   pShaderPS = NULL;
+
+	ID3D11VertexShader*		pVS = NULL;
+	ID3D11InputLayout*		pVertexLayout = NULL;
+	ID3D11HullShader*		pHS = NULL;
+	ID3D11DomainShader*		pDS = NULL;
+	ID3D11GeometryShader*	pGS = NULL;
+	ID3D11PixelShader*		pPS = NULL;
 
 	//////////////////////////////////////////////////////////////////////////
 	// Compile the compulsory vertex shader
 	ASSERT( _pVS != NULL || m_pEntryPointVS != NULL, "Invalid VertexShader entry point !" );
-#ifdef DIRECTX10
-	ID3DBlob*   pShader = _pVS == NULL ? CompileShader( m_pShaderFileName, _pShaderCode, m_pMacros, m_pEntryPointVS, "vs_4_0", this ) : _pVS;
-#else
-	ID3DBlob*   pShader = _pVS == NULL ? CompileShader( m_pShaderFileName, _pShaderCode, m_pMacros, m_pEntryPointVS, "vs_5_0", this ) : _pVS;
-#endif
-	if ( pShader != NULL )
-	{
-		void*	pBuffer = pShader->GetBufferPointer();
-		U32		BufferLength = pShader->GetBufferSize();
-		Check( m_Device.DXDevice().CreateVertexShader( pBuffer, BufferLength, NULL, &m_pVS ) );
-		ASSERT( m_pVS != NULL, "Failed to create vertex shader!" );
-#ifndef GODCOMPLEX
-		m_VSConstants.Enumerate( *pShader );
-#endif
-		bHasErrors |= m_pVS == NULL;
+	#ifdef DIRECTX10
+		pShaderVS = _pVS == NULL ? CompileShader( m_pShaderFileName, _pShaderCode, m_pMacros, m_pEntryPointVS, "vs_4_0", this ) : _pVS;
+	#else
+		pShaderVS = _pVS == NULL ? CompileShader( m_pShaderFileName, _pShaderCode, m_pMacros, m_pEntryPointVS, "vs_5_0", this ) : _pVS;
+	#endif
+	if ( pShaderVS != NULL ) {
+		Check( m_Device.DXDevice().CreateVertexShader( pShaderVS->GetBufferPointer(), pShaderVS->GetBufferSize(), NULL, &pVS ) );
+		ASSERT( pVS != NULL, "Failed to create vertex shader!" );
+		m_bHasErrors |= pVS == NULL;
 
-		// Create the associated vertex layout
-		Check( m_Device.DXDevice().CreateInputLayout( m_Format.GetInputElements(), m_Format.GetInputElementsCount(), pShader->GetBufferPointer(), pShader->GetBufferSize(), &m_pVertexLayout ) );
-		ASSERT( m_pVertexLayout != NULL, "Failed to create vertex layout !" );
-		bHasErrors |= m_pVertexLayout == NULL;
-
-		pShader->Release();
-	}
-	else
-		bHasErrors = true;
+		if ( !m_bHasErrors ) {
+			// Create the associated vertex layout
+			Check( m_Device.DXDevice().CreateInputLayout( m_Format.GetInputElements(), m_Format.GetInputElementsCount(), pShaderVS->GetBufferPointer(), pShaderVS->GetBufferSize(), &pVertexLayout ) );
+			ASSERT( pVertexLayout != NULL, "Failed to create vertex layout!" );
+			m_bHasErrors |= pVertexLayout == NULL;
+		}
+	} else
+		m_bHasErrors = true;
 
 	//////////////////////////////////////////////////////////////////////////
 	// Compile the optional hull shader
-	if ( !bHasErrors && (m_pEntryPointHS != NULL || _pHS != NULL) )
-	{
-#ifdef DIRECTX10
-		ASSERT( false, "You can't use Hull Shaders if you define DIRECTX10!" );
-#endif
-		ID3DBlob*   pShader = _pHS == NULL ? CompileShader( m_pShaderFileName, _pShaderCode, m_pMacros, m_pEntryPointHS, "hs_5_0", this ) : _pHS;
-		if ( pShader != NULL )
-		{
-			void*	pBuffer = pShader->GetBufferPointer();
-			U32		BufferLength = pShader->GetBufferSize();
-			Check( m_Device.DXDevice().CreateHullShader( pBuffer, BufferLength, NULL, &m_pHS ) );
-			ASSERT( m_pHS != NULL, "Failed to create hull shader!" );
-#ifndef GODCOMPLEX
-			m_HSConstants.Enumerate( *pShader );
-#endif
-			bHasErrors |= m_pHS == NULL;
-
-			pShader->Release();
+	if ( !m_bHasErrors && (m_pEntryPointHS != NULL || _pHS != NULL) ) {
+		#ifdef DIRECTX10
+			ASSERT( false, "You can't use Hull Shaders if you define DIRECTX10!" );
+		#endif
+		pShaderHS = _pHS == NULL ? CompileShader( m_pShaderFileName, _pShaderCode, m_pMacros, m_pEntryPointHS, "hs_5_0", this ) : _pHS;
+		if ( pShaderHS != NULL ) {
+			Check( m_Device.DXDevice().CreateHullShader( pShaderHS->GetBufferPointer(), pShaderHS->GetBufferSize(), NULL, &pHS ) );
+			ASSERT( pHS != NULL, "Failed to create hull shader!" );
+			m_bHasErrors |= pHS == NULL;
 		}
 		else
-			bHasErrors = true;
+			m_bHasErrors = true;
 	}
 
 	//////////////////////////////////////////////////////////////////////////
 	// Compile the optional domain shader
-	if ( !bHasErrors && (m_pEntryPointDS != NULL || _pDS != NULL) )
-	{
-#ifdef DIRECTX10
-		ASSERT( false, "You can't use Domain Shaders if you define DIRECTX10!" );
-#endif
-		ID3DBlob*   pShader = _pDS == NULL ? CompileShader( m_pShaderFileName, _pShaderCode, m_pMacros, m_pEntryPointDS, "ds_5_0", this ) : _pDS;
-		if ( pShader != NULL )
-		{
-			Check( m_Device.DXDevice().CreateDomainShader( pShader->GetBufferPointer(), pShader->GetBufferSize(), NULL, &m_pDS ) );
-			ASSERT( m_pDS != NULL, "Failed to create domain shader!" );
-#ifndef GODCOMPLEX
-			m_DSConstants.Enumerate( *pShader );
-#endif
-			bHasErrors |= m_pDS == NULL;
-
-			pShader->Release();
+	if ( !m_bHasErrors && (m_pEntryPointDS != NULL || _pDS != NULL) ) {
+		#ifdef DIRECTX10
+			ASSERT( false, "You can't use Domain Shaders if you define DIRECTX10!" );
+		#endif
+		pShaderDS = _pDS == NULL ? CompileShader( m_pShaderFileName, _pShaderCode, m_pMacros, m_pEntryPointDS, "ds_5_0", this ) : _pDS;
+		if ( pShaderDS != NULL ) {
+			Check( m_Device.DXDevice().CreateDomainShader( pShaderDS->GetBufferPointer(), pShaderDS->GetBufferSize(), NULL, &pDS ) );
+			ASSERT( pDS != NULL, "Failed to create domain shader!" );
+			m_bHasErrors |= pDS == NULL;
 		}
 		else
-			bHasErrors = true;
+			m_bHasErrors = true;
 	}
 
 	//////////////////////////////////////////////////////////////////////////
 	// Compile the optional geometry shader
-	if ( !bHasErrors && (m_pEntryPointGS != NULL || _pGS != NULL) )
-	{
-#ifdef DIRECTX10
-		ID3DBlob*   pShader = _pGS == NULL ? CompileShader( m_pShaderFileName, _pShaderCode, m_pMacros, m_pEntryPointGS, "gs_4_0", this ) : _pGS;
-#else
-		ID3DBlob*   pShader = _pGS == NULL ? CompileShader( m_pShaderFileName, _pShaderCode, m_pMacros, m_pEntryPointGS, "gs_5_0", this ) : _pGS;
-#endif
-		if ( pShader != NULL )
-		{
-			Check( m_Device.DXDevice().CreateGeometryShader( pShader->GetBufferPointer(), pShader->GetBufferSize(), NULL, &m_pGS ) );
-			ASSERT( m_pGS != NULL, "Failed to create geometry shader!" );
-#ifndef GODCOMPLEX
-			m_GSConstants.Enumerate( *pShader );
-#endif
-			bHasErrors |= m_pGS == NULL;
-
-			pShader->Release();
+	if ( !m_bHasErrors && (m_pEntryPointGS != NULL || _pGS != NULL) ) {
+		#ifdef DIRECTX10
+			pShaderGS = _pGS == NULL ? CompileShader( m_pShaderFileName, _pShaderCode, m_pMacros, m_pEntryPointGS, "gs_4_0", this ) : _pGS;
+		#else
+			pShaderGS = _pGS == NULL ? CompileShader( m_pShaderFileName, _pShaderCode, m_pMacros, m_pEntryPointGS, "gs_5_0", this ) : _pGS;
+		#endif
+		if ( pShaderGS != NULL ) {
+			Check( m_Device.DXDevice().CreateGeometryShader( pShaderGS->GetBufferPointer(), pShaderGS->GetBufferSize(), NULL, &pGS ) );
+			ASSERT( pGS != NULL, "Failed to create geometry shader!" );
+			m_bHasErrors |= pGS == NULL;
 		}
 		else
-			bHasErrors = true;
+			m_bHasErrors = true;
 	}
 
 	//////////////////////////////////////////////////////////////////////////
 	// Compile the optional pixel shader
-	if ( !bHasErrors && (m_pEntryPointPS != NULL || _pPS != NULL) )
-	{
+	if ( !m_bHasErrors && (m_pEntryPointPS != NULL || _pPS != NULL) ) {
 
 #ifdef _DEBUG
-// CSO TEST
-// We use a special pre-compiled CSO read from file here
-if ( m_pEntryPointPS != NULL && *m_pEntryPointPS == 1 )
-{
-	U32	BufferSize = *((U32*) (m_pEntryPointPS+1));
-	U8*	pBufferPointer = (U8*) m_pEntryPointPS+5;
-	Check( m_Device.DXDevice().CreatePixelShader( pBufferPointer, BufferSize, NULL, &m_pPS ) );
-	ASSERT( m_pPS != NULL, "Failed to create pixel shader!" );
-	return;
-}
-// TEST
+	// CSO TEST
+	// We use a special pre-compiled CSO read from file here
+	if ( m_pEntryPointPS != NULL && *m_pEntryPointPS == 1 ) {
+		U32	BufferSize = *((U32*) (m_pEntryPointPS+1));
+		U8*	pBufferPointer = (U8*) m_pEntryPointPS+5;
+		Check( m_Device.DXDevice().CreatePixelShader( pBufferPointer, BufferSize, NULL, &m_pPS ) );
+		ASSERT( m_pPS != NULL, "Failed to create pixel shader!" );
+		return;
+	}
+	// CSO TEST
 #endif
 
-#ifdef DIRECTX10
-		ID3DBlob*   pShader = _pPS == NULL ? CompileShader( m_pShaderFileName, _pShaderCode, m_pMacros, m_pEntryPointPS, "ps_4_0", this ) : _pPS;
-#else
-		ID3DBlob*   pShader = _pPS == NULL ? CompileShader( m_pShaderFileName, _pShaderCode, m_pMacros, m_pEntryPointPS, "ps_5_0", this ) : _pPS;
-#endif
-		if ( pShader != NULL )
-		{
-			Check( m_Device.DXDevice().CreatePixelShader( pShader->GetBufferPointer(), pShader->GetBufferSize(), NULL, &m_pPS ) );
-			ASSERT( m_pPS != NULL, "Failed to create pixel shader!" );
-#ifndef GODCOMPLEX
-			m_PSConstants.Enumerate( *pShader );
-#endif
-			bHasErrors |= m_pPS == NULL;
-
-			pShader->Release();
+		#ifdef DIRECTX10
+			pShaderPS = _pPS == NULL ? CompileShader( m_pShaderFileName, _pShaderCode, m_pMacros, m_pEntryPointPS, "ps_4_0", this ) : _pPS;
+		#else
+			pShaderPS = _pPS == NULL ? CompileShader( m_pShaderFileName, _pShaderCode, m_pMacros, m_pEntryPointPS, "ps_5_0", this ) : _pPS;
+		#endif
+		if ( pShaderPS != NULL ) {
+			Check( m_Device.DXDevice().CreatePixelShader( pShaderPS->GetBufferPointer(), pShaderPS->GetBufferSize(), NULL, &pPS ) );
+			ASSERT( pPS != NULL, "Failed to create pixel shader!" );
+			m_bHasErrors |= pPS == NULL;
 		}
 		else
-			bHasErrors = true;
+			m_bHasErrors = true;
 	}
 
-	m_bHasErrors = bHasErrors;
+
+	if ( !m_bHasErrors ) {
+		// Release any pre-existing shader
+		if ( m_pVertexLayout != NULL )	{ m_pVertexLayout->Release(); m_pVertexLayout = NULL; }
+		if ( m_pVS != NULL )			{ m_pVS->Release(); m_pVS = NULL; }
+		if ( m_pHS != NULL )			{ m_pHS->Release(); m_pHS = NULL; }
+		if ( m_pDS != NULL )			{ m_pDS->Release(); m_pDS = NULL; }
+		if ( m_pGS != NULL )			{ m_pGS->Release(); m_pGS = NULL; }
+		if ( m_pPS != NULL )			{ m_pPS->Release(); m_pPS = NULL; }
+
+		// Replace existing shaders if no error occurred
+		m_pVertexLayout = pVertexLayout;
+		m_pVS = pVS;
+		m_pHS = pHS;
+		m_pDS = pDS;
+		m_pGS = pGS;
+		m_pPS = pPS;
+
+		// Enumerate constants
+		#ifndef GODCOMPLEX
+			if ( pShaderVS != NULL )
+				m_VSConstants.Enumerate( *pShaderVS );
+			if ( pShaderHS != NULL )
+				m_HSConstants.Enumerate( *pShaderHS );
+			if ( pShaderDS != NULL )
+				m_DSConstants.Enumerate( *pShaderDS );
+			if ( pShaderGS != NULL )
+				m_GSConstants.Enumerate( *pShaderGS );
+			if ( pShaderPS != NULL )
+				m_PSConstants.Enumerate( *pShaderPS );
+		#endif
+	}
+
+	if ( pShaderVS != NULL )
+		pShaderVS->Release();
+	if ( pShaderHS != NULL )
+		pShaderHS->Release();
+	if ( pShaderDS != NULL )
+		pShaderDS->Release();
+	if ( pShaderGS != NULL )
+		pShaderGS->Release();
+	if ( pShaderPS != NULL )
+		pShaderPS->Release();
 }
 
 #if defined(SURE_DEBUG) || !defined(GODCOMPLEX)
@@ -329,13 +337,13 @@ if ( m_pEntryPointPS != NULL && *m_pEntryPointPS == 1 )
 // 	"\r\n" \
 // 	"";
 
-ID3DBlob*   Shader::CompileShader( const char* _pShaderFileName, const char* _pShaderCode, D3D_SHADER_MACRO* _pMacros, const char* _pEntryPoint, const char* _pTarget, ID3DInclude* _pInclude, bool _bComputeShader )
-{
-#ifdef SAVE_SHADER_BLOB_TO
-	// Check if we're forced to load from binary...
-	if ( ms_LoadFromBinary )
-		return LoadBinaryBlob( _pShaderFileName, _pMacros, _pEntryPoint );
-#endif
+ID3DBlob*   Shader::CompileShader( const char* _pShaderFileName, const char* _pShaderCode, D3D_SHADER_MACRO* _pMacros, const char* _pEntryPoint, const char* _pTarget, ID3DInclude* _pInclude, bool _bComputeShader ) {
+
+	#ifdef SAVE_SHADER_BLOB_TO
+		// Check if we're forced to load from binary...
+		if ( ms_LoadFromBinary )
+			return LoadBinaryBlob( _pShaderFileName, _pMacros, _pEntryPoint );
+	#endif
 
 	ID3DBlob*   pCodeText;
 	ID3DBlob*   pCode;
@@ -346,63 +354,64 @@ ID3DBlob*   Shader::CompileShader( const char* _pShaderFileName, const char* _pS
 
 
 	D3DPreprocess( _pShaderCode, strlen(_pShaderCode), NULL, _pMacros, _pInclude, &pCodeText, &pErrors );
-#if defined(_DEBUG) || defined(DEBUG_SHADER)
-	if ( pErrors != NULL ) {
-		MessageBoxA( NULL, (LPCSTR) pErrors->GetBufferPointer(), "Shader PreProcess Error !", MB_OK | MB_ICONERROR );
-		ASSERT( pErrors == NULL, "Shader preprocess error !" );
-	}
-#endif
+	#if defined(_DEBUG) || defined(DEBUG_SHADER)
+		if ( pErrors != NULL ) {
+			MessageBoxA( NULL, (LPCSTR) pErrors->GetBufferPointer(), "Shader PreProcess Error !", MB_OK | MB_ICONERROR );
+			ASSERT( pErrors == NULL, "Shader preprocess error !" );
+		}
+	#endif
 
-	U32 Flags1 = 0;
-#if (defined(_DEBUG) && !defined(SAVE_SHADER_BLOB_TO)) || defined(NSIGHT)
+	U32 Flags1 = 0, Flags2 = 0;
+	#if (defined(_DEBUG) && !defined(SAVE_SHADER_BLOB_TO)) || defined(NSIGHT)
 		Flags1 |= D3DCOMPILE_DEBUG;
 		Flags1 |= D3DCOMPILE_SKIP_OPTIMIZATION;
 //		Flags1 |= D3DCOMPILE_WARNINGS_ARE_ERRORS;
 		Flags1 |= D3DCOMPILE_PREFER_FLOW_CONTROL;
-#else
-	if ( _bComputeShader )
-		Flags1 |= D3DCOMPILE_OPTIMIZATION_LEVEL1;	// Seems to "optimize" (i.e. strip) the important condition line that checks for threadID before writing to concurrent targets => This leads to "race condition" errors
-	else
-		Flags1 |= D3DCOMPILE_OPTIMIZATION_LEVEL3;
-#endif
+	#else
+		if ( _bComputeShader )
+			Flags1 |= D3DCOMPILE_OPTIMIZATION_LEVEL1;	// Seems to "optimize" (i.e. strip) the important condition line that checks for threadID before writing to concurrent targets => This leads to "race condition" errors
+		else
+			Flags1 |= D3DCOMPILE_OPTIMIZATION_LEVEL3;
+	#endif
 //		Flags1 |= D3DCOMPILE_ENABLE_STRICTNESS;
 //		Flags1 |= D3DCOMPILE_IEEE_STRICTNESS;		// D3D9 compatibility, clamps precision to usual float32 but may prevent internal optimizations by the video card. Better leave it disabled!
 		Flags1 |= D3DCOMPILE_PACK_MATRIX_ROW_MAJOR;	// MOST IMPORTANT FLAG!
-
-	U32 Flags2 = 0;
 
 	LPCVOID	pCodePointer = pCodeText->GetBufferPointer();
 	size_t	CodeSize = pCodeText->GetBufferSize();
 	size_t	CodeLength = strlen( (char*) pCodePointer );
 
 	D3DCompile( pCodePointer, CodeSize, _pShaderFileName, _pMacros, _pInclude, _pEntryPoint, _pTarget, Flags1, Flags2, &pCode, &pErrors );
-#if defined(_DEBUG) || defined(DEBUG_SHADER)
-#ifdef WARNING_AS_ERRORS
-	if ( pErrors != NULL )
-#else
-	if ( pCode == NULL && pErrors != NULL )
-#endif
-	{
-		const char*	pErrorText = (LPCSTR) pErrors->GetBufferPointer();
-		MessageBoxA( NULL, pErrorText, "Shader Compilation Error!", MB_OK | MB_ICONERROR );
-		ASSERT( pErrors == NULL, "Shader compilation error!" );
-	}
-	else
-		ASSERT( pCode != NULL, "Shader compilation failed => No error provided but didn't output any shader either!" );
-#endif
 
-// Save the binary blob to disk
-#if defined(SAVE_SHADER_BLOB_TO) && !defined(NSIGHT)
-	SaveBinaryBlob( _pShaderFileName, _pMacros, _pEntryPoint, *pCode );
-#endif
+	#if defined(_DEBUG) || defined(DEBUG_SHADER)
+		#ifdef WARNING_AS_ERRORS
+			if ( pErrors != NULL ) {
+		#else
+			if ( pCode == NULL && pErrors != NULL ) {
+		#endif
+			const char*	pErrorText = (LPCSTR) pErrors->GetBufferPointer();
+			MessageBoxA( NULL, pErrorText, "Shader Compilation Error!", MB_OK | MB_ICONERROR );
+			ASSERT( pErrors == NULL, "Shader compilation error!" );
+
+			return NULL;
+		}
+		else
+			ASSERT( pCode != NULL, "Shader compilation failed => No error provided but didn't output any shader either!" );
+	#endif
+
+	// Save the binary blob to disk
+	#if defined(SAVE_SHADER_BLOB_TO) && !defined(NSIGHT)
+		if ( pCode != NULL ) {
+			SaveBinaryBlob( _pShaderFileName, _pMacros, _pEntryPoint, *pCode );
+		}
+	#endif
 
 	return pCode;
 }
 
 #else	// #if !defined(_DEBUG) && defined(GODCOMPLEX)
 
-ID3DBlob*   Shader::CompileShader( const char* _pShaderFileName, const char* _pShaderCode, D3D_SHADER_MACRO* _pMacros, const char* _pEntryPoint, const char* _pTarget, ID3DInclude* _pInclude, bool _bComputeShader )
-{
+ID3DBlob*   Shader::CompileShader( const char* _pShaderFileName, const char* _pShaderCode, D3D_SHADER_MACRO* _pMacros, const char* _pEntryPoint, const char* _pTarget, ID3DInclude* _pInclude, bool _bComputeShader ) {
 	U8*	pBigBlob = (U8*) _pShaderCode;	// Actually a giant blob...
 	return LoadBinaryBlobFromAggregate( pBigBlob, _pEntryPoint );
 }

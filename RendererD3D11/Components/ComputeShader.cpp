@@ -142,27 +142,38 @@ ComputeShader::~ComputeShader()
 }
 
 void	ComputeShader::CompileShaders( const char* _pShaderCode, ID3DBlob* _pCS ) {
-	// Release any pre-existing shader
-	if ( m_pCS != NULL )
-		m_pCS->Release();
 
 	//////////////////////////////////////////////////////////////////////////
 	// Compile the compute shader
 	ASSERT( _pCS != NULL || m_pEntryPointCS != NULL, "Invalid ComputeShader entry point!" );
 	ID3DBlob*   pShader = _pCS == NULL ? Shader::CompileShader( m_pShaderFileName, _pShaderCode, m_pMacros, m_pEntryPointCS, "cs_5_0", this, true ) : _pCS;
-	if ( pShader != NULL )
-	{
-		Check( m_Device.DXDevice().CreateComputeShader( pShader->GetBufferPointer(), pShader->GetBufferSize(), NULL, &m_pCS ) );
-		ASSERT( m_pCS != NULL, "Failed to create compute shader!" );
-#ifndef GODCOMPLEX
-		m_CSConstants.Enumerate( *pShader );
-#endif
-		m_bHasErrors |= m_pCS == NULL;
-
-		pShader->Release();
-	}
-	else
+	if ( pShader == NULL ) {
 		m_bHasErrors = true;
+		return;
+	}
+
+	ID3D11ComputeShader*	tempCS = NULL;
+	Check( m_Device.DXDevice().CreateComputeShader( pShader->GetBufferPointer(), pShader->GetBufferSize(), NULL, &tempCS ) );
+
+	if ( tempCS != NULL ) {
+		// SUCCESS! Replace existing shader!
+		if ( m_pCS != NULL )
+			m_pCS->Release();	// Release any pre-existing shader
+
+		m_pCS = tempCS;
+
+		#ifndef GODCOMPLEX
+			m_CSConstants.Enumerate( *pShader );
+		#endif
+
+		m_bHasErrors = false;	// Not in error state anymore
+	} else {
+		// ERROR! Don't replace existing shader until errors are fixed...
+		m_bHasErrors = true;
+		ASSERT( false, "Failed to create compute shader!" );
+	}
+
+	pShader->Release();	// Release shader anyway
 }
 
 bool	ComputeShader::Use()

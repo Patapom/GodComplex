@@ -344,5 +344,8 @@ PS_OUT PS( VS_IN _In ) {
 //	float4	csPosition = mul( float4( ro + distance * rd, 1.0 ), _World2Camera );
 //	Out.NormalDepth = float4( normal, csPosition.z );
 
+
+//Out.Color.xyz = normal;
+
 	return Out;
 }
