@@ -16,8 +16,8 @@ cbuffer CB_PostProcess : register(b2) {
 //	intersection is found...
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 //
-//static const uint	SSR_MIP_MIN = 1;	// Min mip level is half-resolution
-static const uint	SSR_MIP_MAX = 3;	// Max mip level is 1/8th resolution
+//static const uint	SSR_MIP_MIN = 1;	// Min mip level is full-resolution
+static const uint	SSR_MIP_MAX = 4;	// Max mip level is 1/16th resolution
 
 
 // bmayaux (2016-05-07) Thickness is now a [1,2] factor varying with scene depth
@@ -26,6 +26,16 @@ float ComputeSceneZThickness( float _sceneZMin, float4 _zThicknessFactors, float
 	float	t = saturate( (_sceneZMin - _zThicknessFactors.y) / (_zThicknessFactors.w - _zThicknessFactors.y) );
 			t = pow( t, _zThicknessPow );
 	return lerp( _zThicknessFactors.x, _zThicknessFactors.z, t ) * _sceneZMin;
+}
+
+// Samples the scene's depth buffer at appropriate mip level and returns the [ZMin,ZMax] interval
+float2	SampleSceneZ( float2 _pixelPosition, uint _mipLevel, Texture2D<float> _TexFullResDepth, Texture2D<float4> _TexDownsampledDepth, float4 _zThicknessFactors, float _zThicknessPow ) {
+	uint2	Pos = uint2(_pixelPosition);
+	float2	ZMinMax = _mipLevel == 0 ?	_TexFullResDepth[Pos] :										// Read full resolution Z
+										_TexDownsampledDepth.mips[_mipLevel-1U][Pos].yz;			// Assuming we're receiving Y=Min Z, Z=Max Z
+			ZMinMax.y = ComputeSceneZThickness( ZMinMax.y, _zThicknessFactors, _zThicknessPow );	// Grow the interval with artificial scene thickness
+
+	return ZMinMax;
 }
 
 // Performs screen-space ray-tracing using a downsampled depth buffer
@@ -53,8 +63,9 @@ const float		ZThicknessPow = 1.0;
 
 	float3	csEndPos = _csPosition + _RayLength * _csDirection;
 
-	float	Fade = smoothstep( 0.0, 1.0, csEndPos.z );
-//	float	Fade = smoothstep( 0.0, 0.1, _csDirection.z );
+	const float	FADE_START_DISTANCE = 0.5;// * _RayLength;
+	float	Fade = smoothstep( 0.0, FADE_START_DISTANCE, csEndPos.z );	// Fade based on end point's Z
+//	float	Fade = smoothstep( 0.0, 0.1, _csDirection.z );				// Fade based on view direction is too drastic
 	if ( Fade == 0.0 )
 		return 0.0;	// Don't trace rays that come our way
 
@@ -70,25 +81,28 @@ const float		ZThicknessPow = 1.0;
 	H0.xy = float2( 0.5 * (1.0 + H0.x), 0.5 * (1.0 - H0.y) );
 	H1.xy = float2( 0.5 * (1.0 + H1.x), 0.5 * (1.0 - H1.y) );
 
+// _DEBUG = float3( H0.xy, 0 );
+// return Fade;
+
 //H0.xy = saturate( H0.xy );
 //H1.xy = saturate( H1.xy );
 
-	H0.xy *= _TexSize;	// Now in pixels
+	H0.xy *= _TexSize;	// Now in full-resolution pixels
 	H1.xy *= _TexSize;
 
 	float2	Delta = H1.xy - H0.xy;
 	float	PixelsCount = max( abs( Delta.x ), abs( Delta.y ) );
 
-#if 0
+#if 1
+// 	float3	P0 = float3( H0.xy, k0 );					// We compose our screen-interpolable "P" as { XY=Pixel index, Z=1/Z }
+// 	float3	P1 = float3( H1.xy, k1 );
+	float3	P0 = float3( H0.xy, 1.0 / _csPosition.z );	// We compose our screen-interpolable "P" as { XY=Pixel index, Z=1/Z }
+	float3	P1 = float3( H1.xy, 1.0 / csEndPos.z );
+
+	float3	Slope = (P1 - P0) / PixelsCount;			// Slope, with at least one of the 2 XY components equal to +1 or -1 (so adding the slope makes us advance an entire pixel)
+#else
 	float3	P0 = H0.xyz;			// We compose our screen-interpolable "P" as { XY=Pixel index, Z=1/Z }
 	float3	P1 = H1.xyz;
-
-	float3	Slope = (P1 - P0) / PixelsCount;						// Slope, with at least one of the 2 XY components equal to +1 or -1 (so adding the slope makes us advance an entire pixel)
-#else
-// 	float3	P0 = float3( H0.xy, k0 );			// We compose our screen-interpolable "P" as { XY=Pixel index, Z=1/Z }
-// 	float3	P1 = float3( H1.xy, k1 );
-	float3	P0 = float3( H0.xy, 1.0 / _csPosition.z );			// We compose our screen-interpolable "P" as { XY=Pixel index, Z=1/Z }
-	float3	P1 = float3( H1.xy, 1.0 / csEndPos.z );
 
 	float3	Slope = (P1 - P0) / PixelsCount;						// Slope, with at least one of the 2 XY components equal to +1 or -1 (so adding the slope makes us advance an entire pixel)
 #endif
@@ -96,8 +110,9 @@ const float		ZThicknessPow = 1.0;
 //	float2	BorderOffset = float2(	Slope.x > 0.0 ? 1.0 : 0.0,		// If we're tracing to the right, then the next pixel border is +1, otherwise it's 0
 //									Slope.y > 0.0 ? 1.0 : 0.0 );	// If we're tracing to the bottom, then the next pixel border is +1, otherwise it's 0
 
-	float2	BorderOffset = float2(	Slope.x > 0.0 ? 1.001 : -0.001,		// If we're tracing to the right, then the next pixel border is +1, otherwise it's 0
-									Slope.y > 0.0 ? 1.001 : -0.001 );	// If we're tracing to the bottom, then the next pixel border is +1, otherwise it's 0
+	const float	BORDER_EPSILON = 1e-3;														// Always add a little epsilon so we always fully cross the border
+	float2	BorderOffset = float2(	Slope.x > 0.0 ? 1.0+BORDER_EPSILON : -BORDER_EPSILON,	// If we're tracing to the right, then the next pixel border is on the right, otherwise it's on the left
+									Slope.y > 0.0 ? 1.0+BORDER_EPSILON : -BORDER_EPSILON );	// If we're tracing to the bottom, then the next pixel border is below, otherwise it's above
 
 
 //_DEBUG = float3( Slope.xy, 0 );
@@ -116,28 +131,26 @@ const float		ZThicknessPow = 1.0;
 //return Fade;
 
 
-//	uint	MipLevel = SSR_MIP_MAX;			// Start at coarsest mip
-uint	MipLevel = 0U;
-	float	PixelSize = 1U << MipLevel;		// That's the size of a pixel at this mip
-	float	ScaleFactor = 1.0 / PixelSize;	// That's the scale factor to apply to a mip 0 pixel to obtain its position in the current mip's pixel
+//	uint	MipLevel = SSR_MIP_MAX;				// Start at coarsest mip
+uint	MipLevel = 4U;
+	float	PixelSize = 1U << MipLevel;			// That's the size of a pixel at this mip
+//	float	ScaleFactor = 1.0 / PixelSize;		// That's the scale factor to apply to a mip 0 pixel to obtain its position in the current mip's pixel
+
+	// Initial scale of pixel and slope
+//	P0.xy *= ScaleFactor;
+	P0.xy /= PixelSize;
+	Slope.z *= PixelSize;
 
 	uint	StepsCount = min( ceil( PixelsCount ), _MaxStepsCount );
 	uint	StepIndex = 0U;
 	bool	InInterval = false;
 
 	// Sample at current position & current mip
-	float2	PixelPos = ScaleFactor * P0.xy;
-//float2	PixelPos = ScaleFactor * P1.xy;
-	float3	ZAvgMinMax = _TexDownsampledDepth.mips[MipLevel][uint2(PixelPos)].xyz;						// Assuming we're receiving X=Average Z, Y=Min Z, Z=Max Z, W=unused
-			ZAvgMinMax.z = ComputeSceneZThickness( ZAvgMinMax.z, ZThicknessFactors, ZThicknessPow );	// Grow the interval with artificial scene thickness
-	float3	PreviousZAvgMinMax = ZAvgMinMax;
+	float2	ZMinMax = SampleSceneZ( P0.xy, MipLevel, _TexFullResDepth, _TexDownsampledDepth, ZThicknessFactors, ZThicknessPow );
+	float2	PreviousZMinMax = ZMinMax;
 
 	float	Z = _csPosition.z;
 	float	PreviousZ;
-
-// if ( csEndPos.z >= ZAvgMinMax.y && csEndPos.z <= ZAvgMinMax.z )
-// 	_DEBUG = float3( 0, 1, 0 );
-// return Fade;
 
 	// Main loop
 	[loop]
@@ -146,59 +159,56 @@ uint	MipLevel = 0U;
 		PreviousZ = Z;	// Keep previous Z
 
 		// Retrieve current Z
-#if 0
-		float4	csPos = mul( float4( P0, 1.0 ), _Proj2Camera );
-		Z = csPos.z / csPos.w;
-#else
-		Z = 1.0 / P0.z;
-#endif
+		#if 1
+			Z = 1.0 / P0.z;
+		#else
+			float4	csPos = mul( float4( P0, 1.0 ), _Proj2Camera );
+			Z = csPos.z / csPos.w;
+		#endif
 
 		// Check if we're in the thickness interval
 #if 1
-//  		InInterval   = PreviousZ < PreviousZAvgMinMax.y && Z >= PreviousZAvgMinMax.y
-//  					|| PreviousZ <= PreviousZAvgMinMax.z && Z > PreviousZAvgMinMax.z;
-// 		InInterval   = PreviousZ >= PreviousZAvgMinMax.y && PreviousZ <= PreviousZAvgMinMax.z;
-// 		InInterval   = InInterval || (Z >= ZAvgMinMax.y && Z <= ZAvgMinMax.z);
-		InInterval   = Z >= ZAvgMinMax.y && Z <= ZAvgMinMax.z;
+//  		InInterval   = PreviousZ < PreviousZMinMax.y && Z >= PreviousZMinMax.y
+//  					|| PreviousZ <= PreviousZMinMax.z && Z > PreviousZMinMax.z;
+// 		InInterval   = PreviousZ >= PreviousZMinMax.y && PreviousZ <= PreviousZMinMax.z;
+// 		InInterval   = InInterval || (Z >= ZMinMax.x && Z <= ZMinMax.y);
+		InInterval   = Z >= ZMinMax.x && Z <= ZMinMax.y;
 
-//InInterval   = Z >= ZAvgMinMax.y && Z <= ZAvgMinMax.z;
+//InInterval   = Z >= ZMinMax.x && Z <= ZMinMax.y;
 
 
 #else
-//		InInterval = Z >= ZAvgMinMax.y && Z <= ZAvgMinMax.z;
-InInterval   = PreviousZ < PreviousZAvgMinMax.y && Z >= PreviousZAvgMinMax.y
-			|| PreviousZ <= PreviousZAvgMinMax.z && Z > PreviousZAvgMinMax.z;
+//		InInterval = Z >= ZMinMax.x && Z <= ZMinMax.y;
+InInterval   = PreviousZ < PreviousZMinMax.y && Z >= PreviousZMinMax.y
+			|| PreviousZ <= PreviousZMinMax.z && Z > PreviousZMinMax.z;
 
-//InInterval   = PreviousZ < ZAvgMinMax.y && Z >= ZAvgMinMax.y;
-//InInterval   = PreviousZ <= ZAvgMinMax.z && Z > ZAvgMinMax.z;
+//InInterval   = PreviousZ < ZMinMax.x && Z >= ZMinMax.x;
+//InInterval   = PreviousZ <= ZMinMax.y && Z > ZMinMax.y;
 #endif
 
 		[branch]
 		if ( InInterval ) {
-			if ( MipLevel == 0U ) {
-				// Check full res depth
-				uint2	PixelIndex = uint2( 0.5 * P0.xy );
-				ZAvgMinMax = _TexFullResDepth[PixelIndex];
-				ZAvgMinMax.z = ComputeSceneZThickness( ZAvgMinMax.z, ZThicknessFactors, ZThicknessPow );	// Grow the interval with artificial scene thickness
-				InInterval = Z >= ZAvgMinMax.y && Z <= ZAvgMinMax.z;
-				if ( InInterval )
-					break;	// We have an intersection at finest mip!
-			} else {
-//*				// Refine mip to check if we're still intersecting at finer resolution
-				MipLevel--;
-				PixelSize *= 0.5;	// Smaller pixels
-				ScaleFactor *= 2.0;	// Larger scale
-
-				// We can't march yet as we don't know if we're intersecting at finer mip!
-				continue;
-//*/
+			if ( MipLevel == 0U )
+			{
+				break;	// We have an intersection at finest mip!
 			}
+
+//*			// Refine mip to check if we're still intersecting at finer resolution
+			MipLevel--;
+ 			PixelSize *= 0.5;	// Smaller pixels
+// 			ScaleFactor *= 2.0;	// Larger scale
+			P0.xy *= 2.0;		// Smaller pixels
+			Slope.z *= 0.5;		// Smaller steps
+
+			// We can't march yet as we don't know if we're intersecting at finer mip!
+			continue;
+//*/
 		}
 
 		// No intersection!
 		// It means we can safely march forward a full pixel!
-		float2	PixelBorder = floor( PixelPos ) + BorderOffset;
-		float2	Distance2Border = PixelBorder - PixelPos;
+		float2	PixelBorder = floor( P0.xy ) + BorderOffset;
+		float2	Distance2Border = PixelBorder - P0.xy;
 		float2	T = Distance2Border * InvSlope;	// "Time" to intersect, on both X and Y, to reach either next left/right pixel, or top/bottom pixel
 		float	t = min( T.x, T.y );			// Choose the closest intersection (i.e. horizontal or vertical border)
 
@@ -220,7 +230,7 @@ InInterval   = PreviousZ < PreviousZAvgMinMax.y && Z >= PreviousZAvgMinMax.y
 //t += 1e-3;	// Always cross the border
 //t = max( 1e-3, t );
 
-		P0 += t * PixelSize * Slope;
+		P0 += t * Slope;
 
 // if ( P0.x == 0.0 || P0.y == 0.0 || P0.x == 1.0 || P0.y == 1.0 ) {
 // //	P0 += 1e-3 * Slope;
@@ -232,30 +242,30 @@ InInterval   = PreviousZ < PreviousZAvgMinMax.y && Z >= PreviousZAvgMinMax.y
 		StepIndex++;			// Count actual steps
 //		StepIndex += PixelSize;	// Or count actual pixels on screen
 
-/*		// Attempt to trace at coarser resolution (faster steps)
+//*		// Attempt to trace at coarser resolution (faster steps)
 		if ( MipLevel < SSR_MIP_MAX ) {
 			MipLevel++;
-			PixelSize *= 2.0;	// Larger pixels
-			ScaleFactor *= 0.5;	// Smaller scale
+ 			PixelSize *= 2.0;	// Larger pixels
+// 			ScaleFactor *= 0.5;	// Smaller scale
+			P0.xy *= 0.5;		// Larger pixels
+			Slope.z *= 2.0;		// Larger steps
 		}
 
-break;
-*/
+//break;
+//*/
 		// Sample Zs at new mip and position
-		PreviousZAvgMinMax = ZAvgMinMax;
-
-		PixelPos = ScaleFactor * P0.xy;
-		ZAvgMinMax = _TexDownsampledDepth.mips[MipLevel][uint2(PixelPos)].xyz;						// Assuming we're receiving X=Average Z, Y=Min Z, Z=Max Z, W=unused
-		ZAvgMinMax.z = ComputeSceneZThickness( ZAvgMinMax.z, ZThicknessFactors, ZThicknessPow );	// Grow the interval with artificial scene thickness
+		PreviousZMinMax = ZMinMax;
+		ZMinMax = SampleSceneZ( P0.xy, MipLevel, _TexFullResDepth, _TexDownsampledDepth, ZThicknessFactors, ZThicknessPow );
 	}
 
 	// Recompute hit distance and UVs
-	_UV = P0.xy / _TexSize;
+//	PixelSize = 1U << MipLevel;
+	_UV = PixelSize * P0.xy / _TexSize;
 
 // 	// Check full res depth
-// 	ZAvgMinMax = _TexFullResDepth.SampleLevel( LinearClamp, _UV, 0.0 );
-// 	ZAvgMinMax.z = ComputeSceneZThickness( ZAvgMinMax.z, ZThicknessFactors, ZThicknessPow );	// Grow the interval with artificial scene thickness
-// 	InInterval = Z >= ZAvgMinMax.y && Z <= ZAvgMinMax.z;
+// 	ZMinMax = _TexFullResDepth.SampleLevel( LinearClamp, _UV, 0.0 );
+// 	ZMinMax.y = ComputeSceneZThickness( ZMinMax.y, ZThicknessFactors, ZThicknessPow );	// Grow the interval with artificial scene thickness
+// 	InInterval = Z >= ZMinMax.x && Z <= ZMinMax.y;
 
 //_DEBUG = MipLevel;
 //_DEBUG = 0.5 * PixelSize;
@@ -300,8 +310,10 @@ float3	PS( VS_IN _In ) : SV_TARGET0 {
 		float3	csReflect = mul( float4( wsReflect, 0.0 ), _World2Camera ).xyz;
 
 		uint2	Dims;
-		_TexDownsampledDepth.GetDimensions( Dims.x, Dims.y );
-		Dims = uint2( _UVFactor * Dims );
+//		_TexDownsampledDepth.GetDimensions( Dims.x, Dims.y );
+//		Dims = uint2( _UVFactor * Dims );	// So we account for padding
+		_TexLinearDepth.GetDimensions( Dims.x, Dims.y );
+
 //uint prout;
 //_TexSource.GetDimensions( Dims.x, Dims.y, prout );
 //Dims >>= 1U;
