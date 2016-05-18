@@ -29,10 +29,9 @@ float ComputeSceneZThickness( float _sceneZMin, float4 _zThicknessFactors, float
 }
 
 // Samples the scene's depth buffer at appropriate mip level and returns the [ZMin,ZMax] interval
-float2	SampleSceneZ( float2 _pixelPosition, uint _mipLevel, Texture2D<float> _TexFullResDepth, Texture2D<float4> _TexDownsampledDepth, float4 _zThicknessFactors, float _zThicknessPow ) {
-	uint2	Pos = uint2(_pixelPosition);
-	float2	ZMinMax = _mipLevel == 0 ?	_TexFullResDepth[Pos] :										// Read full resolution Z
-										_TexDownsampledDepth.mips[_mipLevel-1U][Pos].yz;			// Assuming we're receiving Y=Min Z, Z=Max Z
+float2	SampleSceneZ( uint2 _pixelPosition, uint _mipLevel, Texture2D<float> _TexFullResDepth, Texture2D<float4> _TexDownsampledDepth, float4 _zThicknessFactors, float _zThicknessPow ) {
+	float2	ZMinMax = _mipLevel == 0 ?	_TexFullResDepth[_pixelPosition] :							// Read full resolution Z
+										_TexDownsampledDepth.mips[_mipLevel-1U][_pixelPosition].yz;	// Assuming we're receiving Y=Min Z, Z=Max Z
 			ZMinMax.y = ComputeSceneZThickness( ZMinMax.y, _zThicknessFactors, _zThicknessPow );	// Grow the interval with artificial scene thickness
 
 	return ZMinMax;
@@ -81,9 +80,6 @@ const float		ZThicknessPow = 1.0;
 	H0.xy = float2( 0.5 * (1.0 + H0.x), 0.5 * (1.0 - H0.y) );
 	H1.xy = float2( 0.5 * (1.0 + H1.x), 0.5 * (1.0 - H1.y) );
 
-// _DEBUG = float3( H0.xy, 0 );
-// return Fade;
-
 //H0.xy = saturate( H0.xy );
 //H1.xy = saturate( H1.xy );
 
@@ -93,22 +89,10 @@ const float		ZThicknessPow = 1.0;
 	float2	Delta = H1.xy - H0.xy;
 	float	PixelsCount = max( abs( Delta.x ), abs( Delta.y ) );
 
-#if 1
-// 	float3	P0 = float3( H0.xy, k0 );					// We compose our screen-interpolable "P" as { XY=Pixel index, Z=1/Z }
-// 	float3	P1 = float3( H1.xy, k1 );
 	float3	P0 = float3( H0.xy, 1.0 / _csPosition.z );	// We compose our screen-interpolable "P" as { XY=Pixel index, Z=1/Z }
 	float3	P1 = float3( H1.xy, 1.0 / csEndPos.z );
 
 	float3	Slope = (P1 - P0) / PixelsCount;			// Slope, with at least one of the 2 XY components equal to +1 or -1 (so adding the slope makes us advance an entire pixel)
-#else
-	float3	P0 = H0.xyz;			// We compose our screen-interpolable "P" as { XY=Pixel index, Z=1/Z }
-	float3	P1 = H1.xyz;
-
-	float3	Slope = (P1 - P0) / PixelsCount;						// Slope, with at least one of the 2 XY components equal to +1 or -1 (so adding the slope makes us advance an entire pixel)
-#endif
-
-//	float2	BorderOffset = float2(	Slope.x > 0.0 ? 1.0 : 0.0,		// If we're tracing to the right, then the next pixel border is +1, otherwise it's 0
-//									Slope.y > 0.0 ? 1.0 : 0.0 );	// If we're tracing to the bottom, then the next pixel border is +1, otherwise it's 0
 
 	const float	BORDER_EPSILON = 1e-3;														// Always add a little epsilon so we always fully cross the border
 	float2	BorderOffset = float2(	Slope.x > 0.0 ? 1.0+BORDER_EPSILON : -BORDER_EPSILON,	// If we're tracing to the right, then the next pixel border is on the right, otherwise it's on the left
@@ -130,9 +114,8 @@ const float		ZThicknessPow = 1.0;
 //_DEBUG = float3( -0.5 * InvSlope, 0 );
 //return Fade;
 
-
 //	uint	MipLevel = SSR_MIP_MAX;				// Start at coarsest mip
-uint	MipLevel = 4U;
+uint	MipLevel = 0U;
 	float	PixelSize = 1U << MipLevel;			// That's the size of a pixel at this mip
 //	float	ScaleFactor = 1.0 / PixelSize;		// That's the scale factor to apply to a mip 0 pixel to obtain its position in the current mip's pixel
 
@@ -146,45 +129,24 @@ uint	MipLevel = 4U;
 	bool	InInterval = false;
 
 	// Sample at current position & current mip
-	float2	ZMinMax = SampleSceneZ( P0.xy, MipLevel, _TexFullResDepth, _TexDownsampledDepth, ZThicknessFactors, ZThicknessPow );
-	float2	PreviousZMinMax = ZMinMax;
-
+	float2	ZMinMax;// = SampleSceneZ( P0.xy, MipLevel, _TexFullResDepth, _TexDownsampledDepth, ZThicknessFactors, ZThicknessPow );
 	float	Z = _csPosition.z;
-	float	PreviousZ;
 
 	// Main loop
 	[loop]
 	while ( StepIndex < StepsCount ) {
 
-		PreviousZ = Z;	// Keep previous Z
-
 		// Retrieve current Z
-		#if 1
-			Z = 1.0 / P0.z;
-		#else
-			float4	csPos = mul( float4( P0, 1.0 ), _Proj2Camera );
-			Z = csPos.z / csPos.w;
-		#endif
+		float	PreviousZ = Z;
+		Z = 1.0 / P0.z;
+
+		// Sample Zs at new mip and position
+		uint2	PixelPos = uint2( floor( P0.xy ) );
+		float2	PreviousZMinMax = ZMinMax;
+		ZMinMax = SampleSceneZ( PixelPos, MipLevel, _TexFullResDepth, _TexDownsampledDepth, ZThicknessFactors, ZThicknessPow );
 
 		// Check if we're in the thickness interval
-#if 1
-//  		InInterval   = PreviousZ < PreviousZMinMax.y && Z >= PreviousZMinMax.y
-//  					|| PreviousZ <= PreviousZMinMax.z && Z > PreviousZMinMax.z;
-// 		InInterval   = PreviousZ >= PreviousZMinMax.y && PreviousZ <= PreviousZMinMax.z;
-// 		InInterval   = InInterval || (Z >= ZMinMax.x && Z <= ZMinMax.y);
-		InInterval   = Z >= ZMinMax.x && Z <= ZMinMax.y;
-
-//InInterval   = Z >= ZMinMax.x && Z <= ZMinMax.y;
-
-
-#else
-//		InInterval = Z >= ZMinMax.x && Z <= ZMinMax.y;
-InInterval   = PreviousZ < PreviousZMinMax.y && Z >= PreviousZMinMax.y
-			|| PreviousZ <= PreviousZMinMax.z && Z > PreviousZMinMax.z;
-
-//InInterval   = PreviousZ < ZMinMax.x && Z >= ZMinMax.x;
-//InInterval   = PreviousZ <= ZMinMax.y && Z > ZMinMax.y;
-#endif
+		InInterval = Z >= ZMinMax.x && Z <= ZMinMax.y;
 
 		[branch]
 		if ( InInterval ) {
@@ -193,9 +155,9 @@ InInterval   = PreviousZ < PreviousZMinMax.y && Z >= PreviousZMinMax.y
 				break;	// We have an intersection at finest mip!
 			}
 
-//*			// Refine mip to check if we're still intersecting at finer resolution
+//*			// Refine mip to check if we're still intersecting at finer resolution (smaller pixels, slower steps)
 			MipLevel--;
- 			PixelSize *= 0.5;	// Smaller pixels
+// 			PixelSize *= 0.5;	// Smaller pixels
 // 			ScaleFactor *= 2.0;	// Larger scale
 			P0.xy *= 2.0;		// Smaller pixels
 			Slope.z *= 0.5;		// Smaller steps
@@ -207,60 +169,29 @@ InInterval   = PreviousZ < PreviousZMinMax.y && Z >= PreviousZMinMax.y
 
 		// No intersection!
 		// It means we can safely march forward a full pixel!
-		float2	PixelBorder = floor( P0.xy ) + BorderOffset;
+		float2	PixelBorder = PixelPos + BorderOffset;
 		float2	Distance2Border = PixelBorder - P0.xy;
 		float2	T = Distance2Border * InvSlope;	// "Time" to intersect, on both X and Y, to reach either next left/right pixel, or top/bottom pixel
 		float	t = min( T.x, T.y );			// Choose the closest intersection (i.e. horizontal or vertical border)
-
-// if ( t > 1.0 ) {
-// //if ( any( Distance2Border < 0.0 ) ) {
-// _DEBUG = float3( 0.1 * (1+StepIndex), 0, 0 );
-// return Fade;
-// }
-
-//_DEBUG.xy = floor( PixelPos ) / _TexSize;
-//_DEBUG = 1.0 * t;
-//return Fade;
-
-//t = 1.0;
-
-//t = min( 1.0, t );
-//t *= 1.5;
-//t += 1e-6;
-//t += 1e-3;	// Always cross the border
-//t = max( 1e-3, t );
-
 		P0 += t * Slope;
-
-// if ( P0.x == 0.0 || P0.y == 0.0 || P0.x == 1.0 || P0.y == 1.0 ) {
-// //	P0 += 1e-3 * Slope;
-// 	_DEBUG = float3( 1, 1, 0 );
-// 	return Fade;
-// }
-
 
 		StepIndex++;			// Count actual steps
 //		StepIndex += PixelSize;	// Or count actual pixels on screen
 
-//*		// Attempt to trace at coarser resolution (faster steps)
+/*		// Attempt to trace at coarser resolution (larger pixels, faster steps)
 		if ( MipLevel < SSR_MIP_MAX ) {
 			MipLevel++;
- 			PixelSize *= 2.0;	// Larger pixels
+// 			PixelSize *= 2.0;	// Larger pixels
 // 			ScaleFactor *= 0.5;	// Smaller scale
 			P0.xy *= 0.5;		// Larger pixels
 			Slope.z *= 2.0;		// Larger steps
 		}
-
-//break;
 //*/
-		// Sample Zs at new mip and position
-		PreviousZMinMax = ZMinMax;
-		ZMinMax = SampleSceneZ( P0.xy, MipLevel, _TexFullResDepth, _TexDownsampledDepth, ZThicknessFactors, ZThicknessPow );
 	}
 
 	// Recompute hit distance and UVs
 //	PixelSize = 1U << MipLevel;
-	_UV = PixelSize * P0.xy / _TexSize;
+	_UV = P0.xy / _TexSize;
 
 // 	// Check full res depth
 // 	ZMinMax = _TexFullResDepth.SampleLevel( LinearClamp, _UV, 0.0 );
@@ -329,7 +260,7 @@ float3	PS( VS_IN _In ) : SV_TARGET0 {
 
 //return blend;
 //return csReflect;
-return lerp( float3( 0.8, 0, 0.8 ), DEBUG, blend );
+//return lerp( float3( 0.8, 0, 0.8 ), DEBUG, blend );
 	}
 
 

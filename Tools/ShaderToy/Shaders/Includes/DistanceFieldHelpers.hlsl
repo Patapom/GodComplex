@@ -429,7 +429,7 @@ float2 castRay( in float3 ro, in float3 rd, const float tmin=0.01, const float t
 	float precis = 0.002;
     float t = tmin;
     float m = -1.0;
-    for( int i=0; i<50; i++ ) {
+    for( int i=0; i<100; i++ ) {
 	    float2 res = map( ro+rd*t );
         if( res.x<precis || t>tmax )
 			break;
