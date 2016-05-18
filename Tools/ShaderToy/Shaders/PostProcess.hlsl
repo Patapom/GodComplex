@@ -138,33 +138,42 @@ uint	MipLevel = 4U;
 
 	// Sample at current position & current mip
 	uint2	PixelPos = uint2( floor( P0.xy ) );
-	float2	NextZMinMax = SampleSceneZ( PixelPos, MipLevel, _TexFullResDepth, _TexDownsampledDepth, ZThicknessFactors, ZThicknessPow );
-	float2	ZMinMax = NextZMinMax;
+	float2	ZMinMax = SampleSceneZ( PixelPos, MipLevel, _TexFullResDepth, _TexDownsampledDepth, ZThicknessFactors, ZThicknessPow );
 	float	Z = _csPosition.z;
 
 	// Main loop
 	[loop]
 	while ( StepIndex < StepsCount ) {
 
-		// Compute potential next intersection
+		// Compute next position
 		uint2	PixelPos = uint2( floor( P0.xy ) );
 		float2	PixelBorder = PixelPos + BorderOffset;
 		float2	Distance2Border = PixelBorder - P0.xy;
 		float2	T = Distance2Border * InvSlope;	// "Time" to intersect, on both X and Y, to reach either next left/right pixel, or top/bottom pixel
 		float	t = min( T.x, T.y );			// Choose the closest intersection (i.e. horizontal or vertical border)
 		float3	NextP = P0 + t * Slope;
-
-		// Retrieve current Z
 		float	NextZ = 1.0 / NextP.z;
 
 		// Sample Zs at new mip and position
-		NextZMinMax = SampleSceneZ( PixelPos, MipLevel, _TexFullResDepth, _TexDownsampledDepth, ZThicknessFactors, ZThicknessPow );
+		uint2	NextPixelPos = uint2( floor( NextP.xy ) );
+		float2	NextZMinMax = SampleSceneZ( NextPixelPos, MipLevel, _TexFullResDepth, _TexDownsampledDepth, ZThicknessFactors, ZThicknessPow );
+
+		StepIndex++;			// Count actual texture taps
+//		StepIndex += PixelSize;	// Or count actual pixels on screen
 
 		// Check if we're in the thickness interval
 InInterval = false;
-InInterval = InInterval || NextZ >= NextZMinMax.x && NextZ <= NextZMinMax.y;	// Either we're currently in the interval
-InInterval = InInterval || Z < ZMinMax.x && NextZ > NextZMinMax.x;				// Or we passed through the front
-//InInterval = InInterval || PreviousZ < PreviousZMinMax.y && Z > ZMinMax.y;	// Or we passed through the back
+#if 1
+Ici ça résoud la barbe, mais on rate des intersections
+InInterval = InInterval || (NextZ >= NextZMinMax.x && NextZ <= NextZMinMax.y);	// Either we're currently in the interval
+//InInterval = InInterval || (Z < ZMinMax.x && NextZ > ZMinMax.x);					// Or we passed through the front
+InInterval = InInterval || (Z < NextZMinMax.y && NextZ > NextZMinMax.y);			// Or we passed through the back
+#else
+Ici on a les intersections mais c'est la barbe!
+InInterval = InInterval || (NextZ >= NextZMinMax.x && NextZ <= NextZMinMax.y);	// Either we're currently in the interval
+InInterval = InInterval || (Z < ZMinMax.x && NextZ > ZMinMax.x);					// Or we passed through the front
+InInterval = InInterval || (Z < NextZMinMax.y && NextZ > NextZMinMax.y);			// Or we passed through the back
+#endif
 
 		[branch]
 		if ( InInterval ) {
@@ -190,9 +199,6 @@ InInterval = InInterval || Z < ZMinMax.x && NextZ > NextZMinMax.x;				// Or we p
 		P0 = NextP;
 		Z = NextZ;
 		ZMinMax = NextZMinMax;
-
-		StepIndex++;			// Count actual steps
-//		StepIndex += PixelSize;	// Or count actual pixels on screen
 
 /*		// Attempt to trace at coarser resolution (larger pixels, faster steps)
 		if ( MipLevel < SSR_MIP_MAX ) {
