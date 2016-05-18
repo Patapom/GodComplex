@@ -32,6 +32,11 @@ float ComputeSceneZThickness( float _sceneZMin, float4 _zThicknessFactors, float
 float2	SampleSceneZ( uint2 _pixelPosition, uint _mipLevel, Texture2D<float> _TexFullResDepth, Texture2D<float4> _TexDownsampledDepth, float4 _zThicknessFactors, float _zThicknessPow ) {
 	float2	ZMinMax = _mipLevel == 0 ?	_TexFullResDepth[_pixelPosition] :							// Read full resolution Z
 										_TexDownsampledDepth.mips[_mipLevel-1U][_pixelPosition].yz;	// Assuming we're receiving Y=Min Z, Z=Max Z
+
+
+//float2	ZMinMax = _TexDownsampledDepth.mips[3U][_pixelPosition].yz;	// Assuming we're receiving Y=Min Z, Z=Max Z
+
+
 			ZMinMax.y = ComputeSceneZThickness( ZMinMax.y, _zThicknessFactors, _zThicknessPow );	// Grow the interval with artificial scene thickness
 
 	return ZMinMax;
@@ -99,13 +104,16 @@ const float		ZThicknessPow = 1.0;
 									Slope.y > 0.0 ? 1.0+BORDER_EPSILON : -BORDER_EPSILON );	// If we're tracing to the bottom, then the next pixel border is below, otherwise it's above
 
 
-//_DEBUG = float3( Slope.xy, 0 );
+// _DEBUG = float3( 1.0*abs(Slope.xy), 0 );
+// _DEBUG = 0.5*abs(Slope.y);
+// _DEBUG = 1.0*abs(Slope.x);
 //_DEBUG = float3( BorderOffset, 0 );
-//_DEBUG = float3( Delta.xy, 0 );
+//_DEBUG = float3( -0.001 * Delta.xy, 0 );
 //_DEBUG = float3( H0.xy / _TexSize, 0 );
 //_DEBUG = float3( H1.xy / _TexSize, 0 );
-//_DEBUG = 0.5 * P1.z;
-//return Fade;
+// _DEBUG = 0.01 / P1.z;
+// _DEBUG = P0.y / _TexSize.y;
+// return Fade;
 
 
 	float2	InvSlope = abs( Slope.xy );
@@ -115,7 +123,7 @@ const float		ZThicknessPow = 1.0;
 //return Fade;
 
 //	uint	MipLevel = SSR_MIP_MAX;				// Start at coarsest mip
-uint	MipLevel = 0U;
+uint	MipLevel = 4U;
 	float	PixelSize = 1U << MipLevel;			// That's the size of a pixel at this mip
 //	float	ScaleFactor = 1.0 / PixelSize;		// That's the scale factor to apply to a mip 0 pixel to obtain its position in the current mip's pixel
 
@@ -129,24 +137,34 @@ uint	MipLevel = 0U;
 	bool	InInterval = false;
 
 	// Sample at current position & current mip
-	float2	ZMinMax;// = SampleSceneZ( P0.xy, MipLevel, _TexFullResDepth, _TexDownsampledDepth, ZThicknessFactors, ZThicknessPow );
+	uint2	PixelPos = uint2( floor( P0.xy ) );
+	float2	NextZMinMax = SampleSceneZ( PixelPos, MipLevel, _TexFullResDepth, _TexDownsampledDepth, ZThicknessFactors, ZThicknessPow );
+	float2	ZMinMax = NextZMinMax;
 	float	Z = _csPosition.z;
 
 	// Main loop
 	[loop]
 	while ( StepIndex < StepsCount ) {
 
+		// Compute potential next intersection
+		uint2	PixelPos = uint2( floor( P0.xy ) );
+		float2	PixelBorder = PixelPos + BorderOffset;
+		float2	Distance2Border = PixelBorder - P0.xy;
+		float2	T = Distance2Border * InvSlope;	// "Time" to intersect, on both X and Y, to reach either next left/right pixel, or top/bottom pixel
+		float	t = min( T.x, T.y );			// Choose the closest intersection (i.e. horizontal or vertical border)
+		float3	NextP = P0 + t * Slope;
+
 		// Retrieve current Z
-		float	PreviousZ = Z;
-		Z = 1.0 / P0.z;
+		float	NextZ = 1.0 / NextP.z;
 
 		// Sample Zs at new mip and position
-		uint2	PixelPos = uint2( floor( P0.xy ) );
-		float2	PreviousZMinMax = ZMinMax;
-		ZMinMax = SampleSceneZ( PixelPos, MipLevel, _TexFullResDepth, _TexDownsampledDepth, ZThicknessFactors, ZThicknessPow );
+		NextZMinMax = SampleSceneZ( PixelPos, MipLevel, _TexFullResDepth, _TexDownsampledDepth, ZThicknessFactors, ZThicknessPow );
 
 		// Check if we're in the thickness interval
-		InInterval = Z >= ZMinMax.x && Z <= ZMinMax.y;
+InInterval = false;
+InInterval = InInterval || NextZ >= NextZMinMax.x && NextZ <= NextZMinMax.y;	// Either we're currently in the interval
+InInterval = InInterval || Z < ZMinMax.x && NextZ > NextZMinMax.x;				// Or we passed through the front
+//InInterval = InInterval || PreviousZ < PreviousZMinMax.y && Z > ZMinMax.y;	// Or we passed through the back
 
 		[branch]
 		if ( InInterval ) {
@@ -169,11 +187,9 @@ uint	MipLevel = 0U;
 
 		// No intersection!
 		// It means we can safely march forward a full pixel!
-		float2	PixelBorder = PixelPos + BorderOffset;
-		float2	Distance2Border = PixelBorder - P0.xy;
-		float2	T = Distance2Border * InvSlope;	// "Time" to intersect, on both X and Y, to reach either next left/right pixel, or top/bottom pixel
-		float	t = min( T.x, T.y );			// Choose the closest intersection (i.e. horizontal or vertical border)
-		P0 += t * Slope;
+		P0 = NextP;
+		Z = NextZ;
+		ZMinMax = NextZMinMax;
 
 		StepIndex++;			// Count actual steps
 //		StepIndex += PixelSize;	// Or count actual pixels on screen
@@ -254,13 +270,13 @@ float3	PS( VS_IN _In ) : SV_TARGET0 {
 		float2	hitUV;
 		float	hitDistance;
 		float3	DEBUG;
-		float	blend = ScreenSpaceRayTrace( csHit, csReflect, 10.0, _TexLinearDepth, _TexDownsampledDepth, Dims, _Camera2Proj, MAX_STEPS, hitDistance, hitUV, DEBUG );
+		float	blend = ScreenSpaceRayTrace( csHit, csReflect, 100.0, _TexLinearDepth, _TexDownsampledDepth, Dims, _Camera2Proj, MAX_STEPS, hitDistance, hitUV, DEBUG );
 		float3	SKY_COLOR = float3( 1, 0, 0 );
 		Color.xyz = lerp( SKY_COLOR, _TexSource.SampleLevel( LinearClamp, float3( hitUV, 0.0 ), 0.0 ).xyz, blend );
 
 //return blend;
 //return csReflect;
-//return lerp( float3( 0.8, 0, 0.8 ), DEBUG, blend );
+return lerp( float3( 0.8, 0, 0.8 ), DEBUG, blend );
 	}
 
 
