@@ -32,6 +32,7 @@ float ComputeSceneZThickness( float _sceneZMin, float4 _zThicknessFactors, float
 //	_csPosition, the initial camera-space ray position
 //	_csDirection, the camera-space ray direction
 //	_RayLength, the maximum ray length to trace
+//	_TexFullResDepth, the full resolution depth buffer
 //	_TexDownsampledDepth, the downsampled depth buffer
 //	_TexSize, the size of lowest mip of the _TexDownsampledDepth
 //	_Camera2Proj, the CAMERA=>PROJECTION transform
@@ -40,7 +41,7 @@ float ComputeSceneZThickness( float _sceneZMin, float4 _zThicknessFactors, float
 //	_UV, the normalized UV coordinates where the hit occurred
 // Returns a blend factor in [0,1] to blend the reflection with default sky reflection
 //
-float	ScreenSpaceRayTrace( float3 _csPosition, float3 _csDirection, float _RayLength, Texture2D<float4> _TexDownsampledDepth, uint2 _TexSize, float4x4 _Camera2Proj, uint _MaxStepsCount, out float _HitDistance, out float2 _UV, out float3 _DEBUG ) {
+float	ScreenSpaceRayTrace( float3 _csPosition, float3 _csDirection, float _RayLength, Texture2D<float> _TexFullResDepth, Texture2D<float4> _TexDownsampledDepth, uint2 _TexSize, float4x4 _Camera2Proj, uint _MaxStepsCount, out float _HitDistance, out float2 _UV, out float3 _DEBUG ) {
 
 	_HitDistance = 0.0;
 	_UV = 0.0;
@@ -84,14 +85,19 @@ const float		ZThicknessPow = 1.0;
 
 	float3	Slope = (P1 - P0) / PixelsCount;						// Slope, with at least one of the 2 XY components equal to +1 or -1 (so adding the slope makes us advance an entire pixel)
 #else
-	float3	P0 = float3( H0.xy, k0 );			// We compose our screen-interpolable "P" as { XY=Pixel index, Z=1/Z }
-	float3	P1 = float3( H1.xy, k1 );
+// 	float3	P0 = float3( H0.xy, k0 );			// We compose our screen-interpolable "P" as { XY=Pixel index, Z=1/Z }
+// 	float3	P1 = float3( H1.xy, k1 );
+	float3	P0 = float3( H0.xy, 1.0 / _csPosition.z );			// We compose our screen-interpolable "P" as { XY=Pixel index, Z=1/Z }
+	float3	P1 = float3( H1.xy, 1.0 / csEndPos.z );
 
 	float3	Slope = (P1 - P0) / PixelsCount;						// Slope, with at least one of the 2 XY components equal to +1 or -1 (so adding the slope makes us advance an entire pixel)
 #endif
 
-	float2	BorderOffset = float2(	Slope.x > 0.0 ? 1.0 : 0.0,		// If we're tracing to the right, then the next pixel border is +1, otherwise it's 0
-									Slope.y > 0.0 ? 1.0 : 0.0 );	// If we're tracing to the bottom, then the next pixel border is +1, otherwise it's 0
+//	float2	BorderOffset = float2(	Slope.x > 0.0 ? 1.0 : 0.0,		// If we're tracing to the right, then the next pixel border is +1, otherwise it's 0
+//									Slope.y > 0.0 ? 1.0 : 0.0 );	// If we're tracing to the bottom, then the next pixel border is +1, otherwise it's 0
+
+	float2	BorderOffset = float2(	Slope.x > 0.0 ? 1.001 : -0.001,		// If we're tracing to the right, then the next pixel border is +1, otherwise it's 0
+									Slope.y > 0.0 ? 1.001 : -0.001 );	// If we're tracing to the bottom, then the next pixel border is +1, otherwise it's 0
 
 
 //_DEBUG = float3( Slope.xy, 0 );
@@ -121,12 +127,17 @@ uint	MipLevel = 0U;
 
 	// Sample at current position & current mip
 	float2	PixelPos = ScaleFactor * P0.xy;
+//float2	PixelPos = ScaleFactor * P1.xy;
 	float3	ZAvgMinMax = _TexDownsampledDepth.mips[MipLevel][uint2(PixelPos)].xyz;						// Assuming we're receiving X=Average Z, Y=Min Z, Z=Max Z, W=unused
 			ZAvgMinMax.z = ComputeSceneZThickness( ZAvgMinMax.z, ZThicknessFactors, ZThicknessPow );	// Grow the interval with artificial scene thickness
 	float3	PreviousZAvgMinMax = ZAvgMinMax;
 
 	float	Z = _csPosition.z;
 	float	PreviousZ;
+
+// if ( csEndPos.z >= ZAvgMinMax.y && csEndPos.z <= ZAvgMinMax.z )
+// 	_DEBUG = float3( 0, 1, 0 );
+// return Fade;
 
 	// Main loop
 	[loop]
@@ -135,36 +146,54 @@ uint	MipLevel = 0U;
 		PreviousZ = Z;	// Keep previous Z
 
 		// Retrieve current Z
+#if 0
+		float4	csPos = mul( float4( P0, 1.0 ), _Proj2Camera );
+		Z = csPos.z / csPos.w;
+#else
 		Z = 1.0 / P0.z;
-
-//float4	csPos = mul( float4( P0, 1.0 ), _Proj2Camera );
-//Z = csPos.z / csPos.w;
+#endif
 
 		// Check if we're in the thickness interval
+#if 1
+//  		InInterval   = PreviousZ < PreviousZAvgMinMax.y && Z >= PreviousZAvgMinMax.y
+//  					|| PreviousZ <= PreviousZAvgMinMax.z && Z > PreviousZAvgMinMax.z;
+// 		InInterval   = PreviousZ >= PreviousZAvgMinMax.y && PreviousZ <= PreviousZAvgMinMax.z;
+// 		InInterval   = InInterval || (Z >= ZAvgMinMax.y && Z <= ZAvgMinMax.z);
+		InInterval   = Z >= ZAvgMinMax.y && Z <= ZAvgMinMax.z;
+
+//InInterval   = Z >= ZAvgMinMax.y && Z <= ZAvgMinMax.z;
+
+
+#else
 //		InInterval = Z >= ZAvgMinMax.y && Z <= ZAvgMinMax.z;
-InInterval   = PreviousZ < ZAvgMinMax.y && Z >= ZAvgMinMax.y
-			|| PreviousZ <= ZAvgMinMax.z && Z > ZAvgMinMax.z;
+InInterval   = PreviousZ < PreviousZAvgMinMax.y && Z >= PreviousZAvgMinMax.y
+			|| PreviousZ <= PreviousZAvgMinMax.z && Z > PreviousZAvgMinMax.z;
 
 //InInterval   = PreviousZ < ZAvgMinMax.y && Z >= ZAvgMinMax.y;
 //InInterval   = PreviousZ <= ZAvgMinMax.z && Z > ZAvgMinMax.z;
+#endif
 
 		[branch]
 		if ( InInterval ) {
-			if ( MipLevel == 0U )
-			{
-				// We have an intersection at finest mip!
-				// @TODO: Compute better intersection
-				break;
+			if ( MipLevel == 0U ) {
+				// Check full res depth
+				uint2	PixelIndex = uint2( 0.5 * P0.xy );
+				ZAvgMinMax = _TexFullResDepth[PixelIndex];
+				ZAvgMinMax.z = ComputeSceneZThickness( ZAvgMinMax.z, ZThicknessFactors, ZThicknessPow );	// Grow the interval with artificial scene thickness
+				InInterval = Z >= ZAvgMinMax.y && Z <= ZAvgMinMax.z;
+				if ( InInterval )
+					break;	// We have an intersection at finest mip!
+			} else {
+//*				// Refine mip to check if we're still intersecting at finer resolution
+				MipLevel--;
+				PixelSize *= 0.5;	// Smaller pixels
+				ScaleFactor *= 2.0;	// Larger scale
+
+				// We can't march yet as we don't know if we're intersecting at finer mip!
+				continue;
+//*/
 			}
-
-/*			// Refine mip to check if we're still intersecting at finer resolution
-			MipLevel--;
-			PixelSize *= 0.5;	// Smaller pixels
-			ScaleFactor *= 2.0;	// Larger scale
-
-			// We can't march yet as we don't know if we're intersecting at finer mip!
-			continue;
-*/		}
+		}
 
 		// No intersection!
 		// It means we can safely march forward a full pixel!
@@ -173,16 +202,11 @@ InInterval   = PreviousZ < ZAvgMinMax.y && Z >= ZAvgMinMax.y
 		float2	T = Distance2Border * InvSlope;	// "Time" to intersect, on both X and Y, to reach either next left/right pixel, or top/bottom pixel
 		float	t = min( T.x, T.y );			// Choose the closest intersection (i.e. horizontal or vertical border)
 
-//t = min( 1.0, t );
-
-t += 1e-3;	// Always cross the border
-//t += 1e-6;
-
-//if ( t > 1.0 ) {
-////if ( any( Distance2Border < 0.0 ) ) {
-//_DEBUG = float3( 1.0 * StepIndex, 0, 0 );
-//return Fade;
-//}
+// if ( t > 1.0 ) {
+// //if ( any( Distance2Border < 0.0 ) ) {
+// _DEBUG = float3( 0.1 * (1+StepIndex), 0, 0 );
+// return Fade;
+// }
 
 //_DEBUG.xy = floor( PixelPos ) / _TexSize;
 //_DEBUG = 1.0 * t;
@@ -190,7 +214,20 @@ t += 1e-3;	// Always cross the border
 
 //t = 1.0;
 
+//t = min( 1.0, t );
+//t *= 1.5;
+//t += 1e-6;
+//t += 1e-3;	// Always cross the border
+//t = max( 1e-3, t );
+
 		P0 += t * PixelSize * Slope;
+
+// if ( P0.x == 0.0 || P0.y == 0.0 || P0.x == 1.0 || P0.y == 1.0 ) {
+// //	P0 += 1e-3 * Slope;
+// 	_DEBUG = float3( 1, 1, 0 );
+// 	return Fade;
+// }
+
 
 		StepIndex++;			// Count actual steps
 //		StepIndex += PixelSize;	// Or count actual pixels on screen
@@ -215,11 +252,15 @@ break;
 	// Recompute hit distance and UVs
 	_UV = P0.xy / _TexSize;
 
+// 	// Check full res depth
+// 	ZAvgMinMax = _TexFullResDepth.SampleLevel( LinearClamp, _UV, 0.0 );
+// 	ZAvgMinMax.z = ComputeSceneZThickness( ZAvgMinMax.z, ZThicknessFactors, ZThicknessPow );	// Grow the interval with artificial scene thickness
+// 	InInterval = Z >= ZAvgMinMax.y && Z <= ZAvgMinMax.z;
 
 //_DEBUG = MipLevel;
 //_DEBUG = 0.5 * PixelSize;
 _DEBUG = float3( _UV, 0 );
-_DEBUG = StepIndex / 64.0;
+_DEBUG = StepIndex / 128.0;
 //InInterval = 1.0;
 
 	return InInterval ? Fade : 0.0;
@@ -270,7 +311,7 @@ float3	PS( VS_IN _In ) : SV_TARGET0 {
 		float2	hitUV;
 		float	hitDistance;
 		float3	DEBUG;
-		float	blend = ScreenSpaceRayTrace( csHit, csReflect, 10.0, _TexDownsampledDepth, Dims, _Camera2Proj, MAX_STEPS, hitDistance, hitUV, DEBUG );
+		float	blend = ScreenSpaceRayTrace( csHit, csReflect, 10.0, _TexLinearDepth, _TexDownsampledDepth, Dims, _Camera2Proj, MAX_STEPS, hitDistance, hitUV, DEBUG );
 		float3	SKY_COLOR = float3( 1, 0, 0 );
 		Color.xyz = lerp( SKY_COLOR, _TexSource.SampleLevel( LinearClamp, float3( hitUV, 0.0 ), 0.0 ).xyz, blend );
 
