@@ -437,8 +437,10 @@ float2 castRay( in float3 ro, in float3 rd, const float tmin=0.01, const float t
 	    m = res.y;
     }
 
-    if( t>tmax )
+    if( t>tmax ) {
 		m = -1.0;	// Sky
+		t = 1e6;
+	}
 
     return float2( t, m );
 }
