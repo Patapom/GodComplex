@@ -171,22 +171,15 @@ uint	MipLevel = 4U;
 		// Check if we're in the thickness interval
 		InInterval = false;
 
-//#if 0
-////Ici ça résoud la barbe, mais on rate des intersections
-//InInterval = InInterval || (NextZ >= NextZMinMax.x && NextZ <= NextZMinMax.y);	// Either we're currently in the interval
-////InInterval = InInterval || (Z < ZMinMax.x && NextZ > ZMinMax.x);					// Or we passed through the front
-//InInterval = InInterval || (Z < NextZMinMax.y && NextZ > NextZMinMax.y);			// Or we passed through the back
-//#else
-////Ici on a les intersections mais c'est la barbe!
-//InInterval = InInterval || (NextZ >= NextZMinMax.x && NextZ <= NextZMinMax.y);	// Either we're currently in the interval
-//InInterval = InInterval || (Z < ZMinMax.x && NextZ > ZMinMax.x);					// Or we passed through the front
-//InInterval = InInterval || (Z < NextZMinMax.y && NextZ > NextZMinMax.y);			// Or we passed through the back
-//#endif
-
-
+#if 1
+InInterval = InInterval || (Z <= ZMinMax.y && NextZ >= ZMinMax.x);
+//InInterval = InInterval || (Z < ZMinMax.x && NextZ >= ZMinMax.x);		// Or we passed through the front
+//InInterval = InInterval || (Z <= ZMinMax.y && NextZ > ZMinMax.y);		// Or we passed through the back
+#else
 InInterval = InInterval || (NextZ >= ZMinMax.x && NextZ <= ZMinMax.y);	// Either we're currently in the interval
-InInterval = InInterval || (Z >= ZMinMax.x && NextZ <= ZMinMax.y);		// Either we're currently in the interval
-InInterval = InInterval || (Z < ZMinMax.y && NextZ > ZMinMax.y);		// Or we passed through the back
+//InInterval = InInterval || (Z < ZMinMax.x && NextZ >= ZMinMax.x);		// Or we passed through the front
+InInterval = InInterval || (Z <= ZMinMax.y && NextZ > ZMinMax.y);		// Or we passed through the back
+#endif
 
 
 		[branch]
@@ -290,13 +283,13 @@ float3	PS( VS_IN _In ) : SV_TARGET0 {
 		float2	hitUV;
 		float	hitDistance;
 		float3	DEBUG;
-		float	blend = ScreenSpaceRayTrace( csHit, csReflect, 10.0, _TexLinearDepth, _TexDownsampledDepth, Dims, _Camera2Proj, MAX_STEPS, hitDistance, hitUV, DEBUG );
+		float	blend = ScreenSpaceRayTrace( csHit, csReflect, 1000.0, _TexLinearDepth, _TexDownsampledDepth, Dims, _Camera2Proj, MAX_STEPS, hitDistance, hitUV, DEBUG );
 		float3	SKY_COLOR = float3( 1, 0, 0 );
 		Color.xyz = lerp( SKY_COLOR, _TexSource.SampleLevel( LinearClamp, float3( hitUV, 0.0 ), 0.0 ).xyz, blend );
 
 //return blend;
 //return csReflect;
-//return lerp( float3( 0.8, 0, 0.8 ), DEBUG, blend );
+return lerp( float3( 0.8, 0, 0.8 ), DEBUG, blend );
 	}
 
 
