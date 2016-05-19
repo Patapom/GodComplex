@@ -181,7 +181,6 @@ InInterval = InInterval || (NextZ >= ZMinMax.x && NextZ <= ZMinMax.y);	// Either
 InInterval = InInterval || (Z <= ZMinMax.y && NextZ > ZMinMax.y);		// Or we passed through the back
 #endif
 
-
 		[branch]
 		if ( InInterval ) {
 			if ( MipLevel == 0U )
@@ -262,9 +261,10 @@ float3	PS( VS_IN _In ) : SV_TARGET0 {
 	if ( hitDistance > 0.0 && hitDistance < sceneDistance ) {
 		float3	wsHit = wsPos + hitDistance * wsDir;
 		float3	wsNormal = float3( 0, 1, 0 );	// Let's make it wavy later...
+//		float3	wsNormal = normalize( float3( sin( 50.0 * wsHit.x + 2.0 * iGlobalTime ), 10.0, sin( 50.0 * wsHit.z - 4.0 * iGlobalTime ) ) );	// Pipo wave
 		float3	wsReflect = reflect( wsDir, wsNormal );
 
-		const uint	MAX_STEPS = 256;
+		const uint	MAX_STEPS = 64;
 
 		float3	csHit = mul( float4( wsHit, 1.0 ), _World2Camera ).xyz;
 		float3	csReflect = mul( float4( wsReflect, 0.0 ), _World2Camera ).xyz;
@@ -289,7 +289,7 @@ float3	PS( VS_IN _In ) : SV_TARGET0 {
 
 //return blend;
 //return csReflect;
-return lerp( float3( 0.8, 0, 0.8 ), DEBUG, blend );
+//return lerp( float3( 0.8, 0, 0.8 ), DEBUG, blend );
 	}
 
 
