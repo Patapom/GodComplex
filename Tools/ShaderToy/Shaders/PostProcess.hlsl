@@ -82,11 +82,16 @@ const float		ZThicknessPow = 1.0;
 	H0.xyz *= k0;
 	H1.xyz *= k1;
 
+	float	RayBendFactor = saturate( 4.0 * (1.0 - abs(H0.x) ) );		// Will bend the ray more when the ray origin gets close to a screen border
+//	float	RayBendFactor = smoothstep( 0.8, 1.0, abs(H0.x) );		// Will bend the ray more when the ray origin gets close to a screen border
+	H1.x = lerp( H0.x, H1.x, RayBendFactor );
+
 	H0.xy = float2( 0.5 * (1.0 + H0.x), 0.5 * (1.0 - H0.y) );
 	H1.xy = float2( 0.5 * (1.0 + H1.x), 0.5 * (1.0 - H1.y) );
 
 //H0.xy = saturate( H0.xy );
 //H1.xy = saturate( H1.xy );
+//H1.x = saturate( H1.x );
 
 	H0.xy *= _TexSize;	// Now in full-resolution pixels
 	H1.xy *= _TexSize;
@@ -94,8 +99,10 @@ const float		ZThicknessPow = 1.0;
 	float2	Delta = H1.xy - H0.xy;
 	float	PixelsCount = max( abs( Delta.x ), abs( Delta.y ) );
 
-	float3	P0 = float3( H0.xy, 1.0 / _csPosition.z );	// We compose our screen-interpolable "P" as { XY=Pixel index, Z=1/Z }
-	float3	P1 = float3( H1.xy, 1.0 / csEndPos.z );
+//	float3	P0 = float3( H0.xy, 1.0 / _csPosition.z );	// We compose our screen-interpolable "P" as { XY=Pixel index, Z=1/Z }
+//	float3	P1 = float3( H1.xy, 1.0 / csEndPos.z );
+	float3	P0 = float3( H0.xy, k0 );	// We compose our screen-interpolable "P" as { XY=Pixel index, Z=1/Z }
+	float3	P1 = float3( H1.xy, k1 );
 
 	float3	Slope = (P1 - P0) / PixelsCount;			// Slope, with at least one of the 2 XY components equal to +1 or -1 (so adding the slope makes us advance an entire pixel)
 
@@ -155,25 +162,32 @@ uint	MipLevel = 4U;
 		float	NextZ = 1.0 / NextP.z;
 
 		// Sample Zs at new mip and position
-		uint2	NextPixelPos = uint2( floor( NextP.xy ) );
-		float2	NextZMinMax = SampleSceneZ( NextPixelPos, MipLevel, _TexFullResDepth, _TexDownsampledDepth, ZThicknessFactors, ZThicknessPow );
+//		uint2	NextPixelPos = uint2( floor( NextP.xy ) );
+		float2	ZMinMax = SampleSceneZ( PixelPos, MipLevel, _TexFullResDepth, _TexDownsampledDepth, ZThicknessFactors, ZThicknessPow );
 
 		StepIndex++;			// Count actual texture taps
 //		StepIndex += PixelSize;	// Or count actual pixels on screen
 
 		// Check if we're in the thickness interval
-InInterval = false;
-#if 1
-Ici ça résoud la barbe, mais on rate des intersections
-InInterval = InInterval || (NextZ >= NextZMinMax.x && NextZ <= NextZMinMax.y);	// Either we're currently in the interval
+		InInterval = false;
+
+//#if 0
+////Ici ça résoud la barbe, mais on rate des intersections
+//InInterval = InInterval || (NextZ >= NextZMinMax.x && NextZ <= NextZMinMax.y);	// Either we're currently in the interval
+////InInterval = InInterval || (Z < ZMinMax.x && NextZ > ZMinMax.x);					// Or we passed through the front
+//InInterval = InInterval || (Z < NextZMinMax.y && NextZ > NextZMinMax.y);			// Or we passed through the back
+//#else
+////Ici on a les intersections mais c'est la barbe!
+//InInterval = InInterval || (NextZ >= NextZMinMax.x && NextZ <= NextZMinMax.y);	// Either we're currently in the interval
 //InInterval = InInterval || (Z < ZMinMax.x && NextZ > ZMinMax.x);					// Or we passed through the front
-InInterval = InInterval || (Z < NextZMinMax.y && NextZ > NextZMinMax.y);			// Or we passed through the back
-#else
-Ici on a les intersections mais c'est la barbe!
-InInterval = InInterval || (NextZ >= NextZMinMax.x && NextZ <= NextZMinMax.y);	// Either we're currently in the interval
-InInterval = InInterval || (Z < ZMinMax.x && NextZ > ZMinMax.x);					// Or we passed through the front
-InInterval = InInterval || (Z < NextZMinMax.y && NextZ > NextZMinMax.y);			// Or we passed through the back
-#endif
+//InInterval = InInterval || (Z < NextZMinMax.y && NextZ > NextZMinMax.y);			// Or we passed through the back
+//#endif
+
+
+InInterval = InInterval || (NextZ >= ZMinMax.x && NextZ <= ZMinMax.y);	// Either we're currently in the interval
+InInterval = InInterval || (Z >= ZMinMax.x && NextZ <= ZMinMax.y);		// Either we're currently in the interval
+InInterval = InInterval || (Z < ZMinMax.y && NextZ > ZMinMax.y);		// Or we passed through the back
+
 
 		[branch]
 		if ( InInterval ) {
@@ -198,9 +212,9 @@ InInterval = InInterval || (Z < NextZMinMax.y && NextZ > NextZMinMax.y);			// Or
 		// It means we can safely march forward a full pixel!
 		P0 = NextP;
 		Z = NextZ;
-		ZMinMax = NextZMinMax;
+//		ZMinMax = NextZMinMax;
 
-/*		// Attempt to trace at coarser resolution (larger pixels, faster steps)
+//*		// Attempt to trace at coarser resolution (larger pixels, faster steps)
 		if ( MipLevel < SSR_MIP_MAX ) {
 			MipLevel++;
 // 			PixelSize *= 2.0;	// Larger pixels
@@ -276,13 +290,13 @@ float3	PS( VS_IN _In ) : SV_TARGET0 {
 		float2	hitUV;
 		float	hitDistance;
 		float3	DEBUG;
-		float	blend = ScreenSpaceRayTrace( csHit, csReflect, 100.0, _TexLinearDepth, _TexDownsampledDepth, Dims, _Camera2Proj, MAX_STEPS, hitDistance, hitUV, DEBUG );
+		float	blend = ScreenSpaceRayTrace( csHit, csReflect, 10.0, _TexLinearDepth, _TexDownsampledDepth, Dims, _Camera2Proj, MAX_STEPS, hitDistance, hitUV, DEBUG );
 		float3	SKY_COLOR = float3( 1, 0, 0 );
 		Color.xyz = lerp( SKY_COLOR, _TexSource.SampleLevel( LinearClamp, float3( hitUV, 0.0 ), 0.0 ).xyz, blend );
 
 //return blend;
 //return csReflect;
-return lerp( float3( 0.8, 0, 0.8 ), DEBUG, blend );
+//return lerp( float3( 0.8, 0, 0.8 ), DEBUG, blend );
 	}
 
 
