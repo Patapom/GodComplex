@@ -117,12 +117,14 @@ float	ScreenSpaceRayTrace( float3 _csPosition, float3 _csDirection, uint _MaxSte
 	H0.xy /= PixelSize;
 	Slope.z *= PixelSize;
 
+	float	MaxY = _TexSize.y >> MipLevel;
+
 	// Main loop
 	bool	InInterval = false;
 	float	Z = _csPosition.z;	// Initial Z
 	uint	StepIndex = 0U;
 	[loop]
-	while ( StepIndex < _MaxStepsCount ) {
+	while ( StepIndex < _MaxStepsCount && H0.y >= 0.0 && H0.y < MaxY ) {
 
 		// Compute next position
 		uint2	PixelPos = uint2( floor( H0.xy ) );
@@ -206,6 +208,7 @@ float	ScreenSpaceRayTrace( float3 _csPosition, float3 _csDirection, uint _MaxSte
 			MipLevel--;
 			H0.xy *= 2.0;		// Smaller pixels
 			Slope.z *= 0.5;		// Smaller steps
+			MaxY = _TexSize.y >> MipLevel;
 
 			InInterval = false;	// Assume we're not in the interval anymore (in case we exit because of excess of steps, we don't want false hits)
 
@@ -225,6 +228,7 @@ float	ScreenSpaceRayTrace( float3 _csPosition, float3 _csDirection, uint _MaxSte
 			MipLevel++;
 			H0.xy *= 0.5;		// Larger pixels
 			Slope.z *= 2.0;		// Larger steps
+			MaxY = _TexSize.y >> MipLevel;
 		}
 //*/
 	}
