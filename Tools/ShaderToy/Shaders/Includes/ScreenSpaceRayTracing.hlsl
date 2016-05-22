@@ -55,7 +55,7 @@ float	ScreenSpaceRayTrace( float3 _csPosition, float3 _csDirection, uint _MaxSte
 	if ( Fade == 0.0 )
 		return 0.0;	// Don't trace rays that come our way
 
-	float3	csEndPos = _csPosition + 0.01 * _csDirection;	// We don't really care about the end position here, we just want the slope
+	float3	csEndPos = _csPosition + _csDirection;	// We don't really care about the end position here, we just want the slope
 
 	float4	H0 = mul( float4( _csPosition, 1.0 ), _Camera2Proj );
 	float4	H1 = mul( float4( csEndPos, 1.0 ), _Camera2Proj );
@@ -81,7 +81,6 @@ float	ScreenSpaceRayTrace( float3 _csPosition, float3 _csDirection, uint _MaxSte
 	// Compute slope
 	float2	Delta = H1.xy - H0.xy;
 	float3	Slope = (H1.xyz - H0.xyz) / max( abs( Delta.x ), abs( Delta.y ) );	// Slope, with at least one of the 2 XY components equal to +1 or -1 (so adding the slope makes us advance an entire pixel)
-
 
 	// This ugly code is here to prevent invalid 0 slopes when camera is perfectly horizontal
 	Slope.x = abs(Slope.x) > 1e-3 ? Slope.x : 1e-3;
@@ -109,7 +108,7 @@ float	ScreenSpaceRayTrace( float3 _csPosition, float3 _csDirection, uint _MaxSte
 
 	// Main loop
 	bool	InInterval = false;
-	float	Z = _csPosition.z;	// Initial Z
+	float	Z = H0.w;	// Initial Z
 	uint	StepIndex = 0U;
 	[loop]
 	while ( StepIndex < _MaxStepsCount && H0.y >= 0.0 && H0.y < MaxY ) {

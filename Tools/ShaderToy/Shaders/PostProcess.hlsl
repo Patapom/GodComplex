@@ -67,7 +67,7 @@ float	ScreenSpaceRayTrace( float3 _csPosition, float3 _csDirection, uint _MaxSte
 	if ( Fade == 0.0 )
 		return 0.0;	// Don't trace rays that come our way
 
-	float3	csEndPos = _csPosition + 0.01 * _csDirection;	// We don't really care about the end position here, we just want the slope
+	float3	csEndPos = _csPosition + _csDirection;	// We don't really care about the end position here, we just want the slope
 
 	float4	H0 = mul( float4( _csPosition, 1.0 ), _Camera2Proj );
 	float4	H1 = mul( float4( csEndPos, 1.0 ), _Camera2Proj );
@@ -94,13 +94,18 @@ float	ScreenSpaceRayTrace( float3 _csPosition, float3 _csDirection, uint _MaxSte
 	float2	Delta = H1.xy - H0.xy;
 	float3	Slope = (H1.xyz - H0.xyz) / max( abs( Delta.x ), abs( Delta.y ) );	// Slope, with at least one of the 2 XY components equal to +1 or -1 (so adding the slope makes us advance an entire pixel)
 
-
 	// This ugly code is here to prevent invalid 0 slopes when camera is perfectly horizontal
 	Slope.x = abs(Slope.x) > 1e-3 ? Slope.x : 1e-3;
 	Slope.y = abs(Slope.y) > 1e-3 ? Slope.y : 1e-3;
 
 	// Bend horizontal slope based on closeness to screen border
 	Slope.x *= RayBendFactor;
+
+// //_DEBUG = 100.0 * (H1.w - H0.w);
+// //_DEBUG = -100.0 * Slope.z;
+// _DEBUG = float3( abs( H0.xy - H1.xy ), 0 );
+// _DEBUG = -0.005 / Slope.z;
+// return 1.0;
 
 	// Pre-Compute the never changing pixel border intersect (i.e. the rate at which we will intersect the next X or Y pixel border)
 	float2	InvSlope = 1.0 / Slope.xy;
@@ -111,7 +116,8 @@ float	ScreenSpaceRayTrace( float3 _csPosition, float3 _csDirection, uint _MaxSte
 									Slope.y > 0.0 ? 1.0+BORDER_EPSILON : -BORDER_EPSILON );	// If we're tracing to the bottom, then the next pixel border is below, otherwise it's above
 
 	// Initial scale pixel position and slope depending on mip
-	uint	MipLevel = SSR_MIP_MAX;		// Start at coarsest mip
+//	uint	MipLevel = SSR_MIP_MAX;		// Start at coarsest mip
+uint	MipLevel = 4U;
 	float	PixelSize = 1U << MipLevel;	// That's the size of a pixel at this mip (in full-resolution pixels)
 
 	H0.xy /= PixelSize;
@@ -121,7 +127,7 @@ float	ScreenSpaceRayTrace( float3 _csPosition, float3 _csDirection, uint _MaxSte
 
 	// Main loop
 	bool	InInterval = false;
-	float	Z = _csPosition.z;	// Initial Z
+	float	Z = H0.w;	// Initial Z
 	uint	StepIndex = 0U;
 	[loop]
 	while ( StepIndex < _MaxStepsCount && H0.y >= 0.0 && H0.y < MaxY ) {
@@ -134,6 +140,9 @@ float	ScreenSpaceRayTrace( float3 _csPosition, float3 _csDirection, uint _MaxSte
 		float	t = min( T.x, T.y );			// Choose the closest intersection (i.e. horizontal or vertical border)
 		float3	NextH = H0.xyz + t * Slope;
 		float	NextZ = 1.0 / NextH.z;
+
+Piste: est-ce qu'il ne faut pas recalculer le Z à l'exact bord du pixel, et non à 1/H0.z où H0.xy ne sont pas pile sur les bords????
+Au pire, render doc!
 
 		// Sample Zs at new mip and position
 		float2	ZMinMax = SampleSceneZ( PixelPos, MipLevel, _TexFullResDepth, _TexDownsampledDepth, _ZThicknessFactors, _ZThicknessPow );
@@ -190,7 +199,8 @@ float	ScreenSpaceRayTrace( float3 _csPosition, float3 _csDirection, uint _MaxSte
 		[branch]
 		if ( InInterval ) {
 			[branch]
-			if ( MipLevel == 0U ) {
+ 			if ( MipLevel == 0U )
+			{
 				// We have an intersection at finest mip!
 				// Compute "exact" hit Z
 				// We know that in the distance "t" we marched from Current Z to Next Z and crossed the ZMin boundary
@@ -236,7 +246,7 @@ float	ScreenSpaceRayTrace( float3 _csPosition, float3 _csDirection, uint _MaxSte
 	// Recompute and UVs
 	_UV = H0.xy / _TexSize;
 
-_DEBUG = float(MipLevel) / SSR_MIP_MAX;
+//_DEBUG = float(MipLevel) / SSR_MIP_MAX;
 _DEBUG = float3( _UV, 0 );
 _DEBUG = 0.1 * _HitZ;
 _DEBUG = float(StepIndex) / _MaxStepsCount;
@@ -274,7 +284,11 @@ float3	PS( VS_IN _In ) : SV_TARGET0 {
 //		float3	wsNormal = normalize( float3( sin( 50.0 * wsHit.x + 2.0 * iGlobalTime ), 10.0, sin( 50.0 * wsHit.z - 4.0 * iGlobalTime ) ) );	// Pipo wave
 		float3	wsReflect = reflect( wsDir, wsNormal );
 
-		const uint	MAX_STEPS = 64;
+// wsReflect.y *= 1.0;
+// wsReflect = normalize( wsReflect );
+
+//		const uint	MAX_STEPS = 64;
+const uint	MAX_STEPS = 512;
 
 		float3	csHit = mul( float4( wsHit, 1.0 ), _World2Camera ).xyz;
 		float3	csReflect = mul( float4( wsReflect, 0.0 ), _World2Camera ).xyz;
@@ -303,7 +317,7 @@ const float		ZThicknessPow = 1.0;
 		Color.xyz = lerp( SKY_COLOR, _TexSource.SampleLevel( LinearClamp, float3( hitUV, 0.0 ), 0.0 ).xyz, blend );
 
 //return blend;
-//return lerp( float3( 0.8, 0, 0.8 ), DEBUG, blend );
+return lerp( float3( 0.8, 0, 0.8 ), DEBUG, blend );
 	}
 
 

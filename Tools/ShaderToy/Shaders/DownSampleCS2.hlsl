@@ -31,8 +31,7 @@ float	ComputeLinearZ( float _projZ ) {
 #ifdef USE_16_16_BUFFER
 	groupshared float4	gs_Samples[16 * 16];	// Apparently, storing in too large a shared array fucks everything up!
 #else
-	groupshared float4	gs_Samples[16 * 16];	// Apparently, storing in 
-//	groupshared float4	gs_Samples[NUMTHREADX * NUMTHREADY];
+	groupshared float4	gs_Samples[NUMTHREADX * NUMTHREADY];
 #endif
 
 [numthreads( NUMTHREADX, NUMTHREADY, 1 )]
