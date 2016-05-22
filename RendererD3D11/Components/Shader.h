@@ -9,12 +9,11 @@
 //#define AUTHORIZE_MULTITHREADED_COMPILATION	// Define this to allow multithreaded compilation at runtime
 
 #if !defined(GODCOMPLEX) && defined(AUTHORIZE_MULTITHREADED_COMPILATION)
-// This is useful only for applications, not demos !
+	// This is useful only for applications, not demos !
+	#define MATERIAL_COMPILE_AT_RUNTIME	// Define this to start compiling shaders at runtime and avoid blocking (useful for debugging)
+										// If you enable that option then the shader will start compiling as soon as WatchShaderModifications() is called on the material
 
-#define MATERIAL_COMPILE_AT_RUNTIME	// Define this to start compiling shaders at runtime and avoid blocking (useful for debugging)
-									// If you enable that option then the shader will start compiling as soon as WatchShaderModifications() is called on the material
-
-#define MATERIAL_COMPILE_THREADED	// Define this to launch shader compilation in different threads (compiles much faster but shaders are not immediately ready!)
+	#define MATERIAL_COMPILE_THREADED	// Define this to launch shader compilation in different threads (compiles much faster but shaders are not immediately ready!)
 
 #endif
 
@@ -26,15 +25,13 @@
 
 
 #if defined(_DEBUG) || !defined(GODCOMPLEX)
-// Define this to save the binary blobs for each shader (only works in DEBUG mode)
-// NOTE: in RELEASE, the blobs are embedded as resources and read from binary so they need to have been saved to
-
-#ifdef GODCOMPLEX
-#define SAVE_SHADER_BLOB_TO		"./Resources/Shaders/Binary/"
-#else
-#define SAVE_SHADER_BLOB_TO		"./Shaders/Binary/"
-#endif
-
+	// Define this to save the binary blobs for each shader (only works in DEBUG mode)
+	// NOTE: in RELEASE, the blobs are embedded as resources and read from binary so they need to have been saved to
+	#ifdef GODCOMPLEX
+		#define SAVE_SHADER_BLOB_TO		"./Resources/Shaders/Binary/"
+	#else
+		#define SAVE_SHADER_BLOB_TO		"./Shaders/Binary/"
+	#endif
 #endif	// _DEBUG
 
 #ifdef GODCOMPLEX

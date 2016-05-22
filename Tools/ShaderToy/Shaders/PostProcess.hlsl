@@ -64,8 +64,9 @@ float	ScreenSpaceRayTrace( float3 _csPosition, float3 _csDirection, uint _MaxSte
 	// Fade based on view direction
 	const float	START_FADE_DIR_Z = 0.05;	// Start fading out when direction's Z component is less than this value (i.e. moving toward negative Z directions)
 	float	Fade = smoothstep( 0.0, START_FADE_DIR_Z, _csDirection.z );
-	if ( Fade == 0.0 )
-		return 0.0;	// Don't trace rays that come our way
+//float	Fade = saturate( _csDirection.z );
+//	if ( Fade == 0.0 )
+//		return 0.0;	// Don't trace rays that come our way
 
 	float3	csEndPos = _csPosition + _csDirection;	// We don't really care about the end position here, we just want the slope
 
@@ -115,9 +116,11 @@ float	ScreenSpaceRayTrace( float3 _csPosition, float3 _csDirection, uint _MaxSte
 	float2	BorderOffset = float2(	Slope.x > 0.0 ? 1.0+BORDER_EPSILON : -BORDER_EPSILON,	// If we're tracing to the right, then the next pixel border is on the right, otherwise it's on the left
 									Slope.y > 0.0 ? 1.0+BORDER_EPSILON : -BORDER_EPSILON );	// If we're tracing to the bottom, then the next pixel border is below, otherwise it's above
 
+	float2	BorderOffsetZ = float2(	Slope.x > 0.0 ? 1.0 : 0.0,		// If we're tracing to the right, then the next pixel border is on the right, otherwise it's on the left
+									Slope.y > 0.0 ? 1.0 : 0.0 );	// If we're tracing to the bottom, then the next pixel border is below, otherwise it's above
+
 	// Initial scale pixel position and slope depending on mip
-//	uint	MipLevel = SSR_MIP_MAX;		// Start at coarsest mip
-uint	MipLevel = 4U;
+	uint	MipLevel = SSR_MIP_MAX;		// Start at coarsest mip
 	float	PixelSize = 1U << MipLevel;	// That's the size of a pixel at this mip (in full-resolution pixels)
 
 	H0.xy /= PixelSize;
@@ -130,7 +133,7 @@ uint	MipLevel = 4U;
 	float	Z = H0.w;	// Initial Z
 	uint	StepIndex = 0U;
 	[loop]
-	while ( StepIndex < _MaxStepsCount && H0.y >= 0.0 && H0.y < MaxY ) {
+	while ( StepIndex < _MaxStepsCount && H0.y >= 0.0 && H0.y < MaxY && H0.z > 0.01 ) {
 
 		// Compute next position
 		uint2	PixelPos = uint2( floor( H0.xy ) );
@@ -139,10 +142,11 @@ uint	MipLevel = 4U;
 		float2	T = Distance2Border * InvSlope;	// "Time" to intersect, on both X and Y, to reach either next left/right pixel, or top/bottom pixel
 		float	t = min( T.x, T.y );			// Choose the closest intersection (i.e. horizontal or vertical border)
 		float3	NextH = H0.xyz + t * Slope;
-		float	NextZ = 1.0 / NextH.z;
 
-Piste: est-ce qu'il ne faut pas recalculer le Z à l'exact bord du pixel, et non à 1/H0.z où H0.xy ne sont pas pile sur les bords????
-Au pire, render doc!
+		float	NextZ = 1.0 / max( 1e-6, NextH.z );	// Here we need to make sure we don't exceed the "ray horizon" and the interpolated Z is always positive
+													// Indeed, for very grazing rays, we quickly reach very far every time we march a single pixel and we can 
+													//	actually exceed the ray's "infinite distance" which occurs when the slope takes us into negative Z values
+													//	that's also one of the loop's exit condition (H0.z > 0) to avoid tracing "further than infinity"...
 
 		// Sample Zs at new mip and position
 		float2	ZMinMax = SampleSceneZ( PixelPos, MipLevel, _TexFullResDepth, _TexDownsampledDepth, _ZThicknessFactors, _ZThicknessPow );
@@ -249,6 +253,7 @@ Au pire, render doc!
 //_DEBUG = float(MipLevel) / SSR_MIP_MAX;
 _DEBUG = float3( _UV, 0 );
 _DEBUG = 0.1 * _HitZ;
+_DEBUG = H0.z <= 0.0 ? float3( 1, 0, 0 ) : float3( 0, 1, 0 );
 _DEBUG = float(StepIndex) / _MaxStepsCount;
 //InInterval = 1.0;	// Force show debug value
 
@@ -309,15 +314,15 @@ const float		ZThicknessPow = 1.0;
 
 		// Compute screen space reflection and blend with background color
 		// Actually, at the moment we simply replace the background color but we should use Fresnel equations to blend correctly...
-		float2	hitUV;
-		float	hitDistance;
-		float3	DEBUG;
+		float2	hitUV = 0.0;
+		float	hitDistance = 0.0;
+		float3	DEBUG = 0.0;
 		float	blend = ScreenSpaceRayTrace( csHit, csReflect, MAX_STEPS, _TexLinearDepth, _TexDownsampledDepth, Dims, ZThicknessFactors, ZThicknessPow, _Camera2Proj, hitDistance, hitUV, DEBUG );
 		float3	SKY_COLOR = float3( 1, 0, 0 );
 		Color.xyz = lerp( SKY_COLOR, _TexSource.SampleLevel( LinearClamp, float3( hitUV, 0.0 ), 0.0 ).xyz, blend );
 
 //return blend;
-return lerp( float3( 0.8, 0, 0.8 ), DEBUG, blend );
+//return lerp( float3( 0.8, 0, 0.8 ), DEBUG, blend );
 	}
 
 
