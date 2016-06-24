@@ -3,7 +3,7 @@
 
 
 //#define NSIGHT			// Define this if you're debugging the app using Nvidia Nsight
-#define RENDERDOC		// Define this if you're debugging the app using Crytek's RenderDoc
+//#define RENDERDOC		// Define this if you're debugging the app using Crytek's RenderDoc
 
 //#define DIRECTX10		// Define this to use DX10, otherwise DX11 will be used
 #define TRY_DIRECTX10_1	// Define this to attempt using DX10.1

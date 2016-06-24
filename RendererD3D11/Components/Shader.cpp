@@ -367,6 +367,9 @@ ID3DBlob*   Shader::CompileShader( const char* _pShaderFileName, const char* _pS
 		Flags1 |= D3DCOMPILE_SKIP_OPTIMIZATION;
 //		Flags1 |= D3DCOMPILE_WARNINGS_ARE_ERRORS;
 		Flags1 |= D3DCOMPILE_PREFER_FLOW_CONTROL;
+
+//Flags1 |= _bComputeShader ? D3DCOMPILE_OPTIMIZATION_LEVEL1 : D3DCOMPILE_OPTIMIZATION_LEVEL3;
+
 	#else
 		if ( _bComputeShader )
 			Flags1 |= D3DCOMPILE_OPTIMIZATION_LEVEL1;	// Seems to "optimize" (i.e. strip) the important condition line that checks for threadID before writing to concurrent targets => This leads to "race condition" errors
