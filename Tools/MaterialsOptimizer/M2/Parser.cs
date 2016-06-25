@@ -24,10 +24,11 @@ namespace MaterialsOptimizer
 		public void	Error( string _Error ) {
 			throw new Exception( _Error );
 		}
-		public void	ConsumeString( string _ExpectedString ) {
+		public void	ConsumeString( string _ExpectedString, bool _caseSensitive ) {
 			if ( !SkipSpaces() )
 				return;
-			if ( m_Content.Substring( m_Index, _ExpectedString.Length ) != _ExpectedString )
+			string	subString = m_Content.Substring( m_Index, _ExpectedString.Length );
+			if ( (_caseSensitive && subString != _ExpectedString) || (!_caseSensitive && subString.ToLower() != _ExpectedString.ToLower()) )
 				Error( "Unexpected string" );
 			m_Index += _ExpectedString.Length;
 		}
@@ -72,14 +73,17 @@ namespace MaterialsOptimizer
 			return Result;
 		}
 		public string	ReadBlock() {
+			return ReadBlock( '{', '}' );
+		}
+		public string	ReadBlock( char _blockStartCharacter, char _blockEndCharacter ) {
 			if ( !SkipSpaces() )
 				return null;
-			ConsumeString( "{" );
+			ConsumeString( _blockStartCharacter.ToString(), true );
 			int	StartIndex = m_Index;
 			int	BracesCount = 1;
 			while ( BracesCount > 0 ) {
-				if ( IsChar( '{' ) ) BracesCount++;
-				if ( IsChar( '}' ) ) BracesCount--;
+				if ( IsChar( _blockStartCharacter ) ) BracesCount++;
+				if ( IsChar( _blockEndCharacter ) ) BracesCount--;
 				m_Index++;
 			}
 			string	Block = m_Content.Substring( StartIndex, m_Index-StartIndex-1 );	// Skip last closing brace
@@ -93,27 +97,86 @@ namespace MaterialsOptimizer
 			string	Result = m_Content.Substring( StartIndex, m_Index-StartIndex );
 			return Result;
 		}
-		public float3	ReadFloat3( float3 _InitialValue) {
+
+		// Reads a float2 in the form { <x>, <y>, <z> }
+		public float2	ReadFloat2() {
 			string	Block = ReadBlock();
-			Parser	P = new Parser( Block );
+			return ReadFloat2( Block );
+		}
+		public float2	ReadFloat2( string _block ) {
+			Parser	P = new Parser( _block );
+			float2	Result = new float2();
 
-			float3	Result = _InitialValue;
-			string	coord = P.ReadString();
+			int		coordinateIndex = 0;
 			while ( P.OK ) {
-				P.ConsumeString( "= " );
 				float	value = P.ReadFloat();
-				P.ConsumeString( ";" );
+				P.ReadString();	// Skip separator
 
-				switch ( coord ) {
-					case "x": Result.x = value; break;
-					case "y": Result.y = value; break;
-					case "z": Result.z = value; break;
+				switch ( coordinateIndex ) {
+					case 0: Result.x = value; break;
+					case 1: Result.y = value; break;
 					default: Error( "Unexpected coordinate!" ); break;
 				}
-				coord = P.ReadString();
+				
+				coordinateIndex++;
 			}
 			return Result;
 		}
+
+		// Reads a float3 in the form { <x>, <y>, <z> }
+		public float3	ReadFloat3() {
+			string	Block = ReadBlock();
+			return ReadFloat3( Block );
+		}
+		public float3	ReadFloat3( string _block ) {
+			Parser	P = new Parser( _block );
+			float3	Result = new float3();
+
+			int		coordinateIndex = 0;
+			while ( P.OK ) {
+				float	value = P.ReadFloat();
+				P.ReadString();	// Skip separator
+
+				switch ( coordinateIndex ) {
+					case 0: Result.x = value; break;
+					case 1: Result.y = value; break;
+					case 2: Result.z = value; break;
+					default: Error( "Unexpected coordinate!" ); break;
+				}
+				
+				coordinateIndex++;
+			}
+			return Result;
+		}
+
+		// Reads a float3 in the form { <x>, <y>, <z>, <w> }
+		public float4	ReadFloat4() {
+			string	Block = ReadBlock();
+			return ReadFloat4( Block );
+		}
+		public float4	ReadFloat4( string _block ) {
+			Parser	P = new Parser( _block );
+
+			float4	Result = new float4();
+
+			int		coordinateIndex = 0;
+			while ( P.OK ) {
+				float	value = P.ReadFloat();
+				P.ReadString();	// Skip separator
+
+				switch ( coordinateIndex ) {
+					case 0: Result.x = value; break;
+					case 1: Result.y = value; break;
+					case 2: Result.z = value; break;
+					case 3: Result.w = value; break;
+					default: Error( "Unexpected coordinate!" ); break;
+				}
+				
+				coordinateIndex++;
+			}
+			return Result;
+		}
+
 		public bool	SkipSpaces() {
 			while ( OK && (IsSpace() || IsEOL()) ) {
 				m_Index++;
