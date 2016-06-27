@@ -12,13 +12,19 @@ namespace MaterialsOptimizer
 	[System.Diagnostics.DebuggerDisplay( "C={Cur} -> {Remainder}" )]
 	public class	Parser {
 		public string	m_Content = null;
+		public int		m_ContentLength = 0;
 		public int		m_Index = 0;
 		public char		Cur			{ get { return m_Content[m_Index]; } }
-		public bool		OK			{ get { return m_Index < m_Content.Length; } }
+		public bool		OK			{ get { return m_Index < m_ContentLength; } }
 		public string	Remainder	{ get { return m_Content.Remove( 0, m_Index ); } }
+
+		public char		this[int _index] {
+			get { return m_Content[m_Index+_index]; }
+		}
 
 		public Parser( string _Content ) {
 			m_Content = _Content;
+			m_ContentLength = m_Content.Length;
 		}
 
 		public void	Error( string _Error ) {
@@ -36,7 +42,7 @@ namespace MaterialsOptimizer
 			if ( !SkipSpaces() )
 				return -1;
 			int	StartIndex = m_Index;
-			while ( IsNumeric() || IsChar( '-' ) ) {
+			while ( OK && (IsNumeric() || IsChar( '-' )) ) {
 				m_Index++;
 			}
 
@@ -48,7 +54,7 @@ namespace MaterialsOptimizer
 			if ( !SkipSpaces() )
 				return 0.0f;
 			int	StartIndex = m_Index;
-			while ( IsNumeric() || IsChar( '-' ) || IsChar( '.' ) ) {
+			while ( OK && (IsNumeric() || IsChar( '-' ) || IsChar( '.' )) ) {
 				m_Index++;
 			}
 
@@ -63,7 +69,7 @@ namespace MaterialsOptimizer
 			if ( !SkipSpaces() )
 				return null;
 			int	StartIndex = m_Index;
-			while ( !IsSpace() && !IsEOL() ) {
+			while ( OK && !IsSpace() && !IsEOL() ) {
 				m_Index++;
 			}
 
@@ -91,7 +97,7 @@ namespace MaterialsOptimizer
 		}
 		public string	ReadToEOL() {
 			int	StartIndex = m_Index;
-			while ( !IsEOL() ) {
+			while ( OK && !IsEOL() ) {
 				m_Index++;
 			}
 			string	Result = m_Content.Substring( StartIndex, m_Index-StartIndex );
@@ -182,6 +188,19 @@ namespace MaterialsOptimizer
 				m_Index++;
 			}
 			return OK;
+		}
+		public void	SkipComment() {
+			while ( OK ) {
+				if ( m_Index >= m_ContentLength-2 ) {
+					m_Index = m_ContentLength;
+					return;	// End of text
+				}
+				if ( m_Content[m_Index] == '*' && m_Content[m_Index+1] == '/' ) {
+					m_Index += 2;
+					return;
+				}
+				m_Index++;
+			}
 		}
 		public bool	IsChar( char _Char ) {
 			return Cur == _Char;

@@ -16,13 +16,15 @@ using System.IO;
 //	Diffuse =>	Texture alpha can contain gloss iff !$isMasking && !$isAlpha
 //				In any case, the FetchDiffuseAlbedo should always replace alpha as a regular alpha channel when exiting the function...
 //
-//	
+//	Masks	=>	Masks cannot be merged if they don't have the same UV tiling/bias
+//				Layer 0 mask is only used to apply coloring to layer 0 diffuse albedo
+//
 //////////////////////////////////////////////////////////////////////////
 //
 //	OPTIONS
 //	-------
 //
-//		$alphaTest
+//		$alphaTest, $isMasking		=> Diffuse  with alpha, nothing to do for those materials: SKIP!
 //		$extraLayer					=> 0, 1, 2 allows up to 3 layers
 //
 //	Layer 0
@@ -57,12 +59,13 @@ using System.IO;
 // 	renderparm Layer1_MaskMode				{ option 0 range [0, 2] }	// 0 vertex color channel // 1 mask texture // 2 mask texture * vertex color channel
 // 	renderparm Layer1_InvertMask			{ option 0 range [0, 1] }
 // 	renderparm use_Layer1_ColorConstant		{ option 0 range [0, 1] }
-// 	renderParm Layer1_diffuseReuseLayer		{ option 0 range [0, 1] }
-// 	renderParm Layer1_bumpReuseLayer		{ option 0 range [0, 1] }
-// 	renderParm Layer1_specularReuseLayer	{ option 0 range [0, 1] }
-// 	renderParm Layer1_glossReuseLayer		{ option 0 range [0, 1] }
-// 	renderParm Layer1_metallicReuseLayer	{ option 0 range [0, 1] }
-// 	renderParm Layer1_maskReuseLayer		{ option 0 range [0, 1] }
+// 	renderParm Layer1_diffuseReuseLayer		{ option 0 range [0, 1] }	// 0 = No reuse // 1 = re-use layer 0
+// 	renderParm Layer1_bumpReuseLayer		{ option 0 range [0, 1] }	// 0 = No reuse // 1 = re-use layer 0
+// 	renderParm Layer1_specularReuseLayer	{ option 0 range [0, 1] }	// 0 = No reuse // 1 = re-use layer 0
+// 	renderParm Layer1_glossReuseLayer		{ option 0 range [0, 1] }	// 0 = No reuse // 1 = re-use layer 0
+// 	renderParm Layer1_metallicReuseLayer	{ option 0 range [0, 1] }	// 0 = No reuse // 1 = re-use layer 0
+// 	renderParm Layer1_maskReuseLayer		{ option 0 range [0, 1] }	// 0 = No reuse // 1 = re-use layer 0
+
 // 	renderParm Layer1_ScaleBias				{ Uniform	float4	{ 1.0, 1.0, 0.0, 0.0 } range [{ -20.0, -20.0, 0.0, 0.0 }, { 20.0, 20.0, 1.0, 1.0 }] }
 // 	renderParm Layer1_MaskScaleBias			{ Uniform	float4	{ 1.0, 1.0, 0.0, 0.0 } range [{ -20.0, -20.0, 0.0, 0.0 }, { 20.0, 20.0, 1.0, 1.0 }] }
 // 	renderParm Layer1_Maskmap				{ Texture2D	float	_default }
@@ -80,12 +83,13 @@ using System.IO;
 // 	renderparm Layer2_MaskMode				{ option 0 range [0, 2] }	// 0 vertex color channel // 1 mask texture // 2 mask texture * vertex color channel
 // 	renderparm Layer2_InvertMask			{ option 0 range [0, 1] }
 // 	renderparm use_Layer2_ColorConstant		{ option 0 range [0, 1] }
-// 	renderParm Layer2_diffuseReuseLayer		{ option 0 range [0, 2] }
-// 	renderParm Layer2_bumpReuseLayer		{ option 0 range [0, 2] }
-// 	renderParm Layer2_specularReuseLayer	{ option 0 range [0, 2] }
-// 	renderParm Layer2_glossReuseLayer		{ option 0 range [0, 2] }
-// 	renderParm Layer2_metallicReuseLayer	{ option 0 range [0, 2] }
-// 	renderParm Layer2_maskReuseLayer		{ option 0 range [0, 2] }
+// 	renderParm Layer2_diffuseReuseLayer		{ option 0 range [0, 2] }	// 0 = No re-use // 1 = re-user layer 0 // 2 = re-use layer 1
+// 	renderParm Layer2_bumpReuseLayer		{ option 0 range [0, 2] }	// 0 = No re-use // 1 = re-user layer 0 // 2 = re-use layer 1
+// 	renderParm Layer2_specularReuseLayer	{ option 0 range [0, 2] }	// 0 = No re-use // 1 = re-user layer 0 // 2 = re-use layer 1
+// 	renderParm Layer2_glossReuseLayer		{ option 0 range [0, 2] }	// 0 = No re-use // 1 = re-user layer 0 // 2 = re-use layer 1
+// 	renderParm Layer2_metallicReuseLayer	{ option 0 range [0, 2] }	// 0 = No re-use // 1 = re-user layer 0 // 2 = re-use layer 1
+// 	renderParm Layer2_maskReuseLayer		{ option 0 range [0, 2] }	// 0 = No re-use // 1 = re-user layer 0 // 2 = re-use layer 1
+
 // 	renderParm Layer2_ScaleBias				{ Uniform	float4	{ 1.0, 1.0, 0.0, 0.0 } range [{ -20.0, -20.0, 0.0, 0.0 }, { 20.0, 20.0, 1.0, 1.0 }] }
 // 	renderParm Layer2_MaskScaleBias			{ Uniform	float4	{ 1.0, 1.0, 0.0, 0.0 } range [{ -20.0, -20.0, 0.0, 0.0 }, { 20.0, 20.0, 1.0, 1.0 }] }
 // 	renderParm Layer2_Maskmap				{ Texture2D	float	_default }
@@ -97,9 +101,6 @@ using System.IO;
 // 	renderparm Layer2_ColorConstant			{ Uniform float4 { 1.0, 1.0, 1.0, 1.0 } range [{0,0,0,0}, {1,1,1,1}] }
 // 	renderParm Layer2_RescaleValues			{ Uniform float2 { 0.4, 0.6 } range [{0,0}, {1,1}] }
 //
-//		
-//		
-//		
 //
 //////////////////////////////////////////////////////////////////////////
 //	Layering & Masking
@@ -171,7 +172,6 @@ using System.IO;
 // 				layer0_mask = $Layer0_Maskmap.Sample($anisotropicSampler, _pixelCtx.m_maskTexCoords[0]).r;
 // 				float L0_M1 = layer0_mask;
 // 				float L0_M2 = _pixelCtx.m_vertexColor[$Layer0_VtxColorMaskChannel];
-// 				//M1 = M1 * M1;
 // 				float L0_M = L0_M1 * L0_M2;
 // 				_pixelCtx.m_masks[0] = LinearStep( $Layer0_RescaleValues.x, $Layer0_RescaleValues.y, L0_M );
 // 			#endif
@@ -203,7 +203,6 @@ using System.IO;
 // 				#endif
 // 				float L1_M1 = layer1_mask;
 // 				float L1_M2 = _pixelCtx.m_vertexColor[$Layer1_VtxColorMaskChannel];
-// 				//M1 = M1 * M1;
 // 				float L1_M = L1_M1 * L1_M2;
 // 				_pixelCtx.m_masks[1] = LinearStep( $Layer1_RescaleValues.x, $Layer1_RescaleValues.y, L1_M );
 // 			#endif
@@ -323,6 +322,9 @@ namespace MaterialsOptimizer
 		{
 			InitializeComponent();
 
+
+			Material.Layer.Texture.ms_TexturesBasePath = new DirectoryInfo( @"V:\Dishonored2\Dishonored2\base\" );
+
 ParseFile( new FileInfo( @"V:\Dishonored2\Dishonored2\base\decls\m2\models\environment\buildings\rich_large_ext_partitions_01.m2" ) );
 
 			RecurseParseMaterials( new DirectoryInfo( @"V:\Dishonored2\Dishonored2\base\decls\m2" ) );
@@ -351,9 +353,30 @@ ParseFile( new FileInfo( @"V:\Dishonored2\Dishonored2\base\decls\m2\models\envir
 			Parser	P = new Parser( fileContent );
 			while ( P.OK ) {
 				string	token = P.ReadString();
+				if ( token == null )
+					return;
+				if ( token.StartsWith( "//" ) ) {
+					P.ReadToEOL();
+					continue;
+				}
+				if ( token.StartsWith( "/*" ) ) {
+					P.SkipComment();
+					continue;
+				}
+
 				switch ( token.ToLower() ) {
 					case "material":
 						string		materialName = P.ReadString();
+						if ( materialName.EndsWith( "{" ) ) {
+							materialName = materialName.Substring( 0, materialName.Length-1 );
+							P.m_Index--;
+						}
+
+						P.SkipSpaces();
+						if ( P[0] == '/' && P[1] == '*' ) {
+							P.SkipComment();	// YES! Someone did do that!
+						}
+
 						string		materialContent = P.ReadBlock();
 						Material	M = new Material( _fileName, materialName, materialContent );
 						m_materials.Add( M );
