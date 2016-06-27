@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.IO;
+using Microsoft.Win32;
 
 //////////////////////////////////////////////////////////////////////////
 //
@@ -307,28 +308,87 @@ namespace MaterialsOptimizer
 	public partial class Form1 : Form {
 
 		class Error {
-			public FileInfo		m_materialFileName;
+			public FileInfo		m_fileName;
 			public Exception	m_error;
 
 			public override string ToString() {
-				return "ERROR! " + m_materialFileName.FullName + " > " + m_error.Message;
+				return "ERROR! " + m_fileName.FullName + " > " + m_error.Message;
 			}
 		}
 
-		List< Material >	m_materials = new List< Material >();
-		List< Error >		m_errors = new List< Error >();
+		private RegistryKey			m_AppKey;
+		private string				m_ApplicationPath;
+
+		// Materials database
+		private List< Material >	m_materials = new List< Material >();
+		private List< Error >		m_materialErrors = new List< Error >();
+
+		// Textures database
+		private List< TextureFile >	m_textures = new List< TextureFile >();
+		private List< Error >		m_textureErrors = new List< Error >();
 
 		public Form1()
 		{
 			InitializeComponent();
 
+ 			m_AppKey = Registry.CurrentUser.CreateSubKey( @"Software\Arkane\MaterialsOptimizer" );
+			m_ApplicationPath = Path.GetDirectoryName( Application.ExecutablePath );
 
-			Material.Layer.Texture.ms_TexturesBasePath = new DirectoryInfo( @"V:\Dishonored2\Dishonored2\base\" );
+			Material.Layer.Texture.ms_TexturesBasePath = new DirectoryInfo( textBoxTexturesBasePath.Text );
 
-ParseFile( new FileInfo( @"V:\Dishonored2\Dishonored2\base\decls\m2\models\environment\buildings\rich_large_ext_partitions_01.m2" ) );
+//ParseFile( new FileInfo( @"V:\Dishonored2\Dishonored2\base\decls\m2\models\environment\buildings\rich_large_ext_partitions_01.m2" ) );
 
-			RecurseParseMaterials( new DirectoryInfo( @"V:\Dishonored2\Dishonored2\base\decls\m2" ) );
+//			RecurseParseMaterials( new DirectoryInfo( @"V:\Dishonored2\Dishonored2\base\decls\m2" ) );
 		}
+
+		#region Helpers
+
+		private string	GetRegKey( string _Key, string _Default )
+		{
+			string	Result = m_AppKey.GetValue( _Key ) as string;
+			return Result != null ? Result : _Default;
+		}
+		private void	SetRegKey( string _Key, string _Value )
+		{
+			m_AppKey.SetValue( _Key, _Value );
+		}
+
+		private float	GetRegKeyFloat( string _Key, float _Default )
+		{
+			string	Value = GetRegKey( _Key, _Default.ToString() );
+			float	Result;
+			float.TryParse( Value, out Result );
+			return Result;
+		}
+
+		private int		GetRegKeyInt( string _Key, float _Default )
+		{
+			string	Value = GetRegKey( _Key, _Default.ToString() );
+			int		Result;
+			int.TryParse( Value, out Result );
+			return Result;
+		}
+
+		private DialogResult	MessageBox( string _Text )
+		{
+			return MessageBox( _Text, MessageBoxButtons.OK );
+		}
+		private DialogResult	MessageBox( string _Text, MessageBoxButtons _Buttons )
+		{
+			return MessageBox( _Text, _Buttons, MessageBoxIcon.Information );
+		}
+		private DialogResult	MessageBox( string _Text, MessageBoxIcon _Icon )
+		{
+			return MessageBox( _Text, MessageBoxButtons.OK, _Icon );
+		}
+		private DialogResult	MessageBox( string _Text, MessageBoxButtons _Buttons, MessageBoxIcon _Icon )
+		{
+			return System.Windows.Forms.MessageBox.Show( this, _Text, "Materials Optimizer", _Buttons, _Icon );
+		}
+
+		#endregion
+
+		#region Materials Parsing
 
 		void	RecurseParseMaterials( DirectoryInfo _directory ) {
 
@@ -336,16 +396,16 @@ ParseFile( new FileInfo( @"V:\Dishonored2\Dishonored2\base\decls\m2\models\envir
 			foreach ( FileInfo materialFileName in materialFileNames ) {
 
 				try {
-					ParseFile( materialFileName );
+					ParseMaterialFile( materialFileName );
 				} catch ( Exception _e ) {
-					Error	Err = new Error() { m_materialFileName = materialFileName, m_error = _e };
-					m_errors.Add( Err );
+					Error	Err = new Error() { m_fileName = materialFileName, m_error = _e };
+					m_materialErrors.Add( Err );
 					textBoxLog.AppendText( Err + "\n" );
 				}
 			}
 		}
 
-		void	ParseFile( FileInfo _fileName ) {
+		void	ParseMaterialFile( FileInfo _fileName ) {
 			string	fileContent = null;
 			using ( StreamReader R = _fileName.OpenText() )
 				fileContent = R.ReadToEnd();
@@ -377,11 +437,110 @@ ParseFile( new FileInfo( @"V:\Dishonored2\Dishonored2\base\decls\m2\models\envir
 							P.SkipComment();	// YES! Someone did do that!
 						}
 
-						string		materialContent = P.ReadBlock();
-						Material	M = new Material( _fileName, materialName, materialContent );
-						m_materials.Add( M );
+						string		materialContent;
+						try {
+							materialContent = P.ReadBlock();
+						} catch ( Exception _e ) {
+							throw new Exception( "Failed parsing material content block for material \"" + materialName + "\"! Check strange comment markers and matching closing brackets", _e );
+						}
+						try {
+							Material	M = new Material( _fileName, materialName, materialContent );
+							m_materials.Add( M );
+						} catch ( Exception _e ) {
+							throw new Exception( "Failed parsing material!", _e );
+						}
 						break;
 				}
+			}
+		}
+
+		#endregion
+
+		#region Materials Parsing
+
+		void	RecurseCollectTextures( DirectoryInfo _directory ) {
+
+			ImageUtility.Bitmap.ReadContent = false;
+
+//			FileInfo[]	textureFileNames = _directory.GetFiles( "*.*", SearchOption.AllDirectories );
+FileInfo[]	textureFileNames = _directory.GetFiles( "*.tga", SearchOption.AllDirectories );
+			int		textureIndex = 0;
+			foreach ( FileInfo textureFileName in textureFileNames ) {
+
+				bool	supported = false;
+				bool	isAnImage = true;
+				string	extension = Path.GetExtension( textureFileName.Name ).ToLower();
+				switch ( extension ) {
+					case ".tga": supported = true; break;
+					case ".png": supported = true; break;
+					case ".jpg": supported = true; break;
+					case ".tiff": supported = true; break;
+					case ".dds": supported = true; break;	// But can't read it at the moment...
+
+					default: isAnImage = false; break;
+				}
+
+				if ( !supported ) {
+					continue;	// Unknown file type
+				}
+
+				try {
+					TextureFile	T = new TextureFile( textureFileName );
+					m_textures.Add( T );
+				} catch ( Exception _e ) {
+					Error	Err = new Error() { m_fileName = textureFileName, m_error = _e };
+					m_textureErrors.Add( Err );
+					textBoxLog.AppendText( Err + "\n" );
+				}
+
+				textureIndex++;
+			}
+
+			ImageUtility.Bitmap.ReadContent = true;
+		}
+
+		#endregion
+
+		private void buttonSetMaterialsBasePath_Click(object sender, EventArgs e) {
+			folderBrowserDialog.SelectedPath = GetRegKey( "MaterialsBasePath", textBoxMaterialsBasePath.Text );
+			if ( folderBrowserDialog.ShowDialog( this ) != DialogResult.OK ) {
+				return;
+			}
+
+			textBoxMaterialsBasePath.Text = folderBrowserDialog.SelectedPath;
+			SetRegKey( "MaterialsBasePath", textBoxMaterialsBasePath.Text );
+		}
+
+		private void buttonSetTexturesBasePath_Click(object sender, EventArgs e) {
+			folderBrowserDialog.SelectedPath = GetRegKey( "TexturesBasePath", textBoxTexturesBasePath.Text );
+			if ( folderBrowserDialog.ShowDialog( this ) != DialogResult.OK ) {
+				return;
+			}
+
+			textBoxTexturesBasePath.Text = folderBrowserDialog.SelectedPath;
+			SetRegKey( "TexturesBasePath", textBoxTexturesBasePath.Text );
+
+			Material.Layer.Texture.ms_TexturesBasePath = new DirectoryInfo( textBoxTexturesBasePath.Text );
+		}
+
+		private void buttonParseMaterials_Click(object sender, EventArgs e)
+		{
+			try {
+				RecurseParseMaterials( new DirectoryInfo( textBoxMaterialsBasePath.Text ) );
+			} catch ( Exception _e ) {
+				MessageBox( "An error occurred while parsing materials:\r\n" + _e.Message, MessageBoxButtons.OK, MessageBoxIcon.Error );
+			}
+		}
+
+		private void buttonCollectTextures_Click(object sender, EventArgs e) {
+			if ( MessageBox( "Collecting textures can take some serious time as they're read to determine their sizes!\r\nAre you sure you wish to proceed?", MessageBoxButtons.YesNo, MessageBoxIcon.Question ) != DialogResult.Yes ) {
+				return;
+			}
+
+			try {
+				RecurseCollectTextures( new DirectoryInfo( Path.Combine( textBoxTexturesBasePath.Text, "models" ) ) );
+			} catch ( Exception _e ) {
+				MessageBox( "An error occurred while collecting textures:\r\n" + _e.Message, MessageBoxButtons.OK, MessageBoxIcon.Error );
 			}
 		}
 	}

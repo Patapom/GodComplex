@@ -70,6 +70,7 @@
     <Compile Include="Form1.Designer.cs">
       <DependentUpon>Form1.cs</DependentUpon>
     </Compile>
+    <Compile Include="TextureFile.cs" />
     <Compile Include="M2\Material.cs" />
     <Compile Include="M2\Parser.cs" />
     <Compile Include="Program.cs" />
@@ -100,6 +101,14 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\Packages\ImageUtility\ImageUtility.csproj">
+      <Project>{a55979a1-0251-49d2-9a2a-3729c814169a}</Project>
+      <Name>ImageUtility</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Packages\LibRawManaged\LibRawManaged.vcxproj">
+      <Project>{d2163abf-3e86-4efe-b73b-9021ab24f717}</Project>
+      <Name>LibRawManaged %28Visual Studio 2010%29</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\Packages\RendererManaged\RendererManaged.vcxproj">
       <Project>{f96cdfd3-8954-4f4f-afb0-2855d98f051b}</Project>
       <Name>RendererManaged %28Visual Studio 2010%29</Name>

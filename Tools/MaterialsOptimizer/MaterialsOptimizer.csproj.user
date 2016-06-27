@@ -7,9 +7,9 @@
     <StartWorkingDirectory>../../</StartWorkingDirectory>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
-    <StartWorkingDirectory>../../</StartWorkingDirectory>
+    <StartWorkingDirectory>../../../</StartWorkingDirectory>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
-    <StartWorkingDirectory>../../</StartWorkingDirectory>
+    <StartWorkingDirectory>../../../</StartWorkingDirectory>
   </PropertyGroup>
 </Project>

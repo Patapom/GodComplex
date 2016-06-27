@@ -7,12 +7,13 @@ using RendererManaged;
 
 namespace MaterialsOptimizer
 {
-	[System.Diagnostics.DebuggerDisplay( "{m_name} - Alpha={m_isAlpha} - {m_layers.Count} Layers" )]
+	[System.Diagnostics.DebuggerDisplay( "{m_name} - {m_options} - {m_layers.Count} Layers" )]
 	public class Material {
 
 		[System.Diagnostics.DebuggerDisplay( "{m_type}" )]
 		public class	Programs {
 			public enum		KNOWN_TYPES {
+				UNKNOWN,
 				DEFAULT,
 				EYE,
 				SKIN,
@@ -26,7 +27,6 @@ namespace MaterialsOptimizer
 				CABLE,
 				FX,
 				DECAL,
-				UNKNOWN,
 			}
 
 			public KNOWN_TYPES	m_type = KNOWN_TYPES.UNKNOWN;
@@ -70,6 +70,18 @@ namespace MaterialsOptimizer
 			}
 		}
 
+		[System.Diagnostics.DebuggerDisplay( "Alpha={m_isAlpha}" )]
+		public class	Options {
+			public bool				m_isAlpha = false;
+			public bool				m_isMasking = false;
+			public bool				m_hasNormal = false;
+			public bool				m_hasSpecular = false;
+			public bool				m_hasGloss = false;
+			public bool				m_hasMetal = false;
+			public bool				m_translucencyEnabled = false;
+			public bool				m_translucencyUseVertexColor = true;
+		}
+
 		public class	Layer {
 
 			[System.Diagnostics.DebuggerDisplay( "{m_name} CstColorType={m_constantColorType}" )]
@@ -106,24 +118,26 @@ namespace MaterialsOptimizer
 
 				public static	DirectoryInfo	ms_TexturesBasePath;
 
-				public	Texture( string _textureName ) {
-					m_name = _textureName;
+				public	Texture( string _textureLine ) {
+					// Parse texture name
+					Parser	P = new Parser( _textureLine );
+					m_name = P.ReadString( true, false );
 
 					try {
 						// Check if it's a constant color
-						_textureName = _textureName.ToLower();
-						if ( _textureName.StartsWith( "_" ) ) {
+						m_name = m_name.ToLower();
+						if ( m_name.StartsWith( "_" ) ) {
 							// Procedural texture
-							switch ( _textureName ) {
+							switch ( m_name ) {
 								case "_default":			m_constantColorType = CONSTANT_COLOR_TYPE.DEFAULT; break;
 								case "_black":				m_constantColorType = CONSTANT_COLOR_TYPE.BLACK; break;
 								case "_blackalphawhite":	m_constantColorType = CONSTANT_COLOR_TYPE.BLACK_ALPHA_WHITE; break;
 								case "_white":				m_constantColorType = CONSTANT_COLOR_TYPE.WHITE; break;
-								default: throw new Exception( "Unsupported procedural texture type \"" + _textureName + "\"!" );
+								default: throw new Exception( "Unsupported procedural texture type \"" + m_name + "\"!" );
 							} 
-						} else if ( _textureName.StartsWith( "ipr_constantcolor" ) ) {
+						} else if ( m_name.StartsWith( "ipr_constantcolor" ) ) {
 							m_constantColorType = CONSTANT_COLOR_TYPE.CUSTOM;
-							Parser	P = new Parser( _textureName );
+							P = new Parser( _textureLine );
 							P.ConsumeString( "ipr_constantColor", false );
 							string	strColor = P.ReadBlock( '(', ')' );
 							m_customConstantColor = P.ReadFloat4( strColor );
@@ -202,15 +216,7 @@ namespace MaterialsOptimizer
 
 		public Programs			m_programs = new Programs();
 
-		// Options
-		public bool				m_isAlpha = false;
-		public bool				m_isMasking = false;
-		public bool				m_hasNormal = false;
-		public bool				m_hasSpecular = false;
-		public bool				m_hasGloss = false;
-		public bool				m_hasMetal = false;
-		public bool				m_translucencyEnabled = false;
-		public bool				m_translucencyUseVertexColor = true;
+		public Options			m_options = new Options();	// Options
 
 		// Textures
 		public List< Layer >	m_layers = new List< Layer >();
@@ -296,38 +302,38 @@ namespace MaterialsOptimizer
 
 					// Textures
 						// Layer 0
-					case "diffusemap":			P.SkipSpaces(); Layer0.m_diffuse = new Layer.Texture( P.ReadToEOL() ); break;
-					case "bumpmap":				P.SkipSpaces(); Layer0.m_normal = new Layer.Texture( P.ReadToEOL() ); break;
-					case "glossmap":			P.SkipSpaces(); Layer0.m_gloss = new Layer.Texture( P.ReadToEOL() ); break;
-					case "metallicmap":			P.SkipSpaces(); Layer0.m_metal = new Layer.Texture( P.ReadToEOL() ); break;
-					case "specularmap":			P.SkipSpaces(); Layer0.m_specular = new Layer.Texture( P.ReadToEOL() ); break;
-					case "heightmap":			P.SkipSpaces(); m_height = new Layer.Texture( P.ReadToEOL() ); break;
-					case "occlusionmap":		P.SkipSpaces(); Layer0.m_AO = new Layer.Texture( P.ReadToEOL() ); break;
-					case "translucencymap":		P.SkipSpaces(); Layer0.m_translucency = new Layer.Texture( P.ReadToEOL() ); break;
-					case "emissivemap":			P.SkipSpaces(); Layer0.m_emissive = new Layer.Texture( P.ReadToEOL() ); break;
-					case "layer0_maskmap":		P.SkipSpaces(); Layer0.m_mask = new Layer.Texture( P.ReadToEOL() ); break;
+					case "diffusemap":			Layer0.m_diffuse = new Layer.Texture( P.ReadToEOL() ); break;
+					case "bumpmap":				Layer0.m_normal = new Layer.Texture( P.ReadToEOL() ); break;
+					case "glossmap":			Layer0.m_gloss = new Layer.Texture( P.ReadToEOL() ); break;
+					case "metallicmap":			Layer0.m_metal = new Layer.Texture( P.ReadToEOL() ); break;
+					case "specularmap":			Layer0.m_specular = new Layer.Texture( P.ReadToEOL() ); break;
+					case "heightmap":			m_height = new Layer.Texture( P.ReadToEOL() ); break;
+					case "occlusionmap":		Layer0.m_AO = new Layer.Texture( P.ReadToEOL() ); break;
+					case "translucencymap":		Layer0.m_translucency = new Layer.Texture( P.ReadToEOL() ); break;
+					case "emissivemap":			Layer0.m_emissive = new Layer.Texture( P.ReadToEOL() ); break;
+					case "layer0_maskmap":		Layer0.m_mask = new Layer.Texture( P.ReadToEOL() ); break;
 					case "layer0_scalebias":	Layer0.ParseScaleBias( P ); break;
 					case "layer0_maskscalebias":Layer0.ParseMaskScaleBias( P ); break;
 
 						// Layer 1
-					case "layer1_diffusemap":	P.SkipSpaces(); Layer1.m_diffuse = new Layer.Texture( P.ReadToEOL() ); break;
-					case "layer1_bumpmap":		P.SkipSpaces(); Layer1.m_normal = new Layer.Texture( P.ReadToEOL() ); break;
-					case "layer1_glossmap":		P.SkipSpaces(); Layer1.m_gloss = new Layer.Texture( P.ReadToEOL() ); break;
-					case "layer1_specularmap":	P.SkipSpaces(); Layer1.m_specular = new Layer.Texture( P.ReadToEOL() ); break;
-					case "layer1_metallicmap":	P.SkipSpaces(); Layer1.m_metal = new Layer.Texture( P.ReadToEOL() ); break;
-					case "layer1_maskmap":		P.SkipSpaces(); Layer1.m_mask = new Layer.Texture( P.ReadToEOL() ); break;
+					case "layer1_diffusemap":	Layer1.m_diffuse = new Layer.Texture( P.ReadToEOL() ); break;
+					case "layer1_bumpmap":		Layer1.m_normal = new Layer.Texture( P.ReadToEOL() ); break;
+					case "layer1_glossmap":		Layer1.m_gloss = new Layer.Texture( P.ReadToEOL() ); break;
+					case "layer1_specularmap":	Layer1.m_specular = new Layer.Texture( P.ReadToEOL() ); break;
+					case "layer1_metallicmap":	Layer1.m_metal = new Layer.Texture( P.ReadToEOL() ); break;
+					case "layer1_maskmap":		Layer1.m_mask = new Layer.Texture( P.ReadToEOL() ); break;
 					case "layer1_emissivemap":	throw new Exception( "Shouldn't be allowed!" );//P.SkipSpaces(); Layer1.m_emissive = new Layer.Texture( P.ReadToEOL() ); break;
 					case "layer1_scalebias":	Layer1.ParseScaleBias( P ); break;
 					case "layer1_maskscalebias":Layer1.ParseMaskScaleBias( P ); break;
 
 						// Layer 2
-					case "layer2_diffusemap":	P.SkipSpaces(); Layer2.m_diffuse = new Layer.Texture( P.ReadToEOL() ); break;
-					case "layer2_bumpmap":		P.SkipSpaces(); Layer2.m_normal = new Layer.Texture( P.ReadToEOL() ); break;
-					case "layer2_glossmap":		P.SkipSpaces(); Layer2.m_gloss = new Layer.Texture( P.ReadToEOL() ); break;
-					case "layer2_specularmap":	P.SkipSpaces(); Layer2.m_specular = new Layer.Texture( P.ReadToEOL() ); break;
-					case "layer2_metallicmap":	P.SkipSpaces(); Layer2.m_metal = new Layer.Texture( P.ReadToEOL() ); break;
+					case "layer2_diffusemap":	Layer2.m_diffuse = new Layer.Texture( P.ReadToEOL() ); break;
+					case "layer2_bumpmap":		Layer2.m_normal = new Layer.Texture( P.ReadToEOL() ); break;
+					case "layer2_glossmap":		Layer2.m_gloss = new Layer.Texture( P.ReadToEOL() ); break;
+					case "layer2_specularmap":	Layer2.m_specular = new Layer.Texture( P.ReadToEOL() ); break;
+					case "layer2_metallicmap":	Layer2.m_metal = new Layer.Texture( P.ReadToEOL() ); break;
 					case "layer2_emissivemap":	throw new Exception( "Shouldn't be allowed!" );//P.SkipSpaces(); Layer2.m_emissive = new Layer.Texture( P.ReadToEOL() ); break;
-					case "layer2_maskmap":		P.SkipSpaces(); Layer2.m_mask = new Layer.Texture( P.ReadToEOL() ); break;
+					case "layer2_maskmap":		Layer2.m_mask = new Layer.Texture( P.ReadToEOL() ); break;
 					case "layer2_scalebias":	Layer2.ParseScaleBias( P ); break;
 					case "layer2_maskscalebias":Layer2.ParseMaskScaleBias( P ); break;
 
@@ -354,199 +360,213 @@ namespace MaterialsOptimizer
 		}
 
 		private void	ParseState( string _state ) {
-
+			try {
+			} catch ( Exception _e ) {
+				throw new Exception( "Failed parsing state block!", _e );
+			}
 		}
 
 		private void	ParseParms( string _parms ) {
-
+			try {
+			} catch ( Exception _e ) {
+				throw new Exception( "Failed parsing parms block!", _e );
+			}
 		}
 
 		private void	ParseOptions( string _options ) {
-			Parser	P = new Parser( _options );
-			while ( P.OK ) {
-				string	token = P.ReadString();
-				if ( token == null )
-					break;	// Done!
-				if ( token.StartsWith( "//" ) ) {
-					P.ReadToEOL();
-					continue;
+			try {
+				Parser	P = new Parser( _options );
+				while ( P.OK ) {
+					string	token = P.ReadString();
+					if ( token == null )
+						break;	// Done!
+					if ( token.StartsWith( "//" ) ) {
+						P.ReadToEOL();
+						continue;
+					}
+					if ( token.StartsWith( "/*" ) ) {
+						P.SkipComment();
+						continue;
+					}
+					if ( !P.IsNumeric() )
+						continue;	// Ill-formed option?
+
+					int		value = P.ReadInteger();
+
+					switch ( token.ToLower() ) {
+
+						case "isalpha":						m_options.m_isAlpha = value != 0; break;
+						case "alphatest":					m_options.m_isAlpha = value != 0; break;
+						case "ismasking":					m_options.m_isMasking = value != 0; break;
+						case "hasbumpmap":					m_options.m_hasNormal = value != 0; break;
+						case "hasspecularmap":				m_options.m_hasSpecular = value != 0; break;
+						case "hasglossmap":					m_options.m_hasGloss = value != 0; break;
+						case "hasmetallicmap":				m_options.m_hasMetal = value != 0; break;
+						case "translucency/enable":			m_options.m_translucencyEnabled = value != 0; break;
+						case "translucencyusevertexcolor":	m_options.m_translucencyUseVertexColor = value != 0; break;
+
+						case "extralayers":
+							switch ( value ) {
+								case 0: Layer0.m_mask = null; break;
+								case 1: Layer1.m_mask = null; break;
+								case 2: Layer2.m_mask = null; break;
+								default: throw new Exception( "Unsupported amount of extra layers!" );
+							}
+							break;
+
+							// LAYER 0
+						case "layer0_uvset":
+							switch ( value ) {
+								case 0: Layer0.m_UVSet = Layer.UV_SET.UV0; break;
+								case 1: Layer0.m_UVSet = Layer.UV_SET.UV1; break;
+								default: throw new Exception( "Unsupported UV set!" );
+							}
+							break;
+						case "layer0_mask_uvset":
+							switch ( value ) {
+								case 0: Layer0.m_maskUVSet = Layer.UV_SET.UV0; break;
+								case 1: Layer0.m_maskUVSet = Layer.UV_SET.UV1; break;
+								default: throw new Exception( "Unsupported UV set!" );
+							}
+							break;
+						case "layer0_maskmode":
+							switch ( value ) {
+								case 0: Layer0.m_maskingMode = Layer.MASKING_MODE.VERTEX_COLOR; break;
+								case 1: Layer0.m_maskingMode = Layer.MASKING_MODE.MASK_MAP; break;
+								case 2: Layer0.m_maskingMode = Layer.MASKING_MODE.MASK_MAP_AND_VERTEX_COLOR; break;
+								default: throw new Exception( "Unsupported UV set!" );
+							}
+							break;
+
+							// LAYER 1
+						case "layer1_uvset":
+							switch ( value ) {
+								case 0: Layer1.m_UVSet = Layer.UV_SET.UV0; break;
+								case 1: Layer1.m_UVSet = Layer.UV_SET.UV1; break;
+								default: throw new Exception( "Unsupported UV set!" );
+							}
+							break;
+						case "layer1_mask_uvset":
+							switch ( value ) {
+								case 0: Layer1.m_maskUVSet = Layer.UV_SET.UV0; break;
+								case 1: Layer1.m_maskUVSet = Layer.UV_SET.UV1; break;
+								default: throw new Exception( "Unsupported UV set!" );
+							}
+							break;
+						case "layer1_maskmode":
+							switch ( value ) {
+								case 0: Layer1.m_maskingMode = Layer.MASKING_MODE.VERTEX_COLOR; break;
+								case 1: Layer1.m_maskingMode = Layer.MASKING_MODE.MASK_MAP; break;
+								case 2: Layer1.m_maskingMode = Layer.MASKING_MODE.MASK_MAP_AND_VERTEX_COLOR; break;
+								default: throw new Exception( "Unsupported UV set!" );
+							}
+							break;
+						case "layer1_diffusereuselayer":
+							switch ( value ) {
+								case 0:	Layer1.m_diffuseReUse = Layer.REUSE_MODE.DONT_REUSE; break;
+								case 1:	Layer1.m_diffuseReUse = Layer.REUSE_MODE.REUSE_LAYER0; break;
+								default: throw new Exception( "Unsupported re-use mode!" );
+							}
+							break;
+						case "layer1_glossreuselayer":
+							switch ( value ) {
+								case 0:	Layer1.m_glossReUse = Layer.REUSE_MODE.DONT_REUSE; break;
+								case 1:	Layer1.m_glossReUse = Layer.REUSE_MODE.REUSE_LAYER0; break;
+								default: throw new Exception( "Unsupported re-use mode!" );
+							}
+							break;
+						case "layer1_specularreuselayer":
+							switch ( value ) {
+								case 0:	Layer1.m_specularReUse = Layer.REUSE_MODE.DONT_REUSE; break;
+								case 1:	Layer1.m_specularReUse = Layer.REUSE_MODE.REUSE_LAYER0; break;
+								default: throw new Exception( "Unsupported re-use mode!" );
+							}
+							break;
+						case "layer1_metallicreuselayer":
+							switch ( value ) {
+								case 0:	Layer1.m_metalReUse = Layer.REUSE_MODE.DONT_REUSE; break;
+								case 1:	Layer1.m_metalReUse = Layer.REUSE_MODE.REUSE_LAYER0; break;
+								default: throw new Exception( "Unsupported re-use mode!" );
+							}
+							break;
+						case "layer1_maskreuselayer":
+							switch ( value ) {
+								case 0:	Layer1.m_maskReUse = Layer.REUSE_MODE.DONT_REUSE; break;
+								case 1:	Layer1.m_maskReUse = Layer.REUSE_MODE.REUSE_LAYER0; break;
+								default: throw new Exception( "Unsupported re-use mode!" );
+							}
+							break;
+
+							// LAYER 2
+						case "layer2_uvset":
+							switch ( value ) {
+								case 0: Layer2.m_UVSet = Layer.UV_SET.UV0; break;
+								case 1: Layer2.m_UVSet = Layer.UV_SET.UV1; break;
+								default: throw new Exception( "Unsupported UV set!" );
+							}
+							break;
+						case "layer2_mask_uvset":
+							switch ( value ) {
+								case 0: Layer2.m_maskUVSet = Layer.UV_SET.UV0; break;
+								case 1: Layer2.m_maskUVSet = Layer.UV_SET.UV1; break;
+								default: throw new Exception( "Unsupported UV set!" );
+							}
+							break;
+						case "layer2_maskmode":
+							switch ( value ) {
+								case 0: Layer2.m_maskingMode = Layer.MASKING_MODE.VERTEX_COLOR; break;
+								case 1: Layer2.m_maskingMode = Layer.MASKING_MODE.MASK_MAP; break;
+								case 2: Layer2.m_maskingMode = Layer.MASKING_MODE.MASK_MAP_AND_VERTEX_COLOR; break;
+								default: throw new Exception( "Unsupported UV set!" );
+							}
+							break;
+						case "layer2_diffusereuselayer":
+							switch ( value ) {
+								case 0:	Layer1.m_diffuseReUse = Layer.REUSE_MODE.DONT_REUSE; break;
+								case 1:	Layer1.m_diffuseReUse = Layer.REUSE_MODE.REUSE_LAYER0; break;
+								case 2:	Layer2.m_diffuseReUse = Layer.REUSE_MODE.REUSE_LAYER1; break;
+								default: throw new Exception( "Unsupported re-use mode!" );
+							}
+							break;
+						case "layer2_glossreuselayer":
+							switch ( value ) {
+								case 0:	Layer1.m_glossReUse = Layer.REUSE_MODE.DONT_REUSE; break;
+								case 1:	Layer1.m_glossReUse = Layer.REUSE_MODE.REUSE_LAYER0; break;
+								case 2:	Layer2.m_glossReUse = Layer.REUSE_MODE.REUSE_LAYER1; break;
+								default: throw new Exception( "Unsupported re-use mode!" );
+							}
+							break;
+						case "layer2_specularreuselayer":
+							switch ( value ) {
+								case 0:	Layer2.m_specularReUse = Layer.REUSE_MODE.DONT_REUSE; break;
+								case 1:	Layer2.m_specularReUse = Layer.REUSE_MODE.REUSE_LAYER0; break;
+								default: throw new Exception( "Unsupported re-use mode!" );
+							}
+							break;
+						case "layer2_metallicreuselayer":
+							switch ( value ) {
+								case 0:	Layer1.m_metalReUse = Layer.REUSE_MODE.DONT_REUSE; break;
+								case 1:	Layer1.m_metalReUse = Layer.REUSE_MODE.REUSE_LAYER0; break;
+								case 2:	Layer2.m_metalReUse = Layer.REUSE_MODE.REUSE_LAYER1; break;
+								default: throw new Exception( "Unsupported re-use mode!" );
+							}
+							break;
+						case "layer2_maskreuselayer":
+							switch ( value ) {
+								case 0:	Layer2.m_maskReUse = Layer.REUSE_MODE.DONT_REUSE; break;
+								case 1:	Layer2.m_maskReUse = Layer.REUSE_MODE.REUSE_LAYER0; break;
+								case 2:	Layer2.m_maskReUse = Layer.REUSE_MODE.REUSE_LAYER1; break;
+								default: throw new Exception( "Unsupported re-use mode!" );
+							}
+							break;
+
+						default:
+							CheckSafeOptionsTokens( token, value );
+							break;
+					}
 				}
-				if ( token.StartsWith( "/*" ) ) {
-					P.SkipComment();
-					continue;
-				}
-				if ( !P.IsNumeric() )
-					continue;	// Ill-formed option?
-
-				int		value = P.ReadInteger();
-
-				switch ( token.ToLower() ) {
-
-					case "isalpha":						m_isAlpha = value != 0; break;
-					case "alphatest":					m_isAlpha = value != 0; break;
-					case "ismasking":					m_isMasking = value != 0; break;
-					case "hasbumpmap":					m_hasNormal = value != 0; break;
-					case "hasspecularmap":				m_hasSpecular = value != 0; break;
-					case "hasglossmap":					m_hasGloss = value != 0; break;
-					case "hasmetallicmap":				m_hasMetal = value != 0; break;
-					case "translucency/enable":			m_translucencyEnabled = value != 0; break;
-					case "translucencyusevertexcolor":	m_translucencyUseVertexColor = value != 0; break;
-
-					case "extralayers":
-						switch ( value ) {
-							case 0: Layer0.m_mask = null; break;
-							case 1: Layer1.m_mask = null; break;
-							case 2: Layer2.m_mask = null; break;
-							default: throw new Exception( "Unsupported amount of extra layers!" );
-						}
-						break;
-
-						// LAYER 0
-					case "layer0_uvset":
-						switch ( value ) {
-							case 0: Layer0.m_UVSet = Layer.UV_SET.UV0; break;
-							case 1: Layer0.m_UVSet = Layer.UV_SET.UV1; break;
-							default: throw new Exception( "Unsupported UV set!" );
-						}
-						break;
-					case "layer0_mask_uvset":
-						switch ( value ) {
-							case 0: Layer0.m_maskUVSet = Layer.UV_SET.UV0; break;
-							case 1: Layer0.m_maskUVSet = Layer.UV_SET.UV1; break;
-							default: throw new Exception( "Unsupported UV set!" );
-						}
-						break;
-					case "layer0_maskmode":
-						switch ( value ) {
-							case 0: Layer0.m_maskingMode = Layer.MASKING_MODE.VERTEX_COLOR; break;
-							case 1: Layer0.m_maskingMode = Layer.MASKING_MODE.MASK_MAP; break;
-							case 2: Layer0.m_maskingMode = Layer.MASKING_MODE.MASK_MAP_AND_VERTEX_COLOR; break;
-							default: throw new Exception( "Unsupported UV set!" );
-						}
-						break;
-
-						// LAYER 1
-					case "layer1_uvset":
-						switch ( value ) {
-							case 0: Layer1.m_UVSet = Layer.UV_SET.UV0; break;
-							case 1: Layer1.m_UVSet = Layer.UV_SET.UV1; break;
-							default: throw new Exception( "Unsupported UV set!" );
-						}
-						break;
-					case "layer1_mask_uvset":
-						switch ( value ) {
-							case 0: Layer1.m_maskUVSet = Layer.UV_SET.UV0; break;
-							case 1: Layer1.m_maskUVSet = Layer.UV_SET.UV1; break;
-							default: throw new Exception( "Unsupported UV set!" );
-						}
-						break;
-					case "layer1_maskmode":
-						switch ( value ) {
-							case 0: Layer1.m_maskingMode = Layer.MASKING_MODE.VERTEX_COLOR; break;
-							case 1: Layer1.m_maskingMode = Layer.MASKING_MODE.MASK_MAP; break;
-							case 2: Layer1.m_maskingMode = Layer.MASKING_MODE.MASK_MAP_AND_VERTEX_COLOR; break;
-							default: throw new Exception( "Unsupported UV set!" );
-						}
-						break;
-					case "layer1_diffusereuselayer":
-						switch ( value ) {
-							case 0:	Layer1.m_diffuseReUse = Layer.REUSE_MODE.DONT_REUSE; break;
-							case 1:	Layer1.m_diffuseReUse = Layer.REUSE_MODE.REUSE_LAYER0; break;
-							default: throw new Exception( "Unsupported re-use mode!" );
-						}
-						break;
-					case "layer1_glossreuselayer":
-						switch ( value ) {
-							case 0:	Layer1.m_glossReUse = Layer.REUSE_MODE.DONT_REUSE; break;
-							case 1:	Layer1.m_glossReUse = Layer.REUSE_MODE.REUSE_LAYER0; break;
-							default: throw new Exception( "Unsupported re-use mode!" );
-						}
-						break;
-					case "layer1_specularreuselayer":
-						switch ( value ) {
-							case 0:	Layer1.m_specularReUse = Layer.REUSE_MODE.DONT_REUSE; break;
-							case 1:	Layer1.m_specularReUse = Layer.REUSE_MODE.REUSE_LAYER0; break;
-							default: throw new Exception( "Unsupported re-use mode!" );
-						}
-						break;
-					case "layer1_metallicreuselayer":
-						switch ( value ) {
-							case 0:	Layer1.m_metalReUse = Layer.REUSE_MODE.DONT_REUSE; break;
-							case 1:	Layer1.m_metalReUse = Layer.REUSE_MODE.REUSE_LAYER0; break;
-							default: throw new Exception( "Unsupported re-use mode!" );
-						}
-						break;
-					case "layer1_maskreuselayer":
-						switch ( value ) {
-							case 0:	Layer1.m_maskReUse = Layer.REUSE_MODE.DONT_REUSE; break;
-							case 1:	Layer1.m_maskReUse = Layer.REUSE_MODE.REUSE_LAYER0; break;
-							default: throw new Exception( "Unsupported re-use mode!" );
-						}
-						break;
-
-						// LAYER 2
-					case "layer2_uvset":
-						switch ( value ) {
-							case 0: Layer2.m_UVSet = Layer.UV_SET.UV0; break;
-							case 1: Layer2.m_UVSet = Layer.UV_SET.UV1; break;
-							default: throw new Exception( "Unsupported UV set!" );
-						}
-						break;
-					case "layer2_mask_uvset":
-						switch ( value ) {
-							case 0: Layer2.m_maskUVSet = Layer.UV_SET.UV0; break;
-							case 1: Layer2.m_maskUVSet = Layer.UV_SET.UV1; break;
-							default: throw new Exception( "Unsupported UV set!" );
-						}
-						break;
-					case "layer2_maskmode":
-						switch ( value ) {
-							case 0: Layer2.m_maskingMode = Layer.MASKING_MODE.VERTEX_COLOR; break;
-							case 1: Layer2.m_maskingMode = Layer.MASKING_MODE.MASK_MAP; break;
-							case 2: Layer2.m_maskingMode = Layer.MASKING_MODE.MASK_MAP_AND_VERTEX_COLOR; break;
-							default: throw new Exception( "Unsupported UV set!" );
-						}
-						break;
-					case "layer2_diffusereuselayer":
-						switch ( value ) {
-							case 0:	Layer1.m_diffuseReUse = Layer.REUSE_MODE.DONT_REUSE; break;
-							case 1:	Layer1.m_diffuseReUse = Layer.REUSE_MODE.REUSE_LAYER0; break;
-							case 2:	Layer2.m_diffuseReUse = Layer.REUSE_MODE.REUSE_LAYER1; break;
-							default: throw new Exception( "Unsupported re-use mode!" );
-						}
-						break;
-					case "layer2_glossreuselayer":
-						switch ( value ) {
-							case 0:	Layer1.m_glossReUse = Layer.REUSE_MODE.DONT_REUSE; break;
-							case 1:	Layer1.m_glossReUse = Layer.REUSE_MODE.REUSE_LAYER0; break;
-							case 2:	Layer2.m_glossReUse = Layer.REUSE_MODE.REUSE_LAYER1; break;
-							default: throw new Exception( "Unsupported re-use mode!" );
-						}
-						break;
-					case "layer2_specularreuselayer":
-						switch ( value ) {
-							case 0:	Layer2.m_specularReUse = Layer.REUSE_MODE.DONT_REUSE; break;
-							case 1:	Layer2.m_specularReUse = Layer.REUSE_MODE.REUSE_LAYER0; break;
-							default: throw new Exception( "Unsupported re-use mode!" );
-						}
-						break;
-					case "layer2_metallicreuselayer":
-						switch ( value ) {
-							case 0:	Layer1.m_metalReUse = Layer.REUSE_MODE.DONT_REUSE; break;
-							case 1:	Layer1.m_metalReUse = Layer.REUSE_MODE.REUSE_LAYER0; break;
-							case 2:	Layer2.m_metalReUse = Layer.REUSE_MODE.REUSE_LAYER1; break;
-							default: throw new Exception( "Unsupported re-use mode!" );
-						}
-						break;
-					case "layer2_maskreuselayer":
-						switch ( value ) {
-							case 0:	Layer2.m_maskReUse = Layer.REUSE_MODE.DONT_REUSE; break;
-							case 1:	Layer2.m_maskReUse = Layer.REUSE_MODE.REUSE_LAYER0; break;
-							case 2:	Layer2.m_maskReUse = Layer.REUSE_MODE.REUSE_LAYER1; break;
-							default: throw new Exception( "Unsupported re-use mode!" );
-						}
-						break;
-				}
+			} catch ( Exception _e ) {
+				throw new Exception( "Failed parsing options block!", _e );
 			}
 		}
 
@@ -757,6 +777,32 @@ namespace MaterialsOptimizer
 "roughnessMap",
 "wardDiffuseRoughness",
 "IBL/intensity",
+			};
+			token = token.ToLower();
+			if ( token.StartsWith( "//" ) )
+				return;
+			if ( token.StartsWith( "materialeffects" ) )
+				return;
+			if ( token.StartsWith( "decal" ) )
+				return;
+			if ( token.StartsWith( "fx/" ) )
+				return;
+
+			foreach ( string recognizedString in recognizedStrings ) {
+				if ( recognizedString.ToLower() == token )
+					return;	// Okay!
+			}
+
+			int	glou = 0;
+			glou++;
+//			throw new Exception( "Unrecognized token!" );
+		}
+
+		void	CheckSafeOptionsTokens( string token, int value ) {
+// 			if ( m_programs.m_type != Programs.KNOWN_TYPES.DEFAULT )
+// 				return;	// Don't care about other programs than arkDefault
+
+			string[]	recognizedStrings = new string[] {
 			};
 			token = token.ToLower();
 			if ( token.StartsWith( "//" ) )
