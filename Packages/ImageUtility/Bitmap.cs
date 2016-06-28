@@ -600,6 +600,10 @@ namespace ImageUtility
 											// Convert to CIEXYZ
 											m_ColorProfile.RGB2XYZ( m_Bitmap, m_Bitmap );
 										}
+									} else {
+										// Only read dimensions
+										m_Width = TGA.Header.Width;
+										m_Height = TGA.Header.Height;
 									}
 								}
 							return;

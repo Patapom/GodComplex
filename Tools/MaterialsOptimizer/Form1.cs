@@ -305,27 +305,55 @@ using Microsoft.Win32;
 //
 namespace MaterialsOptimizer
 {
-	public partial class Form1 : Form {
+	public partial class Form1 : Form, IComparer< TextureFileInfo > {
 
 		class Error {
 			public FileInfo		m_fileName;
 			public Exception	m_error;
 
 			public override string ToString() {
-				return "ERROR! " + m_fileName.FullName + " > " + m_error.Message;
+				return "ERROR! " + m_fileName.FullName + " > " + FullMessage( m_error );
+			}
+
+			public Error( FileInfo _fileName, Exception _error ) {
+				m_fileName = _fileName;
+				m_error = _error;
+			}
+			public Error( BinaryReader R ) {
+				Read( R );
+			}
+
+			public void		Write( BinaryWriter W ) {
+				W.Write( m_fileName.FullName );
+				W.Write( FullMessage( m_error ) );
+			}
+
+			public void		Read( BinaryReader R ) {
+				m_fileName = new FileInfo( R.ReadString() );
+				m_error = new Exception( R.ReadString() );
+			}
+
+			public string	FullMessage( Exception _e ) {
+				return _e.Message + (_e.InnerException != null ? "\r\n" + FullMessage( _e.InnerException ) : "");
 			}
 		}
 
 		private RegistryKey			m_AppKey;
 		private string				m_ApplicationPath;
 
+
+
 		// Materials database
-		private List< Material >	m_materials = new List< Material >();
-		private List< Error >		m_materialErrors = new List< Error >();
+		private List< Material >		m_materials = new List< Material >();
+		private List< Error >			m_materialErrors = new List< Error >();
+		private FileInfo				m_materialsDatabaseFileName = new FileInfo( "materials.database" );
 
 		// Textures database
-		private List< TextureFile >	m_textures = new List< TextureFile >();
-		private List< Error >		m_textureErrors = new List< Error >();
+		private List< TextureFileInfo >	m_textures = new List< TextureFileInfo >();
+		private List< Error >			m_textureErrors = new List< Error >();
+		private FileInfo				m_texturesDatabaseFileName = new FileInfo( "textures.database" );
+		private int						m_texturesSortColumn = 0;
+		private int						m_texturesSortOrder = 1;
 
 		public Form1()
 		{
@@ -336,8 +364,11 @@ namespace MaterialsOptimizer
 
 			Material.Layer.Texture.ms_TexturesBasePath = new DirectoryInfo( textBoxTexturesBasePath.Text );
 
-//ParseFile( new FileInfo( @"V:\Dishonored2\Dishonored2\base\decls\m2\models\environment\buildings\rich_large_ext_partitions_01.m2" ) );
+			// Reload textures database
+			if ( m_texturesDatabaseFileName.Exists )
+				LoadTexturesDatabase( m_texturesDatabaseFileName );
 
+//ParseFile( new FileInfo( @"V:\Dishonored2\Dishonored2\base\decls\m2\models\environment\buildings\rich_large_ext_partitions_01.m2" ) );
 //			RecurseParseMaterials( new DirectoryInfo( @"V:\Dishonored2\Dishonored2\base\decls\m2" ) );
 		}
 
@@ -386,6 +417,13 @@ namespace MaterialsOptimizer
 			return System.Windows.Forms.MessageBox.Show( this, _Text, "Materials Optimizer", _Buttons, _Icon );
 		}
 
+		void	Log( string _text ) {
+			textBoxLog.AppendText( _text );
+		}
+		void	LogLine( string _text ) {
+			Log( _text + "\n" );
+		}
+
 		#endregion
 
 		#region Materials Parsing
@@ -398,9 +436,9 @@ namespace MaterialsOptimizer
 				try {
 					ParseMaterialFile( materialFileName );
 				} catch ( Exception _e ) {
-					Error	Err = new Error() { m_fileName = materialFileName, m_error = _e };
+					Error	Err = new Error( materialFileName, _e );
 					m_materialErrors.Add( Err );
-					textBoxLog.AppendText( Err + "\n" );
+					LogLine( Err.ToString() );
 				}
 			}
 		}
@@ -458,45 +496,234 @@ namespace MaterialsOptimizer
 
 		#region Materials Parsing
 
-		void	RecurseCollectTextures( DirectoryInfo _directory ) {
+		void	CollectTextures( DirectoryInfo _directory ) {
 
 			ImageUtility.Bitmap.ReadContent = false;
 
-//			FileInfo[]	textureFileNames = _directory.GetFiles( "*.*", SearchOption.AllDirectories );
-FileInfo[]	textureFileNames = _directory.GetFiles( "*.tga", SearchOption.AllDirectories );
-			int		textureIndex = 0;
-			foreach ( FileInfo textureFileName in textureFileNames ) {
+			m_textures.Clear();
+			m_textureErrors.Clear();
 
-				bool	supported = false;
-				bool	isAnImage = true;
-				string	extension = Path.GetExtension( textureFileName.Name ).ToLower();
-				switch ( extension ) {
-					case ".tga": supported = true; break;
-					case ".png": supported = true; break;
-					case ".jpg": supported = true; break;
-					case ".tiff": supported = true; break;
-					case ".dds": supported = true; break;	// But can't read it at the moment...
+			string[]	supportedExtensions = new string[] {
+				 ".jpg",
+				 ".png",
+				 ".tga",
+				 ".tiff",
+//				 ".dds",
+			};
 
-					default: isAnImage = false; break;
+			foreach ( string supportedExtension in supportedExtensions ) {
+				FileInfo[]	textureFileNames = _directory.GetFiles( "*" + supportedExtension, SearchOption.AllDirectories );
+
+				LogLine( "Parsing " + textureFileNames.Length + " " + supportedExtension + " image files" );
+				DateTime	startTime = DateTime.Now;
+
+				int			textureIndex = 0;
+				foreach ( FileInfo textureFileName in textureFileNames ) {
+
+// 					bool	supported = false;
+// 					bool	isAnImage = true;
+// 					string	extension = Path.GetExtension( textureFileName.Name ).ToLower();
+// 					switch ( extension ) {
+// 						case ".tga": supported = true; break;
+// 						case ".png": supported = true; break;
+// 						case ".jpg": supported = true; break;
+// 						case ".tiff": supported = true; break;
+// 						case ".dds": supported = true; break;	// But can't read it at the moment...
+// 
+// 						default: isAnImage = false; break;
+// 					}
+// 
+// 					if ( !supported ) {
+// 						continue;	// Unknown file type
+// 					}
+
+					try {
+						TextureFileInfo	T = new TextureFileInfo( textureFileName );
+						m_textures.Add( T );
+					} catch ( Exception _e ) {
+						Error	Err = new Error( textureFileName, _e );
+						m_textureErrors.Add( Err );
+						LogLine( Err.ToString() );
+					}
+
+					textureIndex++;
 				}
 
-				if ( !supported ) {
-					continue;	// Unknown file type
-				}
-
-				try {
-					TextureFile	T = new TextureFile( textureFileName );
-					m_textures.Add( T );
-				} catch ( Exception _e ) {
-					Error	Err = new Error() { m_fileName = textureFileName, m_error = _e };
-					m_textureErrors.Add( Err );
-					textBoxLog.AppendText( Err + "\n" );
-				}
-
-				textureIndex++;
+				TimeSpan	totalTime = DateTime.Now - startTime;
+				LogLine( "Finished parsing " + supportedExtension + " image files. Total time: " + totalTime.ToString( @"mm\:ss" ) );
 			}
 
 			ImageUtility.Bitmap.ReadContent = true;
+		}
+
+		void		SaveTexturesDatabase( FileInfo _fileName ) {
+			using ( FileStream S = _fileName.Create() )
+				using ( BinaryWriter W = new BinaryWriter( S ) ) {
+					W.Write( m_textures.Count );
+					foreach ( TextureFileInfo TFI in m_textures )
+						TFI.Write( W );
+
+					W.Write( m_textureErrors.Count );
+					foreach ( Error E in m_textureErrors )
+						E.Write( W );
+				}
+		}
+
+		void		LoadTexturesDatabase( FileInfo _fileName ) {
+			using ( FileStream S = _fileName.OpenRead() )
+				using ( BinaryReader R = new BinaryReader( S ) ) {
+					int	texturesCount = R.ReadInt32();
+					for ( int errorIndex=0; errorIndex < texturesCount; errorIndex++ )
+						m_textures.Add( new TextureFileInfo( R ) );
+
+					int	errorsCount = R.ReadInt32();
+					for ( int errorIndex=0; errorIndex < errorsCount; errorIndex++ )
+						m_textureErrors.Add( new Error( R ) );
+				}
+
+			RebuildTexturesListView();
+		}
+
+		void		RebuildTexturesListView() {
+
+			// Filter textures
+			List< TextureFileInfo >	filteredTextures = new List< TextureFileInfo >();
+			int	texCountPNG = 0;
+			int	texCountTGA = 0;
+			int	texCountOther = 0;
+			foreach ( TextureFileInfo TFI in m_textures ) {
+				if ( TFI.m_fileType == TextureFileInfo.FILE_TYPE.TGA ) {
+					texCountTGA++;
+					if ( !checkBoxShowTGA.Checked )
+						continue;
+				} else if ( TFI.m_fileType == TextureFileInfo.FILE_TYPE.PNG ) {
+					texCountPNG++;
+					if ( !checkBoxShowPNG.Checked )
+						continue;
+				} else {
+					texCountOther++;
+					if ( !checkBoxShowOtherFormats.Checked )
+						continue;
+				}
+
+				filteredTextures.Add( TFI );
+			}
+
+			checkBoxShowTGA.Text = "Show " + texCountTGA + " TGA";
+			checkBoxShowPNG.Text = "Show " + texCountPNG + " PNG";
+			checkBoxShowOtherFormats.Text = "Show " + texCountOther + " misc. formats";
+
+			// Sort
+//			filteredTextures.Sort( this );
+			if ( m_texturesSortOrder == 1 ) {
+				switch ( m_texturesSortColumn ) {
+					case 0: filteredTextures.Sort( new CompareNames_Ascending() ); break;
+					case 1: filteredTextures.Sort( new CompareSizes_Ascending() ); break;
+					case 2: filteredTextures.Sort( new CompareUsages_Ascending() ); break;
+					case 3: filteredTextures.Sort( new CompareRefCounts_Ascending() ); break;
+				}
+			} else {
+				switch ( m_texturesSortColumn ) {
+					case 0: filteredTextures.Sort( new CompareNames_Descending() ); break;
+					case 1: filteredTextures.Sort( new CompareSizes_Descending() ); break;
+					case 2: filteredTextures.Sort( new CompareUsages_Descending() ); break;
+					case 3: filteredTextures.Sort( new CompareRefCounts_Descending() ); break;
+				}
+			}
+
+
+			// Rebuild list view
+			listViewTextures.BeginUpdate();
+			listViewTextures.Items.Clear();
+			foreach ( TextureFileInfo TFI in filteredTextures ) {
+
+				ListViewItem	item = new ListViewItem( TFI.m_fileName.FullName );
+				item.SubItems.Add( new ListViewItem.ListViewSubItem( item, TFI.m_width.ToString() + "x" + TFI.m_height.ToString() ) );
+				item.SubItems.Add( new ListViewItem.ListViewSubItem( item, TFI.m_usage.ToString() ) );
+				item.SubItems.Add( new ListViewItem.ListViewSubItem( item, TFI.m_refCount.ToString() ) );
+
+				int	area = TFI.m_width * TFI.m_height;
+				if ( area > 2048*2048 ) {
+					item.BackColor = Color.Salmon;
+				} else if ( area > 1024*1024 ) {
+					item.BackColor = Color.Gold;
+				}
+
+				listViewTextures.Items.Add( item );
+			}
+
+			listViewTextures.EndUpdate();
+		}
+
+		class	CompareNames_Ascending : IComparer< TextureFileInfo > {
+			public int Compare(TextureFileInfo x, TextureFileInfo y) {
+				return StringComparer.CurrentCultureIgnoreCase.Compare( x.m_fileName.FullName, y.m_fileName.FullName );
+			}
+		}
+		class	CompareNames_Descending : IComparer< TextureFileInfo > {
+			public int Compare(TextureFileInfo x, TextureFileInfo y) {
+				return -StringComparer.CurrentCultureIgnoreCase.Compare( x.m_fileName.FullName, y.m_fileName.FullName );
+			}
+		}
+
+		class	CompareSizes_Ascending : IComparer< TextureFileInfo > {
+			public int Compare(TextureFileInfo x, TextureFileInfo y) {
+				int	area0 = x.m_width * x.m_height;
+				int	area1 = y.m_width * y.m_height;
+				return area0 < area1 ? -1 : (area0 > area1 ? 1 : 0);
+			}
+		}
+		class	CompareSizes_Descending : IComparer< TextureFileInfo > {
+			public int Compare(TextureFileInfo x, TextureFileInfo y) {
+				int	area0 = x.m_width * x.m_height;
+				int	area1 = y.m_width * y.m_height;
+				return area0 < area1 ? 1 : (area0 > area1 ? -1 : 0);
+			}
+		}
+
+		class	CompareUsages_Ascending : IComparer< TextureFileInfo > {
+			public int Compare(TextureFileInfo x, TextureFileInfo y) {
+//				return StringComparer.CurrentCultureIgnoreCase.Compare( x.m_usage.ToString(), y.m_usage.ToString() );
+				return (int) x.m_usage < (int) y.m_usage ? -1 : ((int) x.m_usage > (int) y.m_usage ? 1 : 0);
+			}
+		}
+		class	CompareUsages_Descending : IComparer< TextureFileInfo > {
+			public int Compare(TextureFileInfo x, TextureFileInfo y) {
+//				return -StringComparer.CurrentCultureIgnoreCase.Compare( x.m_usage.ToString(), y.m_usage.ToString() );
+				return (int) x.m_usage < (int) y.m_usage ? 1 : ((int) x.m_usage > (int) y.m_usage ? -1 : 0);
+			}
+		}
+
+		class	CompareRefCounts_Ascending : IComparer< TextureFileInfo > {
+			public int Compare(TextureFileInfo x, TextureFileInfo y) {
+				return x.m_refCount < y.m_refCount ? -1 : (x.m_refCount > y.m_refCount ? 1 : 0);
+			}
+		}
+		class	CompareRefCounts_Descending : IComparer< TextureFileInfo > {
+			public int Compare(TextureFileInfo x, TextureFileInfo y) {
+				return x.m_refCount < y.m_refCount ? 1 : (x.m_refCount > y.m_refCount ? -1 : 0);
+			}
+		}
+
+		public int Compare( TextureFileInfo x, TextureFileInfo y ) {
+			int	value = 0;
+			switch ( m_texturesSortColumn ) {
+				case 0: value = StringComparer.CurrentCultureIgnoreCase.Compare( x.m_fileName.FullName, y.m_fileName.FullName ); break;	// Sort by name
+
+				case 1:	// Sort by area
+					int	area0 = x.m_width * x.m_height;
+					int	area1 = y.m_width * y.m_height;
+					value = area0 < area1 ? -1 : (area0 > area1 ? 1 : 0);
+					break;
+
+				case 2: value = StringComparer.CurrentCultureIgnoreCase.Compare( x.m_usage.ToString(), y.m_usage.ToString() ); break;	// Sort by usage
+
+				case 3: value = x.m_refCount < y.m_refCount ? -1 : (x.m_refCount > y.m_refCount ? 1 : 0); break;		// Sort by ref count
+
+				default: throw new Exception( "Unhandled case" );
+			}
+
+			return m_texturesSortOrder * value;
 		}
 
 		#endregion
@@ -538,10 +765,38 @@ FileInfo[]	textureFileNames = _directory.GetFiles( "*.tga", SearchOption.AllDire
 			}
 
 			try {
-				RecurseCollectTextures( new DirectoryInfo( Path.Combine( textBoxTexturesBasePath.Text, "models" ) ) );
+				CollectTextures( new DirectoryInfo( textBoxTexturesBasePath.Text ) );
+				SaveTexturesDatabase( m_texturesDatabaseFileName );
+				RebuildTexturesListView();
 			} catch ( Exception _e ) {
 				MessageBox( "An error occurred while collecting textures:\r\n" + _e.Message, MessageBoxButtons.OK, MessageBoxIcon.Error );
 			}
+		}
+
+		private void checkBoxShowOtherFormats_CheckedChanged(object sender, EventArgs e)
+		{
+			RebuildTexturesListView();
+		}
+
+		private void checkBoxShowPNG_CheckedChanged(object sender, EventArgs e)
+		{
+			RebuildTexturesListView();
+		}
+
+		private void checkBoxShowTGA_CheckedChanged(object sender, EventArgs e)
+		{
+			RebuildTexturesListView();
+		}
+
+		private void listViewTextures_ColumnClick(object sender, ColumnClickEventArgs e)
+		{
+			if ( e.Column == m_texturesSortColumn )
+				m_texturesSortOrder *= -1;
+			else
+				m_texturesSortOrder = 1;
+			m_texturesSortColumn = e.Column;
+
+			RebuildTexturesListView();
 		}
 	}
 }

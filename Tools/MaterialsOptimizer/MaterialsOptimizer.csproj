@@ -70,7 +70,7 @@
     <Compile Include="Form1.Designer.cs">
       <DependentUpon>Form1.cs</DependentUpon>
     </Compile>
-    <Compile Include="TextureFile.cs" />
+    <Compile Include="TextureFileInfo.cs" />
     <Compile Include="M2\Material.cs" />
     <Compile Include="M2\Parser.cs" />
     <Compile Include="Program.cs" />
