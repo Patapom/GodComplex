@@ -305,7 +305,7 @@ using Microsoft.Win32;
 //
 namespace MaterialsOptimizer
 {
-	public partial class Form1 : Form, IComparer< TextureFileInfo > {
+	public partial class Form1 : Form {
 
 		class Error {
 			public FileInfo		m_fileName;
@@ -347,6 +347,8 @@ namespace MaterialsOptimizer
 		private List< Material >		m_materials = new List< Material >();
 		private List< Error >			m_materialErrors = new List< Error >();
 		private FileInfo				m_materialsDatabaseFileName = new FileInfo( "materials.database" );
+		private int						m_materialsSortColumn = 0;
+		private int						m_materialsSortOrder = 1;
 
 		// Textures database
 		private List< TextureFileInfo >	m_textures = new List< TextureFileInfo >();
@@ -365,6 +367,8 @@ namespace MaterialsOptimizer
 			Material.Layer.Texture.ms_TexturesBasePath = new DirectoryInfo( textBoxTexturesBasePath.Text );
 
 			// Reload textures database
+			if ( m_materialsDatabaseFileName.Exists )
+				LoadMaterialsDatabase( m_materialsDatabaseFileName );
 			if ( m_texturesDatabaseFileName.Exists )
 				LoadTexturesDatabase( m_texturesDatabaseFileName );
 
@@ -492,9 +496,185 @@ namespace MaterialsOptimizer
 			}
 		}
 
+		void		SaveMaterialsDatabase( FileInfo _fileName ) {
+			using ( FileStream S = _fileName.Create() )
+				using ( BinaryWriter W = new BinaryWriter( S ) ) {
+					W.Write( m_materials.Count );
+					foreach ( Material M in m_materials )
+						M.Write( W );
+
+					W.Write( m_materialErrors.Count );
+					foreach ( Error E in m_materialErrors )
+						E.Write( W );
+				}
+		}
+
+		void		LoadMaterialsDatabase( FileInfo _fileName ) {
+			m_materials.Clear();
+			m_materialErrors.Clear();
+
+			using ( FileStream S = _fileName.OpenRead() )
+				using ( BinaryReader R = new BinaryReader( S ) ) {
+					int	materialsCount = R.ReadInt32();
+					for ( int errorIndex=0; errorIndex < materialsCount; errorIndex++ )
+						m_materials.Add( new Material( R ) );
+
+					int	errorsCount = R.ReadInt32();
+					for ( int errorIndex=0; errorIndex < errorsCount; errorIndex++ )
+						m_materialErrors.Add( new Error( R ) );
+				}
+
+			RebuildMaterialsListView();
+		}
+
+		void		RebuildMaterialsListView() {
+
+			// Filter materials
+			List< Material >	filteredMaterials = new List< Material >();
+			bool	skipDefault = !checkBoxShowArkDefault.Checked ^ checkBoxInvertMaterialFilters.Checked;
+			bool	skipSkin = !checkBoxShowSkin.Checked ^ checkBoxInvertMaterialFilters.Checked;
+			bool	skipEye = !checkBoxShowEye.Checked ^ checkBoxInvertMaterialFilters.Checked;
+			bool	skipHair = !checkBoxShowHair.Checked ^ checkBoxInvertMaterialFilters.Checked;
+			bool	skipVegetation = !checkBoxShowVegetation.Checked ^ checkBoxInvertMaterialFilters.Checked;
+			bool	skipVista = !checkBoxShowVista.Checked ^ checkBoxInvertMaterialFilters.Checked;
+			bool	skipOther = !checkBoxShowOther.Checked ^ checkBoxInvertMaterialFilters.Checked;
+			foreach ( Material M in m_materials ) {
+// 				// Filter by type
+// 				if ( TFI.m_fileType == TextureFileInfo.FILE_TYPE.TGA ) {
+// 					texCountTGA++;
+// 					if ( !checkBoxShowTGA.Checked )
+// 						continue;
+// 				} else if ( TFI.m_fileType == TextureFileInfo.FILE_TYPE.PNG ) {
+// 					texCountPNG++;
+// 					if ( !checkBoxShowPNG.Checked )
+// 						continue;
+// 				} else {
+// 					texCountOther++;
+// 					if ( !checkBoxShowOtherFormats.Checked )
+// 						continue;
+// 				}
+
+				// Filter by program type
+				bool	skip = false;
+				switch ( M.m_programs.m_type ) {
+					case Material.Programs.KNOWN_TYPES.DEFAULT: skip = skipDefault; break;
+					case Material.Programs.KNOWN_TYPES.SKIN: skip = skipSkin; break;
+					case Material.Programs.KNOWN_TYPES.EYE: skip = skipEye; break;
+					case Material.Programs.KNOWN_TYPES.HAIR: skip = skipHair; break;
+					case Material.Programs.KNOWN_TYPES.VEGETATION: skip = skipVegetation; break;
+					case Material.Programs.KNOWN_TYPES.VISTA: skip = skipVista; break;
+					default: skip = skipOther; break;
+				}
+
+				if ( !skip )
+					filteredMaterials.Add( M );
+			}
+
+// 			checkBoxShowTGA.Text = "Show " + texCountTGA + " TGA";
+// 			checkBoxShowPNG.Text = "Show " + texCountPNG + " PNG";
+// 			checkBoxShowOtherFormats.Text = "Show " + texCountOther + " misc. formats";
+			labelTotalMaterials.Text = "Total Materials:\n" + filteredMaterials.Count;
+
+			// Sort
+// 			if ( m_materialsSortOrder == 1 ) {
+// 				switch ( m_materialsSortColumn ) {
+// 					case 0: filteredMaterials.Sort( new MatCompareNames_Ascending() ); break;
+// 					case 1: filteredMaterials.Sort( new MatCompareSizes_Ascending() ); break;
+// 					case 2: filteredMaterials.Sort( new MatCompareUsages_Ascending() ); break;
+// 					case 3: filteredMaterials.Sort( new MatCompareRefCounts_Ascending() ); break;
+// 				}
+// 			} else {
+// 				switch ( m_materialsSortColumn ) {
+// 					case 0: filteredMaterials.Sort( new MatCompareNames_Descending() ); break;
+// 					case 1: filteredMaterials.Sort( new MatCompareSizes_Descending() ); break;
+// 					case 2: filteredMaterials.Sort( new MatCompareUsages_Descending() ); break;
+// 					case 3: filteredMaterials.Sort( new MatCompareRefCounts_Descending() ); break;
+// 				}
+// 			}
+
+
+			// Rebuild list view
+			listViewMaterials.BeginUpdate();
+			listViewMaterials.Items.Clear();
+			foreach ( Material M in filteredMaterials ) {
+
+				ListViewItem	item = new ListViewItem( M.m_name );
+				item.SubItems.Add( new ListViewItem.ListViewSubItem( item, M.m_programs.m_type.ToString() ) );
+				item.SubItems.Add( new ListViewItem.ListViewSubItem( item, M.m_layers.Count.ToString() ) );
+				item.SubItems.Add( new ListViewItem.ListViewSubItem( item, M.m_options.IsAlpha ? "Yes" : "" ) );
+				item.SubItems.Add( new ListViewItem.ListViewSubItem( item, M.m_isCandidateForOptmization ) );
+				item.SubItems.Add( new ListViewItem.ListViewSubItem( item, M.m_errors ) );
+				item.SubItems.Add( new ListViewItem.ListViewSubItem( item, M.m_sourceFileName.FullName ) );
+
+				if ( M.m_errors != null ) {
+					item.BackColor = Color.Salmon;
+				} else if ( M.m_isCandidateForOptmization != null ) {
+					item.BackColor = Color.ForestGreen;
+				}
+
+				listViewMaterials.Items.Add( item );
+			}
+
+			listViewMaterials.EndUpdate();
+		}
+
+/*
+
+		class	CompareNames_Ascending : IComparer< TextureFileInfo > {
+			public int Compare(TextureFileInfo x, TextureFileInfo y) {
+				return StringComparer.CurrentCultureIgnoreCase.Compare( x.m_fileName.FullName, y.m_fileName.FullName );
+			}
+		}
+		class	CompareNames_Descending : IComparer< TextureFileInfo > {
+			public int Compare(TextureFileInfo x, TextureFileInfo y) {
+				return -StringComparer.CurrentCultureIgnoreCase.Compare( x.m_fileName.FullName, y.m_fileName.FullName );
+			}
+		}
+
+		class	CompareSizes_Ascending : IComparer< TextureFileInfo > {
+			public int Compare(TextureFileInfo x, TextureFileInfo y) {
+				int	area0 = x.m_width * x.m_height;
+				int	area1 = y.m_width * y.m_height;
+				return area0 < area1 ? -1 : (area0 > area1 ? 1 : 0);
+			}
+		}
+		class	CompareSizes_Descending : IComparer< TextureFileInfo > {
+			public int Compare(TextureFileInfo x, TextureFileInfo y) {
+				int	area0 = x.m_width * x.m_height;
+				int	area1 = y.m_width * y.m_height;
+				return area0 < area1 ? 1 : (area0 > area1 ? -1 : 0);
+			}
+		}
+
+		class	CompareUsages_Ascending : IComparer< TextureFileInfo > {
+			public int Compare(TextureFileInfo x, TextureFileInfo y) {
+//				return StringComparer.CurrentCultureIgnoreCase.Compare( x.m_usage.ToString(), y.m_usage.ToString() );
+				return (int) x.m_usage < (int) y.m_usage ? -1 : ((int) x.m_usage > (int) y.m_usage ? 1 : 0);
+			}
+		}
+		class	CompareUsages_Descending : IComparer< TextureFileInfo > {
+			public int Compare(TextureFileInfo x, TextureFileInfo y) {
+//				return -StringComparer.CurrentCultureIgnoreCase.Compare( x.m_usage.ToString(), y.m_usage.ToString() );
+				return (int) x.m_usage < (int) y.m_usage ? 1 : ((int) x.m_usage > (int) y.m_usage ? -1 : 0);
+			}
+		}
+
+		class	CompareRefCounts_Ascending : IComparer< TextureFileInfo > {
+			public int Compare(TextureFileInfo x, TextureFileInfo y) {
+				return x.m_refCount < y.m_refCount ? -1 : (x.m_refCount > y.m_refCount ? 1 : 0);
+			}
+		}
+		class	CompareRefCounts_Descending : IComparer< TextureFileInfo > {
+			public int Compare(TextureFileInfo x, TextureFileInfo y) {
+				return x.m_refCount < y.m_refCount ? 1 : (x.m_refCount > y.m_refCount ? -1 : 0);
+			}
+		}
+
+*/
+
 		#endregion
 
-		#region Materials Parsing
+		#region Textures Parsing
 
 		void	CollectTextures( DirectoryInfo _directory ) {
 
@@ -570,6 +750,9 @@ namespace MaterialsOptimizer
 		}
 
 		void		LoadTexturesDatabase( FileInfo _fileName ) {
+			m_textures.Clear();
+			m_textureErrors.Clear();
+
 			using ( FileStream S = _fileName.OpenRead() )
 				using ( BinaryReader R = new BinaryReader( S ) ) {
 					int	texturesCount = R.ReadInt32();
@@ -588,10 +771,17 @@ namespace MaterialsOptimizer
 
 			// Filter textures
 			List< TextureFileInfo >	filteredTextures = new List< TextureFileInfo >();
-			int	texCountPNG = 0;
-			int	texCountTGA = 0;
-			int	texCountOther = 0;
+			int		texCountPNG = 0;
+			int		texCountTGA = 0;
+			int		texCountOther = 0;
+			bool	skipDiffuse = !checkBoxShowDiffuse.Checked ^ checkBoxInvertFilters.Checked;
+			bool	skipNormal = !checkBoxShowNormal.Checked ^ checkBoxInvertFilters.Checked;
+			bool	skipGloss = !checkBoxShowGloss.Checked ^ checkBoxInvertFilters.Checked;
+			bool	skipMetal = !checkBoxShowMetal.Checked ^ checkBoxInvertFilters.Checked;
+			bool	skipEmissive = !checkBoxShowEmissive.Checked ^ checkBoxInvertFilters.Checked;
+			bool	skipOther = !checkBoxShowOther.Checked ^ checkBoxInvertFilters.Checked;
 			foreach ( TextureFileInfo TFI in m_textures ) {
+				// Filter by type
 				if ( TFI.m_fileType == TextureFileInfo.FILE_TYPE.TGA ) {
 					texCountTGA++;
 					if ( !checkBoxShowTGA.Checked )
@@ -606,12 +796,25 @@ namespace MaterialsOptimizer
 						continue;
 				}
 
-				filteredTextures.Add( TFI );
+				// Filter by usage
+				bool	skip = false;
+				switch ( TFI.m_usage ) {
+					case TextureFileInfo.USAGE.DIFFUSE: skip = skipDiffuse; break;
+					case TextureFileInfo.USAGE.NORMAL: skip = skipNormal; break;
+					case TextureFileInfo.USAGE.GLOSS: skip = skipGloss; break;
+					case TextureFileInfo.USAGE.METAL: skip = skipMetal; break;
+					case TextureFileInfo.USAGE.EMISSIVE: skip = skipEmissive; break;
+					default: skip = skipOther; break;
+				}
+
+				if ( !skip )
+					filteredTextures.Add( TFI );
 			}
 
 			checkBoxShowTGA.Text = "Show " + texCountTGA + " TGA";
 			checkBoxShowPNG.Text = "Show " + texCountPNG + " PNG";
 			checkBoxShowOtherFormats.Text = "Show " + texCountOther + " misc. formats";
+			labelTotalTextures.Text = "Total Textures:\n" + filteredTextures.Count;
 
 			// Sort
 //			filteredTextures.Sort( this );
@@ -705,26 +908,26 @@ namespace MaterialsOptimizer
 			}
 		}
 
-		public int Compare( TextureFileInfo x, TextureFileInfo y ) {
-			int	value = 0;
-			switch ( m_texturesSortColumn ) {
-				case 0: value = StringComparer.CurrentCultureIgnoreCase.Compare( x.m_fileName.FullName, y.m_fileName.FullName ); break;	// Sort by name
-
-				case 1:	// Sort by area
-					int	area0 = x.m_width * x.m_height;
-					int	area1 = y.m_width * y.m_height;
-					value = area0 < area1 ? -1 : (area0 > area1 ? 1 : 0);
-					break;
-
-				case 2: value = StringComparer.CurrentCultureIgnoreCase.Compare( x.m_usage.ToString(), y.m_usage.ToString() ); break;	// Sort by usage
-
-				case 3: value = x.m_refCount < y.m_refCount ? -1 : (x.m_refCount > y.m_refCount ? 1 : 0); break;		// Sort by ref count
-
-				default: throw new Exception( "Unhandled case" );
-			}
-
-			return m_texturesSortOrder * value;
-		}
+// 		public int Compare( TextureFileInfo x, TextureFileInfo y ) {
+// 			int	value = 0;
+// 			switch ( m_texturesSortColumn ) {
+// 				case 0: value = StringComparer.CurrentCultureIgnoreCase.Compare( x.m_fileName.FullName, y.m_fileName.FullName ); break;	// Sort by name
+// 
+// 				case 1:	// Sort by area
+// 					int	area0 = x.m_width * x.m_height;
+// 					int	area1 = y.m_width * y.m_height;
+// 					value = area0 < area1 ? -1 : (area0 > area1 ? 1 : 0);
+// 					break;
+// 
+// 				case 2: value = StringComparer.CurrentCultureIgnoreCase.Compare( x.m_usage.ToString(), y.m_usage.ToString() ); break;	// Sort by usage
+// 
+// 				case 3: value = x.m_refCount < y.m_refCount ? -1 : (x.m_refCount > y.m_refCount ? 1 : 0); break;		// Sort by ref count
+// 
+// 				default: throw new Exception( "Unhandled case" );
+// 			}
+// 
+// 			return m_texturesSortOrder * value;
+// 		}
 
 		#endregion
 
@@ -754,6 +957,9 @@ namespace MaterialsOptimizer
 		{
 			try {
 				RecurseParseMaterials( new DirectoryInfo( textBoxMaterialsBasePath.Text ) );
+				SaveMaterialsDatabase( m_materialsDatabaseFileName );
+				RebuildMaterialsListView();
+				RebuildTexturesListView();
 			} catch ( Exception _e ) {
 				MessageBox( "An error occurred while parsing materials:\r\n" + _e.Message, MessageBoxButtons.OK, MessageBoxIcon.Error );
 			}
@@ -797,6 +1003,16 @@ namespace MaterialsOptimizer
 			m_texturesSortColumn = e.Column;
 
 			RebuildTexturesListView();
+		}
+
+		private void checkBoxShowDiffuse_CheckedChanged(object sender, EventArgs e)
+		{
+			RebuildTexturesListView();
+		}
+
+		private void checkBoxShowArkDefault_CheckedChanged(object sender, EventArgs e)
+		{
+			RebuildMaterialsListView();
 		}
 	}
 }

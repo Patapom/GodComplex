@@ -13,20 +13,21 @@ namespace MaterialsOptimizer
 		[System.Diagnostics.DebuggerDisplay( "{m_type}" )]
 		public class	Programs {
 			public enum		KNOWN_TYPES {
-				UNKNOWN,
 				DEFAULT,
 				EYE,
 				SKIN,
 				HAIR,
 				VEGETATION,
+				VISTA,
 				WATER,
 				OCEAN,
-				VISTA,
 				SKY,
 				CLOUDS,
 				CABLE,
 				FX,
 				DECAL,
+
+				UNKNOWN,
 			}
 
 			public KNOWN_TYPES	m_type = KNOWN_TYPES.UNKNOWN;
@@ -68,6 +69,28 @@ namespace MaterialsOptimizer
 // 				if ( m_type == KNOWN_TYPES.UNKNOWN )
 // 					throw new Exception( "Urecognized program type!" );
 			}
+
+			#region Serialization
+
+			public void	Write( BinaryWriter W ) {
+				W.Write( (int) m_type );
+				W.Write( m_main != null ? m_main : "" );
+				W.Write( m_ZPrepass != null ? m_ZPrepass : "" );
+				W.Write( m_shadow != null ? m_shadow : "" );
+			}
+
+			public void	Read( BinaryReader R ) {
+				m_type = (KNOWN_TYPES) R.ReadInt32();
+
+				m_main = R.ReadString();
+				m_main = m_main == string.Empty ? null : m_main;
+				m_ZPrepass = R.ReadString();
+				m_ZPrepass = m_ZPrepass == string.Empty ? null : m_ZPrepass;
+				m_shadow = R.ReadString();
+				m_shadow = m_shadow == string.Empty ? null : m_shadow;
+			}
+
+			#endregion
 		}
 
 		[System.Diagnostics.DebuggerDisplay( "Alpha={m_isAlpha}" )]
@@ -78,18 +101,47 @@ namespace MaterialsOptimizer
 			public bool				m_hasSpecular = false;
 			public bool				m_hasGloss = false;
 			public bool				m_hasMetal = false;
+			public bool				m_hasEmissive = false;
 			public bool				m_translucencyEnabled = false;
 			public bool				m_translucencyUseVertexColor = true;
+
+			public bool				IsAlpha {
+				get { return m_isAlpha || m_isMasking; }
+			}
+
+			#region Serialization
+
+			public void	Write( BinaryWriter W ) {
+				W.Write( m_isAlpha );
+				W.Write( m_isMasking );
+				W.Write( m_hasNormal );
+				W.Write( m_hasSpecular );
+				W.Write( m_hasGloss );
+				W.Write( m_hasMetal );
+				W.Write( m_hasEmissive );
+				W.Write( m_translucencyEnabled );
+				W.Write( m_translucencyUseVertexColor );
+			}
+
+			public void	Read( BinaryReader R ) {
+				m_isAlpha = R.ReadBoolean();
+				m_isMasking = R.ReadBoolean();
+				m_hasNormal = R.ReadBoolean();
+				m_hasSpecular = R.ReadBoolean();
+				m_hasGloss = R.ReadBoolean();
+				m_hasMetal = R.ReadBoolean();
+				m_hasEmissive = R.ReadBoolean();
+				m_translucencyEnabled = R.ReadBoolean();
+				m_translucencyUseVertexColor = R.ReadBoolean();
+			}
+
+			#endregion
 		}
 
 		public class	Layer {
 
 			[System.Diagnostics.DebuggerDisplay( "{m_name} CstColorType={m_constantColorType}" )]
 			public class	Texture {
-				public string		m_name;
-				public FileInfo		m_fileName = null;
-				public Exception	m_error = null;		// Any error that occurred during texture creation
-
 				public enum	 CONSTANT_COLOR_TYPE {
 					TEXTURE,
 					DEFAULT,
@@ -99,6 +151,9 @@ namespace MaterialsOptimizer
 					CUSTOM,
 				}
 
+				public string				m_name;
+				public FileInfo				m_fileName = null;
+				public Exception			m_error = null;		// Any error that occurred during texture creation
 				public CONSTANT_COLOR_TYPE	m_constantColorType = CONSTANT_COLOR_TYPE.TEXTURE;
 				public float4				m_customConstantColor = float4.Zero;
 
@@ -154,7 +209,40 @@ namespace MaterialsOptimizer
 						m_error = _e;
 					}
 				}
+
+				public	Texture( BinaryReader R ) {
+					Read( R );
+				}
+
+				#region Serialization
+
+				public void	Write( BinaryWriter W ) {
+					W.Write( m_name );
+					W.Write( m_fileName != null ? m_fileName.FullName : "" );	// Can be null when using ipr_constantColor
+					W.Write( m_error != null ? m_error.Message : "" );
+					W.Write( (int) m_constantColorType );
+					W.Write( m_customConstantColor.x );
+					W.Write( m_customConstantColor.y );
+					W.Write( m_customConstantColor.z );
+					W.Write( m_customConstantColor.w );
+				}
+
+				public void	Read( BinaryReader R ) {
+					m_name = R.ReadString();
+					string	fileName = R.ReadString();
+					m_fileName = fileName != string.Empty ? new FileInfo( fileName ) : null;
+					string	errorText = R.ReadString();
+					m_error = errorText != string.Empty ? new Exception( errorText ) : null;
+					m_constantColorType = (CONSTANT_COLOR_TYPE) R.ReadInt32();
+					m_customConstantColor.x = R.ReadSingle();
+					m_customConstantColor.y = R.ReadSingle();
+					m_customConstantColor.z = R.ReadSingle();
+					m_customConstantColor.w = R.ReadSingle();
+				}
+
+				#endregion
 			}
+
 			public enum		UV_SET {
 				UV0,
 				UV1,
@@ -179,9 +267,6 @@ namespace MaterialsOptimizer
 			public REUSE_MODE	m_glossReUse = REUSE_MODE.DONT_REUSE;
 			public Texture		m_metal = null;
 			public REUSE_MODE	m_metalReUse = REUSE_MODE.DONT_REUSE;
-			public Texture		m_AO = null;
-			public Texture		m_translucency = null;
-			public Texture		m_emissive = null;
 
 			public REUSE_MODE	m_specularReUse = REUSE_MODE.DONT_REUSE;
 			public Texture		m_specular = null;	// Special specular map!
@@ -189,6 +274,10 @@ namespace MaterialsOptimizer
 			public MASKING_MODE	m_maskingMode = MASKING_MODE.NONE;
 			public Texture		m_mask = null;				// Layer mask
 			public REUSE_MODE	m_maskReUse = REUSE_MODE.DONT_REUSE;
+
+			public Texture		m_AO = null;
+			public Texture		m_translucency = null;
+			public Texture		m_emissive = null;
 
 			public UV_SET		m_UVSet = UV_SET.UV0;
 			public float2		m_UVOffset = float2.Zero;
@@ -209,6 +298,113 @@ namespace MaterialsOptimizer
 				m_maskUVScale.Set( SB.x, SB.y );
 				m_maskUVOffset.Set( SB.z, SB.w );
 			}
+
+			public Layer() {
+			}
+
+			public Layer( BinaryReader R ) {
+				Read( R );
+			}
+
+			#region Serialization
+
+			public void	Write( BinaryWriter W ) {
+				W.Write( m_diffuse != null );
+				if ( m_diffuse != null )
+					m_diffuse.Write( W );
+				W.Write( (int) m_diffuseReUse );
+
+				W.Write( m_normal != null );
+				if ( m_normal != null )
+					m_normal.Write( W );
+				W.Write( (int) m_normalReUse );
+
+				W.Write( m_gloss != null );
+				if ( m_gloss != null )
+					m_gloss.Write( W );
+				W.Write( (int) m_glossReUse );
+
+				W.Write( m_metal != null );
+				if ( m_metal != null )
+					m_metal.Write( W );
+				W.Write( (int) m_metalReUse );
+
+				W.Write( m_specular != null );
+				if ( m_specular != null )
+					m_specular.Write( W );
+				W.Write( (int) m_specularReUse );
+
+				W.Write( (int) m_maskingMode );
+				W.Write( m_mask != null );
+				if ( m_mask != null )
+					m_mask.Write( W );
+				W.Write( (int) m_maskReUse );
+
+				// Single textures
+				W.Write( m_AO != null );
+				if ( m_AO != null )
+					m_AO.Write( W );
+				W.Write( m_translucency != null );
+				if ( m_translucency != null )
+					m_translucency.Write( W );
+				W.Write( m_emissive != null );
+				if ( m_emissive != null )
+					m_emissive.Write( W );
+
+				// UV sets
+				W.Write( (int) m_UVSet );
+				W.Write( m_UVOffset.x );
+				W.Write( m_UVOffset.y );
+				W.Write( m_UVScale.x );
+				W.Write( m_UVScale.y );
+
+				W.Write( (int) m_maskUVSet );
+				W.Write( m_maskUVOffset.x );
+				W.Write( m_maskUVOffset.y );
+				W.Write( m_maskUVScale.x );
+				W.Write( m_maskUVScale.y );
+			}
+
+			public void	Read( BinaryReader R ) {
+				m_diffuse = R.ReadBoolean() ? new Texture( R ) : null;
+				m_diffuseReUse = (REUSE_MODE) R.ReadInt32();
+
+				m_normal = R.ReadBoolean() ? new Texture( R ) : null;
+				m_normalReUse = (REUSE_MODE) R.ReadInt32();
+
+				m_gloss = R.ReadBoolean() ? new Texture( R ) : null;
+				m_glossReUse = (REUSE_MODE) R.ReadInt32();
+
+				m_metal = R.ReadBoolean() ? new Texture( R ) : null;
+				m_metalReUse = (REUSE_MODE) R.ReadInt32();
+
+				m_specular = R.ReadBoolean() ? new Texture( R ) : null;
+				m_specularReUse = (REUSE_MODE) R.ReadInt32();
+
+				m_maskingMode = (MASKING_MODE) R.ReadInt32();
+				m_mask = R.ReadBoolean() ? new Texture( R ) : null;
+				m_maskReUse = (REUSE_MODE) R.ReadInt32();
+
+				// Single textures
+				m_AO = R.ReadBoolean() ? new Texture( R ) : null;
+				m_translucency = R.ReadBoolean() ? new Texture( R ) : null;
+				m_emissive = R.ReadBoolean() ? new Texture( R ) : null;
+
+				// UV sets
+				m_UVSet = (UV_SET) R.ReadInt32();
+				m_UVOffset.x = R.ReadSingle();
+				m_UVOffset.y = R.ReadSingle();
+				m_UVScale.x = R.ReadSingle();
+				m_UVScale.y = R.ReadSingle();
+
+				m_maskUVSet = (UV_SET) R.ReadInt32();
+				m_maskUVOffset.x = R.ReadSingle();
+				m_maskUVOffset.y = R.ReadSingle();
+				m_maskUVScale.x = R.ReadSingle();
+				m_maskUVScale.y = R.ReadSingle();
+			}
+
+			#endregion
 		}
 
 		public FileInfo			m_sourceFileName = null;
@@ -220,12 +416,17 @@ namespace MaterialsOptimizer
 
 		// Textures
 		public List< Layer >	m_layers = new List< Layer >();
-
 		public Layer.Texture	m_height = null;	// Special height map!
 
 		// Main variables
 		public float2			m_glossMinMax = new float2( 0.0f, 0.5f );
 		public float2			m_metallicMinMax = new float2( 0.0f, 0.5f );
+
+
+		// Filled by analyzer
+		public string			m_isCandidateForOptmization = null;
+		public string			m_errors = null;
+
 
 		private Layer			Layer0 {
 			get { return m_layers[0]; }
@@ -255,6 +456,9 @@ namespace MaterialsOptimizer
 			m_name = _name;
 			m_layers.Add( new Layer() );	// We always have at least 1 layer
 			Parse( _content );
+		}
+		public Material( BinaryReader R ) {
+			Read( R );
 		}
 
 		#region Material Parsing
@@ -402,10 +606,11 @@ namespace MaterialsOptimizer
 						case "hasspecularmap":				m_options.m_hasSpecular = value != 0; break;
 						case "hasglossmap":					m_options.m_hasGloss = value != 0; break;
 						case "hasmetallicmap":				m_options.m_hasMetal = value != 0; break;
+						case "hasemissivemap":				m_options.m_hasEmissive = value != 0; break;
 						case "translucency/enable":			m_options.m_translucencyEnabled = value != 0; break;
 						case "translucencyusevertexcolor":	m_options.m_translucencyUseVertexColor = value != 0; break;
 
-						case "extralayers":
+						case "extralayer":
 							switch ( value ) {
 								case 0: Layer0.m_mask = null; break;
 								case 1: Layer1.m_mask = null; break;
@@ -825,6 +1030,67 @@ namespace MaterialsOptimizer
 		}
 
 		#endregion
+
+		#endregion
+
+		#region Serialization
+
+		public void	Write( BinaryWriter W ) {
+			W.Write( m_sourceFileName.FullName );
+			W.Write( m_name );
+
+			m_programs.Write( W );
+			m_options.Write( W );
+
+			W.Write( m_layers.Count );
+			foreach ( Layer L in m_layers ) {
+				L.Write( W );
+			}
+
+			W.Write( m_height != null );
+			if ( m_height != null )
+				m_height.Write( W );
+			
+			W.Write( m_glossMinMax.x );
+			W.Write( m_glossMinMax.y );
+			W.Write( m_metallicMinMax.x );
+			W.Write( m_metallicMinMax.y );
+
+			W.Write( m_isCandidateForOptmization != null ? m_isCandidateForOptmization : "" );
+			W.Write( m_errors != null ? m_errors : "" );
+		}
+
+		public void	Read( BinaryReader R ) {
+			m_sourceFileName = new FileInfo( R.ReadString() );
+			m_name = R.ReadString();
+
+			m_programs.Read( R );
+			m_options.Read( R );
+
+			m_layers.Clear();
+			int	layersCount = R.ReadInt32();
+			for ( int layerIndex=0; layerIndex < layersCount; layerIndex++ ) {
+				m_layers.Add( new Layer( R ) );
+			}
+
+			m_height = R.ReadBoolean() ? new Layer.Texture( R ) : null;
+			
+			m_glossMinMax.x = R.ReadSingle();
+			m_glossMinMax.y = R.ReadSingle();
+			m_metallicMinMax.x = R.ReadSingle();
+			m_metallicMinMax.y = R.ReadSingle();
+
+			m_isCandidateForOptmization = R.ReadString();
+			if ( m_isCandidateForOptmization == string.Empty )
+				m_isCandidateForOptmization = null;
+			m_errors = R.ReadString();
+			if ( m_errors == string.Empty )
+				m_errors = null;
+		}
+
+		#endregion
+
+		#region Material Analyzer
 
 		#endregion
 	}
