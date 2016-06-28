@@ -76,6 +76,11 @@
 			this.checkBoxShowOtherMaterialTypes = new System.Windows.Forms.CheckBox();
 			this.columnHeaderErrors = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
 			this.columnHeaderProgramType = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+			this.integerTrackbarControlLayerMin = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
+			this.label3 = new System.Windows.Forms.Label();
+			this.integerTrackbarControlLayerMax = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
+			this.label4 = new System.Windows.Forms.Label();
+			this.label5 = new System.Windows.Forms.Label();
 			this.tabControl.SuspendLayout();
 			this.tabPageMaterials.SuspendLayout();
 			this.tabPageTextures.SuspendLayout();
@@ -427,6 +432,7 @@
 			this.listViewMaterials.TabIndex = 2;
 			this.listViewMaterials.UseCompatibleStateImageBehavior = false;
 			this.listViewMaterials.View = System.Windows.Forms.View.Details;
+			this.listViewMaterials.ColumnClick += new System.Windows.Forms.ColumnClickEventHandler(this.listViewMaterials_ColumnClick);
 			// 
 			// columnHeaderMaterialFileName
 			// 
@@ -450,12 +456,17 @@
 			// columnHeaderMaterialName
 			// 
 			this.columnHeaderMaterialName.Text = "Material Name";
-			this.columnHeaderMaterialName.Width = 200;
+			this.columnHeaderMaterialName.Width = 600;
 			// 
 			// panelFilterMaterials
 			// 
 			this.panelFilterMaterials.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
+			this.panelFilterMaterials.Controls.Add(this.label5);
+			this.panelFilterMaterials.Controls.Add(this.label4);
+			this.panelFilterMaterials.Controls.Add(this.label3);
+			this.panelFilterMaterials.Controls.Add(this.integerTrackbarControlLayerMax);
+			this.panelFilterMaterials.Controls.Add(this.integerTrackbarControlLayerMin);
 			this.panelFilterMaterials.Controls.Add(this.labelTotalMaterials);
 			this.panelFilterMaterials.Controls.Add(this.checkBoxShowArkDefault);
 			this.panelFilterMaterials.Controls.Add(this.checkBoxShowSkin);
@@ -591,6 +602,63 @@
 			this.columnHeaderProgramType.Text = "Type";
 			this.columnHeaderProgramType.Width = 100;
 			// 
+			// integerTrackbarControlLayerMin
+			// 
+			this.integerTrackbarControlLayerMin.Location = new System.Drawing.Point(36, 26);
+			this.integerTrackbarControlLayerMin.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.integerTrackbarControlLayerMin.MinimumSize = new System.Drawing.Size(70, 20);
+			this.integerTrackbarControlLayerMin.Name = "integerTrackbarControlLayerMin";
+			this.integerTrackbarControlLayerMin.RangeMax = 3;
+			this.integerTrackbarControlLayerMin.RangeMin = 1;
+			this.integerTrackbarControlLayerMin.Size = new System.Drawing.Size(111, 20);
+			this.integerTrackbarControlLayerMin.TabIndex = 4;
+			this.integerTrackbarControlLayerMin.Value = 1;
+			this.integerTrackbarControlLayerMin.VisibleRangeMax = 3;
+			this.integerTrackbarControlLayerMin.VisibleRangeMin = 1;
+			this.integerTrackbarControlLayerMin.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlLayerMin_ValueChanged);
+			// 
+			// label3
+			// 
+			this.label3.AutoSize = true;
+			this.label3.Location = new System.Drawing.Point(3, 6);
+			this.label3.Name = "label3";
+			this.label3.Size = new System.Drawing.Size(85, 13);
+			this.label3.TabIndex = 5;
+			this.label3.Text = "Layers Selection";
+			// 
+			// integerTrackbarControlLayerMax
+			// 
+			this.integerTrackbarControlLayerMax.Location = new System.Drawing.Point(36, 52);
+			this.integerTrackbarControlLayerMax.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.integerTrackbarControlLayerMax.MinimumSize = new System.Drawing.Size(70, 20);
+			this.integerTrackbarControlLayerMax.Name = "integerTrackbarControlLayerMax";
+			this.integerTrackbarControlLayerMax.RangeMax = 3;
+			this.integerTrackbarControlLayerMax.RangeMin = 1;
+			this.integerTrackbarControlLayerMax.Size = new System.Drawing.Size(111, 20);
+			this.integerTrackbarControlLayerMax.TabIndex = 4;
+			this.integerTrackbarControlLayerMax.Value = 3;
+			this.integerTrackbarControlLayerMax.VisibleRangeMax = 3;
+			this.integerTrackbarControlLayerMax.VisibleRangeMin = 1;
+			this.integerTrackbarControlLayerMax.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlLayerMax_ValueChanged);
+			// 
+			// label4
+			// 
+			this.label4.AutoSize = true;
+			this.label4.Location = new System.Drawing.Point(3, 29);
+			this.label4.Name = "label4";
+			this.label4.Size = new System.Drawing.Size(24, 13);
+			this.label4.TabIndex = 5;
+			this.label4.Text = "Min";
+			// 
+			// label5
+			// 
+			this.label5.AutoSize = true;
+			this.label5.Location = new System.Drawing.Point(3, 55);
+			this.label5.Name = "label5";
+			this.label5.Size = new System.Drawing.Size(27, 13);
+			this.label5.TabIndex = 5;
+			this.label5.Text = "Max";
+			// 
 			// Form1
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -670,6 +738,11 @@
 		private System.Windows.Forms.CheckBox checkBoxShowOtherMaterialTypes;
 		private System.Windows.Forms.ColumnHeader columnHeaderErrors;
 		private System.Windows.Forms.ColumnHeader columnHeaderProgramType;
+		private System.Windows.Forms.Label label3;
+		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlLayerMin;
+		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlLayerMax;
+		private System.Windows.Forms.Label label5;
+		private System.Windows.Forms.Label label4;
 	}
 }
 

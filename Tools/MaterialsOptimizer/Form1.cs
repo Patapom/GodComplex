@@ -371,6 +371,7 @@ namespace MaterialsOptimizer
 				LoadMaterialsDatabase( m_materialsDatabaseFileName );
 			if ( m_texturesDatabaseFileName.Exists )
 				LoadTexturesDatabase( m_texturesDatabaseFileName );
+			AnalyzeMaterialsDatabase( false );
 
 //ParseFile( new FileInfo( @"V:\Dishonored2\Dishonored2\base\decls\m2\models\environment\buildings\rich_large_ext_partitions_01.m2" ) );
 //			RecurseParseMaterials( new DirectoryInfo( @"V:\Dishonored2\Dishonored2\base\decls\m2" ) );
@@ -496,6 +497,21 @@ namespace MaterialsOptimizer
 			}
 		}
 
+		void		AnalyzeMaterialsDatabase( bool _yell ) {
+			if ( m_materials.Count == 0 ) {
+				if ( _yell )
+					MessageBox( "Can't analyze materials database since there are no materials available!\r\nTry and parse materials to enable analysis...", MessageBoxButtons.OK );
+				return;
+			}
+			if ( m_textures.Count == 0 ) {
+				if ( _yell )
+					MessageBox( "Can't analyze materials database since there are no textures available!\r\nTry and collect textures to enable analysis...", MessageBoxButtons.OK );
+				return;
+			}
+
+
+		}
+
 		void		SaveMaterialsDatabase( FileInfo _fileName ) {
 			using ( FileStream S = _fileName.Create() )
 				using ( BinaryWriter W = new BinaryWriter( S ) ) {
@@ -537,7 +553,9 @@ namespace MaterialsOptimizer
 			bool	skipHair = !checkBoxShowHair.Checked ^ checkBoxInvertMaterialFilters.Checked;
 			bool	skipVegetation = !checkBoxShowVegetation.Checked ^ checkBoxInvertMaterialFilters.Checked;
 			bool	skipVista = !checkBoxShowVista.Checked ^ checkBoxInvertMaterialFilters.Checked;
-			bool	skipOther = !checkBoxShowOther.Checked ^ checkBoxInvertMaterialFilters.Checked;
+			bool	skipOther = !checkBoxShowOtherMaterialTypes.Checked ^ checkBoxInvertMaterialFilters.Checked;
+			int		layersCountMin = integerTrackbarControlLayerMin.Value;
+			int		layersCountMax = integerTrackbarControlLayerMax.Value;
 			foreach ( Material M in m_materials ) {
 // 				// Filter by type
 // 				if ( TFI.m_fileType == TextureFileInfo.FILE_TYPE.TGA ) {
@@ -553,6 +571,10 @@ namespace MaterialsOptimizer
 // 					if ( !checkBoxShowOtherFormats.Checked )
 // 						continue;
 // 				}
+
+				// Filter by layers count
+				if ( M.m_layers.Count < layersCountMin || M.m_layers.Count > layersCountMax )
+					continue;
 
 				// Filter by program type
 				bool	skip = false;
@@ -576,22 +598,21 @@ namespace MaterialsOptimizer
 			labelTotalMaterials.Text = "Total Materials:\n" + filteredMaterials.Count;
 
 			// Sort
-// 			if ( m_materialsSortOrder == 1 ) {
-// 				switch ( m_materialsSortColumn ) {
-// 					case 0: filteredMaterials.Sort( new MatCompareNames_Ascending() ); break;
-// 					case 1: filteredMaterials.Sort( new MatCompareSizes_Ascending() ); break;
-// 					case 2: filteredMaterials.Sort( new MatCompareUsages_Ascending() ); break;
-// 					case 3: filteredMaterials.Sort( new MatCompareRefCounts_Ascending() ); break;
-// 				}
-// 			} else {
-// 				switch ( m_materialsSortColumn ) {
-// 					case 0: filteredMaterials.Sort( new MatCompareNames_Descending() ); break;
-// 					case 1: filteredMaterials.Sort( new MatCompareSizes_Descending() ); break;
-// 					case 2: filteredMaterials.Sort( new MatCompareUsages_Descending() ); break;
-// 					case 3: filteredMaterials.Sort( new MatCompareRefCounts_Descending() ); break;
-// 				}
-// 			}
-
+			if ( m_materialsSortOrder == 1 ) {
+				switch ( m_materialsSortColumn ) {
+					case 0: filteredMaterials.Sort( new MatCompareNames_Ascending() ); break;
+					case 1: filteredMaterials.Sort( new MatCompareTypes_Ascending() ); break;
+					case 2: filteredMaterials.Sort( new MatCompareLayers_Ascending() ); break;
+					case 6: filteredMaterials.Sort( new MatCompareFileNames_Ascending() ); break;
+				}
+			} else {
+				switch ( m_materialsSortColumn ) {
+					case 0: filteredMaterials.Sort( new MatCompareNames_Descending() ); break;
+					case 1: filteredMaterials.Sort( new MatCompareTypes_Descending() ); break;
+					case 2: filteredMaterials.Sort( new MatCompareLayers_Descending() ); break;
+					case 6: filteredMaterials.Sort( new MatCompareFileNames_Descending() ); break;
+				}
+			}
 
 			// Rebuild list view
 			listViewMaterials.BeginUpdate();
@@ -618,59 +639,51 @@ namespace MaterialsOptimizer
 			listViewMaterials.EndUpdate();
 		}
 
-/*
-
-		class	CompareNames_Ascending : IComparer< TextureFileInfo > {
-			public int Compare(TextureFileInfo x, TextureFileInfo y) {
-				return StringComparer.CurrentCultureIgnoreCase.Compare( x.m_fileName.FullName, y.m_fileName.FullName );
+		class	MatCompareNames_Ascending : IComparer< Material > {
+			public int Compare(Material x, Material y) {
+				return StringComparer.CurrentCultureIgnoreCase.Compare( x.m_name, y.m_name );
 			}
 		}
-		class	CompareNames_Descending : IComparer< TextureFileInfo > {
-			public int Compare(TextureFileInfo x, TextureFileInfo y) {
-				return -StringComparer.CurrentCultureIgnoreCase.Compare( x.m_fileName.FullName, y.m_fileName.FullName );
-			}
-		}
-
-		class	CompareSizes_Ascending : IComparer< TextureFileInfo > {
-			public int Compare(TextureFileInfo x, TextureFileInfo y) {
-				int	area0 = x.m_width * x.m_height;
-				int	area1 = y.m_width * y.m_height;
-				return area0 < area1 ? -1 : (area0 > area1 ? 1 : 0);
-			}
-		}
-		class	CompareSizes_Descending : IComparer< TextureFileInfo > {
-			public int Compare(TextureFileInfo x, TextureFileInfo y) {
-				int	area0 = x.m_width * x.m_height;
-				int	area1 = y.m_width * y.m_height;
-				return area0 < area1 ? 1 : (area0 > area1 ? -1 : 0);
+		class	MatCompareNames_Descending : IComparer< Material > {
+			public int Compare(Material x, Material y) {
+				return -StringComparer.CurrentCultureIgnoreCase.Compare( x.m_name, y.m_name );
 			}
 		}
 
-		class	CompareUsages_Ascending : IComparer< TextureFileInfo > {
-			public int Compare(TextureFileInfo x, TextureFileInfo y) {
-//				return StringComparer.CurrentCultureIgnoreCase.Compare( x.m_usage.ToString(), y.m_usage.ToString() );
-				return (int) x.m_usage < (int) y.m_usage ? -1 : ((int) x.m_usage > (int) y.m_usage ? 1 : 0);
+		class	MatCompareTypes_Ascending : IComparer< Material > {
+			public int Compare(Material x, Material y) {
+//				return StringComparer.CurrentCultureIgnoreCase.Compare( x.m_programs.m_type.ToString(), y.m_programs.m_type.ToString() );
+				return (int) x.m_programs.m_type < (int) y.m_programs.m_type ? -1 : ((int) x.m_programs.m_type > (int) y.m_programs.m_type ? 1 : 0);
 			}
 		}
-		class	CompareUsages_Descending : IComparer< TextureFileInfo > {
-			public int Compare(TextureFileInfo x, TextureFileInfo y) {
-//				return -StringComparer.CurrentCultureIgnoreCase.Compare( x.m_usage.ToString(), y.m_usage.ToString() );
-				return (int) x.m_usage < (int) y.m_usage ? 1 : ((int) x.m_usage > (int) y.m_usage ? -1 : 0);
-			}
-		}
-
-		class	CompareRefCounts_Ascending : IComparer< TextureFileInfo > {
-			public int Compare(TextureFileInfo x, TextureFileInfo y) {
-				return x.m_refCount < y.m_refCount ? -1 : (x.m_refCount > y.m_refCount ? 1 : 0);
-			}
-		}
-		class	CompareRefCounts_Descending : IComparer< TextureFileInfo > {
-			public int Compare(TextureFileInfo x, TextureFileInfo y) {
-				return x.m_refCount < y.m_refCount ? 1 : (x.m_refCount > y.m_refCount ? -1 : 0);
+		class	MatCompareTypes_Descending : IComparer< Material > {
+			public int Compare(Material x, Material y) {
+//				return -StringComparer.CurrentCultureIgnoreCase.Compare( x.m_programs.m_type.ToString(), y.m_programs.m_type.ToString() );
+				return (int) x.m_programs.m_type < (int) y.m_programs.m_type ? 1 : ((int) x.m_programs.m_type > (int) y.m_programs.m_type ? -1 : 0);
 			}
 		}
 
-*/
+		class	MatCompareLayers_Ascending : IComparer< Material > {
+			public int Compare(Material x, Material y) {
+				return x.m_layers.Count < y.m_layers.Count ? -1 : (x.m_layers.Count > y.m_layers.Count ? 1 : 0);
+			}
+		}
+		class	MatCompareLayers_Descending : IComparer< Material > {
+			public int Compare(Material x, Material y) {
+				return x.m_layers.Count < y.m_layers.Count ? 1 : (x.m_layers.Count > y.m_layers.Count ? -1 : 0);
+			}
+		}
+
+		class	MatCompareFileNames_Ascending : IComparer< Material > {
+			public int Compare(Material x, Material y) {
+				return StringComparer.CurrentCultureIgnoreCase.Compare( x.m_sourceFileName.FullName, y.m_sourceFileName.FullName );
+			}
+		}
+		class	MatCompareFileNames_Descending : IComparer< Material > {
+			public int Compare(Material x, Material y) {
+				return -StringComparer.CurrentCultureIgnoreCase.Compare( x.m_sourceFileName.FullName, y.m_sourceFileName.FullName );
+			}
+		}
 
 		#endregion
 
@@ -958,6 +971,7 @@ namespace MaterialsOptimizer
 			try {
 				RecurseParseMaterials( new DirectoryInfo( textBoxMaterialsBasePath.Text ) );
 				SaveMaterialsDatabase( m_materialsDatabaseFileName );
+				AnalyzeMaterialsDatabase( true );
 				RebuildMaterialsListView();
 				RebuildTexturesListView();
 			} catch ( Exception _e ) {
@@ -973,6 +987,7 @@ namespace MaterialsOptimizer
 			try {
 				CollectTextures( new DirectoryInfo( textBoxTexturesBasePath.Text ) );
 				SaveTexturesDatabase( m_texturesDatabaseFileName );
+				AnalyzeMaterialsDatabase( true );
 				RebuildTexturesListView();
 			} catch ( Exception _e ) {
 				MessageBox( "An error occurred while collecting textures:\r\n" + _e.Message, MessageBoxButtons.OK, MessageBoxIcon.Error );
@@ -1011,6 +1026,27 @@ namespace MaterialsOptimizer
 		}
 
 		private void checkBoxShowArkDefault_CheckedChanged(object sender, EventArgs e)
+		{
+			RebuildMaterialsListView();
+		}
+
+		private void listViewMaterials_ColumnClick(object sender, ColumnClickEventArgs e)
+		{
+			if ( e.Column == m_materialsSortColumn )
+				m_materialsSortOrder *= -1;
+			else
+				m_materialsSortOrder = 1;
+			m_materialsSortColumn = e.Column;
+
+			RebuildMaterialsListView();
+		}
+
+		private void integerTrackbarControlLayerMin_ValueChanged(Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue)
+		{
+			RebuildMaterialsListView();
+		}
+
+		private void integerTrackbarControlLayerMax_ValueChanged(Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue)
 		{
 			RebuildMaterialsListView();
 		}

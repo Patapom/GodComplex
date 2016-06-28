@@ -101,6 +101,10 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\Packages\Cirrus.Utility\Utility.csproj">
+      <Project>{9a67863f-d886-41a5-a8d1-04ba1379b097}</Project>
+      <Name>Utility</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\Packages\ImageUtility\ImageUtility.csproj">
       <Project>{a55979a1-0251-49d2-9a2a-3729c814169a}</Project>
       <Name>ImageUtility</Name>
