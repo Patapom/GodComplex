@@ -63,17 +63,18 @@ namespace MaterialsOptimizer
 			}
 
 			try {
-				ImageUtility.Bitmap	B = new ImageUtility.Bitmap( _fileName );
+				using ( ImageUtility.Bitmap B = new ImageUtility.Bitmap( _fileName ) ) {
 
-				m_couldBeRead = true;
-				m_width = B.Width;
-				m_height = B.Height;
-				switch ( B.Type ) {
-					case ImageUtility.Bitmap.FILE_TYPE.PNG: m_fileType = FILE_TYPE.PNG; break;
-					case ImageUtility.Bitmap.FILE_TYPE.TGA: m_fileType = FILE_TYPE.TGA; break;
-//					case ImageUtility.Bitmap.FILE_TYPE.DDS: m_fileType = FILE_TYPE.DDS; break;	// DDS not supported?
-					case ImageUtility.Bitmap.FILE_TYPE.JPEG: m_fileType = FILE_TYPE.JPG; break;
-					case ImageUtility.Bitmap.FILE_TYPE.TIFF: m_fileType = FILE_TYPE.TIFF; break;
+					m_couldBeRead = true;
+					m_width = B.Width;
+					m_height = B.Height;
+					switch ( B.Type ) {
+						case ImageUtility.Bitmap.FILE_TYPE.PNG: m_fileType = FILE_TYPE.PNG; break;
+						case ImageUtility.Bitmap.FILE_TYPE.TGA: m_fileType = FILE_TYPE.TGA; break;
+//						case ImageUtility.Bitmap.FILE_TYPE.DDS: m_fileType = FILE_TYPE.DDS; break;	// DDS not supported?
+						case ImageUtility.Bitmap.FILE_TYPE.JPEG: m_fileType = FILE_TYPE.JPG; break;
+						case ImageUtility.Bitmap.FILE_TYPE.TIFF: m_fileType = FILE_TYPE.TIFF; break;
+					}
 				}
 
 			} catch ( Exception _e ) {

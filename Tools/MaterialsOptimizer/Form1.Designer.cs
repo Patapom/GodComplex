@@ -97,6 +97,8 @@
 			this.textBoxSearchMaterial = new System.Windows.Forms.TextBox();
 			this.label7 = new System.Windows.Forms.Label();
 			this.buttonSearch = new System.Windows.Forms.Button();
+			this.checkBoxShowWarningMaterials = new System.Windows.Forms.CheckBox();
+			this.checkBoxShowMissingPhysics = new System.Windows.Forms.CheckBox();
 			this.tabControl.SuspendLayout();
 			this.tabPageMaterials.SuspendLayout();
 			this.panelFilterMaterials.SuspendLayout();
@@ -234,6 +236,8 @@
 			this.panelFilterMaterials.Controls.Add(this.checkBoxShowOtherMaterialTypes);
 			this.panelFilterMaterials.Controls.Add(this.checkBoxShowVista);
 			this.panelFilterMaterials.Controls.Add(this.checkBoxShowOptimizableMaterials);
+			this.panelFilterMaterials.Controls.Add(this.checkBoxShowMissingPhysics);
+			this.panelFilterMaterials.Controls.Add(this.checkBoxShowWarningMaterials);
 			this.panelFilterMaterials.Controls.Add(this.checkBoxShowErrorMaterials);
 			this.panelFilterMaterials.Controls.Add(this.checkBoxShowVegetation);
 			this.panelFilterMaterials.Location = new System.Drawing.Point(6, 489);
@@ -399,7 +403,7 @@
 			// checkBoxShowOptimizableMaterials
 			// 
 			this.checkBoxShowOptimizableMaterials.AutoSize = true;
-			this.checkBoxShowOptimizableMaterials.Location = new System.Drawing.Point(350, 54);
+			this.checkBoxShowOptimizableMaterials.Location = new System.Drawing.Point(726, 54);
 			this.checkBoxShowOptimizableMaterials.Name = "checkBoxShowOptimizableMaterials";
 			this.checkBoxShowOptimizableMaterials.Size = new System.Drawing.Size(179, 17);
 			this.checkBoxShowOptimizableMaterials.TabIndex = 2;
@@ -853,6 +857,28 @@
 			this.buttonSearch.UseVisualStyleBackColor = true;
 			this.buttonSearch.Click += new System.EventHandler(this.buttonSearch_Click);
 			// 
+			// checkBoxShowWarningMaterials
+			// 
+			this.checkBoxShowWarningMaterials.AutoSize = true;
+			this.checkBoxShowWarningMaterials.Location = new System.Drawing.Point(350, 54);
+			this.checkBoxShowWarningMaterials.Name = "checkBoxShowWarningMaterials";
+			this.checkBoxShowWarningMaterials.Size = new System.Drawing.Size(165, 17);
+			this.checkBoxShowWarningMaterials.TabIndex = 2;
+			this.checkBoxShowWarningMaterials.Text = "Show Warning Materials Only";
+			this.checkBoxShowWarningMaterials.UseVisualStyleBackColor = true;
+			this.checkBoxShowWarningMaterials.CheckedChanged += new System.EventHandler(this.checkBoxShowArkDefault_CheckedChanged);
+			// 
+			// checkBoxShowMissingPhysics
+			// 
+			this.checkBoxShowMissingPhysics.AutoSize = true;
+			this.checkBoxShowMissingPhysics.Location = new System.Drawing.Point(521, 54);
+			this.checkBoxShowMissingPhysics.Name = "checkBoxShowMissingPhysics";
+			this.checkBoxShowMissingPhysics.Size = new System.Drawing.Size(199, 17);
+			this.checkBoxShowMissingPhysics.TabIndex = 2;
+			this.checkBoxShowMissingPhysics.Text = "Show Missing Physics Materials Only";
+			this.checkBoxShowMissingPhysics.UseVisualStyleBackColor = true;
+			this.checkBoxShowMissingPhysics.CheckedChanged += new System.EventHandler(this.checkBoxShowArkDefault_CheckedChanged);
+			// 
 			// Form1
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -962,6 +988,8 @@
 		private System.Windows.Forms.TextBox textBoxSearchMaterial;
 		private System.Windows.Forms.Label label7;
 		private System.Windows.Forms.Button buttonSearch;
+		private System.Windows.Forms.CheckBox checkBoxShowWarningMaterials;
+		private System.Windows.Forms.CheckBox checkBoxShowMissingPhysics;
 	}
 }
 

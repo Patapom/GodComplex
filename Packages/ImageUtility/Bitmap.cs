@@ -1,4 +1,6 @@
-﻿//////////////////////////////////////////////////////////////////////////
+﻿//#define USE_LIB_RAW
+
+//////////////////////////////////////////////////////////////////////////
 // This special Bitmap class handles many image formats (JPG, PNG, BMP, TGA, GIF, HDR and especially RAW camera formats)
 // It also carefully handles color profiles to provide a faithful internal image representation that is always
 //	stored as 32-bits floating point precision CIE XYZ device-independent format that you can later convert to
@@ -618,6 +620,7 @@ namespace ImageUtility
 							return;
 						}
 
+				#if USE_LIB_RAW
 					case FILE_TYPE.CRW:
 					case FILE_TYPE.CR2:
 					case FILE_TYPE.DNG:
@@ -721,6 +724,7 @@ namespace ImageUtility
 #endregion
 							return;
  						}
+					#endif
 
 					default:
 						throw new NotSupportedException( "The image file type \"" + _FileType + "\" is not supported by the Bitmap class!" );

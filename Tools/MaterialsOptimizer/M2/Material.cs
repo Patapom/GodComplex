@@ -299,6 +299,14 @@ namespace MaterialsOptimizer
 			public string		m_errors = null;
 			public string		m_warnings = null;
 
+			public bool				HasErrors {
+				get { return m_errors != null && m_errors != ""; }
+			}
+
+			public bool				HasWarnings {
+				get { return m_warnings != null && m_warnings != ""; }
+			}
+
 			public void			ParseScaleBias( Parser _P ) {
 				float4	SB = _P.ReadFloat4();
 				m_UVScale.Set( SB.x, SB.y );
@@ -547,6 +555,17 @@ namespace MaterialsOptimizer
 			get { return 1+m_options.m_extraLayers; }
 		}
 
+		public bool				HasErrors {
+			get {
+				if ( m_errors != null && m_errors != "" )
+					return true;
+				foreach ( Layer L in m_layers )
+					if ( L.HasErrors )
+						return true;
+				return false;
+			}
+		}
+
 		/// <summary>
 		/// Build error summary
 		/// </summary>
@@ -567,6 +586,17 @@ namespace MaterialsOptimizer
 			}
 		}
 
+		public bool				HasWarnings {
+			get {
+				if ( m_warnings != null && m_warnings != "" )
+					return true;
+				foreach ( Layer L in m_layers )
+					if ( L.HasWarnings )
+						return true;
+				return false;
+			}
+		}
+
 		/// <summary>
 		/// Build warning summary
 		/// </summary>
@@ -584,6 +614,10 @@ namespace MaterialsOptimizer
 				}
 				return R;
 			}
+		}
+
+		public bool				HasPhysicsMaterial {
+			get { return m_physicsMaterial != null && m_physicsMaterial != ""; }
 		}
 
 		private Layer			Layer0 {

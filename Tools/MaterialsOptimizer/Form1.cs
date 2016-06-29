@@ -366,6 +366,9 @@ namespace MaterialsOptimizer
  			m_AppKey = Registry.CurrentUser.CreateSubKey( @"Software\Arkane\MaterialsOptimizer" );
 			m_ApplicationPath = Path.GetDirectoryName( Application.ExecutablePath );
 
+			textBoxMaterialsBasePath.Text = GetRegKey( "MaterialsBasePath", textBoxMaterialsBasePath.Text );
+			textBoxTexturesBasePath.Text = GetRegKey( "TexturesBasePath", textBoxTexturesBasePath.Text );
+
 			Material.Layer.Texture.ms_TexturesBasePath = new DirectoryInfo( textBoxTexturesBasePath.Text );
 
 			// Reload textures database
@@ -713,6 +716,8 @@ namespace MaterialsOptimizer
 				int		layersCountMax = integerTrackbarControlLayerMax.Value;
 
 				bool	showOnlyErrorMats = checkBoxShowErrorMaterials.Checked;
+				bool	showOnlyWarningMats = checkBoxShowWarningMaterials.Checked;
+				bool	showOnlyMissingPhysicsMats = checkBoxShowMissingPhysics.Checked;
 				bool	showOnlyOptimizableMats = checkBoxShowOptimizableMaterials.Checked;
 
 				foreach ( Material M in m_materials ) {
@@ -747,7 +752,11 @@ namespace MaterialsOptimizer
 						default: skip = skipOther; break;
 					}
 
-					if ( showOnlyErrorMats && M.ErrorString == null )
+					if ( showOnlyErrorMats && !M.HasErrors )
+						continue;
+					if ( showOnlyWarningMats && !M.HasWarnings )
+						continue;
+					if ( showOnlyMissingPhysicsMats && M.HasPhysicsMaterial )
 						continue;
 					if ( showOnlyOptimizableMats && M.m_isCandidateForOptimization == null )
 						continue;
@@ -802,15 +811,19 @@ namespace MaterialsOptimizer
 				item.SubItems.Add( new ListViewItem.ListViewSubItem( item, errorString ) );
 				item.SubItems.Add( new ListViewItem.ListViewSubItem( item, M.m_sourceFileName.FullName ) );
 
-				if ( errorString != null ) {
+				 if ( !M.HasPhysicsMaterial )
+					item.BackColor = Color.Sienna;
+				else if ( M.HasErrors )
 					item.BackColor = Color.Salmon;
-				} else if ( M.m_isCandidateForOptimization != null ) {
+				else if ( M.HasWarnings )
+					item.BackColor = Color.Gold;
+				else if ( M.m_isCandidateForOptimization != null )
 					item.BackColor = Color.ForestGreen;
-				}
 
 				// Build tooltip
 				item.ToolTipText = (M.m_isCandidateForOptimization != null ? M.m_isCandidateForOptimization + "\r\n" : "")
-								 + (errorString != null ? errorString : "");
+								 + (M.HasErrors ? errorString : "")
+								 + (M.HasWarnings ? M.WarningString : "");
 
 				listViewMaterials.Items.Add( item );
 			}
@@ -931,8 +944,10 @@ namespace MaterialsOptimizer
 					}
 
 					textureIndex++;
-					if ( (textureIndex % 100) == 0 )
+					if ( (textureIndex % 100) == 0 ) {
 						progressBarTextures.Value = textureIndex * progressBarTextures.Maximum / totalFilesCount;
+						progressBarTextures.Refresh();
+					}
 				}
 
 				TimeSpan	totalTime = DateTime.Now - startTime;
@@ -1282,6 +1297,8 @@ namespace MaterialsOptimizer
 				MessageBox( "Material \"" + M.m_name + "\" source file \"" + M.m_sourceFileName.FullName + "\" cannot be found on disk!" );
 				return;
 			}
+
+			Clipboard.SetText( M.m_name );
 
 			ProcessStartInfo psi = new ProcessStartInfo( M.m_sourceFileName.FullName );
 			psi.UseShellExecute = true;
