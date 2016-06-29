@@ -27,10 +27,12 @@ namespace MaterialsOptimizer
 			GLOSS,			// _g, _g1
 			METAL,			// _mt
 			MASK,			// _m, _o
+			MASK_BAD_SUFFIX,// _mask	<= They're using it a lot but it makes a BC7-encoded image!!
 			EMISSIVE,		// _e
 			AO,				// _ao
 			HEIGHT,			// _h
-			TRANSLUCENCY,	// _dt
+			TRANSLUCENCY,	// _tr
+			DIR_TRANSLUCENCY,	// _dt
 			SPECULAR,		// _s
 			SSBUMP,			// _ssbump
 			COLOR_CUBE,		// _cc
@@ -60,10 +62,12 @@ namespace MaterialsOptimizer
 					case USAGE.GLOSS:			return 1;
 					case USAGE.METAL:			return 1;
 					case USAGE.MASK:			return 1;
+					case USAGE.MASK_BAD_SUFFIX:	return 4;
 					case USAGE.EMISSIVE:		return 4;
 					case USAGE.AO:				return 1;
 					case USAGE.HEIGHT:			return 1;
 					case USAGE.TRANSLUCENCY:	return 1;
+					case USAGE.DIR_TRANSLUCENCY:return 3;
 					case USAGE.SPECULAR:		return 4;
 					case USAGE.SSBUMP:			return 3;
 					case USAGE.COLOR_CUBE:		return 4;
@@ -116,18 +120,18 @@ namespace MaterialsOptimizer
 		public void		Read( BinaryReader R ) {
 			m_fileName = new FileInfo( R.ReadString() );
 			m_fileType = (FILE_TYPE) R.ReadInt32();
-			m_usage = (USAGE) R.ReadInt32();
 			m_width = R.ReadInt32();
 			m_height = R.ReadInt32();
 			m_couldBeRead = R.ReadBoolean();
 			string	errorText = R.ReadString();
 			m_error = errorText != string.Empty ? new Exception( errorText ) : null;
+
+			m_usage = FindUsage( m_fileName );	// Attempt to find usage again
 		}
 
 		public void		Write( BinaryWriter W ) {
 			W.Write( m_fileName.FullName );
 			W.Write( (int) m_fileType );
-			W.Write( (int) m_usage );
 			W.Write( m_width );
 			W.Write( m_height );
 			W.Write( m_couldBeRead );
@@ -137,68 +141,77 @@ namespace MaterialsOptimizer
 		public static USAGE	FindUsage( FileInfo _fileName ) {
 			string	fileName = Path.GetFileNameWithoutExtension( _fileName.FullName );
 			int		indexOfUnderscore = fileName.LastIndexOf( '_' );
-			if ( indexOfUnderscore != -1 ) {
-				string	usageTag = fileName.Substring( indexOfUnderscore ).ToLower();
-				switch ( usageTag ) {
-					case "_d":
-					case "_d1":
-					case "_d2":
-					case "_d3":
-					case "_d4":
-					case "_d5":
-					case "_d6":
-					case "_d7":
-					case "_d8":
-					case "_d9":
-						return USAGE.DIFFUSE;
-					case "_n": return USAGE.NORMAL;
-					case "_g":
-					case "_g1":
-					case "_g2":
-					case "_g3":
-					case "_g4":
-					case "_g5":
-					case "_g6":
-					case "_g7":
-					case "_g8":
-					case "_g9":
-						return USAGE.GLOSS;
-					case "_mt":
-					case "_mt1":
-					case "_mt2":
-					case "_mt3":
-					case "_mt4":
-					case "_mt5":
-					case "_mt6":
-					case "_mt7":
-					case "_mt8":
-					case "_mt9":
-						return USAGE.METAL;
-					case "_ao": return USAGE.AO;
-					case "_h": return USAGE.HEIGHT;
-					case "_ssbump": return USAGE.SSBUMP;
-					case "_m":
-					case "_m1":
-					case "_m2":
-					case "_m3":
-					case "_m4":
-					case "_m5":
-					case "_m6":
-					case "_m7":
-					case "_m8":
-					case "_m9":
-						return USAGE.MASK;
-					case "_o": return USAGE.MASK;
-					case "_cc": return USAGE.COLOR_CUBE;
-					case "_disp": return USAGE.DISPLACEMENT;
-					case "_is": return USAGE.IGGY;
-					case "_df": return USAGE.DISTANCE_FIELD;
-					case "_dt": return USAGE.TRANSLUCENCY;
-					case "_e": return USAGE.EMISSIVE;
-					case "_wm": return USAGE.WRINKLE_MASK;
-					case "_wn": return USAGE.WRINKLE_NORMAL;
-					case "_s": return USAGE.SPECULAR;
-				}
+			if ( indexOfUnderscore == -1 )
+				return USAGE.UNKNOWN;
+
+			string	usageTag = fileName.Substring( indexOfUnderscore ).ToLower();
+			if ( usageTag.EndsWith( "k1" ) || usageTag.EndsWith( "k2" ) )
+				usageTag = usageTag.Substring( 0 , usageTag.Length - 2 );
+			else if ( usageTag.EndsWith( "kc1" ) || usageTag.EndsWith( "kc2" ) )
+				usageTag = usageTag.Substring( 0 , usageTag.Length - 3 );
+
+			switch ( usageTag ) {
+				case "_d":
+				case "_d1":
+				case "_d2":
+				case "_d3":
+				case "_d4":
+				case "_d5":
+				case "_d6":
+				case "_d7":
+				case "_d8":
+				case "_d9":
+					return USAGE.DIFFUSE;
+				case "_n": return USAGE.NORMAL;
+				case "_g":
+				case "_g1":
+				case "_g2":
+				case "_g3":
+				case "_g4":
+				case "_g5":
+				case "_g6":
+				case "_g7":
+				case "_g8":
+				case "_g9":
+					return USAGE.GLOSS;
+				case "_mt":
+				case "_mt1":
+				case "_mt2":
+				case "_mt3":
+				case "_mt4":
+				case "_mt5":
+				case "_mt6":
+				case "_mt7":
+				case "_mt8":
+				case "_mt9":
+					return USAGE.METAL;
+				case "_ao": return USAGE.AO;
+				case "_h": return USAGE.HEIGHT;
+				case "_ssbump": return USAGE.SSBUMP;
+				case "_m":
+				case "_m1":
+				case "_m2":
+				case "_m3":
+				case "_m4":
+				case "_m5":
+				case "_m6":
+				case "_m7":
+				case "_m8":
+				case "_m9":
+					return USAGE.MASK;
+				case "_mask":
+					return USAGE.MASK_BAD_SUFFIX;
+				case "_o": return USAGE.MASK;
+				case "_cc": return USAGE.COLOR_CUBE;
+				case "_disp": return USAGE.DISPLACEMENT;
+				case "_is": return USAGE.IGGY;
+				case "_df": return USAGE.DISTANCE_FIELD;
+				case "_dt": return USAGE.DIR_TRANSLUCENCY;
+				case "_tr": return USAGE.TRANSLUCENCY;
+				case "_e": return USAGE.EMISSIVE;
+				case "_wm": return USAGE.WRINKLE_MASK;
+				case "_wn": return USAGE.WRINKLE_NORMAL;
+				case "_s": return USAGE.SPECULAR;
 			}
 
 			return USAGE.UNKNOWN;

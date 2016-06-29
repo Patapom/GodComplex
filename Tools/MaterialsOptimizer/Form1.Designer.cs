@@ -171,9 +171,9 @@
 			this.label2.AutoSize = true;
 			this.label2.Location = new System.Drawing.Point(13, 53);
 			this.label2.Name = "label2";
-			this.label2.Size = new System.Drawing.Size(100, 13);
+			this.label2.Size = new System.Drawing.Size(92, 13);
 			this.label2.TabIndex = 3;
-			this.label2.Text = "Textures Base Path";
+			this.label2.Text = "Project Base Path";
 			// 
 			// buttonParseMaterials
 			// 
@@ -357,9 +357,10 @@
 			// checkBoxInvertMaterialFilters
 			// 
 			this.checkBoxInvertMaterialFilters.AutoSize = true;
+			this.checkBoxInvertMaterialFilters.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
 			this.checkBoxInvertMaterialFilters.Location = new System.Drawing.Point(477, 28);
 			this.checkBoxInvertMaterialFilters.Name = "checkBoxInvertMaterialFilters";
-			this.checkBoxInvertMaterialFilters.Size = new System.Drawing.Size(83, 17);
+			this.checkBoxInvertMaterialFilters.Size = new System.Drawing.Size(97, 17);
 			this.checkBoxInvertMaterialFilters.TabIndex = 2;
 			this.checkBoxInvertMaterialFilters.Text = "Invert Filters";
 			this.checkBoxInvertMaterialFilters.UseVisualStyleBackColor = true;

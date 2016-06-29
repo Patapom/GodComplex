@@ -656,6 +656,11 @@ namespace MaterialsOptimizer
 				for ( int layerIndex=0; layerIndex < layersCount; layerIndex++ ) {
 					Material.Layer	L = M.m_layers[layerIndex];
 
+					if ( L.m_mask != null && L.m_mask.m_textureFileInfo != null && L.m_mask.m_textureFileInfo.m_usage == TextureFileInfo.USAGE.MASK_BAD_SUFFIX ) {
+						L.m_errors += T + "• Mask texture uses the bad suffix \"_mask\" instead of the correct \"_m\" suffix: a heavy 4-channels BC7 texture will be created instead of a regular single channel texture!\n";
+						L.RaiseErrorLevel( Material.ERROR_LEVEL.DANGEROUS );
+					}
+
 					// Check textures exist
 					L.CheckTexture( L.m_diffuse, true, Material.Layer.REUSE_MODE.DONT_REUSE, T, "diffuse", 4 );
 					L.CheckTexture( L.m_normal, M.m_options.m_hasNormal, L.m_normalReUse, T, "normal", 2 );
@@ -927,6 +932,8 @@ namespace MaterialsOptimizer
 		#region Textures Parsing
 
 		void	CollectTextures( DirectoryInfo _directory ) {
+			if ( !_directory.Exists )
+				throw new Exception( "Directory \"" + _directory.FullName + "\" for texture collection does not exist!" );
 
 			ImageUtility.Bitmap.ReadContent = false;
 			progressBarTextures.Visible = true;
@@ -941,6 +948,7 @@ namespace MaterialsOptimizer
 				 ".tga",
 				 ".tiff",
 //				 ".dds",
+//				 ".bimage",
 			};
 
 			List< FileInfo[] >	textureFileNamesForExtenstion = new List< FileInfo[] >();
@@ -958,24 +966,6 @@ namespace MaterialsOptimizer
 				DateTime	startTime = DateTime.Now;
 
 				foreach ( FileInfo textureFileName in textureFileNames ) {
-
-// 					bool	supported = false;
-// 					bool	isAnImage = true;
-// 					string	extension = Path.GetExtension( textureFileName.Name ).ToLower();
-// 					switch ( extension ) {
-// 						case ".tga": supported = true; break;
-// 						case ".png": supported = true; break;
-// 						case ".jpg": supported = true; break;
-// 						case ".tiff": supported = true; break;
-// 						case ".dds": supported = true; break;	// But can't read it at the moment...
-// 
-// 						default: isAnImage = false; break;
-// 					}
-// 
-// 					if ( !supported ) {
-// 						continue;	// Unknown file type
-// 					}
-
 					try {
 						TextureFileInfo	T = new TextureFileInfo( textureFileName );
 						m_textures.Add( T );

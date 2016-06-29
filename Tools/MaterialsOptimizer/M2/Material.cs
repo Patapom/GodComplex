@@ -525,7 +525,7 @@ namespace MaterialsOptimizer
 					else {
 						// Ensure we have the proper amount of channels
 						if ( _texture.m_textureFileInfo.ColorChannelsCount != _expectedChannelsCount ) {
-							m_errors += T + "• " + _textureName + " texture \"" + _texture.m_fileName.FullName + "\" only provides " + _texture.m_textureFileInfo.ColorChannelsCount + " color channels whereas " + _expectedChannelsCount + " are expected!\n";
+							m_errors += T + "• " + _textureName + " texture \"" + _texture.m_fileName.FullName + "\" provides " + _texture.m_textureFileInfo.ColorChannelsCount + " color channels whereas " + _expectedChannelsCount + " are expected!\n";
 							RaiseErrorLevel( ERROR_LEVEL.DANGEROUS );
 						}
 					}
@@ -537,10 +537,12 @@ namespace MaterialsOptimizer
 					return;	// Easy!
 
 				if ( _texture0 == null ) {
-					m_errors += T + "• " + _textureName0 + " is not provided wheras " + _textureName1 + " is specified\n";
+					if ( _reUseMode0 == REUSE_MODE.DONT_REUSE )
+						m_errors += T + "• " + _textureName0 + " is not provided wheras " + _textureName1 + " is specified and re-use mode is " + _reUseMode0 + "\n";
 					return;
 				} else if ( _texture1 == null ) {
-					_layer1.m_errors += T + "• " + _textureName1 + " is not provided wheras " + _textureName0 + " is specified\n";
+					if ( _reUseMode1 == REUSE_MODE.DONT_REUSE  )
+						_layer1.m_errors += T + "• " + _textureName1 + " is not provided wheras " + _textureName0 + " is specified and re-use mode is " + _reUseMode0 + "\n";
 					return;
 				}
 
