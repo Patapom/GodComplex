@@ -99,11 +99,13 @@ namespace MaterialsOptimizer
 			public bool				m_isMasking = false;
 			public bool				m_hasNormal = false;
 			public bool				m_hasSpecular = false;
+			public bool				m_hasOcclusionMap = false;
 			public bool				m_hasGloss = false;
 			public bool				m_hasMetal = false;
 			public bool				m_hasEmissive = false;
 			public bool				m_translucencyEnabled = false;
 			public bool				m_translucencyUseVertexColor = true;
+			public int				m_extraLayers = 0;
 
 			public bool				IsAlpha {
 				get { return m_isAlpha || m_isMasking; }
@@ -116,11 +118,13 @@ namespace MaterialsOptimizer
 				W.Write( m_isMasking );
 				W.Write( m_hasNormal );
 				W.Write( m_hasSpecular );
+				W.Write( m_hasOcclusionMap );
 				W.Write( m_hasGloss );
 				W.Write( m_hasMetal );
 				W.Write( m_hasEmissive );
 				W.Write( m_translucencyEnabled );
 				W.Write( m_translucencyUseVertexColor );
+				W.Write( m_extraLayers );
 			}
 
 			public void	Read( BinaryReader R ) {
@@ -128,11 +132,13 @@ namespace MaterialsOptimizer
 				m_isMasking = R.ReadBoolean();
 				m_hasNormal = R.ReadBoolean();
 				m_hasSpecular = R.ReadBoolean();
+				m_hasOcclusionMap = R.ReadBoolean();
 				m_hasGloss = R.ReadBoolean();
 				m_hasMetal = R.ReadBoolean();
 				m_hasEmissive = R.ReadBoolean();
 				m_translucencyEnabled = R.ReadBoolean();
 				m_translucencyUseVertexColor = R.ReadBoolean();
+				m_extraLayers = R.ReadInt32();
 			}
 
 			#endregion
@@ -156,6 +162,9 @@ namespace MaterialsOptimizer
 				public Exception			m_error = null;		// Any error that occurred during texture creation
 				public CONSTANT_COLOR_TYPE	m_constantColorType = CONSTANT_COLOR_TYPE.TEXTURE;
 				public float4				m_customConstantColor = float4.Zero;
+
+				// Resolve by analysis
+				public TextureFileInfo		m_textureFileInfo = null;
 
 				public float4	ConstantColor {
 					get {
@@ -287,6 +296,9 @@ namespace MaterialsOptimizer
 			public float2		m_maskUVOffset = float2.Zero;
 			public float2		m_maskUVScale = float2.One;
 
+			public string		m_errors = null;
+			public string		m_warnings = null;
+
 			public void			ParseScaleBias( Parser _P ) {
 				float4	SB = _P.ReadFloat4();
 				m_UVScale.Set( SB.x, SB.y );
@@ -304,6 +316,38 @@ namespace MaterialsOptimizer
 
 			public Layer( BinaryReader R ) {
 				Read( R );
+			}
+
+			public override string ToString() {
+				string	R = null;
+				if ( m_errors != null && m_errors != "" )
+					R += "   Errors:\n" + m_errors;
+				if ( m_warnings != null && m_warnings != "" )
+					R += "   Warnings:\n" + m_warnings;
+
+				return R;
+			}
+
+			/// <summary>
+			/// Checks the UV sets and the tiling/offsets are the same
+			/// </summary>
+			/// <param name="_other"></param>
+			/// <returns></returns>
+			public bool		SameUVs( Layer _other ) {
+				if ( m_UVSet != _other.m_UVSet )
+					return false;
+
+				if ( Math.Abs( m_UVOffset.x - _other.m_UVOffset.x ) > 1e-3f )
+					return false;
+				if ( Math.Abs( m_UVOffset.y - _other.m_UVOffset.y ) > 1e-3f )
+					return false;
+
+				if ( Math.Abs( m_UVScale.x - _other.m_UVScale.x ) > 1e-3f )
+					return false;
+				if ( Math.Abs( m_UVScale.y - _other.m_UVScale.y ) > 1e-3f )
+					return false;
+
+				return true;
 			}
 
 			#region Serialization
@@ -363,6 +407,9 @@ namespace MaterialsOptimizer
 				W.Write( m_maskUVOffset.y );
 				W.Write( m_maskUVScale.x );
 				W.Write( m_maskUVScale.y );
+
+				W.Write( m_errors != null ? m_errors : "" );
+				W.Write( m_warnings != null ? m_warnings : "" );
 			}
 
 			public void	Read( BinaryReader R ) {
@@ -402,6 +449,68 @@ namespace MaterialsOptimizer
 				m_maskUVOffset.y = R.ReadSingle();
 				m_maskUVScale.x = R.ReadSingle();
 				m_maskUVScale.y = R.ReadSingle();
+
+				m_errors = R.ReadString();
+				if ( m_errors == string.Empty )
+					m_errors = null;
+				m_warnings = R.ReadString();
+				if ( m_warnings == string.Empty )
+					m_warnings = null;
+			}
+
+			#endregion
+
+			#region Analysis
+
+			/// <summary>
+			/// Checks the provided texture is valid
+			/// </summary>
+			/// <param name="_texture"></param>
+			/// <param name="_reUseMode"></param>
+			/// <param name="T"></param>
+			/// <param name="_textureName"></param>
+			/// <returns></returns>
+			public void	CheckTexture( Texture _texture, REUSE_MODE _reUseMode, string T, string _textureName ) {
+				if ( _reUseMode != REUSE_MODE.DONT_REUSE )
+					return;	// Don't error when re-using previous channel textures
+
+				if ( _texture == null )
+					m_errors += T + "• No " + _textureName + " texture!\n";
+				else if ( _texture.m_constantColorType == Texture.CONSTANT_COLOR_TYPE.TEXTURE ) {
+					// In case of texture, ensure it exists!
+					if ( !_texture.m_fileName.Exists )
+						m_errors += T + "• " + _textureName + " texture \"" + _texture.m_fileName.FullName + "\" not found on disk!\n";
+					else if ( _texture.m_textureFileInfo == null )
+						m_errors += T + "• " + _textureName + " texture \"" + _texture.m_fileName.FullName + "\"  not found in collected textures!\n";
+				}
+			}
+
+			public void	CompareTextures( Texture _texture0, REUSE_MODE _reUseMode0, Texture _texture1, REUSE_MODE _reUseMode1, Layer _layer1, string T, string _textureName0, string _textureName1 ) {
+				if ( _texture0 == null && _texture1 == null )
+					return;	// Easy!
+
+				if ( _texture0 == null ) {
+					m_errors += T + "• " + _textureName0 + " is not provided wheras " + _textureName1 + " is specified\n";
+					return;
+				} else if ( _texture1 == null ) {
+					_layer1.m_errors += T + "• " + _textureName1 + " is not provided wheras " + _textureName0 + " is specified\n";
+					return;
+				}
+
+				// At this point we know both textures are set
+				if ( _reUseMode0 != REUSE_MODE.DONT_REUSE )
+					m_warnings += T + "• " + _textureName0 + " is provided (\"" + _texture0.m_name + "\") wheras re-use mode is specified. It's not optimal, you should remove the texture...\n";
+				if ( _reUseMode1 != REUSE_MODE.DONT_REUSE )
+					_layer1.m_warnings += T + "• " + _textureName1 + " is provided (\"" + _texture1.m_name + "\")  wheras re-use mode is specified. It's not optimal, you should remove the texture...\n";
+
+				if ( _reUseMode0 == REUSE_MODE.DONT_REUSE && _reUseMode1 == REUSE_MODE.DONT_REUSE ) {
+					// Check if both textures are the same
+					if ( _texture0.m_name.ToLower() == _texture1.m_name.ToLower() ) {
+						// Check if UV sets and tiling is the same
+						if ( SameUVs( _layer1 ) ) 
+							m_errors += T + "• " + _textureName0 + " and " + _textureName1 + " are identical! Consider re-using other layer texture instead!\n";
+					}
+				}
 			}
 
 			#endregion
@@ -419,14 +528,63 @@ namespace MaterialsOptimizer
 		public Layer.Texture	m_height = null;	// Special height map!
 
 		// Main variables
+		public string			m_physicsMaterial = null;
 		public float2			m_glossMinMax = new float2( 0.0f, 0.5f );
 		public float2			m_metallicMinMax = new float2( 0.0f, 0.5f );
 
 
 		// Filled by analyzer
-		public string			m_isCandidateForOptmization = null;
+		public string			m_isCandidateForOptimization = null;
 		public string			m_errors = null;
+		public string			m_warnings = null;
 
+		#region PROPERTIES
+
+		/// <summary>
+		/// Returns the ACTUAL amount of layers used by the shader
+		/// </summary>
+		public int				LayersCount {
+			get { return 1+m_options.m_extraLayers; }
+		}
+
+		/// <summary>
+		/// Build error summary
+		/// </summary>
+		public string			ErrorString {
+			get {
+				string	R = null;
+				if ( m_errors != null && m_errors != "" ) {
+					R += "General errors:\n" + m_errors + "\n\n";
+				}
+				int	layersCount = Math.Min( LayersCount, m_layers.Count );
+				for ( int layerIndex=0; layerIndex < layersCount; layerIndex++ ) {
+					Layer	L = m_layers[layerIndex];
+					if ( L.m_errors != null && L.m_errors != "" ) {
+						R += "Layer " + layerIndex + " errors:\n" + L.m_errors + "\n\n";
+					}
+				}
+				return R;
+			}
+		}
+
+		/// <summary>
+		/// Build warning summary
+		/// </summary>
+		public string			WarningString {
+			get {
+				string	R = null;
+				if ( m_warnings != null && m_warnings != "" ) {
+					R += "General warnings:\n" + m_warnings + "\n\n";
+				}
+				for ( int layerIndex=0; layerIndex < LayersCount; layerIndex++ ) {
+					Layer	L = m_layers[layerIndex];
+					if ( L.m_warnings != null && L.m_warnings != "" ) {
+						R += "Layer " + layerIndex + " warnings:\n" + L.m_warnings + "\n\n";
+					}
+				}
+				return R;
+			}
+		}
 
 		private Layer			Layer0 {
 			get { return m_layers[0]; }
@@ -451,6 +609,8 @@ namespace MaterialsOptimizer
 			}
 		}
 
+		#endregion
+
 		public Material( FileInfo _sourceFileName, string _name, string _content ) {
 			m_sourceFileName = _sourceFileName;
 			m_name = _name;
@@ -459,6 +619,30 @@ namespace MaterialsOptimizer
 		}
 		public Material( BinaryReader R ) {
 			Read( R );
+		}
+
+		public override string ToString() {
+			string	R = null;
+
+			R += m_name + "\n";
+			R += "M2 File: " + m_sourceFileName.FullName + "\n";
+			R += "Material type = " + m_programs.m_type + "\n";
+			R += (1+m_options.m_extraLayers) + " layers (" + m_layers.Count + " encountered)\n";
+
+			for ( int layerIndex=0; layerIndex < LayersCount; layerIndex++ ) {
+				string	layerString = m_layers[layerIndex].ToString();
+				if ( layerString != null && layerString != "" )
+					R += "\n• Layer " + layerIndex + "\n----------\n" + layerString + "\n";
+			}
+
+			if ( m_errors != null && m_errors != "" ) {
+				R += "\nErrors:\n-----------\n" + m_errors;
+			}
+			if ( m_warnings != null && m_warnings != "" ) {
+				R += "\nWarnings:\n-----------\n" + m_warnings;
+			}
+
+			return R;
 		}
 
 		#region Material Parsing
@@ -542,6 +726,10 @@ namespace MaterialsOptimizer
 					case "layer2_maskscalebias":Layer2.ParseMaskScaleBias( P ); break;
 
 					// Main variables
+					case "m_physicsmaterial":
+						m_physicsMaterial = P.ReadToEOL();
+						break;
+
 					case "wardroughness":
 						float4	roughness = P.ReadFloat4();
 						m_glossMinMax.x = roughness.x;
@@ -592,6 +780,7 @@ namespace MaterialsOptimizer
 						P.SkipComment();
 						continue;
 					}
+					P.SkipSpaces();
 					if ( !P.IsNumeric() )
 						continue;	// Ill-formed option?
 
@@ -604,6 +793,7 @@ namespace MaterialsOptimizer
 						case "ismasking":					m_options.m_isMasking = value != 0; break;
 						case "hasbumpmap":					m_options.m_hasNormal = value != 0; break;
 						case "hasspecularmap":				m_options.m_hasSpecular = value != 0; break;
+						case "hasOcclusionMap":				m_options.m_hasOcclusionMap = value != 0; break;
 						case "hasglossmap":					m_options.m_hasGloss = value != 0; break;
 						case "hasmetallicmap":				m_options.m_hasMetal = value != 0; break;
 						case "hasemissivemap":				m_options.m_hasEmissive = value != 0; break;
@@ -612,9 +802,9 @@ namespace MaterialsOptimizer
 
 						case "extralayer":
 							switch ( value ) {
-								case 0: Layer0.m_mask = null; break;
-								case 1: Layer1.m_mask = null; break;
-								case 2: Layer2.m_mask = null; break;
+								case 0: Layer0.m_mask = null; m_options.m_extraLayers = 0; break;
+								case 1: Layer1.m_mask = null; m_options.m_extraLayers = 1; break;
+								case 2: Layer2.m_mask = null; m_options.m_extraLayers = 2; break;
 								default: throw new Exception( "Unsupported amount of extra layers!" );
 							}
 							break;
@@ -782,7 +972,6 @@ namespace MaterialsOptimizer
 				return;	// Don't care about other programs than arkDefault
 
 			string[]	recognizedStrings = new string[] {
-				"m_physicsmaterial",
 				"version",
 				"darkvisionprogram",
 				"sssprogram",
@@ -1051,13 +1240,15 @@ namespace MaterialsOptimizer
 			if ( m_height != null )
 				m_height.Write( W );
 			
+			W.Write( m_physicsMaterial != null ? m_physicsMaterial : "" );
 			W.Write( m_glossMinMax.x );
 			W.Write( m_glossMinMax.y );
 			W.Write( m_metallicMinMax.x );
 			W.Write( m_metallicMinMax.y );
 
-			W.Write( m_isCandidateForOptmization != null ? m_isCandidateForOptmization : "" );
+			W.Write( m_isCandidateForOptimization != null ? m_isCandidateForOptimization : "" );
 			W.Write( m_errors != null ? m_errors : "" );
+			W.Write( m_warnings != null ? m_warnings : "" );
 		}
 
 		public void	Read( BinaryReader R ) {
@@ -1075,17 +1266,23 @@ namespace MaterialsOptimizer
 
 			m_height = R.ReadBoolean() ? new Layer.Texture( R ) : null;
 			
+			m_physicsMaterial = R.ReadString();
+			if ( m_physicsMaterial == "" )
+				m_physicsMaterial = null;
 			m_glossMinMax.x = R.ReadSingle();
 			m_glossMinMax.y = R.ReadSingle();
 			m_metallicMinMax.x = R.ReadSingle();
 			m_metallicMinMax.y = R.ReadSingle();
 
-			m_isCandidateForOptmization = R.ReadString();
-			if ( m_isCandidateForOptmization == string.Empty )
-				m_isCandidateForOptmization = null;
+			m_isCandidateForOptimization = R.ReadString();
+			if ( m_isCandidateForOptimization == string.Empty )
+				m_isCandidateForOptimization = null;
 			m_errors = R.ReadString();
 			if ( m_errors == string.Empty )
 				m_errors = null;
+			m_warnings = R.ReadString();
+			if ( m_warnings == string.Empty )
+				m_warnings = null;
 		}
 
 		#endregion
