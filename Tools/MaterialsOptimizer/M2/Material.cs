@@ -10,6 +10,13 @@ namespace MaterialsOptimizer
 	[System.Diagnostics.DebuggerDisplay( "{m_name} - {m_options} - {m_layers.Count} Layers" )]
 	public class Material {
 
+		public enum ERROR_LEVEL	{
+			NONE = 0,
+			DIRTY = 1,
+			STANDARD = 2,
+			DANGEROUS = 3,
+		}
+
 		[System.Diagnostics.DebuggerDisplay( "{m_type}" )]
 		public class	Programs {
 			public enum		KNOWN_TYPES {
@@ -296,8 +303,13 @@ namespace MaterialsOptimizer
 			public float2		m_maskUVOffset = float2.Zero;
 			public float2		m_maskUVScale = float2.One;
 
+			private ERROR_LEVEL	m_errorLevel = ERROR_LEVEL.NONE;
 			public string		m_errors = null;
 			public string		m_warnings = null;
+
+			public ERROR_LEVEL		ErrorLevel {
+				get { return m_errorLevel; }
+			}
 
 			public bool				HasErrors {
 				get { return m_errors != null && m_errors != ""; }
@@ -358,6 +370,14 @@ namespace MaterialsOptimizer
 				return true;
 			}
 
+			public void		ClearErrorLevel() {
+				m_errorLevel = ERROR_LEVEL.NONE;
+			}
+			public void		RaiseErrorLevel( ERROR_LEVEL _errorLevel ) {
+				if ( (int) m_errorLevel < (int) _errorLevel )
+					m_errorLevel = _errorLevel;
+			}
+
 			#region Serialization
 
 			public void	Write( BinaryWriter W ) {
@@ -416,6 +436,7 @@ namespace MaterialsOptimizer
 				W.Write( m_maskUVScale.x );
 				W.Write( m_maskUVScale.y );
 
+				W.Write( (int) m_errorLevel );
 				W.Write( m_errors != null ? m_errors : "" );
 				W.Write( m_warnings != null ? m_warnings : "" );
 			}
@@ -458,6 +479,7 @@ namespace MaterialsOptimizer
 				m_maskUVScale.x = R.ReadSingle();
 				m_maskUVScale.y = R.ReadSingle();
 
+				m_errorLevel = (ERROR_LEVEL) R.ReadInt32();
 				m_errors = R.ReadString();
 				if ( m_errors == string.Empty )
 					m_errors = null;
@@ -478,18 +500,35 @@ namespace MaterialsOptimizer
 			/// <param name="T"></param>
 			/// <param name="_textureName"></param>
 			/// <returns></returns>
-			public void	CheckTexture( Texture _texture, REUSE_MODE _reUseMode, string T, string _textureName ) {
+			public void	CheckTexture( Texture _texture, bool _hasUseOption, REUSE_MODE _reUseMode, string T, string _textureName, int _expectedChannelsCount ) {
 				if ( _reUseMode != REUSE_MODE.DONT_REUSE )
 					return;	// Don't error when re-using previous channel textures
 
-				if ( _texture == null )
-					m_errors += T + "• No " + _textureName + " texture!\n";
-				else if ( _texture.m_constantColorType == Texture.CONSTANT_COLOR_TYPE.TEXTURE ) {
+				if ( _texture == null ) {
+					if ( _hasUseOption ) {
+						m_errors += T + "• No " + _textureName + " texture!\n";
+						RaiseErrorLevel( ERROR_LEVEL.DANGEROUS );
+					}
+				} else if ( _texture.m_constantColorType == Texture.CONSTANT_COLOR_TYPE.TEXTURE ) {
+					if ( !_hasUseOption )
+						m_warnings += T + "• Specifying " + _textureName + " texture whereas option is not set!\n";
+
 					// In case of texture, ensure it exists!
-					if ( !_texture.m_fileName.Exists )
+					if ( !_texture.m_fileName.Exists ) {
 						m_errors += T + "• " + _textureName + " texture \"" + _texture.m_fileName.FullName + "\" not found on disk!\n";
-					else if ( _texture.m_textureFileInfo == null )
+						RaiseErrorLevel( ERROR_LEVEL.DIRTY );
+					}
+					else if ( _texture.m_textureFileInfo == null ) {
 						m_errors += T + "• " + _textureName + " texture \"" + _texture.m_fileName.FullName + "\"  not found in collected textures!\n";
+						RaiseErrorLevel( ERROR_LEVEL.DIRTY );
+					}
+					else {
+						// Ensure we have the proper amount of channels
+						if ( _texture.m_textureFileInfo.ColorChannelsCount != _expectedChannelsCount ) {
+							m_errors += T + "• " + _textureName + " texture \"" + _texture.m_fileName.FullName + "\" only provides " + _texture.m_textureFileInfo.ColorChannelsCount + " color channels whereas " + _expectedChannelsCount + " are expected!\n";
+							RaiseErrorLevel( ERROR_LEVEL.DANGEROUS );
+						}
+					}
 				}
 			}
 
@@ -516,7 +555,7 @@ namespace MaterialsOptimizer
 					if ( _texture0.m_name.ToLower() == _texture1.m_name.ToLower() ) {
 						// Check if UV sets and tiling is the same
 						if ( SameUVs( _layer1 ) ) 
-							m_errors += T + "• " + _textureName0 + " and " + _textureName1 + " are identical! Consider re-using other layer texture instead!\n";
+							m_errors += T + "• " + _textureName0 + " and " + _textureName1 + " are identical and use the same UV sets, tiling and offsets! Consider re-using other layer texture instead!\n";
 					}
 				}
 			}
@@ -534,15 +573,24 @@ namespace MaterialsOptimizer
 		// Textures
 		public List< Layer >	m_layers = new List< Layer >();
 		public Layer.Texture	m_height = null;	// Special height map!
+		public Layer.Texture	m_lightMap = null;	// Special light map for vista!
 
 		// Main variables
 		public string			m_physicsMaterial = null;
 		public float2			m_glossMinMax = new float2( 0.0f, 0.5f );
 		public float2			m_metallicMinMax = new float2( 0.0f, 0.5f );
 
+		// Forbidden parms
+		public List< string >	m_forbiddenParms = new List< string >();
+
+		// Shader specific parms
+		public bool				m_isUsingVegetationParms = false;
+		public bool				m_isUsingCloudParms = false;
+		public bool				m_isUsingWaterParms = false;
 
 		// Filled by analyzer
 		public string			m_isCandidateForOptimization = null;
+		private ERROR_LEVEL		m_errorLevel = ERROR_LEVEL.NONE;
 		public string			m_errors = null;
 		public string			m_warnings = null;
 
@@ -563,6 +611,20 @@ namespace MaterialsOptimizer
 					if ( L.HasErrors )
 						return true;
 				return false;
+			}
+		}
+
+		public ERROR_LEVEL		ErrorLevel_MaterialOnly {
+			get { return m_errorLevel; }
+		}
+		public ERROR_LEVEL		ErrorLevel {
+			get {
+				int	maxErrorLevel = (int) m_errorLevel;
+				foreach ( Layer L in m_layers ) {
+					maxErrorLevel = Math.Max( maxErrorLevel, (int) L.ErrorLevel );
+				}
+
+				return (ERROR_LEVEL) maxErrorLevel;
 			}
 		}
 
@@ -679,9 +741,22 @@ namespace MaterialsOptimizer
 			return R;
 		}
 
+		public void		ClearErrorLevel() {
+			m_errorLevel = ERROR_LEVEL.NONE;
+		}
+		public void		RaiseErrorLevel( ERROR_LEVEL _errorLevel ) {
+			if ( (int) m_errorLevel < (int) _errorLevel )
+				m_errorLevel = _errorLevel;
+		}
+
 		#region Material Parsing
 
 		private void	Parse( string _block ) {
+			m_forbiddenParms.Clear();
+			m_isUsingVegetationParms = false;
+			m_isUsingCloudParms = false;
+			m_isUsingWaterParms = false;
+
 			Parser	P = new Parser( _block );
 			while ( P.OK ) {
 				string	token = P.ReadString();
@@ -730,6 +805,7 @@ namespace MaterialsOptimizer
 					case "metallicmap":			Layer0.m_metal = new Layer.Texture( P.ReadToEOL() ); break;
 					case "specularmap":			Layer0.m_specular = new Layer.Texture( P.ReadToEOL() ); break;
 					case "heightmap":			m_height = new Layer.Texture( P.ReadToEOL() ); break;
+					case "lightmap":			m_lightMap = new Layer.Texture( P.ReadToEOL() ); break;
 					case "occlusionmap":		Layer0.m_AO = new Layer.Texture( P.ReadToEOL() ); break;
 					case "translucencymap":		Layer0.m_translucency = new Layer.Texture( P.ReadToEOL() ); break;
 					case "emissivemap":			Layer0.m_emissive = new Layer.Texture( P.ReadToEOL() ); break;
@@ -776,9 +852,7 @@ namespace MaterialsOptimizer
 						break;
 
 					default:
-						#if DEBUG
-							CheckSafeTokens( token );
-						#endif
+						CheckSafeTokens( token );
 						P.ReadToEOL();	// Don't care...
 						break;
 				}
@@ -1037,39 +1111,6 @@ namespace MaterialsOptimizer
 				"texturemap",
 				"specularTintDielectric",
 				"diffusealbedometallic",
-				"water/causticsChromaticAberration",
-				"water/causticsFade",
-				"water/causticsTiling",
-				"water/causticsSpeed",
-				"water/specularPower",
-				"water/extinction",
-				"water/inscattering",
-				"water/refraction",
-				"water/waterColor",
-				"water/perlinAmplitude",
-				"water/perlinFrequency",
-				"water/perlinSpeed",
-				"water/screenspacereflectionlod",
-				"water/skyColor",
-				"water/screenSpaceReflectionZThicknessMul",
-				"water/screenSpaceReflectionZThicknessMulNear",
-				"water/screenSpaceReflectionZThicknessDistanceNear",
-				"water/screenSpaceReflectionZThicknessMulFar",
-				"water/screenSpaceReflectionZThicknessDistanceFar",
-				"water/screenSpaceReflectionZThicknessPow",
-				"water/screenSpaceReflectionSoften",
-				"water/screenSpaceReflectionBorderFade",
-				"water/screenSpaceReflectionVerticalFade",
-				"water/screenSpaceReflectionMaxStepsCount",
-				"water/waterLevel",
-				"water/godraysIntensity",
-				"water/underWaterVisibilityBoost",
-				"ocean/perlinPersistence",
-				"ocean/perlinMaxOctaves",
-				"ocean/perlinAntiAlias",
-				"ocean/perlinAmplitude",
-				"ocean/perlinFrequency",
-				"ocean/perlinSpeed",
 				"translucency/intensity",
 				"translucency/distortion",
 				"translucency/power",
@@ -1140,22 +1181,8 @@ namespace MaterialsOptimizer
 				"sheenMap",
 
 // Vista-related parms
-"lightMap",
+//"lightMap",
 "lightMapLuminance",
-
-// Vegetation-related parms
-"vegetanim/leaffreq",
-"vegetanim/branchamplitude",
-"vegetanim/mainbendingamplitude",
-"vegetanim/mainbendingvar",
-"vegetanim/mainbendingfreq",
-"vegetanim/leafamplitude",
-
-// Cloud-related parms
-"cloudProjOnFar",
-"cloudDensityCoef",
-"cloudVerticalAlpha",
-"cloudBackLitCoef",
 
 // Not sure what those are
 "vibrationamplituderange",
@@ -1181,26 +1208,6 @@ namespace MaterialsOptimizer
 "emissivegoocolor",
 
 
-
-
-
-// Problematic variables that shouldn't be used by the user!
-"water/wsRefractedLightDir",
-"precomputeIL/materialID",
-"arealightglobalparms",
-"indirectLighting/glossMetalOverrides",
-"color",
-"env/atm/sky/cloudShadow",
-"viewport",
-"debug_fdrfactor",
-"worldTime",
-"outlineSeedPower",
-"outlineColor",
-"outlineDistances",
-"IBL/texCubeMap",
-"dynamiccanvaslightscattering",
-"env/indirectlighting/bouncefactor/static",	// ENV ONLY
-
 // Obsolete stuff
 "roughnessMap",
 "wardDiffuseRoughness",
@@ -1216,14 +1223,123 @@ namespace MaterialsOptimizer
 			if ( token.StartsWith( "fx/" ) )
 				return;
 
+			//////////////////////////////////////////////////////////////////////////
+			// Check okay tokens
 			foreach ( string recognizedString in recognizedStrings ) {
 				if ( recognizedString.ToLower() == token )
 					return;	// Okay!
 			}
 
-			int	glou = 0;
-			glou++;
-//			throw new Exception( "Unrecognized token!" );
+			//////////////////////////////////////////////////////////////////////////
+			// Check parameters that shouldn't be set by users
+			string[]	forbiddenParms = new string[] {
+				"water/wsRefractedLightDir",
+				"precomputeIL/materialID",
+				"arealightglobalparms",
+				"indirectLighting/glossMetalOverrides",
+				"color",
+				"env/atm/sky/cloudShadow",
+				"viewport",
+				"debug_fdrfactor",
+				"worldTime",
+				"outlineSeedPower",
+				"outlineColor",
+				"outlineDistances",
+				"IBL/texCubeMap",
+				"dynamiccanvaslightscattering",
+				"env/indirectlighting/bouncefactor/static",	// ENV ONLY
+			};
+			foreach ( string forbiddenParm in forbiddenParms ) {
+				if ( forbiddenParm.ToLower() == token ) {
+					m_forbiddenParms.Add( token );
+					return;
+				}
+			}
+
+			//////////////////////////////////////////////////////////////////////////
+			// Check shader-specific parms
+
+				// VEGETATION
+			string[]	vegetationRelatedParms = new string[] {
+				"vegetanim/leaffreq",
+				"vegetanim/branchamplitude",
+				"vegetanim/mainbendingamplitude",
+				"vegetanim/mainbendingvar",
+				"vegetanim/mainbendingfreq",
+				"vegetanim/leafamplitude",
+				"vegetanim/leafMinWindStrength",
+				"vegetation/transmittanceParms",
+				"vegetation/transmittanceMap",
+				"vegetation/transmittanceMapIntensity",
+				"vegetation/indirectTranslucencyBoost",
+			};
+			foreach ( string vegetationParm in vegetationRelatedParms ) {
+				if ( vegetationParm.ToLower() == token ) {
+					m_isUsingVegetationParms = true;
+					return;
+				}
+			}
+
+				// CLOUD
+			string[]	cloudRelatedParms = new string[] {
+				"cloudProjOnFar",
+				"cloudDensityCoef",
+				"cloudVerticalAlpha",
+				"cloudBackLitCoef",
+			};
+			foreach ( string cloudParm in cloudRelatedParms ) {
+				if ( cloudParm.ToLower() == token ) {
+					m_isUsingCloudParms = true;
+					return;
+				}
+			}
+
+				// WATER
+			string[]	waterRelatedParms = new string[] {
+				"water/causticsChromaticAberration",
+				"water/causticsFade",
+				"water/causticsTiling",
+				"water/causticsSpeed",
+				"water/specularPower",
+				"water/extinction",
+				"water/inscattering",
+				"water/refraction",
+				"water/waterColor",
+				"water/perlinAmplitude",
+				"water/perlinFrequency",
+				"water/perlinSpeed",
+				"water/screenspacereflectionlod",
+				"water/skyColor",
+				"water/screenSpaceReflectionZThicknessMul",
+				"water/screenSpaceReflectionZThicknessMulNear",
+				"water/screenSpaceReflectionZThicknessDistanceNear",
+				"water/screenSpaceReflectionZThicknessMulFar",
+				"water/screenSpaceReflectionZThicknessDistanceFar",
+				"water/screenSpaceReflectionZThicknessPow",
+				"water/screenSpaceReflectionSoften",
+				"water/screenSpaceReflectionBorderFade",
+				"water/screenSpaceReflectionVerticalFade",
+				"water/screenSpaceReflectionMaxStepsCount",
+				"water/waterLevel",
+				"water/godraysIntensity",
+				"water/underWaterVisibilityBoost",
+				"ocean/perlinPersistence",
+				"ocean/perlinMaxOctaves",
+				"ocean/perlinAntiAlias",
+				"ocean/perlinAmplitude",
+				"ocean/perlinFrequency",
+				"ocean/perlinSpeed",
+			};
+			foreach ( string waterParm in waterRelatedParms ) {
+				if ( waterParm.ToLower() == token ) {
+					m_isUsingWaterParms = true;
+					return;
+				}
+			}
+
+// 			int	glou = 0;
+// 			glou++;
+			throw new Exception( "Unrecognized token \"" + token + "\"!" );
 		}
 
 		void	CheckSafeOptionsTokens( string token, int value ) {
@@ -1273,6 +1389,9 @@ namespace MaterialsOptimizer
 			W.Write( m_height != null );
 			if ( m_height != null )
 				m_height.Write( W );
+			W.Write( m_lightMap != null );
+			if ( m_lightMap != null )
+				m_lightMap.Write( W );
 			
 			W.Write( m_physicsMaterial != null ? m_physicsMaterial : "" );
 			W.Write( m_glossMinMax.x );
@@ -1280,7 +1399,16 @@ namespace MaterialsOptimizer
 			W.Write( m_metallicMinMax.x );
 			W.Write( m_metallicMinMax.y );
 
+			W.Write( m_forbiddenParms.Count );
+			foreach ( string forbiddenParm in m_forbiddenParms )
+				W.Write( forbiddenParm );
+
+			W.Write( m_isUsingVegetationParms );
+			W.Write( m_isUsingCloudParms );
+			W.Write( m_isUsingWaterParms );
+
 			W.Write( m_isCandidateForOptimization != null ? m_isCandidateForOptimization : "" );
+			W.Write( (int) m_errorLevel );
 			W.Write( m_errors != null ? m_errors : "" );
 			W.Write( m_warnings != null ? m_warnings : "" );
 		}
@@ -1299,6 +1427,7 @@ namespace MaterialsOptimizer
 			}
 
 			m_height = R.ReadBoolean() ? new Layer.Texture( R ) : null;
+			m_lightMap = R.ReadBoolean() ? new Layer.Texture( R ) : null;
 			
 			m_physicsMaterial = R.ReadString();
 			if ( m_physicsMaterial == "" )
@@ -1308,9 +1437,19 @@ namespace MaterialsOptimizer
 			m_metallicMinMax.x = R.ReadSingle();
 			m_metallicMinMax.y = R.ReadSingle();
 
+			m_forbiddenParms.Clear();
+			int	forbiddenParmsCount = R.ReadInt32();
+			for ( int forbiddenParmIndex=0; forbiddenParmIndex < forbiddenParmsCount; forbiddenParmIndex++ )
+				m_forbiddenParms.Add( R.ReadString() );
+
+			m_isUsingVegetationParms = R.ReadBoolean();
+			m_isUsingCloudParms = R.ReadBoolean();
+			m_isUsingWaterParms = R.ReadBoolean();
+
 			m_isCandidateForOptimization = R.ReadString();
 			if ( m_isCandidateForOptimization == string.Empty )
 				m_isCandidateForOptimization = null;
+			m_errorLevel = (ERROR_LEVEL) R.ReadInt32();
 			m_errors = R.ReadString();
 			if ( m_errors == string.Empty )
 				m_errors = null;

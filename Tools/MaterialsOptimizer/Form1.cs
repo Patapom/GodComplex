@@ -380,9 +380,35 @@ namespace MaterialsOptimizer
 				RebuildMaterialsListView();
 				RebuildTexturesListView();
 			}
+		}
 
-//ParseFile( new FileInfo( @"V:\Dishonored2\Dishonored2\base\decls\m2\models\environment\buildings\rich_large_ext_partitions_01.m2" ) );
-//			RecurseParseMaterials( new DirectoryInfo( @"V:\Dishonored2\Dishonored2\base\decls\m2" ) );
+		protected override void OnFormClosing(FormClosingEventArgs e)
+		{
+			if ( this.WindowState != FormWindowState.Minimized )
+				SetRegKey( "FormState", ((int) this.WindowState).ToString() );
+			if ( this.WindowState != FormWindowState.Maximized ) {
+				SetRegKey( "LocationX", this.Location.X.ToString() );
+				SetRegKey( "LocationY", this.Location.Y.ToString() );
+				SetRegKey( "Width", this.Width.ToString() );
+				SetRegKey( "Height", this.Height.ToString() );
+			}
+			SetRegKey( "SplitterDistance", this.splitContainer1.SplitterDistance.ToString() );
+
+			base.OnFormClosing(e);
+		}
+
+		protected override void OnLoad(EventArgs e) {
+			base.OnLoad(e);
+
+			// Restore location and UI state
+			this.WindowState = (FormWindowState) GetRegKeyInt( "FormState", (int) FormWindowState.Normal );
+			if ( this.WindowState == FormWindowState.Minimized )
+				this.WindowState = FormWindowState.Normal;
+			this.DesktopBounds = new System.Drawing.Rectangle(
+				new Point( GetRegKeyInt( "LocationX", this.Location.X ), GetRegKeyInt( "LocationY", this.Location.Y ) ),
+				new Size( GetRegKeyInt( "Width", this.Width ), GetRegKeyInt( "Height", this.Height ) )
+			);
+			this.splitContainer1.SplitterDistance = GetRegKeyInt( "SplitterDistance", this.splitContainer1.SplitterDistance );
 		}
 
 		#region Helpers
@@ -553,15 +579,11 @@ namespace MaterialsOptimizer
 				//////////////////////////////////////////////////////////////////////////
 				// Check errors and optimizations
 				M.m_errors = null;
+				M.ClearErrorLevel();
 				M.m_warnings = null;
 				M.m_isCandidateForOptimization = null;
 
 				int			layersCount = Math.Min( 1+M.m_options.m_extraLayers, M.m_layers.Count );
-
-// 				string		baseErrors = null;
-// 				string[]	layerErrors = new string[layersCount];
-// 				string		baseWarnings = null;
-// 				string[]	layerWarnings = new string[layersCount];
 
 				string	T = "\t";
 
@@ -569,23 +591,58 @@ namespace MaterialsOptimizer
 				// Check general errors
 
 					// Check no physical material
-				if ( M.m_physicsMaterial == null )
+				if ( M.m_physicsMaterial == null && M.m_programs.m_type != Material.Programs.KNOWN_TYPES.VISTA ) {
 					M.m_errors += T + "• Physics material is not setup!\n";
+					M.RaiseErrorLevel( Material.ERROR_LEVEL.DIRTY );
+				}
 
 					// Check layers count is consistent
 				if ( M.m_layers.Count != 1+M.m_options.m_extraLayers )
 					M.m_warnings += T + "• Options specify extraLayer=" + M.m_options.m_extraLayers + " but found parameters involving " + M.m_layers.Count + " layers! Either adjust extra layers count or remove surnumerary layer parameters... (this doesn't have an impact on performance anyway)\n";
 
 					// Check default-valued gloss/metal parms => means the material is not correctly initialized by the user
-				if ( M.m_options.m_hasGloss && Math.Abs( M.m_glossMinMax.x - 0.0f ) < 1e-3f && Math.Abs( M.m_glossMinMax.y - 0.5f ) < 1e-3f )
+				if ( M.m_options.m_hasGloss && Math.Abs( M.m_glossMinMax.x - 0.0f ) < 1e-3f && Math.Abs( M.m_glossMinMax.y - 0.5f ) < 1e-3f ) {
 					M.m_errors += T + "• Gloss min/max are the default values! Material is not initialized!\n";
-				if ( M.m_options.m_hasMetal && Math.Abs( M.m_metallicMinMax.x - 0.0f ) < 1e-3f && Math.Abs( M.m_metallicMinMax.y - 0.5f ) < 1e-3f )
+					M.RaiseErrorLevel( Material.ERROR_LEVEL.DANGEROUS );
+				}
+				if ( M.m_options.m_hasMetal && Math.Abs( M.m_metallicMinMax.x - 0.0f ) < 1e-3f && Math.Abs( M.m_metallicMinMax.y - 0.5f ) < 1e-3f ) {
 					M.m_errors += T + "• Metal min/max are the default values! Material is not initialized!\n";
+					M.RaiseErrorLevel( Material.ERROR_LEVEL.DANGEROUS );
+				}
 
-				if ( M.m_options.m_hasGloss && Math.Abs( M.m_glossMinMax.x - M.m_glossMinMax.y ) < 1e-3f )
+				if ( M.m_options.m_hasGloss && Math.Abs( M.m_glossMinMax.x - M.m_glossMinMax.y ) < 1e-3f ) {
 					M.m_errors += T + "• Gloss min/max are set to an empty range whereas the \"use gloss map\" option is set! This will have no effect! Options and textures should be removed...\n";
-				if ( M.m_options.m_hasMetal && Math.Abs( M.m_metallicMinMax.x - M.m_metallicMinMax.y ) < 1e-3f )
+					M.RaiseErrorLevel( Material.ERROR_LEVEL.DANGEROUS );
+				}
+				if ( M.m_options.m_hasMetal && Math.Abs( M.m_metallicMinMax.x - M.m_metallicMinMax.y ) < 1e-3f ) {
 					M.m_errors += T + "• Metal min/max are set to an empty range whereas the \"use metal option\" is set! This will have no effect! Options and textures should be removed...\n";
+					M.RaiseErrorLevel( Material.ERROR_LEVEL.DANGEROUS );
+				}
+
+				//////////////////////////////////////////////////////////////////////////
+				// Check shader-specific errors
+				if ( M.m_forbiddenParms.Count > 0 ) {
+					// User is using forbidden parms!
+					M.m_warnings += T + "• Material is using forbidden parms:\n";
+					foreach ( string forbiddenParm in M.m_forbiddenParms )
+						M.m_warnings += T + "	" + forbiddenParm + "\n";
+				}
+
+				if ( M.m_lightMap != null && M.m_programs.m_type != Material.Programs.KNOWN_TYPES.VISTA ) {
+					// Shader is using a light map but is not a vista shader!
+					M.m_errors += T + "• Shader is using a light map but is not a VISTA shader!\n";
+					M.RaiseErrorLevel( Material.ERROR_LEVEL.DANGEROUS );
+				}
+
+				if ( M.m_isUsingVegetationParms && M.m_programs.m_type != Material.Programs.KNOWN_TYPES.VEGETATION ) {
+					M.m_warnings += T + "• Shader is using vegetation-related parameters but is not a VEGETATION shader!\n";
+				}
+				if ( M.m_isUsingCloudParms && M.m_programs.m_type != Material.Programs.KNOWN_TYPES.CLOUDS ) {
+					M.m_warnings += T + "• Shader is using cloud-related parameters but is not a CLOUD shader!\n";
+				}
+				if ( M.m_isUsingWaterParms && M.m_programs.m_type != Material.Programs.KNOWN_TYPES.WATER && M.m_programs.m_type != Material.Programs.KNOWN_TYPES.OCEAN ) {
+					M.m_warnings += T + "• Shader is using water-related parameters but is not a WATER or OCEAN shader!\n";
+				}
 
 
 				//////////////////////////////////////////////////////////////////////////
@@ -593,29 +650,22 @@ namespace MaterialsOptimizer
 				for ( int layerIndex=0; layerIndex < layersCount; layerIndex++ ) {
 					Material.Layer	L = M.m_layers[layerIndex];
 					L.m_errors = null;
+					L.ClearErrorLevel();
 					L.m_warnings = null;
 				}
 				for ( int layerIndex=0; layerIndex < layersCount; layerIndex++ ) {
 					Material.Layer	L = M.m_layers[layerIndex];
 
 					// Check textures exist
-					L.CheckTexture( L.m_diffuse, Material.Layer.REUSE_MODE.DONT_REUSE, T, "diffuse" );
-					if ( M.m_options.m_hasNormal )
-						L.CheckTexture( L.m_normal, L.m_normalReUse, T, "normal" );
-					if ( M.m_options.m_hasGloss )
-						L.CheckTexture( L.m_gloss, L.m_glossReUse, T, "gloss" );
-					if ( M.m_options.m_hasMetal )
-						L.CheckTexture( L.m_metal, L.m_metalReUse, T, "metal" );
-					if ( M.m_options.m_hasSpecular )
-						L.CheckTexture( L.m_specular, L.m_specularReUse, T, "specular" );
-					if ( L.m_maskingMode != Material.Layer.MASKING_MODE.NONE && L.m_maskingMode != Material.Layer.MASKING_MODE.VERTEX_COLOR )
-						L.CheckTexture( L.m_mask, L.m_maskReUse, T, "mask" );
-					if ( M.m_options.m_hasOcclusionMap )
-						L.CheckTexture( L.m_AO, Material.Layer.REUSE_MODE.DONT_REUSE, T, "AO" );
-					if ( M.m_options.m_translucencyEnabled )
-						L.CheckTexture( L.m_translucency, Material.Layer.REUSE_MODE.DONT_REUSE, T, "translucency" );
-					if ( M.m_options.m_hasEmissive )
-						L.CheckTexture( L.m_emissive, Material.Layer.REUSE_MODE.DONT_REUSE, T, "emissive" );
+					L.CheckTexture( L.m_diffuse, true, Material.Layer.REUSE_MODE.DONT_REUSE, T, "diffuse", 4 );
+					L.CheckTexture( L.m_normal, M.m_options.m_hasNormal, L.m_normalReUse, T, "normal", 2 );
+					L.CheckTexture( L.m_gloss, M.m_options.m_hasGloss, L.m_glossReUse, T, "gloss", 1 );
+					L.CheckTexture( L.m_metal, M.m_options.m_hasMetal, L.m_metalReUse, T, "metal", 1 );
+					L.CheckTexture( L.m_specular, M.m_options.m_hasSpecular, L.m_specularReUse, T, "specular", 4 );
+					L.CheckTexture( L.m_mask, L.m_maskingMode != Material.Layer.MASKING_MODE.NONE && L.m_maskingMode != Material.Layer.MASKING_MODE.VERTEX_COLOR, L.m_maskReUse, T, "mask", 1 );
+					L.CheckTexture( L.m_AO, M.m_options.m_hasOcclusionMap, Material.Layer.REUSE_MODE.DONT_REUSE, T, "AO", 1 );
+					L.CheckTexture( L.m_translucency, M.m_options.m_translucencyEnabled && !M.m_options.m_translucencyUseVertexColor, Material.Layer.REUSE_MODE.DONT_REUSE, T, "translucency", 1 );
+					L.CheckTexture( L.m_emissive, M.m_options.m_hasEmissive, Material.Layer.REUSE_MODE.DONT_REUSE, T, "emissive", 4 );
 				}
 
 				//////////////////////////////////////////////////////////////////////////
@@ -638,6 +688,13 @@ namespace MaterialsOptimizer
 // 							Ltop.CompareTextures( Ltop.m_emissive, Ltop.m_emissiveReUse, Lbottom.m_emissive, Lbottom.m_emissiveReUse, Lbottom, T, "emissive texture (layer " + topLayerIndex + ")", "emissive texture (layer " + bottomLayerIndex + ")" );
 					}
 				}
+
+				// Report standard error levels unless specified otherwise
+				if ( M.ErrorLevel_MaterialOnly == Material.ERROR_LEVEL.NONE && M.HasErrors )
+					M.RaiseErrorLevel( Material.ERROR_LEVEL.STANDARD );
+				foreach ( Material.Layer L in M.m_layers )
+					if ( L.ErrorLevel == Material.ERROR_LEVEL.NONE && L.HasErrors )
+						L.RaiseErrorLevel( Material.ERROR_LEVEL.STANDARD );
 			}
 
 			RebuildMaterialsListView();
@@ -692,7 +749,7 @@ namespace MaterialsOptimizer
 						for ( int errorIndex=0; errorIndex < errorsCount; errorIndex++ )
 							m_materialErrors.Add( new Error( R ) );
 					}
-			} catch ( Exception _e ) {
+			} catch ( Exception ) {
 				MessageBox( "An error occurred while reloading material database!\nThe format must have changed since it was last saved...\n\nPlease reparse material.", MessageBoxButtons.OK, MessageBoxIcon.Error );
 			}
 		}
@@ -715,27 +772,12 @@ namespace MaterialsOptimizer
 				int		layersCountMin = integerTrackbarControlLayerMin.Value;
 				int		layersCountMax = integerTrackbarControlLayerMax.Value;
 
-				bool	showOnlyErrorMats = checkBoxShowErrorMaterials.Checked;
+				int		minErrorLevel = integerTrackbarControlErrorLevel.Value;
 				bool	showOnlyWarningMats = checkBoxShowWarningMaterials.Checked;
 				bool	showOnlyMissingPhysicsMats = checkBoxShowMissingPhysics.Checked;
 				bool	showOnlyOptimizableMats = checkBoxShowOptimizableMaterials.Checked;
 
 				foreach ( Material M in m_materials ) {
-// 					// Filter by type
-// 					if ( TFI.m_fileType == TextureFileInfo.FILE_TYPE.TGA ) {
-// 						texCountTGA++;
-// 						if ( !checkBoxShowTGA.Checked )
-// 							continue;
-// 					} else if ( TFI.m_fileType == TextureFileInfo.FILE_TYPE.PNG ) {
-// 						texCountPNG++;
-// 						if ( !checkBoxShowPNG.Checked )
-// 							continue;
-// 					} else {
-// 						texCountOther++;
-// 						if ( !checkBoxShowOtherFormats.Checked )
-// 							continue;
-// 					}
-
 					// Filter by layers count
 					if ( M.LayersCount < layersCountMin || M.LayersCount > layersCountMax )
 						continue;
@@ -752,7 +794,7 @@ namespace MaterialsOptimizer
 						default: skip = skipOther; break;
 					}
 
-					if ( showOnlyErrorMats && !M.HasErrors )
+					if ( (int) M.ErrorLevel < minErrorLevel )
 						continue;
 					if ( showOnlyWarningMats && !M.HasWarnings )
 						continue;
@@ -811,14 +853,17 @@ namespace MaterialsOptimizer
 				item.SubItems.Add( new ListViewItem.ListViewSubItem( item, errorString ) );
 				item.SubItems.Add( new ListViewItem.ListViewSubItem( item, M.m_sourceFileName.FullName ) );
 
-				 if ( !M.HasPhysicsMaterial )
-					item.BackColor = Color.Sienna;
-				else if ( M.HasErrors )
-					item.BackColor = Color.Salmon;
-				else if ( M.HasWarnings )
-					item.BackColor = Color.Gold;
-				else if ( M.m_isCandidateForOptimization != null )
-					item.BackColor = Color.ForestGreen;
+				switch ( M.ErrorLevel ) {
+					case Material.ERROR_LEVEL.DIRTY: item.BackColor = Color.Sienna; break;
+					case Material.ERROR_LEVEL.STANDARD: item.BackColor = Color.Salmon; break;
+					case Material.ERROR_LEVEL.DANGEROUS: item.BackColor = Color.Red; break;
+					case Material.ERROR_LEVEL.NONE:
+						if ( M.HasWarnings )
+							item.BackColor = Color.Gold;
+						else if ( M.m_isCandidateForOptimization != null )
+							item.BackColor = Color.ForestGreen;
+						break;
+				}
 
 				// Build tooltip
 				item.ToolTipText = (M.m_isCandidateForOptimization != null ? M.m_isCandidateForOptimization + "\r\n" : "")
@@ -992,7 +1037,7 @@ namespace MaterialsOptimizer
 						for ( int errorIndex=0; errorIndex < errorsCount; errorIndex++ )
 							m_textureErrors.Add( new Error( R ) );
 					}
-			} catch ( Exception _e ) {
+			} catch ( Exception ) {
 				MessageBox( "An error occurred while reloading textures database!\nThe format must have changed since it was last saved...\n\nPlease recollect textures.", MessageBoxButtons.OK, MessageBoxIcon.Error );
 			}
 		}
@@ -1009,6 +1054,7 @@ namespace MaterialsOptimizer
 			bool	skipGloss = !checkBoxShowGloss.Checked ^ checkBoxInvertFilters.Checked;
 			bool	skipMetal = !checkBoxShowMetal.Checked ^ checkBoxInvertFilters.Checked;
 			bool	skipEmissive = !checkBoxShowEmissive.Checked ^ checkBoxInvertFilters.Checked;
+			bool	skipMasks = !checkBoxShowMasks.Checked ^ checkBoxInvertFilters.Checked;
 			bool	skipOther = !checkBoxShowOther.Checked ^ checkBoxInvertFilters.Checked;
 			int		minrefCount = integerTrackbarControlMinRefCount.Value;
 			foreach ( TextureFileInfo TFI in m_textures ) {
@@ -1035,6 +1081,7 @@ namespace MaterialsOptimizer
 					case TextureFileInfo.USAGE.GLOSS: skip = skipGloss; break;
 					case TextureFileInfo.USAGE.METAL: skip = skipMetal; break;
 					case TextureFileInfo.USAGE.EMISSIVE: skip = skipEmissive; break;
+					case TextureFileInfo.USAGE.MASK: skip = skipMasks; break;
 					default: skip = skipOther; break;
 				}
 
@@ -1051,20 +1098,21 @@ namespace MaterialsOptimizer
 			labelTotalTextures.Text = "Total Textures:\n" + filteredTextures.Count;
 
 			// Sort
-//			filteredTextures.Sort( this );
 			if ( m_texturesSortOrder == 1 ) {
 				switch ( m_texturesSortColumn ) {
 					case 0: filteredTextures.Sort( new CompareNames_Ascending() ); break;
 					case 1: filteredTextures.Sort( new CompareSizes_Ascending() ); break;
 					case 2: filteredTextures.Sort( new CompareUsages_Ascending() ); break;
-					case 3: filteredTextures.Sort( new CompareRefCounts_Ascending() ); break;
+					case 3: filteredTextures.Sort( new CompareChannelsCounts_Ascending() ); break;
+					case 4: filteredTextures.Sort( new CompareRefCounts_Ascending() ); break;
 				}
 			} else {
 				switch ( m_texturesSortColumn ) {
 					case 0: filteredTextures.Sort( new CompareNames_Descending() ); break;
 					case 1: filteredTextures.Sort( new CompareSizes_Descending() ); break;
 					case 2: filteredTextures.Sort( new CompareUsages_Descending() ); break;
-					case 3: filteredTextures.Sort( new CompareRefCounts_Descending() ); break;
+					case 3: filteredTextures.Sort( new CompareChannelsCounts_Descending() ); break;
+					case 4: filteredTextures.Sort( new CompareRefCounts_Descending() ); break;
 				}
 			}
 
@@ -1078,6 +1126,7 @@ namespace MaterialsOptimizer
 				item.Tag = TFI;
 				item.SubItems.Add( new ListViewItem.ListViewSubItem( item, TFI.m_width.ToString() + "x" + TFI.m_height.ToString() ) );
 				item.SubItems.Add( new ListViewItem.ListViewSubItem( item, TFI.m_usage.ToString() ) );
+				item.SubItems.Add( new ListViewItem.ListViewSubItem( item, TFI.ColorChannelsCount > 0 ? TFI.ColorChannelsCount.ToString() : "?" ) );
 				item.SubItems.Add( new ListViewItem.ListViewSubItem( item, TFI.m_refCount.ToString() ) );
 
 				int	area = TFI.m_width * TFI.m_height;
@@ -1129,6 +1178,17 @@ namespace MaterialsOptimizer
 			public int Compare(TextureFileInfo x, TextureFileInfo y) {
 //				return -StringComparer.CurrentCultureIgnoreCase.Compare( x.m_usage.ToString(), y.m_usage.ToString() );
 				return (int) x.m_usage < (int) y.m_usage ? 1 : ((int) x.m_usage > (int) y.m_usage ? -1 : 0);
+			}
+		}
+
+		class	CompareChannelsCounts_Ascending : IComparer< TextureFileInfo > {
+			public int Compare(TextureFileInfo x, TextureFileInfo y) {
+				return x.ColorChannelsCount < y.ColorChannelsCount ? -1 : (x.ColorChannelsCount > y.ColorChannelsCount ? 1 : 0);
+			}
+		}
+		class	CompareChannelsCounts_Descending : IComparer< TextureFileInfo > {
+			public int Compare(TextureFileInfo x, TextureFileInfo y) {
+				return x.ColorChannelsCount < y.ColorChannelsCount ? 1 : (x.ColorChannelsCount > y.ColorChannelsCount ? -1 : 0);
 			}
 		}
 
@@ -1274,6 +1334,7 @@ namespace MaterialsOptimizer
 		#region Material List View Events
 
 		private void listViewMaterials_SelectedIndexChanged(object sender, EventArgs e) {
+			tabControlInfo.SelectedTab = tabPageInfo;	// Focus on info tab
 			if ( listViewMaterials.SelectedItems.Count == 0 ) {
 				textBoxInfo.Text = null;
 				return;
@@ -1327,6 +1388,11 @@ namespace MaterialsOptimizer
 		}
 
 		private void integerTrackbarControlLayerMax_ValueChanged(Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue)
+		{
+			RebuildMaterialsListView();
+		}
+
+		private void integerTrackbarControlErrorLevel_ValueChanged(Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue)
 		{
 			RebuildMaterialsListView();
 		}

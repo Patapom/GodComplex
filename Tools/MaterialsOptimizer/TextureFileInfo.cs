@@ -52,6 +52,32 @@ namespace MaterialsOptimizer
 		// Generated in conjunction with materials database
 		public int			m_refCount = 0;
 
+		public int	ColorChannelsCount {
+			get {
+				switch ( m_usage ) {
+					case USAGE.DIFFUSE:			return 4;
+					case USAGE.NORMAL:			return 2;
+					case USAGE.GLOSS:			return 1;
+					case USAGE.METAL:			return 1;
+					case USAGE.MASK:			return 1;
+					case USAGE.EMISSIVE:		return 4;
+					case USAGE.AO:				return 1;
+					case USAGE.HEIGHT:			return 1;
+					case USAGE.TRANSLUCENCY:	return 1;
+					case USAGE.SPECULAR:		return 4;
+					case USAGE.SSBUMP:			return 3;
+					case USAGE.COLOR_CUBE:		return 4;
+					case USAGE.DISPLACEMENT:	return 1;
+					case USAGE.DISTANCE_FIELD:	return 1;
+					case USAGE.WRINKLE_MASK:	return 4;
+					case USAGE.WRINKLE_NORMAL:	return 2;
+					case USAGE.IGGY:			return 4;
+				}
+
+				return 0;
+			}
+		}
+
 		public TextureFileInfo( FileInfo _fileName ) {
 			m_fileName = _fileName;
 			m_usage = FindUsage( _fileName );
@@ -114,14 +140,54 @@ namespace MaterialsOptimizer
 			if ( indexOfUnderscore != -1 ) {
 				string	usageTag = fileName.Substring( indexOfUnderscore ).ToLower();
 				switch ( usageTag ) {
-					case "_d": return USAGE.DIFFUSE;
+					case "_d":
+					case "_d1":
+					case "_d2":
+					case "_d3":
+					case "_d4":
+					case "_d5":
+					case "_d6":
+					case "_d7":
+					case "_d8":
+					case "_d9":
+						return USAGE.DIFFUSE;
 					case "_n": return USAGE.NORMAL;
-					case "_g": return USAGE.GLOSS;
-					case "_mt": return USAGE.METAL;
+					case "_g":
+					case "_g1":
+					case "_g2":
+					case "_g3":
+					case "_g4":
+					case "_g5":
+					case "_g6":
+					case "_g7":
+					case "_g8":
+					case "_g9":
+						return USAGE.GLOSS;
+					case "_mt":
+					case "_mt1":
+					case "_mt2":
+					case "_mt3":
+					case "_mt4":
+					case "_mt5":
+					case "_mt6":
+					case "_mt7":
+					case "_mt8":
+					case "_mt9":
+						return USAGE.METAL;
 					case "_ao": return USAGE.AO;
 					case "_h": return USAGE.HEIGHT;
 					case "_ssbump": return USAGE.SSBUMP;
-					case "_m": return USAGE.MASK;
+					case "_m":
+					case "_m1":
+					case "_m2":
+					case "_m3":
+					case "_m4":
+					case "_m5":
+					case "_m6":
+					case "_m7":
+					case "_m8":
+					case "_m9":
+						return USAGE.MASK;
 					case "_o": return USAGE.MASK;
 					case "_cc": return USAGE.COLOR_CUBE;
 					case "_disp": return USAGE.DISPLACEMENT;

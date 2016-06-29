@@ -55,7 +55,6 @@
 			this.checkBoxShowOtherMaterialTypes = new System.Windows.Forms.CheckBox();
 			this.checkBoxShowVista = new System.Windows.Forms.CheckBox();
 			this.checkBoxShowOptimizableMaterials = new System.Windows.Forms.CheckBox();
-			this.checkBoxShowErrorMaterials = new System.Windows.Forms.CheckBox();
 			this.checkBoxShowVegetation = new System.Windows.Forms.CheckBox();
 			this.listViewMaterials = new System.Windows.Forms.ListView();
 			this.columnHeaderMaterialName = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
@@ -99,6 +98,10 @@
 			this.buttonSearch = new System.Windows.Forms.Button();
 			this.checkBoxShowWarningMaterials = new System.Windows.Forms.CheckBox();
 			this.checkBoxShowMissingPhysics = new System.Windows.Forms.CheckBox();
+			this.integerTrackbarControlErrorLevel = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
+			this.label8 = new System.Windows.Forms.Label();
+			this.columnHeaderChannels = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+			this.checkBoxShowMasks = new System.Windows.Forms.CheckBox();
 			this.tabControl.SuspendLayout();
 			this.tabPageMaterials.SuspendLayout();
 			this.panelFilterMaterials.SuspendLayout();
@@ -224,8 +227,10 @@
 			this.panelFilterMaterials.Controls.Add(this.label5);
 			this.panelFilterMaterials.Controls.Add(this.label4);
 			this.panelFilterMaterials.Controls.Add(this.label7);
+			this.panelFilterMaterials.Controls.Add(this.label8);
 			this.panelFilterMaterials.Controls.Add(this.label3);
 			this.panelFilterMaterials.Controls.Add(this.integerTrackbarControlLayerMax);
+			this.panelFilterMaterials.Controls.Add(this.integerTrackbarControlErrorLevel);
 			this.panelFilterMaterials.Controls.Add(this.integerTrackbarControlLayerMin);
 			this.panelFilterMaterials.Controls.Add(this.labelTotalMaterials);
 			this.panelFilterMaterials.Controls.Add(this.checkBoxShowArkDefault);
@@ -238,7 +243,6 @@
 			this.panelFilterMaterials.Controls.Add(this.checkBoxShowOptimizableMaterials);
 			this.panelFilterMaterials.Controls.Add(this.checkBoxShowMissingPhysics);
 			this.panelFilterMaterials.Controls.Add(this.checkBoxShowWarningMaterials);
-			this.panelFilterMaterials.Controls.Add(this.checkBoxShowErrorMaterials);
 			this.panelFilterMaterials.Controls.Add(this.checkBoxShowVegetation);
 			this.panelFilterMaterials.Location = new System.Drawing.Point(6, 489);
 			this.panelFilterMaterials.Name = "panelFilterMaterials";
@@ -403,24 +407,13 @@
 			// checkBoxShowOptimizableMaterials
 			// 
 			this.checkBoxShowOptimizableMaterials.AutoSize = true;
-			this.checkBoxShowOptimizableMaterials.Location = new System.Drawing.Point(726, 54);
+			this.checkBoxShowOptimizableMaterials.Location = new System.Drawing.Point(875, 54);
 			this.checkBoxShowOptimizableMaterials.Name = "checkBoxShowOptimizableMaterials";
 			this.checkBoxShowOptimizableMaterials.Size = new System.Drawing.Size(179, 17);
 			this.checkBoxShowOptimizableMaterials.TabIndex = 2;
 			this.checkBoxShowOptimizableMaterials.Text = "Show Optimizable Materials Only";
 			this.checkBoxShowOptimizableMaterials.UseVisualStyleBackColor = true;
 			this.checkBoxShowOptimizableMaterials.CheckedChanged += new System.EventHandler(this.checkBoxShowArkDefault_CheckedChanged);
-			// 
-			// checkBoxShowErrorMaterials
-			// 
-			this.checkBoxShowErrorMaterials.AutoSize = true;
-			this.checkBoxShowErrorMaterials.Location = new System.Drawing.Point(197, 54);
-			this.checkBoxShowErrorMaterials.Name = "checkBoxShowErrorMaterials";
-			this.checkBoxShowErrorMaterials.Size = new System.Drawing.Size(147, 17);
-			this.checkBoxShowErrorMaterials.TabIndex = 2;
-			this.checkBoxShowErrorMaterials.Text = "Show Error Materials Only";
-			this.checkBoxShowErrorMaterials.UseVisualStyleBackColor = true;
-			this.checkBoxShowErrorMaterials.CheckedChanged += new System.EventHandler(this.checkBoxShowArkDefault_CheckedChanged);
 			// 
 			// checkBoxShowVegetation
 			// 
@@ -523,6 +516,7 @@
 			this.panelFilterTextures.Controls.Add(this.checkBoxShowGloss);
 			this.panelFilterTextures.Controls.Add(this.checkBoxInvertFilters);
 			this.panelFilterTextures.Controls.Add(this.checkBoxShowMetal);
+			this.panelFilterTextures.Controls.Add(this.checkBoxShowMasks);
 			this.panelFilterTextures.Controls.Add(this.checkBoxShowOther);
 			this.panelFilterTextures.Controls.Add(this.checkBoxShowEmissive);
 			this.panelFilterTextures.Location = new System.Drawing.Point(6, 489);
@@ -643,9 +637,10 @@
 			// checkBoxInvertFilters
 			// 
 			this.checkBoxInvertFilters.AutoSize = true;
+			this.checkBoxInvertFilters.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
 			this.checkBoxInvertFilters.Location = new System.Drawing.Point(477, 28);
 			this.checkBoxInvertFilters.Name = "checkBoxInvertFilters";
-			this.checkBoxInvertFilters.Size = new System.Drawing.Size(83, 17);
+			this.checkBoxInvertFilters.Size = new System.Drawing.Size(97, 17);
 			this.checkBoxInvertFilters.TabIndex = 2;
 			this.checkBoxInvertFilters.Text = "Invert Filters";
 			this.checkBoxInvertFilters.UseVisualStyleBackColor = true;
@@ -669,7 +664,7 @@
 			this.checkBoxShowOther.AutoSize = true;
 			this.checkBoxShowOther.Checked = true;
 			this.checkBoxShowOther.CheckState = System.Windows.Forms.CheckState.Checked;
-			this.checkBoxShowOther.Location = new System.Drawing.Point(291, 28);
+			this.checkBoxShowOther.Location = new System.Drawing.Point(384, 28);
 			this.checkBoxShowOther.Name = "checkBoxShowOther";
 			this.checkBoxShowOther.Size = new System.Drawing.Size(82, 17);
 			this.checkBoxShowOther.TabIndex = 2;
@@ -699,6 +694,7 @@
             this.columnHeaderImageName,
             this.columnHeaderImageSize,
             this.columnHeaderImageUsage,
+            this.columnHeaderChannels,
             this.columnHeaderMaterialsReferencesCount});
 			this.listViewTextures.FullRowSelect = true;
 			this.listViewTextures.GridLines = true;
@@ -860,7 +856,7 @@
 			// checkBoxShowWarningMaterials
 			// 
 			this.checkBoxShowWarningMaterials.AutoSize = true;
-			this.checkBoxShowWarningMaterials.Location = new System.Drawing.Point(350, 54);
+			this.checkBoxShowWarningMaterials.Location = new System.Drawing.Point(499, 54);
 			this.checkBoxShowWarningMaterials.Name = "checkBoxShowWarningMaterials";
 			this.checkBoxShowWarningMaterials.Size = new System.Drawing.Size(165, 17);
 			this.checkBoxShowWarningMaterials.TabIndex = 2;
@@ -871,13 +867,53 @@
 			// checkBoxShowMissingPhysics
 			// 
 			this.checkBoxShowMissingPhysics.AutoSize = true;
-			this.checkBoxShowMissingPhysics.Location = new System.Drawing.Point(521, 54);
+			this.checkBoxShowMissingPhysics.Location = new System.Drawing.Point(670, 54);
 			this.checkBoxShowMissingPhysics.Name = "checkBoxShowMissingPhysics";
 			this.checkBoxShowMissingPhysics.Size = new System.Drawing.Size(199, 17);
 			this.checkBoxShowMissingPhysics.TabIndex = 2;
 			this.checkBoxShowMissingPhysics.Text = "Show Missing Physics Materials Only";
 			this.checkBoxShowMissingPhysics.UseVisualStyleBackColor = true;
 			this.checkBoxShowMissingPhysics.CheckedChanged += new System.EventHandler(this.checkBoxShowArkDefault_CheckedChanged);
+			// 
+			// integerTrackbarControlErrorLevel
+			// 
+			this.integerTrackbarControlErrorLevel.Location = new System.Drawing.Point(367, 52);
+			this.integerTrackbarControlErrorLevel.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.integerTrackbarControlErrorLevel.MinimumSize = new System.Drawing.Size(70, 20);
+			this.integerTrackbarControlErrorLevel.Name = "integerTrackbarControlErrorLevel";
+			this.integerTrackbarControlErrorLevel.RangeMax = 3;
+			this.integerTrackbarControlErrorLevel.RangeMin = 0;
+			this.integerTrackbarControlErrorLevel.Size = new System.Drawing.Size(111, 20);
+			this.integerTrackbarControlErrorLevel.TabIndex = 4;
+			this.integerTrackbarControlErrorLevel.Value = 0;
+			this.integerTrackbarControlErrorLevel.VisibleRangeMax = 3;
+			this.integerTrackbarControlErrorLevel.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlErrorLevel_ValueChanged);
+			// 
+			// label8
+			// 
+			this.label8.AutoSize = true;
+			this.label8.Location = new System.Drawing.Point(194, 55);
+			this.label8.Name = "label8";
+			this.label8.Size = new System.Drawing.Size(167, 13);
+			this.label8.TabIndex = 5;
+			this.label8.Text = "Show Error Materials Above Level";
+			// 
+			// columnHeaderChannels
+			// 
+			this.columnHeaderChannels.Text = "Channels";
+			// 
+			// checkBoxShowMasks
+			// 
+			this.checkBoxShowMasks.AutoSize = true;
+			this.checkBoxShowMasks.Checked = true;
+			this.checkBoxShowMasks.CheckState = System.Windows.Forms.CheckState.Checked;
+			this.checkBoxShowMasks.Location = new System.Drawing.Point(291, 28);
+			this.checkBoxShowMasks.Name = "checkBoxShowMasks";
+			this.checkBoxShowMasks.Size = new System.Drawing.Size(87, 17);
+			this.checkBoxShowMasks.TabIndex = 2;
+			this.checkBoxShowMasks.Text = "Show Masks";
+			this.checkBoxShowMasks.UseVisualStyleBackColor = true;
+			this.checkBoxShowMasks.CheckedChanged += new System.EventHandler(this.checkBoxShowDiffuse_CheckedChanged);
 			// 
 			// Form1
 			// 
@@ -896,7 +932,8 @@
 			this.Controls.Add(this.textBoxTexturesBasePath);
 			this.Controls.Add(this.textBoxMaterialsBasePath);
 			this.Name = "Form1";
-			this.Text = "Form1";
+			this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Show;
+			this.Text = "Materials Optimizer";
 			this.tabControl.ResumeLayout(false);
 			this.tabPageMaterials.ResumeLayout(false);
 			this.panelFilterMaterials.ResumeLayout(false);
@@ -977,7 +1014,6 @@
 		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlMinRefCount;
 		private System.Windows.Forms.ProgressBar progressBarMaterials;
 		private System.Windows.Forms.ProgressBar progressBarTextures;
-		private System.Windows.Forms.CheckBox checkBoxShowErrorMaterials;
 		private System.Windows.Forms.CheckBox checkBoxShowOptimizableMaterials;
 		private System.Windows.Forms.TabControl tabControlInfo;
 		private System.Windows.Forms.TabPage tabPageInfo;
@@ -990,6 +1026,10 @@
 		private System.Windows.Forms.Button buttonSearch;
 		private System.Windows.Forms.CheckBox checkBoxShowWarningMaterials;
 		private System.Windows.Forms.CheckBox checkBoxShowMissingPhysics;
+		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlErrorLevel;
+		private System.Windows.Forms.Label label8;
+		private System.Windows.Forms.ColumnHeader columnHeaderChannels;
+		private System.Windows.Forms.CheckBox checkBoxShowMasks;
 	}
 }
 
