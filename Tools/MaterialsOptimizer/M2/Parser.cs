@@ -189,18 +189,20 @@ namespace MaterialsOptimizer
 			}
 			return OK;
 		}
-		public void	SkipComment() {
+		public string	SkipComment() {
+			int	startIndex = m_Index;
 			while ( OK ) {
 				if ( m_Index >= m_ContentLength-2 ) {
 					m_Index = m_ContentLength;
-					return;	// End of text
+					return m_Content.Substring( startIndex, m_Index - startIndex );	// End of text
 				}
 				if ( m_Content[m_Index] == '*' && m_Content[m_Index+1] == '/' ) {
 					m_Index += 2;
-					return;
+					return m_Content.Substring( startIndex, m_Index - startIndex );
 				}
 				m_Index++;
 			}
+			return m_Content.Substring( startIndex, m_Index - startIndex );
 		}
 		public bool	IsChar( char _Char ) {
 			return Cur == _Char;

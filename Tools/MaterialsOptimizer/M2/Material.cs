@@ -10,6 +10,8 @@ namespace MaterialsOptimizer
 	[System.Diagnostics.DebuggerDisplay( "{m_name} - {m_options} - {m_layers.Count} Layers" )]
 	public class Material {
 
+		#region NESTED TYPES
+
 		public enum ERROR_LEVEL	{
 			NONE = 0,
 			DIRTY = 1,
@@ -103,6 +105,7 @@ namespace MaterialsOptimizer
 		[System.Diagnostics.DebuggerDisplay( "Alpha={m_isAlpha}" )]
 		public class	Options {
 			public bool				m_isAlpha = false;
+			public bool				m_isAlphaTest = false;
 			public bool				m_isMasking = false;
 			public bool				m_hasNormal = false;
 			public bool				m_hasSpecular = false;
@@ -114,14 +117,17 @@ namespace MaterialsOptimizer
 			public bool				m_translucencyUseVertexColor = true;
 			public int				m_extraLayers = 0;
 
+			public List< string >	m_unknownOptions = new List< string >();
+
 			public bool				IsAlpha {
-				get { return m_isAlpha || m_isMasking; }
+				get { return m_isAlpha || m_isAlphaTest || m_isMasking; }
 			}
 
 			#region Serialization
 
 			public void	Write( BinaryWriter W ) {
 				W.Write( m_isAlpha );
+				W.Write( m_isAlphaTest );
 				W.Write( m_isMasking );
 				W.Write( m_hasNormal );
 				W.Write( m_hasSpecular );
@@ -136,6 +142,7 @@ namespace MaterialsOptimizer
 
 			public void	Read( BinaryReader R ) {
 				m_isAlpha = R.ReadBoolean();
+				m_isAlphaTest = R.ReadBoolean();
 				m_isMasking = R.ReadBoolean();
 				m_hasNormal = R.ReadBoolean();
 				m_hasSpecular = R.ReadBoolean();
@@ -149,6 +156,100 @@ namespace MaterialsOptimizer
 			}
 
 			#endregion
+
+			public void		Export( StringWriter W, string T, List< Layer > _layers ) {
+				T += "\t";	// Indent
+
+				// Write known options
+				W.WriteLine( T + "isalpha	" + (m_isAlpha ? 1 : 0) );
+				W.WriteLine( T + "alphatest	" + (m_isAlphaTest ? 1 : 0) );
+				W.WriteLine( T + "ismasking	" + (m_isMasking ? 1 : 0) );
+				W.WriteLine( T + "hasbumpmap	" + (m_hasNormal ? 1 : 0) );
+				W.WriteLine( T + "hasspecularmap	" + (m_hasSpecular ? 1 : 0) );
+				W.WriteLine( T + "hasOcclusionMap	" + (m_hasOcclusionMap ? 1 : 0) );
+				W.WriteLine( T + "hasglossmap	" + (m_hasGloss ? 1 : 0) );
+				W.WriteLine( T + "hasmetallicmap	" + (m_hasMetal ? 1 : 0) );
+				W.WriteLine( T + "hasemissivemap	" + (m_hasEmissive ? 1 : 0) );
+				W.WriteLine( T + "translucency/enable	" + (m_translucencyEnabled ? 1 : 0) );
+				W.WriteLine( T + "translucencyusevertexcolor	" + (m_translucencyUseVertexColor ? 1 : 0) );
+				W.WriteLine( T + "extralayer	" + m_extraLayers );
+
+					// LAYER 0
+				Layer	L = _layers[0];
+				WriteLayerUVSet( W, T + "layer0_uvset", L.m_UVSet );
+				WriteLayerUVSet( W, T + "layer0_mask_uvset", L.m_maskUVSet );
+				WriteLayerMaskingMode( W, T + "layer0_maskmode", L.m_maskingMode );
+
+				if ( m_extraLayers > 0 ) {
+					// LAYER 1
+					L = _layers[1];
+					WriteLayerUVSet( W, T + "layer1_uvset", L.m_UVSet );
+					WriteLayerReUseMode( W, T + "layer1_diffusereuselayer", L.m_diffuseReUse );
+					if ( m_hasGloss )
+						WriteLayerReUseMode( W, T + "layer1_glossreuselayer", L.m_glossReUse );
+					if ( m_hasMetal )
+						WriteLayerReUseMode( W, T + "layer1_metallicreuselayer", L.m_metalReUse );
+					if ( L.m_maskingMode != Layer.MASKING_MODE.NONE && L.m_maskingMode != Layer.MASKING_MODE.VERTEX_COLOR ) {
+						WriteLayerUVSet( W, T + "layer1_mask_uvset", L.m_maskUVSet );
+						WriteLayerMaskingMode( W, T + "layer1_maskmode", L.m_maskingMode );
+						WriteLayerReUseMode( W, T + "layer1_maskreuselayer", L.m_maskReUse );
+					}
+					if ( m_hasSpecular )
+						WriteLayerReUseMode( W, T + "layer1_specularreuselayer", L.m_specularReUse );
+
+					if ( m_extraLayers > 1 ) {
+						// LAYER 2
+						L = _layers[2];
+						WriteLayerUVSet( W, T + "layer2_uvset", L.m_UVSet );
+						WriteLayerReUseMode( W, T + "layer2_diffusereuselayer", L.m_diffuseReUse );
+						if ( m_hasGloss )
+							WriteLayerReUseMode( W, T + "layer2_glossreuselayer", L.m_glossReUse );
+						if ( m_hasMetal )
+							WriteLayerReUseMode( W, T + "layer2_metallicreuselayer", L.m_metalReUse );
+						if ( L.m_maskingMode != Layer.MASKING_MODE.NONE && L.m_maskingMode != Layer.MASKING_MODE.VERTEX_COLOR ) {
+							WriteLayerUVSet( W, T + "layer2_mask_uvset", L.m_maskUVSet );
+							WriteLayerMaskingMode( W, T + "layer2_maskmode", L.m_maskingMode );
+							WriteLayerReUseMode( W, T + "layer2_maskreuselayer", L.m_maskReUse );
+						}
+						if ( m_hasSpecular )
+							WriteLayerReUseMode( W, T + "layer2_specularreuselayer", L.m_specularReUse );
+					}
+				}
+
+				// Write unknown options
+				foreach ( string unknownOption in m_unknownOptions ) {
+					W.WriteLine( T + unknownOption );
+				}
+			}
+
+			void	WriteLayerUVSet( StringWriter W, string _optionName, Layer.UV_SET _UVSet ) {
+				int	UVSetValue = 0;
+				switch ( _UVSet ) {
+					case Layer.UV_SET.UV0: UVSetValue = 0; break;
+					case Layer.UV_SET.UV1: UVSetValue = 1; break;
+				}
+				W.WriteLine( _optionName + "	" + UVSetValue );
+			}
+
+			void	WriteLayerMaskingMode( StringWriter W, string _optionName, Layer.MASKING_MODE _maskingMode ) {
+				int	maskingModeValue = 0;
+				switch ( _maskingMode ) {
+					case Layer.MASKING_MODE.NONE: maskingModeValue = 0; break;
+					case Layer.MASKING_MODE.MASK_MAP: maskingModeValue = 1; break;
+					case Layer.MASKING_MODE.MASK_MAP_AND_VERTEX_COLOR: maskingModeValue = 2; break;
+				}
+				W.WriteLine( _optionName + "	" + maskingModeValue );
+			}
+
+			void	WriteLayerReUseMode( StringWriter W, string _optionName, Layer.REUSE_MODE _reUseMode ) {
+				int	reUseModeValue = 0;
+				switch ( _reUseMode ) {
+					case Layer.REUSE_MODE.DONT_REUSE: reUseModeValue = 0; break;
+					case Layer.REUSE_MODE.REUSE_LAYER0: reUseModeValue = 1; break;
+					case Layer.REUSE_MODE.REUSE_LAYER1: reUseModeValue = 2; break;
+				}
+				W.WriteLine( _optionName + "	" + reUseModeValue );
+			}
 		}
 
 		public class	Layer {
@@ -525,8 +626,13 @@ namespace MaterialsOptimizer
 					else {
 						// Ensure we have the proper amount of channels
 						if ( _texture.m_textureFileInfo.ColorChannelsCount != _expectedChannelsCount ) {
-							m_errors += T + "• " + _textureName + " texture \"" + _texture.m_fileName.FullName + "\" provides " + _texture.m_textureFileInfo.ColorChannelsCount + " color channels whereas " + _expectedChannelsCount + " are expected!\n";
-							RaiseErrorLevel( ERROR_LEVEL.DANGEROUS );
+							string	errorText = T + "• " + _textureName + " texture \"" + _texture.m_fileName.FullName + "\" provides " + _texture.m_textureFileInfo.ColorChannelsCount + " color channels whereas " + _expectedChannelsCount + " are expected!\n";
+							if ( _texture.m_textureFileInfo.m_usage == TextureFileInfo.USAGE.DIFFUSE && _expectedChannelsCount == 1 ) {
+								m_warnings = errorText;	// If an _d was set instead of a gloss or a metal, only issue a warning
+							} else {
+								m_errors += errorText;	// Otherwise it's an actual error!
+								RaiseErrorLevel( ERROR_LEVEL.DANGEROUS );
+							}
 						}
 					}
 				}
@@ -565,8 +671,12 @@ namespace MaterialsOptimizer
 			#endregion
 		}
 
+		#endregion
+
 		public FileInfo			m_sourceFileName = null;
 		public string			m_name = null;
+
+		public int				m_version = -1;
 
 		public Programs			m_programs = new Programs();
 
@@ -582,13 +692,19 @@ namespace MaterialsOptimizer
 		public float2			m_glossMinMax = new float2( 0.0f, 0.5f );
 		public float2			m_metallicMinMax = new float2( 0.0f, 0.5f );
 
-		// Forbidden parms
-		public List< string >	m_forbiddenParms = new List< string >();
-
 		// Shader specific parms
 		public bool				m_isUsingVegetationParms = false;
 		public bool				m_isUsingCloudParms = false;
 		public bool				m_isUsingWaterParms = false;
+
+		// Unknown parms/options/etc. that need to be restored as-is
+		public List< string >	m_unknownStates = new List< string >();
+		public List< string >	m_unknownParms = new List< string >();
+		public List< string >	m_unknownVariables = new List< string >();
+
+		// Forbidden parms
+		public List< string >	m_forbiddenParms = new List< string >();
+
 
 		// Filled by analyzer
 		public string			m_isCandidateForOptimization = null;
@@ -754,7 +870,12 @@ namespace MaterialsOptimizer
 		#region Material Parsing
 
 		private void	Parse( string _block ) {
+			m_unknownStates.Clear();
+			m_unknownParms.Clear();
+			m_options.m_unknownOptions.Clear();
+			m_unknownVariables.Clear();
 			m_forbiddenParms.Clear();
+
 			m_isUsingVegetationParms = false;
 			m_isUsingCloudParms = false;
 			m_isUsingWaterParms = false;
@@ -765,11 +886,11 @@ namespace MaterialsOptimizer
 				if ( token == null )
 					break;	// Done!
 				if ( token.StartsWith( "//" ) ) {
-					P.ReadToEOL();
+					RecordSingleLineCommentVariable( token, P );
 					continue;
 				}
 				if ( token.StartsWith( "/*" ) ) {
-					P.SkipComment();
+					RecordCommentVariable( token, P );
 					continue;
 				}
 
@@ -782,6 +903,11 @@ namespace MaterialsOptimizer
 				P.SkipSpaces();
 
 				switch ( token.ToLower() ) {
+					case "version":
+						P.SkipSpaces();
+						m_version = P.ReadInteger();
+						break;
+
 					case "state":
 						ParseState( P.ReadBlock() );
 						break;
@@ -855,24 +981,28 @@ namespace MaterialsOptimizer
 
 					default:
 						CheckSafeTokens( token );
-						P.ReadToEOL();	// Don't care...
+						RecordUnknownVariable( token, P );
 						break;
 				}
 			}
 		}
 
 		private void	ParseState( string _state ) {
-			try {
-			} catch ( Exception _e ) {
-				throw new Exception( "Failed parsing state block!", _e );
-			}
+			m_unknownStates.Add( _state );	// Add entire state!
+// 
+// 			try {
+// 			} catch ( Exception _e ) {
+// 				throw new Exception( "Failed parsing state block!", _e );
+// 			}
 		}
 
 		private void	ParseParms( string _parms ) {
-			try {
-			} catch ( Exception _e ) {
-				throw new Exception( "Failed parsing parms block!", _e );
-			}
+			m_unknownParms.Add( _parms );	// Add entire parms!
+// 
+// 			try {
+// 			} catch ( Exception _e ) {
+// 				throw new Exception( "Failed parsing parms block!", _e );
+// 			}
 		}
 
 		private void	ParseOptions( string _options ) {
@@ -883,11 +1013,11 @@ namespace MaterialsOptimizer
 					if ( token == null )
 						break;	// Done!
 					if ( token.StartsWith( "//" ) ) {
-						P.ReadToEOL();
+						RecordSingleLineCommentOption( token, P );
 						continue;
 					}
 					if ( token.StartsWith( "/*" ) ) {
-						P.SkipComment();
+						RecordCommentOption( token, P );
 						continue;
 					}
 					P.SkipSpaces();
@@ -899,7 +1029,7 @@ namespace MaterialsOptimizer
 					switch ( token.ToLower() ) {
 
 						case "isalpha":						m_options.m_isAlpha = value != 0; break;
-						case "alphatest":					m_options.m_isAlpha = value != 0; break;
+						case "alphatest":					m_options.m_isAlphaTest = value != 0; break;
 						case "ismasking":					m_options.m_isMasking = value != 0; break;
 						case "hasbumpmap":					m_options.m_hasNormal = value != 0; break;
 						case "hasspecularmap":				m_options.m_hasSpecular = value != 0; break;
@@ -1067,6 +1197,7 @@ namespace MaterialsOptimizer
 
 						default:
 							CheckSafeOptionsTokens( token, value );
+							RecordUnknownOption( token, value, P );
 							break;
 					}
 				}
@@ -1075,6 +1206,41 @@ namespace MaterialsOptimizer
 			}
 		}
 
+		void	RecordUnknownOption( string _token, Parser P ) {
+			string	record = _token + "\t" + P.ReadToEOL();
+			m_options.m_unknownOptions.Add( record );
+		}
+
+		void	RecordUnknownOption( string _token, int value, Parser P ) {
+			string	record = _token + "\t" + value + P.ReadToEOL();
+			m_options.m_unknownOptions.Add( record );
+		}
+
+		void	RecordSingleLineCommentOption( string _token, Parser P ) {
+			string	record = _token + P.ReadToEOL();
+			m_options.m_unknownOptions.Add( record );
+		}
+
+		void	RecordCommentOption( string _token, Parser P ) {
+			string	comment = _token + P.SkipComment();
+			m_options.m_unknownOptions.Add( comment );
+		}
+
+		void	RecordUnknownVariable( string _token, Parser P ) {
+			string	record = _token + "\t" + P.ReadToEOL();
+			m_unknownVariables.Add( record );
+		}
+	
+		void	RecordSingleLineCommentVariable( string _token, Parser P ) {
+			string	record = _token + P.ReadToEOL();
+			m_unknownVariables.Add( record );
+		}
+	
+		void	RecordCommentVariable( string _token, Parser P ) {
+			string	comment = _token + P.SkipComment();
+			m_unknownVariables.Add( comment );
+		}
+	
 		#region Tokens Checking
 
 		void	CheckSafeTokens( string token ) {
@@ -1082,7 +1248,6 @@ namespace MaterialsOptimizer
 				return;	// Don't care about other programs than arkDefault
 
 			string[]	recognizedStrings = new string[] {
-				"version",
 				"darkvisionprogram",
 				"sssprogram",
 				"shadowProgram",
@@ -1345,29 +1510,29 @@ namespace MaterialsOptimizer
 		}
 
 		void	CheckSafeOptionsTokens( string token, int value ) {
-// 			if ( m_programs.m_type != Programs.KNOWN_TYPES.DEFAULT )
-// 				return;	// Don't care about other programs than arkDefault
-
-			string[]	recognizedStrings = new string[] {
-			};
-			token = token.ToLower();
-			if ( token.StartsWith( "//" ) )
-				return;
-			if ( token.StartsWith( "materialeffects" ) )
-				return;
-			if ( token.StartsWith( "decal" ) )
-				return;
-			if ( token.StartsWith( "fx/" ) )
-				return;
-
-			foreach ( string recognizedString in recognizedStrings ) {
-				if ( recognizedString.ToLower() == token )
-					return;	// Okay!
-			}
-
-			int	glou = 0;
-			glou++;
-//			throw new Exception( "Unrecognized token!" );
+// // 			if ( m_programs.m_type != Programs.KNOWN_TYPES.DEFAULT )
+// // 				return;	// Don't care about other programs than arkDefault
+// 
+// 			string[]	recognizedStrings = new string[] {
+// 			};
+// 			token = token.ToLower();
+// 			if ( token.StartsWith( "//" ) )
+// 				return;
+// 			if ( token.StartsWith( "materialeffects" ) )
+// 				return;
+// 			if ( token.StartsWith( "decal" ) )
+// 				return;
+// 			if ( token.StartsWith( "fx/" ) )
+// 				return;
+// 
+// 			foreach ( string recognizedString in recognizedStrings ) {
+// 				if ( recognizedString.ToLower() == token )
+// 					return;	// Okay!
+// 			}
+// 
+//  			int	glou = 0;
+//  			glou++;
+// //			throw new Exception( "Unrecognized token!" );
 		}
 
 		#endregion
@@ -1379,6 +1544,8 @@ namespace MaterialsOptimizer
 		public void	Write( BinaryWriter W ) {
 			W.Write( m_sourceFileName.FullName );
 			W.Write( m_name );
+
+			W.Write( m_version );
 
 			m_programs.Write( W );
 			m_options.Write( W );
@@ -1401,13 +1568,16 @@ namespace MaterialsOptimizer
 			W.Write( m_metallicMinMax.x );
 			W.Write( m_metallicMinMax.y );
 
-			W.Write( m_forbiddenParms.Count );
-			foreach ( string forbiddenParm in m_forbiddenParms )
-				W.Write( forbiddenParm );
-
 			W.Write( m_isUsingVegetationParms );
 			W.Write( m_isUsingCloudParms );
 			W.Write( m_isUsingWaterParms );
+
+			// Write unknown strings that should be restored as-is
+			WriteListOfStrings( W, m_unknownStates );
+			WriteListOfStrings( W, m_unknownParms );
+			WriteListOfStrings( W, m_options.m_unknownOptions );
+			WriteListOfStrings( W, m_unknownVariables );
+			WriteListOfStrings( W, m_forbiddenParms );
 
 			W.Write( m_isCandidateForOptimization != null ? m_isCandidateForOptimization : "" );
 			W.Write( (int) m_errorLevel );
@@ -1418,6 +1588,8 @@ namespace MaterialsOptimizer
 		public void	Read( BinaryReader R ) {
 			m_sourceFileName = new FileInfo( R.ReadString() );
 			m_name = R.ReadString();
+
+			m_version = R.ReadInt32();
 
 			m_programs.Read( R );
 			m_options.Read( R );
@@ -1439,14 +1611,17 @@ namespace MaterialsOptimizer
 			m_metallicMinMax.x = R.ReadSingle();
 			m_metallicMinMax.y = R.ReadSingle();
 
-			m_forbiddenParms.Clear();
-			int	forbiddenParmsCount = R.ReadInt32();
-			for ( int forbiddenParmIndex=0; forbiddenParmIndex < forbiddenParmsCount; forbiddenParmIndex++ )
-				m_forbiddenParms.Add( R.ReadString() );
-
 			m_isUsingVegetationParms = R.ReadBoolean();
 			m_isUsingCloudParms = R.ReadBoolean();
 			m_isUsingWaterParms = R.ReadBoolean();
+
+			// Read unknown strings that should be restored as-is
+			ReadListOfStrings( R, m_unknownStates );
+			ReadListOfStrings( R, m_unknownParms );
+			ReadListOfStrings( R, m_options.m_unknownOptions );
+			ReadListOfStrings( R, m_unknownVariables );
+			ReadListOfStrings( R, m_forbiddenParms );
+
 
 			m_isCandidateForOptimization = R.ReadString();
 			if ( m_isCandidateForOptimization == string.Empty )
@@ -1460,9 +1635,91 @@ namespace MaterialsOptimizer
 				m_warnings = null;
 		}
 
+		void	WriteListOfStrings( BinaryWriter W, List< string > _list ) {
+			W.Write( _list.Count );
+			foreach ( string value in _list )
+				W.Write( value );
+		}
+
+		void	ReadListOfStrings( BinaryReader R, List< string > _list ) {
+			_list.Clear();
+			int	stringsCount = R.ReadInt32();
+			for ( int stringIndex=0; stringIndex < stringsCount; stringIndex++ )
+				_list.Add( R.ReadString() );
+		}
+
 		#endregion
 
-		#region Material Analyzer
+		#region Material Optimizer
+
+		/// <summary>
+		/// This function cleans the material from automatically recoverable errors and warnings
+		/// </summary>
+		public void		CleanUp( ) {
+
+		}
+
+		#endregion
+
+		#region Material Exporter
+
+		/// <summary>
+		/// This attempts to re-export a valid material for a M2 file
+		/// </summary>
+		/// <param name="W"></param>
+		public void	Export( StringWriter W ) {
+			string	T = "\t";
+			W.WriteLine( "material " + m_name + "{" );
+
+			if ( m_version >= 0 )
+				W.WriteLine( T + "version	" + m_version );
+
+			if ( m_physicsMaterial != null )
+				W.WriteLine( T + "m_PhysicsMaterial	" + m_physicsMaterial );
+
+			// Write parms
+			W.WriteLine( T + "parms {" );
+			WriteParms( W, T, m_unknownParms );
+			W.WriteLine( T + "}" );
+
+			// Write state
+			W.WriteLine( T + "state {" );
+			WriteStates( W, T, m_unknownStates );
+			W.WriteLine( T + "}" );
+
+			// Write options
+			W.WriteLine( T + "state {" );
+			m_options.Export( W, T, m_layers );
+			W.WriteLine( T + "}" );
+
+			// Write regular variables
+//			int	layersCount = 
+// 		// Textures
+// 		public List< Layer >	m_layers = new List< Layer >();
+// 		public Layer.Texture	m_height = null;	// Special height map!
+// 		public Layer.Texture	m_lightMap = null;	// Special light map for vista!
+// 
+// 		// Main variables
+// 		public string			m_physicsMaterial = null;
+// 		public float2			m_glossMinMax = new float2( 0.0f, 0.5f );
+// 		public float2			m_metallicMinMax = new float2( 0.0f, 0.5f );
+
+			// Write unknown variables
+			foreach ( string unknownVariable in m_unknownVariables )
+				W.WriteLine( T + unknownVariable );
+
+			W.WriteLine( "}\n" );
+		}
+
+		void	WriteParms( StringWriter W, string T, List< string > _unknownParms ) {
+			foreach ( string unknownParm in _unknownParms )
+				W.WriteLine( T + unknownParm );
+		}
+
+		void	WriteStates( StringWriter W, string T, List< string > _unknownStates ) {
+			foreach ( string unknownState in _unknownStates )
+				W.WriteLine( T + unknownState );
+		}
 
 		#endregion
 	}

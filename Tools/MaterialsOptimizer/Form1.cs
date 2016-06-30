@@ -1216,30 +1216,100 @@ namespace MaterialsOptimizer
 
 		#endregion
 
+		#region Materials Re-Export
+
+		void	ReExportMaterials( DirectoryInfo _directory ) {
+
+			progressBarReExportMaterials.Visible = true;
+
+			// 1] Collect all unique material M2 files and rebase them into export target directory
+			string		sourceBasePath = textBoxMaterialsBasePath.Text.ToLower();
+			if ( !sourceBasePath.EndsWith( "\\" ) )
+				sourceBasePath += "\\";
+			string		targetBasePath = textBoxReExportPath.Text.ToLower();
+
+			Dictionary< string, List< Material > >	M2File2Materials = new Dictionary< string, List< Material > >();
+			foreach ( Material M in m_materials ) {
+				string	originalName = M.m_sourceFileName.FullName.ToLower();
+				if ( !originalName.StartsWith( sourceBasePath ) ) {
+					// Not in source base path?
+					LogLine( "Failed to locate material file \"" + M.m_sourceFileName.FullName + "\" as based on the source materials path \"" + sourceBasePath + "\"! Can't determine base-less filename and can't rebase material for re-export..." );
+					continue;
+				}
+
+				string	baseLessName = originalName.Substring( sourceBasePath.Length );
+				string	rebasedName = Path.Combine( targetBasePath, baseLessName );
+				if ( !M2File2Materials.ContainsKey( rebasedName ) ) {
+					M2File2Materials[rebasedName] = new List<Material>();	// New M2 file
+					Directory.CreateDirectory( Path.GetDirectoryName( rebasedName ) );				// Ensure target directory exists
+				}
+				M2File2Materials[rebasedName].Add( M );
+			}
+
+			// 2] Regenerate all M2 files
+			foreach ( string targetM2FileName in M2File2Materials.Keys ) {
+
+				try {
+					StringBuilder	SB = new StringBuilder();
+					using( StringWriter W = new StringWriter( SB ) ) {
+						// Regenerate all materials in the M2 file
+						List< Material >	materialsInFile = M2File2Materials[targetM2FileName];
+						foreach ( Material M in materialsInFile ) {
+							M.Export( W );
+						}
+					}
+
+					// Write to M2 file in a single time
+					FileInfo	M2FileName = new FileInfo( targetM2FileName );
+					using ( StreamWriter fileS = M2FileName.CreateText() )
+						fileS.Write( SB.ToString() );
+
+				} catch ( Exception _e ) {
+					LogLine( "An error occurred while exporting M2 file \"" + targetM2FileName + "\": " + _e.Message );
+				}
+			}
+
+			progressBarReExportMaterials.Visible = false;
+		}
+
+		#endregion
+
 		private void buttonSetMaterialsBasePath_Click(object sender, EventArgs e) {
 			folderBrowserDialog.SelectedPath = GetRegKey( "MaterialsBasePath", textBoxMaterialsBasePath.Text );
+			folderBrowserDialog.Description = "Select the folder containing materials to parse";
 			if ( folderBrowserDialog.ShowDialog( this ) != DialogResult.OK ) {
 				return;
 			}
 
+			SetRegKey( "MaterialsBasePath", folderBrowserDialog.SelectedPath );
 			textBoxMaterialsBasePath.Text = folderBrowserDialog.SelectedPath;
-			SetRegKey( "MaterialsBasePath", textBoxMaterialsBasePath.Text );
 		}
 
 		private void buttonSetTexturesBasePath_Click(object sender, EventArgs e) {
 			folderBrowserDialog.SelectedPath = GetRegKey( "TexturesBasePath", textBoxTexturesBasePath.Text );
+			folderBrowserDialog.Description = "Select the base folder for Dishonored 2";
 			if ( folderBrowserDialog.ShowDialog( this ) != DialogResult.OK ) {
 				return;
 			}
 
+			SetRegKey( "TexturesBasePath", folderBrowserDialog.SelectedPath );
 			textBoxTexturesBasePath.Text = folderBrowserDialog.SelectedPath;
-			SetRegKey( "TexturesBasePath", textBoxTexturesBasePath.Text );
 
 			Material.Layer.Texture.ms_TexturesBasePath = new DirectoryInfo( textBoxTexturesBasePath.Text );
 		}
 
-		private void buttonParseMaterials_Click(object sender, EventArgs e)
-		{
+		private void buttonSetMaterialsReExportPath_Click(object sender, EventArgs e) {
+			folderBrowserDialog.SelectedPath = GetRegKey( "MaterialsReExportPath", textBoxReExportPath.Text );
+			folderBrowserDialog.Description = "Select the base folder where to re-export";
+			if ( folderBrowserDialog.ShowDialog( this ) != DialogResult.OK ) {
+				return;
+			}
+
+			SetRegKey( "MaterialsReExportPath", folderBrowserDialog.SelectedPath );
+			textBoxReExportPath.Text = folderBrowserDialog.SelectedPath;
+		}
+
+		private void buttonParseMaterials_Click(object sender, EventArgs e) {
 			try {
 				RecurseParseMaterials( new DirectoryInfo( textBoxMaterialsBasePath.Text ) );
 				SaveMaterialsDatabase( m_materialsDatabaseFileName );
@@ -1262,6 +1332,14 @@ namespace MaterialsOptimizer
 					RebuildTexturesListView();
 			} catch ( Exception _e ) {
 				MessageBox( "An error occurred while collecting textures:\r\n" + _e.Message, MessageBoxButtons.OK, MessageBoxIcon.Error );
+			}
+		}
+
+		private void buttonReExport_Click(object sender, EventArgs e) {
+			try {
+				ReExportMaterials( new DirectoryInfo( textBoxReExportPath.Text ) );
+			} catch ( Exception _e ) {
+				MessageBox( "An error occurred while re-exporting materials:\r\n" + _e.Message, MessageBoxButtons.OK, MessageBoxIcon.Error );
 			}
 		}
 

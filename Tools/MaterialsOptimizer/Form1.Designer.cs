@@ -102,6 +102,11 @@
 			this.label8 = new System.Windows.Forms.Label();
 			this.columnHeaderChannels = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
 			this.checkBoxShowMasks = new System.Windows.Forms.CheckBox();
+			this.buttonReExport = new System.Windows.Forms.Button();
+			this.textBoxReExportPath = new System.Windows.Forms.TextBox();
+			this.buttonSetMaterialsReExportPath = new System.Windows.Forms.Button();
+			this.label9 = new System.Windows.Forms.Label();
+			this.progressBarReExportMaterials = new System.Windows.Forms.ProgressBar();
 			this.tabControl.SuspendLayout();
 			this.tabPageMaterials.SuspendLayout();
 			this.panelFilterMaterials.SuspendLayout();
@@ -203,7 +208,7 @@
 			this.tabControl.Location = new System.Drawing.Point(0, 0);
 			this.tabControl.Name = "tabControl";
 			this.tabControl.SelectedIndex = 0;
-			this.tabControl.Size = new System.Drawing.Size(1299, 600);
+			this.tabControl.Size = new System.Drawing.Size(1299, 574);
 			this.tabControl.TabIndex = 5;
 			// 
 			// tabPageMaterials
@@ -213,7 +218,7 @@
 			this.tabPageMaterials.Location = new System.Drawing.Point(4, 22);
 			this.tabPageMaterials.Name = "tabPageMaterials";
 			this.tabPageMaterials.Padding = new System.Windows.Forms.Padding(3);
-			this.tabPageMaterials.Size = new System.Drawing.Size(1291, 574);
+			this.tabPageMaterials.Size = new System.Drawing.Size(1291, 548);
 			this.tabPageMaterials.TabIndex = 0;
 			this.tabPageMaterials.Text = "Materials";
 			this.tabPageMaterials.UseVisualStyleBackColor = true;
@@ -244,7 +249,7 @@
 			this.panelFilterMaterials.Controls.Add(this.checkBoxShowMissingPhysics);
 			this.panelFilterMaterials.Controls.Add(this.checkBoxShowWarningMaterials);
 			this.panelFilterMaterials.Controls.Add(this.checkBoxShowVegetation);
-			this.panelFilterMaterials.Location = new System.Drawing.Point(6, 489);
+			this.panelFilterMaterials.Location = new System.Drawing.Point(6, 463);
 			this.panelFilterMaterials.Name = "panelFilterMaterials";
 			this.panelFilterMaterials.Size = new System.Drawing.Size(1279, 79);
 			this.panelFilterMaterials.TabIndex = 5;
@@ -448,7 +453,7 @@
 			this.listViewMaterials.Location = new System.Drawing.Point(6, 6);
 			this.listViewMaterials.Name = "listViewMaterials";
 			this.listViewMaterials.ShowItemToolTips = true;
-			this.listViewMaterials.Size = new System.Drawing.Size(1279, 477);
+			this.listViewMaterials.Size = new System.Drawing.Size(1279, 451);
 			this.listViewMaterials.TabIndex = 2;
 			this.listViewMaterials.UseCompatibleStateImageBehavior = false;
 			this.listViewMaterials.View = System.Windows.Forms.View.Details;
@@ -757,7 +762,7 @@
 			this.tabControlInfo.Location = new System.Drawing.Point(0, 0);
 			this.tabControlInfo.Name = "tabControlInfo";
 			this.tabControlInfo.SelectedIndex = 0;
-			this.tabControlInfo.Size = new System.Drawing.Size(1299, 176);
+			this.tabControlInfo.Size = new System.Drawing.Size(1299, 169);
 			this.tabControlInfo.TabIndex = 7;
 			// 
 			// tabPageInfo
@@ -766,7 +771,7 @@
 			this.tabPageInfo.Location = new System.Drawing.Point(4, 22);
 			this.tabPageInfo.Name = "tabPageInfo";
 			this.tabPageInfo.Padding = new System.Windows.Forms.Padding(3);
-			this.tabPageInfo.Size = new System.Drawing.Size(1291, 150);
+			this.tabPageInfo.Size = new System.Drawing.Size(1291, 143);
 			this.tabPageInfo.TabIndex = 0;
 			this.tabPageInfo.Text = "Info";
 			this.tabPageInfo.UseVisualStyleBackColor = true;
@@ -800,7 +805,7 @@
 			this.splitContainer1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-			this.splitContainer1.Location = new System.Drawing.Point(12, 77);
+			this.splitContainer1.Location = new System.Drawing.Point(12, 110);
 			this.splitContainer1.Name = "splitContainer1";
 			this.splitContainer1.Orientation = System.Windows.Forms.Orientation.Horizontal;
 			// 
@@ -811,8 +816,8 @@
 			// splitContainer1.Panel2
 			// 
 			this.splitContainer1.Panel2.Controls.Add(this.tabControlInfo);
-			this.splitContainer1.Size = new System.Drawing.Size(1299, 780);
-			this.splitContainer1.SplitterDistance = 600;
+			this.splitContainer1.Size = new System.Drawing.Size(1299, 747);
+			this.splitContainer1.SplitterDistance = 574;
 			this.splitContainer1.TabIndex = 8;
 			// 
 			// textBoxInfo
@@ -825,7 +830,7 @@
 			this.textBoxInfo.Name = "textBoxInfo";
 			this.textBoxInfo.ReadOnly = true;
 			this.textBoxInfo.ScrollBars = System.Windows.Forms.ScrollBars.Both;
-			this.textBoxInfo.Size = new System.Drawing.Size(1285, 144);
+			this.textBoxInfo.Size = new System.Drawing.Size(1285, 137);
 			this.textBoxInfo.TabIndex = 2;
 			// 
 			// textBoxSearchMaterial
@@ -916,6 +921,53 @@
 			this.checkBoxShowMasks.UseVisualStyleBackColor = true;
 			this.checkBoxShowMasks.CheckedChanged += new System.EventHandler(this.checkBoxShowDiffuse_CheckedChanged);
 			// 
+			// buttonReExport
+			// 
+			this.buttonReExport.Location = new System.Drawing.Point(530, 80);
+			this.buttonReExport.Name = "buttonReExport";
+			this.buttonReExport.Size = new System.Drawing.Size(75, 23);
+			this.buttonReExport.TabIndex = 4;
+			this.buttonReExport.Text = "Re-Export";
+			this.buttonReExport.UseVisualStyleBackColor = true;
+			this.buttonReExport.Click += new System.EventHandler(this.buttonReExport_Click);
+			// 
+			// textBoxReExportPath
+			// 
+			this.textBoxReExportPath.Location = new System.Drawing.Point(143, 82);
+			this.textBoxReExportPath.Name = "textBoxReExportPath";
+			this.textBoxReExportPath.Size = new System.Drawing.Size(339, 20);
+			this.textBoxReExportPath.TabIndex = 1;
+			this.textBoxReExportPath.Text = "V:\\Test";
+			// 
+			// buttonSetMaterialsReExportPath
+			// 
+			this.buttonSetMaterialsReExportPath.Location = new System.Drawing.Point(488, 80);
+			this.buttonSetMaterialsReExportPath.Name = "buttonSetMaterialsReExportPath";
+			this.buttonSetMaterialsReExportPath.Size = new System.Drawing.Size(36, 23);
+			this.buttonSetMaterialsReExportPath.TabIndex = 2;
+			this.buttonSetMaterialsReExportPath.Text = "...";
+			this.buttonSetMaterialsReExportPath.UseVisualStyleBackColor = true;
+			this.buttonSetMaterialsReExportPath.Click += new System.EventHandler(this.buttonSetMaterialsReExportPath_Click);
+			// 
+			// label9
+			// 
+			this.label9.AutoSize = true;
+			this.label9.Location = new System.Drawing.Point(13, 85);
+			this.label9.Name = "label9";
+			this.label9.Size = new System.Drawing.Size(124, 13);
+			this.label9.TabIndex = 3;
+			this.label9.Text = "Materials Re-Export Path";
+			// 
+			// progressBarReExportMaterials
+			// 
+			this.progressBarReExportMaterials.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+			this.progressBarReExportMaterials.Location = new System.Drawing.Point(611, 80);
+			this.progressBarReExportMaterials.Name = "progressBarReExportMaterials";
+			this.progressBarReExportMaterials.Size = new System.Drawing.Size(700, 23);
+			this.progressBarReExportMaterials.TabIndex = 6;
+			this.progressBarReExportMaterials.Visible = false;
+			// 
 			// Form1
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -923,13 +975,18 @@
 			this.ClientSize = new System.Drawing.Size(1323, 869);
 			this.Controls.Add(this.splitContainer1);
 			this.Controls.Add(this.progressBarTextures);
+			this.Controls.Add(this.progressBarReExportMaterials);
 			this.Controls.Add(this.progressBarMaterials);
 			this.Controls.Add(this.buttonCollectTextures);
+			this.Controls.Add(this.buttonReExport);
 			this.Controls.Add(this.buttonParseMaterials);
 			this.Controls.Add(this.label2);
+			this.Controls.Add(this.label9);
 			this.Controls.Add(this.label1);
+			this.Controls.Add(this.buttonSetMaterialsReExportPath);
 			this.Controls.Add(this.buttonSetTexturesBasePath);
 			this.Controls.Add(this.buttonSetMaterialsBasePath);
+			this.Controls.Add(this.textBoxReExportPath);
 			this.Controls.Add(this.textBoxTexturesBasePath);
 			this.Controls.Add(this.textBoxMaterialsBasePath);
 			this.Name = "Form1";
@@ -1031,6 +1088,11 @@
 		private System.Windows.Forms.Label label8;
 		private System.Windows.Forms.ColumnHeader columnHeaderChannels;
 		private System.Windows.Forms.CheckBox checkBoxShowMasks;
+		private System.Windows.Forms.Button buttonReExport;
+		private System.Windows.Forms.TextBox textBoxReExportPath;
+		private System.Windows.Forms.Button buttonSetMaterialsReExportPath;
+		private System.Windows.Forms.Label label9;
+		private System.Windows.Forms.ProgressBar progressBarReExportMaterials;
 	}
 }
 
