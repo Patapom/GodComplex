@@ -100,6 +100,15 @@ namespace MaterialsOptimizer
 			}
 
 			#endregion
+
+			public void		Export( StringWriter W, string T ) {
+				if ( m_main != null )
+					W.Write( T + "mainprogram	" + m_main );
+				if ( m_ZPrepass != null )
+					W.Write( T + "zprepassprogram	" + m_ZPrepass );
+				if ( m_shadow != null )
+					W.Write( T + "shadowprogram	" + m_shadow );
+			}
 		}
 
 		[System.Diagnostics.DebuggerDisplay( "Alpha={m_isAlpha}" )]
@@ -161,37 +170,41 @@ namespace MaterialsOptimizer
 				T += "\t";	// Indent
 
 				// Write known options
-				W.WriteLine( T + "isalpha	" + (m_isAlpha ? 1 : 0) );
-				W.WriteLine( T + "alphatest	" + (m_isAlphaTest ? 1 : 0) );
-				W.WriteLine( T + "ismasking	" + (m_isMasking ? 1 : 0) );
-				W.WriteLine( T + "hasbumpmap	" + (m_hasNormal ? 1 : 0) );
+				W.WriteLine( T + "extralayer		" + m_extraLayers );
+				W.WriteLine( T + "isalpha			" + (m_isAlpha ? 1 : 0) );
+				W.WriteLine( T + "alphatest		" + (m_isAlphaTest ? 1 : 0) );
+				W.WriteLine( T + "ismasking		" + (m_isMasking ? 1 : 0) );
+				W.WriteLine( T + "hasbumpmap		" + (m_hasNormal ? 1 : 0) );
 				W.WriteLine( T + "hasspecularmap	" + (m_hasSpecular ? 1 : 0) );
-				W.WriteLine( T + "hasOcclusionMap	" + (m_hasOcclusionMap ? 1 : 0) );
-				W.WriteLine( T + "hasglossmap	" + (m_hasGloss ? 1 : 0) );
+				W.WriteLine( T + "hasocclusionMap	" + (m_hasOcclusionMap ? 1 : 0) );
+				W.WriteLine( T + "hasglossmap		" + (m_hasGloss ? 1 : 0) );
 				W.WriteLine( T + "hasmetallicmap	" + (m_hasMetal ? 1 : 0) );
 				W.WriteLine( T + "hasemissivemap	" + (m_hasEmissive ? 1 : 0) );
-				W.WriteLine( T + "translucency/enable	" + (m_translucencyEnabled ? 1 : 0) );
+				W.WriteLine( T + "translucency/enable			" + (m_translucencyEnabled ? 1 : 0) );
 				W.WriteLine( T + "translucencyusevertexcolor	" + (m_translucencyUseVertexColor ? 1 : 0) );
-				W.WriteLine( T + "extralayer	" + m_extraLayers );
 
-					// LAYER 0
+				// LAYER 0
 				Layer	L = _layers[0];
 				WriteLayerUVSet( W, T + "layer0_uvset", L.m_UVSet );
-				WriteLayerUVSet( W, T + "layer0_mask_uvset", L.m_maskUVSet );
 				WriteLayerMaskingMode( W, T + "layer0_maskmode", L.m_maskingMode );
+				if ( L.m_maskingMode != Layer.MASKING_MODE.VERTEX_COLOR ) {
+					WriteLayerUVSet( W, T + "layer0_mask_uvset", L.m_maskUVSet );
+				}
 
 				if ( m_extraLayers > 0 ) {
 					// LAYER 1
 					L = _layers[1];
 					WriteLayerUVSet( W, T + "layer1_uvset", L.m_UVSet );
 					WriteLayerReUseMode( W, T + "layer1_diffusereuselayer", L.m_diffuseReUse );
+					WriteLayerReUseMode( W, T + "layer1_bumpreuselayer", L.m_normalReUse );
 					if ( m_hasGloss )
 						WriteLayerReUseMode( W, T + "layer1_glossreuselayer", L.m_glossReUse );
 					if ( m_hasMetal )
 						WriteLayerReUseMode( W, T + "layer1_metallicreuselayer", L.m_metalReUse );
-					if ( L.m_maskingMode != Layer.MASKING_MODE.NONE && L.m_maskingMode != Layer.MASKING_MODE.VERTEX_COLOR ) {
+
+					WriteLayerMaskingMode( W, T + "layer1_maskmode", L.m_maskingMode );
+					if ( L.m_maskingMode != Layer.MASKING_MODE.VERTEX_COLOR ) {
 						WriteLayerUVSet( W, T + "layer1_mask_uvset", L.m_maskUVSet );
-						WriteLayerMaskingMode( W, T + "layer1_maskmode", L.m_maskingMode );
 						WriteLayerReUseMode( W, T + "layer1_maskreuselayer", L.m_maskReUse );
 					}
 					if ( m_hasSpecular )
@@ -202,13 +215,15 @@ namespace MaterialsOptimizer
 						L = _layers[2];
 						WriteLayerUVSet( W, T + "layer2_uvset", L.m_UVSet );
 						WriteLayerReUseMode( W, T + "layer2_diffusereuselayer", L.m_diffuseReUse );
+						WriteLayerReUseMode( W, T + "layer2_bumpreuselayer", L.m_normalReUse );
 						if ( m_hasGloss )
 							WriteLayerReUseMode( W, T + "layer2_glossreuselayer", L.m_glossReUse );
 						if ( m_hasMetal )
 							WriteLayerReUseMode( W, T + "layer2_metallicreuselayer", L.m_metalReUse );
-						if ( L.m_maskingMode != Layer.MASKING_MODE.NONE && L.m_maskingMode != Layer.MASKING_MODE.VERTEX_COLOR ) {
+
+						WriteLayerMaskingMode( W, T + "layer2_maskmode", L.m_maskingMode );
+						if ( L.m_maskingMode != Layer.MASKING_MODE.VERTEX_COLOR ) {
 							WriteLayerUVSet( W, T + "layer2_mask_uvset", L.m_maskUVSet );
-							WriteLayerMaskingMode( W, T + "layer2_maskmode", L.m_maskingMode );
 							WriteLayerReUseMode( W, T + "layer2_maskreuselayer", L.m_maskReUse );
 						}
 						if ( m_hasSpecular )
@@ -234,7 +249,7 @@ namespace MaterialsOptimizer
 			void	WriteLayerMaskingMode( StringWriter W, string _optionName, Layer.MASKING_MODE _maskingMode ) {
 				int	maskingModeValue = 0;
 				switch ( _maskingMode ) {
-					case Layer.MASKING_MODE.NONE: maskingModeValue = 0; break;
+					case Layer.MASKING_MODE.VERTEX_COLOR: maskingModeValue = 0; break;
 					case Layer.MASKING_MODE.MASK_MAP: maskingModeValue = 1; break;
 					case Layer.MASKING_MODE.MASK_MAP_AND_VERTEX_COLOR: maskingModeValue = 2; break;
 				}
@@ -254,6 +269,8 @@ namespace MaterialsOptimizer
 
 		public class	Layer {
 
+			#region NESTED TYPES
+
 			[System.Diagnostics.DebuggerDisplay( "{m_name} CstColorType={m_constantColorType}" )]
 			public class	Texture {
 				public enum	 CONSTANT_COLOR_TYPE {
@@ -262,9 +279,11 @@ namespace MaterialsOptimizer
 					BLACK,
 					BLACK_ALPHA_WHITE,
 					WHITE,
+					INVALID,		// <= Used for replacement when diffuse textures are missing (creates a lovely RED)
 					CUSTOM,
 				}
 
+				public string				m_rawTextureLine;
 				public string				m_name;
 				public FileInfo				m_fileName = null;
 				public Exception			m_error = null;		// Any error that occurred during texture creation
@@ -282,6 +301,7 @@ namespace MaterialsOptimizer
 							case CONSTANT_COLOR_TYPE.BLACK:				return float4.Zero;
 							case CONSTANT_COLOR_TYPE.BLACK_ALPHA_WHITE:	return float4.UnitW;
 							case CONSTANT_COLOR_TYPE.WHITE:				return float4.One;
+							case CONSTANT_COLOR_TYPE.INVALID:			return new float4( 1, 0, 0, 1 );	// Red pétant!
 							case CONSTANT_COLOR_TYPE.CUSTOM:			return m_customConstantColor;
 							default:									throw new Exception( "Unsupported constant color type!" );
 						}
@@ -291,6 +311,8 @@ namespace MaterialsOptimizer
 				public static	DirectoryInfo	ms_TexturesBasePath;
 
 				public	Texture( string _textureLine ) {
+					m_rawTextureLine = _textureLine;
+
 					// Parse texture name
 					Parser	P = new Parser( _textureLine );
 					m_name = P.ReadString( true, false );
@@ -305,6 +327,7 @@ namespace MaterialsOptimizer
 								case "_black":				m_constantColorType = CONSTANT_COLOR_TYPE.BLACK; break;
 								case "_blackalphawhite":	m_constantColorType = CONSTANT_COLOR_TYPE.BLACK_ALPHA_WHITE; break;
 								case "_white":				m_constantColorType = CONSTANT_COLOR_TYPE.WHITE; break;
+								case "_invalid":			m_constantColorType = CONSTANT_COLOR_TYPE.INVALID; break;
 								default: throw new Exception( "Unsupported procedural texture type \"" + m_name + "\"!" );
 							} 
 						} else if ( m_name.StartsWith( "ipr_constantcolor" ) ) {
@@ -331,9 +354,50 @@ namespace MaterialsOptimizer
 					Read( R );
 				}
 
+				public static bool	operator==( Texture a, Texture b ) {
+					if ( (object) a == null && (object ) b == null )
+						return true;
+					if ( (object) a == null || (object ) b == null )
+						return false;
+
+					if ( a.m_constantColorType != b.m_constantColorType )
+						return false;
+					switch ( a.m_constantColorType ) {
+						case CONSTANT_COLOR_TYPE.BLACK:
+						case CONSTANT_COLOR_TYPE.BLACK_ALPHA_WHITE:
+						case CONSTANT_COLOR_TYPE.WHITE:
+						case CONSTANT_COLOR_TYPE.INVALID:
+						case CONSTANT_COLOR_TYPE.DEFAULT:
+							return true;
+						case CONSTANT_COLOR_TYPE.CUSTOM:
+							return	Math.Abs( a.m_customConstantColor.x - b.m_customConstantColor.x ) < 1e-3f
+								&&	Math.Abs( a.m_customConstantColor.y - b.m_customConstantColor.y ) < 1e-3f
+								&&	Math.Abs( a.m_customConstantColor.z - b.m_customConstantColor.z ) < 1e-3f
+								&&	Math.Abs( a.m_customConstantColor.w - b.m_customConstantColor.w ) < 1e-3f;
+
+						case CONSTANT_COLOR_TYPE.TEXTURE:
+							if ( a.m_textureFileInfo != null ) {
+								return a.m_textureFileInfo == b.m_textureFileInfo;
+							}
+							return a.m_name.ToLower() == b.m_name.ToLower();
+					}
+
+					throw new Exception( "Unhandled case!" );
+				}
+				public static bool	operator!=( Texture a, Texture b ) {
+					return !(a == b);	// Don't want to bother! :D
+				}
+				public override bool Equals(object obj) {
+					return base.Equals(obj);
+				}
+				public override int GetHashCode() {
+					return base.GetHashCode();
+				}
+
 				#region Serialization
 
 				public void	Write( BinaryWriter W ) {
+					W.Write( m_rawTextureLine );
 					W.Write( m_name );
 					W.Write( m_fileName != null ? m_fileName.FullName : "" );	// Can be null when using ipr_constantColor
 					W.Write( m_error != null ? m_error.Message : "" );
@@ -345,6 +409,7 @@ namespace MaterialsOptimizer
 				}
 
 				public void	Read( BinaryReader R ) {
+					m_rawTextureLine = R.ReadString();
 					m_name = R.ReadString();
 					string	fileName = R.ReadString();
 					m_fileName = fileName != string.Empty ? new FileInfo( fileName ) : null;
@@ -358,6 +423,14 @@ namespace MaterialsOptimizer
 				}
 
 				#endregion
+
+				public string	Export() {
+					return m_rawTextureLine;
+// 					switch ( m_constantColorType ) {
+// 						case CONSTANT_COLOR_TYPE.TEXTURE:
+// 							return 
+// 					}
+				}
 			}
 
 			public enum		UV_SET {
@@ -370,11 +443,14 @@ namespace MaterialsOptimizer
 				REUSE_LAYER1,	// Only available for layer 2
 			}
 			public enum		MASKING_MODE {
-				NONE,
 				VERTEX_COLOR,
 				MASK_MAP,
 				MASK_MAP_AND_VERTEX_COLOR,
 			}
+
+			#endregion
+
+			public int			m_index = 0;
 
 			public Texture		m_diffuse = null;
 			public REUSE_MODE	m_diffuseReUse = REUSE_MODE.DONT_REUSE;
@@ -388,7 +464,7 @@ namespace MaterialsOptimizer
 			public REUSE_MODE	m_specularReUse = REUSE_MODE.DONT_REUSE;
 			public Texture		m_specular = null;	// Special specular map!
 
-			public MASKING_MODE	m_maskingMode = MASKING_MODE.NONE;
+			public MASKING_MODE	m_maskingMode = MASKING_MODE.VERTEX_COLOR;
 			public Texture		m_mask = null;				// Layer mask
 			public REUSE_MODE	m_maskReUse = REUSE_MODE.DONT_REUSE;
 
@@ -432,10 +508,12 @@ namespace MaterialsOptimizer
 				m_maskUVOffset.Set( SB.z, SB.w );
 			}
 
-			public Layer() {
+			public Layer( int _index ) {
+				m_index = _index;
 			}
 
-			public Layer( BinaryReader R ) {
+			public Layer( int _index, BinaryReader R ) {
+				m_index = _index;
 				Read( R );
 			}
 
@@ -466,6 +544,28 @@ namespace MaterialsOptimizer
 				if ( Math.Abs( m_UVScale.x - _other.m_UVScale.x ) > 1e-3f )
 					return false;
 				if ( Math.Abs( m_UVScale.y - _other.m_UVScale.y ) > 1e-3f )
+					return false;
+
+				return true;
+			}
+
+			/// <summary>
+			/// Checks the UV sets and the tiling/offsets are the same
+			/// </summary>
+			/// <param name="_other"></param>
+			/// <returns></returns>
+			public bool		SameMaskUVs( Layer _other ) {
+				if ( m_maskUVSet != _other.m_maskUVSet )
+					return false;
+
+				if ( Math.Abs( m_maskUVOffset.x - _other.m_maskUVOffset.x ) > 1e-3f )
+					return false;
+				if ( Math.Abs( m_maskUVOffset.y - _other.m_maskUVOffset.y ) > 1e-3f )
+					return false;
+
+				if ( Math.Abs( m_maskUVScale.x - _other.m_maskUVScale.x ) > 1e-3f )
+					return false;
+				if ( Math.Abs( m_maskUVScale.y - _other.m_maskUVScale.y ) > 1e-3f )
 					return false;
 
 				return true;
@@ -591,6 +691,49 @@ namespace MaterialsOptimizer
 
 			#endregion
 
+			#region Export
+
+			public void		Export( StringWriter W, string T, string _layerPrefix, Options _options ) {
+
+				string	regularTexturesPrefix = m_index > 0 ? _layerPrefix : "";
+
+				if ( m_diffuse != null )
+					W.WriteLine( T + regularTexturesPrefix + "diffusemap	" + m_diffuse.Export() );
+				if ( _options.m_hasNormal && m_normal != null )
+					W.WriteLine( T + regularTexturesPrefix + "bumpmap	" + m_normal.Export() );
+				if ( _options.m_hasGloss && m_gloss != null )
+					W.WriteLine( T + regularTexturesPrefix + "glossmap	" + m_gloss.Export() );
+				if ( _options.m_hasMetal && m_metal != null )
+					W.WriteLine( T + regularTexturesPrefix + "metallicmap	" + m_metal.Export() );
+				if ( _options.m_hasEmissive && m_emissive != null )
+					W.WriteLine( T + regularTexturesPrefix + "emissivemap	" + m_emissive.Export() );
+				if ( _options.m_hasSpecular && m_specular != null )
+					W.WriteLine( T + regularTexturesPrefix + "specularmap	" + m_specular.Export() );
+
+				// Write scale/offset
+				W.WriteLine( T + _layerPrefix + "scalebias	{ " + m_UVScale.x + ", " + m_UVScale.y + ", " + m_UVOffset.x + ", " + m_UVOffset.y + " }" );
+
+				// Masks
+				if ( m_maskingMode != MASKING_MODE.VERTEX_COLOR && m_mask != null ) {
+					W.WriteLine( T + _layerPrefix + "maskmap	" + m_mask.Export() );
+					W.WriteLine( T + _layerPrefix + "maskscalebias	{ " + m_maskUVScale.x + ", " + m_maskUVScale.y + ", " + m_maskUVOffset.x + ", " + m_maskUVOffset.y + " }" );
+				}
+
+				// Layer 0-only maps
+				if ( _options.m_hasOcclusionMap && m_AO != null ) {
+					W.WriteLine( T + "occlusionmap	" + m_AO.Export() );				// <= At the moment, only layer 0 should write AO, it's an error to write AO for more than 1 layer!
+					if ( m_index > 0 )
+						throw new Exception( "A material shouldn't be writing an AO map for other layers than layer 0!" );
+				}
+				if ( _options.m_translucencyEnabled && !_options.m_translucencyUseVertexColor && m_translucency != null ) {
+					W.WriteLine( T + "translucencymap	" + m_translucency.Export() );	// <= At the moment, only layer 0 should write translucency, it's an error to write translucency for more than 1 layer!
+					if ( m_index > 0 )
+						throw new Exception( "A material shouldn't be writing an AO map for other layers than layer 0!" );
+				}
+			}
+
+			#endregion
+
 			#region Analysis
 
 			/// <summary>
@@ -644,27 +787,139 @@ namespace MaterialsOptimizer
 
 				if ( _texture0 == null ) {
 					if ( _reUseMode0 == REUSE_MODE.DONT_REUSE )
-						m_errors += T + "• " + _textureName0 + " is not provided wheras " + _textureName1 + " is specified and re-use mode is " + _reUseMode0 + "\n";
+						m_errors += T + "• " + _textureName0 + " is not provided whereas " + _textureName1 + " is specified and re-use mode is " + _reUseMode0 + "\n";
 					return;
 				} else if ( _texture1 == null ) {
 					if ( _reUseMode1 == REUSE_MODE.DONT_REUSE  )
-						_layer1.m_errors += T + "• " + _textureName1 + " is not provided wheras " + _textureName0 + " is specified and re-use mode is " + _reUseMode0 + "\n";
+						_layer1.m_errors += T + "• " + _textureName1 + " is not provided whereas " + _textureName0 + " is specified and re-use mode is " + _reUseMode0 + "\n";
 					return;
 				}
 
 				// At this point we know both textures are set
 				if ( _reUseMode0 != REUSE_MODE.DONT_REUSE )
-					m_warnings += T + "• " + _textureName0 + " is provided (\"" + _texture0.m_name + "\") wheras re-use mode is specified. It's not optimal, you should remove the texture...\n";
+					m_warnings += T + "• " + _textureName0 + " is provided (\"" + _texture0.m_name + "\") whereas re-use mode is specified. It's not optimal, you should remove the texture...\n";
 				if ( _reUseMode1 != REUSE_MODE.DONT_REUSE )
-					_layer1.m_warnings += T + "• " + _textureName1 + " is provided (\"" + _texture1.m_name + "\")  wheras re-use mode is specified. It's not optimal, you should remove the texture...\n";
+					_layer1.m_warnings += T + "• " + _textureName1 + " is provided (\"" + _texture1.m_name + "\")  whereas re-use mode is specified. It's not optimal, you should remove the texture...\n";
 
 				if ( _reUseMode0 == REUSE_MODE.DONT_REUSE && _reUseMode1 == REUSE_MODE.DONT_REUSE ) {
 					// Check if both textures are the same
-					if ( _texture0.m_name.ToLower() == _texture1.m_name.ToLower() ) {
+					if ( _texture0 == _texture1 ) {
 						// Check if UV sets and tiling is the same
 						if ( SameUVs( _layer1 ) ) 
 							m_errors += T + "• " + _textureName0 + " and " + _textureName1 + " are identical and use the same UV sets, tiling and offsets! Consider re-using other layer texture instead!\n";
 					}
+				}
+			}
+
+			#endregion
+
+			#region Optimization
+
+			public void	CleanUp( List< Layer > _layers, Options _options, ref int _removedTexturesCount, ref int _missingTexturesReplacedCount, ref int _reUseOptionsSetCount ) {
+				// Cleanup textures that are present although the option is not set
+				if ( !_options.m_hasNormal && m_normal != null ) {
+					m_normal = null;
+					_removedTexturesCount++;
+				}
+				if ( !_options.m_hasGloss && m_gloss != null ) {
+					m_gloss = null;
+					_removedTexturesCount++;
+				}
+				if ( !_options.m_hasMetal && m_metal != null ) {
+					m_metal = null;
+					_removedTexturesCount++;
+				}
+				if ( !_options.m_hasEmissive && m_emissive != null ) {
+					m_emissive = null;
+					_removedTexturesCount++;
+				}
+				if ( !_options.m_hasSpecular && m_specular != null ) {
+					m_specular = null;
+					_removedTexturesCount++;
+				}
+
+				// Patch missing textures
+				if ( m_diffuse == null && m_diffuseReUse == REUSE_MODE.DONT_REUSE ) {
+					m_diffuse = new Texture( "_invalid" );
+					_missingTexturesReplacedCount++;
+				}
+				if ( _options.m_hasNormal && m_normal == null && m_normalReUse == REUSE_MODE.DONT_REUSE ) {
+					m_normal = new Texture( "ipr_constantcolor( 0.5, 0.5, 0, 0 )" );
+					_missingTexturesReplacedCount++;
+				}
+				if ( _options.m_hasGloss && m_gloss == null && m_glossReUse == REUSE_MODE.DONT_REUSE ) {
+					m_gloss = new Texture( "_white" );
+					_missingTexturesReplacedCount++;
+				}
+				if ( _options.m_hasMetal && m_metal == null && m_metalReUse == REUSE_MODE.DONT_REUSE ) {
+					m_metal = new Texture( "_white" );
+					_missingTexturesReplacedCount++;
+				}
+				if ( _options.m_hasEmissive && m_emissive == null ) {
+					m_emissive = new Texture( "_invalid" );
+					_missingTexturesReplacedCount++;
+				}
+				if ( _options.m_hasSpecular && m_specular == null && m_specularReUse == REUSE_MODE.DONT_REUSE ) {
+					m_specular = new Texture( "_invalid" );
+					_missingTexturesReplacedCount++;
+				}
+
+				// Apply re-use options whenever a texture is identical from the previous layer
+				for ( int previousLayerIndex=0; previousLayerIndex < m_index; previousLayerIndex++ ) {
+					Layer		previousLayer = _layers[previousLayerIndex];
+					REUSE_MODE	previousLayerReUseMode = REUSE_MODE.DONT_REUSE;
+					switch ( previousLayerIndex ) {
+						case 0: previousLayerReUseMode = REUSE_MODE.REUSE_LAYER0; break;
+						case 1: previousLayerReUseMode = REUSE_MODE.REUSE_LAYER1; break;
+					}
+
+					if ( previousLayer.SameUVs( previousLayer ) ) {
+						// Can re-use some textures?
+						if ( m_diffuse != null && previousLayer.m_diffuse != null && m_diffuseReUse == REUSE_MODE.DONT_REUSE && previousLayer.m_diffuseReUse == REUSE_MODE.DONT_REUSE ) {
+							if ( m_diffuse == previousLayer.m_diffuse ) {
+								m_diffuseReUse = previousLayerReUseMode;
+								m_diffuse = null;
+								_reUseOptionsSetCount++;
+								_removedTexturesCount++;
+							}
+						}
+						if ( m_normal != null && previousLayer.m_normal != null && m_normalReUse == REUSE_MODE.DONT_REUSE && previousLayer.m_normalReUse == REUSE_MODE.DONT_REUSE ) {
+							if ( m_normal == previousLayer.m_normal ) {
+								m_normalReUse = previousLayerReUseMode;
+								m_normal = null;
+								_reUseOptionsSetCount++;
+								_removedTexturesCount++;
+							}
+						}
+						if ( m_gloss != null && previousLayer.m_gloss != null && m_glossReUse == REUSE_MODE.DONT_REUSE && previousLayer.m_glossReUse == REUSE_MODE.DONT_REUSE ) {
+							if ( m_gloss == previousLayer.m_gloss ) {
+								m_glossReUse = previousLayerReUseMode;
+								m_gloss = null;
+								_reUseOptionsSetCount++;
+								_removedTexturesCount++;
+							}
+						}
+						if ( m_metal != null && previousLayer.m_metal != null && m_metalReUse == REUSE_MODE.DONT_REUSE && previousLayer.m_metalReUse == REUSE_MODE.DONT_REUSE ) {
+							if ( m_metal == previousLayer.m_metal ) {
+								m_metalReUse = previousLayerReUseMode;
+								m_metal = null;
+								_reUseOptionsSetCount++;
+								_removedTexturesCount++;
+							}
+						}
+						if ( m_specular != null && previousLayer.m_specular != null && m_specularReUse == REUSE_MODE.DONT_REUSE && previousLayer.m_specularReUse == REUSE_MODE.DONT_REUSE ) {
+							if ( m_specular == previousLayer.m_specular ) {
+								m_specularReUse = previousLayerReUseMode;
+								m_specular = null;
+								_reUseOptionsSetCount++;
+								_removedTexturesCount++;
+							}
+						}
+					}
+
+// 					if ( previousLayer.SameMaskUVs( previousLayer ) ) {
+// 
+// 					}
 				}
 			}
 
@@ -720,6 +975,9 @@ namespace MaterialsOptimizer
 		public int				LayersCount {
 			get { return 1+m_options.m_extraLayers; }
 		}
+		public int				SafeLayersCount {
+			get { return Math.Min( LayersCount, m_layers.Count ); }
+		}
 
 		public bool				HasErrors {
 			get {
@@ -755,8 +1013,7 @@ namespace MaterialsOptimizer
 				if ( m_errors != null && m_errors != "" ) {
 					R += "General errors:\n" + m_errors + "\n\n";
 				}
-				int	layersCount = Math.Min( LayersCount, m_layers.Count );
-				for ( int layerIndex=0; layerIndex < layersCount; layerIndex++ ) {
+				for ( int layerIndex=0; layerIndex < SafeLayersCount; layerIndex++ ) {
 					Layer	L = m_layers[layerIndex];
 					if ( L.m_errors != null && L.m_errors != "" ) {
 						R += "Layer " + layerIndex + " errors:\n" + L.m_errors + "\n\n";
@@ -786,7 +1043,7 @@ namespace MaterialsOptimizer
 				if ( m_warnings != null && m_warnings != "" ) {
 					R += "General warnings:\n" + m_warnings + "\n\n";
 				}
-				for ( int layerIndex=0; layerIndex < LayersCount; layerIndex++ ) {
+				for ( int layerIndex=0; layerIndex < SafeLayersCount; layerIndex++ ) {
 					Layer	L = m_layers[layerIndex];
 					if ( L.m_warnings != null && L.m_warnings != "" ) {
 						R += "Layer " + layerIndex + " warnings:\n" + L.m_warnings + "\n\n";
@@ -807,7 +1064,7 @@ namespace MaterialsOptimizer
 		private Layer			Layer1 {
 			get {
 				if ( m_layers.Count < 2 )
-					m_layers.Add( new Layer() );
+					m_layers.Add( new Layer( 1 ) );
 				return m_layers[1];
 			}
 		}
@@ -816,8 +1073,8 @@ namespace MaterialsOptimizer
 			get {
 				if ( m_layers.Count < 3 ) {
 					if ( m_layers.Count < 2 )
-						m_layers.Add( new Layer() );
-					m_layers.Add( new Layer() );
+						m_layers.Add( new Layer( 1 ) );
+					m_layers.Add( new Layer( 2 ) );
 				}
 				return m_layers[2];
 			}
@@ -828,7 +1085,7 @@ namespace MaterialsOptimizer
 		public Material( FileInfo _sourceFileName, string _name, string _content ) {
 			m_sourceFileName = _sourceFileName;
 			m_name = _name;
-			m_layers.Add( new Layer() );	// We always have at least 1 layer
+			m_layers.Add( new Layer( 0 ) );	// We always have at least 1 layer
 			Parse( _content );
 		}
 		public Material( BinaryReader R ) {
@@ -850,10 +1107,10 @@ namespace MaterialsOptimizer
 			}
 
 			if ( m_errors != null && m_errors != "" ) {
-				R += "\nErrors:\n-----------\n" + m_errors;
+				R += "\nGeneral Errors:\n----------------------\n" + m_errors;
 			}
 			if ( m_warnings != null && m_warnings != "" ) {
-				R += "\nWarnings:\n-----------\n" + m_warnings;
+				R += "\nGeneral Warnings:\n----------------------\n" + m_warnings;
 			}
 
 			return R;
@@ -980,8 +1237,10 @@ namespace MaterialsOptimizer
 						break;
 
 					default:
-						CheckSafeTokens( token );
-						RecordUnknownVariable( token, P );
+						if ( CheckSafeTokens( token ) )
+							RecordUnknownVariable( token, P );
+						else
+							RecordForbiddenVariable( token, P );
 						break;
 				}
 			}
@@ -1033,7 +1292,7 @@ namespace MaterialsOptimizer
 						case "ismasking":					m_options.m_isMasking = value != 0; break;
 						case "hasbumpmap":					m_options.m_hasNormal = value != 0; break;
 						case "hasspecularmap":				m_options.m_hasSpecular = value != 0; break;
-						case "hasOcclusionMap":				m_options.m_hasOcclusionMap = value != 0; break;
+						case "hasocclusionMap":				m_options.m_hasOcclusionMap = value != 0; break;
 						case "hasglossmap":					m_options.m_hasGloss = value != 0; break;
 						case "hasmetallicmap":				m_options.m_hasMetal = value != 0; break;
 						case "hasemissivemap":				m_options.m_hasEmissive = value != 0; break;
@@ -1103,6 +1362,13 @@ namespace MaterialsOptimizer
 								default: throw new Exception( "Unsupported re-use mode!" );
 							}
 							break;
+						case "layer1_bumpreuselayer":
+							switch ( value ) {
+								case 0:	Layer1.m_normalReUse = Layer.REUSE_MODE.DONT_REUSE; break;
+								case 1:	Layer1.m_normalReUse = Layer.REUSE_MODE.REUSE_LAYER0; break;
+								default: throw new Exception( "Unsupported re-use mode!" );
+							}
+							break;
 						case "layer1_glossreuselayer":
 							switch ( value ) {
 								case 0:	Layer1.m_glossReUse = Layer.REUSE_MODE.DONT_REUSE; break;
@@ -1157,16 +1423,24 @@ namespace MaterialsOptimizer
 							break;
 						case "layer2_diffusereuselayer":
 							switch ( value ) {
-								case 0:	Layer1.m_diffuseReUse = Layer.REUSE_MODE.DONT_REUSE; break;
-								case 1:	Layer1.m_diffuseReUse = Layer.REUSE_MODE.REUSE_LAYER0; break;
+								case 0:	Layer2.m_diffuseReUse = Layer.REUSE_MODE.DONT_REUSE; break;
+								case 1:	Layer2.m_diffuseReUse = Layer.REUSE_MODE.REUSE_LAYER0; break;
 								case 2:	Layer2.m_diffuseReUse = Layer.REUSE_MODE.REUSE_LAYER1; break;
+								default: throw new Exception( "Unsupported re-use mode!" );
+							}
+							break;
+						case "layer2_bumpreuselayer":
+							switch ( value ) {
+								case 0:	Layer2.m_normalReUse = Layer.REUSE_MODE.DONT_REUSE; break;
+								case 1:	Layer2.m_normalReUse = Layer.REUSE_MODE.REUSE_LAYER0; break;
+								case 2:	Layer2.m_normalReUse = Layer.REUSE_MODE.REUSE_LAYER1; break;
 								default: throw new Exception( "Unsupported re-use mode!" );
 							}
 							break;
 						case "layer2_glossreuselayer":
 							switch ( value ) {
-								case 0:	Layer1.m_glossReUse = Layer.REUSE_MODE.DONT_REUSE; break;
-								case 1:	Layer1.m_glossReUse = Layer.REUSE_MODE.REUSE_LAYER0; break;
+								case 0:	Layer2.m_glossReUse = Layer.REUSE_MODE.DONT_REUSE; break;
+								case 1:	Layer2.m_glossReUse = Layer.REUSE_MODE.REUSE_LAYER0; break;
 								case 2:	Layer2.m_glossReUse = Layer.REUSE_MODE.REUSE_LAYER1; break;
 								default: throw new Exception( "Unsupported re-use mode!" );
 							}
@@ -1175,13 +1449,14 @@ namespace MaterialsOptimizer
 							switch ( value ) {
 								case 0:	Layer2.m_specularReUse = Layer.REUSE_MODE.DONT_REUSE; break;
 								case 1:	Layer2.m_specularReUse = Layer.REUSE_MODE.REUSE_LAYER0; break;
+								case 2:	Layer2.m_specularReUse = Layer.REUSE_MODE.REUSE_LAYER1; break;
 								default: throw new Exception( "Unsupported re-use mode!" );
 							}
 							break;
 						case "layer2_metallicreuselayer":
 							switch ( value ) {
-								case 0:	Layer1.m_metalReUse = Layer.REUSE_MODE.DONT_REUSE; break;
-								case 1:	Layer1.m_metalReUse = Layer.REUSE_MODE.REUSE_LAYER0; break;
+								case 0:	Layer2.m_metalReUse = Layer.REUSE_MODE.DONT_REUSE; break;
+								case 1:	Layer2.m_metalReUse = Layer.REUSE_MODE.REUSE_LAYER0; break;
 								case 2:	Layer2.m_metalReUse = Layer.REUSE_MODE.REUSE_LAYER1; break;
 								default: throw new Exception( "Unsupported re-use mode!" );
 							}
@@ -1230,7 +1505,12 @@ namespace MaterialsOptimizer
 			string	record = _token + "\t" + P.ReadToEOL();
 			m_unknownVariables.Add( record );
 		}
-	
+
+		void	RecordForbiddenVariable( string _token, Parser P ) {
+			string	record = _token + "\t" + P.ReadToEOL();
+			m_forbiddenParms.Add( record );
+		}
+
 		void	RecordSingleLineCommentVariable( string _token, Parser P ) {
 			string	record = _token + P.ReadToEOL();
 			m_unknownVariables.Add( record );
@@ -1243,9 +1523,9 @@ namespace MaterialsOptimizer
 	
 		#region Tokens Checking
 
-		void	CheckSafeTokens( string token ) {
+		bool	CheckSafeTokens( string token ) {
 			if ( m_programs.m_type != Programs.KNOWN_TYPES.DEFAULT )
-				return;	// Don't care about other programs than arkDefault
+				return true;	// Don't care about other programs than arkDefault
 
 			string[]	recognizedStrings = new string[] {
 				"darkvisionprogram",
@@ -1382,19 +1662,19 @@ namespace MaterialsOptimizer
 			};
 			token = token.ToLower();
 			if ( token.StartsWith( "//" ) )
-				return;
+				return true;
 			if ( token.StartsWith( "materialeffects" ) )
-				return;
+				return true;
 			if ( token.StartsWith( "decal" ) )
-				return;
+				return true;
 			if ( token.StartsWith( "fx/" ) )
-				return;
+				return true;
 
 			//////////////////////////////////////////////////////////////////////////
 			// Check okay tokens
 			foreach ( string recognizedString in recognizedStrings ) {
 				if ( recognizedString.ToLower() == token )
-					return;	// Okay!
+					return true;	// Okay!
 			}
 
 			//////////////////////////////////////////////////////////////////////////
@@ -1418,8 +1698,7 @@ namespace MaterialsOptimizer
 			};
 			foreach ( string forbiddenParm in forbiddenParms ) {
 				if ( forbiddenParm.ToLower() == token ) {
-					m_forbiddenParms.Add( token );
-					return;
+					return false;
 				}
 			}
 
@@ -1443,7 +1722,7 @@ namespace MaterialsOptimizer
 			foreach ( string vegetationParm in vegetationRelatedParms ) {
 				if ( vegetationParm.ToLower() == token ) {
 					m_isUsingVegetationParms = true;
-					return;
+					return true;
 				}
 			}
 
@@ -1457,7 +1736,7 @@ namespace MaterialsOptimizer
 			foreach ( string cloudParm in cloudRelatedParms ) {
 				if ( cloudParm.ToLower() == token ) {
 					m_isUsingCloudParms = true;
-					return;
+					return true;
 				}
 			}
 
@@ -1500,13 +1779,14 @@ namespace MaterialsOptimizer
 			foreach ( string waterParm in waterRelatedParms ) {
 				if ( waterParm.ToLower() == token ) {
 					m_isUsingWaterParms = true;
-					return;
+					return true;
 				}
 			}
 
 // 			int	glou = 0;
 // 			glou++;
-			throw new Exception( "Unrecognized token \"" + token + "\"!" );
+//			throw new Exception( "Unrecognized token \"" + token + "\"!" );
+			return true;
 		}
 
 		void	CheckSafeOptionsTokens( string token, int value ) {
@@ -1597,7 +1877,7 @@ namespace MaterialsOptimizer
 			m_layers.Clear();
 			int	layersCount = R.ReadInt32();
 			for ( int layerIndex=0; layerIndex < layersCount; layerIndex++ ) {
-				m_layers.Add( new Layer( R ) );
+				m_layers.Add( new Layer( layerIndex, R ) );
 			}
 
 			m_height = R.ReadBoolean() ? new Layer.Texture( R ) : null;
@@ -1655,8 +1935,54 @@ namespace MaterialsOptimizer
 		/// <summary>
 		/// This function cleans the material from automatically recoverable errors and warnings
 		/// </summary>
-		public void		CleanUp( ) {
+		public void		CleanUp( ref int _clearedOptionsCount, ref int _removedTexturesCount, ref int _missingTexturesReplacedCount, ref int _reUseOptionsSetCount ) {
 
+			// Check gloss/metal ranges to know if textures are useful
+			bool	emptyGlossRange = Math.Abs( m_glossMinMax.y - m_glossMinMax.x ) < 1e-3f;
+			bool	emptyMetalRange = Math.Abs( m_metallicMinMax.y - m_metallicMinMax.x ) < 1e-3f;
+
+			// Clear options
+			if ( emptyGlossRange && m_options.m_hasGloss ) {
+				m_options.m_hasGloss = false;
+				_clearedOptionsCount++;
+			}
+			if ( emptyMetalRange && m_options.m_hasMetal ) {
+				m_options.m_hasMetal = false;
+				_clearedOptionsCount++;
+			}
+
+			// Cleanup layers
+			foreach ( Layer L in m_layers ) {
+				L.CleanUp( m_layers, m_options, ref _removedTexturesCount, ref _missingTexturesReplacedCount, ref _reUseOptionsSetCount );
+			}
+
+			// Remove forbidden parms
+			m_forbiddenParms.Clear();
+
+			// Remove standard comments
+			string[]	annoyingComments =  new string[] {
+				"// bumpmap",
+				"// specularmap",
+				"// //specularmap",
+				"// glossmap",
+				"// metallicmap",
+			};
+			string[]	sourceUnknownVariables = m_unknownVariables.ToArray();
+			m_unknownVariables.Clear();
+			foreach ( string unknownVariable in sourceUnknownVariables ) {
+				string	trimmed = unknownVariable.Trim().ToLower();
+				bool	skip = false;
+				foreach ( string annoyingComment in annoyingComments ) {
+					if ( trimmed.StartsWith( annoyingComment ) ) {
+						// Found a recognized comment we want to clean up
+						skip = true;
+						break;
+					}
+				}
+
+				if ( !skip )
+					m_unknownVariables.Add( unknownVariable );	// Okay, we can re-add the variable...
+			}
 		}
 
 		#endregion
@@ -1669,7 +1995,7 @@ namespace MaterialsOptimizer
 		/// <param name="W"></param>
 		public void	Export( StringWriter W ) {
 			string	T = "\t";
-			W.WriteLine( "material " + m_name + "{" );
+			W.WriteLine( "material " + m_name + " {" );
 
 			if ( m_version >= 0 )
 				W.WriteLine( T + "version	" + m_version );
@@ -1688,21 +2014,39 @@ namespace MaterialsOptimizer
 			W.WriteLine( T + "}" );
 
 			// Write options
-			W.WriteLine( T + "state {" );
+			W.WriteLine( T + "options {" );
 			m_options.Export( W, T, m_layers );
 			W.WriteLine( T + "}" );
 
+			// Write programs
+			W.WriteLine();
+			m_programs.Export( W, T );
+
 			// Write regular variables
-//			int	layersCount = 
-// 		// Textures
-// 		public List< Layer >	m_layers = new List< Layer >();
-// 		public Layer.Texture	m_height = null;	// Special height map!
-// 		public Layer.Texture	m_lightMap = null;	// Special light map for vista!
-// 
-// 		// Main variables
-// 		public string			m_physicsMaterial = null;
-// 		public float2			m_glossMinMax = new float2( 0.0f, 0.5f );
-// 		public float2			m_metallicMinMax = new float2( 0.0f, 0.5f );
+			W.WriteLine();
+			W.WriteLine( T + "wardroughness	{ " + m_glossMinMax.x + ", " + m_glossMinMax.y + " }" );
+			W.WriteLine( T + "metallicminmax	{ " + m_metallicMinMax.x + ", " + m_metallicMinMax.y + " }" );
+
+			if ( m_height != null )
+				W.WriteLine( T + "heightmap	" + m_height.Export() );
+			if ( m_lightMap != null )
+				W.WriteLine( T + "lightmap	" + m_lightMap.Export() );
+
+			// Write variables from layers
+			for ( int layerIndex=0; layerIndex < SafeLayersCount; layerIndex++ ) {
+				Layer	L = m_layers[layerIndex];
+
+				string	layerPrefix = null;
+				switch ( layerIndex ) {
+					case 0: layerPrefix = "layer0_"; break;
+					case 1: layerPrefix = "layer1_"; break;
+					case 2: layerPrefix = "layer2_"; break;
+				}
+
+				L.Export( W, T, layerPrefix, m_options );
+				if ( layerIndex < SafeLayersCount-1 )
+					W.WriteLine();
+			}
 
 			// Write unknown variables
 			foreach ( string unknownVariable in m_unknownVariables )

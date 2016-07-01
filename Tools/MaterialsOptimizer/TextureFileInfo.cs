@@ -24,7 +24,7 @@ namespace MaterialsOptimizer
 			UNKNOWN,
 			DIFFUSE,		// _d
 			NORMAL,			// _n
-			GLOSS,			// _g, _g1
+			GLOSS,			// _r, _g, _g1, etc.
 			METAL,			// _mt
 			MASK,			// _m, _o
 			MASK_BAD_SUFFIX,// _mask	<= They're using it a lot but it makes a BC7-encoded image!!
@@ -62,7 +62,7 @@ namespace MaterialsOptimizer
 					case USAGE.GLOSS:			return 1;
 					case USAGE.METAL:			return 1;
 					case USAGE.MASK:			return 1;
-					case USAGE.MASK_BAD_SUFFIX:	return 4;
+					case USAGE.MASK_BAD_SUFFIX:	return 1;
 					case USAGE.EMISSIVE:		return 4;
 					case USAGE.AO:				return 1;
 					case USAGE.HEIGHT:			return 1;
@@ -164,6 +164,7 @@ namespace MaterialsOptimizer
 					return USAGE.DIFFUSE;
 				case "_n": return USAGE.NORMAL;
 				case "_g":
+				case "_r":	// Old but can be encountered...
 				case "_g1":
 				case "_g2":
 				case "_g3":

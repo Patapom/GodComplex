@@ -468,9 +468,9 @@ namespace MaterialsOptimizer
 
 		#region Materials Parsing
 
-		void	RecurseParseMaterials( DirectoryInfo _directory ) {
+		void	RecurseParseMaterials( DirectoryInfo _directory, ProgressBar _progress ) {
 
-			progressBarMaterials.Visible = true;
+			_progress.Visible = true;
 
 			m_materials.Clear();
 			m_materialErrors.Clear();
@@ -479,7 +479,7 @@ namespace MaterialsOptimizer
 			int			materialIndex = 0;
 			foreach ( FileInfo materialFileName in materialFileNames ) {
 
-				progressBarMaterials.Value = (++materialIndex * progressBarMaterials.Maximum) / materialFileNames.Length;
+				_progress.Value = (++materialIndex * _progress.Maximum) / materialFileNames.Length;
 
 				try {
 					ParseMaterialFile( materialFileName );
@@ -490,7 +490,7 @@ namespace MaterialsOptimizer
 				}
 			}
 
-			progressBarMaterials.Visible = false;
+			_progress.Visible = false;
 		}
 
 		void	ParseMaterialFile( FileInfo _fileName ) {
@@ -598,7 +598,7 @@ namespace MaterialsOptimizer
 
 					// Check layers count is consistent
 				if ( M.m_layers.Count != 1+M.m_options.m_extraLayers )
-					M.m_warnings += T + "• Options specify extraLayer=" + M.m_options.m_extraLayers + " but found parameters involving " + M.m_layers.Count + " layers! Either adjust extra layers count or remove surnumerary layer parameters... (this doesn't have an impact on performance anyway)\n";
+					M.m_warnings += T + "• Options specify extraLayer=" + M.m_options.m_extraLayers + " but found parameters implying " + M.m_layers.Count + " layers! Either adjust extra layers count or remove surnumerary layer parameters... (this doesn't have an impact on performance anyway)\n";
 
 					// Check default-valued gloss/metal parms => means the material is not correctly initialized by the user
 				if ( M.m_options.m_hasGloss && Math.Abs( M.m_glossMinMax.x - 0.0f ) < 1e-3f && Math.Abs( M.m_glossMinMax.y - 0.5f ) < 1e-3f ) {
@@ -657,17 +657,18 @@ namespace MaterialsOptimizer
 					Material.Layer	L = M.m_layers[layerIndex];
 
 					if ( L.m_mask != null && L.m_mask.m_textureFileInfo != null && L.m_mask.m_textureFileInfo.m_usage == TextureFileInfo.USAGE.MASK_BAD_SUFFIX ) {
-						L.m_errors += T + "• Mask texture uses the bad suffix \"_mask\" instead of the correct \"_m\" suffix: a heavy 4-channels BC7 texture will be created instead of a regular single channel texture!\n";
-						L.RaiseErrorLevel( Material.ERROR_LEVEL.DANGEROUS );
+// 						L.m_errors += T + "• Mask texture uses the bad suffix \"_mask\" instead of the correct \"_m\" suffix: a heavy 4-channels BC7 texture will be created instead of a regular single channel texture!\n";
+// 						L.RaiseErrorLevel( Material.ERROR_LEVEL.DANGEROUS );
+						L.m_warnings += T + "• Mask texture uses the bad suffix \"_mask\" instead of the correct \"_m\" suffix: an automatic conversion from sRGB to linear will occur and you may lose some precision!\n";
 					}
 
 					// Check textures exist
-					L.CheckTexture( L.m_diffuse, true, Material.Layer.REUSE_MODE.DONT_REUSE, T, "diffuse", 4 );
+					L.CheckTexture( L.m_diffuse, true, L.m_diffuseReUse, T, "diffuse", 4 );
 					L.CheckTexture( L.m_normal, M.m_options.m_hasNormal, L.m_normalReUse, T, "normal", 2 );
 					L.CheckTexture( L.m_gloss, M.m_options.m_hasGloss, L.m_glossReUse, T, "gloss", 1 );
 					L.CheckTexture( L.m_metal, M.m_options.m_hasMetal, L.m_metalReUse, T, "metal", 1 );
 					L.CheckTexture( L.m_specular, M.m_options.m_hasSpecular, L.m_specularReUse, T, "specular", 4 );
-					L.CheckTexture( L.m_mask, L.m_maskingMode != Material.Layer.MASKING_MODE.NONE && L.m_maskingMode != Material.Layer.MASKING_MODE.VERTEX_COLOR, L.m_maskReUse, T, "mask", 1 );
+					L.CheckTexture( L.m_mask, L.m_maskingMode != Material.Layer.MASKING_MODE.VERTEX_COLOR, L.m_maskReUse, T, "mask", 1 );
 					L.CheckTexture( L.m_AO, M.m_options.m_hasOcclusionMap, Material.Layer.REUSE_MODE.DONT_REUSE, T, "AO", 1 );
 					L.CheckTexture( L.m_translucency, M.m_options.m_translucencyEnabled && !M.m_options.m_translucencyUseVertexColor, Material.Layer.REUSE_MODE.DONT_REUSE, T, "translucency", 1 );
 					L.CheckTexture( L.m_emissive, M.m_options.m_hasEmissive, Material.Layer.REUSE_MODE.DONT_REUSE, T, "emissive", 4 );
@@ -726,7 +727,7 @@ namespace MaterialsOptimizer
 			_texture.m_textureFileInfo = TFI;
 		}
 
-		void		SaveMaterialsDatabase( FileInfo _fileName ) {
+		void	SaveMaterialsDatabase( FileInfo _fileName ) {
 			using ( FileStream S = _fileName.Create() )
 				using ( BinaryWriter W = new BinaryWriter( S ) ) {
 					W.Write( m_materials.Count );
@@ -739,7 +740,7 @@ namespace MaterialsOptimizer
 				}
 		}
 
-		void		LoadMaterialsDatabase( FileInfo _fileName ) {
+		void	LoadMaterialsDatabase( FileInfo _fileName ) {
 			m_materials.Clear();
 			m_materialErrors.Clear();
 
@@ -759,10 +760,10 @@ namespace MaterialsOptimizer
 			}
 		}
 
-		void		RebuildMaterialsListView() {
+		void	RebuildMaterialsListView() {
 			RebuildMaterialsListView( null );
 		}
-		void		RebuildMaterialsListView( string _searchFor ) {
+		void	RebuildMaterialsListView( string _searchFor ) {
 
 			// Filter materials
 			List< Material >	filteredMaterials = new List< Material >();
@@ -994,7 +995,7 @@ namespace MaterialsOptimizer
 			ImageUtility.Bitmap.ReadContent = true;
 		}
 
-		void		SaveTexturesDatabase( FileInfo _fileName ) {
+		void	SaveTexturesDatabase( FileInfo _fileName ) {
 			using ( FileStream S = _fileName.Create() )
 				using ( BinaryWriter W = new BinaryWriter( S ) ) {
 					W.Write( m_textures.Count );
@@ -1007,7 +1008,7 @@ namespace MaterialsOptimizer
 				}
 		}
 
-		void		LoadTexturesDatabase( FileInfo _fileName ) {
+		void	LoadTexturesDatabase( FileInfo _fileName ) {
 			m_textures.Clear();
 			m_textureErrors.Clear();
 
@@ -1032,54 +1033,75 @@ namespace MaterialsOptimizer
 			}
 		}
 
-		void		RebuildTexturesListView() {
+		void	RebuildTexturesListView() {
+			RebuildTexturesListView( null );
+		}
+		void	RebuildTexturesListView( string _searchFor ) {
 
 			// Filter textures
 			List< TextureFileInfo >	filteredTextures = new List< TextureFileInfo >();
 			int		texCountPNG = 0;
 			int		texCountTGA = 0;
 			int		texCountOther = 0;
-			bool	skipDiffuse = !checkBoxShowDiffuse.Checked ^ checkBoxInvertFilters.Checked;
-			bool	skipNormal = !checkBoxShowNormal.Checked ^ checkBoxInvertFilters.Checked;
-			bool	skipGloss = !checkBoxShowGloss.Checked ^ checkBoxInvertFilters.Checked;
-			bool	skipMetal = !checkBoxShowMetal.Checked ^ checkBoxInvertFilters.Checked;
-			bool	skipEmissive = !checkBoxShowEmissive.Checked ^ checkBoxInvertFilters.Checked;
-			bool	skipMasks = !checkBoxShowMasks.Checked ^ checkBoxInvertFilters.Checked;
-			bool	skipOther = !checkBoxShowOther.Checked ^ checkBoxInvertFilters.Checked;
-			int		minrefCount = integerTrackbarControlMinRefCount.Value;
-			foreach ( TextureFileInfo TFI in m_textures ) {
-				// Filter by type
-				if ( TFI.m_fileType == TextureFileInfo.FILE_TYPE.TGA ) {
-					texCountTGA++;
-					if ( !checkBoxShowTGA.Checked )
+			if ( _searchFor == null ) {
+				bool	skipDiffuse = !checkBoxShowDiffuse.Checked ^ checkBoxInvertFilters.Checked;
+				bool	skipNormal = !checkBoxShowNormal.Checked ^ checkBoxInvertFilters.Checked;
+				bool	skipGloss = !checkBoxShowGloss.Checked ^ checkBoxInvertFilters.Checked;
+				bool	skipMetal = !checkBoxShowMetal.Checked ^ checkBoxInvertFilters.Checked;
+				bool	skipEmissive = !checkBoxShowEmissive.Checked ^ checkBoxInvertFilters.Checked;
+				bool	skipMasks = !checkBoxShowMasks.Checked ^ checkBoxInvertFilters.Checked;
+				bool	skipOther = !checkBoxShowOther.Checked ^ checkBoxInvertFilters.Checked;
+				int		minRefCount = integerTrackbarControlMinRefCount.Value;
+
+				foreach ( TextureFileInfo TFI in m_textures ) {
+					// Filter by type
+					if ( TFI.m_fileType == TextureFileInfo.FILE_TYPE.TGA ) {
+						texCountTGA++;
+						if ( !checkBoxShowTGA.Checked )
+							continue;
+					} else if ( TFI.m_fileType == TextureFileInfo.FILE_TYPE.PNG ) {
+						texCountPNG++;
+						if ( !checkBoxShowPNG.Checked )
+							continue;
+					} else {
+						texCountOther++;
+						if ( !checkBoxShowOtherFormats.Checked )
+							continue;
+					}
+
+					// Filter by usage
+					bool	skip = false;
+					switch ( TFI.m_usage ) {
+						case TextureFileInfo.USAGE.DIFFUSE: skip = skipDiffuse; break;
+						case TextureFileInfo.USAGE.NORMAL: skip = skipNormal; break;
+						case TextureFileInfo.USAGE.GLOSS: skip = skipGloss; break;
+						case TextureFileInfo.USAGE.METAL: skip = skipMetal; break;
+						case TextureFileInfo.USAGE.EMISSIVE: skip = skipEmissive; break;
+						case TextureFileInfo.USAGE.MASK: skip = skipMasks; break;
+						default: skip = skipOther; break;
+					}
+
+					if ( TFI.m_refCount < minRefCount )
 						continue;
-				} else if ( TFI.m_fileType == TextureFileInfo.FILE_TYPE.PNG ) {
-					texCountPNG++;
-					if ( !checkBoxShowPNG.Checked )
-						continue;
-				} else {
-					texCountOther++;
-					if ( !checkBoxShowOtherFormats.Checked )
-						continue;
+
+					if ( !skip )
+						filteredTextures.Add( TFI );
 				}
-
-				// Filter by usage
-				bool	skip = false;
-				switch ( TFI.m_usage ) {
-					case TextureFileInfo.USAGE.DIFFUSE: skip = skipDiffuse; break;
-					case TextureFileInfo.USAGE.NORMAL: skip = skipNormal; break;
-					case TextureFileInfo.USAGE.GLOSS: skip = skipGloss; break;
-					case TextureFileInfo.USAGE.METAL: skip = skipMetal; break;
-					case TextureFileInfo.USAGE.EMISSIVE: skip = skipEmissive; break;
-					case TextureFileInfo.USAGE.MASK: skip = skipMasks; break;
-					default: skip = skipOther; break;
+			} else {
+				// Search by name
+				_searchFor = _searchFor.ToLower();
+				foreach ( TextureFileInfo TFI in m_textures ) {
+					if ( TFI.m_fileName.FullName.ToLower().IndexOf( _searchFor ) != -1 ) {
+						filteredTextures.Add( TFI );
+						if ( TFI.m_fileType == TextureFileInfo.FILE_TYPE.TGA ) {
+							texCountTGA++;
+						} else if ( TFI.m_fileType == TextureFileInfo.FILE_TYPE.PNG ) {
+							texCountPNG++;
+						} else {
+							texCountOther++;
+						}
+					}
 				}
-
-				if ( TFI.m_refCount < minrefCount )
-					continue;
-
-				if ( !skip )
-					filteredTextures.Add( TFI );
 			}
 
 			checkBoxShowTGA.Text = "Show " + texCountTGA + " TGA";
@@ -1219,10 +1241,26 @@ namespace MaterialsOptimizer
 		#region Materials Re-Export
 
 		void	ReExportMaterials( DirectoryInfo _directory ) {
+			if ( m_materials.Count == 0 ) {
+				MessageBox( "Can't re-export materials since the list of parsed materials is empty!\r\nPlease parse materials first before re-exporting...", MessageBoxButtons.OK, MessageBoxIcon.Warning );
+				return;
+			}
 
 			progressBarReExportMaterials.Visible = true;
 
+			//////////////////////////////////////////////////////////////////////////
 			// 1] Collect all unique material M2 files and rebase them into export target directory
+			LogLine( "" );
+			LogLine( "Registering " + m_materials.Count + " materials..." );
+
+			RecurseParseMaterials( new DirectoryInfo( textBoxMaterialsBasePath.Text ), progressBarMaterials );
+			if ( m_materials.Count == 0 ) {
+				MessageBox( "Failed to parse materials. Can't export..." );
+				return;
+			}
+			if ( !AnalyzeMaterialsDatabase( true ) )
+				return;
+
 			string		sourceBasePath = textBoxMaterialsBasePath.Text.ToLower();
 			if ( !sourceBasePath.EndsWith( "\\" ) )
 				sourceBasePath += "\\";
@@ -1246,7 +1284,57 @@ namespace MaterialsOptimizer
 				M2File2Materials[rebasedName].Add( M );
 			}
 
-			// 2] Regenerate all M2 files
+			LogLine( "	• Registered " + m_materials.Count + " materials" );
+			LogLine( "	• Registered " + M2File2Materials.Keys.Count + " M2 files" );
+
+
+			//////////////////////////////////////////////////////////////////////////
+			// 2] Cleanup all materials
+			LogLine( "" );
+			LogLine( "Cleaning " + m_materials.Count + " materials..." );
+
+			int totalClearedOptionsCount = 0;
+			int totalRemovedTexturesCount = 0;
+			int totalMissingTexturesReplacedCount = 0;
+			int totalReUseOptionsSetCount = 0;
+			int	totalCleanedUpMaterialsCount = 0;
+			int	materialIndex = 0;
+			foreach ( Material M in m_materials ) {
+				try {
+					int clearedOptionsCount = 0;
+					int removedTexturesCount = 0;
+					int	missingTexturesReplacedCount = 0;
+					int reUseOptionsSetCount = 0;
+					M.CleanUp( ref clearedOptionsCount, ref removedTexturesCount, ref missingTexturesReplacedCount, ref reUseOptionsSetCount );
+
+					totalClearedOptionsCount += clearedOptionsCount;
+					totalRemovedTexturesCount += removedTexturesCount;
+					totalMissingTexturesReplacedCount += missingTexturesReplacedCount;
+					totalReUseOptionsSetCount += reUseOptionsSetCount;
+					if ( clearedOptionsCount > 0 || removedTexturesCount > 0 || missingTexturesReplacedCount > 0 || reUseOptionsSetCount > 0 )
+						totalCleanedUpMaterialsCount++;
+
+				} catch ( Exception _e ) {
+					LogLine( "Failed to cleanup material \"" + M.m_name + "\" because of the following error: " + _e.Message );
+				}
+
+				progressBarReExportMaterials.Value = ++materialIndex * progressBarReExportMaterials.Maximum / (2*m_materials.Count);	// Progress from 0 to 50%
+			}
+
+			LogLine( "	• Total cleaned-up materials: " + totalCleanedUpMaterialsCount );
+			LogLine( "	  > Total options removed: " + totalClearedOptionsCount );
+			LogLine( "	  > Total textures removed: " + totalRemovedTexturesCount );
+			LogLine( "	  > Total missing textures replaced: " + totalMissingTexturesReplacedCount );
+			LogLine( "	  > Total re-use options added: " + totalReUseOptionsSetCount );
+
+
+			//////////////////////////////////////////////////////////////////////////
+			// 3] Regenerate all M2 files
+			LogLine( "" );
+			LogLine( "Writing " + M2File2Materials.Keys.Count + " M2 files..." );
+
+			int	fileIndex = 0;
+			int	correctlyExportedFilesCount = 0;
 			foreach ( string targetM2FileName in M2File2Materials.Keys ) {
 
 				try {
@@ -1264,10 +1352,16 @@ namespace MaterialsOptimizer
 					using ( StreamWriter fileS = M2FileName.CreateText() )
 						fileS.Write( SB.ToString() );
 
+					correctlyExportedFilesCount++;
+
 				} catch ( Exception _e ) {
 					LogLine( "An error occurred while exporting M2 file \"" + targetM2FileName + "\": " + _e.Message );
 				}
+
+				progressBarReExportMaterials.Value = progressBarReExportMaterials.Maximum/2 + (++fileIndex * progressBarReExportMaterials.Maximum) / (2*M2File2Materials.Keys.Count);	// Progress from 50 to 100%
 			}
+
+			LogLine( "	• Successfully wrote " + correctlyExportedFilesCount + " M2 files..." );
 
 			progressBarReExportMaterials.Visible = false;
 		}
@@ -1311,7 +1405,7 @@ namespace MaterialsOptimizer
 
 		private void buttonParseMaterials_Click(object sender, EventArgs e) {
 			try {
-				RecurseParseMaterials( new DirectoryInfo( textBoxMaterialsBasePath.Text ) );
+				RecurseParseMaterials( new DirectoryInfo( textBoxMaterialsBasePath.Text ), progressBarMaterials );
 				SaveMaterialsDatabase( m_materialsDatabaseFileName );
 				if ( !AnalyzeMaterialsDatabase( true ) )
 					RebuildMaterialsListView();
@@ -1341,6 +1435,22 @@ namespace MaterialsOptimizer
 			} catch ( Exception _e ) {
 				MessageBox( "An error occurred while re-exporting materials:\r\n" + _e.Message, MessageBoxButtons.OK, MessageBoxIcon.Error );
 			}
+		}
+
+		private void buttonParseReExportedMaterials_Click(object sender, EventArgs e) {
+			try {
+				RecurseParseMaterials( new DirectoryInfo( textBoxReExportPath.Text ), progressBarReExportMaterials );
+//				SaveMaterialsDatabase( m_materialsDatabaseFileName );
+				if ( !AnalyzeMaterialsDatabase( true ) )
+					RebuildMaterialsListView();
+			} catch ( Exception _e ) {
+				MessageBox( "An error occurred while parsing materials:\r\n" + _e.Message, MessageBoxButtons.OK, MessageBoxIcon.Error );
+			}
+		}
+
+		private void buttonIntegratePerforce_Click(object sender, EventArgs e)
+		{
+
 		}
 
 		#region Texture List View Events
@@ -1395,6 +1505,11 @@ namespace MaterialsOptimizer
 		private void integerTrackbarControlMinRefCount_ValueChanged(Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue)
 		{
 			RebuildTexturesListView();
+		}
+
+		private void buttonSearchTexture_Click(object sender, EventArgs e)
+		{
+			RebuildTexturesListView( textBoxSearchTexture.Text != "" ? textBoxSearchTexture.Text : null );
 		}
 
 		#endregion

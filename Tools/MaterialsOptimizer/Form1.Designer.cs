@@ -107,6 +107,11 @@
 			this.buttonSetMaterialsReExportPath = new System.Windows.Forms.Button();
 			this.label9 = new System.Windows.Forms.Label();
 			this.progressBarReExportMaterials = new System.Windows.Forms.ProgressBar();
+			this.buttonParseReExportedMaterials = new System.Windows.Forms.Button();
+			this.buttonIntegratePerforce = new System.Windows.Forms.Button();
+			this.buttonSearchTexture = new System.Windows.Forms.Button();
+			this.textBoxSearchTexture = new System.Windows.Forms.TextBox();
+			this.label10 = new System.Windows.Forms.Label();
 			this.tabControl.SuspendLayout();
 			this.tabPageMaterials.SuspendLayout();
 			this.panelFilterMaterials.SuspendLayout();
@@ -502,7 +507,7 @@
 			this.tabPageTextures.Location = new System.Drawing.Point(4, 22);
 			this.tabPageTextures.Name = "tabPageTextures";
 			this.tabPageTextures.Padding = new System.Windows.Forms.Padding(3);
-			this.tabPageTextures.Size = new System.Drawing.Size(1291, 574);
+			this.tabPageTextures.Size = new System.Drawing.Size(1291, 548);
 			this.tabPageTextures.TabIndex = 1;
 			this.tabPageTextures.Text = "Textures";
 			this.tabPageTextures.UseVisualStyleBackColor = true;
@@ -511,6 +516,9 @@
 			// 
 			this.panelFilterTextures.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
+			this.panelFilterTextures.Controls.Add(this.buttonSearchTexture);
+			this.panelFilterTextures.Controls.Add(this.textBoxSearchTexture);
+			this.panelFilterTextures.Controls.Add(this.label10);
 			this.panelFilterTextures.Controls.Add(this.label6);
 			this.panelFilterTextures.Controls.Add(this.integerTrackbarControlMinRefCount);
 			this.panelFilterTextures.Controls.Add(this.checkBoxShowTGA);
@@ -525,7 +533,7 @@
 			this.panelFilterTextures.Controls.Add(this.checkBoxShowMasks);
 			this.panelFilterTextures.Controls.Add(this.checkBoxShowOther);
 			this.panelFilterTextures.Controls.Add(this.checkBoxShowEmissive);
-			this.panelFilterTextures.Location = new System.Drawing.Point(6, 489);
+			this.panelFilterTextures.Location = new System.Drawing.Point(6, 463);
 			this.panelFilterTextures.Name = "panelFilterTextures";
 			this.panelFilterTextures.Size = new System.Drawing.Size(1279, 79);
 			this.panelFilterTextures.TabIndex = 4;
@@ -707,7 +715,7 @@
 			this.listViewTextures.HideSelection = false;
 			this.listViewTextures.Location = new System.Drawing.Point(6, 6);
 			this.listViewTextures.Name = "listViewTextures";
-			this.listViewTextures.Size = new System.Drawing.Size(1279, 477);
+			this.listViewTextures.Size = new System.Drawing.Size(1279, 451);
 			this.listViewTextures.TabIndex = 1;
 			this.listViewTextures.UseCompatibleStateImageBehavior = false;
 			this.listViewTextures.View = System.Windows.Forms.View.Details;
@@ -962,11 +970,57 @@
 			// 
 			this.progressBarReExportMaterials.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-			this.progressBarReExportMaterials.Location = new System.Drawing.Point(611, 80);
+			this.progressBarReExportMaterials.Location = new System.Drawing.Point(773, 80);
 			this.progressBarReExportMaterials.Name = "progressBarReExportMaterials";
-			this.progressBarReExportMaterials.Size = new System.Drawing.Size(700, 23);
+			this.progressBarReExportMaterials.Size = new System.Drawing.Size(538, 23);
 			this.progressBarReExportMaterials.TabIndex = 6;
 			this.progressBarReExportMaterials.Visible = false;
+			// 
+			// buttonParseReExportedMaterials
+			// 
+			this.buttonParseReExportedMaterials.Location = new System.Drawing.Point(611, 80);
+			this.buttonParseReExportedMaterials.Name = "buttonParseReExportedMaterials";
+			this.buttonParseReExportedMaterials.Size = new System.Drawing.Size(75, 23);
+			this.buttonParseReExportedMaterials.TabIndex = 4;
+			this.buttonParseReExportedMaterials.Text = "Parse";
+			this.buttonParseReExportedMaterials.UseVisualStyleBackColor = true;
+			this.buttonParseReExportedMaterials.Click += new System.EventHandler(this.buttonParseReExportedMaterials_Click);
+			// 
+			// buttonIntegratePerforce
+			// 
+			this.buttonIntegratePerforce.Location = new System.Drawing.Point(692, 81);
+			this.buttonIntegratePerforce.Name = "buttonIntegratePerforce";
+			this.buttonIntegratePerforce.Size = new System.Drawing.Size(75, 23);
+			this.buttonIntegratePerforce.TabIndex = 4;
+			this.buttonIntegratePerforce.Text = "Integrate";
+			this.buttonIntegratePerforce.UseVisualStyleBackColor = true;
+			this.buttonIntegratePerforce.Click += new System.EventHandler(this.buttonIntegratePerforce_Click);
+			// 
+			// buttonSearchTexture
+			// 
+			this.buttonSearchTexture.Location = new System.Drawing.Point(1125, 24);
+			this.buttonSearchTexture.Name = "buttonSearchTexture";
+			this.buttonSearchTexture.Size = new System.Drawing.Size(75, 23);
+			this.buttonSearchTexture.TabIndex = 10;
+			this.buttonSearchTexture.Text = "Search";
+			this.buttonSearchTexture.UseVisualStyleBackColor = true;
+			this.buttonSearchTexture.Click += new System.EventHandler(this.buttonSearchTexture_Click);
+			// 
+			// textBoxSearchTexture
+			// 
+			this.textBoxSearchTexture.Location = new System.Drawing.Point(799, 26);
+			this.textBoxSearchTexture.Name = "textBoxSearchTexture";
+			this.textBoxSearchTexture.Size = new System.Drawing.Size(320, 20);
+			this.textBoxSearchTexture.TabIndex = 9;
+			// 
+			// label10
+			// 
+			this.label10.AutoSize = true;
+			this.label10.Location = new System.Drawing.Point(737, 29);
+			this.label10.Name = "label10";
+			this.label10.Size = new System.Drawing.Size(56, 13);
+			this.label10.TabIndex = 8;
+			this.label10.Text = "Search for";
 			// 
 			// Form1
 			// 
@@ -979,6 +1033,8 @@
 			this.Controls.Add(this.progressBarMaterials);
 			this.Controls.Add(this.buttonCollectTextures);
 			this.Controls.Add(this.buttonReExport);
+			this.Controls.Add(this.buttonIntegratePerforce);
+			this.Controls.Add(this.buttonParseReExportedMaterials);
 			this.Controls.Add(this.buttonParseMaterials);
 			this.Controls.Add(this.label2);
 			this.Controls.Add(this.label9);
@@ -1093,6 +1149,11 @@
 		private System.Windows.Forms.Button buttonSetMaterialsReExportPath;
 		private System.Windows.Forms.Label label9;
 		private System.Windows.Forms.ProgressBar progressBarReExportMaterials;
+		private System.Windows.Forms.Button buttonParseReExportedMaterials;
+		private System.Windows.Forms.Button buttonIntegratePerforce;
+		private System.Windows.Forms.Button buttonSearchTexture;
+		private System.Windows.Forms.TextBox textBoxSearchTexture;
+		private System.Windows.Forms.Label label10;
 	}
 }
 
