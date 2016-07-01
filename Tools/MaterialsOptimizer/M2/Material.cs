@@ -293,6 +293,8 @@ namespace MaterialsOptimizer
 				// Resolve by analysis
 				public TextureFileInfo		m_textureFileInfo = null;
 
+				public int					m_dummyCounter = 0;
+
 				public float4	ConstantColor {
 					get {
 						switch ( m_constantColorType ) {
@@ -336,6 +338,15 @@ namespace MaterialsOptimizer
 							P.ConsumeString( "ipr_constantColor", false );
 							string	strColor = P.ReadBlock( '(', ')' );
 							m_customConstantColor = P.ReadFloat4( strColor );
+
+							// Compare known colors to revert to basic types
+							if ( CompareFloat4( m_customConstantColor, float4.Zero ) ) {
+								m_constantColorType = CONSTANT_COLOR_TYPE.BLACK;
+							} else if ( CompareFloat4( m_customConstantColor, float4.UnitW ) ) {
+								m_constantColorType = CONSTANT_COLOR_TYPE.BLACK_ALPHA_WHITE;
+							} else if ( CompareFloat4( m_customConstantColor, float4.One ) ) {
+								m_constantColorType = CONSTANT_COLOR_TYPE.WHITE;
+							}
 						}
 
 						if ( m_constantColorType == CONSTANT_COLOR_TYPE.TEXTURE ) {
@@ -370,10 +381,7 @@ namespace MaterialsOptimizer
 						case CONSTANT_COLOR_TYPE.DEFAULT:
 							return true;
 						case CONSTANT_COLOR_TYPE.CUSTOM:
-							return	Math.Abs( a.m_customConstantColor.x - b.m_customConstantColor.x ) < 1e-3f
-								&&	Math.Abs( a.m_customConstantColor.y - b.m_customConstantColor.y ) < 1e-3f
-								&&	Math.Abs( a.m_customConstantColor.z - b.m_customConstantColor.z ) < 1e-3f
-								&&	Math.Abs( a.m_customConstantColor.w - b.m_customConstantColor.w ) < 1e-3f;
+							return	CompareFloat4( a.m_customConstantColor, b.m_customConstantColor );
 
 						case CONSTANT_COLOR_TYPE.TEXTURE:
 							if ( a.m_textureFileInfo != null ) {
@@ -392,6 +400,13 @@ namespace MaterialsOptimizer
 				}
 				public override int GetHashCode() {
 					return base.GetHashCode();
+				}
+
+				static bool	CompareFloat4( float4 a, float4 b ) {
+					return	Math.Abs( a.x - b.x ) < 1e-3f
+						&&	Math.Abs( a.y - b.y ) < 1e-3f
+						&&	Math.Abs( a.z - b.z ) < 1e-3f
+						&&	Math.Abs( a.w - b.w ) < 1e-3f;
 				}
 
 				#region Serialization

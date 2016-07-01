@@ -41,10 +41,15 @@
 			this.tabControl = new System.Windows.Forms.TabControl();
 			this.tabPageMaterials = new System.Windows.Forms.TabPage();
 			this.panelFilterMaterials = new System.Windows.Forms.Panel();
+			this.buttonSearch = new System.Windows.Forms.Button();
+			this.textBoxSearchMaterial = new System.Windows.Forms.TextBox();
 			this.label5 = new System.Windows.Forms.Label();
 			this.label4 = new System.Windows.Forms.Label();
+			this.label7 = new System.Windows.Forms.Label();
+			this.label8 = new System.Windows.Forms.Label();
 			this.label3 = new System.Windows.Forms.Label();
 			this.integerTrackbarControlLayerMax = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
+			this.integerTrackbarControlErrorLevel = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
 			this.integerTrackbarControlLayerMin = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
 			this.labelTotalMaterials = new System.Windows.Forms.Label();
 			this.checkBoxShowArkDefault = new System.Windows.Forms.CheckBox();
@@ -55,6 +60,8 @@
 			this.checkBoxShowOtherMaterialTypes = new System.Windows.Forms.CheckBox();
 			this.checkBoxShowVista = new System.Windows.Forms.CheckBox();
 			this.checkBoxShowOptimizableMaterials = new System.Windows.Forms.CheckBox();
+			this.checkBoxShowMissingPhysics = new System.Windows.Forms.CheckBox();
+			this.checkBoxShowWarningMaterials = new System.Windows.Forms.CheckBox();
 			this.checkBoxShowVegetation = new System.Windows.Forms.CheckBox();
 			this.listViewMaterials = new System.Windows.Forms.ListView();
 			this.columnHeaderMaterialName = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
@@ -66,6 +73,9 @@
 			this.columnHeaderMaterialFileName = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
 			this.tabPageTextures = new System.Windows.Forms.TabPage();
 			this.panelFilterTextures = new System.Windows.Forms.Panel();
+			this.buttonSearchTexture = new System.Windows.Forms.Button();
+			this.textBoxSearchTexture = new System.Windows.Forms.TextBox();
+			this.label10 = new System.Windows.Forms.Label();
 			this.label6 = new System.Windows.Forms.Label();
 			this.integerTrackbarControlMinRefCount = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
 			this.checkBoxShowTGA = new System.Windows.Forms.CheckBox();
@@ -77,31 +87,24 @@
 			this.checkBoxShowGloss = new System.Windows.Forms.CheckBox();
 			this.checkBoxInvertFilters = new System.Windows.Forms.CheckBox();
 			this.checkBoxShowMetal = new System.Windows.Forms.CheckBox();
+			this.checkBoxShowMasks = new System.Windows.Forms.CheckBox();
 			this.checkBoxShowOther = new System.Windows.Forms.CheckBox();
 			this.checkBoxShowEmissive = new System.Windows.Forms.CheckBox();
 			this.listViewTextures = new System.Windows.Forms.ListView();
 			this.columnHeaderImageName = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
 			this.columnHeaderImageSize = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
 			this.columnHeaderImageUsage = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+			this.columnHeaderChannels = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
 			this.columnHeaderMaterialsReferencesCount = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
 			this.toolTip = new System.Windows.Forms.ToolTip(this.components);
 			this.progressBarMaterials = new System.Windows.Forms.ProgressBar();
 			this.progressBarTextures = new System.Windows.Forms.ProgressBar();
 			this.tabControlInfo = new System.Windows.Forms.TabControl();
 			this.tabPageInfo = new System.Windows.Forms.TabPage();
+			this.textBoxInfo = new System.Windows.Forms.TextBox();
 			this.tabPageLog = new System.Windows.Forms.TabPage();
 			this.textBoxLog = new System.Windows.Forms.TextBox();
 			this.splitContainer1 = new System.Windows.Forms.SplitContainer();
-			this.textBoxInfo = new System.Windows.Forms.TextBox();
-			this.textBoxSearchMaterial = new System.Windows.Forms.TextBox();
-			this.label7 = new System.Windows.Forms.Label();
-			this.buttonSearch = new System.Windows.Forms.Button();
-			this.checkBoxShowWarningMaterials = new System.Windows.Forms.CheckBox();
-			this.checkBoxShowMissingPhysics = new System.Windows.Forms.CheckBox();
-			this.integerTrackbarControlErrorLevel = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
-			this.label8 = new System.Windows.Forms.Label();
-			this.columnHeaderChannels = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
-			this.checkBoxShowMasks = new System.Windows.Forms.CheckBox();
 			this.buttonReExport = new System.Windows.Forms.Button();
 			this.textBoxReExportPath = new System.Windows.Forms.TextBox();
 			this.buttonSetMaterialsReExportPath = new System.Windows.Forms.Button();
@@ -109,9 +112,7 @@
 			this.progressBarReExportMaterials = new System.Windows.Forms.ProgressBar();
 			this.buttonParseReExportedMaterials = new System.Windows.Forms.Button();
 			this.buttonIntegratePerforce = new System.Windows.Forms.Button();
-			this.buttonSearchTexture = new System.Windows.Forms.Button();
-			this.textBoxSearchTexture = new System.Windows.Forms.TextBox();
-			this.label10 = new System.Windows.Forms.Label();
+			this.buttonAnalyzeConstantColorTextures = new System.Windows.Forms.Button();
 			this.tabControl.SuspendLayout();
 			this.tabPageMaterials.SuspendLayout();
 			this.panelFilterMaterials.SuspendLayout();
@@ -232,6 +233,7 @@
 			// 
 			this.panelFilterMaterials.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
+			this.panelFilterMaterials.Controls.Add(this.buttonAnalyzeConstantColorTextures);
 			this.panelFilterMaterials.Controls.Add(this.buttonSearch);
 			this.panelFilterMaterials.Controls.Add(this.textBoxSearchMaterial);
 			this.panelFilterMaterials.Controls.Add(this.label5);
@@ -259,6 +261,23 @@
 			this.panelFilterMaterials.Size = new System.Drawing.Size(1279, 79);
 			this.panelFilterMaterials.TabIndex = 5;
 			// 
+			// buttonSearch
+			// 
+			this.buttonSearch.Location = new System.Drawing.Point(1090, 20);
+			this.buttonSearch.Name = "buttonSearch";
+			this.buttonSearch.Size = new System.Drawing.Size(75, 23);
+			this.buttonSearch.TabIndex = 7;
+			this.buttonSearch.Text = "Search";
+			this.buttonSearch.UseVisualStyleBackColor = true;
+			this.buttonSearch.Click += new System.EventHandler(this.buttonSearch_Click);
+			// 
+			// textBoxSearchMaterial
+			// 
+			this.textBoxSearchMaterial.Location = new System.Drawing.Point(764, 22);
+			this.textBoxSearchMaterial.Name = "textBoxSearchMaterial";
+			this.textBoxSearchMaterial.Size = new System.Drawing.Size(320, 20);
+			this.textBoxSearchMaterial.TabIndex = 6;
+			// 
 			// label5
 			// 
 			this.label5.AutoSize = true;
@@ -276,6 +295,24 @@
 			this.label4.Size = new System.Drawing.Size(24, 13);
 			this.label4.TabIndex = 5;
 			this.label4.Text = "Min";
+			// 
+			// label7
+			// 
+			this.label7.AutoSize = true;
+			this.label7.Location = new System.Drawing.Point(702, 25);
+			this.label7.Name = "label7";
+			this.label7.Size = new System.Drawing.Size(56, 13);
+			this.label7.TabIndex = 5;
+			this.label7.Text = "Search for";
+			// 
+			// label8
+			// 
+			this.label8.AutoSize = true;
+			this.label8.Location = new System.Drawing.Point(194, 55);
+			this.label8.Name = "label8";
+			this.label8.Size = new System.Drawing.Size(167, 13);
+			this.label8.TabIndex = 5;
+			this.label8.Text = "Show Error Materials Above Level";
 			// 
 			// label3
 			// 
@@ -300,6 +337,20 @@
 			this.integerTrackbarControlLayerMax.VisibleRangeMax = 3;
 			this.integerTrackbarControlLayerMax.VisibleRangeMin = 1;
 			this.integerTrackbarControlLayerMax.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlLayerMax_ValueChanged);
+			// 
+			// integerTrackbarControlErrorLevel
+			// 
+			this.integerTrackbarControlErrorLevel.Location = new System.Drawing.Point(367, 52);
+			this.integerTrackbarControlErrorLevel.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.integerTrackbarControlErrorLevel.MinimumSize = new System.Drawing.Size(70, 20);
+			this.integerTrackbarControlErrorLevel.Name = "integerTrackbarControlErrorLevel";
+			this.integerTrackbarControlErrorLevel.RangeMax = 3;
+			this.integerTrackbarControlErrorLevel.RangeMin = 0;
+			this.integerTrackbarControlErrorLevel.Size = new System.Drawing.Size(111, 20);
+			this.integerTrackbarControlErrorLevel.TabIndex = 4;
+			this.integerTrackbarControlErrorLevel.Value = 0;
+			this.integerTrackbarControlErrorLevel.VisibleRangeMax = 3;
+			this.integerTrackbarControlErrorLevel.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlErrorLevel_ValueChanged);
 			// 
 			// integerTrackbarControlLayerMin
 			// 
@@ -426,6 +477,28 @@
 			this.checkBoxShowOptimizableMaterials.UseVisualStyleBackColor = true;
 			this.checkBoxShowOptimizableMaterials.CheckedChanged += new System.EventHandler(this.checkBoxShowArkDefault_CheckedChanged);
 			// 
+			// checkBoxShowMissingPhysics
+			// 
+			this.checkBoxShowMissingPhysics.AutoSize = true;
+			this.checkBoxShowMissingPhysics.Location = new System.Drawing.Point(670, 54);
+			this.checkBoxShowMissingPhysics.Name = "checkBoxShowMissingPhysics";
+			this.checkBoxShowMissingPhysics.Size = new System.Drawing.Size(199, 17);
+			this.checkBoxShowMissingPhysics.TabIndex = 2;
+			this.checkBoxShowMissingPhysics.Text = "Show Missing Physics Materials Only";
+			this.checkBoxShowMissingPhysics.UseVisualStyleBackColor = true;
+			this.checkBoxShowMissingPhysics.CheckedChanged += new System.EventHandler(this.checkBoxShowArkDefault_CheckedChanged);
+			// 
+			// checkBoxShowWarningMaterials
+			// 
+			this.checkBoxShowWarningMaterials.AutoSize = true;
+			this.checkBoxShowWarningMaterials.Location = new System.Drawing.Point(499, 54);
+			this.checkBoxShowWarningMaterials.Name = "checkBoxShowWarningMaterials";
+			this.checkBoxShowWarningMaterials.Size = new System.Drawing.Size(165, 17);
+			this.checkBoxShowWarningMaterials.TabIndex = 2;
+			this.checkBoxShowWarningMaterials.Text = "Show Warning Materials Only";
+			this.checkBoxShowWarningMaterials.UseVisualStyleBackColor = true;
+			this.checkBoxShowWarningMaterials.CheckedChanged += new System.EventHandler(this.checkBoxShowArkDefault_CheckedChanged);
+			// 
 			// checkBoxShowVegetation
 			// 
 			this.checkBoxShowVegetation.AutoSize = true;
@@ -537,6 +610,32 @@
 			this.panelFilterTextures.Name = "panelFilterTextures";
 			this.panelFilterTextures.Size = new System.Drawing.Size(1279, 79);
 			this.panelFilterTextures.TabIndex = 4;
+			// 
+			// buttonSearchTexture
+			// 
+			this.buttonSearchTexture.Location = new System.Drawing.Point(1125, 24);
+			this.buttonSearchTexture.Name = "buttonSearchTexture";
+			this.buttonSearchTexture.Size = new System.Drawing.Size(75, 23);
+			this.buttonSearchTexture.TabIndex = 10;
+			this.buttonSearchTexture.Text = "Search";
+			this.buttonSearchTexture.UseVisualStyleBackColor = true;
+			this.buttonSearchTexture.Click += new System.EventHandler(this.buttonSearchTexture_Click);
+			// 
+			// textBoxSearchTexture
+			// 
+			this.textBoxSearchTexture.Location = new System.Drawing.Point(799, 26);
+			this.textBoxSearchTexture.Name = "textBoxSearchTexture";
+			this.textBoxSearchTexture.Size = new System.Drawing.Size(320, 20);
+			this.textBoxSearchTexture.TabIndex = 9;
+			// 
+			// label10
+			// 
+			this.label10.AutoSize = true;
+			this.label10.Location = new System.Drawing.Point(737, 29);
+			this.label10.Name = "label10";
+			this.label10.Size = new System.Drawing.Size(56, 13);
+			this.label10.TabIndex = 8;
+			this.label10.Text = "Search for";
 			// 
 			// label6
 			// 
@@ -673,6 +772,19 @@
 			this.checkBoxShowMetal.UseVisualStyleBackColor = true;
 			this.checkBoxShowMetal.CheckedChanged += new System.EventHandler(this.checkBoxShowDiffuse_CheckedChanged);
 			// 
+			// checkBoxShowMasks
+			// 
+			this.checkBoxShowMasks.AutoSize = true;
+			this.checkBoxShowMasks.Checked = true;
+			this.checkBoxShowMasks.CheckState = System.Windows.Forms.CheckState.Checked;
+			this.checkBoxShowMasks.Location = new System.Drawing.Point(291, 28);
+			this.checkBoxShowMasks.Name = "checkBoxShowMasks";
+			this.checkBoxShowMasks.Size = new System.Drawing.Size(87, 17);
+			this.checkBoxShowMasks.TabIndex = 2;
+			this.checkBoxShowMasks.Text = "Show Masks";
+			this.checkBoxShowMasks.UseVisualStyleBackColor = true;
+			this.checkBoxShowMasks.CheckedChanged += new System.EventHandler(this.checkBoxShowDiffuse_CheckedChanged);
+			// 
 			// checkBoxShowOther
 			// 
 			this.checkBoxShowOther.AutoSize = true;
@@ -737,6 +849,10 @@
 			this.columnHeaderImageUsage.Text = "Usage";
 			this.columnHeaderImageUsage.Width = 100;
 			// 
+			// columnHeaderChannels
+			// 
+			this.columnHeaderChannels.Text = "Channels";
+			// 
 			// columnHeaderMaterialsReferencesCount
 			// 
 			this.columnHeaderMaterialsReferencesCount.Text = "Mat. Ref Count";
@@ -784,13 +900,26 @@
 			this.tabPageInfo.Text = "Info";
 			this.tabPageInfo.UseVisualStyleBackColor = true;
 			// 
+			// textBoxInfo
+			// 
+			this.textBoxInfo.AcceptsReturn = true;
+			this.textBoxInfo.AcceptsTab = true;
+			this.textBoxInfo.Dock = System.Windows.Forms.DockStyle.Fill;
+			this.textBoxInfo.Location = new System.Drawing.Point(3, 3);
+			this.textBoxInfo.Multiline = true;
+			this.textBoxInfo.Name = "textBoxInfo";
+			this.textBoxInfo.ReadOnly = true;
+			this.textBoxInfo.ScrollBars = System.Windows.Forms.ScrollBars.Both;
+			this.textBoxInfo.Size = new System.Drawing.Size(1285, 137);
+			this.textBoxInfo.TabIndex = 2;
+			// 
 			// tabPageLog
 			// 
 			this.tabPageLog.Controls.Add(this.textBoxLog);
 			this.tabPageLog.Location = new System.Drawing.Point(4, 22);
 			this.tabPageLog.Name = "tabPageLog";
 			this.tabPageLog.Padding = new System.Windows.Forms.Padding(3);
-			this.tabPageLog.Size = new System.Drawing.Size(1291, 150);
+			this.tabPageLog.Size = new System.Drawing.Size(1291, 143);
 			this.tabPageLog.TabIndex = 1;
 			this.tabPageLog.Text = "Log";
 			this.tabPageLog.UseVisualStyleBackColor = true;
@@ -805,7 +934,7 @@
 			this.textBoxLog.Name = "textBoxLog";
 			this.textBoxLog.ReadOnly = true;
 			this.textBoxLog.ScrollBars = System.Windows.Forms.ScrollBars.Both;
-			this.textBoxLog.Size = new System.Drawing.Size(1285, 144);
+			this.textBoxLog.Size = new System.Drawing.Size(1285, 137);
 			this.textBoxLog.TabIndex = 1;
 			// 
 			// splitContainer1
@@ -827,107 +956,6 @@
 			this.splitContainer1.Size = new System.Drawing.Size(1299, 747);
 			this.splitContainer1.SplitterDistance = 574;
 			this.splitContainer1.TabIndex = 8;
-			// 
-			// textBoxInfo
-			// 
-			this.textBoxInfo.AcceptsReturn = true;
-			this.textBoxInfo.AcceptsTab = true;
-			this.textBoxInfo.Dock = System.Windows.Forms.DockStyle.Fill;
-			this.textBoxInfo.Location = new System.Drawing.Point(3, 3);
-			this.textBoxInfo.Multiline = true;
-			this.textBoxInfo.Name = "textBoxInfo";
-			this.textBoxInfo.ReadOnly = true;
-			this.textBoxInfo.ScrollBars = System.Windows.Forms.ScrollBars.Both;
-			this.textBoxInfo.Size = new System.Drawing.Size(1285, 137);
-			this.textBoxInfo.TabIndex = 2;
-			// 
-			// textBoxSearchMaterial
-			// 
-			this.textBoxSearchMaterial.Location = new System.Drawing.Point(764, 22);
-			this.textBoxSearchMaterial.Name = "textBoxSearchMaterial";
-			this.textBoxSearchMaterial.Size = new System.Drawing.Size(320, 20);
-			this.textBoxSearchMaterial.TabIndex = 6;
-			// 
-			// label7
-			// 
-			this.label7.AutoSize = true;
-			this.label7.Location = new System.Drawing.Point(702, 25);
-			this.label7.Name = "label7";
-			this.label7.Size = new System.Drawing.Size(56, 13);
-			this.label7.TabIndex = 5;
-			this.label7.Text = "Search for";
-			// 
-			// buttonSearch
-			// 
-			this.buttonSearch.Location = new System.Drawing.Point(1090, 20);
-			this.buttonSearch.Name = "buttonSearch";
-			this.buttonSearch.Size = new System.Drawing.Size(75, 23);
-			this.buttonSearch.TabIndex = 7;
-			this.buttonSearch.Text = "Search";
-			this.buttonSearch.UseVisualStyleBackColor = true;
-			this.buttonSearch.Click += new System.EventHandler(this.buttonSearch_Click);
-			// 
-			// checkBoxShowWarningMaterials
-			// 
-			this.checkBoxShowWarningMaterials.AutoSize = true;
-			this.checkBoxShowWarningMaterials.Location = new System.Drawing.Point(499, 54);
-			this.checkBoxShowWarningMaterials.Name = "checkBoxShowWarningMaterials";
-			this.checkBoxShowWarningMaterials.Size = new System.Drawing.Size(165, 17);
-			this.checkBoxShowWarningMaterials.TabIndex = 2;
-			this.checkBoxShowWarningMaterials.Text = "Show Warning Materials Only";
-			this.checkBoxShowWarningMaterials.UseVisualStyleBackColor = true;
-			this.checkBoxShowWarningMaterials.CheckedChanged += new System.EventHandler(this.checkBoxShowArkDefault_CheckedChanged);
-			// 
-			// checkBoxShowMissingPhysics
-			// 
-			this.checkBoxShowMissingPhysics.AutoSize = true;
-			this.checkBoxShowMissingPhysics.Location = new System.Drawing.Point(670, 54);
-			this.checkBoxShowMissingPhysics.Name = "checkBoxShowMissingPhysics";
-			this.checkBoxShowMissingPhysics.Size = new System.Drawing.Size(199, 17);
-			this.checkBoxShowMissingPhysics.TabIndex = 2;
-			this.checkBoxShowMissingPhysics.Text = "Show Missing Physics Materials Only";
-			this.checkBoxShowMissingPhysics.UseVisualStyleBackColor = true;
-			this.checkBoxShowMissingPhysics.CheckedChanged += new System.EventHandler(this.checkBoxShowArkDefault_CheckedChanged);
-			// 
-			// integerTrackbarControlErrorLevel
-			// 
-			this.integerTrackbarControlErrorLevel.Location = new System.Drawing.Point(367, 52);
-			this.integerTrackbarControlErrorLevel.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.integerTrackbarControlErrorLevel.MinimumSize = new System.Drawing.Size(70, 20);
-			this.integerTrackbarControlErrorLevel.Name = "integerTrackbarControlErrorLevel";
-			this.integerTrackbarControlErrorLevel.RangeMax = 3;
-			this.integerTrackbarControlErrorLevel.RangeMin = 0;
-			this.integerTrackbarControlErrorLevel.Size = new System.Drawing.Size(111, 20);
-			this.integerTrackbarControlErrorLevel.TabIndex = 4;
-			this.integerTrackbarControlErrorLevel.Value = 0;
-			this.integerTrackbarControlErrorLevel.VisibleRangeMax = 3;
-			this.integerTrackbarControlErrorLevel.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlErrorLevel_ValueChanged);
-			// 
-			// label8
-			// 
-			this.label8.AutoSize = true;
-			this.label8.Location = new System.Drawing.Point(194, 55);
-			this.label8.Name = "label8";
-			this.label8.Size = new System.Drawing.Size(167, 13);
-			this.label8.TabIndex = 5;
-			this.label8.Text = "Show Error Materials Above Level";
-			// 
-			// columnHeaderChannels
-			// 
-			this.columnHeaderChannels.Text = "Channels";
-			// 
-			// checkBoxShowMasks
-			// 
-			this.checkBoxShowMasks.AutoSize = true;
-			this.checkBoxShowMasks.Checked = true;
-			this.checkBoxShowMasks.CheckState = System.Windows.Forms.CheckState.Checked;
-			this.checkBoxShowMasks.Location = new System.Drawing.Point(291, 28);
-			this.checkBoxShowMasks.Name = "checkBoxShowMasks";
-			this.checkBoxShowMasks.Size = new System.Drawing.Size(87, 17);
-			this.checkBoxShowMasks.TabIndex = 2;
-			this.checkBoxShowMasks.Text = "Show Masks";
-			this.checkBoxShowMasks.UseVisualStyleBackColor = true;
-			this.checkBoxShowMasks.CheckedChanged += new System.EventHandler(this.checkBoxShowDiffuse_CheckedChanged);
 			// 
 			// buttonReExport
 			// 
@@ -994,33 +1022,18 @@
 			this.buttonIntegratePerforce.TabIndex = 4;
 			this.buttonIntegratePerforce.Text = "Integrate";
 			this.buttonIntegratePerforce.UseVisualStyleBackColor = true;
+			this.buttonIntegratePerforce.Visible = false;
 			this.buttonIntegratePerforce.Click += new System.EventHandler(this.buttonIntegratePerforce_Click);
 			// 
-			// buttonSearchTexture
+			// buttonAnalyzeConstantColorTextures
 			// 
-			this.buttonSearchTexture.Location = new System.Drawing.Point(1125, 24);
-			this.buttonSearchTexture.Name = "buttonSearchTexture";
-			this.buttonSearchTexture.Size = new System.Drawing.Size(75, 23);
-			this.buttonSearchTexture.TabIndex = 10;
-			this.buttonSearchTexture.Text = "Search";
-			this.buttonSearchTexture.UseVisualStyleBackColor = true;
-			this.buttonSearchTexture.Click += new System.EventHandler(this.buttonSearchTexture_Click);
-			// 
-			// textBoxSearchTexture
-			// 
-			this.textBoxSearchTexture.Location = new System.Drawing.Point(799, 26);
-			this.textBoxSearchTexture.Name = "textBoxSearchTexture";
-			this.textBoxSearchTexture.Size = new System.Drawing.Size(320, 20);
-			this.textBoxSearchTexture.TabIndex = 9;
-			// 
-			// label10
-			// 
-			this.label10.AutoSize = true;
-			this.label10.Location = new System.Drawing.Point(737, 29);
-			this.label10.Name = "label10";
-			this.label10.Size = new System.Drawing.Size(56, 13);
-			this.label10.TabIndex = 8;
-			this.label10.Text = "Search for";
+			this.buttonAnalyzeConstantColorTextures.Location = new System.Drawing.Point(1090, 50);
+			this.buttonAnalyzeConstantColorTextures.Name = "buttonAnalyzeConstantColorTextures";
+			this.buttonAnalyzeConstantColorTextures.Size = new System.Drawing.Size(173, 23);
+			this.buttonAnalyzeConstantColorTextures.TabIndex = 12;
+			this.buttonAnalyzeConstantColorTextures.Text = "Analyze Constant Color Textures";
+			this.buttonAnalyzeConstantColorTextures.UseVisualStyleBackColor = true;
+			this.buttonAnalyzeConstantColorTextures.Click += new System.EventHandler(this.buttonAnalyzeConstantColorTextures_Click);
 			// 
 			// Form1
 			// 
@@ -1154,6 +1167,7 @@
 		private System.Windows.Forms.Button buttonSearchTexture;
 		private System.Windows.Forms.TextBox textBoxSearchTexture;
 		private System.Windows.Forms.Label label10;
+		private System.Windows.Forms.Button buttonAnalyzeConstantColorTextures;
 	}
 }
 

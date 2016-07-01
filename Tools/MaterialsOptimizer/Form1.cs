@@ -10,6 +10,7 @@ using System.Windows.Forms;
 using System.IO;
 using Microsoft.Win32;
 using System.Diagnostics;
+using RendererManaged;
 
 //////////////////////////////////////////////////////////////////////////
 //
@@ -1583,6 +1584,104 @@ namespace MaterialsOptimizer
 		private void buttonSearch_Click(object sender, EventArgs e)
 		{
 			RebuildMaterialsListView( textBoxSearchMaterial.Text != "" ? textBoxSearchMaterial.Text : null );
+		}
+
+		private void buttonAnalyzeConstantColorTextures_Click(object sender, EventArgs e)
+		{
+			int	totalTexDiffuseCount = 0;
+			int	totalTexNormalCount = 0;
+			int	totalTexGlossCount = 0;
+			int	totalTexMetalCount = 0;
+			int	totalTexEmissiveCount = 0;
+			int	totalTexSpecularCount = 0;
+
+			int	totalCstDiffuseCount = 0;
+			int	totalCstNormalCount = 0;
+			int	totalCstGlossCount = 0;
+			int	totalCstMetalCount = 0;
+			int	totalCstEmissiveCount = 0;
+			int	totalCstSpecularCount = 0;
+
+			int[]			cstMetalTextureCount = new int[6];
+			List< Material.Layer.Texture >	metalCstCustomColors = new List< Material.Layer.Texture >();
+
+			foreach ( Material M in m_materials ) {
+				for ( int layerIndex=0; layerIndex < M.SafeLayersCount; layerIndex++ ) {
+					Material.Layer L = M.m_layers[layerIndex];
+
+					if ( L.m_diffuse != null ) {
+						if ( L.m_diffuse.m_constantColorType != Material.Layer.Texture.CONSTANT_COLOR_TYPE.TEXTURE )
+							totalCstDiffuseCount++;
+						totalTexDiffuseCount++;
+					}
+					if ( L.m_normal != null ) {
+						if ( L.m_normal.m_constantColorType != Material.Layer.Texture.CONSTANT_COLOR_TYPE.TEXTURE )
+							totalCstNormalCount++;
+						totalTexNormalCount++;
+					}
+					if ( L.m_gloss != null ) {
+						if ( L.m_gloss.m_constantColorType != Material.Layer.Texture.CONSTANT_COLOR_TYPE.TEXTURE )
+							totalCstGlossCount++;
+						totalTexGlossCount++;
+					}
+					if ( L.m_metal != null ) {
+						if ( L.m_metal.m_constantColorType != Material.Layer.Texture.CONSTANT_COLOR_TYPE.TEXTURE ) {
+							totalCstMetalCount++;
+							cstMetalTextureCount[(int) L.m_metal.m_constantColorType-1]++;
+							if ( L.m_metal.m_constantColorType == Material.Layer.Texture.CONSTANT_COLOR_TYPE.CUSTOM ) {
+								bool	found = false;
+								foreach ( Material.Layer.Texture existingCustomColor in metalCstCustomColors )
+									if ( existingCustomColor == L.m_metal ) {
+										existingCustomColor.m_dummyCounter++;
+										found = true;
+										break;
+									}
+								if ( !found ) {
+									metalCstCustomColors.Add( L.m_metal );
+									L.m_metal.m_dummyCounter = 1;
+								}
+							}
+						}
+						totalTexMetalCount++;
+					}
+					if ( L.m_emissive != null ) {
+						if ( L.m_emissive.m_constantColorType != Material.Layer.Texture.CONSTANT_COLOR_TYPE.TEXTURE )
+							totalCstEmissiveCount++;
+						totalTexEmissiveCount++;
+					}
+					if ( L.m_specular != null ) {
+						if ( L.m_specular.m_constantColorType != Material.Layer.Texture.CONSTANT_COLOR_TYPE.TEXTURE )
+							totalCstSpecularCount++;
+						totalTexSpecularCount++;
+					}
+				}
+			}
+
+			LogLine( "" );
+			LogLine( " • Diffuse constant colors count = " + totalCstDiffuseCount + " out of " + totalTexDiffuseCount + " textures (" + (100.0f * totalCstDiffuseCount / totalTexDiffuseCount) + "%)" );
+			LogLine( " • Normal constant colors count = " + totalCstNormalCount + " out of " + totalTexNormalCount + " textures (" + (100.0f * totalCstNormalCount / totalTexNormalCount) + "%)" );
+			LogLine( " • Gloss constant colors count = " + totalCstGlossCount + " out of " + totalTexGlossCount + " textures (" + (100.0f * totalCstGlossCount / totalTexGlossCount) + "%)" );
+			LogLine( " • Metal constant colors count = " + totalCstMetalCount + " out of " + totalTexMetalCount + " textures (" + (100.0f * totalCstMetalCount / totalTexMetalCount) + "%)" );
+			LogLine( " • Emissive constant colors count = " + totalCstEmissiveCount + " out of " + totalTexEmissiveCount + " textures (" + (100.0f * totalCstEmissiveCount / totalTexEmissiveCount) + "%)" );
+			LogLine( " • Specular constant colors count = " + totalCstSpecularCount + " out of " + totalTexSpecularCount + " textures (" + (100.0f * totalCstSpecularCount / totalTexSpecularCount) + "%)" );
+
+			string[]	cstMetalTextureCategoryNames = new string[]
+			{
+				"DEFAULT",
+				"BLACK",
+				"BLACK_ALPHA_WHITE",
+				"WHITE",
+				"INVALID",		// <= Used for replacement when diffuse textures are missing (creates a lovely RED)
+				"CUSTOM",
+			};
+			LogLine( "" );
+			for ( int categoryIndex=0; categoryIndex < cstMetalTextureCategoryNames.Length; categoryIndex++ ) {
+				LogLine( "  > Metal constant color for category \"" + cstMetalTextureCategoryNames[categoryIndex] + "\" count = " + cstMetalTextureCount[categoryIndex] );
+			}
+			LogLine( "" );
+			LogLine( "• Different metal custom colors encountered:" );
+			foreach ( Material.Layer.Texture T in metalCstCustomColors )
+				LogLine( "  > { " + T.m_customConstantColor.x + ", " + T.m_customConstantColor.y + ", " + T.m_customConstantColor.z + ", " + T.m_customConstantColor.w + " } referenced " + T.m_dummyCounter + " times" );
 		}
 
 		#endregion
