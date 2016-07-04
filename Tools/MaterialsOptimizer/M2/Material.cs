@@ -111,9 +111,239 @@ namespace MaterialsOptimizer
 			}
 		}
 
+		[System.Diagnostics.DebuggerDisplay( "{m_sortStage}" )]
+		public class	Parms {
+			public enum		SORT_STAGE {
+				sortCoverage,			// { Vec	0	 }
+				sortBoatVolume,			// { Vec	80	 }
+				sortEmit,				// { Vec	100  }	// things that go in the glare pass and are additionally rendered to the main pass
+				sortEmitOnly,			// { Vec	200  }	// things that go in the glare pass only (ie certain particle effects)
+				sortShadowWalk,			// { Vec	250  }
+				sortWater,				// { Vec	300  }
+				sortDecal,				// { Vec	400  }
+				sortTransSort,			// { Vec	495  }
+				sortTrans,				// { Vec	500  }
+				sortDarkVision,			// { Vec	800  }
+				sortHud,				// { Vec	1050 }	// things like blood splats for the hud
+				sortPerturber,			// { Vec	1200 }	// surfaces which distort
+				sortAutomap,			// { Vec	1250 }	// surfaces for the automap that need to be rendered after post process
+				sortPostTonemap,		// { Vec	1400 }	// surfaces for the gui ( Iggy ) 
+
+				UNKNOWN,
+			}
+
+			public SORT_STAGE		m_sortStage = SORT_STAGE.sortCoverage;	// Default is opaque
+
+			public List< string >	m_unknownParms = new List< string >();
+
+			public bool			IsAlpha {
+				get { return (int) m_sortStage > (int) SORT_STAGE.sortTransSort; }
+			}
+
+			public void	Parse( string _parms ) {
+				m_sortStage = SORT_STAGE.UNKNOWN;
+
+				Parser	P = new Parser( _parms );
+				while ( P.OK ) {
+					string	token = P.ReadString();
+					if ( token == null )
+						break;	// Done!
+					if ( token.StartsWith( "//" ) ) {
+						RecordSingleLineCommentVariable( m_unknownParms, token, P );
+						continue;
+					}
+					if ( token.StartsWith( "/*" ) ) {
+						RecordCommentVariable( m_unknownParms, token, P );
+						continue;
+					}
+
+					if ( token.EndsWith( "{" ) ) {
+						// Handle problematic parms without space before their values
+						token = token.Substring( 0, token.Length-1 );
+						P.m_Index--;
+					}
+
+					P.SkipSpaces();
+
+					switch ( token.ToLower() ) {
+						case "stagesort": {
+							string	sortStageName = P.ReadString();
+							switch ( sortStageName.ToLower() ) {
+								case "sortcoverage":	m_sortStage = SORT_STAGE.sortCoverage; break;
+								case "sortboatvolume":	m_sortStage = SORT_STAGE.sortBoatVolume; break;
+								case "sortemit":		m_sortStage = SORT_STAGE.sortEmit; break;
+								case "sortemitonly":	m_sortStage = SORT_STAGE.sortEmitOnly; break;
+								case "sortshadowwalk":	m_sortStage = SORT_STAGE.sortShadowWalk; break;	
+								case "sortwater":		m_sortStage = SORT_STAGE.sortWater; break;
+								case "sortdecal":		m_sortStage = SORT_STAGE.sortDecal; break;
+								case "sorttranssort":	m_sortStage = SORT_STAGE.sortTransSort; break;
+								case "sorttrans":		m_sortStage = SORT_STAGE.sortTrans; break;
+								case "sortdarkvision":	m_sortStage = SORT_STAGE.sortDarkVision; break;
+								case "sorthud":			m_sortStage = SORT_STAGE.sortHud; break;
+								case "sortperturber":	m_sortStage = SORT_STAGE.sortPerturber; break;
+								case "sortautomap":		m_sortStage = SORT_STAGE.sortAutomap; break;
+								case "sortposttonemap":	m_sortStage = SORT_STAGE.sortPostTonemap; break;
+								default: throw new Exception( "Unhandled sort stage!" );
+							}
+							break;
+						}
+						default:
+							m_unknownParms.Add( token + "	" + P.ReadToEOL() );
+							break;
+					}
+				}
+			}
+
+			#region Serialization
+
+			public void	Write( BinaryWriter W ) {
+				W.Write( (int) m_sortStage );
+
+				WriteListOfStrings( W, m_unknownParms );
+			}
+
+			public void	Read( BinaryReader R ) {
+				m_sortStage = (SORT_STAGE) R.ReadInt32();
+
+				ReadListOfStrings( R, m_unknownParms );
+			}
+
+			#endregion
+
+			public void		Export( StringWriter W, string T ) {
+				string	oldT = T;
+
+				W.WriteLine( T + "parms {" );
+				T += "\t";
+
+				if ( m_sortStage != SORT_STAGE.UNKNOWN )
+					W.WriteLine( T + "stageSort	" + m_sortStage.ToString() );
+
+				foreach ( string unknownParm in m_unknownParms )
+					W.WriteLine( T + unknownParm );
+
+				T = oldT;
+				W.WriteLine( T + "}" );
+			}
+		}
+
+
+		[System.Diagnostics.DebuggerDisplay( "{}" )]
+		public class	States {
+
+			public enum		BLEND_STATE {
+				OPAQUE,
+				ALPHA,
+			}
+
+			public string			m_rawBlendState = null;
+			public BLEND_STATE		m_blendState = BLEND_STATE.OPAQUE;	// Default is opaque
+
+			public List< string >	m_unknownStates = new List< string >();
+
+			public bool			IsAlpha {
+				get { return m_blendState != BLEND_STATE.OPAQUE; }
+			}
+
+			public void	Parse( string _parms ) {
+				m_rawBlendState = null;
+				m_blendState = BLEND_STATE.OPAQUE;
+
+				Parser	P = new Parser( _parms );
+				while ( P.OK ) {
+					string	token = P.ReadString();
+					if ( token == null )
+						break;	// Done!
+					if ( token.StartsWith( "//" ) ) {
+						RecordSingleLineCommentVariable( m_unknownStates, token, P );
+						continue;
+					}
+					if ( token.StartsWith( "/*" ) ) {
+						RecordCommentVariable( m_unknownStates, token, P );
+						continue;
+					}
+
+					if ( token.EndsWith( "{" ) ) {
+						// Handle problematic parms without space before their values
+						token = token.Substring( 0, token.Length-1 );
+						P.m_Index--;
+					}
+
+					P.SkipSpaces();
+
+					switch ( token.ToLower() ) {
+						case "blend": {
+							P.SkipSpaces();
+							m_rawBlendState = P.ReadToEOL();
+							ParseBlendState( m_rawBlendState );
+							break;
+						}
+						default:
+							m_unknownStates.Add( token + "	" + P.ReadToEOL() );
+							break;
+					}
+				}
+			}
+
+			#region Serialization
+
+			public void	Write( BinaryWriter W ) {
+				W.Write( m_rawBlendState != null ? m_rawBlendState : "" );
+				W.Write( (int) m_blendState );
+
+				WriteListOfStrings( W, m_unknownStates );
+			}
+
+			public void	Read( BinaryReader R ) {
+				m_rawBlendState = R.ReadString();
+				m_rawBlendState = m_rawBlendState != string.Empty ? m_rawBlendState : null;
+				m_blendState = (BLEND_STATE) R.ReadInt32();
+
+				ReadListOfStrings( R, m_unknownStates );
+			}
+
+			#endregion
+
+			public void		Export( StringWriter W, string T ) {
+				string	oldT = T;
+				W.WriteLine( T + "state {" );
+				T += "\t";
+
+				if ( m_rawBlendState != null ) {
+					W.WriteLine( T + "blend	" + m_rawBlendState );
+				}
+
+				foreach ( string unknownState in m_unknownStates )
+					W.WriteLine( T + unknownState );
+
+				T = oldT;
+				W.WriteLine( T + "}" );
+			}
+
+			void	ParseBlendState( string _rawBlendState ) {
+				m_blendState = BLEND_STATE.OPAQUE;
+
+				Parser		P = new Parser( _rawBlendState );
+				string		sourceOp = P.ReadString();
+				string		destOp = P.OK ? P.ReadString() : null;
+				string[]	ops = new string[] { sourceOp, destOp };
+				foreach ( string op in ops ) {
+					if ( op != null )
+						switch ( op.ToUpper() ) {
+							case "SRC_ALPHA":
+							case "ONE_MINUS_SRC_ALPHA":
+							case "DST_ALPHA":
+							case "ONE_MINUS_DST_ALPHA":
+								m_blendState = BLEND_STATE.ALPHA;
+								break;
+						}
+				}
+			}
+		}
+
 		[System.Diagnostics.DebuggerDisplay( "Alpha={m_isAlpha}" )]
 		public class	Options {
-			public bool				m_isAlpha = false;
+//			public bool				m_isAlpha = false;
 			public bool				m_isAlphaTest = false;
 			public bool				m_isMasking = false;
 			public bool				m_hasNormal = false;
@@ -129,13 +359,13 @@ namespace MaterialsOptimizer
 			public List< string >	m_unknownOptions = new List< string >();
 
 			public bool				IsAlpha {
-				get { return m_isAlpha || m_isAlphaTest || m_isMasking; }
+				get { return m_isAlphaTest; }
 			}
 
 			#region Serialization
 
 			public void	Write( BinaryWriter W ) {
-				W.Write( m_isAlpha );
+//				W.Write( m_isAlpha );
 				W.Write( m_isAlphaTest );
 				W.Write( m_isMasking );
 				W.Write( m_hasNormal );
@@ -147,10 +377,12 @@ namespace MaterialsOptimizer
 				W.Write( m_translucencyEnabled );
 				W.Write( m_translucencyUseVertexColor );
 				W.Write( m_extraLayers );
+
+				WriteListOfStrings( W, m_unknownOptions );
 			}
 
 			public void	Read( BinaryReader R ) {
-				m_isAlpha = R.ReadBoolean();
+//				m_isAlpha = R.ReadBoolean();
 				m_isAlphaTest = R.ReadBoolean();
 				m_isMasking = R.ReadBoolean();
 				m_hasNormal = R.ReadBoolean();
@@ -162,6 +394,8 @@ namespace MaterialsOptimizer
 				m_translucencyEnabled = R.ReadBoolean();
 				m_translucencyUseVertexColor = R.ReadBoolean();
 				m_extraLayers = R.ReadInt32();
+
+				ReadListOfStrings( R, m_unknownOptions );
 			}
 
 			#endregion
@@ -171,7 +405,7 @@ namespace MaterialsOptimizer
 
 				// Write known options
 				W.WriteLine( T + "extralayer		" + m_extraLayers );
-				W.WriteLine( T + "isalpha			" + (m_isAlpha ? 1 : 0) );
+//				W.WriteLine( T + "isalpha			" + (m_isAlpha ? 1 : 0) );
 				W.WriteLine( T + "alphatest		" + (m_isAlphaTest ? 1 : 0) );
 				W.WriteLine( T + "ismasking		" + (m_isMasking ? 1 : 0) );
 				W.WriteLine( T + "hasbumpmap		" + (m_hasNormal ? 1 : 0) );
@@ -950,6 +1184,8 @@ namespace MaterialsOptimizer
 
 		public Programs			m_programs = new Programs();
 
+		public Parms			m_parms = new Parms();		// Parms (with sort stage)
+		public States			m_states = new States();	// Render states (with blend states)
 		public Options			m_options = new Options();	// Options
 
 		// Textures
@@ -968,8 +1204,6 @@ namespace MaterialsOptimizer
 		public bool				m_isUsingWaterParms = false;
 
 		// Unknown parms/options/etc. that need to be restored as-is
-		public List< string >	m_unknownStates = new List< string >();
-		public List< string >	m_unknownParms = new List< string >();
 		public List< string >	m_unknownVariables = new List< string >();
 
 		// Forbidden parms
@@ -983,6 +1217,10 @@ namespace MaterialsOptimizer
 		public string			m_warnings = null;
 
 		#region PROPERTIES
+
+		public bool				IsAlpha {
+			get { return m_options.IsAlpha || m_states.IsAlpha || m_parms.IsAlpha; }
+		}
 
 		/// <summary>
 		/// Returns the ACTUAL amount of layers used by the shader
@@ -1142,8 +1380,8 @@ namespace MaterialsOptimizer
 		#region Material Parsing
 
 		private void	Parse( string _block ) {
-			m_unknownStates.Clear();
-			m_unknownParms.Clear();
+			m_states.m_unknownStates.Clear();
+			m_parms.m_unknownParms.Clear();
 			m_options.m_unknownOptions.Clear();
 			m_unknownVariables.Clear();
 			m_forbiddenParms.Clear();
@@ -1181,11 +1419,11 @@ namespace MaterialsOptimizer
 						break;
 
 					case "state":
-						ParseState( P.ReadBlock() );
+						m_states.Parse( P.ReadBlock() );
 						break;
 
 					case "parms":
-						ParseParms( P.ReadBlock() );
+						m_parms.Parse( P.ReadBlock() );
 						break;
 
 					case "options":
@@ -1261,24 +1499,6 @@ namespace MaterialsOptimizer
 			}
 		}
 
-		private void	ParseState( string _state ) {
-			m_unknownStates.Add( _state );	// Add entire state!
-// 
-// 			try {
-// 			} catch ( Exception _e ) {
-// 				throw new Exception( "Failed parsing state block!", _e );
-// 			}
-		}
-
-		private void	ParseParms( string _parms ) {
-			m_unknownParms.Add( _parms );	// Add entire parms!
-// 
-// 			try {
-// 			} catch ( Exception _e ) {
-// 				throw new Exception( "Failed parsing parms block!", _e );
-// 			}
-		}
-
 		private void	ParseOptions( string _options ) {
 			try {
 				Parser	P = new Parser( _options );
@@ -1302,7 +1522,7 @@ namespace MaterialsOptimizer
 
 					switch ( token.ToLower() ) {
 
-						case "isalpha":						m_options.m_isAlpha = value != 0; break;
+//						case "isalpha":						m_options.m_isAlpha = value != 0; break;
 						case "alphatest":					m_options.m_isAlphaTest = value != 0; break;
 						case "ismasking":					m_options.m_isMasking = value != 0; break;
 						case "hasbumpmap":					m_options.m_hasNormal = value != 0; break;
@@ -1527,13 +1747,19 @@ namespace MaterialsOptimizer
 		}
 
 		void	RecordSingleLineCommentVariable( string _token, Parser P ) {
+			RecordSingleLineCommentVariable( m_unknownVariables, _token, P );
+		}
+		static void	RecordSingleLineCommentVariable( List< string > _variables, string _token, Parser P ) {
 			string	record = _token + P.ReadToEOL();
-			m_unknownVariables.Add( record );
+			_variables.Add( record );
 		}
 	
 		void	RecordCommentVariable( string _token, Parser P ) {
+			RecordCommentVariable( m_unknownVariables, _token, P );
+		}
+		static void	RecordCommentVariable( List< string > _variables, string _token, Parser P ) {
 			string	comment = _token + P.SkipComment();
-			m_unknownVariables.Add( comment );
+			_variables.Add( comment );
 		}
 	
 		#region Tokens Checking
@@ -1843,6 +2069,8 @@ namespace MaterialsOptimizer
 			W.Write( m_version );
 
 			m_programs.Write( W );
+			m_parms.Write( W );
+			m_states.Write( W );
 			m_options.Write( W );
 
 			W.Write( m_layers.Count );
@@ -1868,9 +2096,6 @@ namespace MaterialsOptimizer
 			W.Write( m_isUsingWaterParms );
 
 			// Write unknown strings that should be restored as-is
-			WriteListOfStrings( W, m_unknownStates );
-			WriteListOfStrings( W, m_unknownParms );
-			WriteListOfStrings( W, m_options.m_unknownOptions );
 			WriteListOfStrings( W, m_unknownVariables );
 			WriteListOfStrings( W, m_forbiddenParms );
 
@@ -1887,6 +2112,8 @@ namespace MaterialsOptimizer
 			m_version = R.ReadInt32();
 
 			m_programs.Read( R );
+			m_parms.Read( R );
+			m_states.Read( R );
 			m_options.Read( R );
 
 			m_layers.Clear();
@@ -1911,9 +2138,6 @@ namespace MaterialsOptimizer
 			m_isUsingWaterParms = R.ReadBoolean();
 
 			// Read unknown strings that should be restored as-is
-			ReadListOfStrings( R, m_unknownStates );
-			ReadListOfStrings( R, m_unknownParms );
-			ReadListOfStrings( R, m_options.m_unknownOptions );
 			ReadListOfStrings( R, m_unknownVariables );
 			ReadListOfStrings( R, m_forbiddenParms );
 
@@ -1930,13 +2154,13 @@ namespace MaterialsOptimizer
 				m_warnings = null;
 		}
 
-		void	WriteListOfStrings( BinaryWriter W, List< string > _list ) {
+		static void	WriteListOfStrings( BinaryWriter W, List< string > _list ) {
 			W.Write( _list.Count );
 			foreach ( string value in _list )
 				W.Write( value );
 		}
 
-		void	ReadListOfStrings( BinaryReader R, List< string > _list ) {
+		static void	ReadListOfStrings( BinaryReader R, List< string > _list ) {
 			_list.Clear();
 			int	stringsCount = R.ReadInt32();
 			for ( int stringIndex=0; stringIndex < stringsCount; stringIndex++ )
@@ -1975,15 +2199,23 @@ namespace MaterialsOptimizer
 			m_forbiddenParms.Clear();
 
 			// Remove standard comments
+			CleanUpUselessComments( m_parms.m_unknownParms );
+			CleanUpUselessComments( m_states.m_unknownStates );
+			CleanUpUselessComments( m_options.m_unknownOptions );
+			CleanUpUselessComments( m_unknownVariables );
+		}
+
+		public void		CleanUpUselessComments( List< string > _unknownStrings ) {
 			string[]	annoyingComments =  new string[] {
 				"// bumpmap",
 				"// specularmap",
 				"// //specularmap",
 				"// glossmap",
 				"// metallicmap",
+				"//deprecated",
 			};
-			string[]	sourceUnknownVariables = m_unknownVariables.ToArray();
-			m_unknownVariables.Clear();
+			string[]	sourceUnknownVariables = _unknownStrings.ToArray();
+			_unknownStrings.Clear();
 			foreach ( string unknownVariable in sourceUnknownVariables ) {
 				string	trimmed = unknownVariable.Trim().ToLower();
 				bool	skip = false;
@@ -1996,7 +2228,7 @@ namespace MaterialsOptimizer
 				}
 
 				if ( !skip )
-					m_unknownVariables.Add( unknownVariable );	// Okay, we can re-add the variable...
+					_unknownStrings.Add( unknownVariable );	// Okay, we can re-add the variable...
 			}
 		}
 
@@ -2019,14 +2251,10 @@ namespace MaterialsOptimizer
 				W.WriteLine( T + "m_PhysicsMaterial	" + m_physicsMaterial );
 
 			// Write parms
-			W.WriteLine( T + "parms {" );
-			WriteParms( W, T, m_unknownParms );
-			W.WriteLine( T + "}" );
+			m_parms.Export( W, T );
 
 			// Write state
-			W.WriteLine( T + "state {" );
-			WriteStates( W, T, m_unknownStates );
-			W.WriteLine( T + "}" );
+			m_states.Export( W, T );
 
 			// Write options
 			W.WriteLine( T + "options {" );
@@ -2068,16 +2296,6 @@ namespace MaterialsOptimizer
 				W.WriteLine( T + unknownVariable );
 
 			W.WriteLine( "}\n" );
-		}
-
-		void	WriteParms( StringWriter W, string T, List< string > _unknownParms ) {
-			foreach ( string unknownParm in _unknownParms )
-				W.WriteLine( T + unknownParm );
-		}
-
-		void	WriteStates( StringWriter W, string T, List< string > _unknownStates ) {
-			foreach ( string unknownState in _unknownStates )
-				W.WriteLine( T + unknownState );
 		}
 
 		#endregion

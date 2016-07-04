@@ -774,6 +774,8 @@ namespace MaterialsOptimizer
 				bool	skipEye = !checkBoxShowEye.Checked ^ checkBoxInvertMaterialFilters.Checked;
 				bool	skipHair = !checkBoxShowHair.Checked ^ checkBoxInvertMaterialFilters.Checked;
 				bool	skipVegetation = !checkBoxShowVegetation.Checked ^ checkBoxInvertMaterialFilters.Checked;
+				bool	skipAlpha = !checkBoxShowAlpha.Checked && !checkBoxInvertMaterialFilters.Checked;
+				bool	skipNonAlpha = !checkBoxShowAlpha.Checked && checkBoxInvertMaterialFilters.Checked;
 				bool	skipVista = !checkBoxShowVista.Checked ^ checkBoxInvertMaterialFilters.Checked;
 				bool	skipOther = !checkBoxShowOtherMaterialTypes.Checked ^ checkBoxInvertMaterialFilters.Checked;
 				int		layersCountMin = integerTrackbarControlLayerMin.Value;
@@ -800,6 +802,9 @@ namespace MaterialsOptimizer
 						case Material.Programs.KNOWN_TYPES.VISTA: skip = skipVista; break;
 						default: skip = skipOther; break;
 					}
+					bool	isAlpha = M.IsAlpha;
+					if ( (skipAlpha && isAlpha) || (skipNonAlpha && !isAlpha) )
+						continue;
 
 					if ( (int) M.ErrorLevel < minErrorLevel )
 						continue;
@@ -833,6 +838,7 @@ namespace MaterialsOptimizer
 					case 0: filteredMaterials.Sort( new MatCompareNames_Ascending() ); break;
 					case 1: filteredMaterials.Sort( new MatCompareTypes_Ascending() ); break;
 					case 2: filteredMaterials.Sort( new MatCompareLayers_Ascending() ); break;
+					case 3: filteredMaterials.Sort( new MatCompareAlpha_Ascending() ); break;
 					case 6: filteredMaterials.Sort( new MatCompareFileNames_Ascending() ); break;
 				}
 			} else {
@@ -840,6 +846,7 @@ namespace MaterialsOptimizer
 					case 0: filteredMaterials.Sort( new MatCompareNames_Descending() ); break;
 					case 1: filteredMaterials.Sort( new MatCompareTypes_Descending() ); break;
 					case 2: filteredMaterials.Sort( new MatCompareLayers_Descending() ); break;
+					case 3: filteredMaterials.Sort( new MatCompareAlpha_Descending() ); break;
 					case 6: filteredMaterials.Sort( new MatCompareFileNames_Descending() ); break;
 				}
 			}
@@ -855,7 +862,7 @@ namespace MaterialsOptimizer
 				item.Tag = M;
 				item.SubItems.Add( new ListViewItem.ListViewSubItem( item, M.m_programs.m_type.ToString() ) );
 				item.SubItems.Add( new ListViewItem.ListViewSubItem( item, M.LayersCount.ToString() ) );			// Show the ACTUAL amount of layers used by the shader!
-				item.SubItems.Add( new ListViewItem.ListViewSubItem( item, M.m_options.IsAlpha ? "Yes" : "" ) );
+				item.SubItems.Add( new ListViewItem.ListViewSubItem( item, M.IsAlpha ? "Yes" : "" ) );
 				item.SubItems.Add( new ListViewItem.ListViewSubItem( item, M.m_isCandidateForOptimization ) );
 				item.SubItems.Add( new ListViewItem.ListViewSubItem( item, errorString ) );
 				item.SubItems.Add( new ListViewItem.ListViewSubItem( item, M.m_sourceFileName.FullName ) );
@@ -914,7 +921,22 @@ namespace MaterialsOptimizer
 		}
 		class	MatCompareLayers_Descending : IComparer< Material > {
 			public int Compare(Material x, Material y) {
-				return x.m_layers.Count < y.m_layers.Count ? 1 : (x.m_layers.Count > y.m_layers.Count ? -1 : 0);
+				return x.m_layers.Count < y.m_layers.Count ? -1 : (x.m_layers.Count > y.m_layers.Count ? 1 : 0);
+			}
+		}
+
+		class	MatCompareAlpha_Ascending : IComparer< Material > {
+			public int Compare(Material x, Material y) {
+				bool	a = x.IsAlpha;
+				bool	b = y.IsAlpha;
+				return a == b ? 0 : (a ? 1 : -1);
+			}
+		}
+		class	MatCompareAlpha_Descending : IComparer< Material > {
+			public int Compare(Material x, Material y) {
+				bool	a = x.IsAlpha;
+				bool	b = y.IsAlpha;
+				return a == b ? 0 : (b ? 1 : -1);
 			}
 		}
 

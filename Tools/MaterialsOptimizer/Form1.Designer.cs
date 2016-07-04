@@ -113,6 +113,7 @@
 			this.buttonParseReExportedMaterials = new System.Windows.Forms.Button();
 			this.buttonIntegratePerforce = new System.Windows.Forms.Button();
 			this.buttonAnalyzeConstantColorTextures = new System.Windows.Forms.Button();
+			this.checkBoxShowAlpha = new System.Windows.Forms.CheckBox();
 			this.tabControl.SuspendLayout();
 			this.tabPageMaterials.SuspendLayout();
 			this.panelFilterMaterials.SuspendLayout();
@@ -250,6 +251,7 @@
 			this.panelFilterMaterials.Controls.Add(this.checkBoxShowHair);
 			this.panelFilterMaterials.Controls.Add(this.checkBoxInvertMaterialFilters);
 			this.panelFilterMaterials.Controls.Add(this.checkBoxShowEye);
+			this.panelFilterMaterials.Controls.Add(this.checkBoxShowAlpha);
 			this.panelFilterMaterials.Controls.Add(this.checkBoxShowOtherMaterialTypes);
 			this.panelFilterMaterials.Controls.Add(this.checkBoxShowVista);
 			this.panelFilterMaterials.Controls.Add(this.checkBoxShowOptimizableMaterials);
@@ -263,7 +265,7 @@
 			// 
 			// buttonSearch
 			// 
-			this.buttonSearch.Location = new System.Drawing.Point(1090, 20);
+			this.buttonSearch.Location = new System.Drawing.Point(1020, 6);
 			this.buttonSearch.Name = "buttonSearch";
 			this.buttonSearch.Size = new System.Drawing.Size(75, 23);
 			this.buttonSearch.TabIndex = 7;
@@ -273,7 +275,7 @@
 			// 
 			// textBoxSearchMaterial
 			// 
-			this.textBoxSearchMaterial.Location = new System.Drawing.Point(764, 22);
+			this.textBoxSearchMaterial.Location = new System.Drawing.Point(694, 8);
 			this.textBoxSearchMaterial.Name = "textBoxSearchMaterial";
 			this.textBoxSearchMaterial.Size = new System.Drawing.Size(320, 20);
 			this.textBoxSearchMaterial.TabIndex = 6;
@@ -299,7 +301,7 @@
 			// label7
 			// 
 			this.label7.AutoSize = true;
-			this.label7.Location = new System.Drawing.Point(702, 25);
+			this.label7.Location = new System.Drawing.Point(632, 11);
 			this.label7.Name = "label7";
 			this.label7.Size = new System.Drawing.Size(56, 13);
 			this.label7.TabIndex = 5;
@@ -308,7 +310,7 @@
 			// label8
 			// 
 			this.label8.AutoSize = true;
-			this.label8.Location = new System.Drawing.Point(194, 55);
+			this.label8.Location = new System.Drawing.Point(157, 55);
 			this.label8.Name = "label8";
 			this.label8.Size = new System.Drawing.Size(167, 13);
 			this.label8.TabIndex = 5;
@@ -340,7 +342,7 @@
 			// 
 			// integerTrackbarControlErrorLevel
 			// 
-			this.integerTrackbarControlErrorLevel.Location = new System.Drawing.Point(367, 52);
+			this.integerTrackbarControlErrorLevel.Location = new System.Drawing.Point(330, 52);
 			this.integerTrackbarControlErrorLevel.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.integerTrackbarControlErrorLevel.MinimumSize = new System.Drawing.Size(70, 20);
 			this.integerTrackbarControlErrorLevel.Name = "integerTrackbarControlErrorLevel";
@@ -369,8 +371,9 @@
 			// 
 			// labelTotalMaterials
 			// 
+			this.labelTotalMaterials.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
 			this.labelTotalMaterials.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-			this.labelTotalMaterials.Location = new System.Drawing.Point(579, 2);
+			this.labelTotalMaterials.Location = new System.Drawing.Point(1183, 2);
 			this.labelTotalMaterials.Name = "labelTotalMaterials";
 			this.labelTotalMaterials.Size = new System.Drawing.Size(93, 43);
 			this.labelTotalMaterials.TabIndex = 3;
@@ -381,7 +384,7 @@
 			this.checkBoxShowArkDefault.AutoSize = true;
 			this.checkBoxShowArkDefault.Checked = true;
 			this.checkBoxShowArkDefault.CheckState = System.Windows.Forms.CheckState.Checked;
-			this.checkBoxShowArkDefault.Location = new System.Drawing.Point(197, 5);
+			this.checkBoxShowArkDefault.Location = new System.Drawing.Point(160, 5);
 			this.checkBoxShowArkDefault.Name = "checkBoxShowArkDefault";
 			this.checkBoxShowArkDefault.Size = new System.Drawing.Size(90, 17);
 			this.checkBoxShowArkDefault.TabIndex = 2;
@@ -394,7 +397,7 @@
 			this.checkBoxShowSkin.AutoSize = true;
 			this.checkBoxShowSkin.Checked = true;
 			this.checkBoxShowSkin.CheckState = System.Windows.Forms.CheckState.Checked;
-			this.checkBoxShowSkin.Location = new System.Drawing.Point(291, 5);
+			this.checkBoxShowSkin.Location = new System.Drawing.Point(254, 5);
 			this.checkBoxShowSkin.Name = "checkBoxShowSkin";
 			this.checkBoxShowSkin.Size = new System.Drawing.Size(77, 17);
 			this.checkBoxShowSkin.TabIndex = 2;
@@ -407,7 +410,7 @@
 			this.checkBoxShowHair.AutoSize = true;
 			this.checkBoxShowHair.Checked = true;
 			this.checkBoxShowHair.CheckState = System.Windows.Forms.CheckState.Checked;
-			this.checkBoxShowHair.Location = new System.Drawing.Point(384, 5);
+			this.checkBoxShowHair.Location = new System.Drawing.Point(347, 5);
 			this.checkBoxShowHair.Name = "checkBoxShowHair";
 			this.checkBoxShowHair.Size = new System.Drawing.Size(75, 17);
 			this.checkBoxShowHair.TabIndex = 2;
@@ -419,7 +422,7 @@
 			// 
 			this.checkBoxInvertMaterialFilters.AutoSize = true;
 			this.checkBoxInvertMaterialFilters.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-			this.checkBoxInvertMaterialFilters.Location = new System.Drawing.Point(477, 28);
+			this.checkBoxInvertMaterialFilters.Location = new System.Drawing.Point(440, 28);
 			this.checkBoxInvertMaterialFilters.Name = "checkBoxInvertMaterialFilters";
 			this.checkBoxInvertMaterialFilters.Size = new System.Drawing.Size(97, 17);
 			this.checkBoxInvertMaterialFilters.TabIndex = 2;
@@ -432,7 +435,7 @@
 			this.checkBoxShowEye.AutoSize = true;
 			this.checkBoxShowEye.Checked = true;
 			this.checkBoxShowEye.CheckState = System.Windows.Forms.CheckState.Checked;
-			this.checkBoxShowEye.Location = new System.Drawing.Point(477, 5);
+			this.checkBoxShowEye.Location = new System.Drawing.Point(440, 5);
 			this.checkBoxShowEye.Name = "checkBoxShowEye";
 			this.checkBoxShowEye.Size = new System.Drawing.Size(74, 17);
 			this.checkBoxShowEye.TabIndex = 2;
@@ -445,7 +448,7 @@
 			this.checkBoxShowOtherMaterialTypes.AutoSize = true;
 			this.checkBoxShowOtherMaterialTypes.Checked = true;
 			this.checkBoxShowOtherMaterialTypes.CheckState = System.Windows.Forms.CheckState.Checked;
-			this.checkBoxShowOtherMaterialTypes.Location = new System.Drawing.Point(384, 28);
+			this.checkBoxShowOtherMaterialTypes.Location = new System.Drawing.Point(347, 26);
 			this.checkBoxShowOtherMaterialTypes.Name = "checkBoxShowOtherMaterialTypes";
 			this.checkBoxShowOtherMaterialTypes.Size = new System.Drawing.Size(82, 17);
 			this.checkBoxShowOtherMaterialTypes.TabIndex = 2;
@@ -458,7 +461,7 @@
 			this.checkBoxShowVista.AutoSize = true;
 			this.checkBoxShowVista.Checked = true;
 			this.checkBoxShowVista.CheckState = System.Windows.Forms.CheckState.Checked;
-			this.checkBoxShowVista.Location = new System.Drawing.Point(291, 28);
+			this.checkBoxShowVista.Location = new System.Drawing.Point(520, 5);
 			this.checkBoxShowVista.Name = "checkBoxShowVista";
 			this.checkBoxShowVista.Size = new System.Drawing.Size(79, 17);
 			this.checkBoxShowVista.TabIndex = 2;
@@ -504,7 +507,7 @@
 			this.checkBoxShowVegetation.AutoSize = true;
 			this.checkBoxShowVegetation.Checked = true;
 			this.checkBoxShowVegetation.CheckState = System.Windows.Forms.CheckState.Checked;
-			this.checkBoxShowVegetation.Location = new System.Drawing.Point(197, 28);
+			this.checkBoxShowVegetation.Location = new System.Drawing.Point(160, 26);
 			this.checkBoxShowVegetation.Name = "checkBoxShowVegetation";
 			this.checkBoxShowVegetation.Size = new System.Drawing.Size(107, 17);
 			this.checkBoxShowVegetation.TabIndex = 2;
@@ -1035,6 +1038,19 @@
 			this.buttonAnalyzeConstantColorTextures.UseVisualStyleBackColor = true;
 			this.buttonAnalyzeConstantColorTextures.Click += new System.EventHandler(this.buttonAnalyzeConstantColorTextures_Click);
 			// 
+			// checkBoxShowAlpha
+			// 
+			this.checkBoxShowAlpha.AutoSize = true;
+			this.checkBoxShowAlpha.Checked = true;
+			this.checkBoxShowAlpha.CheckState = System.Windows.Forms.CheckState.Checked;
+			this.checkBoxShowAlpha.Location = new System.Drawing.Point(254, 26);
+			this.checkBoxShowAlpha.Name = "checkBoxShowAlpha";
+			this.checkBoxShowAlpha.Size = new System.Drawing.Size(83, 17);
+			this.checkBoxShowAlpha.TabIndex = 2;
+			this.checkBoxShowAlpha.Text = "Show Alpha";
+			this.checkBoxShowAlpha.UseVisualStyleBackColor = true;
+			this.checkBoxShowAlpha.CheckedChanged += new System.EventHandler(this.checkBoxShowArkDefault_CheckedChanged);
+			// 
 			// Form1
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -1168,6 +1184,7 @@
 		private System.Windows.Forms.TextBox textBoxSearchTexture;
 		private System.Windows.Forms.Label label10;
 		private System.Windows.Forms.Button buttonAnalyzeConstantColorTextures;
+		private System.Windows.Forms.CheckBox checkBoxShowAlpha;
 	}
 }
 
