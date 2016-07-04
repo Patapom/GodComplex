@@ -376,10 +376,15 @@ namespace MaterialsOptimizer
 			Material.Layer.Texture.ms_TexturesBasePath = new DirectoryInfo( textBoxTexturesBasePath.Text );
 
 			// Reload textures database
-			if ( m_sourceMaterialsDatabaseFileName.Exists )
+			if ( m_sourceMaterialsDatabaseFileName.Exists ) {
 				LoadMaterialsDatabase( m_sourceMaterialsDatabaseFileName, m_sourceMaterials );
-			if ( m_optimizedMaterialsDatabaseFileName.Exists )
+				buttonReExport.Enabled = m_sourceMaterials.Count > 0;
+			}
+			if ( m_optimizedMaterialsDatabaseFileName.Exists ) {
 				LoadMaterialsDatabase( m_optimizedMaterialsDatabaseFileName, m_optimizedMaterials );
+				buttonParseReExportedMaterials.Enabled = m_optimizedMaterials.Count > 0;
+				buttonGenerate_dgTextures.Enabled = m_optimizedMaterials.Count > 0;
+			}
 			if ( m_texturesDatabaseFileName.Exists )
 				LoadTexturesDatabase( m_texturesDatabaseFileName );
 
@@ -1386,6 +1391,7 @@ namespace MaterialsOptimizer
 			int totalMissingTexturesReplacedCount = 0;
 			int totalReUseOptionsSetCount = 0;
 			int	totalCleanedUpMaterialsCount = 0;
+
 			int	materialIndex = 0;
 			foreach ( Material M in m_sourceMaterials ) {
 				try {
@@ -1414,6 +1420,53 @@ namespace MaterialsOptimizer
 			LogLine( "	  > Total textures removed: " + totalRemovedTexturesCount );
 			LogLine( "	  > Total missing textures replaced: " + totalMissingTexturesReplacedCount );
 			LogLine( "	  > Total re-use options added: " + totalReUseOptionsSetCount );
+
+
+			//////////////////////////////////////////////////////////////////////////
+			// 4] Collect optimizable textures
+			LogLine( "" );
+			LogLine( "Collecting optimizable diffuse+gloss textures..." );
+
+			foreach ( TextureFileInfo TFI in m_textures ) {
+				TFI.m_associatedTexture = null;	// Clear associated textures
+			}
+
+			// 4.1) Simply collect all possible diffuse+gloss couples
+			Dictionary< TextureFileInfo, List< TextureFileInfo > >	diffuse2GlossMaps = new Dictionary< TextureFileInfo, List< TextureFileInfo > >();
+			foreach ( Material M in m_sourceMaterials ) {
+				M.CollectDiffuseGlossTextures( diffuse2GlossMaps );
+			}
+
+			// 4.2) Keep (diffuse+gloss) forming a single couple (i.e. diffuse map is never used by other gloss textures)
+			Dictionary< TextureFileInfo, TextureFileInfo >	diffuseGlossPairs = new Dictionary<TextureFileInfo,TextureFileInfo>();
+			foreach ( TextureFileInfo diffuseMap in diffuse2GlossMaps.Keys ) {
+				List< TextureFileInfo >	glossMaps = diffuse2GlossMaps[diffuseMap];
+				if ( glossMaps.Count == 0 )
+					continue;
+
+				bool			allSimilarGloss = true;
+				TextureFileInfo	firstGlossMap = glossMaps[0];
+				for ( int glossMapIndex=1; glossMapIndex < glossMaps.Count; glossMapIndex++ ) {
+					TextureFileInfo	otherGlossMap = glossMaps[glossMapIndex];
+					if ( otherGlossMap != firstGlossMap ) {
+						// Several gloss maps are associated to that diffuse map, we can't compact it...
+						allSimilarGloss = false;
+						break;
+					}
+				}
+
+				if ( allSimilarGloss ) {
+					// Okay! Bingo!
+					diffuseMap.m_associatedTexture = firstGlossMap;		// The gloss is now associated to the diffuse
+					diffuseGlossPairs.Add( diffuseMap, firstGlossMap );
+				}
+			}
+			LogLine( "	• Total optimizable (diffuse+gloss) textures: " + diffuseGlossPairs.Count );
+
+			// 4.3) Optimize materials so they replace their diffuse by the new combo
+			int	totalDiffuseGlossTexturesReplaced = 0;
+			foreach ( Material M in m_sourceMaterials )
+				M.Optimize( diffuseGlossPairs, ref totalDiffuseGlossTexturesReplaced );
 
 
 			//////////////////////////////////////////////////////////////////////////
@@ -1458,6 +1511,9 @@ namespace MaterialsOptimizer
 			// 4] Re-parse optimized materials
 			progressBarReExportMaterials.Visible = false;
 
+			buttonParseReExportedMaterials.Enabled = m_optimizedMaterials.Count > 0;
+			buttonGenerate_dgTextures.Enabled = m_optimizedMaterials.Count > 0;
+
 			buttonParseReExportedMaterials_Click( null, EventArgs.Empty );
 		}
 
@@ -1501,6 +1557,8 @@ namespace MaterialsOptimizer
 		private void buttonParseMaterials_Click(object sender, EventArgs e) {
 			try {
 				RecurseParseMaterials( new DirectoryInfo( textBoxMaterialsBasePath.Text ), m_sourceMaterials, progressBarMaterials );
+				buttonReExport.Enabled = m_sourceMaterials.Count > 0;
+
 				SaveMaterialsDatabase( m_sourceMaterialsDatabaseFileName, m_sourceMaterials );
 				AnalyzeMaterialsDatabase( m_sourceMaterials, true );
 				RebuildMaterialsListView( m_sourceMaterials );

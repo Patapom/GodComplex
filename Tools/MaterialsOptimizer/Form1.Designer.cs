@@ -911,6 +911,7 @@
 			// 
 			// buttonReExport
 			// 
+			this.buttonReExport.Enabled = false;
 			this.buttonReExport.Location = new System.Drawing.Point(530, 80);
 			this.buttonReExport.Name = "buttonReExport";
 			this.buttonReExport.Size = new System.Drawing.Size(75, 23);
@@ -923,6 +924,7 @@
 			// 
 			// buttonParseReExportedMaterials
 			// 
+			this.buttonParseReExportedMaterials.Enabled = false;
 			this.buttonParseReExportedMaterials.Location = new System.Drawing.Point(611, 80);
 			this.buttonParseReExportedMaterials.Name = "buttonParseReExportedMaterials";
 			this.buttonParseReExportedMaterials.Size = new System.Drawing.Size(75, 23);
@@ -946,7 +948,8 @@
 			// 
 			// buttonGenerate_dgTextures
 			// 
-			this.buttonGenerate_dgTextures.Location = new System.Drawing.Point(530, 106);
+			this.buttonGenerate_dgTextures.Enabled = false;
+			this.buttonGenerate_dgTextures.Location = new System.Drawing.Point(692, 48);
 			this.buttonGenerate_dgTextures.Name = "buttonGenerate_dgTextures";
 			this.buttonGenerate_dgTextures.Size = new System.Drawing.Size(91, 23);
 			this.buttonGenerate_dgTextures.TabIndex = 4;
@@ -969,9 +972,9 @@
 			// 
 			this.progressBarTextures.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-			this.progressBarTextures.Location = new System.Drawing.Point(692, 48);
+			this.progressBarTextures.Location = new System.Drawing.Point(789, 48);
 			this.progressBarTextures.Name = "progressBarTextures";
-			this.progressBarTextures.Size = new System.Drawing.Size(619, 23);
+			this.progressBarTextures.Size = new System.Drawing.Size(522, 23);
 			this.progressBarTextures.TabIndex = 6;
 			this.progressBarTextures.Visible = false;
 			// 
@@ -1093,7 +1096,7 @@
 			// 
 			// buttonIntegratePerforce
 			// 
-			this.buttonIntegratePerforce.Location = new System.Drawing.Point(692, 106);
+			this.buttonIntegratePerforce.Location = new System.Drawing.Point(530, 106);
 			this.buttonIntegratePerforce.Name = "buttonIntegratePerforce";
 			this.buttonIntegratePerforce.Size = new System.Drawing.Size(75, 23);
 			this.buttonIntegratePerforce.TabIndex = 4;

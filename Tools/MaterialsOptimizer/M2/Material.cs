@@ -2191,6 +2191,8 @@ namespace MaterialsOptimizer
 			}
 
 			// Cleanup layers
+			while ( m_layers.Count > LayersCount )
+				m_layers.RemoveAt( m_layers.Count-1 );	// Remove last layer
 			foreach ( Layer L in m_layers ) {
 				L.CleanUp( m_layers, m_options, ref _removedTexturesCount, ref _missingTexturesReplacedCount, ref _reUseOptionsSetCount );
 			}
@@ -2203,6 +2205,67 @@ namespace MaterialsOptimizer
 			CleanUpUselessComments( m_states.m_unknownStates );
 			CleanUpUselessComments( m_options.m_unknownOptions );
 			CleanUpUselessComments( m_unknownVariables );
+		}
+
+		public void	CollectDiffuseGlossTextures( Dictionary< TextureFileInfo, List< TextureFileInfo > > _diffuse2GlossMaps ) {
+			if ( IsAlpha )
+				return;	// Don't collect alpha materials
+
+			// Check the material is arkDefault
+			if ( m_programs.m_type != Programs.KNOWN_TYPES.DEFAULT )
+				return;	// We could but I chose not to deal with other shaders than arkDefault...
+
+			// Check the material uses diffuse and gloss
+			if ( !m_options.m_hasGloss )
+				return;	// No gloss maps to compact
+
+			foreach ( Layer L in m_layers ) {
+				if ( L.m_diffuse == null || L.m_diffuse.m_textureFileInfo == null )
+					continue;	// No diffuse slot?
+
+				if ( !_diffuse2GlossMaps.ContainsKey( L.m_diffuse.m_textureFileInfo ) )
+					_diffuse2GlossMaps.Add( L.m_diffuse.m_textureFileInfo, new List< TextureFileInfo >() );
+
+				List< TextureFileInfo >	glossMaps = _diffuse2GlossMaps[L.m_diffuse.m_textureFileInfo];
+				Layer.Texture			glossMap = null;
+				switch ( L.m_glossReUse ) {
+					case Layer.REUSE_MODE.DONT_REUSE:	glossMap = L.m_gloss; break;
+					case Layer.REUSE_MODE.REUSE_LAYER0:	glossMap = m_layers[0].m_gloss; break;
+					case Layer.REUSE_MODE.REUSE_LAYER1:	glossMap = m_layers[1].m_gloss; break;
+				}
+
+				if ( glossMap != null )
+					glossMaps.Add( glossMap.m_textureFileInfo );
+				else
+					glossMaps.Add( null );	// Add null anyway so we can know this texture is sometimes lacking a gloss map, which also means it's shared by the "no gloss" texture...
+			}
+		}
+
+		/// <summary>
+		/// This function optimizes the material by compacting diffuse and gloss textures into a single "_dg" texture whenever possible
+		/// </summary>
+		/// <param name="_diffuseGloss"></param>
+		/// <param name="_totalDiffuseGlossTexturesReplaced"></param>
+		public void	Optimize( Dictionary< TextureFileInfo, TextureFileInfo > _diffuseGloss, ref int _totalDiffuseGlossTexturesReplaced ) {
+			if ( IsAlpha )
+				return;	// Can't optimize alpha materials
+
+			// Check the material is arkDefault
+			if ( m_programs.m_type != Programs.KNOWN_TYPES.DEFAULT )
+				return;	// We could but I chose not to deal with other shaders than arkDefault...
+
+			// Check the material uses diffuse and gloss
+			if ( !m_options.m_hasGloss )
+				return;	// No gloss maps to compact
+
+			foreach ( Layer L in m_layers ) {
+				if ( L.m_diffuse == null )
+					continue;
+				if ( L.m_diffuseReUse != L.m_glossReUse )
+					continue;
+
+
+			}
 		}
 
 		public void		CleanUpUselessComments( List< string > _unknownStrings ) {

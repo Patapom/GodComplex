@@ -55,6 +55,10 @@ namespace MaterialsOptimizer
 		// Generated in conjunction with materials database
 		public int			m_refCount = 0;
 
+		// Used when trying to compact textures together
+		// Usually, the associated texture to a diffuse texture is a gloss texture...
+		public TextureFileInfo	m_associatedTexture = null;
+
 		/// <summary>
 		/// Lower-case, slashes file name that can be used in a hashtable to map engine-convention texture names to actual files
 		/// </summary>
