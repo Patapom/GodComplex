@@ -41,6 +41,7 @@ namespace MaterialsOptimizer
 			WRINKLE_MASK,	// _wm
 			WRINKLE_NORMAL,	// _wn
 			IGGY,			// _is
+			DIFFUSE_GLOSS,	// _dg
 		}
 
 		public FileInfo		m_fileName = null;
@@ -53,6 +54,13 @@ namespace MaterialsOptimizer
 
 		// Generated in conjunction with materials database
 		public int			m_refCount = 0;
+
+		/// <summary>
+		/// Lower-case, slashes file name that can be used in a hashtable to map engine-convention texture names to actual files
+		/// </summary>
+		public string	NormalizedFileName {
+			get { return m_fileName.FullName.ToLower().Replace( '\\', '/' ); }
+		}
 
 		public int	ColorChannelsCount {
 			get {
@@ -162,7 +170,10 @@ namespace MaterialsOptimizer
 				case "_d8":
 				case "_d9":
 					return USAGE.DIFFUSE;
+
+				case "_dg": return USAGE.DIFFUSE_GLOSS;
 				case "_n": return USAGE.NORMAL;
+
 				case "_g":
 				case "_r":	// Old but can be encountered...
 				case "_g1":

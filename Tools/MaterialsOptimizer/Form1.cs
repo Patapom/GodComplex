@@ -346,9 +346,12 @@ namespace MaterialsOptimizer
 
 
 		// Materials database
-		private List< Material >		m_materials = new List< Material >();
+		private List< Material >		m_sourceMaterials = new List< Material >();
+		private List< Material >		m_optimizedMaterials = new List< Material >();
 		private List< Error >			m_materialErrors = new List< Error >();
-		private FileInfo				m_materialsDatabaseFileName = new FileInfo( "materials.database" );
+		private FileInfo				m_sourceMaterialsDatabaseFileName = new FileInfo( "sourceMaterials.database" );
+		private FileInfo				m_optimizedMaterialsDatabaseFileName = new FileInfo( "optimizedMaterials.database" );
+
 		private int						m_materialsSortColumn = 0;
 		private int						m_materialsSortOrder = 1;
 
@@ -373,14 +376,17 @@ namespace MaterialsOptimizer
 			Material.Layer.Texture.ms_TexturesBasePath = new DirectoryInfo( textBoxTexturesBasePath.Text );
 
 			// Reload textures database
-			if ( m_materialsDatabaseFileName.Exists )
-				LoadMaterialsDatabase( m_materialsDatabaseFileName );
+			if ( m_sourceMaterialsDatabaseFileName.Exists )
+				LoadMaterialsDatabase( m_sourceMaterialsDatabaseFileName, m_sourceMaterials );
+			if ( m_optimizedMaterialsDatabaseFileName.Exists )
+				LoadMaterialsDatabase( m_optimizedMaterialsDatabaseFileName, m_optimizedMaterials );
 			if ( m_texturesDatabaseFileName.Exists )
 				LoadTexturesDatabase( m_texturesDatabaseFileName );
-			if ( !AnalyzeMaterialsDatabase( false ) ) {
-				RebuildMaterialsListView();
-				RebuildTexturesListView();
-			}
+
+			AnalyzeMaterialsDatabase( m_sourceMaterials, false );
+			AnalyzeMaterialsDatabase( m_optimizedMaterials, false );
+			RebuildMaterialsListView();
+			RebuildTexturesListView();
 		}
 
 		protected override void OnFormClosing(FormClosingEventArgs e)
@@ -469,11 +475,11 @@ namespace MaterialsOptimizer
 
 		#region Materials Parsing
 
-		void	RecurseParseMaterials( DirectoryInfo _directory, ProgressBar _progress ) {
+		void	RecurseParseMaterials( DirectoryInfo _directory, List< Material > _materials, ProgressBar _progress ) {
 
 			_progress.Visible = true;
 
-			m_materials.Clear();
+			_materials.Clear();
 			m_materialErrors.Clear();
 
 			FileInfo[]	materialFileNames = _directory.GetFiles( "*.m2", SearchOption.AllDirectories );
@@ -483,7 +489,7 @@ namespace MaterialsOptimizer
 				_progress.Value = (++materialIndex * _progress.Maximum) / materialFileNames.Length;
 
 				try {
-					ParseMaterialFile( materialFileName );
+					ParseMaterialFile( materialFileName, _materials );
 				} catch ( Exception _e ) {
 					Error	Err = new Error( materialFileName, _e );
 					m_materialErrors.Add( Err );
@@ -494,7 +500,7 @@ namespace MaterialsOptimizer
 			_progress.Visible = false;
 		}
 
-		void	ParseMaterialFile( FileInfo _fileName ) {
+		void	ParseMaterialFile( FileInfo _fileName, List< Material > _materials ) {
 			string	fileContent = null;
 			using ( StreamReader R = _fileName.OpenText() )
 				fileContent = R.ReadToEnd();
@@ -534,7 +540,7 @@ namespace MaterialsOptimizer
 						}
 						try {
 							Material	M = new Material( _fileName, materialName, materialContent );
-							m_materials.Add( M );
+							_materials.Add( M );
 						} catch ( Exception _e ) {
 							throw new Exception( "Failed parsing material!", _e );
 						}
@@ -543,8 +549,8 @@ namespace MaterialsOptimizer
 			}
 		}
 
-		bool	AnalyzeMaterialsDatabase( bool _yell ) {
-			if ( m_materials.Count == 0 ) {
+		bool	AnalyzeMaterialsDatabase( List< Material > _materials, bool _yell ) {
+			if ( _materials.Count == 0 ) {
 				if ( _yell )
 					MessageBox( "Can't analyze materials database since there are no materials available!\r\nTry and parse materials to enable analysis...", MessageBoxButtons.OK );
 				return false;
@@ -561,7 +567,7 @@ namespace MaterialsOptimizer
 			}
 
 			// Analyze each material
-			foreach ( Material M in m_materials ) {
+			foreach ( Material M in _materials ) {
 
 				// Ref count textures
 				ResolveTextureFileInfo( M.m_height );
@@ -704,9 +710,6 @@ namespace MaterialsOptimizer
 						L.RaiseErrorLevel( Material.ERROR_LEVEL.STANDARD );
 			}
 
-			RebuildMaterialsListView();
-			RebuildTexturesListView();
-
 			return true;
 		}
 
@@ -728,11 +731,11 @@ namespace MaterialsOptimizer
 			_texture.m_textureFileInfo = TFI;
 		}
 
-		void	SaveMaterialsDatabase( FileInfo _fileName ) {
+		void	SaveMaterialsDatabase( FileInfo _fileName, List< Material > _materials ) {
 			using ( FileStream S = _fileName.Create() )
 				using ( BinaryWriter W = new BinaryWriter( S ) ) {
-					W.Write( m_materials.Count );
-					foreach ( Material M in m_materials )
+					W.Write( _materials.Count );
+					foreach ( Material M in _materials )
 						M.Write( W );
 
 					W.Write( m_materialErrors.Count );
@@ -741,8 +744,8 @@ namespace MaterialsOptimizer
 				}
 		}
 
-		void	LoadMaterialsDatabase( FileInfo _fileName ) {
-			m_materials.Clear();
+		void	LoadMaterialsDatabase( FileInfo _fileName, List< Material > _materials ) {
+			_materials.Clear();
 			m_materialErrors.Clear();
 
 			try {
@@ -750,7 +753,7 @@ namespace MaterialsOptimizer
 					using ( BinaryReader R = new BinaryReader( S ) ) {
 						int	materialsCount = R.ReadInt32();
 						for ( int errorIndex=0; errorIndex < materialsCount; errorIndex++ )
-							m_materials.Add( new Material( R ) );
+							_materials.Add( new Material( R ) );
 
 						int	errorsCount = R.ReadInt32();
 						for ( int errorIndex=0; errorIndex < errorsCount; errorIndex++ )
@@ -762,9 +765,21 @@ namespace MaterialsOptimizer
 		}
 
 		void	RebuildMaterialsListView() {
-			RebuildMaterialsListView( null );
+			RebuildMaterialsListView( radioButtonViewSourceMaterials.Checked ? m_sourceMaterials : m_optimizedMaterials );
 		}
 		void	RebuildMaterialsListView( string _searchFor ) {
+			RebuildMaterialsListView( radioButtonViewSourceMaterials.Checked ? m_sourceMaterials : m_optimizedMaterials, _searchFor );
+		}
+		void	RebuildMaterialsListView( List< Material > _materials ) {
+			RebuildMaterialsListView( _materials, null );
+		}
+		void	RebuildMaterialsListView( List< Material > _materials, string _searchFor ) {
+
+			if ( _materials == m_sourceMaterials )
+				radioButtonViewSourceMaterials.Checked = true;
+			else if ( _materials == m_optimizedMaterials )
+				radioButtonViewOptimizedMaterials.Checked = true;
+
 
 			// Filter materials
 			List< Material >	filteredMaterials = new List< Material >();
@@ -786,7 +801,7 @@ namespace MaterialsOptimizer
 				bool	showOnlyMissingPhysicsMats = checkBoxShowMissingPhysics.Checked;
 				bool	showOnlyOptimizableMats = checkBoxShowOptimizableMaterials.Checked;
 
-				foreach ( Material M in m_materials ) {
+				foreach ( Material M in _materials ) {
 					// Filter by layers count
 					if ( M.LayersCount < layersCountMin || M.LayersCount > layersCountMax )
 						continue;
@@ -821,7 +836,7 @@ namespace MaterialsOptimizer
 			} else {
 				// Search by name
 				_searchFor = _searchFor.ToLower();
-				foreach ( Material M in m_materials ) {
+				foreach ( Material M in _materials ) {
 					if ( M.m_name.ToLower().IndexOf( _searchFor ) != -1 )
 						filteredMaterials.Add( M ); 
 				}
@@ -993,9 +1008,80 @@ namespace MaterialsOptimizer
 					try {
 						TextureFileInfo	T = new TextureFileInfo( textureFileName );
 						m_textures.Add( T );
+						m_textureFileName2Texture.Add( T.NormalizedFileName, T );
+					} catch ( Exception _e ) {
+						Error	Err = new Error( textureFileName, _e );
+						m_textureErrors.Add( Err );
+						LogLine( Err.ToString() );
+					}
 
-						string	normalizedFileName = textureFileName.FullName.ToLower().Replace( '\\', '/' );
-						m_textureFileName2Texture.Add( normalizedFileName, T );
+					textureIndex++;
+					if ( (textureIndex % 100) == 0 ) {
+						progressBarTextures.Value = textureIndex * progressBarTextures.Maximum / totalFilesCount;
+						progressBarTextures.Refresh();
+					}
+				}
+
+				TimeSpan	totalTime = DateTime.Now - startTime;
+				LogLine( "Finished parsing " + supportedExtensions[extensionIndex] + " image files. Total time: " + totalTime.ToString( @"mm\:ss" ) );
+				extensionIndex++;
+			}
+
+			progressBarTextures.Visible = false;
+			ImageUtility.Bitmap.ReadContent = true;
+		}
+
+		void	CollectDiffuseGlossTextures( DirectoryInfo _directory ) {
+			if ( !_directory.Exists )
+				throw new Exception( "Directory \"" + _directory.FullName + "\" for texture collection does not exist!" );
+
+			ImageUtility.Bitmap.ReadContent = false;
+			progressBarTextures.Visible = true;
+
+			// Clear the textures from "diffuse+gloss"
+			TextureFileInfo[]	texturesCopy = m_textures.ToArray();
+
+			m_textureErrors.Clear();
+			m_textures.Clear();
+			m_textureFileName2Texture.Clear();
+			foreach ( TextureFileInfo TFI in texturesCopy ) {
+				if ( TFI.m_usage != TextureFileInfo.USAGE.DIFFUSE_GLOSS ) {
+					m_textures.Add( TFI );
+					m_textureFileName2Texture.Add( TFI.NormalizedFileName, TFI );
+				}
+			}
+
+			// Reparse all types
+			string[]	supportedExtensions = new string[] {
+				 ".jpg",
+				 ".png",
+				 ".tga",
+				 ".tiff",
+//				 ".dds",
+//				 ".bimage",
+			};
+
+			List< FileInfo[] >	textureFileNamesForExtenstion = new List< FileInfo[] >();
+			int					totalFilesCount = 0;
+			foreach ( string supportedExtension in supportedExtensions ) {
+				FileInfo[]	textureFileNames = _directory.GetFiles( "*_dg" + supportedExtension, SearchOption.AllDirectories );
+				textureFileNamesForExtenstion.Add( textureFileNames );
+				totalFilesCount += textureFileNames.Length;
+			}
+
+			int	extensionIndex = 0;
+			int	textureIndex = 0;
+			foreach ( FileInfo[] textureFileNames in textureFileNamesForExtenstion ) {
+				LogLine( "Parsing " + textureFileNames.Length + " " + supportedExtensions[extensionIndex] + " image files" );
+				DateTime	startTime = DateTime.Now;
+
+				foreach ( FileInfo textureFileName in textureFileNames ) {
+					try {
+						TextureFileInfo	T = new TextureFileInfo( textureFileName );
+						if ( T.m_usage == TextureFileInfo.USAGE.DIFFUSE_GLOSS ) {
+							m_textures.Add( T );
+							m_textureFileName2Texture.Add( T.NormalizedFileName, T );
+						}
 					} catch ( Exception _e ) {
 						Error	Err = new Error( textureFileName, _e );
 						m_textureErrors.Add( Err );
@@ -1042,9 +1128,7 @@ namespace MaterialsOptimizer
 						for ( int textureIndex=0; textureIndex < texturesCount; textureIndex++ ) {
 							TextureFileInfo	TFI = new TextureFileInfo( R );
 							m_textures.Add( TFI );
-
-							string	normalizedFileName = TFI.m_fileName.FullName.ToLower().Replace( '\\', '/' );
-							m_textureFileName2Texture.Add( normalizedFileName, TFI );
+							m_textureFileName2Texture.Add( TFI.NormalizedFileName, TFI );
 						}
 
 						int	errorsCount = R.ReadInt32();
@@ -1068,6 +1152,7 @@ namespace MaterialsOptimizer
 			int		texCountOther = 0;
 			if ( _searchFor == null ) {
 				bool	skipDiffuse = !checkBoxShowDiffuse.Checked ^ checkBoxInvertFilters.Checked;
+				bool	skipDiffuseGloss = !checkBoxShowDiffuseGloss.Checked ^ checkBoxInvertFilters.Checked;
 				bool	skipNormal = !checkBoxShowNormal.Checked ^ checkBoxInvertFilters.Checked;
 				bool	skipGloss = !checkBoxShowGloss.Checked ^ checkBoxInvertFilters.Checked;
 				bool	skipMetal = !checkBoxShowMetal.Checked ^ checkBoxInvertFilters.Checked;
@@ -1096,6 +1181,7 @@ namespace MaterialsOptimizer
 					bool	skip = false;
 					switch ( TFI.m_usage ) {
 						case TextureFileInfo.USAGE.DIFFUSE: skip = skipDiffuse; break;
+						case TextureFileInfo.USAGE.DIFFUSE_GLOSS: skip = skipDiffuseGloss; break;
 						case TextureFileInfo.USAGE.NORMAL: skip = skipNormal; break;
 						case TextureFileInfo.USAGE.GLOSS: skip = skipGloss; break;
 						case TextureFileInfo.USAGE.METAL: skip = skipMetal; break;
@@ -1238,33 +1324,12 @@ namespace MaterialsOptimizer
 			}
 		}
 
-// 		public int Compare( TextureFileInfo x, TextureFileInfo y ) {
-// 			int	value = 0;
-// 			switch ( m_texturesSortColumn ) {
-// 				case 0: value = StringComparer.CurrentCultureIgnoreCase.Compare( x.m_fileName.FullName, y.m_fileName.FullName ); break;	// Sort by name
-// 
-// 				case 1:	// Sort by area
-// 					int	area0 = x.m_width * x.m_height;
-// 					int	area1 = y.m_width * y.m_height;
-// 					value = area0 < area1 ? -1 : (area0 > area1 ? 1 : 0);
-// 					break;
-// 
-// 				case 2: value = StringComparer.CurrentCultureIgnoreCase.Compare( x.m_usage.ToString(), y.m_usage.ToString() ); break;	// Sort by usage
-// 
-// 				case 3: value = x.m_refCount < y.m_refCount ? -1 : (x.m_refCount > y.m_refCount ? 1 : 0); break;		// Sort by ref count
-// 
-// 				default: throw new Exception( "Unhandled case" );
-// 			}
-// 
-// 			return m_texturesSortOrder * value;
-// 		}
-
 		#endregion
 
 		#region Materials Re-Export
 
 		void	ReExportMaterials( DirectoryInfo _directory ) {
-			if ( m_materials.Count == 0 ) {
+			if ( m_sourceMaterials.Count == 0 ) {
 				MessageBox( "Can't re-export materials since the list of parsed materials is empty!\r\nPlease parse materials first before re-exporting...", MessageBoxButtons.OK, MessageBoxIcon.Warning );
 				return;
 			}
@@ -1274,15 +1339,15 @@ namespace MaterialsOptimizer
 			//////////////////////////////////////////////////////////////////////////
 			// 1] Collect all unique material M2 files and rebase them into export target directory
 			LogLine( "" );
-			LogLine( "Registering " + m_materials.Count + " materials..." );
+			LogLine( "Registering " + m_sourceMaterials.Count + " materials..." );
 
-			RecurseParseMaterials( new DirectoryInfo( textBoxMaterialsBasePath.Text ), progressBarMaterials );
-			if ( m_materials.Count == 0 ) {
-				MessageBox( "Failed to parse materials. Can't export..." );
-				return;
-			}
-			if ( !AnalyzeMaterialsDatabase( true ) )
-				return;
+// 			RecurseParseMaterials( new DirectoryInfo( textBoxMaterialsBasePath.Text ), m_sourceMaterials, progressBarMaterials );
+// 			if ( m_sourceMaterials.Count == 0 ) {
+// 				MessageBox( "Failed to parse materials. Can't export..." );
+// 				return;
+// 			}
+// 			if ( !AnalyzeMaterialsDatabase( m_sourceMaterials, true ) )
+// 				return;
 
 			string		sourceBasePath = textBoxMaterialsBasePath.Text.ToLower();
 			if ( !sourceBasePath.EndsWith( "\\" ) )
@@ -1290,7 +1355,7 @@ namespace MaterialsOptimizer
 			string		targetBasePath = textBoxReExportPath.Text.ToLower();
 
 			Dictionary< string, List< Material > >	M2File2Materials = new Dictionary< string, List< Material > >();
-			foreach ( Material M in m_materials ) {
+			foreach ( Material M in m_sourceMaterials ) {
 				string	originalName = M.m_sourceFileName.FullName.ToLower();
 				if ( !originalName.StartsWith( sourceBasePath ) ) {
 					// Not in source base path?
@@ -1307,14 +1372,14 @@ namespace MaterialsOptimizer
 				M2File2Materials[rebasedName].Add( M );
 			}
 
-			LogLine( "	• Registered " + m_materials.Count + " materials" );
+			LogLine( "	• Registered " + m_sourceMaterials.Count + " materials" );
 			LogLine( "	• Registered " + M2File2Materials.Keys.Count + " M2 files" );
 
 
 			//////////////////////////////////////////////////////////////////////////
 			// 2] Cleanup all materials
 			LogLine( "" );
-			LogLine( "Cleaning " + m_materials.Count + " materials..." );
+			LogLine( "Cleaning " + m_sourceMaterials.Count + " materials..." );
 
 			int totalClearedOptionsCount = 0;
 			int totalRemovedTexturesCount = 0;
@@ -1322,7 +1387,7 @@ namespace MaterialsOptimizer
 			int totalReUseOptionsSetCount = 0;
 			int	totalCleanedUpMaterialsCount = 0;
 			int	materialIndex = 0;
-			foreach ( Material M in m_materials ) {
+			foreach ( Material M in m_sourceMaterials ) {
 				try {
 					int clearedOptionsCount = 0;
 					int removedTexturesCount = 0;
@@ -1341,7 +1406,7 @@ namespace MaterialsOptimizer
 					LogLine( "Failed to cleanup material \"" + M.m_name + "\" because of the following error: " + _e.Message );
 				}
 
-				progressBarReExportMaterials.Value = ++materialIndex * progressBarReExportMaterials.Maximum / (2*m_materials.Count);	// Progress from 0 to 50%
+				progressBarReExportMaterials.Value = ++materialIndex * progressBarReExportMaterials.Maximum / (2*m_sourceMaterials.Count);	// Progress from 0 to 50%
 			}
 
 			LogLine( "	• Total cleaned-up materials: " + totalCleanedUpMaterialsCount );
@@ -1356,6 +1421,8 @@ namespace MaterialsOptimizer
 			LogLine( "" );
 			LogLine( "Writing " + M2File2Materials.Keys.Count + " M2 files..." );
 
+			m_optimizedMaterials.Clear();
+
 			int	fileIndex = 0;
 			int	correctlyExportedFilesCount = 0;
 			foreach ( string targetM2FileName in M2File2Materials.Keys ) {
@@ -1367,6 +1434,7 @@ namespace MaterialsOptimizer
 						List< Material >	materialsInFile = M2File2Materials[targetM2FileName];
 						foreach ( Material M in materialsInFile ) {
 							M.Export( W );
+							m_optimizedMaterials.Add( M );
 						}
 					}
 
@@ -1386,7 +1454,11 @@ namespace MaterialsOptimizer
 
 			LogLine( "	• Successfully wrote " + correctlyExportedFilesCount + " M2 files..." );
 
+			//////////////////////////////////////////////////////////////////////////
+			// 4] Re-parse optimized materials
 			progressBarReExportMaterials.Visible = false;
+
+			buttonParseReExportedMaterials_Click( null, EventArgs.Empty );
 		}
 
 		#endregion
@@ -1428,10 +1500,10 @@ namespace MaterialsOptimizer
 
 		private void buttonParseMaterials_Click(object sender, EventArgs e) {
 			try {
-				RecurseParseMaterials( new DirectoryInfo( textBoxMaterialsBasePath.Text ), progressBarMaterials );
-				SaveMaterialsDatabase( m_materialsDatabaseFileName );
-				if ( !AnalyzeMaterialsDatabase( true ) )
-					RebuildMaterialsListView();
+				RecurseParseMaterials( new DirectoryInfo( textBoxMaterialsBasePath.Text ), m_sourceMaterials, progressBarMaterials );
+				SaveMaterialsDatabase( m_sourceMaterialsDatabaseFileName, m_sourceMaterials );
+				AnalyzeMaterialsDatabase( m_sourceMaterials, true );
+				RebuildMaterialsListView( m_sourceMaterials );
 			} catch ( Exception _e ) {
 				MessageBox( "An error occurred while parsing materials:\r\n" + _e.Message, MessageBoxButtons.OK, MessageBoxIcon.Error );
 			}
@@ -1445,10 +1517,21 @@ namespace MaterialsOptimizer
 			try {
 				CollectTextures( new DirectoryInfo( Path.Combine( textBoxTexturesBasePath.Text, "models" ) ) );
 				SaveTexturesDatabase( m_texturesDatabaseFileName );
-				if ( !AnalyzeMaterialsDatabase( true ) )
-					RebuildTexturesListView();
+				AnalyzeMaterialsDatabase( m_sourceMaterials, true );
+				RebuildTexturesListView();
 			} catch ( Exception _e ) {
 				MessageBox( "An error occurred while collecting textures:\r\n" + _e.Message, MessageBoxButtons.OK, MessageBoxIcon.Error );
+			}
+		}
+
+		private void buttonCollect_dgTextures_Click(object sender, EventArgs e) {
+			try {
+				CollectDiffuseGlossTextures( new DirectoryInfo( Path.Combine( textBoxTexturesBasePath.Text, "models" ) ) );
+				SaveTexturesDatabase( m_texturesDatabaseFileName );
+				AnalyzeMaterialsDatabase( m_sourceMaterials, true );
+				RebuildTexturesListView();
+			} catch ( Exception _e ) {
+				MessageBox( "An error occurred while collecting diffuse+gloss textures:\r\n" + _e.Message, MessageBoxButtons.OK, MessageBoxIcon.Error );
 			}
 		}
 
@@ -1462,13 +1545,26 @@ namespace MaterialsOptimizer
 
 		private void buttonParseReExportedMaterials_Click(object sender, EventArgs e) {
 			try {
-				RecurseParseMaterials( new DirectoryInfo( textBoxReExportPath.Text ), progressBarReExportMaterials );
-//				SaveMaterialsDatabase( m_materialsDatabaseFileName );
-				if ( !AnalyzeMaterialsDatabase( true ) )
-					RebuildMaterialsListView();
+				RecurseParseMaterials( new DirectoryInfo( textBoxReExportPath.Text ), m_optimizedMaterials, progressBarReExportMaterials );
+				SaveMaterialsDatabase( m_optimizedMaterialsDatabaseFileName, m_optimizedMaterials );
+				AnalyzeMaterialsDatabase( m_optimizedMaterials, true );
+				RebuildMaterialsListView( m_optimizedMaterials );
 			} catch ( Exception _e ) {
 				MessageBox( "An error occurred while parsing materials:\r\n" + _e.Message, MessageBoxButtons.OK, MessageBoxIcon.Error );
 			}
+		}
+
+		private void buttonGenerate_dgTextures_Click(object sender, EventArgs e) {
+			try {
+//gna!
+// 				RecurseParseMaterials( new DirectoryInfo( textBoxReExportPath.Text ), progressBarReExportMaterials );
+// //				SaveMaterialsDatabase( m_materialsDatabaseFileName );
+// 				if ( !AnalyzeMaterialsDatabase( true ) )
+// 					RebuildMaterialsListView();
+			} catch ( Exception _e ) {
+				MessageBox( "An error occurred while parsing materials:\r\n" + _e.Message, MessageBoxButtons.OK, MessageBoxIcon.Error );
+			}
+
 		}
 
 		private void buttonIntegratePerforce_Click(object sender, EventArgs e)
@@ -1538,6 +1634,11 @@ namespace MaterialsOptimizer
 		#endregion
 
 		#region Material List View Events
+
+		private void radioButtonViewMaterialsList_CheckedChanged(object sender, EventArgs e) {
+			if ( (sender as RadioButton).Checked )
+				RebuildMaterialsListView();
+		}
 
 		private void listViewMaterials_SelectedIndexChanged(object sender, EventArgs e) {
 			tabControlInfo.SelectedTab = tabPageInfo;	// Focus on info tab
@@ -1627,7 +1728,7 @@ namespace MaterialsOptimizer
 			int[]			cstMetalTextureCount = new int[6];
 			List< Material.Layer.Texture >	metalCstCustomColors = new List< Material.Layer.Texture >();
 
-			foreach ( Material M in m_materials ) {
+			foreach ( Material M in m_optimizedMaterials ) {
 				for ( int layerIndex=0; layerIndex < M.SafeLayersCount; layerIndex++ ) {
 					Material.Layer L = M.m_layers[layerIndex];
 

@@ -41,6 +41,7 @@
 			this.tabControl = new System.Windows.Forms.TabControl();
 			this.tabPageMaterials = new System.Windows.Forms.TabPage();
 			this.panelFilterMaterials = new System.Windows.Forms.Panel();
+			this.buttonAnalyzeConstantColorTextures = new System.Windows.Forms.Button();
 			this.buttonSearch = new System.Windows.Forms.Button();
 			this.textBoxSearchMaterial = new System.Windows.Forms.TextBox();
 			this.label5 = new System.Windows.Forms.Label();
@@ -57,6 +58,7 @@
 			this.checkBoxShowHair = new System.Windows.Forms.CheckBox();
 			this.checkBoxInvertMaterialFilters = new System.Windows.Forms.CheckBox();
 			this.checkBoxShowEye = new System.Windows.Forms.CheckBox();
+			this.checkBoxShowAlpha = new System.Windows.Forms.CheckBox();
 			this.checkBoxShowOtherMaterialTypes = new System.Windows.Forms.CheckBox();
 			this.checkBoxShowVista = new System.Windows.Forms.CheckBox();
 			this.checkBoxShowOptimizableMaterials = new System.Windows.Forms.CheckBox();
@@ -87,6 +89,7 @@
 			this.checkBoxShowGloss = new System.Windows.Forms.CheckBox();
 			this.checkBoxInvertFilters = new System.Windows.Forms.CheckBox();
 			this.checkBoxShowMetal = new System.Windows.Forms.CheckBox();
+			this.checkBoxShowDiffuseGloss = new System.Windows.Forms.CheckBox();
 			this.checkBoxShowMasks = new System.Windows.Forms.CheckBox();
 			this.checkBoxShowOther = new System.Windows.Forms.CheckBox();
 			this.checkBoxShowEmissive = new System.Windows.Forms.CheckBox();
@@ -97,6 +100,10 @@
 			this.columnHeaderChannels = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
 			this.columnHeaderMaterialsReferencesCount = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
 			this.toolTip = new System.Windows.Forms.ToolTip(this.components);
+			this.buttonReExport = new System.Windows.Forms.Button();
+			this.buttonParseReExportedMaterials = new System.Windows.Forms.Button();
+			this.buttonCollect_dgTextures = new System.Windows.Forms.Button();
+			this.buttonGenerate_dgTextures = new System.Windows.Forms.Button();
 			this.progressBarMaterials = new System.Windows.Forms.ProgressBar();
 			this.progressBarTextures = new System.Windows.Forms.ProgressBar();
 			this.tabControlInfo = new System.Windows.Forms.TabControl();
@@ -105,15 +112,14 @@
 			this.tabPageLog = new System.Windows.Forms.TabPage();
 			this.textBoxLog = new System.Windows.Forms.TextBox();
 			this.splitContainer1 = new System.Windows.Forms.SplitContainer();
-			this.buttonReExport = new System.Windows.Forms.Button();
 			this.textBoxReExportPath = new System.Windows.Forms.TextBox();
 			this.buttonSetMaterialsReExportPath = new System.Windows.Forms.Button();
 			this.label9 = new System.Windows.Forms.Label();
 			this.progressBarReExportMaterials = new System.Windows.Forms.ProgressBar();
-			this.buttonParseReExportedMaterials = new System.Windows.Forms.Button();
 			this.buttonIntegratePerforce = new System.Windows.Forms.Button();
-			this.buttonAnalyzeConstantColorTextures = new System.Windows.Forms.Button();
-			this.checkBoxShowAlpha = new System.Windows.Forms.CheckBox();
+			this.panel1 = new System.Windows.Forms.Panel();
+			this.radioButtonViewOptimizedMaterials = new System.Windows.Forms.RadioButton();
+			this.radioButtonViewSourceMaterials = new System.Windows.Forms.RadioButton();
 			this.tabControl.SuspendLayout();
 			this.tabPageMaterials.SuspendLayout();
 			this.panelFilterMaterials.SuspendLayout();
@@ -126,6 +132,7 @@
 			this.splitContainer1.Panel1.SuspendLayout();
 			this.splitContainer1.Panel2.SuspendLayout();
 			this.splitContainer1.SuspendLayout();
+			this.panel1.SuspendLayout();
 			this.SuspendLayout();
 			// 
 			// textBoxMaterialsBasePath
@@ -194,6 +201,7 @@
 			this.buttonParseMaterials.Size = new System.Drawing.Size(75, 23);
 			this.buttonParseMaterials.TabIndex = 4;
 			this.buttonParseMaterials.Text = "Parse";
+			this.toolTip.SetToolTip(this.buttonParseMaterials, "Parses all the *.M2 files in the material base directory and sub-directories");
 			this.buttonParseMaterials.UseVisualStyleBackColor = true;
 			this.buttonParseMaterials.Click += new System.EventHandler(this.buttonParseMaterials_Click);
 			// 
@@ -204,6 +212,8 @@
 			this.buttonCollectTextures.Size = new System.Drawing.Size(75, 23);
 			this.buttonCollectTextures.TabIndex = 4;
 			this.buttonCollectTextures.Text = "Collect";
+			this.toolTip.SetToolTip(this.buttonCollectTextures, "Collects all the supported textures (tga, png, jpg) in the textures base director" +
+        "y and sub-directories (WARNING: can take up to 20 minutes)");
 			this.buttonCollectTextures.UseVisualStyleBackColor = true;
 			this.buttonCollectTextures.Click += new System.EventHandler(this.buttonCollectTextures_Click);
 			// 
@@ -215,7 +225,7 @@
 			this.tabControl.Location = new System.Drawing.Point(0, 0);
 			this.tabControl.Name = "tabControl";
 			this.tabControl.SelectedIndex = 0;
-			this.tabControl.Size = new System.Drawing.Size(1299, 574);
+			this.tabControl.Size = new System.Drawing.Size(1299, 554);
 			this.tabControl.TabIndex = 5;
 			// 
 			// tabPageMaterials
@@ -225,7 +235,7 @@
 			this.tabPageMaterials.Location = new System.Drawing.Point(4, 22);
 			this.tabPageMaterials.Name = "tabPageMaterials";
 			this.tabPageMaterials.Padding = new System.Windows.Forms.Padding(3);
-			this.tabPageMaterials.Size = new System.Drawing.Size(1291, 548);
+			this.tabPageMaterials.Size = new System.Drawing.Size(1291, 528);
 			this.tabPageMaterials.TabIndex = 0;
 			this.tabPageMaterials.Text = "Materials";
 			this.tabPageMaterials.UseVisualStyleBackColor = true;
@@ -258,10 +268,20 @@
 			this.panelFilterMaterials.Controls.Add(this.checkBoxShowMissingPhysics);
 			this.panelFilterMaterials.Controls.Add(this.checkBoxShowWarningMaterials);
 			this.panelFilterMaterials.Controls.Add(this.checkBoxShowVegetation);
-			this.panelFilterMaterials.Location = new System.Drawing.Point(6, 463);
+			this.panelFilterMaterials.Location = new System.Drawing.Point(6, 443);
 			this.panelFilterMaterials.Name = "panelFilterMaterials";
 			this.panelFilterMaterials.Size = new System.Drawing.Size(1279, 79);
 			this.panelFilterMaterials.TabIndex = 5;
+			// 
+			// buttonAnalyzeConstantColorTextures
+			// 
+			this.buttonAnalyzeConstantColorTextures.Location = new System.Drawing.Point(1090, 50);
+			this.buttonAnalyzeConstantColorTextures.Name = "buttonAnalyzeConstantColorTextures";
+			this.buttonAnalyzeConstantColorTextures.Size = new System.Drawing.Size(173, 23);
+			this.buttonAnalyzeConstantColorTextures.TabIndex = 12;
+			this.buttonAnalyzeConstantColorTextures.Text = "Analyze Constant Color Textures";
+			this.buttonAnalyzeConstantColorTextures.UseVisualStyleBackColor = true;
+			this.buttonAnalyzeConstantColorTextures.Click += new System.EventHandler(this.buttonAnalyzeConstantColorTextures_Click);
 			// 
 			// buttonSearch
 			// 
@@ -443,6 +463,19 @@
 			this.checkBoxShowEye.UseVisualStyleBackColor = true;
 			this.checkBoxShowEye.CheckedChanged += new System.EventHandler(this.checkBoxShowArkDefault_CheckedChanged);
 			// 
+			// checkBoxShowAlpha
+			// 
+			this.checkBoxShowAlpha.AutoSize = true;
+			this.checkBoxShowAlpha.Checked = true;
+			this.checkBoxShowAlpha.CheckState = System.Windows.Forms.CheckState.Checked;
+			this.checkBoxShowAlpha.Location = new System.Drawing.Point(254, 26);
+			this.checkBoxShowAlpha.Name = "checkBoxShowAlpha";
+			this.checkBoxShowAlpha.Size = new System.Drawing.Size(83, 17);
+			this.checkBoxShowAlpha.TabIndex = 2;
+			this.checkBoxShowAlpha.Text = "Show Alpha";
+			this.checkBoxShowAlpha.UseVisualStyleBackColor = true;
+			this.checkBoxShowAlpha.CheckedChanged += new System.EventHandler(this.checkBoxShowArkDefault_CheckedChanged);
+			// 
 			// checkBoxShowOtherMaterialTypes
 			// 
 			this.checkBoxShowOtherMaterialTypes.AutoSize = true;
@@ -534,7 +567,7 @@
 			this.listViewMaterials.Location = new System.Drawing.Point(6, 6);
 			this.listViewMaterials.Name = "listViewMaterials";
 			this.listViewMaterials.ShowItemToolTips = true;
-			this.listViewMaterials.Size = new System.Drawing.Size(1279, 451);
+			this.listViewMaterials.Size = new System.Drawing.Size(1279, 431);
 			this.listViewMaterials.TabIndex = 2;
 			this.listViewMaterials.UseCompatibleStateImageBehavior = false;
 			this.listViewMaterials.View = System.Windows.Forms.View.Details;
@@ -583,7 +616,7 @@
 			this.tabPageTextures.Location = new System.Drawing.Point(4, 22);
 			this.tabPageTextures.Name = "tabPageTextures";
 			this.tabPageTextures.Padding = new System.Windows.Forms.Padding(3);
-			this.tabPageTextures.Size = new System.Drawing.Size(1291, 548);
+			this.tabPageTextures.Size = new System.Drawing.Size(1291, 528);
 			this.tabPageTextures.TabIndex = 1;
 			this.tabPageTextures.Text = "Textures";
 			this.tabPageTextures.UseVisualStyleBackColor = true;
@@ -606,17 +639,18 @@
 			this.panelFilterTextures.Controls.Add(this.checkBoxShowGloss);
 			this.panelFilterTextures.Controls.Add(this.checkBoxInvertFilters);
 			this.panelFilterTextures.Controls.Add(this.checkBoxShowMetal);
+			this.panelFilterTextures.Controls.Add(this.checkBoxShowDiffuseGloss);
 			this.panelFilterTextures.Controls.Add(this.checkBoxShowMasks);
 			this.panelFilterTextures.Controls.Add(this.checkBoxShowOther);
 			this.panelFilterTextures.Controls.Add(this.checkBoxShowEmissive);
-			this.panelFilterTextures.Location = new System.Drawing.Point(6, 463);
+			this.panelFilterTextures.Location = new System.Drawing.Point(6, 443);
 			this.panelFilterTextures.Name = "panelFilterTextures";
 			this.panelFilterTextures.Size = new System.Drawing.Size(1279, 79);
 			this.panelFilterTextures.TabIndex = 4;
 			// 
 			// buttonSearchTexture
 			// 
-			this.buttonSearchTexture.Location = new System.Drawing.Point(1125, 24);
+			this.buttonSearchTexture.Location = new System.Drawing.Point(1046, 42);
 			this.buttonSearchTexture.Name = "buttonSearchTexture";
 			this.buttonSearchTexture.Size = new System.Drawing.Size(75, 23);
 			this.buttonSearchTexture.TabIndex = 10;
@@ -626,7 +660,7 @@
 			// 
 			// textBoxSearchTexture
 			// 
-			this.textBoxSearchTexture.Location = new System.Drawing.Point(799, 26);
+			this.textBoxSearchTexture.Location = new System.Drawing.Point(720, 44);
 			this.textBoxSearchTexture.Name = "textBoxSearchTexture";
 			this.textBoxSearchTexture.Size = new System.Drawing.Size(320, 20);
 			this.textBoxSearchTexture.TabIndex = 9;
@@ -634,7 +668,7 @@
 			// label10
 			// 
 			this.label10.AutoSize = true;
-			this.label10.Location = new System.Drawing.Point(737, 29);
+			this.label10.Location = new System.Drawing.Point(658, 47);
 			this.label10.Name = "label10";
 			this.label10.Size = new System.Drawing.Size(56, 13);
 			this.label10.TabIndex = 8;
@@ -678,8 +712,9 @@
 			// 
 			// labelTotalTextures
 			// 
+			this.labelTotalTextures.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
 			this.labelTotalTextures.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-			this.labelTotalTextures.Location = new System.Drawing.Point(579, 2);
+			this.labelTotalTextures.Location = new System.Drawing.Point(1183, 2);
 			this.labelTotalTextures.Name = "labelTotalTextures";
 			this.labelTotalTextures.Size = new System.Drawing.Size(93, 43);
 			this.labelTotalTextures.TabIndex = 3;
@@ -754,7 +789,7 @@
 			// 
 			this.checkBoxInvertFilters.AutoSize = true;
 			this.checkBoxInvertFilters.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-			this.checkBoxInvertFilters.Location = new System.Drawing.Point(477, 28);
+			this.checkBoxInvertFilters.Location = new System.Drawing.Point(565, 28);
 			this.checkBoxInvertFilters.Name = "checkBoxInvertFilters";
 			this.checkBoxInvertFilters.Size = new System.Drawing.Size(97, 17);
 			this.checkBoxInvertFilters.TabIndex = 2;
@@ -775,12 +810,25 @@
 			this.checkBoxShowMetal.UseVisualStyleBackColor = true;
 			this.checkBoxShowMetal.CheckedChanged += new System.EventHandler(this.checkBoxShowDiffuse_CheckedChanged);
 			// 
+			// checkBoxShowDiffuseGloss
+			// 
+			this.checkBoxShowDiffuseGloss.AutoSize = true;
+			this.checkBoxShowDiffuseGloss.Checked = true;
+			this.checkBoxShowDiffuseGloss.CheckState = System.Windows.Forms.CheckState.Checked;
+			this.checkBoxShowDiffuseGloss.Location = new System.Drawing.Point(197, 28);
+			this.checkBoxShowDiffuseGloss.Name = "checkBoxShowDiffuseGloss";
+			this.checkBoxShowDiffuseGloss.Size = new System.Drawing.Size(120, 17);
+			this.checkBoxShowDiffuseGloss.TabIndex = 2;
+			this.checkBoxShowDiffuseGloss.Text = "Show Diffuse/Gloss";
+			this.checkBoxShowDiffuseGloss.UseVisualStyleBackColor = true;
+			this.checkBoxShowDiffuseGloss.CheckedChanged += new System.EventHandler(this.checkBoxShowDiffuse_CheckedChanged);
+			// 
 			// checkBoxShowMasks
 			// 
 			this.checkBoxShowMasks.AutoSize = true;
 			this.checkBoxShowMasks.Checked = true;
 			this.checkBoxShowMasks.CheckState = System.Windows.Forms.CheckState.Checked;
-			this.checkBoxShowMasks.Location = new System.Drawing.Point(291, 28);
+			this.checkBoxShowMasks.Location = new System.Drawing.Point(565, 5);
 			this.checkBoxShowMasks.Name = "checkBoxShowMasks";
 			this.checkBoxShowMasks.Size = new System.Drawing.Size(87, 17);
 			this.checkBoxShowMasks.TabIndex = 2;
@@ -793,7 +841,7 @@
 			this.checkBoxShowOther.AutoSize = true;
 			this.checkBoxShowOther.Checked = true;
 			this.checkBoxShowOther.CheckState = System.Windows.Forms.CheckState.Checked;
-			this.checkBoxShowOther.Location = new System.Drawing.Point(384, 28);
+			this.checkBoxShowOther.Location = new System.Drawing.Point(426, 28);
 			this.checkBoxShowOther.Name = "checkBoxShowOther";
 			this.checkBoxShowOther.Size = new System.Drawing.Size(82, 17);
 			this.checkBoxShowOther.TabIndex = 2;
@@ -806,7 +854,7 @@
 			this.checkBoxShowEmissive.AutoSize = true;
 			this.checkBoxShowEmissive.Checked = true;
 			this.checkBoxShowEmissive.CheckState = System.Windows.Forms.CheckState.Checked;
-			this.checkBoxShowEmissive.Location = new System.Drawing.Point(197, 28);
+			this.checkBoxShowEmissive.Location = new System.Drawing.Point(323, 28);
 			this.checkBoxShowEmissive.Name = "checkBoxShowEmissive";
 			this.checkBoxShowEmissive.Size = new System.Drawing.Size(97, 17);
 			this.checkBoxShowEmissive.TabIndex = 2;
@@ -830,7 +878,7 @@
 			this.listViewTextures.HideSelection = false;
 			this.listViewTextures.Location = new System.Drawing.Point(6, 6);
 			this.listViewTextures.Name = "listViewTextures";
-			this.listViewTextures.Size = new System.Drawing.Size(1279, 451);
+			this.listViewTextures.Size = new System.Drawing.Size(1279, 431);
 			this.listViewTextures.TabIndex = 1;
 			this.listViewTextures.UseCompatibleStateImageBehavior = false;
 			this.listViewTextures.View = System.Windows.Forms.View.Details;
@@ -861,6 +909,52 @@
 			this.columnHeaderMaterialsReferencesCount.Text = "Mat. Ref Count";
 			this.columnHeaderMaterialsReferencesCount.Width = 100;
 			// 
+			// buttonReExport
+			// 
+			this.buttonReExport.Location = new System.Drawing.Point(530, 80);
+			this.buttonReExport.Name = "buttonReExport";
+			this.buttonReExport.Size = new System.Drawing.Size(75, 23);
+			this.buttonReExport.TabIndex = 4;
+			this.buttonReExport.Text = "Re-Export";
+			this.toolTip.SetToolTip(this.buttonReExport, "Cleans, optimizies and re-exports brand new M2 materials into the target director" +
+        "y, created M2 files follow the same directory hierarchy as original M2 files.");
+			this.buttonReExport.UseVisualStyleBackColor = true;
+			this.buttonReExport.Click += new System.EventHandler(this.buttonReExport_Click);
+			// 
+			// buttonParseReExportedMaterials
+			// 
+			this.buttonParseReExportedMaterials.Location = new System.Drawing.Point(611, 80);
+			this.buttonParseReExportedMaterials.Name = "buttonParseReExportedMaterials";
+			this.buttonParseReExportedMaterials.Size = new System.Drawing.Size(75, 23);
+			this.buttonParseReExportedMaterials.TabIndex = 4;
+			this.buttonParseReExportedMaterials.Text = "Parse";
+			this.toolTip.SetToolTip(this.buttonParseReExportedMaterials, "Parses all the cleaned-up, optimized and re-exported M2 files found in the re-exp" +
+        "ort directory and sub-directories");
+			this.buttonParseReExportedMaterials.UseVisualStyleBackColor = true;
+			this.buttonParseReExportedMaterials.Click += new System.EventHandler(this.buttonParseReExportedMaterials_Click);
+			// 
+			// buttonCollect_dgTextures
+			// 
+			this.buttonCollect_dgTextures.Location = new System.Drawing.Point(611, 48);
+			this.buttonCollect_dgTextures.Name = "buttonCollect_dgTextures";
+			this.buttonCollect_dgTextures.Size = new System.Drawing.Size(75, 23);
+			this.buttonCollect_dgTextures.TabIndex = 4;
+			this.buttonCollect_dgTextures.Text = "Collect _dg";
+			this.toolTip.SetToolTip(this.buttonCollect_dgTextures, "Collects only \"_dg\"-suffixed textures");
+			this.buttonCollect_dgTextures.UseVisualStyleBackColor = true;
+			this.buttonCollect_dgTextures.Click += new System.EventHandler(this.buttonCollect_dgTextures_Click);
+			// 
+			// buttonGenerate_dgTextures
+			// 
+			this.buttonGenerate_dgTextures.Location = new System.Drawing.Point(530, 106);
+			this.buttonGenerate_dgTextures.Name = "buttonGenerate_dgTextures";
+			this.buttonGenerate_dgTextures.Size = new System.Drawing.Size(91, 23);
+			this.buttonGenerate_dgTextures.TabIndex = 4;
+			this.buttonGenerate_dgTextures.Text = "Generate _dg";
+			this.toolTip.SetToolTip(this.buttonGenerate_dgTextures, "Generates all the missing _dg textures referenced by optimized materials");
+			this.buttonGenerate_dgTextures.UseVisualStyleBackColor = true;
+			this.buttonGenerate_dgTextures.Click += new System.EventHandler(this.buttonGenerate_dgTextures_Click);
+			// 
 			// progressBarMaterials
 			// 
 			this.progressBarMaterials.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
@@ -875,9 +969,9 @@
 			// 
 			this.progressBarTextures.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-			this.progressBarTextures.Location = new System.Drawing.Point(611, 48);
+			this.progressBarTextures.Location = new System.Drawing.Point(692, 48);
 			this.progressBarTextures.Name = "progressBarTextures";
-			this.progressBarTextures.Size = new System.Drawing.Size(700, 23);
+			this.progressBarTextures.Size = new System.Drawing.Size(619, 23);
 			this.progressBarTextures.TabIndex = 6;
 			this.progressBarTextures.Visible = false;
 			// 
@@ -889,7 +983,7 @@
 			this.tabControlInfo.Location = new System.Drawing.Point(0, 0);
 			this.tabControlInfo.Name = "tabControlInfo";
 			this.tabControlInfo.SelectedIndex = 0;
-			this.tabControlInfo.Size = new System.Drawing.Size(1299, 169);
+			this.tabControlInfo.Size = new System.Drawing.Size(1299, 164);
 			this.tabControlInfo.TabIndex = 7;
 			// 
 			// tabPageInfo
@@ -898,7 +992,7 @@
 			this.tabPageInfo.Location = new System.Drawing.Point(4, 22);
 			this.tabPageInfo.Name = "tabPageInfo";
 			this.tabPageInfo.Padding = new System.Windows.Forms.Padding(3);
-			this.tabPageInfo.Size = new System.Drawing.Size(1291, 143);
+			this.tabPageInfo.Size = new System.Drawing.Size(1291, 138);
 			this.tabPageInfo.TabIndex = 0;
 			this.tabPageInfo.Text = "Info";
 			this.tabPageInfo.UseVisualStyleBackColor = true;
@@ -913,7 +1007,7 @@
 			this.textBoxInfo.Name = "textBoxInfo";
 			this.textBoxInfo.ReadOnly = true;
 			this.textBoxInfo.ScrollBars = System.Windows.Forms.ScrollBars.Both;
-			this.textBoxInfo.Size = new System.Drawing.Size(1285, 137);
+			this.textBoxInfo.Size = new System.Drawing.Size(1285, 132);
 			this.textBoxInfo.TabIndex = 2;
 			// 
 			// tabPageLog
@@ -922,7 +1016,7 @@
 			this.tabPageLog.Location = new System.Drawing.Point(4, 22);
 			this.tabPageLog.Name = "tabPageLog";
 			this.tabPageLog.Padding = new System.Windows.Forms.Padding(3);
-			this.tabPageLog.Size = new System.Drawing.Size(1291, 143);
+			this.tabPageLog.Size = new System.Drawing.Size(1291, 138);
 			this.tabPageLog.TabIndex = 1;
 			this.tabPageLog.Text = "Log";
 			this.tabPageLog.UseVisualStyleBackColor = true;
@@ -937,7 +1031,7 @@
 			this.textBoxLog.Name = "textBoxLog";
 			this.textBoxLog.ReadOnly = true;
 			this.textBoxLog.ScrollBars = System.Windows.Forms.ScrollBars.Both;
-			this.textBoxLog.Size = new System.Drawing.Size(1285, 137);
+			this.textBoxLog.Size = new System.Drawing.Size(1285, 132);
 			this.textBoxLog.TabIndex = 1;
 			// 
 			// splitContainer1
@@ -945,7 +1039,7 @@
 			this.splitContainer1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-			this.splitContainer1.Location = new System.Drawing.Point(12, 110);
+			this.splitContainer1.Location = new System.Drawing.Point(12, 135);
 			this.splitContainer1.Name = "splitContainer1";
 			this.splitContainer1.Orientation = System.Windows.Forms.Orientation.Horizontal;
 			// 
@@ -956,19 +1050,9 @@
 			// splitContainer1.Panel2
 			// 
 			this.splitContainer1.Panel2.Controls.Add(this.tabControlInfo);
-			this.splitContainer1.Size = new System.Drawing.Size(1299, 747);
-			this.splitContainer1.SplitterDistance = 574;
+			this.splitContainer1.Size = new System.Drawing.Size(1299, 722);
+			this.splitContainer1.SplitterDistance = 554;
 			this.splitContainer1.TabIndex = 8;
-			// 
-			// buttonReExport
-			// 
-			this.buttonReExport.Location = new System.Drawing.Point(530, 80);
-			this.buttonReExport.Name = "buttonReExport";
-			this.buttonReExport.Size = new System.Drawing.Size(75, 23);
-			this.buttonReExport.TabIndex = 4;
-			this.buttonReExport.Text = "Re-Export";
-			this.buttonReExport.UseVisualStyleBackColor = true;
-			this.buttonReExport.Click += new System.EventHandler(this.buttonReExport_Click);
 			// 
 			// textBoxReExportPath
 			// 
@@ -1001,25 +1085,15 @@
 			// 
 			this.progressBarReExportMaterials.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-			this.progressBarReExportMaterials.Location = new System.Drawing.Point(773, 80);
+			this.progressBarReExportMaterials.Location = new System.Drawing.Point(692, 80);
 			this.progressBarReExportMaterials.Name = "progressBarReExportMaterials";
-			this.progressBarReExportMaterials.Size = new System.Drawing.Size(538, 23);
+			this.progressBarReExportMaterials.Size = new System.Drawing.Size(619, 23);
 			this.progressBarReExportMaterials.TabIndex = 6;
 			this.progressBarReExportMaterials.Visible = false;
 			// 
-			// buttonParseReExportedMaterials
-			// 
-			this.buttonParseReExportedMaterials.Location = new System.Drawing.Point(611, 80);
-			this.buttonParseReExportedMaterials.Name = "buttonParseReExportedMaterials";
-			this.buttonParseReExportedMaterials.Size = new System.Drawing.Size(75, 23);
-			this.buttonParseReExportedMaterials.TabIndex = 4;
-			this.buttonParseReExportedMaterials.Text = "Parse";
-			this.buttonParseReExportedMaterials.UseVisualStyleBackColor = true;
-			this.buttonParseReExportedMaterials.Click += new System.EventHandler(this.buttonParseReExportedMaterials_Click);
-			// 
 			// buttonIntegratePerforce
 			// 
-			this.buttonIntegratePerforce.Location = new System.Drawing.Point(692, 81);
+			this.buttonIntegratePerforce.Location = new System.Drawing.Point(692, 106);
 			this.buttonIntegratePerforce.Name = "buttonIntegratePerforce";
 			this.buttonIntegratePerforce.Size = new System.Drawing.Size(75, 23);
 			this.buttonIntegratePerforce.TabIndex = 4;
@@ -1028,39 +1102,52 @@
 			this.buttonIntegratePerforce.Visible = false;
 			this.buttonIntegratePerforce.Click += new System.EventHandler(this.buttonIntegratePerforce_Click);
 			// 
-			// buttonAnalyzeConstantColorTextures
+			// panel1
 			// 
-			this.buttonAnalyzeConstantColorTextures.Location = new System.Drawing.Point(1090, 50);
-			this.buttonAnalyzeConstantColorTextures.Name = "buttonAnalyzeConstantColorTextures";
-			this.buttonAnalyzeConstantColorTextures.Size = new System.Drawing.Size(173, 23);
-			this.buttonAnalyzeConstantColorTextures.TabIndex = 12;
-			this.buttonAnalyzeConstantColorTextures.Text = "Analyze Constant Color Textures";
-			this.buttonAnalyzeConstantColorTextures.UseVisualStyleBackColor = true;
-			this.buttonAnalyzeConstantColorTextures.Click += new System.EventHandler(this.buttonAnalyzeConstantColorTextures_Click);
+			this.panel1.Controls.Add(this.radioButtonViewOptimizedMaterials);
+			this.panel1.Controls.Add(this.radioButtonViewSourceMaterials);
+			this.panel1.Location = new System.Drawing.Point(12, 106);
+			this.panel1.Name = "panel1";
+			this.panel1.Size = new System.Drawing.Size(307, 22);
+			this.panel1.TabIndex = 9;
 			// 
-			// checkBoxShowAlpha
+			// radioButtonViewOptimizedMaterials
 			// 
-			this.checkBoxShowAlpha.AutoSize = true;
-			this.checkBoxShowAlpha.Checked = true;
-			this.checkBoxShowAlpha.CheckState = System.Windows.Forms.CheckState.Checked;
-			this.checkBoxShowAlpha.Location = new System.Drawing.Point(254, 26);
-			this.checkBoxShowAlpha.Name = "checkBoxShowAlpha";
-			this.checkBoxShowAlpha.Size = new System.Drawing.Size(83, 17);
-			this.checkBoxShowAlpha.TabIndex = 2;
-			this.checkBoxShowAlpha.Text = "Show Alpha";
-			this.checkBoxShowAlpha.UseVisualStyleBackColor = true;
-			this.checkBoxShowAlpha.CheckedChanged += new System.EventHandler(this.checkBoxShowArkDefault_CheckedChanged);
+			this.radioButtonViewOptimizedMaterials.AutoSize = true;
+			this.radioButtonViewOptimizedMaterials.Location = new System.Drawing.Point(136, 3);
+			this.radioButtonViewOptimizedMaterials.Name = "radioButtonViewOptimizedMaterials";
+			this.radioButtonViewOptimizedMaterials.Size = new System.Drawing.Size(142, 17);
+			this.radioButtonViewOptimizedMaterials.TabIndex = 0;
+			this.radioButtonViewOptimizedMaterials.Text = "View Optimized Materials";
+			this.radioButtonViewOptimizedMaterials.UseVisualStyleBackColor = true;
+			this.radioButtonViewOptimizedMaterials.CheckedChanged += new System.EventHandler(this.radioButtonViewMaterialsList_CheckedChanged);
+			// 
+			// radioButtonViewSourceMaterials
+			// 
+			this.radioButtonViewSourceMaterials.AutoSize = true;
+			this.radioButtonViewSourceMaterials.Checked = true;
+			this.radioButtonViewSourceMaterials.Location = new System.Drawing.Point(0, 3);
+			this.radioButtonViewSourceMaterials.Name = "radioButtonViewSourceMaterials";
+			this.radioButtonViewSourceMaterials.Size = new System.Drawing.Size(130, 17);
+			this.radioButtonViewSourceMaterials.TabIndex = 0;
+			this.radioButtonViewSourceMaterials.TabStop = true;
+			this.radioButtonViewSourceMaterials.Text = "View Source Materials";
+			this.radioButtonViewSourceMaterials.UseVisualStyleBackColor = true;
+			this.radioButtonViewSourceMaterials.CheckedChanged += new System.EventHandler(this.radioButtonViewMaterialsList_CheckedChanged);
 			// 
 			// Form1
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1323, 869);
+			this.Controls.Add(this.panel1);
 			this.Controls.Add(this.splitContainer1);
 			this.Controls.Add(this.progressBarTextures);
 			this.Controls.Add(this.progressBarReExportMaterials);
 			this.Controls.Add(this.progressBarMaterials);
+			this.Controls.Add(this.buttonCollect_dgTextures);
 			this.Controls.Add(this.buttonCollectTextures);
+			this.Controls.Add(this.buttonGenerate_dgTextures);
 			this.Controls.Add(this.buttonReExport);
 			this.Controls.Add(this.buttonIntegratePerforce);
 			this.Controls.Add(this.buttonParseReExportedMaterials);
@@ -1093,6 +1180,8 @@
 			this.splitContainer1.Panel2.ResumeLayout(false);
 			((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).EndInit();
 			this.splitContainer1.ResumeLayout(false);
+			this.panel1.ResumeLayout(false);
+			this.panel1.PerformLayout();
 			this.ResumeLayout(false);
 			this.PerformLayout();
 
@@ -1185,6 +1274,12 @@
 		private System.Windows.Forms.Label label10;
 		private System.Windows.Forms.Button buttonAnalyzeConstantColorTextures;
 		private System.Windows.Forms.CheckBox checkBoxShowAlpha;
+		private System.Windows.Forms.Button buttonCollect_dgTextures;
+		private System.Windows.Forms.Button buttonGenerate_dgTextures;
+		private System.Windows.Forms.Panel panel1;
+		private System.Windows.Forms.RadioButton radioButtonViewSourceMaterials;
+		private System.Windows.Forms.RadioButton radioButtonViewOptimizedMaterials;
+		private System.Windows.Forms.CheckBox checkBoxShowDiffuseGloss;
 	}
 }
 
