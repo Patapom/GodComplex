@@ -227,7 +227,6 @@ namespace MaterialsOptimizer
 			}
 		}
 
-
 		[System.Diagnostics.DebuggerDisplay( "{}" )]
 		public class	States {
 
@@ -343,7 +342,8 @@ namespace MaterialsOptimizer
 
 		[System.Diagnostics.DebuggerDisplay( "Alpha={m_isAlpha}" )]
 		public class	Options {
-//			public bool				m_isAlpha = false;
+			public bool				m_glossInDiffuseAlpha = false;	// The new option that allows (diffuse+gloss) merging into a single texture
+
 			public bool				m_isAlphaTest = false;
 			public bool				m_isMasking = false;
 			public bool				m_hasNormal = false;
@@ -365,7 +365,8 @@ namespace MaterialsOptimizer
 			#region Serialization
 
 			public void	Write( BinaryWriter W ) {
-//				W.Write( m_isAlpha );
+				W.Write( m_glossInDiffuseAlpha );
+
 				W.Write( m_isAlphaTest );
 				W.Write( m_isMasking );
 				W.Write( m_hasNormal );
@@ -382,7 +383,8 @@ namespace MaterialsOptimizer
 			}
 
 			public void	Read( BinaryReader R ) {
-//				m_isAlpha = R.ReadBoolean();
+				m_glossInDiffuseAlpha = R.ReadBoolean();
+
 				m_isAlphaTest = R.ReadBoolean();
 				m_isMasking = R.ReadBoolean();
 				m_hasNormal = R.ReadBoolean();
@@ -405,7 +407,7 @@ namespace MaterialsOptimizer
 
 				// Write known options
 				W.WriteLine( T + "extralayer		" + m_extraLayers );
-//				W.WriteLine( T + "isalpha			" + (m_isAlpha ? 1 : 0) );
+				W.WriteLine( T + "glossInDiffuseAlpha	" + (m_glossInDiffuseAlpha ? 1 : 0) );
 				W.WriteLine( T + "alphatest		" + (m_isAlphaTest ? 1 : 0) );
 				W.WriteLine( T + "ismasking		" + (m_isMasking ? 1 : 0) );
 				W.WriteLine( T + "hasbumpmap		" + (m_hasNormal ? 1 : 0) );
@@ -419,6 +421,7 @@ namespace MaterialsOptimizer
 
 				// LAYER 0
 				Layer	L = _layers[0];
+				W.WriteLine( T + "use_Layer0_ColorConstant	" + (L.m_useColorConstant ? 1 : 0) );
 				WriteLayerUVSet( W, T + "layer0_uvset", L.m_UVSet );
 				WriteLayerMaskingMode( W, T + "layer0_maskmode", L.m_maskingMode );
 				if ( L.m_maskingMode != Layer.MASKING_MODE.VERTEX_COLOR ) {
@@ -429,6 +432,7 @@ namespace MaterialsOptimizer
 					// LAYER 1
 					L = _layers[1];
 					WriteLayerUVSet( W, T + "layer1_uvset", L.m_UVSet );
+					W.WriteLine( T + "use_Layer1_ColorConstant	" + (L.m_useColorConstant ? 1 : 0) );
 					WriteLayerReUseMode( W, T + "layer1_diffusereuselayer", L.m_diffuseReUse );
 					WriteLayerReUseMode( W, T + "layer1_bumpreuselayer", L.m_normalReUse );
 					if ( m_hasGloss )
@@ -448,6 +452,7 @@ namespace MaterialsOptimizer
 						// LAYER 2
 						L = _layers[2];
 						WriteLayerUVSet( W, T + "layer2_uvset", L.m_UVSet );
+						W.WriteLine( T + "use_Layer2_ColorConstant	" + (L.m_useColorConstant ? 1 : 0) );
 						WriteLayerReUseMode( W, T + "layer2_diffusereuselayer", L.m_diffuseReUse );
 						WriteLayerReUseMode( W, T + "layer2_bumpreuselayer", L.m_normalReUse );
 						if ( m_hasGloss )
@@ -505,7 +510,7 @@ namespace MaterialsOptimizer
 
 			#region NESTED TYPES
 
-			[System.Diagnostics.DebuggerDisplay( "{m_name} CstColorType={m_constantColorType}" )]
+			[System.Diagnostics.DebuggerDisplay("{m_name} CstColorType={m_constantColorType} Usage={m_textureFileInfo!=null?m_textureFileInfo.m_usage.ToString():\"<NOT A TEXTURE>\"}")]
 			public class	Texture {
 				public enum	 CONSTANT_COLOR_TYPE {
 					TEXTURE,
@@ -699,6 +704,7 @@ namespace MaterialsOptimizer
 
 			#endregion
 
+			public Material		m_owner = null;
 			public int			m_index = 0;
 
 			public Texture		m_diffuse = null;
@@ -729,6 +735,9 @@ namespace MaterialsOptimizer
 			public float2		m_maskUVOffset = float2.Zero;
 			public float2		m_maskUVScale = float2.One;
 
+			public bool			m_useColorConstant = false;
+			public float4		m_colorConstant = float4.One;
+
 			private ERROR_LEVEL	m_errorLevel = ERROR_LEVEL.NONE;
 			public string		m_errors = null;
 			public string		m_warnings = null;
@@ -745,19 +754,29 @@ namespace MaterialsOptimizer
 				get { return m_warnings != null && m_warnings != ""; }
 			}
 
-			public void			ParseScaleBias( Parser _P ) {
-				float4	SB = _P.ReadFloat4();
-				m_UVScale.Set( SB.x, SB.y );
-				m_UVOffset.Set( SB.z, SB.w );
+			/// <summary>
+			/// Returns true if the layer's diffuse texture is a (diffuse+gloss) packed texture
+			/// </summary>
+			public bool				IsOptimized {
+				get {
+					Texture	diffuse = m_diffuse;
+					switch ( m_diffuseReUse ) {
+						case REUSE_MODE.REUSE_LAYER0: diffuse = m_owner.m_layers[0].m_diffuse; break;
+						case REUSE_MODE.REUSE_LAYER1: diffuse = m_owner.m_layers.Count > 1 ? m_owner.m_layers[1].m_diffuse : null; break;
+					}
+
+					return diffuse != null
+						&& diffuse.m_textureFileInfo != null
+						&& diffuse.m_textureFileInfo.m_usage == TextureFileInfo.USAGE.DIFFUSE_GLOSS;
+				}
 			}
 
-			public void			ParseMaskScaleBias( Parser _P ) {
-				float4	SB = _P.ReadFloat4();
-				m_maskUVScale.Set( SB.x, SB.y );
-				m_maskUVOffset.Set( SB.z, SB.w );
+			public Layer( Material _owner ) {
+				m_owner = _owner;
 			}
 
-			public Layer( int _index ) {
+			public Layer( Material _owner, int _index ) {
+				m_owner = _owner;
 				m_index = _index;
 			}
 
@@ -774,6 +793,18 @@ namespace MaterialsOptimizer
 					R += "   Warnings:\n" + m_warnings;
 
 				return R;
+			}
+
+			public void			ParseScaleBias( Parser _P ) {
+				float4	SB = _P.ReadFloat4();
+				m_UVScale.Set( SB.x, SB.y );
+				m_UVOffset.Set( SB.z, SB.w );
+			}
+
+			public void			ParseMaskScaleBias( Parser _P ) {
+				float4	SB = _P.ReadFloat4();
+				m_maskUVScale.Set( SB.x, SB.y );
+				m_maskUVOffset.Set( SB.z, SB.w );
 			}
 
 			/// <summary>
@@ -886,6 +917,12 @@ namespace MaterialsOptimizer
 				W.Write( m_maskUVScale.x );
 				W.Write( m_maskUVScale.y );
 
+				W.Write( m_useColorConstant );
+				W.Write( m_colorConstant.x );
+				W.Write( m_colorConstant.y );
+				W.Write( m_colorConstant.z );
+				W.Write( m_colorConstant.w );
+
 				W.Write( (int) m_errorLevel );
 				W.Write( m_errors != null ? m_errors : "" );
 				W.Write( m_warnings != null ? m_warnings : "" );
@@ -929,6 +966,12 @@ namespace MaterialsOptimizer
 				m_maskUVScale.x = R.ReadSingle();
 				m_maskUVScale.y = R.ReadSingle();
 
+				m_useColorConstant = R.ReadBoolean();
+				m_colorConstant.x = R.ReadSingle();
+				m_colorConstant.y = R.ReadSingle();
+				m_colorConstant.z = R.ReadSingle();
+				m_colorConstant.w = R.ReadSingle();
+
 				m_errorLevel = (ERROR_LEVEL) R.ReadInt32();
 				m_errors = R.ReadString();
 				if ( m_errors == string.Empty )
@@ -945,6 +988,9 @@ namespace MaterialsOptimizer
 			public void		Export( StringWriter W, string T, string _layerPrefix, Options _options ) {
 
 				string	regularTexturesPrefix = m_index > 0 ? _layerPrefix : "";
+
+				if ( m_useColorConstant )
+					W.WriteLine( T + _layerPrefix + "ColorConstant	{ " + m_colorConstant.x + ", " + m_colorConstant.y + ", " + m_colorConstant.z + ", " + m_colorConstant.w + " }" );
 
 				if ( m_diffuse != null )
 					W.WriteLine( T + regularTexturesPrefix + "diffusemap	" + m_diffuse.Export() );
@@ -1064,7 +1110,7 @@ namespace MaterialsOptimizer
 
 			#region Optimization
 
-			public void	CleanUp( List< Layer > _layers, Options _options, ref int _removedTexturesCount, ref int _missingTexturesReplacedCount, ref int _reUseOptionsSetCount ) {
+			public void	CleanUp( List< Layer > _layers, Options _options, ref int _removedTexturesCount, ref int _blackColorConstantsCount, ref int _swappedSlotsCount, ref int _missingTexturesReplacedCount, ref int _reUseOptionsSetCount ) {
 				// Cleanup textures that are present although the option is not set
 				if ( !_options.m_hasNormal && m_normal != null ) {
 					m_normal = null;
@@ -1086,6 +1132,18 @@ namespace MaterialsOptimizer
 					m_specular = null;
 					_removedTexturesCount++;
 				}
+
+				// Cleanup textures that are present whereas a re-use option is set
+				if ( m_diffuse != null && m_diffuseReUse != REUSE_MODE.DONT_REUSE )
+					m_diffuse = null;
+				if ( m_normal != null && m_normalReUse != REUSE_MODE.DONT_REUSE )
+					m_normal = null;
+				if ( m_gloss != null && m_glossReUse != REUSE_MODE.DONT_REUSE )
+					m_gloss = null;
+				if ( m_metal != null && m_metalReUse != REUSE_MODE.DONT_REUSE )
+					m_metal = null;
+				if ( m_specular != null && m_specularReUse != REUSE_MODE.DONT_REUSE )
+					m_specular = null;
 
 				// Patch missing textures
 				if ( m_diffuse == null && m_diffuseReUse == REUSE_MODE.DONT_REUSE ) {
@@ -1112,6 +1170,24 @@ namespace MaterialsOptimizer
 					m_specular = new Texture( "_invalid" );
 					_missingTexturesReplacedCount++;
 				}
+
+				// Replace diffuse textures that use a black constant color multiplier
+				if ( m_useColorConstant && (m_colorConstant.x*m_colorConstant.x + m_colorConstant.y*m_colorConstant.y + m_colorConstant.z*m_colorConstant.z) < 1e-6f ) {
+					m_diffuse = new Texture( "_black" );
+					_blackColorConstantsCount++;
+				}
+
+				// Try swapping slots if the user made obvious mistakes
+				TrySwapping( ref m_diffuse,	ref m_normal,	TextureFileInfo.USAGE.DIFFUSE,	TextureFileInfo.USAGE.NORMAL, ref _swappedSlotsCount );
+				TrySwapping( ref m_diffuse,	ref m_gloss,	TextureFileInfo.USAGE.DIFFUSE,	TextureFileInfo.USAGE.GLOSS, ref _swappedSlotsCount );
+				TrySwapping( ref m_diffuse,	ref m_metal,	TextureFileInfo.USAGE.DIFFUSE,	TextureFileInfo.USAGE.METAL, ref _swappedSlotsCount );
+				TrySwapping( ref m_diffuse,	ref m_emissive,	TextureFileInfo.USAGE.DIFFUSE,	TextureFileInfo.USAGE.EMISSIVE, ref _swappedSlotsCount );
+				TrySwapping( ref m_normal,	ref m_gloss,	TextureFileInfo.USAGE.NORMAL,	TextureFileInfo.USAGE.GLOSS, ref _swappedSlotsCount );
+				TrySwapping( ref m_normal,	ref m_metal,	TextureFileInfo.USAGE.NORMAL,	TextureFileInfo.USAGE.METAL, ref _swappedSlotsCount );
+				TrySwapping( ref m_normal,	ref m_emissive,	TextureFileInfo.USAGE.NORMAL,	TextureFileInfo.USAGE.EMISSIVE, ref _swappedSlotsCount );
+				TrySwapping( ref m_gloss,	ref m_metal,	TextureFileInfo.USAGE.GLOSS,	TextureFileInfo.USAGE.METAL, ref _swappedSlotsCount );
+				TrySwapping( ref m_gloss,	ref m_emissive,	TextureFileInfo.USAGE.GLOSS,	TextureFileInfo.USAGE.EMISSIVE, ref _swappedSlotsCount );
+				TrySwapping( ref m_metal,	ref m_emissive,	TextureFileInfo.USAGE.METAL,	TextureFileInfo.USAGE.EMISSIVE, ref _swappedSlotsCount );
 
 				// Apply re-use options whenever a texture is identical from the previous layer
 				for ( int previousLayerIndex=0; previousLayerIndex < m_index; previousLayerIndex++ ) {
@@ -1165,10 +1241,21 @@ namespace MaterialsOptimizer
 							}
 						}
 					}
+				}
+			}
 
-// 					if ( previousLayer.SameMaskUVs( previousLayer ) ) {
-// 
-// 					}
+			void TrySwapping( ref Texture _a, ref Texture _b, TextureFileInfo.USAGE _expectedUsageForA, TextureFileInfo.USAGE _expectedUsageForB, ref int _swappedSlotsCount ) {
+				if ( _a == null || _a.m_textureFileInfo == null )
+					return;
+				if ( _b == null || _b.m_textureFileInfo == null )
+					return;
+
+				if ( _a.m_textureFileInfo.m_usage == _expectedUsageForB && _b.m_textureFileInfo.m_usage == _expectedUsageForA ) {
+					// Switch!
+					Texture	temp = _a;
+					_a = _b;
+					_b = temp;
+					_swappedSlotsCount++;
 				}
 			}
 
@@ -1220,6 +1307,15 @@ namespace MaterialsOptimizer
 
 		public bool				IsAlpha {
 			get { return m_options.IsAlpha || m_states.IsAlpha || m_parms.IsAlpha; }
+		}
+
+		public bool				IsOptimized {
+			get {
+				foreach ( Layer L in m_layers )
+					if ( !L.IsOptimized )
+						return false;
+				return true;
+			}
 		}
 
 		/// <summary>
@@ -1317,7 +1413,7 @@ namespace MaterialsOptimizer
 		private Layer			Layer1 {
 			get {
 				if ( m_layers.Count < 2 )
-					m_layers.Add( new Layer( 1 ) );
+					m_layers.Add( new Layer( this, 1 ) );
 				return m_layers[1];
 			}
 		}
@@ -1326,8 +1422,8 @@ namespace MaterialsOptimizer
 			get {
 				if ( m_layers.Count < 3 ) {
 					if ( m_layers.Count < 2 )
-						m_layers.Add( new Layer( 1 ) );
-					m_layers.Add( new Layer( 2 ) );
+						m_layers.Add( new Layer( this, 1 ) );
+					m_layers.Add( new Layer( this, 2 ) );
 				}
 				return m_layers[2];
 			}
@@ -1338,7 +1434,7 @@ namespace MaterialsOptimizer
 		public Material( FileInfo _sourceFileName, string _name, string _content ) {
 			m_sourceFileName = _sourceFileName;
 			m_name = _name;
-			m_layers.Add( new Layer( 0 ) );	// We always have at least 1 layer
+			m_layers.Add( new Layer( this, 0 ) );	// We always have at least 1 layer
 			Parse( _content );
 		}
 		public Material( BinaryReader R ) {
@@ -1450,6 +1546,7 @@ namespace MaterialsOptimizer
 					case "layer0_maskmap":		Layer0.m_mask = new Layer.Texture( P.ReadToEOL() ); break;
 					case "layer0_scalebias":	Layer0.ParseScaleBias( P ); break;
 					case "layer0_maskscalebias":Layer0.ParseMaskScaleBias( P ); break;
+					case "layer0_colorconstant":Layer0.m_colorConstant = P.ReadFloat4(); break;
 
 						// Layer 1
 					case "layer1_diffusemap":	Layer1.m_diffuse = new Layer.Texture( P.ReadToEOL() ); break;
@@ -1461,6 +1558,7 @@ namespace MaterialsOptimizer
 					case "layer1_emissivemap":	throw new Exception( "Shouldn't be allowed!" );//P.SkipSpaces(); Layer1.m_emissive = new Layer.Texture( P.ReadToEOL() ); break;
 					case "layer1_scalebias":	Layer1.ParseScaleBias( P ); break;
 					case "layer1_maskscalebias":Layer1.ParseMaskScaleBias( P ); break;
+					case "layer1_colorconstant":Layer1.m_colorConstant = P.ReadFloat4(); break;
 
 						// Layer 2
 					case "layer2_diffusemap":	Layer2.m_diffuse = new Layer.Texture( P.ReadToEOL() ); break;
@@ -1472,6 +1570,7 @@ namespace MaterialsOptimizer
 					case "layer2_maskmap":		Layer2.m_mask = new Layer.Texture( P.ReadToEOL() ); break;
 					case "layer2_scalebias":	Layer2.ParseScaleBias( P ); break;
 					case "layer2_maskscalebias":Layer2.ParseMaskScaleBias( P ); break;
+					case "layer2_colorconstant":Layer2.m_colorConstant = P.ReadFloat4(); break;
 
 					// Main variables
 					case "m_physicsmaterial":
@@ -1522,7 +1621,7 @@ namespace MaterialsOptimizer
 
 					switch ( token.ToLower() ) {
 
-//						case "isalpha":						m_options.m_isAlpha = value != 0; break;
+						case "glossindiffusealpha":			m_options.m_glossInDiffuseAlpha = value != 0; break;
 						case "alphatest":					m_options.m_isAlphaTest = value != 0; break;
 						case "ismasking":					m_options.m_isMasking = value != 0; break;
 						case "hasbumpmap":					m_options.m_hasNormal = value != 0; break;
@@ -1544,6 +1643,8 @@ namespace MaterialsOptimizer
 							break;
 
 							// LAYER 0
+						case "use_layer0_colorconstant": Layer0.m_useColorConstant = value != 0; break;
+
 						case "layer0_uvset":
 							switch ( value ) {
 								case 0: Layer0.m_UVSet = Layer.UV_SET.UV0; break;
@@ -1568,6 +1669,8 @@ namespace MaterialsOptimizer
 							break;
 
 							// LAYER 1
+						case "use_layer1_colorconstant": Layer1.m_useColorConstant = value != 0; break;
+
 						case "layer1_uvset":
 							switch ( value ) {
 								case 0: Layer1.m_UVSet = Layer.UV_SET.UV0; break;
@@ -1634,6 +1737,8 @@ namespace MaterialsOptimizer
 							break;
 
 							// LAYER 2
+						case "use_layer2_colorconstant": Layer2.m_useColorConstant = value != 0; break;
+
 						case "layer2_uvset":
 							switch ( value ) {
 								case 0: Layer2.m_UVSet = Layer.UV_SET.UV0; break;
@@ -2174,7 +2279,7 @@ namespace MaterialsOptimizer
 		/// <summary>
 		/// This function cleans the material from automatically recoverable errors and warnings
 		/// </summary>
-		public void		CleanUp( ref int _clearedOptionsCount, ref int _removedTexturesCount, ref int _missingTexturesReplacedCount, ref int _reUseOptionsSetCount ) {
+		public void		CleanUp( ref int _clearedOptionsCount, ref int _removedTexturesCount, ref int _blackColorConstantsCount, ref int _swappedSlotsCount, ref int _missingTexturesReplacedCount, ref int _reUseOptionsSetCount ) {
 
 			// Check gloss/metal ranges to know if textures are useful
 			bool	emptyGlossRange = Math.Abs( m_glossMinMax.y - m_glossMinMax.x ) < 1e-3f;
@@ -2194,7 +2299,7 @@ namespace MaterialsOptimizer
 			while ( m_layers.Count > LayersCount )
 				m_layers.RemoveAt( m_layers.Count-1 );	// Remove last layer
 			foreach ( Layer L in m_layers ) {
-				L.CleanUp( m_layers, m_options, ref _removedTexturesCount, ref _missingTexturesReplacedCount, ref _reUseOptionsSetCount );
+				L.CleanUp( m_layers, m_options, ref _removedTexturesCount, ref _blackColorConstantsCount, ref _swappedSlotsCount, ref _missingTexturesReplacedCount, ref _reUseOptionsSetCount );
 			}
 
 			// Remove forbidden parms
@@ -2220,7 +2325,7 @@ namespace MaterialsOptimizer
 				return;	// No gloss maps to compact
 
 			foreach ( Layer L in m_layers ) {
-				if ( L.m_diffuse == null || L.m_diffuse.m_textureFileInfo == null )
+				if ( L.m_diffuse == null || L.m_diffuse.m_textureFileInfo == null || L.m_diffuse.m_textureFileInfo.m_usage != TextureFileInfo.USAGE.DIFFUSE )
 					continue;	// No diffuse slot?
 
 				if ( !_diffuse2GlossMaps.ContainsKey( L.m_diffuse.m_textureFileInfo ) )
@@ -2234,7 +2339,7 @@ namespace MaterialsOptimizer
 					case Layer.REUSE_MODE.REUSE_LAYER1:	glossMap = m_layers[1].m_gloss; break;
 				}
 
-				if ( glossMap != null )
+				if ( glossMap != null && glossMap.m_textureFileInfo != null && glossMap.m_textureFileInfo.m_usage == TextureFileInfo.USAGE.GLOSS )
 					glossMaps.Add( glossMap.m_textureFileInfo );
 				else
 					glossMaps.Add( null );	// Add null anyway so we can know this texture is sometimes lacking a gloss map, which also means it's shared by the "no gloss" texture...
@@ -2246,26 +2351,53 @@ namespace MaterialsOptimizer
 		/// </summary>
 		/// <param name="_diffuseGloss"></param>
 		/// <param name="_totalDiffuseGlossTexturesReplaced"></param>
-		public void	Optimize( Dictionary< TextureFileInfo, TextureFileInfo > _diffuseGloss, ref int _totalDiffuseGlossTexturesReplaced ) {
+		public bool	Optimize( Dictionary< TextureFileInfo, TextureFileInfo > _diffuseGloss, ref int _totalDiffuseGlossTexturesReplaced ) {
 			if ( IsAlpha )
-				return;	// Can't optimize alpha materials
+				return false;	// Can't optimize alpha materials
 
 			// Check the material is arkDefault
 			if ( m_programs.m_type != Programs.KNOWN_TYPES.DEFAULT )
-				return;	// We could but I chose not to deal with other shaders than arkDefault...
+				return false;	// We could but I chose not to deal with other shaders than arkDefault...
 
 			// Check the material uses diffuse and gloss
 			if ( !m_options.m_hasGloss )
-				return;	// No gloss maps to compact
+				return false;	// No gloss maps to compact
 
+			bool	allLayersAreUsingPairedTexture = true;
 			foreach ( Layer L in m_layers ) {
-				if ( L.m_diffuse == null )
-					continue;
-				if ( L.m_diffuseReUse != L.m_glossReUse )
-					continue;
-
-
+				Layer.Texture	diffuse = null;
+				switch ( L.m_diffuseReUse ) {
+					case Layer.REUSE_MODE.DONT_REUSE: diffuse = L.m_diffuse; break;
+					case Layer.REUSE_MODE.REUSE_LAYER0: diffuse = m_layers[0].m_diffuse; break;
+					case Layer.REUSE_MODE.REUSE_LAYER1: diffuse = m_layers[1].m_diffuse; break;
+				}
+				if ( diffuse == null || diffuse.m_textureFileInfo == null || diffuse.m_textureFileInfo.m_associatedTexture == null ) {
+					allLayersAreUsingPairedTexture = false;
+					break;
+				}
 			}
+
+			if ( !allLayersAreUsingPairedTexture )
+				return false;
+
+			// Set the "glossInDiffuseAlpha" option
+			m_options.m_glossInDiffuseAlpha = true;
+
+			// Replace all diffuse textures by their "_dg" equivalents
+			foreach ( Layer L in m_layers ) {
+				if ( L.m_diffuseReUse != Layer.REUSE_MODE.DONT_REUSE )
+					continue;
+
+				string	originalTextureName = L.m_diffuse.m_rawTextureLine;
+				int		indexOf_d = originalTextureName.LastIndexOf( "_d" );
+				string	optimizedDiffuseTextureName = originalTextureName.Substring( 0, indexOf_d ) + "_dg" + originalTextureName.Substring( indexOf_d+2 );
+
+				L.m_diffuse = new Layer.Texture( optimizedDiffuseTextureName );
+			}
+
+			_totalDiffuseGlossTexturesReplaced += m_layers.Count;
+
+			return true;
 		}
 
 		public void		CleanUpUselessComments( List< string > _unknownStrings ) {

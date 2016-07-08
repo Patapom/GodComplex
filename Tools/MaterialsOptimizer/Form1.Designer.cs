@@ -70,7 +70,7 @@
 			this.columnHeaderProgramType = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
 			this.columnHeaderLayersCount = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
 			this.columnHeaderIsAlpha = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
-			this.columnHeaderIsOptimizable = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+			this.columnHeaderIsOptimized = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
 			this.columnHeaderErrors = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
 			this.columnHeaderMaterialFileName = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
 			this.tabPageTextures = new System.Windows.Forms.TabPage();
@@ -558,7 +558,7 @@
             this.columnHeaderProgramType,
             this.columnHeaderLayersCount,
             this.columnHeaderIsAlpha,
-            this.columnHeaderIsOptimizable,
+            this.columnHeaderIsOptimized,
             this.columnHeaderErrors,
             this.columnHeaderMaterialFileName});
 			this.listViewMaterials.FullRowSelect = true;
@@ -591,13 +591,13 @@
 			// 
 			// columnHeaderIsAlpha
 			// 
-			this.columnHeaderIsAlpha.Text = "isAlpha";
+			this.columnHeaderIsAlpha.Text = "Alpha?";
 			this.columnHeaderIsAlpha.Width = 50;
 			// 
-			// columnHeaderIsOptimizable
+			// columnHeaderIsOptimized
 			// 
-			this.columnHeaderIsOptimizable.Text = "Can Optimize";
-			this.columnHeaderIsOptimizable.Width = 150;
+			this.columnHeaderIsOptimized.Text = "Optimized?";
+			this.columnHeaderIsOptimized.Width = 70;
 			// 
 			// columnHeaderErrors
 			// 
@@ -1225,7 +1225,7 @@
 		private System.Windows.Forms.ColumnHeader columnHeaderMaterialFileName;
 		private System.Windows.Forms.ColumnHeader columnHeaderLayersCount;
 		private System.Windows.Forms.ColumnHeader columnHeaderIsAlpha;
-		private System.Windows.Forms.ColumnHeader columnHeaderIsOptimizable;
+		private System.Windows.Forms.ColumnHeader columnHeaderIsOptimized;
 		private System.Windows.Forms.ColumnHeader columnHeaderMaterialName;
 		private System.Windows.Forms.Panel panelFilterMaterials;
 		private System.Windows.Forms.Label labelTotalMaterials;

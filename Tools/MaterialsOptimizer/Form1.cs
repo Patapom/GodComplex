@@ -389,8 +389,10 @@ namespace MaterialsOptimizer
 				LoadTexturesDatabase( m_texturesDatabaseFileName );
 
 			AnalyzeMaterialsDatabase( m_sourceMaterials, false );
-			AnalyzeMaterialsDatabase( m_optimizedMaterials, false );
-			RebuildMaterialsListView();
+			if ( AnalyzeMaterialsDatabase( m_optimizedMaterials, false ) )
+				radioButtonViewOptimizedMaterials.Checked = true;
+			else
+				RebuildMaterialsListView();
 			RebuildTexturesListView();
 		}
 
@@ -859,6 +861,7 @@ namespace MaterialsOptimizer
 					case 1: filteredMaterials.Sort( new MatCompareTypes_Ascending() ); break;
 					case 2: filteredMaterials.Sort( new MatCompareLayers_Ascending() ); break;
 					case 3: filteredMaterials.Sort( new MatCompareAlpha_Ascending() ); break;
+					case 4: filteredMaterials.Sort( new MatCompareOptimized_Ascending() ); break;
 					case 6: filteredMaterials.Sort( new MatCompareFileNames_Ascending() ); break;
 				}
 			} else {
@@ -867,6 +870,7 @@ namespace MaterialsOptimizer
 					case 1: filteredMaterials.Sort( new MatCompareTypes_Descending() ); break;
 					case 2: filteredMaterials.Sort( new MatCompareLayers_Descending() ); break;
 					case 3: filteredMaterials.Sort( new MatCompareAlpha_Descending() ); break;
+					case 4: filteredMaterials.Sort( new MatCompareOptimized_Descending() ); break;
 					case 6: filteredMaterials.Sort( new MatCompareFileNames_Descending() ); break;
 				}
 			}
@@ -883,7 +887,7 @@ namespace MaterialsOptimizer
 				item.SubItems.Add( new ListViewItem.ListViewSubItem( item, M.m_programs.m_type.ToString() ) );
 				item.SubItems.Add( new ListViewItem.ListViewSubItem( item, M.LayersCount.ToString() ) );			// Show the ACTUAL amount of layers used by the shader!
 				item.SubItems.Add( new ListViewItem.ListViewSubItem( item, M.IsAlpha ? "Yes" : "" ) );
-				item.SubItems.Add( new ListViewItem.ListViewSubItem( item, M.m_isCandidateForOptimization ) );
+				item.SubItems.Add( new ListViewItem.ListViewSubItem( item, M.IsOptimized ? "Yes" : "" ) );
 				item.SubItems.Add( new ListViewItem.ListViewSubItem( item, errorString ) );
 				item.SubItems.Add( new ListViewItem.ListViewSubItem( item, M.m_sourceFileName.FullName ) );
 
@@ -894,7 +898,7 @@ namespace MaterialsOptimizer
 					case Material.ERROR_LEVEL.NONE:
 						if ( M.HasWarnings )
 							item.BackColor = Color.Gold;
-						else if ( M.m_isCandidateForOptimization != null )
+						else if ( M.IsOptimized )
 							item.BackColor = Color.ForestGreen;
 						break;
 				}
@@ -956,6 +960,21 @@ namespace MaterialsOptimizer
 			public int Compare(Material x, Material y) {
 				bool	a = x.IsAlpha;
 				bool	b = y.IsAlpha;
+				return a == b ? 0 : (b ? 1 : -1);
+			}
+		}
+
+		class	MatCompareOptimized_Ascending : IComparer< Material > {
+			public int Compare(Material x, Material y) {
+				bool	a = x.IsOptimized;
+				bool	b = y.IsOptimized;
+				return a == b ? 0 : (a ? 1 : -1);
+			}
+		}
+		class	MatCompareOptimized_Descending : IComparer< Material > {
+			public int Compare(Material x, Material y) {
+				bool	a = x.IsOptimized;
+				bool	b = y.IsOptimized;
 				return a == b ? 0 : (b ? 1 : -1);
 			}
 		}
@@ -1388,6 +1407,8 @@ namespace MaterialsOptimizer
 
 			int totalClearedOptionsCount = 0;
 			int totalRemovedTexturesCount = 0;
+			int totalBlackColorConstantsCount = 0;
+			int	totalSwappedSlotsCount = 0;
 			int totalMissingTexturesReplacedCount = 0;
 			int totalReUseOptionsSetCount = 0;
 			int	totalCleanedUpMaterialsCount = 0;
@@ -1397,12 +1418,16 @@ namespace MaterialsOptimizer
 				try {
 					int clearedOptionsCount = 0;
 					int removedTexturesCount = 0;
+					int blackColorConstantsCount = 0;
+					int	swappedSlotsCount = 0;
 					int	missingTexturesReplacedCount = 0;
 					int reUseOptionsSetCount = 0;
-					M.CleanUp( ref clearedOptionsCount, ref removedTexturesCount, ref missingTexturesReplacedCount, ref reUseOptionsSetCount );
+					M.CleanUp( ref clearedOptionsCount, ref removedTexturesCount, ref blackColorConstantsCount, ref swappedSlotsCount, ref missingTexturesReplacedCount, ref reUseOptionsSetCount );
 
 					totalClearedOptionsCount += clearedOptionsCount;
 					totalRemovedTexturesCount += removedTexturesCount;
+                    totalBlackColorConstantsCount += blackColorConstantsCount;
+					totalSwappedSlotsCount += swappedSlotsCount;
 					totalMissingTexturesReplacedCount += missingTexturesReplacedCount;
 					totalReUseOptionsSetCount += reUseOptionsSetCount;
 					if ( clearedOptionsCount > 0 || removedTexturesCount > 0 || missingTexturesReplacedCount > 0 || reUseOptionsSetCount > 0 )
@@ -1418,6 +1443,8 @@ namespace MaterialsOptimizer
 			LogLine( "	• Total cleaned-up materials: " + totalCleanedUpMaterialsCount );
 			LogLine( "	  > Total options removed: " + totalClearedOptionsCount );
 			LogLine( "	  > Total textures removed: " + totalRemovedTexturesCount );
+			LogLine( "	  > Total black color constant diffuse textures: " + totalBlackColorConstantsCount );
+			LogLine( "	  > Total swapped textures: " + totalSwappedSlotsCount + " (2 slots were erroneously mixed together, like a normal instead of a gloss and vice-versa)" );
 			LogLine( "	  > Total missing textures replaced: " + totalMissingTexturesReplacedCount );
 			LogLine( "	  > Total re-use options added: " + totalReUseOptionsSetCount );
 
@@ -1437,12 +1464,12 @@ namespace MaterialsOptimizer
 				M.CollectDiffuseGlossTextures( diffuse2GlossMaps );
 			}
 
-			// 4.2) Keep (diffuse+gloss) forming a single couple (i.e. diffuse map is never used by other gloss textures)
+			// 4.2) Keep (diffuse+gloss) forming a single couple (i.e. diffuse maps that are never used with more than a single gloss texture)
 			Dictionary< TextureFileInfo, TextureFileInfo >	diffuseGlossPairs = new Dictionary<TextureFileInfo,TextureFileInfo>();
 			foreach ( TextureFileInfo diffuseMap in diffuse2GlossMaps.Keys ) {
 				List< TextureFileInfo >	glossMaps = diffuse2GlossMaps[diffuseMap];
 				if ( glossMaps.Count == 0 )
-					continue;
+					continue;	// Never used with any gloss map
 
 				bool			allSimilarGloss = true;
 				TextureFileInfo	firstGlossMap = glossMaps[0];
@@ -1461,12 +1488,72 @@ namespace MaterialsOptimizer
 					diffuseGlossPairs.Add( diffuseMap, firstGlossMap );
 				}
 			}
-			LogLine( "	• Total optimizable (diffuse+gloss) textures: " + diffuseGlossPairs.Count );
+			LogLine( "	• Possible candidate textures for (diffuse+gloss) optimization: " + diffuseGlossPairs.Count );
 
-			// 4.3) Optimize materials so they replace their diffuse by the new combo
+			// 4.3) Analyze materials again to know which ones are using paired textures
+			// As soon as a material is NOT using a paired texture, in either of its channels, then it discards the (diffuse+gloss) pair
+			int	previousTotalOptimizableMaterialsCount = -1;
+			int	totalOptimizableMaterialsCount = 0;
+			int	totalTexturesRemoved = -1;
+//			while ( totalOptimizableMaterialsCount != previousTotalOptimizableMaterialsCount ) {
+			while ( totalTexturesRemoved != 0 ) {
+				// Repeat the process multiple times as some materials may discard some textures after some materials approved them
+				// After a couple of iterations, the number of discarded textures and materials is steady we get our final count
+				previousTotalOptimizableMaterialsCount = totalOptimizableMaterialsCount;
+				totalOptimizableMaterialsCount = 0;
+				totalTexturesRemoved = 0;
+				foreach ( Material M in m_sourceMaterials ) {
+					bool    allLayersAreUsingPairedTexture = !M.IsAlpha && M.m_options.m_hasGloss && M.m_programs.m_type == Material.Programs.KNOWN_TYPES.DEFAULT;
+					foreach ( Material.Layer L in M.m_layers ) {
+						Material.Layer.Texture  diffuseTexture = null;
+						switch ( L.m_diffuseReUse ) {
+							case Material.Layer.REUSE_MODE.DONT_REUSE: diffuseTexture = L.m_diffuse; break;
+							case Material.Layer.REUSE_MODE.REUSE_LAYER0: diffuseTexture = M.m_layers[0].m_diffuse; break;
+							case Material.Layer.REUSE_MODE.REUSE_LAYER1: diffuseTexture = M.m_layers[1].m_diffuse; break;
+						}
+
+						if (	diffuseTexture == null
+							 || diffuseTexture.m_textureFileInfo == null
+							 || diffuseTexture.m_textureFileInfo.m_usage != TextureFileInfo.USAGE.DIFFUSE
+							 || diffuseTexture.m_textureFileInfo.m_associatedTexture == null ) {
+							// This layer is not using a paired texture, the material is an invalid candidate and all its layers' diffuse textures should be prevented from being optimized
+							allLayersAreUsingPairedTexture = false;
+							break;
+						}
+					}
+
+					if ( allLayersAreUsingPairedTexture ) {
+						totalOptimizableMaterialsCount++;
+						continue;
+					}
+
+					// Okay so at least one layer of the material is not using a paired texture
+					// That means all layers can't use paired texture so we cancel pairing for all diffuse textures used by the material...
+					foreach ( Material.Layer L in M.m_layers ) {
+						if ( L.m_diffuse != null && L.m_diffuse.m_textureFileInfo != null && L.m_diffuse.m_textureFileInfo.m_associatedTexture != null ) {
+							L.m_diffuse.m_textureFileInfo.m_associatedTexture = null;   // Clear the pairing
+							diffuseGlossPairs.Remove( L.m_diffuse.m_textureFileInfo );	// Remove the texture from possible pairs
+							totalTexturesRemoved++;
+						}
+					}
+				}
+			}
+			LogLine( "	• Final count of candidate textures for (diffuse+gloss) optimization after filtering by optimizable materials: " + diffuseGlossPairs.Count );
+			LogLine( "	• Total optimizable materials: " + totalOptimizableMaterialsCount );
+
+
+			// 4.4) Optimize materials so they replace their diffuse by the new combo
 			int	totalDiffuseGlossTexturesReplaced = 0;
+			int	totalOptimizedMaterialsCount = 0;
 			foreach ( Material M in m_sourceMaterials )
-				M.Optimize( diffuseGlossPairs, ref totalDiffuseGlossTexturesReplaced );
+				try {
+					if ( M.Optimize( diffuseGlossPairs, ref totalDiffuseGlossTexturesReplaced ) )
+						totalOptimizedMaterialsCount++;
+				} catch ( Exception _e ) {
+					LogLine( " !Failed to optimize material \"" + M + "\": " + _e.Message );
+				}
+
+			LogLine( "	• Total optimized materials: " + totalOptimizedMaterialsCount + " (" + totalDiffuseGlossTexturesReplaced + " diffuse textures now using embedded gloss)" );
 
 
 			//////////////////////////////////////////////////////////////////////////
