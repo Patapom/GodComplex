@@ -412,7 +412,7 @@ namespace MaterialsOptimizer
 				W.WriteLine( T + "ismasking		" + (m_isMasking ? 1 : 0) );
 				W.WriteLine( T + "hasbumpmap		" + (m_hasNormal ? 1 : 0) );
 				W.WriteLine( T + "hasspecularmap	" + (m_hasSpecular ? 1 : 0) );
-				W.WriteLine( T + "hasocclusionMap	" + (m_hasOcclusionMap ? 1 : 0) );
+				W.WriteLine( T + "hasocclusionmap	" + (m_hasOcclusionMap ? 1 : 0) );
 				W.WriteLine( T + "hasglossmap		" + (m_hasGloss ? 1 : 0) );
 				W.WriteLine( T + "hasmetallicmap	" + (m_hasMetal ? 1 : 0) );
 				W.WriteLine( T + "hasemissivemap	" + (m_hasEmissive ? 1 : 0) );
@@ -738,6 +738,13 @@ namespace MaterialsOptimizer
 			public bool			m_useColorConstant = false;
 			public float4		m_colorConstant = float4.One;
 
+
+			// When a layer's diffuse+gloss layer gets optimized then we must keep track of the original textures so we can generate the merged map
+			public Texture		m_diffuseBeforeOptimization = null;
+			public Texture		m_glossBeforeOptimization = null;
+
+
+			// Generated errors + level
 			private ERROR_LEVEL	m_errorLevel = ERROR_LEVEL.NONE;
 			public string		m_errors = null;
 			public string		m_warnings = null;
@@ -923,6 +930,14 @@ namespace MaterialsOptimizer
 				W.Write( m_colorConstant.z );
 				W.Write( m_colorConstant.w );
 
+				// Diffuse+Gloss before optimization
+				W.Write( m_diffuseBeforeOptimization != null );
+				if ( m_diffuseBeforeOptimization != null )
+					m_diffuseBeforeOptimization.Write( W );
+				W.Write( m_glossBeforeOptimization != null );
+				if ( m_glossBeforeOptimization != null )
+					m_glossBeforeOptimization.Write( W );
+
 				W.Write( (int) m_errorLevel );
 				W.Write( m_errors != null ? m_errors : "" );
 				W.Write( m_warnings != null ? m_warnings : "" );
@@ -972,6 +987,10 @@ namespace MaterialsOptimizer
 				m_colorConstant.z = R.ReadSingle();
 				m_colorConstant.w = R.ReadSingle();
 
+				// Diffuse+Gloss before optimization
+				m_diffuseBeforeOptimization = R.ReadBoolean() ? new Texture( R ) : null;
+				m_glossBeforeOptimization = R.ReadBoolean() ? new Texture( R ) : null;
+
 				m_errorLevel = (ERROR_LEVEL) R.ReadInt32();
 				m_errors = R.ReadString();
 				if ( m_errors == string.Empty )
@@ -1016,7 +1035,7 @@ namespace MaterialsOptimizer
 
 				// Layer 0-only maps
 				if ( _options.m_hasOcclusionMap && m_AO != null ) {
-					W.WriteLine( T + "occlusionmap	" + m_AO.Export() );				// <= At the moment, only layer 0 should write AO, it's an error to write AO for more than 1 layer!
+					W.WriteLine( T + "occlusionmap	" + m_AO.Export() );		// <= At the moment, only layer 0 should write AO, it's an error to write AO for more than 1 layer!
 					if ( m_index > 0 )
 						throw new Exception( "A material shouldn't be writing an AO map for other layers than layer 0!" );
 				}
@@ -1108,9 +1127,9 @@ namespace MaterialsOptimizer
 
 			#endregion
 
-			#region Optimization
+			#region Cleanup + Optimization
 
-			public void	CleanUp( List< Layer > _layers, Options _options, ref int _removedTexturesCount, ref int _blackColorConstantsCount, ref int _swappedSlotsCount, ref int _missingTexturesReplacedCount, ref int _reUseOptionsSetCount ) {
+			public void	CleanUp( List< Layer > _layers, Options _options, ref int _removedTexturesCount, ref int _blackColorConstantsCount, ref int _swappedSlotsCount, ref int _missingTexturesReplacedCount, ref int _removedHasOcclusionMapOptionsCount, ref int _reUseOptionsSetCount ) {
 				// Cleanup textures that are present although the option is not set
 				if ( !_options.m_hasNormal && m_normal != null ) {
 					m_normal = null;
@@ -1130,6 +1149,10 @@ namespace MaterialsOptimizer
 				}
 				if ( !_options.m_hasSpecular && m_specular != null ) {
 					m_specular = null;
+					_removedTexturesCount++;
+				}
+				if ( !_options.m_hasOcclusionMap && m_AO != null ) {
+					m_AO = null;
 					_removedTexturesCount++;
 				}
 
@@ -1169,6 +1192,12 @@ namespace MaterialsOptimizer
 				if ( _options.m_hasSpecular && m_specular == null && m_specularReUse == REUSE_MODE.DONT_REUSE ) {
 					m_specular = new Texture( "_invalid" );
 					_missingTexturesReplacedCount++;
+				}
+
+				// Clear "hasOcclusionMap" option when we don't have a map after all
+				if ( _options.m_hasOcclusionMap && m_AO == null && m_index == 0 ) {
+					_options.m_hasOcclusionMap = false;
+					_removedHasOcclusionMapOptionsCount++;
 				}
 
 				// Replace diffuse textures that use a black constant color multiplier
@@ -1298,7 +1327,6 @@ namespace MaterialsOptimizer
 
 
 		// Filled by analyzer
-		public string			m_isCandidateForOptimization = null;
 		private ERROR_LEVEL		m_errorLevel = ERROR_LEVEL.NONE;
 		public string			m_errors = null;
 		public string			m_warnings = null;
@@ -1626,7 +1654,7 @@ namespace MaterialsOptimizer
 						case "ismasking":					m_options.m_isMasking = value != 0; break;
 						case "hasbumpmap":					m_options.m_hasNormal = value != 0; break;
 						case "hasspecularmap":				m_options.m_hasSpecular = value != 0; break;
-						case "hasocclusionMap":				m_options.m_hasOcclusionMap = value != 0; break;
+						case "hasocclusionmap":				m_options.m_hasOcclusionMap = value != 0; break;
 						case "hasglossmap":					m_options.m_hasGloss = value != 0; break;
 						case "hasmetallicmap":				m_options.m_hasMetal = value != 0; break;
 						case "hasemissivemap":				m_options.m_hasEmissive = value != 0; break;
@@ -2204,7 +2232,6 @@ namespace MaterialsOptimizer
 			WriteListOfStrings( W, m_unknownVariables );
 			WriteListOfStrings( W, m_forbiddenParms );
 
-			W.Write( m_isCandidateForOptimization != null ? m_isCandidateForOptimization : "" );
 			W.Write( (int) m_errorLevel );
 			W.Write( m_errors != null ? m_errors : "" );
 			W.Write( m_warnings != null ? m_warnings : "" );
@@ -2246,10 +2273,7 @@ namespace MaterialsOptimizer
 			ReadListOfStrings( R, m_unknownVariables );
 			ReadListOfStrings( R, m_forbiddenParms );
 
-
-			m_isCandidateForOptimization = R.ReadString();
-			if ( m_isCandidateForOptimization == string.Empty )
-				m_isCandidateForOptimization = null;
+			// Read errors and warnings
 			m_errorLevel = (ERROR_LEVEL) R.ReadInt32();
 			m_errors = R.ReadString();
 			if ( m_errors == string.Empty )
@@ -2279,7 +2303,7 @@ namespace MaterialsOptimizer
 		/// <summary>
 		/// This function cleans the material from automatically recoverable errors and warnings
 		/// </summary>
-		public void		CleanUp( ref int _clearedOptionsCount, ref int _removedTexturesCount, ref int _blackColorConstantsCount, ref int _swappedSlotsCount, ref int _missingTexturesReplacedCount, ref int _reUseOptionsSetCount ) {
+		public void		CleanUp( ref int _clearedOptionsCount, ref int _removedTexturesCount, ref int _blackColorConstantsCount, ref int _swappedSlotsCount, ref int _missingTexturesReplacedCount, ref int _removedHasOcclusionMapOptionsCount, ref int _reUseOptionsSetCount ) {
 
 			// Check gloss/metal ranges to know if textures are useful
 			bool	emptyGlossRange = Math.Abs( m_glossMinMax.y - m_glossMinMax.x ) < 1e-3f;
@@ -2299,7 +2323,7 @@ namespace MaterialsOptimizer
 			while ( m_layers.Count > LayersCount )
 				m_layers.RemoveAt( m_layers.Count-1 );	// Remove last layer
 			foreach ( Layer L in m_layers ) {
-				L.CleanUp( m_layers, m_options, ref _removedTexturesCount, ref _blackColorConstantsCount, ref _swappedSlotsCount, ref _missingTexturesReplacedCount, ref _reUseOptionsSetCount );
+				L.CleanUp( m_layers, m_options, ref _removedTexturesCount, ref _blackColorConstantsCount, ref _swappedSlotsCount, ref _missingTexturesReplacedCount, ref _removedHasOcclusionMapOptionsCount, ref _reUseOptionsSetCount );
 			}
 
 			// Remove forbidden parms
@@ -2380,10 +2404,11 @@ namespace MaterialsOptimizer
 			if ( !allLayersAreUsingPairedTexture )
 				return false;
 
-			// Set the "glossInDiffuseAlpha" option
+			// Set the "glossInDiffuseAlpha" option and clear the "hasGloss" one
 			m_options.m_glossInDiffuseAlpha = true;
+			m_options.m_hasGloss = false;
 
-			// Replace all diffuse textures by their "_dg" equivalents
+			// Replace all diffuse textures by their "_dg" equivalents and remove gloss textures
 			foreach ( Layer L in m_layers ) {
 				if ( L.m_diffuseReUse != Layer.REUSE_MODE.DONT_REUSE )
 					continue;
@@ -2392,7 +2417,22 @@ namespace MaterialsOptimizer
 				int		indexOf_d = originalTextureName.LastIndexOf( "_d" );
 				string	optimizedDiffuseTextureName = originalTextureName.Substring( 0, indexOf_d ) + "_dg" + originalTextureName.Substring( indexOf_d+2 );
 
+				L.m_diffuseBeforeOptimization = L.m_diffuse;	// Keep track of original diffuse
 				L.m_diffuse = new Layer.Texture( optimizedDiffuseTextureName );
+
+				// Check gloss is okay then remove it
+				Layer.Texture	gloss = L.m_gloss;
+				switch ( L.m_glossReUse ) {
+					case Layer.REUSE_MODE.REUSE_LAYER0: gloss = m_layers[0].m_gloss; break;
+					case Layer.REUSE_MODE.REUSE_LAYER1: gloss = m_layers[1].m_gloss; break;
+				}
+				if ( gloss == null || gloss.m_textureFileInfo == null || gloss.m_textureFileInfo.m_usage != TextureFileInfo.USAGE.GLOSS )
+					throw new Exception( "Diffuse slot about to be optimized is not attached to a proper gloss texture! How could it be listed as optimizable then?" );
+// 				if ( L.m_glossReUse != L.m_diffuseReUse )
+// 					throw new Exception( "Gloss re-use mode is not the same as diffuse re-use mode! How could it be listed as optimizable then?" );
+
+				L.m_glossBeforeOptimization = gloss;	// Keep track of original gloss
+				L.m_gloss = null;
 			}
 
 			_totalDiffuseGlossTexturesReplaced += m_layers.Count;

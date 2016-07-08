@@ -595,7 +595,6 @@ namespace MaterialsOptimizer
 				M.m_errors = null;
 				M.ClearErrorLevel();
 				M.m_warnings = null;
-				M.m_isCandidateForOptimization = null;
 
 				int			layersCount = Math.Min( 1+M.m_options.m_extraLayers, M.m_layers.Count );
 
@@ -806,7 +805,7 @@ namespace MaterialsOptimizer
 				int		minErrorLevel = integerTrackbarControlErrorLevel.Value;
 				bool	showOnlyWarningMats = checkBoxShowWarningMaterials.Checked;
 				bool	showOnlyMissingPhysicsMats = checkBoxShowMissingPhysics.Checked;
-				bool	showOnlyOptimizableMats = checkBoxShowOptimizableMaterials.Checked;
+				bool	showOnlyOptimizedMats = checkBoxShowOptimizableMaterials.Checked;
 
 				foreach ( Material M in _materials ) {
 					// Filter by layers count
@@ -834,7 +833,7 @@ namespace MaterialsOptimizer
 						continue;
 					if ( showOnlyMissingPhysicsMats && M.HasPhysicsMaterial )
 						continue;
-					if ( showOnlyOptimizableMats && M.m_isCandidateForOptimization == null )
+					if ( showOnlyOptimizedMats && !M.IsOptimized )
 						continue;
 
 					if ( !skip )
@@ -904,8 +903,7 @@ namespace MaterialsOptimizer
 				}
 
 				// Build tooltip
-				item.ToolTipText = (M.m_isCandidateForOptimization != null ? M.m_isCandidateForOptimization + "\r\n" : "")
-								 + (M.HasErrors ? errorString : "")
+				item.ToolTipText = (M.HasErrors ? errorString : "")
 								 + (M.HasWarnings ? M.WarningString : "");
 
 				listViewMaterials.Items.Add( item );
@@ -1410,6 +1408,7 @@ namespace MaterialsOptimizer
 			int totalBlackColorConstantsCount = 0;
 			int	totalSwappedSlotsCount = 0;
 			int totalMissingTexturesReplacedCount = 0;
+			int	totalTemovedHasOcclusionMapOptionsCount = 0;
 			int totalReUseOptionsSetCount = 0;
 			int	totalCleanedUpMaterialsCount = 0;
 
@@ -1421,14 +1420,16 @@ namespace MaterialsOptimizer
 					int blackColorConstantsCount = 0;
 					int	swappedSlotsCount = 0;
 					int	missingTexturesReplacedCount = 0;
+					int	removedHasOcclusionMapOptionsCount = 0;
 					int reUseOptionsSetCount = 0;
-					M.CleanUp( ref clearedOptionsCount, ref removedTexturesCount, ref blackColorConstantsCount, ref swappedSlotsCount, ref missingTexturesReplacedCount, ref reUseOptionsSetCount );
+					M.CleanUp( ref clearedOptionsCount, ref removedTexturesCount, ref blackColorConstantsCount, ref swappedSlotsCount, ref missingTexturesReplacedCount, ref removedHasOcclusionMapOptionsCount, ref reUseOptionsSetCount );
 
 					totalClearedOptionsCount += clearedOptionsCount;
 					totalRemovedTexturesCount += removedTexturesCount;
                     totalBlackColorConstantsCount += blackColorConstantsCount;
 					totalSwappedSlotsCount += swappedSlotsCount;
 					totalMissingTexturesReplacedCount += missingTexturesReplacedCount;
+					totalTemovedHasOcclusionMapOptionsCount += removedHasOcclusionMapOptionsCount;
 					totalReUseOptionsSetCount += reUseOptionsSetCount;
 					if ( clearedOptionsCount > 0 || removedTexturesCount > 0 || missingTexturesReplacedCount > 0 || reUseOptionsSetCount > 0 )
 						totalCleanedUpMaterialsCount++;
@@ -1446,6 +1447,7 @@ namespace MaterialsOptimizer
 			LogLine( "	  > Total black color constant diffuse textures: " + totalBlackColorConstantsCount );
 			LogLine( "	  > Total swapped textures: " + totalSwappedSlotsCount + " (2 slots were erroneously mixed together, like a normal instead of a gloss and vice-versa)" );
 			LogLine( "	  > Total missing textures replaced: " + totalMissingTexturesReplacedCount );
+			LogLine( "	  > Total invalid \"hasOcclusionMap\" options cleared: " + totalTemovedHasOcclusionMapOptionsCount + " (= amount of materials specifying AO maps but not providing any. The option was removed)" );
 			LogLine( "	  > Total re-use options added: " + totalReUseOptionsSetCount );
 
 
@@ -1606,6 +1608,52 @@ namespace MaterialsOptimizer
 
 		#endregion
 
+		#region Textures
+
+		/// <summary>
+		/// Parses all materials requiring "_dg" diffuse + gloss textures and builds a list of unique textures
+		/// Creates the image file when the diffuse and gloss texture files are available and of the same size
+		/// </summary>
+		void GenerateDiffuseGlossTextures() {
+			if ( m_optimizedMaterials.Count == 0 ) {
+				MessageBox( "No optimized material is available to list for diffuse+gloss textures...\nYou need to re-export materials first!" );
+				return;
+			}
+
+			try {
+				progressBarTextures.Visible = true;
+
+				// 1] List unique textures to generate
+				LogLine( "Scanning " + m_optimizedMaterials.Count + " materials for (diffuse+gloss) textures..." );
+				Dictionary< TextureFileInfo, TextureFileInfo >	diffuseGlossTextures = new Dictionary< TextureFileInfo, TextureFileInfo >();
+				foreach ( Material M in m_optimizedMaterials ) {
+					foreach ( Material.Layer L in M.m_layers ) {
+						if ( L.m_diffuse == null || L.m_diffuse.m_textureFileInfo == null || L.m_diffuse.m_textureFileInfo.m_usage != TextureFileInfo.USAGE.DIFFUSE_GLOSS )
+							continue;
+
+						// Make sure there is a gloss
+
+						diffuseGlossTextures.Add( L.m_diffuse.m_textureFileInfo, L.m_diffuse.m_textureFileInfo );
+					}
+				}
+				LogLine( " > Found " + diffuseGlossTextures.Count + " textures to generate..." );
+
+				// 2] Generate textures whenever possible
+
+
+			} catch ( Exception ) {
+				throw;
+			} finally {
+				progressBarTextures.Visible = false;
+			}
+// 			RecurseParseMaterials( new DirectoryInfo( textBoxReExportPath.Text ), progressBarReExportMaterials );
+// //			SaveMaterialsDatabase( m_materialsDatabaseFileName );
+// 			if ( !AnalyzeMaterialsDatabase( true ) )
+// 				RebuildMaterialsListView();
+		}
+
+		#endregion
+
 		private void buttonSetMaterialsBasePath_Click(object sender, EventArgs e) {
 			folderBrowserDialog.SelectedPath = GetRegKey( "MaterialsBasePath", textBoxMaterialsBasePath.Text );
 			folderBrowserDialog.Description = "Select the folder containing materials to parse";
@@ -1701,11 +1749,7 @@ namespace MaterialsOptimizer
 
 		private void buttonGenerate_dgTextures_Click(object sender, EventArgs e) {
 			try {
-//gna!
-// 				RecurseParseMaterials( new DirectoryInfo( textBoxReExportPath.Text ), progressBarReExportMaterials );
-// //				SaveMaterialsDatabase( m_materialsDatabaseFileName );
-// 				if ( !AnalyzeMaterialsDatabase( true ) )
-// 					RebuildMaterialsListView();
+				GenerateDiffuseGlossTextures();
 			} catch ( Exception _e ) {
 				MessageBox( "An error occurred while parsing materials:\r\n" + _e.Message, MessageBoxButtons.OK, MessageBoxIcon.Error );
 			}
