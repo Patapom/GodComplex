@@ -1011,14 +1011,6 @@ namespace MaterialsOptimizer
 				W.Write( m_colorConstant.z );
 				W.Write( m_colorConstant.w );
 
-				// Diffuse+Gloss before optimization
-				W.Write( m_diffuseBeforeOptimization != null );
-				if ( m_diffuseBeforeOptimization != null )
-					m_diffuseBeforeOptimization.Write( W );
-				W.Write( m_glossBeforeOptimization != null );
-				if ( m_glossBeforeOptimization != null )
-					m_glossBeforeOptimization.Write( W );
-
 				W.Write( (int) m_errorLevel );
 				W.Write( m_errors != null ? m_errors : "" );
 				W.Write( m_warnings != null ? m_warnings : "" );
@@ -1067,10 +1059,6 @@ namespace MaterialsOptimizer
 				m_colorConstant.y = R.ReadSingle();
 				m_colorConstant.z = R.ReadSingle();
 				m_colorConstant.w = R.ReadSingle();
-
-				// Diffuse+Gloss before optimization
-				m_diffuseBeforeOptimization = R.ReadBoolean() ? new Texture( R ) : null;
-				m_glossBeforeOptimization = R.ReadBoolean() ? new Texture( R ) : null;
 
 				m_errorLevel = (ERROR_LEVEL) R.ReadInt32();
 				m_errors = R.ReadString();
@@ -2450,9 +2438,8 @@ namespace MaterialsOptimizer
 		/// <summary>
 		/// This function optimizes the material by compacting diffuse and gloss textures into a single "_dg" texture whenever possible
 		/// </summary>
-		/// <param name="_diffuseGloss"></param>
 		/// <param name="_totalDiffuseGlossTexturesReplaced"></param>
-		public bool	Optimize( Dictionary< TextureFileInfo, TextureFileInfo > _diffuseGloss, ref int _totalDiffuseGlossTexturesReplaced ) {
+		public bool	Optimize( ref int _totalDiffuseGlossTexturesReplaced ) {
 			if ( IsAlpha )
 				return false;	// Can't optimize alpha materials
 
@@ -2486,11 +2473,11 @@ namespace MaterialsOptimizer
 					continue;
 
 				string	originalTextureName = L.m_diffuse.m_rawTextureLine;
-				int		indexOf_d = originalTextureName.LastIndexOf( "_d" );
-				string	optimizedDiffuseTextureName = originalTextureName.Substring( 0, indexOf_d ) + "_dg" + originalTextureName.Substring( indexOf_d+2 );
+				string	optimizedDiffuseTextureName = TextureFileInfo.GetOptimizedDiffuseGlossNameFromDiffuseName( originalTextureName );
+						optimizedDiffuseTextureName = Path.ChangeExtension( optimizedDiffuseTextureName, ".png" );
 
 				L.m_diffuseBeforeOptimization = L.m_diffuse;	// Keep track of original diffuse
-				L.m_diffuse = new Layer.Texture( optimizedDiffuseTextureName );
+				L.m_diffuse = new Layer.Texture( optimizedDiffuseTextureName );	// Replace with 
 
 				// Check gloss is okay then remove it
 				Layer.Texture	gloss = L.m_gloss;

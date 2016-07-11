@@ -63,7 +63,7 @@ namespace MaterialsOptimizer
 		/// Lower-case, slashes file name that can be used in a hashtable to map engine-convention texture names to actual files
 		/// </summary>
 		public string	NormalizedFileName {
-			get { return m_fileName.FullName.ToLower().Replace( '\\', '/' ); }
+			get { return NormalizeFileName( m_fileName.FullName ); }
 		}
 
 		public int	ColorChannelsCount {
@@ -231,6 +231,17 @@ namespace MaterialsOptimizer
 			}
 
 			return USAGE.UNKNOWN;
+		}
+
+		public static string NormalizeFileName( string _fileName ) {
+			return _fileName.ToLower().Replace( '\\', '/' );
+		}
+
+		public static string GetOptimizedDiffuseGlossNameFromDiffuseName( string _diffuseFileName ) {
+			_diffuseFileName = _diffuseFileName.Trim();
+			int		indexOf_d = _diffuseFileName.LastIndexOf( "_d" );
+			string	optimizedDiffuseTextureName = _diffuseFileName.Substring( 0, indexOf_d ) + "_dg" + _diffuseFileName.Substring( indexOf_d+2 );
+			return optimizedDiffuseTextureName;
 		}
 	}
 }

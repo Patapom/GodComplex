@@ -1280,16 +1280,14 @@ namespace ImageUtility
 
 			// Convert to RGB first
 			float4[,]	SourceXYZ = m_Bitmap;
-			float4[,]	RGB = new float4[W,H];
 			if ( _Format == System.Windows.Media.PixelFormats.Gray8 ||
 				 _Format == System.Windows.Media.PixelFormats.Gray16 ||
-				 _Format == System.Windows.Media.PixelFormats.Gray32Float )
-			{	// Convert to grayscale
+				 _Format == System.Windows.Media.PixelFormats.Gray32Float ) {
+				// Convert to grayscale
 				float4[,]	XYZ = new float4[W,H];
 				Array.Copy( m_Bitmap, XYZ, m_Bitmap.LongLength );
 				for ( int Y = 0; Y < H; Y++ )
-					for ( int X = 0; X < W; X++ )
-					{
+					for ( int X = 0; X < W; X++ ) {
 						float3	xyY = ColorProfile.XYZ2xyY( (float3) XYZ[X,Y] );
 						xyY.x = m_ColorProfile.Chromas.W.x;
 						xyY.y = m_ColorProfile.Chromas.W.y;
@@ -1298,23 +1296,26 @@ namespace ImageUtility
 				SourceXYZ = XYZ;
 			}
 			
-			m_ColorProfile.XYZ2RGB( SourceXYZ, RGB );	// Standard conversion
+			float4[,]	RGB;
+			if ( ConvertContent2XYZ ) {
+				RGB = new float4[W,H];
+				m_ColorProfile.XYZ2RGB( SourceXYZ, RGB );	// Standard conversion
+			} else
+				RGB = SourceXYZ;
 
 			Array	Pixels = null;
 			int		Stride = 0;
 
 			//////////////////////////////////////////////////////////////////////////
 			// BGR24
-			if ( _Format == System.Windows.Media.PixelFormats.Bgr24 )
-			{	
+			if ( _Format == System.Windows.Media.PixelFormats.Bgr24 ) {	
 				Stride = 3*W;
 				byte[]	Content = new byte[Stride*H];
 				Pixels = Content;
 
 				int	Position = 0;
 				for ( int Y = 0; Y < H; Y++ )
-					for ( int X = 0; X < W; X++ )
-					{
+					for ( int X = 0; X < W; X++ ) {
 						Content[Position++] = FLOAT_TO_BYTE( RGB[X,Y].z );
 						Content[Position++] = FLOAT_TO_BYTE( RGB[X,Y].y );
 						Content[Position++] = FLOAT_TO_BYTE( RGB[X,Y].x );
@@ -1322,16 +1323,14 @@ namespace ImageUtility
 			}
 			//////////////////////////////////////////////////////////////////////////
 			// BGR32
-			else if ( _Format == System.Windows.Media.PixelFormats.Bgr32 )
-			{	
+			else if ( _Format == System.Windows.Media.PixelFormats.Bgr32 ) {	
 				Stride = 4*W;
 				byte[]	Content = new byte[Stride*H];
 				Pixels = Content;
 
 				int	Position = 0;
 				for ( int Y = 0; Y < H; Y++ )
-					for ( int X = 0; X < W; X++ )
-					{
+					for ( int X = 0; X < W; X++ ) {
 						Content[Position++] = FLOAT_TO_BYTE( RGB[X,Y].z );
 						Content[Position++] = FLOAT_TO_BYTE( RGB[X,Y].y );
 						Content[Position++] = FLOAT_TO_BYTE( RGB[X,Y].x );
@@ -1340,16 +1339,14 @@ namespace ImageUtility
 			}
 			//////////////////////////////////////////////////////////////////////////
 			// BGRA32
-			else if ( _Format == System.Windows.Media.PixelFormats.Bgra32 )
-			{	
+			else if ( _Format == System.Windows.Media.PixelFormats.Bgra32 ) {	
 				Stride = 4*W;
 				byte[]	Content = new byte[Stride*H];
 				Pixels = Content;
 
 				int		Position = 0;
 				for ( int Y = 0; Y < H; Y++ )
-					for ( int X = 0; X < W; X++ )
-					{
+					for ( int X = 0; X < W; X++ ) {
 						Content[Position++] = FLOAT_TO_BYTE( RGB[X,Y].z );
 						Content[Position++] = FLOAT_TO_BYTE( RGB[X,Y].y );
 						Content[Position++] = FLOAT_TO_BYTE( RGB[X,Y].x );
@@ -1358,16 +1355,14 @@ namespace ImageUtility
 			}
 			//////////////////////////////////////////////////////////////////////////
 			// PBGRA32 (Pre-Multiplied)
-			else if ( _Format == System.Windows.Media.PixelFormats.Pbgra32 )
-			{	
+			else if ( _Format == System.Windows.Media.PixelFormats.Pbgra32 ) {	
 				Stride = 4*W;
 				byte[]	Content = new byte[Stride*H];
 				Pixels = Content;
 
 				int		Position = 0;
 				for ( int Y = 0; Y < H; Y++ )
-					for ( int X = 0; X < W; X++ )
-					{
+					for ( int X = 0; X < W; X++ ) {
 						RGB[X,Y].x *= RGB[X,Y].w;
 						RGB[X,Y].y *= RGB[X,Y].w;
 						RGB[X,Y].z *= RGB[X,Y].w;
@@ -1379,16 +1374,14 @@ namespace ImageUtility
 			}
 			//////////////////////////////////////////////////////////////////////////
 			// RGB48
-			else if ( _Format == System.Windows.Media.PixelFormats.Rgb48 )
-			{	
+			else if ( _Format == System.Windows.Media.PixelFormats.Rgb48 ) {	
 				Stride = 6*W;
 				ushort[]	Content = new ushort[Stride*H];
 				Pixels = Content;
 
 				int		Position = 0;
 				for ( int Y = 0; Y < H; Y++ )
-					for ( int X = 0; X < W; X++ )
-					{
+					for ( int X = 0; X < W; X++ ) {
 						Content[Position++] = FLOAT_TO_WORD( RGB[X,Y].x );
 						Content[Position++] = FLOAT_TO_WORD( RGB[X,Y].y );
 						Content[Position++] = FLOAT_TO_WORD( RGB[X,Y].z );
@@ -1396,16 +1389,14 @@ namespace ImageUtility
 			}
 			//////////////////////////////////////////////////////////////////////////
 			// RGBA64
-			else if ( _Format == System.Windows.Media.PixelFormats.Rgba64 )
-			{	
+			else if ( _Format == System.Windows.Media.PixelFormats.Rgba64 ) {	
 				Stride = 8*W;
 				ushort[]	Content = new ushort[Stride*H];
 				Pixels = Content;
 
 				int		Position = 0;
 				for ( int Y = 0; Y < H; Y++ )
-					for ( int X = 0; X < W; X++ )
-					{
+					for ( int X = 0; X < W; X++ ) {
 						Content[Position++] = FLOAT_TO_WORD( RGB[X,Y].x );
 						Content[Position++] = FLOAT_TO_WORD( RGB[X,Y].y );
 						Content[Position++] = FLOAT_TO_WORD( RGB[X,Y].z );
@@ -1414,16 +1405,14 @@ namespace ImageUtility
 			}
 			//////////////////////////////////////////////////////////////////////////
 			// PRGBA64 (Pre-Multiplied)
-			else if ( _Format == System.Windows.Media.PixelFormats.Prgba64 )
-			{	
+			else if ( _Format == System.Windows.Media.PixelFormats.Prgba64 ) {	
 				Stride = 8*W;
 				ushort[]	Content = new ushort[Stride*H];
 				Pixels = Content;
 
 				int		Position = 0;
 				for ( int Y = 0; Y < H; Y++ )
-					for ( int X = 0; X < W; X++ )
-					{
+					for ( int X = 0; X < W; X++ ) {
 						RGB[X,Y].x *= RGB[X,Y].w;
 						RGB[X,Y].y *= RGB[X,Y].w;
 						RGB[X,Y].z *= RGB[X,Y].w;
@@ -1435,16 +1424,14 @@ namespace ImageUtility
 			}
 			//////////////////////////////////////////////////////////////////////////
 			// RGBA128F
-			else if ( _Format == System.Windows.Media.PixelFormats.Rgba128Float )
-			{	
+			else if ( _Format == System.Windows.Media.PixelFormats.Rgba128Float ) {	
 				Stride = 16*W;
 				float[]	Content = new float[Stride*H];
 				Pixels = Content;
 
 				int		Position = 0;
 				for ( int Y = 0; Y < H; Y++ )
-					for ( int X = 0; X < W; X++ )
-					{
+					for ( int X = 0; X < W; X++ ) {
 						Content[Position++] = RGB[X,Y].x;
 						Content[Position++] = RGB[X,Y].y;
 						Content[Position++] = RGB[X,Y].z;
@@ -1453,16 +1440,14 @@ namespace ImageUtility
 			}
 			//////////////////////////////////////////////////////////////////////////
 			// PRGBA128F (Pre-Multiplied)
-			else if ( _Format == System.Windows.Media.PixelFormats.Prgba128Float )
-			{	
+			else if ( _Format == System.Windows.Media.PixelFormats.Prgba128Float ) {	
 				Stride = 16*W;
 				float[]	Content = new float[Stride*H];
 				Pixels = Content;
 
 				int		Position = 0;
 				for ( int Y = 0; Y < H; Y++ )
-					for ( int X = 0; X < W; X++ )
-					{
+					for ( int X = 0; X < W; X++ ) {
 						RGB[X,Y].x *= RGB[X,Y].w;
 						RGB[X,Y].y *= RGB[X,Y].w;
 						RGB[X,Y].z *= RGB[X,Y].w;
@@ -1474,53 +1459,46 @@ namespace ImageUtility
 			}
 			//////////////////////////////////////////////////////////////////////////
 			// Gray16
-			else if ( _Format == System.Windows.Media.PixelFormats.Gray16 )
-			{	
+			else if ( _Format == System.Windows.Media.PixelFormats.Gray16 ) {	
 				Stride = 2*W;
 				ushort[]	Content = new ushort[Stride*H];
 				Pixels = Content;
 
 				int		Position = 0;
 				for ( int Y = 0; Y < H; Y++ )
-					for ( int X = 0; X < W; X++ )
-					{
+					for ( int X = 0; X < W; X++ ) {
 						Content[Position++] = FLOAT_TO_WORD( RGB[X,Y].x );
 					}
 			}
 			//////////////////////////////////////////////////////////////////////////
 			// Gray32F
-			else if ( _Format == System.Windows.Media.PixelFormats.Gray32Float )
-			{	
+			else if ( _Format == System.Windows.Media.PixelFormats.Gray32Float ) {	
 				Stride = 4*W;
 				float[]	Content = new float[Stride*H];
 				Pixels = Content;
 
 				int		Position = 0;
 				for ( int Y = 0; Y < H; Y++ )
-					for ( int X = 0; X < W; X++ )
-					{
+					for ( int X = 0; X < W; X++ ) {
 						Content[Position++] = RGB[X,Y].x;
 					}
 			}
 			//////////////////////////////////////////////////////////////////////////
 			// Gray8
-			else if ( _Format == System.Windows.Media.PixelFormats.Gray8 )
-			{	
+			else if ( _Format == System.Windows.Media.PixelFormats.Gray8 ) {	
 				Stride = 1*W;
 				byte[]	Content = new byte[Stride*H];
 				Pixels = Content;
 
 				int		Position = 0;
 				for ( int Y = 0; Y < H; Y++ )
-					for ( int X = 0; X < W; X++ )
-					{
+					for ( int X = 0; X < W; X++ ) {
 						Content[Position++] = FLOAT_TO_BYTE( RGB[X,Y].x );
 					}
 			}
 			//////////////////////////////////////////////////////////////////////////
 			// 256 Colors Palette
-			else if ( _Format == System.Windows.Media.PixelFormats.Indexed8 )
-			{
+			else if ( _Format == System.Windows.Media.PixelFormats.Indexed8 ) {
 				throw new Exception( "Palette format are not supported!" );
 			}
 			else
