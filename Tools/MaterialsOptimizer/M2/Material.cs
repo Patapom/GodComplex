@@ -749,6 +749,8 @@ namespace MaterialsOptimizer
 			public string		m_errors = null;
 			public string		m_warnings = null;
 
+			#region PROPERTIES
+
 			public ERROR_LEVEL		ErrorLevel {
 				get { return m_errorLevel; }
 			}
@@ -762,33 +764,112 @@ namespace MaterialsOptimizer
 			}
 
 			/// <summary>
+			/// Gets the diffuse texture used by the layer, accounting for re-use mode
+			/// </summary>
+			public Texture			Diffuse {
+				get {
+					Texture	result = m_diffuse;
+					switch ( m_diffuseReUse ) {
+						case Layer.REUSE_MODE.REUSE_LAYER0:	result = m_owner.m_layers[0].m_diffuse; break;
+						case Layer.REUSE_MODE.REUSE_LAYER1:	result = m_owner.m_layers.Count > 1 ? m_owner.m_layers[1].m_diffuse : null; break;
+					}
+					return result;
+				}
+			}
+
+			/// <summary>
+			/// Gets the normal texture used by the layer, accounting for re-use mode
+			/// </summary>
+			public Texture			Normal {
+				get {
+					Layer.Texture	result = m_normal;
+					switch ( m_normalReUse ) {
+						case Layer.REUSE_MODE.REUSE_LAYER0:	result = m_owner.m_layers[0].m_normal; break;
+						case Layer.REUSE_MODE.REUSE_LAYER1:	result = m_owner.m_layers.Count > 1 ? m_owner.m_layers[1].m_normal : null; break;
+					}
+					return result;
+				}
+			}
+
+			/// <summary>
+			/// Gets the gloss texture used by the layer, accounting for re-use mode
+			/// </summary>
+			public Texture			Gloss {
+				get {
+					Layer.Texture	result = m_gloss;
+					switch ( m_glossReUse ) {
+						case Layer.REUSE_MODE.REUSE_LAYER0:	result = m_owner.m_layers[0].m_gloss; break;
+						case Layer.REUSE_MODE.REUSE_LAYER1:	result = m_owner.m_layers.Count > 1 ? m_owner.m_layers[1].m_gloss : null; break;
+					}
+					return result;
+				}
+			}
+
+			/// <summary>
+			/// Gets the metal texture used by the layer, accounting for re-use mode
+			/// </summary>
+			public Texture			Metal {
+				get {
+					Layer.Texture	result = m_metal;
+					switch ( m_metalReUse ) {
+						case Layer.REUSE_MODE.REUSE_LAYER0:	result = m_owner.m_layers[0].m_metal; break;
+						case Layer.REUSE_MODE.REUSE_LAYER1:	result = m_owner.m_layers.Count > 1 ? m_owner.m_layers[1].m_metal : null; break;
+					}
+					return result;
+				}
+			}
+
+			/// <summary>
+			/// Gets the mask texture used by the layer, accounting for re-use mode
+			/// </summary>
+			public Texture			Mask {
+				get {
+					Layer.Texture	result = m_mask;
+					switch ( m_maskReUse ) {
+						case Layer.REUSE_MODE.REUSE_LAYER0:	result = m_owner.m_layers[0].m_mask; break;
+						case Layer.REUSE_MODE.REUSE_LAYER1:	result = m_owner.m_layers.Count > 1 ? m_owner.m_layers[1].m_mask : null; break;
+					}
+					return result;
+				}
+			}
+
+			/// <summary>
+			/// Gets the specular texture used by the layer, accounting for re-use mode
+			/// </summary>
+			public Texture			Specular {
+				get {
+					Layer.Texture	result = m_specular;
+					switch ( m_specularReUse ) {
+						case Layer.REUSE_MODE.REUSE_LAYER0:	result = m_owner.m_layers[0].m_specular; break;
+						case Layer.REUSE_MODE.REUSE_LAYER1:	result = m_owner.m_layers.Count > 1 ? m_owner.m_layers[1].m_specular : null; break;
+					}
+					return result;
+				}
+			}
+
+			/// <summary>
 			/// Returns true if the layer's diffuse texture is a (diffuse+gloss) packed texture
 			/// </summary>
 			public bool				IsOptimized {
 				get {
-					Texture	diffuse = m_diffuse;
-					switch ( m_diffuseReUse ) {
-						case REUSE_MODE.REUSE_LAYER0: diffuse = m_owner.m_layers[0].m_diffuse; break;
-						case REUSE_MODE.REUSE_LAYER1: diffuse = m_owner.m_layers.Count > 1 ? m_owner.m_layers[1].m_diffuse : null; break;
-					}
-
+					Texture	diffuse = Diffuse;
 					return diffuse != null
 						&& diffuse.m_textureFileInfo != null
 						&& diffuse.m_textureFileInfo.m_usage == TextureFileInfo.USAGE.DIFFUSE_GLOSS;
 				}
 			}
 
+			#endregion
+
 			public Layer( Material _owner ) {
 				m_owner = _owner;
 			}
 
-			public Layer( Material _owner, int _index ) {
-				m_owner = _owner;
+			public Layer( Material _owner, int _index ) : this( _owner ) {
 				m_index = _index;
 			}
 
-			public Layer( int _index, BinaryReader R ) {
-				m_index = _index;
+			public Layer( Material _owner, int _index, BinaryReader R ) : this( _owner, _index ) {
 				Read( R );
 			}
 
@@ -2251,7 +2332,7 @@ namespace MaterialsOptimizer
 			m_layers.Clear();
 			int	layersCount = R.ReadInt32();
 			for ( int layerIndex=0; layerIndex < layersCount; layerIndex++ ) {
-				m_layers.Add( new Layer( layerIndex, R ) );
+				m_layers.Add( new Layer( this, layerIndex, R ) );
 			}
 
 			m_height = R.ReadBoolean() ? new Layer.Texture( R ) : null;
@@ -2349,19 +2430,15 @@ namespace MaterialsOptimizer
 				return;	// No gloss maps to compact
 
 			foreach ( Layer L in m_layers ) {
-				if ( L.m_diffuse == null || L.m_diffuse.m_textureFileInfo == null || L.m_diffuse.m_textureFileInfo.m_usage != TextureFileInfo.USAGE.DIFFUSE )
+				Layer.Texture	diffuse = L.Diffuse;
+				if ( diffuse == null || diffuse.m_textureFileInfo == null || diffuse.m_textureFileInfo.m_usage != TextureFileInfo.USAGE.DIFFUSE )
 					continue;	// No diffuse slot?
 
-				if ( !_diffuse2GlossMaps.ContainsKey( L.m_diffuse.m_textureFileInfo ) )
-					_diffuse2GlossMaps.Add( L.m_diffuse.m_textureFileInfo, new List< TextureFileInfo >() );
+				if ( !_diffuse2GlossMaps.ContainsKey( diffuse.m_textureFileInfo ) )
+					_diffuse2GlossMaps.Add( diffuse.m_textureFileInfo, new List< TextureFileInfo >() );
 
-				List< TextureFileInfo >	glossMaps = _diffuse2GlossMaps[L.m_diffuse.m_textureFileInfo];
-				Layer.Texture			glossMap = null;
-				switch ( L.m_glossReUse ) {
-					case Layer.REUSE_MODE.DONT_REUSE:	glossMap = L.m_gloss; break;
-					case Layer.REUSE_MODE.REUSE_LAYER0:	glossMap = m_layers[0].m_gloss; break;
-					case Layer.REUSE_MODE.REUSE_LAYER1:	glossMap = m_layers[1].m_gloss; break;
-				}
+				List< TextureFileInfo >	glossMaps = _diffuse2GlossMaps[diffuse.m_textureFileInfo];
+				Layer.Texture			glossMap = L.Gloss;
 
 				if ( glossMap != null && glossMap.m_textureFileInfo != null && glossMap.m_textureFileInfo.m_usage == TextureFileInfo.USAGE.GLOSS )
 					glossMaps.Add( glossMap.m_textureFileInfo );
@@ -2389,12 +2466,7 @@ namespace MaterialsOptimizer
 
 			bool	allLayersAreUsingPairedTexture = true;
 			foreach ( Layer L in m_layers ) {
-				Layer.Texture	diffuse = null;
-				switch ( L.m_diffuseReUse ) {
-					case Layer.REUSE_MODE.DONT_REUSE: diffuse = L.m_diffuse; break;
-					case Layer.REUSE_MODE.REUSE_LAYER0: diffuse = m_layers[0].m_diffuse; break;
-					case Layer.REUSE_MODE.REUSE_LAYER1: diffuse = m_layers[1].m_diffuse; break;
-				}
+				Layer.Texture	diffuse = L.Diffuse;
 				if ( diffuse == null || diffuse.m_textureFileInfo == null || diffuse.m_textureFileInfo.m_associatedTexture == null ) {
 					allLayersAreUsingPairedTexture = false;
 					break;
@@ -2423,19 +2495,17 @@ namespace MaterialsOptimizer
 				// Check gloss is okay then remove it
 				Layer.Texture	gloss = L.m_gloss;
 				switch ( L.m_glossReUse ) {
-					case Layer.REUSE_MODE.REUSE_LAYER0: gloss = m_layers[0].m_gloss; break;
-					case Layer.REUSE_MODE.REUSE_LAYER1: gloss = m_layers[1].m_gloss; break;
+					case Layer.REUSE_MODE.REUSE_LAYER0: gloss = m_layers[0].m_glossBeforeOptimization; break;
+					case Layer.REUSE_MODE.REUSE_LAYER1: gloss = m_layers[1].m_glossBeforeOptimization; break;
 				}
 				if ( gloss == null || gloss.m_textureFileInfo == null || gloss.m_textureFileInfo.m_usage != TextureFileInfo.USAGE.GLOSS )
 					throw new Exception( "Diffuse slot about to be optimized is not attached to a proper gloss texture! How could it be listed as optimizable then?" );
-// 				if ( L.m_glossReUse != L.m_diffuseReUse )
-// 					throw new Exception( "Gloss re-use mode is not the same as diffuse re-use mode! How could it be listed as optimizable then?" );
 
-				L.m_glossBeforeOptimization = gloss;	// Keep track of original gloss
+				L.m_glossBeforeOptimization = L.m_gloss;	// Keep track of original gloss
 				L.m_gloss = null;
-			}
 
-			_totalDiffuseGlossTexturesReplaced += m_layers.Count;
+				_totalDiffuseGlossTexturesReplaced++;
+			}
 
 			return true;
 		}

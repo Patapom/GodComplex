@@ -1507,13 +1507,7 @@ namespace MaterialsOptimizer
 				foreach ( Material M in m_sourceMaterials ) {
 					bool    allLayersAreUsingPairedTexture = !M.IsAlpha && M.m_options.m_hasGloss && M.m_programs.m_type == Material.Programs.KNOWN_TYPES.DEFAULT;
 					foreach ( Material.Layer L in M.m_layers ) {
-						Material.Layer.Texture  diffuseTexture = null;
-						switch ( L.m_diffuseReUse ) {
-							case Material.Layer.REUSE_MODE.DONT_REUSE: diffuseTexture = L.m_diffuse; break;
-							case Material.Layer.REUSE_MODE.REUSE_LAYER0: diffuseTexture = M.m_layers[0].m_diffuse; break;
-							case Material.Layer.REUSE_MODE.REUSE_LAYER1: diffuseTexture = M.m_layers[1].m_diffuse; break;
-						}
-
+						Material.Layer.Texture  diffuseTexture = L.Diffuse;
 						if (	diffuseTexture == null
 							 || diffuseTexture.m_textureFileInfo == null
 							 || diffuseTexture.m_textureFileInfo.m_usage != TextureFileInfo.USAGE.DIFFUSE
@@ -1608,7 +1602,7 @@ namespace MaterialsOptimizer
 
 		#endregion
 
-		#region Textures
+		#region Textures Generation
 
 		/// <summary>
 		/// Parses all materials requiring "_dg" diffuse + gloss textures and builds a list of unique textures
