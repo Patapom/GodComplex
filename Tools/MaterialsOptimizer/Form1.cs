@@ -309,6 +309,8 @@ namespace MaterialsOptimizer
 {
 	public partial class Form1 : Form {
 
+		#region NESTED TYPES
+
 		class Error {
 			public FileInfo		m_fileName;
 			public Exception	m_error;
@@ -340,6 +342,8 @@ namespace MaterialsOptimizer
 			}
 		}
 
+		#endregion
+
 		private RegistryKey			m_AppKey;
 		private string				m_ApplicationPath;
 
@@ -348,7 +352,9 @@ namespace MaterialsOptimizer
 		// Materials database
 		private List< Material >		m_sourceMaterials = new List< Material >();
 		private List< Material >		m_optimizedMaterials = new List< Material >();
-		private Dictionary< TextureFileInfo, TextureFileInfo >	m_diffuseGlossPairs = new Dictionary<TextureFileInfo,TextureFileInfo>();
+
+		private List< DiffuseGlossTexture >							m_diffuseGlossTextures = new List< DiffuseGlossTexture >();
+		private Dictionary< TextureFileInfo, DiffuseGlossTexture >	m_diffuse2DiffuseGlossTexture = new Dictionary< TextureFileInfo, DiffuseGlossTexture >();
 
 		private List< Error >			m_materialErrors = new List< Error >();
 		private FileInfo				m_sourceMaterialsDatabaseFileName = new FileInfo( "sourceMaterials.database" );
@@ -366,8 +372,7 @@ namespace MaterialsOptimizer
 		private int						m_texturesSortColumn = 0;
 		private int						m_texturesSortOrder = 1;
 
-		public Form1()
-		{
+		public Form1() {
 			InitializeComponent();
 
  			m_AppKey = Registry.CurrentUser.CreateSubKey( @"Software\Arkane\MaterialsOptimizer" );
@@ -387,13 +392,13 @@ namespace MaterialsOptimizer
 			if ( m_optimizedMaterialsDatabaseFileName.Exists ) {
 				LoadMaterialsDatabase( m_optimizedMaterialsDatabaseFileName, m_optimizedMaterials );
 				buttonParseReExportedMaterials.Enabled = m_optimizedMaterials.Count > 0;
-				buttonGenerate_dgTextures.Enabled = m_optimizedMaterials.Count > 0;
 			}
 			// Reload textures database
 			if ( m_texturesDatabaseFileName.Exists )
 				LoadTexturesDatabase( m_texturesDatabaseFileName );
 
 			// Reload (diffuse+gloss) textures database
+			// !! Needs to be done AFTER texture database loading since we need to resolve texture file infos !!
 			if ( m_diffuseGlossTextureDatabaseFileName.Exists )
 				LoadDiffuseGlossTexturesDatabase( m_diffuseGlossTextureDatabaseFileName );
 
@@ -694,9 +699,13 @@ namespace MaterialsOptimizer
 					L.CheckTexture( L.m_metal, M.m_options.m_hasMetal, L.m_metalReUse, T, "metal", 1 );
 					L.CheckTexture( L.m_specular, M.m_options.m_hasSpecular, L.m_specularReUse, T, "specular", 4 );
 					L.CheckTexture( L.m_mask, L.m_maskingMode != Material.Layer.MASKING_MODE.VERTEX_COLOR, L.m_maskReUse, T, "mask", 1 );
-					L.CheckTexture( L.m_AO, M.m_options.m_hasOcclusionMap, Material.Layer.REUSE_MODE.DONT_REUSE, T, "AO", 1 );
-					L.CheckTexture( L.m_translucency, M.m_options.m_translucencyEnabled && !M.m_options.m_translucencyUseVertexColor, Material.Layer.REUSE_MODE.DONT_REUSE, T, "translucency", 1 );
-					L.CheckTexture( L.m_emissive, M.m_options.m_hasEmissive, Material.Layer.REUSE_MODE.DONT_REUSE, T, "emissive", 4 );
+
+					if ( L.m_index == 0 ) {
+						// These textures only exist for the first layer
+						L.CheckTexture( L.m_AO, M.m_options.m_hasOcclusionMap, Material.Layer.REUSE_MODE.DONT_REUSE, T, "AO", 1 );
+						L.CheckTexture( L.m_translucency, M.m_options.m_translucencyEnabled && !M.m_options.m_translucencyUseVertexColor, Material.Layer.REUSE_MODE.DONT_REUSE, T, "translucency", 1 );
+						L.CheckTexture( L.m_emissive, M.m_options.m_hasEmissive, Material.Layer.REUSE_MODE.DONT_REUSE, T, "emissive", 4 );
+					}
 				}
 
 				//////////////////////////////////////////////////////////////////////////
@@ -734,19 +743,39 @@ namespace MaterialsOptimizer
 		void	ResolveTextureFileInfo( Material.Layer.Texture _texture ) {
 			if ( _texture == null )
 				return;
-			_texture.m_textureFileInfo = null;
-			if ( _texture.m_fileName == null )
-				return;
 
-			string	normalizedFileName = TextureFileInfo.NormalizeFileName( _texture.m_fileName.FullName );
+			_texture.m_textureFileInfo = ResolveTextureFileInfo( _texture.m_fileName );
+			if ( _texture.m_textureFileInfo != null )
+				_texture.m_textureFileInfo.m_refCount++;
+		}
+
+		void	ResolveTextureFileInfo( DiffuseGlossTexture _DTG ) {
+			_DTG.m_diffuse = ResolveTextureFileInfo( _DTG.m_diffuseFileName );
+			if ( _DTG.m_diffuse == null )
+				throw new Exception( "  !Failed to retrieve optimizable diffuse texture \"" + _DTG.m_diffuseFileName.FullName + "\"" );
+
+			if ( _DTG.m_glossFileName != null ) {
+				_DTG.m_gloss = ResolveTextureFileInfo( _DTG.m_glossFileName );
+				if ( _DTG.m_gloss == null )
+					throw new Exception( "  !Failed to retrieve optimizable gloss texture \"" + _DTG.m_glossFileName.FullName + "\"" );
+			} else {
+				_DTG.m_gloss = null;
+			}
+
+			_DTG.m_optimizedDiffuseGloss = _DTG.m_optimizedDiffuseGlossFileName != null ? ResolveTextureFileInfo( _DTG.m_optimizedDiffuseGlossFileName ) : null;
+		}
+
+		TextureFileInfo	ResolveTextureFileInfo( FileInfo _textureFileName ) {
+			if ( _textureFileName == null )
+				return null;
+
+			string	normalizedFileName = TextureFileInfo.NormalizeFileName( _textureFileName.FullName );
 			if ( !m_textureFileName2Texture.ContainsKey( normalizedFileName ) )
-				return;
-			
+				return null;
+
 			// Found it!
 			TextureFileInfo	TFI = m_textureFileName2Texture[normalizedFileName];
-			TFI.m_refCount++;
-
-			_texture.m_textureFileInfo = TFI;
+			return TFI;
 		}
 
 		void	SaveMaterialsDatabase( FileInfo _fileName, List< Material > _materials ) {
@@ -801,6 +830,7 @@ namespace MaterialsOptimizer
 
 			// Filter materials
 			List< Material >	filteredMaterials = new List< Material >();
+			int					errorMaterialsCount = 0;
 			if ( _searchFor == null ) {
 				bool	skipDefault = !checkBoxShowArkDefault.Checked ^ checkBoxInvertMaterialFilters.Checked;
 				bool	skipSkin = !checkBoxShowSkin.Checked ^ checkBoxInvertMaterialFilters.Checked;
@@ -839,6 +869,7 @@ namespace MaterialsOptimizer
 					if ( (skipAlpha && isAlpha) || (skipNonAlpha && !isAlpha) )
 						continue;
 
+					errorMaterialsCount += M.ErrorLevel != Material.ERROR_LEVEL.NONE ? 1 : 0;
 					if ( (int) M.ErrorLevel < minErrorLevel )
 						continue;
 					if ( showOnlyWarningMats && !M.HasWarnings )
@@ -855,15 +886,18 @@ namespace MaterialsOptimizer
 				// Search by name
 				_searchFor = _searchFor.ToLower();
 				foreach ( Material M in _materials ) {
-					if ( M.m_name.ToLower().IndexOf( _searchFor ) != -1 )
-						filteredMaterials.Add( M ); 
+					if ( M.m_name.ToLower().IndexOf( _searchFor ) != -1 ) {
+						filteredMaterials.Add( M );
+						errorMaterialsCount += M.ErrorLevel != Material.ERROR_LEVEL.NONE ? 1 : 0;
+					}
 				}
 			}
 
 // 			checkBoxShowTGA.Text = "Show " + texCountTGA + " TGA";
 // 			checkBoxShowPNG.Text = "Show " + texCountPNG + " PNG";
 // 			checkBoxShowOtherFormats.Text = "Show " + texCountOther + " misc. formats";
-			labelTotalMaterials.Text = "Total Materials:\n" + filteredMaterials.Count;
+			labelTotalMaterials.Text = "Total Materials: " + filteredMaterials.Count + "\r\n"
+									 + "In-Error Materials: " + errorMaterialsCount;
 
 			// Sort
 			if ( m_materialsSortOrder == 1 ) {
@@ -1479,7 +1513,8 @@ namespace MaterialsOptimizer
 			}
 
 			// 4.2) Keep (diffuse+gloss) forming a single couple (i.e. diffuse maps that are never used with more than a single gloss texture)
-			m_diffuseGlossPairs.Clear();
+			m_diffuse2DiffuseGlossTexture.Clear();
+			m_diffuseGlossTextures.Clear();
 			foreach ( TextureFileInfo diffuseMap in diffuse2GlossMaps.Keys ) {
 				List< TextureFileInfo >	glossMaps = diffuse2GlossMaps[diffuseMap];
 				if ( glossMaps.Count == 0 )
@@ -1499,10 +1534,13 @@ namespace MaterialsOptimizer
 				if ( allSimilarGloss ) {
 					// Okay! Bingo!
 					diffuseMap.m_associatedTexture = firstGlossMap;		// The gloss is now associated to the diffuse
-					m_diffuseGlossPairs.Add( diffuseMap, firstGlossMap );
+
+					DiffuseGlossTexture	DGT = new DiffuseGlossTexture( diffuseMap, firstGlossMap );
+					m_diffuseGlossTextures.Add( DGT );
+					m_diffuse2DiffuseGlossTexture.Add( diffuseMap, DGT );
 				}
 			}
-			LogLine( "	• Possible candidate textures for (diffuse+gloss) optimization: " + m_diffuseGlossPairs.Count );
+			LogLine( "	• Possible candidate textures for (diffuse+gloss) optimization: " + m_diffuseGlossTextures.Count );
 
 			// 4.3) Analyze materials again to know which ones are using paired textures
 			// As soon as a material is NOT using a paired texture, in either of its channels, then it discards the (diffuse+gloss) pair
@@ -1536,23 +1574,27 @@ namespace MaterialsOptimizer
 					}
 
 					// Okay so at least one layer of the material is not using a paired texture
-					// That means all layers can't use paired texture so we cancel pairing for all diffuse textures used by the material...
+					// That means no layer can use paired texture so we cancel pairing for all diffuse textures used by the material...
 					foreach ( Material.Layer L in M.m_layers ) {
 						if ( L.m_diffuse != null && L.m_diffuse.m_textureFileInfo != null && L.m_diffuse.m_textureFileInfo.m_associatedTexture != null ) {
-							L.m_diffuse.m_textureFileInfo.m_associatedTexture = null;	 // Clear the pairing
-							m_diffuseGlossPairs.Remove( L.m_diffuse.m_textureFileInfo );	// Remove the texture from possible pairs
+							L.m_diffuse.m_textureFileInfo.m_associatedTexture = null;		// Clear the pairing
+
+							DiffuseGlossTexture	DGT = m_diffuse2DiffuseGlossTexture[L.m_diffuse.m_textureFileInfo];
+							m_diffuseGlossTextures.Remove( DGT );
+							m_diffuse2DiffuseGlossTexture.Remove( L.m_diffuse.m_textureFileInfo );
 							totalTexturesRemoved++;
 						}
 					}
 				}
 			}
-			LogLine( "	• Final count of candidate textures for (diffuse+gloss) optimization after filtering by optimizable materials: " + m_diffuseGlossPairs.Count );
+			LogLine( "	• Final count of candidate textures for (diffuse+gloss) optimization after filtering by optimizable materials: " + m_diffuseGlossTextures.Count );
 			LogLine( "	• Total optimizable materials: " + totalOptimizableMaterialsCount );
+
 
 			// 4.4) Optimize materials so they replace their diffuse by the new combo
 			SaveDiffuseGlossTexturesDatabase( m_diffuseGlossTextureDatabaseFileName );
 			LogLine( "	• Saved optimizable textures database" );
-			buttonGenerate_dgTextures.Enabled = m_diffuseGlossPairs.Count > 0;
+			buttonGenerate_dgTextures.Enabled = m_diffuseGlossTextures.Count > 0;
 
 			// 4.5) Optimize materials so they replace their diffuse by the new combo
 			int	totalDiffuseGlossTexturesReplaced = 0;
@@ -1623,11 +1665,9 @@ namespace MaterialsOptimizer
 			try {
 				using ( FileStream S = _fileName.Create() )
 					using ( BinaryWriter W = new BinaryWriter( S ) ) {
-						W.Write( m_diffuseGlossPairs.Count );
-						foreach ( TextureFileInfo diffuse in m_diffuseGlossPairs.Keys ) {
-							TextureFileInfo	gloss = m_diffuseGlossPairs[diffuse];
-							W.Write( diffuse.NormalizedFileName );
-							W.Write( gloss != null ? gloss.NormalizedFileName : "" );
+						W.Write( m_diffuseGlossTextures.Count );
+						foreach ( DiffuseGlossTexture DGT in m_diffuseGlossTextures ) {
+							DGT.Write( W );
 						}
 					}
 			} catch ( Exception ) {
@@ -1636,36 +1676,31 @@ namespace MaterialsOptimizer
 		}
 
 		void LoadDiffuseGlossTexturesDatabase( FileInfo _fileName ) {
-			m_diffuseGlossPairs.Clear();
+			m_diffuseGlossTextures.Clear();
+			m_diffuse2DiffuseGlossTexture.Clear();
 
 			try {
 				using ( FileStream S = _fileName.OpenRead() )
 					using ( BinaryReader R = new BinaryReader( S ) ) {
 						int	texturesCount = R.ReadInt32();
 						for ( int textureIndex=0; textureIndex < texturesCount; textureIndex++ ) {
-							string	diffuseTextureFileName = R.ReadString();
-							string	glossTextureFileName = R.ReadString();
-							if ( glossTextureFileName == "" )
-								glossTextureFileName = null;
+							try {
+								DiffuseGlossTexture	DGT = new DiffuseGlossTexture( R );
+								ResolveTextureFileInfo( DGT );
 
-							TextureFileInfo	diffuse = m_textureFileName2Texture.ContainsKey( diffuseTextureFileName ) ? m_textureFileName2Texture[diffuseTextureFileName] : null;
-							TextureFileInfo	gloss = glossTextureFileName != null && m_textureFileName2Texture.ContainsKey( glossTextureFileName ) ? m_textureFileName2Texture[glossTextureFileName] : null;
-							if ( diffuse == null ) {
-								LogLine( "  !Failed to retrieve optimizable diffuse texture \"" + diffuseTextureFileName + "\"" );
-								continue;
+								m_diffuseGlossTextures.Add( DGT );
+								m_diffuse2DiffuseGlossTexture.Add( DGT.m_diffuse, DGT );
+							} catch ( Exception _e ) {
+								LogLine( "An error occurred while rebuilding (diffuse+gloss) texture info: " + _e.Message );
+								throw _e;
 							}
-							if ( glossTextureFileName != null && gloss == null ) {
-								LogLine( "  !Failed to retrieve optimizable gloss texture \"" + glossTextureFileName + "\"" );
-								continue;
-							}
-							m_diffuseGlossPairs.Add( diffuse, gloss );
 						}
 					}
 			} catch ( Exception ) {
 				MessageBox( "An error occurred while reloading (diffuse+gloss) textures database!\nThe format must have changed since it was last saved...\n\nPlease re-export optimized materials.", MessageBoxButtons.OK, MessageBoxIcon.Error );
 			}
 
-			buttonGenerate_dgTextures.Enabled = m_diffuseGlossPairs.Count > 0;
+			buttonGenerate_dgTextures.Enabled = m_diffuseGlossTextures.Count > 0;
 		}
 
 		/// <summary>
@@ -1673,7 +1708,7 @@ namespace MaterialsOptimizer
 		/// Creates the image file when the diffuse and gloss texture files are available and of the same size
 		/// </summary>
 		void GenerateDiffuseGlossTextures() {
-			if ( m_diffuseGlossPairs.Count == 0 ) {
+			if ( m_diffuseGlossTextures.Count <= 0 ) {
 				MessageBox( "No (diffuse+gloss) textures are available...\nYou need to re-export materials first!" );
 				return;
 			}
@@ -1682,105 +1717,75 @@ namespace MaterialsOptimizer
 				progressBarTextures.Visible = true;
 				ImageUtility.Bitmap.ConvertContent2XYZ = false;	// Skip conversion
 
+				LogLine( "" );
+
 				// 1] List unique textures to generate
+				List< TextureFileInfo >		glossTexturesToRescale = new List< TextureFileInfo >();
+				List< DiffuseGlossTexture >	diffuseGlossTexturesToGenerate = new List< DiffuseGlossTexture >();
+				LogLine( "Checking " + m_diffuseGlossTextures.Count + " (diffuse+gloss) texture candisdates..." );
+				foreach ( DiffuseGlossTexture DGT in m_diffuseGlossTextures ) {
+					if ( DGT.m_gloss == null )
+						continue;
+
+					if ( DGT.m_gloss.m_width != DGT.m_diffuse.m_width || DGT.m_gloss.m_height != DGT.m_diffuse.m_height ) {
+						// Needs scaling...
+						glossTexturesToRescale.Add( DGT.m_gloss );
+						continue;
+					}
+
+					if ( DGT.NeedsToBeGenerated )
+						diffuseGlossTexturesToGenerate.Add( DGT );
+				}
+				LogLine( " > Found " + glossTexturesToRescale.Count + " gloss texture files that need to be rescaled to match diffuse texture size" );
+				LogLine( " > Found " + diffuseGlossTexturesToGenerate.Count + " (diffuse+gloss) texture files that need to be regenerated" );
+
+				TexturesToRescaleForm	F = new TexturesToRescaleForm();
+				F.glossTexturesToRescale = glossTexturesToRescale;
+				if ( F.ShowDialog( this ) != DialogResult.OK )
+					return;
+
+
+				// 2] Merge textures with same size
 				DateTime	startTime = DateTime.Now;
 				LogLine( "" );
-				LogLine( "Generating " + m_diffuseGlossPairs.Count + " (diffuse+gloss) textures..." );
+				LogLine( "Generating " + diffuseGlossTexturesToGenerate.Count + " (diffuse+gloss) textures..." );
 
+				int	processedTexturesCount = 0;
 				int	generatedTexturesCount = 0;
-				foreach ( TextureFileInfo diffuse in m_diffuseGlossPairs.Keys ) {
+				foreach ( DiffuseGlossTexture DGT in diffuseGlossTexturesToGenerate ) {
 					try {
-						progressBarTextures.Value = (++generatedTexturesCount) * progressBarTextures.Maximum / m_diffuseGlossPairs.Count;
+						progressBarTextures.Value = (++processedTexturesCount) * progressBarTextures.Maximum / diffuseGlossTexturesToGenerate.Count;
 
-						TextureFileInfo	gloss = m_diffuseGlossPairs[diffuse];
-						GenerateDiffuseGlossTexture( diffuse, gloss );
+// 						if ( DGT.m_gloss != null && (DGT.m_gloss.m_width != DGT.m_diffuse.m_width || DGT.m_gloss.m_height != DGT.m_diffuse.m_height) ) {
+// //							LogLine( " > Gloss texture \"" + _gloss.m_fileName.FullName + "\" associated to diffuse texture \"" + _diffuse.m_fileName.FullName + "\" is not the same size... Image will be scaled!" );
+// 							continue;	// Not the same size... Can't merge!
+// 						}
+
+						DGT.GenerateDiffuseGlossTexture();
+						generatedTexturesCount++;
 
 					} catch ( Exception _e ) {
-						LogLine( " > An error occurred while generating (diffuse+gloss) texture for \"" + diffuse.m_fileName.FullName + "\": " + _e.Message );
+						LogLine( " > An error occurred while generating (diffuse+gloss) texture for \"" + DGT.m_diffuseFileName.FullName + "\": " + _e.Message );
 					}
 				}
+
+				SaveDiffuseGlossTexturesDatabase( m_diffuseGlossTextureDatabaseFileName );
+
 				TimeSpan	totalTime = DateTime.Now - startTime;
-				LogLine( "Finished generating " + m_diffuseGlossPairs.Count + " (diffuse+gloss) texture files. Total time: " + totalTime.ToString( @"mm\:ss" ) );
+				LogLine( " • Generated " + generatedTexturesCount + " (diffuse+gloss) texture files." );
+				if ( generatedTexturesCount != processedTexturesCount )
+					LogLine( " • " + (processedTexturesCount-generatedTexturesCount) + " texture failed to generate." );
+				LogLine( "Total time: " + totalTime.ToString( @"mm\:ss" ) );
 				LogLine( "" );
+
+				// Collect (diffuse+gloss) textures only + analyze optimized materials that should be able to resolve their (diffuse+gloss) textures now
+				buttonCollect_dgTextures_Click( null, EventArgs.Empty );
 
 			} catch ( Exception ) {
 				throw;
 			} finally {
 				progressBarTextures.Visible = false;
 				ImageUtility.Bitmap.ConvertContent2XYZ = true;
-
-				// Collect (diffuse+gloss) textures only + analyze optimized materials that should be able to resolve their (diffuse+gloss) textures now
-				buttonCollect_dgTextures_Click( null, EventArgs.Empty );
-			}
-		}
-
-		/// <summary>
-		/// Generates a (diffuse+gloss) texture from 2 textures
-		/// </summary>
-		/// <param name="_diffuse"></param>
-		/// <param name="_gloss"></param>
-		void GenerateDiffuseGlossTexture( TextureFileInfo _diffuse, TextureFileInfo _gloss ) {
-			if ( _diffuse == null )
-				throw new Exception( "Invalid source diffuse image file!" );
-			if ( !_diffuse.m_fileName.Exists )
-				throw new Exception( "Source diffuse image file \"" + _diffuse.m_fileName.FullName + "\" does not exist on disk!" );
-
-			string		targetFileNameString = TextureFileInfo.GetOptimizedDiffuseGlossNameFromDiffuseName( _diffuse.m_fileName.FullName );
-			FileInfo	targetFileName = new FileInfo( Path.ChangeExtension( targetFileNameString, ".png" ) );
-
-			using ( ImageUtility.Bitmap diffuse = new ImageUtility.Bitmap( _diffuse.m_fileName ) ) {
-
-				int	W = diffuse.Width;
-				int	H = diffuse.Height;
-
-				ImageUtility.Bitmap	gloss = null;
-				if ( _gloss != null ) {
-					gloss = new ImageUtility.Bitmap( _gloss.m_fileName );
-				}
-				bool	needsScale = false;
-				if ( gloss != null && (gloss.Width != W || gloss.Height != H) ) {
-					needsScale = true;
-					LogLine( " > Gloss texture \"" + _gloss.m_fileName.FullName + "\" associated to diffuse texture \"" + _diffuse.m_fileName.FullName + "\" is not the same size... Image will be scaled!" );
-				}
-
-//				ImageUtility.Bitmap		targetDiffuseGloss = new ImageUtility.Bitmap( W, H, diffuse.Profile );
-				if ( gloss != null ) {
-					if ( needsScale ) {
-						// Set gloss as alpha with re-scaling
-						float	scaleX = (float) gloss.Width / W;
-						float	scaleY = (float) gloss.Height / H;
-						for ( int Y=0; Y < H; Y++ ) {
-							float	Y2 = scaleY * Y;
-							for ( int X=0; X < W; X++ ) {
-								diffuse.ContentXYZ[X,Y].w = gloss.BilinearSample( scaleX * X, Y2 ).x;
-// 								ImageUtility.float4	C = diffuse.ContentXYZ[X,Y];
-// 													C.w = gloss.BilinearSample( scaleX * X, Y2 ).x;
-// 								diffuse.ContentXYZ[X,Y] = C;
-							}
-						}
-					} else {
-						// Set gloss as alpha without re-scaling
-						for ( int Y=0; Y < H; Y++ )
-							for ( int X=0; X < W; X++ ) {
-								diffuse.ContentXYZ[X,Y].w = gloss.ContentXYZ[X,Y].x;
-// 								ImageUtility.float4	C = diffuse.ContentXYZ[X,Y];
-// 													C.w = gloss.ContentXYZ[X,Y].x;
-// 								diffuse.ContentXYZ[X,Y] = C;
-							}
-					}
-				} else {
-					for ( int Y=0; Y < H; Y++ )
-						for ( int X=0; X < W; X++ ) {
-							diffuse.ContentXYZ[X,Y].w = 1.0f;
-// 							ImageUtility.float4	C = diffuse.ContentXYZ[X,Y];
-// 												C.w = 1.0f;
-// 							diffuse.ContentXYZ[X,Y] = C;
-						}
-				}
-
-				// Save diffuse as target
-				diffuse.HasAlpha = true;
-				diffuse.Save( targetFileName );
 			}
 		}
 
@@ -1885,7 +1890,6 @@ namespace MaterialsOptimizer
 			} catch ( Exception _e ) {
 				MessageBox( "An error occurred while parsing materials:\r\n" + _e.Message, MessageBoxButtons.OK, MessageBoxIcon.Error );
 			}
-
 		}
 
 		private void buttonIntegratePerforce_Click(object sender, EventArgs e)

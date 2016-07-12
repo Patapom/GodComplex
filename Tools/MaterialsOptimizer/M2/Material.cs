@@ -529,7 +529,7 @@ namespace MaterialsOptimizer
 				public CONSTANT_COLOR_TYPE	m_constantColorType = CONSTANT_COLOR_TYPE.TEXTURE;
 				public float4				m_customConstantColor = float4.Zero;
 
-				// Resolve by analysis
+				// Resolved by analysis
 				public TextureFileInfo		m_textureFileInfo = null;
 
 				public int					m_dummyCounter = 0;

@@ -275,7 +275,7 @@
 			// 
 			// buttonAnalyzeConstantColorTextures
 			// 
-			this.buttonAnalyzeConstantColorTextures.Location = new System.Drawing.Point(1090, 50);
+			this.buttonAnalyzeConstantColorTextures.Location = new System.Drawing.Point(1008, 50);
 			this.buttonAnalyzeConstantColorTextures.Name = "buttonAnalyzeConstantColorTextures";
 			this.buttonAnalyzeConstantColorTextures.Size = new System.Drawing.Size(173, 23);
 			this.buttonAnalyzeConstantColorTextures.TabIndex = 12;
@@ -393,9 +393,9 @@
 			// 
 			this.labelTotalMaterials.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
 			this.labelTotalMaterials.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-			this.labelTotalMaterials.Location = new System.Drawing.Point(1183, 2);
+			this.labelTotalMaterials.Location = new System.Drawing.Point(1140, 2);
 			this.labelTotalMaterials.Name = "labelTotalMaterials";
-			this.labelTotalMaterials.Size = new System.Drawing.Size(93, 43);
+			this.labelTotalMaterials.Size = new System.Drawing.Size(136, 44);
 			this.labelTotalMaterials.TabIndex = 3;
 			this.labelTotalMaterials.Text = "Total Materials:";
 			// 
@@ -505,7 +505,7 @@
 			// checkBoxShowOptimizableMaterials
 			// 
 			this.checkBoxShowOptimizableMaterials.AutoSize = true;
-			this.checkBoxShowOptimizableMaterials.Location = new System.Drawing.Point(875, 54);
+			this.checkBoxShowOptimizableMaterials.Location = new System.Drawing.Point(823, 54);
 			this.checkBoxShowOptimizableMaterials.Name = "checkBoxShowOptimizableMaterials";
 			this.checkBoxShowOptimizableMaterials.Size = new System.Drawing.Size(179, 17);
 			this.checkBoxShowOptimizableMaterials.TabIndex = 2;
@@ -516,7 +516,7 @@
 			// checkBoxShowMissingPhysics
 			// 
 			this.checkBoxShowMissingPhysics.AutoSize = true;
-			this.checkBoxShowMissingPhysics.Location = new System.Drawing.Point(670, 54);
+			this.checkBoxShowMissingPhysics.Location = new System.Drawing.Point(618, 54);
 			this.checkBoxShowMissingPhysics.Name = "checkBoxShowMissingPhysics";
 			this.checkBoxShowMissingPhysics.Size = new System.Drawing.Size(199, 17);
 			this.checkBoxShowMissingPhysics.TabIndex = 2;
@@ -527,7 +527,7 @@
 			// checkBoxShowWarningMaterials
 			// 
 			this.checkBoxShowWarningMaterials.AutoSize = true;
-			this.checkBoxShowWarningMaterials.Location = new System.Drawing.Point(499, 54);
+			this.checkBoxShowWarningMaterials.Location = new System.Drawing.Point(447, 54);
 			this.checkBoxShowWarningMaterials.Name = "checkBoxShowWarningMaterials";
 			this.checkBoxShowWarningMaterials.Size = new System.Drawing.Size(165, 17);
 			this.checkBoxShowWarningMaterials.TabIndex = 2;

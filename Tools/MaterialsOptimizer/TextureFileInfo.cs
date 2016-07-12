@@ -88,6 +88,7 @@ namespace MaterialsOptimizer
 					case USAGE.WRINKLE_MASK:	return 4;
 					case USAGE.WRINKLE_NORMAL:	return 2;
 					case USAGE.IGGY:			return 4;
+					case USAGE.DIFFUSE_GLOSS:	return 4;
 				}
 
 				return 0;
@@ -118,7 +119,6 @@ namespace MaterialsOptimizer
 						case ImageUtility.Bitmap.FILE_TYPE.TIFF: m_fileType = FILE_TYPE.TIFF; break;
 					}
 				}
-
 			} catch ( Exception _e ) {
 				m_error = _e;
 				throw _e;
