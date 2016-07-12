@@ -1513,8 +1513,10 @@ namespace MaterialsOptimizer
 			}
 
 			// 4.2) Keep (diffuse+gloss) forming a single couple (i.e. diffuse maps that are never used with more than a single gloss texture)
-			m_diffuse2DiffuseGlossTexture.Clear();
-			m_diffuseGlossTextures.Clear();
+			Dictionary< TextureFileInfo, DiffuseGlossTexture >	oldDiffuse2DiffuseGlossTexture = m_diffuse2DiffuseGlossTexture;
+
+ 			m_diffuse2DiffuseGlossTexture =  new Dictionary< TextureFileInfo, DiffuseGlossTexture >();
+ 			m_diffuseGlossTextures.Clear();
 			foreach ( TextureFileInfo diffuseMap in diffuse2GlossMaps.Keys ) {
 				List< TextureFileInfo >	glossMaps = diffuse2GlossMaps[diffuseMap];
 				if ( glossMaps.Count == 0 )
@@ -1538,6 +1540,16 @@ namespace MaterialsOptimizer
 					DiffuseGlossTexture	DGT = new DiffuseGlossTexture( diffuseMap, firstGlossMap );
 					m_diffuseGlossTextures.Add( DGT );
 					m_diffuse2DiffuseGlossTexture.Add( diffuseMap, DGT );
+
+					// Try and reconnect with former existing texture
+					if ( oldDiffuse2DiffuseGlossTexture.ContainsKey( diffuseMap ) ) {
+						DiffuseGlossTexture	oldDGT = oldDiffuse2DiffuseGlossTexture[diffuseMap];
+						DGT.m_diffuseTimeAtGeneration = oldDGT.m_diffuseTimeAtGeneration;
+						if ( DGT.m_gloss == oldDGT.m_gloss )
+							DGT.m_glossTimeAtGeneration = oldDGT.m_glossTimeAtGeneration;
+						DGT.m_optimizedDiffuseGlossFileName = oldDGT.m_optimizedDiffuseGlossFileName;
+						DGT.m_optimizedDiffuseGloss = oldDGT.m_optimizedDiffuseGloss;
+					}
 				}
 			}
 			LogLine( "	• Possible candidate textures for (diffuse+gloss) optimization: " + m_diffuseGlossTextures.Count );
@@ -1590,7 +1602,6 @@ namespace MaterialsOptimizer
 			LogLine( "	• Final count of candidate textures for (diffuse+gloss) optimization after filtering by optimizable materials: " + m_diffuseGlossTextures.Count );
 			LogLine( "	• Total optimizable materials: " + totalOptimizableMaterialsCount );
 
-
 			// 4.4) Optimize materials so they replace their diffuse by the new combo
 			SaveDiffuseGlossTexturesDatabase( m_diffuseGlossTextureDatabaseFileName );
 			LogLine( "	• Saved optimizable textures database" );
@@ -1611,7 +1622,7 @@ namespace MaterialsOptimizer
 
 			
 			//////////////////////////////////////////////////////////////////////////
-			// 3] Regenerate all M2 files
+			// 5] Regenerate all M2 files
 			LogLine( "" );
 			LogLine( "Writing " + M2File2Materials.Keys.Count + " M2 files..." );
 
@@ -1649,7 +1660,7 @@ namespace MaterialsOptimizer
 			LogLine( "	• Successfully wrote " + correctlyExportedFilesCount + " M2 files..." );
 
 			//////////////////////////////////////////////////////////////////////////
-			// 4] Re-parse optimized materials
+			// 6] Re-parse optimized materials
 			progressBarReExportMaterials.Visible = false;
 
 			buttonParseReExportedMaterials.Enabled = m_optimizedMaterials.Count > 0;

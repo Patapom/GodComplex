@@ -2474,7 +2474,6 @@ namespace MaterialsOptimizer
 
 				string	originalTextureName = L.m_diffuse.m_rawTextureLine;
 				string	optimizedDiffuseTextureName = TextureFileInfo.GetOptimizedDiffuseGlossNameFromDiffuseName( originalTextureName );
-						optimizedDiffuseTextureName = Path.ChangeExtension( optimizedDiffuseTextureName, ".png" );
 
 				L.m_diffuseBeforeOptimization = L.m_diffuse;	// Keep track of original diffuse
 				L.m_diffuse = new Layer.Texture( optimizedDiffuseTextureName );	// Replace with 

@@ -240,7 +240,10 @@ namespace MaterialsOptimizer
 		public static string GetOptimizedDiffuseGlossNameFromDiffuseName( string _diffuseFileName ) {
 			_diffuseFileName = _diffuseFileName.Trim();
 			int		indexOf_d = _diffuseFileName.LastIndexOf( "_d" );
-			string	optimizedDiffuseTextureName = _diffuseFileName.Substring( 0, indexOf_d ) + "_dg" + _diffuseFileName.Substring( indexOf_d+2 );
+
+//			string	optimizedDiffuseTextureName = _diffuseFileName.Substring( 0, indexOf_d ) + "_dg" + _diffuseFileName.Substring( indexOf_d+2 );
+//					optimizedDiffuseTextureName = Path.ChangeExtension( optimizedDiffuseTextureName, ".png" );
+			string	optimizedDiffuseTextureName = _diffuseFileName.Substring( 0, indexOf_d ) + "_dg.png";
 			return optimizedDiffuseTextureName;
 		}
 	}
