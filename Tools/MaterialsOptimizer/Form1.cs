@@ -1045,9 +1045,10 @@ namespace MaterialsOptimizer
 			ImageUtility.Bitmap.ReadContent = false;
 			progressBarTextures.Visible = true;
 
-			m_textures.Clear();
 			m_textureErrors.Clear();
-			m_textureFileName2Texture.Clear();
+
+			foreach ( TextureFileInfo TFI in m_textures )
+				TFI.m_refCount = 0;	// Clear refcount so we can retrieve which textures have disappeared since last collection
 
 			string[]	supportedExtensions = new string[] {
 				 ".jpg",
@@ -1057,6 +1058,9 @@ namespace MaterialsOptimizer
 //				 ".dds",
 //				 ".bimage",
 			};
+
+			DateTime	startTime = DateTime.Now;
+			LogLine( "Parsing image files starting at " + startTime.ToString( @"HH\:mm:ss" ) );
 
 			List< FileInfo[] >	textureFileNamesForExtenstion = new List< FileInfo[] >();
 			int					totalFilesCount = 0;
@@ -1068,15 +1072,34 @@ namespace MaterialsOptimizer
 
 			int	extensionIndex = 0;
 			int	textureIndex = 0;
+			int	texturesCountUpdated = 0;
+			int	texturesCountAdded = 0;
 			foreach ( FileInfo[] textureFileNames in textureFileNamesForExtenstion ) {
-				LogLine( "Parsing " + textureFileNames.Length + " " + supportedExtensions[extensionIndex] + " image files" );
-				DateTime	startTime = DateTime.Now;
-
 				foreach ( FileInfo textureFileName in textureFileNames ) {
+					string	normalizedTextureFileName = TextureFileInfo.NormalizeFileName( textureFileName.FullName );
+					if ( m_textureFileName2Texture.ContainsKey( normalizedTextureFileName ) ) {
+						// Already exists! Check timestamp...
+						TextureFileInfo	TFI = m_textureFileName2Texture[normalizedTextureFileName];
+						TFI.m_refCount++;
+
+						textureFileName.Refresh();
+						TimeSpan	deltaTimeStamp = textureFileName.LastWriteTime - TFI.m_timeStamp;
+						if ( deltaTimeStamp.TotalSeconds > 30 ) {
+							// Image changed and needs to be read back again
+							TFI.ReadImageInfos();
+							TFI.m_timeStamp = textureFileName.LastWriteTime;	// Update time stamp so we're now up to date
+							texturesCountUpdated++;
+						}
+						continue;
+					}
+
+					// Image doesn't exist, create a new one!
 					try {
 						TextureFileInfo	T = new TextureFileInfo( textureFileName );
+						T.m_refCount++;
 						m_textures.Add( T );
-						m_textureFileName2Texture.Add( T.NormalizedFileName, T );
+						m_textureFileName2Texture.Add( normalizedTextureFileName, T );
+						texturesCountAdded++;
 					} catch ( Exception _e ) {
 						Error	Err = new Error( textureFileName, _e );
 						m_textureErrors.Add( Err );
@@ -1090,10 +1113,26 @@ namespace MaterialsOptimizer
 					}
 				}
 
-				TimeSpan	totalTime = DateTime.Now - startTime;
-				LogLine( "Finished parsing " + supportedExtensions[extensionIndex] + " image files. Total time: " + totalTime.ToString( @"mm\:ss" ) );
 				extensionIndex++;
 			}
+
+			// Reparse image files for the ones without any reference so we can delete them
+			int	totalTexturesRemoved = 0;
+			for ( int i=0; i < m_textures.Count; i++ ) {
+				TextureFileInfo	TFI = m_textures[i];
+				if ( TFI.m_refCount == 0 ) {
+					// Not referenced anymore...
+					m_textureFileName2Texture.Remove( TFI.NormalizedFileName );
+					m_textures.RemoveAt( i );
+					totalTexturesRemoved++;
+				}
+			}
+
+			LogLine( "Total textures => Parsed: " + totalFilesCount + " - Added: " + texturesCountAdded + " - Updated: " + texturesCountUpdated + " Removed: " + totalTexturesRemoved );
+
+			DateTime	endTime = DateTime.Now;
+			TimeSpan	totalTime = endTime - startTime;
+			LogLine( "Finished parsing at " + endTime.ToString( @"HH\:mm:ss" ) + ". Total time: " + totalTime.ToString( @"mm\:ss" ) );
 
 			progressBarTextures.Visible = false;
 			ImageUtility.Bitmap.ReadContent = true;
@@ -1735,6 +1774,14 @@ namespace MaterialsOptimizer
 				List< DiffuseGlossTexture >	diffuseGlossTexturesToGenerate = new List< DiffuseGlossTexture >();
 				LogLine( "Checking " + m_diffuseGlossTextures.Count + " (diffuse+gloss) texture candisdates..." );
 				foreach ( DiffuseGlossTexture DGT in m_diffuseGlossTextures ) {
+					if ( DGT == null ) {
+						LogLine( "Invalid (diffuse+gloss) entry" );
+						continue;
+					}
+					if ( DGT.m_diffuse == null ) {
+						LogLine( "Invalid (diffuse+gloss) diffuse texture!" );
+						continue;
+					}
 					if ( DGT.m_gloss == null )
 						continue;
 

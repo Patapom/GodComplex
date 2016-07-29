@@ -1296,7 +1296,7 @@ namespace MaterialsOptimizer
 						case 1: previousLayerReUseMode = REUSE_MODE.REUSE_LAYER1; break;
 					}
 
-					if ( previousLayer.SameUVs( previousLayer ) ) {
+					if ( SameUVs( previousLayer ) ) {
 						// Can re-use some textures?
 						if ( m_diffuse != null && previousLayer.m_diffuse != null && m_diffuseReUse == REUSE_MODE.DONT_REUSE && previousLayer.m_diffuseReUse == REUSE_MODE.DONT_REUSE ) {
 							if ( m_diffuse == previousLayer.m_diffuse ) {
@@ -1334,6 +1334,18 @@ namespace MaterialsOptimizer
 							if ( m_specular == previousLayer.m_specular ) {
 								m_specularReUse = previousLayerReUseMode;
 								m_specular = null;
+								_reUseOptionsSetCount++;
+								_removedTexturesCount++;
+							}
+						}
+					}
+
+					if ( SameMaskUVs( previousLayer ) ) {
+						// Can we re-use the masks?
+						if ( m_mask != null && previousLayer.m_mask != null && m_maskingMode != MASKING_MODE.VERTEX_COLOR && previousLayer.m_maskingMode != MASKING_MODE.VERTEX_COLOR && m_maskReUse == REUSE_MODE.DONT_REUSE && previousLayer.m_maskReUse == REUSE_MODE.DONT_REUSE ) {
+							if ( m_mask == previousLayer.m_mask ) {
+								m_maskReUse = previousLayerReUseMode;
+								m_mask = null;
 								_reUseOptionsSetCount++;
 								_removedTexturesCount++;
 							}

@@ -45,6 +45,7 @@ namespace MaterialsOptimizer
 		}
 
 		public FileInfo		m_fileName = null;
+		public DateTime		m_timeStamp;
 		public FILE_TYPE	m_fileType = FILE_TYPE.UNKNOWN;
 		public USAGE		m_usage = USAGE.UNKNOWN;
 		public bool			m_couldBeRead = false;
@@ -97,17 +98,28 @@ namespace MaterialsOptimizer
 
 		public TextureFileInfo( FileInfo _fileName ) {
 			m_fileName = _fileName;
-			m_usage = FindUsage( _fileName );
+			m_fileName.Refresh();
+			m_timeStamp = m_fileName.LastWriteTime;
 
-			if ( _fileName.Extension.ToLower().StartsWith( ".bimage" ) ) {
+			ReadImageInfos();
+		}
+
+		/// <summary>
+		/// Reads image size and other informations, doesn't read content
+		/// </summary>
+		public void		ReadImageInfos() {
+			m_usage = FindUsage( m_fileName );
+
+			if ( m_fileName.Extension.ToLower().StartsWith( ".bimage" ) ) {
 				// Can't read!
 				m_fileType = FILE_TYPE.BIMAGE;
+				m_couldBeRead = false;
 				return;
 			}
 
 			try {
-				using ( ImageUtility.Bitmap B = new ImageUtility.Bitmap( _fileName ) ) {
-
+				using ( ImageUtility.Bitmap B = new ImageUtility.Bitmap( m_fileName ) ) {
+					m_error = null;
 					m_couldBeRead = true;
 					m_width = B.Width;
 					m_height = B.Height;
@@ -120,6 +132,7 @@ namespace MaterialsOptimizer
 					}
 				}
 			} catch ( Exception _e ) {
+				m_couldBeRead = false;
 				m_error = _e;
 				throw _e;
 			}
@@ -131,7 +144,10 @@ namespace MaterialsOptimizer
 
 		public void		Read( BinaryReader R ) {
 			m_fileName = new FileInfo( R.ReadString() );
+			m_timeStamp = DateTime.FromBinary( R.ReadInt64() );
 			m_fileType = (FILE_TYPE) R.ReadInt32();
+			if ( m_fileType > FILE_TYPE.BIMAGE )
+				throw new Exception( "Corrupted image file!" );
 			m_width = R.ReadInt32();
 			m_height = R.ReadInt32();
 			m_couldBeRead = R.ReadBoolean();
@@ -143,6 +159,7 @@ namespace MaterialsOptimizer
 
 		public void		Write( BinaryWriter W ) {
 			W.Write( m_fileName.FullName );
+			W.Write( m_timeStamp.ToBinary() );
 			W.Write( (int) m_fileType );
 			W.Write( m_width );
 			W.Write( m_height );
@@ -239,12 +256,26 @@ namespace MaterialsOptimizer
 
 		public static string GetOptimizedDiffuseGlossNameFromDiffuseName( string _diffuseFileName ) {
 			_diffuseFileName = _diffuseFileName.Trim();
-			int		indexOf_d = _diffuseFileName.LastIndexOf( "_d" );
+			_diffuseFileName = Path.Combine( Path.GetDirectoryName( _diffuseFileName ), Path.GetFileNameWithoutExtension( _diffuseFileName ) );
+			_diffuseFileName = NormalizeFileName( _diffuseFileName );
 
-//			string	optimizedDiffuseTextureName = _diffuseFileName.Substring( 0, indexOf_d ) + "_dg" + _diffuseFileName.Substring( indexOf_d+2 );
-//					optimizedDiffuseTextureName = Path.ChangeExtension( optimizedDiffuseTextureName, ".png" );
-			string	optimizedDiffuseTextureName = _diffuseFileName.Substring( 0, indexOf_d ) + "_dg.png";
-			return optimizedDiffuseTextureName;
+			int		indexOfUnderscore = _diffuseFileName.LastIndexOf( "_" );
+			if ( indexOfUnderscore == -1 )
+				throw new Exception( "Diffuse file name \"" + _diffuseFileName + "\" doesn't contain a recognized diffuse signature!" );
+
+			string	baseName = _diffuseFileName.Substring( 0, indexOfUnderscore );
+			string	extension = _diffuseFileName.Substring( indexOfUnderscore );
+			if ( extension != "_d" ) {
+				// Handle special extensions by annoying artists!
+				// For example, if we get a "_d2" then we append "_2" to the base name as it's certainly what the artist intended
+				if ( !extension.StartsWith( "_d" ) )
+					throw new Exception( "Diffuse file name \"" + _diffuseFileName + "\" doesn't contain a recognized diffuse signature!" );
+
+				string	specialExtensionExtension = extension.Substring( 2 );
+				baseName += "_" + specialExtensionExtension;
+			}
+
+			return baseName + "_dg.png";
 		}
 	}
 }

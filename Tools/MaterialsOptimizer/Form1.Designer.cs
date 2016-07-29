@@ -120,6 +120,7 @@
 			this.panel1 = new System.Windows.Forms.Panel();
 			this.radioButtonViewOptimizedMaterials = new System.Windows.Forms.RadioButton();
 			this.radioButtonViewSourceMaterials = new System.Windows.Forms.RadioButton();
+			this.progressBarIntegrate = new System.Windows.Forms.ProgressBar();
 			this.tabControl.SuspendLayout();
 			this.tabPageMaterials.SuspendLayout();
 			this.panelFilterMaterials.SuspendLayout();
@@ -1096,13 +1097,14 @@
 			// 
 			// buttonIntegratePerforce
 			// 
+			this.buttonIntegratePerforce.Enabled = false;
 			this.buttonIntegratePerforce.Location = new System.Drawing.Point(530, 106);
 			this.buttonIntegratePerforce.Name = "buttonIntegratePerforce";
 			this.buttonIntegratePerforce.Size = new System.Drawing.Size(75, 23);
 			this.buttonIntegratePerforce.TabIndex = 4;
 			this.buttonIntegratePerforce.Text = "Integrate";
+			this.toolTip.SetToolTip(this.buttonIntegratePerforce, "Integrates the optimized M2 and generated _dg files into perforce");
 			this.buttonIntegratePerforce.UseVisualStyleBackColor = true;
-			this.buttonIntegratePerforce.Visible = false;
 			this.buttonIntegratePerforce.Click += new System.EventHandler(this.buttonIntegratePerforce_Click);
 			// 
 			// panel1
@@ -1138,6 +1140,16 @@
 			this.radioButtonViewSourceMaterials.UseVisualStyleBackColor = true;
 			this.radioButtonViewSourceMaterials.CheckedChanged += new System.EventHandler(this.radioButtonViewMaterialsList_CheckedChanged);
 			// 
+			// progressBarIntegrate
+			// 
+			this.progressBarIntegrate.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+			this.progressBarIntegrate.Location = new System.Drawing.Point(611, 106);
+			this.progressBarIntegrate.Name = "progressBarIntegrate";
+			this.progressBarIntegrate.Size = new System.Drawing.Size(700, 23);
+			this.progressBarIntegrate.TabIndex = 6;
+			this.progressBarIntegrate.Visible = false;
+			// 
 			// Form1
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -1147,6 +1159,7 @@
 			this.Controls.Add(this.splitContainer1);
 			this.Controls.Add(this.progressBarTextures);
 			this.Controls.Add(this.progressBarReExportMaterials);
+			this.Controls.Add(this.progressBarIntegrate);
 			this.Controls.Add(this.progressBarMaterials);
 			this.Controls.Add(this.buttonCollect_dgTextures);
 			this.Controls.Add(this.buttonCollectTextures);
@@ -1283,6 +1296,7 @@
 		private System.Windows.Forms.RadioButton radioButtonViewSourceMaterials;
 		private System.Windows.Forms.RadioButton radioButtonViewOptimizedMaterials;
 		private System.Windows.Forms.CheckBox checkBoxShowDiffuseGloss;
+		private System.Windows.Forms.ProgressBar progressBarIntegrate;
 	}
 }
 
