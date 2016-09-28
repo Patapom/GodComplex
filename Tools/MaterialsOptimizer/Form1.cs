@@ -392,6 +392,8 @@ namespace MaterialsOptimizer
 			if ( m_optimizedMaterialsDatabaseFileName.Exists ) {
 				LoadMaterialsDatabase( m_optimizedMaterialsDatabaseFileName, m_optimizedMaterials );
 				buttonParseReExportedMaterials.Enabled = m_optimizedMaterials.Count > 0;
+				buttonIntegratePerforce.Enabled = m_optimizedMaterials.Count > 0;
+				buttonCreateTestMap.Enabled = m_optimizedMaterials.Count > 0;
 			}
 			// Reload textures database
 			if ( m_texturesDatabaseFileName.Exists )
@@ -1435,6 +1437,30 @@ namespace MaterialsOptimizer
 
 		#region Materials Re-Export
 
+		void	BuildM22MaterialsDictionary( Dictionary< string, List< Material > > _M2File2Materials ) {
+			string		sourceBasePath = textBoxMaterialsBasePath.Text.ToLower();
+			if ( !sourceBasePath.EndsWith( "\\" ) )
+				sourceBasePath += "\\";
+			string		targetBasePath = textBoxReExportPath.Text.ToLower();
+
+			foreach ( Material M in m_sourceMaterials ) {
+				string	originalName = M.m_sourceFileName.FullName.ToLower();
+				if ( !originalName.StartsWith( sourceBasePath ) ) {
+					// Not in source base path?
+					LogLine( "Failed to locate material file \"" + M.m_sourceFileName.FullName + "\" as based on the source materials path \"" + sourceBasePath + "\"! Can't determine base-less filename and can't rebase material for re-export..." );
+					continue;
+				}
+
+				string	baseLessName = originalName.Substring( sourceBasePath.Length );
+				string	rebasedName = Path.Combine( targetBasePath, baseLessName );
+				if ( !_M2File2Materials.ContainsKey( rebasedName ) ) {
+					_M2File2Materials[rebasedName] = new List<Material>();	// New M2 file
+					Directory.CreateDirectory( Path.GetDirectoryName( rebasedName ) );				// Ensure target directory exists
+				}
+				_M2File2Materials[rebasedName].Add( M );
+			}
+		}
+
 		void	ReExportMaterials( DirectoryInfo _directory ) {
 			if ( m_sourceMaterials.Count == 0 ) {
 				MessageBox( "Can't re-export materials since the list of parsed materials is empty!\r\nPlease parse materials first before re-exporting...", MessageBoxButtons.OK, MessageBoxIcon.Warning );
@@ -1456,28 +1482,8 @@ namespace MaterialsOptimizer
 // 			if ( !AnalyzeMaterialsDatabase( m_sourceMaterials, true ) )
 // 				return;
 
-			string		sourceBasePath = textBoxMaterialsBasePath.Text.ToLower();
-			if ( !sourceBasePath.EndsWith( "\\" ) )
-				sourceBasePath += "\\";
-			string		targetBasePath = textBoxReExportPath.Text.ToLower();
-
 			Dictionary< string, List< Material > >	M2File2Materials = new Dictionary< string, List< Material > >();
-			foreach ( Material M in m_sourceMaterials ) {
-				string	originalName = M.m_sourceFileName.FullName.ToLower();
-				if ( !originalName.StartsWith( sourceBasePath ) ) {
-					// Not in source base path?
-					LogLine( "Failed to locate material file \"" + M.m_sourceFileName.FullName + "\" as based on the source materials path \"" + sourceBasePath + "\"! Can't determine base-less filename and can't rebase material for re-export..." );
-					continue;
-				}
-
-				string	baseLessName = originalName.Substring( sourceBasePath.Length );
-				string	rebasedName = Path.Combine( targetBasePath, baseLessName );
-				if ( !M2File2Materials.ContainsKey( rebasedName ) ) {
-					M2File2Materials[rebasedName] = new List<Material>();	// New M2 file
-					Directory.CreateDirectory( Path.GetDirectoryName( rebasedName ) );				// Ensure target directory exists
-				}
-				M2File2Materials[rebasedName].Add( M );
-			}
+			BuildM22MaterialsDictionary( M2File2Materials );
 
 			LogLine( "	• Registered " + m_sourceMaterials.Count + " materials" );
 			LogLine( "	• Registered " + M2File2Materials.Keys.Count + " M2 files" );
@@ -1703,6 +1709,8 @@ namespace MaterialsOptimizer
 			progressBarReExportMaterials.Visible = false;
 
 			buttonParseReExportedMaterials.Enabled = m_optimizedMaterials.Count > 0;
+			buttonIntegratePerforce.Enabled = m_optimizedMaterials.Count > 0;
+			buttonCreateTestMap.Enabled = m_optimizedMaterials.Count > 0;
 
 			buttonParseReExportedMaterials_Click( null, EventArgs.Empty );
 		}
@@ -1772,6 +1780,7 @@ namespace MaterialsOptimizer
 				// 1] List unique textures to generate
 				List< TextureFileInfo >		glossTexturesToRescale = new List< TextureFileInfo >();
 				List< DiffuseGlossTexture >	diffuseGlossTexturesToGenerate = new List< DiffuseGlossTexture >();
+				int							glossLargerThanDiffuseCount = 0;
 				LogLine( "Checking " + m_diffuseGlossTextures.Count + " (diffuse+gloss) texture candisdates..." );
 				foreach ( DiffuseGlossTexture DGT in m_diffuseGlossTextures ) {
 					if ( DGT == null ) {
@@ -1785,16 +1794,19 @@ namespace MaterialsOptimizer
 					if ( DGT.m_gloss == null )
 						continue;
 
-					if ( DGT.m_gloss.m_width != DGT.m_diffuse.m_width || DGT.m_gloss.m_height != DGT.m_diffuse.m_height ) {
+					if ( DGT.m_gloss.m_width < DGT.m_diffuse.m_width || DGT.m_gloss.m_height < DGT.m_diffuse.m_height ) {
 						// Needs scaling...
 						glossTexturesToRescale.Add( DGT.m_gloss );
 						continue;
 					}
+					if ( DGT.m_gloss.m_width > DGT.m_diffuse.m_width || DGT.m_gloss.m_height > DGT.m_diffuse.m_height )
+						glossLargerThanDiffuseCount++;
 
 					if ( DGT.NeedsToBeGenerated )
 						diffuseGlossTexturesToGenerate.Add( DGT );
 				}
 				LogLine( " > Found " + glossTexturesToRescale.Count + " gloss texture files that need to be rescaled to match diffuse texture size" );
+				LogLine( " > Found " + glossLargerThanDiffuseCount + " gloss texture files that are LARGER than diffuse texture size" );
 				LogLine( " > Found " + diffuseGlossTexturesToGenerate.Count + " (diffuse+gloss) texture files that need to be regenerated" );
 
 				TexturesToRescaleForm	F = new TexturesToRescaleForm();
@@ -1814,12 +1826,22 @@ namespace MaterialsOptimizer
 					try {
 						progressBarTextures.Value = (++processedTexturesCount) * progressBarTextures.Maximum / diffuseGlossTexturesToGenerate.Count;
 
-// 						if ( DGT.m_gloss != null && (DGT.m_gloss.m_width != DGT.m_diffuse.m_width || DGT.m_gloss.m_height != DGT.m_diffuse.m_height) ) {
-// //							LogLine( " > Gloss texture \"" + _gloss.m_fileName.FullName + "\" associated to diffuse texture \"" + _diffuse.m_fileName.FullName + "\" is not the same size... Image will be scaled!" );
+						if ( DGT.m_gloss != null && (DGT.m_gloss.m_width < DGT.m_diffuse.m_width || DGT.m_gloss.m_height < DGT.m_diffuse.m_height) ) {
+							LogLine( " > Gloss texture \"" + DGT.m_gloss.m_fileName.FullName + "\" is SMALLER than its associated diffuse texture \"" + DGT.m_diffuse.m_fileName.FullName + "\" => Image will be scaled using bilinear interpolation!" );
+						}
+						if ( DGT.m_gloss != null && (DGT.m_gloss.m_width > DGT.m_diffuse.m_width || DGT.m_gloss.m_height > DGT.m_diffuse.m_height) ) {
+							LogLine( " > Gloss texture \"" + DGT.m_gloss.m_fileName.FullName + "\" is LARGER than its associated to diffuse texture \"" + DGT.m_diffuse.m_fileName.FullName + "\" => Image will be downscaled using averaging" );
 // 							continue;	// Not the same size... Can't merge!
-// 						}
+ 						}
+
+						FileInfo	targetFileName = DGT.GetDiffuseGlossTextureFileName();
+						bool		markForAdd = !PerforceCheckOut( targetFileName.FullName );
 
 						DGT.GenerateDiffuseGlossTexture();
+
+						if ( markForAdd )
+							PerforceAdd( targetFileName.FullName );
+
 						generatedTexturesCount++;
 
 					} catch ( Exception _e ) {
@@ -1950,10 +1972,208 @@ namespace MaterialsOptimizer
 			}
 		}
 
-		private void buttonIntegratePerforce_Click(object sender, EventArgs e)
-		{
-			throw new Exception( "TODO!" );
+		#region Perforce Integration
+
+// 		string	m_template = "Change:	new\n\n"
+// 							+ "#Client:	cougar_dis2\n"
+// 							+ "#Status:	new\n"
+// 							+ "Description:\n<DESCRIPTION>\n\n"
+// 							+ "Files:\n<FILES>\n";
+
+		string		ExecutePerforceCommand( string _command ) {
+			try {
+ 				Process	P = new Process();
+				ProcessStartInfo	psi = P.StartInfo;
+				psi.FileName = "P4";
+				psi.Arguments = _command;
+ 				psi.UseShellExecute = false;
+				psi.CreateNoWindow = true;
+				psi.RedirectStandardOutput = true;
+ 				P.Start();
+
+				P.WaitForExit( 100000 );
+
+				string	result = P.StandardOutput.ReadToEnd();
+				return result;
+			} catch ( Exception _e ) {
+				LogLine( "An error occurred while executing perforce command \"" + _command + "\": " + _e.Message );
+			}
+			return null;
 		}
+
+		bool		PerforceIsFileInDepot( string _fileName ) {
+			string	result = ExecutePerforceCommand( "fstat -T haveRev " + _fileName );
+			return result.ToLower().IndexOf( "haverev" ) != -1;;
+		}
+
+		bool		PerforceCheckOut( string _fileName ) {
+			string	result = ExecutePerforceCommand( "edit " + _fileName );
+			return result.ToLower().IndexOf( "opened for edit" ) != -1;
+		}
+		void		PerforceAdd( string _fileName ) {
+			ExecutePerforceCommand( "add " + _fileName );
+		}
+		void		PerforceCheckOutOrAdd( string _fileName ) {
+			if ( PerforceIsFileInDepot( _fileName ) )
+				PerforceCheckOut( _fileName );
+			else
+				PerforceAdd( _fileName );
+		}
+
+		private void buttonIntegratePerforce_Click(object sender, EventArgs e) {
+
+// 			// Write changelist description file
+// 			FileInfo	changeListFileName = new FileInfo( "perforceChangeList_Materials.txt" );
+// 			using ( StreamWriter W = changeListFileName.CreateText() ) {
+// 
+// 				string	description = "ta mere!";
+// 				string	files = "testFile\ntestFile2";
+// 
+// 				string	content = m_template.Replace( "<DESCRIPTION>", description ).Replace( "<FILES>", files );
+// 
+// 				W.Write( content );
+// 			}
+// 
+//  			ProcessStartInfo psi = new ProcessStartInfo( "P4 change " + changeListFileName.FullName );
+//  			psi.UseShellExecute = true;
+//  			Process.Start(psi);
+
+			// List all source and optimized M2 files
+			Dictionary< string, string >	originalM2optimizedM2 = new Dictionary< string, string >();
+			string		sourceBasePath = textBoxMaterialsBasePath.Text.ToLower();
+			if ( !sourceBasePath.EndsWith( "\\" ) )
+				sourceBasePath += "\\";
+			string		targetBasePath = textBoxReExportPath.Text.ToLower();
+
+			foreach ( Material M in m_sourceMaterials ) {
+				string	originalName = M.m_sourceFileName.FullName.ToLower();
+				if ( !originalName.StartsWith( sourceBasePath ) ) {
+					// Not in source base path?
+					LogLine( "Failed to locate material file \"" + M.m_sourceFileName.FullName + "\" as based on the source materials path \"" + sourceBasePath + "\"! Can't determine base-less filename and can't rebase material for re-export..." );
+					continue;
+				}
+
+				string	baseLessName = originalName.Substring( sourceBasePath.Length );
+				string	rebasedName = Path.Combine( targetBasePath, baseLessName );
+				if ( originalM2optimizedM2.ContainsKey( originalName ) ) {
+					continue;
+				}
+
+				originalM2optimizedM2.Add( originalName, rebasedName );
+			}
+
+			// Check-out all original files and copy optimized files over
+			foreach ( string originalM2FileName_string in originalM2optimizedM2.Keys ) {
+				try {
+					FileInfo	originalM2FileName = new FileInfo( originalM2FileName_string );
+					if ( !originalM2FileName.Exists ) {
+						LogLine( "Failed to locate original material file \"" + originalM2FileName.FullName + "\" for checkout..." );
+						continue;
+					}
+					FileInfo	optimizedM2FileName = new FileInfo( originalM2optimizedM2[originalM2FileName_string] );
+					if ( !optimizedM2FileName.Exists ) {
+						LogLine( "Failed to locate optimized material file \"" + optimizedM2FileName.FullName + "\" for copy..." );
+						continue;
+					}
+
+					// Check out
+					if ( !PerforceCheckOut( originalM2FileName.FullName ) ) {
+						LogLine( "FAILED to check-out \"" + originalM2FileName + "!" );
+						continue;
+					}
+
+					// Copy
+					optimizedM2FileName.CopyTo( originalM2FileName.FullName, true );
+					LogLine( "Integrated \"" + originalM2FileName + "..." );
+
+				} catch ( Exception _e ) {
+					LogLine( "An error occurred while integrating material file \"" + originalM2FileName_string + "\": " + _e.Message );
+				}
+			}
+		}
+
+		#endregion
+
+		#region Test Map Generation
+
+		private void buttonCreateTestMap_Click(object sender, EventArgs e) {
+
+			// Parse all materials featuring a (diffuse+gloss) map
+			List< Material >	materialsWithOptimizedDiffuseGloss = new List< Material >();
+			foreach ( Material M in m_optimizedMaterials ) {
+				foreach ( Material.Layer L in M.m_layers ) {
+					if ( L.m_diffuse != null && L.m_diffuse.m_textureFileInfo != null && L.m_diffuse.m_textureFileInfo.m_usage == TextureFileInfo.USAGE.DIFFUSE_GLOSS ) {
+						// Found another material with diffuse+gloss!
+						materialsWithOptimizedDiffuseGloss.Add( M );
+						break;
+					}
+				}
+			}
+
+			if ( materialsWithOptimizedDiffuseGloss.Count == 0 ) {
+				MessageBox( "There are currently no optimized material that are using (diffuse+gloss) optimized texture.\nIt's useless to generate an empty map...", MessageBoxButtons.OK, MessageBoxIcon.Warning );
+				return;
+			}
+			if ( MessageBox( "You're about to generate a test map with " + materialsWithOptimizedDiffuseGloss.Count + " optimized materials.\n\nProceed?", MessageBoxButtons.OKCancel, MessageBoxIcon.Question ) != DialogResult.OK )
+				return;
+
+			try {
+				// Ask the map name
+				string	testMapPath = GetRegKey( "TestMapPath", textBoxMaterialsBasePath.Text );
+				saveFileDialogTestMap.FileName = Path.GetFileName( testMapPath );
+				saveFileDialogTestMap.InitialDirectory = Path.GetDirectoryName( testMapPath );
+				if ( saveFileDialogTestMap.ShowDialog( this ) != DialogResult.OK ) {
+					return;
+				}
+
+				SetRegKey( "TestMapPath", saveFileDialogTestMap.FileName );
+
+				string	mapDirectory = Path.GetDirectoryName( saveFileDialogTestMap.FileName ).Replace( "\\", "/" );
+				string	mapBasePath = "";
+				int		stripStartIndex = mapDirectory.ToLower().IndexOf( "/maps/" );
+				if ( stripStartIndex != -1 ) {
+					mapBasePath = mapDirectory.Substring( stripStartIndex+1 );
+				}
+
+				// Build the map
+				StringBuilder	SB = new StringBuilder();
+				SB.Append( Properties.Resources.mapHeader );
+				SB.Append( Properties.Resources.entityTemplateProbe.Replace( "<MAP_PATH>", mapBasePath ) );
+
+				int		size = (int) Math.Ceiling( Math.Sqrt( materialsWithOptimizedDiffuseGloss.Count ) );
+				float	offsetX = -0.5f * size;
+				float	offsetZ = 0.0f;
+
+				int	materialIndex = 0;
+				for ( int rowIndex=0; rowIndex < size; rowIndex++ ) {
+					for ( int columnIndex=0; columnIndex < size; columnIndex++, materialIndex++ ) {
+						if ( materialIndex >= materialsWithOptimizedDiffuseGloss.Count )
+							break;
+
+						Material	M = materialsWithOptimizedDiffuseGloss[materialIndex];
+
+						string	entityString = Properties.Resources.entityTemplateSlate;
+						entityString = entityString.Replace( "<ENTITY_NAME>", "slate_" + columnIndex.ToString( "G2" ) + "_" + rowIndex.ToString( "G2" ) );
+						entityString = entityString.Replace( "<MATERIAL_NAME>", M.m_name );
+						entityString = entityString.Replace( "<POSITION_X>", (offsetX + columnIndex).ToString() );
+						entityString = entityString.Replace( "<POSITION_Y>", "0" );
+						entityString = entityString.Replace( "<POSITION_Z>", (offsetZ + rowIndex).ToString() );
+						SB.Append( entityString );
+					}
+				}
+
+				// Save...
+				using ( StreamWriter W = new FileInfo( saveFileDialogTestMap.FileName ).CreateText() )
+					W.Write( SB.ToString() );
+
+				MessageBox( "Success!", MessageBoxButtons.OK, MessageBoxIcon.Information );
+
+			} catch ( Exception _e ) {
+				MessageBox( "An error occurred while saving the test map: " + _e.Message, MessageBoxButtons.OK, MessageBoxIcon.Error );
+			}
+		}
+
+		#endregion
 
 		#region Texture List View Events
 

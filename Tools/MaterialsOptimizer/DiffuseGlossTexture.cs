@@ -79,6 +79,22 @@ namespace MaterialsOptimizer
 		}
 
 		/// <summary>
+		/// Gives the name of the (diffuse+gloss) texture that will be generated
+		/// </summary>
+		/// <returns></returns>
+		public FileInfo	GetDiffuseGlossTextureFileName() {
+			if ( m_diffuse == null )
+				throw new Exception( "Invalid source diffuse image file!" );
+			if ( !m_diffuse.m_fileName.Exists )
+				throw new Exception( "Source diffuse image file \"" + m_diffuse.m_fileName.FullName + "\" does not exist on disk!" );
+
+			string		targetFileNameString = TextureFileInfo.GetOptimizedDiffuseGlossNameFromDiffuseName( m_diffuse.m_fileName.FullName );
+			FileInfo	targetFileName = new FileInfo( targetFileNameString );
+
+			return targetFileName;
+		}
+
+		/// <summary>
 		/// Generates a (diffuse+gloss) texture from 2 distinct textures
 		/// </summary>
 		public void GenerateDiffuseGlossTexture() {
@@ -87,8 +103,7 @@ namespace MaterialsOptimizer
 			if ( !m_diffuse.m_fileName.Exists )
 				throw new Exception( "Source diffuse image file \"" + m_diffuse.m_fileName.FullName + "\" does not exist on disk!" );
 
-			string		targetFileNameString = TextureFileInfo.GetOptimizedDiffuseGlossNameFromDiffuseName( m_diffuse.m_fileName.FullName );
-			FileInfo	targetFileName = new FileInfo( targetFileNameString );
+			FileInfo	targetFileName = GetDiffuseGlossTextureFileName();
 
 			using ( ImageUtility.Bitmap diffuse = new ImageUtility.Bitmap( m_diffuse.m_fileName ) ) {
 
@@ -114,13 +129,67 @@ namespace MaterialsOptimizer
 				if ( gloss != null ) {
 					if ( needsScale ) {
 						// Set gloss as alpha with re-scaling
-						float	scaleX = (float) gloss.Width / W;
-						float	scaleY = (float) gloss.Height / H;
-						for ( int Y=0; Y < H; Y++ ) {
-							float	Y2 = scaleY * Y;
-							for ( int X=0; X < W; X++ )
-								diffuse.ContentXYZ[X,Y].w = gloss.BilinearSample( scaleX * X, Y2 ).x;
+						int			W2 = gloss.Width;
+						int			H2 = gloss.Height;
+						float[,]	source = new float[W2,H2];
+						for ( int Y=0; Y < H2; Y++ )
+							for ( int X=0; X < W2; X++ )
+								source[X,Y] = 0.3f * gloss.ContentXYZ[X,Y].x
+											+ 0.5f * gloss.ContentXYZ[X,Y].y
+											+ 0.2f * gloss.ContentXYZ[X,Y].z;
+
+						// Downscale first
+						while ( W2 > W ) {
+							int			halfW2 = W2 >> 1;
+							float[,]	temp = new float[halfW2,H2];
+							for ( int Y=0; Y < H2; Y++ )
+								for ( int X=0; X < halfW2; X++ )
+									temp[X,Y] = 0.5f * (source[2*X+0,Y] + source[2*X+1,Y]);
+
+							source = temp;
+							W2 = halfW2;
 						}
+						while ( H2 > H ) {
+							int			halfH2 = H2 >> 1;
+							float[,]	temp = new float[W2,halfH2];
+							for ( int Y=0; Y < halfH2; Y++ )
+								for ( int X=0; X < W2; X++ )
+									temp[X,Y] = 0.5f * (source[X,2*Y+0] + source[X,2*Y+1]);
+
+							source = temp;
+							H2 = halfH2;
+						}
+
+						// Upscale then
+						while ( W2 < W ) {
+							int			doubleW2 = W2 << 1;
+							float[,]	temp = new float[doubleW2,H2];
+							for ( int Y=0; Y < H2; Y++ )
+								for ( int X=0; X < W2; X++ ) {
+									temp[2*X+0,Y] = source[X,Y];
+									temp[2*X+1,Y] = 0.5f * (source[X,Y] + source[Math.Min( W2-1, X+1 ),Y]);
+								}
+
+							source = temp;
+							W2 = doubleW2;
+						}
+						while ( H2 < H ) {
+							int			doubleH2 = H2 << 1;
+							float[,]	temp = new float[W2,doubleH2];
+							for ( int Y=0; Y < H2; Y++ )
+								for ( int X=0; X < W2; X++ ) {
+									temp[X,2*Y+0] = source[X,Y];
+									temp[X,2*Y+1] = 0.5f * (source[X,Y] + source[X,Math.Min( H2-1, Y+1 )]);
+								}
+
+							source = temp;
+							H2 = doubleH2;
+						}
+
+						for ( int Y=0; Y < H; Y++ )
+							for ( int X=0; X < W; X++ )
+								diffuse.ContentXYZ[X,Y].w = source[X,Y];
+
 					} else {
 						// Set gloss as alpha without re-scaling
 						for ( int Y=0; Y < H; Y++ )

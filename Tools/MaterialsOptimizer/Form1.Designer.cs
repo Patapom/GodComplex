@@ -104,6 +104,7 @@
 			this.buttonParseReExportedMaterials = new System.Windows.Forms.Button();
 			this.buttonCollect_dgTextures = new System.Windows.Forms.Button();
 			this.buttonGenerate_dgTextures = new System.Windows.Forms.Button();
+			this.buttonIntegratePerforce = new System.Windows.Forms.Button();
 			this.progressBarMaterials = new System.Windows.Forms.ProgressBar();
 			this.progressBarTextures = new System.Windows.Forms.ProgressBar();
 			this.tabControlInfo = new System.Windows.Forms.TabControl();
@@ -116,11 +117,12 @@
 			this.buttonSetMaterialsReExportPath = new System.Windows.Forms.Button();
 			this.label9 = new System.Windows.Forms.Label();
 			this.progressBarReExportMaterials = new System.Windows.Forms.ProgressBar();
-			this.buttonIntegratePerforce = new System.Windows.Forms.Button();
 			this.panel1 = new System.Windows.Forms.Panel();
 			this.radioButtonViewOptimizedMaterials = new System.Windows.Forms.RadioButton();
 			this.radioButtonViewSourceMaterials = new System.Windows.Forms.RadioButton();
 			this.progressBarIntegrate = new System.Windows.Forms.ProgressBar();
+			this.buttonCreateTestMap = new System.Windows.Forms.Button();
+			this.saveFileDialogTestMap = new System.Windows.Forms.SaveFileDialog();
 			this.tabControl.SuspendLayout();
 			this.tabPageMaterials.SuspendLayout();
 			this.panelFilterMaterials.SuspendLayout();
@@ -959,6 +961,18 @@
 			this.buttonGenerate_dgTextures.UseVisualStyleBackColor = true;
 			this.buttonGenerate_dgTextures.Click += new System.EventHandler(this.buttonGenerate_dgTextures_Click);
 			// 
+			// buttonIntegratePerforce
+			// 
+			this.buttonIntegratePerforce.Enabled = false;
+			this.buttonIntegratePerforce.Location = new System.Drawing.Point(530, 106);
+			this.buttonIntegratePerforce.Name = "buttonIntegratePerforce";
+			this.buttonIntegratePerforce.Size = new System.Drawing.Size(75, 23);
+			this.buttonIntegratePerforce.TabIndex = 4;
+			this.buttonIntegratePerforce.Text = "Integrate";
+			this.toolTip.SetToolTip(this.buttonIntegratePerforce, "Integrates the optimized M2 and generated _dg files into perforce");
+			this.buttonIntegratePerforce.UseVisualStyleBackColor = true;
+			this.buttonIntegratePerforce.Click += new System.EventHandler(this.buttonIntegratePerforce_Click);
+			// 
 			// progressBarMaterials
 			// 
 			this.progressBarMaterials.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
@@ -1095,18 +1109,6 @@
 			this.progressBarReExportMaterials.TabIndex = 6;
 			this.progressBarReExportMaterials.Visible = false;
 			// 
-			// buttonIntegratePerforce
-			// 
-			this.buttonIntegratePerforce.Enabled = false;
-			this.buttonIntegratePerforce.Location = new System.Drawing.Point(530, 106);
-			this.buttonIntegratePerforce.Name = "buttonIntegratePerforce";
-			this.buttonIntegratePerforce.Size = new System.Drawing.Size(75, 23);
-			this.buttonIntegratePerforce.TabIndex = 4;
-			this.buttonIntegratePerforce.Text = "Integrate";
-			this.toolTip.SetToolTip(this.buttonIntegratePerforce, "Integrates the optimized M2 and generated _dg files into perforce");
-			this.buttonIntegratePerforce.UseVisualStyleBackColor = true;
-			this.buttonIntegratePerforce.Click += new System.EventHandler(this.buttonIntegratePerforce_Click);
-			// 
 			// panel1
 			// 
 			this.panel1.Controls.Add(this.radioButtonViewOptimizedMaterials);
@@ -1144,11 +1146,30 @@
 			// 
 			this.progressBarIntegrate.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-			this.progressBarIntegrate.Location = new System.Drawing.Point(611, 106);
+			this.progressBarIntegrate.Location = new System.Drawing.Point(692, 106);
 			this.progressBarIntegrate.Name = "progressBarIntegrate";
-			this.progressBarIntegrate.Size = new System.Drawing.Size(700, 23);
+			this.progressBarIntegrate.Size = new System.Drawing.Size(619, 23);
 			this.progressBarIntegrate.TabIndex = 6;
 			this.progressBarIntegrate.Visible = false;
+			// 
+			// buttonCreateTestMap
+			// 
+			this.buttonCreateTestMap.Enabled = false;
+			this.buttonCreateTestMap.Location = new System.Drawing.Point(611, 106);
+			this.buttonCreateTestMap.Name = "buttonCreateTestMap";
+			this.buttonCreateTestMap.Size = new System.Drawing.Size(75, 23);
+			this.buttonCreateTestMap.TabIndex = 4;
+			this.buttonCreateTestMap.Text = "Test Map";
+			this.toolTip.SetToolTip(this.buttonCreateTestMap, "Creates a test map with all the optimized materials containing merged (diffuse+gl" +
+        "oss) textures");
+			this.buttonCreateTestMap.UseVisualStyleBackColor = true;
+			this.buttonCreateTestMap.Click += new System.EventHandler(this.buttonCreateTestMap_Click);
+			// 
+			// saveFileDialogTestMap
+			// 
+			this.saveFileDialogTestMap.DefaultExt = "*.map";
+			this.saveFileDialogTestMap.Filter = "VoidEngine Map File (*.map)|*.map|All Files (*.*)|*.*";
+			this.saveFileDialogTestMap.Title = "Indicate the test map file name to save";
 			// 
 			// Form1
 			// 
@@ -1165,6 +1186,7 @@
 			this.Controls.Add(this.buttonCollectTextures);
 			this.Controls.Add(this.buttonGenerate_dgTextures);
 			this.Controls.Add(this.buttonReExport);
+			this.Controls.Add(this.buttonCreateTestMap);
 			this.Controls.Add(this.buttonIntegratePerforce);
 			this.Controls.Add(this.buttonParseReExportedMaterials);
 			this.Controls.Add(this.buttonParseMaterials);
@@ -1297,6 +1319,8 @@
 		private System.Windows.Forms.RadioButton radioButtonViewOptimizedMaterials;
 		private System.Windows.Forms.CheckBox checkBoxShowDiffuseGloss;
 		private System.Windows.Forms.ProgressBar progressBarIntegrate;
+		private System.Windows.Forms.Button buttonCreateTestMap;
+		private System.Windows.Forms.SaveFileDialog saveFileDialogTestMap;
 	}
 }
 
