@@ -133,7 +133,7 @@ float	ScreenSpaceRayTrace( float3 _csPosition, float3 _csDirection, uint _MaxSte
 	float	Z = H0.w;	// Initial Z
 	uint	StepIndex = 0U;
 	[loop]
-	while ( StepIndex < _MaxStepsCount && H0.y >= 0.0 && H0.y < MaxY && H0.z > 0.01 ) {
+	while ( StepIndex < _MaxStepsCount && H0.y >= 0.0 && H0.y < MaxY && H0.z > 0.0 ) {
 
 		// Compute next position
 		uint2	PixelPos = uint2( floor( H0.xy ) );
@@ -143,7 +143,7 @@ float	ScreenSpaceRayTrace( float3 _csPosition, float3 _csDirection, uint _MaxSte
 		float	t = min( T.x, T.y );			// Choose the closest intersection (i.e. horizontal or vertical border)
 		float3	NextH = H0.xyz + t * Slope;
 
-		float	NextZ = 1.0 / max( 1e-6, NextH.z );	// Here we need to make sure we don't exceed the "ray horizon" and the interpolated Z is always positive
+		float	NextZ = 1.0 / max( 1e-4, NextH.z );	// Here we need to make sure we don't exceed the "ray horizon" and the interpolated Z is always positive
 													// Indeed, for very grazing rays, we quickly reach very far every time we march a single pixel and we can 
 													//	actually exceed the ray's "infinite distance" which occurs when the slope takes us into negative Z values
 													//	that's also one of the loop's exit condition (H0.z > 0) to avoid tracing "further than infinity"...
