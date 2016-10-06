@@ -1,0 +1,31 @@
+entity {
+	entityDef <ENTITY_NAME> {
+		inherit = "func/static";
+		editorVars {
+			placeable = true;
+		}
+		edit = {
+			spawnPosition = {
+				x = <POSITION_X>;
+				y = <POSITION_Y>;
+				z = <POSITION_Z>;
+			}
+			renderModelInfo = ! {
+				model = "models/templates/cube_1meter.lwo";
+				m_probeRenderModeNeedToBeConverted = false;
+				m_customMaterials = {
+					num = 1;
+					item[0] = "<MATERIAL_NAME>";
+				}
+				scale = {
+					x = 0.9499999881;
+					y = 0.1000000015;
+					z = 0.9499999881;
+				}
+			}
+			m_collisionSettings = {
+				m_version = 20150324;
+			}
+		}
+	}
+}

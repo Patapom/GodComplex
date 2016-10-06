@@ -133,11 +133,7 @@ namespace AreaLightTest
 		{
 			InitializeComponent();
 
-			m_Camera.CameraTransformChanged += new EventHandler( Camera_CameraTransformChanged );
-
-			Application.Idle += new EventHandler( Application_Idle );
-
-			TestBisou();
+//			TestBisou();
 		}
 
 
@@ -739,6 +735,48 @@ namespace AreaLightTest
 
 #if USE_COMPUTE_SHADER_FOR_BRDF_INTEGRATION
 
+		void	AnalyticalBRDFIntegral_Order2( float _NdotV, float _roughness, out float _F0term, out float _ambientTerm ) {
+			float	x = _NdotV;
+			float	y = _roughness;
+
+			float	x2 = x*x;
+			float	x3 = x2*x;
+			float	y2 = y*y;
+			float	y3 = y2*y;
+
+			_F0term = Math.Min( 1.0f, 3.2341316749472577f * x - 2.373272450906272f * x2 + 1.0643192106211778f * y - 4.840084966583103f * x * y + 4.174411960036787f * x2 * y - 0.38184478124695787f * y2 + 1.3304731349921781f * x * y2 - 1.779774293647103f * x2 * y2 );
+			_ambientTerm = Math.Max( 0.0f, 1 - 3.10644824089575f * x + 2.2442720252458033f * x2 - 1.5631045930597178f * y + 5.286682741799993f * x * y - 4.013072795013668f * x2 * y + 0.8078765587702772f * y2 - 2.9710821881549427f * x * y2 + 2.3561138954372183f * x2 * y2 );
+		}
+
+		void	AnalyticalBRDFIntegral_Order3( float _NdotV, float _roughness, out float _F0term, out float _ambientTerm ) {
+			float	x = _NdotV;
+			float	y = _roughness;
+
+			float	x2 = x*x;
+			float	x3 = x2*x;
+			float	y2 = y*y;
+			float	y3 = y2*y;
+
+// 			_F0term = Math.Min( 1.0f, 4.468499668510825f * x - 6.559058152749997f * x2 + 3.100924246015641f * x3
+// 									+ 0.3060480025629177f * y - 3.9000236894490814f * x * y + 9.815053796171387f * x2 * y - 5.871672977702834f * x3 * y
+// 									+ 1.524434529668645f * y2 - 6.411883095596227f * x * y2 + 1.8246250809966547f * x2 * y2 + 1.524434529668645f * x3 * y2
+// 									- 1.179575011394126f * y3 + 5.788688558693789f * x * y3 - 5.3758421081258785f * x2 * y3 + 1.4190618001278472f * x3 * y3 );
+// 			_ambientTerm = Math.Max( 0.0f, 1 - 4.204097008385143f * x + 5.7767751596221775f * x2 - 2.587651085262007f * x3
+// 											- 1.0571539479331853f * y + 5.054812966013966f * x * y - 7.000129703739535f * x2 * y + 2.942312835851425f * x3 * y
+// 											- 0.10991284572137273f * y2 - 0.8366676687929925f * x * y2 + 1.2399422035451517f * x2 * y2 - 0.10991284572137273f * x3 * y2
+// 											+ 0.4450309398884565f * y3 - 1.296796034045326f * x * y3 + 1.9692132758430827f * x2 * y3 - 1.2457869679372504f * x3 * y3 );
+
+
+			_F0term = Math.Min( 1.0f, 4.483120094766527f * x - 6.607418162702069f * x2 + 3.1369146126741314f * x3
+									+ 0.31965568814498413f * y - 4.171560969733041f * x * y + 10.579256413997497f * x2 * y - 6.407181973132758f * x3 * y
+									+ 1.4812238752410947f * y2 - 5.679180293057831f * x * y2 - 0.17354724317745246f * x2 * y2 + 2.9060079735435256f * x3 * y2
+									- 1.1483095194551398f * y3 + 5.289774653050149f * x * y3 - 4.03337882134342f * x2 * y3 + 0.496313678299834f * x3 * y3 );
+			_ambientTerm = Math.Max( 0.0f, 1 - 4.268373376557555f * x + 5.9893822170455895f * x2 -  2.745876982205202f * x3
+											- 1.1169779635363377f * y + 6.2485832361009965f * x * y - 10.359824418695426f * x2 * y + 5.296592577623529f * x3 * y
+											+ 0.08005589283505338f * y2 - 4.057878478465465f * x * y2 + 10.024587584890986f * x2 * y2 - 6.183779761950312f * x3 * y2
+											+ 0.3075771997708405f * y3 + 0.8965992421669212f * x * y3 - 3.9327120832393003f * x2 * y3 + 2.8109277250321485f * x3 * y3 );
+		}
+
 		unsafe void	ComputeBRDFIntegral( System.IO.FileInfo _TableFileName, int _TableSize ) {
 
 //			ComputeShader	CS = new ComputeShader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/ComputeBRDFIntegral.hlsl" ) ), "CS", new ShaderMacro[0] );
@@ -763,6 +801,16 @@ namespace AreaLightTest
 
 			// Write tables
 			float2	Temp = new float2();
+			float	F0_analytical;
+			float	ambient_analytical;
+			float	maxAbsoluteError_F0 = 0.0f;
+			float	maxRelativeError_F0 = 0.0f;
+			float	avgAbsoluteError_F0 = 0.0f;
+			float	avgRelativeError_F0 = 0.0f;
+			float	maxAbsoluteError_ambient = 0.0f;
+			float	maxRelativeError_ambient = 0.0f;
+			float	avgAbsoluteError_ambient = 0.0f;
+			float	avgRelativeError_ambient = 0.0f;
 
 			float2[]	Integral_SpecularReflectance = new float2[_TableSize];
 
@@ -780,6 +828,26 @@ namespace AreaLightTest
 
 								SumSpecularlyReflected.x += Temp.x;
 								SumSpecularlyReflected.y += Temp.y;
+
+								// Check analytical solution
+								float	NdotV = (float) X / (_TableSize-1);
+								float	roughness = (float) Y / (_TableSize-1);
+								AnalyticalBRDFIntegral_Order3( NdotV, roughness, out F0_analytical, out ambient_analytical );
+//								AnalyticalBRDFIntegral_Order2( NdotV, roughness, out F0_analytical, out ambient_analytical );
+
+								float	absoluteError_F0 = Math.Abs( F0_analytical - Temp.x );
+								float	relativeError_F0 = F0_analytical > 1e-6f ? Temp.x / F0_analytical : 0.0f;
+								maxAbsoluteError_F0 = Math.Max( maxAbsoluteError_F0, absoluteError_F0 );
+								maxRelativeError_F0 = Math.Max( maxRelativeError_F0, relativeError_F0 );
+								avgAbsoluteError_F0 += absoluteError_F0;
+								avgRelativeError_F0 += relativeError_F0;
+
+								float	absoluteError_ambient = Math.Abs( ambient_analytical - Temp.y );
+								float	relativeError_ambient = ambient_analytical > 1e-6f ? Temp.x / ambient_analytical : 0.0f;
+								maxAbsoluteError_ambient = Math.Max( maxAbsoluteError_ambient, absoluteError_ambient );
+								maxRelativeError_ambient = Math.Max( maxRelativeError_ambient, relativeError_ambient );
+								avgAbsoluteError_ambient += absoluteError_ambient;
+								avgRelativeError_ambient += relativeError_ambient;
 							}
 
 							// Normalize and store "not specularly reflected" light
@@ -791,6 +859,11 @@ namespace AreaLightTest
 							Integral_SpecularReflectance[Y] = SumSpecularlyReflected;
 						}
 			TexTableStaging.UnMap( 0, 0 );
+
+			avgAbsoluteError_F0 /= _TableSize*_TableSize;
+			avgRelativeError_F0 /= _TableSize*_TableSize;
+			avgAbsoluteError_ambient /= _TableSize*_TableSize;
+			avgRelativeError_ambient /= _TableSize*_TableSize;
 
 			string	TotalSpecularReflectionTableFileName = System.IO.Path.GetFileNameWithoutExtension( _TableFileName.FullName ) + ".table";
 			using ( System.IO.FileStream S = new System.IO.FileInfo( TotalSpecularReflectionTableFileName ).Create() )
@@ -1676,8 +1749,7 @@ renderProg PostFX/Debug/WardBRDFAlbedo {
 
 		#region Open/Close
 
-		protected override void OnLoad( EventArgs e )
-		{
+		protected override void OnLoad( EventArgs e ) {
 			base.OnLoad( e );
 
 			try
@@ -1805,6 +1877,10 @@ renderProg PostFX/Debug/WardBRDFAlbedo {
 			m_Ticks2Seconds = 1.0 / System.Diagnostics.Stopwatch.Frequency;
 			m_StopWatch.Start();
 			m_StartTime = GetGameTime();
+
+			m_Camera.CameraTransformChanged += new EventHandler( Camera_CameraTransformChanged );
+
+			Application.Idle += new EventHandler( Application_Idle );
 		}
 
 		protected override void OnFormClosed( FormClosedEventArgs e )
@@ -1957,8 +2033,7 @@ renderProg PostFX/Debug/WardBRDFAlbedo {
 			}
 		}
 
-		void Application_Idle( object sender, EventArgs e )
-		{
+		void Application_Idle( object sender, EventArgs e ) {
 			if ( m_Device == null )
 				return;
 

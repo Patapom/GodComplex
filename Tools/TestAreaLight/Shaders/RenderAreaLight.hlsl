@@ -20,11 +20,15 @@ struct VS_IN {
 	float3	Tangent : TANGENT;
 	float3	BiTangent : BITANGENT;
 	float2	UV : TEXCOORD0;
+
+	uint	VertexID : SV_VERTEXID;
+
 };
 
 struct PS_IN {
 	float4	__Position : SV_POSITION;
 	float2	UV : TEXCOORDS0;
+	uint	Pipo : TEST;
 };
 
 PS_IN	VS( VS_IN _In ) {
@@ -34,6 +38,8 @@ PS_IN	VS( VS_IN _In ) {
 	float4	WorldPosition = mul( float4( _In.Position, 1.0 ), _Local2World );
 	Out.__Position = mul( WorldPosition, _World2Proj );
 	Out.UV = _In.UV;
+
+Out.Pipo = 0 + _In.VertexID;
 
 	return Out;
 }
@@ -55,7 +61,21 @@ float4	SampleSATSinglePixel( float2 _UV ) {
 }
 #endif
 
-float4	PS( PS_IN _In ) : SV_TARGET0 {
+float4	PS( PS_IN _In, uint	_PrimID : SV_PRIMITIVEID ) : SV_TARGET0 {
+
+// switch ( _In.Pipo ) {
+// //switch ( _PrimID ) {
+// case 0: return float4( 1, 0, 0, 1 );
+// case 1: return float4( 1, 1, 0, 1 );
+// case 2: return float4( 0, 1, 0, 1 );
+// case 3: return float4( 0, 1, 1, 1 );
+// case 4: return float4( 0, 0, 1, 1 );
+// case 5: return float4( 1, 0, 1, 1 );
+// }
+// 
+// return float4( 0.25 * _In.Pipo.xxx, 1 );
+// return float4( _In.UV, 0, 1 );
+
 
 float2	BRDF = _TexBRDFIntegral.Sample( LinearClamp, _In.UV );
 //return float4( (BRDF.x + BRDF.y) > 0.98 ? float3( 1, 1, 1 ) : float3( 1, 0, 0 ), 1 );

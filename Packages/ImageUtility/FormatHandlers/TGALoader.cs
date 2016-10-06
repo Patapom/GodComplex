@@ -1419,15 +1419,17 @@ namespace ImageUtility
             
         }
 
-        public TargaImage( Stream _Stream ) : this()
+        public TargaImage( Stream _Stream, bool _ReadHeaderOnly ) : this()
 		{
             // create a BinaryReader used to read the Targa file
             using (BinaryReader binReader = new BinaryReader(_Stream))
             {
                 this.LoadTGAFooterInfo(binReader);
                 this.LoadTGAHeaderInfo(binReader);
-                this.LoadTGAExtensionArea(binReader);
-                this.LoadTGAImage(binReader);
+				if ( !_ReadHeaderOnly ) {
+					this.LoadTGAExtensionArea(binReader);
+					this.LoadTGAImage(binReader);
+				}
             }
 		}
 

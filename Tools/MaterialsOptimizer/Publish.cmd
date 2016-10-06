@@ -1,0 +1,5 @@
+copy ".\bin\x86\Release\Cirrus.Utility.dll" ".\MaterialsOptimizer\"
+copy ".\bin\x86\Release\ImageUtility.dll" ".\MaterialsOptimizer\"
+copy ".\bin\x86\Release\MaterialsOptimizer.exe" ".\MaterialsOptimizer\"
+copy ".\bin\x86\Release\RendererManaged.dll" ".\MaterialsOptimizer\"
+copy ".\bin\x86\Release\SharpMath.dll" ".\MaterialsOptimizer\"

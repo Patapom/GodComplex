@@ -1,0 +1,113 @@
+Version 6
+entity {
+	entityDef world {
+		inherit = "worldspawn";
+		editorVars {
+			placeable = true;
+		}
+		edit = {
+			m_worldEnvironment = "env/generic/exterior_daylight";
+		}
+	}
+}
+entity {
+	entityDef cube_1meter {
+		inherit = "func/static";
+		editorVars {
+			placeable = true;
+		}
+		edit = {
+			renderModelInfo = ! {
+				model = "models/templates/cube_1meter.lwo";
+				m_customMaterials = {
+					num = 1;
+					item[0] = "models/templates/colors/red.material";
+				}
+				scale = {
+					x = 0.9499999881;
+					y = 0.1000000015;
+					z = 0.9499999881;
+				}
+			}
+			m_collisionSettings = {
+				m_version = 20150324;
+			}
+		}
+	}
+}
+entity {
+	entityDef cube_1meter_1 {
+		inherit = "func/static";
+		editorVars {
+			placeable = true;
+		}
+		edit = {
+			spawnPosition = {
+				x = 1;
+			}
+			renderModelInfo = ! {
+				model = "models/templates/cube_1meter.lwo";
+				m_probeRenderModeNeedToBeConverted = false;
+				m_customMaterials = {
+					num = 1;
+					item[0] = "models/templates/colors/green.material";
+				}
+				scale = {
+					x = 0.9499999881;
+					y = 0.1000000015;
+					z = 0.9499999881;
+				}
+			}
+			m_collisionSettings = {
+				m_version = 20150324;
+			}
+		}
+	}
+}
+entity {
+	entityDef cube_1meter_2 {
+		inherit = "func/static";
+		editorVars {
+			placeable = true;
+		}
+		edit = {
+			spawnPosition = {
+				z = 1;
+			}
+			renderModelInfo = ! {
+				model = "models/templates/cube_1meter.lwo";
+				m_probeRenderModeNeedToBeConverted = false;
+				m_customMaterials = {
+					num = 1;
+					item[0] = "models/templates/colors/blue.material";
+				}
+				scale = {
+					x = 0.9499999881;
+					y = 0.1000000015;
+					z = 0.9499999881;
+				}
+			}
+			m_collisionSettings = {
+				m_version = 20150324;
+			}
+		}
+	}
+}
+entity {
+	entityDef probe {
+		inherit = "blacksparrow/probe";
+		editorVars {
+			placeable = true;
+			editorName = "";
+		}
+		edit = {
+			spawnPosition = {
+				x = -0.0189583302;
+				y = -1.7630009651;
+				z = 0.3187797666;
+			}
+			m_usedForIBL = true;
+			m_probe = "maps/userprog/bmayaux/templatemap/probe";
+		}
+	}
+}
