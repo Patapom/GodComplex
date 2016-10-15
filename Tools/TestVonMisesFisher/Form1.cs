@@ -231,8 +231,10 @@ namespace TestVonMisesFisher
 sharedExp = Math.Max( 0, Math.Min( 31, sharedExp + EXPONENT_BIAS ) ) - EXPONENT_BIAS;
 
 
-			float	pow2 = (float) Math.Pow( 2.0f, sharedExp );
-			float3	reducedRGB = _RGB / pow2;
+// 			float	pow2 = (float) Math.Pow( 2.0f, sharedExp );
+// 			float3	reducedRGB = _RGB / pow2;
+			float	invPow2 = (float) Math.Pow( 2.0f, -sharedExp );
+			float3	reducedRGB = _RGB * invPow2;
 					reducedRGB.x = Math.Max( 0.0f, Math.Min( 1.0f, reducedRGB.x ) );
 					reducedRGB.y = Math.Max( 0.0f, Math.Min( 1.0f, reducedRGB.y ) );
 					reducedRGB.z = Math.Max( 0.0f, Math.Min( 1.0f, reducedRGB.z ) );
@@ -240,7 +242,7 @@ sharedExp = Math.Max( 0, Math.Min( 31, sharedExp + EXPONENT_BIAS ) ) - EXPONENT_
 			byte	R = (byte) (255.0f * reducedRGB.x);
 			byte	G = (byte) (255.0f * reducedRGB.y);
 			byte	B = (byte) (255.0f * reducedRGB.z);
-			byte	exp = (byte) Math.Max( 0, Math.Min( 31, EXPONENT_BIAS+sharedExp ) );
+			byte	exp = (byte) (EXPONENT_BIAS + sharedExp);
 					exp |= (byte) ((Sign.x < 0.0f ? 128 : 0) | (Sign.y < 0.0f ? 64 : 0) | (Sign.z < 0.0f ? 32 : 0));
 
 			uint	RGBE = (uint) ((exp << 24) | (R << 16) | (G << 8) | B);
@@ -281,6 +283,9 @@ sharedExp = Math.Max( 0, Math.Min( 31, sharedExp + EXPONENT_BIAS ) ) - EXPONENT_
 
 					}
 				}
+
+			uint	test1_packed = EncodeRGBE( new float3( 1, 0, 1.5f ) );
+			float3	test1_unpacked = DecodeRGBE( test1_packed );
 
 //			float3	coeffMin = new float3( float.MaxValue, float.MaxValue, float.MaxValue );
 			float3	coeffMax = new float3( -float.MaxValue, -float.MaxValue, -float.MaxValue );
@@ -330,9 +335,11 @@ sharedExp = Math.Max( 0, Math.Min( 31, sharedExp + EXPONENT_BIAS ) ) - EXPONENT_
 				float3	magnitudeScale = maxComponent > 0.0f ? new float3( Math.Abs( originalRGB.x ) / maxComponent, Math.Abs( originalRGB.y ) / maxComponent, Math.Abs( originalRGB.z ) / maxComponent ) : float3.Zero;
 				errorRel *= magnitudeScale;
 
-				if ( decodedRGB.x == 0.0 && originalRGB.x != 0.0f ) errorRel.x = 0.0f;	// Don't account for dernomalization
-				if ( decodedRGB.y == 0.0 && originalRGB.y != 0.0f ) errorRel.y = 0.0f;
-				if ( decodedRGB.z == 0.0 && originalRGB.z != 0.0f ) errorRel.z = 0.0f;
+				// Don't account for dernomalization
+// 				if ( decodedRGB.x == 0.0 && originalRGB.x != 0.0f ) errorRel.x = 0.0f;
+// 				if ( decodedRGB.y == 0.0 && originalRGB.y != 0.0f ) errorRel.y = 0.0f;
+// 				if ( decodedRGB.z == 0.0 && originalRGB.z != 0.0f ) errorRel.z = 0.0f;
+
 				const float	errorThreshold = 0.2f;
 				if ( Math.Abs( errorRel.x ) > errorThreshold || Math.Abs( errorRel.y ) > errorThreshold || Math.Abs( errorRel.z ) > errorThreshold )
 					largeRelativeErrorsCount++;
@@ -348,6 +355,44 @@ sharedExp = Math.Max( 0, Math.Min( 31, sharedExp + EXPONENT_BIAS ) ) - EXPONENT_
 		const int	EXPONENT_BIAS = 22;
 
 
+		void	TestSquareFilling() {
+
+			for ( int N=0; N < 6; N++ ) {
+
+				Console.WriteLine( "STARTING NEW LANE FOR N=" + N );
+
+				int	L = Math.Max( 1, 8 * N );
+				int	maxSize = 1+2*N;
+
+				for ( int i=0; i < L; i++ ) {
+					int	iX = (i + N) % L;
+					int	iY = (i + L-N) % L;
+
+					int	X = Math.Max( 0, Math.Min( maxSize-1, 3*N - Math.Abs( 4*N - iX ) ) ) - N;
+					int	Y = Math.Max( 0, Math.Min( maxSize-1, 3*N - Math.Abs( 4*N - iY ) ) ) - N;
+
+					Console.WriteLine( "i=" + i + " X=" + X + " Y=" + Y );
+				}
+			}
+//					Console.WriteLine( "i=" + i + " X=" + X + " Y=" + Y + "  - Xc=" + Math.Max( 0, Math.Min( maxSize-1, X ) ) + "  - Yc=" + Math.Max( 0, Math.Min( maxSize-1, Y ) ) );
+
+			int	HalfSize = whatever;
+			int	S = 1 + 2 * HalfSize;		// <= Square size
+			int	Count = S * S;
+			for ( int i=0; i < Count; i++ ) {
+				int	N = (int) Math.Floor( (Math.Sqrt( i ) + 1) / 2 );	// Lane index
+				int	L = Math.Max( 1, 8 * N );							// Amount of pixels in the lane
+				int	LaneSize = 1+2*N;									// Size of the lane
+				int	LaneStartPixelIndex = N*N;
+				int	j = i - LaneStartPixelIndex;						// Pixel index relative to the lane
+				int	iX = (j + N) % L;
+				int	iY = (j + L-N) % L;
+				int	X = Math.Max( 0, Math.Min( LaneSize-1, 3*N - Math.Abs( 4*N - iX ) ) ) - N;
+				int	Y = Math.Max( 0, Math.Min( LaneSize-1, 3*N - Math.Abs( 4*N - iY ) ) ) - N;
+				// Plot pixel at (X,Y)
+			}
+		}
+
 
 		public FittingForm()
 		{
@@ -358,7 +403,8 @@ sharedExp = Math.Max( 0, Math.Min( 31, sharedExp + EXPONENT_BIAS ) ) - EXPONENT_
 // 			Vector		Test = Pipo * From;
 
 //TestChromaRanges();
-TestSHRGBEEncoding();
+//TestSHRGBEEncoding();
+TestSquareFilling();
 
 			InitializeComponent();
 
