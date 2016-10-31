@@ -376,21 +376,21 @@ sharedExp = Math.Max( 0, Math.Min( 31, sharedExp + EXPONENT_BIAS ) ) - EXPONENT_
 			}
 //					Console.WriteLine( "i=" + i + " X=" + X + " Y=" + Y + "  - Xc=" + Math.Max( 0, Math.Min( maxSize-1, X ) ) + "  - Yc=" + Math.Max( 0, Math.Min( maxSize-1, Y ) ) );
 
-			int	HalfSize = whatever;
-			int	S = 1 + 2 * HalfSize;		// <= Square size
-			int	Count = S * S;
-			for ( int i=0; i < Count; i++ ) {
-				int	N = (int) Math.Floor( (Math.Sqrt( i ) + 1) / 2 );	// Lane index
-				int	L = Math.Max( 1, 8 * N );							// Amount of pixels in the lane
-				int	LaneSize = 1+2*N;									// Size of the lane
-				int	LaneStartPixelIndex = N*N;
-				int	j = i - LaneStartPixelIndex;						// Pixel index relative to the lane
-				int	iX = (j + N) % L;
-				int	iY = (j + L-N) % L;
-				int	X = Math.Max( 0, Math.Min( LaneSize-1, 3*N - Math.Abs( 4*N - iX ) ) ) - N;
-				int	Y = Math.Max( 0, Math.Min( LaneSize-1, 3*N - Math.Abs( 4*N - iY ) ) ) - N;
-				// Plot pixel at (X,Y)
-			}
+// 			int	HalfSize = whatever;
+// 			int	S = 1 + 2 * HalfSize;		// <= Square size
+// 			int	Count = S * S;
+// 			for ( int i=0; i < Count; i++ ) {
+// 				int	N = (int) Math.Floor( (Math.Sqrt( i ) + 1) / 2 );	// Lane index
+// 				int	L = Math.Max( 1, 8 * N );							// Amount of pixels in the lane
+// 				int	LaneSize = 1+2*N;									// Size of the lane
+// 				int	LaneStartPixelIndex = N*N;
+// 				int	j = i - LaneStartPixelIndex;						// Pixel index relative to the lane
+// 				int	iX = (j + N) % L;
+// 				int	iY = (j + L-N) % L;
+// 				int	X = Math.Max( 0, Math.Min( LaneSize-1, 3*N - Math.Abs( 4*N - iX ) ) ) - N;
+// 				int	Y = Math.Max( 0, Math.Min( LaneSize-1, 3*N - Math.Abs( 4*N - iY ) ) ) - N;
+// 				// Plot pixel at (X,Y)
+// 			}
 		}
 
 
