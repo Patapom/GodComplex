@@ -45,7 +45,7 @@ void	GeometryBuilder::BuildSphere( int _PhiSubdivisions, int _ThetaSubdivisions,
 //			Position.Normalize();
 			Normal = Position;	Normal.Normalize();
 
-			BiTangent = Normal ^ Tangent;
+			BiTangent = Normal.Cross( Tangent );
 
 			// Ask for UVs
 			if ( _pMapper )
@@ -78,7 +78,7 @@ void	GeometryBuilder::BuildSphere( int _PhiSubdivisions, int _ThetaSubdivisions,
 			Tangent.y = 0.0f;
 			Tangent.z = -sinf( Phi );
 
-			BiTangent = Normal ^ Tangent;
+			BiTangent = Normal.Cross( Tangent );
 
 			// Ask for UVs
 			if (_pMapper )
@@ -107,7 +107,7 @@ void	GeometryBuilder::BuildSphere( int _PhiSubdivisions, int _ThetaSubdivisions,
 //			Position.Normalize();
 			Normal = Position;	Normal.Normalize();
 
-			BiTangent = Normal ^ Tangent;
+			BiTangent = Normal.Cross( Tangent );
 
 			// Ask for UVs
 			if ( _pMapper )
@@ -193,7 +193,7 @@ void	GeometryBuilder::BuildCylinder( int _RadialSubdivisions, int _VerticalSubdi
 			Position.z = 0.001f * Tangent.x;
 			Normal = float3::UnitY;
 
-			BiTangent = Normal ^ Tangent;
+			BiTangent = Normal.Cross( Tangent );
 
 			// Ask for UVs
 			if ( _pMapper )
@@ -228,7 +228,7 @@ void	GeometryBuilder::BuildCylinder( int _RadialSubdivisions, int _VerticalSubdi
 			Tangent.y = 0.0f;
 			Tangent.z = -sinf( Phi );
 
-			BiTangent = Normal ^ Tangent;
+			BiTangent = Normal.Cross( Tangent );
 
 			// Ask for UVs
 			if ( _pMapper )
@@ -257,7 +257,7 @@ void	GeometryBuilder::BuildCylinder( int _RadialSubdivisions, int _VerticalSubdi
 			Position.z = 0.001f * Tangent.x;
 			Normal = -float3::UnitY;
 
-			BiTangent = Normal ^ Tangent;
+			BiTangent = Normal.Cross( Tangent );
 
 			// Ask for UVs
 			if ( _pMapper )
@@ -342,7 +342,7 @@ void	GeometryBuilder::BuildTorus( int _PhiSubdivisions, int _ThetaSubdivisions, 
 			Normal = cosf(Theta) * X + sinf(Theta) * float3::UnitZ;
 			Position = Center + _SmallRadius * Normal;
 
-			BiTangent = Normal ^ Tangent;
+			BiTangent = Normal.Cross( Tangent );
 
 			if ( _pMapper )
 				_pMapper->Map( Position, Normal, Tangent, UV, i == BandLength );
@@ -401,9 +401,9 @@ void	GeometryBuilder::BuildPlane( int _SubdivisionsX, int _SubdivisionsY, const 
 
 	//////////////////////////////////////////////////////////////////////////
 	// Build vertices
-	float3	Tangent = _X;					Tangent.Normalize();
-	float3	BiTangent = _Y;					BiTangent.Normalize();
-	float3	Normal = Tangent ^ BiTangent;	Normal.Normalize();
+	float3	Tangent = _X;							Tangent.Normalize();
+	float3	BiTangent = _Y;							BiTangent.Normalize();
+	float3	Normal = Tangent.Cross( BiTangent );	Normal.Normalize();
 
 	float3	Position;
 	float2	UV;
@@ -505,7 +505,7 @@ void	GeometryBuilder::BuildCube( int _SubdivisionsX, int _SubdivisionsY, int _Su
 		int		Sy = pSizesY[FaceIndex];
 		Normal = pNormals[FaceIndex];
 		X = pTangents[FaceIndex];
-		Y = Normal ^ X;
+		Y = Normal.Cross( X );
 
 		for ( int j=0; j < Sy; j++ )
 		{
@@ -604,16 +604,16 @@ GeometryBuilder::MapperSpherical::MapperSpherical( float _WrapU, float _WrapV, c
 {
 	m_X.Normalize();
 	m_Y.Normalize();
-	m_Z = m_X ^ m_Y;
+	m_Z = m_X.Cross( m_Y );
 	m_Z.Normalize();
 }
 void	GeometryBuilder::MapperSpherical::Map( const float3& _Position, const float3& _Normal, const float3& _Tangent, float2& _UV, bool _bIsBandEndVertex ) const
 {
 	float3	Dir = _Position - m_Center;
 	Dir.Normalize();
-	float	X = Dir | m_X;
-	float	Y = Dir | m_Y;
-	float	Z = Dir | m_Z;
+	float	X = Dir.Dot( m_X );
+	float	Y = Dir.Dot( m_Y );
+	float	Z = Dir.Dot( m_Z );
 
 	float	Phi = atan2f( X, Z );		// Phi=0 at +Z and 90° at +X
 			Phi = fmodf( Phi + TWOPI, TWOPI );
@@ -638,15 +638,15 @@ GeometryBuilder::MapperCylindrical::MapperCylindrical( float _WrapU, float _Wrap
 {
 	m_X.Normalize();
 	m_Z.Normalize();
-	m_Y = m_Z ^ m_X;
+	m_Y = m_Z.Cross( m_X );
 	m_Y.Normalize();
 }
 void	GeometryBuilder::MapperCylindrical::Map( const float3& _Position, const float3& _Normal, const float3& _Tangent, float2& _UV, bool _bIsBandEndVertex ) const
 {
 	float3	Dir = _Position - m_Center;
-	float	X = Dir | m_X;
-	float	Y = Dir | m_Y;
-	float	Z = Dir | m_Z;
+	float	X = Dir.Dot( m_X );
+	float	Y = Dir.Dot( m_Y );
+	float	Z = Dir.Dot( m_Z );
 
 	float	Phi = atan2f( X, Z );		// Phi=0 at +Z and 90° at +X
 			Phi = fmodf( Phi + TWOPI, TWOPI );
@@ -672,8 +672,8 @@ void	GeometryBuilder::MapperPlanar::Map( const float3& _Position, const float3& 
 {
 	float3	Delta = _Position - m_Center;
 
-	_UV.x = m_WrapU * (Delta | m_Tangent);
-	_UV.y = m_WrapV * (Delta | m_BiTangent);
+	_UV.x = m_WrapU * Delta.Dot( m_Tangent );
+	_UV.y = m_WrapV * Delta.Dot( m_BiTangent );
 }
 
 
@@ -710,15 +710,14 @@ void	GeometryBuilder::MapperCube::Map( const float3& _Position, const float3& _N
 	int		MinHit = -1;
 	float	fMinHit = +MAX_FLOAT;
 	for ( int HitIndex=0; HitIndex < 6; HitIndex++ )
-		if ( pHits[HitIndex] >= 0.0 && pHits[HitIndex] < fMinHit )
-		{	// New closer hit!
+		if ( pHits[HitIndex] >= 0.0 && pHits[HitIndex] < fMinHit ) {
+			// New closer hit!
 			MinHit = HitIndex;
 			fMinHit = pHits[HitIndex];
 		}
 	
 	float4	HitPos = P + fMinHit * D;
-	switch ( MinHit )
-	{
+	switch ( MinHit ) {
 	case 0:	// -X
 		_UV.x = 0.5f * (1.0f + HitPos.z);
 		_UV.y = 0.5f * (1.0f + HitPos.y);

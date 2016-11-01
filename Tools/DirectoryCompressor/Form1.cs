@@ -13,6 +13,8 @@ namespace DirectoryCompressor
 {
 	public partial class Form1 : Form {
 
+		protected delegate void	ProgressDelegate( float _progress, int _identicalFilesCount );
+
 		protected class	File {
 			const int	BLOCK_SIZE = 1024 << 10;	// 1MB blocks
 
@@ -70,13 +72,18 @@ namespace DirectoryCompressor
 		/// Contains all the files with the same extension
 		/// </summary>
 		protected class ExtensionFilesGroup {
+			public string		m_extension = null;
 			public List< File >	m_files = new List< File >();
+
+			public ExtensionFilesGroup( string _extension ) {
+				m_extension = _extension;
+			}
 
 			public void		AddFile( File _file ) {
 				m_files.Add( _file );
 			}
 
-			public List< Tuple< File, File > >	Compare( ExtensionFilesGroup _other ) {
+			public List< Tuple< File, File > >	Compare( ExtensionFilesGroup _other, ProgressDelegate _progress ) {
 				int	maxFilesCount = Math.Max( m_files.Count, _other.m_files.Count );
 
 				// First, compare file sizes
@@ -94,11 +101,22 @@ namespace DirectoryCompressor
 
 				// Compare among files of the same size
 				List< Tuple< File, File > >	result = new List< Tuple< File, File > >( maxFilesCount );
+
+				int	sameSizeFilesProgressCount = Math.Max( 1, size2Files.Values.Count / 100 );
+				int	sameSizeFilesIndex = 0;
 				foreach ( Tuple< List< File >, List< File > > sameSizeFiles in size2Files.Values ) {
+					if ( (++sameSizeFilesIndex % sameSizeFilesProgressCount) == 0 ) {
+						// Notify of progress
+						_progress( (float) sameSizeFilesIndex / size2Files.Values.Count, result.Count );
+					}
+
 					for ( int fileIndex0=0; fileIndex0 < sameSizeFiles.Item1.Count; fileIndex0++ ) {
 						File	file0 = sameSizeFiles.Item1[fileIndex0];
 						for ( int fileIndex1=0; fileIndex1 < sameSizeFiles.Item2.Count; fileIndex1++ ) {
 							File	file1 = sameSizeFiles.Item2[fileIndex1];
+							if ( file0.m_fullName == file1.m_fullName )
+								continue;	// Ignore same files...
+
 							if ( file0.CompareBinary( file1 ) ) {
 								result.Add( new Tuple<File,File>( file0, file1 ) );	// Same!
 							}
@@ -142,7 +160,7 @@ namespace DirectoryCompressor
 			_extensionGroup.Clear();
 			foreach ( File F in _files ) {
 				if ( !_extensionGroup.ContainsKey( F.m_extension ) )
-					_extensionGroup.Add( F.m_extension, new ExtensionFilesGroup() );
+					_extensionGroup.Add( F.m_extension, new ExtensionFilesGroup( F.m_extension ) );
 				ExtensionFilesGroup	group = _extensionGroup[F.m_extension];
 				group.AddFile( F );
 			}
@@ -194,7 +212,12 @@ namespace DirectoryCompressor
 		}
 
 		void	Compare() {
+			progressBar.Value = 0;
+			progressBar.Visible = true;
+
 			m_identicalFiles.Clear();
+			int		extensionIndex = 0;
+			float	currentProgress = 0.0f;
 			foreach ( string extension in m_extensionGroupLeft.Keys ) {
 				if ( !m_extensionGroupRight.ContainsKey( extension ) )
 					continue;
@@ -202,9 +225,22 @@ namespace DirectoryCompressor
 				ExtensionFilesGroup	leftGroup = m_extensionGroupLeft[extension];
 				ExtensionFilesGroup	rightGroup = m_extensionGroupRight[extension];
 
-				List< Tuple< File, File > >	identicalFiles = leftGroup.Compare( rightGroup );
+				float	extensionProgress = (float) leftGroup.m_files.Count / m_filesLeft.Count;
+				float	currentExtensionProgress = extensionIndex++ * extensionProgress;
+
+				List< Tuple< File, File > >	identicalFiles = leftGroup.Compare( rightGroup, ( float _progress, int _identicalFilesCount ) => {
+					progressBar.Value = (int) (progressBar.Maximum * (currentProgress + _progress * extensionProgress));
+					labelResults.Text = "Processing " + leftGroup.m_files.Count + " \"*" + extension + "\" files. " + _identicalFilesCount + " identical so far. Total = " + (m_identicalFiles.Count + _identicalFilesCount) + " identical files of all types.";
+					progressBar.Refresh();
+					labelResults.Refresh();
+				} );
 				m_identicalFiles.AddRange( identicalFiles );
+
+				currentProgress += extensionProgress;
 			}
+
+			labelResults.Text = m_identicalFiles.Count + " identical files that can be optimized.";
+			progressBar.Visible = false;
 		}
 
 		private void buttonBrowseDirectoryLeft_Click(object sender, EventArgs e) {
@@ -227,6 +263,10 @@ namespace DirectoryCompressor
 			m_appKey.SetValue( "LastDirectoryRight", folderBrowserDialog.SelectedPath );
 
 			SetDirectoryRight( new DirectoryInfo( folderBrowserDialog.SelectedPath ) );
+		}
+
+		private void buttonCompare_Click(object sender, EventArgs e) {
+			Compare();
 		}
 	}
 }

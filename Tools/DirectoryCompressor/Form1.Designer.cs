@@ -41,9 +41,13 @@
 			this.buttonCompare = new System.Windows.Forms.Button();
 			this.labelFilesLeft = new System.Windows.Forms.Label();
 			this.labelFilesRight = new System.Windows.Forms.Label();
+			this.panelResults = new System.Windows.Forms.Panel();
+			this.labelResults = new System.Windows.Forms.Label();
+			this.progressBar = new System.Windows.Forms.ProgressBar();
 			this.panelMain.SuspendLayout();
 			this.panelRight.SuspendLayout();
 			this.panelLeft.SuspendLayout();
+			this.panelResults.SuspendLayout();
 			this.SuspendLayout();
 			// 
 			// panelMain
@@ -55,7 +59,7 @@
 			this.panelMain.Controls.Add(this.panelLeft);
 			this.panelMain.Location = new System.Drawing.Point(12, 12);
 			this.panelMain.Name = "panelMain";
-			this.panelMain.Size = new System.Drawing.Size(1051, 397);
+			this.panelMain.Size = new System.Drawing.Size(1049, 422);
 			this.panelMain.TabIndex = 0;
 			// 
 			// panelRight
@@ -66,9 +70,9 @@
 			this.panelRight.Controls.Add(this.listBoxFilesRight);
 			this.panelRight.Controls.Add(this.textBoxDirectoryRight);
 			this.panelRight.Controls.Add(this.buttonBrowseDirectoryRight);
-			this.panelRight.Location = new System.Drawing.Point(527, 3);
+			this.panelRight.Location = new System.Drawing.Point(525, 3);
 			this.panelRight.Name = "panelRight";
-			this.panelRight.Size = new System.Drawing.Size(522, 391);
+			this.panelRight.Size = new System.Drawing.Size(522, 416);
 			this.panelRight.TabIndex = 0;
 			// 
 			// listBoxFilesRight
@@ -80,7 +84,7 @@
 			this.listBoxFilesRight.IntegralHeight = false;
 			this.listBoxFilesRight.Location = new System.Drawing.Point(2, 26);
 			this.listBoxFilesRight.Name = "listBoxFilesRight";
-			this.listBoxFilesRight.Size = new System.Drawing.Size(520, 344);
+			this.listBoxFilesRight.Size = new System.Drawing.Size(520, 369);
 			this.listBoxFilesRight.TabIndex = 2;
 			// 
 			// textBoxDirectoryRight
@@ -106,15 +110,16 @@
 			// 
 			// panelLeft
 			// 
-			this.panelLeft.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left)));
+			this.panelLeft.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
 			this.panelLeft.Controls.Add(this.labelFilesLeft);
 			this.panelLeft.Controls.Add(this.listBoxFilesLeft);
 			this.panelLeft.Controls.Add(this.textBoxDirectoryLeft);
 			this.panelLeft.Controls.Add(this.buttonBrowseDirectoryLeft);
 			this.panelLeft.Location = new System.Drawing.Point(3, 3);
 			this.panelLeft.Name = "panelLeft";
-			this.panelLeft.Size = new System.Drawing.Size(522, 391);
+			this.panelLeft.Size = new System.Drawing.Size(520, 416);
 			this.panelLeft.TabIndex = 0;
 			// 
 			// listBoxFilesLeft
@@ -126,7 +131,7 @@
 			this.listBoxFilesLeft.IntegralHeight = false;
 			this.listBoxFilesLeft.Location = new System.Drawing.Point(2, 26);
 			this.listBoxFilesLeft.Name = "listBoxFilesLeft";
-			this.listBoxFilesLeft.Size = new System.Drawing.Size(520, 344);
+			this.listBoxFilesLeft.Size = new System.Drawing.Size(518, 369);
 			this.listBoxFilesLeft.TabIndex = 2;
 			// 
 			// textBoxDirectoryLeft
@@ -136,13 +141,13 @@
 			this.textBoxDirectoryLeft.Location = new System.Drawing.Point(2, 0);
 			this.textBoxDirectoryLeft.Name = "textBoxDirectoryLeft";
 			this.textBoxDirectoryLeft.ReadOnly = true;
-			this.textBoxDirectoryLeft.Size = new System.Drawing.Size(479, 20);
+			this.textBoxDirectoryLeft.Size = new System.Drawing.Size(477, 20);
 			this.textBoxDirectoryLeft.TabIndex = 1;
 			// 
 			// buttonBrowseDirectoryLeft
 			// 
 			this.buttonBrowseDirectoryLeft.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-			this.buttonBrowseDirectoryLeft.Location = new System.Drawing.Point(484, 0);
+			this.buttonBrowseDirectoryLeft.Location = new System.Drawing.Point(482, 0);
 			this.buttonBrowseDirectoryLeft.Name = "buttonBrowseDirectoryLeft";
 			this.buttonBrowseDirectoryLeft.Size = new System.Drawing.Size(38, 21);
 			this.buttonBrowseDirectoryLeft.TabIndex = 0;
@@ -157,19 +162,21 @@
 			// 
 			// buttonCompare
 			// 
-			this.buttonCompare.Anchor = System.Windows.Forms.AnchorStyles.Top;
+			this.buttonCompare.Anchor = System.Windows.Forms.AnchorStyles.Bottom;
 			this.buttonCompare.Enabled = false;
-			this.buttonCompare.Location = new System.Drawing.Point(499, 415);
+			this.buttonCompare.Location = new System.Drawing.Point(498, 440);
 			this.buttonCompare.Name = "buttonCompare";
 			this.buttonCompare.Size = new System.Drawing.Size(75, 23);
 			this.buttonCompare.TabIndex = 1;
 			this.buttonCompare.Text = "Compare";
 			this.buttonCompare.UseVisualStyleBackColor = true;
+			this.buttonCompare.Click += new System.EventHandler(this.buttonCompare_Click);
 			// 
 			// labelFilesLeft
 			// 
+			this.labelFilesLeft.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
 			this.labelFilesLeft.AutoSize = true;
-			this.labelFilesLeft.Location = new System.Drawing.Point(3, 373);
+			this.labelFilesLeft.Location = new System.Drawing.Point(3, 398);
 			this.labelFilesLeft.Name = "labelFilesLeft";
 			this.labelFilesLeft.Size = new System.Drawing.Size(228, 13);
 			this.labelFilesLeft.TabIndex = 3;
@@ -177,18 +184,51 @@
 			// 
 			// labelFilesRight
 			// 
+			this.labelFilesRight.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
 			this.labelFilesRight.AutoSize = true;
-			this.labelFilesRight.Location = new System.Drawing.Point(4, 373);
+			this.labelFilesRight.Location = new System.Drawing.Point(4, 398);
 			this.labelFilesRight.Name = "labelFilesRight";
 			this.labelFilesRight.Size = new System.Drawing.Size(228, 13);
 			this.labelFilesRight.TabIndex = 3;
 			this.labelFilesRight.Text = "No files listed. Click the browse button above...";
 			// 
+			// panelResults
+			// 
+			this.panelResults.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+			this.panelResults.Controls.Add(this.labelResults);
+			this.panelResults.Location = new System.Drawing.Point(12, 469);
+			this.panelResults.Name = "panelResults";
+			this.panelResults.Size = new System.Drawing.Size(1049, 212);
+			this.panelResults.TabIndex = 2;
+			// 
+			// labelResults
+			// 
+			this.labelResults.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+			this.labelResults.AutoSize = true;
+			this.labelResults.Location = new System.Drawing.Point(2, 0);
+			this.labelResults.Name = "labelResults";
+			this.labelResults.Size = new System.Drawing.Size(0, 13);
+			this.labelResults.TabIndex = 3;
+			// 
+			// progressBar
+			// 
+			this.progressBar.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+			this.progressBar.Location = new System.Drawing.Point(579, 443);
+			this.progressBar.Maximum = 1000;
+			this.progressBar.Name = "progressBar";
+			this.progressBar.Size = new System.Drawing.Size(480, 17);
+			this.progressBar.TabIndex = 3;
+			this.progressBar.Visible = false;
+			// 
 			// Form1
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-			this.ClientSize = new System.Drawing.Size(1075, 668);
+			this.ClientSize = new System.Drawing.Size(1073, 693);
+			this.Controls.Add(this.progressBar);
+			this.Controls.Add(this.panelResults);
 			this.Controls.Add(this.buttonCompare);
 			this.Controls.Add(this.panelMain);
 			this.Name = "Form1";
@@ -199,6 +239,8 @@
 			this.panelRight.PerformLayout();
 			this.panelLeft.ResumeLayout(false);
 			this.panelLeft.PerformLayout();
+			this.panelResults.ResumeLayout(false);
+			this.panelResults.PerformLayout();
 			this.ResumeLayout(false);
 
 		}
@@ -218,6 +260,9 @@
 		private System.Windows.Forms.Button buttonCompare;
 		private System.Windows.Forms.Label labelFilesLeft;
 		private System.Windows.Forms.Label labelFilesRight;
+		private System.Windows.Forms.Panel panelResults;
+		private System.Windows.Forms.Label labelResults;
+		private System.Windows.Forms.ProgressBar progressBar;
 
 	}
 }

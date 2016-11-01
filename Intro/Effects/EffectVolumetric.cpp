@@ -457,8 +457,8 @@ float	t = 2*0.25f * _Time;
 		float3	TerrainCenter = CameraPosition + 0.45f * TERRAIN_SIZE * CameraAt;	// The center will be in front of us always
 
 		float	VertexSnap = TERRAIN_SIZE / TERRAIN_SUBDIVISIONS_COUNT;	// World length between 2 vertices
-		int		VertexX = floorf( TerrainCenter.x / VertexSnap );
-		int		VertexZ = floorf( TerrainCenter.z / VertexSnap );
+		int		VertexX = int( floorf( TerrainCenter.x / VertexSnap ) );
+		int		VertexZ = int( floorf( TerrainCenter.z / VertexSnap ) );
 
 		TerrainPosition.x = VertexX * VertexSnap;
 		TerrainPosition.z = VertexZ * VertexSnap;
@@ -992,7 +992,7 @@ float2	EffectVolumetric::World2ShadowQuad( const float3& _PositionKm, float& _Di
 {
 	float3	ProjectedPositionKm = Project2ShadowPlane( _PositionKm, _Distance2PlaneKm );
 	float3	Center2ProjPositionKm = ProjectedPositionKm - m_ShadowPlaneCenterKm;
-	return float2( Center2ProjPositionKm | m_ShadowPlaneX, Center2ProjPositionKm | m_ShadowPlaneY );
+	return float2( Center2ProjPositionKm.Dot( m_ShadowPlaneX ), Center2ProjPositionKm.Dot( m_ShadowPlaneY ) );
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -1138,15 +1138,15 @@ void	EffectVolumetric::ComputeShadowTransform()
 	//
 	float3	ScaledZ = m_ShadowPlaneNormal / m_ShadowPlaneNormal.y;
 
-	float		ZdotX = ScaledZ | m_ShadowPlaneX;
+	float	ZdotX = ScaledZ.Dot( m_ShadowPlaneX );
 	float3	NewX = m_ShadowPlaneX - float3( 0, ZdotX, 0 );
 
-	float		ZdotY = ScaledZ | m_ShadowPlaneY;
+	float	ZdotY = ScaledZ.Dot( m_ShadowPlaneY );
 	float3	NewY = m_ShadowPlaneY - float3( 0, ZdotY, 0 );
 
 	float3	NewZ( 0, 1/m_ShadowPlaneNormal.y, 0 );
 
-	float3	Translation = float3( -m_ShadowPlaneCenterKm | NewX, -m_ShadowPlaneCenterKm | NewY, -m_ShadowPlaneCenterKm | NewZ );
+	float3	Translation = float3( -m_ShadowPlaneCenterKm.Dot( NewX ), -m_ShadowPlaneCenterKm.Dot( NewY ), -m_ShadowPlaneCenterKm.Dot( NewZ ) );
 
 	m_World2Light.SetRow( 0, float4( NewX.x, NewY.x, NewZ.x, 0 ) );
 	m_World2Light.SetRow( 1, float4( NewX.y, NewY.y, NewZ.y, 0 ) );
@@ -1374,8 +1374,8 @@ float4x4	EffectVolumetric::ComputeTerrainShadowTransform()
 	float3	Z = -LightDirection;
 	if ( abs( Z.y ) > 1.0f - 1e-3f )
 		Z = float3( 1e-2f, Z.y > 0.0f ? 1.0f : -1.0f, 0 ).Normalize();
-	float3	X = (float3::UnitY ^ Z).Normalize();
-	float3	Y = Z ^ X;
+	float3	X = float3::UnitY.Cross( Z ).Normalize();
+	float3	Y = Z.Cross( X );
 
 	float4x4	Light2World;
 	Light2World.SetRow( 0, X, 0 );
@@ -2129,11 +2129,11 @@ float3	EffectVolumetric::SampleTransmittance( const float2 _UV ) const {
 
 	float	X = _UV.x * (TRANSMITTANCE_W-1);
 	float	Y = _UV.y * TRANSMITTANCE_H;
-	int		X0 = floorf( X );
-	X0 = CLAMP( 0, TRANSMITTANCE_W-1, X0 );
+	int		X0 = int( floorf( X ) );
+			X0 = CLAMP( 0, TRANSMITTANCE_W-1, X0 );
 	float	x = X - X0;
-	int		Y0 = floorf( Y );
-	Y0 = CLAMP( 0, TRANSMITTANCE_H-1, Y0 );
+	int		Y0 = int( floorf( Y ) );
+			Y0 = CLAMP( 0, TRANSMITTANCE_H-1, Y0 );
 	float	y = Y - Y0;
 	int		X1 = MIN( TRANSMITTANCE_W-1, X0+1 );
 	int		Y1 = MIN( TRANSMITTANCE_H-1, Y0+1 );
@@ -2153,8 +2153,7 @@ float3	EffectVolumetric::SampleTransmittance( const float2 _UV ) const {
 ////////////////////////////////////////////////////////////////////////////////////////
 // Planetary Helpers
 //
-void	EffectVolumetric::ComputeSphericalData( const float3& _PositionKm, float& _AltitudeKm, float3& _Normal ) const
-{
+void	EffectVolumetric::ComputeSphericalData( const float3& _PositionKm, float& _AltitudeKm, float3& _Normal ) const {
 	float3	EarthCenterKm( 0, -GROUND_RADIUS_KM, 0 );
 	float3	Center2Position = _PositionKm - EarthCenterKm;
 	float	Radius2PositionKm = Center2Position.Length();
@@ -2165,15 +2164,14 @@ void	EffectVolumetric::ComputeSphericalData( const float3& _PositionKm, float& _
 // ====== Intersections ======
 
 // Computes the enter intersection of a ray and a sphere
-float	EffectVolumetric::SphereIntersectionEnter( const float3& _PositionKm, const float3& _View, float _SphereAltitudeKm ) const
-{
+float	EffectVolumetric::SphereIntersectionEnter( const float3& _PositionKm, const float3& _View, float _SphereAltitudeKm ) const {
 	float3	EarthCenterKm( 0, -GROUND_RADIUS_KM, 0 );
-	float		R = _SphereAltitudeKm + GROUND_RADIUS_KM;
+	float	R = _SphereAltitudeKm + GROUND_RADIUS_KM;
 	float3	D = _PositionKm - EarthCenterKm;
-	float		c = (D | D) - R*R;
-	float		b = D | _View;
+	float	c = D.Dot( D ) - R*R;
+	float	b = D.Dot( _View );
 
-	float		Delta = b*b - c;
+	float	Delta = b*b - c;
 	if ( Delta < 0.0f )
 		return 1e6f;
 
@@ -2184,15 +2182,14 @@ float	EffectVolumetric::SphereIntersectionEnter( const float3& _PositionKm, cons
 
 // Computes the exit intersection of a ray and a sphere
 // (No check for validity!)
-float	EffectVolumetric::SphereIntersectionExit( const float3& _PositionKm, const float3& _View, float _SphereAltitudeKm ) const
-{
+float	EffectVolumetric::SphereIntersectionExit( const float3& _PositionKm, const float3& _View, float _SphereAltitudeKm ) const {
 	float3	EarthCenterKm( 0, -GROUND_RADIUS_KM, 0 );
-	float		R = _SphereAltitudeKm + GROUND_RADIUS_KM;
+	float	R = _SphereAltitudeKm + GROUND_RADIUS_KM;
 	float3	D = _PositionKm - EarthCenterKm;
-	float		c = (D | D) - R*R;
-	float		b = D | _View;
+	float	c = D.Dot( D ) - R*R;
+	float	b = D.Dot( _View );
 
-	float		Delta = b*b - c;
+	float	Delta = b*b - c;
 	if ( Delta < 0.0f )
 		return 1e6f;
 
@@ -2208,8 +2205,8 @@ void	EffectVolumetric::SphereIntersections( const float3& _PositionKm, const flo
 	float3	EarthCenterKm( 0, -GROUND_RADIUS_KM, 0 );
 	float	R = _SphereAltitudeKm + GROUND_RADIUS_KM;
 	float3	D = _PositionKm - EarthCenterKm;
-	float	c = (D | D) - R*R;
-	float	b = D | _View;
+	float	c = D.Dot( D ) - R*R;
+	float	b = D.Dot( _View );
 
 	float	Delta = b*b - c;
 	if ( Delta < 0.0 ) {

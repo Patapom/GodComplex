@@ -1,4 +1,5 @@
 #include "../../GodComplex.h"
+#include "SHProbeEncoderFloodFill.h"
 
 const float	SHProbeEncoder::Z_INFINITY = 1e6f;
 const float	SHProbeEncoder::Z_INFINITY_TEST = 0.99f * SHProbeEncoder::Z_INFINITY;
@@ -64,7 +65,7 @@ SHProbeEncoder::SHProbeEncoder() {
 	for ( int CubeFaceIndex=0; CubeFaceIndex < 6; CubeFaceIndex++ )
 		for ( int Y=0; Y < CUBE_MAP_SIZE; Y++ )
 			for ( int X=0; X < CUBE_MAP_SIZE; X++, pPixel++ ) {
-				pPixel->Index = pPixel - m_pCubeMapPixels;
+				pPixel->Index = int( pPixel - m_pCubeMapPixels );
 				pPixel->CubeFaceIndex = CubeFaceIndex;
 				pPixel->CubeFaceX = X;
 				pPixel->CubeFaceY = Y;

@@ -23,10 +23,6 @@ ComputeShader::ComputeShader( Device& _Device, const char* _pShaderFileName, con
 	, m_hCompileThread( 0 )
 #endif
 {
-#ifdef DIRECTX10
-	ASSERT( false, "You can't use Compute Shaders if you define DIRECTX10!" );
-#endif
-
 	m_pIncludeOverride = _pIncludeOverride;
 	m_bHasErrors = false;
 
@@ -65,7 +61,7 @@ ComputeShader::ComputeShader( Device& _Device, const char* _pShaderFileName, con
 		while ( pMacro->Name != NULL )
 			pMacro++;
 
-		int	MacrosCount = 1 + pMacro - _pMacros;
+		int	MacrosCount = int( 1 + pMacro - _pMacros );
 		m_pMacros = new D3D_SHADER_MACRO[MacrosCount];
 		memcpy( m_pMacros, _pMacros, MacrosCount*sizeof(D3D_SHADER_MACRO) );
 	}
@@ -103,9 +99,6 @@ ComputeShader::ComputeShader( Device& _Device, const char* _pShaderFileName, ID3
 	, m_hCompileThread( 0 )
 #endif
 {
-#ifdef DIRECTX10
-	ASSERT( false, "You can't use Compute Shaders if you define DIRECTX10!" );
-#endif
 
 #if defined(_DEBUG) || !defined(GODCOMPLEX)
 	m_pShaderFileName = CopyString( _pShaderFileName );
@@ -323,7 +316,7 @@ const char*	ComputeShader::CopyString( const char* _pShaderFileName ) const
 	if ( _pShaderFileName == NULL )
 		return NULL;
 
-	int		Length = strlen(_pShaderFileName)+1;
+	int		Length = int( strlen(_pShaderFileName)+1 );
 	char*	pResult = new char[Length];
 	memcpy( pResult, _pShaderFileName, Length );
 

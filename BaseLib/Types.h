@@ -1,14 +1,17 @@
 #pragma once
 
 #ifdef _DEBUG
-#include <assert.h>
-#define ASSERT( condition, text ) assert( (condition) || !text )
-#define ASSERT_RETURN_FALSE( condition, text ) assert( (condition) || !text ) return false
+	#include <assert.h>
+	#define ASSERT( condition, text ) assert( (condition) || !text )
+	#define ASSERT_RETURN_FALSE( condition, text ) assert( (condition) || !text ) return false
 #else
-#define ASSERT( condition, text )	(condition)
-#define ASSERT_RETURN_FALSE( condition, text ) return false
+	#define ASSERT( condition, text )	(condition)
+	#define ASSERT_RETURN_FALSE( condition, text ) return false
 #endif
 
+#ifndef NULL
+	#define NULL    0
+#endif
 
 //////////////////////////////////////////////////////////////////////////
 // Simple types definition
@@ -21,9 +24,6 @@ typedef signed int		S32;
 typedef unsigned long	U64;
 typedef signed long		S64;
 
-typedef int NjErrorID;
-typedef int NjResourceID;
-
 
 //////////////////////////////////////////////////////////////////////////
 //
@@ -31,21 +31,20 @@ typedef int NjResourceID;
 #define SAFE_DELETE_ARRAY( a )	if ( (a) != NULL ) { delete[] (a); (a) = NULL; }
 
 #ifndef GODCOMPLEX
-template<typename T> void		SafeDelete__( T*& _pBuffer )
-{
+template<typename T> void		SafeDelete__( T*& _pBuffer ) {
 	if ( _pBuffer == NULL )
 		return;
 	delete _pBuffer;
 	_pBuffer = NULL;
 }
 
-template<typename T> void		SafeDeleteArray__( T*& _pBuffer )
-{
+template<typename T> void		SafeDeleteArray__( T*& _pBuffer ) {
 	if ( _pBuffer == NULL )
 		return;
 	delete[] _pBuffer;
 	_pBuffer = NULL;
 }
+
 //#else
 // //For the GodComplex intro, don't use templates! That makes the exe fat!
 // static void		SafeDelete__( void*& _pBuffer )
@@ -65,10 +64,13 @@ template<typename T> void		SafeDeleteArray__( T*& _pBuffer )
 // }
 // #define delete a )			SafeDelete__( (void*&) (a) );
 // #define delete[] a )	SafeDeleteArray__( (void*&) (a) );
+
 #endif
 
 template<typename T> void	Swap( T& a, T& b ) { T temp = a; a = b; b = temp; }
 
 #include "ASMHelpers.h"
-#include "../Math/Math.h"
+#include "Math/Math.h"
+#include "Containers/Hashtable.h"
+#include "Containers/List.h"
 

@@ -1,8 +1,6 @@
 #include "Hashtable.h"
 //#include <string.h>
 
-#define NULL 0
-
 //////////////////////////////////////////////////////////////////////////
 // U32 General version
 //
@@ -10,8 +8,7 @@
 int	DictionaryU32::ms_MaxCollisionsCount = 0;
 #endif
 
-DictionaryU32::DictionaryU32( int _Size )
-{
+DictionaryU32::DictionaryU32( int _Size ) {
 	m_Size = _Size;
 	m_ppTable = new Node*[m_Size];
 	memset( m_ppTable, 0, m_Size*sizeof(Node*) );

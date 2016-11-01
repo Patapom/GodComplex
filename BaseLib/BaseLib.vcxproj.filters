@@ -1,0 +1,40 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Math">
+      <UniqueIdentifier>{9aa23d5c-ef37-4ac6-8f50-fa3b9142bb9d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Containers">
+      <UniqueIdentifier>{18caded2-64c9-4691-92dc-71107c51c1b9}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\API\ASMHelpers.h" />
+    <ClInclude Include="..\API\Types.h" />
+    <ClInclude Include="Containers\Hashtable.h">
+      <Filter>Containers</Filter>
+    </ClInclude>
+    <ClInclude Include="Containers\List.h">
+      <Filter>Containers</Filter>
+    </ClInclude>
+    <ClInclude Include="Math\Math.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Containers\Hashtable.cpp">
+      <Filter>Containers</Filter>
+    </ClCompile>
+    <ClCompile Include="Math\Math.cpp">
+      <Filter>Math</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Containers\Hashtable.inl">
+      <Filter>Containers</Filter>
+    </None>
+    <None Include="Containers\List.inl">
+      <Filter>Containers</Filter>
+    </None>
+  </ItemGroup>
+</Project>

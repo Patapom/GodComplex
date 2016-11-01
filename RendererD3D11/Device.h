@@ -1,12 +1,8 @@
 #pragma once
 #include "Renderer.h"
 
-
 //#define NSIGHT			// Define this if you're debugging the app using Nvidia Nsight
 //#define RENDERDOC		// Define this if you're debugging the app using Crytek's RenderDoc
-
-//#define DIRECTX10		// Define this to use DX10, otherwise DX11 will be used
-#define TRY_DIRECTX10_1	// Define this to attempt using DX10.1
 
 class Component;
 class Shader;
@@ -16,14 +12,12 @@ class RasterizerState;
 class DepthStencilState;
 class BlendState;
 
-class Device
-{
+class Device {
 	static const int	SAMPLERS_COUNT = 8;
 
 public:		// NESTED TYPES
 
-	enum	SHADER_STAGE_FLAGS
-	{
+	enum	SHADER_STAGE_FLAGS {
 		SSF_VERTEX_SHADER		= (1 << 0),
 		SSF_HULL_SHADER			= (1 << 1),
 		SSF_DOMAIN_SHADER		= (1 << 2),

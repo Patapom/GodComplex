@@ -78,7 +78,7 @@ void	TextureBuilder::CopyFrom( const TextureBuilder& _Source )
 		float	RatioH = float(_Source.m_Height) / m_Height;
 		float	Ratio = MAX( RatioW, RatioH );	// We need to use the mip level of the worst ratio...
 		float	fMipLevel = log2f( Ratio );		// This is the exact mip we need to sample from
-		MipLevel = floorf( fMipLevel );			// In reality, we sample from the nearest lower mip (for example, if the source is 3.5 larger than the destination, fMipLevel=1.8 and we sample from MipLevel=1 which is well suited to accomodate sizes from 2x to 4x)
+		MipLevel = int( floorf( fMipLevel ) );	// In reality, we sample from the nearest lower mip (for example, if the source is 3.5 larger than the destination, fMipLevel=1.8 and we sample from MipLevel=1 which is well suited to accomodate sizes from 2x to 4x)
 	}
 
 	Fillers::__FillerSampleStruct	Param;
@@ -139,13 +139,13 @@ void	TextureBuilder::SampleWrap( float _X, float _Y, int _MipLevel, Pixel& _Pixe
 	int		W = m_pMipSizes[(_MipLevel<<1)+0];
 	int		H = m_pMipSizes[(_MipLevel<<1)+1];
 
-	int		X0 = floorf( _X );
+	int		X0 = int( floorf( _X ) );
 	float	x = _X - X0;
 	float	rx = 1.0f - x;
 	int		X1 = (100*W+X0+1) % W;
 			X0 = (100*W+X0) % W;
 
-	int		Y0 = floorf( _Y );
+	int		Y0 = int( floorf( _Y ) );
 	float	y = _Y - Y0;
 	float	ry = 1.0f - y;
 	int		Y1 = (100*H+Y0+1) % H;
@@ -181,13 +181,13 @@ void	TextureBuilder::SampleClamp( float _X, float _Y, int _MipLevel, Pixel& _Pix
 	int		W = m_pMipSizes[(_MipLevel<<1)+0];
 	int		H = m_pMipSizes[(_MipLevel<<1)+1];
 
-	int		X0 = floorf( _X );
+	int		X0 = int( floorf( _X ) );
 	float	x = _X - X0;
 	float	rx = 1.0f - x;
 	int		X1 = CLAMP( (X0+1), 0, W-1 );
 			X0 = CLAMP( X0, 0, W-1 );
 
-	int		Y0 = floorf( _Y );
+	int		Y0 = int( floorf( _Y ) );
 	float	y = _Y - Y0;
 	float	ry = 1.0f - y;
 	int		Y1 = CLAMP( (Y0+1), 0, H-1 );

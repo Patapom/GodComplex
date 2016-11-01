@@ -3,12 +3,26 @@
 //--------------------------------------------------------------------------//
 #pragma once
 
-//#ifdef GODCOMPLEX
-#if 1
+#ifdef _WIN64
+	// Win64 architecture
+	#include <memory.h>	// include regular memset/memcpy/etc.
+
+	#define log2f( a )			(3.3219280948873623478703194294894f * log( a ))
+
+#else // !defined(_WIN64)
 
 // Override some functions with our own implementations
 #define memset( dst, val, amount )	ASM_memset( dst, val, amount )
 #define memcpy( dst, src, amount )	ASM_memcpy( dst, src, amount )
+
+#define log2f( a )			ASM_log2f( a )
+#define expf( a )			ASM_expf( a )
+#define powf( a, b )		ASM_powf( a, b )
+#define fmodf( a, b )		ASM_fmodf( a, b )
+#define floorf( a )			ASM_floorf( a )
+#define ceilf( a )			ASM_ceilf( a )
+#define acosf( a )			ASM_acosf( a )
+#define asinf( a )			ASM_asinf( a )
 
 static float ASM_log2f( float x )
 {
@@ -119,7 +133,6 @@ static float ASM_asinf( float x )
 
 	return res;
 }
-
 
 static U16	opc1 = 0x043f;     // floor
 static U16	opc2 = 0x083f;     // ceil

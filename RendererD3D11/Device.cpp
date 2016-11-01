@@ -70,20 +70,9 @@ bool	Device::Init( U32 _Width, U32 _Height, HWND _Handle, bool _Fullscreen, bool
 	SwapChainDesc.Windowed = !_Fullscreen;
 	SwapChainDesc.Flags = 0;
 
-	int	FeatureLevelsCount = 1;
-	#ifdef DIRECTX10
-		#ifdef TRY_DIRECTX10_1
-			D3D_FEATURE_LEVEL	FeatureLevels[] = { D3D_FEATURE_LEVEL_10_1,		// Support D3D10.1 only...
-													D3D_FEATURE_LEVEL_10_0 };	// If failed, use D3D10
-			FeatureLevelsCount = 2;
-		#else
-			D3D_FEATURE_LEVEL	FeatureLevels[] = { D3D_FEATURE_LEVEL_10_0 };	// Support D3D10 only...
-		#endif
-	#else
-		D3D_FEATURE_LEVEL	FeatureLevels[] = { D3D_FEATURE_LEVEL_11_0 };		// Support D3D11...
-	#endif
+	int	FeatureLevelsCount = 2;
+	D3D_FEATURE_LEVEL	FeatureLevels[] = { D3D_FEATURE_LEVEL_11_1, D3D_FEATURE_LEVEL_11_0 };		// Support D3D11...
 	D3D_FEATURE_LEVEL	ObtainedFeatureLevel;
-
 
 	#if defined(_DEBUG) && !defined(NSIGHT)
 		UINT	DebugFlags = D3D11_CREATE_DEVICE_DEBUG;

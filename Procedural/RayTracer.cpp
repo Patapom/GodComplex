@@ -23,7 +23,7 @@ void	RayTracer::InitGeometry( int _QuadsCount, const Quad* _pQuads )
 
 		Target.Normal.Normalize();
 		Target.Tangent.Normalize();
-		Target.BiTangent = Target.Normal ^ Target.Tangent;
+		Target.BiTangent = Target.Normal.Cross( Target.Tangent );
 		Target.SizeAndInvSize.Set( 0.5f * Source.Size.x, 0.5f * Source.Size.y, 2.0f / Source.Size.x, 2.0f / Source.Size.y );
 	}
 }
@@ -37,17 +37,17 @@ bool	RayTracer::Trace( Ray& _Ray )
 	for ( int QuadIndex=0; QuadIndex < m_QuadsCount; QuadIndex++, pQuad++ )
 	{
 		float3	ToCenter = pQuad->Center - _Ray.Position;
-		float		HeightFromQuad = ToCenter | pQuad->Normal;		// Negative if above quad
-		float		SlopeToQuad = _Ray.Direction | pQuad->Normal;	// Rate at which we get closer to the quad
-		float		HitDistance = HeightFromQuad / SlopeToQuad;		// Distance at which we'll hit the quad's plane
+		float		HeightFromQuad = ToCenter.Dot( pQuad->Normal );		// Negative if above quad
+		float		SlopeToQuad = _Ray.Direction.Dot( pQuad->Normal );	// Rate at which we get closer to the quad
+		float		HitDistance = HeightFromQuad / SlopeToQuad;			// Distance at which we'll hit the quad's plane
 		if ( HitDistance <= 0.0f || HitDistance > _Ray.HitDistance )
 			continue;	// No hit, or we hit too far away from best hit...
 
 		// Compute hit position and check we're within the quad
 		float3	HitPosition = _Ray.Position + HitDistance * _Ray.Direction;	// Position within quad's plane
 		float3	FromCenter = HitPosition - pQuad->Center;
-		float		DistanceX = FromCenter | pQuad->Tangent;
-		float		DistanceY = FromCenter | pQuad->BiTangent;
+		float		DistanceX = FromCenter.Dot( pQuad->Tangent );
+		float		DistanceY = FromCenter.Dot( pQuad->BiTangent );
 		if ( abs(DistanceX) > pQuad->SizeAndInvSize.x || abs(DistanceY) > pQuad->SizeAndInvSize.y )
 			continue;	// We hit outside the quad...
 

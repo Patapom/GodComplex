@@ -1,32 +1,10 @@
 //////////////////////////////////////////////////////////////////////////
 // Ultra simple math library
-// Self-addressing operators (like +=, -=, etc.) don't exist for brevity so write a = a + b instead of a += b thank you
+// We're trying to match the behavior of HLSL types float2/float3/float4/float4x4/etc.
 //
-#ifndef _NUAJ_MATH_H_
-#define _NUAJ_MATH_H_
+#pragma once
 
 #include <math.h>
-
-// Override some functions with our own implementations
-//#ifdef GODCOMPLEX
-#if 1
-
-#define log2f( a )			ASM_log2f( a )
-#define expf( a )			ASM_expf( a )
-#define powf( a, b )		ASM_powf( a, b )
-#define fmodf( a, b )		ASM_fmodf( a, b )
-#define floorf( a )			ASM_floorf( a )
-#define ceilf( a )			ASM_ceilf( a )
-#define acosf( a )			ASM_acosf( a )
-#define asinf( a )			ASM_asinf( a )
-
-#else
-
-// #define log2f( a )			(float(logf( a ) * 1.4426950408889634073599246810019))
-// #define floorf( a )			int(floorf( a ))
-// #define ceilf( a )			int(ceilf( a ))
-
-#endif
 
 static const float			PI = 3.1415926535897932384626433832795f;			// ??
 static const float			TWOPI = 6.283185307179586476925286766559f;			// 2PI
@@ -55,8 +33,7 @@ static bool					ALMOST( double a, double b )					{ return abs( a - b ) < ALMOST_
 
 
 // Float2 used for point & vector operations
-class   float2
-{
+class   float2 {
 public:
 
 	float	x, y;
@@ -66,27 +43,34 @@ public:
 
 	void		Set( float _x, float _y ) { x = _x; y = _y; }
 
-	float		LengthSq() const	{ return x*x + y*y; }
-	float		Length() const		{ return sqrtf( x*x + y*y ); }
-	float2&		Normalize()			{ float InvL = 1.0f / Length(); x *= InvL; y *= InvL; return *this; }
+	float		LengthSq() const						{ return x*x + y*y; }
+	float		Length() const							{ return sqrtf( x*x + y*y ); }
+	float2&		Normalize()								{ float InvL = 1.0f / Length(); x *= InvL; y *= InvL; return *this; }
 
 	float2		Lerp( const float2& b, float t ) const	{ float r = 1.0f - t; return float2( x * r + b.x * t, y * r + b.y * t ); }
-	float2		Min( const float2& b ) const	{ return float2( MIN( x, b.x ), MIN( y, b.y ) ); }
-	float2		Max( const float2& b ) const	{ return float2( MAX( x, b.x ), MAX( y, b.y ) ); }
-	float		Min() const						{ return MIN( x, y ); }
-	float		Max() const						{ return MAX( x, y ); }
-	bool		Almost( const float2& b )		{ return ALMOST( x, b.x ) && ALMOST( y, b.y ); }
+	float2		Min( const float2& b ) const			{ return float2( MIN( x, b.x ), MIN( y, b.y ) ); }
+	float2		Max( const float2& b ) const			{ return float2( MAX( x, b.x ), MAX( y, b.y ) ); }
+	float		Min() const								{ return MIN( x, y ); }
+	float		Max() const								{ return MAX( x, y ); }
+	bool		Almost( const float2& b )				{ return ALMOST( x, b.x ) && ALMOST( y, b.y ); }
 
-	float		Dot( const float2& b )			{ return x*b.x + y*b.y; }
+	float		Dot( const float2& v )					{ return x*v.x + y*v.y; }
+	float		Cross( const float2& v )				{ return x*v.y - y*v.x; }	// Returns the Z component of the orthogonal vector
 
-	float2		operator-( const float2& v ) const	{ return float2( x-v.x, y-v.y ); }
-	float2		operator+( const float2& v ) const	{ return float2( x+v.x, y+v.y ); }
-	float2		operator*( const float2& v ) const	{ return float2( x*v.x, y*v.y ); }
-	float2		operator*( float v ) const			{ return float2( x * v, y * v ); }
-	float2		operator/( float v ) const			{ return float2( x / v, y / v ); }
-	float2		operator/( const float2& v ) const	{ return float2( x / v.x, y / v.y ); }
-	float		operator|( const float2& v ) const	{ return x*v.x + y*v.y; }
-	float		operator^( const float2& v ) const	{ return x*v.y - y*v.x; }	// Returns the Z component of the orthogonal vector
+	float2		operator-() const						{ return float2( -x, -y ); }
+	float2		operator-( const float2& v ) const		{ return float2( x-v.x, y-v.y ); }
+	float2		operator+( const float2& v ) const		{ return float2( x+v.x, y+v.y ); }
+	float2		operator*( const float2& v ) const		{ return float2( x*v.x, y*v.y ); }
+	float2		operator*( float v ) const				{ return float2( x * v, y * v ); }
+	float2		operator/( float v ) const				{ return float2( x / v, y / v ); }
+	float2		operator/( const float2& v ) const		{ return float2( x / v.x, y / v.y ); }
+
+	float2&		operator-=( const float2& v )			{ *this = *this - v; return *this; }
+	float2&		operator+=( const float2& v )			{ *this = *this + v; return *this; }
+	float2&		operator*=( const float2& v )			{ *this = *this * v; return *this; }
+	float2&		operator*=( float v )					{ *this = *this * v; return *this; }
+	float2&		operator/=( float v )					{ *this = *this / v; return *this; }
+	float2&		operator/=( const float2& v )			{ *this = *this / v; return *this; }
 
 	static const float2	Zero;
 	static const float2	One;
@@ -98,8 +82,7 @@ static float2   operator*( float a, const float2& b )	{ return float2( a*b.x, a*
 
 
 // Float3 used for point & vector operations
-class   float3
-{
+class   float3 {
 public:
 
 	float	x, y, z;
@@ -121,19 +104,24 @@ public:
 	float		Max() const								{ return MAX( MAX( x, y ), z ); }
 	bool		Almost( const float3& b ) const			{ return ALMOST( x, b.x ) && ALMOST( y, b.y ) && ALMOST( z, b.z ); }
 
-	float		Dot( const float3& b ) const			{ return x*b.x + y*b.y + z*b.z; }
-	float3		Cross( const float3& b ) const			{ return float3( y*b.z - z*b.y, b.x*z - b.z*x, x*b.y - y*b.x ); }
+	float		Dot( const float3& v ) const			{ return x*v.x + y*v.y + z*v.z; }
+	float3		Cross( const float3& v ) const			{ return float3( y*v.z - z*v.y, v.x*z - v.z*x, x*v.y - y*v.x ); }
 
+				operator float2() const					{ return float2( x, y ); }
+	float3		operator-() const						{ return float3( -x, -y, -z ); }
 	float3		operator-( const float3& v ) const		{ return float3( x-v.x, y-v.y, z-v.z ); }
 	float3		operator+( const float3& v ) const		{ return float3( x+v.x, y+v.y, z+v.z ); }
 	float3		operator*( const float3& v ) const		{ return float3( x*v.x, y*v.y, z*v.z ); }
 	float3		operator*( float v ) const				{ return float3( x * v, y * v, z * v ); }
 	float3		operator/( float v ) const				{ return float3( x / v, y / v, z / v ); }
 	float3		operator/( const float3& v ) const		{ return float3( x / v.x, y / v.y, z / v.z ); }
-	float		operator|( const float3& v ) const		{ return x*v.x + y*v.y + z*v.z; }
-	float3		operator-() const						{ return float3( -x, -y, -z ); }
-				operator float2() const					{ return float2( x, y ); }
-	float3		operator^( const float3& v ) const		{ return float3( y * v.z - v.y * z, z * v.x - v.z * x, x * v.y - v.x * y ); }
+
+	float3&		operator-=( const float3& v )			{ *this = *this - v; return *this; }
+	float3&		operator+=( const float3& v )			{ *this = *this + v; return *this; }
+	float3&		operator*=( const float3& v )			{ *this = *this * v; return *this; }
+	float3&		operator*=( float v )					{ *this = *this * v; return *this; }
+	float3&		operator/=( float v )					{ *this = *this / v; return *this; }
+	float3&		operator/=( const float3& v )			{ *this = *this / v; return *this; }
 
 	static const float3	Zero;
 	static const float3	One;
@@ -147,8 +135,7 @@ static float3   operator*( float a, const float3& b ) { return float3( a*b.x, a*
 
 
 // Float4 used for point & vector operations
-class   float4
-{
+class   float4 {
 public:
 
 	float	x, y, z, w;
@@ -160,28 +147,35 @@ public:
 
 	void		Set( float _x, float _y, float _z, float _w ) { x = _x; y = _y; z = _z; w = _w; }
 
-	float		LengthSq() const	{ return x*x + y*y + z*z + w*w; }
-	float		Length() const		{ return sqrtf( x*x + y*y + z*z + w*w ); }
-	float4&		Normalize()			{ float InvL = 1.0f / Length(); x *= InvL; y *= InvL; z *= InvL; w *= InvL; return *this; }
+	float		LengthSq() const						{ return x*x + y*y + z*z + w*w; }
+	float		Length() const							{ return sqrtf( x*x + y*y + z*z + w*w ); }
+	float4&		Normalize()								{ float InvL = 1.0f / Length(); x *= InvL; y *= InvL; z *= InvL; w *= InvL; return *this; }
 
 	float4		Lerp( const float4& b, float t ) const	{ float r = 1.0f - t; return float4( x * r + b.x * t, y * r + b.y * t, z * r + b.z * t, w * r + b.w * t ); }
-	float4		Min( const float4& b ) const	{ return float4( MIN( x, b.x ), MIN( y, b.y ), MIN( z, b.z ), MIN( w, b.w ) ); }
-	float4		Max( const float4& b ) const	{ return float4( MAX( x, b.x ), MAX( y, b.y ), MAX( z, b.z ), MAX( w, b.w ) ); }
-	float		Min() const						{ return MIN( MIN( MIN( x, y ), z), w ); }
-	float		Max() const						{ return MAX( MAX( MAX( x, y ), z), w ); }
-	bool		Almost( const float4& b )		{ return ALMOST( x, b.x ) && ALMOST( y, b.y ) && ALMOST( z, b.z ) && ALMOST( w, b.w ); }
+	float4		Min( const float4& b ) const			{ return float4( MIN( x, b.x ), MIN( y, b.y ), MIN( z, b.z ), MIN( w, b.w ) ); }
+	float4		Max( const float4& b ) const			{ return float4( MAX( x, b.x ), MAX( y, b.y ), MAX( z, b.z ), MAX( w, b.w ) ); }
+	float		Min() const								{ return MIN( MIN( MIN( x, y ), z), w ); }
+	float		Max() const								{ return MAX( MAX( MAX( x, y ), z), w ); }
+	bool		Almost( const float4& b )				{ return ALMOST( x, b.x ) && ALMOST( y, b.y ) && ALMOST( z, b.z ) && ALMOST( w, b.w ); }
 
-	float		Dot( const float4& b )			{ return x*b.x + y*b.y + z*b.z + w*b.w; }
+	float		Dot( const float4& b )					{ return x*b.x + y*b.y + z*b.z + w*b.w; }
 
+				operator float2() const					{ return float2( x, y ); }
+				operator float3() const					{ return float3( x, y, z ); }
 	float4		operator-()								{ return float4( -x, -y, -z, -w ); }
-				operator float3()						{ return float3( x, y, z ); }
-	float4		operator-( const float4& v ) const	{ return float4( x-v.x, y-v.y, z-v.z, w-v.w ); }
-	float4		operator+( const float4& v ) const	{ return float4( x+v.x, y+v.y, z+v.z, w+v.w ); }
-	float4		operator*( const float4& v ) const	{ return float4( x*v.x, y*v.y, z*v.z, w*v.w ); }
+	float4		operator-( const float4& v ) const		{ return float4( x-v.x, y-v.y, z-v.z, w-v.w ); }
+	float4		operator+( const float4& v ) const		{ return float4( x+v.x, y+v.y, z+v.z, w+v.w ); }
+	float4		operator*( const float4& v ) const		{ return float4( x*v.x, y*v.y, z*v.z, w*v.w ); }
 	float4		operator*( float v ) const				{ return float4( x * v, y * v, z * v, w * v ); }
 	float4		operator/( float v ) const				{ return float4( x / v, y / v, z / v, w / v ); }
-	float4		operator/( const float4& v ) const	{ return float4( x / v.x, y / v.y, z / v.z, w / v.w ); }
-	float		operator|( const float4& v ) const	{ return x*v.x + y*v.y + z*v.z + w*v.w; }
+	float4		operator/( const float4& v ) const		{ return float4( x / v.x, y / v.y, z / v.z, w / v.w ); }
+
+	float4&		operator-=( const float4& v )			{ *this = *this - v; return *this; }
+	float4&		operator+=( const float4& v )			{ *this = *this + v; return *this; }
+	float4&		operator*=( const float4& v )			{ *this = *this * v; return *this; }
+	float4&		operator*=( float v )					{ *this = *this * v; return *this; }
+	float4&		operator/=( float v )					{ *this = *this / v; return *this; }
+	float4&		operator/=( const float4& v )			{ *this = *this / v; return *this; }
 
 	static float4	QuatFromAngleAxis( float _Angle, const float3& _Axis );
 
@@ -193,12 +187,11 @@ public:
 	static const float4	UnitW;
 };
 
-static float4   operator*( float a, const float4& b ) { return float4( a*b.x, a*b.y, a*b.z, a*b.w ); }
+static float4   operator*( float a, const float4& b )	{ return float4( a*b.x, a*b.y, a*b.z, a*b.w ); }
 
 
 // Float4x4 used for matrix operations
-class   float4x4
-{
+class   float4x4 {
 public:
 
 	float	m[16];
@@ -214,7 +207,7 @@ public:
 
 	float4x4&			Scale( const float3& _Scale );
 
-//	NjFloat4			operator*( const NjFloat4& b ) const;
+//	float4				operator*( const float4& b ) const;
 	float4x4			operator*( const float4x4& b ) const;
 	float&				operator()( int _Row, int _Column );
 
@@ -239,8 +232,7 @@ float4   operator*( const float4& a, const float4x4& b );
 
 
 // Float16
-class   half
-{
+class   half {
 public:
 	static const U16	SMALLEST_UINT = 0x0400;
 	static const float	SMALLEST;// = 6.1035156e-005f;	// The smallest encodable float
@@ -252,8 +244,7 @@ public:
 	operator float() const;
 };
 
-class   half4
-{
+class   half4 {
 public:
 	half  x, y, z, w;
 
@@ -263,5 +254,3 @@ public:
 
 	operator float4()	{ return float4( x, y, z, w ); }
 };
-
-#endif  // _NUAJ_MATH_H_

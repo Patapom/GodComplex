@@ -1,7 +1,6 @@
 #pragma once
 
-#include "Types.h"
-#include "ASMHelpers.h"
+#include "../Types.h"
 
 // Comparer should return:
 //	+1 if a < b 

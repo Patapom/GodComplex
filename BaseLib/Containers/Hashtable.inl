@@ -46,13 +46,12 @@ template<typename T> T*	DictionaryString<T>::Get( const char* _pKey ) const
 	return NULL;
 }
 
-template<typename T> T&	DictionaryString<T>::Add( const char* _pKey )
-{
+template<typename T> T&	DictionaryString<T>::Add( const char* _pKey ) {
 	U32		idx = Hash( _pKey ) % m_Size;
  
 	Node*	pNode = new Node();
 
-	int		KeyLength = strnlen( _pKey, HT_MAX_KEYLEN ) + 1;
+	int		KeyLength = int( strnlen( _pKey, HT_MAX_KEYLEN ) + 1 );
 	pNode->pKey = new char[KeyLength];
 	strcpy_s( pNode->pKey, KeyLength, _pKey );
  

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Types.h"
-#include "ASMHelpers.h"
+#include "../Types.h"
+#include "../ASMHelpers.h"
 #include "../Math/Math.h"
 
 // Source: http://blog.2of1.org/2011/07/11/simple-c-hashtable-code/
@@ -26,8 +26,7 @@
 #if defined(_DEBUG) || !defined(GODCOMPLEX)
 
 // Hashtable of strings, only used to access constants & uniforms by name in the shaders in DEBUG mode
-template<typename T> class	DictionaryString
-{
+template<typename T> class	DictionaryString {
 protected:	// NESTED TYPES
 
 	struct	Node
@@ -70,8 +69,7 @@ public:
 
 //////////////////////////////////////////////////////////////////////////
 // Specific dictionary storing explicit typed values
-template<typename T> class	Dictionary
-{
+template<typename T> class	Dictionary {
 protected:	// NESTED TYPES
 
 	struct	Node
@@ -113,8 +111,7 @@ public:		// METHODS
 };
 
 // General dictionary storing blind values
-class	DictionaryU32
-{
+class	DictionaryU32 {
 protected:	// NESTED TYPES
 
 	struct	Node
@@ -155,8 +152,7 @@ template<typename K> class	DictionaryKey {
 	static U32		GetHash( const K& _key )					{ ASSERT( false, "You didn't specialize the key class!" ); return 0; }
 	static int		Compare( const K& _key0, const K& _key1 )	{ ASSERT( false, "You didn't specialize the key class!" ); return 0; }
 };
-template<typename K, typename T> class	DictionaryGeneric
-{
+template<typename K, typename T> class	DictionaryGeneric {
 protected:		// NESTED TYPES
 
 	struct	Node

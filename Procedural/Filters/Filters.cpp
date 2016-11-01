@@ -155,7 +155,7 @@ void	Filters::BlurGaussian( TextureBuilder& _Builder, float _SizeX, float _SizeY
 		BS.W = W;
 		BS.H = H;
 
-		BS.Size = ceilf( _SizeX );
+		BS.Size = int( ceilf( _SizeX ) );
 		float	k = logf( _MinWeight ) / (_SizeX*_SizeX);
 
 		BS.pWeights = new float[BS.Size];
@@ -179,7 +179,7 @@ void	Filters::BlurGaussian( TextureBuilder& _Builder, float _SizeX, float _SizeY
 		BS.W = W;
 		BS.H = H;
 
-		BS.Size = ceilf( _SizeY );
+		BS.Size = int( ceilf( _SizeY ) );
 		float	k = logf( _MinWeight ) / (_SizeY*_SizeY);
 
 		BS.pWeights = new float[BS.Size];
@@ -237,7 +237,7 @@ void	FillBCG( int _X, int _Y, const float2& _UV, Pixel& _Pixel, void* _pData )
 {
 	__BCGStruct&	BCG = *((__BCGStruct*) _pData);
 
-	float	Luma = _Pixel.RGBA | LUMINANCE;
+	float	Luma = _Pixel.RGBA.Dot( LUMINANCE );
 //	float	ContrastedLuma = BCG.B + BCG.C * (Luma - 0.5f);
 	float	ContrastedLuma = 0.5f + BCG.C * (Luma + BCG.B);
 			ContrastedLuma = SATURATE( ContrastedLuma );

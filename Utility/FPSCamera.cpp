@@ -67,8 +67,8 @@ void	FPSCamera::Update( float _DeltaTime, float _TranslationSpeed, float _Rotati
 	}
 
 	float3	At = (m_Target - m_Position).Normalize();
-	float3	Right = (At ^ m_Up).Normalize();
-	float3	Up = Right ^ At;
+	float3	Right = At.Cross( m_Up ).Normalize();
+	float3	Up = Right.Cross( At );
 
 	//////////////////////////////////////////////////////////////////////////
 	// Handle keyboard manipulation
