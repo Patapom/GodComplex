@@ -28,8 +28,8 @@ template<class T> inline T	LERP( const T& a, const T& b, float t )			{ return a 
 template<class T> inline T	SATURATE( const T& x )							{ return x < 0.0f ? 0.0f : (x > 1.0f ? 1.0f : x); }
 static U8					FLOAT2BYTE( float f )							{ return U8( CLAMP( 255.0f * f, 0.0f, 255.0f ) ); }
 
-static bool					ALMOST( float a, float b )						{ return abs( a - b ) < ALMOST_EPSILON; }
-static bool					ALMOST( double a, double b )					{ return abs( a - b ) < ALMOST_EPSILON; }
+static bool					ALMOST( float a, float b, float _eps=ALMOST_EPSILON )		{ return abs( a - b ) < _eps; }
+static bool					ALMOST( double a, double b, double _eps=ALMOST_EPSILON )	{ return abs( a - b ) < _eps; }
 
 
 // Float2 used for point & vector operations
@@ -52,10 +52,11 @@ public:
 	float2		Max( const float2& b ) const			{ return float2( MAX( x, b.x ), MAX( y, b.y ) ); }
 	float		Min() const								{ return MIN( x, y ); }
 	float		Max() const								{ return MAX( x, y ); }
-	bool		Almost( const float2& b )				{ return ALMOST( x, b.x ) && ALMOST( y, b.y ); }
+	bool		Almost( const float2& b ) const			{ return ALMOST( x, b.x ) && ALMOST( y, b.y ); }
+	bool		Almost( const float2& b, float _eps ) const	{ return ALMOST( x, b.x, _eps ) && ALMOST( y, b.y, _eps ); }
 
-	float		Dot( const float2& v )					{ return x*v.x + y*v.y; }
-	float		Cross( const float2& v )				{ return x*v.y - y*v.x; }	// Returns the Z component of the orthogonal vector
+	float		Dot( const float2& v ) const			{ return x*v.x + y*v.y; }
+	float		Cross( const float2& v ) const			{ return x*v.y - y*v.x; }	// Returns the Z component of the orthogonal vector
 
 	float2		operator-() const						{ return float2( -x, -y ); }
 	float2		operator-( const float2& v ) const		{ return float2( x-v.x, y-v.y ); }
@@ -91,7 +92,8 @@ public:
 	float3( float _x, float _y, float _z ) : x( _x ), y( _y ), z( _z )	{}
 	float3( const float2& _xy, float _z ) : x( _xy.x ), y( _xy.y ), z( _z )	{}
 
-	void		Set( float _x, float _y, float _z ) { x = _x; y = _y; z = _z; }
+	void		Set( float _x, float _y, float _z )		{ x = _x; y = _y; z = _z; }
+	void		Set( const float2& _xy, float _z )		{ x = _xy.x; y = _xy.y; z = _z; }
 
 	float		LengthSq() const						{ return x*x + y*y + z*z; }
 	float		Length() const							{ return sqrtf( x*x + y*y + z*z ); }
@@ -103,6 +105,7 @@ public:
 	float		Min() const								{ return MIN( MIN( x, y ), z ); }
 	float		Max() const								{ return MAX( MAX( x, y ), z ); }
 	bool		Almost( const float3& b ) const			{ return ALMOST( x, b.x ) && ALMOST( y, b.y ) && ALMOST( z, b.z ); }
+	bool		Almost( const float3& b, float _eps ) const	{ return ALMOST( x, b.x, _eps ) && ALMOST( y, b.y, _eps ) && ALMOST( z, b.z, _eps ); }
 
 	float		Dot( const float3& v ) const			{ return x*v.x + y*v.y + z*v.z; }
 	float3		Cross( const float3& v ) const			{ return float3( y*v.z - z*v.y, v.x*z - v.z*x, x*v.y - y*v.x ); }
@@ -145,7 +148,9 @@ public:
 	float4( const float2& _xy, float _z, float _w ) : x( _xy.x ), y( _xy.y ), z( _z ), w( _w ) {}
 	float4( const float3& _xyz, float _w ) : x( _xyz.x ), y( _xyz.y ), z( _xyz.z ), w( _w ) {}
 
-	void		Set( float _x, float _y, float _z, float _w ) { x = _x; y = _y; z = _z; w = _w; }
+	void		Set( float _x, float _y, float _z, float _w )	{ x = _x; y = _y; z = _z; w = _w; }
+	void		Set( const float2& _xy, float _z, float _w )	{ x = _xy.x; y = _xy.y; z = _z; w = _w; }
+	void		Set( const float3& _xyz, float _w )				{ x = _xyz.x; y = _xyz.y; z = _xyz.x; w = _w; }
 
 	float		LengthSq() const						{ return x*x + y*y + z*z + w*w; }
 	float		Length() const							{ return sqrtf( x*x + y*y + z*z + w*w ); }
@@ -156,9 +161,10 @@ public:
 	float4		Max( const float4& b ) const			{ return float4( MAX( x, b.x ), MAX( y, b.y ), MAX( z, b.z ), MAX( w, b.w ) ); }
 	float		Min() const								{ return MIN( MIN( MIN( x, y ), z), w ); }
 	float		Max() const								{ return MAX( MAX( MAX( x, y ), z), w ); }
-	bool		Almost( const float4& b )				{ return ALMOST( x, b.x ) && ALMOST( y, b.y ) && ALMOST( z, b.z ) && ALMOST( w, b.w ); }
+	bool		Almost( const float4& b ) const			{ return ALMOST( x, b.x ) && ALMOST( y, b.y ) && ALMOST( z, b.z ) && ALMOST( w, b.w ); }
+	bool		Almost( const float4& b, float _eps ) const	{ return ALMOST( x, b.x, _eps ) && ALMOST( y, b.y, _eps ) && ALMOST( z, b.z, _eps ) && ALMOST( w, b.w, _eps ); }
 
-	float		Dot( const float4& b )					{ return x*b.x + y*b.y + z*b.z + w*b.w; }
+	float		Dot( const float4& b ) const			{ return x*b.x + y*b.y + z*b.z + w*b.w; }
 
 				operator float2() const					{ return float2( x, y ); }
 				operator float3() const					{ return float3( x, y, z ); }
@@ -194,13 +200,58 @@ static float4   operator*( float a, const float4& b )	{ return float4( a*b.x, a*
 class   float4x4 {
 public:
 
-	float	m[16];
+	float4	r[4];
 
-	const float4&		GetRow( int _RowIndex ) const							{ ASSERT( _RowIndex < 4, "Row index out of range!" ); return *((float4*) &m[4*_RowIndex] ); }
-	float4&				GetRow( int _RowIndex )									{ ASSERT( _RowIndex < 4, "Row index out of range!" ); return *((float4*) &m[4*_RowIndex] ); }
-	float4x4&			SetRow( int _RowIndex, const float4& _Row )				{ ASSERT( _RowIndex < 4, "Row index out of range!" ); m[4*_RowIndex+0] = _Row.x; m[4*_RowIndex+1] = _Row.y; m[4*_RowIndex+2] = _Row.z; m[4*_RowIndex+3] = _Row.w; return *this; }
-	float4x4&			SetRow( int _RowIndex, const float3& _Row, float _w=0 )	{ ASSERT( _RowIndex < 4, "Row index out of range!" ); m[4*_RowIndex+0] = _Row.x; m[4*_RowIndex+1] = _Row.y; m[4*_RowIndex+2] = _Row.z; m[4*_RowIndex+3] = _w; return *this; }
+	float4x4() {}
+	float4x4( const float4x4& _other ) {
+		Set( _other );
+	}
+	float4x4( float _coeffs[16] ) {
+		Set( _coeffs );
+	}
+	float4x4( const float4& _r0, const float4& _r1, const float4& _r2, const float4& _r3 ) {
+		Set( _r0, _r1, _r2, _r3 );
+	}
+	float4x4( const float4 _rows[4] ) {
+		Set( _rows[0], _rows[1], _rows[2], _rows[3] );
+	}
+	float4x4( float r00, float r01, float r02, float r03,
+			  float r10, float r11, float r12, float r13,
+			  float r20, float r21, float r22, float r23,
+			  float r30, float r31, float r32, float r33 ) {
+		Set( r00, r01, r02, r03, r10, r11, r12, r13, r20, r21, r22, r23, r30,  r31,  r32, r33 );
+	}
+
+	void	Set( const float4x4& _other ) {
+		r[0] = _other.r[0];
+		r[1] = _other.r[1];
+		r[2] = _other.r[2];
+		r[3] = _other.r[3];
+	}
+	void	Set( float _coeffs[16] ) {
+		r[0].Set( _coeffs[4*0+0], _coeffs[4*0+1], _coeffs[4*0+2], _coeffs[4*0+3] );
+		r[1].Set( _coeffs[4*1+0], _coeffs[4*1+1], _coeffs[4*1+2], _coeffs[4*1+3] );
+		r[2].Set( _coeffs[4*2+0], _coeffs[4*2+1], _coeffs[4*2+2], _coeffs[4*2+3] );
+		r[3].Set( _coeffs[4*3+0], _coeffs[4*3+1], _coeffs[4*3+2], _coeffs[4*3+3] );
+	}
+	void	Set( const float4& _r0, const float4& _r1, const float4& _r2, const float4& _r3 ) {
+		r[0] = _r0;
+		r[1] = _r1;
+		r[2] = _r2;
+		r[3] = _r3;
+	}
+	void	Set( float r00, float r01, float r02, float r03,
+				 float r10, float r11, float r12, float r13,
+				 float r20, float r21, float r22, float r23,
+				 float r30, float r31, float r32, float r33 ) {
+		r[0].Set( r00, r01, r02, r03 );
+		r[1].Set( r10, r11, r12, r13 );
+		r[2].Set( r20, r21, r22, r23 );
+		r[3].Set( r30, r31, r32, r33 );
+	}
+
 	float4x4			Inverse() const;
+	float4x4&			Invert() { *this = Inverse(); }
 	float				Determinant() const;
 	float				CoFactor( int x, int y ) const;
 	float4x4&			Normalize();
@@ -229,6 +280,7 @@ public:
 };
 
 float4   operator*( const float4& a, const float4x4& b );
+float4   operator*( const float4x4& b, const float4& a );
 
 
 // Float16

@@ -19,97 +19,102 @@ const float4	float4::UnitY( 0, 1, 0, 0 );
 const float4	float4::UnitZ( 0, 0, 1, 0 );
 const float4	float4::UnitW( 0, 0, 0, 1 );
 
-const float4x4	float4x4::Zero = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-const float4x4	float4x4::Identity = { 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 };
+// const float4x4	float4x4::Zero = { { 0, 0, 0, 0 }, { 0, 0, 0, 0 }, { 0, 0, 0, 0 }, { 0, 0, 0, 0 } };
+// const float4x4	float4x4::Identity = { { 1, 0, 0, 0 }, { 0, 1, 0, 0 }, { 0, 0, 1, 0 }, { 0, 0, 0, 1 } };
 
-float4	float4::QuatFromAngleAxis( float _Angle, const float3& _Axis ) {
-	float3	NormalizedAxis = _Axis;
+float4	float4::QuatFromAngleAxis( float _angle, const float3& _axis ) {
+	float3	NormalizedAxis = _axis;
 			NormalizedAxis.Normalize();
 
-	_Angle *= 0.5f;
+	_angle *= 0.5f;
 
-	float	c = cosf(_Angle);
-	float	s = sinf(_Angle);
+	float	c = cosf(_angle);
+	float	s = sinf(_angle);
 
 	return float4( s * NormalizedAxis, c );
 }
 
 float4x4  float4x4::Inverse() const {
-	float	Det = Determinant();
-	ASSERT( abs(Det) > 1e-6f, "Matrix is not inversible!" );
-
-	Det = 1.0f / Det;
+	float	det = Determinant();
+	ASSERT( abs(det) > 1e-6f, "Matrix is not inversible!" );
+	det = 1.0f / det;
 
 	float4x4  Temp;
-	Temp.m[4*0+0] = CoFactor( 0, 0 ) * Det;
-	Temp.m[4*1+0] = CoFactor( 0, 1 ) * Det;
-	Temp.m[4*2+0] = CoFactor( 0, 2 ) * Det;
-	Temp.m[4*3+0] = CoFactor( 0, 3 ) * Det;
-	Temp.m[4*0+1] = CoFactor( 1, 0 ) * Det;
-	Temp.m[4*1+1] = CoFactor( 1, 1 ) * Det;
-	Temp.m[4*2+1] = CoFactor( 1, 2 ) * Det;
-	Temp.m[4*3+1] = CoFactor( 1, 3 ) * Det;
-	Temp.m[4*0+2] = CoFactor( 2, 0 ) * Det;
-	Temp.m[4*1+2] = CoFactor( 2, 1 ) * Det;
-	Temp.m[4*2+2] = CoFactor( 2, 2 ) * Det;
-	Temp.m[4*3+2] = CoFactor( 2, 3 ) * Det;
-	Temp.m[4*0+3] = CoFactor( 3, 0 ) * Det;
-	Temp.m[4*1+3] = CoFactor( 3, 1 ) * Det;
-	Temp.m[4*2+3] = CoFactor( 3, 2 ) * Det;
-	Temp.m[4*3+3] = CoFactor( 3, 3 ) * Det;
+	Temp.r[0].x = CoFactor( 0, 0 ) * det;
+	Temp.r[1].x = CoFactor( 0, 1 ) * det;
+	Temp.r[2].x = CoFactor( 0, 2 ) * det;
+	Temp.r[3].x = CoFactor( 0, 3 ) * det;
+	Temp.r[0].y = CoFactor( 1, 0 ) * det;
+	Temp.r[1].y = CoFactor( 1, 1 ) * det;
+	Temp.r[2].y = CoFactor( 1, 2 ) * det;
+	Temp.r[3].y = CoFactor( 1, 3 ) * det;
+	Temp.r[0].z = CoFactor( 2, 0 ) * det;
+	Temp.r[1].z = CoFactor( 2, 1 ) * det;
+	Temp.r[2].z = CoFactor( 2, 2 ) * det;
+	Temp.r[3].z = CoFactor( 2, 3 ) * det;
+	Temp.r[0].w = CoFactor( 3, 0 ) * det;
+	Temp.r[1].w = CoFactor( 3, 1 ) * det;
+	Temp.r[2].w = CoFactor( 3, 2 ) * det;
+	Temp.r[3].w = CoFactor( 3, 3 ) * det;
 
 	return	Temp;
 }
 
-float	   float4x4::Determinant() const {
-	return m[0] * CoFactor( 0, 0 ) + m[1] * CoFactor( 0, 1 ) + m[2] * CoFactor( 0, 2 ) + m[3] * CoFactor( 0, 3 ); 
+float	float4x4::Determinant() const {
+	return r[0].x * CoFactor( 0, 0 ) + r[0].y * CoFactor( 0, 1 ) + r[0].z * CoFactor( 0, 2 ) + r[0].w * CoFactor( 0, 3 ); 
 }
 
-float	   float4x4::CoFactor( int x, int y ) const {
+// Small macro that accesses the component of a float4 given its index
+#define COMP( f4, index ) ((float*) &f4.x)[index]
+float	float4x4::CoFactor( int x, int y ) const {
 	static int  IndexLoop[7] = { 0, 1, 2, 3, 0, 1, 2 };
 
-	return	((	m[4*IndexLoop[x+1]+IndexLoop[y+1]]*m[4*IndexLoop[x+2]+IndexLoop[y+2]]*m[4*IndexLoop[x+3]+IndexLoop[y+3]] +
-				m[4*IndexLoop[x+1]+IndexLoop[y+2]]*m[4*IndexLoop[x+2]+IndexLoop[y+3]]*m[4*IndexLoop[x+3]+IndexLoop[y+1]] +
-				m[4*IndexLoop[x+1]+IndexLoop[y+3]]*m[4*IndexLoop[x+2]+IndexLoop[y+1]]*m[4*IndexLoop[x+3]+IndexLoop[y+2]] )
+	return	((	COMP( r[IndexLoop[x+1]], IndexLoop[y+1] ) * COMP( r[IndexLoop[x+2]], IndexLoop[y+2] ) * COMP( r[IndexLoop[x+3]], IndexLoop[y+3] ) +
+				COMP( r[IndexLoop[x+1]], IndexLoop[y+2] ) * COMP( r[IndexLoop[x+2]], IndexLoop[y+3] ) * COMP( r[IndexLoop[x+3]], IndexLoop[y+1] ) +
+				COMP( r[IndexLoop[x+1]], IndexLoop[y+3] ) * COMP( r[IndexLoop[x+2]], IndexLoop[y+1] ) * COMP( r[IndexLoop[x+3]], IndexLoop[y+2] ) )
 
-			-(	m[4*IndexLoop[x+3]+IndexLoop[y+1]]*m[4*IndexLoop[x+2]+IndexLoop[y+2]]*m[4*IndexLoop[x+1]+IndexLoop[y+3]] +
-				m[4*IndexLoop[x+3]+IndexLoop[y+2]]*m[4*IndexLoop[x+2]+IndexLoop[y+3]]*m[4*IndexLoop[x+1]+IndexLoop[y+1]] +
-				m[4*IndexLoop[x+3]+IndexLoop[y+3]]*m[4*IndexLoop[x+2]+IndexLoop[y+1]]*m[4*IndexLoop[x+1]+IndexLoop[y+2]] ))
+			-(	COMP( r[IndexLoop[x+3]], IndexLoop[y+1] ) * COMP( r[IndexLoop[x+2]], IndexLoop[y+2] ) * COMP( r[IndexLoop[x+1]], IndexLoop[y+3] ) +
+				COMP( r[IndexLoop[x+3]], IndexLoop[y+2] ) * COMP( r[IndexLoop[x+2]], IndexLoop[y+3] ) * COMP( r[IndexLoop[x+1]], IndexLoop[y+1] ) +
+				COMP( r[IndexLoop[x+3]], IndexLoop[y+3] ) * COMP( r[IndexLoop[x+2]], IndexLoop[y+1] ) * COMP( r[IndexLoop[x+1]], IndexLoop[y+2] ) ))
 			* (((x + y) & 1) == 1 ? -1.0f : +1.0f);
 }
 
 float4x4&	float4x4::Normalize() {
-	float3&	X = *((float3*) &m[4*0]);
-				X.Normalize();
-	float3&	Y = *((float3*) &m[4*1]);
-				Y.Normalize();
-	float3&	Z = *((float3*) &m[4*2]);
-				Z.Normalize();
-
+	((float3&) r[0]).Normalize();
+	((float3&) r[1]).Normalize();
+	((float3&) r[2]).Normalize();
 	return *this;
 }
 
-float4x4&	float4x4::Scale( const float3& _Scale ) {
-	m[4*0+0] *= _Scale.x;	m[4*0+1] *= _Scale.x;	m[4*0+2] *= _Scale.x; 	m[4*0+3] *= _Scale.x;
-	m[4*1+0] *= _Scale.y;	m[4*1+1] *= _Scale.y;	m[4*1+2] *= _Scale.y; 	m[4*1+3] *= _Scale.y;
-	m[4*2+0] *= _Scale.z;	m[4*2+1] *= _Scale.z;	m[4*2+2] *= _Scale.z; 	m[4*2+3] *= _Scale.z;
-
+float4x4&	float4x4::Scale( const float3& _scale ) {
+	r[0] *= _scale.x;
+	r[1] *= _scale.y;
+	r[2] *= _scale.z;
 	return *this;
 }
 
 float4   operator*( const float4& a, const float4x4& b ) {
 	float4	R;
-	R.x = a.x * b.m[4*0+0] + a.y * b.m[4*1+0] + a.z * b.m[4*2+0] + a.w * b.m[4*3+0];
-	R.y = a.x * b.m[4*0+1] + a.y * b.m[4*1+1] + a.z * b.m[4*2+1] + a.w * b.m[4*3+1];
-	R.z = a.x * b.m[4*0+2] + a.y * b.m[4*1+2] + a.z * b.m[4*2+2] + a.w * b.m[4*3+2];
-	R.w = a.x * b.m[4*0+3] + a.y * b.m[4*1+3] + a.z * b.m[4*2+3] + a.w * b.m[4*3+3];
+	R.x = a.x * b.r[0].x + a.y * b.r[1].x + a.z * b.r[2].x + a.w * b.r[3].x;
+	R.y = a.x * b.r[0].y + a.y * b.r[1].y + a.z * b.r[2].y + a.w * b.r[3].y;
+	R.z = a.x * b.r[0].z + a.y * b.r[1].z + a.z * b.r[2].z + a.w * b.r[3].z;
+	R.w = a.x * b.r[0].w + a.y * b.r[1].w + a.z * b.r[2].w + a.w * b.r[3].w;
 
 	return R;
 }
 
+float4   operator*( const float4x4& b, const float4& a ) {
+	float4	R;
+	R.x = a.Dot( b.r[0] );
+	R.y = a.Dot( b.r[1] );
+	R.z = a.Dot( b.r[2] );
+	R.w = a.Dot( b.r[3] );
+	return R;
+}
+
 float4x4	float4x4::BuildFromQuat( const float4& _Quat ) {
-	float4x4	Result;
-	float4	q = _Quat;
+	float4x4	result;
+	float4		q = _Quat;
 	q.Normalize();
 
 	float	xs = 2.0f * q.x;
@@ -121,68 +126,67 @@ float4x4	float4x4::BuildFromQuat( const float4& _Quat ) {
 	xx = q.x * xs;	xy = q.x * ys;	xz = q.x * zs;
 	yy = q.y * ys;	yz = q.y * zs;	zz = q.z * zs;
 
-	Result.m[4*0+0] = 1.0f - yy - zz;
-	Result.m[4*0+1] =        xy + wz;
-	Result.m[4*0+2] =        xz - wy;
-	Result.m[4*0+3] = 0.0f;
+	result.r[0].x = 1.0f - yy - zz;
+	result.r[0].y =        xy + wz;
+	result.r[0].z =        xz - wy;
+	result.r[0].w = 0.0f;
 
-	Result.m[4*1+0] =        xy - wz;
-	Result.m[4*1+1] = 1.0f - xx - zz;
-	Result.m[4*1+2] =        yz + wx;
-	Result.m[4*1+3] = 0.0f;
+	result.r[1].x =        xy - wz;
+	result.r[1].y = 1.0f - xx - zz;
+	result.r[1].z =        yz + wx;
+	result.r[1].w = 0.0f;
 
-	Result.m[4*2+0] =        xz + wy;
-	Result.m[4*2+1] =        yz - wx;
-	Result.m[4*2+2] = 1.0f - xx - yy;
-	Result.m[4*2+3] = 0.0f;
+	result.r[2].x =        xz + wy;
+	result.r[2].y =        yz - wx;
+	result.r[2].z = 1.0f - xx - yy;
+	result.r[2].w = 0.0f;
 
-	Result.m[4*3+0] = 0.0f;
-	Result.m[4*3+1] = 0.0f;
-	Result.m[4*3+2] = 0.0f;
-	Result.m[4*3+3] = 1.0f;
+	result.r[3].x = 0.0f;
+	result.r[3].y = 0.0f;
+	result.r[3].z = 0.0f;
+	result.r[3].w = 1.0f;
 
-	return	Result;
+	return	result;
 }
 
 float4x4&	float4x4::PRS( const float3& P, const float4& R, const float3& S ) {
 	return *this = BuildFromPRS( P, R, S );
 }
 
-float4x4	float4x4::ProjectionPerspective( float _FOVY, float _AspectRatio, float _Near, float _Far ) {
+float4x4	float4x4::ProjectionPerspective( float _FOVY, float _aspectRatio, float _near, float _far ) {
 	float	H = tanf( 0.5f * _FOVY );
-	float	W = _AspectRatio * H;
-	float	Q =  _Far / (_Far - _Near);
+	float	W = _aspectRatio * H;
+	float	Q =  _far / (_far - _near);
 
-	float4x4	Result;
-	Result.SetRow( 0, float4( 1.0f / W, 0.0f, 0.0f, 0.0f ) );
-	Result.SetRow( 1, float4( 0.0f, 1.0f / H, 0.0f, 0.0f ) );
-	Result.SetRow( 2, float4( 0.0f, 0.0f, Q, 1.0f ) );
-	Result.SetRow( 3, float4( 0.0f, 0.0f, -_Near * Q, 0.0f ) );
+	float4x4	result;
+	result.r[0].Set( 1.0f / W, 0.0f, 0.0f, 0.0f );
+	result.r[1].Set( 0.0f, 1.0f / H, 0.0f, 0.0f );
+	result.r[2].Set( 0.0f, 0.0f, Q, 1.0f );
+	result.r[3].Set( 0.0f, 0.0f, -_near * Q, 0.0f );
 
-	return Result;
+	return result;
 }
 
 float4x4	float4x4::BuildFromPRS( const float3& P, const float4& R, const float3& S ) {
-	float4x4	Result = BuildFromQuat( R );
+	float4x4	result = BuildFromQuat( R );
 
-	Result.m[4*0+0] *= S.x;
-	Result.m[4*0+1] *= S.x;
-	Result.m[4*0+2] *= S.x;
-	Result.m[4*0+3] *= S.x;
-	Result.m[4*1+0] *= S.y;
-	Result.m[4*1+1] *= S.y;
-	Result.m[4*1+2] *= S.y;
-	Result.m[4*1+3] *= S.y;
-	Result.m[4*2+0] *= S.z;
-	Result.m[4*2+1] *= S.z;
-	Result.m[4*2+2] *= S.z;
-	Result.m[4*2+3] *= S.z;
+	result.r[0].x *= S.x;
+	result.r[0].y *= S.x;
+	result.r[0].z *= S.x;
+	result.r[0].w *= S.x;
+	result.r[1].x *= S.y;
+	result.r[1].y *= S.y;
+	result.r[1].z *= S.y;
+	result.r[1].w *= S.y;
+	result.r[2].x *= S.z;
+	result.r[2].y *= S.z;
+	result.r[2].z *= S.z;
+	result.r[2].w *= S.z;
+	result.r[3].x = P.x;
+	result.r[3].y = P.y;
+	result.r[3].z = P.z;
 
-	Result.m[4*3+0] = P.x;
-	Result.m[4*3+1] = P.y;
-	Result.m[4*3+2] = P.z;
-
-	return	Result;
+	return	result;
 }
 
 float4x4	float4x4::Rot( const float3& _Source, const float3& _Target ) {
@@ -202,8 +206,8 @@ float4x4	float4x4::RotX( float _Angle ) {
 
 	float C = cosf( _Angle );
 	float S = sinf( _Angle );
-	Result.m[4*1+1] = C;	Result.m[4*1+2] = S;
-	Result.m[4*2+1] = -S;	Result.m[4*2+2] = C;
+	Result.r[1].y = C;	Result.r[1].z = S;
+	Result.r[2].y = -S;	Result.r[2].z = C;
 
 	return Result;
 }
@@ -212,8 +216,8 @@ float4x4	float4x4::RotY( float _Angle ) {
 
 	float C = cosf( _Angle );
 	float S = sinf( _Angle );
-	Result.m[4*0+0] = C;	Result.m[4*0+2] = -S;
-	Result.m[4*2+0] = S;	Result.m[4*2+2] = C;
+	Result.r[0].x = C;	Result.r[0].z = -S;
+	Result.r[2].x = S;	Result.r[2].z = C;
 
 	return Result;
 }
@@ -222,8 +226,8 @@ float4x4	float4x4::RotZ( float _Angle ) {
 
 	float C = cosf( _Angle );
 	float S = sinf( _Angle );
-	Result.m[4*0+0] = C;	Result.m[4*0+1] = S;
-	Result.m[4*1+0] = -S;	Result.m[4*1+1] = C;
+	Result.r[0].x = C;	Result.r[0].y = S;
+	Result.r[1].x = -S;	Result.r[1].y = C;
 
 	return Result;
 }
@@ -240,43 +244,36 @@ float4x4	float4x4::PYR( float _Pitch, float _Yaw, float _Roll ) {
 float4x4  float4x4::operator*( const float4x4& b ) const {
 	float4x4  R;
 
-	R.m[4*0+0] = m[4*0+0] * b.m[4*0+0] + m[4*0+1] * b.m[4*1+0] + m[4*0+2] * b.m[4*2+0] + m[4*0+3] * b.m[4*3+0];
-	R.m[4*0+1] = m[4*0+0] * b.m[4*0+1] + m[4*0+1] * b.m[4*1+1] + m[4*0+2] * b.m[4*2+1] + m[4*0+3] * b.m[4*3+1];
-	R.m[4*0+2] = m[4*0+0] * b.m[4*0+2] + m[4*0+1] * b.m[4*1+2] + m[4*0+2] * b.m[4*2+2] + m[4*0+3] * b.m[4*3+2];
-	R.m[4*0+3] = m[4*0+0] * b.m[4*0+3] + m[4*0+1] * b.m[4*1+3] + m[4*0+2] * b.m[4*2+3] + m[4*0+3] * b.m[4*3+3];
+	R.r[0].x = r[0].x * b.r[0].x + r[0].y * b.r[1].x + r[0].z * b.r[2].x + r[0].w * b.r[3].x;
+	R.r[0].y = r[0].x * b.r[0].y + r[0].y * b.r[1].y + r[0].z * b.r[2].y + r[0].w * b.r[3].y;
+	R.r[0].z = r[0].x * b.r[0].z + r[0].y * b.r[1].z + r[0].z * b.r[2].z + r[0].w * b.r[3].z;
+	R.r[0].w = r[0].x * b.r[0].w + r[0].y * b.r[1].w + r[0].z * b.r[2].w + r[0].w * b.r[3].w;
 
-	R.m[4*1+0] = m[4*1+0] * b.m[4*0+0] + m[4*1+1] * b.m[4*1+0] + m[4*1+2] * b.m[4*2+0] + m[4*1+3] * b.m[4*3+0];
-	R.m[4*1+1] = m[4*1+0] * b.m[4*0+1] + m[4*1+1] * b.m[4*1+1] + m[4*1+2] * b.m[4*2+1] + m[4*1+3] * b.m[4*3+1];
-	R.m[4*1+2] = m[4*1+0] * b.m[4*0+2] + m[4*1+1] * b.m[4*1+2] + m[4*1+2] * b.m[4*2+2] + m[4*1+3] * b.m[4*3+2];
-	R.m[4*1+3] = m[4*1+0] * b.m[4*0+3] + m[4*1+1] * b.m[4*1+3] + m[4*1+2] * b.m[4*2+3] + m[4*1+3] * b.m[4*3+3];
+	R.r[1].x = r[1].x * b.r[0].x + r[1].y * b.r[1].x + r[1].z * b.r[2].x + r[1].w * b.r[3].x;
+	R.r[1].y = r[1].x * b.r[0].y + r[1].y * b.r[1].y + r[1].z * b.r[2].y + r[1].w * b.r[3].y;
+	R.r[1].z = r[1].x * b.r[0].z + r[1].y * b.r[1].z + r[1].z * b.r[2].z + r[1].w * b.r[3].z;
+	R.r[1].w = r[1].x * b.r[0].w + r[1].y * b.r[1].w + r[1].z * b.r[2].w + r[1].w * b.r[3].w;
 
-	R.m[4*2+0] = m[4*2+0] * b.m[4*0+0] + m[4*2+1] * b.m[4*1+0] + m[4*2+2] * b.m[4*2+0] + m[4*2+3] * b.m[4*3+0];
-	R.m[4*2+1] = m[4*2+0] * b.m[4*0+1] + m[4*2+1] * b.m[4*1+1] + m[4*2+2] * b.m[4*2+1] + m[4*2+3] * b.m[4*3+1];
-	R.m[4*2+2] = m[4*2+0] * b.m[4*0+2] + m[4*2+1] * b.m[4*1+2] + m[4*2+2] * b.m[4*2+2] + m[4*2+3] * b.m[4*3+2];
-	R.m[4*2+3] = m[4*2+0] * b.m[4*0+3] + m[4*2+1] * b.m[4*1+3] + m[4*2+2] * b.m[4*2+3] + m[4*2+3] * b.m[4*3+3];
+	R.r[2].x = r[2].x * b.r[0].x + r[2].y * b.r[1].x + r[2].z * b.r[2].x + r[2].w * b.r[3].x;
+	R.r[2].y = r[2].x * b.r[0].y + r[2].y * b.r[1].y + r[2].z * b.r[2].y + r[2].w * b.r[3].y;
+	R.r[2].z = r[2].x * b.r[0].z + r[2].y * b.r[1].z + r[2].z * b.r[2].z + r[2].w * b.r[3].z;
+	R.r[2].w = r[2].x * b.r[0].w + r[2].y * b.r[1].w + r[2].z * b.r[2].w + r[2].w * b.r[3].w;
 
-	R.m[4*3+0] = m[4*3+0] * b.m[4*0+0] + m[4*3+1] * b.m[4*1+0] + m[4*3+2] * b.m[4*2+0] + m[4*3+3] * b.m[4*3+0];
-	R.m[4*3+1] = m[4*3+0] * b.m[4*0+1] + m[4*3+1] * b.m[4*1+1] + m[4*3+2] * b.m[4*2+1] + m[4*3+3] * b.m[4*3+1];
-	R.m[4*3+2] = m[4*3+0] * b.m[4*0+2] + m[4*3+1] * b.m[4*1+2] + m[4*3+2] * b.m[4*2+2] + m[4*3+3] * b.m[4*3+2];
-	R.m[4*3+3] = m[4*3+0] * b.m[4*0+3] + m[4*3+1] * b.m[4*1+3] + m[4*3+2] * b.m[4*2+3] + m[4*3+3] * b.m[4*3+3];
+	R.r[3].x = r[3].x * b.r[0].x + r[3].y * b.r[1].x + r[3].z * b.r[2].x + r[3].w * b.r[3].x;
+	R.r[3].y = r[3].x * b.r[0].y + r[3].y * b.r[1].y + r[3].z * b.r[2].y + r[3].w * b.r[3].y;
+	R.r[3].z = r[3].x * b.r[0].z + r[3].y * b.r[1].z + r[3].z * b.r[2].z + r[3].w * b.r[3].z;
+	R.r[3].w = r[3].x * b.r[0].w + r[3].y * b.r[1].w + r[3].z * b.r[2].w + r[3].w * b.r[3].w;
 
 	return R;
 }
 
-float&	float4x4::operator()( int _Row, int _Column ) {
-	float4*	pRow = 0;
-	switch ( _Row&3 ) {
-		case 0: pRow = (float4*) &m[4*0]; break;
-		case 1: pRow = (float4*) &m[4*1]; break;
-		case 2: pRow = (float4*) &m[4*2]; break;
-		case 3: pRow = (float4*) &m[4*3]; break;
-	}
-
-	switch ( _Column&3 ) {
-		case 0: return pRow->x;
-		case 1: return pRow->y;
-		case 2: return pRow->z;
-		case 3: return pRow->w;
+float&	float4x4::operator()( int _row, int _column ) {
+	float4&	row = r[_row&3];
+	switch ( _column&3 ) {
+		case 0: return row.x;
+		case 1: return row.y;
+		case 2: return row.z;
+		case 3: return row.w;
 	}
 	return *((float*) 0);
 }

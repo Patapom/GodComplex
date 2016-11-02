@@ -942,13 +942,11 @@ namespace ImageUtility
 		/// </summary>
 		/// <param name="_MetaData"></param>
 		/// <param name="_FileType"></param>
-		public ColorProfile( BitmapMetadata _MetaData, Bitmap.FILE_TYPE _FileType )
-		{
+		public ColorProfile( BitmapMetadata _MetaData, Bitmap.FILE_TYPE _FileType ) {
 			string	MetaDump = _MetaData != null ? DumpMetaData( _MetaData ) : null;
 
 			bool	bGammaFoundInFile = false;
-			switch ( _FileType )
-			{
+			switch ( _FileType ) {
 				case Bitmap.FILE_TYPE.JPEG:
 					m_GammaCurve = GAMMA_CURVE.STANDARD;
 					m_Gamma = 2.2f;							// JPG uses a 2.2 gamma by default

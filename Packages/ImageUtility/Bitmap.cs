@@ -1,4 +1,7 @@
-﻿//#define USE_LIB_RAW
+﻿#define USE_LIB_RAW
+
+// Pom (2016-11-02) Please use the ImageUtilityManaged class that wraps the native C++ ImageUtilityLib instead of this C# version
+// The reason I discontinued this C# lib is because it's too slow, especially when dealing with RAW images and large images conversion
 
 //////////////////////////////////////////////////////////////////////////
 // This special Bitmap class handles many image formats (JPG, PNG, BMP, TGA, GIF, HDR and especially RAW camera formats)
@@ -626,8 +629,7 @@ namespace ImageUtility
 					case FILE_TYPE.DNG:
 						{
 							using ( System.IO.MemoryStream Stream = new System.IO.MemoryStream( _ImageFileContent ) )
-								using ( LibRawManaged.RawFile Raw = new LibRawManaged.RawFile() )
-								{
+								using ( LibRawManaged.RawFile Raw = new LibRawManaged.RawFile() ) {
 									Raw.UnpackRAW( Stream );
 
 									ColorProfile.Chromaticities	Chroma = Raw.ColorProfile == LibRawManaged.RawFile.COLOR_PROFILE.ADOBE_RGB
@@ -745,8 +747,7 @@ namespace ImageUtility
 		/// (that uses a gamma of 1 internally) will automatically apply a pow( 2.2 ) to the RGB values, which is NOT what we're looking for since we're
 		/// handling gamma correction ourselves here !
 		/// </remarks>
-		protected void	ConvertFrame( BitmapSource _Frame )
-		{
+		protected void	ConvertFrame( BitmapSource _Frame ) {
 			m_Width = _Frame.PixelWidth;
 			m_Height = _Frame.PixelHeight;
 			if ( !ms_ReadContent )
