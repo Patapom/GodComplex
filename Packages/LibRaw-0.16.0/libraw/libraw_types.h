@@ -81,17 +81,17 @@ typedef unsigned char uchar;
 typedef unsigned short ushort;
 
 #ifdef WIN32
-#ifdef LIBRAW_NODLL
-# define DllDef
+//	#ifdef LIBRAW_NODLL
+		#define DllDef
+// 	#else
+// 		#ifdef LIBRAW_BUILDLIB
+// 			#define DllDef   __declspec( dllexport )
+// 		#else
+// 			#define DllDef   __declspec( dllimport )
+// 		#endif
+// 	#endif
 #else
-# ifdef LIBRAW_BUILDLIB
-#    define DllDef   __declspec( dllexport )
-# else
-#    define DllDef   __declspec( dllimport )
-# endif
-#endif
-#else
-#  define DllDef
+	#define DllDef
 #endif
 
 typedef struct

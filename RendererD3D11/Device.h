@@ -42,7 +42,7 @@ private:	// FIELDS
 
 	Component*				m_pComponentsStackTop;	// Remember this is the stack TOP so access the components using their m_pNext pointer to reach back to the bottom
 
-	Shader*				m_pCurrentMaterial;		// The currently used material
+	Shader*					m_pCurrentMaterial;		// The currently used material
 	RasterizerState*		m_pCurrentRasterizerState;
 	DepthStencilState*		m_pCurrentDepthStencilState;
 	BlendState*				m_pCurrentBlendState;
@@ -50,7 +50,7 @@ private:	// FIELDS
 	int						m_StatesCount;
 
 	// Default blend & stencil refs
-	float4				m_BlendFactors;
+	float4					m_BlendFactors;
 	U32						m_BlendMasks;
 	U8						m_StencilRef;
 
@@ -93,7 +93,7 @@ public:	 // PROPERTIES
 	const Texture2D&		DefaultRenderTarget() const	{ return *m_pDefaultRenderTarget; }
 	const Texture2D&		DefaultDepthStencil() const	{ return *m_pDefaultDepthStencil; }
 
-	Shader*				CurrentMaterial()			{ return m_pCurrentMaterial; }
+	Shader*					CurrentMaterial()			{ return m_pCurrentMaterial; }
 
 
 public:	 // METHODS

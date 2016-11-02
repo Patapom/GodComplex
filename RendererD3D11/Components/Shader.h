@@ -57,7 +57,7 @@ class Shader : public Component, ID3DInclude
 {
 public:		// NESTED TYPES
 
-#ifndef GODCOMPLEX
+#ifdef ENABLE_SHADER_REFLECTION
 	class	ShaderConstants
 	{
 	public:	// NESTED TYPES
@@ -118,16 +118,15 @@ private:	// FIELDS
 
 	bool					m_bHasErrors;
 
-	#ifndef GODCOMPLEX
+ 	#ifdef ENABLE_SHADER_REFLECTION
 		ShaderConstants			m_VSConstants;
 		ShaderConstants			m_HSConstants;
 		ShaderConstants			m_DSConstants;
 		ShaderConstants			m_GSConstants;
 		ShaderConstants			m_PSConstants;
+ 	#endif
 
-		Dictionary<const char*>	m_Pointer2FileName;
-	#endif
-
+	Dictionary<const char*>	m_Pointer2FileName;
 
 public:
 	static bool				ms_LoadFromBinary;	// A flag you can set to force loading from binary files without having to write a specific code for that
@@ -160,10 +159,10 @@ public:	 // METHODS
 
 	void			SetConstantBuffer( int _BufferSlot, ConstantBuffer& _Buffer );
 	void			SetTexture( int _BufferSlot, ID3D11ShaderResourceView* _pData );
-#ifndef GODCOMPLEX
-	bool			SetConstantBuffer( const char* _pBufferName, ConstantBuffer& _Buffer );
-	bool			SetTexture( const char* _pTextureName, ID3D11ShaderResourceView* _pData );
-#endif
+	#ifdef ENABLE_SHADER_REFLECTION
+		bool			SetConstantBuffer( const char* _pBufferName, ConstantBuffer& _Buffer );
+		bool			SetTexture( const char* _pTextureName, ID3D11ShaderResourceView* _pData );
+	#endif
 
 	// Must call this before using the material
 	// Returns false if the shader cannot be used (like when it's in error state)

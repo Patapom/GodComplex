@@ -9,8 +9,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\API\ASMHelpers.h" />
-    <ClInclude Include="..\API\Types.h" />
     <ClInclude Include="Containers\Hashtable.h">
       <Filter>Containers</Filter>
     </ClInclude>
@@ -20,6 +18,8 @@
     <ClInclude Include="Math\Math.h">
       <Filter>Math</Filter>
     </ClInclude>
+    <ClInclude Include="ASMHelpers.h" />
+    <ClInclude Include="Types.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Containers\Hashtable.cpp">

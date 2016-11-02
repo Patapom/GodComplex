@@ -14,4 +14,8 @@
 
 #pragma pack()
 
+// Define this to enable shader reflection and be able to list input textures & uniforms
+// WARNING: I didn't manage to solve a link problem about a missing IID_ID3D11ShaderReflection implementation so the RendererManaged library won't work with that option!
+//#define ENABLE_SHADER_REFLECTION
+
 #include "../BaseLib/Types.h"

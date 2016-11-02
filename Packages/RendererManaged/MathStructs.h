@@ -8,13 +8,11 @@ using namespace System;
 namespace RendererManaged
 {
 	[System::Diagnostics::DebuggerDisplayAttribute( "{x}, {y}" )]
-	public value struct	float2
-	{
+	public value struct	float2 {
 	public:
 		float	x, y;
 		float2( float _x, float _y )				{ Set( _x, _y ); }
 		void	Set( float _x, float _y )			{ x = _x; y = _y; }
-		void	FromVector2( WMath::Vector2D^ a )	{ Set( a->x, a->y ); }
 
 		static float2	operator+( float2 a, float2 b )	{ return float2( a.x+b.x, a.y+b.y ); }
 		static float2	operator-( float2 a, float2 b )	{ return float2( a.x-b.x, a.y-b.y ); }
@@ -57,14 +55,12 @@ namespace RendererManaged
 	};
 
 	[System::Diagnostics::DebuggerDisplayAttribute( "{x}, {y}, {z}" )]
-	public value struct	float3
-	{
+	public value struct	float3 {
 	public:
 		float	x, y, z;
 		float3( float _x, float _y, float _z )		{ Set( _x, _y, _z ); }
 		float3( System::Drawing::Color^ _Color )	{ Set( _Color->R / 255.0f, _Color->G / 255.0f, _Color->B / 255.0f ); }
 		void	Set( float _x, float _y, float _z )	{ x = _x; y = _y; z = _z; }
-		float3^	FromVector3( WMath::Vector^ a )		{ Set( a->x, a->y, a->z ); return *this; }
 
 		static float3	operator+( float3 a, float3 b )	{ return float3( a.x+b.x, a.y+b.y, a.z+b.z ); }
 		static float3	operator-( float3 a, float3 b )	{ return float3( a.x-b.x, a.y-b.y, a.z-b.z ); }
@@ -113,8 +109,7 @@ namespace RendererManaged
 	};
 
 	[System::Diagnostics::DebuggerDisplayAttribute( "{x}, {y}, {z}, {w}" )]
-	public value struct	float4
-	{
+	public value struct	float4 {
 	public:
 		float	x, y, z, w;
 		float4( float _x, float _y, float _z, float _w )		{ Set( _x, _y, _z, _w ); }
@@ -122,7 +117,6 @@ namespace RendererManaged
 		float4( System::Drawing::Color^ _Color, float _Alpha )	{ Set( _Color->R / 255.0f, _Color->G / 255.0f, _Color->B / 255.0f, _Alpha ); }
 		void	Set( float _x, float _y, float _z, float _w )	{ x = _x; y = _y; z = _z; w = _w; }
 		void	Set( float3 _xyz, float _w )					{ x = _xyz.x; y = _xyz.y; z = _xyz.z; w = _w; }
-		void	FromVector4( WMath::Vector4D^ a )				{ Set( a->x, a->y, a->z, a->w ); }
 
 		static float4	operator+( float4 a, float4 b )	{ return float4( a.x+b.x, a.y+b.y, a.z+b.z, a.w+b.w ); }
 		static float4	operator-( float4 a, float4 b )	{ return float4( a.x-b.x, a.y-b.y, a.z-b.z, a.w-b.w ); }
@@ -183,8 +177,7 @@ namespace RendererManaged
 		static property float4	One		{ float4 get() { return float4( 1, 1, 1, 1 ); } }
 	};
 
-	public value struct	float4x4
-	{
+	public value struct	float4x4 {
 	public:
 		float4	r0;
 		float4	r1;
@@ -199,7 +192,6 @@ namespace RendererManaged
 			r3.Set( _values[4*3+0], _values[4*3+1], _values[4*3+2], _values[4*3+3] );
 		}
 		float4x4( float4^ _r0, float4^ _r1, float4^ _r2, float4^ _r3 )	{ r0 = *_r0; r1 = *_r1; r2 = *_r2; r3 = *_r3; }
-		void		FromMatrix4( WMath::Matrix4x4^ a )	{ r0.FromVector4( a->GetRow0() ); r1.FromVector4( a->GetRow1() ); r2.FromVector4( a->GetRow2() ); r3.FromVector4( a->GetRow3() ); }
 
 		// Makes a "look at" camera matrix (left-handed)
 		float4x4^	MakeLookAtCamera( float3 _Position, float3 _Target, float3 _Up )

@@ -9,7 +9,6 @@
 #include "../../RendererD3D11/Device.h"
 
 using namespace System;
-using namespace WMath;
 
 namespace DirectXTexManaged {
 
@@ -20,8 +19,7 @@ namespace DirectXTexManaged {
 		// Creates a DDS file from a texture
 		static void CreateDDS( String^ _FileName, RendererManaged::Texture2D^ _Texture );
 
-// 		static void	CreateNormalMapBC5File( String^ _FileName, cli::array< cli::array<WMath::Vector4D^,2>^>^ _Mips )
-// 		{
+// 		static void	CreateNormalMapBC5File( String^ _FileName, cli::array< cli::array<RendererManaged::float4^,2>^>^ _Mips ) {
 // 			int	MipsCount = _Mips->Length;
 // 
 // 			int	Width = _Mips[0]->GetLength( 0 );
@@ -37,7 +35,7 @@ namespace DirectXTexManaged {
 // 				int	W = Math::Max( 1, Width >> MipIndex );
 // 				int	H = Math::Max( 1, Height >> MipIndex );
 // 
-// 				cli::array<WMath::Vector4D^,2>^	Content = _Mips[MipIndex];
+// 				cli::array<RendererManaged::float4^,2>^	Content = _Mips[MipIndex];
 // 
 // 				const DirectX::Image*	pImage = DXT->GetImage( MipIndex, 0, 0 );
 // 
@@ -77,8 +75,7 @@ namespace DirectXTexManaged {
 // 			delete DXT;
 // 		}
 
-		static void	CreateCubeMapFile( String^ _FileName, int _CubeSize, cli::array< cli::array< cli::array<WMath::Vector4D^,2>^>^ >^ _CubeFaces )
-		{
+		static void	CreateCubeMapFile( String^ _FileName, int _CubeSize, cli::array< cli::array< cli::array<RendererManaged::float4^,2>^>^ >^ _CubeFaces ) {
 			int	MipsCount = _CubeFaces->Length;
 
 			// Create the image and fill it with our data
@@ -89,10 +86,10 @@ namespace DirectXTexManaged {
 			for ( int MipIndex=0; MipIndex < _CubeFaces->Length; MipIndex++ )
 			{
 				int	CubeSize = _CubeSize >> MipIndex;
-				cli::array< cli::array<WMath::Vector4D^,2>^>^	CubeFaces = _CubeFaces[MipIndex];
+				cli::array< cli::array<RendererManaged::float4^,2>^>^	CubeFaces = _CubeFaces[MipIndex];
 				for ( int FaceIndex=0; FaceIndex < 6; FaceIndex++ )
 				{
-					cli::array<WMath::Vector4D^,2>^	CubeFace = CubeFaces[FaceIndex];
+					cli::array<RendererManaged::float4^,2>^	CubeFace = CubeFaces[FaceIndex];
 					const DirectX::Image*	pImage = DXT->GetImage( MipIndex, FaceIndex, 0 );
 
 // 					float	R, G, B;
@@ -141,8 +138,7 @@ namespace DirectXTexManaged {
 			delete DXT;
 		}
 
-		static void	CreateRGBA16FFile( String^ _FileName, cli::array<WMath::Vector4D^,2>^ _Image )
-		{
+		static void	CreateRGBA16FFile( String^ _FileName, cli::array<RendererManaged::float4,2>^ _Image ) {
 			int	Width = _Image->GetLength( 0 );
 			int	Height = _Image->GetLength( 1 );
 
@@ -151,15 +147,13 @@ namespace DirectXTexManaged {
 			HRESULT					hr = TempDXT->Initialize2D( DXGI_FORMAT_R32G32B32A32_FLOAT, Width, Height, 1, 1 );
 			const DirectX::Image*	pTempImage = TempDXT->GetImage( 0, 0, 0 );
 
-			for ( int Y=0; Y < Height; Y++ )
-			{
+			for ( int Y=0; Y < Height; Y++ ) {
 				float*	pScanline = (float*) (pTempImage->pixels + Y * pTempImage->rowPitch);
-				for ( int X=0; X < Width; X++ )
-				{
-					float	R = _Image[X,Y]->x;
-					float	G = _Image[X,Y]->y;
-					float	B = _Image[X,Y]->z;
-					float	A = _Image[X,Y]->w;
+				for ( int X=0; X < Width; X++ ) {
+					float	R = _Image[X,Y].x;
+					float	G = _Image[X,Y].y;
+					float	B = _Image[X,Y].z;
+					float	A = _Image[X,Y].w;
 
 					*pScanline++ = R;
 					*pScanline++ = G;
@@ -230,18 +224,18 @@ namespace DirectXTexManaged {
 			if ( DXT->GetImageCount() != meta.arraySize * meta.mipLevels )
 				throw gcnew Exception( "Unexpected amount of images!" );
 
-			cli::array< RendererManaged::PixelsBuffer^ >^	content = gcnew cli::array< RendererManaged::PixelsBuffer^ >( meta.arraySize * meta.mipLevels );
+			cli::array< RendererManaged::PixelsBuffer^ >^	content = gcnew cli::array< RendererManaged::PixelsBuffer^ >( int( meta.arraySize * meta.mipLevels ) );
 			for ( int arrayIndex=0; arrayIndex < int(meta.arraySize); arrayIndex++ ) {
-				int	W = meta.width;
-				int	H = meta.height;
+				int	W = int( meta.width );
+				int	H = int( meta.height );
 				for ( int mipIndex=0; mipIndex < int(meta.mipLevels); mipIndex++ ) {
 					const DirectX::Image*	sourceImage = DXT->GetImage( mipIndex, arrayIndex, 0U );
 
-					RendererManaged::PixelsBuffer^	buffer = gcnew RendererManaged::PixelsBuffer( sourceImage->slicePitch );
-					content[arrayIndex*meta.mipLevels+mipIndex] = buffer;
+					RendererManaged::PixelsBuffer^	buffer = gcnew RendererManaged::PixelsBuffer( int( sourceImage->slicePitch ) );
+					content[int( arrayIndex*meta.mipLevels+mipIndex )] = buffer;
 
-					cli::array< Byte >^	byteArray = gcnew cli::array< Byte >( sourceImage->slicePitch );
-					System::Runtime::InteropServices::Marshal::Copy( (IntPtr) sourceImage->pixels, byteArray, 0, sourceImage->slicePitch );
+					cli::array< Byte >^	byteArray = gcnew cli::array< Byte >( int( sourceImage->slicePitch ) );
+					System::Runtime::InteropServices::Marshal::Copy( (IntPtr) sourceImage->pixels, byteArray, 0, int( sourceImage->slicePitch ) );
 
 					System::IO::BinaryWriter^	writer = buffer->OpenStreamWrite();
 					writer->Write( byteArray );
@@ -250,7 +244,7 @@ namespace DirectXTexManaged {
 			}
 
 			// Build texture
-			RendererManaged::Texture2D^	Result = gcnew RendererManaged::Texture2D( _Device, meta.width, meta.height, meta.IsCubemap() ? -int(meta.arraySize) : int(meta.arraySize), meta.mipLevels, format, false, false, content );
+			RendererManaged::Texture2D^	Result = gcnew RendererManaged::Texture2D( _Device, int( meta.width ), int( meta.height ), meta.IsCubemap() ? -int(meta.arraySize) : int(meta.arraySize), int( meta.mipLevels ), format, false, false, content );
 
 			delete DXT;
 

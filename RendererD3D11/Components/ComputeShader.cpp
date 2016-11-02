@@ -7,8 +7,8 @@
 #include <stdio.h>
 #include <io.h>
 
-#include "D3Dcompiler.h"
-#include "D3D11Shader.h"
+#include <D3Dcompiler.h>
+#include <D3D11Shader.h>
 
 ComputeShader*	ComputeShader::ms_pCurrentShader = NULL;
 
@@ -155,7 +155,7 @@ void	ComputeShader::CompileShaders( const char* _pShaderCode, ID3DBlob* _pCS ) {
 
 		m_pCS = tempCS;
 
-		#ifndef GODCOMPLEX
+		#ifdef ENABLE_SHADER_REFLECTION
 			m_CSConstants.Enumerate( *pShader );
 		#endif
 
@@ -326,10 +326,9 @@ const char*	ComputeShader::CopyString( const char* _pShaderFileName ) const
 
 // When compiling normally (i.e. not for the GodComplex 64K intro), allow strings to access shader variables
 //
-#ifndef GODCOMPLEX
+#ifdef ENABLE_SHADER_REFLECTION
 
-bool	ComputeShader::SetConstantBuffer( const char* _pBufferName, ConstantBuffer& _Buffer )
-{
+bool	ComputeShader::SetConstantBuffer( const char* _pBufferName, ConstantBuffer& _Buffer ) {
 	if ( !Lock() )
 		return	true;	// Someone else is locking it !
 
@@ -348,8 +347,7 @@ bool	ComputeShader::SetConstantBuffer( const char* _pBufferName, ConstantBuffer&
 	return	bUsed;
 }
 
-bool	ComputeShader::SetTexture( const char* _pTextureName, ID3D11ShaderResourceView* _pData )
-{
+bool	ComputeShader::SetTexture( const char* _pTextureName, ID3D11ShaderResourceView* _pData ) {
 	if ( !Lock() )
 		return	true;	// Someone else is locking it !
 
@@ -366,8 +364,7 @@ bool	ComputeShader::SetTexture( const char* _pTextureName, ID3D11ShaderResourceV
 	return	bUsed;
 }
 
-bool	ComputeShader::SetStructuredBuffer( const char* _pBufferName, StructuredBuffer& _Buffer )
-{
+bool	ComputeShader::SetStructuredBuffer( const char* _pBufferName, StructuredBuffer& _Buffer ) {
 	if ( !Lock() )
 		return	true;	// Someone else is locking it !
 
@@ -387,8 +384,7 @@ bool	ComputeShader::SetStructuredBuffer( const char* _pBufferName, StructuredBuf
 	return	bUsed;
 }
 
-bool	ComputeShader::SetUnorderedAccessView( const char* _pBufferName, StructuredBuffer& _Buffer )
-{
+bool	ComputeShader::SetUnorderedAccessView( const char* _pBufferName, StructuredBuffer& _Buffer ) {
 	if ( !Lock() )
 		return	true;	// Someone else is locking it !
 
@@ -410,17 +406,15 @@ bool	ComputeShader::SetUnorderedAccessView( const char* _pBufferName, Structured
 	return	bUsed;
 }
 
-static void	DeleteBindingDescriptors( int _EntryIndex, ComputeShader::ShaderConstants::BindingDesc*& _pValue, void* _pUserData )
-{
+static void	DeleteBindingDescriptors( int _EntryIndex, ComputeShader::ShaderConstants::BindingDesc*& _pValue, void* _pUserData ) {
 	delete _pValue;
 }
-ComputeShader::ShaderConstants::~ShaderConstants()
-{
+ComputeShader::ShaderConstants::~ShaderConstants() {
 	m_ConstantBufferName2Descriptor.ForEach( DeleteBindingDescriptors, NULL );
 	m_TextureName2Descriptor.ForEach( DeleteBindingDescriptors, NULL );
 }
-void	ComputeShader::ShaderConstants::Enumerate( ID3DBlob& _ShaderBlob )
-{
+
+void	ComputeShader::ShaderConstants::Enumerate( ID3DBlob& _ShaderBlob ) {
 	ID3D11ShaderReflection*	pReflector = NULL; 
 	D3DReflect( _ShaderBlob.GetBufferPointer(), _ShaderBlob.GetBufferSize(), IID_ID3D11ShaderReflection, (void**) &pReflector );
 
@@ -471,19 +465,16 @@ void	ComputeShader::ShaderConstants::Enumerate( ID3DBlob& _ShaderBlob )
 	pReflector->Release();
 }
 
-void	ComputeShader::ShaderConstants::BindingDesc::SetName( const char* _pName )
-{
-	int		NameLength = strlen(_pName)+1;
+void	ComputeShader::ShaderConstants::BindingDesc::SetName( const char* _pName ) {
+	int		NameLength = int( strlen(_pName)+1 );
 	pName = new char[NameLength];
 	strcpy_s( pName, NameLength+1, _pName );
 }
-ComputeShader::ShaderConstants::BindingDesc::~BindingDesc()
-{
+ComputeShader::ShaderConstants::BindingDesc::~BindingDesc() {
 //	delete[] pName;	// This makes a heap corruption, I don't know why and I don't give a fuck about these C++ problems... (certainly some shit about allocating memory from a DLL and releasing it from another one or something like this) (which I don't give a shit about either BTW)
 }
 
-int		ComputeShader::ShaderConstants::GetConstantBufferIndex( const char* _pBufferName ) const
-{
+int		ComputeShader::ShaderConstants::GetConstantBufferIndex( const char* _pBufferName ) const {
 	BindingDesc**	ppValue = m_ConstantBufferName2Descriptor.Get( _pBufferName );
 
 #ifdef __DEBUG_UPLOAD_ONLY_ONCE
@@ -499,8 +490,7 @@ int		ComputeShader::ShaderConstants::GetConstantBufferIndex( const char* _pBuffe
 	return ppValue != NULL ? (*ppValue)->Slot : -1;
 }
 
-int		ComputeShader::ShaderConstants::GetShaderResourceViewIndex( const char* _pTextureName ) const
-{
+int		ComputeShader::ShaderConstants::GetShaderResourceViewIndex( const char* _pTextureName ) const {
 	BindingDesc**	ppValue = m_TextureName2Descriptor.Get( _pTextureName );
 
 #ifdef __DEBUG_UPLOAD_ONLY_ONCE
@@ -516,8 +506,7 @@ int		ComputeShader::ShaderConstants::GetShaderResourceViewIndex( const char* _pT
 	return ppValue != NULL ? (*ppValue)->Slot : -1;
 }
 
-int		ComputeShader::ShaderConstants::GetStructuredBufferIndex( const char* _pUAVName ) const
-{
+int		ComputeShader::ShaderConstants::GetStructuredBufferIndex( const char* _pUAVName ) const {
 	BindingDesc**	ppValue = m_StructuredBufferName2Descriptor.Get( _pUAVName );
 
 #ifdef __DEBUG_UPLOAD_ONLY_ONCE
@@ -533,8 +522,7 @@ int		ComputeShader::ShaderConstants::GetStructuredBufferIndex( const char* _pUAV
 	return ppValue != NULL ? (*ppValue)->Slot : -1;
 }
 
-int		ComputeShader::ShaderConstants::GetUnorderedAccesViewIndex( const char* _pUAVName ) const
-{
+int		ComputeShader::ShaderConstants::GetUnorderedAccesViewIndex( const char* _pUAVName ) const {
 	BindingDesc**	ppValue = m_UAVName2Descriptor.Get( _pUAVName );
 
 #ifdef __DEBUG_UPLOAD_ONLY_ONCE
@@ -550,12 +538,13 @@ int		ComputeShader::ShaderConstants::GetUnorderedAccesViewIndex( const char* _pU
 	return ppValue != NULL ? (*ppValue)->Slot : -1;
 }
 
-const char*	ComputeShader::GetShaderPath( const char* _pShaderFileName ) const
-{
+#endif	// #ifdef ENABLE_SHADER_REFLECTION
+
+const char*	ComputeShader::GetShaderPath( const char* _pShaderFileName ) const {
 	char*	pResult = NULL;
 	if ( _pShaderFileName != NULL )
 	{
-		int	FileNameLength = strlen(_pShaderFileName)+1;
+		int	FileNameLength = int( strlen(_pShaderFileName)+1 );
 		pResult = new char[FileNameLength];
 		strcpy_s( pResult, FileNameLength, _pShaderFileName );
 
@@ -575,8 +564,6 @@ const char*	ComputeShader::GetShaderPath( const char* _pShaderFileName ) const
 
 	return pResult;
 }
-
-#endif	// #ifndef GODCOMPLEX
 
 
 //////////////////////////////////////////////////////////////////////////
