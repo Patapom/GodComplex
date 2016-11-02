@@ -19,8 +19,8 @@ const float4	float4::UnitY( 0, 1, 0, 0 );
 const float4	float4::UnitZ( 0, 0, 1, 0 );
 const float4	float4::UnitW( 0, 0, 0, 1 );
 
-// const float4x4	float4x4::Zero = { { 0, 0, 0, 0 }, { 0, 0, 0, 0 }, { 0, 0, 0, 0 }, { 0, 0, 0, 0 } };
-// const float4x4	float4x4::Identity = { { 1, 0, 0, 0 }, { 0, 1, 0, 0 }, { 0, 0, 1, 0 }, { 0, 0, 0, 1 } };
+const float4x4	float4x4::Zero( 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 );
+const float4x4	float4x4::Identity( 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 );
 
 float4	float4::QuatFromAngleAxis( float _angle, const float3& _axis ) {
 	float3	NormalizedAxis = _axis;
