@@ -23,11 +23,13 @@
     <ClInclude Include="Containers\Hashtable.h" />
     <ClInclude Include="Containers\List.h" />
     <ClInclude Include="Math\Math.h" />
+    <ClInclude Include="PixelFormats\PixelFormats.h" />
     <ClInclude Include="Types.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Containers\Hashtable.cpp" />
     <ClCompile Include="Math\Math.cpp" />
+    <ClCompile Include="PixelFormats\PixelFormats.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Containers\Hashtable.inl" />

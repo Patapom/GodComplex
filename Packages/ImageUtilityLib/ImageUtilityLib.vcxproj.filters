@@ -5,10 +5,10 @@
     <ClInclude Include="ColorProfile.h">
       <Filter>Structures</Filter>
     </ClInclude>
-    <ClInclude Include="PixelFormats.h">
+    <ClInclude Include="ImageFile.h">
       <Filter>Structures</Filter>
     </ClInclude>
-    <ClInclude Include="WPFMetaData.h">
+    <ClInclude Include="MetaData.h">
       <Filter>Structures</Filter>
     </ClInclude>
   </ItemGroup>
@@ -17,10 +17,10 @@
     <ClCompile Include="ColorProfile.cpp">
       <Filter>Structures</Filter>
     </ClCompile>
-    <ClCompile Include="PixelFormats.cpp">
+    <ClCompile Include="ImageFile.cpp">
       <Filter>Structures</Filter>
     </ClCompile>
-    <ClCompile Include="WPFMetaData.cpp">
+    <ClCompile Include="MetaData.cpp">
       <Filter>Structures</Filter>
     </ClCompile>
   </ItemGroup>

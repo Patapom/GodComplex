@@ -7,6 +7,9 @@
     <Filter Include="Containers">
       <UniqueIdentifier>{18caded2-64c9-4691-92dc-71107c51c1b9}</UniqueIdentifier>
     </Filter>
+    <Filter Include="PixelFormats">
+      <UniqueIdentifier>{8f6a9f7a-ab0b-49b0-9d1e-d677d5355e53}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Containers\Hashtable.h">
@@ -20,6 +23,9 @@
     </ClInclude>
     <ClInclude Include="ASMHelpers.h" />
     <ClInclude Include="Types.h" />
+    <ClInclude Include="PixelFormats\PixelFormats.h">
+      <Filter>PixelFormats</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Containers\Hashtable.cpp">
@@ -27,6 +33,9 @@
     </ClCompile>
     <ClCompile Include="Math\Math.cpp">
       <Filter>Math</Filter>
+    </ClCompile>
+    <ClCompile Include="PixelFormats\PixelFormats.cpp">
+      <Filter>PixelFormats</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

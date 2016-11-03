@@ -31,10 +31,10 @@ namespace ImageUtilityLib {
 	/// </summary>
 	class IColorConverter {
 	public:
-		virtual void		XYZ2RGB( const float4& _XYZ, float4& _RGB ) abstract;
-		virtual void		RGB2XYZ( const float4& _RGB, float4& _XYZ ) abstract;
-		virtual void		XYZ2RGB( const float4* _XYZ, float4* _RGB, U32 _length ) abstract;
-		virtual void		RGB2XYZ( const float4* _RGB, float4* _XYZ, U32 _length ) abstract;
+		virtual void		XYZ2RGB( const float4& _XYZ, float4& _RGB ) const abstract;
+		virtual void		RGB2XYZ( const float4& _RGB, float4& _XYZ ) const abstract;
+		virtual void		XYZ2RGB( const float4* _XYZ, float4* _RGB, U32 _length ) const abstract;
+		virtual void		RGB2XYZ( const float4* _RGB, float4* _XYZ, U32 _length ) const abstract;
 	};
 
 	/// <summary>
@@ -149,50 +149,50 @@ namespace ImageUtilityLib {
 		public:
 			static const float4x4 MAT_RGB2XYZ;
 			static const float4x4 MAT_XYZ2RGB;
-			void		XYZ2RGB( const float4& _XYZ, float4& _RGB ) override;
-			void		RGB2XYZ( const float4& _RGB, float4& _XYZ ) override;
-			void		XYZ2RGB( const float4* _XYZ, float4* _RGB, U32 _length ) override;
-			void		RGB2XYZ( const float4* _RGB, float4* _XYZ, U32 _length ) override;
+			void		XYZ2RGB( const float4& _XYZ, float4& _RGB ) const override;
+			void		RGB2XYZ( const float4& _RGB, float4& _XYZ ) const override;
+			void		XYZ2RGB( const float4* _XYZ, float4* _RGB, U32 _length ) const override;
+			void		RGB2XYZ( const float4* _RGB, float4* _XYZ, U32 _length ) const override;
 		};
 
 		class		InternalColorConverter_AdobeRGB_D50 : public IColorConverter {
 		public:
 			static const float4x4 MAT_RGB2XYZ;
 			static const float4x4 MAT_XYZ2RGB;
-			void		XYZ2RGB( const float4& _XYZ, float4& _RGB ) override;
-			void		RGB2XYZ( const float4& _RGB, float4& _XYZ ) override;
-			void		XYZ2RGB( const float4* _XYZ, float4* _RGB, U32 _length ) override;
-			void		RGB2XYZ( const float4* _RGB, float4* _XYZ, U32 _length ) override;
+			void		XYZ2RGB( const float4& _XYZ, float4& _RGB ) const override;
+			void		RGB2XYZ( const float4& _RGB, float4& _XYZ ) const override;
+			void		XYZ2RGB( const float4* _XYZ, float4* _RGB, U32 _length ) const override;
+			void		RGB2XYZ( const float4* _RGB, float4* _XYZ, U32 _length ) const override;
 		};
 
 		class		InternalColorConverter_AdobeRGB_D65 : public IColorConverter {
 		public:
 			static const float4x4 MAT_RGB2XYZ;
 			static const float4x4 MAT_XYZ2RGB;
-			void		XYZ2RGB( const float4& _XYZ, float4& _RGB ) override;
-			void		RGB2XYZ( const float4& _RGB, float4& _XYZ ) override;
-			void		XYZ2RGB( const float4* _XYZ, float4* _RGB, U32 _length ) override;
-			void		RGB2XYZ( const float4* _RGB, float4* _XYZ, U32 _length ) override;
+			void		XYZ2RGB( const float4& _XYZ, float4& _RGB ) const override;
+			void		RGB2XYZ( const float4& _RGB, float4& _XYZ ) const override;
+			void		XYZ2RGB( const float4* _XYZ, float4* _RGB, U32 _length ) const override;
+			void		RGB2XYZ( const float4* _RGB, float4* _XYZ, U32 _length ) const override;
 		};
 
 		class		InternalColorConverter_ProPhoto : public IColorConverter {
 		public:
 			static const float4x4 MAT_RGB2XYZ;
 			static const float4x4 MAT_XYZ2RGB;
-			void		XYZ2RGB( const float4& _XYZ, float4& _RGB ) override;
-			void		RGB2XYZ( const float4& _RGB, float4& _XYZ ) override;
-			void		XYZ2RGB( const float4* _XYZ, float4* _RGB, U32 _length ) override;
-			void		RGB2XYZ( const float4* _RGB, float4* _XYZ, U32 _length ) override;
+			void		XYZ2RGB( const float4& _XYZ, float4& _RGB ) const override;
+			void		RGB2XYZ( const float4& _RGB, float4& _XYZ ) const override;
+			void		XYZ2RGB( const float4* _XYZ, float4* _RGB, U32 _length ) const override;
+			void		RGB2XYZ( const float4* _RGB, float4* _XYZ, U32 _length ) const override;
 		};
 
 		class		InternalColorConverter_Radiance : public IColorConverter {
 		public:
 			static const float4x4 MAT_RGB2XYZ;
 			static const float4x4 MAT_XYZ2RGB;
-			void		XYZ2RGB( const float4& _XYZ, float4& _RGB ) override;
-			void		RGB2XYZ( const float4& _RGB, float4& _XYZ ) override;
-			void		XYZ2RGB( const float4* _XYZ, float4* _RGB, U32 _length ) override;
-			void		RGB2XYZ( const float4* _RGB, float4* _XYZ, U32 _length ) override;
+			void		XYZ2RGB( const float4& _XYZ, float4& _RGB ) const override;
+			void		RGB2XYZ( const float4& _RGB, float4& _XYZ ) const override;
+			void		XYZ2RGB( const float4* _XYZ, float4* _RGB, U32 _length ) const override;
+			void		RGB2XYZ( const float4* _RGB, float4* _XYZ, U32 _length ) const override;
 		};
 
 		class		InternalColorConverter_Generic_NoGamma : public IColorConverter {
@@ -204,10 +204,10 @@ namespace ImageUtilityLib {
 				m_RGB2XYZ = _RGB2XYZ;
 				m_XYZ2RGB = _XYZ2RGB;
 			}
-			void		XYZ2RGB( const float4& _XYZ, float4& _RGB ) override;
-			void		RGB2XYZ( const float4& _RGB, float4& _XYZ ) override;
-			void		XYZ2RGB( const float4* _XYZ, float4* _RGB, U32 _length ) override;
-			void		RGB2XYZ( const float4* _RGB, float4* _XYZ, U32 _length ) override;
+			void		XYZ2RGB( const float4& _XYZ, float4& _RGB ) const override;
+			void		RGB2XYZ( const float4& _RGB, float4& _XYZ ) const override;
+			void		XYZ2RGB( const float4* _XYZ, float4* _RGB, U32 _length ) const override;
+			void		RGB2XYZ( const float4* _RGB, float4* _XYZ, U32 _length ) const override;
 		};
 
 		class		InternalColorConverter_Generic_StandardGamma : public IColorConverter {
@@ -223,10 +223,10 @@ namespace ImageUtilityLib {
 				m_Gamma = _Gamma;
 				m_InvGamma = 1.0f / _Gamma;
 			}
-			void		XYZ2RGB( const float4& _XYZ, float4& _RGB ) override;
-			void		RGB2XYZ( const float4& _RGB, float4& _XYZ ) override;
-			void		XYZ2RGB( const float4* _XYZ, float4* _RGB, U32 _length ) override;
-			void		RGB2XYZ( const float4* _RGB, float4* _XYZ, U32 _length ) override;
+			void		XYZ2RGB( const float4& _XYZ, float4& _RGB ) const override;
+			void		RGB2XYZ( const float4& _RGB, float4& _XYZ ) const override;
+			void		XYZ2RGB( const float4* _XYZ, float4* _RGB, U32 _length ) const override;
+			void		RGB2XYZ( const float4* _RGB, float4* _XYZ, U32 _length ) const override;
 		};
 
 		class		InternalColorConverter_Generic_sRGBGamma : public IColorConverter {
@@ -238,10 +238,10 @@ namespace ImageUtilityLib {
 				m_RGB2XYZ = _RGB2XYZ;
 				m_XYZ2RGB = _XYZ2RGB;
 			}
-			void		XYZ2RGB( const float4& _XYZ, float4& _RGB ) override;
-			void		RGB2XYZ( const float4& _RGB, float4& _XYZ ) override;
-			void		XYZ2RGB( const float4* _XYZ, float4* _RGB, U32 _length ) override;
-			void		RGB2XYZ( const float4* _RGB, float4* _XYZ, U32 _length ) override;
+			void		XYZ2RGB( const float4& _XYZ, float4& _RGB ) const override;
+			void		RGB2XYZ( const float4& _RGB, float4& _XYZ ) const override;
+			void		XYZ2RGB( const float4* _XYZ, float4* _RGB, U32 _length ) const override;
+			void		RGB2XYZ( const float4* _RGB, float4* _XYZ, U32 _length ) const override;
 		};
 
 		class		InternalColorConverter_Generic_ProPhoto : public IColorConverter {
@@ -253,10 +253,10 @@ namespace ImageUtilityLib {
 				m_RGB2XYZ = _RGB2XYZ;
 				m_XYZ2RGB = _XYZ2RGB;
 			}
-			void		XYZ2RGB( const float4& _XYZ, float4& _RGB ) override;
-			void		RGB2XYZ( const float4& _RGB, float4& _XYZ ) override;
-			void		XYZ2RGB( const float4* _XYZ, float4* _RGB, U32 _length ) override;
-			void		RGB2XYZ( const float4* _RGB, float4* _XYZ, U32 _length ) override;
+			void		XYZ2RGB( const float4& _XYZ, float4& _RGB ) const override;
+			void		RGB2XYZ( const float4& _RGB, float4& _XYZ ) const override;
+			void		XYZ2RGB( const float4* _XYZ, float4* _RGB, U32 _length ) const override;
+			void		RGB2XYZ( const float4* _RGB, float4* _XYZ, U32 _length ) const override;
 		};
 
 		#pragma endregion
@@ -280,12 +280,14 @@ namespace ImageUtilityLib {
 		#pragma endregion
 
 	public:
+
 		#pragma region PROPERTIES
 
 		/// <summary>
 		/// Gets the chromaticities attached to the profile
 		/// </summary>
-		const Chromaticities&	GetChromas() const { return m_chromaticities; }
+		const Chromaticities&	GetChromas() const							{ return m_chromaticities; }
+		void					SetChromas( const Chromaticities& value )	{ memcpy_s( &m_chromaticities, sizeof(Chromaticities), &value, sizeof(Chromaticities) ); BuildTransformFromChroma( true ); }
 
 		/// <summary>
 		/// Gets the transform to convert RGB to CIEXYZ
@@ -389,67 +391,6 @@ namespace ImageUtilityLib {
 			BuildTransformFromChroma( true );
 		}
 
-/*
-		/// <summary>
-		/// Creates the color profile from metadata embedded in the image file
-		/// </summary>
-		/// <param name="_MetaData"></param>
-		/// <param name="_FileType"></param>
-		ColorProfile( BitmapMetadata _MetaData, Bitmap.FILE_TYPE _FileType ) {
-			string	MetaDump = _MetaData != nullptr ? DumpMetaData( _MetaData ) : nullptr;
-
-			bool	bGammaFoundInFile = false;
-			switch ( _FileType )
-			{
-				case Bitmap.FILE_TYPE.JPEG:
-					m_gammaCurve = GAMMA_CURVE::STANDARD;
-					m_gamma = 2.2f;							// JPG uses a 2.2 gamma by default
-					m_chromaticities = Chromaticities.sRGB;	// Default for JPEGs is sRGB
-					EnumerateMetaDataJPG( _MetaData, out m_profileFoundInFile, out bGammaFoundInFile );
-
-					if ( !m_profileFoundInFile && !bGammaFoundInFile )
-						bGammaFoundInFile = true;			// Unless specified otherwise, we override the gamma no matter what since JPEGs use a 2.2 gamma by default anyway
-					break;
-
-				case Bitmap.FILE_TYPE.PNG:
-					m_gammaCurve = GAMMA_CURVE::sRGB;
-					m_gamma = GAMMA_EXPONENT_sRGB;
-					m_chromaticities = Chromaticities.sRGB;	// Default for PNGs is standard sRGB
-					EnumerateMetaDataPNG( _MetaData, out m_profileFoundInFile, out bGammaFoundInFile );
-					break;
-
-				case Bitmap.FILE_TYPE.TIFF:
-					m_gammaCurve = GAMMA_CURVE::STANDARD;
-					m_gamma = 1.0f;							// Linear gamma by default
-					m_chromaticities = Chromaticities.sRGB;	// Default for TIFFs is sRGB
-					EnumerateMetaDataTIFF( _MetaData, out m_profileFoundInFile, out bGammaFoundInFile );
-					break;
-
-				case Bitmap.FILE_TYPE.GIF:
-					m_gammaCurve = GAMMA_CURVE::STANDARD;
-					m_gamma = 1.0f;
-					m_chromaticities = Chromaticities.sRGB;	// Default for GIFs is standard sRGB with no gamma
-					break;
-
-				case Bitmap.FILE_TYPE.BMP:	// BMP Don't have metadata!
-					m_gammaCurve = GAMMA_CURVE::STANDARD;
-					m_gamma = 1.0f;
-					m_chromaticities = Chromaticities.sRGB;	// Default for BMPs is standard sRGB with no gamma
-					break;
-
-				case Bitmap.FILE_TYPE.CRW:	// Raw files have no correction
-				case Bitmap.FILE_TYPE.CR2:
-				case Bitmap.FILE_TYPE.DNG:
-					m_gammaCurve = GAMMA_CURVE::STANDARD;
-					m_gamma = 1.0f;
-					m_chromaticities = Chromaticities.sRGB;	// Default for BMPs is standard sRGB with no gamma
-					break;
-			}
-
-			BuildTransformFromChroma( bGammaFoundInFile );
-		}
-*/
-
 		/// <summary>
 		/// Creates a color profile from chromaticities
 		/// </summary>
@@ -471,7 +412,7 @@ namespace ImageUtilityLib {
 		/// </summary>
 		/// <param name="_XYZ"></param>
 		/// <returns></returns>
-		void	XYZ2RGB( const float4& _XYZ, float4& _RGB ) {
+		void	XYZ2RGB( const float4& _XYZ, float4& _RGB ) const {
 			m_internalConverter->XYZ2RGB( _XYZ, _RGB );
 		}
 
@@ -480,7 +421,7 @@ namespace ImageUtilityLib {
 		/// </summary>
 		/// <param name="_RGB"></param>
 		/// <returns></returns>
-		void	RGB2XYZ( const float4& _RGB, float4& _XYZ ) {
+		void	RGB2XYZ( const float4& _RGB, float4& _XYZ ) const {
 			m_internalConverter->RGB2XYZ( _RGB, _XYZ );
 		}
 
@@ -488,7 +429,7 @@ namespace ImageUtilityLib {
 		/// Converts a CIEXYZ color to a RGB color
 		/// </summary>
 		/// <param name="_XYZ"></param>
-		void		XYZ2RGB( const float4* _XYZ, float4* _RGB, U32 _length ) {
+		void	XYZ2RGB( const float4* _XYZ, float4* _RGB, U32 _length ) const {
 			m_internalConverter->XYZ2RGB( _XYZ, _RGB, _length );
 		}
 
@@ -496,7 +437,7 @@ namespace ImageUtilityLib {
 		/// Converts a RGB color to a CIEXYZ color
 		/// </summary>
 		/// <param name="_RGB"></param>
-		void		RGB2XYZ( const float4* _RGB, float4* _XYZ, U32 _length ) {
+		void	RGB2XYZ( const float4* _RGB, float4* _XYZ, U32 _length ) const {
 			m_internalConverter->RGB2XYZ( _RGB, _XYZ, _length );
 		}
 

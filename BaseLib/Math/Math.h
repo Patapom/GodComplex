@@ -251,7 +251,7 @@ public:
 	}
 
 	float4x4			Inverse() const;
-	float4x4&			Invert() { *this = Inverse(); }
+	float4x4&			Invert() { return *this = Inverse(); }
 	float				Determinant() const;
 	float				CoFactor( int x, int y ) const;
 	float4x4&			Normalize();

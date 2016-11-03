@@ -698,6 +698,17 @@ Load(FreeImageIO *io, fi_handle handle, int page, int flags, void *data) {
 				SwapExtensionArea(&extensionarea);
 #endif
 
+
+// BEGIN Pom (2016-11-03) Store gamma
+char value[512];
+sprintf(value, "%d", extensionarea.gamma_value[0] );
+FreeImage_SetMetadataKeyValue(FIMD_COMMENTS, dib, "GammaNumerator", value);				
+sprintf(value, "%d", extensionarea.gamma_value[1] );
+FreeImage_SetMetadataKeyValue(FIMD_COMMENTS, dib, "GammaDenominator", value);				
+// END Pom (2016-11-03)
+
+
+
 				DWORD postage_stamp_offset = extensionarea.postage_stamp_offset;
 				BOOL hasThumbnail = (postage_stamp_offset > 0) && (postage_stamp_offset < (DWORD)footer_offset);
 				if(hasThumbnail) {

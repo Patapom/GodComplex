@@ -71,6 +71,7 @@ template<typename T> void	Swap( T& a, T& b ) { T temp = a; a = b; b = temp; }
 
 #include "ASMHelpers.h"
 #include "Math/Math.h"
+#include "PixelFormats/PixelFormats.h"
 #include "Containers/Hashtable.h"
 #include "Containers/List.h"
 
