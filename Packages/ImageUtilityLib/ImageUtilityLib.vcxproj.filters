@@ -5,24 +5,20 @@
     <ClInclude Include="ColorProfile.h">
       <Filter>Structures</Filter>
     </ClInclude>
-    <ClInclude Include="ImageFile.h">
-      <Filter>Structures</Filter>
-    </ClInclude>
     <ClInclude Include="MetaData.h">
       <Filter>Structures</Filter>
     </ClInclude>
+    <ClInclude Include="ImageFile.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Bitmap.cpp" />
     <ClCompile Include="ColorProfile.cpp">
       <Filter>Structures</Filter>
     </ClCompile>
-    <ClCompile Include="ImageFile.cpp">
-      <Filter>Structures</Filter>
-    </ClCompile>
     <ClCompile Include="MetaData.cpp">
       <Filter>Structures</Filter>
     </ClCompile>
+    <ClCompile Include="ImageFile.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="NoteAboutGammaCorrection.txt" />

@@ -46,9 +46,9 @@ void	Bitmap::ToImageFile( ImageFile& _targetFile, ImageFile::PIXEL_FORMAT _targe
 		throw "Unsupported target type!";
 
 	// Convert back to float4 RGB using color profile
-	ImageFile	float4Image( m_width, m_height, ImageFile::PIXEL_FORMAT::RGBA32F );
+	ImageFile		float4Image( m_width, m_height, ImageFile::PIXEL_FORMAT::RGBA32F );
 	const float4*	source = m_XYZ;
-	float4*			target = (float4*) float4Image.Bits();
+	float4*			target = (float4*) float4Image.GetBits();
 	if ( _premultiplyAlpha ) {
 		// Pre-multiply by alpha
 		const float4*	unPreMultipliedSource = m_XYZ;

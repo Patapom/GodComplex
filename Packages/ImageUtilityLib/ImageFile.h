@@ -54,6 +54,7 @@ namespace ImageUtilityLib {
 
 	class	ImageFile {
 		friend class Bitmap;
+		friend class MetaData;
 	public:
 		#pragma region NESTED TYPES
 
@@ -100,13 +101,13 @@ namespace ImageUtilityLib {
 			JXR		= 36
 		};
 
-		enum class BIT_DEPTH {
-			BPP8	= 8,
-			BPP16	= 16,
-			BPP16F	= 16,
-			BPP32	= 32,
-			BPP32F	= 32,
-		};
+// 		enum class BIT_DEPTH {
+// 			BPP8	= 8,
+// 			BPP16	= 16,
+// 			BPP16F	= 16,
+// 			BPP32	= 32,
+// 			BPP32F	= 32,
+// 		};
 		
 		// This is an aggregate of the various flags that can be fed to the Save() method, depending on the target file format
 		// NOTE: This enum should match the FreeImage defines found in FreemImage.h
@@ -206,6 +207,8 @@ namespace ImageUtilityLib {
 		};
 		// This enum matches the classes available in PixelFormat.h (which in turn match the DXGI formats)
 		enum class PIXEL_FORMAT {
+			UNKNOWN,
+
 			// 8-bits
 			R8,
 			RG8,
@@ -214,16 +217,17 @@ namespace ImageUtilityLib {
 
 			// 16-bits
 			R16,
-//			RG16,
+//			RG16,		// Unsupported
 			RGB16,
 			RGBA16,
-//			R16F,			// Unsupported
-//			RG16F,			// Unsupported
-//			RGBA16F,		// Unsupported
+//			R16F,		// Unsupported
+// 			RG16F,		// Unsupported
+// 			RGB16F,		// Unsupported
+// 			RGBA16F,	// Unsupported
 
 			// 32-bits
 			R32F,
-//			RG32F,			// Unsupported
+			RG32F,
 			RGB32F,
 			RGBA32F,
 		};
@@ -234,22 +238,25 @@ namespace ImageUtilityLib {
 		#pragma region FIELDS
 
 		FIBITMAP*			m_bitmap;
+		PIXEL_FORMAT		m_pixelFormat;		// The bitmap's pixel format
 		mutable FILE_FORMAT	m_fileFormat;		// File format (available if created from a file or saved to a file at some point)
 
-		MetaData			m_metadata;
-		ColorProfile*		m_colorProfile;		// An optional color profile found in the input file if the bitmap was loaded from a file
+		MetaData			m_metadata;			// Contains relevant metadata (e.g. ISO, Tv, Av, focal length, etc.)
 
 		#pragma endregion
 
 	public:
 		#pragma region PROPERTIES
 
-		// Gets the bitmap's content
-		void*				Bits()					{ return FreeImage_GetBits( m_bitmap ); }
-		const void*			Bits() const			{ return FreeImage_GetBits( m_bitmap ); }
+		// Gets the bitmap's raw content
+		void*				GetBits()				{ return FreeImage_GetBits( m_bitmap ); }
+		const void*			GetBits() const			{ return FreeImage_GetBits( m_bitmap ); }
 
 		// Gets the source bitmap type
-		FILE_FORMAT			FileFormat() const		{ return m_fileFormat; }
+		PIXEL_FORMAT		GetPixelFormat() const	{ return m_pixelFormat; }
+
+		// Gets the source bitmap type
+		FILE_FORMAT			GetFileFormat() const	{ return m_fileFormat; }
 
 		// Gets the image width
 		U32					Width() const			{ return FreeImage_GetWidth( m_bitmap ); }
@@ -258,13 +265,13 @@ namespace ImageUtilityLib {
 		U32					Height() const			{ return FreeImage_GetHeight( m_bitmap ); }
 
 		// Tells if the image has an alpha channel
-//		bool				HasAlpha				{ get { return m_hasAlpha; } set { m_hasAlpha = value; } }
+		bool				HasAlpha() const;
 
 		// Gets the image's metadata (i.e. ISO, Tv, Av, focal length, etc.)
 		const MetaData&		GetMetadata() const		{ return m_metadata; }
 
 		// Gets the optional color profile retrieved during file loading
-		const ColorProfile*	GetColorProfile() const	{ return m_colorProfile; }
+		const ColorProfile*	GetColorProfile() const	{ return m_metadata.m_colorProfile; }
 
 		#pragma endregion
 
@@ -281,7 +288,7 @@ namespace ImageUtilityLib {
 
 		// Releases the image
 		void				Exit();
-		
+
 		// Load from a file or memory
 		void				Load( const wchar_t* _fileName );
 		void				Load( const wchar_t* _fileName, FILE_FORMAT _format );
@@ -292,6 +299,9 @@ namespace ImageUtilityLib {
 		void				Save( const wchar_t* _fileName, FILE_FORMAT _format ) const;
 		void				Save( const wchar_t* _fileName, FILE_FORMAT _format, SAVE_FLAGS _options ) const;
 		void				Save( FILE_FORMAT _format, SAVE_FLAGS _options, void*& _fileContent, U64 _fileSize ) const;	// NOTE: The caller MUST delete the returned buffer!
+		
+		// Converts the source image to a target format
+		void				ConvertFrom( const ImageFile& _source, PIXEL_FORMAT _targetFormat );
 
 		// Retrieves the image file type based on the image file name
 		static FILE_FORMAT	GetFileType( const wchar_t* _imageFileNameName );
@@ -328,19 +338,14 @@ namespace ImageUtilityLib {
 
 
 	private:
-		// Attempts to create a color profile from a bitmap
-		// NOTE: The caller MUST delete the returned profile!
-		static ColorProfile*		CreateColorProfile( FILE_FORMAT _format, const FIBITMAP& _bitmap );
-
-		// Retrieves relevant image metadata
-		void						RetrieveMetaData();
-
-		static BIT_DEPTH			PixelFormat2BPP( PIXEL_FORMAT _pixelFormat );
+		static U32					PixelFormat2BPP( PIXEL_FORMAT _pixelFormat );
 
 		static FREE_IMAGE_TYPE		PixelFormat2FIT( PIXEL_FORMAT _pixelFormat );
+		static PIXEL_FORMAT			Bitmap2PixelFormat( const FIBITMAP& _bitmap );
 
-		static FILE_FORMAT			FIF2FORMAT( FREE_IMAGE_FORMAT _format )	{ return FILE_FORMAT( _format ); }
-		static FREE_IMAGE_FORMAT	FORMAT2FIF( FILE_FORMAT _format )		{ return FREE_IMAGE_FORMAT( _format ); }
+		static FILE_FORMAT			FIF2FileFormat( FREE_IMAGE_FORMAT _format )	{ return FILE_FORMAT( _format ); }
+		static FREE_IMAGE_FORMAT	FileFormat2FIF( FILE_FORMAT _format )		{ return FREE_IMAGE_FORMAT( _format ); }
+
 
 	private:	// Ref-counting for free image lib init/release
 		static U32		ms_freeImageUsageRefCount;

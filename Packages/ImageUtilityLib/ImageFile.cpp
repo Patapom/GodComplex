@@ -8,27 +8,24 @@ U32	ImageFile::ms_freeImageUsageRefCount = 0;
 
 ImageFile::ImageFile()
 	: m_bitmap( nullptr )
-	, m_colorProfile( nullptr )
+	, m_pixelFormat( PIXEL_FORMAT::UNKNOWN )
 	, m_fileFormat( FILE_FORMAT::UNKNOWN )
 {}
 
 ImageFile::ImageFile( const wchar_t* _fileName, FILE_FORMAT _format )
 	: m_bitmap( nullptr )
-	, m_colorProfile( nullptr )
 {
 	Load( _fileName, _format );
 }
 
 ImageFile::ImageFile( const U8* _fileContent, U64 _fileSize, FILE_FORMAT _format )
 	: m_bitmap( nullptr )
-	, m_colorProfile( nullptr )
 {
 	Load( _fileContent, _fileSize, _format );
 }
 
 ImageFile::ImageFile( U32 _width, U32 _height, PIXEL_FORMAT _format )
 	: m_bitmap( nullptr )
-	, m_colorProfile( nullptr )
 {
 	Init( _width, _height, _format );
 }
@@ -38,13 +35,28 @@ ImageFile::~ImageFile() {
 	UnUseFreeImage();
 }
 
+bool	ImageFile::HasAlpha() const {
+	switch ( m_pixelFormat ) {
+	case PIXEL_FORMAT::RGBA8:
+	case PIXEL_FORMAT::RGBA16:
+//	case PIXEL_FORMAT::RGBA16F:
+	case PIXEL_FORMAT::RGBA32F:
+		return true;
+	}
+	return false;
+}
+
 void	ImageFile::Init( U32 _width, U32 _height, PIXEL_FORMAT _format ) {
 	UseFreeImage();
 	Exit();
 
+	m_pixelFormat = _format;
+
 	FREE_IMAGE_TYPE	bitmapType = PixelFormat2FIT( _format );
 	int				BPP = int( PixelFormat2BPP( _format ) );
 	m_bitmap = FreeImage_AllocateT( bitmapType, _width, _height, BPP );
+	if ( m_bitmap == nullptr )
+		throw "Failed to initialize image file!";
 }
 
 void	ImageFile::Exit() {
@@ -52,7 +64,6 @@ void	ImageFile::Exit() {
 		FreeImage_Unload( m_bitmap );
 		m_bitmap = nullptr;
 	}
-	SAFE_DELETE( m_colorProfile );
 	m_fileFormat = FILE_FORMAT::UNKNOWN;
 	m_metadata.Reset();
 }
@@ -72,9 +83,13 @@ void	ImageFile::Load( const wchar_t* _fileName, FILE_FORMAT _format ) {
 		throw "Unrecognized image file format!";
 
 	m_fileFormat = _format;
-	m_bitmap = FreeImage_LoadU( FORMAT2FIF( _format ), _fileName );
+	m_bitmap = FreeImage_LoadU( FileFormat2FIF( _format ), _fileName );
+	if ( m_bitmap == nullptr )
+		throw "Failed to load image file!";
 
-	m_colorProfile = CreateColorProfile( m_fileFormat, *m_bitmap );
+	m_pixelFormat = Bitmap2PixelFormat( *m_bitmap );
+
+	m_metadata.RetrieveFromImage( *this );
 }
 void	ImageFile::Load( const void* _fileContent, U64 _fileSize, FILE_FORMAT _format ) {
 	UseFreeImage();
@@ -88,10 +103,15 @@ void	ImageFile::Load( const void* _fileContent, U64 _fileSize, FILE_FORMAT _form
 		throw "Failed to read bitmap content into memory!";
 
 	m_fileFormat = _format;
-	m_bitmap = FreeImage_LoadFromMemory( FORMAT2FIF( _format ), mem );
+	m_bitmap = FreeImage_LoadFromMemory( FileFormat2FIF( _format ), mem );
 	FreeImage_CloseMemory( mem );
 
-	m_colorProfile = CreateColorProfile( m_fileFormat, *m_bitmap );
+	if ( m_bitmap == nullptr )
+		throw "Failed to load image file!";
+
+	m_pixelFormat = Bitmap2PixelFormat( *m_bitmap );
+
+	m_metadata.RetrieveFromImage( *this );
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -108,7 +128,8 @@ void	ImageFile::Save( const wchar_t* _fileName, FILE_FORMAT _format, SAVE_FLAGS 
 		throw "Unrecognized image file format!";
 
 	m_fileFormat = _format;
-	FreeImage_SaveU( FORMAT2FIF( _format ), m_bitmap, _fileName, int(_options) );
+	if ( !FreeImage_SaveU( FileFormat2FIF( _format ), m_bitmap, _fileName, int(_options) ) )
+		throw "Failed to save the image file!";
 }
 void	ImageFile::Save( FILE_FORMAT _format, SAVE_FLAGS _options, void*& _fileContent, U64 _fileSize ) const {
 	if ( _format == FILE_FORMAT::UNKNOWN )
@@ -118,7 +139,8 @@ void	ImageFile::Save( FILE_FORMAT _format, SAVE_FLAGS _options, void*& _fileCont
 
 	// Save into a stream of unknown size
 	FIMEMORY*	stream = FreeImage_OpenMemory();
-	FreeImage_SaveToMemory( FORMAT2FIF( _format ), m_bitmap, stream, int(_options) );
+	if ( !FreeImage_SaveToMemory( FileFormat2FIF( _format ), m_bitmap, stream, int(_options) ) )
+		throw "Failed to save the image file!";
 
 	// Copy into a custom buffer
 	_fileSize = FreeImage_TellMemory( stream );
@@ -131,8 +153,188 @@ void	ImageFile::Save( FILE_FORMAT _format, SAVE_FLAGS _options, void*& _fileCont
 	FreeImage_CloseMemory( target );
 	FreeImage_CloseMemory( stream );
 }
-	
 
+//////////////////////////////////////////////////////////////////////////
+// Conversion
+void	ImageFile::ConvertFrom( const ImageFile& _source, PIXEL_FORMAT _targetFormat ) {
+	Exit();
+
+	// Convert source
+	m_pixelFormat = _targetFormat;
+	m_bitmap = FreeImage_ConvertToType( _source.m_bitmap, PixelFormat2FIT( _targetFormat ) );
+
+	// Copy metadata
+	m_metadata = _source.m_metadata;
+
+	// Copy file format and attempt to create a profile
+	m_fileFormat = _source.m_fileFormat;
+}
+
+//////////////////////////////////////////////////////////////////////////
+// Helpers
+ImageFile::FILE_FORMAT	ImageFile::GetFileType( const wchar_t* _imageFileNameName ) {
+	if ( _imageFileNameName == nullptr )
+		return FILE_FORMAT::UNKNOWN;
+
+#if 1
+	FILE_FORMAT	result = FIF2FileFormat( FreeImage_GetFileTypeU( _imageFileNameName, 0 ) );
+	return result;
+
+#else
+	// Search for last . occurrence
+	size_t	length = strlen( _imageFileNameName );
+	size_t	extensionIndex;
+	for ( extensionIndex=length-1; extensionIndex >= 0; extensionIndex++ ) {
+		if ( _imageFileNameName[extensionIndex] == '.' )
+			break;
+	}
+	if ( extensionIndex == 0 )
+		return FILE_FORMAT::UNKNOWN;
+
+//	// Copy extension and make it uppercase
+//	char	temp[64];
+//	strcpy_s( temp, 64, _imageFileNameName + extensionIndex );
+//	_strupr_s( temp, 64 );
+
+	const char*	extension = _imageFileNameName + extensionIndex;
+
+	// Check for known extensions
+	struct KnownExtension {
+		const char*	extension;
+		FILE_FORMAT	format;
+	}	knownExtensions[] = {
+		{ ".JPG",	FILE_FORMAT::JPEG },
+		{ ".JPEG",	FILE_FORMAT::JPEG },
+		{ ".JPE",	FILE_FORMAT::JPEG },
+		{ ".BMP",	FILE_FORMAT::BMP },
+		{ ".ICO",	FILE_FORMAT::ICO },
+		{ ".PNG",	FILE_FORMAT::PNG },
+		{ ".TGA",	FILE_FORMAT::TARGA },
+		{ ".TIF",	FILE_FORMAT::TIFF },
+		{ ".TIFF",	FILE_FORMAT::TIFF },
+		{ ".GIF",	FILE_FORMAT::GIF },
+		{ ".CRW",	FILE_FORMAT::RAW },
+		{ ".CR2",	FILE_FORMAT::RAW },
+		{ ".DNG",	FILE_FORMAT::RAW },
+		{ ".HDR",	FILE_FORMAT::HDR },
+		{ ".EXR",	FILE_FORMAT::EXR },
+		{ ".DDS",	FILE_FORMAT::DDS },
+		{ ".PSD",	FILE_FORMAT::PSD },
+		{ ".PSB",	FILE_FORMAT::PSD },
+	};
+
+	U32						knownExtensionsCount = sizeof(knownExtensions) / sizeof(KnownExtension);
+	const KnownExtension*	knownExtension = knownExtensions;
+	for ( U32 knownExtensionIndex=0; knownExtensionIndex < knownExtensionsCount; knownExtensionIndex++, knownExtension++ ) {
+		if ( _stricmp( extension, knownExtension->extension ) == 0 ) {
+			return knownExtension->format;
+		}
+	}
+
+	return FILE_FORMAT::UNKNOWN;
+#endif
+}
+
+U32	ImageFile::PixelFormat2BPP( PIXEL_FORMAT _pixelFormat ) {
+	switch (_pixelFormat ) {
+		// 8-bits
+		case PIXEL_FORMAT::R8:		return 8;
+		case PIXEL_FORMAT::RG8:		return 16;
+		case PIXEL_FORMAT::RGB8:	return 24;
+		case PIXEL_FORMAT::RGBA8:	return 32;
+
+		// 16-bits
+		case PIXEL_FORMAT::R16:		return 16;
+//		case PIXEL_FORMAT::RG16:	return 32;	// Unsupported
+		case PIXEL_FORMAT::RGB16:	return 48;
+		case PIXEL_FORMAT::RGBA16:	return 64;
+// 		case PIXEL_FORMAT::R16F:	return 16;	// Unsupported
+// 		case PIXEL_FORMAT::RG16F:	return 32;	// Unsupported
+// 		case PIXEL_FORMAT::RGB16F:	return 48;	// Unsupported
+// 		case PIXEL_FORMAT::RGBA16F:	return 64;	// Unsupported
+
+		// 32-bits
+		case PIXEL_FORMAT::R32F:	return 32;
+		case PIXEL_FORMAT::RG32F:	return 64;
+		case PIXEL_FORMAT::RGB32F:	return 96;
+		case PIXEL_FORMAT::RGBA32F:	return 128;
+	};
+
+	return 0;
+}
+
+// Determine target bitmap type based on target pixel format
+FREE_IMAGE_TYPE	ImageFile::PixelFormat2FIT( PIXEL_FORMAT _pixelFormat ) {
+	switch ( _pixelFormat ) {
+		// 8-bits
+		case ImageFile::PIXEL_FORMAT::R8:		return FIT_BITMAP;
+		case ImageFile::PIXEL_FORMAT::RG8:		return FIT_BITMAP;
+		case ImageFile::PIXEL_FORMAT::RGB8:		return FIT_BITMAP;
+		case ImageFile::PIXEL_FORMAT::RGBA8:	return FIT_BITMAP;
+		// 16-bits
+		case ImageFile::PIXEL_FORMAT::R16:		return FIT_UINT16;
+//		case ImageFile::PIXEL_FORMAT::RG16:		// Unsupported
+		case ImageFile::PIXEL_FORMAT::RGB16:	return FIT_RGB16;
+		case ImageFile::PIXEL_FORMAT::RGBA16:	return FIT_RGBA16;
+// 		case ImageFile::PIXEL_FORMAT::R16F:		// Unsupported
+// 		case ImageFile::PIXEL_FORMAT::RG16F:	// Unsupported
+// 		case ImageFile::PIXEL_FORMAT::RGB16F:	// Unsupported
+// 		case ImageFile::PIXEL_FORMAT::RGBA16F:	// Unsupported
+		// 32-bits
+		case ImageFile::PIXEL_FORMAT::R32F:		return FIT_FLOAT;
+//		case ImageFile::PIXEL_FORMAT::RG32F:	// Unsupported
+		case ImageFile::PIXEL_FORMAT::RGB32F:	return FIT_RGBF;
+		case ImageFile::PIXEL_FORMAT::RGBA32F:	return FIT_RGBAF;
+	}
+
+	return FIT_UNKNOWN;
+}
+
+ImageFile::PIXEL_FORMAT	ImageFile::Bitmap2PixelFormat( const FIBITMAP& _bitmap ) {
+	FREE_IMAGE_TYPE	type = FreeImage_GetImageType( const_cast< FIBITMAP* >( &_bitmap ) );
+	switch ( type ) {
+		// 8-bits
+		case FIT_BITMAP: {
+			// IThe philosophy of FreeImage regarding "regular bitmaps" is to always allocate a 32-bits entry
+			//	per pixel whether each input pixel is 1-, 2-, 4-, 8-, 24- or 32-bits...
+			//
+//			FREE_IMAGE_COLOR_TYPE	color_type = FreeImage_GetColorType( const_cast< FIBITMAP* >( &_bitmap ) );
+			U32	bpp = FreeImage_GetBPP( const_cast< FIBITMAP* >( &_bitmap ) );
+			switch ( bpp ) {
+				case 8:							return PIXEL_FORMAT::R8;
+				case 16:						return PIXEL_FORMAT::RG8;
+				case 24:						return PIXEL_FORMAT::RGB8;
+				case 32:						return PIXEL_FORMAT::RGBA8;
+			}
+			break;
+		}
+		// 16-bits
+		case FIT_UINT16:						return PIXEL_FORMAT::R16;
+		case FIT_RGB16:							return PIXEL_FORMAT::RGB16;
+		case FIT_RGBA16:						return PIXEL_FORMAT::RGBA16;
+		// 32-bits
+		case FIT_FLOAT:							return PIXEL_FORMAT::R32F;
+		case FIT_RGBF:							return PIXEL_FORMAT::RGB32F;
+		case FIT_RGBAF:							return PIXEL_FORMAT::RGBA32F;
+	}
+
+	return PIXEL_FORMAT::UNKNOWN;
+}
+
+void	ImageFile::UseFreeImage() {
+	if ( ms_freeImageUsageRefCount == 0 ) {
+		FreeImage_Initialise( TRUE );
+	}
+	ms_freeImageUsageRefCount++;
+}
+void	ImageFile::UnUseFreeImage() {
+	ms_freeImageUsageRefCount--;
+	if ( ms_freeImageUsageRefCount == 0 ) {
+		FreeImage_DeInitialise();
+	}
+}
+
+#pragma region Old code...
 // 		// Formatting flags for the Save() method
 // 		enum class FORMAT_FLAGS {
 // 			NONE = 0,
@@ -148,7 +350,7 @@ void	ImageFile::Save( FILE_FORMAT _format, SAVE_FLAGS _options, void*& _fileCont
 // 			SKIP_ALPHA = 8,			// Don't save alpha
 // 			PREMULTIPLY_ALPHA = 16,	// RGB should be multiplied by alpha
 // 		};
-	
+//
 // Save to a stream
 // <param name="_Stream">The stream to write the image to</param>
 // <param name="_FileType">The file type to save as</param>
@@ -157,7 +359,7 @@ void	ImageFile::Save( FILE_FORMAT _format, SAVE_FLAGS _options, void*& _fileCont
 // <exception cref="NotSupportedException">Occurs if the image type is not supported by the Bitmap class</exception>
 // <exception cref="Exception">Occurs if the source image format cannot be converted to RGBA32F which is the generic format we read from</exception>
 //		void	Save( System.IO.Stream _Stream, FILE_FORMAT _FileType, FORMAT_FLAGS _Parms, const FormatEncoderOptions* _options ) const;
-
+//
 // <summary>
 // Save to a stream
 // </summary>
@@ -339,250 +541,4 @@ void	ImageFile::Save( FILE_FORMAT _format, SAVE_FLAGS _options, void*& _fileCont
 // 	{
 // 	}
 // }
-
-ImageFile::FILE_FORMAT	ImageFile::GetFileType( const wchar_t* _imageFileNameName ) {
-	if ( _imageFileNameName == nullptr )
-		return FILE_FORMAT::UNKNOWN;
-
-#if 1
-	FILE_FORMAT	result = FIF2FORMAT( FreeImage_GetFileTypeU( _imageFileNameName, 0 ) );
-	return result;
-
-#else
-	// Search for last . occurrence
-	size_t	length = strlen( _imageFileNameName );
-	size_t	extensionIndex;
-	for ( extensionIndex=length-1; extensionIndex >= 0; extensionIndex++ ) {
-		if ( _imageFileNameName[extensionIndex] == '.' )
-			break;
-	}
-	if ( extensionIndex == 0 )
-		return FILE_FORMAT::UNKNOWN;
-
-//	// Copy extension and make it uppercase
-//	char	temp[64];
-//	strcpy_s( temp, 64, _imageFileNameName + extensionIndex );
-//	_strupr_s( temp, 64 );
-
-	const char*	extension = _imageFileNameName + extensionIndex;
-
-	// Check for known extensions
-	struct KnownExtension {
-		const char*	extension;
-		FILE_FORMAT	format;
-	}	knownExtensions[] = {
-		{ ".JPG",	FILE_FORMAT::JPEG },
-		{ ".JPEG",	FILE_FORMAT::JPEG },
-		{ ".JPE",	FILE_FORMAT::JPEG },
-		{ ".BMP",	FILE_FORMAT::BMP },
-		{ ".ICO",	FILE_FORMAT::ICO },
-		{ ".PNG",	FILE_FORMAT::PNG },
-		{ ".TGA",	FILE_FORMAT::TARGA },
-		{ ".TIF",	FILE_FORMAT::TIFF },
-		{ ".TIFF",	FILE_FORMAT::TIFF },
-		{ ".GIF",	FILE_FORMAT::GIF },
-		{ ".CRW",	FILE_FORMAT::RAW },
-		{ ".CR2",	FILE_FORMAT::RAW },
-		{ ".DNG",	FILE_FORMAT::RAW },
-		{ ".HDR",	FILE_FORMAT::HDR },
-		{ ".EXR",	FILE_FORMAT::EXR },
-		{ ".DDS",	FILE_FORMAT::DDS },
-		{ ".PSD",	FILE_FORMAT::PSD },
-		{ ".PSB",	FILE_FORMAT::PSD },
-	};
-
-	U32						knownExtensionsCount = sizeof(knownExtensions) / sizeof(KnownExtension);
-	const KnownExtension*	knownExtension = knownExtensions;
-	for ( U32 knownExtensionIndex=0; knownExtensionIndex < knownExtensionsCount; knownExtensionIndex++, knownExtension++ ) {
-		if ( _stricmp( extension, knownExtension->extension ) == 0 ) {
-			return knownExtension->format;
-		}
-	}
-
-	return FILE_FORMAT::UNKNOWN;
-#endif
-}
-
-ImageFile::BIT_DEPTH	ImageFile::PixelFormat2BPP( PIXEL_FORMAT _pixelFormat ) {
-	switch (_pixelFormat ) {
-		// 8-bits
-		case PIXEL_FORMAT::R8:
-		case PIXEL_FORMAT::RG8:
-		case PIXEL_FORMAT::RGB8:
-		case PIXEL_FORMAT::RGBA8:
-			return BIT_DEPTH::BPP8;
-
-		// 16-bits
-		case PIXEL_FORMAT::R16:
-//		case PIXEL_FORMAT::RG16:
-		case PIXEL_FORMAT::RGB16:
-		case PIXEL_FORMAT::RGBA16:
-			return BIT_DEPTH::BPP16;
-//		case PIXEL_FORMAT::R16F:
-//		case PIXEL_FORMAT::RG16F:
-//		case PIXEL_FORMAT::RGBA16F:
-			return BIT_DEPTH::BPP16F;
-
-		// 32-bits
-		case PIXEL_FORMAT::R32F:
-//		case PIXEL_FORMAT::RG32F:
-		case PIXEL_FORMAT::RGB32F:
-		case PIXEL_FORMAT::RGBA32F:
-			return BIT_DEPTH::BPP32F;
-	};
-
-	return BIT_DEPTH(0U);
-}
-
-// Determine target bitmap type based on target pixel format
-FREE_IMAGE_TYPE	ImageFile::PixelFormat2FIT( PIXEL_FORMAT _pixelFormat ) {
-	switch ( _pixelFormat ) {
-		// 8-bits
-		case ImageFile::PIXEL_FORMAT::R8:		return FIT_BITMAP;
-		case ImageFile::PIXEL_FORMAT::RG8:		return FIT_BITMAP;
-		case ImageFile::PIXEL_FORMAT::RGB8:		return FIT_BITMAP;
-		case ImageFile::PIXEL_FORMAT::RGBA8:	return FIT_BITMAP;
-		// 16-bits
-		case ImageFile::PIXEL_FORMAT::R16:		return FIT_UINT16;
-//		case ImageFile::PIXEL_FORMAT::RG16:		// Unsupported
-		case ImageFile::PIXEL_FORMAT::RGB16:	return FIT_RGB16;
-		case ImageFile::PIXEL_FORMAT::RGBA16:	return FIT_RGBA16;
-// 		case ImageFile::PIXEL_FORMAT::R16F:		// Unsupported
-// 		case ImageFile::PIXEL_FORMAT::RG16F:	// Unsupported
-// 		case ImageFile::PIXEL_FORMAT::RGBA16F:	// Unsupported
-		// 32-bits
-		case ImageFile::PIXEL_FORMAT::R32F:		return FIT_FLOAT;
-//		case ImageFile::PIXEL_FORMAT::RG32F:	// Unsupported
-		case ImageFile::PIXEL_FORMAT::RGB32F:	return FIT_RGBF;
-		case ImageFile::PIXEL_FORMAT::RGBA32F:	return FIT_RGBAF;
-	}
-
-	return FIT_UNKNOWN;
-}
-
-void	ImageFile::UseFreeImage() {
-	if ( ms_freeImageUsageRefCount == 0 ) {
-		FreeImage_Initialise( TRUE );
-	}
-	ms_freeImageUsageRefCount++;
-}
-void	ImageFile::UnUseFreeImage() {
-	ms_freeImageUsageRefCount--;
-	if ( ms_freeImageUsageRefCount == 0 ) {
-		FreeImage_DeInitialise();
-	}
-}
-
-void	ImageFile::RetrieveMetaData() {
-	gna!
-// @TODO!
-
-//			EnumerateMetaDataJPG( _MetaData, out m_profileFoundInFile, out bGammaFoundInFile );
-// 			if ( !m_profileFoundInFile && !bGammaFoundInFile )
-// 				bGammaFoundInFile = true;			// Unless specified otherwise, we override the gamma no matter what since JPEGs use a 2.2 gamma by default anyway
-
-// 			EnumerateMetaDataPNG( _MetaData, out m_profileFoundInFile, out bGammaFoundInFile );
-
-// 			EnumerateMetaDataTIFF( _MetaData, out m_profileFoundInFile, out bGammaFoundInFile );
-
-// 					case FILE_TYPE.CRW:
-// 					case FILE_TYPE.CR2:
-// 					case FILE_TYPE.DNG:
-// 						{
-// 							using ( System::IO::MemoryStream Stream = new System::IO::MemoryStream( _ImageFileContent ) )
-// 								using ( LibRawManaged.RawFile Raw = new LibRawManaged.RawFile() ) {
-// 									Raw.UnpackRAW( Stream );
-// 
-// 									ColorProfile.Chromaticities	Chroma = Raw.ColorProfile == LibRawManaged.RawFile.COLOR_PROFILE.ADOBE_RGB
-// 																		? ColorProfile.Chromaticities.AdobeRGB_D65	// Use Adobe RGB
-// 																		: ColorProfile.Chromaticities.sRGB;			// Use default sRGB color profile
-// 
-// 									// Create a default sRGB linear color profile
-// 									m_colorProfile = _ProfileOverride != nullptr ? _ProfileOverride
-// 										: new ColorProfile(
-// 											Chroma,
-// 											ColorProfile.GAMMA_CURVE.STANDARD,	// But with a standard gamma curve...
-// 											1.0f								// Linear
-// 										);
-// 
-// 									// Also get back valid camera shot info
-// 									m_hasValidShotInfo = true;
-// 									m_ISOSpeed = Raw.ISOSpeed;
-// 									m_shutterSpeed = Raw.ShutterSpeed;
-// 									m_aperture = Raw.Aperture;
-// 									m_focalLength = Raw.FocalLength;
-
-
-}
-
-ColorProfile*	ImageFile::CreateColorProfile( FILE_FORMAT _format, const FIBITMAP& _bitmap ) {
-
-// 	// Try to use the file's associated profile if it exists
-// 	FIICCPROFILE*	fileProfile = FreeImage_GetICCProfile( _bitmap );
-// 	if ( fileProfile != nullptr ) {
-//		@TODO => Use ICC profile lib to read embedded profile
-// 	}
-
-	// Otherwise, recover our own
-	ColorProfile*	profile = nullptr;
-	switch ( _format ) {
-		case FILE_FORMAT::JPEG:
-			profile = new ColorProfile( ColorProfile::Chromaticities::sRGB,		// Default for JPEGs is sRGB
-										ColorProfile::GAMMA_CURVE::STANDARD,	// JPG uses a 2.2 gamma by default
-										2.2f
-									);
-			break;
-
-		case FILE_FORMAT::PNG:
-			profile = new ColorProfile( ColorProfile::Chromaticities::sRGB,		// Default for PNGs is standard sRGB	
-										ColorProfile::GAMMA_CURVE::sRGB,
-										ColorProfile::GAMMA_EXPONENT_sRGB
-									);
-			break;
-
-		case FILE_FORMAT::TIFF:
-			profile = new ColorProfile( ColorProfile::Chromaticities::sRGB,		// Default for TIFFs is sRGB
-										ColorProfile::GAMMA_CURVE::STANDARD,
-										1.0f									// Linear gamma by default
-									);
-			break;
-
-		case FILE_FORMAT::GIF:
-			profile = new ColorProfile( ColorProfile::Chromaticities::sRGB,		// Default for GIFs is standard sRGB with no gamma
-										ColorProfile::GAMMA_CURVE::STANDARD,
-										1.0f
-									);
-			break;
-
-		case FILE_FORMAT::BMP:	// BMP Don't have metadata!
-			profile = new ColorProfile( ColorProfile::Chromaticities::sRGB,		// Default for BMPs is standard sRGB with no gamma
-										ColorProfile::GAMMA_CURVE::STANDARD,
-										1.0f
-									);
-			break;
-
-		case FILE_FORMAT::RAW:	// Raw files have no correction
-			profile = new ColorProfile( ColorProfile::Chromaticities::sRGB,
-										ColorProfile::GAMMA_CURVE::STANDARD,
-										1.0f
-									);
-			break;
-
-		case FILE_FORMAT::TARGA: {
-			float	gammaExponent = 2.2f;
-			int		num, den;
-			if (	MetaData::GetInteger( FIMD_COMMENTS, _bitmap, "GammaNumerator", num )
-				&&	MetaData::GetInteger( FIMD_COMMENTS, _bitmap, "GammaDenominator", den ) ) {
-				gammaExponent = float(num) / den;
-			}
-
-			profile = new ColorProfile( ColorProfile::Chromaticities::sRGB,		// Use default sRGB color profile
-										ColorProfile::GAMMA_CURVE::STANDARD,	// But with a standard gamma curve...
-										gammaExponent							// ...whose gamma is retrieved from extension data, if available
-									);
-			}
-			break;
-	}
-
-	return profile;
-}
+#pragma endregion

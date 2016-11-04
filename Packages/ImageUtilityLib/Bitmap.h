@@ -41,20 +41,10 @@ namespace ImageUtilityLib {
 	/// </remarks>
 	class Bitmap {
 	private:
-		#pragma region CONSTANTS
-
-//		private static readonly System.Windows.Media.PixelFormat	GENERIC_PIXEL_FORMAT = System.Windows.Media.PixelFormats.Rgba128Float;
-// 		static const float	BYTE_TO_FLOAT = 1.0f / 255.0f;
-// 		static const float	WORD_TO_FLOAT = 1.0f / 65535.0f;
-
-		#pragma endregion
-
-	private:
 		#pragma region FIELDS
 
 		U32					m_width;
 		U32					m_height;
-//		bool				m_hasAlpha;
 
 		const ColorProfile*	m_colorProfile;		// The color profile to use with this bitmap (NOTE: Not owned by the class, it's the responsibility of the provider to delete the profile)
 
@@ -96,7 +86,6 @@ namespace ImageUtilityLib {
 		Bitmap()
 			: m_width( 0 )
 			, m_height( 0 )
-//			, m_hasAlpha( false )
 			, m_colorProfile( nullptr )
 			, m_XYZ( nullptr ) {
 		}
@@ -105,12 +94,8 @@ namespace ImageUtilityLib {
 			SAFE_DELETE( m_XYZ );
 		}
 
-		/// <summary>
-		/// Manual creation
-		/// </summary>
-		/// <param name="_Width"></param>
-		/// <param name="_Height"></param>
-		/// <param name="_Profile">An optional color profile, you will need a valid profile if you wish to save the bitmap!</param>
+		// Manual creation
+		//	_profile, an optional color profile (NOTE: you will need a valid profile if you wish to save the bitmap)
 		Bitmap( int _width, int _height, const ColorProfile& _profile ) {
 			m_width = _width;
 			m_height = _height;
@@ -119,23 +104,19 @@ namespace ImageUtilityLib {
 			m_colorProfile = &_profile;
 		}
 
-		/// <summary>
-		/// Creates a bitmap from a file
-		/// </summary>
-		/// <param name="_Device"></param>
-		/// <param name="_Name"></param>
+		// Creates a bitmap from a file
 		Bitmap( const ImageFile& _file ) {
 			FromImageFile( _file );
 		}
 
 		// Initializes the bitmap from an image file
-		void	FromImageFile( const ImageFile& _sourceFile, const ColorProfile* _profileOverride=nullptr, bool _unPremultiplyAlpha=false );
+		void			FromImageFile( const ImageFile& _sourceFile, const ColorProfile* _profileOverride=nullptr, bool _unPremultiplyAlpha=false );
 
 		// Builds an image file from the bitmap
-		void	ToImageFile( ImageFile& _targetFile, ImageFile::PIXEL_FORMAT _targetFormat, bool _premultiplyAlpha=false ) const;
+		void			ToImageFile( ImageFile& _targetFile, ImageFile::PIXEL_FORMAT _targetFormat, bool _premultiplyAlpha=false ) const;
 
 		// Accesses the individual XYZ-Alpha pixels
-		float4&	Access( U32 _X, U32 _Y ) {
+		float4&			Access( U32 _X, U32 _Y ) {
 			return m_XYZ[m_width*_Y+_X];
 		}
 		const float4&	Access( U32 _X, U32 _Y ) const {
