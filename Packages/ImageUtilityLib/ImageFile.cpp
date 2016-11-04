@@ -12,23 +12,25 @@ ImageFile::ImageFile()
 	, m_fileFormat( FILE_FORMAT::UNKNOWN )
 {}
 
-ImageFile::ImageFile( FILE_FORMAT _format, const wchar_t* _fileName ) {
-	UseFreeImage();
-	m_fileFormat = _format;
-	m_bitmap = FreeImage_LoadU( FORMAT2FIF( _format ), _fileName );
-	m_colorProfile = CreateColorProfile( m_fileFormat, *m_bitmap );
+ImageFile::ImageFile( const wchar_t* _fileName, FILE_FORMAT _format )
+	: m_bitmap( nullptr )
+	, m_colorProfile( nullptr )
+{
+	Load( _fileName, _format );
 }
 
-ImageFile::ImageFile( FILE_FORMAT _format, const U8* _fileContent, U64 _fileSize ) {
-	UseFreeImage();
-	FIMEMORY*	mem = FreeImage_OpenMemory( (BYTE*) _fileContent, U32(_fileSize) );
-	if ( mem == nullptr )
-		throw "Failed to read bitmap content into memory!";
+ImageFile::ImageFile( const U8* _fileContent, U64 _fileSize, FILE_FORMAT _format )
+	: m_bitmap( nullptr )
+	, m_colorProfile( nullptr )
+{
+	Load( _fileContent, _fileSize, _format );
+}
 
-	m_fileFormat = _format;
-	m_bitmap = FreeImage_LoadFromMemory( FORMAT2FIF( _format ), mem );
-	FreeImage_CloseMemory( mem );
-	m_colorProfile = CreateColorProfile( m_fileFormat, *m_bitmap );
+ImageFile::ImageFile( U32 _width, U32 _height, PIXEL_FORMAT _format )
+	: m_bitmap( nullptr )
+	, m_colorProfile( nullptr )
+{
+	Init( _width, _height, _format );
 }
 
 ImageFile::~ImageFile() {
@@ -54,6 +56,107 @@ void	ImageFile::Exit() {
 	m_fileFormat = FILE_FORMAT::UNKNOWN;
 	m_metadata.Reset();
 }
+
+//////////////////////////////////////////////////////////////////////////
+// Load
+void	ImageFile::Load( const wchar_t* _fileName ) {
+	// Attempt to retrieve the file format from the file name
+	FILE_FORMAT	format = GetFileType( _fileName );
+	Load( _fileName, format );
+}
+void	ImageFile::Load( const wchar_t* _fileName, FILE_FORMAT _format ) {
+	UseFreeImage();
+	Exit();
+
+	if ( _format == FILE_FORMAT::UNKNOWN )
+		throw "Unrecognized image file format!";
+
+	m_fileFormat = _format;
+	m_bitmap = FreeImage_LoadU( FORMAT2FIF( _format ), _fileName );
+
+	m_colorProfile = CreateColorProfile( m_fileFormat, *m_bitmap );
+}
+void	ImageFile::Load( const void* _fileContent, U64 _fileSize, FILE_FORMAT _format ) {
+	UseFreeImage();
+	Exit();
+
+	if ( _format == FILE_FORMAT::UNKNOWN )
+		throw "Unrecognized image file format!";
+
+	FIMEMORY*	mem = FreeImage_OpenMemory( (BYTE*) _fileContent, U32(_fileSize) );
+	if ( mem == nullptr )
+		throw "Failed to read bitmap content into memory!";
+
+	m_fileFormat = _format;
+	m_bitmap = FreeImage_LoadFromMemory( FORMAT2FIF( _format ), mem );
+	FreeImage_CloseMemory( mem );
+
+	m_colorProfile = CreateColorProfile( m_fileFormat, *m_bitmap );
+}
+
+//////////////////////////////////////////////////////////////////////////
+// Save
+void	ImageFile::Save( const wchar_t* _fileName ) const {
+	FILE_FORMAT	format = GetFileType( _fileName );
+	Save( _fileName, format );
+}
+void	ImageFile::Save( const wchar_t* _fileName, FILE_FORMAT _format ) const {
+	Save( _fileName, _format, SAVE_FLAGS(0) );
+}
+void	ImageFile::Save( const wchar_t* _fileName, FILE_FORMAT _format, SAVE_FLAGS _options ) const {
+	if ( _format == FILE_FORMAT::UNKNOWN )
+		throw "Unrecognized image file format!";
+
+	m_fileFormat = _format;
+	FreeImage_SaveU( FORMAT2FIF( _format ), m_bitmap, _fileName, int(_options) );
+}
+void	ImageFile::Save( FILE_FORMAT _format, SAVE_FLAGS _options, void*& _fileContent, U64 _fileSize ) const {
+	if ( _format == FILE_FORMAT::UNKNOWN )
+		throw "Unrecognized image file format!";
+
+	m_fileFormat = _format;
+
+	// Save into a stream of unknown size
+	FIMEMORY*	stream = FreeImage_OpenMemory();
+	FreeImage_SaveToMemory( FORMAT2FIF( _format ), m_bitmap, stream, int(_options) );
+
+	// Copy into a custom buffer
+	_fileSize = FreeImage_TellMemory( stream );
+	_fileContent = new U8[_fileSize];
+	FIMEMORY*	target = FreeImage_OpenMemory( (BYTE*) _fileContent, U32(_fileSize) );
+
+	FreeImage_SeekMemory( stream, 0, SEEK_SET );
+	FreeImage_ReadMemory( _fileContent, 1, _fileSize, stream );
+
+	FreeImage_CloseMemory( target );
+	FreeImage_CloseMemory( stream );
+}
+	
+
+// 		// Formatting flags for the Save() method
+// 		enum class FORMAT_FLAGS {
+// 			NONE = 0,
+// 
+// 			// Bits per pixel component
+// 			SAVE_8BITS_UNORM = 0,	// Save as byte
+// 			SAVE_16BITS_UNORM = 1,	// Save as UInt16 if possible (valid for PNG, TIFF)
+// 			SAVE_32BITS_FLOAT = 2,	// Save as float if possible (valid for TIFF)
+// 
+// 			// Gray
+// 			GRAY = 4,				// Save as gray levels
+// 
+// 			SKIP_ALPHA = 8,			// Don't save alpha
+// 			PREMULTIPLY_ALPHA = 16,	// RGB should be multiplied by alpha
+// 		};
+	
+// Save to a stream
+// <param name="_Stream">The stream to write the image to</param>
+// <param name="_FileType">The file type to save as</param>
+// <param name="_Parms">Additional formatting flags</param>
+// <param name="_options">An optional block of options for encoding</param>
+// <exception cref="NotSupportedException">Occurs if the image type is not supported by the Bitmap class</exception>
+// <exception cref="Exception">Occurs if the source image format cannot be converted to RGBA32F which is the generic format we read from</exception>
+//		void	Save( System.IO.Stream _Stream, FILE_FORMAT _FileType, FORMAT_FLAGS _Parms, const FormatEncoderOptions* _options ) const;
 
 // <summary>
 // Save to a stream
@@ -237,12 +340,12 @@ void	ImageFile::Exit() {
 // 	}
 // }
 
-ImageFile::FILE_FORMAT	ImageFile::GetFileType( const char* _imageFileNameName ) {
+ImageFile::FILE_FORMAT	ImageFile::GetFileType( const wchar_t* _imageFileNameName ) {
 	if ( _imageFileNameName == nullptr )
 		return FILE_FORMAT::UNKNOWN;
 
 #if 1
-	FILE_FORMAT	result = FIF2FORMAT( FreeImage_GetFileType( _imageFileNameName, 0 ) );
+	FILE_FORMAT	result = FIF2FORMAT( FreeImage_GetFileTypeU( _imageFileNameName, 0 ) );
 	return result;
 
 #else
@@ -371,6 +474,7 @@ void	ImageFile::UnUseFreeImage() {
 }
 
 void	ImageFile::RetrieveMetaData() {
+	gna!
 // @TODO!
 
 //			EnumerateMetaDataJPG( _MetaData, out m_profileFoundInFile, out bGammaFoundInFile );
@@ -413,19 +517,16 @@ void	ImageFile::RetrieveMetaData() {
 
 ColorProfile*	ImageFile::CreateColorProfile( FILE_FORMAT _format, const FIBITMAP& _bitmap ) {
 
-Apparemment, c'est pas ce que je pensais... Ca stocke juste un bloc de data trouvé dans le fichier :(
 // 	// Try to use the file's associated profile if it exists
 // 	FIICCPROFILE*	fileProfile = FreeImage_GetICCProfile( _bitmap );
 // 	if ( fileProfile != nullptr ) {
-// 
+//		@TODO => Use ICC profile lib to read embedded profile
 // 	}
 
 	// Otherwise, recover our own
 	ColorProfile*	profile = nullptr;
 	switch ( _format ) {
 		case FILE_FORMAT::JPEG:
-// pas de gamma sur les JPEG si non spécifié !
-// Il y a bien une magouille faite lors de la conversion par le FormatConvertedBitmap!
 			profile = new ColorProfile( ColorProfile::Chromaticities::sRGB,		// Default for JPEGs is sRGB
 										ColorProfile::GAMMA_CURVE::STANDARD,	// JPG uses a 2.2 gamma by default
 										2.2f

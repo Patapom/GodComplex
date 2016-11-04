@@ -4,7 +4,7 @@ using namespace ImageUtilityLib;
 
 // This is the core of the bitmap class
 // This method converts any image file into a float4 CIE XYZ format using the provided profile or the profile associated to the file
-void	Bitmap::FromImageFile( const ImageFile& _sourceFile, const ColorProfile* _profileOverride ) {
+void	Bitmap::FromImageFile( const ImageFile& _sourceFile, const ColorProfile* _profileOverride, bool _unPremultiplyAlpha ) {
 	m_colorProfile = _profileOverride != nullptr ? _profileOverride : _sourceFile.GetColorProfile();
  	if ( m_colorProfile == nullptr )
  		throw "The provided file doesn't contain a valid color profile to initialize the bitmap!";
@@ -21,10 +21,23 @@ void	Bitmap::FromImageFile( const ImageFile& _sourceFile, const ColorProfile* _p
 	m_colorProfile->RGB2XYZ( source, m_XYZ, U32(m_width * m_height) );
 
 	FreeImage_Unload( float4Bitmap );
+
+	if ( _unPremultiplyAlpha ) {
+		// Un-pre-multiply by alpha
+		float4*	unPreMultipliedTarget = m_XYZ;
+		for ( U32 i=m_width*m_height; i > 0; i--, unPreMultipliedTarget++ ) {
+			if ( unPreMultipliedTarget->w > 0.0f ) {
+				float	invAlpha = 1.0f / unPreMultipliedTarget->w;
+				unPreMultipliedTarget->x *= invAlpha;
+				unPreMultipliedTarget->y *= invAlpha;
+				unPreMultipliedTarget->z *= invAlpha;
+			}
+		}
+	}
 }
 
 // And this method converts back the bitmap to any format
-void	Bitmap::ToImageFile( ImageFile& _targetFile, ImageFile::PIXEL_FORMAT _targetFormat ) const {
+void	Bitmap::ToImageFile( ImageFile& _targetFile, ImageFile::PIXEL_FORMAT _targetFormat, bool _premultiplyAlpha ) const {
  	if ( m_colorProfile == nullptr )
  		throw "The bitmap doesn't contain a valid color profile to initialize the image file!";
 
@@ -34,8 +47,21 @@ void	Bitmap::ToImageFile( ImageFile& _targetFile, ImageFile::PIXEL_FORMAT _targe
 
 	// Convert back to float4 RGB using color profile
 	ImageFile	float4Image( m_width, m_height, ImageFile::PIXEL_FORMAT::RGBA32F );
-	float4*		target = (float4*) float4Image.Bits();
-	m_colorProfile->XYZ2RGB( m_XYZ, target, m_width*m_height );
+	const float4*	source = m_XYZ;
+	float4*			target = (float4*) float4Image.Bits();
+	if ( _premultiplyAlpha ) {
+		// Pre-multiply by alpha
+		const float4*	unPreMultipliedSource = m_XYZ;
+		float4*			preMultipliedTarget = target;
+		for ( U32 i=m_width*m_height; i > 0; i--, unPreMultipliedSource++, preMultipliedTarget++ ) {
+			preMultipliedTarget->x = unPreMultipliedSource->x * unPreMultipliedSource->w;
+			preMultipliedTarget->y = unPreMultipliedSource->y * unPreMultipliedSource->w;
+			preMultipliedTarget->z = unPreMultipliedSource->z * unPreMultipliedSource->w;
+			preMultipliedTarget->w = unPreMultipliedSource->w;
+		}
+		source = target;	// In-place conversion
+	}
+	m_colorProfile->XYZ2RGB( source, target, m_width*m_height );
 
 	// Convert to target bitmap
 	FIBITMAP*	targetBitmap = FreeImage_ConvertToType( float4Image.m_bitmap, targetType );

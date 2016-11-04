@@ -57,7 +57,7 @@ namespace ImageUtilityLib {
 	public:
 		#pragma region NESTED TYPES
 
-		// Wraps around free image's enum
+		// Wraps around free image's "FREE_IMAGE_FORMAT" enum
 		enum class	FILE_FORMAT {
 			UNKNOWN = -1,
 			BMP		= 0,
@@ -107,37 +107,103 @@ namespace ImageUtilityLib {
 			BPP32	= 32,
 			BPP32F	= 32,
 		};
-
-		// Formatting flags for the Save() method
-		enum class FORMAT_FLAGS {
-			NONE = 0,
-
-			// Bits per pixel component
-			SAVE_8BITS_UNORM = 0,	// Save as byte
-			SAVE_16BITS_UNORM = 1,	// Save as UInt16 if possible (valid for PNG, TIFF)
-			SAVE_32BITS_FLOAT = 2,	// Save as float if possible (valid for TIFF)
-
-			// Gray
-			GRAY = 4,				// Save as gray levels
-
-			SKIP_ALPHA = 8,			// Don't save alpha
-			PREMULTIPLY_ALPHA = 16,	// RGB should be multiplied by alpha
-		};
-
 		
-		// This is an aggregate of the various options that can be fed to the Save() method
-		
-		struct FormatEncoderOptions {
-// 			// FILE_FORMAT == JPEG
-// 			int	JPEGQualityLevel = 80;	// 80%
-// 
-// 			// FILE_FORMAT == PNG
-// 			PngInterlaceOption	PNGInterlace = PngInterlaceOption.Default;
-// 
-// 			// FILE_FORMAT == TIFF
-// 			TiffCompressOption	TIFFCompression = TiffCompressOption.Rle;
-		};
-
+		// This is an aggregate of the various flags that can be fed to the Save() method, depending on the target file format
+		// NOTE: This enum should match the FreeImage defines found in FreemImage.h
+ 		enum class SAVE_FLAGS {
+ 			  SF_BMP_DEFAULT				 = 0
+			, SF_BMP_SAVE_RLE				 = 1
+			, SF_CUT_DEFAULT				 = 0
+			, SF_DDS_DEFAULT				 = 0
+			, SF_EXR_DEFAULT				 = 0		//! save data as half with piz-based wavelet compression
+			, SF_EXR_FLOAT					 = 0x0001	//! save data as float instead of as half (not recommended)
+			, SF_EXR_NONE					 = 0x0002	//! save with no compression
+			, SF_EXR_ZIP					 = 0x0004	//! save with zlib compression, in blocks of 16 scan lines
+			, SF_EXR_PIZ					 = 0x0008	//! save with piz-based wavelet compression
+			, SF_EXR_PXR24					 = 0x0010	//! save with lossy 24-bit float compression
+			, SF_EXR_B44					 = 0x0020	//! save with lossy 44% float compression - goes to 22% when combined with EXR_LC
+			, SF_EXR_LC					 = 0x0040	//! save images with one luminance and two chroma channels, rather than as RGB (lossy compression)
+			, SF_FAXG3_DEFAULT				 = 0
+			, SF_GIF_DEFAULT				 = 0
+			, SF_GIF_LOAD256				 = 1		//! load the image as a 256 color image with ununsed palette entries, if it's 16 or 2 color
+			, SF_GIF_PLAYBACK				 = 2		//! 'Play' the GIF to generate each frame (as 32bpp) instead of returning raw frame data when loading
+			, SF_HDR_DEFAULT				 = 0
+			, SF_ICO_DEFAULT				 = 0
+			, SF_ICO_MAKEALPHA				 = 1		//! convert to 32bpp and create an alpha channel from the AND-mask when loading
+			, SF_IFF_DEFAULT				 = 0
+			, SF_J2K_DEFAULT				 = 0		//! save with a 16:1 rate
+			, SF_JP2_DEFAULT				 = 0		//! save with a 16:1 rate
+			, SF_JPEG_DEFAULT				 = 0		//! loading (see JPEG_FAST); saving (see JPEG_QUALITYGOOD|JPEG_SUBSAMPLING_420)
+			, SF_JPEG_FAST					 = 0x0001	//! load the file as fast as possible, sacrificing some quality
+			, SF_JPEG_ACCURATE				 = 0x0002	//! load the file with the best quality, sacrificing some speed
+			, SF_JPEG_CMYK					 = 0x0004	//! load separated CMYK "as is" (use | to combine with other load flags)
+			, SF_JPEG_EXIFROTATE			 = 0x0008	//! load and rotate according to Exif 'Orientation' tag if available
+			, SF_JPEG_GREYSCALE			 = 0x0010	//! load and convert to a 8-bit greyscale image
+			, SF_JPEG_QUALITYSUPERB		 = 0x80		//! save with superb quality (100:1)
+			, SF_JPEG_QUALITYGOOD			 = 0x0100	//! save with good quality (75:1)
+			, SF_JPEG_QUALITYNORMAL		 = 0x0200	//! save with normal quality (50:1)
+			, SF_JPEG_QUALITYAVERAGE		 = 0x0400	//! save with average quality (25:1)
+			, SF_JPEG_QUALITYBAD			 = 0x0800	//! save with bad quality (10:1)
+			, SF_JPEG_PROGRESSIVE			 = 0x2000	//! save as a progressive-JPEG (use | to combine with other save flags)
+			, SF_JPEG_SUBSAMPLING_411		 = 0x1000	//! save with high 4x1 chroma subsampling (4:1:1) 
+			, SF_JPEG_SUBSAMPLING_420		 = 0x4000	//! save with medium 2x2 medium chroma subsampling (4:2:0) - default value
+			, SF_JPEG_SUBSAMPLING_422		 = 0x8000	//! save with low 2x1 chroma subsampling (4:2:2) 
+			, SF_JPEG_SUBSAMPLING_444		 = 0x10000	//! save with no chroma subsampling (4:4:4)
+			, SF_JPEG_OPTIMIZE				 = 0x20000	//! on saving, compute optimal Huffman coding tables (can reduce a few percent of file size)
+			, SF_JPEG_BASELINE				 = 0x40000	//! save basic JPEG, without metadata or any markers
+			, SF_KOALA_DEFAULT				 = 0
+			, SF_LBM_DEFAULT				 = 0
+			, SF_MNG_DEFAULT				 = 0
+			, SF_PCD_DEFAULT				 = 0
+			, SF_PCD_BASE					 = 1		//! load the bitmap sized 768 x 512
+			, SF_PCD_BASEDIV4				 = 2		//! load the bitmap sized 384 x 256
+			, SF_PCD_BASEDIV16				 = 3		//! load the bitmap sized 192 x 128
+			, SF_PCX_DEFAULT				 = 0
+			, SF_PFM_DEFAULT				 = 0
+			, SF_PICT_DEFAULT				 = 0
+			, SF_PNG_DEFAULT				 = 0
+			, SF_PNG_IGNOREGAMMA			 = 1		//! loading: avoid gamma correction
+			, SF_PNG_Z_BEST_SPEED			 = 0x0001	//! save using ZLib level 1 compression flag (default value is 6)
+			, SF_PNG_Z_DEFAULT_COMPRESSION	 = 0x0006	//! save using ZLib level 6 compression flag (default recommended value)
+			, SF_PNG_Z_BEST_COMPRESSION	 = 0x0009	//! save using ZLib level 9 compression flag (default value is 6)
+			, SF_PNG_Z_NO_COMPRESSION		 = 0x0100	//! save without ZLib compression
+			, SF_PNG_INTERLACED			 = 0x0200	//! save using Adam7 interlacing (use | to combine with other save flags)
+			, SF_PNM_DEFAULT				 = 0
+			, SF_PNM_SAVE_RAW				 = 0		//! if set the writer saves in RAW format (i.e. P4, P5 or P6)
+			, SF_PNM_SAVE_ASCII			 = 1		//! if set the writer saves in ASCII format (i.e. P1, P2 or P3)
+			, SF_PSD_DEFAULT				 = 0
+			, SF_PSD_CMYK					 = 1		//! reads tags for separated CMYK (default is conversion to RGB)
+			, SF_PSD_LAB					 = 2		//! reads tags for CIELab (default is conversion to RGB)
+			, SF_RAS_DEFAULT				 = 0
+			, SF_RAW_DEFAULT				 = 0		//! load the file as linear RGB 48-bit
+			, SF_RAW_PREVIEW				 = 1		//! try to load the embedded JPEG preview with included Exif Data or default to RGB 24-bit
+			, SF_RAW_DISPLAY				 = 2		//! load the file as RGB 24-bit
+			, SF_RAW_HALFSIZE				 = 4		//! output a half-size color image
+			, SF_RAW_UNPROCESSED			 = 8		//! output a FIT_UINT16 raw Bayer image
+			, SF_SGI_DEFAULT				 = 0
+			, SF_TARGA_DEFAULT				 = 0
+			, SF_TARGA_LOAD_RGB888			 = 1		//! if set the loader converts RGB555 and ARGB8888 -> RGB888.
+			, SF_TARGA_SAVE_RLE			 = 2		//! if set, the writer saves with RLE compression
+			, SF_TIFF_DEFAULT				 = 0
+			, SF_TIFF_CMYK					 = 0x0001	//! reads/stores tags for separated CMYK (use | to combine with compression flags)
+			, SF_TIFF_PACKBITS				 = 0x0100	//! save using PACKBITS compression
+			, SF_TIFF_DEFLATE				 = 0x0200	//! save using DEFLATE compression (a.k.a. ZLIB compression)
+			, SF_TIFF_ADOBE_DEFLATE		 = 0x0400	//! save using ADOBE DEFLATE compression
+			, SF_TIFF_NONE					 = 0x0800	//! save without any compression
+			, SF_TIFF_CCITTFAX3			 = 0x1000	//! save using CCITT Group 3 fax encoding
+			, SF_TIFF_CCITTFAX4			 = 0x2000	//! save using CCITT Group 4 fax encoding
+			, SF_TIFF_LZW					 = 0x4000	//! save using LZW compression
+			, SF_TIFF_JPEG					 = 0x8000	//! save using JPEG compression
+			, SF_TIFF_LOGLUV				 = 0x10000	//! save using LogLuv compression
+			, SF_WBMP_DEFAULT				 = 0
+			, SF_XBM_DEFAULT				 = 0
+			, SF_XPM_DEFAULT				 = 0
+			, SF_WEBP_DEFAULT				 = 0		//! save with good quality (75:1)
+			, SF_WEBP_LOSSLESS				 = 0x100	//! save in lossless mode
+			, SF_JXR_DEFAULT				 = 0		//! save with quality 80 and no chroma subsampling (4:4:4)
+			, SF_JXR_LOSSLESS				 = 0x0064	//! save lossless
+			, SF_JXR_PROGRESSIVE			 = 0x2000	//! save as a progressive-JXR (use | to combine with other save flags)
+		};
 		// This enum matches the classes available in PixelFormat.h (which in turn match the DXGI formats)
 		enum class PIXEL_FORMAT {
 			// 8-bits
@@ -167,11 +233,11 @@ namespace ImageUtilityLib {
 	private:
 		#pragma region FIELDS
 
-		FIBITMAP*		m_bitmap;
-		FILE_FORMAT		m_fileFormat;		// File format (available if created from a file or saved to a file at some point)
+		FIBITMAP*			m_bitmap;
+		mutable FILE_FORMAT	m_fileFormat;		// File format (available if created from a file or saved to a file at some point)
 
-		MetaData		m_metadata;
-		ColorProfile*	m_colorProfile;		// An optional color profile found in the input file if the bitmap was loaded from a file
+		MetaData			m_metadata;
+		ColorProfile*		m_colorProfile;		// An optional color profile found in the input file if the bitmap was loaded from a file
 
 		#pragma endregion
 
@@ -198,59 +264,76 @@ namespace ImageUtilityLib {
 		const MetaData&		GetMetadata() const		{ return m_metadata; }
 
 		// Gets the optional color profile retrieved during file loading
-		const ColorProfile*	GetColorProfile() const		{ return m_colorProfile; }
+		const ColorProfile*	GetColorProfile() const	{ return m_colorProfile; }
 
 		#pragma endregion
 
 	public:
 
 		ImageFile();
-		ImageFile( FILE_FORMAT _format, const wchar_t* _fileName );
-		ImageFile( FILE_FORMAT _format, const U8* _fileContent, U64 _fileSize );
-		ImageFile( const Bitmap& _bitmap, PIXEL_FORMAT _targetFormat );
-		ImageFile( U32 _width, U32 _height, PIXEL_FORMAT _format ) : m_bitmap( nullptr ), m_colorProfile( nullptr ) {
-			Init( _width, _height, _format );
-		}
+		ImageFile( const wchar_t* _fileName, FILE_FORMAT _format );
+		ImageFile( const U8* _fileContent, U64 _fileSize, FILE_FORMAT _format );
+		ImageFile( U32 _width, U32 _height, PIXEL_FORMAT _format );
 		~ImageFile();
 
 		// Initialize with provided dimensions and pixel format
-		void	Init( U32 _width, U32 _height, PIXEL_FORMAT _format );
+		void				Init( U32 _width, U32 _height, PIXEL_FORMAT _format );
 
 		// Releases the image
-		void	Exit();
+		void				Exit();
 		
-		// Save to a file
-		// <param name="_Stream"></param>
-		// <param name="_FileType"></param>
-		// <param name="_Parms"></param>
-		void	Save( const char* _fileName ) {
-			Save( _fileName, FORMAT_FLAGS::NONE );
-		}
-		void	Save( const char* _fileName, FORMAT_FLAGS _Parms ) {
-			Save( _fileName, _Parms, nullptr );
-		}
-		void	Save( const char* _fileName, FORMAT_FLAGS _Parms, const FormatEncoderOptions* _options ) {
-			FILE_FORMAT	FileType = GetFileType( _fileName );
-// 			using ( System.IO.FileStream S = _fileName.Create() )
-// 				Save( S, FileType, _Parms, _options );
-		}
-		
-		// Save to a stream
-		// <param name="_Stream">The stream to write the image to</param>
-		// <param name="_FileType">The file type to save as</param>
-		// <param name="_Parms">Additional formatting flags</param>
-		// <param name="_options">An optional block of options for encoding</param>
-		// <exception cref="NotSupportedException">Occurs if the image type is not supported by the Bitmap class</exception>
-		// <exception cref="Exception">Occurs if the source image format cannot be converted to RGBA32F which is the generic format we read from</exception>
-//		void	Save( System.IO.Stream _Stream, FILE_FORMAT _FileType, FORMAT_FLAGS _Parms, const FormatEncoderOptions* _options ) const;
-		
+		// Load from a file or memory
+		void				Load( const wchar_t* _fileName );
+		void				Load( const wchar_t* _fileName, FILE_FORMAT _format );
+		void				Load( const void* _fileContent, U64 _fileSize, FILE_FORMAT _format );
+
+		// Save to a file or memory
+		void				Save( const wchar_t* _fileName ) const;
+		void				Save( const wchar_t* _fileName, FILE_FORMAT _format ) const;
+		void				Save( const wchar_t* _fileName, FILE_FORMAT _format, SAVE_FLAGS _options ) const;
+		void				Save( FILE_FORMAT _format, SAVE_FLAGS _options, void*& _fileContent, U64 _fileSize ) const;	// NOTE: The caller MUST delete the returned buffer!
+
 		// Retrieves the image file type based on the image file name
-		// <param name="_ImageFileNameName">The image file name</param>
-		static FILE_FORMAT	GetFileType( const char* _imageFileNameName );
+		static FILE_FORMAT	GetFileType( const wchar_t* _imageFileNameName );
+
+
+	public:
+
+		// DDS-related methods
+		enum class COMPRESSION_TYPE {
+			NONE,
+			BC4,
+			BC5,
+			BC6H,
+			BC7,
+		};
+
+		// Compresses a single image
+		static void			DDSCompress( const ImageFile& _image, COMPRESSION_TYPE _compressionType, void*& _compressedImage, U32 _compressedImageSize );
+
+		// Cube map handling
+		static void			DDSLoadCubeMapFile( const wchar_t* _fileName, U32& _cubeMapsCount, const ImageFile*& _cubeMapFaces );				// NOTE: The caller MUST delete[] the returned cube map faces!
+		static void			DDSLoadCubeMapMemory( void*& _fileContent, U64 _fileSize, U32& _cubeMapsCount, const ImageFile*& _cubeMapFaces );	// NOTE: The caller MUST delete[] the returned cube map faces!
+		static void			DDSSaveCubeMapFile( U32 _cubeMapsCount, const ImageFile* _cubeMapFaces, bool _compressBC6H, const wchar_t* _fileName );
+		static void			DDSSaveCubeMapMemory( U32 _cubeMapsCount, const ImageFile* _cubeMapFaces, bool _compressBC6H, void*& _fileContent, U64 _fileSize );
+
+		// 3D Texture handling
+		static void			DDSLoad3DTextureFile( const wchar_t* _fileName, U32& _slicesCount, const ImageFile*& _slices );				// NOTE: The caller MUST delete[] the returned cube map faces!
+		static void			DDSLoad3DTextureMemory( void*& _fileContent, U64 _fileSize, U32& _slicesCount, const ImageFile*& _slices );	// NOTE: The caller MUST delete[] the returned cube map faces!
+		static void			DDSSave3DTextureFile( U32 _slicesCount, const ImageFile* _slices, bool _compressBC6H, const wchar_t* _fileName );
+		static void			DDSSave3DTextureMemory( U32 _slicesCount, const ImageFile* _slices, bool _compressBC6H, void*& _fileContent, U64 _fileSize );
+
+		// Saves a DDS image in memory to disk (usually used after a compression)
+		static void			DDSSaveFromMemory( void*& _DDSImage, U32 _DDSImageSize, const wchar_t* _fileName );
+
 
 	private:
+		// Attempts to create a color profile from a bitmap
+		// NOTE: The caller MUST delete the returned profile!
+		static ColorProfile*		CreateColorProfile( FILE_FORMAT _format, const FIBITMAP& _bitmap );
+
 		// Retrieves relevant image metadata
-		void				RetrieveMetaData();
+		void						RetrieveMetaData();
 
 		static BIT_DEPTH			PixelFormat2BPP( PIXEL_FORMAT _pixelFormat );
 
@@ -258,10 +341,6 @@ namespace ImageUtilityLib {
 
 		static FILE_FORMAT			FIF2FORMAT( FREE_IMAGE_FORMAT _format )	{ return FILE_FORMAT( _format ); }
 		static FREE_IMAGE_FORMAT	FORMAT2FIF( FILE_FORMAT _format )		{ return FREE_IMAGE_FORMAT( _format ); }
-
-		// Attempts to create a color profile from a bitmap
-		// NOTE: The caller MUST delete the returned profile!
-		static ColorProfile*		CreateColorProfile( FILE_FORMAT _format, const FIBITMAP& _bitmap );
 
 	private:	// Ref-counting for free image lib init/release
 		static U32		ms_freeImageUsageRefCount;

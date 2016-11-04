@@ -294,6 +294,57 @@ public:
 	half()	{ raw=0; }
 	half( float value );
 	operator float() const;
+
+	inline bool isDenormalized() const {
+		U16 e = (raw >> 10) & 0x001f;
+		U16 m = raw & 0x3ff;
+		return e == 0 && m != 0;
+	}
+
+	inline bool isZero() const {
+		return (raw & 0x7fff) == 0;
+	}
+
+	inline bool isNan() const {
+		U16 e = (raw >> 10) & 0x001f;
+		U16 m =  raw & 0x3ff;
+		return e == 31 && m != 0;
+	}
+
+	inline bool isInfinity() const {
+		U16 e = (raw >> 10) & 0x001f;
+		U16 m =  raw & 0x3ff;
+		return e == 31 && m == 0;
+	}
+
+	inline bool isNegative() const {
+		return (raw & 0x8000) != 0;
+	}
+
+	static half positiveInfinity() {
+		half h;
+		h.raw = 0x7c00;
+		return h;
+	}
+
+	static half negativeInfinity() {
+		half h;
+		h.raw = 0xfc00;
+		return h;
+	}
+
+	// Quiet NaN
+	static half qNaN() {
+		half h;
+		h.raw = 0x7fff;
+		return h;
+	}
+	// Signaling NaN
+	static half sNaN() {
+		half h;
+		h.raw = 0x7dff;
+		return h;
+	}
 };
 
 class   half4 {

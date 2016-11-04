@@ -129,15 +129,12 @@ namespace ImageUtilityLib {
 		}
 
 		// Initializes the bitmap from an image file
-		void	FromImageFile( const ImageFile& _sourceFile ) {
-			FromImageFile( _sourceFile, nullptr );
-		}
-		void	FromImageFile( const ImageFile& _sourceFile, const ColorProfile* _profileOverride );
+		void	FromImageFile( const ImageFile& _sourceFile, const ColorProfile* _profileOverride=nullptr, bool _unPremultiplyAlpha=false );
 
 		// Builds an image file from the bitmap
-		void	ToImageFile( ImageFile& _targetFile, ImageFile::PIXEL_FORMAT _targetFormat ) const;
+		void	ToImageFile( ImageFile& _targetFile, ImageFile::PIXEL_FORMAT _targetFormat, bool _premultiplyAlpha=false ) const;
 
-		// Accesses the 
+		// Accesses the individual XYZ-Alpha pixels
 		float4&	Access( U32 _X, U32 _Y ) {
 			return m_XYZ[m_width*_Y+_X];
 		}
