@@ -1,6 +1,6 @@
+#include <string>
 #include "ImageFile.h"
 #include "Bitmap.h"
-#include <string>
 
 using namespace ImageUtilityLib;
 
@@ -24,10 +24,10 @@ ImageFile::ImageFile( const U8* _fileContent, U64 _fileSize, FILE_FORMAT _format
 	Load( _fileContent, _fileSize, _format );
 }
 
-ImageFile::ImageFile( U32 _width, U32 _height, PIXEL_FORMAT _format )
+ImageFile::ImageFile( U32 _width, U32 _height, PIXEL_FORMAT _format, const ColorProfile& _colorProfile )
 	: m_bitmap( nullptr )
 {
-	Init( _width, _height, _format );
+	Init( _width, _height, _format, _colorProfile );
 }
 
 ImageFile::~ImageFile() {
@@ -46,7 +46,7 @@ bool	ImageFile::HasAlpha() const {
 	return false;
 }
 
-void	ImageFile::Init( U32 _width, U32 _height, PIXEL_FORMAT _format ) {
+void	ImageFile::Init( U32 _width, U32 _height, PIXEL_FORMAT _format, const ColorProfile& _colorProfile ) {
 	UseFreeImage();
 	Exit();
 
@@ -57,6 +57,9 @@ void	ImageFile::Init( U32 _width, U32 _height, PIXEL_FORMAT _format ) {
 	m_bitmap = FreeImage_AllocateT( bitmapType, _width, _height, BPP );
 	if ( m_bitmap == nullptr )
 		throw "Failed to initialize image file!";
+
+	// Copy color profile
+	m_metadata.m_colorProfile = new ColorProfile( _colorProfile );
 }
 
 void	ImageFile::Exit() {
@@ -334,6 +337,57 @@ void	ImageFile::UnUseFreeImage() {
 	}
 }
 
+//////////////////////////////////////////////////////////////////////////
+// DDS-Related Helpers
+//
+#if 0
+// @TODO! => Can't include DirectXTex.h without a ton of errors! :(
+
+//#include <wtypes.h>
+#include "DirectXTex.h"
+
+
+// Compresses a single image
+void	ImageFile::DDSCompress( const ImageFile& _image, COMPRESSION_TYPE _compressionType, void*& _compressedImage, U32 _compressedImageSize ) {
+
+}
+
+// Cube map handling
+void	ImageFile::DDSLoadCubeMapFile( const wchar_t* _fileName, U32& _cubeMapsCount, const ImageFile*& _cubeMapFaces ) {
+
+}
+void	ImageFile::DDSLoadCubeMapMemory( void*& _fileContent, U64 _fileSize, U32& _cubeMapsCount, const ImageFile*& _cubeMapFaces ) {
+
+}
+void	ImageFile::DDSSaveCubeMapFile( U32 _cubeMapsCount, const ImageFile* _cubeMapFaces, bool _compressBC6H, const wchar_t* _fileName ) {
+
+}
+void	ImageFile::DDSSaveCubeMapMemory( U32 _cubeMapsCount, const ImageFile* _cubeMapFaces, bool _compressBC6H, void*& _fileContent, U64 _fileSize ) {
+
+}
+
+// 3D Texture handling
+void	ImageFile::DDSLoad3DTextureFile( const wchar_t* _fileName, U32& _slicesCount, const ImageFile*& _slices ) {
+
+}
+void	ImageFile::DDSLoad3DTextureMemory( void*& _fileContent, U64 _fileSize, U32& _slicesCount, const ImageFile*& _slices ) {
+
+}
+void	ImageFile::DDSSave3DTextureFile( U32 _slicesCount, const ImageFile* _slices, bool _compressBC6H, const wchar_t* _fileName ) {
+
+}
+void	ImageFile::DDSSave3DTextureMemory( U32 _slicesCount, const ImageFile* _slices, bool _compressBC6H, void*& _fileContent, U64 _fileSize ) {
+
+}
+
+// Saves a DDS image in memory to disk (usually used after a compression)
+void	ImageFile::DDSSaveFromMemory( void*& _DDSImage, U32 _DDSImageSize, const wchar_t* _fileName ) {
+
+}
+
+#endif
+
+//////////////////////////////////////////////////////////////////////////
 #pragma region Old code...
 // 		// Formatting flags for the Save() method
 // 		enum class FORMAT_FLAGS {

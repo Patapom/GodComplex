@@ -7,7 +7,7 @@ using namespace ImageUtilityLib;
 void	Bitmap::FromImageFile( const ImageFile& _sourceFile, const ColorProfile* _profileOverride, bool _unPremultiplyAlpha ) {
 	m_colorProfile = _profileOverride != nullptr ? _profileOverride : _sourceFile.GetColorProfile();
  	if ( m_colorProfile == nullptr )
- 		throw "The provided file doesn't contain a valid color profile to initialize the bitmap!";
+ 		throw "The provided file doesn't contain a valid color profile and you did not provide any profile override to initialize the bitmap!";
 
 	// Convert for float4 format
 	FIBITMAP*	float4Bitmap = FreeImage_ConvertToType( _sourceFile.m_bitmap, FIT_RGBAF );
@@ -46,7 +46,7 @@ void	Bitmap::ToImageFile( ImageFile& _targetFile, ImageFile::PIXEL_FORMAT _targe
 		throw "Unsupported target type!";
 
 	// Convert back to float4 RGB using color profile
-	ImageFile		float4Image( m_width, m_height, ImageFile::PIXEL_FORMAT::RGBA32F );
+	ImageFile		float4Image( m_width, m_height, ImageFile::PIXEL_FORMAT::RGBA32F, *m_colorProfile );
 	const float4*	source = m_XYZ;
 	float4*			target = (float4*) float4Image.GetBits();
 	if ( _premultiplyAlpha ) {

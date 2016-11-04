@@ -1,12 +1,15 @@
-// RendererManaged.h
-
+//////////////////////////////////////////////////////////////////////////
+// Super simple managed version of the BaseLib's math structures
+//////////////////////////////////////////////////////////////////////////
+//
 #pragma once
-#include "Device.h"
 
 using namespace System;
 
-namespace RendererManaged
-{
+namespace SharpMath {
+
+	value struct	float3;
+
 	[System::Diagnostics::DebuggerDisplayAttribute( "{x}, {y}" )]
 	public value struct	float2 {
 	public:
@@ -31,8 +34,7 @@ namespace RendererManaged
 		}
 
 		property float2	Normalized	{
-			float2	get()
-			{
+			float2	get() {
 				float	InvLength = 1.0f / Length;
 				return float2( InvLength * x, InvLength * y );
 			}
@@ -43,10 +45,9 @@ namespace RendererManaged
 		void	Min( float2 p )	{ x = Math::Min( x, p.x ); y = Math::Min( y, p.y ); }
 		void	Max( float2 p )	{ x = Math::Max( x, p.x ); y = Math::Max( y, p.y ); }
 
-		float	Dot( float2 b )	{ return x*b.x + y*b.y; }
-
-		float3	Cross( float2 b ) { return float3(	0, 0, x * b.y - y * b.x ); }
-		float	CrossZ( float2 b ) { return x * b.y - y * b.x; }
+		float	Dot( float2 b )		{ return x*b.x + y*b.y; }
+		float3	Cross( float2 b );
+		float	CrossZ( float2 b )	{ return x * b.y - y * b.x; }	// Returns the Z component of the orthogonal vector
 
 		static property float2	Zero	{ float2 get() { return float2( 0, 0 ); } }
 		static property float2	UnitX	{ float2 get() { return float2( 1, 0 ); } }
@@ -447,7 +448,7 @@ namespace RendererManaged
 		property float	value	{ float get() { return ((float) *this); } }
 
 		half( float value ) {
-			U32 f32 = *((U32*) &value);
+			UInt32 f32 = *((UInt32*) &value);
 			raw = 0;
 
 			// Decode IEEE 754 little-endian 32-bit floating-point value
@@ -455,32 +456,28 @@ namespace RendererManaged
 			// Map exponent to the range [-127,128]
 			int exponent = ((f32 >> 23) & 0xff) - 127;
 			int mantissa = f32 & 0x007fffff;
-			if ( exponent == 128 )
-			{   // Infinity or NaN
-				raw = U16( sign | F16_MAX_EXPONENT );
+			if ( exponent == 128 ) {
+			   // Infinity or NaN
+				raw = UInt16( sign | F16_MAX_EXPONENT );
 				if ( mantissa != 0 ) raw |= (mantissa & F16_MANTISSA_BITS);
-			}
-			else if ( exponent > 15 )
-			{   // Overflow - flush to Infinity
-				raw = U16( sign | F16_MAX_EXPONENT );
-			}
-			else if ( exponent > -15 )
-			{   // Representable value
+			} else if ( exponent > 15 ) {
+			   // Overflow - flush to Infinity
+				raw = UInt16( sign | F16_MAX_EXPONENT );
+			} else if ( exponent > -15 ) {
+			   // Representable value
 				exponent += F16_EXPONENT_BIAS;
 				mantissa >>= F16_MANTISSA_SHIFT;
-				raw = U16( sign | exponent << F16_EXPONENT_SHIFT | mantissa );
-			}
-			else
-			{
-				raw = U16(sign);
+				raw = UInt16( sign | exponent << F16_EXPONENT_SHIFT | mantissa );
+			} else {
+				raw = UInt16(sign);
 			}
 		}
 
 		static operator float( half _value ) {
 			union 
 			{
-				float   f;
-				U32		ui;
+				float	f;
+				UInt32	ui;
 			} f32;
 
 			int sign = (_value.raw & 0x8000) << 15;

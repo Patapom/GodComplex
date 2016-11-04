@@ -43,7 +43,7 @@
 //
 #pragma once
 
-#include "Types.h"
+#include "..\..\BaseLib\Types.h"
 #include "FreeImage.h"
 #include "MetaData.h"
 
@@ -57,6 +57,33 @@ namespace ImageUtilityLib {
 		friend class MetaData;
 	public:
 		#pragma region NESTED TYPES
+
+		// This enum matches the classes available in PixelFormat.h (which in turn match the DXGI formats)
+		enum class PIXEL_FORMAT {
+			UNKNOWN,
+
+			// 8-bits
+			R8,
+			RG8,
+			RGB8,
+			RGBA8,
+
+			// 16-bits
+			R16,
+//			RG16,		// Unsupported
+			RGB16,
+			RGBA16,
+//			R16F,		// Unsupported
+// 			RG16F,		// Unsupported
+// 			RGB16F,		// Unsupported
+// 			RGBA16F,	// Unsupported
+
+			// 32-bits
+			R32F,
+			RG32F,
+			RGB32F,
+			RGBA32F,
+		};
 
 		// Wraps around free image's "FREE_IMAGE_FORMAT" enum
 		enum class	FILE_FORMAT {
@@ -100,14 +127,6 @@ namespace ImageUtilityLib {
 			WEBP	= 35,
 			JXR		= 36
 		};
-
-// 		enum class BIT_DEPTH {
-// 			BPP8	= 8,
-// 			BPP16	= 16,
-// 			BPP16F	= 16,
-// 			BPP32	= 32,
-// 			BPP32F	= 32,
-// 		};
 		
 		// This is an aggregate of the various flags that can be fed to the Save() method, depending on the target file format
 		// NOTE: This enum should match the FreeImage defines found in FreemImage.h
@@ -123,7 +142,7 @@ namespace ImageUtilityLib {
 			, SF_EXR_PIZ					 = 0x0008	//! save with piz-based wavelet compression
 			, SF_EXR_PXR24					 = 0x0010	//! save with lossy 24-bit float compression
 			, SF_EXR_B44					 = 0x0020	//! save with lossy 44% float compression - goes to 22% when combined with EXR_LC
-			, SF_EXR_LC					 = 0x0040	//! save images with one luminance and two chroma channels, rather than as RGB (lossy compression)
+			, SF_EXR_LC						 = 0x0040	//! save images with one luminance and two chroma channels, rather than as RGB (lossy compression)
 			, SF_FAXG3_DEFAULT				 = 0
 			, SF_GIF_DEFAULT				 = 0
 			, SF_GIF_LOAD256				 = 1		//! load the image as a 256 color image with ununsed palette entries, if it's 16 or 2 color
@@ -139,10 +158,10 @@ namespace ImageUtilityLib {
 			, SF_JPEG_ACCURATE				 = 0x0002	//! load the file with the best quality, sacrificing some speed
 			, SF_JPEG_CMYK					 = 0x0004	//! load separated CMYK "as is" (use | to combine with other load flags)
 			, SF_JPEG_EXIFROTATE			 = 0x0008	//! load and rotate according to Exif 'Orientation' tag if available
-			, SF_JPEG_GREYSCALE			 = 0x0010	//! load and convert to a 8-bit greyscale image
-			, SF_JPEG_QUALITYSUPERB		 = 0x80		//! save with superb quality (100:1)
+			, SF_JPEG_GREYSCALE				 = 0x0010	//! load and convert to a 8-bit greyscale image
+			, SF_JPEG_QUALITYSUPERB			 = 0x80		//! save with superb quality (100:1)
 			, SF_JPEG_QUALITYGOOD			 = 0x0100	//! save with good quality (75:1)
-			, SF_JPEG_QUALITYNORMAL		 = 0x0200	//! save with normal quality (50:1)
+			, SF_JPEG_QUALITYNORMAL			= 0x0200	//! save with normal quality (50:1)
 			, SF_JPEG_QUALITYAVERAGE		 = 0x0400	//! save with average quality (25:1)
 			, SF_JPEG_QUALITYBAD			 = 0x0800	//! save with bad quality (10:1)
 			, SF_JPEG_PROGRESSIVE			 = 0x2000	//! save as a progressive-JPEG (use | to combine with other save flags)
@@ -166,12 +185,12 @@ namespace ImageUtilityLib {
 			, SF_PNG_IGNOREGAMMA			 = 1		//! loading: avoid gamma correction
 			, SF_PNG_Z_BEST_SPEED			 = 0x0001	//! save using ZLib level 1 compression flag (default value is 6)
 			, SF_PNG_Z_DEFAULT_COMPRESSION	 = 0x0006	//! save using ZLib level 6 compression flag (default recommended value)
-			, SF_PNG_Z_BEST_COMPRESSION	 = 0x0009	//! save using ZLib level 9 compression flag (default value is 6)
+			, SF_PNG_Z_BEST_COMPRESSION		 = 0x0009	//! save using ZLib level 9 compression flag (default value is 6)
 			, SF_PNG_Z_NO_COMPRESSION		 = 0x0100	//! save without ZLib compression
-			, SF_PNG_INTERLACED			 = 0x0200	//! save using Adam7 interlacing (use | to combine with other save flags)
+			, SF_PNG_INTERLACED				 = 0x0200	//! save using Adam7 interlacing (use | to combine with other save flags)
 			, SF_PNM_DEFAULT				 = 0
 			, SF_PNM_SAVE_RAW				 = 0		//! if set the writer saves in RAW format (i.e. P4, P5 or P6)
-			, SF_PNM_SAVE_ASCII			 = 1		//! if set the writer saves in ASCII format (i.e. P1, P2 or P3)
+			, SF_PNM_SAVE_ASCII				 = 1		//! if set the writer saves in ASCII format (i.e. P1, P2 or P3)
 			, SF_PSD_DEFAULT				 = 0
 			, SF_PSD_CMYK					 = 1		//! reads tags for separated CMYK (default is conversion to RGB)
 			, SF_PSD_LAB					 = 2		//! reads tags for CIELab (default is conversion to RGB)
@@ -184,15 +203,15 @@ namespace ImageUtilityLib {
 			, SF_SGI_DEFAULT				 = 0
 			, SF_TARGA_DEFAULT				 = 0
 			, SF_TARGA_LOAD_RGB888			 = 1		//! if set the loader converts RGB555 and ARGB8888 -> RGB888.
-			, SF_TARGA_SAVE_RLE			 = 2		//! if set, the writer saves with RLE compression
+			, SF_TARGA_SAVE_RLE				 = 2		//! if set, the writer saves with RLE compression
 			, SF_TIFF_DEFAULT				 = 0
 			, SF_TIFF_CMYK					 = 0x0001	//! reads/stores tags for separated CMYK (use | to combine with compression flags)
 			, SF_TIFF_PACKBITS				 = 0x0100	//! save using PACKBITS compression
 			, SF_TIFF_DEFLATE				 = 0x0200	//! save using DEFLATE compression (a.k.a. ZLIB compression)
-			, SF_TIFF_ADOBE_DEFLATE		 = 0x0400	//! save using ADOBE DEFLATE compression
+			, SF_TIFF_ADOBE_DEFLATE			 = 0x0400	//! save using ADOBE DEFLATE compression
 			, SF_TIFF_NONE					 = 0x0800	//! save without any compression
-			, SF_TIFF_CCITTFAX3			 = 0x1000	//! save using CCITT Group 3 fax encoding
-			, SF_TIFF_CCITTFAX4			 = 0x2000	//! save using CCITT Group 4 fax encoding
+			, SF_TIFF_CCITTFAX3				 = 0x1000	//! save using CCITT Group 3 fax encoding
+			, SF_TIFF_CCITTFAX4				 = 0x2000	//! save using CCITT Group 4 fax encoding
 			, SF_TIFF_LZW					 = 0x4000	//! save using LZW compression
 			, SF_TIFF_JPEG					 = 0x8000	//! save using JPEG compression
 			, SF_TIFF_LOGLUV				 = 0x10000	//! save using LogLuv compression
@@ -205,33 +224,6 @@ namespace ImageUtilityLib {
 			, SF_JXR_LOSSLESS				 = 0x0064	//! save lossless
 			, SF_JXR_PROGRESSIVE			 = 0x2000	//! save as a progressive-JXR (use | to combine with other save flags)
 		};
-		// This enum matches the classes available in PixelFormat.h (which in turn match the DXGI formats)
-		enum class PIXEL_FORMAT {
-			UNKNOWN,
-
-			// 8-bits
-			R8,
-			RG8,
-			RGB8,
-			RGBA8,
-
-			// 16-bits
-			R16,
-//			RG16,		// Unsupported
-			RGB16,
-			RGBA16,
-//			R16F,		// Unsupported
-// 			RG16F,		// Unsupported
-// 			RGB16F,		// Unsupported
-// 			RGBA16F,	// Unsupported
-
-			// 32-bits
-			R32F,
-			RG32F,
-			RGB32F,
-			RGBA32F,
-		};
-
 		#pragma endregion
 
 	private:
@@ -252,7 +244,7 @@ namespace ImageUtilityLib {
 		void*				GetBits()				{ return FreeImage_GetBits( m_bitmap ); }
 		const void*			GetBits() const			{ return FreeImage_GetBits( m_bitmap ); }
 
-		// Gets the source bitmap type
+		// Gets the image's pixel format
 		PIXEL_FORMAT		GetPixelFormat() const	{ return m_pixelFormat; }
 
 		// Gets the source bitmap type
@@ -270,7 +262,7 @@ namespace ImageUtilityLib {
 		// Gets the image's metadata (i.e. ISO, Tv, Av, focal length, etc.)
 		const MetaData&		GetMetadata() const		{ return m_metadata; }
 
-		// Gets the optional color profile retrieved during file loading
+		// Gets the color profile associated to the image
 		const ColorProfile*	GetColorProfile() const	{ return m_metadata.m_colorProfile; }
 
 		#pragma endregion
@@ -280,11 +272,14 @@ namespace ImageUtilityLib {
 		ImageFile();
 		ImageFile( const wchar_t* _fileName, FILE_FORMAT _format );
 		ImageFile( const U8* _fileContent, U64 _fileSize, FILE_FORMAT _format );
-		ImageFile( U32 _width, U32 _height, PIXEL_FORMAT _format );
+		ImageFile( U32 _width, U32 _height, PIXEL_FORMAT _format, const ColorProfile& _colorProfile );
 		~ImageFile();
 
 		// Initialize with provided dimensions and pixel format
-		void				Init( U32 _width, U32 _height, PIXEL_FORMAT _format );
+		//	_width, _height, the dimensions of the image
+		//	_format, the pixel format of the image
+		//	_colorProfile, the compulsory color profile associated to the image (if not sure, create a standard sRGB color profile)
+		void				Init( U32 _width, U32 _height, PIXEL_FORMAT _format, const ColorProfile& _colorProfile );
 
 		// Releases the image
 		void				Exit();
@@ -308,7 +303,7 @@ namespace ImageUtilityLib {
 
 
 	public:
-
+		//////////////////////////////////////////////////////////////////////////
 		// DDS-related methods
 		enum class COMPRESSION_TYPE {
 			NONE,

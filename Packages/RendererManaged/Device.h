@@ -17,7 +17,7 @@
 #pragma managed
 
 #include "RenderStates.h"
-#include "MathStructs.h"
+//#include "MathStructs.h"
 
 using namespace System;
 
@@ -84,9 +84,9 @@ namespace RendererManaged {
 			m_pDevice->Exit();
 		}
 
-		void	Clear( RendererManaged::float4 _ClearColor );
-		void	Clear( Texture2D^ _RenderTarget, RendererManaged::float4 _ClearColor );
-		void	Clear( Texture3D^ _RenderTarget, RendererManaged::float4 _ClearColor );
+		void	Clear( SharpMath::float4 _ClearColor );
+		void	Clear( Texture2D^ _RenderTarget, SharpMath::float4 _ClearColor );
+		void	Clear( Texture3D^ _RenderTarget, SharpMath::float4 _ClearColor );
 		void	ClearDepthStencil( Texture2D^ _RenderTarget, float _Z, byte _Stencil, bool _ClearDepth, bool _ClearStencil );
 
 		void	SetRenderStates( RASTERIZER_STATE _RS, DEPTHSTENCIL_STATE _DS, BLEND_STATE _BS );

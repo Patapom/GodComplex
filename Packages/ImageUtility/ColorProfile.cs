@@ -55,8 +55,7 @@ namespace ImageUtility
 
 		#region NESTED TYPES
 
-		public enum STANDARD_PROFILE
-		{
+		public enum STANDARD_PROFILE {
 			INVALID,		// The profile is invalid (meaning one of the chromaticities was not initialized!)
 			CUSTOM,			// No recognizable standard profile (custom)
 			LINEAR,			// sRGB with linear gamma
@@ -67,11 +66,8 @@ namespace ImageUtility
 			RADIANCE,		// Radiance HDR format with E illuminant
 		}
 
-		/// <summary>
-		/// Enumerates the various supported gamma curves
-		/// </summary>
-		public enum GAMMA_CURVE
-		{
+		// Enumerates the various supported gamma curves
+		public enum GAMMA_CURVE {
 			STANDARD,		// Standard gamma curve using a single exponent and no linear slope
 			sRGB,			// sRGB gamma with linear slope
 			PRO_PHOTO,		// ProPhoto gamma with linear slope

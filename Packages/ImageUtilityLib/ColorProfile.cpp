@@ -20,6 +20,18 @@ const ColorProfile::Chromaticities	ColorProfile::Chromaticities::AdobeRGB_D65	( 
 const ColorProfile::Chromaticities	ColorProfile::Chromaticities::ProPhoto		( float2( 0.7347f, 0.2653f ), float2( 0.1596f, 0.8404f ), float2( 0.0366f, 0.0001f ), ILLUMINANT_D50 );
 const ColorProfile::Chromaticities	ColorProfile::Chromaticities::Radiance		( float2( 0.6400f, 0.3300f ), float2( 0.2900f, 0.6000f ), float2( 0.1500f, 0.0600f ), ILLUMINANT_E );
 
+//////////////////////////////////////////////////////////////////////////
+// Copy constructor
+ColorProfile::ColorProfile( const ColorProfile& _other ) : m_internalConverter( nullptr ) {
+	m_profileFoundInFile = _other.m_profileFoundInFile;
+	m_chromaticities = _other.m_chromaticities;
+	m_gammaCurve = _other.m_gammaCurve;
+	m_gamma = _other.m_gamma;
+
+	// Rebuild internal converter and matrices
+	BuildTransformFromChroma( true );
+}
+
 
 //////////////////////////////////////////////////////////////////////////
 // InternalColorConverter_sRGB

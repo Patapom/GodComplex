@@ -23,7 +23,6 @@
     <ClInclude Include="..\RendererManaged\ComputeShader.h" />
     <ClInclude Include="..\RendererManaged\ConstantBuffer.h" />
     <ClInclude Include="..\RendererManaged\Device.h" />
-    <ClInclude Include="..\RendererManaged\MathStructs.h" />
     <ClInclude Include="..\RendererManaged\Primitive.h" />
     <ClInclude Include="..\RendererManaged\RenderStates.h" />
     <ClInclude Include="..\RendererManaged\Shader.h" />
@@ -63,9 +62,6 @@
       <Filter>Sources</Filter>
     </ClCompile>
     <ClCompile Include="..\RendererManaged\Device.cpp">
-      <Filter>Sources</Filter>
-    </ClCompile>
-    <ClCompile Include="..\RendererManaged\MathStructs.cpp">
       <Filter>Sources</Filter>
     </ClCompile>
     <ClCompile Include="..\RendererManaged\Primitive.cpp">

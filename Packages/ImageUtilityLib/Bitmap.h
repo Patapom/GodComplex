@@ -10,7 +10,7 @@
 //
 #pragma once
 
-#include "Types.h"
+#include "..\..\BaseLib\Types.h"
 #include "ColorProfile.h"
 #include "ImageFile.h"
 

@@ -21,7 +21,7 @@
 //
 #pragma once
 
-#include "Types.h"
+#include "..\..\BaseLib\Types.h"
 
 namespace ImageUtilityLib {
 
@@ -115,7 +115,7 @@ namespace ImageUtilityLib {
 			/// Attempts to recognize the current chromaticities as a standard profile
 			/// </summary>
 			/// <returns></returns>
-			STANDARD_PROFILE	FindRecognizedChromaticity() {
+			STANDARD_PROFILE	FindRecognizedChromaticity() const {
 				if ( Equals( sRGB ) )
 					return STANDARD_PROFILE::sRGB;
 				if ( Equals( AdobeRGB_D65 ) )
@@ -270,7 +270,6 @@ namespace ImageUtilityLib {
 		Chromaticities		m_chromaticities;
 		GAMMA_CURVE			m_gammaCurve;
 		float				m_gamma;
-		float				m_exposureBias;
 
 		float4x4			m_RGB2XYZ;
 		float4x4			m_XYZ2RGB;
@@ -287,7 +286,10 @@ namespace ImageUtilityLib {
 		/// Gets the chromaticities attached to the profile
 		/// </summary>
 		const Chromaticities&	GetChromas() const							{ return m_chromaticities; }
-		void					SetChromas( const Chromaticities& value )	{ memcpy_s( &m_chromaticities, sizeof(Chromaticities), &value, sizeof(Chromaticities) ); BuildTransformFromChroma( true ); }
+		void					SetChromas( const Chromaticities& value )	{
+			memcpy_s( &m_chromaticities, sizeof(Chromaticities), &value, sizeof(Chromaticities) );
+			BuildTransformFromChroma( true );
+		}
 
 		/// <summary>
 		/// Gets the transform to convert RGB to CIEXYZ
@@ -311,23 +313,18 @@ namespace ImageUtilityLib {
 		/// <summary>
 		/// Gets or sets the image gamma
 		/// </summary>
-		float				GetGamma() const { return m_gamma; }
-		void				SetGamma( float value ) {
+		float					GetGamma() const { return m_gamma; }
+		void					SetGamma( float value ) {
 			m_gamma = value;
 			BuildTransformFromChroma( true );
 		}
 
 		/// <summary>
-		/// Gets or sets the image exposure (usually for HDR images)
-		/// </summary>
-		float				GetExposureBias() const { return m_exposureBias; }
-		void				SetExposureBias( float value ) { m_exposureBias = value; }
-
-		/// <summary>
 		/// True if the profile was found in the file's metadata and can be considered accurate.
 		/// False if it's the default assumed profile and may NOT be the actual image's profile.
 		/// </summary>
-		bool				GetProfileFoundInFile() const { return m_profileFoundInFile; }
+		bool					GetProfileFoundInFile() const		{ return m_profileFoundInFile; }
+		void					SetProfileFoundInFile( bool value ) { m_profileFoundInFile = value; }
 
 		#pragma endregion
 
@@ -339,11 +336,11 @@ namespace ImageUtilityLib {
 			, m_chromaticities( Chromaticities::Empty )
 			, m_gammaCurve( GAMMA_CURVE::STANDARD )
 			, m_gamma( 1.0f )
-			, m_exposureBias( 0.0f )
 			, m_RGB2XYZ( float4x4::Identity )
 			, m_XYZ2RGB( float4x4::Identity )
-			, m_internalConverter( nullptr )
-		{}
+			, m_internalConverter( nullptr ) {
+		}
+		ColorProfile( const ColorProfile& _other );
 		virtual ~ColorProfile() {
 			SAFE_DELETE( m_internalConverter );
 		}
@@ -522,7 +519,7 @@ namespace ImageUtilityLib {
 		/// Builds the RGB<->XYZ transforms from chromaticities
 		/// (refer to http://wiki.nuaj.net/index.php/Color_Transforms#XYZ_Matrices for explanations)
 		/// </summary>
-		void	BuildTransformFromChroma( bool _bCheckGammaCurveOverride ) {
+		void	BuildTransformFromChroma( bool _checkGammaCurveOverride ) {
 			float3	xyz_R( m_chromaticities.R.x, m_chromaticities.R.y, 1.0f - m_chromaticities.R.x - m_chromaticities.R.y );
 			float3	xyz_G( m_chromaticities.G.x, m_chromaticities.G.y, 1.0f - m_chromaticities.G.x - m_chromaticities.G.y );
 			float3	xyz_B( m_chromaticities.B.x, m_chromaticities.B.y, 1.0f - m_chromaticities.B.x - m_chromaticities.B.y );
@@ -551,23 +548,24 @@ namespace ImageUtilityLib {
 			// ============= Attempt to recognize a standard profile ============= 
 			STANDARD_PROFILE	recognizedChromaticity = m_chromaticities.FindRecognizedChromaticity();
 
-			if ( _bCheckGammaCurveOverride ) {
+			if ( _checkGammaCurveOverride ) {
 				// Also ensure the gamma ramp is correct before assigning a standard profile
 				bool	bIsGammaCorrect = true;
 				switch ( recognizedChromaticity ) {
-					case STANDARD_PROFILE::sRGB:				bIsGammaCorrect = EnsureGamma( GAMMA_CURVE::sRGB, GAMMA_EXPONENT_sRGB ); break;
+					case STANDARD_PROFILE::sRGB:			bIsGammaCorrect = EnsureGamma( GAMMA_CURVE::sRGB, GAMMA_EXPONENT_sRGB ); break;
 					case STANDARD_PROFILE::ADOBE_RGB_D50:	bIsGammaCorrect = EnsureGamma( GAMMA_CURVE::STANDARD, GAMMA_EXPONENT_ADOBE ); break;
 					case STANDARD_PROFILE::ADOBE_RGB_D65:	bIsGammaCorrect = EnsureGamma( GAMMA_CURVE::STANDARD, GAMMA_EXPONENT_ADOBE ); break;
 					case STANDARD_PROFILE::PRO_PHOTO:		bIsGammaCorrect = EnsureGamma( GAMMA_CURVE::PRO_PHOTO, GAMMA_EXPONENT_PRO_PHOTO ); break;
-					case STANDARD_PROFILE::RADIANCE:			bIsGammaCorrect = EnsureGamma( GAMMA_CURVE::STANDARD, 1.0f ); break;
+					case STANDARD_PROFILE::RADIANCE:		bIsGammaCorrect = EnsureGamma( GAMMA_CURVE::STANDARD, 1.0f ); break;
 				}
 
 				if ( !bIsGammaCorrect )
 					recognizedChromaticity = STANDARD_PROFILE::CUSTOM;	// A non-standard gamma curves fails our pre-defined design...
 			}
 
-
 			// ============= Assign the internal converter depending on the profile =============
+			SAFE_DELETE( m_internalConverter );
+
 			switch ( recognizedChromaticity ) {
 				case STANDARD_PROFILE::sRGB:
 					m_gammaCurve = GAMMA_CURVE::sRGB;

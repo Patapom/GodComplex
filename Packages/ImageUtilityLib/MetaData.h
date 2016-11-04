@@ -4,7 +4,7 @@
 //
 #pragma once
 
-#include "Types.h"
+#include "..\..\BaseLib\Types.h"
 #include "FreeImage.h"
 
 namespace ImageUtilityLib {

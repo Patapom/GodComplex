@@ -152,7 +152,6 @@
     <ClInclude Include="..\RendererManaged\ComputeShader.h" />
     <ClInclude Include="..\RendererManaged\ConstantBuffer.h" />
     <ClInclude Include="..\RendererManaged\Device.h" />
-    <ClInclude Include="..\RendererManaged\MathStructs.h" />
     <ClInclude Include="..\RendererManaged\PixelFormats.h" />
     <ClInclude Include="..\RendererManaged\PixelsBuffer.h" />
     <ClInclude Include="..\RendererManaged\Primitive.h" />
@@ -173,7 +172,6 @@
     <ClCompile Include="..\RendererManaged\ComputeShader.cpp" />
     <ClCompile Include="..\RendererManaged\ConstantBuffer.cpp" />
     <ClCompile Include="..\RendererManaged\Device.cpp" />
-    <ClCompile Include="..\RendererManaged\MathStructs.cpp" />
     <ClCompile Include="..\RendererManaged\PixelsBuffer.cpp" />
     <ClCompile Include="..\RendererManaged\Primitive.cpp" />
     <ClCompile Include="..\RendererManaged\Shader.cpp" />
@@ -196,6 +194,9 @@
     </ProjectReference>
     <ProjectReference Include="..\..\RendererD3D11\RendererLib.vcxproj">
       <Project>{7523deed-a096-4b6e-b1d9-edda85ee6aa6}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\MathSimple\MathSimple.vcxproj">
+      <Project>{cec07704-2a19-4bf1-b46d-8fcf9c5965ee}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

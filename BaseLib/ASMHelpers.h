@@ -24,8 +24,7 @@
 #define acosf( a )			ASM_acosf( a )
 #define asinf( a )			ASM_asinf( a )
 
-static float ASM_log2f( float x )
-{
+static float ASM_log2f( float x ) {
     float res;
 
     _asm fld    dword ptr [x]
@@ -37,8 +36,7 @@ static float ASM_log2f( float x )
     return res;
 }
 
-static float ASM_expf( float x )
-{
+static float ASM_expf( float x ) {
     float res;
 
     _asm fld     dword ptr [x]
@@ -57,8 +55,7 @@ static float ASM_expf( float x )
     return res;
 }
 
-static float ASM_fmodf( float x, float y )
-{
+static float ASM_fmodf( float x, float y ) {
     float res;
 
     _asm fld     dword ptr [y]
@@ -71,8 +68,7 @@ static float ASM_fmodf( float x, float y )
     return res;
 }
 
-static float ASM_powf( float x, float y )
-{
+static float ASM_powf( float x, float y ) {
     float res;
 
     _asm fld     dword ptr [y]
@@ -93,14 +89,12 @@ static float ASM_powf( float x, float y )
 
 // Fast acos() using cubic polynomial approximation
 // http://stackoverflow.com/questions/3380628/fast-arc-cos-algorithm
-static float FAST_acosf( float x )
-{
+static float FAST_acosf( float x ) {
    return (-0.69813170079773212f * x * x - 0.87266462599716477f) * x + 1.5707963267948966f;
 }
 
 // From http://www.jbox.dk/sanos/source/lib/math/acos.asm.html
-static float ASM_acosf( float x )
-{
+static float ASM_acosf( float x ) {
     float res;
 
 	_asm fld     dword ptr [x]           // Load real from stack
@@ -117,8 +111,7 @@ static float ASM_acosf( float x )
 	return res;
 }
 
-static float ASM_asinf( float x )
-{
+static float ASM_asinf( float x ) {
     float res;
 
 	_asm fld     dword ptr [x]           // Load real from stack
@@ -137,8 +130,7 @@ static float ASM_asinf( float x )
 static U16	opc1 = 0x043f;     // floor
 static U16	opc2 = 0x083f;     // ceil
 
-static int ASM_floorf( float x )
-{
+static int ASM_floorf( float x ) {
     int res;
     short tmp;
 
@@ -151,8 +143,7 @@ static int ASM_floorf( float x )
     return res;
 }
 
-static int ASM_ceilf( float x )
-{
+static int ASM_ceilf( float x ) {
 	int res;
 	short tmp;
 
@@ -165,24 +156,21 @@ static int ASM_ceilf( float x )
 	return res;
 }
 
-static void ASM_memset( void *dst, int val, int amount )
-{
+static void ASM_memset( void *dst, int val, int amount ) {
     _asm mov edi, dst
     _asm mov eax, val
     _asm mov ecx, amount
     _asm rep stosb
 }
 
-static void ASM_memcpy( void *dst, const void *src, int amount )
-{
+static void ASM_memcpy( void *dst, const void *src, int amount ) {
     _asm mov edi, dst
     _asm mov esi, src
     _asm mov ecx, amount
     _asm rep movsb
 }
 
-static int ASM_strlen( const char *src )
-{
+static int ASM_strlen( const char *src ) {
     int res;
 
     _asm mov esi, src

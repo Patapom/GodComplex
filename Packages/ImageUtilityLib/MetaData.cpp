@@ -60,6 +60,7 @@ void	MetaData::RetrieveFromImage( const ImageFile& _imageFile ) {
 	default:
 		// Build the default sRGB profile
 		m_colorProfile = new ColorProfile( ColorProfile::STANDARD_PROFILE::sRGB );
+		m_colorProfile->SetProfileFoundInFile( false );
 		break;
 	}
 }
@@ -81,6 +82,7 @@ void	MetaData::EnumerateMetaDataTGA( const ImageFile& _image ) {
 										ColorProfile::GAMMA_CURVE::STANDARD,	// But with a standard gamma curve...
 										gammaExponent							// ...whose gamma is retrieved from extension data, if available
 									);
+	m_colorProfile->SetProfileFoundInFile( m_gammaSpecifiedInFile );
 }
 
 void	MetaData::EnumerateMetaDataJPG( const ImageFile& _image ) {
@@ -117,6 +119,7 @@ void	MetaData::EnumerateMetaDataJPG( const ImageFile& _image ) {
 										ColorProfile::GAMMA_CURVE::STANDARD,	// JPG uses a 2.2 gamma by default
 										2.2f
 									);
+	m_colorProfile->SetProfileFoundInFile( false );
 }
 
 void	MetaData::EnumerateMetaDataPNG( const ImageFile& _image ) {
@@ -184,6 +187,7 @@ void	MetaData::EnumerateMetaDataPNG( const ImageFile& _image ) {
 										ColorProfile::GAMMA_CURVE::sRGB,
 										ColorProfile::GAMMA_EXPONENT_sRGB
 									);
+	m_colorProfile->SetProfileFoundInFile( false );
 }
 
 void	MetaData::EnumerateMetaDataTIFF( const ImageFile& _image ) {
@@ -237,6 +241,7 @@ void	MetaData::EnumerateMetaDataTIFF( const ImageFile& _image ) {
 										ColorProfile::GAMMA_CURVE::STANDARD,
 										1.0f									// Linear gamma by default
 									);
+	m_colorProfile->SetProfileFoundInFile( false );
 }
 
 void	MetaData::EnumerateMetaDataRAW( const ImageFile& _image ) {
@@ -275,6 +280,7 @@ void	MetaData::EnumerateMetaDataRAW( const ImageFile& _image ) {
 										ColorProfile::GAMMA_CURVE::STANDARD,
 										1.0f
 									);
+	m_colorProfile->SetProfileFoundInFile( false );
 }
 
 void	MetaData::EnumerateMetaDataBMP( const ImageFile& _image ) {
@@ -282,6 +288,7 @@ void	MetaData::EnumerateMetaDataBMP( const ImageFile& _image ) {
 										ColorProfile::GAMMA_CURVE::STANDARD,
 										1.0f
 									);
+	m_colorProfile->SetProfileFoundInFile( false );
 }
 
 void	MetaData::EnumerateMetaDataGIF( const ImageFile& _image ) {
@@ -289,6 +296,7 @@ void	MetaData::EnumerateMetaDataGIF( const ImageFile& _image ) {
 										ColorProfile::GAMMA_CURVE::STANDARD,
 										1.0f
 									);
+	m_colorProfile->SetProfileFoundInFile( false );
 }
 
 #pragma endregion 
