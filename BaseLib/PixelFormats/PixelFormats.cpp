@@ -1,4 +1,6 @@
- #include "..\Types.h"
+#include "..\Types.h"
+
+using namespace BaseLib;
 
 #ifdef _DEBUG
 
@@ -34,7 +36,7 @@ void	unitTest_PF() {
 
 	// Test 8-bit formats
 	for ( U32 i=0; i <= 255; i++ ) {
-		float4	temp, temp2;
+		bfloat4	temp, temp2;
 		instance_R8.Write( i, i, i, i );
 		instance_R8.RGBA( temp );
 		instance_R8.Write( temp );

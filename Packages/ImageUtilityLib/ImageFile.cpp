@@ -1,4 +1,5 @@
-#include <string>
+#include "stdafx.h"
+
 #include "ImageFile.h"
 #include "Bitmap.h"
 
@@ -340,12 +341,6 @@ void	ImageFile::UnUseFreeImage() {
 //////////////////////////////////////////////////////////////////////////
 // DDS-Related Helpers
 //
-#if 0
-// @TODO! => Can't include DirectXTex.h without a ton of errors! :(
-
-//#include <wtypes.h>
-#include "DirectXTex.h"
-
 
 // Compresses a single image
 void	ImageFile::DDSCompress( const ImageFile& _image, COMPRESSION_TYPE _compressionType, void*& _compressedImage, U32 _compressedImageSize ) {
@@ -384,8 +379,6 @@ void	ImageFile::DDSSave3DTextureMemory( U32 _slicesCount, const ImageFile* _slic
 void	ImageFile::DDSSaveFromMemory( void*& _DDSImage, U32 _DDSImageSize, const wchar_t* _fileName ) {
 
 }
-
-#endif
 
 //////////////////////////////////////////////////////////////////////////
 #pragma region Old code...

@@ -1,3 +1,4 @@
+#include "stdafx.h"
 #include "Bitmap.h"
 
 using namespace ImageUtilityLib;
@@ -16,15 +17,15 @@ void	Bitmap::FromImageFile( const ImageFile& _sourceFile, const ColorProfile* _p
 	m_height = FreeImage_GetHeight( float4Bitmap );
 
 	// Convert to XYZ in bulk using profile
-	const float4*	source = (const float4*) FreeImage_GetBits( float4Bitmap );
-	m_XYZ = new float4[m_width * m_height];
+	const bfloat4*	source = (const bfloat4*) FreeImage_GetBits( float4Bitmap );
+	m_XYZ = new bfloat4[m_width * m_height];
 	m_colorProfile->RGB2XYZ( source, m_XYZ, U32(m_width * m_height) );
 
 	FreeImage_Unload( float4Bitmap );
 
 	if ( _unPremultiplyAlpha ) {
 		// Un-pre-multiply by alpha
-		float4*	unPreMultipliedTarget = m_XYZ;
+		bfloat4*	unPreMultipliedTarget = m_XYZ;
 		for ( U32 i=m_width*m_height; i > 0; i--, unPreMultipliedTarget++ ) {
 			if ( unPreMultipliedTarget->w > 0.0f ) {
 				float	invAlpha = 1.0f / unPreMultipliedTarget->w;
@@ -47,12 +48,12 @@ void	Bitmap::ToImageFile( ImageFile& _targetFile, ImageFile::PIXEL_FORMAT _targe
 
 	// Convert back to float4 RGB using color profile
 	ImageFile		float4Image( m_width, m_height, ImageFile::PIXEL_FORMAT::RGBA32F, *m_colorProfile );
-	const float4*	source = m_XYZ;
-	float4*			target = (float4*) float4Image.GetBits();
+	const bfloat4*	source = m_XYZ;
+	bfloat4*			target = (bfloat4*) float4Image.GetBits();
 	if ( _premultiplyAlpha ) {
 		// Pre-multiply by alpha
-		const float4*	unPreMultipliedSource = m_XYZ;
-		float4*			preMultipliedTarget = target;
+		const bfloat4*	unPreMultipliedSource = m_XYZ;
+		bfloat4*			preMultipliedTarget = target;
 		for ( U32 i=m_width*m_height; i > 0; i--, unPreMultipliedSource++, preMultipliedTarget++ ) {
 			preMultipliedTarget->x = unPreMultipliedSource->x * unPreMultipliedSource->w;
 			preMultipliedTarget->y = unPreMultipliedSource->y * unPreMultipliedSource->w;

@@ -126,7 +126,7 @@ private:	// FIELDS
 		ShaderConstants			m_PSConstants;
  	#endif
 
-	Dictionary<const char*>	m_Pointer2FileName;
+	BaseLib::Dictionary<const char*>	m_Pointer2FileName;
 
 public:
 	static bool				ms_LoadFromBinary;	// A flag you can set to force loading from binary files without having to write a specific code for that
@@ -227,7 +227,7 @@ private:
 
 	// The dictionary of watched materials
 #if defined(_DEBUG) || !defined(GODCOMPLEX)
-	static DictionaryString<Shader*>	ms_WatchedShaders;
+	static BaseLib::DictionaryString<Shader*>	ms_WatchedShaders;
 	time_t			m_LastShaderModificationTime;
 	time_t			GetFileModTime( const char* _pFileName );
 #endif

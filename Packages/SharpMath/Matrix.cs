@@ -1,6 +1,6 @@
 using System;
 
-namespace WMath
+namespace SharpMath
 {
 	/// <summary>
 	/// Double-precision NxN matrix class

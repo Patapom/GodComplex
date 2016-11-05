@@ -1,9 +1,7 @@
+#include "stdafx.h"
 
 #include "Shader.h"
 #include "ConstantBuffer.h"
-
-#include <stdio.h>
-#include <io.h>
 
 #include <D3Dcompiler.h>
 #include <D3D11Shader.h>
@@ -768,8 +766,9 @@ const char*	Shader::GetShaderPath( const char* _pShaderFileName ) const {
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <timeapi.h>
 
-DictionaryString<Shader*>	Shader::ms_WatchedShaders;
+BaseLib::DictionaryString<Shader*>	Shader::ms_WatchedShaders;
 
 static void	WatchShader( int _EntryIndex, Shader*& _Value, void* _pUserData )	{ _Value->WatchShaderModifications(); }
 

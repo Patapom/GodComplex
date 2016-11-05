@@ -18,4 +18,8 @@
 // WARNING: I didn't manage to solve a link problem about a missing IID_ID3D11ShaderReflection implementation so the RendererManaged library won't work with that option!
 //#define ENABLE_SHADER_REFLECTION
 
-#include "../BaseLib/Types.h"
+// Define this if you're debugging the app using Nvidia Nsight
+//#define NSIGHT
+
+// Define this if you're debugging the app using Crytek's RenderDoc
+//#define RENDERDOC

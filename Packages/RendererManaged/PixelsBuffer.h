@@ -13,8 +13,7 @@ using namespace System::IO;
 
 namespace RendererManaged {
 
-	public ref class PixelsBuffer : public ByteBuffer
-	{
+	public ref class PixelsBuffer : public ByteBuffer {
 	internal:
 
 		int							m_RowPitch;
@@ -27,8 +26,7 @@ namespace RendererManaged {
 
 	public:
 
-		PixelsBuffer( int _ContentSize ) : ByteBuffer( _ContentSize )
-		{
+		PixelsBuffer( int _ContentSize ) : ByteBuffer( _ContentSize ) {
 		}
 
 	internal:
@@ -40,7 +38,7 @@ namespace RendererManaged {
 			System::Runtime::InteropServices::Marshal::Copy( System::IntPtr( _SubResource.pData ), m_Buffer, 0, m_DepthPitch );
 		}
 
-// Enabling this helper requires to include MathStruts.h but doing so results in Device.h failing to compile!!! ô0
+// Enabling this helper requires to include MathStructs.h but doing so results in Device.h failing to compile!!! ô0
 // 		void	FromArray( cli::array<RendererManaged::float4,2>^ _pixels ) {
 // 			int	W = _pixels->GetLength( 0 );
 // 			int	H = _pixels->GetLength( 1 );

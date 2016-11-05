@@ -90,7 +90,7 @@ private:	// FIELDS
 	 	ShaderConstants			m_CSConstants;
 	#endif
 
- 	Dictionary<const char*>	m_Pointer2FileName;
+ 	BaseLib::Dictionary<const char*>	m_Pointer2FileName;
 
 	static ComputeShader*	ms_pCurrentShader;
 
@@ -171,7 +171,7 @@ private:
 	// Shader auto-reload on change mechanism
 #if defined(_DEBUG) || !defined(GODCOMPLEX)
 	// The dictionary of watched materials
-	static DictionaryString<ComputeShader*>	ms_WatchedShaders;
+	static BaseLib::DictionaryString<ComputeShader*>	ms_WatchedShaders;
 	time_t			m_LastShaderModificationTime;
 	time_t			GetFileModTime( const char* _pFileName );
 #endif

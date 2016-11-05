@@ -1,6 +1,6 @@
 using System;
 
-namespace WMath
+namespace SharpMath
 {
 	/// <summary>
 	/// Summary description for Plane.
@@ -10,7 +10,7 @@ namespace WMath
 	{
 		#region FIELDS
 
-		public Vector		n;
+		public float3		n;
 		public float		d;
 
 		#endregion
@@ -20,88 +20,87 @@ namespace WMath
 		// Constructors
 		public						Plane()														{}
 		public						Plane( float _nx, float _ny, float _nz, float _d )			{ n.Set( _nx, _ny, _nz ); }
-		public						Plane( Point _p, Vector _n )								{ Set( _p, _n ); }
-		public						Plane( Point _p0, Point _p1, Point _p2 )					{ Set( _p0, _p1, _p2 ); }
-		public						Plane( Vector _n, float _d )								{ n = _n; d = _d; }
+		public						Plane( float3 _p, float3 _n )								{ Set( _p, _n ); }
+		public						Plane( float3 _p0, float3 _p1, float3 _p2 )					{ Set( _p0, _p1, _p2 ); }
+		public						Plane( float3 _n, float _d )								{ n = _n; d = _d; }
 
 		// Access methods
-		public Plane				Zero()														{ n.MakeZero(); d = 0.0f; return this; }
+		public Plane				Zero()														{ n.Set( 0, 0, 0 ); d = 0.0f; return this; }
 		public Plane				Set( float _nx, float _ny, float _nz, float _d )			{ n.Set( _nx, _ny, _nz ); d = _d; return this; }
-		public Plane				Set( Point _p, Vector _n )									{ n = _n; d = -((Vector) _p ) | n; return this; }
-		public Plane				Set( Point _p0, Point _p1, Point _p2 )		
-		{
-			Vector	v0 = _p1 - _p0, v1 = _p2 - _p0;									// Compute two vectors from the three points
+		public Plane				Set( float3 _p, float3 _n )									{ n = _n; d = -_p.Dot( n ); return this; }
+		public Plane				Set( float3 _p0, float3 _p1, float3 _p2 ) {
+			// Compute two vectors from the three points
+			float3	v0 = _p1 - _p0, v1 = _p2 - _p0;
 
-			n = v0 ^ v1;															// Compute the normal to the plane
+			// Compute the normal to the plane
+			n = v0.Cross( v1 );
 			n.Normalize();
-			d = -(((Vector) _p0) | n);
+			d = -_p0.Dot(n);
 
 			return	this;
 		}
 
 
-		public float				Distance( Point _p )										{ return (((Vector) _p ) | n) + d; }
-		public bool					Belongs( Point _p )											{ return (float) System.Math.Abs( Distance( _p ) ) < float.Epsilon; }
+		public float				Distance( float3 _p )										{ return _p.Dot(n) + d; }
+		public bool					Belongs( float3 _p )										{ return (float) System.Math.Abs( Distance( _p ) ) < float.Epsilon; }
 
 		// Helpers
 			// Intersection between a plane and a ray
-		public Point				Intersect( Ray _Ray )
-		{
-			float	fGradient = n | _Ray.Aim;
+		public bool					Intersect( Ray _Ray, ref float3 _intersection ) {
+			float	fGradient = n.Dot( _Ray.Aim );
 			if ( (float) System.Math.Abs( fGradient ) < float.Epsilon )
-				return	null;					// It cannot hit! (or very far away at least!)
+				return false;	// It cannot hit! (or very far away at least!)
 
-			_Ray.Length = (-d - (((Vector) _Ray.Pos) | n)) / fGradient;
+			_Ray.Length = (-d - _Ray.Pos.Dot(n)) / fGradient;
 
-			return	_Ray.GetHitPos();
+			_intersection = _Ray.GetHitPos();
+			return true;
 		}
 			// Intersection between 2 planes
-		public bool					Intersect( Plane _p, ref Ray _Ray )
-		{
+		public bool					Intersect( Plane _p, Ray _ray ) {
 			// Check if both planes are coplanar
-			if ( (float) System.Math.Abs( 1.0f - (_p.n | n) ) < float.Epsilon )
+			if ( (float) System.Math.Abs( 1.0f - _p.n.Dot(n) ) < float.Epsilon )
 				return	false;
 
 			// Let's have fun!
-			Point	I;
-
-			_Ray.Pos.MakeZero();
-			_Ray.Aim = n;
-			if ( (I = _p.Intersect( _Ray )) == null )
+			float3	I = new float3();
+			_ray.Pos.Set( 0, 0, 0 );
+			_ray.Aim = n;
+			if ( !_p.Intersect( _ray, ref I ) )
 				return	false;
 
-			_Ray.Aim = _p.n;
-			if ( (_Ray.Pos = _p.Intersect( _Ray )) == null )
+			_ray.Aim = _p.n;
+			if ( !_p.Intersect( _ray, ref I ) )
 				return	false;
+			_ray.Pos = I;
 
-			_Ray.Aim = I - _Ray.Pos;
-			if ( (_Ray.Pos = Intersect( _Ray )) == null )
+			_ray.Aim = I - _ray.Pos;
+			if ( !Intersect( _ray, ref I ) )
 				return	false;
+			_ray.Pos = I;
 
 			// We have at least one point belonging to both planes!
-			_Ray.Aim = (n ^ _p.n).Normalize();
+			_ray.Aim = n.Cross(_p.n).Normalized;
 
 			return	true;
 		}
 			// Intersection between 3 planes
-		public Point				Intersect( Plane _p0, Plane _p1 )
-		{
+		public bool				Intersect( Plane _p0, Plane _p1, ref float3 _intersection ) {
 			// Compute the intersection of 2 planes first, yielding a ray
 			Ray		Hit = new Ray();
-			if ( !_p0.Intersect( _p1, ref Hit ) )
-				return	null;
+			if ( !_p0.Intersect( _p1, Hit ) )
+				return	false;
 
 			// Then compute the intersection of this ray with our plane
-			return	Intersect( Hit );
+			return Intersect( Hit, ref _intersection );
 		}
 
 		// Arithmetic operators
-		public static Plane			operator*( Plane _Op0, Matrix4x4 _Op1 )
-		{
+		public static Plane			operator*( Plane _Op0, float4x4 _Op1 ) {
 			Plane	Ret = new Plane();
 
-			Vector n2 = _Op0.n * _Op1;
-			Ret.d = -(((Vector) (new Point( -_Op0.d * _Op0.n ) * _Op1)) | n2);
+			float3 n2 = (float3) (new float4( _Op0.n, 0 ) * _Op1);
+			Ret.d = -((float3) (new float4( -_Op0.d * _Op0.n, 0.0f ) * _Op1)).Dot( n2 );
 			Ret.n = n2;
 
 			return	Ret;

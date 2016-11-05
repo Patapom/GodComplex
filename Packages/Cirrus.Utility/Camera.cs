@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-using RendererManaged;
+using SharpMath;
 
 namespace Nuaj.Cirrus.Utility
 {
@@ -27,8 +27,7 @@ namespace Nuaj.Cirrus.Utility
 	///     o---------> X (Right)
 	/// 
 	/// </summary>
-	public class Camera
-	{
+	public class Camera {
 		#region FIELDS
 
 		protected float4x4	m_Camera2World = float4x4.Identity;	// Transform float4x4
@@ -133,10 +132,10 @@ namespace Nuaj.Cirrus.Utility
 		/// </summary>
 		public float			OrthographicHeight	{ get { return m_OrthoHeight; } }
 
-		public float3			Right		{ get { return (float3) m_Camera2World.r0; } }
-		public float3			Up			{ get { return (float3) m_Camera2World.r1; } }
-		public float3			At			{ get { return (float3) m_Camera2World.r2; } }
-		public float3			Position	{ get { return (float3) m_Camera2World.r3; } }
+		public float3			Right		{ get { return (float3) m_Camera2World.r[0]; } }
+		public float3			Up			{ get { return (float3) m_Camera2World.r[1]; } }
+		public float3			At			{ get { return (float3) m_Camera2World.r[2]; } }
+		public float3			Position	{ get { return (float3) m_Camera2World.r[3]; } }
 
 		public event EventHandler	CameraTransformChanged;
 		public event EventHandler	CameraProjectionChanged;

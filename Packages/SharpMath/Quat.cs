@@ -1,6 +1,6 @@
 using System;
 
-namespace WMath
+namespace SharpMath
 {
 	/// <summary>
 	/// Summary description for Quat.
@@ -10,15 +10,14 @@ namespace WMath
 	{
 		#region NESTED TYPES
 
-		public enum	COMPONENTS : int	{
-										S = 0,
-										I = 1,
-										J = 2,
-										K = 3,
-										}
+		public enum	COMPONENTS : int {
+			S = 0,
+			I = 1,
+			J = 2,
+			K = 3,
+		}
 
-		public class	QuatException : Exception
-		{
+		public class	QuatException : Exception {
 			public					QuatException( string _Message ) : base( _Message )		{}
 		}
 
@@ -27,7 +26,7 @@ namespace WMath
 		#region FIELDS
 
 		public float			qs = 0.0f;
-		public Vector			qv = new Vector( 0.0f, 0.0f, 0.0f );
+		public float3			qv = new float3( 0.0f, 0.0f, 0.0f );
 
 		public static COMPONENTS[]	ms_Next = {
 												COMPONENTS.S,
@@ -44,10 +43,10 @@ namespace WMath
 
 		// Constructors
 		public						Quat()													{}
-		public						Quat( Quat _q )											{ qs = _q.qs; qv.Set( _q.qv ); }
+		public						Quat( Quat _q )											{ qs = _q.qs; qv = _q.qv; }
 		public						Quat( float _s, float _i, float _j, float _k )			{ qs = _s; qv.Set( _i, _j, _k ); }
 		public						Quat( float[] _f )										{ qs = _f[0]; qv.x = _f[1]; qv.y = _f[2]; qv.z = _f[3]; }
-		public						Quat( float _s, Vector _v )								{ qs = _s; qv.Set( _v ); }
+		public						Quat( float _s, float3 _v )								{ qs = _s; qv = _v; }
 		public						Quat( AngleAxis _aa )
 		{
 			qs = (float) System.Math.Cos( 0.5f * _aa.Angle );
@@ -55,10 +54,10 @@ namespace WMath
 		}
 
 		// Access methods
-		public void					Zero()													{ qs = 0.0f; qv.MakeZero(); }
+		public void					Zero()													{ qs = 0.0f; qv.Set( 0, 0, 0 ); }
 		public void					Set( float _s, float _i, float _j, float _k )			{ qs = _s; qv.x = _i; qv.y = _j; qv.z = _k; }
-		public void					Set( float _s, Vector _v )								{ qs = _s; qv.Set( _v ); }
-		public void					Set( Quat _q )											{ qs = _q.qs; qv.Set( _q.qv ); }
+		public void					Set( float _s, float3 _v )								{ qs = _s; qv = _v; }
+		public void					Set( Quat _q )											{ qs = _q.qs; qv = _q.qv; }
 		public void					Log()
 		{
 			// If q = cos(A)+sin(A)*(x*i+y*j+z*k) where (x,y,z) is unit length, then
@@ -78,8 +77,7 @@ namespace WMath
 			}
 			qs = 0.0f;
 		}
-		public void					LogN()
-		{
+		public void					LogN() {
 			float	fTheta, fScale;
 
 			fScale = (float) System.Math.Sqrt( qv.x*qv.x + qv.y*qv.y + qv.z*qv.z );
@@ -91,8 +89,7 @@ namespace WMath
 			qv.z *= fScale;
 			qs = 0.0f;
 		}
-		public void					Exp()
-		{
+		public void					Exp() {
 			float	fTheta, fScale;
 
 			fTheta = (float) System.Math.Sqrt( qv.x*qv.x + qv.y*qv.y + qv.z*qv.z );
@@ -104,20 +101,18 @@ namespace WMath
 			qv.z *= fScale;
 			qs = (float) System.Math.Cos( fTheta );
 		}
-		public void					LnDiff( Quat _q )										{ Set( _q / this ); LogN(); }
-		public float				SquareMagnitude()										{ return qv.SquareMagnitude() + qs*qs; }
-		public float				Magnitude()												{ return (float) System.Math.Sqrt( SquareMagnitude() ); }
+		public void					LnDiff( Quat _q )	{ Set( _q / this ); LogN(); }
+		public float				LengthSquared		{ get { return qv.LengthSquared + qs*qs; } }
+		public float				Length				{ get { return (float) System.Math.Sqrt( LengthSquared ); } }
 
 		// Helpers
-		public void					Conjugate()
-		{
+		public void					Conjugate() {
 			qv.x = -qv.x;
 			qv.y = -qv.y;
 			qv.z = -qv.z;
 		}
-		public void					Normalize()
-		{
-			float	fNorm = Magnitude();
+		public void					Normalize() {
+			float	fNorm = Length;
 			if ( fNorm < float.Epsilon || System.Math.Abs( fNorm - 1.0f ) < float.Epsilon )
 				return;
 
@@ -127,7 +122,7 @@ namespace WMath
 		}
 		public void					Invert()
 		{
-			float	fNorm = SquareMagnitude();
+			float	fNorm = LengthSquared;
 			if ( fNorm < float.Epsilon )
 				return;
 
@@ -137,8 +132,8 @@ namespace WMath
 			qv.z *=  fINorm;
 			qs   *= -fINorm;
 		}
-		public void					MakeIdentity()											{ qs = 0.0f; qv.MakeZero(); }
-		public void					MakeOrtho( Vector _Axis )								{ Set( this * new Quat( 0.0f, _Axis ) ); }
+		public void					MakeIdentity()											{ qs = 0.0f; qv.Set( 0, 0, 0 ); }
+		public void					MakeOrtho( float3 _Axis )								{ Set( this * new Quat( 0.0f, _Axis ) ); }
 		public void					MakeClosest( Quat _q )									{ if ( (this | _q) < 0.0f ) Set( -this ); }
 		public void					MakeSLERP( Quat _q0, Quat _q1, float _t )
 		{
@@ -227,10 +222,7 @@ namespace WMath
 
 		// Cast operators
 		public static explicit		operator AngleAxis( Quat _Source )						{ return new AngleAxis( _Source ); }
-		public static explicit		operator Matrix3x3( Quat _Source )
-		{
-			Matrix3x3	Ret = new Matrix3x3();
-
+		public static explicit		operator float3x3( Quat _Source ) {
 			float	xs, ys, zs, wx, wy, wz, xx, xy, xz, yy, yz, zz;
 
 			Quat	q = new Quat( _Source );
@@ -242,24 +234,22 @@ namespace WMath
 			xx = q.qv.x * xs;	xy = q.qv.x * ys;	xz = q.qv.x * zs;
 			yy = q.qv.y * ys;	yz = q.qv.y * zs;	zz = q.qv.z * zs;
 
-			Ret[Matrix3x3.COEFFS.A] = 1.0f -	yy - zz;
-			Ret[Matrix3x3.COEFFS.D] =			xy - wz;
-			Ret[Matrix3x3.COEFFS.G] =			xz + wy;
+			float3x3	R = new float3x3();
+			R.r[0].x = 1.0f -	yy - zz;
+			R.r[1].x =			xy - wz;
+			R.r[2].x =			xz + wy;
 
-			Ret[Matrix3x3.COEFFS.B] =			xy + wz;
-			Ret[Matrix3x3.COEFFS.E] = 1.0f -	xx - zz;
-			Ret[Matrix3x3.COEFFS.H] =			yz - wx;
+			R.r[0].y =			xy + wz;
+			R.r[1].y = 1.0f -	xx - zz;
+			R.r[2].y =			yz - wx;
 
-			Ret[Matrix3x3.COEFFS.C] =			xz - wy;
-			Ret[Matrix3x3.COEFFS.F] =			yz + wx;
-			Ret[Matrix3x3.COEFFS.I] = 1.0f -	xx - yy;
+			R.r[0].z =			xz - wy;
+			R.r[1].z =			yz + wx;
+			R.r[2].z = 1.0f -	xx - yy;
 
-			return	Ret;
+			return	R;
 		}
-		public static explicit		operator Matrix4x4( Quat _Source )
-		{
-			Matrix4x4	Ret = (new Matrix4x4()).MakeIdentity();
-
+		public static explicit		operator float4x4( Quat _Source ) {
 			float	xs, ys, zs, wx, wy, wz, xx, xy, xz, yy, yz, zz;
 
 			Quat	q = new Quat( _Source );
@@ -271,31 +261,26 @@ namespace WMath
 			xx = q.qv.x * xs;	xy = q.qv.x * ys;	xz = q.qv.x * zs;
 			yy = q.qv.y * ys;	yz = q.qv.y * zs;	zz = q.qv.z * zs;
 
-			Ret[(int) Matrix4x4.COEFFS.A] = 1.0f -	yy - zz;
-			Ret[(int) Matrix4x4.COEFFS.E] =			xy - wz;
-			Ret[(int) Matrix4x4.COEFFS.I] =			xz + wy;
-			Ret[(int) Matrix4x4.COEFFS.M] = 0.0f;
+			float4x4	R = float4x4.Identity;
+			R.r[0].x = 1.0f -	yy - zz;
+			R.r[1].x =			xy - wz;
+			R.r[2].x =			xz + wy;
 
-			Ret[(int) Matrix4x4.COEFFS.B] =			xy + wz;
-			Ret[(int) Matrix4x4.COEFFS.F] = 1.0f -	xx - zz;
-			Ret[(int) Matrix4x4.COEFFS.J] =			yz - wx;
-			Ret[(int) Matrix4x4.COEFFS.N] = 0.0f;
+			R.r[0].y =			xy + wz;
+			R.r[1].y = 1.0f -	xx - zz;
+			R.r[2].y =			yz - wx;
 
-			Ret[(int) Matrix4x4.COEFFS.C] =			xz - wy;
-			Ret[(int) Matrix4x4.COEFFS.G] =			yz + wx;
-			Ret[(int) Matrix4x4.COEFFS.K] = 1.0f -	xx - yy;
-			Ret[(int) Matrix4x4.COEFFS.O] = 0.0f;
+			R.r[0].z =			xz - wy;
+			R.r[1].z =			yz + wx;
+			R.r[2].z = 1.0f -	xx - yy;
 
-			return	Ret;
+			return	R;
 		}
 
 		// Indexers
-		public float				this[int _Index]
-		{
-			get
-			{
-				switch ( _Index )
-				{
+		public float				this[int _Index] {
+			get {
+				switch ( _Index ) {
 					case	(int) COMPONENTS.S:
 						return	qs;
 					case	(int) COMPONENTS.I:
@@ -309,10 +294,8 @@ namespace WMath
 				}
 			}
 
-			set
-			{
-				switch ( _Index )
-				{
+			set {
+				switch ( _Index ) {
 					case	(int) COMPONENTS.S:
 						qs = value;
 						break;
@@ -334,12 +317,12 @@ namespace WMath
 		// Arithmetic operators
 		public static Quat			operator-( Quat _Op )									{ return new Quat( -_Op.qs, -_Op.qv ); }
 		public static Quat			operator+( Quat _Op0, Quat _Op1 )						{ return new Quat( _Op0.qs + _Op1.qs, _Op0.qv + _Op1.qv ); }
-		public static Quat			operator*( Quat _Op0, Quat _Op1 )						{ return new Quat( (_Op0.qs * _Op1.qs) - (_Op0.qv | _Op1.qv), (_Op0.qs * _Op1.qv) + (_Op0.qv * _Op1.qs) + (_Op0.qv ^ _Op1.qv) ); }
+		public static Quat			operator*( Quat _Op0, Quat _Op1 )						{ return new Quat( (_Op0.qs * _Op1.qs) - _Op0.qv.Dot(_Op1.qv), (_Op0.qs * _Op1.qv) + (_Op0.qv * _Op1.qs) + _Op0.qv.Cross(_Op1.qv) ); }
 		public static Quat			operator*( Quat _Op0, float _s )						{ return new Quat( _Op0.qs * _s, _Op0.qv * _s ); }
 		public static Quat			operator*( float _s, Quat _Op0 )						{ return new Quat( _Op0.qs * _s, _Op0.qv * _s ); }
 		public static Quat			operator/( Quat _Op0, Quat _Op1 )						{ Quat InvQuat = new Quat( _Op1 ); InvQuat.Invert(); return InvQuat * _Op0; }
 		public static Quat			operator/( Quat _Op0, float _s )						{ float Is = 1.0f / _s; return new Quat( _Op0.qs * Is, _Op0.qv * Is ); }
-		public static float			operator|( Quat _Op0, Quat _Op1 )						{ return (_Op0.qs * _Op1.qs) + (_Op0.qv | _Op1.qv); }
+		public static float			operator|( Quat _Op0, Quat _Op1 )						{ return (_Op0.qs * _Op1.qs) + _Op0.qv.Dot(_Op1.qv); }
 
 		// Logic operators
 		public static bool			operator==( Quat _Op0, Quat _Op1 )						{ return _Op0.qv == _Op1.qv && (float) System.Math.Abs( _Op0.qs - _Op1.qs ) <= float.Epsilon; }

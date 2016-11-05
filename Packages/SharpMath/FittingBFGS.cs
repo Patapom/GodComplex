@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace WMath
+namespace SharpMath
 {
 	/// <summary>
 	///  Helper fitting class implementing BFGS optimization

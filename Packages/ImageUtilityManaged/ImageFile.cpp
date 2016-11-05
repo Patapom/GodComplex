@@ -1,4 +1,4 @@
-#include < vcclr.h >  
+#include "stdafx.h"
 
 #include "ImageFile.h"
 
@@ -24,6 +24,18 @@ ImageFile::ImageFile( System::Drawing::Bitmap^ _bitmap, ImageUtility::ColorProfi
 		*target++ = bitmapContent[sourceIndex++];
 		*target++ = bitmapContent[sourceIndex++];
 	}
+}
+ImageFile::~ImageFile() {
+	Exit();
+	SAFE_DELETE( m_nativeObject );
+}
+
+void	ImageFile::Init( U32 _width, U32 _height, PIXEL_FORMAT _format, ImageUtility::ColorProfile^ _colorProfile ) {
+	m_nativeObject->Init( _width, _height, ImageUtilityLib::ImageFile::PIXEL_FORMAT( _format ), *_colorProfile->m_nativeObject );
+}
+
+void	ImageFile::Exit() {
+	m_nativeObject->Exit();
 }
 
 // Load from a file or memory
@@ -92,7 +104,7 @@ cli::array< Byte >^	ImageFile::Save( FILE_FORMAT _format, SAVE_FLAGS _options ) 
 
 	return fileContent;
 }
-		
+
 // Converts the source image to a target format
 void	ImageFile::ConvertFrom( ImageFile^ _source, PIXEL_FORMAT _targetFormat ) {
 

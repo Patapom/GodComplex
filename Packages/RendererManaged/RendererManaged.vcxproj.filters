@@ -14,12 +14,6 @@
     <ClInclude Include="..\RendererManaged\VertexFormats.h">
       <Filter>Pixel &amp; Vertex Formats</Filter>
     </ClInclude>
-    <ClInclude Include="..\RendererManaged\resource.h">
-      <Filter>Resource Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\RendererManaged\Stdafx.h">
-      <Filter>Sources</Filter>
-    </ClInclude>
     <ClInclude Include="..\RendererManaged\ComputeShader.h" />
     <ClInclude Include="..\RendererManaged\ConstantBuffer.h" />
     <ClInclude Include="..\RendererManaged\Device.h" />
@@ -30,6 +24,7 @@
     <ClInclude Include="..\RendererManaged\ShaderMacros.h" />
     <ClInclude Include="..\RendererManaged\StructuredBuffer.h" />
     <ClInclude Include="..\RendererManaged\Texture2D.h" />
+    <ClInclude Include="..\RendererManaged\Stdafx.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Buffers">
@@ -37,9 +32,6 @@
     </Filter>
     <Filter Include="Pixel &amp; Vertex Formats">
       <UniqueIdentifier>{d6d4f025-bdba-4b3f-adbd-ecf35428e3df}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Resource Files">
-      <UniqueIdentifier>{13f09afe-c448-445d-9131-bc3007fea4cf}</UniqueIdentifier>
     </Filter>
     <Filter Include="Sources">
       <UniqueIdentifier>{e87ec95d-c0b3-4936-ac31-1f0cde83d32b}</UniqueIdentifier>
@@ -88,15 +80,5 @@
     <ClCompile Include="..\RendererManaged\Texture3D.cpp">
       <Filter>Sources</Filter>
     </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="..\RendererManaged\app.rc">
-      <Filter>Resource Files</Filter>
-    </ResourceCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <Image Include="..\RendererManaged\app.ico">
-      <Filter>Resource Files</Filter>
-    </Image>
   </ItemGroup>
 </Project>

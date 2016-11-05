@@ -1,3 +1,5 @@
+#include "stdafx.h"
+
 #include "States.h"
 
 RasterizerState::RasterizerState( Device& _Device, D3D11_RASTERIZER_DESC& _Description ) : Component( _Device )

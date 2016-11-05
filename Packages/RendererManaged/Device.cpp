@@ -1,5 +1,6 @@
 // This is the main DLL file.
 #include "stdafx.h"
+
 #include "Texture2D.h"
 #include "Texture3D.h"
 #include "Shader.h"
@@ -25,17 +26,17 @@ void	RendererManaged::Device::Init( System::IntPtr _WindowHandle, bool _FullScre
 
 void	RendererManaged::Device::Clear( float4 _ClearColor )
 {
-	m_pDevice->ClearRenderTarget( m_pDevice->DefaultRenderTarget(), ::float4( _ClearColor.x, _ClearColor.y, _ClearColor.z, _ClearColor.w ) );
+	m_pDevice->ClearRenderTarget( m_pDevice->DefaultRenderTarget(), bfloat4( _ClearColor.x, _ClearColor.y, _ClearColor.z, _ClearColor.w ) );
 }
 
 void	RendererManaged::Device::Clear( Texture2D^ _RenderTarget, float4 _ClearColor )
 {
-	m_pDevice->ClearRenderTarget( *_RenderTarget->m_pTexture, ::float4( _ClearColor.x, _ClearColor.y, _ClearColor.z, _ClearColor.w ) );
+	m_pDevice->ClearRenderTarget( *_RenderTarget->m_pTexture, bfloat4( _ClearColor.x, _ClearColor.y, _ClearColor.z, _ClearColor.w ) );
 }
 
 void	RendererManaged::Device::Clear( Texture3D^ _RenderTarget, float4 _ClearColor )
 {
-	m_pDevice->ClearRenderTarget( *_RenderTarget->m_pTexture, ::float4( _ClearColor.x, _ClearColor.y, _ClearColor.z, _ClearColor.w ) );
+	m_pDevice->ClearRenderTarget( *_RenderTarget->m_pTexture, bfloat4( _ClearColor.x, _ClearColor.y, _ClearColor.z, _ClearColor.w ) );
 }
 
 void	RendererManaged::Device::ClearDepthStencil( Texture2D^ _RenderTarget, float _Z, byte _Stencil, bool _ClearDepth, bool _ClearStencil )

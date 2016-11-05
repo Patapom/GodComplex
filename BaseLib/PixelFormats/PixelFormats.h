@@ -32,7 +32,7 @@ namespace BaseLib {
 		/// HDR pixel writer
 		/// </summary>
 		/// <param name="_Color"></param>
-		virtual void	Write( const float4& _Color ) abstract;
+		virtual void	Write( const bfloat4& _Color ) abstract;
 		virtual void	Write( float _R, float _G, float _B, float _A ) abstract;
 		virtual void	Write( float _A ) abstract;
 
@@ -41,7 +41,7 @@ namespace BaseLib {
 		virtual float	Green() abstract;
 		virtual float	Blue() abstract;
 		virtual float	Alpha() abstract;
-		virtual void	RGBA( float4& _Color ) abstract;
+		virtual void	RGBA( bfloat4& _Color ) abstract;
 	};
 
 	/// <summary>
@@ -58,7 +58,7 @@ namespace BaseLib {
 		bool	sRGB() override	{ return false; }
 
 		void	Write( U32 _R, U32 _G, U32 _B, U32 _A ) override		{}
-		void	Write( const float4& _Color ) override	{}
+		void	Write( const bfloat4& _Color ) override	{}
 		void	Write( float _R, float _G, float _B, float _A ) override	{}
 		void	Write( U32 _A ) override		{}
 		void	Write( float _A ) override		{}
@@ -67,7 +67,7 @@ namespace BaseLib {
 		float	Green()	{ return 0.0f; }
 		float	Blue()	{ return 0.0f; }
 		float	Alpha()	{ return 1.0f; }
-		void	RGBA( float4& _Color ) override { _Color.Set( 0, 0, 0, 0 ); }
+		void	RGBA( bfloat4& _Color ) override { _Color.Set( 0, 0, 0, 0 ); }
 
 		#pragma endregion
 
@@ -115,7 +115,7 @@ namespace BaseLib {
 			R = (U8) _R;
 		}
 
-		void Write( const float4& _Color ) {
+		void Write( const bfloat4& _Color ) {
 			R = PF_Empty::ToByte(_Color.x);
 		}
 
@@ -133,7 +133,7 @@ namespace BaseLib {
 		float	Green()	{ return 0.0f; }
 		float	Blue()	{ return 0.0f; }
 		float	Alpha()	{ return 1.0f; }
-		void	RGBA( float4& _Color )	{ _Color.Set( R / 255.0f, 0, 0, 1 ); }
+		void	RGBA( bfloat4& _Color )	{ _Color.Set( R / 255.0f, 0, 0, 1 ); }
 
 		#pragma endregion
 	};
@@ -153,7 +153,7 @@ namespace BaseLib {
 			G = (U8) _G;
 		}
 
-		void Write( const float4& _Color ) {
+		void Write( const bfloat4& _Color ) {
 			R = PF_Empty::ToByte(_Color.x);
 			G = PF_Empty::ToByte(_Color.y);
 		}
@@ -173,7 +173,7 @@ namespace BaseLib {
 		float	Green()	{ return G / 255.0f; }
 		float	Blue()	{ return 0.0f; }
 		float	Alpha()	{ return 1.0f; }
-		void	RGBA( float4& _Color ) override { _Color.Set( R / 255.0f, G / 255.0f, 0, 1 ); }
+		void	RGBA( bfloat4& _Color ) override { _Color.Set( R / 255.0f, G / 255.0f, 0, 1 ); }
 
 		#pragma endregion
 	};
@@ -194,7 +194,7 @@ namespace BaseLib {
 			B = (U8) _B;
 		}
 
-		void Write( const float4& _Color ) {
+		void Write( const bfloat4& _Color ) {
 			R = PF_Empty::ToByte(_Color.x);
 			G = PF_Empty::ToByte(_Color.y);
 			B = PF_Empty::ToByte(_Color.z);
@@ -216,7 +216,7 @@ namespace BaseLib {
 		float	Green()	{ return G / 255.0f; }
 		float	Blue()	{ return B / 255.0f; }
 		float	Alpha()	{ return 1.0; }
-		void	RGBA( float4& _Color ) override { _Color.Set( R / 255.0f, G / 255.0f, B / 255.0f, 1.0 ); }
+		void	RGBA( bfloat4& _Color ) override { _Color.Set( R / 255.0f, G / 255.0f, B / 255.0f, 1.0 ); }
 
 		#pragma endregion
 	};
@@ -238,7 +238,7 @@ namespace BaseLib {
 			A = (U8) _A;
 		}
 
-		void Write( const float4& _Color ) {
+		void Write( const bfloat4& _Color ) {
 			R = PF_Empty::ToByte(_Color.x);
 			G = PF_Empty::ToByte(_Color.y);
 			B = PF_Empty::ToByte(_Color.z);
@@ -264,7 +264,7 @@ namespace BaseLib {
 		float	Green()	{ return G / 255.0f; }
 		float	Blue()	{ return B / 255.0f; }
 		float	Alpha()	{ return A / 255.0f; }
-		void	RGBA( float4& _Color ) override { _Color.Set( R / 255.0f, G / 255.0f, B / 255.0f, A / 255.0f ); }
+		void	RGBA( bfloat4& _Color ) override { _Color.Set( R / 255.0f, G / 255.0f, B / 255.0f, A / 255.0f ); }
 
 		#pragma endregion
 	};
@@ -286,7 +286,7 @@ namespace BaseLib {
 			A = (U8) _A;
 		}
 
-		void Write( const float4& _Color ) {
+		void Write( const bfloat4& _Color ) {
 			R = PF_Empty::ToByte(_Color.x);
 			G = PF_Empty::ToByte(_Color.y);
 			B = PF_Empty::ToByte(_Color.z);
@@ -312,7 +312,7 @@ namespace BaseLib {
 		float	Green()	{ return G / 255.0f; }
 		float	Blue()	{ return B / 255.0f; }
 		float	Alpha()	{ return A / 255.0f; }
-		void	RGBA( float4& _Color ) override { _Color.Set( R / 255.0f, G / 255.0f, B / 255.0f, A / 255.0f ); }
+		void	RGBA( bfloat4& _Color ) override { _Color.Set( R / 255.0f, G / 255.0f, B / 255.0f, A / 255.0f ); }
 
 		#pragma endregion
 	};
@@ -342,7 +342,7 @@ namespace BaseLib {
 		}
 
 		// NOTE: Alpha is ignored, RGB is encoded in RGBE
-		void Write( const float4& _Color ) {
+		void Write( const bfloat4& _Color ) {
 			float	maxComponent = MAX( _Color.x, MAX( _Color.y, _Color.z ) );
 			if ( maxComponent < 1e-16f ) {
 				// Too low to encode...
@@ -369,7 +369,7 @@ namespace BaseLib {
 		}
 
 		void Write( float _R, float _G, float _B, float _E ) {
-			Write( float4( _R, _G, _B, _E ) );
+			Write( bfloat4( _R, _G, _B, _E ) );
 		}
 
 		void Write( U32 _E ) {
@@ -384,13 +384,13 @@ namespace BaseLib {
 		float	Green()	{ return DecodedColor().y; }
 		float	Blue()	{ return DecodedColor().z; }
 		float	Alpha()	{ return 1.0f; }
-		void	RGBA( float4& _Color ) override { _Color = DecodedColor(); }
+		void	RGBA( bfloat4& _Color ) override { _Color = DecodedColor(); }
 
 		#pragma endregion
 
-		float4	DecodedColor() {
+		bfloat4	DecodedColor() {
 			float exponent = powf( 2.0f, E - (128.0f + 8.0f) );
-			return float4(	(float) ((R + .5) * exponent),
+			return bfloat4(	(float) ((R + .5) * exponent),
 							(float) ((G + .5) * exponent),
 							(float) ((B + .5) * exponent),
 							1.0f
@@ -416,7 +416,7 @@ namespace BaseLib {
 			R = (U16) _R;
 		}
 
-		void Write( const float4& _Color ) {
+		void Write( const bfloat4& _Color ) {
 			R = PF_Empty::ToUShort(_Color.x);
 		}
 
@@ -434,7 +434,7 @@ namespace BaseLib {
 		float	Green()	{ return 0.0f; }
 		float	Blue()	{ return 0.0f; }
 		float	Alpha()	{ return 1.0f; }
-		void	RGBA( float4& _Color ) override { _Color.Set( R / 65535.0f, 0, 0, 1 ); }
+		void	RGBA( bfloat4& _Color ) override { _Color.Set( R / 65535.0f, 0, 0, 1 ); }
 
 		#pragma endregion
 	};
@@ -454,7 +454,7 @@ namespace BaseLib {
 			G = (U16) _G;
 		}
 
-		void Write( const float4& _Color ) {
+		void Write( const bfloat4& _Color ) {
 			R = PF_Empty::ToUShort(_Color.x);
 			G = PF_Empty::ToUShort(_Color.y);
 		}
@@ -474,7 +474,7 @@ namespace BaseLib {
 		float	Green()	{ return G / 65535.0f; }
 		float	Blue()	{ return 0.0f; }
 		float	Alpha()	{ return 1.0f; }
-		void	RGBA( float4& _Color ) override { _Color.Set( R / 65535.0f, G / 65535.0f, 0, 1 ); }
+		void	RGBA( bfloat4& _Color ) override { _Color.Set( R / 65535.0f, G / 65535.0f, 0, 1 ); }
 
 		#pragma endregion
 	};
@@ -496,7 +496,7 @@ namespace BaseLib {
 			A = (U16) _A;
 		}
 
-		void Write( const float4& _Color ) {
+		void Write( const bfloat4& _Color ) {
 			R = PF_Empty::ToUShort(_Color.x);
 			G = PF_Empty::ToUShort(_Color.y);
 			B = PF_Empty::ToUShort(_Color.z);
@@ -522,7 +522,7 @@ namespace BaseLib {
 		float	Green()	{ return G / 65535.0f; }
 		float	Blue()	{ return B / 65535.0f; }
 		float	Alpha()	{ return A / 65535.0f; }
-		void	RGBA( float4& _Color ) override { _Color.Set( R / 65535.0f, G / 65535.0f, B / 65535.0f, A / 65535.0f ); }
+		void	RGBA( bfloat4& _Color ) override { _Color.Set( R / 65535.0f, G / 65535.0f, B / 65535.0f, A / 65535.0f ); }
 
 		#pragma endregion
 	};
@@ -545,7 +545,7 @@ namespace BaseLib {
 			R = half( PF_Empty::ToFloat( _R ) );
 		}
 
-		void Write( const float4& _Color ) {
+		void Write( const bfloat4& _Color ) {
 			R = half( _Color.x );
 		}
 
@@ -563,7 +563,7 @@ namespace BaseLib {
 		float	Green()	{ return 0.0f; }
 		float	Blue()	{ return 0.0f; }
 		float	Alpha()	{ return 1.0f; }
-		void	RGBA( float4& _Color ) override { _Color.Set( R, 0, 0, 1 ); }
+		void	RGBA( bfloat4& _Color ) override { _Color.Set( R, 0, 0, 1 ); }
 
 		#pragma endregion
 	};
@@ -583,7 +583,7 @@ namespace BaseLib {
 			G = half( PF_Empty::ToFloat( _G ) );
 		}
 
-		void Write( const float4& _Color ) {
+		void Write( const bfloat4& _Color ) {
 			R = half( _Color.x );
 			G = half( _Color.y );
 		}
@@ -603,7 +603,7 @@ namespace BaseLib {
 		float	Green()	{ return G; }
 		float	Blue()	{ return 0.0f; }
 		float	Alpha()	{ return 1.0f; }
-		void	RGBA( float4& _Color ) override { _Color.Set( R, G, 0, 1 ); }
+		void	RGBA( bfloat4& _Color ) override { _Color.Set( R, G, 0, 1 ); }
 
 		#pragma endregion
 	};
@@ -625,7 +625,7 @@ namespace BaseLib {
 			A = half( PF_Empty::ToFloat( _A ) );
 		}
 
-		void Write( const float4& _Color ) {
+		void Write( const bfloat4& _Color ) {
 			R = half( _Color.x );
 			G = half( _Color.y );
 			B = half( _Color.z );
@@ -651,7 +651,7 @@ namespace BaseLib {
 		float	Green()	{ return G; }
 		float	Blue()	{ return B; }
 		float	Alpha()	{ return A; }
-		void	RGBA( float4& _Color ) override { _Color.Set( R, G, 0, 1 ); }
+		void	RGBA( bfloat4& _Color ) override { _Color.Set( R, G, 0, 1 ); }
 
 		#pragma endregion
 	};
@@ -674,7 +674,7 @@ namespace BaseLib {
 			R = PF_Empty::ToFloat(_R);
 		}
 
-		void Write( const float4& _Color ) {
+		void Write( const bfloat4& _Color ) {
 			R = _Color.x;
 		}
 
@@ -692,7 +692,7 @@ namespace BaseLib {
 		float	Green()	{ return 0.0f; }
 		float	Blue()	{ return 0.0f; }
 		float	Alpha()	{ return 1.0f; }
-		void	RGBA( float4& _Color ) override { _Color.Set( R, 0, 0, 1 ); }
+		void	RGBA( bfloat4& _Color ) override { _Color.Set( R, 0, 0, 1 ); }
 
 		#pragma endregion
 	};
@@ -712,7 +712,7 @@ namespace BaseLib {
 			G = PF_Empty::ToFloat(_G);
 		}
 
-		void Write( const float4& _Color ) {
+		void Write( const bfloat4& _Color ) {
 			R = _Color.x;
 			G = _Color.y;
 		}
@@ -732,7 +732,7 @@ namespace BaseLib {
 		float	Green()	{ return G; }
 		float	Blue()	{ return 0.0f; }
 		float	Alpha()	{ return 1.0f; }
-		void	RGBA( float4& _Color ) override { _Color.Set( R, G, 0, 1 ); }
+		void	RGBA( bfloat4& _Color ) override { _Color.Set( R, G, 0, 1 ); }
 
 		#pragma endregion
 	};
@@ -753,7 +753,7 @@ namespace BaseLib {
 			B = PF_Empty::ToFloat(_B);
 		}
 
-		void Write( const float4& _Color ) {
+		void Write( const bfloat4& _Color ) {
 			R = _Color.x;
 			G = _Color.y;
 			B = _Color.z;
@@ -775,7 +775,7 @@ namespace BaseLib {
 		float	Green()	{ return G; }
 		float	Blue()	{ return B; }
 		float	Alpha()	{ return 1.0f; }
-		void	RGBA( float4& _Color ) override { _Color.Set( R, G, B, 1 ); }
+		void	RGBA( bfloat4& _Color ) override { _Color.Set( R, G, B, 1 ); }
 
 		#pragma endregion
 	};
@@ -797,7 +797,7 @@ namespace BaseLib {
 			A = PF_Empty::ToFloat(_A);
 		}
 
-		void Write( const float4& _Color ) {
+		void Write( const bfloat4& _Color ) {
 			R = _Color.x;
 			G = _Color.y;
 			B = _Color.z;
@@ -823,7 +823,7 @@ namespace BaseLib {
 		float	Green()	{ return G; }
 		float	Blue()	{ return B; }
 		float	Alpha()	{ return A; }
-		void	RGBA( float4& _Color ) override { _Color.Set( R, G, B, A ); }
+		void	RGBA( bfloat4& _Color ) override { _Color.Set( R, G, B, A ); }
 
 		#pragma endregion
 	};
@@ -894,7 +894,7 @@ namespace BaseLib {
 			D = PF_Empty::ToFloat(_R);
 		}
 
-		void Write( const float4& _Color ) {
+		void Write( const bfloat4& _Color ) {
 			D = _Color.x;
 		}
 
@@ -912,7 +912,7 @@ namespace BaseLib {
 		float	Green()	{ return 0.0f; }
 		float	Blue()	{ return 0.0f; }
 		float	Alpha()	{ return 1.0f; }
-		void	RGBA( float4& _Color ) override { _Color.Set( D, 0, 0, 1 ); }
+		void	RGBA( bfloat4& _Color ) override { _Color.Set( D, 0, 0, 1 ); }
 
 		#pragma endregion
 	};
@@ -935,7 +935,7 @@ namespace BaseLib {
 			A = (U8) _A;
 		}
 
-		void Write( const float4& _Color ) {
+		void Write( const bfloat4& _Color ) {
 			R = PF_Empty::ToByte(_Color.x);
 			G = PF_Empty::ToByte(_Color.y);
 			B = PF_Empty::ToByte(_Color.z);
@@ -958,11 +958,11 @@ namespace BaseLib {
 		float	Green()	{ return G / 255.0f; }
 		float	Blue()	{ return B / 255.0f; }
 		float	Alpha()	{ return A / 255.0f; }
-		void	RGBA( float4& _Color ) override { _Color.Set( R / 255.0f, G / 255.0f, B / 255.0f, A / 255.0f ); }
+		void	RGBA( bfloat4& _Color ) override { _Color.Set( R / 255.0f, G / 255.0f, B / 255.0f, A / 255.0f ); }
 
 		#pragma endregion
 	};
 
 	#pragma endregion
 
-}	// namespace
+}	// namespace BaseLib

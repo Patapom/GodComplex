@@ -1,3 +1,5 @@
+#include "stdafx.h"
+
 #include "TextureFilePOM.h"
 #include "../RendererD3D11/Device.h"
 #include "../RendererD3D11/Components/Texture2D.h"

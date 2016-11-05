@@ -2,6 +2,8 @@
 
 #include "../Types.h"
 
+namespace BaseLib {
+
 // Comparer should return:
 //	+1 if a < b 
 //	-1 if a > b
@@ -56,3 +58,5 @@ private:
 };
 
 #include "List.inl"
+
+}	// namespace BaseLib

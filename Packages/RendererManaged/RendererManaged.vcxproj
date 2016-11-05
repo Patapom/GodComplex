@@ -76,7 +76,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <LibraryPath>$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(SolutionDir)build\$(Configuration)\;$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)build\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)build\temp\$(ProjectName)\$(Configuration)\</IntDir>
     <IncludePath>$(IncludePath)</IncludePath>
@@ -88,7 +88,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <LibraryPath>$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(SolutionDir)build\$(Configuration)\;$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)build\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)build\temp\$(ProjectName)\$(Configuration)\</IntDir>
     <IncludePath>$(IncludePath)</IncludePath>
@@ -110,12 +110,11 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <PrecompiledHeader>Use</PrecompiledHeader>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>
-      </AdditionalDependencies>
+      <AdditionalDependencies>RendererLib.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -133,12 +132,11 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <PrecompiledHeader>Use</PrecompiledHeader>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>
-      </AdditionalDependencies>
+      <AdditionalDependencies>baselib.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -156,7 +154,6 @@
     <ClInclude Include="..\RendererManaged\PixelsBuffer.h" />
     <ClInclude Include="..\RendererManaged\Primitive.h" />
     <ClInclude Include="..\RendererManaged\RenderStates.h" />
-    <ClInclude Include="..\RendererManaged\resource.h" />
     <ClInclude Include="..\RendererManaged\Shader.h" />
     <ClInclude Include="..\RendererManaged\ShaderFile.h" />
     <ClInclude Include="..\RendererManaged\ShaderMacros.h" />
@@ -177,16 +174,13 @@
     <ClCompile Include="..\RendererManaged\Shader.cpp" />
     <ClCompile Include="..\RendererManaged\ShaderFile.cpp" />
     <ClCompile Include="..\RendererManaged\ShaderMacros.cpp" />
-    <ClCompile Include="..\RendererManaged\Stdafx.cpp" />
+    <ClCompile Include="..\RendererManaged\Stdafx.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="..\RendererManaged\StructuredBuffer.cpp" />
     <ClCompile Include="..\RendererManaged\Texture2D.cpp" />
     <ClCompile Include="..\RendererManaged\Texture3D.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="..\RendererManaged\app.rc" />
-  </ItemGroup>
-  <ItemGroup>
-    <Image Include="..\RendererManaged\app.ico" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\BaseLib\BaseLib.vcxproj">

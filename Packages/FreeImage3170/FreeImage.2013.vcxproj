@@ -168,7 +168,7 @@ copy Source\FreeImage.h Dist\x32
       <AdditionalIncludeDirectories>Source;Source\ZLib;Source\DeprecationManager;Source\OpenEXR;Source\OpenEXR\Half;Source\OpenEXR\Iex;Source\OpenEXR\IlmImf;Source\OpenEXR\Imath;Source\OpenEXR\IlmThread;Source\LibJXR\jxrgluelib;Source\LibJXR\image\sys;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;OPJ_STATIC;FREEIMAGE_EXPORTS;_CRT_SECURE_NO_DEPRECATE;LIBRAW_NODLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <OpenMPSupport>true</OpenMPSupport>
       <WarningLevel>Level3</WarningLevel>
@@ -197,10 +197,10 @@ copy Source\FreeImage.h Dist\x32
       <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
     </Link>
     <PostBuildEvent>
-      <Command>mkdir Dist\x64
-copy $(OutDir)$(TargetName).dll Dist\x64
-copy $(OutDir)$(TargetName).lib Dist\x64
-copy Source\FreeImage.h Dist\x64
+      <Command>mkdir Dist\x64\$(Configuration)
+copy $(OutDir)$(TargetName).dll Dist\x64\$(Configuration)
+copy $(OutDir)$(TargetName).lib Dist\x64\$(Configuration)
+copy Source\FreeImage.h Dist\x64\$(Configuration)
 </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -266,7 +266,7 @@ copy Source\FreeImage.h Dist\x32
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;OPJ_STATIC;FREEIMAGE_EXPORTS;_CRT_SECURE_NO_DEPRECATE;LIBRAW_NODLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <OpenMPSupport>true</OpenMPSupport>
       <WarningLevel>Level3</WarningLevel>
       <SuppressStartupBanner>true</SuppressStartupBanner>
@@ -292,10 +292,10 @@ copy Source\FreeImage.h Dist\x32
       <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
     </Link>
     <PostBuildEvent>
-      <Command>mkdir Dist\x64
-copy $(OutDir)$(TargetName).dll Dist\x64
-copy $(OutDir)$(TargetName).lib Dist\x64
-copy Source\FreeImage.h Dist\x64
+      <Command>mkdir Dist\x64\$(Configuration)
+copy $(OutDir)$(TargetName).dll Dist\x64\$(Configuration)
+copy $(OutDir)$(TargetName).lib Dist\x64\$(Configuration)
+copy Source\FreeImage.h Dist\x64\$(Configuration)
 </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>

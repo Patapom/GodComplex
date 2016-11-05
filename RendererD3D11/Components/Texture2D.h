@@ -5,8 +5,7 @@
 #include "../Structures/DepthStencilFormats.h"
 #include "../../Utility/TextureFilePOM.h"
 
-class Texture2D : public Component
-{
+class Texture2D : public Component {
 protected:	// CONSTANTS
 
 	static const int	MAX_TEXTURE_SIZE = 8192;	// Should be enough!
@@ -28,10 +27,10 @@ private:	// FIELDS
 	ID3D11Texture2D*				m_pTexture;
 
 	// Cached resource views
-	mutable DictionaryU32			m_CachedSRVs;
-	mutable DictionaryU32			m_CachedRTVs;
-	mutable DictionaryU32			m_CachedUAVs;
-	mutable DictionaryU32			m_CachedDSVs;
+	mutable BaseLib::DictionaryU32	m_CachedSRVs;
+	mutable BaseLib::DictionaryU32	m_CachedRTVs;
+	mutable BaseLib::DictionaryU32	m_CachedUAVs;
+	mutable BaseLib::DictionaryU32	m_CachedDSVs;
 	mutable int						m_LastAssignedSlots[6];
 	mutable int						m_LastAssignedSlotsUAV;
 	D3D11_MAPPED_SUBRESOURCE		m_LockedResource;
@@ -46,7 +45,7 @@ public:	 // PROPERTIES
 	bool						IsCubeMap() const			{ return m_bIsCubeMap; }
 	const IFormatDescriptor&	GetFormatDescriptor() const	{ return m_Format; }
 
-	float3						GetdUV() const				{ return float3( 1.0f / m_Width, 1.0f / m_Height, 0.0f ); }
+	bfloat3						GetdUV() const				{ return bfloat3( 1.0f / m_Width, 1.0f / m_Height, 0.0f ); }
 
 
 public:	 // METHODS

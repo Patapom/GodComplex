@@ -1,3 +1,5 @@
+#include "stdafx.h"
+
 #include "ConstantBuffer.h"
 
 ConstantBuffer::ConstantBuffer( Device& _Device, int _Size, void* _pData, bool _IsConstantBuffer )

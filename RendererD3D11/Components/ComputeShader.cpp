@@ -1,3 +1,4 @@
+#include "stdafx.h"
 
 #include "ComputeShader.h"
 #include "ConstantBuffer.h"
@@ -572,8 +573,9 @@ const char*	ComputeShader::GetShaderPath( const char* _pShaderFileName ) const {
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <timeapi.h>
 
-DictionaryString<ComputeShader*>	ComputeShader::ms_WatchedShaders;
+BaseLib::DictionaryString<ComputeShader*>	ComputeShader::ms_WatchedShaders;
 
 static void	WatchShader( int _EntryIndex, ComputeShader*& _Value, void* _pUserData )	{ _Value->WatchShaderModifications(); }
 

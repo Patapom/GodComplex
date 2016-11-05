@@ -1,29 +1,31 @@
 #include "../Types.h"
 
-const float2	float2::Zero( 0, 0 );
-const float2	float2::One( 1, 1 );
-const float2	float2::UnitX( 1, 0 );
-const float2	float2::UnitY( 0, 1 );
+using namespace BaseLib;
 
-const float3	float3::Zero( 0, 0, 0 );
-const float3	float3::One( 1, 1, 1 );
-const float3	float3::MaxFlt( MAX_FLOAT, MAX_FLOAT, MAX_FLOAT );
-const float3	float3::UnitX( 1, 0, 0 );
-const float3	float3::UnitY( 0, 1, 0 );
-const float3	float3::UnitZ( 0, 0, 1 );
+const bfloat2	bfloat2::Zero( 0, 0 );
+const bfloat2	bfloat2::One( 1, 1 );
+const bfloat2	bfloat2::UnitX( 1, 0 );
+const bfloat2	bfloat2::UnitY( 0, 1 );
 
-const float4	float4::Zero( 0, 0, 0, 0 );
-const float4	float4::One( 1, 1, 1, 1 );
-const float4	float4::UnitX( 1, 0, 0, 0 );
-const float4	float4::UnitY( 0, 1, 0, 0 );
-const float4	float4::UnitZ( 0, 0, 1, 0 );
-const float4	float4::UnitW( 0, 0, 0, 1 );
+const bfloat3	bfloat3::Zero( 0, 0, 0 );
+const bfloat3	bfloat3::One( 1, 1, 1 );
+const bfloat3	bfloat3::MaxFlt( MAX_FLOAT, MAX_FLOAT, MAX_FLOAT );
+const bfloat3	bfloat3::UnitX( 1, 0, 0 );
+const bfloat3	bfloat3::UnitY( 0, 1, 0 );
+const bfloat3	bfloat3::UnitZ( 0, 0, 1 );
+
+const bfloat4	bfloat4::Zero( 0, 0, 0, 0 );
+const bfloat4	bfloat4::One( 1, 1, 1, 1 );
+const bfloat4	bfloat4::UnitX( 1, 0, 0, 0 );
+const bfloat4	bfloat4::UnitY( 0, 1, 0, 0 );
+const bfloat4	bfloat4::UnitZ( 0, 0, 1, 0 );
+const bfloat4	bfloat4::UnitW( 0, 0, 0, 1 );
 
 const float4x4	float4x4::Zero( 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 );
 const float4x4	float4x4::Identity( 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 );
 
-float4	float4::QuatFromAngleAxis( float _angle, const float3& _axis ) {
-	float3	NormalizedAxis = _axis;
+bfloat4	bfloat4::QuatFromAngleAxis( float _angle, const bfloat3& _axis ) {
+	bfloat3	NormalizedAxis = _axis;
 			NormalizedAxis.Normalize();
 
 	_angle *= 0.5f;
@@ -31,7 +33,7 @@ float4	float4::QuatFromAngleAxis( float _angle, const float3& _axis ) {
 	float	c = cosf(_angle);
 	float	s = sinf(_angle);
 
-	return float4( s * NormalizedAxis, c );
+	return bfloat4( s * NormalizedAxis, c );
 }
 
 float4x4  float4x4::Inverse() const {
@@ -80,21 +82,21 @@ float	float4x4::CoFactor( int x, int y ) const {
 }
 
 float4x4&	float4x4::Normalize() {
-	((float3&) r[0]).Normalize();
-	((float3&) r[1]).Normalize();
-	((float3&) r[2]).Normalize();
+	((bfloat3&) r[0]).Normalize();
+	((bfloat3&) r[1]).Normalize();
+	((bfloat3&) r[2]).Normalize();
 	return *this;
 }
 
-float4x4&	float4x4::Scale( const float3& _scale ) {
+float4x4&	float4x4::Scale( const bfloat3& _scale ) {
 	r[0] *= _scale.x;
 	r[1] *= _scale.y;
 	r[2] *= _scale.z;
 	return *this;
 }
 
-float4   operator*( const float4& a, const float4x4& b ) {
-	float4	R;
+bfloat4   operator*( const bfloat4& a, const float4x4& b ) {
+	bfloat4	R;
 	R.x = a.x * b.r[0].x + a.y * b.r[1].x + a.z * b.r[2].x + a.w * b.r[3].x;
 	R.y = a.x * b.r[0].y + a.y * b.r[1].y + a.z * b.r[2].y + a.w * b.r[3].y;
 	R.z = a.x * b.r[0].z + a.y * b.r[1].z + a.z * b.r[2].z + a.w * b.r[3].z;
@@ -103,8 +105,8 @@ float4   operator*( const float4& a, const float4x4& b ) {
 	return R;
 }
 
-float4   operator*( const float4x4& b, const float4& a ) {
-	float4	R;
+bfloat4   operator*( const float4x4& b, const bfloat4& a ) {
+	bfloat4	R;
 	R.x = a.Dot( b.r[0] );
 	R.y = a.Dot( b.r[1] );
 	R.z = a.Dot( b.r[2] );
@@ -112,9 +114,9 @@ float4   operator*( const float4x4& b, const float4& a ) {
 	return R;
 }
 
-float4x4	float4x4::BuildFromQuat( const float4& _Quat ) {
+float4x4	float4x4::BuildFromQuat( const bfloat4& _Quat ) {
 	float4x4	result;
-	float4		q = _Quat;
+	bfloat4		q = _Quat;
 	q.Normalize();
 
 	float	xs = 2.0f * q.x;
@@ -149,7 +151,7 @@ float4x4	float4x4::BuildFromQuat( const float4& _Quat ) {
 	return	result;
 }
 
-float4x4&	float4x4::PRS( const float3& P, const float4& R, const float3& S ) {
+float4x4&	float4x4::PRS( const bfloat3& P, const bfloat4& R, const bfloat3& S ) {
 	return *this = BuildFromPRS( P, R, S );
 }
 
@@ -167,7 +169,7 @@ float4x4	float4x4::ProjectionPerspective( float _FOVY, float _aspectRatio, float
 	return result;
 }
 
-float4x4	float4x4::BuildFromPRS( const float3& P, const float4& R, const float3& S ) {
+float4x4	float4x4::BuildFromPRS( const bfloat3& P, const bfloat4& R, const bfloat3& S ) {
 	float4x4	result = BuildFromQuat( R );
 
 	result.r[0].x *= S.x;
@@ -189,8 +191,8 @@ float4x4	float4x4::BuildFromPRS( const float3& P, const float4& R, const float3&
 	return	result;
 }
 
-float4x4	float4x4::Rot( const float3& _Source, const float3& _Target ) {
-	float3	Ortho = _Source.Cross( _Target );
+float4x4	float4x4::Rot( const bfloat3& _Source, const bfloat3& _Target ) {
+	bfloat3	Ortho = _Source.Cross( _Target );
 	float		Length = Ortho.Length();
 	if ( Length > 1e-6f )
 		Ortho = Ortho / Length;
@@ -268,7 +270,7 @@ float4x4  float4x4::operator*( const float4x4& b ) const {
 }
 
 float&	float4x4::operator()( int _row, int _column ) {
-	float4&	row = r[_row&3];
+	bfloat4&	row = r[_row&3];
 	switch ( _column&3 ) {
 		case 0: return row.x;
 		case 1: return row.y;

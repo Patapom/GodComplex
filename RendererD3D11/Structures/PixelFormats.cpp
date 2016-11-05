@@ -1,4 +1,5 @@
-#pragma once
+#include "stdafx.h"
+
 #include "PixelFormats.h"
 
 PixelFormatR8::Desc				PixelFormatR8::DESCRIPTOR;

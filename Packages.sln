@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharpMath", "Packages\SharpMath\SharpMath.csproj", "{DD026A89-C5FE-4150-BC85-A660E427826A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MathAdvanced", "Packages\SharpMath\MathAdvanced.csproj", "{DD026A89-C5FE-4150-BC85-A660E427826A}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DirectXTex", "Packages\DirectXTex\DirectXTex\DirectXTex_Desktop_2012.vcxproj", "{371B9FA9-4C90-4AC6-A123-ACED756D6C77}"
 EndProject
@@ -39,6 +39,8 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ImageUtilityManaged", "Packages\ImageUtilityManaged\ImageUtilityManaged.vcxproj", "{6C974BA3-ECBA-4436-85CB-218EEBB33D53}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MathSimple", "Packages\MathSimple\MathSimple.vcxproj", "{CEC07704-2A19-4BF1-B46D-8FCF9C5965EE}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Dummy", "Dummy\Dummy.vcxproj", "{AC39E442-A671-4001-9B40-D07893878C44}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -139,7 +141,6 @@ Global
 		{D2163ABF-3E86-4EFE-B73B-9021AB24F717}.Debug|Win32.ActiveCfg = Debug|Win32
 		{D2163ABF-3E86-4EFE-B73B-9021AB24F717}.Debug|Win32.Build.0 = Debug|Win32
 		{D2163ABF-3E86-4EFE-B73B-9021AB24F717}.Debug|x64.ActiveCfg = Debug|x64
-		{D2163ABF-3E86-4EFE-B73B-9021AB24F717}.Debug|x64.Build.0 = Debug|x64
 		{D2163ABF-3E86-4EFE-B73B-9021AB24F717}.Debug|x86.ActiveCfg = Debug|Win32
 		{D2163ABF-3E86-4EFE-B73B-9021AB24F717}.Debug|x86.Build.0 = Debug|Win32
 		{D2163ABF-3E86-4EFE-B73B-9021AB24F717}.Release|Any CPU.ActiveCfg = Release|x64
@@ -210,7 +211,6 @@ Global
 		{A55979A1-0251-49D2-9A2A-3729C814169A}.Debug|Win32.ActiveCfg = Debug|x86
 		{A55979A1-0251-49D2-9A2A-3729C814169A}.Debug|Win32.Build.0 = Debug|x86
 		{A55979A1-0251-49D2-9A2A-3729C814169A}.Debug|x64.ActiveCfg = Debug|x64
-		{A55979A1-0251-49D2-9A2A-3729C814169A}.Debug|x64.Build.0 = Debug|x64
 		{A55979A1-0251-49D2-9A2A-3729C814169A}.Debug|x86.ActiveCfg = Debug|x86
 		{A55979A1-0251-49D2-9A2A-3729C814169A}.Debug|x86.Build.0 = Debug|x86
 		{A55979A1-0251-49D2-9A2A-3729C814169A}.Release|Any CPU.ActiveCfg = Release|x64
@@ -297,6 +297,22 @@ Global
 		{CEC07704-2A19-4BF1-B46D-8FCF9C5965EE}.Release|x64.Build.0 = Release|x64
 		{CEC07704-2A19-4BF1-B46D-8FCF9C5965EE}.Release|x86.ActiveCfg = Release|Win32
 		{CEC07704-2A19-4BF1-B46D-8FCF9C5965EE}.Release|x86.Build.0 = Release|Win32
+		{AC39E442-A671-4001-9B40-D07893878C44}.Debug|Any CPU.ActiveCfg = Debug|Win32
+		{AC39E442-A671-4001-9B40-D07893878C44}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
+		{AC39E442-A671-4001-9B40-D07893878C44}.Debug|Mixed Platforms.Build.0 = Debug|Win32
+		{AC39E442-A671-4001-9B40-D07893878C44}.Debug|Win32.ActiveCfg = Debug|Win32
+		{AC39E442-A671-4001-9B40-D07893878C44}.Debug|Win32.Build.0 = Debug|Win32
+		{AC39E442-A671-4001-9B40-D07893878C44}.Debug|x64.ActiveCfg = Debug|Win32
+		{AC39E442-A671-4001-9B40-D07893878C44}.Debug|x86.ActiveCfg = Debug|Win32
+		{AC39E442-A671-4001-9B40-D07893878C44}.Debug|x86.Build.0 = Debug|Win32
+		{AC39E442-A671-4001-9B40-D07893878C44}.Release|Any CPU.ActiveCfg = Release|Win32
+		{AC39E442-A671-4001-9B40-D07893878C44}.Release|Mixed Platforms.ActiveCfg = Release|Win32
+		{AC39E442-A671-4001-9B40-D07893878C44}.Release|Mixed Platforms.Build.0 = Release|Win32
+		{AC39E442-A671-4001-9B40-D07893878C44}.Release|Win32.ActiveCfg = Release|Win32
+		{AC39E442-A671-4001-9B40-D07893878C44}.Release|Win32.Build.0 = Release|Win32
+		{AC39E442-A671-4001-9B40-D07893878C44}.Release|x64.ActiveCfg = Release|Win32
+		{AC39E442-A671-4001-9B40-D07893878C44}.Release|x86.ActiveCfg = Release|Win32
+		{AC39E442-A671-4001-9B40-D07893878C44}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

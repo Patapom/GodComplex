@@ -161,9 +161,7 @@ namespace ImageUtility {
 		// Creates a bitmap from a System::Drawing.Bitmap and a color profile
 		ImageFile( System::Drawing::Bitmap^ _bitmap, ImageUtility::ColorProfile^ _colorProfile );
 
-		~ImageFile() {
-			SAFE_DELETE( m_nativeObject );
-		}
+		~ImageFile();
 
 	public:
 

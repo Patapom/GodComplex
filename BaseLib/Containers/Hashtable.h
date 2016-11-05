@@ -4,6 +4,8 @@
 #include "../ASMHelpers.h"
 #include "../Math/Math.h"
 
+namespace BaseLib {
+
 // Source: http://blog.2of1.org/2011/07/11/simple-c-hashtable-code/
 //
 // simple hashtable
@@ -196,3 +198,5 @@ public:		// METHODS
 
 //////////////////////////////////////////////////////////////////////////
 #include "Hashtable.inl"
+
+}	// namespace BaseLib

@@ -1,3 +1,5 @@
+#include "stdafx.h"
+
 #include "Device.h"
 #include "Components/Component.h"
 #include "Components/Texture2D.h"
@@ -327,17 +329,17 @@ void	Device::Exit()
 	m_pDevice->Release(); m_pDevice = NULL;
 }
 
-void	Device::ClearRenderTarget( const Texture2D& _Target, const float4& _Color )
+void	Device::ClearRenderTarget( const Texture2D& _Target, const bfloat4& _Color )
 {
 	ClearRenderTarget( *_Target.GetRTV(), _Color );
 }
 
-void	Device::ClearRenderTarget( const Texture3D& _Target, const float4& _Color )
+void	Device::ClearRenderTarget( const Texture3D& _Target, const bfloat4& _Color )
 {
 	ClearRenderTarget( *_Target.GetRTV(), _Color );
 }
 
-void	Device::ClearRenderTarget( ID3D11RenderTargetView& _TargetView, const float4& _Color )
+void	Device::ClearRenderTarget( ID3D11RenderTargetView& _TargetView, const bfloat4& _Color )
 {
 	m_pDeviceContext->ClearRenderTargetView( &_TargetView, &_Color.x );
 }
@@ -426,7 +428,7 @@ void	Device::SetStates( RasterizerState* _pRasterizerState, DepthStencilState* _
 	}
 }
 
-void	Device::SetStatesReferences( const float4& _BlendFactors, U32 _BlendSampleMask, U8 _StencilRef )
+void	Device::SetStatesReferences( const bfloat4& _BlendFactors, U32 _BlendSampleMask, U8 _StencilRef )
 {
 	m_BlendFactors = _BlendFactors;
 	m_BlendMasks = _BlendSampleMask;

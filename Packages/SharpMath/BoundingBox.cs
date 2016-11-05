@@ -1,6 +1,6 @@
 using System;
 
-namespace WMath
+namespace SharpMath
 {
 /// <summary>
 /// Here is the orientation of the bouding-box in its own radix:
@@ -28,7 +28,7 @@ namespace WMath
 
 		#region	FIELDS
 
-		public Point				m_Min, m_Max;
+		public float3				m_Min, m_Max;
 
 		#endregion
 
@@ -49,14 +49,14 @@ namespace WMath
 			get { return m_Max.z - m_Min.z; }
 		}
 
-		public Vector			Dim
+		public float3			Dim
 		{
-			get { return new Vector( m_Max.x - m_Min.x, m_Max.y - m_Min.y, m_Max.z - m_Min.z ); }
+			get { return new float3( m_Max.x - m_Min.x, m_Max.y - m_Min.y, m_Max.z - m_Min.z ); }
 		}
 
-		public Point			Center
+		public float3			Center
 		{
-			get { return new Point( .5f * (m_Min.x + m_Max.x), .5f * (m_Min.y + m_Max.y), .5f * (m_Min.z + m_Max.z) ); }
+			get { return new float3( .5f * (m_Min.x + m_Max.x), .5f * (m_Min.y + m_Max.y), .5f * (m_Min.z + m_Max.z) ); }
 		}
 
 		public static BoundingBox	Empty
@@ -69,49 +69,49 @@ namespace WMath
 		#region	METHODS
 
 		// Constructors/Destructor
-		public					BoundingBox	()																					{ m_Min = new Point(); m_Max = new Point(); }
-		public					BoundingBox	( float _MinX, float _MinY, float _MinZ, float _MaxX, float _MaxY, float _MaxZ )	{ m_Min = new Point( _MinX, _MinY, _MinZ ); m_Max = new Point( _MaxX, _MaxY, _MaxZ ); }
-		public					BoundingBox	( Point _Min, Point _Max ) 															{ m_Min = _Min; m_Max = _Max; }
+		public					BoundingBox	()																					{ m_Min = new float3(); m_Max = new float3(); }
+		public					BoundingBox	( float _MinX, float _MinY, float _MinZ, float _MaxX, float _MaxY, float _MaxZ )	{ m_Min = new float3( _MinX, _MinY, _MinZ ); m_Max = new float3( _MaxX, _MaxY, _MaxZ ); }
+		public					BoundingBox	( float3 _Min, float3 _Max ) 															{ m_Min = _Min; m_Max = _Max; }
 
 		public override string		ToString()
 		{
 			return	"[" + m_Min + "] - [" + m_Max + "]";
 		}
 
-		public BoundingBox		Set			( Point _Min, Point _Max )			{ m_Min = _Min; m_Max = _Max; return this; }
+		public BoundingBox		Set			( float3 _Min, float3 _Max )			{ m_Min = _Min; m_Max = _Max; return this; }
 
 		// Helpers
-		public void				Grow( Vector _GrowSize )						{ m_Min -= .5f * _GrowSize; m_Max += .5f * _GrowSize; }
-		public void				Grow( Point _Point )							{ m_Min.Min( _Point ); m_Max.Max( _Point ); }
+		public void				Grow( float3 _GrowSize )						{ m_Min -= .5f * _GrowSize; m_Max += .5f * _GrowSize; }
+		public void				Add( float3 _Point )							{ m_Min.Min( _Point ); m_Max.Max( _Point ); }
 
 			// Grows the current bbox using another transformed bbox
-		public void				Grow( BoundingBox _BBox, Matrix4x4 _Transform )
+		public void				Grow( BoundingBox _BBox, float4x4 _Transform )
 		{
-			Point[]	Corners = _BBox.Transform( _Transform );
+			float3[]	Corners = _BBox.Transform( _Transform );
 			for ( int CornerIndex=0; CornerIndex < 8; CornerIndex++ )
 				Grow( Corners[CornerIndex] );
 		}
 
 		// Transforms the box by the given matrix and returns 8 points corresponding to the eight transformed corners
-		public Point[]			Transform( Matrix4x4 _Transform )
+		public float3[]			Transform( float4x4 _Transform )
 		{
-			Vector[]	Corners = new Vector[8]
+			float3[]	Corners = new float3[8]
 			{
-				new Vector( 0, 0, 0 ),
-				new Vector( 1, 0, 0 ),
-				new Vector( 1, 1, 0 ),
-				new Vector( 0, 1, 0 ),
-				new Vector( 0, 0, 1 ),
-				new Vector( 1, 0, 1 ),
-				new Vector( 1, 1, 1 ),
-				new Vector( 0, 1, 1 ),
+				new float3( 0, 0, 0 ),
+				new float3( 1, 0, 0 ),
+				new float3( 1, 1, 0 ),
+				new float3( 0, 1, 0 ),
+				new float3( 0, 0, 1 ),
+				new float3( 1, 0, 1 ),
+				new float3( 1, 1, 1 ),
+				new float3( 0, 1, 1 ),
 			};
 
-			Vector	D = Dim;
+			float3	D = Dim;
 
-			Point[]	Result = new Point[8];
+			float3[]	Result = new float3[8];
 			for ( int CornerIndex=0; CornerIndex < 8; CornerIndex++ )
-				Result[CornerIndex] = (m_Min + Corners[CornerIndex] * D) * _Transform;
+				Result[CornerIndex] = (float3) (new float4( m_Min + Corners[CornerIndex] * D, 1.0f ) * _Transform);
 
 			return	Result;
 		}
@@ -121,7 +121,7 @@ namespace WMath
 			// ********** TEST RAY INTERSECTION **********
 			bool	bHitX = false, bHitY = false, bHitZ = false;
 			float	fDistX = float.MaxValue, fDistY = float.MaxValue, fDistZ = float.MaxValue;
-			Point	HitPosition;
+			float3	HitPosition;
 
 			// Left  right intersection
 			if ( System.Math.Abs( _Ray.Aim.x ) > EPSILON )
@@ -203,7 +203,7 @@ namespace WMath
 		{
 			// ********** TEST RAY INTERSECTION (ONLY THE FACT OF INTERSECTION IS IMPORTANT THIS TIME) **********
 			float	fDistX = float.MaxValue, fDistY = float.MaxValue, fDistZ = float.MaxValue;
-			Point	HitPosition;
+			float3	HitPosition;
 
 			// Left  right intersection
 			if ( System.Math.Abs( _Ray.Aim.x ) > EPSILON )
@@ -246,7 +246,7 @@ namespace WMath
 		public bool				IsOutsideHitBy( Ray _Ray )
 		{
 			float	fDistance;
-			Point	HitPosition;
+			float3	HitPosition;
 
 			// Left | right intersection
 			if ( System.Math.Abs( _Ray.Aim.x ) > EPSILON )
@@ -310,7 +310,7 @@ namespace WMath
 		public bool				IsInsideHitBy( Ray _Ray )
 		{
 			float	fDistance;
-			Point	HitPosition;
+			float3	HitPosition;
 
 			// Left | right intersection
 			if ( System.Math.Abs( _Ray.Aim.x ) > EPSILON )
@@ -365,24 +365,24 @@ namespace WMath
 
 			return	false;
 		}
-		public Point			Rationalize( Point _Source )
-		{
-			return	null;//(_Source - m_Min) / (m_Max - m_Min);
+		public float3			Rationalize( float3 _Source ) {
+			float3	D = _Source - m_Min;
+			return new float3( D.x / (m_Max.x - m_Min.x), D.y / (m_Max.y - m_Min.y), D.z / (m_Max.z - m_Min.z) );
 		}
 
-		public Point[]			GetCorners()
+		public float3[]			GetCorners()
 		{
-			Point[]	Result = new Point[8];
+			float3[]	Result = new float3[8];
 			for ( int i=0; i < 8; i++ )
 			{
-				Result[i] = m_Min + new Vector( (i&1) * DimX, ((i>>1)&1) * DimY, ((i>>2)&1) * DimZ );
+				Result[i] = m_Min + new float3( (i&1) * DimX, ((i>>1)&1) * DimY, ((i>>2)&1) * DimZ );
 			}
 
 			return Result;
 		}
 
 		// Arithmetic operators
-		public static BoundingBox	operator+( BoundingBox _Op0, Vector _Op1 )							{ return new BoundingBox( _Op0.m_Min + _Op1, _Op0.m_Max + _Op1 ); }
+		public static BoundingBox	operator+( BoundingBox _Op0, float3 _Op1 )							{ return new BoundingBox( _Op0.m_Min + _Op1, _Op0.m_Max + _Op1 ); }
 		public static BoundingBox	operator*( BoundingBox _Op0, float _Op1 )							{ return new BoundingBox( _Op0.m_Min * _Op1, _Op0.m_Max * _Op1 ); }
 		public static BoundingBox	operator/( BoundingBox _Op0, float _Op1 )							{ _Op1 = 1.0f / _Op1; return new BoundingBox( _Op0.m_Min * _Op1, _Op0.m_Max * _Op1 ); }
 		public static BoundingBox	operator|( BoundingBox _Op0, BoundingBox _Op1 )						{ return new BoundingBox( System.Math.Min(_Op0.m_Min.x,_Op1.m_Min.x), System.Math.Min(_Op0.m_Min.y,_Op1.m_Min.y), System.Math.Min(_Op0.m_Min.z,_Op1.m_Min.z), System.Math.Max(_Op0.m_Max.x,_Op1.m_Max.x), System.Math.Max(_Op0.m_Max.y,_Op1.m_Max.y), System.Math.Max(_Op0.m_Max.z,_Op1.m_Max.z) ); }

@@ -1,4 +1,5 @@
-#include <string>
+#include "stdafx.h"
+
 #include "MetaData.h"
 #include "ImageFile.h"
 #include "ColorProfile.h"
@@ -7,6 +8,9 @@ using namespace ImageUtilityLib;
 
 MetaData::MetaData() : m_colorProfile( nullptr ) {
 	Reset();
+}
+MetaData::~MetaData() {
+	SAFE_DELETE( m_colorProfile );
 }
 
 void	MetaData::Reset() {

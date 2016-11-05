@@ -43,8 +43,6 @@
 //
 #pragma once
 
-#include "..\..\BaseLib\Types.h"
-#include "FreeImage.h"
 #include "MetaData.h"
 
 namespace ImageUtilityLib {
@@ -223,7 +221,8 @@ namespace ImageUtilityLib {
 			, SF_JXR_DEFAULT				 = 0		//! save with quality 80 and no chroma subsampling (4:4:4)
 			, SF_JXR_LOSSLESS				 = 0x0064	//! save lossless
 			, SF_JXR_PROGRESSIVE			 = 0x2000	//! save as a progressive-JXR (use | to combine with other save flags)
-		};
+		};
+
 		#pragma endregion
 
 	private:

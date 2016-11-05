@@ -10,7 +10,6 @@
 //
 #pragma once
 
-#include "..\..\BaseLib\Types.h"
 #include "ColorProfile.h"
 #include "ImageFile.h"
 
@@ -48,7 +47,7 @@ namespace ImageUtilityLib {
 
 		const ColorProfile*	m_colorProfile;		// The color profile to use with this bitmap (NOTE: Not owned by the class, it's the responsibility of the provider to delete the profile)
 
-		float4*				m_XYZ;				// CIEXYZ Bitmap content + Alpha
+		bfloat4*				m_XYZ;				// CIEXYZ Bitmap content + Alpha
 
 		#pragma endregion
 
@@ -68,8 +67,8 @@ namespace ImageUtilityLib {
 		/// <summary>
 		/// Gets the image content stored as CIEXYZ + Alpha
 		/// </summary>
-		float4*			GetContentXYZ()			{ return m_XYZ; }
-		const float4*	GetContentXYZ() const	{ return m_XYZ; }
+		bfloat4*			GetContentXYZ()			{ return m_XYZ; }
+		const bfloat4*	GetContentXYZ() const	{ return m_XYZ; }
 
 		/// <summary>
 		/// Gets or sets the image's color profile
@@ -99,8 +98,8 @@ namespace ImageUtilityLib {
 		Bitmap( int _width, int _height, const ColorProfile& _profile ) {
 			m_width = _width;
 			m_height = _height;
-			m_XYZ = new float4[m_width * m_height];
-			memset( m_XYZ, 0, m_width*m_height*sizeof(float4) );
+			m_XYZ = new bfloat4[m_width * m_height];
+			memset( m_XYZ, 0, m_width*m_height*sizeof(bfloat4) );
 			m_colorProfile = &_profile;
 		}
 
@@ -116,10 +115,10 @@ namespace ImageUtilityLib {
 		void			ToImageFile( ImageFile& _targetFile, ImageFile::PIXEL_FORMAT _targetFormat, bool _premultiplyAlpha=false ) const;
 
 		// Accesses the individual XYZ-Alpha pixels
-		float4&			Access( U32 _X, U32 _Y ) {
+		bfloat4&			Access( U32 _X, U32 _Y ) {
 			return m_XYZ[m_width*_Y+_X];
 		}
-		const float4&	Access( U32 _X, U32 _Y ) const {
+		const bfloat4&	Access( U32 _X, U32 _Y ) const {
 			return m_XYZ[m_width*_Y+_X];
 		}
 
@@ -129,7 +128,7 @@ namespace ImageUtilityLib {
 		/// <param name="X">A column index in [0,Width[ (will be clamped if out of range)</param>
 		/// <param name="Y">A row index in [0,Height[ (will be clamped if out of range)</param>
 		/// <returns>The XYZ at the requested location</returns>
-		void	BilinearSample( float X, float Y, float4& _XYZ ) const {
+		void	BilinearSample( float X, float Y, bfloat4& _XYZ ) const {
 			int		X0 = (int) floorf( X );
 			int		Y0 = (int) floorf( Y );
 			float	x = X - X0;
@@ -141,13 +140,13 @@ namespace ImageUtilityLib {
 			int		X1 = MIN( X0+1, S32(m_width-1) );
 			int		Y1 = MIN( Y0+1, S32(m_height-1) );
 
-			const float4&	V00 = Access( X0, Y0 );
-			const float4&	V01 = Access( X1, Y0 );
-			const float4&	V10 = Access( X0, Y1 );
-			const float4&	V11 = Access( X1, Y1 );
+			const bfloat4&	V00 = Access( X0, Y0 );
+			const bfloat4&	V01 = Access( X1, Y0 );
+			const bfloat4&	V10 = Access( X0, Y1 );
+			const bfloat4&	V11 = Access( X1, Y1 );
 
-			float4	V0 = rx * V00 + x * V01;
-			float4	V1 = rx * V10 + x * V11;
+			bfloat4	V0 = rx * V00 + x * V01;
+			bfloat4	V1 = rx * V10 + x * V11;
 
 			_XYZ = ry * V0 + y * V1;
 		}

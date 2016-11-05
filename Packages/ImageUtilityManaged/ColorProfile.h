@@ -4,12 +4,6 @@
 //
 #pragma once
 
-#pragma unmanaged
-#include "..\ImageUtilityLib\ColorProfile.h"
-#pragma managed
-
-//#include "..\MathSimple\Math.h"
-
 using namespace System;
 
 namespace ImageUtility {
@@ -48,7 +42,7 @@ namespace ImageUtility {
 				m_nativeObject = new ImageUtilityLib::ColorProfile::Chromaticities( xr, yr, xg, yg, xb, yb, xw, yw );
 			}
 			Chromaticities( SharpMath::float2 r, SharpMath::float2 g, SharpMath::float2 b, SharpMath::float2 w ) {
-				m_nativeObject = new ImageUtilityLib::ColorProfile::Chromaticities( ::float2( r.x, r.y ), ::float2( g.x, g.y ), ::float2( b.x, b.y ), ::float2( w.x, w.y ) );
+				m_nativeObject = new ImageUtilityLib::ColorProfile::Chromaticities( bfloat2( r.x, r.y ), bfloat2( g.x, g.y ), bfloat2( b.x, b.y ), bfloat2( w.x, w.y ) );
 			}
 			~Chromaticities() {
 				SAFE_DELETE( m_nativeObject );

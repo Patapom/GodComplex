@@ -1,4 +1,5 @@
-#pragma once
+#include "stdafx.h"
+
 #include "VertexFormats.h"
 
 static const char*	POSITION = "POSITION";
@@ -90,39 +91,39 @@ D3D11_INPUT_ELEMENT_DESC	VertexFormatU32::Desc::ms_pInputElements[] =
 	{ INFO, 0, DXGI_FORMAT_R32_UINT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 };
 
-void	VertexFormatPt4::Desc::Write( void* _pVertex, const float3& _Position, const float3& _Normal, const float3& _Tangent, const float3& _BiTangent, const float2& _UV ) const
+void	VertexFormatPt4::Desc::Write( void* _pVertex, const bfloat3& _Position, const bfloat3& _Normal, const bfloat3& _Tangent, const bfloat3& _BiTangent, const bfloat2& _UV ) const
 {
 	VertexFormatPt4&	V = *((VertexFormatPt4*) _pVertex);
-	V.Pt = float4( _Position, 1.0f );
+	V.Pt = bfloat4( _Position, 1.0f );
 }
 
-void	VertexFormatP3::Desc::Write( void* _pVertex, const float3& _Position, const float3& _Normal, const float3& _Tangent, const float3& _BiTangent, const float2& _UV ) const
+void	VertexFormatP3::Desc::Write( void* _pVertex, const bfloat3& _Position, const bfloat3& _Normal, const bfloat3& _Tangent, const bfloat3& _BiTangent, const bfloat2& _UV ) const
 {
 	VertexFormatP3&	V = *((VertexFormatP3*) _pVertex);
 	V.P = _Position;
 }
 
-void	VertexFormatP3N3::Desc::Write( void* _pVertex, const float3& _Position, const float3& _Normal, const float3& _Tangent, const float3& _BiTangent, const float2& _UV ) const
+void	VertexFormatP3N3::Desc::Write( void* _pVertex, const bfloat3& _Position, const bfloat3& _Normal, const bfloat3& _Tangent, const bfloat3& _BiTangent, const bfloat2& _UV ) const
 {
 	VertexFormatP3N3&	V = *((VertexFormatP3N3*) _pVertex);
 	V.P = _Position;
 	V.N = _Normal;
 }
 
-void	VertexFormatP3T2::Desc::Write( void* _pVertex, const float3& _Position, const float3& _Normal, const float3& _Tangent, const float3& _BiTangent, const float2& _UV ) const
+void	VertexFormatP3T2::Desc::Write( void* _pVertex, const bfloat3& _Position, const bfloat3& _Normal, const bfloat3& _Tangent, const bfloat3& _BiTangent, const bfloat2& _UV ) const
 {
 	VertexFormatP3T2&	V = *((VertexFormatP3T2*) _pVertex);
 	V.P = _Position;
 	V.UV = _UV;
 }
 
-void	VertexFormatT2::Desc::Write( void* _pVertex, const float3& _Position, const float3& _Normal, const float3& _Tangent, const float3& _BiTangent, const float2& _UV ) const
+void	VertexFormatT2::Desc::Write( void* _pVertex, const bfloat3& _Position, const bfloat3& _Normal, const bfloat3& _Tangent, const bfloat3& _BiTangent, const bfloat2& _UV ) const
 {
 	VertexFormatT2&	V = *((VertexFormatT2*) _pVertex);
 	V.UV = _UV;
 }
 
-void	VertexFormatP3N3G3T2::Desc::Write( void* _pVertex, const float3& _Position, const float3& _Normal, const float3& _Tangent, const float3& _BiTangent, const float2& _UV ) const
+void	VertexFormatP3N3G3T2::Desc::Write( void* _pVertex, const bfloat3& _Position, const bfloat3& _Normal, const bfloat3& _Tangent, const bfloat3& _BiTangent, const bfloat2& _UV ) const
 {
 	VertexFormatP3N3G3T2&	V = *((VertexFormatP3N3G3T2*) _pVertex);
 	V.Position = _Position;
@@ -131,7 +132,7 @@ void	VertexFormatP3N3G3T2::Desc::Write( void* _pVertex, const float3& _Position,
 	V.UV = _UV;
 }
 
-void	VertexFormatP3N3G3T2T2::Desc::Write( void* _pVertex, const float3& _Position, const float3& _Normal, const float3& _Tangent, const float3& _BiTangent, const float2& _UV ) const
+void	VertexFormatP3N3G3T2T2::Desc::Write( void* _pVertex, const bfloat3& _Position, const bfloat3& _Normal, const bfloat3& _Tangent, const bfloat3& _BiTangent, const bfloat2& _UV ) const
 {
 	VertexFormatP3N3G3T2T2&	V = *((VertexFormatP3N3G3T2T2*) _pVertex);
 	V.Position = _Position;
@@ -141,7 +142,7 @@ void	VertexFormatP3N3G3T2T2::Desc::Write( void* _pVertex, const float3& _Positio
 	V.UV2 = _UV;
 }
 
-void	VertexFormatP3N3G3T3T3::Desc::Write( void* _pVertex, const float3& _Position, const float3& _Normal, const float3& _Tangent, const float3& _BiTangent, const float2& _UV ) const
+void	VertexFormatP3N3G3T3T3::Desc::Write( void* _pVertex, const bfloat3& _Position, const bfloat3& _Normal, const bfloat3& _Tangent, const bfloat3& _BiTangent, const bfloat2& _UV ) const
 {
 	VertexFormatP3N3G3T3T3&	V = *((VertexFormatP3N3G3T3T3*) _pVertex);
 	V.Position = _Position;
@@ -151,7 +152,7 @@ void	VertexFormatP3N3G3T3T3::Desc::Write( void* _pVertex, const float3& _Positio
 	V.UV2.Set( _UV.x, _UV.y, 0.0f );
 }
 
-void	VertexFormatP3N3G3B3T2::Desc::Write( void* _pVertex, const float3& _Position, const float3& _Normal, const float3& _Tangent, const float3& _BiTangent, const float2& _UV ) const
+void	VertexFormatP3N3G3B3T2::Desc::Write( void* _pVertex, const bfloat3& _Position, const bfloat3& _Normal, const bfloat3& _Tangent, const bfloat3& _BiTangent, const bfloat2& _UV ) const
 {
 	VertexFormatP3N3G3B3T2&	V = *((VertexFormatP3N3G3B3T2*) _pVertex);
 	V.Position = _Position;
@@ -161,7 +162,7 @@ void	VertexFormatP3N3G3B3T2::Desc::Write( void* _pVertex, const float3& _Positio
 	V.UV = _UV;
 }
 
-void	VertexFormatU32::Desc::Write( void* _pVertex, const float3& _Position, const float3& _Normal, const float3& _Tangent, const float3& _BiTangent, const float2& _UV ) const
+void	VertexFormatU32::Desc::Write( void* _pVertex, const bfloat3& _Position, const bfloat3& _Normal, const bfloat3& _Tangent, const bfloat3& _BiTangent, const bfloat2& _UV ) const
 {
 	VertexFormatU32&	V = *((VertexFormatU32*) _pVertex);
 	V.Value = U32( _Position.x );
@@ -208,7 +209,7 @@ void	CompositeVertexFormatDescriptor::AggregateVertexFormat( const IVertexFormat
 	m_ppAggregatedVertexFormats[m_AggregatedVertexFormatsCount++] = &_VertexFormat;
 }
 
-void	CompositeVertexFormatDescriptor::Write( void* _pVertex, const float3& _Position, const float3& _Normal, const float3& _Tangent, const float3& _BiTangent, const float2& _UV ) const
+void	CompositeVertexFormatDescriptor::Write( void* _pVertex, const bfloat3& _Position, const bfloat3& _Normal, const bfloat3& _Tangent, const bfloat3& _BiTangent, const bfloat2& _UV ) const
 {
 	int	Offset = 0;
 	for ( int VertexFormatIndex=0; VertexFormatIndex < m_AggregatedVertexFormatsCount; VertexFormatIndex++ )

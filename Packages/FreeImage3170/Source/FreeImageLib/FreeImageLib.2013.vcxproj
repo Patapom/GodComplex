@@ -131,7 +131,7 @@ copy ..\FreeImage.h ..\..\Dist\x32
       <PreprocessorDefinitions>WIN32;_DEBUG;OPJ_STATIC;FREEIMAGE_LIB;_CRT_SECURE_NO_DEPRECATE;LIBRAW_NODLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <OpenMPSupport>true</OpenMPSupport>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
@@ -152,9 +152,9 @@ copy ..\FreeImage.h ..\..\Dist\x32
       <SuppressStartupBanner>true</SuppressStartupBanner>
     </Lib>
     <PostBuildEvent>
-      <Command>mkdir ..\..\Dist\x64
-copy $(TargetPath) ..\..\Dist\x64\$(ProjectName)d.lib
-copy ..\FreeImage.h ..\..\Dist\x64
+      <Command>mkdir ..\..\Dist\x64\$(Configuration)
+copy $(TargetPath) ..\..\Dist\x64\$(Configuration)\$(ProjectName)d.lib
+copy ..\FreeImage.h ..\..\Dist\x64\$(Configuration)
 </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -210,7 +210,7 @@ copy ..\FreeImage.h ..\..\Dist\x32
       <AdditionalIncludeDirectories>..;..\ZLib;..\DeprecationManager;..\OpenEXR;..\OpenEXR\Half;..\OpenEXR\Iex;..\OpenEXR\IlmImf;..\OpenEXR\Imath;..\OpenEXR\IlmThread;..\LibJXR\jxrgluelib;..\LibJXR\image\sys;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;OPJ_STATIC;FREEIMAGE_LIB;_CRT_SECURE_NO_DEPRECATE;LIBRAW_NODLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <OpenMPSupport>true</OpenMPSupport>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
@@ -233,9 +233,9 @@ copy ..\FreeImage.h ..\..\Dist\x32
       <LinkTimeCodeGeneration>true</LinkTimeCodeGeneration>
     </Lib>
     <PostBuildEvent>
-      <Command>mkdir ..\..\Dist\x64
-copy $(TargetPath) ..\..\Dist\x64\$(ProjectName).lib
-copy ..\FreeImage.h ..\..\Dist\x64
+      <Command>mkdir ..\..\Dist\x64\$(Configuration)
+copy $(TargetPath) ..\..\Dist\x64\$(Configuration)\$(ProjectName).lib
+copy ..\FreeImage.h ..\..\Dist\x64\$(Configuration)
 </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>

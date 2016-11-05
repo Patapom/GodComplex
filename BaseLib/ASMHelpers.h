@@ -3,6 +3,8 @@
 //--------------------------------------------------------------------------//
 #pragma once
 
+namespace BaseLib {
+
 #ifdef _WIN64
 	// Win64 architecture
 	#include <memory.h>	// include regular memset/memcpy/etc.
@@ -188,3 +190,5 @@ static int ASM_strlen( const char *src ) {
 }
 
 #endif
+
+}	// namespace BaseLib

@@ -1,4 +1,5 @@
-#pragma once
+#include "stdafx.h"
+
 #include "DepthStencilFormats.h"
 
 DepthStencilFormatD32F::Desc	DepthStencilFormatD32F::DESCRIPTOR;

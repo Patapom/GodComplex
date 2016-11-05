@@ -1,9 +1,6 @@
 #pragma once
 #include "Renderer.h"
 
-//#define NSIGHT			// Define this if you're debugging the app using Nvidia Nsight
-//#define RENDERDOC		// Define this if you're debugging the app using Crytek's RenderDoc
-
 class Component;
 class Shader;
 class Texture2D;
@@ -50,7 +47,7 @@ private:	// FIELDS
 	int						m_StatesCount;
 
 	// Default blend & stencil refs
-	float4					m_BlendFactors;
+	bfloat4					m_BlendFactors;
 	U32						m_BlendMasks;
 	U8						m_StencilRef;
 
@@ -107,9 +104,9 @@ public:	 // METHODS
 	void	Exit();
 
 	// Helpers
-	void	ClearRenderTarget( const Texture2D& _Target, const float4& _Color );
-	void	ClearRenderTarget( const Texture3D& _Target, const float4& _Color );
-	void	ClearRenderTarget( ID3D11RenderTargetView& _TargetView, const float4& _Color );
+	void	ClearRenderTarget( const Texture2D& _Target, const bfloat4& _Color );
+	void	ClearRenderTarget( const Texture3D& _Target, const bfloat4& _Color );
+	void	ClearRenderTarget( ID3D11RenderTargetView& _TargetView, const bfloat4& _Color );
 	void	ClearDepthStencil( const Texture2D& _DepthStencil, float _Z, U8 _Stencil, bool _bClearDepth=true, bool _bClearStencil=true );
 	void	ClearDepthStencil( ID3D11DepthStencilView& _DepthStencil, float _Z, U8 _Stencil, bool _bClearDepth=true, bool _bClearStencil=true );
 	void	SetRenderTarget( const Texture2D& _Target, const Texture2D* _pDepthStencil=NULL, const D3D11_VIEWPORT* _pViewport=NULL );
@@ -117,7 +114,7 @@ public:	 // METHODS
 	void	SetRenderTarget( int _Width, int _Height, const ID3D11RenderTargetView& _Target, ID3D11DepthStencilView* _pDepthStencil=NULL, const D3D11_VIEWPORT* _pViewport=NULL );
 	void	SetRenderTargets( int _Width, int _Height, int _TargetsCount, ID3D11RenderTargetView* const * _ppTargets, ID3D11DepthStencilView* _pDepthStencil=NULL, const D3D11_VIEWPORT* _pViewport=NULL );
 	void	SetStates( RasterizerState* _pRasterizerState, DepthStencilState* _pDepthStencilState, BlendState* _pBlendState );
-	void	SetStatesReferences( const float4& _BlendMasks, U32 _BlendSampleMask, U8 _StencilRef );
+	void	SetStatesReferences( const bfloat4& _BlendMasks, U32 _BlendSampleMask, U8 _StencilRef );
 	void	SetScissorRect( const D3D11_RECT* _pScissor=NULL );
 
 	// Clears the shader resource registers
