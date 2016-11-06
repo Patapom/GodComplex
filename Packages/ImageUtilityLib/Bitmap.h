@@ -158,6 +158,10 @@ namespace ImageUtilityLib {
 		//	• Always capture LDR images using apertures of f/8 or lower to avoid a possible lense variance between radiance and irradiance (vignetting)
 		//
 		struct HDRParms {
+			// The amount of bits per (R,G,B) component the camera is able to output
+			// Usually, for RAW input images are either 12- or 16-bits depending on model while non-RAW outputs (e.g. JPG or PNG) are simply 8-bits
+			U32		_inputBitsPerComponent;		// default = 12;
+
 			//	The default luminance factor to apply to all the images
 			//	(allows you to scale the base luminance if you know the absolute value)
 			float	_luminanceFactor;			// default = 1.0f
@@ -175,7 +179,8 @@ namespace ImageUtilityLib {
 
 		// Builds a HDR image from a set of LDR images
 		//	_images, the array of LDR bitmaps
-		//	_imageEVs, the array of Exposure Values (EV) used for each image
+		//	_imageEVs, the array of Exposure Values (EV) used for each image (these are basically the log2(ShutterSpeed) used for each image, keeping aperture constant)
+		//				(e.g. taking 3 shots in bracket mode [-2, 0, +2] will yield EV array [-2, 0, +2] with the images being [1/4, 1, 4] times the default shutter speed respectively)
 		void		LDR2HDR( U32 _imagesCount, Bitmap* _images, float* _imageEVs, const HDRParms& _parms );
 
 		// Builds a HDR image from a set of LDR images and a response curve (usually computed using ComputeHDRResponseCurve)
@@ -184,7 +189,7 @@ namespace ImageUtilityLib {
 		//	_imageEVs, the array of Exposure Values (EV) used for each image
 		void		LDR2HDR( U32 _imagesCount, Bitmap* _images, float* _imageEVs, const List< bfloat3 >& _responseCurve, const HDRParms& _parms );
 
-		// Computes the response curve of the sensor that capture the provided LDR images
+		// Computes the response curve of the sensor that captured the provided LDR images
 		//	_images, the array of LDR bitmaps
 		//	_imageEVs, the array of Exposure Values (EV) used for each image
 		//	_responseCurve, the list to fill with values corresponding to the response curve

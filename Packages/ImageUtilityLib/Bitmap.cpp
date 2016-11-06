@@ -78,39 +78,82 @@ void	Bitmap::ToImageFile( ImageFile& _targetFile, ImageFile::PIXEL_FORMAT _targe
 //
 void	Bitmap::LDR2HDR( U32 _imagesCount, Bitmap* _images, float* _imageEVs, const HDRParms& _parms ) {
 
-// Finally, we need not use every available pixel site in this solution
-// procedure. Givenmeasurements ofN pixels in P photographs,
-// we have to solve for N values of lnEi and (Zmax Zmin) samples
-// of g. To ensure a sufficiently overdetermined system, we want
-// N(P 1) > (Zmax Zmin). For the pixel value range (Zmax
-// Zmin) = 255, P = 11 photographs, a choice of N on the order
-// of 50 pixels is more than adequate. Since the size of the system
-// of linear equations arising from Equation 3 is on the order of
-// N  P + Zmax Zmin, computational complexity considerations
-// make it impractical to use every pixel location in this algorithm.
-// Clearly, the pixel locations should be chosen so that they have
-// a reasonably even distribution of pixel values from Zmin to Zmax,
-// and so that they are spatially well distributed in the image. Furthermore,
-// the pixels are best sampled from regions of the image with
-// low intensity variance so that radiance can be assumed to be constant
-// across the area of the pixel, and the effect of optical blur of the
-// imaging system is minimized. So far we have performed this task
-// by hand, though it could easily be automated.
-
 }
 
 void	Bitmap::LDR2HDR( U32 _imagesCount, Bitmap* _images, float* _imageEVs, const List< bfloat3 >& _responseCurve, const HDRParms& _parms ) {
 
 }
 
-// Computes the response curve of the sensor that capture the provided LDR images
-//	_images, the array of LDR bitmaps
-//	_imageEVs, the array of Exposure Values (EV) used for each image
-//	_responseCurve, the list to fill with values corresponding to the response curve
 void	Bitmap::ComputeHDRResponseCurve( U32 _imagesCount, Bitmap* _images, float* _imageEVs, const HDRParms& _parms, List< bfloat3 >& _responseCurve ) {
 
+	//////////////////////////////////////////////////////////////////////////
+	// 1] Find the best possible samples across the provided images
+	// According to Debevec in §2.1:
+	//	<< Finally, we need not use every available pixel site in this solution procedure.
+	//		Given measurements of N pixels in P photographs, we have to solve for N values of ln(Ei) and (Zmax - Zmin) samples of g.
+	//		To ensure a sufficiently overdetermined system, we want N*(P-1) > (Zmax-Zmin).
+	//		For the pixel value range (Zmax - Zmin) = 255, P = 11 photographs, a choice of N on the order of 50 pixels is more than adequate.
+	//		Since the size of the system of linear equations arising from Equation 3 is on the order of N * P + (Zmax - Zmin), computational
+	//		complexity considerations make it impractical to use every pixel location in this algorithm. >>
+	//
+	// Here, Zmin and Zmax are the minimum and maximum pixel values in the images (e.g. for an 8-bits input image Zmin=0 and Zmax=255)
+	//	and g is the log of the inverse of the transfer function the camera applies to the pixels to transform input irradiance into numerical values
+	//
+	int		responseCurveSize = 1 << _parms._inputBitsPerComponent;
+	float	nominalPixelsCount = float(responseCurveSize) / _imagesCount;				// Use about that amount of pixels across images to have a nice over-determined system
+			nominalPixelsCount *= 1.0f + _parms._quality;								// Apply the user's quality settings to use more or less pixels
+	int		pixelsCountPerImage = int ( ceilf( nominalPixelsCount / _imagesCount ) );	// And that is our amount of pixels to use per image
+	int		totalPixelsCount = _imagesCount * pixelsCountPerImage;
+
+	// Now, we need to carefully select the candidate pixels.
+	// Still quoting Debevec in §2.1:
+	//	<< Clearly, the pixel locations should be chosen so that they have a reasonably even distribution of pixel values from Zmin to Zmax,
+	//		and so that they are spatially well distributed in the image.
+	//	   Furthermore, the pixels are best sampled from regions of the image with low intensity variance so that radiance can be assumed to
+	//		be constant across the area of the pixel, and the effect of optical blur of the imaging system is minimized. >>
+	//
+	List< bfloat3 >	pixels( totalPixelsCount );
+	for ( int i=0; i < 3; i++ ) {
+		// Do for R, G and B
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	// 2] Apply SVD 
+	int	equationsCount  = totalPixelsCount		// Pixels
+						+ responseCurveSize		// Used to define the smoothness of the g curve
+						+ 1;					// Constraint that g(Zmid) = 0 (with Zmid = (Zmax+Zmin)/2)
+	int	unknownsCount  = totalPixelsCount		// Pixels solution
+						+ responseCurveSize;	// g curve solution
+
+	int	Zmid = responseCurveSize / 2;
+
+	float*	Aterms = new float[equationsCount*unknownsCount];
+	float**	A = new float*[equationsCount];
+	for ( int rowIndex=0; rowIndex < equationsCount; rowIndex++ ) A[rowIndex] = &Aterms[equationsCount*rowIndex];
+	float*	b = new float[unknownsCount];
+	for ( int i=0; i < 3; i++ ) {	// Because R, G, B
+
+		// 2.1] Build the A matrix
+		memset( A, 0, equationsCount*unknownsCount*sizeof(float) );
+		for ( int pixelIndex=0; pixelIndex < totalPixelsCount; pixelIndex++ ) {
+			int		Z = CLAMP( int( (responseCurveSize-1) * ((float*) &pixels[totalPixelsCount].x)[i] ), 0, responseCurveSize-1 );
+			int		wZ = 1 + (Z < Zmid ? Z : responseCurveSize-Z);	// Z weighted by a hat function
+			A[pixelIndex][Z] = wZ;
+			A[pixelIndex][responseCurveSize+Z] = wZ;
+			b[pixelIndex][Z] = wZ;
+		}
 
 
+		// 2.2] Build the target vector
+		memset( b, 0, equationsCount*sizeof(float) );
+
+		// 2.3] Apply
+
+		// 2.4] Profit
+	}
+	delete[] b;
+	delete[] A;
+	delete[] Aterms;
 }
 
 #pragma region SVD Decomposition
