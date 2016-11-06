@@ -98,6 +98,12 @@ namespace ImageUtilityLib {
 			bfloat2		R, G, B, W;
 
 			Chromaticities() {}
+			Chromaticities( const Chromaticities& _other ) {
+				R = _other.R;
+				G = _other.G;
+				B = _other.B;
+				W = _other.W;
+			}
 			Chromaticities( const bfloat2& r, const bfloat2& g, const bfloat2& b, const bfloat2& w ) {
 				R = r;
 				G = g;
@@ -138,13 +144,11 @@ namespace ImageUtilityLib {
 				return R.x != 0.0f && R.y != 0.0f && G.x != 0.0f && G.y != 0.0f && B.x != 0.0f && B.y != 0.0f && W.x != 0.0f && W.y != 0.0f ? STANDARD_PROFILE::CUSTOM : STANDARD_PROFILE::INVALID;
 			}
 
-		private:
-			bool	Equals( const Chromaticities& other ) const {
-				static const float	EPSILON = 1e-3f;
-				return R.Almost( other.R, EPSILON )
-					&& G.Almost( other.G, EPSILON )
-					&& B.Almost( other.B, EPSILON )
-					&& W.Almost( other.W, EPSILON );
+			bool	Equals( const Chromaticities& other, float _eps=1e-3f ) const {
+				return R.Almost( other.R, _eps )
+					&& G.Almost( other.G, _eps )
+					&& B.Almost( other.B, _eps )
+					&& W.Almost( other.W, _eps );
 			}
 		};
 
@@ -292,6 +296,7 @@ namespace ImageUtilityLib {
 		/// <summary>
 		/// Gets the chromaticities attached to the profile
 		/// </summary>
+		Chromaticities&			GetChromas()								{ return m_chromaticities; }
 		const Chromaticities&	GetChromas() const							{ return m_chromaticities; }
 		void					SetChromas( const Chromaticities& value )	{
 			memcpy_s( &m_chromaticities, sizeof(Chromaticities), &value, sizeof(Chromaticities) );
@@ -320,8 +325,8 @@ namespace ImageUtilityLib {
 		/// <summary>
 		/// Gets or sets the image gamma
 		/// </summary>
-		float					GetGamma() const { return m_gamma; }
-		void					SetGamma( float value ) {
+		float					GetGammaExponent() const { return m_gamma; }
+		void					SetGammaExponent( float value ) {
 			m_gamma = value;
 			BuildTransformFromChroma( true );
 		}

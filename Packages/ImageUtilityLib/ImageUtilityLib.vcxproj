@@ -148,7 +148,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <Lib>
-      <AdditionalDependencies>BaseLib.lib;FreeImageLibd.lib;DirectXTex.lib</AdditionalDependencies>
+      <AdditionalDependencies>BaseLib.lib;FreeImaged.lib;DirectXTex.lib</AdditionalDependencies>
     </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -185,7 +185,7 @@
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
     <Lib>
-      <AdditionalDependencies>BaseLib.lib;FreeImageLib.lib;DirectXTex.lib</AdditionalDependencies>
+      <AdditionalDependencies>BaseLib.lib;FreeImage.lib;DirectXTex.lib</AdditionalDependencies>
     </Lib>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

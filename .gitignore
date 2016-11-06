@@ -523,3 +523,5 @@
 /Packages/FreeImage3170/Wrapper/FreeImagePlus/x64
 /Packages/FreeImage3170/Wrapper/FreeImagePlus/Win32
 /Packages/ImageUtilityManaged/x64
+/Packages/FreeImage3170/Dist/x64/Debug/FreeImageLibd.lib
+/Packages/FreeImage3170/Dist/x64/Release/FreeImageLib.lib

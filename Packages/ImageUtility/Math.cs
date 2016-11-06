@@ -9,8 +9,7 @@ using System.Text;
 namespace ImageUtility
 {
 	[System.Diagnostics.DebuggerDisplay( "x={x} y={y}" )]
-	public struct	float2
-	{
+	public struct	float2 {
 		public float	x, y;
 		public float2( float _x, float _y )		{ x = _x; y = _y; }
 		public static float2	operator+( float2 a, float2 b )		{ return new float2( a.x + b.x, a.y + b.y ); }
@@ -40,8 +39,7 @@ namespace ImageUtility
 		}
 	}
 	[System.Diagnostics.DebuggerDisplay( "x={x} y={y} z={z}" )]
-	public struct	float3
-	{
+	public struct	float3 {
 		public float	x, y, z;
 		public float3( float _x, float _y, float _z )		{ x = _x; y = _y; z = _z; }
 		public static float3	operator+( float3 a, float3 b )		{ return new float3( a.x + b.x, a.y + b.y, a.z + b.z ); }

@@ -139,15 +139,19 @@ namespace ImageUtility {
 
 		// Gets the color profile associated to the image
 		property ImageUtility::ColorProfile^	ColorProfile {
-			ImageUtility::ColorProfile^	get() { return gcnew ImageUtility::ColorProfile( m_nativeObject->GetColorProfile() ); }
+			ImageUtility::ColorProfile^	get() {
+				// Here we can only wrap a valid non null profile!
+				ImageUtilityLib::ColorProfile*	nativeProfile = m_nativeObject->GetColorProfile();
+				return nativeProfile != nullptr ? gcnew ImageUtility::ColorProfile( *m_nativeObject->GetColorProfile() ) : nullptr;
+			}
 		}
 
 		#pragma endregion
 
 	public:
 
-		ImageFile() : m_nativeObject( nullptr ) {
-		}
+// 		ImageFile() : m_nativeObject( nullptr ) {
+// 		}
 		ImageFile( System::IO::FileInfo^ _fileName, FILE_FORMAT _format ) {
 			Load( _fileName, _format );
 		}

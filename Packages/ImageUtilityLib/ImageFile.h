@@ -262,6 +262,7 @@ namespace ImageUtilityLib {
 		const MetaData&		GetMetadata() const		{ return m_metadata; }
 
 		// Gets the color profile associated to the image
+		ColorProfile*		GetColorProfile()		{ return m_metadata.m_colorProfile; }
 		const ColorProfile*	GetColorProfile() const	{ return m_metadata.m_colorProfile; }
 
 		#pragma endregion
