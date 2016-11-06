@@ -39,6 +39,9 @@
 //
 //	• The DDS format is fully supported thanks to the DirectXTex library
 //
+// The ImageFile is a useful container that supports conversion between pixel formats and is the main transition buffer
+//	for the Bitmap class that holds the fully device-independent version of images and is used as a Profile Connection Space
+//
 ////////////////////////////////////////////////////////////////////////////
 //
 #pragma once
@@ -262,8 +265,7 @@ namespace ImageUtilityLib {
 		const MetaData&		GetMetadata() const		{ return m_metadata; }
 
 		// Gets the color profile associated to the image
-		ColorProfile*		GetColorProfile()		{ return m_metadata.m_colorProfile; }
-		const ColorProfile*	GetColorProfile() const	{ return m_metadata.m_colorProfile; }
+		ColorProfile*		GetColorProfile() const	{ return m_metadata.m_colorProfile; }
 
 		#pragma endregion
 

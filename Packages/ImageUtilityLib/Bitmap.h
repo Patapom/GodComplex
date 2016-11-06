@@ -3,9 +3,6 @@
 //	is always stored as 32-bits floating point precision CIE XYZ device-independent format that you can later convert
 //	to any other format.
 //
-//	@TODO: Avoir la possibilité de créer une texture avec un seul channel du bitmap !? (filtrage)
-//	@TODO: Handle "premultiplied alpha"
-//
 ////////////////////////////////////////////////////////////////////////////
 //
 #pragma once
@@ -41,12 +38,13 @@ namespace ImageUtilityLib {
 	private:
 		#pragma region FIELDS
 
-		U32					m_width;
-		U32					m_height;
+		U32				m_width;
+		U32				m_height;
 
-		const ColorProfile*	m_colorProfile;		// The color profile to use with this bitmap (NOTE: Not owned by the class, it's the responsibility of the provider to delete the profile)
+		// This is never NULL! A bitmap must always have a valid profile!
+		ColorProfile*	m_colorProfile;		// The color profile to use with this bitmap (NOTE: Not owned by the class, it's the responsibility of the provider to delete the profile)
 
-		bfloat4*				m_XYZ;				// CIEXYZ Bitmap content + Alpha
+		bfloat4*		m_XYZ;				// CIEXYZ Bitmap content + Alpha
 
 		#pragma endregion
 
@@ -66,14 +64,14 @@ namespace ImageUtilityLib {
 		/// <summary>
 		/// Gets the image content stored as CIEXYZ + Alpha
 		/// </summary>
-		bfloat4*			GetContentXYZ()			{ return m_XYZ; }
+		bfloat4*		GetContentXYZ()			{ return m_XYZ; }
 		const bfloat4*	GetContentXYZ() const	{ return m_XYZ; }
 
 		/// <summary>
 		/// Gets or sets the image's color profile
 		/// </summary>
-		const ColorProfile&	GetProfile() const						{ return *m_colorProfile; }
-		void				SetProfile( const ColorProfile& value )	{ m_colorProfile = &value; }
+		ColorProfile&	GetProfile() const					{ return *m_colorProfile; }
+		void			SetProfile( ColorProfile& value )	{ m_colorProfile = &value; }
 
 		#pragma endregion
 
@@ -94,7 +92,7 @@ namespace ImageUtilityLib {
 
 		// Manual creation
 		//	_profile, an optional color profile (NOTE: you will need a valid profile if you wish to save the bitmap)
-		Bitmap( int _width, int _height, const ColorProfile& _profile ) {
+		Bitmap( int _width, int _height, ColorProfile& _profile ) {
 			m_width = _width;
 			m_height = _height;
 			m_XYZ = new bfloat4[m_width * m_height];
@@ -108,7 +106,7 @@ namespace ImageUtilityLib {
 		}
 
 		// Initializes the bitmap from an image file
-		void			FromImageFile( const ImageFile& _sourceFile, const ColorProfile* _profileOverride=nullptr, bool _unPremultiplyAlpha=false );
+		void			FromImageFile( const ImageFile& _sourceFile, ColorProfile* _profileOverride=nullptr, bool _unPremultiplyAlpha=false );
 
 		// Builds an image file from the bitmap
 		void			ToImageFile( ImageFile& _targetFile, ImageFile::PIXEL_FORMAT _targetFormat, bool _premultiplyAlpha=false ) const;

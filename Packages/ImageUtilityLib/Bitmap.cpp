@@ -5,7 +5,7 @@ using namespace ImageUtilityLib;
 
 // This is the core of the bitmap class
 // This method converts any image file into a float4 CIE XYZ format using the provided profile or the profile associated to the file
-void	Bitmap::FromImageFile( const ImageFile& _sourceFile, const ColorProfile* _profileOverride, bool _unPremultiplyAlpha ) {
+void	Bitmap::FromImageFile( const ImageFile& _sourceFile, ColorProfile* _profileOverride, bool _unPremultiplyAlpha ) {
 	m_colorProfile = _profileOverride != nullptr ? _profileOverride : _sourceFile.GetColorProfile();
  	if ( m_colorProfile == nullptr )
  		throw "The provided file doesn't contain a valid color profile and you did not provide any profile override to initialize the bitmap!";

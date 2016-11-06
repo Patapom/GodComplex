@@ -1,3 +1,49 @@
+//////////////////////////////////////////////////////////////////////////
+// This class wraps over the FreeImage and DirectXTex libraries
+//
+// The following image formats are currently supported:
+//	• Any format supported by the FreeImage v3.17.0 library, namely:
+//		• BMP files [reading, writing]
+//		• Dr. Halo CUT files [reading] *
+//		• DDS files [reading]
+//		• EXR files [reading, writing]
+//		• Raw Fax G3 files [reading]
+//		• GIF files [reading, writing]
+//		• HDR files [reading, writing]
+//		• ICO files [reading, writing]
+//		• IFF files [reading]
+//		• JBIG files [reading, writing] **
+//		• JNG files [reading, writing]
+//		• JPEG/JIF files [reading, writing]
+//		• JPEG-2000 File Format [reading, writing]
+//		• JPEG-2000 codestream [reading, writing]
+//		• JPEG-XR files [reading, writing]
+//		• KOALA files [reading]
+//		• Kodak PhotoCD files [reading]
+//		• MNG files [reading]
+//		• PCX files [reading]
+//		• PBM/PGM/PPM files [reading, writing]
+//		• PFM files [reading, writing]
+//		• PNG files [reading, writing]
+//		• Macintosh PICT files [reading]
+//		• Photoshop PSD files [reading]
+//		• RAW camera files [reading]
+//		• Sun RAS files [reading]
+//		• SGI files [reading]
+//		• TARGA files [reading, writing]
+//		• TIFF files [reading, writing]
+//		• WBMP files [reading, writing]
+//		• WebP files [reading, writing]
+//		• XBM files [reading]
+//		• XPM files [reading, writing]
+//
+//	• The DDS format is fully supported thanks to the DirectXTex library
+//
+// The ImageFile is a useful container that supports conversion between pixel formats and is the main transition buffer
+//	for the Bitmap class that holds the fully device-independent version of images and is used as a Profile Connection Space
+//
+////////////////////////////////////////////////////////////////////////////
+//
 #pragma once
 
 #pragma unmanaged
