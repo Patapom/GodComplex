@@ -270,10 +270,13 @@ namespace ImageUtilityLib {
 	public:
 
 		ImageFile();
+		ImageFile( const ImageFile& _other );
 		ImageFile( const wchar_t* _fileName, FILE_FORMAT _format );
 		ImageFile( const U8* _fileContent, U64 _fileSize, FILE_FORMAT _format );
 		ImageFile( U32 _width, U32 _height, PIXEL_FORMAT _format, const ColorProfile& _colorProfile );
 		~ImageFile();
+
+		ImageFile&			operator=( const ImageFile& _other );
 
 		// Initialize with provided dimensions and pixel format
 		//	_width, _height, the dimensions of the image
@@ -293,7 +296,7 @@ namespace ImageUtilityLib {
 		void				Save( const wchar_t* _fileName ) const;
 		void				Save( const wchar_t* _fileName, FILE_FORMAT _format ) const;
 		void				Save( const wchar_t* _fileName, FILE_FORMAT _format, SAVE_FLAGS _options ) const;
-		void				Save( FILE_FORMAT _format, SAVE_FLAGS _options, void*& _fileContent, U64 _fileSize ) const;	// NOTE: The caller MUST delete the returned buffer!
+		void				Save( FILE_FORMAT _format, SAVE_FLAGS _options, U64 _fileSize, void*& _fileContent ) const;	// NOTE: The caller MUST delete the returned buffer!
 		
 		// Converts the source image to a target format
 		void				ConvertFrom( const ImageFile& _source, PIXEL_FORMAT _targetFormat );
@@ -314,26 +317,26 @@ namespace ImageUtilityLib {
 		};
 
 		// Compresses a single image
-		static void			DDSCompress( const ImageFile& _image, COMPRESSION_TYPE _compressionType, void*& _compressedImage, U32 _compressedImageSize );
-
-		// Cube map handling
-		static void			DDSLoadCubeMapFile( const wchar_t* _fileName, U32& _cubeMapsCount, const ImageFile*& _cubeMapFaces );				// NOTE: The caller MUST delete[] the returned cube map faces!
-		static void			DDSLoadCubeMapMemory( void*& _fileContent, U64 _fileSize, U32& _cubeMapsCount, const ImageFile*& _cubeMapFaces );	// NOTE: The caller MUST delete[] the returned cube map faces!
-		static void			DDSSaveCubeMapFile( U32 _cubeMapsCount, const ImageFile* _cubeMapFaces, bool _compressBC6H, const wchar_t* _fileName );
-		static void			DDSSaveCubeMapMemory( U32 _cubeMapsCount, const ImageFile* _cubeMapFaces, bool _compressBC6H, void*& _fileContent, U64 _fileSize );
-
-		// 3D Texture handling
-		static void			DDSLoad3DTextureFile( const wchar_t* _fileName, U32& _slicesCount, const ImageFile*& _slices );				// NOTE: The caller MUST delete[] the returned cube map faces!
-		static void			DDSLoad3DTextureMemory( void*& _fileContent, U64 _fileSize, U32& _slicesCount, const ImageFile*& _slices );	// NOTE: The caller MUST delete[] the returned cube map faces!
-		static void			DDSSave3DTextureFile( U32 _slicesCount, const ImageFile* _slices, bool _compressBC6H, const wchar_t* _fileName );
-		static void			DDSSave3DTextureMemory( U32 _slicesCount, const ImageFile* _slices, bool _compressBC6H, void*& _fileContent, U64 _fileSize );
+		void				DDSCompress( COMPRESSION_TYPE _compressionType, U32& _compressedImageSize, void*& _compressedImage );	// NOTE: The caller MUST delete[] the returned buffer!
 
 		// Saves a DDS image in memory to disk (usually used after a compression)
-		static void			DDSSaveFromMemory( void*& _DDSImage, U32 _DDSImageSize, const wchar_t* _fileName );
+		static void			DDSSaveFromMemory( U32 _DDSImageSize, const void* _DDSImage, const wchar_t* _fileName );
+
+		// Cube map handling
+		static void			DDSLoadCubeMapFile( const wchar_t* _fileName, U32& _cubeMapsCount, ImageFile*& _cubeMapFaces );				// NOTE: The caller MUST delete[] the returned cube map faces!
+		static void			DDSLoadCubeMapMemory( U64 _fileSize, void* _fileContent, U32& _cubeMapsCount, ImageFile*& _cubeMapFaces );	// NOTE: The caller MUST delete[] the returned cube map faces!
+		static void			DDSSaveCubeMapFile( U32 _cubeMapsCount, const ImageFile** _cubeMapFaces, bool _compressBC6H, const wchar_t* _fileName );
+		static void			DDSSaveCubeMapMemory( U32 _cubeMapsCount, const ImageFile** _cubeMapFaces, bool _compressBC6H, U64 _fileSize, const void* _fileContent );	// NOTE: The caller MUST delete[] the returned buffer!
+
+		// 3D Texture handling
+		static void			DDSLoad3DTextureFile( const wchar_t* _fileName, U32& _slicesCount, ImageFile*& _slices );				// NOTE: The caller MUST delete[] the returned cube map faces!
+		static void			DDSLoad3DTextureMemory( U64 _fileSize, void* _fileContent, U32& _slicesCount, ImageFile*& _slices );	// NOTE: The caller MUST delete[] the returned cube map faces!
+		static void			DDSSave3DTextureFile( U32 _slicesCount, const ImageFile** _slices, bool _compressBC6H, const wchar_t* _fileName );
+		static void			DDSSave3DTextureMemory( U32 _slicesCount, const ImageFile** _slices, bool _compressBC6H, U64 _fileSize, const void* _fileContent );	// NOTE: The caller MUST delete[] the returned buffer!
 
 
 	private:
-		static U32					PixelFormat2BPP( PIXEL_FORMAT _pixelFormat );
+		static U32			PixelFormat2BPP( PIXEL_FORMAT _pixelFormat );
 
 		static FREE_IMAGE_TYPE		PixelFormat2FIT( PIXEL_FORMAT _pixelFormat );
 		static PIXEL_FORMAT			Bitmap2PixelFormat( const FIBITMAP& _bitmap );

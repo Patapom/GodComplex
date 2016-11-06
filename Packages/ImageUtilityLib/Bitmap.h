@@ -10,7 +10,6 @@
 //
 #pragma once
 
-#include "ColorProfile.h"
 #include "ImageFile.h"
 
 namespace ImageUtilityLib {

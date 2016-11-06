@@ -4,6 +4,8 @@
 //
 #pragma once
 
+#include "ColorProfile.h"
+
 namespace ImageUtilityLib {
 
 	class ImageFile;
@@ -25,10 +27,13 @@ namespace ImageUtilityLib {
 
 	public:
 		MetaData();
+		MetaData( const MetaData& _other );
 		~MetaData();
 
 		void	Reset();
 		void	RetrieveFromImage( const ImageFile& _imageFile );
+
+		MetaData&	operator=( const MetaData& _other );
 
 	public:
 

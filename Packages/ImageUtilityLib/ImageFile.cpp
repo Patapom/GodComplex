@@ -13,6 +13,11 @@ ImageFile::ImageFile()
 	, m_fileFormat( FILE_FORMAT::UNKNOWN )
 {}
 
+ImageFile::ImageFile( const ImageFile& _other )
+	: m_bitmap( nullptr ) {
+	*this = _other;
+}
+
 ImageFile::ImageFile( const wchar_t* _fileName, FILE_FORMAT _format )
 	: m_bitmap( nullptr )
 {
@@ -45,6 +50,18 @@ bool	ImageFile::HasAlpha() const {
 		return true;
 	}
 	return false;
+}
+
+ImageFile&	ImageFile::operator=( const ImageFile& _other ) {
+	UseFreeImage();
+	Exit();
+
+	m_bitmap = FreeImage_Clone( _other.m_bitmap );
+	m_pixelFormat = _other.m_pixelFormat;
+	m_fileFormat = _other.m_fileFormat;
+	m_metadata = _other.m_metadata;
+
+	return *this;
 }
 
 void	ImageFile::Init( U32 _width, U32 _height, PIXEL_FORMAT _format, const ColorProfile& _colorProfile ) {
@@ -135,7 +152,7 @@ void	ImageFile::Save( const wchar_t* _fileName, FILE_FORMAT _format, SAVE_FLAGS 
 	if ( !FreeImage_SaveU( FileFormat2FIF( _format ), m_bitmap, _fileName, int(_options) ) )
 		throw "Failed to save the image file!";
 }
-void	ImageFile::Save( FILE_FORMAT _format, SAVE_FLAGS _options, void*& _fileContent, U64 _fileSize ) const {
+void	ImageFile::Save( FILE_FORMAT _format, SAVE_FLAGS _options, U64 _fileSize, void*& _fileContent ) const {
 	if ( _format == FILE_FORMAT::UNKNOWN )
 		throw "Unrecognized image file format!";
 
@@ -343,40 +360,40 @@ void	ImageFile::UnUseFreeImage() {
 //
 
 // Compresses a single image
-void	ImageFile::DDSCompress( const ImageFile& _image, COMPRESSION_TYPE _compressionType, void*& _compressedImage, U32 _compressedImageSize ) {
-
-}
-
-// Cube map handling
-void	ImageFile::DDSLoadCubeMapFile( const wchar_t* _fileName, U32& _cubeMapsCount, const ImageFile*& _cubeMapFaces ) {
-
-}
-void	ImageFile::DDSLoadCubeMapMemory( void*& _fileContent, U64 _fileSize, U32& _cubeMapsCount, const ImageFile*& _cubeMapFaces ) {
-
-}
-void	ImageFile::DDSSaveCubeMapFile( U32 _cubeMapsCount, const ImageFile* _cubeMapFaces, bool _compressBC6H, const wchar_t* _fileName ) {
-
-}
-void	ImageFile::DDSSaveCubeMapMemory( U32 _cubeMapsCount, const ImageFile* _cubeMapFaces, bool _compressBC6H, void*& _fileContent, U64 _fileSize ) {
-
-}
-
-// 3D Texture handling
-void	ImageFile::DDSLoad3DTextureFile( const wchar_t* _fileName, U32& _slicesCount, const ImageFile*& _slices ) {
-
-}
-void	ImageFile::DDSLoad3DTextureMemory( void*& _fileContent, U64 _fileSize, U32& _slicesCount, const ImageFile*& _slices ) {
-
-}
-void	ImageFile::DDSSave3DTextureFile( U32 _slicesCount, const ImageFile* _slices, bool _compressBC6H, const wchar_t* _fileName ) {
-
-}
-void	ImageFile::DDSSave3DTextureMemory( U32 _slicesCount, const ImageFile* _slices, bool _compressBC6H, void*& _fileContent, U64 _fileSize ) {
+void	ImageFile::DDSCompress( COMPRESSION_TYPE _compressionType, U32& _compressedImageSize, void*& _compressedImage ) {
 
 }
 
 // Saves a DDS image in memory to disk (usually used after a compression)
-void	ImageFile::DDSSaveFromMemory( void*& _DDSImage, U32 _DDSImageSize, const wchar_t* _fileName ) {
+void	ImageFile::DDSSaveFromMemory( U32 _DDSImageSize, const void* _DDSImage, const wchar_t* _fileName ) {
+
+}
+
+// Cube map handling
+void	ImageFile::DDSLoadCubeMapFile( const wchar_t* _fileName, U32& _cubeMapsCount, ImageFile*& _cubeMapFaces ) {
+
+}
+void	ImageFile::DDSLoadCubeMapMemory( U64 _fileSize, void* _fileContent, U32& _cubeMapsCount, ImageFile*& _cubeMapFaces ) {
+
+}
+void	ImageFile::DDSSaveCubeMapFile( U32 _cubeMapsCount, const ImageFile** _cubeMapFaces, bool _compressBC6H, const wchar_t* _fileName ) {
+
+}
+void	ImageFile::DDSSaveCubeMapMemory( U32 _cubeMapsCount, const ImageFile** _cubeMapFaces, bool _compressBC6H, U64 _fileSize, const void* _fileContent ) {
+
+}
+
+// 3D Texture handling
+void	ImageFile::DDSLoad3DTextureFile( const wchar_t* _fileName, U32& _slicesCount, ImageFile*& _slices ) {
+
+}
+void	ImageFile::DDSLoad3DTextureMemory( U64 _fileSize, void* _fileContent, U32& _slicesCount, ImageFile*& _slices ) {
+
+}
+void	ImageFile::DDSSave3DTextureFile( U32 _slicesCount, const ImageFile** _slices, bool _compressBC6H, const wchar_t* _fileName ) {
+
+}
+void	ImageFile::DDSSave3DTextureMemory( U32 _slicesCount, const ImageFile** _slices, bool _compressBC6H, U64 _fileSize, const void* _fileContent ) {
 
 }
 

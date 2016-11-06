@@ -4,6 +4,7 @@
 #include "..\ImageUtilityLib\ImageFile.h"
 #pragma managed
 
+#include "NativeByteArray.h"
 #include "ColorProfile.h"
 
 using namespace System;
@@ -92,6 +93,11 @@ namespace ImageUtility {
 	internal:
 		ImageUtilityLib::ImageFile*		m_nativeObject;
 
+		// Special wrapper constructor
+		ImageFile( ImageUtilityLib::ImageFile& _nativeObject ) {
+			m_nativeObject = &_nativeObject;
+		}
+
 	public:
 		#pragma region PROPERTIES
 
@@ -150,16 +156,20 @@ namespace ImageUtility {
 
 	public:
 
-// 		ImageFile() : m_nativeObject( nullptr ) {
-// 		}
+		ImageFile() {
+			m_nativeObject = new ImageUtilityLib::ImageFile();
+		}
 		ImageFile( System::IO::FileInfo^ _fileName, FILE_FORMAT _format ) {
 			Load( _fileName, _format );
 		}
-		ImageFile( cli::array< Byte >^ _fileContent, FILE_FORMAT _format ) {
+		ImageFile( NativeByteArray^ _fileContent, FILE_FORMAT _format ) {
 			Load( _fileContent, _format );
 		}
 		ImageFile( U32 _width, U32 _height, PIXEL_FORMAT _format, ImageUtility::ColorProfile^ _colorProfile ) {
 			Init( _width, _height, _format, _colorProfile );
+		}
+		ImageFile( ImageFile^ _other ) {
+			m_nativeObject = new ImageUtilityLib::ImageFile( *_other->m_nativeObject );
 		}
 
 		// Creates a bitmap from a System::Drawing.Bitmap and a color profile
@@ -182,14 +192,14 @@ namespace ImageUtility {
 		void				Load( System::IO::FileInfo^ _fileName );
 		void				Load( System::IO::FileInfo^ _fileName, FILE_FORMAT _format );
 		void				Load( System::IO::Stream^ _imageStream, FILE_FORMAT _format );
-		void				Load( cli::array< Byte >^ _fileContent, FILE_FORMAT _format );
+		void				Load( NativeByteArray^ _fileContent, FILE_FORMAT _format );
 
 		// Save to a file or memory
 		void				Save( System::IO::FileInfo^ _fileName );
 		void				Save( System::IO::FileInfo^ _fileName, FILE_FORMAT _format );
 		void				Save( System::IO::FileInfo^ _fileName, FILE_FORMAT _format, SAVE_FLAGS _options );
 		void				Save( System::IO::Stream^ _imageStream, FILE_FORMAT _format, SAVE_FLAGS _options );
-		cli::array< Byte >^	Save( FILE_FORMAT _format, SAVE_FLAGS _options );
+		NativeByteArray^	Save( FILE_FORMAT _format, SAVE_FLAGS _options );
 		
 		// Converts the source image to a target format
 		void				ConvertFrom( ImageFile^ _source, PIXEL_FORMAT _targetFormat );
@@ -234,5 +244,35 @@ namespace ImageUtility {
 
 			return result;
 		}
+
+	public:
+		//////////////////////////////////////////////////////////////////////////
+		// DDS-related methods
+		enum class COMPRESSION_TYPE {
+			NONE,
+			BC4,
+			BC5,
+			BC6H,
+			BC7,
+		};
+
+		// Compresses a single image
+		NativeByteArray^					DDSCompress( COMPRESSION_TYPE _compressionType );
+
+		// Saves a DDS image in memory to disk (usually used after a compression)
+		static void							DDSSaveFromMemory( NativeByteArray^ _DDSImage, System::IO::FileInfo^ _fileName );
+		static void							DDSSaveFromMemory( NativeByteArray^ _DDSImage, System::IO::Stream^ _imageStream );
+
+		// Cube map handling
+		static cli::array< ImageFile^ >^	DDSLoadCubeMap( System::IO::FileInfo^ _fileName );
+		static cli::array< ImageFile^ >^	DDSLoadCubeMap( System::IO::Stream^ _imageStream );
+		static void							DDSSaveCubeMap( cli::array< ImageFile^ >^ _cubeMapFaces, bool _compressBC6H, System::IO::FileInfo^ _fileName );
+		static void							DDSSaveCubeMap( cli::array< ImageFile^ >^ _cubeMapFaces, bool _compressBC6H, System::IO::Stream^ _imageStream );
+
+		// 3D Texture handling
+		static cli::array< ImageFile^ >^	DDSLoad3DTexture( System::IO::FileInfo^ _fileName, U32& _slicesCount );
+		static cli::array< ImageFile^ >^	DDSLoad3DTexture( System::IO::Stream^ _imageStream );
+		static void							DDSSave3DTexture( cli::array< ImageFile^ >^ _slices, bool _compressBC6H, System::IO::FileInfo^ _fileName );
+		static void							DDSSave3DTexture( cli::array< ImageFile^ >^ _slices, bool _compressBC6H, System::IO::Stream^ _imageStream );
 	};
 }
