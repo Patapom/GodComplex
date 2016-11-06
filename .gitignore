@@ -525,3 +525,5 @@
 /Packages/ImageUtilityManaged/x64
 /Packages/FreeImage3170/Dist/x64/Debug/FreeImageLibd.lib
 /Packages/FreeImage3170/Dist/x64/Release/FreeImageLib.lib
+/Packages/opencv-2.4.13.exe
+/Packages/OpenCV

@@ -29,6 +29,7 @@ template<class T> inline T	CLAMP( const T& x, const T& min, const T& max )	{ ret
 template<class T> inline T	LERP( const T& a, const T& b, float t )			{ return a * (1.0f - t) + b * t; }
 template<class T> inline T	SATURATE( const T& x )							{ return x < 0.0f ? 0.0f : (x > 1.0f ? 1.0f : x); }
 static U8					FLOAT2BYTE( float f )							{ return U8( CLAMP( 255.0f * f, 0.0f, 255.0f ) ); }
+template<class T> inline T	SQR( const T& a )								{ return a * a;  }
 
 static bool					ALMOST( float a, float b, float _eps=ALMOST_EPSILON )		{ return abs( a - b ) < _eps; }
 static bool					ALMOST( double a, double b, double _eps=ALMOST_EPSILON )	{ return abs( a - b ) < _eps; }

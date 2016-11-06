@@ -148,6 +148,48 @@ namespace ImageUtilityLib {
 			_XYZ = ry * V0 + y * V1;
 		}
 
+
+	public:
+		//////////////////////////////////////////////////////////////////////////
+		// HDR Helpers
+		//
+		// This section follows the algorithm provided by "Recovering HDR Radiance Maps from Photographs", Debevec (1997)
+		// As advised by the author, you should:
+		//	• Always capture LDR images using apertures of f/8 or lower to avoid a possible lense variance between radiance and irradiance (vignetting)
+		//
+		struct HDRParms {
+			//	The default luminance factor to apply to all the images
+			//	(allows you to scale the base luminance if you know the absolute value)
+			float	_luminanceFactor;			// default = 1.0f
+
+			// The curve smoothness constraint used to enforce the smoothness of the response curve
+			// A value of 0 doesn't constrain at all while a value of 1 makes sure the response curve is smooth
+			float	_curveSmoothnessConstraint;	// default = 1.0f
+
+			// The "subjective quality" parameter used for the algorithm that guides how many pixels are going to be used to compute the response curve
+			// The default value is 1 so an average number of pixels is used
+			// Using a quality of 2 will use twice as many pixels, increasing response curve quality and computation time
+			// Using a quality of 0.5 will use half as many pixels, decreasing response curve quality and computation time
+			float	_quality;					// default = 1.0;f
+		};
+
+		// Builds a HDR image from a set of LDR images
+		//	_images, the array of LDR bitmaps
+		//	_imageEVs, the array of Exposure Values (EV) used for each image
+		void		LDR2HDR( U32 _imagesCount, Bitmap* _images, float* _imageEVs, const HDRParms& _parms );
+
+		// Builds a HDR image from a set of LDR images and a response curve (usually computed using ComputeHDRResponseCurve)
+		// You can use this method to build the HDR image from a larger set of LDR images than used to resolve the response curve
+		//	_images, the array of LDR bitmaps
+		//	_imageEVs, the array of Exposure Values (EV) used for each image
+		void		LDR2HDR( U32 _imagesCount, Bitmap* _images, float* _imageEVs, const List< bfloat3 >& _responseCurve, const HDRParms& _parms );
+
+		// Computes the response curve of the sensor that capture the provided LDR images
+		//	_images, the array of LDR bitmaps
+		//	_imageEVs, the array of Exposure Values (EV) used for each image
+		//	_responseCurve, the list to fill with values corresponding to the response curve
+		static void	ComputeHDRResponseCurve( U32 _imagesCount, Bitmap* _images, float* _imageEVs, const HDRParms& _parms, List< bfloat3 >& _responseCurve );
+
 		#pragma endregion
 	};
 }
