@@ -84,6 +84,17 @@ void	Bitmap::LDR2HDR( U32 _imagesCount, ImageFile* _images, float* _imageEVs, co
 
 }
 
+// Computes weight using a hat function:
+//	_Z must be in [0,_responseCurveSize[ range
+float	ComputeWeight( U32 _Z, U32 _responseCurveSize ) {
+	U32	Zmid = _responseCurveSize >> 1;
+	U32	weight = _Z <= Zmid	? _Z						// Z€[0,Zmid] => Z
+							: _responseCurveSize-1 - _Z;	// Z€]Zmid,Zmax] => Zmax - Z
+	return float( 1 + weight );							// Add 1 so the weight is never 0!
+}
+
+void svdcmp( int m, int n, float** a, float w[], float** v );
+
 void	Bitmap::ComputeHDRResponseCurve( U32 _imagesCount, ImageFile* _images, float* _imageEVs, const HDRParms& _parms, List< bfloat3 >& _responseCurve ) {
 
 	//////////////////////////////////////////////////////////////////////////
@@ -99,7 +110,7 @@ void	Bitmap::ComputeHDRResponseCurve( U32 _imagesCount, ImageFile* _images, floa
 	// Here, Zmin and Zmax are the minimum and maximum pixel values in the images (e.g. for an 8-bits input image Zmin=0 and Zmax=255)
 	//	and g is the log of the inverse of the transfer function the camera applies to the pixels to transform input irradiance into numerical values
 	//
-	int		responseCurveSize = 1 << _parms._inputBitsPerComponent;
+	U32		responseCurveSize = 1U << _parms._inputBitsPerComponent;
 	float	nominalPixelsCount = float(responseCurveSize) / _imagesCount;				// Use about that amount of pixels across images to have a nice over-determined system
 			nominalPixelsCount *= 1.0f + _parms._quality;								// Apply the user's quality settings to use more or less pixels
 	int		pixelsCountPerImage = int ( ceilf( nominalPixelsCount / _imagesCount ) );	// And that is our amount of pixels to use per image
@@ -112,48 +123,124 @@ void	Bitmap::ComputeHDRResponseCurve( U32 _imagesCount, ImageFile* _images, floa
 	//	   Furthermore, the pixels are best sampled from regions of the image with low intensity variance so that radiance can be assumed to
 	//		be constant across the area of the pixel, and the effect of optical blur of the imaging system is minimized. >>
 	//
-	List< bfloat3 >	pixels( totalPixelsCount );
+	U32*	pixels = new U32[3 *totalPixelsCount];
 	for ( int i=0; i < 3; i++ ) {
 		// Do for R, G and B
+
+		// 1] Select the pixels within the images that best cover the [Zmin,Zmax] range
+		List< bfloat3* >	selectedPixel( totalPixelsCount );
+// @TODO!
+// @TODO!
+// @TODO!
+// @TODO! This is an important algorithm to find out: select the given amount of pixels that cover the most range
+// @TODO!
+// @TODO!
+// @TODO!
+
+		// 2] Store as integer pixel values within range [Zmin,Zmax] (which is [0,2^bitDepth[ )
+		for ( int pixelIndex=0; pixelIndex < totalPixelsCount; pixelIndex++ ) {
+			// Floating point value of the selected pixel for R, G or B
+			float	pixelValue = ((float*) &selectedPixel[pixelIndex]->x)[pixelIndex];
+
+			// Convert to integer value
+			U32		Z = CLAMP( U32( (responseCurveSize-1) * pixelValue ), 0U, responseCurveSize-1 );
+
+			pixels[totalPixelsCount*i+pixelIndex] = Z;
+		}
 	}
+
 
 	//////////////////////////////////////////////////////////////////////////
 	// 2] Apply SVD 
 	int	equationsCount  = totalPixelsCount		// Pixels
 						+ responseCurveSize		// Used to define the smoothness of the g curve
 						+ 1;					// Constraint that g(Zmid) = 0 (with Zmid = (Zmax+Zmin)/2)
-	int	unknownsCount  = totalPixelsCount		// Pixels solution
-						+ responseCurveSize;	// g curve solution
+	int	unknownsCount	= responseCurveSize		// g(Z) = curve solution
+						+ totalPixelsCount;		// log(E) for each pixel
 
-	int	Zmid = responseCurveSize / 2;
-
-	float*	Aterms = new float[equationsCount*unknownsCount];
+	float*	Aterms = new float[equationsCount*unknownsCount];	// M*N matrix with M rows = #equations and N columns = #unknowns
 	float**	A = new float*[equationsCount];
-	for ( int rowIndex=0; rowIndex < equationsCount; rowIndex++ ) A[rowIndex] = &Aterms[equationsCount*rowIndex];
-	float*	b = new float[unknownsCount];
+	for ( int rowIndex=0; rowIndex < equationsCount; rowIndex++ ) A[rowIndex] = &Aterms[unknownsCount*rowIndex];	// Initialize each row pointer
+
+	float*	Vterms = new float[unknownsCount*unknownsCount];	// N*N matrix
+	float**	V = new float*[unknownsCount];
+	for ( int rowIndex=0; rowIndex < unknownsCount; rowIndex++ ) V[rowIndex] = &Vterms[unknownsCount*rowIndex];		// Initialize each row pointer
+
+	float*	w = new float[unknownsCount];
+
+	float*	b = new float[equationsCount];
+
+	U32*	pixelPtr = pixels;
 	for ( int i=0; i < 3; i++ ) {	// Because R, G, B
 
-		// 2.1] Build the A matrix
+		// ===================================================================
+		// 2.1] Build the "A" matrix and target vector "b"
 		memset( A, 0, equationsCount*unknownsCount*sizeof(float) );
-		for ( int pixelIndex=0; pixelIndex < totalPixelsCount; pixelIndex++ ) {
-			int		Z = CLAMP( int( (responseCurveSize-1) * ((float*) &pixels[totalPixelsCount].x)[i] ), 0, responseCurveSize-1 );
-			int		wZ = 1 + (Z < Zmid ? Z : responseCurveSize-Z);	// Z weighted by a hat function
-			A[pixelIndex][Z] = float(wZ);
-			A[pixelIndex][responseCurveSize+Z] = float(wZ);
-			b[pixelIndex][Z] = wZ;
-		}
-
-
-		// 2.2] Build the target vector
 		memset( b, 0, equationsCount*sizeof(float) );
 
-		// 2.3] Apply
+		// 2.1.1) Fill the first part of the equations containing our data
+		float**	A0 = A;	// A0 starts at A
+		for ( U32 imageIndex=0; imageIndex < _imagesCount; imageIndex++ ) {
+			float	imageEV = _imageEVs[imageIndex];
+			for ( int pixelIndex=0; pixelIndex < pixelsCountPerImage; pixelIndex++ ) {
+				float*	columns = *A0++;
+
+				// Zij = pixel value for selected pixel i in image j
+				U32		Z = *pixelPtr++;
+
+				// Weight based on Z position within the range [Zmin,Zmax]
+				float	Wij = ComputeWeight( Z, responseCurveSize );
+
+				// First weight g(Zi)
+				columns[Z] = Wij;
+
+				// Next, weight ln(Ei)
+				columns[responseCurveSize + pixelIndex] = -Wij;
+
+				// And subtract weighted EV = log2(DeltaT)
+				b[pixelsCountPerImage*imageIndex+pixelIndex] = Wij * imageEV;
+			}
+		}
+
+		// 2.1.2) Fill the second part of the equations containing weighted smoothing coefficients
+		// This part will ensure the g() curve's smoothness
+		float**	A2 = &A[totalPixelsCount];	// A2 starts at the end of A's first part
+
+		float	lambda = _parms._curveSmoothnessConstraint;
+
+		A2[0][0] = lambda * ComputeWeight( 0, responseCurveSize );	// First element can't reach neighbors
+		U32		Z = 1;
+		for ( ; Z < responseCurveSize-1; Z++ ) {
+			float	Weight = ComputeWeight( Z, responseCurveSize );
+			A2[Z][Z-1] = Weight * lambda;
+			A2[Z][Z+0] = -2.0f * Weight * lambda;
+			A2[Z][Z+1] = Weight * lambda;
+		}
+		A2[Z][Z] = lambda * ComputeWeight( Z, responseCurveSize );	// Last element can't reach neighbors either
+
+		// 2.1.3) Fill the last equation used to ensure the Zmid value transforms into g(Zmid) = 0
+		float**	A3 = &A[totalPixelsCount+responseCurveSize];	// A3 starts at the end of A's second part and should actually be the last row of A
+
+		A3[0][responseCurveSize>>1] = 1;	// Make sure g(Zmid) maps to 0
+
+
+		// ===================================================================
+		// 2.2] Apply SVD
+		svdcmp( equationsCount, unknownsCount, A, w, V );
+
+		// 2.3] Solve for x
 
 		// 2.4] Profit
 	}
+
 	delete[] b;
+	delete[] w;
+	delete[] V;
+	delete[] Vterms;
 	delete[] A;
 	delete[] Aterms;
+
+	delete[] pixels;
 }
 
 #pragma region SVD Decomposition
