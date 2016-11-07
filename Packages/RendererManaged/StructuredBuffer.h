@@ -1,9 +1,11 @@
 // RendererManaged.h
 
 #pragma once
+
 #include "Device.h"
 
 using namespace System;
+using namespace SharpMath;
 
 namespace RendererManaged {
 
@@ -46,9 +48,8 @@ namespace RendererManaged {
 			cli::pin_ptr<T>	Bisou = &m[0];
 			m_pStructuredBuffer->Write( Bisou, _ElementsCount );
 		}
-		void	Clear( float4 _Value )
-		{
-			::float4	value( _Value.x, _Value.y, _Value.z, _Value.w );
+		void	Clear( float4 _Value ) {
+			bfloat4	value( _Value.x, _Value.y, _Value.z, _Value.w );
 			m_pStructuredBuffer->Clear( value );
 		}
 		void	SetInput( int _SlotIndex )

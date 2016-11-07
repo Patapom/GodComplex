@@ -440,7 +440,8 @@ namespace ShaderToy
 			// Setup camera
 			m_Camera.CreatePerspectiveCamera( (float) (60.0 * Math.PI / 180.0), (float) panelOutput.Width / panelOutput.Height, 0.01f, 100.0f );
 			m_Manipulator.Attach( panelOutput, m_Camera );
-			m_Manipulator.InitializeCamera( new float3( 0, 0.5f, 2.5f ), new float3( 0, 0.5f, 0 ), float3.UnitY );
+//			m_Manipulator.InitializeCamera( new float3( 0, 0.5f, 2.5f ), new float3( 0, 0.5f, 0 ), float3.UnitY );
+m_Manipulator.InitializeCamera( new float3( 0.91f, 0.11f, 3.3f ), new float3( 0.91f, 0.11f, 3.3f ), float3.UnitY );
 
 			// Start game time
 			m_Ticks2Seconds = 1.0 / System.Diagnostics.Stopwatch.Frequency;
@@ -645,11 +646,11 @@ namespace ShaderToy
 				m_CB_PostProcess.UpdateData();
 
 				m_Prim_Quad.Render( m_ShaderPostProcess );
-
-				m_Tex_TempBuffer.RemoveFromLastAssignedSlots();
-				m_Tex_LinearDepth.RemoveFromLastAssignedSlots();
-				m_Tex_DownsampledDepth.RemoveFromLastAssignedSlots();
 			}
+
+			m_Tex_TempBuffer.RemoveFromLastAssignedSlots();
+			m_Tex_LinearDepth.RemoveFromLastAssignedSlots();
+			m_Tex_DownsampledDepth.RemoveFromLastAssignedSlots();
 
 			// Show!
 			m_Device.Present( false );

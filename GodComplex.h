@@ -1,7 +1,7 @@
 //////////////////////////////////////////////////////////////////////////
 // Main include for the framework
 //
-// NOTE: Many routines were "borrowed" (rather violently stolen) from iQ's 64K framework
+// NOTE: Many routines were "borrowed" from iQ's 64K framework
 //
 #pragma once
 
@@ -18,7 +18,10 @@
 
 #ifdef A64BITS
 #pragma pack(8)			// VERY important, so WNDCLASS gets the correct padding and we don't crash the system
+#pragma error caillou!
 #endif
+
+#include "BaseLib/Types.h"
 
 #define WIN32_LEAN_AND_MEAN
 #define WIN32_EXTRA_LEAN
@@ -29,10 +32,7 @@
 #include <stdio.h>
 #include "resource.h"
 
-#define NUAJ_LIB
-#include "NuajAPI/API/Types.h"
 #include "ErrorCodes.h"
-#include "NuajAPI/API/ASMHelpers.h"
 #ifdef _DEBUG
 #include "Utility/Events.h"
 #endif

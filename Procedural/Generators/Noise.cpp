@@ -90,7 +90,7 @@ Noise::~Noise()
 //
 #define	NOISE_INDICES( Bias, Var, Index )	\
 	float	fX##Index = (Bias+Var) * NOISE_SIZE;	\
- 	int		X##Index##_ = floorf( fX##Index );	\
+ 	int		X##Index##_ = int( floorf( fX##Index ) );	\
  	float	t##Index = fX##Index - X##Index##_;	float	r##Index = t##Index - 1.0f;	\
  			X##Index##_ = X##Index##_ & NOISE_MASK;	\
  	int		X##Index = (X##Index##_ + 1) & NOISE_MASK;
@@ -427,8 +427,8 @@ void	Noise::CellularGetCenter( int _CellX, int _CellY, int _CellZ, float3& _Cent
 
 float	Noise::Cellular( const float2& _UV, CombineDistancesDelegate _Combine, void* _pData, bool _bWrap ) const
 {
-	int	CellX = floorf( _UV.x );
-	int	CellY = floorf( _UV.y );
+	int	CellX = int( floorf( _UV.x ) );
+	int	CellY = int( floorf( _UV.y ) );
 
 	// Read center spot offset for all 9 cells and choose closest distance
 	float	pSqDistances[3] = { FLOAT32_MAX, FLOAT32_MAX, FLOAT32_MAX };
@@ -489,9 +489,9 @@ float	Noise::Cellular( const float2& _UV, CombineDistancesDelegate _Combine, voi
 
 float	Noise::Cellular( const float3& _UVW, CombineDistancesDelegate _Combine, void* _pData, bool _bWrap ) const
 {
-	int	CellX = floorf( _UVW.x );
-	int	CellY = floorf( _UVW.y );
-	int	CellZ = floorf( _UVW.z );
+	int	CellX = int( floorf( _UVW.x ) );
+	int	CellY = int( floorf( _UVW.y ) );
+	int	CellZ = int( floorf( _UVW.z ) );
 
 	float		pSqDistances[3] = { FLOAT32_MAX, FLOAT32_MAX, FLOAT32_MAX };	// Only keep the 3 closest distances
 	int			pCellX[3] = { -1, -1, -1 };
@@ -568,8 +568,8 @@ float	Noise::Cellular( const float3& _UVW, CombineDistancesDelegate _Combine, vo
 // I though about implementing the optimization suggested in Worley's paper to skip inelegible neighbor cubes that are too far away but I remembered I am writing a 64K intro... Less code the better !
 float	Noise::Worley( const float2& _UV, CombineDistancesDelegate _Combine, void* _pData, bool _bWrap ) const
 {
-	int	CellX = floorf( _UV.x );
-	int CellY = floorf( _UV.y );
+	int	CellX = int( floorf( _UV.x ) );
+	int CellY = int( floorf( _UV.y ) );
 
 	float2	Point;
 
@@ -640,9 +640,9 @@ float	Noise::Worley( const float2& _UV, CombineDistancesDelegate _Combine, void*
 
 float	Noise::Worley( const float3& _UVW, CombineDistancesDelegate _Combine, void* _pData, bool _bWrap ) const
 {
-	int	CellX = floorf( _UVW.x );
-	int CellY = floorf( _UVW.y );
-	int CellZ = floorf( _UVW.z );
+	int	CellX = int( floorf( _UVW.x ) );
+	int CellY = int( floorf( _UVW.y ) );
+	int CellZ = int( floorf( _UVW.z ) );
 
 	float3	Point;
 	float		pSqDistances[3] = { FLOAT32_MAX, FLOAT32_MAX, FLOAT32_MAX };	// Only keep the 3 closest distances
@@ -933,7 +933,7 @@ float	Noise::Wavelet( const float2& _UV ) const
 	for ( int i=0; i < 2; i++ )
 	{
 		float	fPositionOffset = pPixelPosition[i] - 0.5f;
-		pPixelCenter[i] = ceilf( fPositionOffset );
+		pPixelCenter[i] = int( ceilf( fPositionOffset ) );
 		float	t = pPixelCenter[i] - fPositionOffset;
 		float	r = 1.0f - t;
 

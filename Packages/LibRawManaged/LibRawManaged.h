@@ -1,6 +1,9 @@
 // LibRawManaged.h
 // Managed version of the libraw library from http://www.libraw.org/download
 //
+// NOTE: If you're missing the static libraries found in ../LibRaw-0.16.0/lib/debug or /release
+//		  you need to rebuild them using the VS2012 solution located in ../LibRaw-0.16.0
+//
 #pragma once
 
 #pragma unmanaged
@@ -54,20 +57,17 @@ namespace LibRawManaged {
 		property int				Maximum			{ int get() { return m_MaximumWhite; } }
 
 	public:
-		RawFile()
-		{
+		RawFile() {
 			m_pLibRaw = new ::LibRaw();
 			m_Image = nullptr;
 			m_ColorProfile = COLOR_PROFILE::sRGB;
 		}
 
-		~RawFile()
-		{
+		~RawFile() {
 			delete m_pLibRaw;
 		}
 
-		void	UnpackRAW( System::IO::Stream^ _Stream )
-		{
+		void	UnpackRAW( System::IO::Stream^ _Stream ) {
 			if ( _Stream == nullptr )
 				throw gcnew System::Exception( "Invalid image stream!" );
 

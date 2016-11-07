@@ -26,7 +26,7 @@ void	FillNormal( int _X, int _Y, const float2& _UV, Pixel& _Pixel, void* _pData 
 	float3	Dx( 1.0f, 0.0f, Params.HeightFactor * (Right.Height - Left.Height) );
 	float3	Dy( 0.0f, -1.0f, Params.HeightFactor * (Bottom.Height - Top.Height) );
 
-	float3	Normal = Dy ^ Dx;
+	float3	Normal = Dy.Cross( Dx );
 	if ( Params.bNormalize )
 		Normal.Normalize();
 
@@ -139,7 +139,7 @@ void	FillDirtyness( int _X, int _Y, const float2& _UV, Pixel& _Pixel, void* _pDa
 	F.x += fOffset;
 	F.y += fOffset;
 	F.z += fOffset;
-	F.w = Params.PullBackForce * (Params.AverageIntensity - (F | LUMINANCE));	// Will yield -1 when F reaches the average intensity so the color is always somewhat brought back to average
+	F.w = Params.PullBackForce * (Params.AverageIntensity - F.Dot( LUMINANCE ));	// Will yield -1 when F reaches the average intensity so the color is always somewhat brought back to average
 
 	_Pixel.RGBA = F;
 }

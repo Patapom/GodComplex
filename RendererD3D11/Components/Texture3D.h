@@ -22,9 +22,9 @@ private:	// FIELDS
 	ID3D11Texture3D*	m_pTexture;
 
 	// Cached resource views
-	mutable DictionaryU32			m_CachedSRVs;
-	mutable DictionaryU32			m_CachedRTVs;
-	mutable DictionaryU32			m_CachedUAVs;
+	mutable BaseLib::DictionaryU32	m_CachedSRVs;
+	mutable BaseLib::DictionaryU32	m_CachedRTVs;
+	mutable BaseLib::DictionaryU32	m_CachedUAVs;
 	mutable int						m_LastAssignedSlots[6];
 	mutable int						m_LastAssignedSlotsUAV;
 	D3D11_MAPPED_SUBRESOURCE		m_LockedResource;
@@ -38,7 +38,7 @@ public:	 // PROPERTIES
 	int	 GetMipLevelsCount() const	{ return m_MipLevelsCount; }
 	const IFormatDescriptor&	GetFormatDescriptor() const	{ return m_Format; }
 
-	float4	GetdUVW() const		{ return float4( 1.0f / m_Width, 1.0f / m_Height, 1.0f / m_Depth, 0.0f ); }
+	bfloat4	GetdUVW() const		{ return bfloat4( 1.0f / m_Width, 1.0f / m_Height, 1.0f / m_Depth, 0.0f ); }
 
 public:	 // METHODS
 

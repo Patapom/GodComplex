@@ -10,8 +10,7 @@ namespace Nuaj.Cirrus.Utility
 	/// This class supports loading and saving POM image files which are usually the direct result of a DirectX Map() call
 	/// It has an homonym class in the GodComplex C++ project and as such should always mirror the C++ class if the format is to ever change...
 	/// </summary>
-	public class TextureFilePOM
-	{
+	public class TextureFilePOM {
 		#region NESTED TYPES
 
 		public enum		TYPE

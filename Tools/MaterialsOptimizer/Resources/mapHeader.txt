@@ -1,0 +1,12 @@
+Version 6
+entity {
+	entityDef world {
+		inherit = "worldspawn";
+		editorVars {
+			placeable = true;
+		}
+		edit = {
+			m_worldEnvironment = "env/generic/exterior_daylight";
+		}
+	}
+}

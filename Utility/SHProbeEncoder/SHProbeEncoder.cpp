@@ -65,7 +65,7 @@ SHProbeEncoder::SHProbeEncoder() {
 	for ( int CubeFaceIndex=0; CubeFaceIndex < 6; CubeFaceIndex++ )
 		for ( int Y=0; Y < CUBE_MAP_SIZE; Y++ )
 			for ( int X=0; X < CUBE_MAP_SIZE; X++, pPixel++ ) {
-				pPixel->Index = pPixel - m_pCubeMapPixels;
+				pPixel->Index = int( pPixel - m_pCubeMapPixels );
 				pPixel->CubeFaceIndex = CubeFaceIndex;
 				pPixel->CubeFaceX = X;
 				pPixel->CubeFaceY = Y;
@@ -799,7 +799,7 @@ bool	SHProbeEncoder::CheckAndAcceptPixel( Sample& _Sample, Pixel& _PreviousPixel
 	bool	Accepted = false;
 
 	// First, let's check the angular discrepancy
-	float	Dot = _PreviousPixel.wsNormal | _P.wsNormal;
+	float	Dot = _PreviousPixel.wsNormal.Dot( _P.wsNormal );
 	if ( Dot > ANGULAR_THRESHOLD ) {
 		// Next, let's check the distance discrepancy
 		float3	P0 = _PreviousPixel.SmoothedDistance * _PreviousPixel.View;
@@ -1284,7 +1284,7 @@ void	SHProbeEncoder::Pixel::Sort( Pixel*& _pList, ISortKeyProvider& _KeyProvider
 		pSource = pSource->pNext;
 	}
 
-	U32	ElementsCount = pTarget - ms_RadixNodes[0];
+	U32	ElementsCount = U32( pTarget - ms_RadixNodes[0] );
 	if ( ElementsCount < 2 ) {
 		return;	// Nothing to sort here...
 	}

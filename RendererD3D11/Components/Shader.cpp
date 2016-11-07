@@ -1,12 +1,10 @@
+#include "stdafx.h"
 
 #include "Shader.h"
 #include "ConstantBuffer.h"
 
-#include <stdio.h>
-#include <io.h>
-
-#include "D3Dcompiler.h"
-#include "D3D11Shader.h"
+#include <D3Dcompiler.h>
+#include <D3D11Shader.h>
 
 bool	Shader::ms_LoadFromBinary = false;
 
@@ -74,7 +72,7 @@ Shader::Shader( Device& _Device, const char* _pShaderFileName, const IVertexForm
 		while ( pMacro->Name != NULL )
 			pMacro++;
 
-		int	MacrosCount = 1 + pMacro - _pMacros;
+		int	MacrosCount = int( 1 + pMacro - _pMacros );
 		m_pMacros = new D3D_SHADER_MACRO[MacrosCount];
 		memcpy( m_pMacros, _pMacros, MacrosCount*sizeof(D3D_SHADER_MACRO) );
 	}
@@ -170,11 +168,7 @@ void	Shader::CompileShaders( const char* _pShaderCode, ID3DBlob* _pVS, ID3DBlob*
 	//////////////////////////////////////////////////////////////////////////
 	// Compile the compulsory vertex shader
 	ASSERT( _pVS != NULL || m_pEntryPointVS != NULL, "Invalid VertexShader entry point !" );
-	#ifdef DIRECTX10
-		pShaderVS = _pVS == NULL ? CompileShader( m_pShaderFileName, _pShaderCode, m_pMacros, m_pEntryPointVS, "vs_4_0", this ) : _pVS;
-	#else
-		pShaderVS = _pVS == NULL ? CompileShader( m_pShaderFileName, _pShaderCode, m_pMacros, m_pEntryPointVS, "vs_5_0", this ) : _pVS;
-	#endif
+	pShaderVS = _pVS == NULL ? CompileShader( m_pShaderFileName, _pShaderCode, m_pMacros, m_pEntryPointVS, "vs_5_0", this ) : _pVS;
 	if ( pShaderVS != NULL ) {
 		Check( m_Device.DXDevice().CreateVertexShader( pShaderVS->GetBufferPointer(), pShaderVS->GetBufferSize(), NULL, &pVS ) );
 		ASSERT( pVS != NULL, "Failed to create vertex shader!" );
@@ -192,9 +186,6 @@ void	Shader::CompileShaders( const char* _pShaderCode, ID3DBlob* _pVS, ID3DBlob*
 	//////////////////////////////////////////////////////////////////////////
 	// Compile the optional hull shader
 	if ( !m_bHasErrors && (m_pEntryPointHS != NULL || _pHS != NULL) ) {
-		#ifdef DIRECTX10
-			ASSERT( false, "You can't use Hull Shaders if you define DIRECTX10!" );
-		#endif
 		pShaderHS = _pHS == NULL ? CompileShader( m_pShaderFileName, _pShaderCode, m_pMacros, m_pEntryPointHS, "hs_5_0", this ) : _pHS;
 		if ( pShaderHS != NULL ) {
 			Check( m_Device.DXDevice().CreateHullShader( pShaderHS->GetBufferPointer(), pShaderHS->GetBufferSize(), NULL, &pHS ) );
@@ -208,9 +199,6 @@ void	Shader::CompileShaders( const char* _pShaderCode, ID3DBlob* _pVS, ID3DBlob*
 	//////////////////////////////////////////////////////////////////////////
 	// Compile the optional domain shader
 	if ( !m_bHasErrors && (m_pEntryPointDS != NULL || _pDS != NULL) ) {
-		#ifdef DIRECTX10
-			ASSERT( false, "You can't use Domain Shaders if you define DIRECTX10!" );
-		#endif
 		pShaderDS = _pDS == NULL ? CompileShader( m_pShaderFileName, _pShaderCode, m_pMacros, m_pEntryPointDS, "ds_5_0", this ) : _pDS;
 		if ( pShaderDS != NULL ) {
 			Check( m_Device.DXDevice().CreateDomainShader( pShaderDS->GetBufferPointer(), pShaderDS->GetBufferSize(), NULL, &pDS ) );
@@ -224,11 +212,7 @@ void	Shader::CompileShaders( const char* _pShaderCode, ID3DBlob* _pVS, ID3DBlob*
 	//////////////////////////////////////////////////////////////////////////
 	// Compile the optional geometry shader
 	if ( !m_bHasErrors && (m_pEntryPointGS != NULL || _pGS != NULL) ) {
-		#ifdef DIRECTX10
-			pShaderGS = _pGS == NULL ? CompileShader( m_pShaderFileName, _pShaderCode, m_pMacros, m_pEntryPointGS, "gs_4_0", this ) : _pGS;
-		#else
-			pShaderGS = _pGS == NULL ? CompileShader( m_pShaderFileName, _pShaderCode, m_pMacros, m_pEntryPointGS, "gs_5_0", this ) : _pGS;
-		#endif
+		pShaderGS = _pGS == NULL ? CompileShader( m_pShaderFileName, _pShaderCode, m_pMacros, m_pEntryPointGS, "gs_5_0", this ) : _pGS;
 		if ( pShaderGS != NULL ) {
 			Check( m_Device.DXDevice().CreateGeometryShader( pShaderGS->GetBufferPointer(), pShaderGS->GetBufferSize(), NULL, &pGS ) );
 			ASSERT( pGS != NULL, "Failed to create geometry shader!" );
@@ -255,11 +239,7 @@ void	Shader::CompileShaders( const char* _pShaderCode, ID3DBlob* _pVS, ID3DBlob*
 	// CSO TEST
 #endif
 
-		#ifdef DIRECTX10
-			pShaderPS = _pPS == NULL ? CompileShader( m_pShaderFileName, _pShaderCode, m_pMacros, m_pEntryPointPS, "ps_4_0", this ) : _pPS;
-		#else
-			pShaderPS = _pPS == NULL ? CompileShader( m_pShaderFileName, _pShaderCode, m_pMacros, m_pEntryPointPS, "ps_5_0", this ) : _pPS;
-		#endif
+		pShaderPS = _pPS == NULL ? CompileShader( m_pShaderFileName, _pShaderCode, m_pMacros, m_pEntryPointPS, "ps_5_0", this ) : _pPS;
 		if ( pShaderPS != NULL ) {
 			Check( m_Device.DXDevice().CreatePixelShader( pShaderPS->GetBufferPointer(), pShaderPS->GetBufferSize(), NULL, &pPS ) );
 			ASSERT( pPS != NULL, "Failed to create pixel shader!" );
@@ -288,7 +268,7 @@ void	Shader::CompileShaders( const char* _pShaderCode, ID3DBlob* _pVS, ID3DBlob*
 		m_pPS = pPS;
 
 		// Enumerate constants
-		#ifndef GODCOMPLEX
+		#ifdef ENABLE_SHADER_REFLECTION
 			if ( pShaderVS != NULL )
 				m_VSConstants.Enumerate( *pShaderVS );
 			if ( pShaderHS != NULL )
@@ -362,11 +342,14 @@ ID3DBlob*   Shader::CompileShader( const char* _pShaderFileName, const char* _pS
 	#endif
 
 	U32 Flags1 = 0, Flags2 = 0;
-	#if (defined(_DEBUG) && !defined(SAVE_SHADER_BLOB_TO)) || defined(NSIGHT)
+	#if (defined(_DEBUG) && !defined(SAVE_SHADER_BLOB_TO)) || defined(RENDERDOC) || defined(NSIGHT)
 		Flags1 |= D3DCOMPILE_DEBUG;
 		Flags1 |= D3DCOMPILE_SKIP_OPTIMIZATION;
 //		Flags1 |= D3DCOMPILE_WARNINGS_ARE_ERRORS;
 		Flags1 |= D3DCOMPILE_PREFER_FLOW_CONTROL;
+
+//Flags1 |= _bComputeShader ? D3DCOMPILE_OPTIMIZATION_LEVEL1 : D3DCOMPILE_OPTIMIZATION_LEVEL3;
+
 	#else
 		if ( _bComputeShader )
 			Flags1 |= D3DCOMPILE_OPTIMIZATION_LEVEL1;	// Seems to "optimize" (i.e. strip) the important condition line that checks for threadID before writing to concurrent targets => This leads to "race condition" errors
@@ -400,7 +383,7 @@ ID3DBlob*   Shader::CompileShader( const char* _pShaderFileName, const char* _pS
 	#endif
 
 	// Save the binary blob to disk
-	#if defined(SAVE_SHADER_BLOB_TO) && !defined(NSIGHT)
+	#if defined(SAVE_SHADER_BLOB_TO) && !defined(RENDERDOC) && !defined(NSIGHT)
 		if ( pCode != NULL ) {
 			SaveBinaryBlob( _pShaderFileName, _pMacros, _pEntryPoint, *pCode );
 		}
@@ -558,7 +541,7 @@ const char*	Shader::CopyString( const char* _pShaderFileName ) const
 	if ( _pShaderFileName == NULL )
 		return NULL;
 
-	int		Length = strlen(_pShaderFileName)+1;
+	int		Length = int( strlen(_pShaderFileName)+1 );
 	char*	pResult = new char[Length];
 	memcpy( pResult, _pShaderFileName, Length );
 
@@ -568,10 +551,9 @@ const char*	Shader::CopyString( const char* _pShaderFileName ) const
 
 // When compiling normally (i.e. not for the GodComplex 64K intro), allow strings to access shader variables
 //
-#ifndef GODCOMPLEX
+#ifdef ENABLE_SHADER_REFLECTION
 
-bool	Shader::SetConstantBuffer( const char* _pBufferName, ConstantBuffer& _Buffer )
-{
+bool	Shader::SetConstantBuffer( const char* _pBufferName, ConstantBuffer& _Buffer ) {
 	if ( !Lock() )
 		return	true;	// Someone else is locking it !
 
@@ -618,8 +600,7 @@ bool	Shader::SetConstantBuffer( const char* _pBufferName, ConstantBuffer& _Buffe
 	return	bUsed;
 }
 
-bool	Shader::SetTexture( const char* _pBufferName, ID3D11ShaderResourceView* _pData )
-{
+bool	Shader::SetTexture( const char* _pBufferName, ID3D11ShaderResourceView* _pData ) {
 	if ( !Lock() )
 		return	true;	// Someone else is locking it !
 
@@ -664,8 +645,7 @@ bool	Shader::SetTexture( const char* _pBufferName, ID3D11ShaderResourceView* _pD
 	return	bUsed;
 }
 
-static void	DeleteBindingDescriptors( int _EntryIndex, Shader::ShaderConstants::BindingDesc*& _pValue, void* _pUserData )
-{
+static void	DeleteBindingDescriptors( int _EntryIndex, Shader::ShaderConstants::BindingDesc*& _pValue, void* _pUserData ) {
 	delete _pValue;
 }
 Shader::ShaderConstants::~ShaderConstants()
@@ -673,10 +653,11 @@ Shader::ShaderConstants::~ShaderConstants()
 	m_ConstantBufferName2Descriptor.ForEach( DeleteBindingDescriptors, NULL );
 	m_TextureName2Descriptor.ForEach( DeleteBindingDescriptors, NULL );
 }
-void	Shader::ShaderConstants::Enumerate( ID3DBlob& _ShaderBlob )
-{
+
+void	Shader::ShaderConstants::Enumerate( ID3DBlob& _ShaderBlob ) {
 	ID3D11ShaderReflection*	pReflector = NULL; 
-	D3DReflect( _ShaderBlob.GetBufferPointer(), _ShaderBlob.GetBufferSize(), IID_ID3D11ShaderReflection, (void**) &pReflector );
+throw "Reflection doesn't work because of a link error with IID_ID3D11ShaderReflection!";
+//	D3DReflect( _ShaderBlob.GetBufferPointer(), _ShaderBlob.GetBufferSize(), IID_ID3D11ShaderReflection, (void**) &pReflector );
 
 	D3D11_SHADER_DESC	ShaderDesc;
 	pReflector->GetDesc( &ShaderDesc );
@@ -712,19 +693,16 @@ void	Shader::ShaderConstants::Enumerate( ID3DBlob& _ShaderBlob )
 	pReflector->Release();
 }
 
-void	Shader::ShaderConstants::BindingDesc::SetName( const char* _pName )
-{
-	int		NameLength = strlen(_pName)+1;
+void	Shader::ShaderConstants::BindingDesc::SetName( const char* _pName ) {
+	int		NameLength = int( strlen(_pName)+1 );
 	pName = new char[NameLength];
 	strcpy_s( pName, NameLength+1, _pName );
 }
-Shader::ShaderConstants::BindingDesc::~BindingDesc()
-{
+Shader::ShaderConstants::BindingDesc::~BindingDesc() {
 //	delete[] pName;	// This makes a heap corruption, I don't know why and I don't give a fuck about these C++ problems... (certainly some shit about allocating memory from a DLL and releasing it from another one or something like this) (which I don't give a shit about either BTW)
 }
 
-int		Shader::ShaderConstants::GetConstantBufferIndex( const char* _pBufferName ) const
-{
+int		Shader::ShaderConstants::GetConstantBufferIndex( const char* _pBufferName ) const {
 	BindingDesc**	ppValue = m_ConstantBufferName2Descriptor.Get( _pBufferName );
 
 #ifdef __DEBUG_UPLOAD_ONLY_ONCE
@@ -740,8 +718,7 @@ int		Shader::ShaderConstants::GetConstantBufferIndex( const char* _pBufferName )
 	return ppValue != NULL ? (*ppValue)->Slot : -1;
 }
 
-int		Shader::ShaderConstants::GetShaderResourceViewIndex( const char* _pTextureName ) const
-{
+int		Shader::ShaderConstants::GetShaderResourceViewIndex( const char* _pTextureName ) const {
 	BindingDesc**	ppValue = m_TextureName2Descriptor.Get( _pTextureName );
 
 #ifdef __DEBUG_UPLOAD_ONLY_ONCE
@@ -757,12 +734,12 @@ int		Shader::ShaderConstants::GetShaderResourceViewIndex( const char* _pTextureN
 	return ppValue != NULL ? (*ppValue)->Slot : -1;
 }
 
-const char*	Shader::GetShaderPath( const char* _pShaderFileName ) const
-{
+#endif	// defined(ENABLE_SHADER_REFLECTION)
+
+const char*	Shader::GetShaderPath( const char* _pShaderFileName ) const {
 	char*	pResult = NULL;
-	if ( _pShaderFileName != NULL )
-	{
-		int	FileNameLength = strlen(_pShaderFileName)+1;
+	if ( _pShaderFileName != NULL ) 	{
+		int	FileNameLength = int( strlen(_pShaderFileName)+1 );
 		pResult = new char[FileNameLength];
 		strcpy_s( pResult, FileNameLength, _pShaderFileName );
 
@@ -773,8 +750,7 @@ const char*	Shader::GetShaderPath( const char* _pShaderFileName ) const
 			pLastSlash[1] = '\0';
 	}
 
-	if ( pResult == NULL )
-	{	// Empty string...
+	if ( pResult == NULL ) 	{	// Empty string...
 		pResult = new char[1];
 		pResult = '\0';
 		return pResult;
@@ -783,8 +759,6 @@ const char*	Shader::GetShaderPath( const char* _pShaderFileName ) const
 	return pResult;
 }
 
-#endif	// #ifndef GODCOMPLEX
-
 
 //////////////////////////////////////////////////////////////////////////
 // Shader rebuild on modifications mechanism...
@@ -792,8 +766,9 @@ const char*	Shader::GetShaderPath( const char* _pShaderFileName ) const
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <timeapi.h>
 
-DictionaryString<Shader*>	Shader::ms_WatchedShaders;
+BaseLib::DictionaryString<Shader*>	Shader::ms_WatchedShaders;
 
 static void	WatchShader( int _EntryIndex, Shader*& _Value, void* _pUserData )	{ _Value->WatchShaderModifications(); }
 
@@ -964,10 +939,10 @@ void	Shader::SaveBinaryBlob( const char* _pShaderFileName, D3D_SHADER_MACRO* _pM
 	if ( pFileName == NULL )
 		pFileName = strrchr( _pShaderFileName, '\\' );
 	ASSERT( pFileName != NULL, "Can't retrieve last '/' !" );
-	int		FileNameIndex = 1+pFileName - _pShaderFileName;
+	int		FileNameIndex = int( 1+pFileName - _pShaderFileName );
 	const char*	pExtension = strrchr( _pShaderFileName, '.' );
 	ASSERT( pExtension != NULL, "Can't retrieve extension!" );
-	int		ExtensionIndex = pExtension - _pShaderFileName;
+	int		ExtensionIndex = int( pExtension - _pShaderFileName );
 	char	pFileNameWithoutExtension[1024];
 	memcpy( pFileNameWithoutExtension, pFileName+1, ExtensionIndex-FileNameIndex );
 	pFileNameWithoutExtension[ExtensionIndex-FileNameIndex] = '\0';	// End the file name here
@@ -981,14 +956,14 @@ void	Shader::SaveBinaryBlob( const char* _pShaderFileName, D3D_SHADER_MACRO* _pM
 	ASSERT( pFile != NULL, "Can't create binary shader file!" );
 
 	// Write the entry point's length
-	int	Length = strlen( _pEntryPoint )+1;
+	int	Length = int( strlen( _pEntryPoint )+1 );
 	fwrite( &Length, sizeof(int), 1, pFile );
 
 	// Write the entry point name
 	fwrite( _pEntryPoint, 1, Length, pFile );
 
 	// Write the blob's length
-	Length = _Blob.GetBufferSize();
+	Length = int( _Blob.GetBufferSize() );
 //	ASSERT( Length < 65536, "Shader length doesn't fit on 16 bits!" );
 	fwrite( &Length, sizeof(int), 1, pFile );
 
@@ -1014,10 +989,10 @@ ID3DBlob*	Shader::LoadBinaryBlob( const char* _pShaderFileName, D3D_SHADER_MACRO
 	if ( pFileName == NULL )
 		pFileName = strrchr( _pShaderFileName, '\\' );
 	ASSERT( pFileName != NULL, "Can't retrieve last /!" );
-	int		FileNameIndex = 1+pFileName - _pShaderFileName;
+	int		FileNameIndex = int( 1+pFileName - _pShaderFileName );
 	const char*	pExtension = strrchr( _pShaderFileName, '.' );
 	ASSERT( pExtension != NULL, "Can't retrieve extension!" );
-	int		ExtensionIndex = pExtension - _pShaderFileName;
+	int		ExtensionIndex = int( pExtension - _pShaderFileName );
 	char	pFileNameWithoutExtension[1024];
 	memcpy( pFileNameWithoutExtension, pFileName+1, ExtensionIndex-FileNameIndex );
 	pFileNameWithoutExtension[ExtensionIndex-FileNameIndex] = '\0';	// End the file name here
@@ -1066,7 +1041,7 @@ ID3DBlob*	Shader::LoadBinaryBlobFromAggregate( const U8* _pAggregate, const char
 	for ( U16 BlobIndex=0; BlobIndex < BlobsCount; BlobIndex++ )
 	{
 		int	Cmp = strcmp( (char*) _pAggregate, _pEntryPoint );
-		int	BlobEntryPointLength = strlen( (char*) _pAggregate );
+		int	BlobEntryPointLength = int( strlen( (char*) _pAggregate ) );
 		_pAggregate += BlobEntryPointLength+1;	// Skip the entry point's name
 
 		if ( !Cmp )

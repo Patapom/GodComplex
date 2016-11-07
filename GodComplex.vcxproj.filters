@@ -16,15 +16,6 @@
     <Filter Include="RendererD3D11\Structures">
       <UniqueIdentifier>{2b646260-af2c-4547-98f4-fceabeac274c}</UniqueIdentifier>
     </Filter>
-    <Filter Include="NuajAPI">
-      <UniqueIdentifier>{1398a42e-41d9-4cdf-bb56-375f3de1a21b}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="NuajAPI\API">
-      <UniqueIdentifier>{cfa1cedf-076e-4875-9d76-111d9a2344a7}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="NuajAPI\Math">
-      <UniqueIdentifier>{e11cc4c8-1f24-4c34-ba37-7fb4c6003159}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Sound">
       <UniqueIdentifier>{9d107aef-9380-4f67-86aa-1bbcc0e5831d}</UniqueIdentifier>
     </Filter>
@@ -143,12 +134,6 @@
     <ClInclude Include="RendererD3D11\Structures\VertexFormats.h">
       <Filter>RendererD3D11\Structures</Filter>
     </ClInclude>
-    <ClInclude Include="NuajAPI\API\Types.h">
-      <Filter>NuajAPI\API</Filter>
-    </ClInclude>
-    <ClInclude Include="NuajAPI\Math\Math.h">
-      <Filter>NuajAPI\Math</Filter>
-    </ClInclude>
     <ClInclude Include="Utility\Memory.h">
       <Filter>Utility</Filter>
     </ClInclude>
@@ -175,12 +160,6 @@
     </ClInclude>
     <ClInclude Include="RendererD3D11\Components\States.h">
       <Filter>RendererD3D11\Components</Filter>
-    </ClInclude>
-    <ClInclude Include="NuajAPI\API\Hashtable.h">
-      <Filter>NuajAPI\API</Filter>
-    </ClInclude>
-    <ClInclude Include="NuajAPI\API\ASMHelpers.h">
-      <Filter>NuajAPI\API</Filter>
     </ClInclude>
     <ClInclude Include="Intro\ConstantBuffers.h">
       <Filter>Intro</Filter>
@@ -279,9 +258,6 @@
     <ClInclude Include="Utility\Octree.h">
       <Filter>Utility</Filter>
     </ClInclude>
-    <ClInclude Include="NuajAPI\API\List.h">
-      <Filter>NuajAPI\API</Filter>
-    </ClInclude>
     <ClInclude Include="Utility\SHProbeEncoder\SHProbeEncoder.h">
       <Filter>Utility\SHProbeEncoder</Filter>
     </ClInclude>
@@ -327,9 +303,6 @@
     <ClCompile Include="RendererD3D11\Structures\VertexFormats.cpp">
       <Filter>RendererD3D11\Structures</Filter>
     </ClCompile>
-    <ClCompile Include="NuajAPI\Math\Math.cpp">
-      <Filter>NuajAPI\Math</Filter>
-    </ClCompile>
     <ClCompile Include="Utility\Memory.cpp">
       <Filter>Utility</Filter>
     </ClCompile>
@@ -347,9 +320,6 @@
     </ClCompile>
     <ClCompile Include="RendererD3D11\Components\States.cpp">
       <Filter>RendererD3D11\Components</Filter>
-    </ClCompile>
-    <ClCompile Include="NuajAPI\API\Hashtable.cpp">
-      <Filter>NuajAPI\API</Filter>
     </ClCompile>
     <ClCompile Include="Procedural\DrawUtils\Draw.cpp">
       <Filter>Procedural\2D\DrawUtils</Filter>
@@ -489,9 +459,6 @@
     </None>
     <None Include="LogExeSizes.txt" />
     <None Include="Tools\GodComplex.kkm" />
-    <None Include="NuajAPI\API\Hashtable.inl">
-      <Filter>NuajAPI\API</Filter>
-    </None>
     <None Include="Resources\Shaders\TranslucencyBuildZBuffer.hlsl">
       <Filter>Resources\Shaders\DEBUG\EffectTranslucency</Filter>
     </None>
@@ -660,9 +627,6 @@
     </None>
     <None Include="Resources\Shaders\GIRenderDebugProbes.hlsl">
       <Filter>Resources\Shaders\DEBUG\EffectGlobalIllum</Filter>
-    </None>
-    <None Include="NuajAPI\API\List.inl">
-      <Filter>NuajAPI\API</Filter>
     </None>
     <None Include="Utility\Octree.inl">
       <Filter>Utility</Filter>

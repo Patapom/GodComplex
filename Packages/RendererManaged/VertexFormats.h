@@ -1,10 +1,12 @@
 // RendererManaged.h
 
 #pragma once
+
 #include "Device.h"
 #include "ByteBuffer.h"
 
 using namespace System;
+using namespace SharpMath;
 
 namespace RendererManaged {
 
@@ -18,8 +20,7 @@ namespace RendererManaged {
 		T2,			// UV
 	};
 
-	static ::IVertexFormatDescriptor*	GetDescriptor( VERTEX_FORMAT _Format )
-	{
+	static ::IVertexFormatDescriptor*	GetDescriptor( VERTEX_FORMAT _Format ) {
 		IVertexFormatDescriptor*	pDescriptor = NULL;
 		switch ( _Format )
 		{
@@ -38,8 +39,7 @@ namespace RendererManaged {
 	//////////////////////////////////////////////////////////////////////////
 	// Pt4
 	[System::Runtime::InteropServices::StructLayoutAttribute( System::Runtime::InteropServices::LayoutKind::Sequential )]
-	public value struct VertexPt4
-	{
+	public value struct VertexPt4 {
 		float4	Pt;		// Transformed Position
 
 		static property int	SizeOf	{ int get() { return System::Runtime::InteropServices::Marshal::SizeOf(VertexPt4::typeid); } }

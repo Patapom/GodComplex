@@ -81,7 +81,7 @@ public:	 // METHODS
 #ifdef SUPPORT_GEO_BUILDERS
 	// IGeometryWriter implementation
 	virtual void	CreateBuffers( int _VerticesCount, int _IndicesCount, D3D11_PRIMITIVE_TOPOLOGY _Topology, void*& _pVertices, void*& _pIndices );
-	virtual void	AppendVertex( void*& _pVertex, const float3& _Position, const float3& _Normal, const float3& _Tangent, const float3& _BiTangent, const float2& _UV );
+	virtual void	AppendVertex( void*& _pVertex, const bfloat3& _Position, const bfloat3& _Normal, const bfloat3& _Tangent, const bfloat3& _BiTangent, const bfloat2& _UV );
 	virtual void	AppendIndex( void*& _pIndex, int _Index );
 	virtual void	Finalize( void* _pVertices, void* _pIndices );
 #endif

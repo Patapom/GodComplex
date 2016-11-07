@@ -83,6 +83,14 @@
       <Project>{9A67863F-D886-41A5-A8D1-04BA1379B097}</Project>
       <Name>Utility</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\Packages\ImageUtility\ImageUtility.csproj">
+      <Project>{a55979a1-0251-49d2-9a2a-3729c814169a}</Project>
+      <Name>ImageUtility</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Packages\RendererManaged\RendererManaged.vcxproj">
+      <Project>{f96cdfd3-8954-4f4f-afb0-2855d98f051b}</Project>
+      <Name>RendererManaged %28Visual Studio 2010%29</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\Packages\SharpMath\SharpMath.csproj">
       <Project>{DD026A89-C5FE-4150-BC85-A660E427826A}</Project>
       <Name>SharpMath</Name>

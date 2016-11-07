@@ -3,10 +3,36 @@
   <ItemGroup>
     <ClInclude Include="LibRawManaged.h" />
     <ClInclude Include="Stdafx.h" />
+    <ClInclude Include="..\LibRaw-0.16.0\libraw\libraw.h">
+      <Filter>LibRaw</Filter>
+    </ClInclude>
+    <ClInclude Include="..\LibRaw-0.16.0\libraw\libraw_alloc.h">
+      <Filter>LibRaw</Filter>
+    </ClInclude>
+    <ClInclude Include="..\LibRaw-0.16.0\libraw\libraw_const.h">
+      <Filter>LibRaw</Filter>
+    </ClInclude>
+    <ClInclude Include="..\LibRaw-0.16.0\libraw\libraw_datastream.h">
+      <Filter>LibRaw</Filter>
+    </ClInclude>
+    <ClInclude Include="..\LibRaw-0.16.0\libraw\libraw_internal.h">
+      <Filter>LibRaw</Filter>
+    </ClInclude>
+    <ClInclude Include="..\LibRaw-0.16.0\libraw\libraw_types.h">
+      <Filter>LibRaw</Filter>
+    </ClInclude>
+    <ClInclude Include="..\LibRaw-0.16.0\libraw\libraw_version.h">
+      <Filter>LibRaw</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Stdafx.cpp" />
     <ClCompile Include="AssemblyInfo.cpp" />
     <ClCompile Include="LibRawManaged.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="LibRaw">
+      <UniqueIdentifier>{ebae669f-1332-462d-b88b-d189577b1b44}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
 </Project>

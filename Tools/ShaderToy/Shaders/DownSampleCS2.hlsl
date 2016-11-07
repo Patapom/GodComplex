@@ -31,8 +31,7 @@ float	ComputeLinearZ( float _projZ ) {
 #ifdef USE_16_16_BUFFER
 	groupshared float4	gs_Samples[16 * 16];	// Apparently, storing in too large a shared array fucks everything up!
 #else
-	groupshared float4	gs_Samples[16 * 16];	// Apparently, storing in 
-//	groupshared float4	gs_Samples[NUMTHREADX * NUMTHREADY];
+	groupshared float4	gs_Samples[NUMTHREADX * NUMTHREADY];
 #endif
 
 [numthreads( NUMTHREADX, NUMTHREADY, 1 )]
@@ -46,14 +45,15 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 
 	// ======================================================================
 	// Full-res sampling
-//	float4	linearZ = _texDepthBuffer.Gather( PointClamp, 0.0, position00 );		// Original size linear Z
-	float4	linearZ = _texDepthBuffer.Gather( PointClamp, float2( position00 ) / _depthBufferSize );		// Original size linear Z
+ 	float4	linearZ;
+//	linearZ = _texDepthBuffer.Gather( PointClamp, 0.0, position00 );		// Original size linear Z
+//	linearZ = _texDepthBuffer.Gather( PointClamp, float2( position00 ) / _depthBufferSize );		// Original size linear Z
 
-// 	float4	linearZ;
-// 	linearZ.x = _texDepthBuffer.Load( uint3( position00, 0 ) );		// Original size linear Z
-// 	linearZ.y = _texDepthBuffer.Load( uint3( position01, 0 ) );		// Original size linear Z
-// 	linearZ.z = _texDepthBuffer.Load( uint3( position11, 0 ) );		// Original size linear Z
-// 	linearZ.w = _texDepthBuffer.Load( uint3( position10, 0 ) );		// Original size linear Z
+	// 4 individual loads
+	linearZ.x = _texDepthBuffer.Load( uint3( position00, 0 ) );		// Original size linear Z
+	linearZ.y = _texDepthBuffer.Load( uint3( position01, 0 ) );		// Original size linear Z
+	linearZ.z = _texDepthBuffer.Load( uint3( position11, 0 ) );		// Original size linear Z
+	linearZ.w = _texDepthBuffer.Load( uint3( position10, 0 ) );		// Original size linear Z
 
 	// ======================================================================
 	// Build thread indices so each thread addresses groups of 2x2 pixels in shared memory

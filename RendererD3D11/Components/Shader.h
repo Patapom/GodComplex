@@ -9,12 +9,11 @@
 //#define AUTHORIZE_MULTITHREADED_COMPILATION	// Define this to allow multithreaded compilation at runtime
 
 #if !defined(GODCOMPLEX) && defined(AUTHORIZE_MULTITHREADED_COMPILATION)
-// This is useful only for applications, not demos !
+	// This is useful only for applications, not demos !
+	#define MATERIAL_COMPILE_AT_RUNTIME	// Define this to start compiling shaders at runtime and avoid blocking (useful for debugging)
+										// If you enable that option then the shader will start compiling as soon as WatchShaderModifications() is called on the material
 
-#define MATERIAL_COMPILE_AT_RUNTIME	// Define this to start compiling shaders at runtime and avoid blocking (useful for debugging)
-									// If you enable that option then the shader will start compiling as soon as WatchShaderModifications() is called on the material
-
-#define MATERIAL_COMPILE_THREADED	// Define this to launch shader compilation in different threads (compiles much faster but shaders are not immediately ready!)
+	#define MATERIAL_COMPILE_THREADED	// Define this to launch shader compilation in different threads (compiles much faster but shaders are not immediately ready!)
 
 #endif
 
@@ -26,15 +25,13 @@
 
 
 #if defined(_DEBUG) || !defined(GODCOMPLEX)
-// Define this to save the binary blobs for each shader (only works in DEBUG mode)
-// NOTE: in RELEASE, the blobs are embedded as resources and read from binary so they need to have been saved to
-
-#ifdef GODCOMPLEX
-#define SAVE_SHADER_BLOB_TO		"./Resources/Shaders/Binary/"
-#else
-#define SAVE_SHADER_BLOB_TO		"./Shaders/Binary/"
-#endif
-
+	// Define this to save the binary blobs for each shader (only works in DEBUG mode)
+	// NOTE: in RELEASE, the blobs are embedded as resources and read from binary so they need to have been saved to
+	#ifdef GODCOMPLEX
+		#define SAVE_SHADER_BLOB_TO		"./Resources/Shaders/Binary/"
+	#else
+		#define SAVE_SHADER_BLOB_TO		"./Shaders/Binary/"
+	#endif
 #endif	// _DEBUG
 
 #ifdef GODCOMPLEX
@@ -60,7 +57,7 @@ class Shader : public Component, ID3DInclude
 {
 public:		// NESTED TYPES
 
-#ifndef GODCOMPLEX
+#ifdef ENABLE_SHADER_REFLECTION
 	class	ShaderConstants
 	{
 	public:	// NESTED TYPES
@@ -121,16 +118,15 @@ private:	// FIELDS
 
 	bool					m_bHasErrors;
 
-	#ifndef GODCOMPLEX
+ 	#ifdef ENABLE_SHADER_REFLECTION
 		ShaderConstants			m_VSConstants;
 		ShaderConstants			m_HSConstants;
 		ShaderConstants			m_DSConstants;
 		ShaderConstants			m_GSConstants;
 		ShaderConstants			m_PSConstants;
+ 	#endif
 
-		Dictionary<const char*>	m_Pointer2FileName;
-	#endif
-
+	BaseLib::Dictionary<const char*>	m_Pointer2FileName;
 
 public:
 	static bool				ms_LoadFromBinary;	// A flag you can set to force loading from binary files without having to write a specific code for that
@@ -163,10 +159,10 @@ public:	 // METHODS
 
 	void			SetConstantBuffer( int _BufferSlot, ConstantBuffer& _Buffer );
 	void			SetTexture( int _BufferSlot, ID3D11ShaderResourceView* _pData );
-#ifndef GODCOMPLEX
-	bool			SetConstantBuffer( const char* _pBufferName, ConstantBuffer& _Buffer );
-	bool			SetTexture( const char* _pTextureName, ID3D11ShaderResourceView* _pData );
-#endif
+	#ifdef ENABLE_SHADER_REFLECTION
+		bool			SetConstantBuffer( const char* _pBufferName, ConstantBuffer& _Buffer );
+		bool			SetTexture( const char* _pTextureName, ID3D11ShaderResourceView* _pData );
+	#endif
 
 	// Must call this before using the material
 	// Returns false if the shader cannot be used (like when it's in error state)
@@ -231,7 +227,7 @@ private:
 
 	// The dictionary of watched materials
 #if defined(_DEBUG) || !defined(GODCOMPLEX)
-	static DictionaryString<Shader*>	ms_WatchedShaders;
+	static BaseLib::DictionaryString<Shader*>	ms_WatchedShaders;
 	time_t			m_LastShaderModificationTime;
 	time_t			GetFileModTime( const char* _pFileName );
 #endif

@@ -1,6 +1,7 @@
 // RendererManaged.h
 
 #pragma once
+
 #include "Device.h"
 
 using namespace System;

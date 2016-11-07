@@ -8,8 +8,7 @@ using namespace System::IO;
 
 namespace RendererManaged {
 
-	public ref class ByteBuffer
-	{
+	public ref class ByteBuffer {
 	internal:
 
 		cli::array<System::Byte>^	m_Buffer;
@@ -27,8 +26,7 @@ namespace RendererManaged {
 			delete m_Buffer;
 		}
 
-		System::IO::BinaryReader^	OpenStreamRead()
-		{
+		System::IO::BinaryReader^	OpenStreamRead() {
 			if ( m_Stream != nullptr )
 				throw gcnew Exception( "Stream is already opened!" );
 
@@ -36,8 +34,7 @@ namespace RendererManaged {
 			return gcnew System::IO::BinaryReader( m_Stream );
 		}
 
-		System::IO::BinaryWriter^	OpenStreamWrite()
-		{
+		System::IO::BinaryWriter^	OpenStreamWrite() {
 			if ( m_Stream != nullptr )
 				throw gcnew Exception( "Stream is already opened!" );
 
@@ -45,8 +42,7 @@ namespace RendererManaged {
 			return gcnew System::IO::BinaryWriter( m_Stream );
 		}
 
-		void	CloseStream()
-		{
+		void	CloseStream() {
 			if ( m_Stream == nullptr )
 				throw gcnew Exception( "Stream is not opened!" );
 

@@ -1,6 +1,6 @@
 using System;
 
-namespace WMath
+namespace SharpMath
 {
 	/// <summary>
 	/// A bunch of utility functions stolen from http://www.johndcook.com

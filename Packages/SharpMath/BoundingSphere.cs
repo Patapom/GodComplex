@@ -1,6 +1,6 @@
 using System;
 
-namespace WMath
+namespace SharpMath
 {
 	/// <summary>
 	/// </summary>
@@ -15,14 +15,14 @@ namespace WMath
 
 		#region	FIELDS
 
-		public Point			m_Center;
+		public float3			m_Center;
 		public float			m_Radius;
 
 		#endregion
 
 		#region PROPERTIES
 
-		public Point			Center
+		public float3			Center
 		{
 			get { return m_Center; }
 			set { m_Center = value; }
@@ -44,9 +44,9 @@ namespace WMath
 		#region	METHODS
 
 		// Constructors/Destructor
-		public					BoundingSphere	()												{ m_Center = new Point(); m_Radius = 0.0f; }
-		public					BoundingSphere	( float _X, float _Y, float _Z, float _Radius )	{ m_Center = new Point( _X, _Y, _Z ); m_Radius = _Radius; }
-		public					BoundingSphere	( Point _Center, float _Radius ) 				{ m_Center = _Center; m_Radius = _Radius; }
+		public					BoundingSphere	()												{ m_Center = new float3(); m_Radius = 0.0f; }
+		public					BoundingSphere	( float _X, float _Y, float _Z, float _Radius )	{ m_Center = new float3( _X, _Y, _Z ); m_Radius = _Radius; }
+		public					BoundingSphere	( float3 _Center, float _Radius ) 				{ m_Center = _Center; m_Radius = _Radius; }
 
 		public override string		ToString()
 		{

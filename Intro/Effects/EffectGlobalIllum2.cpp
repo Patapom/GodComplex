@@ -1001,8 +1001,8 @@ void	EffectGlobalIllum2::RenderShadowMap( const float3& _SunDirection )
 {
 	//////////////////////////////////////////////////////////////////////////
 	// Build a nice transform
-	float3	X = (float3::UnitY ^_SunDirection).Normalize();	// Assuming the Sun is never vertical here!
-	float3	Y = _SunDirection ^ X;
+	float3	X = float3::UnitY.Cross( _SunDirection ).Normalize();	// Assuming the Sun is never vertical here!
+	float3	Y = _SunDirection.Cross( X );
 
 	m_pCB_ShadowMap->m.Light2World.SetRow( 0, X );
 	m_pCB_ShadowMap->m.Light2World.SetRow( 1, Y );

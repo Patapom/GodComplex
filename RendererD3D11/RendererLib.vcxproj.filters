@@ -41,36 +41,6 @@
     <ClInclude Include="Structures\VertexFormats.h">
       <Filter>Structures</Filter>
     </ClInclude>
-    <ClInclude Include="..\NuajAPI\API\ASMHelpers.h">
-      <Filter>NuajAPI</Filter>
-    </ClInclude>
-    <ClInclude Include="..\NuajAPI\API\ConstantsBuffers.h">
-      <Filter>NuajAPI</Filter>
-    </ClInclude>
-    <ClInclude Include="..\NuajAPI\API\Hashtable.h">
-      <Filter>NuajAPI</Filter>
-    </ClInclude>
-    <ClInclude Include="..\NuajAPI\API\IEngine.h">
-      <Filter>NuajAPI</Filter>
-    </ClInclude>
-    <ClInclude Include="..\NuajAPI\API\INuaj.h">
-      <Filter>NuajAPI</Filter>
-    </ClInclude>
-    <ClInclude Include="..\NuajAPI\API\List.h">
-      <Filter>NuajAPI</Filter>
-    </ClInclude>
-    <ClInclude Include="..\NuajAPI\API\NuajParameters.h">
-      <Filter>NuajAPI</Filter>
-    </ClInclude>
-    <ClInclude Include="..\NuajAPI\API\Resources.h">
-      <Filter>NuajAPI</Filter>
-    </ClInclude>
-    <ClInclude Include="..\NuajAPI\API\Types.h">
-      <Filter>NuajAPI</Filter>
-    </ClInclude>
-    <ClInclude Include="..\NuajAPI\Math\Math.h">
-      <Filter>Math</Filter>
-    </ClInclude>
     <ClInclude Include="..\Utility\TextureFilePOM.h">
       <Filter>Utility</Filter>
     </ClInclude>
@@ -114,12 +84,6 @@
     <ClCompile Include="Structures\VertexFormats.cpp">
       <Filter>Structures</Filter>
     </ClCompile>
-    <ClCompile Include="..\NuajAPI\API\Hashtable.cpp">
-      <Filter>NuajAPI</Filter>
-    </ClCompile>
-    <ClCompile Include="..\NuajAPI\Math\Math.cpp">
-      <Filter>Math</Filter>
-    </ClCompile>
     <ClCompile Include="..\Utility\TextureFilePOM.cpp">
       <Filter>Utility</Filter>
     </ClCompile>
@@ -134,22 +98,8 @@
     <Filter Include="Structures">
       <UniqueIdentifier>{8349e7c4-df32-474d-8e8b-6cfd5bbd3211}</UniqueIdentifier>
     </Filter>
-    <Filter Include="NuajAPI">
-      <UniqueIdentifier>{d366610f-6180-44c8-887e-9906dfea3766}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Math">
-      <UniqueIdentifier>{18dfc4ec-f68a-41a3-943a-f635ff7779f0}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Utility">
       <UniqueIdentifier>{cdf3c9a5-7eb3-4b16-882e-538947039d51}</UniqueIdentifier>
     </Filter>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="..\NuajAPI\API\Hashtable.inl">
-      <Filter>NuajAPI</Filter>
-    </None>
-    <None Include="..\NuajAPI\API\List.inl">
-      <Filter>NuajAPI</Filter>
-    </None>
   </ItemGroup>
 </Project>

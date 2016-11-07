@@ -43,7 +43,7 @@ public:		// METHODS
 
 	// Clear of the unordered access view
 	void			Clear( U32 _pValue[4] );
-	void			Clear( const float4& _Value );
+	void			Clear( const bfloat4& _Value );
 
 	// Uploads the buffer to the shader
 	void			SetInput( int _SlotIndex );
@@ -91,7 +91,7 @@ public:		// METHODS
 	void	Read( int _ElementsCount=-1 )		{ m_pBuffer->Read( m, _ElementsCount ); }
 	void	Write( int _ElementsCount=-1 )		{ m_pBuffer->Write( m, _ElementsCount ); }
 	void	Clear( U32 _pValue[4] )				{ m_pBuffer->Clear( _pValue ); }
-	void	Clear( const float4& _Value )		{ m_pBuffer->Clear( _Value ); }
+	void	Clear( const bfloat4& _Value )		{ m_pBuffer->Clear( _Value ); }
 	void	SetInput( int _SlotIndex, bool _bIKnowWhatImDoing=false )
 	{
 		ASSERT( _SlotIndex >= 10 || _bIKnowWhatImDoing, "WARNING: Assigning a reserved texture slot! (i.e. all slots [0,9] are reserved for global textures)" );

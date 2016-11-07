@@ -132,19 +132,20 @@ int	WindowInit()
 {
 	gs_WindowInfos.hInstance = GetModuleHandle( NULL );
 
-	//////////////////////////////////////////////////////////////////////////
-	// Initialize rounding mode once since we disabled fucking _ftol2 link error by adding a deprecated compile flag named /QIfist
-	// (always following the advice from http://www.benshoof.org/blog/minicrt/)
-	static U16	CW;
-    __asm
-	{
-		fstcw	CW							// store fpu control word  
-		mov		dx, word ptr [CW]  
-		or		dx, 0x0C00                  // rounding: truncate (default)
-		mov		CW, dx 
-		fldcw	CW							// load modfied control word  
-    }  
-
+	#ifndef _WIN64
+		//////////////////////////////////////////////////////////////////////////
+		// Initialize rounding mode once since we disabled fucking _ftol2 link error by adding a deprecated compile flag named /QIfist
+		// (always following the advice from http://www.benshoof.org/blog/minicrt/)
+		static U16	CW;
+		__asm
+		{
+			fstcw	CW							// store fpu control word  
+			mov		dx, word ptr [CW]  
+			or		dx, 0x0C00                  // rounding: truncate (default)
+			mov		CW, dx 
+			fldcw	CW							// load modfied control word  
+		}  
+	#endif
 
 	//////////////////////////////////////////////////////////////////////////
 	// Register the new window class
@@ -295,9 +296,9 @@ void	DrawTime( float t )
 
 	if ( !(frame&3) )
 	{
-		m = floorf( t / 60.0f );
-		s = floorf( t - 60.0f * m );
-		c = floorf( t * 100.0f ) % 100;
+		m = int( floorf( t / 60.0f ) );
+		s = int( floorf( t - 60.0f * m ) );
+		c = int( floorf( t * 100.0f ) ) % 100;
 		float	ms = 1000.0f / fps;
 
 		sprintf_s( str, 128, "%s %02d:%02d:%02d  [%d fps] [%4.4f ms] (!DEBUG WIP VERSION!)", pWindowClass, m, s, c, fps, ms );

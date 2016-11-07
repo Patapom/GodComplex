@@ -1,27 +1,12 @@
-Microsoft Visual Studio Solution File, Format Version 11.00
-# Visual Studio 2010
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libraw", "buildfiles\libraw.vcxproj", "{767E57ED-6D37-32A1-B51E-C39E7C1CD02A}"
-	ProjectSection(ProjectDependencies) = postProject
-		{EEC2A34F-EC49-36EC-AEB9-668ED8D9D774} = {EEC2A34F-EC49-36EC-AEB9-668ED8D9D774}
-		{2C04DB64-E5A7-33FC-B2FB-796909A8CA70} = {2C04DB64-E5A7-33FC-B2FB-796909A8CA70}
-		{229D76B0-5D05-37DD-ABCD-111E6815AF22} = {229D76B0-5D05-37DD-ABCD-111E6815AF22}
-		{333626F0-EC45-3771-92C8-5E276A8799C7} = {333626F0-EC45-3771-92C8-5E276A8799C7}
-	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dcraw_emu", "buildfiles\dcraw_emu.vcxproj", "{C82D4C5B-2870-3178-A0CF-784324C61739}"
-	ProjectSection(ProjectDependencies) = postProject
-		{767E57ED-6D37-32A1-B51E-C39E7C1CD02A} = {767E57ED-6D37-32A1-B51E-C39E7C1CD02A}
-	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dcraw_half", "buildfiles\dcraw_half.vcxproj", "{F7B693FE-0B0B-3479-9975-3C8D22C46EC5}"
-	ProjectSection(ProjectDependencies) = postProject
-		{767E57ED-6D37-32A1-B51E-C39E7C1CD02A} = {767E57ED-6D37-32A1-B51E-C39E7C1CD02A}
-	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "half_mt", "buildfiles\half_mt.vcxproj", "{34B83B81-817D-30CB-9490-C9DF7C92C002}"
-	ProjectSection(ProjectDependencies) = postProject
-		{767E57ED-6D37-32A1-B51E-C39E7C1CD02A} = {767E57ED-6D37-32A1-B51E-C39E7C1CD02A}
-	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mem_image", "buildfiles\mem_image.vcxproj", "{EEC2A34F-EC49-36EC-AEB9-668ED8D9D774}"
 EndProject
@@ -32,19 +17,10 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "multirender_test", "buildfiles\multirender_test.vcxproj", "{333626F0-EC45-3771-92C8-5E276A8799C7}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "postprocessing_benchmark", "buildfiles\postprocessing_benchmark.vcxproj", "{7101B5EF-6757-30FF-840F-8A022ECE3065}"
-	ProjectSection(ProjectDependencies) = postProject
-		{767E57ED-6D37-32A1-B51E-C39E7C1CD02A} = {767E57ED-6D37-32A1-B51E-C39E7C1CD02A}
-	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "unprocessed_raw", "buildfiles\unprocessed_raw.vcxproj", "{2433FF3D-BAC0-3744-9185-555CC2EF0CD0}"
-	ProjectSection(ProjectDependencies) = postProject
-		{767E57ED-6D37-32A1-B51E-C39E7C1CD02A} = {767E57ED-6D37-32A1-B51E-C39E7C1CD02A}
-	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "4channels", "buildfiles\4channels.vcxproj", "{4CC3EBFB-7831-3671-B550-F42B151855E5}"
-	ProjectSection(ProjectDependencies) = postProject
-		{767E57ED-6D37-32A1-B51E-C39E7C1CD02A} = {767E57ED-6D37-32A1-B51E-C39E7C1CD02A}
-	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

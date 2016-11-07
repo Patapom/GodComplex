@@ -1,3 +1,5 @@
+#include "stdafx.h"
+
 #include "Texture3D.h"
 
 Texture3D::Texture3D( Device& _Device, int _Width, int _Height, int _Depth, const IPixelFormatDescriptor& _Format, int _MipLevelsCount, const void* const* _ppContent, bool _bStaging, bool _bUnOrderedAccess )

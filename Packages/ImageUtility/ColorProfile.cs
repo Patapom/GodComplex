@@ -55,8 +55,7 @@ namespace ImageUtility
 
 		#region NESTED TYPES
 
-		public enum STANDARD_PROFILE
-		{
+		public enum STANDARD_PROFILE {
 			INVALID,		// The profile is invalid (meaning one of the chromaticities was not initialized!)
 			CUSTOM,			// No recognizable standard profile (custom)
 			LINEAR,			// sRGB with linear gamma
@@ -67,11 +66,8 @@ namespace ImageUtility
 			RADIANCE,		// Radiance HDR format with E illuminant
 		}
 
-		/// <summary>
-		/// Enumerates the various supported gamma curves
-		/// </summary>
-		public enum GAMMA_CURVE
-		{
+		// Enumerates the various supported gamma curves
+		public enum GAMMA_CURVE {
 			STANDARD,		// Standard gamma curve using a single exponent and no linear slope
 			sRGB,			// sRGB gamma with linear slope
 			PRO_PHOTO,		// ProPhoto gamma with linear slope
@@ -942,13 +938,11 @@ namespace ImageUtility
 		/// </summary>
 		/// <param name="_MetaData"></param>
 		/// <param name="_FileType"></param>
-		public ColorProfile( BitmapMetadata _MetaData, Bitmap.FILE_TYPE _FileType )
-		{
+		public ColorProfile( BitmapMetadata _MetaData, Bitmap.FILE_TYPE _FileType ) {
 			string	MetaDump = _MetaData != null ? DumpMetaData( _MetaData ) : null;
 
 			bool	bGammaFoundInFile = false;
-			switch ( _FileType )
-			{
+			switch ( _FileType ) {
 				case Bitmap.FILE_TYPE.JPEG:
 					m_GammaCurve = GAMMA_CURVE.STANDARD;
 					m_Gamma = 2.2f;							// JPG uses a 2.2 gamma by default

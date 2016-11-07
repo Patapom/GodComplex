@@ -1,4 +1,9 @@
-﻿//////////////////////////////////////////////////////////////////////////
+﻿#define USE_LIB_RAW
+
+// Pom (2016-11-02) Please use the ImageUtilityManaged class that wraps the native C++ ImageUtilityLib instead of this C# version
+// The reason I discontinued this C# lib is because it's too slow, especially when dealing with RAW images and large images conversion
+
+//////////////////////////////////////////////////////////////////////////
 // This special Bitmap class handles many image formats (JPG, PNG, BMP, TGA, GIF, HDR and especially RAW camera formats)
 // It also carefully handles color profiles to provide a faithful internal image representation that is always
 //	stored as 32-bits floating point precision CIE XYZ device-independent format that you can later convert to
@@ -185,6 +190,9 @@ namespace ImageUtility
 		protected float				m_Aperture = -1.0f;
 		protected float				m_FocalLength = -1.0f;
 
+		protected static bool		ms_ReadContent = true;
+		protected static bool		ms_ConvertContent2XYZ = true;
+
 		#endregion
 
 		#region PROPERTIES
@@ -255,6 +263,16 @@ namespace ImageUtility
 		/// Gets or sets the focal length associated to the image
 		/// </summary>
 		public float		FocalLength				{ get { return m_FocalLength; } set { m_FocalLength = value; } }
+
+		/// <summary>
+		/// Gets or sets the DontReadContent state flag that allows to skip reading the content of a file, only its header containing file information (e.g. width, height) is available
+		/// </summary>
+		public static bool	ReadContent				{ get { return ms_ReadContent; } set { ms_ReadContent = value; } }
+
+		/// <summary>
+		/// Gets or sets the DontReadContent state flag that allows to skip reading the content of a file, only its header containing file information (e.g. width, height) is available
+		/// </summary>
+		public static bool	ConvertContent2XYZ		{ get { return ms_ConvertContent2XYZ; } set { ms_ConvertContent2XYZ = value; } }
 
 		#endregion
 
@@ -408,6 +426,8 @@ namespace ImageUtility
 
 			// Load the bitmap's content and copy it to a double entry array
 			byte[]	BitmapContent = LoadBitmap( _Bitmap, out m_Width, out m_Height );
+			if ( BitmapContent == null )
+				return;
 
 			m_Bitmap = new float4[m_Width,m_Height];
 
@@ -423,8 +443,10 @@ namespace ImageUtility
 						);
 				}
 
-			// Convert to CIE XYZ
-			m_ColorProfile.RGB2XYZ( m_Bitmap, m_Bitmap );
+			if ( ms_ConvertContent2XYZ ) {
+				// Convert to CIE XYZ
+				m_ColorProfile.RGB2XYZ( m_Bitmap, m_Bitmap );
+			}
 		}
 
 		/// <summary>
@@ -504,6 +526,7 @@ namespace ImageUtility
 		}
 		public void	Load( byte[] _ImageFileContent, FILE_TYPE _FileType, ColorProfile _ProfileOverride )
 		{
+			m_Type = _FileType;
 			try
 			{
 				switch ( _FileType )
@@ -541,7 +564,8 @@ namespace ImageUtility
 							ConvertFrame( Frame );
 
 							// ===== 4] Convert to CIE XYZ (our device-independent profile connection space) =====
-							m_ColorProfile.RGB2XYZ( m_Bitmap, m_Bitmap );
+							if ( ms_ReadContent && ms_ConvertContent2XYZ )
+								m_ColorProfile.RGB2XYZ( m_Bitmap, m_Bitmap );
 						}
 						break;
 
@@ -549,8 +573,7 @@ namespace ImageUtility
 						{
 							// Load as a System.Drawing.Bitmap and convert to float4
 							using ( System.IO.MemoryStream Stream = new System.IO.MemoryStream( _ImageFileContent ) )
-								using ( TargaImage TGA = new TargaImage( Stream ) )
-								{
+								using ( TargaImage TGA = new TargaImage( Stream, !ms_ReadContent ) ) {
 									// Create a default sRGB linear color profile
 									m_ColorProfile = _ProfileOverride != null ? _ProfileOverride
 										: new ColorProfile(
@@ -559,26 +582,34 @@ namespace ImageUtility
 											TGA.ExtensionArea.GammaRatio		// ...whose gamma is retrieved from extension data
 										);
 
-									// Convert
-									byte[]	ImageContent = LoadBitmap( TGA.Image, out m_Width, out m_Height );
-									m_Bitmap = new float4[m_Width,m_Height];
-									byte	A;
-									int		i = 0;
-									for ( int Y=0; Y < m_Height; Y++ )
-										for ( int X=0; X < m_Width; X++ )
-										{
-											m_Bitmap[X,Y].x = BYTE_TO_FLOAT * ImageContent[i++];
-											m_Bitmap[X,Y].y = BYTE_TO_FLOAT * ImageContent[i++];
-											m_Bitmap[X,Y].z = BYTE_TO_FLOAT * ImageContent[i++];
+									if ( ms_ReadContent ) {
+										// Convert
+										byte[]	ImageContent = LoadBitmap( TGA.Image, out m_Width, out m_Height );
+										m_Bitmap = new float4[m_Width,m_Height];
+										byte	A;
+										int		i = 0;
+										for ( int Y=0; Y < m_Height; Y++ )
+											for ( int X=0; X < m_Width; X++ )
+											{
+												m_Bitmap[X,Y].x = BYTE_TO_FLOAT * ImageContent[i++];
+												m_Bitmap[X,Y].y = BYTE_TO_FLOAT * ImageContent[i++];
+												m_Bitmap[X,Y].z = BYTE_TO_FLOAT * ImageContent[i++];
 
-											A = ImageContent[i++];
-											m_bHasAlpha |= A != 0xFF;
+												A = ImageContent[i++];
+												m_bHasAlpha |= A != 0xFF;
 
-											m_Bitmap[X,Y].w = BYTE_TO_FLOAT * A;
+												m_Bitmap[X,Y].w = BYTE_TO_FLOAT * A;
+											}
+
+										if ( ms_ConvertContent2XYZ ) {
+											// Convert to CIEXYZ
+											m_ColorProfile.RGB2XYZ( m_Bitmap, m_Bitmap );
 										}
-
-									// Convert to CIEXYZ
-									m_ColorProfile.RGB2XYZ( m_Bitmap, m_Bitmap );
+									} else {
+										// Only read dimensions
+										m_Width = TGA.Header.Width;
+										m_Height = TGA.Header.Height;
+									}
 								}
 							return;
 						}
@@ -592,13 +623,13 @@ namespace ImageUtility
 							return;
 						}
 
+				#if USE_LIB_RAW
 					case FILE_TYPE.CRW:
 					case FILE_TYPE.CR2:
 					case FILE_TYPE.DNG:
 						{
 							using ( System.IO.MemoryStream Stream = new System.IO.MemoryStream( _ImageFileContent ) )
-								using ( LibRawManaged.RawFile Raw = new LibRawManaged.RawFile() )
-								{
+								using ( LibRawManaged.RawFile Raw = new LibRawManaged.RawFile() ) {
 									Raw.UnpackRAW( Stream );
 
 									ColorProfile.Chromaticities	Chroma = Raw.ColorProfile == LibRawManaged.RawFile.COLOR_PROFILE.ADOBE_RGB
@@ -626,19 +657,23 @@ namespace ImageUtility
 //									float	ColorNormalizer = 1.0f / Raw.Maximum;
 									float	ColorNormalizer = 1.0f / 65535.0f;
 
-									m_Bitmap = new float4[m_Width,m_Height];
-									UInt16[,][]	ImageContent = Raw.Image;
-									for ( int Y=0; Y < m_Height; Y++ )
-										for ( int X=0; X < m_Width; X++ )
-										{
- 											m_Bitmap[X,Y].x = ImageContent[X,Y][0] * ColorNormalizer;
- 											m_Bitmap[X,Y].y = ImageContent[X,Y][1] * ColorNormalizer;
- 											m_Bitmap[X,Y].z = ImageContent[X,Y][2] * ColorNormalizer;
- 											m_Bitmap[X,Y].w = ImageContent[X,Y][3] * ColorNormalizer;
- 										}
+									if ( ms_ReadContent ) {
+										m_Bitmap = new float4[m_Width,m_Height];
+										UInt16[,][]	ImageContent = Raw.Image;
+										for ( int Y=0; Y < m_Height; Y++ )
+											for ( int X=0; X < m_Width; X++ )
+											{
+ 												m_Bitmap[X,Y].x = ImageContent[X,Y][0] * ColorNormalizer;
+ 												m_Bitmap[X,Y].y = ImageContent[X,Y][1] * ColorNormalizer;
+ 												m_Bitmap[X,Y].z = ImageContent[X,Y][2] * ColorNormalizer;
+ 												m_Bitmap[X,Y].w = ImageContent[X,Y][3] * ColorNormalizer;
+ 											}
 
-									// Convert to CIEXYZ
-									m_ColorProfile.RGB2XYZ( m_Bitmap, m_Bitmap );
+										if ( ms_ConvertContent2XYZ ) {
+											// Convert to CIEXYZ
+											m_ColorProfile.RGB2XYZ( m_Bitmap, m_Bitmap );
+										}
+									}
 								}
 
 #region My poor attempt at reading CRW files
@@ -691,6 +726,7 @@ namespace ImageUtility
 #endregion
 							return;
  						}
+					#endif
 
 					default:
 						throw new NotSupportedException( "The image file type \"" + _FileType + "\" is not supported by the Bitmap class!" );
@@ -711,10 +747,12 @@ namespace ImageUtility
 		/// (that uses a gamma of 1 internally) will automatically apply a pow( 2.2 ) to the RGB values, which is NOT what we're looking for since we're
 		/// handling gamma correction ourselves here !
 		/// </remarks>
-		protected void	ConvertFrame( BitmapSource _Frame )
-		{
+		protected void	ConvertFrame( BitmapSource _Frame ) {
 			m_Width = _Frame.PixelWidth;
 			m_Height = _Frame.PixelHeight;
+			if ( !ms_ReadContent )
+				return;
+
 			m_Bitmap = new float4[m_Width,m_Height];
 
 			int		W = m_Width;
@@ -1243,16 +1281,14 @@ namespace ImageUtility
 
 			// Convert to RGB first
 			float4[,]	SourceXYZ = m_Bitmap;
-			float4[,]	RGB = new float4[W,H];
 			if ( _Format == System.Windows.Media.PixelFormats.Gray8 ||
 				 _Format == System.Windows.Media.PixelFormats.Gray16 ||
-				 _Format == System.Windows.Media.PixelFormats.Gray32Float )
-			{	// Convert to grayscale
+				 _Format == System.Windows.Media.PixelFormats.Gray32Float ) {
+				// Convert to grayscale
 				float4[,]	XYZ = new float4[W,H];
 				Array.Copy( m_Bitmap, XYZ, m_Bitmap.LongLength );
 				for ( int Y = 0; Y < H; Y++ )
-					for ( int X = 0; X < W; X++ )
-					{
+					for ( int X = 0; X < W; X++ ) {
 						float3	xyY = ColorProfile.XYZ2xyY( (float3) XYZ[X,Y] );
 						xyY.x = m_ColorProfile.Chromas.W.x;
 						xyY.y = m_ColorProfile.Chromas.W.y;
@@ -1261,23 +1297,26 @@ namespace ImageUtility
 				SourceXYZ = XYZ;
 			}
 			
-			m_ColorProfile.XYZ2RGB( SourceXYZ, RGB );	// Standard conversion
+			float4[,]	RGB;
+			if ( ConvertContent2XYZ ) {
+				RGB = new float4[W,H];
+				m_ColorProfile.XYZ2RGB( SourceXYZ, RGB );	// Standard conversion
+			} else
+				RGB = SourceXYZ;
 
 			Array	Pixels = null;
 			int		Stride = 0;
 
 			//////////////////////////////////////////////////////////////////////////
 			// BGR24
-			if ( _Format == System.Windows.Media.PixelFormats.Bgr24 )
-			{	
+			if ( _Format == System.Windows.Media.PixelFormats.Bgr24 ) {	
 				Stride = 3*W;
 				byte[]	Content = new byte[Stride*H];
 				Pixels = Content;
 
 				int	Position = 0;
 				for ( int Y = 0; Y < H; Y++ )
-					for ( int X = 0; X < W; X++ )
-					{
+					for ( int X = 0; X < W; X++ ) {
 						Content[Position++] = FLOAT_TO_BYTE( RGB[X,Y].z );
 						Content[Position++] = FLOAT_TO_BYTE( RGB[X,Y].y );
 						Content[Position++] = FLOAT_TO_BYTE( RGB[X,Y].x );
@@ -1285,16 +1324,14 @@ namespace ImageUtility
 			}
 			//////////////////////////////////////////////////////////////////////////
 			// BGR32
-			else if ( _Format == System.Windows.Media.PixelFormats.Bgr32 )
-			{	
+			else if ( _Format == System.Windows.Media.PixelFormats.Bgr32 ) {	
 				Stride = 4*W;
 				byte[]	Content = new byte[Stride*H];
 				Pixels = Content;
 
 				int	Position = 0;
 				for ( int Y = 0; Y < H; Y++ )
-					for ( int X = 0; X < W; X++ )
-					{
+					for ( int X = 0; X < W; X++ ) {
 						Content[Position++] = FLOAT_TO_BYTE( RGB[X,Y].z );
 						Content[Position++] = FLOAT_TO_BYTE( RGB[X,Y].y );
 						Content[Position++] = FLOAT_TO_BYTE( RGB[X,Y].x );
@@ -1303,16 +1340,14 @@ namespace ImageUtility
 			}
 			//////////////////////////////////////////////////////////////////////////
 			// BGRA32
-			else if ( _Format == System.Windows.Media.PixelFormats.Bgra32 )
-			{	
+			else if ( _Format == System.Windows.Media.PixelFormats.Bgra32 ) {	
 				Stride = 4*W;
 				byte[]	Content = new byte[Stride*H];
 				Pixels = Content;
 
 				int		Position = 0;
 				for ( int Y = 0; Y < H; Y++ )
-					for ( int X = 0; X < W; X++ )
-					{
+					for ( int X = 0; X < W; X++ ) {
 						Content[Position++] = FLOAT_TO_BYTE( RGB[X,Y].z );
 						Content[Position++] = FLOAT_TO_BYTE( RGB[X,Y].y );
 						Content[Position++] = FLOAT_TO_BYTE( RGB[X,Y].x );
@@ -1321,16 +1356,14 @@ namespace ImageUtility
 			}
 			//////////////////////////////////////////////////////////////////////////
 			// PBGRA32 (Pre-Multiplied)
-			else if ( _Format == System.Windows.Media.PixelFormats.Pbgra32 )
-			{	
+			else if ( _Format == System.Windows.Media.PixelFormats.Pbgra32 ) {	
 				Stride = 4*W;
 				byte[]	Content = new byte[Stride*H];
 				Pixels = Content;
 
 				int		Position = 0;
 				for ( int Y = 0; Y < H; Y++ )
-					for ( int X = 0; X < W; X++ )
-					{
+					for ( int X = 0; X < W; X++ ) {
 						RGB[X,Y].x *= RGB[X,Y].w;
 						RGB[X,Y].y *= RGB[X,Y].w;
 						RGB[X,Y].z *= RGB[X,Y].w;
@@ -1342,16 +1375,14 @@ namespace ImageUtility
 			}
 			//////////////////////////////////////////////////////////////////////////
 			// RGB48
-			else if ( _Format == System.Windows.Media.PixelFormats.Rgb48 )
-			{	
+			else if ( _Format == System.Windows.Media.PixelFormats.Rgb48 ) {	
 				Stride = 6*W;
 				ushort[]	Content = new ushort[Stride*H];
 				Pixels = Content;
 
 				int		Position = 0;
 				for ( int Y = 0; Y < H; Y++ )
-					for ( int X = 0; X < W; X++ )
-					{
+					for ( int X = 0; X < W; X++ ) {
 						Content[Position++] = FLOAT_TO_WORD( RGB[X,Y].x );
 						Content[Position++] = FLOAT_TO_WORD( RGB[X,Y].y );
 						Content[Position++] = FLOAT_TO_WORD( RGB[X,Y].z );
@@ -1359,16 +1390,14 @@ namespace ImageUtility
 			}
 			//////////////////////////////////////////////////////////////////////////
 			// RGBA64
-			else if ( _Format == System.Windows.Media.PixelFormats.Rgba64 )
-			{	
+			else if ( _Format == System.Windows.Media.PixelFormats.Rgba64 ) {	
 				Stride = 8*W;
 				ushort[]	Content = new ushort[Stride*H];
 				Pixels = Content;
 
 				int		Position = 0;
 				for ( int Y = 0; Y < H; Y++ )
-					for ( int X = 0; X < W; X++ )
-					{
+					for ( int X = 0; X < W; X++ ) {
 						Content[Position++] = FLOAT_TO_WORD( RGB[X,Y].x );
 						Content[Position++] = FLOAT_TO_WORD( RGB[X,Y].y );
 						Content[Position++] = FLOAT_TO_WORD( RGB[X,Y].z );
@@ -1377,16 +1406,14 @@ namespace ImageUtility
 			}
 			//////////////////////////////////////////////////////////////////////////
 			// PRGBA64 (Pre-Multiplied)
-			else if ( _Format == System.Windows.Media.PixelFormats.Prgba64 )
-			{	
+			else if ( _Format == System.Windows.Media.PixelFormats.Prgba64 ) {	
 				Stride = 8*W;
 				ushort[]	Content = new ushort[Stride*H];
 				Pixels = Content;
 
 				int		Position = 0;
 				for ( int Y = 0; Y < H; Y++ )
-					for ( int X = 0; X < W; X++ )
-					{
+					for ( int X = 0; X < W; X++ ) {
 						RGB[X,Y].x *= RGB[X,Y].w;
 						RGB[X,Y].y *= RGB[X,Y].w;
 						RGB[X,Y].z *= RGB[X,Y].w;
@@ -1398,16 +1425,14 @@ namespace ImageUtility
 			}
 			//////////////////////////////////////////////////////////////////////////
 			// RGBA128F
-			else if ( _Format == System.Windows.Media.PixelFormats.Rgba128Float )
-			{	
+			else if ( _Format == System.Windows.Media.PixelFormats.Rgba128Float ) {	
 				Stride = 16*W;
 				float[]	Content = new float[Stride*H];
 				Pixels = Content;
 
 				int		Position = 0;
 				for ( int Y = 0; Y < H; Y++ )
-					for ( int X = 0; X < W; X++ )
-					{
+					for ( int X = 0; X < W; X++ ) {
 						Content[Position++] = RGB[X,Y].x;
 						Content[Position++] = RGB[X,Y].y;
 						Content[Position++] = RGB[X,Y].z;
@@ -1416,16 +1441,14 @@ namespace ImageUtility
 			}
 			//////////////////////////////////////////////////////////////////////////
 			// PRGBA128F (Pre-Multiplied)
-			else if ( _Format == System.Windows.Media.PixelFormats.Prgba128Float )
-			{	
+			else if ( _Format == System.Windows.Media.PixelFormats.Prgba128Float ) {	
 				Stride = 16*W;
 				float[]	Content = new float[Stride*H];
 				Pixels = Content;
 
 				int		Position = 0;
 				for ( int Y = 0; Y < H; Y++ )
-					for ( int X = 0; X < W; X++ )
-					{
+					for ( int X = 0; X < W; X++ ) {
 						RGB[X,Y].x *= RGB[X,Y].w;
 						RGB[X,Y].y *= RGB[X,Y].w;
 						RGB[X,Y].z *= RGB[X,Y].w;
@@ -1437,53 +1460,46 @@ namespace ImageUtility
 			}
 			//////////////////////////////////////////////////////////////////////////
 			// Gray16
-			else if ( _Format == System.Windows.Media.PixelFormats.Gray16 )
-			{	
+			else if ( _Format == System.Windows.Media.PixelFormats.Gray16 ) {	
 				Stride = 2*W;
 				ushort[]	Content = new ushort[Stride*H];
 				Pixels = Content;
 
 				int		Position = 0;
 				for ( int Y = 0; Y < H; Y++ )
-					for ( int X = 0; X < W; X++ )
-					{
+					for ( int X = 0; X < W; X++ ) {
 						Content[Position++] = FLOAT_TO_WORD( RGB[X,Y].x );
 					}
 			}
 			//////////////////////////////////////////////////////////////////////////
 			// Gray32F
-			else if ( _Format == System.Windows.Media.PixelFormats.Gray32Float )
-			{	
+			else if ( _Format == System.Windows.Media.PixelFormats.Gray32Float ) {	
 				Stride = 4*W;
 				float[]	Content = new float[Stride*H];
 				Pixels = Content;
 
 				int		Position = 0;
 				for ( int Y = 0; Y < H; Y++ )
-					for ( int X = 0; X < W; X++ )
-					{
+					for ( int X = 0; X < W; X++ ) {
 						Content[Position++] = RGB[X,Y].x;
 					}
 			}
 			//////////////////////////////////////////////////////////////////////////
 			// Gray8
-			else if ( _Format == System.Windows.Media.PixelFormats.Gray8 )
-			{	
+			else if ( _Format == System.Windows.Media.PixelFormats.Gray8 ) {	
 				Stride = 1*W;
 				byte[]	Content = new byte[Stride*H];
 				Pixels = Content;
 
 				int		Position = 0;
 				for ( int Y = 0; Y < H; Y++ )
-					for ( int X = 0; X < W; X++ )
-					{
+					for ( int X = 0; X < W; X++ ) {
 						Content[Position++] = FLOAT_TO_BYTE( RGB[X,Y].x );
 					}
 			}
 			//////////////////////////////////////////////////////////////////////////
 			// 256 Colors Palette
-			else if ( _Format == System.Windows.Media.PixelFormats.Indexed8 )
-			{
+			else if ( _Format == System.Windows.Media.PixelFormats.Indexed8 ) {
 				throw new Exception( "Palette format are not supported!" );
 			}
 			else
@@ -1505,14 +1521,16 @@ namespace ImageUtility
 		/// <param name="_Width">The bitmap's width</param>
 		/// <param name="_Height">The bitmaps's height</param>
 		/// <returns>The byte array containing a sequence of R,G,B,A,R,G,B,A pixels and of length Widht*Height*4</returns>
-		public static unsafe byte[]	LoadBitmap( System.Drawing.Bitmap _Bitmap, out int _Width, out int _Height )
-		{
+		public static unsafe byte[]	LoadBitmap( System.Drawing.Bitmap _Bitmap, out int _Width, out int _Height ) {
+			_Width = _Bitmap.Width;
+			_Height = _Bitmap.Height;
+			if ( !ms_ReadContent )
+				return null;
+
 			byte[]	Result = null;
 			byte*	pScanline;
 			byte	R, G, B, A;
 
-			_Width = _Bitmap.Width;
-			_Height = _Bitmap.Height;
 			Result = new byte[4*_Width*_Height];
 
 			System.Drawing.Imaging.BitmapData	LockedBitmap = _Bitmap.LockBits( new System.Drawing.Rectangle( 0, 0, _Width, _Height ), System.Drawing.Imaging.ImageLockMode.ReadOnly, System.Drawing.Imaging.PixelFormat.Format32bppArgb );
@@ -1759,61 +1777,63 @@ namespace ImageUtility
 				//	_ Each floating-point component is first encoded in Greg Ward's packed-pixel format which encodes 3 floats into a single DWORD organized this way: RrrrrrrrGgggggggBbbbbbbbEeeeeeee (E being the common exponent)
 				//	_ Each component of the packed-pixel is then encoded separately using a simple run-length encoding format
 				//
+				PF_RGBE[,]	Dest = null;
+				if ( ms_ReadContent ) {
+					// 1] Allocate memory for the image and the temporary p_HDRFormatBinaryScanline
+					Dest = new PF_RGBE[Width, Height];
 
-				// 1] Allocate memory for the image and the temporary p_HDRFormatBinaryScanline
-				PF_RGBE[,]	Dest = new PF_RGBE[Width, Height];
-				byte[,]		TempScanline = new byte[Width,4];
-
-				// 2] Read the scanlines
-				int	ImageY = WayY == +1 ? 0 : Height - 1;
-				for ( int y=0; y < Height; y++, ImageY += WayY )
-				{
-					if ( Width < 8 || Width > 0x7FFF || pScanlines[0] != 0x02 )
-						throw new Exception( "Unsupported old encoding format!" );
-
-					byte	Temp;
-					byte	Green, Blue;
-
-					// 2.1] Read an entire scanline
-					pScanlines++;
-					Green = *pScanlines++;
-					Blue = *pScanlines++;
-					Temp = *pScanlines++;
-
-					if ( Green != 2 || (Blue & 0x80) != 0 )
-						throw new Exception( "Unsupported old encoding format!" );
-
-					if ( ((Blue << 8) | Temp) != Width )
-						throw new Exception( "Line and image widths mismatch!" );
-
-					for ( int ComponentIndex=0; ComponentIndex < 4; ComponentIndex++ )
+					// 2] Read the scanlines
+					byte[,]		TempScanline = new byte[Width,4];
+					int	ImageY = WayY == +1 ? 0 : Height - 1;
+					for ( int y=0; y < Height; y++, ImageY += WayY )
 					{
-						for ( int x=0; x < Width; )
+						if ( Width < 8 || Width > 0x7FFF || pScanlines[0] != 0x02 )
+							throw new Exception( "Unsupported old encoding format!" );
+
+						byte	Temp;
+						byte	Green, Blue;
+
+						// 2.1] Read an entire scanline
+						pScanlines++;
+						Green = *pScanlines++;
+						Blue = *pScanlines++;
+						Temp = *pScanlines++;
+
+						if ( Green != 2 || (Blue & 0x80) != 0 )
+							throw new Exception( "Unsupported old encoding format!" );
+
+						if ( ((Blue << 8) | Temp) != Width )
+							throw new Exception( "Line and image widths mismatch!" );
+
+						for ( int ComponentIndex=0; ComponentIndex < 4; ComponentIndex++ )
 						{
-							byte	Code = *pScanlines++;
-							if ( Code > 128 )
-							{	// Run-Length encoding
-								Code &= 0x7F;
-								byte	RLValue = *pScanlines++;
-								while ( Code-- > 0 && x < Width )
-									TempScanline[x++,ComponentIndex] = RLValue;
-							}
-							else
-							{	// Normal encoding
-								while ( Code-- > 0 && x < Width )
-									TempScanline[x++, ComponentIndex] = *pScanlines++;
-							}
-						}	// For every pixels of the scanline
-					}	// For every color components (including exponent)
+							for ( int x=0; x < Width; )
+							{
+								byte	Code = *pScanlines++;
+								if ( Code > 128 )
+								{	// Run-Length encoding
+									Code &= 0x7F;
+									byte	RLValue = *pScanlines++;
+									while ( Code-- > 0 && x < Width )
+										TempScanline[x++,ComponentIndex] = RLValue;
+								}
+								else
+								{	// Normal encoding
+									while ( Code-- > 0 && x < Width )
+										TempScanline[x++, ComponentIndex] = *pScanlines++;
+								}
+							}	// For every pixels of the scanline
+						}	// For every color components (including exponent)
 
-					// 2.2] Post-process the scanline and re-order it correctly
-					int	ImageX = WayX == +1 ? 0 : Width - 1;
-					for ( int x=0; x < Width; x++, ImageX += WayX )
-					{
-						Dest[x,y].R = TempScanline[ImageX, 0];
-						Dest[x,y].G = TempScanline[ImageX, 1];
-						Dest[x,y].B = TempScanline[ImageX, 2];
-						Dest[x,y].E = TempScanline[ImageX, 3];
+						// 2.2] Post-process the scanline and re-order it correctly
+						int	ImageX = WayX == +1 ? 0 : Width - 1;
+						for ( int x=0; x < Width; x++, ImageX += WayX )
+						{
+							Dest[x,y].R = TempScanline[ImageX, 0];
+							Dest[x,y].G = TempScanline[ImageX, 1];
+							Dest[x,y].B = TempScanline[ImageX, 2];
+							Dest[x,y].E = TempScanline[ImageX, 3];
+						}
 					}
 				}
 

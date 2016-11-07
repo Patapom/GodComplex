@@ -1,23 +1,7 @@
 // RendererManaged.h
 #pragma once
 
-#pragma unmanaged
-#include "../../RendererD3D11/Device.h"
-#include "../../RendererD3D11/Components/Texture2D.h"
-#include "../../RendererD3D11/Components/Texture3D.h"
-#include "../../RendererD3D11/Components/StructuredBuffer.h"
-#include "../../RendererD3D11/Components/Shader.h"
-#include "../../RendererD3D11/Components/ComputeShader.h"
-#include "../../RendererD3D11/Components/ConstantBuffer.h"
-#include "../../RendererD3D11/Components/Primitive.h"
-#include "../../RendererD3D11/Components/States.h"
-
-#include "../../RendererD3D11/Structures/PixelFormats.h"
-#include "../../RendererD3D11/Structures/VertexFormats.h"
-#pragma managed
-
 #include "RenderStates.h"
-#include "MathStructs.h"
 
 using namespace System;
 
@@ -84,9 +68,9 @@ namespace RendererManaged {
 			m_pDevice->Exit();
 		}
 
-		void	Clear( RendererManaged::float4 _ClearColor );
-		void	Clear( Texture2D^ _RenderTarget, RendererManaged::float4 _ClearColor );
-		void	Clear( Texture3D^ _RenderTarget, RendererManaged::float4 _ClearColor );
+		void	Clear( SharpMath::float4 _ClearColor );
+		void	Clear( Texture2D^ _RenderTarget, SharpMath::float4 _ClearColor );
+		void	Clear( Texture3D^ _RenderTarget, SharpMath::float4 _ClearColor );
 		void	ClearDepthStencil( Texture2D^ _RenderTarget, float _Z, byte _Stencil, bool _ClearDepth, bool _ClearStencil );
 
 		void	SetRenderStates( RASTERIZER_STATE _RS, DEPTHSTENCIL_STATE _DS, BLEND_STATE _BS );

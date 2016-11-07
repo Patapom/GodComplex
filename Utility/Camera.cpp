@@ -41,10 +41,10 @@ void	Camera::LookAt( const float3& _Position, const float3& _Target, const float
 	float3	Z = _Target - _Position;
 	Z.Normalize();
 
-	float3	X = Z ^ _Up;
+	float3	X = Z.Cross( _Up );
 	X.Normalize();
 
-	float3	Y = X ^ Z;
+	float3	Y = X.Cross( Z );
 
 	m_pCB->m.Camera2World.SetRow( 0, X, 0.0f );
 	m_pCB->m.Camera2World.SetRow( 1, Y, 0.0f );

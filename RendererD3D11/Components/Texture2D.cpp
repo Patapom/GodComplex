@@ -1,3 +1,5 @@
+#include "stdafx.h"
+
 #include "Texture2D.h"
 
 Texture2D::Texture2D( Device& _Device, ID3D11Texture2D& _Texture, const IPixelFormatDescriptor& _Format )

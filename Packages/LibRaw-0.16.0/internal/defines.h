@@ -156,6 +156,3 @@ typedef unsigned long long UINT64;
 
 #define BAYER2(row,col) \
 	image[((row) >> shrink)*iwidth + ((col) >> shrink)][fcol(row,col)]
-
-
-#define LIBRAW_DEMOSAIC_PACK_GPL3

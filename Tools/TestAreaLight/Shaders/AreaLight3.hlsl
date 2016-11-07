@@ -463,7 +463,7 @@ float	ComputeSolidAngleDiffuse( float3 _lsPosition, float3 _lsNormal, float3 _Pr
 //	_lsPositionMin, _lsPositionMax, the 2 coordinates where to sample the area light
 //	_ProjectedSolidAngle, an estimate of the perceived projected solid angle (i.e. cos(IncidentAngle) * dOmega)
 //
-float	ComputeSolidAngleSpecular( float3 _lsPosition, float3 _lsNormal, float3 _lsView, float _Roughness, float4 _lsClippedPositions, float _ClippedAreaLightSolidAngle, out float2 _lsPositionMin, out float2 _lsPositionMax ) {
+float	ComputeSolidAngleSpecular( float3 _lsPosition, float3 _lsNormal, float3 _lsView, float _Roughness, float4 _lsClippedPositions, float _ClippedAreaLightSolidAngle, inout float2 _lsPositionMin, inout float2 _lsPositionMax ) {
 
 	// Compute the gloss cone's aperture angle
 	float	HalfAngle = 0.0003474660443456835 + _Roughness * (1.3331290497744692 - _Roughness * 0.5040552688878546);	// cf. IBL.mrpr to see the link between roughness and aperture angle
@@ -472,10 +472,12 @@ float	ComputeSolidAngleSpecular( float3 _lsPosition, float3 _lsNormal, float3 _l
 	sincos( HalfAngle, SinHalfAngle, CosHalfAngle );
 	float	TanHalfAngle = SinHalfAngle / CosHalfAngle;
 
-	_lsPositionMin = _lsPositionMax = -100.0;
-	if ( _lsView.z > 0.0 ) {
-		return 0.0;
-	}
+// This pisses a fucking warning about uninitialized variables! What can I do else than explicitly assigning them FFS?????????? Fucking compiler!!
+// 	if ( _lsView.z > 0.0 ) {
+// 		_lsPositionMin = -100.0;
+// 		_lsPositionMax = -100.0;
+// 		return 0.0;
+// 	}
 
 	// Compute the intersection of the view with the area light's plane
 	float	t = -_lsPosition.z / _lsView.z;
@@ -618,7 +620,7 @@ AreaLightContext	CreateAreaLightContext( in SurfaceContext _Surface, uint _Slice
 			float2	lsPosMin_diffuse, lsPosMax_diffuse;
 			Result.m_solidAngle_diffuse = ComputeSolidAngleDiffuse( lsPosition, lsNormal, ProjectionDirection, lsClippedPositions, Result.m_solidAngle_area, lsPosMin_diffuse, lsPosMax_diffuse );
 
-			float2	lsPosMin_specular, lsPosMax_specular;
+			float2	lsPosMin_specular = 0.0, lsPosMax_specular = 0.0;
 			Result.m_solidAngle_specular = ComputeSolidAngleSpecular( lsPosition, lsNormal, lsView, Result.m_roughness, lsClippedPositions, Result.m_solidAngle_area, lsPosMin_specular, lsPosMax_specular );
 
 			// 5] =========== Compute diffuse & specular irradiance ===========

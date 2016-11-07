@@ -1,3 +1,5 @@
+#include "stdafx.h"
+
 #include "Primitive.h"
 
 Primitive::Primitive( Device& _Device, int _VerticesCount, const void* _pVertices, int _IndicesCount, const U32* _pIndices, D3D11_PRIMITIVE_TOPOLOGY _Topology, const IVertexFormatDescriptor& _Format ) : Component( _Device )
@@ -260,7 +262,7 @@ void	Primitive::CreateBuffers( int _VerticesCount, int _IndicesCount, D3D11_PRIM
 	_pIndices = new U32[m_IndicesCount];
 }
 
-void	Primitive::AppendVertex( void*& _pVertex, const float3& _Position, const float3& _Normal, const float3& _Tangent, const float3& _BiTangent, const float2& _UV )
+void	Primitive::AppendVertex( void*& _pVertex, const bfloat3& _Position, const bfloat3& _Normal, const bfloat3& _Tangent, const bfloat3& _BiTangent, const bfloat2& _UV )
 {
 	m_Format.Write( _pVertex, _Position, _Normal, _Tangent, _BiTangent, _UV );
 	_pVertex = (void*) ((U8*) _pVertex + m_Format.Size());

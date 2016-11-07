@@ -51,8 +51,7 @@ namespace ImageUtility
 	}
 
 	[StructLayout( LayoutKind.Sequential )]
-	public struct	PF_Empty : IPixelFormat
-	{
+	public struct	PF_Empty : IPixelFormat {
 		#region CODE
 
 		#region IPixelFormat Members

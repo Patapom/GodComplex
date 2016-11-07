@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace WMath
+namespace SharpMath
 {
 	/// <summary>
 	/// A simple implementation of gradient noise from Ken Perlin
@@ -17,9 +17,9 @@ namespace WMath
 
 		#region FIELDS
 
-		protected uint					m_NoiseSize = 0;
-		protected WMath.Vector4D[]		m_NoiseTable = null;
-		protected uint[]				m_PermutationTable = null;
+		protected uint		m_NoiseSize = 0;
+		protected float4[]	m_NoiseTable = null;
+		protected uint[]	m_PermutationTable = null;
 
 		#endregion
 
@@ -48,12 +48,12 @@ namespace WMath
 			Random	PermutationRNG = new Random( _PermutationSeed );
 
 			// Build the noise & permutation tables
-			m_NoiseTable = new WMath.Vector4D[2*m_NoiseSize];
+			m_NoiseTable = new float4[2*m_NoiseSize];
 			m_PermutationTable = new uint[2*m_NoiseSize];
 
 			for ( uint SlotIndex=0; SlotIndex < m_NoiseSize; SlotIndex++ )
 			{
-				m_NoiseTable[SlotIndex] = m_NoiseTable[m_NoiseSize+SlotIndex] = new WMath.Vector4D(	2.0f * (float) GradientRNG.NextDouble() - 1.0f,
+				m_NoiseTable[SlotIndex] = m_NoiseTable[m_NoiseSize+SlotIndex] = new float4(	2.0f * (float) GradientRNG.NextDouble() - 1.0f,
 																									2.0f * (float) GradientRNG.NextDouble() - 1.0f,
 																									2.0f * (float) GradientRNG.NextDouble() - 1.0f,
 																									2.0f * (float) GradientRNG.NextDouble() - 1.0f );
@@ -80,8 +80,7 @@ namespace WMath
 		/// </summary>
 		/// <param name="_Position"></param>
 		/// <returns></returns>
-		public float	GetNoise( WMath.Point4D _Position )
-		{
+		public float	GetNoise( float4 _Position ) {
 			float	x = _Position.x + NOISE_BIAS;
 			float	y = _Position.y + NOISE_BIAS;
 			float	z = _Position.z + NOISE_BIAS;
@@ -149,7 +148,7 @@ namespace WMath
 			return	_t * _t * _t * (10.0f + _t * (-15.0f + _t *  6.0f));	// 6 t^5 - 15 t^4 + 10 t^3  ==> Gives some sort of S-Shaped curve with 0 first and second derivatives at t=0 & t=1
 		}
 
-		protected float	Dot( WMath.Vector4D _Op0, float _Op1x, float _Op1y, float _Op1z, float _Op1w )
+		protected float	Dot( float4 _Op0, float _Op1x, float _Op1y, float _Op1z, float _Op1w )
 		{
 			return	_Op0.x * _Op1x + _Op0.y * _Op1y + _Op0.z * _Op1z + _Op0.w * _Op1w;
 		}

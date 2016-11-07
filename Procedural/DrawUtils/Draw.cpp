@@ -208,7 +208,7 @@ void	DrawUtils::DrawScratch( const float2& _Position, const float2& _Direction, 
 {
 	m_Infos.pData = _pData;
 
-	int	StepsCount = ceilf( _Length / _StepSize );
+	int	StepsCount = int( ceilf( _Length / _StepSize ) );
 
 	m_ContextSCRATCH.pFiller = _Filler;
 	m_ContextSCRATCH.Distance = 0.0f;
@@ -216,17 +216,17 @@ void	DrawUtils::DrawScratch( const float2& _Position, const float2& _Direction, 
 	m_ContextSCRATCH.U = 0.0f;
 	m_ContextSCRATCH.StepU = _Length / (StepsCount * StepsCount * _StepSize);
 
-	float		StepAngle = DEG2RAD( _CurveAngle ) * _StepSize;
+	float	StepAngle = DEG2RAD( _CurveAngle ) * _StepSize;
 	float2	RotX( cosf( StepAngle ), -sinf( StepAngle ) );
 	float2	RotY( -RotX.y, RotX.x );
 
 	float2	Position = _Position;
 	float2	Direction = _Direction;
-				Direction.Normalize();
+			Direction.Normalize();
 	float2	Normal( -Direction.y, Direction.x );
-	float		Thickness = _ThicknessStart;
+	float	Thickness = _ThicknessStart;
 
-	float		StepThickness = (_ThicknessEnd - _ThicknessStart) * _StepSize / _Length;
+	float	StepThickness = (_ThicknessEnd - _ThicknessStart) * _StepSize / _Length;
 
 	float4	pVertices[4];
 	pVertices[3] = float4( Position - Thickness * Normal, 0, 0 );
@@ -240,7 +240,7 @@ void	DrawUtils::DrawScratch( const float2& _Position, const float2& _Direction, 
 		// March along the scratch and build new vertices
 		Thickness += StepThickness;
 		Position = Position + _StepSize * Direction;
-		Direction = float2( Direction | RotX, Direction | RotY );
+		Direction = float2( Direction.Dot( RotX ), Direction.Dot( RotY ) );
 		pVertices[3] = float4( Position - Thickness * Normal, 1, 0 );
 		pVertices[2] = float4( Position + Thickness * Normal, 1, 1 );
 
@@ -300,20 +300,19 @@ void	DrawUtils::DrawQuad( float4 _pVertices[], DrawContext& _Context ) const
 		}
 
 	// Start drawing
-	_Context.Y = floorf( pVertices[Top].y );
-	int			LDy = 0, RDy = 0;			// Amount of pixels to trace for the left & right segments until the next segment (or end of the quad)
-	int			L = Top, R = 4+Top;			// Left & Right indices: Left will increase, Right will decrease
+	_Context.Y = int( floorf( pVertices[Top].y ) );
+	int		LDy = 0, RDy = 0;			// Amount of pixels to trace for the left & right segments until the next segment (or end of the quad)
+	int		L = Top, R = 4+Top;			// Left & Right indices: Left will increase, Right will decrease
 	float4	LPos, RPos;					// Left & Right position & UV
 	float4	LSlope, RSlope;				// Left & Right slope
 //	while ( _Context.Y < m_Height )
-	while ( true )
-	{
-		while ( LDy <= 0.0f && L <= R )
-		{	// Rebuild left slope
+	while ( true ) {
+		while ( LDy <= 0.0f && L <= R ) {
+			// Rebuild left slope
 			float4&	Current = pVertices[L];
 			float4&	Next = pVertices[++L];
 			LSlope = Next - Current;
-			int		EndY = floorf( Next.y+0.5f );
+			int		EndY = int( floorf( Next.y+0.5f ) );
 			LDy = EndY - _Context.Y;
 // 			if ( LDy <= 0 )
 // 				continue;	// Too low a slope !
@@ -321,12 +320,12 @@ void	DrawUtils::DrawQuad( float4 _pVertices[], DrawContext& _Context ) const
 			LSlope = LSlope / LSlope.y;
 			LPos = Current + (_Context.Y+0.5f - Current.y) * LSlope;
 		}
-		while ( RDy <= 0.0f && L <= R )
-		{	// Rebuild right slope
+		while ( RDy <= 0.0f && L <= R ) {
+			// Rebuild right slope
 			float4&	Current = pVertices[R];
 			float4&	Next = pVertices[--R];
 			RSlope = Next - Current;
-			int		EndY = floorf( Next.y+0.5f );
+			int		EndY = int( floorf( Next.y+0.5f ) );
 			RDy = EndY - _Context.Y;
 // 			if ( RDy <= 0 )
 // 				continue;	// Too low a slope !
@@ -341,12 +340,12 @@ void	DrawUtils::DrawQuad( float4 _pVertices[], DrawContext& _Context ) const
 		// The comments left here are the original lines you need to draw in CLAMP mode
 //		if ( _Context.Y > 0 )
 		{
-			_Context.X = floorf( LPos.x );
+			_Context.X = int( floorf( LPos.x ) );
 //			bool		bClipLeft = _Context.X < 0;
 			bool		bClipLeft = false;	// Don't ever clip since we wrap !
 //			_Context.X = MAX( 0, _Context.X );
 
-			int			RX = floorf( RPos.x );
+			int			RX = int( floorf( RPos.x ) );
 //			bool		bClipRight = RX >= m_Width;
 			bool		bClipRight = false;	// Don't ever clip since we wrap !
 //						RX = MIN( m_Width-1, RX );

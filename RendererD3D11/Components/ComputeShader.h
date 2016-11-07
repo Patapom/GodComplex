@@ -36,41 +36,41 @@ class ComputeShader : public Component, ID3DInclude
 {
 public:		// NESTED TYPES
 
-#ifndef GODCOMPLEX
-	class	ShaderConstants
-	{
-	public:	// NESTED TYPES
-
-		struct BindingDesc
-		{
-			char*	pName;
-			int		Slot;
-#ifdef __DEBUG_UPLOAD_ONLY_ONCE
-			bool	bUploaded;
-#endif
-
-			~BindingDesc();
-
-			void	SetName( const char* _pName );
-		};
-
-	public:
-
-		DictionaryString<BindingDesc*>	m_ConstantBufferName2Descriptor;
-		DictionaryString<BindingDesc*>	m_TextureName2Descriptor;
-		DictionaryString<BindingDesc*>	m_StructuredBufferName2Descriptor;
-		DictionaryString<BindingDesc*>	m_UAVName2Descriptor;
-
-		~ShaderConstants();
-
-		void	Enumerate( ID3DBlob& _ShaderBlob );
-		int		GetConstantBufferIndex( const char* _pBufferName ) const;
-		int		GetShaderResourceViewIndex( const char* _pTextureName ) const;
-		int		GetStructuredBufferIndex( const char* _pBufferName ) const;
-		int		GetUnorderedAccesViewIndex( const char* _pUAVName ) const;
-		
-	};
-#endif
+// Pom (2016-11-01) Because of a fucking link error about IID_ID3D11ShaderReflection we can't use reflection...
+// #ifndef GODCOMPLEX
+// 	class	ShaderConstants {
+// 	public:	// NESTED TYPES
+// 
+// 		struct BindingDesc
+// 		{
+// 			char*	pName;
+// 			int		Slot;
+// #ifdef __DEBUG_UPLOAD_ONLY_ONCE
+// 			bool	bUploaded;
+// #endif
+// 
+// 			~BindingDesc();
+// 
+// 			void	SetName( const char* _pName );
+// 		};
+// 
+// 	public:
+// 
+// 		DictionaryString<BindingDesc*>	m_ConstantBufferName2Descriptor;
+// 		DictionaryString<BindingDesc*>	m_TextureName2Descriptor;
+// 		DictionaryString<BindingDesc*>	m_StructuredBufferName2Descriptor;
+// 		DictionaryString<BindingDesc*>	m_UAVName2Descriptor;
+// 
+// 		~ShaderConstants();
+// 
+// 		void	Enumerate( ID3DBlob& _ShaderBlob );
+// 		int		GetConstantBufferIndex( const char* _pBufferName ) const;
+// 		int		GetShaderResourceViewIndex( const char* _pTextureName ) const;
+// 		int		GetStructuredBufferIndex( const char* _pBufferName ) const;
+// 		int		GetUnorderedAccesViewIndex( const char* _pUAVName ) const;
+// 		
+// 	};
+// #endif
 
 
 private:	// FIELDS
@@ -86,11 +86,11 @@ private:	// FIELDS
 
 	bool					m_bHasErrors;
 
-#ifndef GODCOMPLEX
-	ShaderConstants			m_CSConstants;
+ 	#ifdef ENABLE_SHADER_REFLECTION
+	 	ShaderConstants			m_CSConstants;
+	#endif
 
-	Dictionary<const char*>	m_Pointer2FileName;
-#endif
+ 	BaseLib::Dictionary<const char*>	m_Pointer2FileName;
 
 	static ComputeShader*	ms_pCurrentShader;
 
@@ -171,7 +171,7 @@ private:
 	// Shader auto-reload on change mechanism
 #if defined(_DEBUG) || !defined(GODCOMPLEX)
 	// The dictionary of watched materials
-	static DictionaryString<ComputeShader*>	ms_WatchedShaders;
+	static BaseLib::DictionaryString<ComputeShader*>	ms_WatchedShaders;
 	time_t			m_LastShaderModificationTime;
 	time_t			GetFileModTime( const char* _pFileName );
 #endif

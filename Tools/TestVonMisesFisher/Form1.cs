@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Windows.Forms;
 using WMath;
+using RendererManaged;
 
 namespace TestVonMisesFisher
 {
@@ -82,8 +83,6 @@ namespace TestVonMisesFisher
 			public float	Theta_deg	{ get { return (float) (180.0 * Math.Acos( Direction.y ) / Math.PI); } }
 		}
 
-//		relire l'article sur le scattering => glow = exp chou ?
-
 		RandomLobe[]	m_RandomLobes = new RandomLobe[] {
 //			new RandomLobe() { Phi = 30.0f, Theta = 45.0f, Concentration = 100.0f, RandomPointsCount = 4000 },
 
@@ -116,6 +115,284 @@ namespace TestVonMisesFisher
 // 			return R;
 // 		}
 
+		class ranges_t {
+			public float	Ygo_min = float.MaxValue, Ygo_max = -float.MaxValue;
+			public float	Cg_min = float.MaxValue, Cg_max = -float.MaxValue;
+			public float	Co_min = float.MaxValue, Co_max = -float.MaxValue;
+
+			public float	x_min = float.MaxValue, x_max = -float.MaxValue;
+			public float	y_min = float.MaxValue, y_max = -float.MaxValue;
+			public float	Y_min = float.MaxValue, Y_max = -float.MaxValue;
+		}
+
+		void	RGB2YCoCg( float _R, float _G, float _B, out float _Y, out float _Co, out float _Cg ) {
+			_Co = _R - _B;
+			float	t = _B + _Co * 0.5f;
+			_Cg = _G - t;
+			_Y = t + _Cg * 0.5f;
+		}
+		void	YCoCg2RGB( float _Y, float _Co, float _Cg, out float _R, out float _G, out float _B ) {
+			float	t = _Y - _Cg * 0.5f;
+			_G = _Cg + t;
+			_B = t - _Co * 0.5f;
+			_R = _Co + _B;
+		}
+
+		void	TestChromaRanges() {
+			ImageUtility.ColorProfile	profile = new ImageUtility.ColorProfile(ImageUtility.ColorProfile.STANDARD_PROFILE.sRGB );
+
+			ImageUtility.float3	tempFloat3 = new ImageUtility.float3( 0, 0, 0 );
+			ImageUtility.float4	tempFloat4 = new ImageUtility.float4( 0, 0, 0, 1 );
+
+			float	Ygo, Cg, Co;
+
+			ranges_t[]	ranges = new ranges_t[4];
+			for ( int lumaIndex=0; lumaIndex < ranges.Length; lumaIndex++ ) {
+
+				ranges_t	range = new ranges_t();
+				ranges[lumaIndex] = range;
+
+				float	L = (1+lumaIndex) / 255.0f;
+
+				for ( int R=0; R < 256; R++ ) {
+					for ( int G=0; G < 256; G++ ) {
+						for ( int B=0; B < 256; B++ ) {
+
+							tempFloat4.x = L * R;
+							tempFloat4.y = L * G;
+							tempFloat4.z = L * B;
+
+							// Convert to YCoCg
+// 							Ygo = 0.25f * tempFloat4.x + 0.5f * tempFloat4.y + 0.25f * tempFloat4.z;
+// 							Cg = -0.25f * tempFloat4.x + 0.5f * tempFloat4.y - 0.25f * tempFloat4.z;
+// 							Co =  0.50f * tempFloat4.x + 0.0f * tempFloat4.y - 0.50f * tempFloat4.z;
+
+							RGB2YCoCg( tempFloat4.x, tempFloat4.y, tempFloat4.z, out Ygo, out Co, out Cg );
+							YCoCg2RGB( Ygo, Co, Cg, out tempFloat3.x, out tempFloat3.y, out tempFloat3.z );
+							if ( Math.Abs( tempFloat3.x - tempFloat4.x ) > 1e-6 ) throw new Exception( "RHA!" );
+							if ( Math.Abs( tempFloat3.y - tempFloat4.y ) > 1e-6 ) throw new Exception( "RHA!" );
+							if ( Math.Abs( tempFloat3.z - tempFloat4.z ) > 1e-6 ) throw new Exception( "RHA!" );
+
+							// Convert to xyY
+							ImageUtility.float4	XYZ = profile.RGB2XYZ( tempFloat4 );
+							tempFloat3.x = XYZ.x;
+							tempFloat3.y = XYZ.y;
+							tempFloat3.z = XYZ.z;
+							ImageUtility.float3	xyY = ImageUtility.ColorProfile.XYZ2xyY( tempFloat3 );
+
+							// Update ranges
+							range.Ygo_min = Math.Min( range.Ygo_min, Ygo );
+							range.Ygo_max = Math.Max( range.Ygo_max, Ygo );
+							range.Cg_min = Math.Min( range.Cg_min, Cg );
+							range.Cg_max = Math.Max( range.Cg_max, Cg );
+							range.Co_min = Math.Min( range.Co_min, Co );
+							range.Co_max = Math.Max( range.Co_max, Co );
+
+							range.Y_min = Math.Min( range.Y_min, xyY.z );
+							range.Y_max = Math.Max( range.Y_max, xyY.z );
+							range.x_min = Math.Min( range.x_min, xyY.x );
+							range.x_max = Math.Max( range.x_max, xyY.x );
+							range.y_min = Math.Min( range.y_min, xyY.y );
+							range.y_max = Math.Max( range.y_max, xyY.y );
+						}
+					}
+				}
+
+			}
+		}
+
+// 		uint packR8G8B8A8( float4 value ) {
+// 			value = saturate( value );
+// 			return ( ( ( uint( value.x * 255.0 ) ) << 24 ) | ( ( uint( value.y * 255.0 ) ) << 16 ) | ( ( uint( value.z * 255.0 ) ) << 8 ) | ( uint( value.w * 255.0 ) ) );
+// 		}
+// 
+// 		float4 unpackR8G8B8A8( uint value ) {
+// 			return float4( ( value >> 24 ) & 0xFF, ( value >> 16 ) & 0xFF, ( value >> 8 ) & 0xFF, value & 0xFF ) / 255.0;
+// 		}
+// 
+// 		// RGBE (ward 1984)
+// 		uint packRGBE( float3 value ) {  
+// 			const float sharedExp = ceil( ApproxLog2( max( max( value.r, value.g ), value.b ) ) );
+// 			return packR8G8B8A8( saturate( float4( value / ApproxExp2( sharedExp ), ( sharedExp + 128.0f ) / 255.0f ) ) );
+// 		}
+// 
+// 		float3 unpackRGBE( uint value ) {
+// 			const float4 rgbe = unpackR8G8B8A8( value );
+// 			return rgbe.rgb * ApproxExp2( rgbe.a * 255.0f - 128.0f );
+// 		}
+
+		uint	EncodeRGBE( float3 _RGB ) {
+			float3	Sign = new float3( Math.Sign( _RGB.x ), Math.Sign( _RGB.y ), Math.Sign( _RGB.z ) );
+			_RGB *= Sign;
+
+			float	maxRGB = _RGB.Max();
+			int		sharedExp = (int) Math.Ceiling( Math.Log( maxRGB ) / Math.Log(2) );
+
+sharedExp = Math.Max( 0, Math.Min( 31, sharedExp + EXPONENT_BIAS ) ) - EXPONENT_BIAS;
+
+
+// 			float	pow2 = (float) Math.Pow( 2.0f, sharedExp );
+// 			float3	reducedRGB = _RGB / pow2;
+			float	invPow2 = (float) Math.Pow( 2.0f, -sharedExp );
+			float3	reducedRGB = _RGB * invPow2;
+					reducedRGB.x = Math.Max( 0.0f, Math.Min( 1.0f, reducedRGB.x ) );
+					reducedRGB.y = Math.Max( 0.0f, Math.Min( 1.0f, reducedRGB.y ) );
+					reducedRGB.z = Math.Max( 0.0f, Math.Min( 1.0f, reducedRGB.z ) );
+
+			byte	R = (byte) (255.0f * reducedRGB.x);
+			byte	G = (byte) (255.0f * reducedRGB.y);
+			byte	B = (byte) (255.0f * reducedRGB.z);
+			byte	exp = (byte) (EXPONENT_BIAS + sharedExp);
+					exp |= (byte) ((Sign.x < 0.0f ? 128 : 0) | (Sign.y < 0.0f ? 64 : 0) | (Sign.z < 0.0f ? 32 : 0));
+
+			uint	RGBE = (uint) ((exp << 24) | (R << 16) | (G << 8) | B);
+			return RGBE;
+		}
+
+		float3	DecodeRGBE( uint _RGBE ) {
+			byte	exp = (byte) (_RGBE >> 24);
+			byte	R = (byte) ((_RGBE >> 16) & 0xFF);
+			byte	G = (byte) ((_RGBE >> 8) & 0xFF);
+			byte	B = (byte) (_RGBE & 0xFF);
+
+			float3	Sign = new float3( (exp & 128) != 0 ? -1.0f : 1.0f, (exp & 64) != 0 ? -1.0f : 1.0f, (exp & 32) != 0 ? -1.0f : 1.0f );
+			exp &= 31;
+			float	pow2 = (float) Math.Pow( 2.0f, (int) exp - EXPONENT_BIAS );
+
+			float3	resultRGB = new float3( 
+				Sign.x * pow2 * R / 255.0f,
+				Sign.y * pow2 * G / 255.0f,
+				Sign.z * pow2 * B / 255.0f
+				);
+			return resultRGB;
+		}
+
+		void TestSHRGBEEncoding() {
+			float3[]	coeffs = null;
+
+			System.IO.FileInfo	coeffsFileName = new System.IO.FileInfo( "SHCoeffs.sh3" );
+			using ( System.IO.FileStream S = coeffsFileName.OpenRead() )
+				using ( System.IO.BinaryReader R = new System.IO.BinaryReader( S ) ) {
+					uint	coeffsCount = R.ReadUInt32();
+					coeffs = new float3[coeffsCount * 9];
+					for ( int i=0; i < 9*coeffsCount; i++ ) {
+						coeffs[i] = new float3( R.ReadSingle(), R.ReadSingle(), R.ReadSingle() );
+
+// The exponent bias allows us to support up to 512 in luminance!
+//coeffs[i] *= 5.0f;
+
+					}
+				}
+
+			uint	test1_packed = EncodeRGBE( new float3( 1, 0, 1.5f ) );
+			float3	test1_unpacked = DecodeRGBE( test1_packed );
+
+//			float3	coeffMin = new float3( float.MaxValue, float.MaxValue, float.MaxValue );
+			float3	coeffMax = new float3( -float.MaxValue, -float.MaxValue, -float.MaxValue );
+			float3	coeffMinAbs = new float3( float.MaxValue, float.MaxValue, float.MaxValue );
+			int		coeffsWithDifferentSignsInRGBCount = 0;
+			for ( int i=0; i < coeffs.Length; i++ ) {
+				float3	coeff = coeffs[i];
+				float3	absCoeff = new float3( Math.Abs( coeff.x ), Math.Abs( coeff.y ), Math.Abs( coeff.z ) );
+
+				if ( coeff.x * coeff.y < 0.0f || coeff.x * coeff.z < 0.0f || coeff.y * coeff.z < 0.0f )
+					coeffsWithDifferentSignsInRGBCount++;
+
+//				coeffMin.Min( coeff );
+				coeffMax.Max( absCoeff );
+				if ( absCoeff.x > 0.0f ) coeffMinAbs.x = Math.Min( coeffMinAbs.x, absCoeff.x );
+				if ( absCoeff.y > 0.0f ) coeffMinAbs.y = Math.Min( coeffMinAbs.y, absCoeff.y );
+				if ( absCoeff.z > 0.0f ) coeffMinAbs.z = Math.Min( coeffMinAbs.z, absCoeff.z );
+			}
+
+			double	expMin = Math.Min( Math.Min( Math.Log( coeffMinAbs.x ) / Math.Log(2), Math.Log( coeffMinAbs.y ) / Math.Log(2) ), Math.Log( coeffMinAbs.z ) / Math.Log(2) );
+			double	expMax = Math.Max( Math.Max( Math.Log( coeffMax.x ) / Math.Log(2), Math.Log( coeffMax.y ) / Math.Log(2) ), Math.Log( coeffMax.z ) / Math.Log(2) );
+
+			// Measure discrepancies after RGBE encoding
+// 			float3	errorAbsMin = new float3( +float.MaxValue, +float.MaxValue, +float.MaxValue );
+// 			float3	errorAbsMax = new float3( -float.MaxValue, -float.MaxValue, -float.MaxValue );
+			float3	errorRelMin = new float3( +float.MaxValue, +float.MaxValue, +float.MaxValue );
+			float3	errorRelMax = new float3( -float.MaxValue, -float.MaxValue, -float.MaxValue );
+			int		minExponent = +int.MaxValue, maxExponent = -int.MaxValue;
+			int		largeRelativeErrorsCount = 0;
+			for ( int i=0; i < coeffs.Length; i++ ) {
+				float3	originalRGB = coeffs[i];
+				uint	RGBE = EncodeRGBE( originalRGB );
+				float3	decodedRGB = DecodeRGBE( RGBE );
+
+				// Compute absolute error
+// 				float3	delta = decodedRGB - originalRGB;
+// 				float3	distanceFromOriginal = new float3( Math.Abs( delta.x ), Math.Abs( delta.y ), Math.Abs( delta.z ) );
+// 				errorAbsMin.Min( distanceFromOriginal );
+// 				errorAbsMax.Max( distanceFromOriginal );
+
+				// Compute relative error
+				float3	errorRel = new float3( Math.Abs( originalRGB.x ) > 0.0f ? Math.Abs( decodedRGB.x / originalRGB.x - 1.0f ) : 0.0f, Math.Abs( originalRGB.y ) > 0.0f ? Math.Abs( decodedRGB.y / originalRGB.y - 1.0f ) : 0.0f, Math.Abs( originalRGB.z ) > 0.0f ? Math.Abs( decodedRGB.z / originalRGB.z - 1.0f ) : 0.0f );
+
+				// Scale the relative error by the magnitude of each component as compared to the maximum component
+				// This way, if we happen to have a "large" relative error on a component that is super small compared to the component with maximum amplitude then we can safely drop that small component (it's insignificant compared to the largest contribution)
+				float	maxComponent = Math.Max( Math.Max( Math.Abs( originalRGB.x ), Math.Abs( originalRGB.y ) ), Math.Abs( originalRGB.z ) );
+				float3	magnitudeScale = maxComponent > 0.0f ? new float3( Math.Abs( originalRGB.x ) / maxComponent, Math.Abs( originalRGB.y ) / maxComponent, Math.Abs( originalRGB.z ) / maxComponent ) : float3.Zero;
+				errorRel *= magnitudeScale;
+
+				// Don't account for dernomalization
+// 				if ( decodedRGB.x == 0.0 && originalRGB.x != 0.0f ) errorRel.x = 0.0f;
+// 				if ( decodedRGB.y == 0.0 && originalRGB.y != 0.0f ) errorRel.y = 0.0f;
+// 				if ( decodedRGB.z == 0.0 && originalRGB.z != 0.0f ) errorRel.z = 0.0f;
+
+				const float	errorThreshold = 0.2f;
+				if ( Math.Abs( errorRel.x ) > errorThreshold || Math.Abs( errorRel.y ) > errorThreshold || Math.Abs( errorRel.z ) > errorThreshold )
+					largeRelativeErrorsCount++;
+				errorRelMin.Min( errorRel );
+				errorRelMax.Max( errorRel );
+
+				int		exp = (int) ((RGBE >> 24) & 31) - EXPONENT_BIAS;
+				minExponent = Math.Min( minExponent, exp );
+				maxExponent = Math.Max( maxExponent, exp );
+			}
+		}
+
+		const int	EXPONENT_BIAS = 22;
+
+
+		void	TestSquareFilling() {
+
+			for ( int N=0; N < 6; N++ ) {
+
+				Console.WriteLine( "STARTING NEW LANE FOR N=" + N );
+
+				int	L = Math.Max( 1, 8 * N );
+				int	maxSize = 1+2*N;
+
+				for ( int i=0; i < L; i++ ) {
+					int	iX = (i + N) % L;
+					int	iY = (i + L-N) % L;
+
+					int	X = Math.Max( 0, Math.Min( maxSize-1, 3*N - Math.Abs( 4*N - iX ) ) ) - N;
+					int	Y = Math.Max( 0, Math.Min( maxSize-1, 3*N - Math.Abs( 4*N - iY ) ) ) - N;
+
+					Console.WriteLine( "i=" + i + " X=" + X + " Y=" + Y );
+				}
+			}
+//					Console.WriteLine( "i=" + i + " X=" + X + " Y=" + Y + "  - Xc=" + Math.Max( 0, Math.Min( maxSize-1, X ) ) + "  - Yc=" + Math.Max( 0, Math.Min( maxSize-1, Y ) ) );
+
+// 			int	HalfSize = whatever;
+// 			int	S = 1 + 2 * HalfSize;		// <= Square size
+// 			int	Count = S * S;
+// 			for ( int i=0; i < Count; i++ ) {
+// 				int	N = (int) Math.Floor( (Math.Sqrt( i ) + 1) / 2 );	// Lane index
+// 				int	L = Math.Max( 1, 8 * N );							// Amount of pixels in the lane
+// 				int	LaneSize = 1+2*N;									// Size of the lane
+// 				int	LaneStartPixelIndex = N*N;
+// 				int	j = i - LaneStartPixelIndex;						// Pixel index relative to the lane
+// 				int	iX = (j + N) % L;
+// 				int	iY = (j + L-N) % L;
+// 				int	X = Math.Max( 0, Math.Min( LaneSize-1, 3*N - Math.Abs( 4*N - iX ) ) ) - N;
+// 				int	Y = Math.Max( 0, Math.Min( LaneSize-1, 3*N - Math.Abs( 4*N - iY ) ) ) - N;
+// 				// Plot pixel at (X,Y)
+// 			}
+		}
+
 
 		public FittingForm()
 		{
@@ -124,6 +401,10 @@ namespace TestVonMisesFisher
 // 			Vector		To = new Vector( 2.0f * (float) RNG.NextDouble() - 1.0f, 2.0f * (float) RNG.NextDouble() - 1.0f, 2.0f * (float) RNG.NextDouble() - 1.0f ).Normalized;
 // 			Matrix3x3	Pipo = MakeRot( From, To );
 // 			Vector		Test = Pipo * From;
+
+//TestChromaRanges();
+//TestSHRGBEEncoding();
+TestSquareFilling();
 
 			InitializeComponent();
 

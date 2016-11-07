@@ -1,6 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 // Spherical Harmonics Helpers
 // Sources:
+//	"An Efficient Representation for Irradiance Environment Maps" (Ravi Ramamoorthi)
 //	"Stupid SH Tricks" (Peter Pike Sloan): http://www.ppsloan.org/publications/StupidSH36.pdf
 //	"Code Generation and Factoring for Fast Evaluation of Low-order Spherical Harmonic Products and Squares" (John Snyder): http://research.microsoft.com/en-us/um/people/johnsny/papers/shtriple_fixed.pdf
 //
@@ -19,16 +20,28 @@ float3	EvaluateSH( float3 _Direction, float3 _SH[9] )
 	float	f1 = 0.48860251190291992158638462283835;		// 0.5 * sqrt(3.0/PI);
 	float	f2 = 1.0925484305920790705433857058027;			// 0.5 * sqrt(15.0/PI);
 
+	float3	XYZ = float3( -_Direction.z, -_Direction.x, _Direction.y );
 	float	EvalSH0 = f0;
 	float4	EvalSH1234, EvalSH5678;
-	EvalSH1234.x = -f1 * _Direction.x;
-	EvalSH1234.y = f1 * _Direction.y;
-	EvalSH1234.z = -f1 * _Direction.z;
-	EvalSH1234.w = f2 * _Direction.x * _Direction.z;
-	EvalSH5678.x = -f2 * _Direction.x * _Direction.y;
-	EvalSH5678.y = f2 * 0.28867513459481288225457439025097 * (3.0 * _Direction.y*_Direction.y - 1.0);
-	EvalSH5678.z = -f2 * _Direction.z * _Direction.y;
-	EvalSH5678.w = f2 * 0.5 * (_Direction.z*_Direction.z - _Direction.x*_Direction.x);
+	EvalSH1234.x =  f1 * XYZ.y;
+	EvalSH1234.y =  f1 * XYZ.z;
+	EvalSH1234.z =  f1 * XYZ.x;
+	EvalSH1234.w =  f2 * XYZ.x * XYZ.y;
+	EvalSH5678.x =  f2 * XYZ.y * XYZ.z;
+	EvalSH5678.y =  f2 * 0.28867513459481288225457439025097 * (3.0 * XYZ.z*XYZ.z - 1.0);
+	EvalSH5678.z =  f2 * XYZ.x * XYZ.z;
+	EvalSH5678.w =  f2 * 0.5 * (XYZ.x*XYZ.x - XYZ.y*XYZ.y);
+
+//	float	EvalSH0 = f0;
+//	float4	EvalSH1234, EvalSH5678;
+//	EvalSH1234.x = -f1 * _Direction.x;
+//	EvalSH1234.y =  f1 * _Direction.y;
+//	EvalSH1234.z = -f1 * _Direction.z;
+//	EvalSH1234.w =  f2 * _Direction.x * _Direction.z;
+//	EvalSH5678.x = -f2 * _Direction.x * _Direction.y;
+//	EvalSH5678.y =  f2 * 0.28867513459481288225457439025097 * (3.0 * _Direction.y*_Direction.y - 1.0);
+//	EvalSH5678.z = -f2 * _Direction.z * _Direction.y;
+//	EvalSH5678.w =  f2 * 0.5 * (_Direction.z*_Direction.z - _Direction.x*_Direction.x);
 
 	// Dot the SH together
 	return max( 0.0,
@@ -76,15 +89,15 @@ void ZHRotate( const in float3 _Direction, const in float3 _ZHCoeffs, out float 
 	float	f0 = cl0 * 0.28209479177387814347403972578039;	// 0.5 / sqrt(PI);
 	float	f1 = cl1 * 0.48860251190291992158638462283835;	// 0.5 * sqrt(3.0/PI);
 	float	f2 = cl2 * 1.0925484305920790705433857058027;	// 0.5 * sqrt(15.0/PI);
-	_Coeffs[0] = f0;
+	_Coeffs[0] =  f0;
 	_Coeffs[1] = -f1 * _Direction.x;
-	_Coeffs[2] = f1 * _Direction.y;
+	_Coeffs[2] =  f1 * _Direction.y;
 	_Coeffs[3] = -f1 * _Direction.z;
-	_Coeffs[4] = f2 * _Direction.x * _Direction.z;
+	_Coeffs[4] =  f2 * _Direction.x * _Direction.z;
 	_Coeffs[5] = -f2 * _Direction.x * _Direction.y;
-	_Coeffs[6] = f2 * 0.28209479177387814347403972578039 * (3.0 * _Direction.y*_Direction.y - 1.0);
+	_Coeffs[6] =  f2 * 0.28209479177387814347403972578039 * (3.0 * _Direction.y*_Direction.y - 1.0);
 	_Coeffs[7] = -f2 * _Direction.z * _Direction.y;
-	_Coeffs[8] = f2 * 0.5 * (_Direction.z*_Direction.z - _Direction.x*_Direction.x);
+	_Coeffs[8] =  f2 * 0.5 * (_Direction.z*_Direction.z - _Direction.x*_Direction.x);
 }
 
 // Builds a spherical harmonics cone lobe (same as for a spherical light source subtending a cone of half angle a)
@@ -138,6 +151,51 @@ void BuildSHCosineLobe( const in float3 _Direction, out float _Coeffs[9] )
 		0.49541591220075137666812859564002	// sqrt(5PI) / 8
 		);
 	ZHRotate( _Direction, ZHCoeffs, _Coeffs );
+}
+
+// Applies Hanning filter for given window size
+void FilterHanning( inout float3 _SH[9], float _WindowSize ) {
+
+	float	rcpWindow = 1.0 / _WindowSize;
+	float2	Factors = float2( 0.5 * (1.0 + cos( PI * rcpWindow )), 0.5 * (1.0 + cos( 2.0 * PI * rcpWindow )) );
+	_SH[1] *= Factors.x;
+	_SH[2] *= Factors.x;
+	_SH[3] *= Factors.x;
+	_SH[4] *= Factors.y;
+	_SH[5] *= Factors.y;
+	_SH[6] *= Factors.y;
+	_SH[7] *= Factors.y;
+	_SH[8] *= Factors.y;
+}
+
+// Applies Lanczos filter for given window size
+void FilterLanczos( inout float3 _SH[9], float _WindowSize ) {
+
+	float	rcpWindow = 1.0 / _WindowSize;
+	float2	Factors = float2( sin( PI * rcpWindow ) / (PI * rcpWindow), sin( 2.0 * PI * rcpWindow ) / (2.0 * PI * rcpWindow) );
+	_SH[1] *= Factors.x;
+	_SH[2] *= Factors.x;
+	_SH[3] *= Factors.x;
+	_SH[4] *= Factors.y;
+	_SH[5] *= Factors.y;
+	_SH[6] *= Factors.y;
+	_SH[7] *= Factors.y;
+	_SH[8] *= Factors.y;
+}
+
+// Applies gaussian filter for given window size
+void FilterGaussian( inout float3 _SH[9], float _WindowSize ) {
+
+	float	rcpWindow = 1.0 / _WindowSize;
+	float2	Factors = float2( exp( -0.5 * (PI * rcpWindow) * (PI * rcpWindow) ), exp( -0.5 * (2.0 * PI * rcpWindow) * (2.0 * PI * rcpWindow) ) );
+	_SH[1] *= Factors.x;
+	_SH[2] *= Factors.x;
+	_SH[3] *= Factors.x;
+	_SH[4] *= Factors.y;
+	_SH[5] *= Factors.y;
+	_SH[6] *= Factors.y;
+	_SH[7] *= Factors.y;
+	_SH[8] *= Factors.y;
 }
 
 // Performs the SH triple product r = a * b

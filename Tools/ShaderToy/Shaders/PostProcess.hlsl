@@ -34,9 +34,17 @@ float ComputeSceneZThickness( float _sceneZMin, float4 _ZThicknessFactors, float
 
 // Samples the scene's depth buffer at appropriate mip level and returns the [ZMin,ZMax] interval
 float2	SampleSceneZ( uint2 _pixelPosition, uint _mipLevel, Texture2D<float> _TexFullResDepth, Texture2D<float4> _TexDownsampledDepth, float4 _ZThicknessFactors, float _ZThicknessPow ) {
-	float2	ZMinMax = _mipLevel == 0 ?	_TexFullResDepth[_pixelPosition] :							// Read full resolution Z
-										_TexDownsampledDepth.mips[_mipLevel-1U][_pixelPosition].yz;	// Assuming we're receiving Y=Min Z, Z=Max Z
-			ZMinMax.y = ComputeSceneZThickness( ZMinMax.y, _ZThicknessFactors, _ZThicknessPow );	// Grow the interval with artificial scene thickness
+// 	float2	ZMinMax = _mipLevel == 0 ?	_TexFullResDepth[_pixelPosition] :							// Read full resolution Z
+// 										_TexDownsampledDepth.mips[_mipLevel-1U][_pixelPosition].yz;	// Assuming we're receiving Y=Min Z, Z=Max Z
+
+	float2	ZMinMax;
+	[branch]
+	if ( _mipLevel == 0 )
+		ZMinMax = _TexFullResDepth[_pixelPosition];								// Read full resolution Z
+	else
+		ZMinMax = _TexDownsampledDepth.mips[_mipLevel-1U][_pixelPosition].yz;	// Assuming we're receiving Y=Min Z, Z=Max Z
+
+	ZMinMax.y = ComputeSceneZThickness( ZMinMax.y, _ZThicknessFactors, _ZThicknessPow );	// Grow the interval with artificial scene thickness
 
 	return ZMinMax;
 }
@@ -67,7 +75,7 @@ float	ScreenSpaceRayTrace( float3 _csPosition, float3 _csDirection, uint _MaxSte
 	if ( Fade == 0.0 )
 		return 0.0;	// Don't trace rays that come our way
 
-	float3	csEndPos = _csPosition + 0.01 * _csDirection;	// We don't really care about the end position here, we just want the slope
+	float3	csEndPos = _csPosition + _csDirection;	// We don't really care about the end position here, we just want the slope
 
 	float4	H0 = mul( float4( _csPosition, 1.0 ), _Camera2Proj );
 	float4	H1 = mul( float4( csEndPos, 1.0 ), _Camera2Proj );
@@ -94,13 +102,18 @@ float	ScreenSpaceRayTrace( float3 _csPosition, float3 _csDirection, uint _MaxSte
 	float2	Delta = H1.xy - H0.xy;
 	float3	Slope = (H1.xyz - H0.xyz) / max( abs( Delta.x ), abs( Delta.y ) );	// Slope, with at least one of the 2 XY components equal to +1 or -1 (so adding the slope makes us advance an entire pixel)
 
-
 	// This ugly code is here to prevent invalid 0 slopes when camera is perfectly horizontal
 	Slope.x = abs(Slope.x) > 1e-3 ? Slope.x : 1e-3;
 	Slope.y = abs(Slope.y) > 1e-3 ? Slope.y : 1e-3;
 
 	// Bend horizontal slope based on closeness to screen border
 	Slope.x *= RayBendFactor;
+
+// //_DEBUG = 100.0 * (H1.w - H0.w);
+// //_DEBUG = -100.0 * Slope.z;
+// _DEBUG = float3( abs( H0.xy - H1.xy ), 0 );
+// _DEBUG = -0.005 / Slope.z;
+// return 1.0;
 
 	// Pre-Compute the never changing pixel border intersect (i.e. the rate at which we will intersect the next X or Y pixel border)
 	float2	InvSlope = 1.0 / Slope.xy;
@@ -109,6 +122,9 @@ float	ScreenSpaceRayTrace( float3 _csPosition, float3 _csDirection, uint _MaxSte
 	const float	BORDER_EPSILON = 1e-3;														// Always add a little epsilon so we always fully cross the border
 	float2	BorderOffset = float2(	Slope.x > 0.0 ? 1.0+BORDER_EPSILON : -BORDER_EPSILON,	// If we're tracing to the right, then the next pixel border is on the right, otherwise it's on the left
 									Slope.y > 0.0 ? 1.0+BORDER_EPSILON : -BORDER_EPSILON );	// If we're tracing to the bottom, then the next pixel border is below, otherwise it's above
+
+	float2	BorderOffsetZ = float2(	Slope.x > 0.0 ? 1.0 : 0.0,		// If we're tracing to the right, then the next pixel border is on the right, otherwise it's on the left
+									Slope.y > 0.0 ? 1.0 : 0.0 );	// If we're tracing to the bottom, then the next pixel border is below, otherwise it's above
 
 	// Initial scale pixel position and slope depending on mip
 	uint	MipLevel = SSR_MIP_MAX;		// Start at coarsest mip
@@ -121,19 +137,23 @@ float	ScreenSpaceRayTrace( float3 _csPosition, float3 _csDirection, uint _MaxSte
 
 	// Main loop
 	bool	InInterval = false;
-	float	Z = _csPosition.z;	// Initial Z
+	float	Z = H0.w;	// Initial Z
 	uint	StepIndex = 0U;
 	[loop]
-	while ( StepIndex < _MaxStepsCount && H0.y >= 0.0 && H0.y < MaxY ) {
+	while ( StepIndex < _MaxStepsCount && H0.y >= 0.0 && H0.y < MaxY && H0.z > 0.0 ) {
 
 		// Compute next position
 		uint2	PixelPos = uint2( floor( H0.xy ) );
 		float2	PixelBorder = PixelPos + BorderOffset;
 		float2	Distance2Border = PixelBorder - H0.xy;
-		float2	T = Distance2Border * InvSlope;	// "Time" to intersect, on both X and Y, to reach either next left/right pixel, or top/bottom pixel
-		float	t = min( T.x, T.y );			// Choose the closest intersection (i.e. horizontal or vertical border)
+		float2	T = Distance2Border * InvSlope;		// "Time" to intersect, on both X and Y, to reach either next left/right pixel, or top/bottom pixel
+		float	t = min( T.x, T.y );				// Choose the closest intersection (i.e. horizontal or vertical border)
+
 		float3	NextH = H0.xyz + t * Slope;
-		float	NextZ = 1.0 / NextH.z;
+		float	NextZ = 1.0 / max( 1e-4, NextH.z );	// Here we need to make sure we don't exceed the "ray horizon" and the interpolated Z is always positive
+													// Indeed, for very grazing rays, we quickly reach very far every time we march a single pixel and we can 
+													//	actually exceed the ray's "infinite distance" which occurs when the slope takes us into negative Z values
+													//	that's also one of the loop's exit condition (H0.z > 0) to avoid tracing "further than infinity"...
 
 		// Sample Zs at new mip and position
 		float2	ZMinMax = SampleSceneZ( PixelPos, MipLevel, _TexFullResDepth, _TexDownsampledDepth, _ZThicknessFactors, _ZThicknessPow );
@@ -190,7 +210,8 @@ float	ScreenSpaceRayTrace( float3 _csPosition, float3 _csDirection, uint _MaxSte
 		[branch]
 		if ( InInterval ) {
 			[branch]
-			if ( MipLevel == 0U ) {
+ 			if ( MipLevel == 0U )
+			{
 				// We have an intersection at finest mip!
 				// Compute "exact" hit Z
 				// We know that in the distance "t" we marched from Current Z to Next Z and crossed the ZMin boundary
@@ -236,9 +257,10 @@ float	ScreenSpaceRayTrace( float3 _csPosition, float3 _csDirection, uint _MaxSte
 	// Recompute and UVs
 	_UV = H0.xy / _TexSize;
 
-_DEBUG = float(MipLevel) / SSR_MIP_MAX;
+//_DEBUG = float(MipLevel) / SSR_MIP_MAX;
 _DEBUG = float3( _UV, 0 );
 _DEBUG = 0.1 * _HitZ;
+_DEBUG = H0.z <= 0.0 ? float3( 1, 0, 0 ) : float3( 0, 1, 0 );
 _DEBUG = float(StepIndex) / _MaxStepsCount;
 //InInterval = 1.0;	// Force show debug value
 
@@ -274,7 +296,11 @@ float3	PS( VS_IN _In ) : SV_TARGET0 {
 //		float3	wsNormal = normalize( float3( sin( 50.0 * wsHit.x + 2.0 * iGlobalTime ), 10.0, sin( 50.0 * wsHit.z - 4.0 * iGlobalTime ) ) );	// Pipo wave
 		float3	wsReflect = reflect( wsDir, wsNormal );
 
-		const uint	MAX_STEPS = 64;
+// wsReflect.y *= 1.0;
+// wsReflect = normalize( wsReflect );
+
+//		const uint	MAX_STEPS = 64;
+const uint	MAX_STEPS = 512;
 
 		float3	csHit = mul( float4( wsHit, 1.0 ), _World2Camera ).xyz;
 		float3	csReflect = mul( float4( wsReflect, 0.0 ), _World2Camera ).xyz;
@@ -295,9 +321,9 @@ const float		ZThicknessPow = 1.0;
 
 		// Compute screen space reflection and blend with background color
 		// Actually, at the moment we simply replace the background color but we should use Fresnel equations to blend correctly...
-		float2	hitUV;
-		float	hitDistance;
-		float3	DEBUG;
+		float2	hitUV = 0.0;
+		float	hitDistance = 0.0;
+		float3	DEBUG = 0.0;
 		float	blend = ScreenSpaceRayTrace( csHit, csReflect, MAX_STEPS, _TexLinearDepth, _TexDownsampledDepth, Dims, ZThicknessFactors, ZThicknessPow, _Camera2Proj, hitDistance, hitUV, DEBUG );
 		float3	SKY_COLOR = float3( 1, 0, 0 );
 		Color.xyz = lerp( SKY_COLOR, _TexSource.SampleLevel( LinearClamp, float3( hitUV, 0.0 ), 0.0 ).xyz, blend );

@@ -1,0 +1,51 @@
+#pragma region ------------------- GAMMA CORRECTION -------------------
+// The Image class completely supports gamma-corrected images so your internal representation of images always is in linear space.
+// The _ImageGamma parameter present in numerous methods of the Image class is very important to understand in order to obtain
+//  linear space images so you can work peacefully with your pipeline.
+// 
+// The Problem :
+// -------------
+// To sum up, images digitized by cameras or scanners (and even images hand-painted by a software that does not support gamma correction)
+// are stored with gamma-correction "unapplied". That means your camera knows that your monitor has a display curve with a
+// gamma correction factor of about 2.2 so, in order to get back the image you took with the camera, it will store the image
+// with the inverse gamma factor of the monitor.
+// 
+// In short, here is what happens in a few steps :
+//   1) Photons and radiance in the real scene you shot with the camera are in "linear space"
+//       => This means that receiving twice more photons will double the radiance
+// 
+//   2) The camera sensor grabs the radiance and stores it internally in linear space (all is well until now)
+// 
+//   3) When you store the RAW camera image into JPEG or PNG for example, the camera will write the gamma-corrected radiance
+//       => This means the color written to the disk file is not RGB but pow( RGB, 1/Gamma ) instead
+//       => For JPEG or PNG, the usual Gamma value is 2.2 to compensate for the average 2.2 gamma of the CRT displays
+//       
+//   4) When you load the JPEG image as a texture, it's not in linear space but in *GAMMA SPACE*
+// 
+//   5) Finally, displaying the texture to the screen will apply the final gamma correction that will, ideally, convert back
+//      the gamma space image into linear space radiance for your eyes to see.
+//       => This means the monitor will not display the color RGB but pow( RGB, Gamma ) instead
+//       => The usual gamma of a CRT is 2.2, thus nullifying the effect of the JPEG 2.2 gamma correction
+// 
+// So, if you are assuming you are dealing with linear space images from point 4) then you are utterly **WRONG** and will lead to many problems !
+// (even creating mip-maps in gamma space is a problem)
+// 
+// 
+// The Solution :
+// --------------
+// The idea is simply to negate the effect of JPEG/PNG/Whatever gamma-uncorrection by applying pow( RGB, Gamma ) as soon as
+//  point 4) so you obtain nice linear-space textures you can work with peacefully.
+// You can either choose to apply the pow() providing the appropriate _ImageGamma parameter, or you can
+//	use the PF_RGBA8_sRGB pixel format with a _ImageGamma of 1.0 if you know your image is sRGB encoded.
+// 
+// If everything is in linear space then all is well in your rendering pipeline until the result is displayed back.
+// Indeed, right before displaying the final (linear space) color, you should apply gamma correction and write pow( RGB, 1/Gamma )
+//  so the monitor will then apply pow( RGB, Gamma ) and so your linear space color is correctly viewed by your eyes.
+// That may seem like a lot of stupid operations queued together to amount to nothing, but these are merely here to circumvent a physical
+//  property of the screens (which should have been handled by the screen constructors a long time ago IMHO).
+// 
+// Addendum (2016-04-16): Stupid Patapom from the past! Gamma correction in files is NOT only to circumvent screen "problems" but mainly to
+//	have more range in the shadow values to which the eye is more sensitive to!
+// 
+// The complete article you should read to make up your mind about gamma : http://http.developer.nvidia.com/GPUGems3/gpugems3_ch24.html
+#pragma endregion

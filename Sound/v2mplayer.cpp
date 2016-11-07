@@ -11,6 +11,7 @@
 
 #include "v2mplayer.h"
 #include "libv2.h"
+#include <memory.h>
 
 #define GETDELTA(p, w) ((p)[0]+((p)[w]<<8)+((p)[2*w]<<16))
 #define UPDATENT(n, v, p, w) if ((n)<(w)) { (v)=m_state.time+GETDELTA((p), (w)); if ((v)<m_state.nexttime) m_state.nexttime=(v); }
@@ -22,23 +23,40 @@
 
 namespace
 {
-	void UpdateSampleDelta(sU32 nexttime, sU32 time, sU32 usecs, sU32 td2, sU32 *smplrem, sU32 *smpldelta)
-  //////////////////////////////////////////////////////////////////////////////////////////////////////
-	{
-		// performs 64bit (nexttime-time)*usecs/td2 and a 32.32bit addition to smpldelta:smplrem
-		__asm {
-			mov eax, [nexttime]
-			sub eax, [time]
-			mov ebx, [usecs]
-			mul ebx
-			mov ebx, [td2]
-			div ebx
-			mov ecx, [smplrem]
-			add [ecx], edx
-			adc eax, 0
-			mov ecx, [smpldelta]
-			mov [ecx], eax
-		}
+	//////////////////////////////////////////////////////////////////////////////////////////////////////
+	// performs 64bit (nexttime-time)*usecs/td2 and a 32.32bit addition to smpldelta:smplrem
+	void UpdateSampleDelta(sU32 nexttime, sU32 time, sU32 usecs, sU32 td2, sU32 *smplrem, sU32 *smpldelta) {
+		#ifndef _WIN64
+			__asm {
+				mov eax, [nexttime]
+				sub eax, [time]
+				mov ebx, [usecs]
+				mul ebx
+				mov ebx, [td2]
+				div ebx
+				mov ecx, [smplrem]
+				add [ecx], edx
+				adc eax, 0
+				mov ecx, [smpldelta]
+				mov [ecx], eax
+			}
+		#else
+			long	temp = nexttime - time;
+					temp *= usecs;
+					temp /= td2;
+
+			long	temp2 = *smpldelta;
+					temp2 <<= 32;
+					temp2 |= *smplrem;
+
+			temp += temp2;
+
+			*smplrem = sU32( temp & 0xFFFFFFFF );
+
+			temp >>= 32L;
+			*smpldelta = sU32( temp );
+
+		#endif
 	}
 }
 
@@ -311,16 +329,23 @@ void V2MPlayer::Play(sU32 a_time)
 
 	m_base.valid=sFALSE;
 	sU32 destsmpl, cursmpl=0;
-	__asm
-	{
-		mov  ecx, this
-		mov	 eax, [a_time]
-		mov  ebx, [ecx + m_samplerate]
-		imul ebx
-		mov  ebx, [ecx + m_tpc]
-		idiv ebx
-		mov  [destsmpl], eax
-	}
+	#ifndef _WIN64
+		__asm
+		{
+			mov  ecx, this
+			mov	 eax, [a_time]
+			mov  ebx, [ecx + m_samplerate]
+			imul ebx
+			mov  ebx, [ecx + m_tpc]
+			idiv ebx
+			mov  [destsmpl], eax
+		}
+	#else
+		long	temp = a_time;
+				temp *= m_samplerate;
+				temp /= m_tpc;
+		destsmpl = sU32( temp );
+	#endif
 
 	m_state.state=PlayerState::PLAYING;
 	m_state.smpldelta=0;
@@ -349,20 +374,25 @@ void V2MPlayer::Stop(sU32 a_fadetime)
 //////////////////////////////////////
 {
 	if (!m_base.valid) return;
-
-	if (a_fadetime)
-	{
+	if (a_fadetime) {
 		sU32 ftsmpls;
-		__asm
-		{
-			mov  ecx, this
-			mov	 eax, [a_fadetime]
-			mov  ebx, [ecx + m_samplerate]
-			imul ebx
-			mov  ebx, [ecx + m_tpc]
-			idiv ebx
-			mov  [ftsmpls], eax
-		}
+		#ifndef _WIN64
+			__asm
+			{
+				mov  ecx, this
+				mov	 eax, [a_fadetime]
+				mov  ebx, [ecx + m_samplerate]
+				imul ebx
+				mov  ebx, [ecx + m_tpc]
+				idiv ebx
+				mov  [ftsmpls], eax
+			}
+		#else
+			long	temp = a_fadetime;
+					temp *= m_samplerate;
+					temp /= m_tpc;
+			ftsmpls = sU32(temp);
+		#endif
 		m_fadedelta=m_fadeval/ftsmpls;
 	}
 	else
@@ -401,22 +431,21 @@ void V2MPlayer::Render(sF32 *a_buffer, sU32 a_len, sBool a_add)
 					m_state.smpldelta=-1;
 			}
 		}
-	}
-	else if (m_state.state==PlayerState::OFF || !m_base.valid)
-	{
-    if (!a_add)
-    {
-		  __asm {
-			  mov edi, [a_buffer]
-			  mov ecx, [a_len]
-			  shl ecx, 1
-			  xor eax, eax
-			  rep stosd
-		  }
-    }
-	}
-	else
-	{
+	} else if (m_state.state==PlayerState::OFF || !m_base.valid) {
+		if (!a_add) {
+			#ifndef _WIN64
+			  __asm {
+				  mov edi, [a_buffer]
+				  mov ecx, [a_len]
+				  shl ecx, 1
+				  xor eax, eax
+				  rep stosd
+			  }
+			#else
+				memset( a_buffer, 0, 2*a_len );
+			#endif
+		}
+	} else {
 		synthRender(m_synth,a_buffer,a_len,0,a_add);
 		m_state.cursmpl+=a_len;
 	}

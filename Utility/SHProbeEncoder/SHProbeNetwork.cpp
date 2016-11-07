@@ -397,7 +397,7 @@ void	SHProbeNetwork::PreComputeProbes( const char* _pPathToProbes, IRenderSceneD
 	{
 		float4x4	Camera2Local;
 		Camera2Local.SetRow( 0, SideRight[CubeFaceIndex], 0 );
-		Camera2Local.SetRow( 1, SideAt[CubeFaceIndex] ^ SideRight[CubeFaceIndex], 0 );
+		Camera2Local.SetRow( 1, SideAt[CubeFaceIndex].Cross( SideRight[CubeFaceIndex] ), 0 );
 		Camera2Local.SetRow( 2, SideAt[CubeFaceIndex], 0 );
 		Camera2Local.SetRow( 3, float3::Zero, 1 );
 

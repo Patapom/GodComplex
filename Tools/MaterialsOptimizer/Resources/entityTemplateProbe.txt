@@ -1,0 +1,18 @@
+entity {
+	entityDef probe {
+		inherit = "blacksparrow/probe";
+		editorVars {
+			placeable = true;
+			editorName = "";
+		}
+		edit = {
+			spawnPosition = {
+				x = -0.0189583302;
+				y = -1.7630009651;
+				z = 0.3187797666;
+			}
+			m_usedForIBL = true;
+			m_probe = "<MAP_PATH>/probe";
+		}
+	}
+}

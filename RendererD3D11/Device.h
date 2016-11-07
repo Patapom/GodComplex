@@ -1,12 +1,6 @@
 #pragma once
 #include "Renderer.h"
 
-
-//#define NSIGHT			// Define this if you're debugging the app using Nvidia Nsight
-
-//#define DIRECTX10		// Define this to use DX10, otherwise DX11 will be used
-#define TRY_DIRECTX10_1	// Define this to attempt using DX10.1
-
 class Component;
 class Shader;
 class Texture2D;
@@ -15,14 +9,12 @@ class RasterizerState;
 class DepthStencilState;
 class BlendState;
 
-class Device
-{
+class Device {
 	static const int	SAMPLERS_COUNT = 8;
 
 public:		// NESTED TYPES
 
-	enum	SHADER_STAGE_FLAGS
-	{
+	enum	SHADER_STAGE_FLAGS {
 		SSF_VERTEX_SHADER		= (1 << 0),
 		SSF_HULL_SHADER			= (1 << 1),
 		SSF_DOMAIN_SHADER		= (1 << 2),
@@ -47,7 +39,7 @@ private:	// FIELDS
 
 	Component*				m_pComponentsStackTop;	// Remember this is the stack TOP so access the components using their m_pNext pointer to reach back to the bottom
 
-	Shader*				m_pCurrentMaterial;		// The currently used material
+	Shader*					m_pCurrentMaterial;		// The currently used material
 	RasterizerState*		m_pCurrentRasterizerState;
 	DepthStencilState*		m_pCurrentDepthStencilState;
 	BlendState*				m_pCurrentBlendState;
@@ -55,7 +47,7 @@ private:	// FIELDS
 	int						m_StatesCount;
 
 	// Default blend & stencil refs
-	float4				m_BlendFactors;
+	bfloat4					m_BlendFactors;
 	U32						m_BlendMasks;
 	U8						m_StencilRef;
 
@@ -98,7 +90,7 @@ public:	 // PROPERTIES
 	const Texture2D&		DefaultRenderTarget() const	{ return *m_pDefaultRenderTarget; }
 	const Texture2D&		DefaultDepthStencil() const	{ return *m_pDefaultDepthStencil; }
 
-	Shader*				CurrentMaterial()			{ return m_pCurrentMaterial; }
+	Shader*					CurrentMaterial()			{ return m_pCurrentMaterial; }
 
 
 public:	 // METHODS
@@ -112,9 +104,9 @@ public:	 // METHODS
 	void	Exit();
 
 	// Helpers
-	void	ClearRenderTarget( const Texture2D& _Target, const float4& _Color );
-	void	ClearRenderTarget( const Texture3D& _Target, const float4& _Color );
-	void	ClearRenderTarget( ID3D11RenderTargetView& _TargetView, const float4& _Color );
+	void	ClearRenderTarget( const Texture2D& _Target, const bfloat4& _Color );
+	void	ClearRenderTarget( const Texture3D& _Target, const bfloat4& _Color );
+	void	ClearRenderTarget( ID3D11RenderTargetView& _TargetView, const bfloat4& _Color );
 	void	ClearDepthStencil( const Texture2D& _DepthStencil, float _Z, U8 _Stencil, bool _bClearDepth=true, bool _bClearStencil=true );
 	void	ClearDepthStencil( ID3D11DepthStencilView& _DepthStencil, float _Z, U8 _Stencil, bool _bClearDepth=true, bool _bClearStencil=true );
 	void	SetRenderTarget( const Texture2D& _Target, const Texture2D* _pDepthStencil=NULL, const D3D11_VIEWPORT* _pViewport=NULL );
@@ -122,7 +114,7 @@ public:	 // METHODS
 	void	SetRenderTarget( int _Width, int _Height, const ID3D11RenderTargetView& _Target, ID3D11DepthStencilView* _pDepthStencil=NULL, const D3D11_VIEWPORT* _pViewport=NULL );
 	void	SetRenderTargets( int _Width, int _Height, int _TargetsCount, ID3D11RenderTargetView* const * _ppTargets, ID3D11DepthStencilView* _pDepthStencil=NULL, const D3D11_VIEWPORT* _pViewport=NULL );
 	void	SetStates( RasterizerState* _pRasterizerState, DepthStencilState* _pDepthStencilState, BlendState* _pBlendState );
-	void	SetStatesReferences( const float4& _BlendMasks, U32 _BlendSampleMask, U8 _StencilRef );
+	void	SetStatesReferences( const bfloat4& _BlendMasks, U32 _BlendSampleMask, U8 _StencilRef );
 	void	SetScissorRect( const D3D11_RECT* _pScissor=NULL );
 
 	// Clears the shader resource registers

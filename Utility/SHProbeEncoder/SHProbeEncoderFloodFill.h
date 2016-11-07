@@ -24,8 +24,7 @@
 //
 #pragma once
 
-class	SHProbeEncoder
-{
+class	SHProbeEncoder {
 public:		// CONSTANTS
 
 	static const U32		MAX_PROBE_SURFACES = 16;			// We only deal with a maximum of 16 diffuse surfaces (sets)
@@ -460,7 +459,7 @@ private:	// FIELDS
 	float				m_OcclusionSH[9];
 
 	// Dynamic & Emissive surfaces
-//	List< Surface >		m_AllSurfaces;
+	List< Surface >		m_AllSurfaces;
 	U32					m_SurfacesCount;
 	Surface*			m_ppSurfaces[MAX_PROBE_SURFACES];
 	U32					m_EmissiveSurfacesCount;

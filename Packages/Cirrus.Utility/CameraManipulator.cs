@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Windows.Forms;
 
-using RendererManaged;
+using SharpMath;
 
 namespace Nuaj.Cirrus.Utility
 {
@@ -13,8 +13,7 @@ namespace Nuaj.Cirrus.Utility
 	/// Use left button to rotate, middle to pan and right/wheel to zoom
 	/// Use Shift to switch to "Unreal Editor first person mode"
 	/// </summary>
-	public class CameraManipulator
-	{
+	public class CameraManipulator {
 		#region	CONSTANTS
 
 		// The minimal distance we can't go under (decreasing any further would push the target along with the camera)
@@ -92,11 +91,11 @@ namespace Nuaj.Cirrus.Utility
 		}
 
 		public float3		CameraPosition {
-			get { return (float3) m_CameraTransform.r3; }
+			get { return (float3) m_CameraTransform.r[3]; }
 		}
 
 		public float3		TargetPosition {
-			get { return (float3) (m_CameraTransform.r3 + m_CameraTargetDistance * m_CameraTransform.r2); }
+			get { return (float3) (m_CameraTransform.r[3] + m_CameraTargetDistance * m_CameraTransform.r[2]); }
 		}
 
 		protected float4x4	CameraTransform
@@ -109,7 +108,7 @@ namespace Nuaj.Cirrus.Utility
 					return;
 
 				float4x4	Result = value;
-			    Result.r0 = -Result.r0;
+			    Result.r[0] = -Result.r[0];
 
 				m_Camera.Camera2World = Result;
 			}
@@ -126,7 +125,7 @@ namespace Nuaj.Cirrus.Utility
 				m_CameraTargetDistance = value;
 
 				// Move the camera along its axis to match the new distance
-				Temp.r3 =  TargetMat.r3 - m_CameraTargetDistance * Temp.r2;
+				Temp.r[3] =  TargetMat.r[3] - m_CameraTargetDistance * Temp.r[2];
 
 				CameraTransform = Temp;
 
@@ -140,14 +139,14 @@ namespace Nuaj.Cirrus.Utility
 			{
 				float4x4	CamMat = CameraTransform;
 				float4x4	TargetMat = float4x4.Identity;
-							TargetMat.r3 =  CamMat.r3  + m_CameraTargetDistance * CamMat.r2;
+							TargetMat.r[3] = CamMat.r[3]  + m_CameraTargetDistance * CamMat.r[2];
 
 				return	TargetMat;
 			}
 			set
 			{
 				float4x4	CamMat = CameraTransform;
-						CamMat.r3 = value.r3 - m_CameraTargetDistance * value.r2;
+						CamMat.r[3] = value.r[3] - m_CameraTargetDistance * value.r[2];
 
  				CameraTransform = CamMat;
 			}
@@ -206,10 +205,10 @@ namespace Nuaj.Cirrus.Utility
 			float3		Ortho = _Up.Cross( At ).Normalized;
 
 			float4x4	CameraMat = float4x4.Identity;
-						CameraMat.r3 = new float4( _Position, 1.0f );
-						CameraMat.r2 = new float4( At, 0.0f );
-						CameraMat.r0 = new float4( Ortho, 0.0f );
-						CameraMat.r1 = new float4( At.Cross( Ortho ), 0.0f );
+						CameraMat.r[3] = new float4( _Position, 1.0f );
+						CameraMat.r[2] = new float4( At, 0.0f );
+						CameraMat.r[0] = new float4( Ortho, 0.0f );
+						CameraMat.r[1] = new float4( At.Cross( Ortho ), 0.0f );
 
 			CameraTransform = CameraMat;
 
@@ -266,17 +265,17 @@ namespace Nuaj.Cirrus.Utility
 
 			float4x4	Ret = float4x4.Identity;
 
-			Ret.r0.x = 1.0f -	yy - zz;
-			Ret.r0.y =			xy + wz;
-			Ret.r0.z =			xz - wy;
+			Ret.r[0].x = 1.0f -	yy - zz;
+			Ret.r[0].y =		xy + wz;
+			Ret.r[0].z =		xz - wy;
 
-			Ret.r1.x =			xy - wz;
-			Ret.r1.y = 1.0f -	xx - zz;
-			Ret.r1.z =			yz + wx;
+			Ret.r[1].x =		xy - wz;
+			Ret.r[1].y = 1.0f -	xx - zz;
+			Ret.r[1].z =		yz + wx;
 
-			Ret.r2.x =			xz + wy;
-			Ret.r2.y =			yz - wx;
-			Ret.r2.z = 1.0f -	xx - yy;
+			Ret.r[2].x =		xz + wy;
+			Ret.r[2].y =		yz - wx;
+			Ret.r[2].z = 1.0f -	xx - yy;
 
 			return	Ret;
 		}
@@ -289,21 +288,21 @@ namespace Nuaj.Cirrus.Utility
 		protected float3	GetEuler( float4x4 _Matrix )
 		{
 			float3	Ret = new float3();
-			float	fSinY = Math.Min( +1.0f, Math.Max( -1.0f, _Matrix.r0.z ) ),
+			float	fSinY = Math.Min( +1.0f, Math.Max( -1.0f, _Matrix.r[0].z ) ),
 					fCosY = (float) Math.Sqrt( 1.0f - fSinY*fSinY );
 
-			if ( _Matrix.r0.x < 0.0 && _Matrix.r2.z < 0.0 )
+			if ( _Matrix.r[0].x < 0.0 && _Matrix.r[2].z < 0.0 )
 				fCosY = -fCosY;
 
 			if ( (float) Math.Abs( fCosY ) > float.Epsilon )
 			{
-				Ret.x = (float)  Math.Atan2( _Matrix.r1.z / fCosY, _Matrix.r2.z / fCosY );
+				Ret.x = (float)  Math.Atan2( _Matrix.r[1].z / fCosY, _Matrix.r[2].z / fCosY );
 				Ret.y = (float) -Math.Atan2( fSinY, fCosY );
-				Ret.z = (float)  Math.Atan2( _Matrix.r0.y / fCosY, _Matrix.r0.x / fCosY );
+				Ret.z = (float)  Math.Atan2( _Matrix.r[0].y / fCosY, _Matrix.r[0].x / fCosY );
 			}
 			else
 			{
-				Ret.x = (float)  Math.Atan2( -_Matrix.r2.y, _Matrix.r1.y );
+				Ret.x = (float)  Math.Atan2( -_Matrix.r[2].y, _Matrix.r[1].y );
 				Ret.y = (float) -Math.Asin( fSinY );
 				Ret.z = 0.0f;
 			}
@@ -380,7 +379,7 @@ namespace Nuaj.Cirrus.Utility
 						float	fAngleX = (MousePos.y - m_ButtonDownMousePosition.y) * 2.0f * (float) Math.PI * m_ManipulationRotationSpeed;
 						float	fAngleY = (MousePos.x - m_ButtonDownMousePosition.x) * 2.0f * (float) Math.PI * m_ManipulationRotationSpeed;
 
-						float4		AxisX = m_ButtonDownTransform.r0;
+						float4		AxisX = m_ButtonDownTransform.r[0];
 						float4x4	Rot = AngleAxis2Matrix( fAngleX, -new float3( AxisX.x, AxisX.y, AxisX.z ) )
 										* AngleAxis2Matrix( fAngleY, new float3( 0f, -1.0f, 0.0f ) );
 
@@ -419,7 +418,7 @@ namespace Nuaj.Cirrus.Utility
 							m_ButtonDownMousePosition = MousePos;
 
 							float4x4	DollyCam = CameraTransform;
-									DollyCam.r3 = DollyCam.r3 - 2.0f * m_ManipulationZoomSpeed * fTrans * DollyCam.r2;
+									DollyCam.r[3] = DollyCam.r[3] - 2.0f * m_ManipulationZoomSpeed * fTrans * DollyCam.r[2];
 
 							CameraTransform = DollyCam;
 						}
@@ -437,9 +436,9 @@ namespace Nuaj.Cirrus.Utility
 
 						// Make the camera pan
 						float4x4	PanCam = m_ButtonDownTransform;
-									PanCam.r3 = m_ButtonDownTransform.r3
-											  - fTransFactor * Trans.x * m_ButtonDownTransform.r0
-											  - fTransFactor * Trans.y * m_ButtonDownTransform.r1;
+									PanCam.r[3] = m_ButtonDownTransform.r[3]
+											  - fTransFactor * Trans.x * m_ButtonDownTransform.r[0]
+											  - fTransFactor * Trans.y * m_ButtonDownTransform.r[1];
 
 						CameraTransform = PanCam;
 						break;
@@ -460,31 +459,31 @@ namespace Nuaj.Cirrus.Utility
 						float	fTransFactor = m_ManipulationPanSpeed * System.Math.Max( 4.0f, CameraTargetDistance );
 
 						// Compute translation in the view direction
-					    float4	Trans = CameraMatrixBeforeBaseCall.r2;
+					    float4	Trans = CameraMatrixBeforeBaseCall.r[2];
 								Trans.y = 0.0f;
 						if ( Trans.LengthSquared < 1e-4f )
 						{	// Better use Y instead...
-						    Trans = CameraMatrixBeforeBaseCall.r1;
+						    Trans = CameraMatrixBeforeBaseCall.r[1];
 							Trans.y = 0.0f;
 						}
 
 						Trans = Trans.Normalized;
 
-						float4	NewPosition = CameraMatrixBeforeBaseCall.r3 + Trans * fTransFactor * (MousePos.y - m_ButtonDownMousePosition.y);
+						float4	NewPosition = CameraMatrixBeforeBaseCall.r[3] + Trans * fTransFactor * (MousePos.y - m_ButtonDownMousePosition.y);
 
 						m_ButtonDownMousePosition.y = MousePos.y;	// The translation is a cumulative operation...
 
 						// Compute rotation about the the Y WORLD axis
 						float		fAngleY = (m_ButtonDownMousePosition.x - MousePos.x) * 2.0f * (float) Math.PI * m_ManipulationRotationSpeed * 0.2f;	// [PATAPATCH] Multiplied by 0.2 as it's REALLY too sensitive otherwise!
-						if ( m_ButtonDownTransform.r1.y < 0.0f )
+						if ( m_ButtonDownTransform.r[1].y < 0.0f )
 							fAngleY = -fAngleY;		// Special "head down" case...
 
 						float4x4	RotY = float4x4.RotationY( fAngleY );
 
 						float4x4	FinalMatrix = m_ButtonDownTransform;
-								FinalMatrix.r3 = float4.Zero;	// Clear translation...
+								FinalMatrix.r[3] = float4.Zero;	// Clear translation...
 								FinalMatrix = FinalMatrix * RotY;
-								FinalMatrix.r3 = NewPosition;
+								FinalMatrix.r[3] = NewPosition;
 
 						CameraTransform = FinalMatrix;
 
@@ -504,7 +503,7 @@ namespace Nuaj.Cirrus.Utility
 
 						float4x4	RotateMatrix = CamRotXMatrix * CamRotYMatrix * CamRotZMatrix;
 
-						RotateMatrix.r3 = CameraTransform.r3;
+						RotateMatrix.r[3] = CameraTransform.r[3];
 						CameraTransform = RotateMatrix;
 
 						break;
@@ -516,12 +515,12 @@ namespace Nuaj.Cirrus.Utility
 					{
 						float		fTransFactor = m_ManipulationPanSpeed * System.Math.Max( 4.0f, CameraTargetDistance );
 
-						float4		NewPosition =	m_ButtonDownTransform.r3 + fTransFactor *
+						float4		NewPosition =	m_ButtonDownTransform.r[3] + fTransFactor *
 													( (MousePos.y - m_ButtonDownMousePosition.y) * float4.UnitY
-													+ (m_ButtonDownMousePosition.x - MousePos.x) * m_ButtonDownTransform.r0 );
+													+ (m_ButtonDownMousePosition.x - MousePos.x) * m_ButtonDownTransform.r[0] );
 
 						float4x4	NewMatrix = m_ButtonDownTransform;
-								NewMatrix.r3 =  NewPosition ;
+									NewMatrix.r[3] =  NewPosition ;
 
 						CameraTransform = NewMatrix;
 
@@ -552,7 +551,7 @@ namespace Nuaj.Cirrus.Utility
 				m_NormalizedTargetDistance = NormalizeTargetDistance( m_CameraTargetDistance );
 
 				float4x4	DollyCam = CameraTransform;
-						DollyCam.r3 = DollyCam.r3 + 0.004f * m_ManipulationZoomSpeed * e.Delta * DollyCam.r2;
+							DollyCam.r[3] = DollyCam.r[3] + 0.004f * m_ManipulationZoomSpeed * e.Delta * DollyCam.r[2];
 
 				CameraTransform = DollyCam;
 

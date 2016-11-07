@@ -1,3 +1,5 @@
+#include "stdafx.h"
+
 #include "Device.h"
 #include "Components/Component.h"
 #include "Components/Texture2D.h"
@@ -70,26 +72,15 @@ bool	Device::Init( U32 _Width, U32 _Height, HWND _Handle, bool _Fullscreen, bool
 	SwapChainDesc.Windowed = !_Fullscreen;
 	SwapChainDesc.Flags = 0;
 
-	int	FeatureLevelsCount = 1;
-#ifdef DIRECTX10
-#	ifdef TRY_DIRECTX10_1
-	D3D_FEATURE_LEVEL	FeatureLevels[] = { D3D_FEATURE_LEVEL_10_1,		// Support D3D10.1 only...
-											D3D_FEATURE_LEVEL_10_0 };	// If failed, use D3D10
-	FeatureLevelsCount = 2;
-#	else
-	D3D_FEATURE_LEVEL	FeatureLevels[] = { D3D_FEATURE_LEVEL_10_0 };	// Support D3D10 only...
-#	endif
-#else
-	D3D_FEATURE_LEVEL	FeatureLevels[] = { D3D_FEATURE_LEVEL_11_0 };	// Support D3D11...
-#endif
+	int	FeatureLevelsCount = 2;
+	D3D_FEATURE_LEVEL	FeatureLevels[] = { D3D_FEATURE_LEVEL_11_1, D3D_FEATURE_LEVEL_11_0 };		// Support D3D11...
 	D3D_FEATURE_LEVEL	ObtainedFeatureLevel;
 
-
-#if defined(_DEBUG) && !defined(NSIGHT)
-	UINT	DebugFlags = D3D11_CREATE_DEVICE_DEBUG;
-#else
-	UINT	DebugFlags = 0;
-#endif
+	#if defined(_DEBUG) && !defined(NSIGHT)
+		UINT	DebugFlags = D3D11_CREATE_DEVICE_DEBUG;
+	#else
+		UINT	DebugFlags = 0;
+	#endif
 
  	if ( !Check(
 		D3D11CreateDeviceAndSwapChain( NULL, D3D_DRIVER_TYPE_HARDWARE, NULL,
@@ -338,17 +329,17 @@ void	Device::Exit()
 	m_pDevice->Release(); m_pDevice = NULL;
 }
 
-void	Device::ClearRenderTarget( const Texture2D& _Target, const float4& _Color )
+void	Device::ClearRenderTarget( const Texture2D& _Target, const bfloat4& _Color )
 {
 	ClearRenderTarget( *_Target.GetRTV(), _Color );
 }
 
-void	Device::ClearRenderTarget( const Texture3D& _Target, const float4& _Color )
+void	Device::ClearRenderTarget( const Texture3D& _Target, const bfloat4& _Color )
 {
 	ClearRenderTarget( *_Target.GetRTV(), _Color );
 }
 
-void	Device::ClearRenderTarget( ID3D11RenderTargetView& _TargetView, const float4& _Color )
+void	Device::ClearRenderTarget( ID3D11RenderTargetView& _TargetView, const bfloat4& _Color )
 {
 	m_pDeviceContext->ClearRenderTargetView( &_TargetView, &_Color.x );
 }
@@ -437,7 +428,7 @@ void	Device::SetStates( RasterizerState* _pRasterizerState, DepthStencilState* _
 	}
 }
 
-void	Device::SetStatesReferences( const float4& _BlendFactors, U32 _BlendSampleMask, U8 _StencilRef )
+void	Device::SetStatesReferences( const bfloat4& _BlendFactors, U32 _BlendSampleMask, U8 _StencilRef )
 {
 	m_BlendFactors = _BlendFactors;
 	m_BlendMasks = _BlendSampleMask;
