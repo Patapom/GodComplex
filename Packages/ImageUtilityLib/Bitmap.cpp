@@ -76,15 +76,15 @@ void	Bitmap::ToImageFile( ImageFile& _targetFile, ImageFile::PIXEL_FORMAT _targe
 //////////////////////////////////////////////////////////////////////////
 // LDR -> HDR Conversion
 //
-void	Bitmap::LDR2HDR( U32 _imagesCount, Bitmap* _images, float* _imageEVs, const HDRParms& _parms ) {
+void	Bitmap::LDR2HDR( U32 _imagesCount, ImageFile* _images, float* _imageEVs, const HDRParms& _parms ) {
 
 }
 
-void	Bitmap::LDR2HDR( U32 _imagesCount, Bitmap* _images, float* _imageEVs, const List< bfloat3 >& _responseCurve, const HDRParms& _parms ) {
+void	Bitmap::LDR2HDR( U32 _imagesCount, ImageFile* _images, float* _imageEVs, const List< bfloat3 >& _responseCurve, const HDRParms& _parms ) {
 
 }
 
-void	Bitmap::ComputeHDRResponseCurve( U32 _imagesCount, Bitmap* _images, float* _imageEVs, const HDRParms& _parms, List< bfloat3 >& _responseCurve ) {
+void	Bitmap::ComputeHDRResponseCurve( U32 _imagesCount, ImageFile* _images, float* _imageEVs, const HDRParms& _parms, List< bfloat3 >& _responseCurve ) {
 
 	//////////////////////////////////////////////////////////////////////////
 	// 1] Find the best possible samples across the provided images
@@ -138,8 +138,8 @@ void	Bitmap::ComputeHDRResponseCurve( U32 _imagesCount, Bitmap* _images, float* 
 		for ( int pixelIndex=0; pixelIndex < totalPixelsCount; pixelIndex++ ) {
 			int		Z = CLAMP( int( (responseCurveSize-1) * ((float*) &pixels[totalPixelsCount].x)[i] ), 0, responseCurveSize-1 );
 			int		wZ = 1 + (Z < Zmid ? Z : responseCurveSize-Z);	// Z weighted by a hat function
-			A[pixelIndex][Z] = wZ;
-			A[pixelIndex][responseCurveSize+Z] = wZ;
+			A[pixelIndex][Z] = float(wZ);
+			A[pixelIndex][responseCurveSize+Z] = float(wZ);
 			b[pixelIndex][Z] = wZ;
 		}
 
@@ -175,7 +175,8 @@ static int iminarg1,iminarg2;
 // Given a matrix a[1..m][1..n], this routine computes its singular value decomposition, A = U · W · V^T
 //	The matrix U replaces a on output.
 //	The diagonal matrix of singular values W is output as a vector w[1..n].
-//	The matrix V (not the transpose V^T) is output as v[1..n][1..n].//
+//	The matrix V (not the transpose V^T) is output as v[1..n][1..n].
+//
 void svdcmp( int m, int n, float** a, float w[], float** v ) {
 //	bool	flag;
 //	int		flag,jj,nm;

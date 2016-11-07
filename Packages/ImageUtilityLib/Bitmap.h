@@ -181,19 +181,19 @@ namespace ImageUtilityLib {
 		//	_images, the array of LDR bitmaps
 		//	_imageEVs, the array of Exposure Values (EV) used for each image (these are basically the log2(ShutterSpeed) used for each image, keeping aperture constant)
 		//				(e.g. taking 3 shots in bracket mode [-2, 0, +2] will yield EV array [-2, 0, +2] with the images being [1/4, 1, 4] times the default shutter speed respectively)
-		void		LDR2HDR( U32 _imagesCount, Bitmap* _images, float* _imageEVs, const HDRParms& _parms );
+		void		LDR2HDR( U32 _imagesCount, ImageFile* _images, float* _imageEVs, const HDRParms& _parms );
 
 		// Builds a HDR image from a set of LDR images and a response curve (usually computed using ComputeHDRResponseCurve)
 		// You can use this method to build the HDR image from a larger set of LDR images than used to resolve the response curve
 		//	_images, the array of LDR bitmaps
 		//	_imageEVs, the array of Exposure Values (EV) used for each image
-		void		LDR2HDR( U32 _imagesCount, Bitmap* _images, float* _imageEVs, const List< bfloat3 >& _responseCurve, const HDRParms& _parms );
+		void		LDR2HDR( U32 _imagesCount, ImageFile* _images, float* _imageEVs, const List< bfloat3 >& _responseCurve, const HDRParms& _parms );
 
 		// Computes the response curve of the sensor that captured the provided LDR images
 		//	_images, the array of LDR bitmaps
 		//	_imageEVs, the array of Exposure Values (EV) used for each image
 		//	_responseCurve, the list to fill with values corresponding to the response curve
-		static void	ComputeHDRResponseCurve( U32 _imagesCount, Bitmap* _images, float* _imageEVs, const HDRParms& _parms, List< bfloat3 >& _responseCurve );
+		static void	ComputeHDRResponseCurve( U32 _imagesCount, ImageFile* _images, float* _imageEVs, const HDRParms& _parms, List< bfloat3 >& _responseCurve );
 
 		#pragma endregion
 	};
