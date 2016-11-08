@@ -331,16 +331,16 @@ void	MetaData::EnumerateDefaultTags( const ImageFile& _image ) {
 	//	{  0x9204, (char *) "ExposureBiasValue", (char *) "Exposure bias"},
 	//	{  0x920A, (char *) "FocalLength", (char *) "Lens focal length"},
 	m_valid = false;
-	m_valid |= GetFloat( FIMD_EXIF_MAIN, *_image.m_bitmap, "ISOSpeedRatings", m_ISOSpeed );
-	m_valid |= GetFloat( FIMD_EXIF_MAIN, *_image.m_bitmap, "ShutterSpeedValue", m_shutterSpeed );
-	m_valid |= GetFloat( FIMD_EXIF_MAIN, *_image.m_bitmap, "ApertureValue", m_aperture );
-	m_valid |= GetFloat( FIMD_EXIF_MAIN, *_image.m_bitmap, "ExposureBiasValue", m_exposureBias );
-	m_valid |= GetFloat( FIMD_EXIF_MAIN, *_image.m_bitmap, "FocalLength", m_focalLength );
+	m_valid |= GetFloat( FIMD_EXIF_EXIF, *_image.m_bitmap, "ISOSpeedRatings", m_ISOSpeed );
+	m_valid |= GetFloat( FIMD_EXIF_EXIF, *_image.m_bitmap, "ShutterSpeedValue", m_shutterSpeed );
+	m_valid |= GetFloat( FIMD_EXIF_EXIF, *_image.m_bitmap, "ApertureValue", m_aperture );
+	m_valid |= GetFloat( FIMD_EXIF_EXIF, *_image.m_bitmap, "ExposureBiasValue", m_exposureBias );
+	m_valid |= GetFloat( FIMD_EXIF_EXIF, *_image.m_bitmap, "FocalLength", m_focalLength );
 }
 
 bool	MetaData::GetInteger( FREE_IMAGE_MDMODEL _model, FIBITMAP& _bitmap, const char* _keyName, int& _value ) {
-	FITAG*	tag;
-	FreeImage_GetMetadata( _model, &_bitmap, _keyName, &tag );
+	FITAG*	tag = nullptr;
+	if ( !FreeImage_GetMetadata( _model, &_bitmap, _keyName, &tag );
 	if ( tag == NULL )
 		return false;	// Not found...
 
@@ -349,8 +349,8 @@ bool	MetaData::GetInteger( FREE_IMAGE_MDMODEL _model, FIBITMAP& _bitmap, const c
 	return foundFieldsCount == 1;
 }
 bool	MetaData::GetFloat( FREE_IMAGE_MDMODEL _model, FIBITMAP& _bitmap, const char* _keyName, float& _value ) {
-	FITAG*	tag;
-	FreeImage_GetMetadata( _model, &_bitmap, _keyName, &tag );	// const_casting, hoping it really doesn't touch the bitmap!
+	FITAG*	tag = nullptr;
+	if ( !FreeImage_GetMetadata( _model, &_bitmap, _keyName, &tag );	// const_casting, hoping it really doesn't touch the bitmap!
 	if ( tag == NULL )
 		return false;	// Not found...
 

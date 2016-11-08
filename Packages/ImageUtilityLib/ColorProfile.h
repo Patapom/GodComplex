@@ -353,15 +353,12 @@ namespace ImageUtilityLib {
 			, m_internalConverter( nullptr ) {
 		}
 		ColorProfile( const ColorProfile& _other );
-		virtual ~ColorProfile() {
-			SAFE_DELETE( m_internalConverter );
-		}
 
 		/// <summary>
 		/// Build from a standard profile
 		/// </summary>
 		/// <param name="_Profile"></param>
-		ColorProfile( STANDARD_PROFILE _profile ) {
+		ColorProfile( STANDARD_PROFILE _profile ) : m_internalConverter( nullptr ) {
 			switch ( _profile ) {
 				case STANDARD_PROFILE::LINEAR:
 					m_chromaticities = Chromaticities::sRGB;
@@ -406,12 +403,16 @@ namespace ImageUtilityLib {
 		/// <param name="_Chromaticities">The chromaticities for this profile</param>
 		/// <param name="_GammaCurve">The type of gamma curve to use</param>
 		/// <param name="_Gamma">The gamma power</param>
-		ColorProfile( const Chromaticities& _chromaticities, GAMMA_CURVE _gammaCurve, float _gamma ) {
+		ColorProfile( const Chromaticities& _chromaticities, GAMMA_CURVE _gammaCurve, float _gamma ) : m_internalConverter( nullptr ) {
 			m_chromaticities = _chromaticities;
 			m_gammaCurve = _gammaCurve;
 			m_gamma = _gamma;
 
 			BuildTransformFromChroma( true );
+		}
+
+		virtual ~ColorProfile() {
+			SAFE_DELETE( m_internalConverter );
 		}
 
 		#pragma region IColorConverter Members
@@ -552,7 +553,7 @@ namespace ImageUtilityLib {
 			m_RGB2XYZ.r[0].Set( Sum_RGB.x * xyz_R, 0.0f );
 			m_RGB2XYZ.r[1].Set( Sum_RGB.y * xyz_G, 0.0f );
 			m_RGB2XYZ.r[2].Set( Sum_RGB.z * xyz_B, 0.0f );
-
+m_RGB2XYZ.r[3].Set( 0, 0, 0, 1 )!!
 			// And the XYZ->RGB transform
 			m_XYZ2RGB = m_RGB2XYZ;
 			m_XYZ2RGB.Invert();

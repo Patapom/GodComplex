@@ -198,9 +198,17 @@ copy Source\FreeImage.h Dist\x32
     </Link>
     <PostBuildEvent>
       <Command>mkdir Dist\x64\$(Configuration)
+
 copy $(OutDir)$(TargetName).dll Dist\x64\$(Configuration)
+
 copy $(OutDir)$(TargetName).lib Dist\x64\$(Configuration)
+
 copy Source\FreeImage.h Dist\x64\$(Configuration)
+
+
+REM Copy to GodComplex
+copy $(OutDir)$(TargetName).dll $(SolutionDir)\..\..\build\$(Configuration)
+
 </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -293,9 +301,16 @@ copy Source\FreeImage.h Dist\x32
     </Link>
     <PostBuildEvent>
       <Command>mkdir Dist\x64\$(Configuration)
+
 copy $(OutDir)$(TargetName).dll Dist\x64\$(Configuration)
+
 copy $(OutDir)$(TargetName).lib Dist\x64\$(Configuration)
+
 copy Source\FreeImage.h Dist\x64\$(Configuration)
+
+REM Copy to GodComplex
+copy $(OutDir)$(TargetName).dll $(SolutionDir)\..\..\build\$(Configuration)
+
 </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>

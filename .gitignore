@@ -527,3 +527,5 @@
 /Packages/FreeImage3170/Dist/x64/Release/FreeImageLib.lib
 /Packages/opencv-2.4.13.exe
 /Packages/OpenCV
+/Packages/_Unit Tests/TestImageUtility/bin
+/Packages/_Unit Tests/TestImageUtility/obj

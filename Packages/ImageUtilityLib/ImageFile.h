@@ -338,7 +338,7 @@ namespace ImageUtilityLib {
 
 
 	private:
-		static U32			PixelFormat2BPP( PIXEL_FORMAT _pixelFormat );
+		static U32					PixelFormat2BPP( PIXEL_FORMAT _pixelFormat );
 
 		static FREE_IMAGE_TYPE		PixelFormat2FIT( PIXEL_FORMAT _pixelFormat );
 		static PIXEL_FORMAT			Bitmap2PixelFormat( const FIBITMAP& _bitmap );
