@@ -95,7 +95,7 @@ float	ComputeWeight( U32 _Z, U32 _responseCurveSize ) {
 
 void svdcmp( int m, int n, float** a, float w[], float** v );
 
-void	Bitmap::ComputeHDRResponseCurve( U32 _imagesCount, ImageFile* _images, float* _imageEVs, const HDRParms& _parms, List< bfloat3 >& _responseCurve ) {
+void	Bitmap::ComputeHDRResponseCurve( U32 _imagesCount, ImageFile* _images, float* _imageShutterSpeeds, const HDRParms& _parms, List< bfloat3 >& _responseCurve ) {
 
 	//////////////////////////////////////////////////////////////////////////
 	// 1] Find the best possible samples across the provided images
@@ -116,6 +116,10 @@ void	Bitmap::ComputeHDRResponseCurve( U32 _imagesCount, ImageFile* _images, floa
 	int		pixelsCountPerImage = int ( ceilf( nominalPixelsCount / _imagesCount ) );	// And that is our amount of pixels to use per image
 	int		totalPixelsCount = _imagesCount * pixelsCountPerImage;
 
+	// Prepare the response curve array
+	_responseCurve.Init( responseCurveSize );
+	_responseCurve.SetCount( responseCurveSize );
+
 	// Now, we need to carefully select the candidate pixels.
 	// Still quoting Debevec in §2.1:
 	//	<< Clearly, the pixel locations should be chosen so that they have a reasonably even distribution of pixel values from Zmin to Zmax,
@@ -124,15 +128,14 @@ void	Bitmap::ComputeHDRResponseCurve( U32 _imagesCount, ImageFile* _images, floa
 	//		be constant across the area of the pixel, and the effect of optical blur of the imaging system is minimized. >>
 	//
 	U32*	pixels = new U32[3 *totalPixelsCount];
-	for ( int i=0; i < 3; i++ ) {
-		// Do for R, G and B
+	for ( int componentIndex=0; componentIndex < 3; componentIndex++ ) {	// Because R, G, B
 
 		// 1] Select the pixels within the images that best cover the [Zmin,Zmax] range
 		List< bfloat3* >	selectedPixel( totalPixelsCount );
 // @TODO!
 // @TODO!
 // @TODO!
-// @TODO! This is an important algorithm to find out: select the given amount of pixels that cover the most range
+// @TODO! This is an important algorithm we need to find out: select the given amount of pixels that cover the most range
 // @TODO!
 // @TODO!
 // @TODO!
@@ -140,12 +143,12 @@ void	Bitmap::ComputeHDRResponseCurve( U32 _imagesCount, ImageFile* _images, floa
 		// 2] Store as integer pixel values within range [Zmin,Zmax] (which is [0,2^bitDepth[ )
 		for ( int pixelIndex=0; pixelIndex < totalPixelsCount; pixelIndex++ ) {
 			// Floating point value of the selected pixel for R, G or B
-			float	pixelValue = ((float*) &selectedPixel[pixelIndex]->x)[pixelIndex];
+			float	pixelValue = ((float*) &selectedPixel[pixelIndex]->x)[componentIndex];
 
 			// Convert to integer value
 			U32		Z = CLAMP( U32( (responseCurveSize-1) * pixelValue ), 0U, responseCurveSize-1 );
 
-			pixels[totalPixelsCount*i+pixelIndex] = Z;
+			pixels[totalPixelsCount*componentIndex + pixelIndex] = Z;
 		}
 	}
 
@@ -170,8 +173,11 @@ void	Bitmap::ComputeHDRResponseCurve( U32 _imagesCount, ImageFile* _images, floa
 
 	float*	b = new float[equationsCount];
 
+	float*	x = new float[unknownsCount];	// Our result vector
+	float*	tempX = new float[unknownsCount];
+
 	U32*	pixelPtr = pixels;
-	for ( int i=0; i < 3; i++ ) {	// Because R, G, B
+	for ( int componentIndex=0; componentIndex < 3; componentIndex++ ) {	// Because R, G, B
 
 		// ===================================================================
 		// 2.1] Build the "A" matrix and target vector "b"
@@ -181,7 +187,13 @@ void	Bitmap::ComputeHDRResponseCurve( U32 _imagesCount, ImageFile* _images, floa
 		// 2.1.1) Fill the first part of the equations containing our data
 		float**	A0 = A;	// A0 starts at A
 		for ( U32 imageIndex=0; imageIndex < _imagesCount; imageIndex++ ) {
-			float	imageEV = _imageEVs[imageIndex];
+
+			// Compute image EV = log2(shutterSpeed)
+			// (e.g. taking 3 shots in bracket mode with shutter speeds [1/4s, 1s, 4s] [-2, 0, +2] will yield EV array [-2, 0, +2] respectively)
+			//
+			float	imageShutterSpeed = _imageShutterSpeeds[imageIndex];
+			float	imageEV = log2f( imageShutterSpeed );
+
 			for ( int pixelIndex=0; pixelIndex < pixelsCountPerImage; pixelIndex++ ) {
 				float*	columns = *A0++;
 
@@ -226,13 +238,90 @@ void	Bitmap::ComputeHDRResponseCurve( U32 _imagesCount, ImageFile* _images, floa
 
 		// ===================================================================
 		// 2.2] Apply SVD
+#if 1
+float*	Abackup = new float[equationsCount*unknownsCount];
+memcpy_s( Abackup, equationsCount*unknownsCount*sizeof(float), A, equationsCount*unknownsCount*sizeof(float) );
+#endif
+
 		svdcmp( equationsCount, unknownsCount, A, w, V );
 
-		// 2.3] Solve for x
+#if 1
+// Recompose A from U, w and V
+float*	Arecomposed = new float[equationsCount*unknownsCount];
+for ( int rowIndex=0; rowIndex < equationsCount; rowIndex++ ) {
+	for ( int columnIndex=0; columnIndex < unknownsCount; columnIndex++ ) {
+		float	r = 0.0f;
+		for ( int i=0; i < unknownsCount; i++ ) {
+			const float	VTterm = V[columnIndex][i];
+			const float	Wterm = w[i];
+			const float	Uterm = A[rowIndex][i];
+			r += Uterm * Wterm * VTterm;
+		}
+		Arecomposed[rowIndex*unknownsCount + columnIndex] = r;
+	}
+}
 
-		// 2.4] Profit
+// Ensure recomposition yields original A
+float	sumSqDiff = 0.0f;
+for ( int i=equationsCount*unknownsCount-1; i >= 0; i-- ) {
+	float	originalTerm = Abackup[i];
+	float	recomposedTerm = Arecomposed[i];
+	float	diff = originalTerm - recomposedTerm;
+	sumSqDiff += diff * diff;
+}
+sumSqDiff /= equationsCount*unknownsCount;
+ASSERT( sumSqDiff < 1e-4f, "Singular Value Decomposition is wrong!" );
+
+delete[] Arecomposed;
+delete[] Abackup;
+#endif
+
+
+		// ===================================================================
+		// 2.3] Solve for x
+		// We know that A was decomposed into U.w.V^T where U and V are orthonormal matrices and w a diagonal matrix with (theoretically) non null components
+		//	so A^-1 = V.1/w.U^T
+		// Since A.x = b it ensues that x = A^-1.b
+		//
+		
+		// 2.3.1) Perform 1/w * U^T * b
+		for ( int rowIndex=0; rowIndex < unknownsCount; rowIndex++ ) {
+			float	r = 0.0f;
+			for ( int i=0; i < equationsCount; i++ ) {
+				const float	Uterm = A[i][rowIndex];	// The svdcmp() routine used A to store the U matrix in place
+				const float	bterm = b[i];
+				r += Uterm * bterm;
+			}
+
+			// Mulitply by 1/w
+			const float	wterm = w[rowIndex];
+			float		recW = fabs( wterm ) > 1e-6f ? 1.0f / recW : 0.0f;	// We shouldn't ever have 0 values because of the overdetermined system of equations but let's be careful anyway!
+			tempX[rowIndex] = r * recW;
+		}
+
+		// 2.3.2) Perform V * (1/w * U^T * b)
+		for ( int rowIndex=0; rowIndex < unknownsCount; rowIndex++ ) {
+			float	r = 0.0f;
+			for ( int i=0; i < unknownsCount; i++ ) {
+				const float	Vterm = V[rowIndex][i];
+				const float	tempXterm = tempX[rowIndex];
+				r += Vterm * tempXterm;
+			}
+			x[rowIndex] = r;	// This is our final results!
+		}
+
+
+		// ===================================================================
+		// 2.4] Recover curve values
+		// At this point, we recovered the g(Z) for Z€[Zmin,Zmax], followed by the log2(Ei) for the N selected pixels
+		// Let's just store the g(Z) into our target array
+		for ( U32 Z=0; Z < responseCurveSize; Z++ ) {
+			((float*) &_responseCurve[Z].x)[componentIndex] = x[Z];
+		}
 	}
 
+	delete[] tempX;
+	delete[] x;
 	delete[] b;
 	delete[] w;
 	delete[] V;

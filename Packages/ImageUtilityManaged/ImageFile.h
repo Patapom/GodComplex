@@ -131,7 +131,7 @@ namespace ImageUtility {
 		};
 
 		enum class SAVE_FLAGS {
-
+			// TODO!
 		};
 
 		#pragma endregion
@@ -196,6 +196,11 @@ namespace ImageUtility {
 				ImageUtilityLib::ColorProfile*	nativeProfile = m_nativeObject->GetColorProfile();
 				return nativeProfile != nullptr ? gcnew ImageUtility::ColorProfile( *m_nativeObject->GetColorProfile() ) : nullptr;
 			}
+		}
+
+		// Builds a System.Drawing.Bitmap from the image
+		property System::Drawing::Bitmap^	AsBitmap {
+			System::Drawing::Bitmap^	get();
 		}
 
 		#pragma endregion
@@ -263,14 +268,13 @@ namespace ImageUtility {
 			_height = _bitmap->Height;
 
 			cli::array< System::Byte >^	result = gcnew cli::array< System::Byte >( 4*_width*_height );
-			Byte*				pScanline;
-			Byte				R, G, B, A;
 
 			System::Drawing::Imaging::BitmapData^	lockedBitmap = _bitmap->LockBits( System::Drawing::Rectangle( 0, 0, _width, _height ), System::Drawing::Imaging::ImageLockMode::ReadOnly, System::Drawing::Imaging::PixelFormat::Format32bppArgb );
 
-			int	targetIndex = 0;
+			Byte	R, G, B, A;
+			int		targetIndex = 0;
 			for ( int Y=0; Y < _height; Y++ ) {
-				pScanline = (Byte*) lockedBitmap->Scan0.ToPointer() + Y * lockedBitmap->Stride;
+				pin_ptr<Byte>	pScanline = (Byte*) lockedBitmap->Scan0.ToPointer() + Y * lockedBitmap->Stride;
 				for ( int X=0; X < _width; X++ ) {
 					// Read in shitty order
 					B = *pScanline++;

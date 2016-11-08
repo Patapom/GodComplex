@@ -179,9 +179,8 @@ namespace ImageUtilityLib {
 
 		// Builds a HDR image from a set of LDR images
 		//	_images, the array of LDR bitmaps
-		//	_imageEVs, the array of Exposure Values (EV) used for each image (these are basically the log2(ShutterSpeed) used for each image, keeping aperture constant)
-		//				(e.g. taking 3 shots in bracket mode [-2, 0, +2] will yield EV array [-2, 0, +2] with the images being [1/4, 1, 4] times the default shutter speed respectively)
-		void		LDR2HDR( U32 _imagesCount, ImageFile* _images, float* _imageEVs, const HDRParms& _parms );
+		//	_imageShutterSpeeds, the array of shutter speeds (in seconds) used for each image
+		void		LDR2HDR( U32 _imagesCount, ImageFile* _images, float* _imageShutterSpeeds, const HDRParms& _parms );
 
 		// Builds a HDR image from a set of LDR images and a response curve (usually computed using ComputeHDRResponseCurve)
 		// You can use this method to build the HDR image from a larger set of LDR images than used to resolve the response curve

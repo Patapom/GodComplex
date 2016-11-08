@@ -110,6 +110,56 @@ NativeByteArray^	ImageFile::Save( FILE_FORMAT _format, SAVE_FLAGS _options ) {
 	return gcnew NativeByteArray( nativeBufferSize, nativeBuffer );
 }
 
+ System::Drawing::Bitmap^	ImageFile::AsBitmap::get() {
+	int	W = Width;
+	int	H = Height;
+
+	// Convert source bitmap to a compatible format
+	ImageFile^	source = this;
+	if ( PixelFormat != PIXEL_FORMAT::RGB8 && this->PixelFormat != PIXEL_FORMAT::RGBA8 ) {
+		source = gcnew ImageFile();
+		source->ConvertFrom( this, PIXEL_FORMAT::RGBA8 );
+	}
+
+	System::Drawing::Bitmap^	result = gcnew System::Drawing::Bitmap( W, H, System::Drawing::Imaging::PixelFormat::Format32bppArgb );
+
+	const U8*		sourcePtr = (U8*) source->Bits.ToPointer();
+
+	System::Drawing::Imaging::BitmapData^	lockedBitmap = result->LockBits( System::Drawing::Rectangle( 0, 0, W, H ), System::Drawing::Imaging::ImageLockMode::ReadOnly, System::Drawing::Imaging::PixelFormat::Format32bppArgb );
+
+	if ( source->PixelFormat == PIXEL_FORMAT::RGBA8 ) {
+		// 32 bpp
+		for ( int Y=0; Y < H; Y++ ) {
+			pin_ptr<Byte>	targetPtr = (Byte*) lockedBitmap->Scan0.ToPointer() + Y * lockedBitmap->Stride;
+			for ( int X=0; X < W; X++ ) {
+				*targetPtr++ = *sourcePtr++;	// B
+				*targetPtr++ = *sourcePtr++;	// G
+				*targetPtr++ = *sourcePtr++;	// R
+				*targetPtr++ = *sourcePtr++;	// A
+			}
+		}
+	} else {
+		// 24 bpp
+		for ( int Y=0; Y < H; Y++ ) {
+			pin_ptr<Byte>	targetPtr = (Byte*) lockedBitmap->Scan0.ToPointer() + Y * lockedBitmap->Stride;
+			for ( int X=0; X < W; X++ ) {
+				*targetPtr++ = *sourcePtr++;	// B
+				*targetPtr++ = *sourcePtr++;	// G
+				*targetPtr++ = *sourcePtr++;	// R
+				*targetPtr++ = 0xFFU;			// A
+			}
+		}
+	}
+
+	result->UnlockBits( lockedBitmap );
+
+	if ( source != this )
+		delete source;
+
+	return result;
+}
+
+
 // Converts the source image to a target format
 void	ImageFile::ConvertFrom( ImageFile^ _source, PIXEL_FORMAT _targetFormat ) {
 	m_nativeObject->ConvertFrom( *_source->m_nativeObject, ImageUtilityLib::ImageFile::PIXEL_FORMAT( _targetFormat ) );
