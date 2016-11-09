@@ -51,7 +51,7 @@
 #pragma managed
 
 #include "NativeByteArray.h"
-#include "ColorProfile.h"
+#include "MetaData.h"
 
 using namespace System;
 
@@ -186,15 +186,17 @@ namespace ImageUtility {
 			bool	get() { return m_nativeObject->HasAlpha(); }
 		}
 
-// 		// Gets the image's metadata (i.e. ISO, Tv, Av, focal length, etc.)
-// 		const MetaData&		GetMetadata() const		{ return m_metadata; }
+		// Gets the image's metadata (i.e. ISO, Tv, Av, focal length, etc.)
+		property MetaData^	Metadata {
+			MetaData^	get() {
+				return gcnew MetaData( this );
+			}
+		}
 
 		// Gets the color profile associated to the image
 		property ImageUtility::ColorProfile^	ColorProfile {
 			ImageUtility::ColorProfile^	get() {
-				// Here we can only wrap a valid non null profile!
-				ImageUtilityLib::ColorProfile*	nativeProfile = m_nativeObject->GetColorProfile();
-				return nativeProfile != nullptr ? gcnew ImageUtility::ColorProfile( *m_nativeObject->GetColorProfile() ) : nullptr;
+				return Metadata->ColorProfile;
 			}
 		}
 

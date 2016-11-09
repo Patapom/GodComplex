@@ -61,6 +61,7 @@ namespace ImageUtilityLib {
 		static const bfloat2		ILLUMINANT_D65;	// Daylight, Noon, Overcast (sRGB reference illuminant)
 		static const bfloat2		ILLUMINANT_E;	// Reference
 
+		static const float		GAMMA_EXPONENT_STANDARD;// = 2.2f;
 		static const float		GAMMA_EXPONENT_sRGB;// = 2.4f;
 		static const float		GAMMA_EXPONENT_ADOBE;// = 2.19921875f;
 		static const float		GAMMA_EXPONENT_PRO_PHOTO;// = 1.8f;
@@ -553,7 +554,8 @@ namespace ImageUtilityLib {
 			m_RGB2XYZ.r[0].Set( Sum_RGB.x * xyz_R, 0.0f );
 			m_RGB2XYZ.r[1].Set( Sum_RGB.y * xyz_G, 0.0f );
 			m_RGB2XYZ.r[2].Set( Sum_RGB.z * xyz_B, 0.0f );
-m_RGB2XYZ.r[3].Set( 0, 0, 0, 1 )!!
+			m_RGB2XYZ.r[3].Set( 0, 0, 0, 1 );
+
 			// And the XYZ->RGB transform
 			m_XYZ2RGB = m_RGB2XYZ;
 			m_XYZ2RGB.Invert();
@@ -611,8 +613,7 @@ m_RGB2XYZ.r[3].Set( 0, 0, 0, 1 )!!
 					break;
 
 				default:	// Switch to one of our generic converters
-					switch ( m_gammaCurve )
-					{
+					switch ( m_gammaCurve ) {
 						case GAMMA_CURVE::sRGB:
 							m_internalConverter = new InternalColorConverter_Generic_sRGBGamma( m_RGB2XYZ, m_XYZ2RGB );
 							break;

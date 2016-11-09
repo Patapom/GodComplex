@@ -6,6 +6,7 @@
     <ClCompile Include="ImageFile.cpp" />
     <ClCompile Include="stdafx.cpp" />
     <ClCompile Include="NativeByteArray.cpp" />
+    <ClCompile Include="MetaData.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Bitmap.h" />
@@ -14,5 +15,6 @@
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="NativeByteArray.h" />
+    <ClInclude Include="MetaData.h" />
   </ItemGroup>
 </Project>

@@ -17,14 +17,18 @@ MetaData::~MetaData() {
 }
 
 void	MetaData::Reset() {
-	SAFE_DELETE( m_colorProfile );
-	m_valid = false;
 	m_gammaSpecifiedInFile = false;
-	m_ISOSpeed = 0.0f;
-	m_shutterSpeed = 0.0f;
-	m_aperture = 0.0f;
-	m_exposureBias = 0.0f;
+	m_gammaExponent = ColorProfile::GAMMA_EXPONENT_STANDARD;
+
+	m_valid = false;
+	m_ISOSpeed = 100;
+	m_exposureTime = 0.0f;
+	m_Tv = 0.0f;
+	m_Av = 0.0f;
+//	m_exposureBias = 0.0f;
 	m_focalLength = 0.0f;
+
+	SAFE_DELETE( m_colorProfile );
 }
 
 MetaData&	MetaData::operator=( const MetaData& _other ) {
@@ -86,27 +90,35 @@ void	MetaData::RetrieveFromImage( const ImageFile& _imageFile ) {
 
 #pragma region Format-specific metadata enumeration
 
-// NOTE: I had to modify the FreeImage library to add these custom metadata when loading a TGA file otherwise they are lost
 void	MetaData::EnumerateMetaDataTGA( const ImageFile& _image ) {
-	float	gammaExponent = 2.2f;
-	int		num, den;
-	if (	MetaData::GetInteger( FIMD_COMMENTS, *_image.m_bitmap, "GammaNumerator", num )
-		&&	MetaData::GetInteger( FIMD_COMMENTS, *_image.m_bitmap, "GammaDenominator", den ) ) {
-		gammaExponent = float(num) / den;
-		m_gammaSpecifiedInFile = true;
+	if ( !m_gammaSpecifiedInFile ) {
+		// If not alerady found in EXIF data, try and readback our custom tags
+		// NOTE: I had to modify the FreeImage library to add these custom metadata when loading a TGA file otherwise they are lost
+		m_gammaExponent = ColorProfile::GAMMA_EXPONENT_STANDARD;
+
+		const char*	numStr = nullptr;
+		const char* denStr = nullptr;
+		if (	MetaData::GetString( FIMD_COMMENTS, *_image.m_bitmap, "GammaNumerator", numStr )
+			&&	MetaData::GetString( FIMD_COMMENTS, *_image.m_bitmap, "GammaDenominator", denStr ) ) {
+
+			int	num, den;
+			if (	sscanf_s( numStr, "%d", &num ) == 1
+				&&	sscanf_s( denStr, "%d", &den ) == 1 ) {
+				m_gammaExponent = float(num) / den;
+				m_gammaSpecifiedInFile = true;
+			}
+		}
 	}
 
 	// Create the color profile
 	m_colorProfile = new ColorProfile( ColorProfile::Chromaticities::sRGB,		// Use default sRGB color profile
 										ColorProfile::GAMMA_CURVE::STANDARD,	// But with a standard gamma curve...
-										gammaExponent							// ...whose gamma is retrieved from extension data, if available
+										m_gammaExponent							// ...whose gamma is retrieved from extension data, if available
 									);
 	m_colorProfile->SetProfileFoundInFile( m_gammaSpecifiedInFile );
 }
 
 void	MetaData::EnumerateMetaDataJPG( const ImageFile& _image ) {
-	m_gammaSpecifiedInFile = false;
-
 // 	EnumerateMetaData( _MetaData,
 // 		new MetaDataProcessor( "/xmp", ( object _SubData ) =>
 // 		{
@@ -135,8 +147,8 @@ void	MetaData::EnumerateMetaDataJPG( const ImageFile& _image ) {
 // 		);
 
 	m_colorProfile = new ColorProfile(	ColorProfile::Chromaticities::sRGB,		// Default for JPEGs is sRGB
-										ColorProfile::GAMMA_CURVE::STANDARD,	// JPG uses a 2.2 gamma by default
-										2.2f
+										ColorProfile::GAMMA_CURVE::STANDARD,
+										m_gammaSpecifiedInFile ? m_gammaExponent : ColorProfile::GAMMA_EXPONENT_STANDARD	// Unless specified, JPG uses a 2.2 gamma by default
 									);
 	m_colorProfile->SetProfileFoundInFile( false );
 }
@@ -289,7 +301,7 @@ void	MetaData::EnumerateMetaDataRAW( const ImageFile& _image ) {
 // 							// Also get back valid camera shot info
 // 							m_hasValidShotInfo = true;
 // 							m_ISOSpeed = Raw.ISOSpeed;
-// 							m_shutterSpeed = Raw.ShutterSpeed;
+// 							m_Tv = Raw.ShutterSpeed;
 // 							m_aperture = Raw.Aperture;
 // 							m_focalLength = Raw.FocalLength;
 
@@ -323,6 +335,10 @@ void	MetaData::EnumerateMetaDataGIF( const ImageFile& _image ) {
 //////////////////////////////////////////////////////////////////////////
 // Tag reading
 void	MetaData::EnumerateDefaultTags( const ImageFile& _image ) {
+
+	m_gammaSpecifiedInFile = GetRational64( FIMD_EXIF_EXIF, *_image.m_bitmap, "Gamma", m_gammaExponent );
+
+	//////////////////////////////////////////////////////////////////////////
 	// Attempt to read these standard EXIF tags
 	//	{  0x8827, (char *) "ISOSpeedRatings", (char *) "ISO speed rating"},
 	//	{  0x9201, (char *) "ShutterSpeedValue", (char *) "Shutter speed"},
@@ -330,35 +346,99 @@ void	MetaData::EnumerateDefaultTags( const ImageFile& _image ) {
 	//	{  0x9203, (char *) "BrightnessValue", (char *) "Brightness"},
 	//	{  0x9204, (char *) "ExposureBiasValue", (char *) "Exposure bias"},
 	//	{  0x920A, (char *) "FocalLength", (char *) "Lens focal length"},
-	m_valid = false;
-	m_valid |= GetFloat( FIMD_EXIF_EXIF, *_image.m_bitmap, "ISOSpeedRatings", m_ISOSpeed );
-	m_valid |= GetFloat( FIMD_EXIF_EXIF, *_image.m_bitmap, "ShutterSpeedValue", m_shutterSpeed );
-	m_valid |= GetFloat( FIMD_EXIF_EXIF, *_image.m_bitmap, "ApertureValue", m_aperture );
-	m_valid |= GetFloat( FIMD_EXIF_EXIF, *_image.m_bitmap, "ExposureBiasValue", m_exposureBias );
-	m_valid |= GetFloat( FIMD_EXIF_EXIF, *_image.m_bitmap, "FocalLength", m_focalLength );
+	int	validTagsCount = 0;
+	S32	temp;
+	if ( GetInteger( FIMD_EXIF_EXIF, *_image.m_bitmap, "ISOSpeedRatings", temp ) ) {
+		temp = temp & 0xFFFF;
+		m_ISOSpeed = temp < 50 ? temp * 200 : temp;
+		validTagsCount++;
+	}
+	if ( GetRational64( FIMD_EXIF_EXIF, *_image.m_bitmap, "ExposureTime", m_exposureTime ) ) {
+		validTagsCount++;
+	}
+	if ( GetRational64( FIMD_EXIF_EXIF, *_image.m_bitmap, "ShutterSpeedValue", m_Tv ) ) {
+		validTagsCount++;
+	}
+	if ( GetRational64( FIMD_EXIF_EXIF, *_image.m_bitmap, "ApertureValue", m_Av ) ) {
+		validTagsCount++;
+	}
+// 	if ( GetRational64( FIMD_EXIF_EXIF, *_image.m_bitmap, "ExposureBiasValue", m_exposureBias ) ) {
+// 		validTagsCount++;
+// 	}
+	if ( GetRational64( FIMD_EXIF_EXIF, *_image.m_bitmap, "FNumber", m_FNumber ) ) {
+		validTagsCount++;
+	}
+	if ( GetRational64( FIMD_EXIF_EXIF, *_image.m_bitmap, "FocalLength", m_focalLength ) ) {
+		validTagsCount++;
+	}
+
+	m_valid = validTagsCount == 6;
 }
 
-bool	MetaData::GetInteger( FREE_IMAGE_MDMODEL _model, FIBITMAP& _bitmap, const char* _keyName, int& _value ) {
+bool	MetaData::GetString( FREE_IMAGE_MDMODEL _model, FIBITMAP& _bitmap, const char* _keyName, const char*& _value ) {
 	FITAG*	tag = nullptr;
-	if ( !FreeImage_GetMetadata( _model, &_bitmap, _keyName, &tag );
+	if ( !FreeImage_GetMetadata( _model, &_bitmap, _keyName, &tag ) )
+		return false;
 	if ( tag == NULL )
 		return false;	// Not found...
 
-	const char*	value = (const char*) FreeImage_GetTagValue( tag );
-	int	foundFieldsCount = sscanf_s( value, "%d", &_value );
-	return foundFieldsCount == 1;
+	_value = (const char*) FreeImage_GetTagValue( tag );
+
+	return true;
 }
-bool	MetaData::GetFloat( FREE_IMAGE_MDMODEL _model, FIBITMAP& _bitmap, const char* _keyName, float& _value ) {
+
+bool	MetaData::GetInteger( FREE_IMAGE_MDMODEL _model, FIBITMAP& _bitmap, const char* _keyName, S32& _value ) {
 	FITAG*	tag = nullptr;
-	if ( !FreeImage_GetMetadata( _model, &_bitmap, _keyName, &tag );	// const_casting, hoping it really doesn't touch the bitmap!
+	if ( !FreeImage_GetMetadata( _model, &_bitmap, _keyName, &tag ) )
+		return false;
 	if ( tag == NULL )
 		return false;	// Not found...
 
-	const char*	value = (const char*) FreeImage_GetTagValue( tag );
-	int	foundFieldsCount = sscanf_s( value, "%f", &_value );
-	return foundFieldsCount == 1;
+	S32*	pvalue = (S32*) FreeImage_GetTagValue( tag );
+	_value = *pvalue;
+
+	return true;
 }
 
+bool	MetaData::GetRational64( FREE_IMAGE_MDMODEL _model, FIBITMAP& _bitmap, const char* _keyName, S32& _numerator, S32& _denominator ) {
+	FITAG*	tag = nullptr;
+	if ( !FreeImage_GetMetadata( _model, &_bitmap, _keyName, &tag ) )
+		return false;
+	if ( tag == NULL )
+		return false;	// Not found...
+
+	switch ( FreeImage_GetTagType( tag ) ) {
+		case FIDT_RATIONAL: {
+			// 64-bit unsigned fraction 
+			U32*	pvalue = (U32*) FreeImage_GetTagValue( tag );
+			_numerator = S32( pvalue[0] );
+			_denominator = S32( pvalue[1] );
+			break;
+		}
+
+		case FIDT_SRATIONAL: {
+			// 64-bit signed fraction 
+			S32*	pvalue = (S32*) FreeImage_GetTagValue( tag );
+			_numerator = pvalue[0];
+			_denominator = pvalue[1];
+			break;
+		}
+
+		default:
+			throw "Unexpected tag data type!";
+	}
+
+	return true;
+}
+bool	MetaData::GetRational64( FREE_IMAGE_MDMODEL _model, FIBITMAP& _bitmap, const char* _keyName, float& _value ) {
+	S32 num, den;
+	if ( !GetRational64( _model, _bitmap, _keyName, num, den ) )
+		return false;
+
+	_value = float(num) / den;
+
+	return true;
+}
 /*
 
 	protected:

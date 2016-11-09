@@ -11,19 +11,24 @@ namespace ImageUtilityLib {
 	class ImageFile;
 	class ColorProfile;
 
+	// Holds the image's color profile as well as important shot information pulled from EXIF data
+	// You may want to have a look at APEX format to understand Tv and Av settings (https://en.wikipedia.org/wiki/APEX_system)
+	//
 	class	MetaData {
 	public:
 
 		ColorProfile*		m_colorProfile;				// The color profile found in the input file if the bitmap was loaded from a file, or the default sRGB profile otherwise
 
 		bool				m_gammaSpecifiedInFile;		// True if the gamma exponent was found in the file
+		float				m_gammaExponent;			// Gamma exponent or 2.2 if not found in the file
 
-		bool				m_valid;					// True if the following information was found in the file (usually not available except from RAW files)
-		float				m_ISOSpeed;
-		float				m_shutterSpeed;
-		float				m_aperture;
-		float				m_exposureBias;
-		float				m_focalLength;
+		bool				m_valid;					// True if the following information was found in the file (sometimes not available from older file formats like GIF or BMP)
+		U32					m_ISOSpeed;					// ISO speed (min = 50)
+		float				m_exposureTime;				// Exposure time (in seconds)
+		float				m_Tv;						// Shutter Speed Value, in EV (Tv = log2( 1/ShutterSpeed))
+		float				m_Av;						// Aperture Value, in EV (Av = log2( Aperture² ))
+		float				m_FNumber;					// In F-stops
+		float				m_focalLength;				// In mm
 
 	public:
 		MetaData();
@@ -50,7 +55,9 @@ namespace ImageUtilityLib {
 		void	EnumerateDefaultTags( const ImageFile& _image );
 
 		// Wraps FreeImage's metadata tags getters
-		static bool	GetInteger( FREE_IMAGE_MDMODEL _model, FIBITMAP& _bitmap, const char* _keyName, int& _value );
-		static bool	GetFloat( FREE_IMAGE_MDMODEL _model, FIBITMAP& _bitmap, const char* _keyName, float& _value );
+ 		static bool	GetString( FREE_IMAGE_MDMODEL _model, FIBITMAP& _bitmap, const char* _keyName, const char*& _value );
+ 		static bool	GetInteger( FREE_IMAGE_MDMODEL _model, FIBITMAP& _bitmap, const char* _keyName, S32& _value );
+		static bool	GetRational64( FREE_IMAGE_MDMODEL _model, FIBITMAP& _bitmap, const char* _keyName, float& _value );
+		static bool	GetRational64( FREE_IMAGE_MDMODEL _model, FIBITMAP& _bitmap, const char* _keyName, S32& _numerator, S32& _denominator );
 	};
 }

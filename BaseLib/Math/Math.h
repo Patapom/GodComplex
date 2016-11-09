@@ -153,7 +153,7 @@ public:
 
 	void		Set( float _x, float _y, float _z, float _w )	{ x = _x; y = _y; z = _z; w = _w; }
 	void		Set( const bfloat2& _xy, float _z, float _w )	{ x = _xy.x; y = _xy.y; z = _z; w = _w; }
-	void		Set( const bfloat3& _xyz, float _w )				{ x = _xyz.x; y = _xyz.y; z = _xyz.x; w = _w; }
+	void		Set( const bfloat3& _xyz, float _w )				{ x = _xyz.x; y = _xyz.y; z = _xyz.z; w = _w; }
 
 	float		LengthSq() const						{ return x*x + y*y + z*z + w*w; }
 	float		Length() const							{ return sqrtf( x*x + y*y + z*z + w*w ); }

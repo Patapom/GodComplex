@@ -68,6 +68,26 @@ namespace ImageUtility {
 			static property Chromaticities^	ProPhoto		{ Chromaticities^ get() { return gcnew Chromaticities( float2( 0.7347f, 0.2653f ), float2( 0.1596f, 0.8404f ), float2( 0.0366f, 0.0001f ), ILLUMINANT_D50 ); } }
 			static property Chromaticities^	Radiance		{ Chromaticities^ get() { return gcnew Chromaticities( float2( 0.6400f, 0.3300f ), float2( 0.2900f, 0.6000f ), float2( 0.1500f, 0.0600f ), ILLUMINANT_E ); } }
 
+			// Gets the Red chromaticity
+			property float2			Red {
+				float2	get() { return float2( m_nativeObject->R.x, m_nativeObject->R.y ); }
+			}
+
+			// Gets the Green chromaticity
+			property float2			Green {
+				float2	get() { return float2( m_nativeObject->G.x, m_nativeObject->G.y ); }
+			}
+
+			// Gets the Blue chromaticity
+			property float2			Blue {
+				float2	get() { return float2( m_nativeObject->B.x, m_nativeObject->B.y ); }
+			}
+
+			// Gets the White chromaticity
+			property float2			White {
+				float2	get() { return float2( m_nativeObject->W.x, m_nativeObject->W.y ); }
+			}
+
 			/// <summary>
 			/// Attempts to recognize the current chromaticities as a standard profile
 			/// </summary>

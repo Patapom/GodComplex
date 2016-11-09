@@ -9,6 +9,7 @@ const bfloat2	ColorProfile::ILLUMINANT_D55( 0.33242f, 0.34743f );	// Mid-Morning
 const bfloat2	ColorProfile::ILLUMINANT_D65( 0.31271f, 0.32902f );	// Daylight, Noon, Overcast (sRGB reference illuminant)
 const bfloat2	ColorProfile::ILLUMINANT_E( 1/3.0f, 1/3.0f );		// Reference
 
+const float		ColorProfile::GAMMA_EXPONENT_STANDARD = 2.2f;
 const float		ColorProfile::GAMMA_EXPONENT_sRGB = 2.4f;
 const float		ColorProfile::GAMMA_EXPONENT_ADOBE = 2.19921875f;
 const float		ColorProfile::GAMMA_EXPONENT_PRO_PHOTO = 1.8f;
