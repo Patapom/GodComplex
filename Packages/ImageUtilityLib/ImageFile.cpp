@@ -182,7 +182,65 @@ void	ImageFile::ConvertFrom( const ImageFile& _source, PIXEL_FORMAT _targetForma
 
 	// Convert source
 	m_pixelFormat = _targetFormat;
-	m_bitmap = FreeImage_ConvertToType( _source.m_bitmap, PixelFormat2FIT( _targetFormat ) );
+
+	FREE_IMAGE_TYPE	sourceType = PixelFormat2FIT( _source.m_pixelFormat );
+	FREE_IMAGE_TYPE	targetType = PixelFormat2FIT( _targetFormat );
+	if ( targetType == FIT_BITMAP ) {
+		// Convert to temporary bitmap first
+		// If the source is already a standard type bitmap then it is cloned
+		FIBITMAP*	temp = FreeImage_ConvertToStandardType( _source.m_bitmap );
+		if ( temp == nullptr )
+			throw "FreeImage failed to convert to standard bitmap type!";
+
+		// Now check bits per pixel
+		U32		sourceBPP = FreeImage_GetBPP( temp );
+		U32		targetBPP = PixelFormat2BPP( _targetFormat );
+		if ( sourceBPP == targetBPP ) {
+			// Okay so the source and target BPP are the same, just use our freshly converted bitmap then
+			m_bitmap = temp;
+			temp = nullptr;
+		} else {
+			switch ( sourceBPP ) {
+			case 8:
+				switch ( targetBPP ) {
+				case 16: throw "8 -> 16 bits per pixel is not a supported conversion!";
+				case 24: m_bitmap = FreeImage_ConvertTo24Bits( temp );
+				case 32: m_bitmap = FreeImage_ConvertTo32Bits( temp );
+				}
+				break;
+
+			case 16:
+				switch ( targetBPP ) {
+				case 8: m_bitmap = FreeImage_ConvertTo8Bits( temp );
+				case 24: m_bitmap = FreeImage_ConvertTo24Bits( temp );
+				case 32: m_bitmap = FreeImage_ConvertTo32Bits( temp );
+				}
+				break;
+
+			case 24:
+				switch ( targetBPP ) {
+				case 8: m_bitmap = FreeImage_ConvertTo8Bits( temp );
+				case 16: throw "24 -> 16 bits per pixel is not a supported conversion!";
+				case 32: m_bitmap = FreeImage_ConvertTo32Bits( temp );
+				}
+				break;
+
+			case 32:
+				switch ( targetBPP ) {
+				case 8: m_bitmap = FreeImage_ConvertTo8Bits( temp );
+				case 16: throw "32 -> 16 bits per pixel is not a supported conversion!";
+				case 24: m_bitmap = FreeImage_ConvertTo24Bits( temp );
+				}
+				break;
+			}
+		}
+
+		if ( temp != nullptr )
+			FreeImage_Unload( temp );
+	} else {
+		// Not a simple bitmap type
+		m_bitmap = FreeImage_ConvertToType( _source.m_bitmap, targetType );
+	}
 
 	// Copy metadata
 	m_metadata = _source.m_metadata;

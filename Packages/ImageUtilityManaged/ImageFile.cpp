@@ -54,10 +54,14 @@ void	ImageFile::Exit() {
 
 // Load from a file or memory
 void	ImageFile::Load( System::IO::FileInfo^ _fileName ) {
+	if ( !_fileName->Exists )
+		throw gcnew System::IO::FileNotFoundException( "File \"" + _fileName + "\" not found!" );
 	pin_ptr< const wchar_t >	nativeFileName = PtrToStringChars( _fileName->FullName );
 	m_nativeObject->Load( nativeFileName );
 }
 void	ImageFile::Load( System::IO::FileInfo^ _fileName, FILE_FORMAT _format ) {
+	if ( !_fileName->Exists )
+		throw gcnew System::IO::FileNotFoundException( "File \"" + _fileName + "\" not found!" );
 	pin_ptr< const wchar_t >	nativeFileName = PtrToStringChars( _fileName->FullName );
 	m_nativeObject->Load( nativeFileName, ImageUtilityLib::ImageFile::FILE_FORMAT( _format ) );
 
@@ -154,7 +158,7 @@ NativeByteArray^	ImageFile::Save( FILE_FORMAT _format, SAVE_FLAGS _options ) {
 	result->UnlockBits( lockedBitmap );
 
 	if ( source != this )
-		delete source;
+		delete source;	// We had to make a temporary conversion so now we must delete it
 
 	return result;
 }

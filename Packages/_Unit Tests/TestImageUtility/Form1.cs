@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 
 using ImageUtility;
+using SharpMath;
 
 namespace UnitTests.ImageUtility
 {
@@ -23,19 +24,28 @@ namespace UnitTests.ImageUtility
 		protected override void OnLoad( EventArgs e ) {
 			base.OnLoad( e );
 
-			m_imageFile.Load( new System.IO.FileInfo( @".\Images\In\LDR2HDR\FromJPG\IMG_0868.jpg" ) );
+//			m_imageFile.Load( new System.IO.FileInfo( @".\Images\In\LDR2HDR\FromJPG\IMG_0868.jpg" ) );
+//			m_imageFile.Load( new System.IO.FileInfo( @".\Images\In\JPG\R8.jpg" ) );
+			m_imageFile.Load( new System.IO.FileInfo( @".\Images\In\PNG\RGB16.png" ) );
+//			m_imageFile.Load( new System.IO.FileInfo( @".\Images\In\JPG\RGB8.jpg" ) );
+//			m_imageFile.Load( new System.IO.FileInfo( @"C:\Users\Patapom\Desktop\Giger-Shaft_VII.jpg" ) );
+
 			panel1.Bitmap = m_imageFile.AsBitmap;
 
 			// Write out metadata
 			MetaData		MD = m_imageFile.Metadata;
 			ColorProfile	Profile = MD.ColorProfile;
 			textBoxEXIF.Lines = new string[] {
+				"File Format: " + m_imageFile.FileFormat,
+				"Pixel Format: " + m_imageFile.PixelFormat,
+				"",
 				"Profile:",
 				"  • Chromaticities: ",
-				"    R = " + Profile.Chromas.RecognizedChromaticity.Red.ToString(),
-				"    G = " + Profile.Chromas.RecognizedChromaticity.Green.ToString(),
-				"    B = " + Profile.Chromas.RecognizedChromaticity.Blue.ToString(),
-				"    W = " + Profile.Chromas.RecognizedChromaticity.White.ToString(),
+				"    R = " + Profile.Chromas.Red.ToString(),
+				"    G = " + Profile.Chromas.Green.ToString(),
+				"    B = " + Profile.Chromas.Blue.ToString(),
+				"    W = " + Profile.Chromas.White.ToString(),
+				"    Recognized chromaticities = " + Profile.Chromas.RecognizedChromaticity,
 				"  • Gamma Curve: " + Profile.GammaCurve.ToString(),
 				"  • Gamma Exponent: " + Profile.GammaExponent.ToString(),
 				"",

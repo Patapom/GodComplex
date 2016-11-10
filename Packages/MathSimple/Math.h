@@ -17,6 +17,10 @@ namespace SharpMath {
 		float2( float _x, float _y )				{ Set( _x, _y ); }
 		void	Set( float _x, float _y )			{ x = _x; y = _y; }
 
+		String^	ToString() override {
+			return "{ " + x + ", " + y + " }";
+		}
+
 		static float2	operator+( float2 a, float2 b )	{ return float2( a.x+b.x, a.y+b.y ); }
 		static float2	operator-( float2 a, float2 b )	{ return float2( a.x-b.x, a.y-b.y ); }
 		static float2	operator-( float2 a )			{ return float2( -a.x, -a.y ); }
@@ -66,6 +70,10 @@ namespace SharpMath {
 		float3( float2 _xy, float _z )				{ Set( _xy.x, _xy.y, _z ); }
 		float3( System::Drawing::Color^ _Color )	{ Set( _Color->R / 255.0f, _Color->G / 255.0f, _Color->B / 255.0f ); }
 		void	Set( float _x, float _y, float _z )	{ x = _x; y = _y; z = _z; }
+
+		String^	ToString() override {
+			return "{ " + x + ", " + y + ", " + z + " }";
+		}
 
 		static float3	operator+( float3 a, float3 b )	{ return float3( a.x+b.x, a.y+b.y, a.z+b.z ); }
 		static float3	operator-( float3 a, float3 b )	{ return float3( a.x-b.x, a.y-b.y, a.z-b.z ); }
@@ -145,6 +153,10 @@ namespace SharpMath {
 		float4( System::Drawing::Color^ _Color, float _Alpha )	{ Set( _Color->R / 255.0f, _Color->G / 255.0f, _Color->B / 255.0f, _Alpha ); }
 		void	Set( float _x, float _y, float _z, float _w )	{ x = _x; y = _y; z = _z; w = _w; }
 		void	Set( float3 _xyz, float _w )					{ x = _xyz.x; y = _xyz.y; z = _xyz.z; w = _w; }
+
+		String^	ToString() override {
+			return "{ " + x + ", " + y + ", " + z + ", " + w + " }";
+		}
 
 		static float4	operator+( float4 a, float4 b )	{ return float4( a.x+b.x, a.y+b.y, a.z+b.z, a.w+b.w ); }
 		static float4	operator-( float4 a, float4 b )	{ return float4( a.x-b.x, a.y-b.y, a.z-b.z, a.w-b.w ); }

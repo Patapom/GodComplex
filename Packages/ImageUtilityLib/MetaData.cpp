@@ -9,7 +9,7 @@ using namespace ImageUtilityLib;
 MetaData::MetaData() : m_colorProfile( nullptr ) {
 	Reset();
 }
-MetaData::MetaData( const MetaData& _other ) {
+MetaData::MetaData( const MetaData& _other ) : m_colorProfile( nullptr ) {
 	*this = _other;
 }
 MetaData::~MetaData() {
@@ -25,13 +25,15 @@ void	MetaData::Reset() {
 	m_exposureTime = 0.0f;
 	m_Tv = 0.0f;
 	m_Av = 0.0f;
-//	m_exposureBias = 0.0f;
+	m_FNumber = 1.0f;
 	m_focalLength = 0.0f;
 
 	SAFE_DELETE( m_colorProfile );
 }
 
 MetaData&	MetaData::operator=( const MetaData& _other ) {
+	Reset();
+
 	// Copy in bulk
 	memcpy_s( &m_colorProfile, sizeof(MetaData), &_other.m_colorProfile, sizeof(MetaData) );
 
