@@ -120,7 +120,7 @@ NativeByteArray^	ImageFile::Save( FILE_FORMAT _format, SAVE_FLAGS _options ) {
 
 	// Convert source bitmap to a compatible format
 	ImageFile^	source = this;
-	if ( PixelFormat != PIXEL_FORMAT::RGB8 && this->PixelFormat != PIXEL_FORMAT::RGBA8 ) {
+	if ( PixelFormat != PIXEL_FORMAT::RGB8 && PixelFormat != PIXEL_FORMAT::RGBA8 ) {
 		source = gcnew ImageFile();
 		source->ConvertFrom( this, PIXEL_FORMAT::RGBA8 );
 	}
@@ -167,6 +167,19 @@ NativeByteArray^	ImageFile::Save( FILE_FORMAT _format, SAVE_FLAGS _options ) {
 // Converts the source image to a target format
 void	ImageFile::ConvertFrom( ImageFile^ _source, PIXEL_FORMAT _targetFormat ) {
 	m_nativeObject->ConvertFrom( *_source->m_nativeObject, ImageUtilityLib::ImageFile::PIXEL_FORMAT( _targetFormat ) );
+}
+
+// Tone maps a HDR image into a LDR RGBA8 format
+void	ImageFile::ToneMapFrom( ImageFile^ _source, ToneMapper^ _toneMapper ) {
+
+	// Get a function pointer to the delegate
+	System::Runtime::InteropServices::GCHandle	gch = System::Runtime::InteropServices::GCHandle::Alloc( _toneMapper );
+	IntPtr		ip = System::Runtime::InteropServices::Marshal::GetFunctionPointerForDelegate( _toneMapper );
+
+	m_nativeObject->ToneMapFrom( *_source->m_nativeObject, static_cast< ImageUtilityLib::ImageFile::toneMapper_t >( ip.ToPointer() ) );
+
+	// release reference to delegate  
+	gch.Free();  
 }
 
 // Retrieves the image file type based on the image file name

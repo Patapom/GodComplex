@@ -108,6 +108,9 @@ void	ImageFile::Load( const wchar_t* _fileName, FILE_FORMAT _format ) {
 	if ( m_bitmap == nullptr )
 		throw "Failed to load image file!";
 
+	// Apparently, FreeImage **always** flips the images vertically so we need to flip them back
+	FreeImage_FlipVertical( m_bitmap );
+
 	m_pixelFormat = Bitmap2PixelFormat( *m_bitmap );
 
 	m_metadata.RetrieveFromImage( *this );
@@ -130,6 +133,9 @@ void	ImageFile::Load( const void* _fileContent, U64 _fileSize, FILE_FORMAT _form
 	if ( m_bitmap == nullptr )
 		throw "Failed to load image file!";
 
+	// Apparently, FreeImage **always** flips the images vertically so we need to flip them back
+	FreeImage_FlipVertical( m_bitmap );
+
 	m_pixelFormat = Bitmap2PixelFormat( *m_bitmap );
 
 	m_metadata.RetrieveFromImage( *this );
@@ -147,21 +153,37 @@ void	ImageFile::Save( const wchar_t* _fileName, FILE_FORMAT _format ) const {
 void	ImageFile::Save( const wchar_t* _fileName, FILE_FORMAT _format, SAVE_FLAGS _options ) const {
 	if ( _format == FILE_FORMAT::UNKNOWN )
 		throw "Unrecognized image file format!";
+	if ( m_bitmap == nullptr )
+		throw "Invalid bitmap to save!";
+
+	// Apparently, FreeImage **always** flips the images vertically so we need to flip them back before saving
+	FreeImage_FlipVertical( m_bitmap );
 
 	m_fileFormat = _format;
 	if ( !FreeImage_SaveU( FileFormat2FIF( _format ), m_bitmap, _fileName, int(_options) ) )
 		throw "Failed to save the image file!";
+
+	// Apparently, FreeImage **always** flips the images vertically so we need to flip them back after saving
+	FreeImage_FlipVertical( m_bitmap );
 }
 void	ImageFile::Save( FILE_FORMAT _format, SAVE_FLAGS _options, U64 _fileSize, void*& _fileContent ) const {
 	if ( _format == FILE_FORMAT::UNKNOWN )
 		throw "Unrecognized image file format!";
+	if ( m_bitmap == nullptr )
+		throw "Invalid bitmap to save!";
 
 	m_fileFormat = _format;
+
+	// Apparently, FreeImage **always** flips the images vertically so we need to flip them back before saving
+	FreeImage_FlipVertical( m_bitmap );
 
 	// Save into a stream of unknown size
 	FIMEMORY*	stream = FreeImage_OpenMemory();
 	if ( !FreeImage_SaveToMemory( FileFormat2FIF( _format ), m_bitmap, stream, int(_options) ) )
 		throw "Failed to save the image file!";
+
+	// Apparently, FreeImage **always** flips the images vertically so we need to flip them back before saving
+	FreeImage_FlipVertical( m_bitmap );
 
 	// Copy into a custom buffer
 	_fileSize = FreeImage_TellMemory( stream );
@@ -181,14 +203,16 @@ void	ImageFile::ConvertFrom( const ImageFile& _source, PIXEL_FORMAT _targetForma
 	Exit();
 
 	// Convert source
-	m_pixelFormat = _targetFormat;
-
 	FREE_IMAGE_TYPE	sourceType = PixelFormat2FIT( _source.m_pixelFormat );
 	FREE_IMAGE_TYPE	targetType = PixelFormat2FIT( _targetFormat );
 	if ( targetType == FIT_BITMAP ) {
+		// Check the source is not a HDR format
+		if ( sourceType == FIT_RGBF || sourceType == FIT_RGBAF )
+			throw "You need to use the ToneMap() function to convert HDR formats into a LDR format!";
+
 		// Convert to temporary bitmap first
 		// If the source is already a standard type bitmap then it is cloned
-		FIBITMAP*	temp = FreeImage_ConvertToStandardType( _source.m_bitmap );
+		FIBITMAP*	temp = FreeImage_ConvertToType( _source.m_bitmap, FIT_BITMAP );
 		if ( temp == nullptr )
 			throw "FreeImage failed to convert to standard bitmap type!";
 
@@ -241,6 +265,96 @@ void	ImageFile::ConvertFrom( const ImageFile& _source, PIXEL_FORMAT _targetForma
 		// Not a simple bitmap type
 		m_bitmap = FreeImage_ConvertToType( _source.m_bitmap, targetType );
 	}
+
+	// Get pixel format from bitmap
+	m_pixelFormat = Bitmap2PixelFormat( *m_bitmap );
+
+	// Copy metadata
+	m_metadata = _source.m_metadata;
+
+	// Copy file format and attempt to create a profile
+	m_fileFormat = _source.m_fileFormat;
+}
+
+void	ImageFile::ToneMapFrom( const ImageFile& _source, toneMapper_t _toneMapper ) {
+	Exit();
+
+	// Check the source is a HDR format
+	FREE_IMAGE_TYPE	sourceType = PixelFormat2FIT( _source.m_pixelFormat );
+	if ( sourceType != FIT_RGBF && sourceType != FIT_RGBAF )
+		throw "You must provide a HDR format to use the ToneMap() function!";
+
+	U32	W = _source.Width();
+	U32	H = _source.Height();
+
+	// Convert source
+	if ( sourceType == FIT_RGBF ) {
+		// Convert to RGB8
+		m_bitmap = FreeImage_Allocate( W, H, 24, FI_RGBA_RED_MASK, FI_RGBA_GREEN_MASK, FI_RGBA_BLUE_MASK );
+
+		const unsigned	src_pitch  = FreeImage_GetPitch( _source.m_bitmap );
+		const unsigned	dst_pitch  = FreeImage_GetPitch( m_bitmap );
+
+		const U8*	src_bits = (BYTE*) FreeImage_GetBits( _source.m_bitmap );
+		U8*			dst_bits = (BYTE*) FreeImage_GetBits( m_bitmap );
+
+		bfloat3		tempLDR;
+		for ( U32 Y=0; Y < H; Y++ ) {
+			const bfloat3*	src_pixel = (bfloat3*) src_bits;
+			U8*				dst_pixel = (BYTE*) dst_bits;
+			for ( U32 X=0; X < W; X++, src_pixel++ ) {
+				// Apply tone mapping
+				(*_toneMapper)( *src_pixel, tempLDR );
+				tempLDR.x = CLAMP( tempLDR.x, 0.0f, 1.0f );
+				tempLDR.y = CLAMP( tempLDR.y, 0.0f, 1.0f );
+				tempLDR.z = CLAMP( tempLDR.z, 0.0f, 1.0f );
+
+				// Write clamped LDR value
+				dst_pixel[FI_RGBA_RED]   = BYTE(255.0F * tempLDR.x + 0.5F);
+				dst_pixel[FI_RGBA_GREEN] = BYTE(255.0F * tempLDR.y + 0.5F);
+				dst_pixel[FI_RGBA_BLUE]  = BYTE(255.0F * tempLDR.z + 0.5F);
+				dst_pixel += 3;
+			}
+			src_bits += src_pitch;
+			dst_bits += dst_pitch;
+		}
+	} else if ( sourceType == FIT_RGBAF ) {
+		// Convert to RGBA8
+		m_bitmap = FreeImage_Allocate( W, H, 32, FI_RGBA_RED_MASK, FI_RGBA_GREEN_MASK, FI_RGBA_BLUE_MASK );
+
+		const unsigned	src_pitch  = FreeImage_GetPitch( _source.m_bitmap );
+		const unsigned	dst_pitch  = FreeImage_GetPitch( m_bitmap );
+
+		const U8*	src_bits = (BYTE*) FreeImage_GetBits( _source.m_bitmap );
+		U8*			dst_bits = (BYTE*) FreeImage_GetBits( m_bitmap );
+
+		bfloat3		tempLDR;
+		for ( U32 Y=0; Y < H; Y++ ) {
+			const bfloat4*	src_pixel = (bfloat4*) src_bits;
+			U8*				dst_pixel = (BYTE*) dst_bits;
+			for ( U32 X=0; X < W; X++, src_pixel++ ) {
+				// Apply tone mapping
+				_toneMapper( *((bfloat3*) src_pixel), tempLDR );
+				tempLDR.x = CLAMP( tempLDR.x, 0.0f, 1.0f );
+				tempLDR.y = CLAMP( tempLDR.y, 0.0f, 1.0f );
+				tempLDR.z = CLAMP( tempLDR.z, 0.0f, 1.0f );
+				float	A = CLAMP( src_pixel->w, 0.0f, 1.0f );
+
+				// Write clamped LDR value
+				dst_pixel[FI_RGBA_RED]   = BYTE(255.0F * tempLDR.x + 0.5F);
+				dst_pixel[FI_RGBA_GREEN] = BYTE(255.0F * tempLDR.y + 0.5F);
+				dst_pixel[FI_RGBA_BLUE]  = BYTE(255.0F * tempLDR.z + 0.5F);
+				dst_pixel[FI_RGBA_ALPHA] = BYTE(255.0F * A + 0.5F);
+				dst_pixel += 4;
+			}
+			src_bits += src_pitch;
+			dst_bits += dst_pitch;
+		}
+	} else
+		throw "Unsupported source HDR format!";
+
+	// Get pixel format from bitmap
+	m_pixelFormat = Bitmap2PixelFormat( *m_bitmap );
 
 	// Copy metadata
 	m_metadata = _source.m_metadata;
@@ -419,7 +533,7 @@ void	ImageFile::UnUseFreeImage() {
 
 // Compresses a single image
 void	ImageFile::DDSCompress( COMPRESSION_TYPE _compressionType, U32& _compressedImageSize, void*& _compressedImage ) {
-
+	Implement meeeee!
 }
 
 // Saves a DDS image in memory to disk (usually used after a compression)

@@ -319,7 +319,7 @@ void	MetaData::EnumerateMetaDataRAW( const ImageFile& _image ) {
 void	MetaData::EnumerateMetaDataBMP( const ImageFile& _image ) {
 	m_colorProfile = new ColorProfile(	ColorProfile::Chromaticities::sRGB,		// Default for BMPs is standard sRGB with no gamma
 										ColorProfile::GAMMA_CURVE::STANDARD,
-										1.0f
+										ColorProfile::GAMMA_EXPONENT_STANDARD
 									);
 	m_colorProfile->SetProfileFoundInFile( false );
 }
@@ -327,7 +327,7 @@ void	MetaData::EnumerateMetaDataBMP( const ImageFile& _image ) {
 void	MetaData::EnumerateMetaDataGIF( const ImageFile& _image ) {
 	m_colorProfile = new ColorProfile(	ColorProfile::Chromaticities::sRGB,		// Default for GIFs is standard sRGB with no gamma
 										ColorProfile::GAMMA_CURVE::STANDARD,
-										1.0f
+										ColorProfile::GAMMA_EXPONENT_STANDARD
 									);
 	m_colorProfile->SetProfileFoundInFile( false );
 }

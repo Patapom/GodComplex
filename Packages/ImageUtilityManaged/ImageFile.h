@@ -61,6 +61,9 @@ namespace ImageUtility {
 	public:
 		#pragma region NESTED TYPES
 
+		// The delegate used to tone map an HDR image into a LDR color (warning: any returned value above 1 will be clamped!)
+		delegate void	ToneMapper( float3 _HDRColor, float3% _LDRColor );
+
 		// This enum matches the classes available in PixelFormat.h (which in turn match the DXGI formats)
 		enum class PIXEL_FORMAT {
 			UNKNOWN,
@@ -201,6 +204,7 @@ namespace ImageUtility {
 		}
 
 		// Builds a System.Drawing.Bitmap from the image
+		// Warning: throws an exception if your image format is HDR! (cf. ToneMapFrom())
 		property System::Drawing::Bitmap^	AsBitmap {
 			System::Drawing::Bitmap^	get();
 		}
@@ -255,7 +259,11 @@ namespace ImageUtility {
 		NativeByteArray^	Save( FILE_FORMAT _format, SAVE_FLAGS _options );
 		
 		// Converts the source image to a target format
+		// Warning: throws an exception if your image format is HDR, you need to use ToneMapFrom() method and provide a valid tone mapper operator for proper HDR->LDR conversion instead!
 		void				ConvertFrom( ImageFile^ _source, PIXEL_FORMAT _targetFormat );
+
+		// Tone maps a HDR image into a LDR RGBA8 format
+		void				ToneMapFrom( ImageFile^ _source, ToneMapper^ _toneMapper );
 
 		// Retrieves the image file type based on the image file name
 		static FILE_FORMAT	GetFileType( System::IO::FileInfo^ _fileName );

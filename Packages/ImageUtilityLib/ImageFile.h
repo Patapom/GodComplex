@@ -59,6 +59,9 @@ namespace ImageUtilityLib {
 	public:
 		#pragma region NESTED TYPES
 
+		// The delegate used to tone map an HDR image into a LDR color (warning: any returned value above 1 will be clamped!)
+		typedef void	(*toneMapper_t)( const bfloat3& _HDRColor, bfloat3& _LDRColor );
+
 		// This enum matches the classes available in PixelFormat.h (which in turn match the DXGI formats)
 		enum class PIXEL_FORMAT {
 			UNKNOWN,
@@ -301,7 +304,11 @@ namespace ImageUtilityLib {
 		void				Save( FILE_FORMAT _format, SAVE_FLAGS _options, U64 _fileSize, void*& _fileContent ) const;	// NOTE: The caller MUST delete the returned buffer!
 		
 		// Converts the source image to a target format
+		// WARNING: HDR formats need to be tone mapped first before being converted to regular LDR formats
 		void				ConvertFrom( const ImageFile& _source, PIXEL_FORMAT _targetFormat );
+
+		// Tone maps a HDR image into a LDR RGBA8 format
+		void				ToneMapFrom( const ImageFile& _source, toneMapper_t _toneMapper );
 
 		// Retrieves the image file type based on the image file name
 		static FILE_FORMAT	GetFileType( const wchar_t* _imageFileNameName );
