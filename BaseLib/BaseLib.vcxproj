@@ -23,13 +23,19 @@
     <ClInclude Include="Containers\Hashtable.h" />
     <ClInclude Include="Containers\List.h" />
     <ClInclude Include="Math\Math.h" />
+    <ClInclude Include="Math\Random.h" />
+    <ClInclude Include="Math\SH.h" />
     <ClInclude Include="PixelFormats\PixelFormats.h" />
     <ClInclude Include="Types.h" />
+    <ClInclude Include="Utility\tweakval.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Containers\Hashtable.cpp" />
     <ClCompile Include="Math\Math.cpp" />
+    <ClCompile Include="Math\Random.cpp" />
+    <ClCompile Include="Math\SH.cpp" />
     <ClCompile Include="PixelFormats\PixelFormats.cpp" />
+    <ClCompile Include="Utility\tweakval.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Containers\Hashtable.inl" />

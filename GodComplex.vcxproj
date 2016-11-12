@@ -590,9 +590,7 @@ MinifyAll.cmd</Command>
     <ClInclude Include="Utility\MemoryMappedFile.h" />
     <ClInclude Include="Utility\Octree.h" />
     <ClInclude Include="Utility\Profiling.h" />
-    <ClInclude Include="Utility\Random.h" />
     <ClInclude Include="Utility\Resources.h" />
-    <ClInclude Include="Utility\SH.h" />
     <ClInclude Include="Utility\SHProbeEncoder\SHProbe.h" />
     <ClInclude Include="Utility\SHProbeEncoder\SHProbeEncoderFloodFill.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
@@ -604,7 +602,6 @@ MinifyAll.cmd</Command>
     <ClInclude Include="Utility\SHProbeEncoder\SHProbeNetwork.h" />
     <ClInclude Include="Utility\SHProbeEncoder\SHProbeEncoder.h" />
     <ClInclude Include="Utility\TextureFilePOM.h" />
-    <ClInclude Include="Utility\tweakval.h" />
     <ClInclude Include="Utility\Video.h" />
   </ItemGroup>
   <ItemGroup>
@@ -750,9 +747,7 @@ MinifyAll.cmd</Command>
       <FileType>Document</FileType>
     </None>
     <ClCompile Include="Utility\Profiling.cpp" />
-    <ClCompile Include="Utility\Random.cpp" />
     <ClCompile Include="Utility\Resources.cpp" />
-    <ClCompile Include="Utility\SH.cpp" />
     <ClCompile Include="Utility\SHProbeEncoder\SHProbe.cpp" />
     <ClCompile Include="Utility\SHProbeEncoder\SHProbeEncoderFloodFill.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
@@ -764,7 +759,6 @@ MinifyAll.cmd</Command>
     <ClCompile Include="Utility\SHProbeEncoder\SHProbeNetwork.cpp" />
     <ClCompile Include="Utility\SHProbeEncoder\SHProbeEncoder.cpp" />
     <ClCompile Include="Utility\TextureFilePOM.cpp" />
-    <ClCompile Include="Utility\tweakval.cpp" />
     <ClCompile Include="Utility\Video.cpp" />
   </ItemGroup>
   <ItemGroup>

@@ -10,6 +10,9 @@
     <Filter Include="PixelFormats">
       <UniqueIdentifier>{8f6a9f7a-ab0b-49b0-9d1e-d677d5355e53}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Utility">
+      <UniqueIdentifier>{fae693df-fb1b-4c5a-b98a-5cbb929c2665}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Containers\Hashtable.h">
@@ -26,6 +29,15 @@
     <ClInclude Include="PixelFormats\PixelFormats.h">
       <Filter>PixelFormats</Filter>
     </ClInclude>
+    <ClInclude Include="Math\Random.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Math\SH.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Utility\tweakval.h">
+      <Filter>Utility</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Containers\Hashtable.cpp">
@@ -36,6 +48,15 @@
     </ClCompile>
     <ClCompile Include="PixelFormats\PixelFormats.cpp">
       <Filter>PixelFormats</Filter>
+    </ClCompile>
+    <ClCompile Include="Math\Random.cpp">
+      <Filter>Math</Filter>
+    </ClCompile>
+    <ClCompile Include="Math\SH.cpp">
+      <Filter>Math</Filter>
+    </ClCompile>
+    <ClCompile Include="Utility\tweakval.cpp">
+      <Filter>Utility</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

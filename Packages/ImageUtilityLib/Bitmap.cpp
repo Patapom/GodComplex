@@ -2,13 +2,29 @@
 #include "Bitmap.h"
 
 using namespace ImageUtilityLib;
+using namespace BaseLib;
+
+void	Bitmap::Init( int _width, int _height ) {
+	Exit();
+
+	m_width = _width;
+	m_height = _height;
+	m_XYZ = new bfloat4[m_width * m_height];
+	memset( m_XYZ, 0, m_width*m_height*sizeof(bfloat4) );
+}
+
+void	Bitmap::Exit() {
+	SAFE_DELETE( m_XYZ );
+}
 
 // This is the core of the bitmap class
 // This method converts any image file into a float4 CIE XYZ format using the provided profile or the profile associated to the file
 void	Bitmap::FromImageFile( const ImageFile& _sourceFile, ColorProfile* _profileOverride, bool _unPremultiplyAlpha ) {
-	m_colorProfile = _profileOverride != nullptr ? _profileOverride : _sourceFile.GetColorProfile();
- 	if ( m_colorProfile == nullptr )
+	ColorProfile*	colorProfile = _profileOverride != nullptr ? _profileOverride : &_sourceFile.GetColorProfile();
+ 	if ( colorProfile == nullptr )
  		throw "The provided file doesn't contain a valid color profile and you did not provide any profile override to initialize the bitmap!";
+
+	Exit();
 
 	// Convert for float4 format
 	FIBITMAP*	float4Bitmap = FreeImage_ConvertToType( _sourceFile.m_bitmap, FIT_RGBAF );
@@ -19,7 +35,7 @@ void	Bitmap::FromImageFile( const ImageFile& _sourceFile, ColorProfile* _profile
 	// Convert to XYZ in bulk using profile
 	const bfloat4*	source = (const bfloat4*) FreeImage_GetBits( float4Bitmap );
 	m_XYZ = new bfloat4[m_width * m_height];
-	m_colorProfile->RGB2XYZ( source, m_XYZ, U32(m_width * m_height) );
+	colorProfile->RGB2XYZ( source, m_XYZ, U32(m_width * m_height) );
 
 	FreeImage_Unload( float4Bitmap );
 
@@ -38,8 +54,9 @@ void	Bitmap::FromImageFile( const ImageFile& _sourceFile, ColorProfile* _profile
 }
 
 // And this method converts back the bitmap to any format
-void	Bitmap::ToImageFile( ImageFile& _targetFile, ImageFile::PIXEL_FORMAT _targetFormat, bool _premultiplyAlpha ) const {
- 	if ( m_colorProfile == nullptr )
+void	Bitmap::ToImageFile( ImageFile& _targetFile, ImageFile::PIXEL_FORMAT _targetFormat, ColorProfile* _profileOverride, bool _premultiplyAlpha ) const {
+	ColorProfile*	colorProfile = _profileOverride != nullptr ? _profileOverride : &_targetFile.GetColorProfile();
+ 	if ( colorProfile == nullptr )
  		throw "The bitmap doesn't contain a valid color profile to initialize the image file!";
 
 	FREE_IMAGE_TYPE	targetType = ImageFile::PixelFormat2FIT( _targetFormat );
@@ -47,13 +64,13 @@ void	Bitmap::ToImageFile( ImageFile& _targetFile, ImageFile::PIXEL_FORMAT _targe
 		throw "Unsupported target type!";
 
 	// Convert back to float4 RGB using color profile
-	ImageFile		float4Image( m_width, m_height, ImageFile::PIXEL_FORMAT::RGBA32F, *m_colorProfile );
+	ImageFile		float4Image( m_width, m_height, ImageFile::PIXEL_FORMAT::RGBA32F, *colorProfile );
 	const bfloat4*	source = m_XYZ;
-	bfloat4*			target = (bfloat4*) float4Image.GetBits();
+	bfloat4*		target = (bfloat4*) float4Image.GetBits();
 	if ( _premultiplyAlpha ) {
 		// Pre-multiply by alpha
 		const bfloat4*	unPreMultipliedSource = m_XYZ;
-		bfloat4*			preMultipliedTarget = target;
+		bfloat4*		preMultipliedTarget = target;
 		for ( U32 i=m_width*m_height; i > 0; i--, unPreMultipliedSource++, preMultipliedTarget++ ) {
 			preMultipliedTarget->x = unPreMultipliedSource->x * unPreMultipliedSource->w;
 			preMultipliedTarget->y = unPreMultipliedSource->y * unPreMultipliedSource->w;
@@ -62,7 +79,7 @@ void	Bitmap::ToImageFile( ImageFile& _targetFile, ImageFile::PIXEL_FORMAT _targe
 		}
 		source = target;	// In-place conversion
 	}
-	m_colorProfile->XYZ2RGB( source, target, m_width*m_height );
+	colorProfile->XYZ2RGB( source, target, m_width*m_height );
 
 	// Convert to target bitmap
 	FIBITMAP*	targetBitmap = FreeImage_ConvertToType( float4Image.m_bitmap, targetType );
@@ -72,30 +89,84 @@ void	Bitmap::ToImageFile( ImageFile& _targetFile, ImageFile::PIXEL_FORMAT _targe
 	_targetFile.m_bitmap = targetBitmap;
 }
 
+void	Bitmap::BilinearSample( float X, float Y, bfloat4& _XYZ ) const {
+	int		X0 = (int) floorf( X );
+	int		Y0 = (int) floorf( Y );
+	float	x = X - X0;
+	float	y = Y - Y0;
+	float	rx = 1.0f - x;
+	float	ry = 1.0f - y;
+			X0 = CLAMP( X0, 0, S32(m_width-1) );
+			Y0 = CLAMP( Y0, 0, S32(m_height-1) );
+	int		X1 = MIN( X0+1, S32(m_width-1) );
+	int		Y1 = MIN( Y0+1, S32(m_height-1) );
+
+	const bfloat4&	V00 = Access( X0, Y0 );
+	const bfloat4&	V01 = Access( X1, Y0 );
+	const bfloat4&	V10 = Access( X0, Y1 );
+	const bfloat4&	V11 = Access( X1, Y1 );
+
+	bfloat4	V0 = rx * V00 + x * V01;
+	bfloat4	V1 = rx * V10 + x * V11;
+
+	_XYZ = ry * V0 + y * V1;
+}
+
 
 //////////////////////////////////////////////////////////////////////////
 // LDR -> HDR Conversion
 //
-void	Bitmap::LDR2HDR( U32 _imagesCount, ImageFile* _images, float* _imageEVs, const HDRParms& _parms ) {
-
-}
-
-void	Bitmap::LDR2HDR( U32 _imagesCount, ImageFile* _images, float* _imageEVs, const List< bfloat3 >& _responseCurve, const HDRParms& _parms ) {
-
-}
-
 // Computes weight using a hat function:
 //	_Z must be in [0,_responseCurveSize[ range
 float	ComputeWeight( U32 _Z, U32 _responseCurveSize ) {
 	U32	Zmid = _responseCurveSize >> 1;
-	U32	weight = _Z <= Zmid	? _Z						// Z€[0,Zmid] => Z
+	U32	weight = _Z <= Zmid	? _Z							// Z€[0,Zmid] => Z
 							: _responseCurveSize-1 - _Z;	// Z€]Zmid,Zmax] => Zmax - Z
-	return float( 1 + weight );							// Add 1 so the weight is never 0!
+	return float( 1 + weight );								// Add 1 so the weight is never 0!
+}
+
+void	Bitmap::LDR2HDR( U32 _imagesCount, const ImageFile** _images, const float* _imageShutterSpeeds, const HDRParms& _parms ) {
+	// 1] Compute HDR response
+	List< bfloat3 >	responseCurve;
+	ComputeCameraResponseCurve( _imagesCount, _images, _imageShutterSpeeds, _parms, responseCurve );
+
+	// 2] Use the response curve to convert our LDR images into an HDR image
+	LDR2HDR( _imagesCount, _images, _imageShutterSpeeds, responseCurve, _parms._luminanceFactor );
+}
+
+void	Bitmap::LDR2HDR( U32 _imagesCount, const ImageFile** _images, const float* _imageShutterSpeeds, const List< bfloat3 >& _responseCurve, float _luminanceFactor ) {
+	if ( _images == nullptr )
+		throw "Invalid images array!";
+	if ( _imageShutterSpeeds == nullptr )
+		throw "Invalid shutter speeds array!";
+
+	U32		W = _images[0]->Width();
+	U32		H = _images[0]->Height();
+	Init( W, H );
+
+	// Recompose HDR image into the XYZ buffer (still RGB but it will be converted into XYZ at the end)
+	for ( U32 imageIndex=0; imageIndex < _imagesCount; imageIndex++ ) {
+		const ImageFile&	image = *_images[imageIndex];
+		float				shutterSpeed = _imageShutterSpeeds[imageIndex];
+		float				imageEV = log2f( shutterSpeed );
+
+
+	}
+
+	// Convert into XYZ using a linear profile
+	ColorProfile	linearProfile( ColorProfile::STANDARD_PROFILE::LINEAR );
+	linearProfile.RGB2XYZ( m_XYZ, m_XYZ, W*H );
 }
 
 void svdcmp( int m, int n, float** a, float w[], float** v );
+void	Bitmap::ComputeCameraResponseCurve( U32 _imagesCount, const ImageFile** _images, const float* _imageShutterSpeeds, const HDRParms& _parms, List< bfloat3 >& _responseCurve ) {
+	if ( _images == nullptr )
+		throw "Invalid images array!";
+	if ( _imageShutterSpeeds == nullptr )
+		throw "Invalid shutter speeds array!";
 
-void	Bitmap::ComputeHDRResponseCurve( U32 _imagesCount, ImageFile* _images, float* _imageShutterSpeeds, const HDRParms& _parms, List< bfloat3 >& _responseCurve ) {
+	U32		W = _images[0]->Width();
+	U32		H = _images[0]->Height();
 
 	//////////////////////////////////////////////////////////////////////////
 	// 1] Find the best possible samples across the provided images
@@ -111,9 +182,15 @@ void	Bitmap::ComputeHDRResponseCurve( U32 _imagesCount, ImageFile* _images, floa
 	//	and g is the log of the inverse of the transfer function the camera applies to the pixels to transform input irradiance into numerical values
 	//
 	U32		responseCurveSize = 1U << _parms._inputBitsPerComponent;
-	float	nominalPixelsCount = float(responseCurveSize) / _imagesCount;				// Use about that amount of pixels across images to have a nice over-determined system
-			nominalPixelsCount *= 1.0f + _parms._quality;								// Apply the user's quality settings to use more or less pixels
-	int		pixelsCountPerImage = int ( ceilf( nominalPixelsCount / _imagesCount ) );	// And that is our amount of pixels to use per image
+	float	nominalPixelsCount = float(responseCurveSize) / _imagesCount;	// Use about that amount of pixels across images to have a nice over-determined system
+			nominalPixelsCount *= 1.0f + _parms._quality;					// Apply the user's quality settings to use more or less pixels
+
+
+nominalPixelsCount *= 10.0f;	// As long as we don't have a robust algorithm to choose pixels that properly cover the response curve range, let's use a lot more pixels than necessary!
+
+
+	int		pixelsCountPerImage = int ( ceilf( nominalPixelsCount ) );		// And that is our amount of pixels to use per image
+
 	int		totalPixelsCount = _imagesCount * pixelsCountPerImage;
 
 	// Prepare the response curve array
@@ -127,11 +204,15 @@ void	Bitmap::ComputeHDRResponseCurve( U32 _imagesCount, ImageFile* _images, floa
 	//	   Furthermore, the pixels are best sampled from regions of the image with low intensity variance so that radiance can be assumed to
 	//		be constant across the area of the pixel, and the effect of optical blur of the imaging system is minimized. >>
 	//
+
+// Use a pseudo-random sequence of positions at the moment... :/
+List< bfloat2 >	sequence;
+Hammersley::BuildSequence( pixelsCountPerImage, sequence );
+
 	U32*	pixels = new U32[3 *totalPixelsCount];
 	for ( int componentIndex=0; componentIndex < 3; componentIndex++ ) {	// Because R, G, B
 
 		// 1] Select the pixels within the images that best cover the [Zmin,Zmax] range
-		List< bfloat3* >	selectedPixel( totalPixelsCount );
 // @TODO!
 // @TODO!
 // @TODO!
@@ -141,14 +222,24 @@ void	Bitmap::ComputeHDRResponseCurve( U32 _imagesCount, ImageFile* _images, floa
 // @TODO!
 
 		// 2] Store as integer pixel values within range [Zmin,Zmax] (which is [0,2^bitDepth[ )
-		for ( int pixelIndex=0; pixelIndex < totalPixelsCount; pixelIndex++ ) {
-			// Floating point value of the selected pixel for R, G or B
-			float	pixelValue = ((float*) &selectedPixel[pixelIndex]->x)[componentIndex];
+		const bfloat2*	sequencePtr = sequence.Ptr();
+		for ( int pixelIndex=0; pixelIndex < sequence.Count(); pixelIndex++, sequencePtr++ ) {
+U32	X = U32( floorf( sequencePtr->x * (W-1) ) );
+U32	Y = U32( floorf( sequencePtr->y * (H-1) ) );
 
-			// Convert to integer value
-			U32		Z = CLAMP( U32( (responseCurveSize-1) * pixelValue ), 0U, responseCurveSize-1 );
+			for ( U32 imageIndex=0; imageIndex < _imagesCount; imageIndex++ ) {
+				const ImageFile&	image = *_images[imageIndex];
 
-			pixels[totalPixelsCount*componentIndex + pixelIndex] = Z;
+				// Floating point value of the selected pixel for R, G or B
+				bfloat4	colorLDR;
+				image.Get( X, Y, colorLDR );
+				float	pixelValue = ((float*) &colorLDR.x)[componentIndex];
+
+				// Convert to integer value
+				U32		Z = CLAMP( U32( (responseCurveSize-1) * pixelValue ), 0U, responseCurveSize-1 );
+
+				pixels[totalPixelsCount*componentIndex + pixelsCountPerImage*imageIndex + pixelIndex] = Z;
+			}
 		}
 	}
 

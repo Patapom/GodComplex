@@ -41,9 +41,6 @@ namespace ImageUtilityLib {
 		U32				m_width;
 		U32				m_height;
 
-		// This is never NULL! A bitmap must always have a valid profile!
-		ColorProfile*	m_colorProfile;		// The color profile to use with this bitmap (NOTE: Not owned by the class, it's the responsibility of the provider to delete the profile)
-
 		bfloat4*		m_XYZ;				// CIEXYZ Bitmap content + Alpha
 
 		#pragma endregion
@@ -67,12 +64,6 @@ namespace ImageUtilityLib {
 		bfloat4*		GetContentXYZ()			{ return m_XYZ; }
 		const bfloat4*	GetContentXYZ() const	{ return m_XYZ; }
 
-		/// <summary>
-		/// Gets or sets the image's color profile
-		/// </summary>
-		ColorProfile&	GetProfile() const					{ return *m_colorProfile; }
-		void			SetProfile( ColorProfile& value )	{ m_colorProfile = &value; }
-
 		#pragma endregion
 
 	public:
@@ -82,37 +73,37 @@ namespace ImageUtilityLib {
 		Bitmap()
 			: m_width( 0 )
 			, m_height( 0 )
-			, m_colorProfile( nullptr )
 			, m_XYZ( nullptr ) {
 		}
 
 		~Bitmap() {
-			SAFE_DELETE( m_XYZ );
+			Exit();
 		}
 
 		// Manual creation
 		//	_profile, an optional color profile (NOTE: you will need a valid profile if you wish to save the bitmap)
-		Bitmap( int _width, int _height, ColorProfile& _profile ) {
-			m_width = _width;
-			m_height = _height;
-			m_XYZ = new bfloat4[m_width * m_height];
-			memset( m_XYZ, 0, m_width*m_height*sizeof(bfloat4) );
-			m_colorProfile = &_profile;
+		Bitmap( int _width, int _height ) : m_XYZ( nullptr ) {
+			Init( _width, _height );
 		}
 
 		// Creates a bitmap from a file
-		Bitmap( const ImageFile& _file ) {
+		Bitmap( const ImageFile& _file ) : m_XYZ( nullptr ) {
 			FromImageFile( _file );
 		}
+
+		// Initializes with appropriate dimensions
+		void			Init( int _width, int _height );
 
 		// Initializes the bitmap from an image file
 		void			FromImageFile( const ImageFile& _sourceFile, ColorProfile* _profileOverride=nullptr, bool _unPremultiplyAlpha=false );
 
 		// Builds an image file from the bitmap
-		void			ToImageFile( ImageFile& _targetFile, ImageFile::PIXEL_FORMAT _targetFormat, bool _premultiplyAlpha=false ) const;
+		void			ToImageFile( ImageFile& _targetFile, ImageFile::PIXEL_FORMAT _targetFormat, ColorProfile* _profileOverride=nullptr, bool _premultiplyAlpha=false ) const;
+
+		void			Exit();
 
 		// Accesses the individual XYZ-Alpha pixels
-		bfloat4&			Access( U32 _X, U32 _Y ) {
+		bfloat4&		Access( U32 _X, U32 _Y ) {
 			return m_XYZ[m_width*_Y+_X];
 		}
 		const bfloat4&	Access( U32 _X, U32 _Y ) const {
@@ -125,28 +116,7 @@ namespace ImageUtilityLib {
 		/// <param name="X">A column index in [0,Width[ (will be clamped if out of range)</param>
 		/// <param name="Y">A row index in [0,Height[ (will be clamped if out of range)</param>
 		/// <returns>The XYZ at the requested location</returns>
-		void	BilinearSample( float X, float Y, bfloat4& _XYZ ) const {
-			int		X0 = (int) floorf( X );
-			int		Y0 = (int) floorf( Y );
-			float	x = X - X0;
-			float	y = Y - Y0;
-			float	rx = 1.0f - x;
-			float	ry = 1.0f - y;
-					X0 = CLAMP( X0, 0, S32(m_width-1) );
-					Y0 = CLAMP( Y0, 0, S32(m_height-1) );
-			int		X1 = MIN( X0+1, S32(m_width-1) );
-			int		Y1 = MIN( Y0+1, S32(m_height-1) );
-
-			const bfloat4&	V00 = Access( X0, Y0 );
-			const bfloat4&	V01 = Access( X1, Y0 );
-			const bfloat4&	V10 = Access( X0, Y1 );
-			const bfloat4&	V11 = Access( X1, Y1 );
-
-			bfloat4	V0 = rx * V00 + x * V01;
-			bfloat4	V1 = rx * V10 + x * V11;
-
-			_XYZ = ry * V0 + y * V1;
-		}
+		void			BilinearSample( float X, float Y, bfloat4& _XYZ ) const;
 
 
 	public:
@@ -155,7 +125,7 @@ namespace ImageUtilityLib {
 		//
 		// This section follows the algorithm provided by "Recovering HDR Radiance Maps from Photographs", Debevec (1997)
 		// As advised by the author, you should:
-		//	• Always capture LDR images using apertures of f/8 or lower to avoid a possible lense variance between radiance and irradiance (vignetting)
+		//	• Always capture LDR images using apertures of f/8 or higher to avoid a possible lense variance between radiance and irradiance (vignetting)
 		//
 		struct HDRParms {
 			// The amount of bits per (R,G,B) component the camera is able to output
@@ -180,19 +150,21 @@ namespace ImageUtilityLib {
 		// Builds a HDR image from a set of LDR images
 		//	_images, the array of LDR bitmaps
 		//	_imageShutterSpeeds, the array of shutter speeds (in seconds) used for each image
-		void		LDR2HDR( U32 _imagesCount, ImageFile* _images, float* _imageShutterSpeeds, const HDRParms& _parms );
+		void		LDR2HDR( U32 _imagesCount, const ImageFile** _images, const float* _imageShutterSpeeds, const HDRParms& _parms );
 
 		// Builds a HDR image from a set of LDR images and a response curve (usually computed using ComputeHDRResponseCurve)
 		// You can use this method to build the HDR image from a larger set of LDR images than used to resolve the response curve
 		//	_images, the array of LDR bitmaps
-		//	_imageEVs, the array of Exposure Values (EV) used for each image
-		void		LDR2HDR( U32 _imagesCount, ImageFile* _images, float* _imageEVs, const List< bfloat3 >& _responseCurve, const HDRParms& _parms );
+		//	_imageShutterSpeeds, the array of shutter speeds (in seconds) used for each image
+		//	_responseCurve, the list of values corresponding to the response curve
+		//	The default luminance factor to apply to all the images (allows you to scale the base luminance if you know the absolute value)
+		void		LDR2HDR( U32 _imagesCount, const ImageFile** _images, const float* _imageShutterSpeeds, const BaseLib::List< bfloat3 >& _responseCurve, float _luminanceFactor );
 
 		// Computes the response curve of the sensor that captured the provided LDR images
 		//	_images, the array of LDR bitmaps
-		//	_imageEVs, the array of Exposure Values (EV) used for each image
+		//	_imageShutterSpeeds, the array of shutter speeds (in seconds) used for each image
 		//	_responseCurve, the list to fill with values corresponding to the response curve
-		static void	ComputeHDRResponseCurve( U32 _imagesCount, ImageFile* _images, float* _imageEVs, const HDRParms& _parms, List< bfloat3 >& _responseCurve );
+		static void	ComputeCameraResponseCurve( U32 _imagesCount, const ImageFile** _images, const float* _imageShutterSpeeds, const HDRParms& _parms, BaseLib::List< bfloat3 >& _responseCurve );
 
 		#pragma endregion
 	};

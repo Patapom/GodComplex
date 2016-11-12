@@ -3,7 +3,29 @@
 #include "ColorProfile.h"
 
 using namespace ImageUtility;
-using namespace SharpMath;
+//using namespace SharpMath;
+
+ColorProfile::Chromaticities^	ColorProfile::Chromaticities::Empty::get()			{ return gcnew Chromaticities( float2(), float2(), float2(), float2() ); }
+ColorProfile::Chromaticities^	ColorProfile::Chromaticities::sRGB::get()			{ return gcnew Chromaticities(	float2( ImageUtilityLib::ColorProfile::Chromaticities::sRGB.R.x, ImageUtilityLib::ColorProfile::Chromaticities::sRGB.R.y ),
+																													float2( ImageUtilityLib::ColorProfile::Chromaticities::sRGB.G.x, ImageUtilityLib::ColorProfile::Chromaticities::sRGB.G.y ),
+																													float2( ImageUtilityLib::ColorProfile::Chromaticities::sRGB.B.x, ImageUtilityLib::ColorProfile::Chromaticities::sRGB.B.y ),
+																													ILLUMINANT_D65 ); }
+ColorProfile::Chromaticities^	ColorProfile::Chromaticities::AdobeRGB_D50::get()	{ return gcnew Chromaticities(	float2( ImageUtilityLib::ColorProfile::Chromaticities::AdobeRGB_D50.R.x, ImageUtilityLib::ColorProfile::Chromaticities::AdobeRGB_D50.R.y ),
+																													float2( ImageUtilityLib::ColorProfile::Chromaticities::AdobeRGB_D50.G.x, ImageUtilityLib::ColorProfile::Chromaticities::AdobeRGB_D50.G.y ),
+																													float2( ImageUtilityLib::ColorProfile::Chromaticities::AdobeRGB_D50.B.x, ImageUtilityLib::ColorProfile::Chromaticities::AdobeRGB_D50.B.y ),
+																													ILLUMINANT_D50 ); }
+ColorProfile::Chromaticities^	ColorProfile::Chromaticities::AdobeRGB_D65::get()	{ return gcnew Chromaticities(	float2( ImageUtilityLib::ColorProfile::Chromaticities::AdobeRGB_D65.R.x, ImageUtilityLib::ColorProfile::Chromaticities::AdobeRGB_D65.R.y ),
+																													float2( ImageUtilityLib::ColorProfile::Chromaticities::AdobeRGB_D65.G.x, ImageUtilityLib::ColorProfile::Chromaticities::AdobeRGB_D65.G.y ),
+																													float2( ImageUtilityLib::ColorProfile::Chromaticities::AdobeRGB_D65.B.x, ImageUtilityLib::ColorProfile::Chromaticities::AdobeRGB_D65.B.y ),
+																													ILLUMINANT_D65 ); }
+ColorProfile::Chromaticities^	ColorProfile::Chromaticities::ProPhoto::get()		{ return gcnew Chromaticities(	float2( ImageUtilityLib::ColorProfile::Chromaticities::ProPhoto.R.x, ImageUtilityLib::ColorProfile::Chromaticities::ProPhoto.R.y ),
+																													float2( ImageUtilityLib::ColorProfile::Chromaticities::ProPhoto.G.x, ImageUtilityLib::ColorProfile::Chromaticities::ProPhoto.G.y ),
+																													float2( ImageUtilityLib::ColorProfile::Chromaticities::ProPhoto.B.x, ImageUtilityLib::ColorProfile::Chromaticities::ProPhoto.B.y ),
+																													ILLUMINANT_D50 ); }
+ColorProfile::Chromaticities^	ColorProfile::Chromaticities::Radiance::get()		{ return gcnew Chromaticities(	float2( ImageUtilityLib::ColorProfile::Chromaticities::Radiance.R.x, ImageUtilityLib::ColorProfile::Chromaticities::Radiance.R.y ),
+																													float2( ImageUtilityLib::ColorProfile::Chromaticities::Radiance.G.x, ImageUtilityLib::ColorProfile::Chromaticities::Radiance.G.y ),
+																													float2( ImageUtilityLib::ColorProfile::Chromaticities::Radiance.B.x, ImageUtilityLib::ColorProfile::Chromaticities::Radiance.B.y ),
+																													ILLUMINANT_E ); }
 
 SharpMath::float4x4^	Native2ManagedFloat4x4( const ::float4x4& _native ) {
 	const ::float4x4&		S = _native;

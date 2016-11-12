@@ -1,4 +1,4 @@
-﻿#include "../GodComplex.h"
+﻿#include "../Types.h"
 
 double	SH::FACTORIAL[] = {	1.0,
 							1.0,
@@ -74,7 +74,7 @@ double	SH::ComputeSHWindowedCos( int l, int m, double _θ, double _ϕ, int _Orde
 //
 // NOTE ==> The '_Direction' vector must be normalized!!
 //
-double	SH::ComputeSHCoeff( int l, int m, const float3& _Direction )
+double	SH::ComputeSHCoeff( int l, int m, const bfloat3& _Direction )
 {
 	// Convert from cartesian to polar coords
 	double	θ = 0.0;
@@ -85,7 +85,7 @@ double	SH::ComputeSHCoeff( int l, int m, const float3& _Direction )
 }
 
 // True computation of coefficients
-void	SH::BuildSHCoeffs( const float3& _Direction, double _Coeffs[9] )
+void	SH::BuildSHCoeffs( const bfloat3& _Direction, double _Coeffs[9] )
 {
 	// Convert from cartesian to polar coords
 	double	θ, ϕ;
@@ -101,7 +101,7 @@ void	SH::BuildSHCoeffs( const float3& _Direction, double _Coeffs[9] )
 // Builds the 9 SH coefficient for the specified direction
 // (We're already accounting for the fact we're Y-up here)
 //
-void	SH::BuildSHCoeffs_YUp( const float3& _Direction, double _Coeffs[9] )
+void	SH::BuildSHCoeffs_YUp( const bfloat3& _Direction, double _Coeffs[9] )
 {
 	const double	f0 = 0.5 / sqrt(PI);
 	const double	f1 = sqrt(3.0) * f0;
@@ -123,9 +123,9 @@ void	SH::BuildSHCoeffs_YUp( const float3& _Direction, double _Coeffs[9] )
 // (from "Stupid SH Tricks")
 // (We're already accounting for the fact we're Y-up here)
 //
-void	SH::BuildSHCosineLobe_YUp( const float3& _Direction, double _Coeffs[9] )
+void	SH::BuildSHCosineLobe_YUp( const bfloat3& _Direction, double _Coeffs[9] )
 {
-	const float3 ZHCoeffs = float3(
+	const bfloat3 ZHCoeffs = bfloat3(
 		0.88622692545275801364908374167057f,	// sqrt(PI) / 2
 		1.0233267079464884884795516248893f,		// sqrt(PI / 3)
 		0.49541591220075137666812859564002f		// sqrt(5PI) / 8
@@ -136,12 +136,12 @@ void	SH::BuildSHCosineLobe_YUp( const float3& _Direction, double _Coeffs[9] )
 // Builds a spherical harmonics cone lobe (same as for a spherical light source subtending a cone of half angle a)
 // (from "Stupid SH Tricks")
 //
-void	SH::BuildSHCone_YUp( const float3& _Direction, float _HalfAngle, double _Coeffs[9] )
+void	SH::BuildSHCone_YUp( const bfloat3& _Direction, float _HalfAngle, double _Coeffs[9] )
 {
 	double	a = _HalfAngle;
 	double	c = cos( a );
 	double	s = sin( a );
-	float3 ZHCoeffs = float3(
+	bfloat3 ZHCoeffs = bfloat3(
 			float( 1.7724538509055160272981674833411 * (1 - c)),				// sqrt(PI) (1 - cos(a))
 			float( 1.5349900619197327327193274373339 * (s * s)),				// 0.5 sqrt(3PI) sin(a)^2
 			float( 1.9816636488030055066725143825601 * (c * (1 - c) * (1 + c)))	// 0.5 sqrt(5PI) cos(a) (1-cos(a)) (cos(a)+1)
@@ -153,13 +153,13 @@ void	SH::BuildSHCone_YUp( const float3& _Direction, float _HalfAngle, double _Co
 // The light source intensity is 1 at theta=0 and 0 at theta=half angle
 // (from "Stupid SH Tricks")
 //
-void	SH::BuildSHSmoothCone_YUp( const float3& _Direction, float _HalfAngle, double _Coeffs[9] )
+void	SH::BuildSHSmoothCone_YUp( const bfloat3& _Direction, float _HalfAngle, double _Coeffs[9] )
 {
 	double	a = _HalfAngle;
 	float	One_a3 = 1.0f / float(a*a*a);
 	double	c = cos( a );
 	double	s = sin( a );
-	float3 ZHCoeffs = One_a3 * float3(
+	bfloat3 ZHCoeffs = One_a3 * bfloat3(
 			float( 1.7724538509055160272981674833411 * (a * (6.0*(1+c) + a*a) - 12*s) ),					// sqrt(PI) (a^3 + 6a - 12*sin(a) + 6*cos(a)*a) / a^3
 			float( 0.76749503095986636635966371866695 * (a * (a*a + 3*c*c) - 3*c*s) ),						// 0.25 sqrt(3PI) (a^3 - 3*cos(a)*sin(a) + 3*cos(a)^2*a) / a^3
 			float( 0.44036969973400122370500319612446 * (-6.0*a -2*c*c*s -9.0*c*a + 14.0*s + 3*c*c*c*a))	// 1/9 sqrt(5PI) (-6a - 2*cos(a)^2*sin(a) - 9*cos(a)*a + 14*sin(a) + 3*cos(a)^3*a) / a^3
@@ -171,7 +171,7 @@ void	SH::BuildSHSmoothCone_YUp( const float3& _Direction, float _HalfAngle, doub
 // Rotating ZH comes to evaluating scaled SH in the given direction.
 // The scaling factors for each band are equal to the ZH coefficients multiplied by sqrt( 4PI / (2l+1) )
 //
-void	SH::ZHRotate_YUp( const float3& _Direction, const float3& _ZHCoeffs, double _Coeffs[9] )
+void	SH::ZHRotate_YUp( const bfloat3& _Direction, const bfloat3& _ZHCoeffs, double _Coeffs[9] )
 {
 	double	cl0 = 3.5449077018110320545963349666823 * _ZHCoeffs.x;	// sqrt(4PI)
 	double	cl1 = 2.0466534158929769769591032497785 * _ZHCoeffs.y;	// sqrt(4PI/3)
@@ -436,7 +436,7 @@ void	SH::Product3( const float a[9], const float b[9], float c[9] )
 	// addition count=74
 }
 
-void	SH::Product3( const float3 a[9], const float b[9], float3 r[9] )
+void	SH::Product3( const bfloat3 a[9], const float b[9], bfloat3 r[9] )
 {
 	float	ta[9], tr[9];
 
@@ -471,7 +471,7 @@ void	SH::Product3( const float3 a[9], const float b[9], float3 r[9] )
 		r[i].z = tr[i];
 }
 
-void	SH::Product3( const float3 a[9], const float3 b[9], float3 r[9] )
+void	SH::Product3( const bfloat3 a[9], const bfloat3 b[9], bfloat3 r[9] )
 {
 	float	ta[9], tb[9], tr[9];
 
@@ -515,7 +515,7 @@ void	SH::Product3( const float3 a[9], const float3 b[9], float3 r[9] )
 /// <param name="_Direction">The cartesian unit vector to convert</param>
 /// <param name="_θ">The polar elevation</param>
 /// <param name="_ϕ">The azimuth</param>
-void		SH::CartesianToSpherical( const float3& _Direction, double& _θ, double& _ϕ )
+void		SH::CartesianToSpherical( const bfloat3& _Direction, double& _θ, double& _ϕ )
 {
 	_θ = acos( MAX( -1.0f, MIN( +1.0f, _Direction.z ) ) );
 	_ϕ = atan2( _Direction.y, _Direction.x );
@@ -527,9 +527,9 @@ void		SH::CartesianToSpherical( const float3& _Direction, double& _θ, double& _
 /// <param name="_θ">The polar elevation</param>
 /// <param name="_ϕ">The azimuth</param>
 /// <returns>The unit vector in cartesian coordinates</returns>
-float3	SH::SphericalToCartesian( double _θ, double _ϕ )
+bfloat3	SH::SphericalToCartesian( double _θ, double _ϕ )
 {
-	float3	Result;
+	bfloat3	Result;
 	SphericalToCartesian( _θ, _ϕ, Result );
 	return	Result;
 }
@@ -540,7 +540,7 @@ float3	SH::SphericalToCartesian( double _θ, double _ϕ )
 /// <param name="_θ">The polar elevation</param>
 /// <param name="_ϕ">The azimuth</param>
 /// <param name="_Direction">The unit vector in cartesian coordinates</param>
-void		SH::SphericalToCartesian( double _θ, double _ϕ, float3& _Direction )
+void		SH::SphericalToCartesian( double _θ, double _ϕ, bfloat3& _Direction )
 {
 	_Direction.x = (float) (sin( _θ ) * cos( _ϕ ));
 	_Direction.z = (float) cos( _θ );
@@ -548,9 +548,9 @@ void		SH::SphericalToCartesian( double _θ, double _ϕ, float3& _Direction )
 }
 
 // Converts a GodComplex Y-up vector into a vector usable by the SH library
-float3	SH::Yup2Zup( const float3& _Yup )
+bfloat3	SH::Yup2Zup( const bfloat3& _Yup )
 {
-	float3	Result;
+	bfloat3	Result;
 	Result.x = _Yup.z;
 	Result.y = _Yup.x;
 	Result.z = _Yup.y;
@@ -585,7 +585,7 @@ void	SH::FilterGaussian( float _SH[9], float w ) {
 	}
 }
 
-void	SH::FilterHanning( float3 _SH[9], float w ) {
+void	SH::FilterHanning( bfloat3 _SH[9], float w ) {
 	for ( int l = 0; l < 3; l++ )
 		if ( l > w )
 			Filter( _SH, l, 0 );
@@ -593,7 +593,7 @@ void	SH::FilterHanning( float3 _SH[9], float w ) {
 			Filter( _SH, l, 0.5f * (cosf(PI * l / w) + 1.0f) );
 }
 
-void	SH::FilterLanczos( float3 _SH[9], float w ) {
+void	SH::FilterLanczos( bfloat3 _SH[9], float w ) {
 	for ( int l = 0; l < 3; l++ )
 		if ( l > 0 ) {
 			float	angle = PI * l / w;
@@ -601,7 +601,7 @@ void	SH::FilterLanczos( float3 _SH[9], float w ) {
 		}
 }
 
-void	SH::FilterGaussian( float3 _SH[9], float w ) {
+void	SH::FilterGaussian( bfloat3 _SH[9], float w ) {
 	for ( int l = 0; l < 3; l++ ) {
 		float	angle = PI * l / w;
 		Filter( _SH, l, expf( -0.5f * angle * angle ) );
@@ -616,7 +616,7 @@ void	SH::Filter( float _SH[9], int l, float a )
 		_SH[offset] = a * _SH[offset];
 	}
 }
-void	SH::Filter( float3 _SH[9], int l, float a )
+void	SH::Filter( bfloat3 _SH[9], int l, float a )
 {
 	for ( int m=-l; m <= l; m++ ) {
 		int	offset = l*(l+1)+m;

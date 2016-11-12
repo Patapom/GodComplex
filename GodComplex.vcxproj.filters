@@ -137,9 +137,6 @@
     <ClInclude Include="Utility\Memory.h">
       <Filter>Utility</Filter>
     </ClInclude>
-    <ClInclude Include="Utility\Random.h">
-      <Filter>Utility</Filter>
-    </ClInclude>
     <ClInclude Include="Sound\libv2.h">
       <Filter>Sound</Filter>
     </ClInclude>
@@ -183,9 +180,6 @@
       <Filter>Procedural\3D</Filter>
     </ClInclude>
     <ClInclude Include="Utility\Camera.h">
-      <Filter>Utility</Filter>
-    </ClInclude>
-    <ClInclude Include="Utility\tweakval.h">
       <Filter>Utility</Filter>
     </ClInclude>
     <ClInclude Include="Intro\Effects\EffectTranslucency.h">
@@ -246,9 +240,6 @@
     <ClInclude Include="Utility\TextureFilePOM.h">
       <Filter>Utility</Filter>
     </ClInclude>
-    <ClInclude Include="Utility\SH.h">
-      <Filter>Utility</Filter>
-    </ClInclude>
     <ClInclude Include="Intro\Effects\EffectGlobalIllum2.h">
       <Filter>Intro\Effects</Filter>
     </ClInclude>
@@ -306,9 +297,6 @@
     <ClCompile Include="Utility\Memory.cpp">
       <Filter>Utility</Filter>
     </ClCompile>
-    <ClCompile Include="Utility\Random.cpp">
-      <Filter>Utility</Filter>
-    </ClCompile>
     <ClCompile Include="Sound\v2mplayer.cpp">
       <Filter>Sound</Filter>
     </ClCompile>
@@ -344,9 +332,6 @@
     </ClCompile>
     <ClCompile Include="Intro\Build2DTextures.cpp">
       <Filter>Intro</Filter>
-    </ClCompile>
-    <ClCompile Include="Utility\tweakval.cpp">
-      <Filter>Utility</Filter>
     </ClCompile>
     <ClCompile Include="Intro\Effects\EffectTranslucency.cpp">
       <Filter>Intro\Effects</Filter>
@@ -415,9 +400,6 @@
       <Filter>Scene</Filter>
     </ClCompile>
     <ClCompile Include="Utility\TextureFilePOM.cpp">
-      <Filter>Utility</Filter>
-    </ClCompile>
-    <ClCompile Include="Utility\SH.cpp">
       <Filter>Utility</Filter>
     </ClCompile>
     <ClCompile Include="Intro\Effects\EffectGlobalIllum2.cpp">

@@ -268,7 +268,11 @@ namespace ImageUtilityLib {
 		const MetaData&		GetMetadata() const		{ return m_metadata; }
 
 		// Gets the color profile associated to the image
-		ColorProfile*		GetColorProfile() const	{ return m_metadata.m_colorProfile; }
+		ColorProfile&		GetColorProfile() const	{ return *m_metadata.m_colorProfile; }
+
+		// Generic color getter/setter
+		void				Get( U32 _X, U32 _Y, bfloat4& _color ) const;
+		void				Set( U32 _X, U32 _Y, const bfloat4& _color );
 
 		#pragma endregion
 
@@ -322,7 +326,9 @@ namespace ImageUtilityLib {
 			BC4,
 			BC5,
 			BC6H,
+			BC6H_GPU,
 			BC7,
+			BC7_GPU,
 		};
 
 		// Compresses a single image

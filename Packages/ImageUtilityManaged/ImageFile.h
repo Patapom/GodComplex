@@ -313,7 +313,9 @@ namespace ImageUtility {
 			BC4,
 			BC5,
 			BC6H,
+			BC6H_GPU,
 			BC7,
+			BC7_GPU,
 		};
 
 		// Compresses a single image

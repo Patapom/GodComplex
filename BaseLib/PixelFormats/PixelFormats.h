@@ -10,130 +10,123 @@
 namespace BaseLib {
 
 	/// <summary>
-	/// This is the interface to pixel format structures needed for images and textures
+	/// This is the interface to access pixel format structures needed for images and textures
 	/// </summary>
-	struct	IPixelFormat {
-		/// <summary>
-		/// Tells if the format uses sRGB input (cf. Image<PF> Gamma Correction)
-		/// </summary>
-		virtual bool	sRGB() abstract;
+	class	IPixelFormatAccessor {
+	public:
+		// Gives the size of the pixel format in bytes
+		virtual U32		Size() const abstract;
 
-		/// <summary>
-		/// LDR pixel writer
-		/// </summary>
-		/// <param name="_R"></param>
-		/// <param name="_G"></param>
-		/// <param name="_B"></param>
-		/// <param name="_A"></param>
-		virtual void	Write( U32 _R, U32 _G, U32 _B, U32 _A ) abstract;
-		virtual void	Write( U32 _A ) abstract;
+		// Tells if the format uses sRGB input (cf. Image<PF> Gamma Correction)
+		virtual bool	sRGB() const abstract;
 
-		/// <summary>
-		/// HDR pixel writer
-		/// </summary>
-		/// <param name="_Color"></param>
-		virtual void	Write( const bfloat4& _Color ) abstract;
-		virtual void	Write( float _R, float _G, float _B, float _A ) abstract;
-		virtual void	Write( float _A ) abstract;
+		// LDR pixel writer
+		virtual void	Write( void* _pixel, U32 _R, U32 _G, U32 _B, U32 _A ) abstract;
+		virtual void	Write( void* _pixel, U32 _A ) abstract;
+
+		// HDR pixel writer
+		virtual void	Write( void* _pixel, const bfloat4& _Color ) abstract;
+		virtual void	Write( void* _pixel, float _R, float _G, float _B, float _A ) abstract;
+		virtual void	Write( void* _pixel, float _A ) abstract;
 
 		// HDR pixel readers
-		virtual float	Red() abstract;
-		virtual float	Green() abstract;
-		virtual float	Blue() abstract;
-		virtual float	Alpha() abstract;
-		virtual void	RGBA( bfloat4& _Color ) abstract;
-	};
+		virtual float	Red( const void* _pixel ) const abstract;
+		virtual float	Green( const void* _pixel ) const abstract;
+		virtual float	Blue( const void* _pixel ) const abstract;
+		virtual float	Alpha( const void* _pixel ) const abstract;
+		virtual void	RGBA( const void* _pixel, bfloat4& _Color ) const abstract;
 
-	/// <summary>
-	/// This is the interface to depth format structures needed for depth stencil buffers
-	/// They inherit pixel format data and define additional data
-	/// </summary>
-	struct IDepthFormat : public IPixelFormat {
-		// Actually, they don't! :)
-	};
+	protected:	// HELPERS
 
-	struct	PF_Empty : IPixelFormat {
-		#pragma region IPixelFormat Members
+		template< typename T > inline void Setup( void* _pixelPtr, T* _internalPtr )				{ _internalPtr = reinterpret_cast< T* >( _pixelPtr ); }
+		template< typename T > inline void Setup( const void* _pixelPtr, T* _internalPtr ) const	{ _internalPtr = reinterpret_cast< T* >( const_cast< void* >( _pixelPtr ) ); }	// Don't worry, we won't write it!
 
-		bool	sRGB() override	{ return false; }
-
-		void	Write( U32 _R, U32 _G, U32 _B, U32 _A ) override		{}
-		void	Write( const bfloat4& _Color ) override	{}
-		void	Write( float _R, float _G, float _B, float _A ) override	{}
-		void	Write( U32 _A ) override		{}
-		void	Write( float _A ) override		{}
-
-		float	Red()	{ return 0.0f; }
-		float	Green()	{ return 0.0f; }
-		float	Blue()	{ return 0.0f; }
-		float	Alpha()	{ return 1.0f; }
-		void	RGBA( bfloat4& _Color ) override { _Color.Set( 0, 0, 0, 0 ); }
-
-		#pragma endregion
-
-		/// <summary>
-		/// Converts a U8 component to a float component
-		/// </summary>
-		/// <param name="_Component"></param>
-		/// <returns></returns>
+		// Converts a U8 component to a float component
 		inline static float		ToFloat( U32 _Component ) {
 			return _Component / 255.0f;
 		}
 
-		/// <summary>
-		/// Converts a float component to a U8 component
-		/// </summary>
-		/// <param name="_Component"></param>
-		/// <returns></returns>
+		// Converts a float component to a U8 component
 		inline static U8		ToByte( float _Component ) {
 			return U8( CLAMP( _Component * 255.0f, 0.0f, 255.0f ) );
 		}
 
-		/// <summary>
-		/// Converts a float component to a U16 component
-		/// </summary>
-		/// <param name="_Component"></param>
-		/// <returns></returns>
+		// Converts a float component to a U16 component
 		inline static U16	ToUShort( float _Component ) {
 			return U16( CLAMP( _Component * 65535.0f, 0.0f, 65535.0f ) );
 		}
 	};
 
+	/// <summary>
+	/// This is the interface to access depth format structures needed for depth stencil buffers
+	/// They inherit pixel format data and define additional data
+	/// </summary>
+	struct IDepthFormatAccessor : public IPixelFormatAccessor {
+		// Actually, they don't! :)
+	};
+
+// 	struct	PF_Empty : IPixelFormatAccessor {
+// 		#pragma region IPixelFormat Members
+// 
+// 		bool	sRGB() override	{ return false; }
+// 
+// 		void	Write( U32 _R, U32 _G, U32 _B, U32 _A ) override		{}
+// 		void	Write( const bfloat4& _Color ) override	{}
+// 		void	Write( float _R, float _G, float _B, float _A ) override	{}
+// 		void	Write( U32 _A ) override		{}
+// 		void	Write( float _A ) override		{}
+// 
+// 		float	Red()	{ return 0.0f; }
+// 		float	Green()	{ return 0.0f; }
+// 		float	Blue()	{ return 0.0f; }
+// 		float	Alpha()	{ return 1.0f; }
+// 		void	RGBA( bfloat4& _Color ) override { _Color.Set( 0, 0, 0, 0 ); }
+// 
+// 		#pragma endregion
+// 
+// 	};
+
 	#pragma region 8-Bits Formats
 
-	/// <summary>
-	/// R8 format
-	/// </summary>
-	struct	PF_R8 : public IPixelFormat {
-		U8	R;
+	// R8 format
+	class	PF_R8 : public IPixelFormatAccessor {
+	private:
+		U8*	R;
+// 		void	Setup( void* _pixel ) { R = reinterpret_cast<U8*>( _pixel ); }
+// 		void	Setup( const void* _pixel ) { R = reinterpret_cast<U8*>( const_cast<void*>( _pixel ) ); }
 
+	public:
 		#pragma region IPixelFormat Members
 
-		bool	sRGB() override { return false; }
+		bool	sRGB() const override { return false; }
+		U32		Size() const override { return 1; }
 
-		void Write( U32 _R, U32 _G, U32 _B, U32 _A ) {
-			R = (U8) _R;
+		void Write( void* _pixel, U32 _R, U32 _G, U32 _B, U32 _A ) override {
+			Setup( _pixel, R );
+			*R = (U8) _R;
 		}
 
-		void Write( const bfloat4& _Color ) {
-			R = PF_Empty::ToByte(_Color.x);
+		void Write( void* _pixel, const bfloat4& _Color ) override {
+			Setup( _pixel, R );
+			*R = ToByte(_Color.x);
 		}
 
-		void Write( float _R, float _G, float _B, float _A ) {
-			R = PF_Empty::ToByte( _R );
+		void Write( void* _pixel, float _R, float _G, float _B, float _A ) override {
+			Setup( _pixel, R );
+			*R = ToByte( _R );
 		}
 
-		void Write( U32 _A ) {
+		void Write( void* _pixel, U32 _A ) override {
 		}
 
-		void Write( float _A ) {
+		void Write( void* _pixel, float _A ) override {
 		}
 
-		float	Red()	{ return R / 255.0f; }
-		float	Green()	{ return 0.0f; }
-		float	Blue()	{ return 0.0f; }
-		float	Alpha()	{ return 1.0f; }
-		void	RGBA( bfloat4& _Color )	{ _Color.Set( R / 255.0f, 0, 0, 1 ); }
+		float	Red( const void* _pixel ) const override		{ Setup( _pixel, R ); return *R / 255.0f; }
+		float	Green( const void* _pixel ) const override		{ Setup( _pixel, R ); return 0.0f; }
+		float	Blue( const void* _pixel ) const override		{ Setup( _pixel, R ); return 0.0f; }
+		float	Alpha( const void* _pixel ) const override		{ Setup( _pixel, R ); return 1.0f; }
+		void	RGBA( const void* _pixel, bfloat4& _Color ) const override	{ _Color.Set( *R / 255.0f, 0, 0, 1 ); }
 
 		#pragma endregion
 	};
@@ -141,7 +134,7 @@ namespace BaseLib {
 	/// <summary>
 	/// RG8 format
 	/// </summary>
-	struct	PF_RG8 : IPixelFormat {
+	struct	PF_RG8 : IPixelFormatAccessor {
 		U8	G, R;
 
 		#pragma region IPixelFormat Members
@@ -181,7 +174,7 @@ namespace BaseLib {
 	/// <summary>
 	/// RGB8 format
 	/// </summary>
-	struct	PF_RGB8 : IPixelFormat {
+	struct	PF_RGB8 : IPixelFormatAccessor {
 		U8	B, G, R;
 
 		#pragma region IPixelFormat Members
@@ -224,7 +217,7 @@ namespace BaseLib {
 	/// <summary>
 	/// RGBA8 format
 	/// </summary>
-	struct	PF_RGBA8 : IPixelFormat {
+	struct	PF_RGBA8 : IPixelFormatAccessor {
 		U8	R, G, B, A;
 
 		#pragma region IPixelFormat Members
@@ -272,7 +265,7 @@ namespace BaseLib {
 	/// <summary>
 	/// RGBA8 sRGB format
 	/// </summary>
-	struct	PF_RGBA8_sRGB : public IPixelFormat {
+	struct	PF_RGBA8_sRGB : public IPixelFormatAccessor {
 		U8	R, G, B, A;
 
 		#pragma region IPixelFormat Members
@@ -327,7 +320,7 @@ namespace BaseLib {
 	/// It's also quite useful to pack some data as we divide the size by 3, from 3 floats (12 bytes) down to only 4 bytes.
 	/// </summary>
 	/// <remarks>This format only allows storage of POSITIVE floats !</remarks>
-	struct	PF_RGBE : public IPixelFormat {
+	struct	PF_RGBE : public IPixelFormatAccessor {
 		U8	B, G, R, E;
 
 		#pragma region IPixelFormat Members
@@ -351,7 +344,7 @@ namespace BaseLib {
 			}
 
 			float	completeExponent = log2f( maxComponent );
-			float	exponent = ceilf( completeExponent );
+			float	exponent = float( ceilf( completeExponent ) );
 			double	mantissa = maxComponent / powf( 2.0f, exponent );
 			if ( mantissa == 1.0 ) {
 				// Step to next order
@@ -405,7 +398,7 @@ namespace BaseLib {
 	/// <summary>
 	/// R16 format
 	/// </summary>
-	struct	PF_R16 : IPixelFormat {
+	struct	PF_R16 : IPixelFormatAccessor {
 		U16	R;
 
 		#pragma region IPixelFormat Members
@@ -442,7 +435,7 @@ namespace BaseLib {
 	/// <summary>
 	/// RG16 format
 	/// </summary>
-	struct	PF_RG16 : IPixelFormat {
+	struct	PF_RG16 : IPixelFormatAccessor {
 		U16	R, G;
 
 		#pragma region IPixelFormat Members
@@ -482,7 +475,7 @@ namespace BaseLib {
 	/// <summary>
 	/// RGBA16 format
 	/// </summary>
-	struct	PF_RGBA16 : IPixelFormat {
+	struct	PF_RGBA16 : IPixelFormatAccessor {
 		U16	R, G, B, A;
 
 		#pragma region IPixelFormat Members
@@ -534,7 +527,7 @@ namespace BaseLib {
 	/// <summary>
 	/// R16F format
 	/// </summary>
-	struct	PF_R16F : IPixelFormat {
+	struct	PF_R16F : IPixelFormatAccessor {
 		half	R;
 
 		#pragma region IPixelFormat Members
@@ -571,7 +564,7 @@ namespace BaseLib {
 	/// <summary>
 	/// RG16F format
 	/// </summary>
-	struct	PF_RG16F : IPixelFormat {
+	struct	PF_RG16F : IPixelFormatAccessor {
 		half	R, G;
 
 		#pragma region IPixelFormat Members
@@ -611,7 +604,7 @@ namespace BaseLib {
 	/// <summary>
 	/// RGBA16F format
 	/// </summary>
-	struct	PF_RGBA16F : IPixelFormat {
+	struct	PF_RGBA16F : IPixelFormatAccessor {
 		half	R, G, B, A;
 
 		#pragma region IPixelFormat Members
@@ -663,7 +656,7 @@ namespace BaseLib {
 	/// <summary>
 	/// R32F format
 	/// </summary>
-	struct	PF_R32F : IPixelFormat {
+	struct	PF_R32F : IPixelFormatAccessor {
 		float	R;
 
 		#pragma region IPixelFormat Members
@@ -700,7 +693,7 @@ namespace BaseLib {
 	/// <summary>
 	/// RG32F format
 	/// </summary>
-	struct	PF_RG32F : IPixelFormat {
+	struct	PF_RG32F : IPixelFormatAccessor {
 		float	R, G;
 
 		#pragma region IPixelFormat Members
@@ -740,7 +733,7 @@ namespace BaseLib {
 	/// <summary>
 	/// RGB32F format
 	/// </summary>
-	struct	PF_RGB32F : IPixelFormat {
+	struct	PF_RGB32F : IPixelFormatAccessor {
 		float	R, G, B;
 
 		#pragma region IPixelFormat Members
@@ -783,7 +776,7 @@ namespace BaseLib {
 	/// <summary>
 	/// RGBA32F format
 	/// </summary>
-	struct	PF_RGBA32F : IPixelFormat {
+	struct	PF_RGBA32F : IPixelFormatAccessor {
 		float	R, G, B, A;
 
 		#pragma region IPixelFormat Members
@@ -883,7 +876,7 @@ namespace BaseLib {
 	/// <summary>
 	/// D32 format
 	/// </summary>
-	struct	PF_D32 : IDepthFormat {
+	struct	PF_D32 : IDepthFormatAccessor {
 		float	D;
 
 		#pragma region IPixelFormat Members
@@ -921,7 +914,7 @@ namespace BaseLib {
 	/// D24S8 format (24 bits depth + 8 bits stencil)
 	/// NOTE: This format is NOT readable and will throw an exception if used for a readable depth stencil !
 	/// </summary>
-	struct	PF_D24S8 : IDepthFormat {
+	struct	PF_D24S8 : IDepthFormatAccessor {
 		U8	R, G, B, A;
 
 		#pragma region IPixelFormat Members

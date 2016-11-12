@@ -52,6 +52,17 @@ bool	ImageFile::HasAlpha() const {
 	return false;
 }
 
+void	ImageFile::Get( U32 _X, U32 _Y, bfloat4& _color ) const {
+	const unsigned	pitch  = FreeImage_GetPitch( m_bitmap );
+	const U8*		bits = (BYTE*) FreeImage_GetBits( m_bitmap );
+	bits += pitch * _Y;
+	switch ( )
+}
+void	ImageFile::Set( U32 _X, U32 _Y, const bfloat4& _color ) {
+
+}
+
+
 ImageFile&	ImageFile::operator=( const ImageFile& _other ) {
 	UseFreeImage();
 	Exit();
@@ -533,7 +544,7 @@ void	ImageFile::UnUseFreeImage() {
 
 // Compresses a single image
 void	ImageFile::DDSCompress( COMPRESSION_TYPE _compressionType, U32& _compressedImageSize, void*& _compressedImage ) {
-	Implement meeeee!
+//	Implement meeeee!
 }
 
 // Saves a DDS image in memory to disk (usually used after a compression)

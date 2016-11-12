@@ -27,7 +27,7 @@ protected:	// FIELDS
 
 public:		// PROPERTIES
 
-	int		GetCount() const			{ return m_Count; }
+	int		Count() const				{ return m_Count; }
 	void	SetCount( U32 _Count )		{ ASSERT( _Count <= m_Size, "Count exceeds allocated size!" ); m_Count = _Count; }
 	int		GetAllocatedSize() const	{ return m_Size; }
 
@@ -46,6 +46,8 @@ public:		// METHODS
 	void		Append( const T& _Value );
 	void		AppendUnique( const T& _Value );
 	T&			Append();
+	T*			Ptr() { return m_pList; }
+	const T*	Ptr() const { return m_pList; }
 	U32			IndexOf( const T& _Value ) const;
 	void		RemoveAt( U32 _Index );
 	bool		Remove( const T& _Value );

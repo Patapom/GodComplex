@@ -17,7 +17,7 @@ namespace ImageUtility {
 		static const float2		ILLUMINANT_D50	= float2( ImageUtilityLib::ColorProfile::ILLUMINANT_D50.x,	ImageUtilityLib::ColorProfile::ILLUMINANT_D50.y );	// Daylight, Horizon
 		static const float2		ILLUMINANT_D55	= float2( ImageUtilityLib::ColorProfile::ILLUMINANT_D55.x,	ImageUtilityLib::ColorProfile::ILLUMINANT_D55.y );	// Mid-Morning, Mid-Afternoon
 		static const float2		ILLUMINANT_D65	= float2( ImageUtilityLib::ColorProfile::ILLUMINANT_D65.x,	ImageUtilityLib::ColorProfile::ILLUMINANT_D65.y );	// Daylight, Noon, Overcast (sRGB reference illuminant)
-		static const float2		ILLUMINANT_E	= float2( ImageUtilityLib::ColorProfile::ILLUMINANT_E.x,	 ImageUtilityLib::ColorProfile::ILLUMINANT_E.y );	// Reference
+		static const float2		ILLUMINANT_E	= float2( ImageUtilityLib::ColorProfile::ILLUMINANT_E.x,	ImageUtilityLib::ColorProfile::ILLUMINANT_E.y );	// Reference
 
 		static const float		GAMMA_EXPONENT_sRGB = ImageUtilityLib::ColorProfile::GAMMA_EXPONENT_sRGB;
 		static const float		GAMMA_EXPONENT_ADOBE = ImageUtilityLib::ColorProfile::GAMMA_EXPONENT_ADOBE;
@@ -61,30 +61,30 @@ namespace ImageUtility {
 			}
 
 		public:	// PROPERTIES
-			static property Chromaticities^	Empty			{ Chromaticities^ get() { return gcnew Chromaticities( float2(), float2(), float2(), float2() ); } }
-			static property Chromaticities^	sRGB			{ Chromaticities^ get() { return gcnew Chromaticities( float2( 0.6400f, 0.3300f ), float2( 0.3000f, 0.6000f ), float2( 0.1500f, 0.0600f ), ILLUMINANT_D65 ); } }
-			static property Chromaticities^	AdobeRGB_D50	{ Chromaticities^ get() { return gcnew Chromaticities( float2( 0.6400f, 0.3300f ), float2( 0.2100f, 0.7100f ), float2( 0.1500f, 0.0600f ), ILLUMINANT_D50 ); } }
-			static property Chromaticities^	AdobeRGB_D65	{ Chromaticities^ get() { return gcnew Chromaticities( float2( 0.6400f, 0.3300f ), float2( 0.2100f, 0.7100f ), float2( 0.1500f, 0.0600f ), ILLUMINANT_D65 ); } }
-			static property Chromaticities^	ProPhoto		{ Chromaticities^ get() { return gcnew Chromaticities( float2( 0.7347f, 0.2653f ), float2( 0.1596f, 0.8404f ), float2( 0.0366f, 0.0001f ), ILLUMINANT_D50 ); } }
-			static property Chromaticities^	Radiance		{ Chromaticities^ get() { return gcnew Chromaticities( float2( 0.6400f, 0.3300f ), float2( 0.2900f, 0.6000f ), float2( 0.1500f, 0.0600f ), ILLUMINANT_E ); } }
+			static property Chromaticities^	Empty			{ Chromaticities^ get(); }// { return gcnew Chromaticities( float2(), float2(), float2(), float2() ); } }
+			static property Chromaticities^	sRGB			{ Chromaticities^ get(); }// { return gcnew Chromaticities( float2( 0.6400f, 0.3300f ), float2( 0.3000f, 0.6000f ), float2( 0.1500f, 0.0600f ), ILLUMINANT_D65 ); } }
+			static property Chromaticities^	AdobeRGB_D50	{ Chromaticities^ get(); }// { return gcnew Chromaticities( float2( 0.6400f, 0.3300f ), float2( 0.2100f, 0.7100f ), float2( 0.1500f, 0.0600f ), ILLUMINANT_D50 ); } }
+			static property Chromaticities^	AdobeRGB_D65	{ Chromaticities^ get(); }// { return gcnew Chromaticities( float2( 0.6400f, 0.3300f ), float2( 0.2100f, 0.7100f ), float2( 0.1500f, 0.0600f ), ILLUMINANT_D65 ); } }
+			static property Chromaticities^	ProPhoto		{ Chromaticities^ get(); }// { return gcnew Chromaticities( float2( 0.7347f, 0.2653f ), float2( 0.1596f, 0.8404f ), float2( 0.0366f, 0.0001f ), ILLUMINANT_D50 ); } }
+			static property Chromaticities^	Radiance		{ Chromaticities^ get(); }// { return gcnew Chromaticities( float2( 0.6400f, 0.3300f ), float2( 0.2900f, 0.6000f ), float2( 0.1500f, 0.0600f ), ILLUMINANT_E ); } }
 
 			// Gets the Red chromaticity
-			property float2			Red {
+			property float2		Red {
 				float2	get() { return float2( m_nativeObject->R.x, m_nativeObject->R.y ); }
 			}
 
 			// Gets the Green chromaticity
-			property float2			Green {
+			property float2		Green {
 				float2	get() { return float2( m_nativeObject->G.x, m_nativeObject->G.y ); }
 			}
 
 			// Gets the Blue chromaticity
-			property float2			Blue {
+			property float2		Blue {
 				float2	get() { return float2( m_nativeObject->B.x, m_nativeObject->B.y ); }
 			}
 
 			// Gets the White chromaticity
-			property float2			White {
+			property float2		White {
 				float2	get() { return float2( m_nativeObject->W.x, m_nativeObject->W.y ); }
 			}
 

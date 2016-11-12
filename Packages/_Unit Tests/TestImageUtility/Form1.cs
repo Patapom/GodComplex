@@ -57,7 +57,7 @@ namespace UnitTests.ImageUtility
 			// TIFF
 				// 8-bits
 //			m_imageFile.Load( new System.IO.FileInfo( @"..\..\Images\In\TIFF\RGB8.tif" ) );
-//			m_imageFile.Load( new System.IO.FileInfo( @"..\..\Images\In\TIFF\RGB8_ICC.tif" ) );
+			m_imageFile.Load( new System.IO.FileInfo( @"..\..\Images\In\TIFF\RGB8_ICC.tif" ) );
 				// 16-bits
 //			m_imageFile.Load( new System.IO.FileInfo( @"..\..\Images\In\TIFF\RGB16.tif" ) );
 //			m_imageFile.Load( new System.IO.FileInfo( @"..\..\Images\In\TIFF\RGB16_ICC.tif" ) );
@@ -65,7 +65,7 @@ namespace UnitTests.ImageUtility
 
 			// High-Dynamic Range Images
 			ImageFile	originalImageFile = m_imageFile;
-			if ( true ) {
+			if ( false ) {
 				ImageFile	tempHDR = new ImageFile();
 				originalImageFile = tempHDR;
 
