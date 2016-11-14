@@ -234,11 +234,11 @@ namespace ImageUtilityLib {
 	private:
 		#pragma region FIELDS
 
-		FIBITMAP*			m_bitmap;
-		PIXEL_FORMAT		m_pixelFormat;		// The bitmap's pixel format
-		mutable FILE_FORMAT	m_fileFormat;		// File format (available if created from a file or saved to a file at some point)
+		FIBITMAP*					m_bitmap;
+		PIXEL_FORMAT				m_pixelFormat;			// The bitmap's pixel format
+		mutable FILE_FORMAT			m_fileFormat;			// File format (available if created from a file or saved to a file at some point)
 
-		MetaData			m_metadata;			// Contains relevant metadata (e.g. ISO, Tv, Av, focal length, etc.)
+		MetaData					m_metadata;				// Contains relevant metadata (e.g. ISO, Tv, Av, focal length, etc.)
 
 		#pragma endregion
 
@@ -251,6 +251,9 @@ namespace ImageUtilityLib {
 
 		// Gets the image's pixel format
 		PIXEL_FORMAT		GetPixelFormat() const	{ return m_pixelFormat; }
+
+		// Gets the pixel format's accessor
+		const IPixelAccessor&	GetPixelFormatAccessor() const;
 
 		// Gets the source bitmap type
 		FILE_FORMAT			GetFileFormat() const	{ return m_fileFormat; }
@@ -313,6 +316,10 @@ namespace ImageUtilityLib {
 
 		// Tone maps a HDR image into a LDR RGBA8 format
 		void				ToneMapFrom( const ImageFile& _source, toneMapper_t _toneMapper );
+
+		// Generic color getter/setter
+		void				ReadScanline( U32 _Y, bfloat4* _color, U32 _startX=0, U32 _count=~0U ) const;
+		void				WriteScanline( U32 _Y, const bfloat4* _color, U32 _startX=0, U32 _count=~0U );
 
 		// Retrieves the image file type based on the image file name
 		static FILE_FORMAT	GetFileType( const wchar_t* _imageFileNameName );

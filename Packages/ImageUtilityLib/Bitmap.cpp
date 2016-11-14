@@ -144,16 +144,77 @@ void	Bitmap::LDR2HDR( U32 _imagesCount, const ImageFile** _images, const float* 
 	U32		H = _images[0]->Height();
 	Init( W, H );
 
-	// Recompose HDR image into the XYZ buffer (still RGB but it will be converted into XYZ at the end)
+	U32		responseCurveSize = U32(_responseCurve.Count());
+
+	//////////////////////////////////////////////////////////////////////////
+	// 1] Recompose HDR image into the XYZ buffer (still RGB but it will be converted into XYZ at the end)
+	bfloat3*	sumWeights = new bfloat3[W*H];
+	memset( sumWeights, 0, W*H*sizeof(bfloat3) );
+
+	U32			Zr, Zg, Zb;
+	bfloat4		temp, weight, response;
+	bfloat4*	targetHDR = nullptr;
+	bfloat3*	targetWeights = nullptr;
+
 	for ( U32 imageIndex=0; imageIndex < _imagesCount; imageIndex++ ) {
 		const ImageFile&	image = *_images[imageIndex];
 		float				shutterSpeed = _imageShutterSpeeds[imageIndex];
 		float				imageEV = log2f( shutterSpeed );
 
+		targetHDR = m_XYZ;
+		targetWeights = sumWeights;
+		for ( U32 Y=0; Y < H; Y++ ) {
+			for ( U32 X=0; X < W; X++, targetHDR++, targetWeights++ ) {
+				image.Get( X, Y, temp );
 
+				// Retrieve LDR values for RGB
+				Zr = CLAMP( U32( (responseCurveSize-1) * temp.x ), 0U, responseCurveSize-1 );
+				Zg = CLAMP( U32( (responseCurveSize-1) * temp.y ), 0U, responseCurveSize-1 );
+				Zb = CLAMP( U32( (responseCurveSize-1) * temp.z ), 0U, responseCurveSize-1 );
+
+				// Compute weights
+				weight.x = ComputeWeight( Zr, responseCurveSize );
+				weight.y = ComputeWeight( Zg, responseCurveSize );
+				weight.z = ComputeWeight( Zb, responseCurveSize );
+
+				// Accumulate weighted response
+				response.x = _responseCurve[Zr].x - imageEV;
+				response.y = _responseCurve[Zg].y - imageEV;
+				response.z = _responseCurve[Zb].z - imageEV;
+
+				targetHDR->x += weight.x * response.x;
+				targetHDR->y += weight.y * response.y;
+				targetHDR->z += weight.z * response.z;
+
+				// Accumulate weight
+				*targetWeights += weight;
+			}
+		}
 	}
 
-	// Convert into XYZ using a linear profile
+	//////////////////////////////////////////////////////////////////////////
+	// 2] Divide by weights and retrieve linear radiance
+	targetHDR = m_XYZ;
+	targetWeights = sumWeights;
+	for ( U32 Y=0; Y < H; Y++ ) {
+		for ( U32 X=0; X < W; X++, targetHDR++, targetWeights++ ) {
+			// Retrieve log2(E)
+			temp = *targetHDR;
+			temp.x /= targetWeights->x;
+			temp.y /= targetWeights->y;
+			temp.z /= targetWeights->z;
+
+			// Retrieve linear radiance
+			targetWeights->x = powf( 2.0f, temp.x );
+			targetWeights->y = powf( 2.0f, temp.y );
+			targetWeights->z = powf( 2.0f, temp.z );
+		}
+	}
+
+	delete[] sumWeights;
+
+	//////////////////////////////////////////////////////////////////////////
+	// 3] Convert into XYZ using a linear profile
 	ColorProfile	linearProfile( ColorProfile::STANDARD_PROFILE::LINEAR );
 	linearProfile.RGB2XYZ( m_XYZ, m_XYZ, W*H );
 }

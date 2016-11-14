@@ -52,14 +52,49 @@ bool	ImageFile::HasAlpha() const {
 	return false;
 }
 
+const IPixelAccessor&	ImageFile::GetPixelFormatAccessor() const {
+	switch ( m_pixelFormat ) {
+		// 8-bits
+	case PIXEL_FORMAT::R8:			return PF_R8::Descriptor;
+	case PIXEL_FORMAT::RG8:			return PF_RG8::Descriptor;
+	case PIXEL_FORMAT::RGB8:		return PF_RGB8::Descriptor;
+	case PIXEL_FORMAT::RGBA8:		return PF_RGBA8::Descriptor;
+
+		// 16-bits
+	case PIXEL_FORMAT::R16:			return PF_R16::Descriptor;
+//	case PIXEL_FORMAT::RG16,		return PF_RG16::Descriptor;		// Unsupported
+	case PIXEL_FORMAT::RGB16:		return PF_RGB16::Descriptor;
+	case PIXEL_FORMAT::RGBA16:		return PF_RGBA16::Descriptor;
+//	case PIXEL_FORMAT::R16F,		return PF_R16F::Descriptor;		// Unsupported
+// 	case PIXEL_FORMAT::RG16F,		return PF_RG16F::Descriptor;	// Unsupported
+// 	case PIXEL_FORMAT::RGB16F,		return PF_RGB16F::Descriptor;	// Unsupported
+// 	case PIXEL_FORMAT::RGBA16F,		return PF_RGBA16F::Descriptor;	// Unsupported
+
+		// 32-bits
+	case PIXEL_FORMAT::R32F:		return PF_R32F::Descriptor;
+	case PIXEL_FORMAT::RG32F:		return PF_RG32F::Descriptor;
+	case PIXEL_FORMAT::RGB32F:		return PF_RGB32F::Descriptor;
+	case PIXEL_FORMAT::RGBA32F:		return PF_RGBA32F::Descriptor;
+	}
+
+	return PF_Unknown::Descriptor;
+}
+
 void	ImageFile::Get( U32 _X, U32 _Y, bfloat4& _color ) const {
 	const unsigned	pitch  = FreeImage_GetPitch( m_bitmap );
 	const U8*		bits = (BYTE*) FreeImage_GetBits( m_bitmap );
 	bits += pitch * _Y;
-	switch ( )
+
+	const IPixelAccessor&	accessor = GetPixelFormatAccessor();
+	accessor.RGBA( bits, _color );
 }
 void	ImageFile::Set( U32 _X, U32 _Y, const bfloat4& _color ) {
+	const unsigned	pitch  = FreeImage_GetPitch( m_bitmap );
+	U8*		bits = (BYTE*) FreeImage_GetBits( m_bitmap );
+	bits += pitch * _Y;
 
+	const IPixelAccessor&	accessor = GetPixelFormatAccessor();
+	accessor.Write( bits, _color );
 }
 
 
@@ -270,8 +305,9 @@ void	ImageFile::ConvertFrom( const ImageFile& _source, PIXEL_FORMAT _targetForma
 			}
 		}
 
-		if ( temp != nullptr )
+		if ( temp != nullptr ) {
 			FreeImage_Unload( temp );
+		}
 	} else {
 		// Not a simple bitmap type
 		m_bitmap = FreeImage_ConvertToType( _source.m_bitmap, targetType );
@@ -373,6 +409,38 @@ void	ImageFile::ToneMapFrom( const ImageFile& _source, toneMapper_t _toneMapper 
 	// Copy file format and attempt to create a profile
 	m_fileFormat = _source.m_fileFormat;
 }
+
+void	ImageFile::ReadScanline( U32 _Y, bfloat4* _color, U32 _startX, U32 _count ) const {
+	const IPixelAccessor&	accessor = GetPixelFormatAccessor();
+
+	U32	W = Width();
+	U32	pixelSize = accessor.Size();
+
+	const unsigned	pitch  = FreeImage_GetPitch( m_bitmap );
+	const U8*		bits = (BYTE*) FreeImage_GetBits( m_bitmap );
+	bits += pitch * _Y + _startX * pixelSize;
+
+	_count = MIN( _count, W-_startX );
+	for ( U32 i=_count; i > 0; i--, bits += pixelSize, _color++ ) {
+		accessor.RGBA( bits, *_color );
+	}
+}
+void	ImageFile::WriteScanline( U32 _Y, const bfloat4* _color, U32 _startX, U32 _count ) {
+	const IPixelAccessor&	accessor = GetPixelFormatAccessor();
+
+	U32	W = Width();
+	U32	pixelSize = accessor.Size();
+
+	const unsigned	pitch  = FreeImage_GetPitch( m_bitmap );
+	U8*				bits = (BYTE*) FreeImage_GetBits( m_bitmap );
+	bits += pitch * _Y + _startX * pixelSize;
+
+	_count = MIN( _count, W-_startX );
+	for ( U32 i=_count; i > 0; i--, bits += pixelSize, _color++ ) {
+		accessor.Write( bits, *_color );
+	}
+}
+
 
 //////////////////////////////////////////////////////////////////////////
 // Helpers
