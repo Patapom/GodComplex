@@ -11,7 +11,7 @@ using System.Windows.Forms;
 using ImageUtility;
 using SharpMath;
 
-namespace UnitTests.ImageUtility
+namespace ImageUtility.UnitTests
 {
 	public partial class TestForm : Form {
 
@@ -24,9 +24,41 @@ namespace UnitTests.ImageUtility
 		protected override void OnLoad( EventArgs e ) {
 			base.OnLoad( e );
 
-//			m_imageFile.Load( new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0868.jpg" ) );
-//			m_imageFile.Load( new System.IO.FileInfo( @"..\..\Images\In\JPG\R8.jpg" ) );
+//			TestLoadImage();
+			TestConvertLDR2HDR();
+		}
 
+		protected void TestConvertLDR2HDR() {
+
+			// Load a bunch of LDR images
+			System.IO.FileInfo[]	LDRImageFileNames = new System.IO.FileInfo[] {
+				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0860.jpg" ),
+				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0864.jpg" ),
+				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0869.jpg" ),
+			};
+			List< ImageFile >	LDRImages = new List< ImageFile >();
+			foreach ( System.IO.FileInfo LDRImageFileName in LDRImageFileNames )
+				LDRImages.Add( new ImageFile( LDRImageFileName ) );
+
+			// Retrieve the shutter speeds
+			List< float >	shutterSpeeds = new List< float >();
+			foreach ( ImageFile LDRImage in LDRImages ) {
+				shutterSpeeds.Add( LDRImage.Metadata.ExposureTime );
+			}
+
+			// Build the HDR device-independent bitmap
+			Bitmap.HDRParms	parms = new Bitmap.HDRParms() {
+				_inputBitsPerComponent = 8,
+				_luminanceFactor = 1.0f,
+				_curveSmoothnessConstraint = 1.0f,
+				_quality = 1.0f
+			};
+
+			ImageUtility.Bitmap	HDRImage = new ImageUtility.Bitmap();
+			HDRImage.LDR2HDR( LDRImages.ToArray(), shutterSpeeds.ToArray(), parms );
+		}
+
+		protected void TestLoadImage() {
 			// BMP
 //			m_imageFile.Load( new System.IO.FileInfo( @"..\..\Images\In\BMP\RGB8.bmp" ) );
 //			m_imageFile.Load( new System.IO.FileInfo( @"..\..\Images\In\BMP\RGBA8.bmp" ) );
@@ -73,16 +105,17 @@ namespace UnitTests.ImageUtility
 //				tempHDR.Load( new System.IO.FileInfo( @"..\..\Images\In\HDR\RGB32F.hdr" ) );
 
 				// EXR
-// 				tempHDR.Load( new System.IO.FileInfo( @"..\..\Images\In\EXR\RGB32F.exr" ) );
+ 				tempHDR.Load( new System.IO.FileInfo( @"..\..\Images\In\EXR\RGB32F.exr" ) );
 
 				// TIFF
 					// 16-bits floating-point
 //				tempHDR.Load( new System.IO.FileInfo( @"..\..\Images\In\TIFF\RGB16F.tif" ) );
 //				tempHDR.Load( new System.IO.FileInfo( @"..\..\Images\In\TIFF\RGB16F_ICC.tif" ) );
 
-					// 32-bits floating-point
-				tempHDR.Load( new System.IO.FileInfo( @"..\..\Images\In\TIFF\RGB32F.tif" ) );
-//				tempHDR.Load( new System.IO.FileInfo( @"..\..\Images\In\TIFF\RGB32F_ICC.tif" ) );
+// Pom (2016-11-14) This crashes as FreeImage is not capable of reading 32-bits floating point TIFs but I think I don't care, we have enough formats!
+// 					// 32-bits floating-point
+// 				tempHDR.Load( new System.IO.FileInfo( @"..\..\Images\In\TIFF\RGB32F.tif" ) );
+// //				tempHDR.Load( new System.IO.FileInfo( @"..\..\Images\In\TIFF\RGB32F_ICC.tif" ) );
 
 				m_imageFile.ToneMapFrom( tempHDR, ( float3 _HDRColor, ref float3 _LDRColor ) => {
 					// Do nothing (linear space to gamma space without care!)

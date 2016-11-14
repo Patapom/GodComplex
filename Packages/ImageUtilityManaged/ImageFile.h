@@ -216,13 +216,20 @@ namespace ImageUtility {
 		ImageFile() {
 			m_nativeObject = new ImageUtilityLib::ImageFile();
 		}
+		ImageFile( System::IO::FileInfo^ _fileName ) {
+			m_nativeObject = new ImageUtilityLib::ImageFile();
+			Load( _fileName );
+		}
 		ImageFile( System::IO::FileInfo^ _fileName, FILE_FORMAT _format ) {
+			m_nativeObject = new ImageUtilityLib::ImageFile();
 			Load( _fileName, _format );
 		}
 		ImageFile( NativeByteArray^ _fileContent, FILE_FORMAT _format ) {
+			m_nativeObject = new ImageUtilityLib::ImageFile();
 			Load( _fileContent, _format );
 		}
 		ImageFile( U32 _width, U32 _height, PIXEL_FORMAT _format, ImageUtility::ColorProfile^ _colorProfile ) {
+			m_nativeObject = new ImageUtilityLib::ImageFile();
 			Init( _width, _height, _format, _colorProfile );
 		}
 		ImageFile( ImageFile^ _other ) {

@@ -1,7 +1,6 @@
 //////////////////////////////////////////////////////////////////////////
 // This special Bitmap class carefully handles color profiles to provide a faithful internal image representation that
-//	is always stored as 32-bits floating point precision CIE XYZ device-independent format that you can later convert
-//	to any other format.
+//	is always stored as 32-bits floating point precision CIE XYZ device-independent format that you can later convert to any other format.
 //
 ////////////////////////////////////////////////////////////////////////////
 //
@@ -161,7 +160,7 @@ namespace ImageUtility {
 		ref struct HDRParms {
 			// The amount of bits per (R,G,B) component the camera is able to output
 			// Usually, for RAW input images are either 12- or 16-bits depending on model while non-RAW outputs (e.g. JPG or PNG) are simply 8-bits
-			UInt32	_inputBitsPerComponent;		// default = 12;
+			UInt32	_inputBitsPerComponent;		// default = 8 for JPEG, 12 for RAW;
 
 			//	The default luminance factor to apply to all the images
 			//	(allows you to scale the base luminance if you know the absolute value)
@@ -181,7 +180,7 @@ namespace ImageUtility {
 		// Builds a HDR image from a set of LDR images
 		//	_images, the array of LDR bitmaps
 		//	_imageShutterSpeeds, the array of shutter speeds (in seconds) used for each image
-		void		LDR2HDR( cli::array< ImageFile^ >^ _images, cli::array< float >^ _imageShutterSpeeds, HDRParms% _parms );
+		void		LDR2HDR( cli::array< ImageFile^ >^ _images, cli::array< float >^ _imageShutterSpeeds, HDRParms^ _parms );
 
 		// Builds a HDR image from a set of LDR images and a response curve (usually computed using ComputeHDRResponseCurve)
 		// You can use this method to build the HDR image from a larger set of LDR images than used to resolve the response curve
@@ -195,7 +194,7 @@ namespace ImageUtility {
 		//	_images, the array of LDR bitmaps
 		//	_imageEVs, the array of Exposure Values (EV) used for each image
 		//	_responseCurve, the list to fill with values corresponding to the response curve
-		static void	ComputeCameraResponseCurve( cli::array< ImageFile^ >^ _images, cli::array< float >^ _imageShutterSpeeds, HDRParms% _parms, System::Collections::Generic::List< float3 >^ _responseCurve );
+		static void	ComputeCameraResponseCurve( cli::array< ImageFile^ >^ _images, cli::array< float >^ _imageShutterSpeeds, HDRParms^ _parms, System::Collections::Generic::List< float3 >^ _responseCurve );
 
 		#pragma endregion
 	};

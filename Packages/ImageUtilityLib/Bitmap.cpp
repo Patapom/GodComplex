@@ -247,7 +247,7 @@ void	Bitmap::ComputeCameraResponseCurve( U32 _imagesCount, const ImageFile** _im
 			nominalPixelsCount *= 1.0f + _parms._quality;					// Apply the user's quality settings to use more or less pixels
 
 
-nominalPixelsCount *= 10.0f;	// As long as we don't have a robust algorithm to choose pixels that properly cover the response curve range, let's use a lot more pixels than necessary!
+//nominalPixelsCount *= 10.0f;	// As long as we don't have a robust algorithm to choose pixels that properly cover the response curve range, let's use a lot more pixels than necessary!
 
 
 	int		pixelsCountPerImage = int ( ceilf( nominalPixelsCount ) );		// And that is our amount of pixels to use per image
@@ -255,7 +255,7 @@ nominalPixelsCount *= 10.0f;	// As long as we don't have a robust algorithm to c
 	int		totalPixelsCount = _imagesCount * pixelsCountPerImage;
 
 	// Prepare the response curve array
-	_responseCurve.Init( responseCurveSize );
+	_responseCurve.Resize( responseCurveSize );
 	_responseCurve.SetCount( responseCurveSize );
 
 	// Now, we need to carefully select the candidate pixels.
@@ -308,10 +308,10 @@ U32	Y = U32( floorf( sequencePtr->y * (H-1) ) );
 	//////////////////////////////////////////////////////////////////////////
 	// 2] Apply SVD 
 	int	equationsCount  = totalPixelsCount		// Pixels
-						+ responseCurveSize		// Used to define the smoothness of the g curve
+						+ responseCurveSize		// Used to enforce the smoothness of the g curve
 						+ 1;					// Constraint that g(Zmid) = 0 (with Zmid = (Zmax+Zmin)/2)
 	int	unknownsCount	= responseCurveSize		// g(Z) = curve solution
-						+ totalPixelsCount;		// log(E) for each pixel
+						+ pixelsCountPerImage;	// log(E) for each pixel
 
 	float*	Aterms = new float[equationsCount*unknownsCount];	// M*N matrix with M rows = #equations and N columns = #unknowns
 	float**	A = new float*[equationsCount];
@@ -333,21 +333,21 @@ U32	Y = U32( floorf( sequencePtr->y * (H-1) ) );
 
 		// ===================================================================
 		// 2.1] Build the "A" matrix and target vector "b"
-		memset( A, 0, equationsCount*unknownsCount*sizeof(float) );
+		memset( Aterms, 0, equationsCount*unknownsCount*sizeof(float) );
 		memset( b, 0, equationsCount*sizeof(float) );
 
 		// 2.1.1) Fill the first part of the equations containing our data
-		float**	A0 = A;	// A0 starts at A
+		float**	A1 = A;	// A1 starts at A
 		for ( U32 imageIndex=0; imageIndex < _imagesCount; imageIndex++ ) {
 
 			// Compute image EV = log2(shutterSpeed)
-			// (e.g. taking 3 shots in bracket mode with shutter speeds [1/4s, 1s, 4s] [-2, 0, +2] will yield EV array [-2, 0, +2] respectively)
+			// (e.g. taking 3 shots in bracket mode with shutter speeds [1/4s, 1s, 4s] will yield EV array [-2, 0, +2] respectively)
 			//
 			float	imageShutterSpeed = _imageShutterSpeeds[imageIndex];
 			float	imageEV = log2f( imageShutterSpeed );
 
 			for ( int pixelIndex=0; pixelIndex < pixelsCountPerImage; pixelIndex++ ) {
-				float*	columns = *A0++;
+				float*	columns = *A1++;
 
 				// Zij = pixel value for selected pixel i in image j
 				U32		Z = *pixelPtr++;
@@ -362,23 +362,23 @@ U32	Y = U32( floorf( sequencePtr->y * (H-1) ) );
 				columns[responseCurveSize + pixelIndex] = -Wij;
 
 				// And subtract weighted EV = log2(DeltaT)
-				b[pixelsCountPerImage*imageIndex+pixelIndex] = Wij * imageEV;
+				b[pixelsCountPerImage*imageIndex + pixelIndex] = Wij * imageEV;
 			}
 		}
 
 		// 2.1.2) Fill the second part of the equations containing weighted smoothing coefficients
 		// This part will ensure the g() curve's smoothness
-		float**	A2 = &A[totalPixelsCount];	// A2 starts at the end of A's first part
+		float**	A2 = &A[totalPixelsCount];	// A2 starts at the end of A's first part, A1
 
 		float	lambda = _parms._curveSmoothnessConstraint;
 
 		A2[0][0] = lambda * ComputeWeight( 0, responseCurveSize );	// First element can't reach neighbors
 		U32		Z = 1;
 		for ( ; Z < responseCurveSize-1; Z++ ) {
-			float	Weight = ComputeWeight( Z, responseCurveSize );
-			A2[Z][Z-1] = Weight * lambda;
-			A2[Z][Z+0] = -2.0f * Weight * lambda;
-			A2[Z][Z+1] = Weight * lambda;
+			float	Weight = lambda * ComputeWeight( Z, responseCurveSize );
+			A2[Z][Z-1] = Weight;
+			A2[Z][Z+0] = -2.0f * Weight;
+			A2[Z][Z+1] = Weight;
 		}
 		A2[Z][Z] = lambda * ComputeWeight( Z, responseCurveSize );	// Last element can't reach neighbors either
 
@@ -392,7 +392,7 @@ U32	Y = U32( floorf( sequencePtr->y * (H-1) ) );
 		// 2.2] Apply SVD
 #if 1
 float*	Abackup = new float[equationsCount*unknownsCount];
-memcpy_s( Abackup, equationsCount*unknownsCount*sizeof(float), A, equationsCount*unknownsCount*sizeof(float) );
+memcpy_s( Abackup, equationsCount*unknownsCount*sizeof(float), Aterms, equationsCount*unknownsCount*sizeof(float) );
 #endif
 
 		svdcmp( equationsCount, unknownsCount, A, w, V );
@@ -498,7 +498,7 @@ static int iminarg1,iminarg2;
 #define IMIN(a,b) (iminarg1=(a),iminarg2=(b),(iminarg1) < (iminarg2) ?\
         (iminarg1) : (iminarg2))
 
-// From numerical recipes, chapter 2.6 (NOTE: I rewrote the code to use 0-based vectors and matrices!)
+// From numerical recipes, chapter 2.6 (NOTE: I rewrote the code so it uses 0-based vectors and matrices!)
 //
 // Given a matrix a[1..m][1..n], this routine computes its singular value decomposition, A = U · W · V^T
 //	The matrix U replaces a on output.
@@ -637,7 +637,7 @@ void svdcmp( int m, int n, float** a, float w[], float** v ) {
 	}
 
 	// Diagonalization of the bidiagonal form: Loop over singular values, and over allowed iterations
-	for ( int k=n-1; k >= 0; k--) {
+	for ( int k=n-1; k >= 0; k-- ) {
 		int	iterationsCount = 1;
 		for ( ;iterationsCount <= 30; iterationsCount++ ) {
 			int	nm;

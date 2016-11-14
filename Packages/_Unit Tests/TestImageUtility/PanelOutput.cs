@@ -6,11 +6,11 @@ using System.Text;
 using System.Windows.Forms;
 using System.Drawing;
 
-namespace UnitTests.ImageUtility
+namespace ImageUtility.UnitTests
 {
 	public class PanelOutput : Panel {
-		private Bitmap			m_bitmap = null;
-		public Bitmap	Bitmap {
+		private System.Drawing.Bitmap			m_bitmap = null;
+		public System.Drawing.Bitmap	Bitmap {
 			get { return m_bitmap; }
 			set { m_bitmap = value; Invalidate(); }
 		}

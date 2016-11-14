@@ -11,9 +11,11 @@ void	CopyHDRParms( Bitmap::HDRParms% _parmsIn, ImageUtilityLib::Bitmap::HDRParms
 	_parmsOut._quality = _parmsIn._quality;
 }
 
-void	Bitmap::LDR2HDR( cli::array< ImageFile^ >^ _images, cli::array< float >^ _imageShutterSpeeds, HDRParms% _parms ) {
+void	Bitmap::LDR2HDR( cli::array< ImageFile^ >^ _images, cli::array< float >^ _imageShutterSpeeds, HDRParms^ _parms ) {
 	if ( _images == nullptr )
 		throw gcnew Exception( "Invalid images array!" );
+	if ( _parms == nullptr )
+		throw gcnew Exception( "Invalid parms for conversion!" );
 	if ( _imageShutterSpeeds == nullptr )
 		throw gcnew Exception( "Invalid image shutter speeds array!" );
 	if ( _images->Length != _imageShutterSpeeds->Length )
@@ -30,7 +32,7 @@ void	Bitmap::LDR2HDR( cli::array< ImageFile^ >^ _images, cli::array< float >^ _i
 	pin_ptr<float>	imageShutterSpeedsPtr = &_imageShutterSpeeds[0];
 
 	ImageUtilityLib::Bitmap::HDRParms	parms;
-	CopyHDRParms( _parms, parms );
+	CopyHDRParms( *_parms, parms );
 
 	m_nativeObject->LDR2HDR( imagesCount, images, imageShutterSpeedsPtr, parms );
 
@@ -68,9 +70,11 @@ void	Bitmap::LDR2HDR( cli::array< ImageFile^ >^ _images, cli::array< float >^ _i
 	System::Runtime::InteropServices::Marshal::FreeHGlobal( imagesPtr );
 }
 
-void	Bitmap::ComputeCameraResponseCurve( cli::array< ImageFile^ >^ _images, cli::array< float >^ _imageShutterSpeeds, HDRParms% _parms, System::Collections::Generic::List< float3 >^ _responseCurve ) {
+void	Bitmap::ComputeCameraResponseCurve( cli::array< ImageFile^ >^ _images, cli::array< float >^ _imageShutterSpeeds, HDRParms^ _parms, System::Collections::Generic::List< float3 >^ _responseCurve ) {
 	if ( _images == nullptr )
 		throw gcnew Exception( "Invalid images array!" );
+	if ( _parms == nullptr )
+		throw gcnew Exception( "Invalid parms for conversion!" );
 	if ( _imageShutterSpeeds == nullptr )
 		throw gcnew Exception( "Invalid image shutter speeds array!" );
 	if ( _images->Length != _imageShutterSpeeds->Length )
@@ -86,7 +90,7 @@ void	Bitmap::ComputeCameraResponseCurve( cli::array< ImageFile^ >^ _images, cli:
 	pin_ptr<float>	imageShutterSpeedsPtr = &_imageShutterSpeeds[0];
 
 	ImageUtilityLib::Bitmap::HDRParms	parms;
-	CopyHDRParms( _parms, parms );
+	CopyHDRParms( *_parms, parms );
 
 	BaseLib::List< bfloat3 >	responseCurve;
 	ImageUtilityLib::Bitmap::ComputeCameraResponseCurve( imagesCount, images, imageShutterSpeedsPtr, parms, responseCurve );

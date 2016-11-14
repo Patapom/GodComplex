@@ -28,7 +28,7 @@ protected:	// FIELDS
 public:		// PROPERTIES
 
 	int		Count() const				{ return m_Count; }
-	void	SetCount( U32 _Count )		{ ASSERT( _Count <= m_Size, "Count exceeds allocated size!" ); m_Count = _Count; }
+	void	SetCount( U32 _Count );		// Sets the new count, possibility resizing the list
 	int		GetAllocatedSize() const	{ return m_Size; }
 
 
@@ -38,7 +38,8 @@ public:		// METHODS
 	List( U32 _InitialSize );
 	~List();
 
-	void		Init( U32 _Size );
+	// Resizes the list, preserving the existing list if possible
+	void		Resize( U32 _Size );
 
 	T&			operator[]( U32 _Index );
 	const T&	operator[]( U32 _Index ) const;

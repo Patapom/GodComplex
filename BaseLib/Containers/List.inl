@@ -12,18 +12,29 @@ template<typename T> List<T>::List( U32 _InitialSize )
 	, m_Size( 0 )
 	, m_Count( 0 )
 {
-	Init( _InitialSize );
+	Resize( _InitialSize );
 }
 
-template<typename T> void	List<T>::Init( U32 _Size )
-{
+template<typename T> void	List<T>::Resize( U32 _Size ) {
 	if ( _Size > m_Size ) {
-		delete[] m_pList;
+		T*	old = m_pList;
 		m_pList = new T[_Size];
+		if ( old != nullptr ) {
+			// Copy former list and delete
+			memcpy_s( m_pList, _Size*sizeof(T), old, m_Size*sizeof(T) );
+			delete[] old;
+		}
 	}
 
 	m_Size = _Size;
 	m_Count = 0;
+}
+
+template<typename T> void	List<T>::SetCount( U32 _Count ) {
+	if ( _Count > m_Size ) {
+		Resize( _Count );
+	}
+	m_Count = _Count;
 }
 
 template<typename T> List<T>::~List()

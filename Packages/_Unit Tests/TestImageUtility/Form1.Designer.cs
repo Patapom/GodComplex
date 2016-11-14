@@ -1,4 +1,4 @@
-﻿namespace UnitTests.ImageUtility
+﻿namespace ImageUtility.UnitTests
 {
 	partial class TestForm
 	{
