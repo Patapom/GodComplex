@@ -24,8 +24,39 @@ namespace ImageUtility.UnitTests
 		protected override void OnLoad( EventArgs e ) {
 			base.OnLoad( e );
 
+			TestBuildImage();
 //			TestLoadImage();
-			TestConvertLDR2HDR();
+//			TestConvertLDR2HDR();
+		}
+
+		protected void TestBuildImage() {
+			m_imageFile = new ImageFile( 378, 237, ImageFile.PIXEL_FORMAT.RGB16, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
+
+			if ( false ) {
+				// Write pixel per pixel
+				for ( uint Y=0; Y < m_imageFile.Height; Y++ ) {
+					for ( uint X=0; X < m_imageFile.Width; X++ ) {
+						float	R = (float) (1+X) / m_imageFile.Width;
+						float	G = (float) (1+Y) / m_imageFile.Height;
+						m_imageFile[X,Y] = new float4( R, G, 1.0f-0.5f*(R+G), 1 );
+					}
+				}
+			} else {
+				// Write scanline per scanline
+				float4[]	scanline = new float4[m_imageFile.Width];
+				for ( uint Y=0; Y < m_imageFile.Height; Y++ ) {
+					for ( uint X=0; X < m_imageFile.Width; X++ ) {
+						float	R = (float) (1+X) / m_imageFile.Width;
+						float	G = (float) (1+Y) / m_imageFile.Height;
+						scanline[X].Set( R, G, 1.0f-0.5f*(R+G), 1 );
+					}
+
+					m_imageFile.WriteScanline( Y, scanline );
+				}
+			}
+
+
+			panel1.Bitmap = m_imageFile.AsBitmap;
 		}
 
 		protected void TestConvertLDR2HDR() {
@@ -148,7 +179,6 @@ namespace ImageUtility.UnitTests
 				"  • Gamma Exponent: " + Profile.GammaExponent.ToString(),
 				"",
 				"Gamma Found in File = " + MD.GammaSpecifiedInFile,
-				"Gamma Exponent = " + MD.GammaExponent,
 				"",
 				"MetaData are valid: " + MD.IsValid,
 				"  • ISO Speed = " + MD.ISOSpeed,

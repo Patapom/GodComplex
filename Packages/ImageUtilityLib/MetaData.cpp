@@ -18,7 +18,6 @@ MetaData::~MetaData() {
 
 void	MetaData::Reset() {
 	m_gammaSpecifiedInFile = false;
-	m_gammaExponent = ColorProfile::GAMMA_EXPONENT_STANDARD;
 
 	m_valid = false;
 	m_ISOSpeed = 100;
@@ -55,32 +54,33 @@ void	MetaData::RetrieveFromImage( const ImageFile& _imageFile ) {
 // 	}
 
 	// Attempt to grab generic data
-	EnumerateDefaultTags( _imageFile );
+	float	gammaExponentFromMetaData;
+	EnumerateDefaultTags( _imageFile, gammaExponentFromMetaData );
 
 	// Grab format-specific data and build color profile
 	ImageFile::FILE_FORMAT	format = _imageFile.GetFileFormat();
 	switch ( format ) {
 	case ImageFile::FILE_FORMAT::PNG:
-		EnumerateMetaDataPNG( _imageFile );
+		EnumerateMetaDataPNG( _imageFile, gammaExponentFromMetaData );
 		break;
 	case ImageFile::FILE_FORMAT::JPEG:
 	case ImageFile::FILE_FORMAT::JP2:
-		EnumerateMetaDataJPG( _imageFile );
+		EnumerateMetaDataJPG( _imageFile, gammaExponentFromMetaData );
 		break;
 	case ImageFile::FILE_FORMAT::TARGA:
-		EnumerateMetaDataTGA( _imageFile );
+		EnumerateMetaDataTGA( _imageFile, gammaExponentFromMetaData );
 		break;
 	case ImageFile::FILE_FORMAT::TIFF:
-		EnumerateMetaDataTIFF( _imageFile );
+		EnumerateMetaDataTIFF( _imageFile, gammaExponentFromMetaData );
 		break;
 	case ImageFile::FILE_FORMAT::RAW:
-		EnumerateMetaDataRAW( _imageFile );
+		EnumerateMetaDataRAW( _imageFile, gammaExponentFromMetaData );
 		break;
 	case ImageFile::FILE_FORMAT::BMP:
-		EnumerateMetaDataBMP( _imageFile );
+		EnumerateMetaDataBMP( _imageFile, gammaExponentFromMetaData );
 		break;
 	case ImageFile::FILE_FORMAT::GIF:
-		EnumerateMetaDataGIF( _imageFile );
+		EnumerateMetaDataGIF( _imageFile, gammaExponentFromMetaData );
 		break;
 	default:
 		// Build the default sRGB profile
@@ -92,12 +92,10 @@ void	MetaData::RetrieveFromImage( const ImageFile& _imageFile ) {
 
 #pragma region Format-specific metadata enumeration
 
-void	MetaData::EnumerateMetaDataTGA( const ImageFile& _image ) {
+void	MetaData::EnumerateMetaDataTGA( const ImageFile& _image, float _gammaExponent ) {
 	if ( !m_gammaSpecifiedInFile ) {
 		// If not alerady found in EXIF data, try and readback our custom tags
 		// NOTE: I had to modify the FreeImage library to add these custom metadata when loading a TGA file otherwise they are lost
-		m_gammaExponent = ColorProfile::GAMMA_EXPONENT_STANDARD;
-
 		const char*	numStr = nullptr;
 		const char* denStr = nullptr;
 		if (	MetaData::GetString( FIMD_COMMENTS, *_image.m_bitmap, "GammaNumerator", numStr )
@@ -106,7 +104,7 @@ void	MetaData::EnumerateMetaDataTGA( const ImageFile& _image ) {
 			int	num, den;
 			if (	sscanf_s( numStr, "%d", &num ) == 1
 				&&	sscanf_s( denStr, "%d", &den ) == 1 ) {
-				m_gammaExponent = float(num) / den;
+				_gammaExponent = float(num) / den;
 				m_gammaSpecifiedInFile = true;
 			}
 		}
@@ -115,12 +113,13 @@ void	MetaData::EnumerateMetaDataTGA( const ImageFile& _image ) {
 	// Create the color profile
 	m_colorProfile = new ColorProfile( ColorProfile::Chromaticities::sRGB,		// Use default sRGB color profile
 										ColorProfile::GAMMA_CURVE::STANDARD,	// But with a standard gamma curve...
-										m_gammaExponent							// ...whose gamma is retrieved from extension data, if available
+										_gammaExponent							// ...whose gamma is retrieved from extension data, if available
 									);
 	m_colorProfile->SetProfileFoundInFile( m_gammaSpecifiedInFile );
 }
 
-void	MetaData::EnumerateMetaDataJPG( const ImageFile& _image ) {
+void	MetaData::EnumerateMetaDataJPG( const ImageFile& _image, float _gammaExponent ) {
+
 // 	EnumerateMetaData( _MetaData,
 // 		new MetaDataProcessor( "/xmp", ( object _SubData ) =>
 // 		{
@@ -150,12 +149,12 @@ void	MetaData::EnumerateMetaDataJPG( const ImageFile& _image ) {
 
 	m_colorProfile = new ColorProfile(	ColorProfile::Chromaticities::sRGB,		// Default for JPEGs is sRGB
 										ColorProfile::GAMMA_CURVE::STANDARD,
-										m_gammaSpecifiedInFile ? m_gammaExponent : ColorProfile::GAMMA_EXPONENT_STANDARD	// Unless specified, JPG uses a 2.2 gamma by default
+										m_gammaSpecifiedInFile ? _gammaExponent : ColorProfile::GAMMA_EXPONENT_STANDARD	// Unless specified, JPG uses a 2.2 gamma by default
 									);
 	m_colorProfile->SetProfileFoundInFile( false );
 }
 
-void	MetaData::EnumerateMetaDataPNG( const ImageFile& _image ) {
+void	MetaData::EnumerateMetaDataPNG( const ImageFile& _image, float _gammaExponent ) {
 // 	bool	bGammaWasSpecified = false;
 // 	bool	bProfileFound = false;
 // 
@@ -223,7 +222,7 @@ void	MetaData::EnumerateMetaDataPNG( const ImageFile& _image ) {
 	m_colorProfile->SetProfileFoundInFile( false );
 }
 
-void	MetaData::EnumerateMetaDataTIFF( const ImageFile& _image ) {
+void	MetaData::EnumerateMetaDataTIFF( const ImageFile& _image, float _gammaExponent ) {
 // 	bool	bGammaWasSpecified = false;
 // 	bool	bProfileFound = false;
 // 
@@ -277,7 +276,7 @@ void	MetaData::EnumerateMetaDataTIFF( const ImageFile& _image ) {
 	m_colorProfile->SetProfileFoundInFile( false );
 }
 
-void	MetaData::EnumerateMetaDataRAW( const ImageFile& _image ) {
+void	MetaData::EnumerateMetaDataRAW( const ImageFile& _image, float _gammaExponent ) {
 
 
 // 			case FILE_TYPE.CRW:
@@ -316,7 +315,7 @@ void	MetaData::EnumerateMetaDataRAW( const ImageFile& _image ) {
 	m_colorProfile->SetProfileFoundInFile( false );
 }
 
-void	MetaData::EnumerateMetaDataBMP( const ImageFile& _image ) {
+void	MetaData::EnumerateMetaDataBMP( const ImageFile& _image, float _gammaExponent ) {
 	m_colorProfile = new ColorProfile(	ColorProfile::Chromaticities::sRGB,		// Default for BMPs is standard sRGB with no gamma
 										ColorProfile::GAMMA_CURVE::STANDARD,
 										ColorProfile::GAMMA_EXPONENT_STANDARD
@@ -324,7 +323,7 @@ void	MetaData::EnumerateMetaDataBMP( const ImageFile& _image ) {
 	m_colorProfile->SetProfileFoundInFile( false );
 }
 
-void	MetaData::EnumerateMetaDataGIF( const ImageFile& _image ) {
+void	MetaData::EnumerateMetaDataGIF( const ImageFile& _image, float _gammaExponent ) {
 	m_colorProfile = new ColorProfile(	ColorProfile::Chromaticities::sRGB,		// Default for GIFs is standard sRGB with no gamma
 										ColorProfile::GAMMA_CURVE::STANDARD,
 										ColorProfile::GAMMA_EXPONENT_STANDARD
@@ -336,9 +335,11 @@ void	MetaData::EnumerateMetaDataGIF( const ImageFile& _image ) {
 
 //////////////////////////////////////////////////////////////////////////
 // Tag reading
-void	MetaData::EnumerateDefaultTags( const ImageFile& _image ) {
+void	MetaData::EnumerateDefaultTags( const ImageFile& _image, float& _gammaExponent ) {
 
-	m_gammaSpecifiedInFile = GetRational64( FIMD_EXIF_EXIF, *_image.m_bitmap, "Gamma", m_gammaExponent );
+	// Check if the gamma is specified
+	_gammaExponent = ColorProfile::GAMMA_EXPONENT_sRGB;
+	m_gammaSpecifiedInFile = GetRational64( FIMD_EXIF_EXIF, *_image.m_bitmap, "Gamma", _gammaExponent );
 
 	//////////////////////////////////////////////////////////////////////////
 	// Attempt to read these standard EXIF tags

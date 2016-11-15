@@ -29,10 +29,6 @@ namespace ImageUtility {
 		property bool		GammaSpecifiedInFile {
 			bool	get() { return m_nativeObject->m_gammaSpecifiedInFile; }
 		}
-		// Gamma exponent or 2.2 if not found in the file
-		property float		GammaExponent {
-			float	get() { return m_nativeObject->m_gammaExponent; }
-		}
 
 		// True if the following information was found in the file (sometimes not available from older file formats like GIF or BMP)
 		property bool		IsValid {

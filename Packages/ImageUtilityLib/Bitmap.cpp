@@ -250,12 +250,11 @@ void	Bitmap::ComputeCameraResponseCurve( U32 _imagesCount, const ImageFile** _im
 //nominalPixelsCount *= 10.0f;	// As long as we don't have a robust algorithm to choose pixels that properly cover the response curve range, let's use a lot more pixels than necessary!
 
 
-	int		pixelsCountPerImage = int ( ceilf( nominalPixelsCount ) );		// And that is our amount of pixels to use per image
+	int		pixelsCountPerImage = int( ceilf( nominalPixelsCount ) );		// And that is our amount of pixels to use per image
 
 	int		totalPixelsCount = _imagesCount * pixelsCountPerImage;
 
 	// Prepare the response curve array
-	_responseCurve.Resize( responseCurveSize );
 	_responseCurve.SetCount( responseCurveSize );
 
 	// Now, we need to carefully select the candidate pixels.
@@ -295,6 +294,8 @@ U32	Y = U32( floorf( sequencePtr->y * (H-1) ) );
 				bfloat4	colorLDR;
 				image.Get( X, Y, colorLDR );
 				float	pixelValue = ((float*) &colorLDR.x)[componentIndex];
+
+pixelValue = SATURATE( float(1+pixelIndex) / sequence.Count() * powf( 2.0f, float(imageIndex) ) );
 
 				// Convert to integer value
 				U32		Z = CLAMP( U32( (responseCurveSize-1) * pixelValue ), 0U, responseCurveSize-1 );
@@ -345,6 +346,8 @@ U32	Y = U32( floorf( sequencePtr->y * (H-1) ) );
 			//
 			float	imageShutterSpeed = _imageShutterSpeeds[imageIndex];
 			float	imageEV = log2f( imageShutterSpeed );
+
+imageEV = float(1+imageIndex);
 
 			for ( int pixelIndex=0; pixelIndex < pixelsCountPerImage; pixelIndex++ ) {
 				float*	columns = *A1++;

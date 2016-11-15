@@ -188,6 +188,15 @@ ImageFile::FILE_FORMAT	ImageFile::GetFileType( System::IO::FileInfo^ _fileName )
 	return FILE_FORMAT( ImageUtilityLib::ImageFile::GetFileType( nativeFileName ) );
 }
 
+void	ImageFile::ReadScanline( UInt32 _Y, cli::array< float4 >^ _color, UInt32 _startX ) {
+	pin_ptr<float4>	color = &_color[0];
+	m_nativeObject->ReadScanline( _Y, (bfloat4*) color, _startX, _color->Length );
+}
+void	ImageFile::WriteScanline( UInt32 _Y, cli::array< float4 >^ _color, UInt32 _startX ) {
+	pin_ptr<float4>	color = &_color[0];
+	m_nativeObject->WriteScanline( _Y, (bfloat4*) color, _startX, _color->Length );
+}
+
 
 //////////////////////////////////////////////////////////////////////////
 // DDS-related methods

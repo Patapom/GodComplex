@@ -359,7 +359,10 @@ namespace ImageUtilityLib {
 		/// Build from a standard profile
 		/// </summary>
 		/// <param name="_Profile"></param>
-		ColorProfile( STANDARD_PROFILE _profile ) : m_internalConverter( nullptr ) {
+		ColorProfile( STANDARD_PROFILE _profile )
+			: m_profileFoundInFile( false )
+			, m_internalConverter( nullptr )
+		{
 			switch ( _profile ) {
 				case STANDARD_PROFILE::LINEAR:
 					m_chromaticities = Chromaticities::sRGB;
@@ -404,7 +407,10 @@ namespace ImageUtilityLib {
 		/// <param name="_Chromaticities">The chromaticities for this profile</param>
 		/// <param name="_GammaCurve">The type of gamma curve to use</param>
 		/// <param name="_Gamma">The gamma power</param>
-		ColorProfile( const Chromaticities& _chromaticities, GAMMA_CURVE _gammaCurve, float _gamma ) : m_internalConverter( nullptr ) {
+		ColorProfile( const Chromaticities& _chromaticities, GAMMA_CURVE _gammaCurve, float _gamma )
+			: m_profileFoundInFile( false )
+			, m_internalConverter( nullptr )
+		{
 			m_chromaticities = _chromaticities;
 			m_gammaCurve = _gammaCurve;
 			m_gamma = _gamma;

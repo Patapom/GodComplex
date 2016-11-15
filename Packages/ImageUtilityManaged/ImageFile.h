@@ -199,7 +199,12 @@ namespace ImageUtility {
 		// Gets the color profile associated to the image
 		property ImageUtility::ColorProfile^	ColorProfile {
 			ImageUtility::ColorProfile^	get() {
-				return Metadata->ColorProfile;
+				return gcnew ImageUtility::ColorProfile( m_nativeObject->GetColorProfile() );
+			}
+			void set( ImageUtility::ColorProfile^ value ) {
+				if ( value == nullptr )
+					throw gcnew Exception( "Invalid color profile! You MUST provide a valid color profile at all times for the image's metadata structure." );
+				m_nativeObject->SetColorProfile( *value->m_nativeObject );
 			}
 		}
 
@@ -207,6 +212,18 @@ namespace ImageUtility {
 		// Warning: throws an exception if your image format is HDR! (cf. ToneMapFrom())
 		property System::Drawing::Bitmap^	AsBitmap {
 			System::Drawing::Bitmap^	get();
+		}
+
+		// Generic color getter/setter
+		property SharpMath::float4^		default[UInt32, UInt32] {
+			SharpMath::float4^		get( UInt32 _X, UInt32 _Y ) {
+				bfloat4	color;
+				m_nativeObject->Get( _X, _Y, color );
+				return SharpMath::float4( color.x, color.y, color.z, color.w );
+			}
+			void		set( UInt32 _X, UInt32 _Y, SharpMath::float4^ value ) {
+				m_nativeObject->Set( _X, _Y, bfloat4( value->x, value->y, value->z, value->w ) );
+			}
 		}
 
 		#pragma endregion
@@ -271,6 +288,12 @@ namespace ImageUtility {
 
 		// Tone maps a HDR image into a LDR RGBA8 format
 		void				ToneMapFrom( ImageFile^ _source, ToneMapper^ _toneMapper );
+
+		// Generic color getter/setter
+		void				ReadScanline( UInt32 _Y, cli::array< float4 >^ _color ) { ReadScanline( _Y, _color, 0 ); }
+		void				ReadScanline( UInt32 _Y, cli::array< float4 >^ _color, UInt32 _startX );
+		void				WriteScanline( UInt32 _Y, cli::array< float4 >^ _color ) { WriteScanline( _Y, _color, 0 ); }
+		void				WriteScanline( UInt32 _Y, cli::array< float4 >^ _color, UInt32 _startX );
 
 		// Retrieves the image file type based on the image file name
 		static FILE_FORMAT	GetFileType( System::IO::FileInfo^ _fileName );

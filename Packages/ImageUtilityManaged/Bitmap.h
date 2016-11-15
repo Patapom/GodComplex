@@ -76,7 +76,7 @@ namespace ImageUtility {
 		}
 
 		// Accesses the individual XYZ-Alpha pixels
-		property float4^	Item[UInt32, UInt32] {
+		property float4^	default[UInt32, UInt32] {
 			float4^		get( UInt32 _X, UInt32 _Y ) {
 				const bfloat4&	native = m_nativeObject->Access( _X, _Y );
 				return float4( native.x, native.y, native.z, native.w );

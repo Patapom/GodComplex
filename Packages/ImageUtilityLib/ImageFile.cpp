@@ -81,19 +81,21 @@ const IPixelAccessor&	ImageFile::GetPixelFormatAccessor() const {
 }
 
 void	ImageFile::Get( U32 _X, U32 _Y, bfloat4& _color ) const {
+	const IPixelAccessor&	accessor = GetPixelFormatAccessor();
+
 	const unsigned	pitch  = FreeImage_GetPitch( m_bitmap );
 	const U8*		bits = (BYTE*) FreeImage_GetBits( m_bitmap );
-	bits += pitch * _Y;
+	bits += pitch * _Y + accessor.Size() * _X;
 
-	const IPixelAccessor&	accessor = GetPixelFormatAccessor();
 	accessor.RGBA( bits, _color );
 }
 void	ImageFile::Set( U32 _X, U32 _Y, const bfloat4& _color ) {
+	const IPixelAccessor&	accessor = GetPixelFormatAccessor();
+
 	const unsigned	pitch  = FreeImage_GetPitch( m_bitmap );
 	U8*		bits = (BYTE*) FreeImage_GetBits( m_bitmap );
-	bits += pitch * _Y;
+	bits += pitch * _Y + accessor.Size() * _X;
 
-	const IPixelAccessor&	accessor = GetPixelFormatAccessor();
 	accessor.Write( bits, _color );
 }
 
