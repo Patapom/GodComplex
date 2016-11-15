@@ -66,6 +66,10 @@ namespace ImageUtilityLib {
 
 		#pragma endregion
 
+
+static ImageFile*	ms_DEBUG;
+
+
 	public:
 
 		#pragma region METHODS

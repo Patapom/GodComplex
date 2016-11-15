@@ -9,7 +9,7 @@ cli::array< ImageFile^ >^	WrapNativeImages( U32 _imagesCount, ImageUtilityLib::I
 	// Wrap our managed version of ImageFiles around returned images
 	cli::array< ImageFile^ >^	result = gcnew cli::array< ImageFile^ >( _imagesCount );
 	for ( U32 imageIndex=0; imageIndex < _imagesCount; imageIndex++ ) {
-		result[imageIndex] = gcnew ImageFile( _images[imageIndex] );
+		result[imageIndex] = gcnew ImageFile( _images[imageIndex], true );
 	}
 
 	if ( _deleteNativeImages )
@@ -20,6 +20,9 @@ cli::array< ImageFile^ >^	WrapNativeImages( U32 _imagesCount, ImageUtilityLib::I
 
 // Creates a bitmap from a System::Drawing.Bitmap and a color profile
 ImageFile::ImageFile( System::Drawing::Bitmap^ _bitmap, ImageUtility::ColorProfile^ _colorProfile ) {
+	m_ownedObject = true;
+	m_nativeObject = new ImageUtilityLib::ImageFile();
+
 	// Load the bitmap's content
 	int	width, height;
 	cli::array< Byte >^	bitmapContent = LoadBitmap( _bitmap, width, height );
@@ -41,7 +44,9 @@ ImageFile::ImageFile( System::Drawing::Bitmap^ _bitmap, ImageUtility::ColorProfi
 }
 ImageFile::~ImageFile() {
 	Exit();
-	SAFE_DELETE( m_nativeObject );
+	if ( m_ownedObject ) {
+		SAFE_DELETE( m_nativeObject );
+	}
 }
 
 void	ImageFile::Init( U32 _width, U32 _height, PIXEL_FORMAT _format, ImageUtility::ColorProfile^ _colorProfile ) {

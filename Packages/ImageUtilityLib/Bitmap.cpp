@@ -4,6 +4,8 @@
 using namespace ImageUtilityLib;
 using namespace BaseLib;
 
+ImageFile*	Bitmap::ms_DEBUG = new ImageFile( 4, 4, ImageFile::PIXEL_FORMAT::R8, ColorProfile(ColorProfile::STANDARD_PROFILE::sRGB) );
+
 void	Bitmap::Init( int _width, int _height ) {
 	Exit();
 
@@ -150,9 +152,10 @@ void	Bitmap::LDR2HDR( U32 _imagesCount, const ImageFile** _images, const float* 
 	// 1] Recompose HDR image into the XYZ buffer (still RGB but it will be converted into XYZ at the end)
 	bfloat3*	sumWeights = new bfloat3[W*H];
 	memset( sumWeights, 0, W*H*sizeof(bfloat3) );
+	bfloat4*	scanline = new bfloat4[W];
 
 	U32			Zr, Zg, Zb;
-	bfloat4		temp, weight, response;
+	bfloat4		weight, response;
 	bfloat4*	targetHDR = nullptr;
 	bfloat3*	targetWeights = nullptr;
 
@@ -164,13 +167,14 @@ void	Bitmap::LDR2HDR( U32 _imagesCount, const ImageFile** _images, const float* 
 		targetHDR = m_XYZ;
 		targetWeights = sumWeights;
 		for ( U32 Y=0; Y < H; Y++ ) {
-			for ( U32 X=0; X < W; X++, targetHDR++, targetWeights++ ) {
-				image.Get( X, Y, temp );
+			image.ReadScanline( Y, scanline );
+			bfloat4*	scanlinePtr = scanline;
+			for ( U32 X=0; X < W; X++, scanlinePtr++, targetHDR++, targetWeights++ ) {
 
 				// Retrieve LDR values for RGB
-				Zr = CLAMP( U32( (responseCurveSize-1) * temp.x ), 0U, responseCurveSize-1 );
-				Zg = CLAMP( U32( (responseCurveSize-1) * temp.y ), 0U, responseCurveSize-1 );
-				Zb = CLAMP( U32( (responseCurveSize-1) * temp.z ), 0U, responseCurveSize-1 );
+				Zr = CLAMP( U32( (responseCurveSize-1) * scanlinePtr->x ), 0U, responseCurveSize-1 );
+				Zg = CLAMP( U32( (responseCurveSize-1) * scanlinePtr->y ), 0U, responseCurveSize-1 );
+				Zb = CLAMP( U32( (responseCurveSize-1) * scanlinePtr->z ), 0U, responseCurveSize-1 );
 
 				// Compute weights
 				weight.x = ComputeWeight( Zr, responseCurveSize );
@@ -199,7 +203,7 @@ void	Bitmap::LDR2HDR( U32 _imagesCount, const ImageFile** _images, const float* 
 	for ( U32 Y=0; Y < H; Y++ ) {
 		for ( U32 X=0; X < W; X++, targetHDR++, targetWeights++ ) {
 			// Retrieve log2(E)
-			temp = *targetHDR;
+			bfloat4	temp = *targetHDR;
 			temp.x /= targetWeights->x;
 			temp.y /= targetWeights->y;
 			temp.z /= targetWeights->z;
@@ -211,6 +215,7 @@ void	Bitmap::LDR2HDR( U32 _imagesCount, const ImageFile** _images, const float* 
 		}
 	}
 
+	delete[] scanline;
 	delete[] sumWeights;
 
 	//////////////////////////////////////////////////////////////////////////
@@ -396,9 +401,114 @@ imageEV = float(1+imageIndex);
 #if 1
 float*	Abackup = new float[equationsCount*unknownsCount];
 memcpy_s( Abackup, equationsCount*unknownsCount*sizeof(float), Aterms, equationsCount*unknownsCount*sizeof(float) );
+
+// Fill up the debug bitmap with the matrix's coefficients
+// ms_DEBUG->Init( unknownsCount, equationsCount, ImageFile::PIXEL_FORMAT::R16, ColorProfile( ColorProfile::STANDARD_PROFILE::sRGB ) );
+// for ( U32 i=0; i < equationsCount; i++ ) {
+// 	for ( U32 j=0; j < unknownsCount; j++ ) {
+// 		float	value = 0.0078125f * A[i][j];
+// 		ms_DEBUG->Set( j, i, bfloat4( value, value, value, 1.0f ) );
+// 	}
+// }
+
 #endif
 
 		svdcmp( equationsCount, unknownsCount, A, w, V );
+
+
+#if 1
+// Check U and V are orthonormal
+float	minDot = FLT_MAX;
+float	maxDot = -FLT_MAX;
+float	avgDot = 0.0f;
+float	sameColumn_minDot = FLT_MAX;
+float	sameColumn_maxDot = -FLT_MAX;
+float	sameColumn_avgDot = 0.0f;
+// Check U
+for ( U32 col0=0; col0 < unknownsCount-1; col0++ ) {
+	for ( U32 col1=col0+1; col1 < unknownsCount; col1++ ) {
+		float	dot = 0.0f;
+		for ( U32 i=0; i < equationsCount; i++ ) {
+			const float	c0 = A[i][col0];
+			const float	c1 = A[i][col1];
+			dot += c0*c1;
+		}
+		minDot = MIN( minDot, dot );
+		maxDot = MAX( maxDot, dot );
+		avgDot += dot;
+	}
+
+	// Check column norm
+	float	dot = 0.0f;
+	for ( U32 i=0; i < equationsCount; i++ ) {
+		const float	c0 = A[i][col0];
+		dot += c0*c0;
+	}
+	sameColumn_minDot = MIN( sameColumn_minDot, dot );
+	sameColumn_maxDot = MAX( sameColumn_maxDot, dot );
+	sameColumn_avgDot += dot;
+}
+avgDot /= unknownsCount-1;
+sameColumn_avgDot /= unknownsCount;
+
+// Check V
+minDot = FLT_MAX;
+maxDot = -FLT_MAX;
+avgDot = 0.0f;
+sameColumn_minDot = FLT_MAX;
+sameColumn_maxDot = -FLT_MAX;
+sameColumn_avgDot = 0.0f;
+for ( U32 col0=0; col0 < unknownsCount-1; col0++ ) {
+	for ( U32 col1=col0+1; col1 < unknownsCount; col1++ ) {
+		float	dot = 0.0f;
+		for ( U32 i=0; i < unknownsCount; i++ ) {
+			const float	c0 = V[i][col0];
+			const float	c1 = V[i][col1];
+			dot += c0*c1;
+		}
+		minDot = MIN( minDot, dot );
+		maxDot = MAX( maxDot, dot );
+		avgDot += dot;
+	}
+
+	// Check column norm
+	float	dot = 0.0f;
+	for ( U32 i=0; i < unknownsCount; i++ ) {
+		const float	c0 = V[i][col0];
+		dot += c0*c0;
+	}
+	sameColumn_minDot = MIN( sameColumn_minDot, dot );
+	sameColumn_maxDot = MAX( sameColumn_maxDot, dot );
+	sameColumn_avgDot += dot;
+}
+avgDot /= unknownsCount-1;
+sameColumn_avgDot /= unknownsCount;
+#endif
+
+// Fill up the debug bitmap with the matrix's coefficients
+// ms_DEBUG->Init( unknownsCount, equationsCount, ImageFile::PIXEL_FORMAT::R16, ColorProfile( ColorProfile::STANDARD_PROFILE::sRGB ) );
+// for ( U32 i=0; i < equationsCount; i++ ) {
+// 	for ( U32 j=0; j < unknownsCount; j++ ) {
+// 		float	value = 1000.0f * 0.0078125f * A[i][j];
+// 		ms_DEBUG->Set( j, i, bfloat4( value, value, value, 1.0f ) );
+// 	}
+// }
+// ms_DEBUG->Init( unknownsCount, unknownsCount, ImageFile::PIXEL_FORMAT::R16, ColorProfile( ColorProfile::STANDARD_PROFILE::sRGB ) );
+// for ( U32 i=0; i < unknownsCount; i++ ) {
+// 	for ( U32 j=0; j < unknownsCount; j++ ) {
+// 		float	value = 1000.0f * 0.0078125f * V[i][j];
+// 		ms_DEBUG->Set( j, i, bfloat4( value, value, value, 1.0f ) );
+// 	}
+// }
+ms_DEBUG->Init( unknownsCount, unknownsCount, ImageFile::PIXEL_FORMAT::R16, ColorProfile( ColorProfile::STANDARD_PROFILE::sRGB ) );
+for ( U32 i=0; i < unknownsCount; i++ ) {
+	for ( U32 j=0; j < unknownsCount; j++ ) {
+		float	value = 0.01f * fabs(w[i]);
+		ms_DEBUG->Set( j, i, bfloat4( value, value, value, 1.0f ) );
+	}
+}
+throw "PIPO!";
+
 
 #if 1
 // Recompose A from U, w and V
@@ -448,9 +558,9 @@ delete[] Abackup;
 				r += Uterm * bterm;
 			}
 
-			// Mulitply by 1/w
+			// Multiply by 1/w
 			const float	wterm = w[rowIndex];
-			float		recW = fabs( wterm ) > 1e-6f ? 1.0f / recW : 0.0f;	// We shouldn't ever have 0 values because of the overdetermined system of equations but let's be careful anyway!
+			float		recW = fabs( wterm ) > 1e-6f ? 1.0f / wterm : 0.0f;	// We shouldn't ever have 0 values because of the overdetermined system of equations but let's be careful anyway!
 			tempX[rowIndex] = r * recW;
 		}
 
@@ -509,11 +619,9 @@ static int iminarg1,iminarg2;
 //	The matrix V (not the transpose V^T) is output as v[1..n][1..n].
 //
 void svdcmp( int m, int n, float** a, float w[], float** v ) {
-//	bool	flag;
-//	int		flag,jj,nm;
-//	float	c,f,h,s,x,y,z;
-
 	float*	residualValues = new float[n];
+	memset( residualValues, 0, n*sizeof(float) );
+
  	float	g = 0.0f;
  	float	scale = 0.0f;
  	float	anorm = 0.0f;
@@ -556,8 +664,8 @@ void svdcmp( int m, int n, float** a, float w[], float** v ) {
 
 		g = 0.0f;
 		s = 0.0f;
-		scale = 0.0f;
 		if ( i < m && l < n ) {
+			scale = 0.0f;
 			for ( int k=l; k < n; k++ )
 				scale += fabs( a[i][k] );
 
@@ -570,7 +678,7 @@ void svdcmp( int m, int n, float** a, float w[], float** v ) {
 				g = -SIGN( sqrt(s), f );
 				float	h = f * g - s;
 				a[i][l] = f - g;
-				for ( int k=l; k < n; k++)
+				for ( int k=l; k < n; k++ )
 					residualValues[k] = a[i][k] / h;
 
 				for ( int j=l; j < m; j++ ) {
@@ -614,46 +722,48 @@ void svdcmp( int m, int n, float** a, float w[], float** v ) {
 	}
 
 	// Accumulation of left-hand transformations
-	for ( int i=IMIN(m,n)-1; i >= 0; i--) {
+	for ( int i=IMIN(m,n)-1; i >= 0; i-- ) {
 		int	l = i+1;
 		g = w[i];
 		for ( int j=l; j < n; j++ )
 			a[i][j] = 0.0f;
 		if ( g != 0.0f ) {
 			g = 1.0f / g;
-			for ( int j=l; j < n; j++) {
+			for ( int j=l; j < n; j++ ) {
 				float	s = 0.0f;
 				for ( int k=l; k < m; k++ )
 					s += a[k][i] * a[k][j];
 
-				float	f = ( s / a[i][i]) * g;
+				float	f = (s / a[i][i]) * g;
 				for ( int k=i; k < m; k++ )
 					a[k][j] += f * a[k][i];
 			}
-			for ( int j=i; j < m; j++ )
-				a[j][i] *= g;
-		} else {
-			for ( int j=i; j < m; j++ )
-				a[j][i] = 0.0f;
 		}
+		for ( int j=i; j < m; j++ )
+			a[j][i] *= g;
+
 		++a[i][i];
 	}
 
 	// Diagonalization of the bidiagonal form: Loop over singular values, and over allowed iterations
+//	const int	MAX_ITERATIONS = 30;
+	const int	MAX_ITERATIONS = 1000;
+
 	for ( int k=n-1; k >= 0; k-- ) {
 		int	iterationsCount = 1;
-		for ( ;iterationsCount <= 30; iterationsCount++ ) {
+		for ( ; iterationsCount <= MAX_ITERATIONS; iterationsCount++ ) {
 			int	nm;
 			// Test for splitting
 			bool	flag = true;
 			int		l = k;
-			for ( ; l >= 0; l--) {
+			for ( ; l >= 0; l-- ) {
 				nm = l-1;
 				// Note that rv1[0] is always zero
 				if ( float( fabs(residualValues[l]) + anorm ) == anorm ) {
 					flag = false;
 					break;
 				}
+				ASSERT( nm >= 0, "nm in negative range!" );
 				if ( float( fabs(w[nm]) + anorm ) == anorm )
 					break;
 			}
@@ -663,7 +773,7 @@ void svdcmp( int m, int n, float** a, float w[], float** v ) {
 				float	s = 1.0f;
 				for ( int i=l; i < k; i++ ) {
 					float	f = s * residualValues[i];
-					residualValues[i] = c*residualValues[i];
+					residualValues[i] = c * residualValues[i];
 					if ( float( fabs(f) + anorm ) == anorm )
 						break;
 
@@ -692,10 +802,12 @@ void svdcmp( int m, int n, float** a, float w[], float** v ) {
 				}
 				break;
 			}
-			if ( iterationsCount == 30 )
-				throw "no convergence in 30 svdcmp iterations";
+			if ( iterationsCount >= MAX_ITERATIONS )
+				throw "no convergence in svdcmp iterations";
 
 			nm = k-1;
+			ASSERT( nm >= 0, "nm in negative range!" );
+
 			float	x = w[l];
 			float	y = w[nm];
 			float	g = residualValues[nm];
@@ -704,6 +816,7 @@ void svdcmp( int m, int n, float** a, float w[], float** v ) {
 			g = pythag( f, 1.0f );
 			f = ((x-z)*(x+z)+h*((y/(f+SIGN(g,f)))-h))/x;
 
+			// Next QR transformation
 			float	c = 1.0f;
 			float	s = 1.0f;
 			for ( int j=l; j < nm; j++ ) {
@@ -716,11 +829,11 @@ void svdcmp( int m, int n, float** a, float w[], float** v ) {
 				residualValues[j] = z;
 				c = f/z;
 				s = h/z;
-				f = x*c+g*s;
+				f = x*c+g*s;	// Rotation with sine/cosine?
 				g = g*c-x*s;
 				h = y*s;
 				y *= c;
-				for ( int jj=0; jj < n; jj++) {
+				for ( int jj=0; jj < n; jj++ ) {
 					x = v[jj][j];
 					z = v[jj][i];
 					v[jj][j] = x*c + z*s;
@@ -745,8 +858,9 @@ void svdcmp( int m, int n, float** a, float w[], float** v ) {
 			residualValues[l] = 0.0f;
 			residualValues[k] = f;
 			w[k] = x;
-		}
-	}
+		}	// for ( ; iterationsCount <= 30; iterationsCount++ ) 
+	}	// for ( int k=n-1; k >= 0; k-- ) 
+
 	delete[] residualValues;
 }
 

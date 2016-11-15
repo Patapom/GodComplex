@@ -98,6 +98,18 @@ void	ImageFile::Set( U32 _X, U32 _Y, const bfloat4& _color ) {
 
 	accessor.Write( bits, _color );
 }
+void	ImageFile::Add( U32 _X, U32 _Y, const bfloat4& _color ) {
+	const IPixelAccessor&	accessor = GetPixelFormatAccessor();
+
+	const unsigned	pitch  = FreeImage_GetPitch( m_bitmap );
+	U8*		bits = (BYTE*) FreeImage_GetBits( m_bitmap );
+	bits += pitch * _Y + accessor.Size() * _X;
+
+	bfloat4	temp;
+	accessor.RGBA( bits, temp );
+	temp += _color;
+	accessor.Write( bits, temp );
+}
 
 
 ImageFile&	ImageFile::operator=( const ImageFile& _other ) {

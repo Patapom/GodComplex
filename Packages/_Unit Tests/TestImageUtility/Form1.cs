@@ -24,9 +24,9 @@ namespace ImageUtility.UnitTests
 		protected override void OnLoad( EventArgs e ) {
 			base.OnLoad( e );
 
-			TestBuildImage();
+//			TestBuildImage();
 //			TestLoadImage();
-//			TestConvertLDR2HDR();
+			TestConvertLDR2HDR();
 		}
 
 		protected void TestBuildImage() {
@@ -142,7 +142,14 @@ namespace ImageUtility.UnitTests
 			};
 
 			ImageUtility.Bitmap	HDRImage = new ImageUtility.Bitmap();
-			HDRImage.LDR2HDR( LDRImages.ToArray(), shutterSpeeds.ToArray(), parms );
+			try {
+				HDRImage.LDR2HDR( LDRImages.ToArray(), shutterSpeeds.ToArray(), parms );
+			} catch ( Exception _e ) {
+				MessageBox.Show( "Error: " + _e.Message );
+			}
+
+// Show debug image
+panel1.Bitmap = Bitmap.DEBUG.AsBitmap;
 		}
 
 		protected void TestLoadImage() {

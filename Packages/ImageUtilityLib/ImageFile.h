@@ -277,6 +277,7 @@ namespace ImageUtilityLib {
 		// Generic color getter/setter
 		void				Get( U32 _X, U32 _Y, bfloat4& _color ) const;
 		void				Set( U32 _X, U32 _Y, const bfloat4& _color );
+		void				Add( U32 _X, U32 _Y, const bfloat4& _color );
 
 		#pragma endregion
 

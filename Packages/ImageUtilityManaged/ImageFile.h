@@ -140,10 +140,12 @@ namespace ImageUtility {
 		#pragma endregion
 
 	internal:
+		bool							m_ownedObject;
 		ImageUtilityLib::ImageFile*		m_nativeObject;
 
 		// Special wrapper constructor
-		ImageFile( ImageUtilityLib::ImageFile& _nativeObject ) {
+		ImageFile( ImageUtilityLib::ImageFile& _nativeObject, bool _deleteOnDesctruction ) {
+			m_ownedObject = _deleteOnDesctruction;
 			m_nativeObject = &_nativeObject;
 		}
 
@@ -226,13 +228,7 @@ namespace ImageUtility {
 			}
 		}
 		void		Add( UInt32 _X, UInt32 _Y, SharpMath::float4^ value ) {
-			bfloat4	color;
-			m_nativeObject->Get( _X, _Y, color );
-			color.x += value->x;
-			color.y += value->y;
-			color.z += value->z;
-			color.w += value->w;
-			m_nativeObject->Set( _X, _Y, color );
+			m_nativeObject->Add( _X, _Y, bfloat4( value->x, value->y, value->z, value->w ) );
 		}
 
 		#pragma endregion
@@ -240,25 +236,31 @@ namespace ImageUtility {
 	public:
 
 		ImageFile() {
+			m_ownedObject = true;
 			m_nativeObject = new ImageUtilityLib::ImageFile();
 		}
 		ImageFile( System::IO::FileInfo^ _fileName ) {
+			m_ownedObject = true;
 			m_nativeObject = new ImageUtilityLib::ImageFile();
 			Load( _fileName );
 		}
 		ImageFile( System::IO::FileInfo^ _fileName, FILE_FORMAT _format ) {
+			m_ownedObject = true;
 			m_nativeObject = new ImageUtilityLib::ImageFile();
 			Load( _fileName, _format );
 		}
 		ImageFile( NativeByteArray^ _fileContent, FILE_FORMAT _format ) {
+			m_ownedObject = true;
 			m_nativeObject = new ImageUtilityLib::ImageFile();
 			Load( _fileContent, _format );
 		}
 		ImageFile( U32 _width, U32 _height, PIXEL_FORMAT _format, ImageUtility::ColorProfile^ _colorProfile ) {
+			m_ownedObject = true;
 			m_nativeObject = new ImageUtilityLib::ImageFile();
 			Init( _width, _height, _format, _colorProfile );
 		}
 		ImageFile( ImageFile^ _other ) {
+			m_ownedObject = true;
 			m_nativeObject = new ImageUtilityLib::ImageFile( *_other->m_nativeObject );
 		}
 

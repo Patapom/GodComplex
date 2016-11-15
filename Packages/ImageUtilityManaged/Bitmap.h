@@ -87,6 +87,10 @@ namespace ImageUtility {
 			}
 		}
 
+static property ImageFile^	DEBUG {
+	ImageFile^	get() { return gcnew ImageFile( *ImageUtilityLib::Bitmap::ms_DEBUG, false ); }
+}
+
 		#pragma endregion
 
 	public:
