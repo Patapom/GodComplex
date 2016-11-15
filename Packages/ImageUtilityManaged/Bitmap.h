@@ -130,15 +130,15 @@ static property ImageFile^	DEBUG {
 			m_nativeObject->FromImageFile( *_sourceFile->m_nativeObject, _profileOverride != nullptr ? _profileOverride->m_nativeObject : nullptr, _unPremultiplyAlpha );
 		}
 
-		// Builds an image file from the bitmap
-		void			ToImageFile( ImageFile^ _targetFile, ImageFile::PIXEL_FORMAT _targetFormat ) {
-			ToImageFile( _targetFile, _targetFormat, nullptr, false );
+		// Builds an RGBA32F image file from the bitmap that you can later tone map
+		void			ToImageFile( ImageFile^ _targetFile ) {
+			ToImageFile( _targetFile, nullptr, false );
 		}
-		void			ToImageFile( ImageFile^ _targetFile, ImageFile::PIXEL_FORMAT _targetFormat, ColorProfile^ _profileOverride ) {
-			ToImageFile( _targetFile, _targetFormat, nullptr, false );
+		void			ToImageFile( ImageFile^ _targetFile, ColorProfile^ _profileOverride ) {
+			ToImageFile( _targetFile, _profileOverride, false );
 		}
-		void			ToImageFile( ImageFile^ _targetFile, ImageFile::PIXEL_FORMAT _targetFormat, ColorProfile^ _profileOverride, bool _premultiplyAlpha ) {
-			m_nativeObject->ToImageFile( *_targetFile->m_nativeObject, ImageUtilityLib::ImageFile::PIXEL_FORMAT( _targetFormat ), _profileOverride != nullptr ? _profileOverride->m_nativeObject : nullptr, _premultiplyAlpha );
+		void			ToImageFile( ImageFile^ _targetFile, ColorProfile^ _profileOverride, bool _premultiplyAlpha ) {
+			m_nativeObject->ToImageFile( *_targetFile->m_nativeObject, _profileOverride != nullptr ? _profileOverride->m_nativeObject : nullptr, _premultiplyAlpha );
 		}
 
 		/// <summary>

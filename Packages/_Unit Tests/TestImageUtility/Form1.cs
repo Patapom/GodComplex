@@ -143,13 +143,49 @@ namespace ImageUtility.UnitTests
 
 			ImageUtility.Bitmap	HDRImage = new ImageUtility.Bitmap();
 			try {
-				HDRImage.LDR2HDR( LDRImages.ToArray(), shutterSpeeds.ToArray(), parms );
+//				HDRImage.LDR2HDR( LDRImages.ToArray(), shutterSpeeds.ToArray(), parms );
+
+				List< float3 >	responseCurve = new List< float3 >();
+				Bitmap.ComputeCameraResponseCurve( LDRImages.ToArray(), shutterSpeeds.ToArray(), parms, responseCurve );
+
+				// Render the response curve as a bitmap
+				ImageFile	tempCurveBitmap = new ImageFile( 256, 4, ImageFile.PIXEL_FORMAT.RGB8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
+				float4		tempValue = new float4();
+				for ( int i=0; i < 256; i++ ) {
+					tempValue.Set( responseCurve[i], 1.0f );
+					tempCurveBitmap[(uint)i,0] = tempValue;
+					tempCurveBitmap[(uint)i,1] = tempValue;
+					tempCurveBitmap[(uint)i,2] = tempValue;
+					tempCurveBitmap[(uint)i,3] = tempValue;
+				}
+				panel1.Bitmap = tempCurveBitmap.AsBitmap;
+
+				// Recompose the HDR image
+				HDRImage.LDR2HDR( LDRImages.ToArray(), shutterSpeeds.ToArray(), responseCurve, 1.0f );
+
+				// Display as a tone-mapped bitmap
+				ImageFile	tempHDR = new ImageFile();
+				HDRImage.ToImageFile( tempHDR, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
+
+				ImageFile	tempToneMappedHDR = new ImageFile();
+				tempToneMappedHDR.ToneMapFrom( tempHDR,( float3 _HDRColor, ref float3 _LDRColor ) => {
+					// Do nothing (linear space to gamma space without care!)
+//					_LDRColor = _HDRColor;
+
+					// Just do gamma un-correction, don't care about actual HDR range...
+					_LDRColor.x = (float) Math.Pow( Math.Max( 0.0f, _HDRColor.x ), 1.0f / 2.2f );	// Here we need to clamp negative values that we sometimes get in EXR format
+					_LDRColor.y = (float) Math.Pow( Math.Max( 0.0f, _HDRColor.y ), 1.0f / 2.2f );	//  (must be coming from the log encoding I suppose)
+					_LDRColor.z = (float) Math.Pow( Math.Max( 0.0f, _HDRColor.z ), 1.0f / 2.2f );
+				} );
+
+				panel1.Bitmap = tempToneMappedHDR.AsBitmap;
+
 			} catch ( Exception _e ) {
 				MessageBox.Show( "Error: " + _e.Message );
-			}
 
 // Show debug image
 panel1.Bitmap = Bitmap.DEBUG.AsBitmap;
+			}
 		}
 
 		protected void TestLoadImage() {

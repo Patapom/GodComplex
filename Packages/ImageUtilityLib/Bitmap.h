@@ -101,8 +101,8 @@ static ImageFile*	ms_DEBUG;
 		// Initializes the bitmap from an image file
 		void			FromImageFile( const ImageFile& _sourceFile, ColorProfile* _profileOverride=nullptr, bool _unPremultiplyAlpha=false );
 
-		// Builds an image file from the bitmap
-		void			ToImageFile( ImageFile& _targetFile, ImageFile::PIXEL_FORMAT _targetFormat, ColorProfile* _profileOverride=nullptr, bool _premultiplyAlpha=false ) const;
+		// Builds an RGBA32F image file from the bitmap that you can later tone map
+		void			ToImageFile( ImageFile& _targetFile, ColorProfile* _profileOverride=nullptr, bool _premultiplyAlpha=false ) const;
 
 		void			Exit();
 
