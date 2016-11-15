@@ -57,7 +57,7 @@
 			this.Controls.Add(this.panel1);
 			this.Name = "TestForm";
 			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-			this.Text = "Image Utility Lib Unit Test";
+			this.Text = "ImageUtilityLib - Unit Test";
 			this.ResumeLayout(false);
 			this.PerformLayout();
 

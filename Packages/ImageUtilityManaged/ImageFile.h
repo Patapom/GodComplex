@@ -219,11 +219,20 @@ namespace ImageUtility {
 			SharpMath::float4^		get( UInt32 _X, UInt32 _Y ) {
 				bfloat4	color;
 				m_nativeObject->Get( _X, _Y, color );
-				return SharpMath::float4( color.x, color.y, color.z, color.w );
+				return gcnew SharpMath::float4( color.x, color.y, color.z, color.w );
 			}
 			void		set( UInt32 _X, UInt32 _Y, SharpMath::float4^ value ) {
 				m_nativeObject->Set( _X, _Y, bfloat4( value->x, value->y, value->z, value->w ) );
 			}
+		}
+		void		Add( UInt32 _X, UInt32 _Y, SharpMath::float4^ value ) {
+			bfloat4	color;
+			m_nativeObject->Get( _X, _Y, color );
+			color.x += value->x;
+			color.y += value->y;
+			color.z += value->z;
+			color.w += value->w;
+			m_nativeObject->Set( _X, _Y, color );
 		}
 
 		#pragma endregion

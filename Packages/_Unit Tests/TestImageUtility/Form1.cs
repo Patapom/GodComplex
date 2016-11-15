@@ -41,7 +41,7 @@ namespace ImageUtility.UnitTests
 						m_imageFile[X,Y] = new float4( R, G, 1.0f-0.5f*(R+G), 1 );
 					}
 				}
-			} else {
+			} else if ( false ) {
 				// Write scanline per scanline
 				float4[]	scanline = new float4[m_imageFile.Width];
 				for ( uint Y=0; Y < m_imageFile.Height; Y++ ) {
@@ -53,6 +53,62 @@ namespace ImageUtility.UnitTests
 
 					m_imageFile.WriteScanline( Y, scanline );
 				}
+			} else {
+				// Buddhabrot
+				uint	W = m_imageFile.Width;
+				uint	H = m_imageFile.Height;
+				float2	Z, Z0;
+				int		iterations = 50;
+				float4	inc = (1.0f / iterations) * float4.One;
+				float	zoom = 2.0f;
+				float	invZoom = 1.0f / zoom;
+
+#if DIRECT_WRITE	// Either directly accumulate to image
+				for ( uint Y=0; Y < H; Y++ ) {
+					Z0.y = zoom * (Y - 0.5f * H) / H;
+					for ( uint X=0; X < W; X++ ) {
+						Z0.x = zoom * (X - 0.5f * W) / H;
+						Z = Z0;
+						for ( int i=0; i < iterations; i++ ) {
+							Z.Set( Z.x*Z.x - Z.y*Z.y + Z0.x, 2.0f * Z.x * Z.y + Z0.y );
+
+							int	Nx = (int) (invZoom * Z.x * H + 0.5f * W);
+							int	Ny = (int) (invZoom * Z.y * H + 0.5f * H);
+							if ( Nx >= 0 && Nx < W && Ny >= 0 && Ny < H ) {
+// 								float4	tagada = (float4) m_imageFile[(uint)Nx,(uint)Ny];
+// 								tagada += inc;
+// 								m_imageFile[(uint)Nx,(uint)Ny] = tagada;
+ 								m_imageFile.Add( (uint)Nx, (uint)Ny, inc );
+							}
+						}
+					}
+				}
+#else				// Or accumulate to a temp array and write result (this is obviously faster!)
+				float[,]	accumulators = new float[W,H];
+				for ( uint Y=0; Y < H; Y++ ) {
+					Z0.y = zoom * (Y - 0.5f * H) / H;
+					for ( uint X=0; X < W; X++ ) {
+						Z0.x = zoom * (X - 0.5f * W) / H;
+						Z = Z0;
+						for ( int i=0; i < iterations; i++ ) {
+							Z.Set( Z.x*Z.x - Z.y*Z.y + Z0.x, 2.0f * Z.x * Z.y + Z0.y );
+
+							int	Nx = (int) (invZoom * Z.x * H + 0.5f * W);
+							int	Ny = (int) (invZoom * Z.y * H + 0.5f * H);
+							if ( Nx >= 0 && Nx < W && Ny >= 0 && Ny < H )
+								accumulators[Nx, Ny] += inc.x;
+						}
+					}
+				}
+				float4	temp = new float4();
+				for ( uint Y=0; Y < H; Y++ ) {
+					for ( uint X=0; X < W; X++ ) {
+						float	a = accumulators[X,Y];
+						temp.Set( a, a, a, 1 );
+						m_imageFile[X,Y] = temp;
+					}
+				}
+#endif
 			}
 
 
