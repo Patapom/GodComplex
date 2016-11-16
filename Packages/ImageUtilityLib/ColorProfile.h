@@ -61,10 +61,16 @@ namespace ImageUtilityLib {
 		static const bfloat2		ILLUMINANT_D65;	// Daylight, Noon, Overcast (sRGB reference illuminant)
 		static const bfloat2		ILLUMINANT_E;	// Reference
 
-		static const float		GAMMA_EXPONENT_STANDARD;// = 2.2f;
-		static const float		GAMMA_EXPONENT_sRGB;// = 2.4f;
-		static const float		GAMMA_EXPONENT_ADOBE;// = 2.19921875f;
-		static const float		GAMMA_EXPONENT_PRO_PHOTO;// = 1.8f;
+		static const float			GAMMA_EXPONENT_STANDARD;// = 2.2f;
+		static const float			GAMMA_EXPONENT_sRGB;// = 2.4f;
+		static const float			GAMMA_EXPONENT_ADOBE;// = 2.19921875f;
+		static const float			GAMMA_EXPONENT_PRO_PHOTO;// = 1.8f;
+
+		// Color Matching Functions
+		static const float			CMF_WAVELENGTH_START;	// 390 nm
+		static const float			CMF_WAVELENGTH_END;		// 830 nm
+		static const float			CMF_WAVELENGTH_STEP;	// 0.1 nm
+		static const float			CMF_WAVELENGTH_RCP_STEP;
 
 		#pragma endregion
 
@@ -94,7 +100,6 @@ namespace ImageUtilityLib {
 		/// <summary>
 		/// Describes the Red, Green, Blue and White Point chromaticities of a simple/standard color profile
 		/// </summary>
-//		[System.Diagnostics.DebuggerDisplay( "R=({R.x},{R.y}) G=({G.x},{G.y}) B=({B.x},{B.y}) W=({W.x},{W.y}) Prof={RecognizedChromaticity}" )]
 		struct	Chromaticities {
 			bfloat2		R, G, B, W;
 
@@ -288,10 +293,11 @@ namespace ImageUtilityLib {
 
 		IColorConverter*	m_internalConverter;
  
+		static double		ms_colorMatchingFunctions[];
+
 		#pragma endregion
 
 	public:
-
 		#pragma region PROPERTIES
 
 		/// <summary>
@@ -528,6 +534,32 @@ namespace ImageUtilityLib {
 				return c / 12.92f;
 			return powf( (c + 0.055f) / 1.055f, GAMMA_EXPONENT_sRGB );
 		}
+
+		// Computes the power of a black body radiator 
+		//	_blackBodyTemperature, the temperature of the black body (in Kelvin)
+		//	_wavelength, the wavelength at which to compute the power (in nm)
+		static double			ComputeBlackBodyRadiationPower( float _blackBodyTemperature, float _wavelength );
+
+		// Integrates the provided Spectral Power Distribution into CIE XYZ tristimulus value
+		//	_wavelengthsCount, the amount of wavelengths present in the distribution
+		//	_wavelengthStart, the start wavelength (in nm)
+		//	_wavelengthStep, the step in wavelength (in nm)
+		//	_spectralPowerDistibution, the intensities for each wavelength
+		//	_XYZ, the resulting CIE XYZ tristimulus value resulting from the integrtiton
+		static void				IntegrateSpectralPowerDistributionIntoXYZ( U32 _wavelengthsCount, float _wavelengthStart, float _wavelengthStep, double* _spectralPowerDistibution, bfloat3& _XYZ );
+
+		// Generates the Spectral Power Distribution for a black body radiator given its temperature
+		//	_blackBodyTemperature, the temperature of the black body (in Kelvin)
+		//	_wavelengthsCount, the amount of wavelengths to generate
+		//	_wavelengthStart, the start wavelength (in nm)
+		//	_wavelengthStep, the step in wavelength (in nm)
+		//	_spectralPowerDistibution, the intensities for each wavelength
+		static void				BuildSpectralPowerDistributionForBlackBody( float _blackBodyTemperature, U32 _wavelengthsCount, float _wavelengthStart, float _wavelengthStep, List< double >& _spectralPowerDistribution );
+
+		// Computes the xy chromaticities of the white point given by a black body at specified temperature
+		//	_blackBodyTemperature, the temperature of the black body (in Kelvin)
+		//	_whitePointChromaticities, the resulting white point chromaticities in xyY space (Y=1)
+		static void				ComputeWhitePointChromaticities( float _blackBodyTemperature, bfloat2& _whitePointChromaticities );
 
 		#pragma endregion
 

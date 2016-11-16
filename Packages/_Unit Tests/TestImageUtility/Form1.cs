@@ -26,7 +26,63 @@ namespace ImageUtility.UnitTests
 
 //			TestBuildImage();
 //			TestLoadImage();
-			TestConvertLDR2HDR();
+//			TestConvertLDR2HDR();
+			TestBlackBodyRadiation();
+		}
+
+		protected void	DrawPoint( int _X, int _Y, ref float4 _color ) {
+			uint	minX = (uint) Math.Max( 0, _X-3 );
+			uint	minY = (uint) Math.Max( 0, _Y-3 );
+			uint	maxX = (uint) Math.Min( m_imageFile.Width, _X + 4 );
+			uint	maxY = (uint) Math.Min( m_imageFile.Height, _Y + 4 );
+			for ( uint Y=minY; Y < maxY; Y++ )
+				for ( uint X=minX; X < maxX; X++ )
+					m_imageFile[X,Y] = _color;
+		}
+		protected void	TestBlackBodyRadiation() {
+			m_imageFile.Load( new System.IO.FileInfo( @"..\..\Images\In\xyGamut.png" ) );
+
+			float2	cornerZero = new float2( 114, 1336 );			// xy=(0.0, 0.0)
+			float2	cornerPoint8Point9 = new float2( 1257, 49 );	// xy=(0.8, 0.9)
+
+			ColorProfile	sRGB = new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB );
+
+
+			float2	xy = new float2();
+			float3	xyY = new float3();
+			float3	XYZ = new float3();
+
+float4	testRGB = new float4();
+float4	testXYZ = new float4();
+for ( int i=1; i <= 10; i++ ) {
+	float	f = i / 10.0f;
+	testRGB.Set( 1*f, 1*f, 1*f, 1.0f );
+	sRGB.RGB2XYZ( testRGB, ref testXYZ );
+
+XYZ.Set( testXYZ.x, testXYZ.y, testXYZ.z );
+ColorProfile.XYZ2xyY( XYZ, ref xyY );
+ColorProfile.xyY2XYZ( xyY, ref XYZ );
+testXYZ.Set( XYZ, 1.0f );
+
+	sRGB.XYZ2RGB( testXYZ, ref testRGB );
+}
+
+			float4	color = new float4( 1, 0, 0, 1 );
+			for ( int locusIndex=0; locusIndex < 20; locusIndex++ ) {
+				float	T = 1500.0f + (8000.0f - 1500.0f) * locusIndex / 20.0f;
+
+T = 6500.0f;
+
+				ColorProfile.ComputeWhitePointChromaticities( T, ref xy );
+
+ColorProfile.xyY2XYZ( new float3( xy, 1.0f ), ref XYZ );
+sRGB.XYZ2RGB( new float4( XYZ, 1.0f ), ref color );
+
+				float2	fPos = cornerZero + (cornerPoint8Point9 - cornerZero) * new float2( xy.x / 0.8f, xy.y / 0.9f );
+				DrawPoint( (int) fPos.x, (int) fPos.y, ref color );
+			}
+
+			panel1.Bitmap = m_imageFile.AsBitmap;
 		}
 
 		protected void TestBuildImage() {

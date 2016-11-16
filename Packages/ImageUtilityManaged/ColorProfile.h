@@ -228,11 +228,11 @@ namespace ImageUtility {
 		/// </summary>
 		/// <param name="_XYZ"></param>
 		/// <returns></returns>
-		void	XYZ2RGB( float4^ _XYZ, float4^ _RGB ) {
+		void	XYZ2RGB( float4^ _XYZ, float4% _RGB ) {
 			bfloat4	XYZ( _XYZ->x, _XYZ->y, _XYZ->z, _XYZ->w );
 			bfloat4	RGB;
 			m_nativeObject->XYZ2RGB( XYZ, RGB );
-			_RGB->Set( RGB.x, RGB.y, RGB.z, RGB.w );
+			_RGB.Set( RGB.x, RGB.y, RGB.z, RGB.w );
 		}
 
 		/// <summary>
@@ -240,11 +240,11 @@ namespace ImageUtility {
 		/// </summary>
 		/// <param name="_RGB"></param>
 		/// <returns></returns>
-		void	RGB2XYZ( float4^ _RGB, float4^ _XYZ ) {
+		void	RGB2XYZ( float4^ _RGB, float4% _XYZ ) {
 			bfloat4	RGB( _RGB->x, _RGB->y, _RGB->z, _RGB->w );
 			bfloat4	XYZ;
 			m_nativeObject->RGB2XYZ( RGB, XYZ );
-			_XYZ->Set( XYZ.x, XYZ.y, XYZ.z, XYZ.w );
+			_XYZ.Set( XYZ.x, XYZ.y, XYZ.z, XYZ.w );
 		}
 
 		/// <summary>
@@ -270,10 +270,10 @@ namespace ImageUtility {
 		/// </summary>
 		/// <param name="_XYZ"></param>
 		/// <returns></returns>
-		static void	XYZ2xyY( float3^ _XYZ, float3^ _xyY ) {
+		static void	XYZ2xyY( float3^ _XYZ, float3% _xyY ) {
 			bfloat3	result;
 			ImageUtilityLib::ColorProfile::XYZ2xyY( bfloat3( _XYZ->x, _XYZ->y, _XYZ->z ), result );
-			_xyY->Set( result.x, result.y, result.z );
+			_xyY.Set( result.x, result.y, result.z );
 		}
 
 		/// <summary>
@@ -281,10 +281,10 @@ namespace ImageUtility {
 		/// </summary>
 		/// <param name="_xyY"></param>
 		/// <returns></returns>
-		static void	xyY2XYZ( float3^ _xyY, float3^ _XYZ ) {
+		static void	xyY2XYZ( float3^ _xyY, float3% _XYZ ) {
 			bfloat3	result;
 			ImageUtilityLib::ColorProfile::xyY2XYZ( bfloat3( _xyY->x, _xyY->y, _xyY->z ), result );
-			_XYZ->Set( result.x, result.y, result.z );
+			_XYZ.Set( result.x, result.y, result.z );
 		}
 
 		/// <summary>
@@ -325,6 +325,38 @@ namespace ImageUtility {
 		/// <returns></returns>
 		inline static float		sRGB2Linear( float c ) {
 			return ImageUtilityLib::ColorProfile::sRGB2Linear( c );
+		}
+
+		// Computes the power of a black body radiator 
+		//	_blackBodyTemperature, the temperature of the black body (in Kelvin)
+		//	_wavelength, the wavelength at which to compute the power (in nm)
+		static double			ComputeBlackBodyRadiationPower( float _blackBodyTemperature, float _wavelength ) {
+			return ImageUtilityLib::ColorProfile::ComputeBlackBodyRadiationPower( _blackBodyTemperature, _wavelength );
+		}
+
+		// Integrates the provided Spectral Power Distribution into CIE XYZ tristimulus value
+		//	_wavelengthsCount, the amount of wavelengths present in the distribution
+		//	_wavelengthStart, the start wavelength (in nm)
+		//	_wavelengthStep, the step in wavelength (in nm)
+		//	_spectralPowerDistibution, the intensities for each wavelength
+		//	_XYZ, the resulting CIE XYZ tristimulus value resulting from the integrtiton
+		static void				IntegrateSpectralPowerDistributionIntoXYZ( float _wavelengthStart, float _wavelengthStep, cli::array< float >^ _spectralPowerDistibution, float3% _XYZ );
+
+		// Generates the Spectral Power Distribution for a black body radiator given its temperature
+		//	_blackBodyTemperature, the temperature of the black body (in Kelvin)
+		//	_wavelengthsCount, the amount of wavelengths to generate
+		//	_wavelengthStart, the start wavelength (in nm)
+		//	_wavelengthStep, the step in wavelength (in nm)
+		//	_spectralPowerDistibution, the intensities for each wavelength
+		static void				BuildSpectralPowerDistributionForBlackBody( float _blackBodyTemperature, UInt32 _wavelengthsCount, float _wavelengthStart, float _wavelengthStep, System::Collections::Generic::List< float >^ _spectralPowerDistribution );
+
+		// Computes the xy chromaticities of the white point given by a black body at specified temperature
+		//	_blackBodyTemperature, the temperature of the black body (in Kelvin)
+		//	_whitePointChromaticities, the resulting white point chromaticities in xyY space (Y=1)
+		static void				ComputeWhitePointChromaticities( float _blackBodyTemperature, float2% _whitePointChromaticities ) {
+			bfloat2	whitePointChromaticities;
+			ImageUtilityLib::ColorProfile::ComputeWhitePointChromaticities( _blackBodyTemperature, whitePointChromaticities );
+			_whitePointChromaticities.Set( whitePointChromaticities.x, whitePointChromaticities.y );
 		}
 
 		#pragma endregion

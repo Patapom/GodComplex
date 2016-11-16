@@ -14,6 +14,11 @@ const float		ColorProfile::GAMMA_EXPONENT_sRGB = 2.4f;
 const float		ColorProfile::GAMMA_EXPONENT_ADOBE = 2.19921875f;
 const float		ColorProfile::GAMMA_EXPONENT_PRO_PHOTO = 1.8f;
 
+const float		ColorProfile::CMF_WAVELENGTH_START = 390.0f;
+const float		ColorProfile::CMF_WAVELENGTH_END = 830.0f;
+const float		ColorProfile::CMF_WAVELENGTH_STEP = 0.1f;
+const float		ColorProfile::CMF_WAVELENGTH_RCP_STEP = 1.0f / CMF_WAVELENGTH_STEP;
+
 // Standard chromaticities
 const ColorProfile::Chromaticities	ColorProfile::Chromaticities::Empty;
 const ColorProfile::Chromaticities	ColorProfile::Chromaticities::sRGB			( bfloat2( 0.6400f, 0.3300f ), bfloat2( 0.3000f, 0.6000f ), bfloat2( 0.1500f, 0.0600f ), ILLUMINANT_D65 );
@@ -32,6 +37,140 @@ ColorProfile::ColorProfile( const ColorProfile& _other ) : m_internalConverter( 
 
 	// Rebuild internal converter and matrices
 	BuildTransformFromChroma( true );
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+// Spectral Power Conversions and Chromaticity Helpers
+
+// According to https://en.wikipedia.org/wiki/Black-body_radiation#Planck.27s_law_of_black-body_radiation
+// Planck's law states that[30]
+// 
+//	I(nu,T) = [(2.h.nu^3) / c²] * 1 / [e^(h.nu/(k.T)) - 1]
+//
+// Where:
+//	I(nu,T) is the power (the energy per unit time) radiated per unit area of emitting surface in the normal direction per unit solid angle per unit frequency by a black body at temperature T, also known as spectral radiance;
+//	h is the Planck constant;
+//	c is the speed of light in a vacuum;
+//	k is the Boltzmann constant;
+//	nu is the frequency of the electromagnetic radiation;
+//	T is the absolute temperature of the body.
+//
+double	ColorProfile::ComputeBlackBodyRadiationPower( float _blackBodyTemperature, float _wavelength ) {
+	const double	h = 6.62607004081e-34;	// Planck's constant (J.s)
+	const double	c = 299792458.0;		// Light speed (m/s)
+	const double	k = 1.3806485279e-23;	// Boltzmann constant (J/K)
+
+	double	nu = 1e9 * c / _wavelength;		// in 1/s
+	double	T = _blackBodyTemperature;		// in K
+	double	num = 2.0 * h * nu * nu * nu;					// in J/s²
+	double	den = c * c * (exp( (h * nu) / (k * T) ) - 1.0);// in m²/s²
+
+	double	I = num / den;					// in J/m²
+
+	const double	sigma = 5.67036713e-8;	// in W.m-2.K-4
+
+	return I;
+}
+
+void	ColorProfile::IntegrateSpectralPowerDistributionIntoXYZ( U32 _wavelengthsCount, float _wavelengthStart, float _wavelengthStep, double* _spectralPowerDistibution, bfloat3& _XYZ ) {
+	float		wavelengthStart = MAX( CMF_WAVELENGTH_START, _wavelengthStart );
+
+	float		wavelengthEnd = _wavelengthStart + _wavelengthsCount * _wavelengthStep;
+				wavelengthEnd = MIN( CMF_WAVELENGTH_END, wavelengthEnd );
+
+	U32			iStart = U32( floorf( (wavelengthStart - _wavelengthStart) / _wavelengthStep ) );
+	U32			iEnd = U32( floorf( (wavelengthEnd - _wavelengthStart) / _wavelengthStep ) );
+	U32			wavelengthsCount = iEnd - iStart;
+	float		wavelength = _wavelengthStart + iStart * _wavelengthStep;
+
+	double		X = 0.0;
+	double		Y = 0.0;
+	double		Z = 0.0;
+
+	const double*	SPD = _spectralPowerDistibution + iStart;
+
+	// Read first CMF & power values
+	U32		CMDindex = U32( floorf( CMF_WAVELENGTH_RCP_STEP * (wavelength - CMF_WAVELENGTH_START) ) );
+	double	x = ms_colorMatchingFunctions[3*CMDindex+0];
+	double	y = ms_colorMatchingFunctions[3*CMDindex+1];
+	double	z = ms_colorMatchingFunctions[3*CMDindex+2];
+	double	I = *SPD;
+	SPD++;
+
+	double	Dt = _wavelengthStep * 1e-9;	// Integration interval, in meters
+
+	for ( U32 i=iStart+1; i < iEnd; i++, SPD++ ) {
+		// Retrieve the CMD values for the current wavelength
+		wavelength = _wavelengthStart + i * _wavelengthStep;
+		CMDindex = U32( floorf( CMF_WAVELENGTH_RCP_STEP * (wavelength - CMF_WAVELENGTH_START) ) );
+		double	nextx = ms_colorMatchingFunctions[3*CMDindex+0];
+		double	nexty = ms_colorMatchingFunctions[3*CMDindex+1];
+		double	nextz = ms_colorMatchingFunctions[3*CMDindex+2];
+
+		// Read the spectral power intensity for the current wavelength
+		double	nextI = *SPD;
+
+		#if 0
+			// Perform simple square integration
+			X += Dt * I * x;
+			Y += Dt * I * y;
+			Z += Dt * I * z;
+		#elif 1
+			// Perform trapezoidal integration
+			double	v0x = I * x;
+			double	v0y = I * y;
+			double	v0z = I * z;
+			double	v1x = nextI * nextx;
+			double	v1y = nextI * nexty;
+			double	v1z = nextI * nextz;
+			X += Dt * 0.5f * (v0x + v1x);
+			Y += Dt * 0.5f * (v0y + v1y);
+			Z += Dt * 0.5f * (v0z + v1z);
+		#else
+			// Perform integration assuming linear interpolation of {x,y,z} and I across the interval
+			double	Dx = nextx - x;
+			double	Dy = nexty - y;
+			double	Dz = nextz - z;
+			double	DI = nextI - I;
+			X += Dt * (x * I + Dt * (0.5 * (x * DI + I * Dx) + Dt * (Dx * DI) / 3.0f));
+			Y += Dt * (y * I + Dt * (0.5 * (y * DI + I * Dy) + Dt * (Dy * DI) / 3.0f));
+			Z += Dt * (z * I + Dt * (0.5 * (z * DI + I * Dz) + Dt * (Dz * DI) / 3.0f));
+		#endif
+
+		// Scroll values
+		x = nextx;
+		y = nexty;
+		z = nextz;
+		I = nextI;
+	}
+
+	_XYZ.Set( float(X), float(Y), float(Z) );
+}
+
+void	ColorProfile::BuildSpectralPowerDistributionForBlackBody( float _blackBodyTemperature, U32 _wavelengthsCount, float _wavelengthStart, float _wavelengthStep, List< double >& _spectralPowerDistribution ) {
+	_spectralPowerDistribution.Resize( _wavelengthsCount );
+	float	wavelength = _wavelengthStart;
+	for ( U32 i=0; i < _wavelengthsCount; i++, wavelength += _wavelengthStep ) {
+		double	I = ComputeBlackBodyRadiationPower( _blackBodyTemperature, wavelength );
+		_spectralPowerDistribution.Append( I );
+	}
+}
+
+void	ColorProfile::ComputeWhitePointChromaticities( float _blackBodyTemperature, bfloat2& _whitePointChromaticities ) {
+	// 1] Build the SPD for the black body radiator
+	List< double >	SPD;
+	BuildSpectralPowerDistributionForBlackBody( _blackBodyTemperature, U32( CMF_WAVELENGTH_END - CMF_WAVELENGTH_START ) / 10, CMF_WAVELENGTH_START, 10.0f, SPD );
+
+	// 2] Integrate into XYZ
+	bfloat3	XYZ;
+	IntegrateSpectralPowerDistributionIntoXYZ( SPD.Count(), CMF_WAVELENGTH_START, 10.0f, SPD.Ptr(), XYZ );
+
+	// 3] Convert into xyY
+	float	rcpSum = XYZ.x + XYZ.y + XYZ.z;
+	rcpSum = rcpSum > 0.0f ? 1.0f / rcpSum : 0.0f;
+	_whitePointChromaticities.x = XYZ.x * rcpSum;
+	_whitePointChromaticities.y = XYZ.y * rcpSum;
 }
 
 

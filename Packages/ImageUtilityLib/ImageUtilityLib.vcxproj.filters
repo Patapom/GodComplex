@@ -22,6 +22,9 @@
     </ClCompile>
     <ClCompile Include="ImageFile.cpp" />
     <ClCompile Include="stdafx.cpp" />
+    <ClCompile Include="ColorMatchingFunctions.cpp">
+      <Filter>Structures</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Text Include="NoteAboutGammaCorrection.txt" />
