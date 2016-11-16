@@ -95,21 +95,21 @@ cli::array<float4>^	ColorProfile::RGB2XYZ( cli::array<float4>^ _RGB ) {
 	return XYZ;
 }
 
-void	ColorProfile::IntegrateSpectralPowerDistributionIntoXYZ( float _wavelengthStart, float _wavelengthStep, cli::array< float >^ _spectralPowerDistibution, float3% _XYZ ) {
-// 	bfloat3	XYZ;
-// 	pin_ptr<float>	SPD = &_spectralPowerDistibution[0];
-// 
-// 	ImageUtilityLib::ColorProfile::IntegrateSpectralPowerDistributionIntoXYZ( _spectralPowerDistibution->Length, _wavelengthStart, _wavelengthStep, SPD, XYZ );
-// 	_XYZ.x = XYZ.x;
-// 	_XYZ.y = XYZ.y;
-// 	_XYZ.z = XYZ.z;
+void	ColorProfile::IntegrateSpectralPowerDistributionIntoXYZ( float _wavelengthStart, float _wavelengthStep, cli::array< double >^ _spectralPowerDistibution, float3% _XYZ ) {
+	bfloat3	XYZ;
+	pin_ptr<double>	SPD = &_spectralPowerDistibution[0];
+
+	ImageUtilityLib::ColorProfile::IntegrateSpectralPowerDistributionIntoXYZ( _spectralPowerDistibution->Length, _wavelengthStart, _wavelengthStep, SPD, XYZ );
+	_XYZ.x = XYZ.x;
+	_XYZ.y = XYZ.y;
+	_XYZ.z = XYZ.z;
 }
-void	ColorProfile::BuildSpectralPowerDistributionForBlackBody( float _blackBodyTemperature, UInt32 _wavelengthsCount, float _wavelengthStart, float _wavelengthStep, System::Collections::Generic::List< float >^ _spectralPowerDistribution ) {
-// 	BaseLib::List< float >	SPD;
-// 	ImageUtilityLib::ColorProfile::BuildSpectralPowerDistributionForBlackBody( _blackBodyTemperature, _wavelengthsCount, _wavelengthStart, _wavelengthStep, SPD );
-// 
-// 	_spectralPowerDistribution->Clear();
-// 	for ( int i=0; i < SPD.Count(); i++ ) {
-// 		_spectralPowerDistribution->Add( SPD[i] );
-// 	}
+void	ColorProfile::BuildSpectralPowerDistributionForBlackBody( float _blackBodyTemperature, UInt32 _wavelengthsCount, float _wavelengthStart, float _wavelengthStep, System::Collections::Generic::List< double >^ _spectralPowerDistribution ) {
+	BaseLib::List< double >	SPD;
+	ImageUtilityLib::ColorProfile::BuildSpectralPowerDistributionForBlackBody( _blackBodyTemperature, _wavelengthsCount, _wavelengthStart, _wavelengthStep, SPD );
+
+	_spectralPowerDistribution->Clear();
+	for ( int i=0; i < SPD.Count(); i++ ) {
+		_spectralPowerDistribution->Add( SPD[i] );
+	}
 }

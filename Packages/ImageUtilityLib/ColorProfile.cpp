@@ -61,14 +61,12 @@ double	ColorProfile::ComputeBlackBodyRadiationPower( float _blackBodyTemperature
 	const double	c = 299792458.0;		// Light speed (m/s)
 	const double	k = 1.3806485279e-23;	// Boltzmann constant (J/K)
 
-	double	nu = 1e9 * c / _wavelength;		// in 1/s
+	double	lambda = 1e-9 * _wavelength;	// in m
 	double	T = _blackBodyTemperature;		// in K
-	double	num = 2.0 * h * nu * nu * nu;					// in J/s²
-	double	den = c * c * (exp( (h * nu) / (k * T) ) - 1.0);// in m²/s²
+	double	num = 2.0 * h * c * c;			// in J.m²/s
+	double	den = pow( lambda, 5.0 ) * (exp( (h * c) / (lambda * k * T) ) - 1.0);	// in m^5
 
-	double	I = num / den;					// in J/m²
-
-	const double	sigma = 5.67036713e-8;	// in W.m-2.K-4
+	double	I = num / den;					// in J/m^3/s/sr/lambda or W/m^3/sr/lambda
 
 	return I;
 }
@@ -82,7 +80,6 @@ void	ColorProfile::IntegrateSpectralPowerDistributionIntoXYZ( U32 _wavelengthsCo
 	U32			iStart = U32( floorf( (wavelengthStart - _wavelengthStart) / _wavelengthStep ) );
 	U32			iEnd = U32( floorf( (wavelengthEnd - _wavelengthStart) / _wavelengthStep ) );
 	U32			wavelengthsCount = iEnd - iStart;
-	float		wavelength = _wavelengthStart + iStart * _wavelengthStep;
 
 	double		X = 0.0;
 	double		Y = 0.0;
@@ -91,22 +88,25 @@ void	ColorProfile::IntegrateSpectralPowerDistributionIntoXYZ( U32 _wavelengthsCo
 	const double*	SPD = _spectralPowerDistibution + iStart;
 
 	// Read first CMF & power values
-	U32		CMDindex = U32( floorf( CMF_WAVELENGTH_RCP_STEP * (wavelength - CMF_WAVELENGTH_START) ) );
-	double	x = ms_colorMatchingFunctions[3*CMDindex+0];
-	double	y = ms_colorMatchingFunctions[3*CMDindex+1];
-	double	z = ms_colorMatchingFunctions[3*CMDindex+2];
+	float	wavelength = _wavelengthStart + iStart * _wavelengthStep;
+	U32		CMFindex = U32( floorf( CMF_WAVELENGTH_RCP_STEP * (wavelength - CMF_WAVELENGTH_START) ) );
+	double	x = ms_colorMatchingFunctions[3*CMFindex+0];
+	double	y = ms_colorMatchingFunctions[3*CMFindex+1];
+	double	z = ms_colorMatchingFunctions[3*CMFindex+2];
 	double	I = *SPD;
 	SPD++;
 
 	double	Dt = _wavelengthStep * 1e-9;	// Integration interval, in meters
 
 	for ( U32 i=iStart+1; i < iEnd; i++, SPD++ ) {
-		// Retrieve the CMD values for the current wavelength
+		// Recompute wavelength instead of adding the increment to avoid imprecision on the long run
 		wavelength = _wavelengthStart + i * _wavelengthStep;
-		CMDindex = U32( floorf( CMF_WAVELENGTH_RCP_STEP * (wavelength - CMF_WAVELENGTH_START) ) );
-		double	nextx = ms_colorMatchingFunctions[3*CMDindex+0];
-		double	nexty = ms_colorMatchingFunctions[3*CMDindex+1];
-		double	nextz = ms_colorMatchingFunctions[3*CMDindex+2];
+
+		// Retrieve the CMF values for the current wavelength
+		CMFindex = U32( floorf( CMF_WAVELENGTH_RCP_STEP * (wavelength - CMF_WAVELENGTH_START) ) );
+		double	nextx = ms_colorMatchingFunctions[3*CMFindex+0];
+		double	nexty = ms_colorMatchingFunctions[3*CMFindex+1];
+		double	nextz = ms_colorMatchingFunctions[3*CMFindex+2];
 
 		// Read the spectral power intensity for the current wavelength
 		double	nextI = *SPD;
@@ -118,15 +118,9 @@ void	ColorProfile::IntegrateSpectralPowerDistributionIntoXYZ( U32 _wavelengthsCo
 			Z += Dt * I * z;
 		#elif 1
 			// Perform trapezoidal integration
-			double	v0x = I * x;
-			double	v0y = I * y;
-			double	v0z = I * z;
-			double	v1x = nextI * nextx;
-			double	v1y = nextI * nexty;
-			double	v1z = nextI * nextz;
-			X += Dt * 0.5f * (v0x + v1x);
-			Y += Dt * 0.5f * (v0y + v1y);
-			Z += Dt * 0.5f * (v0z + v1z);
+			X += Dt * 0.5f * (I * x + nextI * nextx);
+			Y += Dt * 0.5f * (I * y + nextI * nexty);
+			Z += Dt * 0.5f * (I * z + nextI * nextz);
 		#else
 			// Perform integration assuming linear interpolation of {x,y,z} and I across the interval
 			double	Dx = nextx - x;
@@ -158,13 +152,13 @@ void	ColorProfile::BuildSpectralPowerDistributionForBlackBody( float _blackBodyT
 }
 
 void	ColorProfile::ComputeWhitePointChromaticities( float _blackBodyTemperature, bfloat2& _whitePointChromaticities ) {
-	// 1] Build the SPD for the black body radiator
+	// 1] Build the SPD for the black body radiator (use 1nm steps)
 	List< double >	SPD;
-	BuildSpectralPowerDistributionForBlackBody( _blackBodyTemperature, U32( CMF_WAVELENGTH_END - CMF_WAVELENGTH_START ) / 10, CMF_WAVELENGTH_START, 10.0f, SPD );
+	BuildSpectralPowerDistributionForBlackBody( _blackBodyTemperature, U32( CMF_WAVELENGTH_END - CMF_WAVELENGTH_START ), CMF_WAVELENGTH_START, 1.0f, SPD );
 
 	// 2] Integrate into XYZ
 	bfloat3	XYZ;
-	IntegrateSpectralPowerDistributionIntoXYZ( SPD.Count(), CMF_WAVELENGTH_START, 10.0f, SPD.Ptr(), XYZ );
+	IntegrateSpectralPowerDistributionIntoXYZ( SPD.Count(), CMF_WAVELENGTH_START, 1.0f, SPD.Ptr(), XYZ );
 
 	// 3] Convert into xyY
 	float	rcpSum = XYZ.x + XYZ.y + XYZ.z;

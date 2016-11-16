@@ -31,57 +31,88 @@ namespace ImageUtility.UnitTests
 		}
 
 		protected void	DrawPoint( int _X, int _Y, ref float4 _color ) {
-			uint	minX = (uint) Math.Max( 0, _X-3 );
-			uint	minY = (uint) Math.Max( 0, _Y-3 );
-			uint	maxX = (uint) Math.Min( m_imageFile.Width, _X + 4 );
-			uint	maxY = (uint) Math.Min( m_imageFile.Height, _Y + 4 );
+			uint	minX = (uint) Math.Max( 0, _X-6 );
+			uint	minY = (uint) Math.Max( 0, _Y-6 );
+			uint	maxX = (uint) Math.Min( m_imageFile.Width, _X + 7 );
+			uint	maxY = (uint) Math.Min( m_imageFile.Height, _Y + 7 );
 			for ( uint Y=minY; Y < maxY; Y++ )
 				for ( uint X=minX; X < maxX; X++ )
 					m_imageFile[X,Y] = _color;
 		}
 		protected void	TestBlackBodyRadiation() {
+			ColorProfile	sRGB = new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB );
+
+#if TEST_BLACK_BODY_LOCUS
+			// Load the color gamut and try and plot the locii of various white points
+			//
 			m_imageFile.Load( new System.IO.FileInfo( @"..\..\Images\In\xyGamut.png" ) );
 
 			float2	cornerZero = new float2( 114, 1336 );			// xy=(0.0, 0.0)
 			float2	cornerPoint8Point9 = new float2( 1257, 49 );	// xy=(0.8, 0.9)
 
-			ColorProfile	sRGB = new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB );
-
+// Check XYZ<->RGB and XYZ<->xyY converter code
+// 			float3	xyY = new float3();
+// 			float3	XYZ = new float3();
+// 
+// float4	testRGB = new float4();
+// float4	testXYZ = new float4();
+// for ( int i=1; i <= 10; i++ ) {
+// 	float	f = i / 10.0f;
+// 	testRGB.Set( 1*f, 1*f, 1*f, 1.0f );
+// 	sRGB.RGB2XYZ( testRGB, ref testXYZ );
+// 
+// XYZ.Set( testXYZ.x, testXYZ.y, testXYZ.z );
+// ColorProfile.XYZ2xyY( XYZ, ref xyY );
+// ColorProfile.xyY2XYZ( xyY, ref XYZ );
+// testXYZ.Set( XYZ, 1.0f );
+// 
+// 	sRGB.XYZ2RGB( testXYZ, ref testRGB );
+// }
 
 			float2	xy = new float2();
-			float3	xyY = new float3();
-			float3	XYZ = new float3();
-
-float4	testRGB = new float4();
-float4	testXYZ = new float4();
-for ( int i=1; i <= 10; i++ ) {
-	float	f = i / 10.0f;
-	testRGB.Set( 1*f, 1*f, 1*f, 1.0f );
-	sRGB.RGB2XYZ( testRGB, ref testXYZ );
-
-XYZ.Set( testXYZ.x, testXYZ.y, testXYZ.z );
-ColorProfile.XYZ2xyY( XYZ, ref xyY );
-ColorProfile.xyY2XYZ( xyY, ref XYZ );
-testXYZ.Set( XYZ, 1.0f );
-
-	sRGB.XYZ2RGB( testXYZ, ref testRGB );
-}
-
 			float4	color = new float4( 1, 0, 0, 1 );
 			for ( int locusIndex=0; locusIndex < 20; locusIndex++ ) {
-				float	T = 1500.0f + (8000.0f - 1500.0f) * locusIndex / 20.0f;
-
-T = 6500.0f;
+//				float	T = 1500.0f + (8000.0f - 1500.0f) * locusIndex / 20.0f;
+				float	T = 1500.0f + 500.0f * locusIndex;
 
 				ColorProfile.ComputeWhitePointChromaticities( T, ref xy );
 
-ColorProfile.xyY2XYZ( new float3( xy, 1.0f ), ref XYZ );
-sRGB.XYZ2RGB( new float4( XYZ, 1.0f ), ref color );
+// Plot with the color of the white point
+// ColorProfile.xyY2XYZ( new float3( xy, 1.0f ), ref XYZ );
+// sRGB.XYZ2RGB( new float4( XYZ, 1.0f ), ref color );
 
 				float2	fPos = cornerZero + (cornerPoint8Point9 - cornerZero) * new float2( xy.x / 0.8f, xy.y / 0.9f );
 				DrawPoint( (int) fPos.x, (int) fPos.y, ref color );
 			}
+#else
+			// Build a gradient of white points from 1500K to 8000K
+			m_imageFile.Init( 650, 32, ImageFile.PIXEL_FORMAT.RGBA8, sRGB );
 
+			float4	RGB = new float4( 0, 0, 0, 1 );
+			float3	XYZ = new float3( 0, 0, 0 );
+			float2	xy = new float2();
+			for ( uint X=0; X < 650; X++ ) {
+				float	T = 1500 + 10 * X;	// From 1500K to 8000K
+				ColorProfile.ComputeWhitePointChromaticities( T, ref xy );
+
+				ColorProfile.xyY2XYZ( new float3( xy, 1.0f ), ref XYZ );
+
+				RGB.Set( XYZ, 1.0f );
+				sRGB.XYZ2RGB( RGB, ref RGB );
+
+				// "Normalize"
+				RGB /= Math.Max( Math.Max( RGB.x, RGB.y ), RGB.z );
+
+// Isolate D65
+if ( Math.Abs( T - 6500.0f ) < 10.0f )
+	RGB.Set( 1, 0, 1, 1 );
+
+				for ( uint Y=0; Y < 32; Y++ ) {
+					m_imageFile[X,Y] = RGB;
+				}
+			}
+
+#endif
 			panel1.Bitmap = m_imageFile.AsBitmap;
 		}
 

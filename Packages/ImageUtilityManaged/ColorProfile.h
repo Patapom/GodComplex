@@ -340,7 +340,7 @@ namespace ImageUtility {
 		//	_wavelengthStep, the step in wavelength (in nm)
 		//	_spectralPowerDistibution, the intensities for each wavelength
 		//	_XYZ, the resulting CIE XYZ tristimulus value resulting from the integrtiton
-		static void				IntegrateSpectralPowerDistributionIntoXYZ( float _wavelengthStart, float _wavelengthStep, cli::array< float >^ _spectralPowerDistibution, float3% _XYZ );
+		static void				IntegrateSpectralPowerDistributionIntoXYZ( float _wavelengthStart, float _wavelengthStep, cli::array< double >^ _spectralPowerDistibution, float3% _XYZ );
 
 		// Generates the Spectral Power Distribution for a black body radiator given its temperature
 		//	_blackBodyTemperature, the temperature of the black body (in Kelvin)
@@ -348,7 +348,7 @@ namespace ImageUtility {
 		//	_wavelengthStart, the start wavelength (in nm)
 		//	_wavelengthStep, the step in wavelength (in nm)
 		//	_spectralPowerDistibution, the intensities for each wavelength
-		static void				BuildSpectralPowerDistributionForBlackBody( float _blackBodyTemperature, UInt32 _wavelengthsCount, float _wavelengthStart, float _wavelengthStep, System::Collections::Generic::List< float >^ _spectralPowerDistribution );
+		static void				BuildSpectralPowerDistributionForBlackBody( float _blackBodyTemperature, UInt32 _wavelengthsCount, float _wavelengthStart, float _wavelengthStep, System::Collections::Generic::List< double >^ _spectralPowerDistribution );
 
 		// Computes the xy chromaticities of the white point given by a black body at specified temperature
 		//	_blackBodyTemperature, the temperature of the black body (in Kelvin)
