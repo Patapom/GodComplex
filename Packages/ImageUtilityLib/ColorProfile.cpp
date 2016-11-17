@@ -50,34 +50,66 @@ void	ColorProfile::BuildTransformFromChroma( bool _checkGammaCurveOverride ) {
 	bfloat3	XYZ_W;
 	xyY2XYZ( bfloat3( m_chromaticities.W.x, m_chromaticities.W.y, 1.0f ), XYZ_W );
 
-	float3x3	M_xyz;
-	M_xyz.r[0].Set( xyz_R.x, xyz_R.y, xyz_R.z );
-	M_xyz.r[1].Set( xyz_G.x, xyz_G.y, xyz_G.z );
-	M_xyz.r[2].Set( xyz_B.x, xyz_B.y, xyz_B.z );
-
-	M_xyz.Invert();
-
-	bfloat3	Sum_RGB = XYZ_W * M_xyz;
-
-//Sum_RGB.Set( 2, 1, 1 );
-
-	// Finally, we can retrieve the RGB->XYZ transform
-	m_RGB2XYZ.r[0].Set( Sum_RGB.x * xyz_R, 0.0f );
-	m_RGB2XYZ.r[1].Set( Sum_RGB.y * xyz_G, 0.0f );
-	m_RGB2XYZ.r[2].Set( Sum_RGB.z * xyz_B, 0.0f );
-	m_RGB2XYZ.r[3].Set( 0, 0, 0, 1 );
-
-	// And the XYZ->RGB transform
-	m_XYZ2RGB = m_RGB2XYZ;
+	// Build the xyz->RGB matrix
+	m_XYZ2RGB.r[0].Set( xyz_R, 0.0f );
+	m_XYZ2RGB.r[1].Set( xyz_G, 0.0f );
+	m_XYZ2RGB.r[2].Set( xyz_B, 0.0f );
+	m_XYZ2RGB.r[3].Set( 0,0,0, 1.0f );
 	m_XYZ2RGB.Invert();
 
-for ( int i=0; i < 3; i++ )
-	for ( int j=0; j < 3; j++ ) {
-		float	b = m_XYZ2RGB.r[i][j];
-		float	a = M_xyz.r[i][j];
-				a /= Sum_RGB[j];
-		ASSERT( fabs( a - b ) < 1e-3f, "mismatch!" );
-	}
+	// Knowing the XYZ of the white point, we retrieve the scale factor for each axis x, y and z that will help us get X, Y and Z
+	bfloat4	sum_RGB = bfloat4( XYZ_W, 0.0f ) * m_XYZ2RGB;
+
+// Compute a 2nd white point
+bfloat3	XYZ_W_in;
+xyY2XYZ( bfloat3( ILLUMINANT_D50.x, ILLUMINANT_D50.y, 1.0f ), XYZ_W_in );
+bfloat4	sum_RGB_in = bfloat4( XYZ_W_in, 0.0f ) * m_XYZ2RGB;
+
+// sum_RGB.Set( 2, 1, 1, 0 );
+// sum_RGB_in.Set( 1, 1, 1, 0 );
+
+	// Finally, we can retrieve the RGB->XYZ transform
+	m_RGB2XYZ.r[0].Set( sum_RGB.x * xyz_R, 0.0f );
+	m_RGB2XYZ.r[1].Set( sum_RGB.y * xyz_G, 0.0f );
+	m_RGB2XYZ.r[2].Set( sum_RGB.z * xyz_B, 0.0f );
+	m_RGB2XYZ.r[3].Set( 0, 0, 0, 1 );
+
+	// And the XYZ->RGB transform is simply the existing xyz->RGB matrix scaled by the reciprocal of the sum
+	bfloat3	recSum_RGB( 1.0f / sum_RGB.x, 1.0f / sum_RGB.y, 1.0f / sum_RGB.z );
+	(bfloat3&) m_XYZ2RGB.r[0] = (bfloat3&) m_XYZ2RGB.r[0] * recSum_RGB;
+	(bfloat3&) m_XYZ2RGB.r[1] = (bfloat3&) m_XYZ2RGB.r[1] * recSum_RGB;
+	(bfloat3&) m_XYZ2RGB.r[2] = (bfloat3&) m_XYZ2RGB.r[2] * recSum_RGB;
+
+	float4x4	test = m_RGB2XYZ * m_XYZ2RGB;
+
+// for ( int i=0; i < 3; i++ )
+// 	for ( int j=0; j < 3; j++ ) {
+// 		float	b = m_XYZ2RGB.r[i][j];
+// 		float	a = M_xyz.r[i][j];
+// 				a /= sum_RGB[j];
+// 		ASSERT( fabs( a - b ) < 1e-3f, "mismatch!" );
+// 	}
+
+float4x4	XYZ2RGB_in;
+XYZ2RGB_in.r[0].Set( sum_RGB_in.x * xyz_R, 0.0f );
+XYZ2RGB_in.r[1].Set( sum_RGB_in.y * xyz_G, 0.0f );
+XYZ2RGB_in.r[2].Set( sum_RGB_in.z * xyz_B, 0.0f );
+XYZ2RGB_in.r[3].Set( 0,0,0, 1.0f );
+
+XYZ2RGB_in.Invert();
+float4x4	test2 = XYZ2RGB_in * m_RGB2XYZ;
+//float4x4	test2 = XYZ2RGB_in * m_XYZ2RGB;
+
+bfloat4		newR = bfloat4( sum_RGB_in.x * xyz_R, 0.0f ) * test2;
+bfloat4		newG = bfloat4( sum_RGB_in.y * xyz_G, 0.0f ) * test2;
+bfloat4		newB = bfloat4( sum_RGB_in.z * xyz_B, 0.0f ) * test2;
+bfloat4		newWhite = bfloat4( XYZ_W_in, 0.0f ) * test2;
+
+// Test outer product
+float3x3	outer;
+outer.r[0].Set( sum_RGB.x / sum_RGB_in.x, sum_RGB.y / sum_RGB_in.x, sum_RGB.z / sum_RGB_in.x );
+outer.r[1].Set( sum_RGB.x / sum_RGB_in.y, sum_RGB.y / sum_RGB_in.y, sum_RGB.z / sum_RGB_in.y );
+outer.r[2].Set( sum_RGB.x / sum_RGB_in.z, sum_RGB.y / sum_RGB_in.z, sum_RGB.z / sum_RGB_in.z );
 
 	// ============= Attempt to recognize a standard profile ============= 
 	STANDARD_PROFILE	recognizedChromaticity = m_chromaticities.FindRecognizedChromaticity();
