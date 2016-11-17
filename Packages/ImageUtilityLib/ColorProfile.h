@@ -535,6 +535,17 @@ namespace ImageUtilityLib {
 			return powf( (c + 0.055f) / 1.055f, GAMMA_EXPONENT_sRGB );
 		}
 
+		//////////////////////////////////////////////////////////////////////////
+		// Spectral Power Conversions and Chromaticity Helpers
+
+		// Computes the XYZ matrix to perform white balancing between 2 white points assuming the R,G,B chromaticities are the same for the input and output profiles
+		// The resulting matrix is used like this:
+		//	XYZ_out = XYZ_in * M
+		// The XYZ_in value comes from a device-dependent profile where the white point is _whitePointIn
+		// The XYZ_out value is ready to be used with the profile _profileOut
+		//
+		static void				ComputeWhiteBalanceXYZMatrix( const Chromaticities& _profileIn, const bfloat2& _whitePointOut, float3x3& _whiteBalanceMatrix );
+
 		// Computes the power of a black body radiator 
 		//	_blackBodyTemperature, the temperature of the black body (in Kelvin)
 		//	_wavelength, the wavelength at which to compute the power (in nm)
@@ -567,114 +578,11 @@ namespace ImageUtilityLib {
 
 		#pragma region Color Space Transforms
 
-		/// <summary>
-		/// Builds the RGB<->XYZ transforms from chromaticities
-		/// (refer to http://wiki.nuaj.net/index.php/Color_Transforms#XYZ_Matrices for explanations)
-		/// </summary>
-		void	BuildTransformFromChroma( bool _checkGammaCurveOverride ) {
-			bfloat3	xyz_R( m_chromaticities.R.x, m_chromaticities.R.y, 1.0f - m_chromaticities.R.x - m_chromaticities.R.y );
-			bfloat3	xyz_G( m_chromaticities.G.x, m_chromaticities.G.y, 1.0f - m_chromaticities.G.x - m_chromaticities.G.y );
-			bfloat3	xyz_B( m_chromaticities.B.x, m_chromaticities.B.y, 1.0f - m_chromaticities.B.x - m_chromaticities.B.y );
-			bfloat3	XYZ_W;
-			xyY2XYZ( bfloat3( m_chromaticities.W.x, m_chromaticities.W.y, 1.0f ), XYZ_W );
+		// Builds the RGB<->XYZ transforms from chromaticities
+		// (refer to http://wiki.nuaj.net/index.php/Color_Transforms#XYZ_Matrices for explanations)
+		void	BuildTransformFromChroma( bool _checkGammaCurveOverride );
 
-			float4x4	M_xyz;
-			M_xyz.r[0].Set( xyz_R.x, xyz_R.y, xyz_R.z, 0.0f );
-			M_xyz.r[1].Set( xyz_G.x, xyz_G.y, xyz_G.z, 0.0f );
-			M_xyz.r[2].Set( xyz_B.x, xyz_B.y, xyz_B.z, 0.0f );
-			M_xyz.r[3].Set( 0.0f, 0.0f, 0.0f, 1.0f );
-
-			M_xyz.Invert();
-
-			bfloat4	Sum_RGB = bfloat4( XYZ_W, 1.0f ) * M_xyz;
-
-			// Finally, we can retrieve the RGB->XYZ transform
-			m_RGB2XYZ.r[0].Set( Sum_RGB.x * xyz_R, 0.0f );
-			m_RGB2XYZ.r[1].Set( Sum_RGB.y * xyz_G, 0.0f );
-			m_RGB2XYZ.r[2].Set( Sum_RGB.z * xyz_B, 0.0f );
-			m_RGB2XYZ.r[3].Set( 0, 0, 0, 1 );
-
-			// And the XYZ->RGB transform
-			m_XYZ2RGB = m_RGB2XYZ;
-			m_XYZ2RGB.Invert();
-
-			// ============= Attempt to recognize a standard profile ============= 
-			STANDARD_PROFILE	recognizedChromaticity = m_chromaticities.FindRecognizedChromaticity();
-
-			if ( _checkGammaCurveOverride ) {
-				// Also ensure the gamma ramp is correct before assigning a standard profile
-				bool	bIsGammaCorrect = true;
-				switch ( recognizedChromaticity ) {
-					case STANDARD_PROFILE::sRGB:			bIsGammaCorrect = EnsureGamma( GAMMA_CURVE::sRGB, GAMMA_EXPONENT_sRGB ); break;
-					case STANDARD_PROFILE::ADOBE_RGB_D50:	bIsGammaCorrect = EnsureGamma( GAMMA_CURVE::STANDARD, GAMMA_EXPONENT_ADOBE ); break;
-					case STANDARD_PROFILE::ADOBE_RGB_D65:	bIsGammaCorrect = EnsureGamma( GAMMA_CURVE::STANDARD, GAMMA_EXPONENT_ADOBE ); break;
-					case STANDARD_PROFILE::PRO_PHOTO:		bIsGammaCorrect = EnsureGamma( GAMMA_CURVE::PRO_PHOTO, GAMMA_EXPONENT_PRO_PHOTO ); break;
-					case STANDARD_PROFILE::RADIANCE:		bIsGammaCorrect = EnsureGamma( GAMMA_CURVE::STANDARD, 1.0f ); break;
-				}
-
-				if ( !bIsGammaCorrect )
-					recognizedChromaticity = STANDARD_PROFILE::CUSTOM;	// A non-standard gamma curves fails our pre-defined design...
-			}
-
-			// ============= Assign the internal converter depending on the profile =============
-			SAFE_DELETE( m_internalConverter );
-
-			switch ( recognizedChromaticity ) {
-				case STANDARD_PROFILE::sRGB:
-					m_gammaCurve = GAMMA_CURVE::sRGB;
-					m_gamma = GAMMA_EXPONENT_sRGB;
-					m_internalConverter = new InternalColorConverter_sRGB();
-					break;
-
-				case STANDARD_PROFILE::ADOBE_RGB_D50:
-					m_gammaCurve = GAMMA_CURVE::STANDARD;
-					m_gamma = GAMMA_EXPONENT_ADOBE;
-					m_internalConverter = new InternalColorConverter_AdobeRGB_D50();
-					break;
-
-				case STANDARD_PROFILE::ADOBE_RGB_D65:
-					m_gammaCurve = GAMMA_CURVE::STANDARD;
-					m_gamma = GAMMA_EXPONENT_ADOBE;
-					m_internalConverter = new InternalColorConverter_AdobeRGB_D65();
-					break;
-
-				case STANDARD_PROFILE::PRO_PHOTO:
-					m_gammaCurve = GAMMA_CURVE::PRO_PHOTO;
-					m_gamma = GAMMA_EXPONENT_PRO_PHOTO;
-					m_internalConverter = new InternalColorConverter_ProPhoto();
-					break;
-
-				case STANDARD_PROFILE::RADIANCE:
-					m_gammaCurve = GAMMA_CURVE::STANDARD;
-					m_gamma = 1.0f;
-					m_internalConverter = new InternalColorConverter_Radiance();
-					break;
-
-				default:	// Switch to one of our generic converters
-					switch ( m_gammaCurve ) {
-						case GAMMA_CURVE::sRGB:
-							m_internalConverter = new InternalColorConverter_Generic_sRGBGamma( m_RGB2XYZ, m_XYZ2RGB );
-							break;
-						case GAMMA_CURVE::PRO_PHOTO:
-							m_internalConverter = new InternalColorConverter_Generic_ProPhoto( m_RGB2XYZ, m_XYZ2RGB );
-							break;
-						case GAMMA_CURVE::STANDARD:
-							if ( fabs( m_gamma - 1.0f ) < 1e-3f )
-								m_internalConverter = new InternalColorConverter_Generic_NoGamma( m_RGB2XYZ, m_XYZ2RGB );
-							else
-								m_internalConverter = new InternalColorConverter_Generic_StandardGamma( m_RGB2XYZ, m_XYZ2RGB, m_gamma );
-							break;
-					}
-					break;
-			}
-		}
-
-		/// <summary>
-		/// Ensures the current gamma curve type and value are the ones we want
-		/// </summary>
-		/// <param name="_Curve"></param>
-		/// <param name="_Gamma"></param>
-		/// <returns></returns>
+		// Ensures the current gamma curve type and value are the ones we want
 		bool	EnsureGamma( GAMMA_CURVE _Curve, float _Gamma ) const {
 			return m_gammaCurve == _Curve && fabs( _Gamma - m_gamma ) < 1e-3f;
 		}

@@ -1,4 +1,6 @@
-﻿using System;
+﻿#define TEST_BLACK_BODY_LOCUS
+
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;

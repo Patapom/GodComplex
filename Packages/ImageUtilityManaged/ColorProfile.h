@@ -334,6 +334,12 @@ namespace ImageUtility {
 			return ImageUtilityLib::ColorProfile::ComputeBlackBodyRadiationPower( _blackBodyTemperature, _wavelength );
 		}
 
+		//////////////////////////////////////////////////////////////////////////
+		// Spectral Power Conversions and Chromaticity Helpers
+
+		// Computes the XYZ matrix to perform white balancing between 2 white points
+		static void				ComputeWhiteBalanceXYZMatrix( Chromaticities^ _profileIn, float2^ _whitePointOut, SharpMath::float3x3% _whiteBalanceMatrix );
+
 		// Integrates the provided Spectral Power Distribution into CIE XYZ tristimulus value
 		//	_wavelengthsCount, the amount of wavelengths present in the distribution
 		//	_wavelengthStart, the start wavelength (in nm)

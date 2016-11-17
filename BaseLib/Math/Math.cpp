@@ -21,8 +21,22 @@ const bfloat4	bfloat4::UnitY( 0, 1, 0, 0 );
 const bfloat4	bfloat4::UnitZ( 0, 0, 1, 0 );
 const bfloat4	bfloat4::UnitW( 0, 0, 0, 1 );
 
-const float4x4	float4x4::Zero( 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 );
-const float4x4	float4x4::Identity( 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 );
+
+// (2016-01-04) Original code from http://orbit.dtu.dk/files/57573287/onb_frisvad_jgt2012.pdf
+// This code doesn't involve any square root!
+void bfloat3::OrthogonalBasis( bfloat3& _left, bfloat3& _up ) const {
+	if ( z < -0.9999999f ) {
+		// Handle the singularity
+		_left.Set( 0.0f, -1.0f, 0.0f );
+		_up.Set( -1.0f, 0.0f, 0.0f );
+		return;
+	}
+
+	const float	a = 1.0f / (1.0f + z);
+	const float	b = -x*y*a;
+	_left.Set( 1.0f - x*x*a, b, -x );
+	_up.Set( b, 1.0f - y*y*a, -y );
+}
 
 bfloat4	bfloat4::QuatFromAngleAxis( float _angle, const bfloat3& _axis ) {
 	bfloat3	NormalizedAxis = _axis;
@@ -36,49 +50,213 @@ bfloat4	bfloat4::QuatFromAngleAxis( float _angle, const bfloat3& _axis ) {
 	return bfloat4( s * NormalizedAxis, c );
 }
 
-float4x4  float4x4::Inverse() const {
+
+//////////////////////////////////////////////////////////////////////////
+// float3x3
+const float3x3	float3x3::Zero( 0, 0, 0, 0, 0, 0, 0, 0, 0 );
+const float3x3	float3x3::Identity( 1, 0, 0, 0, 1, 0, 0, 0, 1 );
+
+float	float3x3::Determinant() const {
+	return (r[0].x*r[1].y*r[2].z + r[0].y*r[1].z*r[2].x + r[0].z*r[1].x*r[2].y) - (r[2].x*r[1].y*r[0].z + r[2].y*r[1].z*r[0].x + r[2].z*r[1].x*r[0].y);
+}
+
+float3x3  float3x3::Inverse() const {
 	float	det = Determinant();
 	ASSERT( abs(det) > 1e-6f, "Matrix is not inversible!" );
 	det = 1.0f / det;
 
-	float4x4  Temp;
-	Temp.r[0].x = CoFactor( 0, 0 ) * det;
-	Temp.r[1].x = CoFactor( 0, 1 ) * det;
-	Temp.r[2].x = CoFactor( 0, 2 ) * det;
-	Temp.r[3].x = CoFactor( 0, 3 ) * det;
-	Temp.r[0].y = CoFactor( 1, 0 ) * det;
-	Temp.r[1].y = CoFactor( 1, 1 ) * det;
-	Temp.r[2].y = CoFactor( 1, 2 ) * det;
-	Temp.r[3].y = CoFactor( 1, 3 ) * det;
-	Temp.r[0].z = CoFactor( 2, 0 ) * det;
-	Temp.r[1].z = CoFactor( 2, 1 ) * det;
-	Temp.r[2].z = CoFactor( 2, 2 ) * det;
-	Temp.r[3].z = CoFactor( 2, 3 ) * det;
-	Temp.r[0].w = CoFactor( 3, 0 ) * det;
-	Temp.r[1].w = CoFactor( 3, 1 ) * det;
-	Temp.r[2].w = CoFactor( 3, 2 ) * det;
-	Temp.r[3].w = CoFactor( 3, 3 ) * det;
+	float3x3	R;
+	R.r[0].Set( +(r[1].y * r[2].z - r[2].y * r[1].z) * det,
+				-(r[0].y * r[2].z - r[2].y * r[0].z) * det,
+				+(r[0].y * r[1].z - r[1].y * r[0].z) * det );
+	R.r[1].Set( -(r[1].x * r[2].z - r[2].x * r[1].z) * det,
+				+(r[0].x * r[2].z - r[2].x * r[0].z) * det,
+				-(r[0].x * r[1].z - r[1].x * r[0].z) * det );
+	R.r[2].Set( +(r[1].x * r[2].y - r[2].x * r[1].y) * det,
+				-(r[0].x * r[2].y - r[2].x * r[0].y) * det,
+				+(r[0].x * r[1].y - r[1].x * r[0].y) * det );
 
-	return	Temp;
+	return R;
+}
+
+float3x3&	float3x3::BuildFromQuat( const bfloat4& _Quat ) {
+	bfloat4		q = _Quat;
+	q.Normalize();
+
+	float	xs = 2.0f * q.x;
+	float	ys = 2.0f * q.y;
+	float	zs = 2.0f * q.z;
+
+	float	wx, wy, wz, xx, xy, xz, yy, yz, zz;
+	wx = q.w * xs;	wy = q.w * ys;	wz = q.w * zs;
+	xx = q.x * xs;	xy = q.x * ys;	xz = q.x * zs;
+	yy = q.y * ys;	yz = q.y * zs;	zz = q.z * zs;
+
+	r[0].x = 1.0f - yy - zz;
+	r[0].y =        xy + wz;
+	r[0].z =        xz - wy;
+
+	r[1].x =        xy - wz;
+	r[1].y = 1.0f - xx - zz;
+	r[1].z =        yz + wx;
+
+	r[2].x =        xz + wy;
+	r[2].y =        yz - wx;
+	r[2].z = 1.0f - xx - yy;
+
+	return *this;
+}
+
+float3x3&	float3x3::BuildRot( const bfloat3& _Source, const bfloat3& _Target ) {
+	bfloat3	Ortho = _Source.Cross( _Target );
+	float	Length = Ortho.Length();
+	if ( Length > 1e-6f )
+		Ortho = Ortho / Length;
+	else
+		Ortho.Set( 1, 0, 0 );
+
+	float	Angle = asinf( Length );
+	return BuildFromAngleAxis( Angle, Ortho );
+}
+
+// (2016-01-06) Builds the remaining 2 orthogonal vectors from a given vector (very fast! no normalization or square root involved!)
+// Original code from http://orbit.dtu.dk/files/57573287/onb_frisvad_jgt2012.pdf
+float3x3& float3x3::BuildRot( const bfloat3& _vector ) {
+	r[0] = _vector;
+	_vector.OrthogonalBasis( r[1], r[2] );
+	return *this;
+}
+
+float3x3&	float3x3::BuildRotX( float _Angle ) {
+	*this = Identity;
+
+	float C = cosf( _Angle );
+	float S = sinf( _Angle );
+	r[1].y = C;		r[1].z = S;
+	r[2].y = -S;	r[2].z = C;
+
+	return *this;
+}
+float3x3&	float3x3::BuildRotY( float _Angle ) {
+	*this = Identity;
+
+	float C = cosf( _Angle );
+	float S = sinf( _Angle );
+	r[0].x = C;	r[0].z = -S;
+	r[2].x = S;	r[2].z = C;
+
+	return *this;
+}
+float3x3&	float3x3::BuildRotZ( float _Angle ) {
+	*this = Identity;
+
+	float C = cosf( _Angle );
+	float S = sinf( _Angle );
+	r[0].x = C;		r[0].y = S;
+	r[1].x = -S;	r[1].y = C;
+
+	return *this;
+}
+
+float3x3&	float3x3::BuildPYR( float _Pitch, float _Yaw, float _Roll ) {
+	float3x3	Pitch, Yaw, Roll;
+	Pitch.BuildRotX( _Pitch );
+	Yaw.BuildRotY( _Yaw );
+	Roll.BuildRotZ( _Roll );
+
+	*this = Pitch * Yaw * Roll;
+	return *this;
+}
+
+
+bfloat3   operator*( const bfloat3& a, const float3x3& b ) {
+	bfloat3	R;
+	R.x = a.x * b.r[0].x + a.y * b.r[1].x + a.z * b.r[2].x;
+	R.y = a.x * b.r[0].y + a.y * b.r[1].y + a.z * b.r[2].y;
+	R.z = a.x * b.r[0].z + a.y * b.r[1].z + a.z * b.r[2].z;
+
+	return R;
+}
+
+bfloat3   operator*( const float3x3& b, const bfloat3& a ) {
+	bfloat3	R;
+	R.x = a.Dot( b.r[0] );
+	R.y = a.Dot( b.r[1] );
+	R.z = a.Dot( b.r[2] );
+	return R;
+}
+
+float3x3	float3x3::operator*( float a ) const {
+	float3x3	R;
+	R.r[0].Set( a*r[0].x, a*r[0].y, a*r[0].z );
+	R.r[1].Set( a*r[1].x, a*r[1].y, a*r[1].z );
+	R.r[2].Set( a*r[2].x, a*r[2].y, a*r[2].z );
+	return R;
+}
+float3x3	operator*( const float3x3& b, float a ) {
+	float3x3	R;
+	R.r[0].Set( a*b.r[0].x, a*b.r[0].y, a*b.r[0].z );
+	R.r[1].Set( a*b.r[1].x, a*b.r[1].y, a*b.r[1].z );
+	R.r[2].Set( a*b.r[2].x, a*b.r[2].y, a*b.r[2].z );
+	return R;
+}
+
+float3x3  float3x3::operator*( const float3x3& b ) const {
+	float3x3  R;
+	R.r[0].Set( r[0].x*b.r[0].x + r[0].y*b.r[1].x + r[0].z*b.r[2].x, /**/ r[0].x*b.r[0].y + r[0].y*b.r[1].y + r[0].z*b.r[2].y, /**/ r[0].x*b.r[0].z + r[0].y*b.r[1].z + r[0].z*b.r[2].z );
+	R.r[1].Set( r[1].x*b.r[0].x + r[1].y*b.r[1].x + r[1].z*b.r[2].x, /**/ r[1].x*b.r[0].y + r[1].y*b.r[1].y + r[1].z*b.r[2].y, /**/ r[1].x*b.r[0].z + r[1].y*b.r[1].z + r[1].z*b.r[2].z );
+	R.r[2].Set( r[2].x*b.r[0].x + r[2].y*b.r[1].x + r[2].z*b.r[2].x, /**/ r[2].x*b.r[0].y + r[2].y*b.r[1].y + r[2].z*b.r[2].y, /**/ r[2].x*b.r[0].z + r[2].y*b.r[1].z + r[2].z*b.r[2].z );
+
+	return R;
+}
+
+float&	float3x3::operator()( int _row, int _column ) {
+	bfloat3&	row = r[_row%3];
+	switch ( _column%3 ) {
+		case 0: return row.x;
+		case 1: return row.y;
+		case 2: return row.z;
+	}
+	return *((float*) 0);
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+// float4x4
+const float4x4	float4x4::Zero( 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 );
+const float4x4	float4x4::Identity( 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 );
+
+float4x4 float4x4::Inverse() const {
+	float	det = Determinant();
+	ASSERT( abs(det) > 1e-6f, "Matrix is not inversible!" );
+	det = 1.0f / det;
+
+	float4x4	R;
+	R.r[0].Set( CoFactor( 0, 0 ) * det, CoFactor( 1, 0 ) * det, CoFactor( 2, 0 ) * det, CoFactor( 3, 0 ) * det );
+	R.r[1].Set( CoFactor( 0, 1 ) * det, CoFactor( 1, 1 ) * det, CoFactor( 2, 1 ) * det, CoFactor( 3, 1 ) * det );
+	R.r[2].Set( CoFactor( 0, 2 ) * det, CoFactor( 1, 2 ) * det, CoFactor( 2, 2 ) * det, CoFactor( 3, 2 ) * det );
+	R.r[3].Set( CoFactor( 0, 3 ) * det, CoFactor( 1, 3 ) * det, CoFactor( 2, 3 ) * det, CoFactor( 3, 3 ) * det );
+
+	return R;
 }
 
 float	float4x4::Determinant() const {
 	return r[0].x * CoFactor( 0, 0 ) + r[0].y * CoFactor( 0, 1 ) + r[0].z * CoFactor( 0, 2 ) + r[0].w * CoFactor( 0, 3 ); 
 }
 
-// Small macro that accesses the component of a float4 given its index
-#define COMP( f4, index ) ((float*) &f4.x)[index]
-float	float4x4::CoFactor( int x, int y ) const {
-	static int  IndexLoop[7] = { 0, 1, 2, 3, 0, 1, 2 };
+float	float4x4::CoFactor( int _row, int _col ) const {
+	int		row1 = (_row+1) & 3;
+	int		row2 = (_row+2) & 3;
+	int		row3 = (_row+3) & 3;
+	float	sign = float( (((_row + _col) & 1) << 1) - 1 );
+	return	((	r[row1][_col+1] * r[row2][_col+2] * r[row3][_col+3] +
+				r[row1][_col+2] * r[row2][_col+3] * r[row3][_col+1] +
+				r[row1][_col+3] * r[row2][_col+1] * r[row3][_col+2] )
 
-	return	((	COMP( r[IndexLoop[x+1]], IndexLoop[y+1] ) * COMP( r[IndexLoop[x+2]], IndexLoop[y+2] ) * COMP( r[IndexLoop[x+3]], IndexLoop[y+3] ) +
-				COMP( r[IndexLoop[x+1]], IndexLoop[y+2] ) * COMP( r[IndexLoop[x+2]], IndexLoop[y+3] ) * COMP( r[IndexLoop[x+3]], IndexLoop[y+1] ) +
-				COMP( r[IndexLoop[x+1]], IndexLoop[y+3] ) * COMP( r[IndexLoop[x+2]], IndexLoop[y+1] ) * COMP( r[IndexLoop[x+3]], IndexLoop[y+2] ) )
-
-			-(	COMP( r[IndexLoop[x+3]], IndexLoop[y+1] ) * COMP( r[IndexLoop[x+2]], IndexLoop[y+2] ) * COMP( r[IndexLoop[x+1]], IndexLoop[y+3] ) +
-				COMP( r[IndexLoop[x+3]], IndexLoop[y+2] ) * COMP( r[IndexLoop[x+2]], IndexLoop[y+3] ) * COMP( r[IndexLoop[x+1]], IndexLoop[y+1] ) +
-				COMP( r[IndexLoop[x+3]], IndexLoop[y+3] ) * COMP( r[IndexLoop[x+2]], IndexLoop[y+1] ) * COMP( r[IndexLoop[x+1]], IndexLoop[y+2] ) ))
-			* (((x + y) & 1) == 1 ? -1.0f : +1.0f);
+			-(	r[row3][_col+1] * r[row2][_col+2] * r[row1][_col+3] +
+				r[row3][_col+2] * r[row2][_col+3] * r[row1][_col+1] +
+				r[row3][_col+3] * r[row2][_col+1] * r[row1][_col+2] ))
+			* sign;
 }
 
 float4x4&	float4x4::Normalize() {
@@ -114,9 +292,8 @@ bfloat4   operator*( const float4x4& b, const bfloat4& a ) {
 	return R;
 }
 
-float4x4	float4x4::BuildFromQuat( const bfloat4& _Quat ) {
-	float4x4	result;
-	bfloat4		q = _Quat;
+float4x4&	float4x4::BuildFromQuat( const bfloat4& _Quat ) {
+	bfloat4	q = _Quat;
 	q.Normalize();
 
 	float	xs = 2.0f * q.x;
@@ -128,72 +305,67 @@ float4x4	float4x4::BuildFromQuat( const bfloat4& _Quat ) {
 	xx = q.x * xs;	xy = q.x * ys;	xz = q.x * zs;
 	yy = q.y * ys;	yz = q.y * zs;	zz = q.z * zs;
 
-	result.r[0].x = 1.0f - yy - zz;
-	result.r[0].y =        xy + wz;
-	result.r[0].z =        xz - wy;
-	result.r[0].w = 0.0f;
+	r[0].x = 1.0f - yy - zz;
+	r[0].y =        xy + wz;
+	r[0].z =        xz - wy;
+	r[0].w = 0.0f;
 
-	result.r[1].x =        xy - wz;
-	result.r[1].y = 1.0f - xx - zz;
-	result.r[1].z =        yz + wx;
-	result.r[1].w = 0.0f;
+	r[1].x =        xy - wz;
+	r[1].y = 1.0f - xx - zz;
+	r[1].z =        yz + wx;
+	r[1].w = 0.0f;
 
-	result.r[2].x =        xz + wy;
-	result.r[2].y =        yz - wx;
-	result.r[2].z = 1.0f - xx - yy;
-	result.r[2].w = 0.0f;
+	r[2].x =        xz + wy;
+	r[2].y =        yz - wx;
+	r[2].z = 1.0f - xx - yy;
+	r[2].w = 0.0f;
 
-	result.r[3].x = 0.0f;
-	result.r[3].y = 0.0f;
-	result.r[3].z = 0.0f;
-	result.r[3].w = 1.0f;
+	r[3].x = 0.0f;
+	r[3].y = 0.0f;
+	r[3].z = 0.0f;
+	r[3].w = 1.0f;
 
-	return	result;
+	return *this;
 }
 
-float4x4&	float4x4::PRS( const bfloat3& P, const bfloat4& R, const bfloat3& S ) {
-	return *this = BuildFromPRS( P, R, S );
-}
-
-float4x4	float4x4::ProjectionPerspective( float _FOVY, float _aspectRatio, float _near, float _far ) {
+float4x4&	float4x4::BuildProjectionPerspective( float _FOVY, float _aspectRatio, float _near, float _far ) {
 	float	H = tanf( 0.5f * _FOVY );
 	float	W = _aspectRatio * H;
 	float	Q =  _far / (_far - _near);
 
-	float4x4	result;
-	result.r[0].Set( 1.0f / W, 0.0f, 0.0f, 0.0f );
-	result.r[1].Set( 0.0f, 1.0f / H, 0.0f, 0.0f );
-	result.r[2].Set( 0.0f, 0.0f, Q, 1.0f );
-	result.r[3].Set( 0.0f, 0.0f, -_near * Q, 0.0f );
+	r[0].Set( 1.0f / W, 0.0f, 0.0f, 0.0f );
+	r[1].Set( 0.0f, 1.0f / H, 0.0f, 0.0f );
+	r[2].Set( 0.0f, 0.0f, Q, 1.0f );
+	r[3].Set( 0.0f, 0.0f, -_near * Q, 0.0f );
 
-	return result;
+	return *this;
 }
 
-float4x4	float4x4::BuildFromPRS( const bfloat3& P, const bfloat4& R, const bfloat3& S ) {
-	float4x4	result = BuildFromQuat( R );
+float4x4&	float4x4::BuildPRS( const bfloat3& P, const bfloat4& R, const bfloat3& S ) {
+	BuildFromQuat( R );
 
-	result.r[0].x *= S.x;
-	result.r[0].y *= S.x;
-	result.r[0].z *= S.x;
-	result.r[0].w *= S.x;
-	result.r[1].x *= S.y;
-	result.r[1].y *= S.y;
-	result.r[1].z *= S.y;
-	result.r[1].w *= S.y;
-	result.r[2].x *= S.z;
-	result.r[2].y *= S.z;
-	result.r[2].z *= S.z;
-	result.r[2].w *= S.z;
-	result.r[3].x = P.x;
-	result.r[3].y = P.y;
-	result.r[3].z = P.z;
+	r[0].x *= S.x;
+	r[0].y *= S.x;
+	r[0].z *= S.x;
+	r[0].w *= S.x;
+	r[1].x *= S.y;
+	r[1].y *= S.y;
+	r[1].z *= S.y;
+	r[1].w *= S.y;
+	r[2].x *= S.z;
+	r[2].y *= S.z;
+	r[2].z *= S.z;
+	r[2].w *= S.z;
+	r[3].x = P.x;
+	r[3].y = P.y;
+	r[3].z = P.z;
 
-	return	result;
+	return *this;
 }
 
-float4x4	float4x4::Rot( const bfloat3& _Source, const bfloat3& _Target ) {
+float4x4&	float4x4::BuildRot( const bfloat3& _Source, const bfloat3& _Target ) {
 	bfloat3	Ortho = _Source.Cross( _Target );
-	float		Length = Ortho.Length();
+	float	Length = Ortho.Length();
 	if ( Length > 1e-6f )
 		Ortho = Ortho / Length;
 	else
@@ -203,44 +375,73 @@ float4x4	float4x4::Rot( const bfloat3& _Source, const bfloat3& _Target ) {
 	return BuildFromAngleAxis( Angle, Ortho );
 }
 
-float4x4	float4x4::RotX( float _Angle ) {
-	float4x4	Result = Identity;
+// (2016-01-06) Builds the remaining 2 orthogonal vectors from a given vector (very fast! no normalization or square root involved!)
+// Original code from http://orbit.dtu.dk/files/57573287/onb_frisvad_jgt2012.pdf
+float4x4& float4x4::BuildRot( const bfloat3& _vector ) {
+	r[0].Set( _vector, 0.0f );
+	_vector.OrthogonalBasis( (bfloat3&) r[1], (bfloat3&) r[2] );
+	r[1].w = 0.0f;
+	r[2].w = 0.0f;
+	r[3].Set( 0, 0, 0, 1 );
+	return *this;
+}
+
+float4x4&	float4x4::BuildRotX( float _Angle ) {
+	*this = Identity;
 
 	float C = cosf( _Angle );
 	float S = sinf( _Angle );
-	Result.r[1].y = C;	Result.r[1].z = S;
-	Result.r[2].y = -S;	Result.r[2].z = C;
+	r[1].y = C;		r[1].z = S;
+	r[2].y = -S;	r[2].z = C;
 
-	return Result;
+	return *this;
 }
-float4x4	float4x4::RotY( float _Angle ) {
-	float4x4	Result = Identity;
+float4x4&	float4x4::BuildRotY( float _Angle ) {
+	*this = Identity;
 
 	float C = cosf( _Angle );
 	float S = sinf( _Angle );
-	Result.r[0].x = C;	Result.r[0].z = -S;
-	Result.r[2].x = S;	Result.r[2].z = C;
+	r[0].x = C;	r[0].z = -S;
+	r[2].x = S;	r[2].z = C;
 
-	return Result;
+	return *this;
 }
-float4x4	float4x4::RotZ( float _Angle ) {
-	float4x4	Result = Identity;
+float4x4&	float4x4::BuildRotZ( float _Angle ) {
+	*this = Identity;
 
 	float C = cosf( _Angle );
 	float S = sinf( _Angle );
-	Result.r[0].x = C;	Result.r[0].y = S;
-	Result.r[1].x = -S;	Result.r[1].y = C;
+	r[0].x = C;		r[0].y = S;
+	r[1].x = -S;	r[1].y = C;
 
-	return Result;
+	return *this;
 }
-float4x4	float4x4::PYR( float _Pitch, float _Yaw, float _Roll ) {
-	float4x4	Pitch = RotX( _Pitch );
-	float4x4	Yaw = RotY( _Yaw );
-	float4x4	Roll = RotZ( _Roll );
+float4x4&	float4x4::BuildPYR( float _Pitch, float _Yaw, float _Roll ) {
+	float4x4	Pitch, Yaw, Roll;
+	Pitch.BuildRotX( _Pitch );
+	Yaw.BuildRotY( _Yaw );
+	Roll.BuildRotZ( _Roll );
 
-	float4x4	Result = Pitch * Yaw * Roll;
+	*this = Pitch * Yaw * Roll;
+	return *this;
+}
 
-	return Result;
+float4x4	float4x4::operator*( float a ) const {
+	float4x4	R;
+	R.r[0].Set( a*r[0].x, a*r[0].y, a*r[0].z, a*r[0].w );
+	R.r[1].Set( a*r[1].x, a*r[1].y, a*r[1].z, a*r[1].w );
+	R.r[2].Set( a*r[2].x, a*r[2].y, a*r[2].z, a*r[2].w );
+	R.r[3].Set( a*r[3].x, a*r[3].y, a*r[3].z, a*r[3].w );
+	return R;
+}
+
+float4x4	operator*( float a, const float4x4& b ) {
+	float4x4	R;
+	R.r[0].Set( a*b.r[0].x, a*b.r[0].y, a*b.r[0].z, a*b.r[0].w );
+	R.r[1].Set( a*b.r[1].x, a*b.r[1].y, a*b.r[1].z, a*b.r[1].w );
+	R.r[2].Set( a*b.r[2].x, a*b.r[2].y, a*b.r[2].z, a*b.r[2].w );
+	R.r[3].Set( a*b.r[3].x, a*b.r[3].y, a*b.r[3].z, a*b.r[3].w );
+	return R;
 }
 
 float4x4  float4x4::operator*( const float4x4& b ) const {
@@ -279,6 +480,15 @@ float&	float4x4::operator()( int _row, int _column ) {
 	}
 	return *((float*) 0);
 }
+
+float4x4::operator float3x3() const {
+	float3x3	R;
+	R.r[0].Set( r[0].x, r[0].y, r[0].z );
+	R.r[1].Set( r[1].x, r[1].y, r[1].z );
+	R.r[2].Set( r[2].x, r[2].y, r[2].z );
+	return R;
+}
+
 
 //////////////////////////////////////////////////////////////////////////
 // Half floats encoding

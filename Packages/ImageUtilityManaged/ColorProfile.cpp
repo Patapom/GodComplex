@@ -95,6 +95,15 @@ cli::array<float4>^	ColorProfile::RGB2XYZ( cli::array<float4>^ _RGB ) {
 	return XYZ;
 }
 
+void	ColorProfile::ComputeWhiteBalanceXYZMatrix( Chromaticities^ _profileIn, float2^ _whitePointOut,SharpMath::float3x3% _whiteBalanceMatrix ) {
+	::float3x3	result;
+	ImageUtilityLib::ColorProfile::ComputeWhiteBalanceXYZMatrix( *_profileIn->m_nativeObject, bfloat2( _whitePointOut->x, _whitePointOut->y ), result );
+
+	_whiteBalanceMatrix.r[0].Set( result.r[0].x, result.r[0].y, result.r[0].z );
+	_whiteBalanceMatrix.r[1].Set( result.r[1].x, result.r[1].y, result.r[1].z );
+	_whiteBalanceMatrix.r[2].Set( result.r[2].x, result.r[2].y, result.r[2].z );
+}
+
 void	ColorProfile::IntegrateSpectralPowerDistributionIntoXYZ( float _wavelengthStart, float _wavelengthStep, cli::array< double >^ _spectralPowerDistibution, float3% _XYZ ) {
 	bfloat3	XYZ;
 	pin_ptr<double>	SPD = &_spectralPowerDistibution[0];

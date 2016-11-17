@@ -222,16 +222,22 @@ namespace SharpMath
 			return	Ret;
 		}
 		public void					FromEuler( float3 _EulerAngles )				{ float4x4 MatX = ROT_X( _EulerAngles.x ); float4x4 MatY = ROT_Y( _EulerAngles.y ); float4x4 MatZ = ROT_Z( _EulerAngles.z ); Set( MatX * MatY * MatZ ); }
-		public float4x4			Transpose()										{ float fTemp; fTemp = m[1, 0]; m[1, 0] = m[0, 1]; m[0, 1] = fTemp; fTemp = m[2, 0]; m[2, 0] = m[0, 2]; m[0, 2] = fTemp; fTemp = m[3, 0]; m[3, 0] = m[0, 3]; m[0, 3] = fTemp; fTemp = m[3, 1]; m[3, 1] = m[1, 3]; m[1, 3] = fTemp; fTemp = m[3, 2]; m[3, 2] = m[2, 3]; m[2, 3] = fTemp; fTemp = m[2, 1]; m[2, 1] = m[1, 2]; m[1, 2] = fTemp; return this; }
-		public float				CoFactor( int _dwRow, int _dwCol )
-		{
-			return	((	m[ms_Index[_dwRow+1], ms_Index[_dwCol+1]]*m[ms_Index[_dwRow+2], ms_Index[_dwCol+2]]*m[ms_Index[_dwRow+3], ms_Index[_dwCol+3]] +
-						m[ms_Index[_dwRow+1], ms_Index[_dwCol+2]]*m[ms_Index[_dwRow+2], ms_Index[_dwCol+3]]*m[ms_Index[_dwRow+3], ms_Index[_dwCol+1]] +
-						m[ms_Index[_dwRow+1], ms_Index[_dwCol+3]]*m[ms_Index[_dwRow+2], ms_Index[_dwCol+1]]*m[ms_Index[_dwRow+3], ms_Index[_dwCol+2]] )
+		public float4x4				Transpose()										{ float fTemp; fTemp = m[1, 0]; m[1, 0] = m[0, 1]; m[0, 1] = fTemp; fTemp = m[2, 0]; m[2, 0] = m[0, 2]; m[0, 2] = fTemp; fTemp = m[3, 0]; m[3, 0] = m[0, 3]; m[0, 3] = fTemp; fTemp = m[3, 1]; m[3, 1] = m[1, 3]; m[1, 3] = fTemp; fTemp = m[3, 2]; m[3, 2] = m[2, 3]; m[2, 3] = fTemp; fTemp = m[2, 1]; m[2, 1] = m[1, 2]; m[1, 2] = fTemp; return this; }
+		public float				CoFactor( int _dwRow, int _dwCol ) {
+			int		row1 = (_dwRow+1) & 3;
+			int		row2 = (_dwRow+2) & 3;
+			int		row3 = (_dwRow+3) & 3;
+			int		col1 = (_dwCol+1) & 3;
+			int		col2 = (_dwCol+2) & 3;
+			int		col3 = (_dwCol+3) & 3;
 
-					-(	m[ms_Index[_dwRow+3], ms_Index[_dwCol+1]]*m[ms_Index[_dwRow+2], ms_Index[_dwCol+2]]*m[ms_Index[_dwRow+1], ms_Index[_dwCol+3]] +
-						m[ms_Index[_dwRow+3], ms_Index[_dwCol+2]]*m[ms_Index[_dwRow+2], ms_Index[_dwCol+3]]*m[ms_Index[_dwRow+1], ms_Index[_dwCol+1]] +
-						m[ms_Index[_dwRow+3], ms_Index[_dwCol+3]]*m[ms_Index[_dwRow+2], ms_Index[_dwCol+1]]*m[ms_Index[_dwRow+1], ms_Index[_dwCol+2]] ))
+			return	((	m[row1, col1]*m[row2, col2]*m[row3, col3] +
+						m[row1, col2]*m[row2, col3]*m[row3, col1] +
+						m[row1, col3]*m[row2, col1]*m[row3, col2] )
+
+					-(	m[row3, col1]*m[row2, col2]*m[row1, col3] +
+						m[row3, col2]*m[row2, col3]*m[row1, col1] +
+						m[row3, col3]*m[row2, col1]*m[row1, col2] ))
 					* (((_dwRow + _dwCol) & 1) == 1 ? -1.0f : +1.0f);
 		}
 		public float				Determinant()									{ return m[0, 0] * CoFactor( 0, 0 ) + m[0, 1] * CoFactor( 0, 1 ) + m[0, 2] * CoFactor( 0, 2 ) + m[0, 3] * CoFactor( 0, 3 ); }

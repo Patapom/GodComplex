@@ -251,9 +251,9 @@ namespace SharpMath {
 
 		static float3x3^	operator*( float a, float3x3^ b ) {
 			float3x3^	R = gcnew float3x3();
-			R->r[0].Set( a*b->r[0].x + a*b->r[1].x + a*b->r[2].x, /**/ a*b->r[0].y + a*b->r[1].y + a*b->r[2].y, /**/ a*b->r[0].z + a*b->r[1].z + a*b->r[2].z );
-			R->r[1].Set( a*b->r[0].x + a*b->r[1].x + a*b->r[2].x, /**/ a*b->r[0].y + a*b->r[1].y + a*b->r[2].y, /**/ a*b->r[0].z + a*b->r[1].z + a*b->r[2].z );
-			R->r[2].Set( a*b->r[0].x + a*b->r[1].x + a*b->r[2].x, /**/ a*b->r[0].y + a*b->r[1].y + a*b->r[2].y, /**/ a*b->r[0].z + a*b->r[1].z + a*b->r[2].z );
+			R->r[0].Set( a*b->r[0].x, a*b->r[0].y, a*b->r[0].z );
+			R->r[1].Set( a*b->r[1].x, a*b->r[1].y, a*b->r[1].z );
+			R->r[2].Set( a*b->r[2].x, a*b->r[2].y, a*b->r[2].z );
 			return R;
 		}
 
@@ -440,6 +440,13 @@ namespace SharpMath {
 			return this;
 		}
 
+		static 	operator float3x3^( float4x4^ a ) {
+			float3x3^	R = gcnew float3x3();
+			R->r[0].Set( a->r[0].x, a->r[0].y, a->r[0].z );
+			R->r[1].Set( a->r[1].x, a->r[1].y, a->r[1].z );
+			R->r[2].Set( a->r[2].x, a->r[2].y, a->r[2].z );
+			return R;
+		}
 		static float4x4^	operator*( float4x4^ a, float4x4^ b ) {
 			float4x4^	R = gcnew float4x4();
 			R->r[0].Set( a->r[0].x*b->r[0].x + a->r[0].y*b->r[1].x + a->r[0].z*b->r[2].x + a->r[0].w*b->r[3].x, /**/ a->r[0].x*b->r[0].y + a->r[0].y*b->r[1].y + a->r[0].z*b->r[2].y + a->r[0].w*b->r[3].y, /**/ a->r[0].x*b->r[0].z + a->r[0].y*b->r[1].z + a->r[0].z*b->r[2].z + a->r[0].w*b->r[3].z, /**/ a->r[0].x*b->r[0].w + a->r[0].y*b->r[1].w + a->r[0].z*b->r[2].w + a->r[0].w*b->r[3].w );
@@ -452,11 +459,10 @@ namespace SharpMath {
 
 		static float4x4^	operator*( float a, float4x4^ b ) {
 			float4x4^	R = gcnew float4x4();
-			R->r[0].Set( a*b->r[0].x + a*b->r[1].x + a*b->r[2].x + a*b->r[3].x, /**/ a*b->r[0].y + a*b->r[1].y + a*b->r[2].y + a*b->r[3].y, /**/ a*b->r[0].z + a*b->r[1].z + a*b->r[2].z + a*b->r[3].z, /**/ a*b->r[0].w + a*b->r[1].w + a*b->r[2].w + a*b->r[3].w );
-			R->r[1].Set( a*b->r[0].x + a*b->r[1].x + a*b->r[2].x + a*b->r[3].x, /**/ a*b->r[0].y + a*b->r[1].y + a*b->r[2].y + a*b->r[3].y, /**/ a*b->r[0].z + a*b->r[1].z + a*b->r[2].z + a*b->r[3].z, /**/ a*b->r[0].w + a*b->r[1].w + a*b->r[2].w + a*b->r[3].w );
-			R->r[2].Set( a*b->r[0].x + a*b->r[1].x + a*b->r[2].x + a*b->r[3].x, /**/ a*b->r[0].y + a*b->r[1].y + a*b->r[2].y + a*b->r[3].y, /**/ a*b->r[0].z + a*b->r[1].z + a*b->r[2].z + a*b->r[3].z, /**/ a*b->r[0].w + a*b->r[1].w + a*b->r[2].w + a*b->r[3].w );
-			R->r[3].Set( a*b->r[0].x + a*b->r[1].x + a*b->r[2].x + a*b->r[3].x, /**/ a*b->r[0].y + a*b->r[1].y + a*b->r[2].y + a*b->r[3].y, /**/ a*b->r[0].z + a*b->r[1].z + a*b->r[2].z + a*b->r[3].z, /**/ a*b->r[0].w + a*b->r[1].w + a*b->r[2].w + a*b->r[3].w );
-
+			R->r[0].Set( a*b->r[0].x, a*b->r[0].y, a*b->r[0].z, a*b->r[0].w );
+			R->r[1].Set( a*b->r[1].x, a*b->r[1].y, a*b->r[1].z, a*b->r[1].w );
+			R->r[2].Set( a*b->r[2].x, a*b->r[2].y, a*b->r[2].z, a*b->r[2].w );
+			R->r[3].Set( a*b->r[3].x, a*b->r[3].y, a*b->r[3].z, a*b->r[3].w );
 			return R;
 		}
 

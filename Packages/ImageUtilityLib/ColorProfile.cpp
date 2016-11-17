@@ -39,9 +39,174 @@ ColorProfile::ColorProfile( const ColorProfile& _other ) : m_internalConverter( 
 	BuildTransformFromChroma( true );
 }
 
+//////////////////////////////////////////////////////////////////////////
+// Builds the RGB<->XYZ transforms from chromaticities
+// (refer to http://wiki.nuaj.net/index.php/Color_Transforms#XYZ_Matrices for explanations)
+//
+void	ColorProfile::BuildTransformFromChroma( bool _checkGammaCurveOverride ) {
+	bfloat3	xyz_R( m_chromaticities.R.x, m_chromaticities.R.y, 1.0f - m_chromaticities.R.x - m_chromaticities.R.y );
+	bfloat3	xyz_G( m_chromaticities.G.x, m_chromaticities.G.y, 1.0f - m_chromaticities.G.x - m_chromaticities.G.y );
+	bfloat3	xyz_B( m_chromaticities.B.x, m_chromaticities.B.y, 1.0f - m_chromaticities.B.x - m_chromaticities.B.y );
+	bfloat3	XYZ_W;
+	xyY2XYZ( bfloat3( m_chromaticities.W.x, m_chromaticities.W.y, 1.0f ), XYZ_W );
+
+	float3x3	M_xyz;
+	M_xyz.r[0].Set( xyz_R.x, xyz_R.y, xyz_R.z );
+	M_xyz.r[1].Set( xyz_G.x, xyz_G.y, xyz_G.z );
+	M_xyz.r[2].Set( xyz_B.x, xyz_B.y, xyz_B.z );
+
+	M_xyz.Invert();
+
+	bfloat3	Sum_RGB = XYZ_W * M_xyz;
+
+//Sum_RGB.Set( 2, 1, 1 );
+
+	// Finally, we can retrieve the RGB->XYZ transform
+	m_RGB2XYZ.r[0].Set( Sum_RGB.x * xyz_R, 0.0f );
+	m_RGB2XYZ.r[1].Set( Sum_RGB.y * xyz_G, 0.0f );
+	m_RGB2XYZ.r[2].Set( Sum_RGB.z * xyz_B, 0.0f );
+	m_RGB2XYZ.r[3].Set( 0, 0, 0, 1 );
+
+	// And the XYZ->RGB transform
+	m_XYZ2RGB = m_RGB2XYZ;
+	m_XYZ2RGB.Invert();
+
+for ( int i=0; i < 3; i++ )
+	for ( int j=0; j < 3; j++ ) {
+		float	b = m_XYZ2RGB.r[i][j];
+		float	a = M_xyz.r[i][j];
+				a /= Sum_RGB[j];
+		ASSERT( fabs( a - b ) < 1e-3f, "mismatch!" );
+	}
+
+	// ============= Attempt to recognize a standard profile ============= 
+	STANDARD_PROFILE	recognizedChromaticity = m_chromaticities.FindRecognizedChromaticity();
+
+	if ( _checkGammaCurveOverride ) {
+		// Also ensure the gamma ramp is correct before assigning a standard profile
+		bool	bIsGammaCorrect = true;
+		switch ( recognizedChromaticity ) {
+			case STANDARD_PROFILE::sRGB:			bIsGammaCorrect = EnsureGamma( GAMMA_CURVE::sRGB, GAMMA_EXPONENT_sRGB ); break;
+			case STANDARD_PROFILE::ADOBE_RGB_D50:	bIsGammaCorrect = EnsureGamma( GAMMA_CURVE::STANDARD, GAMMA_EXPONENT_ADOBE ); break;
+			case STANDARD_PROFILE::ADOBE_RGB_D65:	bIsGammaCorrect = EnsureGamma( GAMMA_CURVE::STANDARD, GAMMA_EXPONENT_ADOBE ); break;
+			case STANDARD_PROFILE::PRO_PHOTO:		bIsGammaCorrect = EnsureGamma( GAMMA_CURVE::PRO_PHOTO, GAMMA_EXPONENT_PRO_PHOTO ); break;
+			case STANDARD_PROFILE::RADIANCE:		bIsGammaCorrect = EnsureGamma( GAMMA_CURVE::STANDARD, 1.0f ); break;
+		}
+
+		if ( !bIsGammaCorrect )
+			recognizedChromaticity = STANDARD_PROFILE::CUSTOM;	// A non-standard gamma curves fails our pre-defined design...
+	}
+
+	// ============= Assign the internal converter depending on the profile =============
+	SAFE_DELETE( m_internalConverter );
+
+	switch ( recognizedChromaticity ) {
+		case STANDARD_PROFILE::sRGB:
+			m_gammaCurve = GAMMA_CURVE::sRGB;
+			m_gamma = GAMMA_EXPONENT_sRGB;
+			m_internalConverter = new InternalColorConverter_sRGB();
+			break;
+
+		case STANDARD_PROFILE::ADOBE_RGB_D50:
+			m_gammaCurve = GAMMA_CURVE::STANDARD;
+			m_gamma = GAMMA_EXPONENT_ADOBE;
+			m_internalConverter = new InternalColorConverter_AdobeRGB_D50();
+			break;
+
+		case STANDARD_PROFILE::ADOBE_RGB_D65:
+			m_gammaCurve = GAMMA_CURVE::STANDARD;
+			m_gamma = GAMMA_EXPONENT_ADOBE;
+			m_internalConverter = new InternalColorConverter_AdobeRGB_D65();
+			break;
+
+		case STANDARD_PROFILE::PRO_PHOTO:
+			m_gammaCurve = GAMMA_CURVE::PRO_PHOTO;
+			m_gamma = GAMMA_EXPONENT_PRO_PHOTO;
+			m_internalConverter = new InternalColorConverter_ProPhoto();
+			break;
+
+		case STANDARD_PROFILE::RADIANCE:
+			m_gammaCurve = GAMMA_CURVE::STANDARD;
+			m_gamma = 1.0f;
+			m_internalConverter = new InternalColorConverter_Radiance();
+			break;
+
+		default:	// Switch to one of our generic converters
+			switch ( m_gammaCurve ) {
+				case GAMMA_CURVE::sRGB:
+					m_internalConverter = new InternalColorConverter_Generic_sRGBGamma( m_RGB2XYZ, m_XYZ2RGB );
+					break;
+				case GAMMA_CURVE::PRO_PHOTO:
+					m_internalConverter = new InternalColorConverter_Generic_ProPhoto( m_RGB2XYZ, m_XYZ2RGB );
+					break;
+				case GAMMA_CURVE::STANDARD:
+					if ( fabs( m_gamma - 1.0f ) < 1e-3f )
+						m_internalConverter = new InternalColorConverter_Generic_NoGamma( m_RGB2XYZ, m_XYZ2RGB );
+					else
+						m_internalConverter = new InternalColorConverter_Generic_StandardGamma( m_RGB2XYZ, m_XYZ2RGB, m_gamma );
+					break;
+			}
+			break;
+	}
+}
+
 
 //////////////////////////////////////////////////////////////////////////
 // Spectral Power Conversions and Chromaticity Helpers
+
+// Computes the XYZ matrix to perform white balancing between 2 white points assuming the R,G,B chromaticities are the same for the input and output profiles
+// Re-using the equations from http://wiki.nuaj.net/index.php/Color_Transforms#XYZ_Matrices we know that to compute the RGB->XYZ matrix for the input profile
+//	we need to find { Sigma_R, Sigma_G, Sigma_B } in order to scale the xyz_R, xyz_G, xyz_B vectors into XYZ_R, XYZ_G and XYZ_B respectively.
+//
+// We thus obtain the (RGB_in -> XYZ_in) matrix:
+//	| XYZ_R_in | = | Sigma_R_in * xyz_R |
+//	| XYZ_G_in | = | Sigma_G_in * xyz_G |
+//	| XYZ_B_in | = | Sigma_B_in * xyz_B |
+//
+// In the same maner, we can obtain the (RGB_out -> XYZ_out) matrix:
+//	| XYZ_R_out | = | Sigma_R_out * xyz_R |
+//	| XYZ_G_out | = | Sigma_G_out * xyz_G |
+//	| XYZ_B_out | = | Sigma_B_out * xyz_B |
+//
+// The matrix we're after is simply the (XYZ_in -> RGB_in) * (RGB_out -> XYZ_out) matrix...
+//
+void	ColorProfile::ComputeWhiteBalanceXYZMatrix( const Chromaticities& _profileIn, const bfloat2& _whitePointOut, float3x3& _whiteBalanceMatrix ) {
+	bfloat3	xyz_R( _profileIn.R.x, _profileIn.R.y, 1.0f - _profileIn.R.x - _profileIn.R.y );
+	bfloat3	xyz_G( _profileIn.G.x, _profileIn.G.y, 1.0f - _profileIn.G.x - _profileIn.G.y );
+	bfloat3	xyz_B( _profileIn.B.x, _profileIn.B.y, 1.0f - _profileIn.B.x - _profileIn.B.y );
+
+	bfloat3	XYZ_W_in;
+	xyY2XYZ( bfloat3( _profileIn.W.x, _profileIn.W.y, 1.0f ), XYZ_W_in );
+
+	bfloat3	XYZ_W_out;
+	xyY2XYZ( bfloat3( _whitePointOut.x, _whitePointOut.y, 1.0f ), XYZ_W_out );
+
+	// Build xyz matrix (common to both input and output)
+	float3x3	M_xyz;
+	M_xyz.r[0].Set( xyz_R.x, xyz_R.y, xyz_R.z );
+	M_xyz.r[1].Set( xyz_G.x, xyz_G.y, xyz_G.z );
+	M_xyz.r[2].Set( xyz_B.x, xyz_B.y, xyz_B.z );
+	M_xyz.Invert();
+
+	// Retrieve the sigmas for in and out white points
+	bfloat3	Sum_RGB_in = XYZ_W_in * M_xyz;
+	bfloat3	Sum_RGB_out = XYZ_W_out * M_xyz;
+
+
+
+// 	// Finally, we can retrieve the RGB->XYZ transform
+// 	m_RGB2XYZ.r[0].Set( Sum_RGB.x * xyz_R, 0.0f );
+// 	m_RGB2XYZ.r[1].Set( Sum_RGB.y * xyz_G, 0.0f );
+// 	m_RGB2XYZ.r[2].Set( Sum_RGB.z * xyz_B, 0.0f );
+// 	m_RGB2XYZ.r[3].Set( 0, 0, 0, 1 );
+// 
+// 	// And the XYZ->RGB transform
+// 	m_XYZ2RGB = m_RGB2XYZ;
+// 	m_XYZ2RGB.Invert();
+// 
+// 	float	determinant = Sb Sg Sr Xr Yg Zb - Sb Sg Sr Xg Yr Zb - Sb Sg Sr Xr Yb Zg + 
+//  Sb Sg Sr Xb Yr Zg + Sb Sg Sr Xg Yb Zr - Sb Sg Sr Xb Yg Zr;
+}
 
 // According to https://en.wikipedia.org/wiki/Black-body_radiation#Planck.27s_law_of_black-body_radiation
 // Planck's law states that[30]
