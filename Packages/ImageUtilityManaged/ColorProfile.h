@@ -164,15 +164,15 @@ namespace ImageUtility {
 		/// <summary>
 		/// Gets the transform to convert RGB to CIEXYZ
 		/// </summary>
-		property SharpMath::float4x4^	MatrixRGB2XYZ {
-			SharpMath::float4x4^	get();
+		property SharpMath::float3x3^	MatrixRGB2XYZ {
+			SharpMath::float3x3^	get();
 		}
 
 		/// <summary>
 		/// Gets the transform to convert CIEXYZ to RGB
 		/// </summary>
-		property SharpMath::float4x4^	MatrixXYZ2RGB {
-			SharpMath::float4x4^	get();
+		property SharpMath::float3x3^	MatrixXYZ2RGB {
+			SharpMath::float3x3^	get();
 		}
 
 		/// <summary>
@@ -228,11 +228,11 @@ namespace ImageUtility {
 		/// </summary>
 		/// <param name="_XYZ"></param>
 		/// <returns></returns>
-		void	XYZ2RGB( float4^ _XYZ, float4% _RGB ) {
-			bfloat4	XYZ( _XYZ->x, _XYZ->y, _XYZ->z, _XYZ->w );
-			bfloat4	RGB;
+		void	XYZ2RGB( float3^ _XYZ, float3% _RGB ) {
+			bfloat3	XYZ( _XYZ->x, _XYZ->y, _XYZ->z );
+			bfloat3	RGB;
 			m_nativeObject->XYZ2RGB( XYZ, RGB );
-			_RGB.Set( RGB.x, RGB.y, RGB.z, RGB.w );
+			_RGB.Set( RGB.x, RGB.y, RGB.z );
 		}
 
 		/// <summary>
@@ -240,11 +240,11 @@ namespace ImageUtility {
 		/// </summary>
 		/// <param name="_RGB"></param>
 		/// <returns></returns>
-		void	RGB2XYZ( float4^ _RGB, float4% _XYZ ) {
-			bfloat4	RGB( _RGB->x, _RGB->y, _RGB->z, _RGB->w );
-			bfloat4	XYZ;
+		void	RGB2XYZ( float3^ _RGB, float3% _XYZ ) {
+			bfloat3	RGB( _RGB->x, _RGB->y, _RGB->z );
+			bfloat3	XYZ;
 			m_nativeObject->RGB2XYZ( RGB, XYZ );
-			_XYZ.Set( XYZ.x, XYZ.y, XYZ.z, XYZ.w );
+			_XYZ.Set( XYZ.x, XYZ.y, XYZ.z );
 		}
 
 		/// <summary>
@@ -338,7 +338,9 @@ namespace ImageUtility {
 		// Spectral Power Conversions and Chromaticity Helpers
 
 		// Computes the XYZ matrix to perform white balancing between 2 white points
-		static void				ComputeWhiteBalanceXYZMatrix( Chromaticities^ _profileIn, float2^ _whitePointOut, SharpMath::float3x3% _whiteBalanceMatrix );
+		static SharpMath::float3x3^	ComputeWhiteBalanceXYZMatrix( Chromaticities^ _profileIn, SharpMath::float2^ _whitePointOut );
+		static SharpMath::float3x3^	ComputeWhiteBalanceXYZMatrix( SharpMath::float2^ _whitePointIn, Chromaticities^ _profileOut );
+		static SharpMath::float3x3^	ComputeWhiteBalanceXYZMatrix( SharpMath::float2^ _xyR, float2^ _xyG, SharpMath::float2^ _xyB, SharpMath::float2^ _whitePointIn, SharpMath::float2^ _whitePointOut );
 
 		// Integrates the provided Spectral Power Distribution into CIE XYZ tristimulus value
 		//	_wavelengthsCount, the amount of wavelengths present in the distribution

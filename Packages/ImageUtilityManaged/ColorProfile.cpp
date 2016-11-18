@@ -37,12 +37,21 @@ SharpMath::float4x4^	Native2ManagedFloat4x4( const ::float4x4& _native ) {
 	return R;
 }
 
-SharpMath::float4x4^	ColorProfile::MatrixRGB2XYZ::get() {
-	return Native2ManagedFloat4x4( m_nativeObject->GetMatrixRGB2XYZ() );
+SharpMath::float3x3^	Native2ManagedFloat3x3( const ::float3x3& _native ) {
+	const ::float3x3&		S = _native;
+	SharpMath::float3x3^	R = gcnew SharpMath::float3x3(	float3( S.r[0].x, S.r[0].y, S.r[0].z ),
+															float3( S.r[1].x, S.r[1].y, S.r[1].z ),
+															float3( S.r[2].x, S.r[2].y, S.r[2].z )
+														);
+	return R;
 }
 
-SharpMath::float4x4^	ColorProfile::MatrixXYZ2RGB::get() {
-	return Native2ManagedFloat4x4( m_nativeObject->GetMatrixXYZ2RGB() );
+SharpMath::float3x3^	ColorProfile::MatrixRGB2XYZ::get() {
+	return Native2ManagedFloat3x3( m_nativeObject->GetMatrixRGB2XYZ() );
+}
+
+SharpMath::float3x3^	ColorProfile::MatrixXYZ2RGB::get() {
+	return Native2ManagedFloat3x3( m_nativeObject->GetMatrixXYZ2RGB() );
 }
 
 cli::array<float4>^	ColorProfile::XYZ2RGB( cli::array<float4>^ _XYZ ) {
@@ -55,7 +64,7 @@ cli::array<float4>^	ColorProfile::XYZ2RGB( cli::array<float4>^ _XYZ ) {
 
 	// Call native method
 	IntPtr	nativeBufferDst = System::Runtime::InteropServices::Marshal::AllocHGlobal( _XYZ->Length * sizeof(bfloat4) );
-	m_nativeObject->XYZ2RGB( (bfloat4*) nativeBufferSrc.ToPointer(), (bfloat4*) nativeBufferDst.ToPointer(), _XYZ->Length );
+	m_nativeObject->XYZ2RGB( (bfloat3*) nativeBufferSrc.ToPointer(), (bfloat3*) nativeBufferDst.ToPointer(), _XYZ->Length, sizeof(bfloat4) );
 
 	// Copy result back to managed array
 	cli::array<float4>^	RGB = gcnew cli::array<float4>( _XYZ->Length );
@@ -80,7 +89,7 @@ cli::array<float4>^	ColorProfile::RGB2XYZ( cli::array<float4>^ _RGB ) {
 
 	// Call native method
 	IntPtr	nativeBufferDst = System::Runtime::InteropServices::Marshal::AllocHGlobal( _RGB->Length * sizeof(bfloat4) );
-	m_nativeObject->RGB2XYZ( (bfloat4*) nativeBufferSrc.ToPointer(), (bfloat4*) nativeBufferDst.ToPointer(), _RGB->Length );
+	m_nativeObject->RGB2XYZ( (bfloat3*) nativeBufferSrc.ToPointer(), (bfloat3*) nativeBufferDst.ToPointer(), _RGB->Length, sizeof(bfloat4) );
 
 	// Copy result back to managed array
 	cli::array<float4>^	XYZ = gcnew cli::array<float4>( _RGB->Length );
@@ -95,14 +104,33 @@ cli::array<float4>^	ColorProfile::RGB2XYZ( cli::array<float4>^ _RGB ) {
 	return XYZ;
 }
 
-void	ColorProfile::ComputeWhiteBalanceXYZMatrix( Chromaticities^ _profileIn, float2^ _whitePointOut,SharpMath::float3x3% _whiteBalanceMatrix ) {
+SharpMath::float3x3^	ColorProfile::ComputeWhiteBalanceXYZMatrix( Chromaticities^ _profileIn, SharpMath::float2^ _whitePointOut ) {
 	::float3x3	result;
 	ImageUtilityLib::ColorProfile::ComputeWhiteBalanceXYZMatrix( *_profileIn->m_nativeObject, bfloat2( _whitePointOut->x, _whitePointOut->y ), result );
 
-	_whiteBalanceMatrix.r[0].Set( result.r[0].x, result.r[0].y, result.r[0].z );
-	_whiteBalanceMatrix.r[1].Set( result.r[1].x, result.r[1].y, result.r[1].z );
-	_whiteBalanceMatrix.r[2].Set( result.r[2].x, result.r[2].y, result.r[2].z );
+	return gcnew SharpMath::float3x3(	result.r[0].x, result.r[0].y, result.r[0].z,
+										result.r[1].x, result.r[1].y, result.r[1].z,
+										result.r[2].x, result.r[2].y, result.r[2].z );
 }
+
+SharpMath::float3x3^	ColorProfile::ComputeWhiteBalanceXYZMatrix( SharpMath::float2^ _whitePointIn, Chromaticities^ _profileOut ) {
+	::float3x3	result;
+	ImageUtilityLib::ColorProfile::ComputeWhiteBalanceXYZMatrix( bfloat2( _whitePointIn->x, _whitePointIn->y ), *_profileOut->m_nativeObject, result );
+
+	return gcnew SharpMath::float3x3(	result.r[0].x, result.r[0].y, result.r[0].z,
+										result.r[1].x, result.r[1].y, result.r[1].z,
+										result.r[2].x, result.r[2].y, result.r[2].z );
+}
+
+SharpMath::float3x3^	ColorProfile::ComputeWhiteBalanceXYZMatrix( SharpMath::float2^ _xyR, float2^ _xyG, SharpMath::float2^ _xyB, SharpMath::float2^ _whitePointIn, SharpMath::float2^ _whitePointOut ) {
+	::float3x3	result;
+	ImageUtilityLib::ColorProfile::ComputeWhiteBalanceXYZMatrix( bfloat2( _xyR->x, _xyR->y ), bfloat2( _xyG->x, _xyG->y ), bfloat2( _xyB->x, _xyB->y ), bfloat2( _whitePointIn->x, _whitePointIn->y ), bfloat2( _whitePointOut->x, _whitePointOut->y ), result );
+
+	return gcnew SharpMath::float3x3(	result.r[0].x, result.r[0].y, result.r[0].z,
+										result.r[1].x, result.r[1].y, result.r[1].z,
+										result.r[2].x, result.r[2].y, result.r[2].z );
+}
+
 
 void	ColorProfile::IntegrateSpectralPowerDistributionIntoXYZ( float _wavelengthStart, float _wavelengthStep, cli::array< double >^ _spectralPowerDistibution, float3% _XYZ ) {
 	bfloat3	XYZ;

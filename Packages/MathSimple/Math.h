@@ -233,7 +233,15 @@ namespace SharpMath {
 			r[1] = *_r1;
 			r[2] = *_r2;
 		}
- 
+		float3x3(	float r00, float r01, float r02, 
+					float r10, float r11, float r12, 
+					float r20, float r21, float r22 ) {
+			r = gcnew cli::array< float3 >( 3 );
+			r[0].Set( r00, r01, r02 );
+			r[1].Set( r10, r11, r12 );
+			r[2].Set( r20, r21, r22 );
+		}
+
 		float3x3^	Scale( float3 _Scale ) {
 			r[0] *= _Scale.x;
 			r[1] *= _Scale.y;
@@ -390,6 +398,16 @@ namespace SharpMath {
 			r[1] = *_r1;
 			r[2] = *_r2;
 			r[3] = *_r3;
+		}
+		float4x4(	float r00, float r01, float r02, float r03,
+					float r10, float r11, float r12, float r13,
+					float r20, float r21, float r22, float r23,
+					float r30, float r31, float r32, float r33 ) {
+			r = gcnew cli::array< float4 >( 4 );
+			r[0].Set( r00, r01, r02, r03 );
+			r[1].Set( r10, r11, r12, r13 );
+			r[2].Set( r20, r21, r22, r23 );
+			r[3].Set( r30, r31, r32, r33 );
 		}
 
 		// Makes a "look at" camera matrix (left-handed)

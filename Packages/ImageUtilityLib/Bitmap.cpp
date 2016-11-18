@@ -37,7 +37,7 @@ void	Bitmap::FromImageFile( const ImageFile& _sourceFile, ColorProfile* _profile
 	// Convert to XYZ in bulk using profile
 	const bfloat4*	source = (const bfloat4*) FreeImage_GetBits( float4Bitmap );
 	m_XYZ = new bfloat4[m_width * m_height];
-	colorProfile->RGB2XYZ( source, m_XYZ, U32(m_width * m_height) );
+	colorProfile->RGB2XYZ( (bfloat3*) source, (bfloat3*) m_XYZ, U32(m_width * m_height), sizeof(bfloat4) );
 
 	FreeImage_Unload( float4Bitmap );
 
@@ -77,7 +77,7 @@ void	Bitmap::ToImageFile( ImageFile& _targetFile, ColorProfile* _profileOverride
 		}
 		source = target;	// In-place conversion
 	}
-	colorProfile->XYZ2RGB( source, target, m_width*m_height );
+	colorProfile->XYZ2RGB( (bfloat3*) source, (bfloat3*) target, m_width*m_height, sizeof(bfloat4) );
 }
 
 void	Bitmap::BilinearSample( float X, float Y, bfloat4& _XYZ ) const {
@@ -211,7 +211,7 @@ void	Bitmap::LDR2HDR( U32 _imagesCount, const ImageFile** _images, const float* 
 	//////////////////////////////////////////////////////////////////////////
 	// 3] Convert into XYZ using a linear profile
 	ColorProfile	linearProfile( ColorProfile::STANDARD_PROFILE::LINEAR );
-	linearProfile.RGB2XYZ( m_XYZ, m_XYZ, W*H );
+	linearProfile.RGB2XYZ( (bfloat3*) m_XYZ, (bfloat3*) m_XYZ, W*H, sizeof(bfloat4) );
 }
 
 void svdcmp( int m, int n, float** a, float w[], float** v );

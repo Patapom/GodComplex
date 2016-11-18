@@ -51,65 +51,24 @@ void	ColorProfile::BuildTransformFromChroma( bool _checkGammaCurveOverride ) {
 	xyY2XYZ( bfloat3( m_chromaticities.W.x, m_chromaticities.W.y, 1.0f ), XYZ_W );
 
 	// Build the xyz->RGB matrix
-	m_XYZ2RGB.r[0].Set( xyz_R, 0.0f );
-	m_XYZ2RGB.r[1].Set( xyz_G, 0.0f );
-	m_XYZ2RGB.r[2].Set( xyz_B, 0.0f );
-	m_XYZ2RGB.r[3].Set( 0,0,0, 1.0f );
+	m_XYZ2RGB.r[0] = xyz_R;
+	m_XYZ2RGB.r[1] = xyz_G;
+	m_XYZ2RGB.r[2] = xyz_B;
 	m_XYZ2RGB.Invert();
 
 	// Knowing the XYZ of the white point, we retrieve the scale factor for each axis x, y and z that will help us get X, Y and Z
-	bfloat4	sum_RGB = bfloat4( XYZ_W, 0.0f ) * m_XYZ2RGB;
-
-// Compute a 2nd white point
-bfloat3	XYZ_W_in;
-xyY2XYZ( bfloat3( ILLUMINANT_D50.x, ILLUMINANT_D50.y, 1.0f ), XYZ_W_in );
-bfloat4	sum_RGB_in = bfloat4( XYZ_W_in, 0.0f ) * m_XYZ2RGB;
-
-// sum_RGB.Set( 2, 1, 1, 0 );
-// sum_RGB_in.Set( 1, 1, 1, 0 );
+	bfloat3	sum_RGB = XYZ_W * m_XYZ2RGB;
 
 	// Finally, we can retrieve the RGB->XYZ transform
-	m_RGB2XYZ.r[0].Set( sum_RGB.x * xyz_R, 0.0f );
-	m_RGB2XYZ.r[1].Set( sum_RGB.y * xyz_G, 0.0f );
-	m_RGB2XYZ.r[2].Set( sum_RGB.z * xyz_B, 0.0f );
-	m_RGB2XYZ.r[3].Set( 0, 0, 0, 1 );
+	m_RGB2XYZ.r[0] = sum_RGB.x * xyz_R;
+	m_RGB2XYZ.r[1] = sum_RGB.y * xyz_G;
+	m_RGB2XYZ.r[2] = sum_RGB.z * xyz_B;
 
 	// And the XYZ->RGB transform is simply the existing xyz->RGB matrix scaled by the reciprocal of the sum
 	bfloat3	recSum_RGB( 1.0f / sum_RGB.x, 1.0f / sum_RGB.y, 1.0f / sum_RGB.z );
 	(bfloat3&) m_XYZ2RGB.r[0] = (bfloat3&) m_XYZ2RGB.r[0] * recSum_RGB;
 	(bfloat3&) m_XYZ2RGB.r[1] = (bfloat3&) m_XYZ2RGB.r[1] * recSum_RGB;
 	(bfloat3&) m_XYZ2RGB.r[2] = (bfloat3&) m_XYZ2RGB.r[2] * recSum_RGB;
-
-	float4x4	test = m_RGB2XYZ * m_XYZ2RGB;
-
-// for ( int i=0; i < 3; i++ )
-// 	for ( int j=0; j < 3; j++ ) {
-// 		float	b = m_XYZ2RGB.r[i][j];
-// 		float	a = M_xyz.r[i][j];
-// 				a /= sum_RGB[j];
-// 		ASSERT( fabs( a - b ) < 1e-3f, "mismatch!" );
-// 	}
-
-float4x4	XYZ2RGB_in;
-XYZ2RGB_in.r[0].Set( sum_RGB_in.x * xyz_R, 0.0f );
-XYZ2RGB_in.r[1].Set( sum_RGB_in.y * xyz_G, 0.0f );
-XYZ2RGB_in.r[2].Set( sum_RGB_in.z * xyz_B, 0.0f );
-XYZ2RGB_in.r[3].Set( 0,0,0, 1.0f );
-
-XYZ2RGB_in.Invert();
-float4x4	test2 = XYZ2RGB_in * m_RGB2XYZ;
-//float4x4	test2 = XYZ2RGB_in * m_XYZ2RGB;
-
-bfloat4		newR = bfloat4( sum_RGB_in.x * xyz_R, 0.0f ) * test2;
-bfloat4		newG = bfloat4( sum_RGB_in.y * xyz_G, 0.0f ) * test2;
-bfloat4		newB = bfloat4( sum_RGB_in.z * xyz_B, 0.0f ) * test2;
-bfloat4		newWhite = bfloat4( XYZ_W_in, 0.0f ) * test2;
-
-// Test outer product
-float3x3	outer;
-outer.r[0].Set( sum_RGB.x / sum_RGB_in.x, sum_RGB.y / sum_RGB_in.x, sum_RGB.z / sum_RGB_in.x );
-outer.r[1].Set( sum_RGB.x / sum_RGB_in.y, sum_RGB.y / sum_RGB_in.y, sum_RGB.z / sum_RGB_in.y );
-outer.r[2].Set( sum_RGB.x / sum_RGB_in.z, sum_RGB.y / sum_RGB_in.z, sum_RGB.z / sum_RGB_in.z );
 
 	// ============= Attempt to recognize a standard profile ============= 
 	STANDARD_PROFILE	recognizedChromaticity = m_chromaticities.FindRecognizedChromaticity();
@@ -203,41 +162,41 @@ outer.r[2].Set( sum_RGB.x / sum_RGB_in.z, sum_RGB.y / sum_RGB_in.z, sum_RGB.z / 
 // The matrix we're after is simply the (XYZ_in -> RGB_in) * (RGB_out -> XYZ_out) matrix...
 //
 void	ColorProfile::ComputeWhiteBalanceXYZMatrix( const Chromaticities& _profileIn, const bfloat2& _whitePointOut, float3x3& _whiteBalanceMatrix ) {
-	bfloat3	xyz_R( _profileIn.R.x, _profileIn.R.y, 1.0f - _profileIn.R.x - _profileIn.R.y );
-	bfloat3	xyz_G( _profileIn.G.x, _profileIn.G.y, 1.0f - _profileIn.G.x - _profileIn.G.y );
-	bfloat3	xyz_B( _profileIn.B.x, _profileIn.B.y, 1.0f - _profileIn.B.x - _profileIn.B.y );
+	ComputeWhiteBalanceXYZMatrix( _profileIn.R, _profileIn.G, _profileIn.B, _profileIn.W, _whitePointOut, _whiteBalanceMatrix );
+}
+void	ColorProfile::ComputeWhiteBalanceXYZMatrix( const bfloat2& _whitePointIn, const Chromaticities& _profileOut, float3x3& _whiteBalanceMatrix ) {
+	ComputeWhiteBalanceXYZMatrix( _profileOut.R, _profileOut.G, _profileOut.B, _whitePointIn, _profileOut.W, _whiteBalanceMatrix );
+}
+void	ColorProfile::ComputeWhiteBalanceXYZMatrix( const bfloat2& _xyR, const bfloat2& _xyG, const bfloat2& _xyB, const bfloat2& _whitePointIn, const bfloat2& _whitePointOut, float3x3& _whiteBalanceMatrix ) {
+	bfloat3	xyz_R( _xyR.x, _xyR.y, 1.0f - _xyR.x - _xyR.y );
+	bfloat3	xyz_G( _xyG.x, _xyG.y, 1.0f - _xyG.x - _xyG.y );
+	bfloat3	xyz_B( _xyB.x, _xyB.y, 1.0f - _xyB.x - _xyB.y );
 
 	bfloat3	XYZ_W_in;
-	xyY2XYZ( bfloat3( _profileIn.W.x, _profileIn.W.y, 1.0f ), XYZ_W_in );
+	xyY2XYZ( bfloat3( _whitePointIn.x, _whitePointIn.y, 1.0f ), XYZ_W_in );
 
 	bfloat3	XYZ_W_out;
 	xyY2XYZ( bfloat3( _whitePointOut.x, _whitePointOut.y, 1.0f ), XYZ_W_out );
 
-	// Build xyz matrix (common to both input and output)
+	// Build xyz matrix and its inverse (common to both input and output)
 	float3x3	M_xyz;
 	M_xyz.r[0].Set( xyz_R.x, xyz_R.y, xyz_R.z );
 	M_xyz.r[1].Set( xyz_G.x, xyz_G.y, xyz_G.z );
 	M_xyz.r[2].Set( xyz_B.x, xyz_B.y, xyz_B.z );
-	M_xyz.Invert();
+	float3x3	M_inv_xyz = M_xyz.Inverse();
 
 	// Retrieve the sigmas for in and out white points
-	bfloat3	Sum_RGB_in = XYZ_W_in * M_xyz;
-	bfloat3	Sum_RGB_out = XYZ_W_out * M_xyz;
+	bfloat3	Sum_RGB_in = XYZ_W_in * M_inv_xyz;
+	bfloat3	Sum_RGB_out = XYZ_W_out * M_inv_xyz;
 
+	// Perform the XYZ_in^-1 * XYZ_out product
+	M_xyz.Scale( Sum_RGB_out );
+	bfloat3	rec_Sum_RGB_in( 1.0f / Sum_RGB_in.x, 1.0f / Sum_RGB_in.y, 1.0f / Sum_RGB_in.z );
+	M_inv_xyz.r[0] = rec_Sum_RGB_in * M_inv_xyz.r[0];
+	M_inv_xyz.r[1] = rec_Sum_RGB_in * M_inv_xyz.r[1];
+	M_inv_xyz.r[2] = rec_Sum_RGB_in * M_inv_xyz.r[2];
 
-
-// 	// Finally, we can retrieve the RGB->XYZ transform
-// 	m_RGB2XYZ.r[0].Set( Sum_RGB.x * xyz_R, 0.0f );
-// 	m_RGB2XYZ.r[1].Set( Sum_RGB.y * xyz_G, 0.0f );
-// 	m_RGB2XYZ.r[2].Set( Sum_RGB.z * xyz_B, 0.0f );
-// 	m_RGB2XYZ.r[3].Set( 0, 0, 0, 1 );
-// 
-// 	// And the XYZ->RGB transform
-// 	m_XYZ2RGB = m_RGB2XYZ;
-// 	m_XYZ2RGB.Invert();
-// 
-// 	float	determinant = Sb Sg Sr Xr Yg Zb - Sb Sg Sr Xg Yr Zb - Sb Sg Sr Xr Yb Zg + 
-//  Sb Sg Sr Xb Yr Zg + Sb Sg Sr Xg Yb Zr - Sb Sg Sr Xb Yg Zr;
+	_whiteBalanceMatrix = M_inv_xyz * M_xyz;
 }
 
 // According to https://en.wikipedia.org/wiki/Black-body_radiation#Planck.27s_law_of_black-body_radiation
@@ -368,21 +327,21 @@ void	ColorProfile::ComputeWhitePointChromaticities( float _blackBodyTemperature,
 //////////////////////////////////////////////////////////////////////////
 // InternalColorConverter_sRGB
 //
-const float4x4	ColorProfile::InternalColorConverter_sRGB::MAT_RGB2XYZ(
-	0.4124f, 0.2126f, 0.0193f, 0.0f,
-	0.3576f, 0.7152f, 0.1192f, 0.0f,
-	0.1805f, 0.0722f, 0.9505f, 0.0f,
-	0.0000f, 0.0000f, 0.0000f, 1.0f		// Alpha stays the same
+#define IncPtr( ptr, stride ) ptr = ((bfloat3*) (((U8*) (ptr)) + stride))
+
+const float3x3	ColorProfile::InternalColorConverter_sRGB::MAT_RGB2XYZ(
+	0.4124f, 0.2126f, 0.0193f,
+	0.3576f, 0.7152f, 0.1192f,
+	0.1805f, 0.0722f, 0.9505f
 );
 
-const float4x4	ColorProfile::InternalColorConverter_sRGB::MAT_XYZ2RGB(
-	3.2406f, -0.9689f,  0.0557f, 0.0f,
-	-1.5372f,  1.8758f, -0.2040f, 0.0f,
-	-0.4986f,  0.0415f,  1.0570f, 0.0f,
-	0.0000f,  0.0000f,  0.0000f, 1.0f	// Alpha stays the same
+const float3x3	ColorProfile::InternalColorConverter_sRGB::MAT_XYZ2RGB(
+	 3.2406f, -0.9689f,  0.0557f,
+	-1.5372f,  1.8758f, -0.2040f,
+	-0.4986f,  0.0415f,  1.0570f
 );
 
-void ColorProfile::InternalColorConverter_sRGB::XYZ2RGB( const bfloat4& _XYZ, bfloat4& _RGB ) const {
+void ColorProfile::InternalColorConverter_sRGB::XYZ2RGB( const bfloat3& _XYZ, bfloat3& _RGB ) const {
 	// Transform into RGB
 	_RGB = _XYZ * MAT_XYZ2RGB;
 
@@ -392,19 +351,18 @@ void ColorProfile::InternalColorConverter_sRGB::XYZ2RGB( const bfloat4& _XYZ, bf
 	_RGB.z = Linear2sRGB( _RGB.z );
 }
 
-void ColorProfile::InternalColorConverter_sRGB::RGB2XYZ( const bfloat4& _RGB, bfloat4& _XYZ ) const {
+void ColorProfile::InternalColorConverter_sRGB::RGB2XYZ( const bfloat3& _RGB, bfloat3& _XYZ ) const {
 	// Gamma un-correct
 	_XYZ.x = sRGB2Linear( _RGB.x );
 	_XYZ.y = sRGB2Linear( _RGB.y );
 	_XYZ.z = sRGB2Linear( _RGB.z );
-	_XYZ.w = _RGB.w;
 
 	// Transform into XYZ
 	_XYZ = _XYZ * MAT_RGB2XYZ;
 }
 
-void ColorProfile::InternalColorConverter_sRGB::XYZ2RGB( const bfloat4* _XYZ, bfloat4* _RGB, U32 _length ) const {
-	for ( S32 i=S32(_length); i >= 0; i--, _XYZ++, _RGB++ ) {
+void ColorProfile::InternalColorConverter_sRGB::XYZ2RGB( const bfloat3* _XYZ, bfloat3* _RGB, U32 _length, U32 _stride ) const {
+	for ( S32 i=S32(_length); i >= 0; i--, IncPtr( _XYZ, _stride ), IncPtr( _RGB, _stride ) ) {
 		// Transform into RGB
 		*_RGB = *_XYZ * MAT_XYZ2RGB;
 
@@ -415,13 +373,12 @@ void ColorProfile::InternalColorConverter_sRGB::XYZ2RGB( const bfloat4* _XYZ, bf
 	}
 }
 
-void ColorProfile::InternalColorConverter_sRGB::RGB2XYZ( const bfloat4* _RGB, bfloat4* _XYZ, U32 _length ) const {
-	for ( S32 i=S32(_length); i >= 0; i--, _XYZ++, _RGB++ ) {
+void ColorProfile::InternalColorConverter_sRGB::RGB2XYZ( const bfloat3* _RGB, bfloat3* _XYZ, U32 _length, U32 _stride ) const {
+	for ( S32 i=S32(_length); i >= 0; i--, IncPtr( _XYZ, _stride ), IncPtr( _RGB, _stride ) ) {
 		// Gamma un-correct
 		_XYZ->x = sRGB2Linear( _RGB->x );
 		_XYZ->y = sRGB2Linear( _RGB->y );
 		_XYZ->z = sRGB2Linear( _RGB->z );
-		_XYZ->w = _RGB->w;
 
 		// Transform into XYZ
 		*_XYZ = *_XYZ * MAT_RGB2XYZ;
@@ -431,21 +388,19 @@ void ColorProfile::InternalColorConverter_sRGB::RGB2XYZ( const bfloat4* _RGB, bf
 //////////////////////////////////////////////////////////////////////////
 // InternalColorConverter_AdobeRGB_D50
 //
-const float4x4	ColorProfile::InternalColorConverter_AdobeRGB_D50::MAT_RGB2XYZ(
-	0.60974f, 0.31111f, 0.01947f, 0.0f,
-	0.20528f, 0.62567f, 0.06087f, 0.0f,
-	0.14919f, 0.06322f, 0.74457f, 0.0f,
-	0.00000f, 0.00000f, 0.00000f, 1.0f		// Alpha stays the same
+const float3x3	ColorProfile::InternalColorConverter_AdobeRGB_D50::MAT_RGB2XYZ(
+	0.60974f, 0.31111f, 0.01947f,
+	0.20528f, 0.62567f, 0.06087f,
+	0.14919f, 0.06322f, 0.74457f
 );
 
-const float4x4	ColorProfile::InternalColorConverter_AdobeRGB_D50::MAT_XYZ2RGB(
-	 1.96253f, -0.97876f,  0.02869f, 0.0f,
-	-0.61068f,  1.91615f, -0.14067f, 0.0f,
-	-0.34137f,  0.03342f,  1.34926f, 0.0f,
-	 0.00000f,  0.00000f,  0.00000f, 1.0f	// Alpha stays the same
+const float3x3	ColorProfile::InternalColorConverter_AdobeRGB_D50::MAT_XYZ2RGB(
+	 1.96253f, -0.97876f,  0.02869f,
+	-0.61068f,  1.91615f, -0.14067f,
+	-0.34137f,  0.03342f,  1.34926f
 );
 
-void ColorProfile::InternalColorConverter_AdobeRGB_D50::XYZ2RGB( const bfloat4& _XYZ, bfloat4& _RGB ) const {
+void ColorProfile::InternalColorConverter_AdobeRGB_D50::XYZ2RGB( const bfloat3& _XYZ, bfloat3& _RGB ) const {
 	// Transform into RGB
 	_RGB = _XYZ * MAT_XYZ2RGB;
 
@@ -455,19 +410,18 @@ void ColorProfile::InternalColorConverter_AdobeRGB_D50::XYZ2RGB( const bfloat4& 
 	_RGB.z = powf( _RGB.z, 1.0f / GAMMA_EXPONENT_ADOBE );
 }
 
-void ColorProfile::InternalColorConverter_AdobeRGB_D50::RGB2XYZ( const bfloat4& _RGB, bfloat4& _XYZ ) const {
+void ColorProfile::InternalColorConverter_AdobeRGB_D50::RGB2XYZ( const bfloat3& _RGB, bfloat3& _XYZ ) const {
 	// Gamma un-correct
 	_XYZ.x = powf( _RGB.x, GAMMA_EXPONENT_ADOBE );
 	_XYZ.y = powf( _RGB.y, GAMMA_EXPONENT_ADOBE );
 	_XYZ.z = powf( _RGB.z, GAMMA_EXPONENT_ADOBE );
-	_XYZ.w = _RGB.w;
 
 	// Transform into XYZ
 	_XYZ = _XYZ * MAT_RGB2XYZ;
 }
 
-void ColorProfile::InternalColorConverter_AdobeRGB_D50::XYZ2RGB( const bfloat4* _XYZ, bfloat4* _RGB, U32 _length ) const {
-	for ( S32 i=S32(_length); i >= 0; i--, _XYZ++, _RGB++ ) {
+void ColorProfile::InternalColorConverter_AdobeRGB_D50::XYZ2RGB( const bfloat3* _XYZ, bfloat3* _RGB, U32 _length, U32 _stride ) const {
+	for ( S32 i=S32(_length); i >= 0; i--, IncPtr( _XYZ, _stride ), IncPtr( _RGB, _stride ) ) {
 		// Transform into RGB
 		*_RGB = *_XYZ * MAT_XYZ2RGB;
 
@@ -478,13 +432,12 @@ void ColorProfile::InternalColorConverter_AdobeRGB_D50::XYZ2RGB( const bfloat4* 
 	}
 }
 
-void ColorProfile::InternalColorConverter_AdobeRGB_D50::RGB2XYZ( const bfloat4* _RGB, bfloat4* _XYZ, U32 _length ) const {
-	for ( S32 i=S32(_length); i >= 0; i--, _XYZ++, _RGB++ ) {
+void ColorProfile::InternalColorConverter_AdobeRGB_D50::RGB2XYZ( const bfloat3* _RGB, bfloat3* _XYZ, U32 _length, U32 _stride ) const {
+	for ( S32 i=S32(_length); i >= 0; i--, IncPtr( _XYZ, _stride ), IncPtr( _RGB, _stride ) ) {
 		// Gamma un-correct
 		_XYZ->x = powf( _RGB->x, GAMMA_EXPONENT_ADOBE );
 		_XYZ->y = powf( _RGB->y, GAMMA_EXPONENT_ADOBE );
 		_XYZ->z = powf( _RGB->z, GAMMA_EXPONENT_ADOBE );
-		_XYZ->w = _RGB->w;
 
 		// Transform into XYZ
 		*_XYZ = *_XYZ * MAT_RGB2XYZ;
@@ -494,21 +447,19 @@ void ColorProfile::InternalColorConverter_AdobeRGB_D50::RGB2XYZ( const bfloat4* 
 //////////////////////////////////////////////////////////////////////////
 // InternalColorConverter_AdobeRGB_D65
 //
-const float4x4	ColorProfile::InternalColorConverter_AdobeRGB_D65::MAT_RGB2XYZ(
-	0.57667f, 0.29734f, 0.02703f, 0.0f,
-	0.18556f, 0.62736f, 0.07069f, 0.0f,
-	0.18823f, 0.07529f, 0.99134f, 0.0f,
-	0.00000f, 0.00000f, 0.00000f, 1.0f		// Alpha stays the same
+const float3x3	ColorProfile::InternalColorConverter_AdobeRGB_D65::MAT_RGB2XYZ(
+	0.57667f, 0.29734f, 0.02703f,
+	0.18556f, 0.62736f, 0.07069f,
+	0.18823f, 0.07529f, 0.99134f
 );
 
-const float4x4	ColorProfile::InternalColorConverter_AdobeRGB_D65::MAT_XYZ2RGB(
-	 2.04159f, -0.96924f,  0.01344f, 0.0f,
-	-0.56501f,  1.87597f, -0.11836f, 0.0f,
-	-0.34473f,  0.04156f,  1.01517f, 0.0f,
-	 0.00000f,  0.00000f,  0.00000f, 1.0f	// Alpha stays the same
+const float3x3	ColorProfile::InternalColorConverter_AdobeRGB_D65::MAT_XYZ2RGB(
+	 2.04159f, -0.96924f,  0.01344f,
+	-0.56501f,  1.87597f, -0.11836f,
+	-0.34473f,  0.04156f,  1.01517f
 );
 
-void ColorProfile::InternalColorConverter_AdobeRGB_D65::XYZ2RGB( const bfloat4& _XYZ, bfloat4& _RGB ) const {
+void ColorProfile::InternalColorConverter_AdobeRGB_D65::XYZ2RGB( const bfloat3& _XYZ, bfloat3& _RGB ) const {
 	// Transform into RGB
 	_RGB = _XYZ * MAT_XYZ2RGB;
 
@@ -518,19 +469,18 @@ void ColorProfile::InternalColorConverter_AdobeRGB_D65::XYZ2RGB( const bfloat4& 
 	_RGB.z = powf( _XYZ.z, 1.0f / GAMMA_EXPONENT_ADOBE );
 }
 
-void ColorProfile::InternalColorConverter_AdobeRGB_D65::RGB2XYZ( const bfloat4& _RGB, bfloat4& _XYZ ) const {
+void ColorProfile::InternalColorConverter_AdobeRGB_D65::RGB2XYZ( const bfloat3& _RGB, bfloat3& _XYZ ) const {
 	// Gamma un-correct
 	_XYZ.x = powf( _RGB.x, GAMMA_EXPONENT_ADOBE );
 	_XYZ.y = powf( _RGB.y, GAMMA_EXPONENT_ADOBE );
 	_XYZ.z = powf( _RGB.z, GAMMA_EXPONENT_ADOBE );
-	_XYZ.w = _RGB.w;
 
 	// Transform into XYZ
 	_XYZ = _XYZ * MAT_RGB2XYZ;
 }
 
-void ColorProfile::InternalColorConverter_AdobeRGB_D65::XYZ2RGB( const bfloat4* _XYZ, bfloat4* _RGB, U32 _length ) const {
-	for ( S32 i=S32(_length); i >= 0; i--, _XYZ++, _RGB++ ) {
+void ColorProfile::InternalColorConverter_AdobeRGB_D65::XYZ2RGB( const bfloat3* _XYZ, bfloat3* _RGB, U32 _length, U32 _stride ) const {
+	for ( S32 i=S32(_length); i >= 0; i--, IncPtr( _XYZ, _stride ), IncPtr( _RGB, _stride ) ) {
 		// Transform into RGB
 		*_RGB = *_XYZ * MAT_XYZ2RGB;
 
@@ -541,13 +491,12 @@ void ColorProfile::InternalColorConverter_AdobeRGB_D65::XYZ2RGB( const bfloat4* 
 	}
 }
 
-void ColorProfile::InternalColorConverter_AdobeRGB_D65::RGB2XYZ( const bfloat4* _RGB, bfloat4* _XYZ, U32 _length ) const {
-	for ( S32 i=S32(_length); i >= 0; i--, _XYZ++, _RGB++ ) {
+void ColorProfile::InternalColorConverter_AdobeRGB_D65::RGB2XYZ( const bfloat3* _RGB, bfloat3* _XYZ, U32 _length, U32 _stride ) const {
+	for ( S32 i=S32(_length); i >= 0; i--, IncPtr( _XYZ, _stride ), IncPtr( _RGB, _stride ) ) {
 		// Gamma un-correct
 		_XYZ->x = powf( _RGB->x, GAMMA_EXPONENT_ADOBE );
 		_XYZ->y = powf( _RGB->y, GAMMA_EXPONENT_ADOBE );
 		_XYZ->z = powf( _RGB->z, GAMMA_EXPONENT_ADOBE );
-		_XYZ->w = _RGB->w;
 
 		// Transform into XYZ
 		*_XYZ = *_XYZ * MAT_RGB2XYZ;
@@ -557,21 +506,19 @@ void ColorProfile::InternalColorConverter_AdobeRGB_D65::RGB2XYZ( const bfloat4* 
 //////////////////////////////////////////////////////////////////////////
 // InternalColorConverter_ProPhoto
 //
-const float4x4	ColorProfile::InternalColorConverter_ProPhoto::MAT_RGB2XYZ(
-	0.7977f, 0.2880f, 0.0000f, 0.0f,
-	0.1352f, 0.7119f, 0.0000f, 0.0f,
-	0.0313f, 0.0001f, 0.8249f, 0.0f,
-	0.0000f, 0.0000f, 0.0000f, 1.0f		// Alpha stays the same
+const float3x3	ColorProfile::InternalColorConverter_ProPhoto::MAT_RGB2XYZ(
+	0.7977f, 0.2880f, 0.0000f,
+	0.1352f, 0.7119f, 0.0000f,
+	0.0313f, 0.0001f, 0.8249f
 );
 
-const float4x4	ColorProfile::InternalColorConverter_ProPhoto::MAT_XYZ2RGB(
-	 1.3460f, -0.5446f,  0.0000f, 0.0f,
-	-0.2556f,  1.5082f,  0.0000f, 0.0f,
-	-0.0511f,  0.0205f,  1.2123f, 0.0f,
-	 0.0000f,  0.0000f,  0.0000f, 1.0f	// Alpha stays the same
+const float3x3	ColorProfile::InternalColorConverter_ProPhoto::MAT_XYZ2RGB(
+	 1.3460f, -0.5446f,  0.0000f,
+	-0.2556f,  1.5082f,  0.0000f,
+	-0.0511f,  0.0205f,  1.2123f
 );
 
-void ColorProfile::InternalColorConverter_ProPhoto::XYZ2RGB( const bfloat4& _XYZ, bfloat4& _RGB ) const {
+void ColorProfile::InternalColorConverter_ProPhoto::XYZ2RGB( const bfloat3& _XYZ, bfloat3& _RGB ) const {
 	// Transform into RGB
 	_RGB = _XYZ * MAT_XYZ2RGB;
 
@@ -581,19 +528,18 @@ void ColorProfile::InternalColorConverter_ProPhoto::XYZ2RGB( const bfloat4& _XYZ
 	_RGB.z = _RGB.z > 0.001953f ? powf( _RGB.z, 1.0f / GAMMA_EXPONENT_PRO_PHOTO ) : 16.0f * _RGB.z;
 }
 
-void ColorProfile::InternalColorConverter_ProPhoto::RGB2XYZ( const bfloat4& _RGB, bfloat4& _XYZ ) const {
+void ColorProfile::InternalColorConverter_ProPhoto::RGB2XYZ( const bfloat3& _RGB, bfloat3& _XYZ ) const {
 	// Gamma un-correct
 	_XYZ.x = _RGB.x > 0.031248f ? powf( _RGB.x, GAMMA_EXPONENT_PRO_PHOTO ) : _RGB.x / 16.0f;
 	_XYZ.y = _RGB.y > 0.031248f ? powf( _RGB.y, GAMMA_EXPONENT_PRO_PHOTO ) : _RGB.y / 16.0f;
 	_XYZ.z = _RGB.z > 0.031248f ? powf( _RGB.z, GAMMA_EXPONENT_PRO_PHOTO ) : _RGB.z / 16.0f;
-	_XYZ.w = _RGB.w;
 
 	// Transform into XYZ
 	_XYZ = _XYZ * MAT_RGB2XYZ;
 }
 
-void ColorProfile::InternalColorConverter_ProPhoto::XYZ2RGB( const bfloat4* _XYZ, bfloat4* _RGB, U32 _length ) const {
-	for ( S32 i=S32(_length); i >= 0; i--, _XYZ++, _RGB++ ) {
+void ColorProfile::InternalColorConverter_ProPhoto::XYZ2RGB( const bfloat3* _XYZ, bfloat3* _RGB, U32 _length, U32 _stride ) const {
+	for ( S32 i=S32(_length); i >= 0; i--, IncPtr( _XYZ, _stride ), IncPtr( _RGB, _stride ) ) {
 		// Transform into RGB
 		*_RGB = *_XYZ * MAT_XYZ2RGB;
 
@@ -604,13 +550,12 @@ void ColorProfile::InternalColorConverter_ProPhoto::XYZ2RGB( const bfloat4* _XYZ
 	}
 }
 
-void ColorProfile::InternalColorConverter_ProPhoto::RGB2XYZ( const bfloat4* _RGB, bfloat4* _XYZ, U32 _length ) const {
-	for ( S32 i=S32(_length); i >= 0; i--, _XYZ++, _RGB++ ) {
+void ColorProfile::InternalColorConverter_ProPhoto::RGB2XYZ( const bfloat3* _RGB, bfloat3* _XYZ, U32 _length, U32 _stride ) const {
+	for ( S32 i=S32(_length); i >= 0; i--, IncPtr( _XYZ, _stride ), IncPtr( _RGB, _stride ) ) {
 		// Gamma un-correct
 		_XYZ->x = _RGB->x > 0.031248f ? powf( _RGB->x, GAMMA_EXPONENT_PRO_PHOTO ) : _RGB->x / 16.0f;
 		_XYZ->y = _RGB->y > 0.031248f ? powf( _RGB->y, GAMMA_EXPONENT_PRO_PHOTO ) : _RGB->y / 16.0f;
 		_XYZ->z = _RGB->z > 0.031248f ? powf( _RGB->z, GAMMA_EXPONENT_PRO_PHOTO ) : _RGB->z / 16.0f;
-		_XYZ->w = _RGB->w;
 
 		// Transform into XYZ
 		*_XYZ = *_XYZ * MAT_RGB2XYZ;
@@ -620,38 +565,36 @@ void ColorProfile::InternalColorConverter_ProPhoto::RGB2XYZ( const bfloat4* _RGB
 //////////////////////////////////////////////////////////////////////////
 // InternalColorConverter_Radiance
 //
-const float4x4	ColorProfile::InternalColorConverter_Radiance::MAT_RGB2XYZ(
-	0.5141447f, 0.2651059f, 0.0241005f, 0.0f,
-	0.3238845f, 0.6701059f, 0.1228527f, 0.0f,
-	0.1619709f, 0.0647883f, 0.8530467f, 0.0f,
-	0.0000000f, 0.0000000f, 0.0000000f, 1.0f		// Alpha stays the same
+const float3x3	ColorProfile::InternalColorConverter_Radiance::MAT_RGB2XYZ(
+	0.5141447f, 0.2651059f, 0.0241005f,
+	0.3238845f, 0.6701059f, 0.1228527f,
+	0.1619709f, 0.0647883f, 0.8530467f
 );
 
-const float4x4	ColorProfile::InternalColorConverter_Radiance::MAT_XYZ2RGB(
-	 2.5653124f, -1.02210832f,  0.07472437f, 0.0f,
-	-1.1668493f,  1.97828662f, -0.25193953f, 0.0f,
-	-0.3984632f,  0.04382159f,  1.17721522f, 0.0f,
-	 0.0000000f,  0.00000000f,  0.00000000f, 1.0f	// Alpha stays the same
+const float3x3	ColorProfile::InternalColorConverter_Radiance::MAT_XYZ2RGB(
+	 2.5653124f, -1.02210832f,  0.07472437f,
+	-1.1668493f,  1.97828662f, -0.25193953f,
+	-0.3984632f,  0.04382159f,  1.17721522f
 );
 
-void ColorProfile::InternalColorConverter_Radiance::XYZ2RGB( const bfloat4& _XYZ, bfloat4& _RGB ) const {
+void ColorProfile::InternalColorConverter_Radiance::XYZ2RGB( const bfloat3& _XYZ, bfloat3& _RGB ) const {
 	// Transform into RGB
 	_RGB = _XYZ * MAT_XYZ2RGB;
 }
 
-void ColorProfile::InternalColorConverter_Radiance::RGB2XYZ( const bfloat4& _RGB, bfloat4& _XYZ ) const {
+void ColorProfile::InternalColorConverter_Radiance::RGB2XYZ( const bfloat3& _RGB, bfloat3& _XYZ ) const {
 	// Transform into XYZ
 	_XYZ = _RGB * MAT_RGB2XYZ;
 }
 
-void ColorProfile::InternalColorConverter_Radiance::XYZ2RGB( const bfloat4* _XYZ, bfloat4* _RGB, U32 _length ) const {
-	for ( S32 i=S32(_length); i >= 0; i--, _XYZ++, _RGB++ ) {
+void ColorProfile::InternalColorConverter_Radiance::XYZ2RGB( const bfloat3* _XYZ, bfloat3* _RGB, U32 _length, U32 _stride ) const {
+	for ( S32 i=S32(_length); i >= 0; i--, IncPtr( _XYZ, _stride ), IncPtr( _RGB, _stride ) ) {
 		*_RGB = *_XYZ * MAT_XYZ2RGB;
 	}
 }
 
-void ColorProfile::InternalColorConverter_Radiance::RGB2XYZ( const bfloat4* _RGB, bfloat4* _XYZ, U32 _length ) const {
-	for ( S32 i=S32(_length); i >= 0; i--, _XYZ++, _RGB++ ) {
+void ColorProfile::InternalColorConverter_Radiance::RGB2XYZ( const bfloat3* _RGB, bfloat3* _XYZ, U32 _length, U32 _stride ) const {
+	for ( S32 i=S32(_length); i >= 0; i--, IncPtr( _XYZ, _stride ), IncPtr( _RGB, _stride ) ) {
 		*_XYZ = *_RGB * MAT_RGB2XYZ;
 	}
 }
@@ -659,24 +602,24 @@ void ColorProfile::InternalColorConverter_Radiance::RGB2XYZ( const bfloat4* _RGB
 //////////////////////////////////////////////////////////////////////////
 // InternalColorConverter_Generic_NoGamma
 //
-void ColorProfile::InternalColorConverter_Generic_NoGamma::XYZ2RGB( const bfloat4& _XYZ, bfloat4& _RGB ) const {
+void ColorProfile::InternalColorConverter_Generic_NoGamma::XYZ2RGB( const bfloat3& _XYZ, bfloat3& _RGB ) const {
 	// Transform into RGB
 	_RGB = _XYZ * m_XYZ2RGB;
 }
 
-void ColorProfile::InternalColorConverter_Generic_NoGamma::RGB2XYZ( const bfloat4& _RGB, bfloat4& _XYZ ) const {
+void ColorProfile::InternalColorConverter_Generic_NoGamma::RGB2XYZ( const bfloat3& _RGB, bfloat3& _XYZ ) const {
 	// Transform into XYZ
 	_XYZ = _RGB * m_RGB2XYZ;
 }
 
-void ColorProfile::InternalColorConverter_Generic_NoGamma::XYZ2RGB( const bfloat4* _XYZ, bfloat4* _RGB, U32 _length ) const {
-	for ( S32 i=S32(_length); i >= 0; i--, _XYZ++, _RGB++ ) {
+void ColorProfile::InternalColorConverter_Generic_NoGamma::XYZ2RGB( const bfloat3* _XYZ, bfloat3* _RGB, U32 _length, U32 _stride ) const {
+	for ( S32 i=S32(_length); i >= 0; i--, IncPtr( _XYZ, _stride ), IncPtr( _RGB, _stride ) ) {
 		*_RGB = *_XYZ * m_XYZ2RGB;
 	}
 }
 
-void ColorProfile::InternalColorConverter_Generic_NoGamma::RGB2XYZ( const bfloat4* _RGB, bfloat4* _XYZ, U32 _length ) const {
-	for ( S32 i=S32(_length); i >= 0; i--, _XYZ++, _RGB++ ) {
+void ColorProfile::InternalColorConverter_Generic_NoGamma::RGB2XYZ( const bfloat3* _RGB, bfloat3* _XYZ, U32 _length, U32 _stride ) const {
+	for ( S32 i=S32(_length); i >= 0; i--, IncPtr( _XYZ, _stride ), IncPtr( _RGB, _stride ) ) {
 		*_XYZ = *_RGB * m_RGB2XYZ;
 	}
 }
@@ -684,7 +627,7 @@ void ColorProfile::InternalColorConverter_Generic_NoGamma::RGB2XYZ( const bfloat
 //////////////////////////////////////////////////////////////////////////
 // InternalColorConverter_Generic_StandardGamma
 //
-void ColorProfile::InternalColorConverter_Generic_StandardGamma::XYZ2RGB( const bfloat4& _XYZ, bfloat4& _RGB ) const {
+void ColorProfile::InternalColorConverter_Generic_StandardGamma::XYZ2RGB( const bfloat3& _XYZ, bfloat3& _RGB ) const {
 	// Transform into RGB
 	_RGB = _XYZ * m_XYZ2RGB;
 
@@ -694,19 +637,18 @@ void ColorProfile::InternalColorConverter_Generic_StandardGamma::XYZ2RGB( const 
 	_RGB.z = powf( _RGB.z, m_InvGamma );
 }
 
-void ColorProfile::InternalColorConverter_Generic_StandardGamma::RGB2XYZ( const bfloat4& _RGB, bfloat4& _XYZ ) const {
+void ColorProfile::InternalColorConverter_Generic_StandardGamma::RGB2XYZ( const bfloat3& _RGB, bfloat3& _XYZ ) const {
 	// Gamma un-correct
 	_XYZ.x = powf( _RGB.x, m_Gamma );
 	_XYZ.y = powf( _RGB.y, m_Gamma );
 	_XYZ.z = powf( _RGB.z, m_Gamma );
-	_XYZ.w = _RGB.w;
 
 	// Transform into XYZ
 	_XYZ = _XYZ * m_RGB2XYZ;
 }
 
-void ColorProfile::InternalColorConverter_Generic_StandardGamma::XYZ2RGB( const bfloat4* _XYZ, bfloat4* _RGB, U32 _length ) const {
-	for ( S32 i=S32(_length); i >= 0; i--, _XYZ++, _RGB++ ) {
+void ColorProfile::InternalColorConverter_Generic_StandardGamma::XYZ2RGB( const bfloat3* _XYZ, bfloat3* _RGB, U32 _length, U32 _stride ) const {
+	for ( S32 i=S32(_length); i >= 0; i--, IncPtr( _XYZ, _stride ), IncPtr( _RGB, _stride ) ) {
 		// Transform into RGB
 		*_RGB = *_XYZ * m_XYZ2RGB;
 
@@ -717,13 +659,12 @@ void ColorProfile::InternalColorConverter_Generic_StandardGamma::XYZ2RGB( const 
 	}
 }
 
-void ColorProfile::InternalColorConverter_Generic_StandardGamma::RGB2XYZ( const bfloat4* _RGB, bfloat4* _XYZ, U32 _length ) const {
-	for ( S32 i=S32(_length); i >= 0; i--, _XYZ++, _RGB++ ) {
+void ColorProfile::InternalColorConverter_Generic_StandardGamma::RGB2XYZ( const bfloat3* _RGB, bfloat3* _XYZ, U32 _length, U32 _stride ) const {
+	for ( S32 i=S32(_length); i >= 0; i--, IncPtr( _XYZ, _stride ), IncPtr( _RGB, _stride ) ) {
 		// Gamma un-correct
 		_XYZ->x = powf( _RGB->x, m_Gamma );
 		_XYZ->y = powf( _RGB->y, m_Gamma );
 		_XYZ->z = powf( _RGB->z, m_Gamma );
-		_XYZ->w = _RGB->w;
 
 		// Transform into XYZ
 		*_XYZ = *_XYZ * m_RGB2XYZ;
@@ -733,7 +674,7 @@ void ColorProfile::InternalColorConverter_Generic_StandardGamma::RGB2XYZ( const 
 //////////////////////////////////////////////////////////////////////////
 // InternalColorConverter_Generic_sRGBGamma
 //
-void ColorProfile::InternalColorConverter_Generic_sRGBGamma::XYZ2RGB( const bfloat4& _XYZ, bfloat4& _RGB ) const {
+void ColorProfile::InternalColorConverter_Generic_sRGBGamma::XYZ2RGB( const bfloat3& _XYZ, bfloat3& _RGB ) const {
 	// Transform into RGB
 	_RGB = _XYZ * m_XYZ2RGB;
 
@@ -743,19 +684,18 @@ void ColorProfile::InternalColorConverter_Generic_sRGBGamma::XYZ2RGB( const bflo
 	_RGB.z = _RGB.z > 0.0031308f ? 1.055f * powf( _RGB.z, 1.0f / GAMMA_EXPONENT_sRGB ) - 0.055f : 12.92f * _RGB.z;
 }
 
-void ColorProfile::InternalColorConverter_Generic_sRGBGamma::RGB2XYZ( const bfloat4& _RGB, bfloat4& _XYZ ) const {
+void ColorProfile::InternalColorConverter_Generic_sRGBGamma::RGB2XYZ( const bfloat3& _RGB, bfloat3& _XYZ ) const {
 	// Gamma un-correct
 	_XYZ.x = _RGB.x < 0.04045f ? _RGB.x / 12.92f : powf( (_RGB.x + 0.055f) / 1.055f, GAMMA_EXPONENT_sRGB );
 	_XYZ.y = _RGB.y < 0.04045f ? _RGB.y / 12.92f : powf( (_RGB.y + 0.055f) / 1.055f, GAMMA_EXPONENT_sRGB );
 	_XYZ.z = _RGB.z < 0.04045f ? _RGB.z / 12.92f : powf( (_RGB.z + 0.055f) / 1.055f, GAMMA_EXPONENT_sRGB );
-	_XYZ.w = _RGB.w;
 
 	// Transform into XYZ
 	_XYZ = _XYZ * m_RGB2XYZ;
 }
 
-void ColorProfile::InternalColorConverter_Generic_sRGBGamma::XYZ2RGB( const bfloat4* _XYZ, bfloat4* _RGB, U32 _length ) const {
-	for ( S32 i=S32(_length); i >= 0; i--, _XYZ++, _RGB++ ) {
+void ColorProfile::InternalColorConverter_Generic_sRGBGamma::XYZ2RGB( const bfloat3* _XYZ, bfloat3* _RGB, U32 _length, U32 _stride ) const {
+	for ( S32 i=S32(_length); i >= 0; i--, IncPtr( _XYZ, _stride ), IncPtr( _RGB, _stride ) ) {
 		// Transform into RGB
 		*_RGB = *_XYZ * m_XYZ2RGB;
 
@@ -766,13 +706,12 @@ void ColorProfile::InternalColorConverter_Generic_sRGBGamma::XYZ2RGB( const bflo
 	}
 }
 
-void ColorProfile::InternalColorConverter_Generic_sRGBGamma::RGB2XYZ( const bfloat4* _RGB, bfloat4* _XYZ, U32 _length ) const {
-	for ( S32 i=S32(_length); i >= 0; i--, _XYZ++, _RGB++ ) {
+void ColorProfile::InternalColorConverter_Generic_sRGBGamma::RGB2XYZ( const bfloat3* _RGB, bfloat3* _XYZ, U32 _length, U32 _stride ) const {
+	for ( S32 i=S32(_length); i >= 0; i--, IncPtr( _XYZ, _stride ), IncPtr( _RGB, _stride ) ) {
 		// Gamma un-correct
 		_XYZ->x = _RGB->x < 0.04045f ? _RGB->x / 12.92f : powf( (_RGB->x + 0.055f) / 1.055f, GAMMA_EXPONENT_sRGB );
 		_XYZ->y = _RGB->y < 0.04045f ? _RGB->y / 12.92f : powf( (_RGB->y + 0.055f) / 1.055f, GAMMA_EXPONENT_sRGB );
 		_XYZ->z = _RGB->z < 0.04045f ? _RGB->z / 12.92f : powf( (_RGB->z + 0.055f) / 1.055f, GAMMA_EXPONENT_sRGB );
-		_XYZ->w = _RGB->w;
 
 		// Transform into XYZ
 		*_XYZ = *_XYZ * m_RGB2XYZ;
@@ -782,7 +721,7 @@ void ColorProfile::InternalColorConverter_Generic_sRGBGamma::RGB2XYZ( const bflo
 //////////////////////////////////////////////////////////////////////////
 // InternalColorConverter_Generic_ProPhoto
 //
-void ColorProfile::InternalColorConverter_Generic_ProPhoto::XYZ2RGB( const bfloat4& _XYZ, bfloat4& _RGB ) const {
+void ColorProfile::InternalColorConverter_Generic_ProPhoto::XYZ2RGB( const bfloat3& _XYZ, bfloat3& _RGB ) const {
 	// Transform into RGB
 	_RGB = _XYZ * m_XYZ2RGB;
 
@@ -792,19 +731,18 @@ void ColorProfile::InternalColorConverter_Generic_ProPhoto::XYZ2RGB( const bfloa
 	_RGB.z = _RGB.z > 0.001953f ? powf( _RGB.z, 1.0f / GAMMA_EXPONENT_PRO_PHOTO ) : 16.0f * _RGB.z;
 }
 
-void ColorProfile::InternalColorConverter_Generic_ProPhoto::RGB2XYZ( const bfloat4& _RGB, bfloat4& _XYZ ) const {
+void ColorProfile::InternalColorConverter_Generic_ProPhoto::RGB2XYZ( const bfloat3& _RGB, bfloat3& _XYZ ) const {
 	// Gamma un-correct
 	_XYZ.x = _RGB.x > 0.031248f ? powf( _RGB.x, GAMMA_EXPONENT_PRO_PHOTO ) : _RGB.x / 16.0f;
 	_XYZ.y = _RGB.y > 0.031248f ? powf( _RGB.y, GAMMA_EXPONENT_PRO_PHOTO ) : _RGB.y / 16.0f;
 	_XYZ.z = _RGB.z > 0.031248f ? powf( _RGB.z, GAMMA_EXPONENT_PRO_PHOTO ) : _RGB.z / 16.0f;
-	_XYZ.w = _RGB.w;
 
 	// Transform into XYZ
 	_XYZ = _XYZ * m_RGB2XYZ;
 }
 
-void ColorProfile::InternalColorConverter_Generic_ProPhoto::XYZ2RGB( const bfloat4* _XYZ, bfloat4* _RGB, U32 _length ) const {
-	for ( S32 i=S32(_length); i >= 0; i--, _XYZ++, _RGB++ ) {
+void ColorProfile::InternalColorConverter_Generic_ProPhoto::XYZ2RGB( const bfloat3* _XYZ, bfloat3* _RGB, U32 _length, U32 _stride ) const {
+	for ( S32 i=S32(_length); i >= 0; i--, IncPtr( _XYZ, _stride ), IncPtr( _RGB, _stride ) ) {
 		// Transform into RGB
 		*_RGB = *_XYZ * m_XYZ2RGB;
 
@@ -815,13 +753,12 @@ void ColorProfile::InternalColorConverter_Generic_ProPhoto::XYZ2RGB( const bfloa
 	}
 }
 
-void ColorProfile::InternalColorConverter_Generic_ProPhoto::RGB2XYZ( const bfloat4* _RGB, bfloat4* _XYZ, U32 _length ) const {
-	for ( S32 i=S32(_length); i >= 0; i--, _XYZ++, _RGB++ ) {
+void ColorProfile::InternalColorConverter_Generic_ProPhoto::RGB2XYZ( const bfloat3* _RGB, bfloat3* _XYZ, U32 _length, U32 _stride ) const {
+	for ( S32 i=S32(_length); i >= 0; i--, IncPtr( _XYZ, _stride ), IncPtr( _RGB, _stride ) ) {
 		// Gamma un-correct
 		_XYZ->x = _RGB->x > 0.031248f ? powf( _RGB->x, GAMMA_EXPONENT_PRO_PHOTO ) : _RGB->x / 16.0f;
 		_XYZ->y = _RGB->y > 0.031248f ? powf( _RGB->y, GAMMA_EXPONENT_PRO_PHOTO ) : _RGB->y / 16.0f;
 		_XYZ->z = _RGB->z > 0.031248f ? powf( _RGB->z, GAMMA_EXPONENT_PRO_PHOTO ) : _RGB->z / 16.0f;
-		_XYZ->w = _RGB->w;
 
 		// Transform into XYZ
 		*_XYZ = *_XYZ * m_RGB2XYZ;

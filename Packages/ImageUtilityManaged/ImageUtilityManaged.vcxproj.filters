@@ -2,19 +2,36 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="Bitmap.cpp" />
-    <ClCompile Include="ColorProfile.cpp" />
     <ClCompile Include="ImageFile.cpp" />
     <ClCompile Include="stdafx.cpp" />
-    <ClCompile Include="NativeByteArray.cpp" />
-    <ClCompile Include="MetaData.cpp" />
+    <ClCompile Include="ColorProfile.cpp">
+      <Filter>Structures</Filter>
+    </ClCompile>
+    <ClCompile Include="MetaData.cpp">
+      <Filter>Structures</Filter>
+    </ClCompile>
+    <ClCompile Include="NativeByteArray.cpp">
+      <Filter>Structures</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Bitmap.h" />
-    <ClInclude Include="ColorProfile.h" />
     <ClInclude Include="ImageFile.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
-    <ClInclude Include="NativeByteArray.h" />
-    <ClInclude Include="MetaData.h" />
+    <ClInclude Include="ColorProfile.h">
+      <Filter>Structures</Filter>
+    </ClInclude>
+    <ClInclude Include="MetaData.h">
+      <Filter>Structures</Filter>
+    </ClInclude>
+    <ClInclude Include="NativeByteArray.h">
+      <Filter>Structures</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Structures">
+      <UniqueIdentifier>{5d3bfd78-31f8-4c89-8ce0-6883f43ce00a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
 </Project>

@@ -1,4 +1,4 @@
-﻿#define TEST_BLACK_BODY_LOCUS
+﻿//#define TEST_BLACK_BODY_LOCUS
 
 using System;
 using System.Collections.Generic;
@@ -86,7 +86,7 @@ namespace ImageUtility.UnitTests
 				float2	fPos = cornerZero + (cornerPoint8Point9 - cornerZero) * new float2( xy.x / 0.8f, xy.y / 0.9f );
 				DrawPoint( (int) fPos.x, (int) fPos.y, ref color );
 			}
-#else
+#elif DRAW_WHITE_POINTS
 			// Build a gradient of white points from 1500K to 8000K
 			m_imageFile.Init( 650, 32, ImageFile.PIXEL_FORMAT.RGBA8, sRGB );
 
@@ -113,6 +113,103 @@ if ( Math.Abs( T - 6500.0f ) < 10.0f )
 					m_imageFile[X,Y] = RGB;
 				}
 			}
+
+#else
+
+float3x3	XYZ_D65_D50 = ColorProfile.ComputeWhiteBalanceXYZMatrix( ColorProfile.Chromaticities.sRGB, ColorProfile.ILLUMINANT_D50 );
+
+// // Knowing the XYZ of the white point, we retrieve the scale factor for each axis x, y and z that will help us get X, Y and Z
+// bfloat3	sum_RGB = XYZ_W * m_XYZ2RGB;
+// // Compute an input white point
+// float3	XYZ_W_in;
+// ColorProfile.xyY2XYZ( new float3( ColorProfile.ILLUMINANT_D50, 1.0f ), ref XYZ_W_in );
+
+float3	XYZ_R_in = new float3();
+float3	XYZ_G_in = new float3();
+float3	XYZ_B_in = new float3();
+float3	XYZ_W_in = new float3();
+sRGB.RGB2XYZ( new float3( 1, 0, 0 ), ref XYZ_R_in );
+sRGB.RGB2XYZ( new float3( 0, 1, 0 ), ref XYZ_G_in );
+sRGB.RGB2XYZ( new float3( 0, 0, 1 ), ref XYZ_B_in );
+sRGB.RGB2XYZ( new float3( 1, 1, 1 ), ref XYZ_W_in );
+
+float3	XYZ_R_out = XYZ_R_in * XYZ_D65_D50;
+float3	XYZ_G_out = XYZ_G_in * XYZ_D65_D50;
+float3	XYZ_B_out = XYZ_B_in * XYZ_D65_D50;
+float3	XYZ_W_out = XYZ_W_in * XYZ_D65_D50;
+
+float3	xyY_R_out = new float3();
+float3	xyY_G_out = new float3();
+float3	xyY_B_out = new float3();
+float3	xyY_W_out = new float3();
+ColorProfile.XYZ2xyY( XYZ_R_out, ref xyY_R_out );
+ColorProfile.XYZ2xyY( XYZ_G_out, ref xyY_G_out );
+ColorProfile.XYZ2xyY( XYZ_B_out, ref xyY_B_out );
+ColorProfile.XYZ2xyY( XYZ_W_out, ref xyY_W_out );
+
+/*
+
+//float3	sum_RGB_in = XYZ_W_in * m_XYZ2RGB;
+
+// 
+// // sum_RGB.Set( 2, 1, 1, 0 );
+// // sum_RGB_in.Set( 1, 1, 1, 0 );
+// 
+// 	// Finally, we can retrieve the RGB->XYZ transform
+// 	m_RGB2XYZ.r[0] = sum_RGB.x * xyz_R;
+// 	m_RGB2XYZ.r[1] = sum_RGB.y * xyz_G;
+// 	m_RGB2XYZ.r[2] = sum_RGB.z * xyz_B;
+// 
+// 	// And the XYZ->RGB transform is simply the existing xyz->RGB matrix scaled by the reciprocal of the sum
+// 	bfloat3	recSum_RGB( 1.0f / sum_RGB.x, 1.0f / sum_RGB.y, 1.0f / sum_RGB.z );
+// 	(bfloat3&) m_XYZ2RGB.r[0] = (bfloat3&) m_XYZ2RGB.r[0] * recSum_RGB;
+// 	(bfloat3&) m_XYZ2RGB.r[1] = (bfloat3&) m_XYZ2RGB.r[1] * recSum_RGB;
+// 	(bfloat3&) m_XYZ2RGB.r[2] = (bfloat3&) m_XYZ2RGB.r[2] * recSum_RGB;
+// 
+// 	float3x3	test = m_RGB2XYZ * m_XYZ2RGB;
+
+// for ( int i=0; i < 3; i++ )
+// 	for ( int j=0; j < 3; j++ ) {
+// 		float	b = m_XYZ2RGB.r[i][j];
+// 		float	a = M_xyz.r[i][j];
+// 				a /= sum_RGB[j];
+// 		ASSERT( fabs( a - b ) < 1e-3f, "mismatch!" );
+// 	}
+
+float3x3	XYZ2RGB_in;
+XYZ2RGB_in.r[0] = sum_RGB_in.x * xyz_R;
+XYZ2RGB_in.r[1] = sum_RGB_in.y * xyz_G;
+XYZ2RGB_in.r[2] = sum_RGB_in.z * xyz_B;
+XYZ2RGB_in.Invert();
+
+float3x3	test2 = XYZ2RGB_in * m_RGB2XYZ;
+//float3x3	test2 = XYZ2RGB_in * m_XYZ2RGB;
+
+float3		newR = (sum_RGB_in.x * xyz_R) * test2;
+float3		newG = (sum_RGB_in.y * xyz_G) * test2;
+float3		newB = (sum_RGB_in.z * xyz_B) * test2;
+float3		newWhite = XYZ_W_in * test2;
+
+// Test outer product
+float3x3	outer;
+outer.r[0].Set( sum_RGB.x / sum_RGB_in.x, sum_RGB.y / sum_RGB_in.x, sum_RGB.z / sum_RGB_in.x );
+outer.r[1].Set( sum_RGB.x / sum_RGB_in.y, sum_RGB.y / sum_RGB_in.y, sum_RGB.z / sum_RGB_in.y );
+outer.r[2].Set( sum_RGB.x / sum_RGB_in.z, sum_RGB.y / sum_RGB_in.z, sum_RGB.z / sum_RGB_in.z );
+
+// 	// Finally, we can retrieve the RGB->XYZ transform
+// 	m_RGB2XYZ.r[0].Set( Sum_RGB.x * xyz_R, 0.0f );
+// 	m_RGB2XYZ.r[1].Set( Sum_RGB.y * xyz_G, 0.0f );
+// 	m_RGB2XYZ.r[2].Set( Sum_RGB.z * xyz_B, 0.0f );
+// 	m_RGB2XYZ.r[3].Set( 0, 0, 0, 1 );
+// 
+// 	// And the XYZ->RGB transform
+// 	m_XYZ2RGB = m_RGB2XYZ;
+// 	m_XYZ2RGB.Invert();
+// 
+// 	float	determinant = Sb Sg Sr Xr Yg Zb - Sb Sg Sr Xg Yr Zb - Sb Sg Sr Xr Yb Zg + 
+//  Sb Sg Sr Xb Yr Zg + Sb Sg Sr Xg Yb Zr - Sb Sg Sr Xb Yg Zr;
+*/
+
 
 #endif
 			panel1.Bitmap = m_imageFile.AsBitmap;
