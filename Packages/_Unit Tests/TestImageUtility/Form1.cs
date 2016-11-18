@@ -28,8 +28,8 @@ namespace ImageUtility.UnitTests
 
 //			TestBuildImage();
 //			TestLoadImage();
-//			TestConvertLDR2HDR();
-			TestBlackBodyRadiation();
+			TestConvertLDR2HDR();
+//			TestBlackBodyRadiation();
 		}
 
 		protected void	DrawPoint( int _X, int _Y, ref float4 _color ) {
@@ -266,14 +266,16 @@ if ( Math.Abs( T - 6500.0f ) < 10.0f )
 			try {
 //				HDRImage.LDR2HDR( LDRImages.ToArray(), shutterSpeeds.ToArray(), parms );
 
-				List< float3 >	responseCurve = new List< float3 >();
+				List< float >	responseCurve = new List< float >();
 				Bitmap.ComputeCameraResponseCurve( LDRImages.ToArray(), shutterSpeeds.ToArray(), parms, responseCurve );
 
 				// Render the response curve as a bitmap
 				ImageFile	tempCurveBitmap = new ImageFile( 256, 4, ImageFile.PIXEL_FORMAT.RGB8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
 				float4		tempValue = new float4();
 				for ( int i=0; i < 256; i++ ) {
-					tempValue.Set( responseCurve[i], 1.0f );
+					float	g = responseCurve[i];
+					float	v = (float) Math.Pow( 2.0, g );
+					tempValue.Set( v, v, v, 1.0f );
 					tempCurveBitmap[(uint)i,0] = tempValue;
 					tempCurveBitmap[(uint)i,1] = tempValue;
 					tempCurveBitmap[(uint)i,2] = tempValue;
@@ -281,6 +283,7 @@ if ( Math.Abs( T - 6500.0f ) < 10.0f )
 				}
 				panel1.Bitmap = tempCurveBitmap.AsBitmap;
 
+/*
 				// Recompose the HDR image
 				HDRImage.LDR2HDR( LDRImages.ToArray(), shutterSpeeds.ToArray(), responseCurve, 1.0f );
 
@@ -300,6 +303,7 @@ if ( Math.Abs( T - 6500.0f ) < 10.0f )
 				} );
 
 				panel1.Bitmap = tempToneMappedHDR.AsBitmap;
+*/
 
 			} catch ( Exception _e ) {
 				MessageBox.Show( "Error: " + _e.Message );

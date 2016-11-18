@@ -198,7 +198,12 @@ static property ImageFile^	DEBUG {
 		//	_images, the array of LDR bitmaps
 		//	_imageEVs, the array of Exposure Values (EV) used for each image
 		//	_responseCurve, the list to fill with values corresponding to the response curve
+		// (NOTE: if you're using the 2nd prototype then only the response curve for luminance is returned, which is okay for most sensors that won't differ much between R,G and B)
 		static void	ComputeCameraResponseCurve( cli::array< ImageFile^ >^ _images, cli::array< float >^ _imageShutterSpeeds, HDRParms^ _parms, System::Collections::Generic::List< float3 >^ _responseCurve );
+		static void	ComputeCameraResponseCurve( cli::array< ImageFile^ >^ _images, cli::array< float >^ _imageShutterSpeeds, HDRParms^ _parms, System::Collections::Generic::List< float >^ _responseCurveLuminance );
+
+	private:
+		static void	ComputeCameraResponseCurve_internal( cli::array< ImageFile^ >^ _images, cli::array< float >^ _imageShutterSpeeds, HDRParms^ _parms, BaseLib::List< bfloat3 >& _responseCurve, bool _luminanceOnly );
 
 		#pragma endregion
 	};

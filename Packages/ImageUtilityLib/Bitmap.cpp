@@ -217,7 +217,7 @@ void	Bitmap::LDR2HDR( U32 _imagesCount, const ImageFile** _images, const float* 
 void svdcmp( int m, int n, float** a, float w[], float** v );
 void svdcmp_ORIGINAL( int m, int n, float** a, float w[], float** v );
 
-void	Bitmap::ComputeCameraResponseCurve( U32 _imagesCount, const ImageFile** _images, const float* _imageShutterSpeeds, const HDRParms& _parms, List< bfloat3 >& _responseCurve ) {
+void	Bitmap::ComputeCameraResponseCurve( U32 _imagesCount, const ImageFile** _images, const float* _imageShutterSpeeds, const HDRParms& _parms, List< bfloat3 >& _responseCurve, bool _luminanceOnly ) {
 	if ( _images == nullptr )
 		throw "Invalid images array!";
 	if ( _imageShutterSpeeds == nullptr )
@@ -266,8 +266,12 @@ void	Bitmap::ComputeCameraResponseCurve( U32 _imagesCount, const ImageFile** _im
 List< bfloat2 >	sequence;
 Hammersley::BuildSequence( pixelsCountPerImage, sequence );
 
+	const bfloat4	LUMINANCE_D65( 0.2126f, 0.7152f, 0.0722f, 0.0f );	// Y vector for observer. = 2°, Illuminant = D65
+
+	U32		componentsCount = _luminanceOnly ? 1 : 3;
+
 	U32*	pixels = new U32[3 *totalPixelsCount];
-	for ( int componentIndex=0; componentIndex < 3; componentIndex++ ) {	// Because R, G, B
+	for ( U32 componentIndex=0; componentIndex < componentsCount; componentIndex++ ) {	// Because R, G, B
 
 		// 1] Select the pixels within the images that best cover the [Zmin,Zmax] range
 // @TODO!
@@ -290,9 +294,10 @@ U32	Y = U32( floorf( sequencePtr->y * (H-1) ) );
 				// Floating point value of the selected pixel for R, G or B
 				bfloat4	colorLDR;
 				image.Get( X, Y, colorLDR );
-				float	pixelValue = ((float*) &colorLDR.x)[componentIndex];
+				float	pixelValue = _luminanceOnly	? colorLDR.Dot( LUMINANCE_D65 )
+													: ((float*) &colorLDR.x)[componentIndex];
 
-pixelValue = SATURATE( float(1+pixelIndex) / sequence.Count() * powf( 2.0f, float(imageIndex) ) );
+pixelValue = SATURATE( float(1+pixelIndex) / sequence.Count() * powf( 2.0f, -float(imageIndex) ) );
 
 				// Convert to integer value
 				U32		Z = CLAMP( U32( (responseCurveSize-1) * pixelValue ), 0U, responseCurveSize-1 );
@@ -327,7 +332,7 @@ pixelValue = SATURATE( float(1+pixelIndex) / sequence.Count() * powf( 2.0f, floa
 	float*	tempX = new float[unknownsCount];
 
 	U32*	pixelPtr = pixels;
-	for ( int componentIndex=0; componentIndex < 3; componentIndex++ ) {	// Because R, G, B
+	for ( U32 componentIndex=0; componentIndex < componentsCount; componentIndex++ ) {	// Because R, G, B
 
 		// ===================================================================
 		// 2.1] Build the "A" matrix and target vector "b"
@@ -344,7 +349,7 @@ pixelValue = SATURATE( float(1+pixelIndex) / sequence.Count() * powf( 2.0f, floa
 			float	imageShutterSpeed = _imageShutterSpeeds[imageIndex];
 			float	imageEV = log2f( imageShutterSpeed );
 
-imageEV = float(1+imageIndex);
+imageEV = float(-imageIndex);
 
 			for ( int pixelIndex=0; pixelIndex < pixelsCountPerImage; pixelIndex++ ) {
 				float*	columns = *A1++;
@@ -603,8 +608,14 @@ delete[] Abackup;
 		// 2.4] Recover curve values
 		// At this point, we recovered the g(Z) for Z€[Zmin,Zmax], followed by the log2(Ei) for the N selected pixels
 		// Let's just store the g(Z) into our target array
-		for ( U32 Z=0; Z < responseCurveSize; Z++ ) {
-			((float*) &_responseCurve[Z].x)[componentIndex] = x[Z];
+		if ( _luminanceOnly ) {
+			for ( U32 Z=0; Z < responseCurveSize; Z++ ) {
+				_responseCurve[Z].Set( x[Z], x[Z], x[Z] );
+			}
+		} else {
+			for ( U32 Z=0; Z < responseCurveSize; Z++ ) {
+				((float*) &_responseCurve[Z].x)[componentIndex] = x[Z];
+			}
 		}
 	}
 

@@ -71,6 +71,31 @@ void	Bitmap::LDR2HDR( cli::array< ImageFile^ >^ _images, cli::array< float >^ _i
 }
 
 void	Bitmap::ComputeCameraResponseCurve( cli::array< ImageFile^ >^ _images, cli::array< float >^ _imageShutterSpeeds, HDRParms^ _parms, System::Collections::Generic::List< float3 >^ _responseCurve ) {
+
+ 	BaseLib::List< bfloat3 >	responseCurve;
+	ComputeCameraResponseCurve_internal( _images, _imageShutterSpeeds, _parms, responseCurve, false );
+
+	// Copy result
+	_responseCurve->Clear();
+	for ( int i=0; i < responseCurve.Count(); i++ ) {
+		const bfloat3&	source = responseCurve[i];
+		_responseCurve->Add( float3( source.x, source.y, source.z ) );
+	}
+}
+void	Bitmap::ComputeCameraResponseCurve( cli::array< ImageFile^ >^ _images, cli::array< float >^ _imageShutterSpeeds, HDRParms^ _parms, System::Collections::Generic::List< float >^ _responseCurveLuminance ) {
+
+ 	BaseLib::List< bfloat3 >	responseCurve;
+	ComputeCameraResponseCurve_internal( _images, _imageShutterSpeeds, _parms, responseCurve, true );
+
+	// Copy result
+	_responseCurveLuminance->Clear();
+	for ( int i=0; i < responseCurve.Count(); i++ ) {
+		const bfloat3&	source = responseCurve[i];
+		_responseCurveLuminance->Add( source.x );
+	}
+}
+
+void	Bitmap::ComputeCameraResponseCurve_internal( cli::array< ImageFile^ >^ _images, cli::array< float >^ _imageShutterSpeeds, HDRParms^ _parms, BaseLib::List< bfloat3 >& _responseCurve, bool _luminanceOnly ) {
 	if ( _images == nullptr )
 		throw gcnew Exception( "Invalid images array!" );
 	if ( _parms == nullptr )
@@ -92,15 +117,7 @@ void	Bitmap::ComputeCameraResponseCurve( cli::array< ImageFile^ >^ _images, cli:
 	ImageUtilityLib::Bitmap::HDRParms	parms;
 	CopyHDRParms( *_parms, parms );
 
-	BaseLib::List< bfloat3 >	responseCurve;
-	ImageUtilityLib::Bitmap::ComputeCameraResponseCurve( imagesCount, images, imageShutterSpeedsPtr, parms, responseCurve );
-
-	// Copy result
-	_responseCurve->Clear();
-	for ( int i=0; i < responseCurve.Count(); i++ ) {
-		const bfloat3&	source = responseCurve[i];
-		_responseCurve->Add( float3( source.x, source.y, source.z ) );
-	}
+	ImageUtilityLib::Bitmap::ComputeCameraResponseCurve( imagesCount, images, imageShutterSpeedsPtr, parms, _responseCurve, _luminanceOnly );
 
 	System::Runtime::InteropServices::Marshal::FreeHGlobal( imagesPtr );
 }

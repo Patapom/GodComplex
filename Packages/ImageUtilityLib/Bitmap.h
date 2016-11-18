@@ -168,7 +168,8 @@ static ImageFile*	ms_DEBUG;
 		//	_images, the array of LDR bitmaps
 		//	_imageShutterSpeeds, the array of shutter speeds (in seconds) used for each image
 		//	_responseCurve, the list to fill with values corresponding to the response curve
-		static void	ComputeCameraResponseCurve( U32 _imagesCount, const ImageFile** _images, const float* _imageShutterSpeeds, const HDRParms& _parms, BaseLib::List< bfloat3 >& _responseCurve );
+		//	_luminanceOnly, if true then the luminance of the pixels is used and only a single response curve is computed instead of 3 individual curves for R,G and B
+		static void	ComputeCameraResponseCurve( U32 _imagesCount, const ImageFile** _images, const float* _imageShutterSpeeds, const HDRParms& _parms, BaseLib::List< bfloat3 >& _responseCurve, bool _luminanceOnly=true );
 
 		#pragma endregion
 	};
