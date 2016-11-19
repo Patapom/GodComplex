@@ -329,6 +329,29 @@ namespace ImageUtilityLib {
 
 	public:
 		//////////////////////////////////////////////////////////////////////////
+		// Plotting helpers
+		// The plot delegate that returns y=f(x)
+		typedef float		(*PlotDelegate_t)( float _x );
+
+		// Clears the image with the provided color
+		void				Clear( const bfloat4& _color );
+
+		// Plots the y=f(x) graph for a given X and Y range
+		void				PlotGraph( const bfloat4& _color, const bfloat2& _rangeX, const bfloat2& _rangeY, PlotDelegate_t _delegate );
+
+		// Plots the y=f(x) graph for a given X range, Y range is automatically determined and returned
+		void				PlotGraphAutoRangeY( const bfloat4& _color, const bfloat2& _rangeX, bfloat2& _rangeY, PlotDelegate_t _delegate );
+
+		// Plots the graph axes for the given X Y ranges
+		void				PlotAxes( const bfloat4& _color, const bfloat2& _rangeX, const bfloat2& _rangeY, float _stepX, float _stepY );
+
+		// Plots a line segment of the given color
+		//	_P0, _P1, the position of the line segment's points (i.e. X=0 is left border, X=Width-1 is right border, Y=0 is top border, Y=Height-1 is bottom border)
+		void				DrawLine( const bfloat4& _color, const bfloat2& _P0, const bfloat2& _P1 );
+
+
+	public:
+		//////////////////////////////////////////////////////////////////////////
 		// DDS-related methods
 		enum class COMPRESSION_TYPE {
 			NONE,

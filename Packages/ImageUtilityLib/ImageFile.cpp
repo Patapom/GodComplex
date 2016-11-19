@@ -621,6 +621,165 @@ void	ImageFile::UnUseFreeImage() {
 }
 
 //////////////////////////////////////////////////////////////////////////
+// Graph Plotting Helpers
+const U32	GRAPH_MARGIN = 10;	// 10 pixels margin
+
+// float	RangeY2ImageY( float _y, float _rangeMinY, float _recDy ) {
+// 	return (_y - _rangeMinY) * _recDy;
+// }
+
+void	ImageFile::Clear( const bfloat4& _color ) {
+	U32			W = Width();
+	U32			H = Height();
+	bfloat4*	tempScanline = new bfloat4[W];
+	for ( U32 X=0; X < W; X++ )
+		tempScanline[X] = _color;
+	for ( U32 Y=0; Y < H; Y++ )
+		WriteScanline( Y, tempScanline );
+	delete[] tempScanline;
+}
+
+void	ImageFile::PlotGraphAutoRangeY( const bfloat4& _color, const bfloat2& _rangeX, bfloat2& _rangeY, PlotDelegate_t _delegate ) {
+	U32			W = Width();
+	U32			H = Height();
+}
+
+void	ImageFile::PlotGraph( const bfloat4& _color, const bfloat2& _rangeX, const bfloat2& _rangeY, PlotDelegate_t _delegate ) {
+	U32		W = Width();
+	U32		H = Height();
+	U32		X0 = GRAPH_MARGIN;
+	U32		Y0 = H - GRAPH_MARGIN;
+	U32		X1 = W - GRAPH_MARGIN;
+	U32		Y1 = GRAPH_MARGIN;
+	float	Dx = (_rangeX.y - _rangeX.x) / (X1-X0);
+	float	DY = (Y1 - Y0) / (_rangeY.y - _rangeY.x);
+
+	float	x = _rangeX.x;
+	float	y = (*_delegate)( x );
+	bfloat2	P1( float(X0), (y - _rangeY.x) * DY );
+	bfloat2	P0;
+	for ( U32 X=X0+1; X < X1; X++ ) {
+		P0 = P1;
+
+		x += Dx;
+		y = (*_delegate)( x );
+
+		P1.x++;
+		P1.y = (y - _rangeY.x) * DY;
+
+		DrawLine( _color, P0, P1 );
+	}
+}
+
+void	ImageFile::PlotAxes( const bfloat4& _color, const bfloat2& _rangeX, const bfloat2& _rangeY, float _stepX, float _stepY ) {
+
+}
+
+void	ImageFile::DrawLine( const bfloat4& _color, const bfloat2& _P0, const bfloat2& _P1 ) {
+	float	W = float(Width());
+	float	H = float(Height());
+
+	bfloat2	P0 = _P0;
+	bfloat2	P1 = _P1;
+
+	bfloat2	Delta = P1 - P0;
+	if ( fabs(Delta.x) >= fabs(Delta.y) ) {
+		//---------------------------------------------------------------
+		// Horizontal line
+		// Always order left to right
+		if ( P0.x > P1.x ) {
+			Swap( P0, P1 );
+			Delta = -Delta;
+		}
+		if ( P1.x <= 0.0f || P0.x >= W )
+			return;	// Entirely out of screen
+
+		if ( Delta.x < 1e-3f )
+			return;	// Empty interval
+
+		float	slope = Delta.y / Delta.x;
+		if ( slope == 0.0f ) {
+			if ( P0.y < 0.0f || P0.y >= H )
+				return;	// Entirely out of screen
+		}
+
+		// Perform clipping
+		if ( P0.x < 0.0f ) {
+			// Clip left
+			float	clipDelta = P0.x;
+			P0.y -= clipDelta * slope;
+			Delta.x += clipDelta;
+			P0.x = 0.0f;
+		}
+		if ( P1.x > W ) {
+			// Clip right
+			float	clipDelta = W - P1.x;
+			P1.y -= clipDelta * slope;
+			Delta.x += clipDelta;
+			P1.x = W;
+		}
+		if ( P0.y < P1.y ) {
+			// Drawing from top to bottom
+			if ( P0.y < 0.0f ) {
+				// Clip top
+				float	clipDelta = P0.y;
+				P0.x -= clipDelta / slope;
+				Delta.y += clipDelta;
+				P0.y = 0.0f;
+			}
+			if ( P1.y > H ) {
+				// Clip bottom
+				float	clipDelta = H - P1.y;
+				P1.x -= clipDelta / slope;
+				Delta.y += clipDelta;
+				P1.y = H;
+			}
+		} else {
+			// Drawing from bottom to top
+			if ( P1.y < 0.0f ) {
+				// Clip top
+				float	clipDelta = P1.y;
+				P1.x -= clipDelta / slope;
+				Delta.y += clipDelta;
+				P1.y = 0.0f;
+			}
+			if ( P0.y > H ) {
+				// Clip bottom
+				float	clipDelta = H - P0.y;
+				P0.x -= clipDelta / slope;
+				Delta.y += clipDelta;
+				P0.y = H;
+			}
+		}
+		if ( Delta.x < 1e-3f || fabs(Delta.y) < 1e-3f )
+			return;	// Empty interval
+
+		// Draw
+		int		X0 = int( floorf( P0.x ) );
+		int		X1 = int( floorf( P1.x ) );
+		int		DX = abs( X1 - X0 );
+		for ( ; X0 < X1; X0++, P0.y+=slope ) {
+			int	Y = int( floorf( P0.y ) );
+// 			if ( Y < 0 || Y >= H )
+// 				continue;	// Offscreen
+			ASSERT( Y >= 0 && Y < H, "Offscreen! Check clipping!" );
+			Set( X0, Y, _color );
+		}
+
+	} else {
+		//---------------------------------------------------------------
+		// Vertical line
+		// Always order top to bottom
+		if ( P0.y > P1.y ) {
+			Swap( P0, P1 );
+		}
+		if ( _P1.y <= 0.0f || _P0.y >= H )
+			return;	// Entirely out of screen
+	}
+}
+
+
+//////////////////////////////////////////////////////////////////////////
 // DDS-Related Helpers
 //
 

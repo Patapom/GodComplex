@@ -346,6 +346,30 @@ namespace ImageUtility {
 			return result;
 		}
 
+
+	public:
+		//////////////////////////////////////////////////////////////////////////
+		// Plotting helpers
+		// The plot delegate that returns y=f(x)
+		delegate float		PlotDelegate( float _x );
+
+		// Clears the image with the provided color
+		void				Clear( SharpMath::float4^ _color );
+
+		// Plots the y=f(x) graph for a given X and Y range
+		void				PlotGraph( SharpMath::float4^ _color, SharpMath::float2^ _rangeX, SharpMath::float2^ _rangeY, PlotDelegate^ _delegate );
+
+		// Plots the y=f(x) graph for a given X range, Y range is automatically determined and returned
+		void				PlotGraphAutoRangeY( SharpMath::float4^ _color, SharpMath::float2^ _rangeX, SharpMath::float2% _rangeY, PlotDelegate^ _delegate );
+
+		// Plots the graph axes for the given X Y ranges
+		void				PlotAxes( SharpMath::float4^ _color, SharpMath::float2^ _rangeX, SharpMath::float2^ _rangeY, float _stepX, float _stepY );
+
+		// Plots a line segment of the given color
+		//	_P0, _P1, the position of the line segment's points (i.e. X=0 is left border, X=Width-1 is right border, Y=0 is top border, Y=Height-1 is bottom border)
+		void				DrawLine( SharpMath::float4^ _color, SharpMath::float2^ _P0, SharpMath::float2^ _P1 );
+
+
 	public:
 		//////////////////////////////////////////////////////////////////////////
 		// DDS-related methods

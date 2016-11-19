@@ -204,6 +204,61 @@ void	ImageFile::WriteScanline( UInt32 _Y, cli::array< float4 >^ _color, UInt32 _
 
 
 //////////////////////////////////////////////////////////////////////////
+// Plotting helpers
+
+void	ImageFile::Clear( SharpMath::float4^ _color ) {
+	bfloat4	color( _color->x, _color->y, _color->z, _color->w );
+	m_nativeObject->Clear( color );
+}
+
+void	ImageFile::PlotGraph( SharpMath::float4^ _color, SharpMath::float2^ _rangeX, SharpMath::float2^ _rangeY, PlotDelegate^ _delegate ) {
+	// Get a function pointer to the delegate
+	System::Runtime::InteropServices::GCHandle	gch = System::Runtime::InteropServices::GCHandle::Alloc( _delegate );
+	IntPtr		ip = System::Runtime::InteropServices::Marshal::GetFunctionPointerForDelegate( _delegate );
+
+	bfloat4	color( _color->x, _color->y, _color->z, _color->w );
+	bfloat2	rangeX( _rangeX->x, _rangeX->y );
+	bfloat2	rangeY( _rangeY->x, _rangeY->y );
+	m_nativeObject->PlotGraph( color, rangeX, rangeY, static_cast< ImageUtilityLib::ImageFile::PlotDelegate_t >( ip.ToPointer() ) );
+
+	// release reference to delegate  
+	gch.Free();  
+}
+
+void	ImageFile::PlotGraphAutoRangeY( SharpMath::float4^ _color, SharpMath::float2^ _rangeX, SharpMath::float2% _rangeY, PlotDelegate^ _delegate ) {
+	// Get a function pointer to the delegate
+	System::Runtime::InteropServices::GCHandle	gch = System::Runtime::InteropServices::GCHandle::Alloc( _delegate );
+	IntPtr		ip = System::Runtime::InteropServices::Marshal::GetFunctionPointerForDelegate( _delegate );
+
+	bfloat4	color( _color->x, _color->y, _color->z, _color->w );
+	bfloat2	rangeX( _rangeX->x, _rangeX->y );
+	bfloat2	rangeY;
+	m_nativeObject->PlotGraphAutoRangeY( color, rangeX, rangeY, static_cast< ImageUtilityLib::ImageFile::PlotDelegate_t >( ip.ToPointer() ) );
+
+	_rangeY.x = rangeY.x;
+	_rangeY.y = rangeY.y;
+
+	// release reference to delegate  
+	gch.Free();  
+}
+
+void	ImageFile::PlotAxes( SharpMath::float4^ _color, SharpMath::float2^ _rangeX, SharpMath::float2^ _rangeY, float _stepX, float _stepY ) {
+	bfloat4	color( _color->x, _color->y, _color->z, _color->w );
+	bfloat2	rangeX( _rangeX->x, _rangeX->y );
+	bfloat2	rangeY;
+	m_nativeObject->PlotAxes( color, rangeX, rangeY, _stepX,_stepY );
+}
+
+void	ImageFile::DrawLine( SharpMath::float4^ _color, SharpMath::float2^ _P0, SharpMath::float2^ _P1 ) {
+	bfloat4	color( _color->x, _color->y, _color->z, _color->w );
+	bfloat2	P0( _P0->x, _P0->y );
+	bfloat2	P1( _P1->x, _P1->y );
+	m_nativeObject->DrawLine( color, P0, P1 );
+}
+
+
+
+//////////////////////////////////////////////////////////////////////////
 // DDS-related methods
 
 // Compresses a single image
