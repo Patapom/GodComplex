@@ -269,17 +269,20 @@ if ( Math.Abs( T - 6500.0f ) < 10.0f )
 				List< float >	responseCurve = new List< float >();
 				Bitmap.ComputeCameraResponseCurve( LDRImages.ToArray(), shutterSpeeds.ToArray(), parms, responseCurve );
 
+//panel1.Bitmap = Bitmap.DEBUG.AsBitmap;
+
 				// Render the response curve as a bitmap
-				ImageFile	tempCurveBitmap = new ImageFile( 256, 4, ImageFile.PIXEL_FORMAT.RGB8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
+				ImageFile	tempCurveBitmap = new ImageFile( 256, 32, ImageFile.PIXEL_FORMAT.RGB8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
 				float4		tempValue = new float4();
 				for ( int i=0; i < 256; i++ ) {
 					float	g = responseCurve[i];
 					float	v = (float) Math.Pow( 2.0, g );
+
+					v *= 0.15f;
+
 					tempValue.Set( v, v, v, 1.0f );
-					tempCurveBitmap[(uint)i,0] = tempValue;
-					tempCurveBitmap[(uint)i,1] = tempValue;
-					tempCurveBitmap[(uint)i,2] = tempValue;
-					tempCurveBitmap[(uint)i,3] = tempValue;
+					for ( uint Y=0; Y < 32; Y++ )
+						tempCurveBitmap[(uint)i,Y] = tempValue;
 				}
 				panel1.Bitmap = tempCurveBitmap.AsBitmap;
 

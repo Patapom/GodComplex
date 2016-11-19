@@ -310,19 +310,53 @@ pixelValue = SATURATE( float(1+pixelIndex) / sequence.Count() * powf( 2.0f, -flo
 
 	//////////////////////////////////////////////////////////////////////////
 	// 2] Apply SVD 
-	int	equationsCount  = totalPixelsCount		// Pixels
+#if 0
+	U32	equationsCount  = 3;
+	U32	unknownsCount	= 3;
+
+	float*	Aterms = new float[equationsCount*unknownsCount];	// M*N matrix with M rows = #equations and N columns = #unknowns
+	float**	A = new float*[equationsCount];
+	for ( U32 rowIndex=0; rowIndex < equationsCount; rowIndex++ ) A[rowIndex] = &Aterms[unknownsCount*rowIndex];	// Initialize each row pointer
+
+	float*	Vterms = new float[unknownsCount*unknownsCount];	// N*N matrix
+	float**	V = new float*[unknownsCount];
+	for ( U32 rowIndex=0; rowIndex < unknownsCount; rowIndex++ ) V[rowIndex] = &Vterms[unknownsCount*rowIndex];		// Initialize each row pointer
+
+	float*	w = new float[unknownsCount];
+
+	float*	b = new float[equationsCount];
+
+	float*	x = new float[unknownsCount];	// Our result vector
+	float*	tempX = new float[unknownsCount];
+
+A[0][0] = 1;
+A[0][1] = 2;
+A[0][2] = 3;
+A[1][0] = 0;
+A[1][1] = 1;
+A[1][2] = 4;
+A[2][0] = 5;
+A[2][1] = 6;
+A[2][2] = 0;
+
+	U32*	pixelPtr = pixels;
+	for ( U32 componentIndex=0; componentIndex < componentsCount; componentIndex++ ) {	// Because R, G, B
+
+
+#else
+	U32	equationsCount  = totalPixelsCount		// Pixels
 						+ responseCurveSize		// Used to enforce the smoothness of the g curve
 						+ 1;					// Constraint that g(Zmid) = 0 (with Zmid = (Zmax+Zmin)/2)
-	int	unknownsCount	= responseCurveSize		// g(Z) = curve solution
+	U32	unknownsCount	= responseCurveSize		// g(Z) = curve solution
 						+ pixelsCountPerImage;	// log(E) for each pixel
 
 	float*	Aterms = new float[equationsCount*unknownsCount];	// M*N matrix with M rows = #equations and N columns = #unknowns
 	float**	A = new float*[equationsCount];
-	for ( int rowIndex=0; rowIndex < equationsCount; rowIndex++ ) A[rowIndex] = &Aterms[unknownsCount*rowIndex];	// Initialize each row pointer
+	for ( U32 rowIndex=0; rowIndex < equationsCount; rowIndex++ ) A[rowIndex] = &Aterms[unknownsCount*rowIndex];	// Initialize each row pointer
 
 	float*	Vterms = new float[unknownsCount*unknownsCount];	// N*N matrix
 	float**	V = new float*[unknownsCount];
-	for ( int rowIndex=0; rowIndex < unknownsCount; rowIndex++ ) V[rowIndex] = &Vterms[unknownsCount*rowIndex];		// Initialize each row pointer
+	for ( U32 rowIndex=0; rowIndex < unknownsCount; rowIndex++ ) V[rowIndex] = &Vterms[unknownsCount*rowIndex];		// Initialize each row pointer
 
 	float*	w = new float[unknownsCount];
 
@@ -349,7 +383,7 @@ pixelValue = SATURATE( float(1+pixelIndex) / sequence.Count() * powf( 2.0f, -flo
 			float	imageShutterSpeed = _imageShutterSpeeds[imageIndex];
 			float	imageEV = log2f( imageShutterSpeed );
 
-imageEV = float(-imageIndex);
+imageEV = -float(imageIndex);
 
 			for ( int pixelIndex=0; pixelIndex < pixelsCountPerImage; pixelIndex++ ) {
 				float*	columns = *A1++;
@@ -391,22 +425,22 @@ imageEV = float(-imageIndex);
 		float**	A3 = &A[totalPixelsCount+responseCurveSize];	// A3 starts at the end of A's second part and should actually be the last row of A
 
 		A3[0][responseCurveSize>>1] = 1;	// Make sure g(Zmid) maps to 0
-
+#endif
 
 		// ===================================================================
 		// 2.2] Apply SVD
-#if 0
+#if 1
 float*	Abackup = new float[equationsCount*unknownsCount];
 memcpy_s( Abackup, equationsCount*unknownsCount*sizeof(float), Aterms, equationsCount*unknownsCount*sizeof(float) );
 
 // Fill up the debug bitmap with the matrix's coefficients
-// ms_DEBUG->Init( unknownsCount, equationsCount, ImageFile::PIXEL_FORMAT::R16, ColorProfile( ColorProfile::STANDARD_PROFILE::sRGB ) );
-// for ( U32 i=0; i < equationsCount; i++ ) {
-// 	for ( U32 j=0; j < unknownsCount; j++ ) {
-// 		float	value = 0.0078125f * A[i][j];
-// 		ms_DEBUG->Set( j, i, bfloat4( value, value, value, 1.0f ) );
-// 	}
-// }
+ms_DEBUG->Init( unknownsCount, equationsCount, ImageFile::PIXEL_FORMAT::R16, ColorProfile( ColorProfile::STANDARD_PROFILE::sRGB ) );
+for ( U32 i=0; i < equationsCount; i++ ) {
+	for ( U32 j=0; j < unknownsCount; j++ ) {
+		float	value = 0.0078125f * A[i][j];
+		ms_DEBUG->Set( j, i, bfloat4( value, value, value, 1.0f ) );
+	}
+}
 
 #endif
 
@@ -535,17 +569,20 @@ for ( U32 i=0; i < equationsCount; i++ ) {
 // 		ms_DEBUG->Set( j, i, bfloat4( value, value, value, 1.0f ) );
 // 	}
 // }
-throw "PIPO!";
+
+//throw "PIPO!";
 #endif
 
 #if 0
+// Ensure the product of A.A^-1 = (U.w.V^T) * (V.1/w.U^T) = I
+
 // Recompose A from U, w and V
 float*	Arecomposed = new float[equationsCount*unknownsCount];
-for ( int rowIndex=0; rowIndex < equationsCount; rowIndex++ ) {
-	for ( int columnIndex=0; columnIndex < unknownsCount; columnIndex++ ) {
+for ( U32 rowIndex=0; rowIndex < equationsCount; rowIndex++ ) {
+	for ( U32 columnIndex=0; columnIndex < unknownsCount; columnIndex++ ) {
 		float	r = 0.0f;
-		for ( int i=0; i < unknownsCount; i++ ) {
-			const float	VTterm = V[columnIndex][i];
+		for ( U32 i=0; i < unknownsCount; i++ ) {
+			const float	VTterm = V[columnIndex][i];	// V was returned, we need V^T
 			const float	Wterm = w[i];
 			const float	Uterm = A[rowIndex][i];
 			r += Uterm * Wterm * VTterm;
@@ -565,7 +602,55 @@ for ( int i=equationsCount*unknownsCount-1; i >= 0; i-- ) {
 sumSqDiff /= equationsCount*unknownsCount;
 ASSERT( sumSqDiff < 1e-4f, "Singular Value Decomposition is wrong!" );
 
+// Recompose A^-1
+float*	Ainverse = new float[unknownsCount*equationsCount];
+for ( U32 rowIndex=0; rowIndex < unknownsCount; rowIndex++ ) {
+	for ( U32 columnIndex=0; columnIndex < equationsCount; columnIndex++ ) {
+		float	r = 0.0f;
+		for ( U32 i=0; i < unknownsCount; i++ ) {
+			const float	Vterm = V[rowIndex][i];
+			const float	recWterm = w[i] != 0.0f ? 1.0f / w[i] : 0.0f;
+			const float	UTterm = A[columnIndex][i];
+			r += Vterm * recWterm * UTterm;
+		}
+		Ainverse[rowIndex*equationsCount + columnIndex] = r;
+	}
+}
+
+// Apply product of matrices
+float*	Aproduct = new float[equationsCount*equationsCount];
+for ( U32 rowIndex=0; rowIndex < equationsCount; rowIndex++ ) {
+	for ( U32 columnIndex=0; columnIndex < equationsCount; columnIndex++ ) {
+		float	r = 0.0f;
+		for ( U32 i=0; i < unknownsCount; i++ ) {
+			const float	a = Arecomposed[unknownsCount*rowIndex+i];
+			const float	aI = Ainverse[equationsCount*i+columnIndex];
+			r += a * aI;
+		}
+		Aproduct[rowIndex*equationsCount + columnIndex] = r;
+	}
+}
+
+// Ensure product yields identity
+float	sumDiagonal = 0.0f;
+float	sumOffDiagonal = 0.0f;
+for ( U32 rowIndex=0; rowIndex < unknownsCount; rowIndex++ ) {
+	for ( U32 columnIndex=0; columnIndex < unknownsCount; columnIndex++ ) {
+		float	absTerm = fabs( Aproduct[unknownsCount*rowIndex+columnIndex] );
+		if ( rowIndex == columnIndex )
+			sumDiagonal += absTerm;
+		else
+			sumOffDiagonal += absTerm;
+	}
+}
+sumDiagonal /= unknownsCount;
+sumOffDiagonal /= unknownsCount * (unknownsCount-1);
+ASSERT( sumOffDiagonal < 1e-4f, "Singular Value Decomposition is wrong!" );
+ASSERT( fabs( sumDiagonal - 1.0f) < 1e-4f, "Singular Value Decomposition is wrong!" );
+
+delete[] Aproduct;
 delete[] Arecomposed;
+delete[] Ainverse;
 delete[] Abackup;
 #endif
 
@@ -578,9 +663,9 @@ delete[] Abackup;
 		//
 		
 		// 2.3.1) Perform 1/w * U^T * b
-		for ( int rowIndex=0; rowIndex < unknownsCount; rowIndex++ ) {
+		for ( U32 rowIndex=0; rowIndex < unknownsCount; rowIndex++ ) {
 			float	r = 0.0f;
-			for ( int i=0; i < equationsCount; i++ ) {
+			for ( U32 i=0; i < equationsCount; i++ ) {
 				const float	Uterm = A[i][rowIndex];	// The svdcmp() routine used A to store the U matrix in place
 				const float	bterm = b[i];
 				r += Uterm * bterm;
@@ -593,11 +678,11 @@ delete[] Abackup;
 		}
 
 		// 2.3.2) Perform V * (1/w * U^T * b)
-		for ( int rowIndex=0; rowIndex < unknownsCount; rowIndex++ ) {
+		for ( U32 rowIndex=0; rowIndex < unknownsCount; rowIndex++ ) {
 			float	r = 0.0f;
-			for ( int i=0; i < unknownsCount; i++ ) {
+			for ( U32 i=0; i < unknownsCount; i++ ) {
 				const float	Vterm = V[rowIndex][i];
-				const float	tempXterm = tempX[rowIndex];
+				const float	tempXterm = tempX[i];
 				r += Vterm * tempXterm;
 			}
 			x[rowIndex] = r;	// This is our final results!
