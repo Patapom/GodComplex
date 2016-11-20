@@ -247,7 +247,7 @@ void	ImageFile::PlotGraphAutoRangeY( SharpMath::float4^ _color, SharpMath::float
 void	ImageFile::PlotAxes( SharpMath::float4^ _color, SharpMath::float2^ _rangeX, SharpMath::float2^ _rangeY, float _stepX, float _stepY ) {
 	bfloat4	color( _color->x, _color->y, _color->z, _color->w );
 	bfloat2	rangeX( _rangeX->x, _rangeX->y );
-	bfloat2	rangeY;
+	bfloat2	rangeY( _rangeY->x, _rangeY->y );
 	m_nativeObject->PlotAxes( color, rangeX, rangeY, _stepX,_stepY );
 }
 

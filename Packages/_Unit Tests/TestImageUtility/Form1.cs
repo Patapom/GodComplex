@@ -39,20 +39,28 @@ namespace ImageUtility.UnitTests
 			m_imageFile.Clear( new float4( 1, 1, 1, 1 ) );
 //			m_imageFile.Clear( new float4( 0, 0, 0, 1 ) );
 
-			int	W = (int) m_imageFile.Width;
-			int	H = (int) m_imageFile.Height;
-			Random	R = new Random( 1 );
-			float2	P0 = new float2();
-			float2	P1 = new float2();
 			float4	black = new float4( 0, 0, 0, 1 );
 			float4	white = new float4( 1, 1, 1, 1 );
-			for ( int i=0; i < 10000; i++ ) {
-				P0.x = (float) (R.NextDouble() * 3*W) - W;
-				P0.y = (float) (R.NextDouble() * 3*H) - H;
-				P1.x = (float) (R.NextDouble() * 3*W) - W;
-				P1.y = (float) (R.NextDouble() * 3*H) - H;
-				m_imageFile.DrawLine( black, P0, P1 );
-//				m_imageFile.DrawLine( R.NextDouble() > 0.5 ? white : black, P0, P1 );
+
+			if ( true ) {
+				// Unit test simple graph
+				m_imageFile.PlotGraph( black, new float2( -30.0f, 30.0f ), new float2( -1.0f, 1.0f ), ( float x ) => { return (float) Math.Sin( x ) / x; } );
+				m_imageFile.PlotAxes( black, new float2( -30.0f, 30.0f ), new float2( -1.0f, 1.0f ), (float) (0.5 * Math.PI), 0.1f );
+			} else if ( true ) {
+				// Unit test a LOT of clipped lines!
+				int	W = (int) m_imageFile.Width;
+				int	H = (int) m_imageFile.Height;
+				Random	R = new Random( 1 );
+				float2	P0 = new float2();
+				float2	P1 = new float2();
+				for ( int i=0; i < 10000; i++ ) {
+					P0.x = (float) (R.NextDouble() * 3*W) - W;
+					P0.y = (float) (R.NextDouble() * 3*H) - H;
+					P1.x = (float) (R.NextDouble() * 3*W) - W;
+					P1.y = (float) (R.NextDouble() * 3*H) - H;
+					m_imageFile.DrawLine( black, P0, P1 );
+//					m_imageFile.DrawLine( R.NextDouble() > 0.5 ? white : black, P0, P1 );
+				}
 			}
 
 			panel1.Bitmap = m_imageFile.AsBitmap;

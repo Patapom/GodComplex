@@ -727,34 +727,151 @@ void	ImageFile::PlotGraphAutoRangeY( const bfloat4& _color, const bfloat2& _rang
 }
 
 void	ImageFile::PlotGraph( const bfloat4& _color, const bfloat2& _rangeX, const bfloat2& _rangeY, PlotDelegate_t _delegate ) {
-	U32		W = Width();
-	U32		H = Height();
-	U32		X0 = GRAPH_MARGIN;
-	U32		Y0 = H - GRAPH_MARGIN;
-	U32		X1 = W - GRAPH_MARGIN;
-	U32		Y1 = GRAPH_MARGIN;
-	float	Dx = (_rangeX.y - _rangeX.x) / (X1-X0);
+	S32		W = Width();
+	S32		H = Height();
+	S32		X0 = GRAPH_MARGIN;
+	S32		Y0 = H - GRAPH_MARGIN;
+	S32		X1 = W - GRAPH_MARGIN;
+	S32		Y1 = GRAPH_MARGIN;
+	float	Dx = (_rangeX.y - _rangeX.x) / (X1 - X0);
 	float	DY = (Y1 - Y0) / (_rangeY.y - _rangeY.x);
 
 	float	x = _rangeX.x;
 	float	y = (*_delegate)( x );
-	bfloat2	P1( float(X0), (y - _rangeY.x) * DY );
+	bfloat2	P1( float(X0), Y0 + (y - _rangeY.x) * DY );
 	bfloat2	P0;
-	for ( U32 X=X0+1; X < X1; X++ ) {
+	for ( S32 X=X0+1; X < X1; X++ ) {
 		P0 = P1;
 
 		x += Dx;
 		y = (*_delegate)( x );
 
 		P1.x++;
-		P1.y = (y - _rangeY.x) * DY;
+		P1.y = Y0 + (y - _rangeY.x) * DY;
 
 		DrawLine( _color, P0, P1 );
 	}
+	LogPlot! Base 1 = linéaire, Base 2, Base 10 = Log
 }
 
 void	ImageFile::PlotAxes( const bfloat4& _color, const bfloat2& _rangeX, const bfloat2& _rangeY, float _stepX, float _stepY ) {
+	S32		W = Width();
+	S32		H = Height();
+	S32		X0 = GRAPH_MARGIN;
+	S32		Y0 = H - GRAPH_MARGIN;
+	S32		X1 = W - GRAPH_MARGIN;
+	S32		Y1 = GRAPH_MARGIN;
+	float	DX = (X1 - X0) / (_rangeX.y - _rangeX.x);
+	float	DY = (Y1 - Y0) / (_rangeY.y - _rangeY.x);
 
+	// Draw main axes
+	float	AxisX0 = X0 + (0.0f - _rangeX.x) * DX;
+	float	AxisY0 = Y0 + (0.0f - _rangeY.x) * DY;
+	DrawLine( _color, bfloat2( AxisX0, 0 ), bfloat2( AxisX0, (float) H-1 ) );
+	DrawLine( _color, bfloat2( 0.0f, AxisY0 ), bfloat2( (float) W-1, AxisY0 ) );
+
+	// Draw horizontal scale ticks
+	{
+		bfloat2	tick0( 0, AxisY0 );
+		bfloat2	tick1( 0, AxisY0+4 );
+
+			// Positive X
+		S32	ticksCountX = S32( ceilf( fabs( _rangeX.y ) / _stepX ) );
+			ticksCountX = MIN( ticksCountX, 10000 );
+		for ( S32 tickIndex=1; tickIndex < ticksCountX; tickIndex++ ) {
+			tick0.x = tick1.x = X0 + DX * (tickIndex * _stepX - _rangeX.x);
+			DrawLine( _color, tick0, tick1 );
+		}
+			// Negative X
+		ticksCountX = S32( ceilf( fabs( _rangeX.x ) / _stepX ) );
+		ticksCountX = MIN( ticksCountX, 10000 );
+		for ( S32 tickIndex=1; tickIndex < ticksCountX; tickIndex++ ) {
+			tick0.x = tick1.x = X0 + DX * (-tickIndex * _stepX - _rangeX.x);
+			DrawLine( _color, tick0, tick1 );
+		}
+	}
+
+	// Draw vertical scale ticks
+	{
+		bfloat2	tick0( AxisX0-4, 0 );
+		bfloat2	tick1( AxisX0, 0 );
+
+			// Positive Y
+		S32	ticksCountY = S32( ceilf( fabs( _rangeY.y ) / _stepY ) );
+			ticksCountY = MIN( ticksCountY, 10000 );
+		for ( S32 tickIndex=1; tickIndex < ticksCountY; tickIndex++ ) {
+			tick0.y = tick1.y = Y0 + DY * (tickIndex * _stepY - _rangeY.x);
+			DrawLine( _color, tick0, tick1 );
+		}
+			// Negative Y
+		ticksCountY = S32( ceilf( fabs( _rangeY.x ) / _stepY ) );
+		ticksCountY = MIN( ticksCountY, 10000 );
+		for ( S32 tickIndex=1; tickIndex < ticksCountY; tickIndex++ ) {
+			tick0.y = tick1.y = Y0 + DY * (-tickIndex * _stepY - _rangeY.x);
+			DrawLine( _color, tick0, tick1 );
+		}
+	}
+}
+
+void	ImageFile::PlotLogAxes( const bfloat4& _color, const bfloat2& _rangeX, const bfloat2& _rangeY, float _logBaseX, float _logBaseY ) {
+	S32		W = Width();
+	S32		H = Height();
+	S32		X0 = GRAPH_MARGIN;
+	S32		Y0 = H - GRAPH_MARGIN;
+	S32		X1 = W - GRAPH_MARGIN;
+	S32		Y1 = GRAPH_MARGIN;
+	float	DX = (X1 - X0) / (_rangeX.y - _rangeX.x);
+	float	DY = (Y1 - Y0) / (_rangeY.y - _rangeY.x);
+
+	// Draw main axes
+	float	AxisX0 = X0 + (0.0f - _rangeX.x) * DX;
+	float	AxisY0 = Y0 + (0.0f - _rangeY.x) * DY;
+	DrawLine( _color, bfloat2( AxisX0, 0 ), bfloat2( AxisX0, (float) H-1 ) );
+	DrawLine( _color, bfloat2( 0.0f, AxisY0 ), bfloat2( (float) W-1, AxisY0 ) );
+
+	// Draw horizontal scale ticks
+	{
+		bfloat2	tick0( 0, AxisY0 );
+		bfloat2	tick1( 0, AxisY0+4 );
+
+			// Positive X
+		S32	ticksCountX = S32( ceilf( fabs( _rangeX.y ) / _logBaseX ) );
+			ticksCountX = MIN( ticksCountX, 10000 );
+		for ( S32 tickIndex=0; tickIndex < ticksCountX; tickIndex++ ) {
+			for ( int i=0; i < 10; i++ ) {
+				tick0.x = tick1.x = X0 + DX * (tickIndex * _logBaseX - _rangeX.x);
+				DrawLine( _color, tick0, tick1 );
+			}
+		}
+			// Negative X
+		ticksCountX = S32( ceilf( fabs( _rangeX.x ) / _logBaseX ) );
+		ticksCountX = MIN( ticksCountX, 10000 );
+		for ( S32 tickIndex=1; tickIndex < ticksCountX; tickIndex++ ) {
+			tick0.x = tick1.x = X0 + DX * (-tickIndex * _logBaseX - _rangeX.x);
+			DrawLine( _color, tick0, tick1 );
+		}
+	}
+
+	// Draw vertical scale ticks
+	{
+		bfloat2	tick0( AxisX0-4, 0 );
+		bfloat2	tick1( AxisX0, 0 );
+
+			// Positive Y
+		S32	ticksCountY = S32( ceilf( fabs( _rangeY.y ) / _logBaseY ) );
+			ticksCountY = MIN( ticksCountY, 10000 );
+		for ( S32 tickIndex=1; tickIndex < ticksCountY; tickIndex++ ) {
+			tick0.y = tick1.y = Y0 + DY * (tickIndex * _logBaseY - _rangeY.x);
+			DrawLine( _color, tick0, tick1 );
+		}
+			// Negative Y
+		ticksCountY = S32( ceilf( fabs( _rangeY.x ) / _logBaseY ) );
+		ticksCountY = MIN( ticksCountY, 10000 );
+		for ( S32 tickIndex=1; tickIndex < ticksCountY; tickIndex++ ) {
+			tick0.y = tick1.y = Y0 + DY * (-tickIndex * _logBaseY - _rangeY.x);
+			DrawLine( _color, tick0, tick1 );
+		}
+	}
 }
 
 void	ImageFile::DrawLine( const bfloat4& _color, const bfloat2& _P0, const bfloat2& _P1 ) {
@@ -859,14 +976,14 @@ void	ImageFile::DrawLine( const bfloat4& _color, const bfloat2& _P0, const bfloa
 	// Draw
 	if ( flipped ) {
 		// Draw flipped vertical line
-		for ( ; X0 < X1; X0++, P0.y+=slope ) {
+		for ( ; X0 <= X1; X0++, P0.y+=slope ) {
 			int	Y = int( floorf( P0.y ) );
 			ASSERT( Y >= 0 && Y < H, "Offscreen! Check clipping!" );
 			Set( Y, X0, _color );
 		}
 	} else {
 		// Draw regular horizontal line
-		for ( ; X0 < X1; X0++, P0.y+=slope ) {
+		for ( ; X0 <= X1; X0++, P0.y+=slope ) {
 			int	Y = int( floorf( P0.y ) );
 			ASSERT( Y >= 0 && Y < H, "Offscreen! Check clipping!" );
 			Set( X0, Y, _color );
