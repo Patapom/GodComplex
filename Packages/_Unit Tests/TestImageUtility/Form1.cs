@@ -159,7 +159,8 @@ if ( Math.Abs( T - 6500.0f ) < 10.0f )
 // float3	XYZ_G_out = XYZ_G_in * XYZ_D65_D50;
 // float3	XYZ_B_out = XYZ_B_in * XYZ_D65_D50;
 // float3	XYZ_W_out = XYZ_W_in * XYZ_D65_D50;
-// 
+// 
+
 // float3	xyY_R_out = new float3();
 // float3	xyY_G_out = new float3();
 // float3	xyY_B_out = new float3();

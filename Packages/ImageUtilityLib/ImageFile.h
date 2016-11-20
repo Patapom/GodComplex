@@ -63,30 +63,38 @@ namespace ImageUtilityLib {
 		typedef void	(*toneMapper_t)( const bfloat3& _HDRColor, bfloat3& _LDRColor );
 
 		// This enum matches the classes available in PixelFormat.h (which in turn match the DXGI formats)
-		enum class PIXEL_FORMAT {
-			UNKNOWN,
+		enum class PIXEL_FORMAT : U32 {
+			UNKNOWN = ~0U,
+			NOT_NATIVELY_SUPPORTED = 0x80000000U,	// This flag is used by formats that are not natively supported by FreeImage
 
 			// 8-bits
-			R8,
-			RG8,
-			RGB8,
-			RGBA8,
+			R8		= 0,
+			RG8		= 1,
+			RGB8	= 2,
+			RGBA8	= 3,
 
 			// 16-bits
-			R16,
-//			RG16,		// Unsupported
-			RGB16,
-			RGBA16,
-//			R16F,		// Unsupported
-// 			RG16F,		// Unsupported
-// 			RGB16F,		// Unsupported
-// 			RGBA16F,	// Unsupported
+			R16		= 4,
+//			RG16	= 5,		// Unsupported
+			RGB16	= 6,
+			RGBA16	= 7,
+
+			// 16-bits half-precision floating points
+			// WARNING: These formats are NOT natively supported by FreeImage but can be used by DDS for example so I chose
+			//			 to support them as regular U16 formats but treating the raw U16 as half-floats internally...
+			// NOTE: These are NOT loadable or saveable by the regular Load()/Save() routine, this won't crash but it will produce garbage
+			//		 These formats should only be used for in-memory manipulations and DDS-related routines that can manipulate them
+			//
+			R16F	= 8		| NOT_NATIVELY_SUPPORTED,	// Unsupported by FreeImage, aliased as R16_UNORM
+			RG16F	= 9		| NOT_NATIVELY_SUPPORTED,	// Unsupported by FreeImage, aliased as RGB16_UNORM
+			RGB16F	= 10	| NOT_NATIVELY_SUPPORTED,	// Unsupported by FreeImage, aliased as RGB16_UNORM
+			RGBA16F	= 11	| NOT_NATIVELY_SUPPORTED,	// Unsupported by FreeImage, aliased as RGBA16_UNORM
 
 			// 32-bits
-			R32F,
-			RG32F,
-			RGB32F,
-			RGBA32F,
+			R32F	= 12,
+			RG32F	= 13,
+			RGB32F	= 14,
+			RGBA32F = 15,
 		};
 
 		// Wraps around free image's "FREE_IMAGE_FORMAT" enum
@@ -236,6 +244,7 @@ namespace ImageUtilityLib {
 
 		FIBITMAP*					m_bitmap;
 		PIXEL_FORMAT				m_pixelFormat;			// The bitmap's pixel format
+		const IPixelAccessor*		m_pixelAccessor;		// The bitmap's pixel accessor to read/write the image's content
 		mutable FILE_FORMAT			m_fileFormat;			// File format (available if created from a file or saved to a file at some point)
 
 		MetaData					m_metadata;				// Contains relevant metadata (e.g. ISO, Tv, Av, focal length, etc.)
@@ -253,7 +262,7 @@ namespace ImageUtilityLib {
 		PIXEL_FORMAT		GetPixelFormat() const	{ return m_pixelFormat; }
 
 		// Gets the pixel format's accessor
-		const IPixelAccessor&	GetPixelFormatAccessor() const;
+		const IPixelAccessor&	GetPixelFormatAccessor() const { return *m_pixelAccessor; }
 
 		// Gets the source bitmap type
 		FILE_FORMAT			GetFileFormat() const	{ return m_fileFormat; }
@@ -390,6 +399,8 @@ namespace ImageUtilityLib {
 
 		static FILE_FORMAT			FIF2FileFormat( FREE_IMAGE_FORMAT _format )	{ return FILE_FORMAT( _format ); }
 		static FREE_IMAGE_FORMAT	FileFormat2FIF( FILE_FORMAT _format )		{ return FREE_IMAGE_FORMAT( _format ); }
+
+		static const IPixelAccessor&	GetPixelFormatAccessor( PIXEL_FORMAT _pixelFormat );
 
 
 	private:	// Ref-counting for free image lib init/release
