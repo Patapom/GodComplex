@@ -323,6 +323,24 @@ void	ColorProfile::ComputeWhitePointChromaticities( float _blackBodyTemperature,
 	_whitePointChromaticities.y = XYZ.y * rcpSum;
 }
 
+// The x chromaticity is given by:
+//	x = 0.244063 + 0.09911 * (10^3 / T) + 2.9678 * (10^6 / T^2) - 4.6070 * (10^9 / T^3)		for 4000K < T < 7000K
+//	x = 0.237040 + 0.24748 * (10^3 / T) + 1.9018 * (10^6 / T^2) - 2.0064 * (10^9 / T^3)		for 7000K <= T < 25000K
+//
+// The y chromaticity is infered from x by the relation:
+//	y = -0.275 + 2.870 x - 3 x^2
+//
+void	ColorProfile::ComputeWhitePointChromaticitiesAnalytical( float _blackBodyTemperature, bfloat2& _whitePointChromaticities ) {
+	double	t = 1e3 / _blackBodyTemperature;
+	double	t2 = t * t;
+	double	t3 = t * t2;
+	double	x = _blackBodyTemperature < 7000.0f ? 0.244063 + 0.09911 * t + 2.9678 * t2 - 4.6070 * t3
+												: 0.237040 + 0.24748 * t + 1.9018 * t2 - 2.0064 * t3;
+	double	y = -0.275 + 2.870 * x - 3 * x*x;
+
+	_whitePointChromaticities.Set( float(x), float(y) );
+}
+
 
 //////////////////////////////////////////////////////////////////////////
 // InternalColorConverter_sRGB

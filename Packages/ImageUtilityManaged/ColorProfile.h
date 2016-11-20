@@ -367,6 +367,17 @@ namespace ImageUtility {
 			_whitePointChromaticities.Set( whitePointChromaticities.x, whitePointChromaticities.y );
 		}
 
+		// Computes the xy chromaticities of the white point given by a black body at specified temperature
+		// This is the analytical solution by Judd, MacAdam, and Wyszecki described in http://wiki.nuaj.net/index.php?title=Illuminant_Computation
+		//	_blackBodyTemperature, the temperature of the black body (in Kelvin)
+		//							(NOTE: valid temperature range is from 4000K to 25000K!)
+		//	_whitePointChromaticities, the resulting white point chromaticities in xyY space (Y=1)
+		static void				ComputeWhitePointChromaticitiesAnalytical( float _blackBodyTemperature, float2% _whitePointChromaticities ) {
+			bfloat2	whitePointChromaticities;
+			ImageUtilityLib::ColorProfile::ComputeWhitePointChromaticitiesAnalytical( _blackBodyTemperature, whitePointChromaticities );
+			_whitePointChromaticities.Set( whitePointChromaticities.x, whitePointChromaticities.y );
+		}
+
 		#pragma endregion
 	};
 }

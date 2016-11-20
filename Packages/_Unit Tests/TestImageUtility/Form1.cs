@@ -1,4 +1,4 @@
-﻿//#define TEST_BLACK_BODY_LOCUS
+﻿#define TEST_BLACK_BODY_LOCUS
 
 using System;
 using System.Collections.Generic;
@@ -55,11 +55,11 @@ namespace ImageUtility.UnitTests
 			panel1.Bitmap = m_imageFile.AsBitmap;
 		}
 
-		protected void	DrawPoint( int _X, int _Y, ref float4 _color ) {
-			uint	minX = (uint) Math.Max( 0, _X-6 );
-			uint	minY = (uint) Math.Max( 0, _Y-6 );
-			uint	maxX = (uint) Math.Min( m_imageFile.Width, _X + 7 );
-			uint	maxY = (uint) Math.Min( m_imageFile.Height, _Y + 7 );
+		protected void	DrawPoint( int _X, int _Y, int _size, ref float4 _color ) {
+			uint	minX = (uint) Math.Max( 0, _X-_size );
+			uint	minY = (uint) Math.Max( 0, _Y-_size );
+			uint	maxX = (uint) Math.Min( m_imageFile.Width, _X + _size+1 );
+			uint	maxY = (uint) Math.Min( m_imageFile.Height, _Y + _size+1 );
 			for ( uint Y=minY; Y < maxY; Y++ )
 				for ( uint X=minX; X < maxX; X++ )
 					m_imageFile[X,Y] = _color;
@@ -96,6 +96,7 @@ namespace ImageUtility.UnitTests
 
 			float2	xy = new float2();
 			float4	color = new float4( 1, 0, 0, 1 );
+			float4	color2 = new float4( 0, 0.5f, 1, 1 );
 			for ( int locusIndex=0; locusIndex < 20; locusIndex++ ) {
 //				float	T = 1500.0f + (8000.0f - 1500.0f) * locusIndex / 20.0f;
 				float	T = 1500.0f + 500.0f * locusIndex;
@@ -107,7 +108,11 @@ namespace ImageUtility.UnitTests
 // sRGB.XYZ2RGB( new float4( XYZ, 1.0f ), ref color );
 
 				float2	fPos = cornerZero + (cornerPoint8Point9 - cornerZero) * new float2( xy.x / 0.8f, xy.y / 0.9f );
-				DrawPoint( (int) fPos.x, (int) fPos.y, ref color );
+				DrawPoint( (int) fPos.x, (int) fPos.y, 6, ref color );
+
+				ColorProfile.ComputeWhitePointChromaticitiesAnalytical( T, ref xy );
+				fPos = cornerZero + (cornerPoint8Point9 - cornerZero) * new float2( xy.x / 0.8f, xy.y / 0.9f );
+				DrawPoint( (int) fPos.x, (int) fPos.y, 3, ref color2 );
 			}
 
 #else

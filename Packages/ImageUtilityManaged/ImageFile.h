@@ -65,30 +65,61 @@ namespace ImageUtility {
 		delegate void	ToneMapper( float3 _HDRColor, float3% _LDRColor );
 
 		// This enum matches the classes available in PixelFormat.h (which in turn match the DXGI formats)
-		enum class PIXEL_FORMAT {
-			UNKNOWN,
+		enum class PIXEL_FORMAT : UInt32 {
+			UNKNOWN = ~0U,
+			NOT_NATIVELY_SUPPORTED = 0x80000000U,	// This flag is used by formats that are not natively supported by FreeImage
 
 			// 8-bits
-			R8,
-			RG8,
-			RGB8,
-			RGBA8,
+			R8		= 0,
+			RG8		= 1,
+			RGB8	= 2,
+			RGBA8	= 3,
 
 			// 16-bits
-			R16,
-//			RG16,		// Unsupported
-			RGB16,
-			RGBA16,
-//			R16F,		// Unsupported
-// 			RG16F,		// Unsupported
-// 			RGB16F,		// Unsupported
-// 			RGBA16F,	// Unsupported
+			R16		= 4,
+//			RG16	= 5,		// Unsupported
+			RGB16	= 6,
+			RGBA16	= 7,
+
+			// 16-bits half-precision floating points
+			// WARNING: These formats are NOT natively supported by FreeImage but can be used by DDS for example so I chose
+			//			 to support them as regular U16 formats but treating the raw U16 as half-floats internally...
+			// NOTE: These are NOT loadable or saveable by the regular Load()/Save() routine, this won't crash but it will produce garbage
+			//		 These formats should only be used for in-memory manipulations and DDS-related routines that can manipulate them
+			//
+			R16F	= 8		| NOT_NATIVELY_SUPPORTED,	// Unsupported by FreeImage, aliased as R16_UNORM
+			RG16F	= 9		| NOT_NATIVELY_SUPPORTED,	// Unsupported by FreeImage, aliased as RGB16_UNORM
+			RGB16F	= 10	| NOT_NATIVELY_SUPPORTED,	// Unsupported by FreeImage, aliased as RGB16_UNORM
+			RGBA16F	= 11	| NOT_NATIVELY_SUPPORTED,	// Unsupported by FreeImage, aliased as RGBA16_UNORM
 
 			// 32-bits
-			R32F,
-			RG32F,
-			RGB32F,
-			RGBA32F,
+			R32F	= 12,
+			RG32F	= 13,
+			RGB32F	= 14,
+			RGBA32F = 15,
+// 			UNKNOWN,
+// 
+// 			// 8-bits
+// 			R8,
+// 			RG8,
+// 			RGB8,
+// 			RGBA8,
+// 
+// 			// 16-bits
+// 			R16,
+// //			RG16,		// Unsupported
+// 			RGB16,
+// 			RGBA16,
+// //			R16F,		// Unsupported
+// // 			RG16F,		// Unsupported
+// // 			RGB16F,		// Unsupported
+// // 			RGBA16F,	// Unsupported
+// 
+// 			// 32-bits
+// 			R32F,
+// 			RG32F,
+// 			RGB32F,
+// 			RGBA32F,
 		};
 
 		enum class	FILE_FORMAT {

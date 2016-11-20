@@ -710,10 +710,6 @@ void	ImageFile::UnUseFreeImage() {
 // Graph Plotting Helpers
 const U32	GRAPH_MARGIN = 10;	// 10 pixels margin
 
-// float	RangeY2ImageY( float _y, float _rangeMinY, float _recDy ) {
-// 	return (_y - _rangeMinY) * _recDy;
-// }
-
 void	ImageFile::Clear( const bfloat4& _color ) {
 	U32			W = Width();
 	U32			H = Height();
@@ -768,6 +764,12 @@ void	ImageFile::DrawLine( const bfloat4& _color, const bfloat2& _P0, const bfloa
 	bfloat2	P0 = _P0;
 	bfloat2	P1 = _P1;
 
+	// Offset positions by half a pixel so the integer grid lies on pixel centers
+	P0.x -= 0.5f;
+	P0.y -= 0.5f;
+	P1.x -= 0.5f;
+	P1.y -= 0.5f;
+
 	bfloat2	Delta = P1 - P0;
 	if ( fabs(Delta.x) >= fabs(Delta.y) ) {
 		//---------------------------------------------------------------
@@ -777,77 +779,77 @@ void	ImageFile::DrawLine( const bfloat4& _color, const bfloat2& _P0, const bfloa
 			Swap( P0, P1 );
 			Delta = -Delta;
 		}
-		if ( P1.x <= 0.0f || P0.x >= W )
-			return;	// Entirely out of screen
 
 		if ( Delta.x < 1e-3f )
 			return;	// Empty interval
 
 		float	slope = Delta.y / Delta.x;
-		if ( slope == 0.0f ) {
-			if ( P0.y < 0.0f || P0.y >= H )
-				return;	// Entirely out of screen
-		}
+		float	recSlope = fabs(Delta.y) > 1e-8f ? Delta.x / Delta.y : 0.0f;
 
 		// Perform clipping
 		if ( P0.x < 0.0f ) {
 			// Clip left
 			float	clipDelta = P0.x;
 			P0.y -= clipDelta * slope;
-			Delta.x += clipDelta;
 			P0.x = 0.0f;
 		}
-		if ( P1.x > W ) {
+		if ( P1.x >= W ) {
 			// Clip right
-			float	clipDelta = W - P1.x;
-			P1.y -= clipDelta * slope;
-			Delta.x += clipDelta;
-			P1.x = W;
+			float	clipDelta = W-1 - P1.x;
+			P1.y += clipDelta * slope;
+			P1.x = W-1;
 		}
 		if ( P0.y < P1.y ) {
 			// Drawing from top to bottom
+			if ( P1.y < 0.0f || P0.y >= H )
+				return;	// Entirely out of screen
 			if ( P0.y < 0.0f ) {
 				// Clip top
 				float	clipDelta = P0.y;
-				P0.x -= clipDelta / slope;
-				Delta.y += clipDelta;
+				P0.x -= clipDelta * recSlope;
 				P0.y = 0.0f;
 			}
-			if ( P1.y > H ) {
+			if ( P1.y >= H ) {
 				// Clip bottom
-				float	clipDelta = H - P1.y;
-				P1.x -= clipDelta / slope;
-				Delta.y += clipDelta;
-				P1.y = H;
+				float	clipDelta = H-1 - P1.y;
+				P1.x += clipDelta * recSlope;
+				P1.y = H-1;
 			}
 		} else {
 			// Drawing from bottom to top
+			if ( P0.y < 0.0f || P1.y >= H )
+				return;	// Entirely out of screen
 			if ( P1.y < 0.0f ) {
 				// Clip top
 				float	clipDelta = P1.y;
-				P1.x -= clipDelta / slope;
-				Delta.y += clipDelta;
+				P1.x -= clipDelta * recSlope;
 				P1.y = 0.0f;
 			}
-			if ( P0.y > H ) {
+			if ( P0.y >= H ) {
 				// Clip bottom
-				float	clipDelta = H - P0.y;
-				P0.x -= clipDelta / slope;
-				Delta.y += clipDelta;
-				P0.y = H;
+				float	clipDelta = H-1 - P0.y;
+				P0.x += clipDelta * recSlope;
+				P0.y = H-1;
 			}
 		}
-		if ( Delta.x < 1e-3f || fabs(Delta.y) < 1e-3f )
+		if ( P1.x - P0.x < 1e-3f )
 			return;	// Empty interval
 
+#if _DEBUG
+	// Make sure we didn't alter the slope!
+	float	newSlope = (P1.y - P0.y) / (P1.x - P0.x);
+	ASSERT( fabs( newSlope - slope ) < 1e-4f, "Slope differs after clipping!" );
+#endif
+
+		// At this point we only have positions within the ranges X€[0,W[ and Y€[0,H[
+		int		X0 = int( floorf( P0.x ) );	// Lies on start pixel center
+		int		X1 = int( floorf( P1.x ) );	// Lies on end pixel center
+
+		P0.y += 0.5f - (P0.x - X0) * slope;	// First step: go back to the start pixel's X center
+
 		// Draw
-		int		X0 = int( floorf( P0.x ) );
-		int		X1 = int( floorf( P1.x ) );
-		int		DX = abs( X1 - X0 );
 		for ( ; X0 < X1; X0++, P0.y+=slope ) {
 			int	Y = int( floorf( P0.y ) );
-// 			if ( Y < 0 || Y >= H )
-// 				continue;	// Offscreen
 			ASSERT( Y >= 0 && Y < H, "Offscreen! Check clipping!" );
 			Set( X0, Y, _color );
 		}
