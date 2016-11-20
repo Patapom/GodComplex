@@ -845,7 +845,7 @@ void	ImageFile::DrawLine( const bfloat4& _color, const bfloat2& _P0, const bfloa
 		int		X0 = int( floorf( P0.x ) );	// Lies on start pixel center
 		int		X1 = int( floorf( P1.x ) );	// Lies on end pixel center
 
-		P0.y += 0.5f - (P0.x - X0) * slope;	// First step: go back to the start pixel's X center
+		P0.y += 0.5f - (P0.x - X0 - 0.5f) * slope;	// First step: go back to the start pixel's X center
 
 		// Draw
 		for ( ; X0 < X1; X0++, P0.y+=slope ) {
