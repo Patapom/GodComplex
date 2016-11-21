@@ -58,7 +58,7 @@ namespace ImageUtility.UnitTests
 				m_imageFile.PlotLogGraph( blue, new float2( -2.0f, 2.0f ), new float2( -2.0f, 2.0f ), ( float x ) => { return (float) Math.Pow( 10.0, x ); }, 10.0f, 10.0f );
 // 				m_imageFile.PlotLogAxes( black, new float2( -1000.0f, 1000.0f ), new float2( -100.0f, 100.0f ), -100.0f, -10.0f );
 // 				m_imageFile.PlotLogAxes( black, new float2( -100.0f, 1000.0f ), new float2( -2.0f, 2.0f ), -10.0f, 10.0f );
- 				m_imageFile.PlotLogAxes( black, new float2( -2.0f, 2.0f ), new float2( -2.0f, 2.0f ), 10.0f, 10.0f );
+ 				m_imageFile.PlotLogAxes( black, new float2( -2.0f, 2.0f ), new float2( -2.0f, 2.0f ), 10.0f, 2.0f );
 
 			} else if ( true ) {
 				// Unit test a LOT of clipped lines!
@@ -325,20 +325,49 @@ if ( Math.Abs( T - 6500.0f ) < 10.0f )
 
 //panel1.Bitmap = Bitmap.DEBUG.AsBitmap;
 
-				// Render the response curve as a bitmap
-				ImageFile	tempCurveBitmap = new ImageFile( 256, 32, ImageFile.PIXEL_FORMAT.RGB8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
-				float4		tempValue = new float4();
-				for ( int i=0; i < 256; i++ ) {
-					float	g = responseCurve[i];
-					float	v = (float) Math.Pow( 2.0, g );
+// 				// Render the response curve as a bitmap
+// 				ImageFile	tempCurveBitmap = new ImageFile( 256, 32, ImageFile.PIXEL_FORMAT.RGB8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
+// 				float4		tempValue = new float4();
+// 				for ( int i=0; i < 256; i++ ) {
+// 					float	g = responseCurve[i];
+// 					float	v = (float) Math.Pow( 2.0, g );
+// 
+// 					v *= 0.15f;
+// 
+// 					tempValue.Set( v, v, v, 1.0f );
+// 					for ( uint Y=0; Y < 32; Y++ )
+// 						tempCurveBitmap[(uint)i,Y] = tempValue;
+// 				}
+// 				panel1.Bitmap = tempCurveBitmap.AsBitmap;
 
-					v *= 0.15f;
+				// Render the response curve as a graph
+ 				ImageFile	tempCurveBitmap = new ImageFile( 1024, 768, ImageFile.PIXEL_FORMAT.RGB8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
 
-					tempValue.Set( v, v, v, 1.0f );
-					for ( uint Y=0; Y < 32; Y++ )
-						tempCurveBitmap[(uint)i,Y] = tempValue;
-				}
-				panel1.Bitmap = tempCurveBitmap.AsBitmap;
+				float4		black = new float4( 0, 0, 0, 1 );
+				float2		rangeX = new float2( 0, 256 );
+				float2		rangeY = new float2( -4, 4 );
+				tempCurveBitmap.Clear( new float4( 1, 1, 1, 1 ) );
+//				tempCurveBitmap.PlotGraphAutoRangeY( black, rangeX, ref rangeY, ( float x ) => {
+// 					int		i0 = (int) Math.Min( 255, Math.Floor( x ) );
+// 					int		i1 = (int) Math.Min( 255, i0+1 );
+// 					float	g0 = responseCurve[i0];
+// 					float	g1 = responseCurve[i1];
+// 					float	t = x - i0;
+// 					return g0 + (g1-g0) * t;
+// 				} );
+//				tempCurveBitmap.PlotAxes( black, rangeX, rangeY, 8, 2 );
+
+				tempCurveBitmap.PlotGraphAutoRangeY( black, rangeX, ref rangeY, ( float x ) => {
+					int		i0 = (int) Math.Min( 255, Math.Floor( x ) );
+					int		i1 = (int) Math.Min( 255, i0+1 );
+					float	g0 = responseCurve[i0];
+					float	g1 = responseCurve[i1];
+					float	t = x - i0;
+					return (float) Math.Pow( 2.0f, g0 + (g1-g0) * t );
+				} );
+				tempCurveBitmap.PlotLogAxes( black, rangeX, rangeY, -8, 2 );
+
+ 				panel1.Bitmap = tempCurveBitmap.AsBitmap;
 
 /*
 				// Recompose the HDR image

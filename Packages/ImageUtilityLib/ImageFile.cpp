@@ -908,17 +908,21 @@ void	ImageFile::PlotLogAxes( const bfloat4& _color, const bfloat2& _rangeX, cons
 			S32		intervalStartY = S32( floorf( _rangeX.x ) );
 			S32		intervalEndY = S32( ceilf( _rangeX.y ) );
 			for ( S32 intervalIndex=intervalStartY; intervalIndex <= intervalEndY; intervalIndex++ ) {
-				// Draw a tiny graduation every 1/10 step
 				float	v = powf( _logBaseY, float(intervalIndex) );
-				for ( int i=0; i < 10; i++ ) {
-					float	x = logFactor * logf( v * (1 + i) );
-					tick0.x = tick1.x = X0 + DX * (x - _rangeX.x);
-					DrawLine( _color, tick0, tick1 );
-					tick1.y = AxisY0 + 3;
-				}
-				// Draw one large graduation at the end of the interval
+
+				// Draw one large graduation at the start of the interval
+				float	x = logFactor * logf( v );
+				tick0.x = tick1.x = X0 + DX * (x - _rangeX.x);
 				tick1.y = AxisY0 + 6;
 				DrawLine( _color, tick0, tick1 );
+
+				// Draw a tiny graduation every 1/10 step
+				tick1.y = AxisY0 + 3;
+				for ( int i=1; i < 10; i++ ) {
+					x = logFactor * logf( v * (1 + i * 0.1f) * _logBaseX );
+					tick0.x = tick1.x = X0 + DX * (x - _rangeX.x);
+					DrawLine( _color, tick0, tick1 );
+				}
 			}
 		}
 	}
@@ -943,17 +947,21 @@ void	ImageFile::PlotLogAxes( const bfloat4& _color, const bfloat2& _rangeX, cons
 			S32		intervalStartY = S32( floorf( _rangeY.x ) );
 			S32		intervalEndY = S32( ceilf( _rangeY.y ) );
 			for ( S32 intervalIndex=intervalStartY; intervalIndex <= intervalEndY; intervalIndex++ ) {
-				// Draw a tiny graduation every 1/10 step
 				float	v = powf( _logBaseY, float(intervalIndex) );
-				for ( int i=0; i < 10; i++ ) {
-					float	y = logFactor * logf( v * (1 + i) );
-					tick0.y = tick1.y = Y0 + DY * (y - _rangeY.x);
-					DrawLine( _color, tick0, tick1 );
-					tick0.x = AxisX0 - 3;
-				}
-				// Draw one large graduation at the end of the interval
+
+				// Draw one large graduation at the start of the interval
+				float	y = logFactor * logf( v );
+				tick0.y = tick1.y = Y0 + DY * (y - _rangeY.x);
 				tick0.x = AxisX0 - 6;
 				DrawLine( _color, tick0, tick1 );
+
+				// Draw a tiny graduation every 1/10 step
+				tick0.x = AxisX0 - 3;
+				for ( int i=1; i < 10; i++ ) {
+					y = logFactor * logf( v * (1 + i * 0.1f) * _logBaseY );
+					tick0.y = tick1.y = Y0 + DY * (y - _rangeY.x);
+					DrawLine( _color, tick0, tick1 );
+				}
 			}
 		}
 	}
