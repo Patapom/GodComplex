@@ -170,7 +170,6 @@ NativeByteArray^	ImageFile::Save( FILE_FORMAT _format, SAVE_FLAGS _options ) {
 	return result;
 }
 
-
 // Converts the source image to a target format
 void	ImageFile::ConvertFrom( ImageFile^ _source, PIXEL_FORMAT _targetFormat ) {
 	m_nativeObject->ConvertFrom( *_source->m_nativeObject, ImageUtilityLib::ImageFile::PIXEL_FORMAT( _targetFormat ) );
@@ -204,10 +203,44 @@ void	ImageFile::WriteScanline( UInt32 _Y, cli::array< float4 >^ _color, UInt32 _
 	m_nativeObject->WriteScanline( _Y, (bfloat4*) color, _startX, _color->Length );
 }
 
+cli::array< Byte >^	ImageFile::LoadBitmap( System::Drawing::Bitmap^ _bitmap, int& _width, int& _height ) {
+	_width = _bitmap->Width;
+	_height = _bitmap->Height;
+
+	cli::array< System::Byte >^	result = gcnew cli::array< System::Byte >( 4*_width*_height );
+
+	System::Drawing::Imaging::BitmapData^	lockedBitmap = _bitmap->LockBits( System::Drawing::Rectangle( 0, 0, _width, _height ), System::Drawing::Imaging::ImageLockMode::ReadOnly, System::Drawing::Imaging::PixelFormat::Format32bppArgb );
+
+	cli::pin_ptr<void>	scan0Ptr = lockedBitmap->Scan0.ToPointer();
+
+	Byte	R, G, B, A;
+	int		targetIndex = 0;
+	for ( int Y=0; Y < _height; Y++ ) {
+		Byte*	scanlinePtr = reinterpret_cast<Byte*>(scan0Ptr) + Y * lockedBitmap->Stride;
+		for ( int X=0; X < _width; X++ ) {
+			// Read in shitty order
+			B = *scanlinePtr++;
+			G = *scanlinePtr++;
+			R = *scanlinePtr++;
+			A = *scanlinePtr++;
+
+			// Write in correct order
+			result[targetIndex++] = R;
+			result[targetIndex++] = G;
+			result[targetIndex++] = B;
+			result[targetIndex++] = A;
+		}
+	}
+
+	_bitmap->UnlockBits( lockedBitmap );
+
+	return result;
+}
+
 
 //////////////////////////////////////////////////////////////////////////
 // Plotting helpers
-
+//
 void	ImageFile::Clear( SharpMath::float4^ _color ) {
 	bfloat4	color( _color->x, _color->y, _color->z, _color->w );
 	m_nativeObject->Clear( color );

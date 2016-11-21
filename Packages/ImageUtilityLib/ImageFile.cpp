@@ -722,8 +722,38 @@ void	ImageFile::Clear( const bfloat4& _color ) {
 }
 
 void	ImageFile::PlotGraphAutoRangeY( const bfloat4& _color, const bfloat2& _rangeX, bfloat2& _rangeY, PlotDelegate_t _delegate ) {
-	U32			W = Width();
-	U32			H = Height();
+	S32		W = Width();
+	S32		H = Height();
+	S32		X0 = GRAPH_MARGIN;
+	S32		Y0 = H - GRAPH_MARGIN;
+	S32		X1 = W - GRAPH_MARGIN;
+	S32		Y1 = GRAPH_MARGIN;
+	float	Dx = (_rangeX.y - _rangeX.x) / (X1 - X0);
+
+	// Process values first to determine vertical range
+	List< bfloat2 >	points( X1-X0 );
+	float	x = _rangeX.x;
+	_rangeY.Set( FLT_MAX, -FLT_MAX );
+	for ( S32 X=X0; X < X1; X++, x+=Dx ) {
+		bfloat2&	P = points.Append();
+		P.x = X;
+		P.y = (*_delegate)( x );
+
+		_rangeY.x = MIN( _rangeY.x, P.y );
+		_rangeY.y = MAX( _rangeY.y, P.y );
+	}
+
+	float	DY = (Y1 - Y0) / (_rangeY.y - _rangeY.x);
+
+	// Draw actual graph
+	U32		DX = X1-X0-1;
+	points[0].y = Y0 + (points[0].y - _rangeY.x) * DY;
+	for ( U32 X=0; X < DX; ) {
+		bfloat2&	P0 = points[X++];
+		bfloat2&	P1 = points[X];
+		P1.y = Y0 + (P1.y - _rangeY.x) * DY;
+		DrawLine( _color, P0, P1 );
+	}
 }
 
 void	ImageFile::PlotGraph( const bfloat4& _color, const bfloat2& _rangeX, const bfloat2& _rangeY, PlotDelegate_t _delegate ) {
@@ -751,7 +781,6 @@ void	ImageFile::PlotGraph( const bfloat4& _color, const bfloat2& _rangeX, const 
 
 		DrawLine( _color, P0, P1 );
 	}
-	LogPlot! Base 1 = linéaire, Base 2, Base 10 = Log
 }
 
 void	ImageFile::PlotAxes( const bfloat4& _color, const bfloat2& _rangeX, const bfloat2& _rangeY, float _stepX, float _stepY ) {

@@ -44,8 +44,11 @@ namespace ImageUtility.UnitTests
 
 			if ( true ) {
 				// Unit test simple graph
-				m_imageFile.PlotGraph( black, new float2( -30.0f, 30.0f ), new float2( -1.0f, 1.0f ), ( float x ) => { return (float) Math.Sin( x ) / x; } );
-				m_imageFile.PlotAxes( black, new float2( -30.0f, 30.0f ), new float2( -1.0f, 1.0f ), (float) (0.5 * Math.PI), 0.1f );
+				float2	rangeY = new float2( -1.0f, 1.0f );
+//				m_imageFile.PlotGraph( black, new float2( -30.0f, 30.0f ), rangeY, ( float x ) => { return (float) Math.Sin( x ) / x; } );
+				m_imageFile.PlotGraphAutoRangeY( black, new float2( -30.0f, 30.0f ), ref rangeY, ( float x ) => { return (float) Math.Sin( x ) / x; } );
+				m_imageFile.PlotAxes( black, new float2( -30.0f, 30.0f ), rangeY, (float) (0.5 * Math.PI), 0.1f );
+
 			} else if ( true ) {
 				// Unit test a LOT of clipped lines!
 				int	W = (int) m_imageFile.Width;

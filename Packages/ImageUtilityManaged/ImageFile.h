@@ -345,37 +345,7 @@ namespace ImageUtility {
 		// <param name="_Width">The bitmap's width</param>
 		// <param name="_Height">The bitmaps's height</param>
 		// <returns>The byte array containing a sequence of R,G,B,A,R,G,B,A pixels and of length Widht*Height*4</returns>
-		static cli::array< Byte >^	LoadBitmap( System::Drawing::Bitmap^ _bitmap, int& _width, int& _height ) {
-			_width = _bitmap->Width;
-			_height = _bitmap->Height;
-
-			cli::array< System::Byte >^	result = gcnew cli::array< System::Byte >( 4*_width*_height );
-
-			System::Drawing::Imaging::BitmapData^	lockedBitmap = _bitmap->LockBits( System::Drawing::Rectangle( 0, 0, _width, _height ), System::Drawing::Imaging::ImageLockMode::ReadOnly, System::Drawing::Imaging::PixelFormat::Format32bppArgb );
-
-			Byte	R, G, B, A;
-			int		targetIndex = 0;
-			for ( int Y=0; Y < _height; Y++ ) {
-				pin_ptr<Byte>	pScanline = (Byte*) lockedBitmap->Scan0.ToPointer() + Y * lockedBitmap->Stride;
-				for ( int X=0; X < _width; X++ ) {
-					// Read in shitty order
-					B = *pScanline++;
-					G = *pScanline++;
-					R = *pScanline++;
-					A = *pScanline++;
-
-					// Write in correct order
-					result[targetIndex++] = R;
-					result[targetIndex++] = G;
-					result[targetIndex++] = B;
-					result[targetIndex++] = A;
-				}
-			}
-
-			_bitmap->UnlockBits( lockedBitmap );
-
-			return result;
-		}
+		static cli::array< Byte >^	LoadBitmap( System::Drawing::Bitmap^ _bitmap, int& _width, int& _height );
 
 
 	public:
