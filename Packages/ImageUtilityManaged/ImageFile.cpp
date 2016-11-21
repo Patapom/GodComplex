@@ -260,6 +260,23 @@ void	ImageFile::PlotGraph( SharpMath::float4^ _color, SharpMath::float2^ _rangeX
 	gch.Free();  
 }
 
+void	ImageFile::PlotLogGraph( SharpMath::float4^ _color, SharpMath::float2^ _rangeX, SharpMath::float2^ _rangeY, PlotDelegate^ _delegate ) {
+	PlotLogGraph( _color, _rangeX, _rangeY, _delegate, 10.0f, 10.0f );
+}
+void	ImageFile::PlotLogGraph( SharpMath::float4^ _color, SharpMath::float2^ _rangeX, SharpMath::float2^ _rangeY, PlotDelegate^ _delegate, float _logBaseX, float _logBaseY ) {
+	// Get a function pointer to the delegate
+	System::Runtime::InteropServices::GCHandle	gch = System::Runtime::InteropServices::GCHandle::Alloc( _delegate );
+	IntPtr		ip = System::Runtime::InteropServices::Marshal::GetFunctionPointerForDelegate( _delegate );
+
+	bfloat4	color( _color->x, _color->y, _color->z, _color->w );
+	bfloat2	rangeX( _rangeX->x, _rangeX->y );
+	bfloat2	rangeY( _rangeY->x, _rangeY->y );
+	m_nativeObject->PlotLogGraph( color, rangeX, rangeY, static_cast< ImageUtilityLib::ImageFile::PlotDelegate_t >( ip.ToPointer() ), _logBaseX, _logBaseY );
+
+	// release reference to delegate  
+	gch.Free();  
+}
+
 void	ImageFile::PlotGraphAutoRangeY( SharpMath::float4^ _color, SharpMath::float2^ _rangeX, SharpMath::float2% _rangeY, PlotDelegate^ _delegate ) {
 	// Get a function pointer to the delegate
 	System::Runtime::InteropServices::GCHandle	gch = System::Runtime::InteropServices::GCHandle::Alloc( _delegate );
@@ -281,7 +298,14 @@ void	ImageFile::PlotAxes( SharpMath::float4^ _color, SharpMath::float2^ _rangeX,
 	bfloat4	color( _color->x, _color->y, _color->z, _color->w );
 	bfloat2	rangeX( _rangeX->x, _rangeX->y );
 	bfloat2	rangeY( _rangeY->x, _rangeY->y );
-	m_nativeObject->PlotAxes( color, rangeX, rangeY, _stepX,_stepY );
+	m_nativeObject->PlotAxes( color, rangeX, rangeY, _stepX, _stepY );
+}
+
+void	ImageFile::PlotLogAxes( SharpMath::float4^ _color, SharpMath::float2^ _rangeX, SharpMath::float2^ _rangeY, float _logBaseX, float _logBaseY ) {
+	bfloat4	color( _color->x, _color->y, _color->z, _color->w );
+	bfloat2	rangeX( _rangeX->x, _rangeX->y );
+	bfloat2	rangeY( _rangeY->x, _rangeY->y );
+	m_nativeObject->PlotLogAxes( color, rangeX, rangeY, _logBaseX, _logBaseY );
 }
 
 void	ImageFile::DrawLine( SharpMath::float4^ _color, SharpMath::float2^ _P0, SharpMath::float2^ _P1 ) {

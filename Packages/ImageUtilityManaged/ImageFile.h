@@ -360,11 +360,20 @@ namespace ImageUtility {
 		// Plots the y=f(x) graph for a given X and Y range
 		void				PlotGraph( SharpMath::float4^ _color, SharpMath::float2^ _rangeX, SharpMath::float2^ _rangeY, PlotDelegate^ _delegate );
 
+		// Plots the y=f(x) graph in logarithmic scale for a given X and Y range and given log bases for each axis
+		// NOTE: Use a log base of 1 for a linear scale
+		void				PlotLogGraph( SharpMath::float4^ _color, SharpMath::float2^ _rangeX, SharpMath::float2^ _rangeY, PlotDelegate^ _delegate );
+		void				PlotLogGraph( SharpMath::float4^ _color, SharpMath::float2^ _rangeX, SharpMath::float2^ _rangeY, PlotDelegate^ _delegate, float _logBaseX, float _logBaseY );
+
 		// Plots the y=f(x) graph for a given X range, Y range is automatically determined and returned
 		void				PlotGraphAutoRangeY( SharpMath::float4^ _color, SharpMath::float2^ _rangeX, SharpMath::float2% _rangeY, PlotDelegate^ _delegate );
 
 		// Plots the graph axes for the given X Y ranges
 		void				PlotAxes( SharpMath::float4^ _color, SharpMath::float2^ _rangeX, SharpMath::float2^ _rangeY, float _stepX, float _stepY );
+
+		// Plots the graph axes for the given X and Y ranges and given log bases for each axis
+		// NOTE: Use a _negative_ log base to indicate the step size and use a linear scale
+		void				PlotLogAxes( SharpMath::float4^ _color, SharpMath::float2^ _rangeX, SharpMath::float2^ _rangeY, float _logBaseX, float _logBaseY );
 
 		// Plots a line segment of the given color
 		//	_P0, _P1, the position of the line segment's points (i.e. X=0 is left border, X=Width-1 is right border, Y=0 is top border, Y=Height-1 is bottom border)

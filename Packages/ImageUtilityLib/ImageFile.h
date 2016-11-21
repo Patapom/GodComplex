@@ -348,11 +348,18 @@ namespace ImageUtilityLib {
 		// Plots the y=f(x) graph for a given X and Y range
 		void				PlotGraph( const bfloat4& _color, const bfloat2& _rangeX, const bfloat2& _rangeY, PlotDelegate_t _delegate );
 
+		// Plots the y=f(x) graph in logarithmic scale for a given X and Y range and given log bases for each axis
+		// NOTE: Use a log base of 1 for a linear scale
+		void				PlotLogGraph( const bfloat4& _color, const bfloat2& _rangeX, const bfloat2& _rangeY, PlotDelegate_t _delegate, float _logBaseX=10.0f, float _logBaseY=10.0f );
+
 		// Plots the y=f(x) graph for a given X range, Y range is automatically determined and returned
 		void				PlotGraphAutoRangeY( const bfloat4& _color, const bfloat2& _rangeX, bfloat2& _rangeY, PlotDelegate_t _delegate );
 
-		// Plots the graph axes for the given X Y ranges
+		// Plots the graph axes for the given X and Y ranges
 		void				PlotAxes( const bfloat4& _color, const bfloat2& _rangeX, const bfloat2& _rangeY, float _stepX, float _stepY );
+
+		// Plots the graph axes for the given X and Y ranges and given log bases for each axis
+		// NOTE: Use a _negative_ log base to indicate the step size and use a linear scale
 		void				PlotLogAxes( const bfloat4& _color, const bfloat2& _rangeX, const bfloat2& _rangeY, float _logBaseX, float _logBaseY );
 
 		// Plots a line segment of the given color

@@ -736,7 +736,7 @@ void	ImageFile::PlotGraphAutoRangeY( const bfloat4& _color, const bfloat2& _rang
 	_rangeY.Set( FLT_MAX, -FLT_MAX );
 	for ( S32 X=X0; X < X1; X++, x+=Dx ) {
 		bfloat2&	P = points.Append();
-		P.x = X;
+		P.x = float(X);
 		P.y = (*_delegate)( x );
 
 		_rangeY.x = MIN( _rangeY.x, P.y );
@@ -783,6 +783,45 @@ void	ImageFile::PlotGraph( const bfloat4& _color, const bfloat2& _rangeX, const 
 	}
 }
 
+void	ImageFile::PlotLogGraph( const bfloat4& _color, const bfloat2& _rangeX, const bfloat2& _rangeY, PlotDelegate_t _delegate, float _logBaseX, float _logBaseY ) {
+	S32		W = Width();
+	S32		H = Height();
+	S32		X0 = GRAPH_MARGIN;
+	S32		Y0 = H - GRAPH_MARGIN;
+	S32		X1 = W - GRAPH_MARGIN;
+	S32		Y1 = GRAPH_MARGIN;
+
+	bool	linearX = _logBaseX <= 1.0f;
+	bool	linearY = _logBaseY <= 1.0f;
+
+	float	Dx = (_rangeX.y - _rangeX.x) / (X1 - X0);
+	float	DY = (Y1 - Y0) / (_rangeY.y - _rangeY.x);
+
+ 	float	logFactorY = linearY ? 1.0f : 1.0f / logf( _logBaseY );
+
+	float	x = linearX ? _rangeX.x : powf( _logBaseX, _rangeX.x );
+	float	y = (*_delegate)( x );
+	if ( !linearY )
+		y = logFactorY * logf( y );
+
+	bfloat2	P1( float(X0), Y0 + (y - _rangeY.x) * DY );
+	bfloat2	P0;
+	U32		DX = X1-X0;
+	for ( U32 X=1; X < DX; X++ ) {
+		P0 = P1;
+
+		x = linearX ? _rangeX.x + X * Dx : powf( _logBaseX, _rangeX.x + X * Dx );
+		y = (*_delegate)( x );
+		if ( !linearY )
+			y = logFactorY * logf( y );
+
+		P1.x++;
+		P1.y = Y0 + (y - _rangeY.x) * DY;
+
+		DrawLine( _color, P0, P1 );
+	}
+}
+
 void	ImageFile::PlotAxes( const bfloat4& _color, const bfloat2& _rangeX, const bfloat2& _rangeY, float _stepX, float _stepY ) {
 	S32		W = Width();
 	S32		H = Height();
@@ -804,18 +843,11 @@ void	ImageFile::PlotAxes( const bfloat4& _color, const bfloat2& _rangeX, const b
 		bfloat2	tick0( 0, AxisY0 );
 		bfloat2	tick1( 0, AxisY0+4 );
 
-			// Positive X
-		S32	ticksCountX = S32( ceilf( fabs( _rangeX.y ) / _stepX ) );
-			ticksCountX = MIN( ticksCountX, 10000 );
-		for ( S32 tickIndex=1; tickIndex < ticksCountX; tickIndex++ ) {
+		S32	tickStartX = S32( floorf( _rangeX.x / _stepX ) );
+		S32	tickEndX = S32( ceilf( _rangeX.y / _stepX ) );
+			tickEndX = tickStartX + MIN( 10000, tickEndX - tickStartX );	// Ensure no more than 10000 ticks
+		for ( S32 tickIndex=tickStartX; tickIndex <= tickEndX; tickIndex++ ) {
 			tick0.x = tick1.x = X0 + DX * (tickIndex * _stepX - _rangeX.x);
-			DrawLine( _color, tick0, tick1 );
-		}
-			// Negative X
-		ticksCountX = S32( ceilf( fabs( _rangeX.x ) / _stepX ) );
-		ticksCountX = MIN( ticksCountX, 10000 );
-		for ( S32 tickIndex=1; tickIndex < ticksCountX; tickIndex++ ) {
-			tick0.x = tick1.x = X0 + DX * (-tickIndex * _stepX - _rangeX.x);
 			DrawLine( _color, tick0, tick1 );
 		}
 	}
@@ -825,18 +857,11 @@ void	ImageFile::PlotAxes( const bfloat4& _color, const bfloat2& _rangeX, const b
 		bfloat2	tick0( AxisX0-4, 0 );
 		bfloat2	tick1( AxisX0, 0 );
 
-			// Positive Y
-		S32	ticksCountY = S32( ceilf( fabs( _rangeY.y ) / _stepY ) );
-			ticksCountY = MIN( ticksCountY, 10000 );
-		for ( S32 tickIndex=1; tickIndex < ticksCountY; tickIndex++ ) {
+		S32	tickStartY = S32( floorf( _rangeY.x / _stepY ) );
+		S32	tickEndY = S32( ceilf( _rangeY.y / _stepY ) );
+			tickEndY = tickStartY + MIN( 10000, tickEndY - tickStartY );	// Ensure no more than 10000 ticks
+		for ( S32 tickIndex=tickStartY; tickIndex <= tickEndY; tickIndex++ ) {
 			tick0.y = tick1.y = Y0 + DY * (tickIndex * _stepY - _rangeY.x);
-			DrawLine( _color, tick0, tick1 );
-		}
-			// Negative Y
-		ticksCountY = S32( ceilf( fabs( _rangeY.x ) / _stepY ) );
-		ticksCountY = MIN( ticksCountY, 10000 );
-		for ( S32 tickIndex=1; tickIndex < ticksCountY; tickIndex++ ) {
-			tick0.y = tick1.y = Y0 + DY * (-tickIndex * _stepY - _rangeY.x);
 			DrawLine( _color, tick0, tick1 );
 		}
 	}
@@ -852,10 +877,15 @@ void	ImageFile::PlotLogAxes( const bfloat4& _color, const bfloat2& _rangeX, cons
 	float	DX = (X1 - X0) / (_rangeX.y - _rangeX.x);
 	float	DY = (Y1 - Y0) / (_rangeY.y - _rangeY.x);
 
+	bool	linearX = _logBaseX <= 1.0f;
+	bool	linearY = _logBaseY <= 1.0f;
+	float	stepX = _logBaseX < 0.0f ? -_logBaseX : 1.0f;
+	float	stepY = _logBaseY < 0.0f ? -_logBaseY : 1.0f;
+
 	// Draw main axes
-	float	AxisX0 = X0 + (0.0f - _rangeX.x) * DX;
-	float	AxisY0 = Y0 + (0.0f - _rangeY.x) * DY;
+	float	AxisX0 = linearX ? X0 + (0.0f - _rangeX.x) * DX : X0;
 	DrawLine( _color, bfloat2( AxisX0, 0 ), bfloat2( AxisX0, (float) H-1 ) );
+	float	AxisY0 = linearY ? Y0 + (0.0f - _rangeY.x) * DY : Y0;
 	DrawLine( _color, bfloat2( 0.0f, AxisY0 ), bfloat2( (float) W-1, AxisY0 ) );
 
 	// Draw horizontal scale ticks
@@ -863,21 +893,33 @@ void	ImageFile::PlotLogAxes( const bfloat4& _color, const bfloat2& _rangeX, cons
 		bfloat2	tick0( 0, AxisY0 );
 		bfloat2	tick1( 0, AxisY0+4 );
 
-			// Positive X
-		S32	ticksCountX = S32( ceilf( fabs( _rangeX.y ) / _logBaseX ) );
-			ticksCountX = MIN( ticksCountX, 10000 );
-		for ( S32 tickIndex=0; tickIndex < ticksCountX; tickIndex++ ) {
-			for ( int i=0; i < 10; i++ ) {
-				tick0.x = tick1.x = X0 + DX * (tickIndex * _logBaseX - _rangeX.x);
+		if ( linearX ) {
+			S32	tickStartX = S32( floorf( _rangeX.x / stepX ) );
+			S32	tickEndX = S32( ceilf( _rangeX.y / stepX ) );
+				tickEndX = tickStartX + MIN( 10000, tickEndX - tickStartX );	// Ensure no more than 10000 ticks
+			for ( S32 tickIndex=tickStartX; tickIndex <= tickEndX; tickIndex++ ) {
+				tick0.x = tick1.x = X0 + DX * (tickIndex * stepX - _rangeX.x);
 				DrawLine( _color, tick0, tick1 );
 			}
-		}
-			// Negative X
-		ticksCountX = S32( ceilf( fabs( _rangeX.x ) / _logBaseX ) );
-		ticksCountX = MIN( ticksCountX, 10000 );
-		for ( S32 tickIndex=1; tickIndex < ticksCountX; tickIndex++ ) {
-			tick0.x = tick1.x = X0 + DX * (-tickIndex * _logBaseX - _rangeX.x);
-			DrawLine( _color, tick0, tick1 );
+		} else {
+			// Log scale
+			float	logFactor = 1.0f / logf( _logBaseX );
+
+			S32		intervalStartY = S32( floorf( _rangeX.x ) );
+			S32		intervalEndY = S32( ceilf( _rangeX.y ) );
+			for ( S32 intervalIndex=intervalStartY; intervalIndex <= intervalEndY; intervalIndex++ ) {
+				// Draw a tiny graduation every 1/10 step
+				float	v = powf( _logBaseY, float(intervalIndex) );
+				for ( int i=0; i < 10; i++ ) {
+					float	x = logFactor * logf( v * (1 + i) );
+					tick0.x = tick1.x = X0 + DX * (x - _rangeX.x);
+					DrawLine( _color, tick0, tick1 );
+					tick1.y = AxisY0 + 3;
+				}
+				// Draw one large graduation at the end of the interval
+				tick1.y = AxisY0 + 6;
+				DrawLine( _color, tick0, tick1 );
+			}
 		}
 	}
 
@@ -886,19 +928,33 @@ void	ImageFile::PlotLogAxes( const bfloat4& _color, const bfloat2& _rangeX, cons
 		bfloat2	tick0( AxisX0-4, 0 );
 		bfloat2	tick1( AxisX0, 0 );
 
-			// Positive Y
-		S32	ticksCountY = S32( ceilf( fabs( _rangeY.y ) / _logBaseY ) );
-			ticksCountY = MIN( ticksCountY, 10000 );
-		for ( S32 tickIndex=1; tickIndex < ticksCountY; tickIndex++ ) {
-			tick0.y = tick1.y = Y0 + DY * (tickIndex * _logBaseY - _rangeY.x);
-			DrawLine( _color, tick0, tick1 );
-		}
-			// Negative Y
-		ticksCountY = S32( ceilf( fabs( _rangeY.x ) / _logBaseY ) );
-		ticksCountY = MIN( ticksCountY, 10000 );
-		for ( S32 tickIndex=1; tickIndex < ticksCountY; tickIndex++ ) {
-			tick0.y = tick1.y = Y0 + DY * (-tickIndex * _logBaseY - _rangeY.x);
-			DrawLine( _color, tick0, tick1 );
+		if ( linearY ) {
+			S32	tickStartY = S32( floorf( _rangeY.x / stepY ) );
+			S32	tickEndY = S32( ceilf( _rangeY.y / stepY ) );
+				tickEndY = tickStartY + MIN( 10000, tickEndY - tickStartY );	// Ensure no more than 10000 ticks
+			for ( S32 tickIndex=tickStartY; tickIndex <= tickEndY; tickIndex++ ) {
+				tick0.y = tick1.y = Y0 + DY * (tickIndex * stepY - _rangeY.x);
+				DrawLine( _color, tick0, tick1 );
+			}
+		} else {
+			// Log scale
+			float	logFactor = 1.0f / logf( _logBaseY );
+
+			S32		intervalStartY = S32( floorf( _rangeY.x ) );
+			S32		intervalEndY = S32( ceilf( _rangeY.y ) );
+			for ( S32 intervalIndex=intervalStartY; intervalIndex <= intervalEndY; intervalIndex++ ) {
+				// Draw a tiny graduation every 1/10 step
+				float	v = powf( _logBaseY, float(intervalIndex) );
+				for ( int i=0; i < 10; i++ ) {
+					float	y = logFactor * logf( v * (1 + i) );
+					tick0.y = tick1.y = Y0 + DY * (y - _rangeY.x);
+					DrawLine( _color, tick0, tick1 );
+					tick0.x = AxisX0 - 3;
+				}
+				// Draw one large graduation at the end of the interval
+				tick0.x = AxisX0 - 6;
+				DrawLine( _color, tick0, tick1 );
+			}
 		}
 	}
 }

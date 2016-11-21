@@ -41,13 +41,24 @@ namespace ImageUtility.UnitTests
 
 			float4	black = new float4( 0, 0, 0, 1 );
 			float4	white = new float4( 1, 1, 1, 1 );
+			float4	red = new float4( 1, 0, 0, 1 );
+			float4	green = new float4( 0, 1, 0, 1 );
+			float4	blue = new float4( 0, 0, 1, 1 );
 
 			if ( true ) {
 				// Unit test simple graph
 				float2	rangeY = new float2( -1.0f, 1.0f );
 //				m_imageFile.PlotGraph( black, new float2( -30.0f, 30.0f ), rangeY, ( float x ) => { return (float) Math.Sin( x ) / x; } );
-				m_imageFile.PlotGraphAutoRangeY( black, new float2( -30.0f, 30.0f ), ref rangeY, ( float x ) => { return (float) Math.Sin( x ) / x; } );
-				m_imageFile.PlotAxes( black, new float2( -30.0f, 30.0f ), rangeY, (float) (0.5 * Math.PI), 0.1f );
+// 				m_imageFile.PlotGraphAutoRangeY( black, new float2( -30.0f, 30.0f ), ref rangeY, ( float x ) => { return (float) Math.Sin( x ) / x; } );
+// 				m_imageFile.PlotAxes( black, new float2( -30.0f, 30.0f ), rangeY, (float) (0.5 * Math.PI), 0.1f );
+
+				m_imageFile.PlotLogGraph( red, new float2( 0.0f, 2.0f ), new float2( 0.0f, 100.0f ), ( float x ) => { return (float) Math.Pow( 10.0, x ); }, 1.0f, 1.0f );
+//				m_imageFile.PlotLogGraph( green, new float2( -2.0f, 2.0f ), new float2( 0.0f, 100.0f ), ( float x ) => { return (float) Math.Pow( 10.0, x ); }, 10.0f, 1.0f );
+				m_imageFile.PlotLogGraph( green, new float2( 0.0f, 2.0f ), new float2( 0.0f, 2.0f ), ( float x ) => { return (float) Math.Pow( 10.0, x ); }, 1.0f, 10.0f );
+				m_imageFile.PlotLogGraph( blue, new float2( -2.0f, 2.0f ), new float2( -2.0f, 2.0f ), ( float x ) => { return (float) Math.Pow( 10.0, x ); }, 10.0f, 10.0f );
+// 				m_imageFile.PlotLogAxes( black, new float2( -1000.0f, 1000.0f ), new float2( -100.0f, 100.0f ), -100.0f, -10.0f );
+// 				m_imageFile.PlotLogAxes( black, new float2( -100.0f, 1000.0f ), new float2( -2.0f, 2.0f ), -10.0f, 10.0f );
+ 				m_imageFile.PlotLogAxes( black, new float2( -2.0f, 2.0f ), new float2( -2.0f, 2.0f ), 10.0f, 10.0f );
 
 			} else if ( true ) {
 				// Unit test a LOT of clipped lines!
