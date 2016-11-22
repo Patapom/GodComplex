@@ -349,6 +349,7 @@ namespace ImageUtilityLib {
 		void				PlotGraph( const bfloat4& _color, const bfloat2& _rangeX, const bfloat2& _rangeY, PlotDelegate_t _delegate );
 
 		// Plots the y=f(x) graph in logarithmic scale for a given X and Y range and given log bases for each axis
+		//	_rangeX, _rangeY, the ranges for the axes. When in log-space, ranges are in log-space as well (e.g. [-2,+2] in log10 means plotting from 1e-2 to 1e+2)
 		// NOTE: Use a log base of 1 for a linear scale
 		void				PlotLogGraph( const bfloat4& _color, const bfloat2& _rangeX, const bfloat2& _rangeY, PlotDelegate_t _delegate, float _logBaseX=10.0f, float _logBaseY=10.0f );
 
@@ -359,6 +360,7 @@ namespace ImageUtilityLib {
 		void				PlotAxes( const bfloat4& _color, const bfloat2& _rangeX, const bfloat2& _rangeY, float _stepX, float _stepY );
 
 		// Plots the graph axes for the given X and Y ranges and given log bases for each axis
+		//	_rangeX, _rangeY, the ranges for the axes. When in log-space, ranges are in log-space as well (e.g. [-2,+2] in log10 means plotting from 1e-2 to 1e+2)
 		// NOTE: Use a _negative_ log base to indicate the step size and use a linear scale
 		void				PlotLogAxes( const bfloat4& _color, const bfloat2& _rangeX, const bfloat2& _rangeY, float _logBaseX, float _logBaseY );
 

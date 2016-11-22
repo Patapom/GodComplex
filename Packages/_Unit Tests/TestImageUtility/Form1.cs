@@ -28,9 +28,9 @@ namespace ImageUtility.UnitTests
 
 //			TestBuildImage();
 //			TestLoadImage();
-//			TestConvertLDR2HDR();
+			TestConvertLDR2HDR();
 //			TestBlackBodyRadiation();
-			TestGraph();
+//			TestGraph();
 		}
 
 		void TestGraph() {

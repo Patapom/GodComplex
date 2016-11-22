@@ -34,6 +34,14 @@ template<class T> inline T	SQR( const T& a )								{ return a * a;  }
 static bool					ALMOST( float a, float b, float _eps=ALMOST_EPSILON )		{ return abs( a - b ) < _eps; }
 static bool					ALMOST( double a, double b, double _eps=ALMOST_EPSILON )	{ return abs( a - b ) < _eps; }
 
+//static inline bool		ISINFINITE( float a )							{ return _finitef( a ) != 0; }
+//static inline bool		ISNAN( float a )								{ return _isnanf( a ) != 0; }
+//static inline bool		ISVALID( float a )								{ return !ISNAN( a ) && !ISINFINITE( a ); }
+static inline bool			ISINFINITE( float a )							{ return (((U32&) a) & 0x7FFFFFFFU) == 0x7F800000U; }
+static inline bool			ISINFINITEPOSITIVE( float a )					{ return (((U32&) a) & 0xFFFFFFFFU) == 0x7F800000U; }
+static inline bool			ISINFINITENEGATIVE( float a )					{ return (((U32&) a) & 0xFFFFFFFFU) == 0xFF800000U; }
+static inline bool			ISNAN( float a )								{ return !ISINFINITE( a ) && (((U32&) a) & 0x7F800000U) == 0x7F800000U; }
+static inline bool			ISVALID( float a )								{ return (((U32&) a) & 0x7F800000U) != 0x7F800000U; }
 
 // Float2 used for point & vector operations
 class   bfloat2 {

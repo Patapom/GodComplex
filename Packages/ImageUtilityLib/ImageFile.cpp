@@ -907,8 +907,9 @@ void	ImageFile::PlotLogAxes( const bfloat4& _color, const bfloat2& _rangeX, cons
 
 			S32		intervalStartY = S32( floorf( _rangeX.x ) );
 			S32		intervalEndY = S32( ceilf( _rangeX.y ) );
+			S32		stepsCount = S32( floorf( _logBaseX ) );
 			for ( S32 intervalIndex=intervalStartY; intervalIndex <= intervalEndY; intervalIndex++ ) {
-				float	v = powf( _logBaseY, float(intervalIndex) );
+				float	v = powf( _logBaseX, float(intervalIndex) );
 
 				// Draw one large graduation at the start of the interval
 				float	x = logFactor * logf( v );
@@ -916,10 +917,10 @@ void	ImageFile::PlotLogAxes( const bfloat4& _color, const bfloat2& _rangeX, cons
 				tick1.y = AxisY0 + 6;
 				DrawLine( _color, tick0, tick1 );
 
-				// Draw a tiny graduation every 1/10 step
+				// Draw a tiny graduation every 1/logBase step
 				tick1.y = AxisY0 + 3;
-				for ( int i=1; i < 10; i++ ) {
-					x = logFactor * logf( v * (1 + i * 0.1f) * _logBaseX );
+				for ( int i=2; i < stepsCount; i++ ) {
+					x = logFactor * logf( v * i );
 					tick0.x = tick1.x = X0 + DX * (x - _rangeX.x);
 					DrawLine( _color, tick0, tick1 );
 				}
@@ -946,6 +947,7 @@ void	ImageFile::PlotLogAxes( const bfloat4& _color, const bfloat2& _rangeX, cons
 
 			S32		intervalStartY = S32( floorf( _rangeY.x ) );
 			S32		intervalEndY = S32( ceilf( _rangeY.y ) );
+			S32		stepsCount = S32( floorf( _logBaseY ) );
 			for ( S32 intervalIndex=intervalStartY; intervalIndex <= intervalEndY; intervalIndex++ ) {
 				float	v = powf( _logBaseY, float(intervalIndex) );
 
@@ -957,8 +959,8 @@ void	ImageFile::PlotLogAxes( const bfloat4& _color, const bfloat2& _rangeX, cons
 
 				// Draw a tiny graduation every 1/10 step
 				tick0.x = AxisX0 - 3;
-				for ( int i=1; i < 10; i++ ) {
-					y = logFactor * logf( v * (1 + i * 0.1f) * _logBaseY );
+				for ( int i=2; i < stepsCount; i++ ) {
+					y = logFactor * logf( v * i );
 					tick0.y = tick1.y = Y0 + DY * (y - _rangeY.x);
 					DrawLine( _color, tick0, tick1 );
 				}
@@ -973,6 +975,11 @@ void	ImageFile::DrawLine( const bfloat4& _color, const bfloat2& _P0, const bfloa
 
 	bfloat2	P0 = _P0;
 	bfloat2	P1 = _P1;
+	if (	!ISVALID( P0.x ) || !ISVALID( P0.y )
+		||	!ISVALID( P1.x ) || !ISVALID( P1.y ) ) {
+//		ASSERT( false, "NaN or infinite values! Can't draw..." );
+		return;
+	}
 
 	// Offset positions by half a pixel so the integer grid lies on pixel centers
 	P0.x -= 0.5f;
