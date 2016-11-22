@@ -54,8 +54,8 @@ namespace ImageUtility.UnitTests
 					}
 
 			// Perform fitting
-//			float	a = 0.0f, b = 1.0f, c = 0.0f, d = 0.0f;		// sumSqDiff = 21.664576085822642
-			float	a = -6.55077f, b = 0.1263f, c = -0.000435788f, d = 7.52068e-7f;
+			float	a = 0.0f, b = 1.0f, c = 0.0f, d = 0.0f;		// sumSqDiff = 21.664576085822642
+//			float	a = -6.55077f, b = 0.1263f, c = -0.000435788f, d = 7.52068e-7f;
 			FindFit( responseCurve.ToArray(), ref a, ref b, ref c, ref d );
 
 			// Render
@@ -95,16 +95,18 @@ namespace ImageUtility.UnitTests
 			}
 			return sumSqDiff / (256.0 * 256.0);
 		}
-		void	FindFit( float[] _curve, ref float a, ref float b, ref float c, ref float d ) {
+		double	FindFit( float[] _curve, ref float a, ref float b, ref float c, ref float d ) {
 			const double	gradientDelta = 1e-3;
-			const double	gradFactor = 0.5f / gradientDelta;
-			const double	stepSize = 1e-6 * gradientDelta;	// Must always be proportional to delta!
+			const double	gradFactor = gradientDelta;
+			const double	stepSize = 1e1;//1e-3;// * gradientDelta;	// Must always be proportional to delta!
 			const double	tolerance = 1e-4;
+			const double	growthTolerance = 1e-9;
 
 			double[]	parameterValues = new double[4] { a, b, c, d };
-			double[]	gradientValues = new double[4];
+			double[]	leftGradientValues = new double[4];
+			double[]	rightGradientValues = new double[4];
 
-			double	currentValue = EstimateSqDiff( _curve, a, b, c, d );
+			double		currentValue = EstimateSqDiff( _curve, a, b, c, d );
 
 			for ( int iteration=0; iteration < 1000; iteration++ ) {
 				// Change parameter values & compute gradients
@@ -119,29 +121,40 @@ namespace ImageUtility.UnitTests
 					parameterValues[parmIndex] = parmValue + gradientDelta;
 					double	rightValue = EstimateSqDiff( _curve, parameterValues[0], parameterValues[1], parameterValues[2], parameterValues[3] );
 
-					// Restore parm value and compute gradient
+					// Restore original parm value and compute gradients
 					parameterValues[parmIndex] = parmValue;
-					gradientValues[parmIndex] = gradFactor * (rightValue - leftValue);
+					leftGradientValues[parmIndex] = gradFactor * (leftValue - currentValue);
+					rightGradientValues[parmIndex] = gradFactor * (rightValue - currentValue);
 				}
 
 				// Follow gradient's downward slope
 				for ( int parmIndex=0; parmIndex < 4; parmIndex++ ) {
-					parameterValues[parmIndex] -= stepSize * gradientValues[parmIndex];
+					double	left = leftGradientValues[parmIndex];
+					double	right = rightGradientValues[parmIndex];
+					if ( left > 0.0 && right > 0.0 )
+						continue;	// Both gradients are positive so we're basically at a minimum right where we are!
+					if ( left < right )
+						parameterValues[parmIndex] += stepSize * left;
+					else
+						parameterValues[parmIndex] += stepSize * right;
 				}
-				double	newValue = EstimateSqDiff( _curve, parameterValues[0], parameterValues[1], parameterValues[2], parameterValues[3] );
-				double	diffValue = newValue - currentValue;
-				if ( Math.Abs( diffValue ) < tolerance )
+				double	oldValue = currentValue;
+				currentValue = EstimateSqDiff( _curve, parameterValues[0], parameterValues[1], parameterValues[2], parameterValues[3] );
+				if ( Math.Abs( currentValue ) < tolerance )
 					break;	// Found a minimum!
-				if ( Math.Abs( newValue / diffValue - 1.0 ) < tolerance )
-					break;	// Method doesn't grow anymore...
 
-				currentValue = newValue;
+				double	absoluteDiffValue = currentValue - oldValue;
+				double	relativeDiffValue = currentValue / oldValue - 1.0;
+				if ( Math.Abs( relativeDiffValue ) < growthTolerance )
+					break;	// Method doesn't grow anymore...
 			}
 
 			a = (float) parameterValues[0];
 			b = (float) parameterValues[1];
 			c = (float) parameterValues[2];
 			d = (float) parameterValues[3];
+
+			return currentValue;
 		}
 
 		void TestGraph() {
