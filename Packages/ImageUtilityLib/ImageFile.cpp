@@ -721,6 +721,33 @@ void	ImageFile::Clear( const bfloat4& _color ) {
 	delete[] tempScanline;
 }
 
+void	ImageFile::PlotGraph( const bfloat4& _color, const bfloat2& _rangeX, const bfloat2& _rangeY, PlotDelegate_t _delegate ) {
+	S32		W = Width();
+	S32		H = Height();
+	S32		X0 = GRAPH_MARGIN;
+	S32		Y0 = H - GRAPH_MARGIN;
+	S32		X1 = W - GRAPH_MARGIN;
+	S32		Y1 = GRAPH_MARGIN;
+	float	Dx = (_rangeX.y - _rangeX.x) / (X1 - X0);
+	float	DY = (Y1 - Y0) / (_rangeY.y - _rangeY.x);
+
+	float	x = _rangeX.x;
+	float	y = (*_delegate)( x );
+	bfloat2	P1( float(X0), Y0 + (y - _rangeY.x) * DY );
+	bfloat2	P0;
+	for ( S32 X=X0+1; X < X1; X++ ) {
+		P0 = P1;
+
+		x += Dx;
+		y = (*_delegate)( x );
+
+		P1.x++;
+		P1.y = Y0 + (y - _rangeY.x) * DY;
+
+		DrawLine( _color, P0, P1 );
+	}
+}
+
 void	ImageFile::PlotGraphAutoRangeY( const bfloat4& _color, const bfloat2& _rangeX, bfloat2& _rangeY, PlotDelegate_t _delegate ) {
 	S32		W = Width();
 	S32		H = Height();
@@ -752,33 +779,6 @@ void	ImageFile::PlotGraphAutoRangeY( const bfloat4& _color, const bfloat2& _rang
 		bfloat2&	P0 = points[X++];
 		bfloat2&	P1 = points[X];
 		P1.y = Y0 + (P1.y - _rangeY.x) * DY;
-		DrawLine( _color, P0, P1 );
-	}
-}
-
-void	ImageFile::PlotGraph( const bfloat4& _color, const bfloat2& _rangeX, const bfloat2& _rangeY, PlotDelegate_t _delegate ) {
-	S32		W = Width();
-	S32		H = Height();
-	S32		X0 = GRAPH_MARGIN;
-	S32		Y0 = H - GRAPH_MARGIN;
-	S32		X1 = W - GRAPH_MARGIN;
-	S32		Y1 = GRAPH_MARGIN;
-	float	Dx = (_rangeX.y - _rangeX.x) / (X1 - X0);
-	float	DY = (Y1 - Y0) / (_rangeY.y - _rangeY.x);
-
-	float	x = _rangeX.x;
-	float	y = (*_delegate)( x );
-	bfloat2	P1( float(X0), Y0 + (y - _rangeY.x) * DY );
-	bfloat2	P0;
-	for ( S32 X=X0+1; X < X1; X++ ) {
-		P0 = P1;
-
-		x += Dx;
-		y = (*_delegate)( x );
-
-		P1.x++;
-		P1.y = Y0 + (y - _rangeY.x) * DY;
-
 		DrawLine( _color, P0, P1 );
 	}
 }
@@ -818,6 +818,51 @@ void	ImageFile::PlotLogGraph( const bfloat4& _color, const bfloat2& _rangeX, con
 		P1.x++;
 		P1.y = Y0 + (y - _rangeY.x) * DY;
 
+		DrawLine( _color, P0, P1 );
+	}
+}
+
+void	ImageFile::PlotLogGraphAutoRangeY( const bfloat4& _color, const bfloat2& _rangeX, bfloat2& _rangeY, PlotDelegate_t _delegate, float _logBaseX, float _logBaseY ) {
+	S32		W = Width();
+	S32		H = Height();
+	S32		X0 = GRAPH_MARGIN;
+	S32		Y0 = H - GRAPH_MARGIN;
+	S32		X1 = W - GRAPH_MARGIN;
+	S32		Y1 = GRAPH_MARGIN;
+
+	bool	linearX = _logBaseX <= 1.0f;
+	bool	linearY = _logBaseY <= 1.0f;
+
+	float	Dx = (_rangeX.y - _rangeX.x) / (X1 - X0);
+
+ 	float	logFactorY = linearY ? 1.0f : 1.0f / logf( _logBaseY );
+
+	// Process values first to determine vertical range
+	U32		DX = X1-X0;
+
+	List< bfloat2 >	points( DX );
+	_rangeY.Set( FLT_MAX, -FLT_MAX );
+	for ( U32 X=0; X < DX; X++ ) {
+		float	x = linearX ? _rangeX.x + X * Dx : powf( _logBaseX, _rangeX.x + X * Dx );
+
+		bfloat2&	P = points.Append();
+		P.x = float(X0 + X);
+		P.y = (*_delegate)( x );
+		if ( !linearY )
+			P.y = logFactorY * logf( P.y );
+
+		_rangeY.x = MIN( _rangeY.x, P.y );
+		_rangeY.y = MAX( _rangeY.y, P.y );
+	}
+
+	float	DY = (Y1 - Y0) / (_rangeY.y - _rangeY.x);
+
+	// Draw actual graph
+	points[0].y = Y0 + (points[0].y - _rangeY.x) * DY;
+	for ( U32 X=0; X < DX-1; ) {
+		bfloat2&	P0 = points[X++];
+		bfloat2&	P1 = points[X];
+		P1.y = Y0 + (P1.y - _rangeY.x) * DY;
 		DrawLine( _color, P0, P1 );
 	}
 }

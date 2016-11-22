@@ -260,6 +260,23 @@ void	ImageFile::PlotGraph( SharpMath::float4^ _color, SharpMath::float2^ _rangeX
 	gch.Free();  
 }
 
+void	ImageFile::PlotGraphAutoRangeY( SharpMath::float4^ _color, SharpMath::float2^ _rangeX, SharpMath::float2% _rangeY, PlotDelegate^ _delegate ) {
+	// Get a function pointer to the delegate
+	System::Runtime::InteropServices::GCHandle	gch = System::Runtime::InteropServices::GCHandle::Alloc( _delegate );
+	IntPtr		ip = System::Runtime::InteropServices::Marshal::GetFunctionPointerForDelegate( _delegate );
+
+	bfloat4	color( _color->x, _color->y, _color->z, _color->w );
+	bfloat2	rangeX( _rangeX->x, _rangeX->y );
+	bfloat2	rangeY;
+	m_nativeObject->PlotGraphAutoRangeY( color, rangeX, rangeY, static_cast< ImageUtilityLib::ImageFile::PlotDelegate_t >( ip.ToPointer() ) );
+
+	_rangeY.x = rangeY.x;
+	_rangeY.y = rangeY.y;
+
+	// release reference to delegate  
+	gch.Free();  
+}
+
 void	ImageFile::PlotLogGraph( SharpMath::float4^ _color, SharpMath::float2^ _rangeX, SharpMath::float2^ _rangeY, PlotDelegate^ _delegate ) {
 	PlotLogGraph( _color, _rangeX, _rangeY, _delegate, 10.0f, 10.0f );
 }
@@ -277,7 +294,10 @@ void	ImageFile::PlotLogGraph( SharpMath::float4^ _color, SharpMath::float2^ _ran
 	gch.Free();  
 }
 
-void	ImageFile::PlotGraphAutoRangeY( SharpMath::float4^ _color, SharpMath::float2^ _rangeX, SharpMath::float2% _rangeY, PlotDelegate^ _delegate ) {
+void	ImageFile::PlotLogGraphAutoRangeY( SharpMath::float4^ _color, SharpMath::float2^ _rangeX, SharpMath::float2% _rangeY, PlotDelegate^ _delegate ) {
+	PlotLogGraphAutoRangeY( _color, _rangeX, _rangeY, _delegate, 10.0f, 10.0f );
+}
+void	ImageFile::PlotLogGraphAutoRangeY( SharpMath::float4^ _color, SharpMath::float2^ _rangeX, SharpMath::float2% _rangeY, PlotDelegate^ _delegate, float _logBaseX, float _logBaseY ) {
 	// Get a function pointer to the delegate
 	System::Runtime::InteropServices::GCHandle	gch = System::Runtime::InteropServices::GCHandle::Alloc( _delegate );
 	IntPtr		ip = System::Runtime::InteropServices::Marshal::GetFunctionPointerForDelegate( _delegate );
@@ -285,7 +305,7 @@ void	ImageFile::PlotGraphAutoRangeY( SharpMath::float4^ _color, SharpMath::float
 	bfloat4	color( _color->x, _color->y, _color->z, _color->w );
 	bfloat2	rangeX( _rangeX->x, _rangeX->y );
 	bfloat2	rangeY;
-	m_nativeObject->PlotGraphAutoRangeY( color, rangeX, rangeY, static_cast< ImageUtilityLib::ImageFile::PlotDelegate_t >( ip.ToPointer() ) );
+	m_nativeObject->PlotLogGraphAutoRangeY( color, rangeX, rangeY, static_cast< ImageUtilityLib::ImageFile::PlotDelegate_t >( ip.ToPointer() ), _logBaseX, _logBaseY );
 
 	_rangeY.x = rangeY.x;
 	_rangeY.y = rangeY.y;

@@ -360,13 +360,17 @@ namespace ImageUtility {
 		// Plots the y=f(x) graph for a given X and Y range
 		void				PlotGraph( SharpMath::float4^ _color, SharpMath::float2^ _rangeX, SharpMath::float2^ _rangeY, PlotDelegate^ _delegate );
 
-		// Plots the y=f(x) graph in logarithmic scale for a given X and Y range and given log bases for each axis
-		// NOTE: Use a log base of 1 for a linear scale
-		void				PlotLogGraph( SharpMath::float4^ _color, SharpMath::float2^ _rangeX, SharpMath::float2^ _rangeY, PlotDelegate^ _delegate );
-		void				PlotLogGraph( SharpMath::float4^ _color, SharpMath::float2^ _rangeX, SharpMath::float2^ _rangeY, PlotDelegate^ _delegate, float _logBaseX, float _logBaseY );
-
 		// Plots the y=f(x) graph for a given X range, Y range is automatically determined and returned
 		void				PlotGraphAutoRangeY( SharpMath::float4^ _color, SharpMath::float2^ _rangeX, SharpMath::float2% _rangeY, PlotDelegate^ _delegate );
+
+		// Plots the y=f(x) graph in logarithmic scale for a given X and Y range and given log bases for each axis
+		// NOTE: Use a log base of 1 for a linear scale
+		void				PlotLogGraph( SharpMath::float4^ _color, SharpMath::float2^ _rangeX, SharpMath::float2^ _rangeY, PlotDelegate^ _delegate );	// Default log10
+		void				PlotLogGraph( SharpMath::float4^ _color, SharpMath::float2^ _rangeX, SharpMath::float2^ _rangeY, PlotDelegate^ _delegate, float _logBaseX, float _logBaseY );
+
+		// Plots the y=f(x) graph in logarithmic scale for a given X range, Y range is automatically determined and returned
+		void				PlotLogGraphAutoRangeY( SharpMath::float4^ _color, SharpMath::float2^ _rangeX, SharpMath::float2% _rangeY, PlotDelegate^ _delegate );	// Default log10
+		void				PlotLogGraphAutoRangeY( SharpMath::float4^ _color, SharpMath::float2^ _rangeX, SharpMath::float2% _rangeY, PlotDelegate^ _delegate, float _logBaseX, float _logBaseY );
 
 		// Plots the graph axes for the given X Y ranges
 		void				PlotAxes( SharpMath::float4^ _color, SharpMath::float2^ _rangeX, SharpMath::float2^ _rangeY, float _stepX, float _stepY );

@@ -357,15 +357,16 @@ if ( Math.Abs( T - 6500.0f ) < 10.0f )
 // 				} );
 //				tempCurveBitmap.PlotAxes( black, rangeX, rangeY, 8, 2 );
 
-				tempCurveBitmap.PlotGraphAutoRangeY( black, rangeX, ref rangeY, ( float x ) => {
+				tempCurveBitmap.PlotLogGraphAutoRangeY( black, rangeX, ref rangeY, ( float x ) => {
 					int		i0 = (int) Math.Min( 255, Math.Floor( x ) );
 					int		i1 = (int) Math.Min( 255, i0+1 );
 					float	g0 = responseCurve[i0];
 					float	g1 = responseCurve[i1];
 					float	t = x - i0;
+//					return g0 + (g1-g0) * t;
 					return (float) Math.Pow( 2.0f, g0 + (g1-g0) * t );
-				} );
-				tempCurveBitmap.PlotLogAxes( black, rangeX, rangeY, -8, 2 );
+				}, -1.0f, 2.0f );
+				tempCurveBitmap.PlotLogAxes( black, rangeX, rangeY, -16, 2 );
 
  				panel1.Bitmap = tempCurveBitmap.AsBitmap;
 
