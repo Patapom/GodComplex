@@ -217,6 +217,8 @@ void	Bitmap::LDR2HDR( U32 _imagesCount, const ImageFile** _images, const float* 
 void svdcmp( int m, int n, float** a, float w[], float** v );
 void svdcmp_ORIGINAL( int m, int n, float** a, float w[], float** v );
 
+//#define DEBUG_LINEAR_SIGNAL	// Define this to inject a linear sensor response for debugging purpose
+
 void	Bitmap::ComputeCameraResponseCurve( U32 _imagesCount, const ImageFile** _images, const float* _imageShutterSpeeds, const HDRParms& _parms, List< bfloat3 >& _responseCurve, bool _luminanceOnly ) {
 	if ( _images == nullptr )
 		throw "Invalid images array!";
@@ -284,20 +286,40 @@ Hammersley::BuildSequence( pixelsCountPerImage, sequence );
 
 		// 2] Store as integer pixel values within range [Zmin,Zmax] (which is [0,2^bitDepth[ )
 		const bfloat2*	sequencePtr = sequence.Ptr();
+		bfloat4	colorLDR;
+
 		for ( int pixelIndex=0; pixelIndex < sequence.Count(); pixelIndex++, sequencePtr++ ) {
-U32	X = U32( floorf( sequencePtr->x * (W-1) ) );
-U32	Y = U32( floorf( sequencePtr->y * (H-1) ) );
+			U32	X = U32( floorf( sequencePtr->x * (W-1) ) );
+			U32	Y = U32( floorf( sequencePtr->y * (H-1) ) );
 
 			for ( U32 imageIndex=0; imageIndex < _imagesCount; imageIndex++ ) {
 				const ImageFile&	image = *_images[imageIndex];
+				ASSERT( image.Width() == W && image.Height() == H, "All input images must have the same resolution!" );
 
-				// Floating point value of the selected pixel for R, G or B
-				bfloat4	colorLDR;
-				image.Get( X, Y, colorLDR );
+				// Get floating point value of the selected pixel for R, G or B
+				#if 1
+					// Use an average of neighbor pixels
+					S32	X0 = MAX( 0, S32(X) - 8 );
+					S32	X1 = MIN( S32(W-1), S32(X) + 8 );
+					S32	Y0 = MAX( 0, S32(Y) - 8 );
+					S32	Y1 = MIN( S32(H-1), S32(Y) + 8 );
+					bfloat4	sum( 0, 0, 0, 0 );
+					for ( S32 CY=Y0; CY <= Y1; CY++ )
+						for ( S32 CX=X0; CX <= X1; CX++ ) {
+							image.Get( CX, CY, colorLDR );
+							sum += colorLDR;
+						}
+					colorLDR = sum / float( (1+X1-X0)*(1+Y1-Y0) );
+				#else
+					image.Get( X, Y, colorLDR );
+				#endif
+
 				float	pixelValue = _luminanceOnly	? colorLDR.Dot( LUMINANCE_D65 )
 													: ((float*) &colorLDR.x)[componentIndex];
 
+#ifdef DEBUG_LINEAR_SIGNAL
 pixelValue = SATURATE( float(1+pixelIndex) / sequence.Count() * powf( 2.0f, -float(imageIndex) ) );
+#endif
 
 				// Convert to integer value
 				U32		Z = CLAMP( U32( (responseCurveSize-1) * pixelValue ), 0U, responseCurveSize-1 );
@@ -383,7 +405,9 @@ A[2][2] = 0;
 			float	imageShutterSpeed = _imageShutterSpeeds[imageIndex];
 			float	imageEV = log2f( imageShutterSpeed );
 
+#ifdef DEBUG_LINEAR_SIGNAL
 imageEV = -float(imageIndex);
+#endif
 
 			for ( int pixelIndex=0; pixelIndex < pixelsCountPerImage; pixelIndex++ ) {
 				float*	columns = *A1++;
@@ -429,7 +453,7 @@ imageEV = -float(imageIndex);
 
 		// ===================================================================
 		// 2.2] Apply SVD
-#if 1
+#if 0
 float*	Abackup = new float[equationsCount*unknownsCount];
 memcpy_s( Abackup, equationsCount*unknownsCount*sizeof(float), Aterms, equationsCount*unknownsCount*sizeof(float) );
 
@@ -733,6 +757,7 @@ static int iminarg1,iminarg2;
 //char	debugString[4096];
 
 // From numerical recipes, chapter 2.6 (NOTE: I rewrote the code so it uses 0-based vectors and matrices!)
+// (itself stolen from http://people.duke.edu/~hpgavin/SystemID/References/Golub+Reinsch-NM-1970.pdf)
 //
 // Given a matrix a[1..m][1..n], this routine computes its singular value decomposition, A = U · W · V^T
 //	The matrix U replaces a on output.

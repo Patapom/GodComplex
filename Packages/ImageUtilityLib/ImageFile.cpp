@@ -928,9 +928,9 @@ void	ImageFile::PlotLogAxes( const bfloat4& _color, const bfloat2& _rangeX, cons
 	float	stepY = _logBaseY < 0.0f ? -_logBaseY : 1.0f;
 
 	// Draw main axes
-	float	AxisX0 = linearX ? X0 + (0.0f - _rangeX.x) * DX : X0;
+	float	AxisX0 = linearX ? X0 + (0.0f - _rangeX.x) * DX : X0 + (0.0f - _rangeX.x) * DX;
 	DrawLine( _color, bfloat2( AxisX0, 0 ), bfloat2( AxisX0, (float) H-1 ) );
-	float	AxisY0 = linearY ? Y0 + (0.0f - _rangeY.x) * DY : Y0;
+	float	AxisY0 = linearY ? Y0 + (0.0f - _rangeY.x) * DY : Y0 + (0.0f - _rangeY.x) * DY;
 	DrawLine( _color, bfloat2( 0.0f, AxisY0 ), bfloat2( (float) W-1, AxisY0 ) );
 
 	// Draw horizontal scale ticks

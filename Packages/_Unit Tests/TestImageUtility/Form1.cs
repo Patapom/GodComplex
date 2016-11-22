@@ -19,6 +19,13 @@ namespace ImageUtility.UnitTests
 
 		ImageFile	m_imageFile = new ImageFile();
 
+		float4	black = new float4( 0, 0, 0, 1 );
+		float4	white = new float4( 1, 1, 1, 1 );
+		float4	red = new float4( 1, 0, 0, 1 );
+		float4	green = new float4( 0, 1, 0, 1 );
+		float4	blue = new float4( 0, 0, 1, 1 );
+
+
 		public TestForm() {
 			InitializeComponent();
 		}
@@ -28,9 +35,113 @@ namespace ImageUtility.UnitTests
 
 //			TestBuildImage();
 //			TestLoadImage();
-			TestConvertLDR2HDR();
+			FastFit();
+//			TestConvertLDR2HDR();
 //			TestBlackBodyRadiation();
 //			TestGraph();
+		}
+
+		float	TentFilter( float x ) {
+			return 1.0f - Math.Abs( x - 127.0f ) / 128.0f;
+		}
+		void	FastFit() {
+			// Load response curve
+			List<float>	responseCurve = new List<float>();
+			using ( System.IO.FileStream S = new System.IO.FileInfo( "../../responseCurve9.float" ).OpenRead() )
+				using ( System.IO.BinaryReader R = new System.IO.BinaryReader( S ) ) {
+					for ( int i=0; i < 256; i++ )
+						responseCurve.Add( R.ReadSingle() );
+					}
+
+			// Perform fitting
+//			float	a = 0.0f, b = 1.0f, c = 0.0f, d = 0.0f;		// sumSqDiff = 21.664576085822642
+			float	a = -6.55077f, b = 0.1263f, c = -0.000435788f, d = 7.52068e-7f;
+			FindFit( responseCurve.ToArray(), ref a, ref b, ref c, ref d );
+
+			// Render
+			m_imageFile.Init( 1024, 768, ImageFile.PIXEL_FORMAT.RGBA8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
+			m_imageFile.Clear( new float4( 1, 1, 1, 1 ) );
+
+			float2	rangeX = new float2( 0, 255 );
+			float2	rangeY = new float2( -2, 2 );
+			m_imageFile.PlotGraphAutoRangeY( black, rangeX, ref rangeY, ( float x ) => {
+				int		i0 = (int) Math.Min( 255, Math.Floor( x ) );
+				int		i1 = (int) Math.Min( 255, i0+1 );
+				float	g0 = responseCurve[i0];
+				float	g1 = responseCurve[i1];
+				float	t = x - i0;
+				return TentFilter( x ) * (g0 + (g1-g0) * t);
+//				return (float) Math.Pow( 2.0f, g0 + (g1-g0) * t );
+			} );
+			m_imageFile.PlotGraph( red, rangeX, rangeY, ( float x ) => {
+				return TentFilter( x ) * (a + b * x + c * x*x + d * x*x*x);
+			} );
+			m_imageFile.PlotLogAxes( black, rangeX, rangeY, -16.0f, 2.0f );
+
+			panel1.Bitmap = m_imageFile.AsBitmap;
+		}
+
+		// Super simple fitting method
+		double	Model( double x, double a, double b, double c, double d ) {
+			return TentFilter( (float) x ) * (a + b * x + c * x*x + d * x*x*x);
+		}
+		double	EstimateSqDiff( float[] _curve, double a, double b, double c, double d ) {
+			double	sumSqDiff = 0.0f;
+			for ( int i=0; i < 256; i++ ) {
+				double	curveValue = TentFilter( i ) * _curve[i];
+				double	modelValue = Model( i, a, b, c, d );
+				double	diff = modelValue - curveValue;
+				sumSqDiff += diff * diff;
+			}
+			return sumSqDiff / (256.0 * 256.0);
+		}
+		void	FindFit( float[] _curve, ref float a, ref float b, ref float c, ref float d ) {
+			const double	gradientDelta = 1e-3;
+			const double	gradFactor = 0.5f / gradientDelta;
+			const double	stepSize = 1e-6 * gradientDelta;	// Must always be proportional to delta!
+			const double	tolerance = 1e-4;
+
+			double[]	parameterValues = new double[4] { a, b, c, d };
+			double[]	gradientValues = new double[4];
+
+			double	currentValue = EstimateSqDiff( _curve, a, b, c, d );
+
+			for ( int iteration=0; iteration < 1000; iteration++ ) {
+				// Change parameter values & compute gradients
+				for ( int parmIndex=0; parmIndex < 4; parmIndex++ ) {
+					double	parmValue = parameterValues[parmIndex];
+
+					// Estimate left
+					parameterValues[parmIndex] -= gradientDelta;
+					double	leftValue = EstimateSqDiff( _curve, parameterValues[0], parameterValues[1], parameterValues[2], parameterValues[3] );
+
+					// Estimate right
+					parameterValues[parmIndex] = parmValue + gradientDelta;
+					double	rightValue = EstimateSqDiff( _curve, parameterValues[0], parameterValues[1], parameterValues[2], parameterValues[3] );
+
+					// Restore parm value and compute gradient
+					parameterValues[parmIndex] = parmValue;
+					gradientValues[parmIndex] = gradFactor * (rightValue - leftValue);
+				}
+
+				// Follow gradient's downward slope
+				for ( int parmIndex=0; parmIndex < 4; parmIndex++ ) {
+					parameterValues[parmIndex] -= stepSize * gradientValues[parmIndex];
+				}
+				double	newValue = EstimateSqDiff( _curve, parameterValues[0], parameterValues[1], parameterValues[2], parameterValues[3] );
+				double	diffValue = newValue - currentValue;
+				if ( Math.Abs( diffValue ) < tolerance )
+					break;	// Found a minimum!
+				if ( Math.Abs( newValue / diffValue - 1.0 ) < tolerance )
+					break;	// Method doesn't grow anymore...
+
+				currentValue = newValue;
+			}
+
+			a = (float) parameterValues[0];
+			b = (float) parameterValues[1];
+			c = (float) parameterValues[2];
+			d = (float) parameterValues[3];
 		}
 
 		void TestGraph() {
@@ -38,12 +149,6 @@ namespace ImageUtility.UnitTests
 			m_imageFile.Init( 1024, 768, ImageFile.PIXEL_FORMAT.RGBA8, sRGB );
 			m_imageFile.Clear( new float4( 1, 1, 1, 1 ) );
 //			m_imageFile.Clear( new float4( 0, 0, 0, 1 ) );
-
-			float4	black = new float4( 0, 0, 0, 1 );
-			float4	white = new float4( 1, 1, 1, 1 );
-			float4	red = new float4( 1, 0, 0, 1 );
-			float4	green = new float4( 0, 1, 0, 1 );
-			float4	blue = new float4( 0, 0, 1, 1 );
 
 			if ( true ) {
 				// Unit test simple graph
@@ -295,7 +400,14 @@ if ( Math.Abs( T - 6500.0f ) < 10.0f )
 			// Load a bunch of LDR images
 			System.IO.FileInfo[]	LDRImageFileNames = new System.IO.FileInfo[] {
 				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0860.jpg" ),
+//				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0861.jpg" ),
+//				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0862.jpg" ),
+//				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0863.jpg" ),
 				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0864.jpg" ),
+//				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0865.jpg" ),
+//				// Don't use 866 because of bad ISO
+//				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0867.jpg" ),
+//				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0868.jpg" ),
 				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0869.jpg" ),
 			};
 			List< ImageFile >	LDRImages = new List< ImageFile >();
@@ -323,6 +435,12 @@ if ( Math.Abs( T - 6500.0f ) < 10.0f )
 				List< float >	responseCurve = new List< float >();
 				Bitmap.ComputeCameraResponseCurve( LDRImages.ToArray(), shutterSpeeds.ToArray(), parms, responseCurve );
 
+				using ( System.IO.FileStream S = new System.IO.FileInfo( "../../responseCurve3.float" ).Create() )
+					using ( System.IO.BinaryWriter W = new System.IO.BinaryWriter( S ) ) {
+						for ( int i=0; i < 256; i++ )
+							W.Write( responseCurve[i] );
+					}
+
 //panel1.Bitmap = Bitmap.DEBUG.AsBitmap;
 
 // 				// Render the response curve as a bitmap
@@ -340,24 +458,39 @@ if ( Math.Abs( T - 6500.0f ) < 10.0f )
 // 				}
 // 				panel1.Bitmap = tempCurveBitmap.AsBitmap;
 
+				//////////////////////////////////////////////////////////////////////////////////////////////
 				// Render the response curve as a graph
  				ImageFile	tempCurveBitmap = new ImageFile( 1024, 768, ImageFile.PIXEL_FORMAT.RGB8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
 
+				string		info = "Exposures:\r\n";
+				foreach ( float shutterSpeed in shutterSpeeds )
+					info += " " + shutterSpeed + "s + ";
+				info += "\r\nLog2 exposures (EV):\r\n";
+				foreach ( float shutterSpeed in shutterSpeeds )
+					info += " " + (float) (Math.Log( shutterSpeed ) / Math.Log(2)) + "EV + ";
+				info += "\r\n\r\n";
+
 				float4		black = new float4( 0, 0, 0, 1 );
 				float2		rangeX = new float2( 0, 256 );
-				float2		rangeY = new float2( -4, 4 );
+				float2		rangeY = new float2( 0, 1000 );
 				tempCurveBitmap.Clear( new float4( 1, 1, 1, 1 ) );
-//				tempCurveBitmap.PlotGraphAutoRangeY( black, rangeX, ref rangeY, ( float x ) => {
-// 					int		i0 = (int) Math.Min( 255, Math.Floor( x ) );
-// 					int		i1 = (int) Math.Min( 255, i0+1 );
-// 					float	g0 = responseCurve[i0];
-// 					float	g1 = responseCurve[i1];
-// 					float	t = x - i0;
-// 					return g0 + (g1-g0) * t;
-// 				} );
+//				tempCurveBitmap.PlotGraphAutoRangeY( red, rangeX, ref rangeY, ( float x ) => {
+				tempCurveBitmap.PlotGraph( red, rangeX, rangeY, ( float x ) => {
+					int		i0 = (int) Math.Min( 255, Math.Floor( x ) );
+					int		i1 = (int) Math.Min( 255, i0+1 );
+					float	g0 = responseCurve[i0];
+					float	g1 = responseCurve[i1];
+					float	t = x - i0;
+//					return g0 + (g1-g0) * t;
+					return (float) Math.Pow( 2.0f, g0 + (g1-g0) * t );
+				} );
 //				tempCurveBitmap.PlotAxes( black, rangeX, rangeY, 8, 2 );
 
+				info += "• Linear range Y = [" + rangeY.x + ", " + rangeY.y + "]\r\n";
+
+				rangeY = new float2( -4, 4 );
 				tempCurveBitmap.PlotLogGraphAutoRangeY( black, rangeX, ref rangeY, ( float x ) => {
+//				tempCurveBitmap.PlotLogGraph( black, rangeX, rangeY, ( float x ) => {
 					int		i0 = (int) Math.Min( 255, Math.Floor( x ) );
 					int		i1 = (int) Math.Min( 255, i0+1 );
 					float	g0 = responseCurve[i0];
@@ -367,6 +500,9 @@ if ( Math.Abs( T - 6500.0f ) < 10.0f )
 					return (float) Math.Pow( 2.0f, g0 + (g1-g0) * t );
 				}, -1.0f, 2.0f );
 				tempCurveBitmap.PlotLogAxes( black, rangeX, rangeY, -16, 2 );
+
+				info += "• Log2 range Y = [" + rangeY.x + ", " + rangeY.y + "]\r\n";
+				textBoxEXIF.Text = info;
 
  				panel1.Bitmap = tempCurveBitmap.AsBitmap;
 
