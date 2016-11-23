@@ -184,6 +184,10 @@ static ImageFile*	ms_DEBUG;
 		//	_luminanceOnly, if true then the luminance of the pixels is used and only a single response curve is computed instead of 3 individual curves for R,G and B
 		static void	ComputeCameraResponseCurve( U32 _imagesCount, const ImageFile** _images, const float* _imageShutterSpeeds, const HDRParms& _parms, BaseLib::List< bfloat3 >& _responseCurve, bool _luminanceOnly=true );
 
+	private:
+
+		static void	PerformCurveFitting( BaseLib::List< bfloat3 >& _responseCurve, U32 _componentsCount );
+
 		#pragma endregion
 	};
 }

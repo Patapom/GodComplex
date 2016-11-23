@@ -7,16 +7,25 @@
       <Filter>Minimization</Filter>
     </ClInclude>
     <ClInclude Include="MathSolvers.h" />
+    <ClInclude Include="Matrix.h">
+      <Filter>Structures</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp" />
     <ClCompile Include="MinimizeBFGS.cpp">
       <Filter>Minimization</Filter>
     </ClCompile>
+    <ClCompile Include="Matrix.cpp">
+      <Filter>Structures</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Minimization">
       <UniqueIdentifier>{4be7ff71-58f8-4872-8599-3d1b8d9512a0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Structures">
+      <UniqueIdentifier>{e602731f-7839-45ff-8fd1-5189af916c3b}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

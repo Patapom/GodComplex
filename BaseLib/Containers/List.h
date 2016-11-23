@@ -27,9 +27,9 @@ protected:	// FIELDS
 
 public:		// PROPERTIES
 
-	int		Count() const				{ return m_Count; }
+	U32		Count() const				{ return m_Count; }
 	void	SetCount( U32 _Count );		// Sets the new count, possibility resizing the list
-	int		GetAllocatedSize() const	{ return m_Size; }
+	U32		GetAllocatedSize() const	{ return m_Size; }
 
 
 public:		// METHODS

@@ -9,42 +9,36 @@ BFGS::BFGS()
 	, m_maxIterations( 200 )
 	, m_tolX( 1.0e-8 )
  	, m_tolGradient( 1.0e-8 )
-	, m_previousX( nullptr )
-	, m_currentX( nullptr )
-	, m_optimum( nullptr )
  	, m_functionMinimum( DBL_MAX )
 	, m_iterationsCount( 0 )
 	, m_evalCallsCount( 0 )
 	, m_evalGradientCallsCount( 0 ) {
 }
 BFGS::~BFGS() {
-	SAFE_DELETE_ARRAY( m_previousX );
-	SAFE_DELETE_ARRAY( m_currentX );
-	SAFE_DELETE_ARRAY( m_optimum );
 }
 
 void	BFGS::Minimize( IModel& _model ) {
 	m_model = &_model;
-	m_coefficientsCount = m_model->getParametersCount();
+	m_coefficientsCount = m_model->getParameters().length;
 
-	m_previousX = InitVector( m_coefficientsCount );
-	m_currentX = InitVector( m_coefficientsCount );
-	m_optimum = InitVector( m_coefficientsCount );
+	m_previousX.Init( m_coefficientsCount );
+	m_currentX.Init( m_coefficientsCount );
+	m_optimum.Init( m_coefficientsCount );
 
 	// Start from model's initial parameters
-	CopyVector( m_model->getParameters(), m_previousX, m_coefficientsCount );
+	m_model->getParameters().CopyTo( m_previousX );
 
-	double*	direction = InitVector( m_coefficientsCount ); // x_k+1 = x_k + alpha_k*direction_k
-	double*	tempDirection = InitVector( m_coefficientsCount ); // Used temporarily by LinearSearch()
+	Vector	direction( m_coefficientsCount ); // x_k+1 = x_k + alpha_k*direction_k
+	Vector	tempDirection( m_coefficientsCount ); // Used temporarily by LinearSearch()
 
-	double*	gradient = InitVector( m_coefficientsCount );
-	double*	previousGradient = InitVector( m_coefficientsCount );
+	Vector	gradient( m_coefficientsCount );
+	Vector	previousGradient( m_coefficientsCount );
 
-	double**	hessian = InitMatrix( m_coefficientsCount, m_coefficientsCount ); // inverse Hessian approximation
+	Matrix	hessian( m_coefficientsCount, m_coefficientsCount ); // inverse Hessian approximation
 
-	double*	pi = InitVector( m_coefficientsCount );  // p_i = x_i+1 - x_i
-	double*	qi = InitVector( m_coefficientsCount );  // q_i = Gradient_i+1 - Gradient_i
-	double*	Dqi = InitVector( m_coefficientsCount ); // Dq_i = |D_i|.q_i:
+	Vector	pi( m_coefficientsCount );  // p_i = x_i+1 - x_i
+	Vector	qi( m_coefficientsCount );  // q_i = Gradient_i+1 - Gradient_i
+	Vector	Dqi( m_coefficientsCount ); // Dq_i = |D_i|.q_i:
 
 	m_evalCallsCount = m_evalGradientCallsCount = 0; // count of function and gradient evaluations
 
@@ -71,7 +65,7 @@ void	BFGS::Minimize( IModel& _model ) {
 		m_functionMinimum = newMinimum;
 
 		// Notify of new optimal values
-		CopyVector( m_currentX, m_optimum, m_coefficientsCount );
+		m_currentX.CopyTo( m_optimum );
 		m_model->setParameters( m_optimum );
 
 		// if the current point shift (relative to current position) is below tolerance, we're done:
@@ -159,49 +153,47 @@ void	BFGS::Minimize( IModel& _model ) {
 	}
 
 	// Copy final parameters
-	CopyVector( m_currentX, m_optimum, m_coefficientsCount );
+	m_currentX.CopyTo( m_optimum );
 	m_model->setParameters( m_optimum );
 
-	DeleteVector( Dqi );
-	DeleteVector( qi );
-	DeleteVector( pi );
-	DeleteMatrix( hessian );
-	DeleteVector( previousGradient );
-	DeleteVector( gradient );
-	DeleteVector( tempDirection );
-	DeleteVector( direction );
-	DeleteVector( m_optimum );
-	DeleteVector( m_currentX );
-	DeleteVector( m_previousX );
+// 	DeleteVector( Dqi );
+// 	DeleteVector( qi );
+// 	DeleteVector( pi );
+// 	DeleteMatrix( hessian );
+// 	DeleteVector( previousGradient );
+// 	DeleteVector( gradient );
+// 	DeleteVector( tempDirection );
+// 	DeleteVector( direction );
+// 	DeleteVector( m_optimum );
+// 	DeleteVector( m_currentX );
+// 	DeleteVector( m_previousX );
 }
 
 // ===========================================
 // Compute the gradient using finite differences
-void	BFGS::EvalGradient( double _params[], double _gradient[] ) {
+void	BFGS::EvalGradient( Vector& _params, Vector& _gradient ) {
 	double	EPS = 1e-6;
-	double	CentralValue = m_functionMinimum;
+//	double	centralValue = m_functionMinimum;
 
 	for ( int i=0; i < m_coefficientsCount; i++ ) {
-		double	OldCoeff = _params[i];
+		double	oldCoeff = _params[i];
 
 		_params[i] -= EPS;
 		m_model->Constrain( _params );		// Pom: constrain!
 		double	parmMin = _params[i];
 
-		double	OffsetValueNeg = m_model->Eval( _params );
+		double	offsetValueNeg = m_model->Eval( _params );
 
-		_params[i] = OldCoeff + EPS;
+		_params[i] = oldCoeff + EPS;
 		m_model->Constrain( _params );		// Pom: constrain!
 		double	parmMax = _params[i];
 
-		double	OffsetValuePos = m_model->Eval( _params );
+		double	offsetValuePos = m_model->Eval( _params );
 
-		_params[i] = OldCoeff;
+		_params[i] = oldCoeff;
 
-//				double	derivative = (OffsetValue - CentralValue) / EPS;
-//				double	derivative = (OffsetValuePos - OffsetValueNeg) / (2.0*EPS);
 		double	delta = parmMax - parmMin;
-		double	derivative = delta > 0.0 ? (OffsetValuePos - OffsetValueNeg) / delta : 0.0;
+		double	derivative = delta > 0.0 ? (offsetValuePos - offsetValueNeg) / delta : 0.0;
 
 		_gradient[i] = derivative;
 	}
@@ -212,7 +204,7 @@ void	BFGS::EvalGradient( double _params[], double _gradient[] ) {
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
-double	BFGS::LinearSearch( double _functionMinimum, double _gradient[], double x[], double _direction[], double _xout[], double _tempDirection[] ) {
+double	BFGS::LinearSearch( double _functionMinimum, Vector& _gradient, Vector& x, Vector& _direction, Vector& _xout, Vector& _tempDirection ) {
 	double	ZERO = 1.0E-10;
 	double	SIGMA = 1.0E-4;
 	double	BETA = 0.5;
@@ -285,42 +277,40 @@ double	BFGS::LinearSearch( double _functionMinimum, double _gradient[], double x
 
 // ===========================================
 // Useful private functions
-double*	BFGS::InitVector( int _length ) {
-	double*	m = new double[_length];
-	memset( m, 0, _length*sizeof(double) );
-	return m;
-}
-
-double**	BFGS::InitMatrix( int _rows, int _columns ) {
-	U8*		raw = new U8[2*sizeof(int) + _rows*sizeof(double*) + _rows*_columns*sizeof(double)];
-
-	*((int*) (raw+0)) = _rows;
-	*((int*) (raw+sizeof(int))) = _columns;
-
-	double*	m = (double*) (raw + 2 * sizeof(int) + _rows*sizeof(double*));
-	memset( m, 0, _rows*_columns*sizeof(double) );
-
-	double**	rows = (double**) (raw + 2 * sizeof(int));
-	for ( int i=0; i < _rows; i++ )
-		rows[i] = &m[_columns*i];
-
-	return rows;
-}
-
-void	BFGS::CopyVector( const double* _source, double* _target, int _length ) {
-	memcpy_s( _target, _length*sizeof(double), _source, _length*sizeof(double) );
-}
-
-void	BFGS::DeleteVector( double*& _vector ) {
-	SAFE_DELETE_ARRAY( _vector );
-}
-
-void	BFGS::DeleteMatrix( double**& _matrix ) {
-	if ( _matrix == nullptr )
-		return;
-
-	U8*	raw = ((U8*) _matrix) - 2*sizeof(int);	// Address of the large buffer that was allocated is actually 2 ints before the matrix pointer itself
-	delete[] raw;
-
-	_matrix = nullptr;
-}
+// double*	BFGS::InitVector( int _length ) {
+// 	double*	m = new double[_length];
+// 	memset( m, 0, _length*sizeof(double) );
+// 	return m;
+// }
+// 
+// double**	BFGS::InitMatrix( int _rows, int _columns ) {
+// 	U8*		raw = new U8[2*sizeof(int) + _rows*sizeof(double*) + _rows*_columns*sizeof(double)];
+// 
+// 	*((int*) (raw+0)) = _rows;
+// 	*((int*) (raw+sizeof(int))) = _columns;
+// 
+// 	double*	m = (double*) (raw + 2 * sizeof(int) + _rows*sizeof(double*));
+// 	memset( m, 0, _rows*_columns*sizeof(double) );
+// 
+// 	double**	rows = (double**) (raw + 2 * sizeof(int));
+// 	for ( int i=0; i < _rows; i++ )// 		rows[i] = &m[_columns*i];// 
+// 	return rows;
+// }
+// 
+// void	BFGS::CopyVector( const double* _source, double* _target, int _length ) {
+// 	memcpy_s( _target, _length*sizeof(double), _source, _length*sizeof(double) );
+// }
+// 
+// void	BFGS::DeleteVector( double*& _vector ) {
+// 	SAFE_DELETE_ARRAY( _vector );
+// }
+// 
+// void	BFGS::DeleteMatrix( double**& _matrix ) {
+// 	if ( _matrix == nullptr )
+// 		return;
+// 
+// 	U8*	raw = ((U8*) _matrix) - 2*sizeof(int);	// Address of the large buffer that was allocated is actually 2 ints before the matrix pointer itself
+// 	delete[] raw;
+// 
+// 	_matrix = nullptr;
+// }

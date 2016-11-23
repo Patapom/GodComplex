@@ -2,4 +2,5 @@
 //
 #pragma once
 
+#include "Matrix.h"
 #include "MinimizeBFGS.h"

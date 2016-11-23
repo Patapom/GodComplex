@@ -35,8 +35,8 @@ namespace ImageUtility.UnitTests
 
 //			TestBuildImage();
 //			TestLoadImage();
-			FastFit();
-//			TestConvertLDR2HDR();
+//			FastFit();
+			TestConvertLDR2HDR();
 //			TestBlackBodyRadiation();
 //			TestGraph();
 		}

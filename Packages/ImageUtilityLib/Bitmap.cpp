@@ -288,7 +288,7 @@ Hammersley::BuildSequence( pixelsCountPerImage, sequence );
 		const bfloat2*	sequencePtr = sequence.Ptr();
 		bfloat4	colorLDR;
 
-		for ( int pixelIndex=0; pixelIndex < sequence.Count(); pixelIndex++, sequencePtr++ ) {
+		for ( U32 pixelIndex=0; pixelIndex < sequence.Count(); pixelIndex++, sequencePtr++ ) {
 			U32	X = U32( floorf( sequencePtr->x * (W-1) ) );
 			U32	Y = U32( floorf( sequencePtr->y * (H-1) ) );
 
@@ -742,9 +742,84 @@ delete[] Abackup;
 	//////////////////////////////////////////////////////////////////////////
 	// 3] Perform optional curve fitting
 	if ( _parms._performResponseCurveFitting ) {
-
+		PerformCurveFitting( _responseCurve, componentsCount );
 	}
 }
+
+#pragma region BFGS Minimization
+
+#include "..\MathSolvers\MathSolvers.h"
+using namespace MathSolvers;
+
+// This model attempts to fit a 3rd order polynomial to the curve
+class BFGSModel_polynomial : public BFGS::IModel {
+	List< float >		m_curve;
+	double				m_curveTentCenter;
+	Vector				m_parameters;
+public:
+	BFGSModel_polynomial() : m_parameters( 4 ) {}
+
+	void				SetCurve( const List< bfloat3 >& _curve, U32 _componentIndex ) {
+		m_curve.SetCount( _curve.Count() );
+		for ( U32 i=0; i < _curve.Count(); i++ )
+			m_curve[i] = ((float*) &_curve[i].x)[_componentIndex];
+		m_curveTentCenter = 0.5 * _curve.Count();
+	}
+
+	static double		EvalModel( double x, const MathSolvers::Vector& _parameters ) {
+//		return _parameters[0] + _parameters[1] * x + _parameters[2] * x*x + _parameters[3] * x*x*x;
+		return _parameters[0] + x * (_parameters[1] + x * (_parameters[2] + x * _parameters[3]));
+	}
+
+	// IModel Implementation
+	virtual Vector&			getParameters() override						{ return m_parameters; }
+	virtual void			setParameters( const Vector& value ) override	{ value.CopyTo( m_parameters ); }
+	virtual double			Eval( const Vector& _newParameters ) override {
+		double	sumSqDiff = 0.0;
+		for ( U32 i=0; i < m_curve.Count(); i++ ) {
+			double	curveValue = m_curve[i];
+			double	modelValue = EvalModel( i, _newParameters );
+			double	diff = modelValue - curveValue;
+					diff *= TentFilter( i );
+			sumSqDiff += diff * diff;
+		}
+		return sumSqDiff / (m_curve.Count()*m_curve.Count());
+	}
+	virtual void		Constrain( Vector& _parameters ) override {}
+
+private:
+	double TentFilter( double x ) {
+		return 1.0 - abs( x - m_curveTentCenter ) / m_curveTentCenter;
+	}
+};
+
+void	Bitmap::PerformCurveFitting( BaseLib::List< bfloat3 >& _responseCurve, U32 _componentsCount ) {
+	BFGSModel_polynomial	model;
+	BFGS					solver;
+	for ( U32 componentIndex=0; componentIndex < _componentsCount; componentIndex++ ) {	// Because R, G, B
+		// Setup initial values
+		model.SetCurve( _responseCurve, componentIndex );
+		model.getParameters()[0] = 0.0f;
+		model.getParameters()[1] = 1.0f;
+		model.getParameters()[2] = 0.0f;
+		model.getParameters()[3] = 0.0f;
+
+		// Solve!
+		solver.Minimize( model );
+
+		// Replace curve by fit polynomial model
+		for ( U32 i=0; i < _responseCurve.Count(); i++ ) {
+			bfloat3&	value = _responseCurve[i];
+			float		f = float( BFGSModel_polynomial::EvalModel( i, model.getParameters() ) );
+			if ( _componentsCount == 1 )
+				value.Set( f, f, f );
+			else
+				((float*) &value.x)[componentIndex] = f;
+		}
+	}
+}
+
+#pragma endregion BFGS Minimization
 
 #pragma region SVD Decomposition
 
