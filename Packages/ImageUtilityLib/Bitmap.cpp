@@ -738,6 +738,12 @@ delete[] Abackup;
 	delete[] Aterms;
 
 	delete[] pixels;
+
+	//////////////////////////////////////////////////////////////////////////
+	// 3] Perform optional curve fitting
+	if ( _parms._performResponseCurveFitting ) {
+
+	}
 }
 
 #pragma region SVD Decomposition

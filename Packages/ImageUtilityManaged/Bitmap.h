@@ -161,24 +161,37 @@ static property ImageFile^	DEBUG {
 		// As advised by the author, you should:
 		//	• Always capture LDR images using apertures of f/8 or higher to avoid a possible lense variance between radiance and irradiance (vignetting)
 		//
-		ref struct HDRParms {
+		ref class HDRParms {
+		public:
 			// The amount of bits per (R,G,B) component the camera is able to output
 			// Usually, for RAW input images are either 12- or 16-bits depending on model while non-RAW outputs (e.g. JPG or PNG) are simply 8-bits
-			UInt32	_inputBitsPerComponent;		// default = 8 for JPEG, 12 for RAW;
+			UInt32	_inputBitsPerComponent;
 
 			//	The default luminance factor to apply to all the images
 			//	(allows you to scale the base luminance if you know the absolute value)
-			float	_luminanceFactor;			// default = 1.0f
+			float	_luminanceFactor;
 
 			// The curve smoothness constraint used to enforce the smoothness of the response curve
 			// A value of 0 doesn't constrain at all while a value of 1 makes sure the response curve is smooth
-			float	_curveSmoothnessConstraint;	// default = 1.0f
+			float	_curveSmoothnessConstraint;
 
 			// The "subjective quality" parameter used for the algorithm that guides how many pixels are going to be used to compute the response curve
 			// The default value is 1 so an average number of pixels is used
 			// Using a quality of 2 will use twice as many pixels, increasing response curve quality and computation time
 			// Using a quality of 0.5 will use half as many pixels, decreasing response curve quality and computation time
-			float	_quality;					// default = 1.0;f
+			float	_quality;
+
+			// If true, the Camera Response Curve is fit against a polynomial curve and replaced by its smooth version
+			// If false, the raw response curve is returned (with noise and such)
+			bool	_performResponseCurveFitting;
+
+			HDRParms()
+				: _inputBitsPerComponent( 8 )		// default = 8 for JPEG, 12 for RAW;
+				, _luminanceFactor( 1.0f )
+				, _curveSmoothnessConstraint( 1.0f )
+				, _quality( 1.0f )
+				, _performResponseCurveFitting( true ) {
+			}
 		};
 
 		// Builds a HDR image from a set of LDR images
@@ -193,6 +206,7 @@ static property ImageFile^	DEBUG {
 		//	_responseCurve, the list of values corresponding to the response curve
 		//	The default luminance factor to apply to all the images (allows you to scale the base luminance if you know the absolute value)
 		void		LDR2HDR( cli::array< ImageFile^ >^ _images, cli::array< float >^ _imageShutterSpeeds, System::Collections::Generic::List< float3 >^ _responseCurve, float _luminanceFactor );
+		void		LDR2HDR( cli::array< ImageFile^ >^ _images, cli::array< float >^ _imageShutterSpeeds, System::Collections::Generic::List< float >^ _responseCurveLuminance, float _luminanceFactor );
 
 		// Computes the response curve of the sensor that captured the provided LDR images
 		//	_images, the array of LDR bitmaps
@@ -203,6 +217,7 @@ static property ImageFile^	DEBUG {
 		static void	ComputeCameraResponseCurve( cli::array< ImageFile^ >^ _images, cli::array< float >^ _imageShutterSpeeds, HDRParms^ _parms, System::Collections::Generic::List< float >^ _responseCurveLuminance );
 
 	private:
+		void		LDR2HDR_internal( cli::array< ImageFile^ >^ _images, cli::array< float >^ _imageShutterSpeeds, const BaseLib::List< bfloat3 >& _responseCurve, float _luminanceFactor );
 		static void	ComputeCameraResponseCurve_internal( cli::array< ImageFile^ >^ _images, cli::array< float >^ _imageShutterSpeeds, HDRParms^ _parms, BaseLib::List< bfloat3 >& _responseCurve, bool _luminanceOnly );
 
 		#pragma endregion

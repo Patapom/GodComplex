@@ -9,6 +9,7 @@ void	CopyHDRParms( Bitmap::HDRParms% _parmsIn, ImageUtilityLib::Bitmap::HDRParms
 	_parmsOut._luminanceFactor = _parmsIn._luminanceFactor;
 	_parmsOut._curveSmoothnessConstraint = _parmsIn._curveSmoothnessConstraint;
 	_parmsOut._quality = _parmsIn._quality;
+	_parmsOut._performResponseCurveFitting = _parmsIn._performResponseCurveFitting;
 }
 
 void	Bitmap::LDR2HDR( cli::array< ImageFile^ >^ _images, cli::array< float >^ _imageShutterSpeeds, HDRParms^ _parms ) {
@@ -40,11 +41,37 @@ void	Bitmap::LDR2HDR( cli::array< ImageFile^ >^ _images, cli::array< float >^ _i
 }
 
 void	Bitmap::LDR2HDR( cli::array< ImageFile^ >^ _images, cli::array< float >^ _imageShutterSpeeds, System::Collections::Generic::List< float3 >^ _responseCurve, float _luminanceFactor ) {
+	if ( _responseCurve == nullptr || _responseCurve->Count == 0 )
+		throw gcnew Exception( "Invalid or empty response curve list!" );
+
+	// Copy to native list
+	BaseLib::List< bfloat3 >	responseCurve( _responseCurve->Count );
+	for ( int i=0; i < _responseCurve->Count; i++ ) {
+		float3%	source = _responseCurve[i];
+		responseCurve.Append( bfloat3( source.x, source.y, source.z ) );
+	}
+
+	LDR2HDR_internal( _images, _imageShutterSpeeds, responseCurve, _luminanceFactor );
+}
+void	Bitmap::LDR2HDR( cli::array< ImageFile^ >^ _images, cli::array< float >^ _imageShutterSpeeds, System::Collections::Generic::List< float >^ _responseCurveLuminance, float _luminanceFactor ) {
+	if ( _responseCurveLuminance == nullptr || _responseCurveLuminance->Count == 0 )
+		throw gcnew Exception( "Invalid or empty response curve list!" );
+
+	// Copy to native list
+	BaseLib::List< bfloat3 >	responseCurve( _responseCurveLuminance->Count );
+	for ( int i=0; i < _responseCurveLuminance->Count; i++ ) {
+		float	source = _responseCurveLuminance[i];
+		responseCurve.Append( bfloat3( source, source, source ) );
+	}
+
+	LDR2HDR_internal( _images, _imageShutterSpeeds, responseCurve, _luminanceFactor );
+}
+void	Bitmap::LDR2HDR_internal( cli::array< ImageFile^ >^ _images, cli::array< float >^ _imageShutterSpeeds, const BaseLib::List< bfloat3 >& _responseCurve, float _luminanceFactor ) {
 	if ( _images == nullptr )
 		throw gcnew Exception( "Invalid images array!" );
 	if ( _imageShutterSpeeds == nullptr )
 		throw gcnew Exception( "Invalid image shutter speeds array!" );
-	if ( _responseCurve == nullptr || _responseCurve->Count == 0 )
+	if ( _responseCurve.Count() == 0 )
 		throw gcnew Exception( "Invalid or empty response curve list!" );
 	if ( _images->Length != _imageShutterSpeeds->Length )
 		throw gcnew Exception( "Image array and shutter speeds array sizes mismatch!" );
@@ -58,14 +85,7 @@ void	Bitmap::LDR2HDR( cli::array< ImageFile^ >^ _images, cli::array< float >^ _i
 
 	pin_ptr<float>	imageShutterSpeedsPtr = &_imageShutterSpeeds[0];
 
-	// Copy to native list
-	BaseLib::List< bfloat3 >	responseCurve( _responseCurve->Count );
-	for ( int i=0; i < _responseCurve->Count; i++ ) {
-		float3%	source = _responseCurve[i];
-		responseCurve.Append( bfloat3( source.x, source.y, source.z ) );
-	}
-
-	m_nativeObject->LDR2HDR( imagesCount, images, imageShutterSpeedsPtr, responseCurve, _luminanceFactor );
+	m_nativeObject->LDR2HDR( imagesCount, images, imageShutterSpeedsPtr, _responseCurve, _luminanceFactor );
 
 	System::Runtime::InteropServices::Marshal::FreeHGlobal( imagesPtr );
 }
