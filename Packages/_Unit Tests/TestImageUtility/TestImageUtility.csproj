@@ -112,6 +112,10 @@
       <Project>{cec07704-2a19-4bf1-b46d-8fcf9c5965ee}</Project>
       <Name>MathSimple</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\SharpMath\MathAdvanced.csproj">
+      <Project>{dd026a89-c5fe-4150-bc85-a660e427826a}</Project>
+      <Name>MathAdvanced</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Content Include="FreeImage.dll">

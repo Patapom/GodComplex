@@ -20,13 +20,13 @@ namespace SharpMath
 			/// Evaluates the model given a set of parameters
 			/// </summary>
 			/// <returns>The difference between the model's estimate and the measured data</returns>
-			double		Eval( double[] _NewParameters );
+			double		Eval( double[] _newParameters );
 
 			/// <summary>
 			/// Applies constraints to the array of parameters
 			/// </summary>
 			/// <param name="_Parameters"></param>
-			void		Constrain( double[] _Parameters );
+			void		Constrain( double[] _parameters );
 		}
 
 		public delegate float	ProgressCallback( float _progress );

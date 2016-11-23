@@ -41,22 +41,23 @@ namespace ImageUtility.UnitTests
 //			TestGraph();
 		}
 
-		float	TentFilter( float x ) {
-			return 1.0f - Math.Abs( x - 127.0f ) / 128.0f;
-		}
 		void	FastFit() {
 			// Load response curve
+//			string	text = "";
 			List<float>	responseCurve = new List<float>();
 			using ( System.IO.FileStream S = new System.IO.FileInfo( "../../responseCurve9.float" ).OpenRead() )
 				using ( System.IO.BinaryReader R = new System.IO.BinaryReader( S ) ) {
-					for ( int i=0; i < 256; i++ )
+					for ( int i=0; i < 256; i++ ) {
 						responseCurve.Add( R.ReadSingle() );
+//						text += ", " + responseCurve[responseCurve.Count-1];
 					}
+				}
 
 			// Perform fitting
 			float	a = 0.0f, b = 1.0f, c = 0.0f, d = 0.0f;		// sumSqDiff = 21.664576085822642
 //			float	a = -6.55077f, b = 0.1263f, c = -0.000435788f, d = 7.52068e-7f;
-			FindFit( responseCurve.ToArray(), ref a, ref b, ref c, ref d );
+//			FindFit( responseCurve.ToArray(), ref a, ref b, ref c, ref d );
+			FindFitBFGS( responseCurve.ToArray(), ref a, ref b, ref c, ref d );
 
 			// Render
 			m_imageFile.Init( 1024, 768, ImageFile.PIXEL_FORMAT.RGBA8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
@@ -64,6 +65,7 @@ namespace ImageUtility.UnitTests
 
 			float2	rangeX = new float2( 0, 255 );
 			float2	rangeY = new float2( -2, 2 );
+/*
 			m_imageFile.PlotGraphAutoRangeY( black, rangeX, ref rangeY, ( float x ) => {
 				int		i0 = (int) Math.Min( 255, Math.Floor( x ) );
 				int		i1 = (int) Math.Min( 255, i0+1 );
@@ -77,36 +79,102 @@ namespace ImageUtility.UnitTests
 				return TentFilter( x ) * (a + b * x + c * x*x + d * x*x*x);
 			} );
 			m_imageFile.PlotLogAxes( black, rangeX, rangeY, -16.0f, 2.0f );
+*/
+
+//			m_imageFile.PlotGraphAutoRangeY( black, rangeX, ref rangeY, ( float x ) => {
+			rangeY = new float2( 0, 400 );
+			m_imageFile.PlotGraph( black, rangeX, rangeY, ( float x ) => {
+				int		i0 = (int) Math.Min( 255, Math.Floor( x ) );
+				int		i1 = (int) Math.Min( 255, i0+1 );
+				float	g0 = responseCurve[i0];
+				float	g1 = responseCurve[i1];
+				float	t = x - i0;
+//				return (float) (Math.Log( (g0 + (g1-g0) * t) ) / Math.Log( 2 ));
+				return (float) Math.Pow( 2.0, (g0 + (g1-g0) * t) );
+			} );
+			m_imageFile.PlotGraph( red, rangeX, rangeY, ( float x ) => {
+//				return (float) (Math.Log( (a + b * x + c * x*x + d * x*x*x) ) / Math.Log( 2 ));
+				return (float) Math.Pow( 2.0, (a + b * x + c * x*x + d * x*x*x) );
+			} );
 
 			panel1.Bitmap = m_imageFile.AsBitmap;
 		}
 
-		// Super simple fitting method
-		double	Model( double x, double a, double b, double c, double d ) {
-			return TentFilter( (float) x ) * (a + b * x + c * x*x + d * x*x*x);
+		class BFGSModel : SharpMath.BFGS.Model {
+			public float[]	m_curve;
+			public double[]	m_parameters;
+
+			public double[] Parameters {
+				get { return m_parameters; }
+				set { m_parameters = value; }
+			}
+
+			double	EvalModel( double x, double[] _parameters ) {
+				return _parameters[0] + _parameters[1] * x + _parameters[2] * x*x + _parameters[3] * x*x*x;
+			}
+			public double Eval( double[] _newParameters ) {
+				double	sumSqDiff = 0.0f;
+				for ( int i=0; i < 256; i++ ) {
+					double	curveValue = m_curve[i];
+					double	modelValue = EvalModel( i, _newParameters );
+					double	diff = modelValue - curveValue;
+							diff *= TentFilter( (float) i );
+					sumSqDiff += diff * diff;
+				}
+				return sumSqDiff / (256.0*256.0);
+			}
+
+			public void Constrain( double[] _parameters ) {
+			}
 		}
-		double	EstimateSqDiff( float[] _curve, double a, double b, double c, double d ) {
+		double	FindFitBFGS( float[] _curve, ref float a, ref float b, ref float c, ref float d ) {
+			BFGSModel	model = new BFGSModel() {
+				m_curve = _curve,
+				m_parameters = new double[] { a, b, c, d }
+			};
+
+			SharpMath.BFGS	fitter = new SharpMath.BFGS();
+			fitter.Minimize( model );
+
+			a = (float) model.m_parameters[0];
+			b = (float) model.m_parameters[1];
+			c = (float) model.m_parameters[2];
+			d = (float) model.m_parameters[3];
+
+			return fitter.FunctionMinimum;
+		}
+
+		// Super simple fitting method
+		static float	TentFilter( float x ) {
+			return 1.0f - Math.Abs( x - 127.0f ) / 128.0f;
+		}
+		double	Model( double x, double[] _parms ) {
+			return _parms[0] + _parms[1] * x + _parms[2] * x*x + _parms[3] * x*x*x;
+		}
+		double	EstimateSqDiff( float[] _curve, double[] _parms ) {
 			double	sumSqDiff = 0.0f;
 			for ( int i=0; i < 256; i++ ) {
-				double	curveValue = TentFilter( i ) * _curve[i];
-				double	modelValue = Model( i, a, b, c, d );
+				double	curveValue = _curve[i];
+				double	modelValue = Model( i, _parms );
 				double	diff = modelValue - curveValue;
+						diff *= TentFilter( (float) i );
 				sumSqDiff += diff * diff;
 			}
-			return sumSqDiff / (256.0 * 256.0);
+			return sumSqDiff / (256.0*256.0);
 		}
 		double	FindFit( float[] _curve, ref float a, ref float b, ref float c, ref float d ) {
-			const double	gradientDelta = 1e-3;
-			const double	gradFactor = gradientDelta;
-			const double	stepSize = 1e1;//1e-3;// * gradientDelta;	// Must always be proportional to delta!
+			const double	gradientDelta = 1e-6;
+			const double	gradFactor = 1.0 / gradientDelta;
 			const double	tolerance = 1e-4;
 			const double	growthTolerance = 1e-9;
 
+			double[]	oldParameterValues = new double[4];
 			double[]	parameterValues = new double[4] { a, b, c, d };
 			double[]	leftGradientValues = new double[4];
 			double[]	rightGradientValues = new double[4];
 
-			double		currentValue = EstimateSqDiff( _curve, a, b, c, d );
+			double		currentValue = EstimateSqDiff( _curve, parameterValues );
+			double		stepSize = 1.0;
 
 			for ( int iteration=0; iteration < 1000; iteration++ ) {
 				// Change parameter values & compute gradients
@@ -114,12 +182,12 @@ namespace ImageUtility.UnitTests
 					double	parmValue = parameterValues[parmIndex];
 
 					// Estimate left
-					parameterValues[parmIndex] -= gradientDelta;
-					double	leftValue = EstimateSqDiff( _curve, parameterValues[0], parameterValues[1], parameterValues[2], parameterValues[3] );
+					parameterValues[parmIndex] = parmValue - gradientDelta;
+					double	leftValue = EstimateSqDiff( _curve, parameterValues );
 
 					// Estimate right
 					parameterValues[parmIndex] = parmValue + gradientDelta;
-					double	rightValue = EstimateSqDiff( _curve, parameterValues[0], parameterValues[1], parameterValues[2], parameterValues[3] );
+					double	rightValue = EstimateSqDiff( _curve, parameterValues );
 
 					// Restore original parm value and compute gradients
 					parameterValues[parmIndex] = parmValue;
@@ -128,18 +196,27 @@ namespace ImageUtility.UnitTests
 				}
 
 				// Follow gradient's downward slope
-				for ( int parmIndex=0; parmIndex < 4; parmIndex++ ) {
-					double	left = leftGradientValues[parmIndex];
-					double	right = rightGradientValues[parmIndex];
-					if ( left > 0.0 && right > 0.0 )
-						continue;	// Both gradients are positive so we're basically at a minimum right where we are!
-					if ( left < right )
-						parameterValues[parmIndex] += stepSize * left;
-					else
-						parameterValues[parmIndex] += stepSize * right;
-				}
+				for ( int parmIndex=0; parmIndex < 4; parmIndex++ )
+					oldParameterValues[parmIndex] = parameterValues[parmIndex];
+
 				double	oldValue = currentValue;
-				currentValue = EstimateSqDiff( _curve, parameterValues[0], parameterValues[1], parameterValues[2], parameterValues[3] );
+				do {
+					for ( int parmIndex=0; parmIndex < 4; parmIndex++ ) {
+						double	left = leftGradientValues[parmIndex];
+						double	right = rightGradientValues[parmIndex];
+						if ( left > 0.0 && right > 0.0 )
+							continue;	// Both gradients are positive so we're basically at a minimum right where we are!
+						if ( left < right )
+							parameterValues[parmIndex] = oldParameterValues[parmIndex] + stepSize * left;
+						else
+							parameterValues[parmIndex] = oldParameterValues[parmIndex] + stepSize * right;
+					}
+					currentValue = EstimateSqDiff( _curve, parameterValues );
+					if ( currentValue > oldValue )
+						stepSize *= 0.5;	// Reduce step size
+				} while ( currentValue > oldValue );
+				stepSize *= 2.0;
+
 				if ( Math.Abs( currentValue ) < tolerance )
 					break;	// Found a minimum!
 

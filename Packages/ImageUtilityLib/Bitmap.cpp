@@ -16,7 +16,7 @@ void	Bitmap::Init( int _width, int _height ) {
 }
 
 void	Bitmap::Exit() {
-	SAFE_DELETE( m_XYZ );
+	SAFE_DELETE_ARRAY( m_XYZ );
 }
 
 // This is the core of the bitmap class
