@@ -510,6 +510,13 @@ if ( Math.Abs( T - 6500.0f ) < 10.0f )
 				shutterSpeeds.Add( LDRImage.Metadata.ExposureTime );
 			}
 
+// Check EXR save is working!
+// ImageFile	pipo = new ImageFile();
+// 			pipo.ConvertFrom( LDRImages[0], ImageFile.PIXEL_FORMAT.RGB32F );
+// pipo.Save( new System.IO.FileInfo( @"..\..\Images\Out\LDR2HDR\FromJPG\Result.exr" ), ImageFile.FILE_FORMAT.EXR, ImageFile.SAVE_FLAGS.SF_EXR_DEFAULT );
+
+
+			//////////////////////////////////////////////////////////////////////////////////////////////
 			// Build the HDR device-independent bitmap
 			Bitmap.HDRParms	parms = new Bitmap.HDRParms() {
 				_inputBitsPerComponent = 8,
@@ -531,9 +538,6 @@ if ( Math.Abs( T - 6500.0f ) < 10.0f )
 				List< float >	responseCurve_filtered = new List< float >();
 //				Bitmap.FilterCameraResponseCurve( responseCurve, responseCurve_filtered, Bitmap.FILTER_TYPE.CURVE_FITTING );
 				Bitmap.FilterCameraResponseCurve( responseCurve, responseCurve_filtered, Bitmap.FILTER_TYPE.SMOOTHING_GAUSSIAN );
-
-				// Apply for reconstruction
-				HDRImage.LDR2HDR( LDRImages.ToArray(), shutterSpeeds.ToArray(), responseCurve_filtered, 1.0f );
 
 // 				using ( System.IO.FileStream S = new System.IO.FileInfo( "../../responseCurve3.float" ).Create() )
 // 					using ( System.IO.BinaryWriter W = new System.IO.BinaryWriter( S ) ) {
@@ -625,27 +629,29 @@ if ( Math.Abs( T - 6500.0f ) < 10.0f )
 
  				panel1.Bitmap = tempCurveBitmap.AsBitmap;
 
-/*
+
+				//////////////////////////////////////////////////////////////////////////////////////////////
 				// Recompose the HDR image
-				HDRImage.LDR2HDR( LDRImages.ToArray(), shutterSpeeds.ToArray(), responseCurve, 1.0f );
+				HDRImage.LDR2HDR( LDRImages.ToArray(), shutterSpeeds.ToArray(), responseCurve_filtered, 1.0f );
 
 				// Display as a tone-mapped bitmap
 				ImageFile	tempHDR = new ImageFile();
 				HDRImage.ToImageFile( tempHDR, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
 
-				ImageFile	tempToneMappedHDR = new ImageFile();
-				tempToneMappedHDR.ToneMapFrom( tempHDR,( float3 _HDRColor, ref float3 _LDRColor ) => {
-					// Do nothing (linear space to gamma space without care!)
-//					_LDRColor = _HDRColor;
+				tempHDR.Save( new System.IO.FileInfo( @"..\..\Images\Out\LDR2HDR\FromJPG\Result.exr" ), ImageFile.FILE_FORMAT.EXR, ImageFile.SAVE_FLAGS.SF_EXR_DEFAULT );
 
-					// Just do gamma un-correction, don't care about actual HDR range...
-					_LDRColor.x = (float) Math.Pow( Math.Max( 0.0f, _HDRColor.x ), 1.0f / 2.2f );	// Here we need to clamp negative values that we sometimes get in EXR format
-					_LDRColor.y = (float) Math.Pow( Math.Max( 0.0f, _HDRColor.y ), 1.0f / 2.2f );	//  (must be coming from the log encoding I suppose)
-					_LDRColor.z = (float) Math.Pow( Math.Max( 0.0f, _HDRColor.z ), 1.0f / 2.2f );
-				} );
-
-				panel1.Bitmap = tempToneMappedHDR.AsBitmap;
-*/
+// 				ImageFile	tempToneMappedHDR = new ImageFile();
+// 				tempToneMappedHDR.ToneMapFrom( tempHDR,( float3 _HDRColor, ref float3 _LDRColor ) => {
+// 					// Do nothing (linear space to gamma space without care!)
+// //					_LDRColor = _HDRColor;
+// 
+// 					// Just do gamma un-correction, don't care about actual HDR range...
+// 					_LDRColor.x = (float) Math.Pow( Math.Max( 0.0f, _HDRColor.x ), 1.0f / 2.2f );	// Here we need to clamp negative values that we sometimes get in EXR format
+// 					_LDRColor.y = (float) Math.Pow( Math.Max( 0.0f, _HDRColor.y ), 1.0f / 2.2f );	//  (must be coming from the log encoding I suppose)
+// 					_LDRColor.z = (float) Math.Pow( Math.Max( 0.0f, _HDRColor.z ), 1.0f / 2.2f );
+// 				} );
+// 
+// 				panel1.Bitmap = tempToneMappedHDR.AsBitmap;
 
 			} catch ( Exception _e ) {
 				MessageBox.Show( "Error: " + _e.Message );
