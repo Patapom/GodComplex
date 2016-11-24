@@ -160,7 +160,15 @@ static property ImageFile^	DEBUG {
 		// This section follows the algorithm provided by "Recovering HDR Radiance Maps from Photographs", Debevec (1997)
 		// As advised by the author, you should:
 		//	• Always capture LDR images using apertures of f/8 or higher to avoid a possible lense variance between radiance and irradiance (vignetting)
+		//	• Always use a quite large amount of LDR images to compute the camera response curve (a minimum of 5 is quite okay)
+		//	• Use more samples (i.e. the quality settings) in the parameters structure below if you don't have enough images
 		//
+		enum class FILTER_TYPE {
+			NONE,				// No filter
+			SMOOTHING,			// Curve smoothing using floating average
+			CURVE_FITTING,		// Curve fitting (warning: extremums are less fit than the center of the curve because the tent filtering of extremums is accounted for during curve fitting)
+		};
+
 		ref class HDRParms {
 		public:
 			// The amount of bits per (R,G,B) component the camera is able to output
@@ -179,18 +187,19 @@ static property ImageFile^	DEBUG {
 			// The default value is 1 so an average number of pixels is used
 			// Using a quality of 2 will use twice as many pixels, increasing response curve quality and computation time
 			// Using a quality of 0.5 will use half as many pixels, decreasing response curve quality and computation time
+			// WARNING: the computation time grows quadratically with quality!
 			float	_quality;
 
 			// If true, the Camera Response Curve is fit against a polynomial curve and replaced by its smooth version
 			// If false, the raw response curve is returned (with noise and such)
-			bool	_performResponseCurveFitting;
+			FILTER_TYPE	_responseCurveFilterType;
 
 			HDRParms()
 				: _inputBitsPerComponent( 8 )		// default = 8 for JPEG, 12 for RAW;
 				, _luminanceFactor( 1.0f )
 				, _curveSmoothnessConstraint( 1.0f )
-				, _quality( 1.0f )
-				, _performResponseCurveFitting( true ) {
+				, _quality( 3.0f )
+				, _responseCurveFilterType( FILTER_TYPE::NONE ) {
 			}
 		};
 
@@ -209,16 +218,23 @@ static property ImageFile^	DEBUG {
 		void		LDR2HDR( cli::array< ImageFile^ >^ _images, cli::array< float >^ _imageShutterSpeeds, System::Collections::Generic::List< float >^ _responseCurveLuminance, float _luminanceFactor );
 
 		// Computes the response curve of the sensor that captured the provided LDR images
+		// (NOTE: it's important to understand that the response curve shouldn't be used as-is but weighted by a "tent filter" centered on the middle of the response curve
+		//	so the extremum values of the curve shouldn't be used directly because of large noisy variations in these ranges)
 		//	_images, the array of LDR bitmaps
 		//	_imageEVs, the array of Exposure Values (EV) used for each image
 		//	_responseCurve, the list to fill with values corresponding to the response curve
 		// (NOTE: if you're using the 2nd prototype then only the response curve for luminance is returned, which is okay for most sensors that won't differ much between R,G and B)
-		static void	ComputeCameraResponseCurve( cli::array< ImageFile^ >^ _images, cli::array< float >^ _imageShutterSpeeds, HDRParms^ _parms, System::Collections::Generic::List< float3 >^ _responseCurve );
-		static void	ComputeCameraResponseCurve( cli::array< ImageFile^ >^ _images, cli::array< float >^ _imageShutterSpeeds, HDRParms^ _parms, System::Collections::Generic::List< float >^ _responseCurveLuminance );
+		//
+		static void	ComputeCameraResponseCurve( cli::array< ImageFile^ >^ _images, cli::array< float >^ _imageShutterSpeeds, UInt32 _inputBitsPerComponent, float _curveSmoothnessConstraint, float _quality, System::Collections::Generic::List< float3 >^ _responseCurve );
+		static void	ComputeCameraResponseCurve( cli::array< ImageFile^ >^ _images, cli::array< float >^ _imageShutterSpeeds, UInt32 _inputBitsPerComponent, float _curveSmoothnessConstraint, float _quality, System::Collections::Generic::List< float >^ _responseCurveLuminance );
+
+
+		static void	FilterCameraResponseCurve( System::Collections::Generic::List< float3 >^ _rawResponseCurve, System::Collections::Generic::List< float3 >^ _filteredResponseCurve, FILTER_TYPE _filterType );
+		static void	FilterCameraResponseCurve( System::Collections::Generic::List< float >^ _rawResponseCurve, System::Collections::Generic::List< float >^ _filteredResponseCurve, FILTER_TYPE _filterType );
 
 	private:
 		void		LDR2HDR_internal( cli::array< ImageFile^ >^ _images, cli::array< float >^ _imageShutterSpeeds, const BaseLib::List< bfloat3 >& _responseCurve, float _luminanceFactor );
-		static void	ComputeCameraResponseCurve_internal( cli::array< ImageFile^ >^ _images, cli::array< float >^ _imageShutterSpeeds, HDRParms^ _parms, BaseLib::List< bfloat3 >& _responseCurve, bool _luminanceOnly );
+		static void	ComputeCameraResponseCurve_internal( cli::array< ImageFile^ >^ _images, cli::array< float >^ _imageShutterSpeeds, UInt32 _inputBitsPerComponent, float _curveSmoothnessConstraint, float _quality, BaseLib::List< bfloat3 >& _responseCurve, bool _luminanceOnly );
 
 		#pragma endregion
 	};

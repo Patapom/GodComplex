@@ -28,12 +28,14 @@
 		/// </summary>
 		private void InitializeComponent()
 		{
-			this.panel1 = new PanelOutput();
+			this.components = new System.ComponentModel.Container();
+			this.panel1 = new ImageUtility.UnitTests.PanelOutput(this.components);
 			this.textBoxEXIF = new System.Windows.Forms.TextBox();
 			this.SuspendLayout();
 			// 
 			// panel1
 			// 
+			this.panel1.Bitmap = null;
 			this.panel1.Location = new System.Drawing.Point(12, 37);
 			this.panel1.Name = "panel1";
 			this.panel1.Size = new System.Drawing.Size(842, 568);

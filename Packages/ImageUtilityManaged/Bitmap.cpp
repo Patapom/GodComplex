@@ -9,7 +9,7 @@ void	CopyHDRParms( Bitmap::HDRParms% _parmsIn, ImageUtilityLib::Bitmap::HDRParms
 	_parmsOut._luminanceFactor = _parmsIn._luminanceFactor;
 	_parmsOut._curveSmoothnessConstraint = _parmsIn._curveSmoothnessConstraint;
 	_parmsOut._quality = _parmsIn._quality;
-	_parmsOut._performResponseCurveFitting = _parmsIn._performResponseCurveFitting;
+	_parmsOut._responseCurveFilterType = ImageUtilityLib::Bitmap::FILTER_TYPE( _parmsIn._responseCurveFilterType );
 }
 
 void	Bitmap::LDR2HDR( cli::array< ImageFile^ >^ _images, cli::array< float >^ _imageShutterSpeeds, HDRParms^ _parms ) {
@@ -90,36 +90,34 @@ void	Bitmap::LDR2HDR_internal( cli::array< ImageFile^ >^ _images, cli::array< fl
 	System::Runtime::InteropServices::Marshal::FreeHGlobal( imagesPtr );
 }
 
-void	Bitmap::ComputeCameraResponseCurve( cli::array< ImageFile^ >^ _images, cli::array< float >^ _imageShutterSpeeds, HDRParms^ _parms, System::Collections::Generic::List< float3 >^ _responseCurve ) {
+void	Bitmap::ComputeCameraResponseCurve( cli::array< ImageFile^ >^ _images, cli::array< float >^ _imageShutterSpeeds, UInt32 _inputBitsPerComponent, float _curveSmoothnessConstraint, float _quality, System::Collections::Generic::List< float3 >^ _responseCurve ) {
 
  	BaseLib::List< bfloat3 >	responseCurve;
-	ComputeCameraResponseCurve_internal( _images, _imageShutterSpeeds, _parms, responseCurve, false );
+	ComputeCameraResponseCurve_internal( _images, _imageShutterSpeeds, _inputBitsPerComponent, _curveSmoothnessConstraint, _quality, responseCurve, false );
 
 	// Copy result
 	_responseCurve->Clear();
-	for ( int i=0; i < responseCurve.Count(); i++ ) {
+	for ( U32 i=0; i < responseCurve.Count(); i++ ) {
 		const bfloat3&	source = responseCurve[i];
 		_responseCurve->Add( float3( source.x, source.y, source.z ) );
 	}
 }
-void	Bitmap::ComputeCameraResponseCurve( cli::array< ImageFile^ >^ _images, cli::array< float >^ _imageShutterSpeeds, HDRParms^ _parms, System::Collections::Generic::List< float >^ _responseCurveLuminance ) {
+void	Bitmap::ComputeCameraResponseCurve( cli::array< ImageFile^ >^ _images, cli::array< float >^ _imageShutterSpeeds, UInt32 _inputBitsPerComponent, float _curveSmoothnessConstraint, float _quality, System::Collections::Generic::List< float >^ _responseCurveLuminance ) {
 
  	BaseLib::List< bfloat3 >	responseCurve;
-	ComputeCameraResponseCurve_internal( _images, _imageShutterSpeeds, _parms, responseCurve, true );
+	ComputeCameraResponseCurve_internal( _images, _imageShutterSpeeds, _inputBitsPerComponent, _curveSmoothnessConstraint, _quality, responseCurve, true );
 
 	// Copy result
 	_responseCurveLuminance->Clear();
-	for ( int i=0; i < responseCurve.Count(); i++ ) {
+	for ( U32 i=0; i < responseCurve.Count(); i++ ) {
 		const bfloat3&	source = responseCurve[i];
 		_responseCurveLuminance->Add( source.x );
 	}
 }
 
-void	Bitmap::ComputeCameraResponseCurve_internal( cli::array< ImageFile^ >^ _images, cli::array< float >^ _imageShutterSpeeds, HDRParms^ _parms, BaseLib::List< bfloat3 >& _responseCurve, bool _luminanceOnly ) {
+void	Bitmap::ComputeCameraResponseCurve_internal( cli::array< ImageFile^ >^ _images, cli::array< float >^ _imageShutterSpeeds, UInt32 _inputBitsPerComponent, float _curveSmoothnessConstraint, float _quality, BaseLib::List< bfloat3 >& _responseCurve, bool _luminanceOnly ) {
 	if ( _images == nullptr )
 		throw gcnew Exception( "Invalid images array!" );
-	if ( _parms == nullptr )
-		throw gcnew Exception( "Invalid parms for conversion!" );
 	if ( _imageShutterSpeeds == nullptr )
 		throw gcnew Exception( "Invalid image shutter speeds array!" );
 	if ( _images->Length != _imageShutterSpeeds->Length )
@@ -134,10 +132,32 @@ void	Bitmap::ComputeCameraResponseCurve_internal( cli::array< ImageFile^ >^ _ima
 
 	pin_ptr<float>	imageShutterSpeedsPtr = &_imageShutterSpeeds[0];
 
-	ImageUtilityLib::Bitmap::HDRParms	parms;
-	CopyHDRParms( *_parms, parms );
-
-	ImageUtilityLib::Bitmap::ComputeCameraResponseCurve( imagesCount, images, imageShutterSpeedsPtr, parms, _responseCurve, _luminanceOnly );
+	ImageUtilityLib::Bitmap::ComputeCameraResponseCurve( imagesCount, images, imageShutterSpeedsPtr, _inputBitsPerComponent, _curveSmoothnessConstraint, _quality, _responseCurve, _luminanceOnly );
 
 	System::Runtime::InteropServices::Marshal::FreeHGlobal( imagesPtr );
+}
+
+void	Bitmap::FilterCameraResponseCurve( System::Collections::Generic::List< float3 >^ _rawResponseCurve, System::Collections::Generic::List< float3 >^ _filteredResponseCurve, FILTER_TYPE _filterType ) {
+	BaseLib::List< bfloat3 >	rawResponseCurve( _rawResponseCurve->Count );
+	for ( int i=0; i < _rawResponseCurve->Count; i++ )
+		rawResponseCurve.Append( bfloat3( _rawResponseCurve[i].x, _rawResponseCurve[i].y, _rawResponseCurve[i].z ) );
+
+	BaseLib::List< bfloat3 >	filteredResponseCurve;
+	ImageUtilityLib::Bitmap::FilterCameraResponseCurve( rawResponseCurve, filteredResponseCurve, 3, ImageUtilityLib::Bitmap::FILTER_TYPE( _filterType ) );
+
+	_filteredResponseCurve->Clear();
+	for ( U32 i=0; i < filteredResponseCurve.Count(); i++ )
+		_filteredResponseCurve->Add( float3( filteredResponseCurve[i].x, filteredResponseCurve[i].y, filteredResponseCurve[i].z ) );
+}
+void	Bitmap::FilterCameraResponseCurve( System::Collections::Generic::List< float >^ _rawResponseCurve, System::Collections::Generic::List< float >^ _filteredResponseCurve, FILTER_TYPE _filterType ) {
+	BaseLib::List< bfloat3 >	rawResponseCurve( _rawResponseCurve->Count );
+	for ( int i=0; i < _rawResponseCurve->Count; i++ )
+		rawResponseCurve.Append( bfloat3( _rawResponseCurve[i], _rawResponseCurve[i], _rawResponseCurve[i] ) );
+
+	BaseLib::List< bfloat3 >	filteredResponseCurve;
+	ImageUtilityLib::Bitmap::FilterCameraResponseCurve( rawResponseCurve, filteredResponseCurve, 1, ImageUtilityLib::Bitmap::FILTER_TYPE( _filterType ) );
+
+	_filteredResponseCurve->Clear();
+	for ( U32 i=0; i < filteredResponseCurve.Count(); i++ )
+		_filteredResponseCurve->Add( filteredResponseCurve[i].x );
 }

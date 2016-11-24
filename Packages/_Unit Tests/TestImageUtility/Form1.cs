@@ -490,14 +490,14 @@ if ( Math.Abs( T - 6500.0f ) < 10.0f )
 			// Load a bunch of LDR images
 			System.IO.FileInfo[]	LDRImageFileNames = new System.IO.FileInfo[] {
 				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0860.jpg" ),
-//				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0861.jpg" ),
-//				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0862.jpg" ),
-//				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0863.jpg" ),
+				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0861.jpg" ),
+ 				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0862.jpg" ),
+				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0863.jpg" ),
 				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0864.jpg" ),
-//				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0865.jpg" ),
-//				// Don't use 866 because of bad ISO
-//				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0867.jpg" ),
-//				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0868.jpg" ),
+				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0865.jpg" ),
+				// Don't use 866 because of bad ISO
+ 				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0867.jpg" ),
+				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0868.jpg" ),
 				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0869.jpg" ),
 			};
 			List< ImageFile >	LDRImages = new List< ImageFile >();
@@ -515,7 +515,8 @@ if ( Math.Abs( T - 6500.0f ) < 10.0f )
 				_inputBitsPerComponent = 8,
 				_luminanceFactor = 1.0f,
 				_curveSmoothnessConstraint = 1.0f,
-				_quality = 1.0f
+				_quality = 3,
+				_responseCurveFilterType = Bitmap.FILTER_TYPE.NONE
 			};
 
 			ImageUtility.Bitmap	HDRImage = new ImageUtility.Bitmap();
@@ -523,13 +524,16 @@ if ( Math.Abs( T - 6500.0f ) < 10.0f )
 //				HDRImage.LDR2HDR( LDRImages.ToArray(), shutterSpeeds.ToArray(), parms );
 
 				List< float >	responseCurve = new List< float >();
-				Bitmap.ComputeCameraResponseCurve( LDRImages.ToArray(), shutterSpeeds.ToArray(), parms, responseCurve );
+				Bitmap.ComputeCameraResponseCurve( LDRImages.ToArray(), shutterSpeeds.ToArray(), parms._inputBitsPerComponent, parms._curveSmoothnessConstraint, parms._quality, responseCurve );
 
-				using ( System.IO.FileStream S = new System.IO.FileInfo( "../../responseCurve3.float" ).Create() )
-					using ( System.IO.BinaryWriter W = new System.IO.BinaryWriter( S ) ) {
-						for ( int i=0; i < 256; i++ )
-							W.Write( responseCurve[i] );
-					}
+				List< float >	responseCurve_filtered = new List< float >();
+				Bitmap.FilterCameraResponseCurve( responseCurve, responseCurve_filtered, Bitmap.FILTER_TYPE.CURVE_FITTING );
+
+// 				using ( System.IO.FileStream S = new System.IO.FileInfo( "../../responseCurve3.float" ).Create() )
+// 					using ( System.IO.BinaryWriter W = new System.IO.BinaryWriter( S ) ) {
+// 						for ( int i=0; i < 256; i++ )
+// 							W.Write( responseCurve[i] );
+// 					}
 
 //panel1.Bitmap = Bitmap.DEBUG.AsBitmap;
 
@@ -574,6 +578,15 @@ if ( Math.Abs( T - 6500.0f ) < 10.0f )
 //					return g0 + (g1-g0) * t;
 					return (float) Math.Pow( 2.0f, g0 + (g1-g0) * t );
 				} );
+				tempCurveBitmap.PlotGraph( blue, rangeX, rangeY, ( float x ) => {
+					int		i0 = (int) Math.Min( 255, Math.Floor( x ) );
+					int		i1 = (int) Math.Min( 255, i0+1 );
+					float	g0 = responseCurve_filtered[i0];
+					float	g1 = responseCurve_filtered[i1];
+					float	t = x - i0;
+//					return g0 + (g1-g0) * t;
+					return (float) Math.Pow( 2.0f, g0 + (g1-g0) * t );
+				} );
 //				tempCurveBitmap.PlotAxes( black, rangeX, rangeY, 8, 2 );
 
 				info += "• Linear range Y = [" + rangeY.x + ", " + rangeY.y + "]\r\n";
@@ -585,6 +598,16 @@ if ( Math.Abs( T - 6500.0f ) < 10.0f )
 					int		i1 = (int) Math.Min( 255, i0+1 );
 					float	g0 = responseCurve[i0];
 					float	g1 = responseCurve[i1];
+					float	t = x - i0;
+//					return g0 + (g1-g0) * t;
+					return (float) Math.Pow( 2.0f, g0 + (g1-g0) * t );
+				}, -1.0f, 2.0f );
+				tempCurveBitmap.PlotLogGraph( blue, rangeX, rangeY, ( float x ) => {
+//				tempCurveBitmap.PlotLogGraph( black, rangeX, rangeY, ( float x ) => {
+					int		i0 = (int) Math.Min( 255, Math.Floor( x ) );
+					int		i1 = (int) Math.Min( 255, i0+1 );
+					float	g0 = responseCurve_filtered[i0];
+					float	g1 = responseCurve_filtered[i1];
 					float	t = x - i0;
 //					return g0 + (g1-g0) * t;
 					return (float) Math.Pow( 2.0f, g0 + (g1-g0) * t );

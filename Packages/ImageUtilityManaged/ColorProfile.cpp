@@ -146,7 +146,7 @@ void	ColorProfile::BuildSpectralPowerDistributionForBlackBody( float _blackBodyT
 	ImageUtilityLib::ColorProfile::BuildSpectralPowerDistributionForBlackBody( _blackBodyTemperature, _wavelengthsCount, _wavelengthStart, _wavelengthStep, SPD );
 
 	_spectralPowerDistribution->Clear();
-	for ( int i=0; i < SPD.Count(); i++ ) {
+	for ( U32 i=0; i < SPD.Count(); i++ ) {
 		_spectralPowerDistribution->Add( SPD[i] );
 	}
 }

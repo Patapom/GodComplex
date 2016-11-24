@@ -130,7 +130,15 @@ static ImageFile*	ms_DEBUG;
 		// This section follows the algorithm provided by "Recovering HDR Radiance Maps from Photographs", Debevec (1997)
 		// As advised by the author, you should:
 		//	• Always capture LDR images using apertures of f/8 or higher to avoid a possible lense variance between radiance and irradiance (vignetting)
+		//	• Always use a quite large amount of LDR images to compute the camera response curve (a minimum of 5 is quite okay)
+		//	• Use more samples (i.e. the quality settings) in the parameters structure below if you don't have enough images
 		//
+		enum class FILTER_TYPE {
+			NONE,				// No filter
+			SMOOTHING,			// Curve smoothing using floating average
+			CURVE_FITTING,		// Curve fitting (warning: extremums are less fit than the center of the curve because the tent filtering of extremums is accounted for during curve fitting)
+		};
+
 		class HDRParms {
 		public:
 			// The amount of bits per (R,G,B) component the camera is able to output
@@ -149,18 +157,19 @@ static ImageFile*	ms_DEBUG;
 			// The default value is 1 so an average number of pixels is used
 			// Using a quality of 2 will use twice as many pixels, increasing response curve quality and computation time
 			// Using a quality of 0.5 will use half as many pixels, decreasing response curve quality and computation time
+			// WARNING: the computation time grows quadratically with quality!
 			float	_quality;
 
 			// If true, the Camera Response Curve is fit against a polynomial curve and replaced by its smooth version
 			// If false, the raw response curve is returned (with noise and such)
-			bool	_performResponseCurveFitting;
+			FILTER_TYPE	_responseCurveFilterType;
 
 			HDRParms()
 				: _inputBitsPerComponent( 8 )		// default = 8 for JPEG, 12 for RAW;
 				, _luminanceFactor( 1.0f )
 				, _curveSmoothnessConstraint( 1.0f )
-				, _quality( 1.0f )
-				, _performResponseCurveFitting( true ) {
+				, _quality( 3.0f )
+				, _responseCurveFilterType( FILTER_TYPE::NONE ) {
 			}
 		};
 
@@ -182,11 +191,9 @@ static ImageFile*	ms_DEBUG;
 		//	_imageShutterSpeeds, the array of shutter speeds (in seconds) used for each image
 		//	_responseCurve, the list to fill with values corresponding to the response curve
 		//	_luminanceOnly, if true then the luminance of the pixels is used and only a single response curve is computed instead of 3 individual curves for R,G and B
-		static void	ComputeCameraResponseCurve( U32 _imagesCount, const ImageFile** _images, const float* _imageShutterSpeeds, const HDRParms& _parms, BaseLib::List< bfloat3 >& _responseCurve, bool _luminanceOnly=true );
+		static void	ComputeCameraResponseCurve( U32 _imagesCount, const ImageFile** _images, const float* _imageShutterSpeeds, U32 _inputBitsPerComponent, float _curveSmoothnessConstraint, float _quality, BaseLib::List< bfloat3 >& _responseCurve, bool _luminanceOnly=true );
 
-	private:
-
-		static void	PerformCurveFitting( BaseLib::List< bfloat3 >& _responseCurve, U32 _componentsCount );
+		static void	FilterCameraResponseCurve( const BaseLib::List< bfloat3 >& _rawResponseCurve, BaseLib::List< bfloat3 >& _filteredResponseCurve, U32 _componentsCount, FILTER_TYPE _filterType );
 
 		#pragma endregion
 	};

@@ -47,6 +47,7 @@ void	BFGS::Minimize( IModel& _model ) {
 	EvalGradient( m_previousX, previousGradient );		// Initial gradient
 	m_evalCallsCount++;
 
+	hessian.Clear();
 	for ( int d = 0; d < m_coefficientsCount; ++d ) {
 		// initialize Hessian to a unit matrix:
 		hessian[d][d] = 1.0;
@@ -147,8 +148,8 @@ void	BFGS::Minimize( IModel& _model ) {
 
 		// update current point and current gradient for the next iteration:
 		if ( m_iterationsCount < m_maxIterations-1 ) {	// keep the 'x contains the latest point' invariant for the post-loop copy below
-			Swap( gradient, previousGradient );
-			Swap( m_currentX, m_previousX );
+			gradient.Swap( previousGradient );
+			m_currentX.Swap( m_previousX );
 		}
 	}
 
@@ -173,8 +174,6 @@ void	BFGS::Minimize( IModel& _model ) {
 // Compute the gradient using finite differences
 void	BFGS::EvalGradient( Vector& _params, Vector& _gradient ) {
 	double	EPS = 1e-6;
-//	double	centralValue = m_functionMinimum;
-
 	for ( int i=0; i < m_coefficientsCount; i++ ) {
 		double	oldCoeff = _params[i];
 

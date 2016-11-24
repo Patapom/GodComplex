@@ -119,7 +119,7 @@ float	ComputeWeight( U32 _Z, U32 _responseCurveSize ) {
 void	Bitmap::LDR2HDR( U32 _imagesCount, const ImageFile** _images, const float* _imageShutterSpeeds, const HDRParms& _parms ) {
 	// 1] Compute HDR response
 	List< bfloat3 >	responseCurve;
-	ComputeCameraResponseCurve( _imagesCount, _images, _imageShutterSpeeds, _parms, responseCurve );
+	ComputeCameraResponseCurve( _imagesCount, _images, _imageShutterSpeeds, _parms._inputBitsPerComponent, _parms._curveSmoothnessConstraint, _parms._quality, responseCurve );
 
 	// 2] Use the response curve to convert our LDR images into an HDR image
 	LDR2HDR( _imagesCount, _images, _imageShutterSpeeds, responseCurve, _parms._luminanceFactor );
@@ -219,7 +219,7 @@ void svdcmp_ORIGINAL( int m, int n, float** a, float w[], float** v );
 
 //#define DEBUG_LINEAR_SIGNAL	// Define this to inject a linear sensor response for debugging purpose
 
-void	Bitmap::ComputeCameraResponseCurve( U32 _imagesCount, const ImageFile** _images, const float* _imageShutterSpeeds, const HDRParms& _parms, List< bfloat3 >& _responseCurve, bool _luminanceOnly ) {
+void	Bitmap::ComputeCameraResponseCurve( U32 _imagesCount, const ImageFile** _images, const float* _imageShutterSpeeds, U32 _inputBitsPerComponent, float _curveSmoothnessConstraint, float _quality, List< bfloat3 >& _responseCurve, bool _luminanceOnly ) {
 	if ( _images == nullptr )
 		throw "Invalid images array!";
 	if ( _imageShutterSpeeds == nullptr )
@@ -241,9 +241,9 @@ void	Bitmap::ComputeCameraResponseCurve( U32 _imagesCount, const ImageFile** _im
 	// Here, Zmin and Zmax are the minimum and maximum pixel values in the images (e.g. for an 8-bits input image Zmin=0 and Zmax=255)
 	//	and g is the log of the inverse of the transfer function the camera applies to the pixels to transform input irradiance into numerical values
 	//
-	U32		responseCurveSize = 1U << _parms._inputBitsPerComponent;
+	U32		responseCurveSize = 1U << _inputBitsPerComponent;
 	float	nominalPixelsCount = float(responseCurveSize) / _imagesCount;	// Use about that amount of pixels across images to have a nice over-determined system
-			nominalPixelsCount *= 1.0f + _parms._quality;					// Apply the user's quality settings to use more or less pixels
+			nominalPixelsCount *= 1.0f + _quality;							// Apply the user's quality settings to use more or less pixels
 
 
 //nominalPixelsCount *= 10.0f;	// As long as we don't have a robust algorithm to choose pixels that properly cover the response curve range, let's use a lot more pixels than necessary!
@@ -433,7 +433,7 @@ imageEV = -float(imageIndex);
 		// This part will ensure the g() curve's smoothness
 		float**	A2 = &A[totalPixelsCount];	// A2 starts at the end of A's first part, A1
 
-		float	lambda = _parms._curveSmoothnessConstraint;
+		float	lambda = _curveSmoothnessConstraint;
 
 		A2[0][0] = lambda * ComputeWeight( 0, responseCurveSize );	// First element can't reach neighbors
 		U32		Z = 1;
@@ -738,12 +738,6 @@ delete[] Abackup;
 	delete[] Aterms;
 
 	delete[] pixels;
-
-	//////////////////////////////////////////////////////////////////////////
-	// 3] Perform optional curve fitting
-	if ( _parms._performResponseCurveFitting ) {
-		PerformCurveFitting( _responseCurve, componentsCount );
-	}
 }
 
 #pragma region BFGS Minimization
@@ -793,33 +787,57 @@ private:
 	}
 };
 
-void	Bitmap::PerformCurveFitting( BaseLib::List< bfloat3 >& _responseCurve, U32 _componentsCount ) {
-	BFGSModel_polynomial	model;
-	BFGS					solver;
-	for ( U32 componentIndex=0; componentIndex < _componentsCount; componentIndex++ ) {	// Because R, G, B
-		// Setup initial values
-		model.SetCurve( _responseCurve, componentIndex );
-		model.getParameters()[0] = 0.0f;
-		model.getParameters()[1] = 1.0f;
-		model.getParameters()[2] = 0.0f;
-		model.getParameters()[3] = 0.0f;
+#pragma endregion
 
-		// Solve!
-		solver.Minimize( model );
+void	Bitmap::FilterCameraResponseCurve( const BaseLib::List< bfloat3 >& _rawResponseCurve, BaseLib::List< bfloat3 >& _filteredResponseCurve, U32 _componentsCount, FILTER_TYPE _filterType ) {
+	_filteredResponseCurve.SetCount( _rawResponseCurve.Count() );
 
-		// Replace curve by fit polynomial model
-		for ( U32 i=0; i < _responseCurve.Count(); i++ ) {
-			bfloat3&	value = _responseCurve[i];
-			float		f = float( BFGSModel_polynomial::EvalModel( i, model.getParameters() ) );
-			if ( _componentsCount == 1 )
-				value.Set( f, f, f );
-			else
-				((float*) &value.x)[componentIndex] = f;
+	// Apply filtering
+	switch ( _filterType ) {
+
+		//////////////////////////////////////////////////////////////////////////
+		// Use a floating average to smooth out the input curve
+		case Bitmap::FILTER_TYPE::SMOOTHING: {
+			break;
 		}
+
+		//////////////////////////////////////////////////////////////////////////
+		// Perform BFGS minimization of a 3rd order polynomial
+		case Bitmap::FILTER_TYPE::CURVE_FITTING: {
+			BFGSModel_polynomial	model;
+			BFGS					solver;
+			for ( U32 componentIndex=0; componentIndex < _componentsCount; componentIndex++ ) {	// Because R, G, B
+				// Setup initial values
+				model.SetCurve( _rawResponseCurve, componentIndex );
+				model.getParameters()[0] = 0.0f;
+				model.getParameters()[1] = 1.0f;
+				model.getParameters()[2] = 0.0f;
+				model.getParameters()[3] = 0.0f;
+
+				// Solve!
+				solver.Minimize( model );
+
+				// Replace curve by fit polynomial model
+				for ( U32 i=0; i < _filteredResponseCurve.Count(); i++ ) {
+					bfloat3&	value = _filteredResponseCurve[i];
+					float		f = float( BFGSModel_polynomial::EvalModel( i, model.getParameters() ) );
+					((float*) &value.x)[componentIndex] = f;
+				}
+			}
+			for ( U32 componentIndex=_componentsCount; componentIndex < 3; componentIndex++ ) {
+				for ( U32 i=0; i < _filteredResponseCurve.Count(); i++ ) {
+					bfloat3&	value = _filteredResponseCurve[i];
+					((float*) &value.x)[componentIndex] = ((float*) &value.x)[componentIndex-1];
+				}
+			}
+			break;
+		}
+
+	default:
+		// No change...
+		memcpy_s( _filteredResponseCurve.Ptr(), _filteredResponseCurve.Count()*sizeof(bfloat3), _rawResponseCurve.Ptr(), _rawResponseCurve.Count()*sizeof(bfloat3) );
 	}
 }
-
-#pragma endregion BFGS Minimization
 
 #pragma region SVD Decomposition
 
