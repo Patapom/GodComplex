@@ -9,6 +9,7 @@ void	CopyHDRParms( Bitmap::HDRParms% _parmsIn, ImageUtilityLib::Bitmap::HDRParms
 	_parmsOut._luminanceFactor = _parmsIn._luminanceFactor;
 	_parmsOut._curveSmoothnessConstraint = _parmsIn._curveSmoothnessConstraint;
 	_parmsOut._quality = _parmsIn._quality;
+	_parmsOut._luminanceOnly = _parmsIn._luminanceOnly;
 	_parmsOut._responseCurveFilterType = ImageUtilityLib::Bitmap::FILTER_TYPE( _parmsIn._responseCurveFilterType );
 }
 
@@ -93,7 +94,7 @@ void	Bitmap::LDR2HDR_internal( cli::array< ImageFile^ >^ _images, cli::array< fl
 void	Bitmap::ComputeCameraResponseCurve( cli::array< ImageFile^ >^ _images, cli::array< float >^ _imageShutterSpeeds, UInt32 _inputBitsPerComponent, float _curveSmoothnessConstraint, float _quality, System::Collections::Generic::List< float3 >^ _responseCurve ) {
 
  	BaseLib::List< bfloat3 >	responseCurve;
-	ComputeCameraResponseCurve_internal( _images, _imageShutterSpeeds, _inputBitsPerComponent, _curveSmoothnessConstraint, _quality, responseCurve, false );
+	ComputeCameraResponseCurve_internal( _images, _imageShutterSpeeds, _inputBitsPerComponent, _curveSmoothnessConstraint, _quality, false, responseCurve );
 
 	// Copy result
 	_responseCurve->Clear();
@@ -105,7 +106,7 @@ void	Bitmap::ComputeCameraResponseCurve( cli::array< ImageFile^ >^ _images, cli:
 void	Bitmap::ComputeCameraResponseCurve( cli::array< ImageFile^ >^ _images, cli::array< float >^ _imageShutterSpeeds, UInt32 _inputBitsPerComponent, float _curveSmoothnessConstraint, float _quality, System::Collections::Generic::List< float >^ _responseCurveLuminance ) {
 
  	BaseLib::List< bfloat3 >	responseCurve;
-	ComputeCameraResponseCurve_internal( _images, _imageShutterSpeeds, _inputBitsPerComponent, _curveSmoothnessConstraint, _quality, responseCurve, true );
+	ComputeCameraResponseCurve_internal( _images, _imageShutterSpeeds, _inputBitsPerComponent, _curveSmoothnessConstraint, _quality, true, responseCurve );
 
 	// Copy result
 	_responseCurveLuminance->Clear();
@@ -115,7 +116,7 @@ void	Bitmap::ComputeCameraResponseCurve( cli::array< ImageFile^ >^ _images, cli:
 	}
 }
 
-void	Bitmap::ComputeCameraResponseCurve_internal( cli::array< ImageFile^ >^ _images, cli::array< float >^ _imageShutterSpeeds, UInt32 _inputBitsPerComponent, float _curveSmoothnessConstraint, float _quality, BaseLib::List< bfloat3 >& _responseCurve, bool _luminanceOnly ) {
+void	Bitmap::ComputeCameraResponseCurve_internal( cli::array< ImageFile^ >^ _images, cli::array< float >^ _imageShutterSpeeds, UInt32 _inputBitsPerComponent, float _curveSmoothnessConstraint, float _quality, bool _luminanceOnly, BaseLib::List< bfloat3 >& _responseCurve ) {
 	if ( _images == nullptr )
 		throw gcnew Exception( "Invalid images array!" );
 	if ( _imageShutterSpeeds == nullptr )
@@ -132,7 +133,7 @@ void	Bitmap::ComputeCameraResponseCurve_internal( cli::array< ImageFile^ >^ _ima
 
 	pin_ptr<float>	imageShutterSpeedsPtr = &_imageShutterSpeeds[0];
 
-	ImageUtilityLib::Bitmap::ComputeCameraResponseCurve( imagesCount, images, imageShutterSpeedsPtr, _inputBitsPerComponent, _curveSmoothnessConstraint, _quality, _responseCurve, _luminanceOnly );
+	ImageUtilityLib::Bitmap::ComputeCameraResponseCurve( imagesCount, images, imageShutterSpeedsPtr, _inputBitsPerComponent, _curveSmoothnessConstraint, _quality, _luminanceOnly, _responseCurve );
 
 	System::Runtime::InteropServices::Marshal::FreeHGlobal( imagesPtr );
 }

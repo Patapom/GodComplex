@@ -135,7 +135,8 @@ static ImageFile*	ms_DEBUG;
 		//
 		enum class FILTER_TYPE {
 			NONE,				// No filter
-			SMOOTHING,			// Curve smoothing using floating average
+			SMOOTHING_GAUSSIAN,	// Curve smoothing using gaussian filtering
+			SMOOTHING_TENT,		// Curve smoothing using tent filtering
 			CURVE_FITTING,		// Curve fitting (warning: extremums are less fit than the center of the curve because the tent filtering of extremums is accounted for during curve fitting)
 		};
 
@@ -160,8 +161,10 @@ static ImageFile*	ms_DEBUG;
 			// WARNING: the computation time grows quadratically with quality!
 			float	_quality;
 
-			// If true, the Camera Response Curve is fit against a polynomial curve and replaced by its smooth version
-			// If false, the raw response curve is returned (with noise and such)
+			// If true then the luminance of the pixels is used and only a single response curve is computed instead of 3 individual curves for R,G and B
+			bool	_luminanceOnly;
+
+			// The type of filtering to apply to the raw response curve to smooth it out
 			FILTER_TYPE	_responseCurveFilterType;
 
 			HDRParms()
@@ -169,7 +172,8 @@ static ImageFile*	ms_DEBUG;
 				, _luminanceFactor( 1.0f )
 				, _curveSmoothnessConstraint( 1.0f )
 				, _quality( 3.0f )
-				, _responseCurveFilterType( FILTER_TYPE::NONE ) {
+				, _luminanceOnly( true )
+				, _responseCurveFilterType( FILTER_TYPE::SMOOTHING_GAUSSIAN ) {
 			}
 		};
 
@@ -191,8 +195,13 @@ static ImageFile*	ms_DEBUG;
 		//	_imageShutterSpeeds, the array of shutter speeds (in seconds) used for each image
 		//	_responseCurve, the list to fill with values corresponding to the response curve
 		//	_luminanceOnly, if true then the luminance of the pixels is used and only a single response curve is computed instead of 3 individual curves for R,G and B
-		static void	ComputeCameraResponseCurve( U32 _imagesCount, const ImageFile** _images, const float* _imageShutterSpeeds, U32 _inputBitsPerComponent, float _curveSmoothnessConstraint, float _quality, BaseLib::List< bfloat3 >& _responseCurve, bool _luminanceOnly=true );
+		static void	ComputeCameraResponseCurve( U32 _imagesCount, const ImageFile** _images, const float* _imageShutterSpeeds, U32 _inputBitsPerComponent, float _curveSmoothnessConstraint, float _quality, bool _luminanceOnly, BaseLib::List< bfloat3 >& _responseCurve );
 
+		// Filters the raw response curve to obtain a smoother version (especially useful when few LDR images are available!)
+		//	_rawResponseCurve, the "raw" response curve with noise
+		//	_filteredResponseCurve, the filtered response curve
+		//	_componentsCount, the amount of components in the float3 that should be processed (1 for luminance only curve, 3 for RGB curves)
+		//	_filterType, the type of filtering to apply
 		static void	FilterCameraResponseCurve( const BaseLib::List< bfloat3 >& _rawResponseCurve, BaseLib::List< bfloat3 >& _filteredResponseCurve, U32 _componentsCount, FILTER_TYPE _filterType );
 
 		#pragma endregion

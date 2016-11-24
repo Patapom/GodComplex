@@ -119,10 +119,14 @@ float	ComputeWeight( U32 _Z, U32 _responseCurveSize ) {
 void	Bitmap::LDR2HDR( U32 _imagesCount, const ImageFile** _images, const float* _imageShutterSpeeds, const HDRParms& _parms ) {
 	// 1] Compute HDR response
 	List< bfloat3 >	responseCurve;
-	ComputeCameraResponseCurve( _imagesCount, _images, _imageShutterSpeeds, _parms._inputBitsPerComponent, _parms._curveSmoothnessConstraint, _parms._quality, responseCurve );
+	ComputeCameraResponseCurve( _imagesCount, _images, _imageShutterSpeeds, _parms._inputBitsPerComponent, _parms._curveSmoothnessConstraint, _parms._quality, _parms._luminanceOnly, responseCurve );
+
+	// 2] Filter response
+	List< bfloat3 >	responseCurve_filtered;
+	FilterCameraResponseCurve( responseCurve, responseCurve_filtered, _parms._luminanceOnly ? 1 : 3, _parms._responseCurveFilterType );
 
 	// 2] Use the response curve to convert our LDR images into an HDR image
-	LDR2HDR( _imagesCount, _images, _imageShutterSpeeds, responseCurve, _parms._luminanceFactor );
+	LDR2HDR( _imagesCount, _images, _imageShutterSpeeds, responseCurve_filtered, _parms._luminanceFactor );
 }
 
 void	Bitmap::LDR2HDR( U32 _imagesCount, const ImageFile** _images, const float* _imageShutterSpeeds, const List< bfloat3 >& _responseCurve, float _luminanceFactor ) {
@@ -219,7 +223,7 @@ void svdcmp_ORIGINAL( int m, int n, float** a, float w[], float** v );
 
 //#define DEBUG_LINEAR_SIGNAL	// Define this to inject a linear sensor response for debugging purpose
 
-void	Bitmap::ComputeCameraResponseCurve( U32 _imagesCount, const ImageFile** _images, const float* _imageShutterSpeeds, U32 _inputBitsPerComponent, float _curveSmoothnessConstraint, float _quality, List< bfloat3 >& _responseCurve, bool _luminanceOnly ) {
+void	Bitmap::ComputeCameraResponseCurve( U32 _imagesCount, const ImageFile** _images, const float* _imageShutterSpeeds, U32 _inputBitsPerComponent, float _curveSmoothnessConstraint, float _quality, bool _luminanceOnly, List< bfloat3 >& _responseCurve ) {
 	if ( _images == nullptr )
 		throw "Invalid images array!";
 	if ( _imageShutterSpeeds == nullptr )
@@ -244,10 +248,6 @@ void	Bitmap::ComputeCameraResponseCurve( U32 _imagesCount, const ImageFile** _im
 	U32		responseCurveSize = 1U << _inputBitsPerComponent;
 	float	nominalPixelsCount = float(responseCurveSize) / _imagesCount;	// Use about that amount of pixels across images to have a nice over-determined system
 			nominalPixelsCount *= 1.0f + _quality;							// Apply the user's quality settings to use more or less pixels
-
-
-//nominalPixelsCount *= 10.0f;	// As long as we don't have a robust algorithm to choose pixels that properly cover the response curve range, let's use a lot more pixels than necessary!
-
 
 	int		pixelsCountPerImage = int( ceilf( nominalPixelsCount ) );		// And that is our amount of pixels to use per image
 
@@ -791,15 +791,96 @@ private:
 
 void	Bitmap::FilterCameraResponseCurve( const BaseLib::List< bfloat3 >& _rawResponseCurve, BaseLib::List< bfloat3 >& _filteredResponseCurve, U32 _componentsCount, FILTER_TYPE _filterType ) {
 	_filteredResponseCurve.SetCount( _rawResponseCurve.Count() );
+	memcpy_s( _filteredResponseCurve.Ptr(), _filteredResponseCurve.Count()*sizeof(bfloat3), _rawResponseCurve.Ptr(), _rawResponseCurve.Count()*sizeof(bfloat3) );
+
+	// Compute kernel size for tent and gaussian filters
+	const S32	KERNEL_SIZE = S32(_filteredResponseCurve.Count()) / 8;	// Should be [-32,+32] for 256 entries response curve
 
 	// Apply filtering
 	switch ( _filterType ) {
 
 		//////////////////////////////////////////////////////////////////////////
-		// Use a floating average to smooth out the input curve
-		case Bitmap::FILTER_TYPE::SMOOTHING: {
+		// Use a gaussian filter
+		case Bitmap::FILTER_TYPE::SMOOTHING_GAUSSIAN: {
+			const float	SIGMA = logf( 0.01f ) / (KERNEL_SIZE*KERNEL_SIZE);
+
+			for ( U32 componentIndex=0; componentIndex < _componentsCount; componentIndex++ ) {	// Because R, G, B
+				for ( U32 i=0; i < _filteredResponseCurve.Count(); i++ ) {
+					S32		minJ = MAX( 0, S32(i) - KERNEL_SIZE );
+					S32		maxJ = MIN( S32(_filteredResponseCurve.Count()), S32(i) + KERNEL_SIZE );
+					float	sumWeights = 0.0f;
+					float	sum = 0.0f;
+					for ( S32 j=minJ; j < maxJ; j++ ) {
+						float	weight = expf( SIGMA * (j - S32(i))*(j - S32(i)) );		// Gaussian
+						sumWeights += weight;
+						sum += weight * ((float*) &_rawResponseCurve[j].x)[componentIndex];
+					}
+					sum /= sumWeights;
+					((float*) &_filteredResponseCurve[i].x)[componentIndex] = sum;
+				}
+			}
+			
+			for ( U32 componentIndex=_componentsCount; componentIndex < 3; componentIndex++ ) {
+				for ( U32 i=0; i < _filteredResponseCurve.Count(); i++ ) {
+					bfloat3&	value = _filteredResponseCurve[i];
+					((float*) &value.x)[componentIndex] = ((float*) &value.x)[componentIndex-1];
+				}
+			}
 			break;
 		}
+
+		//////////////////////////////////////////////////////////////////////////
+		// Use a tent filter
+		case Bitmap::FILTER_TYPE::SMOOTHING_TENT: {
+			for ( U32 componentIndex=0; componentIndex < _componentsCount; componentIndex++ ) {	// Because R, G, B
+				for ( U32 i=0; i < _filteredResponseCurve.Count(); i++ ) {
+					S32		minJ = MAX( 0, S32(i) - KERNEL_SIZE );
+					S32		maxJ = MIN( S32(_filteredResponseCurve.Count()), S32(i) + KERNEL_SIZE );
+					float	sumWeights = 0.0f;
+					float	sum = 0.0f;
+					for ( S32 j=minJ; j < maxJ; j++ ) {
+						float	weight = 1.0f - abs( j - S32(i) ) / float(KERNEL_SIZE);	// Tent filter
+						sumWeights += weight;
+						sum += weight * ((float*) &_rawResponseCurve[j].x)[componentIndex];
+					}
+					sum /= sumWeights;
+					((float*) &_filteredResponseCurve[i].x)[componentIndex] = sum;
+				}
+			}
+			for ( U32 componentIndex=_componentsCount; componentIndex < 3; componentIndex++ ) {
+				for ( U32 i=0; i < _filteredResponseCurve.Count(); i++ ) {
+					bfloat3&	value = _filteredResponseCurve[i];
+					((float*) &value.x)[componentIndex] = ((float*) &value.x)[componentIndex-1];
+				}
+			}
+			break;
+		}
+
+		//////////////////////////////////////////////////////////////////////////
+		// Use an exponential moving average to smooth out the input curve
+// 		case Bitmap::FILTER_TYPE::EXPONENTIAL_MOVING_AVERAGE: {
+// //			const float	alpha = 1.0f - expf( logf( 0.001f ) / _rawResponseCurve.Count() );
+// 			const float	alpha = 0.5f;
+// 
+// 			for ( int iterationIndex=0; iterationIndex < 1; iterationIndex++ ) {
+// 				for ( U32 componentIndex=0; componentIndex < _componentsCount; componentIndex++ ) {	// Because R, G, B
+// 					float	movingSum = ((float*) &_filteredResponseCurve[0].x)[componentIndex];
+// 					((float*) &_filteredResponseCurve[0].x)[componentIndex] = movingSum;
+// 					for ( U32 i=1; i < _filteredResponseCurve.Count(); i++ ) {
+// 						float		Yi = ((float*) &_filteredResponseCurve[i].x)[componentIndex];
+// 						movingSum = alpha * Yi + (1.0f - alpha) * movingSum;
+// 						((float*) &_filteredResponseCurve[i].x)[componentIndex] = movingSum;
+// 					}
+// 				}
+// 			}
+// 			for ( U32 componentIndex=_componentsCount; componentIndex < 3; componentIndex++ ) {
+// 				for ( U32 i=0; i < _filteredResponseCurve.Count(); i++ ) {
+// 					bfloat3&	value = _filteredResponseCurve[i];
+// 					((float*) &value.x)[componentIndex] = ((float*) &value.x)[componentIndex-1];
+// 				}
+// 			}
+// 			break;
+// 		}
 
 		//////////////////////////////////////////////////////////////////////////
 		// Perform BFGS minimization of a 3rd order polynomial
@@ -832,10 +913,6 @@ void	Bitmap::FilterCameraResponseCurve( const BaseLib::List< bfloat3 >& _rawResp
 			}
 			break;
 		}
-
-	default:
-		// No change...
-		memcpy_s( _filteredResponseCurve.Ptr(), _filteredResponseCurve.Count()*sizeof(bfloat3), _rawResponseCurve.Ptr(), _rawResponseCurve.Count()*sizeof(bfloat3) );
 	}
 }
 

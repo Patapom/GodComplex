@@ -165,7 +165,8 @@ static property ImageFile^	DEBUG {
 		//
 		enum class FILTER_TYPE {
 			NONE,				// No filter
-			SMOOTHING,			// Curve smoothing using floating average
+			SMOOTHING_GAUSSIAN,	// Curve smoothing using gaussian filtering
+			SMOOTHING_TENT,		// Curve smoothing using tent filtering
 			CURVE_FITTING,		// Curve fitting (warning: extremums are less fit than the center of the curve because the tent filtering of extremums is accounted for during curve fitting)
 		};
 
@@ -175,7 +176,7 @@ static property ImageFile^	DEBUG {
 			// Usually, for RAW input images are either 12- or 16-bits depending on model while non-RAW outputs (e.g. JPG or PNG) are simply 8-bits
 			UInt32	_inputBitsPerComponent;
 
-			//	The default luminance factor to apply to all the images
+			// The default luminance factor to apply to all the images
 			//	(allows you to scale the base luminance if you know the absolute value)
 			float	_luminanceFactor;
 
@@ -190,8 +191,10 @@ static property ImageFile^	DEBUG {
 			// WARNING: the computation time grows quadratically with quality!
 			float	_quality;
 
-			// If true, the Camera Response Curve is fit against a polynomial curve and replaced by its smooth version
-			// If false, the raw response curve is returned (with noise and such)
+			// If true then the luminance of the pixels is used and only a single response curve is computed instead of 3 individual curves for R,G and B
+			bool	_luminanceOnly;
+
+			// The type of filtering to apply to the raw response curve to smooth it out
 			FILTER_TYPE	_responseCurveFilterType;
 
 			HDRParms()
@@ -199,7 +202,8 @@ static property ImageFile^	DEBUG {
 				, _luminanceFactor( 1.0f )
 				, _curveSmoothnessConstraint( 1.0f )
 				, _quality( 3.0f )
-				, _responseCurveFilterType( FILTER_TYPE::NONE ) {
+				, _luminanceOnly( true )
+				, _responseCurveFilterType( FILTER_TYPE::SMOOTHING_GAUSSIAN ) {
 			}
 		};
 
@@ -234,7 +238,7 @@ static property ImageFile^	DEBUG {
 
 	private:
 		void		LDR2HDR_internal( cli::array< ImageFile^ >^ _images, cli::array< float >^ _imageShutterSpeeds, const BaseLib::List< bfloat3 >& _responseCurve, float _luminanceFactor );
-		static void	ComputeCameraResponseCurve_internal( cli::array< ImageFile^ >^ _images, cli::array< float >^ _imageShutterSpeeds, UInt32 _inputBitsPerComponent, float _curveSmoothnessConstraint, float _quality, BaseLib::List< bfloat3 >& _responseCurve, bool _luminanceOnly );
+		static void	ComputeCameraResponseCurve_internal( cli::array< ImageFile^ >^ _images, cli::array< float >^ _imageShutterSpeeds, UInt32 _inputBitsPerComponent, float _curveSmoothnessConstraint, float _quality, bool _luminanceOnly, BaseLib::List< bfloat3 >& _responseCurve );
 
 		#pragma endregion
 	};

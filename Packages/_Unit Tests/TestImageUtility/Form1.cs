@@ -496,7 +496,7 @@ if ( Math.Abs( T - 6500.0f ) < 10.0f )
 				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0864.jpg" ),
 				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0865.jpg" ),
 				// Don't use 866 because of bad ISO
- 				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0867.jpg" ),
+				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0867.jpg" ),
 				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0868.jpg" ),
 				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0869.jpg" ),
 			};
@@ -516,18 +516,24 @@ if ( Math.Abs( T - 6500.0f ) < 10.0f )
 				_luminanceFactor = 1.0f,
 				_curveSmoothnessConstraint = 1.0f,
 				_quality = 3,
-				_responseCurveFilterType = Bitmap.FILTER_TYPE.NONE
+				_responseCurveFilterType = Bitmap.FILTER_TYPE.SMOOTHING_GAUSSIAN
 			};
 
 			ImageUtility.Bitmap	HDRImage = new ImageUtility.Bitmap();
 			try {
 //				HDRImage.LDR2HDR( LDRImages.ToArray(), shutterSpeeds.ToArray(), parms );
 
+				// Compute response curve
 				List< float >	responseCurve = new List< float >();
 				Bitmap.ComputeCameraResponseCurve( LDRImages.ToArray(), shutterSpeeds.ToArray(), parms._inputBitsPerComponent, parms._curveSmoothnessConstraint, parms._quality, responseCurve );
 
+				// Filter
 				List< float >	responseCurve_filtered = new List< float >();
-				Bitmap.FilterCameraResponseCurve( responseCurve, responseCurve_filtered, Bitmap.FILTER_TYPE.CURVE_FITTING );
+//				Bitmap.FilterCameraResponseCurve( responseCurve, responseCurve_filtered, Bitmap.FILTER_TYPE.CURVE_FITTING );
+				Bitmap.FilterCameraResponseCurve( responseCurve, responseCurve_filtered, Bitmap.FILTER_TYPE.SMOOTHING_GAUSSIAN );
+
+				// Apply for reconstruction
+				HDRImage.LDR2HDR( LDRImages.ToArray(), shutterSpeeds.ToArray(), responseCurve_filtered, 1.0f );
 
 // 				using ( System.IO.FileStream S = new System.IO.FileInfo( "../../responseCurve3.float" ).Create() )
 // 					using ( System.IO.BinaryWriter W = new System.IO.BinaryWriter( S ) ) {
