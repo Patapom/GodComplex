@@ -453,6 +453,8 @@ namespace ImageUtilityLib {
 		/// </summary>
 		/// <param name="_XYZ"></param>
 		void	XYZ2RGB( const bfloat3* _XYZ, bfloat3* _RGB, U32 _length, U32 _stride ) const {
+			if ( _XYZ != _RGB && _stride != sizeof(bfloat3) )
+				memcpy_s( (void*) _RGB, _length*_stride, _XYZ, _length*_stride );	// Copy what must be alpha
 			m_internalConverter->XYZ2RGB( _XYZ, _RGB, _length, _stride );
 		}
 
@@ -461,6 +463,8 @@ namespace ImageUtilityLib {
 		/// </summary>
 		/// <param name="_RGB"></param>
 		void	RGB2XYZ( const bfloat3* _RGB, bfloat3* _XYZ, U32 _length, U32 _stride ) const {
+			if ( _RGB != _XYZ && _stride != sizeof(bfloat3) )
+				memcpy_s( (void*) _XYZ, _length*_stride, _RGB, _length*_stride );	// Copy what must be alpha
 			m_internalConverter->RGB2XYZ( _RGB, _XYZ, _length, _stride );
 		}
 

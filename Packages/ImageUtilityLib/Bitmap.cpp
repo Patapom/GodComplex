@@ -55,7 +55,7 @@ void	Bitmap::FromImageFile( const ImageFile& _sourceFile, ColorProfile* _profile
 	}
 }
 
-// And this method converts back the bitmap to any format
+// And this method converts back the bitmap to RGBA32F format
 void	Bitmap::ToImageFile( ImageFile& _targetFile, ColorProfile* _profileOverride, bool _premultiplyAlpha ) const {
 	ColorProfile*	colorProfile = _profileOverride != nullptr ? _profileOverride : &_targetFile.GetColorProfile();
  	if ( colorProfile == nullptr )
@@ -206,6 +206,8 @@ void	Bitmap::LDR2HDR( U32 _imagesCount, const ImageFile** _images, const float* 
 			temp.x = powf( 2.0f, temp.x );
 			temp.y = powf( 2.0f, temp.y );
 			temp.z = powf( 2.0f, temp.z );
+
+			temp.w = 1.0f;	// Force alpha to 1
 		}
 	}
 

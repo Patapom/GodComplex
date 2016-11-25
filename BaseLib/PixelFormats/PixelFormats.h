@@ -11,6 +11,8 @@
 
 namespace BaseLib {
 
+	#pragma pack(push,1)
+
 	// This is the interface to access pixel format structures needed for images and textures
 	class	IPixelAccessor {
 	public:
@@ -826,7 +828,7 @@ namespace BaseLib {
 		public:
 
 			bool	sRGB() const override { return false; }
-			U32		Size() const override { return 4; }
+			U32		Size() const override { return 8; }
 
 			void Write( void* _pixel, U32 _R, U32 _G, U32 _B, U32 _A ) const override {	PF_RG32F& P = *((PF_RG32F*) _pixel);
 				P.R = U32toF32(_R);
@@ -868,7 +870,7 @@ namespace BaseLib {
 		public:
 
 			bool	sRGB() const override { return false; }
-			U32		Size() const override { return 4; }
+			U32		Size() const override { return 12; }
 
 			void Write( void* _pixel, U32 _R, U32 _G, U32 _B, U32 _A ) const override {	PF_RGB32F& P = *((PF_RGB32F*) _pixel);
 				P.R = U32toF32(_R);
@@ -905,7 +907,7 @@ namespace BaseLib {
 	};
 
 	// RGBA32F format
-	struct	PF_RGBA32F : IPixelAccessor {
+	struct	PF_RGBA32F {
 		float	R, G, B, A;
 
 		#pragma region IPixelAccessor
@@ -913,7 +915,7 @@ namespace BaseLib {
 		public:
 
 			bool	sRGB() const override { return false; }
-			U32		Size() const override { return 4; }
+			U32		Size() const override { return 16; }
 
 			void Write( void* _pixel, U32 _R, U32 _G, U32 _B, U32 _A ) const override {	PF_RGBA32F& P = *((PF_RGBA32F*) _pixel);
 				P.R = U32toF32(_R);
@@ -1010,7 +1012,7 @@ namespace BaseLib {
 	
 	
 	// D24S8 format (24 bits depth + 8 bits stencil)
-	struct	PF_D24S8 : IDepthAccessor {
+	struct	PF_D24S8 {
 		U8	D[3];
 		U8	Stencil;
 
@@ -1046,5 +1048,7 @@ namespace BaseLib {
 	};
 
 	#pragma endregion
+
+	#pragma pack(pop)
 
 }	// namespace BaseLib
