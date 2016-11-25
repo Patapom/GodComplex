@@ -333,6 +333,108 @@ pixelValue = SATURATE( float(1+pixelIndex) / sequence.Count() * powf( 2.0f, -flo
 	//////////////////////////////////////////////////////////////////////////
 	// 2] Apply SVD 
 #if 0
+	U32	equationsCount  = totalPixelsCount		// Pixels
+						+ responseCurveSize		// Used to enforce the smoothness of the g curve
+						+ 1;					// Constraint that g(Zmid) = 0 (with Zmid = (Zmax+Zmin)/2)
+
+	U32	unknownsCount	= responseCurveSize		// g(Z) = curve solution
+						+ pixelsCountPerImage;	// log(E) for each pixel
+
+	MathSolvers::SVD			SVD( equationsCount, unknownsCount );
+	MathSolvers::VectorF		b( equationsCount );
+	MathSolvers::VectorF		x( unknownsCount );
+
+	U32*		pixelPtr = pixels;
+	for ( U32 componentIndex=0; componentIndex < componentsCount; componentIndex++ ) {	// Because R, G, B
+
+		// ===================================================================
+		// 2.1] Build the "A" matrix and target vector "b"
+		SVD.A.Clear();
+		b.Clear();
+
+		// 2.1.1) Fill the first part of the equations containing our data
+		MathSolvers::VectorF*	A1 = &SVD.A[0];	// A1 starts at A
+		for ( U32 imageIndex=0; imageIndex < _imagesCount; imageIndex++ ) {
+
+			// Compute image EV = log2(shutterSpeed)
+			// (e.g. taking 3 shots in bracket mode with shutter speeds [1/4s, 1s, 4s] will yield EV array [-2, 0, +2] respectively)
+			//
+			float	imageShutterSpeed = _imageShutterSpeeds[imageIndex];
+			float	imageEV = log2f( imageShutterSpeed );
+
+#ifdef DEBUG_LINEAR_SIGNAL
+imageEV = -float(imageIndex);
+#endif
+
+			for ( int pixelIndex=0; pixelIndex < pixelsCountPerImage; pixelIndex++ ) {
+
+				// Zij = pixel value for selected pixel i in image j
+				U32		Z = *pixelPtr++;
+
+				// Weight based on Z position within the range [Zmin,Zmax]
+				float	Wij = ComputeWeight( Z, responseCurveSize );
+
+				// First weight g(Zi)
+				A1[pixelIndex][Z] = Wij;
+
+				// Next, weight ln(Ei)
+				A1[pixelIndex][responseCurveSize + pixelIndex] = -Wij;
+
+				// And subtract weighted EV = log2(DeltaT)
+				b[pixelsCountPerImage*imageIndex + pixelIndex] = Wij * imageEV;
+			}
+		}
+
+		// 2.1.2) Fill the second part of the equations containing weighted smoothing coefficients
+		// This part will ensure the g() curve's smoothness
+		MathSolvers::VectorF*	A2 = &SVD.A[totalPixelsCount];	// A2 starts at the end of A's first part, A1
+
+		float	lambda = _curveSmoothnessConstraint;
+
+		A2[0][0] = lambda * ComputeWeight( 0, responseCurveSize );	// First element can't reach neighbors
+		U32		Z = 1;
+		for ( ; Z < responseCurveSize-1; Z++ ) {
+			float	Weight = lambda * ComputeWeight( Z, responseCurveSize );
+			A2[Z][Z-1] = Weight;
+			A2[Z][Z+0] = -2.0f * Weight;
+			A2[Z][Z+1] = Weight;
+		}
+		A2[Z][Z] = lambda * ComputeWeight( Z, responseCurveSize );	// Last element can't reach neighbors either
+
+		// 2.1.3) Fill the last equation used to ensure the Zmid value transforms into g(Zmid) = 0
+		MathSolvers::VectorF*	A3 = &SVD.A[totalPixelsCount+responseCurveSize];	// A3 starts at the end of A's second part and should actually be the last row of A
+
+		A3[0][responseCurveSize>>1] = 1;	// Make sure g(Zmid) maps to 0
+
+		// ===================================================================
+		// 2.2] Apply SVD
+		SVD.Decompose();
+
+		// ===================================================================
+		// 2.3] Solve for x
+		// We know that A was decomposed into U.w.V^T where U and V are orthonormal matrices and w a diagonal matrix with (theoretically) non null components
+		//	so A^-1 = V.1/w.U^T
+		// Since A.x = b it ensues that x = A^-1.b
+		//
+		SVD.Solve( b, x );
+
+		// ===================================================================
+		// 2.4] Recover curve values
+		// At this point, we recovered the g(Z) for Z€[Zmin,Zmax], followed by the log2(Ei) for the N selected pixels
+		// Let's just store the g(Z) into our target array
+		if ( _luminanceOnly ) {
+			for ( U32 Z=0; Z < responseCurveSize; Z++ ) {
+				_responseCurve[Z].Set( x[Z], x[Z], x[Z] );
+			}
+		} else {
+			for ( U32 Z=0; Z < responseCurveSize; Z++ ) {
+				((float*) &_responseCurve[Z].x)[componentIndex] = x[Z];
+			}
+		}
+	}
+
+#else
+#if 0
 	U32	equationsCount  = 3;
 	U32	unknownsCount	= 3;
 
@@ -738,18 +840,18 @@ delete[] Abackup;
 	delete[] Aterms;
 
 	delete[] pixels;
+#endif
 }
 
 #pragma region BFGS Minimization
 
-#include "..\MathSolvers\MathSolvers.h"
 using namespace MathSolvers;
 
 // This model attempts to fit a 3rd order polynomial to the curve
 class BFGSModel_polynomial : public BFGS::IModel {
 	List< float >		m_curve;
 	double				m_curveTentCenter;
-	Vector				m_parameters;
+	VectorD				m_parameters;
 public:
 	BFGSModel_polynomial() : m_parameters( 4 ) {}
 
@@ -760,15 +862,15 @@ public:
 		m_curveTentCenter = 0.5 * _curve.Count();
 	}
 
-	static double		EvalModel( double x, const MathSolvers::Vector& _parameters ) {
+	static double		EvalModel( double x, const VectorD& _parameters ) {
 //		return _parameters[0] + _parameters[1] * x + _parameters[2] * x*x + _parameters[3] * x*x*x;
 		return _parameters[0] + x * (_parameters[1] + x * (_parameters[2] + x * _parameters[3]));
 	}
 
 	// IModel Implementation
-	virtual Vector&			getParameters() override						{ return m_parameters; }
-	virtual void			setParameters( const Vector& value ) override	{ value.CopyTo( m_parameters ); }
-	virtual double			Eval( const Vector& _newParameters ) override {
+	virtual VectorD&		getParameters() override						{ return m_parameters; }
+	virtual void			setParameters( const VectorD& value ) override	{ value.CopyTo( m_parameters ); }
+	virtual double			Eval( const VectorD& _newParameters ) override {
 		double	sumSqDiff = 0.0;
 		for ( U32 i=0; i < m_curve.Count(); i++ ) {
 			double	curveValue = m_curve[i];
@@ -779,7 +881,7 @@ public:
 		}
 		return sumSqDiff / (m_curve.Count()*m_curve.Count());
 	}
-	virtual void		Constrain( Vector& _parameters ) override {}
+	virtual void		Constrain( VectorD& _parameters ) override {}
 
 private:
 	double TentFilter( double x ) {

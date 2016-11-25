@@ -3,6 +3,62 @@
 
 using namespace MathSolvers;
 
+void	SVD::Init( U32 _rows, U32 _columns ) {
+	A.Init( _rows, _columns );
+	U.Init( _rows, _columns );
+	w.Init( _columns );
+	V.Init( _columns, _columns );
+}
+void	SVD::Init( const MatrixF& _A ) {
+	_A.CopyTo( A );
+	U.Init( _A.rows, _A.columns );
+	w.Init( _A.columns );
+	V.Init( _A.columns, _A.columns );
+}
+
+//////////////////////////////////////////////////////////////////////////
+// We know that A was decomposed into U.w.V^T where U and V are orthonormal matrices and w a diagonal matrix with (theoretically) non null components
+//	so A^-1 = V.1/w.U^T
+// Since A.x = b it ensues that x = A^-1.b
+//
+void	SVD::Solve( const VectorF& b, VectorF& x ) {
+	if ( b.length != A.rows )
+		throw "Vector b length and matrix A's rows count mismatch!";
+
+	U32	unknownsCount = A.columns;
+	U32	equationsCount = A.rows;
+
+	VectorF	tempX( x.length );
+
+	// 1) Perform 1/w * U^T * b
+	for ( U32 rowIndex=0; rowIndex < unknownsCount; rowIndex++ ) {
+		float	r = 0.0f;
+		for ( U32 i=0; i < equationsCount; i++ ) {
+			const float	Uterm = U[i][rowIndex];
+			const float	bterm = b[i];
+			r += Uterm * bterm;
+		}
+
+		// Multiply by 1/w
+		const float	wterm = w[rowIndex];
+		float		recW = fabs( wterm ) > 1e-6f ? 1.0f / wterm : 0.0f;	// We shouldn't ever have 0 values because of the overdetermined system of equations but let's be careful anyway!
+		tempX[rowIndex] = r * recW;
+	}
+
+	// 2) Perform V * (1/w * U^T * b)
+	for ( U32 rowIndex=0; rowIndex < unknownsCount; rowIndex++ ) {
+		float	r = 0.0f;
+		for ( U32 i=0; i < unknownsCount; i++ ) {
+			const float	Vterm = V[rowIndex][i];
+			const float	tempXterm = tempX[i];
+			r += Vterm * tempXterm;
+		}
+		x[rowIndex] = r;	// This is our final results!
+	}
+}
+
+//////////////////////////////////////////////////////////////////////////
+// Performs the actual Singular Value Decomposition
 float pythag(float a, float b);
 template<class T>
 inline T SIGN(const T &a, const T &b) { return b >= 0 ? (a >= 0 ? a : -a) : (a >= 0 ? -a : a); }
@@ -15,16 +71,15 @@ static int iminarg1,iminarg2;
 #define IMIN(a,b) (iminarg1=(a),iminarg2=(b),(iminarg1) < (iminarg2) ?\
         (iminarg1) : (iminarg2))
 
-//char	debugString[4096];
+void	SVD::Decompose() {
+	// Copy A to U as SVD works in place
+	A.CopyTo( U );
 
-// Given a matrix a[1..m][1..n], this routine computes its singular value decomposition, A = U · W · V^T
-//	The matrix U replaces a on output.
-//	The diagonal matrix of singular values W is output as a vector w[1..n].
-//	The matrix V (not the transpose V^T) is output as v[1..n][1..n].
-//
-void svdcmp( int m, int n, float** a, float w[], float** v ) {
-	float*	residualValues = new float[n];
-	memset( residualValues, 0, n*sizeof(float) );
+	int		m = U.rows;
+	int		n = U.columns;
+
+	VectorF	residualValues( n );
+	residualValues.Clear();
 
 	float	f = 0.0f, g = 0.0f, h = 0.0f;
  	float	scale = 0.0f;
@@ -40,28 +95,28 @@ void svdcmp( int m, int n, float** a, float w[], float** v ) {
 		scale = 0.0f;
 		if ( i < m ) {
 			for ( int k=i; k < m; k++ )
-				scale += fabs( a[k][i] );
+				scale += fabs( U[k][i] );
 
 			if ( scale != 0.0f ) {
 				for ( int k=i; k < m; k++ ) {
-					a[k][i] /= scale;
-					s += a[k][i] * a[k][i];
+					U[k][i] /= scale;
+					s += U[k][i] * U[k][i];
 				}
-				f = a[i][i];
+				f = U[i][i];
 				g = -SIGN( sqrt(s), f );
 				h = f*g - s;
-				a[i][i] = f-g;
+				U[i][i] = f-g;
 				for ( int j=l; j < n; j++ ) {
 					s = 0.0f;
 					for ( int k = i; k < m; k++)
-						s += a[k][i] * a[k][j];
+						s += U[k][i] * U[k][j];
 
 					f = s/h;
 					for ( int k=i; k < m; k++ )
-						a[k][j] += f*a[k][i];
+						U[k][j] += f*U[k][i];
 				}
 				for ( int k=i; k < m; k++ )
-					a[k][i] *= scale;
+					U[k][i] *= scale;
 			}
 		}
 		w[i] = scale * g;
@@ -71,57 +126,57 @@ void svdcmp( int m, int n, float** a, float w[], float** v ) {
 		scale = 0.0f;
 		if ( i < m && l < n ) {
 			for ( int k=l; k < n; k++ )
-				scale += fabs( a[i][k] );
+				scale += fabs( U[i][k] );
 
 			if ( scale != 0.0f ) {
 				for ( int k=l; k < n; k++ ) {
-					a[i][k] /= scale;
-					s += a[i][k] * a[i][k];
+					U[i][k] /= scale;
+					s += U[i][k] * U[i][k];
 				}
-				f = a[i][l];
+				f = U[i][l];
 				g = -SIGN( sqrt(s), f );
 				h = f * g - s;
-				a[i][l] = f - g;
+				U[i][l] = f - g;
 				for ( int k=l; k < n; k++ )
-					residualValues[k] = a[i][k] / h;
+					residualValues[k] = U[i][k] / h;
 
 				for ( int j=l; j < m; j++ ) {
 					s = 0.0f;
 					for ( int k=l; k < n; k++ )
-						s += a[j][k] * a[i][k];
+						s += U[j][k] * U[i][k];
 
 					for ( int k=l; k < n; k++ )
-						a[j][k] += s * residualValues[k];
+						U[j][k] += s * residualValues[k];
 				}
 				for ( int k=l; k < n; k++ )
-					a[i][k] *= scale;
+					U[i][k] *= scale;
 			}
 		}
 		anorm = FMAX( anorm, (fabs(w[i])+fabs(residualValues[i])) );
 	}
 
 	// Accumulation of right-hand transformations
-	v[n-1][n-1] = 1.0f;
+	V[n-1][n-1] = 1.0f;
 	g = residualValues[n-1];
 
 	for ( int i=n-2; i >= 0; i-- ) {
 		int	l = i+1;
 		if ( g != 0.0f ) {
 			for ( int j=l; j < n; j++ )
-				v[j][i] = (a[i][j] / a[i][l]) / g;	// Double division to avoid possible underflow
+				V[j][i] = (U[i][j] / U[i][l]) / g;	// Double division to avoid possible underflow
 
 			for ( int j=l; j < n; j++) {
 				float	s = 0.0f;
 				for ( int k=l; k < n; k++ )
-					s += a[i][k] * v[k][j];
+					s += U[i][k] * V[k][j];
 				for ( int k=l; k < n; k++ )
-					v[k][j] += s * v[k][i];
+					V[k][j] += s * V[k][i];
 			}
 		}
 		for ( int j=l; j < n; j++ )
-			v[i][j] = v[j][i] = 0.0f;
+			V[i][j] = V[j][i] = 0.0f;
 
-		v[i][i] = 1.0f;
+		V[i][i] = 1.0f;
 		g = residualValues[i];
 	}
 
@@ -130,26 +185,24 @@ void svdcmp( int m, int n, float** a, float w[], float** v ) {
 		int	l = i+1;
 		g = w[i];
 		for ( int j=l; j < n; j++ )
-			a[i][j] = 0.0f;
+			U[i][j] = 0.0f;
 		if ( g != 0.0f ) {
 			g = 1.0f / g;
 			for ( int j=l; j < n; j++ ) {
 				float	s = 0.0f;
 				for ( int k=l; k < m; k++ )
-					s += a[k][i] * a[k][j];
+					s += U[k][i] * U[k][j];
 
-				f = (s / a[i][i]) * g;
+				f = (s / U[i][i]) * g;
 				for ( int k=i; k < m; k++ )
-					a[k][j] += f * a[k][i];
+					U[k][j] += f * U[k][i];
 			}
 		}
 		for ( int j=i; j < m; j++ )
-			a[j][i] *= g;
+			U[j][i] *= g;
 
-		++a[i][i];
+		++U[i][i];
 	}
-
-//return;
 
 	// Diagonalization of the bidiagonal form: Loop over singular values, and over allowed iterations
 	const int	MAX_ITERATIONS = 30;
@@ -190,10 +243,10 @@ void svdcmp( int m, int n, float** a, float w[], float** v ) {
 					c = g * h;
 					s = -f * h;
 					for ( int j=0; j < m; j++ ) {
-						float	y = a[j][nm];
-						float	z = a[j][i];
-						a[j][nm] = y*c + z*s;
-						a[j][i]  = z*c - y*s;
+						float	y = U[j][nm];
+						float	z = U[j][i];
+						U[j][nm] = y*c + z*s;
+						U[j][i]  = z*c - y*s;
 					}
 				}
 			}
@@ -204,7 +257,7 @@ void svdcmp( int m, int n, float** a, float w[], float** v ) {
 					// Singular value is made nonnegative
 					w[k] = -z;
 					for ( int j=0; j < n; j++ )
-						v[j][k] = -v[j][k];
+						V[j][k] = -V[j][k];
 				}
 				break;
 			}
@@ -243,10 +296,10 @@ void svdcmp( int m, int n, float** a, float w[], float** v ) {
 				h = y*s;
 				y *= c;
 				for ( int jj=0; jj < n; jj++ ) {
-					x = v[jj][j];
-					z = v[jj][i];
-					v[jj][j] = x*c + z*s;
-					v[jj][i] = z*c - x*s;
+					x = V[jj][j];
+					z = V[jj][i];
+					V[jj][j] = x*c + z*s;
+					V[jj][i] = z*c - x*s;
 				}
 				z = pythag( f, h );
 				w[j] = z;
@@ -258,10 +311,10 @@ void svdcmp( int m, int n, float** a, float w[], float** v ) {
 				f = c*g + s*y;
 				x = c*y - s*g;
 				for ( int jj=0; jj < m; jj++ ) {
-					y = a[jj][j];
-					z = a[jj][i];
-					a[jj][j] = y*c + z*s;
-					a[jj][i] = z*c - y*s;
+					y = U[jj][j];
+					z = U[jj][i];
+					U[jj][j] = y*c + z*s;
+					U[jj][i] = z*c - y*s;
 				}
 
 // sprintf( debugString, "j = %d -> z = %f - f = %f - x = %f\r\n", j, z, f, x );
@@ -272,7 +325,5 @@ void svdcmp( int m, int n, float** a, float w[], float** v ) {
 			w[k] = x;
 		}	// for ( ; iterationsCount <= 30; iterationsCount++ ) 
 	}	// for ( int k=n-1; k >= 0; k-- ) 
-
-	delete[] residualValues;
 }
 

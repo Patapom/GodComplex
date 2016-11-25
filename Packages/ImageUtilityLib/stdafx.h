@@ -13,4 +13,5 @@
 
 #include <string>
 #include "..\..\BaseLib\Types.h"
+#include "..\MathSolvers\MathSolvers.h"
 #include "FreeImage.h"

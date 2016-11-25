@@ -14,37 +14,34 @@ namespace MathSolvers {
 		class IModel abstract {
 		public:
 			// Gets or sets the free parameters used by the model
-			virtual Vector&		getParameters() abstract;
-			virtual void		setParameters( const Vector& value ) abstract;
+			virtual VectorD&	getParameters() abstract;
+			virtual void		setParameters( const VectorD& value ) abstract;
 
 			// Evaluates the model given a set of parameters
 			// <returns>The difference between the model's estimate and the measured data</returns>
-			virtual double		Eval( const Vector& _newParameters ) abstract;
+			virtual double		Eval( const VectorD& _newParameters ) abstract;
 
 			// Applies constraints to the array of parameters
 			// <param name="_Parameters"></param>
-			virtual void		Constrain( Vector& _parameters ) abstract;
+			virtual void		Constrain( VectorD& _parameters ) abstract;
 		};
-
-		typedef float	(*ProgressCallback_t)( float _progress );
-
 
 	private:	// FIELDS
 
-		int			m_coefficientsCount;		// Cached amount of coefficients used by the model
-		IModel*		m_model;					// Pointer to the model to minimize
+		int					m_coefficientsCount;		// Cached amount of coefficients used by the model
+		IModel*				m_model;					// Pointer to the model to minimize
 
-		int			m_maxIterations;			// User-specified maximum amount of iterations of the algorithm
-		double		m_tolX;						// User-specified tolerance for target minimum
- 		double		m_tolGradient;				// User-specified tolerance for gradient progression
+		int					m_maxIterations;			// User-specified maximum amount of iterations of the algorithm
+		double				m_tolX;						// User-specified tolerance for target minimum
+ 		double				m_tolGradient;				// User-specified tolerance for gradient progression
 
-		Vector		m_previousX;				// Previous set of parameters
-		Vector		m_currentX;					// Current set of parameters
-		Vector		m_optimum;					// Current optimum set of parameters
- 		double		m_functionMinimum;			// Current function minimum
-		int			m_iterationsCount;			// Current amount of iterations performed by the algorithm
-		int			m_evalCallsCount;			// (STATS) Amount of model evaluations called to reach minimum
-		int			m_evalGradientCallsCount;	// (STATS) Amount of gradient evaluations called to reach minimum
+		VectorD	m_previousX;				// Previous set of parameters
+		VectorD	m_currentX;					// Current set of parameters
+		VectorD	m_optimum;					// Current optimum set of parameters
+ 		double				m_functionMinimum;			// Current function minimum
+		int					m_iterationsCount;			// Current amount of iterations performed by the algorithm
+		int					m_evalCallsCount;			// (STATS) Amount of model evaluations called to reach minimum
+		int					m_evalGradientCallsCount;	// (STATS) Amount of gradient evaluations called to reach minimum
 
 
 	public:	// PROPERTIES
@@ -75,22 +72,15 @@ namespace MathSolvers {
 		// <param name="_model"></param>
 		void	Minimize( IModel& _model );
 
+	private:
+
 		// ===========================================
 		// Compute the gradient using finite differences
-		void	EvalGradient( Vector& _params, Vector& _gradient );
+		void	EvalGradient( VectorD& _params, VectorD& _gradient );
 
 		//////////////////////////////////////////////////////////////////////////
 		//////////////////////////////////////////////////////////////////////////
-		double	LinearSearch( double _FunctionMinimum, Vector& _gradient, Vector& x, Vector& _direction, Vector& _xout, Vector& _tempDirection );
-
-// 	private:
-// 		// ===========================================
-// 		// Helpers
-// 		double*		InitVector( int _length );
-// 		double**	InitMatrix( int _rows, int _columns );
-// 		void		CopyVector( const double* _source, double* _target, int _length );
-// 		void		DeleteVector( double*& _vector );
-// 		void		DeleteMatrix( double**& _matrix );
+		double	LinearSearch( double _FunctionMinimum, VectorD& _gradient, VectorD& x, VectorD& _direction, VectorD& _xout, VectorD& _tempDirection );
 	};
 
 }	// namespace MathSolvers

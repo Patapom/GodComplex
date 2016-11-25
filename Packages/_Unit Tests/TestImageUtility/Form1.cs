@@ -545,23 +545,6 @@ if ( Math.Abs( T - 6500.0f ) < 10.0f )
 // 							W.Write( responseCurve[i] );
 // 					}
 
-//panel1.Bitmap = Bitmap.DEBUG.AsBitmap;
-
-// 				// Render the response curve as a bitmap
-// 				ImageFile	tempCurveBitmap = new ImageFile( 256, 32, ImageFile.PIXEL_FORMAT.RGB8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
-// 				float4		tempValue = new float4();
-// 				for ( int i=0; i < 256; i++ ) {
-// 					float	g = responseCurve[i];
-// 					float	v = (float) Math.Pow( 2.0, g );
-// 
-// 					v *= 0.15f;
-// 
-// 					tempValue.Set( v, v, v, 1.0f );
-// 					for ( uint Y=0; Y < 32; Y++ )
-// 						tempCurveBitmap[(uint)i,Y] = tempValue;
-// 				}
-// 				panel1.Bitmap = tempCurveBitmap.AsBitmap;
-
 				//////////////////////////////////////////////////////////////////////////////////////////////
 				// Render the response curve as a graph
  				ImageFile	tempCurveBitmap = new ImageFile( 1024, 768, ImageFile.PIXEL_FORMAT.RGB8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
@@ -630,15 +613,15 @@ if ( Math.Abs( T - 6500.0f ) < 10.0f )
  				panel1.Bitmap = tempCurveBitmap.AsBitmap;
 
 
-				//////////////////////////////////////////////////////////////////////////////////////////////
-				// Recompose the HDR image
-				HDRImage.LDR2HDR( LDRImages.ToArray(), shutterSpeeds.ToArray(), responseCurve_filtered, 1.0f );
-
-				// Display as a tone-mapped bitmap
-				ImageFile	tempHDR = new ImageFile();
-				HDRImage.ToImageFile( tempHDR, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
-
-				tempHDR.Save( new System.IO.FileInfo( @"..\..\Images\Out\LDR2HDR\FromJPG\Result.exr" ), ImageFile.FILE_FORMAT.EXR, ImageFile.SAVE_FLAGS.SF_EXR_DEFAULT );
+// 				//////////////////////////////////////////////////////////////////////////////////////////////
+// 				// Recompose the HDR image
+// 				HDRImage.LDR2HDR( LDRImages.ToArray(), shutterSpeeds.ToArray(), responseCurve_filtered, 1.0f );
+// 
+// 				// Display as a tone-mapped bitmap
+// 				ImageFile	tempHDR = new ImageFile();
+// 				HDRImage.ToImageFile( tempHDR, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
+// 
+// 				tempHDR.Save( new System.IO.FileInfo( @"..\..\Images\Out\LDR2HDR\FromJPG\Result.exr" ), ImageFile.FILE_FORMAT.EXR, ImageFile.SAVE_FLAGS.SF_EXR_DEFAULT );
 
 // 				ImageFile	tempToneMappedHDR = new ImageFile();
 // 				tempToneMappedHDR.ToneMapFrom( tempHDR,( float3 _HDRColor, ref float3 _LDRColor ) => {

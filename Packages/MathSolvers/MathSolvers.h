@@ -4,3 +4,4 @@
 
 #include "Matrix.h"
 #include "MinimizeBFGS.h"
+#include "SVD.h"

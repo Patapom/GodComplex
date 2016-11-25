@@ -28,17 +28,17 @@ void	BFGS::Minimize( IModel& _model ) {
 	// Start from model's initial parameters
 	m_model->getParameters().CopyTo( m_previousX );
 
-	Vector	direction( m_coefficientsCount ); // x_k+1 = x_k + alpha_k*direction_k
-	Vector	tempDirection( m_coefficientsCount ); // Used temporarily by LinearSearch()
+	VectorD	direction( m_coefficientsCount ); // x_k+1 = x_k + alpha_k*direction_k
+	VectorD	tempDirection( m_coefficientsCount ); // Used temporarily by LinearSearch()
 
-	Vector	gradient( m_coefficientsCount );
-	Vector	previousGradient( m_coefficientsCount );
+	VectorD	gradient( m_coefficientsCount );
+	VectorD	previousGradient( m_coefficientsCount );
 
-	Matrix	hessian( m_coefficientsCount, m_coefficientsCount ); // inverse Hessian approximation
+	MatrixD	hessian( m_coefficientsCount, m_coefficientsCount ); // inverse Hessian approximation
 
-	Vector	pi( m_coefficientsCount );  // p_i = x_i+1 - x_i
-	Vector	qi( m_coefficientsCount );  // q_i = Gradient_i+1 - Gradient_i
-	Vector	Dqi( m_coefficientsCount ); // Dq_i = |D_i|.q_i:
+	VectorD	pi( m_coefficientsCount );  // p_i = x_i+1 - x_i
+	VectorD	qi( m_coefficientsCount );  // q_i = Gradient_i+1 - Gradient_i
+	VectorD	Dqi( m_coefficientsCount ); // Dq_i = |D_i|.q_i:
 
 	m_evalCallsCount = m_evalGradientCallsCount = 0; // count of function and gradient evaluations
 
@@ -172,7 +172,7 @@ void	BFGS::Minimize( IModel& _model ) {
 
 // ===========================================
 // Compute the gradient using finite differences
-void	BFGS::EvalGradient( Vector& _params, Vector& _gradient ) {
+void	BFGS::EvalGradient( VectorD& _params, VectorD& _gradient ) {
 	double	EPS = 1e-6;
 	for ( int i=0; i < m_coefficientsCount; i++ ) {
 		double	oldCoeff = _params[i];
@@ -203,7 +203,7 @@ void	BFGS::EvalGradient( Vector& _params, Vector& _gradient ) {
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
-double	BFGS::LinearSearch( double _functionMinimum, Vector& _gradient, Vector& x, Vector& _direction, Vector& _xout, Vector& _tempDirection ) {
+double	BFGS::LinearSearch( double _functionMinimum, VectorD& _gradient, VectorD& x, VectorD& _direction, VectorD& _xout, VectorD& _tempDirection ) {
 	double	ZERO = 1.0E-10;
 	double	SIGMA = 1.0E-4;
 	double	BETA = 0.5;
