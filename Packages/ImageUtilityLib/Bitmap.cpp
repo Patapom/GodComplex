@@ -332,7 +332,9 @@ pixelValue = SATURATE( float(1+pixelIndex) / sequence.Count() * powf( 2.0f, -flo
 
 	//////////////////////////////////////////////////////////////////////////
 	// 2] Apply SVD 
-#if 0
+	const float	lambda = _curveSmoothnessConstraint;
+
+#if 1
 	U32	equationsCount  = totalPixelsCount		// Pixels
 						+ responseCurveSize		// Used to enforce the smoothness of the g curve
 						+ 1;					// Constraint that g(Zmid) = 0 (with Zmid = (Zmax+Zmin)/2)
@@ -366,7 +368,7 @@ pixelValue = SATURATE( float(1+pixelIndex) / sequence.Count() * powf( 2.0f, -flo
 imageEV = -float(imageIndex);
 #endif
 
-			for ( int pixelIndex=0; pixelIndex < pixelsCountPerImage; pixelIndex++ ) {
+			for ( int pixelIndex=0; pixelIndex < pixelsCountPerImage; pixelIndex++, A1++ ) {
 
 				// Zij = pixel value for selected pixel i in image j
 				U32		Z = *pixelPtr++;
@@ -375,10 +377,10 @@ imageEV = -float(imageIndex);
 				float	Wij = ComputeWeight( Z, responseCurveSize );
 
 				// First weight g(Zi)
-				A1[pixelIndex][Z] = Wij;
+				(*A1)[Z] = Wij;
 
 				// Next, weight ln(Ei)
-				A1[pixelIndex][responseCurveSize + pixelIndex] = -Wij;
+				(*A1)[responseCurveSize + pixelIndex] = -Wij;
 
 				// And subtract weighted EV = log2(DeltaT)
 				b[pixelsCountPerImage*imageIndex + pixelIndex] = Wij * imageEV;
@@ -388,8 +390,6 @@ imageEV = -float(imageIndex);
 		// 2.1.2) Fill the second part of the equations containing weighted smoothing coefficients
 		// This part will ensure the g() curve's smoothness
 		MathSolvers::VectorF*	A2 = &SVD.A[totalPixelsCount];	// A2 starts at the end of A's first part, A1
-
-		float	lambda = _curveSmoothnessConstraint;
 
 		A2[0][0] = lambda * ComputeWeight( 0, responseCurveSize );	// First element can't reach neighbors
 		U32		Z = 1;
@@ -434,6 +434,7 @@ imageEV = -float(imageIndex);
 	}
 
 #else
+
 #if 0
 	U32	equationsCount  = 3;
 	U32	unknownsCount	= 3;
@@ -481,13 +482,28 @@ A[2][2] = 0;
 	float*	Vterms = new float[unknownsCount*unknownsCount];	// N*N matrix
 	float**	V = new float*[unknownsCount];
 	for ( U32 rowIndex=0; rowIndex < unknownsCount; rowIndex++ ) V[rowIndex] = &Vterms[unknownsCount*rowIndex];		// Initialize each row pointer
+// 
+// 	float*	w = new float[unknownsCount];
+// 
+ 	float*	b = new float[equationsCount];
+// 
+// 	float*	x = new float[unknownsCount];	// Our result vector
+// 	float*	tempX = new float[unknownsCount];
 
-	float*	w = new float[unknownsCount];
+	MathSolvers::MatrixF	A_( equationsCount, unknownsCount );
+	MathSolvers::MatrixF	V_( unknownsCount, unknownsCount );
+	MathSolvers::VectorF	w( unknownsCount );
+	MathSolvers::VectorF	b_( equationsCount );
+	MathSolvers::VectorF	tempX( unknownsCount );
+	MathSolvers::VectorF	x( unknownsCount );
 
-	float*	b = new float[equationsCount];
 
-	float*	x = new float[unknownsCount];	// Our result vector
-	float*	tempX = new float[unknownsCount];
+	float**	Arows = new float*[equationsCount];
+	for ( U32 rowIndex=0; rowIndex < equationsCount; rowIndex++ ) Arows[rowIndex] = A_[rowIndex].m;	// Initialize each row pointer
+	float**	Vrows = new float*[unknownsCount];
+	for ( U32 rowIndex=0; rowIndex < unknownsCount; rowIndex++ ) Vrows[rowIndex] = V_[rowIndex].m;	// Initialize each row pointer
+
+
 
 	U32*	pixelPtr = pixels;
 	for ( U32 componentIndex=0; componentIndex < componentsCount; componentIndex++ ) {	// Because R, G, B
@@ -496,9 +512,12 @@ A[2][2] = 0;
 		// 2.1] Build the "A" matrix and target vector "b"
 		memset( Aterms, 0, equationsCount*unknownsCount*sizeof(float) );
 		memset( b, 0, equationsCount*sizeof(float) );
+		A_.Clear();
+		b_.Clear();
 
 		// 2.1.1) Fill the first part of the equations containing our data
-		float**	A1 = A;	// A1 starts at A
+		float**		A1 = &A[0];	// A1 starts at A
+		MathSolvers::VectorF*	A1_ = &A_[0];	// A1 starts at A
 		for ( U32 imageIndex=0; imageIndex < _imagesCount; imageIndex++ ) {
 
 			// Compute image EV = log2(shutterSpeed)
@@ -511,7 +530,7 @@ A[2][2] = 0;
 imageEV = -float(imageIndex);
 #endif
 
-			for ( int pixelIndex=0; pixelIndex < pixelsCountPerImage; pixelIndex++ ) {
+			for ( int pixelIndex=0; pixelIndex < pixelsCountPerImage; pixelIndex++, A1_++ ) {
 				float*	columns = *A1++;
 
 				// Zij = pixel value for selected pixel i in image j
@@ -522,35 +541,47 @@ imageEV = -float(imageIndex);
 
 				// First weight g(Zi)
 				columns[Z] = Wij;
+				(*A1_)[Z] = Wij;
 
 				// Next, weight ln(Ei)
-				columns[responseCurveSize + pixelIndex] = -Wij;
+ 				columns[responseCurveSize + pixelIndex] = -Wij;
+				(*A1_)[responseCurveSize + pixelIndex] = -Wij;
 
 				// And subtract weighted EV = log2(DeltaT)
 				b[pixelsCountPerImage*imageIndex + pixelIndex] = Wij * imageEV;
+				b_[pixelsCountPerImage*imageIndex + pixelIndex] = Wij * imageEV;
 			}
 		}
 
 		// 2.1.2) Fill the second part of the equations containing weighted smoothing coefficients
 		// This part will ensure the g() curve's smoothness
 		float**	A2 = &A[totalPixelsCount];	// A2 starts at the end of A's first part, A1
-
-		float	lambda = _curveSmoothnessConstraint;
+		MathSolvers::VectorF*	A2_ = &A_[totalPixelsCount];	// A2 starts at the end of A's first part, A1
 
 		A2[0][0] = lambda * ComputeWeight( 0, responseCurveSize );	// First element can't reach neighbors
+		A2_[0][0] = lambda * ComputeWeight( 0, responseCurveSize );	// First element can't reach neighbors
 		U32		Z = 1;
 		for ( ; Z < responseCurveSize-1; Z++ ) {
 			float	Weight = lambda * ComputeWeight( Z, responseCurveSize );
 			A2[Z][Z-1] = Weight;
 			A2[Z][Z+0] = -2.0f * Weight;
 			A2[Z][Z+1] = Weight;
+			A2_[Z][Z-1] = Weight;
+			A2_[Z][Z+0] = -2.0f * Weight;
+			A2_[Z][Z+1] = Weight;
 		}
 		A2[Z][Z] = lambda * ComputeWeight( Z, responseCurveSize );	// Last element can't reach neighbors either
+		A2_[Z][Z] = lambda * ComputeWeight( Z, responseCurveSize );	// Last element can't reach neighbors either
 
 		// 2.1.3) Fill the last equation used to ensure the Zmid value transforms into g(Zmid) = 0
 		float**	A3 = &A[totalPixelsCount+responseCurveSize];	// A3 starts at the end of A's second part and should actually be the last row of A
+		MathSolvers::VectorF*	A3_ = &A_[totalPixelsCount+responseCurveSize];	// A3 starts at the end of A's second part and should actually be the last row of A
 
 		A3[0][responseCurveSize>>1] = 1;	// Make sure g(Zmid) maps to 0
+		A3_[0][responseCurveSize>>1] = 1;	// Make sure g(Zmid) maps to 0
+
+		ASSERT( memcmp( Aterms, A_.m_raw, equationsCount*unknownsCount*sizeof(float) ) == 0, "RHA!" );
+		ASSERT( memcmp( b, b_.m, equationsCount*sizeof(float) ) == 0, "RHA!" );
 #endif
 
 		// ===================================================================
@@ -570,7 +601,7 @@ for ( U32 i=0; i < equationsCount; i++ ) {
 
 #endif
 
-		svdcmp( equationsCount, unknownsCount, A, w, V );
+		svdcmp( equationsCount, unknownsCount, Arows, w.m, Vrows );
 
 #if 0	// Check against the original routine
 float*	resultA = new float[equationsCount*unknownsCount];
@@ -830,17 +861,17 @@ delete[] Abackup;
 		}
 	}
 
-	delete[] tempX;
-	delete[] x;
-	delete[] b;
-	delete[] w;
-	delete[] V;
-	delete[] Vterms;
-	delete[] A;
-	delete[] Aterms;
+// 	delete[] tempX;
+// 	delete[] x;
+// 	delete[] b;
+// 	delete[] w;
+// 	delete[] V;
+// 	delete[] Vterms;
+// 	delete[] A;
+// 	delete[] Aterms;
+#endif
 
 	delete[] pixels;
-#endif
 }
 
 #pragma region BFGS Minimization
