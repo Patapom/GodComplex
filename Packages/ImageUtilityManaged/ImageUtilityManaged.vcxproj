@@ -134,7 +134,7 @@
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>ImageUtilityLib.libFreeImageLib.lib</AdditionalDependencies>
+      <AdditionalDependencies>ImageUtilityLib.lib;FreeImageLib.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

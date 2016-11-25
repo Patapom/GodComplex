@@ -5,6 +5,7 @@
 	#define ASSERT( condition, text ) assert( (condition) || !text )
 	#define ASSERT_RETURN_FALSE( condition, text ) assert( (condition) || !text ) return false
 #else
+	#include <crtdefs.h>
 	#define ASSERT( condition, text )	(condition)
 	#define ASSERT_RETURN_FALSE( condition, text ) return false
 #endif
