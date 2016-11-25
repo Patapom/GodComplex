@@ -10,6 +10,9 @@
     <ClInclude Include="Matrix.h">
       <Filter>Structures</Filter>
     </ClInclude>
+    <ClInclude Include="SVD.h">
+      <Filter>Solvers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp" />
@@ -19,6 +22,9 @@
     <ClCompile Include="Matrix.cpp">
       <Filter>Structures</Filter>
     </ClCompile>
+    <ClCompile Include="SVD.cpp">
+      <Filter>Solvers</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Minimization">
@@ -26,6 +32,9 @@
     </Filter>
     <Filter Include="Structures">
       <UniqueIdentifier>{e602731f-7839-45ff-8fd1-5189af916c3b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Solvers">
+      <UniqueIdentifier>{54d3074d-ddf4-43b1-b858-76a99a3cd277}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>
