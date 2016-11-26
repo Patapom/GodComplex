@@ -5,15 +5,14 @@
 
 using namespace System;
 
-namespace RendererManaged {
+namespace Renderer {
 
 	ref class Shader;
 	ref class Texture2D;
 	ref class Texture3D;
 
 	// Texture view interface
-	public interface class	IView
-	{
+	public interface class	IView {
 	public:
 		virtual property int							Width				{ int get() = 0; }
 		virtual property int							Height				{ int get() = 0; }
@@ -24,40 +23,40 @@ namespace RendererManaged {
 		virtual property ::ID3D11DepthStencilView*		DSV					{ ::ID3D11DepthStencilView*		get() = 0; }
 	};
 
-	// Main device
-	public ref class Device
-	{
+	// Main device class from which everything else is derived
+	public ref class Device {
 	internal:
 
 		::Device*		m_pDevice;
- 		Texture2D^		m_DefaultTarget;
- 		Texture2D^		m_DefaultDepthStencil;
+ 		Texture2D^		m_defaultTarget;
+ 		Texture2D^		m_defaultDepthStencil;
 
 		// We offer the ever useful fullscreen quad
-		::Primitive*	m_pQuad;
+		::Primitive*	m_pScreenQuad;
+
+		// We keep the list of the last 8 assigned RTVs
+		::ID3D11RenderTargetView**	m_ppRenderTargetViews;
 
 	public:
 
-		property Texture2D^		DefaultTarget
-		{
-			Texture2D^	get() { return m_DefaultTarget; }
+		property Texture2D^		DefaultTarget {
+			Texture2D^	get() { return m_defaultTarget; }
 		}
 
-		property Texture2D^		DefaultDepthStencil
-		{
-			Texture2D^	get() { return m_DefaultDepthStencil; }
+		property Texture2D^		DefaultDepthStencil {
+			Texture2D^	get() { return m_defaultDepthStencil; }
 		}
 
-		Device()
-		{
+		Device() {
 			m_pDevice = new ::Device();
- 			m_DefaultTarget = nullptr;
- 			m_DefaultDepthStencil = nullptr;
+ 			m_defaultTarget = nullptr;
+ 			m_defaultDepthStencil = nullptr;
+			m_ppRenderTargetViews = new ::ID3D11RenderTargetView*[8];
+			memset( m_ppRenderTargetViews, 0, 8*sizeof(::ID3D11RenderTargetView*) );
 		}
-		~Device()
-		{
+		~Device() {
 //			delete m_pQuad;
-
+			SAFE_DELETE_ARRAY( m_ppRenderTargetViews );
 			m_pDevice->Exit();
 			delete m_pDevice;
 			m_pDevice = NULL;
@@ -68,9 +67,9 @@ namespace RendererManaged {
 			m_pDevice->Exit();
 		}
 
-		void	Clear( SharpMath::float4 _ClearColor );
-		void	Clear( Texture2D^ _RenderTarget, SharpMath::float4 _ClearColor );
-		void	Clear( Texture3D^ _RenderTarget, SharpMath::float4 _ClearColor );
+		void	Clear( SharpMath::float4 _clearColor );
+		void	Clear( Texture2D^ _RenderTarget, SharpMath::float4 _clearColor );
+		void	Clear( Texture3D^ _RenderTarget, SharpMath::float4 _clearColor );
 		void	ClearDepthStencil( Texture2D^ _RenderTarget, float _Z, byte _Stencil, bool _ClearDepth, bool _ClearStencil );
 
 		void	SetRenderStates( RASTERIZER_STATE _RS, DEPTHSTENCIL_STATE _DS, BLEND_STATE _BS );
@@ -82,9 +81,8 @@ namespace RendererManaged {
 
 		void	RenderFullscreenQuad( Shader^ _Shader );
 
-		void	Present( bool _FlushCommands )
-		{
-			if ( _FlushCommands )
+		void	Present( bool _flushCommands ) {
+			if ( _flushCommands )
 				m_pDevice->DXContext().Flush();
 
 			m_pDevice->DXSwapChain().Present( 0, 0 );

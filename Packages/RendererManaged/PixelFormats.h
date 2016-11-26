@@ -5,10 +5,11 @@
 
 using namespace System;
 
-namespace RendererManaged {
+namespace Renderer {
 
-	public enum class	PIXEL_FORMAT
-	{
+	// Wraps the most useful DXGI formats used for textures and render targets
+	//
+	public enum class	PIXEL_FORMAT {
 		UNKNOWN,
 		R8_UNORM,
 		RGBA8_UNORM,
@@ -56,17 +57,20 @@ namespace RendererManaged {
 		return pDescriptor;
 	}
 
+	// Wraps the most useful DXGI formats used for depth stencil buffers
+	//
 	public enum class	DEPTH_STENCIL_FORMAT {
+		D16,
 		D32,
 		D24S8,
 	};
 
-	static ::IDepthStencilFormatDescriptor*	GetDescriptor( DEPTH_STENCIL_FORMAT _Format )
+	static ::IDepthStencilFormatDescriptor*	GetDescriptor( DEPTH_STENCIL_FORMAT _format )
 	{
  		IDepthStencilFormatDescriptor*	pDescriptor = NULL;
- 		switch ( _Format ) {
-			case DEPTH_STENCIL_FORMAT::D32:				pDescriptor = &DepthStencilFormatD32F::DESCRIPTOR; break;
-			case DEPTH_STENCIL_FORMAT::D24S8:			pDescriptor = &DepthStencilFormatD24S8::DESCRIPTOR; break;
+ 		switch ( _format ) {
+			case DEPTH_STENCIL_FORMAT::D32:		pDescriptor = &DepthStencilFormatD32F::DESCRIPTOR; break;
+			case DEPTH_STENCIL_FORMAT::D24S8:	pDescriptor = &DepthStencilFormatD24S8::DESCRIPTOR; break;
 
 			default:	throw gcnew Exception( "Unsupported depth stencil format!" );
  		}

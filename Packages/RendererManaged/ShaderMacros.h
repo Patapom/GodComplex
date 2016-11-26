@@ -6,16 +6,17 @@
 
 using namespace System;
 
-namespace RendererManaged {
+namespace Renderer {
 
-	public ref class	ShaderMacro
-	{
+	// Wraps a simple [key,value] pair used to specify shader compilation macros
+	//
+	public ref class	ShaderMacro {
 	public:
-		String^		Name;
-		String^		Value;
+		String^		name;
+		String^		value;
 
 	public:
-		ShaderMacro() : Name( nullptr ), Value( nullptr ) {}
-		ShaderMacro( String^ _Name, String^ _Value ) : Name( _Name ), Value( _Value ) {}
+		ShaderMacro() : name( nullptr ), value( nullptr ) {}
+		ShaderMacro( String^ _name, String^ _value ) : name( _name ), value( _value ) {}
 	};
 }

@@ -9,7 +9,7 @@
 
 namespace DirectXTexManaged {
 
-	void TextureCreator::CreateDDS( String^ _FileName, RendererManaged::Texture2D^ _Texture ) {
+	void TextureCreator::CreateDDS( String^ _FileName, Renderer::Texture2D^ _Texture ) {
 
 		::Texture2D&	Texture = *((::Texture2D*) _Texture->GetWrappedtexture());
 

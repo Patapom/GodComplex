@@ -6,7 +6,7 @@
 using namespace System;
 using namespace System::IO;
 
-namespace RendererManaged {
+namespace Renderer {
 
 	public ref class ByteBuffer {
 	internal:
@@ -16,12 +16,10 @@ namespace RendererManaged {
 
 	public:
 
-		ByteBuffer( int _ContentSize )
-		{
+		ByteBuffer( int _ContentSize ) {
 			m_Buffer = gcnew array<System::Byte>( _ContentSize );
 		}
-		~ByteBuffer()
-		{
+		~ByteBuffer() {
 			delete m_Stream;
 			delete m_Buffer;
 		}

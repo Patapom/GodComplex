@@ -17,7 +17,7 @@ namespace DirectXTexManaged {
 	public:
 
 		// Creates a DDS file from a texture
-		static void CreateDDS( String^ _FileName, RendererManaged::Texture2D^ _Texture );
+		static void CreateDDS( String^ _FileName, Renderer::Texture2D^ _Texture );
 
 // 		static void	CreateNormalMapBC5File( String^ _FileName, cli::array< cli::array<RendererManaged::float4^,2>^>^ _Mips ) {
 // 			int	MipsCount = _Mips->Length;
@@ -75,7 +75,7 @@ namespace DirectXTexManaged {
 // 			delete DXT;
 // 		}
 
-		static void	CreateCubeMapFile( String^ _FileName, int _CubeSize, cli::array< cli::array< cli::array<RendererManaged::float4^,2>^>^ >^ _CubeFaces ) {
+		static void	CreateCubeMapFile( String^ _FileName, int _CubeSize, cli::array< cli::array< cli::array<Renderer::float4^,2>^>^ >^ _CubeFaces ) {
 			int	MipsCount = _CubeFaces->Length;
 
 			// Create the image and fill it with our data
@@ -86,10 +86,10 @@ namespace DirectXTexManaged {
 			for ( int MipIndex=0; MipIndex < _CubeFaces->Length; MipIndex++ )
 			{
 				int	CubeSize = _CubeSize >> MipIndex;
-				cli::array< cli::array<RendererManaged::float4^,2>^>^	CubeFaces = _CubeFaces[MipIndex];
+				cli::array< cli::array<Renderer::float4^,2>^>^	CubeFaces = _CubeFaces[MipIndex];
 				for ( int FaceIndex=0; FaceIndex < 6; FaceIndex++ )
 				{
-					cli::array<RendererManaged::float4^,2>^	CubeFace = CubeFaces[FaceIndex];
+					cli::array<Renderer::float4^,2>^	CubeFace = CubeFaces[FaceIndex];
 					const DirectX::Image*	pImage = DXT->GetImage( MipIndex, FaceIndex, 0 );
 
 // 					float	R, G, B;
@@ -138,7 +138,7 @@ namespace DirectXTexManaged {
 			delete DXT;
 		}
 
-		static void	CreateRGBA16FFile( String^ _FileName, cli::array<RendererManaged::float4,2>^ _Image ) {
+		static void	CreateRGBA16FFile( String^ _FileName, cli::array<Renderer::float4,2>^ _Image ) {
 			int	Width = _Image->GetLength( 0 );
 			int	Height = _Image->GetLength( 1 );
 
@@ -183,7 +183,7 @@ namespace DirectXTexManaged {
 			delete DXT;
 		}
 
-		static RendererManaged::Texture2D^	CreateTexture2DFromDDSFile( RendererManaged::Device^ _Device, String^ _FileName ) {
+		static Renderer::Texture2D^	CreateTexture2DFromDDSFile( Renderer::Device^ _Device, String^ _FileName ) {
 
 			// Create the image and fill it with our data
 			DirectX::ScratchImage*	DXT = new DirectX::ScratchImage();
@@ -202,36 +202,36 @@ namespace DirectXTexManaged {
 			// Convert into texture
 
 			// Retrieve supported format
-			RendererManaged::PIXEL_FORMAT	format = RendererManaged::PIXEL_FORMAT::UNKNOWN;
+			Renderer::PIXEL_FORMAT	format = Renderer::PIXEL_FORMAT::UNKNOWN;
 			int	pixelSize = 0;
 			switch ( meta.format ) {
-				case DXGI_FORMAT_R8_UNORM: format = RendererManaged::PIXEL_FORMAT::R8_UNORM; pixelSize = 1; break;
-				case DXGI_FORMAT_R8G8B8A8_UNORM: format = RendererManaged::PIXEL_FORMAT::RGBA8_UNORM; pixelSize = 4; break;
-				case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB: format = RendererManaged::PIXEL_FORMAT::RGBA8_UNORM_sRGB; pixelSize = 4; break;
-				case DXGI_FORMAT_R16_FLOAT: format = RendererManaged::PIXEL_FORMAT::R16_FLOAT; pixelSize = 2; break;
-				case DXGI_FORMAT_R16_UNORM: format = RendererManaged::PIXEL_FORMAT::R16_UNORM; pixelSize = 2; break;
-				case DXGI_FORMAT_R16G16_FLOAT: format = RendererManaged::PIXEL_FORMAT::RG16_FLOAT; pixelSize = 4; break;
-				case DXGI_FORMAT_R16G16_UNORM: format = RendererManaged::PIXEL_FORMAT::RG16_UNORM; pixelSize = 4; break;
-				case DXGI_FORMAT_R16G16B16A16_FLOAT: format = RendererManaged::PIXEL_FORMAT::RGBA16_FLOAT; pixelSize = 8; break;
-				case DXGI_FORMAT_R32_FLOAT: format = RendererManaged::PIXEL_FORMAT::R32_FLOAT; pixelSize = 4; break;
-				case DXGI_FORMAT_R32G32_FLOAT: format = RendererManaged::PIXEL_FORMAT::RG32_FLOAT; pixelSize = 8; break;
-				case DXGI_FORMAT_R32G32B32A32_FLOAT: format = RendererManaged::PIXEL_FORMAT::RGBA32_FLOAT; pixelSize = 16; break;
-				case DXGI_FORMAT_BC3_UNORM: format = RendererManaged::PIXEL_FORMAT::BC3_UNORM; break;
-				case DXGI_FORMAT_BC3_UNORM_SRGB: format = RendererManaged::PIXEL_FORMAT::BC3_UNORM_sRGB; break;
+				case DXGI_FORMAT_R8_UNORM: format = Renderer::PIXEL_FORMAT::R8_UNORM; pixelSize = 1; break;
+				case DXGI_FORMAT_R8G8B8A8_UNORM: format = Renderer::PIXEL_FORMAT::RGBA8_UNORM; pixelSize = 4; break;
+				case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB: format = Renderer::PIXEL_FORMAT::RGBA8_UNORM_sRGB; pixelSize = 4; break;
+				case DXGI_FORMAT_R16_FLOAT: format = Renderer::PIXEL_FORMAT::R16_FLOAT; pixelSize = 2; break;
+				case DXGI_FORMAT_R16_UNORM: format = Renderer::PIXEL_FORMAT::R16_UNORM; pixelSize = 2; break;
+				case DXGI_FORMAT_R16G16_FLOAT: format = Renderer::PIXEL_FORMAT::RG16_FLOAT; pixelSize = 4; break;
+				case DXGI_FORMAT_R16G16_UNORM: format = Renderer::PIXEL_FORMAT::RG16_UNORM; pixelSize = 4; break;
+				case DXGI_FORMAT_R16G16B16A16_FLOAT: format = Renderer::PIXEL_FORMAT::RGBA16_FLOAT; pixelSize = 8; break;
+				case DXGI_FORMAT_R32_FLOAT: format = Renderer::PIXEL_FORMAT::R32_FLOAT; pixelSize = 4; break;
+				case DXGI_FORMAT_R32G32_FLOAT: format = Renderer::PIXEL_FORMAT::RG32_FLOAT; pixelSize = 8; break;
+				case DXGI_FORMAT_R32G32B32A32_FLOAT: format = Renderer::PIXEL_FORMAT::RGBA32_FLOAT; pixelSize = 16; break;
+				case DXGI_FORMAT_BC3_UNORM: format = Renderer::PIXEL_FORMAT::BC3_UNORM; break;
+				case DXGI_FORMAT_BC3_UNORM_SRGB: format = Renderer::PIXEL_FORMAT::BC3_UNORM_sRGB; break;
 			}
 
 			// Build content slices
 			if ( DXT->GetImageCount() != meta.arraySize * meta.mipLevels )
 				throw gcnew Exception( "Unexpected amount of images!" );
 
-			cli::array< RendererManaged::PixelsBuffer^ >^	content = gcnew cli::array< RendererManaged::PixelsBuffer^ >( int( meta.arraySize * meta.mipLevels ) );
+			cli::array< Renderer::PixelsBuffer^ >^	content = gcnew cli::array< Renderer::PixelsBuffer^ >( int( meta.arraySize * meta.mipLevels ) );
 			for ( int arrayIndex=0; arrayIndex < int(meta.arraySize); arrayIndex++ ) {
 				int	W = int( meta.width );
 				int	H = int( meta.height );
 				for ( int mipIndex=0; mipIndex < int(meta.mipLevels); mipIndex++ ) {
 					const DirectX::Image*	sourceImage = DXT->GetImage( mipIndex, arrayIndex, 0U );
 
-					RendererManaged::PixelsBuffer^	buffer = gcnew RendererManaged::PixelsBuffer( int( sourceImage->slicePitch ) );
+					Renderer::PixelsBuffer^	buffer = gcnew Renderer::PixelsBuffer( int( sourceImage->slicePitch ) );
 					content[int( arrayIndex*meta.mipLevels+mipIndex )] = buffer;
 
 					cli::array< Byte >^	byteArray = gcnew cli::array< Byte >( int( sourceImage->slicePitch ) );
@@ -244,7 +244,7 @@ namespace DirectXTexManaged {
 			}
 
 			// Build texture
-			RendererManaged::Texture2D^	Result = gcnew RendererManaged::Texture2D( _Device, int( meta.width ), int( meta.height ), meta.IsCubemap() ? -int(meta.arraySize) : int(meta.arraySize), int( meta.mipLevels ), format, false, false, content );
+			Renderer::Texture2D^	Result = gcnew Renderer::Texture2D( _Device, int( meta.width ), int( meta.height ), meta.IsCubemap() ? -int(meta.arraySize) : int(meta.arraySize), int( meta.mipLevels ), format, false, false, content );
 
 			delete DXT;
 

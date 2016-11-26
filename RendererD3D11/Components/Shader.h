@@ -30,7 +30,8 @@
 	#ifdef GODCOMPLEX
 		#define SAVE_SHADER_BLOB_TO		"./Resources/Shaders/Binary/"
 	#else
-		#define SAVE_SHADER_BLOB_TO		"./Shaders/Binary/"
+//		#define SAVE_SHADER_BLOB_TO		"./Binary/"
+		#define SAVE_SHADER_BLOB_TO		""
 	#endif
 #endif	// _DEBUG
 

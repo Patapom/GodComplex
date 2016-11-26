@@ -1,15 +1,16 @@
-// RendererManaged.h
-
 #pragma once
 
 #include "Device.h"
 
 using namespace System;
 
-namespace RendererManaged {
+namespace Renderer {
 
-	public enum class	RASTERIZER_STATE
-	{
+	// I chose not to implement an exhaustive list of render states but rather the most used render states
+	// You need to modify that list and add the state yourself (in RendererLib::Device) to support additional states...
+	//
+
+	public enum class	RASTERIZER_STATE {
 		NOCHANGE,
 
 		CULL_NONE,
@@ -18,8 +19,7 @@ namespace RendererManaged {
 		WIREFRAME,
 	};
 
-	public enum class	DEPTHSTENCIL_STATE
-	{
+	public enum class	DEPTHSTENCIL_STATE {
 		NOCHANGE,
 
 		DISABLED,
@@ -28,8 +28,7 @@ namespace RendererManaged {
 		READ_WRITE_DEPTH_GREATER,
 	};
 
-	public enum class	BLEND_STATE
-	{
+	public enum class	BLEND_STATE {
 		NOCHANGE,
 
 		DISABLED,

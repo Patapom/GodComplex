@@ -6,12 +6,11 @@
 #pragma managed
 
 #include "ByteBuffer.h"
-//#include "MathStructs.h"
 
 using namespace System;
 using namespace System::IO;
 
-namespace RendererManaged {
+namespace Renderer {
 
 	public ref class PixelsBuffer : public ByteBuffer {
 	internal:
@@ -30,8 +29,7 @@ namespace RendererManaged {
 		}
 
 	internal:
-		PixelsBuffer( D3D11_MAPPED_SUBRESOURCE& _SubResource ) : ByteBuffer( _SubResource.DepthPitch )
-		{
+		PixelsBuffer( D3D11_MAPPED_SUBRESOURCE& _SubResource ) : ByteBuffer( _SubResource.DepthPitch ) {
 			m_RowPitch = _SubResource.RowPitch;
 			m_DepthPitch = _SubResource.DepthPitch;
 

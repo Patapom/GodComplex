@@ -940,15 +940,22 @@ void	Shader::SaveBinaryBlob( const char* _pShaderFileName, D3D_SHADER_MACRO* _pM
 		pFileName = strrchr( _pShaderFileName, '\\' );
 	ASSERT( pFileName != NULL, "Can't retrieve last '/' !" );
 	int		FileNameIndex = int( 1+pFileName - _pShaderFileName );
+
 	const char*	pExtension = strrchr( _pShaderFileName, '.' );
 	ASSERT( pExtension != NULL, "Can't retrieve extension!" );
 	int		ExtensionIndex = int( pExtension - _pShaderFileName );
+
+	char	pShaderPath[1024];
+	memcpy( pShaderPath, _pShaderFileName, FileNameIndex );
+	pShaderPath[FileNameIndex] = '\0';	// End the path name here
+
 	char	pFileNameWithoutExtension[1024];
 	memcpy( pFileNameWithoutExtension, pFileName+1, ExtensionIndex-FileNameIndex );
 	pFileNameWithoutExtension[ExtensionIndex-FileNameIndex] = '\0';	// End the file name here
 
 	char	pFinalShaderName[1024];
-	sprintf_s( pFinalShaderName, 1024, "%s%s%s.%s.fxbin", SAVE_SHADER_BLOB_TO, pFileNameWithoutExtension, pMacrosSignature, _pEntryPoint );
+//	sprintf_s( pFinalShaderName, 1024, "%s%s%s.%s.fxbin", SAVE_SHADER_BLOB_TO, pFileNameWithoutExtension, pMacrosSignature, _pEntryPoint );
+	sprintf_s( pFinalShaderName, 1024, "%s%s%s%s.%s.fxbin", pShaderPath, SAVE_SHADER_BLOB_TO, pFileNameWithoutExtension, pMacrosSignature, _pEntryPoint );
 
 	// Create the binary file
 	FILE*	pFile;

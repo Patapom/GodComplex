@@ -8,71 +8,56 @@
 
 using namespace System;
 
-namespace RendererManaged {
+namespace Renderer {
 
-	public ref class ComputeShader
-	{
+	public ref class ComputeShader {
 	private:
 
 		::ComputeShader*	m_pShader;
 
 	public:
 
-		ComputeShader( Device^ _Device, ShaderFile^ _ShaderFile, String^ _EntryPoint, cli::array<ShaderMacro^>^ _Macros )
-		{
-			const char*	ShaderFileName = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( _ShaderFile->m_ShaderFileName->FullName ).ToPointer();
-			const char*	ShaderCode = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( _ShaderFile->m_ShaderSourceCode ).ToPointer();
-			const char*	EntryPoint = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( _EntryPoint ).ToPointer();
+		ComputeShader( Device^ _device, ShaderFile^ _shaderFile, String^ _entryPoint, cli::array<ShaderMacro^>^ _macros ) {
+			const char*	ShaderFileName = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( _shaderFile->m_shaderFileName->FullName ).ToPointer();
+			const char*	ShaderCode = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( _shaderFile->m_shaderSourceCode ).ToPointer();
+			const char*	EntryPoint = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( _entryPoint ).ToPointer();
 
-			D3D_SHADER_MACRO*	pMacros = NULL;
-			if ( _Macros != nullptr )
-			{
+			D3D_SHADER_MACRO*	macros = NULL;
+			if ( _macros != nullptr ) {
 				int i=0;
-				pMacros = new D3D_SHADER_MACRO[_Macros->Length + 1];
-				for ( ; i < _Macros->Length; i++ )
-				{
-					pMacros[i].Name = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( _Macros[i]->Name ).ToPointer();
-					pMacros[i].Definition = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( _Macros[i]->Value ).ToPointer();
+				macros = new D3D_SHADER_MACRO[_macros->Length + 1];
+				for ( ; i < _macros->Length; i++ ) {
+					macros[i].Name = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( _macros[i]->name ).ToPointer();
+					macros[i].Definition = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( _macros[i]->value ).ToPointer();
 
 				}
-				pMacros[i].Name = NULL;
-				pMacros[i].Definition = NULL;
+				macros[i].Name = NULL;
+				macros[i].Definition = NULL;
 			}
 
-			m_pShader = new ::ComputeShader( *_Device->m_pDevice, ShaderFileName, ShaderCode, pMacros, EntryPoint, NULL );
+			m_pShader = new ::ComputeShader( *_device->m_pDevice, ShaderFileName, ShaderCode, macros, EntryPoint, NULL );
 
-			delete[] pMacros;
+			delete[] macros;
+		}
+		ComputeShader( Device^ _device, ShaderBinaryFile^ _shaderFile, String^ _entryPoint ) {
+			const char*	ShaderFileName = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( _shaderFile->m_shaderFileName->FullName ).ToPointer();
+			const char*	EntryPoint = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( _entryPoint ).ToPointer();
+
+			m_pShader = ::ComputeShader::CreateFromBinaryBlob( *_device->m_pDevice, ShaderFileName, NULL, EntryPoint );
 		}
 
-		~ComputeShader()
-		{
+		~ComputeShader() {
 			delete m_pShader;
 		}
 
-		bool	Use()
-		{
+		// Must be called prior calling Dispatch()!
+		bool	Use() {
 			return m_pShader->Use();
 		}
 
-		void	Dispatch( int _GroupsCountX, int _GroupsCountY, int _GroupsCountZ )
-		{
+		void	Dispatch( int _GroupsCountX, int _GroupsCountY, int _GroupsCountZ ) {
 			m_pShader->Dispatch( _GroupsCountX, _GroupsCountY, _GroupsCountZ );
 		}
 
-		static ComputeShader^	CreateFromBinaryBlob( Device^ _Device, FileInfo^ _ShaderFileName, String^ _EntryPoint )
-		{
-			const char*	ShaderFileName = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( _ShaderFileName->FullName ).ToPointer();
-			const char*	EntryPoint = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( _EntryPoint ).ToPointer();
-
-			::ComputeShader*	pShader = ::ComputeShader::CreateFromBinaryBlob( *_Device->m_pDevice, ShaderFileName, NULL, EntryPoint );
-
-			return gcnew ComputeShader( _Device, pShader );
-		}
-
-	private:
-		ComputeShader( Device^ _Device, ::ComputeShader* _ComputeShader )
-		{
-			m_pShader = _ComputeShader;
-		}
 	};
 }
