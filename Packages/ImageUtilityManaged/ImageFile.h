@@ -94,32 +94,9 @@ namespace ImageUtility {
 
 			// 32-bits
 			R32F	= 12,
-			RG32F	= 13,
+//			RG32F	= 13,		// Unsupported
 			RGB32F	= 14,
 			RGBA32F = 15,
-// 			UNKNOWN,
-// 
-// 			// 8-bits
-// 			R8,
-// 			RG8,
-// 			RGB8,
-// 			RGBA8,
-// 
-// 			// 16-bits
-// 			R16,
-// //			RG16,		// Unsupported
-// 			RGB16,
-// 			RGBA16,
-// //			R16F,		// Unsupported
-// // 			RG16F,		// Unsupported
-// // 			RGB16F,		// Unsupported
-// // 			RGBA16F,	// Unsupported
-// 
-// 			// 32-bits
-// 			R32F,
-// 			RG32F,
-// 			RGB32F,
-// 			RGBA32F,
 		};
 
 		enum class	FILE_FORMAT {

@@ -356,7 +356,7 @@ void	ImageFile::ToneMapFrom( const ImageFile& _source, toneMapper_t _toneMapper 
 	case PIXEL_FORMAT::RGB16F:
 	case PIXEL_FORMAT::RGBA16F:
 	case PIXEL_FORMAT::R32F:
-	case PIXEL_FORMAT::RG32F:
+//	case PIXEL_FORMAT::RG32F:
 	case PIXEL_FORMAT::RGB32F:
 	case PIXEL_FORMAT::RGBA32F:
 		break;	// Okay!
@@ -402,7 +402,8 @@ void	ImageFile::ToneMapFrom( const ImageFile& _source, toneMapper_t _toneMapper 
 		}
 	// ===============================================================================
 	} else if (	_source.m_pixelFormat == ImageFile::PIXEL_FORMAT::RG16F
-			 || _source.m_pixelFormat == ImageFile::PIXEL_FORMAT::RG32F ) {
+//			 || _source.m_pixelFormat == ImageFile::PIXEL_FORMAT::RG32F ) {
+		) {
 		// Convert to RG8
 		m_bitmap = FreeImage_Allocate( W, H, 16, FI_RGBA_RED_MASK, FI_RGBA_GREEN_MASK, 0 );
 
@@ -630,7 +631,7 @@ U32	ImageFile::PixelFormat2BPP( PIXEL_FORMAT _pixelFormat ) {
 
 		// 32-bits
 		case PIXEL_FORMAT::R32F:	return 32;
-		case PIXEL_FORMAT::RG32F:	return 64;
+//		case PIXEL_FORMAT::RG32F:	return 64;	// Unsupported
 		case PIXEL_FORMAT::RGB32F:	return 96;
 		case PIXEL_FORMAT::RGBA32F:	return 128;
 	};

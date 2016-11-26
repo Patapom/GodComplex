@@ -68,7 +68,7 @@ namespace SharpMath {
 		float	x, y, z;
 		float3( float _x, float _y, float _z )		{ Set( _x, _y, _z ); }
 		float3( float2 _xy, float _z )				{ Set( _xy.x, _xy.y, _z ); }
-		float3( System::Drawing::Color^ _Color )	{ Set( _Color->R / 255.0f, _Color->G / 255.0f, _Color->B / 255.0f ); }
+//		explicit float3( System::Drawing::Color^ _Color )	{ Set( _Color->R / 255.0f, _Color->G / 255.0f, _Color->B / 255.0f ); }
 		void	Set( float _x, float _y, float _z )	{ x = _x; y = _y; z = _z; }
 
 		String^	ToString() override {
@@ -150,7 +150,7 @@ namespace SharpMath {
 		float4( float _x, float _y, float _z, float _w )		{ Set( _x, _y, _z, _w ); }
 		float4( float2 _xy, float _z, float _w )				{ Set( _xy.x, _xy.y, _z, _w ); }
 		float4( float3 _xyz, float _w )							{ Set( _xyz.x, _xyz.y, _xyz.z, _w ); }
-		float4( System::Drawing::Color^ _Color, float _Alpha )	{ Set( _Color->R / 255.0f, _Color->G / 255.0f, _Color->B / 255.0f, _Alpha ); }
+//		explicit float4( System::Drawing::Color^ _Color, float _Alpha )	{ Set( _Color->R / 255.0f, _Color->G / 255.0f, _Color->B / 255.0f, _Alpha ); }
 		void	Set( float _x, float _y, float _z, float _w )	{ x = _x; y = _y; z = _z; w = _w; }
 		void	Set( float3 _xyz, float _w )					{ x = _xyz.x; y = _xyz.y; z = _xyz.z; w = _w; }
 

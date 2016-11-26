@@ -92,7 +92,7 @@ namespace ImageUtilityLib {
 
 			// 32-bits
 			R32F	= 12,
-			RG32F	= 13,
+//			RG32F	= 13,		// Unsupported
 			RGB32F	= 14,
 			RGBA32F = 15,
 		};

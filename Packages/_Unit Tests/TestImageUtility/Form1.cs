@@ -233,6 +233,7 @@ namespace ImageUtility.UnitTests
 
 		enum TEST_GRAPH_TYPE {
 			SIMPLE_FUNCTION,
+			SIMPLE_LOG_FUNCTIONS,
 			MANY_LINES,
 		}
 
@@ -241,6 +242,10 @@ namespace ImageUtility.UnitTests
 		}
 
 		private void buttonDraw2_Click(object sender, EventArgs e) {
+			TestGraph( TEST_GRAPH_TYPE.SIMPLE_LOG_FUNCTIONS );
+		}
+
+		private void buttonDraw3_Click(object sender, EventArgs e) {
 			TestGraph( TEST_GRAPH_TYPE.MANY_LINES );
 		}
 
@@ -254,9 +259,10 @@ namespace ImageUtility.UnitTests
 				// Unit test simple graph
 				float2	rangeY = new float2( -1.0f, 1.0f );
 //				m_imageFile.PlotGraph( black, new float2( -30.0f, 30.0f ), rangeY, ( float x ) => { return (float) Math.Sin( x ) / x; } );
-// 				m_imageFile.PlotGraphAutoRangeY( black, new float2( -30.0f, 30.0f ), ref rangeY, ( float x ) => { return (float) Math.Sin( x ) / x; } );
-// 				m_imageFile.PlotAxes( black, new float2( -30.0f, 30.0f ), rangeY, (float) (0.5 * Math.PI), 0.1f );
+ 				m_imageFile.PlotGraphAutoRangeY( black, new float2( -30.0f, 30.0f ), ref rangeY, ( float x ) => { return (float) Math.Sin( x ) / x; } );
+ 				m_imageFile.PlotAxes( black, new float2( -30.0f, 30.0f ), rangeY, (float) (0.5 * Math.PI), 0.1f );
 
+			} else if ( _type == TEST_GRAPH_TYPE.SIMPLE_LOG_FUNCTIONS ) {
 				m_imageFile.PlotLogGraph( red, new float2( 0.0f, 2.0f ), new float2( 0.0f, 100.0f ), ( float x ) => { return (float) Math.Pow( 10.0, x ); }, 1.0f, 1.0f );
 //				m_imageFile.PlotLogGraph( green, new float2( -2.0f, 2.0f ), new float2( 0.0f, 100.0f ), ( float x ) => { return (float) Math.Pow( 10.0, x ); }, 10.0f, 1.0f );
 				m_imageFile.PlotLogGraph( green, new float2( 0.0f, 2.0f ), new float2( 0.0f, 2.0f ), ( float x ) => { return (float) Math.Pow( 10.0, x ); }, 1.0f, 10.0f );
@@ -380,13 +386,16 @@ namespace ImageUtility.UnitTests
 				case TEST_COLOR_PROFILES.BUILD_WHITE_POINTS_GRADIENT_BALANCE_D50_TO_D65:
 				case TEST_COLOR_PROFILES.BUILD_WHITE_POINTS_GRADIENT_BALANCE_D65_TO_D50: {
 
-					float3x3	WhiteBalancingXYZ = float3x3.Identity;
+					float3x3	whiteBalancingXYZ = float3x3.Identity;
+					float		whitePointCCT = 6500.0f;
 					if ( _type == TEST_COLOR_PROFILES.BUILD_WHITE_POINTS_GRADIENT_BALANCE_D50_TO_D65 ) {
 						// Compute white balancing from a D50 to a D65 illuminant
-						WhiteBalancingXYZ = ColorProfile.ComputeWhiteBalanceXYZMatrix( ColorProfile.Chromaticities.sRGB, ColorProfile.ILLUMINANT_D50 );
+						whiteBalancingXYZ = ColorProfile.ComputeWhiteBalanceXYZMatrix( ColorProfile.Chromaticities.AdobeRGB_D50, ColorProfile.ILLUMINANT_D65 );
+						whitePointCCT = 5000.0f;
 					} else if ( _type == TEST_COLOR_PROFILES.BUILD_WHITE_POINTS_GRADIENT_BALANCE_D65_TO_D50 ) {
 						// Compute white balancing from a D65 to a D50 illuminant
-						WhiteBalancingXYZ = ColorProfile.ComputeWhiteBalanceXYZMatrix( ColorProfile.Chromaticities.AdobeRGB_D50, ColorProfile.ILLUMINANT_D65 );
+						whiteBalancingXYZ = ColorProfile.ComputeWhiteBalanceXYZMatrix( ColorProfile.Chromaticities.sRGB, ColorProfile.ILLUMINANT_D50 );
+						whitePointCCT = 10000.0f;	// ?? Actually we're already in D65 so assuming we're starting from a D50 illuminant instead actually pushes the white point far away...
 					}
 
 					// Build a gradient of white points from 1500K to 8000K
@@ -402,7 +411,7 @@ namespace ImageUtility.UnitTests
 						ColorProfile.xyY2XYZ( new float3( xy, 1.0f ), ref XYZ );
 
 						// Apply white balancing
-						XYZ *= WhiteBalancingXYZ;
+						XYZ *= whiteBalancingXYZ;
 
 						sRGB.XYZ2RGB( new float4( XYZ, 1 ), ref RGB );
 
@@ -410,11 +419,11 @@ namespace ImageUtility.UnitTests
 //RGB /= Math.Max( Math.Max( RGB.x, RGB.y ), RGB.z );
 
 // Isolate D65
-if ( Math.Abs( T - 6500.0f ) < 10.0f )
+if ( Math.Abs( T - whitePointCCT ) < 10.0f )
 	RGB.Set( 1, 0, 1, 1 );
 
 						for ( uint Y=0; Y < 32; Y++ ) {
-							m_imageFile[X,Y] = new float4( RGB, 1.0f );
+							m_imageFile[X,Y] = RGB;
 						}
 					}
 
@@ -582,21 +591,22 @@ if ( Math.Abs( T - 6500.0f ) < 10.0f )
 							ImageFile.PIXEL_FORMAT.RGB16F,
 							ImageFile.PIXEL_FORMAT.RGBA16F,
 							ImageFile.PIXEL_FORMAT.R32F,
-							ImageFile.PIXEL_FORMAT.RG32F,
+//							ImageFile.PIXEL_FORMAT.RG32F,
 							ImageFile.PIXEL_FORMAT.RGB32F,
 							ImageFile.PIXEL_FORMAT.RGBA32F,
 						};
-						m_imageFile = null;
 						Random	RNG = new Random( 1 );
 						for ( int i=0; i < 1000; i++ ) {
-							if ( m_imageFile != null )
-								m_imageFile.Dispose();
 
 							uint	W = 100 + (uint) (1000 * RNG.NextDouble());
 							uint	H = 100 + (uint) (1000 * RNG.NextDouble());
 							ImageFile.PIXEL_FORMAT	format = formats[RNG.Next( formats.Length-1 )];
 							m_imageFile = new ImageFile( W, H,format, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
+							m_imageFile.Dispose();
 						}
+
+						m_imageFile = new ImageFile( 1000, 1000, ImageFile.PIXEL_FORMAT.RGBA8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
+						m_imageFile.Clear( new float4( 0, 1, 0.2f, 1 ) );
 						break;
 
 				}
@@ -689,29 +699,30 @@ if ( Math.Abs( T - 6500.0f ) < 10.0f )
 		}
 
 		protected void TestConvertLDR2HDR( System.IO.FileInfo[] _LDRImageFileNames, bool _responseCurveOnly ) {
+			try {
 
-			// Load the LDR images
-			List< ImageFile >	LDRImages = new List< ImageFile >();
-			foreach ( System.IO.FileInfo LDRImageFileName in _LDRImageFileNames )
-				LDRImages.Add( new ImageFile( LDRImageFileName ) );
+				// Load the LDR images
+				List< ImageFile >	LDRImages = new List< ImageFile >();
+				foreach ( System.IO.FileInfo LDRImageFileName in _LDRImageFileNames )
+					LDRImages.Add( new ImageFile( LDRImageFileName ) );
 
-			// Retrieve the shutter speeds
-			List< float >	shutterSpeeds = new List< float >();
-			foreach ( ImageFile LDRImage in LDRImages ) {
-				shutterSpeeds.Add( LDRImage.Metadata.ExposureTime );
-			}
+				// Retrieve the shutter speeds
+				List< float >	shutterSpeeds = new List< float >();
+				foreach ( ImageFile LDRImage in LDRImages ) {
+					shutterSpeeds.Add( LDRImage.Metadata.ExposureTime );
+				}
 
-			// Retrieve filter type
-			Bitmap.FILTER_TYPE	filterType = Bitmap.FILTER_TYPE.NONE;
-			if ( radioButtonFilterNone.Checked ) {
-				 filterType = Bitmap.FILTER_TYPE.SMOOTHING_GAUSSIAN;
-			} else if ( radioButtonFilterGaussian.Checked ) {
-				 filterType = Bitmap.FILTER_TYPE.SMOOTHING_GAUSSIAN;
-			} else if ( radioButtonFilterTent.Checked ) {
-				 filterType = Bitmap.FILTER_TYPE.SMOOTHING_TENT;
-			} else if ( radioButtonFilterCurveFitting.Checked ) {
-				 filterType = Bitmap.FILTER_TYPE.CURVE_FITTING;
-			}
+				// Retrieve filter type
+				Bitmap.FILTER_TYPE	filterType = Bitmap.FILTER_TYPE.NONE;
+				if ( radioButtonFilterNone.Checked ) {
+					 filterType = Bitmap.FILTER_TYPE.NONE;
+				} else if ( radioButtonFilterGaussian.Checked ) {
+					 filterType = Bitmap.FILTER_TYPE.SMOOTHING_GAUSSIAN;
+				} else if ( radioButtonFilterTent.Checked ) {
+					 filterType = Bitmap.FILTER_TYPE.SMOOTHING_TENT;
+				} else if ( radioButtonFilterCurveFitting.Checked ) {
+					 filterType = Bitmap.FILTER_TYPE.CURVE_FITTING;
+				}
 
 
 // Check EXR save is working!
@@ -743,18 +754,18 @@ if ( Math.Abs( T - 6500.0f ) < 10.0f )
 // }
 
 
-			//////////////////////////////////////////////////////////////////////////////////////////////
-			// Build the HDR device-independent bitmap
-			Bitmap.HDRParms	parms = new Bitmap.HDRParms() {
-				_inputBitsPerComponent = 8,
-				_luminanceFactor = 1.0f,
-				_curveSmoothnessConstraint = 1.0f,
-				_quality = 3,
-				_responseCurveFilterType = filterType
-			};
+				//////////////////////////////////////////////////////////////////////////////////////////////
+				// Build the HDR device-independent bitmap
+				Bitmap.HDRParms	parms = new Bitmap.HDRParms() {
+					_inputBitsPerComponent = 8,
+					_luminanceFactor = 1.0f,
+					_curveSmoothnessConstraint = 1.0f,
+					_quality = 3,
+					_responseCurveFilterType = filterType
+				};
 
-			ImageUtility.Bitmap	HDRImage = new ImageUtility.Bitmap();
-			try {
+				ImageUtility.Bitmap	HDRImage = new ImageUtility.Bitmap();
+
 //				HDRImage.LDR2HDR( LDRImages.ToArray(), shutterSpeeds.ToArray(), parms );
 
 				// Compute response curve
@@ -781,13 +792,11 @@ if ( Math.Abs( T - 6500.0f ) < 10.0f )
 					info += " " + (float) (Math.Log( shutterSpeed ) / Math.Log(2)) + "EV + ";
 				info += "\r\n\r\n";
 
-
 				if ( _responseCurveOnly ) {
 					//////////////////////////////////////////////////////////////////////////////////////////////
 					// Render the response curve as a graph
  					ImageFile	tempCurveBitmap = new ImageFile( 1024, 768, ImageFile.PIXEL_FORMAT.RGB8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
 
-					float4		black = new float4( 0, 0, 0, 1 );
 					float2		rangeX = new float2( 0, 256 );
 					float2		rangeY = new float2( 0, 1000 );
 					tempCurveBitmap.Clear( new float4( 1, 1, 1, 1 ) );
@@ -1080,7 +1089,7 @@ if ( Math.Abs( T - 6500.0f ) < 10.0f )
 							_LDRColor.y = (float) Math.Pow( Math.Max( 0.0f, _HDRColor.y ), 1.0f / 2.2f );	//  (must be coming from the log encoding I suppose)
 							_LDRColor.z = (float) Math.Pow( Math.Max( 0.0f, _HDRColor.z ), 1.0f / 2.2f );
 						} );
-						panelLoad.Bitmap = m_imageFile.AsBitmap;
+						panelLoad.Bitmap = tempLDR.AsBitmap;
 					break;
  				}
 
