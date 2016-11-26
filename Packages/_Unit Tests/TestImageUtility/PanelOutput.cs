@@ -71,7 +71,8 @@ namespace ImageUtility.UnitTests
 			base.OnPaint( e );
 			if ( m_bitmap != null ) {
 				e.Graphics.DrawImage( m_bitmap, 0, 0, Width, Height );
-			}
+			} else
+				e.Graphics.FillRectangle( Brushes.White, 0, 0, Width, Height );
 		}
 	}
 }
