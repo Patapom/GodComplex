@@ -277,11 +277,13 @@ namespace ImageUtilityLib {
 		bool				HasAlpha() const;
 
 		// Gets the image's metadata (i.e. ISO, Tv, Av, focal length, etc.)
+		MetaData&			GetMetadata()			{ return m_metadata; }
 		const MetaData&		GetMetadata() const		{ return m_metadata; }
 
 		// Gets or sets the color profile associated to the image
-		ColorProfile&		GetColorProfile() const					{ return *m_metadata.m_colorProfile; }
-		void				SetColorProfile( ColorProfile& _value )	{ m_metadata.m_colorProfile = &_value; }
+		ColorProfile&		GetColorProfile()								{ return m_metadata.GetColorProfile(); }
+		const ColorProfile&	GetColorProfile() const							{ return m_metadata.GetColorProfile(); }
+		void				SetColorProfile( const ColorProfile& _value )	{ m_metadata.SetColorProfile( _value ); }
 
 		// Generic color getter/setter
 		void				Get( U32 _X, U32 _Y, bfloat4& _color ) const;

@@ -39,10 +39,10 @@ namespace ImageUtilityLib {
 	/// </summary>
 	class IColorConverter {
 	public:
-		virtual void		XYZ2RGB( const bfloat3& _XYZ, bfloat3& _RGB ) const abstract;
-		virtual void		RGB2XYZ( const bfloat3& _RGB, bfloat3& _XYZ ) const abstract;
-		virtual void		XYZ2RGB( const bfloat3* _XYZ, bfloat3* _RGB, U32 _length, U32 _stride ) const abstract;
-		virtual void		RGB2XYZ( const bfloat3* _RGB, bfloat3* _XYZ, U32 _length, U32 _stride ) const abstract;
+		virtual void		XYZ2RGB( const bfloat4& _XYZ, bfloat4& _RGB ) const abstract;
+		virtual void		RGB2XYZ( const bfloat4& _RGB, bfloat4& _XYZ ) const abstract;
+		virtual void		XYZ2RGB( const bfloat4* _XYZ, bfloat4* _RGB, U32 _length ) const abstract;
+		virtual void		RGB2XYZ( const bfloat4* _RGB, bfloat4* _XYZ, U32 _length ) const abstract;
 	};
 
 	// The source color for the bitmap
@@ -166,50 +166,50 @@ namespace ImageUtilityLib {
 		public:
 			static const float3x3 MAT_RGB2XYZ;
 			static const float3x3 MAT_XYZ2RGB;
-			void		XYZ2RGB( const bfloat3& _XYZ, bfloat3& _RGB ) const override;
-			void		RGB2XYZ( const bfloat3& _RGB, bfloat3& _XYZ ) const override;
-			void		XYZ2RGB( const bfloat3* _XYZ, bfloat3* _RGB, U32 _length, U32 _stride ) const override;
-			void		RGB2XYZ( const bfloat3* _RGB, bfloat3* _XYZ, U32 _length, U32 _stride ) const override;
+			void		XYZ2RGB( const bfloat4& _XYZ, bfloat4& _RGB ) const override;
+			void		RGB2XYZ( const bfloat4& _RGB, bfloat4& _XYZ ) const override;
+			void		XYZ2RGB( const bfloat4* _XYZ, bfloat4* _RGB, U32 _length ) const override;
+			void		RGB2XYZ( const bfloat4* _RGB, bfloat4* _XYZ, U32 _length ) const override;
 		};
 
 		class		InternalColorConverter_AdobeRGB_D50 : public IColorConverter {
 		public:
 			static const float3x3 MAT_RGB2XYZ;
 			static const float3x3 MAT_XYZ2RGB;
-			void		XYZ2RGB( const bfloat3& _XYZ, bfloat3& _RGB ) const override;
-			void		RGB2XYZ( const bfloat3& _RGB, bfloat3& _XYZ ) const override;
-			void		XYZ2RGB( const bfloat3* _XYZ, bfloat3* _RGB, U32 _length, U32 _stride ) const override;
-			void		RGB2XYZ( const bfloat3* _RGB, bfloat3* _XYZ, U32 _length, U32 _stride ) const override;
+			void		XYZ2RGB( const bfloat4& _XYZ, bfloat4& _RGB ) const override;
+			void		RGB2XYZ( const bfloat4& _RGB, bfloat4& _XYZ ) const override;
+			void		XYZ2RGB( const bfloat4* _XYZ, bfloat4* _RGB, U32 _length ) const override;
+			void		RGB2XYZ( const bfloat4* _RGB, bfloat4* _XYZ, U32 _length ) const override;
 		};
 
 		class		InternalColorConverter_AdobeRGB_D65 : public IColorConverter {
 		public:
 			static const float3x3 MAT_RGB2XYZ;
 			static const float3x3 MAT_XYZ2RGB;
-			void		XYZ2RGB( const bfloat3& _XYZ, bfloat3& _RGB ) const override;
-			void		RGB2XYZ( const bfloat3& _RGB, bfloat3& _XYZ ) const override;
-			void		XYZ2RGB( const bfloat3* _XYZ, bfloat3* _RGB, U32 _length, U32 _stride ) const override;
-			void		RGB2XYZ( const bfloat3* _RGB, bfloat3* _XYZ, U32 _length, U32 _stride ) const override;
+			void		XYZ2RGB( const bfloat4& _XYZ, bfloat4& _RGB ) const override;
+			void		RGB2XYZ( const bfloat4& _RGB, bfloat4& _XYZ ) const override;
+			void		XYZ2RGB( const bfloat4* _XYZ, bfloat4* _RGB, U32 _length ) const override;
+			void		RGB2XYZ( const bfloat4* _RGB, bfloat4* _XYZ, U32 _length ) const override;
 		};
 
 		class		InternalColorConverter_ProPhoto : public IColorConverter {
 		public:
 			static const float3x3 MAT_RGB2XYZ;
 			static const float3x3 MAT_XYZ2RGB;
-			void		XYZ2RGB( const bfloat3& _XYZ, bfloat3& _RGB ) const override;
-			void		RGB2XYZ( const bfloat3& _RGB, bfloat3& _XYZ ) const override;
-			void		XYZ2RGB( const bfloat3* _XYZ, bfloat3* _RGB, U32 _length, U32 _stride ) const override;
-			void		RGB2XYZ( const bfloat3* _RGB, bfloat3* _XYZ, U32 _length, U32 _stride ) const override;
+			void		XYZ2RGB( const bfloat4& _XYZ, bfloat4& _RGB ) const override;
+			void		RGB2XYZ( const bfloat4& _RGB, bfloat4& _XYZ ) const override;
+			void		XYZ2RGB( const bfloat4* _XYZ, bfloat4* _RGB, U32 _length ) const override;
+			void		RGB2XYZ( const bfloat4* _RGB, bfloat4* _XYZ, U32 _length ) const override;
 		};
 
 		class		InternalColorConverter_Radiance : public IColorConverter {
 		public:
 			static const float3x3 MAT_RGB2XYZ;
 			static const float3x3 MAT_XYZ2RGB;
-			void		XYZ2RGB( const bfloat3& _XYZ, bfloat3& _RGB ) const override;
-			void		RGB2XYZ( const bfloat3& _RGB, bfloat3& _XYZ ) const override;
-			void		XYZ2RGB( const bfloat3* _XYZ, bfloat3* _RGB, U32 _length, U32 _stride ) const override;
-			void		RGB2XYZ( const bfloat3* _RGB, bfloat3* _XYZ, U32 _length, U32 _stride ) const override;
+			void		XYZ2RGB( const bfloat4& _XYZ, bfloat4& _RGB ) const override;
+			void		RGB2XYZ( const bfloat4& _RGB, bfloat4& _XYZ ) const override;
+			void		XYZ2RGB( const bfloat4* _XYZ, bfloat4* _RGB, U32 _length ) const override;
+			void		RGB2XYZ( const bfloat4* _RGB, bfloat4* _XYZ, U32 _length ) const override;
 		};
 
 		class		InternalColorConverter_Generic_NoGamma : public IColorConverter {
@@ -221,10 +221,10 @@ namespace ImageUtilityLib {
 				m_RGB2XYZ = _RGB2XYZ;
 				m_XYZ2RGB = _XYZ2RGB;
 			}
-			void		XYZ2RGB( const bfloat3& _XYZ, bfloat3& _RGB ) const override;
-			void		RGB2XYZ( const bfloat3& _RGB, bfloat3& _XYZ ) const override;
-			void		XYZ2RGB( const bfloat3* _XYZ, bfloat3* _RGB, U32 _length, U32 _stride ) const override;
-			void		RGB2XYZ( const bfloat3* _RGB, bfloat3* _XYZ, U32 _length, U32 _stride ) const override;
+			void		XYZ2RGB( const bfloat4& _XYZ, bfloat4& _RGB ) const override;
+			void		RGB2XYZ( const bfloat4& _RGB, bfloat4& _XYZ ) const override;
+			void		XYZ2RGB( const bfloat4* _XYZ, bfloat4* _RGB, U32 _length ) const override;
+			void		RGB2XYZ( const bfloat4* _RGB, bfloat4* _XYZ, U32 _length ) const override;
 		};
 
 		class		InternalColorConverter_Generic_StandardGamma : public IColorConverter {
@@ -240,10 +240,10 @@ namespace ImageUtilityLib {
 				m_Gamma = _Gamma;
 				m_InvGamma = 1.0f / _Gamma;
 			}
-			void		XYZ2RGB( const bfloat3& _XYZ, bfloat3& _RGB ) const override;
-			void		RGB2XYZ( const bfloat3& _RGB, bfloat3& _XYZ ) const override;
-			void		XYZ2RGB( const bfloat3* _XYZ, bfloat3* _RGB, U32 _length, U32 _stride ) const override;
-			void		RGB2XYZ( const bfloat3* _RGB, bfloat3* _XYZ, U32 _length, U32 _stride ) const override;
+			void		XYZ2RGB( const bfloat4& _XYZ, bfloat4& _RGB ) const override;
+			void		RGB2XYZ( const bfloat4& _RGB, bfloat4& _XYZ ) const override;
+			void		XYZ2RGB( const bfloat4* _XYZ, bfloat4* _RGB, U32 _length ) const override;
+			void		RGB2XYZ( const bfloat4* _RGB, bfloat4* _XYZ, U32 _length ) const override;
 		};
 
 		class		InternalColorConverter_Generic_sRGBGamma : public IColorConverter {
@@ -255,10 +255,10 @@ namespace ImageUtilityLib {
 				m_RGB2XYZ = _RGB2XYZ;
 				m_XYZ2RGB = _XYZ2RGB;
 			}
-			void		XYZ2RGB( const bfloat3& _XYZ, bfloat3& _RGB ) const override;
-			void		RGB2XYZ( const bfloat3& _RGB, bfloat3& _XYZ ) const override;
-			void		XYZ2RGB( const bfloat3* _XYZ, bfloat3* _RGB, U32 _length, U32 _stride ) const override;
-			void		RGB2XYZ( const bfloat3* _RGB, bfloat3* _XYZ, U32 _length, U32 _stride ) const override;
+			void		XYZ2RGB( const bfloat4& _XYZ, bfloat4& _RGB ) const override;
+			void		RGB2XYZ( const bfloat4& _RGB, bfloat4& _XYZ ) const override;
+			void		XYZ2RGB( const bfloat4* _XYZ, bfloat4* _RGB, U32 _length ) const override;
+			void		RGB2XYZ( const bfloat4* _RGB, bfloat4* _XYZ, U32 _length ) const override;
 		};
 
 		class		InternalColorConverter_Generic_ProPhoto : public IColorConverter {
@@ -270,10 +270,10 @@ namespace ImageUtilityLib {
 				m_RGB2XYZ = _RGB2XYZ;
 				m_XYZ2RGB = _XYZ2RGB;
 			}
-			void		XYZ2RGB( const bfloat3& _XYZ, bfloat3& _RGB ) const override;
-			void		RGB2XYZ( const bfloat3& _RGB, bfloat3& _XYZ ) const override;
-			void		XYZ2RGB( const bfloat3* _XYZ, bfloat3* _RGB, U32 _length, U32 _stride ) const override;
-			void		RGB2XYZ( const bfloat3* _RGB, bfloat3* _XYZ, U32 _length, U32 _stride ) const override;
+			void		XYZ2RGB( const bfloat4& _XYZ, bfloat4& _RGB ) const override;
+			void		RGB2XYZ( const bfloat4& _RGB, bfloat4& _XYZ ) const override;
+			void		XYZ2RGB( const bfloat4* _XYZ, bfloat4* _RGB, U32 _length ) const override;
+			void		RGB2XYZ( const bfloat4* _RGB, bfloat4* _XYZ, U32 _length ) const override;
 		};
 
 		#pragma endregion
@@ -435,7 +435,7 @@ namespace ImageUtilityLib {
 		/// </summary>
 		/// <param name="_XYZ"></param>
 		/// <returns></returns>
-		void	XYZ2RGB( const bfloat3& _XYZ, bfloat3& _RGB ) const {
+		void	XYZ2RGB( const bfloat4& _XYZ, bfloat4& _RGB ) const {
 			m_internalConverter->XYZ2RGB( _XYZ, _RGB );
 		}
 
@@ -444,7 +444,7 @@ namespace ImageUtilityLib {
 		/// </summary>
 		/// <param name="_RGB"></param>
 		/// <returns></returns>
-		void	RGB2XYZ( const bfloat3& _RGB, bfloat3& _XYZ ) const {
+		void	RGB2XYZ( const bfloat4& _RGB, bfloat4& _XYZ ) const {
 			m_internalConverter->RGB2XYZ( _RGB, _XYZ );
 		}
 
@@ -452,20 +452,16 @@ namespace ImageUtilityLib {
 		/// Converts a CIEXYZ color to a RGB color
 		/// </summary>
 		/// <param name="_XYZ"></param>
-		void	XYZ2RGB( const bfloat3* _XYZ, bfloat3* _RGB, U32 _length, U32 _stride ) const {
-			if ( _XYZ != _RGB && _stride != sizeof(bfloat3) )
-				memcpy_s( (void*) _RGB, _length*_stride, _XYZ, _length*_stride );	// Copy what must be alpha
-			m_internalConverter->XYZ2RGB( _XYZ, _RGB, _length, _stride );
+		void	XYZ2RGB( const bfloat4* _XYZ, bfloat4* _RGB, U32 _length ) const {
+			m_internalConverter->XYZ2RGB( _XYZ, _RGB, _length );
 		}
 
 		/// <summary>
 		/// Converts a RGB color to a CIEXYZ color
 		/// </summary>
 		/// <param name="_RGB"></param>
-		void	RGB2XYZ( const bfloat3* _RGB, bfloat3* _XYZ, U32 _length, U32 _stride ) const {
-			if ( _RGB != _XYZ && _stride != sizeof(bfloat3) )
-				memcpy_s( (void*) _XYZ, _length*_stride, _RGB, _length*_stride );	// Copy what must be alpha
-			m_internalConverter->RGB2XYZ( _RGB, _XYZ, _length, _stride );
+		void	RGB2XYZ( const bfloat4* _RGB, bfloat4* _XYZ, U32 _length ) const {
+			m_internalConverter->RGB2XYZ( _RGB, _XYZ, _length );
 		}
 
 		#pragma endregion

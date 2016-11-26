@@ -135,8 +135,8 @@ void	ImageFile::Init( U32 _width, U32 _height, PIXEL_FORMAT _format, const Color
 	if ( m_bitmap == nullptr )
 		throw "Failed to initialize image file!";
 
-	// Copy color profile
-	m_metadata.m_colorProfile = new ColorProfile( _colorProfile );
+	// Assign color profile
+	SetColorProfile( _colorProfile );
 }
 
 void	ImageFile::Exit() {

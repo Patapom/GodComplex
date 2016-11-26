@@ -64,7 +64,7 @@ cli::array<float4>^	ColorProfile::XYZ2RGB( cli::array<float4>^ _XYZ ) {
 
 	// Call native method
 	IntPtr	nativeBufferDst = System::Runtime::InteropServices::Marshal::AllocHGlobal( _XYZ->Length * sizeof(bfloat4) );
-	m_nativeObject->XYZ2RGB( (bfloat3*) nativeBufferSrc.ToPointer(), (bfloat3*) nativeBufferDst.ToPointer(), _XYZ->Length, sizeof(bfloat4) );
+	m_nativeObject->XYZ2RGB( (bfloat4*) nativeBufferSrc.ToPointer(), (bfloat4*) nativeBufferDst.ToPointer(), _XYZ->Length );
 
 	// Copy result back to managed array
 	cli::array<float4>^	RGB = gcnew cli::array<float4>( _XYZ->Length );
@@ -89,7 +89,7 @@ cli::array<float4>^	ColorProfile::RGB2XYZ( cli::array<float4>^ _RGB ) {
 
 	// Call native method
 	IntPtr	nativeBufferDst = System::Runtime::InteropServices::Marshal::AllocHGlobal( _RGB->Length * sizeof(bfloat4) );
-	m_nativeObject->RGB2XYZ( (bfloat3*) nativeBufferSrc.ToPointer(), (bfloat3*) nativeBufferDst.ToPointer(), _RGB->Length, sizeof(bfloat4) );
+	m_nativeObject->RGB2XYZ( (bfloat4*) nativeBufferSrc.ToPointer(), (bfloat4*) nativeBufferDst.ToPointer(), _RGB->Length );
 
 	// Copy result back to managed array
 	cli::array<float4>^	XYZ = gcnew cli::array<float4>( _RGB->Length );

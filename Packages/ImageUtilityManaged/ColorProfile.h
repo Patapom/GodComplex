@@ -228,11 +228,11 @@ namespace ImageUtility {
 		/// </summary>
 		/// <param name="_XYZ"></param>
 		/// <returns></returns>
-		void	XYZ2RGB( float3^ _XYZ, float3% _RGB ) {
-			bfloat3	XYZ( _XYZ->x, _XYZ->y, _XYZ->z );
-			bfloat3	RGB;
+		void	XYZ2RGB( float4^ _XYZ, float4% _RGB ) {
+			bfloat4	XYZ( _XYZ->x, _XYZ->y, _XYZ->z, _XYZ->w );
+			bfloat4	RGB;
 			m_nativeObject->XYZ2RGB( XYZ, RGB );
-			_RGB.Set( RGB.x, RGB.y, RGB.z );
+			_RGB.Set( RGB.x, RGB.y, RGB.z, RGB.w );
 		}
 
 		/// <summary>
@@ -240,11 +240,11 @@ namespace ImageUtility {
 		/// </summary>
 		/// <param name="_RGB"></param>
 		/// <returns></returns>
-		void	RGB2XYZ( float3^ _RGB, float3% _XYZ ) {
-			bfloat3	RGB( _RGB->x, _RGB->y, _RGB->z );
-			bfloat3	XYZ;
+		void	RGB2XYZ( float4^ _RGB, float4% _XYZ ) {
+			bfloat4	RGB( _RGB->x, _RGB->y, _RGB->z, _RGB->w );
+			bfloat4	XYZ;
 			m_nativeObject->RGB2XYZ( RGB, XYZ );
-			_XYZ.Set( XYZ.x, XYZ.y, XYZ.z );
+			_XYZ.Set( XYZ.x, XYZ.y, XYZ.z, XYZ.w );
 		}
 
 		/// <summary>

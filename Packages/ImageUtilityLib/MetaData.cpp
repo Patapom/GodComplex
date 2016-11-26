@@ -8,6 +8,7 @@ using namespace ImageUtilityLib;
 
 MetaData::MetaData() : m_colorProfile( nullptr ) {
 	Reset();
+	m_colorProfile = new ColorProfile( ColorProfile::STANDARD_PROFILE::sRGB );	// Assign default sRGB profile
 }
 MetaData::MetaData( const MetaData& _other ) : m_colorProfile( nullptr ) {
 	*this = _other;
@@ -35,11 +36,10 @@ MetaData&	MetaData::operator=( const MetaData& _other ) {
 
 	// Copy in bulk
 	memcpy_s( &m_colorProfile, sizeof(MetaData), &_other.m_colorProfile, sizeof(MetaData) );
+	m_colorProfile = nullptr;
 
 	// But make a deep copy of the profile
-	if ( _other.m_colorProfile != nullptr ) {
-		m_colorProfile = new ColorProfile( *_other.m_colorProfile );
-	}
+	SetColorProfile( *_other.m_colorProfile );
 
 	return *this;
 }
@@ -442,8 +442,8 @@ bool	MetaData::GetRational64( FREE_IMAGE_MDMODEL _model, FIBITMAP& _bitmap, cons
 
 	return true;
 }
-/*
 
+/*
 	protected:
 
 // 		// Attempts to find the TIFF "PhotometricInterpretation" metadata

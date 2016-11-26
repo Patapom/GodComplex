@@ -13,15 +13,18 @@ namespace ImageUtility {
 	//
 	public ref class MetaData {
 	private:
-		const ImageUtilityLib::MetaData*	m_nativeObject;
+		ImageUtilityLib::MetaData*	m_nativeObject;
 
 	public:	// PROPERTIES
 
 		property ImageUtility::ColorProfile^		ColorProfile {
 			ImageUtility::ColorProfile^	get() {
-				// Here we can only wrap a valid non null profile!
-				ImageUtilityLib::ColorProfile*	nativeProfile = m_nativeObject->m_colorProfile;
-				return nativeProfile != nullptr ? gcnew ImageUtility::ColorProfile( *nativeProfile ) : nullptr;
+				return gcnew ImageUtility::ColorProfile( m_nativeObject->GetColorProfile() );
+			}
+			void	set( ImageUtility::ColorProfile^ value ) {
+				if ( value == nullptr )
+					throw gcnew Exception( "Invalid null profile!" );
+				m_nativeObject->SetColorProfile( *value->m_nativeObject );
 			}
 		}
 

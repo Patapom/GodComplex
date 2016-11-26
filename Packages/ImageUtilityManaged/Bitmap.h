@@ -127,18 +127,21 @@ static property ImageFile^	DEBUG {
 			FromImageFile( _sourceFile, _profileOverride, false );
 		}
 		void			FromImageFile( ImageFile^ _sourceFile, ColorProfile^ _profileOverride, bool _unPremultiplyAlpha ) {
+			if ( _sourceFile == nullptr )
+				throw gcnew Exception( "Invalid source file!" );
 			m_nativeObject->FromImageFile( *_sourceFile->m_nativeObject, _profileOverride != nullptr ? _profileOverride->m_nativeObject : nullptr, _unPremultiplyAlpha );
 		}
 
 		// Builds an RGBA32F image file from the bitmap that you can later tone map
-		void			ToImageFile( ImageFile^ _targetFile ) {
-			ToImageFile( _targetFile, nullptr, false );
+		void			ToImageFile( ImageFile^ _targetFile, ColorProfile^ _colorProfile ) {
+			ToImageFile( _targetFile, _colorProfile, false );
 		}
-		void			ToImageFile( ImageFile^ _targetFile, ColorProfile^ _profileOverride ) {
-			ToImageFile( _targetFile, _profileOverride, false );
-		}
-		void			ToImageFile( ImageFile^ _targetFile, ColorProfile^ _profileOverride, bool _premultiplyAlpha ) {
-			m_nativeObject->ToImageFile( *_targetFile->m_nativeObject, _profileOverride != nullptr ? _profileOverride->m_nativeObject : nullptr, _premultiplyAlpha );
+		void			ToImageFile( ImageFile^ _targetFile, ColorProfile^ _colorProfile, bool _premultiplyAlpha ) {
+			if ( _targetFile == nullptr )
+				throw gcnew Exception( "Invalid target file!" );
+			if ( _colorProfile == nullptr )
+				throw gcnew Exception( "Invalid color profile!" );
+			m_nativeObject->ToImageFile( *_targetFile->m_nativeObject, *_colorProfile->m_nativeObject, _premultiplyAlpha );
 		}
 
 		/// <summary>

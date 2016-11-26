@@ -21,8 +21,8 @@ void	Bitmap::Exit() {
 
 // This is the core of the bitmap class
 // This method converts any image file into a float4 CIE XYZ format using the provided profile or the profile associated to the file
-void	Bitmap::FromImageFile( const ImageFile& _sourceFile, ColorProfile* _profileOverride, bool _unPremultiplyAlpha ) {
-	ColorProfile*	colorProfile = _profileOverride != nullptr ? _profileOverride : &_sourceFile.GetColorProfile();
+void	Bitmap::FromImageFile( const ImageFile& _sourceFile, const ColorProfile* _profileOverride, bool _unPremultiplyAlpha ) {
+	const ColorProfile*	colorProfile = _profileOverride != nullptr ? _profileOverride : &_sourceFile.GetColorProfile();
  	if ( colorProfile == nullptr )
  		throw "The provided file doesn't contain a valid color profile and you did not provide any profile override to initialize the bitmap!";
 
@@ -37,7 +37,7 @@ void	Bitmap::FromImageFile( const ImageFile& _sourceFile, ColorProfile* _profile
 	// Convert to XYZ in bulk using profile
 	const bfloat4*	source = (const bfloat4*) FreeImage_GetBits( float4Bitmap );
 	m_XYZ = new bfloat4[m_width * m_height];
-	colorProfile->RGB2XYZ( (bfloat3*) source, (bfloat3*) m_XYZ, U32(m_width * m_height), sizeof(bfloat4) );
+	colorProfile->RGB2XYZ( source, m_XYZ, U32(m_width * m_height) );
 
 	FreeImage_Unload( float4Bitmap );
 
@@ -56,13 +56,9 @@ void	Bitmap::FromImageFile( const ImageFile& _sourceFile, ColorProfile* _profile
 }
 
 // And this method converts back the bitmap to RGBA32F format
-void	Bitmap::ToImageFile( ImageFile& _targetFile, ColorProfile* _profileOverride, bool _premultiplyAlpha ) const {
-	ColorProfile*	colorProfile = _profileOverride != nullptr ? _profileOverride : &_targetFile.GetColorProfile();
- 	if ( colorProfile == nullptr )
- 		throw "The bitmap doesn't contain a valid color profile to initialize the image file or you didn't provide an override!";
-
+void	Bitmap::ToImageFile( ImageFile& _targetFile, const ColorProfile& _colorProfile, bool _premultiplyAlpha ) const {
 	// Convert back to float4 RGB using color profile
-	_targetFile.Init( m_width, m_height, ImageFile::PIXEL_FORMAT::RGBA32F, *colorProfile );
+	_targetFile.Init( m_width, m_height, ImageFile::PIXEL_FORMAT::RGBA32F, _colorProfile );
 	const bfloat4*	source = m_XYZ;
 	bfloat4*		target = (bfloat4*) _targetFile.GetBits();
 	if ( _premultiplyAlpha ) {
@@ -77,7 +73,7 @@ void	Bitmap::ToImageFile( ImageFile& _targetFile, ColorProfile* _profileOverride
 		}
 		source = target;	// In-place conversion
 	}
-	colorProfile->XYZ2RGB( (bfloat3*) source, (bfloat3*) target, m_width*m_height, sizeof(bfloat4) );
+	_colorProfile.XYZ2RGB( source, target, m_width*m_height );
 }
 
 void	Bitmap::BilinearSample( float X, float Y, bfloat4& _XYZ ) const {
@@ -217,7 +213,7 @@ void	Bitmap::LDR2HDR( U32 _imagesCount, const ImageFile** _images, const float* 
 	//////////////////////////////////////////////////////////////////////////
 	// 3] Convert into XYZ using a linear profile
 	ColorProfile	linearProfile( ColorProfile::STANDARD_PROFILE::LINEAR );
-	linearProfile.RGB2XYZ( (bfloat3*) m_XYZ, (bfloat3*) m_XYZ, W*H, sizeof(bfloat4) );
+	linearProfile.RGB2XYZ( m_XYZ, m_XYZ, W*H );
 }
 
 void svdcmp( int m, int n, float** a, float w[], float** v );
