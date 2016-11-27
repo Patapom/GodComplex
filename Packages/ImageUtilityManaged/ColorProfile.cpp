@@ -104,31 +104,31 @@ cli::array<float4>^	ColorProfile::RGB2XYZ( cli::array<float4>^ _RGB ) {
 	return XYZ;
 }
 
-SharpMath::float3x3^	ColorProfile::ComputeWhiteBalanceXYZMatrix( Chromaticities^ _profileIn, SharpMath::float2^ _whitePointOut ) {
+SharpMath::float3x3	ColorProfile::ComputeWhiteBalanceXYZMatrix( Chromaticities^ _profileIn, SharpMath::float2^ _whitePointOut ) {
 	::float3x3	result;
 	ImageUtilityLib::ColorProfile::ComputeWhiteBalanceXYZMatrix( *_profileIn->m_nativeObject, bfloat2( _whitePointOut->x, _whitePointOut->y ), result );
 
-	return gcnew SharpMath::float3x3(	result.r[0].x, result.r[0].y, result.r[0].z,
-										result.r[1].x, result.r[1].y, result.r[1].z,
-										result.r[2].x, result.r[2].y, result.r[2].z );
+	return SharpMath::float3x3(	result.r[0].x, result.r[0].y, result.r[0].z,
+								result.r[1].x, result.r[1].y, result.r[1].z,
+								result.r[2].x, result.r[2].y, result.r[2].z );
 }
 
-SharpMath::float3x3^	ColorProfile::ComputeWhiteBalanceXYZMatrix( SharpMath::float2^ _whitePointIn, Chromaticities^ _profileOut ) {
+SharpMath::float3x3	ColorProfile::ComputeWhiteBalanceXYZMatrix( SharpMath::float2^ _whitePointIn, Chromaticities^ _profileOut ) {
 	::float3x3	result;
 	ImageUtilityLib::ColorProfile::ComputeWhiteBalanceXYZMatrix( bfloat2( _whitePointIn->x, _whitePointIn->y ), *_profileOut->m_nativeObject, result );
 
-	return gcnew SharpMath::float3x3(	result.r[0].x, result.r[0].y, result.r[0].z,
-										result.r[1].x, result.r[1].y, result.r[1].z,
-										result.r[2].x, result.r[2].y, result.r[2].z );
+	return SharpMath::float3x3(	result.r[0].x, result.r[0].y, result.r[0].z,
+								result.r[1].x, result.r[1].y, result.r[1].z,
+								result.r[2].x, result.r[2].y, result.r[2].z );
 }
 
-SharpMath::float3x3^	ColorProfile::ComputeWhiteBalanceXYZMatrix( SharpMath::float2^ _xyR, float2^ _xyG, SharpMath::float2^ _xyB, SharpMath::float2^ _whitePointIn, SharpMath::float2^ _whitePointOut ) {
+SharpMath::float3x3	ColorProfile::ComputeWhiteBalanceXYZMatrix( SharpMath::float2^ _xyR, float2^ _xyG, SharpMath::float2^ _xyB, SharpMath::float2^ _whitePointIn, SharpMath::float2^ _whitePointOut ) {
 	::float3x3	result;
 	ImageUtilityLib::ColorProfile::ComputeWhiteBalanceXYZMatrix( bfloat2( _xyR->x, _xyR->y ), bfloat2( _xyG->x, _xyG->y ), bfloat2( _xyB->x, _xyB->y ), bfloat2( _whitePointIn->x, _whitePointIn->y ), bfloat2( _whitePointOut->x, _whitePointOut->y ), result );
 
-	return gcnew SharpMath::float3x3(	result.r[0].x, result.r[0].y, result.r[0].z,
-										result.r[1].x, result.r[1].y, result.r[1].z,
-										result.r[2].x, result.r[2].y, result.r[2].z );
+	return SharpMath::float3x3(	result.r[0].x, result.r[0].y, result.r[0].z,
+								result.r[1].x, result.r[1].y, result.r[1].z,
+								result.r[2].x, result.r[2].y, result.r[2].z );
 }
 
 

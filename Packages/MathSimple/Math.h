@@ -44,6 +44,22 @@ namespace SharpMath {
 			}
 		}
 
+		property float	default[int] {
+			float	get( int _ComponentIndex ) {
+				switch ( _ComponentIndex&1 ) {
+					case 0: return x;
+					case 1: return y;
+				}
+				return x;
+			}
+			void	set( int _ComponentIndex, float value ) {
+				switch ( _ComponentIndex&1 ) {
+					case 0: x = value; break;
+					case 1: y = value; break;
+				}
+			}
+		}
+
 		float	Min()			{ return Math::Min( x, y ); }
 		float	Max()			{ return Math::Max( x, y ); }
 		void	Min( float2 p )	{ x = Math::Min( x, p.x ); y = Math::Min( y, p.y ); }
@@ -214,137 +230,154 @@ namespace SharpMath {
 	};
 
 	//////////////////////////////////////////////////////////////////////////
-	public ref class	float3x3 {
+	[System::Diagnostics::DebuggerDisplayAttribute( "{r0}, {r1}, {r2}" )]
+	public value struct	float3x3 {
 	public:
-		cli::array< float3 >^	r;
+		float3	r0;
+		float3	r1;
+		float3	r2;
 
-		float3x3() {
-			r = gcnew cli::array< float3 >( 3 );
-		}
 		float3x3( cli::array<float>^ _values ) {
-			r = gcnew cli::array< float3 >( 3 );
-			r[0].Set( _values[3*0+0], _values[3*0+1], _values[3*0+2] );
-			r[1].Set( _values[3*1+0], _values[3*1+1], _values[3*1+2] );
-			r[2].Set( _values[3*2+0], _values[3*2+1], _values[3*2+2] );
+			r0.Set( _values[3*0+0], _values[3*0+1], _values[3*0+2] );
+			r1.Set( _values[3*1+0], _values[3*1+1], _values[3*1+2] );
+			r2.Set( _values[3*2+0], _values[3*2+1], _values[3*2+2] );
 		}
 		float3x3( float3^ _r0, float3^ _r1, float3^ _r2 ) {
-			r = gcnew cli::array< float3 >( 3 );
-			r[0] = *_r0;
-			r[1] = *_r1;
-			r[2] = *_r2;
+			r0 = *_r0;
+			r1 = *_r1;
+			r2 = *_r2;
 		}
 		float3x3(	float r00, float r01, float r02, 
 					float r10, float r11, float r12, 
 					float r20, float r21, float r22 ) {
-			r = gcnew cli::array< float3 >( 3 );
-			r[0].Set( r00, r01, r02 );
-			r[1].Set( r10, r11, r12 );
-			r[2].Set( r20, r21, r22 );
+			r0.Set( r00, r01, r02 );
+			r1.Set( r10, r11, r12 );
+			r2.Set( r20, r21, r22 );
 		}
 
-		float3x3^	Scale( float3 _Scale ) {
-			r[0] *= _Scale.x;
-			r[1] *= _Scale.y;
-			r[2] *= _Scale.z;
-			return this;
+		void	Scale( float3 _Scale ) {
+			r0 *= _Scale.x;
+			r1 *= _Scale.y;
+			r2 *= _Scale.z;
 		}
 
-		static float3x3^	operator*( float3x3^ a, float3x3^ b ) {
-			float3x3^	R = gcnew float3x3();
-			R->r[0].Set( a->r[0].x*b->r[0].x + a->r[0].y*b->r[1].x + a->r[0].z*b->r[2].x, /**/ a->r[0].x*b->r[0].y + a->r[0].y*b->r[1].y + a->r[0].z*b->r[2].y, /**/ a->r[0].x*b->r[0].z + a->r[0].y*b->r[1].z + a->r[0].z*b->r[2].z );
-			R->r[1].Set( a->r[1].x*b->r[0].x + a->r[1].y*b->r[1].x + a->r[1].z*b->r[2].x, /**/ a->r[1].x*b->r[0].y + a->r[1].y*b->r[1].y + a->r[1].z*b->r[2].y, /**/ a->r[1].x*b->r[0].z + a->r[1].y*b->r[1].z + a->r[1].z*b->r[2].z );
-			R->r[2].Set( a->r[2].x*b->r[0].x + a->r[2].y*b->r[1].x + a->r[2].z*b->r[2].x, /**/ a->r[2].x*b->r[0].y + a->r[2].y*b->r[1].y + a->r[2].z*b->r[2].y, /**/ a->r[2].x*b->r[0].z + a->r[2].y*b->r[1].z + a->r[2].z*b->r[2].z );
+		static float3x3	operator*( float3x3^ a, float3x3^ b ) {
+			float3x3	R;
+			R.r0.Set( a->r0.x*b->r0.x + a->r0.y*b->r1.x + a->r0.z*b->r2.x, /**/ a->r0.x*b->r0.y + a->r0.y*b->r1.y + a->r0.z*b->r2.y, /**/ a->r0.x*b->r0.z + a->r0.y*b->r1.z + a->r0.z*b->r2.z );
+			R.r1.Set( a->r1.x*b->r0.x + a->r1.y*b->r1.x + a->r1.z*b->r2.x, /**/ a->r1.x*b->r0.y + a->r1.y*b->r1.y + a->r1.z*b->r2.y, /**/ a->r1.x*b->r0.z + a->r1.y*b->r1.z + a->r1.z*b->r2.z );
+			R.r2.Set( a->r2.x*b->r0.x + a->r2.y*b->r1.x + a->r2.z*b->r2.x, /**/ a->r2.x*b->r0.y + a->r2.y*b->r1.y + a->r2.z*b->r2.y, /**/ a->r2.x*b->r0.z + a->r2.y*b->r1.z + a->r2.z*b->r2.z );
 			return R;
 		}
 
-		static float3x3^	operator*( float a, float3x3^ b ) {
-			float3x3^	R = gcnew float3x3();
-			R->r[0].Set( a*b->r[0].x, a*b->r[0].y, a*b->r[0].z );
-			R->r[1].Set( a*b->r[1].x, a*b->r[1].y, a*b->r[1].z );
-			R->r[2].Set( a*b->r[2].x, a*b->r[2].y, a*b->r[2].z );
+		static float3x3	operator*( float a, float3x3^ b ) {
+			float3x3	R;
+			R.r0.Set( a*b->r0.x, a*b->r0.y, a*b->r0.z );
+			R.r1.Set( a*b->r1.x, a*b->r1.y, a*b->r1.z );
+			R.r2.Set( a*b->r2.x, a*b->r2.y, a*b->r2.z );
 			return R;
 		}
 
 		static float3	operator*( float3 a, float3x3^ b ) {
 			float3	R;
-			R.x = a.x*b->r[0].x + a.y*b->r[1].x + a.z*b->r[2].x;
-			R.y = a.x*b->r[0].y + a.y*b->r[1].y + a.z*b->r[2].y;
-			R.z = a.x*b->r[0].z + a.y*b->r[1].z + a.z*b->r[2].z;
+			R.x = a.x*b->r0.x + a.y*b->r1.x + a.z*b->r2.x;
+			R.y = a.x*b->r0.y + a.y*b->r1.y + a.z*b->r2.y;
+			R.z = a.x*b->r0.z + a.y*b->r1.z + a.z*b->r2.z;
 			return R;
 		}
 
-		property float	default[int,int] {
-			float	get( int _RowIndex, int _ColumnIndex )				{ return r[_RowIndex%3][_ColumnIndex%3]; }
-			void	set( int _RowIndex, int _ColumnIndex, float value )	{ r[_RowIndex%3][_ColumnIndex%3] = value; }
-		}
-
-		float3	GetRow( int _RowIndex )					{ return r[_RowIndex%3]; }
-		void	SetRow( int _RowIndex, float3 value )	{ r[_RowIndex%3] = value; }
-
-		property float	Determinant {
-			float	get() {
-				return (r[0][0]*r[1][1]*r[2][2] + r[0][1]*r[1][2]*r[2][0] + r[0][2]*r[1][0]*r[2][1]) - (r[2][0]*r[1][1]*r[0][2] + r[2][1]*r[1][2]*r[0][0] + r[2][2]*r[1][0]*r[0][1]);
+		property float3	default[int] {
+			float3		get( int _rowIndex ) {
+				switch ( _rowIndex % 3 ) {
+				case 0: return r0;
+				case 1: return r1;
+				case 2: return r2;
+				}
+				return r0;
+			}
+			void		set( int _rowIndex, float3 value ) {
+				switch ( _rowIndex % 3 ) {
+				case 0: r0 = value;	break;
+				case 1: r1 = value;	break;
+				case 2: r2 = value;	break;
+				}
 			}
 		}
 
-		property float3x3^	Inverse {
-			float3x3^	get() {
+		property float	default[int,int] {
+			float	get( int _rowIndex, int _columnIndex )				{ return (*this)[_rowIndex%3][_columnIndex%3]; }
+			void	set( int _rowIndex, int _columnIndex, float value )	{
+				switch ( _rowIndex%3 ) {
+					case 0: r0[_columnIndex%3] = value; break;
+					case 1: r1[_columnIndex%3] = value; break;
+					case 2: r2[_columnIndex%3] = value; break;
+				}
+			}
+		}
+
+		property float	Determinant {
+			float	get() {
+				return (r0[0]*r1[1]*r2[2] + r0[1]*r1[2]*r2[0] + r0[2]*r1[0]*r2[1]) - (r2[0]*r1[1]*r0[2] + r2[1]*r1[2]*r0[0] + r2[2]*r1[0]*r0[1]);
+			}
+		}
+
+		property float3x3	Inverse {
+			float3x3	get() {
 				float	fDet = Determinant;
 				if ( Math::Abs(fDet) < float::Epsilon )
 					throw gcnew Exception( "Matrix is not invertible!" );		// The matrix is not invertible! Singular case!
 
 				float	fIDet = 1.0f / fDet;
 
-				float3x3^	R = gcnew float3x3();
-				R->r[0][0] = +(r[1][1] * r[2][2] - r[2][1] * r[1][2]) * fIDet;
-				R->r[1][0] = -(r[1][0] * r[2][2] - r[2][0] * r[1][2]) * fIDet;
-				R->r[2][0] = +(r[1][0] * r[2][1] - r[2][0] * r[1][1]) * fIDet;
-				R->r[0][1] = -(r[0][1] * r[2][2] - r[2][1] * r[0][2]) * fIDet;
-				R->r[1][1] = +(r[0][0] * r[2][2] - r[2][0] * r[0][2]) * fIDet;
-				R->r[2][1] = -(r[0][0] * r[2][1] - r[2][0] * r[0][1]) * fIDet;
-				R->r[0][2] = +(r[0][1] * r[1][2] - r[1][1] * r[0][2]) * fIDet;
-				R->r[1][2] = -(r[0][0] * r[1][2] - r[1][0] * r[0][2]) * fIDet;
-				R->r[2][2] = +(r[0][0] * r[1][1] - r[1][0] * r[0][1]) * fIDet;
+				float3x3	R;
+				R.r0[0] = +(r1[1] * r2[2] - r2[1] * r1[2]) * fIDet;
+				R.r1[0] = -(r1[0] * r2[2] - r2[0] * r1[2]) * fIDet;
+				R.r2[0] = +(r1[0] * r2[1] - r2[0] * r1[1]) * fIDet;
+				R.r0[1] = -(r0[1] * r2[2] - r2[1] * r0[2]) * fIDet;
+				R.r1[1] = +(r0[0] * r2[2] - r2[0] * r0[2]) * fIDet;
+				R.r2[1] = -(r0[0] * r2[1] - r2[0] * r0[1]) * fIDet;
+				R.r0[2] = +(r0[1] * r1[2] - r1[1] * r0[2]) * fIDet;
+				R.r1[2] = -(r0[0] * r1[2] - r1[0] * r0[2]) * fIDet;
+				R.r2[2] = +(r0[0] * r1[1] - r1[0] * r0[1]) * fIDet;
 
 				return	R;
 			}
 		}
 
-		static property float3x3^	Identity {
-			float3x3^	get() {
-				return gcnew float3x3( gcnew cli::array<float>( 9 ) { 1, 0, 0, 0, 1, 0, 0, 0, 1 } );
+		static property float3x3	Identity {
+			float3x3	get() {
+				return float3x3( 1, 0, 0, 0, 1, 0, 0, 0, 1 );
 			}
 		}
 
-		static float3x3^	RotationX( float _Angle ) {
+		float3x3	BuildRotationX( float _Angle ) {
 			float C = (float) Math::Cos( _Angle );
 			float S = (float) Math::Sin( _Angle );
 
-			float3x3^	R = Identity;
-			R[1,1] = C;		R[1,2] = S;
-			R[2,1] = -S;	R[2,2] = C;
+			r0.Set( 1,  0, 0 );
+			r1.Set( 0,  C, S );
+			r2.Set( 0, -S, C );
 
-			return R;
+			return *this;
 		}
-		static float3x3^	RotationY( float _Angle ) {
+		float3x3	BuildRotationY( float _Angle ) {
 			float C = (float) Math::Cos( _Angle );
 			float S = (float) Math::Sin( _Angle );
 
-			float3x3^	R = Identity;
-			R[0,0] = C;	R[0,2] = -S;
-			R[2,0] = S;	R[2,2] = C;
+			r0.Set( C, 0, -S );
+			r1.Set( 0, 1,  0 );
+			r2.Set( S, 0,  C );
 
-			return R;
+			return *this;
 		}
-		static float3x3^	RotationZ( float _Angle ) {
+		float3x3	BuildRotationZ( float _Angle ) {
 			float C = (float) Math::Cos( _Angle );
 			float S = (float) Math::Sin( _Angle );
 
-			float3x3^	R = Identity;
-			R[0,0] = C;		R[0,1] = S;
-			R[1,0] = -S;	R[1,1] = C;
+			r0.Set(  C, S, 0 );
+			r1.Set( -S, C, 0 );
+			r2.Set(  0, 0, 1 );
 
-			return R;
+			return *this;
 		}
 
 		/// <summary>
@@ -353,7 +386,7 @@ namespace SharpMath {
 		/// <param name="_Angle"></param>
 		/// <param name="_Axis"></param>
 		/// <returns></returns>
-		static float3x3^	FromAngleAxis( float _Angle, float3 _Axis ) {
+		float3x3	BuildFromAngleAxis( float _Angle, float3 _Axis ) {
 			// Convert into a quaternion
 			float3	qv = (float) Math::Sin( 0.5f * _Angle ) * _Axis;
 			float	qs = (float) Math::Cos( 0.5f * _Angle );
@@ -363,221 +396,231 @@ namespace SharpMath {
 
 			xs = 2.0f * qv.x;	ys = 2.0f * qv.y;	zs = 2.0f * qv.z;
 
-			wx = qs * xs;		wy = qs * ys;		wz = qs * zs;
+			wx = qs * xs;	wy = qs * ys;	wz = qs * zs;
 			xx = qv.x * xs;	xy = qv.x * ys;	xz = qv.x * zs;
 			yy = qv.y * ys;	yz = qv.y * zs;	zz = qv.z * zs;
 
-			float3x3^	R = gcnew float3x3();
-			R->r[0].Set( 1.0f -	yy - zz,		xy + wz,		xz - wy );
-			R->r[1].Set(		xy - wz, 1.0f -	xx - zz,		yz + wx );
-			R->r[2].Set(		xz + wy,		yz - wx, 1.0f -	xx - yy );
+			r0.Set( 1.0f -	yy - zz,		xy + wz,		xz - wy );
+			r1.Set(			xy - wz, 1.0f -	xx - zz,		yz + wx );
+			r2.Set(			xz + wy,		yz - wx, 1.0f -	xx - yy );
 
-			return	R;
+			return *this;
 		}
 	};
 
-
 	//////////////////////////////////////////////////////////////////////////
-	public ref class	float4x4 {
+	[System::Diagnostics::DebuggerDisplayAttribute( "{r0}, {r1}, {r2}, {r3}" )]
+	public value struct	float4x4 {
 	public:
-		cli::array< float4 >^	r;
+		float4	r0;
+		float4	r1;
+		float4	r2;
+		float4	r3;
 
-		float4x4() {
-			r = gcnew cli::array< float4 >( 4 );
-		}
 		float4x4( cli::array<float>^ _values ) {
-			r = gcnew cli::array< float4 >( 4 );
-			r[0].Set( _values[4*0+0], _values[4*0+1], _values[4*0+2], _values[4*0+3] );
-			r[1].Set( _values[4*1+0], _values[4*1+1], _values[4*1+2], _values[4*1+3] );
-			r[2].Set( _values[4*2+0], _values[4*2+1], _values[4*2+2], _values[4*2+3] );
-			r[3].Set( _values[4*3+0], _values[4*3+1], _values[4*3+2], _values[4*3+3] );
+			r0.Set( _values[4*0+0], _values[4*0+1], _values[4*0+2], _values[4*0+3] );
+			r1.Set( _values[4*1+0], _values[4*1+1], _values[4*1+2], _values[4*1+3] );
+			r2.Set( _values[4*2+0], _values[4*2+1], _values[4*2+2], _values[4*2+3] );
+			r3.Set( _values[4*3+0], _values[4*3+1], _values[4*3+2], _values[4*3+3] );
 		}
 		float4x4( float4^ _r0, float4^ _r1, float4^ _r2, float4^ _r3 ) {
-			r = gcnew cli::array< float4 >( 4 );
-			r[0] = *_r0;
-			r[1] = *_r1;
-			r[2] = *_r2;
-			r[3] = *_r3;
+			r0 = *_r0;
+			r1 = *_r1;
+			r2 = *_r2;
+			r3 = *_r3;
 		}
 		float4x4(	float r00, float r01, float r02, float r03,
 					float r10, float r11, float r12, float r13,
 					float r20, float r21, float r22, float r23,
 					float r30, float r31, float r32, float r33 ) {
-			r = gcnew cli::array< float4 >( 4 );
-			r[0].Set( r00, r01, r02, r03 );
-			r[1].Set( r10, r11, r12, r13 );
-			r[2].Set( r20, r21, r22, r23 );
-			r[3].Set( r30, r31, r32, r33 );
+			r0.Set( r00, r01, r02, r03 );
+			r1.Set( r10, r11, r12, r13 );
+			r2.Set( r20, r21, r22, r23 );
+			r3.Set( r30, r31, r32, r33 );
 		}
 
-		// Makes a "look at" camera matrix (left-handed)
-		float4x4^	MakeLookAtCamera( float3 _Position, float3 _Target, float3 _Up ) {
-			float3	At = (_Target - _Position).Normalized;	// We want Z to point toward target
-			float3	Right = At.Cross( _Up ).Normalized;		// We want X to point to the right
-			float3	Up = Right.Cross( At );					// We want Y to point upward
-
-			r[0].Set( Right.x, Right.y, Right.z, 0.0f );
-			r[1].Set( Up.x, Up.y, Up.z, 0.0f );
-			r[2].Set( At.x, At.y, At.z, 0.0f );
-			r[3].Set( _Position.x, _Position.y, _Position.z, 1.0f );
-
-			return this;
+		void	Scale( float3 _Scale ) {
+			r0 *= _Scale.x;
+			r1 *= _Scale.y;
+			r2 *= _Scale.z;
 		}
 
-		// Makes a regular "look at" matrix for objects (right-handed)
-		float4x4^	MakeLookAt( float3 _Position, float3 _Target, float3 _Up ) {
-			float3	At = (_Target - _Position).Normalized;	// We want Z to point toward target
-			float3	Right = _Up.Cross( At ).Normalized;		// We want X to point to the right
-			float3	Up = At.Cross( Right );					// We want Y to point upward
-
-			r[0].Set( Right.x, Right.y, Right.z, 0.0f );
-			r[1].Set( Up.x, Up.y, Up.z, 0.0f );
-			r[2].Set( At.x, At.y, At.z, 0.0f );
-			r[3].Set( _Position.x, _Position.y, _Position.z, 1.0f );
-
-			return this;
-		}
-	
-		float4x4^	MakeProjectionPerspective( float _FOVY, float _AspectRatio, float _Near, float _Far ) {
-			float	H = (float) Math::Tan( 0.5f * _FOVY );
-			float	W = _AspectRatio * H;
-			float	Q =  _Far / (_Far - _Near);
-
-			r[0].Set( 1.0f / W, 0.0f, 0.0f, 0.0f );
-			r[1].Set( 0.0f, 1.0f / H, 0.0f, 0.0f );
-			r[2].Set( 0.0f, 0.0f, Q, 1.0f );
-			r[3].Set( 0.0f, 0.0f, -_Near * Q, 0.0f );
-
-			return this;
-		}
- 
-		float4x4^	Scale( float3 _Scale ) {
-			r[0] *= _Scale.x;
-			r[1] *= _Scale.y;
-			r[2] *= _Scale.z;
-			return this;
-		}
-
-		static 	operator float3x3^( float4x4^ a ) {
-			float3x3^	R = gcnew float3x3();
-			R->r[0].Set( a->r[0].x, a->r[0].y, a->r[0].z );
-			R->r[1].Set( a->r[1].x, a->r[1].y, a->r[1].z );
-			R->r[2].Set( a->r[2].x, a->r[2].y, a->r[2].z );
+		static 	operator float3x3( float4x4 a ) {
+			float3x3	R;
+			R.r0.Set( a.r0.x, a.r0.y, a.r0.z );
+			R.r1.Set( a.r1.x, a.r1.y, a.r1.z );
+			R.r2.Set( a.r2.x, a.r2.y, a.r2.z );
 			return R;
 		}
-		static float4x4^	operator*( float4x4^ a, float4x4^ b ) {
-			float4x4^	R = gcnew float4x4();
-			R->r[0].Set( a->r[0].x*b->r[0].x + a->r[0].y*b->r[1].x + a->r[0].z*b->r[2].x + a->r[0].w*b->r[3].x, /**/ a->r[0].x*b->r[0].y + a->r[0].y*b->r[1].y + a->r[0].z*b->r[2].y + a->r[0].w*b->r[3].y, /**/ a->r[0].x*b->r[0].z + a->r[0].y*b->r[1].z + a->r[0].z*b->r[2].z + a->r[0].w*b->r[3].z, /**/ a->r[0].x*b->r[0].w + a->r[0].y*b->r[1].w + a->r[0].z*b->r[2].w + a->r[0].w*b->r[3].w );
-			R->r[1].Set( a->r[1].x*b->r[0].x + a->r[1].y*b->r[1].x + a->r[1].z*b->r[2].x + a->r[1].w*b->r[3].x, /**/ a->r[1].x*b->r[0].y + a->r[1].y*b->r[1].y + a->r[1].z*b->r[2].y + a->r[1].w*b->r[3].y, /**/ a->r[1].x*b->r[0].z + a->r[1].y*b->r[1].z + a->r[1].z*b->r[2].z + a->r[1].w*b->r[3].z, /**/ a->r[1].x*b->r[0].w + a->r[1].y*b->r[1].w + a->r[1].z*b->r[2].w + a->r[1].w*b->r[3].w );
-			R->r[2].Set( a->r[2].x*b->r[0].x + a->r[2].y*b->r[1].x + a->r[2].z*b->r[2].x + a->r[2].w*b->r[3].x, /**/ a->r[2].x*b->r[0].y + a->r[2].y*b->r[1].y + a->r[2].z*b->r[2].y + a->r[2].w*b->r[3].y, /**/ a->r[2].x*b->r[0].z + a->r[2].y*b->r[1].z + a->r[2].z*b->r[2].z + a->r[2].w*b->r[3].z, /**/ a->r[2].x*b->r[0].w + a->r[2].y*b->r[1].w + a->r[2].z*b->r[2].w + a->r[2].w*b->r[3].w );
-			R->r[3].Set( a->r[3].x*b->r[0].x + a->r[3].y*b->r[1].x + a->r[3].z*b->r[2].x + a->r[3].w*b->r[3].x, /**/ a->r[3].x*b->r[0].y + a->r[3].y*b->r[1].y + a->r[3].z*b->r[2].y + a->r[3].w*b->r[3].y, /**/ a->r[3].x*b->r[0].z + a->r[3].y*b->r[1].z + a->r[3].z*b->r[2].z + a->r[3].w*b->r[3].z, /**/ a->r[3].x*b->r[0].w + a->r[3].y*b->r[1].w + a->r[3].z*b->r[2].w + a->r[3].w*b->r[3].w );
+		static float4x4	operator*( float4x4^ a, float4x4^ b ) {
+			float4x4	R;
+			R.r0.Set( a->r0.x*b->r0.x + a->r0.y*b->r1.x + a->r0.z*b->r2.x + a->r0.w*b->r3.x, /**/ a->r0.x*b->r0.y + a->r0.y*b->r1.y + a->r0.z*b->r2.y + a->r0.w*b->r3.y, /**/ a->r0.x*b->r0.z + a->r0.y*b->r1.z + a->r0.z*b->r2.z + a->r0.w*b->r3.z, /**/ a->r0.x*b->r0.w + a->r0.y*b->r1.w + a->r0.z*b->r2.w + a->r0.w*b->r3.w );
+			R.r1.Set( a->r1.x*b->r0.x + a->r1.y*b->r1.x + a->r1.z*b->r2.x + a->r1.w*b->r3.x, /**/ a->r1.x*b->r0.y + a->r1.y*b->r1.y + a->r1.z*b->r2.y + a->r1.w*b->r3.y, /**/ a->r1.x*b->r0.z + a->r1.y*b->r1.z + a->r1.z*b->r2.z + a->r1.w*b->r3.z, /**/ a->r1.x*b->r0.w + a->r1.y*b->r1.w + a->r1.z*b->r2.w + a->r1.w*b->r3.w );
+			R.r2.Set( a->r2.x*b->r0.x + a->r2.y*b->r1.x + a->r2.z*b->r2.x + a->r2.w*b->r3.x, /**/ a->r2.x*b->r0.y + a->r2.y*b->r1.y + a->r2.z*b->r2.y + a->r2.w*b->r3.y, /**/ a->r2.x*b->r0.z + a->r2.y*b->r1.z + a->r2.z*b->r2.z + a->r2.w*b->r3.z, /**/ a->r2.x*b->r0.w + a->r2.y*b->r1.w + a->r2.z*b->r2.w + a->r2.w*b->r3.w );
+			R.r3.Set( a->r3.x*b->r0.x + a->r3.y*b->r1.x + a->r3.z*b->r2.x + a->r3.w*b->r3.x, /**/ a->r3.x*b->r0.y + a->r3.y*b->r1.y + a->r3.z*b->r2.y + a->r3.w*b->r3.y, /**/ a->r3.x*b->r0.z + a->r3.y*b->r1.z + a->r3.z*b->r2.z + a->r3.w*b->r3.z, /**/ a->r3.x*b->r0.w + a->r3.y*b->r1.w + a->r3.z*b->r2.w + a->r3.w*b->r3.w );
 
 			return R;
 		}
 
-		static float4x4^	operator*( float a, float4x4^ b ) {
-			float4x4^	R = gcnew float4x4();
-			R->r[0].Set( a*b->r[0].x, a*b->r[0].y, a*b->r[0].z, a*b->r[0].w );
-			R->r[1].Set( a*b->r[1].x, a*b->r[1].y, a*b->r[1].z, a*b->r[1].w );
-			R->r[2].Set( a*b->r[2].x, a*b->r[2].y, a*b->r[2].z, a*b->r[2].w );
-			R->r[3].Set( a*b->r[3].x, a*b->r[3].y, a*b->r[3].z, a*b->r[3].w );
+		static float4x4	operator*( float a, float4x4^ b ) {
+			float4x4	R;
+			R.r0.Set( a*b->r0.x, a*b->r0.y, a*b->r0.z, a*b->r0.w );
+			R.r1.Set( a*b->r1.x, a*b->r1.y, a*b->r1.z, a*b->r1.w );
+			R.r2.Set( a*b->r2.x, a*b->r2.y, a*b->r2.z, a*b->r2.w );
+			R.r3.Set( a*b->r3.x, a*b->r3.y, a*b->r3.z, a*b->r3.w );
 			return R;
 		}
 
 		static float4	operator*( float4 a, float4x4^ b ) {
 			float4	R;
-			R.x = a.x*b->r[0].x + a.y*b->r[1].x + a.z*b->r[2].x + a.w*b->r[3].x;
-			R.y = a.x*b->r[0].y + a.y*b->r[1].y + a.z*b->r[2].y + a.w*b->r[3].y;
-			R.z = a.x*b->r[0].z + a.y*b->r[1].z + a.z*b->r[2].z + a.w*b->r[3].z;
-			R.w = a.x*b->r[0].w + a.y*b->r[1].w + a.z*b->r[2].w + a.w*b->r[3].w;
+			R.x = a.x*b->r0.x + a.y*b->r1.x + a.z*b->r2.x + a.w*b->r3.x;
+			R.y = a.x*b->r0.y + a.y*b->r1.y + a.z*b->r2.y + a.w*b->r3.y;
+			R.z = a.x*b->r0.z + a.y*b->r1.z + a.z*b->r2.z + a.w*b->r3.z;
+			R.w = a.x*b->r0.w + a.y*b->r1.w + a.z*b->r2.w + a.w*b->r3.w;
 
 			return R;
 		}
 
-// 		property float4%	default[int]
-// 		{
-// 			float4%	get( int _RowIndex )				{ return GetRow( _RowIndex ); }
-// 			void	set( int _RowIndex, float4% value )	{ SetRow( _RowIndex, value ); }
-// 		}
-
-		property float	default[int,int] {
-			float	get( int _RowIndex, int _ColumnIndex )				{ return r[_RowIndex&3][_ColumnIndex&3]; }
-			void	set( int _RowIndex, int _ColumnIndex, float value )	{ r[_RowIndex&3][_ColumnIndex&3] = value; }
+		property float4	default[int] {
+			float4		get( int _rowIndex ) {
+				switch ( _rowIndex & 3 ) {
+				case 0: return r0;
+				case 1: return r1;
+				case 2: return r2;
+				case 3: return r3;
+				}
+				return r0;
+			}
+			void		set( int _rowIndex, float4 value ) {
+				switch ( _rowIndex & 3 ) {
+				case 0: r0 = value; break;
+				case 1: r1 = value; break;
+				case 2: r2 = value; break;
+				case 3: r3 = value; break;
+				}
+			}
 		}
 
-		float4	GetRow( int _RowIndex )					{ return r[_RowIndex&3]; }
-		void	SetRow( int _RowIndex, float4 _Value )	{ r[_RowIndex&3] = _Value; }
+		property float	default[int,int] {
+			float	get( int _rowIndex, int _columnIndex )				{ return (*this)[_rowIndex&3][_columnIndex&3]; }
+			void	set( int _rowIndex, int _columnIndex, float value )	{
+				switch ( _rowIndex & 3 ) {
+				case 0: r0[_columnIndex&3] = value;	break;
+				case 1: r1[_columnIndex&3] = value;	break;
+				case 2: r2[_columnIndex&3] = value;	break;
+				case 3: r3[_columnIndex&3] = value;	break;
+				}
+			}
+		}
 
 		float	CoFactor( int _dwRow, int _dwCol ) {
-			return	((	GetRow(_dwRow+1)[_dwCol+1]*GetRow(_dwRow+2)[_dwCol+2]*GetRow(_dwRow+3)[_dwCol+3] +
-						GetRow(_dwRow+1)[_dwCol+2]*GetRow(_dwRow+2)[_dwCol+3]*GetRow(_dwRow+3)[_dwCol+1] +
-						GetRow(_dwRow+1)[_dwCol+3]*GetRow(_dwRow+2)[_dwCol+1]*GetRow(_dwRow+3)[_dwCol+2] )
+			return	((	(*this)[_dwRow+1, _dwCol+1]*(*this)[_dwRow+2, _dwCol+2]*(*this)[_dwRow+3, _dwCol+3] +
+						(*this)[_dwRow+1, _dwCol+2]*(*this)[_dwRow+2, _dwCol+3]*(*this)[_dwRow+3, _dwCol+1] +
+						(*this)[_dwRow+1, _dwCol+3]*(*this)[_dwRow+2, _dwCol+1]*(*this)[_dwRow+3, _dwCol+2] )
 
-					-(	GetRow(_dwRow+3)[_dwCol+1]*GetRow(_dwRow+2)[_dwCol+2]*GetRow(_dwRow+1)[_dwCol+3] +
-						GetRow(_dwRow+3)[_dwCol+2]*GetRow(_dwRow+2)[_dwCol+3]*GetRow(_dwRow+1)[_dwCol+1] +
-						GetRow(_dwRow+3)[_dwCol+3]*GetRow(_dwRow+2)[_dwCol+1]*GetRow(_dwRow+1)[_dwCol+2] ))
+					-(	(*this)[_dwRow+3, _dwCol+1]*(*this)[_dwRow+2, _dwCol+2]*(*this)[_dwRow+1, _dwCol+3] +
+						(*this)[_dwRow+3, _dwCol+2]*(*this)[_dwRow+2, _dwCol+3]*(*this)[_dwRow+1, _dwCol+1] +
+						(*this)[_dwRow+3, _dwCol+3]*(*this)[_dwRow+2, _dwCol+1]*(*this)[_dwRow+1, _dwCol+2] ))
 					* (((_dwRow + _dwCol) & 1) == 1 ? -1.0f : +1.0f);
 		}
 
 		property float	Determinant {
 			float	get() {
-				return GetRow(0)[0] * CoFactor( 0, 0 ) + GetRow(0)[1] * CoFactor( 0, 1 ) + GetRow(0)[2] * CoFactor( 0, 2 ) + GetRow(0)[3] * CoFactor( 0, 3 );
+				return r0.x * CoFactor( 0, 0 ) + r0.y * CoFactor( 0, 1 ) + r0.z * CoFactor( 0, 2 ) + r0.w * CoFactor( 0, 3 );
 			}
 		}
 
-		property float4x4^	Inverse {
-			float4x4^	get() {
-				float	fDet = Determinant;
-				if ( Math::Abs(fDet) < float::Epsilon )
+		property float4x4	Inverse {
+			float4x4	get() {
+				float	det = Determinant;
+				if ( Math::Abs(det) < float::Epsilon )
 					throw gcnew Exception( "Matrix is not invertible!" );		// The matrix is not invertible! Singular case!
 
-				float	fIDet = 1.0f / fDet;
+				float	recDet = 1.0f / det;
 
-				float4x4^	R = gcnew float4x4();
-				R->r[0] = float4( CoFactor( 0, 0 ) * fIDet, CoFactor( 1, 0 ) * fIDet, CoFactor( 2, 0 ) * fIDet, CoFactor( 3, 0 ) * fIDet );
-				R->r[1] = float4( CoFactor( 0, 1 ) * fIDet, CoFactor( 1, 1 ) * fIDet, CoFactor( 2, 1 ) * fIDet, CoFactor( 3, 1 ) * fIDet );
-				R->r[2] = float4( CoFactor( 0, 2 ) * fIDet, CoFactor( 1, 2 ) * fIDet, CoFactor( 2, 2 ) * fIDet, CoFactor( 3, 2 ) * fIDet );
-				R->r[3] = float4( CoFactor( 0, 3 ) * fIDet, CoFactor( 1, 3 ) * fIDet, CoFactor( 2, 3 ) * fIDet, CoFactor( 3, 3 ) * fIDet );
+				float4x4	R;
+				R.r0.Set( CoFactor( 0, 0 ) * recDet, CoFactor( 1, 0 ) * recDet, CoFactor( 2, 0 ) * recDet, CoFactor( 3, 0 ) * recDet );
+				R.r1.Set( CoFactor( 0, 1 ) * recDet, CoFactor( 1, 1 ) * recDet, CoFactor( 2, 1 ) * recDet, CoFactor( 3, 1 ) * recDet );
+				R.r2.Set( CoFactor( 0, 2 ) * recDet, CoFactor( 1, 2 ) * recDet, CoFactor( 2, 2 ) * recDet, CoFactor( 3, 2 ) * recDet );
+				R.r3.Set( CoFactor( 0, 3 ) * recDet, CoFactor( 1, 3 ) * recDet, CoFactor( 2, 3 ) * recDet, CoFactor( 3, 3 ) * recDet );
 
 				return	R;
 			}
 		}
 
-		static property float4x4^	Identity {
-			float4x4^	get() {
-				return gcnew float4x4( gcnew cli::array<float>( 16 ) { 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 } );
+		static property float4x4	Identity {
+			float4x4	get() {
+				return float4x4( 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 );
 			}
 		}
 
-		static float4x4^	RotationX( float _Angle ) {
-			float C = (float) Math::Cos( _Angle );
-			float S = (float) Math::Sin( _Angle );
+		// Makes a "look at" camera matrix (left-handed)
+		void	BuildRotLeftHanded( float3 _position, float3 _target, float3 _up ) {
+			float3	at = (_target - _position).Normalized;	// We want Z to point toward target
+			float3	right = at.Cross( _up ).Normalized;		// We want X to point to the right
+			float3	up = right.Cross( at );					// We want Y to point upward
 
-			float4x4^	R = Identity;
-			R[1,1] = C;		R[1,2] = S;
-			R[2,1] = -S;	R[2,2] = C;
-
-			return R;
+			r0.Set( right.x, right.y, right.z, 0.0f );
+			r1.Set( up.x, up.y, up.z, 0.0f );
+			r2.Set( at.x, at.y, at.z, 0.0f );
+			r3.Set( _position.x, _position.y, _position.z, 1.0f );
 		}
-		static float4x4^	RotationY( float _Angle ) {
-			float C = (float) Math::Cos( _Angle );
-			float S = (float) Math::Sin( _Angle );
 
-			float4x4^	R = Identity;
-			R[0,0] = C;	R[0,2] = -S;
-			R[2,0] = S;	R[2,2] = C;
+		// Makes a regular "look at" matrix for objects (right-handed)
+		void	BuildRotRightHanded( float3 _position, float3 _target, float3 _up ) {
+			float3	at = (_target - _position).Normalized;	// We want Z to point toward target
+			float3	right = _up.Cross( at ).Normalized;		// We want X to point to the right
+			float3	up = at.Cross( right );					// We want Y to point upward
 
-			return R;
+			r0.Set( right.x, right.y, right.z, 0.0f );
+			r1.Set( up.x, up.y, up.z, 0.0f );
+			r2.Set( at.x, at.y, at.z, 0.0f );
+			r3.Set( _position.x, _position.y, _position.z, 1.0f );
 		}
-		static float4x4^	RotationZ( float _Angle ) {
+	
+		void	BuildProjectionPerspective( float _FOVY, float _aspectRatio, float _Near, float _Far ) {
+			float	H = (float) Math::Tan( 0.5f * _FOVY );
+			float	W = _aspectRatio * H;
+			float	Q =  _Far / (_Far - _Near);
+
+			r0.Set( 1.0f / W, 0.0f, 0.0f, 0.0f );
+			r1.Set( 0.0f, 1.0f / H, 0.0f, 0.0f );
+			r2.Set( 0.0f, 0.0f, Q, 1.0f );
+			r3.Set( 0.0f, 0.0f, -_Near * Q, 0.0f );
+		}
+ 
+		float4x4	BuildRotationX( float _Angle ) {
 			float C = (float) Math::Cos( _Angle );
 			float S = (float) Math::Sin( _Angle );
 
-			float4x4^	R = Identity;
-			R[0,0] = C;		R[0,1] = S;
-			R[1,0] = -S;	R[1,1] = C;
+			r0.Set( 1,  0, 0, 0 );
+			r1.Set( 0,  C, S, 0 );
+			r2.Set( 0, -S, C, 0 );
+			r3.Set( 0,  0, 0, 1 );
 
-			return R;
+			return *this;
+		}
+		float4x4	BuildRotationY( float _Angle ) {
+			float C = (float) Math::Cos( _Angle );
+			float S = (float) Math::Sin( _Angle );
+
+			r0.Set( C, 0, -S, 0 );
+			r1.Set( 0, 1,  0, 0 );
+			r2.Set( S, 0,  C, 0 );
+			r3.Set( 0, 0,  0, 1 );
+
+			return *this;
+		}
+		float4x4	BuildRotationZ( float _Angle ) {
+			float C = (float) Math::Cos( _Angle );
+			float S = (float) Math::Sin( _Angle );
+
+			r0.Set(  C, S, 0, 0 );
+			r1.Set( -S, C, 0, 0 );
+			r2.Set(  0, 0, 1, 0 );
+			r3.Set(  0, 0, 0, 1 );
+
+			return *this;
 		}
 
 		/// <summary>
@@ -586,7 +629,7 @@ namespace SharpMath {
 		/// <param name="_Angle"></param>
 		/// <param name="_Axis"></param>
 		/// <returns></returns>
-		static float4x4^	FromAngleAxis( float _Angle, float3 _Axis ) {
+		float4x4	BuildFromAngleAxis( float _Angle, float3 _Axis ) {
 			// Convert into a quaternion
 			float3	qv = (float) Math::Sin( 0.5f * _Angle ) * _Axis;
 			float	qs = (float) Math::Cos( 0.5f * _Angle );
@@ -596,17 +639,16 @@ namespace SharpMath {
 
 			xs = 2.0f * qv.x;	ys = 2.0f * qv.y;	zs = 2.0f * qv.z;
 
-			wx = qs * xs;		wy = qs * ys;		wz = qs * zs;
+			wx = qs * xs;	wy = qs * ys;	wz = qs * zs;
 			xx = qv.x * xs;	xy = qv.x * ys;	xz = qv.x * zs;
 			yy = qv.y * ys;	yz = qv.y * zs;	zz = qv.z * zs;
 
-			float4x4^	R = gcnew float4x4();
-			R->r[0] = float4( 1.0f -	yy - zz,		xy + wz,		xz - wy, 0.0f );
-			R->r[1] = float4(			xy - wz, 1.0f -	xx - zz,		yz + wx, 0.0f );
-			R->r[2] = float4(			xz + wy,		yz - wx, 1.0f -	xx - yy, 0.0f );
-			R->r[3] = float4( 0, 0, 0, 1 );
+			r0.Set( 1.0f -	yy - zz,		xy + wz,		xz - wy, 0.0f );
+			r1.Set(			xy - wz, 1.0f -	xx - zz,		yz + wx, 0.0f );
+			r2.Set(			xz + wy,		yz - wx, 1.0f -	xx - yy, 0.0f );
+			r3.Set( 0, 0, 0, 1 );
 
-			return	R;
+			return *this;
 		}
 	};
 

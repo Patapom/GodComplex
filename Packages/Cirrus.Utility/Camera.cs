@@ -58,8 +58,7 @@ namespace Nuaj.Cirrus.Utility
 		public float4x4			Camera2World
 		{
 			get { return m_Camera2World; }
-			set
-			{
+			set {
 				m_Camera2World = value;
 				m_World2Camera = value.Inverse;
 				m_World2Proj = m_World2Camera * m_Camera2Proj;
@@ -132,10 +131,10 @@ namespace Nuaj.Cirrus.Utility
 		/// </summary>
 		public float			OrthographicHeight	{ get { return m_OrthoHeight; } }
 
-		public float3			Right		{ get { return (float3) m_Camera2World.r[0]; } }
-		public float3			Up			{ get { return (float3) m_Camera2World.r[1]; } }
-		public float3			At			{ get { return (float3) m_Camera2World.r[2]; } }
-		public float3			Position	{ get { return (float3) m_Camera2World.r[3]; } }
+		public float3			Right		{ get { return (float3) m_Camera2World.r0; } }
+		public float3			Up			{ get { return (float3) m_Camera2World.r1; } }
+		public float3			At			{ get { return (float3) m_Camera2World.r2; } }
+		public float3			Position	{ get { return (float3) m_Camera2World.r3; } }
 
 		public event EventHandler	CameraTransformChanged;
 		public event EventHandler	CameraProjectionChanged;
@@ -166,7 +165,7 @@ namespace Nuaj.Cirrus.Utility
 			m_PerspFOV = _FOV;
 
 			float4x4	Temp = new float4x4();
-			Temp.MakeProjectionPerspective( _FOV, _AspectRatio, _Near, _Far );
+			Temp.BuildProjectionPerspective( _FOV, _AspectRatio, _Near, _Far );
 			this.Camera2Proj = Temp;
 			m_bIsPerspective = true;
 
@@ -218,10 +217,9 @@ namespace Nuaj.Cirrus.Utility
 		/// <param name="_Eye"></param>
 		/// <param name="_Target"></param>
 		/// <param name="_Up"></param>
-		public void		LookAt( float3 _Eye, float3 _Target, float3 _Up )
-		{
+		public void		LookAt( float3 _Eye, float3 _Target, float3 _Up ) {
 			float4x4	Temp = new float4x4();
-						Temp.MakeLookAtCamera( _Eye, _Target, _Up );
+						Temp.BuildRotLeftHanded( _Eye, _Target, _Up );
 			this.Camera2World = Temp;
 		}
 
@@ -230,8 +228,7 @@ namespace Nuaj.Cirrus.Utility
 		/// </summary>
 		/// <param name="_Position"></param>
 		/// <returns></returns>
-		public float2	ProjectPoint( float3 _Position )
-		{
+		public float2	ProjectPoint( float3 _Position ) {
 			float4	Temp = new float4( _Position, 1.0f ) * m_World2Proj;
 					Temp *= 1.0f / Temp.w;
 			return new float2( Temp.x, Temp.y );
@@ -242,8 +239,7 @@ namespace Nuaj.Cirrus.Utility
 		/// </summary>
 		/// <param name="_Position"></param>
 		/// <returns></returns>
-		public float2	ProjectVector( float3 _Vector )
-		{
+		public float2	ProjectVector( float3 _Vector ) {
 			float4	Temp = new float4( _Vector, 0.0f ) * m_World2Proj;
 					Temp *= 1.0f / Temp.w;
 			return new float2( Temp.x, Temp.y );

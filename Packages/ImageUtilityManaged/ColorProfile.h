@@ -338,9 +338,9 @@ namespace ImageUtility {
 		// Spectral Power Conversions and Chromaticity Helpers
 
 		// Computes the XYZ matrix to perform white balancing between 2 white points
-		static SharpMath::float3x3^	ComputeWhiteBalanceXYZMatrix( Chromaticities^ _profileIn, SharpMath::float2^ _whitePointOut );
-		static SharpMath::float3x3^	ComputeWhiteBalanceXYZMatrix( SharpMath::float2^ _whitePointIn, Chromaticities^ _profileOut );
-		static SharpMath::float3x3^	ComputeWhiteBalanceXYZMatrix( SharpMath::float2^ _xyR, float2^ _xyG, SharpMath::float2^ _xyB, SharpMath::float2^ _whitePointIn, SharpMath::float2^ _whitePointOut );
+		static SharpMath::float3x3	ComputeWhiteBalanceXYZMatrix( Chromaticities^ _profileIn, SharpMath::float2^ _whitePointOut );
+		static SharpMath::float3x3	ComputeWhiteBalanceXYZMatrix( SharpMath::float2^ _whitePointIn, Chromaticities^ _profileOut );
+		static SharpMath::float3x3	ComputeWhiteBalanceXYZMatrix( SharpMath::float2^ _xyR, float2^ _xyG, SharpMath::float2^ _xyB, SharpMath::float2^ _whitePointIn, SharpMath::float2^ _whitePointOut );
 
 		// Integrates the provided Spectral Power Distribution into CIE XYZ tristimulus value
 		//	_wavelengthsCount, the amount of wavelengths present in the distribution

@@ -26,6 +26,8 @@ namespace Renderer.UnitTests
 		ConstantBuffer< CBCamera >	m_CB_Camera;
 
 		public Form1() {
+// TestFloat3x3();
+// TestFloat4x4();
 			InitializeComponent();
 		}
 
@@ -113,11 +115,11 @@ namespace Renderer.UnitTests
 			float3	cameraTarget = new float3( 0, 0, 0 );
 
 			float4x4	camera2World = new float4x4();
-			camera2World.MakeLookAt( cameraPosition, cameraTarget, float3.UnitY );
+			camera2World.BuildRotLeftHanded( cameraPosition, cameraTarget, float3.UnitY );
 
 			// Build the perspective projection matrix
 			float4x4	camera2Proj = new float4x4();
-			camera2Proj.MakeProjectionPerspective( 80.0f * (float) Math.PI / 180.0f, (float) Width / Height, 0.01f, 100.0f );
+			camera2Proj.BuildProjectionPerspective( 80.0f * (float) Math.PI / 180.0f, (float) Width / Height, 0.01f, 100.0f );
 
 			// Compose the 2 matrices together to obtain the final matrix that transforms world coordinates into projected 2D coordinates
 			return camera2World.Inverse * camera2Proj;
@@ -151,5 +153,74 @@ namespace Renderer.UnitTests
 // 		void timer1_Tick(object sender, System.EventArgs e) {
 // 			throw new System.NotImplementedException();
 // 		}
+
+
+#if DEBUG
+
+//////////////////////////////////////////////////////////////////////////
+// Test methods compile
+static void	TestFloat3x3() {
+	if ( System.Runtime.InteropServices.Marshal.SizeOf(typeof(float3x3)) != 36 )
+		throw new Exception( "Not the appropriate size!" );
+
+	float3x3	test1 = new float3x3( new float[9] { 9, 8, 7, 6, 5, 4, 3, 2, 1 } );
+	float3x3	test2 = new float3x3( new float3( 1, 0, 0 ), new float3( 0, 1, 0 ), new float3( 0, 0, 1 ) );
+	float3x3	test3 = new float3x3( 0, 1, 2, 3, 4, 5, 6, 7, 8 );
+	float3x3	test0;
+				test0 = test3;
+	test2.Scale( new float3( 2, 2, 2 ) );
+	float3x3	mul0 = test1 * test2;
+	float3x3	mul1 = 3.0f * test2;
+	float3		mul2 = new float3( 1, 1, 1 ) * test3;
+	float3		access0 = test3[2];
+	test3[1] = new float3( 12, 13, 14 );
+	float		access1 = test3[1,2];
+	test3[1,2] = 18;
+//	float		coFactor = test3.CoFactor( 0, 2 );
+	float		det = test3.Determinant;
+	float3x3	inv = test2.Inverse;
+	float3x3	id = float3x3.Identity;
+
+	test3.BuildRotationX( 0.5f );
+	test3.BuildRotationY( 0.5f );
+	test3.BuildRotationZ( 0.5f );
+	test3.BuildFromAngleAxis( 0.5f, float3.UnitY );
+}
+
+static void	TestFloat4x4() {
+	if ( System.Runtime.InteropServices.Marshal.SizeOf(typeof(float4x4)) != 64 )
+		throw new Exception( "Not the appropriate size!" );
+
+	float4x4	test1 = new float4x4( new float[16] { 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1 } );
+	float4x4	test2 = new float4x4( new float4( 1, 0, 0, 0 ), new float4( 0, 1, 0, 0 ), new float4( 0, 0, 1, 0 ), new float4( 0, 0, 0, 1 ) );
+	float4x4	test3 = new float4x4( 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 );
+	float4x4	test0;
+				test0 = test3;
+	test2.Scale( new float3( 2, 2, 2 ) );
+	float3x3	cast = (float3x3) test3;
+	float4x4	mul0 = test1 * test2;
+	float4x4	mul1 = 3.0f * test2;
+	float4		mul2 = new float4( 1, 1, 1, 1 ) * test3;
+	float4		access0 = test3[2];
+	test3[1] = new float4( 12, 13, 14, 15 );
+	float		access1 = test3[1,2];
+	test3[1,2] = 18;
+	float		coFactor = test3.CoFactor( 0, 2 );
+	float		det = test3.Determinant;
+	float4x4	inv = test2.Inverse;
+	float4x4	id = float4x4.Identity;
+
+	test3.BuildRotLeftHanded( float3.UnitZ, float3.Zero, float3.UnitY );
+	test3.BuildRotRightHanded( float3.UnitZ, float3.Zero, float3.UnitY );
+	test3.BuildProjectionPerspective( 1.2f, 2.0f, 0.01f, 10.0f );
+	test3.BuildRotationX( 0.5f );
+	test3.BuildRotationY( 0.5f );
+	test3.BuildRotationZ( 0.5f );
+	test3.BuildFromAngleAxis( 0.5f, float3.UnitY );
+}
+
+#endif
+
+
 	}
 }

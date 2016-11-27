@@ -52,7 +52,8 @@
 			this.ClientSize = new System.Drawing.Size(1202, 741);
 			this.Controls.Add(this.panelOutput1);
 			this.Name = "Form1";
-			this.Text = "Form1";
+			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
+			this.Text = "RendererLib - Unit Test";
 			this.ResumeLayout(false);
 
 		}

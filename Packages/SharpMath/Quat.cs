@@ -235,17 +235,17 @@ namespace SharpMath
 			yy = q.qv.y * ys;	yz = q.qv.y * zs;	zz = q.qv.z * zs;
 
 			float3x3	R = new float3x3();
-			R.r[0].x = 1.0f -	yy - zz;
-			R.r[1].x =			xy - wz;
-			R.r[2].x =			xz + wy;
+			R.r0.x = 1.0f -	yy - zz;
+			R.r1.x =		xy - wz;
+			R.r2.x =		xz + wy;
 
-			R.r[0].y =			xy + wz;
-			R.r[1].y = 1.0f -	xx - zz;
-			R.r[2].y =			yz - wx;
+			R.r0.y =		xy + wz;
+			R.r1.y = 1.0f -	xx - zz;
+			R.r2.y =		yz - wx;
 
-			R.r[0].z =			xz - wy;
-			R.r[1].z =			yz + wx;
-			R.r[2].z = 1.0f -	xx - yy;
+			R.r0.z =		xz - wy;
+			R.r1.z =		yz + wx;
+			R.r2.z = 1.0f -	xx - yy;
 
 			return	R;
 		}
@@ -262,17 +262,17 @@ namespace SharpMath
 			yy = q.qv.y * ys;	yz = q.qv.y * zs;	zz = q.qv.z * zs;
 
 			float4x4	R = float4x4.Identity;
-			R.r[0].x = 1.0f -	yy - zz;
-			R.r[1].x =			xy - wz;
-			R.r[2].x =			xz + wy;
+			R.r0.x = 1.0f -	yy - zz;
+			R.r1.x =		xy - wz;
+			R.r2.x =		xz + wy;
 
-			R.r[0].y =			xy + wz;
-			R.r[1].y = 1.0f -	xx - zz;
-			R.r[2].y =			yz - wx;
+			R.r0.y =		xy + wz;
+			R.r1.y = 1.0f -	xx - zz;
+			R.r2.y =		yz - wx;
 
-			R.r[0].z =			xz - wy;
-			R.r[1].z =			yz + wx;
-			R.r[2].z = 1.0f -	xx - yy;
+			R.r0.z =		xz - wy;
+			R.r1.z =		yz + wx;
+			R.r2.z = 1.0f -	xx - yy;
 
 			return	R;
 		}
