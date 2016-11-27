@@ -17,7 +17,8 @@ cbuffer CBCamera : register(b0) {
 PS_IN	VS( VS_IN _In ) {
 	PS_IN	Out;
 	Out.__Position = mul( float4( _In.Position, 1.0 ), _World2Proj );
-	Out.Color = float3( _In.UV, 0 );
+//	Out.Color = float3( _In.UV, 0 );
+	Out.Color = _In.Tangent;
 	return Out;
 }
 

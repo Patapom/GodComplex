@@ -39,37 +39,44 @@ namespace Renderer.UnitTests
 
 			// Build cube primitive
 			{
+				float3	colorXp = new float3( 1, 0, 0 );
+				float3	colorXn = new float3( 1, 1, 0 );
+				float3	colorYp = new float3( 0, 1, 0 );
+				float3	colorYn = new float3( 0, 1, 1 );
+				float3	colorZp = new float3( 0, 0, 1 );
+				float3	colorZn = new float3( 1, 0, 1 );
+
 				VertexP3N3G3T2[]	vertices = new VertexP3N3G3T2[6*4] {
 					// +X
-					new VertexP3N3G3T2() { P = new float3(  1,  1,  1 ), N = new float3(  1, 0, 0 ), UV = new float2( 0, 0 ) },
-					new VertexP3N3G3T2() { P = new float3(  1, -1,  1 ), N = new float3(  1, 0, 0 ), UV = new float2( 0, 1 ) },
-					new VertexP3N3G3T2() { P = new float3(  1, -1, -1 ), N = new float3(  1, 0, 0 ), UV = new float2( 1, 1 ) },
-					new VertexP3N3G3T2() { P = new float3(  1,  1, -1 ), N = new float3(  1, 0, 0 ), UV = new float2( 1, 0 ) },
+					new VertexP3N3G3T2() { P = new float3(  1,  1,  1 ), N = new float3(  1, 0, 0 ), T = colorXp, UV = new float2( 0, 0 ) },
+					new VertexP3N3G3T2() { P = new float3(  1, -1,  1 ), N = new float3(  1, 0, 0 ), T = colorXp, UV = new float2( 0, 1 ) },
+					new VertexP3N3G3T2() { P = new float3(  1, -1, -1 ), N = new float3(  1, 0, 0 ), T = colorXp, UV = new float2( 1, 1 ) },
+					new VertexP3N3G3T2() { P = new float3(  1,  1, -1 ), N = new float3(  1, 0, 0 ), T = colorXp, UV = new float2( 1, 0 ) },
 					// -X
-					new VertexP3N3G3T2() { P = new float3( -1,  1, -1 ), N = new float3( -1, 0, 0 ), UV = new float2( 0, 0 ) },
-					new VertexP3N3G3T2() { P = new float3( -1, -1, -1 ), N = new float3( -1, 0, 0 ), UV = new float2( 0, 1 ) },
-					new VertexP3N3G3T2() { P = new float3( -1, -1,  1 ), N = new float3( -1, 0, 0 ), UV = new float2( 1, 1 ) },
-					new VertexP3N3G3T2() { P = new float3( -1,  1,  1 ), N = new float3( -1, 0, 0 ), UV = new float2( 1, 0 ) },
+					new VertexP3N3G3T2() { P = new float3( -1,  1, -1 ), N = new float3( -1, 0, 0 ), T = colorXn, UV = new float2( 0, 0 ) },
+					new VertexP3N3G3T2() { P = new float3( -1, -1, -1 ), N = new float3( -1, 0, 0 ), T = colorXn, UV = new float2( 0, 1 ) },
+					new VertexP3N3G3T2() { P = new float3( -1, -1,  1 ), N = new float3( -1, 0, 0 ), T = colorXn, UV = new float2( 1, 1 ) },
+					new VertexP3N3G3T2() { P = new float3( -1,  1,  1 ), N = new float3( -1, 0, 0 ), T = colorXn, UV = new float2( 1, 0 ) },
 					// +Y
-					new VertexP3N3G3T2() { P = new float3( -1,  1, -1 ), N = new float3( 0,  1, 0 ), UV = new float2( 0, 0 ) },
-					new VertexP3N3G3T2() { P = new float3( -1,  1,  1 ), N = new float3( 0,  1, 0 ), UV = new float2( 0, 1 ) },
-					new VertexP3N3G3T2() { P = new float3(  1,  1,  1 ), N = new float3( 0,  1, 0 ), UV = new float2( 1, 1 ) },
-					new VertexP3N3G3T2() { P = new float3(  1,  1, -1 ), N = new float3( 0,  1, 0 ), UV = new float2( 1, 0 ) },
+					new VertexP3N3G3T2() { P = new float3( -1,  1, -1 ), N = new float3( 0,  1, 0 ), T = colorYp, UV = new float2( 0, 0 ) },
+					new VertexP3N3G3T2() { P = new float3( -1,  1,  1 ), N = new float3( 0,  1, 0 ), T = colorYp, UV = new float2( 0, 1 ) },
+					new VertexP3N3G3T2() { P = new float3(  1,  1,  1 ), N = new float3( 0,  1, 0 ), T = colorYp, UV = new float2( 1, 1 ) },
+					new VertexP3N3G3T2() { P = new float3(  1,  1, -1 ), N = new float3( 0,  1, 0 ), T = colorYp, UV = new float2( 1, 0 ) },
 					// -Y
-					new VertexP3N3G3T2() { P = new float3( -1, -1,  1 ), N = new float3( 0, -1, 0 ), UV = new float2( 0, 0 ) },
-					new VertexP3N3G3T2() { P = new float3( -1, -1, -1 ), N = new float3( 0, -1, 0 ), UV = new float2( 0, 1 ) },
-					new VertexP3N3G3T2() { P = new float3(  1, -1, -1 ), N = new float3( 0, -1, 0 ), UV = new float2( 1, 1 ) },
-					new VertexP3N3G3T2() { P = new float3(  1, -1,  1 ), N = new float3( 0, -1, 0 ), UV = new float2( 1, 0 ) },
+					new VertexP3N3G3T2() { P = new float3( -1, -1,  1 ), N = new float3( 0, -1, 0 ), T = colorYn, UV = new float2( 0, 0 ) },
+					new VertexP3N3G3T2() { P = new float3( -1, -1, -1 ), N = new float3( 0, -1, 0 ), T = colorYn, UV = new float2( 0, 1 ) },
+					new VertexP3N3G3T2() { P = new float3(  1, -1, -1 ), N = new float3( 0, -1, 0 ), T = colorYn, UV = new float2( 1, 1 ) },
+					new VertexP3N3G3T2() { P = new float3(  1, -1,  1 ), N = new float3( 0, -1, 0 ), T = colorYn, UV = new float2( 1, 0 ) },
 					// +Z
-					new VertexP3N3G3T2() { P = new float3( -1,  1,  1 ), N = new float3( 0, 0,  1 ), UV = new float2( 0, 0 ) },
-					new VertexP3N3G3T2() { P = new float3( -1, -1,  1 ), N = new float3( 0, 0,  1 ), UV = new float2( 0, 1 ) },
-					new VertexP3N3G3T2() { P = new float3(  1, -1,  1 ), N = new float3( 0, 0,  1 ), UV = new float2( 1, 1 ) },
-					new VertexP3N3G3T2() { P = new float3(  1,  1,  1 ), N = new float3( 0, 0,  1 ), UV = new float2( 1, 0 ) },
+					new VertexP3N3G3T2() { P = new float3( -1,  1,  1 ), N = new float3( 0, 0,  1 ), T = colorZp, UV = new float2( 0, 0 ) },
+					new VertexP3N3G3T2() { P = new float3( -1, -1,  1 ), N = new float3( 0, 0,  1 ), T = colorZp, UV = new float2( 0, 1 ) },
+					new VertexP3N3G3T2() { P = new float3(  1, -1,  1 ), N = new float3( 0, 0,  1 ), T = colorZp, UV = new float2( 1, 1 ) },
+					new VertexP3N3G3T2() { P = new float3(  1,  1,  1 ), N = new float3( 0, 0,  1 ), T = colorZp, UV = new float2( 1, 0 ) },
 					// -Z
-					new VertexP3N3G3T2() { P = new float3(  1,  1, -1 ), N = new float3( 0, 0, -1 ), UV = new float2( 0, 0 ) },
-					new VertexP3N3G3T2() { P = new float3(  1, -1, -1 ), N = new float3( 0, 0, -1 ), UV = new float2( 0, 1 ) },
-					new VertexP3N3G3T2() { P = new float3( -1, -1, -1 ), N = new float3( 0, 0, -1 ), UV = new float2( 1, 1 ) },
-					new VertexP3N3G3T2() { P = new float3( -1,  1, -1 ), N = new float3( 0, 0, -1 ), UV = new float2( 1, 0 ) },
+					new VertexP3N3G3T2() { P = new float3(  1,  1, -1 ), N = new float3( 0, 0, -1 ), T = colorZn, UV = new float2( 0, 0 ) },
+					new VertexP3N3G3T2() { P = new float3(  1, -1, -1 ), N = new float3( 0, 0, -1 ), T = colorZn, UV = new float2( 0, 1 ) },
+					new VertexP3N3G3T2() { P = new float3( -1, -1, -1 ), N = new float3( 0, 0, -1 ), T = colorZn, UV = new float2( 1, 1 ) },
+					new VertexP3N3G3T2() { P = new float3( -1,  1, -1 ), N = new float3( 0, 0, -1 ), T = colorZn, UV = new float2( 1, 0 ) },
 				};
 				uint[]	indices = new uint[3*2*6] {
 					4*0+0, 4*0+1, 4*0+2, 4*0+0, 4*0+2, 4*0+3,
