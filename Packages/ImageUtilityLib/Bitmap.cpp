@@ -932,23 +932,28 @@ void	Bitmap::FilterCameraResponseCurve( const BaseLib::List< bfloat3 >& _rawResp
 
 		//////////////////////////////////////////////////////////////////////////
 		// Use a gaussian filter
-		case Bitmap::FILTER_TYPE::SMOOTHING_GAUSSIAN: {
+		case Bitmap::FILTER_TYPE::SMOOTHING_GAUSSIAN:
+		case Bitmap::FILTER_TYPE::SMOOTHING_GAUSSIAN_2_PASSES: {
 			const float	SIGMA = logf( 0.01f ) / (KERNEL_SIZE*KERNEL_SIZE);
-
-			for ( U32 componentIndex=0; componentIndex < _componentsCount; componentIndex++ ) {	// Because R, G, B
+			U32	passesCount = _filterType == FILTER_TYPE::SMOOTHING_GAUSSIAN_2_PASSES ? 2 : 1;
+			for ( U32 passIndex=0; passIndex < passesCount; passIndex++ ) {
 				for ( U32 i=0; i < _filteredResponseCurve.Count(); i++ ) {
 					S32		minJ = MAX( 0, S32(i) - KERNEL_SIZE );
 					S32		maxJ = MIN( S32(_filteredResponseCurve.Count()), S32(i) + KERNEL_SIZE );
 					float	sumWeights = 0.0f;
-					float	sum = 0.0f;
+					bfloat3	sum = bfloat3::Zero;
 					for ( S32 j=minJ; j < maxJ; j++ ) {
 						float	weight = expf( SIGMA * (j - S32(i))*(j - S32(i)) );		// Gaussian
 						sumWeights += weight;
-						sum += weight * ((float*) &_rawResponseCurve[j].x)[componentIndex];
+						sum += weight * _rawResponseCurve[j];
 					}
 					sum /= sumWeights;
-					((float*) &_filteredResponseCurve[i].x)[componentIndex] = sum;
+					_filteredResponseCurve[i] = sum;
 				}
+
+				// Get ready for next pass
+				if ( passIndex < passesCount-1 )
+					memcpy_s( (void*) _rawResponseCurve.Ptr(), _rawResponseCurve.Count()*sizeof(bfloat3), _filteredResponseCurve.Ptr(), _filteredResponseCurve.Count()*sizeof(bfloat3) );
 			}
 			
 			for ( U32 componentIndex=_componentsCount; componentIndex < 3; componentIndex++ ) {
@@ -1015,7 +1020,31 @@ void	Bitmap::FilterCameraResponseCurve( const BaseLib::List< bfloat3 >& _rawResp
 
 		//////////////////////////////////////////////////////////////////////////
 		// Perform BFGS minimization of a 3rd order polynomial
-		case Bitmap::FILTER_TYPE::CURVE_FITTING: {
+		case Bitmap::FILTER_TYPE::CURVE_FITTING:
+		case Bitmap::FILTER_TYPE::GAUSSIAN_PLUS_CURVE_FITTING: {
+
+			if ( _filterType == Bitmap::FILTER_TYPE::GAUSSIAN_PLUS_CURVE_FITTING ) {
+				// Apply gaussian filtering first
+				const float	SIGMA = logf( 0.01f ) / (KERNEL_SIZE*KERNEL_SIZE);
+
+				for ( U32 componentIndex=0; componentIndex < _componentsCount; componentIndex++ ) {	// Because R, G, B
+					for ( U32 i=0; i < _filteredResponseCurve.Count(); i++ ) {
+						S32		minJ = MAX( 0, S32(i) - KERNEL_SIZE );
+						S32		maxJ = MIN( S32(_filteredResponseCurve.Count()), S32(i) + KERNEL_SIZE );
+						float	sumWeights = 0.0f;
+						float	sum = 0.0f;
+						for ( S32 j=minJ; j < maxJ; j++ ) {
+							float	weight = expf( SIGMA * (j - S32(i))*(j - S32(i)) );		// Gaussian
+							sumWeights += weight;
+							sum += weight * ((float*) &_rawResponseCurve[j].x)[componentIndex];
+						}
+						sum /= sumWeights;
+						((float*) &_filteredResponseCurve[i].x)[componentIndex] = sum;
+					}
+				}
+				memcpy_s( (void*) _rawResponseCurve.Ptr(), _rawResponseCurve.Count()*sizeof(bfloat3), _filteredResponseCurve.Ptr(), _filteredResponseCurve.Count()*sizeof(bfloat3) );
+			}
+
 			BFGSModel_polynomial	model;
 			BFGS					solver;
 			for ( U32 componentIndex=0; componentIndex < _componentsCount; componentIndex++ ) {	// Because R, G, B

@@ -506,7 +506,7 @@ if ( Math.Abs( T - whitePointCCT ) < 10.0f )
 						float4[]	scanline = new float4[m_imageFile.Width];
 						for ( uint Y=0; Y < m_imageFile.Height; Y++ ) {
 							for ( uint X=0; X < m_imageFile.Width; X++ ) {
-								float	R = (float) (1+X) / m_imageFile.Width;
+								float	R = 1.0f - (float) (1+X) / m_imageFile.Width;
 								float	G = (float) (1+Y) / m_imageFile.Height;
 								scanline[X].Set( R, G, 1.0f-0.5f*(R+G), 1 );
 							}
@@ -634,7 +634,7 @@ if ( Math.Abs( T - whitePointCCT ) < 10.0f )
 //				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0867.jpg" ),
 //				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0868.jpg" ),
 				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0869.jpg" ),
-			}, true );
+			}, true, false );
 		}
 
 		private void buttonLDR5JPG_Click(object sender, EventArgs e) {
@@ -649,7 +649,7 @@ if ( Math.Abs( T - whitePointCCT ) < 10.0f )
 				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0867.jpg" ),
 //				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0868.jpg" ),
 				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0869.jpg" ),
-			}, true );
+			}, true, false );
 		}
 
 		private void buttonLDR9JPG_Click(object sender, EventArgs e) {
@@ -664,15 +664,25 @@ if ( Math.Abs( T - whitePointCCT ) < 10.0f )
 				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0867.jpg" ),
 				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0868.jpg" ),
 				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0869.jpg" ),
-			}, true );
+			}, true, false );
 		}
 
 		private void buttonLDR3RAW_Click(object sender, EventArgs e) {
 			TestConvertLDR2HDR( new System.IO.FileInfo[] {
-				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromRAW\IMG_0000.crw" ),
-				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromRAW\IMG_0001.crw" ),
-				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromRAW\IMG_0002.crw" ),
-			}, true );
+				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromRAW\CRW_7965.crw" ),
+				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromRAW\CRW_7966.crw" ),
+				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromRAW\CRW_7967.crw" ),
+			}, true, true );
+		}
+
+		private void buttonLDR5RAW_Click(object sender, EventArgs e) {
+			TestConvertLDR2HDR( new System.IO.FileInfo[] {
+				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromRAW\CRW_7965.crw" ),
+				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromRAW\CRW_7966.crw" ),
+				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromRAW\CRW_7967.crw" ),
+				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromRAW\CRW_7968.crw" ),
+				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromRAW\CRW_7969.crw" ),
+			}, true, true );
 		}
 
 		private void buttonLDR2HDRJPG_Click(object sender, EventArgs e) {
@@ -687,7 +697,7 @@ if ( Math.Abs( T - whitePointCCT ) < 10.0f )
 				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0867.jpg" ),
 				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0868.jpg" ),
 				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0869.jpg" ),
-			}, false );
+			}, false, false );
 		}
 
 		private void buttonLDR2HDRRAW_Click(object sender, EventArgs e) {
@@ -695,10 +705,10 @@ if ( Math.Abs( T - whitePointCCT ) < 10.0f )
 				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromRAW\IMG_0000.crw" ),
 				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromRAW\IMG_0001.crw" ),
 				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromRAW\IMG_0002.crw" ),
-			}, false );
+			}, false, true );
 		}
 
-		protected void TestConvertLDR2HDR( System.IO.FileInfo[] _LDRImageFileNames, bool _responseCurveOnly ) {
+		protected void TestConvertLDR2HDR( System.IO.FileInfo[] _LDRImageFileNames, bool _responseCurveOnly, bool _RAW ) {
 			try {
 
 				// Load the LDR images
@@ -718,10 +728,12 @@ if ( Math.Abs( T - whitePointCCT ) < 10.0f )
 					 filterType = Bitmap.FILTER_TYPE.NONE;
 				} else if ( radioButtonFilterGaussian.Checked ) {
 					 filterType = Bitmap.FILTER_TYPE.SMOOTHING_GAUSSIAN;
+				} else if ( radioButtonFilterGaussian2Pass.Checked ) {
+					 filterType = Bitmap.FILTER_TYPE.SMOOTHING_GAUSSIAN_2_PASSES;
 				} else if ( radioButtonFilterTent.Checked ) {
 					 filterType = Bitmap.FILTER_TYPE.SMOOTHING_TENT;
 				} else if ( radioButtonFilterCurveFitting.Checked ) {
-					 filterType = Bitmap.FILTER_TYPE.CURVE_FITTING;
+					 filterType = Bitmap.FILTER_TYPE.GAUSSIAN_PLUS_CURVE_FITTING;
 				}
 
 
@@ -756,11 +768,15 @@ if ( Math.Abs( T - whitePointCCT ) < 10.0f )
 
 				//////////////////////////////////////////////////////////////////////////////////////////////
 				// Build the HDR device-independent bitmap
+//				uint bitsPerPixel = _RAW ? 12U : 8U;
+uint	bitsPerPixel = _RAW ? 8U : 8U;
+float	quality = _RAW ? 7.0f : 3.0f;
+
 				Bitmap.HDRParms	parms = new Bitmap.HDRParms() {
-					_inputBitsPerComponent = 8,
+					_inputBitsPerComponent = bitsPerPixel,
 					_luminanceFactor = 1.0f,
 					_curveSmoothnessConstraint = 1.0f,
-					_quality = 3,
+					_quality = quality,
 					_responseCurveFilterType = filterType
 				};
 
@@ -775,7 +791,7 @@ if ( Math.Abs( T - whitePointCCT ) < 10.0f )
 				// Filter
 				List< float >	responseCurve_filtered = new List< float >();
 //				Bitmap.FilterCameraResponseCurve( responseCurve, responseCurve_filtered, Bitmap.FILTER_TYPE.CURVE_FITTING );
-				Bitmap.FilterCameraResponseCurve( responseCurve, responseCurve_filtered, Bitmap.FILTER_TYPE.SMOOTHING_GAUSSIAN );
+				Bitmap.FilterCameraResponseCurve( responseCurve, responseCurve_filtered, filterType );
 
 // 				using ( System.IO.FileStream S = new System.IO.FileInfo( "../../responseCurve3.float" ).Create() )
 // 					using ( System.IO.BinaryWriter W = new System.IO.BinaryWriter( S ) ) {
@@ -797,13 +813,15 @@ if ( Math.Abs( T - whitePointCCT ) < 10.0f )
 					// Render the response curve as a graph
  					ImageFile	tempCurveBitmap = new ImageFile( 1024, 768, ImageFile.PIXEL_FORMAT.RGB8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
 
-					float2		rangeX = new float2( 0, 256 );
-					float2		rangeY = new float2( 0, 1000 );
+					int			responseCurveSizeMax = responseCurve.Count-1;
+
+					float2		rangeX = new float2( 0, responseCurveSizeMax+1 );
+					float2		rangeY = new float2( 0, 2000 );
 					tempCurveBitmap.Clear( new float4( 1, 1, 1, 1 ) );
 //					tempCurveBitmap.PlotGraphAutoRangeY( red, rangeX, ref rangeY, ( float x ) => {
 					tempCurveBitmap.PlotGraph( red, rangeX, rangeY, ( float x ) => {
-						int		i0 = (int) Math.Min( 255, Math.Floor( x ) );
-						int		i1 = (int) Math.Min( 255, i0+1 );
+						int		i0 = (int) Math.Min( responseCurveSizeMax, Math.Floor( x ) );
+						int		i1 = (int) Math.Min( responseCurveSizeMax, i0+1 );
 						float	g0 = responseCurve[i0];
 						float	g1 = responseCurve[i1];
 						float	t = x - i0;
@@ -811,8 +829,8 @@ if ( Math.Abs( T - whitePointCCT ) < 10.0f )
 						return (float) Math.Pow( 2.0f, g0 + (g1-g0) * t );
 					} );
 					tempCurveBitmap.PlotGraph( blue, rangeX, rangeY, ( float x ) => {
-						int		i0 = (int) Math.Min( 255, Math.Floor( x ) );
-						int		i1 = (int) Math.Min( 255, i0+1 );
+						int		i0 = (int) Math.Min( responseCurveSizeMax, Math.Floor( x ) );
+						int		i1 = (int) Math.Min( responseCurveSizeMax, i0+1 );
 						float	g0 = responseCurve_filtered[i0];
 						float	g1 = responseCurve_filtered[i1];
 						float	t = x - i0;
@@ -826,8 +844,8 @@ if ( Math.Abs( T - whitePointCCT ) < 10.0f )
 					rangeY = new float2( -4, 4 );
 					tempCurveBitmap.PlotLogGraphAutoRangeY( black, rangeX, ref rangeY, ( float x ) => {
 //					tempCurveBitmap.PlotLogGraph( black, rangeX, rangeY, ( float x ) => {
-						int		i0 = (int) Math.Min( 255, Math.Floor( x ) );
-						int		i1 = (int) Math.Min( 255, i0+1 );
+						int		i0 = (int) Math.Min( responseCurveSizeMax, Math.Floor( x ) );
+						int		i1 = (int) Math.Min( responseCurveSizeMax, i0+1 );
 						float	g0 = responseCurve[i0];
 						float	g1 = responseCurve[i1];
 						float	t = x - i0;
@@ -836,8 +854,8 @@ if ( Math.Abs( T - whitePointCCT ) < 10.0f )
 					}, -1.0f, 2.0f );
 					tempCurveBitmap.PlotLogGraph( blue, rangeX, rangeY, ( float x ) => {
 //					tempCurveBitmap.PlotLogGraph( black, rangeX, rangeY, ( float x ) => {
-						int		i0 = (int) Math.Min( 255, Math.Floor( x ) );
-						int		i1 = (int) Math.Min( 255, i0+1 );
+						int		i0 = (int) Math.Min( responseCurveSizeMax, Math.Floor( x ) );
+						int		i1 = (int) Math.Min( responseCurveSizeMax, i0+1 );
 						float	g0 = responseCurve_filtered[i0];
 						float	g1 = responseCurve_filtered[i1];
 						float	t = x - i0;
@@ -903,6 +921,7 @@ if ( Math.Abs( T - whitePointCCT ) < 10.0f )
 			TIFF_RGB8,
 			TIFF_RGB16,
 			TIFF_RGB16F,
+			CRW,
 			HDR_RGBE,
 			EXR_RGB32F,
 		}
@@ -960,14 +979,18 @@ if ( Math.Abs( T - whitePointCCT ) < 10.0f )
 		}
 
 		private void buttonLoad14_Click(object sender, EventArgs e) {
+			TestLoadImage( LOADING_TESTS.CRW );
+		}
+
+		private void buttonLoad20_Click(object sender, EventArgs e) {
 			TestLoadImage( LOADING_TESTS.HDR_RGBE );
 		}
 
-		private void buttonLoad15_Click(object sender, EventArgs e) {
+		private void buttonLoad21_Click(object sender, EventArgs e) {
 			TestLoadImage( LOADING_TESTS.EXR_RGB32F );
 		}
 
-		private void buttonLoad16_Click(object sender, EventArgs e) {
+		private void buttonLoad22_Click(object sender, EventArgs e) {
 			TestLoadImage( LOADING_TESTS.TIFF_RGB16F );
 		}
 
@@ -1045,6 +1068,12 @@ if ( Math.Abs( T - whitePointCCT ) < 10.0f )
 					case LOADING_TESTS.TIFF_RGB16:
 						m_imageFile.Load( new System.IO.FileInfo( @"..\..\Images\In\TIFF\RGB16.tif" ) );
 //						m_imageFile.Load( new System.IO.FileInfo( @"..\..\Images\In\TIFF\RGB16_ICC.tif" ) );
+						panelLoad.Bitmap = m_imageFile.AsBitmap;
+						break;
+
+					// RAW
+					case LOADING_TESTS.CRW:
+						m_imageFile.Load( new System.IO.FileInfo( @"..\..\Images\In\CRW\CRW_7967.CRW" ) );
 						panelLoad.Bitmap = m_imageFile.AsBitmap;
 						break;
 

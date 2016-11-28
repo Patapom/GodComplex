@@ -36,11 +36,10 @@
 			this.buttonBuild3 = new System.Windows.Forms.Button();
 			this.buttonBuild2 = new System.Windows.Forms.Button();
 			this.buttonBuild1 = new System.Windows.Forms.Button();
-			this.panelBuild = new ImageUtility.UnitTests.PanelOutput(this.components);
 			this.tabPageLoading = new System.Windows.Forms.TabPage();
-			this.buttonLoad15 = new System.Windows.Forms.Button();
-			this.buttonLoad14 = new System.Windows.Forms.Button();
-			this.buttonLoad16 = new System.Windows.Forms.Button();
+			this.buttonLoad21 = new System.Windows.Forms.Button();
+			this.buttonLoad20 = new System.Windows.Forms.Button();
+			this.buttonLoad22 = new System.Windows.Forms.Button();
 			this.buttonLoad13 = new System.Windows.Forms.Button();
 			this.buttonLoad12 = new System.Windows.Forms.Button();
 			this.buttonLoad11 = new System.Windows.Forms.Button();
@@ -54,7 +53,6 @@
 			this.buttonLoad3 = new System.Windows.Forms.Button();
 			this.buttonLoad2 = new System.Windows.Forms.Button();
 			this.buttonLoad1 = new System.Windows.Forms.Button();
-			this.panelLoad = new ImageUtility.UnitTests.PanelOutput(this.components);
 			this.tabPageLDR2HDR = new System.Windows.Forms.TabPage();
 			this.radioButtonFilterCurveFitting = new System.Windows.Forms.RadioButton();
 			this.radioButtonFilterTent = new System.Windows.Forms.RadioButton();
@@ -67,18 +65,23 @@
 			this.buttonLDR5JPG = new System.Windows.Forms.Button();
 			this.buttonLDR3JPG = new System.Windows.Forms.Button();
 			this.textBoxHDR = new System.Windows.Forms.TextBox();
-			this.panelOutputHDR = new ImageUtility.UnitTests.PanelOutput(this.components);
 			this.tabPageColorProfiles = new System.Windows.Forms.TabPage();
 			this.buttonProfile4 = new System.Windows.Forms.Button();
 			this.buttonProfile3 = new System.Windows.Forms.Button();
 			this.buttonProfile2 = new System.Windows.Forms.Button();
 			this.buttonProfile1 = new System.Windows.Forms.Button();
-			this.panelColorProfile = new ImageUtility.UnitTests.PanelOutput(this.components);
 			this.tabPageDrawing = new System.Windows.Forms.TabPage();
 			this.buttonDraw3 = new System.Windows.Forms.Button();
 			this.buttonDraw2 = new System.Windows.Forms.Button();
 			this.buttonDraw1 = new System.Windows.Forms.Button();
+			this.buttonLDR5RAW = new System.Windows.Forms.Button();
+			this.panelBuild = new ImageUtility.UnitTests.PanelOutput(this.components);
+			this.panelLoad = new ImageUtility.UnitTests.PanelOutput(this.components);
+			this.panelOutputHDR = new ImageUtility.UnitTests.PanelOutput(this.components);
+			this.panelColorProfile = new ImageUtility.UnitTests.PanelOutput(this.components);
 			this.panelDrawing = new ImageUtility.UnitTests.PanelOutput(this.components);
+			this.buttonLoad14 = new System.Windows.Forms.Button();
+			this.radioButtonFilterGaussian2Pass = new System.Windows.Forms.RadioButton();
 			this.tabControlTests.SuspendLayout();
 			this.tabPageBuilding.SuspendLayout();
 			this.tabPageLoading.SuspendLayout();
@@ -164,19 +167,12 @@
 			this.buttonBuild1.UseVisualStyleBackColor = true;
 			this.buttonBuild1.Click += new System.EventHandler(this.buttonBuild1_Click);
 			// 
-			// panelBuild
-			// 
-			this.panelBuild.Bitmap = null;
-			this.panelBuild.Location = new System.Drawing.Point(6, 86);
-			this.panelBuild.Name = "panelBuild";
-			this.panelBuild.Size = new System.Drawing.Size(842, 568);
-			this.panelBuild.TabIndex = 3;
-			// 
 			// tabPageLoading
 			// 
-			this.tabPageLoading.Controls.Add(this.buttonLoad15);
+			this.tabPageLoading.Controls.Add(this.buttonLoad21);
+			this.tabPageLoading.Controls.Add(this.buttonLoad20);
+			this.tabPageLoading.Controls.Add(this.buttonLoad22);
 			this.tabPageLoading.Controls.Add(this.buttonLoad14);
-			this.tabPageLoading.Controls.Add(this.buttonLoad16);
 			this.tabPageLoading.Controls.Add(this.buttonLoad13);
 			this.tabPageLoading.Controls.Add(this.buttonLoad12);
 			this.tabPageLoading.Controls.Add(this.buttonLoad11);
@@ -200,35 +196,35 @@
 			this.tabPageLoading.Text = "Loading";
 			this.tabPageLoading.UseVisualStyleBackColor = true;
 			// 
-			// buttonLoad15
+			// buttonLoad21
 			// 
-			this.buttonLoad15.Location = new System.Drawing.Point(386, 35);
-			this.buttonLoad15.Name = "buttonLoad15";
-			this.buttonLoad15.Size = new System.Drawing.Size(89, 23);
-			this.buttonLoad15.TabIndex = 2;
-			this.buttonLoad15.Text = "EXR RGB32F";
-			this.buttonLoad15.UseVisualStyleBackColor = true;
-			this.buttonLoad15.Click += new System.EventHandler(this.buttonLoad15_Click);
+			this.buttonLoad21.Location = new System.Drawing.Point(481, 35);
+			this.buttonLoad21.Name = "buttonLoad21";
+			this.buttonLoad21.Size = new System.Drawing.Size(89, 23);
+			this.buttonLoad21.TabIndex = 2;
+			this.buttonLoad21.Text = "EXR RGB32F";
+			this.buttonLoad21.UseVisualStyleBackColor = true;
+			this.buttonLoad21.Click += new System.EventHandler(this.buttonLoad21_Click);
 			// 
-			// buttonLoad14
+			// buttonLoad20
 			// 
-			this.buttonLoad14.Location = new System.Drawing.Point(291, 35);
-			this.buttonLoad14.Name = "buttonLoad14";
-			this.buttonLoad14.Size = new System.Drawing.Size(89, 23);
-			this.buttonLoad14.TabIndex = 2;
-			this.buttonLoad14.Text = "HDR RGBE";
-			this.buttonLoad14.UseVisualStyleBackColor = true;
-			this.buttonLoad14.Click += new System.EventHandler(this.buttonLoad14_Click);
+			this.buttonLoad20.Location = new System.Drawing.Point(386, 35);
+			this.buttonLoad20.Name = "buttonLoad20";
+			this.buttonLoad20.Size = new System.Drawing.Size(89, 23);
+			this.buttonLoad20.TabIndex = 2;
+			this.buttonLoad20.Text = "HDR RGBE";
+			this.buttonLoad20.UseVisualStyleBackColor = true;
+			this.buttonLoad20.Click += new System.EventHandler(this.buttonLoad20_Click);
 			// 
-			// buttonLoad16
+			// buttonLoad22
 			// 
-			this.buttonLoad16.Location = new System.Drawing.Point(481, 35);
-			this.buttonLoad16.Name = "buttonLoad16";
-			this.buttonLoad16.Size = new System.Drawing.Size(89, 23);
-			this.buttonLoad16.TabIndex = 2;
-			this.buttonLoad16.Text = "TIFF RGB16F";
-			this.buttonLoad16.UseVisualStyleBackColor = true;
-			this.buttonLoad16.Click += new System.EventHandler(this.buttonLoad16_Click);
+			this.buttonLoad22.Location = new System.Drawing.Point(576, 35);
+			this.buttonLoad22.Name = "buttonLoad22";
+			this.buttonLoad22.Size = new System.Drawing.Size(89, 23);
+			this.buttonLoad22.TabIndex = 2;
+			this.buttonLoad22.Text = "TIFF RGB16F";
+			this.buttonLoad22.UseVisualStyleBackColor = true;
+			this.buttonLoad22.Click += new System.EventHandler(this.buttonLoad22_Click);
 			// 
 			// buttonLoad13
 			// 
@@ -360,21 +356,15 @@
 			this.buttonLoad1.UseVisualStyleBackColor = true;
 			this.buttonLoad1.Click += new System.EventHandler(this.buttonLoad1_Click);
 			// 
-			// panelLoad
-			// 
-			this.panelLoad.Bitmap = null;
-			this.panelLoad.Location = new System.Drawing.Point(6, 71);
-			this.panelLoad.Name = "panelLoad";
-			this.panelLoad.Size = new System.Drawing.Size(842, 568);
-			this.panelLoad.TabIndex = 0;
-			// 
 			// tabPageLDR2HDR
 			// 
 			this.tabPageLDR2HDR.Controls.Add(this.radioButtonFilterCurveFitting);
 			this.tabPageLDR2HDR.Controls.Add(this.radioButtonFilterTent);
+			this.tabPageLDR2HDR.Controls.Add(this.radioButtonFilterGaussian2Pass);
 			this.tabPageLDR2HDR.Controls.Add(this.radioButtonFilterGaussian);
 			this.tabPageLDR2HDR.Controls.Add(this.radioButtonFilterNone);
 			this.tabPageLDR2HDR.Controls.Add(this.buttonLDR2HDRRAW);
+			this.tabPageLDR2HDR.Controls.Add(this.buttonLDR5RAW);
 			this.tabPageLDR2HDR.Controls.Add(this.buttonLDR3RAW);
 			this.tabPageLDR2HDR.Controls.Add(this.buttonLDR2HDRJPG);
 			this.tabPageLDR2HDR.Controls.Add(this.buttonLDR9JPG);
@@ -392,17 +382,17 @@
 			// radioButtonFilterCurveFitting
 			// 
 			this.radioButtonFilterCurveFitting.AutoSize = true;
-			this.radioButtonFilterCurveFitting.Location = new System.Drawing.Point(763, 40);
+			this.radioButtonFilterCurveFitting.Location = new System.Drawing.Point(900, 40);
 			this.radioButtonFilterCurveFitting.Name = "radioButtonFilterCurveFitting";
-			this.radioButtonFilterCurveFitting.Size = new System.Drawing.Size(109, 17);
+			this.radioButtonFilterCurveFitting.Size = new System.Drawing.Size(140, 17);
 			this.radioButtonFilterCurveFitting.TabIndex = 5;
-			this.radioButtonFilterCurveFitting.Text = "Filter Curve Fitting";
+			this.radioButtonFilterCurveFitting.Text = "Gaussian + Curve Fitting";
 			this.radioButtonFilterCurveFitting.UseVisualStyleBackColor = true;
 			// 
 			// radioButtonFilterTent
 			// 
 			this.radioButtonFilterTent.AutoSize = true;
-			this.radioButtonFilterTent.Location = new System.Drawing.Point(763, 17);
+			this.radioButtonFilterTent.Location = new System.Drawing.Point(900, 17);
 			this.radioButtonFilterTent.Name = "radioButtonFilterTent";
 			this.radioButtonFilterTent.Size = new System.Drawing.Size(72, 17);
 			this.radioButtonFilterTent.TabIndex = 5;
@@ -413,18 +403,17 @@
 			// 
 			this.radioButtonFilterGaussian.AutoSize = true;
 			this.radioButtonFilterGaussian.Checked = true;
-			this.radioButtonFilterGaussian.Location = new System.Drawing.Point(663, 40);
+			this.radioButtonFilterGaussian.Location = new System.Drawing.Point(800, 40);
 			this.radioButtonFilterGaussian.Name = "radioButtonFilterGaussian";
 			this.radioButtonFilterGaussian.Size = new System.Drawing.Size(94, 17);
 			this.radioButtonFilterGaussian.TabIndex = 5;
-			this.radioButtonFilterGaussian.TabStop = true;
 			this.radioButtonFilterGaussian.Text = "Filter Gaussian";
 			this.radioButtonFilterGaussian.UseVisualStyleBackColor = true;
 			// 
 			// radioButtonFilterNone
 			// 
 			this.radioButtonFilterNone.AutoSize = true;
-			this.radioButtonFilterNone.Location = new System.Drawing.Point(663, 17);
+			this.radioButtonFilterNone.Location = new System.Drawing.Point(800, 17);
 			this.radioButtonFilterNone.Name = "radioButtonFilterNone";
 			this.radioButtonFilterNone.Size = new System.Drawing.Size(81, 17);
 			this.radioButtonFilterNone.TabIndex = 5;
@@ -500,14 +489,6 @@
 			this.textBoxHDR.Size = new System.Drawing.Size(297, 568);
 			this.textBoxHDR.TabIndex = 3;
 			// 
-			// panelOutputHDR
-			// 
-			this.panelOutputHDR.Bitmap = null;
-			this.panelOutputHDR.Location = new System.Drawing.Point(8, 84);
-			this.panelOutputHDR.Name = "panelOutputHDR";
-			this.panelOutputHDR.Size = new System.Drawing.Size(842, 568);
-			this.panelOutputHDR.TabIndex = 2;
-			// 
 			// tabPageColorProfiles
 			// 
 			this.tabPageColorProfiles.Controls.Add(this.buttonProfile4);
@@ -562,14 +543,6 @@
 			this.buttonProfile1.UseVisualStyleBackColor = true;
 			this.buttonProfile1.Click += new System.EventHandler(this.buttonProfile1_Click);
 			// 
-			// panelColorProfile
-			// 
-			this.panelColorProfile.Bitmap = null;
-			this.panelColorProfile.Location = new System.Drawing.Point(160, 84);
-			this.panelColorProfile.Name = "panelColorProfile";
-			this.panelColorProfile.Size = new System.Drawing.Size(842, 568);
-			this.panelColorProfile.TabIndex = 3;
-			// 
 			// tabPageDrawing
 			// 
 			this.tabPageDrawing.Controls.Add(this.buttonDraw3);
@@ -613,6 +586,48 @@
 			this.buttonDraw1.UseVisualStyleBackColor = true;
 			this.buttonDraw1.Click += new System.EventHandler(this.buttonDraw1_Click);
 			// 
+			// buttonLDR5RAW
+			// 
+			this.buttonLDR5RAW.Location = new System.Drawing.Point(632, 14);
+			this.buttonLDR5RAW.Name = "buttonLDR5RAW";
+			this.buttonLDR5RAW.Size = new System.Drawing.Size(150, 23);
+			this.buttonLDR5RAW.TabIndex = 4;
+			this.buttonLDR5RAW.Text = "5 LDR RAW -> Response";
+			this.buttonLDR5RAW.UseVisualStyleBackColor = true;
+			this.buttonLDR5RAW.Click += new System.EventHandler(this.buttonLDR5RAW_Click);
+			// 
+			// panelBuild
+			// 
+			this.panelBuild.Bitmap = null;
+			this.panelBuild.Location = new System.Drawing.Point(6, 86);
+			this.panelBuild.Name = "panelBuild";
+			this.panelBuild.Size = new System.Drawing.Size(842, 568);
+			this.panelBuild.TabIndex = 3;
+			// 
+			// panelLoad
+			// 
+			this.panelLoad.Bitmap = null;
+			this.panelLoad.Location = new System.Drawing.Point(6, 71);
+			this.panelLoad.Name = "panelLoad";
+			this.panelLoad.Size = new System.Drawing.Size(842, 568);
+			this.panelLoad.TabIndex = 0;
+			// 
+			// panelOutputHDR
+			// 
+			this.panelOutputHDR.Bitmap = null;
+			this.panelOutputHDR.Location = new System.Drawing.Point(8, 84);
+			this.panelOutputHDR.Name = "panelOutputHDR";
+			this.panelOutputHDR.Size = new System.Drawing.Size(842, 568);
+			this.panelOutputHDR.TabIndex = 2;
+			// 
+			// panelColorProfile
+			// 
+			this.panelColorProfile.Bitmap = null;
+			this.panelColorProfile.Location = new System.Drawing.Point(160, 84);
+			this.panelColorProfile.Name = "panelColorProfile";
+			this.panelColorProfile.Size = new System.Drawing.Size(842, 568);
+			this.panelColorProfile.TabIndex = 3;
+			// 
 			// panelDrawing
 			// 
 			this.panelDrawing.Bitmap = null;
@@ -620,6 +635,26 @@
 			this.panelDrawing.Name = "panelDrawing";
 			this.panelDrawing.Size = new System.Drawing.Size(842, 568);
 			this.panelDrawing.TabIndex = 4;
+			// 
+			// buttonLoad14
+			// 
+			this.buttonLoad14.Location = new System.Drawing.Point(196, 35);
+			this.buttonLoad14.Name = "buttonLoad14";
+			this.buttonLoad14.Size = new System.Drawing.Size(89, 23);
+			this.buttonLoad14.TabIndex = 2;
+			this.buttonLoad14.Text = "Canon RAW";
+			this.buttonLoad14.UseVisualStyleBackColor = true;
+			this.buttonLoad14.Click += new System.EventHandler(this.buttonLoad14_Click);
+			// 
+			// radioButtonFilterGaussian2Pass
+			// 
+			this.radioButtonFilterGaussian2Pass.AutoSize = true;
+			this.radioButtonFilterGaussian2Pass.Location = new System.Drawing.Point(800, 63);
+			this.radioButtonFilterGaussian2Pass.Name = "radioButtonFilterGaussian2Pass";
+			this.radioButtonFilterGaussian2Pass.Size = new System.Drawing.Size(104, 17);
+			this.radioButtonFilterGaussian2Pass.TabIndex = 5;
+			this.radioButtonFilterGaussian2Pass.Text = "2-Pass Gaussian";
+			this.radioButtonFilterGaussian2Pass.UseVisualStyleBackColor = true;
 			// 
 			// TestForm
 			// 
@@ -678,9 +713,9 @@
 		private System.Windows.Forms.Button buttonLoad11;
 		private System.Windows.Forms.Button buttonLoad12;
 		private System.Windows.Forms.Button buttonLoad13;
-		private System.Windows.Forms.Button buttonLoad14;
-		private System.Windows.Forms.Button buttonLoad15;
-		private System.Windows.Forms.Button buttonLoad16;
+		private System.Windows.Forms.Button buttonLoad20;
+		private System.Windows.Forms.Button buttonLoad21;
+		private System.Windows.Forms.Button buttonLoad22;
 		private PanelOutput panelBuild;
 		private System.Windows.Forms.Button buttonBuild4;
 		private System.Windows.Forms.Button buttonBuild3;
@@ -695,6 +730,9 @@
 		private System.Windows.Forms.Button buttonProfile3;
 		private System.Windows.Forms.Button buttonProfile4;
 		private System.Windows.Forms.Button buttonDraw3;
+		private System.Windows.Forms.Button buttonLDR5RAW;
+		private System.Windows.Forms.Button buttonLoad14;
+		private System.Windows.Forms.RadioButton radioButtonFilterGaussian2Pass;
 
 	}
 }

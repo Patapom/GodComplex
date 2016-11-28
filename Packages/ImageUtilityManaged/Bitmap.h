@@ -167,10 +167,12 @@ static property ImageFile^	DEBUG {
 		//	• Use more samples (i.e. the quality settings) in the parameters structure below if you don't have enough images
 		//
 		enum class FILTER_TYPE {
-			NONE,				// No filter
-			SMOOTHING_GAUSSIAN,	// Curve smoothing using gaussian filtering
-			SMOOTHING_TENT,		// Curve smoothing using tent filtering
-			CURVE_FITTING,		// Curve fitting (warning: extremums are less fit than the center of the curve because the tent filtering of extremums is accounted for during curve fitting)
+			NONE,							// No filter
+			SMOOTHING_GAUSSIAN,				// Curve smoothing using gaussian filtering
+			SMOOTHING_GAUSSIAN_2_PASSES,	// Curve smoothing using 2 passes of gaussian filtering
+			SMOOTHING_TENT,					// Curve smoothing using tent filtering
+			CURVE_FITTING,					// Curve fitting (warning: extremums are less fit than the center of the curve because the tent filtering of extremums is accounted for during curve fitting)
+			GAUSSIAN_PLUS_CURVE_FITTING,	// Gaussian filtering followed by curve fitting (warning: extremums are less fit than the center of the curve because the tent filtering of extremums is accounted for during curve fitting)
 		};
 
 		ref class HDRParms {
