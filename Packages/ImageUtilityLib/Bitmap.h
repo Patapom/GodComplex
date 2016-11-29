@@ -189,8 +189,9 @@ static ImageFile*	ms_DEBUG;
 		//	_images, the array of LDR bitmaps
 		//	_imageShutterSpeeds, the array of shutter speeds (in seconds) used for each image
 		//	_responseCurve, the list of values corresponding to the response curve
+		//	_luminanceOnly, if true then response curve is assumed to contain a single channel only
 		//	The default luminance factor to apply to all the images (allows you to scale the base luminance if you know the absolute value)
-		void		LDR2HDR( U32 _imagesCount, const ImageFile** _images, const float* _imageShutterSpeeds, const BaseLib::List< bfloat3 >& _responseCurve, float _luminanceFactor );
+		void		LDR2HDR( U32 _imagesCount, const ImageFile** _images, const float* _imageShutterSpeeds, const BaseLib::List< bfloat3 >& _responseCurve, bool _luminanceOnly, float _luminanceFactor );
 
 		// Computes the response curve of the sensor that captured the provided LDR images
 		//	_images, the array of LDR bitmaps

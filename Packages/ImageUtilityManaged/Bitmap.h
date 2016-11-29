@@ -242,7 +242,7 @@ static property ImageFile^	DEBUG {
 		static void	FilterCameraResponseCurve( System::Collections::Generic::List< float >^ _rawResponseCurve, System::Collections::Generic::List< float >^ _filteredResponseCurve, FILTER_TYPE _filterType );
 
 	private:
-		void		LDR2HDR_internal( cli::array< ImageFile^ >^ _images, cli::array< float >^ _imageShutterSpeeds, const BaseLib::List< bfloat3 >& _responseCurve, float _luminanceFactor );
+		void		LDR2HDR_internal( cli::array< ImageFile^ >^ _images, cli::array< float >^ _imageShutterSpeeds, const BaseLib::List< bfloat3 >& _responseCurve, bool _luminanceOnly, float _luminanceFactor );
 		static void	ComputeCameraResponseCurve_internal( cli::array< ImageFile^ >^ _images, cli::array< float >^ _imageShutterSpeeds, UInt32 _inputBitsPerComponent, float _curveSmoothnessConstraint, float _quality, bool _luminanceOnly, BaseLib::List< bfloat3 >& _responseCurve );
 
 		#pragma endregion

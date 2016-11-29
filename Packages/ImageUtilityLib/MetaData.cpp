@@ -20,13 +20,12 @@ MetaData::~MetaData() {
 void	MetaData::Reset() {
 	m_gammaSpecifiedInFile = false;
 
-	m_valid = false;
-	m_ISOSpeed = 100;
-	m_exposureTime = 0.0f;
-	m_Tv = 0.0f;
-	m_Av = 0.0f;
-	m_FNumber = 1.0f;
-	m_focalLength = 0.0f;
+ 	m_ISOSpeed.Clear( 100 );
+ 	m_exposureTime.Clear( 0.0f );
+ 	m_Tv.Clear( 0.0f );
+ 	m_Av.Clear( 0.0f );
+ 	m_FNumber.Clear( 1.0f );
+ 	m_focalLength.Clear( 0.0f );
 
 	SAFE_DELETE( m_colorProfile );
 }
@@ -278,7 +277,6 @@ void	MetaData::EnumerateMetaDataTIFF( const ImageFile& _image, float _gammaExpon
 
 void	MetaData::EnumerateMetaDataRAW( const ImageFile& _image, float _gammaExponent ) {
 
-
 // 			case FILE_TYPE.CRW:
 // 			case FILE_TYPE.CR2:
 // 			case FILE_TYPE.DNG:
@@ -349,33 +347,31 @@ void	MetaData::EnumerateDefaultTags( const ImageFile& _image, float& _gammaExpon
 	//	{  0x9203, (char *) "BrightnessValue", (char *) "Brightness"},
 	//	{  0x9204, (char *) "ExposureBiasValue", (char *) "Exposure bias"},
 	//	{  0x920A, (char *) "FocalLength", (char *) "Lens focal length"},
-	int	validTagsCount = 0;
-	S32	temp;
+	int		validTagsCount = 0;
+	S32		temp;
+	float	tempF;
 	if ( GetInteger( FIMD_EXIF_EXIF, *_image.m_bitmap, "ISOSpeedRatings", temp ) ) {
 		temp = temp & 0xFFFF;
 		m_ISOSpeed = temp < 50 ? temp * 200 : temp;
-		validTagsCount++;
 	}
-	if ( GetRational64( FIMD_EXIF_EXIF, *_image.m_bitmap, "ExposureTime", m_exposureTime ) ) {
-		validTagsCount++;
+	if ( GetRational64( FIMD_EXIF_EXIF, *_image.m_bitmap, "ExposureTime", tempF ) ) {
+		m_exposureTime = tempF;
 	}
-	if ( GetRational64( FIMD_EXIF_EXIF, *_image.m_bitmap, "ShutterSpeedValue", m_Tv ) ) {
-		validTagsCount++;
+	if ( GetRational64( FIMD_EXIF_EXIF, *_image.m_bitmap, "ShutterSpeedValue", tempF ) ) {
+		m_Tv = tempF;
 	}
-	if ( GetRational64( FIMD_EXIF_EXIF, *_image.m_bitmap, "ApertureValue", m_Av ) ) {
-		validTagsCount++;
+	if ( GetRational64( FIMD_EXIF_EXIF, *_image.m_bitmap, "ApertureValue", tempF ) ) {
+		m_Av = tempF;
 	}
-// 	if ( GetRational64( FIMD_EXIF_EXIF, *_image.m_bitmap, "ExposureBiasValue", m_exposureBias ) ) {
-// 		validTagsCount++;
+// 	if ( GetRational64( FIMD_EXIF_EXIF, *_image.m_bitmap, "ExposureBiasValue", tempF ) ) {
+//		m_exposureBias = tempF;
 // 	}
-	if ( GetRational64( FIMD_EXIF_EXIF, *_image.m_bitmap, "FNumber", m_FNumber ) ) {
-		validTagsCount++;
+	if ( GetRational64( FIMD_EXIF_EXIF, *_image.m_bitmap, "FNumber", tempF ) ) {
+		m_FNumber = tempF;
 	}
-	if ( GetRational64( FIMD_EXIF_EXIF, *_image.m_bitmap, "FocalLength", m_focalLength ) ) {
-		validTagsCount++;
+	if ( GetRational64( FIMD_EXIF_EXIF, *_image.m_bitmap, "FocalLength", tempF ) ) {
+		m_focalLength = tempF;
 	}
-
-	m_valid = validTagsCount == 6;
 }
 
 bool	MetaData::GetString( FREE_IMAGE_MDMODEL _model, FIBITMAP& _bitmap, const char* _keyName, const char*& _value ) {

@@ -16,6 +16,25 @@ namespace ImageUtilityLib {
 	// NOTE: The color profile is never NULL and is assigned to the default sRGB profile if left unspecified
 	//
 	class	MetaData {
+	public:
+		template< typename T > class Field {
+		public:
+			bool		m_isValid;
+			T			m_value;
+
+			Field() : m_isValid( false ) {}
+			void		Clear( T _defaultValue ) {
+				m_isValid = false;
+				m_value = _defaultValue;
+			}
+			Field<T>&	operator=( const T& _value ) {
+				m_isValid = true;
+				m_value = _value;
+				return *this;
+			}
+						operator T() const { return m_value; }
+		};
+
 	private:
 
 		ColorProfile*		m_colorProfile;				// The color profile found in the input file if the bitmap was loaded from a file, or the default profile corresponding to the image type otherwise
@@ -24,13 +43,12 @@ namespace ImageUtilityLib {
 
  		bool				m_gammaSpecifiedInFile;		// True if the gamma exponent was found in the file
 
-		bool				m_valid;					// True if the following information was found in the file (sometimes not available from older file formats like GIF or BMP)
-		U32					m_ISOSpeed;					// ISO speed (min = 50)
-		float				m_exposureTime;				// Exposure time (in seconds)
-		float				m_Tv;						// Shutter Speed Value, in EV (Tv = log2( 1/ShutterSpeed))
-		float				m_Av;						// Aperture Value, in EV (Av = log2( Aperture² ))
-		float				m_FNumber;					// In F-stops
-		float				m_focalLength;				// In mm
+		Field<U32>			m_ISOSpeed;					// ISO speed (min = 50)
+		Field<float>		m_exposureTime;				// Exposure time (in seconds)
+		Field<float>		m_Tv;						// Shutter Speed Value, in EV (Tv = log2( 1/ShutterSpeed))
+		Field<float>		m_Av;						// Aperture Value, in EV (Av = log2( Aperture² ))
+		Field<float>		m_FNumber;					// In F-stops
+		Field<float>		m_focalLength;				// In mm
 
 	public:
 

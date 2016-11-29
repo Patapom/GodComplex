@@ -52,7 +52,7 @@ void	Bitmap::LDR2HDR( cli::array< ImageFile^ >^ _images, cli::array< float >^ _i
 		responseCurve.Append( bfloat3( source.x, source.y, source.z ) );
 	}
 
-	LDR2HDR_internal( _images, _imageShutterSpeeds, responseCurve, _luminanceFactor );
+	LDR2HDR_internal( _images, _imageShutterSpeeds, responseCurve, false, _luminanceFactor );
 }
 void	Bitmap::LDR2HDR( cli::array< ImageFile^ >^ _images, cli::array< float >^ _imageShutterSpeeds, System::Collections::Generic::List< float >^ _responseCurveLuminance, float _luminanceFactor ) {
 	if ( _responseCurveLuminance == nullptr || _responseCurveLuminance->Count == 0 )
@@ -65,9 +65,9 @@ void	Bitmap::LDR2HDR( cli::array< ImageFile^ >^ _images, cli::array< float >^ _i
 		responseCurve.Append( bfloat3( source, source, source ) );
 	}
 
-	LDR2HDR_internal( _images, _imageShutterSpeeds, responseCurve, _luminanceFactor );
+	LDR2HDR_internal( _images, _imageShutterSpeeds, responseCurve, true, _luminanceFactor );
 }
-void	Bitmap::LDR2HDR_internal( cli::array< ImageFile^ >^ _images, cli::array< float >^ _imageShutterSpeeds, const BaseLib::List< bfloat3 >& _responseCurve, float _luminanceFactor ) {
+void	Bitmap::LDR2HDR_internal( cli::array< ImageFile^ >^ _images, cli::array< float >^ _imageShutterSpeeds, const BaseLib::List< bfloat3 >& _responseCurve, bool _luminanceOnly, float _luminanceFactor ) {
 	if ( _images == nullptr )
 		throw gcnew Exception( "Invalid images array!" );
 	if ( _imageShutterSpeeds == nullptr )
@@ -86,7 +86,7 @@ void	Bitmap::LDR2HDR_internal( cli::array< ImageFile^ >^ _images, cli::array< fl
 
 	pin_ptr<float>	imageShutterSpeedsPtr = &_imageShutterSpeeds[0];
 
-	m_nativeObject->LDR2HDR( imagesCount, images, imageShutterSpeedsPtr, _responseCurve, _luminanceFactor );
+	m_nativeObject->LDR2HDR( imagesCount, images, imageShutterSpeedsPtr, _responseCurve, _luminanceOnly, _luminanceFactor );
 
 	System::Runtime::InteropServices::Marshal::FreeHGlobal( imagesPtr );
 }

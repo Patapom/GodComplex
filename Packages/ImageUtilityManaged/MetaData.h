@@ -33,33 +33,53 @@ namespace ImageUtility {
 			bool	get() { return m_nativeObject->m_gammaSpecifiedInFile; }
 		}
 
-		// True if the following information was found in the file (sometimes not available from older file formats like GIF or BMP)
-		property bool		IsValid {
-			bool	get() { return m_nativeObject->m_valid; }
-		}
 		// ISO speed (min = 50)
+		property bool		ISOSpeed_isValid { bool get() { return m_nativeObject->m_ISOSpeed.m_isValid; } }
 		property UInt32		ISOSpeed {
-			UInt32	get() { return m_nativeObject->m_ISOSpeed; }
+			UInt32	get() {
+				if ( !m_nativeObject->m_ISOSpeed.m_isValid ) throw gcnew Exception( "Invalid field!" );
+				return m_nativeObject->m_ISOSpeed;
+			}
 		}
 		// Exposure time (in seconds)
+		property bool		ExposureTime_isValid { bool get() { return m_nativeObject->m_exposureTime.m_isValid; } }
 		property float		ExposureTime {
-			float	get() { return m_nativeObject->m_exposureTime; }
+			float	get() {
+				if ( !m_nativeObject->m_exposureTime.m_isValid ) throw gcnew Exception( "Invalid field!" );
+				return m_nativeObject->m_exposureTime;
+			}
 		}
 		// Shutter Speed Value, in EV (Tv = log2( 1/ShutterSpeed))
+		property bool		Tv_isValid { bool get() { return m_nativeObject->m_Tv.m_isValid; } }
 		property float		Tv {
-			float	get() { return m_nativeObject->m_Tv; }
+			float	get() {
+				if ( !m_nativeObject->m_Tv.m_isValid ) throw gcnew Exception( "Invalid field!" );
+				return m_nativeObject->m_Tv;
+			}
 		}
 		// Aperture Value, in EV (Av = log2( Aperture² ))
+		property bool		Av_isValid { bool get() { return m_nativeObject->m_Av.m_isValid; } }
 		property float		Av {
-			float	get() { return m_nativeObject->m_Av; }
+			float	get() {
+				if ( !m_nativeObject->m_Av.m_isValid ) throw gcnew Exception( "Invalid field!" );
+				return m_nativeObject->m_Av;
+			}
 		}
 		// In F-stops
+		property bool		FNumber_isValid { bool get() { return m_nativeObject->m_FNumber.m_isValid; } }
 		property float		FNumber {
-			float	get() { return m_nativeObject->m_FNumber; }
+			float	get() {
+				if ( !m_nativeObject->m_FNumber.m_isValid ) throw gcnew Exception( "Invalid field!" );
+				return m_nativeObject->m_FNumber;
+			}
 		}
 		// In mm
+		property bool		FocalLength_isValid { bool get() { return m_nativeObject->m_focalLength.m_isValid; } }
 		property float		FocalLength {
-			float	get() { return m_nativeObject->m_focalLength; }
+			float	get() {
+				if ( !m_nativeObject->m_focalLength.m_isValid ) throw gcnew Exception( "Invalid field!" );
+				return m_nativeObject->m_focalLength;
+			}
 		}
 
 
