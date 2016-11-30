@@ -137,7 +137,8 @@ void	Bitmap::LDR2HDR( U32 _imagesCount, const ImageFile** _images, const float* 
 
 	U32		responseCurveSize = U32(_responseCurve.Count());
 
-	ColorProfile	profileLinear( ColorProfile::STANDARD_PROFILE::LINEAR );
+	ColorProfile	linearProfile( ColorProfile::STANDARD_PROFILE::LINEAR );
+
 
 	//////////////////////////////////////////////////////////////////////////
 	// 1] Recompose HDR image into the XYZ buffer (still RGB but it will be converted into XYZ at the end)
@@ -146,39 +147,120 @@ void	Bitmap::LDR2HDR( U32 _imagesCount, const ImageFile** _images, const float* 
 	bfloat4*	scanline = new bfloat4[W];
 
 	U32			Zr, Zg, Zb;
-	bfloat4		colorLDR_RGB_Linear;
-	bfloat4		colorLDR_XYZ;
-	bfloat4		colorLDR_xyY;
 	bfloat4		weight, response;
 	bfloat4*	targetHDR = nullptr;
 	bfloat3*	targetWeights = nullptr;
 
+	bfloat4		colorLDR_RGB_Linear;
+	bfloat4		colorLDR_XYZ;
+	bfloat4		colorLDR_xyY;
+
+#if 1
 	for ( U32 imageIndex=0; imageIndex < _imagesCount; imageIndex++ ) {
 		const ImageFile&	image = *_images[imageIndex];
 		const ColorProfile&	imageProfile = image.GetColorProfile();
 		float				shutterSpeed = _imageShutterSpeeds[imageIndex];
 		float				imageEV = log2f( shutterSpeed );
 
+		targetHDR = m_XYZ;
+		targetWeights = sumWeights;
+		for ( U32 Y=0; Y < H; Y++ ) {
+			image.ReadScanline( Y, scanline );
+			bfloat4*	scanlinePtr = scanline;
+			for ( U32 X=0; X < W; X++, scanlinePtr++, targetHDR++, targetWeights++ ) {
+				imageProfile.RGB2XYZ( *scanlinePtr, colorLDR_XYZ );
+				linearProfile.XYZ2RGB( colorLDR_XYZ, colorLDR_RGB_Linear );
+
+// 				if ( colorLDR_RGB_Linear.x < -1e-3f || colorLDR_RGB_Linear.x > 1.001f ) throw "PROUT!";
+// 				if ( colorLDR_RGB_Linear.y < -1e-3f || colorLDR_RGB_Linear.y > 1.001f ) throw "PROUT!";
+// 				if ( colorLDR_RGB_Linear.z < -1e-3f || colorLDR_RGB_Linear.z > 1.001f ) throw "PROUT!";
+
+				// Retrieve LDR values for RGB
+// 				Zr = CLAMP( U32( (responseCurveSize-1) * scanlinePtr->x ), 0U, responseCurveSize-1 );
+// 				Zg = CLAMP( U32( (responseCurveSize-1) * scanlinePtr->y ), 0U, responseCurveSize-1 );
+// 				Zb = CLAMP( U32( (responseCurveSize-1) * scanlinePtr->z ), 0U, responseCurveSize-1 );
+				Zr = CLAMP( U32( (responseCurveSize-1) * colorLDR_RGB_Linear.x ), 0U, responseCurveSize-1 );
+				Zg = CLAMP( U32( (responseCurveSize-1) * colorLDR_RGB_Linear.y ), 0U, responseCurveSize-1 );
+				Zb = CLAMP( U32( (responseCurveSize-1) * colorLDR_RGB_Linear.z ), 0U, responseCurveSize-1 );
+
+				// Compute weights
+				weight.x = ComputeWeight( Zr, responseCurveSize );
+				weight.y = ComputeWeight( Zg, responseCurveSize );
+				weight.z = ComputeWeight( Zb, responseCurveSize );
+
+				// Accumulate weighted response
+				response.x = _responseCurve[Zr].x - imageEV;
+				response.y = _responseCurve[Zg].y - imageEV;
+				response.z = _responseCurve[Zb].z - imageEV;
+
+				targetHDR->x += weight.x * response.x;
+				targetHDR->y += weight.y * response.y;
+				targetHDR->z += weight.z * response.z;
+
+				// Accumulate weight
+				*targetWeights += weight;
+			}
+		}
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	// 2] Divide by weights and retrieve linear radiance
+	targetHDR = m_XYZ;
+	targetWeights = sumWeights;
+	for ( U32 Y=0; Y < H; Y++ ) {
+		for ( U32 X=0; X < W; X++, targetHDR++, targetWeights++ ) {
+			bfloat4&	temp = *targetHDR;
+
+			// Retrieve log2(E)
+			temp.x *= _luminanceFactor / targetWeights->x;
+			temp.y *= _luminanceFactor / targetWeights->y;
+			temp.z *= _luminanceFactor / targetWeights->z;
+
+			// Retrieve linear radiance
+			temp.x = powf( 2.0f, temp.x );
+			temp.y = powf( 2.0f, temp.y );
+			temp.z = powf( 2.0f, temp.z );
+
+			temp.w = 1.0f;	// Force alpha to 1
+		}
+	}
+
+	delete[] scanline;
+	delete[] sumWeights;
+
+	//////////////////////////////////////////////////////////////////////////
+	// 3] Convert into XYZ using a linear profile
+	linearProfile.RGB2XYZ( m_XYZ, m_XYZ, W*H );
+
+#else
+	for ( U32 imageIndex=0; imageIndex < _imagesCount; imageIndex++ ) {
+		const ImageFile&	image = *_images[imageIndex];
+		const ColorProfile&	imageProfile = image.GetColorProfile();
+		float				shutterSpeed = _imageShutterSpeeds[imageIndex];
+		float				imageEV = log2f( shutterSpeed );
+
+		targetHDR = m_XYZ;
+		targetWeights = sumWeights;
+
 		if ( _luminanceOnly ) {
 			// When dealing with luminance only response curve, we work in xyY
 			// The response curve and log2() shifting is only applied to the Y component while the xy chromaticities are simply weighted
-			targetHDR = m_XYZ;
-			targetWeights = sumWeights;
 			for ( U32 Y=0; Y < H; Y++ ) {
 				image.ReadScanline( Y, scanline );
 				bfloat4*	scanlinePtr = scanline;
 				for ( U32 X=0; X < W; X++, scanlinePtr++, targetHDR++, targetWeights++ ) {
 					// Transform into xyY
 					imageProfile.RGB2XYZ( *scanlinePtr, colorLDR_XYZ );
+					if ( colorLDR_XYZ.y == 0.0f )
+						continue;	// Don't account for black pixels since we don't have valid chromas for these!
+
 					ColorProfile::XYZ2xyY( (bfloat3&) colorLDR_XYZ, (bfloat3&) colorLDR_xyY );
 
 					// Retrieve LDR values for luminance
 					Zb = CLAMP( U32( (responseCurveSize-1) * colorLDR_xyY.z ), 0U, responseCurveSize-1 );
 
 					// Compute weights
-					weight.z = ComputeWeight( Zb, responseCurveSize );
-					weight.x = weight.z;
-					weight.y = weight.z;
+					weight.x = weight.y = weight.z = ComputeWeight( Zb, responseCurveSize );
 
 					// Accumulate weighted response
 					response.x = colorLDR_xyY.x;
@@ -196,15 +278,13 @@ void	Bitmap::LDR2HDR( U32 _imagesCount, const ImageFile** _images, const float* 
 		} else {
 			// When dealing with a RGB response curve then we first convert into linear RGB (i.e. without gamma)
 			// We weight each component independently in RGB space
-			targetHDR = m_XYZ;
-			targetWeights = sumWeights;
 			for ( U32 Y=0; Y < H; Y++ ) {
 				image.ReadScanline( Y, scanline );
 				bfloat4*	scanlinePtr = scanline;
 				for ( U32 X=0; X < W; X++, scanlinePtr++, targetHDR++, targetWeights++ ) {
 					// Transform into linear RGB
 					imageProfile.RGB2XYZ( *scanlinePtr, colorLDR_XYZ );
-					profileLinear.XYZ2RGB( colorLDR_XYZ, colorLDR_RGB_Linear );
+					linearProfile.XYZ2RGB( colorLDR_XYZ, colorLDR_RGB_Linear );
 
 					// Retrieve LDR values for RGB
 					Zr = CLAMP( U32( (responseCurveSize-1) * colorLDR_RGB_Linear.x ), 0U, responseCurveSize-1 );
@@ -242,6 +322,8 @@ void	Bitmap::LDR2HDR( U32 _imagesCount, const ImageFile** _images, const float* 
 		for ( U32 Y=0; Y < H; Y++ ) {
 			for ( U32 X=0; X < W; X++, targetHDR++, targetWeights++ ) {
 				bfloat4&	temp = *targetHDR;
+				if ( targetWeights->z == 0.0f )
+					continue;	// All pixels were black?
 
 				// Retrieve log2(E)
 				temp.x /= targetWeights->x;
@@ -277,13 +359,14 @@ void	Bitmap::LDR2HDR( U32 _imagesCount, const ImageFile** _images, const float* 
 				temp.w = 1.0f;	// Force alpha to 1
 
 				// Convert back into XYZ
-				profileLinear.RGB2XYZ( temp, temp );
+				linearProfile.RGB2XYZ( temp, temp );
 			}
 		}
 	}
 
 	delete[] scanline;
 	delete[] sumWeights;
+#endif
 }
 
 void svdcmp( int m, int n, float** a, float w[], float** v );
@@ -300,7 +383,7 @@ void	Bitmap::ComputeCameraResponseCurve( U32 _imagesCount, const ImageFile** _im
 	U32		W = _images[0]->Width();
 	U32		H = _images[0]->Height();
 
-	ColorProfile	profileLinear( ColorProfile::STANDARD_PROFILE::LINEAR );
+	ColorProfile	linearProfile( ColorProfile::STANDARD_PROFILE::LINEAR );
 
 	//////////////////////////////////////////////////////////////////////////
 	// 1] Find the best possible samples across the provided images
@@ -338,7 +421,7 @@ void	Bitmap::ComputeCameraResponseCurve( U32 _imagesCount, const ImageFile** _im
 List< bfloat2 >	sequence;
 Hammersley::BuildSequence( pixelsCountPerImage, sequence );
 
-// 	const bfloat4	LUMINANCE_D65( 0.2126f, 0.7152f, 0.0722f, 0.0f );	// Y vector for observer. = 2°, Illuminant = D65
+	const bfloat4	LUMINANCE_D65( 0.2126f, 0.7152f, 0.0722f, 0.0f );	// Y vector for observer. = 2°, Illuminant = D65
 
 	U32		componentsCount = _luminanceOnly ? 1 : 3;
 
@@ -356,7 +439,7 @@ Hammersley::BuildSequence( pixelsCountPerImage, sequence );
 
 		// 2] Store as integer pixel values within range [Zmin,Zmax] (which is [0,2^bitDepth[ )
 		const bfloat2*	sequencePtr = sequence.Ptr();
-		bfloat4	colorLDR, colorLDR_XYZ;
+		bfloat4	colorLDR_RGB, colorLDR_XYZ, colorLDR_RGB_Linear;
 
 		for ( U32 pixelIndex=0; pixelIndex < sequence.Count(); pixelIndex++, sequencePtr++ ) {
 			U32	X = U32( floorf( sequencePtr->x * (W-1) ) );
@@ -378,26 +461,38 @@ Hammersley::BuildSequence( pixelsCountPerImage, sequence );
 					bfloat4	sum_XYZ( 0, 0, 0, 0 );
 					for ( S32 CY=Y0; CY <= Y1; CY++ )
 						for ( S32 CX=X0; CX <= X1; CX++ ) {
-							image.Get( CX, CY, colorLDR );
-							imageProfile.RGB2XYZ( colorLDR, colorLDR_XYZ );	// Transform into linear XYZ
+							image.Get( CX, CY, colorLDR_RGB );
+							imageProfile.RGB2XYZ( colorLDR_RGB, colorLDR_XYZ );	// Transform into linear XYZ
 							sum_XYZ += colorLDR_XYZ;
+//sum_XYZ += colorLDR;
+// colorLDR.x = powf( colorLDR.x, 2.2f );
+// colorLDR.y = powf( colorLDR.y, 2.2f );
+// colorLDR.z = powf( colorLDR.z, 2.2f );
+// sum_XYZ.x += colorLDR.Dot( LUMINANCE_D65 );
 						}
 					colorLDR_XYZ = sum_XYZ / float( (1+X1-X0)*(1+Y1-Y0) );
 				#else
-					image.Get( X, Y, colorLDR );
+					image.Get( X, Y, colorLDR_RGB );
 
 					// Transform into linear XYZ
-					imageProfile.RGB2XYZ( colorLDR, colorLDR_XYZ );
+					imageProfile.RGB2XYZ( colorLDR_RGB, colorLDR_XYZ );
 				#endif
 
 				float	pixelValue;
 				if ( _luminanceOnly ) {
 					// Use luminance directly
-					pixelValue = colorLDR.y;
+					pixelValue = colorLDR_XYZ.y;
+//pixelValue = colorLDR_XYZ.Dot( LUMINANCE_D65 );
+//pixelValue = colorLDR_XYZ.x;
+// colorLDR_XYZ.x = powf( colorLDR_XYZ.x, 2.2f );
+// colorLDR_XYZ.y = powf( colorLDR_XYZ.y, 2.2f );
+// colorLDR_XYZ.z = powf( colorLDR_XYZ.z, 2.2f );
+// pixelValue = colorLDR_XYZ.Dot( LUMINANCE_D65 );
+
 				} else {
 					// Transform back into linear RGB
-					profileLinear.XYZ2RGB( colorLDR_XYZ, colorLDR );
-					pixelValue = ((float*) &colorLDR.x)[componentIndex];
+					linearProfile.XYZ2RGB( colorLDR_XYZ, colorLDR_RGB );
+					pixelValue = ((float*) &colorLDR_RGB.x)[componentIndex];
 				}
 
 #ifdef DEBUG_LINEAR_SIGNAL
