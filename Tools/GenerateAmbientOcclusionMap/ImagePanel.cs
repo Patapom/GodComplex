@@ -1,6 +1,4 @@
-﻿#define ABS_NORMAL
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -9,6 +7,8 @@ using System.Text;
 using System.Windows.Forms;
 using System.Drawing;
 using System.Drawing.Imaging;
+
+using SharpMath;
 
 namespace GenerateSelfShadowedBumpMap
 {
@@ -30,12 +30,11 @@ namespace GenerateSelfShadowedBumpMap
 		private float				m_Contrast = 0.0f;
 		private float				m_Gamma = 0.0f;
 
-		private ImageUtility.Bitmap	m_Image = null;
-		public ImageUtility.Bitmap	Image
+		public Bitmap		Bitmap
 		{
-			get { return m_Image; }
+			get { return m_Bitmap; }
 			set {
-				m_Image = value;
+				m_Bitmap = value;
 				UpdateBitmap();
 			}
 		}
@@ -80,18 +79,18 @@ namespace GenerateSelfShadowedBumpMap
 
 		private RectangleF		ImageClientRect {
 			get {
-				int		SizeX = m_Image.Width;
-				int		SizeY = m_Image.Height;
+				int		SizeX = m_Bitmap.Width;
+				int		SizeY = m_Bitmap.Height;
 
 				int		WidthIfVertical = SizeX * Height / SizeY;	// Client width of the image if fitting vertically
 				int		HeightIfHorizontal = SizeY * Width / SizeX;	// Client height of the image if fitting horizontally
 
-				if ( WidthIfVertical > Width )
-				{	// Fit horizontally
+				if ( WidthIfVertical > Width ) {
+					// Fit horizontally
 					return new RectangleF( 0, 0.5f * (Height-HeightIfHorizontal), Width, HeightIfHorizontal );
 				}
-				else
-				{	// Fit vertically
+				else {
+					// Fit vertically
 					return new RectangleF( 0.5f * (Width-WidthIfVertical), 0, WidthIfVertical, Height );
 				}
 			}
@@ -111,14 +110,14 @@ namespace GenerateSelfShadowedBumpMap
 			return _Source;
 		}
 
-		public ImageUtility.float4[,]	ApplyBrightnessContrastGamma( ImageUtility.float4[,] _Source, float _Brightness, float _Contrast, float _Gamma ) {
+		public float4[,]	ApplyBrightnessContrastGamma( float4[,] _Source, float _Brightness, float _Contrast, float _Gamma ) {
 			int		W = _Source.GetLength( 0 );
 			int		H = _Source.GetLength( 1 );
-			ImageUtility.float4[,]	Result = new ImageUtility.float4[W,H];
+			float4[,]	Result = new float4[W,H];
 
 			for ( int Y=0; Y < H; Y++ )
 				for ( int X=0; X < W; X++ ) {
-					ImageUtility.float4	RGBA = _Source[X,Y];
+					float4	RGBA = _Source[X,Y];
 					RGBA.x = ApplyBrightnessContrastGamma( RGBA.x, _Brightness, _Contrast, _Gamma );
 					RGBA.y = ApplyBrightnessContrastGamma( RGBA.y, _Brightness, _Contrast, _Gamma );
 					RGBA.z = ApplyBrightnessContrastGamma( RGBA.z, _Brightness, _Contrast, _Gamma );
@@ -131,47 +130,45 @@ namespace GenerateSelfShadowedBumpMap
 
 		private unsafe void	UpdateBitmap()
 		{
-			if ( m_Image == null )
-				return;
-
-			// Fill pixel per pixel
-			int	W = m_Image.Width;
-			int	H = m_Image.Height;
-			if ( m_Bitmap != null && (m_Bitmap.Width != W || m_Bitmap.Height != H) )
-			{
-				m_Bitmap.Dispose();
-				m_Bitmap = null;
-			}
-			if ( m_Bitmap == null )
-				m_Bitmap = new Bitmap( W, H, PixelFormat.Format32bppArgb );
-
-			ImageUtility.float4[,]	OriginalContentRGB = new ImageUtility.float4[W,H];
-			if ( m_ViewLinear )
-				m_ProfileLinear.XYZ2RGB( m_Image.ContentXYZ, OriginalContentRGB );
-			else
-				m_ProfilesRGB.XYZ2RGB( m_Image.ContentXYZ, OriginalContentRGB );
-
-//			ImageUtility.float4[,]	ContentRGB = ApplyBrightnessContrastGamma( OriginalContentRGB, m_Brightness, m_Contrast, m_Gamma );
-			ImageUtility.float4[,]	ContentRGB = OriginalContentRGB;
-
-			BitmapData	LockedBitmap = m_Bitmap.LockBits( new Rectangle( 0, 0, W, H ), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb );
-			for ( int Y=0; Y < H; Y++ )
-			{
-				byte*	pScanline = (byte*) LockedBitmap.Scan0.ToPointer() + LockedBitmap.Stride * Y;
-				for ( int X=0; X < W; X++ )
-				{
-					byte	R = (byte) Math.Max( 0, Math.Min( 255, 255 * ContentRGB[X,Y].x ) );
-					byte	G = (byte) Math.Max( 0, Math.Min( 255, 255 * ContentRGB[X,Y].y ) );
-					byte	B = (byte) Math.Max( 0, Math.Min( 255, 255 * ContentRGB[X,Y].z ) );
-					byte	A = (byte) Math.Max( 0, Math.Min( 255, 255 * (m_ViewLinear ? ContentRGB[X,Y].w : ImageUtility.ColorProfile.Linear2sRGB( ContentRGB[X,Y].w )) ) );
-
-					*pScanline++ = B;
-					*pScanline++ = G;
-					*pScanline++ = R;
-					*pScanline++ = 0xFF;
-				}
-			}
-			m_Bitmap.UnlockBits( LockedBitmap );
+// 			if ( m_Image == null )
+// 				return;
+// 
+// 			// Fill pixel per pixel
+// 			int	W = m_Image.Width;
+// 			int	H = m_Image.Height;
+// 			if ( m_Bitmap != null && (m_Bitmap.Width != W || m_Bitmap.Height != H) )
+// 			{
+// 				m_Bitmap.Dispose();
+// 				m_Bitmap = null;
+// 			}
+// 			if ( m_Bitmap == null )
+// 				m_Bitmap = new Bitmap( W, H, PixelFormat.Format32bppArgb );
+// 
+// 			float4[,]	OriginalContentRGB = new float4[W,H];
+// 			if ( m_ViewLinear )
+// 				m_ProfileLinear.XYZ2RGB( m_Image.ContentXYZ, OriginalContentRGB );
+// 			else
+// 				m_ProfilesRGB.XYZ2RGB( m_Image.ContentXYZ, OriginalContentRGB );
+// 
+// //			float4[,]	ContentRGB = ApplyBrightnessContrastGamma( OriginalContentRGB, m_Brightness, m_Contrast, m_Gamma );
+// 			float4[,]	ContentRGB = OriginalContentRGB;
+// 
+// 			BitmapData	LockedBitmap = m_Bitmap.LockBits( new Rectangle( 0, 0, W, H ), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb );
+// 			for ( int Y=0; Y < H; Y++ ) {
+// 				byte*	pScanline = (byte*) LockedBitmap.Scan0.ToPointer() + LockedBitmap.Stride * Y;
+// 				for ( int X=0; X < W; X++ ) {
+// 					byte	R = (byte) Math.Max( 0, Math.Min( 255, 255 * ContentRGB[X,Y].x ) );
+// 					byte	G = (byte) Math.Max( 0, Math.Min( 255, 255 * ContentRGB[X,Y].y ) );
+// 					byte	B = (byte) Math.Max( 0, Math.Min( 255, 255 * ContentRGB[X,Y].z ) );
+// 					byte	A = (byte) Math.Max( 0, Math.Min( 255, 255 * (m_ViewLinear ? ContentRGB[X,Y].w : ImageUtility.ColorProfile.Linear2sRGB( ContentRGB[X,Y].w )) ) );
+// 
+// 					*pScanline++ = B;
+// 					*pScanline++ = G;
+// 					*pScanline++ = R;
+// 					*pScanline++ = 0xFF;
+// 				}
+// 			}
+// 			m_Bitmap.UnlockBits( LockedBitmap );
 
 			Refresh();
 		}

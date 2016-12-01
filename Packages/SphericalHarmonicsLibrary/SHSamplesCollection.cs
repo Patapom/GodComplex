@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-using WMath;
+using SharpMath;
 
 namespace SphericalHarmonics
 {
@@ -17,7 +17,7 @@ namespace SphericalHarmonics
 		{
 			#region	FIELDS
 
-			public Vector		m_Direction = new Vector();
+			public float3		m_Direction;
 			public float		m_Phi = 0.0f;
 			public float		m_Theta = 0.0f;
 			public double[]		m_SHFactors = null;
@@ -104,7 +104,7 @@ namespace SphericalHarmonics
 		/// <param name="_Phi">The Phi angle of the sampling direction</param>
 		/// <param name="_Theta">The Theta angle of the sampling direction</param>
 		/// <returns></returns>
-		public delegate double	FunctionDelegate( WMath.Vector _Direction, double _Phi, double _Theta );
+		public delegate double	FunctionDelegate( float3 _Direction, double _Phi, double _Theta );
 
 		#endregion
 
@@ -179,9 +179,8 @@ namespace SphericalHarmonics
 
 		#endregion
 
-		public void			Initialize( int _Order, int _ThetaSamplesCount )
-		{
-			Initialize( _Order, _ThetaSamplesCount, new Vector( 0, 1, 0 ) );
+		public void			Initialize( int _Order, int _ThetaSamplesCount ) {
+			Initialize( _Order, _ThetaSamplesCount, float3.UnitY );
 		}
 
 		/// <summary>
@@ -190,25 +189,24 @@ namespace SphericalHarmonics
 		/// <param name="_Order">The order of the SH</param>
 		/// <param name="_ThetaSamplesCount">The amount of samples on Theta (total samples count will be 2*N*N)</param>
 		/// <param name="_Up">The vector to use as the Up direction (use [0,1,0] if not sure)</param>
-		public void			Initialize( int _Order, int _ThetaSamplesCount, WMath.Vector _Up )
-		{
+		public void			Initialize( int _Order, int _ThetaSamplesCount, float3 _Up ) {
 			m_Order = _Order;
 			m_ThetaSamplesCount = _ThetaSamplesCount;
 			m_SamplesCount = 2 * m_ThetaSamplesCount * m_ThetaSamplesCount;
 			m_Random = new Random( m_RandomSeed );
 
 			// Compute the rotation matrix
-			Matrix3x3	Rotation = new Matrix3x3();
-			Vector		Ortho = new Vector( 0, 1, 0 ) ^ _Up;
-			float		fNorm = Ortho.SquareMagnitude();
+			float3x3	Rotation = new float3x3();
+			float3		Ortho = float3.UnitY.Cross( _Up );
+			float		fNorm = Ortho.LengthSquared;
 			if ( fNorm < 1e-6f )
-				Rotation.MakeIdentity();
+				Rotation = float3x3.Identity;
 			else
 			{
 				Ortho /= (float) Math.Sqrt( fNorm );
-				Rotation.SetRow0( Ortho );
-				Rotation.SetRow1( _Up );
-				Rotation.SetRow2( Ortho ^ _Up );
+				Rotation.r0 = Ortho;
+				Rotation.r1 = _Up;
+				Rotation.r2 = Ortho.Cross( _Up );
 			}
 
 			// Initialize the SH samples
@@ -224,7 +222,7 @@ namespace SphericalHarmonics
 					double	fPhi = System.Math.PI * (PhiIndex + m_Random.NextDouble()) / m_ThetaSamplesCount;
 
 					// Compute direction, rotate it then cast it back to sphercial coordinates
-					Vector	Direction = SphericalHarmonics.SHFunctions.SphericalToCartesian( fTheta, fPhi );
+					float3	Direction = SphericalHarmonics.SHFunctions.SphericalToCartesian( fTheta, fPhi );
 							Direction *= Rotation;
 
 					SphericalHarmonics.SHFunctions.CartesianToSpherical( Direction, out fTheta, out fPhi );

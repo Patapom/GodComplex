@@ -12,6 +12,8 @@ using System.Text;
 using System.Windows.Forms;
 using Microsoft.Win32;
 
+using SharpMath;
+
 namespace GenerateSelfShadowedBumpMap
 {
 	public partial class GeneratorForm : Form
@@ -51,33 +53,33 @@ namespace GenerateSelfShadowedBumpMap
 
 		#region FIELDS
 
-		private RegistryKey						m_AppKey;
-		private string							m_ApplicationPath;
+		private RegistryKey							m_AppKey;
+		private string								m_ApplicationPath;
 
-		private System.IO.FileInfo				m_SourceFileName = null;
-		private int								W, H;
-		private ImageUtility.Bitmap				m_BitmapSource = null;
-		private ImageUtility.Bitmap				m_BitmapSourceNormal = null;
+		private System.IO.FileInfo					m_SourceFileName = null;
+		private uint								W, H;
+		private ImageUtility.ImageFile				m_imageSourceHeight = null;
+		private ImageUtility.ImageFile				m_imageSourceNormal = null;
 
-		internal RendererManaged.Device			m_Device = new RendererManaged.Device();
-		internal RendererManaged.Texture2D		m_TextureSource = null;
-		internal RendererManaged.Texture2D		m_TextureSourceNormal = null;
-		internal RendererManaged.Texture2D		m_TextureTarget0 = null;
-		internal RendererManaged.Texture2D		m_TextureTarget1 = null;
-		internal RendererManaged.Texture2D		m_TextureTarget_CPU = null;
+		internal Renderer.Device					m_Device = new Renderer.Device();
+		internal Renderer.Texture2D					m_TextureSource = null;
+		internal Renderer.Texture2D					m_TextureSourceNormal = null;
+		internal Renderer.Texture2D					m_TextureTarget0 = null;
+		internal Renderer.Texture2D					m_TextureTarget1 = null;
+		internal Renderer.Texture2D					m_TextureTarget_CPU = null;
 
 		// SSBump Generation
-		private RendererManaged.ConstantBuffer<CBInput>						m_CB_Input;
-		private RendererManaged.StructuredBuffer<RendererManaged.float3>	m_SB_Rays = null;
-		private RendererManaged.ComputeShader								m_CS_GenerateSSBumpMap = null;
+		private Renderer.ConstantBuffer<CBInput>	m_CB_Input;
+		private Renderer.StructuredBuffer<float3>	m_SB_Rays = null;
+		private Renderer.ComputeShader				m_CS_GenerateAOMap = null;
 
 		// Bilateral filtering pre-processing
-		private RendererManaged.ConstantBuffer<CBFilter>	m_CB_Filter;
-		private RendererManaged.ComputeShader	m_CS_BilateralFilter = null;
+		private Renderer.ConstantBuffer<CBFilter>	m_CB_Filter;
+		private Renderer.ComputeShader				m_CS_BilateralFilter = null;
 
- 		private ImageUtility.ColorProfile		m_ProfilesRGB = new ImageUtility.ColorProfile( ImageUtility.ColorProfile.STANDARD_PROFILE.sRGB );
-		private ImageUtility.ColorProfile		m_ProfileLinear = new ImageUtility.ColorProfile( ImageUtility.ColorProfile.STANDARD_PROFILE.LINEAR );
-		private ImageUtility.Bitmap				m_BitmapResult = null;
+ 		private ImageUtility.ColorProfile			m_profilesRGB = new ImageUtility.ColorProfile( ImageUtility.ColorProfile.STANDARD_PROFILE.sRGB );
+		private ImageUtility.ColorProfile			m_profileLinear = new ImageUtility.ColorProfile( ImageUtility.ColorProfile.STANDARD_PROFILE.LINEAR );
+		private ImageUtility.ImageFile				m_imageResult = null;
 
 		#endregion
 
@@ -95,8 +97,7 @@ namespace GenerateSelfShadowedBumpMap
 
 		#region METHODS
 
-		public unsafe GeneratorForm()
-		{
+		public unsafe GeneratorForm() {
 			InitializeComponent();
 
  			m_AppKey = Registry.CurrentUser.CreateSubKey( @"Software\GodComplex\AOMapGenerator" );
@@ -118,8 +119,7 @@ namespace GenerateSelfShadowedBumpMap
 			#endif
 		}
 
-		protected override void  OnLoad(EventArgs e)
-		{
+		protected override void  OnLoad(EventArgs e) {
  			base.OnLoad(e);
 
 			try {
@@ -127,19 +127,19 @@ namespace GenerateSelfShadowedBumpMap
 
 				// Create our compute shaders
 				#if DEBUG
-					m_CS_BilateralFilter = new RendererManaged.ComputeShader( m_Device, new RendererManaged.ShaderFile( new System.IO.FileInfo( "./Shaders/BilateralFiltering.hlsl" ) ), "CS", null );
-					m_CS_GenerateSSBumpMap = new RendererManaged.ComputeShader( m_Device, new RendererManaged.ShaderFile( new System.IO.FileInfo( "./Shaders/GenerateAOMap.hlsl" ) ), "CS", null );
+					m_CS_BilateralFilter = new Renderer.ComputeShader( m_Device, new Renderer.ShaderFile( new System.IO.FileInfo( "./Shaders/BilateralFiltering.hlsl" ) ), "CS", null );
+					m_CS_GenerateAOMap = new Renderer.ComputeShader( m_Device, new Renderer.ShaderFile( new System.IO.FileInfo( "./Shaders/GenerateAOMap.hlsl" ) ), "CS", null );
 				#else
-					m_CS_BilateralFilter = RendererManaged.ComputeShader.CreateFromBinaryBlob( m_Device, new System.IO.FileInfo( "./Shaders/Binary/BilateralFiltering.fxbin" ), "CS" );
-					m_CS_GenerateSSBumpMap = RendererManaged.ComputeShader.CreateFromBinaryBlob( m_Device, new System.IO.FileInfo( "./Shaders/Binary/GenerateAOMap.fxbin" ), "CS" );
+					m_CS_BilateralFilter = new Renderer.ComputeShader( m_Device, new System.IO.FileInfo( "./Shaders/BilateralFiltering.fxbin" ), "CS" );
+					m_CS_GenerateAOMap = new Renderer.ComputeShader( m_Device, new System.IO.FileInfo( "./Shaders/GenerateAOMap.fxbin" ), "CS" );
 				#endif
 
 				// Create our constant buffers
-				m_CB_Input = new RendererManaged.ConstantBuffer<CBInput>( m_Device, 0 );
-				m_CB_Filter = new RendererManaged.ConstantBuffer<CBFilter>( m_Device, 0 );
+				m_CB_Input = new Renderer.ConstantBuffer<CBInput>( m_Device, 0 );
+				m_CB_Filter = new Renderer.ConstantBuffer<CBFilter>( m_Device, 0 );
 
 				// Create our structured buffer containing the rays
-				m_SB_Rays = new RendererManaged.StructuredBuffer<RendererManaged.float3>( m_Device, MAX_THREADS, true );
+				m_SB_Rays = new Renderer.StructuredBuffer<float3>( m_Device, MAX_THREADS, true );
 				integerTrackbarControlRaysCount_SliderDragStop( integerTrackbarControlRaysCount, 0 );
 
 				// Create the default, planar normal map
@@ -154,7 +154,7 @@ namespace GenerateSelfShadowedBumpMap
 		protected override void OnClosing( CancelEventArgs e )
 		{
 			try {
-				m_CS_GenerateSSBumpMap.Dispose();
+				m_CS_GenerateAOMap.Dispose();
 				m_CS_BilateralFilter.Dispose();
 
 				m_SB_Rays.Dispose();
@@ -247,7 +247,7 @@ namespace GenerateSelfShadowedBumpMap
  			Generate();
 
 			// Save results
-			m_BitmapResult.Save( new System.IO.FileInfo( _args.AOMapFileName ) );
+			m_imageResult.Save( new System.IO.FileInfo( _args.AOMapFileName ) );
 
 			// Dispose
 			CancelEventArgs	onsenfout = new CancelEventArgs();
@@ -259,9 +259,9 @@ namespace GenerateSelfShadowedBumpMap
 				panelParameters.Enabled = false;
 
 				// Dispose of existing resources
-				if ( m_BitmapSource != null )
-					m_BitmapSource.Dispose();
-				m_BitmapSource = null;
+				if ( m_imageSourceHeight != null )
+					m_imageSourceHeight.Dispose();
+				m_imageSourceHeight = null;
 
 				if ( m_TextureTarget_CPU != null )
 					m_TextureTarget_CPU.Dispose();
@@ -276,27 +276,33 @@ namespace GenerateSelfShadowedBumpMap
 					m_TextureSource.Dispose();
 				m_TextureSource = null;
 
-				// Load the source image assuming it's in linear space
+				// Load the source image
+				// Assume it's in linear space
 				m_SourceFileName = _FileName;
-				m_BitmapSource = new ImageUtility.Bitmap( _FileName, m_ProfileLinear );
-				outputPanelInputHeightMap.Image = m_BitmapSource;
+				m_imageSourceHeight = new ImageUtility.ImageFile( _FileName );
+				outputPanelInputHeightMap.Bitmap = m_imageSourceHeight.AsBitmap;
 
-				W = m_BitmapSource.Width;
-				H = m_BitmapSource.Height;
+				W = m_imageSourceHeight.Width;
+				H = m_imageSourceHeight.Height;
 
 				// Build the source texture
-				RendererManaged.PixelsBuffer	SourceHeightMap = new RendererManaged.PixelsBuffer( W*H*4 );
-				using ( System.IO.BinaryWriter Wr = SourceHeightMap.OpenStreamWrite() )
-					for ( int Y=0; Y < H; Y++ )
-						for ( int X=0; X < W; X++ )
-							Wr.Write( m_BitmapSource.ContentXYZ[X,Y].y );
+				float4[]	scanline = new float4[W];
 
-				m_TextureSource = new RendererManaged.Texture2D( m_Device, W, H, 1, 1, RendererManaged.PIXEL_FORMAT.R32_FLOAT, false, false, new RendererManaged.PixelsBuffer[] { SourceHeightMap } );
+				Renderer.PixelsBuffer	SourceHeightMap = new Renderer.PixelsBuffer( W*H*4 );
+				using ( System.IO.BinaryWriter Wr = SourceHeightMap.OpenStreamWrite() )
+					for ( uint Y=0; Y < H; Y++ ) {
+						m_imageSourceHeight.ReadScanline( Y, scanline );
+						for ( uint X=0; X < W; X++ ) {
+							Wr.Write( scanline[X].y );
+						}
+					}
+
+				m_TextureSource = new Renderer.Texture2D( m_Device, W, H, 1, 1, Renderer.PIXEL_FORMAT.R32_FLOAT, false, false, new Renderer.PixelsBuffer[] { SourceHeightMap } );
 
 				// Build the target UAV & staging texture for readback
-				m_TextureTarget0 = new RendererManaged.Texture2D( m_Device, W, H, 1, 1, RendererManaged.PIXEL_FORMAT.R32_FLOAT, false, true, null );
-				m_TextureTarget1 = new RendererManaged.Texture2D( m_Device, W, H, 1, 1, RendererManaged.PIXEL_FORMAT.R32_FLOAT, false, true, null );
-				m_TextureTarget_CPU = new RendererManaged.Texture2D( m_Device, W, H, 1, 1, RendererManaged.PIXEL_FORMAT.R32_FLOAT, true, false, null );
+				m_TextureTarget0 = new Renderer.Texture2D( m_Device, W, H, 1, 1, Renderer.PIXEL_FORMAT.R32_FLOAT, false, true, null );
+				m_TextureTarget1 = new Renderer.Texture2D( m_Device, W, H, 1, 1, Renderer.PIXEL_FORMAT.R32_FLOAT, false, true, null );
+				m_TextureTarget_CPU = new Renderer.Texture2D( m_Device, W, H, 1, 1, Renderer.PIXEL_FORMAT.R32_FLOAT, true, false, null );
 
 				panelParameters.Enabled = true;
 				buttonGenerate.Focus();
@@ -309,38 +315,40 @@ namespace GenerateSelfShadowedBumpMap
 		private void	LoadNormalMap( System.IO.FileInfo _FileName ) {
 			try {
 				// Dispose of existing resources
-				if ( m_BitmapSourceNormal != null )
-					m_BitmapSourceNormal.Dispose();
-				m_BitmapSourceNormal = null;
+				if ( m_imageSourceNormal != null )
+					m_imageSourceNormal.Dispose();
+				m_imageSourceNormal = null;
 
 				if ( m_TextureSourceNormal != null )
 					m_TextureSourceNormal.Dispose();
 				m_TextureSourceNormal = null;
 
-				// Load the source image assuming it's in linear space (all normal maps should be in linear space, with the default value being (0.5, 0.5, 1))
-				m_BitmapSourceNormal = new ImageUtility.Bitmap( _FileName, m_ProfileLinear );
-//				outputPanelInputHeightMap.Image = m_BitmapSourceNormal;
+				// Load the source image
+				// Assume it's in linear space (all normal maps should be in linear space, with the default value being (0.5, 0.5, 1))
+				m_imageSourceNormal = new ImageUtility.ImageFile( _FileName );
 
-				int	W = m_BitmapSourceNormal.Width;
-				int	H = m_BitmapSourceNormal.Height;
+				uint	W = m_imageSourceNormal.Width;
+				uint	H = m_imageSourceNormal.Height;
 
 				// Build the source texture
-				ImageUtility.float4[,]	ContentRGB = m_BitmapSourceNormal.ConvertedContentRGB;
+				float4[]	scanline = new float4[W];
 
-				RendererManaged.PixelsBuffer	SourceNormalMap = new RendererManaged.PixelsBuffer( W*H*4*4 );
+				Renderer.PixelsBuffer	SourceNormalMap = new Renderer.PixelsBuffer( W*H*4*4 );
 				using ( System.IO.BinaryWriter Wr = SourceNormalMap.OpenStreamWrite() )
-					for ( int Y=0; Y < H; Y++ )
+					for ( int Y=0; Y < H; Y++ ) {
+						m_imageSourceNormal.ReadScanline( (uint) Y, scanline );
 						for ( int X=0; X < W; X++ ) {
-							float	Nx = 2.0f * ContentRGB[X,Y].x - 1.0f;
-							float	Ny = 1.0f - 2.0f * ContentRGB[X,Y].y;
-							float	Nz = 2.0f * ContentRGB[X,Y].z - 1.0f;
+							float	Nx = 2.0f * scanline[X].x - 1.0f;
+							float	Ny = 1.0f - 2.0f * scanline[X].y;
+							float	Nz = 2.0f * scanline[X].z - 1.0f;
 							Wr.Write( Nx );
 							Wr.Write( Ny );
 							Wr.Write( Nz );
 							Wr.Write( 1.0f );
 						}
+					}
 
-				m_TextureSourceNormal = new RendererManaged.Texture2D( m_Device, W, H, 1, 1, RendererManaged.PIXEL_FORMAT.RGBA32_FLOAT, false, false, new RendererManaged.PixelsBuffer[] { SourceNormalMap } );
+				m_TextureSourceNormal = new Renderer.Texture2D( m_Device, W, H, 1, 1, Renderer.PIXEL_FORMAT.RGBA32_FLOAT, false, false, new Renderer.PixelsBuffer[] { SourceNormalMap } );
 
 			} catch ( Exception _e ) {
 				MessageBox( "An error occurred while opening the image:\n\n", _e );
@@ -373,17 +381,16 @@ namespace GenerateSelfShadowedBumpMap
 				m_CB_Input.m.Displacement_mm = TextureHeight_mm;
 
 				// Start
-				if ( !m_CS_GenerateSSBumpMap.Use() )
+				if ( !m_CS_GenerateAOMap.Use() )
 					throw new Exception( "Can't generate self-shadowed bump map as compute shader failed to compile!" );
 
-				int	h = Math.Max( 1, MAX_LINES*1024 / W );
-				int	CallsCount = (int) Math.Ceiling( (float) H / h );
-				for ( int i=0; i < CallsCount; i++ )
-				{
+				uint	h = Math.Max( 1, MAX_LINES*1024 / W );
+				uint	CallsCount = (uint) Math.Ceiling( (float) H / h );
+				for ( int i=0; i < CallsCount; i++ ) {
 					m_CB_Input.m.Y0 = (UInt32) (i * h);
 					m_CB_Input.UpdateData();
 
-					m_CS_GenerateSSBumpMap.Dispatch( W, h, 1 );
+					m_CS_GenerateAOMap.Dispatch( W, h, 1 );
 
 					m_Device.Present( true );
 
@@ -406,32 +413,39 @@ namespace GenerateSelfShadowedBumpMap
 				// 3] Copy target to staging for CPU readback and update the resulting bitmap
 				m_TextureTarget_CPU.CopyFrom( m_TextureTarget1 );
 
-				ImageUtility.ColorProfile	Profile = m_ProfilesRGB;	// AO maps are sRGB! (although strange, that's certainly to have more range in dark values)
+//				ImageUtility.ColorProfile	profile = m_profilesRGB;	// AO maps are sRGB! (although strange, that's certainly to have more range in dark values)
+				ImageUtility.ColorProfile	profile = m_profileLinear;
 
-				if ( m_BitmapResult != null )
-					m_BitmapResult.Dispose();
-				m_BitmapResult = null;
-				m_BitmapResult = new ImageUtility.Bitmap( W, H, Profile );
-				m_BitmapResult.HasAlpha = false;
+				float3	whitePoint_xyY = new float3( profile.Chromas.White, 0 );
+				float3	whitePoint_XYZ = new float3();
 
-				RendererManaged.PixelsBuffer	Pixels = m_TextureTarget_CPU.Map( 0, 0 );
+				ImageUtility.Bitmap		tempBitmap = new ImageUtility.Bitmap( W, H );
+				Renderer.PixelsBuffer	Pixels = m_TextureTarget_CPU.Map( 0, 0 );
 				using ( System.IO.BinaryReader R = Pixels.OpenStreamRead() )
-					for ( int Y=0; Y < H; Y++ )
-					{
+					for ( uint Y=0; Y < H; Y++ ) {
 						R.BaseStream.Position = Y * Pixels.RowPitch;
-						for ( int X=0; X < W; X++ ) {
-							float	AO = R.ReadSingle();		// Linear value
-							ImageUtility.float4	Color = new ImageUtility.float4( AO, AO, AO, AO );
-							Color = Profile.RGB2XYZ( Color );	// Now sRGB value, converted as XYZ
-							m_BitmapResult.ContentXYZ[X,Y] = Color;
+						for ( uint X=0; X < W; X++ ) {
+							whitePoint_xyY.z = R.ReadSingle();		// Linear value
+							ImageUtility.ColorProfile.xyY2XYZ( whitePoint_xyY, ref whitePoint_XYZ );
+							tempBitmap[X,Y] = new float4( whitePoint_XYZ, 1 );
 						}
 					}
 
 				Pixels.Dispose();
 				m_TextureTarget_CPU.UnMap( 0, 0 );
 
+				// Convert to RGB
+				ImageUtility.ImageFile	temmpImageRGBA32F = new ImageUtility.ImageFile();
+				tempBitmap.ToImageFile( temmpImageRGBA32F, profile );
+
+				if ( m_imageResult == null )
+					m_imageResult = new ImageUtility.ImageFile();
+				m_imageResult.ToneMapFrom( temmpImageRGBA32F, ( float3 _HDR, ref float3 _LDR ) => {
+					_LDR = _HDR;	// Return as-is..
+				} );
+
 				// Assign result
-				viewportPanelResult.Image = m_BitmapResult;
+				viewportPanelResult.Bitmap = m_imageResult.AsBitmap;
 
 			} catch ( Exception _e ) {
 				MessageBox( "An error occurred during generation!\r\n\r\nDetails: ", _e );
@@ -440,7 +454,7 @@ namespace GenerateSelfShadowedBumpMap
 			}
 		}
 
-		private void	ApplyBilateralFiltering( RendererManaged.Texture2D _Source, RendererManaged.Texture2D _Target, float _BilateralRadius, float _BilateralTolerance, bool _Wrap, int _ProgressBarMax ) {
+		private void	ApplyBilateralFiltering( Renderer.Texture2D _Source, Renderer.Texture2D _Target, float _BilateralRadius, float _BilateralTolerance, bool _Wrap, int _ProgressBarMax ) {
 			_Source.SetCS( 0 );
 			_Target.SetCSUAV( 0 );
 
@@ -452,10 +466,9 @@ namespace GenerateSelfShadowedBumpMap
 
 			m_CS_BilateralFilter.Use();
 
-			int	h = Math.Max( 1, MAX_LINES*1024 / W );
-			int	CallsCount = (int) Math.Ceiling( (float) H / h );
-			for ( int i=0; i < CallsCount; i++ )
-			{
+			uint	h = Math.Max( 1, MAX_LINES*1024 / W );
+			uint	CallsCount = (uint) Math.Ceiling( (float) H / h );
+			for ( uint i=0; i < CallsCount; i++ ) {
 				m_CB_Filter.m.Y0 = (UInt32) (i * h);
 				m_CB_Filter.UpdateData();
 
@@ -474,14 +487,14 @@ namespace GenerateSelfShadowedBumpMap
 			_Target.RemoveFromLastAssignedSlotUAV();	// So we can use it as input for next stage
 		}
 
-		private void	GenerateRays( int _RaysCount, float _MaxConeAngle, RendererManaged.StructuredBuffer<RendererManaged.float3> _Target ) {
+		private void	GenerateRays( int _RaysCount, float _MaxConeAngle, Renderer.StructuredBuffer<float3> _Target ) {
 			_RaysCount = Math.Min( MAX_THREADS, _RaysCount );
 
-			WMath.Hammersley	hammersley = new WMath.Hammersley();
-			double[,]			sequence = hammersley.BuildSequence( _RaysCount, 2 );
-			WMath.Vector[]		rays = hammersley.MapSequenceToSphere( sequence, 0.5f * _MaxConeAngle );
+			Hammersley	hammersley = new Hammersley();
+			double[,]	sequence = hammersley.BuildSequence( _RaysCount, 2 );
+			float3[]	rays = hammersley.MapSequenceToSphere( sequence, 0.5f * _MaxConeAngle );
 			for ( int RayIndex=0; RayIndex < _RaysCount; RayIndex++ ) {
-				WMath.Vector	ray = rays[RayIndex];
+				float3	ray = rays[RayIndex];
 
 // 				// Scale the ray so we ensure to always walk at least a texel in the texture
 // 				float	SinTheta = (float) Math.Sqrt( 1.0 - ray.y * ray.y );
@@ -558,8 +571,7 @@ namespace GenerateSelfShadowedBumpMap
 //			Generate_CPU( integerTrackbarControlRaysCount.Value );
 		}
 
-		private void buttonTestBilateral_Click( object sender, EventArgs e )
-		{
+		private void buttonTestBilateral_Click( object sender, EventArgs e ) {
 			try {
 				panelParameters.Enabled = false;
 
@@ -573,30 +585,31 @@ namespace GenerateSelfShadowedBumpMap
 				// 2] Copy target to staging for CPU readback and update the resulting bitmap
 				m_TextureTarget_CPU.CopyFrom( m_TextureTarget0 );
 
-				if ( m_BitmapResult != null )
-					m_BitmapResult.Dispose();
-				m_BitmapResult = null;
-				m_BitmapResult = new ImageUtility.Bitmap( W, H, m_ProfileLinear );
-				m_BitmapResult.HasAlpha = true;
-
-				RendererManaged.PixelsBuffer	Pixels = m_TextureTarget_CPU.Map( 0, 0 );
+				ImageUtility.Bitmap		tempBitmap = new ImageUtility.Bitmap( W, H );
+				Renderer.PixelsBuffer	Pixels = m_TextureTarget_CPU.Map( 0, 0 );
 				using ( System.IO.BinaryReader R = Pixels.OpenStreamRead() )
-					for ( int Y=0; Y < H; Y++ )
-					{
+					for ( uint Y=0; Y < H; Y++ ) {
 						R.BaseStream.Position = Y * Pixels.RowPitch;
-						for ( int X=0; X < W; X++ ) {
+						for ( uint X=0; X < W; X++ ) {
 							float	AO = R.ReadSingle();
-							ImageUtility.float4	Color = new ImageUtility.float4( AO, AO, AO, AO );
-							Color = m_ProfileLinear.RGB2XYZ( Color );
-							m_BitmapResult.ContentXYZ[X,Y] = Color;
+							tempBitmap[X,Y] = new float4( AO, AO, AO, 1 );
 						}
 					}
 
 				Pixels.Dispose();
 				m_TextureTarget_CPU.UnMap( 0, 0 );
 
+				// Convert to RGB
+//				ImageUtility.ColorProfile	Profile = m_ProfilesRGB;	// AO maps are sRGB! (although strange, that's certainly to have more range in dark values)
+				ImageUtility.ColorProfile	Profile = m_profilesRGB;	// AO maps are sRGB! (although strange, that's certainly to have more range in dark values)
+
+				if ( m_imageResult != null )
+					m_imageResult.Dispose();
+				m_imageResult = new ImageUtility.ImageFile();
+				tempBitmap.ToImageFile( m_imageResult, Profile );
+
 				// Assign result
-				viewportPanelResult.Image = m_BitmapResult;
+				viewportPanelResult.Bitmap = m_imageResult.AsBitmap;
 
 			} catch ( Exception _e ) {
 				MessageBox( "An error occurred during generation!\r\n\r\nDetails: ", _e );
@@ -635,9 +648,8 @@ namespace GenerateSelfShadowedBumpMap
 			viewportPanelResult.Gamma = _Sender.Value;
 		}
 
-		private unsafe void viewportPanelResult_Click( object sender, EventArgs e )
-		{
-			if ( m_BitmapResult == null ) {
+		private unsafe void viewportPanelResult_Click( object sender, EventArgs e ) {
+			if ( m_imageResult == null ) {
 				MessageBox( "There is no result image to save!" );
 				return;
 			}
@@ -650,9 +662,8 @@ namespace GenerateSelfShadowedBumpMap
 			if ( saveFileDialogImage.ShowDialog( this ) != DialogResult.OK )
 				return;
 
-			try
-			{
-				m_BitmapResult.Save( new System.IO.FileInfo( saveFileDialogImage.FileName ) );
+			try {
+				m_imageResult.Save( new System.IO.FileInfo( saveFileDialogImage.FileName ), ImageUtility.ImageFile.FILE_FORMAT.PNG );
 
 				MessageBox( "Success!", MessageBoxButtons.OK, MessageBoxIcon.Information );
 			}
@@ -662,8 +673,7 @@ namespace GenerateSelfShadowedBumpMap
 			}
 		}
 
-		private void outputPanelInputHeightMap_Click( object sender, EventArgs e )
-		{
+		private void outputPanelInputHeightMap_Click( object sender, EventArgs e ) {
 			string	OldFileName = GetRegKey( "HeightMapFileName", System.IO.Path.Combine( m_ApplicationPath, "Example.jpg" ) );
 			openFileDialogImage.InitialDirectory = System.IO.Path.GetFullPath( OldFileName );
 			openFileDialogImage.FileName = System.IO.Path.GetFileName( OldFileName );
@@ -675,13 +685,12 @@ namespace GenerateSelfShadowedBumpMap
 			LoadHeightMap( new System.IO.FileInfo( openFileDialogImage.FileName ) );
 		}
 
-		private void buttonClearNormalMap_Click( object sender, EventArgs e )
-		{
+		private void buttonClearNormalMap_Click( object sender, EventArgs e ) {
 			if ( m_TextureSourceNormal != null )
 				m_TextureSourceNormal.Dispose();
 
 			// Create the default, planar normal map
-			RendererManaged.PixelsBuffer	SourceNormalMap = new RendererManaged.PixelsBuffer( 4*4 );
+			Renderer.PixelsBuffer	SourceNormalMap = new Renderer.PixelsBuffer( 4*4 );
 			using ( System.IO.BinaryWriter Wr = SourceNormalMap.OpenStreamWrite() ) {
 				Wr.Write( 0.0f );
 				Wr.Write( 0.0f );
@@ -689,11 +698,10 @@ namespace GenerateSelfShadowedBumpMap
 				Wr.Write( 1.0f );
 			}
 
-			m_TextureSourceNormal = new RendererManaged.Texture2D( m_Device, 1, 1, 1, 1, RendererManaged.PIXEL_FORMAT.RGBA32_FLOAT, false, false, new RendererManaged.PixelsBuffer[] { SourceNormalMap } );
+			m_TextureSourceNormal = new Renderer.Texture2D( m_Device, 1, 1, 1, 1, Renderer.PIXEL_FORMAT.RGBA32_FLOAT, false, false, new Renderer.PixelsBuffer[] { SourceNormalMap } );
 		}
 
-		private void buttonLoadNormalMap_Click( object sender, EventArgs e )
-		{
+		private void buttonLoadNormalMap_Click( object sender, EventArgs e ) {
 			string	OldFileName = GetRegKey( "NormalMapFileName", System.IO.Path.Combine( m_ApplicationPath, "Example.jpg" ) );
 			openFileDialogImage.InitialDirectory = System.IO.Path.GetFullPath( OldFileName );
 			openFileDialogImage.FileName = System.IO.Path.GetFileName( OldFileName );
@@ -706,8 +714,7 @@ namespace GenerateSelfShadowedBumpMap
 		}
 
 		private string	m_DraggedFileName = null;
-		private void outputPanelInputHeightMap_DragEnter( object sender, DragEventArgs e )
-		{
+		private void outputPanelInputHeightMap_DragEnter( object sender, DragEventArgs e ) {
 			m_DraggedFileName = null;
 			if ( (e.AllowedEffect & DragDropEffects.Copy) != DragDropEffects.Copy )
 				return;
@@ -738,14 +745,12 @@ namespace GenerateSelfShadowedBumpMap
 			}
 		}
 
-		private void outputPanelInputHeightMap_DragDrop( object sender, DragEventArgs e )
-		{
+		private void outputPanelInputHeightMap_DragDrop( object sender, DragEventArgs e ) {
 			if ( m_DraggedFileName != null )
 				LoadHeightMap( new System.IO.FileInfo( m_DraggedFileName ) );
 		}
 
-		private void buttonReload_Click( object sender, EventArgs e )
-		{
+		private void buttonReload_Click( object sender, EventArgs e ) {
 			m_Device.ReloadModifiedShaders();
 		}
 

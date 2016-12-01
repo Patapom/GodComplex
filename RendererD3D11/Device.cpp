@@ -103,7 +103,7 @@ bool	Device::Init( U32 _Width, U32 _Height, HWND _Handle, bool _Fullscreen, bool
 		m_pDefaultRenderTarget = new Texture2D( *this, *pDefaultRenderSurface, PixelFormatRGBA8::DESCRIPTOR );
 
 	// Create the default depth stencil buffer
-	m_pDefaultDepthStencil = new Texture2D( *this, _Width, _Height, DepthStencilFormatD32F::DESCRIPTOR );
+	m_pDefaultDepthStencil = new Texture2D( *this, _Width, _Height, 1, DepthStencilFormatD32F::DESCRIPTOR );
 
 
 	//////////////////////////////////////////////////////////////////////////

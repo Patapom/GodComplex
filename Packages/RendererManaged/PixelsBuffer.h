@@ -15,17 +15,17 @@ namespace Renderer {
 	public ref class PixelsBuffer : public ByteBuffer {
 	internal:
 
-		int							m_RowPitch;
-		int							m_DepthPitch;
+		UInt32						m_RowPitch;
+		UInt32						m_DepthPitch;
 
 	public:
 
-		property int		RowPitch	{ int get() { return m_RowPitch; } }
-		property int		DepthPitch	{ int get() { return m_DepthPitch; } }
+		property UInt32		RowPitch	{ UInt32 get() { return m_RowPitch; } }
+		property UInt32		DepthPitch	{ UInt32 get() { return m_DepthPitch; } }
 
 	public:
 
-		PixelsBuffer( int _ContentSize ) : ByteBuffer( _ContentSize ) {
+		PixelsBuffer( UInt32 _ContentSize ) : ByteBuffer( _ContentSize ) {
 		}
 
 	internal:

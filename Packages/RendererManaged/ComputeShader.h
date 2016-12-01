@@ -39,8 +39,8 @@ namespace Renderer {
 
 			delete[] macros;
 		}
-		ComputeShader( Device^ _device, ShaderBinaryFile^ _shaderFile, String^ _entryPoint ) {
-			const char*	ShaderFileName = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( _shaderFile->m_shaderFileName->FullName ).ToPointer();
+		ComputeShader( Device^ _device, System::IO::FileInfo^ _shaderFileName, String^ _entryPoint ) {
+			const char*	ShaderFileName = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( _shaderFileName->FullName ).ToPointer();
 			const char*	EntryPoint = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( _entryPoint ).ToPointer();
 
 			m_pShader = ::ComputeShader::CreateFromBinaryBlob( *_device->m_pDevice, ShaderFileName, NULL, EntryPoint );
@@ -55,7 +55,7 @@ namespace Renderer {
 			return m_pShader->Use();
 		}
 
-		void	Dispatch( int _GroupsCountX, int _GroupsCountY, int _GroupsCountZ ) {
+		void	Dispatch( UInt32 _GroupsCountX, UInt32 _GroupsCountY, UInt32 _GroupsCountZ ) {
 			m_pShader->Dispatch( _GroupsCountX, _GroupsCountY, _GroupsCountZ );
 		}
 

@@ -48,7 +48,7 @@ namespace ImageUtility {
 		};
 
 		// Describes the Red, Green, Blue and White Point chromaticities of a simple/standard color profile
-		[System::Diagnostics::DebuggerDisplay( "R=({R.x},{R.y}) G=({G.x},{G.y}) B=({B.x},{B.y}) W=({W.x},{W.y}) Prof={RecognizedChromaticity}" )]
+		[System::Diagnostics::DebuggerDisplay( "R={Red} G={Green} B={Blue} W={White} Prof={RecognizedChromaticity}" )]
 		ref struct	Chromaticities {
 		internal:
 		bool												m_ownedObject;	// True if we created the object and should also delete it, false if it's owned by someone else

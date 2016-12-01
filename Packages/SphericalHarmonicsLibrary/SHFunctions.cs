@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-using WMath;
+using SharpMath;
 
 namespace SphericalHarmonics
 {
@@ -98,7 +98,7 @@ namespace SphericalHarmonics
 		/// <param name="_θ">The polar elevation in [0,PI]</param>
 		/// <param name="_ϕ">The azimuth in [0,2PI]</param>
 		/// <param name="_Value">The function value for the requested angles</param>
-		public delegate void		EvaluateFunctionSHVector3( double _θ, double _ϕ, WMath.Vector _Value );
+		public delegate void		EvaluateFunctionSHVector3( double _θ, double _ϕ, float3 _Value );
 
 		/// <summary>
 		/// The delegate to use to evaluate a function that will be encoded into a ZH basis
@@ -144,10 +144,9 @@ namespace SphericalHarmonics
 		/// <param name="_Params">User params</param>
 		protected delegate void		BFGSFunctionGradientEval( double[] _Coefficients, double[] _Gradients, object _Params );
 
-		protected class		ZHMappingLocalFunctionEvaluationContext
-		{
+		protected class		ZHMappingLocalFunctionEvaluationContext {
 			public int					m_Order = 0;						// The SH order
-			public Vector2D				m_LobeDirection = null;				// The fixed lobe direction
+			public float2				m_LobeDirection = float2.Zero;		// The fixed lobe direction
 
 			// The precomputed table of SH coefficients
 			public double				m_Normalizer = 0;
@@ -216,7 +215,7 @@ namespace SphericalHarmonics
 		//
 		// NOTE ==> The '_Direction' vector must be normalized!!
 		//
-		public static double	ComputeSH( int l, int m, Vector _Direction )
+		public static double	ComputeSH( int l, int m, float3 _Direction )
 		{
 			// Convert from cartesian to polar coords
 			double	θ = 0.0;
@@ -265,7 +264,7 @@ namespace SphericalHarmonics
 		/// <param name="_Direction">The direction where to evalute the SH</param>
 		/// <param name="_Order">The order of the SH vector</param>
 		/// <returns>The SH evaluation in the provided direction</returns>
-		public static double	EvaluateSH( double[] _Coefficients, Vector _Direction, int _Order )
+		public static double	EvaluateSH( double[] _Coefficients, float3 _Direction, int _Order )
 		{
 			// Convert from cartesian to polar coords
 			double	θ = 0.0;
@@ -319,22 +318,18 @@ namespace SphericalHarmonics
 		/// <param name="_RandomSeed">The random seed to initialize the RNG with when drawing random sample position</param>
 		/// <param name="_Order">The order of the SH vector to encode</param>
 		/// <param name="_Delegate">The delegate that will be called to evaluate the function to encode</param>
-		public static void		EncodeIntoSH( WMath.Vector[] _Coefficients, int _SamplesCountTheta, int _SamplesCountPhi, int _RandomSeed, int _Order, EvaluateFunctionSHVector3 _Delegate )
+		public static void		EncodeIntoSH( float3[] _Coefficients, int _SamplesCountTheta, int _SamplesCountPhi, int _RandomSeed, int _Order, EvaluateFunctionSHVector3 _Delegate )
 		{
 			Random	RNG = new Random( _RandomSeed );
 
 			// Reset coefficients
-			for ( int CoefficientIndex=0; CoefficientIndex < _Coefficients.Length; CoefficientIndex++ )
-			{
-				if ( _Coefficients[CoefficientIndex] == null )
-					_Coefficients[CoefficientIndex] = new Vector();
-				_Coefficients[CoefficientIndex].MakeZero();
+			for ( int CoefficientIndex=0; CoefficientIndex < _Coefficients.Length; CoefficientIndex++ ) {
+				_Coefficients[CoefficientIndex] = float3.Zero;
 			}
 
-			WMath.Vector	Value = new WMath.Vector();
+			float3	Value = new float3();
 			for ( int PhiIndex=0; PhiIndex < _SamplesCountPhi; PhiIndex++ )
-				for ( int ThetaIndex=0; ThetaIndex < _SamplesCountTheta; ThetaIndex++ )
-				{
+				for ( int ThetaIndex=0; ThetaIndex < _SamplesCountTheta; ThetaIndex++ ) {
 					// Draw uniformly sampled θ and ϕ angles
 					double	θ = 2.0 * Math.Acos( Math.Sqrt( 1.0 - (ThetaIndex + RNG.NextDouble()) / _SamplesCountTheta ) );
 					double	ϕ = 2.0 * Math.PI * (PhiIndex + RNG.NextDouble()) / _SamplesCountPhi;
@@ -370,7 +365,7 @@ namespace SphericalHarmonics
 		//
 		// NOTE ==> The '_Direction' vector must be normalized!!
 		//
-		public static double	ComputeZH( int l, Vector _Direction )
+		public static double	ComputeZH( int l, float3 _Direction )
 		{
 			// Convert from cartesian to polar coords
 			double	θ = 0.0;
@@ -401,7 +396,7 @@ namespace SphericalHarmonics
 		/// <param name="_Coefficients">The SH coefficients encoding an amplitude in various directions</param>
 		/// <param name="_Direction">The direction where to evalute the ZH</param>
 		/// <returns>The ZH evaluation in the provided direction</returns>
-		public static double	EvaluateZH( double[] _Coefficients, Vector _Direction )
+		public static double	EvaluateZH( double[] _Coefficients, float3 _Direction )
 		{
 			// Convert from cartesian to polar coords
 			double	θ = 0.0;
@@ -452,7 +447,7 @@ namespace SphericalHarmonics
 		/// <param name="_Order">The order of the SH vector</param>
 		/// <param name="_Direction">The direction of the SH sampling</param>
 		/// <param name="_Coefficients">The array of coefficients to fill up</param>
-		public static void	InitializeSHCoefficients( int _Order, Vector _Direction, double[] _Coefficients )
+		public static void	InitializeSHCoefficients( int _Order, float3 _Direction, double[] _Coefficients )
 		{
 			int	Index = 0;
 			for ( int l=0; l < _Order; l++ )
@@ -482,7 +477,7 @@ namespace SphericalHarmonics
 		/// <param name="_θ">The elevation of the direction of the SH sampling</param>
 		/// <param name="_ϕ">The azimuth of the direction of the SH sampling</param>
 		/// <param name="_Coefficients">The array of coefficients to fill up</param>
-		public static void	InitializeSHCoefficients( int _Order, double _θ, double _ϕ, Vector[] _Coefficients )
+		public static void	InitializeSHCoefficients( int _Order, double _θ, double _ϕ, float3[] _Coefficients )
 		{
 			int	Index = 0;
 			for ( int l=0; l < _Order; l++ )
@@ -499,7 +494,7 @@ namespace SphericalHarmonics
 		/// <param name="_Order">The order of the SH vector</param>
 		/// <param name="_Direction">The direction of the SH sampling</param>
 		/// <param name="_Coefficients">The array of coefficients to fill up</param>
-		public static void	InitializeSHCoefficients( int _Order, Vector _Direction, Vector[] _Coefficients )
+		public static void	InitializeSHCoefficients( int _Order, float3 _Direction, float3[] _Coefficients )
 		{
 			int	Index = 0;
 			for ( int l=0; l < _Order; l++ )
@@ -532,7 +527,7 @@ namespace SphericalHarmonics
 		/// <param name="_Vector">The vector to mirror</param>
 		/// <param name="_MirroredVector">The mirrored vector</param>
 		/// <param name="_Order">The order of the vectors (i.e. vectors must have a length of Order²)</param>
-		public static void			MirrorY( WMath.Vector[] _Vector, WMath.Vector[] _MirroredVector, int _Order )
+		public static void			MirrorY( float3[] _Vector, float3[] _MirroredVector, int _Order )
 		{
 			for ( int l=0; l < _Order; l++ )
 				for ( int m=-l; m <= l; m++ )
@@ -574,7 +569,7 @@ namespace SphericalHarmonics
 		/// <param name="_ϕ">The rotation angle</param>
 		/// <param name="_RotatedVector">The rotated vector</param>
 		/// <param name="_Order">The order of the vectors (i.e. vectors must have a length of Order²)</param>
-		public static void			RotateY( WMath.Vector[] _Vector, double _ϕ, WMath.Vector[] _RotatedVector, int _Order )
+		public static void			RotateY( float3[] _Vector, double _ϕ, float3[] _RotatedVector, int _Order )
 		{
 			for ( int l=0; l < _Order; l++ )
 				for ( int m=-l; m <= l; m++ )
@@ -598,8 +593,7 @@ namespace SphericalHarmonics
 		/// <param name="_Rotation">The 3x3 rotation matrix to infer the SH rotation matrix from</param>
 		/// <param name="_Matrix">The resulting _Order² x _Order² rotation matrix</param>
 		/// <param name="_Order">The order of the SH vectors that will be rotated using the matrix</param>
-		public static void	BuildRotationMatrix( Matrix3x3 _Rotation, double[,]	_Matrix, int _Order )
-		{
+		public static void	BuildRotationMatrix( float3x3 _Rotation, double[,] _Matrix, int _Order ) {
 			// This method recursively computes the SH transformation matrix based on a regular 3x3 transform
 			//
 			// The transformation matrix is block diagonal-sparse in the following form:
@@ -721,7 +715,7 @@ namespace SphericalHarmonics
 		/// <param name="_RotationMatrix">The SH rotation matrix</param>
 		/// <param name="_RotatedVector">The rotated vector</param>
 		/// <param name="_Order">The order of the vectors (i.e. vectors must have a length of Order²)</param>
-		public static void		Rotate( Vector[] _Vector, double[,] _RotationMatrix, Vector[] _RotatedVector, int _Order )
+		public static void		Rotate( float3[] _Vector, double[,] _RotationMatrix, float3[] _RotatedVector, int _Order )
 		{
 			int	MatrixSize = 1;
 			int	SourceCoefficientIndex = 0;
@@ -731,7 +725,7 @@ namespace SphericalHarmonics
 				int	BandOffset = l * l;
 				for ( int n=0; n < MatrixSize; n++ )
 				{
-					_RotatedVector[DestCoefficientIndex] = new Vector( 0.0f, 0.0f, 0.0f );
+					_RotatedVector[DestCoefficientIndex] = new float3( 0.0f, 0.0f, 0.0f );
 
 					for ( int m=0; m < MatrixSize; m++ )
 						_RotatedVector[DestCoefficientIndex] += _Vector[SourceCoefficientIndex+m] * (float) _RotationMatrix[BandOffset + m,BandOffset + n];
@@ -940,7 +934,7 @@ namespace SphericalHarmonics
 		/// <returns>The convolution of the 2 vectors</returns>
 		/// <remarks>This method is quite time-consuming as the convolution is computed using 5 loops but, as an optimisation, we can notice that most Clebsh-Gordan are 0
 		/// and a vector of non-null coefficients could be precomputed as only the vectors' coefficients change</remarks>
-		public static Vector[]		Convolve( Vector[] _Vector0, Vector[] _Vector1, int _Order )
+		public static float3[]		Convolve( float3[] _Vector0, float3[] _Vector1, int _Order )
 		{
 			if ( _Vector0 == null || _Vector1 == null )
 				throw new Exception( "Invalid coefficients!" );
@@ -949,14 +943,14 @@ namespace SphericalHarmonics
 			if ( _Order * _Order != _Vector0.Length )
 				throw new Exception( "Coefficient vectors are not of the specified order!" );
 
-			Vector[]	ConvolvedCoeffs = new Vector[_Vector0.Length];
+			float3[]	ConvolvedCoeffs = new float3[_Vector0.Length];
 
 			// Compute convolution
 			int	TotalCoeffIndex = 0;
 			for ( int l=0; l < _Order; l++ )
 				for ( int m=-l; m <= +l; m++, TotalCoeffIndex++ )
 				{
-					ConvolvedCoeffs[TotalCoeffIndex] = new Vector( 0.0f, 0.0f, 0.0f );
+					ConvolvedCoeffs[TotalCoeffIndex] = new float3( 0.0f, 0.0f, 0.0f );
 
 					int	InnerTotalCoeffIndex = 0;
 					for ( int l1=0; l1 < _Order; l1++ )
@@ -976,8 +970,8 @@ namespace SphericalHarmonics
 								if ( Math.Abs( CGC1 ) < 1e-4 )
 									continue;
 
-								Vector	A = _Vector0[InnerTotalCoeffIndex];
-								Vector	B = _Vector1[Bl2m1mIndex];
+								float3	A = _Vector0[InnerTotalCoeffIndex];
+								float3	B = _Vector1[Bl2m1mIndex];
 
 								double	FinalCoeff = Sqrt * CGC0 * CGC1;
 
@@ -990,7 +984,7 @@ namespace SphericalHarmonics
 
 		// Filtering stolen from http://csc.lsu.edu/~kooima/sht/sh.hpp
 		// Apply a Hanning window of width w (usually the SH order).
-		public static void	FilterHanning( WMath.Vector[] _SH, int w )
+		public static void	FilterHanning( float3[] _SH, int w )
 		{
 			for (int l = 0; l < 3; l++)
 				if ( l > w )
@@ -1000,7 +994,7 @@ namespace SphericalHarmonics
 		}
 
 		// Apply a Lanczos window of width w (usually the SH order).
-		public static void	FilterLanczos( WMath.Vector[] _SH, int w )
+		public static void	FilterLanczos( float3[] _SH, int w )
 		{
 			for (int l = 0; l < 3; l++)
 				if ( l == 0 )
@@ -1010,14 +1004,14 @@ namespace SphericalHarmonics
 		}
 
 		// Apply a Gaussian window of width w (usually the SH order).
-		public static void	FilterGaussian( WMath.Vector[] _SH, int w )
+		public static void	FilterGaussian( float3[] _SH, int w )
 		{
 			for ( int l = 0; l < 3; l++ )
 				Filter( _SH, l, (float) Math.Exp( -(Math.PI * l / w) * (Math.PI * l / w) / 2.0 ) );
 		}
 
 		// Modulate all coefficients of degree l by scalar a.
-		private static void	Filter( WMath.Vector[] _SH, int l, float a )
+		private static void	Filter( float3[] _SH, int l, float a )
 		{
 			for ( int m=-l; m <= l; m++ )
 				_SH[l*(l+1)+m] *= a;
@@ -1067,7 +1061,7 @@ namespace SphericalHarmonics
 		/// <param name="_TargetAxis">The target axis to match (the original axis being positive Y)</param>
 		/// <param name="_RotatedSHCoefficients">The rotated SH coefficients</param>
 		/// <remarks>Be careful the returned coefficients are SH coefficients, hence the _RotatedSHCoefficients vector should be N² if rotating an order N Zonal Harmonics vector</remarks>
-		public static void		ComputeRotatedZHCoefficients( double[] _ZHCoefficients, Vector _TargetAxis, double[] _RotatedSHCoefficients )
+		public static void		ComputeRotatedZHCoefficients( double[] _ZHCoefficients, float3 _TargetAxis, double[] _RotatedSHCoefficients )
 		{
 			// Compute the convolution coefficients from input ZH coeffs
 			double[]	ConvolutionCoefficients = new double[_ZHCoefficients.Length];
@@ -1093,7 +1087,7 @@ namespace SphericalHarmonics
 		/// <param name="_FunctionSamplingResolution">The resolution of the sphere used to perform function sampling and measuring the error (e.g. using a resolution of 100 will estimate the function with 100 * (2*100) samples)</param>
 		/// <param name="_RMS">The resulting array of RMS errors for each ZH lobe</param>
 		/// <param name="_Delegate">An optional delegate to pass the method to get feedback about the mapping as it can be a lengthy process (!!)</param>
-		public static void		MapSHIntoZH( double[] _SHCoefficients, int _Order, Vector2D[] _ZHAxes, double[][] _ZHCoefficients, int _HemisphereResolution, int _FunctionSamplingResolution, double _BFGSConvergenceTolerance, out double[] _RMS, ZHMappingFeedback _Delegate )
+		public static void		MapSHIntoZH( double[] _SHCoefficients, int _Order, float2[] _ZHAxes, double[][] _ZHCoefficients, int _HemisphereResolution, int _FunctionSamplingResolution, double _BFGSConvergenceTolerance, out double[] _RMS, ZHMappingFeedback _Delegate )
 		{
 			int			LobesCount = _ZHCoefficients.GetLength( 0 );
 			Random		RNG = new Random( 1 );
@@ -1118,11 +1112,11 @@ namespace SphericalHarmonics
 			ContextLocal.m_SHEvaluation = new double[ContextLocal.m_SHSamples.SamplesCount];
 
 			// Prepare the hemisphere of random directions for lobe best fit
-			Vector2D[]	RandomInitialDirections = new Vector2D[_HemisphereResolution*(4*_HemisphereResolution)];
+			float2[]	RandomInitialDirections = new float2[_HemisphereResolution*(4*_HemisphereResolution)];
 			int		DirectionIndex = 0;
 			for ( int ThetaIndex=0; ThetaIndex < _HemisphereResolution; ThetaIndex++ )
 				for ( int PhiIndex=0; PhiIndex < 4*_HemisphereResolution; PhiIndex++ )
-					RandomInitialDirections[DirectionIndex++] = new Vector2D( (float) Math.Acos( Math.Sqrt( 1.0 - (ThetaIndex + RNG.NextDouble()) / _HemisphereResolution) ), (float) (2.0 * Math.PI * (PhiIndex + RNG.NextDouble()) / (4*_HemisphereResolution) ) );
+					RandomInitialDirections[DirectionIndex++] = new float2( (float) Math.Acos( Math.Sqrt( 1.0 - (ThetaIndex + RNG.NextDouble()) / _HemisphereResolution) ), (float) (2.0 * Math.PI * (PhiIndex + RNG.NextDouble()) / (4*_HemisphereResolution) ) );
 
 			// Prepare the fixed list of coefficients' denominators
 			double[]	LobeCoefficientsDenominators = new double[_Order];
@@ -1885,7 +1879,7 @@ namespace SphericalHarmonics
 		/// <param name="_Direction">The cartesian unit vector to convert</param>
 		/// <param name="_θ">The polar elevation</param>
 		/// <param name="_ϕ">The azimuth</param>
-		public static void		CartesianToSpherical( Vector _Direction, out double _θ, out double _ϕ )
+		public static void		CartesianToSpherical( float3 _Direction, out double _θ, out double _ϕ )
 		{
 			_θ = Math.Acos( Math.Max( -1.0f, Math.Min( +1.0f, _Direction.z ) ) );
 			_ϕ = Math.Atan2( _Direction.y, _Direction.x );
@@ -1897,9 +1891,9 @@ namespace SphericalHarmonics
 		/// <param name="_θ">The polar elevation</param>
 		/// <param name="_ϕ">The azimuth</param>
 		/// <returns>The unit vector in cartesian coordinates</returns>
-		public static Vector	SphericalToCartesian( double _θ, double _ϕ )
+		public static float3	SphericalToCartesian( double _θ, double _ϕ )
 		{
-			Vector	Result = new Vector();
+			float3	Result = new float3();
 			SphericalToCartesian( _θ, _ϕ, Result );
 			return	Result;
 		}
@@ -1910,7 +1904,7 @@ namespace SphericalHarmonics
 		/// <param name="_θ">The polar elevation</param>
 		/// <param name="_ϕ">The azimuth</param>
 		/// <param name="_Direction">The unit vector in cartesian coordinates</param>
-		public static void		SphericalToCartesian( double _θ, double _ϕ, WMath.Vector _Direction )
+		public static void		SphericalToCartesian( double _θ, double _ϕ, float3 _Direction )
 		{
 			_Direction.x = (float) (Math.Sin( _θ ) * Math.Cos( _ϕ ));
 			_Direction.z = (float) Math.Cos( _θ );

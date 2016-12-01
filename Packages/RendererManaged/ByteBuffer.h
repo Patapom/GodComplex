@@ -16,7 +16,7 @@ namespace Renderer {
 
 	public:
 
-		ByteBuffer( int _ContentSize ) {
+		ByteBuffer( UInt32 _ContentSize ) {
 			m_Buffer = gcnew array<System::Byte>( _ContentSize );
 		}
 		~ByteBuffer() {

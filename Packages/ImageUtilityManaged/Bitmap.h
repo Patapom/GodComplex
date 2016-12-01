@@ -46,15 +46,15 @@ namespace ImageUtility {
 		/// <summary>
 		/// Gets the image width
 		/// </summary>
-		property int		Width {
-			int		get() { return m_nativeObject->Width(); }
+		property UInt32		Width {
+			UInt32		get() { return m_nativeObject->Width(); }
 		}
 
 		/// <summary>
 		/// Gets the image height
 		/// </summary>
-		property int		Height {
-			int		get() { return m_nativeObject->Height(); }
+		property UInt32		Height {
+			UInt32		get() { return m_nativeObject->Height(); }
 		}
 
 		/// <summary>
@@ -106,7 +106,7 @@ static property ImageFile^	DEBUG {
 		}
 
 		// Manual creation
-		Bitmap( int _width, int _height ) {
+		Bitmap( UInt32 _width, UInt32 _height ) {
 			m_nativeObject = new ImageUtilityLib::Bitmap( _width, _height );
 		}
 
@@ -115,7 +115,7 @@ static property ImageFile^	DEBUG {
 			FromImageFile( _file );
 		}
 
-		void			Init( int _width, int _height ) {
+		void			Init( UInt32 _width, UInt32 _height ) {
 			m_nativeObject->Init( _width, _height );
 		}
 

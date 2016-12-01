@@ -111,6 +111,7 @@ Shader::Shader( Device& _Device, const char* _pShaderFileName, const IVertexForm
 	, m_pEntryPointPS( NULL )
 	, m_pShaderPath( NULL )
 	, m_pIncludeOverride( NULL )
+	, m_pMacros( NULL )
 	, m_bHasErrors( false )
 #if defined(_DEBUG) || !defined(GODCOMPLEX)
 	, m_LastShaderModificationTime( 0 )
@@ -1000,12 +1001,18 @@ ID3DBlob*	Shader::LoadBinaryBlob( const char* _pShaderFileName, D3D_SHADER_MACRO
 	const char*	pExtension = strrchr( _pShaderFileName, '.' );
 	ASSERT( pExtension != NULL, "Can't retrieve extension!" );
 	int		ExtensionIndex = int( pExtension - _pShaderFileName );
+
+	char	pShaderPath[1024];
+	memcpy( pShaderPath, _pShaderFileName, FileNameIndex );
+	pShaderPath[FileNameIndex] = '\0';	// End the path name here
+
 	char	pFileNameWithoutExtension[1024];
 	memcpy( pFileNameWithoutExtension, pFileName+1, ExtensionIndex-FileNameIndex );
 	pFileNameWithoutExtension[ExtensionIndex-FileNameIndex] = '\0';	// End the file name here
 
 	char	pFinalShaderName[1024];
-	sprintf_s( pFinalShaderName, 1024, "%s%s%s.%s.fxbin", SAVE_SHADER_BLOB_TO, pFileNameWithoutExtension, pMacrosSignature, _pEntryPoint );
+//	sprintf_s( pFinalShaderName, 1024, "%s%s%s.%s.fxbin", SAVE_SHADER_BLOB_TO, pFileNameWithoutExtension, pMacrosSignature, _pEntryPoint );
+	sprintf_s( pFinalShaderName, 1024, "%s%s%s%s.%s.fxbin", pShaderPath, SAVE_SHADER_BLOB_TO, pFileNameWithoutExtension, pMacrosSignature, _pEntryPoint );
 
 	// Load the binary file
 	FILE*	pFile;

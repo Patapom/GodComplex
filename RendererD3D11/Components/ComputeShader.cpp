@@ -56,8 +56,7 @@ ComputeShader::ComputeShader( Device& _Device, const char* _pShaderFileName, con
 
 	m_pEntryPointCS = _pEntryPoint;
 
-	if ( _pMacros != NULL )
-	{
+	if ( _pMacros != NULL ) {
 		D3D_SHADER_MACRO*	pMacro = _pMacros;
 		while ( pMacro->Name != NULL )
 			pMacro++;
@@ -92,6 +91,7 @@ ComputeShader::ComputeShader( Device& _Device, const char* _pShaderFileName, ID3
 	, m_pCS( NULL )
 	, m_pShaderPath( NULL )
 	, m_pIncludeOverride( NULL )
+	, m_pMacros( NULL )
 	, m_bHasErrors( false )
 #if defined(_DEBUG) || !defined(GODCOMPLEX)
 	, m_LastShaderModificationTime( 0 )
@@ -183,8 +183,7 @@ bool	ComputeShader::Use()
 	return true;
 }
 
-void	ComputeShader::Dispatch( int _GroupsCountX, int _GroupsCountY, int _GroupsCountZ )
-{
+void	ComputeShader::Dispatch( U32 _GroupsCountX, U32 _GroupsCountY, U32 _GroupsCountZ ) {
 	ASSERT( ms_pCurrentShader == this, "You must call Use() before calling Run() on a ComputeShader!" );
 	if ( !Lock() )
 		return;	// Someone else is locking it !

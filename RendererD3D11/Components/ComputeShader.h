@@ -123,7 +123,7 @@ public:	 // METHODS
 	//
 	// NOTE: Each thread group runs a number of threads as indicated in the shader
 	//
-	void			Dispatch( int _GroupsCountX, int _GroupsCountY, int _GroupsCountZ );
+	void			Dispatch( U32 _GroupsCountX, U32 _GroupsCountY, U32 _GroupsCountZ );
 
 
 public:	// ID3DInclude Members

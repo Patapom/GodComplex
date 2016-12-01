@@ -2,7 +2,7 @@
 
 #include "Texture3D.h"
 
-Texture3D::Texture3D( Device& _Device, int _Width, int _Height, int _Depth, const IPixelFormatDescriptor& _Format, int _MipLevelsCount, const void* const* _ppContent, bool _bStaging, bool _bUnOrderedAccess )
+Texture3D::Texture3D( Device& _Device, U32 _Width, U32 _Height, U32 _Depth, U32 _MipLevelsCount, const IPixelFormatDescriptor& _Format, const void* const* _ppContent, bool _bStaging, bool _bUnOrderedAccess )
 	: Component( _Device )
 	, m_Width( _Width )
 	, m_Height( _Height )
@@ -19,8 +19,7 @@ static void		ReleaseDirectXObject( int _EntryIndex, void*& _pValue, void* _pUser
 	pObject->Release();
 }
 
-Texture3D::~Texture3D()
-{
+Texture3D::~Texture3D() {
 	ASSERT( m_pTexture != NULL, "Invalid texture to destroy !" );
 
 	m_CachedSRVs.ForEach( ReleaseDirectXObject, NULL );
@@ -31,8 +30,7 @@ Texture3D::~Texture3D()
 	m_pTexture = NULL;
 }
 
-void	Texture3D::Init( const void* const* _ppContent, bool _bStaging, bool _bUnOrderedAccess, TextureFilePOM::MipDescriptor* _pMipDescriptors )
-{
+void	Texture3D::Init( const void* const* _ppContent, bool _bStaging, bool _bUnOrderedAccess, TextureFilePOM::MipDescriptor* _pMipDescriptors ) {
 	ASSERT( m_Width <= MAX_TEXTURE_SIZE, "Texture size out of range !" );
 	ASSERT( m_Height <= MAX_TEXTURE_SIZE, "Texture size out of range !" );
 	ASSERT( m_Depth <= MAX_TEXTURE_SIZE, "Texture size out of range !" );
@@ -51,29 +49,24 @@ void	Texture3D::Init( const void* const* _ppContent, bool _bStaging, bool _bUnOr
 	Desc.Format = m_Format.DirectXFormat();
 	Desc.MiscFlags = D3D11_RESOURCE_MISC_FLAG( 0 );
 
-	if ( _bStaging )
-	{
+	if ( _bStaging ) {
 		Desc.Usage = D3D11_USAGE_STAGING;
 		Desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ | D3D11_CPU_ACCESS_WRITE;
 		Desc.BindFlags = 0;
-	}
-	else
-	{
+	} else {
 		Desc.Usage = _ppContent != NULL ? D3D11_USAGE_IMMUTABLE : D3D11_USAGE_DEFAULT;
 		Desc.CPUAccessFlags = D3D11_CPU_ACCESS_FLAG( 0 );
 		Desc.BindFlags = _ppContent != NULL ? D3D11_BIND_SHADER_RESOURCE : (D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE | (_bUnOrderedAccess ? D3D11_BIND_UNORDERED_ACCESS: 0));
 	}
 
-	if ( _ppContent != NULL )
-	{
+	if ( _ppContent != NULL ) {
 		D3D11_SUBRESOURCE_DATA  pInitialData[MAX_TEXTURE_POT];
-		int	Width = m_Width;
-		int	Height = m_Height;
-		int	Depth = m_Depth;
-		for ( int MipLevelIndex=0; MipLevelIndex < m_MipLevelsCount; MipLevelIndex++ )
-		{
-			int	RowPitch = _pMipDescriptors != NULL ? _pMipDescriptors[MipLevelIndex].RowPitch : Width * m_Format.Size();
-			int	DepthPitch = _pMipDescriptors != NULL ? _pMipDescriptors[MipLevelIndex].DepthPitch : Height * RowPitch;
+		U32	Width = m_Width;
+		U32	Height = m_Height;
+		U32	Depth = m_Depth;
+		for ( U32 MipLevelIndex=0; MipLevelIndex < m_MipLevelsCount; MipLevelIndex++ ) {
+			U32	RowPitch = _pMipDescriptors != NULL ? _pMipDescriptors[MipLevelIndex].RowPitch : Width * m_Format.Size();
+			U32	DepthPitch = _pMipDescriptors != NULL ? _pMipDescriptors[MipLevelIndex].DepthPitch : Height * RowPitch;
 
 			pInitialData[MipLevelIndex].pSysMem = _ppContent[MipLevelIndex];
 			pInitialData[MipLevelIndex].SysMemPitch = RowPitch;
@@ -87,8 +80,7 @@ void	Texture3D::Init( const void* const* _ppContent, bool _bStaging, bool _bUnOr
 		Check( m_Device.DXDevice().CreateTexture3D( &Desc, NULL, &m_pTexture ) );
 }
 
-ID3D11ShaderResourceView*	Texture3D::GetSRV( int _MipLevelStart, int _MipLevelsCount, int _FirstWSlice, int _WSize, bool _AsArray ) const
-{
+ID3D11ShaderResourceView*	Texture3D::GetSRV( U32 _MipLevelStart, U32 _MipLevelsCount, U32 _FirstWSlice, U32 _WSize, bool _AsArray ) const {
 	if ( _MipLevelsCount == 0 )
 		_MipLevelsCount = m_MipLevelsCount - _MipLevelStart;
 	if ( _WSize == 0 )
@@ -108,16 +100,14 @@ ID3D11ShaderResourceView*	Texture3D::GetSRV( int _MipLevelStart, int _MipLevelsC
 
 	D3D11_SHADER_RESOURCE_VIEW_DESC	Desc;
 	Desc.Format = m_Format.DirectXFormat();
-	if ( _AsArray )
-	{	// Force as a Texture2DArray
+	if ( _AsArray ) {
+		// Force as a Texture2DArray
 		Desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
 		Desc.Texture2DArray.MostDetailedMip = _MipLevelStart;
 		Desc.Texture2DArray.MipLevels = _MipLevelsCount;
 		Desc.Texture2DArray.FirstArraySlice = _FirstWSlice;
 		Desc.Texture2DArray.ArraySize = _WSize;
-	}
-	else
-	{
+	} else {
 		Desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE3D;
 		Desc.Texture3D.MostDetailedMip = _MipLevelStart;
 		Desc.Texture3D.MipLevels = _MipLevelsCount;
@@ -131,8 +121,7 @@ ID3D11ShaderResourceView*	Texture3D::GetSRV( int _MipLevelStart, int _MipLevelsC
 	return pView;
 }
 
-ID3D11RenderTargetView*		Texture3D::GetRTV( int _MipLevelIndex, int _FirstWSlice, int _WSize ) const
-{
+ID3D11RenderTargetView*		Texture3D::GetRTV( U32 _MipLevelIndex, U32 _FirstWSlice, U32 _WSize ) const {
 	if ( _WSize == 0 )
 		_WSize = m_Depth - _FirstWSlice;
 
@@ -158,8 +147,7 @@ ID3D11RenderTargetView*		Texture3D::GetRTV( int _MipLevelIndex, int _FirstWSlice
 	return pView;
 }
 
-ID3D11UnorderedAccessView*	Texture3D::GetUAV( int _MipLevelIndex, int _FirstWSlice, int _WSize ) const
-{
+ID3D11UnorderedAccessView*	Texture3D::GetUAV( U32 _MipLevelIndex, U32 _FirstWSlice, U32 _WSize ) const {
 	if ( _WSize == 0 )
 		_WSize = m_Depth - _FirstWSlice;
 
@@ -186,8 +174,7 @@ ID3D11UnorderedAccessView*	Texture3D::GetUAV( int _MipLevelIndex, int _FirstWSli
 	return pView;
 }
 
-void	Texture3D::Set( int _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderResourceView* _pView ) const
-{
+void	Texture3D::Set( U32 _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderResourceView* _pView ) const {
 	ASSERT( _SlotIndex >= 10 || _bIKnowWhatImDoing, "WARNING: Assigning a reserved texture slot ! (i.e. all slots [0,9] are reserved for global textures)" );
 
 	_pView = _pView != NULL ? _pView : GetSRV( 0, 0 );
@@ -204,48 +191,42 @@ void	Texture3D::Set( int _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderResour
 	m_LastAssignedSlots[4] = _SlotIndex;
 	m_LastAssignedSlots[5] = _SlotIndex;
 }
-void	Texture3D::SetVS( int _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderResourceView* _pView ) const
-{
+void	Texture3D::SetVS( U32 _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderResourceView* _pView ) const {
 	ASSERT( _SlotIndex >= 10 || _bIKnowWhatImDoing, "WARNING: Assigning a reserved texture slot ! (i.e. all slots [0,9] are reserved for global textures)" );
 
 	_pView = _pView != NULL ? _pView : GetSRV( 0, 0 );
 	m_Device.DXContext().VSSetShaderResources( _SlotIndex, 1, &_pView );
 	m_LastAssignedSlots[0] = _SlotIndex;
 }
-void	Texture3D::SetHS( int _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderResourceView* _pView ) const
-{
+void	Texture3D::SetHS( U32 _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderResourceView* _pView ) const {
 	ASSERT( _SlotIndex >= 10 || _bIKnowWhatImDoing, "WARNING: Assigning a reserved texture slot ! (i.e. all slots [0,9] are reserved for global textures)" );
 
 	_pView = _pView != NULL ? _pView : GetSRV( 0, 0 );
 	m_Device.DXContext().HSSetShaderResources( _SlotIndex, 1, &_pView );
 	m_LastAssignedSlots[1] = _SlotIndex;
 }
-void	Texture3D::SetDS( int _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderResourceView* _pView ) const
-{
+void	Texture3D::SetDS( U32 _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderResourceView* _pView ) const {
 	ASSERT( _SlotIndex >= 10 || _bIKnowWhatImDoing, "WARNING: Assigning a reserved texture slot ! (i.e. all slots [0,9] are reserved for global textures)" );
 
 	_pView = _pView != NULL ? _pView : GetSRV( 0, 0 );
 	m_Device.DXContext().DSSetShaderResources( _SlotIndex, 1, &_pView );
 	m_LastAssignedSlots[2] = _SlotIndex;
 }
-void	Texture3D::SetGS( int _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderResourceView* _pView ) const
-{
+void	Texture3D::SetGS( U32 _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderResourceView* _pView ) const {
 	ASSERT( _SlotIndex >= 10 || _bIKnowWhatImDoing, "WARNING: Assigning a reserved texture slot ! (i.e. all slots [0,9] are reserved for global textures)" );
 
 	_pView = _pView != NULL ? _pView : GetSRV( 0, 0 );
 	m_Device.DXContext().GSSetShaderResources( _SlotIndex, 1, &_pView );
 	m_LastAssignedSlots[3] = _SlotIndex;
 }
-void	Texture3D::SetPS( int _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderResourceView* _pView ) const
-{
+void	Texture3D::SetPS( U32 _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderResourceView* _pView ) const {
 	ASSERT( _SlotIndex >= 10 || _bIKnowWhatImDoing, "WARNING: Assigning a reserved texture slot ! (i.e. all slots [0,9] are reserved for global textures)" );
 
 	_pView = _pView != NULL ? _pView : GetSRV( 0, 0 );
 	m_Device.DXContext().PSSetShaderResources( _SlotIndex, 1, &_pView );
 	m_LastAssignedSlots[4] = _SlotIndex;
 }
-void	Texture3D::SetCS( int _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderResourceView* _pView ) const
-{
+void	Texture3D::SetCS( U32 _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderResourceView* _pView ) const {
 	ASSERT( _SlotIndex >= 10 || _bIKnowWhatImDoing, "WARNING: Assigning a reserved texture slot ! (i.e. all slots [0,9] are reserved for global textures)" );
 
 	_pView = _pView != NULL ? _pView : GetSRV( 0, 0 );
@@ -253,8 +234,7 @@ void	Texture3D::SetCS( int _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderReso
 	m_LastAssignedSlots[5] = _SlotIndex;
 }
 
-void	Texture3D::RemoveFromLastAssignedSlots() const
-{
+void	Texture3D::RemoveFromLastAssignedSlots() const {
 	static Device::SHADER_STAGE_FLAGS	pStageFlags[] = {
 		Device::SSF_VERTEX_SHADER,
 		Device::SSF_HULL_SHADER,
@@ -263,7 +243,7 @@ void	Texture3D::RemoveFromLastAssignedSlots() const
 		Device::SSF_PIXEL_SHADER,
 		Device::SSF_COMPUTE_SHADER,
 	};
-	for ( int ShaderStageIndex=0; ShaderStageIndex < 6; ShaderStageIndex++ )
+	for ( U32 ShaderStageIndex=0; ShaderStageIndex < 6; ShaderStageIndex++ )
 		if ( m_LastAssignedSlots[ShaderStageIndex] != -1 ) {
 			m_Device.RemoveShaderResources( m_LastAssignedSlots[ShaderStageIndex], 1, pStageFlags[ShaderStageIndex] );
 			m_LastAssignedSlots[ShaderStageIndex] = -1;
@@ -271,16 +251,14 @@ void	Texture3D::RemoveFromLastAssignedSlots() const
 }
 
 // UAV setting
-void	Texture3D::SetCSUAV( int _SlotIndex, ID3D11UnorderedAccessView* _pView ) const
-{
+void	Texture3D::SetCSUAV( U32 _SlotIndex, ID3D11UnorderedAccessView* _pView ) const {
 	_pView = _pView != NULL ? _pView : GetUAV( 0, 0, 0 );
 	UINT	InitialCount = -1;
 	m_Device.DXContext().CSSetUnorderedAccessViews( _SlotIndex, 1, &_pView, &InitialCount );
 	m_LastAssignedSlotsUAV = _SlotIndex;
 }
 
-void	Texture3D::RemoveFromLastAssignedSlotUAV() const
-{
+void	Texture3D::RemoveFromLastAssignedSlotUAV() const {
 	ID3D11UnorderedAccessView*	pNULL = NULL;
 	UINT	InitialCount = -1;
 	if ( m_LastAssignedSlotsUAV != -1 )
@@ -289,8 +267,7 @@ void	Texture3D::RemoveFromLastAssignedSlotUAV() const
 }
 
 
-void	Texture3D::CopyFrom( Texture3D& _SourceTexture )
-{
+void	Texture3D::CopyFrom( Texture3D& _SourceTexture ) {
 	ASSERT( _SourceTexture.m_Width == m_Width && _SourceTexture.m_Height == m_Height && _SourceTexture.m_Depth == m_Depth, "Size mismatch!" );
 	ASSERT( _SourceTexture.m_MipLevelsCount == m_MipLevelsCount, "Mips count mismatch!" );
 	ASSERT( _SourceTexture.m_Format.DirectXFormat() == m_Format.DirectXFormat(), "Format mismatch!" );
@@ -298,28 +275,24 @@ void	Texture3D::CopyFrom( Texture3D& _SourceTexture )
 	m_Device.DXContext().CopyResource( m_pTexture, _SourceTexture.m_pTexture );
 }
 
-D3D11_MAPPED_SUBRESOURCE&	Texture3D::Map( int _MipLevelIndex )
-{
+D3D11_MAPPED_SUBRESOURCE&	Texture3D::Map( U32 _MipLevelIndex ) {
 	Check( m_Device.DXContext().Map( m_pTexture, _MipLevelIndex, D3D11_MAP_READ, 0, &m_LockedResource ) );
 	return m_LockedResource;
 }
 
-void	Texture3D::UnMap( int _MipLevelIndex )
-{
+void	Texture3D::UnMap( U32 _MipLevelIndex ) {
 	m_Device.DXContext().Unmap( m_pTexture, _MipLevelIndex );
 }
 
-void	Texture3D::NextMipSize( int& _Width, int& _Height, int& _Depth )
-{
-	_Width = MAX( 1, _Width >> 1 );
-	_Height = MAX( 1, _Height >> 1 );
-	_Depth = MAX( 1, _Depth >> 1 );
+void	Texture3D::NextMipSize( U32& _Width, U32& _Height, U32& _Depth ) {
+	_Width = MAX( 1U, _Width >> 1 );
+	_Height = MAX( 1U, _Height >> 1 );
+	_Depth = MAX( 1U, _Depth >> 1 );
 }
 
-int	 Texture3D::ComputeMipLevelsCount( int _Width, int _Height, int _Depth, int _MipLevelsCount )
-{
-	int MaxSize = MAX( MAX( _Width, _Height ), _Depth );
-	int	MaxMipLevelsCount = int( ceilf( logf( MaxSize+1.0f ) / logf( 2.0f ) ) );
+U32	 Texture3D::ComputeMipLevelsCount( U32 _Width, U32 _Height, U32 _Depth, U32 _MipLevelsCount ) {
+	U32 MaxSize = MAX( MAX( _Width, _Height ), _Depth );
+	U32	MaxMipLevelsCount = int( ceilf( logf( MaxSize+1.0f ) / logf( 2.0f ) ) );
 	
 	if ( _MipLevelsCount == 0 )
 		_MipLevelsCount = MaxMipLevelsCount;
@@ -335,15 +308,13 @@ int	 Texture3D::ComputeMipLevelsCount( int _Width, int _Height, int _Depth, int 
 #include "..\..\Utility\TextureFilePOM.h"
 
 // I/O for staging textures
-void	Texture3D::Save( const char* _pFileName )
-{
+void	Texture3D::Save( const char* _pFileName ) {
 	TextureFilePOM	POM;
 	POM.AllocateContent( *this );
 
 	// Fill up content
  	int	Depth = m_Depth;
-	for ( int MipLevelIndex=0; MipLevelIndex < m_MipLevelsCount; MipLevelIndex++ )
-	{
+	for ( U32 MipLevelIndex=0; MipLevelIndex < m_MipLevelsCount; MipLevelIndex++ ) {
 		Map( MipLevelIndex );
 
 		POM.m_ppContent[MipLevelIndex] = new void*[Depth*m_LockedResource.DepthPitch];
@@ -393,15 +364,13 @@ void	Texture3D::Save( const char* _pFileName )
 // 	fclose( pFile );
 }
 
-void	Texture3D::Load( const char* _pFileName )
-{
+void	Texture3D::Load( const char* _pFileName ) {
 	TextureFilePOM	POM;
 	POM.Load( _pFileName );
 
 	// Read up content
  	int	Depth = m_Depth;
-	for ( int MipLevelIndex=0; MipLevelIndex < m_MipLevelsCount; MipLevelIndex++ )
-	{
+	for ( U32 MipLevelIndex=0; MipLevelIndex < m_MipLevelsCount; MipLevelIndex++ ) {
 		Map( MipLevelIndex );
 
 		ASSERT( POM.m_pMipsDescriptors[MipLevelIndex].RowPitch == m_LockedResource.RowPitch, "Incompatible row pitch!" );

@@ -86,7 +86,7 @@ static ImageFile*	ms_DEBUG;
 
 		// Manual creation
 		//	_profile, an optional color profile (NOTE: you will need a valid profile if you wish to save the bitmap)
-		Bitmap( int _width, int _height ) : m_XYZ( nullptr ) {
+		Bitmap( U32 _width, U32 _height ) : m_XYZ( nullptr ) {
 			Init( _width, _height );
 		}
 
@@ -96,7 +96,7 @@ static ImageFile*	ms_DEBUG;
 		}
 
 		// Initializes with appropriate dimensions
-		void			Init( int _width, int _height );
+		void			Init( U32 _width, U32 _height );
 
 		// Initializes the bitmap from an image file
 		void			FromImageFile( const ImageFile& _sourceFile, const ColorProfile* _profileOverride=nullptr, bool _unPremultiplyAlpha=false );

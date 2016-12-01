@@ -17,20 +17,20 @@ namespace Renderer {
 	public ref class	View3D : public IView {
 	internal:
 		Texture3D^	m_Owner;
-		int			m_MipLevelStart;
-		int			m_MipLevelsCount;
-		int			m_SliceStart;
-		int			m_SlicesCount;
+		UInt32		m_MipLevelStart;
+		UInt32		m_MipLevelsCount;
+		UInt32		m_SliceStart;
+		UInt32		m_SlicesCount;
 		bool		m_AsArray;
 
-		View3D( Texture3D^ _Owner, int _MipLevelStart, int _MipLevelsCount, int _SliceStart, int _SlicesCount ) : m_Owner( _Owner ), m_MipLevelStart( _MipLevelStart ), m_MipLevelsCount( _MipLevelsCount ), m_SliceStart( _SliceStart ), m_SlicesCount( _SlicesCount ), m_AsArray( false ) {}
-		View3D( Texture3D^ _Owner, int _MipLevelStart, int _MipLevelsCount, int _SliceStart, int _SlicesCount, bool _AsArray ) : m_Owner( _Owner ), m_MipLevelStart( _MipLevelStart ), m_MipLevelsCount( _MipLevelsCount ), m_SliceStart( _SliceStart ), m_SlicesCount( _SlicesCount ), m_AsArray( _AsArray ) {}
+		View3D( Texture3D^ _Owner, UInt32 _MipLevelStart, UInt32 _MipLevelsCount, UInt32 _SliceStart, UInt32 _SlicesCount ) : m_Owner( _Owner ), m_MipLevelStart( _MipLevelStart ), m_MipLevelsCount( _MipLevelsCount ), m_SliceStart( _SliceStart ), m_SlicesCount( _SlicesCount ), m_AsArray( false ) {}
+		View3D( Texture3D^ _Owner, UInt32 _MipLevelStart, UInt32 _MipLevelsCount, UInt32 _SliceStart, UInt32 _SlicesCount, bool _AsArray ) : m_Owner( _Owner ), m_MipLevelStart( _MipLevelStart ), m_MipLevelsCount( _MipLevelsCount ), m_SliceStart( _SliceStart ), m_SlicesCount( _SlicesCount ), m_AsArray( _AsArray ) {}
 
 	public:
 
-		virtual property int	Width				{ int get(); }
-		virtual property int	Height				{ int get(); }
-		virtual property int	ArraySizeOrDepth	{ int get(); }
+		virtual property UInt32	Width				{ UInt32 get(); }
+		virtual property UInt32	Height				{ UInt32 get(); }
+		virtual property UInt32	ArraySizeOrDepth	{ UInt32 get(); }
 
 		virtual property ::ID3D11ShaderResourceView*	SRV { ::ID3D11ShaderResourceView*	get(); }
 		virtual property ::ID3D11RenderTargetView*		RTV { ::ID3D11RenderTargetView*		get(); }
@@ -46,14 +46,14 @@ namespace Renderer {
 
 	public:
 
-		property int	Width			{ int get() { return m_pTexture->GetWidth(); } }
-		property int	Height			{ int get() { return m_pTexture->GetHeight(); } }
-		property int	Depth			{ int get() { return m_pTexture->GetDepth(); } }
-		property int	MipLevelsCount	{ int get() { return m_pTexture->GetMipLevelsCount(); } }
+		property UInt32	Width			{ UInt32 get() { return m_pTexture->GetWidth(); } }
+		property UInt32	Height			{ UInt32 get() { return m_pTexture->GetHeight(); } }
+		property UInt32	Depth			{ UInt32 get() { return m_pTexture->GetDepth(); } }
+		property UInt32	MipLevelsCount	{ UInt32 get() { return m_pTexture->GetMipLevelsCount(); } }
 
 	public:
 
-		Texture3D( Device^ _device, int _width, int _height, int _depth, int _mipLevelsCount, PIXEL_FORMAT _pixelFormat, bool _staging, bool _UAV, cli::array<PixelsBuffer^>^ _mipLevelsContent );
+		Texture3D( Device^ _device, UInt32 _width, UInt32 _height, UInt32 _depth, UInt32 _mipLevelsCount, PIXEL_FORMAT _pixelFormat, bool _staging, bool _UAV, cli::array<PixelsBuffer^>^ _mipLevelsContent );
 		~Texture3D() {
  			delete m_pTexture;
 		}
@@ -74,25 +74,25 @@ namespace Renderer {
 
 		// Views
 		View3D^		GetView()				{ return GetView( 0, 0, 0, 0 ); }
-		View3D^		GetView( int _mipLevelStart, int _mipLevelsCount, int _sliceStart, int _slicesCount ) { return gcnew View3D( this, _mipLevelStart, _mipLevelsCount, _sliceStart, _slicesCount ); }
-		View3D^		GetView( int _mipLevelStart, int _mipLevelsCount, int _sliceStart, int _slicesCount, bool _asArray ) { return gcnew View3D( this, _mipLevelStart, _mipLevelsCount, _sliceStart, _slicesCount, _asArray ); }
+		View3D^		GetView( UInt32 _mipLevelStart, UInt32 _mipLevelsCount, UInt32 _sliceStart, UInt32 _slicesCount ) { return gcnew View3D( this, _mipLevelStart, _mipLevelsCount, _sliceStart, _slicesCount ); }
+		View3D^		GetView( UInt32 _mipLevelStart, UInt32 _mipLevelsCount, UInt32 _sliceStart, UInt32 _slicesCount, bool _asArray ) { return gcnew View3D( this, _mipLevelStart, _mipLevelsCount, _sliceStart, _slicesCount, _asArray ); }
 
 		// Uploads the texture to the shader
-		void		Set( int _slotIndex )	{ Set( _slotIndex, nullptr ); }
-		void		SetVS( int _slotIndex )	{ SetVS( _slotIndex, nullptr ); }
-		void		SetHS( int _slotIndex )	{ SetHS( _slotIndex, nullptr ); }
-		void		SetDS( int _slotIndex )	{ SetDS( _slotIndex, nullptr ); }
-		void		SetGS( int _slotIndex )	{ SetGS( _slotIndex, nullptr ); }
-		void		SetPS( int _slotIndex )	{ SetPS( _slotIndex, nullptr ); }
-		void		SetCS( int _slotIndex )	{ SetCS( _slotIndex, nullptr ); }
+		void		Set( UInt32 _slotIndex )	{ Set( _slotIndex, nullptr ); }
+		void		SetVS( UInt32 _slotIndex )	{ SetVS( _slotIndex, nullptr ); }
+		void		SetHS( UInt32 _slotIndex )	{ SetHS( _slotIndex, nullptr ); }
+		void		SetDS( UInt32 _slotIndex )	{ SetDS( _slotIndex, nullptr ); }
+		void		SetGS( UInt32 _slotIndex )	{ SetGS( _slotIndex, nullptr ); }
+		void		SetPS( UInt32 _slotIndex )	{ SetPS( _slotIndex, nullptr ); }
+		void		SetCS( UInt32 _slotIndex )	{ SetCS( _slotIndex, nullptr ); }
 
-		void		Set( int _slotIndex, View3D^ _view );
-		void		SetVS( int _slotIndex, View3D^ _view );
-		void		SetHS( int _slotIndex, View3D^ _view );
-		void		SetDS( int _slotIndex, View3D^ _view );
-		void		SetGS( int _slotIndex, View3D^ _view );
-		void		SetPS( int _slotIndex, View3D^ _view );
-		void		SetCS( int _slotIndex, View3D^ _view );
+		void		Set( UInt32 _slotIndex, View3D^ _view );
+		void		SetVS( UInt32 _slotIndex, View3D^ _view );
+		void		SetHS( UInt32 _slotIndex, View3D^ _view );
+		void		SetDS( UInt32 _slotIndex, View3D^ _view );
+		void		SetGS( UInt32 _slotIndex, View3D^ _view );
+		void		SetPS( UInt32 _slotIndex, View3D^ _view );
+		void		SetCS( UInt32 _slotIndex, View3D^ _view );
 		void		RemoveFromLastAssignedSlots()	{ m_pTexture->RemoveFromLastAssignedSlots(); }
 
 		// Upload the texture as a UAV for a compute shader

@@ -5,7 +5,8 @@
 
 namespace BaseLib {
 
-#ifdef _WIN64
+//#ifdef _WIN64
+#if 1
 	// Win64 architecture
 	#include <memory.h>	// include regular memset/memcpy/etc.
 

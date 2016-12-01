@@ -14,9 +14,9 @@ namespace Renderer {
 	// Texture view interface
 	public interface class	IView {
 	public:
-		virtual property int							Width				{ int get() = 0; }
-		virtual property int							Height				{ int get() = 0; }
-		virtual property int							ArraySizeOrDepth	{ int get() = 0; }
+		virtual property UInt32							Width				{ UInt32 get() = 0; }
+		virtual property UInt32							Height				{ UInt32 get() = 0; }
+		virtual property UInt32							ArraySizeOrDepth	{ UInt32 get() = 0; }
 		virtual property ::ID3D11ShaderResourceView*	SRV					{ ::ID3D11ShaderResourceView*	get() = 0; }
 		virtual property ::ID3D11RenderTargetView*		RTV					{ ::ID3D11RenderTargetView*		get() = 0; }
 		virtual property ::ID3D11UnorderedAccessView*	UAV					{ ::ID3D11UnorderedAccessView*	get() = 0; }
@@ -88,8 +88,7 @@ namespace Renderer {
 			m_pDevice->DXSwapChain().Present( 0, 0 );
 		}
 
-		void	ReloadModifiedShaders()
-		{
+		void	ReloadModifiedShaders() {
 			// Reload modified shaders
 			::Shader::WatchShadersModifications();
 			::ComputeShader::WatchShadersModifications();

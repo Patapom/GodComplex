@@ -15,10 +15,10 @@ protected:	// CONSTANTS
 
 private:	// FIELDS
 
-	int								m_Width;
-	int								m_Height;
-	int								m_ArraySize;
-	int								m_MipLevelsCount;
+	U32								m_Width;
+	U32								m_Height;
+	U32								m_ArraySize;
+	U32								m_MipLevelsCount;
 
 	const IFormatDescriptor&		m_Format;
 	bool							m_bIsDepthStencil;
@@ -31,17 +31,17 @@ private:	// FIELDS
 	mutable BaseLib::DictionaryU32	m_CachedRTVs;
 	mutable BaseLib::DictionaryU32	m_CachedUAVs;
 	mutable BaseLib::DictionaryU32	m_CachedDSVs;
-	mutable int						m_LastAssignedSlots[6];
-	mutable int						m_LastAssignedSlotsUAV;
+	mutable U32						m_LastAssignedSlots[6];
+	mutable U32						m_LastAssignedSlotsUAV;
 	D3D11_MAPPED_SUBRESOURCE		m_LockedResource;
 
 
 public:	 // PROPERTIES
 
-	int							GetWidth() const			{ return m_Width; }
-	int							GetHeight() const			{ return m_Height; }
-	int							GetArraySize() const		{ return m_ArraySize; }
-	int							GetMipLevelsCount() const	{ return m_MipLevelsCount; }
+	U32							GetWidth() const			{ return m_Width; }
+	U32							GetHeight() const			{ return m_Height; }
+	U32							GetArraySize() const		{ return m_ArraySize; }
+	U32							GetMipLevelsCount() const	{ return m_MipLevelsCount; }
 	bool						IsCubeMap() const			{ return m_bIsCubeMap; }
 	const IFormatDescriptor&	GetFormatDescriptor() const	{ return m_Format; }
 
@@ -51,29 +51,30 @@ public:	 // PROPERTIES
 public:	 // METHODS
 
 	// NOTE: If _ppContents == NULL then the texture is considered a render target !
-	Texture2D( Device& _Device, int _Width, int _Height, int _ArraySize, const IPixelFormatDescriptor& _Format, int _MipLevelsCount, const void* const* _ppContent, bool _bStaging=false, bool _bUnOrderedAccess=false );
+	// NOTE: If _ArraySize is < 0 then a cube map or cube map array is created (WARNING: the array size must be a valid multiple of 6!)
+	Texture2D( Device& _Device, U32 _Width, U32 _Height, int _ArraySize, U32 _MipLevelsCount, const IPixelFormatDescriptor& _Format, const void* const* _ppContent, bool _bStaging=false, bool _bUnOrderedAccess=false );
 	// This is for creating a depth stencil buffer
-	Texture2D( Device& _Device, int _Width, int _Height, const IDepthStencilFormatDescriptor& _Format, int _ArraySize=1 );
+	Texture2D( Device& _Device, U32 _Width, U32 _Height, U32 _ArraySize, const IDepthStencilFormatDescriptor& _Format );
 	~Texture2D();
 
 	// _AsArray is used to force the SRV as viewing a Texture2DArray instead of a TextureCube or TextureCubeArray
-	ID3D11ShaderResourceView*	GetSRV( int _MipLevelStart=0, int _MipLevelsCount=0, int _ArrayStart=0, int _ArraySize=0, bool _AsArray=false ) const;	// Shader Resource View => Read-Only Input
-	ID3D11RenderTargetView*		GetRTV( int _MipLevelIndex=0, int _ArrayStart=0, int _ArraySize=0 ) const;												// Render Target View => Write-Only Output
-	ID3D11UnorderedAccessView*	GetUAV(  int _MipLevelIndex=0, int _ArrayStart=0, int _ArraySize=0 ) const;												// Unordered Access View => Read/Write
-	ID3D11DepthStencilView*		GetDSV( int _ArrayStart=0, int _ArraySize=0 ) const;																	// Depth Stencil View => Write-Only Depth Stencil Output
+	ID3D11ShaderResourceView*	GetSRV( U32 _MipLevelStart=0, U32 _MipLevelsCount=0, U32 _ArrayStart=0, U32 _ArraySize=0, bool _AsArray=false ) const;	// Shader Resource View => Read-Only Input
+	ID3D11RenderTargetView*		GetRTV( U32 _MipLevelIndex=0, U32 _ArrayStart=0, U32 _ArraySize=0 ) const;												// Render Target View => Write-Only Output
+	ID3D11UnorderedAccessView*	GetUAV( U32 _MipLevelIndex=0, U32 _ArrayStart=0, U32 _ArraySize=0 ) const;												// Unordered Access View => Read/Write
+	ID3D11DepthStencilView*		GetDSV( U32 _ArrayStart=0, U32 _ArraySize=0 ) const;																	// Depth Stencil View => Write-Only Depth Stencil Output
 
 	// Uploads the texture to the shader
-	void		Set( int _SlotIndex, bool _bIKnowWhatImDoing=false, ID3D11ShaderResourceView* _pView=NULL ) const;
-	void		SetVS( int _SlotIndex, bool _bIKnowWhatImDoing=false, ID3D11ShaderResourceView* _pView=NULL ) const;
-	void		SetHS( int _SlotIndex, bool _bIKnowWhatImDoing=false, ID3D11ShaderResourceView* _pView=NULL ) const;
-	void		SetDS( int _SlotIndex, bool _bIKnowWhatImDoing=false, ID3D11ShaderResourceView* _pView=NULL ) const;
-	void		SetGS( int _SlotIndex, bool _bIKnowWhatImDoing=false, ID3D11ShaderResourceView* _pView=NULL ) const;
-	void		SetPS( int _SlotIndex, bool _bIKnowWhatImDoing=false, ID3D11ShaderResourceView* _pView=NULL ) const;
-	void		SetCS( int _SlotIndex, bool _bIKnowWhatImDoing=false, ID3D11ShaderResourceView* _pView=NULL ) const;
+	void		Set( U32 _SlotIndex, bool _bIKnowWhatImDoing=false, ID3D11ShaderResourceView* _pView=NULL ) const;
+	void		SetVS( U32 _SlotIndex, bool _bIKnowWhatImDoing=false, ID3D11ShaderResourceView* _pView=NULL ) const;
+	void		SetHS( U32 _SlotIndex, bool _bIKnowWhatImDoing=false, ID3D11ShaderResourceView* _pView=NULL ) const;
+	void		SetDS( U32 _SlotIndex, bool _bIKnowWhatImDoing=false, ID3D11ShaderResourceView* _pView=NULL ) const;
+	void		SetGS( U32 _SlotIndex, bool _bIKnowWhatImDoing=false, ID3D11ShaderResourceView* _pView=NULL ) const;
+	void		SetPS( U32 _SlotIndex, bool _bIKnowWhatImDoing=false, ID3D11ShaderResourceView* _pView=NULL ) const;
+	void		SetCS( U32 _SlotIndex, bool _bIKnowWhatImDoing=false, ID3D11ShaderResourceView* _pView=NULL ) const;
 	void		RemoveFromLastAssignedSlots() const;
 
 	// Upload the texture as a UAV for a compute shader
-	void		SetCSUAV( int _SlotIndex, ID3D11UnorderedAccessView* _pView=NULL ) const;
+	void		SetCSUAV( U32 _SlotIndex, ID3D11UnorderedAccessView* _pView=NULL ) const;
 	void		RemoveFromLastAssignedSlotUAV() const;
 
 	// Used by the Device for the default backbuffer
@@ -81,8 +82,8 @@ public:	 // METHODS
 
 	// Texture access by the CPU
 	void		CopyFrom( Texture2D& _SourceTexture );
-	D3D11_MAPPED_SUBRESOURCE&	Map( int _MipLevelIndex, int _ArrayIndex );
-	void		UnMap( int _MipLevelIndex, int _ArrayIndex );
+	D3D11_MAPPED_SUBRESOURCE&	Map( U32 _MipLevelIndex, U32 _ArrayIndex );
+	void		UnMap( U32 _MipLevelIndex, U32 _ArrayIndex );
 
 #if defined(_DEBUG) || !defined(GODCOMPLEX)
 	// I/O for staging textures
@@ -94,9 +95,9 @@ public:	 // METHODS
 #endif
 
 public:
-	static void	NextMipSize( int& _Width, int& _Height );
-	static int	ComputeMipLevelsCount( int _Width, int _Height, int _MipLevelsCount );
-	int			CalcSubResource( int _MipLevelIndex, int _ArrayIndex );
+	static void	NextMipSize( U32& _Width, U32& _Height );
+	static U32	ComputeMipLevelsCount( U32 _Width, U32 _Height, U32 _MipLevelsCount );
+	U32			CalcSubResource( U32 _MipLevelIndex, U32 _ArrayIndex );
 
 private:
 	// _bStaging, true if this is a staging texture (i.e. CPU accessible as read/write)
