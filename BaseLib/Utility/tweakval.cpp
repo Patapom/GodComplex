@@ -38,7 +38,9 @@ namespace tweakval {
 
 	U32			HashKey( const char* _pFileName, size_t _Counter ) {
 		static char	pStringKey[1024];
-		sprintf_s( pStringKey, 1024, "%s#%d", _pFileName, _Counter );
+		U32	counter = 0;
+		sprintf_s( pStringKey, 1024, "%s#%d", _pFileName, counter );
+		_Counter = counter;
 
 		U32	Hash = DictionaryString<int>::Hash( pStringKey );
 		return Hash;

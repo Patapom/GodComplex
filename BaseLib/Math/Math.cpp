@@ -62,7 +62,7 @@ float	float3x3::Determinant() const {
 
 float3x3  float3x3::Inverse() const {
 	float	det = Determinant();
-	ASSERT( abs(det) > 1e-6f, "Matrix is not inversible!" );
+	ASSERT( fabs(det) > 1e-6f, "Matrix is not inversible!" );
 	det = 1.0f / det;
 
 	float3x3	R;
@@ -228,7 +228,7 @@ const float4x4	float4x4::Identity( 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 
 
 float4x4 float4x4::Inverse() const {
 	float	det = Determinant();
-	ASSERT( abs(det) > 1e-6f, "Matrix is not inversible!" );
+	ASSERT( fabs(det) > 1e-6f, "Matrix is not inversible!" );
 	det = 1.0f / det;
 
 	float4x4	R;

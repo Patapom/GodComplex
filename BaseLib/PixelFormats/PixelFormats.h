@@ -1024,19 +1024,19 @@ namespace BaseLib {
 
 			void	Write( void* _pixel, float _Depth, U8 _Stencil ) override { PF_D24S8& P = *((PF_D24S8*) _pixel);
 				U32	temp = (U32&) _Depth;
-				((U8*) temp)[3] = _Stencil;
+				((U8*) &temp)[3] = _Stencil;
 				*((U32*) P.D) = temp;
 			}
 			float	Depth( const void* _pixel ) const override { PF_D24S8& P = *((PF_D24S8*) _pixel);
 				U32	temp = *((U32*) P.D);
-				((U8*) temp)[3] = 0x3F;
+				((U8*) &temp)[3] = 0x3F;
 				float&	tempF = (float&) temp;
 				return tempF;
 			}
 			U8		Stencil( const void* _pixel ) const override { ((PF_D24S8*) _pixel)->Stencil; }
 			void	DepthStencil( const void* _pixel, float& _Depth, U8& _Stencil ) const override { PF_D24S8& P = *((PF_D24S8*) _pixel);
 				U32	temp = *((U32*) P.D);
-				((U8*) temp)[3] = 0x3F;
+				((U8*) &temp)[3] = 0x3F;
 				float&	tempF = (float&) temp;
 
 				_Depth = tempF;
