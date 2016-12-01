@@ -40,7 +40,7 @@ namespace TestFresnel
 		{
 			InitializeComponent();
 
-			using ( System.IO.FileStream S = new System.IO.FileInfo( "../../../TestAreaLight/BRDF0_64x64.table" ).OpenRead() )
+			using ( System.IO.FileStream S = new System.IO.FileInfo( "../TestAreaLight/BRDF0_64x64.table" ).OpenRead() )
 				using ( System.IO.BinaryReader R = new System.IO.BinaryReader( S ) )
 					for ( int i=0; i < 64; i++ ) {
 						m_IntegralSpecularReflection[i,0] = R.ReadSingle();

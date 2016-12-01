@@ -20,7 +20,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
     <StartProgram>V:\blacksparrow\idtech5\blacksparrow\tools\SSBumpGenerator\GenerateSelfShadowedBumpMap.exe</StartProgram>
-    <StartWorkingDirectory>D:\Workspaces\GodComplex\Tools\GenerateAmbientOcclusionMap\</StartWorkingDirectory>
+    <StartWorkingDirectory>..\..\..\..\Tools\GenerateAmbientOcclusionMap\</StartWorkingDirectory>
     <EnableUnmanagedDebugging>true</EnableUnmanagedDebugging>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug DirectX10|x64'">
