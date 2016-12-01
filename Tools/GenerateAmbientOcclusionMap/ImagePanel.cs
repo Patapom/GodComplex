@@ -17,8 +17,7 @@ namespace GenerateSelfShadowedBumpMap
 		private Bitmap				m_Bitmap = null;
 
 		private string				m_MessageOnEmpty = null;
-		public string				MessageOnEmpty
-		{
+		public string				MessageOnEmpty {
 			get { return m_MessageOnEmpty; }
 			set { m_MessageOnEmpty = value; Invalidate(); }
 		}

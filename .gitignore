@@ -530,3 +530,5 @@
 /Packages/_Unit Tests/TestImageUtility/bin
 /Packages/_Unit Tests/TestImageUtility/obj
 /Packages/_Unit Tests/TestRendererLib/obj
+/Tools/TestSHIrradiance/bin
+/Tools/TestSHIrradiance/obj

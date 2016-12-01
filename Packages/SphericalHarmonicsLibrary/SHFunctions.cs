@@ -1326,15 +1326,14 @@ namespace SphericalHarmonics
 		// Calculates an Associated Legendre Polynomial P(l,m,x) using stable recurrence relations
 		// From Numerical Recipes in C
 		//
-		public static double	P( int l, int m, double x )
-		{
+		public static double	P( int l, int m, double x ) {
 // if ( l == 1 && m == 1 )
 // 	return -Math.Sqrt( 1 - x*x );
 
 
 			double	pmm = 1.0;
-			if ( m > 0 )
-			{	// pmm = (-1) ^ m * Factorial( 2 * m - 1 ) * ( (1 - x) * (1 + x) ) ^ (m/2);
+			if ( m > 0 ) {
+				// pmm = (-1) ^ m * Factorial( 2 * m - 1 ) * ( (1 - x) * (1 + x) ) ^ (m/2);
 				double	somx2 = Math.Sqrt( (1.0-x) * (1.0+x) );
 				double	fact = 1.0;
 				for ( int i=1; i <= m; i++ )
@@ -1351,8 +1350,7 @@ namespace SphericalHarmonics
 				return	pmmp1;
 
 			double	pll = 0.0;
-			for ( int ll=m+2; ll <= l; ++ll )
-			{
+			for ( int ll=m+2; ll <= l; ++ll ) {
 				pll = ( (2.0*ll-1.0) * x * pmmp1 - (ll+m-1.0) * pmm ) / (ll-m);
 				pmm = pmmp1;
 				pmmp1 = pll;

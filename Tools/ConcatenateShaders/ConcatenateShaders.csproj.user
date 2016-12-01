@@ -20,4 +20,13 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug DirectX10|x64'">
     <StartArguments>D:\Workspaces\GodComplex\Resources\Shaders\Binary\</StartArguments>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
+    <StartArguments>D:\Workspaces\GodComplex\Resources\Shaders\Binary\</StartArguments>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
+    <StartArguments>D:\Workspaces\GodComplex\Resources\Shaders\Binary\</StartArguments>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug DirectX10|AnyCPU'">
+    <StartArguments>D:\Workspaces\GodComplex\Resources\Shaders\Binary\</StartArguments>
+  </PropertyGroup>
 </Project>
