@@ -222,12 +222,8 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Shaders\BilateralFiltering.hlsl">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Shaders\Display.hlsl">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
+    <Content Include="Shaders\BilateralFiltering.hlsl" />
+    <Content Include="Shaders\Display.hlsl" />
     <Content Include="Shaders\GenerateAOMap.hlsl">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
