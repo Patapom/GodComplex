@@ -18,6 +18,9 @@ namespace TestSHIrradiance
 
 		float4		m_black = new float4( 0, 0, 0, 1 );
 		float4		m_white = new float4( 1, 1, 1, 1 );
+		float4		m_red = new float4( 1, 0, 0, 1 );
+		float4		m_green = new float4( 0, 1, 0, 1 );
+		float4		m_blue = new float4( 0, 0, 1, 1 );
 
 		public Form1() {
 			InitializeComponent();
@@ -68,6 +71,13 @@ namespace TestSHIrradiance
 				x = x - l0;
 				return A0 + (A1 - A0) * x;
 			} );
+
+			// Plot A0, A1 and A2 terms
+			double	C = Math.Cos( thetaMax );
+			m_image.PlotGraph( m_red, rangeX, rangeY, ( float x ) => { return (float) (Math.Sqrt( Math.PI ) * (1.0 - C*C) / 2.0); } );
+			m_image.PlotGraph( m_green, rangeX, rangeY, ( float x ) => { return (float) (Math.Sqrt( 3.0 * Math.PI ) * (1.0 - C*C*C) / 3.0); } );
+			m_image.PlotGraph( m_blue, rangeX, rangeY, ( float x ) => { return (float) (Math.Sqrt( 5.0 * Math.PI / 4.0 ) * (3.0/4.0 * (1.0 - C*C*C*C) - 1.0 / 2.0 * (1 - C*C))); } );
+
 			m_image.PlotAxes( m_black, rangeX, rangeY, 1, 0.1f );
 
 			text += "\r\nRange Y = [" + rangeY.x + ", " + rangeY.y + "]\r\n";
