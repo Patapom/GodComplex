@@ -51,6 +51,18 @@ namespace TestSHIrradiance
 		float2	rangeY = new float2( -0.2f, 1.1f );
 		float[]	coeffs = new float[1+MAX_ORDER];
 
+		void	PlotSquare( float4 _color, float2 _rangeX, float2 _rangeY, float2 _rangedPosition ) {
+			float2	imagePosition = m_image.RangedCoordinates2ImageCoordinates( _rangeX, _rangeY, _rangedPosition );
+			int		size = 4;
+			int		X0 = Math.Max( 0, (int) Math.Floor( imagePosition.x - size ) );
+			int		Y0 = Math.Max( 0, (int) Math.Floor( imagePosition.y - size ) );
+			int		X1 = Math.Min( (int) m_image.Width-1, (int) Math.Floor( imagePosition.x + size ) );
+			int		Y1 = Math.Min( (int) m_image.Height-1, (int) Math.Floor( imagePosition.y + size ) );
+			for ( int Y=Y0; Y <= Y1; Y++ )
+				for ( int X=X0; X <= X1; X++ )
+					m_image[(uint)X,(uint)Y] = _color;
+		}
+
 		void	UpdateGraph() {
 			string	text = "";
 
@@ -74,9 +86,12 @@ namespace TestSHIrradiance
 
 			// Plot A0, A1 and A2 terms
 			double	C = Math.Cos( thetaMax );
-			m_image.PlotGraph( m_red, rangeX, rangeY, ( float x ) => { return (float) (Math.Sqrt( Math.PI ) * (1.0 - C*C) / 2.0); } );
-			m_image.PlotGraph( m_green, rangeX, rangeY, ( float x ) => { return (float) (Math.Sqrt( 3.0 * Math.PI ) * (1.0 - C*C*C) / 3.0); } );
-			m_image.PlotGraph( m_blue, rangeX, rangeY, ( float x ) => { return (float) (Math.Sqrt( 5.0 * Math.PI / 4.0 ) * (3.0/4.0 * (1.0 - C*C*C*C) - 1.0 / 2.0 * (1 - C*C))); } );
+// 			m_image.PlotGraph( m_red, rangeX, rangeY, ( float x ) => { return (float) (Math.Sqrt( Math.PI ) * (1.0 - C*C) / 2.0); } );
+// 			m_image.PlotGraph( m_green, rangeX, rangeY, ( float x ) => { return (float) (Math.Sqrt( 3.0 * Math.PI ) * (1.0 - C*C*C) / 3.0); } );
+// 			m_image.PlotGraph( m_blue, rangeX, rangeY, ( float x ) => { return (float) (Math.Sqrt( 5.0 * Math.PI / 4.0 ) * (3.0/4.0 * (1.0 - C*C*C*C) - 1.0 / 2.0 * (1 - C*C))); } );
+			PlotSquare( m_red, rangeX, rangeY, new float2( 0, (float) (Math.Sqrt( Math.PI ) * (1.0 - C*C) / 2.0) ) );
+			PlotSquare( m_green, rangeX, rangeY, new float2( 1, (float) (Math.Sqrt( Math.PI / 3.0 ) * (1.0 - C*C*C)) ) );
+			PlotSquare( m_blue, rangeX, rangeY, new float2( 2, (float) (Math.Sqrt( 5.0 * Math.PI / 4.0 ) * (3.0/4.0 * (1.0 - C*C*C*C) - 1.0 / 2.0 * (1 - C*C))) ) );
 
 			m_image.PlotAxes( m_black, rangeX, rangeY, 1, 0.1f );
 
@@ -84,6 +99,9 @@ namespace TestSHIrradiance
 			textBoxResults.Text = text;
 
 			graphPanel.Bitmap = m_image.AsBitmap;
+			graphPanel.Refresh();
+			floatTrackbarControlThetaMax.Refresh();
+			textBoxResults.Refresh();
 		}
 
 		private void floatTrackbarControlThetaMax_SliderDragStop(Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fStartValue) {

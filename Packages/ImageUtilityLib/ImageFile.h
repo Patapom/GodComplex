@@ -375,6 +375,11 @@ namespace ImageUtilityLib {
 		//	_P0, _P1, the position of the line segment's points (i.e. X=0 is left border, X=Width-1 is right border, Y=0 is top border, Y=Height-1 is bottom border)
 		void				DrawLine( const bfloat4& _color, const bfloat2& _P0, const bfloat2& _P1 );
 
+		// Converts "ranged coordinates" into (X,Y) pixel coordinates
+		void				RangedCoordinates2ImageCoordinates( const bfloat2& _rangeX, const bfloat2& _rangeY, const bfloat2& _rangedCoordinates, bfloat2& _imageCoordinates );
+		// Converts (X,Y) pixel coordinates into "ranged coordinates"
+		void				ImageCoordinates2RangedCoordinates( const bfloat2& _rangeX, const bfloat2& _rangeY, const bfloat2& _imageCoordinates, bfloat2& _rangedCoordinates );
+
 
 	public:
 		//////////////////////////////////////////////////////////////////////////

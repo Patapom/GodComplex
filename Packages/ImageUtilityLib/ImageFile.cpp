@@ -1137,6 +1137,29 @@ void	ImageFile::DrawLine( const bfloat4& _color, const bfloat2& _P0, const bfloa
 	}
 }
 
+void	ImageFile::RangedCoordinates2ImageCoordinates( const bfloat2& _rangeX, const bfloat2& _rangeY, const bfloat2& _rangedCoordinates, bfloat2& _imageCoordinates ) {
+	S32		W = Width();
+	S32		H = Height();
+	S32		X0 = GRAPH_MARGIN;
+	S32		Y0 = H - GRAPH_MARGIN;
+	S32		X1 = W - GRAPH_MARGIN;
+	S32		Y1 = GRAPH_MARGIN;
+
+	_imageCoordinates.x = X0 + (_rangedCoordinates.x - _rangeX.x) * (X1 - X0) / (_rangeX.y - _rangeX.x);
+	_imageCoordinates.y = Y0 + (_rangedCoordinates.y - _rangeY.x) * (Y1 - Y0) / (_rangeY.y - _rangeY.x);
+}
+void	ImageFile::ImageCoordinates2RangedCoordinates( const bfloat2& _rangeX, const bfloat2& _rangeY, const bfloat2& _imageCoordinates, bfloat2& _rangedCoordinates ) {
+	S32		W = Width();
+	S32		H = Height();
+	S32		X0 = GRAPH_MARGIN;
+	S32		Y0 = H - GRAPH_MARGIN;
+	S32		X1 = W - GRAPH_MARGIN;
+	S32		Y1 = GRAPH_MARGIN;
+
+	_rangedCoordinates.x = _rangeX.x + (_imageCoordinates.x - X0) * (_rangeX.y - _rangeX.x) / (X1 - X0);
+	_rangedCoordinates.y = _rangeY.x + (_imageCoordinates.y - Y0) * (_rangeY.y - _rangeY.x) / (Y1 - Y0);
+}
+
 
 //////////////////////////////////////////////////////////////////////////
 // DDS-Related Helpers

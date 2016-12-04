@@ -335,6 +335,16 @@ void	ImageFile::DrawLine( SharpMath::float4^ _color, SharpMath::float2^ _P0, Sha
 	m_nativeObject->DrawLine( color, P0, P1 );
 }
 
+SharpMath::float2	ImageFile::RangedCoordinates2ImageCoordinates( SharpMath::float2^ _rangeX, SharpMath::float2^ _rangeY, SharpMath::float2^ _rangedCoordinates ) {
+	bfloat2	result;
+	m_nativeObject->RangedCoordinates2ImageCoordinates( bfloat2( _rangeX->x, _rangeX->y ), bfloat2( _rangeY->x, _rangeY->y ), bfloat2( _rangedCoordinates->x, _rangedCoordinates->y ), result );
+	return float2( result.x, result.y );
+}
+SharpMath::float2	ImageFile::ImageCoordinates2RangedCoordinates( SharpMath::float2^ _rangeX, SharpMath::float2^ _rangeY, SharpMath::float2^ _imageCoordinates ) {
+	bfloat2	result;
+	m_nativeObject->ImageCoordinates2RangedCoordinates( bfloat2( _rangeX->x, _rangeX->y ), bfloat2( _rangeY->x, _rangeY->y ), bfloat2( _imageCoordinates->x, _imageCoordinates->y ), result );
+	return float2( result.x, result.y );
+}
 
 
 //////////////////////////////////////////////////////////////////////////

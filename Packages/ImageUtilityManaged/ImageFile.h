@@ -452,6 +452,11 @@ namespace ImageUtility {
 		//	_P0, _P1, the position of the line segment's points (i.e. X=0 is left border, X=Width-1 is right border, Y=0 is top border, Y=Height-1 is bottom border)
 		void				DrawLine( SharpMath::float4^ _color, SharpMath::float2^ _P0, SharpMath::float2^ _P1 );
 
+		// Converts "ranged coordinates" into (X,Y) pixel coordinates
+		SharpMath::float2	RangedCoordinates2ImageCoordinates( SharpMath::float2^ _rangeX, SharpMath::float2^ _rangeY, SharpMath::float2^ _rangedCoordinates );
+		// Converts (X,Y) pixel coordinates into "ranged coordinates"
+		SharpMath::float2	ImageCoordinates2RangedCoordinates( SharpMath::float2^ _rangeX, SharpMath::float2^ _rangeY, SharpMath::float2^ _imageCoordinates );
+
 
 	public:
 		//////////////////////////////////////////////////////////////////////////
