@@ -405,6 +405,20 @@ void ColorProfile::InternalColorConverter_sRGB::RGB2XYZ( const bfloat4* _RGB, bf
 	}
 }
 
+void ColorProfile::InternalColorConverter_sRGB::GammaRGB2LinearRGB( const bfloat4& _gammaRGB, bfloat4& _linearRGB ) const {
+	_linearRGB.x = sRGB2Linear( _gammaRGB.x );
+	_linearRGB.y = sRGB2Linear( _gammaRGB.y );
+	_linearRGB.z = sRGB2Linear( _gammaRGB.z );
+	_linearRGB.w = _gammaRGB.w;
+}
+void ColorProfile::InternalColorConverter_sRGB::LinearRGB2GammaRGB( const bfloat4& _linearRGB, bfloat4& _gammaRGB ) const {
+	_gammaRGB.x = Linear2sRGB( _linearRGB.x );
+	_gammaRGB.y = Linear2sRGB( _linearRGB.y );
+	_gammaRGB.z = Linear2sRGB( _linearRGB.z );
+	_gammaRGB.w = _linearRGB.w;
+}
+
+
 //////////////////////////////////////////////////////////////////////////
 // InternalColorConverter_AdobeRGB_D50
 //
@@ -466,6 +480,19 @@ void ColorProfile::InternalColorConverter_AdobeRGB_D50::RGB2XYZ( const bfloat4* 
 		// Transform into XYZ
 		((bfloat3&) *_XYZ) = ((bfloat3&) *_XYZ) * MAT_RGB2XYZ;
 	}
+}
+
+void ColorProfile::InternalColorConverter_AdobeRGB_D50::GammaRGB2LinearRGB( const bfloat4& _gammaRGB, bfloat4& _linearRGB ) const {
+	_linearRGB.x = powf( _gammaRGB.x, GAMMA_EXPONENT_ADOBE );
+	_linearRGB.y = powf( _gammaRGB.y, GAMMA_EXPONENT_ADOBE );
+	_linearRGB.z = powf( _gammaRGB.z, GAMMA_EXPONENT_ADOBE );
+	_linearRGB.w = _gammaRGB.w;
+}
+void ColorProfile::InternalColorConverter_AdobeRGB_D50::LinearRGB2GammaRGB( const bfloat4& _linearRGB, bfloat4& _gammaRGB ) const {
+	_gammaRGB.x = powf( _linearRGB.x, 1.0f / GAMMA_EXPONENT_ADOBE );
+	_gammaRGB.y = powf( _linearRGB.y, 1.0f / GAMMA_EXPONENT_ADOBE );
+	_gammaRGB.z = powf( _linearRGB.z, 1.0f / GAMMA_EXPONENT_ADOBE );
+	_gammaRGB.w = _linearRGB.w;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -531,6 +558,19 @@ void ColorProfile::InternalColorConverter_AdobeRGB_D65::RGB2XYZ( const bfloat4* 
 	}
 }
 
+void ColorProfile::InternalColorConverter_AdobeRGB_D65::GammaRGB2LinearRGB( const bfloat4& _gammaRGB, bfloat4& _linearRGB ) const {
+	_linearRGB.x = powf( _gammaRGB.x, GAMMA_EXPONENT_ADOBE );
+	_linearRGB.y = powf( _gammaRGB.y, GAMMA_EXPONENT_ADOBE );
+	_linearRGB.z = powf( _gammaRGB.z, GAMMA_EXPONENT_ADOBE );
+	_linearRGB.w = _gammaRGB.w;
+}
+void ColorProfile::InternalColorConverter_AdobeRGB_D65::LinearRGB2GammaRGB( const bfloat4& _linearRGB, bfloat4& _gammaRGB ) const {
+	_gammaRGB.x = powf( _linearRGB.x, 1.0f / GAMMA_EXPONENT_ADOBE );
+	_gammaRGB.y = powf( _linearRGB.y, 1.0f / GAMMA_EXPONENT_ADOBE );
+	_gammaRGB.z = powf( _linearRGB.z, 1.0f / GAMMA_EXPONENT_ADOBE );
+	_gammaRGB.w = _linearRGB.w;
+}
+
 //////////////////////////////////////////////////////////////////////////
 // InternalColorConverter_ProPhoto
 //
@@ -594,6 +634,19 @@ void ColorProfile::InternalColorConverter_ProPhoto::RGB2XYZ( const bfloat4* _RGB
 	}
 }
 
+void ColorProfile::InternalColorConverter_ProPhoto::GammaRGB2LinearRGB( const bfloat4& _gammaRGB, bfloat4& _linearRGB ) const {
+	_linearRGB.x = _gammaRGB.x > 0.031248f ? powf( _gammaRGB.x, GAMMA_EXPONENT_PRO_PHOTO ) : _gammaRGB.x / 16.0f;
+	_linearRGB.y = _gammaRGB.y > 0.031248f ? powf( _gammaRGB.y, GAMMA_EXPONENT_PRO_PHOTO ) : _gammaRGB.y / 16.0f;
+	_linearRGB.z = _gammaRGB.z > 0.031248f ? powf( _gammaRGB.z, GAMMA_EXPONENT_PRO_PHOTO ) : _gammaRGB.z / 16.0f;
+	_linearRGB.w = _gammaRGB.w;
+}
+void ColorProfile::InternalColorConverter_ProPhoto::LinearRGB2GammaRGB( const bfloat4& _linearRGB, bfloat4& _gammaRGB ) const {
+	_gammaRGB.x = _linearRGB.x > 0.001953f ? powf( _linearRGB.x, 1.0f / GAMMA_EXPONENT_PRO_PHOTO ) : 16.0f * _linearRGB.x;
+	_gammaRGB.y = _linearRGB.y > 0.001953f ? powf( _linearRGB.y, 1.0f / GAMMA_EXPONENT_PRO_PHOTO ) : 16.0f * _linearRGB.y;
+	_gammaRGB.z = _linearRGB.z > 0.001953f ? powf( _linearRGB.z, 1.0f / GAMMA_EXPONENT_PRO_PHOTO ) : 16.0f * _linearRGB.z;
+	_gammaRGB.w = _linearRGB.w;
+}
+
 //////////////////////////////////////////////////////////////////////////
 // InternalColorConverter_Radiance
 //
@@ -635,6 +688,13 @@ void ColorProfile::InternalColorConverter_Radiance::RGB2XYZ( const bfloat4* _RGB
 	}
 }
 
+void ColorProfile::InternalColorConverter_Radiance::GammaRGB2LinearRGB( const bfloat4& _gammaRGB, bfloat4& _linearRGB ) const {
+	_linearRGB = _gammaRGB;
+}
+void ColorProfile::InternalColorConverter_Radiance::LinearRGB2GammaRGB( const bfloat4& _linearRGB, bfloat4& _gammaRGB ) const {
+	_gammaRGB = _linearRGB;
+}
+
 //////////////////////////////////////////////////////////////////////////
 // InternalColorConverter_Generic_NoGamma
 //
@@ -662,6 +722,13 @@ void ColorProfile::InternalColorConverter_Generic_NoGamma::RGB2XYZ( const bfloat
 		((bfloat3&) *_XYZ) = ((bfloat3&) *_RGB) * m_RGB2XYZ;
 		_XYZ->w = _RGB->w;
 	}
+}
+
+void ColorProfile::InternalColorConverter_Generic_NoGamma::GammaRGB2LinearRGB( const bfloat4& _gammaRGB, bfloat4& _linearRGB ) const {
+	_linearRGB = _gammaRGB;
+}
+void ColorProfile::InternalColorConverter_Generic_NoGamma::LinearRGB2GammaRGB( const bfloat4& _linearRGB, bfloat4& _gammaRGB ) const {
+	_gammaRGB = _linearRGB;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -715,6 +782,19 @@ void ColorProfile::InternalColorConverter_Generic_StandardGamma::RGB2XYZ( const 
 	}
 }
 
+void ColorProfile::InternalColorConverter_Generic_StandardGamma::GammaRGB2LinearRGB( const bfloat4& _gammaRGB, bfloat4& _linearRGB ) const {
+	_linearRGB.x = powf( _gammaRGB.x, m_Gamma );
+	_linearRGB.y = powf( _gammaRGB.y, m_Gamma );
+	_linearRGB.z = powf( _gammaRGB.z, m_Gamma );
+	_linearRGB.w = _gammaRGB.w;
+}
+void ColorProfile::InternalColorConverter_Generic_StandardGamma::LinearRGB2GammaRGB( const bfloat4& _linearRGB, bfloat4& _gammaRGB ) const {
+	_gammaRGB.x = powf( _linearRGB.x, m_InvGamma );
+	_gammaRGB.y = powf( _linearRGB.y, m_InvGamma );
+	_gammaRGB.z = powf( _linearRGB.z, m_InvGamma );
+	_gammaRGB.w = _linearRGB.w;
+}
+
 //////////////////////////////////////////////////////////////////////////
 // InternalColorConverter_Generic_sRGBGamma
 //
@@ -766,6 +846,19 @@ void ColorProfile::InternalColorConverter_Generic_sRGBGamma::RGB2XYZ( const bflo
 	}
 }
 
+void ColorProfile::InternalColorConverter_Generic_sRGBGamma::GammaRGB2LinearRGB( const bfloat4& _gammaRGB, bfloat4& _linearRGB ) const {
+	_linearRGB.x = _gammaRGB.x < 0.04045f ? _gammaRGB.x / 12.92f : powf( (_gammaRGB.x + 0.055f) / 1.055f, GAMMA_EXPONENT_sRGB );
+	_linearRGB.y = _gammaRGB.y < 0.04045f ? _gammaRGB.y / 12.92f : powf( (_gammaRGB.y + 0.055f) / 1.055f, GAMMA_EXPONENT_sRGB );
+	_linearRGB.z = _gammaRGB.z < 0.04045f ? _gammaRGB.z / 12.92f : powf( (_gammaRGB.z + 0.055f) / 1.055f, GAMMA_EXPONENT_sRGB );
+	_linearRGB.w = _gammaRGB.w;
+}
+void ColorProfile::InternalColorConverter_Generic_sRGBGamma::LinearRGB2GammaRGB( const bfloat4& _linearRGB, bfloat4& _gammaRGB ) const {
+	_gammaRGB.x = _linearRGB.x > 0.0031308f ? 1.055f * powf( _linearRGB.x, 1.0f / GAMMA_EXPONENT_sRGB ) - 0.055f : 12.92f * _linearRGB.x;
+	_gammaRGB.y = _linearRGB.y > 0.0031308f ? 1.055f * powf( _linearRGB.y, 1.0f / GAMMA_EXPONENT_sRGB ) - 0.055f : 12.92f * _linearRGB.y;
+	_gammaRGB.z = _linearRGB.z > 0.0031308f ? 1.055f * powf( _linearRGB.z, 1.0f / GAMMA_EXPONENT_sRGB ) - 0.055f : 12.92f * _linearRGB.z;
+	_gammaRGB.w = _linearRGB.w;
+}
+
 //////////////////////////////////////////////////////////////////////////
 // InternalColorConverter_Generic_ProPhoto
 //
@@ -815,4 +908,17 @@ void ColorProfile::InternalColorConverter_Generic_ProPhoto::RGB2XYZ( const bfloa
 		// Transform into XYZ
 		((bfloat3&) *_XYZ) = ((bfloat3&) *_XYZ) * m_RGB2XYZ;
 	}
+}
+
+void ColorProfile::InternalColorConverter_Generic_ProPhoto::GammaRGB2LinearRGB( const bfloat4& _gammaRGB, bfloat4& _linearRGB ) const {
+	_linearRGB.x = _gammaRGB.x > 0.031248f ? powf( _gammaRGB.x, GAMMA_EXPONENT_PRO_PHOTO ) : _gammaRGB.x / 16.0f;
+	_linearRGB.y = _gammaRGB.y > 0.031248f ? powf( _gammaRGB.y, GAMMA_EXPONENT_PRO_PHOTO ) : _gammaRGB.y / 16.0f;
+	_linearRGB.z = _gammaRGB.z > 0.031248f ? powf( _gammaRGB.z, GAMMA_EXPONENT_PRO_PHOTO ) : _gammaRGB.z / 16.0f;
+	_linearRGB.w = _gammaRGB.w;
+}
+void ColorProfile::InternalColorConverter_Generic_ProPhoto::LinearRGB2GammaRGB( const bfloat4& _linearRGB, bfloat4& _gammaRGB ) const {
+	_gammaRGB.x = _linearRGB.x > 0.001953f ? powf( _linearRGB.x, 1.0f / GAMMA_EXPONENT_PRO_PHOTO ) : 16.0f * _linearRGB.x;
+	_gammaRGB.y = _linearRGB.y > 0.001953f ? powf( _linearRGB.y, 1.0f / GAMMA_EXPONENT_PRO_PHOTO ) : 16.0f * _linearRGB.y;
+	_gammaRGB.z = _linearRGB.z > 0.001953f ? powf( _linearRGB.z, 1.0f / GAMMA_EXPONENT_PRO_PHOTO ) : 16.0f * _linearRGB.z;
+	_gammaRGB.w = _linearRGB.w;
 }

@@ -25,6 +25,7 @@
     <ClInclude Include="..\RendererManaged\StructuredBuffer.h" />
     <ClInclude Include="..\RendererManaged\Texture2D.h" />
     <ClInclude Include="..\RendererManaged\Stdafx.h" />
+    <ClInclude Include="ImagesMatrix.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Buffers">
@@ -78,6 +79,9 @@
       <Filter>Sources</Filter>
     </ClCompile>
     <ClCompile Include="..\RendererManaged\Texture3D.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="ImagesMatrix.cpp">
       <Filter>Sources</Filter>
     </ClCompile>
   </ItemGroup>

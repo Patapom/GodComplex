@@ -162,6 +162,7 @@
     <ClInclude Include="..\RendererManaged\Texture2D.h" />
     <ClInclude Include="..\RendererManaged\Texture3D.h" />
     <ClInclude Include="..\RendererManaged\VertexFormats.h" />
+    <ClInclude Include="ImagesMatrix.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\RendererManaged\AssemblyInfo.cpp" />
@@ -181,6 +182,7 @@
     <ClCompile Include="..\RendererManaged\StructuredBuffer.cpp" />
     <ClCompile Include="..\RendererManaged\Texture2D.cpp" />
     <ClCompile Include="..\RendererManaged\Texture3D.cpp" />
+    <ClCompile Include="ImagesMatrix.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\BaseLib\BaseLib.vcxproj">
@@ -188,6 +190,9 @@
     </ProjectReference>
     <ProjectReference Include="..\..\RendererD3D11\RendererLib.vcxproj">
       <Project>{7523deed-a096-4b6e-b1d9-edda85ee6aa6}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\ImageUtilityManaged\ImageUtilityManaged.vcxproj">
+      <Project>{6c974ba3-ecba-4436-85cb-218eebb33d53}</Project>
     </ProjectReference>
     <ProjectReference Include="..\MathSimple\MathSimple.vcxproj">
       <Project>{cec07704-2a19-4bf1-b46d-8fcf9c5965ee}</Project>

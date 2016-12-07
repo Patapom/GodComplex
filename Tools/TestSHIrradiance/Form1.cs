@@ -16,6 +16,8 @@ namespace TestSHIrradiance
 
 		ImageUtility.ImageFile	m_image = new ImageUtility.ImageFile( 800, 550, ImageUtility.ImageFile.PIXEL_FORMAT.RGBA8, new ImageUtility.ColorProfile( ImageUtility.ColorProfile.STANDARD_PROFILE.sRGB ) );
 
+		ImageUtility.ImageFile	m_HDRImage = new ImageUtility.ImageFile();
+
 		float4		m_black = new float4( 0, 0, 0, 1 );
 		float4		m_white = new float4( 1, 1, 1, 1 );
 		float4		m_red = new float4( 1, 0, 0, 1 );
@@ -25,6 +27,17 @@ namespace TestSHIrradiance
 		public Form1() {
 			InitializeComponent();
 			UpdateGraph();
+			LoadHDRImage();
+
+		}
+
+		void	LoadHDRImage() {
+			m_HDRImage.Load( new System.IO.FileInfo( @"D:\Docs\Computer Graphics\Image Based Lighting + Colorimetry\HDR Images\grace-new.hdr" ) );
+			ImageUtility.ImageFile	tempLDRImage = new ImageUtility.ImageFile();
+			tempLDRImage.ToneMapFrom( m_HDRImage, ( float3 _HDR, ref float3 _LDR ) => {
+				_LDR = _HDR;
+			} );
+			graphPanel.Bitmap = tempLDRImage.AsBitmap;
 		}
 
 		double	EstimateSHCoeff( int l, double _thetaMax ) {

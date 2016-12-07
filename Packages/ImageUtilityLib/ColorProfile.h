@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////
 // The bitmap class cannot work without a proper definition of a Color Profile
-// Because all image systems sooner or later work with the device-dependent RGB color space,
+// Because all image systems sooner or later work with a device-dependent RGB color space,
 //	we need to offer a robust bridge between the (device-dependent) RGB color space and the
 //	reference (device-independent) XYZ color space that is used internally by the Bitmap class
 //
@@ -43,6 +43,10 @@ namespace ImageUtilityLib {
 		virtual void		RGB2XYZ( const bfloat4& _RGB, bfloat4& _XYZ ) const abstract;
 		virtual void		XYZ2RGB( const bfloat4* _XYZ, bfloat4* _RGB, U32 _length ) const abstract;
 		virtual void		RGB2XYZ( const bfloat4* _RGB, bfloat4* _XYZ, U32 _length ) const abstract;
+
+		// Converts between gamma- and linear-space RGB
+		virtual void		GammaRGB2LinearRGB( const bfloat4& _gammaRGB, bfloat4& _linearRGB ) const abstract;
+		virtual void		LinearRGB2GammaRGB( const bfloat4& _linearRGB, bfloat4& _gammaRGB ) const abstract;
 	};
 
 	// The source color for the bitmap
@@ -170,6 +174,8 @@ namespace ImageUtilityLib {
 			void		RGB2XYZ( const bfloat4& _RGB, bfloat4& _XYZ ) const override;
 			void		XYZ2RGB( const bfloat4* _XYZ, bfloat4* _RGB, U32 _length ) const override;
 			void		RGB2XYZ( const bfloat4* _RGB, bfloat4* _XYZ, U32 _length ) const override;
+			void		GammaRGB2LinearRGB( const bfloat4& _gammaRGB, bfloat4& _linearRGB ) const override;
+			void		LinearRGB2GammaRGB( const bfloat4& _linearRGB, bfloat4& _gammaRGB ) const override;
 		};
 
 		class		InternalColorConverter_AdobeRGB_D50 : public IColorConverter {
@@ -180,6 +186,8 @@ namespace ImageUtilityLib {
 			void		RGB2XYZ( const bfloat4& _RGB, bfloat4& _XYZ ) const override;
 			void		XYZ2RGB( const bfloat4* _XYZ, bfloat4* _RGB, U32 _length ) const override;
 			void		RGB2XYZ( const bfloat4* _RGB, bfloat4* _XYZ, U32 _length ) const override;
+			void		GammaRGB2LinearRGB( const bfloat4& _gammaRGB, bfloat4& _linearRGB ) const override;
+			void		LinearRGB2GammaRGB( const bfloat4& _linearRGB, bfloat4& _gammaRGB ) const override;
 		};
 
 		class		InternalColorConverter_AdobeRGB_D65 : public IColorConverter {
@@ -190,6 +198,8 @@ namespace ImageUtilityLib {
 			void		RGB2XYZ( const bfloat4& _RGB, bfloat4& _XYZ ) const override;
 			void		XYZ2RGB( const bfloat4* _XYZ, bfloat4* _RGB, U32 _length ) const override;
 			void		RGB2XYZ( const bfloat4* _RGB, bfloat4* _XYZ, U32 _length ) const override;
+			void		GammaRGB2LinearRGB( const bfloat4& _gammaRGB, bfloat4& _linearRGB ) const override;
+			void		LinearRGB2GammaRGB( const bfloat4& _linearRGB, bfloat4& _gammaRGB ) const override;
 		};
 
 		class		InternalColorConverter_ProPhoto : public IColorConverter {
@@ -200,6 +210,8 @@ namespace ImageUtilityLib {
 			void		RGB2XYZ( const bfloat4& _RGB, bfloat4& _XYZ ) const override;
 			void		XYZ2RGB( const bfloat4* _XYZ, bfloat4* _RGB, U32 _length ) const override;
 			void		RGB2XYZ( const bfloat4* _RGB, bfloat4* _XYZ, U32 _length ) const override;
+			void		GammaRGB2LinearRGB( const bfloat4& _gammaRGB, bfloat4& _linearRGB ) const override;
+			void		LinearRGB2GammaRGB( const bfloat4& _linearRGB, bfloat4& _gammaRGB ) const override;
 		};
 
 		class		InternalColorConverter_Radiance : public IColorConverter {
@@ -210,6 +222,8 @@ namespace ImageUtilityLib {
 			void		RGB2XYZ( const bfloat4& _RGB, bfloat4& _XYZ ) const override;
 			void		XYZ2RGB( const bfloat4* _XYZ, bfloat4* _RGB, U32 _length ) const override;
 			void		RGB2XYZ( const bfloat4* _RGB, bfloat4* _XYZ, U32 _length ) const override;
+			void		GammaRGB2LinearRGB( const bfloat4& _gammaRGB, bfloat4& _linearRGB ) const override;
+			void		LinearRGB2GammaRGB( const bfloat4& _linearRGB, bfloat4& _gammaRGB ) const override;
 		};
 
 		class		InternalColorConverter_Generic_NoGamma : public IColorConverter {
@@ -225,6 +239,8 @@ namespace ImageUtilityLib {
 			void		RGB2XYZ( const bfloat4& _RGB, bfloat4& _XYZ ) const override;
 			void		XYZ2RGB( const bfloat4* _XYZ, bfloat4* _RGB, U32 _length ) const override;
 			void		RGB2XYZ( const bfloat4* _RGB, bfloat4* _XYZ, U32 _length ) const override;
+			void		GammaRGB2LinearRGB( const bfloat4& _gammaRGB, bfloat4& _linearRGB ) const override;
+			void		LinearRGB2GammaRGB( const bfloat4& _linearRGB, bfloat4& _gammaRGB ) const override;
 		};
 
 		class		InternalColorConverter_Generic_StandardGamma : public IColorConverter {
@@ -244,6 +260,8 @@ namespace ImageUtilityLib {
 			void		RGB2XYZ( const bfloat4& _RGB, bfloat4& _XYZ ) const override;
 			void		XYZ2RGB( const bfloat4* _XYZ, bfloat4* _RGB, U32 _length ) const override;
 			void		RGB2XYZ( const bfloat4* _RGB, bfloat4* _XYZ, U32 _length ) const override;
+			void		GammaRGB2LinearRGB( const bfloat4& _gammaRGB, bfloat4& _linearRGB ) const override;
+			void		LinearRGB2GammaRGB( const bfloat4& _linearRGB, bfloat4& _gammaRGB ) const override;
 		};
 
 		class		InternalColorConverter_Generic_sRGBGamma : public IColorConverter {
@@ -259,6 +277,8 @@ namespace ImageUtilityLib {
 			void		RGB2XYZ( const bfloat4& _RGB, bfloat4& _XYZ ) const override;
 			void		XYZ2RGB( const bfloat4* _XYZ, bfloat4* _RGB, U32 _length ) const override;
 			void		RGB2XYZ( const bfloat4* _RGB, bfloat4* _XYZ, U32 _length ) const override;
+			void		GammaRGB2LinearRGB( const bfloat4& _gammaRGB, bfloat4& _linearRGB ) const override;
+			void		LinearRGB2GammaRGB( const bfloat4& _linearRGB, bfloat4& _gammaRGB ) const override;
 		};
 
 		class		InternalColorConverter_Generic_ProPhoto : public IColorConverter {
@@ -274,6 +294,8 @@ namespace ImageUtilityLib {
 			void		RGB2XYZ( const bfloat4& _RGB, bfloat4& _XYZ ) const override;
 			void		XYZ2RGB( const bfloat4* _XYZ, bfloat4* _RGB, U32 _length ) const override;
 			void		RGB2XYZ( const bfloat4* _RGB, bfloat4* _XYZ, U32 _length ) const override;
+			void		GammaRGB2LinearRGB( const bfloat4& _gammaRGB, bfloat4& _linearRGB ) const override;
+			void		LinearRGB2GammaRGB( const bfloat4& _linearRGB, bfloat4& _gammaRGB ) const override;
 		};
 
 		#pragma endregion
@@ -462,6 +484,13 @@ namespace ImageUtilityLib {
 		/// <param name="_RGB"></param>
 		void	RGB2XYZ( const bfloat4* _RGB, bfloat4* _XYZ, U32 _length ) const {
 			m_internalConverter->RGB2XYZ( _RGB, _XYZ, _length );
+		}
+
+		void		GammaRGB2LinearRGB( const bfloat4& _gammaRGB, bfloat4& _linearRGB ) const {
+			m_internalConverter->GammaRGB2LinearRGB( _gammaRGB, _linearRGB );
+		}
+		void		LinearRGB2GammaRGB( const bfloat4& _linearRGB, bfloat4& _gammaRGB ) const {
+			m_internalConverter->LinearRGB2GammaRGB( _linearRGB, _gammaRGB );
 		}
 
 		#pragma endregion

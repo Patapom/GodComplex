@@ -252,6 +252,10 @@ namespace ImageUtility {
 	public:
 		#pragma region PROPERTIES
 
+		property ImageUtilityLib::ImageFile&	NativeObject	{
+			ImageUtilityLib::ImageFile& get() { return *m_nativeObject; }
+		}
+
  		// Gets the bitmap's raw content
 		property IntPtr		Bits {
 			IntPtr		get() {

@@ -18,6 +18,5 @@
 
 // Image Utility lib
 #include "..\ImageUtilityLib\Bitmap.h"
-//#include "..\ImageUtilityLib\ColorProfile.h"
 
 #pragma managed

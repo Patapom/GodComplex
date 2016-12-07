@@ -151,6 +151,10 @@ namespace ImageUtility {
 
 	public:	// PROPERTIES
 
+		property ImageUtilityLib::ColorProfile&	NativeObject	{
+			ImageUtilityLib::ColorProfile& get() { return *m_nativeObject; }
+		}
+
 		/// <summary>
 		/// Gets the chromaticities attached to the profile
 		/// </summary>
@@ -258,6 +262,20 @@ namespace ImageUtility {
 		/// </summary>
 		/// <param name="_RGB"></param>
 		cli::array<float4>^	RGB2XYZ( cli::array<float4>^ _RGB );
+
+		// Converts between gamma- and linear-space RGB
+		void		GammaRGB2LinearRGB( float4^ _gammaRGB, float4% _linearRGB ) {
+			bfloat4	gammaRGB( _gammaRGB->x, _gammaRGB->y, _gammaRGB->z, _gammaRGB->w );
+			bfloat4	linearRGB;
+			m_nativeObject->GammaRGB2LinearRGB( gammaRGB, linearRGB );
+			_linearRGB.Set( linearRGB.x, linearRGB.y, linearRGB.z, linearRGB.w );
+		}
+		void		LinearRGB2GammaRGB( float4^ _linearRGB, float4% _gammaRGB ) {
+			bfloat4	linearRGB( _linearRGB->x, _linearRGB->y, _linearRGB->z, _linearRGB->w );
+			bfloat4	gammaRGB;
+			m_nativeObject->LinearRGB2GammaRGB( linearRGB, gammaRGB );
+			_gammaRGB.Set( gammaRGB.x, gammaRGB.y, gammaRGB.z, linearRGB.w );
+		}
 
 		#pragma endregion
 
