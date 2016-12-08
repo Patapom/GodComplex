@@ -80,9 +80,6 @@ namespace Renderer {
 		ImageFile::PIXEL_FORMAT	format = _mip0->PixelFormat;
 		ImageFile^				currentMip = _mip0;
 		ColorProfile^			profile = _mip0->ColorProfile;
-//		ImageUtilityLib::ColorProfile&	nativeProfile = profile->NativeObject;
-
-//		bool	sRGB = _mip0->ColorProfile->GammaCurve == ColorProfile::GAMMA_CURVE::sRGB;
 
 		UInt32	W2 = (W+1) & ~1U;	// Ensure an even number of pixels
 		array< float4 >^	scanline0 = gcnew array<float4>( W2 );
@@ -125,8 +122,8 @@ namespace Renderer {
 			}
 		}
 
-		delete[] scanlineMip;
-		delete[] scanline1;
-		delete[] scanline0;
+		delete scanlineMip;
+		delete scanline1;
+		delete scanline0;
 	}
 }

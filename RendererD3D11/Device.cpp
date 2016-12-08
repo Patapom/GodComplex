@@ -369,16 +369,14 @@ void	Device::SetRenderTarget( const Texture3D& _Target, const Texture2D* _pDepth
 	SetRenderTargets( _Target.GetWidth(), _Target.GetHeight(), 1, &pTargetView, pDepthStencilView, _pViewport );
 }
 
-void	Device::SetRenderTarget( int _Width, int _Height, const ID3D11RenderTargetView& _Target, ID3D11DepthStencilView* _pDepthStencil, const D3D11_VIEWPORT* _pViewport )
-{
+void	Device::SetRenderTarget( U32 _Width, U32 _Height, const ID3D11RenderTargetView& _Target, ID3D11DepthStencilView* _pDepthStencil, const D3D11_VIEWPORT* _pViewport ) {
 	const ID3D11RenderTargetView*	pTargetView = &_Target;
 	SetRenderTargets( _Width, _Height, 1, (ID3D11RenderTargetView* const*) &pTargetView, _pDepthStencil, _pViewport );
 }
 
-void	Device::SetRenderTargets( int _Width, int _Height, int _TargetsCount, ID3D11RenderTargetView* const * _ppTargets, ID3D11DepthStencilView* _pDepthStencil, const D3D11_VIEWPORT* _pViewport )
-{
-	if ( _pViewport == NULL )
-	{	// Use default viewport
+void	Device::SetRenderTargets( U32 _Width, U32 _Height, U32 _TargetsCount, ID3D11RenderTargetView* const * _ppTargets, ID3D11DepthStencilView* _pDepthStencil, const D3D11_VIEWPORT* _pViewport ) {
+	if ( _pViewport == NULL ) {
+		// Use default viewport
 		D3D11_VIEWPORT	Viewport;
 		Viewport.TopLeftX = 0;
 		Viewport.TopLeftY = 0;
@@ -394,8 +392,7 @@ void	Device::SetRenderTargets( int _Width, int _Height, int _TargetsCount, ID3D1
 	m_pDeviceContext->OMSetRenderTargets( _TargetsCount, _ppTargets, _pDepthStencil );
 }
 
-void	Device::RemoveRenderTargets()
-{
+void	Device::RemoveRenderTargets() {
 	static ID3D11RenderTargetView*	ppEmpty[8] = { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, };
 	m_pDeviceContext->OMSetRenderTargets( 8, ppEmpty, NULL );
 }

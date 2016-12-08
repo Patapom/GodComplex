@@ -252,9 +252,9 @@ namespace ImageUtility {
 	public:
 		#pragma region PROPERTIES
 
-		property ImageUtilityLib::ImageFile&	NativeObject	{
-			ImageUtilityLib::ImageFile& get() { return *m_nativeObject; }
-		}
+// 		property ImageUtilityLib::ImageFile&	NativeObject	{
+// 			ImageUtilityLib::ImageFile& get() { return *m_nativeObject; }
+// 		}
 
  		// Gets the bitmap's raw content
 		property IntPtr		Bits {
@@ -288,6 +288,16 @@ namespace ImageUtility {
 		// Gets the image height
 		property UInt32		Height {
 			UInt32	get() { return m_nativeObject->Height(); }
+		}
+
+		// Gets the image width
+		property UInt32		Pitch {
+			UInt32	get() { return m_nativeObject->Pitch(); }
+		}
+
+		// Gets the pixel size
+		property UInt32		PixelSize {
+			UInt32	get() { return m_nativeObject->GetPixelFormatAccessor().Size(); }
 		}
 
 		// Tells if the image has an alpha channel

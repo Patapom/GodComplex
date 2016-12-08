@@ -77,7 +77,7 @@ void	Renderer::Device::SetRenderTarget( Texture2D^ _RenderTarget, Texture2D^ _De
 	m_pDevice->SetRenderTarget( *_RenderTarget->m_pTexture, _DepthStencilTarget != nullptr ? _DepthStencilTarget->m_pTexture : NULL );
 }
 
-void	Renderer::Device::SetRenderTargets( int _width, int _height, cli::array<IView^>^ _renderTargetViews, Texture2D^ _depthStencilTarget ) {
+void	Renderer::Device::SetRenderTargets( UInt32 _width, UInt32 _height, cli::array<IView^>^ _renderTargetViews, Texture2D^ _depthStencilTarget ) {
 	if ( _renderTargetViews == nullptr )
 		throw gcnew Exception( "Invalid render targets array!" );
 

@@ -1,0 +1,2 @@
+Here should be the "grace-new.hdr" file but it's 13.5MB so I left it out of the GIT repo.
+You can download it from there though: http://gl.ict.usc.edu/Data/HighResProbes/probes/grace-new.hdr

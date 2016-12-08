@@ -125,6 +125,11 @@
       <Name>SphericalHarmonicsLibrary</Name>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup>
+    <Content Include="Shaders\Global.hlsl" />
+    <Content Include="Shaders\RenderScene.hlsl" />
+    <Content Include="Shaders\RenderSphere.hlsl" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

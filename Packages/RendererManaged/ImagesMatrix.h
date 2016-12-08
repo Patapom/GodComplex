@@ -12,7 +12,7 @@ using namespace System;
 namespace Renderer {
 
 	// This class is used to build an array of images and their mips and is used as an argument for the static texture creation methods
-	ref class	ImagesMatrix {
+	public ref class	ImagesMatrix {
 	public:
 		ref class	Mips {
 			array< ImageUtility::ImageFile^ >^	m_images;
@@ -30,8 +30,7 @@ namespace Renderer {
 			// Mips are already built
 			Mips( array< ImageUtility::ImageFile^ >^ _mipLevels );
 
-// 			// Sets the image for the mip level
-// 			void		SetMipLevel( UInt32 _mipLevelIndex, ImageUtility::ImageFile^ _image );
+//			void			MipSizeForLevel( UInt32 _mipLevel )
 
 			// Automatically builds the necessary mips from the level 0 mip
 			void			BuildMips( ImageUtility::ImageFile^ _mip0 );
@@ -48,6 +47,8 @@ namespace Renderer {
 
 		property UInt32		Width { UInt32 get() { return m_width; } }
 		property UInt32		Height { UInt32 get() { return m_height; } }
+		property UInt32		ArraySize { UInt32 get() { return m_mipsArray->Length; } }
+		property UInt32		MipLevelsCount { UInt32 get() { return m_mipLevelsCount; } }
 		property bool		IsCubeMap { bool get() { return m_isCubeMap; } void set( bool value ) { m_isCubeMap = value; } }
 		property Mips^		default[UInt32] { Mips^ get( UInt32 _index ) { return m_mipsArray[_index]; } void set( UInt32 _index, Mips^ ); }
 

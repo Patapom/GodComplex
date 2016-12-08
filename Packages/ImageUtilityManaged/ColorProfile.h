@@ -151,9 +151,9 @@ namespace ImageUtility {
 
 	public:	// PROPERTIES
 
-		property ImageUtilityLib::ColorProfile&	NativeObject	{
-			ImageUtilityLib::ColorProfile& get() { return *m_nativeObject; }
-		}
+// 		property ImageUtilityLib::ColorProfile&	NativeObject	{
+// 			ImageUtilityLib::ColorProfile& get() { return *m_nativeObject; }
+// 		}
 
 		/// <summary>
 		/// Gets the chromaticities attached to the profile

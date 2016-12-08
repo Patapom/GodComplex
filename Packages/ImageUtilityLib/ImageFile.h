@@ -273,6 +273,9 @@ namespace ImageUtilityLib {
 		// Gets the image height
 		U32					Height() const			{ return FreeImage_GetHeight( m_bitmap ); }
 
+		// Getsthe image pitch
+		U32					Pitch() const			{ return FreeImage_GetPitch( m_bitmap ); }
+
 		// Tells if the image has an alpha channel
 		bool				HasAlpha() const;
 

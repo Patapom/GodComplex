@@ -6,6 +6,7 @@
 
 #include "PixelFormats.h"
 #include "PixelsBuffer.h"
+#include "ImagesMatrix.h"
 
 using namespace System;
 
@@ -116,30 +117,15 @@ namespace Renderer {
 		};
 
 		// Creates a texture from an image
+		//	_images, the image matrix containing the texture slices with their mips
 		//	_componentFormat, indicates how individual channels should be encoded
-		static Texture2D^	CreateTexture2D( Device^ _device, ImageUtility::ImageFile^ _image, UInt32 _mipLevelsCount ) { return CreateTexture2D( _device, _image, _mipLevelsCount, COMPONENT_FORMAT::AUTO ); }
-		static Texture2D^	CreateTexture2D( Device^ _device, ImageUtility::ImageFile^ _image, UInt32 _mipLevelsCount, COMPONENT_FORMAT _componentFormat );
-
-		// Creates a texture 2D array from an array of images
-		//	_componentFormat, indicates how individual channels should be encoded
-		// NOTE: All images in the array must have the same dimensions and pixel format!
-		static Texture2D^	CreateTexture2DArray( Device^ _device, array< ImageUtility::ImageFile^ >^ _images, UInt32 _mipLevelsCount ) { return CreateTexture2DArray( _device, _images, _mipLevelsCount, COMPONENT_FORMAT::AUTO ); }
-		static Texture2D^	CreateTexture2DArray( Device^ _device, array< ImageUtility::ImageFile^ >^ _images, UInt32 _mipLevelsCount, COMPONENT_FORMAT _componentFormat );
-
-		// Creates a texture cubemap array from an array of images
-		//	_componentFormat, indicates how individual channels should be encoded
-		// NOTE: All images in the array must have the same dimensions and pixel format!
-		// NOTE: the length of the array of images must be a multiple of 6!
-		static Texture2D^	CreateCubeMapsArray( Device^ _device, array< ImageUtility::ImageFile^ >^ _images, UInt32 _mipLevelsCount ) { return CreateCubeMapsArray( _device, _images, _mipLevelsCount, COMPONENT_FORMAT::AUTO ); }
-		static Texture2D^	CreateCubeMapsArray( Device^ _device, array< ImageUtility::ImageFile^ >^ _images, UInt32 _mipLevelsCount, COMPONENT_FORMAT _componentFormat );
-
+		static Texture2D^	CreateTexture2D( Device^ _device, ImagesMatrix^ _images ) { return CreateTexture2D( _device, _images, COMPONENT_FORMAT::AUTO ); }
+		static Texture2D^	CreateTexture2D( Device^ _device, ImagesMatrix^ _images, COMPONENT_FORMAT _componentFormat );
 
 	internal:
 
-		static Texture2D^	CreateTexture2DArray_internal( Device^ _device, array< ImageUtility::ImageFile^ >^ _images, UInt32 _mipLevelsCount, COMPONENT_FORMAT _componentFormat, bool _isCubeMap );
-
 		// _UNorm, true = prefer UNORM formats, false = 
-		static PIXEL_FORMAT	ImagePixelFormat2TextureFormat( ImageUtility::ImageFile::PIXEL_FORMAT _format, COMPONENT_FORMAT _componentFormat, bool _sRGB, bool% _requiresChannelExtension );
+		static PIXEL_FORMAT	ImagePixelFormat2TextureFormat( ImageUtility::ImageFile::PIXEL_FORMAT _format, COMPONENT_FORMAT _componentFormat, bool _sRGB, UInt32% _channelExtension );
 
 		Texture2D( const ::Texture2D& _existingTexture ) {
 			m_pTexture = const_cast< ::Texture2D* >( &_existingTexture );
