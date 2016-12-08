@@ -37,6 +37,7 @@ namespace TestSHIrradiance
 //			public float4x4	_proj2World;
 			public float4x4	_camera2World;
 			public float	_cosAO;
+			public float	_luminanceFactor;
 		}
 
 		Device						m_device = null;
@@ -57,16 +58,17 @@ namespace TestSHIrradiance
 		#region HDR Image Encoding
 
 		void	LoadHDRImage() {
-//			m_HDRImage.Load( new System.IO.FileInfo( @"D:\Docs\Computer Graphics\Image Based Lighting + Colorimetry\HDR Images\grace-new.hdr" ) );
-			m_HDRImage.Load( new System.IO.FileInfo( @".\Images\grace-new.hdr" ) );
+//			m_HDRImage.Load( new System.IO.FileInfo( @".\Images\grace-new.hdr" ) );
+			m_HDRImage.Load( new System.IO.FileInfo( @".\Images\ennis_1024x512.hdr" ) );
+			
 // 			ImageUtility.ImageFile	tempLDRImage = new ImageUtility.ImageFile();
 // 			tempLDRImage.ToneMapFrom( m_HDRImage, ( float3 _HDR, ref float3 _LDR ) => {
 // 				_LDR = _HDR;
 // 			} );
 // 			graphPanel.Bitmap = tempLDRImage.AsBitmap;
 
-			// Integrate SH
-//			EncodeSH();
+// 			// Integrate SH
+// 			EncodeSH();
 
 			// Build texture
 			ImagesMatrix	images = new Renderer.ImagesMatrix( new ImageUtility.ImageFile[] { m_HDRImage }, 1 );
@@ -275,13 +277,15 @@ namespace TestSHIrradiance
 			m_CB_Render.m._SizeY = (uint) graphPanel.Height;
 			m_CB_Render.m._Time = (float) (DateTime.Now - m_startTime).TotalSeconds;
 			m_CB_Render.m._cosAO = (float) Math.Cos( floatTrackbarControlThetaMax.Value * Math.PI / 180.0 );
+			m_CB_Render.m._luminanceFactor = floatTrackbarControlLuminanceFactor.Value;
 			m_CB_Render.UpdateData();
 			m_CB_Render.m._Flags = 0;
 			if ( radioButtonSideBySide.Checked )
-				m_CB_Render.m._Flags = 2;
-			else if ( radioButtonSingleSphere.Checked )
-				m_CB_Render.m._Flags = 0;
-			m_CB_Render.m._Flags |= checkBoxAO.Checked ? 1U : 0U;
+				m_CB_Render.m._Flags = 1;
+			m_CB_Render.m._Flags |= checkBoxAO.Checked ? 0x8U : 0U;
+			m_CB_Render.m._Flags |= checkBoxShowAO.Checked ? 0x10U : 0U;
+			m_CB_Render.m._Flags |= checkBoxShowBentNormal.Checked ? 0x20U : 0U;
+			m_CB_Render.m._Flags |= checkBoxEnvironmentSH.Checked ? 0x100U : 0U;
 
 			m_Tex_HDR.SetPS( 0 );
 
@@ -299,8 +303,6 @@ namespace TestSHIrradiance
 		private void floatTrackbarControlThetaMax_ValueChanged(Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue) {
 			if ( radioButtonCoeffs.Checked )
 				UpdateGraph();
-			else
-				graphPanel.EnablePaint = false;
 		}
 
 		private void buttonReload_Click( object sender, EventArgs e ) {
@@ -309,6 +311,12 @@ namespace TestSHIrradiance
 
 		private void radioButtonCoeffs_CheckedChanged( object sender, EventArgs e ) {
 			graphPanel.Refresh();
+			graphPanel.EnablePaint = radioButtonCoeffs.Checked;
+
+			checkBoxAO.Visible = radioButtonSingleSphere.Checked | radioButtonSimpleScene.Checked;
+
+			checkBoxShowAO.Visible = radioButtonSimpleScene.Checked;
+			checkBoxShowBentNormal.Visible = radioButtonSimpleScene.Checked;
 		}
 	}
 }

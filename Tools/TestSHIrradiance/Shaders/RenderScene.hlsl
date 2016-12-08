@@ -45,8 +45,8 @@ float4	ComputeSphereAO( float3 _wsPosition ) {
 }
 
 float3	PS( VS_IN _In ) : SV_TARGET0 {
-	float2	UV = _In.__Position.xy / _Size;
-	float	aspectRatio = float(_Size.x) / _Size.y;
+	float2	UV = _In.__Position.xy / _size;
+	float	aspectRatio = float(_size.x) / _size.y;
 	float3	csView = float3( aspectRatio * TAN_HALF_FOV * (2.0 * UV.x - 1.0), TAN_HALF_FOV * (1.0 - 2.0 * UV.y), 1.0 );
 	float	Z2Distance = length( csView );
 			csView /= Z2Distance;
@@ -56,37 +56,37 @@ float3	PS( VS_IN _In ) : SV_TARGET0 {
 
 	float2	dist = IntersectScene( wsPos, wsView );
 	if ( dist.x > NO_HIT ) {
-		return SampleHDREnvironment( wsView );
+//		return (_flags & 0x100U) ? EvaluateSHIrradiance( wsView, EnvironmentSH )
+		return (_flags & 0x100U) ? _luminanceFactor * EvaluateSH( wsView, EnvironmentSH )
+								 : _luminanceFactor * SampleHDREnvironment( wsView );
 	}
 
-	// Render scene
-	bool	enableAO = (_Flags & 1) != 0;
-
+	// Compute scene AO
 	float3	wsHitPos = wsPos + dist.x * wsView;
-	float3	color = 0.0;
+	float4	AO;
 	if ( dist.y < 0.5 ) {
-		// Render sphere
-		float4	AO = ComputeSphereAO( wsHitPos );
-		color = 0.01 * dist.x;
-		color = enableAO ? EvaluateSHIrradiance( AO.xyz, AO.w, EnvironmentSH ) :
-							2.0 * INVPI * acos(AO.w) * EvaluateSHIrradiance( AO.xyz, EnvironmentSH );
-
-color *= 0.1;
-
-//		color = AO.xyz;
-//		color = AO.w;
-		color = 2.0 * INVPI * acos( AO.w );
+		// Sphere
+		AO = ComputeSphereAO( wsHitPos );
 	} else if ( dist.y < 1.5 ) {
-		// Render plane
-		float4	AO = ComputePlaneAO( wsHitPos );
-		color = enableAO ? EvaluateSHIrradiance( AO.xyz, AO.w, EnvironmentSH ) :
-							2.0 * INVPI * acos(AO.w) * EvaluateSHIrradiance( AO.xyz, EnvironmentSH );
+		// Plane
+		AO = ComputePlaneAO( wsHitPos );
+	}
 
-color *= 0.1;
+	float3	color = 0.0;
+//	color = 0.01 * dist.x;
 
-//		color = AO.xyz;
+	if ( (_flags & 0x20U) ) {
+		// Bent normal debug
+		color = AO.xyz;
+	} else if ( (_flags & 0x10U) ) {
+		// AO debug
 //		color = AO.w;
 		color = 2.0 * INVPI * acos( AO.w );
+	} else {
+		// Regular scene display
+		color = (_flags & 0x8U) ?	_luminanceFactor * EvaluateSHIrradiance( AO.xyz, AO.w, EnvironmentSH ) :
+									_luminanceFactor * 2.0 * INVPI * acos(AO.w) * EvaluateSHIrradiance( AO.xyz, EnvironmentSH );
+//color *= 0.1;
 	}
 
 	return color;
