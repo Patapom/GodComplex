@@ -21,6 +21,11 @@ namespace TestSHIrradiance
 				Invalidate();
 			}
 		}
+		private bool				m_EnablePaint = true;
+		public bool					EnablePaint {
+			get { return m_EnablePaint; }
+			set { m_EnablePaint = value; Invalidate(); }
+		}
 
 		private string				m_MessageOnEmpty = "Bisou";
 		public string				MessageOnEmpty {
@@ -67,6 +72,8 @@ namespace TestSHIrradiance
 		protected override void OnPaint( PaintEventArgs e )
 		{
 			base.OnPaint( e );
+			if ( !m_EnablePaint )
+				return;
 
 			if ( m_Bitmap != null ) {
 				RectangleF	Rect = ImageClientRect;

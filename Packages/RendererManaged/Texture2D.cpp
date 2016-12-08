@@ -78,6 +78,38 @@ namespace Renderer {
 		::IPixelFormatDescriptor*	targetFormatDescriptor = GetDescriptor( targetFormat );
 		UInt32						targetPixelSize = targetFormatDescriptor->Size();
 
+		// Build padding if the source format needs channels extension (i.e. missing the Blue or Alpha channels)
+		UInt32			paddingSize = targetPixelSize - sourcePixelSize;
+		array<Byte>^	padding = nullptr;
+		if ( channelExtension > 0 ) {
+			padding = gcnew array<Byte>( paddingSize );
+			switch ( targetFormat ) {
+			case PIXEL_FORMAT::RGBA8_UNORM:
+			case PIXEL_FORMAT::RGBA8_UNORM_sRGB:
+				padding[paddingSize-1] = 0xFF;
+				break;
+			case PIXEL_FORMAT::RGBA16_UINT:
+			case PIXEL_FORMAT::RGBA16_UNORM:
+				padding[paddingSize-1] = 0xFF;
+				padding[paddingSize-2] = 0xFF;
+				break;
+			case PIXEL_FORMAT::RGBA16_FLOAT: {
+				half	temp( 1.0f );
+				padding[paddingSize-1] = temp.raw >> 8;
+				padding[paddingSize-2] = temp.raw & 0xFF;
+				break;
+				}
+			case PIXEL_FORMAT::RGBA32_FLOAT: {
+				float	temp = 1.0f;
+				padding[paddingSize-1] = ((U32&) temp >> 24) & 0xFF;
+				padding[paddingSize-2] = ((U32&) temp >> 16) & 0xFF;
+				padding[paddingSize-3] = ((U32&) temp >> 8) & 0xFF;
+				padding[paddingSize-4] = ((U32&) temp) & 0xFF;
+				break;
+				}
+			}
+		}
+
 		// Allocate an array large enough for mip 0
 		cli::array< Byte >^		managedBuffer = gcnew cli::array< Byte >( referenceImage->Pitch * referenceImage->Height * sourcePixelSize );
 
@@ -93,14 +125,20 @@ namespace Renderer {
 				UInt32			Pitch = mipSlice->Pitch;
 
 				// Copy to managed buffer
-				System::Runtime::InteropServices::Marshal::Copy( mipSlice->Bits, managedBuffer, 0, Pitch * H * sourcePixelSize );
+				System::Runtime::InteropServices::Marshal::Copy( mipSlice->Bits, managedBuffer, 0, Pitch * H );
 
 				// Transfer to target pixel format
 				PixelsBuffer^	pixels = gcnew PixelsBuffer( W * H * targetPixelSize );
 				{
 					System::IO::BinaryWriter^	writer = pixels->OpenStreamWrite();
 					if ( channelExtension > 0 ) {
-						throw gcnew Exception( "TODO!" );
+						// Copy each pixel individually, completing missing channels
+						for ( UInt32 Y=0; Y < H; Y++ ) {
+							for ( UInt32 X=0; X < W; X++ ) {
+								writer->Write( managedBuffer, Pitch * Y + sourcePixelSize * X, sourcePixelSize );
+								writer->Write( padding, 0, paddingSize );
+							}
+						}
 					} else {
 						// Copy each scanline
 						for ( UInt32 Y=0; Y < H; Y++ ) {
@@ -109,6 +147,8 @@ namespace Renderer {
 					}
 					delete writer;
 				}
+
+				content[i++] = pixels;
 			}
 		}
 

@@ -30,10 +30,12 @@ namespace Nuaj.Cirrus.Utility
 	public class Camera {
 		#region FIELDS
 
-		protected float4x4	m_Camera2World = float4x4.Identity;	// Transform float4x4
-		protected float4x4	m_World2Camera = float4x4.Identity;
-		protected float4x4	m_Camera2Proj = float4x4.Identity;	// Projection float4x4
-		protected float4x4	m_World2Proj = float4x4.Identity;	// Transform + Projection float4x4
+		protected float4x4	m_Camera2World = float4x4.Identity;	// Transform matrix
+		protected float4x4	m_World2Camera = float4x4.Identity;	// Inverse transform matrix
+		protected float4x4	m_Camera2Proj = float4x4.Identity;	// Projection matrix
+		protected float4x4	m_Proj2Camera = float4x4.Identity;	// Inverse projection matrix
+		protected float4x4	m_World2Proj = float4x4.Identity;	// Transform + Projection matrix
+		protected float4x4	m_Proj2World = float4x4.Identity;	// Inverse Transform + Projection matrix
 
 		protected float		m_Near = 0.0f;
 		protected float		m_Far = 0.0f;
@@ -55,13 +57,13 @@ namespace Nuaj.Cirrus.Utility
 		/// <summary>
 		/// Gets or sets the camera transform (CAMERA => WORLD)
 		/// </summary>
-		public float4x4			Camera2World
-		{
+		public float4x4			Camera2World {
 			get { return m_Camera2World; }
 			set {
 				m_Camera2World = value;
 				m_World2Camera = value.Inverse;
 				m_World2Proj = m_World2Camera * m_Camera2Proj;
+				m_Proj2World = m_Proj2Camera * m_Camera2World;
 
 				// Notify of the change
 				if ( CameraTransformChanged != null )
@@ -72,8 +74,7 @@ namespace Nuaj.Cirrus.Utility
 		/// <summary>
 		/// Gets the inverse camera transform (WORLD => CAMERA)
 		/// </summary>
-		public float4x4			World2Camera
-		{
+		public float4x4			World2Camera {
 			get { return m_World2Camera; }
 		}
 
@@ -81,13 +82,14 @@ namespace Nuaj.Cirrus.Utility
 		/// Gets the projection transform
 		/// </summary>
 		[System.ComponentModel.Browsable( false )]
-		public float4x4			Camera2Proj
-		{
+		public float4x4			Camera2Proj {
 			get { return m_Camera2Proj; }
 			private set
 			{
 				m_Camera2Proj = value;
+				m_Proj2Camera = m_Camera2Proj.Inverse;
 				m_World2Proj = m_World2Camera * m_Camera2Proj;
+				m_Proj2World = m_Proj2Camera * m_Camera2World;
 
 				// Notify of the change
 				if ( CameraProjectionChanged != null )
@@ -96,10 +98,23 @@ namespace Nuaj.Cirrus.Utility
 		}
 
 		/// <summary>
+		/// Gets the inverse projection transform (CAMERA => PROJ)
+		/// </summary>
+		public float4x4			Proj2Camera {
+			get { return m_Camera2World; }
+		}
+
+		/// <summary>
 		/// Gets the world to projection transform
 		/// </summary>
 		[System.ComponentModel.Browsable( false )]
 		public float4x4			World2Proj	{ get { return m_World2Proj; } }
+
+		/// <summary>
+		/// Gets the projection to world transform
+		/// </summary>
+		[System.ComponentModel.Browsable( false )]
+		public float4x4			Proj2World	{ get { return m_Proj2World; } }
 
 		/// <summary>
 		/// Gets the near clip plane distance

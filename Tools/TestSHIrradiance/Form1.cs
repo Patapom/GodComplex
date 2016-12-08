@@ -32,14 +32,18 @@ namespace TestSHIrradiance
 			public uint		_SizeX;
 			public uint		_SizeY;
 			public float	_Time;
-			public float	_cosAO;
+			public uint		_Flags;
 			public float4x4	_world2Proj;
+//			public float4x4	_proj2World;
+			public float4x4	_camera2World;
+			public float	_cosAO;
 		}
 
 		Device						m_device = null;
 		Shader						m_shader_RenderSphere = null;
 		Shader						m_shader_RenderScene = null;
 		ConstantBuffer< CB_Main >	m_CB_Render;
+		Texture2D					m_Tex_HDR;
 
 		Camera						m_camera = new Camera();
 		CameraManipulator			m_cameraManipulator = new CameraManipulator();
@@ -64,22 +68,9 @@ namespace TestSHIrradiance
 			// Integrate SH
 //			EncodeSH();
 
-// Grace probe
-// float3	SH[9] = {
-// 					float3( 0.933358105849532, 0.605499186927096, 0.450999072970855 ), 
-// 					float3( 0.0542981143130068, 0.0409598475963159, 0.0355377036564806 ), 
-// 					float3( 0.914255336642483, 0.651103534810611, 0.518065694132826 ), 
-// 					float3( 0.238207071886099, 0.14912965904707, 0.0912559191766972 ), 
-// 					float3( 0.0321476755042544, 0.0258939812282057, 0.0324159089991572 ), 
-// 					float3( 0.104707893908821, 0.0756648975030993, 0.0749934936107284 ), 
-// 					float3( 1.27654512826622, 0.85613828921136, 0.618241442250845 ), 
-// 					float3( 0.473237767573493, 0.304160108872238, 0.193304867770535 ), 
-// 					float3( 0.143726445535245, 0.0847402441253633, 0.0587779174281925 ), 
-// };
-
-
 			// Build texture
-
+			ImagesMatrix	images = new Renderer.ImagesMatrix( new ImageUtility.ImageFile[] { m_HDRImage }, 1 );
+			m_Tex_HDR = Texture2D.CreateTexture2D( m_device, images );
 		}
 
 		/// <summary>
@@ -114,6 +105,7 @@ namespace TestSHIrradiance
 					double	sinPhi = Math.Sin( phi );
 
 					float4	HDRColor = m_HDRImage[X,Y];
+//HDRColor.Set( 1, 1, 1, 1 );
 
 					// Accumulate weighted SH
 					double	omega = sinTheta * dPhi * dTheta;
@@ -216,6 +208,7 @@ namespace TestSHIrradiance
 			textBoxResults.Text = text;
 
 			graphPanel.Bitmap = m_image.AsBitmap;
+			graphPanel.EnablePaint = true;
 			graphPanel.Refresh();
 			floatTrackbarControlThetaMax.Refresh();
 			textBoxResults.Refresh();
@@ -234,6 +227,12 @@ namespace TestSHIrradiance
 				m_device.Init( graphPanel.Handle, false, true );
 
 				// Create the render shaders
+				try {
+					m_shader_RenderSphere = new Shader( m_device, new ShaderFile( new System.IO.FileInfo( @"./Shaders/RenderSphere.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+					m_shader_RenderScene = new Shader( m_device, new ShaderFile( new System.IO.FileInfo( @"./Shaders/RenderScene.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+				} catch ( Exception _e ) {
+					throw new Exception( "Failed to compile shader! " + _e.Message );
+				}
 
 				// Create CB
 				m_CB_Render = new ConstantBuffer< CB_Main >( m_device, 0 );
@@ -245,6 +244,8 @@ namespace TestSHIrradiance
 				m_camera.CreatePerspectiveCamera( 0.5f * (float) Math.PI, (float) graphPanel.Width / graphPanel.Height, 0.01f, 100.0f );
 				m_camera.CameraTransformChanged += m_camera_CameraTransformChanged;
 				m_cameraManipulator.Attach( graphPanel, m_camera );
+				m_cameraManipulator.InitializeCamera( -2.0f * float3.UnitZ, float3.Zero, float3.UnitY );
+				m_camera_CameraTransformChanged( null, EventArgs.Empty );
 
 				// Start rendering
 				Application.Idle += Application_Idle;
@@ -255,7 +256,9 @@ namespace TestSHIrradiance
 		}
 
 		void m_camera_CameraTransformChanged( object sender, EventArgs e ) {
-			m_CB_Render.m._world2Proj = m_camera.World2Camera * m_camera.Camera2Proj;
+			m_CB_Render.m._world2Proj = m_camera.World2Proj;
+//			m_CB_Render.m._proj2World =  m_camera.Proj2World;
+			m_CB_Render.m._camera2World =  m_camera.Camera2World;
 		}
 
 		DateTime	m_startTime = DateTime.Now;
@@ -268,15 +271,24 @@ namespace TestSHIrradiance
 			m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
 
 			// Update CB
-			m_CB_Render.m._SizeX = graphPanel.Width;
-			m_CB_Render.m._SizeY = graphPanel.Height;
+			m_CB_Render.m._SizeX = (uint) graphPanel.Width;
+			m_CB_Render.m._SizeY = (uint) graphPanel.Height;
 			m_CB_Render.m._Time = (float) (DateTime.Now - m_startTime).TotalSeconds;
 			m_CB_Render.m._cosAO = (float) Math.Cos( floatTrackbarControlThetaMax.Value * Math.PI / 180.0 );
 			m_CB_Render.UpdateData();
+			m_CB_Render.m._Flags = 0;
+			if ( radioButtonSideBySide.Checked )
+				m_CB_Render.m._Flags = 2;
+			else if ( radioButtonSingleSphere.Checked )
+				m_CB_Render.m._Flags = 0;
+			m_CB_Render.m._Flags |= checkBoxAO.Checked ? 1U : 0U;
+
+			m_Tex_HDR.SetPS( 0 );
 
 			// Render
-			if ( m_shader_RenderSphere.Use() ) {
-				 m_device.RenderFullscreenQuad( m_shader_RenderSphere );
+			Shader	S = radioButtonSimpleScene.Checked ? m_shader_RenderScene : m_shader_RenderSphere;
+			if ( S.Use() ) {
+				m_device.RenderFullscreenQuad( S );
 			}
 
 			m_device.Present( false );
@@ -287,6 +299,16 @@ namespace TestSHIrradiance
 		private void floatTrackbarControlThetaMax_ValueChanged(Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue) {
 			if ( radioButtonCoeffs.Checked )
 				UpdateGraph();
+			else
+				graphPanel.EnablePaint = false;
+		}
+
+		private void buttonReload_Click( object sender, EventArgs e ) {
+			m_device.ReloadModifiedShaders();
+		}
+
+		private void radioButtonCoeffs_CheckedChanged( object sender, EventArgs e ) {
+			graphPanel.Refresh();
 		}
 	}
 }
