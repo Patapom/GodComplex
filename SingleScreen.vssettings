@@ -2233,7 +2233,7 @@
 											<DockGroup Orientation="Vertical" IsVisible="True" DockedHeight="*" DockedWidth="*">
 												<DockGroup IsVisible="True" DockedHeight="*" DockedWidth="*">
 													<DocumentGroupContainer Orientation="Vertical" IsVisible="True" DockedHeight="*" DockedWidth="*">
-														<wm:WMDocumentGroup IsVisible="True">
+														<wm:WMDocumentGroup>
 															<wm:ToolWindowView ContextVisibilityEnabled="False" Name="ST:0:0:{46c87f81-5a06-43a8-9e25-85d33bac49f8}" FloatingHeight="614.4" FloatingWidth="819.2"/>
 															<wm:ToolWindowView ContextVisibilityEnabled="False" ForceCreate="ForceCreate" IconIndex="4" IconResourceID="6650" IconResourcePackage="da9fb551-c724-11d0-ae1f-00a0c90fffc3" Name="ST:0:0:{269a02dc-6af8-11d3-bdc4-00c04f688e50}" FloatingHeight="614.4" FloatingWidth="819.2"/>
 															<wm:ToolWindowView ForceCreate="ForceCreate" Name="ST:0:0:{99b8fa2f-ab90-4f57-9c32-949f146f1914}" FloatingHeight="614.4" FloatingWidth="819.2"/>
@@ -2522,8 +2522,8 @@
 											<wm:ToolWindowView ForceCreate="ForceCreate" Name="ST:0:0:{b8f809ca-7d14-4935-8657-727dc294e16b}" DockedWidth="650" FloatingTop="100" FloatingLeft="100" FloatingHeight="450" FloatingWidth="450"/>
 											<DockGroup Orientation="Vertical" IsVisible="True" DockedHeight="*" DockedWidth="*">
 												<DockGroup IsVisible="True" DockedHeight="*" DockedWidth="*">
-													<DocumentGroupContainer IsVisible="True" DockedHeight="*" DockedWidth="*">
-														<wm:WMDocumentGroup DockedWidth="263.320463320463">
+													<DocumentGroupContainer Orientation="Vertical" IsVisible="True" DockedHeight="*" DockedWidth="*">
+														<wm:WMDocumentGroup IsVisible="True" DockedWidth="263.320463320463">
 															<wm:ToolWindowView ContextVisibilityEnabled="False" ForceCreate="DontForceCreate" Name="ST:0:0:{387cb18d-6153-4156-9257-9ac3f9207bbe}" DockedWidth="263.320463320463" FloatingHeight="614.4" FloatingWidth="819.2"/>
 															<wm:ToolWindowView ContextVisibilityEnabled="False" Name="ST:0:0:{46c87f81-5a06-43a8-9e25-85d33bac49f8}" DockedWidth="263.320463320463" FloatingHeight="614.4" FloatingWidth="819.2"/>
 															<wm:ToolWindowView ContextVisibilityEnabled="False" ForceCreate="ForceCreate" Name="ST:0:0:{269a02dc-6af8-11d3-bdc4-00c04f688e50}" DockedWidth="263.320463320463" FloatingHeight="614.4" FloatingWidth="819.2"/>
@@ -2535,6 +2535,7 @@
 															<wm:ToolWindowView ContextVisibilityEnabled="False" ForceCreate="DontForceCreate" Name="ST:0:0:{93a69444-e846-4571-9e03-a8433ad9ddf9}" DockedWidth="263.320463320463" FloatingHeight="614.4" FloatingWidth="819.2"/>
 															<wm:ToolWindowView ContextVisibilityEnabled="False" ForceCreate="DontForceCreate" Name="ST:0:0:{cb4d394c-6408-4607-8c42-0910d3147a4e}" DockedWidth="263.320463320463" FloatingHeight="614.4" FloatingWidth="819.2"/>
 															<wm:ToolWindowView ForceCreate="DontForceCreate" Name="ST:0:0:{1820bae5-c385-4492-9de5-e35c9cf17b18}" DockedWidth="263.320463320463" FloatingTop="100" FloatingLeft="100" FloatingHeight="450" FloatingWidth="450"/>
+															<wm:ToolWindowView ForceCreate="DontForceCreate" Name="ST:0:0:{e8b06f52-6d01-11d2-aa7d-00c04f990343}" DockedWidth="263.320463320463" FloatingTop="100" FloatingLeft="100" FloatingHeight="400" FloatingWidth="400"/>
 														</wm:WMDocumentGroup>
 														<wm:WMDocumentGroup DockedHeight="436" DockedWidth="400">
 															<ViewBookmark Name="ST:0:0:{4a18f9d0-b838-11d0-93eb-00a0c90f2734}" AccessOrder="2" ViewBookmarkType="DocumentWell" DockedHeight="436" DockedWidth="400"/>
@@ -2588,16 +2589,29 @@
 															<ViewBookmark Name="ST:0:0:{34e76e81-ee4a-11d0-ae2e-00a0c90fffc3}" AccessOrder="1" ViewBookmarkType="DocumentWell" DockedWidth="1554"/>
 														</wm:WMDocumentGroup>
 													</DocumentGroupContainer>
+													<DockGroup Orientation="Vertical" IsVisible="True" DockedHeight="397" DockedWidth="373">
+														<TabGroup IsVisible="True" DockedHeight="397" DockedWidth="373" FloatingTop="541" FloatingLeft="687" FloatingHeight="430" FloatingWidth="352">
+															<wm:ToolWindowView ForceCreate="ForceCreate" IconIndex="4" IconResourceID="5123" IconResourcePackage="c9dd4a57-47fb-11d2-83e7-00c04f9902c1" Name="ST:0:0:{4a18f9d0-b838-11d0-93eb-00a0c90f2734}" IsSelected="True" IsVisible="True" DockedHeight="397" DockedWidth="373" FloatingTop="541" FloatingLeft="687" FloatingHeight="430" FloatingWidth="352"/>
+															<wm:ToolWindowView ForceCreate="ForceCreate" IconIndex="9" IconResourceID="5123" IconResourcePackage="c9dd4a57-47fb-11d2-83e7-00c04f9902c1" Name="ST:1:0:{90243340-bd7a-11d0-93ef-00a0c90f2734}" IsVisible="True" DockedHeight="397" DockedWidth="373" FloatingTop="541" FloatingLeft="687" FloatingHeight="430" FloatingWidth="352"/>
+														</TabGroup>
+														<wm:ToolWindowView ForceCreate="ForceCreate" IconIndex="7" IconResourceID="5123" IconResourcePackage="c9dd4a57-47fb-11d2-83e7-00c04f9902c1" Name="ST:1:0:{350f9856-a72b-11d2-8ad0-00c04f79e479}" IsSelected="True" IsVisible="True" DockedHeight="275" DockedWidth="373" FloatingTop="586" FloatingLeft="876" FloatingHeight="275" FloatingWidth="370"/>
+													</DockGroup>
+													<DockGroup Orientation="Vertical" IsVisible="True" DockedHeight="121" DockedWidth="370" FloatingTop="541" FloatingLeft="687" FloatingHeight="430" FloatingWidth="352">
+														<wm:ToolWindowView ForceCreate="ForceCreate" IconIndex="3" IconResourceID="5123" IconResourcePackage="c9dd4a57-47fb-11d2-83e7-00c04f9902c1" Name="ST:0:0:{0504ff91-9d61-11d0-a794-00a0c9110051}" IsVisible="True" DockedHeight="194" DockedWidth="370" FloatingTop="541" FloatingLeft="687" FloatingHeight="430" FloatingWidth="352"/>
+														<TabGroup IsVisible="True" DockedHeight="74" DockedWidth="370" FloatingTop="541" FloatingLeft="687" FloatingHeight="430" FloatingWidth="352">
+															<wm:ToolWindowView ForceCreate="ForceCreate" IconIndex="8" IconResourceID="5123" IconResourcePackage="c9dd4a57-47fb-11d2-83e7-00c04f9902c1" Name="ST:0:0:{ca4b8ff5-bfc7-11d2-9929-00c04f68fdaf}" IsSelected="True" IsVisible="True" DockedHeight="74" DockedWidth="370" FloatingTop="541" FloatingLeft="687" FloatingHeight="430" FloatingWidth="352"/>
+															<wm:ToolWindowView ContextVisibilityEnabled="False" ForceCreate="ForceCreate" IconIndex="16" IconResourceID="6650" IconResourcePackage="da9fb551-c724-11d0-ae1f-00a0c90fffc3" Name="ST:0:0:{ecb7191a-597b-41f5-9843-03a4cf275dde}" IsVisible="True" DockedHeight="74" DockedWidth="370" FloatingTop="541" FloatingLeft="687" FloatingHeight="430" FloatingWidth="352"/>
+														</TabGroup>
+													</DockGroup>
 													<DockGroup Orientation="Vertical" DockedHeight="134" DockedWidth="352" FloatingTop="544" FloatingLeft="618" FloatingHeight="436" FloatingWidth="521">
 														<TabGroup DockedWidth="352">
-															<ViewBookmark Name="ST:0:0:{4a18f9d0-b838-11d0-93eb-00a0c90f2734}" DockedWidth="352"/>
-															<ViewBookmark Name="ST:1:0:{90243340-bd7a-11d0-93ef-00a0c90f2734}" DockedWidth="352"/>
+															<ViewBookmark Name="ST:0:0:{4a18f9d0-b838-11d0-93eb-00a0c90f2734}" AccessOrder="1" DockedWidth="352"/>
+															<ViewBookmark Name="ST:1:0:{90243340-bd7a-11d0-93ef-00a0c90f2734}" AccessOrder="1" DockedWidth="352"/>
 														</TabGroup>
 														<TabGroup DockedWidth="352">
 															<ViewBookmark Name="ST:0:0:{ca4b8ff5-bfc7-11d2-9929-00c04f68fdaf}" AccessOrder="1" DockedWidth="352"/>
 															<ViewBookmark Name="ST:0:0:{ecb7191a-597b-41f5-9843-03a4cf275dde}" AccessOrder="1" DockedWidth="352"/>
 														</TabGroup>
-														<ViewBookmark Name="ST:1:0:{350f9856-a72b-11d2-8ad0-00c04f79e479}" DockedWidth="352"/>
 													</DockGroup>
 												</DockGroup>
 												<ViewBookmark Name="ST:0:0:{0f887920-c2b6-11d2-9375-0080c747d9a0}"/>
@@ -2684,7 +2698,7 @@
 											<wm:ToolWindowView ContextVisibilityEnabled="False" ForceCreate="ForceCreate" Name="ST:0:0:{dd1ddd20-d59b-11da-a94d-0800200c9a66}" DockedHeight="432" DockedWidth="348.16" FloatingHeight="432" FloatingWidth="348"/>
 											<wm:ToolWindowView ContextVisibilityEnabled="False" ForceCreate="ForceCreate" Name="ST:0:0:{a34b1c5d-6d37-4a0c-a8b0-99f8e8158b48}" DockedHeight="432" DockedWidth="348.16" FloatingHeight="432" FloatingWidth="348"/>
 										</TabGroup>
-										<ViewBookmark Name="ST:0:0:{0504ff91-9d61-11d0-a794-00a0c9110051}" DockedWidth="348.16"/>
+										<ViewBookmark Name="ST:0:0:{0504ff91-9d61-11d0-a794-00a0c9110051}" AccessOrder="1" DockedWidth="348.16"/>
 									</DockGroup>
 								</DockGroup>
 							</DockRoot>
@@ -2799,21 +2813,23 @@
 							<ViewBookmark Name="ST:0:0:{a34b1c5d-6d37-4a0c-a8b0-99f8e8158b48}" ViewBookmarkType="Raft" FloatingHeight="432" FloatingWidth="348"/>
 						</TabGroup>
 					</wm:WMFloatSite>
-					<wm:WMFloatSite Id="4930a838-aedc-466a-95f7-63089930d91b" IsVisible="True" FloatingTop="116" FloatingLeft="2759" FloatingHeight="430" FloatingWidth="352" FloatingWindowState="Maximized">
-						<DockGroup IsVisible="True" DockedHeight="171.613559322034" DockedWidth="352" FloatingTop="116" FloatingLeft="2759" FloatingHeight="430" FloatingWidth="352">
-							<TabGroup IsVisible="True" DockedHeight="171.613559322034" DockedWidth="352" FloatingTop="116" FloatingLeft="2759" FloatingHeight="430" FloatingWidth="352">
-								<wm:ToolWindowView ForceCreate="ForceCreate" IconIndex="4" IconResourceID="5123" IconResourcePackage="c9dd4a57-47fb-11d2-83e7-00c04f9902c1" Name="ST:0:0:{4a18f9d0-b838-11d0-93eb-00a0c90f2734}" IsSelected="True" IsVisible="True" DockedHeight="171.613559322034" DockedWidth="352" FloatingTop="116" FloatingLeft="2759" FloatingHeight="430" FloatingWidth="352"/>
-								<wm:ToolWindowView ForceCreate="ForceCreate" IconIndex="9" IconResourceID="5123" IconResourcePackage="c9dd4a57-47fb-11d2-83e7-00c04f9902c1" Name="ST:1:0:{90243340-bd7a-11d0-93ef-00a0c90f2734}" IsVisible="True" DockedHeight="171.613559322034" DockedWidth="352" FloatingTop="116" FloatingLeft="2759" FloatingHeight="430" FloatingWidth="352"/>
+					<wm:WMFloatSite Id="4930a838-aedc-466a-95f7-63089930d91b" FloatingTop="541" FloatingLeft="687" FloatingHeight="430" FloatingWidth="352">
+						<DockGroup FloatingHeight="430" FloatingWidth="352">
+							<TabGroup FloatingHeight="430" FloatingWidth="352">
+								<ViewBookmark Name="ST:0:0:{4a18f9d0-b838-11d0-93eb-00a0c90f2734}" ViewBookmarkType="Raft" FloatingHeight="430" FloatingWidth="352"/>
+								<ViewBookmark Name="ST:1:0:{90243340-bd7a-11d0-93ef-00a0c90f2734}" ViewBookmarkType="Raft" FloatingHeight="430" FloatingWidth="352"/>
 							</TabGroup>
-							<DockGroup Orientation="Vertical" IsVisible="True" DockedHeight="171.613559322034" DockedWidth="352" FloatingTop="116" FloatingLeft="2759" FloatingHeight="430" FloatingWidth="352">
-								<wm:ToolWindowView ForceCreate="ForceCreate" IconIndex="3" IconResourceID="5123" IconResourcePackage="c9dd4a57-47fb-11d2-83e7-00c04f9902c1" Name="ST:0:0:{0504ff91-9d61-11d0-a794-00a0c9110051}" IsVisible="True" DockedHeight="343.227118644068" DockedWidth="352" FloatingTop="116" FloatingLeft="2759" FloatingHeight="430" FloatingWidth="352"/>
-								<TabGroup IsVisible="True" DockedHeight="134.314060535218" DockedWidth="352" FloatingTop="116" FloatingLeft="2759" FloatingHeight="430" FloatingWidth="352">
-									<wm:ToolWindowView ForceCreate="ForceCreate" IconIndex="8" IconResourceID="5123" IconResourcePackage="c9dd4a57-47fb-11d2-83e7-00c04f9902c1" Name="ST:0:0:{ca4b8ff5-bfc7-11d2-9929-00c04f68fdaf}" IsSelected="True" IsVisible="True" DockedHeight="134.314060535218" DockedWidth="352" FloatingTop="116" FloatingLeft="2759" FloatingHeight="430" FloatingWidth="352"/>
-									<wm:ToolWindowView ContextVisibilityEnabled="False" ForceCreate="ForceCreate" IconIndex="16" IconResourceID="6650" IconResourcePackage="da9fb551-c724-11d0-ae1f-00a0c90fffc3" Name="ST:0:0:{ecb7191a-597b-41f5-9843-03a4cf275dde}" IsVisible="True" DockedHeight="134.314060535218" DockedWidth="352" FloatingTop="116" FloatingLeft="2759" FloatingHeight="430" FloatingWidth="352"/>
+							<DockGroup Orientation="Vertical" FloatingHeight="430" FloatingWidth="352">
+								<ViewBookmark Name="ST:0:0:{0504ff91-9d61-11d0-a794-00a0c9110051}" ViewBookmarkType="Raft" FloatingHeight="430" FloatingWidth="352"/>
+								<TabGroup FloatingHeight="430" FloatingWidth="352">
+									<ViewBookmark Name="ST:0:0:{ca4b8ff5-bfc7-11d2-9929-00c04f68fdaf}" ViewBookmarkType="Raft" FloatingHeight="430" FloatingWidth="352"/>
+									<ViewBookmark Name="ST:0:0:{ecb7191a-597b-41f5-9843-03a4cf275dde}" ViewBookmarkType="Raft" FloatingHeight="430" FloatingWidth="352"/>
 								</TabGroup>
-								<wm:ToolWindowView ForceCreate="ForceCreate" IconIndex="7" IconResourceID="5123" IconResourcePackage="c9dd4a57-47fb-11d2-83e7-00c04f9902c1" Name="ST:1:0:{350f9856-a72b-11d2-8ad0-00c04f79e479}" IsSelected="True" IsVisible="True" DockedHeight="208.91305810885" DockedWidth="352" FloatingTop="116" FloatingLeft="2759" FloatingHeight="430" FloatingWidth="352"/>
 							</DockGroup>
 						</DockGroup>
+					</wm:WMFloatSite>
+					<wm:WMFloatSite Id="b8b1c311-235e-4d30-9d82-48e0f84e5b12">
+						<wm:ToolWindowView Name="ST:0:0:{7d70549f-033c-4727-be2c-3bb8925d869a}"/>
 					</wm:WMFloatSite>
 				</WindowProfile>
 			</Debug>
