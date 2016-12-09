@@ -75,7 +75,7 @@ namespace TestSHIrradiance
 //			EncodeSH();
 
 			// Test numerical integration
-//			NumericalIntegration();
+			NumericalIntegration();
 
 			// Build texture
 			ImagesMatrix	images = new Renderer.ImagesMatrix( new ImageUtility.ImageFile[] { m_HDRImage }, 1 );
@@ -102,14 +102,16 @@ namespace TestSHIrradiance
 			float3		coneDirection = float3.Zero;
 			float3[,]	integratedSHCoeffs = new float3[TABLE_SIZE,TABLE_SIZE];
 			for ( int thetaIndex=0; thetaIndex < TABLE_SIZE; thetaIndex++ ) {
-				float	cosTheta = 1.0f - (float) thetaIndex / TABLE_SIZE;
+//				float	cosTheta = 1.0f - (float) thetaIndex / TABLE_SIZE;
+float	cosTheta = (float) Math.Cos( 0.5 * Math.PI * thetaIndex / TABLE_SIZE );
 				coneDirection.x = (float) Math.Sqrt( 1.0f - cosTheta*cosTheta );
 				coneDirection.z = cosTheta;
 
 				for ( int AOIndex=0; AOIndex < TABLE_SIZE; AOIndex++ ) {
 					float	AO = 1.0f - (float) AOIndex / TABLE_SIZE;
-					float	coneHalfAngle = 0.5f * (float) Math.PI * AO;			// Cone half angle varies in [0,PI/2]
-					float	cosConeHalfAngle = (float) Math.Cos( coneHalfAngle );
+//					float	coneHalfAngle = 0.5f * (float) Math.PI * AO;			// Cone half angle varies in [0,PI/2]
+//					float	cosConeHalfAngle = (float) Math.Cos( coneHalfAngle );
+float	cosConeHalfAngle = (float) AOIndex / TABLE_SIZE;
 
 					double	A0 = 0.0;
 					double	A1 = 0.0;
@@ -139,7 +141,7 @@ namespace TestSHIrradiance
 				}
 			}
 
-			using ( System.IO.FileStream S = new System.IO.FileInfo( @"ConeTable.float3" ).Create() )
+			using ( System.IO.FileStream S = new System.IO.FileInfo( @"ConeTable_cosAO.float3" ).Create() )
 				using ( System.IO.BinaryWriter W = new System.IO.BinaryWriter( S ) ) {
 				for ( int thetaIndex=0; thetaIndex < TABLE_SIZE; thetaIndex++ )
 						for ( int AOIndex=0; AOIndex < TABLE_SIZE; AOIndex++ ) {
