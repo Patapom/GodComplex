@@ -60,8 +60,6 @@ float3	SampleHDREnvironment( float3 _wsDirection ) {
 //	With {a -> 0.523407, b -> -0.6694, c -> -0.128209, d -> 5.26746, e -> 3.40837, f -> 0.905606, g -> -12.8261, h -> -10.5428, i -> 9.40113, j -> -3.18758, k -> -1.08565, l -> 7.57317, m -> 5.45239, p -> -4.06299}
 //
 float3	EstimateLambertReflectanceFactors( float _cosThetaAO, float _coneBendAngle ) {
-//	float	cosThetaAO = cos( 0.5 * PI * _AO );
-
 	float	x = _cosThetaAO;
 	float	y = _coneBendAngle * 2.0 * INVPI;
 
@@ -84,9 +82,9 @@ float3	EstimateLambertReflectanceFactors( float _cosThetaAO, float _coneBendAngl
 	float	A0 = a.x + x * (b.x + y * d.x + x * (e.x + y * (g.x + y * i.x))) + f.x * y2;
 	float	A1 = a.y + x * (b.y + y * (d.y + h.y * y) + x * (e.y + y * g.y)) + y * (c.y + y * f.y);
 	float	A2 = a.z + x * (b.z + y * d.z + x * (e.z + y * (g.z + y * i.z) + x * (j + y * (l + y2 * p))))
-					 + y * (c.z + y * (f.z + x * h.z + y * k));
+					 + y * (c.z + y * (f.z + x * h.z + (y * (k + x * m))));
 
-	return float3( A0, A1, A2 );
+	return float3( A0, saturate( A1 ), A2 );
 }
 
 // Grace probe
@@ -141,7 +139,7 @@ void	Ylm( float3 _direction, out float3 _SH[9] ) {
 // Evaluates the SH coefficients in the requested direction
 // Analytic method from http://www1.cs.columbia.edu/~ravir/papers/envmap/envmap.pdf eq. 3
 //
-float3	EvaluateSH( float3 _direction, float3 _SH[9] ) {
+float3	EvaluateSHRadiance( float3 _direction, float3 _SH[9] ) {
 	const float	f0 = 0.28209479177387814347403972578039;		// 0.5 / sqrt(PI);
 	const float	f1 = 0.48860251190291992158638462283835;		// 0.5 * sqrt(3/PI);
 	const float	f2 = 1.0925484305920790705433857058027;			// 0.5 * sqrt(15/PI);
@@ -194,17 +192,42 @@ float3	EvaluateSHIrradiance( float3 _direction, float3 _SH[9] ) {
 
 // Evaluates the irradiance perceived in the provided direction, also accounting for Ambient Occlusion
 // Details can be found at http://wiki.nuaj.net/index.php?title=SphericalHarmonicsPortal
-// Here, _CosThetaAO = cos( PI/2 * AO ) and represents the cosine of the cone half-angle that drives the amount of light a surface is perceiving
+// Here, _cosThetaAO = cos( PI/2 * AO ) and represents the cosine of the cone half-angle that drives the amount of light a surface is perceiving
 //
-float3	EvaluateSHIrradiance( float3 _direction, float _CosThetaAO,  float3 _SH[9] ) {
-	float		t2 = _CosThetaAO*_CosThetaAO;
-	float		t3 = t2*_CosThetaAO;
-	float		t4 = t3*_CosThetaAO;
+float3	EvaluateSHIrradiance( float3 _direction, float _cosThetaAO,  float3 _SH[9] ) {
+	float		t2 = _cosThetaAO*_cosThetaAO;
+	float		t3 = t2*_cosThetaAO;
+	float		t4 = t3*_cosThetaAO;
 	float		ct2 = 1.0 - t2; 
 
 	float		c0 = 0.88622692545275801364908374167057 * ct2;							// 1/2 * sqrt(PI) * (1-t^2)
 	float		c1 = 1.02332670794648848847955162488930 * (1.0-t3);						// sqrt(PI/3) * (1-t^3)
 	float		c2 = 0.24770795610037568833406429782001 * (3.0 * (1.0-t4) - 2.0 * ct2);	// 1/16 * sqrt(5*PI) * [3(1-t^4) - 2(1-t^2)]
+	const float	sqrt3 = 1.7320508075688772935274463415059;
+
+	float		x = _direction.x;
+	float		y = _direction.y;
+	float		z = _direction.z;
+
+	return	max( 0.0, c0 * _SH[0]										// c0.L00
+			+ c1 * (_SH[1]*y + _SH[2]*z + _SH[3]*x)						// c1.(L1-1.y + L10.z + L11.x)
+			+ c2 * (_SH[6]*(3.0*z*z - 1.0)								// c2.L20.(3z²-1)
+				+ sqrt3 * (_SH[8]*(x*x - y*y)							// sqrt(3).c2.L22.(x²-y²)
+					+ 2.0 * (_SH[4]*x*y + _SH[5]*y*z + _SH[7]*z*x)))	// 2sqrt(3).c2.(L2-2.xy + L2-1.yz + L21.zx)
+		);
+}
+
+// Evaluates the irradiance perceived in the provided direction, also accounting for Ambient Occlusion cone and normal bending
+// Details can be found at http://wiki.nuaj.net/index.php?title=SphericalHarmonicsPortal
+// Here, _cosThetaAO = cos( PI/2 * AO ) and represents the cosine of the cone half-angle that drives the amount of light a surface is perceiving
+//	and _coneBendAngle is the angle from which the cone's direction bends from the normal
+//
+float3	EvaluateSHIrradiance( float3 _direction, float _cosThetaAO, float _coneBendAngle, float3 _SH[9] ) {
+	float3		A = EstimateLambertReflectanceFactors( _cosThetaAO, _coneBendAngle );
+
+	float		c0 = 3.5449077018110320545963349666823 * A.x;	// sqrt(4PI) * A0
+	float		c1 = 2.0466534158929769769591032497785 * A.y;	// sqrt(4PI/3) * A1
+	float		c2 = 1.5853309190424044053380115060481 * A.z;	// sqrt(4PI/5) * A2
 	const float	sqrt3 = 1.7320508075688772935274463415059;
 
 	float		x = _direction.x;

@@ -55,25 +55,27 @@ float3	PS( VS_IN _In ) : SV_TARGET0 {
 	float3	wsPos = float3( _camera2World[3].x, -_camera2World[3].z, _camera2World[3].y );	// Make camera pos Z-up
 
 
-return 1.0 * EstimateLambertReflectanceFactors( UV.x, UV.y ).z;
-return EstimateLambertReflectanceFactors( _cosAO, saturate( _luminanceFactor ) ).x;
+//float	v = EstimateLambertReflectanceFactors( UV.x, UV.y ).z;
+//return v < 0.0 || v > 1.0 ? float3( v-1, 0, 0 ) : v;
+//return EstimateLambertReflectanceFactors( _cosAO, saturate( _luminanceFactor ) ).x;
 
 	float3	filteredEnvironmentSH[9];
 	FilterHanning( EnvironmentSH, filteredEnvironmentSH, _filterWindowSize );
 
 	float2	dist = IntersectScene( wsPos, wsView );
 	if ( dist.x > NO_HIT ) {
-//		return (_flags & 0x100U) ? EvaluateSHIrradiance( wsView, EnvironmentSH )
-		return (_flags & 0x100U) ? _luminanceFactor * EvaluateSH( wsView, filteredEnvironmentSH )
+		return (_flags & 0x100U) ? _luminanceFactor * EvaluateSHRadiance( wsView, filteredEnvironmentSH )
 								 : _luminanceFactor * SampleHDREnvironment( wsView );
 	}
 
 	// Compute scene AO
 	float3	wsHitPos = wsPos + dist.x * wsView;
+	float3	wsNormal = PLANE_NORMAL;
 	float4	AO;
 	if ( dist.y < 0.5 ) {
 		// Sphere
 		AO = ComputeSphereAO( wsHitPos );
+		wsNormal = normalize( wsHitPos - SPHERE_CENTER );
 	} else if ( dist.y < 1.5 ) {
 		// Plane
 		AO = ComputePlaneAO( wsHitPos );
@@ -84,16 +86,19 @@ return EstimateLambertReflectanceFactors( _cosAO, saturate( _luminanceFactor ) )
 
 	if ( (_flags & 0x20U) ) {
 		// Bent normal debug
+		color = wsNormal;
 		color = AO.xyz;
+		color = saturate( dot( AO.xyz, wsNormal ) );
 	} else if ( (_flags & 0x10U) ) {
 		// AO debug
 //		color = AO.w;
 		color = 2.0 * INVPI * acos( AO.w );
 	} else {
 		// Regular scene display
-		color = (_flags & 0x8U) ?	_luminanceFactor * EvaluateSHIrradiance( AO.xyz, AO.w, filteredEnvironmentSH ) :
-									_luminanceFactor * 2.0 * INVPI * acos(AO.w) * EvaluateSHIrradiance( AO.xyz, filteredEnvironmentSH );
-//color *= 0.1;
+		float	bentConeAngle = acos( saturate( dot( AO.xyz, wsNormal ) ) );
+		color = (_flags & 0x8U) ?	_luminanceFactor * EvaluateSHIrradiance( wsNormal, AO.w, filteredEnvironmentSH )
+								:	_luminanceFactor * 2.0 * INVPI * acos(AO.w) * EvaluateSHIrradiance( AO.xyz, filteredEnvironmentSH );
+//								:	_luminanceFactor * EvaluateSHIrradiance( wsNormal, AO.w, bentConeAngle, filteredEnvironmentSH );
 	}
 
 	return color;

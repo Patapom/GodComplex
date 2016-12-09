@@ -82,6 +82,47 @@ namespace TestSHIrradiance
 			m_Tex_HDR = Texture2D.CreateTexture2D( m_device, images );
 		}
 
+// Estimates A0, A1 and A2 integrals based on the angle of the AO cone from the normal and cos(PI/2 * AO) defining the AO cone's half-angle aperture
+// Fitting was done with mathematica:
+//
+//	A0 = a + b*x + d*x*y + e*x^2 + f*y^2 + g*x^2*y + i*x^2*y^2;
+//	With {a -> 0.86342, b -> 0.127258, c -> 4.9738*10^-14, d -> -0.903477, e -> -0.967484, f -> -0.411706, g -> 0.885699, h -> 0., i -> 0.407098}
+//
+//	A1 = a + b*x + c*y + d*x*y + e*x^2 + f*y^2 + g*x^2*y + h*x*y^2;
+//	With {a -> 0.95672, b -> 0.790566, c -> 0.298642, d -> -2.63968, e -> -1.65043, f -> -0.720222, g -> 2.14987, h -> 0.788641 }
+//
+//	A2 = a + b*x + c*y + d*x*y + e*x^2 + f*y^2 + g*x^2*y + h*x*y^2 + i*x^2*y^2 + j*x^3 + k*y^3 + l*x^3*y + m*x*y^3 + p*x^3*y^3;
+//	With {a -> 0.523407, b -> -0.6694, c -> -0.128209, d -> 5.26746, e -> 3.40837, f -> 0.905606, g -> -12.8261, h -> -10.5428, i -> 9.40113, j -> -3.18758, k -> -1.08565, l -> 7.57317, m -> 5.45239, p -> -4.06299}
+//
+static readonly float3	a = new float3( 0.86342f, 0.95672f, 0.523407f );
+static readonly float3	b = new float3( 0.127258f, 0.790566f, -0.6694f );
+static readonly float3	c = new float3( 0.0f, 0.298642f, -0.128209f );
+static readonly float3	d = new float3( -0.903477f, -2.63968f, 5.26746f );
+static readonly float3	e = new float3( -0.967484f, -1.65043f, 3.40837f );
+static readonly float3	f = new float3( -0.411706f, -0.720222f, 0.905606f );
+static readonly float3	g = new float3( 0.885699f, 2.14987f, -12.8261f );
+static readonly float3	h = new float3( 0.0f, 0.788641f, -10.5428f );
+static readonly float3	i = new float3( 0.407098f, 0.0f, 9.40113f );
+const float		j = -3.18758f, k = -1.08565f, l = 7.57317f, m = 5.45239f, p = -4.06299f;
+
+float3	EstimateLambertReflectanceFactors( float _cosThetaAO, float _coneBendAngle ) {
+	float	x = _cosThetaAO;
+	float	y = _coneBendAngle * 2.0f / (float) Math.PI;
+
+	float	x2 = x*x;
+	float	x3 = x*x2;
+	float	y2 = y*y;
+	float	y3 = y*y2;
+
+	float	A0 = a.x + x * (b.x + y * d.x + x * (e.x + y * (g.x + y * i.x))) + f.x * y2;
+	float	A1 = a.y + x * (b.y + y * (d.y + h.y * y) + x * (e.y + y * g.y)) + y * (c.y + y * f.y);
+	float	A2 = a.z + x * (b.z + y * d.z + x * (e.z + y * (g.z + y * i.z) + x * (j + y * (l + y2 * p))))
+					 + y * (c.z + y * (f.z + x * h.z + (y * (k + x * m))));
+
+	return new float3( A0, A1, A2 );
+}
+
+
 		void	NumericalIntegration() {
 			// Generate a bunch of rays with equal probability on the hemisphere
 			const int		THETA_SAMPLES = 100;
@@ -101,6 +142,11 @@ namespace TestSHIrradiance
 
 			float3		coneDirection = float3.Zero;
 			float3[,]	integratedSHCoeffs = new float3[TABLE_SIZE,TABLE_SIZE];
+
+double	avgDiffA0 = 0.0;
+double	avgDiffA1 = 0.0;
+double	avgDiffA2 = 0.0;
+
 			for ( int thetaIndex=0; thetaIndex < TABLE_SIZE; thetaIndex++ ) {
 //				float	cosTheta = 1.0f - (float) thetaIndex / TABLE_SIZE;
 float	cosTheta = (float) Math.Cos( 0.5 * Math.PI * thetaIndex / TABLE_SIZE );
@@ -137,9 +183,18 @@ float	cosConeHalfAngle = (float) AOIndex / TABLE_SIZE;
 					A1 *= Math.Sqrt( 3.0 / (4.0 * Math.PI) );
 					A2 *= Math.Sqrt( 5.0 / (4.0 * Math.PI) );
 
+// float3	verify = EstimateLambertReflectanceFactors( cosConeHalfAngle, 0.5f * (float) Math.PI * thetaIndex / TABLE_SIZE );
+// avgDiffA0 += Math.Abs( A0 - verify.x );
+// avgDiffA1 += Math.Abs( A1 - verify.y );
+// avgDiffA2 += Math.Abs( A2 - verify.z );
+
 					integratedSHCoeffs[thetaIndex,AOIndex].Set( (float) A0, (float) A1, (float) A2 );
 				}
 			}
+
+avgDiffA0 /= TABLE_SIZE*TABLE_SIZE;
+avgDiffA1 /= TABLE_SIZE*TABLE_SIZE;
+avgDiffA2 /= TABLE_SIZE*TABLE_SIZE;
 
 			using ( System.IO.FileStream S = new System.IO.FileInfo( @"ConeTable_cosAO.float3" ).Create() )
 				using ( System.IO.BinaryWriter W = new System.IO.BinaryWriter( S ) ) {
