@@ -75,7 +75,7 @@ namespace TestSHIrradiance
 //			EncodeSH();
 
 			// Test numerical integration
-			NumericalIntegration();
+//			NumericalIntegration();
 
 			// Build texture
 			ImagesMatrix	images = new Renderer.ImagesMatrix( new ImageUtility.ImageFile[] { m_HDRImage }, 1 );
@@ -108,7 +108,7 @@ float	cosTheta = (float) Math.Cos( 0.5 * Math.PI * thetaIndex / TABLE_SIZE );
 				coneDirection.z = cosTheta;
 
 				for ( int AOIndex=0; AOIndex < TABLE_SIZE; AOIndex++ ) {
-					float	AO = 1.0f - (float) AOIndex / TABLE_SIZE;
+//					float	AO = 1.0f - (float) AOIndex / TABLE_SIZE;
 //					float	coneHalfAngle = 0.5f * (float) Math.PI * AO;			// Cone half angle varies in [0,PI/2]
 //					float	cosConeHalfAngle = (float) Math.Cos( coneHalfAngle );
 float	cosConeHalfAngle = (float) AOIndex / TABLE_SIZE;

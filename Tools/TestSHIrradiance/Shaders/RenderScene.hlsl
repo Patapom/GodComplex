@@ -54,6 +54,10 @@ float3	PS( VS_IN _In ) : SV_TARGET0 {
 			wsView = float3( wsView.x, -wsView.z, wsView.y );	// Make view Z-up
 	float3	wsPos = float3( _camera2World[3].x, -_camera2World[3].z, _camera2World[3].y );	// Make camera pos Z-up
 
+
+return 1.0 * EstimateLambertReflectanceFactors( UV.x, UV.y ).z;
+return EstimateLambertReflectanceFactors( _cosAO, saturate( _luminanceFactor ) ).x;
+
 	float3	filteredEnvironmentSH[9];
 	FilterHanning( EnvironmentSH, filteredEnvironmentSH, _filterWindowSize );
 
