@@ -183,14 +183,39 @@ namespace SphericalHarmonics
 
 		#region SH
 
+		/// <summary>
+		/// Computes the 9 Ylm coefficients for order 2 SH evaluated in the requested direction
+		/// </summary>
+		/// <param name="_direction"></param>
+		/// <param name="_SH"></param>
+		static void	Ylm( float3 _direction, double[] _SH ) {
+			const double	c0 = 0.28209479177387814347403972578039;	// 1/2 sqrt(1/pi)
+			const double	c1 = 0.48860251190291992158638462283835;	// 1/2 sqrt(3/pi)
+			const double	c2 = 1.09254843059207907054338570580270;	// 1/2 sqrt(15/pi)
+			const double	c3 = 0.31539156525252000603089369029571;	// 1/4 sqrt(5/pi)
+
+			float	x = _direction.x;
+			float	y = _direction.y;
+			float	z = _direction.z;
+
+			_SH[0] = c0;
+			_SH[1] = c1*y;
+			_SH[2] = c1*z;
+			_SH[3] = c1*x;
+			_SH[4] = c2*x*y;
+			_SH[5] = c2*y*z;
+			_SH[6] = c3*(3.0*z*z - 1.0);
+			_SH[7] = c2*x*z;
+			_SH[8] = 0.5*c2*(x*x - y*y);
+		}
+
 		// Returns a spot sample of a Spherical Harmonic basis function
 		//		l is the band, range [0..N]
 		//		m in the range [-l..l]
 		//		θ in the range [0..Pi]
 		//		ϕ in the range [0..2*Pi]
 		//
-		public static double	ComputeSH( int l, int m, double _θ, double _ϕ )
-		{
+		public static double	Ylm( int l, int m, double _θ, double _ϕ ) {
 			if ( Math.Abs( m ) > l )
 				throw new Exception( "m parameter is outside the [-l,+l] range!" );
 
@@ -215,28 +240,25 @@ namespace SphericalHarmonics
 		//
 		// NOTE ==> The '_Direction' vector must be normalized!!
 		//
-		public static double	ComputeSH( int l, int m, float3 _Direction )
-		{
+		public static double	Ylm( int l, int m, float3 _Direction ) {
 			// Convert from cartesian to polar coords
 			double	θ = 0.0;
 			double	ϕ = 0.0f;
 			CartesianToSpherical( _Direction, out θ, out ϕ );
 
-			return	ComputeSH( l, m, θ, ϕ );
+			return	Ylm( l, m, θ, ϕ );
 		}
 
 		// Computes a SH windowed with a cardinal sine function
 		//
-		public static double	ComputeSHWindowedSinc( int l, int m, double _θ, double _ϕ, int _Order )
-		{
-			return ComputeSigmaFactorSinc( l, _Order ) * ComputeSH( l, m, _θ, _ϕ );
+		public static double	ComputeSHWindowedSinc( int l, int m, double _θ, double _ϕ, int _Order ) {
+			return ComputeSigmaFactorSinc( l, _Order ) * Ylm( l, m, _θ, _ϕ );
 		}
 
 		// Computes a SH windowed with a cosine function
 		//
-		public static double	ComputeSHWindowedCos( int l, int m, double _θ, double _ϕ, int _Order )
-		{
-			return ComputeSigmaFactorCos( l, _Order ) * ComputeSH( l, m, _θ, _ϕ );
+		public static double	ComputeSHWindowedCos( int l, int m, double _θ, double _ϕ, int _Order ) {
+			return ComputeSigmaFactorCos( l, _Order ) * Ylm( l, m, _θ, _ϕ );
 		}
 
 		/// <summary>
@@ -252,7 +274,7 @@ namespace SphericalHarmonics
 			double	Result = 0.0;
 			for ( int l=0; l < _Order; l++ )
 				for ( int m=-l; m <= +l; m++ )
-					Result += ComputeSH( l, m, _θ, _ϕ ) * _Coefficients[l*(l+1)+m];
+					Result += Ylm( l, m, _θ, _ϕ ) * _Coefficients[l*(l+1)+m];
 
 			return	Result;
 		}
@@ -301,7 +323,7 @@ namespace SphericalHarmonics
 					double	Value = _Delegate( θ, ϕ );
 					for ( int l=0; l < _Order; l++ )
 						for ( int m=-l; m <= +l; m++ )
-							_Coefficients[l*(l+1)+m] += Value * ComputeSH( l, m, θ, ϕ );
+							_Coefficients[l*(l+1)+m] += Value * Ylm( l, m, θ, ϕ );
 				}
 
 			// Final normalizing
@@ -338,7 +360,7 @@ namespace SphericalHarmonics
 					_Delegate( θ, ϕ, Value );
 					for ( int l=0; l < _Order; l++ )
 						for ( int m=-l; m <= +l; m++ )
-							_Coefficients[l*(l+1)+m] += (float) ComputeSH( l, m, θ, ϕ ) * Value;
+							_Coefficients[l*(l+1)+m] += (float) Ylm( l, m, θ, ϕ ) * Value;
 				}
 
 			// Final normalizing
@@ -385,7 +407,7 @@ namespace SphericalHarmonics
 		{
 			double	Result = 0.0;
 			for ( int l=0; l < _Coefficients.Length; l++ )
-				Result += ComputeSH( l, 0, _θ, 0.0 ) * _Coefficients[l];
+				Result += Ylm( l, 0, _θ, 0.0 ) * _Coefficients[l];
 
 			return	Result;
 		}
@@ -452,7 +474,7 @@ namespace SphericalHarmonics
 			int	Index = 0;
 			for ( int l=0; l < _Order; l++ )
 				for ( int m=-l; m <= +l; m++ )
-					_Coefficients[Index++] = ComputeSH( l, m, _Direction );
+					_Coefficients[Index++] = Ylm( l, m, _Direction );
 		}
 
 		/// <summary>
@@ -467,7 +489,7 @@ namespace SphericalHarmonics
 			int	Index = 0;
 			for ( int l=0; l < _Order; l++ )
 				for ( int m=-l; m <= +l; m++ )
-					_Coefficients[Index++] = ComputeSH( l, m, _θ, _ϕ );
+					_Coefficients[Index++] = Ylm( l, m, _θ, _ϕ );
 		}
 
 		/// <summary>
@@ -483,7 +505,7 @@ namespace SphericalHarmonics
 			for ( int l=0; l < _Order; l++ )
 				for ( int m=-l; m <= +l; m++ )
 				{
-					float	fCoeff = (float) ComputeSH( l, m, _θ, _ϕ );
+					float	fCoeff = (float) Ylm( l, m, _θ, _ϕ );
 					_Coefficients[Index++].Set( fCoeff, fCoeff, fCoeff );
 				}
 		}
@@ -500,7 +522,7 @@ namespace SphericalHarmonics
 			for ( int l=0; l < _Order; l++ )
 				for ( int m=-l; m <= +l; m++ )
 				{
-					float	fCoeff = (float) ComputeSH( l, m, _Direction );
+					float	fCoeff = (float) Ylm( l, m, _Direction );
 					_Coefficients[Index++].Set( fCoeff, fCoeff, fCoeff );
 				}
 		}
@@ -1071,7 +1093,7 @@ namespace SphericalHarmonics
 			// Perform rotation
 			for ( int l=0; l < _ZHCoefficients.Length; l++ )
 				for ( int m=-l; m <= +l; m++ )
-					_RotatedSHCoefficients[l*(l+1)+m] = ComputeSH( l, m, _TargetAxis ) * ConvolutionCoefficients[l];
+					_RotatedSHCoefficients[l*(l+1)+m] = Ylm( l, m, _TargetAxis ) * ConvolutionCoefficients[l];
 		}
 
 		/// <summary>
@@ -1169,7 +1191,7 @@ namespace SphericalHarmonics
 						{
 							Coefficients[1+l] = 0.0;
 							for ( int m=-l; m <= +l; m++ )
-								Coefficients[1+l] += SHCoefficients[l*(l+1)+m] * ComputeSH( l, m, ContextLocal.m_LobeDirection.x, ContextLocal.m_LobeDirection.y );
+								Coefficients[1+l] += SHCoefficients[l*(l+1)+m] * Ylm( l, m, ContextLocal.m_LobeDirection.x, ContextLocal.m_LobeDirection.y );
 
 							Coefficients[1+l] *= LobeCoefficientsDenominators[l];
 						}

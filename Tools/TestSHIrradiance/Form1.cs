@@ -38,6 +38,7 @@ namespace TestSHIrradiance
 			public float4x4	_camera2World;
 			public float	_cosAO;
 			public float	_luminanceFactor;
+			public float	_filteringWindowSize;
 		}
 
 		Device						m_device = null;
@@ -57,6 +58,9 @@ namespace TestSHIrradiance
 
 		#region HDR Image Encoding
 
+//Check direction d'encodage daubée +Y / -Y!
+//FILTERING !!! (Hanning, tout ça)
+
 		void	LoadHDRImage() {
 //			m_HDRImage.Load( new System.IO.FileInfo( @".\Images\grace-new.hdr" ) );
 			m_HDRImage.Load( new System.IO.FileInfo( @".\Images\ennis_1024x512.hdr" ) );
@@ -67,12 +71,83 @@ namespace TestSHIrradiance
 // 			} );
 // 			graphPanel.Bitmap = tempLDRImage.AsBitmap;
 
-// 			// Integrate SH
-// 			EncodeSH();
+			// Integrate SH
+//			EncodeSH();
+
+			// Test numerical integration
+//			NumericalIntegration();
 
 			// Build texture
 			ImagesMatrix	images = new Renderer.ImagesMatrix( new ImageUtility.ImageFile[] { m_HDRImage }, 1 );
 			m_Tex_HDR = Texture2D.CreateTexture2D( m_device, images );
+		}
+
+		void	NumericalIntegration() {
+			// Generate a bunch of rays with equal probability on the hemisphere
+			const int		THETA_SAMPLES = 100;
+			const int		SAMPLES_COUNT = 4*THETA_SAMPLES*THETA_SAMPLES;
+			const double	dPhi = 2.0 * Math.PI / (4 * THETA_SAMPLES);
+			float3[]		directions = new float3[SAMPLES_COUNT];
+			for ( int Y=0; Y < THETA_SAMPLES; Y++ ) {
+				for ( int X=0; X < 4*THETA_SAMPLES; X++ ) {
+					double	phi = dPhi * (X+SimpleRNG.GetUniform());
+					double	theta = 2.0 * Math.Acos( Math.Sqrt( 1.0 - 0.5 * (Y+SimpleRNG.GetUniform()) / THETA_SAMPLES ) );		// Uniform sampling on theta
+					directions[4*THETA_SAMPLES*Y+X].Set( (float) (Math.Sin( theta ) * Math.Cos( phi )), (float) (Math.Sin( theta ) * Math.Sin( phi )), (float) Math.Cos( theta ) );
+				}
+			}
+
+			// Compute numerical integration for various sets of angles
+			const int	TABLE_SIZE = 100;
+
+			float3		coneDirection = float3.Zero;
+			float3[,]	integratedSHCoeffs = new float3[TABLE_SIZE,TABLE_SIZE];
+			for ( int thetaIndex=0; thetaIndex < TABLE_SIZE; thetaIndex++ ) {
+				float	cosTheta = 1.0f - (float) thetaIndex / TABLE_SIZE;
+				coneDirection.x = (float) Math.Sqrt( 1.0f - cosTheta*cosTheta );
+				coneDirection.z = cosTheta;
+
+				for ( int AOIndex=0; AOIndex < TABLE_SIZE; AOIndex++ ) {
+					float	AO = 1.0f - (float) AOIndex / TABLE_SIZE;
+					float	coneHalfAngle = 0.5f * (float) Math.PI * AO;			// Cone half angle varies in [0,PI/2]
+					float	cosConeHalfAngle = (float) Math.Cos( coneHalfAngle );
+
+					double	A0 = 0.0;
+					double	A1 = 0.0;
+					double	A2 = 0.0;
+					for ( int sampleIndex=0; sampleIndex < SAMPLES_COUNT; sampleIndex++ ) {
+						float3	direction = directions[sampleIndex];
+						if ( direction.Dot( coneDirection ) < cosConeHalfAngle )
+							continue;	// Sample is outside cone
+
+						float	u = direction.z;	// cos(theta_sample)
+						float	u2 = u * u;
+						float	u3 = u * u2;
+						A0 += u;
+//A0 += 1.0;
+						A1 += u2;
+						A2 += 0.5 * (3 * u3 - u);
+					}
+
+					A0 *= 2.0 * Math.PI / SAMPLES_COUNT;
+					A1 *= 2.0 * Math.PI / SAMPLES_COUNT;
+					A2 *= 2.0 * Math.PI / SAMPLES_COUNT;
+					A0 *= Math.Sqrt( 1.0 / (4.0 * Math.PI) );
+					A1 *= Math.Sqrt( 3.0 / (4.0 * Math.PI) );
+					A2 *= Math.Sqrt( 5.0 / (4.0 * Math.PI) );
+
+					integratedSHCoeffs[thetaIndex,AOIndex].Set( (float) A0, (float) A1, (float) A2 );
+				}
+			}
+
+			using ( System.IO.FileStream S = new System.IO.FileInfo( @"ConeTable.float3" ).Create() )
+				using ( System.IO.BinaryWriter W = new System.IO.BinaryWriter( S ) ) {
+				for ( int thetaIndex=0; thetaIndex < TABLE_SIZE; thetaIndex++ )
+						for ( int AOIndex=0; AOIndex < TABLE_SIZE; AOIndex++ ) {
+							W.Write( integratedSHCoeffs[thetaIndex,AOIndex].x );
+							W.Write( integratedSHCoeffs[thetaIndex,AOIndex].y );
+							W.Write( integratedSHCoeffs[thetaIndex,AOIndex].z );
+						}
+				}
 		}
 
 		/// <summary>
@@ -95,25 +170,44 @@ namespace TestSHIrradiance
 			double	dPhi = 2.0 * Math.PI / W;
 			double	dTheta = Math.PI / H;
 
+			double[]	SH0 = new double[9];
+			double[]	SH1 = new double[9];
+
 			double[,]	coeffs = new double[9,3];
 			for ( uint Y=0; Y < H; Y++ ) {
 				double	theta = (0.5+Y) * dTheta;
-				double	cosTheta = Math.Cos( theta );
+//				double	cosTheta = Math.Cos( theta );
 				double	sinTheta = Math.Sin( theta );
 
 				for ( uint X=0; X < W; X++ ) {
 					double	phi = X * dPhi - Math.PI;
-					double	cosPhi = Math.Cos( phi );
-					double	sinPhi = Math.Sin( phi );
+// 					double	cosPhi = Math.Cos( phi );
+// 					double	sinPhi = Math.Sin( phi );
 
 					float4	HDRColor = m_HDRImage[X,Y];
 //HDRColor.Set( 1, 1, 1, 1 );
 
 					// Accumulate weighted SH
 					double	omega = sinTheta * dPhi * dTheta;
+
+
+// Compare our 2 ways of generating Ylm
+// SHFunctions.Ylm( new float3( (float) (sinTheta * cosPhi), (float) (sinTheta * sinPhi), (float) cosTheta ), SH0 );
+// for ( int l=0; l < 3; l++ ) {
+// 	for ( int m=-l; m <= l; m++ ) {
+// 		int		i = l*(l+1)+m;
+// 		SH1[i] = SHFunctions.Ylm( l, m, theta, phi );
+// 	}
+// }
+// for ( int i=0; i < 9; i++ )
+// 	if ( Math.Abs( SH0[i] - SH1[i] ) > 1e-4 )
+// 		throw new Exception( "ARGH!" );
+			
+
+
 					for ( int l=0; l < 3; l++ ) {
 						for ( int m=-l; m <= l; m++ ) {
-							double	Ylm = SHFunctions.ComputeSH( l, m, theta, phi );
+							double	Ylm = SHFunctions.Ylm( l, m, theta, phi );
 							int		i = l*(l+1)+m;
 							coeffs[i,0] += HDRColor.x * omega * Ylm;
 							coeffs[i,1] += HDRColor.y * omega * Ylm;
@@ -278,7 +372,7 @@ namespace TestSHIrradiance
 			m_CB_Render.m._Time = (float) (DateTime.Now - m_startTime).TotalSeconds;
 			m_CB_Render.m._cosAO = (float) Math.Cos( floatTrackbarControlThetaMax.Value * Math.PI / 180.0 );
 			m_CB_Render.m._luminanceFactor = floatTrackbarControlLuminanceFactor.Value;
-			m_CB_Render.UpdateData();
+			m_CB_Render.m._filteringWindowSize = floatTrackbarControlFilterWindowSize.Value;
 			m_CB_Render.m._Flags = 0;
 			if ( radioButtonSideBySide.Checked )
 				m_CB_Render.m._Flags = 1;
@@ -286,6 +380,8 @@ namespace TestSHIrradiance
 			m_CB_Render.m._Flags |= checkBoxShowAO.Checked ? 0x10U : 0U;
 			m_CB_Render.m._Flags |= checkBoxShowBentNormal.Checked ? 0x20U : 0U;
 			m_CB_Render.m._Flags |= checkBoxEnvironmentSH.Checked ? 0x100U : 0U;
+
+			m_CB_Render.UpdateData();
 
 			m_Tex_HDR.SetPS( 0 );
 

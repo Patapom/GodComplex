@@ -54,10 +54,13 @@ float3	PS( VS_IN _In ) : SV_TARGET0 {
 			wsView = float3( wsView.x, -wsView.z, wsView.y );	// Make view Z-up
 	float3	wsPos = float3( _camera2World[3].x, -_camera2World[3].z, _camera2World[3].y );	// Make camera pos Z-up
 
+	float3	filteredEnvironmentSH[9];
+	FilterHanning( EnvironmentSH, filteredEnvironmentSH, _filterWindowSize );
+
 	float2	dist = IntersectScene( wsPos, wsView );
 	if ( dist.x > NO_HIT ) {
 //		return (_flags & 0x100U) ? EvaluateSHIrradiance( wsView, EnvironmentSH )
-		return (_flags & 0x100U) ? _luminanceFactor * EvaluateSH( wsView, EnvironmentSH )
+		return (_flags & 0x100U) ? _luminanceFactor * EvaluateSH( wsView, filteredEnvironmentSH )
 								 : _luminanceFactor * SampleHDREnvironment( wsView );
 	}
 
@@ -84,8 +87,8 @@ float3	PS( VS_IN _In ) : SV_TARGET0 {
 		color = 2.0 * INVPI * acos( AO.w );
 	} else {
 		// Regular scene display
-		color = (_flags & 0x8U) ?	_luminanceFactor * EvaluateSHIrradiance( AO.xyz, AO.w, EnvironmentSH ) :
-									_luminanceFactor * 2.0 * INVPI * acos(AO.w) * EvaluateSHIrradiance( AO.xyz, EnvironmentSH );
+		color = (_flags & 0x8U) ?	_luminanceFactor * EvaluateSHIrradiance( AO.xyz, AO.w, filteredEnvironmentSH ) :
+									_luminanceFactor * 2.0 * INVPI * acos(AO.w) * EvaluateSHIrradiance( AO.xyz, filteredEnvironmentSH );
 //color *= 0.1;
 	}
 

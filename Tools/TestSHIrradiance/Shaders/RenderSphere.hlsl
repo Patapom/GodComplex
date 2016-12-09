@@ -12,11 +12,14 @@ float3	PS( VS_IN _In ) : SV_TARGET0 {
 
 	float3	wsPos = float3( _camera2World[3].x, -_camera2World[3].z, _camera2World[3].y );
 
+	float3	filteredEnvironmentSH[9];
+	FilterHanning( EnvironmentSH, filteredEnvironmentSH, _filterWindowSize );
+
 	float3	color = 0.0;
 	float	dist = IntersectSphere( wsPos, wsView, 0.0, 1.0 );
 	if ( dist < 0.0 || dist > NO_HIT ) {
-//		return (_flags & 0x100U) ? EvaluateSHIrradiance( wsView, EnvironmentSH )
-		return (_flags & 0x100U) ? _luminanceFactor * EvaluateSH( wsView, EnvironmentSH )
+//		return (_flags & 0x100U) ? EvaluateSHIrradiance( wsView, filteredEnvironmentSH )
+		return (_flags & 0x100U) ? _luminanceFactor * EvaluateSH( wsView, filteredEnvironmentSH )
 								 : _luminanceFactor * SampleHDREnvironment( wsView );
 	}
 
@@ -26,9 +29,9 @@ float3	PS( VS_IN _In ) : SV_TARGET0 {
 //	color = wsNormal;
 //	color = 0.01 * dist * _cosAO;
 
-	float3	irradianceOFF = _luminanceFactor * 2.0 * INVPI * acos( _cosAO ) * EvaluateSHIrradiance( wsNormal, EnvironmentSH );
-//	float3	irradianceOFF = _luminanceFactor * EvaluateSH( wsNormal, EnvironmentSH );
-	float3	irradianceON = _luminanceFactor * EvaluateSHIrradiance( wsNormal, _cosAO, EnvironmentSH );
+	float3	irradianceOFF = _luminanceFactor * 2.0 * INVPI * acos( _cosAO ) * EvaluateSHIrradiance( wsNormal, filteredEnvironmentSH );
+//	float3	irradianceOFF = _luminanceFactor * EvaluateSH( wsNormal, filteredEnvironmentSH );
+	float3	irradianceON = _luminanceFactor * EvaluateSHIrradiance( wsNormal, _cosAO, filteredEnvironmentSH );
 
 	switch ( _flags & 1 ) {
 	case 0:	color = (_flags & 0x8U) ? irradianceON : irradianceOFF; break;

@@ -19,6 +19,7 @@ cbuffer	CBDisplay : register( b0 ) {
 	float4x4	_camera2World;
 	float		_cosAO;
 	float		_luminanceFactor;
+	float		_filterWindowSize;
 }
 
 SamplerState LinearClamp	: register( s0 );
@@ -41,8 +42,8 @@ VS_IN	VS( VS_IN _In ) { return _In; }
 // Samples the panormaic environment HDR map
 float3	SampleHDREnvironment( float3 _wsDirection ) {
 	float	phi = atan2( _wsDirection.y, _wsDirection.x );
-	float	theta =acos( _wsDirection.z );
-	float2	UV = float2( 0.5 * phi * INVPI, theta * INVPI );
+	float	theta = acos( _wsDirection.z );
+	float2	UV = float2( 0.5 + 0.5 * phi * INVPI, theta * INVPI );
 	return _TexHDR.SampleLevel( LinearWrap, UV, 0.0 ).xyz;
 }
 
@@ -73,11 +74,33 @@ static const float3	EnvironmentSH[9] = {
 					float3( 6.07079134655854, 6.05819330192308, 6.50325529149908 ), 
 };
 
+// Computes the Ylm coefficients in the requested direction
+//
+void	Ylm( float3 _direction, out float3 _SH[9] ) {
+	const float	c0 = 0.28209479177387814347403972578039;	// 1/2 sqrt(1/pi)
+	const float	c1 = 0.48860251190291992158638462283835;	// 1/2 sqrt(3/pi)
+	const float	c2 = 1.09254843059207907054338570580270;	// 1/2 sqrt(15/pi)
+	const float	c3 = 0.31539156525252000603089369029571;	// 1/4 sqrt(5/pi)
+
+	float	x = _direction.x;
+	float	y = _direction.y;
+	float	z = _direction.z;
+
+	_SH[0] = c0;
+	_SH[1] = c1*y;
+	_SH[2] = c1*z;
+	_SH[3] = c1*x;
+	_SH[4] = c2*x*y;
+	_SH[5] = c2*y*z;
+	_SH[6] = c3*(3.0*z*z - 1.0);
+	_SH[7] = c2*x*z;
+	_SH[8] = 0.5*c2*(x*x - y*y);
+}
 
 // Evaluates the SH coefficients in the requested direction
 // Analytic method from http://www1.cs.columbia.edu/~ravir/papers/envmap/envmap.pdf eq. 3
 //
-float3	EvaluateSH( float3 _Direction, float3 _SH[9] ) {
+float3	EvaluateSH( float3 _direction, float3 _SH[9] ) {
 	const float	f0 = 0.28209479177387814347403972578039;		// 0.5 / sqrt(PI);
 	const float	f1 = 0.48860251190291992158638462283835;		// 0.5 * sqrt(3/PI);
 	const float	f2 = 1.0925484305920790705433857058027;			// 0.5 * sqrt(15/PI);
@@ -85,14 +108,14 @@ float3	EvaluateSH( float3 _Direction, float3 _SH[9] ) {
 
 	float	EvalSH0 = f0;
 	float4	EvalSH1234, EvalSH5678;
-	EvalSH1234.x = f1 * _Direction.y;
-	EvalSH1234.y = f1 * _Direction.z;
-	EvalSH1234.z = f1 * _Direction.x;
-	EvalSH1234.w = f2 * _Direction.x * _Direction.y;
-	EvalSH5678.x = f2 * _Direction.y * _Direction.z;
-	EvalSH5678.y = f3 * (3.0 * _Direction.z*_Direction.z - 1.0);
-	EvalSH5678.z = f2 * _Direction.x * _Direction.z;
-	EvalSH5678.w = f2 * 0.5 * (_Direction.x*_Direction.x - _Direction.y*_Direction.y);
+	EvalSH1234.x = f1 * _direction.y;
+	EvalSH1234.y = f1 * _direction.z;
+	EvalSH1234.z = f1 * _direction.x;
+	EvalSH1234.w = f2 * _direction.x * _direction.y;
+	EvalSH5678.x = f2 * _direction.y * _direction.z;
+	EvalSH5678.y = f3 * (3.0 * _direction.z*_direction.z - 1.0);
+	EvalSH5678.z = f2 * _direction.x * _direction.z;
+	EvalSH5678.w = f2 * 0.5 * (_direction.x*_direction.x - _direction.y*_direction.y);
 
 	// Dot the SH together
 	return max( 0.0,
@@ -110,20 +133,20 @@ float3	EvaluateSH( float3 _Direction, float3 _SH[9] ) {
 // Evaluates the irradiance perceived in the provided direction
 // Analytic method from http://www1.cs.columbia.edu/~ravir/papers/envmap/envmap.pdf eq. 13
 //
-float3	EvaluateSHIrradiance( float3 _Direction, float3 _SH[9] ) {
+float3	EvaluateSHIrradiance( float3 _direction, float3 _SH[9] ) {
 	const float	c1 = 0.42904276540489171563379376569857;	// 4 * Â2.Y22 = 1/4 * sqrt(15.PI)
 	const float	c2 = 0.51166335397324424423977581244463;	// 0.5 * Â1.Y10 = 1/2 * sqrt(PI/3)
 	const float	c3 = 0.24770795610037568833406429782001;	// Â2.Y20 = 1/16 * sqrt(5.PI)
 	const float	c4 = 0.88622692545275801364908374167057;	// Â0.Y00 = 1/2 * sqrt(PI)
 
-	float	x = _Direction.x;
-	float	y = _Direction.y;
-	float	z = _Direction.z;
+	float	x = _direction.x;
+	float	y = _direction.y;
+	float	z = _direction.z;
 
 	return	max( 0.0,
-			(c1*(x*x - y*y)) * _SH[8]			// c1.L22.(x²-y²)
-			+ (c3*(3.0*z*z - 1)) * _SH[6]			// c3.L20.(3.z² - 1)
-			+ c4 * _SH[0]					// c4.L00 
+			(c1*(x*x - y*y)) * _SH[8]						// c1.L22.(x²-y²)
+			+ (c3*(3.0*z*z - 1)) * _SH[6]					// c3.L20.(3.z² - 1)
+			+ c4 * _SH[0]									// c4.L00 
 			+ 2.0*c1*(_SH[4]*x*y + _SH[7]*x*z + _SH[5]*y*z)	// 2.c1.(L2-2.xy + L21.xz + L2-1.yz)
 			+ 2.0*c2*(_SH[3]*x + _SH[1]*y + _SH[2]*z) );	// 2.c2.(L11.x + L1-1.y + L10.z)
 }
@@ -132,7 +155,7 @@ float3	EvaluateSHIrradiance( float3 _Direction, float3 _SH[9] ) {
 // Details can be found at http://wiki.nuaj.net/index.php?title=SphericalHarmonicsPortal
 // Here, _CosThetaAO = cos( PI/2 * AO ) and represents the cosine of the cone half-angle that drives the amount of light a surface is perceiving
 //
-float3	EvaluateSHIrradiance( float3 _Direction, float _CosThetaAO,  float3 _SH[9] ) {
+float3	EvaluateSHIrradiance( float3 _direction, float _CosThetaAO,  float3 _SH[9] ) {
 	float		t2 = _CosThetaAO*_CosThetaAO;
 	float		t3 = t2*_CosThetaAO;
 	float		t4 = t3*_CosThetaAO;
@@ -143,9 +166,9 @@ float3	EvaluateSHIrradiance( float3 _Direction, float _CosThetaAO,  float3 _SH[9
 	float		c2 = 0.24770795610037568833406429782001 * (3.0 * (1.0-t4) - 2.0 * ct2);	// 1/16 * sqrt(5*PI) * [3(1-t^4) - 2(1-t^2)]
 	const float	sqrt3 = 1.7320508075688772935274463415059;
 
-	float		x = _Direction.x;
-	float		y = _Direction.y;
-	float		z = _Direction.z;
+	float		x = _direction.x;
+	float		y = _direction.y;
+	float		z = _direction.z;
 
 	return	max( 0.0, c0 * _SH[0]										// c0.L00
 			+ c1 * (_SH[1]*y + _SH[2]*z + _SH[3]*x)						// c1.(L1-1.y + L10.z + L11.x)
@@ -153,6 +176,54 @@ float3	EvaluateSHIrradiance( float3 _Direction, float _CosThetaAO,  float3 _SH[9
 				+ sqrt3 * (_SH[8]*(x*x - y*y)							// sqrt(3).c2.L22.(x²-y²)
 					+ 2.0 * (_SH[4]*x*y + _SH[5]*y*z + _SH[7]*z*x)))	// 2sqrt(3).c2.(L2-2.xy + L2-1.yz + L21.zx)
 		);
+}
+
+// Applies Hanning filter for given window size
+void FilterHanning( float3 _inSH[9], out float3 _outSH[9], float _WindowSize ) {
+
+	float	rcpWindow = 1.0 / _WindowSize;
+	float2	Factors = float2( 0.5 * (1.0 + cos( PI * rcpWindow )), 0.5 * (1.0 + cos( 2.0 * PI * rcpWindow )) );
+	_outSH[0] = _inSH[0];
+	_outSH[1] = Factors.x * _inSH[1];
+	_outSH[2] = Factors.x * _inSH[2];
+	_outSH[3] = Factors.x * _inSH[3];
+	_outSH[4] = Factors.y * _inSH[4];
+	_outSH[5] = Factors.y * _inSH[5];
+	_outSH[6] = Factors.y * _inSH[6];
+	_outSH[7] = Factors.y * _inSH[7];
+	_outSH[8] = Factors.y * _inSH[8];
+}
+
+// Applies Lanczos filter for given window size
+void FilterLanczos( float3 _inSH[9], out float3 _outSH[9], float _WindowSize ) {
+
+	float	rcpWindow = 1.0 / _WindowSize;
+	float2	Factors = float2( sin( PI * rcpWindow ) / (PI * rcpWindow), sin( 2.0 * PI * rcpWindow ) / (2.0 * PI * rcpWindow) );
+	_outSH[0] = _inSH[0];
+	_outSH[1] = Factors.x * _inSH[1];
+	_outSH[2] = Factors.x * _inSH[2];
+	_outSH[3] = Factors.x * _inSH[3];
+	_outSH[4] = Factors.y * _inSH[4];
+	_outSH[5] = Factors.y * _inSH[5];
+	_outSH[6] = Factors.y * _inSH[6];
+	_outSH[7] = Factors.y * _inSH[7];
+	_outSH[8] = Factors.y * _inSH[8];
+}
+
+// Applies gaussian filter for given window size
+void FilterGaussian( float3 _inSH[9], out float3 _outSH[9], float _WindowSize ) {
+
+	float	rcpWindow = 1.0 / _WindowSize;
+	float2	Factors = float2( exp( -0.5 * (PI * rcpWindow) * (PI * rcpWindow) ), exp( -0.5 * (2.0 * PI * rcpWindow) * (2.0 * PI * rcpWindow) ) );
+	_outSH[0] = _inSH[0];
+	_outSH[1] = Factors.x * _inSH[1];
+	_outSH[2] = Factors.x * _inSH[2];
+	_outSH[3] = Factors.x * _inSH[3];
+	_outSH[4] = Factors.y * _inSH[4];
+	_outSH[5] = Factors.y * _inSH[5];
+	_outSH[6] = Factors.y * _inSH[6];
+	_outSH[7] = Factors.y * _inSH[7];
+	_outSH[8] = Factors.y * _inSH[8];
 }
 
 float	IntersectSphere( float3 _pos, float3 _dir, float3 _center, float _radius ) {

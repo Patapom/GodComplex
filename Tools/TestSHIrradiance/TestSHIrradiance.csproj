@@ -120,6 +120,10 @@
       <Project>{f96cdfd3-8954-4f4f-afb0-2855d98f051b}</Project>
       <Name>RendererManaged</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\Packages\SharpMath\MathAdvanced.csproj">
+      <Project>{dd026a89-c5fe-4150-bc85-a660e427826a}</Project>
+      <Name>MathAdvanced</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\Packages\SphericalHarmonicsLibrary\SphericalHarmonicsLibrary.csproj">
       <Project>{e96e2072-c7ef-46bb-a3f1-8cf6b26bf019}</Project>
       <Name>SphericalHarmonicsLibrary</Name>

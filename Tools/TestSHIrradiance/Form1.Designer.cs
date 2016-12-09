@@ -46,6 +46,8 @@
 			this.graphPanel = new TestSHIrradiance.GraphPanel(this.components);
 			this.floatTrackbarControlLuminanceFactor = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label3 = new System.Windows.Forms.Label();
+			this.floatTrackbarControlFilterWindowSize = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.label4 = new System.Windows.Forms.Label();
 			this.SuspendLayout();
 			// 
 			// floatTrackbarControlThetaMax
@@ -230,6 +232,28 @@
 			this.label3.TabIndex = 2;
 			this.label3.Text = "Luminance Factor";
 			// 
+			// floatTrackbarControlFilterWindowSize
+			// 
+			this.floatTrackbarControlFilterWindowSize.Location = new System.Drawing.Point(750, 31);
+			this.floatTrackbarControlFilterWindowSize.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlFilterWindowSize.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlFilterWindowSize.Name = "floatTrackbarControlFilterWindowSize";
+			this.floatTrackbarControlFilterWindowSize.RangeMax = 10F;
+			this.floatTrackbarControlFilterWindowSize.RangeMin = 0F;
+			this.floatTrackbarControlFilterWindowSize.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlFilterWindowSize.TabIndex = 0;
+			this.floatTrackbarControlFilterWindowSize.Value = 4F;
+			this.floatTrackbarControlFilterWindowSize.VisibleRangeMax = 8F;
+			// 
+			// label4
+			// 
+			this.label4.AutoSize = true;
+			this.label4.Location = new System.Drawing.Point(659, 35);
+			this.label4.Name = "label4";
+			this.label4.Size = new System.Drawing.Size(71, 13);
+			this.label4.TabIndex = 2;
+			this.label4.Text = "Filter Window";
+			// 
 			// Form1
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -246,9 +270,11 @@
 			this.Controls.Add(this.radioButtonSideBySide);
 			this.Controls.Add(this.radioButtonCoeffs);
 			this.Controls.Add(this.textBoxResults);
+			this.Controls.Add(this.label4);
 			this.Controls.Add(this.label3);
 			this.Controls.Add(this.label1);
 			this.Controls.Add(this.graphPanel);
+			this.Controls.Add(this.floatTrackbarControlFilterWindowSize);
 			this.Controls.Add(this.floatTrackbarControlLuminanceFactor);
 			this.Controls.Add(this.floatTrackbarControlThetaMax);
 			this.Name = "Form1";
@@ -278,6 +304,8 @@
 		private System.Windows.Forms.CheckBox checkBoxEnvironmentSH;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlLuminanceFactor;
 		private System.Windows.Forms.Label label3;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlFilterWindowSize;
+		private System.Windows.Forms.Label label4;
 	}
 }
 
