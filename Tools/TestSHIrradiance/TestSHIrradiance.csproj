@@ -130,6 +130,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Shaders\RenderLDR.hlsl" />
     <Content Include="Shaders\Global.hlsl" />
     <Content Include="Shaders\RenderScene.hlsl" />
     <Content Include="Shaders\RenderSphere.hlsl" />

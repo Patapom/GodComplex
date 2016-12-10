@@ -29,7 +29,6 @@
 		private void InitializeComponent()
 		{
 			this.components = new System.ComponentModel.Container();
-			this.floatTrackbarControlThetaMax = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label1 = new System.Windows.Forms.Label();
 			this.textBoxResults = new System.Windows.Forms.TextBox();
 			this.radioButtonCoeffs = new System.Windows.Forms.RadioButton();
@@ -43,38 +42,31 @@
 			this.checkBoxShowAO = new System.Windows.Forms.CheckBox();
 			this.checkBoxShowBentNormal = new System.Windows.Forms.CheckBox();
 			this.checkBoxEnvironmentSH = new System.Windows.Forms.CheckBox();
-			this.graphPanel = new TestSHIrradiance.GraphPanel(this.components);
-			this.floatTrackbarControlLuminanceFactor = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label3 = new System.Windows.Forms.Label();
-			this.floatTrackbarControlFilterWindowSize = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label4 = new System.Windows.Forms.Label();
-			this.floatTrackbarControlAOInfluence = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label5 = new System.Windows.Forms.Label();
-			this.floatTrackbarControlBentNormalInfluence = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label6 = new System.Windows.Forms.Label();
 			this.panelScene = new System.Windows.Forms.Panel();
+			this.floatTrackbarControlAOInfluence = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.checkBoxUseIQAO = new System.Windows.Forms.CheckBox();
 			this.checkBoxUseAOAsAFactor = new System.Windows.Forms.CheckBox();
+			this.floatTrackbarControlBentNormalInfluence = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.buttonCameraCopy = new System.Windows.Forms.Button();
+			this.buttonCameraPaste = new System.Windows.Forms.Button();
+			this.floatTrackbarControlFilterWindowSize = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlLuminanceFactor = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlThetaMax = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.graphPanel = new TestSHIrradiance.GraphPanel(this.components);
+			this.panelGraph = new System.Windows.Forms.Panel();
+			this.checkBoxGroundTruth = new System.Windows.Forms.CheckBox();
 			this.panelScene.SuspendLayout();
+			this.panelGraph.SuspendLayout();
 			this.SuspendLayout();
-			// 
-			// floatTrackbarControlThetaMax
-			// 
-			this.floatTrackbarControlThetaMax.Location = new System.Drawing.Point(103, 614);
-			this.floatTrackbarControlThetaMax.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.floatTrackbarControlThetaMax.MinimumSize = new System.Drawing.Size(70, 20);
-			this.floatTrackbarControlThetaMax.Name = "floatTrackbarControlThetaMax";
-			this.floatTrackbarControlThetaMax.RangeMax = 90F;
-			this.floatTrackbarControlThetaMax.RangeMin = 0F;
-			this.floatTrackbarControlThetaMax.Size = new System.Drawing.Size(200, 20);
-			this.floatTrackbarControlThetaMax.TabIndex = 0;
-			this.floatTrackbarControlThetaMax.Value = 90F;
-			this.floatTrackbarControlThetaMax.VisibleRangeMax = 90F;
-			this.floatTrackbarControlThetaMax.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlThetaMax_ValueChanged);
 			// 
 			// label1
 			// 
 			this.label1.AutoSize = true;
-			this.label1.Location = new System.Drawing.Point(12, 618);
+			this.label1.Location = new System.Drawing.Point(0, 7);
 			this.label1.Name = "label1";
 			this.label1.Size = new System.Drawing.Size(85, 13);
 			this.label1.TabIndex = 2;
@@ -207,59 +199,57 @@
 			this.checkBoxEnvironmentSH.Text = "Environment SH";
 			this.checkBoxEnvironmentSH.UseVisualStyleBackColor = true;
 			// 
-			// graphPanel
-			// 
-			this.graphPanel.Bitmap = null;
-			this.graphPanel.EnablePaint = true;
-			this.graphPanel.Location = new System.Drawing.Point(12, 57);
-			this.graphPanel.MessageOnEmpty = "Bisou";
-			this.graphPanel.Name = "graphPanel";
-			this.graphPanel.Size = new System.Drawing.Size(800, 550);
-			this.graphPanel.TabIndex = 1;
-			// 
-			// floatTrackbarControlLuminanceFactor
-			// 
-			this.floatTrackbarControlLuminanceFactor.Location = new System.Drawing.Point(750, 9);
-			this.floatTrackbarControlLuminanceFactor.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.floatTrackbarControlLuminanceFactor.MinimumSize = new System.Drawing.Size(70, 20);
-			this.floatTrackbarControlLuminanceFactor.Name = "floatTrackbarControlLuminanceFactor";
-			this.floatTrackbarControlLuminanceFactor.RangeMax = 100F;
-			this.floatTrackbarControlLuminanceFactor.RangeMin = 0F;
-			this.floatTrackbarControlLuminanceFactor.Size = new System.Drawing.Size(200, 20);
-			this.floatTrackbarControlLuminanceFactor.TabIndex = 0;
-			this.floatTrackbarControlLuminanceFactor.Value = 1F;
-			this.floatTrackbarControlLuminanceFactor.VisibleRangeMax = 2F;
-			// 
 			// label3
 			// 
+			this.label3.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
 			this.label3.AutoSize = true;
-			this.label3.Location = new System.Drawing.Point(659, 13);
+			this.label3.Location = new System.Drawing.Point(810, 10);
 			this.label3.Name = "label3";
 			this.label3.Size = new System.Drawing.Size(92, 13);
 			this.label3.TabIndex = 2;
 			this.label3.Text = "Luminance Factor";
 			// 
-			// floatTrackbarControlFilterWindowSize
-			// 
-			this.floatTrackbarControlFilterWindowSize.Location = new System.Drawing.Point(750, 31);
-			this.floatTrackbarControlFilterWindowSize.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.floatTrackbarControlFilterWindowSize.MinimumSize = new System.Drawing.Size(70, 20);
-			this.floatTrackbarControlFilterWindowSize.Name = "floatTrackbarControlFilterWindowSize";
-			this.floatTrackbarControlFilterWindowSize.RangeMax = 10F;
-			this.floatTrackbarControlFilterWindowSize.RangeMin = 0F;
-			this.floatTrackbarControlFilterWindowSize.Size = new System.Drawing.Size(200, 20);
-			this.floatTrackbarControlFilterWindowSize.TabIndex = 0;
-			this.floatTrackbarControlFilterWindowSize.Value = 4F;
-			this.floatTrackbarControlFilterWindowSize.VisibleRangeMax = 8F;
-			// 
 			// label4
 			// 
+			this.label4.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
 			this.label4.AutoSize = true;
-			this.label4.Location = new System.Drawing.Point(659, 35);
+			this.label4.Location = new System.Drawing.Point(810, 32);
 			this.label4.Name = "label4";
 			this.label4.Size = new System.Drawing.Size(71, 13);
 			this.label4.TabIndex = 2;
 			this.label4.Text = "Filter Window";
+			// 
+			// label5
+			// 
+			this.label5.AutoSize = true;
+			this.label5.Location = new System.Drawing.Point(46, 7);
+			this.label5.Name = "label5";
+			this.label5.Size = new System.Drawing.Size(69, 13);
+			this.label5.TabIndex = 2;
+			this.label5.Text = "AO Influence";
+			// 
+			// label6
+			// 
+			this.label6.AutoSize = true;
+			this.label6.Location = new System.Drawing.Point(3, 32);
+			this.label6.Name = "label6";
+			this.label6.Size = new System.Drawing.Size(112, 13);
+			this.label6.TabIndex = 2;
+			this.label6.Text = "Bent Normal Influence";
+			// 
+			// panelScene
+			// 
+			this.panelScene.Controls.Add(this.floatTrackbarControlAOInfluence);
+			this.panelScene.Controls.Add(this.checkBoxUseIQAO);
+			this.panelScene.Controls.Add(this.checkBoxUseAOAsAFactor);
+			this.panelScene.Controls.Add(this.floatTrackbarControlBentNormalInfluence);
+			this.panelScene.Controls.Add(this.label5);
+			this.panelScene.Controls.Add(this.label6);
+			this.panelScene.Location = new System.Drawing.Point(309, 613);
+			this.panelScene.Name = "panelScene";
+			this.panelScene.Size = new System.Drawing.Size(503, 62);
+			this.panelScene.TabIndex = 8;
+			this.panelScene.Visible = false;
 			// 
 			// floatTrackbarControlAOInfluence
 			// 
@@ -274,14 +264,25 @@
 			this.floatTrackbarControlAOInfluence.Value = 100F;
 			this.floatTrackbarControlAOInfluence.VisibleRangeMax = 100F;
 			// 
-			// label5
+			// checkBoxUseIQAO
 			// 
-			this.label5.AutoSize = true;
-			this.label5.Location = new System.Drawing.Point(46, 7);
-			this.label5.Name = "label5";
-			this.label5.Size = new System.Drawing.Size(69, 13);
-			this.label5.TabIndex = 2;
-			this.label5.Text = "AO Influence";
+			this.checkBoxUseIQAO.AutoSize = true;
+			this.checkBoxUseIQAO.Location = new System.Drawing.Point(343, 27);
+			this.checkBoxUseIQAO.Name = "checkBoxUseIQAO";
+			this.checkBoxUseIQAO.Size = new System.Drawing.Size(118, 17);
+			this.checkBoxUseIQAO.TabIndex = 7;
+			this.checkBoxUseIQAO.Text = "Use iQ\'s sphere AO";
+			this.checkBoxUseIQAO.UseVisualStyleBackColor = true;
+			// 
+			// checkBoxUseAOAsAFactor
+			// 
+			this.checkBoxUseAOAsAFactor.AutoSize = true;
+			this.checkBoxUseAOAsAFactor.Location = new System.Drawing.Point(343, 6);
+			this.checkBoxUseAOAsAFactor.Name = "checkBoxUseAOAsAFactor";
+			this.checkBoxUseAOAsAFactor.Size = new System.Drawing.Size(148, 17);
+			this.checkBoxUseAOAsAFactor.TabIndex = 7;
+			this.checkBoxUseAOAsAFactor.Text = "Use AO as a simple factor";
+			this.checkBoxUseAOAsAFactor.UseVisualStyleBackColor = true;
 			// 
 			// floatTrackbarControlBentNormalInfluence
 			// 
@@ -296,44 +297,107 @@
 			this.floatTrackbarControlBentNormalInfluence.Value = 100F;
 			this.floatTrackbarControlBentNormalInfluence.VisibleRangeMax = 100F;
 			// 
-			// label6
+			// buttonCameraCopy
 			// 
-			this.label6.AutoSize = true;
-			this.label6.Location = new System.Drawing.Point(3, 32);
-			this.label6.Name = "label6";
-			this.label6.Size = new System.Drawing.Size(112, 13);
-			this.label6.TabIndex = 2;
-			this.label6.Text = "Bent Normal Influence";
+			this.buttonCameraCopy.Location = new System.Drawing.Point(818, 613);
+			this.buttonCameraCopy.Name = "buttonCameraCopy";
+			this.buttonCameraCopy.Size = new System.Drawing.Size(108, 23);
+			this.buttonCameraCopy.TabIndex = 9;
+			this.buttonCameraCopy.Text = "Camera->Clipboard";
+			this.buttonCameraCopy.UseVisualStyleBackColor = true;
+			this.buttonCameraCopy.Click += new System.EventHandler(this.buttonCameraCopy_Click);
 			// 
-			// panelScene
+			// buttonCameraPaste
 			// 
-			this.panelScene.Controls.Add(this.floatTrackbarControlAOInfluence);
-			this.panelScene.Controls.Add(this.checkBoxUseAOAsAFactor);
-			this.panelScene.Controls.Add(this.floatTrackbarControlBentNormalInfluence);
-			this.panelScene.Controls.Add(this.label5);
-			this.panelScene.Controls.Add(this.label6);
-			this.panelScene.Location = new System.Drawing.Point(309, 613);
-			this.panelScene.Name = "panelScene";
-			this.panelScene.Size = new System.Drawing.Size(503, 62);
-			this.panelScene.TabIndex = 8;
-			this.panelScene.Visible = false;
+			this.buttonCameraPaste.Location = new System.Drawing.Point(818, 640);
+			this.buttonCameraPaste.Name = "buttonCameraPaste";
+			this.buttonCameraPaste.Size = new System.Drawing.Size(108, 23);
+			this.buttonCameraPaste.TabIndex = 9;
+			this.buttonCameraPaste.Text = "Clipboard->Camera";
+			this.buttonCameraPaste.UseVisualStyleBackColor = true;
+			this.buttonCameraPaste.Click += new System.EventHandler(this.buttonCameraPaste_Click);
 			// 
-			// checkBoxUseAOAsAFactor
+			// floatTrackbarControlFilterWindowSize
 			// 
-			this.checkBoxUseAOAsAFactor.AutoSize = true;
-			this.checkBoxUseAOAsAFactor.Location = new System.Drawing.Point(343, 6);
-			this.checkBoxUseAOAsAFactor.Name = "checkBoxUseAOAsAFactor";
-			this.checkBoxUseAOAsAFactor.Size = new System.Drawing.Size(148, 17);
-			this.checkBoxUseAOAsAFactor.TabIndex = 7;
-			this.checkBoxUseAOAsAFactor.Text = "Use AO as a simple factor";
-			this.checkBoxUseAOAsAFactor.UseVisualStyleBackColor = true;
+			this.floatTrackbarControlFilterWindowSize.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+			this.floatTrackbarControlFilterWindowSize.Location = new System.Drawing.Point(901, 28);
+			this.floatTrackbarControlFilterWindowSize.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlFilterWindowSize.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlFilterWindowSize.Name = "floatTrackbarControlFilterWindowSize";
+			this.floatTrackbarControlFilterWindowSize.RangeMax = 10F;
+			this.floatTrackbarControlFilterWindowSize.RangeMin = 0F;
+			this.floatTrackbarControlFilterWindowSize.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlFilterWindowSize.TabIndex = 0;
+			this.floatTrackbarControlFilterWindowSize.Value = 1.8F;
+			this.floatTrackbarControlFilterWindowSize.VisibleRangeMax = 4F;
+			// 
+			// floatTrackbarControlLuminanceFactor
+			// 
+			this.floatTrackbarControlLuminanceFactor.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+			this.floatTrackbarControlLuminanceFactor.Location = new System.Drawing.Point(901, 6);
+			this.floatTrackbarControlLuminanceFactor.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlLuminanceFactor.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlLuminanceFactor.Name = "floatTrackbarControlLuminanceFactor";
+			this.floatTrackbarControlLuminanceFactor.RangeMax = 100F;
+			this.floatTrackbarControlLuminanceFactor.RangeMin = 0F;
+			this.floatTrackbarControlLuminanceFactor.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlLuminanceFactor.TabIndex = 0;
+			this.floatTrackbarControlLuminanceFactor.Value = 0.12F;
+			this.floatTrackbarControlLuminanceFactor.VisibleRangeMax = 1F;
+			// 
+			// floatTrackbarControlThetaMax
+			// 
+			this.floatTrackbarControlThetaMax.Location = new System.Drawing.Point(91, 3);
+			this.floatTrackbarControlThetaMax.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlThetaMax.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlThetaMax.Name = "floatTrackbarControlThetaMax";
+			this.floatTrackbarControlThetaMax.RangeMax = 90F;
+			this.floatTrackbarControlThetaMax.RangeMin = 0F;
+			this.floatTrackbarControlThetaMax.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlThetaMax.TabIndex = 0;
+			this.floatTrackbarControlThetaMax.Value = 90F;
+			this.floatTrackbarControlThetaMax.VisibleRangeMax = 90F;
+			this.floatTrackbarControlThetaMax.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlThetaMax_ValueChanged);
+			// 
+			// graphPanel
+			// 
+			this.graphPanel.Bitmap = null;
+			this.graphPanel.EnablePaint = true;
+			this.graphPanel.Location = new System.Drawing.Point(12, 57);
+			this.graphPanel.MessageOnEmpty = "Bisou";
+			this.graphPanel.Name = "graphPanel";
+			this.graphPanel.Size = new System.Drawing.Size(800, 550);
+			this.graphPanel.TabIndex = 1;
+			// 
+			// panelGraph
+			// 
+			this.panelGraph.Controls.Add(this.floatTrackbarControlThetaMax);
+			this.panelGraph.Controls.Add(this.label1);
+			this.panelGraph.Location = new System.Drawing.Point(12, 613);
+			this.panelGraph.Name = "panelGraph";
+			this.panelGraph.Size = new System.Drawing.Size(291, 62);
+			this.panelGraph.TabIndex = 10;
+			// 
+			// checkBoxGroundTruth
+			// 
+			this.checkBoxGroundTruth.AutoSize = true;
+			this.checkBoxGroundTruth.Location = new System.Drawing.Point(652, 34);
+			this.checkBoxGroundTruth.Name = "checkBoxGroundTruth";
+			this.checkBoxGroundTruth.Size = new System.Drawing.Size(89, 17);
+			this.checkBoxGroundTruth.TabIndex = 7;
+			this.checkBoxGroundTruth.Text = "Ground Truth";
+			this.checkBoxGroundTruth.UseVisualStyleBackColor = true;
 			// 
 			// Form1
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1113, 687);
+			this.Controls.Add(this.panelGraph);
+			this.Controls.Add(this.buttonCameraPaste);
+			this.Controls.Add(this.buttonCameraCopy);
 			this.Controls.Add(this.panelScene);
+			this.Controls.Add(this.checkBoxGroundTruth);
 			this.Controls.Add(this.checkBoxShowBentNormal);
 			this.Controls.Add(this.checkBoxEnvironmentSH);
 			this.Controls.Add(this.checkBoxShowAO);
@@ -347,16 +411,16 @@
 			this.Controls.Add(this.textBoxResults);
 			this.Controls.Add(this.label4);
 			this.Controls.Add(this.label3);
-			this.Controls.Add(this.label1);
 			this.Controls.Add(this.graphPanel);
 			this.Controls.Add(this.floatTrackbarControlFilterWindowSize);
 			this.Controls.Add(this.floatTrackbarControlLuminanceFactor);
-			this.Controls.Add(this.floatTrackbarControlThetaMax);
 			this.Name = "Form1";
 			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
 			this.Text = "Test SH Irradiance Estimate Coefficients with AO factor";
 			this.panelScene.ResumeLayout(false);
 			this.panelScene.PerformLayout();
+			this.panelGraph.ResumeLayout(false);
+			this.panelGraph.PerformLayout();
 			this.ResumeLayout(false);
 			this.PerformLayout();
 
@@ -389,6 +453,11 @@
 		private System.Windows.Forms.Label label6;
 		private System.Windows.Forms.Panel panelScene;
 		private System.Windows.Forms.CheckBox checkBoxUseAOAsAFactor;
+		private System.Windows.Forms.Button buttonCameraCopy;
+		private System.Windows.Forms.Button buttonCameraPaste;
+		private System.Windows.Forms.CheckBox checkBoxUseIQAO;
+		private System.Windows.Forms.Panel panelGraph;
+		private System.Windows.Forms.CheckBox checkBoxGroundTruth;
 	}
 }
 

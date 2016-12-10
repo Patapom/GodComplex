@@ -46,8 +46,10 @@ namespace TestSHIrradiance
 		Device						m_device = null;
 		Shader						m_shader_RenderSphere = null;
 		Shader						m_shader_RenderScene = null;
+		Shader						m_shader_RenderLDR = null;
 		ConstantBuffer< CB_Main >	m_CB_Render;
-		Texture2D					m_Tex_HDR;
+		Texture2D					m_Tex_HDREnvironment;
+		Texture2D					m_Tex_HDRBuffer;
 
 		Camera						m_camera = new Camera();
 		CameraManipulator			m_cameraManipulator = new CameraManipulator();
@@ -82,7 +84,7 @@ namespace TestSHIrradiance
 
 			// Build texture
 			ImagesMatrix	images = new Renderer.ImagesMatrix( new ImageUtility.ImageFile[] { m_HDRImage }, 1 );
-			m_Tex_HDR = Texture2D.CreateTexture2D( m_device, images );
+			m_Tex_HDREnvironment = Texture2D.CreateTexture2D( m_device, images );
 		}
 
 // Estimates A0, A1 and A2 integrals based on the angle of the AO cone from the normal and cos(PI/2 * AO) defining the AO cone's half-angle aperture
@@ -419,6 +421,7 @@ avgDiffA2 /= TABLE_SIZE*TABLE_SIZE;
 				try {
 					m_shader_RenderSphere = new Shader( m_device, new ShaderFile( new System.IO.FileInfo( @"./Shaders/RenderSphere.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 					m_shader_RenderScene = new Shader( m_device, new ShaderFile( new System.IO.FileInfo( @"./Shaders/RenderScene.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+					m_shader_RenderLDR = new Shader( m_device, new ShaderFile( new System.IO.FileInfo( @"./Shaders/RenderLDR.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 				} catch ( Exception _e ) {
 					throw new Exception( "Failed to compile shader! " + _e.Message );
 				}
@@ -428,6 +431,8 @@ avgDiffA2 /= TABLE_SIZE*TABLE_SIZE;
 
 				// Create textures
 				LoadHDRImage();
+
+				m_Tex_HDRBuffer = new Texture2D( m_device, (uint) graphPanel.Width, (uint) graphPanel.Height, 2, 1, PIXEL_FORMAT.RGBA32_FLOAT, false, false, null );
 
 				// Create camera + manipulator
 				m_camera.CreatePerspectiveCamera( 0.5f * (float) Math.PI, (float) graphPanel.Width / graphPanel.Height, 0.01f, 100.0f );
@@ -444,6 +449,23 @@ avgDiffA2 /= TABLE_SIZE*TABLE_SIZE;
 			}
 		}
 
+		protected override void OnFormClosing( FormClosingEventArgs e ) {
+			base.OnFormClosing( e );
+			if ( e.Cancel )
+				return;
+
+			radioButtonCoeffs.Checked = true;
+
+			m_Tex_HDRBuffer.Dispose();
+			m_Tex_HDREnvironment.Dispose();
+			m_CB_Render.Dispose();
+			m_shader_RenderLDR.Dispose();
+			m_shader_RenderScene.Dispose();
+			m_shader_RenderSphere.Dispose();
+			m_device.Dispose();
+			m_device = null;
+		}
+
 		void m_camera_CameraTransformChanged( object sender, EventArgs e ) {
 			m_CB_Render.m._world2Proj = m_camera.World2Proj;
 //			m_CB_Render.m._proj2World =  m_camera.Proj2World;
@@ -451,12 +473,13 @@ avgDiffA2 /= TABLE_SIZE*TABLE_SIZE;
 		}
 
 		DateTime	m_startTime = DateTime.Now;
-
+		uint		m_frameIndex = 0;
 		void Application_Idle( object sender, EventArgs e ) {
 			if ( m_device == null || radioButtonCoeffs.Checked )
 				return;	// No 3D render
 
-			m_device.SetRenderTarget( m_device.DefaultTarget, null );
+			m_frameIndex++;
+
 			m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
 
 			// Update CB
@@ -475,16 +498,30 @@ avgDiffA2 /= TABLE_SIZE*TABLE_SIZE;
 			m_CB_Render.m._Flags |= checkBoxShowAO.Checked ? 0x10U : 0U;
 			m_CB_Render.m._Flags |= checkBoxShowBentNormal.Checked ? 0x20U : 0U;
 			m_CB_Render.m._Flags |= checkBoxUseAOAsAFactor.Checked ? 0x40U : 0U;
+			m_CB_Render.m._Flags |= checkBoxUseIQAO.Checked ? 0x80U : 0U;
 			m_CB_Render.m._Flags |= checkBoxEnvironmentSH.Checked ? 0x100U : 0U;
+			m_CB_Render.m._Flags |= checkBoxGroundTruth.Checked ? 0x1000U : 0U;
 
 			m_CB_Render.UpdateData();
 
-			m_Tex_HDR.SetPS( 0 );
+			m_Tex_HDREnvironment.SetPS( 0 );
 
-			// Render
+			// Render to HDR buffer
+			View2D	targetView = m_Tex_HDRBuffer.GetView( 0, 0, m_frameIndex & 1, 1 );
+			View2D	sourceView = m_Tex_HDRBuffer.GetView( 0, 0, 1 - (m_frameIndex & 1), 1 );
+
 			Shader	S = radioButtonSimpleScene.Checked ? m_shader_RenderScene : m_shader_RenderSphere;
 			if ( S.Use() ) {
+				m_device.SetRenderTargets( targetView.Width, targetView.Height, new IView[] { targetView }, null );
+				m_Tex_HDRBuffer.SetPS( 1, sourceView );
 				m_device.RenderFullscreenQuad( S );
+			}
+
+			// Render to LDR back buffer
+			if ( m_shader_RenderLDR.Use() ) {
+				m_device.SetRenderTarget( m_device.DefaultTarget, null );
+				m_Tex_HDRBuffer.SetPS( 1, targetView );
+				m_device.RenderFullscreenQuad( m_shader_RenderLDR );
 			}
 
 			m_device.Present( false );
@@ -508,8 +545,31 @@ avgDiffA2 /= TABLE_SIZE*TABLE_SIZE;
 			checkBoxAO.Visible = radioButtonSingleSphere.Checked | radioButtonSimpleScene.Checked;
 
 			panelScene.Visible = radioButtonSimpleScene.Checked;
+			panelGraph.Visible = !radioButtonSimpleScene.Checked;
 			checkBoxShowAO.Visible = radioButtonSimpleScene.Checked;
 			checkBoxShowBentNormal.Visible = radioButtonSimpleScene.Checked;
+		}
+
+		private void buttonCameraCopy_Click( object sender, EventArgs e ) {
+			string	text = m_cameraManipulator.CameraPosition + "\r\n" + m_cameraManipulator.TargetPosition;
+			Clipboard.SetText( text );
+		}
+
+		private void buttonCameraPaste_Click( object sender, EventArgs e ) {
+			string[]	lines = Clipboard.ContainsText() ? Clipboard.GetText().Split( '\n' ) : null;
+			if ( lines == null || lines.Length <= 1 ) {
+				MessageBox.Show( "Clipboard doesn't contain a valid camera text!" );
+				return;
+			}
+
+			float3	cameraPosition = float3.UnitY + 4.0f * float3.UnitZ;
+			float3	cameraTarget = float3.UnitY;
+			if (	!float3.TryParse( lines[0], ref cameraPosition )
+				|| 	!float3.TryParse( lines[1], ref cameraTarget ) ) {
+				// Okay, let's use that as a reset
+			}
+
+			m_cameraManipulator.InitializeCamera( cameraPosition, cameraTarget, float3.UnitY );
 		}
 	}
 }

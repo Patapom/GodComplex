@@ -303,3 +303,13 @@ float	IntersectPlane( float3 _pos, float3 _dir, float3 _planePosition, float3 _n
 	float3	D = _pos - _planePosition;
 	return -dot( D, _normal ) / dot( _dir, _normal );
 }
+
+// bmayaux (2016-01-04) Builds the remaining 2 orthogonal vectors from a given vector (very fast! no normalization or square root involved!)
+// Original code from http://orbit.dtu.dk/files/57573287/onb_frisvad_jgt2012.pdf
+//
+void	BuildOrthogonalVectors( float3 n, out float3 b1, out float3 b2 ) {
+	const float	a = n.z > -0.9999999 ? 1.0 / (1.0 + n.z) : 0.0;	// Instead of the condition, I used this ternary op but beware that b1=(1,0,0) and b2=(0,1,0) in the case n.z=-1 instead of the expected (0,-1,0), (-1,0,0)
+	const float	b = -n.x*n.y*a;
+	b1 = float3( 1.0 - n.x*n.x*a, b, -n.x );
+	b2 = float3( b, 1.0 - n.y*n.y*a, -n.y );
+}

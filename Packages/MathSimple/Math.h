@@ -91,6 +91,8 @@ namespace SharpMath {
 			return "{ " + x + ", " + y + ", " + z + " }";
 		}
 
+		static bool		TryParse( String^ _stringValue, float3% _value );
+
 		static float3	operator+( float3 a, float3 b )	{ return float3( a.x+b.x, a.y+b.y, a.z+b.z ); }
 		static float3	operator-( float3 a, float3 b )	{ return float3( a.x-b.x, a.y-b.y, a.z-b.z ); }
 		static float3	operator-( float3 a )			{ return float3( -a.x, -a.y, -a.z ); }

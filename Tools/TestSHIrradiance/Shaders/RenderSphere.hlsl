@@ -19,8 +19,8 @@ float3	PS( VS_IN _In ) : SV_TARGET0 {
 	float	dist = IntersectSphere( wsPos, wsView, 0.0, 1.0 );
 	if ( dist < 0.0 || dist > NO_HIT ) {
 //		return (_flags & 0x100U) ? EvaluateSHIrradiance( wsView, filteredEnvironmentSH )
-		return (_flags & 0x100U) ? _luminanceFactor * EvaluateSHRadiance( wsView, filteredEnvironmentSH )
-								 : _luminanceFactor * SampleHDREnvironment( wsView );
+		return (_flags & 0x100U) ? EvaluateSHRadiance( wsView, filteredEnvironmentSH )
+								 : SampleHDREnvironment( wsView );
 	}
 
 	// Regular rendering
@@ -30,9 +30,9 @@ float3	PS( VS_IN _In ) : SV_TARGET0 {
 //	color = wsNormal;
 //	color = 0.01 * dist * _cosAO;
 
-	float3	irradianceOFF = _luminanceFactor * 2.0 * INVPI * acos( _cosAO ) * EvaluateSHIrradiance( wsNormal, filteredEnvironmentSH );
-//	float3	irradianceOFF = _luminanceFactor * EvaluateSH( wsNormal, filteredEnvironmentSH );
-	float3	irradianceON = _luminanceFactor * EvaluateSHIrradiance( wsNormal, _cosAO, filteredEnvironmentSH );
+	float3	irradianceOFF = 2.0 * INVPI * acos( _cosAO ) * EvaluateSHIrradiance( wsNormal, filteredEnvironmentSH );
+//	float3	irradianceOFF = EvaluateSH( wsNormal, filteredEnvironmentSH );
+	float3	irradianceON = EvaluateSHIrradiance( wsNormal, _cosAO, filteredEnvironmentSH );
 
 	switch ( _flags & 1 ) {
 	case 0:	color = (_flags & 0x8U) ? irradianceON : irradianceOFF; break;
