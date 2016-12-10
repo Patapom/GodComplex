@@ -26,6 +26,7 @@ float3	PS( VS_IN _In ) : SV_TARGET0 {
 	// Regular rendering
 	float3	wsHitPos = wsPos + dist * wsView;
 	float3	wsNormal = wsHitPos;
+
 //	color = wsNormal;
 //	color = 0.01 * dist * _cosAO;
 

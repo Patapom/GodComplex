@@ -39,6 +39,8 @@ namespace TestSHIrradiance
 			public float	_cosAO;
 			public float	_luminanceFactor;
 			public float	_filteringWindowSize;
+			public float	_influenceAO;
+			public float	_influenceBentNormal;
 		}
 
 		Device						m_device = null;
@@ -76,6 +78,7 @@ namespace TestSHIrradiance
 
 			// Test numerical integration
 //			NumericalIntegration();
+			TestIntegral();
 
 			// Build texture
 			ImagesMatrix	images = new Renderer.ImagesMatrix( new ImageUtility.ImageFile[] { m_HDRImage }, 1 );
@@ -122,6 +125,39 @@ float3	EstimateLambertReflectanceFactors( float _cosThetaAO, float _coneBendAngl
 	return new float3( A0, A1, A2 );
 }
 
+		void	TestIntegral() {
+			double	sumDiffA0 = 0.0;
+			double	sumDiffA1 = 0.0;
+			double	sumDiffA2 = 0.0;
+			double[]	approxSH = new double[9];
+			double[]	exactSH = new double[9];
+			double[]	sumDiffSH = new double[9];
+			for ( int i=0; i < 100; i++ ) {
+				float	AO = 1.0f - (float) i / 100;
+				float	t = (float) Math.Cos( 0.5 * Math.PI * AO );
+				float3	tableA = EstimateLambertReflectanceFactors( t, 0.0f );
+				double	exactA0 = Math.Sqrt( Math.PI / 4.0 ) * (1 - t*t);
+				double	exactA1 = Math.Sqrt( Math.PI / 3.0 ) * (1 - t*t*t);
+				double	exactA2 = Math.Sqrt( 5.0 * Math.PI / 4.0 ) * (3.0 / 4.0 * (1 - t*t*t*t) - 1.0 / 2.0 * (1 - t*t));
+
+				exactSH[0] = 0.5 * Math.PI * (1 - t*t);
+				approxSH[0] = Math.PI * tableA.x;
+
+				double	exactC1 = Math.Sqrt( Math.PI / 3 ) * (1 - t*t*t);
+				double	approxC1 = tableA.y;
+
+				double	exactc0 = Math.Sqrt( Math.PI / 4.0 ) * (1 - t*t);
+				double	exactc1 = Math.Sqrt( Math.PI / 3.0 ) * (1 - t*t*t);
+				double	exactc2 = Math.Sqrt( 5.0 * Math.PI / 4.0 ) * (3.0 / 4.0 * (1 - t*t*t*t) - 1.0 / 2.0 * (1 - t*t));
+
+				sumDiffA0 += Math.Abs( exactA0 - tableA.x );
+				sumDiffA1 += Math.Abs( exactA1 - tableA.y );
+				sumDiffA2 += Math.Abs( exactA2 - tableA.z );
+			}
+			sumDiffA0 /= 100;
+			sumDiffA1 /= 100;
+			sumDiffA2 /= 100;
+		}
 
 		void	NumericalIntegration() {
 			// Generate a bunch of rays with equal probability on the hemisphere
@@ -430,12 +466,15 @@ avgDiffA2 /= TABLE_SIZE*TABLE_SIZE;
 			m_CB_Render.m._cosAO = (float) Math.Cos( floatTrackbarControlThetaMax.Value * Math.PI / 180.0 );
 			m_CB_Render.m._luminanceFactor = floatTrackbarControlLuminanceFactor.Value;
 			m_CB_Render.m._filteringWindowSize = floatTrackbarControlFilterWindowSize.Value;
+			m_CB_Render.m._influenceAO = 0.01f * floatTrackbarControlAOInfluence.Value;
+			m_CB_Render.m._influenceBentNormal = 0.01f * floatTrackbarControlBentNormalInfluence.Value;
 			m_CB_Render.m._Flags = 0;
 			if ( radioButtonSideBySide.Checked )
 				m_CB_Render.m._Flags = 1;
 			m_CB_Render.m._Flags |= checkBoxAO.Checked ? 0x8U : 0U;
 			m_CB_Render.m._Flags |= checkBoxShowAO.Checked ? 0x10U : 0U;
 			m_CB_Render.m._Flags |= checkBoxShowBentNormal.Checked ? 0x20U : 0U;
+			m_CB_Render.m._Flags |= checkBoxUseAOAsAFactor.Checked ? 0x40U : 0U;
 			m_CB_Render.m._Flags |= checkBoxEnvironmentSH.Checked ? 0x100U : 0U;
 
 			m_CB_Render.UpdateData();
@@ -468,6 +507,7 @@ avgDiffA2 /= TABLE_SIZE*TABLE_SIZE;
 
 			checkBoxAO.Visible = radioButtonSingleSphere.Checked | radioButtonSimpleScene.Checked;
 
+			panelScene.Visible = radioButtonSimpleScene.Checked;
 			checkBoxShowAO.Visible = radioButtonSimpleScene.Checked;
 			checkBoxShowBentNormal.Visible = radioButtonSimpleScene.Checked;
 		}

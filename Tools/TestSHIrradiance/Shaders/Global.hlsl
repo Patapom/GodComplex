@@ -20,6 +20,8 @@ cbuffer	CBDisplay : register( b0 ) {
 	float		_cosAO;
 	float		_luminanceFactor;
 	float		_filterWindowSize;
+	float		_influenceAO;
+	float		_influenceBentNormal;
 }
 
 SamplerState LinearClamp	: register( s0 );
@@ -224,10 +226,9 @@ float3	EvaluateSHIrradiance( float3 _direction, float _cosThetaAO,  float3 _SH[9
 //
 float3	EvaluateSHIrradiance( float3 _direction, float _cosThetaAO, float _coneBendAngle, float3 _SH[9] ) {
 	float3		A = EstimateLambertReflectanceFactors( _cosThetaAO, _coneBendAngle );
-
-	float		c0 = 3.5449077018110320545963349666823 * A.x;	// sqrt(4PI) * A0
-	float		c1 = 2.0466534158929769769591032497785 * A.y;	// sqrt(4PI/3) * A1
-	float		c2 = 1.5853309190424044053380115060481 * A.z;	// sqrt(4PI/5) * A2
+	float		c0 = A.x;		// [sqrt(1/(4PI)] * [sqrt(4PI/1) * A0] = A0
+	float		c1 = A.y;		// [sqrt(3/(4PI)] * [sqrt(4PI/3) * A1] = A1
+	float		c2 = 0.5 * A.z;	// [sqrt(5/(16PI)] * [sqrt(4PI/5) * A2] = 1/2 * A2
 	const float	sqrt3 = 1.7320508075688772935274463415059;
 
 	float		x = _direction.x;

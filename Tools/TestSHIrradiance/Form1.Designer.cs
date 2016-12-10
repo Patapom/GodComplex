@@ -48,6 +48,13 @@
 			this.label3 = new System.Windows.Forms.Label();
 			this.floatTrackbarControlFilterWindowSize = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label4 = new System.Windows.Forms.Label();
+			this.floatTrackbarControlAOInfluence = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.label5 = new System.Windows.Forms.Label();
+			this.floatTrackbarControlBentNormalInfluence = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.label6 = new System.Windows.Forms.Label();
+			this.panelScene = new System.Windows.Forms.Panel();
+			this.checkBoxUseAOAsAFactor = new System.Windows.Forms.CheckBox();
+			this.panelScene.SuspendLayout();
 			this.SuspendLayout();
 			// 
 			// floatTrackbarControlThetaMax
@@ -254,11 +261,79 @@
 			this.label4.TabIndex = 2;
 			this.label4.Text = "Filter Window";
 			// 
+			// floatTrackbarControlAOInfluence
+			// 
+			this.floatTrackbarControlAOInfluence.Location = new System.Drawing.Point(121, 3);
+			this.floatTrackbarControlAOInfluence.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlAOInfluence.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlAOInfluence.Name = "floatTrackbarControlAOInfluence";
+			this.floatTrackbarControlAOInfluence.RangeMax = 100F;
+			this.floatTrackbarControlAOInfluence.RangeMin = 0F;
+			this.floatTrackbarControlAOInfluence.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlAOInfluence.TabIndex = 0;
+			this.floatTrackbarControlAOInfluence.Value = 100F;
+			this.floatTrackbarControlAOInfluence.VisibleRangeMax = 100F;
+			// 
+			// label5
+			// 
+			this.label5.AutoSize = true;
+			this.label5.Location = new System.Drawing.Point(46, 7);
+			this.label5.Name = "label5";
+			this.label5.Size = new System.Drawing.Size(69, 13);
+			this.label5.TabIndex = 2;
+			this.label5.Text = "AO Influence";
+			// 
+			// floatTrackbarControlBentNormalInfluence
+			// 
+			this.floatTrackbarControlBentNormalInfluence.Location = new System.Drawing.Point(121, 29);
+			this.floatTrackbarControlBentNormalInfluence.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlBentNormalInfluence.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlBentNormalInfluence.Name = "floatTrackbarControlBentNormalInfluence";
+			this.floatTrackbarControlBentNormalInfluence.RangeMax = 100F;
+			this.floatTrackbarControlBentNormalInfluence.RangeMin = 0F;
+			this.floatTrackbarControlBentNormalInfluence.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlBentNormalInfluence.TabIndex = 0;
+			this.floatTrackbarControlBentNormalInfluence.Value = 100F;
+			this.floatTrackbarControlBentNormalInfluence.VisibleRangeMax = 100F;
+			// 
+			// label6
+			// 
+			this.label6.AutoSize = true;
+			this.label6.Location = new System.Drawing.Point(3, 32);
+			this.label6.Name = "label6";
+			this.label6.Size = new System.Drawing.Size(112, 13);
+			this.label6.TabIndex = 2;
+			this.label6.Text = "Bent Normal Influence";
+			// 
+			// panelScene
+			// 
+			this.panelScene.Controls.Add(this.floatTrackbarControlAOInfluence);
+			this.panelScene.Controls.Add(this.checkBoxUseAOAsAFactor);
+			this.panelScene.Controls.Add(this.floatTrackbarControlBentNormalInfluence);
+			this.panelScene.Controls.Add(this.label5);
+			this.panelScene.Controls.Add(this.label6);
+			this.panelScene.Location = new System.Drawing.Point(309, 613);
+			this.panelScene.Name = "panelScene";
+			this.panelScene.Size = new System.Drawing.Size(503, 62);
+			this.panelScene.TabIndex = 8;
+			this.panelScene.Visible = false;
+			// 
+			// checkBoxUseAOAsAFactor
+			// 
+			this.checkBoxUseAOAsAFactor.AutoSize = true;
+			this.checkBoxUseAOAsAFactor.Location = new System.Drawing.Point(343, 6);
+			this.checkBoxUseAOAsAFactor.Name = "checkBoxUseAOAsAFactor";
+			this.checkBoxUseAOAsAFactor.Size = new System.Drawing.Size(148, 17);
+			this.checkBoxUseAOAsAFactor.TabIndex = 7;
+			this.checkBoxUseAOAsAFactor.Text = "Use AO as a simple factor";
+			this.checkBoxUseAOAsAFactor.UseVisualStyleBackColor = true;
+			// 
 			// Form1
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1113, 687);
+			this.Controls.Add(this.panelScene);
 			this.Controls.Add(this.checkBoxShowBentNormal);
 			this.Controls.Add(this.checkBoxEnvironmentSH);
 			this.Controls.Add(this.checkBoxShowAO);
@@ -280,6 +355,8 @@
 			this.Name = "Form1";
 			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
 			this.Text = "Test SH Irradiance Estimate Coefficients with AO factor";
+			this.panelScene.ResumeLayout(false);
+			this.panelScene.PerformLayout();
 			this.ResumeLayout(false);
 			this.PerformLayout();
 
@@ -306,6 +383,12 @@
 		private System.Windows.Forms.Label label3;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlFilterWindowSize;
 		private System.Windows.Forms.Label label4;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlAOInfluence;
+		private System.Windows.Forms.Label label5;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlBentNormalInfluence;
+		private System.Windows.Forms.Label label6;
+		private System.Windows.Forms.Panel panelScene;
+		private System.Windows.Forms.CheckBox checkBoxUseAOAsAFactor;
 	}
 }
 

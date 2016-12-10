@@ -81,6 +81,9 @@ float3	PS( VS_IN _In ) : SV_TARGET0 {
 		AO = ComputePlaneAO( wsHitPos );
 	}
 
+	AO.xyz = normalize( lerp( wsNormal, AO.xyz, _influenceBentNormal ) );
+	AO.w = lerp( 0.0, AO.w, _influenceAO );
+
 	float3	color = 0.0;
 //	color = 0.01 * dist.x;
 
@@ -96,9 +99,13 @@ float3	PS( VS_IN _In ) : SV_TARGET0 {
 	} else {
 		// Regular scene display
 		float	bentConeAngle = acos( saturate( dot( AO.xyz, wsNormal ) ) );
-		color = (_flags & 0x8U) ?	_luminanceFactor * EvaluateSHIrradiance( wsNormal, AO.w, filteredEnvironmentSH )
-								:	_luminanceFactor * 2.0 * INVPI * acos(AO.w) * EvaluateSHIrradiance( AO.xyz, filteredEnvironmentSH );
-//								:	_luminanceFactor * EvaluateSHIrradiance( wsNormal, AO.w, bentConeAngle, filteredEnvironmentSH );
+
+		float3	correctIrradiance = _luminanceFactor * EvaluateSHIrradiance( wsNormal, AO.w, bentConeAngle, filteredEnvironmentSH );
+		float3	incorrectIrradiance = (_flags & 0x40U)  ?	_luminanceFactor * 2.0 * INVPI * acos(AO.w) * EvaluateSHIrradiance( wsNormal, filteredEnvironmentSH )
+														:	_luminanceFactor * EvaluateSHIrradiance( wsNormal, AO.w, filteredEnvironmentSH );
+//														:	_luminanceFactor * EvaluateSHIrradiance( wsNormal, AO.w, 0.0, filteredEnvironmentSH );
+
+		color = (_flags & 0x8U) ? correctIrradiance : incorrectIrradiance;
 	}
 
 	return color;
