@@ -29,10 +29,10 @@ namespace TestSHIrradiance
 		// D3D Stuff
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
 		struct CB_Main {
-			public uint		_SizeX;
-			public uint		_SizeY;
-			public float	_Time;
-			public uint		_Flags;
+			public uint		_sizeX;
+			public uint		_sizeY;
+			public float	_time;
+			public uint		_flags;
 			public float4x4	_world2Proj;
 //			public float4x4	_proj2World;
 			public float4x4	_camera2World;
@@ -41,6 +41,7 @@ namespace TestSHIrradiance
 			public float	_filteringWindowSize;
 			public float	_influenceAO;
 			public float	_influenceBentNormal;
+			public uint		_SHOrdersCount;
 		}
 
 		Device						m_device = null;
@@ -54,6 +55,7 @@ namespace TestSHIrradiance
 
 		// Advanced SH to compare with ground truth
 		Texture2D					m_Tex_ACoeffs;
+		RawConstantBuffer			m_CB_Coeffs;
 
 		Camera						m_camera = new Camera();
 		CameraManipulator			m_cameraManipulator = new CameraManipulator();
@@ -66,12 +68,11 @@ namespace TestSHIrradiance
 
 		#region HDR Image Encoding
 
-//Check direction d'encodage daubée +Y / -Y!
-//FILTERING !!! (Hanning, tout ça)
-
 		void	LoadHDRImage() {
 //			m_HDRImage.Load( new System.IO.FileInfo( @".\Images\grace-new.hdr" ) );
 			m_HDRImage.Load( new System.IO.FileInfo( @".\Images\ennis_1024x512.hdr" ) );
+			ImagesMatrix	images = new Renderer.ImagesMatrix( new ImageUtility.ImageFile[] { m_HDRImage }, 1 );
+			m_Tex_HDREnvironment = Texture2D.CreateTexture2D( m_device, images );
 			
 // 			ImageUtility.ImageFile	tempLDRImage = new ImageUtility.ImageFile();
 // 			tempLDRImage.ToneMapFrom( m_HDRImage, ( float3 _HDR, ref float3 _LDR ) => {
@@ -81,15 +82,12 @@ namespace TestSHIrradiance
 
 			// Integrate SH
 //			EncodeSH();
+//			EncodeSH_20Orders();
 
 			// Test numerical integration
 //			NumericalIntegration();
 //			NumericalIntegration_20Orders();
 //			TestIntegral();
-
-			// Build texture
-			ImagesMatrix	images = new Renderer.ImagesMatrix( new ImageUtility.ImageFile[] { m_HDRImage }, 1 );
-			m_Tex_HDREnvironment = Texture2D.CreateTexture2D( m_device, images );
 		}
 
 // Estimates A0, A1 and A2 integrals based on the angle of the AO cone from the normal and cos(PI/2 * AO) defining the AO cone's half-angle aperture
@@ -374,6 +372,7 @@ avgDiffA2 /= TABLE_SIZE*TABLE_SIZE;
 				}
 			}
 
+			// Save table
 			using ( System.IO.FileStream S = new System.IO.FileInfo( @"ConeTable_cosAO_order20.float" ).Create() )
 				using ( System.IO.BinaryWriter W = new System.IO.BinaryWriter( S ) ) {
 				for ( int thetaIndex=0; thetaIndex < TABLE_SIZE; thetaIndex++ )
@@ -460,6 +459,49 @@ avgDiffA2 /= TABLE_SIZE*TABLE_SIZE;
 			}
 			SHText += "};\r\n";
 			return SHText;
+		}
+
+		void	EncodeSH_20Orders() {
+			const int	ORDERS = 20;
+
+			uint	W = m_HDRImage.Width;
+			uint	H = m_HDRImage.Height;
+			double	dPhi = 2.0 * Math.PI / W;
+			double	dTheta = Math.PI / H;
+
+			double[,]	coeffs = new double[ORDERS*ORDERS,3];
+			for ( uint Y=0; Y < H; Y++ ) {
+				double	theta = (0.5+Y) * dTheta;
+				double	sinTheta = Math.Sin( theta );
+				double	omega = sinTheta * dPhi * dTheta;
+
+				for ( uint X=0; X < W; X++ ) {
+					double	phi = X * dPhi - Math.PI;
+
+					float4	HDRColor = m_HDRImage[X,Y];
+
+					// Accumulate weighted SH
+					for ( int l=0; l < ORDERS; l++ ) {
+						for ( int m=-l; m <= l; m++ ) {
+							double	Ylm = SHFunctions.Ylm( l, m, theta, phi );
+							int		i = l*(l+1)+m;
+							coeffs[i,0] += HDRColor.x * omega * Ylm;
+							coeffs[i,1] += HDRColor.y * omega * Ylm;
+							coeffs[i,2] += HDRColor.z * omega * Ylm;
+						}
+					}
+				}
+			}
+
+			// Save table
+			using ( System.IO.FileStream S = new System.IO.FileInfo( @"Ennis_order20.float3" ).Create() )
+				using ( System.IO.BinaryWriter Wr = new System.IO.BinaryWriter( S ) ) {
+					for ( int i=0; i < ORDERS*ORDERS; i++ ) {
+						Wr.Write( (float) coeffs[i,0] );
+						Wr.Write( (float) coeffs[i,1] );
+						Wr.Write( (float) coeffs[i,2] );
+					}
+				}
 		}
 
 		#endregion
@@ -586,20 +628,62 @@ avgDiffA2 /= TABLE_SIZE*TABLE_SIZE;
 					m_Tex_Noise = new Texture2D( m_device, 256, 256, 1, 1, PIXEL_FORMAT.RGBA32_FLOAT, false, false, new PixelsBuffer[] { content } );
 				}
 
-				// Build A coeffs
+				// Build SH coeffs
+				const int	ORDERS = 20;
 				{
-					using ( System.IO.FileStream S = new System.IO.FileInfo( @"ConeTable_cosAO_order20.float" ).Create() )
-						using ( System.IO.BinaryWriter W = new System.IO.BinaryWriter( S ) ) {
-						for ( int thetaIndex=0; thetaIndex < TABLE_SIZE; thetaIndex++ )
-								for ( int AOIndex=0; AOIndex < TABLE_SIZE; AOIndex++ ) {
-									for ( int order=0; order < ORDERS; order++ )
-										W.Write( integratedSHCoeffs[thetaIndex,AOIndex,order] );
-								}
+					const int	TABLE_SIZE = 64;
+
+					// Load A coeffs into a texture array
+					float[,,]	A = new float[TABLE_SIZE,TABLE_SIZE,ORDERS];
+					using ( System.IO.FileStream S = new System.IO.FileInfo( @"ConeTable_cosAO_order20.float" ).OpenRead() )
+						using ( System.IO.BinaryReader R = new System.IO.BinaryReader( S ) ) {
+							for ( int thetaIndex=0; thetaIndex < TABLE_SIZE; thetaIndex++ )
+									for ( int AOIndex=0; AOIndex < TABLE_SIZE; AOIndex++ ) {
+										for ( int order=0; order < ORDERS; order++ )
+											A[thetaIndex,AOIndex,order] = R.ReadSingle();
+									}
 						}
 
 					PixelsBuffer[]	coeffSlices = new PixelsBuffer[5];	// 5 slices of 4 coeffs each to get our 20 orders
+					for ( int sliceIndex=0; sliceIndex < coeffSlices.Length; sliceIndex++ ) {
+						PixelsBuffer	coeffSlice = new PixelsBuffer( TABLE_SIZE*TABLE_SIZE*16 );
+						coeffSlices[sliceIndex] = coeffSlice;
+
+						using ( System.IO.BinaryWriter W = coeffSlice.OpenStreamWrite() ) {
+							for ( int Y=0; Y < TABLE_SIZE; Y++ )
+								for ( int X=0; X < TABLE_SIZE; X++ ) {
+									W.Write( A[X,Y,4*sliceIndex+0] );
+									W.Write( A[X,Y,4*sliceIndex+1] );
+									W.Write( A[X,Y,4*sliceIndex+2] );
+									W.Write( A[X,Y,4*sliceIndex+3] );
+								}
+						}
+					}
 
 					m_Tex_ACoeffs = new Texture2D( m_device, 64, 64, coeffSlices.Length, 1, PIXEL_FORMAT.RGBA32_FLOAT, false, false, coeffSlices );
+				}
+
+				{
+					// Load environment coeffs into a constant buffer
+					float3[]	coeffs = new float3[ORDERS*ORDERS];
+					using ( System.IO.FileStream S = new System.IO.FileInfo( @"Ennis_order20.float3" ).OpenRead() )
+						using ( System.IO.BinaryReader R = new System.IO.BinaryReader( S ) )
+							for ( int coeffIndex=0; coeffIndex < ORDERS*ORDERS; coeffIndex++ )
+								coeffs[coeffIndex].Set( R.ReadSingle(), R.ReadSingle(), R.ReadSingle() );
+
+					// Write into a raw byte[]
+					byte[]	rawContent = new byte[400 * 3 * 4];
+					using ( System.IO.MemoryStream	MS = new System.IO.MemoryStream( rawContent ) )
+						using ( System.IO.BinaryWriter W = new System.IO.BinaryWriter( MS ) ) {
+							for ( int coeffIndex=0; coeffIndex < ORDERS*ORDERS; coeffIndex++ )
+								W.Write( coeffs[coeffIndex].x );
+							for ( int coeffIndex=0; coeffIndex < ORDERS*ORDERS; coeffIndex++ )
+								W.Write( coeffs[coeffIndex].y );
+							for ( int coeffIndex=0; coeffIndex < ORDERS*ORDERS; coeffIndex++ )
+								W.Write( coeffs[coeffIndex].z );
+						}
+ 					m_CB_Coeffs = new RawConstantBuffer( m_device, 1, rawContent.Length );
+					m_CB_Coeffs.UpdateData( rawContent );
 				}
 
 				// Create camera + manipulator
@@ -624,6 +708,8 @@ avgDiffA2 /= TABLE_SIZE*TABLE_SIZE;
 
 			radioButtonCoeffs.Checked = true;
 
+			m_CB_Coeffs.Dispose();
+			m_Tex_ACoeffs.Dispose();
 			m_Tex_Noise.Dispose();
 			m_Tex_HDRBuffer.Dispose();
 			m_Tex_HDREnvironment.Dispose();
@@ -652,24 +738,25 @@ avgDiffA2 /= TABLE_SIZE*TABLE_SIZE;
 			m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
 
 			// Update CB
-			m_CB_Render.m._SizeX = (uint) graphPanel.Width;
-			m_CB_Render.m._SizeY = (uint) graphPanel.Height;
-			m_CB_Render.m._Time = (float) (DateTime.Now - m_startTime).TotalSeconds;
+			m_CB_Render.m._sizeX = (uint) graphPanel.Width;
+			m_CB_Render.m._sizeY = (uint) graphPanel.Height;
+			m_CB_Render.m._time = (float) (DateTime.Now - m_startTime).TotalSeconds;
 			m_CB_Render.m._cosAO = (float) Math.Cos( floatTrackbarControlThetaMax.Value * Math.PI / 180.0 );
 			m_CB_Render.m._luminanceFactor = floatTrackbarControlLuminanceFactor.Value;
 			m_CB_Render.m._filteringWindowSize = floatTrackbarControlFilterWindowSize.Value;
 			m_CB_Render.m._influenceAO = 0.01f * floatTrackbarControlAOInfluence.Value;
 			m_CB_Render.m._influenceBentNormal = 0.01f * floatTrackbarControlBentNormalInfluence.Value;
-			m_CB_Render.m._Flags = 0;
+			m_CB_Render.m._SHOrdersCount = (uint) integerTrackbarControlSHCoeffsCount.Value;
+			m_CB_Render.m._flags = 0;
 			if ( radioButtonSideBySide.Checked )
-				m_CB_Render.m._Flags = 1;
-			m_CB_Render.m._Flags |= checkBoxAO.Checked ? 0x8U : 0U;
-			m_CB_Render.m._Flags |= checkBoxShowAO.Checked ? 0x10U : 0U;
-			m_CB_Render.m._Flags |= checkBoxShowBentNormal.Checked ? 0x20U : 0U;
-			m_CB_Render.m._Flags |= checkBoxUseAOAsAFactor.Checked ? 0x40U : 0U;
-			m_CB_Render.m._Flags |= checkBoxUseIQAO.Checked ? 0x80U : 0U;
-			m_CB_Render.m._Flags |= checkBoxEnvironmentSH.Checked ? 0x100U : 0U;
-			m_CB_Render.m._Flags |= checkBoxGroundTruth.Checked ? 0x1000U : 0U;
+				m_CB_Render.m._flags = 1;
+			m_CB_Render.m._flags |= checkBoxAO.Checked ? 0x8U : 0U;
+			m_CB_Render.m._flags |= checkBoxShowAO.Checked ? 0x10U : 0U;
+			m_CB_Render.m._flags |= checkBoxShowBentNormal.Checked ? 0x20U : 0U;
+			m_CB_Render.m._flags |= checkBoxUseAOAsAFactor.Checked ? 0x40U : 0U;
+			m_CB_Render.m._flags |= checkBoxUseIQAO.Checked ? 0x80U : 0U;
+			m_CB_Render.m._flags |= checkBoxEnvironmentSH.Checked ? 0x100U : 0U;
+			m_CB_Render.m._flags |= checkBoxGroundTruth.Checked ? 0x1000U : 0U;
 
 			m_CB_Render.UpdateData();
 
@@ -684,6 +771,7 @@ avgDiffA2 /= TABLE_SIZE*TABLE_SIZE;
 				m_device.SetRenderTargets( targetView.Width, targetView.Height, new IView[] { targetView }, null );
 				m_Tex_HDRBuffer.SetPS( 1, sourceView );
 				m_Tex_Noise.SetPS( 2 );
+				m_Tex_ACoeffs.SetPS( 3 );
 				m_device.RenderFullscreenQuad( S );
 			}
 

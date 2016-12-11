@@ -59,6 +59,8 @@
 			this.graphPanel = new TestSHIrradiance.GraphPanel(this.components);
 			this.panelGraph = new System.Windows.Forms.Panel();
 			this.checkBoxGroundTruth = new System.Windows.Forms.CheckBox();
+			this.integerTrackbarControlSHCoeffsCount = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
+			this.label7 = new System.Windows.Forms.Label();
 			this.panelScene.SuspendLayout();
 			this.panelGraph.SuspendLayout();
 			this.SuspendLayout();
@@ -239,15 +241,17 @@
 			// 
 			// panelScene
 			// 
+			this.panelScene.Controls.Add(this.integerTrackbarControlSHCoeffsCount);
 			this.panelScene.Controls.Add(this.floatTrackbarControlAOInfluence);
 			this.panelScene.Controls.Add(this.checkBoxUseIQAO);
 			this.panelScene.Controls.Add(this.checkBoxUseAOAsAFactor);
 			this.panelScene.Controls.Add(this.floatTrackbarControlBentNormalInfluence);
 			this.panelScene.Controls.Add(this.label5);
+			this.panelScene.Controls.Add(this.label7);
 			this.panelScene.Controls.Add(this.label6);
-			this.panelScene.Location = new System.Drawing.Point(309, 613);
+			this.panelScene.Location = new System.Drawing.Point(309, 611);
 			this.panelScene.Name = "panelScene";
-			this.panelScene.Size = new System.Drawing.Size(503, 62);
+			this.panelScene.Size = new System.Drawing.Size(503, 79);
 			this.panelScene.TabIndex = 8;
 			this.panelScene.Visible = false;
 			// 
@@ -373,7 +377,7 @@
 			// 
 			this.panelGraph.Controls.Add(this.floatTrackbarControlThetaMax);
 			this.panelGraph.Controls.Add(this.label1);
-			this.panelGraph.Location = new System.Drawing.Point(12, 613);
+			this.panelGraph.Location = new System.Drawing.Point(12, 611);
 			this.panelGraph.Name = "panelGraph";
 			this.panelGraph.Size = new System.Drawing.Size(291, 62);
 			this.panelGraph.TabIndex = 10;
@@ -387,6 +391,28 @@
 			this.checkBoxGroundTruth.TabIndex = 7;
 			this.checkBoxGroundTruth.Text = "Ground Truth";
 			this.checkBoxGroundTruth.UseVisualStyleBackColor = true;
+			// 
+			// integerTrackbarControlSHCoeffsCount
+			// 
+			this.integerTrackbarControlSHCoeffsCount.Location = new System.Drawing.Point(121, 55);
+			this.integerTrackbarControlSHCoeffsCount.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.integerTrackbarControlSHCoeffsCount.MinimumSize = new System.Drawing.Size(70, 20);
+			this.integerTrackbarControlSHCoeffsCount.Name = "integerTrackbarControlSHCoeffsCount";
+			this.integerTrackbarControlSHCoeffsCount.RangeMax = 20;
+			this.integerTrackbarControlSHCoeffsCount.RangeMin = 0;
+			this.integerTrackbarControlSHCoeffsCount.Size = new System.Drawing.Size(200, 20);
+			this.integerTrackbarControlSHCoeffsCount.TabIndex = 8;
+			this.integerTrackbarControlSHCoeffsCount.Value = 10;
+			this.integerTrackbarControlSHCoeffsCount.VisibleRangeMax = 20;
+			// 
+			// label7
+			// 
+			this.label7.AutoSize = true;
+			this.label7.Location = new System.Drawing.Point(29, 58);
+			this.label7.Name = "label7";
+			this.label7.Size = new System.Drawing.Size(87, 13);
+			this.label7.TabIndex = 2;
+			this.label7.Text = "SH Orders Count";
 			// 
 			// Form1
 			// 
@@ -458,6 +484,8 @@
 		private System.Windows.Forms.CheckBox checkBoxUseIQAO;
 		private System.Windows.Forms.Panel panelGraph;
 		private System.Windows.Forms.CheckBox checkBoxGroundTruth;
+		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlSHCoeffsCount;
+		private System.Windows.Forms.Label label7;
 	}
 }
 

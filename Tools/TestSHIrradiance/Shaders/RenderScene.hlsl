@@ -2,6 +2,7 @@
 
 Texture2D<float4>	_TexHDRBackBuffer_PreviousFrame : register( t1 );
 Texture2D<float4>	_TexNoise : register( t2 );
+Texture2D<float4>	_TexACoeffs : register( t3 );
 
 static const float3	SPHERE_CENTER = float3( 0, 0, 1 );
 static const float	SPHERE_RADIUS = 1.0;
@@ -80,26 +81,6 @@ float2	hash2( float n ) { return frac(sin(float2(n,n+1.0))*float2(43758.5453123,
 float3	GroundTruth( float3 _wsHitPosition, float3 _wsNormal, float2 _dist, float2 _SVPosition ) {
 	_wsHitPosition += 1e-3 * _wsNormal;	// Offset to avoid false hits
 
-	float3	color = 0.0;
-//	if ( dist.y < 0.5 ) {
-//		// Hit sphere, bounce accounting for plane only
-//		[loop]
-//		for ( uint i=0; i < 256; i++ ) {
-//			float2	aa = hash2( rrr.x + float(i)*203.1 );
-//			float	ra = sqrt(aa.y);
-//			float	rx = ra*cos(6.2831*aa.x); 
-//			float	ry = ra*sin(6.2831*aa.x);
-//			float	rz = sqrt( 1.0-aa.y );
-//			vec3	dir = vec3( rx*ru + ry*rv + rz*nor );
-//			float	res = sphIntersect( pos, dir, sph );
-//			occ += step(0.0,res);
-//
-//		}
-//	} else {
-//		// Hit plane, bounce accounteing for sphere only
-//
-//	}
-
 	// Build tangent frame
 	float3	wsTangent, wsBiTangent;
 	BuildOrthogonalVectors( _wsNormal, wsTangent, wsBiTangent );
@@ -110,6 +91,7 @@ float3	GroundTruth( float3 _wsHitPosition, float3 _wsNormal, float2 _dist, float
 //	float4	rrr = hash2( _SVPosition.x * _SVPosition.y + _time ).xyxy;
 	float2	rrr = frac( _TexNoise.SampleLevel( LinearWrap, _SVPosition.xy / 256 + hash2( _time ), 0.0 ).xy );
 
+	float3	color = 0.0;
 	const uint	SAMPLES_COUNT = 512;
 	[loop]
 	for ( uint i=0; i < SAMPLES_COUNT; i++ ) {
