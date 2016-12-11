@@ -50,6 +50,7 @@ namespace TestSHIrradiance
 		ConstantBuffer< CB_Main >	m_CB_Render;
 		Texture2D					m_Tex_HDREnvironment;
 		Texture2D					m_Tex_HDRBuffer;
+		Texture2D					m_Tex_Noise;
 
 		Camera						m_camera = new Camera();
 		CameraManipulator			m_cameraManipulator = new CameraManipulator();
@@ -128,6 +129,75 @@ float3	EstimateLambertReflectanceFactors( float _cosThetaAO, float _coneBendAngl
 }
 
 		void	TestIntegral() {
+			// Test double integral
+			const double	dTheta = 0.5 * Math.PI / 100;
+			const double	dPhi = 2.0 * Math.PI / 400;
+			double	sum = 0.0;
+			double	sum2 = 0.0;
+			double	sum3 = 0.0;
+			for ( int Y=0; Y < 100; Y++ ) {
+				double	theta = (Y+0.5) * dTheta;
+				double	cosTheta = Math.Cos( theta );
+				double	sinTheta = Math.Sin( theta );
+				for ( int X=0; X < 400; X++ ) {
+					double	phi = X * dPhi;
+
+					sum += sinTheta * dTheta * dPhi;
+					sum2 += cosTheta * sinTheta * dTheta * dPhi;
+					sum3 += cosTheta * cosTheta * sinTheta * dTheta * dPhi;
+				}
+			}
+
+			// Test random integration with uniform angular distribution
+			SimpleRNG.SetSeed( 1 );
+			sum = 0.0;
+			sum2 = 0.0;
+			sum3 = 0.0;
+			for ( int Y=0; Y < 100*400; Y++ ) {
+				double	theta = SimpleRNG.GetUniform() * 0.5 * Math.PI;
+				double	phi = SimpleRNG.GetUniform() * 2.0 * Math.PI;
+				double	cosTheta = Math.Cos( theta );
+				double	sinTheta = Math.Sin( theta );
+				sum += sinTheta * dTheta * dPhi;
+				sum2 += cosTheta * sinTheta * dTheta * dPhi;
+				sum3 += cosTheta * cosTheta * sinTheta * dTheta * dPhi;
+			}
+
+			// Test random integration with uniform vertical distribution
+			SimpleRNG.SetSeed( 1 );
+			sum = 0.0;
+			sum2 = 0.0;
+			sum3 = 0.0;
+			for ( int Y=0; Y < 100*400; Y++ ) {
+				double	phi = SimpleRNG.GetUniform() * 2.0 * Math.PI;
+				double	cosTheta = SimpleRNG.GetUniform();
+				double	sinTheta = Math.Sqrt( 1.0 - cosTheta*cosTheta );
+				sum += dTheta * dPhi;
+				sum2 += cosTheta * dTheta * dPhi;
+				sum3 += cosTheta * cosTheta * dTheta * dPhi;
+			}
+			sum *= 2.0 / Math.PI;
+			sum2 *= 2.0 / Math.PI;
+			sum3 *= 2.0 / Math.PI;
+
+			// Test random integration with uniform vertical cosine-distribution
+			SimpleRNG.SetSeed( 1 );
+			sum = 0.0;
+			sum2 = 0.0;
+			sum3 = 0.0;
+			for ( int Y=0; Y < 100*400; Y++ ) {
+				double	phi = SimpleRNG.GetUniform() * 2.0 * Math.PI;
+				double	cosTheta = Math.Sqrt( SimpleRNG.GetUniform() );
+				double	sinTheta = Math.Sqrt( 1.0 - cosTheta*cosTheta );
+				sum += dTheta * dPhi;
+				sum2 += cosTheta * dTheta * dPhi;
+				sum3 += cosTheta * cosTheta * dTheta * dPhi;
+			}
+			sum /= Math.PI;
+			sum2 /= Math.PI;
+			sum3 /= Math.PI;
+
+			// Test analytical and tabulated A terms
 			double	sumDiffA0 = 0.0;
 			double	sumDiffA1 = 0.0;
 			double	sumDiffA2 = 0.0;
@@ -434,6 +504,19 @@ avgDiffA2 /= TABLE_SIZE*TABLE_SIZE;
 
 				m_Tex_HDRBuffer = new Texture2D( m_device, (uint) graphPanel.Width, (uint) graphPanel.Height, 2, 1, PIXEL_FORMAT.RGBA32_FLOAT, false, false, null );
 
+				{
+					SimpleRNG.SetSeed( 1U );
+					PixelsBuffer	content = new PixelsBuffer( 256*256*16 );
+					using ( System.IO.BinaryWriter W = content.OpenStreamWrite() )
+						for ( int i=0; i < 256*256; i++ ) {
+							W.Write( (float) SimpleRNG.GetUniform() );
+							W.Write( (float) SimpleRNG.GetUniform() );
+							W.Write( (float) SimpleRNG.GetUniform() );
+							W.Write( (float) SimpleRNG.GetUniform() );
+						}
+					m_Tex_Noise = new Texture2D( m_device, 256, 256, 1, 1, PIXEL_FORMAT.RGBA32_FLOAT, false, false, new PixelsBuffer[] { content } );
+				}
+
 				// Create camera + manipulator
 				m_camera.CreatePerspectiveCamera( 0.5f * (float) Math.PI, (float) graphPanel.Width / graphPanel.Height, 0.01f, 100.0f );
 				m_camera.CameraTransformChanged += m_camera_CameraTransformChanged;
@@ -456,6 +539,7 @@ avgDiffA2 /= TABLE_SIZE*TABLE_SIZE;
 
 			radioButtonCoeffs.Checked = true;
 
+			m_Tex_Noise.Dispose();
 			m_Tex_HDRBuffer.Dispose();
 			m_Tex_HDREnvironment.Dispose();
 			m_CB_Render.Dispose();
@@ -514,6 +598,7 @@ avgDiffA2 /= TABLE_SIZE*TABLE_SIZE;
 			if ( S.Use() ) {
 				m_device.SetRenderTargets( targetView.Width, targetView.Height, new IView[] { targetView }, null );
 				m_Tex_HDRBuffer.SetPS( 1, sourceView );
+				m_Tex_Noise.SetPS( 2 );
 				m_device.RenderFullscreenQuad( S );
 			}
 

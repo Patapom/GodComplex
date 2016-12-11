@@ -1,6 +1,7 @@
 #include "Global.hlsl"
 
 Texture2D<float4>	_TexHDRBackBuffer_PreviousFrame : register( t1 );
+Texture2D<float4>	_TexNoise : register( t2 );
 
 static const float3	SPHERE_CENTER = float3( 0, 0, 1 );
 static const float	SPHERE_RADIUS = 1.0;
@@ -104,23 +105,29 @@ float3	GroundTruth( float3 _wsHitPosition, float3 _wsNormal, float2 _dist, float
 	BuildOrthogonalVectors( _wsNormal, wsTangent, wsBiTangent );
 
 	// Shoot a lot of rays
-//    vec4 rrr = texture2D( iChannel0, (fragCoord.xy)/iChannelResolution[0].xy, -99.0  ).xzyw;	// Noise
+//	vec4	rrr = texture2D( iChannel0, (fragCoord.xy)/iChannelResolution[0].xy, -99.0  ).xzyw;	// Noise
 //	float4	rrr = hash2( frac( 0.321519 * _SVPosition.x * _SVPosition.y ) + _time ).xyxy;
-	float4	rrr = hash2( _SVPosition.x * _SVPosition.y + _time ).xyxy;
+//	float4	rrr = hash2( _SVPosition.x * _SVPosition.y + _time ).xyxy;
+	float2	rrr = frac( _TexNoise.SampleLevel( LinearWrap, _SVPosition.xy / 256 + hash2( _time ), 0.0 ).xy );
 
 	const uint	SAMPLES_COUNT = 512;
 	[loop]
 	for ( uint i=0; i < SAMPLES_COUNT; i++ ) {
 		float2	aa = hash2( rrr.x + 203.1 * i );
+//		float2	aa = _TexNoise.SampleLevel( LinearWrap, 0.032191948 * (_SVPosition.xy + _time + i), 0.0 ).xy;
+//		float2	aa = _TexNoise.SampleLevel( LinearWrap, float2( 0.5 + i, 0.5 + floor( i / 256.0 ) ) / 256, 0.0 ).xy;
 
 		float	phi = 2.0 * PI * aa.x;
 
-#if 1
+#if 0
 		// Naïve sampling
 //		float	cosTheta = sqrt( 1.0 - aa.y );
 //		float	sinTheta = sqrt( aa.y );
-		float	cosTheta = cos( 0.5 * PI * aa.y );
-		float	sinTheta = sqrt( 1.0 - cosTheta*cosTheta );
+//		float	cosTheta = cos( 0.5 * PI * aa.y );
+//		float	cosTheta = aa.y;
+//		float	sinTheta = sqrt( 1.0 - cosTheta*cosTheta );
+		float	cosTheta = sqrt( aa.y );
+		float	sinTheta = sqrt( 1.0 - aa.y );
 
 		float	rx = sinTheta * cos( phi ); 
 		float	ry = sinTheta * sin( phi );
@@ -130,13 +137,16 @@ float3	GroundTruth( float3 _wsHitPosition, float3 _wsNormal, float2 _dist, float
 		float	hitDistance = IntersectScene( _wsHitPosition, wsSampleDirection ).x;
 		float3	radiance = hitDistance < NO_HIT ? 0.0
 												: 1;//SampleHDREnvironment( wsSampleDirection );
-//		color += cosTheta * sinTheta * PI * radiance;
-		color += cosTheta * sinTheta * PI * radiance / _luminanceFactor;
+
+//		color += cosTheta * sinTheta;
+//		color += cosTheta * sinTheta * radiance;
+		color += radiance;
+//		color += cosTheta * radiance;
+
 #else
 		// Importance-sampling
-//		float	theta = 2.0 * acos( sqrt( 1.0 - 0.5 * aa.y ) );		// Uniform sampling on theta
-		float	cosTheta = aa.y;
-		float	sinTheta = sqrt( 1.0 - cosTheta*cosTheta );
+		float	cosTheta = sqrt( aa.y );		// Accounts for dot(N,L)
+		float	sinTheta = sqrt( 1.0 - aa.y );
 
 		float	rx = sinTheta * cos( phi ); 
 		float	ry = sinTheta * sin( phi );
@@ -145,12 +155,16 @@ float3	GroundTruth( float3 _wsHitPosition, float3 _wsNormal, float2 _dist, float
 
 		float	hitDistance = IntersectScene( _wsHitPosition, wsSampleDirection ).x;
 		float3	radiance = hitDistance < NO_HIT ? 0.0
-												: 1;//SampleHDREnvironment( wsSampleDirection );
-//		color += radiance;
-		color += radiance / _luminanceFactor;
+												: SampleHDREnvironment( wsSampleDirection );
+		color += radiance;
+//		color += radiance / (_luminanceFactor * 2.0 * PI);	// To normalize AO
 #endif
 	}
 	color /= SAMPLES_COUNT;
+
+//color *= PI*PI;		// if cosTheta = cos( PI/2 * rnd )
+//color *= 2.0 * PI;	// if cosTheta = rnd
+color *= PI;			// if cosTheta = sqrt( rnd )
 
 	return color;
 }
@@ -194,7 +208,8 @@ float3	PS( VS_IN _In ) : SV_TARGET0 {
 	if ( _flags & 0x1000U ) {
 		float3	previousFrame = _TexHDRBackBuffer_PreviousFrame[_In.__Position.xy].xyz;
 		float3	currentFrame = GroundTruth( wsHitPos, wsNormal, dist, _In.__Position.xy );
-		return lerp( previousFrame, currentFrame, 0.4 );
+		return lerp( previousFrame, currentFrame, 0.1 );
+//		return lerp( previousFrame, currentFrame, 1.0 );
 	}
 
 	AO.xyz = normalize( lerp( wsNormal, AO.xyz, _influenceBentNormal ) );
