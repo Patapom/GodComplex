@@ -52,6 +52,9 @@ namespace TestSHIrradiance
 		Texture2D					m_Tex_HDRBuffer;
 		Texture2D					m_Tex_Noise;
 
+		// Advanced SH to compare with ground truth
+		Texture2D					m_Tex_ACoeffs;
+
 		Camera						m_camera = new Camera();
 		CameraManipulator			m_cameraManipulator = new CameraManipulator();
 
@@ -81,7 +84,8 @@ namespace TestSHIrradiance
 
 			// Test numerical integration
 //			NumericalIntegration();
-			TestIntegral();
+//			NumericalIntegration_20Orders();
+//			TestIntegral();
 
 			// Build texture
 			ImagesMatrix	images = new Renderer.ImagesMatrix( new ImageUtility.ImageFile[] { m_HDRImage }, 1 );
@@ -316,6 +320,71 @@ avgDiffA2 /= TABLE_SIZE*TABLE_SIZE;
 		}
 
 		/// <summary>
+		/// Computes up to 20 orders of A coefficients for various AO and angle values
+		/// </summary>
+		void	NumericalIntegration_20Orders() {
+			// Generate a bunch of rays with equal probability on the hemisphere
+			const int		THETA_SAMPLES = 100;
+			const int		SAMPLES_COUNT = 4*THETA_SAMPLES*THETA_SAMPLES;
+			const double	dPhi = 2.0 * Math.PI / (4 * THETA_SAMPLES);
+			float3[]		directions = new float3[SAMPLES_COUNT];
+			for ( int Y=0; Y < THETA_SAMPLES; Y++ ) {
+				for ( int X=0; X < 4*THETA_SAMPLES; X++ ) {
+					double	phi = dPhi * (X+SimpleRNG.GetUniform());
+					double	theta = 2.0 * Math.Acos( Math.Sqrt( 1.0 - 0.5 * (Y+SimpleRNG.GetUniform()) / THETA_SAMPLES ) );		// Uniform sampling on theta
+					directions[4*THETA_SAMPLES*Y+X].Set( (float) (Math.Sin( theta ) * Math.Cos( phi )), (float) (Math.Sin( theta ) * Math.Sin( phi )), (float) Math.Cos( theta ) );
+				}
+			}
+
+			// Compute numerical integration for various sets of angles
+			const int	TABLE_SIZE = 64;
+			const int	ORDERS = 20;
+
+			float3		coneDirection = float3.Zero;
+			float[,,]	integratedSHCoeffs = new float[TABLE_SIZE,TABLE_SIZE,ORDERS];
+
+			double[]	A = new double[ORDERS];
+			for ( int thetaIndex=0; thetaIndex < TABLE_SIZE; thetaIndex++ ) {
+//				float	cosTheta = 1.0f - (float) thetaIndex / TABLE_SIZE;
+				float	cosTheta = (float) Math.Cos( 0.5 * Math.PI * thetaIndex / TABLE_SIZE );
+				coneDirection.x = (float) Math.Sqrt( 1.0f - cosTheta*cosTheta );
+				coneDirection.z = cosTheta;
+
+				for ( int AOIndex=0; AOIndex < TABLE_SIZE; AOIndex++ ) {
+					float	cosConeHalfAngle = (float) AOIndex / TABLE_SIZE;
+
+					Array.Clear( A, 0, ORDERS );
+					for ( int sampleIndex=0; sampleIndex < SAMPLES_COUNT; sampleIndex++ ) {
+						float3	direction = directions[sampleIndex];
+						if ( direction.Dot( coneDirection ) < cosConeHalfAngle )
+							continue;	// Sample is outside cone
+
+						float	u = direction.z;	// cos(theta_sample)
+						for ( int order=0; order < ORDERS; order++ ) {
+							A[order] += u * SHFunctions.P0( order, u );
+						}
+					}
+
+					// Finalize integration
+					for ( int order=0; order < ORDERS; order++ )
+						A[order] *= 2.0 * Math.PI / SAMPLES_COUNT;
+					for ( int order=0; order < ORDERS; order++ ) {
+						integratedSHCoeffs[thetaIndex,AOIndex,order] = (float) A[order];
+					}
+				}
+			}
+
+			using ( System.IO.FileStream S = new System.IO.FileInfo( @"ConeTable_cosAO_order20.float" ).Create() )
+				using ( System.IO.BinaryWriter W = new System.IO.BinaryWriter( S ) ) {
+				for ( int thetaIndex=0; thetaIndex < TABLE_SIZE; thetaIndex++ )
+						for ( int AOIndex=0; AOIndex < TABLE_SIZE; AOIndex++ ) {
+							for ( int order=0; order < ORDERS; order++ )
+								W.Write( integratedSHCoeffs[thetaIndex,AOIndex,order] );
+						}
+				}
+		}
+
+		/// <summary>
 		/// Encodes HDR radiance image into SH
 		/// We're assuming the input image is encoded as panoramic format described here: http://gl.ict.usc.edu/Data/HighResProbes/
 		/// </summary>
@@ -504,7 +573,7 @@ avgDiffA2 /= TABLE_SIZE*TABLE_SIZE;
 
 				m_Tex_HDRBuffer = new Texture2D( m_device, (uint) graphPanel.Width, (uint) graphPanel.Height, 2, 1, PIXEL_FORMAT.RGBA32_FLOAT, false, false, null );
 
-				{
+				{	// Build noise texture
 					SimpleRNG.SetSeed( 1U );
 					PixelsBuffer	content = new PixelsBuffer( 256*256*16 );
 					using ( System.IO.BinaryWriter W = content.OpenStreamWrite() )
@@ -515,6 +584,22 @@ avgDiffA2 /= TABLE_SIZE*TABLE_SIZE;
 							W.Write( (float) SimpleRNG.GetUniform() );
 						}
 					m_Tex_Noise = new Texture2D( m_device, 256, 256, 1, 1, PIXEL_FORMAT.RGBA32_FLOAT, false, false, new PixelsBuffer[] { content } );
+				}
+
+				// Build A coeffs
+				{
+					using ( System.IO.FileStream S = new System.IO.FileInfo( @"ConeTable_cosAO_order20.float" ).Create() )
+						using ( System.IO.BinaryWriter W = new System.IO.BinaryWriter( S ) ) {
+						for ( int thetaIndex=0; thetaIndex < TABLE_SIZE; thetaIndex++ )
+								for ( int AOIndex=0; AOIndex < TABLE_SIZE; AOIndex++ ) {
+									for ( int order=0; order < ORDERS; order++ )
+										W.Write( integratedSHCoeffs[thetaIndex,AOIndex,order] );
+								}
+						}
+
+					PixelsBuffer[]	coeffSlices = new PixelsBuffer[5];	// 5 slices of 4 coeffs each to get our 20 orders
+
+					m_Tex_ACoeffs = new Texture2D( m_device, 64, 64, coeffSlices.Length, 1, PIXEL_FORMAT.RGBA32_FLOAT, false, false, coeffSlices );
 				}
 
 				// Create camera + manipulator
