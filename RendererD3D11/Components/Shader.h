@@ -17,7 +17,7 @@
 
 #endif
 
-//#define WARNING_AS_ERRORS			// Also report warnings in the message box
+//#define WARNING_AS_ERROR			// Also report warnings in the message box
 
 //#define __DEBUG_UPLOAD_ONLY_ONCE	// If defined, then the constants & textures will be uploaded only once (once the material is compiled)
 									// This allows to test the importance of constants/texture uploads in the performance of the application
@@ -54,17 +54,14 @@ class ConstantBuffer;
 }
 
 
-class Shader : public Component, ID3DInclude
-{
+class Shader : public Component, ID3DInclude {
 public:		// NESTED TYPES
 
 #ifdef ENABLE_SHADER_REFLECTION
-	class	ShaderConstants
-	{
+	class	ShaderConstants {
 	public:	// NESTED TYPES
 
-		struct BindingDesc
-		{
+		struct BindingDesc {
 			char*	pName;
 			int		Slot;
 #ifdef __DEBUG_UPLOAD_ONLY_ONCE
@@ -88,7 +85,6 @@ public:		// NESTED TYPES
 		int		GetShaderResourceViewIndex( const char* _pTextureName ) const;
 	};
 #endif
-
 
 private:	// FIELDS
 
@@ -132,6 +128,8 @@ private:	// FIELDS
 public:
 	static bool				ms_LoadFromBinary;	// A flag you can set to force loading from binary files without having to write a specific code for that
 												// Use the helper class ScopedForceMaterialsLoadFromBinary below
+
+	static bool				ms_warningsAsError;	// A flag you can set to treat warnings as errors
 
 
 public:	 // PROPERTIES
@@ -210,7 +208,7 @@ public:
 	// Binary Blobs
 #ifdef SAVE_SHADER_BLOB_TO
 	// Helper to reload a compiled binary blob and build the material from it
-	static Shader*	CreateFromBinaryBlob( Device& _Device, const char* _pShaderFileName, const IVertexFormatDescriptor& _Format, D3D_SHADER_MACRO* _pMacros, const char* _pEntryPointVS, const char* _pEntryPointHS, const char* _pEntryPointDS, const char* _pEntryPointGS, const char* _pEntryPointPS );
+	static Shader*		CreateFromBinaryBlob( Device& _Device, const char* _pShaderFileName, const IVertexFormatDescriptor& _Format, D3D_SHADER_MACRO* _pMacros, const char* _pEntryPointVS, const char* _pEntryPointHS, const char* _pEntryPointDS, const char* _pEntryPointGS, const char* _pEntryPointPS );
 
 	static void			SaveBinaryBlob( const char* _pShaderFileName, D3D_SHADER_MACRO* _pMacros, const char* _pEntryPoint, ID3DBlob& _Blob );
 	static ID3DBlob*	LoadBinaryBlob( const char* _pShaderFileName, D3D_SHADER_MACRO* _pMacros, const char* _pEntryPoint );	// NOTE: It's the caller's responsibility to release the blob!
@@ -240,8 +238,7 @@ public:
 	void			ForceRecompile();	// Called externally by the IncludesManager if an include file was changed
 };
 
-class	ScopedForceMaterialsLoadFromBinary
-{
+class	ScopedForceMaterialsLoadFromBinary {
 public:
 	ScopedForceMaterialsLoadFromBinary()	{ Shader::ms_LoadFromBinary = true; }
 	~ScopedForceMaterialsLoadFromBinary()	{ Shader::ms_LoadFromBinary = false; }

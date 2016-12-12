@@ -38,39 +38,61 @@ namespace SphericalHarmonics
 	{
 		#region CONSTANTS
 
-		protected static double[]	FACTORIAL = new double[] {	1.0,
-																1.0,
-																2.0,
-																6.0,
-																24.0,
-																120.0,
-																720.0,
-																5040.0,
-																40320.0,
-																362880.0,
-																3628800.0,
-																39916800.0,
-																479001600.0,
-																6227020800.0,
-																87178291200.0,
-																1307674368000.0,
-																20922789888000.0,
-																355687428096000.0,
-																6402373705728000.0,
-																1.21645100408832e+17,
-																2.43290200817664e+18,
-																5.109094217170944e+19,
-																1.12400072777760768e+21,
-																2.58520167388849766e+22,
-																6.20448401733239439e+23,
-																1.55112100433309860e+25,
-																4.03291461126605636e+26,
-																1.08888694504183522e+28,
-																3.04888344611713861e+29,
-																8.84176199373970195e+30,
-																2.65252859812191059e+32,
-																8.22283865417792282e+33,
-																2.63130836933693530e+35
+		protected static double[]	FACTORIAL = new double[] {	1.0,							//  0!	Order 0
+																1.0,							//  1!
+																2.0,							//  2!	Order 1
+																6.0,							//  3!
+																24.0,							//  4!	Order 2
+																120.0,							//  5!
+																720.0,							//  6!	Order 3
+																5040.0,							//  7!
+																40320.0,						//  8!	Order 4
+																362880.0,						//  9!
+																3628800.0,						// 10!	Order 5
+																39916800.0,						// 11!
+																479001600.0,					// 12!	Order 6
+																6227020800.0,					// 13!
+																87178291200.0,					// 14!	Order 7
+																1307674368000.0,				// 15!
+																20922789888000.0,				// 16!	Order 8
+																355687428096000.0,				// 17!
+																6402373705728000.0,				// 18!	Order 9
+// 																1.21645100408832e+17,			// 19!
+// 																2.43290200817664e+18,			// 20!	Order 10
+// 																5.109094217170944e+19,			// 21!
+// 																1.12400072777760768e+21,		// 22!	Order 11
+// 																2.58520167388849766e+22,		// 23!
+// 																6.20448401733239439e+23,		// 24!	Order 12
+// 																1.55112100433309860e+25,		// 25!
+// 																4.03291461126605636e+26,		// 26!	Order 13
+// 																1.08888694504183522e+28,		// 27!
+// 																3.04888344611713861e+29,		// 28!	Order 14
+// 																8.84176199373970195e+30,		// 29!
+// 																2.65252859812191059e+32,		// 30!	Order 15
+// 																8.22283865417792282e+33,		// 31!
+// 																2.63130836933693530e+35,		// 32!	Order 16
+																1216451004088320000.0,									// 19!
+																24329020081766400000.0,									// 20!	Order 10
+																510909421717094400000.0,								// 21!
+																11240007277776076800000.0,								// 22!	Order 11
+																258520167388849766400000.0,								// 23!
+																6204484017332394393600000.0,							// 24!	Order 12
+																155112100433309859840000000.0,							// 25!
+																4032914611266056355840000000.0,							// 26!	Order 13
+																108888694504183521607680000000.0,						// 27!
+																3048883446117138605015040000000.0,						// 28!	Order 14
+																88417619937397019545436160000000.0,						// 29!
+																2652528598121910586363084800000000.0,					// 30!	Order 15
+																82228386541779228177255628800000000.0,					// 31!
+																263130836933693530167218012160000000.0,					// 32!	Order 16
+																8683317618811886495518194401280000000.0,				// 33!
+																295232799039604140847618609643520000000.0,				// 34!	Order 17
+																10333147966386144929666651337523200000000.0,			// 35!
+																371993326789901217467999448150835200000000.0,			// 36!	Order 18
+																13763753091226345046315979581580902400000000.0,			// 37!
+																523022617466601111760007224100074291200000000.0,		// 38!	Order 19
+																20397882081197443358640281739902897356800000000.0,		// 39!
+																815915283247897734345611269596115894272000000000.0,		// 40!	Order 20
 															};
 
 
@@ -269,8 +291,7 @@ namespace SphericalHarmonics
 		/// <param name="_θ">The elevation of the direction of the SH sampling</param>
 		/// <param name="_Order">The order of the SH vector</param>
 		/// <returns></returns>
-		public static double	EvaluateSH( double[] _Coefficients, double _θ, double _ϕ, int _Order )
-		{
+		public static double	EvaluateSH( double[] _Coefficients, double _θ, double _ϕ, int _Order ) {
 			double	Result = 0.0;
 			for ( int l=0; l < _Order; l++ )
 				for ( int m=-l; m <= +l; m++ )
@@ -1340,8 +1361,7 @@ namespace SphericalHarmonics
 		//           | --------------------
 		//          \| 4*Math.PI * (l+|m|)!
 		//
-		public static double	K( int l, int m )
-		{
+		public static double	K( int l, int m ) {
 			return	Math.Sqrt( ((2.0 * l + 1.0 ) * Factorial( l - Math.Abs(m) )) / (4.0 * Math.PI * Factorial( l + Math.Abs(m) )) );
 		}
 
@@ -1381,6 +1401,24 @@ namespace SphericalHarmonics
 			return	pll;
 		}
 
+		public static double	P0( int l, double x ) {
+			if ( l == 0 )
+				return 1.0;
+			if ( l == 1 )
+				return x;
+
+			double	pmm = 1.0;
+			double	pmmp1 = x;
+			double	pll = 0.0;
+			for ( int ll=2; ll <= l; ++ll ) {
+				pll = ( (2.0*ll-1.0) * x * pmmp1 - (ll-1.0) * pmm ) / ll;
+				pmm = pmmp1;
+				pmmp1 = pll;
+			}
+
+			return	pll;
+		}
+
 		/// <summary>
 		/// Factored code used to compute U,V,W coefficients needed for rotation matrix inference
 		/// </summary>
@@ -1390,8 +1428,7 @@ namespace SphericalHarmonics
 		/// <param name="_l"></param>
 		/// <param name="_Matrix">The source rotation matrix</param>
 		/// <returns></returns>
-		protected static double	ComputeP( int _a, int _b, int _i, int _l, double[,] _Matrix )
-		{
+		protected static double	ComputeP( int _a, int _b, int _i, int _l, double[,] _Matrix ) {
 			int	PrevBandOffset = _l * (_l - 1);
 
 			if ( PrevBandOffset + _a < 0 )
@@ -1422,8 +1459,7 @@ namespace SphericalHarmonics
 		/// <param name="l">Current band</param>
 		/// <param name="_Order">Max used SH order</param>
 		/// <returns>The sigma factor to apply to the SH coefficient to avoid ringing (aka Gibbs phenomenon)</returns>
-		public static double	ComputeSigmaFactorSinc( int l, int _Order )
-		{
+		public static double	ComputeSigmaFactorSinc( int l, int _Order ) {
 			double	Angle = Math.PI * l / (_Order+1);
 			return l > 0 ? Math.Sin( Angle ) / Angle : 1.0;
 		}
@@ -1439,8 +1475,7 @@ namespace SphericalHarmonics
 		/// <param name="_Order">Max used SH order</param>
 		/// <returns>The sigma factor to apply to the SH coefficient to avoid ringing (aka Gibbs phenomenon)</returns>
 		public static double	ComputeSigmaFactorCos( int l, int _Order )	{ return ComputeSigmaFactorCos( l, 2.0 * _Order ); }
-		public static double	ComputeSigmaFactorCos( int l, double h )
-		{
+		public static double	ComputeSigmaFactorCos( int l, double h ) {
 			return Math.Cos( 0.5 * Math.PI * l / h );
 		}
 
@@ -1911,8 +1946,7 @@ namespace SphericalHarmonics
 		/// <param name="_θ">The polar elevation</param>
 		/// <param name="_ϕ">The azimuth</param>
 		/// <returns>The unit vector in cartesian coordinates</returns>
-		public static float3	SphericalToCartesian( double _θ, double _ϕ )
-		{
+		public static float3	SphericalToCartesian( double _θ, double _ϕ ) {
 			float3	Result = new float3();
 			SphericalToCartesian( _θ, _ϕ, Result );
 			return	Result;
@@ -1924,11 +1958,10 @@ namespace SphericalHarmonics
 		/// <param name="_θ">The polar elevation</param>
 		/// <param name="_ϕ">The azimuth</param>
 		/// <param name="_Direction">The unit vector in cartesian coordinates</param>
-		public static void		SphericalToCartesian( double _θ, double _ϕ, float3 _Direction )
-		{
+		public static void		SphericalToCartesian( double _θ, double _ϕ, float3 _Direction ) {
 			_Direction.x = (float) (Math.Sin( _θ ) * Math.Cos( _ϕ ));
-			_Direction.z = (float) Math.Cos( _θ );
 			_Direction.y = (float) (Math.Sin( _θ ) * Math.Sin( _ϕ ));
+			_Direction.z = (float) Math.Cos( _θ );
 		}
 
 		/// <summary>
@@ -1936,8 +1969,7 @@ namespace SphericalHarmonics
 		/// </summary>
 		/// <param name="_Value">The value to compute the factorial of</param>
 		/// <returns>The factorial of the input value</returns>
-		protected static double		Factorial( int _Value )
-		{
+		protected static double		Factorial( int _Value ) {
 			return	FACTORIAL[_Value];
 		}
 

@@ -7,6 +7,12 @@
 #include <D3D11Shader.h>
 
 bool	Shader::ms_LoadFromBinary = false;
+#ifdef WARNING_AS_ERROR
+	bool	Shader::ms_warningsAsError = true;
+#else
+	bool	Shader::ms_warningsAsError = false;
+#endif
+
 
 Shader::Shader( Device& _Device, const char* _pShaderFileName, const IVertexFormatDescriptor& _Format, const char* _pShaderCode, D3D_SHADER_MACRO* _pMacros, const char* _pEntryPointVS, const char* _pEntryPointHS, const char* _pEntryPointDS, const char* _pEntryPointGS, const char* _pEntryPointPS, ID3DInclude* _pIncludeOverride )
 	: Component( _Device )
@@ -330,7 +336,6 @@ ID3DBlob*   Shader::CompileShader( const char* _pShaderFileName, const char* _pS
 	ID3DBlob*   pCode;
 	ID3DBlob*   pErrors;
 
-
 //_pShaderCode = pTestShader;
 
 
@@ -368,19 +373,16 @@ ID3DBlob*   Shader::CompileShader( const char* _pShaderFileName, const char* _pS
 	D3DCompile( pCodePointer, CodeSize, _pShaderFileName, _pMacros, _pInclude, _pEntryPoint, _pTarget, Flags1, Flags2, &pCode, &pErrors );
 
 	#if defined(_DEBUG) || defined(DEBUG_SHADER)
-		#ifdef WARNING_AS_ERRORS
-			if ( pErrors != NULL ) {
-		#else
-			if ( pCode == NULL && pErrors != NULL ) {
-		#endif
+		bool	hasWarningOrErrors = pErrors != NULL;	// Represents warnings and errors
+		bool	hasErrors = pCode == NULL;				// Surely an error if no shader is returned!
+		if ( hasWarningOrErrors && (ms_warningsAsError || hasErrors) ) {
 			const char*	pErrorText = (LPCSTR) pErrors->GetBufferPointer();
 			MessageBoxA( NULL, pErrorText, "Shader Compilation Error!", MB_OK | MB_ICONERROR );
 			ASSERT( pErrors == NULL, "Shader compilation error!" );
-
 			return NULL;
-		}
-		else
+		} else {
 			ASSERT( pCode != NULL, "Shader compilation failed => No error provided but didn't output any shader either!" );
+		}
 	#endif
 
 	// Save the binary blob to disk

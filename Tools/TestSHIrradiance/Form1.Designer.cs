@@ -47,10 +47,12 @@
 			this.label5 = new System.Windows.Forms.Label();
 			this.label6 = new System.Windows.Forms.Label();
 			this.panelScene = new System.Windows.Forms.Panel();
+			this.integerTrackbarControlSHCoeffsCount = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
 			this.floatTrackbarControlAOInfluence = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.checkBoxUseIQAO = new System.Windows.Forms.CheckBox();
 			this.checkBoxUseAOAsAFactor = new System.Windows.Forms.CheckBox();
 			this.floatTrackbarControlBentNormalInfluence = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.label7 = new System.Windows.Forms.Label();
 			this.buttonCameraCopy = new System.Windows.Forms.Button();
 			this.buttonCameraPaste = new System.Windows.Forms.Button();
 			this.floatTrackbarControlFilterWindowSize = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
@@ -59,8 +61,7 @@
 			this.graphPanel = new TestSHIrradiance.GraphPanel(this.components);
 			this.panelGraph = new System.Windows.Forms.Panel();
 			this.checkBoxGroundTruth = new System.Windows.Forms.CheckBox();
-			this.integerTrackbarControlSHCoeffsCount = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
-			this.label7 = new System.Windows.Forms.Label();
+			this.integerTrackbarControlm = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
 			this.panelScene.SuspendLayout();
 			this.panelGraph.SuspendLayout();
 			this.SuspendLayout();
@@ -241,6 +242,7 @@
 			// 
 			// panelScene
 			// 
+			this.panelScene.Controls.Add(this.integerTrackbarControlm);
 			this.panelScene.Controls.Add(this.integerTrackbarControlSHCoeffsCount);
 			this.panelScene.Controls.Add(this.floatTrackbarControlAOInfluence);
 			this.panelScene.Controls.Add(this.checkBoxUseIQAO);
@@ -254,6 +256,20 @@
 			this.panelScene.Size = new System.Drawing.Size(503, 79);
 			this.panelScene.TabIndex = 8;
 			this.panelScene.Visible = false;
+			// 
+			// integerTrackbarControlSHCoeffsCount
+			// 
+			this.integerTrackbarControlSHCoeffsCount.Location = new System.Drawing.Point(121, 55);
+			this.integerTrackbarControlSHCoeffsCount.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.integerTrackbarControlSHCoeffsCount.MinimumSize = new System.Drawing.Size(70, 20);
+			this.integerTrackbarControlSHCoeffsCount.Name = "integerTrackbarControlSHCoeffsCount";
+			this.integerTrackbarControlSHCoeffsCount.RangeMax = 20;
+			this.integerTrackbarControlSHCoeffsCount.RangeMin = 0;
+			this.integerTrackbarControlSHCoeffsCount.Size = new System.Drawing.Size(200, 20);
+			this.integerTrackbarControlSHCoeffsCount.TabIndex = 8;
+			this.integerTrackbarControlSHCoeffsCount.Value = 10;
+			this.integerTrackbarControlSHCoeffsCount.VisibleRangeMax = 20;
+			this.integerTrackbarControlSHCoeffsCount.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlSHCoeffsCount_ValueChanged);
 			// 
 			// floatTrackbarControlAOInfluence
 			// 
@@ -301,6 +317,15 @@
 			this.floatTrackbarControlBentNormalInfluence.Value = 100F;
 			this.floatTrackbarControlBentNormalInfluence.VisibleRangeMax = 100F;
 			// 
+			// label7
+			// 
+			this.label7.AutoSize = true;
+			this.label7.Location = new System.Drawing.Point(29, 58);
+			this.label7.Name = "label7";
+			this.label7.Size = new System.Drawing.Size(87, 13);
+			this.label7.TabIndex = 2;
+			this.label7.Text = "SH Orders Count";
+			// 
 			// buttonCameraCopy
 			// 
 			this.buttonCameraCopy.Location = new System.Drawing.Point(818, 613);
@@ -328,7 +353,7 @@
 			this.floatTrackbarControlFilterWindowSize.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlFilterWindowSize.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlFilterWindowSize.Name = "floatTrackbarControlFilterWindowSize";
-			this.floatTrackbarControlFilterWindowSize.RangeMax = 10F;
+			this.floatTrackbarControlFilterWindowSize.RangeMax = 20F;
 			this.floatTrackbarControlFilterWindowSize.RangeMin = 0F;
 			this.floatTrackbarControlFilterWindowSize.Size = new System.Drawing.Size(200, 20);
 			this.floatTrackbarControlFilterWindowSize.TabIndex = 0;
@@ -392,27 +417,18 @@
 			this.checkBoxGroundTruth.Text = "Ground Truth";
 			this.checkBoxGroundTruth.UseVisualStyleBackColor = true;
 			// 
-			// integerTrackbarControlSHCoeffsCount
+			// integerTrackbarControlm
 			// 
-			this.integerTrackbarControlSHCoeffsCount.Location = new System.Drawing.Point(121, 55);
-			this.integerTrackbarControlSHCoeffsCount.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.integerTrackbarControlSHCoeffsCount.MinimumSize = new System.Drawing.Size(70, 20);
-			this.integerTrackbarControlSHCoeffsCount.Name = "integerTrackbarControlSHCoeffsCount";
-			this.integerTrackbarControlSHCoeffsCount.RangeMax = 20;
-			this.integerTrackbarControlSHCoeffsCount.RangeMin = 0;
-			this.integerTrackbarControlSHCoeffsCount.Size = new System.Drawing.Size(200, 20);
-			this.integerTrackbarControlSHCoeffsCount.TabIndex = 8;
-			this.integerTrackbarControlSHCoeffsCount.Value = 10;
-			this.integerTrackbarControlSHCoeffsCount.VisibleRangeMax = 20;
-			// 
-			// label7
-			// 
-			this.label7.AutoSize = true;
-			this.label7.Location = new System.Drawing.Point(29, 58);
-			this.label7.Name = "label7";
-			this.label7.Size = new System.Drawing.Size(87, 13);
-			this.label7.TabIndex = 2;
-			this.label7.Text = "SH Orders Count";
+			this.integerTrackbarControlm.Location = new System.Drawing.Point(343, 55);
+			this.integerTrackbarControlm.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.integerTrackbarControlm.MinimumSize = new System.Drawing.Size(70, 20);
+			this.integerTrackbarControlm.Name = "integerTrackbarControlm";
+			this.integerTrackbarControlm.RangeMax = 20;
+			this.integerTrackbarControlm.RangeMin = 0;
+			this.integerTrackbarControlm.Size = new System.Drawing.Size(116, 20);
+			this.integerTrackbarControlm.TabIndex = 8;
+			this.integerTrackbarControlm.Value = 10;
+			this.integerTrackbarControlm.VisibleRangeMax = 20;
 			// 
 			// Form1
 			// 
@@ -486,6 +502,7 @@
 		private System.Windows.Forms.CheckBox checkBoxGroundTruth;
 		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlSHCoeffsCount;
 		private System.Windows.Forms.Label label7;
+		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlm;
 	}
 }
 

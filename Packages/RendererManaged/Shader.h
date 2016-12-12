@@ -20,6 +20,13 @@ namespace Renderer {
 
 	public:
 
+		static property bool	WarningAsError {
+			bool	get() { return ::Shader::ms_warningsAsError; }
+			void	set( bool value ) { ::Shader::ms_warningsAsError = value; }
+		}
+
+	public:
+
 		Shader( Device^ _device, ShaderFile^ _shaderFile, VERTEX_FORMAT _format, String^ _entryPointVS, String^ _entryPointGS, String^ _entryPointPS, cli::array<ShaderMacro^>^ _macros ) {
 			const char*	shaderFileName = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( _shaderFile->m_shaderFileName->FullName ).ToPointer();
 			const char*	shaderSourceCode = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( _shaderFile->m_shaderSourceCode ).ToPointer();

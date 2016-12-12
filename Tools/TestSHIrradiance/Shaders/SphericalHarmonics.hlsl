@@ -34,13 +34,19 @@ static const float3	EnvironmentSH[9] = {
 
 // 400 SH coefficients representing the surrounding environment
 cbuffer _CB_Coeffs : register( b1 ) {
-	float	_environmentSH_R[400];
-	float	_environmentSH_G[400];
-	float	_environmentSH_B[400];
+	float4	_environmentSH[400];
+//	float	_environmentSH_R[400];
+//	float	_environmentSH_G[400];
+//	float	_environmentSH_B[400];
 };
 
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+// Generic SH coefficients (works up to order 17, after that I believe it's lacking precision)
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 
-static const float	FACTORIAL[] {	1.0,							//  0!	Order 0
+static const float	FACT[41] = {	1.0,							//  0!	Order 0
 									1.0,							//  1!
 									2.0,							//  2!	Order 1
 									6.0,							//  3!
@@ -90,18 +96,22 @@ static const float	FACTORIAL[] {	1.0,							//  0!	Order 0
 //          \|    4*PI * (l+|m|)!
 //
 float	General_K( int l, int m ) {
-	return	sqrt( ((2.0 * l + 1.0 ) * FACTORIAL[l - abs(m)]) / (4.0 * PI * FACTORIAL[l + abs(m)]) );
+	return	sqrt( ((2.0 * l + 1.0 ) * FACT[l - abs(m)]) / (4.0 * PI * FACT[l + abs(m)]) );
 }
 
 // Calculates an Associated Legendre Polynomial P(l,m,x) using stable recurrence relations
 // From Numerical Recipes in C
 // x = cos(theta)
 float	General_P( int l, int m, float x ) {
+	x = clamp( x, -1.0, 1.0 );
+
 	float	pmm = 1.0;
 	if ( m > 0 ) {
 		// pmm = (-1) ^ m * Factorial( 2 * m - 1 ) * ( (1 - x) * (1 + x) ) ^ (m/2);
-		float	somx2 = Math.Sqrt( (1.0-x) * (1.0+x) );
+		float	somx2 = sqrt( (1.0-x) * (1.0+x) );
+//		float	somx2 = sqrt( max( 0.0, (1.0-x) * (1.0+x) ) );
 		float	fact = 1.0;
+		[loop]
 		for ( int i=1; i <= m; i++ ) {
 			pmm *= -fact * somx2;
 			fact += 2;
@@ -115,6 +125,7 @@ float	General_P( int l, int m, float x ) {
 		return	pmmp1;
 
 	float	pll = 0.0;
+	[loop]
 	for ( int ll=m+2; ll <= l; ++ll ) {
 		pll = ( (2.0*ll-1.0) * x * pmmp1 - (ll+m-1.0) * pmm ) / (ll-m);
 		pmm = pmmp1;
@@ -125,18 +136,111 @@ float	General_P( int l, int m, float x ) {
 }
 
 float	General_Ylm( int l, int m, float _cosTheta, float _phi ) {
+	float	factor = General_K( l, m );
+	float	P = General_P( l, abs(m), _cosTheta );
 	if ( m == 0 )
-		return	General_K( l, m ) * General_P( l, m, _cosTheta );
+		return	factor * P;
 
-	float	factor = pow( -1, m ) * SQRT2 * General_K( l, m );	// (2015-04-13) According to wikipedia (http://en.wikipedia.org/wiki/Spherical_harmonics#Real_form) we should multiply coeffs by (-1)^m ...
-	float	P = General_P( l, abs(m), _cosTheta )
-	return  factor * P * (m > 0 ? cos( m * _phi ) : sin( -m * _phi ));
+	factor *= (m & 1 ? -1 : 1) * SQRT2;	// (2015-04-13) According to wikipedia (http://en.wikipedia.org/wiki/Spherical_harmonics#Real_form) we should multiply coeffs by (-1)^m ...
+//	return  factor * P * (m > 0 ? cos( m * _phi ) : sin( -m * _phi ));
+	return  factor * P * sin( (m >= 0 ? 0.5*PI : 0.0) + abs(m) * _phi );
 }
 
+////////////////////////////////////////////////////////////////////////////////
+// Specialized SH coefficients
+// Computes the Ylm coefficients in the requested direction
+//
+void	Ylm( float3 _direction, out float _SH[9] ) {
+	const float	c0 = 0.28209479177387814347403972578039;	// 1/2 sqrt(1/pi)
+	const float	c1 = 0.48860251190291992158638462283835;	// 1/2 sqrt(3/pi)
+	const float	c2 = 1.09254843059207907054338570580270;	// 1/2 sqrt(15/pi)
+	const float	c3 = 0.31539156525252000603089369029571;	// 1/4 sqrt(5/pi)
+
+	float	x = _direction.x;
+	float	y = _direction.y;
+	float	z = _direction.z;
+
+	_SH[0] = c0;
+	_SH[1] = c1*y;
+	_SH[2] = c1*z;
+	_SH[3] = c1*x;
+	_SH[4] = c2*x*y;
+	_SH[5] = c2*y*z;
+	_SH[6] = c3*(3.0*z*z - 1.0);
+	_SH[7] = c2*x*z;
+	_SH[8] = 0.5*c2*(x*x - y*y);
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
+// Generic radiance estimate up to order 20
 ////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+//
+float3	EvaluateSHRadiance( float3 _direction, int _maxOrder, float _filterWindowSize, float _A[20] ) {
+	float	cosTheta = _direction.z;
+//	float	phi = atan2( _direction.y, _direction.x );	// Produces NaNs if atan2( 0, 0 )!!
+	float	phi = abs(_direction.x) > 1e-6 ? atan2( _direction.y, _direction.x ) : 0.0;
+	float	rcpWindow = 1.0 / _filterWindowSize;
+
+	// Use hardcoded Ylm for first 3 orders
+	float	firstSH[9];
+	Ylm( _direction, firstSH );
+
+	float2	filters = float2( _A[1] * 0.5 * (1.0 + cos( PI * rcpWindow )), _A[2] * 0.5 * (1.0 + cos( 2.0 * PI * rcpWindow )) );
+	firstSH[0] *= _A[0];
+	firstSH[1] *= filters.x;
+	firstSH[2] *= filters.x;
+	firstSH[3] *= filters.x;
+	firstSH[4] *= filters.y;
+	firstSH[5] *= filters.y;
+	firstSH[6] *= filters.y;
+	firstSH[7] *= filters.y;
+	firstSH[8] *= filters.y;
+
+	float3	radiance = 0.0;
+
+#if 0
+	uint	imax = min( 9, _maxOrder*_maxOrder );
+	for ( uint i=0; i < imax; i++ ) {
+		float	Ylm = firstSH[i];
+		radiance += Ylm * _environmentSH[i].xyz;
+	}
+
+	// Use generic Ylm for remaining orders
+	[loop]
+	for ( int l=3; l < _maxOrder; l++ ) {
+		float	filter = 0.5 * (1.0 + cos( l * PI * rcpWindow ));
+				filter *= _A[l];	// Incorporate Al term
+		[loop]
+		for ( int m=-l; m <= l; m++ ) {
+			uint	i = l*(l+1)+m;
+			float	Ylm = filter * General_Ylm( l, m, cosTheta, phi );
+			radiance += Ylm * _environmentSH[i].xyz;
+		}
+	}
+#else
+	// Use generic Ylm for all orders
+	uint	coeffsCount = _maxOrder*_maxOrder;
+	[loop]
+	for ( int i=0; i < coeffsCount; i++ ) {
+		int	l = int( floor( sqrt( i ) ) );
+		int	m = i - l*(l+1);
+
+		float	filter = 0.5 * (1.0 + cos( l * PI * rcpWindow ));
+				filter *= _A[l];	// Incorporate Al term
+
+		float	Ylm = filter * General_Ylm( l, m, cosTheta, phi );
+		radiance += Ylm * _environmentSH[i].xyz;
+	}
+#endif
+
+	return radiance;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+// Radiance/Irradiance Evaluators
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -178,29 +282,6 @@ float3	EstimateLambertReflectanceFactors( float _cosThetaAO, float _coneBendAngl
 					 + y * (c.z + y * (f.z + x * h.z + (y * (k + x * m))));
 
 	return float3( A0, saturate( A1 ), A2 );
-}
-
-// Computes the Ylm coefficients in the requested direction
-//
-void	Ylm( float3 _direction, out float3 _SH[9] ) {
-	const float	c0 = 0.28209479177387814347403972578039;	// 1/2 sqrt(1/pi)
-	const float	c1 = 0.48860251190291992158638462283835;	// 1/2 sqrt(3/pi)
-	const float	c2 = 1.09254843059207907054338570580270;	// 1/2 sqrt(15/pi)
-	const float	c3 = 0.31539156525252000603089369029571;	// 1/4 sqrt(5/pi)
-
-	float	x = _direction.x;
-	float	y = _direction.y;
-	float	z = _direction.z;
-
-	_SH[0] = c0;
-	_SH[1] = c1*y;
-	_SH[2] = c1*z;
-	_SH[3] = c1*x;
-	_SH[4] = c2*x*y;
-	_SH[5] = c2*y*z;
-	_SH[6] = c3*(3.0*z*z - 1.0);
-	_SH[7] = c2*x*z;
-	_SH[8] = 0.5*c2*(x*x - y*y);
 }
 
 // Evaluates the SH coefficients in the requested direction
@@ -307,6 +388,12 @@ float3	EvaluateSHIrradiance( float3 _direction, float _cosThetaAO, float _coneBe
 					+ 2.0 * (_SH[4]*x*y + _SH[5]*y*z + _SH[7]*z*x)))	// 2sqrt(3).c2.(L2-2.xy + L2-1.yz + L21.zx)
 		);
 }
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+// Filtering
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 
 // Applies Hanning filter for given window size
 void FilterHanning( float3 _inSH[9], out float3 _outSH[9], float _WindowSize ) {

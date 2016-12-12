@@ -4,6 +4,8 @@
 //
 static const float	PI = 3.1415926535897932384626433832795;
 static const float	INVPI = 0.31830988618379067153776752674503;
+static const float	SQRT2 = 1.4142135623730950488016887242097;
+
 static const float	CAMERA_FOV = 90.0 * PI / 180.0;
 static const float	TAN_HALF_FOV = tan( 0.5 * CAMERA_FOV );
 static const float3	LUMINANCE = float3( 0.2126, 0.7152, 0.0722 );	// D65 Illuminant and 2° observer (cf. http://wiki.nuaj.net/index.php?title=Colorimetry)
@@ -22,6 +24,8 @@ cbuffer	CBDisplay : register( b0 ) {
 	float		_filterWindowSize;
 	float		_influenceAO;
 	float		_influenceBentNormal;
+	uint		_SHOrdersCount;
+	int			_customM;
 }
 
 SamplerState LinearClamp	: register( s0 );

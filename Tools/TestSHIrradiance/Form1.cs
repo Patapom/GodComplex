@@ -42,6 +42,7 @@ namespace TestSHIrradiance
 			public float	_influenceAO;
 			public float	_influenceBentNormal;
 			public uint		_SHOrdersCount;
+			public int		_customM;
 		}
 
 		Device						m_device = null;
@@ -87,7 +88,7 @@ namespace TestSHIrradiance
 			// Test numerical integration
 //			NumericalIntegration();
 //			NumericalIntegration_20Orders();
-//			TestIntegral();
+			TestIntegral();
 		}
 
 // Estimates A0, A1 and A2 integrals based on the angle of the AO cone from the normal and cos(PI/2 * AO) defining the AO cone's half-angle aperture
@@ -131,6 +132,7 @@ float3	EstimateLambertReflectanceFactors( float _cosThetaAO, float _coneBendAngl
 }
 
 		void	TestIntegral() {
+/*
 			// Test double integral
 			const double	dTheta = 0.5 * Math.PI / 100;
 			const double	dPhi = 2.0 * Math.PI / 400;
@@ -198,14 +200,15 @@ float3	EstimateLambertReflectanceFactors( float _cosThetaAO, float _coneBendAngl
 			sum /= Math.PI;
 			sum2 /= Math.PI;
 			sum3 /= Math.PI;
+*/
 
 			// Test analytical and tabulated A terms
-			double	sumDiffA0 = 0.0;
-			double	sumDiffA1 = 0.0;
-			double	sumDiffA2 = 0.0;
-			double[]	approxSH = new double[9];
-			double[]	exactSH = new double[9];
-			double[]	sumDiffSH = new double[9];
+			double		sumDiffA0 = 0.0;
+			double		sumDiffA1 = 0.0;
+			double		sumDiffA2 = 0.0;
+// 			double[]	approxSH = new double[9];
+// 			double[]	exactSH = new double[9];
+// 			double[]	sumDiffSH = new double[9];
 			for ( int i=0; i < 100; i++ ) {
 				float	AO = 1.0f - (float) i / 100;
 				float	t = (float) Math.Cos( 0.5 * Math.PI * AO );
@@ -214,8 +217,8 @@ float3	EstimateLambertReflectanceFactors( float _cosThetaAO, float _coneBendAngl
 				double	exactA1 = Math.Sqrt( Math.PI / 3.0 ) * (1 - t*t*t);
 				double	exactA2 = Math.Sqrt( 5.0 * Math.PI / 4.0 ) * (3.0 / 4.0 * (1 - t*t*t*t) - 1.0 / 2.0 * (1 - t*t));
 
-				exactSH[0] = 0.5 * Math.PI * (1 - t*t);
-				approxSH[0] = Math.PI * tableA.x;
+// 				exactSH[0] = 0.5 * Math.PI * (1 - t*t);
+// 				approxSH[0] = Math.PI * tableA.x;
 
 				double	exactC1 = Math.Sqrt( Math.PI / 3 ) * (1 - t*t*t);
 				double	approxC1 = tableA.y;
@@ -343,13 +346,16 @@ avgDiffA2 /= TABLE_SIZE*TABLE_SIZE;
 
 			double[]	A = new double[ORDERS];
 			for ( int thetaIndex=0; thetaIndex < TABLE_SIZE; thetaIndex++ ) {
-//				float	cosTheta = 1.0f - (float) thetaIndex / TABLE_SIZE;
-				float	cosTheta = (float) Math.Cos( 0.5 * Math.PI * thetaIndex / TABLE_SIZE );
+				float	V = (float) thetaIndex / TABLE_SIZE;
+//				float	cosTheta = (float) Math.Cos( 0.5 * Math.PI * V );
+				float	cosTheta = V;
 				coneDirection.x = (float) Math.Sqrt( 1.0f - cosTheta*cosTheta );
 				coneDirection.z = cosTheta;
 
 				for ( int AOIndex=0; AOIndex < TABLE_SIZE; AOIndex++ ) {
-					float	cosConeHalfAngle = (float) AOIndex / TABLE_SIZE;
+					float	U = (float) AOIndex / TABLE_SIZE;
+//					float	cosConeHalfAngle = U;
+					float	cosConeHalfAngle = (float) Math.Cos( 0.5 * Math.PI * U );
 
 					Array.Clear( A, 0, ORDERS );
 					for ( int sampleIndex=0; sampleIndex < SAMPLES_COUNT; sampleIndex++ ) {
@@ -373,7 +379,7 @@ avgDiffA2 /= TABLE_SIZE*TABLE_SIZE;
 			}
 
 			// Save table
-			using ( System.IO.FileStream S = new System.IO.FileInfo( @"ConeTable_cosAO_order20.float" ).Create() )
+			using ( System.IO.FileStream S = new System.IO.FileInfo( @"ConeTable_cosTheta_order20.float" ).Create() )
 				using ( System.IO.BinaryWriter W = new System.IO.BinaryWriter( S ) ) {
 				for ( int thetaIndex=0; thetaIndex < TABLE_SIZE; thetaIndex++ )
 						for ( int AOIndex=0; AOIndex < TABLE_SIZE; AOIndex++ ) {
@@ -600,6 +606,8 @@ avgDiffA2 /= TABLE_SIZE*TABLE_SIZE;
 
 				// Create the render shaders
 				try {
+					Shader.WarningAsError = false;
+
 					m_shader_RenderSphere = new Shader( m_device, new ShaderFile( new System.IO.FileInfo( @"./Shaders/RenderSphere.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 					m_shader_RenderScene = new Shader( m_device, new ShaderFile( new System.IO.FileInfo( @"./Shaders/RenderScene.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 					m_shader_RenderLDR = new Shader( m_device, new ShaderFile( new System.IO.FileInfo( @"./Shaders/RenderLDR.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
@@ -635,13 +643,14 @@ avgDiffA2 /= TABLE_SIZE*TABLE_SIZE;
 
 					// Load A coeffs into a texture array
 					float[,,]	A = new float[TABLE_SIZE,TABLE_SIZE,ORDERS];
-					using ( System.IO.FileStream S = new System.IO.FileInfo( @"ConeTable_cosAO_order20.float" ).OpenRead() )
+//					using ( System.IO.FileStream S = new System.IO.FileInfo( @"ConeTable_cosAO_order20.float" ).OpenRead() )
+					using ( System.IO.FileStream S = new System.IO.FileInfo( @"ConeTable_cosTheta_order20.float" ).OpenRead() )
 						using ( System.IO.BinaryReader R = new System.IO.BinaryReader( S ) ) {
 							for ( int thetaIndex=0; thetaIndex < TABLE_SIZE; thetaIndex++ )
-									for ( int AOIndex=0; AOIndex < TABLE_SIZE; AOIndex++ ) {
-										for ( int order=0; order < ORDERS; order++ )
-											A[thetaIndex,AOIndex,order] = R.ReadSingle();
-									}
+								for ( int AOIndex=0; AOIndex < TABLE_SIZE; AOIndex++ ) {
+									for ( int order=0; order < ORDERS; order++ )
+										A[thetaIndex,AOIndex,order] = R.ReadSingle();
+								}
 						}
 
 					PixelsBuffer[]	coeffSlices = new PixelsBuffer[5];	// 5 slices of 4 coeffs each to get our 20 orders
@@ -650,12 +659,12 @@ avgDiffA2 /= TABLE_SIZE*TABLE_SIZE;
 						coeffSlices[sliceIndex] = coeffSlice;
 
 						using ( System.IO.BinaryWriter W = coeffSlice.OpenStreamWrite() ) {
-							for ( int Y=0; Y < TABLE_SIZE; Y++ )
-								for ( int X=0; X < TABLE_SIZE; X++ ) {
-									W.Write( A[X,Y,4*sliceIndex+0] );
-									W.Write( A[X,Y,4*sliceIndex+1] );
-									W.Write( A[X,Y,4*sliceIndex+2] );
-									W.Write( A[X,Y,4*sliceIndex+3] );
+							for ( int thetaIndex=0; thetaIndex < TABLE_SIZE; thetaIndex++ )
+								for ( int AOIndex=0; AOIndex < TABLE_SIZE; AOIndex++ ) {
+									W.Write( A[thetaIndex,AOIndex,4*sliceIndex+0] );
+									W.Write( A[thetaIndex,AOIndex,4*sliceIndex+1] );
+									W.Write( A[thetaIndex,AOIndex,4*sliceIndex+2] );
+									W.Write( A[thetaIndex,AOIndex,4*sliceIndex+3] );
 								}
 						}
 					}
@@ -672,15 +681,15 @@ avgDiffA2 /= TABLE_SIZE*TABLE_SIZE;
 								coeffs[coeffIndex].Set( R.ReadSingle(), R.ReadSingle(), R.ReadSingle() );
 
 					// Write into a raw byte[]
-					byte[]	rawContent = new byte[400 * 3 * 4];
+					byte[]	rawContent = new byte[400 * 4 * 4];
 					using ( System.IO.MemoryStream	MS = new System.IO.MemoryStream( rawContent ) )
 						using ( System.IO.BinaryWriter W = new System.IO.BinaryWriter( MS ) ) {
-							for ( int coeffIndex=0; coeffIndex < ORDERS*ORDERS; coeffIndex++ )
+							for ( int coeffIndex=0; coeffIndex < ORDERS*ORDERS; coeffIndex++ ) {
 								W.Write( coeffs[coeffIndex].x );
-							for ( int coeffIndex=0; coeffIndex < ORDERS*ORDERS; coeffIndex++ )
 								W.Write( coeffs[coeffIndex].y );
-							for ( int coeffIndex=0; coeffIndex < ORDERS*ORDERS; coeffIndex++ )
 								W.Write( coeffs[coeffIndex].z );
+								W.Write( 0.0f );
+							}
 						}
  					m_CB_Coeffs = new RawConstantBuffer( m_device, 1, rawContent.Length );
 					m_CB_Coeffs.UpdateData( rawContent );
@@ -747,6 +756,8 @@ avgDiffA2 /= TABLE_SIZE*TABLE_SIZE;
 			m_CB_Render.m._influenceAO = 0.01f * floatTrackbarControlAOInfluence.Value;
 			m_CB_Render.m._influenceBentNormal = 0.01f * floatTrackbarControlBentNormalInfluence.Value;
 			m_CB_Render.m._SHOrdersCount = (uint) integerTrackbarControlSHCoeffsCount.Value;
+			m_CB_Render.m._customM = integerTrackbarControlm.Value;
+			
 			m_CB_Render.m._flags = 0;
 			if ( radioButtonSideBySide.Checked )
 				m_CB_Render.m._flags = 1;
@@ -828,6 +839,13 @@ avgDiffA2 /= TABLE_SIZE*TABLE_SIZE;
 			}
 
 			m_cameraManipulator.InitializeCamera( cameraPosition, cameraTarget, float3.UnitY );
+		}
+
+		private void integerTrackbarControlSHCoeffsCount_ValueChanged( IntegerTrackbarControl _Sender, int _FormerValue ) {
+			integerTrackbarControlm.RangeMin = -integerTrackbarControlSHCoeffsCount.Value;
+			integerTrackbarControlm.RangeMax = integerTrackbarControlSHCoeffsCount.Value;
+			integerTrackbarControlm.VisibleRangeMin = -integerTrackbarControlSHCoeffsCount.Value;
+			integerTrackbarControlm.VisibleRangeMax = integerTrackbarControlSHCoeffsCount.Value;
 		}
 	}
 }
