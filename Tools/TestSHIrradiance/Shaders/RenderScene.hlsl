@@ -28,6 +28,9 @@ float	ComputeAOiQ( float3 _wsPosition, float3 _wsNormal, float3 _wsSphereCenter,
 	float	h  = l / _sphereRadius;
 	float	h2 = h*h;
 
+// NOTE: It's WRONG to factor in the (N.L) here! We're not computing lighting!
+return sqrt( max( 0.0, 1.0 - 1.0 / h2 ) );
+
 	// above/below horizon: Quilez - http://iquilezles.org/www/articles/sphereao/sphereao.htm
 	float res = max( 0.0, nl ) / h2;
 	// intersecting horizon: Lagarde/de Rousiers - http://www.frostbite.com/wp-content/uploads/2014/11/course_notes_moving_frostbite_to_pbr.pdf
@@ -46,7 +49,7 @@ float	ComputeAOiQ( float3 _wsPosition, float3 _wsNormal, float3 _wsSphereCenter,
 }
 
 // Hardcoded AO computations
-#if 0
+#if 1
 	// Compute cone's aperture as angle of non-occlusion
 float4	ComputePlaneAO( float3 _wsPosition ) {
 	float3	delta = SPHERE_CENTER - _wsPosition;
@@ -54,7 +57,7 @@ float4	ComputePlaneAO( float3 _wsPosition ) {
 			delta /= dist2Sphere;
 
 	float	cosTheta = sqrt( 1.0 - SPHERE_RADIUS*SPHERE_RADIUS / (dist2Sphere*dist2Sphere) );
-//	float	cosThetaAO = cos( 0.5 * PI - acos( cosTheta ) );
+//float	dOmega = 2.0 * PI * (1.0 - cosTheta)
 	float	AO = cosTheta;
 
 	float3	ortho = cross( delta, PLANE_NORMAL );
@@ -72,10 +75,10 @@ float4	ComputeSphereAO( float3 _wsPosition ) {
 	float3	wsFlatDir = normalize( float3( wsNormal.xy, 0 ) );
 
 	float3	ortho = normalize( cross( PLANE_NORMAL, wsNormal ) );
-	float3	ortho2 = cross( wsNormal, ortho );
+	float3	wsTangent = cross( wsNormal, ortho );
 
-	float3	direction = normalize( 0.5 * (ortho2 + wsFlatDir ) );
-	float	AO = acos( dot( direction, wsFlatDir ) );
+	float3	direction = normalize( wsTangent + wsFlatDir );
+	float	AO = 1.0 - dot( direction, wsFlatDir );
 	return float4( direction, AO );
 }
 #else
@@ -91,9 +94,9 @@ float4	ComputePlaneAO( float3 _wsPosition ) {
 	float3	ortho = cross( delta, PLANE_NORMAL );
 	float3	direction = cross( ortho, delta );
 
-if ( _flags & 0x80U ) {
-	AO = ComputeAOiQ( _wsPosition, PLANE_NORMAL, SPHERE_CENTER, SPHERE_RADIUS );
-}
+//if ( _flags & 0x80U ) {
+//	AO = ComputeAOiQ( _wsPosition, PLANE_NORMAL, SPHERE_CENTER, SPHERE_RADIUS );
+//}
 
 	return float4( direction, AO );
 }
@@ -145,11 +148,9 @@ float3	GroundTruth( float3 _wsHitPosition, float3 _wsNormal, float2 _dist, float
 #if 0
 		// Naïve sampling
 //		float	cosTheta = sqrt( 1.0 - aa.y );
-//		float	sinTheta = sqrt( aa.y );
-//		float	cosTheta = cos( 0.5 * PI * aa.y );
-//		float	cosTheta = aa.y;
-//		float	sinTheta = sqrt( 1.0 - cosTheta*cosTheta );
-		float	cosTheta = sqrt( aa.y );
+//		float	cosTheta = cos( 0.5 * PI * aa.y );	// Accounts for nothing
+//		float	cosTheta = aa.y;					// Only acounts for sin( theta )
+		float	cosTheta = sqrt( aa.y );			// Accounts for cos( theta ) * sin( theta )
 		float	sinTheta = sqrt( 1.0 - aa.y );
 
 		float	rx = sinTheta * cos( phi ); 
@@ -161,10 +162,9 @@ float3	GroundTruth( float3 _wsHitPosition, float3 _wsNormal, float2 _dist, float
 		float3	radiance = hitDistance < NO_HIT ? 0.0
 												: 1;//SampleHDREnvironment( wsSampleDirection );
 
-//		color += cosTheta * sinTheta;
-//		color += cosTheta * sinTheta * radiance;
-		color += radiance;
-//		color += cosTheta * radiance;
+//		color += cosTheta * sinTheta * radiance;	// If cos(theta) = cos( PI/2 * random )
+//		color += cosTheta * radiance;				// If cos(theta) = random
+		color += radiance;							// If cos(theta) = sqrt( random )
 
 #else
 		// Importance-sampling
@@ -234,7 +234,11 @@ float3	GroundTruth_AO( float3 _wsHitPosition, float3 _wsNormal, float2 _dist, fl
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 //
-float3	EvaluateSHIrradiance( float3 _wsDirection, float _AO, float _cosBentConeAngle, int _SHOrdersCount, float _filterWindowSize ) {
+// THIS IS WRONG: It doesn't preoperly account for cone bending in any direction...
+// THIS IS WRONG: It doesn't preoperly account for cone bending in any direction...
+// THIS IS WRONG: It doesn't preoperly account for cone bending in any direction...
+//
+float3	General_EvaluateSHIrradiance( float3 _wsDirection, float _AO, float _cosBentConeAngle, int _SHOrdersCount, float _filterWindowSize ) {
 
 //return _AO / _luminanceFactor;
 //_cosBentConeAngle = 1.0;
@@ -303,8 +307,71 @@ return anus;
 #endif
 
 	// Estimate radiance in reduced AO cone
-	return EvaluateSHRadiance( _wsDirection, _SHOrdersCount, _filterWindowSize, A );
+	return General_EvaluateSHRadiance( _wsDirection, _SHOrdersCount, _filterWindowSize, A );
 }
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+// Computes the "improved irradiance estimate" using hardcoded order-2
+// 
+// 
+// 
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+//
+float3	EvaluateSHIrradiance( float3 _wsNormal, float3 _wsConeDirection, float _AO, float3 _SH[9] ) {
+
+	// Rotate A into normal direction
+	float	cosineLobeSH[9];
+	Ylm( float3( 0, 0, 1 ), cosineLobeSH );
+
+	const float	A0 = 1;//PI;
+	const float	A1 = 1;//2.0*PI/3.0;
+	const float	A2 = 1;//0.25*PI;
+
+	const float	w0 = sqrt( 4.0 * PI ) * A0;
+	const float	w1 = sqrt( 4.0 * PI / 3.0 ) * A1;
+	const float	w2 = sqrt( 4.0 * PI / 5.0 ) * A2;
+
+	// Estimate cosine lobe in normal direction
+	float	normalSH[9];
+	Ylm( _wsNormal, normalSH );
+
+refaire ce putain de calcul ! J'ai pris en compte les sqrt( 4PI/(2L+1) ) ou pas ??
+
+// Estimate cosine lobe
+return (w0 * cosineLobeSH[0] * normalSH[0]
+	  + w1 * cosineLobeSH[1] * normalSH[1]
+	  + w1 * cosineLobeSH[2] * normalSH[2]
+	  + w1 * cosineLobeSH[3] * normalSH[3]
+	  + w2 * cosineLobeSH[4] * normalSH[4]
+	  + w2 * cosineLobeSH[5] * normalSH[5]
+	  + w2 * cosineLobeSH[6] * normalSH[6]
+	  + w2 * cosineLobeSH[7] * normalSH[7]
+	  + w2 * cosineLobeSH[8] * normalSH[8]);// / _luminanceFactor;
+
+
+//	float3		A = EstimateLambertReflectanceFactors( _cosThetaAO, _coneBendAngle );
+//	float		c0 = A.x;		// [sqrt(1/(4PI)] * [sqrt(4PI/1) * A0] = A0
+//	float		c1 = A.y;		// [sqrt(3/(4PI)] * [sqrt(4PI/3) * A1] = A1
+//	float		c2 = 0.5 * A.z;	// [sqrt(5/(16PI)] * [sqrt(4PI/5) * A2] = 1/2 * A2
+//	const float	sqrt3 = 1.7320508075688772935274463415059;
+//
+//	float		x = _direction.x;
+//	float		y = _direction.y;
+//	float		z = _direction.z;
+//
+//	return	max( 0.0, c0 * _SH[0]										// c0.L00
+//			+ c1 * (_SH[1]*y + _SH[2]*z + _SH[3]*x)						// c1.(L1-1.y + L10.z + L11.x)
+//			+ c2 * (_SH[6]*(3.0*z*z - 1.0)								// c2.L20.(3z²-1)
+//				+ sqrt3 * (_SH[8]*(x*x - y*y)							// sqrt(3).c2.L22.(x²-y²)
+//					+ 2.0 * (_SH[4]*x*y + _SH[5]*y*z + _SH[7]*z*x)))	// 2sqrt(3).c2.(L2-2.xy + L2-1.yz + L21.zx)
+//		);
+}
+
+
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -373,7 +440,7 @@ return 2.0 * (1.0 + testOrder) * abs( _TexACoeffs.SampleLevel( LinearClamp, floa
 		for ( uint l=0; l < 20; l++ )
 			A[l] = 1.0;
 
-		return (_flags & 0x100U) ? EvaluateSHRadiance( wsView, _SHOrdersCount, _filterWindowSize, A )
+		return (_flags & 0x100U) ? General_EvaluateSHRadiance( wsView, _SHOrdersCount, _filterWindowSize, A )
 //		return (_flags & 0x100U) ? EvaluateSHRadiance( wsView, filteredEnvironmentSH )
 								 : SampleHDREnvironment( wsView );
 	}
@@ -426,13 +493,12 @@ return 2.0 * (1.0 + testOrder) * abs( _TexACoeffs.SampleLevel( LinearClamp, floa
 		float	bentConeAngle = acos( cosBentConeAngle );
 
 		// Use hardcoded order 2 estimate
-//		float3	correctIrradiance = EvaluateSHIrradiance( wsNormal, cos( 0.5 * PI * AO.w ), bentConeAngle, filteredEnvironmentSH );
+		float3	correctIrradiance = EvaluateSHIrradiance( wsNormal, AO.w, AO.xyz, filteredEnvironmentSH );
 
-		// Use generic order in normal's direction
-//		float3	correctIrradiance = EvaluateSHIrradiance( wsNormal, AO.w, cosBentConeAngle, _SHOrdersCount, _filterWindowSize );
-
-		// Use generic order in BENT NORMAL's direction
-		float3	correctIrradiance = EvaluateSHIrradiance( AO.xyz, AO.w, cosBentConeAngle, _SHOrdersCount, _filterWindowSize );
+		// Use generic order
+// THIS IS WRONG: It doesn't preoperly account for cone bending in any direction...
+//		float3	correctIrradiance = General_EvaluateSHIrradiance( wsNormal, AO.w, cosBentConeAngle, _SHOrdersCount, _filterWindowSize );	// Estimate in normal's direction
+//		float3	correctIrradiance = General_EvaluateSHIrradiance( AO.xyz, AO.w, cosBentConeAngle, _SHOrdersCount, _filterWindowSize );		// Estimate in BENT NORMAL's direction
 
 		float3	incorrectIrradiance = (_flags & 0x40U)  ?	AO.w * EvaluateSHIrradiance( wsNormal, filteredEnvironmentSH )						// "Traditional method" AO * irradiance
 														:	EvaluateSHIrradiance( wsNormal, cos( 0.5 * PI * AO.w ), filteredEnvironmentSH );	// Improved method, without bent normal

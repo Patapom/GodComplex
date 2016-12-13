@@ -65,7 +65,59 @@ namespace TestSHIrradiance
 		public Form1() {
 			InitializeComponent();
 			UpdateGraph();
+
+TestSolidAngle();
 		}
+
+void	TestSolidAngle() {
+	double	dPhi = 2.0 * Math.PI / 200;
+	double	dTheta = Math.PI / 100;
+	double	solidAngle;
+
+	double	R = 0.7;
+	for ( double D=10.0; D > 0.0; D-=1.0 ) {
+		double	Px = -D;
+		double	Py = 0.0;
+		double	Pz = 0.0;
+
+		double	sum = 0.0;
+		double	test = 0.0;
+		for ( int X=0; X < 200; X++ ) {
+			double	phi = X * dPhi;
+			for ( int Y=0; Y < 100; Y++ ) {
+				double	theta = (0.5+Y) * dTheta;
+
+				double	dS = Math.Sin( theta ) * dPhi * dTheta;
+
+				double	Nx = Math.Sin( theta ) * Math.Cos( phi );
+				double	Ny = Math.Sin( theta ) * Math.Sin( phi );
+				double	Nz = Math.Cos( theta );
+
+				double	Rx = R * Nx - Px;
+				double	Ry = R * Ny - Py;
+				double	Rz = R * Nz - Pz;
+// 				double	Rx = Px - R * Nx;
+// 				double	Ry = Py - R * Ny;
+// 				double	Rz = Pz - R * Nz;
+				double	r2 = Rx*Rx + Ry*Ry + Rz*Rz;
+				double	r = Math.Sqrt( r2 );
+				double	r3 = r * r2;
+						Rx /= r3;
+						Ry /= r3;
+						Rz /= r3;
+
+				sum += (Nx * Rx + Ny * Ry + Nz * Rz) * dS;
+
+				test += Math.Sqrt( 1.0 - Rz * Rz );	// sin( theta du point sur la sphère )
+			}
+		}
+		test /= 200 * 100;
+
+		double	sinConeAngle = R / D;
+		solidAngle = 2.0 * Math.PI * (1.0 - Math.Sqrt( 1.0 - sinConeAngle*sinConeAngle ) );
+	}
+}
+
 
 		#region HDR Image Encoding
 

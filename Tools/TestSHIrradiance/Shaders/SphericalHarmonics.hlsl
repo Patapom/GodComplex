@@ -177,7 +177,7 @@ void	Ylm( float3 _direction, out float _SH[9] ) {
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 //
-float3	EvaluateSHRadiance( float3 _direction, int _maxOrder, float _filterWindowSize, float _A[20] ) {
+float3	General_EvaluateSHRadiance( float3 _direction, int _maxOrder, float _filterWindowSize, float _A[20] ) {
 	float	cosTheta = _direction.z;
 //	float	phi = atan2( _direction.y, _direction.x );	// Produces NaNs if atan2( 0, 0 )!!
 	float	phi = abs(_direction.x) > 1e-6 ? atan2( _direction.y, _direction.x ) : 0.0;
@@ -365,6 +365,8 @@ float3	EvaluateSHIrradiance( float3 _direction, float _cosThetaAO,  float3 _SH[9
 		);
 }
 
+/* THIS IS WRONG: It doesn't preoperly account for cone bending in any direction...
+
 // Evaluates the irradiance perceived in the provided direction, also accounting for Ambient Occlusion cone and normal bending
 // Details can be found at http://wiki.nuaj.net/index.php?title=SphericalHarmonicsPortal
 // Here, _cosThetaAO = cos( PI/2 * AO ) and represents the cosine of the cone half-angle that drives the amount of light a surface is perceiving
@@ -388,6 +390,7 @@ float3	EvaluateSHIrradiance( float3 _direction, float _cosThetaAO, float _coneBe
 					+ 2.0 * (_SH[4]*x*y + _SH[5]*y*z + _SH[7]*z*x)))	// 2sqrt(3).c2.(L2-2.xy + L2-1.yz + L21.zx)
 		);
 }
+*/
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
