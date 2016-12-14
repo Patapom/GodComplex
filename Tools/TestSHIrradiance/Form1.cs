@@ -33,6 +33,7 @@ namespace TestSHIrradiance
 			public uint		_sizeY;
 			public float	_time;
 			public uint		_flags;
+			public float4	_mouse;
 			public float4x4	_world2Proj;
 //			public float4x4	_proj2World;
 			public float4x4	_camera2World;
@@ -66,7 +67,10 @@ namespace TestSHIrradiance
 			InitializeComponent();
 			UpdateGraph();
 
-TestSolidAngle();
+//TestSolidAngle();
+
+radioButtonSingleSphere.Checked = true;
+
 		}
 
 void	TestSolidAngle() {
@@ -798,10 +802,13 @@ avgDiffA2 /= TABLE_SIZE*TABLE_SIZE;
 
 			m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
 
+			Point	clientMousePos = graphPanel.PointToClient( Control.MousePosition );
+
 			// Update CB
 			m_CB_Render.m._sizeX = (uint) graphPanel.Width;
 			m_CB_Render.m._sizeY = (uint) graphPanel.Height;
 			m_CB_Render.m._time = (float) (DateTime.Now - m_startTime).TotalSeconds;
+			m_CB_Render.m._mouse.Set( clientMousePos.X, clientMousePos.Y, (Control.MouseButtons & MouseButtons.Left) != 0 ? 1 : 0, (Control.MouseButtons & MouseButtons.Right) != 0 ? 1 : 0 );
 			m_CB_Render.m._cosAO = (float) Math.Cos( floatTrackbarControlThetaMax.Value * Math.PI / 180.0 );
 			m_CB_Render.m._luminanceFactor = floatTrackbarControlLuminanceFactor.Value;
 			m_CB_Render.m._filteringWindowSize = floatTrackbarControlFilterWindowSize.Value;

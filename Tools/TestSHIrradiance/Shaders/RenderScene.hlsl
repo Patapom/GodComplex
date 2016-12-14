@@ -221,7 +221,7 @@ float3	GroundTruth_AO( float3 _wsHitPosition, float3 _wsNormal, float2 _dist, fl
 		float	hitDistance = IntersectScene( _wsHitPosition, wsSampleDirection ).x;
 		AO += hitDistance < NO_HIT ? 0.0 : 1.0;
 	}
-	AO /= (SAMPLES_COUNT * _luminanceFactor);
+	AO /= (float(SAMPLES_COUNT) * _luminanceFactor);
 
 	return AO;
 }
@@ -323,23 +323,122 @@ return anus;
 //
 float3	EvaluateSHIrradiance( float3 _wsNormal, float3 _wsConeDirection, float _AO, float3 _SH[9] ) {
 
-	// Rotate A into normal direction
-	float	cosineLobeSH[9];
-	Ylm( float3( 0, 0, 1 ), cosineLobeSH );
+	// Build modified radiance coefficients weighted by clamped cone
+	float	a = cos( 0.5 * PI * _AO );
+//float	a = cos( 0.5 * PI * _influenceAO );
+	const float	C0 = 2.0 * PI * (1.0 - a);
+	const float	C1 = PI * (1.0 - a*a);
+	const float	C2 = a * C1;//PI * (a - a*a*a);
 
-	const float	A0 = 1;//PI;
-	const float	A1 = 1;//2.0*PI/3.0;
-	const float	A2 = 1;//0.25*PI;
+	float3		clampedConeRadianceSH[9];
+	clampedConeRadianceSH[0] = 2*sqrt(PI);//C0 * _SH[0];
+	clampedConeRadianceSH[1] = 0;//C1 * _SH[1];
+	clampedConeRadianceSH[2] = 0;//C1 * _SH[2];
+	clampedConeRadianceSH[3] = 0;//C1 * _SH[3];
+	clampedConeRadianceSH[4] = 0;//C2 * _SH[4];
+	clampedConeRadianceSH[5] = 0;//C2 * _SH[5];
+	clampedConeRadianceSH[6] = 0;//C2 * _SH[6];
+	clampedConeRadianceSH[7] = 0;//C2 * _SH[7];
+	clampedConeRadianceSH[8] = 0;//C2 * _SH[8];
 
+/*float	tempSH[9];
+Ylm( _wsConeDirection, tempSH );
+//Ylm( _wsNormal, tempSH );
+//	Ylm( float3( 1, 0, 0 ), coneSH );
+
+// Compute resulting color
+return (clampedConeRadianceSH[0] * tempSH[0]
+	  + clampedConeRadianceSH[1] * tempSH[1]
+	  + clampedConeRadianceSH[2] * tempSH[2]
+	  + clampedConeRadianceSH[3] * tempSH[3]
+	  + clampedConeRadianceSH[4] * tempSH[4]
+	  + clampedConeRadianceSH[5] * tempSH[5]
+	  + clampedConeRadianceSH[6] * tempSH[6]
+	  + clampedConeRadianceSH[7] * tempSH[7]
+	  + clampedConeRadianceSH[8] * tempSH[8]);
+*/
+
+	// Build rotated cosine lobe coefficients
+	float	normalSH[9];
+//	Ylm( _wsNormal, normalSH );
+Ylm( float3( 0, 0, 1 ), normalSH );
+
+	const float	A0 = PI;
+	const float	A1 = 2.0 * PI / 3.0;
+	const float	A2 = PI / 4.0;
 	const float	w0 = sqrt( 4.0 * PI ) * A0;
 	const float	w1 = sqrt( 4.0 * PI / 3.0 ) * A1;
 	const float	w2 = sqrt( 4.0 * PI / 5.0 ) * A2;
 
-	// Estimate cosine lobe in normal direction
-	float	normalSH[9];
-	Ylm( _wsNormal, normalSH );
+	float	cosineLobeSH[9];
+	cosineLobeSH[0] = w0 * normalSH[0];
+	cosineLobeSH[1] = w1 * normalSH[1];
+	cosineLobeSH[2] = w1 * normalSH[2];
+	cosineLobeSH[3] = w1 * normalSH[3];
+	cosineLobeSH[4] = w2 * normalSH[4];
+	cosineLobeSH[5] = w2 * normalSH[5];
+	cosineLobeSH[6] = w2 * normalSH[6];
+	cosineLobeSH[7] = w2 * normalSH[7];
+	cosineLobeSH[8] = w2 * normalSH[8];
 
-refaire ce putain de calcul ! J'ai pris en compte les sqrt( 4PI/(2L+1) ) ou pas ??
+	// Build the resulting clamped cone radiance convolved with the cosine lobe
+	float3	coneClampedCosineSH[9];
+	SHProduct( cosineLobeSH, clampedConeRadianceSH, coneClampedCosineSH );
+if ( _flags & 0x40U ) {
+	for ( uint i=0; i < 9; i++ ) {
+		coneClampedCosineSH[i] = cosineLobeSH[i];
+	}
+	coneClampedCosineSH[0].yz *= 0.8;
+}
+
+	// Estimate irradiance in cone direction
+	float	coneSH[9];
+//	Ylm( _wsConeDirection, coneSH );
+	Ylm( _wsNormal, coneSH );
+//	Ylm( float3( 1, 0, 0 ), coneSH );
+
+	// Compute resulting color
+	return (coneClampedCosineSH[0] * coneSH[0]
+		  + coneClampedCosineSH[1] * coneSH[1]
+		  + coneClampedCosineSH[2] * coneSH[2]
+		  + coneClampedCosineSH[3] * coneSH[3]
+		  + coneClampedCosineSH[4] * coneSH[4]
+		  + coneClampedCosineSH[5] * coneSH[5]
+		  + coneClampedCosineSH[6] * coneSH[6]
+		  + coneClampedCosineSH[7] * coneSH[7]
+		  + coneClampedCosineSH[8] * coneSH[8]) * 0.4 / _luminanceFactor;
+/*
+
+#if 1	// TEST CLAMPED CONE
+
+//const float	A0 = 2.0 * sqrt( PI );	// This would be the result of encoding a constant ambient term of 1 into SH/ZH
+//const float	A1 = 0.0;
+//const float	A2 = 0.0;
+
+
+//// Estimate cosine lobe
+//return (w0 * normalSH[0]
+//	  + w1 * normalSH[1]
+//	  + w1 * normalSH[2]
+//	  + w1 * normalSH[3]
+//	  + w2 * normalSH[4]
+//	  + w2 * normalSH[5]
+//	  + w2 * normalSH[6]
+//	  + w2 * normalSH[7]
+//	  + w2 * normalSH[8]) / _luminanceFactor;
+//
+#else	// TEST COSINE LOBE
+	// Rotate A into normal direction
+	const float	A0 = 1;//PI;
+	const float	A1 = 1;//2.0*PI/3.0;
+	const float	A2 = 1;//0.25*PI;
+
+	// Estimate cosine lobe in normal direction
+#endif
+
+	const float	w0 = sqrt( 4.0 * PI ) * A0;
+	const float	w1 = sqrt( 4.0 * PI / 3.0 ) * A1;
+	const float	w2 = sqrt( 4.0 * PI / 5.0 ) * A2;
 
 // Estimate cosine lobe
 return (w0 * cosineLobeSH[0] * normalSH[0]
@@ -350,8 +449,7 @@ return (w0 * cosineLobeSH[0] * normalSH[0]
 	  + w2 * cosineLobeSH[5] * normalSH[5]
 	  + w2 * cosineLobeSH[6] * normalSH[6]
 	  + w2 * cosineLobeSH[7] * normalSH[7]
-	  + w2 * cosineLobeSH[8] * normalSH[8]);// / _luminanceFactor;
-
+	  + w2 * cosineLobeSH[8] * normalSH[8]) * 0.1 / _luminanceFactor;
 
 //	float3		A = EstimateLambertReflectanceFactors( _cosThetaAO, _coneBendAngle );
 //	float		c0 = A.x;		// [sqrt(1/(4PI)] * [sqrt(4PI/1) * A0] = A0
@@ -369,6 +467,7 @@ return (w0 * cosineLobeSH[0] * normalSH[0]
 //				+ sqrt3 * (_SH[8]*(x*x - y*y)							// sqrt(3).c2.L22.(x²-y²)
 //					+ 2.0 * (_SH[4]*x*y + _SH[5]*y*z + _SH[7]*z*x)))	// 2sqrt(3).c2.(L2-2.xy + L2-1.yz + L21.zx)
 //		);
+*/
 }
 
 
@@ -493,7 +592,7 @@ return 2.0 * (1.0 + testOrder) * abs( _TexACoeffs.SampleLevel( LinearClamp, floa
 		float	bentConeAngle = acos( cosBentConeAngle );
 
 		// Use hardcoded order 2 estimate
-		float3	correctIrradiance = EvaluateSHIrradiance( wsNormal, AO.w, AO.xyz, filteredEnvironmentSH );
+		float3	correctIrradiance = EvaluateSHIrradiance( wsNormal, AO.xyz, AO.w, filteredEnvironmentSH );
 
 		// Use generic order
 // THIS IS WRONG: It doesn't preoperly account for cone bending in any direction...

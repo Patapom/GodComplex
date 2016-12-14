@@ -16,6 +16,7 @@ cbuffer	CBDisplay : register( b0 ) {
 	uint2		_size;
 	float		_time;
 	uint		_flags;
+	float4		_mouse;
 	float4x4	_world2Proj;
 //	float4x4	_proj2World;
 	float4x4	_camera2World;
