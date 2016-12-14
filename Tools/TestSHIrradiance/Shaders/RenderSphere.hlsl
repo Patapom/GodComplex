@@ -1,6 +1,6 @@
 #include "Global.hlsl"
 
-#if 0
+#if 1
 
 // Test Sphere Rendering
 float3	PS( VS_IN _In ) : SV_TARGET0 {
@@ -59,14 +59,23 @@ static const float3	TEST_POSITION2 = float3( -1.0, 0.0, 2.5 );
 
 // Enter SH function to visualize below:
 float SH_TEST( in float3 n ) {
+	// Build a rotating cosine lobe
+	float	lobeSH0[9];
+	ClampedCosineLobe( d, _cosAO, lobeSH0 );
+	float3	d = normalize( float3( cos( _time ), sin( _time ), 0*1 ) );
 
+	// Build a fixed clamped cone along +X
+	float	lobeSH1[9];
+	ClampedCone( float3( 1, 0, 0 ), _cosAO, lobeSH1 );
+
+	// Compute convolution
 	float	lobeSH[9];
-	ClampedCosineLobe( float3( 0, 0, 1 ), _cosAO, lobeSH );
+	SHProduct( lobeSH0, lobeSH1, lobeSH );
 
+	// Estimate lobe in requested direction
 	float SH[9];
 	Ylm( n, SH );
 
-	// Estimate lobe in requested direction
 	return lobeSH[0] * SH[0]
 		 + lobeSH[1] * SH[1]
 		 + lobeSH[2] * SH[2]
@@ -79,7 +88,7 @@ float SH_TEST( in float3 n ) {
 }
 
 float SH_TEST2( in float3 n ) {
-
+return 1.0;
 //return saturate( n.z );			// Regular cosine lobe
 //return n.z > _cosAO ? n.z : 0.0;	// Clamped cosine lobe
 //return n.z > _cosAO ? 1.0 : 0.0;	// Clamped hemisphere

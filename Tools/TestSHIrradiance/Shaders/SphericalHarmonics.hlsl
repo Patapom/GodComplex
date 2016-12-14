@@ -394,6 +394,7 @@ float3	EvaluateSHIrradiance( float3 _direction, float _cosThetaAO, float _coneBe
 
 
 // Rotate ZH cosine lobe into specific direction
+// WARNING! _A coefficients MUST already be multiplied by sqrt( 4PI / (2l+1) ) before entering this function!
 void	RotateZH( float3 _A, float3 _wsDirection, out float _SH[9] ) {
 	Ylm( _wsDirection, _SH );
 	_SH[0] *= _A.x;
@@ -498,6 +499,123 @@ void FilterGaussian( float3 _inSH[9], out float3 _outSH[9], float _WindowSize ) 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 //
+void SHProduct( const in float a[9], const in float b[9], out float r[9] ) {
+	float	ta, tb, t;
+
+	const float	C0 = 0.282094792935999980;
+	const float	C1 = -0.126156626101000010;
+	const float	C2 = 0.218509686119999990;
+	const float	C3 = 0.252313259986999990;
+	const float	C4 = 0.180223751576000010;
+	const float	C5 = 0.156078347226000000;
+	const float	C6 = 0.090111875786499998;
+
+	// [0,0]: 0,
+	r[0] = C0*a[0]*b[0];
+
+	// [1,1]: 0,6,8,
+	ta = C0*a[0]+C1*a[6]-C2*a[8];
+	tb = C0*b[0]+C1*b[6]-C2*b[8];
+	r[1] = ta*b[1]+tb*a[1];
+	t = a[1]*b[1];
+	r[0] += C0*t;
+	r[6] = C1*t;
+	r[8] = -C2*t;
+
+	// [1,2]: 5,
+	ta = C2*a[5];
+	tb = C2*b[5];
+	r[1] += ta*b[2]+tb*a[2];
+	r[2] = ta*b[1]+tb*a[1];
+	t = a[1]*b[2]+a[2]*b[1];
+	r[5] = C2*t;
+
+	// [1,3]: 4,
+	ta = C2*a[4];
+	tb = C2*b[4];
+	r[1] += ta*b[3]+tb*a[3];
+	r[3] = ta*b[1]+tb*a[1];
+	t = a[1]*b[3]+a[3]*b[1];
+	r[4] = C2*t;
+
+	// [2,2]: 0,6,
+	ta = C0*a[0]+C3*a[6];
+	tb = C0*b[0]+C3*b[6];
+	r[2] += ta*b[2]+tb*a[2];
+	t = a[2]*b[2];
+	r[0] += C0*t;
+	r[6] += C3*t;
+
+	// [2,3]: 7,
+	ta = C2*a[7];
+	tb = C2*b[7];
+	r[2] += ta*b[3]+tb*a[3];
+	r[3] += ta*b[2]+tb*a[2];
+	t = a[2]*b[3]+a[3]*b[2];
+	r[7] = C2*t;
+
+	// [3,3]: 0,6,8,
+	ta = C0*a[0]+C1*a[6]+C2*a[8];
+	tb = C0*b[0]+C1*b[6]+C2*b[8];
+	r[3] += ta*b[3]+tb*a[3];
+	t = a[3]*b[3];
+	r[0] += C0*t;
+	r[6] += C1*t;
+	r[8] += C2*t;
+
+	// [4,4]: 0,6,
+	ta = C0*a[0]-C4*a[6];
+	tb = C0*b[0]-C4*b[6];
+	r[4] += ta*b[4]+tb*a[4];
+	t = a[4]*b[4];
+	r[0] += C0*t;
+	r[6] -= C4*t;
+
+	// [4,5]: 7,
+	ta = C5*a[7];
+	tb = C5*b[7];
+	r[4] += ta*b[5]+tb*a[5];
+	r[5] += ta*b[4]+tb*a[4];
+	t = a[4]*b[5]+a[5]*b[4];
+	r[7] += C5*t;
+
+	// [5,5]: 0,6,8,
+	ta = C0*a[0]+C6*a[6]-C5*a[8];
+	tb = C0*b[0]+C6*b[6]-C5*b[8];
+	r[5] += ta*b[5]+tb*a[5];
+	t = a[5]*b[5];
+	r[0] += C0*t;
+	r[6] += C6*t;
+	r[8] -= C5*t;
+
+	// [6,6]: 0,6,
+	ta = C0*a[0];
+	tb = C0*b[0];
+	r[6] += ta*b[6]+tb*a[6];
+	t = a[6]*b[6];
+	r[0] += C0*t;
+	r[6] += C4*t;
+
+	// [7,7]: 0,6,8,
+	ta = C0*a[0]+C6*a[6]+C5*a[8];
+	tb = C0*b[0]+C6*b[6]+C5*b[8];
+	r[7] += ta*b[7]+tb*a[7];
+	t = a[7]*b[7];
+	r[0] += C0*t;
+	r[6] += C6*t;
+	r[8] += C5*t;
+
+	// [8,8]: 0,6,
+	ta = C0*a[0]-C4*a[6];
+	tb = C0*b[0]-C4*b[6];
+	r[8] += ta*b[8]+tb*a[8];
+	t = a[8]*b[8];
+	r[0] += C0*t;
+	r[6] -= C4*t;
+	// entry count=13
+	// multiplications count=120
+	// addition count=74
+}
 void SHProduct( const in float a[9], const in float3 b[9], out float3 r[9] ) {
 	float3	ta, tb, t;
 
