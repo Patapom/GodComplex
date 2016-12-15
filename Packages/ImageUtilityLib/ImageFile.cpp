@@ -154,7 +154,7 @@ void	ImageFile::Exit() {
 // Load
 void	ImageFile::Load( const wchar_t* _fileName ) {
 	// Attempt to retrieve the file format from the file name
-	FILE_FORMAT	format = GetFileType( _fileName );
+	FILE_FORMAT	format = GetFileTypeFromExistingFileContent( _fileName );
 	Load( _fileName, format );
 }
 void	ImageFile::Load( const wchar_t* _fileName, FILE_FORMAT _format ) {
@@ -207,7 +207,7 @@ void	ImageFile::Load( const void* _fileContent, U64 _fileSize, FILE_FORMAT _form
 //////////////////////////////////////////////////////////////////////////
 // Save
 void	ImageFile::Save( const wchar_t* _fileName ) const {
-	FILE_FORMAT	format = GetFileType( _fileName );
+	FILE_FORMAT	format = GetFileTypeFromFileNameOnly( _fileName );
 	Save( _fileName, format );
 }
 void	ImageFile::Save( const wchar_t* _fileName, FILE_FORMAT _format ) const {
@@ -545,68 +545,74 @@ void	ImageFile::WriteScanline( U32 _Y, const bfloat4* _color, U32 _startX, U32 _
 
 //////////////////////////////////////////////////////////////////////////
 // Helpers
-ImageFile::FILE_FORMAT	ImageFile::GetFileType( const wchar_t* _imageFileNameName ) {
+ImageFile::FILE_FORMAT	ImageFile::GetFileTypeFromExistingFileContent( const wchar_t* _imageFileNameName ) {
 	if ( _imageFileNameName == nullptr )
 		return FILE_FORMAT::UNKNOWN;
 
-#if 1
-	// Don't bother: use FreeImage!
 	FILE_FORMAT	result = FIF2FileFormat( FreeImage_GetFileTypeU( _imageFileNameName, 0 ) );
 	return result;
+}
 
-#else
+ImageFile::FILE_FORMAT	ImageFile::GetFileTypeFromFileNameOnly( const wchar_t* _imageFileNameName ) {
+	if ( _imageFileNameName == nullptr )
+		return FILE_FORMAT::UNKNOWN;
+
 	// Search for last . occurrence
-	size_t	length = strlen( _imageFileNameName );
+	size_t	length = wcslen( _imageFileNameName );
 	size_t	extensionIndex;
-	for ( extensionIndex=length-1; extensionIndex >= 0; extensionIndex++ ) {
+	for ( extensionIndex=length-1; extensionIndex >= 0; extensionIndex-- ) {
 		if ( _imageFileNameName[extensionIndex] == '.' )
 			break;
 	}
 	if ( extensionIndex == 0 )
 		return FILE_FORMAT::UNKNOWN;
 
-//	// Copy extension and make it uppercase
-//	char	temp[64];
-//	strcpy_s( temp, 64, _imageFileNameName + extensionIndex );
-//	_strupr_s( temp, 64 );
-
-	const char*	extension = _imageFileNameName + extensionIndex;
+	const wchar_t*	extension = _imageFileNameName + extensionIndex;
 
 	// Check for known extensions
 	struct KnownExtension {
-		const char*	extension;
+		const wchar_t*	extension;
 		FILE_FORMAT	format;
 	}	knownExtensions[] = {
-		{ ".JPG",	FILE_FORMAT::JPEG },
-		{ ".JPEG",	FILE_FORMAT::JPEG },
-		{ ".JPE",	FILE_FORMAT::JPEG },
-		{ ".BMP",	FILE_FORMAT::BMP },
-		{ ".ICO",	FILE_FORMAT::ICO },
-		{ ".PNG",	FILE_FORMAT::PNG },
-		{ ".TGA",	FILE_FORMAT::TARGA },
-		{ ".TIF",	FILE_FORMAT::TIFF },
-		{ ".TIFF",	FILE_FORMAT::TIFF },
-		{ ".GIF",	FILE_FORMAT::GIF },
-		{ ".CRW",	FILE_FORMAT::RAW },
-		{ ".CR2",	FILE_FORMAT::RAW },
-		{ ".DNG",	FILE_FORMAT::RAW },
-		{ ".HDR",	FILE_FORMAT::HDR },
-		{ ".EXR",	FILE_FORMAT::EXR },
-		{ ".DDS",	FILE_FORMAT::DDS },
-		{ ".PSD",	FILE_FORMAT::PSD },
-		{ ".PSB",	FILE_FORMAT::PSD },
+		{ L".PNG",	FILE_FORMAT::PNG },
+		{ L".JPG",	FILE_FORMAT::JPEG },
+		{ L".JPEG",	FILE_FORMAT::JPEG },
+		{ L".JPE",	FILE_FORMAT::JPEG },
+		{ L".TGA",	FILE_FORMAT::TARGA },
+		{ L".DDS",	FILE_FORMAT::DDS },
+		{ L".TIF",	FILE_FORMAT::TIFF },
+		{ L".TIFF",	FILE_FORMAT::TIFF },
+		{ L".GIF",	FILE_FORMAT::GIF },
+		{ L".CRW",	FILE_FORMAT::RAW },
+		{ L".CR2",	FILE_FORMAT::RAW },
+		{ L".DNG",	FILE_FORMAT::RAW },
+		{ L".HDR",	FILE_FORMAT::HDR },
+		{ L".EXR",	FILE_FORMAT::EXR },
+		{ L".J2K",	FILE_FORMAT::J2K },
+		{ L".JP2",	FILE_FORMAT::JP2 },
+		{ L".JNG",	FILE_FORMAT::JNG },
+		{ L".LBM",	FILE_FORMAT::LBM },
+		{ L".IFF",	FILE_FORMAT::IFF },	// = LBM
+		{ L".BMP",	FILE_FORMAT::BMP },
+		{ L".ICO",	FILE_FORMAT::ICO },
+		{ L".PSD",	FILE_FORMAT::PSD },
+		{ L".PSB",	FILE_FORMAT::PSD },
+		{ L".PCD",	FILE_FORMAT::PCD },
+		{ L".PCX",	FILE_FORMAT::PCX },
+		{ L".XBM",	FILE_FORMAT::XBM },
+		{ L".XPM",	FILE_FORMAT::XPM },
+		{ L".WEBP",	FILE_FORMAT::WEBP },
 	};
 
 	U32						knownExtensionsCount = sizeof(knownExtensions) / sizeof(KnownExtension);
 	const KnownExtension*	knownExtension = knownExtensions;
 	for ( U32 knownExtensionIndex=0; knownExtensionIndex < knownExtensionsCount; knownExtensionIndex++, knownExtension++ ) {
-		if ( _stricmp( extension, knownExtension->extension ) == 0 ) {
+		if ( _wcsicmp( extension, knownExtension->extension ) == 0 ) {
 			return knownExtension->format;
 		}
 	}
 
 	return FILE_FORMAT::UNKNOWN;
-#endif
 }
 
 U32	ImageFile::PixelFormat2BPP( PIXEL_FORMAT _pixelFormat ) {

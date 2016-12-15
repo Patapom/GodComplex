@@ -24,6 +24,8 @@ ComputeShader::ComputeShader( Device& _Device, const char* _pShaderFileName, con
 	, m_hCompileThread( 0 )
 #endif
 {
+	ASSERT( Shader::ms_LoadFromBinary || _pShaderCode != NULL, "Shader code is NULL!" );
+
 	m_pIncludeOverride = _pIncludeOverride;
 	m_bHasErrors = false;
 

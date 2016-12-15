@@ -20,6 +20,14 @@ namespace Renderer {
 
 	public:
 
+		// A flag you can set to force loading from binary files without having to write a specific code for that
+		// Use the helper class ScopedForceMaterialsLoadFromBinary below
+		static property bool	LoadFromBinary {
+			bool	get() { return ::Shader::ms_LoadFromBinary; }
+			void	set( bool value ) { ::Shader::ms_LoadFromBinary = value; }
+		}
+
+		// A flag you can set to treat warnings as errors
 		static property bool	WarningAsError {
 			bool	get() { return ::Shader::ms_warningsAsError; }
 			void	set( bool value ) { ::Shader::ms_warningsAsError = value; }
@@ -29,12 +37,15 @@ namespace Renderer {
 
 		Shader( Device^ _device, ShaderFile^ _shaderFile, VERTEX_FORMAT _format, String^ _entryPointVS, String^ _entryPointGS, String^ _entryPointPS, cli::array<ShaderMacro^>^ _macros ) {
 			const char*	shaderFileName = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( _shaderFile->m_shaderFileName->FullName ).ToPointer();
-			const char*	shaderSourceCode = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( _shaderFile->m_shaderSourceCode ).ToPointer();
 			const char*	entryPointVS = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( _entryPointVS ).ToPointer();
 			const char*	entryPointHS = NULL;	//TODO?
 			const char*	entryPointDS = NULL;	//TODO?
 			const char*	entryPointGS = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( _entryPointGS ).ToPointer();
 			const char*	entryPointPS = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( _entryPointPS ).ToPointer();
+
+			const char*	shaderSourceCode = nullptr;
+			if ( !Shader::LoadFromBinary )
+				shaderSourceCode = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( _shaderFile->ShaderSourceCode ).ToPointer();
 
 			D3D_SHADER_MACRO*	pMacros = NULL;
 			if ( _macros != nullptr ) {
@@ -56,18 +67,18 @@ namespace Renderer {
 			delete[] pMacros;
 		}
 
-		Shader( Device^ _device, ShaderBinaryFile^ _shaderFile, VERTEX_FORMAT _format, String^ _entryPointVS, String^ _entryPointGS, String^ _entryPointPS ) {
-			const char*	ShaderFileName = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( _shaderFile->m_shaderFileName->FullName ).ToPointer();
-			const char*	entryPointVS = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( _entryPointVS ).ToPointer();
-			const char*	entryPointHS = NULL;	//TODO?
-			const char*	entryPointDS = NULL;	//TODO?
-			const char*	entryPointGS = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( _entryPointGS ).ToPointer();
-			const char*	entryPointPS = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( _entryPointPS ).ToPointer();
-
-			IVertexFormatDescriptor*	descriptor = GetDescriptor( _format );
-
-			m_pShader = ::Shader::CreateFromBinaryBlob( *_device->m_pDevice, ShaderFileName, *descriptor, NULL, entryPointVS, entryPointHS, entryPointDS, entryPointGS, entryPointPS );
-		}
+// 		Shader( Device^ _device, ShaderBinaryFile^ _shaderFile, VERTEX_FORMAT _format, String^ _entryPointVS, String^ _entryPointGS, String^ _entryPointPS ) {
+// 			const char*	ShaderFileName = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( _shaderFile->m_shaderFileName->FullName ).ToPointer();
+// 			const char*	entryPointVS = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( _entryPointVS ).ToPointer();
+// 			const char*	entryPointHS = NULL;	//TODO?
+// 			const char*	entryPointDS = NULL;	//TODO?
+// 			const char*	entryPointGS = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( _entryPointGS ).ToPointer();
+// 			const char*	entryPointPS = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( _entryPointPS ).ToPointer();
+// 
+// 			IVertexFormatDescriptor*	descriptor = GetDescriptor( _format );
+// 
+// 			m_pShader = ::Shader::CreateFromBinaryBlob( *_device->m_pDevice, ShaderFileName, *descriptor, NULL, entryPointVS, entryPointHS, entryPointDS, entryPointGS, entryPointPS );
+// 		}
 
 		~Shader() {
 			delete m_pShader;
@@ -77,5 +88,12 @@ namespace Renderer {
 		bool	Use() {
 			return m_pShader != nullptr ? m_pShader->Use() : false;
 		}
+	};
+
+	public ref class	ScopedForceMaterialsLoadFromBinary {
+		::ScopedForceMaterialsLoadFromBinary*	m_nativeObject;
+	public:
+		ScopedForceMaterialsLoadFromBinary() { m_nativeObject = new ::ScopedForceMaterialsLoadFromBinary(); }
+		~ScopedForceMaterialsLoadFromBinary() { delete m_nativeObject; }
 	};
 }

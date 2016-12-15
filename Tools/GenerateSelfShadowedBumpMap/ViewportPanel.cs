@@ -10,17 +10,16 @@ using System.Drawing.Imaging;
 
 namespace GenerateSelfShadowedBumpMap
 {
-	public partial class ViewportPanel : Panel
-	{
+	public partial class ViewportPanel : Panel {
 		#region FIELDS
 
-		private RendererManaged.Device	m_Device;
+		private Renderer.Device	m_Device;
 
 		#endregion
 
 		#region PROPERTIES
 
-		public RendererManaged.Device	Device
+		public Renderer.Device	Device
 		{
 			get { return m_Device; }
 			set { m_Device = value; }

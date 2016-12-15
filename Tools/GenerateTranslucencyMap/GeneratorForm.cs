@@ -18,12 +18,12 @@ using System.Text;
 using System.Windows.Forms;
 using Microsoft.Win32;
 
-using RendererManaged;
+using Renderer;
+using SharpMath;
 
 namespace GenerateTranslucencyMap
 {
-	public partial class GeneratorForm : Form
-	{
+	public partial class GeneratorForm : Form {
 		#region CONSTANTS
 
 //		private const int		MAX_THREADS = 1024;			// Maximum threads run by the compute shader
@@ -89,11 +89,11 @@ namespace GenerateTranslucencyMap
 		private ViewerForm						m_viewerForm;
 
 		private System.IO.FileInfo				m_SourceFileName = null;
-		private int								W, H;
-		private ImageUtility.Bitmap				m_BitmapSourceThickness = null;
-		private ImageUtility.Bitmap				m_BitmapSourceNormal = null;
-		private ImageUtility.Bitmap				m_BitmapSourceAlbedo = null;
-		private ImageUtility.Bitmap				m_BitmapSourceTransmittance = null;
+		private uint							W, H;
+		private ImageUtility.ImageFile			m_ImageSourceThickness = null;
+		private ImageUtility.ImageFile			m_imageSourceNormal = null;
+		private ImageUtility.ImageFile			m_imageSourceAlbedo = null;
+		private ImageUtility.ImageFile			m_imageSourceTransmittance = null;
 
 		internal Device							m_Device = new Device();
 		internal Texture2D						m_TextureSourceThickness = null;
@@ -113,7 +113,7 @@ namespace GenerateTranslucencyMap
 		internal Texture2D						m_TextureTarget_CPU = null;
 
 		// The bunch of rays to shoot
-		private float3[][]						m_Rays = new float3[3][];
+		private float3[][]						m_rays = new float3[3][];
 
 		// Directional Translucency Map Generation
 		private ConstantBuffer<CBGenerate>		m_CB_Generate;
@@ -134,8 +134,8 @@ namespace GenerateTranslucencyMap
 
 		private ImageUtility.ColorProfile		m_LinearProfile = new ImageUtility.ColorProfile( ImageUtility.ColorProfile.STANDARD_PROFILE.LINEAR );
 		private ImageUtility.ColorProfile		m_sRGBProfile = new ImageUtility.ColorProfile( ImageUtility.ColorProfile.STANDARD_PROFILE.sRGB );
-		private ImageUtility.Bitmap[]			m_BitmapResults = new ImageUtility.Bitmap[3];
-		private ImageUtility.Bitmap				m_BitmapResultCombined = null;
+		private ImageUtility.ImageFile[]		m_imageResults = new ImageUtility.ImageFile[3];
+		private ImageUtility.ImageFile			m_imageResultCombined = null;
 
 		#endregion
 
@@ -166,8 +166,7 @@ namespace GenerateTranslucencyMap
 
 		#region METHODS
 
-		public GeneratorForm()
-		{
+		public GeneratorForm() {
 			InitializeComponent();
 
 			m_viewerForm = new ViewerForm( this );
@@ -185,8 +184,7 @@ namespace GenerateTranslucencyMap
 			#endif
 		}
 
-		protected override void  OnLoad(EventArgs e)
-		{
+		protected override void  OnLoad(EventArgs e) {
  			base.OnLoad(e);
 
 			try {
@@ -195,19 +193,21 @@ namespace GenerateTranslucencyMap
 				m_viewerForm.Init();
 
 				// Create our compute shaders
-				#if DEBUG && !BISOU
+				#if !DEBUG || BISOU
+					using ( ScopedForceMaterialsLoadFromBinary scope = new ScopedForceMaterialsLoadFromBinary() )
+				#endif
+				{
 					m_CS_BilateralFilter = new ComputeShader( m_Device, new ShaderFile( new System.IO.FileInfo( "./Shaders/BilateralFiltering.hlsl" ) ), "CS", null );
 					m_CS_GenerateVisibilityMap = new ComputeShader( m_Device, new ShaderFile( new System.IO.FileInfo( "./Shaders/GenerateVisibilityMap.hlsl" ) ), "CS", null );
 					m_CS_GenerateTranslucencyMap = new ComputeShader( m_Device, new ShaderFile( new System.IO.FileInfo( "./Shaders/GenerateTranslucencyMap.hlsl" ) ), "CS", null );
 					m_CS_Helper_Normalize = new ComputeShader( m_Device, new ShaderFile( new System.IO.FileInfo( "./Shaders/Helpers.hlsl" ) ), "CS_Finalize", null );
 					m_CS_Helper_Mix = new ComputeShader( m_Device, new ShaderFile( new System.IO.FileInfo( "./Shaders/Helpers.hlsl" ) ), "CS_Mix", null );
-				#else
-					m_CS_BilateralFilter = ComputeShader.CreateFromBinaryBlob( m_Device, new System.IO.FileInfo( "./Shaders/Binary/BilateralFiltering.fxbin" ), "CS" );
-					m_CS_GenerateVisibilityMap = ComputeShader.CreateFromBinaryBlob( m_Device, new System.IO.FileInfo( "./Shaders/Binary/GenerateVisibilityMap.fxbin" ), "CS" );
-					m_CS_GenerateTranslucencyMap = ComputeShader.CreateFromBinaryBlob( m_Device, new System.IO.FileInfo( "./Shaders/Binary/GenerateTranslucencyMap.fxbin" ), "CS" );
-					m_CS_Helper_Normalize = ComputeShader.CreateFromBinaryBlob( m_Device, new System.IO.FileInfo( "./Shaders/Helpers.hlsl" ), "CS_Finalize" );
-					m_CS_Helper_Mix = ComputeShader.CreateFromBinaryBlob( m_Device, new System.IO.FileInfo( "./Shaders/Helpers.hlsl" ), "CS_Mix" );
-				#endif
+				}
+// 				m_CS_BilateralFilter = new ComputeShader( m_Device, new ShaderBinaryFile( new System.IO.FileInfo( "./Shaders/Binary/BilateralFiltering.fxbin" ) ), "CS" );
+// 				m_CS_GenerateVisibilityMap = new ComputeShader( m_Device, new ShaderBinaryFile( new System.IO.FileInfo( "./Shaders/Binary/GenerateVisibilityMap.fxbin" ) ), "CS" );
+// 				m_CS_GenerateTranslucencyMap = new ComputeShader( m_Device, new ShaderBinaryFile( new System.IO.FileInfo( "./Shaders/Binary/GenerateTranslucencyMap.fxbin" ) ), "CS" );
+// 				m_CS_Helper_Normalize = new ComputeShader( m_Device, new ShaderBinaryFile( new System.IO.FileInfo( "./Shaders/Helpers.hlsl" ) ), "CS_Finalize" );
+// 				m_CS_Helper_Mix = new ComputeShader( m_Device, new ShaderBinaryFile( new System.IO.FileInfo( "./Shaders/Helpers.hlsl" ) ), "CS_Mix" );
 
 				// Create our constant buffers
 				m_CB_Generate = new ConstantBuffer<CBGenerate>( m_Device, 0 );
@@ -233,8 +233,7 @@ namespace GenerateTranslucencyMap
 
 		}
 
-		protected override void OnFormClosing( FormClosingEventArgs e )
-		{
+		protected override void OnFormClosing( FormClosingEventArgs e ) {
 			try {
 				m_viewerForm.Exit();
 				m_viewerForm.Dispose();
@@ -287,14 +286,13 @@ namespace GenerateTranslucencyMap
 		#region Images Loading
 
 		private void	LoadThicknessMap( System.IO.FileInfo _FileName ) {
-			try
-			{
+			try {
 				groupBoxOptions.Enabled = false;
 
 				// Dispose of existing resources
-				if ( m_BitmapSourceThickness != null )
-					m_BitmapSourceThickness.Dispose();
-				m_BitmapSourceThickness = null;
+				if ( m_ImageSourceThickness != null )
+					m_ImageSourceThickness.Dispose();
+				m_ImageSourceThickness = null;
 				if ( m_TextureSourceThickness != null )
 					m_TextureSourceThickness.Dispose();
 				m_TextureSourceThickness = null;
@@ -331,22 +329,27 @@ namespace GenerateTranslucencyMap
 					m_TextureTargetCombined.Dispose();
 				m_TextureTargetCombined = null;
 
-				// Load the source image assuming it's in linear space
+				// Load the source image
 				m_SourceFileName = _FileName;
-				m_BitmapSourceThickness = new ImageUtility.Bitmap( _FileName, m_LinearProfile );
-				imagePanelThicknessMap.Image = m_BitmapSourceThickness;
+				m_ImageSourceThickness = new ImageUtility.ImageFile( _FileName );
+				imagePanelThicknessMap.Image = m_ImageSourceThickness;
 
-				W = m_BitmapSourceThickness.Width;
-				H = m_BitmapSourceThickness.Height;
+				W = m_ImageSourceThickness.Width;
+				H = m_ImageSourceThickness.Height;
 
-				// Build the source texture
-				PixelsBuffer	SourceHeightMap = new PixelsBuffer( W*H*4 );
-				using ( System.IO.BinaryWriter Wr = SourceHeightMap.OpenStreamWrite() )
-					for ( int Y=0; Y < H; Y++ )
-						for ( int X=0; X < W; X++ )
-							Wr.Write( m_BitmapSourceThickness.ContentXYZ[X,Y].y );
+				// Build the source texture assuming the image is in linear space
+				float4[]	scanline = new float4[W];
 
-				m_TextureSourceThickness = new Texture2D( m_Device, W, H, 1, 1, PIXEL_FORMAT.R32_FLOAT, false, false, new PixelsBuffer[] { SourceHeightMap } );
+				PixelsBuffer	sourceHeightMap = new PixelsBuffer( W*H*4 );
+				using ( System.IO.BinaryWriter Wr = sourceHeightMap.OpenStreamWrite() )
+					for ( uint Y=0; Y < H; Y++ ) {
+						m_ImageSourceThickness.ReadScanline( Y, scanline );
+						for ( uint X=0; X < W; X++ ) {
+							Wr.Write( scanline[X].y );
+						}
+					}
+
+				m_TextureSourceThickness = new Texture2D( m_Device, W, H, 1, 1, PIXEL_FORMAT.R32_FLOAT, false, false, new PixelsBuffer[] { sourceHeightMap } );
 
 				// Build the 3D visibility texture
 				m_TextureSourceVisibility = new Texture3D( m_Device, W, H, VISIBILITY_SLICES, 1, PIXEL_FORMAT.R16_FLOAT, false, true, null );
@@ -371,38 +374,38 @@ namespace GenerateTranslucencyMap
 		}
 
 		private void	LoadNormalMap( System.IO.FileInfo _FileName ) {
-			try
-			{
+			try {
 				// Dispose of existing resources
-				if ( m_BitmapSourceNormal != null )
-					m_BitmapSourceNormal.Dispose();
-				m_BitmapSourceNormal = null;
+				if ( m_imageSourceNormal != null )
+					m_imageSourceNormal.Dispose();
+				m_imageSourceNormal = null;
 				if ( m_TextureSourceNormal != null )
 					m_TextureSourceNormal.Dispose();
 				m_TextureSourceNormal = null;
 
-				// Load the source image assuming it's in linear space
-				m_BitmapSourceNormal = new ImageUtility.Bitmap( _FileName, m_LinearProfile );
-				imagePanelNormalMap.Image = m_BitmapSourceNormal;
+				// Load the source image
+				m_imageSourceNormal = new ImageUtility.ImageFile( _FileName );
+				imagePanelNormalMap.Image = m_imageSourceNormal;
 
-				int	W = m_BitmapSourceNormal.Width;
-				int	H = m_BitmapSourceNormal.Height;
+				uint	W = m_imageSourceNormal.Width;
+				uint	H = m_imageSourceNormal.Height;
 
-				// Build the source texture
-				ImageUtility.float4[,]	ContentRGB = new ImageUtility.float4[W,H];
-				m_LinearProfile.XYZ2RGB( m_BitmapSourceNormal.ContentXYZ, ContentRGB );
+				// Build the source texture assuming the image is in linear space
+				float4[]	scanline = new float4[W];
 
-				PixelsBuffer	SourceMap = new PixelsBuffer( W*H*16 );
-				using ( System.IO.BinaryWriter Wr = SourceMap.OpenStreamWrite() )
-					for ( int Y=0; Y < H; Y++ )
-						for ( int X=0; X < W; X++ ) {
-							Wr.Write( ContentRGB[X,Y].x );
-							Wr.Write( ContentRGB[X,Y].y );
-							Wr.Write( ContentRGB[X,Y].z );
+				PixelsBuffer	sourceNormalMap = new PixelsBuffer( W*H*16 );
+				using ( System.IO.BinaryWriter Wr = sourceNormalMap.OpenStreamWrite() )
+					for ( uint Y=0; Y < H; Y++ ) {
+						m_imageSourceNormal.ReadScanline( Y, scanline );
+						for ( uint X=0; X < W; X++ ) {
+							Wr.Write( scanline[X].x );
+							Wr.Write( scanline[X].y );
+							Wr.Write( scanline[X].z );
 							Wr.Write( 1.0f );
 						}
+					}
 
-				m_TextureSourceNormal = new Texture2D( m_Device, W, H, 1, 1, PIXEL_FORMAT.RGBA32_FLOAT, false, false, new PixelsBuffer[] { SourceMap } );
+				m_TextureSourceNormal = new Texture2D( m_Device, W, H, 1, 1, PIXEL_FORMAT.RGBA32_FLOAT, false, false, new PixelsBuffer[] { sourceNormalMap } );
 			}
 			catch ( Exception _e )
 			{
@@ -411,36 +414,43 @@ namespace GenerateTranslucencyMap
 		}
 
 		private void	LoadTransmittanceMap( System.IO.FileInfo _FileName ) {
-			try
-			{
+			try {
 				// Dispose of existing resources
-				if ( m_BitmapSourceTransmittance != null )
-					m_BitmapSourceTransmittance.Dispose();
-				m_BitmapSourceTransmittance = null;
+				if ( m_imageSourceTransmittance != null )
+					m_imageSourceTransmittance.Dispose();
+				m_imageSourceTransmittance = null;
 				if ( m_TextureSourceTransmittance != null )
 					m_TextureSourceTransmittance.Dispose();
 				m_TextureSourceTransmittance = null;
 
-				// Load the source image assuming it's in linear space
-				m_BitmapSourceTransmittance = new ImageUtility.Bitmap( _FileName, m_sRGBProfile );
-				imagePanelTransmittanceMap.Image = m_BitmapSourceTransmittance;
+				// Load the source image
+				m_imageSourceTransmittance = new ImageUtility.ImageFile( _FileName );
+				imagePanelTransmittanceMap.Image = m_imageSourceTransmittance;
 
-				int	W = m_BitmapSourceTransmittance.Width;
-				int	H = m_BitmapSourceTransmittance.Height;
+				uint	W = m_imageSourceTransmittance.Width;
+				uint	H = m_imageSourceTransmittance.Height;
 
-				// Build the source texture
-				ImageUtility.float4[,]	ContentRGB = new ImageUtility.float4[W,H];
-				m_LinearProfile.XYZ2RGB( m_BitmapSourceTransmittance.ContentXYZ, ContentRGB );
+				// Build the source texture assuming the image's color profile
+				float4[]	scanline = new float4[W];
+				float4		linearRGB = float4.Zero;
+				ImageUtility.ColorProfile	imageProfile = m_imageSourceTransmittance.ColorProfile;
+//				ImageUtility.ColorProfile	imageProfile = m_sRGBProfile;
+
+// 				ImageUtility.float4[,]	ContentRGB = new ImageUtility.float4[W,H];
+// 				m_LinearProfile.XYZ2RGB( m_imageSourceTransmittance.ContentXYZ, ContentRGB );
 
 				PixelsBuffer	SourceMap = new PixelsBuffer( W*H*16 );
 				using ( System.IO.BinaryWriter Wr = SourceMap.OpenStreamWrite() )
-					for ( int Y=0; Y < H; Y++ )
+					for ( uint Y=0; Y < H; Y++ ) {
+						m_imageSourceTransmittance.ReadScanline( Y, scanline );
 						for ( int X=0; X < W; X++ ) {
-							Wr.Write( ContentRGB[X,Y].x );
-							Wr.Write( ContentRGB[X,Y].y );
-							Wr.Write( ContentRGB[X,Y].z );
-							Wr.Write( ContentRGB[X,Y].w );
+							imageProfile.GammaRGB2LinearRGB( scanline[X], ref linearRGB );
+							Wr.Write( linearRGB.x );
+							Wr.Write( linearRGB.y );
+							Wr.Write( linearRGB.z );
+							Wr.Write( linearRGB.w );
 						}
+					}
 
 				m_TextureSourceTransmittance = new Texture2D( m_Device, W, H, 1, 1, PIXEL_FORMAT.RGBA32_FLOAT, false, false, new PixelsBuffer[] { SourceMap } );
 			}
@@ -451,48 +461,53 @@ namespace GenerateTranslucencyMap
 		}
 
 		private void	LoadAlbedoMap( System.IO.FileInfo _FileName ) {
-			try
-			{
+			try {
 				// Dispose of existing resources
-				if ( m_BitmapSourceAlbedo != null )
-					m_BitmapSourceAlbedo.Dispose();
-				m_BitmapSourceAlbedo = null;
+				if ( m_imageSourceAlbedo != null )
+					m_imageSourceAlbedo.Dispose();
+				m_imageSourceAlbedo = null;
 				if ( m_TextureSourceAlbedo != null )
 					m_TextureSourceAlbedo.Dispose();
 				m_TextureSourceAlbedo = null;
 
-				// Load the source image assuming it's in linear space
-				m_BitmapSourceAlbedo = new ImageUtility.Bitmap( _FileName, m_sRGBProfile );
-				imagePanelAlbedoMap.Image = m_BitmapSourceAlbedo;
+				// Load the source image
+				m_imageSourceAlbedo = new ImageUtility.ImageFile( _FileName );
+				imagePanelAlbedoMap.Image = m_imageSourceAlbedo;
 
-				int	W = m_BitmapSourceAlbedo.Width;
-				int	H = m_BitmapSourceAlbedo.Height;
+				uint	W = m_imageSourceAlbedo.Width;
+				uint	H = m_imageSourceAlbedo.Height;
 
-				// Build the source texture
-				ImageUtility.float4[,]	ContentRGB = new ImageUtility.float4[W,H];
-				m_LinearProfile.XYZ2RGB( m_BitmapSourceAlbedo.ContentXYZ, ContentRGB );
+				// Build the source texture assuming the image's color profile
+				float4[]	scanline = new float4[W];
+				float4		linearRGB = float4.Zero;
+				ImageUtility.ColorProfile	imageProfile = m_imageSourceTransmittance.ColorProfile;
+//				ImageUtility.ColorProfile	imageProfile = m_sRGBProfile;
+
+// 				float4[,]	ContentRGB = new float4[W,H];
+// 				m_LinearProfile.XYZ2RGB( m_imageSourceAlbedo.ContentXYZ, ContentRGB );
 
 				PixelsBuffer	SourceMap = new PixelsBuffer( W*H*16 );
 				using ( System.IO.BinaryWriter Wr = SourceMap.OpenStreamWrite() )
-					for ( int Y=0; Y < H; Y++ )
-						for ( int X=0; X < W; X++ ) {
-							Wr.Write( ContentRGB[X,Y].x );
-							Wr.Write( ContentRGB[X,Y].y );
-							Wr.Write( ContentRGB[X,Y].z );
-							Wr.Write( ContentRGB[X,Y].w );
+					for ( uint Y=0; Y < H; Y++ ) {
+						m_imageSourceAlbedo.ReadScanline( Y, scanline );
+						for ( uint X=0; X < W; X++ ) {
+							imageProfile.GammaRGB2LinearRGB( scanline[X], ref linearRGB );
+							Wr.Write( linearRGB.x );
+							Wr.Write( linearRGB.y );
+							Wr.Write( linearRGB.z );
+							Wr.Write( linearRGB.w );
 						}
+					}
 
 				m_TextureSourceAlbedo = new Texture2D( m_Device, W, H, 1, 1, PIXEL_FORMAT.RGBA32_FLOAT, false, false, new PixelsBuffer[] { SourceMap } );
 			}
-			catch ( Exception _e )
-			{
+			catch ( Exception _e ) {
 				MessageBox( "An error occurred while opening the albedo map \"" + _FileName.FullName + "\":\n\n", _e );
 			}
 		}
 
 		private void	LoadResults( System.IO.FileInfo _FileName ) {
-			try
-			{
+			try {
 				groupBoxOptions.Enabled = false;
 
 				// Dispose of existing resources
@@ -513,18 +528,22 @@ namespace GenerateTranslucencyMap
 				m_TextureTargets[2][1] = null;
 				m_TextureTargetCombined = null;
 
-				if ( m_BitmapResults[0] != null )
-					m_BitmapResults[0].Dispose();
-				if ( m_BitmapResults[1] != null )
-					m_BitmapResults[1].Dispose();
-				if ( m_BitmapResults[2] != null )
-					m_BitmapResults[2].Dispose();
-				if ( m_BitmapResultCombined != null )
-					m_BitmapResultCombined.Dispose();
-				m_BitmapResults[0] = new ImageUtility.Bitmap( W, H, m_sRGBProfile );
-				m_BitmapResults[1] = new ImageUtility.Bitmap( W, H, m_sRGBProfile );
-				m_BitmapResults[2] = new ImageUtility.Bitmap( W, H, m_sRGBProfile );
-				m_BitmapResultCombined = new ImageUtility.Bitmap( W, H, m_sRGBProfile );
+				if ( m_imageResults[0] != null )
+					m_imageResults[0].Dispose();
+				if ( m_imageResults[1] != null )
+					m_imageResults[1].Dispose();
+				if ( m_imageResults[2] != null )
+					m_imageResults[2].Dispose();
+				if ( m_imageResultCombined != null )
+					m_imageResultCombined.Dispose();
+//				m_imageResults[0] = new ImageUtility.ImageFile( W, H, ImageUtility.ImageFile.PIXEL_FORMAT.R8, m_sRGBProfile );
+//				m_imageResults[1] = new ImageUtility.ImageFile( W, H, ImageUtility.ImageFile.PIXEL_FORMAT.R8, m_sRGBProfile );
+//				m_imageResults[2] = new ImageUtility.ImageFile( W, H, ImageUtility.ImageFile.PIXEL_FORMAT.R8, m_sRGBProfile );
+//				m_imageResultCombined = new ImageUtility.ImageFile( W, H, ImageUtility.ImageFile.PIXEL_FORMAT.RGBA8, m_sRGBProfile );
+				m_imageResults[0] = new ImageUtility.ImageFile();
+				m_imageResults[1] = new ImageUtility.ImageFile();
+				m_imageResults[2] = new ImageUtility.ImageFile();
+				m_imageResultCombined = new ImageUtility.ImageFile();
 
 				// Load the result images assuming it's in sRGB space
 				string[]		FileNames = new string[4] {
@@ -533,11 +552,11 @@ namespace GenerateTranslucencyMap
 					System.IO.Path.Combine( System.IO.Path.GetDirectoryName( _FileName.FullName ), System.IO.Path.GetFileNameWithoutExtension( _FileName.FullName ) + "_translucency2.png" ),
 					System.IO.Path.Combine( System.IO.Path.GetDirectoryName( _FileName.FullName ), System.IO.Path.GetFileNameWithoutExtension( _FileName.FullName ) + "_translucency.png" ),
 				};
-				ImageUtility.Bitmap[]	Bitmaps = new ImageUtility.Bitmap[] {
-					m_BitmapResults[0],
-					m_BitmapResults[1],
-					m_BitmapResults[2],
-					m_BitmapResultCombined
+				ImageUtility.ImageFile[]	images = new ImageUtility.ImageFile[] {
+					m_imageResults[0],
+					m_imageResults[1],
+					m_imageResults[2],
+					m_imageResultCombined
 				};
 				Texture2D[]		Results = new Texture2D[] {
 					m_TextureTargets[0][0],
@@ -553,26 +572,29 @@ namespace GenerateTranslucencyMap
 				};
 
 				for ( int i=0; i < 4; i++ ) {
-					ImageUtility.Bitmap	B = Bitmaps[i];
-					B.Load( new System.IO.FileInfo( FileNames[i] ), ImageUtility.Bitmap.FILE_TYPE.PNG, m_sRGBProfile );
+					ImageUtility.ImageFile	B = images[i];
+					B.Load( new System.IO.FileInfo( FileNames[i] ) );
 
 					Panels[i].Image = B;
 
-					// Build the texture
-					ImageUtility.float4[,]	ContentRGB = new ImageUtility.float4[B.Width,B.Height];
-					m_LinearProfile.XYZ2RGB( B.ContentXYZ, ContentRGB );
+					// Build the texture assuming sRGB sources
+					float4[]	scanline = new float4[B.Width];
+					float4		linearRGB = float4.Zero;
 
-					PixelsBuffer	SourceMap = new PixelsBuffer( B.Width*B.Height*16 );
-					using ( System.IO.BinaryWriter Wr = SourceMap.OpenStreamWrite() )
-						for ( int Y=0; Y < B.Height; Y++ )
-							for ( int X=0; X < B.Width; X++ ) {
-								Wr.Write( ContentRGB[X,Y].x );
-								Wr.Write( ContentRGB[X,Y].y );
-								Wr.Write( ContentRGB[X,Y].z );
-								Wr.Write( ContentRGB[X,Y].w );
+					PixelsBuffer	sourceMap = new PixelsBuffer( B.Width*B.Height*16 );
+					using ( System.IO.BinaryWriter Wr = sourceMap.OpenStreamWrite() )
+						for ( uint Y=0; Y < B.Height; Y++ ) {
+							B.ReadScanline( Y, scanline );
+							for ( uint X=0; X < B.Width; X++ ) {
+								m_sRGBProfile.GammaRGB2LinearRGB( scanline[X], ref linearRGB );
+								Wr.Write( linearRGB.x );
+								Wr.Write( linearRGB.y );
+								Wr.Write( linearRGB.z );
+								Wr.Write( linearRGB.w );
 							}
+						}
 
-					Results[i] = new Texture2D( m_Device, W, H, 1, 1, PIXEL_FORMAT.RGBA32_FLOAT, false, true, new PixelsBuffer[] { SourceMap } );
+					Results[i] = new Texture2D( m_Device, W, H, 1, 1, PIXEL_FORMAT.RGBA32_FLOAT, false, true, new PixelsBuffer[] { sourceMap } );
 				}
 
 				m_TextureTargets[0][0] = Results[0];
@@ -583,8 +605,7 @@ namespace GenerateTranslucencyMap
 				m_TextureTargets[2][1] = Results[2];
 				m_TextureTargetCombined = Results[3];
 			}
-			catch ( Exception _e )
-			{
+			catch ( Exception _e ) {
 				MessageBox( "An error occurred while opening the result maps \"" + _FileName.FullName + "\":\n\n", _e );
 			}
 		}
@@ -597,11 +618,11 @@ namespace GenerateTranslucencyMap
 
 				//////////////////////////////////////////////////////////////////////////
 				// 0] Assign empty textures
-				if ( m_BitmapSourceNormal == null )
+				if ( m_imageSourceNormal == null )
 					LoadNormalMap( new System.IO.FileInfo( "default_normal.png" ) );
-				if ( m_BitmapSourceTransmittance == null )
+				if ( m_imageSourceTransmittance == null )
 					LoadTransmittanceMap( new System.IO.FileInfo( "default_transmittance.png" ) );
-				if ( m_BitmapSourceAlbedo == null )
+				if ( m_imageSourceAlbedo == null )
 					LoadAlbedoMap( new System.IO.FileInfo( "default_albedo.png" ) );
 
 				m_TextureTargets[0][0].RemoveFromLastAssignedSlots();
@@ -650,12 +671,12 @@ namespace GenerateTranslucencyMap
 				m_TextureSourceAlbedo.SetCS( 3 );
 				m_TextureSourceVisibility.SetCS( 4 );
 
-				int	groupsCountX = (W + 15) >> 4;
-				int	groupsCountY = (H + 15) >> 4;
+				uint	groupsCountX = (W + 15) >> 4;
+				uint	groupsCountY = (H + 15) >> 4;
 
-				int	RaysCount = integerTrackbarControlRaysCount.Value;
-				int	UpdateCountMax = Math.Max( 1, RaysCount / 100 );
-				int	UpdateCount = 0;
+				uint	raysCount = (uint) integerTrackbarControlRaysCount.Value;
+				uint	updateCountMax = Math.Max( 1, raysCount / 100 );
+				uint	updateCount = 0;
 
 				// For each HL2 basis direction
 				for ( int i=0; i < 3; i++ ) {
@@ -670,9 +691,9 @@ namespace GenerateTranslucencyMap
 					m_Device.Clear( m_TextureTargets[i][0], float4.Zero );
 
 					// Start
-					for ( int RayIndex=0; RayIndex < RaysCount; RayIndex++ ) {
+					for ( uint rayIndex=0; rayIndex < raysCount; rayIndex++ ) {
 
-						m_CB_Generate.m._Light = m_Rays[i][RayIndex];
+						m_CB_Generate.m._Light = m_rays[i][rayIndex];
 //m_CB_Generate.m._Light = float3.UnitZ;
 						m_CB_Generate.UpdateData();
 
@@ -690,12 +711,12 @@ namespace GenerateTranslucencyMap
 						m_TextureTargets[i][1] = Temp;
 
 						// Progress
-						if ( UpdateCount++ >= UpdateCountMax ) {
-							UpdateCount = 0;
+						if ( updateCount++ >= updateCountMax ) {
+							updateCount = 0;
 
 							m_Device.Present( true );
 
-							float	progress = (float) (RaysCount*i+1) / (3*RaysCount);
+							float	progress = (float) (raysCount*i+1) / (3*raysCount);
 							progressBar.Value = (int) (0.01f * (VISIBILITY_PROGRESS + (100-VISIBILITY_PROGRESS) * progress) * progressBar.Maximum);
 							Application.DoEvents();
 						}
@@ -713,7 +734,7 @@ namespace GenerateTranslucencyMap
 
 					m_CB_Helper.m._Width = (uint) W;
 					m_CB_Helper.m._Height = (uint) H;
-					m_CB_Helper.m._Parms = (1.0f / RaysCount) * float3.One;
+					m_CB_Helper.m._Parms = (1.0f / raysCount) * float3.One;
 					m_CB_Helper.UpdateData();
 
 					m_TextureTargets[i][0].SetCS( 0 );
@@ -739,33 +760,32 @@ namespace GenerateTranslucencyMap
 					imagePanelResult2,
 				};
 				for ( int i=0; i < 3; i++ ) {
-					if ( m_BitmapResults[i] != null )
-						m_BitmapResults[i].Dispose();
+					if ( m_imageResults[i] != null )
+						m_imageResults[i].Dispose();
 //					m_BitmapResults[i] = new ImageUtility.Bitmap( W, H, m_LinearProfile );
-					m_BitmapResults[i] = new ImageUtility.Bitmap( W, H, m_sRGBProfile );
-					m_BitmapResults[i].HasAlpha = true;
+					m_imageResults[i] = new ImageUtility.ImageFile( W, H, ImageUtility.ImageFile.PIXEL_FORMAT.R8, m_sRGBProfile );
 
 					// Copy from GPU to CPU
 					m_TextureTarget_CPU.CopyFrom( m_TextureTargets[i][0] );
 
+					float4[]		scanline = new float4[W];
+					float4			gammaRGB = float4.Zero;
 					PixelsBuffer	Pixels = m_TextureTarget_CPU.Map( 0, 0 );
 					using ( System.IO.BinaryReader R = Pixels.OpenStreamRead() )
-						for ( int Y=0; Y < H; Y++ )
-						{
+						for ( uint Y=0; Y < H; Y++ ) {
 							R.BaseStream.Position = Y * Pixels.RowPitch;
-							for ( int X=0; X < W; X++ )
-							{
-								ImageUtility.float4	Color = new ImageUtility.float4( R.ReadSingle(), R.ReadSingle(), R.ReadSingle(), R.ReadSingle() );
-								Color = m_LinearProfile.RGB2XYZ( Color );
-								m_BitmapResults[i].ContentXYZ[X,Y] = Color;
+							for ( uint X=0; X < W; X++ ) {
+								gammaRGB.Set( R.ReadSingle(), R.ReadSingle(), R.ReadSingle(), R.ReadSingle() );
+								m_sRGBProfile.LinearRGB2GammaRGB( gammaRGB, ref scanline[X] );
 							}
+							m_imageResults[i].WriteScanline( Y, scanline );
 						}
 
 					Pixels.Dispose();
 					m_TextureTarget_CPU.UnMap( 0, 0 );
 
 					// Assign result
-					ImagePanels[i].Image = m_BitmapResults[i];
+					ImagePanels[i].Image = m_imageResults[i];
 				}
 
 				//////////////////////////////////////////////////////////////////////////
@@ -794,18 +814,17 @@ namespace GenerateTranslucencyMap
 			m_CB_Visibility.m._TexelSize_mm = TextureSize_mm / Math.Max( W, H );
 			m_CB_Visibility.m._DiscRadius = 32;
 
-			int	h = Math.Max( 1, MAX_LINES*1024 / W );
-			int	CallsCount = (int) Math.Ceiling( (float) H / h );
-			for ( int i=0; i < CallsCount; i++ )
-			{
-				m_CB_Visibility.m._Y0 = (UInt32) (i * h);
+			uint	h = Math.Max( 1, MAX_LINES*1024 / W );
+			uint	callsCount = (uint) Math.Ceiling( (float) H / h );
+			for ( uint i=0; i < callsCount; i++ ) {
+				m_CB_Visibility.m._Y0 = i * h;
 				m_CB_Visibility.UpdateData();
 
 				m_CS_GenerateVisibilityMap.Dispatch( W, h, 1 );
 
 				m_Device.Present( true );
 
-				progressBar.Value = (int) (0.01f * (BILATERAL_PROGRESS + (VISIBILITY_PROGRESS - BILATERAL_PROGRESS) * (i+1) / CallsCount) * progressBar.Maximum);
+				progressBar.Value = (int) (0.01f * (BILATERAL_PROGRESS + (VISIBILITY_PROGRESS - BILATERAL_PROGRESS) * (i+1) / callsCount) * progressBar.Maximum);
 				Application.DoEvents();
 			}
 
@@ -823,18 +842,17 @@ namespace GenerateTranslucencyMap
 			m_CB_Filter.m._Tolerance = _BilateralTolerance;
 			m_CB_Filter.m._Tile = (uint) (_Wrap ? 1 : 0);
 
-			int	h = Math.Max( 1, MAX_LINES*1024 / W );
-			int	CallsCount = (int) Math.Ceiling( (float) H / h );
-			for ( int i=0; i < CallsCount; i++ )
-			{
-				m_CB_Filter.m._Y0 = (UInt32) (i * h);
+			uint	h = Math.Max( 1, MAX_LINES*1024 / W );
+			uint	callsCount = (uint) Math.Ceiling( (float) H / h );
+			for ( uint i=0; i < callsCount; i++ ) {
+				m_CB_Filter.m._Y0 = i * h;
 				m_CB_Filter.UpdateData();
 
 				m_CS_BilateralFilter.Dispatch( W, h, 1 );
 
 				m_Device.Present( true );
 
-				progressBar.Value = (int) (0.01f * (BILATERAL_PROGRESS * (i+1) / CallsCount) * progressBar.Maximum);
+				progressBar.Value = (int) (0.01f * (BILATERAL_PROGRESS * (i+1) / callsCount) * progressBar.Maximum);
 				Application.DoEvents();
 			}
 
@@ -861,8 +879,8 @@ namespace GenerateTranslucencyMap
 			m_TextureTargetCombined.RemoveFromLastAssignedSlots();
 			m_TextureTargetCombined.SetCSUAV( 0 );
 
-			int	groupsCountX = (W + 15) >> 4;
-			int	groupsCountY = (H + 15) >> 4;
+			uint	groupsCountX = (W + 15) >> 4;
+			uint	groupsCountY = (H + 15) >> 4;
 
 			m_CS_Helper_Mix.Dispatch( groupsCountX, groupsCountY, 1 );
 
@@ -870,39 +888,39 @@ namespace GenerateTranslucencyMap
 
 			//////////////////////////////////////////////////////////////////////////
 			// 2] Copy target to staging for CPU readback and update the resulting bitmaps
-			if ( m_BitmapResultCombined != null )
-				m_BitmapResultCombined.Dispose();
-			m_BitmapResultCombined = new ImageUtility.Bitmap( W, H, m_sRGBProfile );
-			m_BitmapResultCombined.HasAlpha = true;
+			if ( m_imageResultCombined != null )
+				m_imageResultCombined.Dispose();
+			m_imageResultCombined = new ImageUtility.ImageFile( W, H, ImageUtility.ImageFile.PIXEL_FORMAT.RGBA8, m_sRGBProfile );
 
 			// Copy from GPU to CPU
 			m_TextureTarget_CPU.CopyFrom( m_TextureTargetCombined );
 
 			PixelsBuffer	Pixels = m_TextureTarget_CPU.Map( 0, 0 );
+			float4[]		scanline = new float4[W];
+			float4			gammaRGB = float4.Zero;
+
 			using ( System.IO.BinaryReader R = Pixels.OpenStreamRead() )
-				for ( int Y=0; Y < H; Y++ )
-				{
+				for ( uint Y=0; Y < H; Y++ ) {
 					R.BaseStream.Position = Y * Pixels.RowPitch;
-					for ( int X=0; X < W; X++ )
-					{
-						ImageUtility.float4	Color = new ImageUtility.float4( R.ReadSingle(), R.ReadSingle(), R.ReadSingle(), R.ReadSingle() );
-						Color = m_LinearProfile.RGB2XYZ( Color );
-						m_BitmapResultCombined.ContentXYZ[X,Y] = Color;
+					for ( uint X=0; X < W; X++ ) {
+						gammaRGB.Set( R.ReadSingle(), R.ReadSingle(), R.ReadSingle(), R.ReadSingle() );
+						m_sRGBProfile.LinearRGB2GammaRGB( gammaRGB, ref scanline[X] );
 					}
+					m_imageResultCombined.WriteScanline( Y, scanline );
 				}
 
 			Pixels.Dispose();
 			m_TextureTarget_CPU.UnMap( 0, 0 );
 
 			// Assign result
-			imagePanelResult3.Image = m_BitmapResultCombined;
+			imagePanelResult3.Image = m_imageResultCombined;
 		}
 
-		private void	GenerateRays( int _RaysCount ) {
+		private void	GenerateRays( int _raysCount ) {
 
-			m_Rays[0] = new float3[_RaysCount];
-			m_Rays[1] = new float3[_RaysCount];
-			m_Rays[2] = new float3[_RaysCount];
+			m_rays[0] = new float3[_raysCount];
+			m_rays[1] = new float3[_raysCount];
+			m_rays[2] = new float3[_raysCount];
 
 			// Half-Life 2 basis
 			float3[]	HL2Basis = new float3[] {
@@ -922,23 +940,23 @@ namespace GenerateTranslucencyMap
 			};
 
 			double	randomTheta = 0.0;	// So first draw is always the HL2 direction itself
-			for ( int RayIndex=0; RayIndex < _RaysCount; RayIndex++ ) {
+			for ( int rayIndex=0; rayIndex < _raysCount; rayIndex++ ) {
 				// Stratified version
-				double	Phi = (Math.PI / 3.0) * (2.0 * WMath.SimpleRNG.GetUniform() - 1.0);
-				double	Theta = 2.0 * Math.Asin( Math.Sqrt( 0.5 * (RayIndex + randomTheta) / _RaysCount ) );
+				double	phi = (Math.PI / 3.0) * (2.0 * SimpleRNG.GetUniform() - 1.0);
+				double	theta = 2.0 * Math.Asin( Math.Sqrt( 0.5 * (rayIndex + randomTheta) / _raysCount ) );
 
-				double	CosTheta = Math.Cos( Theta );
-				double	SinTheta = Math.Sin( Theta );
+				double	cosTheta = Math.Cos( theta );
+				double	sinTheta = Math.Sin( theta );
 
-				float3	Dir = new float3( (float) (Math.Cos( Phi ) * SinTheta),
-										  (float) (Math.Sin( Phi ) * SinTheta),
-										  (float) CosTheta );
+				float3	dir = new float3( (float) (Math.Cos( phi ) * sinTheta),
+										  (float) (Math.Sin( phi ) * sinTheta),
+										  (float) cosTheta );
 
-				m_Rays[0][RayIndex] = Dir.x * X[0] + Dir.y * Y[0] + Dir.z * HL2Basis[0];
-				m_Rays[1][RayIndex] = Dir.x * X[1] + Dir.y * Y[1] + Dir.z * HL2Basis[1];
-				m_Rays[2][RayIndex] = Dir.x * X[2] + Dir.y * Y[2] + Dir.z * HL2Basis[2];
+				m_rays[0][rayIndex] = dir.x * X[0] + dir.y * Y[0] + dir.z * HL2Basis[0];
+				m_rays[1][rayIndex] = dir.x * X[1] + dir.y * Y[1] + dir.z * HL2Basis[1];
+				m_rays[2][rayIndex] = dir.x * X[2] + dir.y * Y[2] + dir.z * HL2Basis[2];
 
-				randomTheta = WMath.SimpleRNG.GetUniform();
+				randomTheta = SimpleRNG.GetUniform();
 			}
 		}
 
@@ -1009,7 +1027,7 @@ namespace GenerateTranslucencyMap
 
 		private void imagePanelResult0_Click(object sender, EventArgs e)
 		{
-			if ( m_BitmapResults[0] == null ) {
+			if ( m_imageResults[0] == null ) {
 				MessageBox( "There is no result image to save!" );
 				return;
 			}
@@ -1023,7 +1041,7 @@ namespace GenerateTranslucencyMap
 				return;
 
 			try {
-				m_BitmapResults[0].Save( new System.IO.FileInfo( saveFileDialogImage.FileName ) );
+				m_imageResults[0].Save( new System.IO.FileInfo( saveFileDialogImage.FileName ) );
 //				MessageBox( "Success!", MessageBoxButtons.OK, MessageBoxIcon.Information );
 			} catch ( Exception _e ) {
 				MessageBox( "An error occurred while saving the image:\n\n", _e );
@@ -1032,7 +1050,7 @@ namespace GenerateTranslucencyMap
 
 		private void imagePanelResult1_Click(object sender, EventArgs e)
 		{
-			if ( m_BitmapResults[1] == null ) {
+			if ( m_imageResults[1] == null ) {
 				MessageBox( "There is no result image to save!" );
 				return;
 			}
@@ -1046,7 +1064,7 @@ namespace GenerateTranslucencyMap
 				return;
 
 			try {
-				m_BitmapResults[1].Save( new System.IO.FileInfo( saveFileDialogImage.FileName ) );
+				m_imageResults[1].Save( new System.IO.FileInfo( saveFileDialogImage.FileName ) );
 //				MessageBox( "Success!", MessageBoxButtons.OK, MessageBoxIcon.Information );
 			} catch ( Exception _e ) {
 				MessageBox( "An error occurred while saving the image:\n\n", _e );
@@ -1055,7 +1073,7 @@ namespace GenerateTranslucencyMap
 
 		private void imagePanelResult2_Click(object sender, EventArgs e)
 		{
-			if ( m_BitmapResults[2] == null ) {
+			if ( m_imageResults[2] == null ) {
 				MessageBox( "There is no result image to save!" );
 				return;
 			}
@@ -1069,7 +1087,7 @@ namespace GenerateTranslucencyMap
 				return;
 
 			try {
-				m_BitmapResults[2].Save( new System.IO.FileInfo( saveFileDialogImage.FileName ) );
+				m_imageResults[2].Save( new System.IO.FileInfo( saveFileDialogImage.FileName ) );
 //				MessageBox( "Success!", MessageBoxButtons.OK, MessageBoxIcon.Information );
 			} catch ( Exception _e ) {
 				MessageBox( "An error occurred while saving the image:\n\n", _e );
@@ -1078,7 +1096,7 @@ namespace GenerateTranslucencyMap
 
 		private void imagePanelResult3_Click(object sender, EventArgs e)
 		{
-			if ( m_BitmapResultCombined == null ) {
+			if ( m_imageResultCombined == null ) {
 				MessageBox( "There is no result image to save!" );
 				return;
 			}
@@ -1092,7 +1110,7 @@ namespace GenerateTranslucencyMap
 				return;
 
 			try {
-				m_BitmapResultCombined.Save( new System.IO.FileInfo( saveFileDialogImage.FileName ) );
+				m_imageResultCombined.Save( new System.IO.FileInfo( saveFileDialogImage.FileName ) );
 //				MessageBox( "Success!", MessageBoxButtons.OK, MessageBoxIcon.Information );
 			} catch ( Exception _e ) {
 				MessageBox( "An error occurred while saving the image:\n\n", _e );

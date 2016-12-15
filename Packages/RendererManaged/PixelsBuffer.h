@@ -15,25 +15,25 @@ namespace Renderer {
 	public ref class PixelsBuffer : public ByteBuffer {
 	internal:
 
-		UInt32						m_RowPitch;
-		UInt32						m_DepthPitch;
+		UInt32						m_rowPitch;
+		UInt32						m_depthPitch;
 
 	public:
 
-		property UInt32		RowPitch	{ UInt32 get() { return m_RowPitch; } }
-		property UInt32		DepthPitch	{ UInt32 get() { return m_DepthPitch; } }
+		property UInt32		RowPitch	{ UInt32 get() { return m_rowPitch; } }
+		property UInt32		DepthPitch	{ UInt32 get() { return m_depthPitch; } }
 
 	public:
 
-		PixelsBuffer( UInt32 _ContentSize ) : ByteBuffer( _ContentSize ) {
+		PixelsBuffer( UInt32 _contentSize ) : ByteBuffer( _contentSize ) {
 		}
 
 	internal:
 		PixelsBuffer( D3D11_MAPPED_SUBRESOURCE& _SubResource ) : ByteBuffer( _SubResource.DepthPitch ) {
-			m_RowPitch = _SubResource.RowPitch;
-			m_DepthPitch = _SubResource.DepthPitch;
+			m_rowPitch = _SubResource.RowPitch;
+			m_depthPitch = _SubResource.DepthPitch;
 
-			System::Runtime::InteropServices::Marshal::Copy( System::IntPtr( _SubResource.pData ), m_Buffer, 0, m_DepthPitch );
+			System::Runtime::InteropServices::Marshal::Copy( System::IntPtr( _SubResource.pData ), m_Buffer, 0, m_depthPitch );
 		}
 
 // Enabling this helper requires to include MathStructs.h but doing so results in Device.h failing to compile!!! ô0

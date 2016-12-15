@@ -338,7 +338,10 @@ namespace ImageUtilityLib {
 		void				WriteScanline( U32 _Y, const bfloat4* _color, U32 _startX=0, U32 _count=~0U );
 
 		// Retrieves the image file type based on the image file name
-		static FILE_FORMAT	GetFileType( const wchar_t* _imageFileNameName );
+		// WARNING: The image file MUST exist on disk as FreeImage inspects the content!
+		static FILE_FORMAT	GetFileTypeFromExistingFileContent( const wchar_t* _imageFileNameName );
+		// Same version from filename only
+		static FILE_FORMAT	GetFileTypeFromFileNameOnly( const wchar_t* _imageFileNameName );
 
 
 	public:

@@ -5,9 +5,9 @@
 using namespace ImageUtility;
 
 // Helper to wrap a bunch of images into a managed array
-cli::array< ImageFile^ >^	WrapNativeImages( U32 _imagesCount, ImageUtilityLib::ImageFile*& _images, bool _deleteNativeImages ) {
+array< ImageFile^ >^	WrapNativeImages( U32 _imagesCount, ImageUtilityLib::ImageFile*& _images, bool _deleteNativeImages ) {
 	// Wrap our managed version of ImageFiles around returned images
-	cli::array< ImageFile^ >^	result = gcnew cli::array< ImageFile^ >( _imagesCount );
+	array< ImageFile^ >^	result = gcnew array< ImageFile^ >( _imagesCount );
 	for ( U32 imageIndex=0; imageIndex < _imagesCount; imageIndex++ ) {
 		result[imageIndex] = gcnew ImageFile( _images[imageIndex], true );
 	}
@@ -25,7 +25,7 @@ ImageFile::ImageFile( System::Drawing::Bitmap^ _bitmap, ImageUtility::ColorProfi
 
 	// Load the bitmap's content
 	int	width, height;
-	cli::array< Byte >^	bitmapContent = LoadBitmap( _bitmap, width, height );
+	array< Byte >^	bitmapContent = LoadBitmap( _bitmap, width, height );
 	if ( bitmapContent == nullptr )
 		throw gcnew Exception( "Failed to load bitmap content into an RGBA[]!" );
 
@@ -76,7 +76,7 @@ void	ImageFile::Load( System::IO::FileInfo^ _fileName, FILE_FORMAT _format ) {
 }
 void	ImageFile::Load( System::IO::Stream^ _imageStream, FILE_FORMAT _format ) {
 	// Read the file's content
-	cli::array< Byte >^	imageContent = gcnew cli::array< Byte >( int( _imageStream->Length ) );
+	array< Byte >^	imageContent = gcnew array< Byte >( int( _imageStream->Length ) );
 	_imageStream->Read( imageContent, 0, (int) _imageStream->Length );
 
 	// Read from memory
@@ -189,29 +189,33 @@ void	ImageFile::ToneMapFrom( ImageFile^ _source, ToneMapper^ _toneMapper ) {
 }
 
 // Retrieves the image file type based on the image file name
-ImageFile::FILE_FORMAT	ImageFile::GetFileType( System::IO::FileInfo^ _fileName ) {
+ImageFile::FILE_FORMAT	ImageFile::GetFileTypeFromExistingFileContent( System::IO::FileInfo^ _fileName ) {
 	pin_ptr< const wchar_t >	nativeFileName = PtrToStringChars( _fileName->FullName );
-	return FILE_FORMAT( ImageUtilityLib::ImageFile::GetFileType( nativeFileName ) );
+	return FILE_FORMAT( ImageUtilityLib::ImageFile::GetFileTypeFromExistingFileContent( nativeFileName ) );
+}
+ImageFile::FILE_FORMAT	ImageFile::GetFileTypeFromFileNameOnly( System::IO::FileInfo^ _fileName ) {
+	pin_ptr< const wchar_t >	nativeFileName = PtrToStringChars( _fileName->FullName );
+	return FILE_FORMAT( ImageUtilityLib::ImageFile::GetFileTypeFromFileNameOnly( nativeFileName ) );
 }
 
-void	ImageFile::ReadScanline( UInt32 _Y, cli::array< float4 >^ _color, UInt32 _startX ) {
+void	ImageFile::ReadScanline( UInt32 _Y, array< float4 >^ _color, UInt32 _startX ) {
 	pin_ptr<float4>	color = &_color[0];
 	m_nativeObject->ReadScanline( _Y, (bfloat4*) color, _startX, _color->Length );
 }
-void	ImageFile::WriteScanline( UInt32 _Y, cli::array< float4 >^ _color, UInt32 _startX ) {
+void	ImageFile::WriteScanline( UInt32 _Y, array< float4 >^ _color, UInt32 _startX ) {
 	pin_ptr<float4>	color = &_color[0];
 	m_nativeObject->WriteScanline( _Y, (bfloat4*) color, _startX, _color->Length );
 }
 
-cli::array< Byte >^	ImageFile::LoadBitmap( System::Drawing::Bitmap^ _bitmap, int& _width, int& _height ) {
+array< Byte >^	ImageFile::LoadBitmap( System::Drawing::Bitmap^ _bitmap, int& _width, int& _height ) {
 	_width = _bitmap->Width;
 	_height = _bitmap->Height;
 
-	cli::array< System::Byte >^	result = gcnew cli::array< System::Byte >( 4*_width*_height );
+	array< System::Byte >^	result = gcnew array< System::Byte >( 4*_width*_height );
 
 	System::Drawing::Imaging::BitmapData^	lockedBitmap = _bitmap->LockBits( System::Drawing::Rectangle( 0, 0, _width, _height ), System::Drawing::Imaging::ImageLockMode::ReadOnly, System::Drawing::Imaging::PixelFormat::Format32bppArgb );
 
-	cli::pin_ptr<void>	scan0Ptr = lockedBitmap->Scan0.ToPointer();
+	pin_ptr<void>	scan0Ptr = lockedBitmap->Scan0.ToPointer();
 
 	Byte	R, G, B, A;
 	int		targetIndex = 0;
@@ -236,6 +240,53 @@ cli::array< Byte >^	ImageFile::LoadBitmap( System::Drawing::Bitmap^ _bitmap, int
 
 	return result;
 }
+
+System::Drawing::Bitmap^	ImageFile::AsCustomBitmap( ColorTransformer^ _transformer ) {
+	System::Drawing::Bitmap^	result = gcnew System::Drawing::Bitmap( Width, Height, System::Drawing::Imaging::PixelFormat::Format32bppArgb );
+	AsCustomBitmap( result, _transformer );
+	return result;
+}
+
+void	ImageFile::AsCustomBitmap( System::Drawing::Bitmap^ _bitmap, ColorTransformer^ _transformer ) {
+	if ( _bitmap == nullptr )
+		throw gcnew Exception( "Invalid bitmap!" );
+	if ( _bitmap->Width != Width )
+		throw gcnew Exception( "Provided bitmap width mismatch!" );
+	if ( _bitmap->Height != Height )
+		throw gcnew Exception( "Provided bitmap height mismatch!" );
+
+	System::Drawing::Imaging::BitmapData^	lockedBitmap = _bitmap->LockBits( System::Drawing::Rectangle( 0, 0, Width, Height ), System::Drawing::Imaging::ImageLockMode::WriteOnly, System::Drawing::Imaging::PixelFormat::Format32bppArgb );
+
+	pin_ptr<void>	scan0Ptr = lockedBitmap->Scan0.ToPointer();
+
+	array<float4>^	sourceScanline = gcnew array<float4>( Width );
+	float4	temp;
+	Byte	R, G, B, A;
+	int		targetIndex = 0;
+	for ( UInt32 Y=0; Y < Height; Y++ ) {
+		ReadScanline( Y, sourceScanline );
+		Byte*	targetScanlinePtr = reinterpret_cast<Byte*>(scan0Ptr) + Y * lockedBitmap->Stride;
+		for ( UInt32 X=0; X < Width; X++ ) {
+			// Apply user transform
+			temp = sourceScanline[X];
+			_transformer( temp );
+
+			R = Byte( Math::Max( 0.0f, Math::Min( 255.0f, 255.0f * temp.x ) ) );
+			G = Byte( Math::Max( 0.0f, Math::Min( 255.0f, 255.0f * temp.y ) ) );
+			B = Byte( Math::Max( 0.0f, Math::Min( 255.0f, 255.0f * temp.z ) ) );
+			A = Byte( Math::Max( 0.0f, Math::Min( 255.0f, 255.0f * temp.w ) ) );
+
+			// Write in shitty order
+			*targetScanlinePtr++ = B;
+			*targetScanlinePtr++ = G;
+			*targetScanlinePtr++ = R;
+			*targetScanlinePtr++ = A;
+		}
+	}
+
+	_bitmap->UnlockBits( lockedBitmap );
+}
+
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -371,7 +422,7 @@ void ImageFile::DDSSaveFromMemory( NativeByteArray^ _DDSImage, System::IO::Strea
 }
 
 // Cube map handling
-cli::array< ImageFile^ >^	ImageFile::DDSLoadCubeMap( System::IO::FileInfo^ _fileName ) {
+array< ImageFile^ >^	ImageFile::DDSLoadCubeMap( System::IO::FileInfo^ _fileName ) {
 	pin_ptr< const wchar_t >	nativeFileName = PtrToStringChars( _fileName->FullName );
 
 	// Call native method
@@ -383,13 +434,13 @@ cli::array< ImageFile^ >^	ImageFile::DDSLoadCubeMap( System::IO::FileInfo^ _file
 
 // Or call streamed version
 // 	System::IO::FileStream^	S = _fileName->OpenRead();
-// 	cli::array< ImageFile^ >^	result = DDSLoadCubeMap( S );
+// 	array< ImageFile^ >^	result = DDSLoadCubeMap( S );
 // 	delete S;
 // 	return result;
 }
-cli::array< ImageFile^ >^	ImageFile::DDSLoadCubeMap( System::IO::Stream^ _imageStream ) {
+array< ImageFile^ >^	ImageFile::DDSLoadCubeMap( System::IO::Stream^ _imageStream ) {
 	// Load stream into memory
-	cli::array< Byte >^	fileContent = gcnew cli::array< Byte >( int( _imageStream->Length ) );
+	array< Byte >^	fileContent = gcnew array< Byte >( int( _imageStream->Length ) );
 	_imageStream->Read( fileContent, 0, int( _imageStream->Length ) );
 
 	NativeByteArray^	temp = gcnew NativeByteArray( fileContent );
@@ -404,7 +455,7 @@ cli::array< ImageFile^ >^	ImageFile::DDSLoadCubeMap( System::IO::Stream^ _imageS
 
 	return WrapNativeImages( imagesCount, images, true );
 }
-void	ImageFile::DDSSaveCubeMap( cli::array< ImageFile^ >^ _cubeMapFaces, bool _compressBC6H, System::IO::FileInfo^ _fileName ) {
+void	ImageFile::DDSSaveCubeMap( array< ImageFile^ >^ _cubeMapFaces, bool _compressBC6H, System::IO::FileInfo^ _fileName ) {
 	pin_ptr< const wchar_t >	nativeFileName = PtrToStringChars( _fileName->FullName );
 
 	const ImageUtilityLib::ImageFile**	nativeCubeMapFaces = new const ImageUtilityLib::ImageFile*[_cubeMapFaces->Length];
@@ -415,7 +466,7 @@ void	ImageFile::DDSSaveCubeMap( cli::array< ImageFile^ >^ _cubeMapFaces, bool _c
 
 	delete[] nativeCubeMapFaces;
 }
-void	ImageFile::DDSSaveCubeMap( cli::array< ImageFile^ >^ _cubeMapFaces, bool _compressBC6H, System::IO::Stream^ _imageStream ) {
+void	ImageFile::DDSSaveCubeMap( array< ImageFile^ >^ _cubeMapFaces, bool _compressBC6H, System::IO::Stream^ _imageStream ) {
 //	System::Runtime::InteropServices::Marshal::AllocHGlobal( _cubeMapFaces->Length * Sizeof* ); ??
 	const ImageUtilityLib::ImageFile**	nativeCubeMapFaces = new const ImageUtilityLib::ImageFile*[_cubeMapFaces->Length];
 	for ( int i=0; i < _cubeMapFaces->Length; i++ )
@@ -435,7 +486,7 @@ void	ImageFile::DDSSaveCubeMap( cli::array< ImageFile^ >^ _cubeMapFaces, bool _c
 }
 
 // 3D Texture handling
-cli::array< ImageFile^ >^	ImageFile::DDSLoad3DTexture( System::IO::FileInfo^ _fileName, U32& _slicesCount ) {
+array< ImageFile^ >^	ImageFile::DDSLoad3DTexture( System::IO::FileInfo^ _fileName, U32& _slicesCount ) {
 	pin_ptr< const wchar_t >	nativeFileName = PtrToStringChars( _fileName->FullName );
 
 	// Call native method
@@ -447,13 +498,13 @@ cli::array< ImageFile^ >^	ImageFile::DDSLoad3DTexture( System::IO::FileInfo^ _fi
 
 // Or call streamed version
 // 	System::IO::FileStream^	S = _fileName->OpenRead();
-// 	cli::array< ImageFile^ >^	result = DDSLoadCubeMap( S );
+// 	array< ImageFile^ >^	result = DDSLoadCubeMap( S );
 // 	delete S;
 // 	return result;
 }
-cli::array< ImageFile^ >^	ImageFile::DDSLoad3DTexture( System::IO::Stream^ _imageStream ) {
+array< ImageFile^ >^	ImageFile::DDSLoad3DTexture( System::IO::Stream^ _imageStream ) {
 	// Load stream into memory
-	cli::array< Byte >^	fileContent = gcnew cli::array< Byte >( int( _imageStream->Length ) );
+	array< Byte >^	fileContent = gcnew array< Byte >( int( _imageStream->Length ) );
 	_imageStream->Read( fileContent, 0, int( _imageStream->Length ) );
 
 	NativeByteArray^	temp = gcnew NativeByteArray( fileContent );
@@ -467,7 +518,7 @@ cli::array< ImageFile^ >^	ImageFile::DDSLoad3DTexture( System::IO::Stream^ _imag
 
 	return WrapNativeImages( imagesCount, images, true );
 }
-void	ImageFile::DDSSave3DTexture( cli::array< ImageFile^ >^ _slices, bool _compressBC6H, System::IO::FileInfo^ _fileName ) {
+void	ImageFile::DDSSave3DTexture( array< ImageFile^ >^ _slices, bool _compressBC6H, System::IO::FileInfo^ _fileName ) {
 	pin_ptr< const wchar_t >	nativeFileName = PtrToStringChars( _fileName->FullName );
 
 	const ImageUtilityLib::ImageFile**	nativeSlices = new const ImageUtilityLib::ImageFile*[_slices->Length];
@@ -478,7 +529,7 @@ void	ImageFile::DDSSave3DTexture( cli::array< ImageFile^ >^ _slices, bool _compr
 
 	delete[] nativeSlices;
 }
-void	ImageFile::DDSSave3DTexture( cli::array< ImageFile^ >^ _slices, bool _compressBC6H, System::IO::Stream^ _imageStream ) {
+void	ImageFile::DDSSave3DTexture( array< ImageFile^ >^ _slices, bool _compressBC6H, System::IO::Stream^ _imageStream ) {
 	const ImageUtilityLib::ImageFile**	nativeSlices = new const ImageUtilityLib::ImageFile*[_slices->Length];
 	for ( int i=0; i < _slices->Length; i++ )
 		nativeSlices[i] = _slices[i]->m_nativeObject;
@@ -490,7 +541,7 @@ void	ImageFile::DDSSave3DTexture( cli::array< ImageFile^ >^ _slices, bool _compr
 	delete[] nativeSlices;
 
 	// Copy to Byte[]
-	cli::array< Byte >^	managedBuffer = gcnew cli::array< Byte >( fileLength );
+	array< Byte >^	managedBuffer = gcnew array< Byte >( fileLength );
 	System::Runtime::InteropServices::Marshal::Copy( IntPtr(fileContent), managedBuffer, 0, fileLength );
 
 	// Write to stream

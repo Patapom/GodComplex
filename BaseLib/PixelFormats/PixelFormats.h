@@ -148,7 +148,8 @@ namespace BaseLib {
 			float	Green( const void* _pixel ) const override					{ return 0.0f; }
 			float	Blue( const void* _pixel ) const override					{ return 0.0f; }
 			float	Alpha( const void* _pixel ) const override					{ return 1.0f; }
-			void	RGBA( const void* _pixel, bfloat4& _Color ) const override	{ _Color.Set( ((PF_R8*) _pixel)->R / 255.0f, 0, 0, 1 ); }
+			// Here I'm taking the risk of returning a grayscale image... :/
+			void	RGBA( const void* _pixel, bfloat4& _Color ) const override	{ float	v = ((PF_R8*) _pixel)->R / 255.0f; _Color.Set( v, v, v, 1 ); }
 
 		}	Descriptor;
 		#pragma endregion
@@ -453,7 +454,8 @@ namespace BaseLib {
 			float	Green( const void* _pixel ) const override					{ return 0.0f; }
 			float	Blue( const void* _pixel ) const override					{ return 0.0f; }
 			float	Alpha( const void* _pixel ) const override					{ return 1.0f; }
-			void	RGBA( const void* _pixel, bfloat4& _Color ) const override	{ _Color.Set( U16toF32( ((PF_R16*) _pixel)->R ), 0, 0, 1 ); }
+			// Here I'm taking the risk of returning a grayscale image... :/
+			void	RGBA( const void* _pixel, bfloat4& _Color ) const override	{ float	v = U16toF32( ((PF_R16*) _pixel)->R ); _Color.Set( v, v, v, 1 ); }
 
 		} Descriptor;
 		#pragma endregion
@@ -633,7 +635,8 @@ namespace BaseLib {
 			float	Green( const void* _pixel ) const override					{ return 0; }
 			float	Blue( const void* _pixel ) const override					{ return 0; }
 			float	Alpha( const void* _pixel ) const override					{ return 1; }
-			void	RGBA( const void* _pixel, bfloat4& _Color ) const override	{ _Color.Set( ((PF_R16F*) _pixel)->R, 0, 0, 1 ); }
+			// Here I'm taking the risk of returning a grayscale image... :/
+			void	RGBA( const void* _pixel, bfloat4& _Color ) const override	{ float	v = ((PF_R16F*) _pixel)->R; _Color.Set( v, v, v, 1 ); }
 
 		} Descriptor;
 		#pragma endregion
@@ -813,7 +816,8 @@ namespace BaseLib {
 			float	Green( const void* _pixel ) const override					{ return 0; }
 			float	Blue( const void* _pixel ) const override					{ return 0; }
 			float	Alpha( const void* _pixel ) const override					{ return 1; }
-			void	RGBA( const void* _pixel, bfloat4& _Color ) const override	{ _Color.Set( ((PF_R32F*) _pixel)->R, 0, 0, 1 ); }
+			// Here I'm taking the risk of returning a grayscale image... :/
+			void	RGBA( const void* _pixel, bfloat4& _Color ) const override	{ float	v = ((PF_R32F*) _pixel)->R; _Color.Set( v, v, v, 1 ); }
 
 		} Descriptor;
 		#pragma endregion

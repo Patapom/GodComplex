@@ -14,12 +14,12 @@ using System.Text;
 using System.Windows.Forms;
 using Microsoft.Win32;
 
-using RendererManaged;
+using Renderer;
+using SharpMath;
 
 namespace GenerateSelfShadowedBumpMap
 {
-	public partial class GeneratorForm : Form
-	{
+	public partial class GeneratorForm : Form {
 		#region CONSTANTS
 
 		private const int		MAX_THREADS = 1024;			// Maximum threads run by the compute shader
@@ -79,14 +79,14 @@ namespace GenerateSelfShadowedBumpMap
 		private ViewerForm						m_viewerForm;
 
 		private System.IO.FileInfo				m_SourceFileName = null;
-		private int								W, H;
-		private ImageUtility.Bitmap				m_BitmapSource = null;
+		private uint							W, H;
+		private ImageUtility.ImageFile			m_imageSourceHeightMap = null;
 
-		internal Device							m_Device = new Device();
-		internal Texture2D						m_TextureSource = null;
-		internal Texture2D						m_TextureTarget0 = null;
-		internal Texture2D						m_TextureTarget1 = null;
-		internal Texture2D						m_TextureTarget_CPU = null;
+		internal Device							m_device = new Device();
+		internal Texture2D						m_textureSourceHeightMap = null;
+		internal Texture2D						m_textureTarget0 = null;
+		internal Texture2D						m_textureTarget1 = null;
+		internal Texture2D						m_textureTarget_CPU = null;
 
 		// SSBump Generation
 		private ConstantBuffer<CBInput>			m_CB_Input;
@@ -94,15 +94,16 @@ namespace GenerateSelfShadowedBumpMap
 		private ComputeShader					m_CS_GenerateSSBumpMap = null;
 
 		// Bilateral filtering pre-processing
-		private RendererManaged.ConstantBuffer<CBFilter>	m_CB_Filter;
-		private RendererManaged.ComputeShader	m_CS_BilateralFilter = null;
+		private ConstantBuffer<CBFilter>		m_CB_Filter;
+		private ComputeShader					m_CS_BilateralFilter = null;
 
 		// Display
 		public ConstantBuffer<CBDisplay>		m_CB_Display;
 		public Shader							m_PS_Display;
 
-		private ImageUtility.ColorProfile		m_LinearProfile = new ImageUtility.ColorProfile( ImageUtility.ColorProfile.Chromaticities.sRGB, ImageUtility.ColorProfile.GAMMA_CURVE.STANDARD, 1.0f );
-		private ImageUtility.Bitmap				m_BitmapResult = null;
+		private ImageUtility.ColorProfile		m_linearProfile = new ImageUtility.ColorProfile( ImageUtility.ColorProfile.STANDARD_PROFILE.LINEAR );
+		private ImageUtility.ColorProfile		m_sRGBProfile = new ImageUtility.ColorProfile( ImageUtility.ColorProfile.STANDARD_PROFILE.sRGB );
+		private ImageUtility.ImageFile			m_imageResult = null;
 
 		#endregion
 
@@ -137,35 +138,33 @@ tabControlGenerators.TabPages.RemoveAt( 1 );
 			#endif
 		}
 
-		protected override void  OnLoad(EventArgs e)
-		{
+		protected override void  OnLoad(EventArgs e) {
  			base.OnLoad(e);
 
 			try {
-				m_Device.Init( m_viewerForm.Handle, false, true );
+				m_device.Init( m_viewerForm.Handle, false, true );
 
 				// Create our compute shaders
-				#if DEBUG
-					m_CS_BilateralFilter = new ComputeShader( m_Device, new ShaderFile( new System.IO.FileInfo( "./Shaders/BilateralFiltering.hlsl" ) ), "CS", null );
-					m_CS_GenerateSSBumpMap = new ComputeShader( m_Device, new ShaderFile( new System.IO.FileInfo( "./Shaders/GenerateSSBumpMap.hlsl" ) ), "CS", null );
-					m_PS_Display = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "./Shaders/Display.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
-				#else
-					m_CS_BilateralFilter = ComputeShader.CreateFromBinaryBlob( m_Device, new System.IO.FileInfo( "./Shaders/Binary/BilateralFiltering.fxbin" ), "CS" );
-					m_CS_GenerateSSBumpMap = ComputeShader.CreateFromBinaryBlob( m_Device, new System.IO.FileInfo( "./Shaders/Binary/GenerateSSBumpMap.fxbin" ), "CS" );
-					m_PS_Display = Shader.CreateFromBinaryBlob( m_Device, new System.IO.FileInfo( "./Shaders/Display.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS" );
+				#if !DEBUG
+					using ( ScopedForceMaterialsLoadFromBinary scope = new ScopedForceMaterialsLoadFromBinary() )
 				#endif
+				{
+					m_CS_BilateralFilter = new ComputeShader( m_device, new ShaderFile( new System.IO.FileInfo( "./Shaders/BilateralFiltering.hlsl" ) ), "CS", null );
+					m_CS_GenerateSSBumpMap = new ComputeShader( m_device, new ShaderFile( new System.IO.FileInfo( "./Shaders/GenerateSSBumpMap.hlsl" ) ), "CS", null );
+					m_PS_Display = new Shader( m_device, new ShaderFile( new System.IO.FileInfo( "./Shaders/Display.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+				}
 
 
 				// Create our constant buffers
-				m_CB_Input = new RendererManaged.ConstantBuffer<CBInput>( m_Device, 0 );
-				m_CB_Filter = new RendererManaged.ConstantBuffer<CBFilter>( m_Device, 0 );
+				m_CB_Input = new ConstantBuffer<CBInput>( m_device, 0 );
+				m_CB_Filter = new ConstantBuffer<CBFilter>( m_device, 0 );
 
-				m_CB_Display = new ConstantBuffer<CBDisplay>( m_Device, 0 );
+				m_CB_Display = new ConstantBuffer<CBDisplay>( m_device, 0 );
 				m_CB_Display.m._Width = (uint) m_viewerForm.Width;
 				m_CB_Display.m._Height = (uint) m_viewerForm.Height;
 
 				// Create our structured buffer containing the rays
-				m_SB_Rays = new RendererManaged.StructuredBuffer<RendererManaged.float3>( m_Device, 3*MAX_THREADS, true );
+				m_SB_Rays = new StructuredBuffer<float3>( m_device, 3*MAX_THREADS, true );
 				integerTrackbarControlRaysCount_SliderDragStop( integerTrackbarControlRaysCount, 0 );
 
 //				LoadHeightMap( new System.IO.FileInfo( "eye_generic_01_disp.png" ) );
@@ -193,25 +192,25 @@ tabControlGenerators.TabPages.RemoveAt( 1 );
 				m_CS_GenerateSSBumpMap.Dispose();
 				m_CS_BilateralFilter.Dispose();
 
-				if ( m_TextureTarget_CPU != null )
-					m_TextureTarget_CPU.Dispose();
-				if ( m_TextureTarget1 != null )
-					m_TextureTarget1.Dispose();
-				if ( m_TextureTarget0 != null )
-					m_TextureTarget0.Dispose();
-				if ( m_TextureSource != null )
-					m_TextureSource.Dispose();
+				if ( m_textureTarget_CPU != null )
+					m_textureTarget_CPU.Dispose();
+				if ( m_textureTarget1 != null )
+					m_textureTarget1.Dispose();
+				if ( m_textureTarget0 != null )
+					m_textureTarget0.Dispose();
+				if ( m_textureSourceHeightMap != null )
+					m_textureSourceHeightMap.Dispose();
 
-				m_Device.Dispose();
-				m_Device = null;
+				m_device.Dispose();
+				m_device = null;
 
 			} catch ( Exception _e ) {
 				MessageBox( "Failed to close:\r\n", _e );
 			}
 
 // FFS!!!
-System.Diagnostics.Process	P = System.Diagnostics.Process.GetCurrentProcess();
-P.Kill();
+//System.Diagnostics.Process	P = System.Diagnostics.Process.GetCurrentProcess();
+//P.Kill();
 
 			e.Cancel = false;
 			base.OnClosing( e );
@@ -221,65 +220,64 @@ P.Kill();
 		/// Clean up any resources being used.
 		/// </summary>
 		/// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
-		protected override void Dispose( bool disposing )
-		{
-			if ( disposing && (components != null) )
-			{
+		protected override void Dispose( bool disposing ) {
+			if ( disposing && (components != null) ) {
 				components.Dispose();
 			}
 			base.Dispose( disposing );
 		}
 
 		private void	LoadHeightMap( System.IO.FileInfo _FileName ) {
-			try
-			{
+			try {
 				tabControlGenerators.Enabled = false;
 
 				// Dispose of existing resources
-				if ( m_BitmapSource != null )
-					m_BitmapSource.Dispose();
-				m_BitmapSource = null;
+				if ( m_imageSourceHeightMap != null )
+					m_imageSourceHeightMap.Dispose();
+				m_imageSourceHeightMap = null;
 
-				if ( m_TextureTarget_CPU != null )
-					m_TextureTarget_CPU.Dispose();
-				m_TextureTarget_CPU = null;
-				if ( m_TextureTarget0 != null )
-					m_TextureTarget0.Dispose();
-				m_TextureTarget0 = null;
-				if ( m_TextureTarget1 != null )
-					m_TextureTarget1.Dispose();
-				m_TextureTarget1 = null;
-				if ( m_TextureSource != null )
-					m_TextureSource.Dispose();
-				m_TextureSource = null;
+				if ( m_textureTarget_CPU != null )
+					m_textureTarget_CPU.Dispose();
+				m_textureTarget_CPU = null;
+				if ( m_textureTarget0 != null )
+					m_textureTarget0.Dispose();
+				m_textureTarget0 = null;
+				if ( m_textureTarget1 != null )
+					m_textureTarget1.Dispose();
+				m_textureTarget1 = null;
+				if ( m_textureSourceHeightMap != null )
+					m_textureSourceHeightMap.Dispose();
+				m_textureSourceHeightMap = null;
 
-				// Load the source image assuming it's in linear space
+				// Load the source image
 				m_SourceFileName = _FileName;
-				m_BitmapSource = new ImageUtility.Bitmap( _FileName, m_LinearProfile );
-				outputPanelInputHeightMap.Image = m_BitmapSource;
+				m_imageSourceHeightMap = new ImageUtility.ImageFile( _FileName );
+				outputPanelInputHeightMap.Image = m_imageSourceHeightMap;
 
-				W = m_BitmapSource.Width;
-				H = m_BitmapSource.Height;
+				W = m_imageSourceHeightMap.Width;
+				H = m_imageSourceHeightMap.Height;
 
-				// Build the source texture
-				RendererManaged.PixelsBuffer	SourceHeightMap = new RendererManaged.PixelsBuffer( W*H*4 );
+				// Build the source texture  assuming the image is in linear space
+				float4[]	scanline = new float4[W];
+
+				PixelsBuffer	SourceHeightMap = new PixelsBuffer( W*H*4 );
 				using ( System.IO.BinaryWriter Wr = SourceHeightMap.OpenStreamWrite() )
-					for ( int Y=0; Y < H; Y++ )
+					for ( uint Y=0; Y < H; Y++ ) {
+						m_imageSourceHeightMap.ReadScanline( Y, scanline );
 						for ( int X=0; X < W; X++ )
-							Wr.Write( m_BitmapSource.ContentXYZ[X,Y].y );
+							Wr.Write( scanline[X].x );
+					}
 
-				m_TextureSource = new RendererManaged.Texture2D( m_Device, W, H, 1, 1, RendererManaged.PIXEL_FORMAT.R32_FLOAT, false, false, new RendererManaged.PixelsBuffer[] { SourceHeightMap } );
+				m_textureSourceHeightMap = new Texture2D( m_device, W, H, 1, 1, PIXEL_FORMAT.R32_FLOAT, false, false, new PixelsBuffer[] { SourceHeightMap } );
 
 				// Build the target UAV & staging texture for readback
-				m_TextureTarget0 = new RendererManaged.Texture2D( m_Device, W, H, 1, 1, RendererManaged.PIXEL_FORMAT.R32_FLOAT, false, true, null );
-				m_TextureTarget1 = new RendererManaged.Texture2D( m_Device, W, H, 1, 1, RendererManaged.PIXEL_FORMAT.RGBA32_FLOAT, false, true, null );
-				m_TextureTarget_CPU = new RendererManaged.Texture2D( m_Device, W, H, 1, 1, RendererManaged.PIXEL_FORMAT.RGBA32_FLOAT, true, false, null );
+				m_textureTarget0 = new Texture2D( m_device, W, H, 1, 1, PIXEL_FORMAT.R32_FLOAT, false, true, null );
+				m_textureTarget1 = new Texture2D( m_device, W, H, 1, 1, PIXEL_FORMAT.RGBA32_FLOAT, false, true, null );
+				m_textureTarget_CPU = new Texture2D( m_device, W, H, 1, 1, PIXEL_FORMAT.RGBA32_FLOAT, true, false, null );
 
 				tabControlGenerators.Enabled = true;
 				buttonGenerate.Focus();
-			}
-			catch ( Exception _e )
-			{
+			} catch ( Exception _e ) {
 				MessageBox( "An error occurred while opening the image:\n\n", _e );
 			}
 		}
@@ -290,16 +288,16 @@ P.Kill();
 
 				//////////////////////////////////////////////////////////////////////////
 				// 1] Apply bilateral filtering to the input texture as a pre-process
-				ApplyBilateralFiltering( m_TextureSource, m_TextureTarget0, floatTrackbarControlBilateralRadius.Value, floatTrackbarControlBilateralTolerance.Value, checkBoxWrap.Checked );
+				ApplyBilateralFiltering( m_textureSourceHeightMap, m_textureTarget0, floatTrackbarControlBilateralRadius.Value, floatTrackbarControlBilateralTolerance.Value, checkBoxWrap.Checked );
 
 
 				//////////////////////////////////////////////////////////////////////////
 				// 2] Compute directional occlusion
-				m_TextureTarget1.RemoveFromLastAssignedSlots();
+				m_textureTarget1.RemoveFromLastAssignedSlots();
 
 				// Prepare computation parameters
-				m_TextureTarget0.SetCS( 0 );
-				m_TextureTarget1.SetCSUAV( 0 );
+				m_textureTarget0.SetCS( 0 );
+				m_textureTarget1.SetCSUAV( 0 );
 				m_SB_Rays.SetInput( 1 );
 
 				m_CB_Input.m.RaysCount = (UInt32) Math.Min( MAX_THREADS, integerTrackbarControlRaysCount.Value );
@@ -312,23 +310,22 @@ P.Kill();
 				if ( !m_CS_GenerateSSBumpMap.Use() )
 					throw new Exception( "Can't generate self-shadowed bump map as compute shader failed to compile!" );
 
-				int	h = Math.Max( 1, MAX_LINES*1024 / W );
-				int	CallsCount = (int) Math.Ceiling( (float) H / h );
-				for ( int i=0; i < CallsCount; i++ )
-				{
-					m_CB_Input.m.Y0 = (UInt32) (i * h);
+				uint	h = Math.Max( 1, MAX_LINES*1024 / W );
+				uint	callsCount = (uint) Math.Ceiling( (float) H / h );
+				for ( uint i=0; i < callsCount; i++ ) {
+					m_CB_Input.m.Y0 = i * h;
 					m_CB_Input.UpdateData();
 
 					m_CS_GenerateSSBumpMap.Dispatch( W, h, 1 );
 
-					m_Device.Present( true );
+					m_device.Present( true );
 
-					progressBar.Value = (int) (0.01f * (BILATERAL_PROGRESS + (100-BILATERAL_PROGRESS) * (i+1) / (CallsCount)) * progressBar.Maximum);
+					progressBar.Value = (int) (0.01f * (BILATERAL_PROGRESS + (100-BILATERAL_PROGRESS) * (i+1) / (callsCount)) * progressBar.Maximum);
 //					for ( int a=0; a < 10; a++ )
 						Application.DoEvents();
 				}
 
-				m_TextureTarget1.RemoveFromLastAssignedSlotUAV();	// So we can use it as input for next stage
+				m_textureTarget1.RemoveFromLastAssignedSlotUAV();	// So we can use it as input for next stage
 
 				progressBar.Value = progressBar.Maximum;
 
@@ -340,32 +337,29 @@ P.Kill();
 
 				//////////////////////////////////////////////////////////////////////////
 				// 3] Copy target to staging for CPU readback and update the resulting bitmap
-				m_TextureTarget_CPU.CopyFrom( m_TextureTarget1 );
+				m_textureTarget_CPU.CopyFrom( m_textureTarget1 );
 
-				if ( m_BitmapResult != null )
-					m_BitmapResult.Dispose();
-				m_BitmapResult = null;
-				m_BitmapResult = new ImageUtility.Bitmap( W, H, m_LinearProfile );
-				m_BitmapResult.HasAlpha = true;
+				if ( m_imageResult != null )
+					m_imageResult.Dispose();
+				m_imageResult = null;
+				m_imageResult = new ImageUtility.ImageFile( W, H, ImageUtility.ImageFile.PIXEL_FORMAT.RGBA8, m_linearProfile );
 
-				RendererManaged.PixelsBuffer	Pixels = m_TextureTarget_CPU.Map( 0, 0 );
-				using ( System.IO.BinaryReader R = Pixels.OpenStreamRead() )
-					for ( int Y=0; Y < H; Y++ )
-					{
-						R.BaseStream.Position = Y * Pixels.RowPitch;
-						for ( int X=0; X < W; X++ )
-						{
-							ImageUtility.float4	Color = new ImageUtility.float4( R.ReadSingle(), R.ReadSingle(), R.ReadSingle(), R.ReadSingle() );
-							Color = m_LinearProfile.RGB2XYZ( Color );
-							m_BitmapResult.ContentXYZ[X,Y] = Color;
+				float4[]		scanline = new float4[W];
+				PixelsBuffer	pixels = m_textureTarget_CPU.Map( 0, 0 );
+				using ( System.IO.BinaryReader R = pixels.OpenStreamRead() )
+					for ( uint Y=0; Y < H; Y++ ) {
+						R.BaseStream.Position = Y * pixels.RowPitch;
+						for ( int X=0; X < W; X++ ) {
+							scanline[X].Set( R.ReadSingle(), R.ReadSingle(), R.ReadSingle(), R.ReadSingle() );
 						}
+						m_imageResult.WriteScanline( Y, scanline );
 					}
 
-				Pixels.Dispose();
-				m_TextureTarget_CPU.UnMap( 0, 0 );
+				pixels.Dispose();
+				m_textureTarget_CPU.UnMap( 0, 0 );
 
 				// Assign result
-				viewportPanelResult.Image = m_BitmapResult;
+				viewportPanelResult.Image = m_imageResult;
 
 			} catch ( Exception _e ) {
 				MessageBox( "An error occurred during generation!\r\n\r\nDetails: ", _e );
@@ -374,7 +368,7 @@ P.Kill();
 			}
 		}
 
-		private void	ApplyBilateralFiltering( RendererManaged.Texture2D _Source, RendererManaged.Texture2D _Target, float _BilateralRadius, float _BilateralTolerance, bool _Wrap ) {
+		private void	ApplyBilateralFiltering( Texture2D _Source, Texture2D _Target, float _BilateralRadius, float _BilateralTolerance, bool _Wrap ) {
 			_Source.SetCS( 0 );
 			_Target.SetCSUAV( 0 );
 
@@ -384,18 +378,17 @@ P.Kill();
 
 			m_CS_BilateralFilter.Use();
 
-			int	h = Math.Max( 1, MAX_LINES*1024 / W );
-			int	CallsCount = (int) Math.Ceiling( (float) H / h );
-			for ( int i=0; i < CallsCount; i++ )
-			{
-				m_CB_Filter.m.Y0 = (UInt32) (i * h);
+			uint	h = Math.Max( 1, MAX_LINES*1024 / W );
+			uint	callsCount = (uint) Math.Ceiling( (float) H / h );
+			for ( uint i=0; i < callsCount; i++ ) {
+				m_CB_Filter.m.Y0 = i * h;
 				m_CB_Filter.UpdateData();
 
 				m_CS_BilateralFilter.Dispatch( W, h, 1 );
 
-				m_Device.Present( true );
+				m_device.Present( true );
 
-				progressBar.Value = (int) (0.01f * (0 + BILATERAL_PROGRESS * (i+1) / CallsCount) * progressBar.Maximum);
+				progressBar.Value = (int) (0.01f * (0 + BILATERAL_PROGRESS * (i+1) / callsCount) * progressBar.Maximum);
 //				for ( int a=0; a < 10; a++ )
 					Application.DoEvents();
 			}
@@ -406,76 +399,75 @@ P.Kill();
 			_Target.RemoveFromLastAssignedSlotUAV();	// So we can use it as input for next stage
 		}
 
-		private void	GenerateRays( int _RaysCount, RendererManaged.StructuredBuffer<RendererManaged.float3> _Target ) {
-			_RaysCount = Math.Min( MAX_THREADS, _RaysCount );
+		private void	GenerateRays( int _raysCount, StructuredBuffer<float3> _target ) {
+			_raysCount = Math.Min( MAX_THREADS, _raysCount );
 
 			// Half-Life 2 basis
-			RendererManaged.float3[]	HL2Basis = new RendererManaged.float3[] {
-				new RendererManaged.float3( (float) Math.Sqrt( 2.0 / 3.0 ), 0.0f, (float) Math.Sqrt( 1.0 / 3.0 ) ),
-				new RendererManaged.float3( -(float) Math.Sqrt( 1.0 / 6.0 ), (float) Math.Sqrt( 1.0 / 2.0 ), (float) Math.Sqrt( 1.0 / 3.0 ) ),
-				new RendererManaged.float3( -(float) Math.Sqrt( 1.0 / 6.0 ), -(float) Math.Sqrt( 1.0 / 2.0 ), (float) Math.Sqrt( 1.0 / 3.0 ) )
+			float3[]	HL2Basis = new float3[] {
+				new float3( (float) Math.Sqrt( 2.0 / 3.0 ), 0.0f, (float) Math.Sqrt( 1.0 / 3.0 ) ),
+				new float3( -(float) Math.Sqrt( 1.0 / 6.0 ), (float) Math.Sqrt( 1.0 / 2.0 ), (float) Math.Sqrt( 1.0 / 3.0 ) ),
+				new float3( -(float) Math.Sqrt( 1.0 / 6.0 ), -(float) Math.Sqrt( 1.0 / 2.0 ), (float) Math.Sqrt( 1.0 / 3.0 ) )
 			};
 
-			float	CenterTheta = (float) Math.Acos( HL2Basis[0].z );
-			float[]	CenterPhi = new float[] {
+			float	centerTheta = (float) Math.Acos( HL2Basis[0].z );
+			float[]	centerPhi = new float[] {
 				(float) Math.Atan2( HL2Basis[0].y, HL2Basis[0].x ),
 				(float) Math.Atan2( HL2Basis[1].y, HL2Basis[1].x ),
 				(float) Math.Atan2( HL2Basis[2].y, HL2Basis[2].x ),
 			};
 
-			for ( int RayIndex=0; RayIndex < _RaysCount; RayIndex++ ) {
-				double	Phi = (Math.PI / 3.0) * (2.0 * WMath.SimpleRNG.GetUniform() - 1.0);
+			for ( int rayIndex=0; rayIndex < _raysCount; rayIndex++ ) {
+				double	phi = (Math.PI / 3.0) * (2.0 * SimpleRNG.GetUniform() - 1.0);
 
 				// Stratified version
-				double	Theta = (Math.Acos( Math.Sqrt( (RayIndex + WMath.SimpleRNG.GetUniform()) / _RaysCount ) ));
+				double	theta = (Math.Acos( Math.Sqrt( (rayIndex + SimpleRNG.GetUniform()) / _raysCount ) ));
 
 // 				// Don't give a shit version (a.k.a. melonhead version)
 // //				double	Theta = Math.Acos( Math.Sqrt(WMath.SimpleRNG.GetUniform() ) );
 // 				double	Theta = 0.5 * Math.PI * WMath.SimpleRNG.GetUniform();
 
-				Theta = Math.Min( 0.499f * Math.PI, Theta );
+				theta = Math.Min( 0.499f * Math.PI, theta );
 
 
-				double	CosTheta = Math.Cos( Theta );
-				double	SinTheta = Math.Sin( Theta );
+				double	cosTheta = Math.Cos( theta );
+				double	sinTheta = Math.Sin( theta );
 
-				double	LengthFactor = 1.0 / SinTheta;	// The ray is scaled so we ensure we always walk at least a texel in the texture
-				CosTheta *= LengthFactor;
-				SinTheta *= LengthFactor;	// Yeah, yields 1... :)
+				double	lengthFactor = 1.0 / sinTheta;	// The ray is scaled so we ensure we always walk at least a texel in the texture
+				cosTheta *= lengthFactor;
+				sinTheta *= lengthFactor;	// Yeah, yields 1... :)
 
-				_Target.m[0*MAX_THREADS+RayIndex].Set(	(float) (Math.Cos( CenterPhi[0] + Phi ) * SinTheta),
-														(float) (Math.Sin( CenterPhi[0] + Phi ) * SinTheta),
-														(float) CosTheta );
-				_Target.m[1*MAX_THREADS+RayIndex].Set(	(float) (Math.Cos( CenterPhi[1] + Phi ) * SinTheta),
-														(float) (Math.Sin( CenterPhi[1] + Phi ) * SinTheta),
-														(float) CosTheta );
-				_Target.m[2*MAX_THREADS+RayIndex].Set(	(float) (Math.Cos( CenterPhi[2] + Phi ) * SinTheta),
-														(float) (Math.Sin( CenterPhi[2] + Phi ) * SinTheta),
-														(float) CosTheta );
+				_target.m[0*MAX_THREADS+rayIndex].Set(	(float) (Math.Cos( centerPhi[0] + phi ) * sinTheta),
+														(float) (Math.Sin( centerPhi[0] + phi ) * sinTheta),
+														(float) cosTheta );
+				_target.m[1*MAX_THREADS+rayIndex].Set(	(float) (Math.Cos( centerPhi[1] + phi ) * sinTheta),
+														(float) (Math.Sin( centerPhi[1] + phi ) * sinTheta),
+														(float) cosTheta );
+				_target.m[2*MAX_THREADS+rayIndex].Set(	(float) (Math.Cos( centerPhi[2] + phi ) * sinTheta),
+														(float) (Math.Sin( centerPhi[2] + phi ) * sinTheta),
+														(float) cosTheta );
 			}
 
-			_Target.Write();
+			_target.Write();
 		}
 
 		#region Super Slow CPU Version (without bilateral)
 
 		private void	Generate_CPU( int _RaysCount )
 		{
-			try
-			{
+			try {
 				tabControlGenerators.Enabled = false;
 
 				// Half-life basis (Z points outside of the surface, as in normal maps)
-				WMath.Vector[]	Basis = new WMath.Vector[] {
-					new WMath.Vector( (float) Math.Sqrt( 2.0 / 3.0 ), 0.0f, (float) Math.Sqrt( 1.0 / 3.0 ) ),
-					new WMath.Vector( (float) -Math.Sqrt( 1.0 / 6.0 ), (float) Math.Sqrt( 1.0 / 2.0 ), (float) Math.Sqrt( 1.0 / 3.0 ) ),
-					new WMath.Vector( (float) -Math.Sqrt( 1.0 / 6.0 ), (float) -Math.Sqrt( 1.0 / 2.0 ), (float) Math.Sqrt( 1.0 / 3.0 ) ),
+				float3[]	basis = new float3[] {
+					new float3( (float) Math.Sqrt( 2.0 / 3.0 ), 0.0f, (float) Math.Sqrt( 1.0 / 3.0 ) ),
+					new float3( (float) -Math.Sqrt( 1.0 / 6.0 ), (float) Math.Sqrt( 1.0 / 2.0 ), (float) Math.Sqrt( 1.0 / 3.0 ) ),
+					new float3( (float) -Math.Sqrt( 1.0 / 6.0 ), (float) -Math.Sqrt( 1.0 / 2.0 ), (float) Math.Sqrt( 1.0 / 3.0 ) ),
 				};
 
 // 				// 1] Compute normal map
-// 				WMath.Vector	dX = new WMath.Vector();
-// 				WMath.Vector	dY = new WMath.Vector();
-// 				WMath.Vector	N;
+// 				float3	dX = new float3();
+// 				float3	dY = new float3();
+// 				float3	N;
 // 				float			ddX = floatTrackbarControlPixelSize.Value;
 // 				float			ddH = floatTrackbarControlHeight.Value;
 // 				for ( int Y=0; Y < H; Y++ )
@@ -497,7 +489,7 @@ P.Kill();
 // 
 // 						N = dX.Cross( dY ).Normalized;
 // 
-// 						m_Normal[X,Y] = new WMath.Vector(
+// 						m_Normal[X,Y] = new float3(
 // 							N.Dot( Basis[0] ),
 // 							N.Dot( Basis[1] ),
 // 							N.Dot( Basis[2] ) );
@@ -512,30 +504,30 @@ P.Kill();
 
 				float	PixelSize_mm = 1000.0f / floatTrackbarControlPixelDensity.Value;
 
-				float	Scale = 0.1f * PixelSize_mm / floatTrackbarControlHeight.Value;	// Scale factor to apply to pixel distances so they're renormalized in [0,1], our "heights space"...
+				float	scale = 0.1f * PixelSize_mm / floatTrackbarControlHeight.Value;	// Scale factor to apply to pixel distances so they're renormalized in [0,1], our "heights space"...
 //						Scale *= floatTrackbarControlZFactor.Value;	// Cheat Z velocity so AO is amplified!
 
 				// 2] Build local rays only once
-				int				RaysCount = integerTrackbarControlRaysCount.Value;
-				WMath.Vector[,]	Rays = new WMath.Vector[3,RaysCount];
+				int			raysCount = integerTrackbarControlRaysCount.Value;
+				float3[,]	rays = new float3[3,raysCount];
 
 				// Create orthonormal bases to orient the lobe
-				WMath.Vector	Xr = Basis[0].Cross( WMath.Vector.UnitZ ).Normalized;	// We can safely use (0,0,1) as the "up" direction since the HL2 basis doesn't have any vertical direction
-				WMath.Vector	Yr = Xr.Cross( Basis[0] );
-				WMath.Vector	Xg = Basis[1].Cross( WMath.Vector.UnitZ ).Normalized;	// We can safely use (0,0,1) as the "up" direction since the HL2 basis doesn't have any vertical direction
-				WMath.Vector	Yg = Xg.Cross( Basis[1] );
-				WMath.Vector	Xb = Basis[2].Cross( WMath.Vector.UnitZ ).Normalized;	// We can safely use (0,0,1) as the "up" direction since the HL2 basis doesn't have any vertical direction
-				WMath.Vector	Yb = Xb.Cross( Basis[2] );
+				float3	Xr = basis[0].Cross( float3.UnitZ ).Normalized;	// We can safely use (0,0,1) as the "up" direction since the HL2 basis doesn't have any vertical direction
+				float3	Yr = Xr.Cross( basis[0] );
+				float3	Xg = basis[1].Cross( float3.UnitZ ).Normalized;	// We can safely use (0,0,1) as the "up" direction since the HL2 basis doesn't have any vertical direction
+				float3	Yg = Xg.Cross( basis[1] );
+				float3	Xb = basis[2].Cross( float3.UnitZ ).Normalized;	// We can safely use (0,0,1) as the "up" direction since the HL2 basis doesn't have any vertical direction
+				float3	Yb = Xb.Cross( basis[2] );
 
 				double	Exponent = 1.0 / (1.0 + LobeExponent);
-				for ( int RayIndex=0; RayIndex < RaysCount; RayIndex++ )
+				for ( int RayIndex=0; RayIndex < raysCount; RayIndex++ )
 				{
 // 					if ( false ) {
 // 						double	Phi = 2.0 * Math.PI * WMath.SimpleRNG.GetUniform();
 // //						double	Theta = Math.Acos( Math.Pow( WMath.SimpleRNG.GetUniform(), Exponent ) );
 // 						double	Theta = Math.PI / 3.0 * WMath.SimpleRNG.GetUniform();
 // 
-// 						WMath.Vector	RayLocal = new WMath.Vector(
+// 						float3	RayLocal = new float3(
 // 							(float) (Math.Cos( Phi ) * Math.Sin( Theta )),
 // 							(float) (Math.Sin( Phi ) * Math.Sin( Theta )),
 // 							(float) Math.Cos( Theta ) );
@@ -543,53 +535,52 @@ P.Kill();
 // 						Rays[0,RayIndex] = RayLocal.x * Xr + RayLocal.y * Yr + RayLocal.z * Basis[0];
 // 						Rays[1,RayIndex] = RayLocal.x * Xg + RayLocal.y * Yg + RayLocal.z * Basis[1];
 // 						Rays[2,RayIndex] = RayLocal.x * Xb + RayLocal.y * Yb + RayLocal.z * Basis[2];
-// 					}
-// 					else
+// 					} else
 					{
-						double	Phi = Math.PI / 3.0 * (2.0 * WMath.SimpleRNG.GetUniform() - 1.0);
-						double	Theta = 0.49 * Math.PI * WMath.SimpleRNG.GetUniform();
-						Rays[0,RayIndex] = new WMath.Vector(
+						double	Phi = Math.PI / 3.0 * (2.0 * SimpleRNG.GetUniform() - 1.0);
+						double	Theta = 0.49 * Math.PI * SimpleRNG.GetUniform();
+						rays[0,RayIndex] = new float3(
 							(float) (Math.Cos( Phi ) * Math.Sin( Theta )),
 							(float) (Math.Sin( Phi ) * Math.Sin( Theta )),
 							(float) Math.Cos( Theta ) );
 
-						Phi = Math.PI / 3.0 * (2.0 * WMath.SimpleRNG.GetUniform() - 1.0 + 2.0);
-						Theta = 0.49 * Math.PI * WMath.SimpleRNG.GetUniform();
-						Rays[1,RayIndex] = new WMath.Vector(
+						Phi = Math.PI / 3.0 * (2.0 * SimpleRNG.GetUniform() - 1.0 + 2.0);
+						Theta = 0.49 * Math.PI * SimpleRNG.GetUniform();
+						rays[1,RayIndex] = new float3(
 							(float) (Math.Cos( Phi ) * Math.Sin( Theta )),
 							(float) (Math.Sin( Phi ) * Math.Sin( Theta )),
 							(float) Math.Cos( Theta ) );
 
-						Phi = Math.PI / 3.0 * (2.0 * WMath.SimpleRNG.GetUniform() - 1.0 + 4.0);
-						Theta = 0.49 * Math.PI * WMath.SimpleRNG.GetUniform();
-						Rays[2,RayIndex] = new WMath.Vector(
+						Phi = Math.PI / 3.0 * (2.0 * SimpleRNG.GetUniform() - 1.0 + 4.0);
+						Theta = 0.49 * Math.PI * SimpleRNG.GetUniform();
+						rays[2,RayIndex] = new float3(
 							(float) (Math.Cos( Phi ) * Math.Sin( Theta )),
 							(float) (Math.Sin( Phi ) * Math.Sin( Theta )),
 							(float) Math.Cos( Theta ) );
 					}
 
-					Rays[0,RayIndex].z *= Scale;
-					Rays[1,RayIndex].z *= Scale;
-					Rays[2,RayIndex].z *= Scale;
+					rays[0,RayIndex].z *= scale;
+					rays[1,RayIndex].z *= scale;
+					rays[2,RayIndex].z *= scale;
 				}
 
 				// 3] Compute directional occlusion
-				for ( int Y=0; Y < H; Y++ )
-				{
-					for ( int X=0; X < W; X++ )
-					{
-						float	R = ComputeAO( 0, X, Y, Scale, Rays );
-						float	G = ComputeAO( 1, X, Y, Scale, Rays );
-						float	B = ComputeAO( 2, X, Y, Scale, Rays );
-//						N = m_Normal[X,Y];
-// 
- 						m_BitmapResult.ContentXYZ[X,Y] = m_LinearProfile.RGB2XYZ( new ImageUtility.float4( R, G, B, (R+G+B)/3.0f ) );
+				float4[]	scanline = new float4[W];
+				float4		gammaRGB = float4.Zero;
+				for ( uint Y=0; Y < H; Y++ ) {
+					for ( uint X=0; X < W; X++ ) {
+						gammaRGB.x = ComputeAO( 0, X, Y, scale, rays );
+						gammaRGB.y = ComputeAO( 1, X, Y, scale, rays );
+						gammaRGB.z = ComputeAO( 2, X, Y, scale, rays );
+						gammaRGB.w = (gammaRGB.x+gammaRGB.y+gammaRGB.z) / 3.0f;
+						m_sRGBProfile.GammaRGB2LinearRGB( gammaRGB, ref scanline[X] );
 					}
+					m_imageResult.WriteScanline( Y, scanline );
 
 					// Update and show progress
-					UpdateProgress( m_BitmapResult, Y, true );
+					UpdateProgress( m_imageResult, Y, true );
 				}
-				UpdateProgress( m_BitmapResult, H, true );
+				UpdateProgress( m_imageResult, H, true );
 
 //				m_BitmapResult.Save( "eye_generic_01_disp_hl2.png", ImageFormat.Png );
 			}
@@ -613,19 +604,16 @@ P.Kill();
 		/// <param name="_LobeExponent">1 is a simple cosine lobe</param>
 		/// <returns></returns>
 		/// 
-		private float	ComputeAO( int _LightIndex, int _X, int _Y, float _Z2HeightScale, WMath.Vector[,] _Rays )
-		{
-			int		RaysCount = _Rays.GetLength( 1 );
-			int		MaxStepsCount = integerTrackbarControlMaxStepsCount.Value;
+		private float	ComputeAO( int _LightIndex, uint _X, uint _Y, float _Z2HeightScale, float3[,] _rays ) {
+			int		RaysCount = _rays.GetLength( 1 );
+			int		maxStepsCount = integerTrackbarControlMaxStepsCount.Value;
 
-			float	Z0 = m_BitmapSource.ContentXYZ[_X,_Y].y;
+			float	Z0 = m_imageSourceHeightMap[_X,_Y].y;
 			double	AO = 0.0f;
-			int		SamplesCount = 0;
-			for ( int RayIndex=0; RayIndex < RaysCount; RayIndex++ )
-			{
-				WMath.Vector	RayWorld = _Rays[_LightIndex,RayIndex];
- 				if ( RayWorld.z < 0.0f )
-				{
+			int		samplesCount = 0;
+			for ( int rayIndex=0; rayIndex < RaysCount; rayIndex++ ) {
+				float3	wsRay = _rays[_LightIndex,rayIndex];
+ 				if ( wsRay.z < 0.0f ) {
 // AO += 1.0;
 // SamplesCount++;
  					continue;	// Pointing to the ground so don't account for it...
@@ -649,47 +637,45 @@ P.Kill();
 				float	Z = Z0;
 
 				// Compute intersection with the height field
-				int	StepIndex = 0;
-				while ( StepIndex < MaxStepsCount && Z < 1.0f && X > 0.0f && Y > 0.0f && X < W && Y < H )
-				{
-					X += RayWorld.x;
-					Y += RayWorld.y;
-					Z += RayWorld.z;
+				int	stepIndex = 0;
+				while ( stepIndex < maxStepsCount && Z < 1.0f && X > 0.0f && Y > 0.0f && X < W && Y < H ) {
+					X += wsRay.x;
+					Y += wsRay.y;
+					Z += wsRay.z;
 
-					float	Height = SampleHeightField( X, Y );
-					if ( Height > Z )
-					{	// Hit!
+					float	height = SampleHeightField( X, Y );
+					if ( height > Z ) {
+						// Hit!
 						AO += 1.0;
 						break;
 					}
 
-					StepIndex++;
+					stepIndex++;
 				}
 
-				SamplesCount++;
+				samplesCount++;
 			}
-			AO /= SamplesCount;
+			AO /= samplesCount;
 
 			return (float) (1.0 - AO);
 		}
 
-		private float	SampleHeightField( float _X, float _Y )
-		{
+		private float	SampleHeightField( float _X, float _Y ) {
 // 			_X *= W;
 // 			_Y *= H;
 			int		X0 = (int) Math.Floor( _X );
 			int		Y0 = (int) Math.Floor( _Y );
 			float	x = _X - X0;
 			float	y = _Y - Y0;
-			X0 = Math.Max( 0, Math.Min( W-1, X0 ) );
-			Y0 = Math.Max( 0, Math.Min( H-1, Y0 ) );
-			int		X1 = Math.Min( W-1, X0+1 );
-			int		Y1 = Math.Min( H-1, Y0+1 );
+			X0 = Math.Max( 0, Math.Min( (int)W-1, X0 ) );
+			Y0 = Math.Max( 0, Math.Min( (int)H-1, Y0 ) );
+			int		X1 = Math.Min( (int)W-1, X0+1 );
+			int		Y1 = Math.Min( (int)H-1, Y0+1 );
 
-			float	V00 = m_BitmapSource.ContentXYZ[X0,Y0].y;
-			float	V01 = m_BitmapSource.ContentXYZ[X1,Y0].y;
-			float	V10 = m_BitmapSource.ContentXYZ[X0,Y1].y;
-			float	V11 = m_BitmapSource.ContentXYZ[X1,Y1].y;
+			float	V00 = m_imageSourceHeightMap[(uint)X0,(uint)Y0].y;
+			float	V01 = m_imageSourceHeightMap[(uint)X1,(uint)Y0].y;
+			float	V10 = m_imageSourceHeightMap[(uint)X0,(uint)Y1].y;
+			float	V11 = m_imageSourceHeightMap[(uint)X1,(uint)Y1].y;
 
 			float	V0 = V00 + (V01-V00) * x;
 			float	V1 = V10 + (V11-V10) * x;
@@ -698,14 +684,12 @@ P.Kill();
 			return V;
 		}
 
-		private unsafe void	UpdateProgress( ImageUtility.Bitmap _Image, int Y, bool _Bias )
-		{
-			const int	REFRESH_EVERY_N_SCANLINES = 4;
-
+		private unsafe void	UpdateProgress( ImageUtility.ImageFile _image, uint Y, bool _Bias ) {
+			const uint	REFRESH_EVERY_N_SCANLINES = 4;
 			if ( Y == 0 || (Y & (REFRESH_EVERY_N_SCANLINES-1)) != 0 )
 				return;
 
-			viewportPanelResult.Image = _Image;
+			viewportPanelResult.Image = _image;
 			Application.DoEvents();
 		}
 
@@ -786,7 +770,7 @@ P.Kill();
 		private void radioButtonDirOccRGBtimeAO_CheckedChanged( object sender, EventArgs e )
 		{
 			if ( (sender as RadioButton).Checked )
-				viewportPanelResult.ViewMode = ImagePanel.VIEW_MODE.RGB_AO;
+				viewportPanelResult.ViewMode = ImagePanel.VIEW_MODE.RGB_TIMES_AO;
 		}
 
 		private void radioButtonDirOccR_CheckedChanged( object sender, EventArgs e )
@@ -821,8 +805,7 @@ P.Kill();
 
 		private unsafe void viewportPanelResult_Click( object sender, EventArgs e )
 		{
-			if ( m_BitmapResult == null )
-			{
+			if ( m_imageResult == null ) {
 				MessageBox( "There is no result image to save!" );
 				return;
 			}
@@ -835,14 +818,11 @@ P.Kill();
 			if ( saveFileDialogImage.ShowDialog( this ) != DialogResult.OK )
 				return;
 
-			try
-			{
-				m_BitmapResult.Save( new System.IO.FileInfo( saveFileDialogImage.FileName ) );
+			try {
+				m_imageResult.Save( new System.IO.FileInfo( saveFileDialogImage.FileName ) );
 
 				MessageBox( "Success!", MessageBoxButtons.OK, MessageBoxIcon.Information );
-			}
-			catch ( Exception _e )
-			{
+			} catch ( Exception _e ) {
 				MessageBox( "An error occurred while saving the image:\n\n", _e );
 			}
 		}
@@ -867,8 +847,7 @@ P.Kill();
 		}
 
 		private string	m_DraggedFileName = null;
-		private void outputPanelInputHeightMap_DragEnter( object sender, DragEventArgs e )
-		{
+		private void outputPanelInputHeightMap_DragEnter( object sender, DragEventArgs e ) {
 			m_DraggedFileName = null;
 			if ( (e.AllowedEffect & DragDropEffects.Copy) != DragDropEffects.Copy )
 				return;
@@ -882,18 +861,7 @@ P.Kill();
 			string	DraggedFileName = (data as string[])[0];
 
 			string	Extension = System.IO.Path.GetExtension( DraggedFileName ).ToLower();
-			if (	Extension == ".jpg"
-				||	Extension == ".jpeg"
-				||	Extension == ".png"
-				||	Extension == ".tga"
-				||	Extension == ".bmp"
-				||	Extension == ".tif"
-				||	Extension == ".tiff"
-				||	Extension == ".hdr"
-				||	Extension == ".crw"
-				||	Extension == ".dng"
-				)
-			{
+			if ( ImageUtility.ImageFile.GetFileTypeFromFileNameOnly( new System.IO.FileInfo( DraggedFileName ) ) != ImageUtility.ImageFile.FILE_FORMAT.UNKNOWN ) {
 				m_DraggedFileName = DraggedFileName;	// Supported!
 				e.Effect = DragDropEffects.Copy;
 			}
@@ -907,7 +875,7 @@ P.Kill();
 
 		private void buttonReload_Click( object sender, EventArgs e )
 		{
-			m_Device.ReloadModifiedShaders();
+			m_device.ReloadModifiedShaders();
 		}
 
 		private void buttonTest_Click( object sender, EventArgs e )

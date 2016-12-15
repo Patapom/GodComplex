@@ -8,7 +8,8 @@ using System.Text;
 using System.Windows.Forms;
 
 using Nuaj.Cirrus.Utility;
-using RendererManaged;
+using Renderer;
+using SharpMath;
 
 namespace GenerateTranslucencyMap
 {
@@ -62,7 +63,10 @@ namespace GenerateTranslucencyMap
 			#if DEBUG
 				m_PS_Display = new Shader( Device, new ShaderFile( new System.IO.FileInfo( "./Shaders/Display.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 			#else
-				m_PS_Display = Shader.CreateFromBinaryBlob( Device, new System.IO.FileInfo( "./Shaders/Display.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS" );
+//				m_PS_Display = new Shader( Device, new ShaderBinaryFile( new System.IO.FileInfo( "./Shaders/Display.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS" );
+				using ( ScopedForceMaterialsLoadFromBinary scope = new ScopedForceMaterialsLoadFromBinary() ) {
+					m_PS_Display = new Shader( Device, new ShaderFile( new System.IO.FileInfo( "./Shaders/Display.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+				}
 			#endif
 
 			m_CB_Display = new ConstantBuffer<CBDisplay>( Device, 0 );

@@ -1,13 +1,31 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
-    <StartWorkingDirectory>../../</StartWorkingDirectory>
+    <StartWorkingDirectory>D:\Workspaces\GodComplex\Tools\GenerateTranslucencyMap\</StartWorkingDirectory>
     <EnableUnmanagedDebugging>true</EnableUnmanagedDebugging>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
-    <StartWorkingDirectory>..\..\</StartWorkingDirectory>
+    <StartWorkingDirectory>D:\Workspaces\GodComplex\Tools\GenerateTranslucencyMap\</StartWorkingDirectory>
     <EnableUnmanagedDebugging>true</EnableUnmanagedDebugging>
     <StartAction>Project</StartAction>
     <StartProgram>V:\Dishonored2\Dishonored2\tools\TranslucencyMapGenerator\GenerateTranslucencyMap.exe</StartProgram>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
+    <StartWorkingDirectory>D:\Workspaces\GodComplex\Tools\GenerateTranslucencyMap\</StartWorkingDirectory>
+    <EnableUnmanagedDebugging>true</EnableUnmanagedDebugging>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
+    <StartProgram>V:\Dishonored2\Dishonored2\tools\TranslucencyMapGenerator\GenerateTranslucencyMap.exe</StartProgram>
+    <StartWorkingDirectory>D:\Workspaces\GodComplex\Tools\GenerateTranslucencyMap\</StartWorkingDirectory>
+    <EnableUnmanagedDebugging>true</EnableUnmanagedDebugging>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
+    <StartWorkingDirectory>D:\Workspaces\GodComplex\Tools\GenerateTranslucencyMap\</StartWorkingDirectory>
+    <EnableUnmanagedDebugging>true</EnableUnmanagedDebugging>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
+    <StartProgram>V:\Dishonored2\Dishonored2\tools\TranslucencyMapGenerator\GenerateTranslucencyMap.exe</StartProgram>
+    <StartWorkingDirectory>D:\Workspaces\GodComplex\Tools\GenerateTranslucencyMap\</StartWorkingDirectory>
+    <EnableUnmanagedDebugging>true</EnableUnmanagedDebugging>
   </PropertyGroup>
 </Project>

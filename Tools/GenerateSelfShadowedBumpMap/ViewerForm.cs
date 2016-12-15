@@ -8,7 +8,8 @@ using System.Text;
 using System.Windows.Forms;
 
 using Nuaj.Cirrus.Utility;
-using RendererManaged;
+using Renderer;
+using SharpMath;
 
 namespace GenerateSelfShadowedBumpMap
 {
@@ -29,7 +30,7 @@ namespace GenerateSelfShadowedBumpMap
 		private CameraManipulator			m_Manipulator = new CameraManipulator();
 
 		private Device		Device {
-			get { return m_Owner.m_Device; }
+			get { return m_Owner.m_device; }
 		}
 
 		public ViewerForm( GeneratorForm _Owner )
@@ -92,9 +93,9 @@ namespace GenerateSelfShadowedBumpMap
 			if ( m_Owner.m_PS_Display.Use() ) {
 
 				m_Owner.m_CB_Display.m._Flags &= ~1U;
- 				if ( m_Owner.m_TextureTarget1 != null ) {
- 					m_Owner.m_TextureTarget0.SetPS( 0 );
- 					m_Owner.m_TextureTarget1.SetPS( 1 );
+ 				if ( m_Owner.m_textureTarget1 != null ) {
+ 					m_Owner.m_textureTarget0.SetPS( 0 );
+ 					m_Owner.m_textureTarget1.SetPS( 1 );
 					m_Owner.m_CB_Display.m._Flags |= 1U;
 				}
 

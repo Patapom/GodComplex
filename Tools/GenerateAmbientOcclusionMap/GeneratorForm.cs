@@ -16,8 +16,7 @@ using SharpMath;
 
 namespace GenerateSelfShadowedBumpMap
 {
-	public partial class GeneratorForm : Form
-	{
+	public partial class GeneratorForm : Form {
 		#region CONSTANTS
 
 		private const int		MAX_THREADS = 1024;			// Maximum threads run by the compute shader
@@ -61,12 +60,12 @@ namespace GenerateSelfShadowedBumpMap
 		private ImageUtility.ImageFile				m_imageSourceHeight = null;
 		private ImageUtility.ImageFile				m_imageSourceNormal = null;
 
-		internal Renderer.Device					m_Device = new Renderer.Device();
-		internal Renderer.Texture2D					m_TextureSource = null;
+		internal Renderer.Device					m_device = new Renderer.Device();
+		internal Renderer.Texture2D					m_textureSourceHeightMap = null;
 		internal Renderer.Texture2D					m_TextureSourceNormal = null;
-		internal Renderer.Texture2D					m_TextureTarget0 = null;
-		internal Renderer.Texture2D					m_TextureTarget1 = null;
-		internal Renderer.Texture2D					m_TextureTarget_CPU = null;
+		internal Renderer.Texture2D					m_textureTarget0 = null;
+		internal Renderer.Texture2D					m_textureTarget1 = null;
+		internal Renderer.Texture2D					m_textureTarget_CPU = null;
 
 		// SSBump Generation
 		private Renderer.ConstantBuffer<CBInput>	m_CB_Input;
@@ -123,23 +122,23 @@ namespace GenerateSelfShadowedBumpMap
  			base.OnLoad(e);
 
 			try {
-				m_Device.Init( viewportPanelResult.Handle, false, true );
+				m_device.Init( viewportPanelResult.Handle, false, true );
 
 				// Create our compute shaders
-				#if DEBUG
-					m_CS_BilateralFilter = new Renderer.ComputeShader( m_Device, new Renderer.ShaderFile( new System.IO.FileInfo( "./Shaders/BilateralFiltering.hlsl" ) ), "CS", null );
-					m_CS_GenerateAOMap = new Renderer.ComputeShader( m_Device, new Renderer.ShaderFile( new System.IO.FileInfo( "./Shaders/GenerateAOMap.hlsl" ) ), "CS", null );
-				#else
-					m_CS_BilateralFilter = new Renderer.ComputeShader( m_Device, new System.IO.FileInfo( "./Shaders/BilateralFiltering.fxbin" ), "CS" );
-					m_CS_GenerateAOMap = new Renderer.ComputeShader( m_Device, new System.IO.FileInfo( "./Shaders/GenerateAOMap.fxbin" ), "CS" );
+				#if !DEBUG
+					using ( Renderer.ScopedForceMaterialsLoadFromBinary scope = new Renderer.ScopedForceMaterialsLoadFromBinary() )
 				#endif
+				{
+					m_CS_BilateralFilter = new Renderer.ComputeShader( m_device, new Renderer.ShaderFile( new System.IO.FileInfo( "./Shaders/BilateralFiltering.hlsl" ) ), "CS", null );
+					m_CS_GenerateAOMap = new Renderer.ComputeShader( m_device, new Renderer.ShaderFile( new System.IO.FileInfo( "./Shaders/GenerateAOMap.hlsl" ) ), "CS", null );
+				}
 
 				// Create our constant buffers
-				m_CB_Input = new Renderer.ConstantBuffer<CBInput>( m_Device, 0 );
-				m_CB_Filter = new Renderer.ConstantBuffer<CBFilter>( m_Device, 0 );
+				m_CB_Input = new Renderer.ConstantBuffer<CBInput>( m_device, 0 );
+				m_CB_Filter = new Renderer.ConstantBuffer<CBFilter>( m_device, 0 );
 
 				// Create our structured buffer containing the rays
-				m_SB_Rays = new Renderer.StructuredBuffer<float3>( m_Device, MAX_THREADS, true );
+				m_SB_Rays = new Renderer.StructuredBuffer<float3>( m_device, MAX_THREADS, true );
 				integerTrackbarControlRaysCount_SliderDragStop( integerTrackbarControlRaysCount, 0 );
 
 				// Create the default, planar normal map
@@ -161,18 +160,18 @@ namespace GenerateSelfShadowedBumpMap
 				m_CB_Filter.Dispose();
 				m_CB_Input.Dispose();
 
-				if ( m_TextureTarget_CPU != null )
-					m_TextureTarget_CPU.Dispose();
-				if ( m_TextureTarget1 != null )
-					m_TextureTarget1.Dispose();
-				if ( m_TextureTarget0 != null )
-					m_TextureTarget0.Dispose();
+				if ( m_textureTarget_CPU != null )
+					m_textureTarget_CPU.Dispose();
+				if ( m_textureTarget1 != null )
+					m_textureTarget1.Dispose();
+				if ( m_textureTarget0 != null )
+					m_textureTarget0.Dispose();
 				if ( m_TextureSourceNormal != null )
 					m_TextureSourceNormal.Dispose();
-				if ( m_TextureSource != null )
-					m_TextureSource.Dispose();
+				if ( m_textureSourceHeightMap != null )
+					m_textureSourceHeightMap.Dispose();
 
-				m_Device.Dispose();
+				m_device.Dispose();
 			} catch ( Exception ) {
 			}
 
@@ -263,18 +262,18 @@ namespace GenerateSelfShadowedBumpMap
 					m_imageSourceHeight.Dispose();
 				m_imageSourceHeight = null;
 
-				if ( m_TextureTarget_CPU != null )
-					m_TextureTarget_CPU.Dispose();
-				m_TextureTarget_CPU = null;
-				if ( m_TextureTarget0 != null )
-					m_TextureTarget0.Dispose();
-				m_TextureTarget0 = null;
-				if ( m_TextureTarget1 != null )
-					m_TextureTarget1.Dispose();
-				m_TextureTarget1 = null;
-				if ( m_TextureSource != null )
-					m_TextureSource.Dispose();
-				m_TextureSource = null;
+				if ( m_textureTarget_CPU != null )
+					m_textureTarget_CPU.Dispose();
+				m_textureTarget_CPU = null;
+				if ( m_textureTarget0 != null )
+					m_textureTarget0.Dispose();
+				m_textureTarget0 = null;
+				if ( m_textureTarget1 != null )
+					m_textureTarget1.Dispose();
+				m_textureTarget1 = null;
+				if ( m_textureSourceHeightMap != null )
+					m_textureSourceHeightMap.Dispose();
+				m_textureSourceHeightMap = null;
 
 				// Load the source image
 				// Assume it's in linear space
@@ -297,12 +296,12 @@ namespace GenerateSelfShadowedBumpMap
 						}
 					}
 
-				m_TextureSource = new Renderer.Texture2D( m_Device, W, H, 1, 1, Renderer.PIXEL_FORMAT.R32_FLOAT, false, false, new Renderer.PixelsBuffer[] { SourceHeightMap } );
+				m_textureSourceHeightMap = new Renderer.Texture2D( m_device, W, H, 1, 1, Renderer.PIXEL_FORMAT.R32_FLOAT, false, false, new Renderer.PixelsBuffer[] { SourceHeightMap } );
 
 				// Build the target UAV & staging texture for readback
-				m_TextureTarget0 = new Renderer.Texture2D( m_Device, W, H, 1, 1, Renderer.PIXEL_FORMAT.R32_FLOAT, false, true, null );
-				m_TextureTarget1 = new Renderer.Texture2D( m_Device, W, H, 1, 1, Renderer.PIXEL_FORMAT.R32_FLOAT, false, true, null );
-				m_TextureTarget_CPU = new Renderer.Texture2D( m_Device, W, H, 1, 1, Renderer.PIXEL_FORMAT.R32_FLOAT, true, false, null );
+				m_textureTarget0 = new Renderer.Texture2D( m_device, W, H, 1, 1, Renderer.PIXEL_FORMAT.R32_FLOAT, false, true, null );
+				m_textureTarget1 = new Renderer.Texture2D( m_device, W, H, 1, 1, Renderer.PIXEL_FORMAT.R32_FLOAT, false, true, null );
+				m_textureTarget_CPU = new Renderer.Texture2D( m_device, W, H, 1, 1, Renderer.PIXEL_FORMAT.R32_FLOAT, true, false, null );
 
 				panelParameters.Enabled = true;
 				buttonGenerate.Focus();
@@ -348,7 +347,7 @@ namespace GenerateSelfShadowedBumpMap
 						}
 					}
 
-				m_TextureSourceNormal = new Renderer.Texture2D( m_Device, W, H, 1, 1, Renderer.PIXEL_FORMAT.RGBA32_FLOAT, false, false, new Renderer.PixelsBuffer[] { SourceNormalMap } );
+				m_TextureSourceNormal = new Renderer.Texture2D( m_device, W, H, 1, 1, Renderer.PIXEL_FORMAT.RGBA32_FLOAT, false, false, new Renderer.PixelsBuffer[] { SourceNormalMap } );
 
 			} catch ( Exception _e ) {
 				MessageBox( "An error occurred while opening the image:\n\n", _e );
@@ -361,16 +360,16 @@ namespace GenerateSelfShadowedBumpMap
 
 				//////////////////////////////////////////////////////////////////////////
 				// 1] Apply bilateral filtering to the input texture as a pre-process
-				ApplyBilateralFiltering( m_TextureSource, m_TextureTarget0, floatTrackbarControlBilateralRadius.Value, floatTrackbarControlBilateralTolerance.Value, checkBoxWrap.Checked, BILATERAL_PROGRESS );
+				ApplyBilateralFiltering( m_textureSourceHeightMap, m_textureTarget0, floatTrackbarControlBilateralRadius.Value, floatTrackbarControlBilateralTolerance.Value, checkBoxWrap.Checked, BILATERAL_PROGRESS );
 
 
 				//////////////////////////////////////////////////////////////////////////
 				// 2] Compute directional occlusion
-				m_TextureTarget1.RemoveFromLastAssignedSlots();
+				m_textureTarget1.RemoveFromLastAssignedSlots();
 
 				// Prepare computation parameters
-				m_TextureTarget0.SetCS( 0 );
-				m_TextureTarget1.SetCSUAV( 0 );
+				m_textureTarget0.SetCS( 0 );
+				m_textureTarget1.SetCSUAV( 0 );
 				m_SB_Rays.SetInput( 1 );
 				m_TextureSourceNormal.SetCS( 2 );
 
@@ -392,14 +391,14 @@ namespace GenerateSelfShadowedBumpMap
 
 					m_CS_GenerateAOMap.Dispatch( W, h, 1 );
 
-					m_Device.Present( true );
+					m_device.Present( true );
 
 					progressBar.Value = (int) (0.01f * (BILATERAL_PROGRESS + (100-BILATERAL_PROGRESS) * (i+1) / (CallsCount)) * progressBar.Maximum);
 //					for ( int a=0; a < 10; a++ )
 						Application.DoEvents();
 				}
 
-				m_TextureTarget1.RemoveFromLastAssignedSlotUAV();	// So we can use it as input for next stage
+				m_textureTarget1.RemoveFromLastAssignedSlotUAV();	// So we can use it as input for next stage
 
 				progressBar.Value = progressBar.Maximum;
 
@@ -411,7 +410,7 @@ namespace GenerateSelfShadowedBumpMap
 
 				//////////////////////////////////////////////////////////////////////////
 				// 3] Copy target to staging for CPU readback and update the resulting bitmap
-				m_TextureTarget_CPU.CopyFrom( m_TextureTarget1 );
+				m_textureTarget_CPU.CopyFrom( m_textureTarget1 );
 
 //				ImageUtility.ColorProfile	profile = m_profilesRGB;	// AO maps are sRGB! (although strange, that's certainly to have more range in dark values)
 				ImageUtility.ColorProfile	profile = m_profileLinear;
@@ -420,7 +419,7 @@ namespace GenerateSelfShadowedBumpMap
 				float3	whitePoint_XYZ = new float3();
 
 				ImageUtility.Bitmap		tempBitmap = new ImageUtility.Bitmap( W, H );
-				Renderer.PixelsBuffer	Pixels = m_TextureTarget_CPU.Map( 0, 0 );
+				Renderer.PixelsBuffer	Pixels = m_textureTarget_CPU.Map( 0, 0 );
 				using ( System.IO.BinaryReader R = Pixels.OpenStreamRead() )
 					for ( uint Y=0; Y < H; Y++ ) {
 						R.BaseStream.Position = Y * Pixels.RowPitch;
@@ -432,7 +431,7 @@ namespace GenerateSelfShadowedBumpMap
 					}
 
 				Pixels.Dispose();
-				m_TextureTarget_CPU.UnMap( 0, 0 );
+				m_textureTarget_CPU.UnMap( 0, 0 );
 
 				// Convert to RGB
 				ImageUtility.ImageFile	temmpImageRGBA32F = new ImageUtility.ImageFile();
@@ -474,7 +473,7 @@ namespace GenerateSelfShadowedBumpMap
 
 				m_CS_BilateralFilter.Dispatch( W, h, 1 );
 
-				m_Device.Present( true );
+				m_device.Present( true );
 
 				progressBar.Value = (int) (0.01f * (0 + _ProgressBarMax * (i+1) / CallsCount) * progressBar.Maximum);
 //				for ( int a=0; a < 10; a++ )
@@ -577,16 +576,16 @@ namespace GenerateSelfShadowedBumpMap
 
 				//////////////////////////////////////////////////////////////////////////
 				// 1] Apply bilateral filtering to the input texture as a pre-process
-				ApplyBilateralFiltering( m_TextureSource, m_TextureTarget0, floatTrackbarControlBilateralRadius.Value, floatTrackbarControlBilateralTolerance.Value, checkBoxWrap.Checked, 100 );
+				ApplyBilateralFiltering( m_textureSourceHeightMap, m_textureTarget0, floatTrackbarControlBilateralRadius.Value, floatTrackbarControlBilateralTolerance.Value, checkBoxWrap.Checked, 100 );
 
 				progressBar.Value = progressBar.Maximum;
 
 				//////////////////////////////////////////////////////////////////////////
 				// 2] Copy target to staging for CPU readback and update the resulting bitmap
-				m_TextureTarget_CPU.CopyFrom( m_TextureTarget0 );
+				m_textureTarget_CPU.CopyFrom( m_textureTarget0 );
 
 				ImageUtility.Bitmap		tempBitmap = new ImageUtility.Bitmap( W, H );
-				Renderer.PixelsBuffer	Pixels = m_TextureTarget_CPU.Map( 0, 0 );
+				Renderer.PixelsBuffer	Pixels = m_textureTarget_CPU.Map( 0, 0 );
 				using ( System.IO.BinaryReader R = Pixels.OpenStreamRead() )
 					for ( uint Y=0; Y < H; Y++ ) {
 						R.BaseStream.Position = Y * Pixels.RowPitch;
@@ -597,7 +596,7 @@ namespace GenerateSelfShadowedBumpMap
 					}
 
 				Pixels.Dispose();
-				m_TextureTarget_CPU.UnMap( 0, 0 );
+				m_textureTarget_CPU.UnMap( 0, 0 );
 
 				// Convert to RGB
 //				ImageUtility.ColorProfile	Profile = m_ProfilesRGB;	// AO maps are sRGB! (although strange, that's certainly to have more range in dark values)
@@ -698,7 +697,7 @@ namespace GenerateSelfShadowedBumpMap
 				Wr.Write( 1.0f );
 			}
 
-			m_TextureSourceNormal = new Renderer.Texture2D( m_Device, 1, 1, 1, 1, Renderer.PIXEL_FORMAT.RGBA32_FLOAT, false, false, new Renderer.PixelsBuffer[] { SourceNormalMap } );
+			m_TextureSourceNormal = new Renderer.Texture2D( m_device, 1, 1, 1, 1, Renderer.PIXEL_FORMAT.RGBA32_FLOAT, false, false, new Renderer.PixelsBuffer[] { SourceNormalMap } );
 		}
 
 		private void buttonLoadNormalMap_Click( object sender, EventArgs e ) {
@@ -751,7 +750,7 @@ namespace GenerateSelfShadowedBumpMap
 		}
 
 		private void buttonReload_Click( object sender, EventArgs e ) {
-			m_Device.ReloadModifiedShaders();
+			m_device.ReloadModifiedShaders();
 		}
 
 		#endregion

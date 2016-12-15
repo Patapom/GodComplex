@@ -65,13 +65,13 @@ namespace GenerateSelfShadowedBumpMap
 			}
 		}
 
-		private bool		m_ViewLinear = false;
+		private bool		m_viewLinear = false;
 		public bool			ViewLinear
 		{
-			get { return m_ViewLinear; }
+			get { return m_viewLinear; }
 			set
 			{
-				m_ViewLinear = value;
+				m_viewLinear = value;
 				UpdateBitmap();
 			}
 		}

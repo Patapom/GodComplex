@@ -239,7 +239,8 @@ public:
 };
 
 class	ScopedForceMaterialsLoadFromBinary {
+	bool	m_formerState;
 public:
-	ScopedForceMaterialsLoadFromBinary()	{ Shader::ms_LoadFromBinary = true; }
-	~ScopedForceMaterialsLoadFromBinary()	{ Shader::ms_LoadFromBinary = false; }
+	ScopedForceMaterialsLoadFromBinary()	{ m_formerState = Shader::ms_LoadFromBinary; Shader::ms_LoadFromBinary = true; }
+	~ScopedForceMaterialsLoadFromBinary()	{ Shader::ms_LoadFromBinary = m_formerState; }
 };

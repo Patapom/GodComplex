@@ -56,13 +56,17 @@
 using namespace System;
 
 namespace ImageUtility {
-
+	[System::Diagnostics::DebuggerDisplayAttribute( "{Width}x{Height} {PixelFormat} {FileFormat}" )]
 	public ref class ImageFile {
 	public:
 		#pragma region NESTED TYPES
 
 		// The delegate used to tone map an HDR image into a LDR color (warning: any returned value above 1 will be clamped!)
 		delegate void	ToneMapper( float3 _HDRColor, float3% _LDRColor );
+
+		// The delegate used to transform a source color into a target color LDR used by a System::Drawing::Bitmap
+		// NOTE: Any value outside the [0,1] range will be clamped!
+		delegate void	ColorTransformer( float4% _color );
 
 		// This enum matches the classes available in PixelFormat.h (which in turn match the DXGI formats)
 		enum class PIXEL_FORMAT : UInt32 {
@@ -421,7 +425,10 @@ namespace ImageUtility {
 		void				WriteScanline( UInt32 _Y, cli::array< float4 >^ _color, UInt32 _startX );
 
 		// Retrieves the image file type based on the image file name
-		static FILE_FORMAT	GetFileType( System::IO::FileInfo^ _fileName );
+		// WARNING: The image file MUST exist on disk as FreeImage inspects the content!
+		static FILE_FORMAT	GetFileTypeFromExistingFileContent( System::IO::FileInfo^ _fileName );
+		// Same version from filename only
+		static FILE_FORMAT	GetFileTypeFromFileNameOnly( System::IO::FileInfo^ _fileName );
 
 		// Loads a System::Drawing.Bitmap into a byte[] containing RGBARGBARG... pixels
 		// <param name="_Bitmap">The source System::Drawing.Bitmap to load</param>
@@ -429,6 +436,12 @@ namespace ImageUtility {
 		// <param name="_Height">The bitmaps's height</param>
 		// <returns>The byte array containing a sequence of R,G,B,A,R,G,B,A pixels and of length Widht*Height*4</returns>
 		static cli::array< Byte >^	LoadBitmap( System::Drawing::Bitmap^ _bitmap, int& _width, int& _height );
+
+		// Builds a System.Drawing.Bitmap from the image, applying the user's transform
+		// NOTE: Does not throw an exception, but any color outside the [0,1] will be clamped!
+		System::Drawing::Bitmap^	AsCustomBitmap( ColorTransformer^ _transformer );
+		// Same but the bitmap is already constructed at the proper size
+		void						AsCustomBitmap( System::Drawing::Bitmap^ _bitmap, ColorTransformer^ _transformer );
 
 
 	public:

@@ -31,7 +31,7 @@ Shader::Shader( Device& _Device, const char* _pShaderFileName, const IVertexForm
 	, m_hCompileThread( 0 )
 #endif
 {
-	ASSERT( _pShaderCode != NULL, "Shader code is NULL!" );
+	ASSERT( Shader::ms_LoadFromBinary || _pShaderCode != NULL, "Shader code is NULL!" );
 
 	m_pIncludeOverride = _pIncludeOverride;
 	m_bHasErrors = false;

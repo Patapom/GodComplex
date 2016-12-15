@@ -18,9 +18,11 @@ namespace Renderer {
 	public:
 
 		ComputeShader( Device^ _device, ShaderFile^ _shaderFile, String^ _entryPoint, cli::array<ShaderMacro^>^ _macros ) {
-			const char*	ShaderFileName = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( _shaderFile->m_shaderFileName->FullName ).ToPointer();
-			const char*	ShaderCode = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( _shaderFile->m_shaderSourceCode ).ToPointer();
-			const char*	EntryPoint = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( _entryPoint ).ToPointer();
+			const char*	shaderFileName = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( _shaderFile->m_shaderFileName->FullName ).ToPointer();
+			const char*	entryPoint = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( _entryPoint ).ToPointer();
+			const char*	shaderSourceCode = nullptr;
+			if ( !::Shader::ms_LoadFromBinary )
+				shaderSourceCode = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( _shaderFile->ShaderSourceCode ).ToPointer();
 
 			D3D_SHADER_MACRO*	macros = NULL;
 			if ( _macros != nullptr ) {
@@ -35,16 +37,16 @@ namespace Renderer {
 				macros[i].Definition = NULL;
 			}
 
-			m_pShader = new ::ComputeShader( *_device->m_pDevice, ShaderFileName, ShaderCode, macros, EntryPoint, NULL );
+			m_pShader = new ::ComputeShader( *_device->m_pDevice, shaderFileName, shaderSourceCode, macros, entryPoint, NULL );
 
 			delete[] macros;
 		}
-		ComputeShader( Device^ _device, System::IO::FileInfo^ _shaderFileName, String^ _entryPoint ) {
-			const char*	ShaderFileName = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( _shaderFileName->FullName ).ToPointer();
-			const char*	EntryPoint = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( _entryPoint ).ToPointer();
-
-			m_pShader = ::ComputeShader::CreateFromBinaryBlob( *_device->m_pDevice, ShaderFileName, NULL, EntryPoint );
-		}
+// 		ComputeShader( Device^ _device, ShaderBinaryFile^ _shaderFile, String^ _entryPoint ) {
+// 			const char*	ShaderFileName = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( _shaderFile->m_shaderFileName->FullName ).ToPointer();
+// 			const char*	EntryPoint = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( _entryPoint ).ToPointer();
+// 
+// 			m_pShader = ::ComputeShader::CreateFromBinaryBlob( *_device->m_pDevice, ShaderFileName, NULL, EntryPoint );
+// 		}
 
 		~ComputeShader() {
 			delete m_pShader;
