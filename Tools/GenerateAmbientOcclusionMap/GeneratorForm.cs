@@ -129,8 +129,8 @@ namespace GenerateSelfShadowedBumpMap
 					using ( Renderer.ScopedForceMaterialsLoadFromBinary scope = new Renderer.ScopedForceMaterialsLoadFromBinary() )
 				#endif
 				{
-					m_CS_BilateralFilter = new Renderer.ComputeShader( m_device, new Renderer.ShaderFile( new System.IO.FileInfo( "./Shaders/BilateralFiltering.hlsl" ) ), "CS", null );
-					m_CS_GenerateAOMap = new Renderer.ComputeShader( m_device, new Renderer.ShaderFile( new System.IO.FileInfo( "./Shaders/GenerateAOMap.hlsl" ) ), "CS", null );
+					m_CS_BilateralFilter = new Renderer.ComputeShader( m_device, new System.IO.FileInfo( "./Shaders/BilateralFiltering.hlsl" ), "CS", null );
+					m_CS_GenerateAOMap = new Renderer.ComputeShader( m_device, new System.IO.FileInfo( "./Shaders/GenerateAOMap.hlsl" ), "CS", null );
 				}
 
 				// Create our constant buffers

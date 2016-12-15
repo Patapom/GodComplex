@@ -767,8 +767,8 @@ throw new Exception( "Deprecated!" );
 
 		unsafe void	ComputeBRDFIntegral( System.IO.FileInfo _TableFileName, uint _TableSize ) {
 
-//			ComputeShader	CS = new ComputeShader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/ComputeBRDFIntegral.hlsl" ) ), "CS", new ShaderMacro[0] );
-			ComputeShader	CS = new ComputeShader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/ComputeBRDFIntegral.hlsl" ) ), "CS", new ShaderMacro[] { new ShaderMacro( "IMPORTANCE_SAMPLING", "1" ) } );
+//			ComputeShader	CS = new ComputeShader( m_Device, new System.IO.FileInfo( "Shaders/ComputeBRDFIntegral.hlsl" ), "CS", new ShaderMacro[0] );
+			ComputeShader	CS = new ComputeShader( m_Device, new System.IO.FileInfo( "Shaders/ComputeBRDFIntegral.hlsl" ), "CS", new ShaderMacro[] { new ShaderMacro( "IMPORTANCE_SAMPLING", "1" ) } );
 
 			Texture2D		TexTable = new Texture2D( m_Device, _TableSize, _TableSize, 1, 1, PIXEL_FORMAT.RG32_FLOAT, false, true, null );
 			TexTable.SetCSUAV( 0 );
@@ -1797,34 +1797,25 @@ renderProg PostFX/Debug/WardBRDFAlbedo {
 			m_CB_ShadowMap = new ConstantBuffer<CB_ShadowMap>( m_Device, 3 );
 			m_CB_Object = new ConstantBuffer<CB_Object>( m_Device, 4 );
 
-			try
-			{
-				m_Shader_RenderAreaLight = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/RenderAreaLight.hlsl" ) ), VERTEX_FORMAT.P3N3G3B3T2, "VS", null, "PS", null );;
-			}
-			catch ( Exception _e )
-			{
+			try {
+				m_Shader_RenderAreaLight = new Shader( m_Device, new System.IO.FileInfo( "Shaders/RenderAreaLight.hlsl" ), VERTEX_FORMAT.P3N3G3B3T2, "VS", null, "PS", null );;
+			} catch ( Exception _e ) {
 				MessageBox.Show( "Shader \"RenderAreaLight\" failed to compile!\n\n" + _e.Message, "Area Light Test", MessageBoxButtons.OK, MessageBoxIcon.Error );
 				m_Shader_RenderAreaLight = null;
 			}
 
-			try
-			{
-				m_Shader_RenderShadowMap = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/RenderShadowMap.hlsl" ) ), VERTEX_FORMAT.P3N3G3B3T2, "VS", null, "PS", null );;
-			}
-			catch ( Exception _e )
-			{
+			try {
+				m_Shader_RenderShadowMap = new Shader( m_Device, new System.IO.FileInfo( "Shaders/RenderShadowMap.hlsl" ), VERTEX_FORMAT.P3N3G3B3T2, "VS", null, "PS", null );;
+			} catch ( Exception _e ) {
 				MessageBox.Show( "Shader \"RenderShadow\" failed to compile!\n\n" + _e.Message, "Area Light Test", MessageBoxButtons.OK, MessageBoxIcon.Error );
 				m_Shader_RenderShadowMap = null;
 			}
 
 #if FILTER_EXP_SHADOW_MAP
-			try
-			{
-				m_Shader_FilterShadowMapH = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/FilterShadowMap.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS_FilterH", null );;
-				m_Shader_FilterShadowMapV = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/FilterShadowMap.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS_FilterV", null );;
-			}
-			catch ( Exception _e )
-			{
+			try {
+				m_Shader_FilterShadowMapH = new Shader( m_Device, new System.IO.FileInfo( "Shaders/FilterShadowMap.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS_FilterH", null );;
+				m_Shader_FilterShadowMapV = new Shader( m_Device, new System.IO.FileInfo( "Shaders/FilterShadowMap.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS_FilterV", null );;
+			} catch ( Exception _e ) {
 				MessageBox.Show( "Shader \"BuildSmoothie\" failed to compile!\n\n" + _e.Message, "Area Light Test", MessageBoxButtons.OK, MessageBoxIcon.Error );
 				m_Shader_FilterShadowMapH = null;
 				m_Shader_FilterShadowMapV = null;
@@ -1832,9 +1823,9 @@ renderProg PostFX/Debug/WardBRDFAlbedo {
 #else
 			try
 			{
-				m_Shader_BuildSmoothie = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/BuildSmoothie.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS_Edge", null );;
-				m_Shader_BuildSmoothieDistanceFieldH = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/BuildSmoothie.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS_DistanceFieldH", null );;
-				m_Shader_BuildSmoothieDistanceFieldV = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/BuildSmoothie.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS_DistanceFieldV", null );;
+				m_Shader_BuildSmoothie = new Shader( m_Device, new System.IO.FileInfo( "Shaders/BuildSmoothie.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS_Edge", null );;
+				m_Shader_BuildSmoothieDistanceFieldH = new Shader( m_Device, new System.IO.FileInfo( "Shaders/BuildSmoothie.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS_DistanceFieldH", null );;
+				m_Shader_BuildSmoothieDistanceFieldV = new Shader( m_Device, new System.IO.FileInfo( "Shaders/BuildSmoothie.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS_DistanceFieldV", null );;
 			}
 			catch ( Exception _e )
 			{
@@ -1845,12 +1836,9 @@ renderProg PostFX/Debug/WardBRDFAlbedo {
 			}
 #endif
 
-			try
-			{
-				m_Shader_RenderScene = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/RenderScene.hlsl" ) ), VERTEX_FORMAT.P3N3G3B3T2, "VS", null, "PS", null );;
-			}
-			catch ( Exception _e )
-			{
+			try {
+				m_Shader_RenderScene = new Shader( m_Device, new System.IO.FileInfo( "Shaders/RenderScene.hlsl" ), VERTEX_FORMAT.P3N3G3B3T2, "VS", null, "PS", null );;
+			} catch ( Exception _e ) {
 				MessageBox.Show( "Shader \"RenderScene\" failed to compile!\n\n" + _e.Message, "Area Light Test", MessageBoxButtons.OK, MessageBoxIcon.Error );
 				m_Shader_RenderScene = null;
 			}

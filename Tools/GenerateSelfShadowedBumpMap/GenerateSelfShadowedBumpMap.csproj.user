@@ -20,9 +20,9 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
     <StartProgram>D:\Workspaces\GodComplex\Tools\GenerateSelfShadowedBumpMap\Publish\GenerateSelfShadowedBumpMap.exe</StartProgram>
-    <StartWorkingDirectory>D:\Workspaces\GodComplex\Tools\GenerateSelfShadowedBumpMap\Publish</StartWorkingDirectory>
+    <StartWorkingDirectory>D:\Workspaces\GodComplex\Tools\GenerateSelfShadowedBumpMap</StartWorkingDirectory>
     <EnableUnmanagedDebugging>true</EnableUnmanagedDebugging>
-    <StartAction>Program</StartAction>
+    <StartAction>Project</StartAction>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug DirectX10|x64'">
     <StartWorkingDirectory>D:\Workspaces\GodComplex\Tools\GenerateSelfShadowedBumpMap\</StartWorkingDirectory>

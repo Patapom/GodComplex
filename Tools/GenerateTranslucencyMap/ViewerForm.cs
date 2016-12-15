@@ -60,14 +60,12 @@ namespace GenerateTranslucencyMap
 
 		public void Init()
 		{
-			#if DEBUG
-				m_PS_Display = new Shader( Device, new ShaderFile( new System.IO.FileInfo( "./Shaders/Display.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
-			#else
-//				m_PS_Display = new Shader( Device, new ShaderBinaryFile( new System.IO.FileInfo( "./Shaders/Display.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS" );
-				using ( ScopedForceMaterialsLoadFromBinary scope = new ScopedForceMaterialsLoadFromBinary() ) {
-					m_PS_Display = new Shader( Device, new ShaderFile( new System.IO.FileInfo( "./Shaders/Display.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
-				}
+			#if !DEBUG
+				using ( ScopedForceMaterialsLoadFromBinary scope = new ScopedForceMaterialsLoadFromBinary() )
 			#endif
+			{
+				m_PS_Display = new Shader( Device, new System.IO.FileInfo( "./Shaders/Display.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+			}
 
 			m_CB_Display = new ConstantBuffer<CBDisplay>( Device, 0 );
 			m_CB_Display.m._Width = (uint) Width;

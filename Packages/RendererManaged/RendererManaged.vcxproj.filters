@@ -20,7 +20,6 @@
     <ClInclude Include="..\RendererManaged\Primitive.h" />
     <ClInclude Include="..\RendererManaged\RenderStates.h" />
     <ClInclude Include="..\RendererManaged\Shader.h" />
-    <ClInclude Include="..\RendererManaged\ShaderFile.h" />
     <ClInclude Include="..\RendererManaged\ShaderMacros.h" />
     <ClInclude Include="..\RendererManaged\StructuredBuffer.h" />
     <ClInclude Include="..\RendererManaged\Texture2D.h" />

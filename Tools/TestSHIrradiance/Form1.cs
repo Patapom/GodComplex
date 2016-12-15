@@ -664,9 +664,9 @@ avgDiffA2 /= TABLE_SIZE*TABLE_SIZE;
 				try {
 					Shader.WarningAsError = false;
 
-					m_shader_RenderSphere = new Shader( m_device, new ShaderFile( new System.IO.FileInfo( @"./Shaders/RenderSphere.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
-					m_shader_RenderScene = new Shader( m_device, new ShaderFile( new System.IO.FileInfo( @"./Shaders/RenderScene.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
-					m_shader_RenderLDR = new Shader( m_device, new ShaderFile( new System.IO.FileInfo( @"./Shaders/RenderLDR.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+					m_shader_RenderSphere = new Shader( m_device, new System.IO.FileInfo( @"./Shaders/RenderSphere.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+					m_shader_RenderScene = new Shader( m_device, new System.IO.FileInfo( @"./Shaders/RenderScene.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+					m_shader_RenderLDR = new Shader( m_device, new System.IO.FileInfo( @"./Shaders/RenderLDR.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 				} catch ( Exception _e ) {
 					throw new Exception( "Failed to compile shader! " + _e.Message );
 				}

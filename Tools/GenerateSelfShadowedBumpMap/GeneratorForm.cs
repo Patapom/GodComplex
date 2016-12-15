@@ -149,9 +149,9 @@ tabControlGenerators.TabPages.RemoveAt( 1 );
 					using ( ScopedForceMaterialsLoadFromBinary scope = new ScopedForceMaterialsLoadFromBinary() )
 				#endif
 				{
-					m_CS_BilateralFilter = new ComputeShader( m_device, new ShaderFile( new System.IO.FileInfo( "./Shaders/BilateralFiltering.hlsl" ) ), "CS", null );
-					m_CS_GenerateSSBumpMap = new ComputeShader( m_device, new ShaderFile( new System.IO.FileInfo( "./Shaders/GenerateSSBumpMap.hlsl" ) ), "CS", null );
-					m_PS_Display = new Shader( m_device, new ShaderFile( new System.IO.FileInfo( "./Shaders/Display.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+					m_CS_BilateralFilter = new ComputeShader( m_device, new System.IO.FileInfo( "./Shaders/BilateralFiltering.hlsl" ), "CS", null );
+					m_CS_GenerateSSBumpMap = new ComputeShader( m_device, new System.IO.FileInfo( "./Shaders/GenerateSSBumpMap.hlsl" ), "CS", null );
+					m_PS_Display = new Shader( m_device, new System.IO.FileInfo( "./Shaders/Display.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 				}
 
 

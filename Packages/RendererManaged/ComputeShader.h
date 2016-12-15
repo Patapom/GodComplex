@@ -4,7 +4,6 @@
 
 #include "Device.h"
 #include "ShaderMacros.h"
-#include "ShaderFile.h"
 
 using namespace System;
 
@@ -17,12 +16,21 @@ namespace Renderer {
 
 	public:
 
-		ComputeShader( Device^ _device, ShaderFile^ _shaderFile, String^ _entryPoint, cli::array<ShaderMacro^>^ _macros ) {
-			const char*	shaderFileName = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( _shaderFile->m_shaderFileName->FullName ).ToPointer();
+		ComputeShader( Device^ _device, System::IO::FileInfo^ _shaderFileName, String^ _entryPoint, cli::array<ShaderMacro^>^ _macros ) {
+			const char*	shaderFileName = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( _shaderFileName->FullName ).ToPointer();
 			const char*	entryPoint = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( _entryPoint ).ToPointer();
+
 			const char*	shaderSourceCode = nullptr;
-			if ( !::Shader::ms_LoadFromBinary )
-				shaderSourceCode = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( _shaderFile->ShaderSourceCode ).ToPointer();
+			if ( !::Shader::ms_LoadFromBinary ) {
+				if ( _shaderFileName->Exists )
+					throw gcnew Exception( "Compute shader file \"" + _shaderFileName + "\" does not exist!" );
+
+				System::IO::StreamReader^	R = _shaderFileName->OpenText();
+				String^	stringShaderSourceCode = R->ReadToEnd();
+				delete R;
+
+				shaderSourceCode = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( stringShaderSourceCode ).ToPointer();
+			}
 
 			D3D_SHADER_MACRO*	macros = NULL;
 			if ( _macros != nullptr ) {
@@ -41,12 +49,6 @@ namespace Renderer {
 
 			delete[] macros;
 		}
-// 		ComputeShader( Device^ _device, ShaderBinaryFile^ _shaderFile, String^ _entryPoint ) {
-// 			const char*	ShaderFileName = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( _shaderFile->m_shaderFileName->FullName ).ToPointer();
-// 			const char*	EntryPoint = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( _entryPoint ).ToPointer();
-// 
-// 			m_pShader = ::ComputeShader::CreateFromBinaryBlob( *_device->m_pDevice, ShaderFileName, NULL, EntryPoint );
-// 		}
 
 		~ComputeShader() {
 			delete m_pShader;

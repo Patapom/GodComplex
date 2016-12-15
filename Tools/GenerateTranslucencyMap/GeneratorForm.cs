@@ -197,11 +197,11 @@ namespace GenerateTranslucencyMap
 					using ( ScopedForceMaterialsLoadFromBinary scope = new ScopedForceMaterialsLoadFromBinary() )
 				#endif
 				{
-					m_CS_BilateralFilter = new ComputeShader( m_Device, new ShaderFile( new System.IO.FileInfo( "./Shaders/BilateralFiltering.hlsl" ) ), "CS", null );
-					m_CS_GenerateVisibilityMap = new ComputeShader( m_Device, new ShaderFile( new System.IO.FileInfo( "./Shaders/GenerateVisibilityMap.hlsl" ) ), "CS", null );
-					m_CS_GenerateTranslucencyMap = new ComputeShader( m_Device, new ShaderFile( new System.IO.FileInfo( "./Shaders/GenerateTranslucencyMap.hlsl" ) ), "CS", null );
-					m_CS_Helper_Normalize = new ComputeShader( m_Device, new ShaderFile( new System.IO.FileInfo( "./Shaders/Helpers.hlsl" ) ), "CS_Finalize", null );
-					m_CS_Helper_Mix = new ComputeShader( m_Device, new ShaderFile( new System.IO.FileInfo( "./Shaders/Helpers.hlsl" ) ), "CS_Mix", null );
+					m_CS_BilateralFilter = new ComputeShader( m_Device, new System.IO.FileInfo( "./Shaders/BilateralFiltering.hlsl" ), "CS", null );
+					m_CS_GenerateVisibilityMap = new ComputeShader( m_Device, new System.IO.FileInfo( "./Shaders/GenerateVisibilityMap.hlsl" ), "CS", null );
+					m_CS_GenerateTranslucencyMap = new ComputeShader( m_Device, new System.IO.FileInfo( "./Shaders/GenerateTranslucencyMap.hlsl" ), "CS", null );
+					m_CS_Helper_Normalize = new ComputeShader( m_Device, new System.IO.FileInfo( "./Shaders/Helpers.hlsl" ), "CS_Finalize", null );
+					m_CS_Helper_Mix = new ComputeShader( m_Device, new System.IO.FileInfo( "./Shaders/Helpers.hlsl" ), "CS_Mix", null );
 				}
 // 				m_CS_BilateralFilter = new ComputeShader( m_Device, new ShaderBinaryFile( new System.IO.FileInfo( "./Shaders/Binary/BilateralFiltering.fxbin" ) ), "CS" );
 // 				m_CS_GenerateVisibilityMap = new ComputeShader( m_Device, new ShaderBinaryFile( new System.IO.FileInfo( "./Shaders/Binary/GenerateVisibilityMap.fxbin" ) ), "CS" );
@@ -453,9 +453,7 @@ namespace GenerateTranslucencyMap
 					}
 
 				m_TextureSourceTransmittance = new Texture2D( m_Device, W, H, 1, 1, PIXEL_FORMAT.RGBA32_FLOAT, false, false, new PixelsBuffer[] { SourceMap } );
-			}
-			catch ( Exception _e )
-			{
+			} catch ( Exception _e ) {
 				MessageBox( "An error occurred while opening the transmittance map \"" + _FileName.FullName + "\":\n\n", _e );
 			}
 		}
