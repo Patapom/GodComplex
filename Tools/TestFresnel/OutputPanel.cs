@@ -12,8 +12,7 @@ namespace TestFresnel
 	public partial class OutputPanel : Panel
 	{
 		[System.Diagnostics.DebuggerDisplay( "wl={Wavelength} n={n} k={k}" )]
-		public class	RefractionData
-		{
+		public class	RefractionData {
 			public float	Wavelength;	// In µm
 			public float	n;			// Refraction index
 			public float	k;			// Extinction coefficient
@@ -21,10 +20,10 @@ namespace TestFresnel
 
 		protected Bitmap	m_Bitmap = null;
 
-		public enum		FRESNEL_TYPE
-		{
+		public enum		FRESNEL_TYPE {
 			SCHLICK,
 			PRECISE,
+			ARTIST_FRIENDLY,	// "Artist-friendly" model from http://jcgt.org/published/0003/04/03/paper.pdf
 		}
 
 		protected FRESNEL_TYPE	m_Type = FRESNEL_TYPE.SCHLICK;
@@ -79,23 +78,29 @@ namespace TestFresnel
 			}
 		}
 
-// 		protected Color			m_SpecularTint = Color.White;
-// 		public Color			SpecularTint
-// 		{
-// 			get { return m_SpecularTint; }
-// 			set
-// 			{
-// 				m_SpecularTint = value;
-// 				UpdateBitmap();
-// 			}
-// 		}
+		protected Color			m_SpecularTintNormal = Color.White;
+		public Color			SpecularTintNormal {
+			get { return m_SpecularTintNormal; }
+			set {
+ 				m_SpecularTintNormal = value;
+ 				UpdateBitmap();
+ 			}
+ 		}
+
+		protected Color			m_SpecularTintEdge = Color.Black;
+		public Color			SpecularTintEdge {
+			get { return m_SpecularTintEdge; }
+			set {
+ 				m_SpecularTintEdge = value;
+ 				UpdateBitmap();
+ 			}
+ 		}
 
 		protected RefractionData[]	m_Data = null;
 		public RefractionData[]		Data
 		{
 			get { return m_Data; }
-			set
-			{
+			set {
 				m_Data = value;
 				UpdateBitmap();
 			}
@@ -113,8 +118,7 @@ namespace TestFresnel
 			InitializeComponent();
 		}
 
-		protected void		UpdateBitmap()
-		{
+		protected void		UpdateBitmap() {
 			if ( m_Bitmap == null )
 				return;
 
@@ -126,20 +130,17 @@ namespace TestFresnel
 				G.DrawLine( Pens.Black, 0, Height-10, Width, Height-10 );
 
 				FresnelEval	Eval = null;
-				if ( m_FromData )
-				{
-					switch ( m_Type ) 
-					{
+				if ( m_FromData ) {
+					switch ( m_Type )  {
 						case FRESNEL_TYPE.SCHLICK:	Eval = Fresnel_SchlickData; PrepareData(); break;
 						case FRESNEL_TYPE.PRECISE:	Eval = Fresnel_PreciseData; PrepareData(); break;
+						default: Eval = Fresnel_SchlickData; PrepareData(); break;
 					}
-				}
-				else
-				{
-					switch ( m_Type ) 
-					{
+				} else {
+					switch ( m_Type ) {
 						case FRESNEL_TYPE.SCHLICK:	Eval = Fresnel_Schlick; PrepareSchlick(); break;
 						case FRESNEL_TYPE.PRECISE:	Eval = Fresnel_Precise; PreparePrecise(); break;
+						case FRESNEL_TYPE.ARTIST_FRIENDLY: Eval = Fresnel_ArtistFriendly; PrepareArtistFriendly(); break;
 					}
 				}
 
@@ -148,8 +149,7 @@ namespace TestFresnel
 				float	x = 0.0f;
 				float	yr, yg, yb;
 				Eval( 1.0f, out yr, out yg, out yb );
-				for ( int X=10; X <= Width; X++ )
-				{
+				for ( int X=10; X <= Width; X++ ) {
 					float	px = x;
 					float	pyr = yr;
 					float	pyg = yg;
@@ -165,14 +165,12 @@ namespace TestFresnel
 					DrawLine( G, px, pyb, x, yb, Pens.Blue );
 				}
 
-				if ( !m_FromData )
-				{
+				if ( !m_FromData ) {
 					Eval( 1.0f, out yr, out yg, out yb );
 					float	F0 = Math.Max( Math.Max( yr, yg ), yb );
 					G.DrawString( "F0 = " + F0, Font, Brushes.Black, 12.0f, Height - 30 - (Height-20) * F0 );
-				}
-				else
-				{
+
+				} else {
 					Eval( 1.0f, out yr, out yg, out yb );
 					float	F0 = Math.Max( Math.Max( yr, yg ), yb );
 
@@ -204,11 +202,81 @@ namespace TestFresnel
 
 		protected delegate void		FresnelEval( float x, out float yr, out float yg, out float yb );
 
+		#region Artist-Friendly Fresnel
+
+		// This is based on the "Artist-friendly" model from http://jcgt.org/published/0003/04/03/paper.pdf
+		//	a 2014 paper by Ole Gulbrandsen
+		//
+		// Here, we're dealing with complex IOR in the form of a second specular tint: the edge tint that is
+		//	actually used to make the imaginary "k" parameter (i.e. the absorption parameter of the Fresnel equation)
+		//	vary over an interval that depends on the values of the real "n" parameter (i.e. the scattering parameter of the Fresnel equation)
+		//
+		// n is obtained from the regular specular tint at normal incidence "r" (what we usually call "F0") and the specular tint at edge incidence "g" as:
+		//	n(g,r) = g * (1-r)/(1+r) + (1-g) * (1+sqrt(r))/(1-sqrt(r))
+		//
+		// NOTE: Remember that we usually take n = (1+sqrt(r))/(1-sqrt(r)), which is only the right part of the linear interpolation
+		//
+		// Knowing n, we obtain k by:
+		//
+		//	k(n,r) = sqrt( ((n-1)² - r(n+1)²) / (r-1) )
+		//
+		// The perpendicular-polarized reflection is expressed as:
+		//	f_perp( n, k, c ) = (n² + k² - 2*n*c + c*c) / (n² + k² + 2*n*c + c*c)
+		//
+		// The parallel-polarized reflection is expressed as:
+		//	f_para( n, k, c ) = ((n² + k²)*c*c - 2*n*c + 1) / ((n² + k²)*c*c + 2*n*c + 1)
+		//
+		// And the unpolarized Fresnel equation finally is:
+		//	R( n, k, c ) = (f_perp( n, k, c ) + f_para( n, k, c )) / 2
+		//
+		float	Nr, Ng, Nb;
+		float	K2r, K2g, K2b;
+		float	ComputeN( float r, float g ) {
+			float	sqrtR = (float) Math.Sqrt( r );
+			return g * (1-r) / (1+r) + (1-g) * (1+sqrtR)/(1-sqrtR);
+		}
+		float	ComputeK2( float n, float r ) {
+			return ((n-1)*(n-1) - r*(n+1)*(n+1)) / (r-1);
+		}
+		float	ComputeFresnelPerp( float n, float k2, float c ) {
+			return (n*n + k2 - 2*n*c + c*c) / (n*n + k2 + 2*n*c + c*c);
+		}
+		float	ComputeFresnelPara( float n, float k2, float c ) {
+			return (n*n*c*c + k2 - 2*n*c + 1) / (n*n*c*c + k2 + 2*n*c + 1);
+		}
+		float	ComputeFresnelUnpolarized( float n, float k2, float c ) {
+			return 0.5f * (ComputeFresnelPerp( n, k2, c ) + ComputeFresnelPara( n, k2, c ));
+		}
+
+		void	PrepareArtistFriendly() {
+			float	r = Math.Min( 0.999f, m_SpecularTintNormal.R / 255.0f );
+			Nr = ComputeN( r, m_SpecularTintEdge.R / 255.0f );
+			K2r = ComputeK2( Nr, r );
+
+			r = Math.Min( 0.999f, m_SpecularTintNormal.G / 255.0f );
+			Ng = ComputeN( r, m_SpecularTintEdge.G / 255.0f );
+			K2g = ComputeK2( Ng, r );
+
+			r = Math.Min( 0.999f, m_SpecularTintNormal.B / 255.0f );
+			Nb = ComputeN( r, m_SpecularTintEdge.B / 255.0f );
+			K2b = ComputeK2( Nb, r );
+		}
+
+		void	Fresnel_ArtistFriendly( float _CosTheta, out float yr, out float yg, out float yb ) {
+			float	c = _CosTheta;
+			yr = ComputeFresnelUnpolarized( Nr, K2r, c );
+			yg = ComputeFresnelUnpolarized( Ng, K2g, c );
+			yb = ComputeFresnelUnpolarized( Nb, K2b, c );
+		}
+
+		#endregion
+
+		#region Schlick Approximation
+
 		protected float		F0r;
 		protected float		F0g;
 		protected float		F0b;
-		protected void		PrepareSchlick()
-		{
+		protected void		PrepareSchlick() {
 // 			var	IOR = (1+Math.sqrt(this.fresnelF0)) / (1-Math.sqrt(this.fresnelF0));
 // 			if ( !isFinite( IOR ) )
 // 				IOR = 1e30;	// Simply use a huge number instead...
@@ -217,8 +285,7 @@ namespace TestFresnel
 			F0g = Form1.IOR_to_F0( m_IOR_green );
 			F0b = Form1.IOR_to_F0( m_IOR_blue );
 		}
-		protected void		Fresnel_Schlick( float _CosTheta, out float yr, out float yg, out float yb )
-		{
+		protected void		Fresnel_Schlick( float _CosTheta, out float yr, out float yg, out float yb ) {
 			float	One_Minus_CosTheta = 1.0f - _CosTheta;
 			float	One_Minus_CosTheta_Pow5 = One_Minus_CosTheta * One_Minus_CosTheta;
 					One_Minus_CosTheta_Pow5 *= One_Minus_CosTheta_Pow5 * One_Minus_CosTheta;
@@ -227,6 +294,10 @@ namespace TestFresnel
 			yg = F0g + (1.0f - F0g) * One_Minus_CosTheta_Pow5;
 			yb = F0b + (1.0f - F0b) * One_Minus_CosTheta_Pow5;
 		}
+
+		#endregion
+
+		#region Precise Fresnel from Walter 2007
 
 		/// <summary>
 		/// Stolen from §5.1 http://www.cs.cornell.edu/~srm/publications/EGSR07-btdf.pdf
@@ -242,8 +313,7 @@ namespace TestFresnel
 		/// </summary>
 		protected void		PreparePrecise() {
 		}
-		protected void		Fresnel_Precise( float _CosTheta, out float yr, out float yg, out float yb )
-		{
+		protected void		Fresnel_Precise( float _CosTheta, out float yr, out float yg, out float yb ) {
 			float	c = _CosTheta;
 // 			double	g = Math.Sqrt( m_IOR*m_IOR - 1.0 + c*c );
 // 			float	F = (float) (0.5 * Math.Pow( (g-c) / (g+c), 2.0 ) * (1.0 + Math.Pow( (c*(g+c) - 1) / (c*(g-c) + 1), 2.0 )) );
@@ -255,6 +325,10 @@ namespace TestFresnel
 			g = Math.Sqrt( Math.Max( 0.0, m_IOR_blue*m_IOR_blue - 1.0 + c*c ) );
 			yb = (float) (0.5 * Math.Pow( (g-c) / (g+c), 2.0 ) * (1.0 + Math.Pow( (c*(g+c) - 1) / (c*(g-c) + 1), 2.0 )) );
 		}
+
+		#endregion
+
+		#region Fresnel based on Data with Complex IOR
 
 		//////////////////////////////////////////////////////////////////////////
 		// Complex Fresnel data from http://refractiveindex.info
@@ -741,8 +815,7 @@ namespace TestFresnel
 830,0.000001251141,0.000000451810,0.000000000000,
 	};
 		#endregion
-		protected void	PrepareData()
-		{
+		protected void	PrepareData() {
 			if ( m_Data == null )
 				return;
 
@@ -797,8 +870,7 @@ namespace TestFresnel
 			G = X * MAT_RGB2XYZ[3*0+1] + Y * MAT_RGB2XYZ[3*1+1] + Z * MAT_RGB2XYZ[3*2+1];
 			B = X * MAT_RGB2XYZ[3*0+2] + Y * MAT_RGB2XYZ[3*1+2] + Z * MAT_RGB2XYZ[3*2+2];
 		}
-		float	sRGB( float V )
-		{
+		float	sRGB( float V ) {
 			return V > 0.0031308f ? 1.055f * (float) Math.Pow( V, 1.0f / 2.4 ) - 0.055f : 12.92f * V;
 		}
 
@@ -871,6 +943,8 @@ k = 1.0f / k;
 			yg = Fresnel_PreciseMetal( m_IndicesG.n, m_IndicesG.k, _CosTheta );
 			yb = Fresnel_PreciseMetal( m_IndicesB.n, m_IndicesB.k, _CosTheta );
 		}
+
+		#endregion
 
 		protected override void OnSizeChanged( EventArgs e )
 		{

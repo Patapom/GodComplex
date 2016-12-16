@@ -609,7 +609,7 @@ namespace GenerateSelfShadowedBumpMap
 				tempBitmap.ToImageFile( m_imageResult, Profile );
 
 				// Assign result
-				viewportPanelResult.Bitmap = m_imageResult.AsBitmap;
+				viewportPanelResult.Bitmap = m_imageResult.AsCustomBitmap( ( ref float4 _color ) => {} );
 
 			} catch ( Exception _e ) {
 				MessageBox( "An error occurred during generation!\r\n\r\nDetails: ", _e );

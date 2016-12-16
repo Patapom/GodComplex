@@ -32,7 +32,7 @@
 			this.radioButtonSchlick = new System.Windows.Forms.RadioButton();
 			this.radioButtonPrecise = new System.Windows.Forms.RadioButton();
 			this.floatTrackbarControlIOR = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.panelColor = new System.Windows.Forms.Panel();
+			this.panelSpecularTintNormal = new System.Windows.Forms.Panel();
 			this.colorDialog1 = new System.Windows.Forms.ColorDialog();
 			this.openFileDialogRefract = new System.Windows.Forms.OpenFileDialog();
 			this.buttonLoadData = new System.Windows.Forms.Button();
@@ -40,6 +40,9 @@
 			this.label2 = new System.Windows.Forms.Label();
 			this.label4 = new System.Windows.Forms.Label();
 			this.panel1 = new System.Windows.Forms.Panel();
+			this.panelUseEdgeTint = new System.Windows.Forms.Panel();
+			this.checkBoxUseEdgeTint = new System.Windows.Forms.CheckBox();
+			this.panelSpecularTintEdge = new System.Windows.Forms.Panel();
 			this.radioButtonIOR = new System.Windows.Forms.RadioButton();
 			this.radioButtonSpecularTint = new System.Windows.Forms.RadioButton();
 			this.floatTrackbarControlVerticalScale = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
@@ -54,6 +57,7 @@
 			this.floatTrackbarControlPeakFactor = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label6 = new System.Windows.Forms.Label();
 			this.panel1.SuspendLayout();
+			this.panelUseEdgeTint.SuspendLayout();
 			this.outputPanel1.SuspendLayout();
 			this.SuspendLayout();
 			// 
@@ -73,7 +77,7 @@
 			// radioButtonPrecise
 			// 
 			this.radioButtonPrecise.AutoSize = true;
-			this.radioButtonPrecise.Location = new System.Drawing.Point(580, 28);
+			this.radioButtonPrecise.Location = new System.Drawing.Point(580, 35);
 			this.radioButtonPrecise.Name = "radioButtonPrecise";
 			this.radioButtonPrecise.Size = new System.Drawing.Size(60, 17);
 			this.radioButtonPrecise.TabIndex = 1;
@@ -98,16 +102,16 @@
 			this.floatTrackbarControlIOR.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControl1_ValueChanged);
 			this.floatTrackbarControlIOR.SliderDragStop += new Nuaj.Cirrus.Utility.FloatTrackbarControl.SliderDragStopEventHandler(this.floatTrackbarControlIOR_SliderDragStop);
 			// 
-			// panelColor
+			// panelSpecularTintNormal
 			// 
-			this.panelColor.BackColor = System.Drawing.Color.White;
-			this.panelColor.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-			this.panelColor.Enabled = false;
-			this.panelColor.Location = new System.Drawing.Point(94, 29);
-			this.panelColor.Name = "panelColor";
-			this.panelColor.Size = new System.Drawing.Size(48, 35);
-			this.panelColor.TabIndex = 4;
-			this.panelColor.Click += new System.EventHandler(this.panelColor_Click);
+			this.panelSpecularTintNormal.BackColor = System.Drawing.Color.White;
+			this.panelSpecularTintNormal.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+			this.panelSpecularTintNormal.Enabled = false;
+			this.panelSpecularTintNormal.Location = new System.Drawing.Point(94, 29);
+			this.panelSpecularTintNormal.Name = "panelSpecularTintNormal";
+			this.panelSpecularTintNormal.Size = new System.Drawing.Size(48, 35);
+			this.panelSpecularTintNormal.TabIndex = 4;
+			this.panelSpecularTintNormal.Click += new System.EventHandler(this.panelColor_Click);
 			// 
 			// colorDialog1
 			// 
@@ -162,20 +166,53 @@
 			// 
 			// panel1
 			// 
+			this.panel1.Controls.Add(this.panelUseEdgeTint);
 			this.panel1.Controls.Add(this.floatTrackbarControlIOR);
 			this.panel1.Controls.Add(this.radioButtonIOR);
 			this.panel1.Controls.Add(this.radioButtonSpecularTint);
-			this.panel1.Controls.Add(this.panelColor);
-			this.panel1.Location = new System.Drawing.Point(580, 61);
+			this.panel1.Controls.Add(this.panelSpecularTintNormal);
+			this.panel1.Location = new System.Drawing.Point(580, 58);
 			this.panel1.Name = "panel1";
-			this.panel1.Size = new System.Drawing.Size(243, 79);
+			this.panel1.Size = new System.Drawing.Size(243, 120);
 			this.panel1.TabIndex = 10;
+			// 
+			// panelUseEdgeTint
+			// 
+			this.panelUseEdgeTint.Controls.Add(this.checkBoxUseEdgeTint);
+			this.panelUseEdgeTint.Controls.Add(this.panelSpecularTintEdge);
+			this.panelUseEdgeTint.Enabled = false;
+			this.panelUseEdgeTint.Location = new System.Drawing.Point(0, 70);
+			this.panelUseEdgeTint.Name = "panelUseEdgeTint";
+			this.panelUseEdgeTint.Size = new System.Drawing.Size(173, 47);
+			this.panelUseEdgeTint.TabIndex = 5;
+			// 
+			// checkBoxUseEdgeTint
+			// 
+			this.checkBoxUseEdgeTint.AutoSize = true;
+			this.checkBoxUseEdgeTint.Location = new System.Drawing.Point(0, 3);
+			this.checkBoxUseEdgeTint.Name = "checkBoxUseEdgeTint";
+			this.checkBoxUseEdgeTint.Size = new System.Drawing.Size(94, 17);
+			this.checkBoxUseEdgeTint.TabIndex = 5;
+			this.checkBoxUseEdgeTint.Text = "Use Edge Tint";
+			this.checkBoxUseEdgeTint.UseVisualStyleBackColor = true;
+			this.checkBoxUseEdgeTint.CheckedChanged += new System.EventHandler(this.checkBoxUseEdgeTint_CheckedChanged);
+			// 
+			// panelSpecularTintEdge
+			// 
+			this.panelSpecularTintEdge.BackColor = System.Drawing.Color.Black;
+			this.panelSpecularTintEdge.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+			this.panelSpecularTintEdge.Enabled = false;
+			this.panelSpecularTintEdge.Location = new System.Drawing.Point(94, 3);
+			this.panelSpecularTintEdge.Name = "panelSpecularTintEdge";
+			this.panelSpecularTintEdge.Size = new System.Drawing.Size(48, 35);
+			this.panelSpecularTintEdge.TabIndex = 4;
+			this.panelSpecularTintEdge.Click += new System.EventHandler(this.panelEdgeTint_Click);
 			// 
 			// radioButtonIOR
 			// 
 			this.radioButtonIOR.AutoSize = true;
 			this.radioButtonIOR.Checked = true;
-			this.radioButtonIOR.Location = new System.Drawing.Point(0, 4);
+			this.radioButtonIOR.Location = new System.Drawing.Point(0, 5);
 			this.radioButtonIOR.Name = "radioButtonIOR";
 			this.radioButtonIOR.Size = new System.Drawing.Size(44, 17);
 			this.radioButtonIOR.TabIndex = 1;
@@ -283,6 +320,8 @@
 			this.outputPanel1.Location = new System.Drawing.Point(12, 35);
 			this.outputPanel1.Name = "outputPanel1";
 			this.outputPanel1.Size = new System.Drawing.Size(559, 377);
+			this.outputPanel1.SpecularTintEdge = System.Drawing.Color.Black;
+			this.outputPanel1.SpecularTintNormal = System.Drawing.Color.White;
 			this.outputPanel1.TabIndex = 0;
 			// 
 			// label3
@@ -355,6 +394,8 @@
 			this.Text = "Form1";
 			this.panel1.ResumeLayout(false);
 			this.panel1.PerformLayout();
+			this.panelUseEdgeTint.ResumeLayout(false);
+			this.panelUseEdgeTint.PerformLayout();
 			this.outputPanel1.ResumeLayout(false);
 			this.outputPanel1.PerformLayout();
 			this.ResumeLayout(false);
@@ -368,7 +409,7 @@
 		private System.Windows.Forms.RadioButton radioButtonSchlick;
 		private System.Windows.Forms.RadioButton radioButtonPrecise;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlIOR;
-		private System.Windows.Forms.Panel panelColor;
+		private System.Windows.Forms.Panel panelSpecularTintNormal;
 		private System.Windows.Forms.ColorDialog colorDialog1;
 		private System.Windows.Forms.OpenFileDialog openFileDialogRefract;
 		private System.Windows.Forms.Button buttonLoadData;
@@ -388,6 +429,9 @@
 		private System.Windows.Forms.Label label5;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlPeakFactor;
 		private System.Windows.Forms.Label label6;
+		private System.Windows.Forms.Panel panelUseEdgeTint;
+		private System.Windows.Forms.CheckBox checkBoxUseEdgeTint;
+		private System.Windows.Forms.Panel panelSpecularTintEdge;
 	}
 }
 

@@ -3,6 +3,8 @@
 // This is an experiment about Fresnel reflection and complex IOR
 //	• It uses Schlick's approximation or the exact formulation from Walter 2007 for dielectrics
 //	• I tried fiddling with metals and complex IORs but I don't remember arriving at anything good
+//		=> Instead, I implemented the "edge tint" specular color from the paper "Artist Friendly Metallic Fresnel" (2014) by Ole Gulbrandsen.
+//		http://jcgt.org/published/0003/04/03/paper.pdf 
 //
 // In the bottom panel:
 //	• I also compute the Fresnel diffuse reflectance which is the "total Fresnel reflectance" that
@@ -14,8 +16,6 @@
 //	• You can also choose to use the pre-computed BRDF table that also accounts for surface
 //		roughness (although it's still not clear why it makes a difference in specularly reflected
 //		light?)
-//
-// TODO: Read the paper "Artist Friendly Metallic Fresnel" (2014) by Ole Gulbrandsen and implement.
 //
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -83,17 +83,20 @@ namespace TestFresnel
 
 		private void radioButtonIOR_CheckedChanged( object sender, EventArgs e ) {
 			floatTrackbarControlIOR.Enabled = true;
-			panelColor.Enabled = false;
+			panelSpecularTintNormal.Enabled = false;
+			panelUseEdgeTint.Enabled = false;
 		}
 
 		private void radioButtonSpecularTint_CheckedChanged( object sender, EventArgs e ) {
 			floatTrackbarControlIOR.Enabled = false;
-			panelColor.Enabled = true;
+			panelSpecularTintNormal.Enabled = !checkBoxData.Checked;
+			panelUseEdgeTint.Enabled = !checkBoxData.Checked;
 		}
 
 		private void checkBoxData_CheckedChanged( object sender, EventArgs e ) {
 			floatTrackbarControlIOR.Enabled = !checkBoxData.Checked;
-			panelColor.Enabled = !checkBoxData.Checked;
+			panelSpecularTintNormal.Enabled = !checkBoxData.Checked;
+			panelUseEdgeTint.Enabled = !checkBoxData.Checked;
 			outputPanel1.FromData = checkBoxData.Checked;
 		}
 
@@ -119,7 +122,7 @@ namespace TestFresnel
 
 			outputPanel2.IOR = _Sender.Value;
 
-			panelColor.BackColor = IOR_to_Color( _Sender.Value, _Sender.Value, _Sender.Value );
+			panelSpecularTintNormal.BackColor = IOR_to_Color( _Sender.Value, _Sender.Value, _Sender.Value );
 		}
 
 		private void panelColor_Click( object sender, EventArgs e ) {
@@ -127,7 +130,7 @@ namespace TestFresnel
 			if ( colorDialog1.ShowDialog( this ) != DialogResult.OK )
 				return;
 
-			panelColor.BackColor = colorDialog1.Color;
+			panelSpecularTintNormal.BackColor = colorDialog1.Color;
 
 			float	F0_red = colorDialog1.Color.R / 255.0f;
 			float	F0_green = colorDialog1.Color.G / 255.0f;
@@ -143,8 +146,30 @@ namespace TestFresnel
 			outputPanel1.IOR_red = IOR_red;
 			outputPanel1.IOR_green = IOR_green;
 			outputPanel1.IOR_blue = IOR_blue;
+			outputPanel1.SpecularTintNormal = colorDialog1.Color;
 
 			outputPanel2.IOR = Math.Max( Math.Max( IOR_red, IOR_green ), IOR_blue );
+		}
+
+		private void checkBoxUseEdgeTint_CheckedChanged( object sender, EventArgs e ) {
+			if ( checkBoxUseEdgeTint.Checked ) {
+				outputPanel1.SpecularTintNormal = panelSpecularTintNormal.BackColor;
+				outputPanel1.SpecularTintEdge = panelSpecularTintEdge.BackColor;
+				outputPanel1.FresnelType = OutputPanel.FRESNEL_TYPE.ARTIST_FRIENDLY;
+				panelSpecularTintEdge.Enabled = true;
+			} else {
+				outputPanel1.FresnelType = radioButtonSchlick.Checked ? OutputPanel.FRESNEL_TYPE.SCHLICK : OutputPanel.FRESNEL_TYPE.PRECISE;
+				panelSpecularTintEdge.Enabled = false;
+			}
+		}
+
+		private void panelEdgeTint_Click( object sender, EventArgs e ) {
+			colorDialog1.Color = panelSpecularTintEdge.BackColor;
+			if ( colorDialog1.ShowDialog( this ) != DialogResult.OK )
+				return;
+
+			panelSpecularTintEdge.BackColor = colorDialog1.Color;
+			outputPanel1.SpecularTintEdge = colorDialog1.Color;
 		}
 
 		private void buttonLoadData_Click( object sender, EventArgs e ) {
