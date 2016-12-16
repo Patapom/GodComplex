@@ -45,11 +45,13 @@
 			this.floatTrackbarControlGamma = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label10 = new System.Windows.Forms.Label();
 			this.checkBoxViewsRGB = new System.Windows.Forms.CheckBox();
-			this.buttonLoadNormalMap = new System.Windows.Forms.Button();
-			this.viewportPanelResult = new GenerateSelfShadowedBumpMap.ImagePanel(this.components);
-			this.outputPanelInputHeightMap = new GenerateSelfShadowedBumpMap.ImagePanel(this.components);
-			this.buttonClearNormalMap = new System.Windows.Forms.Button();
+			this.viewportPanelResult = new GenerateSelfShadowedBumpMap.ImagePanel();
+			this.outputPanelInputHeightMap = new GenerateSelfShadowedBumpMap.ImagePanel();
+			this.imagePanelNormalMap = new GenerateSelfShadowedBumpMap.ImagePanel();
+			this.contextMenuStripNormal = new System.Windows.Forms.ContextMenuStrip(this.components);
+			this.clearNormalToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.panelParameters.SuspendLayout();
+			this.contextMenuStripNormal.SuspendLayout();
 			this.SuspendLayout();
 			// 
 			// checkBoxWrap
@@ -319,7 +321,7 @@
 			// label8
 			// 
 			this.label8.AutoSize = true;
-			this.label8.Location = new System.Drawing.Point(538, 363);
+			this.label8.Location = new System.Drawing.Point(579, 363);
 			this.label8.Name = "label8";
 			this.label8.Size = new System.Drawing.Size(56, 13);
 			this.label8.TabIndex = 3;
@@ -345,7 +347,7 @@
 			// label9
 			// 
 			this.label9.AutoSize = true;
-			this.label9.Location = new System.Drawing.Point(538, 389);
+			this.label9.Location = new System.Drawing.Point(579, 389);
 			this.label9.Name = "label9";
 			this.label9.Size = new System.Drawing.Size(46, 13);
 			this.label9.TabIndex = 3;
@@ -371,7 +373,7 @@
 			// label10
 			// 
 			this.label10.AutoSize = true;
-			this.label10.Location = new System.Drawing.Point(538, 415);
+			this.label10.Location = new System.Drawing.Point(579, 415);
 			this.label10.Name = "label10";
 			this.label10.Size = new System.Drawing.Size(43, 13);
 			this.label10.TabIndex = 3;
@@ -392,18 +394,9 @@
 			this.checkBoxViewsRGB.Visible = false;
 			this.checkBoxViewsRGB.CheckedChanged += new System.EventHandler(this.checkBoxViewsRGB_CheckedChanged);
 			// 
-			// buttonLoadNormalMap
-			// 
-			this.buttonLoadNormalMap.Location = new System.Drawing.Point(530, 499);
-			this.buttonLoadNormalMap.Name = "buttonLoadNormalMap";
-			this.buttonLoadNormalMap.Size = new System.Drawing.Size(75, 23);
-			this.buttonLoadNormalMap.TabIndex = 10;
-			this.buttonLoadNormalMap.Text = "Load Normal";
-			this.buttonLoadNormalMap.UseVisualStyleBackColor = true;
-			this.buttonLoadNormalMap.Click += new System.EventHandler(this.buttonLoadNormalMap_Click);
-			// 
 			// viewportPanelResult
 			// 
+			this.viewportPanelResult.Bitmap = null;
 			this.viewportPanelResult.Brightness = 0F;
 			this.viewportPanelResult.Contrast = 0F;
 			this.viewportPanelResult.Gamma = 0F;
@@ -418,6 +411,7 @@
 			// outputPanelInputHeightMap
 			// 
 			this.outputPanelInputHeightMap.AllowDrop = true;
+			this.outputPanelInputHeightMap.Bitmap = null;
 			this.outputPanelInputHeightMap.Brightness = 0F;
 			this.outputPanelInputHeightMap.Contrast = 0F;
 			this.outputPanelInputHeightMap.Font = new System.Drawing.Font("Microsoft Sans Serif", 24F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
@@ -427,29 +421,51 @@
 			this.outputPanelInputHeightMap.Name = "outputPanelInputHeightMap";
 			this.outputPanelInputHeightMap.Size = new System.Drawing.Size(512, 512);
 			this.outputPanelInputHeightMap.TabIndex = 0;
-			this.outputPanelInputHeightMap.ViewLinear = true;
+			this.outputPanelInputHeightMap.ViewLinear = false;
 			this.outputPanelInputHeightMap.Click += new System.EventHandler(this.outputPanelInputHeightMap_Click);
 			this.outputPanelInputHeightMap.DragDrop += new System.Windows.Forms.DragEventHandler(this.outputPanelInputHeightMap_DragDrop);
 			this.outputPanelInputHeightMap.DragEnter += new System.Windows.Forms.DragEventHandler(this.outputPanelInputHeightMap_DragEnter);
 			// 
-			// buttonClearNormalMap
+			// imagePanelNormalMap
 			// 
-			this.buttonClearNormalMap.Location = new System.Drawing.Point(530, 470);
-			this.buttonClearNormalMap.Name = "buttonClearNormalMap";
-			this.buttonClearNormalMap.Size = new System.Drawing.Size(75, 23);
-			this.buttonClearNormalMap.TabIndex = 10;
-			this.buttonClearNormalMap.Text = "Clear Normal";
-			this.buttonClearNormalMap.UseVisualStyleBackColor = true;
-			this.buttonClearNormalMap.Click += new System.EventHandler(this.buttonClearNormalMap_Click);
+			this.imagePanelNormalMap.AllowDrop = true;
+			this.imagePanelNormalMap.Bitmap = null;
+			this.imagePanelNormalMap.Brightness = 0F;
+			this.imagePanelNormalMap.ContextMenuStrip = this.contextMenuStripNormal;
+			this.imagePanelNormalMap.Contrast = 0F;
+			this.imagePanelNormalMap.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F);
+			this.imagePanelNormalMap.Gamma = 0F;
+			this.imagePanelNormalMap.Location = new System.Drawing.Point(533, 338);
+			this.imagePanelNormalMap.MessageOnEmpty = "Click to load a normal map,\r\nor drag and drop...";
+			this.imagePanelNormalMap.Name = "imagePanelNormalMap";
+			this.imagePanelNormalMap.Size = new System.Drawing.Size(186, 186);
+			this.imagePanelNormalMap.TabIndex = 0;
+			this.imagePanelNormalMap.ViewLinear = false;
+			this.imagePanelNormalMap.Click += new System.EventHandler(this.outputPanelInputNormalMap_Click);
+			this.imagePanelNormalMap.DragDrop += new System.Windows.Forms.DragEventHandler(this.outputPanelInputNormalMap_DragDrop);
+			this.imagePanelNormalMap.DragEnter += new System.Windows.Forms.DragEventHandler(this.outputPanelInputNormalMap_DragEnter);
+			// 
+			// contextMenuStripNormal
+			// 
+			this.contextMenuStripNormal.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.clearNormalToolStripMenuItem});
+			this.contextMenuStripNormal.Name = "contextMenuStripNormal";
+			this.contextMenuStripNormal.Size = new System.Drawing.Size(145, 26);
+			// 
+			// clearNormalToolStripMenuItem
+			// 
+			this.clearNormalToolStripMenuItem.Name = "clearNormalToolStripMenuItem";
+			this.clearNormalToolStripMenuItem.Size = new System.Drawing.Size(144, 22);
+			this.clearNormalToolStripMenuItem.Text = "Clear Normal";
+			this.clearNormalToolStripMenuItem.Click += new System.EventHandler(this.clearNormalToolStripMenuItem_Click);
 			// 
 			// GeneratorForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1379, 536);
+			this.Controls.Add(this.imagePanelNormalMap);
 			this.Controls.Add(this.panelParameters);
-			this.Controls.Add(this.buttonClearNormalMap);
-			this.Controls.Add(this.buttonLoadNormalMap);
 			this.Controls.Add(this.buttonReload);
 			this.Controls.Add(this.progressBar);
 			this.Controls.Add(this.checkBoxViewsRGB);
@@ -467,6 +483,7 @@
 			this.Text = "Ambient Occlusion Map Generator";
 			this.panelParameters.ResumeLayout(false);
 			this.panelParameters.PerformLayout();
+			this.contextMenuStripNormal.ResumeLayout(false);
 			this.ResumeLayout(false);
 			this.PerformLayout();
 
@@ -505,8 +522,9 @@
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlGamma;
 		private System.Windows.Forms.Label label10;
 		private System.Windows.Forms.CheckBox checkBoxViewsRGB;
-		private System.Windows.Forms.Button buttonLoadNormalMap;
-		private System.Windows.Forms.Button buttonClearNormalMap;
+		private ImagePanel imagePanelNormalMap;
+		private System.Windows.Forms.ContextMenuStrip contextMenuStripNormal;
+		private System.Windows.Forms.ToolStripMenuItem clearNormalToolStripMenuItem;
 	}
 }
 

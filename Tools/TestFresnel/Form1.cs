@@ -1,4 +1,26 @@
-﻿using System;
+﻿//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+// This is an experiment about Fresnel reflection and complex IOR
+//	• It uses Schlick's approximation or the exact formulation from Walter 2007 for dielectrics
+//	• I tried fiddling with metals and complex IORs but I don't remember arriving at anything good
+//
+// In the bottom panel:
+//	• I also compute the Fresnel diffuse reflectance which is the "total Fresnel reflectance" that
+//		gets the ratio of reflected agains refracted rays for the entire hemisphere of directions
+//		=> It's super useful to known how much *diffuse* indirect lighting must be reflected
+//			(actually, it should be what "has not been specularly reflected", so the complement of
+//			 the integral of all Fresnel reflectance coefficients for the entire hemisphere)
+//
+//	• You can also choose to use the pre-computed BRDF table that also accounts for surface
+//		roughness (although it's still not clear why it makes a difference in specularly reflected
+//		light?)
+//
+// TODO: Read the paper "Artist Friendly Metallic Fresnel" (2014) by Ole Gulbrandsen and implement.
+//
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;

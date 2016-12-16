@@ -533,3 +533,5 @@
 /Tools/TestSHIrradiance/bin
 /Tools/TestSHIrradiance/obj
 /Tools/TestSHIrradiance/Images/grace-new.hdr
+/Tools/TestFourier/obj
+/Tools/TestFourier/bin

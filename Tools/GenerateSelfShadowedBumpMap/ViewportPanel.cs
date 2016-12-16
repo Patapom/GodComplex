@@ -11,6 +11,14 @@ using System.Drawing.Imaging;
 namespace GenerateSelfShadowedBumpMap
 {
 	public partial class ViewportPanel : Panel {
+		public ViewportPanel( IContainer container )
+		{
+			container.Add( this );
+			InitializeComponent();
+			OnSizeChanged( EventArgs.Empty );
+		}
+
+#if !NO64
 		#region FIELDS
 
 		private Renderer.Device	m_Device;
@@ -28,13 +36,6 @@ namespace GenerateSelfShadowedBumpMap
 		#endregion
 
 		#region METHODS
-
-		public ViewportPanel( IContainer container )
-		{
-			container.Add( this );
-			InitializeComponent();
-			OnSizeChanged( EventArgs.Empty );
-		}
 
 		protected override void OnSizeChanged( EventArgs e )
 		{
@@ -58,5 +59,6 @@ namespace GenerateSelfShadowedBumpMap
 		}
 
 		#endregion
+#endif
 	}
 }

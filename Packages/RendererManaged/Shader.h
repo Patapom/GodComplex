@@ -44,7 +44,7 @@ namespace Renderer {
 
 			const char*	shaderSourceCode = nullptr;
 			if ( !Shader::LoadFromBinary ) {
-				if ( _shaderFileName->Exists )
+				if ( !_shaderFileName->Exists )
 					throw gcnew Exception( "Shader file \"" + _shaderFileName + "\" does not exist!" );
 
 				StreamReader^	R = _shaderFileName->OpenText();

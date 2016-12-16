@@ -22,9 +22,6 @@ namespace GenerateSelfShadowedBumpMap
 			set { m_MessageOnEmpty = value; Invalidate(); }
 		}
 
- 		private ImageUtility.ColorProfile	m_ProfilesRGB = new ImageUtility.ColorProfile( ImageUtility.ColorProfile.STANDARD_PROFILE.sRGB );
-		private ImageUtility.ColorProfile	m_ProfileLinear = new ImageUtility.ColorProfile( ImageUtility.ColorProfile.STANDARD_PROFILE.LINEAR );
-
 		private float				m_Brightness = 0.0f;
 		private float				m_Contrast = 0.0f;
 		private float				m_Gamma = 0.0f;
@@ -95,9 +92,14 @@ namespace GenerateSelfShadowedBumpMap
 			}
 		}
 
-		public ImagePanel( IContainer container )
+#if !NO64
+ 		private ImageUtility.ColorProfile	m_ProfilesRGB = new ImageUtility.ColorProfile( ImageUtility.ColorProfile.STANDARD_PROFILE.sRGB );
+		private ImageUtility.ColorProfile	m_ProfileLinear = new ImageUtility.ColorProfile( ImageUtility.ColorProfile.STANDARD_PROFILE.LINEAR );
+
+//		public ImagePanel( IContainer container )
+		public ImagePanel()
 		{
-			container.Add( this );
+//			container.Add( this );
 			InitializeComponent();
 		}
 
@@ -125,6 +127,35 @@ namespace GenerateSelfShadowedBumpMap
 				}
 
 			return Result;
+		}
+#endif
+
+		protected override void OnSizeChanged( EventArgs e )
+		{
+			base.OnSizeChanged( e );
+			Invalidate();
+		}
+
+		protected override void OnPaintBackground( PaintEventArgs e )
+		{
+//			base.OnPaintBackground( e );
+		}
+
+		protected override void OnPaint( PaintEventArgs e )
+		{
+			base.OnPaint( e );
+
+			e.Graphics.FillRectangle( Brushes.Black, 0, 0, Width, Height );
+			if ( m_Bitmap != null )
+			{
+				RectangleF	Rect = ImageClientRect;
+				e.Graphics.DrawImage( m_Bitmap, Rect, new RectangleF( 0, 0, m_Bitmap.Width, m_Bitmap.Height ), GraphicsUnit.Pixel );
+			}
+			else if ( m_MessageOnEmpty != null )
+			{
+				SizeF	MessageSize = e.Graphics.MeasureString( m_MessageOnEmpty, Font, Width );
+				e.Graphics.DrawString( m_MessageOnEmpty, Font, Brushes.White, 0.5f * (Width-MessageSize.Width), 0.5f * (Height-MessageSize.Height) );
+			}
 		}
 
 		private unsafe void	UpdateBitmap()
@@ -170,34 +201,6 @@ namespace GenerateSelfShadowedBumpMap
 // 			m_Bitmap.UnlockBits( LockedBitmap );
 
 			Refresh();
-		}
-
-		protected override void OnSizeChanged( EventArgs e )
-		{
-			base.OnSizeChanged( e );
-			Invalidate();
-		}
-
-		protected override void OnPaintBackground( PaintEventArgs e )
-		{
-//			base.OnPaintBackground( e );
-		}
-
-		protected override void OnPaint( PaintEventArgs e )
-		{
-			base.OnPaint( e );
-
-			e.Graphics.FillRectangle( Brushes.Black, 0, 0, Width, Height );
-			if ( m_Bitmap != null )
-			{
-				RectangleF	Rect = ImageClientRect;
-				e.Graphics.DrawImage( m_Bitmap, Rect, new RectangleF( 0, 0, m_Bitmap.Width, m_Bitmap.Height ), GraphicsUnit.Pixel );
-			}
-			else if ( m_MessageOnEmpty != null )
-			{
-				SizeF	MessageSize = e.Graphics.MeasureString( m_MessageOnEmpty, Font );
-				e.Graphics.DrawString( m_MessageOnEmpty, Font, Brushes.White, 0.5f * (Width-MessageSize.Width), 0.5f * (Height-MessageSize.Height) );
-			}
 		}
 	}
 }

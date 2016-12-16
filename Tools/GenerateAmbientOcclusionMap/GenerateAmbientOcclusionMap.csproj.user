@@ -38,4 +38,17 @@
     <StartWorkingDirectory>../../</StartWorkingDirectory>
     <EnableUnmanagedDebugging>true</EnableUnmanagedDebugging>
   </PropertyGroup>
+  <PropertyGroup>
+    <PublishUrlHistory>Publish\|D:\Workspaces\GodComplex\Tools\GenerateAmbientOcclusionMap\AutoPublish\|D:\Workspaces\GodComplex\Tools\GenerateAmbientOcclusionMap\Publish\|publish\</PublishUrlHistory>
+    <InstallUrlHistory />
+    <SupportUrlHistory />
+    <UpdateUrlHistory />
+    <BootstrapperUrlHistory />
+    <ErrorReportUrlHistory />
+    <FallbackCulture>en-US</FallbackCulture>
+    <VerifyUploadedFiles>false</VerifyUploadedFiles>
+  </PropertyGroup>
+  <PropertyGroup>
+    <EnableSecurityDebugging>false</EnableSecurityDebugging>
+  </PropertyGroup>
 </Project>

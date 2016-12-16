@@ -345,7 +345,7 @@ namespace GenerateTranslucencyMap
 					for ( uint Y=0; Y < H; Y++ ) {
 						m_ImageSourceThickness.ReadScanline( Y, scanline );
 						for ( uint X=0; X < W; X++ ) {
-							Wr.Write( scanline[X].y );
+							Wr.Write( scanline[X].x );
 						}
 					}
 
@@ -478,7 +478,7 @@ namespace GenerateTranslucencyMap
 				// Build the source texture assuming the image's color profile
 				float4[]	scanline = new float4[W];
 				float4		linearRGB = float4.Zero;
-				ImageUtility.ColorProfile	imageProfile = m_imageSourceTransmittance.ColorProfile;
+				ImageUtility.ColorProfile	imageProfile = m_imageSourceAlbedo.ColorProfile;
 //				ImageUtility.ColorProfile	imageProfile = m_sRGBProfile;
 
 // 				float4[,]	ContentRGB = new float4[W,H];

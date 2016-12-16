@@ -126,7 +126,7 @@
 			this.floatTrackbarControlScatteringCoefficient.RangeMin = 0.001F;
 			this.floatTrackbarControlScatteringCoefficient.Size = new System.Drawing.Size(200, 20);
 			this.floatTrackbarControlScatteringCoefficient.TabIndex = 25;
-			this.floatTrackbarControlScatteringCoefficient.Value = 1F;
+			this.floatTrackbarControlScatteringCoefficient.Value = 2.0F;
 			this.floatTrackbarControlScatteringCoefficient.VisibleRangeMax = 2F;
 			this.floatTrackbarControlScatteringCoefficient.VisibleRangeMin = 0.001F;
 			// 
@@ -140,7 +140,7 @@
 			this.floatTrackbarControlThickness.RangeMin = 0.01F;
 			this.floatTrackbarControlThickness.Size = new System.Drawing.Size(200, 20);
 			this.floatTrackbarControlThickness.TabIndex = 24;
-			this.floatTrackbarControlThickness.Value = 2F;
+			this.floatTrackbarControlThickness.Value = 1F;
 			this.floatTrackbarControlThickness.VisibleRangeMax = 4F;
 			this.floatTrackbarControlThickness.VisibleRangeMin = 0.01F;
 			// 
@@ -334,8 +334,8 @@
 			this.floatTrackbarControlAbsorptionCoefficient.RangeMin = 0.001F;
 			this.floatTrackbarControlAbsorptionCoefficient.Size = new System.Drawing.Size(200, 20);
 			this.floatTrackbarControlAbsorptionCoefficient.TabIndex = 25;
-			this.floatTrackbarControlAbsorptionCoefficient.Value = 0.1F;
-			this.floatTrackbarControlAbsorptionCoefficient.VisibleRangeMax = 2F;
+			this.floatTrackbarControlAbsorptionCoefficient.Value = 0.025F;
+			this.floatTrackbarControlAbsorptionCoefficient.VisibleRangeMax = 0.1F;
 			this.floatTrackbarControlAbsorptionCoefficient.VisibleRangeMin = 0.001F;
 			// 
 			// label2
@@ -551,6 +551,7 @@
 			this.Controls.Add(this.imagePanelThicknessMap);
 			this.Controls.Add(this.label4);
 			this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedToolWindow;
+			this.ShowInTaskbar = true;
 			this.Name = "GeneratorForm";
 			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
 			this.Text = "Directional Translucency Map Generator";

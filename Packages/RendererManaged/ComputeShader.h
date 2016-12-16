@@ -22,7 +22,7 @@ namespace Renderer {
 
 			const char*	shaderSourceCode = nullptr;
 			if ( !::Shader::ms_LoadFromBinary ) {
-				if ( _shaderFileName->Exists )
+				if ( !_shaderFileName->Exists )
 					throw gcnew Exception( "Compute shader file \"" + _shaderFileName + "\" does not exist!" );
 
 				System::IO::StreamReader^	R = _shaderFileName->OpenText();

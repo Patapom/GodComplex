@@ -142,7 +142,7 @@ namespace GenerateSelfShadowedBumpMap
 				integerTrackbarControlRaysCount_SliderDragStop( integerTrackbarControlRaysCount, 0 );
 
 				// Create the default, planar normal map
-				buttonClearNormalMap_Click( null, EventArgs.Empty );
+				clearNormalToolStripMenuItem_Click( null, EventArgs.Empty );
 
 			} catch ( Exception _e ) {
 				MessageBox( "Failed to create DX11 device and default shaders:\r\n", _e );
@@ -325,6 +325,7 @@ namespace GenerateSelfShadowedBumpMap
 				// Load the source image
 				// Assume it's in linear space (all normal maps should be in linear space, with the default value being (0.5, 0.5, 1))
 				m_imageSourceNormal = new ImageUtility.ImageFile( _FileName );
+				imagePanelNormalMap.Bitmap = m_imageSourceNormal.AsBitmap;
 
 				uint	W = m_imageSourceNormal.Width;
 				uint	H = m_imageSourceNormal.Height;
@@ -672,6 +673,8 @@ namespace GenerateSelfShadowedBumpMap
 			}
 		}
 
+		#region Height Map
+
 		private void outputPanelInputHeightMap_Click( object sender, EventArgs e ) {
 			string	OldFileName = GetRegKey( "HeightMapFileName", System.IO.Path.Combine( m_ApplicationPath, "Example.jpg" ) );
 			openFileDialogImage.InitialDirectory = System.IO.Path.GetFullPath( OldFileName );
@@ -682,34 +685,6 @@ namespace GenerateSelfShadowedBumpMap
 			SetRegKey( "HeightMapFileName", openFileDialogImage.FileName );
 
 			LoadHeightMap( new System.IO.FileInfo( openFileDialogImage.FileName ) );
-		}
-
-		private void buttonClearNormalMap_Click( object sender, EventArgs e ) {
-			if ( m_TextureSourceNormal != null )
-				m_TextureSourceNormal.Dispose();
-
-			// Create the default, planar normal map
-			Renderer.PixelsBuffer	SourceNormalMap = new Renderer.PixelsBuffer( 4*4 );
-			using ( System.IO.BinaryWriter Wr = SourceNormalMap.OpenStreamWrite() ) {
-				Wr.Write( 0.0f );
-				Wr.Write( 0.0f );
-				Wr.Write( 1.0f );
-				Wr.Write( 1.0f );
-			}
-
-			m_TextureSourceNormal = new Renderer.Texture2D( m_device, 1, 1, 1, 1, Renderer.PIXEL_FORMAT.RGBA32_FLOAT, false, false, new Renderer.PixelsBuffer[] { SourceNormalMap } );
-		}
-
-		private void buttonLoadNormalMap_Click( object sender, EventArgs e ) {
-			string	OldFileName = GetRegKey( "NormalMapFileName", System.IO.Path.Combine( m_ApplicationPath, "Example.jpg" ) );
-			openFileDialogImage.InitialDirectory = System.IO.Path.GetFullPath( OldFileName );
-			openFileDialogImage.FileName = System.IO.Path.GetFileName( OldFileName );
-			if ( openFileDialogImage.ShowDialog( this ) != DialogResult.OK )
-				return;
-
-			SetRegKey( "NormalMapFileName", openFileDialogImage.FileName );
-
-			LoadNormalMap( new System.IO.FileInfo( openFileDialogImage.FileName ) );
 		}
 
 		private string	m_DraggedFileName = null;
@@ -726,19 +701,7 @@ namespace GenerateSelfShadowedBumpMap
 
 			string	DraggedFileName = (data as string[])[0];
 
-			string	Extension = System.IO.Path.GetExtension( DraggedFileName ).ToLower();
-			if (	Extension == ".jpg"
-				||	Extension == ".jpeg"
-				||	Extension == ".png"
-				||	Extension == ".tga"
-				||	Extension == ".bmp"
-				||	Extension == ".tif"
-				||	Extension == ".tiff"
-				||	Extension == ".hdr"
-				||	Extension == ".crw"
-				||	Extension == ".dng"
-				)
-			{
+			if ( ImageUtility.ImageFile.GetFileTypeFromFileNameOnly( new System.IO.FileInfo( DraggedFileName ) ) != ImageUtility.ImageFile.FILE_FORMAT.UNKNOWN ) {
 				m_DraggedFileName = DraggedFileName;	// Supported!
 				e.Effect = DragDropEffects.Copy;
 			}
@@ -748,6 +711,66 @@ namespace GenerateSelfShadowedBumpMap
 			if ( m_DraggedFileName != null )
 				LoadHeightMap( new System.IO.FileInfo( m_DraggedFileName ) );
 		}
+
+		#endregion
+
+		#region Normal Map
+
+		private void outputPanelInputNormalMap_Click( object sender, EventArgs e ) {
+			string	OldFileName = GetRegKey( "NormalMapFileName", System.IO.Path.Combine( m_ApplicationPath, "Example.jpg" ) );
+			openFileDialogImage.InitialDirectory = System.IO.Path.GetFullPath( OldFileName );
+			openFileDialogImage.FileName = System.IO.Path.GetFileName( OldFileName );
+			if ( openFileDialogImage.ShowDialog( this ) != DialogResult.OK )
+				return;
+
+			SetRegKey( "NormalMapFileName", openFileDialogImage.FileName );
+
+			LoadNormalMap( new System.IO.FileInfo( openFileDialogImage.FileName ) );
+		}
+
+		private void outputPanelInputNormalMap_DragEnter( object sender, DragEventArgs e ) {
+			m_DraggedFileName = null;
+			if ( (e.AllowedEffect & DragDropEffects.Copy) != DragDropEffects.Copy )
+				return;
+
+			Array	data = ((IDataObject) e.Data).GetData( "FileNameW" ) as Array;
+			if ( data == null || data.Length != 1 )
+				return;
+			if ( !(data.GetValue(0) is String) )
+				return;
+
+			string	DraggedFileName = (data as string[])[0];
+
+			if ( ImageUtility.ImageFile.GetFileTypeFromFileNameOnly( new System.IO.FileInfo( DraggedFileName ) ) != ImageUtility.ImageFile.FILE_FORMAT.UNKNOWN ) {
+				m_DraggedFileName = DraggedFileName;	// Supported!
+				e.Effect = DragDropEffects.Copy;
+			}
+		}
+
+		private void outputPanelInputNormalMap_DragDrop( object sender, DragEventArgs e ) {
+			if ( m_DraggedFileName != null )
+				LoadNormalMap( new System.IO.FileInfo( m_DraggedFileName ) );
+		}
+
+		private void clearNormalToolStripMenuItem_Click( object sender, EventArgs e ) {
+			if ( m_TextureSourceNormal != null )
+				m_TextureSourceNormal.Dispose();
+			m_TextureSourceNormal = null;
+			imagePanelNormalMap.Bitmap = null;
+
+			// Create the default, planar normal map
+			Renderer.PixelsBuffer	SourceNormalMap = new Renderer.PixelsBuffer( 4*4 );
+			using ( System.IO.BinaryWriter Wr = SourceNormalMap.OpenStreamWrite() ) {
+				Wr.Write( 0.0f );
+				Wr.Write( 0.0f );
+				Wr.Write( 1.0f );
+				Wr.Write( 1.0f );
+			}
+
+			m_TextureSourceNormal = new Renderer.Texture2D( m_device, 1, 1, 1, 1, Renderer.PIXEL_FORMAT.RGBA32_FLOAT, false, false, new Renderer.PixelsBuffer[] { SourceNormalMap } );
+		}
+
+		#endregion
 
 		private void buttonReload_Click( object sender, EventArgs e ) {
 			m_device.ReloadModifiedShaders();

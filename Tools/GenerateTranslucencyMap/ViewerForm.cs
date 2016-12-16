@@ -13,8 +13,7 @@ using SharpMath;
 
 namespace GenerateTranslucencyMap
 {
-	public partial class ViewerForm : Form
-	{
+	public partial class ViewerForm : Form {
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
 		private struct	CBDisplay {
 			public uint		_Width;
