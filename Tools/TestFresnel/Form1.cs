@@ -68,26 +68,30 @@ namespace TestFresnel
 						m_IntegralSpecularReflection[i,0] = R.ReadSingle();
 						m_IntegralSpecularReflection[i,1] = R.ReadSingle();
 					}
-			outputPanel2.m_Table = m_IntegralSpecularReflection;
+			outputPanelDiffuseFresnelReflectance.m_Table = m_IntegralSpecularReflection;
 		}
 
 		private void radioButtonSchlick_CheckedChanged( object sender, EventArgs e ) {
-			outputPanel1.FresnelType = OutputPanel.FRESNEL_TYPE.SCHLICK;
-			outputPanel2.FresnelType = OutputPanel2.FRESNEL_TYPE.SCHLICK;
+			outputPanelFresnelGraph.FresnelType = PanelFresnelReflectance.FRESNEL_TYPE.SCHLICK;
+			outputPanelDiffuseFresnelReflectance.FresnelType = PanelDiffuseFresnelReflectance.FRESNEL_TYPE.SCHLICK;
 		}
 
 		private void radioButtonPrecise_CheckedChanged( object sender, EventArgs e ) {
-			outputPanel1.FresnelType = OutputPanel.FRESNEL_TYPE.PRECISE;
-			outputPanel2.FresnelType = OutputPanel2.FRESNEL_TYPE.PRECISE;
+			outputPanelFresnelGraph.FresnelType = PanelFresnelReflectance.FRESNEL_TYPE.PRECISE;
+			outputPanelDiffuseFresnelReflectance.FresnelType = PanelDiffuseFresnelReflectance.FRESNEL_TYPE.PRECISE;
 		}
 
 		private void radioButtonIOR_CheckedChanged( object sender, EventArgs e ) {
+			outputPanelFresnelGraph.IORSource = PanelFresnelReflectance.IOR_SOURCE.IOR;
+//			outputPanelDiffuseFresnelReflectance.IORSource = PanelFresnelReflectance.IOR_SOURCE.IOR;
 			floatTrackbarControlIOR.Enabled = true;
 			panelSpecularTintNormal.Enabled = false;
 			panelUseEdgeTint.Enabled = false;
 		}
 
 		private void radioButtonSpecularTint_CheckedChanged( object sender, EventArgs e ) {
+			outputPanelFresnelGraph.IORSource = PanelFresnelReflectance.IOR_SOURCE.F0;
+//			outputPanelDiffuseFresnelReflectance.IORSource = PanelFresnelReflectance.IOR_SOURCE.F0;
 			floatTrackbarControlIOR.Enabled = false;
 			panelSpecularTintNormal.Enabled = !checkBoxData.Checked;
 			panelUseEdgeTint.Enabled = !checkBoxData.Checked;
@@ -97,7 +101,12 @@ namespace TestFresnel
 			floatTrackbarControlIOR.Enabled = !checkBoxData.Checked;
 			panelSpecularTintNormal.Enabled = !checkBoxData.Checked;
 			panelUseEdgeTint.Enabled = !checkBoxData.Checked;
-			outputPanel1.FromData = checkBoxData.Checked;
+			outputPanelFresnelGraph.FromData = checkBoxData.Checked;
+		}
+
+		private void checkBoxUseEdgeTint_CheckedChanged( object sender, EventArgs e ) {
+			outputPanelFresnelGraph.UseEdgeTint = checkBoxUseEdgeTint.Checked;
+			panelSpecularTintEdge.Enabled = checkBoxUseEdgeTint.Checked;
 		}
 
 		Color	IOR_to_Color( float _IOR_red, float _IOR_green, float _IOR_blue ) {
@@ -111,26 +120,32 @@ namespace TestFresnel
 
 		private void floatTrackbarControl1_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue ) {
 
-			outputPanel2.MaxIOR = floatTrackbarControlIOR.VisibleRangeMax;	// So we match the visible range
+			outputPanelDiffuseFresnelReflectance.MaxIOR = floatTrackbarControlIOR.VisibleRangeMax;	// So we match the visible range
 
 			if ( !floatTrackbarControlIOR.Enabled )
 				return;	// Changed externally from specular tint modification, don't change panels' values!
 
-			outputPanel1.IOR_red = _Sender.Value;
-			outputPanel1.IOR_green = _Sender.Value;
-			outputPanel1.IOR_blue = _Sender.Value;
+			outputPanelFresnelGraph.IOR_red = _Sender.Value;
+			outputPanelFresnelGraph.IOR_green = _Sender.Value;
+			outputPanelFresnelGraph.IOR_blue = _Sender.Value;
 
-			outputPanel2.IOR = _Sender.Value;
+			outputPanelDiffuseFresnelReflectance.IOR = _Sender.Value;
 
 			panelSpecularTintNormal.BackColor = IOR_to_Color( _Sender.Value, _Sender.Value, _Sender.Value );
 		}
 
 		private void panelColor_Click( object sender, EventArgs e ) {
-			colorDialog1.Color = IOR_to_Color( outputPanel1.IOR_red, outputPanel1.IOR_green, outputPanel1.IOR_blue );
+// 			colorDialog1.Color = IOR_to_Color( outputPanelFresnelGraph.IOR_red, outputPanelFresnelGraph.IOR_green, outputPanelFresnelGraph.IOR_blue );
+			colorDialog1.Color = panelSpecularTintNormal.BackColor;
 			if ( colorDialog1.ShowDialog( this ) != DialogResult.OK )
 				return;
 
 			panelSpecularTintNormal.BackColor = colorDialog1.Color;
+
+// 			floatTrackbarControlIOR.Value = Math.Max( Math.Max( IOR_red, IOR_green ), IOR_blue );
+// 			floatTrackbarControlIOR.VisibleRangeMax = Math.Max( 10.0f, 2.0f * floatTrackbarControlIOR.Value );
+// 
+			outputPanelFresnelGraph.SpecularTintNormal = colorDialog1.Color;
 
 			float	F0_red = colorDialog1.Color.R / 255.0f;
 			float	F0_green = colorDialog1.Color.G / 255.0f;
@@ -139,28 +154,10 @@ namespace TestFresnel
 			float	IOR_red = F0_to_IOR( F0_red );
 			float	IOR_green = F0_to_IOR( F0_green );
 			float	IOR_blue = F0_to_IOR( F0_blue );
-
-			floatTrackbarControlIOR.Value = Math.Max( Math.Max( IOR_red, IOR_green ), IOR_blue );
-			floatTrackbarControlIOR.VisibleRangeMax = Math.Max( 10.0f, 2.0f * floatTrackbarControlIOR.Value );
-
-			outputPanel1.IOR_red = IOR_red;
-			outputPanel1.IOR_green = IOR_green;
-			outputPanel1.IOR_blue = IOR_blue;
-			outputPanel1.SpecularTintNormal = colorDialog1.Color;
-
-			outputPanel2.IOR = Math.Max( Math.Max( IOR_red, IOR_green ), IOR_blue );
-		}
-
-		private void checkBoxUseEdgeTint_CheckedChanged( object sender, EventArgs e ) {
-			if ( checkBoxUseEdgeTint.Checked ) {
-				outputPanel1.SpecularTintNormal = panelSpecularTintNormal.BackColor;
-				outputPanel1.SpecularTintEdge = panelSpecularTintEdge.BackColor;
-				outputPanel1.FresnelType = OutputPanel.FRESNEL_TYPE.ARTIST_FRIENDLY;
-				panelSpecularTintEdge.Enabled = true;
-			} else {
-				outputPanel1.FresnelType = radioButtonSchlick.Checked ? OutputPanel.FRESNEL_TYPE.SCHLICK : OutputPanel.FRESNEL_TYPE.PRECISE;
-				panelSpecularTintEdge.Enabled = false;
-			}
+			outputPanelFresnelGraph.IOR_red = IOR_red;
+			outputPanelFresnelGraph.IOR_green = IOR_green;
+			outputPanelFresnelGraph.IOR_blue = IOR_blue;
+			outputPanelDiffuseFresnelReflectance.IOR = Math.Max( Math.Max( IOR_red, IOR_green ), IOR_blue );
 		}
 
 		private void panelEdgeTint_Click( object sender, EventArgs e ) {
@@ -169,7 +166,7 @@ namespace TestFresnel
 				return;
 
 			panelSpecularTintEdge.BackColor = colorDialog1.Color;
-			outputPanel1.SpecularTintEdge = colorDialog1.Color;
+			outputPanelFresnelGraph.SpecularTintEdge = colorDialog1.Color;
 		}
 
 		private void buttonLoadData_Click( object sender, EventArgs e ) {
@@ -185,7 +182,7 @@ namespace TestFresnel
 				Content = Content.Replace( "\r", "" );
 				string[]	Lines = Content.Split( '\n' );
 
-				List<OutputPanel.RefractionData>	Data = new List<OutputPanel.RefractionData>();
+				List<PanelFresnelReflectance.RefractionData>	Data = new List<PanelFresnelReflectance.RefractionData>();
 				READING_STATE	State = READING_STATE.UNKNOWN;
 				bool			InsertExisting = false;
 				for ( int LineIndex=0; LineIndex < Lines.Length; LineIndex++ )
@@ -216,10 +213,10 @@ namespace TestFresnel
 					if ( !float.TryParse( Values[1], out v ) )
 						throw new Exception( "Failed to parse " + (State == READING_STATE.N ? "n" : "k") + " at line " + LineIndex );
 
-					OutputPanel.RefractionData	D = null;
+					PanelFresnelReflectance.RefractionData	D = null;
 					if ( InsertExisting )
 					{	// Find existing slot in list
-						foreach ( OutputPanel.RefractionData ExistingD in Data )
+						foreach ( PanelFresnelReflectance.RefractionData ExistingD in Data )
 							if ( Math.Abs( ExistingD.Wavelength - wl ) < 1e-6f )
 							{	// Found it!
 								D = ExistingD;
@@ -230,7 +227,7 @@ namespace TestFresnel
 					}
 					else
 					{	// Simply append
-						D = new OutputPanel.RefractionData() { Wavelength = wl };
+						D = new PanelFresnelReflectance.RefractionData() { Wavelength = wl };
 						Data.Add( D );
 					}
 
@@ -240,7 +237,7 @@ namespace TestFresnel
 						D.k = v;
 				}
 
-				outputPanel1.Data = Data.ToArray();
+				outputPanelFresnelGraph.Data = Data.ToArray();
 				checkBoxData.Checked = true;
 			}
 			catch ( Exception _e )
@@ -250,28 +247,28 @@ namespace TestFresnel
 		}
 
 		private void floatTrackbarControlVerticalScale_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue ) {
-			outputPanel2.VerticalScale = floatTrackbarControlVerticalScale.Value;
+			outputPanelDiffuseFresnelReflectance.VerticalScale = floatTrackbarControlVerticalScale.Value;
 		}
 
 		private void checkBoxusePreComputedtable_CheckedChanged( object sender, EventArgs e ) {
 			if ( checkBoxusePreComputedTable.Checked )
-				outputPanel2.FresnelType = OutputPanel2.FRESNEL_TYPE.TABLE;
+				outputPanelDiffuseFresnelReflectance.FresnelType = PanelDiffuseFresnelReflectance.FRESNEL_TYPE.TABLE;
 			else
-				outputPanel2.FresnelType = radioButtonPrecise.Checked ? OutputPanel2.FRESNEL_TYPE.PRECISE : OutputPanel2.FRESNEL_TYPE.SCHLICK;
+				outputPanelDiffuseFresnelReflectance.FresnelType = radioButtonPrecise.Checked ? PanelDiffuseFresnelReflectance.FRESNEL_TYPE.PRECISE : PanelDiffuseFresnelReflectance.FRESNEL_TYPE.SCHLICK;
 			floatTrackbarControlRoughness.Enabled = checkBoxusePreComputedTable.Checked;
 			floatTrackbarControlPeakFactor.Enabled = checkBoxusePreComputedTable.Checked;
 		}
 
 		private void floatTrackbarControlRoughness_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue ) {
-			outputPanel2.Roughness = floatTrackbarControlRoughness.Value;
+			outputPanelDiffuseFresnelReflectance.Roughness = floatTrackbarControlRoughness.Value;
 		}
 
 		private void checkBoxPlotAgainstF0_CheckedChanged( object sender, EventArgs e ) {
-			outputPanel2.PlotAgainstF0 = checkBoxPlotAgainstF0.Checked;
+			outputPanelDiffuseFresnelReflectance.PlotAgainstF0 = checkBoxPlotAgainstF0.Checked;
 		}
 
 		private void floatTrackbarControlPeakFactor_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue ) {
-			outputPanel2.PeakFactor = floatTrackbarControlPeakFactor.Value;
+			outputPanelDiffuseFresnelReflectance.PeakFactor = floatTrackbarControlPeakFactor.Value;
 		}
 
 		private void floatTrackbarControlIOR_SliderDragStop( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fStartValue ) {

@@ -50,15 +50,16 @@
 			this.checkBoxusePreComputedTable = new System.Windows.Forms.CheckBox();
 			this.floatTrackbarControlRoughness = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.checkBoxPlotAgainstF0 = new System.Windows.Forms.CheckBox();
-			this.outputPanel2 = new TestFresnel.OutputPanel2(this.components);
-			this.outputPanel1 = new TestFresnel.OutputPanel(this.components);
+			this.outputPanelDiffuseFresnelReflectance = new TestFresnel.PanelDiffuseFresnelReflectance(this.components);
+			this.outputPanelFresnelGraph = new TestFresnel.PanelFresnelReflectance(this.components);
 			this.label3 = new System.Windows.Forms.Label();
 			this.label5 = new System.Windows.Forms.Label();
 			this.floatTrackbarControlPeakFactor = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label6 = new System.Windows.Forms.Label();
+			this.label7 = new System.Windows.Forms.Label();
 			this.panel1.SuspendLayout();
 			this.panelUseEdgeTint.SuspendLayout();
-			this.outputPanel1.SuspendLayout();
+			this.outputPanelFresnelGraph.SuspendLayout();
 			this.SuspendLayout();
 			// 
 			// radioButtonSchlick
@@ -171,7 +172,7 @@
 			this.panel1.Controls.Add(this.radioButtonIOR);
 			this.panel1.Controls.Add(this.radioButtonSpecularTint);
 			this.panel1.Controls.Add(this.panelSpecularTintNormal);
-			this.panel1.Location = new System.Drawing.Point(580, 58);
+			this.panel1.Location = new System.Drawing.Point(580, 99);
 			this.panel1.Name = "panel1";
 			this.panel1.Size = new System.Drawing.Size(243, 120);
 			this.panel1.TabIndex = 10;
@@ -296,33 +297,33 @@
 			// 
 			// outputPanel2
 			// 
-			this.outputPanel2.FresnelType = TestFresnel.OutputPanel2.FRESNEL_TYPE.SCHLICK;
-			this.outputPanel2.IOR = 1F;
-			this.outputPanel2.Location = new System.Drawing.Point(12, 447);
-			this.outputPanel2.MaxIOR = 10F;
-			this.outputPanel2.Name = "outputPanel2";
-			this.outputPanel2.PeakFactor = 1F;
-			this.outputPanel2.PlotAgainstF0 = false;
-			this.outputPanel2.Roughness = 1F;
-			this.outputPanel2.Size = new System.Drawing.Size(559, 268);
-			this.outputPanel2.TabIndex = 8;
-			this.outputPanel2.VerticalScale = 1F;
+			this.outputPanelDiffuseFresnelReflectance.FresnelType = TestFresnel.PanelDiffuseFresnelReflectance.FRESNEL_TYPE.SCHLICK;
+			this.outputPanelDiffuseFresnelReflectance.IOR = 1F;
+			this.outputPanelDiffuseFresnelReflectance.Location = new System.Drawing.Point(12, 447);
+			this.outputPanelDiffuseFresnelReflectance.MaxIOR = 10F;
+			this.outputPanelDiffuseFresnelReflectance.Name = "outputPanel2";
+			this.outputPanelDiffuseFresnelReflectance.PeakFactor = 1F;
+			this.outputPanelDiffuseFresnelReflectance.PlotAgainstF0 = false;
+			this.outputPanelDiffuseFresnelReflectance.Roughness = 1F;
+			this.outputPanelDiffuseFresnelReflectance.Size = new System.Drawing.Size(559, 268);
+			this.outputPanelDiffuseFresnelReflectance.TabIndex = 8;
+			this.outputPanelDiffuseFresnelReflectance.VerticalScale = 1F;
 			// 
 			// outputPanel1
 			// 
-			this.outputPanel1.Controls.Add(this.label3);
-			this.outputPanel1.Data = null;
-			this.outputPanel1.FresnelType = TestFresnel.OutputPanel.FRESNEL_TYPE.SCHLICK;
-			this.outputPanel1.FromData = false;
-			this.outputPanel1.IOR_blue = 1F;
-			this.outputPanel1.IOR_green = 1F;
-			this.outputPanel1.IOR_red = 1F;
-			this.outputPanel1.Location = new System.Drawing.Point(12, 35);
-			this.outputPanel1.Name = "outputPanel1";
-			this.outputPanel1.Size = new System.Drawing.Size(559, 377);
-			this.outputPanel1.SpecularTintEdge = System.Drawing.Color.Black;
-			this.outputPanel1.SpecularTintNormal = System.Drawing.Color.White;
-			this.outputPanel1.TabIndex = 0;
+			this.outputPanelFresnelGraph.Controls.Add(this.label3);
+			this.outputPanelFresnelGraph.Data = null;
+			this.outputPanelFresnelGraph.FresnelType = TestFresnel.PanelFresnelReflectance.FRESNEL_TYPE.SCHLICK;
+			this.outputPanelFresnelGraph.FromData = false;
+			this.outputPanelFresnelGraph.IOR_blue = 1F;
+			this.outputPanelFresnelGraph.IOR_green = 1F;
+			this.outputPanelFresnelGraph.IOR_red = 1F;
+			this.outputPanelFresnelGraph.Location = new System.Drawing.Point(12, 35);
+			this.outputPanelFresnelGraph.Name = "outputPanel1";
+			this.outputPanelFresnelGraph.Size = new System.Drawing.Size(559, 377);
+			this.outputPanelFresnelGraph.SpecularTintEdge = System.Drawing.Color.Black;
+			this.outputPanelFresnelGraph.SpecularTintNormal = System.Drawing.Color.White;
+			this.outputPanelFresnelGraph.TabIndex = 0;
 			// 
 			// label3
 			// 
@@ -367,6 +368,15 @@
 			this.label6.TabIndex = 11;
 			this.label6.Text = "Peak Factor";
 			// 
+			// label7
+			// 
+			this.label7.AutoSize = true;
+			this.label7.Location = new System.Drawing.Point(580, 83);
+			this.label7.Name = "label7";
+			this.label7.Size = new System.Drawing.Size(63, 13);
+			this.label7.TabIndex = 11;
+			this.label7.Text = "IOR Source";
+			// 
 			// Form1
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -374,12 +384,13 @@
 			this.ClientSize = new System.Drawing.Size(823, 727);
 			this.Controls.Add(this.label6);
 			this.Controls.Add(this.label5);
+			this.Controls.Add(this.label7);
 			this.Controls.Add(this.label1);
 			this.Controls.Add(this.floatTrackbarControlPeakFactor);
 			this.Controls.Add(this.floatTrackbarControlRoughness);
 			this.Controls.Add(this.floatTrackbarControlVerticalScale);
 			this.Controls.Add(this.panel1);
-			this.Controls.Add(this.outputPanel2);
+			this.Controls.Add(this.outputPanelDiffuseFresnelReflectance);
 			this.Controls.Add(this.checkBoxPlotAgainstF0);
 			this.Controls.Add(this.checkBoxusePreComputedTable);
 			this.Controls.Add(this.checkBoxData);
@@ -388,7 +399,7 @@
 			this.Controls.Add(this.label2);
 			this.Controls.Add(this.radioButtonPrecise);
 			this.Controls.Add(this.radioButtonSchlick);
-			this.Controls.Add(this.outputPanel1);
+			this.Controls.Add(this.outputPanelFresnelGraph);
 			this.Name = "Form1";
 			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
 			this.Text = "Form1";
@@ -396,8 +407,8 @@
 			this.panel1.PerformLayout();
 			this.panelUseEdgeTint.ResumeLayout(false);
 			this.panelUseEdgeTint.PerformLayout();
-			this.outputPanel1.ResumeLayout(false);
-			this.outputPanel1.PerformLayout();
+			this.outputPanelFresnelGraph.ResumeLayout(false);
+			this.outputPanelFresnelGraph.PerformLayout();
 			this.ResumeLayout(false);
 			this.PerformLayout();
 
@@ -405,7 +416,7 @@
 
 		#endregion
 
-		private OutputPanel outputPanel1;
+		private PanelFresnelReflectance outputPanelFresnelGraph;
 		private System.Windows.Forms.RadioButton radioButtonSchlick;
 		private System.Windows.Forms.RadioButton radioButtonPrecise;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlIOR;
@@ -414,7 +425,7 @@
 		private System.Windows.Forms.OpenFileDialog openFileDialogRefract;
 		private System.Windows.Forms.Button buttonLoadData;
 		private System.Windows.Forms.CheckBox checkBoxData;
-		private OutputPanel2 outputPanel2;
+		private PanelDiffuseFresnelReflectance outputPanelDiffuseFresnelReflectance;
 		private System.Windows.Forms.Label label2;
 		private System.Windows.Forms.Label label3;
 		private System.Windows.Forms.Label label4;
@@ -432,6 +443,7 @@
 		private System.Windows.Forms.Panel panelUseEdgeTint;
 		private System.Windows.Forms.CheckBox checkBoxUseEdgeTint;
 		private System.Windows.Forms.Panel panelSpecularTintEdge;
+		private System.Windows.Forms.Label label7;
 	}
 }
 

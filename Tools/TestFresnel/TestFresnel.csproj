@@ -110,11 +110,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="OutputPanel2.cs">
+    <Compile Include="PanelDiffuseFresnelReflectance.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="OutputPanel2.Designer.cs">
-      <DependentUpon>OutputPanel2.cs</DependentUpon>
+    <Compile Include="PanelDiffuseFresnelReflectance.Designer.cs">
+      <DependentUpon>PanelDiffuseFresnelReflectance.cs</DependentUpon>
     </Compile>
     <Compile Include="Form1.cs">
       <SubType>Form</SubType>
@@ -122,11 +122,11 @@
     <Compile Include="Form1.Designer.cs">
       <DependentUpon>Form1.cs</DependentUpon>
     </Compile>
-    <Compile Include="OutputPanel.cs">
+    <Compile Include="PanelFresnelReflectance.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="OutputPanel.Designer.cs">
-      <DependentUpon>OutputPanel.cs</DependentUpon>
+    <Compile Include="PanelFresnelReflectance.Designer.cs">
+      <DependentUpon>PanelFresnelReflectance.cs</DependentUpon>
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
