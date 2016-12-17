@@ -21,7 +21,7 @@ namespace TestFourier
 		ImageFile		m_image = null;
 
 		double[]		m_signalSource = new double[1024];
-		float2[]		m_spectrum = new float2[512];
+		float2[]		m_spectrum = new float2[1024];
 		float2[]		m_signalReconstructed = new float2[1024];
 
 
@@ -35,14 +35,15 @@ namespace TestFourier
 //				m_signalSource[i] = Math.Cos( 2.0 * Math.PI * i / 1024 + _time );
 //				m_signalSource[i] = Math.Cos( (4.0 * (1.0 + Math.Sin( _time ))) * 2.0 * Math.PI * i / 1024 );
 				m_signalSource[i] = 0.5 * Math.Sin( _time ) + ((i + 50.0 * _time) % 512 < 256 ? 0.5 : -0.5);
+//				m_signalSource[i] = Math.Sin( (4.0 * (1.0 + Math.Sin( _time ))) * 2.0 * Math.PI * (1+i) / 1024 ) / ((4.0 * (1.0 + Math.Sin( _time ))) * 2.0 * Math.PI * (1+i) / 1024);
 //				m_signalSource[i] = SimpleRNG.GetUniform();
 			}
 
 			// Transform
 //			double	normalizer = Math.Sqrt( 1.0 / m_signalSource.Length );
 			double	normalizer = 1.0 / m_signalSource.Length;
-			for ( int frequencyIndex=0; frequencyIndex < m_spectrum.Length; frequencyIndex++ ) {
-				double	frequency = 2.0 * Math.PI * frequencyIndex;
+			for ( int frequencyIndex=0; frequencyIndex < 1024; frequencyIndex++ ) {
+				double	frequency = 2.0 * Math.PI * (frequencyIndex - 512);
 				double	sumR = 0.0;
 				double	sumI = 0.0;
 				for ( int i=0; i < 1024; i++ ) {
@@ -56,16 +57,13 @@ namespace TestFourier
 				sumR *= normalizer;
 				sumI *= normalizer;
 
-// sumR = 1.0;
-// sumI = -1.0;
-
 				m_spectrum[frequencyIndex].Set( (float) sumR, (float) sumI );
 			}
 
 			// Reconstruct signal
 			Array.Clear( m_signalReconstructed, 0, m_signalReconstructed.Length );
 			for ( int frequencyIndex=0; frequencyIndex < m_spectrum.Length; frequencyIndex++ ) {
-				double	frequency = 2.0 * Math.PI * frequencyIndex;
+				double	frequency = 2.0 * Math.PI * (frequencyIndex - 512);
 				float2	spectrum = m_spectrum[frequencyIndex];
 				for ( int i=0; i < 1024; i++ ) {
 					double	omega = frequency * i / 1024.0;	// Notice the + sign here!
