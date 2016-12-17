@@ -1070,7 +1070,7 @@ void	ImageFile::DrawLine( const bfloat4& _color, const bfloat2& _P0, const bfloa
 		P0.y -= clipDelta * slope;
 		P0.x = 0.0f;
 	}
-	if ( P1.x >= W ) {
+	if ( P1.x > W-1 ) {
 		// Clip right
 		float	clipDelta = W-1 - P1.x;
 		P1.y += clipDelta * slope;
@@ -1130,14 +1130,14 @@ void	ImageFile::DrawLine( const bfloat4& _color, const bfloat2& _P0, const bfloa
 		// Draw flipped vertical line
 		for ( ; X0 <= X1; X0++, P0.y+=slope ) {
 			int	Y = int( floorf( P0.y ) );
-			ASSERT( Y >= 0 && Y < H, "Offscreen! Check clipping!" );
+			ASSERT( X0 >= 0 && X0 < W, "Offscreen! Check vertical clipping!" );
 			Set( Y, X0, _color );
 		}
 	} else {
 		// Draw regular horizontal line
 		for ( ; X0 <= X1; X0++, P0.y+=slope ) {
 			int	Y = int( floorf( P0.y ) );
-			ASSERT( Y >= 0 && Y < H, "Offscreen! Check clipping!" );
+			ASSERT( Y >= 0 && Y < H, "Offscreen! Check vertical clipping!" );
 			Set( X0, Y, _color );
 		}
 	}

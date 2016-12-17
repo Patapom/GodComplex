@@ -15,11 +15,14 @@ namespace TestFourier
 {
 	public partial class FourierTestForm : Form {
 		float4			m_black = float4.UnitW;
+		float4			m_red = new float4( 1, 0, 0, 1 );
+		float4			m_blue = new float4( 0, 0, 1, 1 );
 
 		ImageFile		m_image = null;
 
-		double[]		m_signal = new double[1024];
-		float2[]		m_spectrum = null;
+		double[]		m_signalSource = new double[1024];
+		float2[]		m_spectrum = new float2[512];
+		float2[]		m_signalReconstructed = new float2[1024];
 
 
 		public FourierTestForm() {
@@ -29,38 +32,55 @@ namespace TestFourier
 		void	TestTransform( double _time ) {
 			// Build the input signal
 			for ( int i=0; i < 1024; i++ ) {
-//				m_signal[i] = Math.Cos( 2.0 * Math.PI * i / 1024 + _time );
-//				m_signal[i] = Math.Cos( (40.0 * (1.0 + Math.Sin( _time ))) * 2.0 * Math.PI * i / 1024 );
-				m_signal[i] = (i + 50.0 * _time) % 1024 < 512 ? 1 : 0;
-//				m_signal[i] = SimpleRNG.GetUniform();
+//				m_signalSource[i] = Math.Cos( 2.0 * Math.PI * i / 1024 + _time );
+//				m_signalSource[i] = Math.Cos( (4.0 * (1.0 + Math.Sin( _time ))) * 2.0 * Math.PI * i / 1024 );
+				m_signalSource[i] = 0.5 * Math.Sin( _time ) + ((i + 50.0 * _time) % 512 < 256 ? 0.5 : -0.5);
+//				m_signalSource[i] = SimpleRNG.GetUniform();
 			}
 
 			// Transform
-			m_spectrum = new float2[m_signal.Length >> 1];
+//			double	normalizer = Math.Sqrt( 1.0 / m_signalSource.Length );
+			double	normalizer = 1.0 / m_signalSource.Length;
 			for ( int frequencyIndex=0; frequencyIndex < m_spectrum.Length; frequencyIndex++ ) {
 				double	frequency = 2.0 * Math.PI * frequencyIndex;
 				double	sumR = 0.0;
 				double	sumI = 0.0;
 				for ( int i=0; i < 1024; i++ ) {
-					double	omega = -frequency * i / 1024.0;
+					double	omega = -frequency * i / 1024.0;	// Notice the - sign here!
 					double	c = Math.Cos( omega );
 					double	s = Math.Sin( omega );
-					double	v = m_signal[i];
+					double	v = m_signalSource[i];
 					sumR += c * v;
 					sumI += s * v;
 				}
-				sumR /= 512.0;
-				sumI /= 512.0;
+				sumR *= normalizer;
+				sumI *= normalizer;
 
 // sumR = 1.0;
 // sumI = -1.0;
 
 				m_spectrum[frequencyIndex].Set( (float) sumR, (float) sumI );
 			}
+
+			// Reconstruct signal
+			Array.Clear( m_signalReconstructed, 0, m_signalReconstructed.Length );
+			for ( int frequencyIndex=0; frequencyIndex < m_spectrum.Length; frequencyIndex++ ) {
+				double	frequency = 2.0 * Math.PI * frequencyIndex;
+				float2	spectrum = m_spectrum[frequencyIndex];
+				for ( int i=0; i < 1024; i++ ) {
+					double	omega = frequency * i / 1024.0;	// Notice the + sign here!
+					double	c = Math.Cos( omega );
+					double	s = Math.Sin( omega );
+					m_signalReconstructed[i].x += (float) (c * spectrum.x - s * spectrum.y);
+					m_signalReconstructed[i].y += (float) (s * spectrum.x + c * spectrum.y);
+				}
+			}
 		}
 
 		protected override void OnLoad( EventArgs e ) {
 			base.OnLoad( e );
+
+			m_image = new ImageFile( (uint) imagePanel.Width, (uint) imagePanel.Height, ImageFile.PIXEL_FORMAT.RGBA8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
 
 			UpdateGraph();
 
@@ -74,9 +94,10 @@ namespace TestFourier
 		DateTime	m_startTime = DateTime.Now;
 		void	UpdateGraph() {
 
-			TestTransform( (DateTime.Now - m_startTime).TotalSeconds );
+			double	time = (DateTime.Now - m_startTime).TotalSeconds;
 
-			m_image = new ImageFile( (uint) imagePanel.Width, (uint) imagePanel.Height, ImageFile.PIXEL_FORMAT.RGBA8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
+			TestTransform( time );
+
 			m_image.Clear( float4.One );
 
 			float2	rangeX = new float2( 0.0f, 1024.0f );
@@ -84,7 +105,15 @@ namespace TestFourier
 //			m_image.PlotGraphAutoRangeY( m_black, rangeX, ref rangeY, ( float x ) => {
 			m_image.PlotGraph( m_black, rangeX, rangeY, ( float x ) => {
 				int		X = Math.Max( 0, Math.Min( 1023, (int) x ) );
-				return (float) m_signal[X];
+				return (float) m_signalSource[X];
+			} );
+			m_image.PlotGraph( m_red, rangeX, rangeY, ( float x ) => {
+				int		X = Math.Max( 0, Math.Min( 1023, (int) x ) );
+				return m_signalReconstructed[X].x;
+			} );
+			m_image.PlotGraph( m_blue, rangeX, rangeY, ( float x ) => {
+				int		X = Math.Max( 0, Math.Min( 1023, (int) x ) );
+				return m_signalReconstructed[X].y;
 			} );
 			m_image.PlotAxes( m_black, rangeX, rangeY, 16.0f, 0.1f );
 
