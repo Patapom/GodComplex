@@ -535,3 +535,5 @@
 /Tools/TestSHIrradiance/Images/grace-new.hdr
 /Tools/TestFourier/obj
 /Tools/TestFourier/bin
+/Packages/MathFFT/bin
+/Packages/MathFFT/obj

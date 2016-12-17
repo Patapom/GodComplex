@@ -109,6 +109,10 @@
       <Project>{6c974ba3-ecba-4436-85cb-218eebb33d53}</Project>
       <Name>ImageUtilityManaged</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\Packages\MathFFT\MathFFT.csproj">
+      <Project>{e23a7535-002f-4dd6-93f4-445b123d75b5}</Project>
+      <Name>MathFFT</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\Packages\MathSimple\MathSimple.vcxproj">
       <Project>{cec07704-2a19-4bf1-b46d-8fcf9c5965ee}</Project>
       <Name>MathSimple</Name>

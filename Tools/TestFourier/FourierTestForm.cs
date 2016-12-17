@@ -20,26 +20,31 @@ namespace TestFourier
 
 		ImageFile		m_image = null;
 
-		double[]		m_signalSource = new double[1024];
-		float2[]		m_spectrum = new float2[1024];
-		float2[]		m_signalReconstructed = new float2[1024];
 
 
 		public FourierTestForm() {
 			InitializeComponent();
 		}
 		
+		Complex[]		m_signalSource = new Complex[1024];
+		Complex[]		m_spectrum = new Complex[1024];
+		Complex[]		m_signalReconstructed = new Complex[1024];
+
 		void	TestTransform( double _time ) {
 			// Build the input signal
+			Array.Clear( m_signalSource, 0, 1024 );
 			for ( int i=0; i < 1024; i++ ) {
-//				m_signalSource[i] = Math.Cos( 2.0 * Math.PI * i / 1024 + _time );
-//				m_signalSource[i] = Math.Cos( (4.0 * (1.0 + Math.Sin( _time ))) * 2.0 * Math.PI * i / 1024 );
-				m_signalSource[i] = 0.5 * Math.Sin( _time ) + ((i + 50.0 * _time) % 512 < 256 ? 0.5 : -0.5);
-//				m_signalSource[i] = Math.Sin( (4.0 * (1.0 + Math.Sin( _time ))) * 2.0 * Math.PI * (1+i) / 1024 ) / ((4.0 * (1.0 + Math.Sin( _time ))) * 2.0 * Math.PI * (1+i) / 1024);
-//				m_signalSource[i] = SimpleRNG.GetUniform();
+//				m_signalSource[i].r = Math.Cos( 2.0 * Math.PI * i / 1024 + _time );
+//				m_signalSource[i].r = Math.Cos( (4.0 * (1.0 + Math.Sin( _time ))) * 2.0 * Math.PI * i / 1024 );
+				m_signalSource[i].r = 0.5 * Math.Sin( _time ) + ((i + 50.0 * _time) % 512 < 256 ? 0.5 : -0.5);
+//				m_signalSource[i].r = Math.Sin( (4.0 * (1.0 + Math.Sin( _time ))) * 2.0 * Math.PI * (1+i) / 1024 ) / ((4.0 * (1.0 + Math.Sin( _time ))) * 2.0 * Math.PI * (1+i) / 1024);
+//				m_signalSource[i].r = SimpleRNG.GetUniform();
 			}
 
 			// Transform
+			SharpMath.FFT.DFT1D.DFT_Forward( m_signalSource, m_spectrum );
+
+/*			// Transform
 //			double	normalizer = Math.Sqrt( 1.0 / m_signalSource.Length );
 			double	normalizer = 1.0 / m_signalSource.Length;
 			for ( int frequencyIndex=0; frequencyIndex < 1024; frequencyIndex++ ) {
@@ -50,29 +55,33 @@ namespace TestFourier
 					double	omega = -frequency * i / 1024.0;	// Notice the - sign here!
 					double	c = Math.Cos( omega );
 					double	s = Math.Sin( omega );
-					double	v = m_signalSource[i];
-					sumR += c * v;
-					sumI += s * v;
+					Complex	v = m_signalSource[i];
+					sumR += c * v.r - s * v.i;
+					sumI += s * v.r + c * v.i;
 				}
 				sumR *= normalizer;
 				sumI *= normalizer;
 
 				m_spectrum[frequencyIndex].Set( (float) sumR, (float) sumI );
 			}
-
-			// Reconstruct signal
+//*/
+/*			// Reconstruct signal
 			Array.Clear( m_signalReconstructed, 0, m_signalReconstructed.Length );
 			for ( int frequencyIndex=0; frequencyIndex < m_spectrum.Length; frequencyIndex++ ) {
 				double	frequency = 2.0 * Math.PI * (frequencyIndex - 512);
-				float2	spectrum = m_spectrum[frequencyIndex];
+				Complex	v = m_spectrum[frequencyIndex];
 				for ( int i=0; i < 1024; i++ ) {
 					double	omega = frequency * i / 1024.0;	// Notice the + sign here!
 					double	c = Math.Cos( omega );
 					double	s = Math.Sin( omega );
-					m_signalReconstructed[i].x += (float) (c * spectrum.x - s * spectrum.y);
-					m_signalReconstructed[i].y += (float) (s * spectrum.x + c * spectrum.y);
+					m_signalReconstructed[i].r += (float) (c * v.r - s * v.i);
+					m_signalReconstructed[i].i += (float) (s * v.r + c * v.i);
 				}
 			}
+//*/
+
+			// Inverse Transform
+			SharpMath.FFT.DFT1D.DFT_Inverse( m_spectrum, m_signalReconstructed );
 		}
 
 		protected override void OnLoad( EventArgs e ) {
@@ -100,21 +109,27 @@ namespace TestFourier
 
 			float2	rangeX = new float2( 0.0f, 1024.0f );
 			float2	rangeY = new float2( -1, 1 );
+
+			// Plot input signal
 //			m_image.PlotGraphAutoRangeY( m_black, rangeX, ref rangeY, ( float x ) => {
 			m_image.PlotGraph( m_black, rangeX, rangeY, ( float x ) => {
 				int		X = Math.Max( 0, Math.Min( 1023, (int) x ) );
-				return (float) m_signalSource[X];
+				return (float) m_signalSource[X].r;
 			} );
+
+			// Plot reconstructed signals (Real and Imaginary parts)
 			m_image.PlotGraph( m_red, rangeX, rangeY, ( float x ) => {
 				int		X = Math.Max( 0, Math.Min( 1023, (int) x ) );
-				return m_signalReconstructed[X].x;
+				return (float) m_signalReconstructed[X].r;
 			} );
 			m_image.PlotGraph( m_blue, rangeX, rangeY, ( float x ) => {
 				int		X = Math.Max( 0, Math.Min( 1023, (int) x ) );
-				return m_signalReconstructed[X].y;
+				return (float) m_signalReconstructed[X].i;
 			} );
 			m_image.PlotAxes( m_black, rangeX, rangeY, 16.0f, 0.1f );
 
+			//////////////////////////////////////////////////////////////////////////
+			// Render spectrum as (Real=Red, Imaginary=Blue) vertical lines for each frequency
 			float2	cornerMin = m_image.RangedCoordinates2ImageCoordinates( rangeX, rangeY, new float2( rangeX.x, -1.0f ) );
 			float2	cornerMax = m_image.RangedCoordinates2ImageCoordinates( rangeX, rangeY, new float2( rangeX.y, +1.0f ) );
 			float2	delta = cornerMax - cornerMin;
@@ -133,10 +148,10 @@ namespace TestFourier
 				float	X = cornerMin.x + i * delta.x / m_spectrum.Length;
 				Xr0.x = X;
 				Xr1.x = X;
-				Xr1.y = cornerMin.y + 0.5f * (scale * m_spectrum[i].x + 1.0f) * delta.y;
+				Xr1.y = cornerMin.y + 0.5f * (scale * (float) m_spectrum[i].r + 1.0f) * delta.y;
 				Xi0.x = X+1;
 				Xi1.x = X+1;
-				Xi1.y = cornerMin.y + 0.5f * (scale * m_spectrum[i].y + 1.0f) * delta.y;
+				Xi1.y = cornerMin.y + 0.5f * (scale * (float) m_spectrum[i].i + 1.0f) * delta.y;
 
 				m_image.DrawLine( spectrumColorRe, Xr0, Xr1 );
 				m_image.DrawLine( spectrumColorIm, Xi0, Xi1 );

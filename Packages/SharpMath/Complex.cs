@@ -6,8 +6,7 @@ namespace SharpMath
 	/// Summary description for Complex.
 	/// </summary>
     [System.Diagnostics.DebuggerDisplay("r = {r} i = {i}")]
-    public class Complex
-	{
+    public struct Complex {
 		public double			r, i;
 
 //		public double			R
@@ -23,10 +22,10 @@ namespace SharpMath
 //		}
 //
 		// Constructors
-		public						Complex()										{}
-		public						Complex( Complex _Source )						{ Set( _Source ); }
-		public						Complex( double _R, double _I )					{ Set( _R, _I ); }
-		public						Complex( double _Z, double _Arg, bool _b )		{ SetPhasor( _Z, _Arg ); }
+//		public						Complex()										{}
+		public						Complex( Complex _Source )						{ r = _Source.r; i = _Source.i; }
+		public						Complex( double _R, double _I )					{ r = _R; i = _I; }
+		public						Complex( float2 _f )							{ r = _f.x; i = _f.y; }
 		public						Complex( double[] _f )							{ r = _f[0]; i = _f[1]; }
 
 		// Access methods
@@ -40,8 +39,7 @@ namespace SharpMath
 		public void					Max( Complex _Op )								{ r = System.Math.Max( r, _Op.r ); i = System.Math.Max( i, _Op.i ); }
 		public double				Sum()											{ return r + i; }
 		public double				Product()										{ return r * i; }
-		public static Complex		FromSqrt( double _r )
-		{
+		public static Complex		FromSqrt( double _r ) {
 			return new Complex( _r >= 0.0f ? Math.Sqrt( _r ) : 0.0f,
 								_r < 0.0f ? Math.Sqrt( -_r ) : 0.0f );
 		}
@@ -49,10 +47,9 @@ namespace SharpMath
 		public double				Magnitude()										{ return System.Math.Sqrt( r * r + i * i ); }
 		public double				Argument()										{ return Math.Atan2( i, r ); }
 		public Complex				Conjugate()										{ return new Complex( r, -i ); }
-		public Complex				Sqrt()											{ return new Complex( Math.Pow( SquareMagnitude(), .25 ), .5f * Argument(), true ); }
+		public Complex				Sqrt()											{ Complex R = new Complex(); R.SetPhasor( Math.Pow( SquareMagnitude(), .25 ), .5f * Argument() ); return R; }
 
-		public override string		ToString()
-		{
+		public override string		ToString() {
 			return	r.ToString() + " + i * " + i.ToString();
 		}
 
@@ -69,8 +66,10 @@ namespace SharpMath
 //		}
 
 		// Cast operators
-		public double				this[int _Index]
-		{
+		public float2				float2()	{
+			return new float2( (float) r, (float) i );
+		}
+		public double				this[int _Index] {
 			get { return _Index == 0 ? r : (_Index == 1 ? i : double.NaN); }
 			set
 			{
