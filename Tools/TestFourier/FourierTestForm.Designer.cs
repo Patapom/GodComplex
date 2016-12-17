@@ -28,7 +28,9 @@
 		/// </summary>
 		private void InitializeComponent()
 		{
+			this.components = new System.ComponentModel.Container();
 			this.imagePanel = new TestFourier.ImagePanel();
+			this.timer1 = new System.Windows.Forms.Timer(this.components);
 			this.SuspendLayout();
 			// 
 			// imagePanel
@@ -39,6 +41,11 @@
 			this.imagePanel.Name = "imagePanel";
 			this.imagePanel.Size = new System.Drawing.Size(1000, 500);
 			this.imagePanel.TabIndex = 0;
+			// 
+			// timer1
+			// 
+			this.timer1.Enabled = true;
+			timer1.Interval = 10;
 			// 
 			// FourierTestForm
 			// 
@@ -56,6 +63,7 @@
 		#endregion
 
 		private ImagePanel imagePanel;
+		private System.Windows.Forms.Timer timer1;
 	}
 }
 

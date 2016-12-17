@@ -63,9 +63,11 @@ namespace TestFourier
 		{
 			base.OnPaint( e );
 
-			e.Graphics.FillRectangle( Brushes.Black, 0, 0, Width, Height );
+			RectangleF	Rect = ImageClientRect;
+ 			if ( Rect.Width != Width || Rect.Height != Height )
+ 				e.Graphics.FillRectangle( Brushes.Black, 0, 0, Width, Height );
+
 			if ( m_Bitmap != null ) {
-				RectangleF	Rect = ImageClientRect;
 				e.Graphics.DrawImage( m_Bitmap, Rect, new RectangleF( 0, 0, m_Bitmap.Width, m_Bitmap.Height ), GraphicsUnit.Pixel );
 			} else if ( m_MessageOnEmpty != null ) {
 				SizeF	MessageSize = e.Graphics.MeasureString( m_MessageOnEmpty, Font, Width );
