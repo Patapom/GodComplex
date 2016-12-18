@@ -82,7 +82,8 @@ namespace TestFourier
 //*/
 
 			// Inverse Transform
-			SharpMath.FFT.DFT1D.DFT_Inverse( m_spectrum, m_signalReconstructed );
+//			SharpMath.FFT.DFT1D.DFT_Inverse( m_spectrum, m_signalReconstructed );
+			SharpMath.FFT.FFT1D.FFT_Inverse( m_spectrum, m_signalReconstructed );
 		}
 
 		protected override void OnLoad( EventArgs e ) {
