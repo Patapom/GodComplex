@@ -120,14 +120,14 @@ namespace TestFourier
 			} );
 
 			// Plot reconstructed signals (Real and Imaginary parts)
-			m_image.PlotGraph( m_red, rangeX, rangeY, ( float x ) => {
-				int		X = Math.Max( 0, Math.Min( 1023, (int) x ) );
-				return (float) m_signalReconstructed[X].r;
-			} );
-			m_image.PlotGraph( m_blue, rangeX, rangeY, ( float x ) => {
-				int		X = Math.Max( 0, Math.Min( 1023, (int) x ) );
-				return (float) m_signalReconstructed[X].i;
-			} );
+// 			m_image.PlotGraph( m_red, rangeX, rangeY, ( float x ) => {
+// 				int		X = Math.Max( 0, Math.Min( 1023, (int) x ) );
+// 				return (float) m_signalReconstructed[X].r;
+// 			} );
+// 			m_image.PlotGraph( m_blue, rangeX, rangeY, ( float x ) => {
+// 				int		X = Math.Max( 0, Math.Min( 1023, (int) x ) );
+// 				return (float) m_signalReconstructed[X].i;
+// 			} );
 			m_image.PlotAxes( m_black, rangeX, rangeY, 16.0f, 0.1f );
 
 			//////////////////////////////////////////////////////////////////////////
