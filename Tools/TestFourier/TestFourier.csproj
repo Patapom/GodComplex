@@ -64,7 +64,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Spectrum.cs" />
     <Compile Include="FourierTestForm.cs">
       <SubType>Form</SubType>
     </Compile>
