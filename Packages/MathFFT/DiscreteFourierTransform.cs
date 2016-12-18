@@ -4,12 +4,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-//using SharpMath;
-
 namespace SharpMath.FFT {
 	/// <summary>
 	/// Performs the Discrete Fourier Transform (DFT) or Inverse-DFT of a 1-Dimensional discrete complex signal
-	/// This is a slow CPU version purely designed to test the Fourier transform and debugging purpose
+	/// This is a slow CPU version purely designed to test the Fourier transform and for debugging purpose
 	/// </summary>
     public static class DFT1D {
 
@@ -61,6 +59,8 @@ namespace SharpMath.FFT {
 			for ( int frequencyIndex=0; frequencyIndex < size; frequencyIndex++ ) {
 				double	frequency = 2.0 * Math.PI * (frequencyIndex - halfSize);
 				double	normalizedFrequency = -frequency * normalizer;	// Notice the - sign here! It's indicating the "division" by e^ix and the forward transform...
+
+				// Accumulate (co)sine wave amplitude for specified frequency (i.e. computes how much the (co)sine wave matches to the signal at this frequency)
 				double	sumR = 0.0;
 				double	sumI = 0.0;
 				for ( int i=0; i < size; i++ ) {
@@ -128,7 +128,7 @@ namespace SharpMath.FFT {
 				double	frequency = 2.0 * Math.PI * (frequencyIndex - halfSize);
 				double	normalizedFrequency = frequency * normalizer;	// Notice the + sign here! It's indicating the "multiplication" by e^ix and the inverse transform...
 
-				// Accumulate (co)sine wave at specified frequency and amplitude
+				// Accumulate (co)sine wave at specified frequency and amplitude to the signal
 				Complex	v = _inputSpectrum[frequencyIndex];
 				for ( int i=0; i < size; i++ ) {
 					double	omega = i * normalizedFrequency;	

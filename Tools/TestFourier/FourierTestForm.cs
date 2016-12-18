@@ -42,7 +42,8 @@ namespace TestFourier
 			}
 
 			// Transform
-			SharpMath.FFT.DFT1D.DFT_Forward( m_signalSource, m_spectrum );
+//			SharpMath.FFT.DFT1D.DFT_Forward( m_signalSource, m_spectrum );
+			SharpMath.FFT.FFT1D.FFT_Forward( m_signalSource, m_spectrum );
 
 /*			// Transform
 //			double	normalizer = Math.Sqrt( 1.0 / m_signalSource.Length );
