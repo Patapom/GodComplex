@@ -146,14 +146,18 @@ namespace TestFourier
 
 			float4	spectrumColorRe = new float4( 1, 0.25f, 0, 1 );
 			float4	spectrumColorIm = new float4( 0, 0.5f, 1, 1 );
+			int		size = m_spectrum.Length;
+			int		halfSize = size >> 1;
 			for ( int i=0; i < m_spectrum.Length; i++ ) {
 				float	X = cornerMin.x + i * delta.x / m_spectrum.Length;
+//				int		frequencyIndex = i;							// Show spectrum as output by FFT
+				int		frequencyIndex = (i + halfSize) % size;		// Show offset spectrum with DC term in the middle
 				Xr0.x = X;
 				Xr1.x = X;
-				Xr1.y = cornerMin.y + 0.5f * (scale * (float) m_spectrum[i].r + 1.0f) * delta.y;
+				Xr1.y = cornerMin.y + 0.5f * (scale * (float) m_spectrum[frequencyIndex].r + 1.0f) * delta.y;
 				Xi0.x = X+1;
 				Xi1.x = X+1;
-				Xi1.y = cornerMin.y + 0.5f * (scale * (float) m_spectrum[i].i + 1.0f) * delta.y;
+				Xi1.y = cornerMin.y + 0.5f * (scale * (float) m_spectrum[frequencyIndex].i + 1.0f) * delta.y;
 
 				m_image.DrawLine( spectrumColorRe, Xr0, Xr1 );
 				m_image.DrawLine( spectrumColorIm, Xi0, Xi1 );

@@ -57,7 +57,7 @@ namespace SharpMath.FFT {
 			int		halfSize = size >> 1;
 			double	normalizer = 1.0 / size;
 			for ( int frequencyIndex=0; frequencyIndex < size; frequencyIndex++ ) {
-				double	frequency = 2.0 * Math.PI * (frequencyIndex - halfSize);
+				double	frequency = 2.0 * Math.PI * frequencyIndex;
 				double	normalizedFrequency = -frequency * normalizer;	// Notice the - sign here! It's indicating the "division" by e^ix and the forward transform...
 
 				// Accumulate (co)sine wave amplitude for specified frequency (i.e. computes how much the (co)sine wave matches to the signal at this frequency)
@@ -125,7 +125,7 @@ namespace SharpMath.FFT {
 
 			Array.Clear( _outputSignal, 0, size );
 			for ( int frequencyIndex=0; frequencyIndex < size; frequencyIndex++ ) {
-				double	frequency = 2.0 * Math.PI * (frequencyIndex - halfSize);
+				double	frequency = 2.0 * Math.PI * frequencyIndex;
 				double	normalizedFrequency = frequency * normalizer;	// Notice the + sign here! It's indicating the "multiplication" by e^ix and the inverse transform...
 
 				// Accumulate (co)sine wave at specified frequency and amplitude to the signal
