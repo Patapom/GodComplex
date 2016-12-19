@@ -537,3 +537,11 @@
 /Tools/TestFourier/bin
 /Packages/MathFFT/bin
 /Packages/MathFFT/obj
+/Tools/GenerateTranslucencyMap/Publish
+/Images/In/TIFF
+/Images/In/BMP
+/Images/In/CRW
+/Images/In/HDR
+/Images/In/LDR2HDR
+/Images/In/TGA
+/Images/Out/LDR2HDR
