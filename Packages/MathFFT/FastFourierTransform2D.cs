@@ -6,71 +6,10 @@ using System.Threading.Tasks;
 
 namespace SharpMath.FFT {
 	/// <summary>
-	/// Performs the Fast Fourier Transform (FFT) or Inverse-FFT of a 1-Dimensional discrete complex signal
+	/// Performs the Fast Fourier Transform (FFT) or Inverse-FFT of a 2-Dimensional discrete complex signal
 	/// This is a slow CPU version purely designed to test the Fourier transform and for debugging purpose
-	/// 
-	/// The idea behind the "Fast" Discrete Fourier Transform is that we can recursively subdivide the analyze
-	///  of a domain into sub-domains that are easier to compute, and re-use the results each stage.
-	/// It turns a O(N²) computation into log2(N) stages of O(N) computations.
-	///  
-	/// Basically, a DFT is:
-	///			  N-1
-	///		X_k = Sum[ x_n * e^(-2PI * n/N * k) ]
-	///			  n=0
-	/// 
-	/// For k€[0,N[
-	/// 
-	/// Assuming a power of two length N, we can separate the even and odd powers and write:
-	/// 
-	///			  N/2-1
-	///		X_k = Sum[ x_(2n) * e^(-i * 2PI * (2n)/N * k) ]
-	///			  n=0
-	///			  
-	///			  N/2-1
-	///			+ Sum[ x_(2n+1) * e^(-i * 2PI * (2n+1)/N * k) ]
-	///			  n=0
-	/// 
-	/// That we rewrite:
-	/// 
-	///		X_k = E_k + e^(-i * 2PI * k / N) * O_k
-	/// 
-	/// With:
-	///			  N/2-1
-	///		E_k = Sum[ x_(2n) * e^(-i * 2PI * (2n)/N * k) ]
-	///			  n=0
-	///			  
-	///			  N/2-1
-	///		O_k	= Sum[ x_(2n+1) * e^(-i * 2PI * (2n)/N * k) ]
-	///			  n=0
-	/// 
-	/// Noticing that:
-	/// 
-	///		e^(-i * 2PI * (2n)/N * (k+N/2)) = e^(-i * 2PI * (2n)/N * k) * e^(-i * 2PI * (2n/N)*(N/2) )
-	///										= e^(-i * 2PI * (2n)/N * k) * e^(-i * 2PI * n)
-	///										= e^(-i * 2PI * (2n)/N * k)
-	/// 
-	///		E_(k+N/2) = E_k
-	///	and	O_(k+N/2) = O_k
-	/// 
-	/// Therefore we can rewrite:
-	/// 
-	///		X_k = E_k + e^(-i * 2PI * k / N) * O_k					if 0 <= k < N/2
-	/// 
-	///		X_k = E_(k-N/2) + e^(-i * 2PI * k / N) * O_(k-N/2)		if N/2 <= k < N (that is the part where we reuse existing results)
-	/// 
-	/// Noticing the "twiddle factor" also simplifies:
-	/// 
-	///		e^(-i * 2PI * (k+N/2) / N) = e^(-i * 2PI * k / N) * e^(-i * PI) = -e^(-i * 2PI * k / N)
-	/// 
-	/// Thus we get the final result for 0 <= k < N/2 :
-	/// 
-	///		X_k = E_k + e^(-i * 2PI * k / N) * O_k
-	///		X_(k+N/2) = E_k - e^(-i * 2PI * k / N) * O_k
-	/// 
-	/// Expressing the DFT of length N recursively in terms of two DFTs of length N/2 allows to reach N*log(N) speeds instead
-	///	 of the traditional N² form.
 	/// </summary>
-    public static class FFT1D {
+    public static class FFT2D {
 
 		#region Forward FFT
 
@@ -255,34 +194,34 @@ namespace SharpMath.FFT {
 
 		#region Brute-Force Recursive Version
 
-		private static Complex[]	BROUTEFORCE_FFT( Complex[] _inputSignal, int _inputIndex, int _inputStride, int _length, double _baseFrequency ) {
-			if ( _length == 1 )
-				return new Complex[] { _inputSignal[_inputIndex] };
-
-			int			halfLength = _length >> 1;
-			double		frequency = _baseFrequency / _length;
-
-			Complex[]	even = BROUTEFORCE_FFT( _inputSignal, _inputIndex, 2*_inputStride, halfLength, _baseFrequency );
-			Complex[]	odd = BROUTEFORCE_FFT( _inputSignal, _inputIndex + _inputStride, 2*_inputStride, halfLength, _baseFrequency );
-
-			Complex[]	result = new Complex[_length];
-
-			for ( int k=0; k < halfLength; k++ ) {
-				Complex	Ek = even[k];
-				Complex	Ok = odd[k];
-
-				double	omega = frequency * k;
-				double	c = Math.Cos( omega );
-				double	s = Math.Sin( omega );
-
-				result[k].Set(	Ek.r + c * Ok.r - s * Ok.i, 
-								Ek.i + s * Ok.r + c * Ok.i );
-
-				result[k+halfLength].Set(	Ek.r - c * Ok.r + s * Ok.i, 
-											Ek.i - s * Ok.r - c * Ok.i );
-			}
-			return result;
-		}
+// 		private static Complex[]	BROUTEFORCE_FFT( Complex[,] _inputSignal, int _inputX, int _inputY, int _inputStride, int _length, double _baseFrequency ) {
+// 			if ( _length == 1 )
+// 				return new Complex[,] { { _inputSignal[_inputX,_inputY] } };
+// 
+// 			int			halfLength = _length >> 1;
+// 			double		frequency = _baseFrequency / _length;
+// 
+// 			Complex[,]	even = BROUTEFORCE_FFT( _inputSignal, _inputX, _inputY, 2*_inputStride, halfLength, _baseFrequency );
+// 			Complex[,]	odd = BROUTEFORCE_FFT( _inputSignal, _inputX + _inputStride, _inputY, 2*_inputStride, halfLength, _baseFrequency );
+// 
+// 			Complex[,]	result = new Complex[_length,_length];
+// 
+// 			for ( int k=0; k < halfLength; k++ ) {
+// 				Complex	Ek = even[k];
+// 				Complex	Ok = odd[k];
+// 
+// 				double	omega = frequency * k;
+// 				double	c = Math.Cos( omega );
+// 				double	s = Math.Sin( omega );
+// 
+// 				result[k].Set(	Ek.r + c * Ok.r - s * Ok.i, 
+// 								Ek.i + s * Ok.r + c * Ok.i );
+// 
+// 				result[k+halfLength].Set(	Ek.r - c * Ok.r + s * Ok.i, 
+// 											Ek.i - s * Ok.r - c * Ok.i );
+// 			}
+// 			return result;
+// 		}
 
 		#endregion
 

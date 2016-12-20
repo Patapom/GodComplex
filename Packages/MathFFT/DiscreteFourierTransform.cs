@@ -8,6 +8,25 @@ namespace SharpMath.FFT {
 	/// <summary>
 	/// Performs the Discrete Fourier Transform (DFT) or Inverse-DFT of a 1-Dimensional discrete complex signal
 	/// This is a slow CPU version purely designed to test the Fourier transform and for debugging purpose
+	/// 
+	/// The forward DFT is computed like this:
+	/// 
+	///				 N
+	///		X_k =   Sum[ x_n * e^(-2PI * n/N * k) ]
+	///				n=0
+	///	
+	/// For k€[0,N[ so X_0 is the DC term, X_1 is the matching with a wave of frequency 2PI/N
+	///	 X_2 is the matching with a wave of frequency 4PI/N, X_3 = 6PI/N, X_4 = 8PI/N, etc.
+	/// 
+	/// The inverse-DFT is computed like this:
+	/// 
+	///				 N
+	///		x_k =   Sum[ X_n * e^(2PI * n/N * k) ]
+	///				n=0
+	///	
+	/// Where we notice the change of sign to account for the fact that this time it's not a "division" by
+	///  a sine wave but rather a multiplication at the amplitude and phase specified by the spectrum at frequency n.
+	/// So basically we're performing the sum of N sine waves at various fraquencies between 0 and N...
 	/// </summary>
     public static class DFT1D {
 
@@ -20,8 +39,7 @@ namespace SharpMath.FFT {
 		//
 		// The resulting spectrum:
 		//	• Is normalized, meaning each of the complex values in the spectrum are multiplied by 1/N
-		//	• Stores complex amplitudes for frequencies from -N/2 to +N/2 (excluded) as a contiguous array
-		//		(so, for example, the DC term can simply be found at index N/2)
+		//	• Stores complex amplitudes for frequencies in [0,N[ as a contiguous array
 		//
 		//////////////////////////////////////////////////////////////////////////
 
@@ -88,8 +106,7 @@ namespace SharpMath.FFT {
 		//
 		// The input spectrum:
 		//	• Must be normalized, meaning each of the complex values in the spectrum are already multiplied by 1/N
-		//	• Must store complex amplitudes for frequencies from -N/2 to +N/2 (excluded) as a contiguous array
-		//		(so, for example, the DC term can simply be found at index N/2)
+		//	• Must store complex amplitudes for frequencies in [0,N[ as a contiguous array
 		//
 		//////////////////////////////////////////////////////////////////////////
 
