@@ -57,6 +57,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="FFT_PermutationTables.cs" />
+    <Compile Include="FastFourierTransformGPU.cs" />
     <Compile Include="FastFourierTransform2D.cs" />
     <Compile Include="FastFourierTransform.cs" />
     <Compile Include="DiscreteFourierTransform.cs" />
@@ -75,6 +77,10 @@
       <Project>{dd026a89-c5fe-4150-bc85-a660e427826a}</Project>
       <Name>MathAdvanced</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Shaders\FFT.hlsl" />
+    <Content Include="Shaders\FFT1D.hlsl" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

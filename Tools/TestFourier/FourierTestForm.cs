@@ -9,7 +9,9 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 
 using SharpMath;
+using SharpMath.FFT;
 using ImageUtility;
+using Renderer;
 
 namespace TestFourier
 {
@@ -20,7 +22,9 @@ namespace TestFourier
 
 		ImageFile		m_image = null;
 
+		Device			m_device = new Device();
 
+		FFT1D_GPU		m_FFT1D = null;
 
 		public FourierTestForm() {
 			InitializeComponent();
@@ -29,12 +33,28 @@ namespace TestFourier
 		protected override void OnLoad( EventArgs e ) {
 			base.OnLoad( e );
 
+			try {
+				m_device.Init( viewportPanel.Handle, false, true );
+				m_FFT1D = new FFT1D_GPU( m_device, 1024 );
+			} catch ( Exception ) {
+				MessageBox.Show( "Failed to initialize DirectX device! Can't execute GPU FFT!" );
+				m_device = null;
+			}
+
 			m_image = new ImageFile( (uint) imagePanel.Width, (uint) imagePanel.Height, ImageFile.PIXEL_FORMAT.RGBA8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
 
 			UpdateGraph1D();
-			UpdateGraph2D();
 
 			Application.Idle += Application_Idle;
+		}
+
+		protected override void OnClosing( CancelEventArgs e ) {
+			if ( m_device != null ) {
+				m_FFT1D.Dispose();
+				m_device.Dispose();
+			}
+
+			base.OnClosing( e );
 		}
 
 		void Application_Idle( object sender, EventArgs e ) {
@@ -166,20 +186,30 @@ namespace TestFourier
 					break;
 
 				case SIGNAL_TYPE.SINC:
-					for ( int i=0; i < 1024; i++ )
-						m_signalSource[i].r = Math.Sin( (4.0 * (1.0 + Math.Sin( _time ))) * 2.0 * Math.PI * (1+i) / 1024 ) / ((4.0 * (1.0 + Math.Sin( _time ))) * 2.0 * Math.PI * (1+i) / 1024);
+					for ( int i=0; i < 1024; i++ ) {
+//						double	a = 4.0 * (1.0 + Math.Sin( _time )) * 2.0 * Math.PI * (1+i) / 1024;		// Asymmetrical
+						double	a = 4.0 * (1.0 + Math.Sin( _time )) * 2.0 * Math.PI * (i-512) / 512;	// Symmetrical
+						m_signalSource[i].r = Math.Abs( a ) > 0.0 ? Math.Sin( a ) / a : 1.0;
+					}
 					break;
 
 				case SIGNAL_TYPE.RANDOM:
 					for ( int i=0; i < 1024; i++ )
-//						m_signalSource[i].r = SimpleRNG.GetUniform();
-						m_signalSource[i].r = SimpleRNG.GetExponential();
+						m_signalSource[i].r = SimpleRNG.GetUniform();
+//						m_signalSource[i].r = SimpleRNG.GetExponential();
+//						m_signalSource[i].r = SimpleRNG.GetBeta( 0.5, 1 );
+//						m_signalSource[i].r = SimpleRNG.GetGamma( 1.0, 0.1 );
+//						m_signalSource[i].r = SimpleRNG.GetCauchy( 0.0, 1.0 );
+//						m_signalSource[i].r = SimpleRNG.GetChiSquare( 1.0 );
+//						m_signalSource[i].r = SimpleRNG.GetNormal( 0.0, 0.1 );
+//						m_signalSource[i].r = SimpleRNG.GetLaplace( 0.0, 0.1 );
+//						m_signalSource[i].r = SimpleRNG.GetStudentT( 2.0 );
 					break;
 			}
 
 			// Transform
-//			SharpMath.FFT.DFT1D.DFT_Forward( m_signalSource, m_spectrum );
-			SharpMath.FFT.FFT1D.FFT_Forward( m_signalSource, m_spectrum );
+//			DFT1D.DFT_Forward( m_signalSource, m_spectrum );
+			FFT1D.FFT_Forward( m_signalSource, m_spectrum );
 
 			// Filter
 			FilterDelegate	filter = null;
@@ -225,84 +255,9 @@ namespace TestFourier
 			}
 
 			// Inverse Transform
-//			SharpMath.FFT.DFT1D.DFT_Inverse( m_spectrum, m_signalReconstructed );
-			SharpMath.FFT.FFT1D.FFT_Inverse( m_spectrum, m_signalReconstructed );
+//			DFT1D.DFT_Inverse( m_spectrum, m_signalReconstructed );
+			FFT1D.FFT_Inverse( m_spectrum, m_signalReconstructed );
 		}
-
-		#endregion
-
-		#region FFT 2D Test
-
-// 		Complex[][]		m_signalSource = new Complex[64][64];
-// 		Complex[][]		m_spectrum = new Complex[64][64];
-// 		Complex[][]		m_signalReconstructed = new Complex[64][64];
-
-		void	UpdateGraph2D() {
-
-			double	time = (DateTime.Now - m_startTime).TotalSeconds;
-
-			TestTransform1D( time );
-
-			m_image.Clear( float4.One );
-
-			float2	rangeX = new float2( 0.0f, 1024.0f );
-			float2	rangeY = new float2( -1, 1 );
-
-			// Plot input signal
-//			m_image.PlotGraphAutoRangeY( m_black, rangeX, ref rangeY, ( float x ) => {
-			m_image.PlotGraph( m_black, rangeX, rangeY, ( float x ) => {
-				int		X = Math.Max( 0, Math.Min( 1023, (int) x ) );
-				return (float) m_signalSource[X].r;
-			} );
-
-			// Plot reconstructed signals (Real and Imaginary parts)
-			m_image.PlotGraph( m_red, rangeX, rangeY, ( float x ) => {
-				int		X = Math.Max( 0, Math.Min( 1023, (int) x ) );
-				return (float) m_signalReconstructed[X].r;
-			} );
-			m_image.PlotGraph( m_blue, rangeX, rangeY, ( float x ) => {
-				int		X = Math.Max( 0, Math.Min( 1023, (int) x ) );
-				return (float) m_signalReconstructed[X].i;
-			} );
-			m_image.PlotAxes( m_black, rangeX, rangeY, 16.0f, 0.1f );
-
-			//////////////////////////////////////////////////////////////////////////
-			// Render spectrum as (Real=Red, Imaginary=Blue) vertical lines for each frequency
-			float2	cornerMin = m_image.RangedCoordinates2ImageCoordinates( rangeX, rangeY, new float2( rangeX.x, -1.0f ) );
-			float2	cornerMax = m_image.RangedCoordinates2ImageCoordinates( rangeX, rangeY, new float2( rangeX.y, +1.0f ) );
-			float2	delta = cornerMax - cornerMin;
-			float	zeroY = cornerMin.y + 0.5f * delta.y;
-
-			float2	Xr0 = new float2( 0, zeroY );
-			float2	Xr1 = new float2( 0, 0 );
-			float2	Xi0 = new float2( 0, zeroY );
-			float2	Xi1 = new float2( 0, 0 );
-
-			float	scale = 10.0f;
-
-			float4	spectrumColorRe = new float4( 1, 0.25f, 0, 1 );
-			float4	spectrumColorIm = new float4( 0, 0.5f, 1, 1 );
-			int		size = m_spectrum.Length;
-			int		halfSize = size >> 1;
-			for ( int i=0; i < m_spectrum.Length; i++ ) {
-				float	X = cornerMin.x + i * delta.x / m_spectrum.Length;
-//				int		frequencyIndex = i;							// Show spectrum as output by FFT
-				int		frequencyIndex = (i + halfSize) % size;		// Show offset spectrum with DC term in the middle
-				Xr0.x = X;
-				Xr1.x = X;
-				Xr1.y = cornerMin.y + 0.5f * (scale * (float) m_spectrum[frequencyIndex].r + 1.0f) * delta.y;
-				Xi0.x = X+1;
-				Xi1.x = X+1;
-				Xi1.y = cornerMin.y + 0.5f * (scale * (float) m_spectrum[frequencyIndex].i + 1.0f) * delta.y;
-
-				m_image.DrawLine( spectrumColorRe, Xr0, Xr1 );
-				m_image.DrawLine( spectrumColorIm, Xi0, Xi1 );
-			}
-
-			imagePanel.Bitmap = m_image.AsBitmap;
-		}
-
-		#endregion
 
 		private void radioButtonSquare_CheckedChanged( object sender, EventArgs e ) {
 			if ( radioButtonSquare.Checked )
@@ -333,6 +288,23 @@ namespace TestFourier
 			else if ( radioButtonFilterInverse.Checked )
 				m_filter = FILTER_TYPE.INVERSE;
 		}
+
+		#endregion
+
+		#region FFT 2D Test
+
+// 		Complex[][]		m_signalSource = new Complex[64][64];
+// 		Complex[][]		m_spectrum = new Complex[64][64];
+// 		Complex[][]		m_signalReconstructed = new Complex[64][64];
+
+		void	UpdateGraph2D() {
+
+			double	time = (DateTime.Now - m_startTime).TotalSeconds;
+
+//			TestTransform2D( time );
+		}
+
+		#endregion
 
 	}
 }

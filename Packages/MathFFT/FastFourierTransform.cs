@@ -183,8 +183,9 @@ namespace SharpMath.FFT {
 			Complex[]	bufferOut = (_POT & 1) != 0 ? _output : temp;
 
 			// Generate most-displacement indices then copy and displace source
-			int[]	indices = new int[_size];
-			GenerateIndexList( _POT-1, indices );
+// 			int[]	indices = new int[_size];
+// 			GenerateIndexList( _POT-1, indices );
+			int[]	indices = PermutationTables.ms_tables[_POT];
 			for ( int i=0; i < _size; i++ )
 				bufferIn[i] = _input[indices[i]];
 
@@ -232,25 +233,6 @@ namespace SharpMath.FFT {
 
 			if ( bufferIn != _output )
 				throw new Exception( "Unexpected buffer as output!" );
-		}
-
-		private static void		GenerateIndexList( int _stageIndex, int[] _indices ) {
-			int		length = _indices.Length;
-			int		halfLength = length / 2;
-			GenerateIndexList( _stageIndex, _indices, 0, 0, halfLength, 2 );
-			GenerateIndexList( _stageIndex, _indices, halfLength, 1, halfLength, 2 );
-		}
-		private static void		GenerateIndexList( int _stageIndex, int[] _indices, int _targetIndex, int _sourceIndex, int _length, int _stride ) {
-			if ( _stageIndex == 0 ) {
-				for ( int k=0; k < _length; k++ ) {
-					_indices[_targetIndex+k] = _sourceIndex + k * _stride;
-				}
-				return;
-			}
-
-			int	halfLength = _length / 2;
-			GenerateIndexList( _stageIndex-1, _indices, _targetIndex, _sourceIndex, halfLength, 2 * _stride );
-			GenerateIndexList( _stageIndex-1, _indices, _targetIndex + halfLength, _sourceIndex + _stride, halfLength, 2 * _stride );
 		}
 
 		#region Brute-Force Recursive Version

@@ -64,6 +64,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ViewportPanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="ViewportPanel.Designer.cs">
+      <DependentUpon>ViewportPanel.cs</DependentUpon>
+    </Compile>
     <Compile Include="FourierTestForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -124,6 +130,11 @@
       <Project>{dd026a89-c5fe-4150-bc85-a660e427826a}</Project>
       <Name>MathAdvanced</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Shaders\Global.hlsl" />
+    <Content Include="Shaders\GenerateSignal.hlsl" />
+    <Content Include="Shaders\Display.hlsl" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

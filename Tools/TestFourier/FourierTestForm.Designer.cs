@@ -52,7 +52,7 @@
 			this.label1 = new System.Windows.Forms.Label();
 			this.imagePanel = new TestFourier.ImagePanel();
 			this.tabPage2D = new System.Windows.Forms.TabPage();
-			this.imagePanel2D = new TestFourier.ImagePanel();
+			this.viewportPanel = new TestFourier.ViewportPanel();
 			this.checkBoxShowInput = new System.Windows.Forms.CheckBox();
 			this.tabControl1.SuspendLayout();
 			this.tabPage1D.SuspendLayout();
@@ -307,7 +307,7 @@
 			// 
 			// tabPage2D
 			// 
-			this.tabPage2D.Controls.Add(this.imagePanel2D);
+			this.tabPage2D.Controls.Add(this.viewportPanel);
 			this.tabPage2D.Location = new System.Drawing.Point(4, 22);
 			this.tabPage2D.Name = "tabPage2D";
 			this.tabPage2D.Padding = new System.Windows.Forms.Padding(3);
@@ -318,12 +318,10 @@
 			// 
 			// imagePanel2D
 			// 
-			this.imagePanel2D.Bitmap = null;
-			this.imagePanel2D.Location = new System.Drawing.Point(6, 45);
-			this.imagePanel2D.MessageOnEmpty = null;
-			this.imagePanel2D.Name = "imagePanel2D";
-			this.imagePanel2D.Size = new System.Drawing.Size(1000, 500);
-			this.imagePanel2D.TabIndex = 1;
+			this.viewportPanel.Location = new System.Drawing.Point(6, 45);
+			this.viewportPanel.Name = "viewportPanel";
+			this.viewportPanel.Size = new System.Drawing.Size(1000, 500);
+			this.viewportPanel.TabIndex = 1;
 			// 
 			// checkBoxShowInput
 			// 
@@ -365,7 +363,7 @@
 		private System.Windows.Forms.TabControl tabControl1;
 		private System.Windows.Forms.TabPage tabPage1D;
 		private System.Windows.Forms.TabPage tabPage2D;
-		private ImagePanel imagePanel2D;
+		private ViewportPanel viewportPanel;
 		private System.Windows.Forms.Label label1;
 		private System.Windows.Forms.Panel panel1;
 		private System.Windows.Forms.RadioButton radioButtonSquare;
