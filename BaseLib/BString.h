@@ -6,9 +6,9 @@
 //
 #pragma once
 
-typedef const char*	BString;
+//typedef char*	BString;
 
-/*
+//*
 class	BString {
 private:
 	char*		m_str;
@@ -43,4 +43,4 @@ public:
 private:
 	void			Copy( const char* _source );
 };
-*/
+//*/

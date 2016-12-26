@@ -3,6 +3,8 @@
 #include "FileServer.h"
 #include <sys/stat.h>
 
+DiskFileServer	DiskFileServer::singleton;
+
 DiskFileServer::DiskFileServer() {
 }
 
@@ -85,7 +87,6 @@ void	DiskFileServer::GetFileDirectory( BString& _fileDirectory, const BString& _
 	}
 
 	_fileDirectory = _filePath;
-//	strcpy_s( _fileDirectory, 1024, _filePath );
 
 	// Cut at last slash or anti-slash
 	const char*	pLastSlash = strrchr( _fileDirectory, '\\' );

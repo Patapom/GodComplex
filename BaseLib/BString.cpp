@@ -1,5 +1,5 @@
 ﻿#include "Types.h"
-/*
+//*
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
@@ -114,4 +114,4 @@ S32	BString::Compare( const BString& _a, const BString& _b, int _maxLength ) {
 	BString::~BString() {
 	}
 #endif
-*/
+//*/
