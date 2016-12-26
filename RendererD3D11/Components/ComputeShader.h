@@ -7,33 +7,32 @@
 //#define AUTHORIZE_MULTITHREADED_COMPILATION	// Define this to allow multithreaded compilation at runtime
 
 #if !defined(GODCOMPLEX) && defined(AUTHORIZE_MULTITHREADED_COMPILATION)
-// This is useful only for applications, not demos!
+	// This is useful only for applications, not demos!
+	#define COMPUTE_SHADER_COMPILE_AT_RUNTIME	// Define this to start compiling shaders at runtime and avoid blocking (useful for debugging)
+												// If you enable that option then the shader will start compiling as soon as WatchShaderModifications() is called on the material
 
-#define COMPUTE_SHADER_COMPILE_AT_RUNTIME	// Define this to start compiling shaders at runtime and avoid blocking (useful for debugging)
-											// If you enable that option then the shader will start compiling as soon as WatchShaderModifications() is called on the material
-
-#define COMPUTE_SHADER_COMPILE_THREADED		// Define this to launch shader compilation in different threads
+	#define COMPUTE_SHADER_COMPILE_THREADED		// Define this to launch shader compilation in different threads
 
 #endif
 
 
 class ConstantBuffer;
 class StructuredBuffer;
+class IFileServer;
 
 #define USING_COMPUTESHADER_START( Shader )	\
 {									\
 	ComputeShader&	M = Shader;		\
 	M.Use();						\
 
-// #define USING_MATERIAL_END	\
+// #define USING_COMPUTE_SHADER_END	\
 // M.GetDevice().RemoveRenderTargets(); /* Just to ensure we don't leave any attached RT we may need later as a texture !*/	\
 // }
 #define USING_COMPUTE_SHADER_END	\
 }
 
 
-class ComputeShader : public Component, ID3DInclude
-{
+class ComputeShader : public Component {
 public:		// NESTED TYPES
 
 // Pom (2016-11-01) Because of a fucking link error about IID_ID3D11ShaderReflection we can't use reflection...
@@ -41,13 +40,9 @@ public:		// NESTED TYPES
 // 	class	ShaderConstants {
 // 	public:	// NESTED TYPES
 // 
-// 		struct BindingDesc
-// 		{
+// 		struct BindingDesc {
 // 			char*	pName;
 // 			int		Slot;
-// #ifdef __DEBUG_UPLOAD_ONLY_ONCE
-// 			bool	bUploaded;
-// #endif
 // 
 // 			~BindingDesc();
 // 
@@ -75,34 +70,31 @@ public:		// NESTED TYPES
 
 private:	// FIELDS
 
-	const char*				m_pShaderFileName;
-	const char*				m_pShaderPath;
-	ID3DInclude*			m_pIncludeOverride;
+	BString					m_shaderFileName;
+	IFileServer*			m_fileServer;
 
-	D3D_SHADER_MACRO*		m_pMacros;
+	D3D_SHADER_MACRO*		m_macros;
 
-	const char*				m_pEntryPointCS;
+	BString					m_entryPointCS;
 	ID3D11ComputeShader*	m_pCS;
 
-	bool					m_bHasErrors;
+	bool					m_hasErrors;
 
  	#ifdef ENABLE_SHADER_REFLECTION
 	 	ShaderConstants			m_CSConstants;
 	#endif
-
- 	BaseLib::Dictionary<const char*>	m_Pointer2FileName;
 
 	static ComputeShader*	ms_pCurrentShader;
 
 
 public:	 // PROPERTIES
 
-	bool				HasErrors() const	{ return m_bHasErrors; }
+	bool				HasErrors() const	{ return m_hasErrors; }
 
 public:	 // METHODS
 
-	ComputeShader( Device& _Device, const char* _pShaderFileName, const char* _pShaderCode, D3D_SHADER_MACRO* _pMacros, const char* _pEntryPoint, ID3DInclude* _pIncludeOverride );
-	ComputeShader( Device& _Device, const char* _pShaderFileName, ID3DBlob* _pCS );
+	ComputeShader( Device& _device, const BString& _shaderFileName, D3D_SHADER_MACRO* _macros, const BString& _entryPoint, IFileServer* _fileServerOverride );
+	ComputeShader( Device& _device, const BString& _shaderFileName, ID3DBlob* _blobCS );
 	~ComputeShader();
 
 	void			SetConstantBuffer( int _BufferSlot, ConstantBuffer& _Buffer );
@@ -110,10 +102,10 @@ public:	 // METHODS
 	void			SetStructuredBuffer( int _BufferSlot, StructuredBuffer& _Buffer );
 	void			SetUnorderedAccessView( int _BufferSlot, StructuredBuffer& _Buffer );
 #ifndef GODCOMPLEX
-	bool			SetConstantBuffer( const char* _pBufferName, ConstantBuffer& _Buffer );
-	bool			SetTexture( const char* _pTextureName, ID3D11ShaderResourceView* _pData );
-	bool			SetStructuredBuffer( const char* _pBufferName, StructuredBuffer& _Buffer );
-	bool			SetUnorderedAccessView( const char* _pBufferName, StructuredBuffer& _Buffer );
+	bool			SetConstantBuffer( const BString& _pBufferName, ConstantBuffer& _Buffer );
+	bool			SetTexture( const BString& _pTextureName, ID3D11ShaderResourceView* _pData );
+	bool			SetStructuredBuffer( const BString& _pBufferName, StructuredBuffer& _Buffer );
+	bool			SetUnorderedAccessView( const BString& _pBufferName, StructuredBuffer& _Buffer );
 #endif
 
 	bool			Use();
@@ -125,20 +117,13 @@ public:	 // METHODS
 	//
 	void			Dispatch( U32 _GroupsCountX, U32 _GroupsCountY, U32 _GroupsCountZ );
 
-
-public:	// ID3DInclude Members
-
-    STDMETHOD(Open)( THIS_ D3D_INCLUDE_TYPE _IncludeType, LPCSTR _pFileName, LPCVOID _pParentData, LPCVOID* _ppData, UINT* _pBytes );
-    STDMETHOD(Close)( THIS_ LPCVOID _pData );
-
 private:
 
-	void			CompileShaders( const char* _pShaderCode, ID3DBlob* _pCS=NULL );
+	void			CompileShader( ID3DBlob* _pCS=NULL );
 
-	const char*		CopyString( const char* _pShaderFileName ) const;
-#ifndef GODCOMPLEX
-	const char*		GetShaderPath( const char* _pShaderFileName ) const;
-#endif
+// 	#ifndef GODCOMPLEX
+// 		const char*		GetShaderPath( const char* _pShaderFileName ) const;
+// 	#endif
 
 
 	// Returns true if the shaders are safe to access (i.e. have been compiled and no other thread is accessing them)
@@ -163,7 +148,7 @@ public:
 	// Binary Blobs
 
 	// Helper to reload a compiled binary blob and build the shader from it
-	static ComputeShader*	CreateFromBinaryBlob( Device& _Device, const char* _pShaderFileName, D3D_SHADER_MACRO* _pMacros, const char* _pEntryPoint );
+	static ComputeShader*	CreateFromBinaryBlob( Device& _device, const BString& _shaderFileName, D3D_SHADER_MACRO* _macros, const BString& _entryPoint );
 
 
 private:

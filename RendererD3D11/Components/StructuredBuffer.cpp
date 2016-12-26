@@ -31,14 +31,14 @@ StructuredBuffer::StructuredBuffer( Device& _Device, int _ElementSize, int _Elem
 	Desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
 	Desc.StructureByteStride = _ElementSize;
 
-	Check( m_Device.DXDevice().CreateBuffer( &Desc, NULL, &m_pBuffer ) );
+	Check( m_device.DXDevice().CreateBuffer( &Desc, NULL, &m_pBuffer ) );
 
 	// Create the CPU accessible version of the buffer
 	Desc.Usage = D3D11_USAGE_STAGING;
 	Desc.BindFlags = 0;
 	Desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ | (_bWriteable ? D3D11_CPU_ACCESS_WRITE : 0);
 	
-	Check( m_Device.DXDevice().CreateBuffer( &Desc, NULL, &m_pCPUBuffer ) );
+	Check( m_device.DXDevice().CreateBuffer( &Desc, NULL, &m_pCPUBuffer ) );
 
 
 	//////////////////////////////////////////////////////////////////////////
@@ -49,7 +49,7 @@ StructuredBuffer::StructuredBuffer( Device& _Device, int _ElementSize, int _Elem
 	ViewDesc.Buffer.FirstElement = 0;
 	ViewDesc.Buffer.NumElements = _ElementsCount;
 
-	Check( m_Device.DXDevice().CreateShaderResourceView( m_pBuffer, &ViewDesc, &m_pShaderView ) );
+	Check( m_device.DXDevice().CreateShaderResourceView( m_pBuffer, &ViewDesc, &m_pShaderView ) );
 
  
 	// Create the Unordered Access View for the Buffers
@@ -61,7 +61,7 @@ StructuredBuffer::StructuredBuffer( Device& _Device, int _ElementSize, int _Elem
 	UnorderedViewDesc.Buffer.NumElements = _ElementsCount;
 	UnorderedViewDesc.Buffer.Flags = 0;
 
-	Check( m_Device.DXDevice().CreateUnorderedAccessView( m_pBuffer, &UnorderedViewDesc, &m_pUnorderedAccessView ) );
+	Check( m_device.DXDevice().CreateUnorderedAccessView( m_pBuffer, &UnorderedViewDesc, &m_pUnorderedAccessView ) );
 }
 
 StructuredBuffer::~StructuredBuffer()
@@ -77,16 +77,16 @@ void	StructuredBuffer::Read( void* _pData, int _ElementsCount ) const
 	int	Size = m_ElementSize * (_ElementsCount < 0 ? m_ElementsCount : _ElementsCount);
 
 	// Copy from actual buffer
-	m_Device.DXContext().CopyResource( m_pCPUBuffer, m_pBuffer );
+	m_device.DXContext().CopyResource( m_pCPUBuffer, m_pBuffer );
 
 	// Read from staging resource
 	D3D11_MAPPED_SUBRESOURCE	SubResource;
-	Check( m_Device.DXContext().Map( m_pCPUBuffer, 0, D3D11_MAP_READ, 0, &SubResource ) );
+	Check( m_device.DXContext().Map( m_pCPUBuffer, 0, D3D11_MAP_READ, 0, &SubResource ) );
 	ASSERT( SubResource.pData != NULL, "Failed to Map resource for reading!" );
 
 	memcpy( _pData, SubResource.pData, Size );
 
-	m_Device.DXContext().Unmap( m_pCPUBuffer, 0 );
+	m_device.DXContext().Unmap( m_pCPUBuffer, 0 );
 }
 
 void	StructuredBuffer::Write( void* _pData, int _ElementsCount )
@@ -95,25 +95,25 @@ void	StructuredBuffer::Write( void* _pData, int _ElementsCount )
 
 	// Write to staging resource
 	D3D11_MAPPED_SUBRESOURCE	SubResource;
-	Check( m_Device.DXContext().Map( m_pCPUBuffer, 0, D3D11_MAP_WRITE, 0, &SubResource ) );
+	Check( m_device.DXContext().Map( m_pCPUBuffer, 0, D3D11_MAP_WRITE, 0, &SubResource ) );
 	ASSERT( SubResource.pData != NULL, "Failed to Map resource for writing!" );
 
 	memcpy( SubResource.pData, _pData, Size );
 
-	m_Device.DXContext().Unmap( m_pCPUBuffer, 0 );
+	m_device.DXContext().Unmap( m_pCPUBuffer, 0 );
 
 	// Copy to actual buffer
-	m_Device.DXContext().CopyResource( m_pBuffer, m_pCPUBuffer );
+	m_device.DXContext().CopyResource( m_pBuffer, m_pCPUBuffer );
 }
 
 void	StructuredBuffer::Clear( U32 _pValue[4] )
 {
-	m_Device.DXContext().ClearUnorderedAccessViewUint( m_pUnorderedAccessView, _pValue );
+	m_device.DXContext().ClearUnorderedAccessViewUint( m_pUnorderedAccessView, _pValue );
 }
 
 void	StructuredBuffer::Clear( const bfloat4& _Value )
 {
-	m_Device.DXContext().ClearUnorderedAccessViewFloat( m_pUnorderedAccessView, &_Value.x );
+	m_device.DXContext().ClearUnorderedAccessViewFloat( m_pUnorderedAccessView, &_Value.x );
 }
 
 void	StructuredBuffer::SetInput( int _SlotIndex )
@@ -129,7 +129,7 @@ void	StructuredBuffer::SetInput( int _SlotIndex )
 		for ( int OutputSlotIndex=0; OutputSlotIndex < D3D11_PS_CS_UAV_REGISTER_COUNT; OutputSlotIndex++ )
 			if ( m_pAssignedToOutputSlot[OutputSlotIndex] != -1 )
 			{	// We're still assigned to an output...
-				m_Device.DXContext().CSSetUnorderedAccessViews( OutputSlotIndex, 1, &pView, &UAVInitialCount );
+				m_device.DXContext().CSSetUnorderedAccessViews( OutputSlotIndex, 1, &pView, &UAVInitialCount );
 				m_pAssignedToOutputSlot[OutputSlotIndex] = -1;
 				ms_ppOutputs[OutputSlotIndex] = NULL;
 			}
@@ -137,12 +137,12 @@ void	StructuredBuffer::SetInput( int _SlotIndex )
 
 	// We can now safely assign it as an input
 	ID3D11ShaderResourceView*	pView = GetShaderView();
-	m_Device.DXContext().VSSetShaderResources( _SlotIndex, 1, &pView );
-	m_Device.DXContext().HSSetShaderResources( _SlotIndex, 1, &pView );
-	m_Device.DXContext().DSSetShaderResources( _SlotIndex, 1, &pView );
-	m_Device.DXContext().GSSetShaderResources( _SlotIndex, 1, &pView );
-	m_Device.DXContext().PSSetShaderResources( _SlotIndex, 1, &pView );
-	m_Device.DXContext().CSSetShaderResources( _SlotIndex, 1, &pView );
+	m_device.DXContext().VSSetShaderResources( _SlotIndex, 1, &pView );
+	m_device.DXContext().HSSetShaderResources( _SlotIndex, 1, &pView );
+	m_device.DXContext().DSSetShaderResources( _SlotIndex, 1, &pView );
+	m_device.DXContext().GSSetShaderResources( _SlotIndex, 1, &pView );
+	m_device.DXContext().PSSetShaderResources( _SlotIndex, 1, &pView );
+	m_device.DXContext().CSSetShaderResources( _SlotIndex, 1, &pView );
 
 	m_LastAssignedSlots[0] = _SlotIndex;
 	m_LastAssignedSlots[1] = _SlotIndex;
@@ -159,7 +159,7 @@ void	StructuredBuffer::SetOutput( int _SlotIndex ) {
 
 	ID3D11UnorderedAccessView*	pView = GetUnorderedAccessView();
 	U32							UAVInitialCount = -1;
-	m_Device.DXContext().CSSetUnorderedAccessViews( _SlotIndex, 1, &pView, &UAVInitialCount );
+	m_device.DXContext().CSSetUnorderedAccessViews( _SlotIndex, 1, &pView, &UAVInitialCount );
 
 	// Remove any previous output buffer
 	if ( ms_ppOutputs[_SlotIndex] != NULL )
@@ -182,7 +182,7 @@ void	StructuredBuffer::RemoveFromLastAssignedSlots() const
 	};
 	for ( int ShaderStageIndex=0; ShaderStageIndex < 6; ShaderStageIndex++ )
 		if ( m_LastAssignedSlots[ShaderStageIndex] != -1 ) {
-			m_Device.RemoveShaderResources( m_LastAssignedSlots[ShaderStageIndex], 1, pStageFlags[ShaderStageIndex] );
+			m_device.RemoveShaderResources( m_LastAssignedSlots[ShaderStageIndex], 1, pStageFlags[ShaderStageIndex] );
 			m_LastAssignedSlots[ShaderStageIndex] = -1;
 		}
 }

@@ -26,6 +26,7 @@
     <ClInclude Include="Math\Random.h" />
     <ClInclude Include="Math\SH.h" />
     <ClInclude Include="PixelFormats\PixelFormats.h" />
+    <ClInclude Include="BString.h" />
     <ClInclude Include="Types.h" />
     <ClInclude Include="Utility\tweakval.h" />
   </ItemGroup>
@@ -35,6 +36,7 @@
     <ClCompile Include="Math\Random.cpp" />
     <ClCompile Include="Math\SH.cpp" />
     <ClCompile Include="PixelFormats\PixelFormats.cpp" />
+    <ClCompile Include="BString.cpp" />
     <ClCompile Include="Utility\tweakval.cpp" />
   </ItemGroup>
   <ItemGroup>

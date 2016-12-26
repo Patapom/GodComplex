@@ -27,7 +27,7 @@ int		Device::ComponentsCount() const
 	while ( pCurrent != NULL )
 	{
 		Count++;
-		pCurrent = pCurrent->m_pPrevious;
+		pCurrent = pCurrent->m_previous;
 	}
 
 	return Count;
@@ -475,8 +475,8 @@ void	Device::RegisterComponent( Component& _Component )
 {
 	// Attach to the end of the list
 	if ( m_pComponentsStackTop != NULL )
-		m_pComponentsStackTop->m_pNext = &_Component;
-	_Component.m_pPrevious = m_pComponentsStackTop;
+		m_pComponentsStackTop->m_next = &_Component;
+	_Component.m_previous = m_pComponentsStackTop;
 
 	m_pComponentsStackTop = &_Component;
 }
@@ -484,12 +484,12 @@ void	Device::RegisterComponent( Component& _Component )
 void	Device::UnRegisterComponent( Component& _Component )
 {
 	// Link over
-	if ( _Component.m_pPrevious != NULL )
-		_Component.m_pPrevious->m_pNext = _Component.m_pNext;
-	if ( _Component.m_pNext != NULL )
-		_Component.m_pNext->m_pPrevious = _Component.m_pPrevious;
+	if ( _Component.m_previous != NULL )
+		_Component.m_previous->m_next = _Component.m_next;
+	if ( _Component.m_next != NULL )
+		_Component.m_next->m_previous = _Component.m_previous;
 	else
-		m_pComponentsStackTop = _Component.m_pPrevious;	// We were the top of the stack !
+		m_pComponentsStackTop = _Component.m_previous;	// We were the top of the stack !
 }
 
 bool	Device::Check( HRESULT _Result )

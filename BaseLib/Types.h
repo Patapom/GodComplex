@@ -4,10 +4,12 @@
 	#include <assert.h>
 	#define ASSERT( condition, text ) assert( (condition) || !text )
 	#define ASSERT_RETURN_FALSE( condition, text ) assert( (condition) || !text ) return false
+	#define RELEASE_ASSERT( condition, text ) assert( (condition) || !text )
 #else
 	#include <crtdefs.h>
 	#define ASSERT( condition, text )	(condition)
 	#define ASSERT_RETURN_FALSE( condition, text ) return false
+	#define RELEASE_ASSERT( condition, text ) assert( (condition) || !text )
 #endif
 
 #ifndef NULL
@@ -30,6 +32,7 @@ typedef signed long		S64;
 //
 #define SAFE_DELETE( a )		if ( (a) != NULL ) { delete (a); (a) = NULL; }
 #define SAFE_DELETE_ARRAY( a )	if ( (a) != NULL ) { delete[] (a); (a) = NULL; }
+#define SAFE_RELEASE( a )		if ( (a) != NULL ) { (a)->Release(); delete (a); (a) = NULL; }
 
 #ifndef GODCOMPLEX
 template<typename T> void		SafeDelete__( T*& _pBuffer ) {
@@ -70,6 +73,7 @@ template<typename T> void		SafeDeleteArray__( T*& _pBuffer ) {
 
 template<typename T> void	Swap( T& a, T& b ) { T temp = a; a = b; b = temp; }
 
+#include "BString.h"
 #include "Containers/Hashtable.h"
 #include "Containers/List.h"
 

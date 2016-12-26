@@ -29,10 +29,10 @@ ConstantBuffer::ConstantBuffer( Device& _device, int _size, void* _pData, bool _
 		InitData.SysMemPitch = 0;
 		InitData.SysMemSlicePitch = 0;
 
-		Check( m_Device.DXDevice().CreateBuffer( &Desc, &InitData, &m_pBuffer ) );
+		Check( m_device.DXDevice().CreateBuffer( &Desc, &InitData, &m_pBuffer ) );
 	}
 	else
-		Check( m_Device.DXDevice().CreateBuffer( &Desc, NULL, &m_pBuffer ) );
+		Check( m_device.DXDevice().CreateBuffer( &Desc, NULL, &m_pBuffer ) );
 
 	// Create the shader resource view if it's a tbuffer
 	if ( m_IsConstantBuffer )
@@ -44,7 +44,7 @@ ConstantBuffer::ConstantBuffer( Device& _device, int _size, void* _pData, bool _
 	ViewDesc.Buffer.ElementOffset = 0;
 	ViewDesc.Buffer.ElementWidth = _size >> 4;
 
-	Check( m_Device.DXDevice().CreateShaderResourceView( m_pBuffer, &ViewDesc, &m_pShaderResourceView ) );
+	Check( m_device.DXDevice().CreateShaderResourceView( m_pBuffer, &ViewDesc, &m_pShaderResourceView ) );
 }
 
 ConstantBuffer::~ConstantBuffer() {
@@ -58,11 +58,11 @@ ConstantBuffer::~ConstantBuffer() {
 
 void	ConstantBuffer::UpdateData( const void* _pData ) {
 	D3D11_MAPPED_SUBRESOURCE	SubResource;
-	m_Device.DXContext().Map( m_pBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &SubResource );
+	m_device.DXContext().Map( m_pBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &SubResource );
 
 	memcpy( SubResource.pData, _pData, m_Size );
 
-	m_Device.DXContext().Unmap( m_pBuffer, 0 );
+	m_device.DXContext().Unmap( m_pBuffer, 0 );
 }
 
 void	ConstantBuffer::Set( int _SlotIndex ) {
@@ -75,37 +75,37 @@ void	ConstantBuffer::Set( int _SlotIndex ) {
 }
 void	ConstantBuffer::SetVS( int _SlotIndex ) {
 	if ( m_IsConstantBuffer )
-		m_Device.DXContext().VSSetConstantBuffers( _SlotIndex, 1, &m_pBuffer );
+		m_device.DXContext().VSSetConstantBuffers( _SlotIndex, 1, &m_pBuffer );
 	else
-		m_Device.DXContext().VSSetShaderResources( _SlotIndex, 1, &m_pShaderResourceView );
+		m_device.DXContext().VSSetShaderResources( _SlotIndex, 1, &m_pShaderResourceView );
 }
 void	ConstantBuffer::SetHS( int _SlotIndex ) {
 	if ( m_IsConstantBuffer )
-		m_Device.DXContext().HSSetConstantBuffers( _SlotIndex, 1, &m_pBuffer );
+		m_device.DXContext().HSSetConstantBuffers( _SlotIndex, 1, &m_pBuffer );
 	else
-		m_Device.DXContext().HSSetShaderResources( _SlotIndex, 1, &m_pShaderResourceView );
+		m_device.DXContext().HSSetShaderResources( _SlotIndex, 1, &m_pShaderResourceView );
 }
 void	ConstantBuffer::SetDS( int _SlotIndex ) {
 	if ( m_IsConstantBuffer )
-		m_Device.DXContext().DSSetConstantBuffers( _SlotIndex, 1, &m_pBuffer );
+		m_device.DXContext().DSSetConstantBuffers( _SlotIndex, 1, &m_pBuffer );
 	else
-		m_Device.DXContext().DSSetShaderResources( _SlotIndex, 1, &m_pShaderResourceView );
+		m_device.DXContext().DSSetShaderResources( _SlotIndex, 1, &m_pShaderResourceView );
 }
 void	ConstantBuffer::SetGS( int _SlotIndex ) {
 	if ( m_IsConstantBuffer )
-		m_Device.DXContext().GSSetConstantBuffers( _SlotIndex, 1, &m_pBuffer );
+		m_device.DXContext().GSSetConstantBuffers( _SlotIndex, 1, &m_pBuffer );
 	else
-		m_Device.DXContext().GSSetShaderResources( _SlotIndex, 1, &m_pShaderResourceView );
+		m_device.DXContext().GSSetShaderResources( _SlotIndex, 1, &m_pShaderResourceView );
 }
 void	ConstantBuffer::SetPS( int _SlotIndex ) {
 	if ( m_IsConstantBuffer )
-		m_Device.DXContext().PSSetConstantBuffers( _SlotIndex, 1, &m_pBuffer );
+		m_device.DXContext().PSSetConstantBuffers( _SlotIndex, 1, &m_pBuffer );
 	else
-		m_Device.DXContext().PSSetShaderResources( _SlotIndex, 1, &m_pShaderResourceView );
+		m_device.DXContext().PSSetShaderResources( _SlotIndex, 1, &m_pShaderResourceView );
 }
 void	ConstantBuffer::SetCS( int _SlotIndex ) {
 	if ( m_IsConstantBuffer )
-		m_Device.DXContext().CSSetConstantBuffers( _SlotIndex, 1, &m_pBuffer );
+		m_device.DXContext().CSSetConstantBuffers( _SlotIndex, 1, &m_pBuffer );
 	else
-		m_Device.DXContext().CSSetShaderResources( _SlotIndex, 1, &m_pShaderResourceView );
+		m_device.DXContext().CSSetShaderResources( _SlotIndex, 1, &m_pShaderResourceView );
 }

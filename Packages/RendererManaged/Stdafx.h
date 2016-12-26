@@ -25,4 +25,7 @@
 #include "../../RendererD3D11/Structures/PixelFormats.h"
 #include "../../RendererD3D11/Structures/VertexFormats.h"
 
+#include "../../RendererD3D11/Utility/FileServer.h"
+#include "../../RendererD3D11/Utility/ShaderCompiler.h"
+
 #pragma managed

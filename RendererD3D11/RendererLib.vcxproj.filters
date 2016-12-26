@@ -47,6 +47,12 @@
     <ClInclude Include="Components\Shader.h">
       <Filter>Components</Filter>
     </ClInclude>
+    <ClInclude Include="Utility\FileServer.h">
+      <Filter>Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="Utility\ShaderCompiler.h">
+      <Filter>Utility</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp" />
@@ -89,6 +95,12 @@
     </ClCompile>
     <ClCompile Include="Components\Shader.cpp">
       <Filter>Components</Filter>
+    </ClCompile>
+    <ClCompile Include="Utility\FileServer.cpp">
+      <Filter>Utility</Filter>
+    </ClCompile>
+    <ClCompile Include="Utility\ShaderCompiler.cpp">
+      <Filter>Utility</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

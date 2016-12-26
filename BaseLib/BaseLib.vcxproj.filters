@@ -38,6 +38,7 @@
     <ClInclude Include="Utility\tweakval.h">
       <Filter>Utility</Filter>
     </ClInclude>
+    <ClInclude Include="BString.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Containers\Hashtable.cpp">
@@ -58,6 +59,7 @@
     <ClCompile Include="Utility\tweakval.cpp">
       <Filter>Utility</Filter>
     </ClCompile>
+    <ClCompile Include="BString.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Containers\Hashtable.inl">

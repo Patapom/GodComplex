@@ -4,6 +4,7 @@
 
 #include "Device.h"
 #include "ShaderMacros.h"
+#include "FileServer.h"
 
 using namespace System;
 
@@ -17,37 +18,11 @@ namespace Renderer {
 	public:
 
 		ComputeShader( Device^ _device, System::IO::FileInfo^ _shaderFileName, String^ _entryPoint, cli::array<ShaderMacro^>^ _macros ) {
-			const char*	shaderFileName = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( _shaderFileName->FullName ).ToPointer();
-			const char*	entryPoint = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( _entryPoint ).ToPointer();
+			Init( _device, _shaderFileName, _entryPoint, _macros, nullptr );
+		}
 
-			const char*	shaderSourceCode = nullptr;
-			if ( !::Shader::ms_LoadFromBinary ) {
-				if ( !_shaderFileName->Exists )
-					throw gcnew Exception( "Compute shader file \"" + _shaderFileName + "\" does not exist!" );
-
-				System::IO::StreamReader^	R = _shaderFileName->OpenText();
-				String^	stringShaderSourceCode = R->ReadToEnd();
-				delete R;
-
-				shaderSourceCode = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( stringShaderSourceCode ).ToPointer();
-			}
-
-			D3D_SHADER_MACRO*	macros = NULL;
-			if ( _macros != nullptr ) {
-				int i=0;
-				macros = new D3D_SHADER_MACRO[_macros->Length + 1];
-				for ( ; i < _macros->Length; i++ ) {
-					macros[i].Name = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( _macros[i]->name ).ToPointer();
-					macros[i].Definition = (const char*) System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi( _macros[i]->value ).ToPointer();
-
-				}
-				macros[i].Name = NULL;
-				macros[i].Definition = NULL;
-			}
-
-			m_pShader = new ::ComputeShader( *_device->m_pDevice, shaderFileName, shaderSourceCode, macros, entryPoint, NULL );
-
-			delete[] macros;
+		ComputeShader( Device^ _device, System::IO::FileInfo^ _shaderFileName, String^ _entryPoint, cli::array<ShaderMacro^>^ _macros, FileServer^ _fileServerOverride ) {
+			Init( _device, _shaderFileName, _entryPoint, _macros, _fileServerOverride );
 		}
 
 		~ComputeShader() {
@@ -63,5 +38,7 @@ namespace Renderer {
 			m_pShader->Dispatch( _GroupsCountX, _GroupsCountY, _GroupsCountZ );
 		}
 
+	private:
+		void	Init( Device^ _device, System::IO::FileInfo^ _shaderFileName, String^ _entryPoint, cli::array<ShaderMacro^>^ _macros, FileServer^ _fileServerOverride );
 	};
 }

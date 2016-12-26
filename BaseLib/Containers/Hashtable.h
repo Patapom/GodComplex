@@ -31,11 +31,10 @@ namespace BaseLib {
 template<typename T> class	DictionaryString {
 protected:	// NESTED TYPES
 
-	struct	Node
-	{
+	struct	Node {
 		struct Node*	pNext;
-		char*			pKey;
-		T				Value;
+		BString			key;
+		T				value;
 	};
 
 public:
@@ -53,17 +52,17 @@ public:		// METHODS
 	DictionaryString( int _Size=HT_DEFAULT_SIZE );
 	~DictionaryString();
 
-	T*		Get( const char* _pKey ) const;					// retrieve entry
-	T&		Add( const char* _pKey );						// store entry
-	T&		AddUnique( const char* _pKey );					// store entry
-	void	Add( const char* _pKey, const T& _Value );		// store entry
-	void	AddUnique( const char* _pKey, const T& _Value );// store entry
-	void	Remove( const char* _pKey );					// remove entry
+	T*		Get( const BString& _key ) const;					// retrieve entry
+	T&		Add( const BString& _key );							// store entry
+	T&		AddUnique( const BString& _key );					// store entry
+	void	Add( const BString& _key, const T& _Value );			// store entry
+	void	AddUnique( const BString& _key, const T& _Value );	// store entry
+	void	Remove( const BString& _key );						// remove entry
 	void	ForEach( VisitorDelegate _pDelegate, void* _pUserData );
 
 public:
 
-	static U32	Hash( const char* _pKey );
+//	static U32	Hash( const String& _key );
 	static U32	Hash( U32 _Key );
 };
 
@@ -74,11 +73,10 @@ public:
 template<typename T> class	Dictionary {
 protected:	// NESTED TYPES
 
-	struct	Node
-	{
+	struct	Node {
 		struct Node*	pNext;
-		U32				Key;
-		T				Value;
+		U32				key;
+		T				value;
 	};
 
 public:
@@ -116,8 +114,7 @@ public:		// METHODS
 class	DictionaryU32 {
 protected:	// NESTED TYPES
 
-	struct	Node
-	{
+	struct	Node {
 		struct Node*	pNext;
 		U32				Key;
 		void*			pValue;
@@ -157,11 +154,10 @@ template<typename K> class	DictionaryKey {
 template<typename K, typename T> class	DictionaryGeneric {
 protected:		// NESTED TYPES
 
-	struct	Node
-	{
+	struct	Node {
 		struct Node*		pNext;
-		K					Key;
-		T					Value;
+		K					key;
+		T					value;
 	};
 
 public:

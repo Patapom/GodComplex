@@ -28,61 +28,52 @@ namespace tweakval {
 	};
 
 	struct TweakableSourceFile {
-//		char		pFilename[1024];
-		const char*	pFilename;
-		time_t		LastModificationTime;
+		BString	filename;
+		time_t	lastModificationTime;
 	};
 
 	static Dictionary< TweakableSourceFile >	g_TweakableFiles;
 	static Dictionary< Tweakable >				g_TweakableValues;
 
-	U32			HashKey( const char* _pFileName, size_t _Counter ) {
-		static char	pStringKey[1024];
-		U32	counter = 0;
-		sprintf_s( pStringKey, 1024, "%s#%d", _pFileName, counter );
-		_Counter = counter;
-
-		U32	Hash = DictionaryString<int>::Hash( pStringKey );
+	U32			HashKey( const BString& _fileName, size_t _Counter ) {
+		BString	temp( "%s#%d", _fileName, _Counter );
+		U32	Hash = temp.Hash();
 		return Hash;
 	}
 
-	Tweakable*	LookupTweakValue( const char* _pFileName, size_t _Counter )
-	{
-		U32	Hash = HashKey( _pFileName, _Counter );
+	Tweakable*	LookupTweakValue( const BString& _fileName, size_t _Counter ) {
+		U32	Hash = HashKey( _fileName, _Counter );
 		return g_TweakableValues.Get( Hash );
 	}
 
-	time_t		GetFileModTime( const char* _pFileName )
-	{	
+	time_t		GetFileModTime( const char* _pFileName ) {	
 		struct _stat statInfo;
 		_stat( _pFileName, &statInfo );
 
 		return statInfo.st_mtime;
 	}
 
-	Tweakable&	AddTweakableValue( const char* _pFilename, size_t _Counter )
-	{
+	Tweakable&	AddTweakableValue( const BString& _filename, size_t _Counter ) {
 		// First, see if this file is in the files list
-		U32		Key = DictionaryString<int>::Hash( _pFilename );
+		U32		Key = _filename.Hash();
 		TweakableSourceFile*	pFileEntry = g_TweakableFiles.Get( Key );
-		if ( pFileEntry == NULL )
-		{	// if it's not found, add to the list of tweakable files, assume it's unmodified since the program has been built 
+		if ( pFileEntry == NULL ) {
+			// If it's not found, add to the list of tweakable files, assume it's unmodified since the program has been built 
 			TweakableSourceFile&	Value = g_TweakableFiles.Add( Key );
 // 			strcpy( Value.pFilename, _pFilename );
-			Value.pFilename = _pFilename;
-			Value.LastModificationTime = GetFileModTime( _pFilename );
+			Value.filename = _filename;
+			Value.lastModificationTime = GetFileModTime( _filename );
 		}
 
 		// Add to the tweakables
-		Key = HashKey( _pFilename, _Counter );
+		Key = HashKey( _filename, _Counter );
 		return g_TweakableValues.Add( Key );
 	}
 
-	void	ReloadTweakableFile( TweakableSourceFile& _SrcFile )
-	{	
+	void	ReloadTweakableFile( TweakableSourceFile& _SrcFile ) {	
 		size_t	counter = 0;
 		FILE*	fp;
-		fopen_s( &fp, _SrcFile.pFilename, "rt" );
+		fopen_s( &fp, _SrcFile.filename, "rt" );
 	
 		char line[2048], strval[512];
 		while ( !feof( fp ) )
@@ -112,9 +103,8 @@ namespace tweakval {
 				ch = chend;
 
 				// Apply the tweaked value (if found)
-				Tweakable*	tv = LookupTweakValue( _SrcFile.pFilename, counter );
-				if ( tv )
-				{
+				Tweakable*	tv = LookupTweakValue( _SrcFile.filename, counter );
+				if ( tv ) {
 					if ( tv->type == Tweakable::Type_INT ) {
 						tv->val.i = atoi( strval );
 					} else if ( tv->type == Tweakable::Type_FLOAT ) {
@@ -131,36 +121,34 @@ namespace tweakval {
 } // namespace tweakval
 
 using namespace tweakval;
-float _TweakValue( const char* file, size_t counter, float origVal ) {
-	Tweakable*	tv = LookupTweakValue( file, counter );
-	if ( !tv )
-	{
-		tv = &AddTweakableValue( file, counter );
+float _TweakValue( const BString& _fileName, size_t _counter, float _originalValue ) {
+	Tweakable*	tv = LookupTweakValue( _fileName, _counter );
+	if ( !tv ) {
+		tv = &AddTweakableValue( _fileName, _counter );
 		tv->type = Tweakable::Type_FLOAT;
-		tv->val.f = origVal;
+		tv->val.f = _originalValue;
 	}
 
 	return tv->val.f;
 }
 
-int _TweakValue( const char *file, size_t counter, int origVal ) {
-	Tweakable*	tv = LookupTweakValue( file, counter );
-	if ( !tv )
-	{
-		tv = &AddTweakableValue( file, counter );
+int _TweakValue( const BString& _fileName, size_t _counter, int _originalValue ) {
+	Tweakable*	tv = LookupTweakValue( _fileName, _counter );
+	if ( !tv ) {
+		tv = &AddTweakableValue( _fileName, _counter );
 		tv->type = Tweakable::Type_INT;
-		tv->val.i = origVal;
+		tv->val.i = _originalValue;
 	}
 
 	return tv->val.i;
 }
 
-void	FilesVisitor( int _EntryIndex, TweakableSourceFile& _File, void* _pUserData ) {
-	time_t	LastModificationTime = GetFileModTime( _File.pFilename );
-	if ( LastModificationTime <= _File.LastModificationTime )
+void	FilesVisitor( int _entryIndex, TweakableSourceFile& _File, void* _pUserData ) {
+	time_t	LastModificationTime = GetFileModTime( _File.filename );
+	if ( LastModificationTime <= _File.lastModificationTime )
 		return;	// No change !
 
-	_File.LastModificationTime = LastModificationTime;
+	_File.lastModificationTime = LastModificationTime;
 	ReloadTweakableFile( _File );
 }
 

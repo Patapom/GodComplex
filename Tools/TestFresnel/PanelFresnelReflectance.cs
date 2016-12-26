@@ -273,7 +273,7 @@ namespace TestFresnel
 		float	ComputeFresnelUnpolarized( float n, float k2, float c ) {
 			return 0.5f * (ComputeFresnelPerp( n, k2, c ) + ComputeFresnelPara( n, k2, c ));
 
-//Rha!
+//Rha! WRONG YOU MORON!
 // 			float	f = (n*n + k2 + 1)*(1+c*c);
 // 			float	katnc = 4.0f * n *c;
 // 			return 0.5f * (f - katnc) / (f + katnc);

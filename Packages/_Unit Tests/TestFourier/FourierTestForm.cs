@@ -164,6 +164,8 @@ namespace TestFourier
 
 		delegate double	FilterDelegate( int i, int _frequency );
 
+		Complex[]	m_spectrumGPU = new Complex[1024];
+
 		void	TestTransform1D( double _time ) {
 
 			// Build the input signal
@@ -210,6 +212,10 @@ namespace TestFourier
 			// Transform
 //			DFT1D.DFT_Forward( m_signalSource, m_spectrum );
 			FFT1D.FFT_Forward( m_signalSource, m_spectrum );
+
+			// Try the GPU version
+			m_FFT1D.FFT_Forward( m_signalSource, m_spectrumGPU );
+
 
 			// Filter
 			FilterDelegate	filter = null;

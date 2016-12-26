@@ -55,7 +55,7 @@ void	Primitive::Render( Shader& _Material )
 }
 void	Primitive::Render( Shader& _Material, int _StartVertex, int _VerticesCount, int _StartIndex, int _IndicesCount, int _BaseVertexOffset )
 {
-	ASSERT( m_Device.CurrentMaterial() == &_Material, "Attempting to render with a material that is not the currently used material!" );
+	ASSERT( m_device.CurrentMaterial() == &_Material, "Attempting to render with a material that is not the currently used material!" );
 
 	ID3D11InputLayout*	pLayout = _Material.GetVertexLayout();
 	if ( pLayout == NULL )
@@ -66,22 +66,22 @@ void	Primitive::Render( Shader& _Material, int _StartVertex, int _VerticesCount,
 //	ASSERT( PrimitiveFormat == _Material.GetFormat(), "Material and Primitive must use the same vertex format !" );
 	ASSERT( _Material.GetFormat().IsSubset( PrimitiveFormat ), "Material and Primitive must use a compatible vertex format!" );
 
-	m_Device.DXContext().IASetInputLayout( pLayout );
-	m_Device.DXContext().IASetPrimitiveTopology( m_Topology );
+	m_device.DXContext().IASetInputLayout( pLayout );
+	m_device.DXContext().IASetPrimitiveTopology( m_Topology );
 
 	U32 Offset = 0;
 //	m_Device.DXContext().IASetVertexBuffers( 0, 1, &m_pVB, &m_Stride, &Offset );
-	m_Device.DXContext().IASetVertexBuffers( 0, m_BoundVertexStreamsCount, m_ppVertexBuffers, m_pStrides, m_pOffsets );
+	m_device.DXContext().IASetVertexBuffers( 0, m_BoundVertexStreamsCount, m_ppVertexBuffers, m_pStrides, m_pOffsets );
 
 	if ( m_pIB != NULL )
 	{
-		m_Device.DXContext().IASetIndexBuffer( m_pIB, DXGI_FORMAT_R32_UINT, 0 );
-		m_Device.DXContext().DrawIndexed( _IndicesCount, _StartIndex, _BaseVertexOffset );
+		m_device.DXContext().IASetIndexBuffer( m_pIB, DXGI_FORMAT_R32_UINT, 0 );
+		m_device.DXContext().DrawIndexed( _IndicesCount, _StartIndex, _BaseVertexOffset );
 	}
 	else
 	{
-		m_Device.DXContext().IASetIndexBuffer( NULL, DXGI_FORMAT_UNKNOWN, 0 );
-		m_Device.DXContext().Draw( _VerticesCount, _StartVertex );
+		m_device.DXContext().IASetIndexBuffer( NULL, DXGI_FORMAT_UNKNOWN, 0 );
+		m_device.DXContext().Draw( _VerticesCount, _StartVertex );
 	}
 }
 
@@ -91,7 +91,7 @@ void	Primitive::RenderInstanced( Shader& _Material, int _InstancesCount )
 }
 void	Primitive::RenderInstanced( Shader& _Material, int _InstancesCount, int _StartVertex, int _VerticesCount, int _StartIndex, int _IndicesCount, int _BaseVertexOffset )
 {
-	ASSERT( m_Device.CurrentMaterial() == &_Material, "Attempting to render with a material that is not the currently used material!" );
+	ASSERT( m_device.CurrentMaterial() == &_Material, "Attempting to render with a material that is not the currently used material!" );
 
 	ID3D11InputLayout*	pLayout = _Material.GetVertexLayout();
 	if ( pLayout == NULL )
@@ -102,22 +102,22 @@ void	Primitive::RenderInstanced( Shader& _Material, int _InstancesCount, int _St
 //	ASSERT( PrimitiveFormat == _Material.GetFormat(), "Material and Primitive must use the same vertex format !" );
 	ASSERT( _Material.GetFormat().IsSubset( PrimitiveFormat ), "Material and Primitive must use a compatible vertex format!" );
 
-	m_Device.DXContext().IASetInputLayout( pLayout );
-	m_Device.DXContext().IASetPrimitiveTopology( m_Topology );
+	m_device.DXContext().IASetInputLayout( pLayout );
+	m_device.DXContext().IASetPrimitiveTopology( m_Topology );
 
 	U32 Offset = 0;
 //	m_Device.DXContext().IASetVertexBuffers( 0, 1, &m_pVB, &m_Stride, &Offset );
-	m_Device.DXContext().IASetVertexBuffers( 0, m_BoundVertexStreamsCount, m_ppVertexBuffers, m_pStrides, m_pOffsets );
+	m_device.DXContext().IASetVertexBuffers( 0, m_BoundVertexStreamsCount, m_ppVertexBuffers, m_pStrides, m_pOffsets );
 
 	if ( m_pIB != NULL )
 	{
-		m_Device.DXContext().IASetIndexBuffer( m_pIB, DXGI_FORMAT_R32_UINT, 0 );
-		m_Device.DXContext().DrawIndexedInstanced( _IndicesCount, _InstancesCount, _StartIndex, _BaseVertexOffset, 0 );
+		m_device.DXContext().IASetIndexBuffer( m_pIB, DXGI_FORMAT_R32_UINT, 0 );
+		m_device.DXContext().DrawIndexedInstanced( _IndicesCount, _InstancesCount, _StartIndex, _BaseVertexOffset, 0 );
 	}
 	else
 	{
-		m_Device.DXContext().IASetIndexBuffer( NULL, DXGI_FORMAT_UNKNOWN, 0 );
-		m_Device.DXContext().DrawInstanced( _VerticesCount, _InstancesCount, _StartVertex, 0 );
+		m_device.DXContext().IASetIndexBuffer( NULL, DXGI_FORMAT_UNKNOWN, 0 );
+		m_device.DXContext().DrawInstanced( _VerticesCount, _InstancesCount, _StartVertex, 0 );
 	}
 }
 
@@ -141,10 +141,10 @@ void	Primitive::Build( const void* _pVertices, const U32* _pIndices, bool _bDyna
 			InitData.SysMemPitch = 0;
 			InitData.SysMemSlicePitch = 0;
 
-			Check( m_Device.DXDevice().CreateBuffer( &Desc, &InitData, &m_pVB ) );
+			Check( m_device.DXDevice().CreateBuffer( &Desc, &InitData, &m_pVB ) );
 		}
 		else
-			Check( m_Device.DXDevice().CreateBuffer( &Desc, NULL, &m_pVB ) );
+			Check( m_device.DXDevice().CreateBuffer( &Desc, NULL, &m_pVB ) );
 
 		// Initialize as if we had only one bound vertex stream
 #ifdef _DEBUG
@@ -175,10 +175,10 @@ void	Primitive::Build( const void* _pVertices, const U32* _pIndices, bool _bDyna
 			InitData.SysMemPitch = 0;
 			InitData.SysMemSlicePitch = 0;
 
-			Check( m_Device.DXDevice().CreateBuffer( &Desc, &InitData, &m_pIB ) );
+			Check( m_device.DXDevice().CreateBuffer( &Desc, &InitData, &m_pIB ) );
 		}
 		else
-			Check( m_Device.DXDevice().CreateBuffer( &Desc, NULL, &m_pIB ) );
+			Check( m_device.DXDevice().CreateBuffer( &Desc, NULL, &m_pIB ) );
 	}
 
 	switch ( m_Topology )
@@ -215,17 +215,17 @@ void	Primitive::UpdateDynamic( void* _pVertices, U16* _pIndices, int _VerticesCo
 	ASSERT( _pVertices != NULL, "Invalid vertices !" );
 	{
 		D3D11_MAPPED_SUBRESOURCE	SubResource;
-		Device::Check( m_Device.DXContext().Map( m_pVB, 0, D3D11_MAP_WRITE_DISCARD, 0, &SubResource ) );
+		Device::Check( m_device.DXContext().Map( m_pVB, 0, D3D11_MAP_WRITE_DISCARD, 0, &SubResource ) );
 		memcpy( SubResource.pData, _pVertices, (_VerticesCount != -1 ? _VerticesCount : m_VerticesCount) * m_Stride );
-		m_Device.DXContext().Unmap( m_pVB, 0 );
+		m_device.DXContext().Unmap( m_pVB, 0 );
 	}
 
 	if ( _pIndices != NULL )
 	{
 		D3D11_MAPPED_SUBRESOURCE	SubResource;
-		Device::Check( m_Device.DXContext().Map( m_pIB, 0, D3D11_MAP_WRITE_DISCARD, 0, &SubResource ) );
+		Device::Check( m_device.DXContext().Map( m_pIB, 0, D3D11_MAP_WRITE_DISCARD, 0, &SubResource ) );
 		memcpy( SubResource.pData, _pVertices, (_IndicesCount != -1 ? _IndicesCount : m_IndicesCount) * sizeof(U16) );
-		m_Device.DXContext().Unmap( m_pIB, 0 );
+		m_device.DXContext().Unmap( m_pIB, 0 );
 	}
 }
 

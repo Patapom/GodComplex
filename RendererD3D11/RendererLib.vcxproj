@@ -177,6 +177,8 @@
     <ClInclude Include="Structures\PixelFormats.h" />
     <ClInclude Include="Structures\VertexFormats.h" />
     <ClInclude Include="targetver.h" />
+    <ClInclude Include="Utility\FileServer.h" />
+    <ClInclude Include="Utility\ShaderCompiler.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Utility\TextureFilePOM.cpp" />
@@ -199,6 +201,8 @@
     <ClCompile Include="Structures\DepthStencilFormats.cpp" />
     <ClCompile Include="Structures\PixelFormats.cpp" />
     <ClCompile Include="Structures\VertexFormats.cpp" />
+    <ClCompile Include="Utility\FileServer.cpp" />
+    <ClCompile Include="Utility\ShaderCompiler.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\BaseLib\BaseLib.vcxproj">
