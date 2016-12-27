@@ -136,17 +136,17 @@ namespace SharpMath.FFT {
 
 			try {
 				#if DEBUG
-				FileServer	server = new FileServer( Properties.Resources.ResourceManager );
+					FileServer	server = new FileServer( Properties.Resources.ResourceManager );
 
-				m_CS__1to128 = new ComputeShader( _device, new System.IO.FileInfo( @"./Shaders/FFT1D.hlsl" ), "CS__1to128", null, server );
-				switch ( m_POT ) {
-					case 7:  m_CS__Remainder = null; break;
-					case 8:  m_CS__Remainder  = new ComputeShader( _device, new System.IO.FileInfo( @"./Shaders/FFT1D.hlsl" ), "CS__128to256", null, server ); break;
-					case 9:  m_CS__Remainder  = new ComputeShader( _device, new System.IO.FileInfo( @"./Shaders/FFT1D.hlsl" ), "CS__128to256", null, server ); break;
-					case 10: m_CS__Remainder  = new ComputeShader( _device, new System.IO.FileInfo( @"./Shaders/FFT1D.hlsl" ), "CS__128to512", null, server ); break;
-					case 11: m_CS__Remainder  = new ComputeShader( _device, new System.IO.FileInfo( @"./Shaders/FFT1D.hlsl" ), "CS__128to1024", null, server ); break;
-					case 12: m_CS__Remainder  = new ComputeShader( _device, new System.IO.FileInfo( @"./Shaders/FFT1D.hlsl" ), "CS__128to2048", null, server ); break;
-				}
+					m_CS__1to128 = new ComputeShader( _device, new System.IO.FileInfo( @"./Shaders/FFT1D.hlsl" ), "CS__1to128", null, server );
+					switch ( m_POT ) {
+						case 7:  m_CS__Remainder = null; break;
+						case 8:  m_CS__Remainder  = new ComputeShader( _device, new System.IO.FileInfo( @"./Shaders/FFT1D.hlsl" ), "CS__128to256", null, server ); break;
+						case 9:  m_CS__Remainder  = new ComputeShader( _device, new System.IO.FileInfo( @"./Shaders/FFT1D.hlsl" ), "CS__128to256", null, server ); break;
+						case 10: m_CS__Remainder  = new ComputeShader( _device, new System.IO.FileInfo( @"./Shaders/FFT1D.hlsl" ), "CS__128to512", null, server ); break;
+						case 11: m_CS__Remainder  = new ComputeShader( _device, new System.IO.FileInfo( @"./Shaders/FFT1D.hlsl" ), "CS__128to1024", null, server ); break;
+						case 12: m_CS__Remainder  = new ComputeShader( _device, new System.IO.FileInfo( @"./Shaders/FFT1D.hlsl" ), "CS__128to2048", null, server ); break;
+					}
 				#else
 					using ( new ScopedForceShadersLoadFromBinary() ) {
 

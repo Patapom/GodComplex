@@ -31,6 +31,9 @@ namespace TestFourier
 
 		private RectangleF		ImageClientRect {
 			get {
+				if ( m_Bitmap == null )
+					return new RectangleF( 0, 0, Width, Height );
+
 				int		SizeX = m_Bitmap.Width;
 				int		SizeY = m_Bitmap.Height;
 

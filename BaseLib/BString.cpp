@@ -23,21 +23,33 @@ bool	BString::IsEmpty() const {
 }
 
 S32		BString::Length() const {
+	if ( m_str == nullptr )
+		return 0;
+
 	S32	length = S32( strlen( m_str ) );
 	return length;
 }
 
 void	BString::Format( const char* _format, ... ) {
-	SAFE_DELETE_ARRAY( m_str );
-
 	va_list args;
 	va_start( args, _format );
-
-	char*	str = new char[4096];
-	sprintf_s( str, 4096, _format, args );
-	m_str = str;
-
+	Format( _format, args );
 	va_end( args );
+}
+void	BString::Format( const char* _format, va_list _args ) {
+	SAFE_DELETE_ARRAY( m_str );
+
+	m_str = new char[4096];
+	vsprintf_s( m_str, 4096, _format, _args );
+}
+
+BString&	BString::operator=( const char* _other ) {
+	Copy( _other );
+	return *this;
+}
+BString&	BString::operator=( const BString& _other ) {
+	Copy( _other.m_str );
+	return *this;
 }
 
 const char&	BString::operator[]( U32 _index ) const {
@@ -69,9 +81,12 @@ U32	BString::Hash() const {
 	return BString::Hash( *this );
 }
 
-U32	BString::Hash( const BString& _pKey ) {
+U32	BString::Hash( const BString& _key ) {
 	// djb2
-	const char*	ptr = _pKey.m_str;
+	const char*	ptr = _key.m_str;
+	if ( ptr == nullptr )
+		return 0;
+
 	int c;
 	U32 hash = 5381;
 	while ( c = *ptr++ ) {

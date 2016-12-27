@@ -15,22 +15,23 @@ HRESULT	DiskFileServer::Open( THIS_ D3D_INCLUDE_TYPE _IncludeType, LPCSTR _pFile
 		fopen_s( &pFile, _pFileName, "rb" );
 		if ( pFile != NULL ) {
 			fclose( pFile );
+			return S_OK;
 		}
 		return S_FALSE;
 	}
 
 	// Attempt to retrieve shader path of parent file from parent's data pointer
-	const char**	ppShaderPath = _pParentData != NULL ? m_dataPointer2FilePath.Get( _pParentData ) : NULL;
+	const BString*	pShaderPath = _pParentData != NULL ? m_dataPointer2FilePath.Get( _pParentData ) : NULL;
 //	ASSERT( ppShaderPath != NULL, "Failed to retrieve data pointer!" );
 
 	// Split file path into directory + file name
 	BString	shaderDirectory;
 	BString	shaderFileName;
-	GetFileDirectory( shaderDirectory, ppShaderPath != NULL ? *ppShaderPath : _pFileName );
+	GetFileDirectory( shaderDirectory, pShaderPath != NULL ? *pShaderPath : _pFileName );
 	GetFileName( shaderFileName, _pFileName );
 
 	// Recompose file name
-	BString	fullName( true, "%s%s", shaderDirectory, shaderFileName );
+	BString	fullName( true, "%s%s", (const char*) shaderDirectory, (const char*) shaderFileName );
 
 	FILE*	pFile;
 	fopen_s( &pFile, fullName, "rb" );
@@ -51,19 +52,20 @@ HRESULT	DiskFileServer::Open( THIS_ D3D_INCLUDE_TYPE _IncludeType, LPCSTR _pFile
 	fclose( pFile );
 
 	// Register this file's path as attached to the data pointer
-	size_t	strLength = strlen(_pFileName)+1;
-	char*	copiedFileName = new char[strLength];
-	strcpy_s( copiedFileName, strLength, _pFileName );
-	m_dataPointer2FilePath.Add( pBuffer, copiedFileName );
+// 	size_t	strLength = strlen(_pFileName)+1;
+// 	char*	copiedFileName = new char[strLength];
+// 	strcpy_s( copiedFileName, strLength, _pFileName );
+// 	m_dataPointer2FilePath.Add( pBuffer, copiedFileName );
+ 	m_dataPointer2FilePath.Add( pBuffer, _pFileName );
 
 	return S_OK;
 }
 
 HRESULT	DiskFileServer::Close( THIS_ LPCVOID _pData ) {
-	// Remove entry from dictionary
-	const char**	ppShaderPath = m_dataPointer2FilePath.Get( _pData );
-	ASSERT( ppShaderPath != NULL, "Failed to retrieve data pointer!" );
-	delete[] *ppShaderPath;	// Delete the hardcopy of the string we made for registration
+// 	// Remove entry from dictionary
+// 	const BString*	pShaderPath = m_dataPointer2FilePath.Get( _pData );
+// 	ASSERT( pShaderPath != NULL, "Failed to retrieve data pointer!" );
+//	delete[] *pShaderPath;	// Delete the hardcopy of the string we made for registration
 
 	m_dataPointer2FilePath.Remove( _pData );
 

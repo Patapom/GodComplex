@@ -21,7 +21,7 @@
 // Declares the interface to a file server
 // 
 class IFileServer : public ID3DInclude {
-
+public:
 	// We inherit the ID3DInclude interface so you must implement these 2 methods as well:
 	// NOTE: The Open/Close methods must support _ppData == NULL, in which case the file is only opened and closed immediately (used for test purpose)!
 	//
@@ -52,7 +52,8 @@ private:	// FIELDS
 	// This dictionary is used to keep track of the shader paths that led to a specific data blob
 	//	so that if a file include is queried and we're given the parent file's data blob, we can retrieve the
 	//	parent file's path and append the include file path to it to get the absolute file path
-	BaseLib::DictionaryGeneric< const void*, const char* >	m_dataPointer2FilePath;
+//	BaseLib::DictionaryGeneric< const void*, const char* >	m_dataPointer2FilePath;
+	BaseLib::DictionaryGeneric< const void*, BString >	m_dataPointer2FilePath;
 
 public:
 

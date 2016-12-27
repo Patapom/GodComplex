@@ -69,7 +69,7 @@ ID3DBlob*   ShaderCompiler::CompileShader( IFileServer& _fileServer, const BStri
 
 	LPCVOID	pCodePointer = codeTextBlob->GetBufferPointer();
 	size_t	CodeSize = codeTextBlob->GetBufferSize();
-	size_t	CodeLength = strlen( (char*) pCodePointer );
+//	size_t	CodeLength = strlen( (char*) pCodePointer );
 
 	ID3DBlob*   codeBlob = NULL;
 				errorsBlob = NULL;

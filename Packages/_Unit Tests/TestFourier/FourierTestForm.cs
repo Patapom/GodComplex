@@ -311,6 +311,5 @@ namespace TestFourier
 		}
 
 		#endregion
-
 	}
 }

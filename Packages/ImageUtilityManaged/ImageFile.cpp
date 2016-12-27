@@ -116,7 +116,7 @@ NativeByteArray^	ImageFile::Save( FILE_FORMAT _format, SAVE_FLAGS _options ) {
 	m_nativeObject->Save( ImageUtilityLib::ImageFile::FILE_FORMAT( _format ), ImageUtilityLib::ImageFile::SAVE_FLAGS( _options ), nativeBufferSize, nativeBuffer );
 
 	// Copy to managed array
-	return gcnew NativeByteArray( nativeBufferSize, nativeBuffer );
+	return gcnew NativeByteArray( int( nativeBufferSize ), nativeBuffer );
 }
 
  System::Drawing::Bitmap^	ImageFile::AsBitmap::get() {

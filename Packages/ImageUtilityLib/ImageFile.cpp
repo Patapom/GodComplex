@@ -254,7 +254,7 @@ void	ImageFile::Save( FILE_FORMAT _format, SAVE_FLAGS _options, U64 _fileSize, v
 	FIMEMORY*	target = FreeImage_OpenMemory( (BYTE*) _fileContent, U32(_fileSize) );
 
 	FreeImage_SeekMemory( stream, 0, SEEK_SET );
-	FreeImage_ReadMemory( _fileContent, 1, _fileSize, stream );
+	FreeImage_ReadMemory( _fileContent, 1, U32( _fileSize ), stream );
 
 	FreeImage_CloseMemory( target );
 	FreeImage_CloseMemory( stream );

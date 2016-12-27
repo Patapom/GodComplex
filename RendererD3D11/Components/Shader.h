@@ -195,7 +195,7 @@ private:
 #if defined(_DEBUG) || !defined(GODCOMPLEX)
 	static BaseLib::DictionaryString<Shader*>	ms_WatchedShaders;
 	time_t			m_LastShaderModificationTime;
-	time_t			GetFileModTime( const BString& _fileName );
+//	time_t			GetFileModTime( const BString& _fileName );
 #endif
 
 public:

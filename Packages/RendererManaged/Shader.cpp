@@ -53,7 +53,7 @@ void	Renderer::Shader::Init( Device^ _device, System::IO::FileInfo^ _shaderFileN
 
 	IVertexFormatDescriptor*	descriptor = GetDescriptor( _format );
 
-	m_pShader = new ::Shader( *_device->m_pDevice, shaderFileName, *descriptor, pMacros, entryPointVS, entryPointHS, entryPointDS, entryPointGS, entryPointPS, NULL );//_fileServerOverride != nullptr ? _fileServerOverride->m_server : NULL );
+	m_pShader = new ::Shader( *_device->m_pDevice, shaderFileName, *descriptor, pMacros, entryPointVS, entryPointHS, entryPointDS, entryPointGS, entryPointPS, _fileServerOverride != nullptr ? _fileServerOverride->m_server : NULL );
 
 	delete[] pMacros;
 }

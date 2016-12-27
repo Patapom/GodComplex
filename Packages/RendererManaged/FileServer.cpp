@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "FileServer.h"
+#include <sys/stat.h>
 
 using namespace System;
 
@@ -126,11 +127,11 @@ namespace Renderer {
 	}
 
 	time_t	FileServer::Disk_GetFileModTime( const BString& _fileName ) {
-// 		struct _stat statInfo;
-// 		_stat( _fileName, &statInfo );
-// 
-// 		return statInfo.st_mtime;
-		return time_t( ~0ULL );
+		struct _stat statInfo;
+		_stat( _fileName, &statInfo );
+
+		return statInfo.st_mtime;
+//		return time_t( ~0ULL );
 	}
 
 	#pragma endregion

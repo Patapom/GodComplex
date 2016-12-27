@@ -14,6 +14,7 @@ ComputeShader*	ComputeShader::ms_pCurrentShader = NULL;
 ComputeShader::ComputeShader( Device& _device, const BString& _shaderFileName, D3D_SHADER_MACRO* _macros, const BString& _entryPoint, IFileServer* _fileServerOverride )
 	: Component( _device )
 	, m_shaderFileName( _shaderFileName )
+	, m_hasErrors( false )
 	, m_entryPointCS( _entryPoint )
 	, m_pCS( NULL )
 #if defined(_DEBUG) || !defined(GODCOMPLEX)
@@ -24,22 +25,20 @@ ComputeShader::ComputeShader( Device& _device, const BString& _shaderFileName, D
 #endif
 {
 	m_fileServer = _fileServerOverride != nullptr ? _fileServerOverride : &DiskFileServer::singleton;
-	m_hasErrors = false;
 
 	#if defined(_DEBUG) && defined(WATCH_SHADER_MODIFICATIONS)
 		if ( !m_shaderFileName.IsEmpty() ) {
 			// Just ensure the file exists !
-			FILE*	pFile;
-			fopen_s( &pFile, _shaderFileName, "rb" );
-			ASSERT( pFile != NULL, "Compute Shader file not found => You can ignore this assert but compute shader file will NOT be watched for modification!" );
-			fclose( pFile );
+			if ( m_fileServer->Open( D3D_INCLUDE_LOCAL, _shaderFileName, NULL, NULL, NULL ) == S_OK ) {
+				// Register as a watched shader
+				ms_WatchedShaders.Add( _shaderFileName, this );
 
-			// Register as a watched shader
-			ms_WatchedShaders.Add( _shaderFileName, this );
-
-	#ifndef COMPUTE_SHADER_COMPILE_AT_RUNTIME
-			m_LastShaderModificationTime = GetFileModTime( _shaderFileName );
-	#endif
+				#ifndef COMPUTE_SHADER_COMPILE_AT_RUNTIME
+					m_LastShaderModificationTime = m_fileServer->GetFileModTime( _shaderFileName );
+				#endif
+			} else {
+				ASSERT( false, "Compute Shader file not found => You can ignore this assert but compute shader file will NOT be watched for modification!" );
+			}
 		}
 	#endif
 
@@ -51,9 +50,9 @@ ComputeShader::ComputeShader( Device& _device, const BString& _shaderFileName, D
 		int	MacrosCount = int( 1 + pMacro - _macros );
 		m_macros = new D3D_SHADER_MACRO[MacrosCount];
 		memcpy( m_macros, _macros, MacrosCount*sizeof(D3D_SHADER_MACRO) );
-	}
-	else
+	} else {
 		m_macros = NULL;
+	}
 
 	#ifdef COMPUTE_SHADER_COMPILE_THREADED
 		// Create the mutex for compilation exclusivity
@@ -64,9 +63,9 @@ ComputeShader::ComputeShader( Device& _device, const BString& _shaderFileName, D
 	#endif
 
 	#ifndef COMPUTE_SHADER_COMPILE_AT_RUNTIME
-	#ifdef COMPUTE_SHADER_COMPILE_THREADED
-		ASSERT( false, "The COMPUTE_SHADER_COMPILE_THREADED option should only work in pair with the COMPUTE_SHADER_COMPILE_AT_RUNTIME option! (i.e. You CANNOT define COMPUTE_SHADER_COMPILE_THREADED without defining COMPUTE_SHADER_COMPILE_AT_RUNTIME at the same time!)" );
-	#endif
+		#ifdef COMPUTE_SHADER_COMPILE_THREADED
+			ASSERT( false, "The COMPUTE_SHADER_COMPILE_THREADED option should only work in pair with the COMPUTE_SHADER_COMPILE_AT_RUNTIME option! (i.e. You CANNOT define COMPUTE_SHADER_COMPILE_THREADED without defining COMPUTE_SHADER_COMPILE_AT_RUNTIME at the same time!)" );
+		#endif
 
 		// Compile immediately
 		CompileShader();
@@ -116,17 +115,15 @@ void	ComputeShader::CompileShader( ID3DBlob* _blobCS ) {
 
 	//////////////////////////////////////////////////////////////////////////
 	// Compile the compute shader
-	ID3DBlob*   blobCS = _blobCS;
-	if ( blobCS == nullptr ) {
+	if ( _blobCS == nullptr ) {
 		ASSERT( !m_entryPointCS.IsEmpty(), "Invalid ComputeShader entry point!" );
-		blobCS = ShaderCompiler::CompileShader( *m_fileServer, m_shaderFileName, m_macros, m_entryPointCS, "cs_5_0", true );
+		_blobCS = ShaderCompiler::CompileShader( *m_fileServer, m_shaderFileName, m_macros, m_entryPointCS, "cs_5_0", true );
+		m_hasErrors = _blobCS != NULL;
 	}
-	if ( blobCS != NULL ) {
-		Check( m_device.DXDevice().CreateComputeShader( blobCS->GetBufferPointer(), blobCS->GetBufferSize(), NULL, &pCS ) );
+	if ( _blobCS != NULL ) {
+		Check( m_device.DXDevice().CreateComputeShader( _blobCS->GetBufferPointer(), _blobCS->GetBufferSize(), NULL, &pCS ) );
 		ASSERT( pCS != NULL, "Failed to create vertex shader!" );
 		m_hasErrors |= pCS == NULL;
-	} else {
-		m_hasErrors = true;
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -143,14 +140,14 @@ void	ComputeShader::CompileShader( ID3DBlob* _blobCS ) {
 		#endif
 
 		// Enumerate constants
-		if ( blobCS == NULL ) {
+		if ( _blobCS == NULL ) {
 			m_hasErrors = true;
 			return;
 		}
 	}
 
-	if ( blobCS != NULL )
-		blobCS->Release();
+	if ( _blobCS != NULL )
+		_blobCS->Release();
 }
 
 bool	ComputeShader::Use() {
@@ -174,63 +171,6 @@ void	ComputeShader::Dispatch( U32 _GroupsCountX, U32 _GroupsCountY, U32 _GroupsC
 
 	Unlock();
 }
-
-// HRESULT	ComputeShader::Open( THIS_ D3D_INCLUDE_TYPE _IncludeType, LPCSTR _pFileName, LPCVOID _pParentData, LPCVOID* _ppData, UINT* _pBytes ) {
-// 	if ( m_fileServer != NULL )
-// 		return m_fileServer->Open( _IncludeType, _pFileName, _pParentData, _ppData, _pBytes );
-// 
-// #ifndef GODCOMPLEX
-// 	const char**	ppShaderPath = m_Pointer2FileName.Get( U32(_pParentData) );
-// 	ASSERT( ppShaderPath != NULL, "Failed to retrieve data pointer !" );
-// 	const char*	pShaderPath = *ppShaderPath;
-// 
-// 	char	pFullName[4096];
-// 	sprintf_s( pFullName, 4096, "%s%s", pShaderPath, _pFileName );
-// 
-// 	FILE*	pFile;
-// 	fopen_s( &pFile, pFullName, "rb" );
-// 	ASSERT( pFile != NULL, "Include file not found !" );
-// 
-// 	fseek( pFile, 0, SEEK_END );
-// 	U32	Size = ftell( pFile );
-// 	fseek( pFile, 0, SEEK_SET );
-// 
-// 	char*	pBuffer = new char[Size];
-// 	fread_s( pBuffer, Size, 1, Size, pFile );
-// //	pBuffer[Size] = '\0';
-// 
-// 	*_pBytes = Size;
-// 	*_ppData = pBuffer;
-// 
-// 	fclose( pFile );
-// 
-// 	// Register this shader's path as attached to the data pointer
-// 	const char*	pIncludedShaderPath = GetShaderPath( pFullName );
-// 	m_Pointer2FileName.Add( U32(*_ppData), pIncludedShaderPath );
-// #else
-// 	ASSERT( false, "You MUST provide an ID3DINCLUDE override when compiling with the GODCOMPLEX option !" );
-// #endif
-// 
-// 	return S_OK;
-// }
-// 
-// HRESULT	ComputeShader::Close( THIS_ LPCVOID _pData ) {
-// 	if ( m_fileServer != NULL )
-// 		return m_fileServer->Close( _pData );
-// 
-// #ifndef GODCOMPLEX
-// 	// Remove entry from dictionary
-// 	const char**	ppShaderPath = m_Pointer2FileName.Get( U32(_pData) );
-// 	ASSERT( ppShaderPath != NULL, "Failed to retrieve data pointer !" );
-// 	delete[] *ppShaderPath;
-// 	m_Pointer2FileName.Remove( U32(_pData) );
-// 
-// 	// Delete file content
-// 	delete[] _pData;
-// #endif
-// 
-// 	return S_OK;
-// }
 
 void	ComputeShader::SetConstantBuffer( int _BufferSlot, ConstantBuffer& _Buffer ) {
 	if ( !Lock() )
@@ -281,7 +221,7 @@ bool	ComputeShader::Lock() const {
 }
 void	ComputeShader::Unlock() const {
 #ifdef COMPUTE_SHADER_COMPILE_THREADED
-	ASSERT( ReleaseMutex( m_hCompileMutex ), "Failed to release mutex !" );
+	ASSERT( ReleaseMutex( m_hCompileMutex ), "Failed to release mutex!" );
 #endif
 }
 
@@ -454,31 +394,6 @@ int		ComputeShader::ShaderConstants::GetUnorderedAccesViewIndex( const BString& 
 
 #endif	// #ifdef ENABLE_SHADER_REFLECTION
 
-// const char*	ComputeShader::GetShaderPath( const char* _pShaderFileName ) const {
-// 	char*	pResult = NULL;
-// 	if ( _pShaderFileName != NULL )
-// 	{
-// 		int	FileNameLength = int( strlen(_pShaderFileName)+1 );
-// 		pResult = new char[FileNameLength];
-// 		strcpy_s( pResult, FileNameLength, _pShaderFileName );
-// 
-// 		char*	pLastSlash = strrchr( pResult, '\\' );
-// 		if ( pLastSlash == NULL )
-// 			pLastSlash = strrchr( pResult, '/' );
-// 		if ( pLastSlash != NULL )
-// 			pLastSlash[1] = '\0';
-// 	}
-// 
-// 	if ( pResult == NULL )
-// 	{	// Empty string...
-// 		pResult = new char[1];
-// 		pResult = '\0';
-// 		return pResult;
-// 	}
-// 
-// 	return pResult;
-// }
-
 
 //////////////////////////////////////////////////////////////////////////
 // Shader rebuild on modifications mechanism...
@@ -516,7 +431,7 @@ void		ComputeShader::WatchShaderModifications() {
 		return;	// Someone else is locking it !
 
 	// Check if the shader file changed since last time
-	time_t	LastModificationTime = GetFileModTime( m_shaderFileName );
+	time_t	LastModificationTime = m_fileServer->GetFileModTime( m_shaderFileName );
 	if ( LastModificationTime <= m_LastShaderModificationTime ) {
 		// No change !
 		Unlock();
@@ -529,7 +444,7 @@ void		ComputeShader::WatchShaderModifications() {
 	Unlock();
 
 #ifdef COMPUTE_SHADER_COMPILE_THREADED
-	ASSERT( m_hCompileThread == 0, "Compilation thread already exists !" );
+	ASSERT( m_hCompileThread == 0, "Compilation thread already exists!" );
 
 	DWORD	ThreadID;
     m_hCompileThread = CreateThread( NULL, 0, (LPTHREAD_START_ROUTINE) ThreadCompileComputeShader, this, 0, &ThreadID );
@@ -540,32 +455,12 @@ void		ComputeShader::RebuildShader()
 {
 	DWORD	ErrorCode = WaitForSingleObject( m_hCompileMutex, 30000 );
 #ifdef _DEBUG
-	ASSERT( ErrorCode == WAIT_OBJECT_0, "Failed shader rebuild after 30 seconds waiting for access !" );
+	ASSERT( ErrorCode == WAIT_OBJECT_0, "Failed shader rebuild after 30 seconds waiting for access!" );
 #else
 	if ( ErrorCode != WAIT_OBJECT_0 )
 		ExitProcess( -1 );	// Failed !
 #endif
 #endif
- 
-// 	// Reload file
-// 	FILE*	pFile = NULL;
-// 	fopen_s( &pFile, m_shaderFileName, "rb" );
-// //	ASSERT( pFile != NULL, "Failed to open shader file !" );
-// 	if ( pFile == NULL )
-// 	{	// Failed! Unlock but don't update time stamp so we try again next time...
-// 		Unlock();
-// 		return;
-// 	}
-// 
-// 	fseek( pFile, 0, SEEK_END );
-// 	size_t	FileSize = ftell( pFile );
-// 	fseek( pFile, 0, SEEK_SET );
-// 
-// 	char*	pShaderCode = new char[FileSize+1];
-// 	fread_s( pShaderCode, FileSize, 1, FileSize, pFile );
-// 	pShaderCode[FileSize] = '\0';
-// 
-// 	fclose( pFile );
 
 	HRESULT		error = m_fileServer->Open( D3D_INCLUDE_TYPE::D3D_INCLUDE_LOCAL, m_shaderFileName, NULL, NULL, NULL );
 	if ( error != S_OK ) {
@@ -576,8 +471,6 @@ void		ComputeShader::RebuildShader()
 
 	// Compile
 	CompileShader();
-
-// 	delete[] pShaderCode;
 
 	// Release the mutex: it's now safe to access the shader !
 	Unlock();
@@ -592,13 +485,6 @@ void		ComputeShader::RebuildShader()
 
 void		ComputeShader::ForceRecompile() {
 	m_LastShaderModificationTime++;	// So we're sure it will be recompiled on next watch!
-}
-
-time_t		ComputeShader::GetFileModTime( const char* _pFileName ) {	
-	struct _stat statInfo;
-	_stat( _pFileName, &statInfo );
-
-	return statInfo.st_mtime;
 }
 
 #endif	// #if defined(_DEBUG) || !defined(GODCOMPLEX)

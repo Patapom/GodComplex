@@ -158,7 +158,7 @@ private:
 	// The dictionary of watched materials
 	static BaseLib::DictionaryString<ComputeShader*>	ms_WatchedShaders;
 	time_t			m_LastShaderModificationTime;
-	time_t			GetFileModTime( const char* _pFileName );
+//	time_t			GetFileModTime( const char* _pFileName );
 #endif
 
 public:

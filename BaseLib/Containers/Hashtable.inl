@@ -41,7 +41,7 @@ template<typename T> T&	DictionaryString<T>::Add( const BString& _key ) {
 	U32		idx = _key.Hash() % m_Size;
  	Node*	pNode = new Node();
 
-	int		KeyLength = int( MIN( _key.Length(), HT_MAX_KEYLEN ) + 1 );
+	int		keyLength = int( MIN( _key.Length(), HT_MAX_KEYLEN ) + 1 );
 	pNode->key = _key;
 	pNode->pNext = m_ppTable[idx];
 	m_ppTable[idx] = pNode;
@@ -323,11 +323,11 @@ T*	DictionaryGeneric<K,T>::Get( const K& _Key ) const {
 }
 
 template<typename K, typename T>
-T&	DictionaryGeneric<K,T>::Add( const K& _Key ) {
-	U32		idx = GetHash( _Key ) % m_Size;
+T&	DictionaryGeneric<K,T>::Add( const K& _key ) {
+	U32		idx = GetHash( _key ) % m_Size;
  
 	Node*	pNode = new Node();
-	pNode->key = _Key;
+	pNode->key = _key;
 	pNode->pNext = m_ppTable[idx];	// Here, we could add a check for m_ppTable[idx] == NULL to ensure no collision...
 	m_ppTable[idx] = pNode;
 
@@ -337,21 +337,21 @@ T&	DictionaryGeneric<K,T>::Add( const K& _Key ) {
 }
 
 template<typename K, typename T>
-T&	DictionaryGeneric<K,T>::Add( const K& _Key, const T& _Value ) {
-	T&	Value = Add( _Key );
-	memcpy( &Value, &_Value, sizeof(T) );
+T&	DictionaryGeneric<K,T>::Add( const K& _key, const T& _value ) {
+	T&	value = Add( _key );
+	value = _value;
 
-	return Value;
+	return value;
 }
 
 template<typename K, typename T>
-void	DictionaryGeneric<K,T>::Remove( const K& _Key ) {
-	U32		idx = GetHash( _Key ) % m_Size;
+void	DictionaryGeneric<K,T>::Remove( const K& _key ) {
+	U32		idx = GetHash( _key ) % m_Size;
  
 	Node*	pPrevious = NULL;
 	Node*	pCurrent = m_ppTable[idx];
 	while ( pCurrent != NULL ) {
-		if ( Compare( _Key, pCurrent->key ) == 0 ) {
+		if ( Compare( _key, pCurrent->key ) == 0 ) {
 			if ( pPrevious != NULL )
 				pPrevious->pNext = pCurrent->pNext;	// Link over...
 			else

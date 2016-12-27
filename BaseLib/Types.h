@@ -18,21 +18,21 @@
 
 //////////////////////////////////////////////////////////////////////////
 // Simple types definition
-typedef signed char		S8;
-typedef unsigned char	U8;
-typedef signed short	S16;
-typedef unsigned short	U16;
-typedef unsigned int	U32;
-typedef signed int		S32;
-typedef unsigned long	U64;
-typedef signed long		S64;
+typedef signed char			S8;
+typedef unsigned char		U8;
+typedef signed short		S16;
+typedef unsigned short		U16;
+typedef unsigned int		U32;
+typedef signed int			S32;
+typedef unsigned long long	U64;
+typedef signed long long	S64;
 
 
 //////////////////////////////////////////////////////////////////////////
 //
 #define SAFE_DELETE( a )		if ( (a) != NULL ) { delete (a); (a) = NULL; }
 #define SAFE_DELETE_ARRAY( a )	if ( (a) != NULL ) { delete[] (a); (a) = NULL; }
-#define SAFE_RELEASE( a )		if ( (a) != NULL ) { (a)->Release(); delete (a); (a) = NULL; }
+#define SAFE_RELEASE( a )		if ( (a) != NULL ) { (a)->Release(); (a) = NULL; }
 
 #ifndef GODCOMPLEX
 template<typename T> void		SafeDelete__( T*& _pBuffer ) {

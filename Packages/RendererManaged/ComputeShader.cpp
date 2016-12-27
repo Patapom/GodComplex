@@ -21,7 +21,7 @@ void	Renderer::ComputeShader::Init( Device^ _device, System::IO::FileInfo^ _shad
 		macros[i].Definition = NULL;
 	}
 
-	m_pShader = new ::ComputeShader( *_device->m_pDevice, shaderFileName, macros, entryPoint, NULL );// _fileServerOverride != nullptr ? _fileServerOverride->m_server : NULL );
+	m_pShader = new ::ComputeShader( *_device->m_pDevice, shaderFileName, macros, entryPoint, _fileServerOverride != nullptr ? _fileServerOverride->m_server : NULL );
 
 	delete[] macros;
 }

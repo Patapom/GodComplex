@@ -24,13 +24,14 @@ public:
 	S32				Length() const;
 
 	void			Format( const char* _format, ... );
+	void			Format( const char* _format, va_list _args );
 
 	const char&		operator[]( U32 _index ) const;
 	char&			operator[]( U32 _index );
 					operator const char*() const { return m_str; }
 
-// 	String&			operator=( const char* _other );
-// 	String&			operator=( const String& _other );
+	BString&		operator=( const char* _other );
+	BString&		operator=( const BString& _other );
 
 	bool			operator==( const BString& _other ) const;
 	bool			operator!=( const BString& _other ) const;
