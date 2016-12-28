@@ -1,6 +1,5 @@
 #include "stdafx.h"
 #include "FileServer.h"
-#include <sys/stat.h>
 
 using namespace System;
 
@@ -10,8 +9,8 @@ namespace Renderer {
 
 	class GenericServer : public IFileServer {
 	public:
-		typedef void	(*OpenFileDelegate)( D3D_INCLUDE_TYPE IncludeType, LPCSTR pFileName, LPCVOID pParentData, LPCVOID *ppData, UINT *pBytes );
-		typedef void	(*CloseFileDelegate)( LPCVOID pData );
+		typedef HRESULT	(*OpenFileDelegate)( D3D_INCLUDE_TYPE IncludeType, LPCSTR pFileName, LPCVOID pParentData, LPCVOID *ppData, UINT *pBytes );
+		typedef HRESULT	(*CloseFileDelegate)( LPCVOID pData );
 		typedef time_t	(*GetFileModTimeDelegate)( const BString& _fileName );
 
 	private:
@@ -28,14 +27,11 @@ namespace Renderer {
 		}
 
 		STDMETHOD(Open)(THIS_ D3D_INCLUDE_TYPE IncludeType, LPCSTR pFileName, LPCVOID pParentData, LPCVOID *ppData, UINT *pBytes) {
-			(*m_openFileDelegate)( IncludeType, pFileName, pParentData, ppData, pBytes );
-			return S_OK;
+			return (*m_openFileDelegate)( IncludeType, pFileName, pParentData, ppData, pBytes );
 		}
 		STDMETHOD(Close)(THIS_ LPCVOID pData) {
-			(*m_closeFileDelegate)( pData );
-			return S_OK;
+			return (*m_closeFileDelegate)( pData );
 		}
-
 		virtual time_t	GetFileModTime( const BString& _fileName ) const override {
 			return (*m_getFileModTimeDelegate)( _fileName );
 		}
@@ -44,21 +40,19 @@ namespace Renderer {
 	#pragma endregion
 
 	FileServer::FileServer( System::IO::DirectoryInfo^ _baseDirectory ) {
-// 		m_fileName2AllocatedMemory = gcnew Dictionary< String^, IntPtr >();
 		m_baseDirectory = _baseDirectory;
 
-		OpenFileDelegate^	openDelegate = gcnew OpenFileDelegate( this, &FileServer::Disk_OpenFile );
-		CloseFileDelegate^	closeDelegate = gcnew CloseFileDelegate( this, &FileServer::Disk_CloseFile );
+		OpenFileDelegate^		openDelegate = gcnew OpenFileDelegate( this, &FileServer::Disk_OpenFile );
+		CloseFileDelegate^		closeDelegate = gcnew CloseFileDelegate( this, &FileServer::Disk_CloseFile );
 		GetFileModTimeDelegate^	getFileModDelegate = gcnew GetFileModTimeDelegate( this, &FileServer::Disk_GetFileModTime );
 		InitServer( openDelegate, closeDelegate, getFileModDelegate );
 	}
 
 	FileServer::FileServer( System::Resources::ResourceManager^ _manager ) {
-// 		m_fileName2AllocatedMemory = gcnew Dictionary< String^, IntPtr >();
 		m_manager = _manager;
 
-		OpenFileDelegate^	openDelegate = gcnew OpenFileDelegate( this, &FileServer::ResourceManager_OpenFile );
-		CloseFileDelegate^	closeDelegate = gcnew CloseFileDelegate( this, &FileServer::ResourceManager_CloseFile );
+		OpenFileDelegate^		openDelegate = gcnew OpenFileDelegate( this, &FileServer::ResourceManager_OpenFile );
+		CloseFileDelegate^		closeDelegate = gcnew CloseFileDelegate( this, &FileServer::ResourceManager_CloseFile );
 		GetFileModTimeDelegate^	getFileModDelegate = gcnew GetFileModTimeDelegate( this, &FileServer::ResourceManager_GetFileModTime );
 		InitServer( openDelegate, closeDelegate, getFileModDelegate );
 	}
@@ -77,7 +71,7 @@ namespace Renderer {
 		
 		IntPtr	ptrOpenDelegate = System::Runtime::InteropServices::Marshal::GetFunctionPointerForDelegate( _openFileDelegate );
 		IntPtr	ptrCloseDelegate = System::Runtime::InteropServices::Marshal::GetFunctionPointerForDelegate( _closeFileDelegate );
-		IntPtr	ptrFileModDelegate = System::Runtime::InteropServices::Marshal::GetFunctionPointerForDelegate( _closeFileDelegate );
+		IntPtr	ptrFileModDelegate = System::Runtime::InteropServices::Marshal::GetFunctionPointerForDelegate( _getFileModDelegate );
 
 		m_server = new GenericServer(	reinterpret_cast< GenericServer::OpenFileDelegate >( ptrOpenDelegate.ToPointer() ),
 										reinterpret_cast< GenericServer::CloseFileDelegate >( ptrCloseDelegate.ToPointer() ),
@@ -87,13 +81,18 @@ namespace Renderer {
 
  	#pragma region Disk Server
 
-// 	#include <sys/stat.h>
+ 	#include <sys/stat.h>
 
 	HRESULT	FileServer::Disk_OpenFile( D3D_INCLUDE_TYPE IncludeType, LPCSTR pFileName, LPCVOID pParentData, LPCVOID *ppData, UINT *pBytes ) {
 		String^	partialFileName = System::Runtime::InteropServices::Marshal::PtrToStringAnsi( static_cast<IntPtr>( (void*) pFileName ) );  
 		String^	shaderFileNameStr = System::IO::Path::Combine( m_baseDirectory->FullName, partialFileName );
 
 		System::IO::FileInfo^	shaderFileName = gcnew System::IO::FileInfo( shaderFileNameStr );
+		if ( ppData == NULL ) {
+			// Only a test for file's existence
+			return shaderFileName->Exists ? S_OK : S_FALSE;
+		}
+
 		if ( !shaderFileName->Exists )
 			throw gcnew System::IO::FileNotFoundException( "Shader file not found!", shaderFileName->FullName );
 
@@ -109,7 +108,9 @@ namespace Renderer {
 			System::Runtime::InteropServices::Marshal::Copy( fileContent, 0, ptrFileContent, fileLength );
 		
 			*ppData = ptrFileContent.ToPointer();
-			*pBytes = UINT( fileLength );
+			if ( pBytes != NULL ) {
+				*pBytes = UINT( fileLength );
+			}
 		} catch ( System::Exception^ ) {
 			// Failed to read! Maybe the file is locked?
 			return S_FALSE;
@@ -121,8 +122,10 @@ namespace Renderer {
 		return S_OK;
 	}
 	HRESULT	FileServer::Disk_CloseFile( LPCVOID pData ) {
-		IntPtr	ptrFileContent( (void*) pData );
-		System::Runtime::InteropServices::Marshal::FreeHGlobal( ptrFileContent );
+		if ( pData != NULL ) {
+			IntPtr	ptrFileContent( (void*) pData );
+			System::Runtime::InteropServices::Marshal::FreeHGlobal( ptrFileContent );
+		}
 		return S_OK;
 	}
 
@@ -131,7 +134,6 @@ namespace Renderer {
 		_stat( _fileName, &statInfo );
 
 		return statInfo.st_mtime;
-//		return time_t( ~0ULL );
 	}
 
 	#pragma endregion
@@ -139,8 +141,33 @@ namespace Renderer {
  	#pragma region Resource Manager Server
 
 	HRESULT	FileServer::ResourceManager_OpenFile( D3D_INCLUDE_TYPE IncludeType, LPCSTR pFileName, LPCVOID pParentData, LPCVOID *ppData, UINT *pBytes ) {
-		String^	partialFileName = System::Runtime::InteropServices::Marshal::PtrToStringAnsi( static_cast<IntPtr>( (void*) pFileName ) );  
-		return S_FALSE;
+		String^	partialFileName = System::Runtime::InteropServices::Marshal::PtrToStringAnsi( static_cast<IntPtr>( (void*) pFileName ) );
+
+		// Extract filename
+		String^	resourceName = System::IO::Path::GetFileNameWithoutExtension( partialFileName );
+
+		// Retrieve resource, if it exists...
+		Object^	resourceObj = m_manager->GetObject( resourceName );
+		if ( resourceObj == nullptr )
+			return S_FALSE;	// Not found...
+
+		if ( ppData != NULL ) {
+			// Read it as a Byte[]
+			array<Byte>^	resourceAsByteArray = dynamic_cast< array<Byte>^ >( resourceObj );
+			if ( resourceAsByteArray == nullptr )
+				return S_FALSE;
+
+			U32		length = resourceAsByteArray->Length;
+			IntPtr	resourcePtr = System::Runtime::InteropServices::Marshal::AllocHGlobal( length );
+
+			System::Runtime::InteropServices::Marshal::Copy( resourceAsByteArray, 0, resourcePtr, length );
+
+			*ppData = resourcePtr.ToPointer();
+			if ( pBytes != NULL )
+				*pBytes = length;
+		}
+
+		return S_OK;
 	}
 	HRESULT	FileServer::ResourceManager_CloseFile( LPCVOID pData ) {
 		IntPtr	ptrFileContent( (void*) pData );
@@ -149,7 +176,7 @@ namespace Renderer {
 	}
 
 	time_t	 FileServer::ResourceManager_GetFileModTime( const BString& _fileName ) {
-		return time_t( ~0ULL );
+		return time_t( ~0ULL );	// Always modified!
 	}
 
 	#pragma endregion

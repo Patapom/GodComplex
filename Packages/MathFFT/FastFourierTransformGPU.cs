@@ -88,7 +88,8 @@ namespace SharpMath.FFT {
 		ComputeShader			m_CS__1to128;
 		ComputeShader			m_CS__Remainder;
 
-		Texture2D				m_texBuffer;		// Texture that will contain the signal/spectrum
+		Texture2D				m_texBufferIn;		// Texture that will contain the input signal/spectrum
+		Texture2D				m_texBufferOut;		// Texture that will contain the output spectrum/signal
 		Texture2D				m_texBufferCPU;		// CPU version used for readback
 
 		int						m_size;
@@ -101,14 +102,15 @@ namespace SharpMath.FFT {
 		/// Gets the input view for quick GPU access
 		/// </summary>
 		public View2D		Input {
-			get { return m_texBuffer.GetView( 0, 1, 0, 1 ); }
+			get { return m_texBufferIn.GetView( 0, 1, 0, 1 ); }
 		}
 
 		/// <summary>
 		/// Gets the output view for quick GPU access
 		/// </summary>
 		public View2D		Output {
-			get { return m_texBuffer.GetView( 0, 1, (m_POT & 1) != 0 ? 1U : 0U, 1 ); }
+			get { return m_texBufferOut.GetView( 0, 1, 0, 1 ); }
+//			get { return m_texBuffer.GetView( 0, 1, (m_POT & 1) != 0 ? 1U : 0U, 1 ); }
 		}
 
 		/// <summary>
@@ -131,8 +133,9 @@ namespace SharpMath.FFT {
 			// Initialize DX stuff
 			m_device = _device;
 			m_CB = new ConstantBuffer<CB>( m_device, 0 );
-			m_texBuffer = new Texture2D( m_device, (uint) m_size, 1, 2, 1, PIXEL_FORMAT.RG32_FLOAT, false, true, null );
-			m_texBufferCPU = new Texture2D( m_device, (uint) m_size, 1, 2, 1, PIXEL_FORMAT.RG32_FLOAT, true, true, null );
+			m_texBufferIn = new Texture2D( m_device, (uint) m_size, 1, 1, 1, PIXEL_FORMAT.RG32_FLOAT, false, true, null );
+			m_texBufferOut = new Texture2D( m_device, (uint) m_size, 1, 1, 1, PIXEL_FORMAT.RG32_FLOAT, false, true, null );
+			m_texBufferCPU = new Texture2D( m_device, (uint) m_size, 1, 1, 1, PIXEL_FORMAT.RG32_FLOAT, true, true, null );
 
 			try {
 				#if DEBUG
@@ -142,10 +145,10 @@ namespace SharpMath.FFT {
 					switch ( m_POT ) {
 						case 7:  m_CS__Remainder = null; break;
 						case 8:  m_CS__Remainder  = new ComputeShader( _device, new System.IO.FileInfo( @"./Shaders/FFT1D.hlsl" ), "CS__128to256", null, server ); break;
-						case 9:  m_CS__Remainder  = new ComputeShader( _device, new System.IO.FileInfo( @"./Shaders/FFT1D.hlsl" ), "CS__128to256", null, server ); break;
-						case 10: m_CS__Remainder  = new ComputeShader( _device, new System.IO.FileInfo( @"./Shaders/FFT1D.hlsl" ), "CS__128to512", null, server ); break;
-						case 11: m_CS__Remainder  = new ComputeShader( _device, new System.IO.FileInfo( @"./Shaders/FFT1D.hlsl" ), "CS__128to1024", null, server ); break;
-						case 12: m_CS__Remainder  = new ComputeShader( _device, new System.IO.FileInfo( @"./Shaders/FFT1D.hlsl" ), "CS__128to2048", null, server ); break;
+						case 9:  m_CS__Remainder  = new ComputeShader( _device, new System.IO.FileInfo( @"./Shaders/FFT1D.hlsl" ), "CS__128to512", null, server ); break;
+						case 10: m_CS__Remainder  = new ComputeShader( _device, new System.IO.FileInfo( @"./Shaders/FFT1D.hlsl" ), "CS__128to1024", null, server ); break;
+						case 11: m_CS__Remainder  = new ComputeShader( _device, new System.IO.FileInfo( @"./Shaders/FFT1D.hlsl" ), "CS__128to2048", null, server ); break;
+						case 12: m_CS__Remainder  = new ComputeShader( _device, new System.IO.FileInfo( @"./Shaders/FFT1D.hlsl" ), "CS__128to4096", null, server ); break;
 					}
 				#else
 					using ( new ScopedForceShadersLoadFromBinary() ) {
@@ -165,7 +168,8 @@ namespace SharpMath.FFT {
 				m_CS__Remainder.Dispose();
 			m_CS__1to128.Dispose();
 			m_texBufferCPU.Dispose();
-			m_texBuffer.Dispose();
+			m_texBufferOut.Dispose();
+			m_texBufferIn.Dispose();
 			m_CB.Dispose();
 		}
 
@@ -277,7 +281,7 @@ namespace SharpMath.FFT {
 				}
 				loadingBuffer.CloseStream();
 				m_texBufferCPU.UnMap( 0, 0 );
-				m_texBuffer.CopyFrom( m_texBufferCPU );
+				m_texBufferIn.CopyFrom( m_texBufferCPU );
 
 				//////////////////////////////////////////////////////////////////////////
 				// Apply multiple shader passes
@@ -285,9 +289,10 @@ namespace SharpMath.FFT {
 
 				//////////////////////////////////////////////////////////////////////////
 				// Read back content
-				m_texBufferCPU.CopyFrom( m_texBuffer );
+				m_texBufferCPU.CopyFrom( m_texBufferOut );
 
-				uint					outputBufferIndex = (m_POT & 1) != 0 ? 1U : 0U;
+//				uint					outputBufferIndex = (m_POT & 1) != 0 ? 1U : 0U;
+				uint					outputBufferIndex = 0U;
 				PixelsBuffer			resultBuffer = m_texBufferCPU.Map( 0, outputBufferIndex );
 				System.IO.BinaryReader	R = resultBuffer.OpenStreamRead();
 				for ( int i=0; i < m_size; i++ ) {
@@ -310,8 +315,10 @@ namespace SharpMath.FFT {
 				m_CB.m._sign = _sign;
 				m_CB.UpdateData();
 
-				m_texBuffer.SetCS( 0, m_texBuffer.GetView( 0, 1, 0, 1 ) );
-				m_texBuffer.SetCSUAV( 0, m_texBuffer.GetView( 0, 1, 1, 1 ) );
+// 				m_texBuffer.SetCS( 0, m_texBuffer.GetView( 0, 1, 0, 1 ) );
+// 				m_texBuffer.SetCSUAV( 0, m_texBuffer.GetView( 0, 1, 1, 1 ) );
+				m_texBufferIn.SetCS( 0 );
+				m_texBufferOut.SetCSUAV( 0 );
 
 				if ( !m_CS__1to128.Use() )
 					throw new Exception( "Failed to use compute shader: did it compile without error?" );
@@ -322,15 +329,21 @@ namespace SharpMath.FFT {
 				uint	groupsCount = (uint) (m_size >> 7);
 				m_CS__1to128.Dispatch( groupsCount, 1, 1 );
 
-				m_texBuffer.RemoveFromLastAssignedSlots();
-				m_texBuffer.RemoveFromLastAssignedSlotUAV();
+				m_texBufferIn.RemoveFromLastAssignedSlots();
 
 				if ( m_CS__Remainder != null ) {
+//					m_texBuffer.SetCS( 0, m_texBuffer.GetView( 0, 1, 1, 1 ) );	// Also as SRV!
+					m_texBufferOut.SetCS( 0 );	// Also as SRV!
 					if ( !m_CS__Remainder.Use() )
 						throw new Exception( "Failed to use compute shader: did it compile without error?" );
 
 					m_CS__Remainder.Dispatch( groupsCount, 1, 1 );
+
+					m_texBufferOut.RemoveFromLastAssignedSlots();
 				}
+
+				m_texBufferOut.RemoveFromLastAssignedSlotUAV();
+
 			} catch ( Exception _e ) {
 				throw new Exception( "An error occurred while performing the FFT!", _e );
 			}

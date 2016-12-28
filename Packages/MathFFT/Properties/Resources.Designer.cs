@@ -61,46 +61,32 @@ namespace SharpMath.FFT.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        ///// Common FFT code
-        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        /////
-        ///
-        ///cbuffer : register(b0) {
-        ///	float	_sign;
-        /////	uint	_groupSize;
-        ///};
-        ///
-        ///
-        ///uint	wang_hash(uint seed) {
-        ///    seed = (seed ^ 61) ^ (seed &gt;&gt; 16);
-        ///    seed *= 9;
-        ///    seed = seed ^ (seed &gt;&gt; 4);
-        ///    seed *= 0x27d4eb2d;
-        ///    seed = seed ^ (seed &gt;&gt; 15) [rest of string was truncated]&quot;;.
+        ///   Looks up a localized resource of type System.Byte[].
         /// </summary>
-        internal static string FFT {
+        internal static byte[] FFT {
             get {
-                return ResourceManager.GetString("FFT", resourceCulture);
+                object obj = ResourceManager.GetObject("FFT", resourceCulture);
+                return ((byte[])(obj));
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        ///// 1D FFT
-        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        /////
-        ///#include &quot;FFT.hlsl&quot;
-        ///
-        ///Texture2D&lt;float2&gt;	_texIn : register(t0);
-        ///RWTexture2D&lt;float2&gt;	_texOut : register(u0);
-        ///
-        ///// Applies FFT from stage 0 (size 1) to stage 6 (size 64)
-        ///// NOTE: Each thread reads and writes 2 values so each thread at stage 0 reads 2 s [rest of string was truncated]&quot;;.
+        ///   Looks up a localized resource of type System.Byte[].
         /// </summary>
-        internal static string FFT1D {
+        internal static byte[] FFT1D {
             get {
-                return ResourceManager.GetString("FFT1D", resourceCulture);
+                object obj = ResourceManager.GetObject("FFT1D", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Byte[].
+        /// </summary>
+        internal static byte[] FFT1D_CS__1to128 {
+            get {
+                object obj = ResourceManager.GetObject("FFT1D_CS__1to128", resourceCulture);
+                return ((byte[])(obj));
             }
         }
     }

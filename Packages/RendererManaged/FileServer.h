@@ -26,7 +26,7 @@ namespace Renderer {
 		IFileServer*		m_server;
 
 	public:
-		// Constructs a FileServer that loads files from the disk
+		// Constructs a FileServer that loads files from the disk from a specific directory
 		FileServer( System::IO::DirectoryInfo^ _baseDirectory );
 
 		// Constructs a FileServer that loads resource files from a System::ResourceManager

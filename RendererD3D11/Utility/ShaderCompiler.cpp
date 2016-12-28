@@ -67,13 +67,12 @@ ID3DBlob*   ShaderCompiler::CompileShader( IFileServer& _fileServer, const BStri
 //		Flags1 |= D3DCOMPILE_IEEE_STRICTNESS;		// D3D9 compatibility, clamps precision to usual float32 but may prevent internal optimizations by the video card. Better leave it disabled!
 		Flags1 |= D3DCOMPILE_PACK_MATRIX_ROW_MAJOR;	// MOST IMPORTANT FLAG!
 
-	LPCVOID	pCodePointer = codeTextBlob->GetBufferPointer();
-	size_t	CodeSize = codeTextBlob->GetBufferSize();
-//	size_t	CodeLength = strlen( (char*) pCodePointer );
+	LPCVOID	codePointer = codeTextBlob->GetBufferPointer();
+	size_t	codeSize = codeTextBlob->GetBufferSize();
 
 	ID3DBlob*   codeBlob = NULL;
 				errorsBlob = NULL;
-	D3DCompile( pCodePointer, CodeSize, _shaderFileName, _macros, &_fileServer, _entryPoint, _target, Flags1, Flags2, &codeBlob, &errorsBlob );
+	D3DCompile( codePointer, codeSize, _shaderFileName, _macros, &_fileServer, _entryPoint, _target, Flags1, Flags2, &codeBlob, &errorsBlob );
 
 	#if defined(_DEBUG) || defined(DEBUG_SHADER)
 		bool	hasWarningOrErrors = errorsBlob != NULL;	// Represents warnings and errors

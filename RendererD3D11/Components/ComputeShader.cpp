@@ -118,11 +118,11 @@ void	ComputeShader::CompileShader( ID3DBlob* _blobCS ) {
 	if ( _blobCS == nullptr ) {
 		ASSERT( !m_entryPointCS.IsEmpty(), "Invalid ComputeShader entry point!" );
 		_blobCS = ShaderCompiler::CompileShader( *m_fileServer, m_shaderFileName, m_macros, m_entryPointCS, "cs_5_0", true );
-		m_hasErrors = _blobCS != NULL;
+		m_hasErrors = _blobCS == NULL;
 	}
 	if ( _blobCS != NULL ) {
 		Check( m_device.DXDevice().CreateComputeShader( _blobCS->GetBufferPointer(), _blobCS->GetBufferSize(), NULL, &pCS ) );
-		ASSERT( pCS != NULL, "Failed to create vertex shader!" );
+		ASSERT( pCS != NULL, "Failed to create compute shader!" );
 		m_hasErrors |= pCS == NULL;
 	}
 
@@ -134,20 +134,16 @@ void	ComputeShader::CompileShader( ID3DBlob* _blobCS ) {
 
 		// Replace with brand new shaders
 		m_pCS = pCS;
-
-		#ifdef ENABLE_SHADER_REFLECTION
-			m_CSConstants.Enumerate( *pShader );
-		#endif
+		pCS = NULL;
 
 		// Enumerate constants
-		if ( _blobCS == NULL ) {
-			m_hasErrors = true;
-			return;
-		}
+		#ifdef ENABLE_SHADER_REFLECTION
+			m_CSConstants.Enumerate( *m_pCS );
+		#endif
 	}
 
-	if ( _blobCS != NULL )
-		_blobCS->Release();
+	SAFE_RELEASE( pCS );
+	SAFE_RELEASE( _blobCS );
 }
 
 bool	ComputeShader::Use() {
@@ -213,16 +209,16 @@ void	ComputeShader::SetUnorderedAccessView( int _BufferSlot, StructuredBuffer& _
 }
 
 bool	ComputeShader::Lock() const {
-#ifdef COMPUTE_SHADER_COMPILE_THREADED
-	return WaitForSingleObject( m_hCompileMutex, 0 ) == WAIT_OBJECT_0;
-#else
-	return true;
-#endif
+	#ifdef COMPUTE_SHADER_COMPILE_THREADED
+		return WaitForSingleObject( m_hCompileMutex, 0 ) == WAIT_OBJECT_0;
+	#else
+		return true;
+	#endif
 }
 void	ComputeShader::Unlock() const {
-#ifdef COMPUTE_SHADER_COMPILE_THREADED
-	ASSERT( ReleaseMutex( m_hCompileMutex ), "Failed to release mutex!" );
-#endif
+	#ifdef COMPUTE_SHADER_COMPILE_THREADED
+		ASSERT( ReleaseMutex( m_hCompileMutex ), "Failed to release mutex!" );
+	#endif
 }
 
 // When compiling normally (i.e. not for the GodComplex 64K intro), allow strings to access shader variables
