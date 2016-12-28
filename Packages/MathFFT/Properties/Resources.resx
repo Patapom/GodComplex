@@ -124,7 +124,4 @@
   <data name="FFT1D" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\shaders\fft1d.hlsl;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
-  <data name="FFT1D_CS__1to128" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Shaders\FFT1D.CS__1to128.fxbin;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
 </root>

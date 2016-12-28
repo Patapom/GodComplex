@@ -85,7 +85,8 @@ namespace Renderer {
 
 	HRESULT	FileServer::Disk_OpenFile( D3D_INCLUDE_TYPE IncludeType, LPCSTR pFileName, LPCVOID pParentData, LPCVOID *ppData, UINT *pBytes ) {
 		String^	partialFileName = System::Runtime::InteropServices::Marshal::PtrToStringAnsi( static_cast<IntPtr>( (void*) pFileName ) );  
-		String^	shaderFileNameStr = System::IO::Path::Combine( m_baseDirectory->FullName, partialFileName );
+		String^	fileNameNoDir = System::IO::Path::GetFileName( partialFileName );
+		String^	shaderFileNameStr = System::IO::Path::Combine( m_baseDirectory->FullName, fileNameNoDir );
 
 		System::IO::FileInfo^	shaderFileName = gcnew System::IO::FileInfo( shaderFileNameStr );
 		if ( ppData == NULL ) {
@@ -130,10 +131,18 @@ namespace Renderer {
 	}
 
 	time_t	FileServer::Disk_GetFileModTime( const BString& _fileName ) {
-		struct _stat statInfo;
-		_stat( _fileName, &statInfo );
+		String^	partialFileName = System::Runtime::InteropServices::Marshal::PtrToStringAnsi( static_cast<IntPtr>( (void*) (const char*) _fileName ) );  
+		String^	fileNameNoDir = System::IO::Path::GetFileName( partialFileName );
+		String^	shaderFileNameStr = System::IO::Path::Combine( m_baseDirectory->FullName, fileNameNoDir );
 
-		return statInfo.st_mtime;
+		System::IO::FileInfo^	shaderFileName = gcnew System::IO::FileInfo( shaderFileNameStr );
+		if ( !shaderFileName->Exists )
+			throw gcnew System::IO::FileNotFoundException( "Shader file not found!", shaderFileName->FullName );
+
+		DateTime	lasModificationTime = shaderFileName->LastWriteTime;
+
+		time_t	result = lasModificationTime.ToFileTime();
+		return result;
 	}
 
 	#pragma endregion

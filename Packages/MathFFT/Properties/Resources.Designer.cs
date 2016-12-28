@@ -79,15 +79,5 @@ namespace SharpMath.FFT.Properties {
                 return ((byte[])(obj));
             }
         }
-        
-        /// <summary>
-        ///   Looks up a localized resource of type System.Byte[].
-        /// </summary>
-        internal static byte[] FFT1D_CS__1to128 {
-            get {
-                object obj = ResourceManager.GetObject("FFT1D_CS__1to128", resourceCulture);
-                return ((byte[])(obj));
-            }
-        }
     }
 }

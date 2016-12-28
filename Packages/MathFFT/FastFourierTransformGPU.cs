@@ -139,7 +139,8 @@ namespace SharpMath.FFT {
 
 			try {
 				#if DEBUG
-					FileServer	server = new FileServer( Properties.Resources.ResourceManager );
+//					FileServer	server = new FileServer( Properties.Resources.ResourceManager );
+					FileServer	server = new FileServer( new System.IO.DirectoryInfo( @"../../MathFFT/Shaders/" ) );
 
 					m_CS__1to128 = new ComputeShader( _device, new System.IO.FileInfo( @"./Shaders/FFT1D.hlsl" ), "CS__1to128", null, server );
 					switch ( m_POT ) {
@@ -272,15 +273,16 @@ namespace SharpMath.FFT {
 			try {
 				//////////////////////////////////////////////////////////////////////////
 				// Load initial swizzled content
-				PixelsBuffer			loadingBuffer = m_texBufferCPU.Map( 0, 0 );
+				PixelsBuffer			loadingBuffer = m_texBufferCPU.MapWrite( 0, 0 );
 				System.IO.BinaryWriter	W = loadingBuffer.OpenStreamWrite();
 				for ( int i=0; i < m_size; i++ ) {
-					int		swizzledIndex = m_permutations[i];
+//					int		swizzledIndex = m_permutations[i];
+int	swizzledIndex = i;
 					W.Write( (float) _input[swizzledIndex].r );
 					W.Write( (float) _input[swizzledIndex].i );
 				}
 				loadingBuffer.CloseStream();
-				m_texBufferCPU.UnMap( 0, 0 );
+				m_texBufferCPU.UnMap( loadingBuffer );
 				m_texBufferIn.CopyFrom( m_texBufferCPU );
 
 				//////////////////////////////////////////////////////////////////////////
@@ -293,13 +295,13 @@ namespace SharpMath.FFT {
 
 //				uint					outputBufferIndex = (m_POT & 1) != 0 ? 1U : 0U;
 				uint					outputBufferIndex = 0U;
-				PixelsBuffer			resultBuffer = m_texBufferCPU.Map( 0, outputBufferIndex );
+				PixelsBuffer			resultBuffer = m_texBufferCPU.MapRead( 0, outputBufferIndex );
 				System.IO.BinaryReader	R = resultBuffer.OpenStreamRead();
 				for ( int i=0; i < m_size; i++ ) {
 					_output[i].Set( R.ReadSingle(), R.ReadSingle() );
 				}
 				resultBuffer.CloseStream();
-				m_texBufferCPU.UnMap( 0, outputBufferIndex );
+				m_texBufferCPU.UnMap( resultBuffer );
 
 			} catch ( Exception _e ) {
 				throw new Exception( "An error occurred while performing the FFT!", _e );
@@ -315,34 +317,38 @@ namespace SharpMath.FFT {
 				m_CB.m._sign = _sign;
 				m_CB.UpdateData();
 
-// 				m_texBuffer.SetCS( 0, m_texBuffer.GetView( 0, 1, 0, 1 ) );
-// 				m_texBuffer.SetCSUAV( 0, m_texBuffer.GetView( 0, 1, 1, 1 ) );
-				m_texBufferIn.SetCS( 0 );
-				m_texBufferOut.SetCSUAV( 0 );
-
 				if ( !m_CS__1to128.Use() )
 					throw new Exception( "Failed to use compute shader: did it compile without error?" );
 
-				// • We're using a group of 64 threads
+				m_texBufferIn.SetCS( 0 );
+				m_texBufferOut.SetCSUAV( 0 );
+
+				// • We're using groups of 64 threads
 				// • Each thread reads and writes 2 values
 				// ==> The total amount of elements processed by a group is thus 128
 				uint	groupsCount = (uint) (m_size >> 7);
 				m_CS__1to128.Dispatch( groupsCount, 1, 1 );
 
 				m_texBufferIn.RemoveFromLastAssignedSlots();
-
-				if ( m_CS__Remainder != null ) {
-//					m_texBuffer.SetCS( 0, m_texBuffer.GetView( 0, 1, 1, 1 ) );	// Also as SRV!
-					m_texBufferOut.SetCS( 0 );	// Also as SRV!
-					if ( !m_CS__Remainder.Use() )
-						throw new Exception( "Failed to use compute shader: did it compile without error?" );
-
-					m_CS__Remainder.Dispatch( groupsCount, 1, 1 );
-
-					m_texBufferOut.RemoveFromLastAssignedSlots();
-				}
-
 				m_texBufferOut.RemoveFromLastAssignedSlotUAV();
+
+// 				if ( m_CS__Remainder != null ) {
+// 					if ( !m_CS__Remainder.Use() )
+// 						throw new Exception( "Failed to use compute shader: did it compile without error?" );
+// 
+// 					// Swap in and out
+// 					Texture2D	temp = m_texBufferIn;
+// 					m_texBufferIn = m_texBufferOut;
+// 					m_texBufferOut = temp;
+// 
+// 					m_texBufferIn.SetCS( 0 );
+// 					m_texBufferOut.SetCSUAV( 0 );
+// 
+// 					m_CS__Remainder.Dispatch( 2, 1, 1 );
+// 
+// 					m_texBufferIn.RemoveFromLastAssignedSlots();
+// 					m_texBufferOut.RemoveFromLastAssignedSlotUAV();
+// 				}
 
 			} catch ( Exception _e ) {
 				throw new Exception( "An error occurred while performing the FFT!", _e );

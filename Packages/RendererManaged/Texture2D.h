@@ -69,13 +69,22 @@ namespace Renderer {
 			m_pTexture->CopyFrom( *_source->m_pTexture );
 		}
 
-		PixelsBuffer^	Map( UInt32 _mipLevelIndex, UInt32 _arrayIndex ) {
-			D3D11_MAPPED_SUBRESOURCE&	MappedResource = m_pTexture->Map( _mipLevelIndex, _arrayIndex );
-			return gcnew PixelsBuffer( MappedResource );
+		PixelsBuffer^	MapRead( UInt32 _mipLevelIndex, UInt32 _arrayIndex ) {
+			D3D11_MAPPED_SUBRESOURCE&	mappedResource = m_pTexture->Map( _mipLevelIndex, _arrayIndex );
+			return gcnew PixelsBuffer( mappedResource, _mipLevelIndex, _arrayIndex, true );
 		}
 
-		void			UnMap( UInt32 _mipLevelIndex, UInt32 _arrayIndex ) {
-			m_pTexture->UnMap( _mipLevelIndex, _arrayIndex );
+		PixelsBuffer^	MapWrite( UInt32 _mipLevelIndex, UInt32 _arrayIndex ) {
+			D3D11_MAPPED_SUBRESOURCE&	mappedResource = m_pTexture->Map( _mipLevelIndex, _arrayIndex );
+			return gcnew PixelsBuffer( mappedResource, _mipLevelIndex, _arrayIndex, false );
+		}
+
+		void			UnMap( PixelsBuffer^ _mappedResource ) {
+			if ( !_mappedResource->m_readOnly ) {
+				// Write back buffer to mapped sub-resource for upload
+				_mappedResource->WriteToMappedSubResource();
+			}
+			m_pTexture->UnMap( _mappedResource->m_mappedMipLevelIndex, _mappedResource->m_mappedArrayIndex );
 		}
 
 		// Views

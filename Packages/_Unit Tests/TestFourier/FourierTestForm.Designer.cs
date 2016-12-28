@@ -32,6 +32,7 @@
 			this.timer1 = new System.Windows.Forms.Timer(this.components);
 			this.tabControl1 = new System.Windows.Forms.TabControl();
 			this.tabPage1D = new System.Windows.Forms.TabPage();
+			this.checkBoxShowInput = new System.Windows.Forms.CheckBox();
 			this.checkBoxShowReconstructedSignal = new System.Windows.Forms.CheckBox();
 			this.checkBoxInvertFilter = new System.Windows.Forms.CheckBox();
 			this.panel2 = new System.Windows.Forms.Panel();
@@ -53,7 +54,7 @@
 			this.imagePanel = new TestFourier.ImagePanel();
 			this.tabPage2D = new System.Windows.Forms.TabPage();
 			this.viewportPanel = new TestFourier.ViewportPanel();
-			this.checkBoxShowInput = new System.Windows.Forms.CheckBox();
+			this.buttonReload = new System.Windows.Forms.Button();
 			this.tabControl1.SuspendLayout();
 			this.tabPage1D.SuspendLayout();
 			this.panel2.SuspendLayout();
@@ -93,6 +94,18 @@
 			this.tabPage1D.TabIndex = 0;
 			this.tabPage1D.Text = "FFT 1D";
 			this.tabPage1D.UseVisualStyleBackColor = true;
+			// 
+			// checkBoxShowInput
+			// 
+			this.checkBoxShowInput.AutoSize = true;
+			this.checkBoxShowInput.Checked = true;
+			this.checkBoxShowInput.CheckState = System.Windows.Forms.CheckState.Checked;
+			this.checkBoxShowInput.Location = new System.Drawing.Point(503, 14);
+			this.checkBoxShowInput.Name = "checkBoxShowInput";
+			this.checkBoxShowInput.Size = new System.Drawing.Size(112, 17);
+			this.checkBoxShowInput.TabIndex = 3;
+			this.checkBoxShowInput.Text = "Show Input Signal";
+			this.checkBoxShowInput.UseVisualStyleBackColor = true;
 			// 
 			// checkBoxShowReconstructedSignal
 			// 
@@ -316,30 +329,29 @@
 			this.tabPage2D.Text = "FFT 2D";
 			this.tabPage2D.UseVisualStyleBackColor = true;
 			// 
-			// imagePanel2D
+			// viewportPanel
 			// 
 			this.viewportPanel.Location = new System.Drawing.Point(6, 45);
 			this.viewportPanel.Name = "viewportPanel";
 			this.viewportPanel.Size = new System.Drawing.Size(1000, 500);
 			this.viewportPanel.TabIndex = 1;
 			// 
-			// checkBoxShowInput
+			// buttonReload
 			// 
-			this.checkBoxShowInput.AutoSize = true;
-			this.checkBoxShowInput.Checked = true;
-			this.checkBoxShowInput.CheckState = System.Windows.Forms.CheckState.Checked;
-			this.checkBoxShowInput.Location = new System.Drawing.Point(503, 14);
-			this.checkBoxShowInput.Name = "checkBoxShowInput";
-			this.checkBoxShowInput.Size = new System.Drawing.Size(112, 17);
-			this.checkBoxShowInput.TabIndex = 3;
-			this.checkBoxShowInput.Text = "Show Input Signal";
-			this.checkBoxShowInput.UseVisualStyleBackColor = true;
+			this.buttonReload.Location = new System.Drawing.Point(1205, 4);
+			this.buttonReload.Name = "buttonReload";
+			this.buttonReload.Size = new System.Drawing.Size(75, 23);
+			this.buttonReload.TabIndex = 2;
+			this.buttonReload.Text = "Reload";
+			this.buttonReload.UseVisualStyleBackColor = true;
+			this.buttonReload.Click += new System.EventHandler(this.buttonReload_Click);
 			// 
 			// FourierTestForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1294, 777);
+			this.Controls.Add(this.buttonReload);
 			this.Controls.Add(this.tabControl1);
 			this.Name = "FourierTestForm";
 			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
@@ -383,6 +395,7 @@
 		private System.Windows.Forms.CheckBox checkBoxShowReconstructedSignal;
 		private System.Windows.Forms.RadioButton radioButtonRandom;
 		private System.Windows.Forms.CheckBox checkBoxShowInput;
+		private System.Windows.Forms.Button buttonReload;
 	}
 }
 

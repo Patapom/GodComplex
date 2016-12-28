@@ -193,7 +193,8 @@ namespace SharpMath.FFT {
 			int		groupsCount = _size >> 1;
 			int		groupSize = 1;
 			double	frequency = 0.5 * _baseFrequency;
-			for ( int stageIndex=0; stageIndex < _POT; stageIndex++ ) {
+//			for ( int stageIndex=0; stageIndex < _POT; stageIndex++ ) {
+for ( int stageIndex=0; stageIndex < 2; stageIndex++ ) {
 
 				int	k_even = 0;
 				int	k_odd = groupSize;

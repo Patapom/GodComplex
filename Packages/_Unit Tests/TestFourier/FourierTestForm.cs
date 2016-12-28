@@ -24,7 +24,7 @@ namespace TestFourier
 
 		Device			m_device = new Device();
 
-		FFT1D_GPU		m_FFT1D = null;
+		FFT1D_GPU		m_FFT1D_GPU = null;
 
 		public FourierTestForm() {
 			InitializeComponent();
@@ -35,7 +35,7 @@ namespace TestFourier
 
 			try {
 				m_device.Init( viewportPanel.Handle, false, true );
-				m_FFT1D = new FFT1D_GPU( m_device, 1024 );
+				m_FFT1D_GPU = new FFT1D_GPU( m_device, 1024 );
 			} catch ( Exception ) {
 				MessageBox.Show( "Failed to initialize DirectX device! Can't execute GPU FFT!" );
 				m_device = null;
@@ -50,7 +50,7 @@ namespace TestFourier
 
 		protected override void OnClosing( CancelEventArgs e ) {
 			if ( m_device != null ) {
-				m_FFT1D.Dispose();
+				m_FFT1D_GPU.Dispose();
 				m_device.Dispose();
 			}
 
@@ -214,7 +214,16 @@ namespace TestFourier
 			FFT1D.FFT_Forward( m_signalSource, m_spectrum );
 
 			// Try the GPU version
-			m_FFT1D.FFT_Forward( m_signalSource, m_spectrumGPU );
+			m_FFT1D_GPU.FFT_Forward( m_signalSource, m_spectrumGPU );
+//			m_FFT1D_GPU.FFT_Forward( m_signalSource, m_spectrum );
+
+if ( checkBoxInvertFilter.Checked )
+	for ( int i=0; i < 1024; i++ )
+		m_spectrum[i] = 40.0 * m_spectrumGPU[i];
+else
+	for ( int i=0; i < 1024; i++ )
+		m_spectrum[i] *= 40.0;
+
 
 
 			// Filter
@@ -311,5 +320,9 @@ namespace TestFourier
 		}
 
 		#endregion
+
+		private void buttonReload_Click( object sender, EventArgs e ) {
+			m_device.ReloadModifiedShaders();
+		}
 	}
 }

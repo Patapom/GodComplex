@@ -77,7 +77,7 @@ void	FetchAndMix_First( uint _dispatchThreadIndex, Texture2D<float2> _texSource 
 	float2	O = _texSource[uint2(elementIndex+1,0)];
 
 	// Sine = 0, Cosine = 1
-	uint	targetIndex = elementIndex & 0x7EU;	// Just because we're fetching/writing from a local memory of size 128
+	uint	targetIndex = elementIndex & 0x7EU;	// Just because we're writing to a local memory of size 128
 	gs_temp[targetIndex] = float2(		E.x + O.x, 
 										E.y + O.y );
 	gs_temp[targetIndex+1] = float2(	E.x - O.x, 

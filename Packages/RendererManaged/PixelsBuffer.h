@@ -18,6 +18,12 @@ namespace Renderer {
 		UInt32						m_rowPitch;
 		UInt32						m_depthPitch;
 
+		// When a texture is mapped
+		D3D11_MAPPED_SUBRESOURCE*	m_mappedSubResource;
+		UInt32						m_mappedMipLevelIndex;
+		UInt32						m_mappedArrayIndex;
+		bool						m_readOnly;
+
 	public:
 
 		property UInt32		RowPitch	{ UInt32 get() { return m_rowPitch; } }
@@ -25,15 +31,28 @@ namespace Renderer {
 
 	public:
 
-		PixelsBuffer( UInt32 _contentSize ) : ByteBuffer( _contentSize ) {
+		PixelsBuffer( UInt32 _contentSize ) : ByteBuffer( _contentSize ), m_mappedSubResource( NULL ) {
 		}
 
 	internal:
-		PixelsBuffer( D3D11_MAPPED_SUBRESOURCE& _SubResource ) : ByteBuffer( _SubResource.DepthPitch ) {
+		PixelsBuffer( D3D11_MAPPED_SUBRESOURCE& _SubResource, UInt32 _mipLevelIndex, UInt32 _arrayIndex, bool _readOnly ) : ByteBuffer( _SubResource.DepthPitch ) {
 			m_rowPitch = _SubResource.RowPitch;
 			m_depthPitch = _SubResource.DepthPitch;
 
-			System::Runtime::InteropServices::Marshal::Copy( System::IntPtr( _SubResource.pData ), m_Buffer, 0, m_depthPitch );
+			m_mappedSubResource = &_SubResource;
+			m_mappedMipLevelIndex = _mipLevelIndex;
+			m_mappedArrayIndex = _arrayIndex;
+			m_readOnly = _readOnly;
+
+			if ( m_readOnly ) {
+				// Copy mapped resource now
+				System::Runtime::InteropServices::Marshal::Copy( System::IntPtr( _SubResource.pData ), m_Buffer, 0, m_depthPitch );
+			}
+		}
+
+		// Copies back buffer's content to mapped sub-resources
+		void	WriteToMappedSubResource() {
+			System::Runtime::InteropServices::Marshal::Copy( m_Buffer, 0, System::IntPtr( m_mappedSubResource->pData ), m_depthPitch );
 		}
 
 // Enabling this helper requires to include MathStructs.h but doing so results in Device.h failing to compile!!! ô0
