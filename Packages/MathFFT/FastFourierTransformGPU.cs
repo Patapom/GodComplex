@@ -276,8 +276,7 @@ namespace SharpMath.FFT {
 				PixelsBuffer			loadingBuffer = m_texBufferCPU.MapWrite( 0, 0 );
 				System.IO.BinaryWriter	W = loadingBuffer.OpenStreamWrite();
 				for ( int i=0; i < m_size; i++ ) {
-//					int		swizzledIndex = m_permutations[i];
-int	swizzledIndex = i;
+					int		swizzledIndex = m_permutations[i];
 					W.Write( (float) _input[swizzledIndex].r );
 					W.Write( (float) _input[swizzledIndex].i );
 				}
@@ -332,23 +331,23 @@ int	swizzledIndex = i;
 				m_texBufferIn.RemoveFromLastAssignedSlots();
 				m_texBufferOut.RemoveFromLastAssignedSlotUAV();
 
-// 				if ( m_CS__Remainder != null ) {
-// 					if ( !m_CS__Remainder.Use() )
-// 						throw new Exception( "Failed to use compute shader: did it compile without error?" );
-// 
-// 					// Swap in and out
-// 					Texture2D	temp = m_texBufferIn;
-// 					m_texBufferIn = m_texBufferOut;
-// 					m_texBufferOut = temp;
-// 
-// 					m_texBufferIn.SetCS( 0 );
-// 					m_texBufferOut.SetCSUAV( 0 );
-// 
-// 					m_CS__Remainder.Dispatch( 2, 1, 1 );
-// 
-// 					m_texBufferIn.RemoveFromLastAssignedSlots();
-// 					m_texBufferOut.RemoveFromLastAssignedSlotUAV();
-// 				}
+				if ( m_CS__Remainder != null ) {
+					if ( !m_CS__Remainder.Use() )
+						throw new Exception( "Failed to use compute shader: did it compile without error?" );
+
+					// Swap in and out
+					Texture2D	temp = m_texBufferIn;
+					m_texBufferIn = m_texBufferOut;
+					m_texBufferOut = temp;
+
+					m_texBufferIn.SetCS( 0 );
+					m_texBufferOut.SetCSUAV( 0 );
+
+					m_CS__Remainder.Dispatch( 2, 1, 1 );
+
+					m_texBufferIn.RemoveFromLastAssignedSlots();
+					m_texBufferOut.RemoveFromLastAssignedSlotUAV();
+				}
 
 			} catch ( Exception _e ) {
 				throw new Exception( "An error occurred while performing the FFT!", _e );

@@ -86,8 +86,9 @@ void	FetchAndMix_First( uint _dispatchThreadIndex, Texture2D<float2> _texSource 
 
 // Special case for last stage, writing to target buffer
 void	FetchAndMix_Last( uint _groupShift, uint _dispatchThreadIndex, float _frequency, RWTexture2D<float2> _texTarget ) {
-	_dispatchThreadIndex &= 0x7FU;	// Just because we're fetching/writing from a local memory of size 128
-	uint3	k = ComputeIndices( _groupShift, _dispatchThreadIndex );
+//	_dispatchThreadIndex &= 0x7FU;	// Just because we're fetching/writing from a local memory of size 128
+//	uint3	k = ComputeIndices( _groupShift, _dispatchThreadIndex );
+	uint3	k = ComputeIndices( _groupShift, _dispatchThreadIndex & 0x3FU );
 
 	float2	E = gs_temp[k.x];
 	float2	O = gs_temp[k.y];
@@ -95,10 +96,11 @@ void	FetchAndMix_Last( uint _groupShift, uint _dispatchThreadIndex, float _frequ
 	float	s, c;
 	sincos( k.z * _frequency, s, c );
 
-	_texTarget[uint2(k.x,0)] = float2(	E.x + c * O.x - s * O.y, 
-										E.y + s * O.x + c * O.y );
-	_texTarget[uint2(k.y,0)] = float2(	E.x - c * O.x + s * O.y, 
-										E.y - s * O.x - c * O.y );
+	uint	index = _dispatchThreadIndex.x << 1;
+	_texTarget[uint2(index,0)] = float2(	E.x + c * O.x - s * O.y, 
+											E.y + s * O.x + c * O.y );
+	_texTarget[uint2(index+1,0)] = float2(	E.x - c * O.x + s * O.y, 
+											E.y - s * O.x - c * O.y );
 }
 
 // General case for large groups that don't fit into local storage

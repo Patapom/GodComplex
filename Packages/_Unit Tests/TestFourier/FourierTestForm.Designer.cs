@@ -55,6 +55,7 @@
 			this.tabPage2D = new System.Windows.Forms.TabPage();
 			this.viewportPanel = new TestFourier.ViewportPanel();
 			this.buttonReload = new System.Windows.Forms.Button();
+			this.labelDiff = new System.Windows.Forms.Label();
 			this.tabControl1.SuspendLayout();
 			this.tabPage1D.SuspendLayout();
 			this.panel2.SuspendLayout();
@@ -79,6 +80,7 @@
 			// 
 			// tabPage1D
 			// 
+			this.tabPage1D.Controls.Add(this.labelDiff);
 			this.tabPage1D.Controls.Add(this.checkBoxShowInput);
 			this.tabPage1D.Controls.Add(this.checkBoxShowReconstructedSignal);
 			this.tabPage1D.Controls.Add(this.checkBoxInvertFilter);
@@ -346,6 +348,15 @@
 			this.buttonReload.UseVisualStyleBackColor = true;
 			this.buttonReload.Click += new System.EventHandler(this.buttonReload_Click);
 			// 
+			// labelDiff
+			// 
+			this.labelDiff.AutoSize = true;
+			this.labelDiff.Location = new System.Drawing.Point(669, 590);
+			this.labelDiff.Name = "labelDiff";
+			this.labelDiff.Size = new System.Drawing.Size(46, 13);
+			this.labelDiff.TabIndex = 4;
+			this.labelDiff.Text = "BISOU !";
+			// 
 			// FourierTestForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -396,6 +407,7 @@
 		private System.Windows.Forms.RadioButton radioButtonRandom;
 		private System.Windows.Forms.CheckBox checkBoxShowInput;
 		private System.Windows.Forms.Button buttonReload;
+		private System.Windows.Forms.Label labelDiff;
 	}
 }
 

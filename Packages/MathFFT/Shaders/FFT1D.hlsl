@@ -33,7 +33,7 @@ void	FetchAndMixBetter( uint _groupShift, uint _groupThreadIndex, float _frequen
 #define	SYNC	GroupMemoryBarrier();	// We only need group barriers because groups don't interfere with each other
 //#define	SYNC	GroupMemoryBarrierWithGroupSync();
 
-// Applies FFT from stage 0 (size 1) to stage 6 (size 64)
+// Applies FFT from stage 0 (size 1) to stage 7 (size 128)
 // NOTE: Each thread reads and writes 2 values so each thread at stage 0 reads 2 size-1 groups and writes an entire size-2 group by itself
 //			while at stage 6, each thread group will read 2*64 values and write them as a single final size-128 group.
 [numthreads( 64, 1, 1 )]
@@ -54,24 +54,8 @@ float2	sinCos;
 
 	// Fetch level 1 - Group size = 2*2->1*4 - Frequency = 2PI/4
 	float	frequency = _sign * (0.5 * PI);
-#if 1
 	FetchAndMixBetter( 1, index, frequency );
-#else
-//	uint	pipoIndex = index & 0x3FU;	// Just because we're fetching/writing from a local memory of size 128
-	uint	pipoIndex = _groupThreadID.x;
-	uint	groupSize = 2;
-	uint	elemIndex = pipoIndex & (groupSize-1U);
-	uint	grIndex = (pipoIndex - elemIndex) << 1;
-	sincos( PI * elemIndex / 2.0, sinCos.x, sinCos.y );
-	Twiddle( sinCos, gs_temp[grIndex + elemIndex + 0], gs_temp[grIndex + groupSize + elemIndex] );
-#endif
 	SYNC
-
-#if 1
-_texOut[uint2(2*_dispatchThreadID.x+0, 0)] = gs_temp[2*index+0];
-_texOut[uint2(2*_dispatchThreadID.x+1, 0)] = gs_temp[2*index+1];
-return;
-#endif
 
 	// Fetch level 2 - Group size = 2*4->1*8 - Frequency = 2PI/8
 	frequency *= 0.5;
@@ -93,6 +77,12 @@ return;
 	FetchAndMixBetter( 5, index, frequency );
 	SYNC
 
+//#if 1
+//_texOut[uint2(2*_dispatchThreadID.x+0, 0)] = gs_temp[2*index+0];
+//_texOut[uint2(2*_dispatchThreadID.x+1, 0)] = gs_temp[2*index+1];
+//return;
+//#endif
+
 	// Fetch level 6 - Group size = 2*64->1*128 - Frequency = 2PI/128
 	frequency *= 0.5;
 #if 0
@@ -100,8 +90,8 @@ return;
 #else
 	FetchAndMixBetter( 6, index, frequency );
 
-	_texOut[uint2(2*_dispatchThreadID.x+0, 0)] = 4.0 * gs_temp[2*index+0];
-	_texOut[uint2(2*_dispatchThreadID.x+1, 0)] = 4.0 * gs_temp[2*index+1];
+	_texOut[uint2(2*_dispatchThreadID.x+0, 0)] = gs_temp[2*index+0];
+	_texOut[uint2(2*_dispatchThreadID.x+1, 0)] = gs_temp[2*index+1];
 #endif
 
 #if 0
@@ -144,10 +134,11 @@ void	CS__128to1024( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : SV_GROUP
 	Twiddle( sinCos, V[0], V[2] );
 	Twiddle( sinCos, V[4], V[6] );
 
-	sincos( frequency + (0.5 * PI), sinCos.x, sinCos.y );
+//	sincos( frequency + (0.5 * PI), sinCos.x, sinCos.y );
+	sinCos = float2( sinCos.y, -sinCos.x );
 	Twiddle( sinCos, V[1], V[3] );
 	Twiddle( sinCos, V[5], V[7] );
-
+/*
 	// Apply twiddling - Group size = 2*512->1*1024 - Frequency = 2PI/1024
 	frequency *= 0.5;
 	sincos( frequency, sinCos.x, sinCos.y );
@@ -161,14 +152,15 @@ void	CS__128to1024( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : SV_GROUP
 
 	sincos( frequency + (0.75 * PI), sinCos.x, sinCos.y );
 	Twiddle( sinCos, V[3], V[7] );
+//*/
 
 	// Store
 	pos.x = index;
 	[unroll]
 	for ( uint j=0; j < 8; j++ ) {
-//		_texOut[pos] = V[j];
+		_texOut[pos] = V[j];
 //_texOut[pos] = 20.0 * sinCos;
-_texOut[pos] = _texIn[pos];
+//_texOut[pos] = _texIn[pos];
 		pos.x += 128U;
 	}
 }

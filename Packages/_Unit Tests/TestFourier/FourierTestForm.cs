@@ -219,11 +219,21 @@ namespace TestFourier
 
 if ( checkBoxInvertFilter.Checked )
 	for ( int i=0; i < 1024; i++ )
-		m_spectrum[i] = 40.0 * m_spectrumGPU[i];
+		m_spectrum[i] = 2.0 * m_spectrumGPU[i];
 else
 	for ( int i=0; i < 1024; i++ )
-		m_spectrum[i] *= 40.0;
+		m_spectrum[i] *= 2.0;
 
+double	sumSqDiffR = 0.0;
+double	sumSqDiffI = 0.0;
+for ( int i=0; i < 1024; i++ ) {
+	Complex	diff = m_spectrum[i] - m_spectrumGPU[i];
+	sumSqDiffR += diff.r*diff.r;
+	sumSqDiffI += diff.i*diff.i;
+}
+sumSqDiffR /= 1024.0;
+sumSqDiffI /= 1024.0;
+labelDiff.Text = "SqDiff = " + sumSqDiffR.ToString( "G3" ) + " , " + sumSqDiffI.ToString( "G3" );
 
 
 			// Filter
