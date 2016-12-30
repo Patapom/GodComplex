@@ -105,7 +105,7 @@ _texOut[uint2(2*index+1,0)] = 200.0 * _texIn[uint2(2*index+1,0)];
 }
 
 // Applies FFT from stage 7 (size 128) to stage 10 (size 1024)
-[numthreads( 64, 1, 1 )]
+[numthreads( 128, 1, 1 )]
 void	CS__128to1024( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : SV_GROUPTHREADID, uint3 _dispatchThreadID : SV_DISPATCHTHREADID ) {
 	uint	index = _dispatchThreadID.x;	// in [0,128[ (2 groups of 64 threads)
 	uint2	pos = uint2( index, 0 );
@@ -130,14 +130,26 @@ void	CS__128to1024( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : SV_GROUP
 
 	// Apply twiddling - Group size = 2*256->1*512 - Frequency = 2PI/512
 	frequency *= 0.5;
+//frequency = index * _sign * (PI / 256.0);
 	sincos( frequency, sinCos.x, sinCos.y );
 	Twiddle( sinCos, V[0], V[2] );
 	Twiddle( sinCos, V[4], V[6] );
 
-//	sincos( frequency + (0.5 * PI), sinCos.x, sinCos.y );
-	sinCos = float2( sinCos.y, -sinCos.x );
+//	sincos( frequency + _sign * (0.5 * PI), sinCos.x, sinCos.y );
+	sinCos = float2( _sign * sinCos.y, -_sign * sinCos.x );
+//frequency = (index+128) * _sign * (PI / 256.0);
+//sincos( frequency, sinCos.x, sinCos.y );
+
 	Twiddle( sinCos, V[1], V[3] );
 	Twiddle( sinCos, V[5], V[7] );
+
+//float	time = 0;//V[0].x;
+//for ( uint k=0; k < 8; k++ ) {
+//	sincos( time + (index+k*128) * PI / 1024.0, V[k].x, V[k].y );
+//	V[k] *= 10.0;
+//}
+
+
 /*
 	// Apply twiddling - Group size = 2*512->1*1024 - Frequency = 2PI/1024
 	frequency *= 0.5;
@@ -155,7 +167,7 @@ void	CS__128to1024( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : SV_GROUP
 //*/
 
 	// Store
-	pos.x = index;
+	pos.x = _dispatchThreadID.x;
 	[unroll]
 	for ( uint j=0; j < 8; j++ ) {
 		_texOut[pos] = V[j];

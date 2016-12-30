@@ -217,13 +217,6 @@ namespace TestFourier
 			m_FFT1D_GPU.FFT_Forward( m_signalSource, m_spectrumGPU );
 //			m_FFT1D_GPU.FFT_Forward( m_signalSource, m_spectrum );
 
-if ( checkBoxInvertFilter.Checked )
-	for ( int i=0; i < 1024; i++ )
-		m_spectrum[i] = 2.0 * m_spectrumGPU[i];
-else
-	for ( int i=0; i < 1024; i++ )
-		m_spectrum[i] *= 2.0;
-
 double	sumSqDiffR = 0.0;
 double	sumSqDiffI = 0.0;
 for ( int i=0; i < 1024; i++ ) {
@@ -231,9 +224,16 @@ for ( int i=0; i < 1024; i++ ) {
 	sumSqDiffR += diff.r*diff.r;
 	sumSqDiffI += diff.i*diff.i;
 }
-sumSqDiffR /= 1024.0;
-sumSqDiffI /= 1024.0;
+//sumSqDiffR /= 1024.0;
+//sumSqDiffI /= 1024.0;
 labelDiff.Text = "SqDiff = " + sumSqDiffR.ToString( "G3" ) + " , " + sumSqDiffI.ToString( "G3" );
+
+if ( checkBoxInvertFilter.Checked )
+	for ( int i=0; i < 1024; i++ )
+		m_spectrum[i] = 2.0 * m_spectrumGPU[i];
+else
+	for ( int i=0; i < 1024; i++ )
+		m_spectrum[i] *= 2.0;
 
 
 			// Filter
