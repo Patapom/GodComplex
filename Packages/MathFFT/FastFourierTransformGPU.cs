@@ -343,7 +343,7 @@ namespace SharpMath.FFT {
 					m_texBufferIn.SetCS( 0 );
 					m_texBufferOut.SetCSUAV( 0 );
 
-					m_CS__Remainder.Dispatch( 1, 1, 1 );
+					m_CS__Remainder.Dispatch( 2, 1, 1 );
 
 					m_texBufferIn.RemoveFromLastAssignedSlots();
 					m_texBufferOut.RemoveFromLastAssignedSlotUAV();

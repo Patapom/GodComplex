@@ -16,7 +16,7 @@ using Renderer;
 namespace TestFourier
 {
 	public partial class FourierTestForm : Form {
-		const int		SIGNAL_SIZE = 512;
+		const int		SIGNAL_SIZE = 2048;
 
 		float4			m_black = float4.UnitW;
 		float4			m_red = new float4( 1, 0, 0, 1 );
@@ -89,7 +89,7 @@ namespace TestFourier
 			if ( checkBoxShowInput.Checked ) {
 //				m_image.PlotGraphAutoRangeY( m_black, rangeX, ref rangeY, ( float x ) => {
 				m_image.PlotGraph( m_black, rangeX, rangeY, ( float x ) => {
-					int		X = Math.Max( 0, Math.Min( 1023, (int) x ) );
+					int		X = Math.Max( 0, Math.Min( SIGNAL_SIZE-1, (int) x ) );
 					return (float) m_signalSource[X].r;
 				} );
 			}
@@ -97,11 +97,11 @@ namespace TestFourier
 			// Plot reconstructed signals (Real and Imaginary parts)
 			if ( checkBoxShowReconstructedSignal.Checked ) {
 				m_image.PlotGraph( m_red, rangeX, rangeY, ( float x ) => {
-					int		X = Math.Max( 0, Math.Min( 1023, (int) x ) );
+					int		X = Math.Max( 0, Math.Min( SIGNAL_SIZE-1, (int) x ) );
 					return (float) m_signalReconstructed[X].r;
 				} );
 				m_image.PlotGraph( m_blue, rangeX, rangeY, ( float x ) => {
-					int		X = Math.Max( 0, Math.Min( 1023, (int) x ) );
+					int		X = Math.Max( 0, Math.Min( SIGNAL_SIZE-1, (int) x ) );
 					return (float) m_signalReconstructed[X].i;
 				} );
 			}
@@ -175,7 +175,7 @@ namespace TestFourier
 			switch ( m_signalType ) {
 				case SIGNAL_TYPE.SQUARE:
 					for ( int i=0; i < SIGNAL_SIZE; i++ )
-						m_signalSource[i].r = 0.5 * Math.Sin( _time ) + ((i + 50.0 * _time) % (SIGNAL_SIZE/2) < (SIGNAL_SIZE/4) ? 0.5 : -0.5);
+						m_signalSource[i].r = 0.5 * Math.Sin( _time ) + ((i + 50.0 * _time) % (SIGNAL_SIZE/2.0) < (SIGNAL_SIZE/4.0) ? 0.5 : -0.5);
 					break;
 
 				case SIGNAL_TYPE.SINE:
@@ -191,8 +191,8 @@ namespace TestFourier
 
 				case SIGNAL_TYPE.SINC:
 					for ( int i=0; i < SIGNAL_SIZE; i++ ) {
-//						double	a = 4.0 * (1.0 + Math.Sin( _time )) * 2.0 * Math.PI * (1+i) / SIGNAL_SIZE;		// Asymmetrical
-						double	a = 4.0 * (1.0 + Math.Sin( _time )) * 2.0 * Math.PI * (i-512) / 512;	// Symmetrical
+//						double	a = 4.0 * (1.0 + Math.Sin( _time )) * 2.0 * Math.PI * (1+i) / SIGNAL_SIZE;						// Asymmetrical
+						double	a = 4.0 * (1.0 + Math.Sin( _time )) * 2.0 * Math.PI * (i-SIGNAL_SIZE/2.0) * 2.0 / SIGNAL_SIZE;	// Symmetrical
 						m_signalSource[i].r = Math.Abs( a ) > 0.0 ? Math.Sin( a ) / a : 1.0;
 					}
 					break;

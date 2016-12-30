@@ -103,7 +103,7 @@ void	CS__1to128( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : SV_GROUPTHR
 }
 
 // Applies FFT from stage 7 (size 128) to stage 8 (size 256)
-[numthreads( 128, 1, 1 )]
+[numthreads( 64, 1, 1 )]
 void	CS__128to256( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : SV_GROUPTHREADID, uint3 _dispatchThreadID : SV_DISPATCHTHREADID ) {
 	uint	index = _dispatchThreadID.x;	// in [0,128[ (2 groups of 64 threads)
 	uint2	pos = uint2( index, 0 );
@@ -125,7 +125,7 @@ void	CS__128to256( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : SV_GROUPT
 }
 
 // Applies FFT from stage 7 (size 128) to stage 9 (size 512)
-[numthreads( 128, 1, 1 )]
+[numthreads( 64, 1, 1 )]
 void	CS__128to512( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : SV_GROUPTHREADID, uint3 _dispatchThreadID : SV_DISPATCHTHREADID ) {
 	uint	index = _dispatchThreadID.x;	// in [0,128[ (2 groups of 64 threads)
 	uint2	pos = uint2( index, 0 );
@@ -159,7 +159,7 @@ void	CS__128to512( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : SV_GROUPT
 }
 
 // Applies FFT from stage 7 (size 128) to stage 10 (size 1024)
-[numthreads( 128, 1, 1 )]
+[numthreads( 64, 1, 1 )]
 void	CS__128to1024( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : SV_GROUPTHREADID, uint3 _dispatchThreadID : SV_DISPATCHTHREADID ) {
 	uint	index = _dispatchThreadID.x;	// in [0,128[ (2 groups of 64 threads)
 	uint2	pos = uint2( index, 0 );
@@ -213,141 +213,92 @@ void	CS__128to1024( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : SV_GROUP
 	}
 }
 
-
-/*
-// Applies FFT from stage 7 (size 128) to stage 8 (size 256)
-[numthreads( 64, 1, 1 )]
-void	CS__128to256( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : SV_GROUPTHREADID, uint3 _dispatchThreadID : SV_DISPATCHTHREADID ) {
-	uint	index = _dispatchThreadID.x;
-
-	// Fetch level 7 - Group size = 2*128->1*256 - Frequency = PI/64
-	float	frequency = _sign * PI / 64.0;
-	FetchAndMix_Large( 7, index, frequency, _texIn, _texOut );
-}
-
-// Applies FFT from stage 7 (size 128) to stage 9 (size 512)
-[numthreads( 64, 1, 1 )]
-void	CS__128to512( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : SV_GROUPTHREADID, uint3 _dispatchThreadID : SV_DISPATCHTHREADID ) {
-	uint	index = _dispatchThreadID.x;
-
-	// Fetch level 7 - Group size = 2*128->1*256 - Frequency = PI/64
-	float	frequency = _sign * PI / 64.0;
-	FetchAndMix_Large( 7, index, frequency, _texIn, _texOut );
-	GroupMemoryBarrierWithGroupSync();
-
-	// Fetch level 8 - Group size = 2*256->1*512 - Frequency = PI/128
-	frequency *= 0.5;
-	FetchAndMix_Large( 8, index, frequency, _texIn, _texOut );
-}
-
 // Applies FFT from stage 7 (size 128) to stage 11 (size 2048)
 [numthreads( 64, 1, 1 )]
 void	CS__128to2048( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : SV_GROUPTHREADID, uint3 _dispatchThreadID : SV_DISPATCHTHREADID ) {
-	uint	index = _dispatchThreadID.x;
+	uint	index = _dispatchThreadID.x;	// in [0,128[ (2 groups of 64 threads)
+	uint2	pos = uint2( index, 0 );
 
-	// Fetch level 7 - Group size = 2*128->1*256 - Frequency = PI/64
-	float	frequency = _sign * PI / 64.0;
-	FetchAndMix_Large( 7, index, frequency, _texIn, _texOut );
-	GroupMemoryBarrierWithGroupSync();
+	// Read 16 source values with a stride of 128
+	float2	V[16];
+	[unroll]
+	for ( uint i=0; i < 16; i++ ) {
+		V[i] = _texIn[pos];
+		pos.x += 128U;
+	}
 
-	// Fetch level 8 - Group size = 2*256->1*512 - Frequency = PI/128
+	// Apply twiddling - Group size = 2*128->1*256 - Frequency = 2PI/256
+	float	frequency = index * _sign * (PI / 128.0);
+	float2	sinCos;
+	sincos( frequency, sinCos.x, sinCos.y );
+
+	Twiddle( sinCos, V[0], V[1] );
+	Twiddle( sinCos, V[2], V[3] );
+	Twiddle( sinCos, V[4], V[5] );
+	Twiddle( sinCos, V[6], V[7] );
+	Twiddle( sinCos, V[8], V[9] );
+	Twiddle( sinCos, V[10], V[11] );
+	Twiddle( sinCos, V[12], V[13] );
+	Twiddle( sinCos, V[14], V[15] );
+
+	// Apply twiddling - Group size = 2*256->1*512 - Frequency = 2PI/512
 	frequency *= 0.5;
-	FetchAndMix_Large( 8, index, frequency, _texIn, _texOut );
-	GroupMemoryBarrierWithGroupSync();
+	sincos( frequency, sinCos.x, sinCos.y );
+	Twiddle( sinCos, V[0], V[2] );
+	Twiddle( sinCos, V[4], V[6] );
+	Twiddle( sinCos, V[8], V[10] );
+	Twiddle( sinCos, V[12], V[14] );
 
-	// Fetch level 9 - Group size = 2*512->1*1024 - Frequency = PI/256
-	frequency *= 0.5;
-	FetchAndMix_Large( 9, index, frequency, _texIn, _texOut );
-	GroupMemoryBarrierWithGroupSync();
+	sinCos = float2( _sign * sinCos.y, -_sign * sinCos.x );			// frequency + PI/2
+	Twiddle( sinCos, V[1], V[3] );
+	Twiddle( sinCos, V[5], V[7] );
+	Twiddle( sinCos, V[9], V[11] );
+	Twiddle( sinCos, V[13], V[15] );
 
-	// Fetch level 10 - Group size = 2*1024->1*2048 - Frequency = PI/512
+	// Apply twiddling - Group size = 2*512->1*1024 - Frequency = 2PI/1024
 	frequency *= 0.5;
-	FetchAndMix_Large( 10, index, frequency, _texIn, _texOut );
+	sincos( frequency, sinCos.x, sinCos.y );
+	Twiddle( sinCos, V[0], V[4] );
+	Twiddle( sinCos, V[8], V[12] );
+	sinCos = _sign * float2( sinCos.y, -sinCos.x );					// frequency + PI/2
+	Twiddle( sinCos, V[2], V[6] );
+	Twiddle( sinCos, V[10], V[14] );
+
+	sincos( frequency + _sign * (0.25 * PI), sinCos.x, sinCos.y );	// frequency + PI/4
+	Twiddle( sinCos, V[1], V[5] );
+	Twiddle( sinCos, V[9], V[13] );
+	sinCos = _sign * float2( sinCos.y, -sinCos.x );					// frequency + PI/4 + PI/2
+	Twiddle( sinCos, V[3], V[7] );
+	Twiddle( sinCos, V[11], V[15] );
+
+//*	// Apply twiddling - Group size = 2*1024->1*2048 - Frequency = 2PI/2048
+	frequency *= 0.5;
+	sincos( frequency, sinCos.x, sinCos.y );
+	Twiddle( sinCos, V[0], V[8] );
+	sinCos = _sign * float2( sinCos.y, -sinCos.x );					// frequency + PI/2
+	Twiddle( sinCos, V[4], V[12] );
+
+	sincos( frequency + _sign * (0.125 * PI), sinCos.x, sinCos.y );	// frequency + PI/8
+	Twiddle( sinCos, V[1], V[9] );
+	sinCos = _sign * float2( sinCos.y, -sinCos.x );					// frequency + PI/8 + PI/2
+	Twiddle( sinCos, V[5], V[13] );
+
+	sincos( frequency + _sign * (0.25 * PI), sinCos.x, sinCos.y );	// frequency + PI/4
+	Twiddle( sinCos, V[2], V[10] );
+	sinCos = _sign * float2( sinCos.y, -sinCos.x );					// frequency + PI/4 + PI/2
+	Twiddle( sinCos, V[6], V[14] );
+
+	sincos( frequency + _sign * (0.375 * PI), sinCos.x, sinCos.y );	// frequency + 3PI/4
+	Twiddle( sinCos, V[3], V[11] );
+	sinCos = _sign * float2( sinCos.y, -sinCos.x );					// frequency + 3PI/4 + PI/2
+	Twiddle( sinCos, V[7], V[15] );
+//*/
+
+	// Store
+	pos.x = _dispatchThreadID.x;
+	[unroll]
+	for ( uint j=0; j < 16; j++ ) {
+		_texOut[pos] = V[j];
+		pos.x += 128U;
+	}
 }
-
-// Applies FFT from stage 7 (size 128) to stage 12 (size 4096)
-[numthreads( 64, 1, 1 )]
-void	CS__128to4096( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : SV_GROUPTHREADID, uint3 _dispatchThreadID : SV_DISPATCHTHREADID ) {
-	uint	index = _dispatchThreadID.x;
-
-	// Fetch level 7 - Group size = 2*128->1*256 - Frequency = PI/64
-	float	frequency = _sign * PI / 64.0;
-	FetchAndMix_Large( 7, index, frequency, _texIn, _texOut );
-	GroupMemoryBarrierWithGroupSync();
-
-	// Fetch level 8 - Group size = 2*256->1*512 - Frequency = PI/128
-	frequency *= 0.5;
-	FetchAndMix_Large( 8, index, frequency, _texIn, _texOut );
-	GroupMemoryBarrierWithGroupSync();
-
-	// Fetch level 9 - Group size = 2*512->1*1024 - Frequency = PI/256
-	frequency *= 0.5;
-	FetchAndMix_Large( 9, index, frequency, _texIn, _texOut );
-	GroupMemoryBarrierWithGroupSync();
-
-	// Fetch level 10 - Group size = 2*1024->1*2048 - Frequency = PI/512
-	frequency *= 0.5;
-	FetchAndMix_Large( 10, index, frequency, _texIn, _texOut );
-	GroupMemoryBarrierWithGroupSync();
-
-	// Fetch level 11 - Group size = 2*2048->1*4096 - Frequency = PI/1024
-	frequency *= 0.5;
-	FetchAndMix_Large( 11, index, frequency, _texIn, _texOut );
-}
-
-/*
-			Complex[]	temp = new Complex[_size];
-
-			Complex[]	bufferIn = (_POT & 1) != 0 ? temp : _output;
-			Complex[]	bufferOut = (_POT & 1) != 0 ? _output : temp;
-
-			// Generate most-displacement indices then copy and displace source
- 			int[]	indices = PermutationTables.ms_tables[_POT];
-			for ( int i=0; i < _size; i++ )
-				bufferIn[i] = _input[indices[i]];
-
-			// Apply grouping and twiddling
-			int		groupsCount = _size >> 1;
-			int		groupSize = 1;
-			double	frequency = 0.5 * _baseFrequency;
-			for ( int stageIndex=0; stageIndex < _POT; stageIndex++ ) {
-
-				int	k_even = 0;
-				int	k_odd = groupSize;
-				for ( int groupIndex=0; groupIndex < groupsCount; groupIndex++ ) {
-					for ( int i=0; i < groupSize; i++ ) {
-						Complex	E = bufferIn[k_even];
-						Complex	O = bufferIn[k_odd];
-
-						double	omega = frequency * i;
-						double	c = Math.Cos( omega );
-						double	s = Math.Sin( omega );
-
-						bufferOut[k_even].Set(	E.x + c * O.x - s * O.y, 
-												E.y + s * O.x + c * O.y );
-
-						bufferOut[k_odd].Set(	E.x - c * O.x + s * O.y, 
-												E.y - s * O.x - c * O.y );
-
-						k_even++;
-						k_odd++;
-					}
-
-					k_even += groupSize;
-					k_odd += groupSize;
-				}
-
-				// Double group size and halve frequency resolution
-				groupsCount >>= 1;
-				groupSize <<= 1;
-				frequency *= 0.5;
-
-				// Swap buffers
-				Complex[]	t = bufferIn;
-				bufferIn = bufferOut;
-				bufferOut = t;
-			}
-
-			if ( bufferIn != _output )
-				throw new Exception( "Unexpected buffer as output!" );
-*/
