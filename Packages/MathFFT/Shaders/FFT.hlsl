@@ -20,30 +20,7 @@ uint	wang_hash(uint seed) {
 
 groupshared float2	gs_temp[128];
 
-// Fetches and mixes inputs for a specific group shift
-// We always have groups of size 1, 2, 4, 8, etc. that are classified into [Even] and (Odd) couples:
-//
-//	Stage 0 =>	[.](.) [.](.) [.](.) [.](.) [.](.) [.](.) [.](.) [.](.)		size 1
-//	Stage 1 =>	 [..]   (..)   [..]   (..)   [..]   (..)   [..]   (..)		size 2
-//	Stage 2 =>	    [....]       (....)         [....]        (....)		size 4
-//	Stage 3 =>	        [........]   	             (........)				size 8
-//
-// Each thread fetches even and odd groups' values, mix them using the "twiddle factors" and stores the result:
-//			
-//				[E]		(O)
-//				 |		 |
-//				 |\     /|
-//				 |  \ /  |
-//				 |   X   |
-//				 |  / \  |
-//				 |/     \|
-//				 |		 |
-//			   (X_k)  (X_(k+N/2))
-//
-//	X_k = E_k + e^(-i * 2PI * k / N) * O_k
-//	X_(k+N/2) = E_k - e^(-i * 2PI * k / N) * O_k
-//
-uint3	ComputeIndices( uint _groupShift, uint _dispatchThreadIndex ) {
+/*uint3	ComputeIndices( uint _groupShift, uint _dispatchThreadIndex ) {
 	uint	groupSize = 1 << _groupShift;
 	uint	groupIndex = _dispatchThreadIndex >> _groupShift;
 	uint	elementIndex = _dispatchThreadIndex & (groupSize-1U);	// in [0,groupSize[
@@ -121,3 +98,4 @@ void	FetchAndMix_Large( uint _groupShift, uint _dispatchThreadIndex, float _freq
 	_texTarget[k_odd] = float2(		E.x - c * O.x + s * O.y, 
 									E.y - s * O.x - c * O.y );
 }
+*/

@@ -16,6 +16,8 @@ using Renderer;
 namespace TestFourier
 {
 	public partial class FourierTestForm : Form {
+		const int		SIGNAL_SIZE = 512;
+
 		float4			m_black = float4.UnitW;
 		float4			m_red = new float4( 1, 0, 0, 1 );
 		float4			m_blue = new float4( 0, 0, 1, 1 );
@@ -35,7 +37,7 @@ namespace TestFourier
 
 			try {
 				m_device.Init( viewportPanel.Handle, false, true );
-				m_FFT1D_GPU = new FFT1D_GPU( m_device, 1024 );
+				m_FFT1D_GPU = new FFT1D_GPU( m_device, SIGNAL_SIZE );
 			} catch ( Exception ) {
 				MessageBox.Show( "Failed to initialize DirectX device! Can't execute GPU FFT!" );
 				m_device = null;
@@ -68,9 +70,9 @@ namespace TestFourier
 
 		#region FFT 1D Test
 
-		Complex[]		m_signalSource = new Complex[1024];
-		Complex[]		m_spectrum = new Complex[1024];
-		Complex[]		m_signalReconstructed = new Complex[1024];
+		Complex[]		m_signalSource = new Complex[SIGNAL_SIZE];
+		Complex[]		m_spectrum = new Complex[SIGNAL_SIZE];
+		Complex[]		m_signalReconstructed = new Complex[SIGNAL_SIZE];
 
 		void	UpdateGraph1D() {
 
@@ -80,7 +82,7 @@ namespace TestFourier
 
 			m_image.Clear( float4.One );
 
-			float2	rangeX = new float2( 0.0f, 1024.0f );
+			float2	rangeX = new float2( 0.0f, SIGNAL_SIZE );
 			float2	rangeY = new float2( -1, 1 );
 
 			// Plot input signal
@@ -164,39 +166,39 @@ namespace TestFourier
 
 		delegate double	FilterDelegate( int i, int _frequency );
 
-		Complex[]	m_spectrumGPU = new Complex[1024];
+		Complex[]	m_spectrumGPU = new Complex[SIGNAL_SIZE];
 
 		void	TestTransform1D( double _time ) {
 
 			// Build the input signal
-			Array.Clear( m_signalSource, 0, 1024 );
+			Array.Clear( m_signalSource, 0, m_signalSource.Length );
 			switch ( m_signalType ) {
 				case SIGNAL_TYPE.SQUARE:
-					for ( int i=0; i < 1024; i++ )
-						m_signalSource[i].r = 0.5 * Math.Sin( _time ) + ((i + 50.0 * _time) % 512 < 256 ? 0.5 : -0.5);
+					for ( int i=0; i < SIGNAL_SIZE; i++ )
+						m_signalSource[i].r = 0.5 * Math.Sin( _time ) + ((i + 50.0 * _time) % (SIGNAL_SIZE/2) < (SIGNAL_SIZE/4) ? 0.5 : -0.5);
 					break;
 
 				case SIGNAL_TYPE.SINE:
-					for ( int i=0; i < 1024; i++ )
-//						m_signalSource[i].r = Math.Cos( 2.0 * Math.PI * i / 1024 + _time );
-						m_signalSource[i].r = Math.Cos( (4.0 * (1.0 + Math.Sin( _time ))) * 2.0 * Math.PI * i / 1024 );
+					for ( int i=0; i < SIGNAL_SIZE; i++ )
+//						m_signalSource[i].r = Math.Cos( 2.0 * Math.PI * i / SIGNAL_SIZE + _time );
+						m_signalSource[i].r = Math.Cos( (4.0 * (1.0 + Math.Sin( _time ))) * 2.0 * Math.PI * i / SIGNAL_SIZE );
 					break;
 
 				case SIGNAL_TYPE.SAW:
-					for ( int i=0; i < 1024; i++ )
+					for ( int i=0; i < SIGNAL_SIZE; i++ )
 						m_signalSource[i].r = 0.5 * Math.Sin( _time ) + ((((i + 50.0 * _time) / 128.0) % 1.0) - 0.5);
 					break;
 
 				case SIGNAL_TYPE.SINC:
-					for ( int i=0; i < 1024; i++ ) {
-//						double	a = 4.0 * (1.0 + Math.Sin( _time )) * 2.0 * Math.PI * (1+i) / 1024;		// Asymmetrical
+					for ( int i=0; i < SIGNAL_SIZE; i++ ) {
+//						double	a = 4.0 * (1.0 + Math.Sin( _time )) * 2.0 * Math.PI * (1+i) / SIGNAL_SIZE;		// Asymmetrical
 						double	a = 4.0 * (1.0 + Math.Sin( _time )) * 2.0 * Math.PI * (i-512) / 512;	// Symmetrical
 						m_signalSource[i].r = Math.Abs( a ) > 0.0 ? Math.Sin( a ) / a : 1.0;
 					}
 					break;
 
 				case SIGNAL_TYPE.RANDOM:
-					for ( int i=0; i < 1024; i++ )
+					for ( int i=0; i < SIGNAL_SIZE; i++ )
 						m_signalSource[i].r = SimpleRNG.GetUniform();
 //						m_signalSource[i].r = SimpleRNG.GetExponential();
 //						m_signalSource[i].r = SimpleRNG.GetBeta( 0.5, 1 );
@@ -219,20 +221,18 @@ namespace TestFourier
 
 double	sumSqDiffR = 0.0;
 double	sumSqDiffI = 0.0;
-for ( int i=0; i < 1024; i++ ) {
+for ( int i=0; i < m_spectrum.Length; i++ ) {
 	Complex	diff = m_spectrum[i] - m_spectrumGPU[i];
 	sumSqDiffR += diff.r*diff.r;
 	sumSqDiffI += diff.i*diff.i;
 }
-//sumSqDiffR /= 1024.0;
-//sumSqDiffI /= 1024.0;
 labelDiff.Text = "SqDiff = " + sumSqDiffR.ToString( "G3" ) + " , " + sumSqDiffI.ToString( "G3" );
 
 if ( checkBoxInvertFilter.Checked )
-	for ( int i=0; i < 1024; i++ )
+	for ( int i=0; i < m_spectrum.Length; i++ )
 		m_spectrum[i] = m_spectrumGPU[i];
 // else
-// 	for ( int i=0; i < 1024; i++ )
+// 	for ( int i=0; i < m_spectrum.Length; i++ )
 // 		m_spectrum[i] *= 2.0;
 
 
