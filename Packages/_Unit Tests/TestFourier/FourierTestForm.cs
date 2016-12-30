@@ -230,10 +230,10 @@ labelDiff.Text = "SqDiff = " + sumSqDiffR.ToString( "G3" ) + " , " + sumSqDiffI.
 
 if ( checkBoxInvertFilter.Checked )
 	for ( int i=0; i < 1024; i++ )
-		m_spectrum[i] = 2.0 * m_spectrumGPU[i];
-else
-	for ( int i=0; i < 1024; i++ )
-		m_spectrum[i] *= 2.0;
+		m_spectrum[i] = m_spectrumGPU[i];
+// else
+// 	for ( int i=0; i < 1024; i++ )
+// 		m_spectrum[i] *= 2.0;
 
 
 			// Filter

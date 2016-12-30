@@ -193,8 +193,8 @@ namespace SharpMath.FFT {
 			int		groupsCount = _size >> 1;
 			int		groupSize = 1;
 			double	frequency = 0.5 * _baseFrequency;
-//			for ( int stageIndex=0; stageIndex < _POT; stageIndex++ ) {
-for ( int stageIndex=0; stageIndex < 9; stageIndex++ ) {
+			for ( int stageIndex=0; stageIndex < _POT; stageIndex++ ) {
+//for ( int stageIndex=0; stageIndex < 9; stageIndex++ ) {
 
 				int	k_even = 0;
 				int	k_odd = groupSize;
@@ -232,15 +232,15 @@ for ( int stageIndex=0; stageIndex < 9; stageIndex++ ) {
 				bufferOut = t;
 			}
 
-if ( true ) {
-	for ( int i=0; i < _size; i++ )
-		bufferOut[i] = bufferIn[i];
-
-	// Swap buffers
-	Complex[]	t = bufferIn;
-	bufferIn = bufferOut;
-	bufferOut = t;
-}
+// if ( true ) {
+// 	for ( int i=0; i < _size; i++ )
+// 		bufferOut[i] = bufferIn[i];
+// 
+// 	// Swap buffers
+// 	Complex[]	t = bufferIn;
+// 	bufferIn = bufferOut;
+// 	bufferOut = t;
+// }
 
 			if ( bufferIn != _output )
 				throw new Exception( "Unexpected buffer as output!" );
