@@ -50,6 +50,9 @@ namespace TestFourier
 		Shader			m_Shader_Display;
 		Texture2D		m_texSpectrumCopy;
 
+		// FFTW test
+		fftwlib.FFT2D	m_FFTW_1D = new fftwlib.FFT2D( SIGNAL_SIZE, 1 );
+
 		#endregion
 
 		public FourierTestForm() {
@@ -93,6 +96,8 @@ namespace TestFourier
 				m_FFT1D_GPU.Dispose();
 				m_device.Dispose();
 			}
+
+			m_FFTW_1D.Dispose();
 
 			base.OnClosing( e );
 		}
@@ -300,8 +305,19 @@ namespace TestFourier
 			}
 
 			// Transform
-//			DFT1D.DFT_Forward( m_signalSource, m_spectrum );
-			FFT1D.FFT_Forward( m_signalSource, m_spectrum );
+			if ( checkBoxUseFFTW.Checked ) {
+				m_FFTW_1D.FillInputSpatial( ( int x, int y, out float r, out float i ) => {
+					r = (float) m_signalSource[x].r;
+					i = (float) m_signalSource[x].i;
+				} );
+				m_FFTW_1D.Execute( fftwlib.FFT2D.Normalization.DIMENSIONS_PRODUCT );
+				m_FFTW_1D.GetOutput( ( int x, int y, float r, float i ) => {
+					m_spectrum[x].Set( r, i );
+				} );
+			} else {
+//				DFT1D.DFT_Forward( m_signalSource, m_spectrum );
+				FFT1D.FFT_Forward( m_signalSource, m_spectrum );
+			}
 
 			// Try the GPU version
 			m_FFT1D_GPU.FFT_Forward( m_signalSource, m_spectrumGPU );
@@ -368,8 +384,19 @@ if ( checkBoxInvertFilter.Checked )
 			}
 
 			// Inverse Transform
-//			DFT1D.DFT_Inverse( m_spectrum, m_signalReconstructed );
-			FFT1D.FFT_Inverse( m_spectrum, m_signalReconstructed );
+			if ( checkBoxUseFFTW.Checked ) {
+				m_FFTW_1D.FillInputFrequency( ( int x, int y, out float r, out float i ) => {
+					r = (float) m_spectrum[x].r;
+					i = (float) m_spectrum[x].i;
+				} );
+				m_FFTW_1D.Execute( fftwlib.FFT2D.Normalization.NONE );
+				m_FFTW_1D.GetOutput( ( int x, int y, float r, float i ) => {
+					m_signalReconstructed[x].Set( r, i );
+				} );
+			} else {
+//				DFT1D.DFT_Inverse( m_spectrum, m_signalReconstructed );
+				FFT1D.FFT_Inverse( m_spectrum, m_signalReconstructed );
+			}
 		}
 
 		private void radioButtonSquare_CheckedChanged( object sender, EventArgs e ) {

@@ -110,6 +110,10 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\FFTWLib\FFTWLib.csproj">
+      <Project>{bea875b8-e28a-49c5-8e7e-6512da65f7e1}</Project>
+      <Name>FFTWLib</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\ImageUtilityManaged\ImageUtilityManaged.vcxproj">
       <Project>{6c974ba3-ecba-4436-85cb-218eebb33d53}</Project>
       <Name>ImageUtilityManaged</Name>

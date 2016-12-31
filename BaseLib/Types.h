@@ -1,7 +1,7 @@
 #pragma once
 
+#include <assert.h>
 #ifdef _DEBUG
-	#include <assert.h>
 	#define ASSERT( condition, text ) assert( (condition) || !text )
 	#define ASSERT_RETURN_FALSE( condition, text ) assert( (condition) || !text ) return false
 	#define RELEASE_ASSERT( condition, text ) assert( (condition) || !text )

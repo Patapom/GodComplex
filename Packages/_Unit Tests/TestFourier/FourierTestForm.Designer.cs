@@ -57,6 +57,7 @@
 			this.tabPage2D = new System.Windows.Forms.TabPage();
 			this.viewportPanel = new TestFourier.ViewportPanel();
 			this.buttonReload = new System.Windows.Forms.Button();
+			this.checkBoxUseFFTW = new System.Windows.Forms.CheckBox();
 			this.tabControl1.SuspendLayout();
 			this.tabPage1D.SuspendLayout();
 			this.panel2.SuspendLayout();
@@ -81,6 +82,7 @@
 			// 
 			// tabPage1D
 			// 
+			this.tabPage1D.Controls.Add(this.checkBoxUseFFTW);
 			this.tabPage1D.Controls.Add(this.checkBoxGPU);
 			this.tabPage1D.Controls.Add(this.labelDiff);
 			this.tabPage1D.Controls.Add(this.checkBoxShowInput);
@@ -374,6 +376,16 @@
 			this.buttonReload.UseVisualStyleBackColor = true;
 			this.buttonReload.Click += new System.EventHandler(this.buttonReload_Click);
 			// 
+			// checkBoxUseFFTW
+			// 
+			this.checkBoxUseFFTW.AutoSize = true;
+			this.checkBoxUseFFTW.Location = new System.Drawing.Point(1016, 14);
+			this.checkBoxUseFFTW.Name = "checkBoxUseFFTW";
+			this.checkBoxUseFFTW.Size = new System.Drawing.Size(78, 17);
+			this.checkBoxUseFFTW.TabIndex = 6;
+			this.checkBoxUseFFTW.Text = "Use FFTW";
+			this.checkBoxUseFFTW.UseVisualStyleBackColor = true;
+			// 
 			// FourierTestForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -426,6 +438,7 @@
 		private System.Windows.Forms.Button buttonReload;
 		private System.Windows.Forms.Label labelDiff;
 		private System.Windows.Forms.CheckBox checkBoxGPU;
+		private System.Windows.Forms.CheckBox checkBoxUseFFTW;
 	}
 }
 

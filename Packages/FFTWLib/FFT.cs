@@ -8,8 +8,7 @@ using System.Runtime.InteropServices;
 
 namespace fftwlib
 {
-	public class	FFT2D : IDisposable
-	{
+	public class	FFT2D : IDisposable {
 		#region NESTED TYPES
 
 		public enum		Normalization
@@ -49,8 +48,7 @@ namespace fftwlib
 
 		#region METHODS
 
-		public FFT2D( int _Width, int _Height )
-		{
+		public FFT2D( int _Width, int _Height ) {
 			m_Width = _Width;
 			m_Height = _Height;
 			m_Input = fftwlib.fftwf.malloc( m_Width*m_Height*2*sizeof(float) );
@@ -65,8 +63,7 @@ namespace fftwlib
 
 		#region IDisposable Members
 
-		public void Dispose()
-		{
+		public void Dispose() {
 			// Free willy
 			m_hUserInput.Free();
 			m_hUserOutput.Free();
@@ -83,8 +80,7 @@ namespace fftwlib
 		//////////////////////////////////////////////////////////////////////////
 		// Input
 		public delegate void	SetValueSpatialDelegate( int x, int y, out float r, out float i );
-		public void FillInputSpatial( SetValueSpatialDelegate _SetValue )
-		{
+		public void FillInputSpatial( SetValueSpatialDelegate _SetValue ) {
 			m_InputIsSpatial = true;
 			for ( int Y=0; Y < m_Height; Y++ )
 				for ( int X=0; X < m_Width; X++ )
@@ -92,28 +88,41 @@ namespace fftwlib
 		}
 
 		public delegate void	SetValueFrequencyDelegate( int x, int y, out float r, out float i );
-		public void FillInputFrequency( SetValueFrequencyDelegate _SetValue )
-		{
+		public void FillInputFrequency_UseNegativeFrequencies( SetValueFrequencyDelegate _SetValue ) {
 			m_InputIsSpatial = false;
-			for ( int Y=0; Y < m_Height; Y++ )
-			{
-				int	Fy = Y < 128 ? Y : Y-255;		// Negative frequencies are stored in the second half of the array
-				for ( int X=0; X < m_Width; X++ )
-				{
-					int	Fx = X < 128 ? X : X-255;	// Negative frequencies are stored in the second half of the array
+			int	halfWidth = m_Width / 2;
+			int	halfHeight = m_Height / 2;
+			for ( int Y=0; Y < m_Height; Y++ ) {
+				int	Fy = Y < halfHeight ? Y : Y-m_Height+1;		// Negative frequencies are stored in the second half of the array
+				for ( int X=0; X < m_Width; X++ ) {
+					int	Fx = X < halfWidth ? X : X-m_Width+1;	// Negative frequencies are stored in the second half of the array
 					_SetValue( Fx, Fy, out m_UserInput[2*(m_Width*Y+X)+0], out m_UserInput[2*(m_Width*Y+X)+1] );
+				}
+			}
+		}
+		public void FillInputFrequency( SetValueFrequencyDelegate _SetValue ) {
+			m_InputIsSpatial = false;
+			for ( int Y=0; Y < m_Height; Y++ ) {
+				for ( int X=0; X < m_Width; X++ ) {
+					_SetValue( X, Y, out m_UserInput[2*(m_Width*Y+X)+0], out m_UserInput[2*(m_Width*Y+X)+1] );
 				}
 			}
 		}
 
 		//////////////////////////////////////////////////////////////////////////
 		// Execution
-		public void	Execute( Normalization _Normalization )
-		{
-			if ( m_InputIsSpatial && m_PlanForward == IntPtr.Zero )
-				m_PlanForward = fftwlib.fftwf.dft_2d( m_Width, m_Height, m_Input, m_Output, fftwlib.fftw_direction.Forward, fftwlib.fftw_flags.DestroyInput );
-			else if ( !m_InputIsSpatial && m_PlanBackward == IntPtr.Zero )
-				m_PlanBackward = fftwlib.fftwf.dft_2d( m_Width, m_Height, m_Input, m_Output, fftwlib.fftw_direction.Backward, fftwlib.fftw_flags.DestroyInput );
+		public void	Execute( Normalization _Normalization ) {
+			if ( m_Height == 1 ) {
+				if ( m_InputIsSpatial && m_PlanForward == IntPtr.Zero )
+					m_PlanForward = fftwlib.fftwf.dft_1d( m_Width, m_Input, m_Output, fftwlib.fftw_direction.Forward, fftwlib.fftw_flags.DestroyInput );
+				else if ( !m_InputIsSpatial && m_PlanBackward == IntPtr.Zero )
+					m_PlanBackward = fftwlib.fftwf.dft_1d( m_Width, m_Input, m_Output, fftwlib.fftw_direction.Backward, fftwlib.fftw_flags.DestroyInput );
+			} else {
+				if ( m_InputIsSpatial && m_PlanForward == IntPtr.Zero )
+					m_PlanForward = fftwlib.fftwf.dft_2d( m_Width, m_Height, m_Input, m_Output, fftwlib.fftw_direction.Forward, fftwlib.fftw_flags.DestroyInput );
+				else if ( !m_InputIsSpatial && m_PlanBackward == IntPtr.Zero )
+					m_PlanBackward = fftwlib.fftwf.dft_2d( m_Width, m_Height, m_Input, m_Output, fftwlib.fftw_direction.Backward, fftwlib.fftw_flags.DestroyInput );
+			}
 
 			// Copy source data to FFTW memory
             Marshal.Copy( m_UserInput, 0, m_Input, m_Width*m_Height*2 );
@@ -124,8 +133,7 @@ namespace fftwlib
 			// Retrieve results
 			Marshal.Copy( m_Output, m_UserOutput, 0, m_Width*m_Height*2 );
 
-			if ( _Normalization != Normalization.NONE )
-			{
+			if ( _Normalization != Normalization.NONE ) {
 				float	Normalizer = _Normalization == Normalization.DIMENSIONS_PRODUCT ? 1.0f / (m_Width * m_Height) : 1.0f / (float) Math.Sqrt(m_Width * m_Height);
 				for ( int i=0; i < 2*m_Width*m_Height; i++ )
 					m_UserOutput[i] *= Normalizer;
