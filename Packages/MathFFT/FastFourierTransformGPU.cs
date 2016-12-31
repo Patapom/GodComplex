@@ -79,7 +79,7 @@ namespace SharpMath.FFT {
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
 		struct CB {
 			public float		_sign;
-			public float		_normalization128;
+			public float		_normalizationFirstPass;
 			public float		_normalizationFinal;
 		}
 
@@ -87,7 +87,7 @@ namespace SharpMath.FFT {
 
 		ConstantBuffer< CB >	m_CB;
 
-		ComputeShader			m_CS__1to128;
+		ComputeShader			m_CS__1to256;
 		ComputeShader			m_CS__Remainder;
 
 		Texture2D				m_texBufferIn;		// Texture that will contain the input signal/spectrum
@@ -103,9 +103,6 @@ namespace SharpMath.FFT {
 		/// <summary>
 		/// Gets the input view for quick GPU access
 		/// </summary>
-// 		public View2D		Input {
-// 			get { return m_texBufferIn.GetView( 0, 1, 0, 1 ); }
-// 		}
 		public Texture2D	Input {
 			get { return m_texBufferIn; }
 		}
@@ -113,10 +110,6 @@ namespace SharpMath.FFT {
 		/// <summary>
 		/// Gets the output view for quick GPU access
 		/// </summary>
-// 		public View2D		Output {
-// 			get { return m_texBufferOut.GetView( 0, 1, 0, 1 ); }
-// //			get { return m_texBuffer.GetView( 0, 1, (m_POT & 1) != 0 ? 1U : 0U, 1 ); }
-// 		}
 		public Texture2D	Output {
 			get { return m_texBufferOut; }
 		}
@@ -133,8 +126,8 @@ namespace SharpMath.FFT {
 			m_POT = (int) Math.Floor( fPOT );
 			if ( fPOT != m_POT )
 				throw new Exception( "Signal size is not a Power Of Two!" );
-			if ( m_POT < 7 || m_POT > 12 )
-				throw new Exception( "GPU FFT implementation only supports the following sizes: { 128, 256, 512, 1024, 2048, 4096 }!" );
+			if ( m_POT < 8 || m_POT > 12 )
+				throw new Exception( "GPU FFT implementation only supports the following sizes: { 256, 512, 1024, 2048, 4096 }!" );
 
 			m_permutations = PermutationTables.ms_tables[m_POT];
 
@@ -150,18 +143,17 @@ namespace SharpMath.FFT {
 //					FileServer	server = new FileServer( Properties.Resources.ResourceManager );
 					FileServer	server = new FileServer( new System.IO.DirectoryInfo( @"../../MathFFT/Shaders/" ) );
 
-					m_CS__1to128 = new ComputeShader( _device, new System.IO.FileInfo( @"./Shaders/FFT1D.hlsl" ), "CS__1to128", null, server );
+					m_CS__1to256 = new ComputeShader( _device, new System.IO.FileInfo( @"./Shaders/FFT1D.hlsl" ), "CS__1to256", null, server );
 					switch ( m_POT ) {
-						case 7:  m_CS__Remainder = null; break;
-						case 8:  m_CS__Remainder  = new ComputeShader( _device, new System.IO.FileInfo( @"./Shaders/FFT1D.hlsl" ), "CS__128to256", null, server ); break;
-						case 9:  m_CS__Remainder  = new ComputeShader( _device, new System.IO.FileInfo( @"./Shaders/FFT1D.hlsl" ), "CS__128to512", null, server ); break;
-						case 10: m_CS__Remainder  = new ComputeShader( _device, new System.IO.FileInfo( @"./Shaders/FFT1D.hlsl" ), "CS__128to1024", null, server ); break;
-						case 11: m_CS__Remainder  = new ComputeShader( _device, new System.IO.FileInfo( @"./Shaders/FFT1D.hlsl" ), "CS__128to2048", null, server ); break;
-						case 12: m_CS__Remainder  = new ComputeShader( _device, new System.IO.FileInfo( @"./Shaders/FFT1D.hlsl" ), "CS__128to4096", null, server ); break;
+						case 8:  m_CS__Remainder = null; break;
+						case 9:  m_CS__Remainder = new ComputeShader( _device, new System.IO.FileInfo( @"./Shaders/FFT1D.hlsl" ), "CS__256to512", null, server ); break;
+						case 10: m_CS__Remainder = new ComputeShader( _device, new System.IO.FileInfo( @"./Shaders/FFT1D.hlsl" ), "CS__256to1024", null, server ); break;
+						case 11: m_CS__Remainder = new ComputeShader( _device, new System.IO.FileInfo( @"./Shaders/FFT1D.hlsl" ), "CS__256to2048", null, server ); break;
+						case 12: m_CS__Remainder = new ComputeShader( _device, new System.IO.FileInfo( @"./Shaders/FFT1D.hlsl" ), "CS__256to4096", null, server ); break;
 					}
 				#else
 					using ( new ScopedForceShadersLoadFromBinary() ) {
-
+						TODO!
 					}
 				#endif
 			} catch ( Exception _e ) {
@@ -175,7 +167,7 @@ namespace SharpMath.FFT {
 		public void Dispose() {
 			if ( m_CS__Remainder != null )
 				m_CS__Remainder.Dispose();
-			m_CS__1to128.Dispose();
+			m_CS__1to256.Dispose();
 			m_texBufferCPU.Dispose();
 			m_texBufferOut.Dispose();
 			m_texBufferIn.Dispose();
@@ -322,21 +314,21 @@ namespace SharpMath.FFT {
 		public void	FFT_GPUInOut( float _sign ) {
 			try {
 				m_CB.m._sign = _sign;
-				m_CB.m._normalization128 = _sign < 0.0f && m_CS__Remainder == null ? 1.0f / m_size : 1.0f;
+				m_CB.m._normalizationFirstPass = _sign < 0.0f && m_CS__Remainder == null ? 1.0f / m_size : 1.0f;
 				m_CB.m._normalizationFinal = _sign < 0.0f && m_CS__Remainder != null ? 1.0f / m_size : 1.0f;
 				m_CB.UpdateData();
 
-				if ( !m_CS__1to128.Use() )
+				if ( !m_CS__1to256.Use() )
 					throw new Exception( "Failed to use compute shader: did it compile without error?" );
 
 				m_texBufferIn.SetCS( 0 );
 				m_texBufferOut.SetCSUAV( 0 );
 
-				// • We're using groups of 64 threads
+				// • We're using groups of 128 threads
 				// • Each thread reads and writes 2 values
-				// ==> The total amount of elements processed by a group is thus 128
-				uint	groupsCount = (uint) (m_size >> 7);
-				m_CS__1to128.Dispatch( groupsCount, 1, 1 );
+				// ==> The total amount of elements processed by a group is thus 256
+				uint	groupsCount = (uint) (m_size >> 8);
+				m_CS__1to256.Dispatch( groupsCount, 1, 1 );
 
 				m_texBufferIn.RemoveFromLastAssignedSlots();
 				m_texBufferOut.RemoveFromLastAssignedSlotUAV();
@@ -351,7 +343,7 @@ namespace SharpMath.FFT {
 					m_texBufferIn.SetCS( 0 );
 					m_texBufferOut.SetCSUAV( 0 );
 
-					m_CS__Remainder.Dispatch( 2, 1, 1 );
+					m_CS__Remainder.Dispatch( 4, 1, 1 );
 
 					m_texBufferIn.RemoveFromLastAssignedSlots();
 					m_texBufferOut.RemoveFromLastAssignedSlotUAV();
@@ -363,7 +355,7 @@ namespace SharpMath.FFT {
 		}
 
 		/// <summary>
-		/// Swappes in & out buffers
+		/// Swaps in & out buffers
 		/// </summary>
 		public void		SwapBuffers() {
 			Texture2D	temp = m_texBufferIn;

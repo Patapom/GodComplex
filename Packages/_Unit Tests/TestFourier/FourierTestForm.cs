@@ -16,7 +16,7 @@ using Renderer;
 namespace TestFourier
 {
 	public partial class FourierTestForm : Form {
-		const int		SIGNAL_SIZE = 1024;
+		const int		SIGNAL_SIZE = 256;
 
 		#region NESTED TYPES
 

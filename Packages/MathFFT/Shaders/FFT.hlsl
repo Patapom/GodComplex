@@ -6,11 +6,9 @@ static const float	PI = 3.1415926535897932384626433832795;
 
 cbuffer CB_Main : register(b0) {
 	float	_sign;
-	float	_normalization128;
+	float	_normalizationFirstPass;
 	float	_normalizationFinal;
 };
-
-groupshared float2	gs_temp[128];
 
 /*uint3	ComputeIndices( uint _groupShift, uint _dispatchThreadIndex ) {
 	uint	groupSize = 1 << _groupShift;
