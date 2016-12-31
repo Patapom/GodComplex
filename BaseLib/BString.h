@@ -6,9 +6,6 @@
 //
 #pragma once
 
-//typedef char*	BString;
-
-//*
 class	BString {
 private:
 	char*		m_str;
@@ -21,14 +18,29 @@ public:
 	~BString();
 
 	bool			IsEmpty() const;
-	S32				Length() const;
+	U32				Length() const;
 
 	void			Format( const char* _format, ... );
 	void			Format( const char* _format, va_list _args );
 
+	BString&		ToLower();
+	BString&		ToUpper();
+	BString&		Replace( const BString& a, const BString& b );						// Replaces a with b
+	bool			StartsWith( const BString& value ) const;							// True if string starts with value
+	bool			EndsWith( const BString& value ) const;								// True if string end with value
+	S32				IndexOf( const BString& value, int _startIndex=-1 ) const;			// Returns the index where value is found, or -1 if not found
+	S32				LastIndexOf( const BString& value, int _startIndex=-1 ) const;		// Returns the index where value is found, or -1 if not found. Search is performed backward
+
+	// Path helpers
+	void			GetFileDirectory( BString& _fileDirectory )const;					// Extracts the directory from the file's full path
+	void			GetFileName( BString& _fileName ) const;							// Extracts the name from the file's full path
+	void			Combine( const BString& _fileDirectory, const BString& _fileName );	// Combines a file directory and file name into a full path
+
+
 	const char&		operator[]( U32 _index ) const;
 	char&			operator[]( U32 _index );
-					operator const char*() const { return m_str; }
+					operator const char*() const	{ return m_str; }
+					operator char*()				{ return m_str; }
 
 	BString&		operator=( const char* _other );
 	BString&		operator=( const BString& _other );
@@ -44,4 +56,6 @@ public:
 private:
 	void			Copy( const char* _source );
 };
-//*/
+
+static U32		GetHash( const BString& _key ) { return _key.Hash(); }
+static S32		Compare( const BString& _a, const BString& _b )  { return BString::Compare( _a, _b ); }

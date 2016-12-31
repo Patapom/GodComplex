@@ -16,7 +16,23 @@ using Renderer;
 namespace TestFourier
 {
 	public partial class FourierTestForm : Form {
-		const int		SIGNAL_SIZE = 2048;
+		const int		SIGNAL_SIZE = 1024;
+
+		#region NESTED TYPES
+
+		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
+		struct CB_Main {
+			public uint		_resolutionX;
+			public uint		_resolutionY;
+			public uint		_signalSize;
+			public uint		_signalFlags;
+			public float	_time;
+			public float3	__pad;
+		}
+
+		#endregion
+
+		#region FIELDS
 
 		float4			m_black = float4.UnitW;
 		float4			m_red = new float4( 1, 0, 0, 1 );
@@ -28,6 +44,14 @@ namespace TestFourier
 
 		FFT1D_GPU		m_FFT1D_GPU = null;
 
+		// Direct GPU feed
+		ConstantBuffer<CB_Main>		m_CB_Main;
+		Shader			m_Shader_GenerateSignal;
+		Shader			m_Shader_Display;
+		Texture2D		m_texSpectrumCopy;
+
+		#endregion
+
 		public FourierTestForm() {
 			InitializeComponent();
 		}
@@ -36,14 +60,23 @@ namespace TestFourier
 			base.OnLoad( e );
 
 			try {
-				m_device.Init( viewportPanel.Handle, false, true );
+//				m_device.Init( viewportPanel.Handle, false, true );
+				m_device.Init( imagePanel.Handle, false, true );
 				m_FFT1D_GPU = new FFT1D_GPU( m_device, SIGNAL_SIZE );
+
+				m_CB_Main = new ConstantBuffer<CB_Main>( m_device, 0 );
+				m_Shader_GenerateSignal = new Shader( m_device, new System.IO.FileInfo( "./Shaders/GenerateSignal.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+				m_Shader_Display = new Shader( m_device, new System.IO.FileInfo( "./Shaders/Display.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+				m_texSpectrumCopy = new Texture2D( m_device, SIGNAL_SIZE, 1, 1, 1, PIXEL_FORMAT.RG32_FLOAT, false, true, null );
+
 			} catch ( Exception ) {
 				MessageBox.Show( "Failed to initialize DirectX device! Can't execute GPU FFT!" );
 				m_device = null;
 			}
 
 			m_image = new ImageFile( (uint) imagePanel.Width, (uint) imagePanel.Height, ImageFile.PIXEL_FORMAT.RGBA8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
+
+			imagePanel.SkipPaint = checkBoxGPU.Checked;
 
 			UpdateGraph1D();
 
@@ -52,6 +85,11 @@ namespace TestFourier
 
 		protected override void OnClosing( CancelEventArgs e ) {
 			if ( m_device != null ) {
+				m_texSpectrumCopy.Dispose();
+				m_Shader_Display.Dispose();
+				m_Shader_GenerateSignal.Dispose();
+				m_CB_Main.Dispose();
+
 				m_FFT1D_GPU.Dispose();
 				m_device.Dispose();
 			}
@@ -77,6 +115,11 @@ namespace TestFourier
 		void	UpdateGraph1D() {
 
 			double	time = (DateTime.Now - m_startTime).TotalSeconds;
+
+			if ( checkBoxGPU.Checked ) {
+				UpdateGraph1D_GPU( time );
+				return;
+			}
 
 			TestTransform1D( time );
 
@@ -142,6 +185,51 @@ namespace TestFourier
 			}
 
 			imagePanel.Bitmap = m_image.AsBitmap;
+		}
+
+		void	UpdateGraph1D_GPU( double _time ) {
+
+			m_CB_Main.m._resolutionX = (uint) imagePanel.Width;
+			m_CB_Main.m._resolutionY = (uint) imagePanel.Height;
+			m_CB_Main.m._signalSize = (uint) SIGNAL_SIZE;
+			m_CB_Main.m._signalFlags = (uint) m_signalType;
+			m_CB_Main.m._signalFlags |= checkBoxShowInput.Checked ? 0x100U : 0;
+			m_CB_Main.m._signalFlags |= checkBoxShowReconstructedSignal.Checked ? 0x200U : 0;
+			m_CB_Main.m._time = (float) _time;
+
+			m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
+
+			// Generate signal
+			if ( m_Shader_GenerateSignal.Use() ) {
+				m_device.SetRenderTarget( m_FFT1D_GPU.Input, null );
+				m_CB_Main.UpdateData();
+				m_device.RenderFullscreenQuad( m_Shader_GenerateSignal );
+				m_device.RemoveRenderTargets();
+			}
+
+			// Apply FFT
+			m_FFT1D_GPU.FFT_GPUInOut( -1.0f );
+
+			// Copy spectrum & swap buffers
+			m_texSpectrumCopy.CopyFrom( m_FFT1D_GPU.Output );
+			m_FFT1D_GPU.SwapBuffers();
+
+			// Apply FFT again to obtain signal again
+			m_FFT1D_GPU.FFT_GPUInOut( 1.0f );
+
+			// Display result
+			if ( m_Shader_Display.Use() ) {
+				m_device.SetRenderTarget( m_device.DefaultTarget, null );
+				m_texSpectrumCopy.SetPS( 0 );
+				m_FFT1D_GPU.Output.SetPS( 1 );
+
+				m_CB_Main.UpdateData();
+
+				m_device.RenderFullscreenQuad( m_Shader_Display );
+				m_FFT1D_GPU.Output.RemoveFromLastAssignedSlots();
+			}
+
+			m_device.Present( false );
 		}
 
 		enum SIGNAL_TYPE {
@@ -333,6 +421,10 @@ if ( checkBoxInvertFilter.Checked )
 
 		private void buttonReload_Click( object sender, EventArgs e ) {
 			m_device.ReloadModifiedShaders();
+		}
+
+		private void checkBoxGPU_CheckedChanged( object sender, EventArgs e ) {
+			imagePanel.SkipPaint = checkBoxGPU.Checked;
 		}
 	}
 }

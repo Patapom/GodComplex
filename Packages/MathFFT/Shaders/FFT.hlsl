@@ -8,16 +8,6 @@ cbuffer CB_Main : register(b0) {
 	float	_sign;
 };
 
-
-uint	wang_hash(uint seed) {
-    seed = (seed ^ 61) ^ (seed >> 16);
-    seed *= 9;
-    seed = seed ^ (seed >> 4);
-    seed *= 0x27d4eb2d;
-    seed = seed ^ (seed >> 15);
-    return seed;
-}
-
 groupshared float2	gs_temp[128];
 
 /*uint3	ComputeIndices( uint _groupShift, uint _dispatchThreadIndex ) {

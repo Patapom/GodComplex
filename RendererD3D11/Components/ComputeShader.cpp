@@ -401,7 +401,7 @@ int		ComputeShader::ShaderConstants::GetUnorderedAccesViewIndex( const BString& 
 
 BaseLib::DictionaryString<ComputeShader*>	ComputeShader::ms_WatchedShaders;
 
-static void	WatchShader( int _EntryIndex, ComputeShader*& _Value, void* _pUserData )	{ _Value->WatchShaderModifications(); }
+static bool	WatchShader( int _EntryIndex, const BString& _key, ComputeShader*& _value, void* _pUserData )	{ _value->WatchShaderModifications(); return true; }
 
 void		ComputeShader::WatchShadersModifications() {
 	static int	LastTime = -1;

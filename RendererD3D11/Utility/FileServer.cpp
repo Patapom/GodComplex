@@ -9,33 +9,17 @@ DiskFileServer::DiskFileServer() {
 }
 
 HRESULT	DiskFileServer::Open( THIS_ D3D_INCLUDE_TYPE _IncludeType, LPCSTR _pFileName, LPCVOID _pParentData, LPCVOID* _ppData, UINT* _pBytes ) {
+
+	// Test all registered paths to find the shader
+	FILE*	pFile = FindShaderFile( _pFileName );
+	if ( pFile == NULL )
+		return S_FALSE;
+
 	if ( _ppData == NULL ) {
 		// Just check file can be opened...
-		FILE*	pFile;
-		fopen_s( &pFile, _pFileName, "rb" );
-		if ( pFile != NULL ) {
-			fclose( pFile );
-			return S_OK;
-		}
-		return S_FALSE;
+		fclose( pFile );
+		return S_OK;
 	}
-
-	// Attempt to retrieve shader path of parent file from parent's data pointer
-	const BString*	pShaderPath = _pParentData != NULL ? m_dataPointer2FilePath.Get( _pParentData ) : NULL;
-//	ASSERT( ppShaderPath != NULL, "Failed to retrieve data pointer!" );
-
-	// Split file path into directory + file name
-	BString	shaderDirectory;
-	BString	shaderFileName;
-	GetFileDirectory( shaderDirectory, pShaderPath != NULL ? *pShaderPath : _pFileName );
-	GetFileName( shaderFileName, _pFileName );
-
-	// Recompose file name
-	BString	fullName( true, "%s%s", (const char*) shaderDirectory, (const char*) shaderFileName );
-
-	FILE*	pFile;
-	fopen_s( &pFile, fullName, "rb" );
-	ASSERT( pFile != NULL, "Include file not found!" );
 
 	fseek( pFile, 0, SEEK_END );
 	U32	Size = ftell( pFile );
@@ -51,27 +35,11 @@ HRESULT	DiskFileServer::Open( THIS_ D3D_INCLUDE_TYPE _IncludeType, LPCSTR _pFile
 
 	fclose( pFile );
 
-	// Register this file's path as attached to the data pointer
-// 	size_t	strLength = strlen(_pFileName)+1;
-// 	char*	copiedFileName = new char[strLength];
-// 	strcpy_s( copiedFileName, strLength, _pFileName );
-// 	m_dataPointer2FilePath.Add( pBuffer, copiedFileName );
- 	m_dataPointer2FilePath.Add( pBuffer, _pFileName );
-
 	return S_OK;
 }
 
 HRESULT	DiskFileServer::Close( THIS_ LPCVOID _pData ) {
-// 	// Remove entry from dictionary
-// 	const BString*	pShaderPath = m_dataPointer2FilePath.Get( _pData );
-// 	ASSERT( pShaderPath != NULL, "Failed to retrieve data pointer!" );
-//	delete[] *pShaderPath;	// Delete the hardcopy of the string we made for registration
-
-	m_dataPointer2FilePath.Remove( _pData );
-
-	// Delete file content
-	delete[] _pData;
-
+	delete[] _pData;	// Delete file content
 	return S_OK;
 }
 
@@ -82,35 +50,48 @@ time_t		DiskFileServer::GetFileModTime( const BString& _fileName ) const {
 	return statInfo.st_mtime;
 }
 
-void	DiskFileServer::GetFileDirectory( BString& _fileDirectory, const BString& _filePath ) {
-	if ( _filePath.IsEmpty() ) {
-		_fileDirectory = "\0";
-		return;
-	}
-
-	_fileDirectory = _filePath;
-
-	// Cut at last slash or anti-slash
-	const char*	pLastSlash = strrchr( _fileDirectory, '\\' );
-	if ( pLastSlash == NULL )
-		pLastSlash = strrchr( _fileDirectory, '/' );
-	if ( pLastSlash != NULL ) {
-		size_t	end = 1 + pLastSlash - _fileDirectory;
-		_fileDirectory[U32(end)] = '\0';
-	}
-}
-void	DiskFileServer::GetFileName( BString& _fileName, const BString& _filePath ) {
-	if ( _filePath.IsEmpty() ) {
-		_fileName = "\0";
-		return;
-	}
-	const char*	pLastSlash = strrchr( _filePath, '\\' );
-	if ( pLastSlash == NULL )
-		pLastSlash = strrchr( _filePath, '/' );
-	if ( pLastSlash == NULL )
-		pLastSlash = _filePath - 1;
-
-	const char*	fileNameStart = pLastSlash + 1;
-	_fileName = fileNameStart;
+struct DelegateData {
+	DiskFileServer*	server;
+	const BString*	partialFileName;
+	FILE*			result;
+};
+bool	VisitorDelegate( int _entryIndex, const BString& _key, BString& _value, void* _pUserData ) {
+	DelegateData&	data = *reinterpret_cast< DelegateData* >( _pUserData );
+	data.result = data.server->FindShaderFile( _key, *data.partialFileName );
+	return data.result == NULL;	// Continue while not found...
 }
 
+FILE*	DiskFileServer::FindShaderFile( const BString& _partialFileName ) {
+	DelegateData	data;
+	data.server = this;
+	data.partialFileName = &_partialFileName;
+	data.result = FindShaderFile( "", _partialFileName );
+	if ( data.result == NULL )
+		m_collectedDirectories.ForEach( VisitorDelegate, &data );	// Search other directories if necessary...
+
+	return data.result;
+}
+
+FILE*	DiskFileServer::FindShaderFile( const BString& _directoryName, const BString& _partialFileName ) {
+	FILE*	file = NULL;
+
+	// Combine paths
+	BString	combinedPath;
+	combinedPath.Combine( _directoryName, _partialFileName );
+	fopen_s( &file, combinedPath, "rb" );
+	if ( file == NULL )
+		return NULL;	// Not found in that directory
+
+	// Retrieve directory for registration
+	BString	shaderDirectory;
+	combinedPath.GetFileDirectory( shaderDirectory );
+	shaderDirectory.ToLower();
+
+	const BString*	existingDirectory = m_collectedDirectories.Get( shaderDirectory );
+	if ( existingDirectory == NULL ) {
+		// Collect new directory
+		m_collectedDirectories.Add( shaderDirectory, shaderDirectory );
+	}
+
+	return file;
+}

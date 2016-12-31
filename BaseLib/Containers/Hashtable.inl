@@ -122,7 +122,8 @@ template<typename T> void	DictionaryString<T>::ForEach( VisitorDelegate _pDelega
 	for ( int i=0; i < m_Size; i++ ) {
 		Node*	pNode = m_ppTable[i];
 		while ( pNode != NULL ) {
-			(*_pDelegate)( EntryIndex++, pNode->value, _pUserData );
+			if ( !(*_pDelegate)( EntryIndex++, pNode->key, pNode->value, _pUserData ) )
+				return;	// Stop!
 			pNode = pNode->pNext;
 		}
 	}
@@ -390,7 +391,8 @@ void	DictionaryGeneric<K,T>::ForEach( VisitorDelegate _pDelegate, void* _pUserDa
 	for ( int i=0; i < m_Size; i++ ) {
 		Node*	pNode = m_ppTable[i];
 		while ( pNode != NULL ) {
-			(*_pDelegate)( EntryIndex++, pNode->value, _pUserData );
+			if ( !(*_pDelegate)( EntryIndex++, pNode->key, pNode->value, _pUserData ) )
+				return;	// Stop!
 			pNode = pNode->pNext;
 		}
 	}

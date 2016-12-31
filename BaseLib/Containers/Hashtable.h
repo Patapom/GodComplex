@@ -22,8 +22,8 @@ namespace BaseLib {
 // 
 // the hashtable uses basic linked-lists for handling collisions
 // 
-#define HT_DEFAULT_SIZE	8192//(1 << 13)	// Default size if 8Kb
-#define HT_MAX_KEYLEN	1024
+#define HT_DEFAULT_SIZE	8192U//(1 << 13)	// Default size if 8Kb
+#define HT_MAX_KEYLEN	1024U
 
 #if defined(_DEBUG) || !defined(GODCOMPLEX)
 
@@ -39,7 +39,7 @@ protected:	// NESTED TYPES
 
 public:
 
-	typedef void	(*VisitorDelegate)( int _EntryIndex, T& _Value, void* _pUserData );
+	typedef bool	(*VisitorDelegate)( int _EntryIndex, const BString& _key, T& _Value, void* _pUserData );
 
 protected:	// FIELDS
 
@@ -147,10 +147,6 @@ public:		// METHODS
 
 //////////////////////////////////////////////////////////////////////////
 // Generic dictionary storing explicit typed values and using an explicit key class
-template<typename K> class	DictionaryKey {
-	static U32		GetHash( const K& _key )					{ ASSERT( false, "You didn't specialize the key class!" ); return 0; }
-	static int		Compare( const K& _key0, const K& _key1 )	{ ASSERT( false, "You didn't specialize the key class!" ); return 0; }
-};
 template<typename K, typename T> class	DictionaryGeneric {
 protected:		// NESTED TYPES
 
@@ -162,7 +158,8 @@ protected:		// NESTED TYPES
 
 public:
 
-	typedef void	(*VisitorDelegate)( int _EntryIndex, T& _Value, void* _pUserData );
+	// Must return true to continue, false to abort visit
+	typedef bool	(*VisitorDelegate)( int _EntryIndex, const K& _key, T& _Value, void* _pUserData );
 
 
 protected:	// FIELDS

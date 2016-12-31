@@ -32,16 +32,17 @@ public:
 	virtual time_t			GetFileModTime( const BString& _fileName ) const abstract;
 };
 
+// static U32	GetHash( const void* _key ) {
+// 	U64		v = U64( _key );
+// 	U64		v2 = v;
+// 			v2 >>= 32;
+// 	return U32( v2 ^ v );
+// }
+// static S32	Compare( const void* const& _a, const void*& _b ) {
+// 	return _a < _b ? -1 : (_a > _b ? 1 : 0);
+// }
 
-static U32	GetHash( const void* _key ) {
-	U64		v = U64( _key );
-	U64		v2 = v;
-			v2 >>= 32;
-	return U32( v2 ^ v );
-}
-static S32	Compare( const void* const& _a, const void*& _b ) {
-	return _a < _b ? -1 : (_a > _b ? 1 : 0);
-}
+typedef struct _iobuf FILE;
 
 //////////////////////////////////////////////////////////////////////////
 // Generic disk file server loading files from disk
@@ -49,11 +50,8 @@ static S32	Compare( const void* const& _a, const void*& _b ) {
 class DiskFileServer : public IFileServer {
 private:	// FIELDS
 
-	// This dictionary is used to keep track of the shader paths that led to a specific data blob
-	//	so that if a file include is queried and we're given the parent file's data blob, we can retrieve the
-	//	parent file's path and append the include file path to it to get the absolute file path
-//	BaseLib::DictionaryGeneric< const void*, const char* >	m_dataPointer2FilePath;
-	BaseLib::DictionaryGeneric< const void*, BString >	m_dataPointer2FilePath;
+	// This dictionary is used to keep track of the various base shader paths that that were encountered by the file server
+	BaseLib::DictionaryGeneric< BString, BString >	m_collectedDirectories;
 
 public:
 
@@ -71,10 +69,10 @@ public:	// ID3DInclude Members
 		// IFileServer Members
 	time_t			GetFileModTime( const BString& _fileName ) const override;
 
-public:
-	// Extracts the directory from the file's full path
-	static void		GetFileDirectory( BString& _fileDirectory, const BString& _filePath );
-	// Extracts the name from the file's full path
-	static void		GetFileName( BString& _fileName, const BString& _filePath );
+private:
 
+	// Attempts to find the shader file using already collected directories
+	FILE*			FindShaderFile( const BString& _partialFileName );
+public:
+	FILE*			FindShaderFile( const BString& _directory, const BString& _partialFileName );
 };

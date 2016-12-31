@@ -526,7 +526,7 @@ int		Shader::ShaderConstants::GetShaderResourceViewIndex( const BString& _pTextu
 
 BaseLib::DictionaryString<Shader*>	Shader::ms_WatchedShaders;
 
-static void	WatchShader( int _EntryIndex, Shader*& _Value, void* _pUserData )	{ _Value->WatchShaderModifications(); }
+static bool	WatchShader( int _EntryIndex, const BString& _key, Shader*& _value, void* _pUserData )	{ _value->WatchShaderModifications(); return true; }
 
 void	Shader::WatchShadersModifications() {
 	static int	LastTime = -1;

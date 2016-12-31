@@ -101,16 +101,22 @@ namespace SharpMath.FFT {
 		/// <summary>
 		/// Gets the input view for quick GPU access
 		/// </summary>
-		public View2D		Input {
-			get { return m_texBufferIn.GetView( 0, 1, 0, 1 ); }
+// 		public View2D		Input {
+// 			get { return m_texBufferIn.GetView( 0, 1, 0, 1 ); }
+// 		}
+		public Texture2D	Input {
+			get { return m_texBufferIn; }
 		}
 
 		/// <summary>
 		/// Gets the output view for quick GPU access
 		/// </summary>
-		public View2D		Output {
-			get { return m_texBufferOut.GetView( 0, 1, 0, 1 ); }
-//			get { return m_texBuffer.GetView( 0, 1, (m_POT & 1) != 0 ? 1U : 0U, 1 ); }
+// 		public View2D		Output {
+// 			get { return m_texBufferOut.GetView( 0, 1, 0, 1 ); }
+// //			get { return m_texBuffer.GetView( 0, 1, (m_POT & 1) != 0 ? 1U : 0U, 1 ); }
+// 		}
+		public Texture2D	Output {
+			get { return m_texBufferOut; }
 		}
 
 		/// <summary>
@@ -336,9 +342,7 @@ namespace SharpMath.FFT {
 						throw new Exception( "Failed to use compute shader: did it compile without error?" );
 
 					// Swap in and out
-					Texture2D	temp = m_texBufferIn;
-					m_texBufferIn = m_texBufferOut;
-					m_texBufferOut = temp;
+					SwapBuffers();
 
 					m_texBufferIn.SetCS( 0 );
 					m_texBufferOut.SetCSUAV( 0 );
@@ -352,6 +356,15 @@ namespace SharpMath.FFT {
 			} catch ( Exception _e ) {
 				throw new Exception( "An error occurred while performing the FFT!", _e );
 			}
+		}
+
+		/// <summary>
+		/// Swappes in & out buffers
+		/// </summary>
+		public void		SwapBuffers() {
+			Texture2D	temp = m_texBufferIn;
+			m_texBufferIn = m_texBufferOut;
+			m_texBufferOut = temp;
 		}
 
 		#endregion

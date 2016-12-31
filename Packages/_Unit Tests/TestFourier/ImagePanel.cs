@@ -20,13 +20,18 @@ namespace TestFourier
 			set { m_MessageOnEmpty = value; Invalidate(); }
 		}
 
-		public Bitmap		Bitmap
-		{
+		public Bitmap		Bitmap {
 			get { return m_Bitmap; }
 			set {
 				m_Bitmap = value;
 				Invalidate();
 			}
+		}
+
+		private bool				m_skipPaint = false;
+		public bool				SkipPaint {
+			get { return m_skipPaint; }
+			set { m_skipPaint = value; Invalidate(); }
 		}
 
 		private RectangleF		ImageClientRect {
@@ -57,14 +62,14 @@ namespace TestFourier
 			Invalidate();
 		}
 
-		protected override void OnPaintBackground( PaintEventArgs e )
-		{
+		protected override void OnPaintBackground( PaintEventArgs e ) {
 //			base.OnPaintBackground( e );
 		}
 
-		protected override void OnPaint( PaintEventArgs e )
-		{
+		protected override void OnPaint( PaintEventArgs e ) {
 			base.OnPaint( e );
+			if ( m_skipPaint )
+				return;
 
 			RectangleF	Rect = ImageClientRect;
  			if ( Rect.Width != Width || Rect.Height != Height )
