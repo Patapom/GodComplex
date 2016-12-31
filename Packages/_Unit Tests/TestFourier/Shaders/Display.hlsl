@@ -11,8 +11,8 @@ float3	PS( VS_IN _In ) : SV_TARGET0 {
 	float2	spectrum = _texSpectrum[uint2( U * _signalSize, 0 )];
 	float2	reconstructedSignal = _texReconstructedSignal[uint2( U * _signalSize, 0 )];
 
-spectrum *= 10.0 / _signalSize;
-reconstructedSignal *= 0.0005;
+spectrum *= 10.0;// / _signalSize;
+reconstructedSignal *= 0.5;
 
 	float2	UV = float2( U, 2.0 * (0.5 - float(_In.__Position.y) / _resolution.y) );
 	float3	color = 0.0;

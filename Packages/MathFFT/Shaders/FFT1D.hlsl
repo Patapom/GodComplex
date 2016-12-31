@@ -98,8 +98,8 @@ void	CS__1to128( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : SV_GROUPTHR
 	frequency *= 0.5;
 	FetchAndMix( 6, index, frequency );
 
-	_texOut[uint2(2*_dispatchThreadID.x+0, 0)] = gs_temp[2*index+0];
-	_texOut[uint2(2*_dispatchThreadID.x+1, 0)] = gs_temp[2*index+1];
+	_texOut[uint2(2*_dispatchThreadID.x+0, 0)] = _normalization128 * gs_temp[2*index+0];
+	_texOut[uint2(2*_dispatchThreadID.x+1, 0)] = _normalization128 * gs_temp[2*index+1];
 }
 
 // Applies FFT from stage 7 (size 128) to stage 8 (size 256)
@@ -120,8 +120,8 @@ void	CS__128to256( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : SV_GROUPT
 	Twiddle( sinCos, V0, V1 );
 
 	// Store
-	_texOut[pos] = V1;	pos.x -= 128U;
-	_texOut[pos] = V0;
+	_texOut[pos] = _normalizationFinal * V1;	pos.x -= 128U;
+	_texOut[pos] = _normalizationFinal * V0;
 }
 
 // Applies FFT from stage 7 (size 128) to stage 9 (size 512)
@@ -152,10 +152,10 @@ void	CS__128to512( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : SV_GROUPT
 	Twiddle( sinCos, V1, V3 );
 
 	// Store
-	_texOut[pos] = V3;	pos.x -= 128U;
-	_texOut[pos] = V2;	pos.x -= 128U;
-	_texOut[pos] = V1;	pos.x -= 128U;
-	_texOut[pos] = V0;
+	_texOut[pos] = _normalizationFinal * V3;	pos.x -= 128U;
+	_texOut[pos] = _normalizationFinal * V2;	pos.x -= 128U;
+	_texOut[pos] = _normalizationFinal * V1;	pos.x -= 128U;
+	_texOut[pos] = _normalizationFinal * V0;
 }
 
 // Applies FFT from stage 7 (size 128) to stage 10 (size 1024)
@@ -208,7 +208,7 @@ void	CS__128to1024( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : SV_GROUP
 	pos.x = _dispatchThreadID.x;
 	[unroll]
 	for ( uint j=0; j < 8; j++ ) {
-		_texOut[pos] = V[j];
+		_texOut[pos] = _normalizationFinal * V[j];
 		pos.x += 128U;
 	}
 }
@@ -298,7 +298,7 @@ void	CS__128to2048( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : SV_GROUP
 	pos.x = _dispatchThreadID.x;
 	[unroll]
 	for ( uint j=0; j < 16; j++ ) {
-		_texOut[pos] = V[j];
+		_texOut[pos] = _normalizationFinal * V[j];
 		pos.x += 128U;
 	}
 }

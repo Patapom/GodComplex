@@ -46,12 +46,12 @@ namespace TestFourier
 
 		// Direct GPU feed
 		ConstantBuffer<CB_Main>		m_CB_Main;
-		Shader			m_Shader_GenerateSignal;
-		Shader			m_Shader_Display;
-		Texture2D		m_texSpectrumCopy;
+		Shader						m_Shader_GenerateSignal;
+		Shader						m_Shader_Display;
+		Texture2D					m_texSpectrumCopy;
 
 		// FFTW test
-		fftwlib.FFT2D	m_FFTW_1D = new fftwlib.FFT2D( SIGNAL_SIZE, 1 );
+		fftwlib.FFT2D	m_FFTW_1D;
 
 		#endregion
 
@@ -73,11 +73,18 @@ namespace TestFourier
 				m_texSpectrumCopy = new Texture2D( m_device, SIGNAL_SIZE, 1, 1, 1, PIXEL_FORMAT.RG32_FLOAT, false, true, null );
 
 			} catch ( Exception ) {
-				MessageBox.Show( "Failed to initialize DirectX device! Can't execute GPU FFT!" );
+				MessageBox.Show( "Failed to initialize DirectX device! Can't execute GPU FFT!", "DirectX Error", MessageBoxButtons.OK, MessageBoxIcon.Error );
 				m_device = null;
 			}
 
 			m_image = new ImageFile( (uint) imagePanel.Width, (uint) imagePanel.Height, ImageFile.PIXEL_FORMAT.RGBA8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
+
+			try {
+				m_FFTW_1D = new fftwlib.FFT2D( SIGNAL_SIZE, 1 );	// Allocate on the fly, if the interop fails then it will crash immediately but at least the 
+			} catch ( Exception _e ) {
+				MessageBox.Show( "Failed to initialize reference FFTW library! It's not necessary for the unit test unless you need to compare against \"ground truth\".\r\nReason:\r\n" + _e.Message, "FFTW Library Error", MessageBoxButtons.OK, MessageBoxIcon.Error );
+				m_FFTW_1D = null;
+			}
 
 			imagePanel.SkipPaint = checkBoxGPU.Checked;
 
@@ -97,7 +104,8 @@ namespace TestFourier
 				m_device.Dispose();
 			}
 
-			m_FFTW_1D.Dispose();
+			if ( m_FFTW_1D != null )
+				m_FFTW_1D.Dispose();
 
 			base.OnClosing( e );
 		}
@@ -305,7 +313,7 @@ namespace TestFourier
 			}
 
 			// Transform
-			if ( checkBoxUseFFTW.Checked ) {
+			if ( m_FFTW_1D != null && checkBoxUseFFTW.Checked ) {
 				m_FFTW_1D.FillInputSpatial( ( int x, int y, out float r, out float i ) => {
 					r = (float) m_signalSource[x].r;
 					i = (float) m_signalSource[x].i;
@@ -331,6 +339,8 @@ for ( int i=0; i < m_spectrum.Length; i++ ) {
 	sumSqDiffI += diff.i*diff.i;
 }
 labelDiff.Text = "SqDiff = " + sumSqDiffR.ToString( "G3" ) + " , " + sumSqDiffI.ToString( "G3" );
+if ( m_FFTW_1D == null && checkBoxUseFFTW.Checked )
+	labelDiff.Text += "\r\nERROR: Can't use FFTW because of an initialization error!";
 
 if ( checkBoxInvertFilter.Checked )
 	for ( int i=0; i < m_spectrum.Length; i++ )
@@ -384,7 +394,7 @@ if ( checkBoxInvertFilter.Checked )
 			}
 
 			// Inverse Transform
-			if ( checkBoxUseFFTW.Checked ) {
+			if ( m_FFTW_1D != null && checkBoxUseFFTW.Checked ) {
 				m_FFTW_1D.FillInputFrequency( ( int x, int y, out float r, out float i ) => {
 					r = (float) m_spectrum[x].r;
 					i = (float) m_spectrum[x].i;

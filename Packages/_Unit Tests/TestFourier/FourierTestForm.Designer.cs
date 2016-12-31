@@ -32,6 +32,7 @@
 			this.timer1 = new System.Windows.Forms.Timer(this.components);
 			this.tabControl1 = new System.Windows.Forms.TabControl();
 			this.tabPage1D = new System.Windows.Forms.TabPage();
+			this.checkBoxUseFFTW = new System.Windows.Forms.CheckBox();
 			this.checkBoxGPU = new System.Windows.Forms.CheckBox();
 			this.labelDiff = new System.Windows.Forms.Label();
 			this.checkBoxShowInput = new System.Windows.Forms.CheckBox();
@@ -57,7 +58,6 @@
 			this.tabPage2D = new System.Windows.Forms.TabPage();
 			this.viewportPanel = new TestFourier.ViewportPanel();
 			this.buttonReload = new System.Windows.Forms.Button();
-			this.checkBoxUseFFTW = new System.Windows.Forms.CheckBox();
 			this.tabControl1.SuspendLayout();
 			this.tabPage1D.SuspendLayout();
 			this.panel2.SuspendLayout();
@@ -101,11 +101,19 @@
 			this.tabPage1D.Text = "FFT 1D";
 			this.tabPage1D.UseVisualStyleBackColor = true;
 			// 
+			// checkBoxUseFFTW
+			// 
+			this.checkBoxUseFFTW.AutoSize = true;
+			this.checkBoxUseFFTW.Location = new System.Drawing.Point(1016, 14);
+			this.checkBoxUseFFTW.Name = "checkBoxUseFFTW";
+			this.checkBoxUseFFTW.Size = new System.Drawing.Size(147, 17);
+			this.checkBoxUseFFTW.TabIndex = 6;
+			this.checkBoxUseFFTW.Text = "Use FFTW (for reference)";
+			this.checkBoxUseFFTW.UseVisualStyleBackColor = true;
+			// 
 			// checkBoxGPU
 			// 
 			this.checkBoxGPU.AutoSize = true;
-			this.checkBoxGPU.Checked = true;
-			this.checkBoxGPU.CheckState = System.Windows.Forms.CheckState.Checked;
 			this.checkBoxGPU.Font = new System.Drawing.Font("Microsoft Sans Serif", 11.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
 			this.checkBoxGPU.Location = new System.Drawing.Point(862, 10);
 			this.checkBoxGPU.Name = "checkBoxGPU";
@@ -375,16 +383,6 @@
 			this.buttonReload.Text = "Reload";
 			this.buttonReload.UseVisualStyleBackColor = true;
 			this.buttonReload.Click += new System.EventHandler(this.buttonReload_Click);
-			// 
-			// checkBoxUseFFTW
-			// 
-			this.checkBoxUseFFTW.AutoSize = true;
-			this.checkBoxUseFFTW.Location = new System.Drawing.Point(1016, 14);
-			this.checkBoxUseFFTW.Name = "checkBoxUseFFTW";
-			this.checkBoxUseFFTW.Size = new System.Drawing.Size(78, 17);
-			this.checkBoxUseFFTW.TabIndex = 6;
-			this.checkBoxUseFFTW.Text = "Use FFTW";
-			this.checkBoxUseFFTW.UseVisualStyleBackColor = true;
 			// 
 			// FourierTestForm
 			// 

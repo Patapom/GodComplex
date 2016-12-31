@@ -79,6 +79,8 @@ namespace SharpMath.FFT {
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
 		struct CB {
 			public float		_sign;
+			public float		_normalization128;
+			public float		_normalizationFinal;
 		}
 
 		Device					m_device;
@@ -320,6 +322,8 @@ namespace SharpMath.FFT {
 		public void	FFT_GPUInOut( float _sign ) {
 			try {
 				m_CB.m._sign = _sign;
+				m_CB.m._normalization128 = _sign < 0.0f && m_CS__Remainder == null ? 1.0f / m_size : 1.0f;
+				m_CB.m._normalizationFinal = _sign < 0.0f && m_CS__Remainder != null ? 1.0f / m_size : 1.0f;
 				m_CB.UpdateData();
 
 				if ( !m_CS__1to128.Use() )
