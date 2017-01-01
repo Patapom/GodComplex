@@ -57,6 +57,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="FastFourierTransform2DGPU.cs" />
     <Compile Include="FFT_PermutationTables.cs" />
     <Compile Include="FastFourierTransformGPU.cs" />
     <Compile Include="FastFourierTransform2D.cs" />

@@ -136,6 +136,8 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Shaders\Display2D.hlsl" />
+    <Content Include="Shaders\GenerateSignal2D.hlsl" />
     <Content Include="Shaders\Global.hlsl" />
     <Content Include="Shaders\GenerateSignal.hlsl" />
     <Content Include="Shaders\Display.hlsl" />

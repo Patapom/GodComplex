@@ -8,7 +8,7 @@ using Renderer;
 
 namespace SharpMath.FFT {
 	/// <summary>
-	/// Performs the Fast Fourier Transform (FFT) or Inverse-FFT of a 1-Dimensional discrete complex signal
+	/// Performs the Fast Fourier Transform (FFT) or Inverse-FFT of a 2-Dimensional discrete complex signal
 	/// This is the fast GPU version
 	/// 
 	/// The idea behind the "Fast" Discrete Fourier Transform is that we can recursively subdivide the analyze
@@ -72,7 +72,7 @@ namespace SharpMath.FFT {
 	/// Expressing the DFT of length N recursively in terms of two DFTs of length N/2 allows to reach N*log(N) speeds instead
 	///	 of the traditional N² form.
 	/// </summary>
-    public class FFT1D_GPU : IDisposable {
+    public class FFT2D_GPU : IDisposable {
 
 		#region FIELDS
 
@@ -120,7 +120,7 @@ namespace SharpMath.FFT {
 		/// </summary>
 		/// <param name="_device"></param>
 		/// <param name="_signalSize">The size of the signals to process</param>
-		public FFT1D_GPU( Device _device, int _signalSize ) {
+		public FFT2D_GPU( Device _device, int _signalSize ) {
 			// Check Power Of Two
 			m_size = _signalSize;
 			float	fPOT = (float) (Math.Log( m_size ) / Math.Log( 2.0 ));

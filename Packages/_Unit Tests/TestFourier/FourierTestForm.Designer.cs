@@ -56,13 +56,21 @@
 			this.label1 = new System.Windows.Forms.Label();
 			this.imagePanel = new TestFourier.ImagePanel();
 			this.tabPage2D = new System.Windows.Forms.TabPage();
-			this.viewportPanel = new TestFourier.ViewportPanel();
+			this.panel3 = new System.Windows.Forms.Panel();
+			this.radioButton1 = new System.Windows.Forms.RadioButton();
+			this.radioButton2 = new System.Windows.Forms.RadioButton();
+			this.radioButton3 = new System.Windows.Forms.RadioButton();
+			this.radioButton4 = new System.Windows.Forms.RadioButton();
+			this.radioButtonSquare2D = new System.Windows.Forms.RadioButton();
+			this.label3 = new System.Windows.Forms.Label();
+			this.imagePanel2D = new TestFourier.ImagePanel();
 			this.buttonReload = new System.Windows.Forms.Button();
 			this.tabControl1.SuspendLayout();
 			this.tabPage1D.SuspendLayout();
 			this.panel2.SuspendLayout();
 			this.panel1.SuspendLayout();
 			this.tabPage2D.SuspendLayout();
+			this.panel3.SuspendLayout();
 			this.SuspendLayout();
 			// 
 			// timer1
@@ -358,7 +366,9 @@
 			// 
 			// tabPage2D
 			// 
-			this.tabPage2D.Controls.Add(this.viewportPanel);
+			this.tabPage2D.Controls.Add(this.panel3);
+			this.tabPage2D.Controls.Add(this.label3);
+			this.tabPage2D.Controls.Add(this.imagePanel2D);
 			this.tabPage2D.Location = new System.Drawing.Point(4, 22);
 			this.tabPage2D.Name = "tabPage2D";
 			this.tabPage2D.Padding = new System.Windows.Forms.Padding(3);
@@ -367,12 +377,88 @@
 			this.tabPage2D.Text = "FFT 2D";
 			this.tabPage2D.UseVisualStyleBackColor = true;
 			// 
-			// viewportPanel
+			// panel3
 			// 
-			this.viewportPanel.Location = new System.Drawing.Point(6, 45);
-			this.viewportPanel.Name = "viewportPanel";
-			this.viewportPanel.Size = new System.Drawing.Size(1000, 500);
-			this.viewportPanel.TabIndex = 1;
+			this.panel3.Controls.Add(this.radioButton1);
+			this.panel3.Controls.Add(this.radioButton2);
+			this.panel3.Controls.Add(this.radioButton3);
+			this.panel3.Controls.Add(this.radioButton4);
+			this.panel3.Controls.Add(this.radioButtonSquare2D);
+			this.panel3.Location = new System.Drawing.Point(48, 3);
+			this.panel3.Name = "panel3";
+			this.panel3.Size = new System.Drawing.Size(359, 34);
+			this.panel3.TabIndex = 4;
+			// 
+			// radioButton1
+			// 
+			this.radioButton1.AutoSize = true;
+			this.radioButton1.Location = new System.Drawing.Point(255, 10);
+			this.radioButton1.Name = "radioButton1";
+			this.radioButton1.Size = new System.Drawing.Size(65, 17);
+			this.radioButton1.TabIndex = 0;
+			this.radioButton1.Text = "Random";
+			this.radioButton1.UseVisualStyleBackColor = true;
+			// 
+			// radioButton2
+			// 
+			this.radioButton2.AutoSize = true;
+			this.radioButton2.Location = new System.Drawing.Point(203, 10);
+			this.radioButton2.Name = "radioButton2";
+			this.radioButton2.Size = new System.Drawing.Size(46, 17);
+			this.radioButton2.TabIndex = 0;
+			this.radioButton2.Text = "Sinc";
+			this.radioButton2.UseVisualStyleBackColor = true;
+			// 
+			// radioButton3
+			// 
+			this.radioButton3.AutoSize = true;
+			this.radioButton3.Location = new System.Drawing.Point(125, 10);
+			this.radioButton3.Name = "radioButton3";
+			this.radioButton3.Size = new System.Drawing.Size(72, 17);
+			this.radioButton3.TabIndex = 0;
+			this.radioButton3.Text = "Triangular";
+			this.radioButton3.UseVisualStyleBackColor = true;
+			// 
+			// radioButton4
+			// 
+			this.radioButton4.AutoSize = true;
+			this.radioButton4.Location = new System.Drawing.Point(68, 10);
+			this.radioButton4.Name = "radioButton4";
+			this.radioButton4.Size = new System.Drawing.Size(51, 17);
+			this.radioButton4.TabIndex = 0;
+			this.radioButton4.Text = "Sinus";
+			this.radioButton4.UseVisualStyleBackColor = true;
+			// 
+			// radioButtonSquare2D
+			// 
+			this.radioButtonSquare2D.AutoSize = true;
+			this.radioButtonSquare2D.Checked = true;
+			this.radioButtonSquare2D.Location = new System.Drawing.Point(3, 10);
+			this.radioButtonSquare2D.Name = "radioButtonSquare2D";
+			this.radioButtonSquare2D.Size = new System.Drawing.Size(59, 17);
+			this.radioButtonSquare2D.TabIndex = 0;
+			this.radioButtonSquare2D.TabStop = true;
+			this.radioButtonSquare2D.Text = "Square";
+			this.radioButtonSquare2D.UseVisualStyleBackColor = true;
+			// 
+			// label3
+			// 
+			this.label3.AutoSize = true;
+			this.label3.Location = new System.Drawing.Point(6, 15);
+			this.label3.Name = "label3";
+			this.label3.Size = new System.Drawing.Size(36, 13);
+			this.label3.TabIndex = 3;
+			this.label3.Text = "Signal";
+			// 
+			// imagePanel2D
+			// 
+			this.imagePanel2D.Bitmap = null;
+			this.imagePanel2D.Location = new System.Drawing.Point(6, 45);
+			this.imagePanel2D.MessageOnEmpty = null;
+			this.imagePanel2D.Name = "imagePanel2D";
+			this.imagePanel2D.Size = new System.Drawing.Size(1200, 600);
+			this.imagePanel2D.SkipPaint = false;
+			this.imagePanel2D.TabIndex = 1;
 			// 
 			// buttonReload
 			// 
@@ -391,6 +477,7 @@
 			this.ClientSize = new System.Drawing.Size(1294, 777);
 			this.Controls.Add(this.buttonReload);
 			this.Controls.Add(this.tabControl1);
+			this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedToolWindow;
 			this.Name = "FourierTestForm";
 			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
 			this.Text = "Fourier Transform Test";
@@ -402,6 +489,9 @@
 			this.panel1.ResumeLayout(false);
 			this.panel1.PerformLayout();
 			this.tabPage2D.ResumeLayout(false);
+			this.tabPage2D.PerformLayout();
+			this.panel3.ResumeLayout(false);
+			this.panel3.PerformLayout();
 			this.ResumeLayout(false);
 
 		}
@@ -413,7 +503,7 @@
 		private System.Windows.Forms.TabControl tabControl1;
 		private System.Windows.Forms.TabPage tabPage1D;
 		private System.Windows.Forms.TabPage tabPage2D;
-		private ViewportPanel viewportPanel;
+		private ImagePanel imagePanel2D;
 		private System.Windows.Forms.Label label1;
 		private System.Windows.Forms.Panel panel1;
 		private System.Windows.Forms.RadioButton radioButtonSquare;
@@ -437,6 +527,13 @@
 		private System.Windows.Forms.Label labelDiff;
 		private System.Windows.Forms.CheckBox checkBoxGPU;
 		private System.Windows.Forms.CheckBox checkBoxUseFFTW;
+		private System.Windows.Forms.Panel panel3;
+		private System.Windows.Forms.RadioButton radioButton1;
+		private System.Windows.Forms.RadioButton radioButton2;
+		private System.Windows.Forms.RadioButton radioButton3;
+		private System.Windows.Forms.RadioButton radioButton4;
+		private System.Windows.Forms.RadioButton radioButtonSquare2D;
+		private System.Windows.Forms.Label label3;
 	}
 }
 
