@@ -183,8 +183,6 @@ namespace SharpMath.FFT {
 			Complex[]	bufferOut = (_POT & 1) != 0 ? _output : temp;
 
 			// Generate most-displacement indices then copy and displace source
-// 			int[]	indices = new int[_size];
-// 			GenerateIndexList( _POT-1, indices );
 			int[]	indices = PermutationTables.ms_tables[_POT];
 			for ( int i=0; i < _size; i++ )
 				bufferIn[i] = _input[indices[i]];

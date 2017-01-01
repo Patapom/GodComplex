@@ -6,9 +6,21 @@ static const float	PI = 3.1415926535897932384626433832795;
 
 cbuffer CB_Main : register(b0) {
 	float	_sign;
+	uint	_bitReversalShift;			// = 32 - log2( signal size )
 	float	_normalizationFirstPass;
 	float	_normalizationFinal;
 };
+
+uint	ReverseBits( uint x ) {
+	x = (((x & 0xaaaaaaaaU) >> 1) | ((x & 0x55555555U) << 1));
+	x = (((x & 0xccccccccU) >> 2) | ((x & 0x33333333U) << 2));
+	x = (((x & 0xf0f0f0f0U) >> 4) | ((x & 0x0f0f0f0fU) << 4));
+	x = (((x & 0xff00ff00U) >> 8) | ((x & 0x00ff00ffU) << 8));
+	x = ((x >> 16) | (x << 16));
+	x >>= _bitReversalShift;	// Last shift to ensure indices are in [0,2^POT[
+	return x;
+}
+
 
 /*uint3	ComputeIndices( uint _groupShift, uint _dispatchThreadIndex ) {
 	uint	groupSize = 1 << _groupShift;

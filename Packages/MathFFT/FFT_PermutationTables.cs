@@ -30,6 +30,21 @@ namespace SharpMath.FFT {
 
 		#region Generation Code
 
+		//////////////////////////////////////////////////////////////////////////
+		// Okay so once again I failed to notice that these "permutation tables" are simply
+		//	bit-reversed and can be generated easily using the following code:
+		//
+		//////////////////////////////////////////////////////////////////////////
+		public static uint		ReverseBits( uint x, int _tablePOT ) {
+			x = (((x & 0xaaaaaaaaU) >> 1) | ((x & 0x55555555U) << 1));
+			x = (((x & 0xccccccccU) >> 2) | ((x & 0x33333333U) << 2));
+			x = (((x & 0xf0f0f0f0U) >> 4) | ((x & 0x0f0f0f0fU) << 4));
+			x = (((x & 0xff00ff00U) >> 8) | ((x & 0x00ff00ffU) << 8));
+			x = ((x >> 16) | (x << 16));
+			x >>= 32 - _tablePOT;	// Last shift to ensure indices are in [0,2^POT[
+			return x;
+		}
+
 		/// <summary>
 		/// Generates the permutation tables up to order 12 (i.e. 4096 entries)
 		/// </summary>

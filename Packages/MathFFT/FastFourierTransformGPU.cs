@@ -79,6 +79,7 @@ namespace SharpMath.FFT {
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
 		struct CB {
 			public float		_sign;
+			public uint			_bitReversalShift;
 			public float		_normalizationFirstPass;
 			public float		_normalizationFinal;
 		}
@@ -96,7 +97,6 @@ namespace SharpMath.FFT {
 
 		int						m_size;
 		int						m_POT;
-		int[]					m_permutations = null;
 
 		#endregion
 
@@ -114,6 +114,7 @@ namespace SharpMath.FFT {
 			get { return m_texBufferOut; }
 		}
 
+
 		/// <summary>
 		/// Initializes the FFT for the required signal size
 		/// </summary>
@@ -129,7 +130,12 @@ namespace SharpMath.FFT {
 			if ( m_POT < 8 || m_POT > 12 )
 				throw new Exception( "GPU FFT implementation only supports the following sizes: { 256, 512, 1024, 2048, 4096 }!" );
 
-			m_permutations = PermutationTables.ms_tables[m_POT];
+// Ensure permutation for proper FFT are _always_ a bit-reversal pattern!
+for ( int i=0; i < m_size; i++ ) {
+	uint	j = PermutationTables.ReverseBits( (uint) i, m_POT );
+	if ( j != PermutationTables.ms_tables[m_POT][i] )
+		throw new Exception( "RHA!" );
+}
 
 			// Initialize DX stuff
 			m_device = _device;
@@ -216,11 +222,6 @@ namespace SharpMath.FFT {
 				throw new Exception( "Output spectrum size doesn't match value passed to Init()!" );
 
 			FFT_CPUInOut( _inputSignal, _outputSpectrum, -1.0f );
-
-// 			// Normalize
-// 			double	normalizer = 1.0f / m_size;
-// 			for ( int i=0; i < m_size; i++ )
-// 				_outputSpectrum[i] *= normalizer;
 		}
 
 		#endregion
@@ -276,7 +277,8 @@ namespace SharpMath.FFT {
 				PixelsBuffer			loadingBuffer = m_texBufferCPU.MapWrite( 0, 0 );
 				System.IO.BinaryWriter	W = loadingBuffer.OpenStreamWrite();
 				for ( int i=0; i < m_size; i++ ) {
-					int		swizzledIndex = m_permutations[i];
+//					int		swizzledIndex = m_permutations[i];
+int		swizzledIndex = i;
 					W.Write( (float) _input[swizzledIndex].r );
 					W.Write( (float) _input[swizzledIndex].i );
 				}
@@ -314,6 +316,7 @@ namespace SharpMath.FFT {
 		public void	FFT_GPUInOut( float _sign ) {
 			try {
 				m_CB.m._sign = _sign;
+				m_CB.m._bitReversalShift = (uint) (32 - m_POT);
 				m_CB.m._normalizationFirstPass = _sign < 0.0f && m_CS__Remainder == null ? 1.0f / m_size : 1.0f;
 				m_CB.m._normalizationFinal = _sign < 0.0f && m_CS__Remainder != null ? 1.0f / m_size : 1.0f;
 				m_CB.UpdateData();

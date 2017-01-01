@@ -66,8 +66,8 @@ void	CS__1to256( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : SV_GROUPTHR
 	uint	index = _groupThreadID.x;
 
 	// Fetch level 0 - Group size = 2*1->1*2 - Frequency = 2PI/2
-	gs_temp[2*index+0] = _texIn[uint2(2*_dispatchThreadID.x+0, 0)];
-	gs_temp[2*index+1] = _texIn[uint2(2*_dispatchThreadID.x+1, 0)];
+	gs_temp[2*index+0] = _texIn[uint2( ReverseBits( 2*_dispatchThreadID.x+0 ), 0)];
+	gs_temp[2*index+1] = _texIn[uint2( ReverseBits( 2*_dispatchThreadID.x+1 ), 0)];
 	Twiddle( float2( 0, 1 ), gs_temp[2*index+0], gs_temp[2*index+1] );
 	SYNC
 
