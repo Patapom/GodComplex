@@ -217,10 +217,10 @@ namespace SharpMath.FFT {
 
 			FFT_CPUInOut( _inputSignal, _outputSpectrum, -1.0f );
 
-			// Normalize
-			double	normalizer = 1.0f / m_size;
-			for ( int i=0; i < m_size; i++ )
-				_outputSpectrum[i] *= normalizer;
+// 			// Normalize
+// 			double	normalizer = 1.0f / m_size;
+// 			for ( int i=0; i < m_size; i++ )
+// 				_outputSpectrum[i] *= normalizer;
 		}
 
 		#endregion
