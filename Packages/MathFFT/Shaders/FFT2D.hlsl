@@ -80,7 +80,7 @@ void	FetchAndMix( uint _groupShift, uint2 _groupThreadIndex, float _frequency ) 
 // NOTE: Each thread reads and writes 4 values so each thread at stage 0 reads 4 size-1 groups and writes an entire size-2 group by itself
 //			while at stage 3, each thread group will read 4*8 values and write them as a single final size-16 group.
 [numthreads( 8, 8, 1 )]
-void	CS__1to64( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : SV_GROUPTHREADID, uint3 _dispatchThreadID : SV_DISPATCHTHREADID ) {
+void	CS__1to16( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : SV_GROUPTHREADID, uint3 _dispatchThreadID : SV_DISPATCHTHREADID ) {
 	uint2	index = _groupThreadID.xy;
 
 	// Fetch level 0 - Group size = 1x1->2x2 - Frequency = 2PI/2
@@ -150,4 +150,81 @@ void	CS__1to64( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : SV_GROUPTHRE
 	_texOut[dispatchThreadIndexShifted.zy] = factor * V01;	// 2X+1, 2Y+0
 	_texOut[dispatchThreadIndexShifted.xw] = factor * V10;	// 2X+0, 2Y+1
 	_texOut[dispatchThreadIndexShifted.zw] = factor * V11;	// 2X+1, 2Y+1
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// For the generic part of the 2D FFT, we let each thread process as many groups of 4 values to cover the entire group size
+//	(i.e. specified by the uniform parameter)
+// The dispatch is called with as many groups as necessary to cover the entire input buffer
+// 
+//           Group Size       
+//        <--------------->
+//	      o-------o-------.
+//	      |       |       .
+//	      |       |       .
+//	      |       |       .
+//	      o-------o-------.
+//	      |       |       .
+//	      |       |       .
+//	      |       |       .
+//	      .................
+// 
+// Imagine group size is 8 as in the above figure then each thread will read and mix the values at the "o" positions.
+// To cover the entire input we simply dispatch with as many groups as necessary.
+//
+// Now imagine group size is 16 (i.e. twice the amount of threads used by the shader) then each thread will need to
+//	read 2x2 times groups of "o" positions, if the size is 32 then each thread will need to read 4x4 groups, and so on...
+// 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+#define	THREADS_COUNT	8
+#define	THREADS_POT		3
+
+[numthreads( THREADS_COUNT, THREADS_COUNT, 1 )]
+void	CS__Generic( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : SV_GROUPTHREADID, uint3 _dispatchThreadID : SV_DISPATCHTHREADID ) {
+	uint2	groupOffsetXY = _groupID.xy << _groupSizePOT;
+	uint	threadGroupsCountPOT = _groupSizePOT - THREADS_POT - 1;	// -1 because each thread will read 2 values (along X and Y) so group size is effectively divided by 2
+	uint	threadGroupsCount = 1U << threadGroupsCountPOT;			// Each thread will need to process that amount of groups of 4 values
+	uint	threadGroupStride = THREADS_COUNT;						// Each thread will jump that amount (along X and Y) to process the next group of 4 values
+	uint	halfGroupSize = 1U << (_groupSizePOT - 1);				// Size of the "mix group"
+
+	uint2	groupXY;
+	float2	frequency, scX, scY;
+	groupXY.y = _groupThreadID.y;
+	frequency.y = _groupFrequency * groupXY.y;
+
+	[loop]
+	for ( uint Y=0; Y < threadGroupsCount; Y++ ) {
+		sincos( frequency.y, scY.x, scY.y );
+
+		groupXY.x = _groupThreadID.x;
+		frequency.x = _groupFrequency * groupXY.x;
+
+		[loop]
+		for ( uint X=0; X < threadGroupsCount; X++ ) {
+			uint2	bufferXY = groupXY + groupOffsetXY;	// Actual buffer position
+
+			sincos( frequency.x, scX.x, scX.y );
+
+			float2	V00 = _texIn[bufferXY];	bufferXY.x += halfGroupSize;
+			float2	V01 = _texIn[bufferXY];	bufferXY.y += halfGroupSize;
+			float2	V11 = _texIn[bufferXY];	bufferXY.x -= halfGroupSize;
+			float2	V10 = _texIn[bufferXY];	bufferXY.y -= halfGroupSize;
+
+			Twiddle( scX, V00, V01 );
+			Twiddle( scX, V10, V11 );
+			Twiddle( scY, V00, V10 );
+			Twiddle( scY, V01, V11 );
+
+			_texOut[bufferXY] = _normalizationFinal * V00;	bufferXY.x += halfGroupSize;
+			_texOut[bufferXY] = _normalizationFinal * V01;	bufferXY.y += halfGroupSize;
+			_texOut[bufferXY] = _normalizationFinal * V11;	bufferXY.x -= halfGroupSize;
+			_texOut[bufferXY] = _normalizationFinal * V10;	bufferXY.y -= halfGroupSize;
+
+			groupXY.x += threadGroupStride;
+			frequency.x += _groupFrequency * threadGroupStride;
+		}
+		groupXY.y += threadGroupStride;
+		frequency.y += _groupFrequency * threadGroupStride;
+	}
 }

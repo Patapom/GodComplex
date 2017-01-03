@@ -9,6 +9,10 @@ cbuffer CB_Main : register(b0) {
 	uint	_bitReversalShift;			// = 32 - log2( signal size )
 	float	_normalizationFirstPass;
 	float	_normalizationFinal;
+	// Used by 2D FFT only
+	float	_groupFrequency;
+	uint	_groupSize;
+	uint	_groupSizePOT;
 };
 
 uint	ReverseBits( uint x ) {

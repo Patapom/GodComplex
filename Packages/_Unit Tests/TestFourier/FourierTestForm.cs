@@ -17,7 +17,7 @@ namespace TestFourier
 {
 	public partial class FourierTestForm : Form {
 		const int		SIGNAL_SIZE = 1024;
-		const int		SIGNAL_SIZE_2D = 64;
+		const int		SIGNAL_SIZE_2D = 16;
 
 		#region NESTED TYPES
 
@@ -152,8 +152,8 @@ namespace TestFourier
  				m_Shader_Display2D = new Shader( m_device2D, new System.IO.FileInfo( "./Shaders/Display2D.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 				m_texSpectrumCopy2D = new Texture2D( m_device2D, SIGNAL_SIZE_2D, SIGNAL_SIZE_2D, 1, 1, PIXEL_FORMAT.RG32_FLOAT, false, true, null );
 
-			} catch ( Exception ) {
-				MessageBox.Show( "Failed to initialize DirectX device! Can't execute GPU FFT!", "DirectX Error", MessageBoxButtons.OK, MessageBoxIcon.Error );
+			} catch ( Exception _e ) {
+				MessageBox.Show( "Failed to initialize DirectX device! Can't execute GPU FFT!\r\nReason:\r\n" + _e.Message, "DirectX Error", MessageBoxButtons.OK, MessageBoxIcon.Error );
 				m_device2D = null;
 			}
 
@@ -495,6 +495,7 @@ if ( checkBoxInvertFilter.Checked )
 
 			// Apply FFT
 			m_FFT2D_GPU.FFT_GPUInOut( -1.0f );
+CheckAgainstFFTW();
 
 			// Copy spectrum & swap buffers
 			m_texSpectrumCopy2D.CopyFrom( m_FFT2D_GPU.Output );
@@ -516,6 +517,60 @@ if ( checkBoxInvertFilter.Checked )
 			}
 
 			m_device2D.Present( false );
+		}
+
+		fftwlib.FFT2D	m_FFTW_2D = null;
+		Texture2D		m_test_CPU = null;
+		void	CheckAgainstFFTW() {
+			if ( m_FFTW_2D == null ) {
+				m_FFTW_2D = new fftwlib.FFT2D( SIGNAL_SIZE_2D, SIGNAL_SIZE_2D );
+				m_test_CPU = new Texture2D( m_device2D, SIGNAL_SIZE_2D, SIGNAL_SIZE_2D, 1, 1, PIXEL_FORMAT.RG32_FLOAT, true, false, null );
+			}
+
+			// Retrieve input/output as CPU-accessible
+			m_test_CPU.CopyFrom( m_FFT2D_GPU.Input );
+			PixelsBuffer	bufferIn = m_test_CPU.MapRead( 0, 0 );
+			m_test_CPU.UnMap( bufferIn );
+			m_test_CPU.CopyFrom( m_FFT2D_GPU.Output );
+			PixelsBuffer	bufferOut = m_test_CPU.MapRead( 0, 0 );
+			m_test_CPU.UnMap( bufferOut );
+
+			float2[,]	input_GPU = new float2[SIGNAL_SIZE_2D,SIGNAL_SIZE_2D];
+			using ( System.IO.BinaryReader R = bufferIn.OpenStreamRead() )
+				for ( int Y=0; Y < SIGNAL_SIZE_2D; Y++ )
+					for ( int X=0; X < SIGNAL_SIZE_2D; X++ ) {
+						input_GPU[X,Y].Set( R.ReadSingle(), R.ReadSingle() );
+					}
+			float2[,]	output_GPU = new float2[SIGNAL_SIZE_2D,SIGNAL_SIZE_2D];
+			using ( System.IO.BinaryReader R = bufferOut.OpenStreamRead() )
+				for ( int Y=0; Y < SIGNAL_SIZE_2D; Y++ )
+					for ( int X=0; X < SIGNAL_SIZE_2D; X++ ) {
+						output_GPU[X,Y].Set( R.ReadSingle(), R.ReadSingle() );
+					}
+
+			// Process input with FFTW
+			m_FFTW_2D.FillInputSpatial( ( int _x, int _y, out float _r, out float _i ) => {
+				_r = input_GPU[_x,_y].x;
+				_i = input_GPU[_x,_y].y;
+			} );
+			m_FFTW_2D.Execute( fftwlib.FFT2D.Normalization.DIMENSIONS_PRODUCT );
+			float2[,]	output_FFTW = new float2[SIGNAL_SIZE_2D,SIGNAL_SIZE_2D];
+			m_FFTW_2D.GetOutput( (int _x, int _y, float _r, float _i ) => {
+				output_FFTW[_x,_y].Set( _r, _i );
+			} );
+
+			// Compare
+			float	sumSqDiffR = 0.0f;
+			float	sumSqDiffI = 0.0f;
+			for ( int Y=0; Y < SIGNAL_SIZE_2D; Y++ )
+				for ( int X=0; X < SIGNAL_SIZE_2D; X++ ) {
+					float2	GPU = output_GPU[X,Y];
+					float2	FFTW = output_FFTW[X,Y];
+					float2	diff = GPU - FFTW;
+					sumSqDiffR += diff.x * diff.x;
+					sumSqDiffI += diff.y * diff.y;
+				}
+			labelDiff2D.Text = "SqDiff = " + sumSqDiffR.ToString( "G3" ) + " , " + sumSqDiffI.ToString( "G3" );
 		}
 
 		#endregion

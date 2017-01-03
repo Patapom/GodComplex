@@ -68,6 +68,7 @@
 			this.label3 = new System.Windows.Forms.Label();
 			this.imagePanel2D = new TestFourier.ImagePanel();
 			this.buttonReload = new System.Windows.Forms.Button();
+			this.labelDiff2D = new System.Windows.Forms.Label();
 			this.tabControl1.SuspendLayout();
 			this.tabPage1D.SuspendLayout();
 			this.panel2.SuspendLayout();
@@ -371,6 +372,7 @@
 			// 
 			// tabPage2D
 			// 
+			this.tabPage2D.Controls.Add(this.labelDiff2D);
 			this.tabPage2D.Controls.Add(this.label4);
 			this.tabPage2D.Controls.Add(this.floatTrackbarControlScaleV);
 			this.tabPage2D.Controls.Add(this.floatTrackbarControlScaleU);
@@ -511,6 +513,15 @@
 			this.buttonReload.UseVisualStyleBackColor = true;
 			this.buttonReload.Click += new System.EventHandler(this.buttonReload_Click);
 			// 
+			// labelDiff2D
+			// 
+			this.labelDiff2D.AutoSize = true;
+			this.labelDiff2D.Location = new System.Drawing.Point(502, 663);
+			this.labelDiff2D.Name = "labelDiff2D";
+			this.labelDiff2D.Size = new System.Drawing.Size(46, 13);
+			this.labelDiff2D.TabIndex = 7;
+			this.labelDiff2D.Text = "BISOU !";
+			// 
 			// FourierTestForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -578,6 +589,7 @@
 		private System.Windows.Forms.Label label4;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlScaleU;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlScaleV;
+		private System.Windows.Forms.Label labelDiff2D;
 	}
 }
 
