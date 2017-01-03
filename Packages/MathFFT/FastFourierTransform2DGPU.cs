@@ -331,7 +331,7 @@ namespace SharpMath.FFT {
 
 				int		stagesCount = m_POT - 4;
 				uint	groupSizePOT = 4U;
-				float	frequency = _sign * 2.0f * (float) Math.PI / 32.0f;
+				float	frequency = _sign * 2.0f * (float) Math.PI / 16.0f;
 				for ( int stageIndex=0; stageIndex < stagesCount; stageIndex++ ) {
 					groupsCount >>= 1;
 					frequency *= 0.5f;

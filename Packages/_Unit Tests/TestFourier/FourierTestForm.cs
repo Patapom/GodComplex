@@ -17,7 +17,7 @@ namespace TestFourier
 {
 	public partial class FourierTestForm : Form {
 		const int		SIGNAL_SIZE = 1024;
-		const int		SIGNAL_SIZE_2D = 16;
+		const int		SIGNAL_SIZE_2D = 256;
 
 		#region NESTED TYPES
 
@@ -32,6 +32,7 @@ namespace TestFourier
 		}
 
 		enum SIGNAL_TYPE {
+			CONSTANT,
 			SQUARE,
 			SINE,
 			SAW,
@@ -92,7 +93,8 @@ namespace TestFourier
 
 		ImageFile		m_image2D = null;
 
-		SIGNAL_TYPE		m_signalType2D = SIGNAL_TYPE.SQUARE;
+		SIGNAL_TYPE		m_signalType2D_X = SIGNAL_TYPE.SQUARE;
+		SIGNAL_TYPE		m_signalType2D_Y = SIGNAL_TYPE.SQUARE;
 
 		// CPU Feed
 		// @TODO if necessary but I haven't implemented 2D CPU FFT
@@ -161,7 +163,8 @@ namespace TestFourier
 
 			imagePanel2D.SkipPaint = true;//checkBoxGPU.Checked;
 
-//			UpdateGraph2D();
+			radioButtonSignalX_CheckedChanged( null, EventArgs.Empty );
+			radioButtonSignalY_CheckedChanged( null, EventArgs.Empty );
 
 			Application.Idle += Application_Idle;
 		}
@@ -477,9 +480,10 @@ if ( checkBoxInvertFilter.Checked )
 			m_CB_Main2D.m._resolutionX = (uint) imagePanel2D.Width;
 			m_CB_Main2D.m._resolutionY = (uint) imagePanel2D.Height;
 			m_CB_Main2D.m._signalSize = (uint) SIGNAL_SIZE_2D;
-			m_CB_Main2D.m._signalFlags = (uint) m_signalType2D;
-// 			m_CB_Main2D.m._signalFlags |= checkBoxShowInput.Checked ? 0x100U : 0;
-// 			m_CB_Main2D.m._signalFlags |= checkBoxShowReconstructedSignal.Checked ? 0x200U : 0;
+			m_CB_Main2D.m._signalFlags = (uint) m_signalType2D_X;
+			m_CB_Main2D.m._signalFlags |= (uint) m_signalType2D_Y << 4;
+ 			m_CB_Main2D.m._signalFlags |= checkBoxShowFFTWSpectrum.Checked ? 0x100U : 0;
+ 			m_CB_Main2D.m._signalFlags |= checkBoxPipoOption.Checked ? 0x200U : 0;
 			m_CB_Main2D.m._time = (float) time;
 			m_CB_Main2D.m._scaleUV.Set( floatTrackbarControlScaleU.Value, floatTrackbarControlScaleV.Value );
 
@@ -494,7 +498,7 @@ if ( checkBoxInvertFilter.Checked )
 			}
 
 			// Apply FFT
-			m_FFT2D_GPU.FFT_GPUInOut( -1.0f );
+//			m_FFT2D_GPU.FFT_GPUInOut( -1.0f );
 CheckAgainstFFTW();
 
 			// Copy spectrum & swap buffers
@@ -508,12 +512,16 @@ CheckAgainstFFTW();
 			if ( m_Shader_Display2D.Use() ) {
 				m_device2D.SetRenderTarget( m_device2D.DefaultTarget, null );
 				m_texSpectrumCopy2D.SetPS( 0 );
+//m_FFT2D_GPU.Input.SetPS( 0 );
 				m_FFT2D_GPU.Output.SetPS( 1 );
+				if ( m_FFTW2D_Output != null )
+					m_FFTW2D_Output.SetPS( 2 );
 
 				m_CB_Main2D.UpdateData();
 
 				m_device2D.RenderFullscreenQuad( m_Shader_Display2D );
 				m_FFT2D_GPU.Output.RemoveFromLastAssignedSlots();
+//m_FFT2D_GPU.Input.RemoveFromLastAssignedSlots();
 			}
 
 			m_device2D.Present( false );
@@ -521,19 +529,18 @@ CheckAgainstFFTW();
 
 		fftwlib.FFT2D	m_FFTW_2D = null;
 		Texture2D		m_test_CPU = null;
+		Texture2D		m_FFTW2D_Output = null;
 		void	CheckAgainstFFTW() {
 			if ( m_FFTW_2D == null ) {
 				m_FFTW_2D = new fftwlib.FFT2D( SIGNAL_SIZE_2D, SIGNAL_SIZE_2D );
 				m_test_CPU = new Texture2D( m_device2D, SIGNAL_SIZE_2D, SIGNAL_SIZE_2D, 1, 1, PIXEL_FORMAT.RG32_FLOAT, true, false, null );
+				m_FFTW2D_Output = new Texture2D( m_device2D, SIGNAL_SIZE_2D, SIGNAL_SIZE_2D, 1, 1, PIXEL_FORMAT.RG32_FLOAT, false, true, null );
 			}
 
-			// Retrieve input/output as CPU-accessible
+			// Retrieve input as CPU-accessible
 			m_test_CPU.CopyFrom( m_FFT2D_GPU.Input );
 			PixelsBuffer	bufferIn = m_test_CPU.MapRead( 0, 0 );
 			m_test_CPU.UnMap( bufferIn );
-			m_test_CPU.CopyFrom( m_FFT2D_GPU.Output );
-			PixelsBuffer	bufferOut = m_test_CPU.MapRead( 0, 0 );
-			m_test_CPU.UnMap( bufferOut );
 
 			float2[,]	input_GPU = new float2[SIGNAL_SIZE_2D,SIGNAL_SIZE_2D];
 			using ( System.IO.BinaryReader R = bufferIn.OpenStreamRead() )
@@ -541,12 +548,23 @@ CheckAgainstFFTW();
 					for ( int X=0; X < SIGNAL_SIZE_2D; X++ ) {
 						input_GPU[X,Y].Set( R.ReadSingle(), R.ReadSingle() );
 					}
+			bufferIn.Dispose();
+
+			// Apply FFT
+			m_FFT2D_GPU.FFT_GPUInOut( -1.0f );
+
+			// Retrieve output as CPU-accessible
+			m_test_CPU.CopyFrom( m_FFT2D_GPU.Output );
+			PixelsBuffer	bufferOut = m_test_CPU.MapRead( 0, 0 );
+			m_test_CPU.UnMap( bufferOut );
+
 			float2[,]	output_GPU = new float2[SIGNAL_SIZE_2D,SIGNAL_SIZE_2D];
 			using ( System.IO.BinaryReader R = bufferOut.OpenStreamRead() )
 				for ( int Y=0; Y < SIGNAL_SIZE_2D; Y++ )
 					for ( int X=0; X < SIGNAL_SIZE_2D; X++ ) {
 						output_GPU[X,Y].Set( R.ReadSingle(), R.ReadSingle() );
 					}
+			bufferOut.Dispose();
 
 			// Process input with FFTW
 			m_FFTW_2D.FillInputSpatial( ( int _x, int _y, out float _r, out float _i ) => {
@@ -558,6 +576,18 @@ CheckAgainstFFTW();
 			m_FFTW_2D.GetOutput( (int _x, int _y, float _r, float _i ) => {
 				output_FFTW[_x,_y].Set( _r, _i );
 			} );
+
+			// Upload FFTW output to GPU
+			bufferOut = m_test_CPU.MapWrite( 0, 0 );
+			using ( System.IO.BinaryWriter W = bufferOut.OpenStreamWrite() )
+				for ( int Y=0; Y < SIGNAL_SIZE_2D; Y++ )
+					for ( int X=0; X < SIGNAL_SIZE_2D; X++ ) {
+						W.Write( output_FFTW[X,Y].x );
+						W.Write( output_FFTW[X,Y].y );
+					}
+			m_test_CPU.UnMap( bufferOut );
+			bufferOut.Dispose();
+			m_FFTW2D_Output.CopyFrom( m_test_CPU );
 
 			// Compare
 			float	sumSqDiffR = 0.0f;
@@ -612,6 +642,36 @@ CheckAgainstFFTW();
 				m_filter1D = FILTER_TYPE.GAUSSIAN;
 			else if ( radioButtonFilterInverse.Checked )
 				m_filter1D = FILTER_TYPE.INVERSE;
+		}
+
+		private void radioButtonSignalX_CheckedChanged( object sender, EventArgs e ) {
+			if ( radioButtonConstantX.Checked )
+				m_signalType2D_X = SIGNAL_TYPE.CONSTANT;
+			else if ( radioButtonSquareX.Checked )
+				m_signalType2D_X = SIGNAL_TYPE.SQUARE;
+			else if ( radioButtonSinusX.Checked )
+				m_signalType2D_X = SIGNAL_TYPE.SINE;
+			else if ( radioButtonTriX.Checked )
+				m_signalType2D_X = SIGNAL_TYPE.SAW;
+			else if ( radioButtonSincX.Checked )
+				m_signalType2D_X = SIGNAL_TYPE.SINC;
+			else if ( radioButtonRandomX.Checked )
+				m_signalType2D_X = SIGNAL_TYPE.RANDOM;
+		}
+
+		private void radioButtonSignalY_CheckedChanged( object sender, EventArgs e ) {
+			if ( radioButtonConstantY.Checked )
+				m_signalType2D_Y = SIGNAL_TYPE.CONSTANT;
+			else if ( radioButtonSquareY.Checked )
+				m_signalType2D_Y = SIGNAL_TYPE.SQUARE;
+			else if ( radioButtonSinusY.Checked )
+				m_signalType2D_Y = SIGNAL_TYPE.SINE;
+			else if ( radioButtonTriY.Checked )
+				m_signalType2D_Y = SIGNAL_TYPE.SAW;
+			else if ( radioButtonSincY.Checked )
+				m_signalType2D_Y = SIGNAL_TYPE.SINC;
+			else if ( radioButtonRandomY.Checked )
+				m_signalType2D_Y = SIGNAL_TYPE.RANDOM;
 		}
 	}
 }

@@ -56,24 +56,36 @@
 			this.label1 = new System.Windows.Forms.Label();
 			this.imagePanel = new TestFourier.ImagePanel();
 			this.tabPage2D = new System.Windows.Forms.TabPage();
+			this.checkBoxPipoOption = new System.Windows.Forms.CheckBox();
+			this.checkBoxShowFFTWSpectrum = new System.Windows.Forms.CheckBox();
+			this.labelDiff2D = new System.Windows.Forms.Label();
 			this.label4 = new System.Windows.Forms.Label();
 			this.floatTrackbarControlScaleV = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.floatTrackbarControlScaleU = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.panel4 = new System.Windows.Forms.Panel();
+			this.radioButtonConstantY = new System.Windows.Forms.RadioButton();
+			this.radioButtonRandomY = new System.Windows.Forms.RadioButton();
+			this.radioButtonSincY = new System.Windows.Forms.RadioButton();
+			this.radioButtonTriY = new System.Windows.Forms.RadioButton();
+			this.radioButtonSinusY = new System.Windows.Forms.RadioButton();
+			this.radioButtonSquareY = new System.Windows.Forms.RadioButton();
+			this.label5 = new System.Windows.Forms.Label();
 			this.panel3 = new System.Windows.Forms.Panel();
-			this.radioButton1 = new System.Windows.Forms.RadioButton();
-			this.radioButton2 = new System.Windows.Forms.RadioButton();
-			this.radioButton3 = new System.Windows.Forms.RadioButton();
-			this.radioButton4 = new System.Windows.Forms.RadioButton();
-			this.radioButtonSquare2D = new System.Windows.Forms.RadioButton();
+			this.radioButtonConstantX = new System.Windows.Forms.RadioButton();
+			this.radioButtonRandomX = new System.Windows.Forms.RadioButton();
+			this.radioButtonSincX = new System.Windows.Forms.RadioButton();
+			this.radioButtonTriX = new System.Windows.Forms.RadioButton();
+			this.radioButtonSinusX = new System.Windows.Forms.RadioButton();
+			this.radioButtonSquareX = new System.Windows.Forms.RadioButton();
 			this.label3 = new System.Windows.Forms.Label();
 			this.imagePanel2D = new TestFourier.ImagePanel();
 			this.buttonReload = new System.Windows.Forms.Button();
-			this.labelDiff2D = new System.Windows.Forms.Label();
 			this.tabControl1.SuspendLayout();
 			this.tabPage1D.SuspendLayout();
 			this.panel2.SuspendLayout();
 			this.panel1.SuspendLayout();
 			this.tabPage2D.SuspendLayout();
+			this.panel4.SuspendLayout();
 			this.panel3.SuspendLayout();
 			this.SuspendLayout();
 			// 
@@ -372,10 +384,14 @@
 			// 
 			// tabPage2D
 			// 
+			this.tabPage2D.Controls.Add(this.checkBoxPipoOption);
+			this.tabPage2D.Controls.Add(this.checkBoxShowFFTWSpectrum);
 			this.tabPage2D.Controls.Add(this.labelDiff2D);
 			this.tabPage2D.Controls.Add(this.label4);
 			this.tabPage2D.Controls.Add(this.floatTrackbarControlScaleV);
 			this.tabPage2D.Controls.Add(this.floatTrackbarControlScaleU);
+			this.tabPage2D.Controls.Add(this.panel4);
+			this.tabPage2D.Controls.Add(this.label5);
 			this.tabPage2D.Controls.Add(this.panel3);
 			this.tabPage2D.Controls.Add(this.label3);
 			this.tabPage2D.Controls.Add(this.imagePanel2D);
@@ -387,10 +403,39 @@
 			this.tabPage2D.Text = "FFT 2D";
 			this.tabPage2D.UseVisualStyleBackColor = true;
 			// 
+			// checkBoxPipoOption
+			// 
+			this.checkBoxPipoOption.AutoSize = true;
+			this.checkBoxPipoOption.Location = new System.Drawing.Point(749, 14);
+			this.checkBoxPipoOption.Name = "checkBoxPipoOption";
+			this.checkBoxPipoOption.Size = new System.Drawing.Size(81, 17);
+			this.checkBoxPipoOption.TabIndex = 8;
+			this.checkBoxPipoOption.Text = "Pipo Option";
+			this.checkBoxPipoOption.UseVisualStyleBackColor = true;
+			// 
+			// checkBoxShowFFTWSpectrum
+			// 
+			this.checkBoxShowFFTWSpectrum.AutoSize = true;
+			this.checkBoxShowFFTWSpectrum.Location = new System.Drawing.Point(595, 14);
+			this.checkBoxShowFFTWSpectrum.Name = "checkBoxShowFFTWSpectrum";
+			this.checkBoxShowFFTWSpectrum.Size = new System.Drawing.Size(134, 17);
+			this.checkBoxShowFFTWSpectrum.TabIndex = 8;
+			this.checkBoxShowFFTWSpectrum.Text = "Show FFTW Spectrum";
+			this.checkBoxShowFFTWSpectrum.UseVisualStyleBackColor = true;
+			// 
+			// labelDiff2D
+			// 
+			this.labelDiff2D.AutoSize = true;
+			this.labelDiff2D.Location = new System.Drawing.Point(502, 688);
+			this.labelDiff2D.Name = "labelDiff2D";
+			this.labelDiff2D.Size = new System.Drawing.Size(46, 13);
+			this.labelDiff2D.TabIndex = 7;
+			this.labelDiff2D.Text = "BISOU !";
+			// 
 			// label4
 			// 
 			this.label4.AutoSize = true;
-			this.label4.Location = new System.Drawing.Point(7, 663);
+			this.label4.Location = new System.Drawing.Point(7, 688);
 			this.label4.Name = "label4";
 			this.label4.Size = new System.Drawing.Size(52, 13);
 			this.label4.TabIndex = 6;
@@ -398,105 +443,212 @@
 			// 
 			// floatTrackbarControlScaleV
 			// 
-			this.floatTrackbarControlScaleV.Location = new System.Drawing.Point(271, 659);
+			this.floatTrackbarControlScaleV.Location = new System.Drawing.Point(271, 684);
 			this.floatTrackbarControlScaleV.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlScaleV.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlScaleV.Name = "floatTrackbarControlScaleV";
 			this.floatTrackbarControlScaleV.RangeMin = 0F;
 			this.floatTrackbarControlScaleV.Size = new System.Drawing.Size(200, 20);
 			this.floatTrackbarControlScaleV.TabIndex = 5;
-			this.floatTrackbarControlScaleV.Value = 0F;
-			this.floatTrackbarControlScaleV.VisibleRangeMax = 8F;
+			this.floatTrackbarControlScaleV.Value = 6F;
+			this.floatTrackbarControlScaleV.VisibleRangeMax = 32F;
 			// 
 			// floatTrackbarControlScaleU
 			// 
-			this.floatTrackbarControlScaleU.Location = new System.Drawing.Point(65, 659);
+			this.floatTrackbarControlScaleU.Location = new System.Drawing.Point(65, 684);
 			this.floatTrackbarControlScaleU.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlScaleU.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlScaleU.Name = "floatTrackbarControlScaleU";
 			this.floatTrackbarControlScaleU.RangeMin = 0F;
 			this.floatTrackbarControlScaleU.Size = new System.Drawing.Size(200, 20);
 			this.floatTrackbarControlScaleU.TabIndex = 5;
-			this.floatTrackbarControlScaleU.Value = 1F;
-			this.floatTrackbarControlScaleU.VisibleRangeMax = 8F;
+			this.floatTrackbarControlScaleU.Value = 3F;
+			this.floatTrackbarControlScaleU.VisibleRangeMax = 32F;
+			// 
+			// panel4
+			// 
+			this.panel4.Controls.Add(this.radioButtonConstantY);
+			this.panel4.Controls.Add(this.radioButtonRandomY);
+			this.panel4.Controls.Add(this.radioButtonSincY);
+			this.panel4.Controls.Add(this.radioButtonTriY);
+			this.panel4.Controls.Add(this.radioButtonSinusY);
+			this.panel4.Controls.Add(this.radioButtonSquareY);
+			this.panel4.Location = new System.Drawing.Point(65, 35);
+			this.panel4.Name = "panel4";
+			this.panel4.Size = new System.Drawing.Size(404, 34);
+			this.panel4.TabIndex = 4;
+			// 
+			// radioButtonConstantY
+			// 
+			this.radioButtonConstantY.AutoSize = true;
+			this.radioButtonConstantY.Location = new System.Drawing.Point(3, 10);
+			this.radioButtonConstantY.Name = "radioButtonConstantY";
+			this.radioButtonConstantY.Size = new System.Drawing.Size(67, 17);
+			this.radioButtonConstantY.TabIndex = 0;
+			this.radioButtonConstantY.Text = "Constant";
+			this.radioButtonConstantY.UseVisualStyleBackColor = true;
+			this.radioButtonConstantY.CheckedChanged += new System.EventHandler(this.radioButtonSignalY_CheckedChanged);
+			// 
+			// radioButtonRandomY
+			// 
+			this.radioButtonRandomY.AutoSize = true;
+			this.radioButtonRandomY.Location = new System.Drawing.Point(332, 10);
+			this.radioButtonRandomY.Name = "radioButtonRandomY";
+			this.radioButtonRandomY.Size = new System.Drawing.Size(65, 17);
+			this.radioButtonRandomY.TabIndex = 0;
+			this.radioButtonRandomY.Text = "Random";
+			this.radioButtonRandomY.UseVisualStyleBackColor = true;
+			this.radioButtonRandomY.CheckedChanged += new System.EventHandler(this.radioButtonSignalY_CheckedChanged);
+			// 
+			// radioButtonSincY
+			// 
+			this.radioButtonSincY.AutoSize = true;
+			this.radioButtonSincY.Checked = true;
+			this.radioButtonSincY.Location = new System.Drawing.Point(280, 10);
+			this.radioButtonSincY.Name = "radioButtonSincY";
+			this.radioButtonSincY.Size = new System.Drawing.Size(46, 17);
+			this.radioButtonSincY.TabIndex = 0;
+			this.radioButtonSincY.TabStop = true;
+			this.radioButtonSincY.Text = "Sinc";
+			this.radioButtonSincY.UseVisualStyleBackColor = true;
+			this.radioButtonSincY.CheckedChanged += new System.EventHandler(this.radioButtonSignalY_CheckedChanged);
+			// 
+			// radioButtonTriY
+			// 
+			this.radioButtonTriY.AutoSize = true;
+			this.radioButtonTriY.Location = new System.Drawing.Point(202, 10);
+			this.radioButtonTriY.Name = "radioButtonTriY";
+			this.radioButtonTriY.Size = new System.Drawing.Size(72, 17);
+			this.radioButtonTriY.TabIndex = 0;
+			this.radioButtonTriY.Text = "Triangular";
+			this.radioButtonTriY.UseVisualStyleBackColor = true;
+			this.radioButtonTriY.CheckedChanged += new System.EventHandler(this.radioButtonSignalY_CheckedChanged);
+			// 
+			// radioButtonSinusY
+			// 
+			this.radioButtonSinusY.AutoSize = true;
+			this.radioButtonSinusY.Location = new System.Drawing.Point(145, 10);
+			this.radioButtonSinusY.Name = "radioButtonSinusY";
+			this.radioButtonSinusY.Size = new System.Drawing.Size(51, 17);
+			this.radioButtonSinusY.TabIndex = 0;
+			this.radioButtonSinusY.Text = "Sinus";
+			this.radioButtonSinusY.UseVisualStyleBackColor = true;
+			this.radioButtonSinusY.CheckedChanged += new System.EventHandler(this.radioButtonSignalY_CheckedChanged);
+			// 
+			// radioButtonSquareY
+			// 
+			this.radioButtonSquareY.AutoSize = true;
+			this.radioButtonSquareY.Location = new System.Drawing.Point(80, 10);
+			this.radioButtonSquareY.Name = "radioButtonSquareY";
+			this.radioButtonSquareY.Size = new System.Drawing.Size(59, 17);
+			this.radioButtonSquareY.TabIndex = 0;
+			this.radioButtonSquareY.Text = "Square";
+			this.radioButtonSquareY.UseVisualStyleBackColor = true;
+			this.radioButtonSquareY.CheckedChanged += new System.EventHandler(this.radioButtonSignalY_CheckedChanged);
+			// 
+			// label5
+			// 
+			this.label5.AutoSize = true;
+			this.label5.Location = new System.Drawing.Point(6, 47);
+			this.label5.Name = "label5";
+			this.label5.Size = new System.Drawing.Size(46, 13);
+			this.label5.TabIndex = 3;
+			this.label5.Text = "Signal Y";
 			// 
 			// panel3
 			// 
-			this.panel3.Controls.Add(this.radioButton1);
-			this.panel3.Controls.Add(this.radioButton2);
-			this.panel3.Controls.Add(this.radioButton3);
-			this.panel3.Controls.Add(this.radioButton4);
-			this.panel3.Controls.Add(this.radioButtonSquare2D);
-			this.panel3.Location = new System.Drawing.Point(48, 3);
+			this.panel3.Controls.Add(this.radioButtonConstantX);
+			this.panel3.Controls.Add(this.radioButtonRandomX);
+			this.panel3.Controls.Add(this.radioButtonSincX);
+			this.panel3.Controls.Add(this.radioButtonTriX);
+			this.panel3.Controls.Add(this.radioButtonSinusX);
+			this.panel3.Controls.Add(this.radioButtonSquareX);
+			this.panel3.Location = new System.Drawing.Point(65, 3);
 			this.panel3.Name = "panel3";
-			this.panel3.Size = new System.Drawing.Size(359, 34);
+			this.panel3.Size = new System.Drawing.Size(404, 34);
 			this.panel3.TabIndex = 4;
 			// 
-			// radioButton1
+			// radioButtonConstantX
 			// 
-			this.radioButton1.AutoSize = true;
-			this.radioButton1.Location = new System.Drawing.Point(255, 10);
-			this.radioButton1.Name = "radioButton1";
-			this.radioButton1.Size = new System.Drawing.Size(65, 17);
-			this.radioButton1.TabIndex = 0;
-			this.radioButton1.Text = "Random";
-			this.radioButton1.UseVisualStyleBackColor = true;
+			this.radioButtonConstantX.AutoSize = true;
+			this.radioButtonConstantX.Location = new System.Drawing.Point(3, 10);
+			this.radioButtonConstantX.Name = "radioButtonConstantX";
+			this.radioButtonConstantX.Size = new System.Drawing.Size(67, 17);
+			this.radioButtonConstantX.TabIndex = 0;
+			this.radioButtonConstantX.Text = "Constant";
+			this.radioButtonConstantX.UseVisualStyleBackColor = true;
+			this.radioButtonConstantX.CheckedChanged += new System.EventHandler(this.radioButtonSignalX_CheckedChanged);
 			// 
-			// radioButton2
+			// radioButtonRandomX
 			// 
-			this.radioButton2.AutoSize = true;
-			this.radioButton2.Location = new System.Drawing.Point(203, 10);
-			this.radioButton2.Name = "radioButton2";
-			this.radioButton2.Size = new System.Drawing.Size(46, 17);
-			this.radioButton2.TabIndex = 0;
-			this.radioButton2.Text = "Sinc";
-			this.radioButton2.UseVisualStyleBackColor = true;
+			this.radioButtonRandomX.AutoSize = true;
+			this.radioButtonRandomX.Location = new System.Drawing.Point(332, 10);
+			this.radioButtonRandomX.Name = "radioButtonRandomX";
+			this.radioButtonRandomX.Size = new System.Drawing.Size(65, 17);
+			this.radioButtonRandomX.TabIndex = 0;
+			this.radioButtonRandomX.Text = "Random";
+			this.radioButtonRandomX.UseVisualStyleBackColor = true;
+			this.radioButtonRandomX.CheckedChanged += new System.EventHandler(this.radioButtonSignalX_CheckedChanged);
 			// 
-			// radioButton3
+			// radioButtonSincX
 			// 
-			this.radioButton3.AutoSize = true;
-			this.radioButton3.Location = new System.Drawing.Point(125, 10);
-			this.radioButton3.Name = "radioButton3";
-			this.radioButton3.Size = new System.Drawing.Size(72, 17);
-			this.radioButton3.TabIndex = 0;
-			this.radioButton3.Text = "Triangular";
-			this.radioButton3.UseVisualStyleBackColor = true;
+			this.radioButtonSincX.AutoSize = true;
+			this.radioButtonSincX.Location = new System.Drawing.Point(280, 10);
+			this.radioButtonSincX.Name = "radioButtonSincX";
+			this.radioButtonSincX.Size = new System.Drawing.Size(46, 17);
+			this.radioButtonSincX.TabIndex = 0;
+			this.radioButtonSincX.Text = "Sinc";
+			this.radioButtonSincX.UseVisualStyleBackColor = true;
+			this.radioButtonSincX.CheckedChanged += new System.EventHandler(this.radioButtonSignalX_CheckedChanged);
 			// 
-			// radioButton4
+			// radioButtonTriX
 			// 
-			this.radioButton4.AutoSize = true;
-			this.radioButton4.Location = new System.Drawing.Point(68, 10);
-			this.radioButton4.Name = "radioButton4";
-			this.radioButton4.Size = new System.Drawing.Size(51, 17);
-			this.radioButton4.TabIndex = 0;
-			this.radioButton4.Text = "Sinus";
-			this.radioButton4.UseVisualStyleBackColor = true;
+			this.radioButtonTriX.AutoSize = true;
+			this.radioButtonTriX.Location = new System.Drawing.Point(202, 10);
+			this.radioButtonTriX.Name = "radioButtonTriX";
+			this.radioButtonTriX.Size = new System.Drawing.Size(72, 17);
+			this.radioButtonTriX.TabIndex = 0;
+			this.radioButtonTriX.Text = "Triangular";
+			this.radioButtonTriX.UseVisualStyleBackColor = true;
+			this.radioButtonTriX.CheckedChanged += new System.EventHandler(this.radioButtonSignalX_CheckedChanged);
 			// 
-			// radioButtonSquare2D
+			// radioButtonSinusX
 			// 
-			this.radioButtonSquare2D.AutoSize = true;
-			this.radioButtonSquare2D.Checked = true;
-			this.radioButtonSquare2D.Location = new System.Drawing.Point(3, 10);
-			this.radioButtonSquare2D.Name = "radioButtonSquare2D";
-			this.radioButtonSquare2D.Size = new System.Drawing.Size(59, 17);
-			this.radioButtonSquare2D.TabIndex = 0;
-			this.radioButtonSquare2D.TabStop = true;
-			this.radioButtonSquare2D.Text = "Square";
-			this.radioButtonSquare2D.UseVisualStyleBackColor = true;
+			this.radioButtonSinusX.AutoSize = true;
+			this.radioButtonSinusX.Location = new System.Drawing.Point(145, 10);
+			this.radioButtonSinusX.Name = "radioButtonSinusX";
+			this.radioButtonSinusX.Size = new System.Drawing.Size(51, 17);
+			this.radioButtonSinusX.TabIndex = 0;
+			this.radioButtonSinusX.Text = "Sinus";
+			this.radioButtonSinusX.UseVisualStyleBackColor = true;
+			this.radioButtonSinusX.CheckedChanged += new System.EventHandler(this.radioButtonSignalX_CheckedChanged);
+			// 
+			// radioButtonSquareX
+			// 
+			this.radioButtonSquareX.AutoSize = true;
+			this.radioButtonSquareX.Checked = true;
+			this.radioButtonSquareX.Location = new System.Drawing.Point(80, 10);
+			this.radioButtonSquareX.Name = "radioButtonSquareX";
+			this.radioButtonSquareX.Size = new System.Drawing.Size(59, 17);
+			this.radioButtonSquareX.TabIndex = 0;
+			this.radioButtonSquareX.TabStop = true;
+			this.radioButtonSquareX.Text = "Square";
+			this.radioButtonSquareX.UseVisualStyleBackColor = true;
+			this.radioButtonSquareX.CheckedChanged += new System.EventHandler(this.radioButtonSignalX_CheckedChanged);
 			// 
 			// label3
 			// 
 			this.label3.AutoSize = true;
 			this.label3.Location = new System.Drawing.Point(6, 15);
 			this.label3.Name = "label3";
-			this.label3.Size = new System.Drawing.Size(36, 13);
+			this.label3.Size = new System.Drawing.Size(46, 13);
 			this.label3.TabIndex = 3;
-			this.label3.Text = "Signal";
+			this.label3.Text = "Signal X";
 			// 
 			// imagePanel2D
 			// 
 			this.imagePanel2D.Bitmap = null;
-			this.imagePanel2D.Location = new System.Drawing.Point(6, 45);
+			this.imagePanel2D.Location = new System.Drawing.Point(6, 75);
 			this.imagePanel2D.MessageOnEmpty = null;
 			this.imagePanel2D.Name = "imagePanel2D";
 			this.imagePanel2D.Size = new System.Drawing.Size(1200, 600);
@@ -512,15 +664,6 @@
 			this.buttonReload.Text = "Reload";
 			this.buttonReload.UseVisualStyleBackColor = true;
 			this.buttonReload.Click += new System.EventHandler(this.buttonReload_Click);
-			// 
-			// labelDiff2D
-			// 
-			this.labelDiff2D.AutoSize = true;
-			this.labelDiff2D.Location = new System.Drawing.Point(502, 663);
-			this.labelDiff2D.Name = "labelDiff2D";
-			this.labelDiff2D.Size = new System.Drawing.Size(46, 13);
-			this.labelDiff2D.TabIndex = 7;
-			this.labelDiff2D.Text = "BISOU !";
 			// 
 			// FourierTestForm
 			// 
@@ -542,6 +685,8 @@
 			this.panel1.PerformLayout();
 			this.tabPage2D.ResumeLayout(false);
 			this.tabPage2D.PerformLayout();
+			this.panel4.ResumeLayout(false);
+			this.panel4.PerformLayout();
 			this.panel3.ResumeLayout(false);
 			this.panel3.PerformLayout();
 			this.ResumeLayout(false);
@@ -580,16 +725,27 @@
 		private System.Windows.Forms.CheckBox checkBoxGPU;
 		private System.Windows.Forms.CheckBox checkBoxUseFFTW;
 		private System.Windows.Forms.Panel panel3;
-		private System.Windows.Forms.RadioButton radioButton1;
-		private System.Windows.Forms.RadioButton radioButton2;
-		private System.Windows.Forms.RadioButton radioButton3;
-		private System.Windows.Forms.RadioButton radioButton4;
-		private System.Windows.Forms.RadioButton radioButtonSquare2D;
+		private System.Windows.Forms.RadioButton radioButtonRandomX;
+		private System.Windows.Forms.RadioButton radioButtonSincX;
+		private System.Windows.Forms.RadioButton radioButtonTriX;
+		private System.Windows.Forms.RadioButton radioButtonSinusX;
+		private System.Windows.Forms.RadioButton radioButtonSquareX;
 		private System.Windows.Forms.Label label3;
 		private System.Windows.Forms.Label label4;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlScaleU;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlScaleV;
 		private System.Windows.Forms.Label labelDiff2D;
+		private System.Windows.Forms.CheckBox checkBoxShowFFTWSpectrum;
+		private System.Windows.Forms.CheckBox checkBoxPipoOption;
+		private System.Windows.Forms.Panel panel4;
+		private System.Windows.Forms.RadioButton radioButtonRandomY;
+		private System.Windows.Forms.RadioButton radioButtonSincY;
+		private System.Windows.Forms.RadioButton radioButtonTriY;
+		private System.Windows.Forms.RadioButton radioButtonSinusY;
+		private System.Windows.Forms.RadioButton radioButtonSquareY;
+		private System.Windows.Forms.Label label5;
+		private System.Windows.Forms.RadioButton radioButtonConstantY;
+		private System.Windows.Forms.RadioButton radioButtonConstantX;
 	}
 }
 

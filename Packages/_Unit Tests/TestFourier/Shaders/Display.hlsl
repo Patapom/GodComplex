@@ -7,7 +7,7 @@ float3	PS( VS_IN _In ) : SV_TARGET0 {
 	float	U = float(_In.__Position.x) / _resolution.x;
 //return U;
 
-	float	signal = GenerateSignal( U, _signalFlags & 7 );
+	float	signal = GenerateSignal( U, _time, _signalFlags & 7 );
 	float2	spectrum = _texSpectrum[uint2( frac( 0.5 + U ) * _signalSize, 0 )];
 	float2	reconstructedSignal = _texReconstructedSignal[uint2( U * _signalSize, 0 )];
 

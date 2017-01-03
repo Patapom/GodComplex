@@ -39,24 +39,24 @@ uint	wang_hash( uint seed ) {
     return seed;
 }
 
-float	GenerateSignal( float t, uint _signalFlags ) {
-	float	r = 0.0;
+float	GenerateSignal( float t, float _time, uint _signalFlags ) {
+	float	r = 1.0;	// CONSTANT
 	switch ( _signalFlags ) {
-		case 0:	// SQUARE,
+		case 1:	// SQUARE,
 			r = 0.5 * sin( _time ) + (fmod( t + 0.2 * _time, 0.5 ) < 0.25 ? 0.5 : -0.5);
 			break;
-		case 1:	// SINE,
+		case 2:	// SINE,
 			r = cos( 4.0 * (1.001 + sin( _time )) * 2.0 * PI * t );
 			break;
-		case 2:	// SAW,
+		case 3:	// SAW,
 			r = 0.5 * sin( _time ) + (frac( 4.0 * t + 0.2 * _time ) - 0.5);
 			break;
-		case 3:	{ // SINC,
+		case 4:	{ // SINC,
 			float	a = 4.0 * (1.001 + sin( _time )) * 4.0 * PI * (t - 0.5);
 			r = abs(a) > 0.0 ? sin( a ) / a : 1.0;
 			break;
 		}
-		case 4:	// RANDOM,
+		case 5:	// RANDOM,
 			r = wang_hash( 491537.0 * (t + 0.2 * _time) ) / 4294967295.0 - 0.5;
 			break;
 	}
@@ -64,8 +64,11 @@ float	GenerateSignal( float t, uint _signalFlags ) {
 	return r;
 }
 
-float	GenerateSignal2D( float2 _UV, uint _signalFlags ) {
-	float	time = 0.0 * _time;
-	return cos( _signalScaleUV.x * 2.0 * PI * _UV.x + time )
-			* cos( _signalScaleUV.y * 2.0 * PI * _UV.y + time );
+float	GenerateSignal2D( float2 _UV, float2 _time, uint _signalFlagsX, uint _signalFlagsY ) {
+//	return cos( _signalScaleUV.x * 2.0 * PI * _UV.x + _time.x )
+//		 * cos( _signalScaleUV.y * 2.0 * PI * _UV.y + _time.y );
+
+	float	rx = GenerateSignal( _UV.x, _time.x, _signalFlagsX );
+	float	ry = GenerateSignal( _UV.y, _time.y, _signalFlagsY );
+	return rx * ry;
 }

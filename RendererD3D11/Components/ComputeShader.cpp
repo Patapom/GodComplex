@@ -100,7 +100,6 @@ ComputeShader::~ComputeShader() {
 	// Unregister as a watched shader
 	if ( !m_shaderFileName.IsEmpty() ) {
 		ms_WatchedShaders.Remove( m_shaderFileName );
-		delete[] m_shaderFileName;
 	}
 #endif
 
