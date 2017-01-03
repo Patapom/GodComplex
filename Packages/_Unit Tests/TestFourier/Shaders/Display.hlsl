@@ -24,6 +24,15 @@ spectrum *= 40.0;
 			color = float3( 0, 0.5, 1 );
 	}
 
+#if 1
+		// Draw real and imaginary values as combined colors
+		if (   (spectrum.x > 0.0 && UV.y > 0.0 && UV.y < spectrum.x)
+			|| (spectrum.x < 0.0 && UV.y < 0.0 && UV.y > spectrum.x) )
+			color += float3( 1, 0, 0 );
+		if (   (spectrum.y > 0.0 && UV.y > 0.0 && UV.y < spectrum.y)
+			|| (spectrum.y < 0.0 && UV.y < 0.0 && UV.y > spectrum.y) )
+			color += float3( 0, 0, 1 );
+#else
 	if ( (uint(_In.__Position.x) & 1) == 0 ) {
 		// Even columns: draw real values
 		if (   (spectrum.x > 0.0 && UV.y > 0.0 && UV.y < spectrum.x)
@@ -35,6 +44,7 @@ spectrum *= 40.0;
 			|| (spectrum.y < 0.0 && UV.y < 0.0 && UV.y > spectrum.y) )
 			color = float3( 0, 0, 1 );
 	}
+#endif
 
 	return color;
 }

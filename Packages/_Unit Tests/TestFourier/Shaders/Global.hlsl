@@ -11,6 +11,7 @@ cbuffer	CBDisplay : register( b0 ) {
 	uint		_signalSize;
 	uint		_signalFlags;
 	float		_time;
+	float2		_signalScaleUV;
 }
 
 SamplerState LinearClamp	: register( s0 );
@@ -61,4 +62,10 @@ float	GenerateSignal( float t, uint _signalFlags ) {
 	}
 
 	return r;
+}
+
+float	GenerateSignal2D( float2 _UV, uint _signalFlags ) {
+	float	time = 0.0 * _time;
+	return cos( _signalScaleUV.x * 2.0 * PI * _UV.x + time )
+			* cos( _signalScaleUV.y * 2.0 * PI * _UV.y + time );
 }

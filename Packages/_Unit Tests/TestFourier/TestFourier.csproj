@@ -110,6 +110,10 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\Cirrus.Utility\Utility.csproj">
+      <Project>{9a67863f-d886-41a5-a8d1-04ba1379b097}</Project>
+      <Name>Utility</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\FFTWLib\FFTWLib.csproj">
       <Project>{bea875b8-e28a-49c5-8e7e-6512da65f7e1}</Project>
       <Name>FFTWLib</Name>

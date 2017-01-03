@@ -106,11 +106,8 @@ void	CS__1to256( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : SV_GROUPTHR
 	FetchAndMix( 7, index, frequency );
 	SYNC
 
-	float	factor = _normalizationFirstPass;
-//	float	factor = 1.0;//_sign < 0.0 ? 1.0 / 256.0 : 1.0;
-
-	_texOut[uint2(2*_dispatchThreadID.x+0, 0)] = factor * gs_temp[2*index+0];
-	_texOut[uint2(2*_dispatchThreadID.x+1, 0)] = factor * gs_temp[2*index+1];
+	_texOut[uint2(2*_dispatchThreadID.x+0, 0)] = _normalizationFirstPass * gs_temp[2*index+0];
+	_texOut[uint2(2*_dispatchThreadID.x+1, 0)] = _normalizationFirstPass * gs_temp[2*index+1];
 }
 
 // Applies FFT from stage 8 (size 256) to stage 9 (size 512)

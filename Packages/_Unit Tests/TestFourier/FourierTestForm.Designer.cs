@@ -56,6 +56,9 @@
 			this.label1 = new System.Windows.Forms.Label();
 			this.imagePanel = new TestFourier.ImagePanel();
 			this.tabPage2D = new System.Windows.Forms.TabPage();
+			this.label4 = new System.Windows.Forms.Label();
+			this.floatTrackbarControlScaleV = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlScaleU = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.panel3 = new System.Windows.Forms.Panel();
 			this.radioButton1 = new System.Windows.Forms.RadioButton();
 			this.radioButton2 = new System.Windows.Forms.RadioButton();
@@ -122,6 +125,8 @@
 			// checkBoxGPU
 			// 
 			this.checkBoxGPU.AutoSize = true;
+			this.checkBoxGPU.Checked = true;
+			this.checkBoxGPU.CheckState = System.Windows.Forms.CheckState.Checked;
 			this.checkBoxGPU.Font = new System.Drawing.Font("Microsoft Sans Serif", 11.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
 			this.checkBoxGPU.Location = new System.Drawing.Point(862, 10);
 			this.checkBoxGPU.Name = "checkBoxGPU";
@@ -366,6 +371,9 @@
 			// 
 			// tabPage2D
 			// 
+			this.tabPage2D.Controls.Add(this.label4);
+			this.tabPage2D.Controls.Add(this.floatTrackbarControlScaleV);
+			this.tabPage2D.Controls.Add(this.floatTrackbarControlScaleU);
 			this.tabPage2D.Controls.Add(this.panel3);
 			this.tabPage2D.Controls.Add(this.label3);
 			this.tabPage2D.Controls.Add(this.imagePanel2D);
@@ -376,6 +384,39 @@
 			this.tabPage2D.TabIndex = 1;
 			this.tabPage2D.Text = "FFT 2D";
 			this.tabPage2D.UseVisualStyleBackColor = true;
+			// 
+			// label4
+			// 
+			this.label4.AutoSize = true;
+			this.label4.Location = new System.Drawing.Point(7, 663);
+			this.label4.Name = "label4";
+			this.label4.Size = new System.Drawing.Size(52, 13);
+			this.label4.TabIndex = 6;
+			this.label4.Text = "Scale UV";
+			// 
+			// floatTrackbarControlScaleV
+			// 
+			this.floatTrackbarControlScaleV.Location = new System.Drawing.Point(271, 659);
+			this.floatTrackbarControlScaleV.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlScaleV.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlScaleV.Name = "floatTrackbarControlScaleV";
+			this.floatTrackbarControlScaleV.RangeMin = 0F;
+			this.floatTrackbarControlScaleV.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlScaleV.TabIndex = 5;
+			this.floatTrackbarControlScaleV.Value = 0F;
+			this.floatTrackbarControlScaleV.VisibleRangeMax = 8F;
+			// 
+			// floatTrackbarControlScaleU
+			// 
+			this.floatTrackbarControlScaleU.Location = new System.Drawing.Point(65, 659);
+			this.floatTrackbarControlScaleU.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlScaleU.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlScaleU.Name = "floatTrackbarControlScaleU";
+			this.floatTrackbarControlScaleU.RangeMin = 0F;
+			this.floatTrackbarControlScaleU.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlScaleU.TabIndex = 5;
+			this.floatTrackbarControlScaleU.Value = 1F;
+			this.floatTrackbarControlScaleU.VisibleRangeMax = 8F;
 			// 
 			// panel3
 			// 
@@ -534,6 +575,9 @@
 		private System.Windows.Forms.RadioButton radioButton4;
 		private System.Windows.Forms.RadioButton radioButtonSquare2D;
 		private System.Windows.Forms.Label label3;
+		private System.Windows.Forms.Label label4;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlScaleU;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlScaleV;
 	}
 }
 

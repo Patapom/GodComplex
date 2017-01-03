@@ -130,7 +130,7 @@ namespace SharpMath.FFT {
 			if ( m_POT < 8 || m_POT > 12 )
 				throw new Exception( "GPU FFT implementation only supports the following sizes: { 256, 512, 1024, 2048, 4096 }!" );
 
-// Ensure permutation for proper FFT are _always_ a bit-reversal pattern!
+// Ensure permutations for FFT are _always_ a bit-reversal pattern!
 // for ( int i=0; i < m_size; i++ ) {
 // 	uint	j = PermutationTables.ReverseBits( (uint) i, m_POT );
 // 	if ( j != PermutationTables.ms_tables[m_POT][i] )
@@ -306,7 +306,7 @@ namespace SharpMath.FFT {
 		}
 
 		/// <summary>
-		/// Directly applies the FFT assuming the input buffer is filled with swizzled data
+		/// Directly applies the FFT to the input buffer
 		/// </summary>
 		/// <param name="_sign">Use -1 for forward FFT (temporal->frequential) and +1 for backward FFT (frequential->temporal)</param>
 		public void	FFT_GPUInOut( float _sign ) {

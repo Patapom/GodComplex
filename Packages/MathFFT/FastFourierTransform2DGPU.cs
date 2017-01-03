@@ -88,7 +88,7 @@ namespace SharpMath.FFT {
 
 		ConstantBuffer< CB >	m_CB;
 
-		ComputeShader			m_CS__1to256;
+		ComputeShader			m_CS__1to64;
 		ComputeShader			m_CS__Remainder;
 
 		Texture2D				m_texBufferIn;		// Texture that will contain the input signal/spectrum
@@ -127,36 +127,29 @@ namespace SharpMath.FFT {
 			m_POT = (int) Math.Floor( fPOT );
 			if ( fPOT != m_POT )
 				throw new Exception( "Signal size is not a Power Of Two!" );
-			if ( m_POT < 8 || m_POT > 12 )
-				throw new Exception( "GPU FFT implementation only supports the following sizes: { 256, 512, 1024, 2048, 4096 }!" );
-
-// Ensure permutation for proper FFT are _always_ a bit-reversal pattern!
-// for ( int i=0; i < m_size; i++ ) {
-// 	uint	j = PermutationTables.ReverseBits( (uint) i, m_POT );
-// 	if ( j != PermutationTables.ms_tables[m_POT][i] )
-// 		throw new Exception( "RHA!" );
-// }
+			if ( m_POT < 6 || m_POT > 12 )
+				throw new Exception( "GPU FFT implementation only supports the following sizes: { 64, 128, 256, 512, 1024, 2048, 4096 }!" );
 
 			// Initialize DX stuff
 			m_device = _device;
 			m_CB = new ConstantBuffer<CB>( m_device, 0 );
-			m_texBufferIn = new Texture2D( m_device, (uint) m_size, 1, 1, 1, PIXEL_FORMAT.RG32_FLOAT, false, true, null );
-			m_texBufferOut = new Texture2D( m_device, (uint) m_size, 1, 1, 1, PIXEL_FORMAT.RG32_FLOAT, false, true, null );
-			m_texBufferCPU = new Texture2D( m_device, (uint) m_size, 1, 1, 1, PIXEL_FORMAT.RG32_FLOAT, true, true, null );
+			m_texBufferIn = new Texture2D( m_device, (uint) m_size, (uint) m_size, 1, 1, PIXEL_FORMAT.RG32_FLOAT, false, true, null );
+			m_texBufferOut = new Texture2D( m_device, (uint) m_size, (uint) m_size, 1, 1, PIXEL_FORMAT.RG32_FLOAT, false, true, null );
+			m_texBufferCPU = new Texture2D( m_device, (uint) m_size, (uint) m_size, 1, 1, PIXEL_FORMAT.RG32_FLOAT, true, true, null );
 
 			try {
 				#if DEBUG
 //					FileServer	server = new FileServer( Properties.Resources.ResourceManager );
 					FileServer	server = new FileServer( new System.IO.DirectoryInfo( @"../../MathFFT/Shaders/" ) );
 
-					m_CS__1to256 = new ComputeShader( _device, new System.IO.FileInfo( @"./Shaders/FFT1D.hlsl" ), "CS__1to256", null, server );
-					switch ( m_POT ) {
-						case 8:  m_CS__Remainder = null; break;
-						case 9:  m_CS__Remainder = new ComputeShader( _device, new System.IO.FileInfo( @"./Shaders/FFT1D.hlsl" ), "CS__256to512", null, server ); break;
-						case 10: m_CS__Remainder = new ComputeShader( _device, new System.IO.FileInfo( @"./Shaders/FFT1D.hlsl" ), "CS__256to1024", null, server ); break;
-						case 11: m_CS__Remainder = new ComputeShader( _device, new System.IO.FileInfo( @"./Shaders/FFT1D.hlsl" ), "CS__256to2048", null, server ); break;
-						case 12: m_CS__Remainder = new ComputeShader( _device, new System.IO.FileInfo( @"./Shaders/FFT1D.hlsl" ), "CS__256to4096", null, server ); break;
-					}
+					m_CS__1to64 = new ComputeShader( _device, new System.IO.FileInfo( @"./Shaders/FFT2D.hlsl" ), "CS__1to64", null, server );
+// 					switch ( m_POT ) {
+// 						case 8:  m_CS__Remainder = null; break;
+// 						case 9:  m_CS__Remainder = new ComputeShader( _device, new System.IO.FileInfo( @"./Shaders/FFT1D.hlsl" ), "CS__256to512", null, server ); break;
+// 						case 10: m_CS__Remainder = new ComputeShader( _device, new System.IO.FileInfo( @"./Shaders/FFT1D.hlsl" ), "CS__256to1024", null, server ); break;
+// 						case 11: m_CS__Remainder = new ComputeShader( _device, new System.IO.FileInfo( @"./Shaders/FFT1D.hlsl" ), "CS__256to2048", null, server ); break;
+// 						case 12: m_CS__Remainder = new ComputeShader( _device, new System.IO.FileInfo( @"./Shaders/FFT1D.hlsl" ), "CS__256to4096", null, server ); break;
+// 					}
 				#else
 					using ( new ScopedForceShadersLoadFromBinary() ) {
 						TODO!
@@ -164,7 +157,7 @@ namespace SharpMath.FFT {
 				#endif
 			} catch ( Exception _e ) {
 				m_device = null;
-				throw new Exception( "An error occurred while creating FFT1D shaders!", _e );
+				throw new Exception( "An error occurred while creating FFT2D shaders!", _e );
 			}
 		}
 
@@ -173,7 +166,7 @@ namespace SharpMath.FFT {
 		public void Dispose() {
 			if ( m_CS__Remainder != null )
 				m_CS__Remainder.Dispose();
-			m_CS__1to256.Dispose();
+			m_CS__1to64.Dispose();
 			m_texBufferCPU.Dispose();
 			m_texBufferOut.Dispose();
 			m_texBufferIn.Dispose();
@@ -202,8 +195,8 @@ namespace SharpMath.FFT {
 		/// <returns>The output complex-valued spectrum of amplitudes for each frequency.
 		/// The spectrum of frequencies goes from [-N/2,N/2[ hertz, where N is the length of the input signal</returns>
 		/// <remarks>Throws an exception if signal size is not a power of two!</remarks>
-		public Complex[]	FFT_Forward( Complex[] _inputSignal ) {
-			Complex[] outputSpectrum = new Complex[_inputSignal.Length];
+		public Complex[,]	FFT_Forward( Complex[,] _inputSignal ) {
+			Complex[,] outputSpectrum = new Complex[_inputSignal.GetLength(0),_inputSignal.GetLength(1)];
 			FFT_Forward( _inputSignal, outputSpectrum );
 			return outputSpectrum;
 		}
@@ -215,10 +208,10 @@ namespace SharpMath.FFT {
 		/// <param name="_outputSpectrum">The output complex-valued spectrum of amplitudes for each frequency.
 		/// The spectrum of frequencies goes from [-N/2,N/2[ hertz, where N is the length of the input signal</param>
 		/// <remarks>Throws an exception if signal and spectrum sizes mismatch and if their size are not a power of two!</remarks>
-		public void	FFT_Forward( Complex[] _inputSignal, Complex[] _outputSpectrum ) {
-			if ( _inputSignal.Length != m_size )
+		public void	FFT_Forward( Complex[,] _inputSignal, Complex[,] _outputSpectrum ) {
+			if ( _inputSignal.GetLength(0) != m_size || _inputSignal.GetLength(1) != m_size )
 				throw new Exception( "Input signal size doesn't match value passed to Init()!" );
-			if ( _outputSpectrum.Length != m_size )
+			if ( _outputSpectrum.GetLength(0) != m_size || _outputSpectrum.GetLength(1) != m_size )
 				throw new Exception( "Output spectrum size doesn't match value passed to Init()!" );
 
 			FFT_CPUInOut( _inputSignal, _outputSpectrum, -1.0f );
@@ -245,8 +238,8 @@ namespace SharpMath.FFT {
 		/// <param name="_inputSpectrum">The input complex-valued spectrum of amplitudes for each frequency</param>
 		/// <returns>The output complex-valued signal</returns>
 		/// <remarks>Throws an exception if spectrum size is not a power of two!</remarks>
-		public Complex[]	FFT_Inverse( Complex[] _inputSpectrum ) {
-			Complex[] outputSignal = new Complex[_inputSpectrum.Length];
+		public Complex[,]	FFT_Inverse( Complex[,] _inputSpectrum ) {
+			Complex[,] outputSignal = new Complex[_inputSpectrum.GetLength(0),_inputSpectrum.GetLength(1)];
 			FFT_Inverse( _inputSpectrum, outputSignal );
 			return outputSignal;
 		}
@@ -257,10 +250,10 @@ namespace SharpMath.FFT {
 		/// <param name="_inputSpectrum">The input complex-valued spectrum of amplitudes for each frequency</param>
 		/// <param name="_outputSignal">The output signal of complex-valued amplitudes for each time sample</param>
 		/// <remarks>Throws an exception if signal and spectrum sizes mismatch and if their size are not a power of two!</remarks>
-		public void	FFT_Inverse( Complex[] _inputSpectrum, Complex[] _outputSignal ) {
-			if ( _inputSpectrum.Length != m_size )
+		public void	FFT_Inverse( Complex[,] _inputSpectrum, Complex[,] _outputSignal ) {
+			if ( _inputSpectrum.GetLength(0) != m_size || _inputSpectrum.GetLength(1) != m_size )
 				throw new Exception( "Input spectrum size doesn't match value passed to Init()!" );
-			if ( _outputSignal.Length != m_size )
+			if ( _outputSignal.GetLength(0) != m_size || _outputSignal.GetLength(1) != m_size )
 				throw new Exception( "Output signal size doesn't match value passed to Init()!" );
 
 			FFT_CPUInOut( _inputSpectrum, _outputSignal, 1.0f );
@@ -270,15 +263,17 @@ namespace SharpMath.FFT {
 
 		#region Common Code
 
-		private void	FFT_CPUInOut( Complex[] _input, Complex[] _output, float _sign ) {
+		private void	FFT_CPUInOut( Complex[,] _input, Complex[,] _output, float _sign ) {
 			try {
 				//////////////////////////////////////////////////////////////////////////
 				// Load initial content
 				PixelsBuffer			loadingBuffer = m_texBufferCPU.MapWrite( 0, 0 );
 				System.IO.BinaryWriter	W = loadingBuffer.OpenStreamWrite();
-				for ( int i=0; i < m_size; i++ ) {
-					W.Write( (float) _input[i].r );
-					W.Write( (float) _input[i].i );
+				for ( int Y=0; Y < m_size; Y++ ) {
+					for ( int X=0; X < m_size; X++ ) {
+						W.Write( (float) _input[X,Y].r );
+						W.Write( (float) _input[X,Y].i );
+					}
 				}
 				loadingBuffer.CloseStream();
 				m_texBufferCPU.UnMap( loadingBuffer );
@@ -294,8 +289,10 @@ namespace SharpMath.FFT {
 
 				PixelsBuffer			resultBuffer = m_texBufferCPU.MapRead( 0, 0 );
 				System.IO.BinaryReader	R = resultBuffer.OpenStreamRead();
-				for ( int i=0; i < m_size; i++ ) {
-					_output[i].Set( R.ReadSingle(), R.ReadSingle() );
+				for ( int Y=0; Y < m_size; Y++ ) {
+					for ( int X=0; X < m_size; X++ ) {
+						_output[X,Y].Set( R.ReadSingle(), R.ReadSingle() );
+					}
 				}
 				resultBuffer.CloseStream();
 				m_texBufferCPU.UnMap( resultBuffer );
@@ -306,7 +303,7 @@ namespace SharpMath.FFT {
 		}
 
 		/// <summary>
-		/// Directly applies the FFT assuming the input buffer is filled with swizzled data
+		/// Directly applies the FFT to the input buffer
 		/// </summary>
 		/// <param name="_sign">Use -1 for forward FFT (temporal->frequential) and +1 for backward FFT (frequential->temporal)</param>
 		public void	FFT_GPUInOut( float _sign ) {
@@ -317,17 +314,17 @@ namespace SharpMath.FFT {
 				m_CB.m._normalizationFinal = _sign < 0.0f && m_CS__Remainder != null ? 1.0f / m_size : 1.0f;
 				m_CB.UpdateData();
 
-				if ( !m_CS__1to256.Use() )
+				if ( !m_CS__1to64.Use() )
 					throw new Exception( "Failed to use compute shader: did it compile without error?" );
 
 				m_texBufferIn.SetCS( 0 );
 				m_texBufferOut.SetCSUAV( 0 );
 
-				// • We're using groups of 128 threads
-				// • Each thread reads and writes 2 values
-				// ==> The total amount of elements processed by a group is thus 256
-				uint	groupsCount = (uint) (m_size >> 8);
-				m_CS__1to256.Dispatch( groupsCount, 1, 1 );
+				// • We're using groups of 8x8 threads
+				// • Each thread reads and writes 4 values
+				// ==> The total amount of elements processed by a group is thus 16x16
+				uint	groupsCount = (uint) (m_size >> 4);
+				m_CS__1to64.Dispatch( groupsCount, groupsCount, 1 );
 
 				m_texBufferIn.RemoveFromLastAssignedSlots();
 				m_texBufferOut.RemoveFromLastAssignedSlotUAV();

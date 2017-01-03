@@ -137,20 +137,9 @@ public:	 // METHODS
 	// Returns false if the shader cannot be used (like when it's in error state)
 	bool				Use();
 
-// 	// Static shader compilation helper (also used by ComputeShader)
-// 	static ID3DBlob*	CompileShader( ID3DInclude* _pInclude, const String& _pShaderFileName, const String& _pShaderCode, D3D_SHADER_MACRO* _pMacros, const String& _pEntryPoint, const String& _pTarget, bool _bComputeShader=false );
-// 
-// 
-// public:	// ID3DInclude Members
-// 
-//     STDMETHOD(Open)( THIS_ D3D_INCLUDE_TYPE _IncludeType, LPCSTR _pFileName, LPCVOID _pParentData, LPCVOID* _ppData, UINT* _pBytes );
-//     STDMETHOD(Close)( THIS_ LPCVOID _pData );
-
 private:
 	// Compiles all shaders from shader file
 	void			CompileShaders( ID3DBlob* _pVS=NULL, ID3DBlob* _pHS=NULL, ID3DBlob* _pDS=NULL, ID3DBlob* _pGS=NULL, ID3DBlob* _pPS=NULL );
-// 
-// 	const String&		CopyString( const String& _pShaderFileName ) const;
 
 	// Returns true if the shaders are safe to access (i.e. have been compiled and no other thread is accessing them)
 	// WARNING: Calling this will take ownership of the mutex if the function returns true ! You thus must call Unlock() later...
@@ -175,18 +164,6 @@ public:
 	// Helper to reload a compiled binary blob and build the material from it
 	static Shader*		CreateFromBinaryBlob( Device& _device, const BString& _shaderFileName, const IVertexFormatDescriptor& _format, D3D_SHADER_MACRO* _macros, const BString& _entryPointVS, const BString& _entryPointHS, const BString& _entryPointDS, const BString& _entryPointGS, const BString& _entryPointPS );
 
-
-// #ifdef SAVE_SHADER_BLOB_TO
-// 	static void			SaveBinaryBlob( const String& _pShaderFileName, D3D_SHADER_MACRO* _pMacros, const String& _pEntryPoint, ID3DBlob& _Blob );
-// 	static ID3DBlob*	LoadBinaryBlob( const String& _pShaderFileName, D3D_SHADER_MACRO* _pMacros, const String& _pEntryPoint );	// NOTE: It's the caller's responsibility to release the blob!
-// 	static void			BuildMacroSignature( char _pSignature[1024], D3D_SHADER_MACRO* _pMacros );
-// #endif
-// 
-// 	// After .FXBIN files are processed by the ConcatenateShader project (Tools.sln), they are packed together in
-// 	//	a single aggregate containing all the entry points for a given original HLSL file.
-// 	// Each binary blob (FXBIN file) can be retrieved using this helper method...
-// 	static ID3DBlob*	LoadBinaryBlobFromAggregate( const U8* _pAggregate, const String& _pEntryPoint );
-
 private:
 	//////////////////////////////////////////////////////////////////////////
 	// Shader auto-reload on change mechanism
@@ -195,7 +172,6 @@ private:
 #if defined(_DEBUG) || !defined(GODCOMPLEX)
 	static BaseLib::DictionaryString<Shader*>	ms_WatchedShaders;
 	time_t			m_LastShaderModificationTime;
-//	time_t			GetFileModTime( const BString& _fileName );
 #endif
 
 public:

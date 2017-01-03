@@ -28,7 +28,7 @@ namespace TestFourier
 			public uint		_signalSize;
 			public uint		_signalFlags;
 			public float	_time;
-			public float3	__pad;
+			public float2	_scaleUV;
 		}
 
 		enum SIGNAL_TYPE {
@@ -150,7 +150,7 @@ namespace TestFourier
  				m_CB_Main2D = new ConstantBuffer<CB_Main>( m_device2D, 0 );
  				m_Shader_GenerateSignal2D = new Shader( m_device2D, new System.IO.FileInfo( "./Shaders/GenerateSignal2D.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
  				m_Shader_Display2D = new Shader( m_device2D, new System.IO.FileInfo( "./Shaders/Display2D.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
-				m_texSpectrumCopy2D = new Texture2D( m_device1D, SIGNAL_SIZE_2D, SIGNAL_SIZE_2D, 1, 1, PIXEL_FORMAT.RG32_FLOAT, false, true, null );
+				m_texSpectrumCopy2D = new Texture2D( m_device2D, SIGNAL_SIZE_2D, SIGNAL_SIZE_2D, 1, 1, PIXEL_FORMAT.RG32_FLOAT, false, true, null );
 
 			} catch ( Exception ) {
 				MessageBox.Show( "Failed to initialize DirectX device! Can't execute GPU FFT!", "DirectX Error", MessageBoxButtons.OK, MessageBoxIcon.Error );
@@ -481,6 +481,7 @@ if ( checkBoxInvertFilter.Checked )
 // 			m_CB_Main2D.m._signalFlags |= checkBoxShowInput.Checked ? 0x100U : 0;
 // 			m_CB_Main2D.m._signalFlags |= checkBoxShowReconstructedSignal.Checked ? 0x200U : 0;
 			m_CB_Main2D.m._time = (float) time;
+			m_CB_Main2D.m._scaleUV.Set( floatTrackbarControlScaleU.Value, floatTrackbarControlScaleV.Value );
 
 			m_device2D.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
 

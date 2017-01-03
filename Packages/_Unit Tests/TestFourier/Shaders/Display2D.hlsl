@@ -4,8 +4,12 @@ Texture2D<float2>	_texSpectrum : register( t0 );
 Texture2D<float2>	_texReconstructedSignal : register( t1 );
 
 float3	PS( VS_IN _In ) : SV_TARGET0 {
-	float	UV = float(_In.__Position.xy) / _resolution;
-return float3( UV, 0 );
+	float2	UV = float2(_In.__Position.xy) / _resolution;
+//return float3( UV, 0 );
+
+
+//return GenerateSignal2D( UV, _signalFlags & 7 );
+return float3( _texSpectrum.SampleLevel( LinearClamp, UV, 0.0 ), 0 );
 
 //	float	signal = GenerateSignal( U, _signalFlags & 7 );
 //	float2	spectrum = _texSpectrum[uint2( frac( 0.5 + U ) * _signalSize, 0 )];

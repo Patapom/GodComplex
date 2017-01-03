@@ -121,11 +121,6 @@ private:
 
 	void			CompileShader( ID3DBlob* _pCS=NULL );
 
-// 	#ifndef GODCOMPLEX
-// 		const char*		GetShaderPath( const char* _pShaderFileName ) const;
-// 	#endif
-
-
 	// Returns true if the shaders are safe to access (i.e. have been compiled and no other thread is accessing them)
 	// WARNING: Calling this will take ownership of the mutex if the function returns true ! You thus must call Unlock() later...
 	bool			Lock() const;
@@ -158,7 +153,6 @@ private:
 	// The dictionary of watched materials
 	static BaseLib::DictionaryString<ComputeShader*>	ms_WatchedShaders;
 	time_t			m_LastShaderModificationTime;
-//	time_t			GetFileModTime( const char* _pFileName );
 #endif
 
 public:
