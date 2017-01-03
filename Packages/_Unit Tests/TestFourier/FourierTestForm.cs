@@ -82,6 +82,7 @@ namespace TestFourier
 		// Direct GPU feed
 		ConstantBuffer<CB_Main>		m_CB_Main1D;
 		Shader						m_Shader_GenerateSignal1D;
+		Shader						m_Shader_FilterSignal1D;
 		Shader						m_Shader_Display1D;
 		Texture2D					m_texSpectrumCopy;
 
@@ -95,6 +96,7 @@ namespace TestFourier
 
 		SIGNAL_TYPE		m_signalType2D_X = SIGNAL_TYPE.SQUARE;
 		SIGNAL_TYPE		m_signalType2D_Y = SIGNAL_TYPE.SQUARE;
+		FILTER_TYPE		m_filter2D = FILTER_TYPE.NONE;
 
 		// CPU Feed
 		// @TODO if necessary but I haven't implemented 2D CPU FFT
@@ -102,6 +104,7 @@ namespace TestFourier
 		// Direct GPU feed
 		ConstantBuffer<CB_Main>		m_CB_Main2D;
 		Shader						m_Shader_GenerateSignal2D;
+		Shader						m_Shader_FilterSignal2D;
 		Shader						m_Shader_Display2D;
 		Texture2D					m_texSpectrumCopy2D;
 
@@ -122,6 +125,7 @@ namespace TestFourier
 
 				m_CB_Main1D = new ConstantBuffer<CB_Main>( m_device1D, 0 );
 				m_Shader_GenerateSignal1D = new Shader( m_device1D, new System.IO.FileInfo( "./Shaders/GenerateSignal.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+				m_Shader_FilterSignal1D = new Shader( m_device1D, new System.IO.FileInfo( "./Shaders/FilterSignal.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 				m_Shader_Display1D = new Shader( m_device1D, new System.IO.FileInfo( "./Shaders/Display.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 				m_texSpectrumCopy = new Texture2D( m_device1D, SIGNAL_SIZE, 1, 1, 1, PIXEL_FORMAT.RG32_FLOAT, false, true, null );
 
@@ -151,6 +155,7 @@ namespace TestFourier
 
  				m_CB_Main2D = new ConstantBuffer<CB_Main>( m_device2D, 0 );
  				m_Shader_GenerateSignal2D = new Shader( m_device2D, new System.IO.FileInfo( "./Shaders/GenerateSignal2D.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+				m_Shader_FilterSignal2D = new Shader( m_device2D, new System.IO.FileInfo( "./Shaders/FilterSignal2D.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
  				m_Shader_Display2D = new Shader( m_device2D, new System.IO.FileInfo( "./Shaders/Display2D.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 				m_texSpectrumCopy2D = new Texture2D( m_device2D, SIGNAL_SIZE_2D, SIGNAL_SIZE_2D, 1, 1, PIXEL_FORMAT.RG32_FLOAT, false, true, null );
 
@@ -174,6 +179,7 @@ namespace TestFourier
 			if ( m_device2D != null ) {
 				m_texSpectrumCopy2D.Dispose();
 				m_Shader_Display2D.Dispose();
+				m_Shader_FilterSignal2D.Dispose();
 				m_Shader_GenerateSignal2D.Dispose();
 				m_CB_Main2D.Dispose();
 
@@ -185,6 +191,7 @@ namespace TestFourier
 			if ( m_device1D != null ) {
 				m_texSpectrumCopy.Dispose();
 				m_Shader_Display1D.Dispose();
+				m_Shader_FilterSignal1D.Dispose();
 				m_Shader_GenerateSignal1D.Dispose();
 				m_CB_Main1D.Dispose();
 
@@ -292,6 +299,7 @@ namespace TestFourier
 			m_CB_Main1D.m._signalFlags = (uint) m_signalType1D;
 			m_CB_Main1D.m._signalFlags |= checkBoxShowInput.Checked ? 0x100U : 0;
 			m_CB_Main1D.m._signalFlags |= checkBoxShowReconstructedSignal.Checked ? 0x200U : 0;
+			m_CB_Main1D.m._signalFlags |= (uint) m_filter1D << 16;
 			m_CB_Main1D.m._time = (float) _time;
 
 			m_device1D.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
@@ -306,6 +314,17 @@ namespace TestFourier
 
 			// Apply FFT
 			m_FFT1D_GPU.FFT_GPUInOut( -1.0f );
+
+			// Filter signal
+			if ( m_filter1D != FILTER_TYPE.NONE && m_Shader_FilterSignal1D.Use() ) {
+				m_FFT1D_GPU.SwapBuffers();
+				m_FFT1D_GPU.Input.SetPS( 0 );
+				m_device1D.SetRenderTarget( m_FFT1D_GPU.Output, null );
+				m_CB_Main1D.UpdateData();
+				m_device1D.RenderFullscreenQuad( m_Shader_FilterSignal1D );
+				m_FFT1D_GPU.Input.RemoveFromLastAssignedSlots();
+				m_device1D.RemoveRenderTargets();
+			}
 
 			// Copy spectrum & swap buffers
 			m_texSpectrumCopy.CopyFrom( m_FFT1D_GPU.Output );
@@ -482,9 +501,10 @@ if ( checkBoxInvertFilter.Checked )
 			m_CB_Main2D.m._signalSize = (uint) SIGNAL_SIZE_2D;
 			m_CB_Main2D.m._signalFlags = (uint) m_signalType2D_X;
 			m_CB_Main2D.m._signalFlags |= (uint) m_signalType2D_Y << 4;
- 			m_CB_Main2D.m._signalFlags |= checkBoxShowFFTWSpectrum.Checked ? 0x100U : 0;
- 			m_CB_Main2D.m._signalFlags |= checkBoxPipoOption.Checked ? 0x200U : 0;
-			m_CB_Main2D.m._time = (float) time;
+ 			m_CB_Main2D.m._signalFlags |= (uint) ((radioButtonShowInitialSignal.Checked ? 0 : (radioButtonShowReconstructedSignal.Checked ? 1 : radioButtonShowSignalDiff.Checked ? 2 : 0)) << 8);
+ 			m_CB_Main2D.m._signalFlags |= checkBoxShowSignalMagnitude.Checked ? 0x400U : 0;
+ 			m_CB_Main2D.m._signalFlags |= (uint) m_filter2D << 16;
+			m_CB_Main2D.m._time = floatTrackbarControlTimeScale.Value * (float) time;
 			m_CB_Main2D.m._scaleUV.Set( floatTrackbarControlScaleU.Value, floatTrackbarControlScaleV.Value );
 
 			m_device2D.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
@@ -498,8 +518,19 @@ if ( checkBoxInvertFilter.Checked )
 			}
 
 			// Apply FFT
-//			m_FFT2D_GPU.FFT_GPUInOut( -1.0f );
-CheckAgainstFFTW();
+			m_FFT2D_GPU.FFT_GPUInOut( -1.0f );
+//CheckAgainstFFTW();
+
+			// Filter signal
+			if ( m_filter2D != FILTER_TYPE.NONE && m_Shader_FilterSignal2D.Use() ) {
+				m_FFT2D_GPU.SwapBuffers();
+				m_FFT2D_GPU.Input.SetPS( 0 );
+				m_device2D.SetRenderTarget( m_FFT2D_GPU.Output, null );
+				m_CB_Main2D.UpdateData();
+				m_device2D.RenderFullscreenQuad( m_Shader_FilterSignal2D );
+				m_FFT2D_GPU.Input.RemoveFromLastAssignedSlots();
+				m_device2D.RemoveRenderTargets();
+			}
 
 			// Copy spectrum & swap buffers
 			m_texSpectrumCopy2D.CopyFrom( m_FFT2D_GPU.Output );
@@ -514,8 +545,8 @@ CheckAgainstFFTW();
 				m_texSpectrumCopy2D.SetPS( 0 );
 //m_FFT2D_GPU.Input.SetPS( 0 );
 				m_FFT2D_GPU.Output.SetPS( 1 );
-				if ( m_FFTW2D_Output != null )
-					m_FFTW2D_Output.SetPS( 2 );
+// 				if ( m_FFTW2D_Output != null )
+// 					m_FFTW2D_Output.SetPS( 2 );
 
 				m_CB_Main2D.UpdateData();
 
@@ -672,6 +703,23 @@ CheckAgainstFFTW();
 				m_signalType2D_Y = SIGNAL_TYPE.SINC;
 			else if ( radioButtonRandomY.Checked )
 				m_signalType2D_Y = SIGNAL_TYPE.RANDOM;
+		}
+
+		private void radioButtonFilterNone2D_CheckedChanged( object sender, EventArgs e ) {
+			if ( radioButtonFilterNone2D.Checked )
+				m_filter2D = FILTER_TYPE.NONE;
+			else if ( radioButtonFilterCutLarge2D.Checked )
+				m_filter2D = FILTER_TYPE.CUT_LARGE;
+			else if ( radioButtonFilterCutMedium2D.Checked )
+				m_filter2D = FILTER_TYPE.CUT_MEDIUM;
+			else if ( radioButtonFilterCutShort2D.Checked )
+				m_filter2D = FILTER_TYPE.CUT_SHORT;
+			else if ( radioButtonFilterExp2D.Checked )
+				m_filter2D = FILTER_TYPE.EXP;
+			else if ( radioButtonFilterGaussian2D.Checked )
+				m_filter2D = FILTER_TYPE.GAUSSIAN;
+			else if ( radioButtonFilterInverse2D.Checked )
+				m_filter2D = FILTER_TYPE.INVERSE;
 		}
 	}
 }

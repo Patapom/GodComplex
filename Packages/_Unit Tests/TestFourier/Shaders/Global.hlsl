@@ -68,7 +68,12 @@ float	GenerateSignal2D( float2 _UV, float2 _time, uint _signalFlagsX, uint _sign
 //	return cos( _signalScaleUV.x * 2.0 * PI * _UV.x + _time.x )
 //		 * cos( _signalScaleUV.y * 2.0 * PI * _UV.y + _time.y );
 
-	float	rx = GenerateSignal( _UV.x, _time.x, _signalFlagsX );
-	float	ry = GenerateSignal( _UV.y, _time.y, _signalFlagsY );
+	float2	time = _time * float2( 1.0, 0.97856756 );
+
+//	time *= _signalScaleUV;
+	_UV *= _signalScaleUV;
+
+	float	rx = GenerateSignal( _UV.x, time.x, _signalFlagsX );
+	float	ry = GenerateSignal( _UV.y, time.y, _signalFlagsY );
 	return rx * ry;
 }

@@ -140,6 +140,8 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Shaders\FilterSignal2D.hlsl" />
+    <Content Include="Shaders\FilterSignal.hlsl" />
     <Content Include="Shaders\Display2D.hlsl" />
     <Content Include="Shaders\GenerateSignal2D.hlsl" />
     <Content Include="Shaders\Global.hlsl" />

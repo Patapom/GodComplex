@@ -54,10 +54,12 @@
 			this.radioButtonSine = new System.Windows.Forms.RadioButton();
 			this.radioButtonSquare = new System.Windows.Forms.RadioButton();
 			this.label1 = new System.Windows.Forms.Label();
-			this.imagePanel = new TestFourier.ImagePanel();
 			this.tabPage2D = new System.Windows.Forms.TabPage();
-			this.checkBoxPipoOption = new System.Windows.Forms.CheckBox();
-			this.checkBoxShowFFTWSpectrum = new System.Windows.Forms.CheckBox();
+			this.panel5 = new System.Windows.Forms.Panel();
+			this.radioButtonShowSignalDiff = new System.Windows.Forms.RadioButton();
+			this.radioButtonShowReconstructedSignal = new System.Windows.Forms.RadioButton();
+			this.radioButtonShowInitialSignal = new System.Windows.Forms.RadioButton();
+			this.checkBoxShowSignalMagnitude = new System.Windows.Forms.CheckBox();
 			this.labelDiff2D = new System.Windows.Forms.Label();
 			this.label4 = new System.Windows.Forms.Label();
 			this.floatTrackbarControlScaleV = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
@@ -78,15 +80,29 @@
 			this.radioButtonSinusX = new System.Windows.Forms.RadioButton();
 			this.radioButtonSquareX = new System.Windows.Forms.RadioButton();
 			this.label3 = new System.Windows.Forms.Label();
-			this.imagePanel2D = new TestFourier.ImagePanel();
 			this.buttonReload = new System.Windows.Forms.Button();
+			this.panel6 = new System.Windows.Forms.Panel();
+			this.radioButtonFilterInverse2D = new System.Windows.Forms.RadioButton();
+			this.radioButtonFilterGaussian2D = new System.Windows.Forms.RadioButton();
+			this.radioButtonFilterExp2D = new System.Windows.Forms.RadioButton();
+			this.radioButtonFilterCutShort2D = new System.Windows.Forms.RadioButton();
+			this.radioButtonFilterCutMedium2D = new System.Windows.Forms.RadioButton();
+			this.radioButtonFilterCutLarge2D = new System.Windows.Forms.RadioButton();
+			this.radioButtonFilterNone2D = new System.Windows.Forms.RadioButton();
+			this.label6 = new System.Windows.Forms.Label();
+			this.imagePanel = new TestFourier.ImagePanel();
+			this.imagePanel2D = new TestFourier.ImagePanel();
+			this.floatTrackbarControlTimeScale = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.label7 = new System.Windows.Forms.Label();
 			this.tabControl1.SuspendLayout();
 			this.tabPage1D.SuspendLayout();
 			this.panel2.SuspendLayout();
 			this.panel1.SuspendLayout();
 			this.tabPage2D.SuspendLayout();
+			this.panel5.SuspendLayout();
 			this.panel4.SuspendLayout();
 			this.panel3.SuspendLayout();
+			this.panel6.SuspendLayout();
 			this.SuspendLayout();
 			// 
 			// timer1
@@ -372,23 +388,17 @@
 			this.label1.TabIndex = 1;
 			this.label1.Text = "Signal";
 			// 
-			// imagePanel
-			// 
-			this.imagePanel.Bitmap = null;
-			this.imagePanel.Location = new System.Drawing.Point(6, 43);
-			this.imagePanel.MessageOnEmpty = null;
-			this.imagePanel.Name = "imagePanel";
-			this.imagePanel.Size = new System.Drawing.Size(1000, 500);
-			this.imagePanel.SkipPaint = false;
-			this.imagePanel.TabIndex = 0;
-			// 
 			// tabPage2D
 			// 
-			this.tabPage2D.Controls.Add(this.checkBoxPipoOption);
-			this.tabPage2D.Controls.Add(this.checkBoxShowFFTWSpectrum);
+			this.tabPage2D.Controls.Add(this.panel6);
+			this.tabPage2D.Controls.Add(this.label6);
+			this.tabPage2D.Controls.Add(this.panel5);
+			this.tabPage2D.Controls.Add(this.checkBoxShowSignalMagnitude);
 			this.tabPage2D.Controls.Add(this.labelDiff2D);
+			this.tabPage2D.Controls.Add(this.label7);
 			this.tabPage2D.Controls.Add(this.label4);
 			this.tabPage2D.Controls.Add(this.floatTrackbarControlScaleV);
+			this.tabPage2D.Controls.Add(this.floatTrackbarControlTimeScale);
 			this.tabPage2D.Controls.Add(this.floatTrackbarControlScaleU);
 			this.tabPage2D.Controls.Add(this.panel4);
 			this.tabPage2D.Controls.Add(this.label5);
@@ -403,30 +413,64 @@
 			this.tabPage2D.Text = "FFT 2D";
 			this.tabPage2D.UseVisualStyleBackColor = true;
 			// 
-			// checkBoxPipoOption
+			// panel5
 			// 
-			this.checkBoxPipoOption.AutoSize = true;
-			this.checkBoxPipoOption.Location = new System.Drawing.Point(749, 14);
-			this.checkBoxPipoOption.Name = "checkBoxPipoOption";
-			this.checkBoxPipoOption.Size = new System.Drawing.Size(81, 17);
-			this.checkBoxPipoOption.TabIndex = 8;
-			this.checkBoxPipoOption.Text = "Pipo Option";
-			this.checkBoxPipoOption.UseVisualStyleBackColor = true;
+			this.panel5.Controls.Add(this.radioButtonShowSignalDiff);
+			this.panel5.Controls.Add(this.radioButtonShowReconstructedSignal);
+			this.panel5.Controls.Add(this.radioButtonShowInitialSignal);
+			this.panel5.Location = new System.Drawing.Point(636, 3);
+			this.panel5.Name = "panel5";
+			this.panel5.Size = new System.Drawing.Size(570, 34);
+			this.panel5.TabIndex = 9;
 			// 
-			// checkBoxShowFFTWSpectrum
+			// radioButtonShowSignalDiff
 			// 
-			this.checkBoxShowFFTWSpectrum.AutoSize = true;
-			this.checkBoxShowFFTWSpectrum.Location = new System.Drawing.Point(595, 14);
-			this.checkBoxShowFFTWSpectrum.Name = "checkBoxShowFFTWSpectrum";
-			this.checkBoxShowFFTWSpectrum.Size = new System.Drawing.Size(134, 17);
-			this.checkBoxShowFFTWSpectrum.TabIndex = 8;
-			this.checkBoxShowFFTWSpectrum.Text = "Show FFTW Spectrum";
-			this.checkBoxShowFFTWSpectrum.UseVisualStyleBackColor = true;
+			this.radioButtonShowSignalDiff.AutoSize = true;
+			this.radioButtonShowSignalDiff.Location = new System.Drawing.Point(284, 10);
+			this.radioButtonShowSignalDiff.Name = "radioButtonShowSignalDiff";
+			this.radioButtonShowSignalDiff.Size = new System.Drawing.Size(162, 17);
+			this.radioButtonShowSignalDiff.TabIndex = 2;
+			this.radioButtonShowSignalDiff.TabStop = true;
+			this.radioButtonShowSignalDiff.Text = "Show Signal Difference (x10)";
+			this.radioButtonShowSignalDiff.UseVisualStyleBackColor = true;
+			// 
+			// radioButtonShowReconstructedSignal
+			// 
+			this.radioButtonShowReconstructedSignal.AutoSize = true;
+			this.radioButtonShowReconstructedSignal.Checked = true;
+			this.radioButtonShowReconstructedSignal.Location = new System.Drawing.Point(121, 10);
+			this.radioButtonShowReconstructedSignal.Name = "radioButtonShowReconstructedSignal";
+			this.radioButtonShowReconstructedSignal.Size = new System.Drawing.Size(157, 17);
+			this.radioButtonShowReconstructedSignal.TabIndex = 1;
+			this.radioButtonShowReconstructedSignal.TabStop = true;
+			this.radioButtonShowReconstructedSignal.Text = "Show Reconstructed Signal";
+			this.radioButtonShowReconstructedSignal.UseVisualStyleBackColor = true;
+			// 
+			// radioButtonShowInitialSignal
+			// 
+			this.radioButtonShowInitialSignal.AutoSize = true;
+			this.radioButtonShowInitialSignal.Location = new System.Drawing.Point(4, 10);
+			this.radioButtonShowInitialSignal.Name = "radioButtonShowInitialSignal";
+			this.radioButtonShowInitialSignal.Size = new System.Drawing.Size(111, 17);
+			this.radioButtonShowInitialSignal.TabIndex = 0;
+			this.radioButtonShowInitialSignal.TabStop = true;
+			this.radioButtonShowInitialSignal.Text = "Show Initial Signal";
+			this.radioButtonShowInitialSignal.UseVisualStyleBackColor = true;
+			// 
+			// checkBoxShowSignalMagnitude
+			// 
+			this.checkBoxShowSignalMagnitude.AutoSize = true;
+			this.checkBoxShowSignalMagnitude.Location = new System.Drawing.Point(524, 14);
+			this.checkBoxShowSignalMagnitude.Name = "checkBoxShowSignalMagnitude";
+			this.checkBoxShowSignalMagnitude.Size = new System.Drawing.Size(106, 17);
+			this.checkBoxShowSignalMagnitude.TabIndex = 8;
+			this.checkBoxShowSignalMagnitude.Text = "Show Magnitude";
+			this.checkBoxShowSignalMagnitude.UseVisualStyleBackColor = true;
 			// 
 			// labelDiff2D
 			// 
 			this.labelDiff2D.AutoSize = true;
-			this.labelDiff2D.Location = new System.Drawing.Point(502, 688);
+			this.labelDiff2D.Location = new System.Drawing.Point(521, 47);
 			this.labelDiff2D.Name = "labelDiff2D";
 			this.labelDiff2D.Size = new System.Drawing.Size(46, 13);
 			this.labelDiff2D.TabIndex = 7;
@@ -435,7 +479,7 @@
 			// label4
 			// 
 			this.label4.AutoSize = true;
-			this.label4.Location = new System.Drawing.Point(7, 688);
+			this.label4.Location = new System.Drawing.Point(7, 685);
 			this.label4.Name = "label4";
 			this.label4.Size = new System.Drawing.Size(52, 13);
 			this.label4.TabIndex = 6;
@@ -443,24 +487,24 @@
 			// 
 			// floatTrackbarControlScaleV
 			// 
-			this.floatTrackbarControlScaleV.Location = new System.Drawing.Point(271, 684);
+			this.floatTrackbarControlScaleV.Location = new System.Drawing.Point(210, 681);
 			this.floatTrackbarControlScaleV.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlScaleV.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlScaleV.Name = "floatTrackbarControlScaleV";
 			this.floatTrackbarControlScaleV.RangeMin = 0F;
-			this.floatTrackbarControlScaleV.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlScaleV.Size = new System.Drawing.Size(140, 20);
 			this.floatTrackbarControlScaleV.TabIndex = 5;
 			this.floatTrackbarControlScaleV.Value = 6F;
 			this.floatTrackbarControlScaleV.VisibleRangeMax = 32F;
 			// 
 			// floatTrackbarControlScaleU
 			// 
-			this.floatTrackbarControlScaleU.Location = new System.Drawing.Point(65, 684);
+			this.floatTrackbarControlScaleU.Location = new System.Drawing.Point(65, 681);
 			this.floatTrackbarControlScaleU.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlScaleU.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlScaleU.Name = "floatTrackbarControlScaleU";
 			this.floatTrackbarControlScaleU.RangeMin = 0F;
-			this.floatTrackbarControlScaleU.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlScaleU.Size = new System.Drawing.Size(140, 20);
 			this.floatTrackbarControlScaleU.TabIndex = 5;
 			this.floatTrackbarControlScaleU.Value = 3F;
 			this.floatTrackbarControlScaleU.VisibleRangeMax = 32F;
@@ -645,6 +689,128 @@
 			this.label3.TabIndex = 3;
 			this.label3.Text = "Signal X";
 			// 
+			// buttonReload
+			// 
+			this.buttonReload.Location = new System.Drawing.Point(1205, 4);
+			this.buttonReload.Name = "buttonReload";
+			this.buttonReload.Size = new System.Drawing.Size(75, 23);
+			this.buttonReload.TabIndex = 2;
+			this.buttonReload.Text = "Reload";
+			this.buttonReload.UseVisualStyleBackColor = true;
+			this.buttonReload.Click += new System.EventHandler(this.buttonReload_Click);
+			// 
+			// panel6
+			// 
+			this.panel6.Controls.Add(this.radioButtonFilterInverse2D);
+			this.panel6.Controls.Add(this.radioButtonFilterGaussian2D);
+			this.panel6.Controls.Add(this.radioButtonFilterExp2D);
+			this.panel6.Controls.Add(this.radioButtonFilterCutShort2D);
+			this.panel6.Controls.Add(this.radioButtonFilterCutMedium2D);
+			this.panel6.Controls.Add(this.radioButtonFilterCutLarge2D);
+			this.panel6.Controls.Add(this.radioButtonFilterNone2D);
+			this.panel6.Location = new System.Drawing.Point(649, 675);
+			this.panel6.Name = "panel6";
+			this.panel6.Size = new System.Drawing.Size(557, 32);
+			this.panel6.TabIndex = 11;
+			// 
+			// radioButtonFilterInverse2D
+			// 
+			this.radioButtonFilterInverse2D.AutoSize = true;
+			this.radioButtonFilterInverse2D.Location = new System.Drawing.Point(460, 10);
+			this.radioButtonFilterInverse2D.Name = "radioButtonFilterInverse2D";
+			this.radioButtonFilterInverse2D.Size = new System.Drawing.Size(60, 17);
+			this.radioButtonFilterInverse2D.TabIndex = 0;
+			this.radioButtonFilterInverse2D.Text = "Inverse";
+			this.radioButtonFilterInverse2D.UseVisualStyleBackColor = true;
+			this.radioButtonFilterInverse2D.CheckedChanged += new System.EventHandler(this.radioButtonFilterNone2D_CheckedChanged);
+			// 
+			// radioButtonFilterGaussian2D
+			// 
+			this.radioButtonFilterGaussian2D.AutoSize = true;
+			this.radioButtonFilterGaussian2D.Location = new System.Drawing.Point(385, 10);
+			this.radioButtonFilterGaussian2D.Name = "radioButtonFilterGaussian2D";
+			this.radioButtonFilterGaussian2D.Size = new System.Drawing.Size(69, 17);
+			this.radioButtonFilterGaussian2D.TabIndex = 0;
+			this.radioButtonFilterGaussian2D.Text = "Gaussian";
+			this.radioButtonFilterGaussian2D.UseVisualStyleBackColor = true;
+			this.radioButtonFilterGaussian2D.CheckedChanged += new System.EventHandler(this.radioButtonFilterNone2D_CheckedChanged);
+			// 
+			// radioButtonFilterExp2D
+			// 
+			this.radioButtonFilterExp2D.AutoSize = true;
+			this.radioButtonFilterExp2D.Location = new System.Drawing.Point(299, 10);
+			this.radioButtonFilterExp2D.Name = "radioButtonFilterExp2D";
+			this.radioButtonFilterExp2D.Size = new System.Drawing.Size(80, 17);
+			this.radioButtonFilterExp2D.TabIndex = 0;
+			this.radioButtonFilterExp2D.Text = "Exponential";
+			this.radioButtonFilterExp2D.UseVisualStyleBackColor = true;
+			this.radioButtonFilterExp2D.CheckedChanged += new System.EventHandler(this.radioButtonFilterNone2D_CheckedChanged);
+			// 
+			// radioButtonFilterCutShort2D
+			// 
+			this.radioButtonFilterCutShort2D.AutoSize = true;
+			this.radioButtonFilterCutShort2D.Location = new System.Drawing.Point(224, 10);
+			this.radioButtonFilterCutShort2D.Name = "radioButtonFilterCutShort2D";
+			this.radioButtonFilterCutShort2D.Size = new System.Drawing.Size(69, 17);
+			this.radioButtonFilterCutShort2D.TabIndex = 0;
+			this.radioButtonFilterCutShort2D.Text = "Cut Short";
+			this.radioButtonFilterCutShort2D.UseVisualStyleBackColor = true;
+			this.radioButtonFilterCutShort2D.CheckedChanged += new System.EventHandler(this.radioButtonFilterNone2D_CheckedChanged);
+			// 
+			// radioButtonFilterCutMedium2D
+			// 
+			this.radioButtonFilterCutMedium2D.AutoSize = true;
+			this.radioButtonFilterCutMedium2D.Location = new System.Drawing.Point(137, 10);
+			this.radioButtonFilterCutMedium2D.Name = "radioButtonFilterCutMedium2D";
+			this.radioButtonFilterCutMedium2D.Size = new System.Drawing.Size(81, 17);
+			this.radioButtonFilterCutMedium2D.TabIndex = 0;
+			this.radioButtonFilterCutMedium2D.Text = "Cut Medium";
+			this.radioButtonFilterCutMedium2D.UseVisualStyleBackColor = true;
+			this.radioButtonFilterCutMedium2D.CheckedChanged += new System.EventHandler(this.radioButtonFilterNone2D_CheckedChanged);
+			// 
+			// radioButtonFilterCutLarge2D
+			// 
+			this.radioButtonFilterCutLarge2D.AutoSize = true;
+			this.radioButtonFilterCutLarge2D.Location = new System.Drawing.Point(60, 10);
+			this.radioButtonFilterCutLarge2D.Name = "radioButtonFilterCutLarge2D";
+			this.radioButtonFilterCutLarge2D.Size = new System.Drawing.Size(71, 17);
+			this.radioButtonFilterCutLarge2D.TabIndex = 0;
+			this.radioButtonFilterCutLarge2D.Text = "Cut Large";
+			this.radioButtonFilterCutLarge2D.UseVisualStyleBackColor = true;
+			this.radioButtonFilterCutLarge2D.CheckedChanged += new System.EventHandler(this.radioButtonFilterNone2D_CheckedChanged);
+			// 
+			// radioButtonFilterNone2D
+			// 
+			this.radioButtonFilterNone2D.AutoSize = true;
+			this.radioButtonFilterNone2D.Checked = true;
+			this.radioButtonFilterNone2D.Location = new System.Drawing.Point(3, 10);
+			this.radioButtonFilterNone2D.Name = "radioButtonFilterNone2D";
+			this.radioButtonFilterNone2D.Size = new System.Drawing.Size(51, 17);
+			this.radioButtonFilterNone2D.TabIndex = 0;
+			this.radioButtonFilterNone2D.TabStop = true;
+			this.radioButtonFilterNone2D.Text = "None";
+			this.radioButtonFilterNone2D.UseVisualStyleBackColor = true;
+			this.radioButtonFilterNone2D.CheckedChanged += new System.EventHandler(this.radioButtonFilterNone2D_CheckedChanged);
+			// 
+			// label6
+			// 
+			this.label6.AutoSize = true;
+			this.label6.Location = new System.Drawing.Point(607, 687);
+			this.label6.Name = "label6";
+			this.label6.Size = new System.Drawing.Size(29, 13);
+			this.label6.TabIndex = 10;
+			this.label6.Text = "Filter";
+			// 
+			// imagePanel
+			// 
+			this.imagePanel.Bitmap = null;
+			this.imagePanel.Location = new System.Drawing.Point(6, 43);
+			this.imagePanel.MessageOnEmpty = null;
+			this.imagePanel.Name = "imagePanel";
+			this.imagePanel.Size = new System.Drawing.Size(1000, 500);
+			this.imagePanel.SkipPaint = false;
+			this.imagePanel.TabIndex = 0;
+			// 
 			// imagePanel2D
 			// 
 			this.imagePanel2D.Bitmap = null;
@@ -655,15 +821,26 @@
 			this.imagePanel2D.SkipPaint = false;
 			this.imagePanel2D.TabIndex = 1;
 			// 
-			// buttonReload
+			// floatTrackbarControlTimeScale
 			// 
-			this.buttonReload.Location = new System.Drawing.Point(1205, 4);
-			this.buttonReload.Name = "buttonReload";
-			this.buttonReload.Size = new System.Drawing.Size(75, 23);
-			this.buttonReload.TabIndex = 2;
-			this.buttonReload.Text = "Reload";
-			this.buttonReload.UseVisualStyleBackColor = true;
-			this.buttonReload.Click += new System.EventHandler(this.buttonReload_Click);
+			this.floatTrackbarControlTimeScale.Location = new System.Drawing.Point(427, 681);
+			this.floatTrackbarControlTimeScale.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlTimeScale.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlTimeScale.Name = "floatTrackbarControlTimeScale";
+			this.floatTrackbarControlTimeScale.RangeMin = 0F;
+			this.floatTrackbarControlTimeScale.Size = new System.Drawing.Size(140, 20);
+			this.floatTrackbarControlTimeScale.TabIndex = 5;
+			this.floatTrackbarControlTimeScale.Value = 0.2F;
+			this.floatTrackbarControlTimeScale.VisibleRangeMax = 1F;
+			// 
+			// label7
+			// 
+			this.label7.AutoSize = true;
+			this.label7.Location = new System.Drawing.Point(361, 685);
+			this.label7.Name = "label7";
+			this.label7.Size = new System.Drawing.Size(60, 13);
+			this.label7.TabIndex = 6;
+			this.label7.Text = "Time Scale";
 			// 
 			// FourierTestForm
 			// 
@@ -685,10 +862,14 @@
 			this.panel1.PerformLayout();
 			this.tabPage2D.ResumeLayout(false);
 			this.tabPage2D.PerformLayout();
+			this.panel5.ResumeLayout(false);
+			this.panel5.PerformLayout();
 			this.panel4.ResumeLayout(false);
 			this.panel4.PerformLayout();
 			this.panel3.ResumeLayout(false);
 			this.panel3.PerformLayout();
+			this.panel6.ResumeLayout(false);
+			this.panel6.PerformLayout();
 			this.ResumeLayout(false);
 
 		}
@@ -735,8 +916,7 @@
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlScaleU;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlScaleV;
 		private System.Windows.Forms.Label labelDiff2D;
-		private System.Windows.Forms.CheckBox checkBoxShowFFTWSpectrum;
-		private System.Windows.Forms.CheckBox checkBoxPipoOption;
+		private System.Windows.Forms.CheckBox checkBoxShowSignalMagnitude;
 		private System.Windows.Forms.Panel panel4;
 		private System.Windows.Forms.RadioButton radioButtonRandomY;
 		private System.Windows.Forms.RadioButton radioButtonSincY;
@@ -746,6 +926,21 @@
 		private System.Windows.Forms.Label label5;
 		private System.Windows.Forms.RadioButton radioButtonConstantY;
 		private System.Windows.Forms.RadioButton radioButtonConstantX;
+		private System.Windows.Forms.Panel panel5;
+		private System.Windows.Forms.RadioButton radioButtonShowSignalDiff;
+		private System.Windows.Forms.RadioButton radioButtonShowReconstructedSignal;
+		private System.Windows.Forms.RadioButton radioButtonShowInitialSignal;
+		private System.Windows.Forms.Panel panel6;
+		private System.Windows.Forms.RadioButton radioButtonFilterInverse2D;
+		private System.Windows.Forms.RadioButton radioButtonFilterGaussian2D;
+		private System.Windows.Forms.RadioButton radioButtonFilterExp2D;
+		private System.Windows.Forms.RadioButton radioButtonFilterCutShort2D;
+		private System.Windows.Forms.RadioButton radioButtonFilterCutMedium2D;
+		private System.Windows.Forms.RadioButton radioButtonFilterCutLarge2D;
+		private System.Windows.Forms.RadioButton radioButtonFilterNone2D;
+		private System.Windows.Forms.Label label6;
+		private System.Windows.Forms.Label label7;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlTimeScale;
 	}
 }
 
