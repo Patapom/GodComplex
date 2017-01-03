@@ -79,5 +79,85 @@ namespace SharpMath.FFT.Properties {
                 return ((byte[])(obj));
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Byte[].
+        /// </summary>
+        internal static byte[] FFT1D_CS__1to256 {
+            get {
+                object obj = ResourceManager.GetObject("FFT1D_CS__1to256", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Byte[].
+        /// </summary>
+        internal static byte[] FFT1D_CS__256to1024 {
+            get {
+                object obj = ResourceManager.GetObject("FFT1D_CS__256to1024", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Byte[].
+        /// </summary>
+        internal static byte[] FFT1D_CS__256to2048 {
+            get {
+                object obj = ResourceManager.GetObject("FFT1D_CS__256to2048", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Byte[].
+        /// </summary>
+        internal static byte[] FFT1D_CS__256to4096 {
+            get {
+                object obj = ResourceManager.GetObject("FFT1D_CS__256to4096", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Byte[].
+        /// </summary>
+        internal static byte[] FFT1D_CS__256to512 {
+            get {
+                object obj = ResourceManager.GetObject("FFT1D_CS__256to512", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Byte[].
+        /// </summary>
+        internal static byte[] FFT2D {
+            get {
+                object obj = ResourceManager.GetObject("FFT2D", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Byte[].
+        /// </summary>
+        internal static byte[] FFT2D_CS__1to16 {
+            get {
+                object obj = ResourceManager.GetObject("FFT2D_CS__1to16", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Byte[].
+        /// </summary>
+        internal static byte[] FFT2D_CS__Generic {
+            get {
+                object obj = ResourceManager.GetObject("FFT2D_CS__Generic", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
     }
 }

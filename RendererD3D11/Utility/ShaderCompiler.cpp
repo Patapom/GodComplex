@@ -114,7 +114,7 @@ ID3DBlob*	ShaderCompiler::LoadPreCompiledShader( IFileServer& _fileServer, const
 	// Load the binary file
 	const U8*	fileContent = NULL;
 	U32			fileLength;
-	HRESULT		fileError = _fileServer.Open( D3D_INCLUDE_LOCAL, _shaderFileName, NULL, (LPCVOID*) &fileContent, &fileLength );
+	HRESULT		fileError = _fileServer.Open( D3D_INCLUDE_LOCAL, finalShaderName, NULL, (LPCVOID*) &fileContent, &fileLength );
 	if ( fileError != S_OK ) {
 		#if defined(_DEBUG) || defined(DEBUG_SHADER)
 			MessageBoxA( NULL, "Failed to open shader binary file!", "Shader File Error!", MB_OK | MB_ICONERROR );
@@ -127,6 +127,7 @@ ID3DBlob*	ShaderCompiler::LoadPreCompiledShader( IFileServer& _fileServer, const
 
 	// Read the entry point's length
 	int	entryPointLength = *((int*) currentPtr); currentPtr += sizeof(int);
+		entryPointLength = MIN( entryPointLength, S32(fileLength) );
 	if ( strncmp( _entryPoint, (const char*) currentPtr, entryPointLength ) ) {
 		ASSERT( false, "Entry point names mismatch!" );
 		return NULL;
@@ -135,6 +136,7 @@ ID3DBlob*	ShaderCompiler::LoadPreCompiledShader( IFileServer& _fileServer, const
 
 	// Read the blob's length
 	int	blobSize = *((int*) currentPtr); currentPtr += sizeof(int);
+		blobSize = MIN( blobSize, S32(fileLength) );
 
 	// Create a D3DBlob
 	ID3DBlob*	shaderBlob = NULL;

@@ -152,8 +152,17 @@ namespace Renderer {
 	HRESULT	FileServer::ResourceManager_OpenFile( D3D_INCLUDE_TYPE IncludeType, LPCSTR pFileName, LPCVOID pParentData, LPCVOID *ppData, UINT *pBytes ) {
 		String^	partialFileName = System::Runtime::InteropServices::Marshal::PtrToStringAnsi( static_cast<IntPtr>( (void*) pFileName ) );
 
-		// Extract filename
-		String^	resourceName = System::IO::Path::GetFileNameWithoutExtension( partialFileName );
+		// Extract filename ourselves since removing the extension using IO:Path sometimes removes too much
+		int		indexOfLastSlash = partialFileName->LastIndexOf( "\\" );
+		if ( indexOfLastSlash == -1 )
+			indexOfLastSlash = partialFileName->LastIndexOf( "/" );
+		int		indexOfLastDot = partialFileName->LastIndexOf( "." );
+		if ( indexOfLastDot == -1 )
+			indexOfLastDot = partialFileName->Length;
+		String^	resourceName = partialFileName->Substring( indexOfLastSlash+1, indexOfLastDot - indexOfLastSlash - 1 );
+
+		// Replace any remaining dots by "_" as the resources manager does...
+		resourceName = resourceName->Replace( ".", "_" );
 
 		// Retrieve resource, if it exists...
 		Object^	resourceObj = m_manager->GetObject( resourceName );
@@ -164,7 +173,7 @@ namespace Renderer {
 			// Read it as a Byte[]
 			array<Byte>^	resourceAsByteArray = dynamic_cast< array<Byte>^ >( resourceObj );
 			if ( resourceAsByteArray == nullptr )
-				return S_FALSE;
+				throw gcnew Exception( "Resource \"" + resourceName + "\" is not a Byte[] as expected! (did you include it as a text file?)" );
 
 			U32		length = resourceAsByteArray->Length;
 			IntPtr	resourcePtr = System::Runtime::InteropServices::Marshal::AllocHGlobal( length );

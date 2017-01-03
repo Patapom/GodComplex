@@ -11,7 +11,7 @@ float3	PS( VS_IN _In ) : SV_TARGET0 {
 			UV.x = frac( UV.x );
 
 	float2	UV_point = (0.5 + floor( (UV - 1.0/_resolution) * _signalSize )) / _signalSize;
-	float2	signal = float2( GenerateSignal2D( UV_point, _time, _signalFlags & 7, (_signalFlags >> 4) & 7 ), 0 );
+	float2	signal = float2( GenerateSignal2D( UV_point, _time, _signalFlags & 7, (_signalFlags >> 4) & 7, _signalFlags & 0x800U ), 0 );
 	float2	spectrum = _texSpectrum[frac( 0.5 + UV ) * _signalSize];
 //	float2	spectrumFFTW = _texSpectrumFFTW[frac( 0.5 + UV ) * _signalSize];
 	float2	reconstructedSignal = _texReconstructedSignal[UV * _signalSize];

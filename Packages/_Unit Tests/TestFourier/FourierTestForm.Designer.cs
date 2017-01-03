@@ -64,7 +64,7 @@
 			this.label4 = new System.Windows.Forms.Label();
 			this.floatTrackbarControlScaleV = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.floatTrackbarControlScaleU = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.panel4 = new System.Windows.Forms.Panel();
+			this.panelSignalY = new System.Windows.Forms.Panel();
 			this.radioButtonConstantY = new System.Windows.Forms.RadioButton();
 			this.radioButtonRandomY = new System.Windows.Forms.RadioButton();
 			this.radioButtonSincY = new System.Windows.Forms.RadioButton();
@@ -72,7 +72,7 @@
 			this.radioButtonSinusY = new System.Windows.Forms.RadioButton();
 			this.radioButtonSquareY = new System.Windows.Forms.RadioButton();
 			this.label5 = new System.Windows.Forms.Label();
-			this.panel3 = new System.Windows.Forms.Panel();
+			this.panelSignalX = new System.Windows.Forms.Panel();
 			this.radioButtonConstantX = new System.Windows.Forms.RadioButton();
 			this.radioButtonRandomX = new System.Windows.Forms.RadioButton();
 			this.radioButtonSincX = new System.Windows.Forms.RadioButton();
@@ -90,18 +90,19 @@
 			this.radioButtonFilterCutLarge2D = new System.Windows.Forms.RadioButton();
 			this.radioButtonFilterNone2D = new System.Windows.Forms.RadioButton();
 			this.label6 = new System.Windows.Forms.Label();
-			this.imagePanel = new TestFourier.ImagePanel();
-			this.imagePanel2D = new TestFourier.ImagePanel();
 			this.floatTrackbarControlTimeScale = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label7 = new System.Windows.Forms.Label();
+			this.imagePanel = new TestFourier.ImagePanel();
+			this.imagePanel2D = new TestFourier.ImagePanel();
+			this.checkBoxRadial = new System.Windows.Forms.CheckBox();
 			this.tabControl1.SuspendLayout();
 			this.tabPage1D.SuspendLayout();
 			this.panel2.SuspendLayout();
 			this.panel1.SuspendLayout();
 			this.tabPage2D.SuspendLayout();
 			this.panel5.SuspendLayout();
-			this.panel4.SuspendLayout();
-			this.panel3.SuspendLayout();
+			this.panelSignalY.SuspendLayout();
+			this.panelSignalX.SuspendLayout();
 			this.panel6.SuspendLayout();
 			this.SuspendLayout();
 			// 
@@ -390,6 +391,7 @@
 			// 
 			// tabPage2D
 			// 
+			this.tabPage2D.Controls.Add(this.checkBoxRadial);
 			this.tabPage2D.Controls.Add(this.panel6);
 			this.tabPage2D.Controls.Add(this.label6);
 			this.tabPage2D.Controls.Add(this.panel5);
@@ -400,9 +402,9 @@
 			this.tabPage2D.Controls.Add(this.floatTrackbarControlScaleV);
 			this.tabPage2D.Controls.Add(this.floatTrackbarControlTimeScale);
 			this.tabPage2D.Controls.Add(this.floatTrackbarControlScaleU);
-			this.tabPage2D.Controls.Add(this.panel4);
+			this.tabPage2D.Controls.Add(this.panelSignalY);
 			this.tabPage2D.Controls.Add(this.label5);
-			this.tabPage2D.Controls.Add(this.panel3);
+			this.tabPage2D.Controls.Add(this.panelSignalX);
 			this.tabPage2D.Controls.Add(this.label3);
 			this.tabPage2D.Controls.Add(this.imagePanel2D);
 			this.tabPage2D.Location = new System.Drawing.Point(4, 22);
@@ -460,7 +462,7 @@
 			// checkBoxShowSignalMagnitude
 			// 
 			this.checkBoxShowSignalMagnitude.AutoSize = true;
-			this.checkBoxShowSignalMagnitude.Location = new System.Drawing.Point(524, 14);
+			this.checkBoxShowSignalMagnitude.Location = new System.Drawing.Point(640, 46);
 			this.checkBoxShowSignalMagnitude.Name = "checkBoxShowSignalMagnitude";
 			this.checkBoxShowSignalMagnitude.Size = new System.Drawing.Size(106, 17);
 			this.checkBoxShowSignalMagnitude.TabIndex = 8;
@@ -470,7 +472,7 @@
 			// labelDiff2D
 			// 
 			this.labelDiff2D.AutoSize = true;
-			this.labelDiff2D.Location = new System.Drawing.Point(521, 47);
+			this.labelDiff2D.Location = new System.Drawing.Point(821, 47);
 			this.labelDiff2D.Name = "labelDiff2D";
 			this.labelDiff2D.Size = new System.Drawing.Size(46, 13);
 			this.labelDiff2D.TabIndex = 7;
@@ -509,18 +511,18 @@
 			this.floatTrackbarControlScaleU.Value = 3F;
 			this.floatTrackbarControlScaleU.VisibleRangeMax = 32F;
 			// 
-			// panel4
+			// panelSignalY
 			// 
-			this.panel4.Controls.Add(this.radioButtonConstantY);
-			this.panel4.Controls.Add(this.radioButtonRandomY);
-			this.panel4.Controls.Add(this.radioButtonSincY);
-			this.panel4.Controls.Add(this.radioButtonTriY);
-			this.panel4.Controls.Add(this.radioButtonSinusY);
-			this.panel4.Controls.Add(this.radioButtonSquareY);
-			this.panel4.Location = new System.Drawing.Point(65, 35);
-			this.panel4.Name = "panel4";
-			this.panel4.Size = new System.Drawing.Size(404, 34);
-			this.panel4.TabIndex = 4;
+			this.panelSignalY.Controls.Add(this.radioButtonConstantY);
+			this.panelSignalY.Controls.Add(this.radioButtonRandomY);
+			this.panelSignalY.Controls.Add(this.radioButtonSincY);
+			this.panelSignalY.Controls.Add(this.radioButtonTriY);
+			this.panelSignalY.Controls.Add(this.radioButtonSinusY);
+			this.panelSignalY.Controls.Add(this.radioButtonSquareY);
+			this.panelSignalY.Location = new System.Drawing.Point(65, 35);
+			this.panelSignalY.Name = "panelSignalY";
+			this.panelSignalY.Size = new System.Drawing.Size(404, 34);
+			this.panelSignalY.TabIndex = 4;
 			// 
 			// radioButtonConstantY
 			// 
@@ -599,18 +601,18 @@
 			this.label5.TabIndex = 3;
 			this.label5.Text = "Signal Y";
 			// 
-			// panel3
+			// panelSignalX
 			// 
-			this.panel3.Controls.Add(this.radioButtonConstantX);
-			this.panel3.Controls.Add(this.radioButtonRandomX);
-			this.panel3.Controls.Add(this.radioButtonSincX);
-			this.panel3.Controls.Add(this.radioButtonTriX);
-			this.panel3.Controls.Add(this.radioButtonSinusX);
-			this.panel3.Controls.Add(this.radioButtonSquareX);
-			this.panel3.Location = new System.Drawing.Point(65, 3);
-			this.panel3.Name = "panel3";
-			this.panel3.Size = new System.Drawing.Size(404, 34);
-			this.panel3.TabIndex = 4;
+			this.panelSignalX.Controls.Add(this.radioButtonConstantX);
+			this.panelSignalX.Controls.Add(this.radioButtonRandomX);
+			this.panelSignalX.Controls.Add(this.radioButtonSincX);
+			this.panelSignalX.Controls.Add(this.radioButtonTriX);
+			this.panelSignalX.Controls.Add(this.radioButtonSinusX);
+			this.panelSignalX.Controls.Add(this.radioButtonSquareX);
+			this.panelSignalX.Location = new System.Drawing.Point(65, 3);
+			this.panelSignalX.Name = "panelSignalX";
+			this.panelSignalX.Size = new System.Drawing.Size(404, 34);
+			this.panelSignalX.TabIndex = 4;
 			// 
 			// radioButtonConstantX
 			// 
@@ -801,26 +803,6 @@
 			this.label6.TabIndex = 10;
 			this.label6.Text = "Filter";
 			// 
-			// imagePanel
-			// 
-			this.imagePanel.Bitmap = null;
-			this.imagePanel.Location = new System.Drawing.Point(6, 43);
-			this.imagePanel.MessageOnEmpty = null;
-			this.imagePanel.Name = "imagePanel";
-			this.imagePanel.Size = new System.Drawing.Size(1000, 500);
-			this.imagePanel.SkipPaint = false;
-			this.imagePanel.TabIndex = 0;
-			// 
-			// imagePanel2D
-			// 
-			this.imagePanel2D.Bitmap = null;
-			this.imagePanel2D.Location = new System.Drawing.Point(6, 75);
-			this.imagePanel2D.MessageOnEmpty = null;
-			this.imagePanel2D.Name = "imagePanel2D";
-			this.imagePanel2D.Size = new System.Drawing.Size(1200, 600);
-			this.imagePanel2D.SkipPaint = false;
-			this.imagePanel2D.TabIndex = 1;
-			// 
 			// floatTrackbarControlTimeScale
 			// 
 			this.floatTrackbarControlTimeScale.Location = new System.Drawing.Point(427, 681);
@@ -841,6 +823,37 @@
 			this.label7.Size = new System.Drawing.Size(60, 13);
 			this.label7.TabIndex = 6;
 			this.label7.Text = "Time Scale";
+			// 
+			// imagePanel
+			// 
+			this.imagePanel.Bitmap = null;
+			this.imagePanel.Location = new System.Drawing.Point(6, 43);
+			this.imagePanel.MessageOnEmpty = null;
+			this.imagePanel.Name = "imagePanel";
+			this.imagePanel.Size = new System.Drawing.Size(1000, 500);
+			this.imagePanel.SkipPaint = false;
+			this.imagePanel.TabIndex = 0;
+			// 
+			// imagePanel2D
+			// 
+			this.imagePanel2D.Bitmap = null;
+			this.imagePanel2D.Location = new System.Drawing.Point(6, 75);
+			this.imagePanel2D.MessageOnEmpty = null;
+			this.imagePanel2D.Name = "imagePanel2D";
+			this.imagePanel2D.Size = new System.Drawing.Size(1200, 600);
+			this.imagePanel2D.SkipPaint = false;
+			this.imagePanel2D.TabIndex = 1;
+			// 
+			// checkBoxRadial
+			// 
+			this.checkBoxRadial.AutoSize = true;
+			this.checkBoxRadial.Location = new System.Drawing.Point(476, 13);
+			this.checkBoxRadial.Name = "checkBoxRadial";
+			this.checkBoxRadial.Size = new System.Drawing.Size(88, 17);
+			this.checkBoxRadial.TabIndex = 12;
+			this.checkBoxRadial.Text = "Radial Signal";
+			this.checkBoxRadial.UseVisualStyleBackColor = true;
+			this.checkBoxRadial.CheckedChanged += new System.EventHandler(this.checkBoxRadial_CheckedChanged);
 			// 
 			// FourierTestForm
 			// 
@@ -864,10 +877,10 @@
 			this.tabPage2D.PerformLayout();
 			this.panel5.ResumeLayout(false);
 			this.panel5.PerformLayout();
-			this.panel4.ResumeLayout(false);
-			this.panel4.PerformLayout();
-			this.panel3.ResumeLayout(false);
-			this.panel3.PerformLayout();
+			this.panelSignalY.ResumeLayout(false);
+			this.panelSignalY.PerformLayout();
+			this.panelSignalX.ResumeLayout(false);
+			this.panelSignalX.PerformLayout();
 			this.panel6.ResumeLayout(false);
 			this.panel6.PerformLayout();
 			this.ResumeLayout(false);
@@ -905,7 +918,7 @@
 		private System.Windows.Forms.Label labelDiff;
 		private System.Windows.Forms.CheckBox checkBoxGPU;
 		private System.Windows.Forms.CheckBox checkBoxUseFFTW;
-		private System.Windows.Forms.Panel panel3;
+		private System.Windows.Forms.Panel panelSignalX;
 		private System.Windows.Forms.RadioButton radioButtonRandomX;
 		private System.Windows.Forms.RadioButton radioButtonSincX;
 		private System.Windows.Forms.RadioButton radioButtonTriX;
@@ -917,7 +930,7 @@
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlScaleV;
 		private System.Windows.Forms.Label labelDiff2D;
 		private System.Windows.Forms.CheckBox checkBoxShowSignalMagnitude;
-		private System.Windows.Forms.Panel panel4;
+		private System.Windows.Forms.Panel panelSignalY;
 		private System.Windows.Forms.RadioButton radioButtonRandomY;
 		private System.Windows.Forms.RadioButton radioButtonSincY;
 		private System.Windows.Forms.RadioButton radioButtonTriY;
@@ -941,6 +954,7 @@
 		private System.Windows.Forms.Label label6;
 		private System.Windows.Forms.Label label7;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlTimeScale;
+		private System.Windows.Forms.CheckBox checkBoxRadial;
 	}
 }
 

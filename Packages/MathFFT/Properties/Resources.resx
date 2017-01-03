@@ -124,4 +124,28 @@
   <data name="FFT1D" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\shaders\fft1d.hlsl;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
+  <data name="FFT1D_CS__1to256" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\FFT1D.CS__1to256.fxbin;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="FFT1D_CS__256to1024" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\FFT1D.CS__256to1024.fxbin;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="FFT1D_CS__256to2048" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\FFT1D.CS__256to2048.fxbin;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="FFT1D_CS__256to4096" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\FFT1D.CS__256to4096.fxbin;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="FFT1D_CS__256to512" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\FFT1D.CS__256to512.fxbin;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="FFT2D" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\shaders\fft2d.hlsl;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="FFT2D_CS__1to16" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\FFT2D.CS__1to16.fxbin;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="FFT2D_CS__Generic" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\FFT2D.CS__Generic.fxbin;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
 </root>

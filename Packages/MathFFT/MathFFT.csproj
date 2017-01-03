@@ -102,6 +102,15 @@
       <SubType>Designer</SubType>
     </EmbeddedResource>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\FFT1D.CS__1to256.fxbin" />
+    <None Include="Resources\FFT1D.CS__256to1024.fxbin" />
+    <None Include="Resources\FFT1D.CS__256to2048.fxbin" />
+    <None Include="Resources\FFT1D.CS__256to4096.fxbin" />
+    <None Include="Resources\FFT1D.CS__256to512.fxbin" />
+    <None Include="Resources\FFT2D.CS__1to16.fxbin" />
+    <None Include="Resources\FFT2D.CS__Generic.fxbin" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

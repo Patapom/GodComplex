@@ -17,7 +17,7 @@ namespace TestFourier
 {
 	public partial class FourierTestForm : Form {
 		const int		SIGNAL_SIZE = 1024;
-		const int		SIGNAL_SIZE_2D = 256;
+		const int		SIGNAL_SIZE_2D = 512;
 
 		#region NESTED TYPES
 
@@ -504,6 +504,7 @@ if ( checkBoxInvertFilter.Checked )
  			m_CB_Main2D.m._signalFlags |= (uint) ((radioButtonShowInitialSignal.Checked ? 0 : (radioButtonShowReconstructedSignal.Checked ? 1 : radioButtonShowSignalDiff.Checked ? 2 : 0)) << 8);
  			m_CB_Main2D.m._signalFlags |= checkBoxShowSignalMagnitude.Checked ? 0x400U : 0;
  			m_CB_Main2D.m._signalFlags |= (uint) m_filter2D << 16;
+ 			m_CB_Main2D.m._signalFlags |= checkBoxRadial.Checked ? 0x800U : 0;
 			m_CB_Main2D.m._time = floatTrackbarControlTimeScale.Value * (float) time;
 			m_CB_Main2D.m._scaleUV.Set( floatTrackbarControlScaleU.Value, floatTrackbarControlScaleV.Value );
 
@@ -720,6 +721,10 @@ if ( checkBoxInvertFilter.Checked )
 				m_filter2D = FILTER_TYPE.GAUSSIAN;
 			else if ( radioButtonFilterInverse2D.Checked )
 				m_filter2D = FILTER_TYPE.INVERSE;
+		}
+
+		private void checkBoxRadial_CheckedChanged( object sender, EventArgs e ) {
+			panelSignalY.Enabled = !checkBoxRadial.Checked;
 		}
 	}
 }

@@ -7,8 +7,8 @@
 Texture2D<float2>	_texIn : register(t0);
 RWTexture2D<float2>	_texOut : register(u0);
 
-//#define	SYNC	GroupMemoryBarrier();	// We only need group barriers because groups don't interfere with each other
-#define	SYNC	GroupMemoryBarrierWithGroupSync();
+#define	SYNC	GroupMemoryBarrier();	// We only need group barriers because groups don't interfere with each other
+//#define	SYNC	GroupMemoryBarrierWithGroupSync();
 
 groupshared float2	gs_temp[256];
 

@@ -142,15 +142,16 @@ namespace SharpMath.FFT {
 			m_texBufferCPU = new Texture2D( m_device, (uint) m_size, (uint) m_size, 1, 1, PIXEL_FORMAT.RG32_FLOAT, true, true, null );
 
 			try {
-				#if DEBUG
-//					FileServer	server = new FileServer( Properties.Resources.ResourceManager );
-					FileServer	server = new FileServer( new System.IO.DirectoryInfo( @"../../MathFFT/Shaders/" ) );
+				FileServer	server = new FileServer( Properties.Resources.ResourceManager );
+//				FileServer	server = new FileServer( new System.IO.DirectoryInfo( @"../../MathFFT/Shaders/" ) );
 
+				#if DEBUG
 					m_CS__1to16 = new ComputeShader( _device, new System.IO.FileInfo( @"./Shaders/FFT2D.hlsl" ), "CS__1to16", null, server );
 					m_CS__Generic = new ComputeShader( _device, new System.IO.FileInfo( @"./Shaders/FFT2D.hlsl" ), "CS__Generic", null, server );
 				#else
 					using ( new ScopedForceShadersLoadFromBinary() ) {
-						TODO!
+						m_CS__1to16 = new ComputeShader( _device, new System.IO.FileInfo( @"./Shaders/FFT2D.hlsl" ), "CS__1to16", null, server );
+						m_CS__Generic = new ComputeShader( _device, new System.IO.FileInfo( @"./Shaders/FFT2D.hlsl" ), "CS__Generic", null, server );
 					}
 				#endif
 			} catch ( Exception _e ) {
