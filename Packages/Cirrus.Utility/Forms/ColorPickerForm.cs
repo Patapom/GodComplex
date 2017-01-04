@@ -71,28 +71,35 @@ namespace Nuaj.Cirrus.Utility
 		/// The delegate to use to subscribe to the ColorChanged event
 		/// </summary>
 		/// <param name="_Sender">The color picker whose color changed</param>
-		public delegate void				ColorChangedEventHandler( ColorPickerForm _Sender );
+		public delegate void				ColorChangedEventHandler( ColorPickerForm _sender );
 
 		#endregion
 
 		#region FIELDS
 
+		protected bool					m_initialized = false;
+		protected float4				m_initialColor = float4.Zero;
+
 		protected AdobeColors.HSL		m_HSL = new AdobeColors.HSL( 1, 1, 1 );
 		protected float4				m_RGB = new float4( AdobeColors.HSL_to_RGB( new AdobeColors.HSL( 1, 1, 1 ) ), 1 );
 
-		protected float4				m_PrimaryColor = float4.Zero;
-		protected float4				m_SecondaryColor = float4.Zero;
+		protected float4				m_primaryColor = float4.Zero;
+		protected float4				m_secondaryColor = float4.Zero;
 
-		protected DONT_REFRESH			m_DontRefresh = DONT_REFRESH.NONE;
+		protected DONT_REFRESH			m_dontRefresh = DONT_REFRESH.NONE;
 
 		#endregion
 
 		#region PROPERTIES
 
-		public float4	ColorHDR
-		{
+		public float4	ColorHDR {
 			get { return m_RGB; }
 			set {
+				if ( !m_initialized ) {
+					m_initialColor = value;
+					m_initialized = true;
+				}
+
 				// Setup RGB & HSL colors
 				float3	TempValue = new float3( Math.Max( 0.0f, value.x ), Math.Max( 0.0f, value.y ), Math.Max( 0.0f, value.z ) );
 				if ( TempValue.LengthSquared < MIN_COMPONENT_VALUE * MIN_COMPONENT_VALUE )
@@ -103,18 +110,18 @@ namespace Nuaj.Cirrus.Utility
 				m_HSL = AdobeColors.RGB_to_HSL( (float3) m_RGB );
 
 				// Setup color & alpha boxes
-				if ( m_DontRefresh != DONT_REFRESH.COLOR_BOX )
+				if ( m_dontRefresh != DONT_REFRESH.COLOR_BOX )
 					colorBoxControl.HSL = m_HSL;
-				if ( m_DontRefresh != DONT_REFRESH.COLOR_SLIDER )
+				if ( m_dontRefresh != DONT_REFRESH.COLOR_SLIDER )
 					sliderControlHSL.HSL = m_HSL;
-				m_DontRefresh = DONT_REFRESH.NONE;
+				m_dontRefresh = DONT_REFRESH.NONE;
 
 				// Setup primary & secondary colors
-				m_PrimaryColor = value;
-				labelPrimaryColor.BackColor = AdobeColors.ConvertHDR2LDR( (float3) m_PrimaryColor );
-				if ( m_SecondaryColor == float4.Zero ) {
-					m_SecondaryColor = value;
-					labelSecondaryColor.BackColor = AdobeColors.ConvertHDR2LDR( (float3) m_SecondaryColor );
+				m_primaryColor = value;
+				labelPrimaryColor.BackColor = AdobeColors.ConvertHDR2LDR( (float3) m_primaryColor );
+				if ( m_secondaryColor == float4.Zero ) {
+					m_secondaryColor = value;
+					labelSecondaryColor.BackColor = AdobeColors.ConvertHDR2LDR( (float3) m_secondaryColor );
 				}
 
 				// Update text boxes
@@ -126,16 +133,13 @@ namespace Nuaj.Cirrus.Utility
 			}
 		}
 
-		public Color		ColorLDR
-		{
+		public Color		ColorLDR {
 			get { return ConvertHDR2LDR( m_RGB ); }
 			set { ColorHDR = AdobeColors.RGB_LDR_to_RGB_HDR( value ); }
 		}
 
-		protected DRAW_STYLE	DrawStyle
-		{
-			get
-			{
+		protected DRAW_STYLE	DrawStyle {
+			get {
 				if ( buttonHue.Checked )
 					return DRAW_STYLE.Hue;
 				else if ( buttonSaturation.Checked )
@@ -151,10 +155,8 @@ namespace Nuaj.Cirrus.Utility
 				else
 					return DRAW_STYLE.Hue;
 			}
-			set
-			{
-				switch ( value )
-				{
+			set {
+				switch ( value ) {
 					case DRAW_STYLE.Hue :
 						buttonHue.Checked = true;
 						break;
@@ -241,6 +243,15 @@ namespace Nuaj.Cirrus.Utility
 			base.Dispose( disposing );
 		}
 
+		protected override void OnClosing( CancelEventArgs e ) {
+			base.OnClosing( e );
+			if ( e.Cancel || DialogResult != DialogResult.Cancel )
+				return;
+
+			// Cancel any edition and restore initial color!
+			ColorHDR = m_initialColor;
+		}
+
 		/// <summary>
 		/// Custom Control initialization
 		/// </summary>
@@ -305,24 +316,14 @@ namespace Nuaj.Cirrus.Utility
 			Microsoft.Win32.RegistryKey	PaletteKey = Microsoft.Win32.Registry.CurrentUser.CreateSubKey( @"GodComplex\ColorPicker" );
 			string	PaletteEntry = PaletteKey.GetValue( "Entry" + _PaletteIndex, null ) as string;
 
-			if ( PaletteEntry != null && PaletteEntry != "" )
-				try
-				{
-					string[]	Split = PaletteEntry.Split( ' ' );
-					float4	Result;
-					if ( float.TryParse( Split[0].Split( ':' )[1], out Result.x ) &&
-						 float.TryParse( Split[1].Split( ':' )[1], out Result.y ) &&
-						 float.TryParse( Split[2].Split( ':' )[1], out Result.z ) &&
-						 float.TryParse( Split[3].Split( ':' )[1], out Result.w ) )
-						return	Result;
-				}
-				catch ( System.Exception )
-				{
-				}
+			if ( PaletteEntry != null && PaletteEntry != "" ) {
+				float4	Result = float4.Zero;
+				if ( float4.TryParse( PaletteEntry, ref Result ) )
+					return Result;
+			}
 
 			// If we get here, we have no color for that palette entry so we create a default one...
-			switch ( _PaletteIndex )
-			{
+			switch ( _PaletteIndex ) {
 				case	0:
 					return new float4( 0.0f, 0.0f, 0.0f, 1.0f );
 				case	1:
@@ -534,31 +535,28 @@ namespace Nuaj.Cirrus.Utility
 
 		}
 
-
-		protected void m_cmd_OK_Click(object sender, System.EventArgs e)
-		{
-			this.DialogResult = DialogResult.OK;
-			this.Close();
-		}
-
-
-		protected void m_cmd_Cancel_Click(object sender, System.EventArgs e)
-		{
-			this.DialogResult = DialogResult.Cancel;
-			this.Close();
-		}
+// 		protected void m_cmd_OK_Click(object sender, System.EventArgs e) {
+// 			this.DialogResult = DialogResult.OK;
+// 			this.Close();
+// 		}
+// 
+// 
+// 		protected void m_cmd_Cancel_Click(object sender, System.EventArgs e) {
+// 			this.DialogResult = DialogResult.Cancel;
+// 			this.Close();
+// 		}
 
 		#endregion
 
 		protected void colorBoxControl_Scroll(object sender, System.EventArgs e)
 		{
-			m_DontRefresh = DONT_REFRESH.COLOR_BOX;
+			m_dontRefresh = DONT_REFRESH.COLOR_BOX;
 			RGB = AdobeColors.HSL_to_RGB( colorBoxControl.HSL );
 		}
 
 		protected void sliderControlHSL_Scroll(object sender, System.EventArgs e)
 		{
-			m_DontRefresh = DONT_REFRESH.COLOR_SLIDER;
+			m_dontRefresh = DONT_REFRESH.COLOR_SLIDER;
 			RGB = AdobeColors.HSL_to_RGB( sliderControlHSL.HSL );
 
 			// Handle special cases where saturation is 0 (shades of gray) and it's not possible to devise a hue
@@ -576,12 +574,12 @@ namespace Nuaj.Cirrus.Utility
 
 		protected void labelPrimaryColor_Click(object sender, System.EventArgs e)
 		{
-			ColorHDR = m_PrimaryColor;
+			ColorHDR = m_primaryColor;
 		}
 
 		protected void labelSecondaryColor_Click(object sender, System.EventArgs e)
 		{
-			ColorHDR = m_SecondaryColor;
+			ColorHDR = m_secondaryColor;
 		}
 
 		#endregion

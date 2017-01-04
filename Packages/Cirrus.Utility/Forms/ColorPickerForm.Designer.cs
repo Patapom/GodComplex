@@ -177,7 +177,7 @@ namespace Nuaj.Cirrus.Utility
 			this.m_cmd_OK.Size = new System.Drawing.Size( 94, 21 );
 			this.m_cmd_OK.TabIndex = 4;
 			this.m_cmd_OK.Text = "OK";
-			this.m_cmd_OK.Click += new System.EventHandler( this.m_cmd_OK_Click );
+//			this.m_cmd_OK.Click += new System.EventHandler( this.m_cmd_OK_Click );
 			// 
 			// m_cmd_Cancel
 			// 
@@ -187,7 +187,7 @@ namespace Nuaj.Cirrus.Utility
 			this.m_cmd_Cancel.Size = new System.Drawing.Size( 94, 21 );
 			this.m_cmd_Cancel.TabIndex = 5;
 			this.m_cmd_Cancel.Text = "Cancel";
-			this.m_cmd_Cancel.Click += new System.EventHandler( this.m_cmd_Cancel_Click );
+//			this.m_cmd_Cancel.Click += new System.EventHandler( this.m_cmd_Cancel_Click );
 			// 
 			// textBoxHexa
 			// 
@@ -911,6 +911,8 @@ namespace Nuaj.Cirrus.Utility
 			this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
 			this.MaximizeBox = false;
 			this.MinimizeBox = false;
+			this.CancelButton = this.m_cmd_Cancel;
+			this.AcceptButton = this.m_cmd_OK;
 			this.Name = "ColorPickerForm";
 			this.ShowInTaskbar = false;
 			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;

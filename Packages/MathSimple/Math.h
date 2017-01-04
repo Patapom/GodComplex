@@ -176,6 +176,8 @@ namespace SharpMath {
 			return "{ " + x + ", " + y + ", " + z + ", " + w + " }";
 		}
 
+		static bool		TryParse( String^ _stringValue, float4% _value );
+
 		static float4	operator+( float4 a, float4 b )	{ return float4( a.x+b.x, a.y+b.y, a.z+b.z, a.w+b.w ); }
 		static float4	operator-( float4 a, float4 b )	{ return float4( a.x-b.x, a.y-b.y, a.z-b.z, a.w-b.w ); }
 		static float4	operator-( float4 a )			{ return float4( -a.x, -a.y, -a.z, -a.w ); }

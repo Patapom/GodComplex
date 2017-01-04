@@ -6,7 +6,6 @@ float3	float2::Cross( float2 b ) {
 	return float3( 0.0f, 0.0f, x * b.y - y * b.x );
 }
 
-
 bool	float3::TryParse( String^ _stringValue, float3% _value ) {
 	_stringValue = _stringValue->Trim();
 	if ( !_stringValue->StartsWith( "{" )
@@ -22,6 +21,28 @@ bool	float3::TryParse( String^ _stringValue, float3% _value ) {
 	if ( !float::TryParse( components[1], _value.y ) )
 		return false;
 	if ( !float::TryParse( components[2], _value.z ) )
+		return false;
+
+	return true;
+}
+
+bool	float4::TryParse( String^ _stringValue, float4% _value ) {
+	_stringValue = _stringValue->Trim();
+	if ( !_stringValue->StartsWith( "{" )
+		|| !_stringValue->EndsWith( "}" ) ) {
+		return false;
+	}
+	array<String^>^	components = _stringValue->Substring( 1, _stringValue->Length-2 )->Split( ',' );
+	if ( components->Length != 4 )
+		return false;
+
+	if ( !float::TryParse( components[0], _value.x ) )
+		return false;
+	if ( !float::TryParse( components[1], _value.y ) )
+		return false;
+	if ( !float::TryParse( components[2], _value.z ) )
+		return false;
+	if ( !float::TryParse( components[3], _value.w ) )
 		return false;
 
 	return true;

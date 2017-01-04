@@ -31,10 +31,8 @@ using System.Windows.Forms;
 
 namespace TestFresnel
 {
-	public partial class Form1 : Form
-	{
-		enum READING_STATE
-		{
+	public partial class Form1 : Form {
+		enum READING_STATE {
 			UNKNOWN,
 			N,
 			K,
@@ -58,8 +56,8 @@ namespace TestFresnel
 
 		public float[,]	m_IntegralSpecularReflection = new float[64,2];
 
-		public Form1()
-		{
+
+		public Form1() {
 			InitializeComponent();
 
 			using ( System.IO.FileStream S = new System.IO.FileInfo( "../TestAreaLight/BRDF0_64x64.table" ).OpenRead() )
@@ -69,6 +67,8 @@ namespace TestFresnel
 						m_IntegralSpecularReflection[i,1] = R.ReadSingle();
 					}
 			outputPanelDiffuseFresnelReflectance.m_Table = m_IntegralSpecularReflection;
+
+			radioButtonPrecise_CheckedChanged( null, EventArgs.Empty );
 		}
 
 		private void radioButtonSchlick_CheckedChanged( object sender, EventArgs e ) {
@@ -134,31 +134,26 @@ namespace TestFresnel
 			panelSpecularTintNormal.BackColor = IOR_to_Color( _Sender.Value, _Sender.Value, _Sender.Value );
 		}
 
-// 		Nuaj.Cirrus.Utility.ColorPickerForm	colorPicker = new Nuaj.Cirrus.Utility.ColorPickerForm( panelSpecularTintNormal.BackColor );
-// 		colorPicker.ColorChanged += colorPicker_ColorChanged;
-
 		private void panelColor_Click( object sender, EventArgs e ) {
-			
-// 			if ( colorPicker.ShowDialog( this ) != DialogResult.OK )
-// 				return;
-
-/*
 // 			colorDialog1.Color = IOR_to_Color( outputPanelFresnelGraph.IOR_red, outputPanelFresnelGraph.IOR_green, outputPanelFresnelGraph.IOR_blue );
-			colorDialog1.Color = panelSpecularTintNormal.BackColor;
-			if ( colorDialog1.ShowDialog( this ) != DialogResult.OK ) {
-				return;
-			}
+			Nuaj.Cirrus.Utility.ColorPickerForm	colorPicker = new Nuaj.Cirrus.Utility.ColorPickerForm( panelSpecularTintNormal.BackColor );
+			colorPicker.ColorChanged += colorPicker_ColorChanged;
+			colorPicker.ShowDialog( this );
+		}
 
-			panelSpecularTintNormal.BackColor = colorDialog1.Color;
+		void colorPicker_ColorChanged( Nuaj.Cirrus.Utility.ColorPickerForm _sender ) {
+			Color	pickedColor = _sender.ColorLDR;
+
+			panelSpecularTintNormal.BackColor = pickedColor;
 
 // 			floatTrackbarControlIOR.Value = Math.Max( Math.Max( IOR_red, IOR_green ), IOR_blue );
 // 			floatTrackbarControlIOR.VisibleRangeMax = Math.Max( 10.0f, 2.0f * floatTrackbarControlIOR.Value );
 // 
-			outputPanelFresnelGraph.SpecularTintNormal = colorDialog1.Color;
+			outputPanelFresnelGraph.SpecularTintNormal = pickedColor;
 
-			float	F0_red = colorDialog1.Color.R / 255.0f;
-			float	F0_green = colorDialog1.Color.G / 255.0f;
-			float	F0_blue = colorDialog1.Color.B / 255.0f;
+			float	F0_red = pickedColor.R / 255.0f;
+			float	F0_green = pickedColor.G / 255.0f;
+			float	F0_blue = pickedColor.B / 255.0f;
 
 			float	IOR_red = F0_to_IOR( F0_red );
 			float	IOR_green = F0_to_IOR( F0_green );
@@ -167,20 +162,24 @@ namespace TestFresnel
 			outputPanelFresnelGraph.IOR_green = IOR_green;
 			outputPanelFresnelGraph.IOR_blue = IOR_blue;
 			outputPanelDiffuseFresnelReflectance.IOR = Math.Max( Math.Max( IOR_red, IOR_green ), IOR_blue );
-*/
-		}
 
-		void colorPicker_ColorChanged( Nuaj.Cirrus.Utility.ColorPickerForm _Sender ) {
-//			panelSpecularTintNormal.BackColor = _Sender.ColorLDR;
+			outputPanelFresnelGraph.Refresh();
 		}
 
 		private void panelEdgeTint_Click( object sender, EventArgs e ) {
-			colorDialog1.Color = panelSpecularTintEdge.BackColor;
-			if ( colorDialog1.ShowDialog( this ) != DialogResult.OK )
-				return;
+// 			colorDialog1.Color = IOR_to_Color( outputPanelFresnelGraph.IOR_red, outputPanelFresnelGraph.IOR_green, outputPanelFresnelGraph.IOR_blue );
+			Nuaj.Cirrus.Utility.ColorPickerForm	colorPicker = new Nuaj.Cirrus.Utility.ColorPickerForm( panelSpecularTintEdge.BackColor );
+			colorPicker.ColorChanged += colorPicker_ColorChanged_EdgeTint;
+			colorPicker.ShowDialog( this );
+		}
 
-			panelSpecularTintEdge.BackColor = colorDialog1.Color;
-			outputPanelFresnelGraph.SpecularTintEdge = colorDialog1.Color;
+		void colorPicker_ColorChanged_EdgeTint( Nuaj.Cirrus.Utility.ColorPickerForm _sender ) {
+			Color	pickedColor = _sender.ColorLDR;
+
+			panelSpecularTintEdge.BackColor = pickedColor;
+			outputPanelFresnelGraph.SpecularTintEdge = pickedColor;
+
+			outputPanelFresnelGraph.Refresh();
 		}
 
 		private void buttonLoadData_Click( object sender, EventArgs e ) {

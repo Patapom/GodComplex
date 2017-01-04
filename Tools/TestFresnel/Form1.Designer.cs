@@ -33,7 +33,6 @@
 			this.radioButtonPrecise = new System.Windows.Forms.RadioButton();
 			this.floatTrackbarControlIOR = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.panelSpecularTintNormal = new System.Windows.Forms.Panel();
-			this.colorDialog1 = new System.Windows.Forms.ColorDialog();
 			this.openFileDialogRefract = new System.Windows.Forms.OpenFileDialog();
 			this.buttonLoadData = new System.Windows.Forms.Button();
 			this.checkBoxData = new System.Windows.Forms.CheckBox();
@@ -65,12 +64,10 @@
 			// radioButtonSchlick
 			// 
 			this.radioButtonSchlick.AutoSize = true;
-			this.radioButtonSchlick.Checked = true;
 			this.radioButtonSchlick.Location = new System.Drawing.Point(580, 12);
 			this.radioButtonSchlick.Name = "radioButtonSchlick";
 			this.radioButtonSchlick.Size = new System.Drawing.Size(60, 17);
 			this.radioButtonSchlick.TabIndex = 1;
-			this.radioButtonSchlick.TabStop = true;
 			this.radioButtonSchlick.Text = "Schlick";
 			this.radioButtonSchlick.UseVisualStyleBackColor = true;
 			this.radioButtonSchlick.CheckedChanged += new System.EventHandler(this.radioButtonSchlick_CheckedChanged);
@@ -78,10 +75,12 @@
 			// radioButtonPrecise
 			// 
 			this.radioButtonPrecise.AutoSize = true;
+			this.radioButtonPrecise.Checked = true;
 			this.radioButtonPrecise.Location = new System.Drawing.Point(580, 35);
 			this.radioButtonPrecise.Name = "radioButtonPrecise";
 			this.radioButtonPrecise.Size = new System.Drawing.Size(60, 17);
 			this.radioButtonPrecise.TabIndex = 1;
+			this.radioButtonPrecise.TabStop = true;
 			this.radioButtonPrecise.Text = "Precise";
 			this.radioButtonPrecise.UseVisualStyleBackColor = true;
 			this.radioButtonPrecise.CheckedChanged += new System.EventHandler(this.radioButtonPrecise_CheckedChanged);
@@ -113,11 +112,6 @@
 			this.panelSpecularTintNormal.Size = new System.Drawing.Size(48, 35);
 			this.panelSpecularTintNormal.TabIndex = 4;
 			this.panelSpecularTintNormal.Click += new System.EventHandler(this.panelColor_Click);
-			// 
-			// colorDialog1
-			// 
-			this.colorDialog1.AnyColor = true;
-			this.colorDialog1.FullOpen = true;
 			// 
 			// openFileDialogRefract
 			// 
@@ -424,7 +418,6 @@
 		private System.Windows.Forms.RadioButton radioButtonPrecise;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlIOR;
 		private System.Windows.Forms.Panel panelSpecularTintNormal;
-		private System.Windows.Forms.ColorDialog colorDialog1;
 		private System.Windows.Forms.OpenFileDialog openFileDialogRefract;
 		private System.Windows.Forms.Button buttonLoadData;
 		private System.Windows.Forms.CheckBox checkBoxData;
