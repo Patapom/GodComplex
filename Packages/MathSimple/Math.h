@@ -223,6 +223,9 @@ namespace SharpMath {
 
 		float	Dot( float4 b )	{ return x*b.x + y*b.y + z*b.z + w*b.w; }
 
+		static bool			operator==( float4^ _Op0, float4^ _Op1 )	{ return Math::Abs( _Op0->x - _Op1->x ) < float::Epsilon && Math::Abs( _Op0->y - _Op1->y ) < float::Epsilon && Math::Abs( _Op0->z - _Op1->z ) < float::Epsilon && Math::Abs( _Op0->w - _Op1->w ) < float::Epsilon; }
+		static bool			operator!=( float4^ _Op0, float4^ _Op1 )	{ return Math::Abs( _Op0->x - _Op1->x ) > float::Epsilon || Math::Abs( _Op0->y - _Op1->y ) > float::Epsilon || Math::Abs( _Op0->z - _Op1->z ) > float::Epsilon || Math::Abs( _Op0->w - _Op1->w ) > float::Epsilon; }
+
 		static property float4	Zero	{ float4 get() { return float4( 0, 0, 0, 0 ); } }
 		static property float4	UnitX	{ float4 get() { return float4( 1, 0, 0, 0 ); } }
 		static property float4	UnitY	{ float4 get() { return float4( 0, 1, 0, 0 ); } }

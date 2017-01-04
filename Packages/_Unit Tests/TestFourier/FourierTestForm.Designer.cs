@@ -433,7 +433,7 @@
 			this.radioButtonShowSignalDiff.Size = new System.Drawing.Size(162, 17);
 			this.radioButtonShowSignalDiff.TabIndex = 2;
 			this.radioButtonShowSignalDiff.TabStop = true;
-			this.radioButtonShowSignalDiff.Text = "Show Signal Difference (x10)";
+			this.radioButtonShowSignalDiff.Text = "Show Signal Difference (x100)";
 			this.radioButtonShowSignalDiff.UseVisualStyleBackColor = true;
 			// 
 			// radioButtonShowReconstructedSignal

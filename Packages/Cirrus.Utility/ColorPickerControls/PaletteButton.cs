@@ -5,6 +5,7 @@ using System.Drawing;
 using System.Data;
 using System.Text;
 using System.Windows.Forms;
+
 using SharpMath;
 
 namespace Nuaj.Cirrus.Utility
@@ -25,9 +26,11 @@ namespace Nuaj.Cirrus.Utility
 		public float4		Vector
 		{
 			get { return m_Vector; }
-			set {
+			set
+			{
 				m_Vector = value;
 				m_Color = AdobeColors.ConvertHDR2LDR( (float3) m_Vector );
+
 				Refresh();
 			}
 		}

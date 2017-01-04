@@ -134,11 +134,20 @@ namespace TestFresnel
 			panelSpecularTintNormal.BackColor = IOR_to_Color( _Sender.Value, _Sender.Value, _Sender.Value );
 		}
 
+// 		Nuaj.Cirrus.Utility.ColorPickerForm	colorPicker = new Nuaj.Cirrus.Utility.ColorPickerForm( panelSpecularTintNormal.BackColor );
+// 		colorPicker.ColorChanged += colorPicker_ColorChanged;
+
 		private void panelColor_Click( object sender, EventArgs e ) {
+			
+// 			if ( colorPicker.ShowDialog( this ) != DialogResult.OK )
+// 				return;
+
+/*
 // 			colorDialog1.Color = IOR_to_Color( outputPanelFresnelGraph.IOR_red, outputPanelFresnelGraph.IOR_green, outputPanelFresnelGraph.IOR_blue );
 			colorDialog1.Color = panelSpecularTintNormal.BackColor;
-			if ( colorDialog1.ShowDialog( this ) != DialogResult.OK )
+			if ( colorDialog1.ShowDialog( this ) != DialogResult.OK ) {
 				return;
+			}
 
 			panelSpecularTintNormal.BackColor = colorDialog1.Color;
 
@@ -158,6 +167,11 @@ namespace TestFresnel
 			outputPanelFresnelGraph.IOR_green = IOR_green;
 			outputPanelFresnelGraph.IOR_blue = IOR_blue;
 			outputPanelDiffuseFresnelReflectance.IOR = Math.Max( Math.Max( IOR_red, IOR_green ), IOR_blue );
+*/
+		}
+
+		void colorPicker_ColorChanged( Nuaj.Cirrus.Utility.ColorPickerForm _Sender ) {
+//			panelSpecularTintNormal.BackColor = _Sender.ColorLDR;
 		}
 
 		private void panelEdgeTint_Click( object sender, EventArgs e ) {

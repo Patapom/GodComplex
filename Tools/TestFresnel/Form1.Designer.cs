@@ -50,13 +50,13 @@
 			this.checkBoxusePreComputedTable = new System.Windows.Forms.CheckBox();
 			this.floatTrackbarControlRoughness = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.checkBoxPlotAgainstF0 = new System.Windows.Forms.CheckBox();
-			this.outputPanelDiffuseFresnelReflectance = new TestFresnel.PanelDiffuseFresnelReflectance(this.components);
-			this.outputPanelFresnelGraph = new TestFresnel.PanelFresnelReflectance(this.components);
-			this.label3 = new System.Windows.Forms.Label();
 			this.label5 = new System.Windows.Forms.Label();
 			this.floatTrackbarControlPeakFactor = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label6 = new System.Windows.Forms.Label();
 			this.label7 = new System.Windows.Forms.Label();
+			this.outputPanelDiffuseFresnelReflectance = new TestFresnel.PanelDiffuseFresnelReflectance(this.components);
+			this.outputPanelFresnelGraph = new TestFresnel.PanelFresnelReflectance(this.components);
+			this.label3 = new System.Windows.Forms.Label();
 			this.panel1.SuspendLayout();
 			this.panelUseEdgeTint.SuspendLayout();
 			this.outputPanelFresnelGraph.SuspendLayout();
@@ -116,6 +116,7 @@
 			// 
 			// colorDialog1
 			// 
+			this.colorDialog1.AnyColor = true;
 			this.colorDialog1.FullOpen = true;
 			// 
 			// openFileDialogRefract
@@ -295,45 +296,6 @@
 			this.checkBoxPlotAgainstF0.UseVisualStyleBackColor = true;
 			this.checkBoxPlotAgainstF0.CheckedChanged += new System.EventHandler(this.checkBoxPlotAgainstF0_CheckedChanged);
 			// 
-			// outputPanel2
-			// 
-			this.outputPanelDiffuseFresnelReflectance.FresnelType = TestFresnel.PanelDiffuseFresnelReflectance.FRESNEL_TYPE.SCHLICK;
-			this.outputPanelDiffuseFresnelReflectance.IOR = 1F;
-			this.outputPanelDiffuseFresnelReflectance.Location = new System.Drawing.Point(12, 447);
-			this.outputPanelDiffuseFresnelReflectance.MaxIOR = 10F;
-			this.outputPanelDiffuseFresnelReflectance.Name = "outputPanel2";
-			this.outputPanelDiffuseFresnelReflectance.PeakFactor = 1F;
-			this.outputPanelDiffuseFresnelReflectance.PlotAgainstF0 = false;
-			this.outputPanelDiffuseFresnelReflectance.Roughness = 1F;
-			this.outputPanelDiffuseFresnelReflectance.Size = new System.Drawing.Size(559, 268);
-			this.outputPanelDiffuseFresnelReflectance.TabIndex = 8;
-			this.outputPanelDiffuseFresnelReflectance.VerticalScale = 1F;
-			// 
-			// outputPanel1
-			// 
-			this.outputPanelFresnelGraph.Controls.Add(this.label3);
-			this.outputPanelFresnelGraph.Data = null;
-			this.outputPanelFresnelGraph.FresnelType = TestFresnel.PanelFresnelReflectance.FRESNEL_TYPE.SCHLICK;
-			this.outputPanelFresnelGraph.FromData = false;
-			this.outputPanelFresnelGraph.IOR_blue = 1F;
-			this.outputPanelFresnelGraph.IOR_green = 1F;
-			this.outputPanelFresnelGraph.IOR_red = 1F;
-			this.outputPanelFresnelGraph.Location = new System.Drawing.Point(12, 35);
-			this.outputPanelFresnelGraph.Name = "outputPanel1";
-			this.outputPanelFresnelGraph.Size = new System.Drawing.Size(559, 377);
-			this.outputPanelFresnelGraph.SpecularTintEdge = System.Drawing.Color.Black;
-			this.outputPanelFresnelGraph.SpecularTintNormal = System.Drawing.Color.White;
-			this.outputPanelFresnelGraph.TabIndex = 0;
-			// 
-			// label3
-			// 
-			this.label3.AutoSize = true;
-			this.label3.Location = new System.Drawing.Point(-3, 396);
-			this.label3.Name = "label3";
-			this.label3.Size = new System.Drawing.Size(128, 13);
-			this.label3.TabIndex = 3;
-			this.label3.Text = "Fresnel against cos(theta)";
-			// 
 			// label5
 			// 
 			this.label5.AutoSize = true;
@@ -376,6 +338,47 @@
 			this.label7.Size = new System.Drawing.Size(63, 13);
 			this.label7.TabIndex = 11;
 			this.label7.Text = "IOR Source";
+			// 
+			// outputPanelDiffuseFresnelReflectance
+			// 
+			this.outputPanelDiffuseFresnelReflectance.FresnelType = TestFresnel.PanelDiffuseFresnelReflectance.FRESNEL_TYPE.SCHLICK;
+			this.outputPanelDiffuseFresnelReflectance.IOR = 1F;
+			this.outputPanelDiffuseFresnelReflectance.Location = new System.Drawing.Point(12, 447);
+			this.outputPanelDiffuseFresnelReflectance.MaxIOR = 10F;
+			this.outputPanelDiffuseFresnelReflectance.Name = "outputPanelDiffuseFresnelReflectance";
+			this.outputPanelDiffuseFresnelReflectance.PeakFactor = 1F;
+			this.outputPanelDiffuseFresnelReflectance.PlotAgainstF0 = false;
+			this.outputPanelDiffuseFresnelReflectance.Roughness = 1F;
+			this.outputPanelDiffuseFresnelReflectance.Size = new System.Drawing.Size(559, 268);
+			this.outputPanelDiffuseFresnelReflectance.TabIndex = 8;
+			this.outputPanelDiffuseFresnelReflectance.VerticalScale = 1F;
+			// 
+			// outputPanelFresnelGraph
+			// 
+			this.outputPanelFresnelGraph.Controls.Add(this.label3);
+			this.outputPanelFresnelGraph.Data = null;
+			this.outputPanelFresnelGraph.FresnelType = TestFresnel.PanelFresnelReflectance.FRESNEL_TYPE.SCHLICK;
+			this.outputPanelFresnelGraph.FromData = false;
+			this.outputPanelFresnelGraph.IOR_blue = 1F;
+			this.outputPanelFresnelGraph.IOR_green = 1F;
+			this.outputPanelFresnelGraph.IOR_red = 1F;
+			this.outputPanelFresnelGraph.IORSource = TestFresnel.PanelFresnelReflectance.IOR_SOURCE.IOR;
+			this.outputPanelFresnelGraph.Location = new System.Drawing.Point(12, 35);
+			this.outputPanelFresnelGraph.Name = "outputPanelFresnelGraph";
+			this.outputPanelFresnelGraph.Size = new System.Drawing.Size(559, 377);
+			this.outputPanelFresnelGraph.SpecularTintEdge = System.Drawing.Color.Black;
+			this.outputPanelFresnelGraph.SpecularTintNormal = System.Drawing.Color.White;
+			this.outputPanelFresnelGraph.TabIndex = 0;
+			this.outputPanelFresnelGraph.UseEdgeTint = false;
+			// 
+			// label3
+			// 
+			this.label3.AutoSize = true;
+			this.label3.Location = new System.Drawing.Point(-3, 396);
+			this.label3.Name = "label3";
+			this.label3.Size = new System.Drawing.Size(128, 13);
+			this.label3.TabIndex = 3;
+			this.label3.Text = "Fresnel against cos(theta)";
 			// 
 			// Form1
 			// 

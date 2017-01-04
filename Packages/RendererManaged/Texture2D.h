@@ -79,12 +79,13 @@ namespace Renderer {
 			return gcnew PixelsBuffer( mappedResource, _mipLevelIndex, _arrayIndex, false );
 		}
 
-		void			UnMap( PixelsBuffer^ _mappedResource ) {
-			if ( !_mappedResource->m_readOnly ) {
+		void			UnMap( PixelsBuffer^ _mappedSubResource ) {
+			if ( !_mappedSubResource->m_readOnly ) {
 				// Write back buffer to mapped sub-resource for upload
-				_mappedResource->WriteToMappedSubResource();
+				_mappedSubResource->WriteToMappedSubResource();
 			}
-			m_pTexture->UnMap( _mappedResource->m_mappedMipLevelIndex, _mappedResource->m_mappedArrayIndex );
+			m_pTexture->UnMap( _mappedSubResource->m_mappedMipLevelIndex, _mappedSubResource->m_mappedArrayIndex );
+			delete _mappedSubResource;
 		}
 
 		// Views

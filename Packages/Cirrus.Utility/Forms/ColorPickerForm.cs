@@ -77,10 +77,8 @@ namespace Nuaj.Cirrus.Utility
 
 		#region FIELDS
 
-		static string					ms_registryPath = @"GodComplex\ColorPicker";
-
 		protected AdobeColors.HSL		m_HSL = new AdobeColors.HSL( 1, 1, 1 );
-		protected float4				m_RGB = new float4( AdobeColors.HSL_to_RGB( new AdobeColors.HSL( 1, 1, 1 ) ), 1.0f );
+		protected float4				m_RGB = new float4( AdobeColors.HSL_to_RGB( new AdobeColors.HSL( 1, 1, 1 ) ), 1 );
 
 		protected float4				m_PrimaryColor = float4.Zero;
 		protected float4				m_SecondaryColor = float4.Zero;
@@ -91,7 +89,8 @@ namespace Nuaj.Cirrus.Utility
 
 		#region PROPERTIES
 
-		public float4	ColorHDR {
+		public float4	ColorHDR
+		{
 			get { return m_RGB; }
 			set {
 				// Setup RGB & HSL colors
@@ -113,10 +112,10 @@ namespace Nuaj.Cirrus.Utility
 				// Setup primary & secondary colors
 				m_PrimaryColor = value;
 				labelPrimaryColor.BackColor = AdobeColors.ConvertHDR2LDR( (float3) m_PrimaryColor );
-// 				if ( m_SecondaryColor == null ) {
-// 					m_SecondaryColor = value;
-// 					labelSecondaryColor.BackColor = AdobeColors.ConvertHDR2LDR( (float3) m_SecondaryColor );
-// 				}
+				if ( m_SecondaryColor == float4.Zero ) {
+					m_SecondaryColor = value;
+					labelSecondaryColor.BackColor = AdobeColors.ConvertHDR2LDR( (float3) m_SecondaryColor );
+				}
 
 				// Update text boxes
 				UpdateTextBoxes();
@@ -127,13 +126,16 @@ namespace Nuaj.Cirrus.Utility
 			}
 		}
 
-		public Color		ColorLDR {
+		public Color		ColorLDR
+		{
 			get { return ConvertHDR2LDR( m_RGB ); }
 			set { ColorHDR = AdobeColors.RGB_LDR_to_RGB_HDR( value ); }
 		}
 
-		protected DRAW_STYLE	DrawStyle {
-			get {
+		protected DRAW_STYLE	DrawStyle
+		{
+			get
+			{
 				if ( buttonHue.Checked )
 					return DRAW_STYLE.Hue;
 				else if ( buttonSaturation.Checked )
@@ -149,7 +151,8 @@ namespace Nuaj.Cirrus.Utility
 				else
 					return DRAW_STYLE.Hue;
 			}
-			set {
+			set
+			{
 				switch ( value )
 				{
 					case DRAW_STYLE.Hue :
@@ -190,19 +193,12 @@ namespace Nuaj.Cirrus.Utility
 		///  so alpha is preserved.
 		/// Methods dealing with RGB color space should access m_RGB directly though...
 		/// </summary>
-		protected float3	RGB {
+		protected float3	RGB
+		{
 			get { return (float3) m_RGB; }
 			set { ColorHDR = new float4( value.x, value.y, value.z, m_RGB.w ); }
 		}
 		// [PATACODE]
-
-		/// <summary>
-		/// Gets or sets the default registry path where to store configuration info
-		/// </summary>
-		public static string	RegistryPath {
-			get { return ms_registryPath; }
-			set { ms_registryPath = value; }
-		}
 
 		#endregion
 
@@ -304,8 +300,9 @@ namespace Nuaj.Cirrus.Utility
 
 		#region Static Palette Access
 
-		public static float4	GetPaletteColor( int _PaletteIndex ) {
-			Microsoft.Win32.RegistryKey	PaletteKey = Microsoft.Win32.Registry.CurrentUser.CreateSubKey( ms_registryPath );
+		public static float4	GetPaletteColor( int _PaletteIndex )
+		{
+			Microsoft.Win32.RegistryKey	PaletteKey = Microsoft.Win32.Registry.CurrentUser.CreateSubKey( @"GodComplex\ColorPicker" );
 			string	PaletteEntry = PaletteKey.GetValue( "Entry" + _PaletteIndex, null ) as string;
 
 			if ( PaletteEntry != null && PaletteEntry != "" )
@@ -407,7 +404,7 @@ namespace Nuaj.Cirrus.Utility
 
 		public static void				SetPaletteColor( int _PaletteIndex, float4 _HDRColor )
 		{
-			Microsoft.Win32.RegistryKey	PaletteKey = Microsoft.Win32.Registry.CurrentUser.CreateSubKey( ms_registryPath );
+			Microsoft.Win32.RegistryKey	PaletteKey = Microsoft.Win32.Registry.CurrentUser.CreateSubKey( @"GodComplex\ColorPicker" );
 										PaletteKey.SetValue( "Entry" + _PaletteIndex, _HDRColor.ToString() );
 		}
 
@@ -495,13 +492,13 @@ namespace Nuaj.Cirrus.Utility
 		/// <param name="_Vector">The vector to test</param>
 		/// <returns>A combination of damage flags. If none is set, then the vector can be safely edited without damage</returns>
 		public static VECTOR_DAMAGE_ON_EDITION	GetVectorDamage( float4 _Vector ) {
-			VECTOR_DAMAGE_ON_EDITION	result = VECTOR_DAMAGE_ON_EDITION.NONE;
+			VECTOR_DAMAGE_ON_EDITION	Result = VECTOR_DAMAGE_ON_EDITION.NONE;
 			if ( _Vector.x < 0.0f || _Vector.y < 0.0f || _Vector.z < 0.0f )
-				result |= VECTOR_DAMAGE_ON_EDITION.XYZ_WILL_BE_MADE_POSITIVE;
+				Result |= VECTOR_DAMAGE_ON_EDITION.XYZ_WILL_BE_MADE_POSITIVE;
 			if ( _Vector.w < 0.0f )
-				result |= VECTOR_DAMAGE_ON_EDITION.ALPHA_WILL_BE_MADE_POSITIVE;
+				Result |= VECTOR_DAMAGE_ON_EDITION.ALPHA_WILL_BE_MADE_POSITIVE;
 
-			return	result;
+			return	Result;
 		}
 
 		/// <summary>

@@ -15,6 +15,7 @@ using System.ComponentModel;
 using System.Drawing;
 using System.Data;
 using System.Windows.Forms;
+
 using SharpMath;
 
 namespace Nuaj.Cirrus.Utility
@@ -88,9 +89,11 @@ namespace Nuaj.Cirrus.Utility
 		/// <summary>
 		/// The RGB color of the control, changing the RGB will automatically change the HSL color for the control.
 		/// </summary>
-		public float3		RGB {
+		public float3		RGB
+		{
 			get { return m_RGB; }
-			set {
+			set
+			{
 				m_RGB = new float3( Math.Max( value.x, MIN_COMPONENT_VALUE ), Math.Max( value.y, MIN_COMPONENT_VALUE ), Math.Max( value.z, MIN_COMPONENT_VALUE ) );
 				m_HSL = AdobeColors.RGB_to_HSL( m_RGB );
 

@@ -803,7 +803,7 @@ throw new Exception( "Deprecated!" );
 
 			float2[]	Integral_SpecularReflectance = new float2[_TableSize];
 
-			PixelsBuffer Buff = TexTableStaging.Map( 0, 0 );
+			PixelsBuffer Buff = TexTableStaging.MapRead( 0, 0 );
 			using ( System.IO.BinaryReader R = Buff.OpenStreamRead() )
 				using ( System.IO.FileStream S = _TableFileName.Create() )
 					using ( System.IO.BinaryWriter W = new System.IO.BinaryWriter( S ) )
@@ -847,7 +847,7 @@ throw new Exception( "Deprecated!" );
 
 							Integral_SpecularReflectance[Y] = SumSpecularlyReflected;
 						}
-			TexTableStaging.UnMap( 0, 0 );
+			TexTableStaging.UnMap( Buff );
 
 			avgAbsoluteError_F0 /= _TableSize*_TableSize;
 			avgRelativeError_F0 /= _TableSize*_TableSize;

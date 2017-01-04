@@ -345,7 +345,7 @@ tabControlGenerators.TabPages.RemoveAt( 1 );
 				m_imageResult = new ImageUtility.ImageFile( W, H, ImageUtility.ImageFile.PIXEL_FORMAT.RGBA8, m_linearProfile );
 
 				float4[]		scanline = new float4[W];
-				PixelsBuffer	pixels = m_textureTarget_CPU.Map( 0, 0 );
+				PixelsBuffer	pixels = m_textureTarget_CPU.MapRead( 0, 0 );
 				using ( System.IO.BinaryReader R = pixels.OpenStreamRead() )
 					for ( uint Y=0; Y < H; Y++ ) {
 						R.BaseStream.Position = Y * pixels.RowPitch;
@@ -355,8 +355,7 @@ tabControlGenerators.TabPages.RemoveAt( 1 );
 						m_imageResult.WriteScanline( Y, scanline );
 					}
 
-				pixels.Dispose();
-				m_textureTarget_CPU.UnMap( 0, 0 );
+				m_textureTarget_CPU.UnMap( pixels );
 
 				// Assign result
 				viewportPanelResult.Image = m_imageResult;

@@ -79,6 +79,7 @@ namespace Renderer {
 				_mappedSubResource->WriteToMappedSubResource();
 			}
 			m_pTexture->UnMap( _mappedSubResource->m_mappedMipLevelIndex );
+			delete _mappedSubResource;
 		}
 
 		// Views

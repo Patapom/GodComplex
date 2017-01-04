@@ -11,6 +11,7 @@
 
 using System;
 using System.Drawing;
+
 using SharpMath;
 
 namespace Nuaj.Cirrus.Utility

@@ -420,7 +420,7 @@ namespace GenerateSelfShadowedBumpMap
 				float3	whitePoint_XYZ = new float3();
 
 				ImageUtility.Bitmap		tempBitmap = new ImageUtility.Bitmap( W, H );
-				Renderer.PixelsBuffer	Pixels = m_textureTarget_CPU.Map( 0, 0 );
+				Renderer.PixelsBuffer	Pixels = m_textureTarget_CPU.MapRead( 0, 0 );
 				using ( System.IO.BinaryReader R = Pixels.OpenStreamRead() )
 					for ( uint Y=0; Y < H; Y++ ) {
 						R.BaseStream.Position = Y * Pixels.RowPitch;
@@ -431,8 +431,7 @@ namespace GenerateSelfShadowedBumpMap
 						}
 					}
 
-				Pixels.Dispose();
-				m_textureTarget_CPU.UnMap( 0, 0 );
+				m_textureTarget_CPU.UnMap( Pixels );
 
 				// Convert to RGB
 				ImageUtility.ImageFile	temmpImageRGBA32F = new ImageUtility.ImageFile();
@@ -586,18 +585,17 @@ namespace GenerateSelfShadowedBumpMap
 				m_textureTarget_CPU.CopyFrom( m_textureTarget0 );
 
 				ImageUtility.Bitmap		tempBitmap = new ImageUtility.Bitmap( W, H );
-				Renderer.PixelsBuffer	Pixels = m_textureTarget_CPU.Map( 0, 0 );
-				using ( System.IO.BinaryReader R = Pixels.OpenStreamRead() )
+				Renderer.PixelsBuffer	pixels = m_textureTarget_CPU.MapRead( 0, 0 );
+				using ( System.IO.BinaryReader R = pixels.OpenStreamRead() )
 					for ( uint Y=0; Y < H; Y++ ) {
-						R.BaseStream.Position = Y * Pixels.RowPitch;
+						R.BaseStream.Position = Y * pixels.RowPitch;
 						for ( uint X=0; X < W; X++ ) {
 							float	AO = R.ReadSingle();
 							tempBitmap[X,Y] = new float4( AO, AO, AO, 1 );
 						}
 					}
 
-				Pixels.Dispose();
-				m_textureTarget_CPU.UnMap( 0, 0 );
+				m_textureTarget_CPU.UnMap( pixels );
 
 				// Convert to RGB
 //				ImageUtility.ColorProfile	Profile = m_ProfilesRGB;	// AO maps are sRGB! (although strange, that's certainly to have more range in dark values)

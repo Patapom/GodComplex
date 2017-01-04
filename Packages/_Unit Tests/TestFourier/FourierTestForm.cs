@@ -107,6 +107,7 @@ namespace TestFourier
 		Shader						m_Shader_FilterSignal2D;
 		Shader						m_Shader_Display2D;
 		Texture2D					m_texSpectrumCopy2D;
+		Texture2D					m_texOriginalSignalCopy2D;
 
 		#endregion
 
@@ -157,6 +158,7 @@ namespace TestFourier
  				m_Shader_GenerateSignal2D = new Shader( m_device2D, new System.IO.FileInfo( "./Shaders/GenerateSignal2D.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 				m_Shader_FilterSignal2D = new Shader( m_device2D, new System.IO.FileInfo( "./Shaders/FilterSignal2D.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
  				m_Shader_Display2D = new Shader( m_device2D, new System.IO.FileInfo( "./Shaders/Display2D.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+				m_texOriginalSignalCopy2D = new Texture2D( m_device2D, SIGNAL_SIZE_2D, SIGNAL_SIZE_2D, 1, 1, PIXEL_FORMAT.RG32_FLOAT, false, true, null );
 				m_texSpectrumCopy2D = new Texture2D( m_device2D, SIGNAL_SIZE_2D, SIGNAL_SIZE_2D, 1, 1, PIXEL_FORMAT.RG32_FLOAT, false, true, null );
 
 			} catch ( Exception _e ) {
@@ -178,6 +180,7 @@ namespace TestFourier
 			// Release 2D resources
 			if ( m_device2D != null ) {
 				m_texSpectrumCopy2D.Dispose();
+				m_texOriginalSignalCopy2D.Dispose();
 				m_Shader_Display2D.Dispose();
 				m_Shader_FilterSignal2D.Dispose();
 				m_Shader_GenerateSignal2D.Dispose();
@@ -517,6 +520,7 @@ if ( checkBoxInvertFilter.Checked )
 				m_device2D.RenderFullscreenQuad( m_Shader_GenerateSignal2D );
 				m_device2D.RemoveRenderTargets();
 			}
+			m_texOriginalSignalCopy2D.CopyFrom( m_FFT2D_GPU.Input );
 
 			// Apply FFT
 			m_FFT2D_GPU.FFT_GPUInOut( -1.0f );
@@ -548,11 +552,13 @@ if ( checkBoxInvertFilter.Checked )
 				m_FFT2D_GPU.Output.SetPS( 1 );
 // 				if ( m_FFTW2D_Output != null )
 // 					m_FFTW2D_Output.SetPS( 2 );
+				m_texOriginalSignalCopy2D.SetPS( 2 );
 
 				m_CB_Main2D.UpdateData();
 
 				m_device2D.RenderFullscreenQuad( m_Shader_Display2D );
 				m_FFT2D_GPU.Output.RemoveFromLastAssignedSlots();
+				m_texOriginalSignalCopy2D.RemoveFromLastAssignedSlots();
 //m_FFT2D_GPU.Input.RemoveFromLastAssignedSlots();
 			}
 

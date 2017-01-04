@@ -4,7 +4,6 @@ using System.Drawing;
 using System.Collections;
 using System.ComponentModel;
 using System.Windows.Forms;
-using SharpMath;
 
 namespace Nuaj.Cirrus.Utility
 {
@@ -335,7 +334,7 @@ namespace Nuaj.Cirrus.Utility
 			this.radioButtonPalette35.Selected = false;
 			this.radioButtonPalette35.Size = new System.Drawing.Size( 18, 18 );
 			this.radioButtonPalette35.TabIndex = 0;
-			this.radioButtonPalette35.Vector = float4.Zero;
+			this.radioButtonPalette35.Vector = SharpMath.float4.Zero;
 			// 
 			// radioButtonPalette23
 			// 
@@ -346,7 +345,7 @@ namespace Nuaj.Cirrus.Utility
 			this.radioButtonPalette23.Selected = false;
 			this.radioButtonPalette23.Size = new System.Drawing.Size( 18, 18 );
 			this.radioButtonPalette23.TabIndex = 0;
-			this.radioButtonPalette23.Vector = float4.Zero;
+			this.radioButtonPalette23.Vector = SharpMath.float4.Zero;
 			// 
 			// radioButtonPalette11
 			// 
@@ -357,7 +356,7 @@ namespace Nuaj.Cirrus.Utility
 			this.radioButtonPalette11.Selected = false;
 			this.radioButtonPalette11.Size = new System.Drawing.Size( 18, 18 );
 			this.radioButtonPalette11.TabIndex = 0;
-			this.radioButtonPalette11.Vector = float4.Zero;
+			this.radioButtonPalette11.Vector = SharpMath.float4.Zero;
 			// 
 			// radioButtonPalette34
 			// 
@@ -368,7 +367,7 @@ namespace Nuaj.Cirrus.Utility
 			this.radioButtonPalette34.Selected = false;
 			this.radioButtonPalette34.Size = new System.Drawing.Size( 18, 18 );
 			this.radioButtonPalette34.TabIndex = 0;
-			this.radioButtonPalette34.Vector = float4.Zero;
+			this.radioButtonPalette34.Vector = SharpMath.float4.Zero;
 			// 
 			// radioButtonPalette22
 			// 
@@ -379,7 +378,7 @@ namespace Nuaj.Cirrus.Utility
 			this.radioButtonPalette22.Selected = false;
 			this.radioButtonPalette22.Size = new System.Drawing.Size( 18, 18 );
 			this.radioButtonPalette22.TabIndex = 0;
-			this.radioButtonPalette22.Vector = float4.Zero;
+			this.radioButtonPalette22.Vector = SharpMath.float4.Zero;
 			// 
 			// radioButtonPalette10
 			// 
@@ -390,7 +389,7 @@ namespace Nuaj.Cirrus.Utility
 			this.radioButtonPalette10.Selected = false;
 			this.radioButtonPalette10.Size = new System.Drawing.Size( 18, 18 );
 			this.radioButtonPalette10.TabIndex = 0;
-			this.radioButtonPalette10.Vector = float4.Zero;
+			this.radioButtonPalette10.Vector = SharpMath.float4.Zero;
 			// 
 			// radioButtonPalette33
 			// 
@@ -401,7 +400,7 @@ namespace Nuaj.Cirrus.Utility
 			this.radioButtonPalette33.Selected = false;
 			this.radioButtonPalette33.Size = new System.Drawing.Size( 18, 18 );
 			this.radioButtonPalette33.TabIndex = 0;
-			this.radioButtonPalette33.Vector = float4.Zero;
+			this.radioButtonPalette33.Vector = SharpMath.float4.Zero;
 			// 
 			// radioButtonPalette21
 			// 
@@ -412,7 +411,7 @@ namespace Nuaj.Cirrus.Utility
 			this.radioButtonPalette21.Selected = false;
 			this.radioButtonPalette21.Size = new System.Drawing.Size( 18, 18 );
 			this.radioButtonPalette21.TabIndex = 0;
-			this.radioButtonPalette21.Vector = float4.Zero;
+			this.radioButtonPalette21.Vector = SharpMath.float4.Zero;
 			// 
 			// radioButtonPalette9
 			// 
@@ -423,7 +422,7 @@ namespace Nuaj.Cirrus.Utility
 			this.radioButtonPalette9.Selected = false;
 			this.radioButtonPalette9.Size = new System.Drawing.Size( 18, 18 );
 			this.radioButtonPalette9.TabIndex = 0;
-			this.radioButtonPalette9.Vector = float4.Zero;
+			this.radioButtonPalette9.Vector = SharpMath.float4.Zero;
 			// 
 			// radioButtonPalette32
 			// 
@@ -434,7 +433,7 @@ namespace Nuaj.Cirrus.Utility
 			this.radioButtonPalette32.Selected = false;
 			this.radioButtonPalette32.Size = new System.Drawing.Size( 18, 18 );
 			this.radioButtonPalette32.TabIndex = 0;
-			this.radioButtonPalette32.Vector = float4.Zero;
+			this.radioButtonPalette32.Vector = SharpMath.float4.Zero;
 			// 
 			// radioButtonPalette20
 			// 
@@ -445,7 +444,7 @@ namespace Nuaj.Cirrus.Utility
 			this.radioButtonPalette20.Selected = false;
 			this.radioButtonPalette20.Size = new System.Drawing.Size( 18, 18 );
 			this.radioButtonPalette20.TabIndex = 0;
-			this.radioButtonPalette20.Vector = float4.Zero;
+			this.radioButtonPalette20.Vector = SharpMath.float4.Zero;
 			// 
 			// radioButtonPalette8
 			// 
@@ -456,7 +455,7 @@ namespace Nuaj.Cirrus.Utility
 			this.radioButtonPalette8.Selected = false;
 			this.radioButtonPalette8.Size = new System.Drawing.Size( 18, 18 );
 			this.radioButtonPalette8.TabIndex = 0;
-			this.radioButtonPalette8.Vector = float4.Zero;
+			this.radioButtonPalette8.Vector = SharpMath.float4.Zero;
 			// 
 			// radioButtonPalette31
 			// 
@@ -467,7 +466,7 @@ namespace Nuaj.Cirrus.Utility
 			this.radioButtonPalette31.Selected = false;
 			this.radioButtonPalette31.Size = new System.Drawing.Size( 18, 18 );
 			this.radioButtonPalette31.TabIndex = 0;
-			this.radioButtonPalette31.Vector = float4.Zero;
+			this.radioButtonPalette31.Vector = SharpMath.float4.Zero;
 			// 
 			// radioButtonPalette19
 			// 
@@ -478,7 +477,7 @@ namespace Nuaj.Cirrus.Utility
 			this.radioButtonPalette19.Selected = false;
 			this.radioButtonPalette19.Size = new System.Drawing.Size( 18, 18 );
 			this.radioButtonPalette19.TabIndex = 0;
-			this.radioButtonPalette19.Vector = float4.Zero;
+			this.radioButtonPalette19.Vector = SharpMath.float4.Zero;
 			// 
 			// radioButtonPalette7
 			// 
@@ -489,7 +488,7 @@ namespace Nuaj.Cirrus.Utility
 			this.radioButtonPalette7.Selected = false;
 			this.radioButtonPalette7.Size = new System.Drawing.Size( 18, 18 );
 			this.radioButtonPalette7.TabIndex = 0;
-			this.radioButtonPalette7.Vector = float4.Zero;
+			this.radioButtonPalette7.Vector = SharpMath.float4.Zero;
 			// 
 			// radioButtonPalette30
 			// 
@@ -500,7 +499,7 @@ namespace Nuaj.Cirrus.Utility
 			this.radioButtonPalette30.Selected = false;
 			this.radioButtonPalette30.Size = new System.Drawing.Size( 18, 18 );
 			this.radioButtonPalette30.TabIndex = 0;
-			this.radioButtonPalette30.Vector = float4.Zero;
+			this.radioButtonPalette30.Vector = SharpMath.float4.Zero;
 			// 
 			// radioButtonPalette18
 			// 
@@ -511,7 +510,7 @@ namespace Nuaj.Cirrus.Utility
 			this.radioButtonPalette18.Selected = false;
 			this.radioButtonPalette18.Size = new System.Drawing.Size( 18, 18 );
 			this.radioButtonPalette18.TabIndex = 0;
-			this.radioButtonPalette18.Vector = float4.Zero;
+			this.radioButtonPalette18.Vector = SharpMath.float4.Zero;
 			// 
 			// radioButtonPalette6
 			// 
@@ -522,7 +521,7 @@ namespace Nuaj.Cirrus.Utility
 			this.radioButtonPalette6.Selected = false;
 			this.radioButtonPalette6.Size = new System.Drawing.Size( 18, 18 );
 			this.radioButtonPalette6.TabIndex = 0;
-			this.radioButtonPalette6.Vector = float4.Zero;
+			this.radioButtonPalette6.Vector = SharpMath.float4.Zero;
 			// 
 			// radioButtonPalette29
 			// 
@@ -533,7 +532,7 @@ namespace Nuaj.Cirrus.Utility
 			this.radioButtonPalette29.Selected = false;
 			this.radioButtonPalette29.Size = new System.Drawing.Size( 18, 18 );
 			this.radioButtonPalette29.TabIndex = 0;
-			this.radioButtonPalette29.Vector = float4.Zero;
+			this.radioButtonPalette29.Vector = SharpMath.float4.Zero;
 			// 
 			// radioButtonPalette17
 			// 
@@ -544,7 +543,7 @@ namespace Nuaj.Cirrus.Utility
 			this.radioButtonPalette17.Selected = false;
 			this.radioButtonPalette17.Size = new System.Drawing.Size( 18, 18 );
 			this.radioButtonPalette17.TabIndex = 0;
-			this.radioButtonPalette17.Vector = float4.Zero;
+			this.radioButtonPalette17.Vector = SharpMath.float4.Zero;
 			// 
 			// radioButtonPalette5
 			// 
@@ -555,7 +554,7 @@ namespace Nuaj.Cirrus.Utility
 			this.radioButtonPalette5.Selected = false;
 			this.radioButtonPalette5.Size = new System.Drawing.Size( 18, 18 );
 			this.radioButtonPalette5.TabIndex = 0;
-			this.radioButtonPalette5.Vector = float4.Zero;
+			this.radioButtonPalette5.Vector = SharpMath.float4.Zero;
 			// 
 			// radioButtonPalette28
 			// 
@@ -566,7 +565,7 @@ namespace Nuaj.Cirrus.Utility
 			this.radioButtonPalette28.Selected = false;
 			this.radioButtonPalette28.Size = new System.Drawing.Size( 18, 18 );
 			this.radioButtonPalette28.TabIndex = 0;
-			this.radioButtonPalette28.Vector = float4.Zero;
+			this.radioButtonPalette28.Vector = SharpMath.float4.Zero;
 			// 
 			// radioButtonPalette16
 			// 
@@ -577,7 +576,7 @@ namespace Nuaj.Cirrus.Utility
 			this.radioButtonPalette16.Selected = false;
 			this.radioButtonPalette16.Size = new System.Drawing.Size( 18, 18 );
 			this.radioButtonPalette16.TabIndex = 0;
-			this.radioButtonPalette16.Vector = float4.Zero;
+			this.radioButtonPalette16.Vector = SharpMath.float4.Zero;
 			// 
 			// radioButtonPalette4
 			// 
@@ -588,7 +587,7 @@ namespace Nuaj.Cirrus.Utility
 			this.radioButtonPalette4.Selected = false;
 			this.radioButtonPalette4.Size = new System.Drawing.Size( 18, 18 );
 			this.radioButtonPalette4.TabIndex = 0;
-			this.radioButtonPalette4.Vector = float4.Zero;
+			this.radioButtonPalette4.Vector = SharpMath.float4.Zero;
 			// 
 			// radioButtonPalette27
 			// 
@@ -599,7 +598,7 @@ namespace Nuaj.Cirrus.Utility
 			this.radioButtonPalette27.Selected = false;
 			this.radioButtonPalette27.Size = new System.Drawing.Size( 18, 18 );
 			this.radioButtonPalette27.TabIndex = 0;
-			this.radioButtonPalette27.Vector = float4.Zero;
+			this.radioButtonPalette27.Vector = SharpMath.float4.Zero;
 			// 
 			// radioButtonPalette15
 			// 
@@ -610,7 +609,7 @@ namespace Nuaj.Cirrus.Utility
 			this.radioButtonPalette15.Selected = false;
 			this.radioButtonPalette15.Size = new System.Drawing.Size( 18, 18 );
 			this.radioButtonPalette15.TabIndex = 0;
-			this.radioButtonPalette15.Vector = float4.Zero;
+			this.radioButtonPalette15.Vector = SharpMath.float4.Zero;
 			// 
 			// radioButtonPalette3
 			// 
@@ -621,7 +620,7 @@ namespace Nuaj.Cirrus.Utility
 			this.radioButtonPalette3.Selected = false;
 			this.radioButtonPalette3.Size = new System.Drawing.Size( 18, 18 );
 			this.radioButtonPalette3.TabIndex = 0;
-			this.radioButtonPalette3.Vector = float4.Zero;
+			this.radioButtonPalette3.Vector = SharpMath.float4.Zero;
 			// 
 			// radioButtonPalette26
 			// 
@@ -632,7 +631,7 @@ namespace Nuaj.Cirrus.Utility
 			this.radioButtonPalette26.Selected = false;
 			this.radioButtonPalette26.Size = new System.Drawing.Size( 18, 18 );
 			this.radioButtonPalette26.TabIndex = 0;
-			this.radioButtonPalette26.Vector = float4.Zero;
+			this.radioButtonPalette26.Vector = SharpMath.float4.Zero;
 			// 
 			// radioButtonPalette14
 			// 
@@ -643,7 +642,7 @@ namespace Nuaj.Cirrus.Utility
 			this.radioButtonPalette14.Selected = false;
 			this.radioButtonPalette14.Size = new System.Drawing.Size( 18, 18 );
 			this.radioButtonPalette14.TabIndex = 0;
-			this.radioButtonPalette14.Vector = float4.Zero;
+			this.radioButtonPalette14.Vector = SharpMath.float4.Zero;
 			// 
 			// radioButtonPalette2
 			// 
@@ -654,7 +653,7 @@ namespace Nuaj.Cirrus.Utility
 			this.radioButtonPalette2.Selected = false;
 			this.radioButtonPalette2.Size = new System.Drawing.Size( 18, 18 );
 			this.radioButtonPalette2.TabIndex = 0;
-			this.radioButtonPalette2.Vector = float4.Zero;
+			this.radioButtonPalette2.Vector = SharpMath.float4.Zero;
 			// 
 			// radioButtonPalette25
 			// 
@@ -665,7 +664,7 @@ namespace Nuaj.Cirrus.Utility
 			this.radioButtonPalette25.Selected = false;
 			this.radioButtonPalette25.Size = new System.Drawing.Size( 18, 18 );
 			this.radioButtonPalette25.TabIndex = 0;
-			this.radioButtonPalette25.Vector = float4.Zero;
+			this.radioButtonPalette25.Vector = SharpMath.float4.Zero;
 			// 
 			// radioButtonPalette13
 			// 
@@ -676,7 +675,7 @@ namespace Nuaj.Cirrus.Utility
 			this.radioButtonPalette13.Selected = false;
 			this.radioButtonPalette13.Size = new System.Drawing.Size( 18, 18 );
 			this.radioButtonPalette13.TabIndex = 0;
-			this.radioButtonPalette13.Vector = float4.Zero;
+			this.radioButtonPalette13.Vector = SharpMath.float4.Zero;
 			// 
 			// radioButtonPalette1
 			// 
@@ -687,7 +686,7 @@ namespace Nuaj.Cirrus.Utility
 			this.radioButtonPalette1.Selected = false;
 			this.radioButtonPalette1.Size = new System.Drawing.Size( 18, 18 );
 			this.radioButtonPalette1.TabIndex = 0;
-			this.radioButtonPalette1.Vector = float4.Zero;
+			this.radioButtonPalette1.Vector = SharpMath.float4.Zero;
 			// 
 			// radioButtonPalette24
 			// 
@@ -698,7 +697,7 @@ namespace Nuaj.Cirrus.Utility
 			this.radioButtonPalette24.Selected = false;
 			this.radioButtonPalette24.Size = new System.Drawing.Size( 18, 18 );
 			this.radioButtonPalette24.TabIndex = 0;
-			this.radioButtonPalette24.Vector = float4.Zero;
+			this.radioButtonPalette24.Vector = SharpMath.float4.Zero;
 			// 
 			// radioButtonPalette12
 			// 
@@ -709,7 +708,7 @@ namespace Nuaj.Cirrus.Utility
 			this.radioButtonPalette12.Selected = false;
 			this.radioButtonPalette12.Size = new System.Drawing.Size( 18, 18 );
 			this.radioButtonPalette12.TabIndex = 0;
-			this.radioButtonPalette12.Vector = float4.Zero;
+			this.radioButtonPalette12.Vector = SharpMath.float4.Zero;
 			// 
 			// radioButtonPalette0
 			// 
@@ -721,7 +720,7 @@ namespace Nuaj.Cirrus.Utility
 			this.radioButtonPalette0.Size = new System.Drawing.Size( 18, 18 );
 			this.radioButtonPalette0.TabIndex = 0;
 			this.radioButtonPalette0.TabStop = true;
-			this.radioButtonPalette0.Vector = float4.Zero;
+			this.radioButtonPalette0.Vector = SharpMath.float4.Zero;
 			// 
 			// buttonAssignColor
 			// 
@@ -858,7 +857,7 @@ namespace Nuaj.Cirrus.Utility
 			this.colorBoxControl.HSL = hsl1;
 			this.colorBoxControl.Location = new System.Drawing.Point( 12, 133 );
 			this.colorBoxControl.Name = "colorBoxControl";
-			this.colorBoxControl.RGB = new float3( 1.0f, 0.0f, 0.0f );
+			this.colorBoxControl.RGB = new SharpMath.float3( 1.0f, 0.0f, 0.0f );
 			this.colorBoxControl.Size = new System.Drawing.Size( 260, 260 );
 			this.colorBoxControl.TabIndex = 39;
 			this.colorBoxControl.Scroll += new System.EventHandler( this.colorBoxControl_Scroll );
@@ -872,7 +871,7 @@ namespace Nuaj.Cirrus.Utility
 			this.sliderControlHSL.HSL = hsl2;
 			this.sliderControlHSL.Location = new System.Drawing.Point( 273, 131 );
 			this.sliderControlHSL.Name = "sliderControlHSL";
-			this.sliderControlHSL.RGB = new float3( 1.0f, 0.0f, 0.0f );
+			this.sliderControlHSL.RGB = new SharpMath.float3( 1.0f, 0.0f, 0.0f );
 			this.sliderControlHSL.Size = new System.Drawing.Size( 40, 264 );
 			this.sliderControlHSL.TabIndex = 38;
 			this.sliderControlHSL.Scroll += new System.EventHandler( this.sliderControlHSL_Scroll );

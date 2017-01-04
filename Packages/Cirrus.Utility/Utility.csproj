@@ -121,28 +121,28 @@
   <ItemGroup>
     <Compile Include="Camera.cs" />
     <Compile Include="CameraManipulator.cs" />
+    <Compile Include="ColorPickerControls\AdobeColors.cs" />
+    <Compile Include="ColorPickerControls\ColorBoxControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="ColorPickerControls\GradientFloatTrackbarControl.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="ColorPickerControls\GradientFloatTrackbarControl.Designer.cs" />
+    <Compile Include="ColorPickerControls\HorizontalAlphaSliderControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="ColorPickerControls\PaletteButton.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="ColorPickerControls\PaletteButton.Designer.cs" />
+    <Compile Include="ColorPickerControls\VerticalColorSliderControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
     <Compile Include="Forms\ColorPickerForm.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Forms\ColorPickerForm.Designer.cs" />
-    <Compile Include="Forms\ColorPicker\AdobeColors.cs" />
-    <Compile Include="Forms\ColorPicker\ColorBoxControl.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="Forms\ColorPicker\GradientFloatTrackbarControl.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="Forms\ColorPicker\GradientFloatTrackbarControl.Designer.cs" />
-    <Compile Include="Forms\ColorPicker\HorizontalAlphaSliderControl.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="Forms\ColorPicker\PaletteButton.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="Forms\ColorPicker\PaletteButton.Designer.cs" />
-    <Compile Include="Forms\ColorPicker\VerticalColorSliderControl.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
     <Compile Include="Forms\FloatTrackbarControl.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -174,13 +174,6 @@
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Forms\ColorPickerForm.resx" />
-    <EmbeddedResource Include="Forms\ColorPicker\ColorBoxControl.resx" />
-    <EmbeddedResource Include="Forms\ColorPicker\ctrlHorizontalColorSlider.resx" />
-    <EmbeddedResource Include="Forms\ColorPicker\GradientFloatTrackbarControl.resx" />
-    <EmbeddedResource Include="Forms\ColorPicker\HDRColorPickerForm.resx" />
-    <EmbeddedResource Include="Forms\ColorPicker\HorizontalAlphaSliderControl.resx" />
-    <EmbeddedResource Include="Forms\ColorPicker\PaletteButton.resx" />
-    <EmbeddedResource Include="Forms\ColorPicker\VerticalColorSliderControl.resx" />
     <EmbeddedResource Include="Forms\FloatTrackbarControl.resx">
       <DependentUpon>FloatTrackbarControl.cs</DependentUpon>
     </EmbeddedResource>

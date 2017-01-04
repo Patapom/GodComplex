@@ -768,10 +768,10 @@ namespace GenerateTranslucencyMap
 
 					float4[]		scanline = new float4[W];
 					float4			gammaRGB = float4.Zero;
-					PixelsBuffer	Pixels = m_TextureTarget_CPU.Map( 0, 0 );
-					using ( System.IO.BinaryReader R = Pixels.OpenStreamRead() )
+					PixelsBuffer	pixels = m_TextureTarget_CPU.MapRead( 0, 0 );
+					using ( System.IO.BinaryReader R = pixels.OpenStreamRead() )
 						for ( uint Y=0; Y < H; Y++ ) {
-							R.BaseStream.Position = Y * Pixels.RowPitch;
+							R.BaseStream.Position = Y * pixels.RowPitch;
 							for ( uint X=0; X < W; X++ ) {
 								gammaRGB.Set( R.ReadSingle(), R.ReadSingle(), R.ReadSingle(), R.ReadSingle() );
 								m_sRGBProfile.LinearRGB2GammaRGB( gammaRGB, ref scanline[X] );
@@ -779,8 +779,7 @@ namespace GenerateTranslucencyMap
 							m_imageResults[i].WriteScanline( Y, scanline );
 						}
 
-					Pixels.Dispose();
-					m_TextureTarget_CPU.UnMap( 0, 0 );
+					m_TextureTarget_CPU.UnMap( pixels );
 
 					// Assign result
 					ImagePanels[i].Image = m_imageResults[i];
@@ -893,13 +892,13 @@ namespace GenerateTranslucencyMap
 			// Copy from GPU to CPU
 			m_TextureTarget_CPU.CopyFrom( m_TextureTargetCombined );
 
-			PixelsBuffer	Pixels = m_TextureTarget_CPU.Map( 0, 0 );
+			PixelsBuffer	pixels = m_TextureTarget_CPU.MapRead( 0, 0 );
 			float4[]		scanline = new float4[W];
 			float4			gammaRGB = float4.Zero;
 
-			using ( System.IO.BinaryReader R = Pixels.OpenStreamRead() )
+			using ( System.IO.BinaryReader R = pixels.OpenStreamRead() )
 				for ( uint Y=0; Y < H; Y++ ) {
-					R.BaseStream.Position = Y * Pixels.RowPitch;
+					R.BaseStream.Position = Y * pixels.RowPitch;
 					for ( uint X=0; X < W; X++ ) {
 						gammaRGB.Set( R.ReadSingle(), R.ReadSingle(), R.ReadSingle(), R.ReadSingle() );
 						m_sRGBProfile.LinearRGB2GammaRGB( gammaRGB, ref scanline[X] );
@@ -907,8 +906,7 @@ namespace GenerateTranslucencyMap
 					m_imageResultCombined.WriteScanline( Y, scanline );
 				}
 
-			Pixels.Dispose();
-			m_TextureTarget_CPU.UnMap( 0, 0 );
+			m_TextureTarget_CPU.UnMap( pixels );
 
 			// Assign result
 			imagePanelResult3.Image = m_imageResultCombined;
