@@ -30,7 +30,7 @@ using SharpMath;
 namespace Nuaj.Cirrus.Utility
 {
 	/// <summary>
-	/// An improved, photoshop-like color picker with also Alpha and HDR colors support
+	/// An improved, photoshop-like color picker with Alpha and HDR colors support
 	/// </summary>
 	public partial class ColorPickerForm : System.Windows.Forms.Form
 	{
