@@ -33,9 +33,8 @@ int		Device::ComponentsCount() const
 	return Count;
 }
 
-bool	Device::Init( HWND _Handle, bool _Fullscreen, bool _sRGB )
-{
-	RECT	Rect;
+bool	Device::Init( HWND _Handle, bool _Fullscreen, bool _sRGB ) {
+	RECT	Rect = { 0, 0, 0, 0 };
 	if ( !GetWindowRect( _Handle, &Rect ) )
 		throw "Failed to retrieve window dimensions to initialize device!";
 	

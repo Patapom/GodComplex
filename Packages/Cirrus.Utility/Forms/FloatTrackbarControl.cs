@@ -41,6 +41,7 @@ namespace Nuaj.Cirrus.Utility
 		protected float				m_DefaultVisibleRangeMax = DEFAULT_VISIBLE_RANGE_MAX;
 
 		protected bool				m_bInternalChange = false;
+		protected bool				m_undefinedState = false;
 
 		protected RectangleF		m_SliderRectangle = RectangleF.Empty;
 		protected bool				m_bSliderDragging = false;
@@ -58,13 +59,10 @@ namespace Nuaj.Cirrus.Utility
 
 		[Description( "The value to edit" )]
 		[Category( "Value" )]
-		public float		Value
-		{
+		public float		Value {
 			get { return m_Value; }
-			set
-			{
+			set {
 				value = Math.Max( m_RangeMin, Math.Min( m_RangeMax, value ) );	// Clamp the value to its range
-
 				if ( Math.Abs( value - m_Value ) < 1e-3f || m_bInternalChange )
 					return;	// No or internal change...
 
@@ -72,15 +70,13 @@ namespace Nuaj.Cirrus.Utility
 				m_Value = value;
 
 				m_bInternalChange = true;
+				m_undefinedState = false;						// Any value clears the undefined state
 
 				// Update visible range
-				if ( m_Value < VisibleRangeMin )
-				{
+				if ( m_Value < VisibleRangeMin ) {
 					VisibleRangeMin = 2 * m_Value;				// Double negative range
 					VisibleRangeMax = m_DefaultVisibleRangeMax;	// Restore maximal range
-				}
-				else if ( m_Value > VisibleRangeMax )
-				{
+				} else if ( m_Value > VisibleRangeMax ) {
 					VisibleRangeMin = m_DefaultVisibleRangeMin;	// Restore minimal range
 					VisibleRangeMax = 2 * m_Value;				// Double positive range
 				}
@@ -100,11 +96,9 @@ namespace Nuaj.Cirrus.Utility
 		[Description( "The minimum allowed value" )]
 		[Category( "Value" )]
 		[DefaultValue( -float.MaxValue )]
-		public float	RangeMin
-		{
+		public float	RangeMin {
 			get { return m_RangeMin; }
-			set
-			{
+			set {
 				m_bInternalChange = true;
 
 				m_RangeMin = value;
@@ -120,11 +114,9 @@ namespace Nuaj.Cirrus.Utility
 		[Description( "The maximum allowed value" )]
 		[Category( "Value" )]
 		[DefaultValue( +float.MaxValue )]
-		public float	RangeMax
-		{
+		public float	RangeMax {
 			get { return m_RangeMax; }
-			set
-			{
+			set {
 				m_bInternalChange = true;
 
 				m_RangeMax = value;
@@ -140,11 +132,9 @@ namespace Nuaj.Cirrus.Utility
 		[Description( "The minimum value shown by the trackbar" )]
 		[Category( "Value" )]
 		[DefaultValue( DEFAULT_VISIBLE_RANGE_MIN )]
-		public float	VisibleRangeMin
-		{
+		public float	VisibleRangeMin {
 			get { return m_VisibleRangeMin; }
-			set
-			{
+			set {
 				m_VisibleRangeMin = Math.Max( m_RangeMin, value );			// Can't go further than allowed range anyway
 				m_VisibleRangeMin = Math.Min( Value, m_VisibleRangeMin );	// But can't go higher than displayed value either...
 
@@ -161,11 +151,9 @@ namespace Nuaj.Cirrus.Utility
 		[Description( "The maximum value shown by the trackbar" )]
 		[Category( "Value" )]
 		[DefaultValue( DEFAULT_VISIBLE_RANGE_MAX )]
-		public float	VisibleRangeMax
-		{
+		public float	VisibleRangeMax {
 			get { return m_VisibleRangeMax; }
-			set
-			{
+			set {
 				m_VisibleRangeMax = Math.Min( m_RangeMax, value );			// Can't go further than allowed range anyway
 				m_VisibleRangeMax = Math.Max( Value, m_VisibleRangeMax );	// But can't go lower than displayed value either...
 
@@ -173,6 +161,23 @@ namespace Nuaj.Cirrus.Utility
 				{	// This means it's an external change (obvsiouly) so we can use the provided value as a default value
 					m_DefaultVisibleRangeMax = m_VisibleRangeMax;
 				}
+
+				// Update GUI
+				Invalidate();
+			}
+		}
+
+		[Description( "Gets or sets the \"undefined\" state for the trackbar." )]
+		[Category( "Value" )]
+		[DefaultValue( false )]
+		public bool		UndefinedState {
+			get { return m_undefinedState; }
+			set {
+				if ( value == m_undefinedState )
+					return;
+
+				m_undefinedState = value;
+				textBox.Text = "N/A";
 
 				// Update GUI
 				Invalidate();
@@ -256,15 +261,12 @@ namespace Nuaj.Cirrus.Utility
 
 		#region Control Members
 
-		protected override void OnEnabledChanged( EventArgs e )
-		{
+		protected override void OnEnabledChanged( EventArgs e ) {
 			base.OnEnabledChanged( e );
-
 			textBox.Enabled = Enabled;
 		}
 
-		protected override void OnResize( EventArgs eventargs )
-		{
+		protected override void OnResize( EventArgs eventargs ) {
 			base.OnResize( eventargs );
 
 			// Recompute slider range
@@ -274,8 +276,7 @@ namespace Nuaj.Cirrus.Utility
 			m_SliderRectangle = new RectangleF( SliderTopLeft.X, SliderTopLeft.Y, 1 + SliderBottomRight.X - SliderTopLeft.X, 1 + SliderBottomRight.Y - SliderTopLeft.Y );
 		}
 
-		protected override void OnMouseDown( MouseEventArgs e )
-		{
+		protected override void OnMouseDown( MouseEventArgs e ) {
 			base.OnMouseDown( e );
 
 			if ( e.Button != MouseButtons.Left )
@@ -296,8 +297,7 @@ namespace Nuaj.Cirrus.Utility
 			OnMouseMove( e );
 		}
 
-		protected override void OnMouseMove( MouseEventArgs e )
-		{
+		protected override void OnMouseMove( MouseEventArgs e ) {
 			base.OnMouseMove( e );
 
 			// Update value...
@@ -307,8 +307,7 @@ namespace Nuaj.Cirrus.Utility
 			Value = Math.Max( VisibleRangeMin, Math.Min( VisibleRangeMax, VisibleRangeMin + (e.X - m_SliderRectangle.X) * (VisibleRangeMax - VisibleRangeMin) / m_SliderRectangle.Width ) );
 		}
 
-		protected override void OnMouseUp( MouseEventArgs e )
-		{
+		protected override void OnMouseUp( MouseEventArgs e ) {
 			base.OnMouseUp( e );
 
 			if ( !m_bSliderDragging )
@@ -321,25 +320,23 @@ namespace Nuaj.Cirrus.Utility
 				SliderDragStop( this, m_StartValue );
 		}
 
-		protected override void OnKeyDown( KeyEventArgs e )
-		{
+		protected override void OnKeyDown( KeyEventArgs e ) {
 			base.OnKeyDown( e );
 
 			if ( e.KeyCode == Keys.Escape )
 				CancelDrag();
 		}
 
-		protected override void OnPaintBackground( PaintEventArgs e )
-		{
+		protected override void OnPaintBackground( PaintEventArgs e ) {
  			base.OnPaintBackground( e );
 		}
 
-		protected override void OnPaint( PaintEventArgs e )
-		{
+		protected override void OnPaint( PaintEventArgs e ) {
 			base.OnPaint( e );
 
 			// Draw the slider
-			DrawSlider( e );
+			if ( !m_undefinedState )
+				DrawSlider( e );
 
 			// Draw the left image portion
 			e.Graphics.DrawImage( Properties.Resources.Trackbar___Left, 0, 0, Properties.Resources.Trackbar___Left.Width, Properties.Resources.Trackbar___Left.Height );
@@ -371,8 +368,7 @@ namespace Nuaj.Cirrus.Utility
 			m_BrushTrackbarMiddle = new TextureBrush( Properties.Resources.Trackbar___Middle, BrushRect, ImageAttr );
 		}
 
-		protected virtual void	DrawSlider( PaintEventArgs e )
-		{
+		protected virtual void	DrawSlider( PaintEventArgs e ) {
 			float	fSizeToDraw = m_SliderRectangle.Width * (Value - VisibleRangeMin) / (VisibleRangeMax - VisibleRangeMin);
 			e.Graphics.FillRectangle( Enabled ? m_BackgroundBrush : m_BackgroundBrushDisabled, m_SliderRectangle.X + fSizeToDraw, m_SliderRectangle.Y, m_SliderRectangle.Width - fSizeToDraw, m_SliderRectangle.Height );
 			e.Graphics.FillRectangle( m_SliderBrush, m_SliderRectangle.X, m_SliderRectangle.Y, fSizeToDraw, m_SliderRectangle.Height );
@@ -392,11 +388,10 @@ namespace Nuaj.Cirrus.Utility
 
 		#region EVENT HANDLERS
 
-		private void textBox_Validating( object sender, CancelEventArgs e )
-		{
+		private void textBox_Validating( object sender, CancelEventArgs e ) {
 			float	fNewValue = 0.0f;
-			if ( !float.TryParse( textBox.Text, out fNewValue ) )
-			{	// Reset current value...
+			if ( !float.TryParse( textBox.Text, out fNewValue ) ) {
+				// Reset current value...
 				textBox.Text = Value.ToString();
 				e.Cancel = true;
 				return;
@@ -415,8 +410,7 @@ namespace Nuaj.Cirrus.Utility
 				SliderDragStop( this, fStartValue );
 		}
 
-		private void textBox_KeyDown( object sender, KeyEventArgs e )
-		{
+		private void textBox_KeyDown( object sender, KeyEventArgs e ) {
 			if ( e.KeyCode != Keys.Return )
 				return;
 

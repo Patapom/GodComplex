@@ -14,6 +14,7 @@ using System.Collections;
 using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.Drawing.Imaging;
 using System.Data;
 using System.Windows.Forms;
 
@@ -36,8 +37,8 @@ namespace Nuaj.Cirrus.Utility
 
 		//	These variables keep track of how to fill in the content inside the box;
 		protected ColorPickerForm.DRAW_STYLE	m_DrawStyle = ColorPickerForm.DRAW_STYLE.Hue;
-		protected AdobeColors.HSL				m_HSL = new AdobeColors.HSL( 1, 1, 1 );
-		protected float3						m_RGB = AdobeColors.HSL_to_RGB( new AdobeColors.HSL( 1, 1, 1 ) );
+//		protected float3						m_HSL = float3.One;
+		protected float3						m_RGB = float3.One;
 
 		/// <summary> 
 		/// Required designer variable.
@@ -51,11 +52,9 @@ namespace Nuaj.Cirrus.Utility
 		/// <summary>
 		/// The drawstyle of the contol (Hue, Saturation, Brightness, Red, Green or Blue)
 		/// </summary>
-		public ColorPickerForm.DRAW_STYLE DrawStyle
-		{
+		public ColorPickerForm.DRAW_STYLE DrawStyle {
 			get { return m_DrawStyle; }
-			set
-			{
+			set {
 				m_DrawStyle = value;
 
 				//	Redraw the control based on the new ColorPickerForm.DRAW_STYLE
@@ -68,13 +67,10 @@ namespace Nuaj.Cirrus.Utility
 		/// <summary>
 		/// The HSL color of the control, changing the HSL will automatically change the RGB color for the control.
 		/// </summary>
-		public AdobeColors.HSL HSL
-		{
-			get { return m_HSL; }
-			set
-			{
-				m_HSL = value;
-				m_RGB = AdobeColors.HSL_to_RGB( m_HSL );
+		public float3	HSL {
+			get { return AdobeColors.RGB2HSB( m_RGB ); }
+			set {
+				m_RGB = AdobeColors.HSB2RGB( value );
 
 				//	Redraw the control based on the new color.
 				Reset_Marker( true );
@@ -86,13 +82,10 @@ namespace Nuaj.Cirrus.Utility
 		/// <summary>
 		/// The RGB color of the control, changing the RGB will automatically change the HSL color for the control.
 		/// </summary>
-		public float3	RGB
-		{
+		public float3	RGB {
 			get { return m_RGB; }
-			set
-			{
+			set {
 				m_RGB = value;
-				m_HSL = AdobeColors.RGB_to_HSL( m_RGB );
 
 				//	Redraw the control based on the new color.
 				Reset_Marker( true );
@@ -152,15 +145,12 @@ namespace Nuaj.Cirrus.Utility
 
 		#region Control Events
 
-		protected override void OnLoad( EventArgs e )
-		{
+		protected override void OnLoad( EventArgs e ) {
 			base.OnLoad( e );
-
 			Redraw_Control();
 		}
 
-		protected override void OnMouseDown( MouseEventArgs e )
-		{
+		protected override void OnMouseDown( MouseEventArgs e ) {
 			base.OnMouseDown( e );
 
 			if ( e.Button != MouseButtons.Left )	//	Only respond to left mouse button events
@@ -241,13 +231,11 @@ namespace Nuaj.Cirrus.Utility
 			Refresh();
 		}
 
-		protected override void OnResize( EventArgs e )
-		{
+		protected override void OnResize( EventArgs e ) {
 			base.OnResize( e );
 
 			// Dispose of previous bitmap
-			if ( m_Output != null )
-			{
+			if ( m_Output != null ) {
 				m_Output.Dispose();
 				m_Output = null;
 			}
@@ -255,13 +243,11 @@ namespace Nuaj.Cirrus.Utility
 			Redraw_Control();
 		}
 
-		protected override void OnPaintBackground( PaintEventArgs e )
-		{
+		protected override void OnPaintBackground( PaintEventArgs e ) {
 //			base.OnPaintBackground( e );
 		}
 
-		protected override void OnPaint( PaintEventArgs e )
-		{
+		protected override void OnPaint( PaintEventArgs e ) {
 //			base.OnPaint( e );
 
 			// Simply output the bitmap...
@@ -283,8 +269,8 @@ namespace Nuaj.Cirrus.Utility
 			//	Determine the area that needs to be redrawn
 			int start_x, start_y, end_x, end_y;
 			int red = 0; int green = 0; int blue = 0;
-			AdobeColors.HSL hsl_start = new AdobeColors.HSL();
-			AdobeColors.HSL hsl_end = new AdobeColors.HSL();
+			float3	hsl_start = float3.Zero;
+			float3	hsl_end = float3.Zero;
 
 			//	Find the markers corners
 			start_x = m_iMarker_X - 5;
@@ -297,10 +283,11 @@ namespace Nuaj.Cirrus.Utility
 			if ( end_x > this.Width - 4 ) end_x = this.Width - 4;
 			if ( end_y > this.Height - 4 ) end_y = this.Height - 4;
 
+			float3	HSL = this.HSL;
+
 			//	Redraw the content based on the current draw style:
-			//	The code get's a little messy from here
-			switch (m_DrawStyle)
-			{
+			//	The code is getting a little messy from here
+			switch ( m_DrawStyle ) {
 					//		  S=0,S=1,S=2,S=3.....S=100
 					//	L=100
 					//	L=99
@@ -310,14 +297,13 @@ namespace Nuaj.Cirrus.Utility
 					//	L=0
 				case ColorPickerForm.DRAW_STYLE.Hue :	
 
-					hsl_start.H = m_HSL.H;	hsl_end.H = m_HSL.H;	//	Hue is constant
-					hsl_start.S = (double)start_x/(this.Width - 4);	//	Because we're drawing horizontal lines, s will not change
-					hsl_end.S = (double)end_x/(this.Width - 4);		//	from line to line
+					hsl_start.x = HSL.x;	hsl_end.x = HSL.x;			//	Hue is constant
+					hsl_start.y = (float) start_x / (Width - 4);		//	Because we're drawing horizontal lines, s will not change
+					hsl_end.y = (float) end_x / (Width - 4);			//	from line to line
 
-					for ( int i = start_y; i <= end_y; i++ )		//	For each horizontal line:
-					{
-						hsl_start.L = 1.0 - (double)i/(this.Height - 4);	//	Brightness (L) WILL change for each horizontal
-						hsl_end.L = hsl_start.L;							//	line drawn
+					for ( int i = start_y; i <= end_y; i++ ) {			//	For each horizontal line:
+						hsl_start.z = 1.0f - (float) i / (Height - 4);	//	Brightness (L) WILL change for each horizontal
+						hsl_end.z = hsl_start.z;						//	line drawn
 				
 						LinearGradientBrush br = new LinearGradientBrush(new System.Drawing.Rectangle(start_x + 1,i + 2, end_x - start_x + 1, 1), AdobeColors.HSL_to_RGB_LDR(hsl_start), AdobeColors.HSL_to_RGB_LDR(hsl_end), 0, false); 
 						g.FillRectangle(br,new System.Drawing.Rectangle(start_x + 2,i + 2, end_x - start_x + 1 , 1)); 
@@ -333,14 +319,13 @@ namespace Nuaj.Cirrus.Utility
 					//	L=0
 				case ColorPickerForm.DRAW_STYLE.Saturation :
 
-					hsl_start.S = m_HSL.S;	hsl_end.S = m_HSL.S;			//	Saturation is constant
-					hsl_start.L = 1.0 - (double)start_y/(this.Height - 4);	//	Because we're drawing vertical lines, L will 
-					hsl_end.L = 1.0 - (double)end_y/(this.Height - 4);		//	not change from line to line
+					hsl_start.y = HSL.y;	hsl_end.y = HSL.y;			//	Saturation is constant
+					hsl_start.z = 1.0f - (float) start_y/(Height - 4);	//	Because we're drawing vertical lines, L will 
+					hsl_end.z = 1.0f - (float) end_y/(Height - 4);		//	not change from line to line
 
-					for ( int i = start_x; i <= end_x; i++ )				//	For each vertical line:
-					{
-						hsl_start.H = (double)i/(this.Width - 4);			//	Hue (H) WILL change for each vertical
-						hsl_end.H = hsl_start.H;							//	line drawn
+					for ( int i = start_x; i <= end_x; i++ ) {			//	For each vertical line:
+						hsl_start.x = (float) i / (Width - 4);			//	Hue (H) WILL change for each vertical
+						hsl_end.x = hsl_start.x;						//	line drawn
 				
 						LinearGradientBrush br = new LinearGradientBrush(new System.Drawing.Rectangle(i + 2,start_y + 1, 1, end_y - start_y + 2), AdobeColors.HSL_to_RGB_LDR(hsl_start), AdobeColors.HSL_to_RGB_LDR(hsl_end), 90, false); 
 						g.FillRectangle(br,new System.Drawing.Rectangle(i + 2, start_y + 2, 1, end_y - start_y + 1)); 
@@ -355,14 +340,13 @@ namespace Nuaj.Cirrus.Utility
 					//	S=0
 				case ColorPickerForm.DRAW_STYLE.Brightness :
 					
-					hsl_start.L = m_HSL.L;	hsl_end.L = m_HSL.L;			//	Luminance is constant
-					hsl_start.S = 1.0 - (double)start_y/(this.Height - 4);	//	Because we're drawing vertical lines, S will 
-					hsl_end.S = 1.0 - (double)end_y/(this.Height - 4);		//	not change from line to line
+					hsl_start.z = HSL.z;	hsl_end.z = HSL.z;				//	Luminance is constant
+					hsl_start.y = 1.0f - (float) start_y / (Height - 4);	//	Because we're drawing vertical lines, S will 
+					hsl_end.y = 1.0f - (float) end_y / (Height - 4);		//	not change from line to line
 
-					for ( int i = start_x; i <= end_x; i++ )				//	For each vertical line:
-					{
-						hsl_start.H = (double)i/(this.Width - 4);			//	Hue (H) WILL change for each vertical
-						hsl_end.H = hsl_start.H;							//	line drawn
+					for ( int i = start_x; i <= end_x; i++ ) {				//	For each vertical line:
+						hsl_start.x = (float) i / (Width - 4);				//	Hue (H) WILL change for each vertical
+						hsl_end.x = hsl_start.x;							//	line drawn
 				
 						LinearGradientBrush br = new LinearGradientBrush(new System.Drawing.Rectangle(i + 2,start_y + 1, 1, end_y - start_y + 2), AdobeColors.HSL_to_RGB_LDR(hsl_start), AdobeColors.HSL_to_RGB_LDR(hsl_end), 90, false); 
 						g.FillRectangle(br,new System.Drawing.Rectangle(i + 2, start_y + 2, 1, end_y - start_y + 1)); 
@@ -463,12 +447,12 @@ namespace Nuaj.Cirrus.Utility
 			Graphics g = Graphics.FromImage( m_Output );
 
 			Pen pen;
-			AdobeColors.HSL _hsl = GetColor(x,y);	//	The selected color determines the color of the marker drawn over
+			float3	_hsl = GetColor(x,y);	//	The selected color determines the color of the marker drawn over
 			//	it (black or white)
-			if ( _hsl.L < (double)200/255 )
+			if ( _hsl.z < 200.0f / 255 )
 				pen = new Pen(Color.White);									//	White marker if selected color is dark
-			else if ( _hsl.H < (double)26/360 || _hsl.H > (double)200/360 )
-				if ( _hsl.S > (double)70/255 )
+			else if ( _hsl.x < 26.0f / 360 || _hsl.x > 200.0f / 360 )
+				if ( _hsl.y > 70.0f / 255 )
 					pen = new Pen(Color.White);
 				else
 					pen = new Pen(Color.Black);								//	Else use a black marker for lighter colors
@@ -511,10 +495,8 @@ namespace Nuaj.Cirrus.Utility
 		/// Evaluates the DrawStyle of the control and calls the appropriate
 		/// drawing function for content
 		/// </summary>
-		protected void DrawContent()
-		{
-			switch (m_DrawStyle)
-			{
+		protected void DrawContent() {
+			switch ( m_DrawStyle ) {
 				case ColorPickerForm.DRAW_STYLE.Hue :
 					Draw_Style_Hue();
 					break;
@@ -522,7 +504,7 @@ namespace Nuaj.Cirrus.Utility
 					Draw_Style_Saturation();
 					break;
 				case ColorPickerForm.DRAW_STYLE.Brightness :
-					Draw_Style_Luminance();
+					Draw_Style_Brightness();
 					break;
 				case ColorPickerForm.DRAW_STYLE.Red :
 					Draw_Style_Red();
@@ -533,6 +515,15 @@ namespace Nuaj.Cirrus.Utility
 				case ColorPickerForm.DRAW_STYLE.Blue :
 					Draw_Style_Blue();
 					break;
+				case ColorPickerForm.DRAW_STYLE.Luminance:
+					Draw_Style_Luminance();
+					break;
+				case ColorPickerForm.DRAW_STYLE.a:
+					Draw_Style_a();
+					break;
+				case ColorPickerForm.DRAW_STYLE.b:
+					Draw_Style_b();
+					break;
 			}
 		}
 
@@ -540,21 +531,20 @@ namespace Nuaj.Cirrus.Utility
 		/// <summary>
 		/// Draws the content of the control filling in all color values with the provided Hue value.
 		/// </summary>
-		protected void Draw_Style_Hue()
-		{
+		protected void Draw_Style_Hue() {
 			Graphics g = Graphics.FromImage( m_Output );
 
-			AdobeColors.HSL hsl_start = new AdobeColors.HSL();
-			AdobeColors.HSL hsl_end = new AdobeColors.HSL();
-			hsl_start.H = m_HSL.H;
-			hsl_end.H = m_HSL.H;
-			hsl_start.S = 0.0;
-			hsl_end.S = 1.0;
+			float3	HSL = this.HSL;
+			float3	hsl_start = float3.Zero;
+			float3	hsl_end = float3.Zero;
+			hsl_start.x = HSL.x;
+			hsl_end.x = HSL.x;
+			hsl_start.y = 0.0f;
+			hsl_end.y = 1.0f;
 
-			for ( int i = 0; i < this.Height - 4; i++ )				//	For each horizontal line in the control:
-			{
-				hsl_start.L = 1.0 - (double)i/(this.Height - 4);	//	Calculate luminance at this line (Hue and Saturation are constant)
-				hsl_end.L = hsl_start.L;
+			for ( int i = 0; i < this.Height - 4; i++ ) {		//	For each horizontal line in the control:
+				hsl_start.z = 1.0f - (float) i / (Height - 4);	//	Calculate luminance at this line (Hue and Saturation are constant)
+				hsl_end.z = hsl_start.z;
 				
 				LinearGradientBrush br = new LinearGradientBrush(new System.Drawing.Rectangle(2,2, this.Width - 4, 1), AdobeColors.HSL_to_RGB_LDR(hsl_start), AdobeColors.HSL_to_RGB_LDR(hsl_end), 0, false); 
 				g.FillRectangle(br,new System.Drawing.Rectangle(2,i + 2, this.Width - 4, 1)); 
@@ -569,17 +559,17 @@ namespace Nuaj.Cirrus.Utility
 		{
 			Graphics g = Graphics.FromImage( m_Output );
 
-			AdobeColors.HSL hsl_start = new AdobeColors.HSL();
-			AdobeColors.HSL hsl_end = new AdobeColors.HSL();
-			hsl_start.S = m_HSL.S;
-			hsl_end.S = m_HSL.S;
-			hsl_start.L = 1.0;
-			hsl_end.L = 0.0;
+			float3	HSL = this.HSL;
+			float3	hsl_start = float3.Zero;
+			float3	hsl_end = float3.Zero;
+			hsl_start.y = HSL.y;
+			hsl_end.y = HSL.y;
+			hsl_start.z = 1.0f;
+			hsl_end.z = 0.0f;
 
-			for ( int i = 0; i < this.Width - 4; i++ )		//	For each vertical line in the control:
-			{
-				hsl_start.H = (double)i/(this.Width - 4);	//	Calculate Hue at this line (Saturation and Luminance are constant)
-				hsl_end.H = hsl_start.H;
+			for ( int i = 0; i < this.Width - 4; i++ ) {	//	For each vertical line in the control:
+				hsl_start.x = (float) i / (Width - 4);		//	Calculate Hue at this line (Saturation and Luminance are constant)
+				hsl_end.x = hsl_start.x;
 				
 				LinearGradientBrush br = new LinearGradientBrush(new System.Drawing.Rectangle(2,2, 1, this.Height - 4), AdobeColors.HSL_to_RGB_LDR(hsl_start), AdobeColors.HSL_to_RGB_LDR(hsl_end), 90, false); 
 				g.FillRectangle(br,new System.Drawing.Rectangle(i + 2, 2, 1, this.Height - 4)); 
@@ -590,21 +580,21 @@ namespace Nuaj.Cirrus.Utility
 		/// <summary>
 		/// Draws the content of the control filling in all color values with the provided Luminance or Brightness value.
 		/// </summary>
-		protected void Draw_Style_Luminance()
+		protected void Draw_Style_Brightness()
 		{
 			Graphics g = Graphics.FromImage( m_Output );
 
-			AdobeColors.HSL hsl_start = new AdobeColors.HSL();
-			AdobeColors.HSL hsl_end = new AdobeColors.HSL();
-			hsl_start.L = m_HSL.L;
-			hsl_end.L = m_HSL.L;
-			hsl_start.S = 1.0;
-			hsl_end.S = 0.0;
+			float3	HSL = this.HSL;
+			float3	hsl_start = float3.Zero;
+			float3	hsl_end = float3.Zero;
+			hsl_start.z = HSL.z;
+			hsl_end.z = HSL.z;
+			hsl_start.y = 1.0f;
+			hsl_end.y = 0.0f;
 
-			for ( int i = 0; i < this.Width - 4; i++ )		//	For each vertical line in the control:
-			{
-				hsl_start.H = (double)i/(this.Width - 4);	//	Calculate Hue at this line (Saturation and Luminance are constant)
-				hsl_end.H = hsl_start.H;
+			for ( int i = 0; i < Width - 4; i++ ) {		//	For each vertical line in the control:
+				hsl_start.x = (float) i / (Width - 4);	//	Calculate Hue at this line (Saturation and Luminance are constant)
+				hsl_end.x = hsl_start.x;
 				
 				LinearGradientBrush br = new LinearGradientBrush(new System.Drawing.Rectangle(2,2, 1, this.Height - 4), AdobeColors.HSL_to_RGB_LDR(hsl_start), AdobeColors.HSL_to_RGB_LDR(hsl_end), 90, false); 
 				g.FillRectangle(br,new System.Drawing.Rectangle(i + 2, 2, 1, this.Height - 4)); 
@@ -635,8 +625,7 @@ namespace Nuaj.Cirrus.Utility
 		/// <summary>
 		/// Draws the content of the control filling in all color values with the provided Green value.
 		/// </summary>
-		protected void Draw_Style_Green()
-		{
+		protected void Draw_Style_Green() {
 			Graphics g = Graphics.FromImage( m_Output );
 
 			int green = AdobeColors.ConvertHDR2LDR( m_RGB ).G;
@@ -655,8 +644,7 @@ namespace Nuaj.Cirrus.Utility
 		/// <summary>
 		/// Draws the content of the control filling in all color values with the provided Blue value.
 		/// </summary>
-		protected void Draw_Style_Blue()
-		{
+		protected void Draw_Style_Blue() {
 			Graphics g = Graphics.FromImage( m_Output );
 
 			int blue = AdobeColors.ConvertHDR2LDR( m_RGB ).B;
@@ -671,15 +659,51 @@ namespace Nuaj.Cirrus.Utility
 			}
 		}
 
+		/// <summary>
+		/// Draws the content of the control filling in all color values with the provided Luminance value.
+		/// </summary>
+		protected unsafe void	Draw_Style_Luminance() {
+			BitmapData	lockedBitmap = m_Output.LockBits( new Rectangle( 0, 0, Width, Height ), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb );
+
+			float3	Lab = AdobeColors.RGB2Lab_D65( m_RGB );
+			float3	RGB;
+
+			int		W = Width - 4;
+			int		H = Height - 4;
+			for ( int Y=0; Y < H; Y++ ) {
+				byte*	scanlinePtr = (byte*) lockedBitmap.Scan0.ToPointer() + (2+Y) * lockedBitmap.Stride + (2*4);	// Add a margin of 2
+				Lab.z = -(256.0f * Y / H - 128.0f);
+				for ( int X=0; X < W; X++ ) {
+					Lab.y = 256.0f * X / W - 128.0f;
+					RGB = AdobeColors.Lab2RGB_D65( Lab );
+					*scanlinePtr++ = (byte) Math.Max( 0, Math.Min( 255, 255 * RGB.z ));
+					*scanlinePtr++ = (byte) Math.Max( 0, Math.Min( 255, 255 * RGB.y ));
+					*scanlinePtr++ = (byte) Math.Max( 0, Math.Min( 255, 255 * RGB.x ));
+					*scanlinePtr++ = 0xFF;
+				}
+			}
+
+			m_Output.UnlockBits( lockedBitmap );
+		}
+
+		/// <summary>
+		/// Draws the content of the control filling in all color values with the provided a* value.
+		/// </summary>
+		protected unsafe void	Draw_Style_a() {
+		}
+
+		/// <summary>
+		/// Draws the content of the control filling in all color values with the provided b* value.
+		/// </summary>
+		protected unsafe void	Draw_Style_b() {
+		}
 
 		/// <summary>
 		/// Calls all the functions neccessary to redraw the entire control.
 		/// </summary>
-		protected void Redraw_Control()
-		{
+		protected void Redraw_Control() {
 			// Check we have a valid bitmap to paint into
-			if ( m_Output == null )
-			{
+			if ( m_Output == null ) {
 				Graphics	Reference = this.CreateGraphics();
 				m_Output = new Bitmap( Width, Height, Reference );
 				Reference.Dispose();
@@ -687,27 +711,30 @@ namespace Nuaj.Cirrus.Utility
 
 			DrawBorder();
 
-			switch (m_DrawStyle)
-			{
-				case ColorPickerForm.DRAW_STYLE.Hue :
-					Draw_Style_Hue();
-					break;
-				case ColorPickerForm.DRAW_STYLE.Saturation :
-					Draw_Style_Saturation();
-					break;
-				case ColorPickerForm.DRAW_STYLE.Brightness :
-					Draw_Style_Luminance();
-					break;
-				case ColorPickerForm.DRAW_STYLE.Red :
-					Draw_Style_Red();
-					break;
-				case ColorPickerForm.DRAW_STYLE.Green :
-					Draw_Style_Green();
-					break;
-				case ColorPickerForm.DRAW_STYLE.Blue :
-					Draw_Style_Blue();
-					break;
-			} 
+			DrawContent();
+// 			switch ( m_DrawStyle ) {
+// 				case ColorPickerForm.DRAW_STYLE.Hue :
+// 					Draw_Style_Hue();
+// 					break;
+// 				case ColorPickerForm.DRAW_STYLE.Saturation :
+// 					Draw_Style_Saturation();
+// 					break;
+// 				case ColorPickerForm.DRAW_STYLE.Brightness :
+// 					Draw_Style_Brightness();
+// 					break;
+// 				case ColorPickerForm.DRAW_STYLE.Red :
+// 					Draw_Style_Red();
+// 					break;
+// 				case ColorPickerForm.DRAW_STYLE.Green :
+// 					Draw_Style_Green();
+// 					break;
+// 				case ColorPickerForm.DRAW_STYLE.Blue :
+// 					Draw_Style_Blue();
+// 					break;
+// 				case ColorPickerForm.DRAW_STYLE.Luminance:
+// 					Draw_Style_Luminance();
+// 					break;
+// 			} 
 
 			DrawMarker(m_iMarker_X, m_iMarker_Y, true);
 			Invalidate();
@@ -718,21 +745,20 @@ namespace Nuaj.Cirrus.Utility
 		/// Resets the marker position of the slider to match the controls color.  Gives the option of redrawing the slider.
 		/// </summary>
 		/// <param name="Redraw">Set to true if you want the function to redraw the slider after determining the best position</param>
-		protected void Reset_Marker( bool Redraw )
-		{
-			switch ( m_DrawStyle )
-			{
+		protected void Reset_Marker( bool Redraw ) {
+			float3	HSL = this.HSL;
+			switch ( m_DrawStyle ) {
 				case ColorPickerForm.DRAW_STYLE.Hue :
-					m_iMarker_X = Round( (this.Width - 4) * m_HSL.S );
-					m_iMarker_Y = Round( (this.Height - 4) * (1.0 - Clamp( m_HSL.L )) );
+					m_iMarker_X = Round( (this.Width - 4) * HSL.y );
+					m_iMarker_Y = Round( (this.Height - 4) * (1.0 - Clamp( HSL.z )) );
 					break;
 				case ColorPickerForm.DRAW_STYLE.Saturation :
-					m_iMarker_X = Round( (this.Width - 4) * m_HSL.H );
-					m_iMarker_Y = Round( (this.Height - 4) * (1.0 - Clamp( m_HSL.L)) );
+					m_iMarker_X = Round( (this.Width - 4) * HSL.x );
+					m_iMarker_Y = Round( (this.Height - 4) * (1.0 - Clamp( HSL.z )) );
 					break;
 				case ColorPickerForm.DRAW_STYLE.Brightness :
-					m_iMarker_X = Round( (this.Width - 4) * m_HSL.H );
-					m_iMarker_Y = Round( (this.Height - 4) * (1.0 - m_HSL.S) );
+					m_iMarker_X = Round( (this.Width - 4) * HSL.x );
+					m_iMarker_Y = Round( (this.Height - 4) * (1.0 - HSL.y) );
 					break;
 				case ColorPickerForm.DRAW_STYLE.Red :
 					m_iMarker_X = Round( (this.Width - 4) * (double) AdobeColors.ConvertHDR2LDR( m_RGB ).B );
@@ -756,10 +782,9 @@ namespace Nuaj.Cirrus.Utility
 		/// <summary>
 		/// Resets the controls color (both HSL and RGB variables) based on the current marker position
 		/// </summary>
-		protected void ResetHSLRGB()
-		{
-			m_HSL = GetColor( m_iMarker_X, m_iMarker_Y );
-			m_RGB = AdobeColors.HSL_to_RGB( m_HSL );
+		protected void ResetHSLRGB() {
+			float3	HSL = GetColor( m_iMarker_X, m_iMarker_Y );
+			m_RGB = AdobeColors.HSB2RGB( HSL );
 		}
 
 
@@ -792,38 +817,37 @@ namespace Nuaj.Cirrus.Utility
 		/// <param name="x"></param>
 		/// <param name="y"></param>
 		/// <returns></returns>
-		protected AdobeColors.HSL GetColor(int x, int y)
-		{
-			double	InvWidth = 1.0 / (Width - 4);
-			double	InvHeight = 1.0 / (Height - 4);
+		protected float3	GetColor(int x, int y) {
+			float	InvWidth = 1.0f / (Width - 4);
+			float	InvHeight = 1.0f / (Height - 4);
 
-			AdobeColors.HSL	Result = new AdobeColors.HSL();
+			float3	Result = float3.One;
 
-			switch ( m_DrawStyle )
-			{
+			float3	HSL = this.HSL;
+			switch ( m_DrawStyle ) {
 				case ColorPickerForm.DRAW_STYLE.Hue :
-					Result.H = m_HSL.H;
-					Result.S = x * InvWidth;
-					Result.L = 1.0 - y * InvHeight;
+					Result.x = HSL.x;
+					Result.y = x * InvWidth;
+					Result.z = 1.0f - y * InvHeight;
 					break;
 				case ColorPickerForm.DRAW_STYLE.Saturation :
-					Result.S = m_HSL.S;
-					Result.H = x * InvWidth;
-					Result.L = 1.0 - y * InvHeight;
+					Result.y = HSL.y;
+					Result.x = x * InvWidth;
+					Result.z = 1.0f - y * InvHeight;
 					break;
 				case ColorPickerForm.DRAW_STYLE.Brightness :
-					Result.L = m_HSL.L;
-					Result.H = x * InvWidth;
-					Result.S = 1.0 - y * InvHeight;
+					Result.z = HSL.z;
+					Result.x = x * InvWidth;
+					Result.y = 1.0f - y * InvHeight;
 					break;
 				case ColorPickerForm.DRAW_STYLE.Red :
-					Result = AdobeColors.RGB_to_HSL( new float3( m_RGB.x, (float) (1.0 - y * InvHeight), (float) (x * InvWidth) ) );
+					Result = AdobeColors.RGB2HSB( new float3( m_RGB.x, 1.0f - y * InvHeight, x * InvWidth ) );
 					break;
 				case ColorPickerForm.DRAW_STYLE.Green :
-					Result = AdobeColors.RGB_to_HSL( new float3( (float) (1.0 - y * InvHeight), m_RGB.y, (float) (x * InvWidth) ) );
+					Result = AdobeColors.RGB2HSB( new float3( 1.0f - y * InvHeight, m_RGB.y, x * InvWidth ) );
 					break;
 				case ColorPickerForm.DRAW_STYLE.Blue :
-					Result = AdobeColors.RGB_to_HSL( new float3( (float) (x * InvWidth), (float) (1.0 - y * InvHeight), m_RGB.z ) );
+					Result = AdobeColors.RGB2HSB( new float3( x * InvWidth, 1.0f - y * InvHeight, m_RGB.z ) );
 					break;
 			}
 

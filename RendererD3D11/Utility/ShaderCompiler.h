@@ -23,9 +23,10 @@ public:	// FIELDS
 	// A flag you can set to treat warnings as errors
 	static bool				ms_warningsAsError;
 
-	static bool				ms_LoadFromBinary;	// A flag you can set to force loading from binary files without having to write a specific code for that
+	static bool				ms_loadFromBinary;	// A flag you can set to force loading from binary files without having to write a specific code for that
 												// Use the helper class ScopedForceMaterialsLoadFromBinary below
 
+	static bool				ms_assertOnSaveBinaryBlobFailed;
 
 public:	 // METHODS
 
@@ -72,6 +73,6 @@ private:
 class	ScopedForceShadersLoadFromBinary {
 	bool	m_formerState;
 public:
-	ScopedForceShadersLoadFromBinary()	{ m_formerState = ShaderCompiler::ms_LoadFromBinary; ShaderCompiler::ms_LoadFromBinary = true; }
-	~ScopedForceShadersLoadFromBinary()	{ ShaderCompiler::ms_LoadFromBinary = m_formerState; }
+	ScopedForceShadersLoadFromBinary()	{ m_formerState = ShaderCompiler::ms_loadFromBinary; ShaderCompiler::ms_loadFromBinary = true; }
+	~ScopedForceShadersLoadFromBinary()	{ ShaderCompiler::ms_loadFromBinary = m_formerState; }
 };

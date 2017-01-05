@@ -5,10 +5,10 @@
 #include "Shader.h"
 
 bool	Renderer::Shader::LoadFromBinary::get() {
-	return ShaderCompiler::ms_LoadFromBinary;
+	return ShaderCompiler::ms_loadFromBinary;
 }
 void	Renderer::Shader::LoadFromBinary::set( bool value ) {
-	ShaderCompiler::ms_LoadFromBinary = value;
+	ShaderCompiler::ms_loadFromBinary = value;
 }
 
 bool	Renderer::Shader::WarningAsError::get() {
@@ -16,6 +16,13 @@ bool	Renderer::Shader::WarningAsError::get() {
 }
 void	Renderer::Shader::WarningAsError::set( bool value ) {
 	::ShaderCompiler::ms_warningsAsError = value;
+}
+
+bool	Renderer::Shader::AssertOnSaveBinaryBlobFailed::get() {
+	return ::ShaderCompiler::ms_assertOnSaveBinaryBlobFailed;
+}
+void	Renderer::Shader::AssertOnSaveBinaryBlobFailed::set( bool value ) {
+	::ShaderCompiler::ms_assertOnSaveBinaryBlobFailed = value;
 }
 
 void	Renderer::Shader::Init( Device^ _device, System::IO::FileInfo^ _shaderFileName, VERTEX_FORMAT _format, String^ _entryPointVS, String^ _entryPointGS, String^ _entryPointPS, cli::array<ShaderMacro^>^ _macros, FileServer^ _fileServerOverride ) {

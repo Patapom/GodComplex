@@ -28,7 +28,7 @@ namespace Nuaj.Cirrus.Utility
 		protected Bitmap	m_Output = null;
 
 		//	Slider properties
-		protected int			m_iMarker_Start_X = 0;
+		protected int		m_iMarker_Start_X = 0;
 		protected bool		m_bDragging = false;
 
 		//	These variables keep track of how to fill in the content inside the box;

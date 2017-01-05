@@ -145,6 +145,8 @@ namespace SharpMath.FFT {
 				FileServer	server = new FileServer( Properties.Resources.ResourceManager );
 //				FileServer	server = new FileServer( new System.IO.DirectoryInfo( @"../../MathFFT/Shaders/" ) );
 
+				Shader.AssertOnSaveBinaryBlobFailed = false;
+
 				#if DEBUG
 					m_CS__1to16 = new ComputeShader( _device, new System.IO.FileInfo( @"./Shaders/FFT2D.hlsl" ), "CS__1to16", null, server );
 					m_CS__Generic = new ComputeShader( _device, new System.IO.FileInfo( @"./Shaders/FFT2D.hlsl" ), "CS__Generic", null, server );

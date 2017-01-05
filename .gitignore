@@ -547,3 +547,15 @@
 /Images/Out/LDR2HDR
 /Packages/_Unit Tests/TestFourier/obj
 /Packages/_Unit Tests/TestFourier/bin
+/Tools/GenerateBlueNoise/obj
+/Tools/GenerateBlueNoise/bin
+/Tools/GenerateBlueNoise/Images/Data/256_256
+/Tools/GenerateBlueNoise/Images/Data/1024_1024
+/Tools/GenerateBlueNoise/Images/Data/16_16
+/Tools/GenerateBlueNoise/Images/Data/32_32
+/Tools/GenerateBlueNoise/Images/Data/64_64
+/Tools/GenerateBlueNoise/Images/Data/128_128
+/Tools/GenerateBlueNoise/Images/Data/512_512/LDR_RGBA_0.png
+/Tools/GenerateBlueNoise/Images/Data/512_512/LDR_RG01_0.png
+/Tools/GenerateBlueNoise/Images/Data/512_512/LDR_RGB1_0.png
+/Packages/_Unit Tests/TestFourier/Publish

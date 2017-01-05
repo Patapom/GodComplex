@@ -148,6 +148,8 @@ namespace SharpMath.FFT {
 				FileServer	server = new FileServer( Properties.Resources.ResourceManager );
 //				FileServer	server = new FileServer( new System.IO.DirectoryInfo( @"../../MathFFT/Shaders/" ) );
 
+				Shader.AssertOnSaveBinaryBlobFailed = false;
+
 				#if DEBUG
 					m_CS__1to256 = new ComputeShader( _device, new System.IO.FileInfo( @"./Shaders/FFT1D.hlsl" ), "CS__1to256", null, server );
 					switch ( m_POT ) {

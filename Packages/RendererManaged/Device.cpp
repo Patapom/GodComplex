@@ -6,6 +6,8 @@
 #include "Shader.h"
 
 void	Renderer::Device::Init( System::IntPtr _windowHandle, bool _fullScreen, bool _sRGBRenderTarget ) {
+	if ( _windowHandle == IntPtr::Zero )
+		throw gcnew Exception( "Invalid window handle!" );
 	m_pDevice->Exit();
 	if ( !m_pDevice->Init( (HWND) _windowHandle.ToInt32(), _fullScreen, _sRGBRenderTarget ) )
 		throw gcnew Exception( "Failed to initialize the DirectX device with DX11 level!" );

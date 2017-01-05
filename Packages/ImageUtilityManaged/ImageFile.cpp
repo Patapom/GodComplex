@@ -328,9 +328,9 @@ void	ImageFile::PlotGraphAutoRangeY( SharpMath::float4^ _color, SharpMath::float
 	gch.Free();  
 }
 
-void	ImageFile::PlotLogGraph( SharpMath::float4^ _color, SharpMath::float2^ _rangeX, SharpMath::float2^ _rangeY, PlotDelegate^ _delegate ) {
-	PlotLogGraph( _color, _rangeX, _rangeY, _delegate, 10.0f, 10.0f );
-}
+// void	ImageFile::PlotLogGraph( SharpMath::float4^ _color, SharpMath::float2^ _rangeX, SharpMath::float2^ _rangeY, PlotDelegate^ _delegate ) {
+// 	PlotLogGraph( _color, _rangeX, _rangeY, _delegate, 10.0f, 10.0f );
+// }
 void	ImageFile::PlotLogGraph( SharpMath::float4^ _color, SharpMath::float2^ _rangeX, SharpMath::float2^ _rangeY, PlotDelegate^ _delegate, float _logBaseX, float _logBaseY ) {
 	// Get a function pointer to the delegate
 	System::Runtime::InteropServices::GCHandle	gch = System::Runtime::InteropServices::GCHandle::Alloc( _delegate );
@@ -345,9 +345,9 @@ void	ImageFile::PlotLogGraph( SharpMath::float4^ _color, SharpMath::float2^ _ran
 	gch.Free();  
 }
 
-void	ImageFile::PlotLogGraphAutoRangeY( SharpMath::float4^ _color, SharpMath::float2^ _rangeX, SharpMath::float2% _rangeY, PlotDelegate^ _delegate ) {
-	PlotLogGraphAutoRangeY( _color, _rangeX, _rangeY, _delegate, 10.0f, 10.0f );
-}
+// void	ImageFile::PlotLogGraphAutoRangeY( SharpMath::float4^ _color, SharpMath::float2^ _rangeX, SharpMath::float2% _rangeY, PlotDelegate^ _delegate ) {
+// 	PlotLogGraphAutoRangeY( _color, _rangeX, _rangeY, _delegate, 10.0f, 10.0f );
+// }
 void	ImageFile::PlotLogGraphAutoRangeY( SharpMath::float4^ _color, SharpMath::float2^ _rangeX, SharpMath::float2% _rangeY, PlotDelegate^ _delegate, float _logBaseX, float _logBaseY ) {
 	// Get a function pointer to the delegate
 	System::Runtime::InteropServices::GCHandle	gch = System::Runtime::InteropServices::GCHandle::Alloc( _delegate );

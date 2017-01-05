@@ -6,7 +6,8 @@
 #include <D3Dcompiler.h>
 #include <D3D11Shader.h>
 
-bool	ShaderCompiler::ms_LoadFromBinary = false;
+bool	ShaderCompiler::ms_loadFromBinary = false;
+bool	ShaderCompiler::ms_assertOnSaveBinaryBlobFailed = true;
 
 #ifdef WARNING_AS_ERROR
 	bool	ShaderCompiler::ms_warningsAsError = true;
@@ -15,7 +16,7 @@ bool	ShaderCompiler::ms_LoadFromBinary = false;
 #endif
 
 ID3DBlob*   ShaderCompiler::CompileShader( IFileServer& _fileServer, const BString& _shaderFileName, D3D_SHADER_MACRO* _macros, const BString& _entryPoint, const BString& _target, bool _isComputeShader ) {
-	if ( ms_LoadFromBinary )
+	if ( ms_loadFromBinary )
 		return LoadPreCompiledShader( _fileServer, _shaderFileName, _macros, _entryPoint );
 
 	// Load shader code
@@ -248,7 +249,10 @@ void	ShaderCompiler::SaveBinaryBlob( const BString& _shaderFileName, D3D_SHADER_
 	// Create the binary file
 	FILE*	pFile;
 	fopen_s( &pFile, finalShaderName, "wb" );
-	ASSERT( pFile != NULL, "Can't create binary shader file!" );
+	if ( pFile == NULL ) {
+		ASSERT( !ms_assertOnSaveBinaryBlobFailed, "Can't create binary shader file!" );
+		return;
+	}
 
 	// Write the entry point's length
 	int	Length = int( strlen( _entryPoint )+1 );

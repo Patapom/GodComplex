@@ -23,14 +23,20 @@ namespace Renderer {
 		// A flag you can set to force loading from binary files without having to write a specific code for that
 		// Use the helper class ScopedForceMaterialsLoadFromBinary below
 		static property bool	LoadFromBinary {
-			bool	get();// { return ShaderCompiler::ms_LoadFromBinary; }
-			void	set( bool value );// { ShaderCompiler::ms_LoadFromBinary = value; }
+			bool	get();
+			void	set( bool value );
 		}
 
 		// A flag you can set to treat warnings as errors
 		static property bool	WarningAsError {
-			bool	get();// { return ::ShaderCompiler::ms_warningsAsError; }
-			void	set( bool value );// { ::ShaderCompiler::ms_warningsAsError = value; }
+			bool	get();
+			void	set( bool value );
+		}
+
+		// A flag you can set to treat warnings as errors
+		static property bool	AssertOnSaveBinaryBlobFailed {
+			bool	get();
+			void	set( bool value );
 		}
 
 	public:
