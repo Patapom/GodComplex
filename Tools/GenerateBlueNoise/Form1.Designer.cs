@@ -35,6 +35,7 @@
 			// 
 			// panelImage
 			// 
+			this.panelImage.Bitmap = null;
 			this.panelImage.Location = new System.Drawing.Point(12, 12);
 			this.panelImage.Name = "panelImage";
 			this.panelImage.Size = new System.Drawing.Size(512, 512);
@@ -43,10 +44,12 @@
 			// 
 			// panelImageSpectrum
 			// 
+			this.panelImageSpectrum.Bitmap = null;
 			this.panelImageSpectrum.Location = new System.Drawing.Point(548, 12);
 			this.panelImageSpectrum.Name = "panelImageSpectrum";
 			this.panelImageSpectrum.Size = new System.Drawing.Size(512, 512);
 			this.panelImageSpectrum.TabIndex = 0;
+			this.panelImageSpectrum.Click += new System.EventHandler(this.panelImageSpectrum_Click);
 			// 
 			// GenerateBlueNoiseForm
 			// 
