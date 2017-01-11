@@ -29,18 +29,104 @@
 		private void InitializeComponent()
 		{
 			this.components = new System.ComponentModel.Container();
-			this.panelImage = new GenerateBlueNoise.PanelImage(this.components);
+			this.floatTrackbarControlScale = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlOffset = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.label1 = new System.Windows.Forms.Label();
+			this.label2 = new System.Windows.Forms.Label();
+			this.floatTrackbarControlRadialScale = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.label3 = new System.Windows.Forms.Label();
+			this.floatTrackbarControlRadialOffset = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.label4 = new System.Windows.Forms.Label();
 			this.panelImageSpectrum = new GenerateBlueNoise.PanelImage(this.components);
+			this.panelImage = new GenerateBlueNoise.PanelImage(this.components);
+			this.floatTrackbarControlDC = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.label5 = new System.Windows.Forms.Label();
 			this.SuspendLayout();
 			// 
-			// panelImage
+			// floatTrackbarControlScale
 			// 
-			this.panelImage.Bitmap = null;
-			this.panelImage.Location = new System.Drawing.Point(12, 12);
-			this.panelImage.Name = "panelImage";
-			this.panelImage.Size = new System.Drawing.Size(512, 512);
-			this.panelImage.TabIndex = 0;
-			this.panelImage.Click += new System.EventHandler(this.panelImage_Click);
+			this.floatTrackbarControlScale.Location = new System.Drawing.Point(87, 530);
+			this.floatTrackbarControlScale.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlScale.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlScale.Name = "floatTrackbarControlScale";
+			this.floatTrackbarControlScale.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlScale.TabIndex = 1;
+			this.floatTrackbarControlScale.Value = 6F;
+			this.floatTrackbarControlScale.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlScale_ValueChanged);
+			// 
+			// floatTrackbarControlOffset
+			// 
+			this.floatTrackbarControlOffset.Location = new System.Drawing.Point(87, 556);
+			this.floatTrackbarControlOffset.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlOffset.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlOffset.Name = "floatTrackbarControlOffset";
+			this.floatTrackbarControlOffset.RangeMax = 1F;
+			this.floatTrackbarControlOffset.RangeMin = 0F;
+			this.floatTrackbarControlOffset.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlOffset.TabIndex = 1;
+			this.floatTrackbarControlOffset.Value = 0.5F;
+			this.floatTrackbarControlOffset.VisibleRangeMax = 1F;
+			this.floatTrackbarControlOffset.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlOffset_ValueChanged);
+			// 
+			// label1
+			// 
+			this.label1.AutoSize = true;
+			this.label1.Location = new System.Drawing.Point(24, 536);
+			this.label1.Name = "label1";
+			this.label1.Size = new System.Drawing.Size(34, 13);
+			this.label1.TabIndex = 2;
+			this.label1.Text = "Scale";
+			// 
+			// label2
+			// 
+			this.label2.AutoSize = true;
+			this.label2.Location = new System.Drawing.Point(24, 559);
+			this.label2.Name = "label2";
+			this.label2.Size = new System.Drawing.Size(27, 13);
+			this.label2.TabIndex = 2;
+			this.label2.Text = "Bias";
+			// 
+			// floatTrackbarControlRadialScale
+			// 
+			this.floatTrackbarControlRadialScale.Location = new System.Drawing.Point(413, 530);
+			this.floatTrackbarControlRadialScale.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlRadialScale.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlRadialScale.Name = "floatTrackbarControlRadialScale";
+			this.floatTrackbarControlRadialScale.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlRadialScale.TabIndex = 1;
+			this.floatTrackbarControlRadialScale.Value = 1F;
+			this.floatTrackbarControlRadialScale.VisibleRangeMax = 2F;
+			this.floatTrackbarControlRadialScale.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlScale_ValueChanged);
+			// 
+			// label3
+			// 
+			this.label3.AutoSize = true;
+			this.label3.Location = new System.Drawing.Point(335, 536);
+			this.label3.Name = "label3";
+			this.label3.Size = new System.Drawing.Size(72, 13);
+			this.label3.TabIndex = 2;
+			this.label3.Text = "Radial Range";
+			// 
+			// floatTrackbarControlRadialOffset
+			// 
+			this.floatTrackbarControlRadialOffset.Location = new System.Drawing.Point(413, 556);
+			this.floatTrackbarControlRadialOffset.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlRadialOffset.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlRadialOffset.Name = "floatTrackbarControlRadialOffset";
+			this.floatTrackbarControlRadialOffset.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlRadialOffset.TabIndex = 1;
+			this.floatTrackbarControlRadialOffset.Value = 0F;
+			this.floatTrackbarControlRadialOffset.VisibleRangeMax = 1F;
+			this.floatTrackbarControlRadialOffset.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlScale_ValueChanged);
+			// 
+			// label4
+			// 
+			this.label4.AutoSize = true;
+			this.label4.Location = new System.Drawing.Point(335, 562);
+			this.label4.Name = "label4";
+			this.label4.Size = new System.Drawing.Size(68, 13);
+			this.label4.TabIndex = 2;
+			this.label4.Text = "Radial Offset";
 			// 
 			// panelImageSpectrum
 			// 
@@ -51,11 +137,51 @@
 			this.panelImageSpectrum.TabIndex = 0;
 			this.panelImageSpectrum.Click += new System.EventHandler(this.panelImageSpectrum_Click);
 			// 
+			// panelImage
+			// 
+			this.panelImage.Bitmap = null;
+			this.panelImage.Location = new System.Drawing.Point(12, 12);
+			this.panelImage.Name = "panelImage";
+			this.panelImage.Size = new System.Drawing.Size(512, 512);
+			this.panelImage.TabIndex = 0;
+			this.panelImage.Click += new System.EventHandler(this.panelImage_Click);
+			// 
+			// floatTrackbarControlDC
+			// 
+			this.floatTrackbarControlDC.Location = new System.Drawing.Point(708, 530);
+			this.floatTrackbarControlDC.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlDC.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlDC.Name = "floatTrackbarControlDC";
+			this.floatTrackbarControlDC.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlDC.TabIndex = 1;
+			this.floatTrackbarControlDC.Value = 0.5F;
+			this.floatTrackbarControlDC.VisibleRangeMax = 1F;
+			this.floatTrackbarControlDC.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlScale_ValueChanged);
+			// 
+			// label5
+			// 
+			this.label5.AutoSize = true;
+			this.label5.Location = new System.Drawing.Point(630, 536);
+			this.label5.Name = "label5";
+			this.label5.Size = new System.Drawing.Size(49, 13);
+			this.label5.TabIndex = 2;
+			this.label5.Text = "DC Term";
+			// 
 			// GenerateBlueNoiseForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1072, 595);
+			this.Controls.Add(this.label2);
+			this.Controls.Add(this.label4);
+			this.Controls.Add(this.label5);
+			this.Controls.Add(this.label3);
+			this.Controls.Add(this.label1);
+			this.Controls.Add(this.floatTrackbarControlOffset);
+			this.Controls.Add(this.floatTrackbarControlRadialOffset);
+			this.Controls.Add(this.floatTrackbarControlDC);
+			this.Controls.Add(this.floatTrackbarControlRadialScale);
+			this.Controls.Add(this.floatTrackbarControlScale);
 			this.Controls.Add(this.panelImageSpectrum);
 			this.Controls.Add(this.panelImage);
 			this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedToolWindow;
@@ -63,6 +189,7 @@
 			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
 			this.Text = "Blue Noise Generator";
 			this.ResumeLayout(false);
+			this.PerformLayout();
 
 		}
 
@@ -70,6 +197,16 @@
 
 		private PanelImage panelImage;
 		private PanelImage panelImageSpectrum;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlScale;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlOffset;
+		private System.Windows.Forms.Label label1;
+		private System.Windows.Forms.Label label2;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlRadialScale;
+		private System.Windows.Forms.Label label3;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlRadialOffset;
+		private System.Windows.Forms.Label label4;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlDC;
+		private System.Windows.Forms.Label label5;
 	}
 }
 
