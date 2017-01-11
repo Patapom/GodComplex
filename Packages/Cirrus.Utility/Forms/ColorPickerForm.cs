@@ -11,11 +11,11 @@
 //
 // And also by Patapom ^_^ :
 //
-// _ an upgrade to support Alpha
-// _ Full HDR refactor
-// _ Palette support with storage in the Registry
-// _ various code factoring and optimization
-// _ used nice sliders
+// • an upgrade to support Alpha
+// • Full HDR refactor
+// • Palette support with storage in the Registry
+// • various code factoring and optimization
+// • used nice sliders
 //
 
 using System;
@@ -32,8 +32,7 @@ namespace Nuaj.Cirrus.Utility
 	/// <summary>
 	/// An improved, photoshop-like color picker with Alpha and HDR colors support
 	/// </summary>
-	public partial class ColorPickerForm : System.Windows.Forms.Form
-	{
+	public partial class ColorPickerForm : System.Windows.Forms.Form {
 		#region CONSTANTS
 
 		protected const float	MIN_COMPONENT_VALUE	= 0.0f;//1e-3f;
@@ -224,45 +223,53 @@ namespace Nuaj.Cirrus.Utility
 
 		#region METHODS
 
-		public ColorPickerForm()
-		{
+		public ColorPickerForm() {
 			InitializeComponent();
-
 			CustomInit();
 		}
 
-		public ColorPickerForm( float4 _ColorHDR )
-		{
+		public ColorPickerForm( float4 _ColorHDR ) {
 			InitializeComponent();
-
 			CustomInit();
 
 			ColorHDR = _ColorHDR;
 		}
 
-		public ColorPickerForm( Color _ColorLDR )
-		{
+		public ColorPickerForm( Color _ColorLDR ) {
 			InitializeComponent();
-
 			CustomInit();
 
 			ColorLDR = _ColorLDR;
 		}
 
-		protected override void Dispose( bool disposing )
-		{
-			if( disposing )
-			{
-				if(components != null)
-				{
+		protected override void Dispose( bool disposing ) {
+			if( disposing ) {
+				if(components != null) {
 					components.Dispose();
 				}
 			}
 			base.Dispose( disposing );
 		}
 
+		protected override void OnLoad(EventArgs e) {
+			base.OnLoad(e);
+
+			// Restore last location
+			string	lastLocationXStr = GetRegistryValue( "LastDialogPositionX", null );
+			string	lastLocationYStr = GetRegistryValue( "LastDialogPositionY", null );
+			if ( lastLocationXStr != null && lastLocationYStr != null ) {
+				int	X, Y;
+				if ( int.TryParse( lastLocationXStr, out X ) && int.TryParse( lastLocationYStr, out Y ) )
+					this.DesktopLocation = new Point( X, Y );
+			}
+		}
+
 		protected override void OnClosing( CancelEventArgs e ) {
 			base.OnClosing( e );
+
+			SetRegistryValue( "LastDialogPositionX", this.DesktopLocation.X.ToString() );
+			SetRegistryValue( "LastDialogPositionY", this.DesktopLocation.Y.ToString() );
+
 			if ( e.Cancel || DialogResult != DialogResult.Cancel )
 				return;
 
@@ -273,12 +280,10 @@ namespace Nuaj.Cirrus.Utility
 		/// <summary>
 		/// Custom Control initialization
 		/// </summary>
-		protected void	CustomInit()
-		{
+		protected void	CustomInit() {
 			// Subscribe to the palette buttons' events
 			FieldInfo[]	Fields = this.GetType().GetFields( BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic );
-			foreach ( FieldInfo Field in Fields )
-			{
+			foreach ( FieldInfo Field in Fields ) {
 				if ( Field.FieldType != typeof(PaletteButton) )
 					continue;
 				if ( Field.Name.IndexOf( "radioButtonPalette" ) == -1 )
@@ -326,21 +331,33 @@ namespace Nuaj.Cirrus.Utility
 			WriteHexData( m_RGB );
 		}
 
+		#region Registry
+
+		internal static string	GetRegistryValue( string _keyName, string _defaultValue ) {
+			Microsoft.Win32.RegistryKey	KeyRoot = Microsoft.Win32.Registry.CurrentUser.CreateSubKey( @"Software\GodComplex\ColorPicker" );
+			string	value = KeyRoot.GetValue( _keyName, _defaultValue ) as string;
+			return value;
+		}
+
+		internal static void	SetRegistryValue( string _keyName, string _value ) {
+			Microsoft.Win32.RegistryKey	KeyRoot = Microsoft.Win32.Registry.CurrentUser.CreateSubKey( @"Software\GodComplex\ColorPicker" );
+										KeyRoot.SetValue( _keyName, _value );
+		}
+
+		#endregion
+
 		#region Static Palette Access
 
-		public static float4	GetPaletteColor( int _PaletteIndex )
-		{
-			Microsoft.Win32.RegistryKey	PaletteKey = Microsoft.Win32.Registry.CurrentUser.CreateSubKey( @"GodComplex\ColorPicker" );
-			string	PaletteEntry = PaletteKey.GetValue( "Entry" + _PaletteIndex, null ) as string;
-
-			if ( PaletteEntry != null && PaletteEntry != "" ) {
+		public static float4	GetPaletteColor( int _paletteIndex ) {
+			string	paletteEntry = GetRegistryValue( "Entry" + _paletteIndex, null );
+			if ( paletteEntry != null && paletteEntry != "" ) {
 				float4	Result = float4.Zero;
-				if ( float4.TryParse( PaletteEntry, ref Result ) )
+				if ( float4.TryParse( paletteEntry, ref Result ) )
 					return Result;
 			}
 
 			// If we get here, we have no color for that palette entry so we create a default one...
-			switch ( _PaletteIndex ) {
+			switch ( _paletteIndex ) {
 				case	0:
 					return new float4( 0.0f, 0.0f, 0.0f, 1.0f );
 				case	1:
@@ -420,26 +437,21 @@ namespace Nuaj.Cirrus.Utility
 			return	float4.Zero;
 		}
 
-		public static void				SetPaletteColor( int _PaletteIndex, float4 _HDRColor )
-		{
-			Microsoft.Win32.RegistryKey	PaletteKey = Microsoft.Win32.Registry.CurrentUser.CreateSubKey( @"GodComplex\ColorPicker" );
-										PaletteKey.SetValue( "Entry" + _PaletteIndex, _HDRColor.ToString() );
+		public static void		SetPaletteColor( int _paletteIndex, float4 _HDRColor ) {
+			SetRegistryValue( "Entry" + _paletteIndex, _HDRColor.ToString() );
 		}
 
 		// Retrieves the index of the palette entry given a palette radio button
 		//
-		protected int	GetPaletteButtonIndex( PaletteButton _Button )
-		{
+		protected int	GetPaletteButtonIndex( PaletteButton _Button ) {
 			return	int.Parse( _Button.Name.Replace( "radioButtonPalette", "" ) );
 		}
 
 		// Retrieves the index of the palette entry given a palette radio button
 		//
-		protected PaletteButton	GetPaletteButton( int _PaletteIndex )
-		{
+		protected PaletteButton	GetPaletteButton( int _PaletteIndex ) {
 			FieldInfo[]	Fields = this.GetType().GetFields( BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic );
-			foreach ( FieldInfo Field in Fields )
-			{
+			foreach ( FieldInfo Field in Fields ) {
 				if ( Field.FieldType != typeof(PaletteButton) )
 					continue;
 				if ( Field.Name.IndexOf( "radioButtonPalette" ) == -1 )
@@ -456,8 +468,7 @@ namespace Nuaj.Cirrus.Utility
 
 		// Retrieves the index of the selected palette button
 		//
-		protected int	GetSelectedPaletteButtonIndex()
-		{
+		protected int	GetSelectedPaletteButtonIndex() {
 			FieldInfo[]	Fields = this.GetType().GetFields( BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic );
 			foreach ( FieldInfo Field in Fields )
 			{
@@ -477,8 +488,7 @@ namespace Nuaj.Cirrus.Utility
 
 		// Retrieves the index of the selected palette button
 		//
-		protected void	SetSelectedPaletteButton( PaletteButton _Button )
-		{
+		protected void	SetSelectedPaletteButton( PaletteButton _Button ) {
 			FieldInfo[]	Fields = this.GetType().GetFields( BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic );
 			foreach ( FieldInfo Field in Fields )
 			{
@@ -495,8 +505,7 @@ namespace Nuaj.Cirrus.Utility
 
 		// Updates the palette button's back color based on the associated palette entry
 		//
-		protected void	UpdatePaletteButtonColor( int _PaletteIndex )
-		{
+		protected void	UpdatePaletteButtonColor( int _PaletteIndex ) {
 			PaletteButton	Button = GetPaletteButton( _PaletteIndex );
 							Button.Vector = GetPaletteColor( _PaletteIndex );
 		}
@@ -544,11 +553,6 @@ namespace Nuaj.Cirrus.Utility
 		#region EVENT HANDLERS
 
 		#region General Events
-
-		protected void ColorPickerForm_Load(object sender, System.EventArgs e)
-		{
-
-		}
 
 // 		protected void m_cmd_OK_Click(object sender, System.EventArgs e) {
 // 			this.DialogResult = DialogResult.OK;

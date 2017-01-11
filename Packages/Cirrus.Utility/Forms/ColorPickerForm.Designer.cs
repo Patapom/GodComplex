@@ -983,7 +983,6 @@ namespace Nuaj.Cirrus.Utility
 			this.ShowInTaskbar = false;
 			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
 			this.Text = "Color Picker";
-			this.Load += new System.EventHandler(this.ColorPickerForm_Load);
 			((System.ComponentModel.ISupportInitialize)(this.m_pbx_BlankBox)).EndInit();
 			this.groupBox1.ResumeLayout(false);
 			this.groupBox1.PerformLayout();

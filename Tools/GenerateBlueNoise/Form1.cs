@@ -245,7 +245,7 @@ namespace GenerateBlueNoise
 			return y;
 		}
 
-		void	RebuildNoise() {
+		void	CreateNoiseSpectrum( Complex[,] _spectrum ) {
 			uint	size = m_blueNoise.Width;
 			uint	halfSize = size >> 1;
 
@@ -254,9 +254,6 @@ namespace GenerateBlueNoise
 			double	radialOffset = floatTrackbarControlRadialOffset.Value;
 			double	radialScale = floatTrackbarControlRadialScale.Value;
 
-			//////////////////////////////////////////////////////////////////////////
-			// Reconstruct an artificial spectrum
-			Complex[,]	handmadeSpectrum = new Complex[m_blueNoise.Width, m_blueNoise.Height];
 			Complex		Cnoise = new Complex();
 			for ( uint Y=0; Y < m_blueNoise.Height; Y++ ) {
 				uint	Yoff = (Y + halfSize) & (size-1);
@@ -299,10 +296,64 @@ namespace GenerateBlueNoise
 //Cnoise = output[Xoff,Yoff];
 //Cnoise *= Math.Exp( 0.01 * Math.Max( 0.0, radius - 128 ) );
 
-					handmadeSpectrum[Xoff,Yoff] = Cnoise;
+					_spectrum[Xoff,Yoff] = Cnoise;
 				}
 			}
-			handmadeSpectrum[0,0].Set( floatTrackbarControlDC.Value, 0.0 );	// Central value for constant term
+			_spectrum[0,0].Set( floatTrackbarControlDC.Value, 0.0 );	// Central value for constant term
+		}
+
+		void	CreateTestSpectrum( Complex[,] _spectrum ) {
+			uint	size = m_blueNoise.Width;
+			uint	halfSize = size >> 1;
+
+			double	angle = Math.PI * floatTrackbarControlRadialOffset.Value;
+			double	distance = 50.0 * floatTrackbarControlRadialScale.Value;
+
+			double	centerPosX0 = distance * Math.Cos( angle );
+			double	centerPosY0 = distance * Math.Sin( angle );
+			double	centerPosX1 = -distance * Math.Cos( angle );
+			double	centerPosY1 = -distance * Math.Sin( angle );
+
+			double	k = -0.01 * floatTrackbarControlScale.Value;
+			double	amplitudeFactor = floatTrackbarControlOffset.Value;// 1000.0 / (size*size);
+
+			Complex		Cnoise = new Complex();
+			for ( uint Y=0; Y < m_blueNoise.Height; Y++ ) {
+				uint	Yoff = (Y + halfSize) & (size-1);
+				int		Yrel = (int) Y - (int) halfSize;
+				for ( uint X=0; X < m_blueNoise.Width; X++ ) {
+					uint	Xoff = (X + halfSize) & (size-1);
+					int		Xrel = (int) X - (int) halfSize;
+
+					double	Dx0 = Xrel - centerPosX0;
+					double	Dy0 = Yrel - centerPosY0;
+					double	amplitude0 = amplitudeFactor * Math.Exp( k * (Dx0*Dx0 + Dy0*Dy0) );
+					double	Dx1 = Xrel - centerPosX1;
+					double	Dy1 = Yrel - centerPosY1;
+					double	amplitude1 = amplitudeFactor * Math.Exp( k * (Dx1*Dx1 + Dy1*Dy1) );
+
+					Cnoise.r = amplitude0 + amplitude1;
+
+					_spectrum[Xoff,Yoff] = Cnoise;
+				}
+			}
+			Cnoise.r = floatTrackbarControlDC.Value;
+			for ( uint Y=0; Y < m_blueNoise.Height; Y++ ) {
+				_spectrum[Y,0] = Cnoise;
+				_spectrum[0,Y] = Cnoise;
+			}
+		}
+
+		void	RebuildNoise() {
+			uint	size = m_blueNoise.Width;
+			uint	halfSize = size >> 1;
+
+			//////////////////////////////////////////////////////////////////////////
+			// Reconstruct an artificial spectrum
+			Complex[,]	handmadeSpectrum = new Complex[m_blueNoise.Width, m_blueNoise.Height];
+//			CreateNoiseSpectrum( handmadeSpectrum );
+CreateTestSpectrum( handmadeSpectrum );
+
 
 			//////////////////////////////////////////////////////////////////////////
 			// Reconstruct a hand-made "blue noise"
