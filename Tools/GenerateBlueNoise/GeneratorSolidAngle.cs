@@ -42,7 +42,7 @@ namespace GenerateBlueNoise
 			m_textures[1] = new float[m_textureSize,m_textureSize];
 		}
 
-		public delegate void	ProgressDelegate( float _iterationProgress, float _energyScore, float[,] _texture );
+		public delegate void	ProgressDelegate( int _iterationIndex, float _energyScore, float[,] _texture );
 
 		/// <summary>
 		/// Generates blue noise distribution by randomly swapping pixels in the texture to reach lowest possible score and minimize a specific energy function
@@ -68,7 +68,6 @@ namespace GenerateBlueNoise
 			// Perform iterations
 			float	bestScore = ComputeScore( m_textures[0] );
 			int		iterationIndex = 0;
-			int		iterationNotificationIndex = Math.Max( 1, _maxIterations / 100 );
 			while ( iterationIndex < _maxIterations && bestScore > _minEnergyThreshold ) {
 
 				// Copy source to target array
@@ -97,8 +96,8 @@ namespace GenerateBlueNoise
 				}
 
 				iterationIndex++;
-				if ( _progress != null && iterationIndex > iterationNotificationIndex ) {
-					_progress( (float) iterationIndex / _maxIterations, bestScore, m_textures[0] );	// Notify!
+				if ( _progress != null ) {
+					_progress( iterationIndex, bestScore, m_textures[0] );	// Notify!
 				}
 			}
 		}
@@ -138,8 +137,8 @@ namespace GenerateBlueNoise
 
 							// Compute -|Ps - Qs|^(d/2) / Sigma_s²
 							value = _texture[finalX,finalY];
-//							sqDistanceValue = value - centralValue;					// 2D value => d/2 = 1
-							sqDistanceValue = Math.Sqrt( value - centralValue );	// 1D value => d/2 = 0.5
+//							sqDistanceValue = value - centralValue;								// 2D value => d/2 = 1
+							sqDistanceValue = Math.Sqrt( Math.Abs( value - centralValue ) );	// 1D value => d/2 = 0.5
 							sqDistanceValue *= m_kernelFactorValue;
 
 							// Compute score as Exp[ -|Pi - Qi|² / Sigma_i² -|Ps - Qs|^(d/2) / Sigma_s² ]
@@ -149,6 +148,7 @@ namespace GenerateBlueNoise
 					}
 				}
 			}
+			score /= m_textureTotalSize;
 
 			return (float) score;
 		}
@@ -172,7 +172,7 @@ namespace GenerateBlueNoise
 		/// <param name="_maxValue"></param>
 		/// <returns></returns>
 		uint	GetUniformInt( uint _maxValue ) {
-			ulong	value = _maxValue * SimpleRNG.GetUint();
+			ulong	value = (ulong) _maxValue * (ulong) SimpleRNG.GetUint();
 					value >>= 32;
 			return (uint) value;
 		}

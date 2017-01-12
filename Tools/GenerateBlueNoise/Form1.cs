@@ -42,6 +42,7 @@ namespace GenerateBlueNoise
 
 		protected override void OnLoad( EventArgs e ) {
 			base.OnLoad( e );
+
 			m_blueNoise = new ImageFile( new System.IO.FileInfo( @"Images\Data\512_512\LDR_LLL1_0.png" ) );
 //			m_blueNoise = new ImageFile( new System.IO.FileInfo( @"Images\BlueNoiseSpectrumCorners256.png" ) );
 
@@ -412,6 +413,34 @@ CreateTestSpectrum( handmadeSpectrum );
 
 		private void floatTrackbarControlOffset_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue ) {
 			RebuildNoise();
+		}
+
+		ImageFile	m_blueNoiseAnnealing = new ImageFile( 64, 64, ImageFile.PIXEL_FORMAT.R8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
+		private void buttonSolidAngleAlgorithm_Click(object sender, EventArgs e) {
+
+			uint		W = m_blueNoiseAnnealing.Width;
+			uint		H = m_blueNoiseAnnealing.Height;
+			float4[]	scanline = new float4[W];
+
+			GeneratorSolidAngle	generator = new GeneratorSolidAngle( 6 );
+			generator.Generate( 1, 1e-6f, 1000000, 2.1f, 1.0f, ( int _iterationIndex, float _energyScore, float[,] _texture ) => {
+				if ( (_iterationIndex & 0x1F) != 1 )
+					return;
+
+				for ( uint Y=0; Y < H; Y++ ) {
+					for ( uint X=0; X < W; X++ ) {
+						float	V = _texture[X,Y];
+						scanline[X].Set( V, V, V, 1.0f );
+					}
+					m_blueNoiseAnnealing.WriteScanline( Y, scanline );
+				}
+
+				panelImage.Bitmap = m_blueNoiseAnnealing.AsBitmap;
+				labelAnnealingScore.Text = "Score: " + _energyScore + " - Iterations = " + _iterationIndex;
+				labelAnnealingScore.Refresh();
+			} );
+
+			m_blueNoiseAnnealing.Save( new System.IO.FileInfo( "MyBlueNoiseMoisi64x64.png" ) );
 		}
 	}
 }
