@@ -126,7 +126,7 @@ namespace GenerateSelfShadowedBumpMap
 
 				// Create our compute shaders
 				#if !DEBUG
-					using ( Renderer.ScopedForceMaterialsLoadFromBinary scope = new Renderer.ScopedForceMaterialsLoadFromBinary() )
+					using ( Renderer.ScopedForceShadersLoadFromBinary scope = new Renderer.ScopedForceShadersLoadFromBinary() )
 				#endif
 				{
 					m_CS_BilateralFilter = new Renderer.ComputeShader( m_device, new System.IO.FileInfo( "./Shaders/BilateralFiltering.hlsl" ), "CS", null );

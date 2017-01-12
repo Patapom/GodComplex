@@ -146,7 +146,7 @@ tabControlGenerators.TabPages.RemoveAt( 1 );
 
 				// Create our compute shaders
 				#if !DEBUG
-					using ( ScopedForceMaterialsLoadFromBinary scope = new ScopedForceMaterialsLoadFromBinary() )
+					using ( ScopedForceShadersLoadFromBinary scope = new ScopedForceShadersLoadFromBinary() )
 				#endif
 				{
 					m_CS_BilateralFilter = new ComputeShader( m_device, new System.IO.FileInfo( "./Shaders/BilateralFiltering.hlsl" ), "CS", null );

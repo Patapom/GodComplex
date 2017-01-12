@@ -60,7 +60,7 @@ namespace GenerateTranslucencyMap
 		public void Init()
 		{
 			#if !DEBUG
-				using ( ScopedForceMaterialsLoadFromBinary scope = new ScopedForceMaterialsLoadFromBinary() )
+				using ( ScopedForceShadersLoadFromBinary scope = new ScopedForceShadersLoadFromBinary() )
 			#endif
 			{
 				m_PS_Display = new Shader( Device, new System.IO.FileInfo( "./Shaders/Display.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );

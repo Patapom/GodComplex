@@ -70,6 +70,7 @@
     <Compile Include="Form1.Designer.cs">
       <DependentUpon>Form1.cs</DependentUpon>
     </Compile>
+    <Compile Include="GeneratorSolidAngle.cs" />
     <Compile Include="PanelImage.cs">
       <SubType>Component</SubType>
     </Compile>

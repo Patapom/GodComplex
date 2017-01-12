@@ -48,7 +48,7 @@ namespace SharpMath
 		// This is the heart of the generator.
 		// It uses George Marsaglia's MWC algorithm to produce an unsigned integer.
 		// See http://www.bobwheeler.com/statistics/Password/MarsagliaPost.txt
-		private static uint GetUint() {
+		public static uint GetUint() {
 			m_z = 36969 * (m_z & 65535) + (m_z >> 16);
 			m_w = 18000 * (m_w & 65535) + (m_w >> 16);
 			return (m_z << 16) + m_w;

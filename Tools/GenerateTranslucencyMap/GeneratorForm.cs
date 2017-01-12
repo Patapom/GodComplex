@@ -194,7 +194,7 @@ namespace GenerateTranslucencyMap
 
 				// Create our compute shaders
 				#if !DEBUG || BISOU
-					using ( ScopedForceMaterialsLoadFromBinary scope = new ScopedForceMaterialsLoadFromBinary() )
+					using ( ScopedForceShadersLoadFromBinary scope = new ScopedForceShadersLoadFromBinary() )
 				#endif
 				{
 					m_CS_BilateralFilter = new ComputeShader( m_Device, new System.IO.FileInfo( "./Shaders/BilateralFiltering.hlsl" ), "CS", null );
