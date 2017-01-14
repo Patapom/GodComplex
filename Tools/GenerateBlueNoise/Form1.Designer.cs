@@ -174,7 +174,7 @@
 			this.buttonSolidAngleAlgorithm.Location = new System.Drawing.Point(633, 562);
 			this.buttonSolidAngleAlgorithm.Name = "buttonSolidAngleAlgorithm";
 			this.buttonSolidAngleAlgorithm.Size = new System.Drawing.Size(152, 23);
-			this.buttonSolidAngleAlgorithm.TabIndex = 3;
+			this.buttonSolidAngleAlgorithm.TabIndex = 0;
 			this.buttonSolidAngleAlgorithm.Text = "Use Simulated Annealing";
 			this.buttonSolidAngleAlgorithm.UseVisualStyleBackColor = true;
 			this.buttonSolidAngleAlgorithm.Click += new System.EventHandler(this.buttonSolidAngleAlgorithm_Click);
