@@ -10,6 +10,7 @@ using System.Windows.Forms;
 
 using SharpMath;
 using ImageUtility;
+using Renderer;
 
 namespace GenerateBlueNoise
 {
@@ -415,6 +416,37 @@ CreateTestSpectrum( handmadeSpectrum );
 			RebuildNoise();
 		}
 
+#if !MEUGLE
+		ImageFile	m_blueNoiseAnnealing = new ImageFile( 256, 256, ImageFile.PIXEL_FORMAT.R8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
+		private void buttonSolidAngleAlgorithm_Click(object sender, EventArgs e) {
+
+			uint		W = m_blueNoiseAnnealing.Width;
+			uint		H = m_blueNoiseAnnealing.Height;
+			float4[]	scanline = new float4[W];
+
+			Device	device = new Device();
+			device.Init( panelImage.Handle, false, false );
+
+			GeneratorSolidAngleGPU	generator = new GeneratorSolidAngleGPU( m_device, 8 );
+			generator.Generate( 1, 1e-6f, 1000000, 2.1f, 1.0f, 100, ( int _iterationIndex, float _energyScore, float[,] _texture ) => {
+				for ( uint Y=0; Y < H; Y++ ) {
+					for ( uint X=0; X < W; X++ ) {
+						float	V = _texture[X,Y];
+						scanline[X].Set( V, V, V, 1.0f );
+					}
+					m_blueNoiseAnnealing.WriteScanline( Y, scanline );
+				}
+
+				panelImage.Bitmap = m_blueNoiseAnnealing.AsBitmap;
+				labelAnnealingScore.Text = "Score: " + _energyScore + " - Iterations = " + _iterationIndex;
+				labelAnnealingScore.Refresh();
+			} );
+
+			device.Dispose();
+
+			m_blueNoiseAnnealing.Save( new System.IO.FileInfo( "MyBlueNoise" + m_blueNoiseAnnealing.Width + "x" + m_blueNoiseAnnealing.Height + ".png" ) );
+		}
+#else
 		ImageFile	m_blueNoiseAnnealing = new ImageFile( 64, 64, ImageFile.PIXEL_FORMAT.R8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
 		private void buttonSolidAngleAlgorithm_Click(object sender, EventArgs e) {
 
@@ -442,5 +474,6 @@ CreateTestSpectrum( handmadeSpectrum );
 
 			m_blueNoiseAnnealing.Save( new System.IO.FileInfo( "MyBlueNoiseMoisi64x64.png" ) );
 		}
+#endif
 	}
 }

@@ -1,7 +1,8 @@
-ï»¿#include "Global.hlsl"
+#include "Global.hlsl"
 
 Texture2D<float>	_texIn : register(t0);
 RWTexture2D<float>	_texOut : register(u0);
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Mutate the initial distribution into a new, slightly different one
@@ -36,7 +37,7 @@ void	CS__ComputeScore1D( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : SV_
 	float	centralValue = _texIn[pixelIndex];
 
 	// Compute energy as indicated in the paper:
-	//	E(M) = Sum[ Exp[ -|Pi - Qi|Â² / Sigma_iÂ² -|Ps - Qs|^(d/2) / Sigma_sÂ² ] ]
+	//	E(M) = Sum[ Exp[ -|Pi - Qi|² / Sigma_i² -|Ps - Qs|^(d/2) / Sigma_s² ] ]
 	//
 	// For all pairs of pixels Pi != Qi (although we're only restraining to a 17x17 kernel surrounding our current pixel, assuming the score is too low to be significant otherwise)
 	//
@@ -54,22 +55,22 @@ void	CS__ComputeScore1D( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : SV_
 			float	sqDx = dX * dX;
 			uint	finalX = uint( pixelIndex.x + dX ) & _textureMask;
 
-			// Compute -|Pi - Qi|Â² / Sigma_iÂ²
+			// Compute -|Pi - Qi|² / Sigma_i²
 			float	sqDistanceImage = sqDx + sqDy;
 					sqDistanceImage *= _kernelFactorSpatial;
 
-			// Compute -|Ps - Qs|^(d/2) / Sigma_sÂ²
+			// Compute -|Ps - Qs|^(d/2) / Sigma_s²
 			float	value = _texIn[uint2( finalX, finalY )];
 //			float	sqDistanceValue = value - centralValue;					// 2D value => d/2 = 1
 			float	sqDistanceValue = sqrt( abs( value - centralValue ) );	// 1D value => d/2 = 0.5
 					sqDistanceValue *= _kernelFactorValue;
 
-			// Compute score as Exp[ -|Pi - Qi|Â² / Sigma_iÂ² -|Ps - Qs|^(d/2) / Sigma_sÂ² ]
-			dScore = exp( sqDistanceImage + sqDistanceValue );
-			score += dScore;
+			// Compute score as Exp[ -|Pi - Qi|² / Sigma_i² -|Ps - Qs|^(d/2) / Sigma_s² ]
+			score += exp( sqDistanceImage + sqDistanceValue );
 		}
 	}
 
+score = 1.0;//pixelIndex.y / 256.0;
 	_texOut[pixelIndex] = score;
 }
 
@@ -117,7 +118,7 @@ void	CS__AccumulateScore16( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : 
 	// Store initial values
 	{
 		// Threads in range [{0,0},{7,7}[ will each span 4 samples in range [{0,0},{16,16}[
-		uint2	targetPos = 8U * $SV_GroupID.xy + threadPos;
+		uint2	targetPos = 8U * _groupID.xy + threadPos;
 		gs_scores[threadIndex] = sum;
 	}
 
@@ -131,7 +132,7 @@ void	CS__AccumulateScore16( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : 
 		float	score01 = gs_scores[threadIndex01];
 		float	score11 = gs_scores[threadIndex11];
 		float	score10 = gs_scores[threadIndex10];
-		gs_scores[threadIndex] = score00 + score01 + score10 + score1;
+		gs_scores[threadIndex] = score00 + score01 + score10 + score11;
 	}
 
 	GroupMemoryBarrierWithGroupSync();	// We wait until all samples from the group are available
@@ -144,7 +145,7 @@ void	CS__AccumulateScore16( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : 
 		float	score01 = gs_scores[threadIndex01];
 		float	score11 = gs_scores[threadIndex11];
 		float	score10 = gs_scores[threadIndex10];
-		gs_scores[threadIndex] = score00 + score01 + score10 + score1;
+		gs_scores[threadIndex] = score00 + score01 + score10 + score11;
 	}
 
 	GroupMemoryBarrierWithGroupSync();	// We wait until all samples from the group are available
@@ -157,6 +158,9 @@ void	CS__AccumulateScore16( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : 
 		float	score01 = gs_scores[threadIndex01];
 		float	score11 = gs_scores[threadIndex11];
 		float	score10 = gs_scores[threadIndex10];
-		_texOut[$SV_GroupID.xy] = score00 + score01 + score10 + score1;
+		_texOut[_groupID.xy] = score00 + score01 + score10 + score11;
+
+_texOut[_groupID.xy] = 3456.0;
+//_texOut[_groupID.xy] = 1234.0;
 	}
 }

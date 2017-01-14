@@ -80,6 +80,7 @@ namespace GenerateBlueNoise
 		Texture2D		m_texNoise1 = null;
 		Texture2D		m_texNoiseScore = null;
 		Texture2D		m_texNoiseCPU = null;				// Used to upload/download results
+		Texture2D		m_texNoiseScoreCPU = null;
 
 		public	GeneratorSolidAngleGPU( Device _device, uint _texturePOT ) {
 			m_texturePOT = (int) _texturePOT;
@@ -98,8 +99,9 @@ namespace GenerateBlueNoise
 
 				m_texNoise0 = new Texture2D( _device, m_textureSize, m_textureSize, 1, 1, PIXEL_FORMAT.R32_FLOAT, false, true, null );
 				m_texNoise1 = new Texture2D( _device, m_textureSize, m_textureSize, 1, 1, PIXEL_FORMAT.R32_FLOAT, false, true, null );
-				m_texNoiseScore = new Texture2D( _device, m_textureSize, m_textureSize, 1, 1+_texturePOT, PIXEL_FORMAT.R32_FLOAT, false, true, null );
 				m_texNoiseCPU = new Texture2D( _device, m_textureSize, m_textureSize, 1, 1, PIXEL_FORMAT.R32_FLOAT, true, true, null );
+				m_texNoiseScore = new Texture2D( _device, m_textureSize, m_textureSize, 1, 1+_texturePOT, PIXEL_FORMAT.R32_FLOAT, false, true, null );
+				m_texNoiseScoreCPU = new Texture2D( _device, m_textureSize, m_textureSize, 1, 1+_texturePOT, PIXEL_FORMAT.R32_FLOAT, true, true, null );
 			} catch ( Exception _e ) {
 				throw new Exception( "An error occurred while creating DirectX structures: " + _e.Message, _e );
 			}
@@ -108,8 +110,9 @@ namespace GenerateBlueNoise
 		#region IDisposable Members
 
 		public void Dispose() {
-			m_texNoiseCPU.Dispose();
+			m_texNoiseScoreCPU.Dispose();
 			m_texNoiseScore.Dispose();
+			m_texNoiseCPU.Dispose();
 			m_texNoise1.Dispose();
 			m_texNoise0.Dispose();
 
@@ -163,7 +166,7 @@ namespace GenerateBlueNoise
 
 			//////////////////////////////////////////////////////////////////////////
 			// Perform iterations
-			float		bestScore = ComputeScore1D( m_texNoise0 );
+			float		bestScore = float.MaxValue;//ComputeScore1D( m_texNoise0 );
 			int			iterationIndex = 0;
 			uint[,]		sourceTargetIndices = new uint[MAX_SWAPPED_ELEMENTS_PER_ITERATION,2];
 			float[,]	textureCPU = new float[m_textureSize,m_textureSize];
@@ -171,39 +174,41 @@ namespace GenerateBlueNoise
 
 				//////////////////////////////////////////////////////////////////////////
 				// Copy
-				m_texNoise0.SetCS( 0 );
-				m_texNoise1.SetCSUAV( 0 );
+				if ( m_CS_Copy.Use() ) {
+					m_texNoise0.SetCS( 0 );
+					m_texNoise1.SetCSUAV( 0 );
 
-				uint	groupsCount = m_textureSize >> 4;
-				m_CS_Copy.Use();
-				m_CS_Copy.Dispatch( groupsCount, groupsCount, 1 );
+					uint	groupsCount = m_textureSize >> 4;
+					m_CS_Copy.Dispatch( groupsCount, groupsCount, 1 );
+				}
 
 				//////////////////////////////////////////////////////////////////////////
 				// Mutate current solution by swapping up to N pixels randomly
-				for ( int swapCount=0; swapCount < MAX_SWAPPED_ELEMENTS_PER_ITERATION; swapCount++ ) {
-					uint	sourceIndex = GetUniformInt( m_textureTotalSize );
-					uint	targetIndex = GetUniformInt( m_textureTotalSize );
+				if ( m_CS_Mutate.Use() ) {
+					for ( int swapCount=0; swapCount < MAX_SWAPPED_ELEMENTS_PER_ITERATION; swapCount++ ) {
+						uint	sourceIndex = GetUniformInt( m_textureTotalSize );
+						uint	targetIndex = GetUniformInt( m_textureTotalSize );
 
-					sourceTargetIndices[swapCount,0] = sourceIndex;
-					sourceTargetIndices[swapCount,0] = targetIndex;
+						sourceTargetIndices[swapCount,0] = sourceIndex;
+						sourceTargetIndices[swapCount,1] = targetIndex;
+					}
+
+					ComputeXYFromSingleIndex( sourceTargetIndices[0,0], out m_CB_Mutation.m._pixelSourceX0, out m_CB_Mutation.m._pixelSourceY0 );
+					ComputeXYFromSingleIndex( sourceTargetIndices[0,1], out m_CB_Mutation.m._pixelTargetX0, out m_CB_Mutation.m._pixelTargetY0 );
+					ComputeXYFromSingleIndex( sourceTargetIndices[1,0], out m_CB_Mutation.m._pixelSourceX1, out m_CB_Mutation.m._pixelSourceY1 );
+					ComputeXYFromSingleIndex( sourceTargetIndices[1,1], out m_CB_Mutation.m._pixelTargetX1, out m_CB_Mutation.m._pixelTargetY1 );
+					ComputeXYFromSingleIndex( sourceTargetIndices[2,0], out m_CB_Mutation.m._pixelSourceX2, out m_CB_Mutation.m._pixelSourceY2 );
+					ComputeXYFromSingleIndex( sourceTargetIndices[2,1], out m_CB_Mutation.m._pixelTargetX2, out m_CB_Mutation.m._pixelTargetY2 );
+					ComputeXYFromSingleIndex( sourceTargetIndices[3,0], out m_CB_Mutation.m._pixelSourceX3, out m_CB_Mutation.m._pixelSourceY3 );
+					ComputeXYFromSingleIndex( sourceTargetIndices[3,1], out m_CB_Mutation.m._pixelTargetX3, out m_CB_Mutation.m._pixelTargetY3 );
+
+					m_CB_Mutation.UpdateData();
+
+					m_CS_Mutate.Dispatch( MAX_SWAPPED_ELEMENTS_PER_ITERATION, 1, 1 );
+
+					m_texNoise0.RemoveFromLastAssignedSlots();
+					m_texNoise1.RemoveFromLastAssignedSlotUAV();
 				}
-
-				ComputeXYFromSingleIndex( sourceTargetIndices[0,0], out m_CB_Mutation.m._pixelSourceX0, out m_CB_Mutation.m._pixelSourceY0 );
-				ComputeXYFromSingleIndex( sourceTargetIndices[0,1], out m_CB_Mutation.m._pixelTargetX0, out m_CB_Mutation.m._pixelTargetY0 );
-				ComputeXYFromSingleIndex( sourceTargetIndices[1,0], out m_CB_Mutation.m._pixelSourceX1, out m_CB_Mutation.m._pixelSourceY1 );
-				ComputeXYFromSingleIndex( sourceTargetIndices[1,1], out m_CB_Mutation.m._pixelTargetX1, out m_CB_Mutation.m._pixelTargetY1 );
-				ComputeXYFromSingleIndex( sourceTargetIndices[2,0], out m_CB_Mutation.m._pixelSourceX2, out m_CB_Mutation.m._pixelSourceY2 );
-				ComputeXYFromSingleIndex( sourceTargetIndices[2,1], out m_CB_Mutation.m._pixelTargetX2, out m_CB_Mutation.m._pixelTargetY2 );
-				ComputeXYFromSingleIndex( sourceTargetIndices[3,0], out m_CB_Mutation.m._pixelSourceX3, out m_CB_Mutation.m._pixelSourceY3 );
-				ComputeXYFromSingleIndex( sourceTargetIndices[3,1], out m_CB_Mutation.m._pixelTargetX3, out m_CB_Mutation.m._pixelTargetY3 );
-
-				m_CB_Mutation.UpdateData();
-
-				m_CS_Mutate.Use();
-				m_CS_Mutate.Dispatch( MAX_SWAPPED_ELEMENTS_PER_ITERATION, 1, 1 );
-
-				m_texNoise0.RemoveFromLastAssignedSlots();
-				m_texNoise1.RemoveFromLastAssignedSlotUAV();
 
 				//////////////////////////////////////////////////////////////////////////
 				// Compute new score
@@ -222,9 +227,13 @@ namespace GenerateBlueNoise
 				if ( _progress == null || (iterationIndex % _notifyProgressEveryNIterations) != 1 )
 					continue;
 				
-				ReadBackTexture1D( m_texNoise0, textureCPU );
+//				ReadBackTexture1D( m_texNoise0, textureCPU );
+ReadBackScoreTexture1D( m_texNoiseScore, textureCPU );
 				_progress( iterationIndex, bestScore, textureCPU );	// Notify!
 			}
+
+			// One final call with our best final result
+			_progress( iterationIndex, bestScore, textureCPU );
 		}
 
 		float	ComputeScore1D( Texture2D _texture ) {
@@ -238,34 +247,44 @@ namespace GenerateBlueNoise
 				m_CS_ComputeScore1D.Dispatch( groupsCount, groupsCount, 1 );
 
 				_texture.RemoveFromLastAssignedSlots();
+				m_texNoiseScore.RemoveFromLastAssignedSlotUAV();
 			}
 
 			if ( m_CS_AccumulateScore.Use() ) {
-				// Downsample from mip 0 to mip 4
+				// 2] Downsample from mip 0 to mip 4
 				View2D	sourceView = m_texNoiseScore.GetView( 0, 1, 0, 1 );
 				View2D	targetView = m_texNoiseScore.GetView( 4, 1, 0, 1 );
+				m_texNoiseScore.SetCS( 0, sourceView );
 				m_texNoiseScore.SetCSUAV( 0, targetView );
 
 				uint	groupsCount = m_textureSize >> 4;	// Each group is using 8x8 threads that each read 2x2 values, thus each group is effectively covering 16x16 pixels
-				m_CS_ComputeScore1D.Dispatch( groupsCount, groupsCount, 1 );
+				m_CS_AccumulateScore.Dispatch( groupsCount, groupsCount, 1 );
 
+				m_texNoiseScore.RemoveFromLastAssignedSlots();
 				m_texNoiseScore.RemoveFromLastAssignedSlotUAV();
 
-				// Downsample from mip 4 to mip 8
+				// 3] Downsample from mip 4 to mip 8
 				sourceView = targetView;
 				targetView = m_texNoiseScore.GetView( 8, 1, 0, 1 );
 				m_texNoiseScore.SetCS( 0, sourceView );
 				m_texNoiseScore.SetCSUAV( 0, targetView );
 
 				groupsCount >>= 4;	// Should be 1!
-				m_CS_ComputeScore1D.Dispatch( groupsCount, groupsCount, 1 );
+				m_CS_AccumulateScore.Dispatch( groupsCount, groupsCount, 1 );
+
+				m_texNoiseScore.RemoveFromLastAssignedSlots();
+				m_texNoiseScore.RemoveFromLastAssignedSlotUAV();
 			}
 
 			// Copy to CPU
-			PixelsBuffer	lastPixel = m_texNoiseCPU.MapRead( 8, 0 );
+			m_texNoiseScoreCPU.CopyFrom( m_texNoiseScore );
+			PixelsBuffer	lastPixel = m_texNoiseScoreCPU.MapRead( 8, 0 );
 			float			score = 0.0f;
 			using ( System.IO.BinaryReader R = lastPixel.OpenStreamRead() )
 				score = R.ReadSingle();
+			m_texNoiseScoreCPU.UnMap( lastPixel );
+
+			score /= m_textureSize*m_textureSize;
 
 			return score;
 		}
@@ -285,6 +304,35 @@ namespace GenerateBlueNoise
 						_textureCPU[X,Y] = R.ReadSingle();
 					}
 			}
+			m_texNoiseCPU.UnMap( pixels );
+		}
+
+		/// <summary>
+		/// Reads the specified GPU 1D-valued texture back to the CPU
+		/// </summary>
+		/// <param name="_textureGPU"></param>
+		/// <param name="_textureCPU"></param>
+		void	ReadBackScoreTexture1D( Texture2D _textureGPU, float[,] _textureCPU ) {
+			m_texNoiseScoreCPU.CopyFrom( _textureGPU );
+
+			PixelsBuffer	pixels = m_texNoiseScoreCPU.MapRead( 0, 0 );
+			using ( System.IO.BinaryReader R = pixels.OpenStreamRead() ) {
+				for ( int Y=0; Y < m_textureSize; Y++ )
+					for ( int X=0; X < m_textureSize; X++ ) {
+						_textureCPU[X,Y] = R.ReadSingle();
+					}
+			}
+			m_texNoiseScoreCPU.UnMap( pixels );
+
+			float[,]	bisou = new float[16,16];
+			pixels = m_texNoiseScoreCPU.MapRead( 4, 0 );
+			using ( System.IO.BinaryReader R = pixels.OpenStreamRead() ) {
+				for ( int Y=0; Y < m_textureSize >> 4; Y++ )
+					for ( int X=0; X < m_textureSize >> 4; X++ ) {
+						bisou[X,Y] = R.ReadSingle();
+					}
+			}
+			m_texNoiseScoreCPU.UnMap( pixels );
 		}
 
 		void	ComputeXYFromSingleIndex( uint _index, out uint _X, out uint _Y ) {
