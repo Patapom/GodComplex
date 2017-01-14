@@ -427,8 +427,16 @@ CreateTestSpectrum( handmadeSpectrum );
 			Device	device = new Device();
 			device.Init( panelImage.Handle, false, false );
 
+
+			ImageFile	graphStatistics = new ImageFile( (uint) panelImageSpectrum.Width, (uint) panelImageSpectrum.Height, ImageFile.PIXEL_FORMAT.RGBA8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
+			float4		black = new float4( 0, 0, 0, 1 );
+			float2		rangeX = new float2( 0, 10000 );
+//			float2		rangeY = new float2( -10, 10 );
+//			float2		rangeY = new float2( -1, 2 );
+			float2		rangeY = new float2( 0, 100 );
+
 			GeneratorSolidAngleGPU	generator = new GeneratorSolidAngleGPU( m_device, 8 );
-			generator.Generate( 1, 1e-6f, 1000000, 2.1f, 1.0f, 100, ( int _iterationIndex, float _energyScore, float[,] _texture ) => {
+			generator.Generate( 1, 128, 1e-3f, 1000000, 2.1f, 1.0f, 100, ( int _iterationIndex, float _energyScore, float[,] _texture, List< float > _statistics ) => {
 				for ( uint Y=0; Y < H; Y++ ) {
 					for ( uint X=0; X < W; X++ ) {
 						float	V = _texture[X,Y];
@@ -440,6 +448,27 @@ CreateTestSpectrum( handmadeSpectrum );
 				panelImage.Bitmap = m_blueNoiseAnnealing.AsBitmap;
 				labelAnnealingScore.Text = "Score: " + _energyScore + " - Iterations = " + _iterationIndex;
 				labelAnnealingScore.Refresh();
+
+
+				// Plot statistics
+				int	lastX = 0;
+				graphStatistics.Clear( float4.One );
+//				graphStatistics.PlotGraphAutoRangeY( black, rangeX, ref rangeY, ( float _X ) => {
+				graphStatistics.PlotGraph( black, rangeX, rangeY, ( float _X ) => {
+					int	X = Math.Max( 0, Math.Min( _statistics.Count-1, (int) (_statistics.Count - 10000.0f + _X) ) );
+//					return _statistics[X];
+
+					// Integrate...
+					float	sum = 0.0f;
+					for ( int x=lastX; x <= X; x++ )
+						sum += _statistics[x];
+					sum *= X != lastX ? 1.0f / (X - lastX) : 0.0f;
+					lastX = X;
+
+					return sum;
+				} );
+				graphStatistics.PlotAxes( black, rangeX, rangeY, 1000.0f, 100.0f );
+				panelImageSpectrum.Bitmap = graphStatistics.AsBitmap;
 			} );
 
 			device.Dispose();

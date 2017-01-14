@@ -3,6 +3,8 @@
 Texture2D<float>	_texIn : register(t0);
 RWTexture2D<float>	_texOut : register(u0);
 
+StructuredBuffer<uint4>	_SBMutations : register(t1);
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Mutate the initial distribution into a new, slightly different one
@@ -15,8 +17,11 @@ void	CS__Copy( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : SV_GROUPTHREA
 
 [numthreads( 1, 1, 1 )]
 void	CS__Mutate( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : SV_GROUPTHREADID, uint3 _dispatchThreadID : SV_DISPATCHTHREADID ) {
-	uint2	pixelIndexA = uint2( _pixelSourceX[_groupID.x], _pixelSourceY[_groupID.x] );
-	uint2	pixelIndexB = uint2( _pixelTargetX[_groupID.x], _pixelTargetY[_groupID.x] );
+//	uint2	pixelIndexA = uint2( _pixelSourceX[_groupID.x], _pixelSourceY[_groupID.x] );
+//	uint2	pixelIndexB = uint2( _pixelTargetX[_groupID.x], _pixelTargetY[_groupID.x] );
+	uint4	pixelIndices = _SBMutations[_groupID.x];
+	uint2	pixelIndexA = pixelIndices.xy;
+	uint2	pixelIndexB = pixelIndices.zw;
 
 	float	pixelA = _texIn[pixelIndexA];
 	float	pixelB = _texIn[pixelIndexB];

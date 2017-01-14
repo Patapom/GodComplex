@@ -3,13 +3,12 @@
 #include "Component.h"
 
 // This is the class that is used to pass values to the shader and read back the results
-class	StructuredBuffer : public Component
-{
+class	StructuredBuffer : public Component {
 protected:	// FIELDS
 
-	int							m_ElementSize;
-	int							m_ElementsCount;
-	int							m_Size;
+	U32							m_ElementSize;
+	U32							m_ElementsCount;
+	U32							m_Size;
 
 	ID3D11Buffer*				m_pBuffer;
 	ID3D11Buffer*				m_pCPUBuffer;
@@ -25,21 +24,21 @@ protected:	// FIELDS
 
 public:		// PROPERTIES
 
-	int				GetElementSize() const		{ return m_ElementSize; }
-	int				GetElementsCount() const	{ return m_ElementsCount; }
-	int				GetSize() const				{ return m_Size; }
+	U32			GetElementSize() const		{ return m_ElementSize; }
+	U32			GetElementsCount() const	{ return m_ElementsCount; }
+	U32			GetSize() const				{ return m_Size; }
 
 	ID3D11ShaderResourceView*	GetShaderView()				{ return m_pShaderView; }
 	ID3D11UnorderedAccessView*	GetUnorderedAccessView()	{ return m_pUnorderedAccessView; }
 
 public:		// METHODS
 
-	StructuredBuffer( Device& _Device, int _ElementSize, int _ElementsCount, bool _bWriteable );
+	StructuredBuffer( Device& _Device, U32 _ElementSize, U32 _ElementsCount, bool _bWriteable );
 	~StructuredBuffer();
 
 	// Read/Write for CPU interchange
-	void			Read( void* _pData, int _ElementsCount=-1 ) const;
-	void			Write( void* _pData, int _ElementsCount=-1 );
+	void			Read( void* _pData, U32 _ElementsCount=~0U ) const;
+	void			Write( void* _pData, U32 _ElementsCount=~0U );
 
 	// Clear of the unordered access view
 	void			Clear( U32 _pValue[4] );

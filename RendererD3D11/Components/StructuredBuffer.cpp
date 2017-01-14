@@ -8,7 +8,7 @@
 //
 StructuredBuffer*	StructuredBuffer::ms_ppOutputs[D3D11_PS_CS_UAV_REGISTER_COUNT] = { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };
 
-StructuredBuffer::StructuredBuffer( Device& _Device, int _ElementSize, int _ElementsCount, bool _bWriteable )
+StructuredBuffer::StructuredBuffer( Device& _Device, U32 _ElementSize, U32 _ElementsCount, bool _bWriteable )
 	: Component( _Device )
 {
 	ASSERT( _ElementSize > 0, "Buffer must have at least one element!" );
@@ -64,17 +64,15 @@ StructuredBuffer::StructuredBuffer( Device& _Device, int _ElementSize, int _Elem
 	Check( m_device.DXDevice().CreateUnorderedAccessView( m_pBuffer, &UnorderedViewDesc, &m_pUnorderedAccessView ) );
 }
 
-StructuredBuffer::~StructuredBuffer()
-{
+StructuredBuffer::~StructuredBuffer() {
 	m_pUnorderedAccessView->Release();
 	m_pShaderView->Release();
 	m_pCPUBuffer->Release();
 	m_pBuffer->Release();
 }
 
-void	StructuredBuffer::Read( void* _pData, int _ElementsCount ) const
-{
-	int	Size = m_ElementSize * (_ElementsCount < 0 ? m_ElementsCount : _ElementsCount);
+void	StructuredBuffer::Read( void* _pData, U32 _ElementsCount ) const {
+	U32	Size = m_ElementSize * (_ElementsCount == ~0U ? m_ElementsCount : _ElementsCount);
 
 	// Copy from actual buffer
 	m_device.DXContext().CopyResource( m_pCPUBuffer, m_pBuffer );
@@ -89,9 +87,8 @@ void	StructuredBuffer::Read( void* _pData, int _ElementsCount ) const
 	m_device.DXContext().Unmap( m_pCPUBuffer, 0 );
 }
 
-void	StructuredBuffer::Write( void* _pData, int _ElementsCount )
-{
-	int	Size = m_ElementSize * (_ElementsCount < 0 ? m_ElementsCount : _ElementsCount);
+void	StructuredBuffer::Write( void* _pData, U32 _ElementsCount ) {
+	U32	Size = m_ElementSize * (_ElementsCount == ~0U ? m_ElementsCount : _ElementsCount);
 
 	// Write to staging resource
 	D3D11_MAPPED_SUBRESOURCE	SubResource;
@@ -106,18 +103,15 @@ void	StructuredBuffer::Write( void* _pData, int _ElementsCount )
 	m_device.DXContext().CopyResource( m_pBuffer, m_pCPUBuffer );
 }
 
-void	StructuredBuffer::Clear( U32 _pValue[4] )
-{
+void	StructuredBuffer::Clear( U32 _pValue[4] ) {
 	m_device.DXContext().ClearUnorderedAccessViewUint( m_pUnorderedAccessView, _pValue );
 }
 
-void	StructuredBuffer::Clear( const bfloat4& _Value )
-{
+void	StructuredBuffer::Clear( const bfloat4& _Value ) {
 	m_device.DXContext().ClearUnorderedAccessViewFloat( m_pUnorderedAccessView, &_Value.x );
 }
 
-void	StructuredBuffer::SetInput( int _SlotIndex )
-{
+void	StructuredBuffer::SetInput( int _SlotIndex ) {
 	// Unassign this buffer to any output it was previously bound to
 	// NOTE: This mechanism may seem a bit heavy but it's really necessary to avoid scratching one's head too often
 	//	when a buffer seems to be empty in the compute shader, whereas it has silently been NOT ASSIGNED AS INPUT
