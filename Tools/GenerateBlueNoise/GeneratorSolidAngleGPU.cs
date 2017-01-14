@@ -180,8 +180,12 @@ namespace GenerateBlueNoise
 			uint		iterationIndex = 0;
 			uint		mutationsCount = MAX_MUTATIONS;
 			int			iterationsCountWithoutImprovement = 0;
-//			float		maxIterationsCountWithoutImprovementBeforeDecreasingMutationsCount = 0.01f * m_textureTotalSize;	// Arbitrary: 1% of the texture size
-			float		maxIterationsCountWithoutImprovementBeforeDecreasingMutationsCount = 0.002f * m_textureTotalSize;	// Arbitrary: 0.2% of the texture size
+#if !CAILLOU
+			float		maxIterationsCountWithoutImprovementBeforeDecreasingMutationsCount = 0.1f * m_textureTotalSize;	// Arbitrary: 10% of the texture size
+#else
+			float		maxIterationsCountWithoutImprovementBeforeDecreasingMutationsCount = 0.01f * m_textureTotalSize;	// Arbitrary: 1% of the texture size
+#endif
+//			float		maxIterationsCountWithoutImprovementBeforeDecreasingMutationsCount = 0.002f * m_textureTotalSize;	// Arbitrary: 0.2% of the texture size
 			float		averageIterationsCountWithoutImprovement = 0.0f;
 			float		alpha = 0.001f;
 
