@@ -162,5 +162,6 @@ void	CS__AccumulateScore16( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : 
 
 _texOut[_groupID.xy] = 3456.0;
 //_texOut[_groupID.xy] = 1234.0;
+_texOut[_groupID.xy] = _groupID.y;
 	}
 }

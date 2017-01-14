@@ -34,6 +34,14 @@ namespace Renderer {
 		PixelsBuffer( UInt32 _contentSize ) : ByteBuffer( _contentSize ), m_mappedSubResource( NULL ) {
 		}
 
+		// Makes the reader/writer jump to the proper scanline
+		void	JumpToScanline( System::IO::BinaryReader^ _reader, UInt32 _Y ) {
+			_reader->BaseStream->Position = _Y * m_rowPitch;
+		}
+		void	JumpToScanline( System::IO::BinaryWriter^ _reader, UInt32 _Y ) {
+			_reader->BaseStream->Position = _Y * m_rowPitch;
+		}
+
 	internal:
 		PixelsBuffer( D3D11_MAPPED_SUBRESOURCE& _SubResource, UInt32 _mipLevelIndex, UInt32 _arrayIndex, bool _readOnly ) : ByteBuffer( _SubResource.DepthPitch ) {
 			m_rowPitch = _SubResource.RowPitch;

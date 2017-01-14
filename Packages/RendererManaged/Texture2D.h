@@ -52,6 +52,14 @@ namespace Renderer {
 		property UInt32	ArraySize		{ UInt32 get() { return m_pTexture->GetArraySize(); } }
 		property UInt32	MipLevelsCount	{ UInt32 get() { return m_pTexture->GetMipLevelsCount(); } }
 
+		property UInt32	WidthAtMip[UInt32] {
+			UInt32	get( UInt32 _mipLevelIndex ) { return GetSizeAtMip( Width, _mipLevelIndex ); }
+		}
+
+		property UInt32	HeightAtMip[UInt32] {
+			UInt32	get( UInt32 _mipLevelIndex ) { return GetSizeAtMip( Height, _mipLevelIndex ); }
+		}
+
 		void*	GetWrappedtexture()	{ return m_pTexture; }
 
 	public:
@@ -69,13 +77,66 @@ namespace Renderer {
 			m_pTexture->CopyFrom( *_source->m_pTexture );
 		}
 
+		// These are simple helpers to ease the reading and writing of textures
+		delegate void	PixelReaderDelegate( UInt32 _X, UInt32 _Y, System::IO::BinaryReader^ _reader );
+		void			ReadPixels( UInt32 _mipLevelIndex, UInt32 _arrayIndex, PixelReaderDelegate^ _reader ) {
+			PixelsBuffer^				pixels = MapRead( _mipLevelIndex, _arrayIndex, true );
+			System::IO::BinaryReader^	R = pixels->OpenStreamRead();
+			UInt32	W = WidthAtMip[_mipLevelIndex];
+			UInt32	H = HeightAtMip[_mipLevelIndex];
+			for ( UInt32 Y=0; Y < H; Y++ ) {
+				pixels->JumpToScanline( R, Y );
+				for ( UInt32 X=0; X < W; X++ ) {
+					_reader( X, Y, R );
+				}
+			}
+			delete R;
+			UnMap( pixels );
+		}
+
+		delegate void	PixelWriterDelegate( UInt32 _X, UInt32 _Y, System::IO::BinaryWriter^ _writer );
+		void			WritePixels( UInt32 _mipLevelIndex, UInt32 _arrayIndex, PixelWriterDelegate^ _writer ) {
+			PixelsBuffer^				pixels = MapWrite( _mipLevelIndex, _arrayIndex, true );
+			System::IO::BinaryWriter^	Wr = pixels->OpenStreamWrite();
+			UInt32	W = WidthAtMip[_mipLevelIndex];
+			UInt32	H = HeightAtMip[_mipLevelIndex];
+			for ( UInt32 Y=0; Y < H; Y++ ) {
+				pixels->JumpToScanline( Wr, Y );
+				for ( UInt32 X=0; X < W; X++ ) {
+					_writer( X, Y, Wr );
+				}
+			}
+			delete Wr;
+			UnMap( pixels );
+		}
+
+		// NOTE: The strange "_ImAwareOfStrideAlignmentTo128Bytes" argument in the Map() functions is here so you have to explicitely declare that you're aware of a certain fact:
+		//	• Most video cards have a low-bound alignment of mapped memory of 128 bytes so you have to be careful about the row pitch length of each scanline
+		//	• For example, if your texture is a R32F and your scanline has less than 128/4 = 32 texels the pitch/stride will stay at 128 bytes nonetheless
+		//		and so to access the Nth scanline you'll have to use scanlineStart[N] = N * rowPitch
+		//	• Just set _ImAwareOfStrideAlignmentTo128Bytes = true if you correctly handled this specificity so no exception is thrown
+		//
 		PixelsBuffer^	MapRead( UInt32 _mipLevelIndex, UInt32 _arrayIndex ) {
+			return MapRead( _mipLevelIndex, _arrayIndex, false );	// Unaware of alignment by default
+		}
+		PixelsBuffer^	MapRead( UInt32 _mipLevelIndex, UInt32 _arrayIndex, bool _ImAwareOfStrideAlignmentTo128Bytes ) {
 			D3D11_MAPPED_SUBRESOURCE&	mappedResource = m_pTexture->Map( _mipLevelIndex, _arrayIndex );
+			#ifdef _DEBUG
+				if ( !_ImAwareOfStrideAlignmentTo128Bytes && m_pTexture->GetFormatDescriptor().Size() * m_pTexture->GetWidth() != mappedResource.RowPitch )
+					throw gcnew Exception( "Be careful about 128 bytes alignment: each scanline should account for proper row stride!" );
+			#endif
 			return gcnew PixelsBuffer( mappedResource, _mipLevelIndex, _arrayIndex, true );
 		}
 
 		PixelsBuffer^	MapWrite( UInt32 _mipLevelIndex, UInt32 _arrayIndex ) {
+			return MapWrite( _mipLevelIndex, _arrayIndex, false );	// Unaware of alignment by default
+		}
+		PixelsBuffer^	MapWrite( UInt32 _mipLevelIndex, UInt32 _arrayIndex, bool _ImAwareOfStrideAlignmentTo128Bytes ) {
 			D3D11_MAPPED_SUBRESOURCE&	mappedResource = m_pTexture->Map( _mipLevelIndex, _arrayIndex );
+			#ifdef _DEBUG
+				if ( !_ImAwareOfStrideAlignmentTo128Bytes && m_pTexture->GetFormatDescriptor().Size() * m_pTexture->GetWidth() != mappedResource.RowPitch )
+					throw gcnew Exception( "Be careful about 128 bytes alignment: each scanline should account for proper row stride!" );
+			#endif
 			return gcnew PixelsBuffer( mappedResource, _mipLevelIndex, _arrayIndex, false );
 		}
 
@@ -131,6 +192,11 @@ namespace Renderer {
 		//	_componentFormat, indicates how individual channels should be encoded
 		static Texture2D^	CreateTexture2D( Device^ _device, ImagesMatrix^ _images ) { return CreateTexture2D( _device, _images, COMPONENT_FORMAT::AUTO ); }
 		static Texture2D^	CreateTexture2D( Device^ _device, ImagesMatrix^ _images, COMPONENT_FORMAT _componentFormat );
+
+		// Helper to compute a size (width or height) at a specific mip level
+		static UInt32		GetSizeAtMip( UInt32 _sizeAtMip0, UInt32 _mipLevelIndex ) {
+			return Math::Max( 1U, _sizeAtMip0 >> _mipLevelIndex );
+		}
 
 	internal:
 

@@ -189,19 +189,15 @@ namespace TestFilmicCurve
 			m_CB_ToneMapping = new ConstantBuffer<CB_ToneMapping>( m_Device, 10 );
 
 			try {
-			#if DEBUG
+				#if !DEBUG
+					ScopedForceShadersLoadFromBinary	loadFromBinary = new ScopedForceShadersLoadFromBinary();
+				#endif
 				m_Shader_RenderHDR = new Shader( m_Device, new System.IO.FileInfo( "Shaders/RenderCubeMap.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 				m_Shader_ComputeTallHistogram = new ComputeShader( m_Device, new System.IO.FileInfo( "Shaders/AutoExposure/ComputeTallHistogram.hlsl" ), "CS", null );
 				m_Shader_FinalizeHistogram = new ComputeShader( m_Device, new System.IO.FileInfo( "Shaders/AutoExposure/FinalizeHistogram.hlsl" ), "CS", null );
 				m_Shader_ComputeAutoExposure = new ComputeShader( m_Device, new System.IO.FileInfo( "Shaders/AutoExposure/ComputeAutoExposure.hlsl" ), "CS", null );
 				m_Shader_ToneMapping = new Shader( m_Device, new System.IO.FileInfo( "Shaders/ToneMapping.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
-			#else
-				m_Shader_RenderHDR = Shader.CreateFromBinaryBlob( m_Device, new System.IO.FileInfo( "Shaders/RenderCubeMap.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS" );
-				m_Shader_ComputeTallHistogram = ComputeShader.CreateFromBinaryBlob( m_Device, new System.IO.FileInfo( "Shaders/AutoExposure/ComputeTallHistogram.hlsl" ), "CS" );
-				m_Shader_FinalizeHistogram = ComputeShader.CreateFromBinaryBlob( m_Device, new System.IO.FileInfo( "Shaders/AutoExposure/FinalizeHistogram.hlsl" ), "CS" );
-				m_Shader_ComputeAutoExposure = ComputeShader.CreateFromBinaryBlob( m_Device, new System.IO.FileInfo( "Shaders/AutoExposure/ComputeAutoExposure.hlsl" ), "CS" );
-				m_Shader_ToneMapping = Shader.CreateFromBinaryBlob( m_Device, new System.IO.FileInfo( "Shaders/ToneMapping.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS" );
-			#endif
+
 			} catch ( Exception _e ) {
 				MessageBox( "Shader failed to compile!\n\n" + _e.Message, MessageBoxButtons.OK, MessageBoxIcon.Error );
 				m_Shader_RenderHDR = null;

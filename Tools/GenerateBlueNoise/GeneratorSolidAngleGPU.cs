@@ -56,12 +56,6 @@ namespace GenerateBlueNoise
 			public uint		_pixelTargetY3;
 		}
 
-// 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
-// 		struct SB_Score {
-// 			public uint		scoreLo;
-// 			public uint		scoreHi;
-// 		}
-
 		int				m_texturePOT;
 		uint			m_textureSize;
 		uint			m_textureSizeMask;
@@ -153,14 +147,17 @@ namespace GenerateBlueNoise
 			// Generate initial white noise
 			{
 				SimpleRNG.SetSeed( _randomSeed, 362436069U );
-				PixelsBuffer	pixels = m_texNoiseCPU.MapWrite( 0, 0 );
-				using ( System.IO.BinaryWriter W = pixels.OpenStreamWrite() ) {
-					for ( int Y=0; Y < m_textureSize; Y++ )
-						for ( int X=0; X < m_textureSize; X++ ) {
-							W.Write( (float) SimpleRNG.GetUniform() );
-						}
-				}
-				m_texNoiseCPU.UnMap( pixels );
+				m_texNoiseCPU.WritePixels( 0, 0, ( uint _X, uint _Y, System.IO.BinaryWriter _W ) => {
+					_W.Write( (float) SimpleRNG.GetUniform() );
+				} );
+// 				PixelsBuffer	pixels = m_texNoiseCPU.MapWrite( 0, 0 );
+// 				using ( System.IO.BinaryWriter W = pixels.OpenStreamWrite() ) {
+// 					for ( int Y=0; Y < m_textureSize; Y++ )
+// 						for ( int X=0; X < m_textureSize; X++ ) {
+// 							W.Write( (float) SimpleRNG.GetUniform() );
+// 						}
+// 				}
+//				m_texNoiseCPU.UnMap( pixels );
 				m_texNoise0.CopyFrom( m_texNoiseCPU );
 			}
 
@@ -214,7 +211,7 @@ namespace GenerateBlueNoise
 				// Compute new score
 				float	score = ComputeScore1D( m_texNoise1 );
 				if ( score < bestScore ) {
-					// New best score! Swap textures...
+					// New best score! Swap textures so we accept the new state...
 					bestScore = score;
 					Texture2D	temp = m_texNoise0;
 					m_texNoise0 = m_texNoise1;
@@ -250,8 +247,9 @@ ReadBackScoreTexture1D( m_texNoiseScore, textureCPU );
 				m_texNoiseScore.RemoveFromLastAssignedSlotUAV();
 			}
 
+			// 2] Accumulate scores of each individual pixels into a single final score
 			if ( m_CS_AccumulateScore.Use() ) {
-				// 2] Downsample from mip 0 to mip 4
+				// 2.1) Downsample from mip 0 to mip 4
 				View2D	sourceView = m_texNoiseScore.GetView( 0, 1, 0, 1 );
 				View2D	targetView = m_texNoiseScore.GetView( 4, 1, 0, 1 );
 				m_texNoiseScore.SetCS( 0, sourceView );
@@ -263,7 +261,7 @@ ReadBackScoreTexture1D( m_texNoiseScore, textureCPU );
 				m_texNoiseScore.RemoveFromLastAssignedSlots();
 				m_texNoiseScore.RemoveFromLastAssignedSlotUAV();
 
-				// 3] Downsample from mip 4 to mip 8
+				// 2.2) Downsample from mip 4 to mip 8
 				sourceView = targetView;
 				targetView = m_texNoiseScore.GetView( 8, 1, 0, 1 );
 				m_texNoiseScore.SetCS( 0, sourceView );
@@ -278,11 +276,14 @@ ReadBackScoreTexture1D( m_texNoiseScore, textureCPU );
 
 			// Copy to CPU
 			m_texNoiseScoreCPU.CopyFrom( m_texNoiseScore );
-			PixelsBuffer	lastPixel = m_texNoiseScoreCPU.MapRead( 8, 0 );
-			float			score = 0.0f;
-			using ( System.IO.BinaryReader R = lastPixel.OpenStreamRead() )
-				score = R.ReadSingle();
-			m_texNoiseScoreCPU.UnMap( lastPixel );
+			float	score = 0.0f;
+			m_texNoiseScoreCPU.ReadPixels( 8, 0, ( uint _X, uint _Y, System.IO.BinaryReader _R ) => {
+				score = _R.ReadSingle();
+			} );
+// 			PixelsBuffer	lastPixel = m_texNoiseScoreCPU.MapRead( 8, 0 );
+// 			using ( System.IO.BinaryReader R = lastPixel.OpenStreamRead() )
+// 				score = R.ReadSingle();
+// 			m_texNoiseScoreCPU.UnMap( lastPixel );
 
 			score /= m_textureSize*m_textureSize;
 
@@ -296,15 +297,17 @@ ReadBackScoreTexture1D( m_texNoiseScore, textureCPU );
 		/// <param name="_textureCPU"></param>
 		void	ReadBackTexture1D( Texture2D _textureGPU, float[,] _textureCPU ) {
 			m_texNoiseCPU.CopyFrom( _textureGPU );
-
-			PixelsBuffer	pixels = m_texNoiseCPU.MapRead( 0, 0 );
-			using ( System.IO.BinaryReader R = pixels.OpenStreamRead() ) {
-				for ( int Y=0; Y < m_textureSize; Y++ )
-					for ( int X=0; X < m_textureSize; X++ ) {
-						_textureCPU[X,Y] = R.ReadSingle();
-					}
-			}
-			m_texNoiseCPU.UnMap( pixels );
+			m_texNoiseCPU.ReadPixels( 0, 0, ( uint _X, uint _Y, System.IO.BinaryReader _R ) => {
+				_textureCPU[_X,_Y] = _R.ReadSingle();
+			} );
+// 			PixelsBuffer	pixels = m_texNoiseCPU.MapRead( 0, 0 );
+// 			using ( System.IO.BinaryReader R = pixels.OpenStreamRead() ) {
+// 				for ( int Y=0; Y < m_textureSize; Y++ )
+// 					for ( int X=0; X < m_textureSize; X++ ) {
+// 						_textureCPU[X,Y] = R.ReadSingle();
+// 					}
+// 			}
+// 			m_texNoiseCPU.UnMap( pixels );
 		}
 
 		/// <summary>
@@ -314,25 +317,30 @@ ReadBackScoreTexture1D( m_texNoiseScore, textureCPU );
 		/// <param name="_textureCPU"></param>
 		void	ReadBackScoreTexture1D( Texture2D _textureGPU, float[,] _textureCPU ) {
 			m_texNoiseScoreCPU.CopyFrom( _textureGPU );
-
-			PixelsBuffer	pixels = m_texNoiseScoreCPU.MapRead( 0, 0 );
-			using ( System.IO.BinaryReader R = pixels.OpenStreamRead() ) {
-				for ( int Y=0; Y < m_textureSize; Y++ )
-					for ( int X=0; X < m_textureSize; X++ ) {
-						_textureCPU[X,Y] = R.ReadSingle();
-					}
-			}
-			m_texNoiseScoreCPU.UnMap( pixels );
+			m_texNoiseScoreCPU.ReadPixels( 0, 0, ( uint _X, uint _Y, System.IO.BinaryReader _R ) => {
+				_textureCPU[_X,_Y] = _R.ReadSingle();
+			} );
+// 			PixelsBuffer	pixels = m_texNoiseScoreCPU.MapRead( 0, 0 );
+// 			using ( System.IO.BinaryReader R = pixels.OpenStreamRead() ) {
+// 				for ( int Y=0; Y < m_textureSize; Y++ )
+// 					for ( int X=0; X < m_textureSize; X++ ) {
+// 						_textureCPU[X,Y] = R.ReadSingle();
+// 					}
+// 			}
+// 			m_texNoiseScoreCPU.UnMap( pixels );
 
 			float[,]	bisou = new float[16,16];
-			pixels = m_texNoiseScoreCPU.MapRead( 4, 0 );
-			using ( System.IO.BinaryReader R = pixels.OpenStreamRead() ) {
-				for ( int Y=0; Y < m_textureSize >> 4; Y++ )
-					for ( int X=0; X < m_textureSize >> 4; X++ ) {
-						bisou[X,Y] = R.ReadSingle();
-					}
-			}
-			m_texNoiseScoreCPU.UnMap( pixels );
+			m_texNoiseScoreCPU.ReadPixels( 4, 0, ( uint _X, uint _Y, System.IO.BinaryReader _R ) => {
+				bisou[_X,_Y] = _R.ReadSingle();
+			} );
+// 			pixels = m_texNoiseScoreCPU.MapRead( 4, 0 );
+// 			using ( System.IO.BinaryReader R = pixels.OpenStreamRead() ) {
+// 				for ( int Y=0; Y < m_textureSize >> 4; Y++ )
+// 					for ( int X=0; X < m_textureSize >> 4; X++ ) {
+// 						bisou[X,Y] = R.ReadSingle();
+// 					}
+// 			}
+//			m_texNoiseScoreCPU.UnMap( pixels );
 		}
 
 		void	ComputeXYFromSingleIndex( uint _index, out uint _X, out uint _Y ) {
