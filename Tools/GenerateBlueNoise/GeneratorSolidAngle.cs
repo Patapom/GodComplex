@@ -17,9 +17,11 @@ namespace GenerateBlueNoise
 	/// https://www.solidangle.com/research/dither_abstract.pdf
 	/// 
 	/// This code was adapted from B.Wronski's implementation available at https://github.com/bartwronski/BlueNoiseGenerator
+	///  although I could notice this wasn't really a correct implementation of simulated annealing, as advised in the Solid Angle's paper...
+	/// 
+	/// I rewrote the entire thing with the GPU in the GeneratorSolidAngleGPU class
 	/// </summary>
 	public class GeneratorSolidAngle {
-
 
 		// Note: we try to swap between 1 and 3 elements to try to jump over local minimum
 		const int	MAX_SWAPPED_ELEMENTS_PER_ITERATION = 3;

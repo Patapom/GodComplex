@@ -10,7 +10,8 @@ using System.Drawing.Imaging;
 using Microsoft.Win32;
 using System.Xml;
 
-using RendererManaged;
+using SharpMath;
+using Renderer;
 using Nuaj.Cirrus.Utility;
 
 namespace TestFilmicCurve
@@ -189,11 +190,11 @@ namespace TestFilmicCurve
 
 			try {
 			#if DEBUG
-				m_Shader_RenderHDR = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/RenderCubeMap.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
-				m_Shader_ComputeTallHistogram = new ComputeShader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/AutoExposure/ComputeTallHistogram.hlsl" ) ), "CS", null );
-				m_Shader_FinalizeHistogram = new ComputeShader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/AutoExposure/FinalizeHistogram.hlsl" ) ), "CS", null );
-				m_Shader_ComputeAutoExposure = new ComputeShader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/AutoExposure/ComputeAutoExposure.hlsl" ) ), "CS", null );
-				m_Shader_ToneMapping = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/ToneMapping.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+				m_Shader_RenderHDR = new Shader( m_Device, new System.IO.FileInfo( "Shaders/RenderCubeMap.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+				m_Shader_ComputeTallHistogram = new ComputeShader( m_Device, new System.IO.FileInfo( "Shaders/AutoExposure/ComputeTallHistogram.hlsl" ), "CS", null );
+				m_Shader_FinalizeHistogram = new ComputeShader( m_Device, new System.IO.FileInfo( "Shaders/AutoExposure/FinalizeHistogram.hlsl" ), "CS", null );
+				m_Shader_ComputeAutoExposure = new ComputeShader( m_Device, new System.IO.FileInfo( "Shaders/AutoExposure/ComputeAutoExposure.hlsl" ), "CS", null );
+				m_Shader_ToneMapping = new Shader( m_Device, new System.IO.FileInfo( "Shaders/ToneMapping.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 			#else
 				m_Shader_RenderHDR = Shader.CreateFromBinaryBlob( m_Device, new System.IO.FileInfo( "Shaders/RenderCubeMap.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS" );
 				m_Shader_ComputeTallHistogram = ComputeShader.CreateFromBinaryBlob( m_Device, new System.IO.FileInfo( "Shaders/AutoExposure/ComputeTallHistogram.hlsl" ), "CS" );
@@ -211,11 +212,11 @@ namespace TestFilmicCurve
 			}
 
 			// Create the HDR buffer
-			m_Tex_HDR = new Texture2D( m_Device, panelOutput.Width, panelOutput.Height, 1, 1, PIXEL_FORMAT.RGBA32_FLOAT, false, false, null );
+			m_Tex_HDR = new Texture2D( m_Device, (uint) panelOutput.Width, (uint) panelOutput.Height, 1, 1, PIXEL_FORMAT.RGBA32_FLOAT, false, false, null );
 
 			// Create the histogram & auto-exposure buffers
 			int	tallHistogramHeight = (panelOutput.Height + 3) >> 2;
-			m_Tex_TallHistogram = new Texture2D( m_Device, 128, tallHistogramHeight, 1, 1, PIXEL_FORMAT.R32_UINT, false, true, null );
+			m_Tex_TallHistogram = new Texture2D( m_Device, 128, (uint) tallHistogramHeight, 1, 1, PIXEL_FORMAT.R32_UINT, false, true, null );
 			m_Tex_Histogram = new Texture2D( m_Device, 128, 1, 1, 1, PIXEL_FORMAT.R32_UINT, false, true, null );
 			m_Buffer_AutoExposureSource = new StructuredBuffer<autoExposure_t>( m_Device, 1, true );
 			m_Buffer_AutoExposureSource.m[0].EngineLuminanceFactor = 1.0f;
@@ -651,7 +652,8 @@ m_Tex_TallHistogram.RemoveFromLastAssignedSlots();
 			string	Ext = _FileName.Extension.ToLower();
 			switch ( Ext ) {
 				case ".dds":
-					return DirectXTexManaged.TextureCreator.CreateTexture2DFromDDSFile( m_Device, _FileName.FullName );
+					throw new Exception( "Time to write DDS support in ImageLib!" );
+//					return DirectXTexManaged.TextureCreator.CreateTexture2DFromDDSFile( m_Device, _FileName.FullName );
 				case ".bimage": {
 					BImage I = new BImage( _FileName );
 					return I.CreateTextureCube( m_Device );

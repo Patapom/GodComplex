@@ -1,4 +1,11 @@
-﻿using System;
+﻿//////////////////////////////////////////////////////////////////////////
+// This is a simple tool intented for artists that still have difficulties computing
+//	and understanding color values in linear or sRGB color profiles...
+// You just enter any value in any form from one profile or the other and click the 
+//	arrows to make the conversion into the opposite profile
+//////////////////////////////////////////////////////////////////////////
+// 
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;

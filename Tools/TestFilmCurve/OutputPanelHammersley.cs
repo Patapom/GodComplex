@@ -7,14 +7,16 @@ using System.Text;
 using System.Windows.Forms;
 using System.Drawing;
 
+using SharpMath;
+
 namespace TestFilmicCurve
 {
 	public partial class OutputPanelHammersley : Panel
 	{
 		protected Bitmap	m_Bitmap = null;
 
-		protected const int			SAMPLES_COUNT = 32;
-		protected WMath.Vector2D[]	m_Samples = new WMath.Vector2D[SAMPLES_COUNT];
+		protected const int		SAMPLES_COUNT = 32;
+		protected float2[]		m_Samples = new float2[SAMPLES_COUNT];
 
 		public OutputPanelHammersley( IContainer container )
 		{
@@ -22,7 +24,7 @@ namespace TestFilmicCurve
 
 			InitializeComponent();
 
-			WMath.Hammersley	QRNG = new WMath.Hammersley();
+			Hammersley	QRNG = new Hammersley();
 			double[,]		Sequence = QRNG.BuildSequence( SAMPLES_COUNT, 2 );
 			for ( int SampleIndex=0; SampleIndex < SAMPLES_COUNT; SampleIndex++ )
 			{
@@ -30,7 +32,7 @@ namespace TestFilmicCurve
 				float	Radius = (float) Math.Sqrt( Sequence[SampleIndex,1] );	// Uniform
 //				float	Radius = (float) Sequence[SampleIndex,1];
 
-				m_Samples[SampleIndex] = new WMath.Vector2D( Radius * (float) Math.Cos( Angle ), Radius * (float) Math.Sin( Angle ) );
+				m_Samples[SampleIndex] = new float2( Radius * (float) Math.Cos( Angle ), Radius * (float) Math.Sin( Angle ) );
 			}
 
 			string	Format = "const uint		SHADOW_SAMPLES_COUNT = " + SAMPLES_COUNT + ";\r\n"

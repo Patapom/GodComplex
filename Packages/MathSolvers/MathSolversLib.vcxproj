@@ -22,6 +22,7 @@
     <ProjectGuid>{4CEFF180-C07C-4AD5-B9CA-5F90E30391E5}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>MathSolvers</RootNamespace>
+    <ProjectName>MathSolversLib</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

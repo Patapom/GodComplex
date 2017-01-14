@@ -143,64 +143,64 @@ namespace TestFilmicCurve
 				}
 			}
 
-			public RendererManaged.PIXEL_FORMAT	EquivalentRendererFormat {
+			public Renderer.PIXEL_FORMAT	EquivalentRendererFormat {
 				get {
 					switch ( m_layout ) {
 						case Layout.LAYOUT_8: 
 							switch ( m_type ) {
-								case Type.UNORM: return RendererManaged.PIXEL_FORMAT.R8_UNORM;
+								case Type.UNORM: return Renderer.PIXEL_FORMAT.R8_UNORM;
 							}
 							break;
 
 						case Layout.LAYOUT_16:
 							switch ( m_type ) {
-								case Type.UNORM: return RendererManaged.PIXEL_FORMAT.R16_UNORM;
-								case Type.FLOAT: return RendererManaged.PIXEL_FORMAT.R16_FLOAT;
+								case Type.UNORM: return Renderer.PIXEL_FORMAT.R16_UNORM;
+								case Type.FLOAT: return Renderer.PIXEL_FORMAT.R16_FLOAT;
 							}
 							break;
 
 						case Layout.LAYOUT_32:
 							switch ( m_type ) {
-								case Type.FLOAT: return RendererManaged.PIXEL_FORMAT.R32_FLOAT;
+								case Type.FLOAT: return Renderer.PIXEL_FORMAT.R32_FLOAT;
 							}
 							break;
 
 						case Layout.LAYOUT_8_8_8_8:
 							switch ( m_type ) {
-								case Type.UNORM: return RendererManaged.PIXEL_FORMAT.RGBA8_UNORM;
-								case Type.UNORM_sRGB: return RendererManaged.PIXEL_FORMAT.RGBA8_UNORM_sRGB;
+								case Type.UNORM: return Renderer.PIXEL_FORMAT.RGBA8_UNORM;
+								case Type.UNORM_sRGB: return Renderer.PIXEL_FORMAT.RGBA8_UNORM_sRGB;
 							}
 							break;
 
 						case Layout.LAYOUT_16_16:
 							switch ( m_type ) {
-								case Type.UNORM: return RendererManaged.PIXEL_FORMAT.RG16_UNORM;
-								case Type.FLOAT: return RendererManaged.PIXEL_FORMAT.RG16_FLOAT;
+								case Type.UNORM: return Renderer.PIXEL_FORMAT.RG16_UNORM;
+								case Type.FLOAT: return Renderer.PIXEL_FORMAT.RG16_FLOAT;
 							}
 							break;
 
 						case Layout.LAYOUT_32_32:
 							switch ( m_type ) {
-								case Type.FLOAT: return RendererManaged.PIXEL_FORMAT.RG32_FLOAT;
+								case Type.FLOAT: return Renderer.PIXEL_FORMAT.RG32_FLOAT;
 							}
 							break;
 
 						case Layout.LAYOUT_16_16_16_16:
 							switch ( m_type ) {
-								case Type.FLOAT: return RendererManaged.PIXEL_FORMAT.RGBA16_FLOAT;
+								case Type.FLOAT: return Renderer.PIXEL_FORMAT.RGBA16_FLOAT;
 							}
 							break;
 
 						case Layout.LAYOUT_32_32_32_32:
 							switch ( m_type ) {
-								case Type.FLOAT: return RendererManaged.PIXEL_FORMAT.RGBA32_FLOAT;
+								case Type.FLOAT: return Renderer.PIXEL_FORMAT.RGBA32_FLOAT;
 							}
 							break;
 
 						case Layout.LAYOUT_BC3:
 							switch ( m_type ) {
-								case Type.UNORM: return RendererManaged.PIXEL_FORMAT.BC3_UNORM;
-								case Type.UNORM_sRGB: return RendererManaged.PIXEL_FORMAT.BC3_UNORM_sRGB;
+								case Type.UNORM: return Renderer.PIXEL_FORMAT.BC3_UNORM;
+								case Type.UNORM_sRGB: return Renderer.PIXEL_FORMAT.BC3_UNORM_sRGB;
 							}
 							break;
 					}
@@ -407,22 +407,22 @@ namespace TestFilmicCurve
 		/// Creates a 2D texture from the image
 		/// </summary>
 		/// <returns></returns>
-		public RendererManaged.Texture2D	CreateTexture2D( RendererManaged.Device _Device ) {
+		public Renderer.Texture2D	CreateTexture2D( Renderer.Device _Device ) {
 			if ( m_Opts.m_type != ImageOptions.TYPE.TT_2D )
 				throw new Exception( "The image is not a 2D texture!" );
 
-			RendererManaged.PIXEL_FORMAT	TextureFormat = m_Opts.m_format.EquivalentRendererFormat;
+			Renderer.PIXEL_FORMAT	TextureFormat = m_Opts.m_format.EquivalentRendererFormat;
 
 			uint	ArraySize = m_Opts.m_arraySize;
 			uint	MipsCount = m_Opts.m_curNumLevels;
 			uint	PixelSize = m_Opts.m_format.BitsCount >> 3;
 
-			List<RendererManaged.PixelsBuffer>	Content = new List<RendererManaged.PixelsBuffer>();
+			List<Renderer.PixelsBuffer>	Content = new List<Renderer.PixelsBuffer>();
 			for ( uint SliceIndex=0; SliceIndex < ArraySize; SliceIndex++ ) {
 				for ( uint MipLevelIndex=0; MipLevelIndex < MipsCount; MipLevelIndex++ ) {
 					ImageSlice	Slice = m_Slices[MipLevelIndex*ArraySize+SliceIndex];	// Stupidly stored in reverse order!
 
-					RendererManaged.PixelsBuffer	Pixels = new RendererManaged.PixelsBuffer( (int) (Slice.m_Width * Slice.m_Height * PixelSize) );
+					Renderer.PixelsBuffer	Pixels = new Renderer.PixelsBuffer( (uint) (Slice.m_Width * Slice.m_Height * PixelSize) );
 					Content.Add( Pixels );
 
 					using ( BinaryWriter Writer = Pixels.OpenStreamWrite() )
@@ -430,26 +430,26 @@ namespace TestFilmicCurve
 				}
 			}
 
-			RendererManaged.Texture2D	Result = new RendererManaged.Texture2D( _Device, (int) m_Opts.m_curWidth, (int) m_Opts.m_curHeight, (int) m_Opts.m_arraySize, (int) m_Opts.m_curNumLevels, TextureFormat, false, false, Content.ToArray() );
+			Renderer.Texture2D	Result = new Renderer.Texture2D( _Device, m_Opts.m_curWidth, m_Opts.m_curHeight, (int) m_Opts.m_arraySize, m_Opts.m_curNumLevels, TextureFormat, false, false, Content.ToArray() );
 			return Result;
 		}
 
-		public RendererManaged.Texture2D	CreateTextureCube( RendererManaged.Device _Device ) {
+		public Renderer.Texture2D	CreateTextureCube( Renderer.Device _Device ) {
 			if ( m_Opts.m_type != ImageOptions.TYPE.TT_CUBIC )
 				throw new Exception( "The image is not a cube map texture!" );
 
-			RendererManaged.PIXEL_FORMAT	TextureFormat = m_Opts.m_format.EquivalentRendererFormat;
+			Renderer.PIXEL_FORMAT	TextureFormat = m_Opts.m_format.EquivalentRendererFormat;
 
 			uint	ArraySize = 6 * m_Opts.m_arraySize;
 			uint	MipsCount = m_Opts.m_curNumLevels;
 			uint	PixelSize = m_Opts.m_format.BitsCount >> 3;
 
-			List<RendererManaged.PixelsBuffer>	Content = new List<RendererManaged.PixelsBuffer>();
+			List<Renderer.PixelsBuffer>	Content = new List<Renderer.PixelsBuffer>();
 			for ( uint SliceIndex=0; SliceIndex < ArraySize; SliceIndex++ ) {
 				for ( uint MipLevelIndex=0; MipLevelIndex < MipsCount; MipLevelIndex++ ) {
 					ImageSlice	Slice = m_Slices[MipLevelIndex*ArraySize+SliceIndex];	// Stupidly stored in reverse order!
 
-					RendererManaged.PixelsBuffer	Pixels = new RendererManaged.PixelsBuffer( (int) (Slice.m_Width * Slice.m_Height * PixelSize) );
+					Renderer.PixelsBuffer	Pixels = new Renderer.PixelsBuffer( (uint) (Slice.m_Width * Slice.m_Height * PixelSize) );
 					Content.Add( Pixels );
 
 					using ( BinaryWriter Writer = Pixels.OpenStreamWrite() )
@@ -457,11 +457,11 @@ namespace TestFilmicCurve
 				}
 			}
 
-			RendererManaged.Texture2D	Result = new RendererManaged.Texture2D( _Device, (int) m_Opts.m_curWidth, (int) m_Opts.m_curHeight, -6 * (int) m_Opts.m_arraySize, (int) m_Opts.m_curNumLevels, TextureFormat, false, false, Content.ToArray() );
+			Renderer.Texture2D	Result = new Renderer.Texture2D( _Device, m_Opts.m_curWidth, m_Opts.m_curHeight, -6 * (int) m_Opts.m_arraySize, m_Opts.m_curNumLevels, TextureFormat, false, false, Content.ToArray() );
 			return Result;
 		}
 
-		public RendererManaged.Texture3D	CreateTexture3D( RendererManaged.Device _Device ) {
+		public Renderer.Texture3D	CreateTexture3D( Renderer.Device _Device ) {
 			if ( m_Opts.m_type != ImageOptions.TYPE.TT_3D )
 				throw new Exception( "The image is not a 2D texture!" );
 
