@@ -417,7 +417,7 @@ CreateTestSpectrum( handmadeSpectrum );
 		}
 
 #if !MEUGLE
-		ImageFile	m_blueNoiseAnnealing = new ImageFile( 64, 64, ImageFile.PIXEL_FORMAT.R8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
+		ImageFile	m_blueNoiseAnnealing = new ImageFile( 512, 512, ImageFile.PIXEL_FORMAT.R8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
 		private void buttonSolidAngleAlgorithm_Click(object sender, EventArgs e) {
 
 			uint		W = m_blueNoiseAnnealing.Width;
@@ -435,8 +435,13 @@ CreateTestSpectrum( handmadeSpectrum );
 //			float2		rangeY = new float2( -1, 2 );
 			float2		rangeY = new float2( 0, 100 );
 
+			float	sigma_i = 2.1f;	// Default, recommended value
+			float	sigma_s = 1.0f;	// Default, recommended value
+// 			float	sigma_i = 2.1f;
+// 			float	sigma_s = 2.0f;
+
 			GeneratorSolidAngleGPU	generator = new GeneratorSolidAngleGPU( m_device, (uint) (Math.Log(m_blueNoiseAnnealing.Width)/Math.Log(2.0)) );
-			generator.Generate( 1, 1e-3f, 1000000, 2.1f, 1.0f, 1000, ( uint _iterationIndex, uint _mutationsCount, float _energyScore, float[,] _texture, List< float > _statistics ) => {
+			generator.Generate( 1, 1e-3f, 1000000, sigma_i, sigma_s, 1000, ( uint _iterationIndex, uint _mutationsCount, float _energyScore, float[,] _texture, List< float > _statistics ) => {
 				for ( uint Y=0; Y < H; Y++ ) {
 					for ( uint X=0; X < W; X++ ) {
 						float	V = _texture[X,Y];

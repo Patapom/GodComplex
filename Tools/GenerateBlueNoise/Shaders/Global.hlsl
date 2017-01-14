@@ -17,6 +17,3 @@ cbuffer CB_Main : register(b0) {
 //	uint4	_pixelTargetX;
 //	uint4	_pixelTargetY;
 //};
-
-// Half-Size of the kernel used to sample surrounding a pixel
-static const int	KERNEL_HALF_SIZE = 8;

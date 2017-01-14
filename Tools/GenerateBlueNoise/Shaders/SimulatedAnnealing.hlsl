@@ -5,6 +5,8 @@ RWTexture2D<float>	_texOut : register(u0);
 
 StructuredBuffer<uint4>	_SBMutations : register(t1);
 
+// Half-Size of the kernel used to sample surrounding a pixel
+static const int	KERNEL_HALF_SIZE = 16;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Mutate the initial distribution into a new, slightly different one
