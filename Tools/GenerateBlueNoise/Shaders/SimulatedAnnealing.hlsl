@@ -70,14 +70,13 @@ void	CS__ComputeScore1D( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : SV_
 		}
 	}
 
-score = 1.0;//pixelIndex.y / 256.0;
+//score = 1.0;//pixelIndex.y / 256.0;
+//score = pixelIndex.x / 256.0;
+//float sigma = 20.0;
+////score = rsqrt( 2.0 * 3.14159265358979 * sigma*sigma ) * exp( -dot( pixelIndex - 127.5, pixelIndex - 127.5 ) / (2.0 * sigma*sigma) );
+//score = exp( -dot( pixelIndex - 127.5, pixelIndex - 127.5 ) / (2.0 * sigma*sigma) ) / ( 2.0 * 3.14159265358979 * sigma*sigma );
 	_texOut[pixelIndex] = score;
 }
-
-//		uint3	UVW = uint3( iPhi, iTheta, scatteringOrder );
-//		InterlockedAdd( _Tex_DirectionsHistogram_Decimal[UVW], value, oldValue );						// Decimal point addition
-//		value += oldValue;																				// Perform local addition to see if we need to add carry to integers accumulator
-//		InterlockedAdd( _Tex_DirectionsHistogram_Integer[UVW], value < oldValue ? 1 : 0, oldValue );	// Integer addition with carry
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -160,8 +159,8 @@ void	CS__AccumulateScore16( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : 
 		float	score10 = gs_scores[threadIndex10];
 		_texOut[_groupID.xy] = score00 + score01 + score10 + score11;
 
-_texOut[_groupID.xy] = 3456.0;
+//_texOut[_groupID.xy] = 3456.0;
 //_texOut[_groupID.xy] = 1234.0;
-_texOut[_groupID.xy] = _groupID.y;
+//_texOut[_groupID.xy] = _groupID.y;
 	}
 }
