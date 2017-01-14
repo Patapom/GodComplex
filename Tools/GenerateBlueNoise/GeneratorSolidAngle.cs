@@ -128,6 +128,9 @@ namespace GenerateBlueNoise
 						finalY = (uint) (Y + dY) & m_textureSizeMask;
 						sqDy = dY * dY;
 						for ( int dX=-KERNEL_HALF_SIZE; dX <= KERNEL_HALF_SIZE; dX++ ) {
+							if ( dX == 0 && dY == 0 )
+								continue;
+
 							finalX = (uint) (X + dX) & m_textureSizeMask;
 							sqDx = dX * dX;
 
