@@ -24,7 +24,7 @@ namespace GenerateBlueNoise
 	/// </summary>
 	public class GeneratorSolidAngleGPU : IDisposable {
 
-		const uint	MAX_MUTATIONS = 128;
+		const uint	MAX_MUTATIONS = 1024;
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
 		struct CB_Main {
@@ -131,20 +131,19 @@ namespace GenerateBlueNoise
 
 		#endregion
 
-		public delegate void	ProgressDelegate( int _iterationIndex, float _energyScore, float[,] _texture, List<float> _statistics );
+		public delegate void	ProgressDelegate( uint _iterationIndex, uint _mutationsCount, float _energyScore, float[,] _texture, List<float> _statistics );
 
 		/// <summary>
 		/// Generates blue noise distribution by randomly swapping pixels in the texture to reach lowest possible score and minimize a specific energy function
 		/// </summary>
 		/// <param name="_randomSeed"></param>
-		/// <param name="_startMutationsCount">The initial amount of mutations per iteration (clamped to 128).</param>
 		/// <param name="_energyThreshold">The threshold below which the amount of mutations is decreased, the loop exits if the amount of mutation is 0. A default value can be 1e-3f</param>
 		/// <param name="_maxIterations">The maximum amount of iterations before exiting with the last best solution</param>
 		/// <param name="_standardDeviationImage">Standard deviation for image space. If not sure, use 2.1</param>
 		/// <param name="_standardDeviationValue">Standard deviation for value space. If not sure, use 1.0</param>
 		/// <param name="_notifyProgressEveryNIterations">Will read back the GPU texture to the CPU and notify of progress every N iterations</param>
 		/// <param name="_progress"></param>
-		public void		Generate( uint _randomSeed, uint _startMutationsCount, float _energyThreshold, int _maxIterations, float _standardDeviationImage, float _standardDeviationValue, int _notifyProgressEveryNIterations, ProgressDelegate _progress ) {
+		public void		Generate( uint _randomSeed, float _energyThreshold, int _maxIterations, float _standardDeviationImage, float _standardDeviationValue, int _notifyProgressEveryNIterations, ProgressDelegate _progress ) {
 
 			m_CB_Main.m._texturePOT = (uint) m_texturePOT;
 			m_CB_Main.m._textureSize = m_textureSize;
@@ -169,18 +168,19 @@ namespace GenerateBlueNoise
 			// Perform iterations
 			float		bestScore = ComputeScore1D( m_texNoise0 );
 			float		score = bestScore;
-			int			iterationIndex = 0;
-			uint		mutationsCount = Math.Min( MAX_MUTATIONS, _startMutationsCount );
+			uint		iterationIndex = 0;
+			uint		mutationsCount = MAX_MUTATIONS;
 			int			iterationsCountWithoutImprovement = 0;
 //			float		maxIterationsCountWithoutImprovementBeforeDecreasingMutationsCount = 0.01f * m_textureTotalSize;	// Arbitrary: 1% of the texture size
-			float		maxIterationsCountWithoutImprovementBeforeDecreasingMutationsCount = 0.002f * m_textureTotalSize;	// Arbitrary: 1% of the texture size
-//			int			maxIterationsCountWithoutImprovementBeforeDecreasingMutationsCount = 10;
+			float		maxIterationsCountWithoutImprovementBeforeDecreasingMutationsCount = 0.002f * m_textureTotalSize;	// Arbitrary: 0.2% of the texture size
 			float		averageIterationsCountWithoutImprovement = 0.0f;
 			float		alpha = 0.001f;
 
+			uint[]		neighborOffsetX = new uint[8] { 0, 1, 2, 2, 2, 1, 0, 0 };
+			uint[]		neighborOffsetY = new uint[8] { 0, 0, 0, 1, 2, 2, 2, 1 };
+
 			List<float>	statistics = new List<float>();
 
-//			uint[,]		sourceTargetIndices = new uint[MAX_SWAPPED_ELEMENTS_PER_ITERATION,2];
 			float[,]	textureCPU = new float[m_textureSize,m_textureSize];
 			while ( iterationIndex < _maxIterations && bestScore > _energyThreshold ) {
 
@@ -200,11 +200,29 @@ namespace GenerateBlueNoise
 
 					// Fill up mutations buffer
 					for ( int mutationIndex=0; mutationIndex < mutationsCount; mutationIndex++ ) {
-						uint	sourceIndex = GetUniformInt( m_textureTotalSize );
-						uint	targetIndex = GetUniformInt( m_textureTotalSize );
+						#if CAILLOU
+							// Swap pixels randomly
+							uint	sourceIndex = GetUniformInt( m_textureTotalSize );
+							uint	targetIndex = GetUniformInt( m_textureTotalSize );
 
-						ComputeXYFromSingleIndex( sourceIndex, out m_SB_Mutations.m[mutationIndex]._pixelSourceX, out m_SB_Mutations.m[mutationIndex]._pixelSourceY );
-						ComputeXYFromSingleIndex( targetIndex, out m_SB_Mutations.m[mutationIndex]._pixelTargetX, out m_SB_Mutations.m[mutationIndex]._pixelTargetY );
+							ComputeXYFromSingleIndex( sourceIndex, out m_SB_Mutations.m[mutationIndex]._pixelSourceX, out m_SB_Mutations.m[mutationIndex]._pixelSourceY );
+							ComputeXYFromSingleIndex( targetIndex, out m_SB_Mutations.m[mutationIndex]._pixelTargetX, out m_SB_Mutations.m[mutationIndex]._pixelTargetY );
+						#else
+							// Swap neighbor pixels only
+							uint	sourceIndex = GetUniformInt( m_textureTotalSize );
+							uint	X, Y;
+							ComputeXYFromSingleIndex( sourceIndex, out X, out Y );
+
+							// Randomly pick one of the 8 neighbors
+							uint	neighborIndex = SimpleRNG.GetUint() & 0x7;
+							uint	Xn = (X + m_textureSizeMask + neighborOffsetX[neighborIndex]) & m_textureSizeMask;
+							uint	Yn = (Y + m_textureSizeMask + neighborOffsetY[neighborIndex]) & m_textureSizeMask;
+
+							m_SB_Mutations.m[mutationIndex]._pixelSourceX = X;
+							m_SB_Mutations.m[mutationIndex]._pixelSourceY = Y;
+							m_SB_Mutations.m[mutationIndex]._pixelTargetX = Xn;
+							m_SB_Mutations.m[mutationIndex]._pixelTargetY = Yn;
+						#endif
 					}
 
 					m_SB_Mutations.Write( mutationsCount );
@@ -261,37 +279,7 @@ namespace GenerateBlueNoise
 						break;	// Clearly we've reached a steady state here...
 				}
 
-// 				// Check if the score is really improving
-// //				float	scoreImprovementRate = score > previousScore ? previousScore / score : score / previousScore;
-// // 				float	scoreImprovementRate = score / previousScore;
-// // 						scoreImprovementRate = 1.0f - scoreImprovementRate;
-// // 						scoreImprovementRate *= m_textureTotalSize;
-// 
-// 				float	scoreImprovementRate = (previousScore - score) / previousScore;
-// 						scoreImprovementRate *= m_textureTotalSize;
-// 
-// 				previousScore = score;
-// 
-// 				if ( scoreImprovementRate < _energyThreshold ) {
-// 					// Consider another round without clear improvement...
-// 					iterationsCountWithoutImprovement++;
-// 					if ( iterationsCountWithoutImprovement > maxIterationsCountWithoutImprovementBeforeDecreasingMutationsCount ) {
-// 						// Too many rounds without any clear improvement!
-// 						// Reduce the amount of mutations to have a better chance
-// 						iterationsCountWithoutImprovement = 0;
-// //						mutationsCount--;
-// 						mutationsCount >>= 1;	// Halve mutations count
-// 						if ( mutationsCount == 0 )
-// 							break;	// Clearly we've reached a steady state here...
-// 					}
-// 				} else {
-// 					iterationsCountWithoutImprovement = 0;	// Score improved, reset counter!
-// 				}
-
-
-//statistics.Add( scoreImprovementRate );
-//statistics.Add( iterationsCountWithoutImprovement );
-statistics.Add( averageIterationsCountWithoutImprovement );
+//statistics.Add( averageIterationsCountWithoutImprovement );
 
 
 				//////////////////////////////////////////////////////////////////////////
@@ -302,11 +290,11 @@ statistics.Add( averageIterationsCountWithoutImprovement );
 				
 				ReadBackTexture1D( m_texNoise0, textureCPU );
 //ReadBackScoreTexture1D( m_texNoiseScore, textureCPU );
-				_progress( iterationIndex, bestScore, textureCPU, statistics );	// Notify!
+				_progress( iterationIndex, mutationsCount, bestScore, textureCPU, statistics );	// Notify!
 			}
 
 			// One final call with our best final result
-			_progress( iterationIndex, bestScore, textureCPU, statistics );
+			_progress( iterationIndex, mutationsCount, bestScore, textureCPU, statistics );
 		}
 
 		float	ComputeScore1D( Texture2D _texture ) {

@@ -436,7 +436,7 @@ CreateTestSpectrum( handmadeSpectrum );
 			float2		rangeY = new float2( 0, 100 );
 
 			GeneratorSolidAngleGPU	generator = new GeneratorSolidAngleGPU( m_device, 8 );
-			generator.Generate( 1, 128, 1e-3f, 1000000, 2.1f, 1.0f, 100, ( int _iterationIndex, float _energyScore, float[,] _texture, List< float > _statistics ) => {
+			generator.Generate( 1, 1e-3f, 1000000, 2.1f, 1.0f, 1000, ( uint _iterationIndex, uint _mutationsCount, float _energyScore, float[,] _texture, List< float > _statistics ) => {
 				for ( uint Y=0; Y < H; Y++ ) {
 					for ( uint X=0; X < W; X++ ) {
 						float	V = _texture[X,Y];
@@ -446,11 +446,11 @@ CreateTestSpectrum( handmadeSpectrum );
 				}
 
 				panelImage.Bitmap = m_blueNoiseAnnealing.AsBitmap;
-				labelAnnealingScore.Text = "Score: " + _energyScore + " - Iterations = " + _iterationIndex;
+				labelAnnealingScore.Text = "Score: " + _energyScore + " - Iterations = " + _iterationIndex + " - Mutations: " + _mutationsCount;
 				labelAnnealingScore.Refresh();
 
 
-				// Plot statistics
+/*				// Plot statistics
 				int	lastX = 0;
 				graphStatistics.Clear( float4.One );
 //				graphStatistics.PlotGraphAutoRangeY( black, rangeX, ref rangeY, ( float _X ) => {
@@ -469,6 +469,7 @@ CreateTestSpectrum( handmadeSpectrum );
 				} );
 				graphStatistics.PlotAxes( black, rangeX, rangeY, 1000.0f, 100.0f );
 				panelImageSpectrum.Bitmap = graphStatistics.AsBitmap;
+//*/
 			} );
 
 			device.Dispose();
