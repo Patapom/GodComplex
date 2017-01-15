@@ -11,9 +11,15 @@ cbuffer CB_Main : register(b0) {
 	float	_kernelFactorValue;		// = 1/sigma_s²
 };
 
-//cbuffer CB_Mutation : register(b1) {
-//	uint4	_pixelSourceX;
-//	uint4	_pixelSourceY;
-//	uint4	_pixelTargetX;
-//	uint4	_pixelTargetY;
-//};
+cbuffer CB_Mips : register(b1) {
+	uint	_textureMipSource;
+	uint	_textureMipTarget;
+};
+
+SamplerState LinearClamp	: register( s0 );
+SamplerState PointClamp		: register( s1 );
+SamplerState LinearWrap		: register( s2 );
+SamplerState PointWrap		: register( s3 );
+SamplerState LinearMirror	: register( s4 );
+SamplerState PointMirror	: register( s5 );
+SamplerState LinearBorder	: register( s6 );	// Black border
