@@ -170,6 +170,60 @@ NativeByteArray^	ImageFile::Save( FILE_FORMAT _format, SAVE_FLAGS _options ) {
 	return result;
 }
 
+ System::Drawing::Bitmap^	ImageFile::AsTiledBitmap( UInt32 _width, UInt32 _height ) {
+	int	W = Width;
+	int	H = Height;
+
+	// Convert source bitmap to a compatible format
+	ImageFile^	source = this;
+	if ( PixelFormat != PIXEL_FORMAT::RGB8 && PixelFormat != PIXEL_FORMAT::RGBA8 ) {
+		source = gcnew ImageFile();
+		source->ConvertFrom( this, PIXEL_FORMAT::RGBA8 );
+	}
+
+	const U8*	sourcePtr = (U8*) source->Bits.ToPointer();
+
+	System::Drawing::Bitmap^	result = gcnew System::Drawing::Bitmap( _width, _height, System::Drawing::Imaging::PixelFormat::Format32bppArgb );
+	System::Drawing::Imaging::BitmapData^	lockedBitmap = result->LockBits( System::Drawing::Rectangle( 0, 0, W, H ), System::Drawing::Imaging::ImageLockMode::ReadOnly, System::Drawing::Imaging::PixelFormat::Format32bppArgb );
+
+	cli::pin_ptr<void>	scan0Ptr = lockedBitmap->Scan0.ToPointer();
+
+	if ( source->PixelFormat == PIXEL_FORMAT::RGBA8 ) {
+		// 32 bpp
+		for ( UInt32 Y=0; Y < _height; Y++ ) {
+			Byte*		targetPtr = reinterpret_cast<Byte*>(scan0Ptr) + Y * lockedBitmap->Stride;
+			const U8*	sourceScanlinePtr = sourcePtr + (Y % H) * 4*W;
+			for ( UInt32 X=0; X < _width; X++ ) {
+				int	tiledX = X % W;
+				*targetPtr++ = sourceScanlinePtr[4*tiledX+0];	// B
+				*targetPtr++ = sourceScanlinePtr[4*tiledX+1];	// G
+				*targetPtr++ = sourceScanlinePtr[4*tiledX+2];	// R
+				*targetPtr++ = sourceScanlinePtr[4*tiledX+3];	// A
+			}
+		}
+	} else {
+		// 24 bpp
+		for ( UInt32 Y=0; Y < _height; Y++ ) {
+			Byte*	targetPtr = reinterpret_cast<Byte*>(scan0Ptr) + Y * lockedBitmap->Stride;
+			const U8*	sourceScanlinePtr = sourcePtr + (Y % H) * 3*W;
+			for ( UInt32 X=0; X < _width; X++ ) {
+				int	tiledX = X % W;
+				*targetPtr++ = sourceScanlinePtr[3*tiledX+0];	// B
+				*targetPtr++ = sourceScanlinePtr[3*tiledX+1];	// G
+				*targetPtr++ = sourceScanlinePtr[3*tiledX+2];	// R
+				*targetPtr++ = 0xFFU;	// A
+			}
+		}
+	}
+
+	result->UnlockBits( lockedBitmap );
+
+	if ( source != this )
+		delete source;	// We had to make a temporary conversion so now we must delete it
+
+	return result;
+}
+
 // Converts the source image to a target format
 void	ImageFile::ConvertFrom( ImageFile^ _source, PIXEL_FORMAT _targetFormat ) {
 	m_nativeObject->ConvertFrom( *_source->m_nativeObject, ImageUtilityLib::ImageFile::PIXEL_FORMAT( _targetFormat ) );

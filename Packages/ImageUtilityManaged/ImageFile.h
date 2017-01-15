@@ -443,6 +443,11 @@ namespace ImageUtility {
 		// Same but the bitmap is already constructed at the proper size
 		void						AsCustomBitmap( System::Drawing::Bitmap^ _bitmap, ColorTransformer^ _transformer );
 
+		// Builds a System.Drawing.Bitmap from the tiled image
+		// Warning: throws an exception if your image format is HDR! (cf. ToneMapFrom())
+		// The 2 parameters are the Width and Height of the expected bitmap, the image will tile as much as possible to fill the target bitmap size
+		System::Drawing::Bitmap^	AsTiledBitmap( UInt32 _width, UInt32 _height );
+
 
 	public:
 		//////////////////////////////////////////////////////////////////////////

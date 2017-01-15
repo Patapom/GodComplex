@@ -450,7 +450,11 @@ CreateTestSpectrum( handmadeSpectrum );
 					m_blueNoiseAnnealing.WriteScanline( Y, scanline );
 				}
 
-				panelImage.Bitmap = m_blueNoiseAnnealing.AsBitmap;
+				if ( m_blueNoiseAnnealing.Width < panelImage.Width )
+					panelImage.Bitmap = m_blueNoiseAnnealing.AsTiledBitmap( (uint) panelImage.Width, (uint) panelImage.Height );
+				else
+					panelImage.Bitmap = m_blueNoiseAnnealing.AsBitmap;
+
 				labelAnnealingScore.Text = "Score: " + _energyScore + " - Iterations = " + _iterationIndex + " - Mutations: " + _mutationsCount;
 				labelAnnealingScore.Refresh();
 

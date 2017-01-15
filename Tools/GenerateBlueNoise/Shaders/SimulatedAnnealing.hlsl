@@ -281,57 +281,16 @@ void	CS__AccumulateScore4( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : S
 //
 [numthreads( 1, 1, 1 )]
 void	CS__AccumulateScore2( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : SV_GROUPTHREADID, uint3 _dispatchThreadID : SV_DISPATCHTHREADID ) {
-#if 0
-//	uint2	position00 = _dispatchThreadID.xy << 1U;
 	uint2	position00 = _groupID.xy << 1U;
 	uint2	position11 = position00 + 1U;
 	uint2	position01 = uint2( position11.x, position00.y );
 	uint2	position10 = uint2( position00.x, position11.y );
 
 	float4	rawScore;
-//	rawScore.x = LoadSource( position00 );
-//	rawScore.y = LoadSource( position01 );
-//	rawScore.z = LoadSource( position11 );
-//	rawScore.w = LoadSource( position10 );
-	rawScore.x = _texIn.Load( int3( position00, 0 ) );
-	rawScore.y = _texIn.Load( int3( position01, 0 ) );
-	rawScore.z = _texIn.Load( int3( position11, 0 ) );
-	rawScore.w = _texIn.Load( int3( position10, 0 ) );
+	rawScore.x = LoadSource( position00 );
+	rawScore.y = LoadSource( position01 );
+	rawScore.z = LoadSource( position11 );
+	rawScore.w = LoadSource( position10 );
 
 	_texOut[_groupID.xy] = rawScore.x + rawScore.y + rawScore.z + rawScore.w;
-//_texOut[_groupID.xy] = _groupID.y;
-#elif 0
-//	rawScore.x = _texIn.Load( int3( int2(_groupID.xy << 1U) + int2( 0, 0 ), 0 ) ).x;
-//	rawScore.y = _texIn.Load( int3( int2(_groupID.xy << 1U) + int2( 0, 1 ), 0 ) ).x;
-//	rawScore.z = _texIn.Load( int3( int2(_groupID.xy << 1U) + int2( 1, 0 ), 0 ) ).x;
-//	rawScore.w = _texIn.Load( int3( int2(_groupID.xy << 1U) + int2( 1, 1 ), 0 ) ).x;
-
-	uint2	fuckYou00 = _groupID.xy << 1;
-	uint2	fuckYou11 = fuckYou00 + 1U;
-//	uint2	fuckYou01 = uint2( fuckYou11.x, fuckYou00.y );
-//	uint2	fuckYou10 = uint2( fuckYou00.x, fuckYou11.y );
-	uint2	fuckYou01 = fuckYou00 + uint2( 1, 0 );
-	uint2	fuckYou10 = fuckYou00 + uint2( 0, 1 );
-
-	float4	rawScore;
-	rawScore.x = _texIn[fuckYou00];
-	GroupMemoryBarrier();	// We wait until all samples from the group are available
-	rawScore.y = _texIn[fuckYou01];
-	GroupMemoryBarrier();	// We wait until all samples from the group are available
-	rawScore.z = _texIn[fuckYou10];
-	GroupMemoryBarrier();	// We wait until all samples from the group are available
-	rawScore.w = _texIn[fuckYou11];
-	GroupMemoryBarrier();	// We wait until all samples from the group are available
-	DeviceMemoryBarrier();	// We wait until all samples from the group are available
-	AllMemoryBarrier();	// We wait until all samples from the group are available
-
-	_texOut[_groupID.xy] = rawScore.x + rawScore.y + rawScore.z + rawScore.w;
-#else
-	float4	rawScore;
-	rawScore.x = _texIn.Load( int3( int2(_groupID.xy << 1U) + int2( 0, 0 ), _textureMipSource ) ).x;
-	rawScore.y = _texIn.Load( int3( int2(_groupID.xy << 1U) + int2( 0, 1 ), _textureMipSource ) ).x;
-	rawScore.z = _texIn.Load( int3( int2(_groupID.xy << 1U) + int2( 1, 0 ), _textureMipSource ) ).x;
-	rawScore.w = _texIn.Load( int3( int2(_groupID.xy << 1U) + int2( 1, 1 ), _textureMipSource ) ).x;
-	_texOut[_groupID.xy] = rawScore.x + rawScore.y + rawScore.z + rawScore.w;
-#endif
 }
