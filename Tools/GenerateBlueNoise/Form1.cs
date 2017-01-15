@@ -485,6 +485,11 @@ CreateTestSpectrum( handmadeSpectrum );
 
 			m_blueNoiseAnnealing.Save( new System.IO.FileInfo( "MyBlueNoise" + m_blueNoiseAnnealing.Width + "x" + m_blueNoiseAnnealing.Height + ".png" ) );
 		}
+
+		private void buttonVoidAndCluster_Click( object sender, EventArgs e )
+		{
+
+		}
 #else
 		ImageFile	m_blueNoiseAnnealing = new ImageFile( 64, 64, ImageFile.PIXEL_FORMAT.R8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
 		private void buttonSolidAngleAlgorithm_Click(object sender, EventArgs e) {
