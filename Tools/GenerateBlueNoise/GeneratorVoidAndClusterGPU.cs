@@ -1,4 +1,6 @@
-﻿//#define	DEBUG_BINARY_PATTERN
+﻿#define	DEBUG_BINARY_PATTERN
+//#define BYPASS_GPU_DOWNSAMPLING
+
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -80,6 +82,7 @@ namespace GenerateBlueNoise
  		ConstantBuffer<CB_Mips>			m_CB_Mips;
 
  		Texture2D		m_texBinaryPattern = null;
+ 		Texture2D		m_texBinaryPatternCPU = null;
  		Texture2D		m_texDitheringArray = null;
  		Texture2D		m_texDitheringArrayCPU = null;
  		Texture2D		m_texScore0 = null;
@@ -117,12 +120,11 @@ namespace GenerateBlueNoise
 				m_CB_Mips = new ConstantBuffer<CB_Mips>( _device, 1 );
 
 				m_texBinaryPattern = new Texture2D( _device, m_textureSize, m_textureSize, 1, 1, PIXEL_FORMAT.R32_UINT, false, true, null );
-				m_texDitheringArray = new Texture2D( _device, m_textureSize, m_textureSize, 1, 1, PIXEL_FORMAT.R32_FLOAT, false, true, null );
-				#if !DEBUG_BINARY_PATTERN
-					m_texDitheringArrayCPU = new Texture2D( _device, m_textureSize, m_textureSize, 1, 1, PIXEL_FORMAT.R32_FLOAT, true, true, null );
-				#else
-					m_texDitheringArrayCPU = new Texture2D( _device, m_textureSize, m_textureSize, 1, 1, PIXEL_FORMAT.R32_UINT, true, true, null );
+				#if DEBUG_BINARY_PATTERN
+					m_texBinaryPatternCPU = new Texture2D( _device, m_textureSize, m_textureSize, 1, 1, PIXEL_FORMAT.R32_UINT, true, true, null );
 				#endif
+				m_texDitheringArray = new Texture2D( _device, m_textureSize, m_textureSize, 1, 1, PIXEL_FORMAT.R32_FLOAT, false, true, null );
+				m_texDitheringArrayCPU = new Texture2D( _device, m_textureSize, m_textureSize, 1, 1, PIXEL_FORMAT.R32_FLOAT, true, true, null );
 				m_texScore0 = new Texture2D( _device, m_textureSize, m_textureSize, 1, 0, PIXEL_FORMAT.RG32_FLOAT, false, true, null );
 				m_texScore1 = new Texture2D( _device, m_textureSize, m_textureSize, 1, 0, PIXEL_FORMAT.RG32_FLOAT, false, true, null );
 				m_texScoreCPU = new Texture2D( _device, m_textureSize, m_textureSize, 1, 0, PIXEL_FORMAT.RG32_FLOAT, true, true, null );
@@ -205,6 +207,7 @@ namespace GenerateBlueNoise
 				}
 
 				// 2] Downsample score and keep lowest value and the position where to find it
+#if !BYPASS_GPU_DOWNSAMPLING
 				if ( m_CS_DownsampleScore16.Use() ) {
 					uint	groupsCount = m_textureSize;
 					uint	mipLevelIndex = 0;
@@ -212,7 +215,7 @@ namespace GenerateBlueNoise
 
 					m_CB_Mips.m._textureMipTarget = 0;
 
-					// 2.1) Downsample by packs of 4 mips
+					// 2.1) Downsample by groups of 4 mips
 					while ( mipLevelsCount >= 4 ) {
 						mipLevelIndex += 4;
 						mipLevelsCount -= 4;
@@ -264,7 +267,12 @@ namespace GenerateBlueNoise
 					}
 
 //DebugDownsampling();
+DebugSplatPosition( iterationIndex );
 				}
+#else
+				DownsampleCPU( iterationIndex );
+				m_CB_Mips.m._textureMipTarget = (uint) m_texturePOT;
+#endif
 
 				// 3] Splat a new pixel where we located the best score
 				if ( m_CS_Splat.Use() ) {
@@ -308,12 +316,54 @@ namespace GenerateBlueNoise
 					m_ditheringArray[_X,_Y] = _R.ReadSingle();
 				} );
 			#else
-				m_texDitheringArrayCPU.CopyFrom( m_texBinaryPattern );
-				m_texDitheringArrayCPU.ReadPixels( 0, 0, ( uint _X, uint _Y, System.IO.BinaryReader _R ) => {
+				m_texBinaryPatternCPU.CopyFrom( m_texBinaryPattern );
+				m_texBinaryPatternCPU.ReadPixels( 0, 0, ( uint _X, uint _Y, System.IO.BinaryReader _R ) => {
 					m_ditheringArray[_X,_Y] = _R.ReadUInt32();
 				} );
 			#endif
 		}
+
+		uint[,]		m_binaryPattern;
+#if BYPASS_GPU_DOWNSAMPLING
+		float[,]	m_score;
+		void	DownsampleCPU( uint _iterationIndex ) {
+			if ( m_score == null ) {
+				m_score = new float[m_textureSize,m_textureSize];
+				m_binaryPattern = new uint[m_textureSize,m_textureSize];
+			}
+
+			// Manually read back scores and look for minimum
+			m_texScoreCPU.CopyFrom( m_texScore0 );
+			m_texScoreCPU.ReadPixels( 0, 0, ( uint _X, uint _Y, System.IO.BinaryReader _R ) => { m_score[_X,_Y] = _R.ReadSingle(); _R.ReadUInt32(); } );
+
+			float	bestScore = float.MaxValue;
+			uint	bestX = 0, bestY = 0;
+			for ( uint Y=0; Y < m_textureSize; Y++ )
+				for ( uint X=0; X < m_textureSize; X++ ) {
+					if ( m_score[X,Y] >= bestScore )
+						continue;
+					bestScore = m_score[X,Y];
+					bestX = X;
+					bestY = Y;
+				}
+
+//bestX = _iterationIndex & m_textureSizeMask;
+//bestY = _iterationIndex >> m_texturePOT;
+
+			m_texBinaryPatternCPU.CopyFrom( m_texBinaryPattern );
+			m_texBinaryPatternCPU.ReadPixels( 0, 0, ( uint _X, uint _Y, System.IO.BinaryReader _R ) => { m_binaryPattern[_X,_Y] = _R.ReadUInt32(); } );
+			if ( m_binaryPattern[bestX,bestY] != 0 )
+				throw new Exception( "Already selected!" );
+
+			// Write best minimum to last mip
+			m_texScoreCPU.WritePixels( (uint) m_texturePOT, 0, ( uint _X, uint _Y, System.IO.BinaryWriter _W ) => {
+				_W.Write( bestScore );
+				uint	V = (bestY << 16) | bestX;
+				_W.Write( V );
+			} );
+			m_texScore0.CopyFrom( m_texScoreCPU );
+		}
+#endif
 
 		[System.Diagnostics.DebuggerDisplay( "{coordX},{coordY} = {score}" )]
 		struct bisou {
@@ -339,6 +389,28 @@ namespace GenerateBlueNoise
 
 				S >>= 1;
 			}
+		}
+
+		void	DebugSplatPosition( uint _iterationIndex ) {
+			if ( m_binaryPattern == null ) {
+				m_binaryPattern = new uint[m_textureSize,m_textureSize];
+			}
+
+			float	bestScore;
+			uint	bestPos = 0;
+			m_texScoreCPU.CopyFrom( m_texScore0 );
+			m_texScoreCPU.ReadPixels( (uint) m_texturePOT, 0, ( uint _X, uint _Y, System.IO.BinaryReader _R ) => { bestScore = _R.ReadSingle(); bestPos = _R.ReadUInt32(); } );
+
+			uint	bestX = bestPos & 0xFFFFU;
+			uint	bestY = (bestPos >> 16) & 0xFFFFU;
+
+System.Diagnostics.Debug.WriteLine( "Iteration #" + _iterationIndex + " => X=" + bestX + ", Y=" + bestY );
+
+			m_texBinaryPatternCPU.CopyFrom( m_texBinaryPattern );
+			m_texBinaryPatternCPU.ReadPixels( 0, 0, ( uint _X, uint _Y, System.IO.BinaryReader _R ) => { m_binaryPattern[_X,_Y] = _R.ReadUInt32(); } );
+			if ( m_binaryPattern[bestX,bestY] != 0 )
+				System.Diagnostics.Debug.WriteLine( "CONFLICT!" );
+//				throw new Exception( "Already selected!" );
 		}
 
 		#endregion

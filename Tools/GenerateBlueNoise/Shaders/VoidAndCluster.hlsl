@@ -103,8 +103,10 @@ float2	KeepBestScore( float2 _score00, float2 _score01, float2 _score10, float2 
 //
 groupshared float2	gs_scores[8*8];
 
+// Selects the scores from a 16x16 to a 1x1 target
 [numthreads( 8, 8, 1 )]
 void	CS__DownsampleScore16( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : SV_GROUPTHREADID, uint3 _dispatchThreadID : SV_DISPATCHTHREADID ) {
+#if 0
 	uint2	position00 = _dispatchThreadID.xy << 1U;
 	uint2	position11 = position00 + 1U;
 	uint2	position01 = uint2( position11.x, position00.y );
@@ -168,10 +170,28 @@ void	CS__DownsampleScore16( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : 
 		score10 = gs_scores[threadIndex10];
 		_texFilterOut[_groupID.xy] = KeepBestScore( score00, score01, score10, score11 );
 	}
+#else
+	uint2	threadPos = _groupThreadID.xy;		// Thread position within group
+	uint	threadIndex = 8 * threadPos.y + threadPos.x;
+	if ( threadIndex == 0 ) {
+		float2	bestScore = float2( 1e6, 0 );
+		for ( uint Y=0; Y < 16; Y++ ) {
+			for ( uint X=0; X < 16; X++ ) {
+//				float2	score = LoadSource( _groupID.xy + uint2( X, Y ) );
+				float2	score = LoadSource( uint2( X, Y ) );
+				if ( score.x < bestScore.x )
+					bestScore = score;
+			}
+		}
+
+		_texFilterOut[_groupID.xy] = bestScore;
+	}
+
+#endif
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Accumulates the scores from a 8x8 to a 1x1 target
+// Selects the scores from a 8x8 to a 1x1 target
 //
 [numthreads( 4, 4, 1 )]
 void	CS__DownsampleScore8( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : SV_GROUPTHREADID, uint3 _dispatchThreadID : SV_DISPATCHTHREADID ) {
@@ -228,7 +248,7 @@ void	CS__DownsampleScore8( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : S
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Accumulates the scores from a 4x4 to a 1x1 target
+// Selects the scores from a 4x4 to a 1x1 target
 //
 [numthreads( 2, 2, 1 )]
 void	CS__DownsampleScore4( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : SV_GROUPTHREADID, uint3 _dispatchThreadID : SV_DISPATCHTHREADID ) {
@@ -275,7 +295,7 @@ void	CS__DownsampleScore4( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : S
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Accumulates the scores from a 2x2 to a 1x1 target
+// Selects the scores from a 2x2 to a 1x1 target
 //
 [numthreads( 1, 1, 1 )]
 void	CS__DownsampleScore2( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : SV_GROUPTHREADID, uint3 _dispatchThreadID : SV_DISPATCHTHREADID ) {

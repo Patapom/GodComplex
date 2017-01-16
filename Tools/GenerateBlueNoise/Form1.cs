@@ -509,7 +509,7 @@ CreateTestSpectrum( handmadeSpectrum );
 		}
 #endif
 
-		ImageFile	m_blueNoiseVoidAndCluster = new ImageFile( 256, 256, ImageFile.PIXEL_FORMAT.R8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
+		ImageFile	m_blueNoiseVoidAndCluster = new ImageFile( 16, 16, ImageFile.PIXEL_FORMAT.R8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
 		private void buttonVoidAndCluster_Click( object sender, EventArgs e ) {
 
 			uint		W = m_blueNoiseVoidAndCluster.Width;
