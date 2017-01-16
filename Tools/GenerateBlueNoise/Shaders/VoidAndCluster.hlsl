@@ -4,9 +4,10 @@ cbuffer CB_Main : register(b0) {
 	uint	_texturePOT;
 	uint	_textureSize;
 	uint	_textureMask;
+	float	_kernelFactor;		// = -1/(2*sigma²)
 
-	float	_kernelFactorSpatial;	// = 1/sigma_i²
-	float	_kernelFactorValue;		// = 1/sigma_s²
+	uint2	_randomOffset;
+	uint	_iterationIndex;
 };
 
 cbuffer CB_Mips : register(b1) {
@@ -14,114 +15,105 @@ cbuffer CB_Mips : register(b1) {
 	uint	_textureMipTarget;
 };
 
-Texture2D<float>	_texIn : register(t0);
-RWTexture2D<float>	_texOut : register(u0);
+RWTexture2D<uint>	_texBinaryPatternOut : register(u0);
+RWTexture2D<float>	_texDitheringArrayOut : register(u1);
 
-StructuredBuffer<uint4>	_SBMutations : register(t1);
+Texture2D<float2>	_texFilterIn : register(t0);
+RWTexture2D<float2>	_texFilterOut : register(u2);
 
-// Half-Size of the kernel used to sample surrounding a pixel
-static const int	KERNEL_HALF_SIZE = 16;
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Mutate the initial distribution into a new, slightly different one
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//
-[numthreads( 16, 16, 1 )]
-void	CS__Copy( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : SV_GROUPTHREADID, uint3 _dispatchThreadID : SV_DISPATCHTHREADID ) {
-	_texOut[_dispatchThreadID.xy] = _texIn[_dispatchThreadID.xy];
+
+float	WritePos( uint2 _position ) {
+	return asfloat( (_position.y << 16) | _position.x );
+}
+uint2	ReadPos( float _position ) {
+	uint	posXY = asuint( _position );
+	return uint2( posXY & 0xFFFF, (posXY >> 16) & 0xFFFF );
 }
 
-[numthreads( 1, 1, 1 )]
-void	CS__Mutate( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : SV_GROUPTHREADID, uint3 _dispatchThreadID : SV_DISPATCHTHREADID ) {
-	uint4	pixelIndices = _SBMutations[_groupID.x];
-	uint2	pixelIndexA = pixelIndices.xy;
-	uint2	pixelIndexB = pixelIndices.zw;
-
-	float	pixelA = _texIn[pixelIndexA];
-	float	pixelB = _texIn[pixelIndexB];
-	_texOut[pixelIndexB] = pixelA;
-	_texOut[pixelIndexA] = pixelB;
-}
-
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Computes the energy score for a 2D texture of 1D vectors
+// Filters the binary pattern texture to compute a "clustering score"
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // 
+static const int	KERNEL_HALF_SIZE = 16;
+
 [numthreads( 16, 16, 1 )]
-void	CS__ComputeScore1D( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : SV_GROUPTHREADID, uint3 _dispatchThreadID : SV_DISPATCHTHREADID ) {
+void	CS__Filter( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : SV_GROUPTHREADID, uint3 _dispatchThreadID : SV_DISPATCHTHREADID ) {
 	int2	pixelIndex = _dispatchThreadID.xy;
+			pixelIndex = (pixelIndex + _randomOffset) & _textureMask;
+
+	float2	score = float2( 1e6, WritePos( _dispatchThreadID.xy ) );
 
 	// Sample central value
-	float	centralValue = _texIn[pixelIndex];
+	uint	centralValue = _texBinaryPatternOut[pixelIndex];
+	if ( centralValue != 0 ) {
+		// Already filled!
+		_texFilterOut[pixelIndex] = score;
+		return;
+	}
 
-	// Compute energy as indicated in the paper:
-	//	E(M) = Sum[ Exp[ -|Pi - Qi|² / Sigma_i² -|Ps - Qs|^(d/2) / Sigma_s² ] ]
-	//
-	// For all pairs of pixels Pi != Qi (although we're only restraining to a 17x17 kernel surrounding our current pixel, assuming the score is too low to be significant otherwise)
-	//
-	float	score = 0.0;
+	// Filter neighbors
+	score.x = 0.0;
 	[loop]
 	for ( int dY=-KERNEL_HALF_SIZE; dY <= KERNEL_HALF_SIZE; dY++ ) {
 		float	sqDy = dY * dY;
-		uint	finalY = uint( pixelIndex.y + dY ) & _textureMask;
+		uint	finalY = uint( _textureSize + pixelIndex.y + dY ) & _textureMask;
 
 		[loop]
 		for ( int dX=-KERNEL_HALF_SIZE; dX <= KERNEL_HALF_SIZE; dX++ ) {
-			if ( dY == 0 && dX == 0 )
-				continue;	// Not interested in ourselves
-
 			float	sqDx = dX * dX;
-			uint	finalX = uint( pixelIndex.x + dX ) & _textureMask;
+			uint	finalX = uint( _textureSize + pixelIndex.x + dX ) & _textureMask;
 
-			// Compute -|Pi - Qi|² / Sigma_i²
-			float	sqDistanceImage = sqDx + sqDy;
-					sqDistanceImage *= _kernelFactorSpatial;
-
-			// Compute -|Ps - Qs|^(d/2) / Sigma_s²
-			float	value = _texIn[uint2( finalX, finalY )];
-//			float	sqDistanceValue = value - centralValue;					// 2D value => d/2 = 1
-			float	sqDistanceValue = sqrt( abs( value - centralValue ) );	// 1D value => d/2 = 0.5
-					sqDistanceValue *= _kernelFactorValue;
-
-			// Compute score as Exp[ -|Pi - Qi|² / Sigma_i² -|Ps - Qs|^(d/2) / Sigma_s² ]
-			score += exp( sqDistanceImage + sqDistanceValue );
+			score.x += _texBinaryPatternOut[uint2( finalX, finalY )] * exp( _kernelFactor * (sqDx + sqDy) );
 		}
 	}
 
-//score = 1.0;
+score.x *= 1.0 / (2.0 * 3.14159265358979 * 2.1*2.1);
+score.x *= 4.0;
+//score.x = _kernelFactor;
 
-	_texOut[pixelIndex] = score;
+	_texFilterOut[pixelIndex] = score;
 }
+
 
 // Factorized source texture loading as it seems to pose problems on my 2 different machines:
 //	• On my GTX 680, the Load() instruction and [] operator are working normally
 //	• On my GTX 980M, only the SampleLevel() is working otherwise only a single thread is returning something, the others are returning 0 from a Load() or []!
 //
-float	LoadSource( uint2 _position ) {
-	return _texIn.Load( int3( _position, _textureMipSource ) );
+float2	LoadSource( uint2 _position ) {
+	return _texFilterIn.Load( int3( _position, _textureMipSource ) );
 //	return _texIn[_position];
 //	return _texIn.SampleLevel( PointClamp, float2( _position / _textureSize ), 0.0 );
 }
 
+float2	KeepBestScore( float2 _score00, float2 _score01, float2 _score10, float2 _score11 ) {
+	float2	bestScore = _score00;
+	if ( _score01.x < bestScore.x )
+		bestScore = _score01;
+	if ( _score10.x < bestScore.x )
+		bestScore = _score10;
+	if ( _score11.x < bestScore.x )
+		bestScore = _score11;
+	return bestScore;
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Accumulates the scores from a 16x16 to a 1x1 target
+// Finds and isolates the minimum score
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// 
-groupshared float	gs_scores[8*8];
+//
+groupshared float2	gs_scores[8*8];
 
 [numthreads( 8, 8, 1 )]
-void	CS__AccumulateScore16( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : SV_GROUPTHREADID, uint3 _dispatchThreadID : SV_DISPATCHTHREADID ) {
+void	CS__DownsampleScore16( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : SV_GROUPTHREADID, uint3 _dispatchThreadID : SV_DISPATCHTHREADID ) {
 	uint2	position00 = _dispatchThreadID.xy << 1U;
 	uint2	position11 = position00 + 1U;
 	uint2	position01 = uint2( position11.x, position00.y );
 	uint2	position10 = uint2( position00.x, position11.y );
 
-	float4	rawScore;
-	rawScore.x = LoadSource( position00 );
-	rawScore.y = LoadSource( position01 );
-	rawScore.z = LoadSource( position11 );
-	rawScore.w = LoadSource( position10 );
+	float2	score00 = LoadSource( position00 );
+	float2	score01 = LoadSource( position01 );
+	float2	score10 = LoadSource( position10 );
+	float2	score11 = LoadSource( position11 );
 
 	// ======================================================================
 	// Build thread indices so each thread addresses groups of 2x2 pixels in shared memory
@@ -136,12 +128,7 @@ void	CS__AccumulateScore16( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : 
 	// ======================================================================
 	// Store initial values
 	// Threads in range [{0,0},{8,8}[ will each span 4 samples in range [{0,0},{16,16}[
-	gs_scores[threadIndex] = rawScore.x + rawScore.y + rawScore.z + rawScore.w;
-
-//uint3	Size;
-//_texIn.GetDimensions( 0, Size.x, Size.y, Size.z );
-//gs_scores[threadIndex] = Size.z;
-//gs_scores[threadIndex] = threadIndex;
+	gs_scores[threadIndex] = KeepBestScore( score00, score01, score10, score11 );
 
 	GroupMemoryBarrierWithGroupSync();	// We wait until all samples from the group are available
 
@@ -149,11 +136,11 @@ void	CS__AccumulateScore16( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : 
 	// Downsample to 4x4
 	if ( all( threadPos < 4U ) ) {
 		// Threads in range [{0,0},{4,4}[ will each span 4 samples in range [{0,0},{8,8}[
-		float	score00 = gs_scores[threadIndex00];
-		float	score01 = gs_scores[threadIndex01];
-		float	score11 = gs_scores[threadIndex11];
-		float	score10 = gs_scores[threadIndex10];
-		gs_scores[threadIndex] = score00 + score01 + score10 + score11;
+		score00 = gs_scores[threadIndex00];
+		score01 = gs_scores[threadIndex01];
+		score11 = gs_scores[threadIndex11];
+		score10 = gs_scores[threadIndex10];
+		gs_scores[threadIndex] = KeepBestScore( score00, score01, score10, score11 );
 	}
 
 	GroupMemoryBarrierWithGroupSync();	// We wait until all samples from the group are available
@@ -162,11 +149,11 @@ void	CS__AccumulateScore16( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : 
 	// Downsample to 2x2
 	if ( all( threadPos < 2U ) ) {
 		// Threads in range [{0,0},{2,2}[ will each span 4 samples in range [{0,0},{4,4}[
-		float	score00 = gs_scores[threadIndex00];
-		float	score01 = gs_scores[threadIndex01];
-		float	score11 = gs_scores[threadIndex11];
-		float	score10 = gs_scores[threadIndex10];
-		gs_scores[threadIndex] = score00 + score01 + score10 + score11;
+		score00 = gs_scores[threadIndex00];
+		score01 = gs_scores[threadIndex01];
+		score11 = gs_scores[threadIndex11];
+		score10 = gs_scores[threadIndex10];
+		gs_scores[threadIndex] = KeepBestScore( score00, score01, score10, score11 );
 	}
 
 	GroupMemoryBarrierWithGroupSync();	// We wait until all samples from the group are available
@@ -175,15 +162,11 @@ void	CS__AccumulateScore16( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : 
 	// Downsample to 1x1
 	if ( threadIndex == 0 ) {
 		// Threads in range [{0,0},{1,1}[ will each span 4 samples in range [{0,0},{2,2}[
-		float	score00 = gs_scores[threadIndex00];
-		float	score01 = gs_scores[threadIndex01];
-		float	score11 = gs_scores[threadIndex11];
-		float	score10 = gs_scores[threadIndex10];
-		_texOut[_groupID.xy] = score00 + score01 + score10 + score11;
-
-//_texOut[_groupID.xy] = gs_scores[8*7+7];
-//_texOut[_groupID.xy] = _texIn[position00 + uint2( 7, 3 )];
-
+		score00 = gs_scores[threadIndex00];
+		score01 = gs_scores[threadIndex01];
+		score11 = gs_scores[threadIndex11];
+		score10 = gs_scores[threadIndex10];
+		_texFilterOut[_groupID.xy] = KeepBestScore( score00, score01, score10, score11 );
 	}
 }
 
@@ -191,17 +174,16 @@ void	CS__AccumulateScore16( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : 
 // Accumulates the scores from a 8x8 to a 1x1 target
 //
 [numthreads( 4, 4, 1 )]
-void	CS__AccumulateScore8( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : SV_GROUPTHREADID, uint3 _dispatchThreadID : SV_DISPATCHTHREADID ) {
+void	CS__DownsampleScore8( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : SV_GROUPTHREADID, uint3 _dispatchThreadID : SV_DISPATCHTHREADID ) {
 	uint2	position00 = _dispatchThreadID.xy << 1U;
 	uint2	position11 = position00 + 1U;
 	uint2	position01 = uint2( position11.x, position00.y );
 	uint2	position10 = uint2( position00.x, position11.y );
 
-	float4	rawScore;
-	rawScore.x = LoadSource( position00 );
-	rawScore.y = LoadSource( position01 );
-	rawScore.z = LoadSource( position11 );
-	rawScore.w = LoadSource( position10 );
+	float2	score00 = LoadSource( position00 );
+	float2	score01 = LoadSource( position01 );
+	float2	score10 = LoadSource( position10 );
+	float2	score11 = LoadSource( position11 );
 
 	// ======================================================================
 	// Build thread indices so each thread addresses groups of 2x2 pixels in shared memory
@@ -216,7 +198,7 @@ void	CS__AccumulateScore8( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : S
 	// ======================================================================
 	// Store initial values
 	// Threads in range [{0,0},{4,4}[ will each span 4 samples in range [{0,0},{8,8}[
-	gs_scores[threadIndex] = rawScore.x + rawScore.y + rawScore.z + rawScore.w;
+	gs_scores[threadIndex] = KeepBestScore( score00, score01, score10, score11 );
 
 	GroupMemoryBarrierWithGroupSync();	// We wait until all samples from the group are available
 
@@ -224,11 +206,11 @@ void	CS__AccumulateScore8( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : S
 	// Downsample to 2x2
 	if ( all( threadPos < 2U ) ) {
 		// Threads in range [{0,0},{2,2}[ will each span 4 samples in range [{0,0},{4,4}[
-		float	score00 = gs_scores[threadIndex00];
-		float	score01 = gs_scores[threadIndex01];
-		float	score11 = gs_scores[threadIndex11];
-		float	score10 = gs_scores[threadIndex10];
-		gs_scores[threadIndex] = score00 + score01 + score10 + score11;
+		score00 = gs_scores[threadIndex00];
+		score01 = gs_scores[threadIndex01];
+		score11 = gs_scores[threadIndex11];
+		score10 = gs_scores[threadIndex10];
+		gs_scores[threadIndex] = KeepBestScore( score00, score01, score10, score11 );
 	}
 
 	GroupMemoryBarrierWithGroupSync();	// We wait until all samples from the group are available
@@ -237,11 +219,11 @@ void	CS__AccumulateScore8( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : S
 	// Downsample to 1x1
 	if ( threadIndex == 0 ) {
 		// Threads in range [{0,0},{1,1}[ will each span 4 samples in range [{0,0},{2,2}[
-		float	score00 = gs_scores[threadIndex00];
-		float	score01 = gs_scores[threadIndex01];
-		float	score11 = gs_scores[threadIndex11];
-		float	score10 = gs_scores[threadIndex10];
-		_texOut[_groupID.xy] = score00 + score01 + score10 + score11;
+		score00 = gs_scores[threadIndex00];
+		score01 = gs_scores[threadIndex01];
+		score11 = gs_scores[threadIndex11];
+		score10 = gs_scores[threadIndex10];
+		_texFilterOut[_groupID.xy] = KeepBestScore( score00, score01, score10, score11 );
 	}
 }
 
@@ -249,17 +231,16 @@ void	CS__AccumulateScore8( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : S
 // Accumulates the scores from a 4x4 to a 1x1 target
 //
 [numthreads( 2, 2, 1 )]
-void	CS__AccumulateScore4( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : SV_GROUPTHREADID, uint3 _dispatchThreadID : SV_DISPATCHTHREADID ) {
+void	CS__DownsampleScore4( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : SV_GROUPTHREADID, uint3 _dispatchThreadID : SV_DISPATCHTHREADID ) {
 	uint2	position00 = _dispatchThreadID.xy << 1U;
 	uint2	position11 = position00 + 1U;
 	uint2	position01 = uint2( position11.x, position00.y );
 	uint2	position10 = uint2( position00.x, position11.y );
 
-	float4	rawScore;
-	rawScore.x = LoadSource( position00 );
-	rawScore.y = LoadSource( position01 );
-	rawScore.z = LoadSource( position11 );
-	rawScore.w = LoadSource( position10 );
+	float2	score00 = LoadSource( position00 );
+	float2	score01 = LoadSource( position01 );
+	float2	score10 = LoadSource( position10 );
+	float2	score11 = LoadSource( position11 );
 
 	// ======================================================================
 	// Build thread indices so each thread addresses groups of 2x2 pixels in shared memory
@@ -274,7 +255,7 @@ void	CS__AccumulateScore4( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : S
 	// ======================================================================
 	// Store initial values
 	// Threads in range [{0,0},{2,2}[ will each span 4 samples in range [{0,0},{4,4}[
-	gs_scores[threadIndex] = rawScore.x + rawScore.y + rawScore.z + rawScore.w;
+	gs_scores[threadIndex] = KeepBestScore( score00, score01, score10, score11 );
 
 	GroupMemoryBarrierWithGroupSync();	// We wait until all samples from the group are available
 
@@ -282,11 +263,14 @@ void	CS__AccumulateScore4( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : S
 	// Downsample to 1x1
 	if ( threadIndex == 0 ) {
 		// Threads in range [{0,0},{1,1}[ will each span 4 samples in range [{0,0},{2,2}[
-		float	score00 = gs_scores[threadIndex00];
-		float	score01 = gs_scores[threadIndex01];
-		float	score11 = gs_scores[threadIndex11];
-		float	score10 = gs_scores[threadIndex10];
-		_texOut[_groupID.xy] = score00 + score01 + score10 + score11;
+		score00 = gs_scores[threadIndex00];
+		score01 = gs_scores[threadIndex01];
+		score11 = gs_scores[threadIndex11];
+		score10 = gs_scores[threadIndex10];
+		_texFilterOut[_groupID.xy] = KeepBestScore( score00, score01, score10, score11 );
+
+
+//_texFilterOut[_groupID.xy] = float2( 0.0, WritePos( uint2( _iterationIndex & _textureMask, _iterationIndex >> _texturePOT ) ) );
 	}
 }
 
@@ -294,17 +278,38 @@ void	CS__AccumulateScore4( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : S
 // Accumulates the scores from a 2x2 to a 1x1 target
 //
 [numthreads( 1, 1, 1 )]
-void	CS__AccumulateScore2( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : SV_GROUPTHREADID, uint3 _dispatchThreadID : SV_DISPATCHTHREADID ) {
+void	CS__DownsampleScore2( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : SV_GROUPTHREADID, uint3 _dispatchThreadID : SV_DISPATCHTHREADID ) {
 	uint2	position00 = _groupID.xy << 1U;
 	uint2	position11 = position00 + 1U;
 	uint2	position01 = uint2( position11.x, position00.y );
 	uint2	position10 = uint2( position00.x, position11.y );
 
-	float4	rawScore;
-	rawScore.x = LoadSource( position00 );
-	rawScore.y = LoadSource( position01 );
-	rawScore.z = LoadSource( position11 );
-	rawScore.w = LoadSource( position10 );
+	float2	score00 = LoadSource( position00 );
+	float2	score01 = LoadSource( position01 );
+	float2	score10 = LoadSource( position10 );
+	float2	score11 = LoadSource( position11 );
 
-	_texOut[_groupID.xy] = rawScore.x + rawScore.y + rawScore.z + rawScore.w;
+	_texFilterOut[_groupID.xy] = KeepBestScore( score00, score01, score10, score11 );
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Splat a value where we located the maximum
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+[numthreads( 1, 1, 1 )]
+void	CS__Splat( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : SV_GROUPTHREADID, uint3 _dispatchThreadID : SV_DISPATCHTHREADID ) {
+	float2	bestScore = LoadSource( 0 );
+	uint2	splatPos = ReadPos( bestScore.y );
+
+//splatPos.x = _iterationIndex & _textureMask;
+//splatPos.y = _iterationIndex >> _texturePOT;
+
+	if ( any(splatPos >= _textureSize) ) {
+//		_texDitheringArrayOut[splatPos & _textureMask] = 10.0;
+		return;	// OUCH!!
+	}
+
+	_texBinaryPatternOut[splatPos] = 1.0;
+//	_texDitheringArrayOut[splatPos] = float( _iterationIndex ) / (_textureSize*_textureSize);
+	_texDitheringArrayOut[splatPos] = bestScore.x;
 }

@@ -25,6 +25,8 @@ namespace GenerateBlueNoise
 	/// </summary>
 	public class GeneratorSolidAngleGPU : IDisposable {
 
+		#region FIELDS
+
 		const uint	MAX_MUTATIONS = 1024;
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
@@ -40,26 +42,6 @@ namespace GenerateBlueNoise
 		struct CB_Mips {
 			public uint		_textureMipSource;
 			public uint		_textureMipTarget;
-		}
-		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
-		struct CB_Mutation {
-			public uint		_pixelSourceX0;
-			public uint		_pixelSourceX1;
-			public uint		_pixelSourceX2;
-			public uint		_pixelSourceX3;
-			public uint		_pixelSourceY0;
-			public uint		_pixelSourceY1;
-			public uint		_pixelSourceY2;
-			public uint		_pixelSourceY3;
-
-			public uint		_pixelTargetX0;
-			public uint		_pixelTargetX1;
-			public uint		_pixelTargetX2;
-			public uint		_pixelTargetX3;
-			public uint		_pixelTargetY0;
-			public uint		_pixelTargetY1;
-			public uint		_pixelTargetY2;
-			public uint		_pixelTargetY3;
 		}
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
 		struct SB_Mutation {
@@ -94,6 +76,13 @@ namespace GenerateBlueNoise
 		Texture2D		m_texNoiseCPU = null;				// Used to upload/download results
 		Texture2D		m_texNoiseScoreCPU = null;
 
+		#endregion
+
+		/// <summary>
+		/// Constructor
+		/// </summary>
+		/// <param name="_device">Device CAN be null, in which case the CPU version will be used</param>
+		/// <param name="_texturePOT"></param>
 		public	GeneratorSolidAngleGPU( Device _device, uint _texturePOT ) {
 			m_texturePOT = (int) _texturePOT;
 			m_textureSize = 1U << m_texturePOT;
@@ -101,6 +90,7 @@ namespace GenerateBlueNoise
 			m_textureTotalSize = m_textureSize * m_textureSize;
 
 			try {
+
 				m_CS_Copy = new ComputeShader( _device, new System.IO.FileInfo( @"Shaders/SimulatedAnnealing.hlsl" ), "CS__Copy", null );
 				m_CS_Mutate = new ComputeShader( _device, new System.IO.FileInfo( @"Shaders/SimulatedAnnealing.hlsl" ), "CS__Mutate", null );
 				m_CS_ComputeScore1D = new ComputeShader( _device, new System.IO.FileInfo( @"Shaders/SimulatedAnnealing.hlsl" ), "CS__ComputeScore1D", null );
@@ -151,6 +141,8 @@ namespace GenerateBlueNoise
 
 		public delegate void	ProgressDelegate( uint _iterationIndex, uint _mutationsCount, float _energyScore, float[,] _texture, List<float> _statistics );
 
+		#region GPU Version
+
 		/// <summary>
 		/// Generates blue noise distribution by randomly swapping pixels in the texture to reach lowest possible score and minimize a specific energy function
 		/// </summary>
@@ -161,7 +153,6 @@ namespace GenerateBlueNoise
 		/// <param name="_notifyProgressEveryNIterations">Will read back the GPU texture to the CPU and notify of progress every N iterations</param>
 		/// <param name="_progress"></param>
 		public void		Generate( uint _randomSeed, int _maxIterations, float _standardDeviationImage, float _standardDeviationValue, int _notifyProgressEveryNIterations, ProgressDelegate _progress ) {
-
 			m_CB_Main.m._texturePOT = (uint) m_texturePOT;
 			m_CB_Main.m._textureSize = m_textureSize;
 			m_CB_Main.m._textureMask = m_textureSizeMask;
@@ -297,7 +288,9 @@ namespace GenerateBlueNoise
 			}
 
 			// One final call with our best final result
-			_progress( iterationIndex, mutationsCount, bestScore, textureCPU, statistics );
+			ReadBackTexture1D( m_texNoise0, textureCPU );
+			if ( _progress != null )
+				_progress( iterationIndex, mutationsCount, bestScore, textureCPU, statistics );
 		}
 
 		float	ComputeScore1D( Texture2D _texture ) {
@@ -505,6 +498,12 @@ namespace GenerateBlueNoise
 			_X = _index & m_textureSizeMask;
 			_Y = _index >> m_texturePOT;
 		}
+
+		#endregion
+
+		#region CPU Version
+
+		#endregion
 
 		/// <summary>
 		/// Returns a value in [0,_maxValue[
