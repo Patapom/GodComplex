@@ -39,10 +39,8 @@ static const int	KERNEL_HALF_SIZE = 16;
 
 [numthreads( 16, 16, 1 )]
 void	CS__Filter( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : SV_GROUPTHREADID, uint3 _dispatchThreadID : SV_DISPATCHTHREADID ) {
-	int2	pixelIndex = _dispatchThreadID.xy;
-			pixelIndex = (pixelIndex + _randomOffset) & _textureMask;
-
-	float2	score = float2( 1e6, WritePos( _dispatchThreadID.xy ) );
+	int2	pixelIndex = (_dispatchThreadID.xy + _randomOffset) & _textureMask;
+	float2	score = float2( 1e6, WritePos( pixelIndex ) );	// Default invalid score
 
 	// Sample central value
 	uint	centralValue = _texBinaryPatternOut[pixelIndex];
@@ -68,8 +66,8 @@ void	CS__Filter( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : SV_GROUPTHR
 		}
 	}
 
-score.x *= 1.0 / (2.0 * 3.14159265358979 * 2.1*2.1);
-score.x *= 4.0;
+//score.x *= 1.0 / (2.0 * 3.14159265358979 * 2.1*2.1);
+//score.x *= 4.0;
 //score.x = _kernelFactor;
 
 	_texFilterOut[pixelIndex] = score;
@@ -106,7 +104,7 @@ groupshared float2	gs_scores[8*8];
 // Selects the scores from a 16x16 to a 1x1 target
 [numthreads( 8, 8, 1 )]
 void	CS__DownsampleScore16( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : SV_GROUPTHREADID, uint3 _dispatchThreadID : SV_DISPATCHTHREADID ) {
-#if 0
+#if 1
 	uint2	position00 = _dispatchThreadID.xy << 1U;
 	uint2	position11 = position00 + 1U;
 	uint2	position01 = uint2( position11.x, position00.y );
@@ -186,7 +184,6 @@ void	CS__DownsampleScore16( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : 
 
 		_texFilterOut[_groupID.xy] = bestScore;
 	}
-
 #endif
 }
 
@@ -330,6 +327,6 @@ void	CS__Splat( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : SV_GROUPTHRE
 	}
 
 	_texBinaryPatternOut[splatPos] = 1.0;
-//	_texDitheringArrayOut[splatPos] = float( _iterationIndex ) / (_textureSize*_textureSize);
-	_texDitheringArrayOut[splatPos] = bestScore.x;
+	_texDitheringArrayOut[splatPos] = float( _iterationIndex ) / (_textureSize*_textureSize);
+//	_texDitheringArrayOut[splatPos] = bestScore.x;
 }

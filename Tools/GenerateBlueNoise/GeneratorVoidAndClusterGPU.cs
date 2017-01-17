@@ -1,5 +1,5 @@
-﻿#define	DEBUG_BINARY_PATTERN
-//#define BYPASS_GPU_DOWNSAMPLING
+﻿//#define	DEBUG_BINARY_PATTERN
+//#define	BYPASS_GPU_DOWNSAMPLING
 
 using System;
 using System.Collections.Generic;
@@ -23,7 +23,8 @@ namespace GenerateBlueNoise
 	/// NOTE: The method is implemented as both CPU and GPU depending on whether you pass a valid Device to the constructor.
 	/// 
 	/// The void-and-cluster algorithm is extremely simple:
-	///		► At each step, find the place where there is the largest gap and place a pixel there. That's basically it...
+	///		► At each step, find the place where there is the largest gap and place a pixel there.
+	///					Yup! That's basically it... :/
 	///	
 	/// In detail:
 	///		• We perform a gaussian filtering of a binary texture and find the maximum value.
@@ -120,7 +121,7 @@ namespace GenerateBlueNoise
 				m_CB_Mips = new ConstantBuffer<CB_Mips>( _device, 1 );
 
 				m_texBinaryPattern = new Texture2D( _device, m_textureSize, m_textureSize, 1, 1, PIXEL_FORMAT.R32_UINT, false, true, null );
-				#if DEBUG_BINARY_PATTERN
+				#if DEBUG_BINARY_PATTERN || BYPASS_GPU_DOWNSAMPLING
 					m_texBinaryPatternCPU = new Texture2D( _device, m_textureSize, m_textureSize, 1, 1, PIXEL_FORMAT.R32_UINT, true, true, null );
 				#endif
 				m_texDitheringArray = new Texture2D( _device, m_textureSize, m_textureSize, 1, 1, PIXEL_FORMAT.R32_FLOAT, false, true, null );
@@ -189,7 +190,7 @@ namespace GenerateBlueNoise
 
 			SimpleRNG.SetSeed( _randomSeed, 362436069U );
 
-			for ( uint iterationIndex=1; iterationIndex < m_textureTotalSize; iterationIndex++ ) {
+			for ( uint iterationIndex=0; iterationIndex < m_textureTotalSize; iterationIndex++ ) {
 
 				m_CB_Main.m._randomOffsetX = GetUniformInt( m_textureSize );
 				m_CB_Main.m._randomOffsetY = GetUniformInt( m_textureSize );
@@ -207,72 +208,74 @@ namespace GenerateBlueNoise
 				}
 
 				// 2] Downsample score and keep lowest value and the position where to find it
-#if !BYPASS_GPU_DOWNSAMPLING
-				if ( m_CS_DownsampleScore16.Use() ) {
-					uint	groupsCount = m_textureSize;
-					uint	mipLevelIndex = 0;
-					uint	mipLevelsCount = (uint) m_texturePOT;
+				#if !BYPASS_GPU_DOWNSAMPLING
+					if ( m_CS_DownsampleScore16.Use() ) {
+						uint	groupsCount = m_textureSize;
+						uint	mipLevelIndex = 0;
+						uint	mipLevelsCount = (uint) m_texturePOT;
 
-					m_CB_Mips.m._textureMipTarget = 0;
+						m_CB_Mips.m._textureMipTarget = 0;
 
-					// 2.1) Downsample by groups of 4 mips
-					while ( mipLevelsCount >= 4 ) {
-						mipLevelIndex += 4;
-						mipLevelsCount -= 4;
-						groupsCount >>= 4;
+						// 2.1) Downsample by groups of 4 mips
+						while ( mipLevelsCount >= 4 ) {
+							mipLevelIndex += 4;
+							mipLevelsCount -= 4;
+							groupsCount >>= 4;
 
-						m_texScore0.SetCS( 0 );
-						m_texScore1.SetCSUAV( 2, m_texScore1.GetView( mipLevelIndex, 1, 0, 1 ) );
+							m_texScore0.SetCS( 0 );
+							m_texScore1.SetCSUAV( 2, m_texScore1.GetView( mipLevelIndex, 1, 0, 1 ) );
 
-						m_CB_Mips.m._textureMipSource = m_CB_Mips.m._textureMipTarget;
-						m_CB_Mips.m._textureMipTarget = mipLevelIndex;
-						m_CB_Mips.UpdateData();
+							m_CB_Mips.m._textureMipSource = m_CB_Mips.m._textureMipTarget;
+							m_CB_Mips.m._textureMipTarget = mipLevelIndex;
+							m_CB_Mips.UpdateData();
 
-						m_CS_DownsampleScore16.Dispatch( groupsCount, groupsCount, 1 );
+							m_CS_DownsampleScore16.Dispatch( groupsCount, groupsCount, 1 );
 
-						m_texScore0.RemoveFromLastAssignedSlots();
-						m_texScore1.RemoveFromLastAssignedSlotUAV();
+							m_texScore0.RemoveFromLastAssignedSlots();
+							m_texScore1.RemoveFromLastAssignedSlotUAV();
 
-						// Swap
-						Texture2D	temp = m_texScore0;
-						m_texScore0 = m_texScore1;
-						m_texScore1 = temp;
-					}
+							// Swap
+							Texture2D	temp = m_texScore0;
+							m_texScore0 = m_texScore1;
+							m_texScore1 = temp;
+						}
 
-					// 2.2) Downsample to last mip
-					ComputeShader	CSLastMip = null;
-					switch ( mipLevelsCount ) {
-						case 3: CSLastMip = m_CS_DownsampleScore8; break;
-						case 2: CSLastMip = m_CS_DownsampleScore4; break;
-						case 1: CSLastMip = m_CS_DownsampleScore2; break;
-					}
-					if ( CSLastMip != null && CSLastMip.Use() ) {
+						// 2.2) Downsample to last mip
+						ComputeShader	CSLastMip = null;
+						switch ( mipLevelsCount ) {
+							case 3: CSLastMip = m_CS_DownsampleScore8; break;
+							case 2: CSLastMip = m_CS_DownsampleScore4; break;
+							case 1: CSLastMip = m_CS_DownsampleScore2; break;
+						}
+						if ( CSLastMip != null && CSLastMip.Use() ) {
 
-						m_texScore0.SetCS( 0 );
-						m_texScore1.SetCSUAV( 2, m_texScore1.GetView( (uint) m_texturePOT, 1, 0, 1 ) );
+							m_texScore0.SetCS( 0 );
+							m_texScore1.SetCSUAV( 2, m_texScore1.GetView( (uint) m_texturePOT, 1, 0, 1 ) );
 
-						m_CB_Mips.m._textureMipSource = m_CB_Mips.m._textureMipTarget;
-						m_CB_Mips.m._textureMipTarget = (uint) m_texturePOT;
-						m_CB_Mips.UpdateData();
+							m_CB_Mips.m._textureMipSource = m_CB_Mips.m._textureMipTarget;
+							m_CB_Mips.m._textureMipTarget = (uint) m_texturePOT;
+							m_CB_Mips.UpdateData();
 
-						CSLastMip.Dispatch( 1, 1, 1 );
+							CSLastMip.Dispatch( 1, 1, 1 );
 
-						m_texScore0.RemoveFromLastAssignedSlots();
-						m_texScore1.RemoveFromLastAssignedSlotUAV();
+							m_texScore0.RemoveFromLastAssignedSlots();
+							m_texScore1.RemoveFromLastAssignedSlotUAV();
 
-						// Swap
-						Texture2D	temp = m_texScore0;
-						m_texScore0 = m_texScore1;
-						m_texScore1 = temp;
-					}
+							// Swap
+							Texture2D	temp = m_texScore0;
+							m_texScore0 = m_texScore1;
+							m_texScore1 = temp;
+						}
 
+#if DEBUG
 //DebugDownsampling();
-DebugSplatPosition( iterationIndex );
-				}
-#else
-				DownsampleCPU( iterationIndex );
-				m_CB_Mips.m._textureMipTarget = (uint) m_texturePOT;
+//DebugSplatPosition( iterationIndex );
 #endif
+					}
+				#else
+					DownsampleCPU( iterationIndex );
+					m_CB_Mips.m._textureMipTarget = (uint) m_texturePOT;
+				#endif
 
 				// 3] Splat a new pixel where we located the best score
 				if ( m_CS_Splat.Use() ) {
@@ -350,10 +353,12 @@ DebugSplatPosition( iterationIndex );
 //bestX = _iterationIndex & m_textureSizeMask;
 //bestY = _iterationIndex >> m_texturePOT;
 
-			m_texBinaryPatternCPU.CopyFrom( m_texBinaryPattern );
-			m_texBinaryPatternCPU.ReadPixels( 0, 0, ( uint _X, uint _Y, System.IO.BinaryReader _R ) => { m_binaryPattern[_X,_Y] = _R.ReadUInt32(); } );
-			if ( m_binaryPattern[bestX,bestY] != 0 )
-				throw new Exception( "Already selected!" );
+			#if DEBUG
+				m_texBinaryPatternCPU.CopyFrom( m_texBinaryPattern );
+				m_texBinaryPatternCPU.ReadPixels( 0, 0, ( uint _X, uint _Y, System.IO.BinaryReader _R ) => { m_binaryPattern[_X,_Y] = _R.ReadUInt32(); } );
+				if ( m_binaryPattern[bestX,bestY] != 0 )
+					throw new Exception( "Already selected!" );
+			#endif
 
 			// Write best minimum to last mip
 			m_texScoreCPU.WritePixels( (uint) m_texturePOT, 0, ( uint _X, uint _Y, System.IO.BinaryWriter _W ) => {

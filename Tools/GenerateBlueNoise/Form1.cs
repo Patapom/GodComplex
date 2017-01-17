@@ -509,7 +509,7 @@ CreateTestSpectrum( handmadeSpectrum );
 		}
 #endif
 
-		ImageFile	m_blueNoiseVoidAndCluster = new ImageFile( 16, 16, ImageFile.PIXEL_FORMAT.R8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
+		ImageFile	m_blueNoiseVoidAndCluster = new ImageFile( 128, 128, ImageFile.PIXEL_FORMAT.R8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
 		private void buttonVoidAndCluster_Click( object sender, EventArgs e ) {
 
 			uint		W = m_blueNoiseVoidAndCluster.Width;
@@ -524,6 +524,7 @@ CreateTestSpectrum( handmadeSpectrum );
 			float2		rangeY = new float2( 0, 100 );
 
 			float	sigma_i = 2.1f;	// Default, recommended value
+//float	sigma_i = 1.0f;
 
 			GeneratorVoidAndClusterGPU	generator = new GeneratorVoidAndClusterGPU( m_device, (uint) (Math.Log(m_blueNoiseVoidAndCluster.Width)/Math.Log(2.0)) );
 			generator.Generate( 1, sigma_i, 0.1f, ( float _progress, float[,] _texture, List< float > _statistics ) => {
@@ -535,9 +536,9 @@ CreateTestSpectrum( handmadeSpectrum );
 					m_blueNoiseVoidAndCluster.WriteScanline( Y, scanline );
 				}
 
-// 				if ( m_blueNoiseVoidAndCluster.Width < panelImage.Width )
-// 					panelImage.Bitmap = m_blueNoiseVoidAndCluster.AsTiledBitmap( (uint) panelImage.Width, (uint) panelImage.Height );
-// 				else
+				if ( m_blueNoiseVoidAndCluster.Width < panelImage.Width )
+					panelImage.Bitmap = m_blueNoiseVoidAndCluster.AsTiledBitmap( (uint) panelImage.Width, (uint) panelImage.Height );
+				else
 					panelImage.Bitmap = m_blueNoiseVoidAndCluster.AsBitmap;
 
 				labelAnnealingScore.Text = "Progress: " + (100.0f*_progress).ToString( "G4" ) + "%";
