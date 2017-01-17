@@ -15,18 +15,16 @@ What you will find in this framework:
   • Various libraries, including:
     ► An image library that supports all formats the FreeImage library is supporting, plus the DDS format
       It also offers a simple and efficient plotting service as well as a HDR=>LDR conversion service
-      It supports various color profiles and can be used to ensure a full control over your import/export pipeline
+      It supports various color profiles and can be used as a very simple Profile Connection Space (CIE XYZ) to ensure a full control over your import/export pipeline as it attempts to apply the principles explained in my wiki about colorimetry that you can find at http://wiki.nuaj.net/index.php?title=Colorimetry and http://wiki.nuaj.net/index.php?title=Color_Profile
     
     ► A very simple yet efficient DirectX 11 rendering library
       Don't expect a super optimized renderer here: the main goal is to quickly and easily prototype some tools and experiments!
-      But don't take for a fool either: all the necessary heavy-duty structures for creating GPGPU softwares are here. Most of the
-       tools I wrote are heavily using compute shaders.
+      But don't take me for a fool either: all the necessary heavy-duty structures for creating powerful GPGPU softwares are there.
+	  Most of the tools I wrote are heavily using compute shaders by the way.
     
     ► A multi-tier math library that is very simple to use as it mimics the vectors found in HLSL (i.e. float2, float3, float4, float4x4, etc.)
-      The second tier of the library contains more involved tools like quaternions, pseudo- & quasi-random-number generators,
-       spherical harmonics support, complex numbers suppport, noise generation algorithms, etc.
-      The last tier of the library contains high-level "solver" tools like Levenberg-Marquardt, BFGS, simulated annealing or other
-       linear regression tools.
+      The second tier of the library contains more involved tools like quaternions, pseudo- & quasi-random-number generators, spherical harmonics support, complex numbers suppport, noise generation algorithms, etc.
+      The last tier of the library contains high-level "solver" tools like Levenberg-Marquardt, BFGS, simulated annealing or other linear regression tools.
        It also offers a GPU-accelerated 1D and 2D FFT library, but also the CPU version of the FFT and DFT.
     
   • Various generators, namely:
@@ -38,9 +36,9 @@ What you will find in this framework:
   • Various tests:
     ► Area Light implementation, as used in the Dishonored 2 title
     ► Filmic Curve + Histogram Auto-Exposure, as used in the Dishonored 2 title
-    ► Fresnel Tests, showing the various fresnel equations (Schlick, exact, and more recently the 2-terms approximation for metals described by http://jcgt.org/published/0003/04/03/paper.pdf )
+    ► Fresnel Tests, showing the various fresnel equations (Schlick, exact, and more recently the 2-terms approximation for metals described by http://jcgt.org/published/0003/04/03/paper.pdf)
     ► SH Irradiance encoding/decoding experiments, as described in my article about SH available at http://wiki.nuaj.net/index.php?title=SphericalHarmonicsPortal
-    ► Many others still coming up
+    ► Many others coming up as they still need to be converted from 32 to 64 bits...
 
 
 What you will *NOT* find though:
