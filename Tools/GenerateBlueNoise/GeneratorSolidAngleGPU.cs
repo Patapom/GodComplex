@@ -177,6 +177,7 @@ namespace GenerateBlueNoise
 				SimpleRNG.SetSeed( _randomSeed, 362436069U );
 				m_texNoiseCPU.WritePixels( 0, 0, ( uint _X, uint _Y, System.IO.BinaryWriter _W ) => {
 					_W.Write( (float) SimpleRNG.GetUniform() );
+//					_W.Write( (float) (m_textureSize*_Y+_X) / m_textureTotalSize );
 				} );
 				m_texNoise0.CopyFrom( m_texNoiseCPU );
 			}
