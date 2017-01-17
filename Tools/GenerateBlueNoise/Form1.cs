@@ -424,10 +424,6 @@ CreateTestSpectrum( handmadeSpectrum );
 			uint		H = m_blueNoiseAnnealing.Height;
 			float4[]	scanline = new float4[W];
 
-			Device	device = new Device();
-			device.Init( panelImage.Handle, false, false );
-
-
 			ImageFile	graphStatistics = new ImageFile( (uint) panelImageSpectrum.Width, (uint) panelImageSpectrum.Height, ImageFile.PIXEL_FORMAT.RGBA8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
 			float4		black = new float4( 0, 0, 0, 1 );
 			float2		rangeX = new float2( 0, 10000 );
@@ -481,14 +477,7 @@ CreateTestSpectrum( handmadeSpectrum );
 //*/
 			} );
 
-			device.Dispose();
-
 			m_blueNoiseAnnealing.Save( new System.IO.FileInfo( "MyBlueNoise" + m_blueNoiseAnnealing.Width + "x" + m_blueNoiseAnnealing.Height + ".png" ) );
-		}
-
-		private void buttonVoidAndCluster_Click( object sender, EventArgs e )
-		{
-
 		}
 #else
 		ImageFile	m_blueNoiseAnnealing = new ImageFile( 64, 64, ImageFile.PIXEL_FORMAT.R8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
@@ -519,5 +508,65 @@ CreateTestSpectrum( handmadeSpectrum );
 			m_blueNoiseAnnealing.Save( new System.IO.FileInfo( "MyBlueNoiseMoisi64x64.png" ) );
 		}
 #endif
+
+		ImageFile	m_blueNoiseVoidAndCluster = new ImageFile( 16, 16, ImageFile.PIXEL_FORMAT.R8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
+		private void buttonVoidAndCluster_Click( object sender, EventArgs e ) {
+
+			uint		W = m_blueNoiseVoidAndCluster.Width;
+			uint		H = m_blueNoiseVoidAndCluster.Height;
+			float4[]	scanline = new float4[W];
+
+			ImageFile	graphStatistics = new ImageFile( (uint) panelImageSpectrum.Width, (uint) panelImageSpectrum.Height, ImageFile.PIXEL_FORMAT.RGBA8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
+			float4		black = new float4( 0, 0, 0, 1 );
+			float2		rangeX = new float2( 0, 10000 );
+//			float2		rangeY = new float2( -10, 10 );
+//			float2		rangeY = new float2( -1, 2 );
+			float2		rangeY = new float2( 0, 100 );
+
+			float	sigma_i = 2.1f;	// Default, recommended value
+
+			GeneratorVoidAndClusterGPU	generator = new GeneratorVoidAndClusterGPU( m_device, (uint) (Math.Log(m_blueNoiseVoidAndCluster.Width)/Math.Log(2.0)) );
+			generator.Generate( 1, sigma_i, 0.1f, ( float _progress, float[,] _texture, List< float > _statistics ) => {
+				for ( uint Y=0; Y < H; Y++ ) {
+					for ( uint X=0; X < W; X++ ) {
+						float	V = _texture[X,Y];
+						scanline[X].Set( V, V, V, 1.0f );
+					}
+					m_blueNoiseVoidAndCluster.WriteScanline( Y, scanline );
+				}
+
+// 				if ( m_blueNoiseVoidAndCluster.Width < panelImage.Width )
+// 					panelImage.Bitmap = m_blueNoiseVoidAndCluster.AsTiledBitmap( (uint) panelImage.Width, (uint) panelImage.Height );
+// 				else
+					panelImage.Bitmap = m_blueNoiseVoidAndCluster.AsBitmap;
+
+				labelAnnealingScore.Text = "Progress: " + (100.0f*_progress).ToString( "G4" ) + "%";
+				labelAnnealingScore.Refresh();
+
+
+/*				// Plot statistics
+				int	lastX = 0;
+				graphStatistics.Clear( float4.One );
+//				graphStatistics.PlotGraphAutoRangeY( black, rangeX, ref rangeY, ( float _X ) => {
+				graphStatistics.PlotGraph( black, rangeX, rangeY, ( float _X ) => {
+					int	X = Math.Max( 0, Math.Min( _statistics.Count-1, (int) (_statistics.Count - 10000.0f + _X) ) );
+//					return _statistics[X];
+
+					// Integrate...
+					float	sum = 0.0f;
+					for ( int x=lastX; x <= X; x++ )
+						sum += _statistics[x];
+					sum *= X != lastX ? 1.0f / (X - lastX) : 0.0f;
+					lastX = X;
+
+					return sum;
+				} );
+				graphStatistics.PlotAxes( black, rangeX, rangeY, 1000.0f, 100.0f );
+				panelImageSpectrum.Bitmap = graphStatistics.AsBitmap;
+//*/
+			} );
+
+			m_blueNoiseVoidAndCluster.Save( new System.IO.FileInfo( "BlueNoise" + m_blueNoiseVoidAndCluster.Width + "x" + m_blueNoiseVoidAndCluster.Height + "_VoidAndCluster.png" ) );
+		}
 	}
 }

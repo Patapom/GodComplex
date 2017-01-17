@@ -1,5 +1,19 @@
 #include "Global.hlsl"
 
+cbuffer CB_Main : register(b0) {
+	uint	_texturePOT;
+	uint	_textureSize;
+	uint	_textureMask;
+
+	float	_kernelFactorSpatial;	// = 1/sigma_i²
+	float	_kernelFactorValue;		// = 1/sigma_s²
+};
+
+cbuffer CB_Mips : register(b1) {
+	uint	_textureMipSource;
+	uint	_textureMipTarget;
+};
+
 Texture2D<float>	_texIn : register(t0);
 RWTexture2D<float>	_texOut : register(u0);
 
