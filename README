@@ -51,8 +51,7 @@ More precisely:
   • Everything animation-related, except some basic support for quaternions
   • Everything mesh-related except the most basic mesh generators, as I loathe geometry problems :D
   • Everything sound-related, as I never wrote anything else than graphical stuff
-  • Any meta-templated-convoluted shitty code that is abominable to read and debug
-    (i.e. anything like the STL or boost, if you like those and desperately need to explain why, please just go away)
+  • Any meta-templated-convoluted shitty code that is abominable to read and debug (i.e. anything like the STL or boost, if you like those and desperately need to explain why, please just go away)
    =► My main concerns are ► useability, ► readability, ► maintanability and most of all, ► simplicity (and God knows it's awfully hard to make something simple!)
 
 

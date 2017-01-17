@@ -524,10 +524,10 @@ CreateTestSpectrum( handmadeSpectrum );
 			float2		rangeY = new float2( 0, 100 );
 
 			float	sigma_i = 2.1f;	// Default, recommended value
-//float	sigma_i = 1.0f;
+//			float	sigma_i = 1.5f;	// Value recommanded by Ulichney
 
 			GeneratorVoidAndClusterGPU	generator = new GeneratorVoidAndClusterGPU( m_device, (uint) (Math.Log(m_blueNoiseVoidAndCluster.Width)/Math.Log(2.0)) );
-			generator.Generate( 1, sigma_i, 0.1f, ( float _progress, float[,] _texture, List< float > _statistics ) => {
+			generator.Generate( 1, sigma_i, 0.025f, ( float _progress, float[,] _texture, List< float > _statistics ) => {
 				for ( uint Y=0; Y < H; Y++ ) {
 					for ( uint X=0; X < W; X++ ) {
 						float	V = _texture[X,Y];
@@ -541,7 +541,7 @@ CreateTestSpectrum( handmadeSpectrum );
 				else
 					panelImage.Bitmap = m_blueNoiseVoidAndCluster.AsBitmap;
 
-				labelAnnealingScore.Text = "Progress: " + (100.0f*_progress).ToString( "G4" ) + "%";
+				labelAnnealingScore.Text = "Progress: " + (100.0f*_progress).ToString( "G3" ) + "%";
 				labelAnnealingScore.Refresh();
 
 
