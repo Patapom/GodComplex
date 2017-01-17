@@ -56,7 +56,7 @@ More precisely:
    =► My main concerns are ► useability, ► readability, ► maintanability and most of all, ► simplicity (and God knows it's awfully hard to make something simple!)
 
 
-This framework is written for the Microsoft Windows platform using Microsoft Visual Studio 64-bits C++ for the low-level part, it is (usually) wrapped in CLR Managed C++ to make the native low-level part easily accessible by the high-level tools and applications that I write in C# (if you're one of those advocates of why open-source software and linux is so much better than windows and desperately need to explain why, please just go away also).
+This framework is written for the Microsoft Windows platform using Microsoft Visual Studio 64-bits C++ for the low-level part, it is (usually) wrapped in CLR Managed C++ to make the native low-level part easily accessible by the high-level tools and applications that I write in C# (if you're one of those who like to advocate why open-source software and linux is so much better than windows and desperately need to explain why, please just go away also).
 You end up with tools that you can write very easily and very quickly thanks to C#, but that are also fast as lightning thanks to optimized native C++ and/or hardware acceleration offered by DirectX.
 Best of both worlds, right?
 
