@@ -12,6 +12,8 @@ NOTE: *ALL* the parts described below have been tested in real use condition!
 
 
 What you will find in this framework:
+=====================================
+
   • Various libraries, including:
     ► An image library that supports all formats the FreeImage library is supporting, plus the DDS format
       It also offers a simple and efficient plotting service as well as a HDR=>LDR conversion service
@@ -42,6 +44,7 @@ What you will find in this framework:
 
 
 What you will *NOT* find though:
+================================
   • Exactly the total amount of information in the Universe that is not represented by this bunch of code and data
 
 More precisely:
@@ -50,12 +53,16 @@ More precisely:
   • Everything sound-related, as I never wrote anything else than graphical stuff
   • Any meta-templated-convoluted shitty code that is abominable to read and debug
     (i.e. anything like the STL or boost, if you like those and desperately need to explain why, please just go away)
-   =► My main concerns are ► useability, ► readability, ► maintanability and most of all, ► simplicity (and God knows it's hard to make something simple!)
+   =► My main concerns are ► useability, ► readability, ► maintanability and most of all, ► simplicity (and God knows it's awfully hard to make something simple!)
 
 
-This framework is written in x64 C++ for the low-level part and (usually) wrapped in CLR Managed C++ for an easy C# access by the high-level tools and applications.
+This framework is written for the Microsoft Windows platform using Microsoft Visual Studio 64-bits C++ for the low-level part, it is (usually) wrapped in CLR Managed C++ to make the native low-level part easily accessible by the high-level tools and applications that I write in C#.
+You end up with tools that you can write very easily and very quickly thanks to C#, but that are also fast as lightning thanks to optimized native C++ and/or hardware acceleration offered by DirectX.
+Best of both worlds, right?
+
 
 Minimum requirements are:
+=========================
   • Windows 7
   • Visual Studio 2012
   • DotNet framework version 4.5, available from https://www.microsoft.com/en-us/download/details.aspx?id=30653
