@@ -49,14 +49,14 @@ What you will *NOT* find though:
 
 More precisely:
   • Everything animation-related, except some basic support for quaternions
-  • Everything mesh-related, as I loathe geometry problems
+  • Everything mesh-related except the most basic mesh generators, as I loathe geometry problems :D
   • Everything sound-related, as I never wrote anything else than graphical stuff
   • Any meta-templated-convoluted shitty code that is abominable to read and debug
     (i.e. anything like the STL or boost, if you like those and desperately need to explain why, please just go away)
    =► My main concerns are ► useability, ► readability, ► maintanability and most of all, ► simplicity (and God knows it's awfully hard to make something simple!)
 
 
-This framework is written for the Microsoft Windows platform using Microsoft Visual Studio 64-bits C++ for the low-level part, it is (usually) wrapped in CLR Managed C++ to make the native low-level part easily accessible by the high-level tools and applications that I write in C#.
+This framework is written for the Microsoft Windows platform using Microsoft Visual Studio 64-bits C++ for the low-level part, it is (usually) wrapped in CLR Managed C++ to make the native low-level part easily accessible by the high-level tools and applications that I write in C# (if you're one of those advocates of why open-source software and linux is so much better than windows and desperately need to explain why, please just go away also).
 You end up with tools that you can write very easily and very quickly thanks to C#, but that are also fast as lightning thanks to optimized native C++ and/or hardware acceleration offered by DirectX.
 Best of both worlds, right?
 
