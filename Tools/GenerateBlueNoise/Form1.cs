@@ -496,9 +496,14 @@ namespace GenerateBlueNoise
 			RebuildNoise();
 		}
 
-		private void buttonSave_Click( object sender, EventArgs e )
-		{
+		private void buttonSave_Click( object sender, EventArgs e ) {
+			if ( saveFileDialog.ShowDialog( this ) != DialogResult.OK )
+				return;
 
+			try {
+				m_handMadeBlueNoise.Save( new System.IO.FileInfo( saveFileDialog.FileName ) );
+			} catch ( Exception ) {
+			}
 		}
 
 		#endregion

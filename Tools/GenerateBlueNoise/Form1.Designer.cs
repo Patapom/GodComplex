@@ -56,10 +56,10 @@
 			this.floatTrackbarControlVariance = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.radioButtonNeighborMutations = new System.Windows.Forms.RadioButton();
 			this.radioButtonRandomMutations = new System.Windows.Forms.RadioButton();
-			this.panelImageSpectrum = new GenerateBlueNoise.PanelImage(this.components);
-			this.panelImage = new GenerateBlueNoise.PanelImage(this.components);
 			this.openFileDialog = new System.Windows.Forms.OpenFileDialog();
 			this.saveFileDialog = new System.Windows.Forms.SaveFileDialog();
+			this.panelImageSpectrum = new GenerateBlueNoise.PanelImage(this.components);
+			this.panelImage = new GenerateBlueNoise.PanelImage(this.components);
 			this.groupBox1.SuspendLayout();
 			this.SuspendLayout();
 			// 
@@ -361,6 +361,17 @@
 			this.radioButtonRandomMutations.Text = "Random Mutations";
 			this.radioButtonRandomMutations.UseVisualStyleBackColor = true;
 			// 
+			// openFileDialog
+			// 
+			this.openFileDialog.DefaultExt = "*.png";
+			this.openFileDialog.FileName = "openFileDialog";
+			this.openFileDialog.Filter = "Image Files|*.*";
+			// 
+			// saveFileDialog
+			// 
+			this.saveFileDialog.DefaultExt = "*.png";
+			this.saveFileDialog.Filter = "PNG Image Files|*.png|All Files (*.*)|*.*";
+			// 
 			// panelImageSpectrum
 			// 
 			this.panelImageSpectrum.Bitmap = null;
@@ -378,17 +389,6 @@
 			this.panelImage.Size = new System.Drawing.Size(512, 512);
 			this.panelImage.TabIndex = 0;
 			this.panelImage.Click += new System.EventHandler(this.panelImage_Click);
-			// 
-			// openFileDialog
-			// 
-			this.openFileDialog.DefaultExt = "*.png";
-			this.openFileDialog.FileName = "openFileDialog";
-			this.openFileDialog.Filter = "Image Files|*.*";
-			// 
-			// saveFileDialog
-			// 
-			this.saveFileDialog.DefaultExt = "*.png";
-			this.saveFileDialog.Filter = "Image Files|*.*";
 			// 
 			// GenerateBlueNoiseForm
 			// 
