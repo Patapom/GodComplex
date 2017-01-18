@@ -68,6 +68,9 @@ namespace ImageUtility {
 		// NOTE: Any value outside the [0,1] range will be clamped!
 		delegate void	ColorTransformer( float4% _color );
 
+		// The delegate used to read from/write to an image
+		delegate void	PixelReadWrite( UInt32 _X, UInt32 _Y, float4% _color );
+
 		// This enum matches the classes available in PixelFormat.h (which in turn match the DXGI formats)
 		enum class PIXEL_FORMAT : UInt32 {
 			UNKNOWN = ~0U,
@@ -421,8 +424,12 @@ namespace ImageUtility {
 		// Generic color getter/setter
 		void				ReadScanline( UInt32 _Y, cli::array< float4 >^ _color ) { ReadScanline( _Y, _color, 0 ); }
 		void				ReadScanline( UInt32 _Y, cli::array< float4 >^ _color, UInt32 _startX );
+		void				ReadPixels( PixelReadWrite^ _reader ) { ReadPixels( _reader, 0, 0, Width, Height ); }
+		void				ReadPixels( PixelReadWrite^ _reader, UInt32 _startX, UInt32 _startY, UInt32 _width, UInt32 _height );
 		void				WriteScanline( UInt32 _Y, cli::array< float4 >^ _color ) { WriteScanline( _Y, _color, 0 ); }
 		void				WriteScanline( UInt32 _Y, cli::array< float4 >^ _color, UInt32 _startX );
+		void				WritePixels( PixelReadWrite^ _writer ) { WritePixels( _writer, 0, 0, Width, Height ); }
+		void				WritePixels( PixelReadWrite^ _writer, UInt32 _startX, UInt32 _startY, UInt32 _width, UInt32 _height );
 
 		// Retrieves the image file type based on the image file name
 		// WARNING: The image file MUST exist on disk as FreeImage inspects the content!

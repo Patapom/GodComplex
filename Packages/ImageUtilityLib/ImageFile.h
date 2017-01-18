@@ -62,6 +62,9 @@ namespace ImageUtilityLib {
 		// The delegate used to tone map an HDR image into a LDR color (warning: any returned value above 1 will be clamped!)
 		typedef void	(*toneMapper_t)( const bfloat3& _HDRColor, bfloat3& _LDRColor );
 
+		// The delegate used to tone map an HDR image into a LDR color (warning: any returned value above 1 will be clamped!)
+		typedef void	(*pixelReaderWriter_t)( U32 _X, U32 _Y, bfloat4& _Color );
+
 		// This enum matches the classes available in PixelFormat.h (which in turn match the DXGI formats)
 		enum class PIXEL_FORMAT : U32 {
 			UNKNOWN = ~0U,
@@ -336,6 +339,8 @@ namespace ImageUtilityLib {
 		// Generic color getter/setter
 		void				ReadScanline( U32 _Y, bfloat4* _color, U32 _startX=0, U32 _count=~0U ) const;
 		void				WriteScanline( U32 _Y, const bfloat4* _color, U32 _startX=0, U32 _count=~0U );
+		void				ReadPixels( pixelReaderWriter_t _reader, U32 _startX=0, U32 _startY=0, U32 _width=~0U, U32 _height=~0U ) const;
+		void				WritePixels( pixelReaderWriter_t _writer, U32 _startX=0, U32 _startY=0, U32 _width=~0U, U32 _height=~0U );
 
 		// Retrieves the image file type based on the image file name
 		// WARNING: The image file MUST exist on disk as FreeImage inspects the content!

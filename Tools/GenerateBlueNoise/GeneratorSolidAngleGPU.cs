@@ -27,7 +27,7 @@ namespace GenerateBlueNoise
 
 		#region FIELDS
 
-		const uint	MAX_MUTATIONS = 1024;
+		const uint	MAX_MUTATIONS_RATE = 4096;
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
 		struct CB_Main {
@@ -109,7 +109,7 @@ namespace GenerateBlueNoise
 
 				m_CB_Main = new ConstantBuffer<CB_Main>( _device, 0 );
 				m_CB_Mips = new ConstantBuffer<CB_Mips>( _device, 1 );
-				m_SB_Mutations = new StructuredBuffer<SB_Mutation>( _device, MAX_MUTATIONS, true );
+				m_SB_Mutations = new StructuredBuffer<SB_Mutation>( _device, MAX_MUTATIONS_RATE, true );
 
 				PIXEL_FORMAT	noiseFormat = PIXEL_FORMAT.UNKNOWN;
 				switch ( m_vectorDimension ) {
@@ -154,7 +154,7 @@ namespace GenerateBlueNoise
 
 		#endregion
 
-		public delegate void	ProgressDelegate( uint _iterationIndex, uint _mutationsCount, float _energyScore, Array _texture, List<float> _statistics );
+		public delegate void	ProgressDelegate( uint _iterationIndex, uint _mutationsRate, float _energyScore, Array _texture, List<float> _statistics );
 
 		#region GPU Version
 
@@ -165,9 +165,10 @@ namespace GenerateBlueNoise
 		/// <param name="_maxIterations">The maximum amount of iterations before exiting with the last best solution</param>
 		/// <param name="_standardDeviationImage">Standard deviation for image space. If not sure, use 2.1</param>
 		/// <param name="_standardDeviationValue">Standard deviation for value space. If not sure, use 1.0</param>
+		/// <param name="_neighborsOnlyMutations">True to only authorize mutations of neighbor pixels, false to randomly mutate any pixel</param>
 		/// <param name="_notifyProgressEveryNIterations">Will read back the GPU texture to the CPU and notify of progress every N iterations</param>
 		/// <param name="_progress"></param>
-		public void		Generate( uint _randomSeed, int _maxIterations, float _standardDeviationImage, float _standardDeviationValue, int _notifyProgressEveryNIterations, ProgressDelegate _progress ) {
+		public void		Generate( uint _randomSeed, uint _maxIterations, float _standardDeviationImage, float _standardDeviationValue, bool _neighborsOnlyMutations, uint _notifyProgressEveryNIterations, ProgressDelegate _progress ) {
 			m_CB_Main.m._texturePOT = (uint) m_texturePOT;
 			m_CB_Main.m._textureSize = m_textureSize;
 			m_CB_Main.m._textureMask = m_textureSizeMask;
@@ -182,20 +183,62 @@ namespace GenerateBlueNoise
 			{
 				SimpleRNG.SetSeed( _randomSeed, 362436069U );
 				switch ( m_vectorDimension ) {
-					case 1:
-						m_texNoiseCPU.WritePixels( 0, 0, ( uint _X, uint _Y, System.IO.BinaryWriter _W ) => {
-							_W.Write( (float) SimpleRNG.GetUniform() );
-//							_W.Write( (float) (m_textureSize*_Y+_X) / m_textureTotalSize );
-						} );
-						break;
+					case 1: {
+						// Build ordered initial values
+						float[,]	initialValues = new float[m_textureSize,m_textureSize];
+						for ( uint Y=0; Y < m_textureSize; Y++ )
+							for ( uint X=0; X < m_textureSize; X++ )
+								initialValues[X,Y] = (float) (m_textureSize*Y+X) / m_textureTotalSize;
 
-					case 2:
+						// Displace them randomly
+						for ( uint i=0; i < m_textureTotalSize; i++ ) {
+							uint	startX = GetUniformInt( m_textureSize );
+							uint	startY = GetUniformInt( m_textureSize );
+							uint	endX = GetUniformInt( m_textureSize );
+							uint	endY = GetUniformInt( m_textureSize );
+							float	temp = initialValues[startX,startY];
+							initialValues[startX,startY] = initialValues[endX,endY];
+							initialValues[endX,endY] = temp;
+						}
+
 						m_texNoiseCPU.WritePixels( 0, 0, ( uint _X, uint _Y, System.IO.BinaryWriter _W ) => {
-							_W.Write( (float) SimpleRNG.GetUniform() );
-							_W.Write( (float) SimpleRNG.GetUniform() );
-//							_W.Write( (float) (m_textureSize*_Y+_X) / m_textureTotalSize );
+							_W.Write( initialValues[_X,_Y] );
 						} );
 						break;
+					}
+
+					case 2: {
+						// Build ordered initial values
+						float2[,]	initialValues = new float2[m_textureSize,m_textureSize];
+						for ( uint Y=0; Y < m_textureSize; Y++ )
+							for ( uint X=0; X < m_textureSize; X++ )
+								initialValues[X,Y].Set( (float) (m_textureSize*Y+X) / m_textureTotalSize, (float) (m_textureSize*Y+X) / m_textureTotalSize );
+
+						// Displace them randomly
+						for ( uint i=0; i < m_textureTotalSize; i++ ) {
+							uint	startX = GetUniformInt( m_textureSize );
+							uint	startY = GetUniformInt( m_textureSize );
+							uint	endX = GetUniformInt( m_textureSize );
+							uint	endY = GetUniformInt( m_textureSize );
+							float	temp = initialValues[startX,startY].x;
+							initialValues[startX,startY].x = initialValues[endX,endY].x;
+							initialValues[endX,endY].x = temp;
+
+							startX = GetUniformInt( m_textureSize );
+							startY = GetUniformInt( m_textureSize );
+							endX = GetUniformInt( m_textureSize );
+							endY = GetUniformInt( m_textureSize );
+							temp = initialValues[startX,startY].y;
+							initialValues[startX,startY].y = initialValues[endX,endY].y;
+							initialValues[endX,endY].y = temp;
+						}
+
+						m_texNoiseCPU.WritePixels( 0, 0, ( uint _X, uint _Y, System.IO.BinaryWriter _W ) => {
+							_W.Write( initialValues[_X,_Y].x );
+							_W.Write( initialValues[_X,_Y].y );
+						} );
+						break;
+					}
 				}
 				m_texNoise0.CopyFrom( m_texNoiseCPU );
 			}
@@ -205,7 +248,7 @@ namespace GenerateBlueNoise
 			float		bestScore = ComputeScore( m_texNoise0 );
 			float		score = bestScore;
 			uint		iterationIndex = 0;
-			uint		mutationsCount = MAX_MUTATIONS;
+			uint		mutationsRate = MAX_MUTATIONS_RATE;
 			int			iterationsCountWithoutImprovement = 0;
 #if !CAILLOU
 			float		maxIterationsCountWithoutImprovementBeforeDecreasingMutationsCount = 0.1f * m_textureTotalSize;	// Arbitrary: 10% of the texture size
@@ -238,16 +281,9 @@ namespace GenerateBlueNoise
 				if ( m_CS_Mutate.Use() ) {
 
 					// Fill up mutations buffer
-					for ( int mutationIndex=0; mutationIndex < mutationsCount; mutationIndex++ ) {
-						#if CAILLOU
-							// Swap pixels randomly
-							uint	sourceIndex = GetUniformInt( m_textureTotalSize );
-							uint	targetIndex = GetUniformInt( m_textureTotalSize );
-
-							ComputeXYFromSingleIndex( sourceIndex, out m_SB_Mutations.m[mutationIndex]._pixelSourceX, out m_SB_Mutations.m[mutationIndex]._pixelSourceY );
-							ComputeXYFromSingleIndex( targetIndex, out m_SB_Mutations.m[mutationIndex]._pixelTargetX, out m_SB_Mutations.m[mutationIndex]._pixelTargetY );
-						#else
-							// Swap neighbor pixels only
+					if ( _neighborsOnlyMutations ) {
+						// Swap neighbor pixels only
+						for ( int mutationIndex=0; mutationIndex < mutationsRate; mutationIndex++ ) {
 							uint	sourceIndex = GetUniformInt( m_textureTotalSize );
 							uint	X, Y;
 							ComputeXYFromSingleIndex( sourceIndex, out X, out Y );
@@ -261,13 +297,29 @@ namespace GenerateBlueNoise
 							m_SB_Mutations.m[mutationIndex]._pixelSourceY = Y;
 							m_SB_Mutations.m[mutationIndex]._pixelTargetX = Xn;
 							m_SB_Mutations.m[mutationIndex]._pixelTargetY = Yn;
-						#endif
+
+							if ( m_vectorDimension > 1 ) {
+								m_SB_Mutations.m[mutationIndex]._pixelTargetY |= SimpleRNG.GetUniform() > 0.5 ? 0x80000000U : 0x40000000U;
+							}
+						}
+					} else {
+						// Swap pixels randomly
+						for ( int mutationIndex=0; mutationIndex < mutationsRate; mutationIndex++ ) {
+							uint	sourceIndex = GetUniformInt( m_textureTotalSize );
+							uint	targetIndex = GetUniformInt( m_textureTotalSize );
+							ComputeXYFromSingleIndex( sourceIndex, out m_SB_Mutations.m[mutationIndex]._pixelSourceX, out m_SB_Mutations.m[mutationIndex]._pixelSourceY );
+							ComputeXYFromSingleIndex( targetIndex, out m_SB_Mutations.m[mutationIndex]._pixelTargetX, out m_SB_Mutations.m[mutationIndex]._pixelTargetY );
+
+							if ( m_vectorDimension > 1 ) {
+								m_SB_Mutations.m[mutationIndex]._pixelTargetY |= SimpleRNG.GetUniform() > 0.5 ? 0x80000000U : 0x40000000U;
+							}
+						}
 					}
 
-					m_SB_Mutations.Write( mutationsCount );
+					m_SB_Mutations.Write( mutationsRate );
 					m_SB_Mutations.SetInput( 1 );
 
-					m_CS_Mutate.Dispatch( mutationsCount, 1, 1 );
+					m_CS_Mutate.Dispatch( mutationsRate, 1, 1 );
 
 					m_texNoise0.RemoveFromLastAssignedSlots();
 					m_texNoise1.RemoveFromLastAssignedSlotUAV();
@@ -294,8 +346,8 @@ namespace GenerateBlueNoise
 
 				if ( averageIterationsCountWithoutImprovement > maxIterationsCountWithoutImprovementBeforeDecreasingMutationsCount ) {
 					averageIterationsCountWithoutImprovement = 0.0f;	// Start over...
-					mutationsCount >>= 1;	// Halve mutations count
-					if ( mutationsCount == 0 )
+					mutationsRate >>= 1;	// Halve mutations count
+					if ( mutationsRate == 0 )
 						break;	// Clearly we've reached a steady state here...
 				}
 
@@ -310,8 +362,8 @@ namespace GenerateBlueNoise
 				
 //				_progress( iterationIndex, mutationsCount, bestScore, ReadBackScoreTexture( m_texNoiseScore ), statistics );	// Notify!
 				switch ( m_vectorDimension ) {
-					case 1: _progress( iterationIndex, mutationsCount, bestScore, ReadBackTexture1D( m_texNoise0 ), statistics ); break;	// Notify!
-					case 2: _progress( iterationIndex, mutationsCount, bestScore, ReadBackTexture2D( m_texNoise0 ), statistics ); break;	// Notify!
+					case 1: _progress( iterationIndex, mutationsRate, bestScore, ReadBackTexture1D( m_texNoise0 ), statistics ); break;	// Notify!
+					case 2: _progress( iterationIndex, mutationsRate, bestScore, ReadBackTexture2D( m_texNoise0 ), statistics ); break;	// Notify!
 				}
 			}
 
@@ -321,8 +373,8 @@ namespace GenerateBlueNoise
 			if ( _progress != null ) {
 //				_progress( iterationIndex, mutationsCount, bestScore, ReadBackScoreTexture( m_texNoiseScore ), statistics );	// Notify!
 				switch ( m_vectorDimension ) {
-					case 1: _progress( iterationIndex, mutationsCount, bestScore, ReadBackTexture1D( m_texNoise0 ), statistics ); break;	// Notify!
-					case 2: _progress( iterationIndex, mutationsCount, bestScore, ReadBackTexture2D( m_texNoise0 ), statistics ); break;	// Notify!
+					case 1: _progress( iterationIndex, mutationsRate, bestScore, ReadBackTexture1D( m_texNoise0 ), statistics ); break;	// Notify!
+					case 2: _progress( iterationIndex, mutationsRate, bestScore, ReadBackTexture2D( m_texNoise0 ), statistics ); break;	// Notify!
 				}
 			}
 		}

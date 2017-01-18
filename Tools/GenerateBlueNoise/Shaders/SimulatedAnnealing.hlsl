@@ -39,8 +39,29 @@ void	CS__Mutate( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : SV_GROUPTHR
 	uint2	pixelIndexA = pixelIndices.xy;
 	uint2	pixelIndexB = pixelIndices.zw;
 
+	uint	swapFlags = pixelIndexB.y >> 30;
+	pixelIndexB.y &= ~0xC0000000U;
+
 	float2	pixelA = _texVectorIn[pixelIndexA];
 	float2	pixelB = _texVectorIn[pixelIndexB];
+
+	switch ( swapFlags ) {
+		case 0x1U: {
+				// Only swap Y
+				float	temp = pixelA.x;
+				pixelA.x = pixelB.x;
+				pixelB.x = temp;
+				break;
+			}
+		case 0x2U: {
+				// Only swap X
+				float	temp = pixelA.y;
+				pixelA.y = pixelB.y;
+				pixelB.y = temp;
+				break;
+			}
+	}
+
 	_texVectorOut[pixelIndexB] = pixelA;
 	_texVectorOut[pixelIndexA] = pixelB;
 }

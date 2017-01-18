@@ -99,8 +99,8 @@ namespace SharpMath.FFT {
 		Texture2D				m_texBufferOut;		// Texture that will contain the output spectrum/signal
 		Texture2D				m_texBufferCPU;		// CPU version used for readback
 
-		int						m_size;
-		int						m_POT;
+		uint					m_size;
+		uint					m_POT;
 
 		#endregion
 
@@ -124,11 +124,11 @@ namespace SharpMath.FFT {
 		/// </summary>
 		/// <param name="_device"></param>
 		/// <param name="_signalSize">The size of the signals to process</param>
-		public FFT2D_GPU( Device _device, int _signalSize ) {
+		public FFT2D_GPU( Device _device, uint _signalSize ) {
 			// Check Power Of Two
 			m_size = _signalSize;
 			float	fPOT = (float) (Math.Log( m_size ) / Math.Log( 2.0 ));
-			m_POT = (int) Math.Floor( fPOT );
+			m_POT = (uint) Math.Floor( fPOT );
 			if ( fPOT != m_POT )
 				throw new Exception( "Signal size is not a Power Of Two!" );
 			if ( m_POT < 4 || m_POT > 12 )
@@ -332,7 +332,7 @@ namespace SharpMath.FFT {
 				if ( !m_CS__Generic.Use() )
 					throw new Exception( "Failed to use compute shader: did it compile without error?" );
 
-				int		stagesCount = m_POT - 4;
+				uint	stagesCount = m_POT - 4;
 				uint	groupSizePOT = 4U;
 				float	frequency = _sign * 2.0f * (float) Math.PI / 16.0f;
 				for ( int stageIndex=0; stageIndex < stagesCount; stageIndex++ ) {
