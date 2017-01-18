@@ -55,11 +55,12 @@ namespace GenerateBlueNoise
 		uint			m_textureSize;
 		uint			m_textureSizeMask;
 		uint			m_textureTotalSize;
+		uint			m_vectorDimension;
 
 		// GPU-structures
 		ComputeShader	m_CS_Copy;							// Simply copies a source texture into a target texture
 		ComputeShader	m_CS_Mutate;						// Mutates the current distribution into a new, slightly different one
-		ComputeShader	m_CS_ComputeScore1D;				// Computes the simulation's "energy score"
+		ComputeShader	m_CS_ComputeScore;					// Computes the simulation's "energy score"
 		ComputeShader	m_CS_AccumulateScore16;				// Accumulates the score from a (multiple of) 16x16 texture down to a (multiple of) 1x1 texture
 		ComputeShader	m_CS_AccumulateScore8;				// Accumulates the score from a (multiple of) 8x8 texture down to a (multiple of) 1x1 texture
 		ComputeShader	m_CS_AccumulateScore4;				// Accumulates the score from a (multiple of) 4x4 texture down to a (multiple of) 1x1 texture
@@ -82,18 +83,25 @@ namespace GenerateBlueNoise
 		/// Constructor
 		/// </summary>
 		/// <param name="_device">Device CAN be null, in which case the CPU version will be used</param>
-		/// <param name="_texturePOT"></param>
-		public	GeneratorSolidAngleGPU( Device _device, uint _texturePOT ) {
+		/// <param name="_texturePOT">Power-of-Two texture size</param>
+		/// <param name="_dimensions">Dimensions of the noise vectors (1 for monochromatic noise, etc.)</param>
+		public	GeneratorSolidAngleGPU( Device _device, uint _texturePOT, uint _dimensions ) {
 			m_texturePOT = (int) _texturePOT;
 			m_textureSize = 1U << m_texturePOT;
 			m_textureSizeMask = m_textureSize - 1;
 			m_textureTotalSize = m_textureSize * m_textureSize;
+			m_vectorDimension = _dimensions;
 
 			try {
 
 				m_CS_Copy = new ComputeShader( _device, new System.IO.FileInfo( @"Shaders/SimulatedAnnealing.hlsl" ), "CS__Copy", null );
 				m_CS_Mutate = new ComputeShader( _device, new System.IO.FileInfo( @"Shaders/SimulatedAnnealing.hlsl" ), "CS__Mutate", null );
-				m_CS_ComputeScore1D = new ComputeShader( _device, new System.IO.FileInfo( @"Shaders/SimulatedAnnealing.hlsl" ), "CS__ComputeScore1D", null );
+				switch ( m_vectorDimension ) {
+					case 1:	m_CS_ComputeScore = new ComputeShader( _device, new System.IO.FileInfo( @"Shaders/SimulatedAnnealing.hlsl" ), "CS__ComputeScore1D", null ); break;
+					case 2:	m_CS_ComputeScore = new ComputeShader( _device, new System.IO.FileInfo( @"Shaders/SimulatedAnnealing.hlsl" ), "CS__ComputeScore2D", null ); break;
+					default:
+						throw new Exception( "Unsupported vector dimension!" );
+				}
 				m_CS_AccumulateScore16 = new ComputeShader( _device, new System.IO.FileInfo( @"Shaders/SimulatedAnnealing.hlsl" ), "CS__AccumulateScore16", null );
 				m_CS_AccumulateScore8 = new ComputeShader( _device, new System.IO.FileInfo( @"Shaders/SimulatedAnnealing.hlsl" ), "CS__AccumulateScore8", null );
 				m_CS_AccumulateScore4 = new ComputeShader( _device, new System.IO.FileInfo( @"Shaders/SimulatedAnnealing.hlsl" ), "CS__AccumulateScore4", null );
@@ -103,9 +111,16 @@ namespace GenerateBlueNoise
 				m_CB_Mips = new ConstantBuffer<CB_Mips>( _device, 1 );
 				m_SB_Mutations = new StructuredBuffer<SB_Mutation>( _device, MAX_MUTATIONS, true );
 
-				m_texNoise0 = new Texture2D( _device, m_textureSize, m_textureSize, 1, 1, PIXEL_FORMAT.R32_FLOAT, false, true, null );
-				m_texNoise1 = new Texture2D( _device, m_textureSize, m_textureSize, 1, 1, PIXEL_FORMAT.R32_FLOAT, false, true, null );
-				m_texNoiseCPU = new Texture2D( _device, m_textureSize, m_textureSize, 1, 1, PIXEL_FORMAT.R32_FLOAT, true, true, null );
+				PIXEL_FORMAT	noiseFormat = PIXEL_FORMAT.UNKNOWN;
+				switch ( m_vectorDimension ) {
+					case 1: noiseFormat = PIXEL_FORMAT.R32_FLOAT; break;
+					case 2: noiseFormat = PIXEL_FORMAT.RG32_FLOAT; break;
+				}
+
+				m_texNoise0 = new Texture2D( _device, m_textureSize, m_textureSize, 1, 1, noiseFormat, false, true, null );
+				m_texNoise1 = new Texture2D( _device, m_textureSize, m_textureSize, 1, 1, noiseFormat, false, true, null );
+				m_texNoiseCPU = new Texture2D( _device, m_textureSize, m_textureSize, 1, 1, noiseFormat, true, true, null );
+
 				m_texNoiseScore = new Texture2D( _device, m_textureSize, m_textureSize, 1, 1+_texturePOT, PIXEL_FORMAT.R32_FLOAT, false, true, null );
 				m_texNoiseScore2 = new Texture2D( _device, m_textureSize, m_textureSize, 1, 1+_texturePOT, PIXEL_FORMAT.R32_FLOAT, false, true, null );
 				m_texNoiseScoreCPU = new Texture2D( _device, m_textureSize, m_textureSize, 1, 1+_texturePOT, PIXEL_FORMAT.R32_FLOAT, true, true, null );
@@ -132,14 +147,14 @@ namespace GenerateBlueNoise
 			m_CS_AccumulateScore4.Dispose();
 			m_CS_AccumulateScore8.Dispose();
 			m_CS_AccumulateScore16.Dispose();
-			m_CS_ComputeScore1D.Dispose();
+			m_CS_ComputeScore.Dispose();
 			m_CS_Mutate.Dispose();
 			m_CS_Copy.Dispose();
 		}
 
 		#endregion
 
-		public delegate void	ProgressDelegate( uint _iterationIndex, uint _mutationsCount, float _energyScore, float[,] _texture, List<float> _statistics );
+		public delegate void	ProgressDelegate( uint _iterationIndex, uint _mutationsCount, float _energyScore, Array _texture, List<float> _statistics );
 
 		#region GPU Version
 
@@ -166,16 +181,28 @@ namespace GenerateBlueNoise
 			// Generate initial white noise
 			{
 				SimpleRNG.SetSeed( _randomSeed, 362436069U );
-				m_texNoiseCPU.WritePixels( 0, 0, ( uint _X, uint _Y, System.IO.BinaryWriter _W ) => {
-					_W.Write( (float) SimpleRNG.GetUniform() );
-//					_W.Write( (float) (m_textureSize*_Y+_X) / m_textureTotalSize );
-				} );
+				switch ( m_vectorDimension ) {
+					case 1:
+						m_texNoiseCPU.WritePixels( 0, 0, ( uint _X, uint _Y, System.IO.BinaryWriter _W ) => {
+							_W.Write( (float) SimpleRNG.GetUniform() );
+//							_W.Write( (float) (m_textureSize*_Y+_X) / m_textureTotalSize );
+						} );
+						break;
+
+					case 2:
+						m_texNoiseCPU.WritePixels( 0, 0, ( uint _X, uint _Y, System.IO.BinaryWriter _W ) => {
+							_W.Write( (float) SimpleRNG.GetUniform() );
+							_W.Write( (float) SimpleRNG.GetUniform() );
+//							_W.Write( (float) (m_textureSize*_Y+_X) / m_textureTotalSize );
+						} );
+						break;
+				}
 				m_texNoise0.CopyFrom( m_texNoiseCPU );
 			}
 
 			//////////////////////////////////////////////////////////////////////////
 			// Perform iterations
-			float		bestScore = ComputeScore1D( m_texNoise0 );
+			float		bestScore = ComputeScore( m_texNoise0 );
 			float		score = bestScore;
 			uint		iterationIndex = 0;
 			uint		mutationsCount = MAX_MUTATIONS;
@@ -193,9 +220,7 @@ namespace GenerateBlueNoise
 			uint[]		neighborOffsetY = new uint[8] { 0, 0, 0, 1, 2, 2, 2, 1 };
 
 			List<float>	statistics = new List<float>();
-
-			float[,]	textureCPU = new float[m_textureSize,m_textureSize];
-//ReadBackScoreTexture1D( m_texNoiseScore2, textureCPU );
+//ReadBackScoreTexture( m_texNoiseScore2, textureCPU );
 			while ( iterationIndex < _maxIterations ) {
 
 				//////////////////////////////////////////////////////////////////////////
@@ -251,7 +276,7 @@ namespace GenerateBlueNoise
 				//////////////////////////////////////////////////////////////////////////
 				// Compute new score
 				float	previousScore = score;
-				score = ComputeScore1D( m_texNoise1 );
+				score = ComputeScore( m_texNoise1 );
 				if ( score < bestScore ) {
 					// New best score! Swap textures so we accept the new state...
 					bestScore = score;
@@ -283,26 +308,34 @@ namespace GenerateBlueNoise
 				if ( _progress == null || (iterationIndex % _notifyProgressEveryNIterations) != 1 )
 					continue;
 				
-				ReadBackTexture1D( m_texNoise0, textureCPU );
-//ReadBackScoreTexture1D( m_texNoiseScore, textureCPU );
-				_progress( iterationIndex, mutationsCount, bestScore, textureCPU, statistics );	// Notify!
+//				_progress( iterationIndex, mutationsCount, bestScore, ReadBackScoreTexture( m_texNoiseScore ), statistics );	// Notify!
+				switch ( m_vectorDimension ) {
+					case 1: _progress( iterationIndex, mutationsCount, bestScore, ReadBackTexture1D( m_texNoise0 ), statistics ); break;	// Notify!
+					case 2: _progress( iterationIndex, mutationsCount, bestScore, ReadBackTexture2D( m_texNoise0 ), statistics ); break;	// Notify!
+				}
 			}
 
 			// One final call with our best final result
-			ReadBackTexture1D( m_texNoise0, textureCPU );
-			if ( _progress != null )
-				_progress( iterationIndex, mutationsCount, bestScore, textureCPU, statistics );
+			ReadBackTexture1D( m_texNoise0 );
+
+			if ( _progress != null ) {
+//				_progress( iterationIndex, mutationsCount, bestScore, ReadBackScoreTexture( m_texNoiseScore ), statistics );	// Notify!
+				switch ( m_vectorDimension ) {
+					case 1: _progress( iterationIndex, mutationsCount, bestScore, ReadBackTexture1D( m_texNoise0 ), statistics ); break;	// Notify!
+					case 2: _progress( iterationIndex, mutationsCount, bestScore, ReadBackTexture2D( m_texNoise0 ), statistics ); break;	// Notify!
+				}
+			}
 		}
 
-		float	ComputeScore1D( Texture2D _texture ) {
+		float	ComputeScore( Texture2D _texture ) {
 			// 1] Compute score for each texel and store it into mip 0
-			if ( m_CS_ComputeScore1D.Use() ) {
+			if ( m_CS_ComputeScore.Use() ) {
 				uint	groupsCount = m_textureSize >> 4;	// Each group is using 16x16 threads
 
 				_texture.SetCS( 0 );
 				m_texNoiseScore.SetCSUAV( 0 );
 
-				m_CS_ComputeScore1D.Dispatch( groupsCount, groupsCount, 1 );
+				m_CS_ComputeScore.Dispatch( groupsCount, groupsCount, 1 );
 
 				_texture.RemoveFromLastAssignedSlots();
 				m_texNoiseScore.RemoveFromLastAssignedSlotUAV();
@@ -457,11 +490,36 @@ namespace GenerateBlueNoise
 		/// </summary>
 		/// <param name="_textureGPU"></param>
 		/// <param name="_textureCPU"></param>
-		void	ReadBackTexture1D( Texture2D _textureGPU, float[,] _textureCPU ) {
+		float[,]	m_textureCPU_1D = null;
+		float[,]	ReadBackTexture1D( Texture2D _textureGPU ) {
+			if ( m_textureCPU_1D == null )
+				m_textureCPU_1D = new float[m_textureSize,m_textureSize];
+
 			m_texNoiseCPU.CopyFrom( _textureGPU );
 			m_texNoiseCPU.ReadPixels( 0, 0, ( uint _X, uint _Y, System.IO.BinaryReader _R ) => {
-				_textureCPU[_X,_Y] = _R.ReadSingle();
+				m_textureCPU_1D[_X,_Y] = _R.ReadSingle();
 			} );
+
+			return m_textureCPU_1D;
+		}
+
+		/// <summary>
+		/// Reads the specified 2D-valued GPU texture back to the CPU
+		/// </summary>
+		/// <param name="_textureGPU"></param>
+		/// <param name="_textureCPU"></param>
+		float2[,]	m_textureCPU_2D = null;
+		float2[,]	ReadBackTexture2D( Texture2D _textureGPU ) {
+			if ( m_textureCPU_2D == null )
+				m_textureCPU_2D = new float2[m_textureSize,m_textureSize];
+
+			m_texNoiseCPU.CopyFrom( _textureGPU );
+			m_texNoiseCPU.ReadPixels( 0, 0, ( uint _X, uint _Y, System.IO.BinaryReader _R ) => {
+				m_textureCPU_2D[_X,_Y].x = _R.ReadSingle();
+				m_textureCPU_2D[_X,_Y].y = _R.ReadSingle();
+			} );
+
+			return m_textureCPU_2D;
 		}
 
 		/// <summary>
@@ -469,14 +527,13 @@ namespace GenerateBlueNoise
 		/// </summary>
 		/// <param name="_textureGPU"></param>
 		/// <param name="_textureCPU"></param>
-		void	ReadBackScoreTexture1D( Texture2D _textureGPU, float[,] _textureCPU ) {
-
-// _textureGPU = m_texNoiseScore;
-// _textureGPU = m_texNoiseScore2;
+		float[,]	ReadBackScoreTexture( Texture2D _textureGPU ) {
+			if ( m_textureCPU_1D == null )
+				m_textureCPU_1D = new float[m_textureSize,m_textureSize];
 
 			m_texNoiseScoreCPU.CopyFrom( _textureGPU );
 			m_texNoiseScoreCPU.ReadPixels( 0, 0, ( uint _X, uint _Y, System.IO.BinaryReader _R ) => {
-				_textureCPU[_X,_Y] = _R.ReadSingle();
+				m_textureCPU_1D[_X,_Y] = _R.ReadSingle();
 			} );
 
 // 			float[,]	trump = new float[2,2];
@@ -493,6 +550,8 @@ namespace GenerateBlueNoise
 			m_texNoiseScoreCPU.ReadPixels( (uint) m_texturePOT, 0, ( uint _X, uint _Y, System.IO.BinaryReader _R ) => {
 				finalMip = _R.ReadSingle();
 			} );
+
+			return m_textureCPU_1D;
 		}
 
 		void	ComputeXYFromSingleIndex( uint _index, out uint _X, out uint _Y ) {

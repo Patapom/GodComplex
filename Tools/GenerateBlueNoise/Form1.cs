@@ -417,7 +417,7 @@ CreateTestSpectrum( handmadeSpectrum );
 		}
 
 #if !MEUGLE
-		ImageFile	m_blueNoiseAnnealing = new ImageFile( 64, 64, ImageFile.PIXEL_FORMAT.R8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
+		ImageFile	m_blueNoiseAnnealing = new ImageFile( 64, 64, ImageFile.PIXEL_FORMAT.RGBA8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
 		private void buttonSolidAngleAlgorithm_Click(object sender, EventArgs e) {
 
 			uint		W = m_blueNoiseAnnealing.Width;
@@ -436,14 +436,35 @@ CreateTestSpectrum( handmadeSpectrum );
 // 			float	sigma_i = 2.1f;
 // 			float	sigma_s = 2.0f;
 
-			GeneratorSolidAngleGPU	generator = new GeneratorSolidAngleGPU( m_device, (uint) (Math.Log(m_blueNoiseAnnealing.Width)/Math.Log(2.0)) );
-			generator.Generate( 1, 1000000, sigma_i, sigma_s, 1000, ( uint _iterationIndex, uint _mutationsCount, float _energyScore, float[,] _texture, List< float > _statistics ) => {
-				for ( uint Y=0; Y < H; Y++ ) {
-					for ( uint X=0; X < W; X++ ) {
-						float	V = _texture[X,Y];
-						scanline[X].Set( V, V, V, 1.0f );
+			uint	dimensions = 2;
+
+			GeneratorSolidAngleGPU	generator = new GeneratorSolidAngleGPU( m_device, (uint) (Math.Log(m_blueNoiseAnnealing.Width)/Math.Log(2.0)), dimensions );
+			generator.Generate( 1, 1000000, sigma_i, sigma_s, 1000, ( uint _iterationIndex, uint _mutationsCount, float _energyScore, Array _texture, List< float > _statistics ) => {
+
+				switch ( dimensions ) {
+					case 1: {
+						float[,]	texture = _texture as float[,];
+						for ( uint Y=0; Y < H; Y++ ) {
+							for ( uint X=0; X < W; X++ ) {
+								float	V = texture[X,Y];
+								scanline[X].Set( V, V, V, 1.0f );
+							}
+							m_blueNoiseAnnealing.WriteScanline( Y, scanline );
+						}
+						break;
 					}
-					m_blueNoiseAnnealing.WriteScanline( Y, scanline );
+
+					case 2: {
+						float2[,]	texture = _texture as float2[,];
+						for ( uint Y=0; Y < H; Y++ ) {
+							for ( uint X=0; X < W; X++ ) {
+								float2	V = texture[X,Y];
+								scanline[X].Set( V.x, V.y, 0, 1.0f );
+							}
+							m_blueNoiseAnnealing.WriteScanline( Y, scanline );
+						}
+						break;
+					}
 				}
 
 				if ( m_blueNoiseAnnealing.Width < panelImage.Width )
@@ -477,7 +498,7 @@ CreateTestSpectrum( handmadeSpectrum );
 //*/
 			} );
 
-			m_blueNoiseAnnealing.Save( new System.IO.FileInfo( "MyBlueNoise" + m_blueNoiseAnnealing.Width + "x" + m_blueNoiseAnnealing.Height + ".png" ) );
+			m_blueNoiseAnnealing.Save( new System.IO.FileInfo( "BlueNoise" + m_blueNoiseAnnealing.Width + "x" + m_blueNoiseAnnealing.Height + "_SimulatedAnnealing" + dimensions + "D.png" ) );
 		}
 #else
 		ImageFile	m_blueNoiseAnnealing = new ImageFile( 64, 64, ImageFile.PIXEL_FORMAT.R8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
