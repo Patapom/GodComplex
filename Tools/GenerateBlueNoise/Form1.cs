@@ -40,6 +40,23 @@ namespace GenerateBlueNoise
 		public GenerateBlueNoiseForm() {
 			InitializeComponent();
 
+			uint[]		testHisto = new uint[100];
+			for ( uint i=0; i < 1000000; i++ ) {
+				double	rnd = Math.Sqrt( SimpleRNG.GetUniform() );
+				uint	binIndex = (uint) Math.Floor( rnd * 100 );
+				testHisto[binIndex]++;
+			}
+
+			float[]		normalized = new float[100];
+			float[]		partialSum = new float[100];
+			float		sum = 0.0f;
+			for ( uint i=0; i < 100; i++ ) {
+				float	value = (float) testHisto[i] / 10000.0f;
+				sum += value;
+				normalized[i] = value;
+				partialSum[i] = sum;
+			}
+
 // 			ImageFile	dick = new ImageFile( new System.IO.FileInfo( "dick.png" ) );
 // 			uint[]		maxY = new uint[dick.Width];
 // 			dick.ReadPixels( (uint X, uint Y, ref float4 _color ) => {
