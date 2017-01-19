@@ -76,8 +76,7 @@ namespace SharpMath
         
 		// Get normal (Gaussian) random sample with specified mean and standard deviation
 		public static double GetNormal(double mean, double standardDeviation) {
-			if (standardDeviation <= 0.0)
-			{
+			if (standardDeviation <= 0.0) {
 				string msg = string.Format("Shape must be positive. Received {0}.", standardDeviation);
 				throw new ArgumentOutOfRangeException(msg);
 			}

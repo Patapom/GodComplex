@@ -49,7 +49,11 @@
 			this.integerTrackbarControlVectorDimension = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
 			this.label8 = new System.Windows.Forms.Label();
 			this.groupBox1 = new System.Windows.Forms.GroupBox();
+			this.checkBoxShowDistribution = new System.Windows.Forms.CheckBox();
 			this.buttonSave = new System.Windows.Forms.Button();
+			this.floatTrackbarControlSigma = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlDistributionPower = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.label11 = new System.Windows.Forms.Label();
 			this.integerTrackbarControlAnnealingIterations = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
 			this.label9 = new System.Windows.Forms.Label();
 			this.label10 = new System.Windows.Forms.Label();
@@ -71,7 +75,7 @@
 			this.floatTrackbarControlScale.Name = "floatTrackbarControlScale";
 			this.floatTrackbarControlScale.Size = new System.Drawing.Size(200, 20);
 			this.floatTrackbarControlScale.TabIndex = 2;
-			this.floatTrackbarControlScale.Value = 6F;
+			this.floatTrackbarControlScale.Value = 4F;
 			this.floatTrackbarControlScale.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlScale_ValueChanged);
 			// 
 			// floatTrackbarControlOffset
@@ -81,7 +85,7 @@
 			this.floatTrackbarControlOffset.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlOffset.Name = "floatTrackbarControlOffset";
 			this.floatTrackbarControlOffset.RangeMax = 1F;
-			this.floatTrackbarControlOffset.RangeMin = 0F;
+			this.floatTrackbarControlOffset.RangeMin = -1F;
 			this.floatTrackbarControlOffset.Size = new System.Drawing.Size(200, 20);
 			this.floatTrackbarControlOffset.TabIndex = 3;
 			this.floatTrackbarControlOffset.Value = 0.5F;
@@ -163,7 +167,7 @@
 			// label5
 			// 
 			this.label5.AutoSize = true;
-			this.label5.Location = new System.Drawing.Point(558, 25);
+			this.label5.Location = new System.Drawing.Point(547, 24);
 			this.label5.Name = "label5";
 			this.label5.Size = new System.Drawing.Size(49, 13);
 			this.label5.TabIndex = 2;
@@ -267,33 +271,80 @@
 			// 
 			// groupBox1
 			// 
+			this.groupBox1.Controls.Add(this.checkBoxShowDistribution);
 			this.groupBox1.Controls.Add(this.buttonSave);
 			this.groupBox1.Controls.Add(this.floatTrackbarControlScale);
 			this.groupBox1.Controls.Add(this.floatTrackbarControlRadialScale);
+			this.groupBox1.Controls.Add(this.floatTrackbarControlSigma);
+			this.groupBox1.Controls.Add(this.floatTrackbarControlDistributionPower);
 			this.groupBox1.Controls.Add(this.floatTrackbarControlDC);
 			this.groupBox1.Controls.Add(this.floatTrackbarControlRadialOffset);
 			this.groupBox1.Controls.Add(this.floatTrackbarControlOffset);
 			this.groupBox1.Controls.Add(this.label1);
 			this.groupBox1.Controls.Add(this.label2);
 			this.groupBox1.Controls.Add(this.label3);
+			this.groupBox1.Controls.Add(this.label11);
 			this.groupBox1.Controls.Add(this.label4);
 			this.groupBox1.Controls.Add(this.label5);
 			this.groupBox1.Location = new System.Drawing.Point(12, 664);
 			this.groupBox1.Name = "groupBox1";
-			this.groupBox1.Size = new System.Drawing.Size(917, 94);
+			this.groupBox1.Size = new System.Drawing.Size(951, 94);
 			this.groupBox1.TabIndex = 9;
 			this.groupBox1.TabStop = false;
 			this.groupBox1.Text = "Shitty Spectrum Generation";
 			// 
+			// checkBoxShowDistribution
+			// 
+			this.checkBoxShowDistribution.AutoSize = true;
+			this.checkBoxShowDistribution.Location = new System.Drawing.Point(860, 66);
+			this.checkBoxShowDistribution.Name = "checkBoxShowDistribution";
+			this.checkBoxShowDistribution.Size = new System.Drawing.Size(83, 17);
+			this.checkBoxShowDistribution.TabIndex = 8;
+			this.checkBoxShowDistribution.Text = "Show Noise";
+			this.checkBoxShowDistribution.UseVisualStyleBackColor = true;
+			this.checkBoxShowDistribution.CheckedChanged += new System.EventHandler(this.checkBoxShowDistribution_CheckedChanged);
+			// 
 			// buttonSave
 			// 
-			this.buttonSave.Location = new System.Drawing.Point(759, 51);
+			this.buttonSave.Location = new System.Drawing.Point(860, 19);
 			this.buttonSave.Name = "buttonSave";
 			this.buttonSave.Size = new System.Drawing.Size(75, 23);
 			this.buttonSave.TabIndex = 7;
 			this.buttonSave.Text = "Save";
 			this.buttonSave.UseVisualStyleBackColor = true;
 			this.buttonSave.Click += new System.EventHandler(this.buttonSave_Click);
+			// 
+			// floatTrackbarControlSigma
+			// 
+			this.floatTrackbarControlSigma.Location = new System.Drawing.Point(636, 66);
+			this.floatTrackbarControlSigma.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlSigma.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlSigma.Name = "floatTrackbarControlSigma";
+			this.floatTrackbarControlSigma.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlSigma.TabIndex = 6;
+			this.floatTrackbarControlSigma.Value = 4F;
+			this.floatTrackbarControlSigma.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlScale_ValueChanged);
+			// 
+			// floatTrackbarControlDistributionPower
+			// 
+			this.floatTrackbarControlDistributionPower.Location = new System.Drawing.Point(636, 45);
+			this.floatTrackbarControlDistributionPower.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlDistributionPower.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlDistributionPower.Name = "floatTrackbarControlDistributionPower";
+			this.floatTrackbarControlDistributionPower.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlDistributionPower.TabIndex = 6;
+			this.floatTrackbarControlDistributionPower.Value = 0.8F;
+			this.floatTrackbarControlDistributionPower.VisibleRangeMax = 2F;
+			this.floatTrackbarControlDistributionPower.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlScale_ValueChanged);
+			// 
+			// label11
+			// 
+			this.label11.AutoSize = true;
+			this.label11.Location = new System.Drawing.Point(547, 50);
+			this.label11.Name = "label11";
+			this.label11.Size = new System.Drawing.Size(92, 13);
+			this.label11.TabIndex = 2;
+			this.label11.Text = "Distribution Power";
 			// 
 			// integerTrackbarControlAnnealingIterations
 			// 
@@ -457,6 +508,10 @@
 		private System.Windows.Forms.OpenFileDialog openFileDialog;
 		private System.Windows.Forms.Button buttonSave;
 		private System.Windows.Forms.SaveFileDialog saveFileDialog;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlDistributionPower;
+		private System.Windows.Forms.Label label11;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlSigma;
+		private System.Windows.Forms.CheckBox checkBoxShowDistribution;
 	}
 }
 

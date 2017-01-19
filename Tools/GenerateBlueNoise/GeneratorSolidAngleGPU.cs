@@ -368,7 +368,10 @@ namespace GenerateBlueNoise
 			}
 
 			// One final call with our best final result
-			ReadBackTexture1D( m_texNoise0 );
+			switch ( m_vectorDimension ) {
+				case 1: ReadBackTexture1D( m_texNoise0 ); break;
+				case 2: ReadBackTexture2D( m_texNoise0 ); break;
+			}
 
 			if ( _progress != null ) {
 //				_progress( iterationIndex, mutationsCount, bestScore, ReadBackScoreTexture( m_texNoiseScore ), statistics );	// Notify!

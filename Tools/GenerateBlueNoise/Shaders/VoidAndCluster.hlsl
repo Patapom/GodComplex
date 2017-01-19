@@ -73,7 +73,6 @@ void	CS__Filter( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : SV_GROUPTHR
 	_texFilterOut[pixelIndex] = score;
 }
 
-
 // Factorized source texture loading as it seems to pose problems on my 2 different machines:
 //	• On my GTX 680, the Load() instruction and [] operator are working normally
 //	• On my GTX 980M, only the SampleLevel() is working otherwise only a single thread is returning something, the others are returning 0 from a Load() or []!

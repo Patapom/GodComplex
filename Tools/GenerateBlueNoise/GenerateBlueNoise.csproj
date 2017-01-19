@@ -104,9 +104,6 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="App.config" />
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\..\Packages\Cirrus.Utility\Utility.csproj">
       <Project>{9a67863f-d886-41a5-a8d1-04ba1379b097}</Project>
       <Name>Utility</Name>

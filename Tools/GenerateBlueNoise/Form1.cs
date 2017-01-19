@@ -1,4 +1,5 @@
-﻿//#define COMPUTE_RADIAL_SLICE
+﻿#define COMPUTE_RADIAL_SLICE
+#define SIGMOID_FITTING
 
 using System;
 using System.Collections.Generic;
@@ -26,8 +27,9 @@ namespace GenerateBlueNoise
 			ImageFile	m_blueNoise;
 			ImageFile	m_blueNoiseSpectrum;
 			ImageFile	m_spectrumRadialSlice;
+			ImageFile	m_spectrumNoiseDistribution;
+			ImageFile	m_spectrumNoiseDistribution_Custom;
 
-			uint[]		m_radialSliceAverageCounters;
 			Complex[]	m_radialSliceAverage_Smoothed;
 			float4[]	m_scanline;
 		#endif
@@ -35,10 +37,40 @@ namespace GenerateBlueNoise
 		ImageFile	m_handMadeBlueNoise;
 		ImageFile	m_handMadeSpectrum;
 
-		Complex[]	m_radialSliceAverage;
-
 		public GenerateBlueNoiseForm() {
 			InitializeComponent();
+
+// 			ImageFile	dick = new ImageFile( new System.IO.FileInfo( "dick.png" ) );
+// 			uint[]		maxY = new uint[dick.Width];
+// 			dick.ReadPixels( (uint X, uint Y, ref float4 _color ) => {
+// 				if ( _color.x < 0.5f && Y > maxY[X] )
+// 					maxY[X] = Y;
+// 			} );
+// 			using ( System.IO.FileStream S = new System.IO.FileInfo( "dickHisto.float" ).Create() )
+// 				using ( System.IO.BinaryWriter W = new System.IO.BinaryWriter( S ) ) {
+// 					for ( int X=0; X < maxY.Length; X++ ) {
+// 						W.Write( maxY[X] / 256.0f );
+// 					}
+// 				}
+// 
+// 			float[]	CDF = new float[dick.Width];
+// 			float	sum = 0.0f;
+// 			for ( int X=0; X < maxY.Length; X++ ) {
+// 				sum += maxY[X] / 255.0f;
+// 				CDF[X] = sum;
+// 			}
+// 			using ( System.IO.FileStream S = new System.IO.FileInfo( "dickCDF.float" ).Create() )
+// 				using ( System.IO.BinaryWriter W = new System.IO.BinaryWriter( S ) ) {
+// 					for ( int X=0; X < CDF.Length; X++ ) {
+// 						float	V = CDF[X];
+// 								V /= sum;
+// 						W.Write( V );
+// 					}
+// 				}
+// 
+//  			// Build inverse CDF
+//  			float[]	inverseCDF = new float[dick.Width];
+
 		}
 
 		protected override void OnClosed( EventArgs e ) {
@@ -51,198 +83,248 @@ namespace GenerateBlueNoise
 
 		protected override void OnLoad( EventArgs e ) {
 			base.OnLoad( e );
+			try {
+				#if COMPUTE_RADIAL_SLICE
+					m_blueNoise = new ImageFile( new System.IO.FileInfo( @"Images\Data\512_512\LDR_LLL1_0.png" ) );
+//					m_blueNoise = new ImageFile( new System.IO.FileInfo( @"Images\BlueNoiseSpectrumCorners256.png" ) );
+//					m_blueNoise = new ImageFile( new System.IO.FileInfo( @"BlueNoise512x512_VoidAndCluster.png" ) );
+//					m_blueNoise = new ImageFile( new System.IO.FileInfo( @"BlueNoise256x256_VoidAndCluster.png" ) );
 
-			#if COMPUTE_RADIAL_SLICE
-				m_blueNoise = new ImageFile( new System.IO.FileInfo( @"Images\Data\512_512\LDR_LLL1_0.png" ) );
-//				m_blueNoise = new ImageFile( new System.IO.FileInfo( @"Images\BlueNoiseSpectrumCorners256.png" ) );
-//				m_blueNoise = new ImageFile( new System.IO.FileInfo( @"BlueNoise512x512_VoidAndCluster.png" ) );
-//				m_blueNoise = new ImageFile( new System.IO.FileInfo( @"BlueNoise256x256_VoidAndCluster.png" ) );
+					uint	size = m_blueNoise.Width;
+					uint	halfSize = size >> 1;
 
-				uint	size = m_blueNoise.Width;
-				uint	halfSize = size >> 1;
-
-				try {
-					m_device.Init( panelImageSpectrum.Handle, false, false );
-					m_FFT = new SharpMath.FFT.FFT2D_GPU( m_device, size );
-				} catch ( Exception ) {
-				}
-
-				if ( m_FFT == null ) {
-					return;
-				}
-
-				m_blueNoiseSpectrum = new ImageFile( m_blueNoise.Width, m_blueNoise.Height, ImageFile.PIXEL_FORMAT.RGBA8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
-				m_handMadeBlueNoise = new ImageFile( m_blueNoise.Width, m_blueNoise.Height, ImageFile.PIXEL_FORMAT.RGBA8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
-				m_handMadeSpectrum = new ImageFile( m_blueNoise.Width, m_blueNoise.Height, ImageFile.PIXEL_FORMAT.RGBA8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
-				m_scanline = new float4[m_blueNoise.Width];
-
-				//////////////////////////////////////////////////////////////////////////
-				// Apply FFT to blue noise
-				Complex[,]	input = new Complex[m_blueNoise.Width,m_blueNoise.Height];
-				Complex[,]	output = new Complex[m_blueNoise.Width,m_blueNoise.Height];
-				for ( uint Y=0; Y < m_blueNoise.Height; Y++ ) {
-					m_blueNoise.ReadScanline( Y, m_scanline );
-					for ( uint X=0; X < m_blueNoise.Width; X++ )
-						input[X,Y].Set( m_scanline[X].x, 0 );
-				}
-				m_FFT.FFT_Forward( input, output );
-
-				//////////////////////////////////////////////////////////////////////////
-				// Build the radial slice average
-				m_radialSliceAverage = new Complex[halfSize];
-				m_radialSliceAverageCounters = new uint[halfSize];
-				for ( uint Y=0; Y < m_blueNoise.Height; Y++ ) {
-					uint	Yoff = (Y + halfSize) & (size-1);
-					int		Yrel = (int) Y - (int) halfSize;
-					for ( uint X=0; X < m_blueNoise.Width; X++ ) {
-						uint	Xoff = (X + halfSize) & (size-1);
-						int		Xrel = (int) X - (int) halfSize;
-						int		sqRadius = Xrel*Xrel + Yrel*Yrel;
-						if ( sqRadius > (halfSize-1)*(halfSize-1) )
-							continue;
-
-						int		radius = (int) Math.Floor( Math.Sqrt( sqRadius ) );
-//						m_radialSliceAverage[radius] += output[Xoff,Yoff];
-						m_radialSliceAverage[radius].r += Math.Abs( output[Xoff,Yoff].r );
-						m_radialSliceAverage[radius].i += Math.Abs( output[Xoff,Yoff].i );
-						m_radialSliceAverageCounters[radius]++;
+					try {
+						m_device.Init( panelImageSpectrum.Handle, false, false );
+						m_FFT = new SharpMath.FFT.FFT2D_GPU( m_device, size );
+					} catch ( Exception ) {
 					}
-				}
-				for ( int i=0; i < halfSize; i++ ) {
-//					m_radialSliceAverage[i].r = Math.Abs( m_radialSliceAverage[i].r );
-					m_radialSliceAverage[i] *= m_radialSliceAverageCounters[i] > 0 ? 1.0f / m_radialSliceAverageCounters[i] : 1.0f;
-				}
-				double	minAverage = double.MaxValue;
-				double	maxAverage = double.MinValue;
- 				for ( int i=0; i < halfSize; i++ ) {
-					if ( m_radialSliceAverage[i].r < 1e-12 )
-						m_radialSliceAverage[i].r = 1e-12;
-					if ( m_radialSliceAverage[i].i < 1e-12 )
-						m_radialSliceAverage[i].i = 1e-12;
 
-					if ( i > 1 ) {
-						minAverage = Math.Min( minAverage, m_radialSliceAverage[i].r );
-						maxAverage = Math.Max( maxAverage, m_radialSliceAverage[i].r );
-	 				}
- 				}
+					if ( m_FFT == null ) {
+						return;
+					}
 
-				// Write it to disk
-				using ( System.IO.FileStream S = new System.IO.FileInfo( "BlueNoiseRadialProfile255.complex" ).Create() )
-					using ( System.IO.BinaryWriter W = new System.IO.BinaryWriter( S ) ) {
-						for ( int i=1; i < m_radialSliceAverage.Length; i++ ) {
-							W.Write( m_radialSliceAverage[i].r );
-							W.Write( m_radialSliceAverage[i].i );
+					m_blueNoiseSpectrum = new ImageFile( m_blueNoise.Width, m_blueNoise.Height, ImageFile.PIXEL_FORMAT.RGBA8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
+					m_handMadeBlueNoise = new ImageFile( m_blueNoise.Width, m_blueNoise.Height, ImageFile.PIXEL_FORMAT.RGBA8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
+					m_handMadeSpectrum = new ImageFile( m_blueNoise.Width, m_blueNoise.Height, ImageFile.PIXEL_FORMAT.RGBA8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
+					m_scanline = new float4[m_blueNoise.Width];
+
+					//////////////////////////////////////////////////////////////////////////
+					// Apply FFT to blue noise
+					Complex[,]	input = new Complex[m_blueNoise.Width,m_blueNoise.Height];
+					Complex[,]	output = new Complex[m_blueNoise.Width,m_blueNoise.Height];
+					m_blueNoise.ReadPixels( ( uint X, uint Y, ref float4 _color ) => { input[X,Y].Set( _color.x, 0 ); } );
+// 					for ( uint Y=0; Y < m_blueNoise.Height; Y++ ) {
+// 						m_blueNoise.ReadScanline( Y, m_scanline );
+// 						for ( uint X=0; X < m_blueNoise.Width; X++ )
+// 							input[X,Y].Set( m_scanline[X].x, 0 );
+// 					}
+					m_FFT.FFT_Forward( input, output );
+
+					//////////////////////////////////////////////////////////////////////////
+					// Build the radial slice average
+					Complex[]	radialSliceAverage = new Complex[halfSize];
+					uint[]		radialSliceAverageCounters = new uint[halfSize];
+					for ( uint Y=0; Y < m_blueNoise.Height; Y++ ) {
+						uint	Yoff = (Y + halfSize) & (size-1);
+						int		Yrel = (int) Y - (int) halfSize;
+						for ( uint X=0; X < m_blueNoise.Width; X++ ) {
+							uint	Xoff = (X + halfSize) & (size-1);
+							int		Xrel = (int) X - (int) halfSize;
+							int		sqRadius = Xrel*Xrel + Yrel*Yrel;
+							if ( sqRadius > (halfSize-1)*(halfSize-1) )
+								continue;
+
+							int		radius = (int) Math.Floor( Math.Sqrt( sqRadius ) );
+//							radialSliceAverage[radius] += output[Xoff,Yoff];
+							radialSliceAverage[radius].r += Math.Abs( output[Xoff,Yoff].r );
+							radialSliceAverage[radius].i += Math.Abs( output[Xoff,Yoff].i );
+							radialSliceAverageCounters[radius]++;
+						}
+					}
+					for ( int i=0; i < halfSize; i++ ) {
+//						radialSliceAverage[i].r = Math.Abs( radialSliceAverage[i].r );
+						radialSliceAverage[i] *= radialSliceAverageCounters[i] > 0 ? 1.0f / radialSliceAverageCounters[i] : 1.0f;
+					}
+					double	minAverage = double.MaxValue;
+					double	maxAverage = double.MinValue;
+ 					for ( int i=0; i < halfSize; i++ ) {
+						if ( radialSliceAverage[i].r < 1e-12 )
+							radialSliceAverage[i].r = 1e-12;
+						if ( radialSliceAverage[i].i < 1e-12 )
+							radialSliceAverage[i].i = 1e-12;
+
+						if ( i > 1 ) {
+							minAverage = Math.Min( minAverage, radialSliceAverage[i].r );
+							maxAverage = Math.Max( maxAverage, radialSliceAverage[i].r );
+	 					}
+ 					}
+
+					// Write it to disk
+					using ( System.IO.FileStream S = new System.IO.FileInfo( "BlueNoiseRadialProfile255.complex" ).Create() )
+						using ( System.IO.BinaryWriter W = new System.IO.BinaryWriter( S ) ) {
+							for ( int i=1; i < radialSliceAverage.Length; i++ ) {
+								W.Write( radialSliceAverage[i].r );
+								W.Write( radialSliceAverage[i].i );
+							}
+						}
+
+					// Smooth it out
+					m_radialSliceAverage_Smoothed = new Complex[halfSize];
+					Complex	average = new Complex();
+ 					for ( int i=1; i < halfSize; i++ ) {
+						average.Zero();
+						for ( int j=-4; j <= 4; j++ ) {
+							average += radialSliceAverage[Math.Max( 1, Math.Min( halfSize-1, i + j ))];
+						}
+						m_radialSliceAverage_Smoothed[i] = average / 9.0;
+					}
+
+
+					//////////////////////////////////////////////////////////////////////////
+					// Build spectrum noise distribution histogram
+					const int BUCKETS_COUNT = 1000;
+					uint[]	noiseDistributionHistogram = new uint[BUCKETS_COUNT];
+					for ( uint Y=0; Y < m_blueNoise.Height; Y++ ) {
+						uint	Yoff = (Y + halfSize) & (size-1);
+						int		Yrel = (int) Y - (int) halfSize;
+						for ( uint X=0; X < m_blueNoise.Width; X++ ) {
+							uint	Xoff = (X + halfSize) & (size-1);
+							int		Xrel = (int) X - (int) halfSize;
+							int		sqRadius = Xrel*Xrel + Yrel*Yrel;
+							double	radius = Math.Sqrt( sqRadius ) / halfSize;
+							if ( radius < 0.01f )
+								continue;	// Avoid central values because of too much imprecision
+
+							double	random = Math.Abs( output[Xoff,Yoff].r );
+							double	profileAmplitude = RadialProfile( radius );
+							double	normalizedRandom = random / profileAmplitude;
+
+							int		bucketIndex = Math.Min( BUCKETS_COUNT-1, (int) Math.Floor( normalizedRandom * BUCKETS_COUNT ) );
+							noiseDistributionHistogram[bucketIndex]++;
 						}
 					}
 
-				// Smooth it out
-				m_radialSliceAverage_Smoothed = new Complex[halfSize];
-				Complex	average = new Complex();
- 				for ( int i=1; i < halfSize; i++ ) {
-					average.Zero();
-					for ( int j=-4; j <= 4; j++ ) {
-						average += m_radialSliceAverage[Math.Max( 1, Math.Min( halfSize-1, i + j ))];
+					// Write histogram to disk
+					using ( System.IO.FileStream S = new System.IO.FileInfo( "noiseDistribution.float" ).Create() )
+						using ( System.IO.BinaryWriter W = new System.IO.BinaryWriter( S ) ) {
+							for ( int i=0; i < BUCKETS_COUNT; i++ ) {
+								W.Write( (float) noiseDistributionHistogram[i] / BUCKETS_COUNT );
+							}
+						}
+
+
+					//////////////////////////////////////////////////////////////////////////
+					// Build the images
+
+					// Initial Blue Noise Spectrum
+					for ( uint Y=0; Y < m_blueNoiseSpectrum.Height; Y++ ) {
+						uint	Yoff = (Y + halfSize) & (size-1);
+
+						// Initial blue noise spectrum
+						for ( uint X=0; X < m_blueNoiseSpectrum.Width; X++ ) {
+							uint	Xoff = (X + halfSize) & (size-1);
+
+							float	R = (float) output[Xoff,Yoff].r;
+							float	I = (float) output[Xoff,Yoff].i;
+
+							R *= 500.0f;
+							I *= 500.0f;
+							R = Math.Abs( R );
+
+							m_scanline[X].Set( R, R, R, 1.0f );
+						}
+						m_blueNoiseSpectrum.WriteScanline( Y, m_scanline );
 					}
-					m_radialSliceAverage_Smoothed[i] = average / 9.0;
-				}
 
-				//////////////////////////////////////////////////////////////////////////
-				// Build the images
-
-				// Initial Blue Noise Spectrum
-				for ( uint Y=0; Y < m_blueNoiseSpectrum.Height; Y++ ) {
-					uint	Yoff = (Y + halfSize) & (size-1);
-
-					// Initial blue noise spectrum
-					for ( uint X=0; X < m_blueNoiseSpectrum.Width; X++ ) {
-						uint	Xoff = (X + halfSize) & (size-1);
-
-						float	R = (float) output[Xoff,Yoff].r;
-						float	I = (float) output[Xoff,Yoff].i;
-
-						R *= 500.0f;
-						I *= 500.0f;
-						R = Math.Abs( R );
-
-						m_scanline[X].Set( R, R, R, 1.0f );
-					}
-					m_blueNoiseSpectrum.WriteScanline( Y, m_scanline );
-				}
-
-				// Average radial slice
-				m_spectrumRadialSlice = new ImageFile( m_blueNoise.Width, m_blueNoise.Height, ImageFile.PIXEL_FORMAT.RGBA8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
-				m_spectrumRadialSlice.Clear( float4.One );
-				float2	rangeX = new float2( 0, halfSize );
-//				float2	rangeY = new float2( -8, 0 );
-//					m_spectrumRadialSlice.PlotLogGraphAutoRangeY( float4.UnitW, rangeX, ref rangeY, ( float _x ) => {
-// 				m_spectrumRadialSlice.PlotLogGraph( new float4( 0, 0, 0, 1 ), rangeX, rangeY, ( float _x ) => {
-//  					return (float) m_radialSliceAverage[(int) Math.Floor( _x )].r;
-//  				}, -1.0f, 10.0f );
+					// =====================================================
+					// Average radial slice
+					m_spectrumRadialSlice = new ImageFile( m_blueNoise.Width, m_blueNoise.Height, ImageFile.PIXEL_FORMAT.RGBA8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
+					m_spectrumRadialSlice.Clear( float4.One );
+					float2	rangeX = new float2( 0, halfSize );
+//					float2	rangeY = new float2( -8, 0 );
+//						m_spectrumRadialSlice.PlotLogGraphAutoRangeY( float4.UnitW, rangeX, ref rangeY, ( float _x ) => {
+// 					m_spectrumRadialSlice.PlotLogGraph( new float4( 0, 0, 0, 1 ), rangeX, rangeY, ( float _x ) => {
+//  						return (float) radialSliceAverage[(int) Math.Floor( _x )].r;
+//  					}, -1.0f, 10.0f );
 // 
-// 				m_spectrumRadialSlice.PlotLogGraph( new float4( 0, 0.5f, 0, 1 ), rangeX, rangeY, ( float _x ) => {
-//  					return (float) Math.Pow( 10.0, RadialProfile( _x / halfSize ) );
-//  				}, -1.0f, 10.0f );
-// 				m_spectrumRadialSlice.PlotLogGraph( new float4( 0.25f, 0.25f, 0.25f, 1 ), rangeX, rangeY, ( float _x ) => { return (float) m_radialSliceAverage[(int) Math.Floor( _x )].i; }, -1.0f, 10.0f );
-// 				m_spectrumRadialSlice.PlotLogGraph( new float4( 1, 0, 0, 1 ), rangeX, rangeY, ( float _x ) => { return (float) m_radialSliceAverage_Smoothed[(int) Math.Floor( _x )].r; }, -1.0f, 10.0f );
-// 				m_spectrumRadialSlice.PlotLogGraph( new float4( 0, 0, 1, 1 ), rangeX, rangeY, ( float _x ) => { return (float) m_radialSliceAverage_Smoothed[(int) Math.Floor( _x )].i; }, -1.0f, 10.0f );
-// 				m_spectrumRadialSlice.PlotLogAxes( float4.UnitW, rangeX, rangeY, -16.0f, 10.0f );
+// 					m_spectrumRadialSlice.PlotLogGraph( new float4( 0, 0.5f, 0, 1 ), rangeX, rangeY, ( float _x ) => {
+//  						return (float) RadialProfile( _x / halfSize );
+//  					}, -1.0f, 10.0f );
+// 					m_spectrumRadialSlice.PlotLogGraph( new float4( 0.25f, 0.25f, 0.25f, 1 ), rangeX, rangeY, ( float _x ) => { return (float) radialSliceAverage[(int) Math.Floor( _x )].i; }, -1.0f, 10.0f );
+// 					m_spectrumRadialSlice.PlotLogGraph( new float4( 1, 0, 0, 1 ), rangeX, rangeY, ( float _x ) => { return (float) m_radialSliceAverage_Smoothed[(int) Math.Floor( _x )].r; }, -1.0f, 10.0f );
+// 					m_spectrumRadialSlice.PlotLogGraph( new float4( 0, 0, 1, 1 ), rangeX, rangeY, ( float _x ) => { return (float) m_radialSliceAverage_Smoothed[(int) Math.Floor( _x )].i; }, -1.0f, 10.0f );
+// 					m_spectrumRadialSlice.PlotLogAxes( float4.UnitW, rangeX, rangeY, -16.0f, 10.0f );
 
-				float2	rangeY = new float2( 0, 0.0005f );
-				m_spectrumRadialSlice.PlotGraph( new float4( 0, 0, 0, 1 ), rangeX, rangeY, ( float _x ) => {
- 					return (float) m_radialSliceAverage[(int) Math.Floor( _x )].r;
- 				} );
+					float2	rangeY = new float2( 0, 0.0005f );
+					m_spectrumRadialSlice.PlotGraph( new float4( 0, 0, 0, 1 ), rangeX, rangeY, ( float _x ) => {
+ 						return (float) radialSliceAverage[(int) Math.Floor( _x )].r;
+ 					} );
 
-				m_spectrumRadialSlice.PlotGraph( new float4( 0, 0.5f, 0, 1 ), rangeX, rangeY, ( float _x ) => {
- 					return (float) Math.Pow( 10.0, RadialProfile( _x / halfSize ) );
- 				} );
+					m_spectrumRadialSlice.PlotGraph( new float4( 0, 0.5f, 0, 1 ), rangeX, rangeY, ( float _x ) => {
+ 						return (float) RadialProfile( _x / halfSize );
+ 					} );
 
-				m_spectrumRadialSlice.PlotGraph( new float4( 0.25f, 0.25f, 0.25f, 1 ), rangeX, rangeY, ( float _x ) => { return (float) m_radialSliceAverage[(int) Math.Floor( _x )].i; } );
-				m_spectrumRadialSlice.PlotGraph( new float4( 1, 0, 0, 1 ), rangeX, rangeY, ( float _x ) => { return (float) m_radialSliceAverage_Smoothed[(int) Math.Floor( _x )].r; } );
-				m_spectrumRadialSlice.PlotGraph( new float4( 0, 0, 1, 1 ), rangeX, rangeY, ( float _x ) => { return (float) m_radialSliceAverage_Smoothed[(int) Math.Floor( _x )].i; } );
+					m_spectrumRadialSlice.PlotGraph( new float4( 0.25f, 0.25f, 0.25f, 1 ), rangeX, rangeY, ( float _x ) => { return (float) radialSliceAverage[(int) Math.Floor( _x )].i; } );
+					m_spectrumRadialSlice.PlotGraph( new float4( 1, 0, 0, 1 ), rangeX, rangeY, ( float _x ) => { return (float) m_radialSliceAverage_Smoothed[(int) Math.Floor( _x )].r; } );
+					m_spectrumRadialSlice.PlotGraph( new float4( 0, 0, 1, 1 ), rangeX, rangeY, ( float _x ) => { return (float) m_radialSliceAverage_Smoothed[(int) Math.Floor( _x )].i; } );
 
-				m_spectrumRadialSlice.PlotAxes( float4.UnitW, rangeX, rangeY, 16.0f, 1e-4f );
-			#else
-				// Create our hand made textures
-				const uint	NOISE_SIZE = 512;
+					m_spectrumRadialSlice.PlotAxes( float4.UnitW, rangeX, rangeY, 16.0f, 1e-4f );
 
-				try {
-					m_device.Init( panelImageSpectrum.Handle, false, false );
-					m_FFT = new SharpMath.FFT.FFT2D_GPU( m_device, NOISE_SIZE );
-				} catch ( Exception ) {
-				}
+					// =====================================================
+					// Noise distribution
+					m_spectrumNoiseDistribution = new ImageFile( m_blueNoise.Width, m_blueNoise.Height, ImageFile.PIXEL_FORMAT.RGBA8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
+					m_spectrumNoiseDistribution_Custom = new ImageFile( m_blueNoise.Width, m_blueNoise.Height, ImageFile.PIXEL_FORMAT.RGBA8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
+					m_spectrumNoiseDistribution.Clear( float4.One );
+					rangeX = new float2( 0, 1 );
+					rangeY = new float2( 0, 1.0f / BUCKETS_COUNT );
+					m_spectrumNoiseDistribution.PlotGraph( float4.UnitW, rangeX, rangeY, ( float _x ) => {
+						int	bucketIndex = Math.Min( BUCKETS_COUNT-1, (int) Math.Floor( _x * BUCKETS_COUNT ) );
+ 						return (float) noiseDistributionHistogram[bucketIndex] / (m_blueNoise.Width * m_blueNoise.Height);
+ 					} );
 
-				m_handMadeBlueNoise = new ImageFile( NOISE_SIZE, NOISE_SIZE, ImageFile.PIXEL_FORMAT.RGBA8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
-				m_handMadeSpectrum = new ImageFile( m_handMadeBlueNoise.Width, m_handMadeBlueNoise.Height, ImageFile.PIXEL_FORMAT.RGBA8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
+				#else
+					// Create our hand made textures
+					const uint	NOISE_SIZE = 512;
 
-				// Read radial profile from disk
-				m_radialSliceAverage = new Complex[256];
-
-				using ( System.IO.FileStream S = new System.IO.FileInfo( "BlueNoiseRadialProfile255.complex" ).OpenRead() )
-					using ( System.IO.BinaryReader R = new System.IO.BinaryReader( S ) ) {
-						for ( int i=1; i < m_radialSliceAverage.Length; i++ ) {
-							m_radialSliceAverage[i].r = R.ReadSingle();
-							m_radialSliceAverage[i].i = R.ReadSingle();
-						}
+					try {
+						m_device.Init( panelImageSpectrum.Handle, false, false );
+						m_FFT = new SharpMath.FFT.FFT2D_GPU( m_device, NOISE_SIZE );
+					} catch ( Exception ) {
 					}
-			#endif
 
-			//////////////////////////////////////////////////////////////////////////
-			// Build initial blue-noise
-			RebuildNoise();
+					m_handMadeBlueNoise = new ImageFile( NOISE_SIZE, NOISE_SIZE, ImageFile.PIXEL_FORMAT.RGBA8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
+					m_handMadeSpectrum = new ImageFile( m_handMadeBlueNoise.Width, m_handMadeBlueNoise.Height, ImageFile.PIXEL_FORMAT.RGBA8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
+
+					// Read radial profile from disk
+					Complex[]	radialSliceAverage = new Complex[256];
+					using ( System.IO.FileStream S = new System.IO.FileInfo( "BlueNoiseRadialProfile255.complex" ).OpenRead() )
+						using ( System.IO.BinaryReader R = new System.IO.BinaryReader( S ) ) {
+							for ( int i=1; i < radialSliceAverage.Length; i++ ) {
+								radialSliceAverage[i].r = R.ReadSingle();
+								radialSliceAverage[i].i = R.ReadSingle();
+							}
+						}
+				#endif
+
+				//////////////////////////////////////////////////////////////////////////
+				// Build initial blue-noise
+				RebuildNoise();
+
+			} catch ( Exception _e ) {
+				MessageBox.Show( this, "Error during Load() => " + _e.Message, "BlueNoiseGenerator" );
+			}
 		}
 
 		void	UpdatePanels() {
 			#if COMPUTE_RADIAL_SLICE
 				if ( m_displayType ) {
 					panelImage.Bitmap = m_spectrumRadialSlice.AsBitmap;
+					panelImageSpectrum.Bitmap = checkBoxShowDistribution.Checked ? m_spectrumNoiseDistribution_Custom.AsBitmap : m_spectrumNoiseDistribution.AsBitmap;
 				} else {
 					panelImage.Bitmap = m_displayHandMadeSpectrum ? m_handMadeBlueNoise.AsBitmap : m_blueNoise.AsBitmap;
+					panelImageSpectrum.Bitmap = m_displayHandMadeSpectrum ? m_handMadeSpectrum.AsBitmap : m_blueNoiseSpectrum.AsBitmap;
 				}
-				if ( m_displayHandMadeSpectrum ) {
-					panelImageSpectrum.Bitmap = m_handMadeSpectrum.AsBitmap;
-				} else {
-					panelImageSpectrum.Bitmap = m_blueNoiseSpectrum.AsBitmap;
-				}
+
 // 				panelImage.Bitmap = m_blueNoise.AsBitmap;
 // 				panelImageSpectrum.Bitmap = m_blueNoiseSpectrum.AsBitmap;
 			#else
@@ -280,6 +362,25 @@ namespace GenerateBlueNoise
 
 		#region Poor Spectrum-based Method (doesn't work => Nothing guarantees a proper distribution of values and a correct dithering array)
 
+#if SIGMOID_FITTING
+		/// <summary>
+		/// This is a modified sigmoïd fitted with Mathematica.
+		/// It shows a closer fit than the piecewise-continuous fit below
+		/// 
+		/// The exact formula is:
+		///		model = (a*Exp[g + h*(x + i)]) / (b + c*Exp[d + e*(x^j + f)])
+		/// </summary>
+		/// <param name="_radius"></param>
+		/// <returns></returns>
+		double		RadialProfile( double _radius ) {
+			const double	a = 0.000385792, b = 0.625297, c = 8.02121, d = 4.08171, e = -20.6229, f = 0.0866656, g = -0.208976, h = -0.283764, i = 0.154578, j = 2.36722;
+			double	x = Math.Min( 1.0, _radius );
+			double	num = a * Math.Exp( g + h * (x+i) );
+			double	den = b + c * Math.Exp( d + e * (Math.Pow( x, j ) + f) );
+			double	value = num / den;
+			return value;
+		}
+#else
 		/// <summary>
 		/// This piecewise-continuous analytical function was fitted using Mathematica:
 		///		• The left and right parts are straight half-lines
@@ -313,8 +414,10 @@ namespace GenerateBlueNoise
 				// Estimate a regular 3rd order polynomial
 				y = a + x * (b + x * (c + x * d));
 			}
+			y = Math.Pow( 10.0, y );
 			return y;
 		}
+#endif
 
 		void	CreateNoiseSpectrum( Complex[,] _spectrum ) {
 			uint	size = m_handMadeBlueNoise.Width;
@@ -324,6 +427,8 @@ namespace GenerateBlueNoise
 			double	noiseBias = floatTrackbarControlOffset.Value;
 			double	radialOffset = floatTrackbarControlRadialOffset.Value;
 			double	radialScale = floatTrackbarControlRadialScale.Value;
+			double	distributionPower = floatTrackbarControlDistributionPower.Value;
+			double	sigma = floatTrackbarControlSigma.Value;
 
 			Complex		Cnoise = new Complex();
 			for ( uint Y=0; Y < m_handMadeBlueNoise.Height; Y++ ) {
@@ -338,8 +443,15 @@ namespace GenerateBlueNoise
 //					Cnoise /= maxAverage;	// Center noise is already factored by the maximum average so we "renormalize it"
 
 					// Apply simple uniform noise
-					Cnoise.r = noiseScale * (SimpleRNG.GetUniform() - noiseBias);
- 					Cnoise.i = noiseScale * (SimpleRNG.GetUniform() - noiseBias);
+					Cnoise.r = noiseScale * (Math.Pow( SimpleRNG.GetUniform(), distributionPower ) - noiseBias);
+					Cnoise.i = noiseScale * (Math.Pow( SimpleRNG.GetUniform(), distributionPower ) - noiseBias);
+
+// 					Cnoise.r = noiseScale * (SimpleRNG.GetNormal() - noiseBias);
+// 					Cnoise.i = noiseScale * (SimpleRNG.GetNormal() - noiseBias);
+
+// 					Cnoise.r = noiseScale * (SimpleRNG.GetLaplace( 0, sigma ) - noiseBias);
+// 					Cnoise.i = noiseScale * (SimpleRNG.GetLaplace( 0, sigma ) - noiseBias);
+
 // 					Cnoise.r = 2.0 * SimpleRNG.GetNormal( 0, 1 ) - 1.0;
 // 					Cnoise.i = 2.0 * SimpleRNG.GetNormal( 0, 1 ) - 1.0;
 
@@ -355,7 +467,7 @@ namespace GenerateBlueNoise
 //profileFactor *= 2.0;
 
 					// Use the Mathematica hand-fitted curve
-					double	profileFactor = Math.Pow( 10.0, RadialProfile( radialOffset + radialScale * Math.Sqrt( sqRadius ) / halfSize ) );
+					double	profileFactor = RadialProfile( radialOffset + radialScale * Math.Sqrt( sqRadius ) / halfSize );
 //profileFactor *= 0.75 / 1;
 //profileFactor *= 3.0;
 
@@ -371,6 +483,52 @@ namespace GenerateBlueNoise
 				}
 			}
 			_spectrum[0,0].Set( floatTrackbarControlDC.Value, 0.0 );	// Central value for constant term
+
+
+			#if COMPUTE_RADIAL_SLICE
+
+				const int BUCKETS_COUNT = 1000;
+				uint[]	noiseDistributionHistogram = new uint[BUCKETS_COUNT];
+				for ( uint i=0; i < m_handMadeBlueNoise.Width*m_handMadeBlueNoise.Height; i++ ) {
+					double	noiseValue = noiseScale * (Math.Pow( SimpleRNG.GetUniform(), distributionPower ) - noiseBias);
+					double	noiseValue2 = noiseScale * (Math.Pow( SimpleRNG.GetUniform(), distributionPower ) - noiseBias);
+							noiseValue = Math.Abs( noiseValue + noiseValue2 );
+
+noiseValue = Math.Pow( SimpleRNG.GetUniform(), 0.5 );
+noiseValue = SimpleRNG.GetUniform() < 0.5 ? 0.5 * Math.Sqrt( 1.0 - noiseValue ) : 1.0 - 0.5 * Math.Sqrt( 1.0 - noiseValue );
+
+					int		bucketIndex = Math.Min( BUCKETS_COUNT-1, (int) Math.Floor( noiseValue * BUCKETS_COUNT ) );
+					noiseDistributionHistogram[bucketIndex]++;
+				}
+
+// 				for ( uint Y=0; Y < m_handMadeBlueNoise.Height; Y++ ) {
+// 					uint	Yoff = (Y + halfSize) & (size-1);
+// 					int		Yrel = (int) Y - (int) halfSize;
+// 					for ( uint X=0; X < m_handMadeBlueNoise.Width; X++ ) {
+// 						uint	Xoff = (X + halfSize) & (size-1);
+// 						int		Xrel = (int) X - (int) halfSize;
+// 						int		sqRadius = Xrel*Xrel + Yrel*Yrel;
+// 						double	radius = Math.Sqrt( sqRadius ) / halfSize;
+// 						if ( radius < 0.01f )
+// 							continue;	// Avoid central values because of too much imprecision
+// 
+// 						double	random = Math.Abs( _spectrum[Xoff,Yoff].r );
+// 						double	profileAmplitude = RadialProfile( radius );
+// 						double	normalizedRandom = random / profileAmplitude;
+// 
+// 						int		bucketIndex = Math.Min( BUCKETS_COUNT-1, (int) Math.Floor( normalizedRandom * BUCKETS_COUNT ) );
+// 						noiseDistributionHistogram[bucketIndex]++;
+// 					}
+// 				}
+
+				m_spectrumNoiseDistribution_Custom.Clear( float4.One );
+				float2	rangeX = new float2( 0, 1 );
+				float2	rangeY = new float2( 0, 4.0f / BUCKETS_COUNT );
+				m_spectrumNoiseDistribution_Custom.PlotGraph( float4.UnitW, rangeX, rangeY, ( float _x ) => {
+					int	bucketIndex = Math.Min( BUCKETS_COUNT-1, (int) Math.Floor( _x * BUCKETS_COUNT ) );
+ 					return (float) noiseDistributionHistogram[bucketIndex] / (m_blueNoise.Width * m_blueNoise.Height);
+ 				} );
+			#endif
 		}
 
 		void	CreateTestSpectrum( Complex[,] _spectrum ) {
@@ -447,22 +605,6 @@ namespace GenerateBlueNoise
 
 				_color.Set( R, R, R, 1.0f );
 			} );
-// 			for ( uint Y=0; Y < m_handMadeSpectrum.Height; Y++ ) {
-// 				uint	Yoff = (Y + halfSize) & (size-1);
-// 				for ( uint X=0; X < m_handMadeSpectrum.Width; X++ ) {
-// 					uint	Xoff = (X + halfSize) & (size-1);
-// 
-// 					float	R = (float) handmadeSpectrum[Xoff,Yoff].r;
-// 					float	I = (float) handmadeSpectrum[Xoff,Yoff].i;
-// 
-// 					R *= 500.0f;
-// 					I *= 500.0f;
-// 					R = Math.Abs( R );
-// 
-// 					m_scanline[X].Set( R, R, R, 1.0f );
-// 				}
-// 				m_handMadeSpectrum.WriteScanline( Y, m_scanline );
-// 			}
 
 			// Hand-made blue noise
 			m_handMadeBlueNoise.WritePixels( ( uint X, uint Y, ref float4 _color ) => {
@@ -470,14 +612,6 @@ namespace GenerateBlueNoise
 				float	I = (float) handMadeBlueNoise[X,Y].i;
 				_color.Set( R, R, R, 1.0f );
 			} );
-// 			for ( uint Y=0; Y < m_handMadeBlueNoise.Height; Y++ ) {
-// 				for ( uint X=0; X < m_handMadeBlueNoise.Width; X++ ) {
-// 					float	R = (float) handMadeBlueNoise[X,Y].r;
-// 					float	I = (float) handMadeBlueNoise[X,Y].i;
-// 					m_scanline[X].Set( R, R, R, 1.0f );
-// 				}
-// 				m_handMadeBlueNoise.WriteScanline( Y, m_scanline );
-// 			}
 
 			UpdatePanels();
 		}
@@ -539,6 +673,8 @@ namespace GenerateBlueNoise
 
 			DateTime	startTime = DateTime.Now;
 
+			this.Enabled = false;
+
 			GeneratorSolidAngleGPU	generator = new GeneratorSolidAngleGPU( m_device, (uint) (Math.Log(m_blueNoiseAnnealing.Width)/Math.Log(2.0)), dimensions );
 			generator.Generate( randomSeed, iterations, sigma_i, sigma_s, radioButtonNeighborMutations.Checked, notificationIterationsCount, ( uint _iterationIndex, uint _mutationsRate, float _energyScore, Array _texture, List< float > _statistics ) => {
 
@@ -578,6 +714,7 @@ namespace GenerateBlueNoise
 				labelAnnealingScore.Text = "Time: " + deltaTime.ToString( @"hh\:mm\:ss" ) + " ► Score: " + _energyScore + " - Iterations = " + _iterationIndex + " - Mutations Rate: " + _mutationsRate;
 				labelAnnealingScore.Refresh();
 
+				Application.DoEvents();
 
 /*				// Plot statistics
 				int	lastX = 0;
@@ -600,6 +737,8 @@ namespace GenerateBlueNoise
 				panelImageSpectrum.Bitmap = graphStatistics.AsBitmap;
 //*/
 			} );
+
+			this.Enabled = true;
 
 			m_blueNoiseAnnealing.Save( new System.IO.FileInfo( "BlueNoise" + m_blueNoiseAnnealing.Width + "x" + m_blueNoiseAnnealing.Height + "_SimulatedAnnealing" + dimensions + "D.png" ) );
 
@@ -662,6 +801,8 @@ namespace GenerateBlueNoise
 
 			DateTime	startTime = DateTime.Now;
 
+			this.Enabled = false;
+
 			GeneratorVoidAndClusterGPU	generator = new GeneratorVoidAndClusterGPU( m_device, (uint) (Math.Log(m_blueNoiseVoidAndCluster.Width)/Math.Log(2.0)) );
 			generator.Generate( randomSeed, sigma_i, 0.025f, ( float _progress, float[,] _texture, List< float > _statistics ) => {
 				for ( uint Y=0; Y < textureSize; Y++ ) {
@@ -682,6 +823,7 @@ namespace GenerateBlueNoise
 				labelAnnealingScore.Text = "Time: " + deltaTime.ToString( @"hh\:mm\:ss" ) + " ► Progress: " + (100.0f*_progress).ToString( "G3" ) + "%";
 				labelAnnealingScore.Refresh();
 
+				Application.DoEvents();
 
 /*				// Plot statistics
 				int	lastX = 0;
@@ -704,6 +846,8 @@ namespace GenerateBlueNoise
 				panelImageSpectrum.Bitmap = graphStatistics.AsBitmap;
 //*/
 			} );
+
+			this.Enabled = true;
 
 			m_blueNoiseVoidAndCluster.Save( new System.IO.FileInfo( "BlueNoise" + m_blueNoiseVoidAndCluster.Width + "x" + m_blueNoiseVoidAndCluster.Height + "_VoidAndCluster.png" ) );
 
@@ -732,5 +876,8 @@ namespace GenerateBlueNoise
 			#endif
 		}
 
+		private void checkBoxShowDistribution_CheckedChanged( object sender, EventArgs e ) {
+			UpdatePanels();
+		}
 	}
 }
