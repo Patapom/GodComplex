@@ -32,6 +32,7 @@
 			this.imagePanelHeight = new GenerateHeightMapFromNormalMap.ImagePanel();
 			this.openFileDialog = new System.Windows.Forms.OpenFileDialog();
 			this.saveFileDialog = new System.Windows.Forms.SaveFileDialog();
+			this.buttonConvert = new System.Windows.Forms.Button();
 			this.SuspendLayout();
 			// 
 			// imagePanelNormal
@@ -73,11 +74,22 @@
 			this.saveFileDialog.DefaultExt = "*.png";
 			this.saveFileDialog.Filter = "Image Files|*.png,*.tga,*.jpg|All Files|*.*";
 			// 
+			// buttonConvert
+			// 
+			this.buttonConvert.Location = new System.Drawing.Point(584, 253);
+			this.buttonConvert.Name = "buttonConvert";
+			this.buttonConvert.Size = new System.Drawing.Size(75, 23);
+			this.buttonConvert.TabIndex = 1;
+			this.buttonConvert.Text = "Convert";
+			this.buttonConvert.UseVisualStyleBackColor = true;
+			this.buttonConvert.Click += new System.EventHandler(this.buttonConvert_Click);
+			// 
 			// TransformForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1246, 544);
+			this.Controls.Add(this.buttonConvert);
 			this.Controls.Add(this.imagePanelHeight);
 			this.Controls.Add(this.imagePanelNormal);
 			this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedToolWindow;
@@ -94,6 +106,7 @@
 		private ImagePanel imagePanelHeight;
 		private System.Windows.Forms.OpenFileDialog openFileDialog;
 		private System.Windows.Forms.SaveFileDialog saveFileDialog;
+		private System.Windows.Forms.Button buttonConvert;
 	}
 }
 
