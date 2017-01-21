@@ -56,11 +56,13 @@ void	CS__Filter( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : SV_GROUPTHR
 	for ( int dY=-KERNEL_HALF_SIZE; dY <= KERNEL_HALF_SIZE; dY++ ) {
 		float	sqDy = dY * dY;
 		uint	finalY = uint( _textureSize + pixelIndex.y + dY ) & _textureMask;
+//		uint	finalY = uint( _textureSize + _dispatchThreadID.y + dY ) & _textureMask;
 
 		[loop]
 		for ( int dX=-KERNEL_HALF_SIZE; dX <= KERNEL_HALF_SIZE; dX++ ) {
 			float	sqDx = dX * dX;
 			uint	finalX = uint( _textureSize + pixelIndex.x + dX ) & _textureMask;
+//			uint	finalX = uint( _textureSize + _dispatchThreadID.x + dX ) & _textureMask;
 
 			score.x += _texBinaryPatternOut[uint2( finalX, finalY )] * exp( _kernelFactor * (sqDx + sqDy) );
 		}

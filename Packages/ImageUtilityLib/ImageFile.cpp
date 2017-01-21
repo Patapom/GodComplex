@@ -57,7 +57,7 @@ const IPixelAccessor&	ImageFile::GetPixelFormatAccessor( PIXEL_FORMAT _pixelForm
 	switch ( _pixelFormat ) {
 		// 8-bits
 	case PIXEL_FORMAT::R8:			return PF_R8::Descriptor;
-	case PIXEL_FORMAT::RG8:			return PF_RG8::Descriptor;
+//	case PIXEL_FORMAT::RG8:			return PF_RG8::Descriptor;		// Unsupported
 	case PIXEL_FORMAT::RGB8:		return PF_RGB8::Descriptor;
 	case PIXEL_FORMAT::RGBA8:		return PF_RGBA8::Descriptor;
 
@@ -651,7 +651,7 @@ U32	ImageFile::PixelFormat2BPP( PIXEL_FORMAT _pixelFormat ) {
 	switch (_pixelFormat ) {
 		// 8-bits
 		case PIXEL_FORMAT::R8:		return 8;
-		case PIXEL_FORMAT::RG8:		return 16;
+//		case PIXEL_FORMAT::RG8:		return 16;	// Unsupported
 		case PIXEL_FORMAT::RGB8:	return 24;
 		case PIXEL_FORMAT::RGBA8:	return 32;
 
@@ -682,7 +682,7 @@ FREE_IMAGE_TYPE	ImageFile::PixelFormat2FIT( PIXEL_FORMAT _pixelFormat ) {
 	switch ( _pixelFormat ) {
 		// 8-bits
 		case ImageFile::PIXEL_FORMAT::R8:		return FIT_BITMAP;
-		case ImageFile::PIXEL_FORMAT::RG8:		return FIT_BITMAP;
+//		case ImageFile::PIXEL_FORMAT::RG8:		return FIT_BITMAP;	// Unsupported
 		case ImageFile::PIXEL_FORMAT::RGB8:		return FIT_BITMAP;
 		case ImageFile::PIXEL_FORMAT::RGBA8:	return FIT_BITMAP;
 		// 16-bits
@@ -713,7 +713,7 @@ ImageFile::PIXEL_FORMAT	ImageFile::Bitmap2PixelFormat( const FIBITMAP& _bitmap )
 			U32	bpp = FreeImage_GetBPP( const_cast< FIBITMAP* >( &_bitmap ) );
 			switch ( bpp ) {
 				case 8:							return PIXEL_FORMAT::R8;
-				case 16:						return PIXEL_FORMAT::RG8;
+//				case 16:						return PIXEL_FORMAT::RG8;	// Unsupported
 				case 24:						return PIXEL_FORMAT::RGB8;
 				case 32:						return PIXEL_FORMAT::RGBA8;
 			}

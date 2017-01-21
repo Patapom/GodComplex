@@ -79,8 +79,8 @@ namespace GenerateBlueNoise
 		ComputeShader	m_CS_DownsampleScore2;				// Downsamples and keeps the best score from a (multiple of) 2x2 texture down to a (multiple of) 1x1 texture
 		ComputeShader	m_CS_Splat;							// Splats a single value where we spotted the best score
 
-		ConstantBuffer<CB_Main>			m_CB_Main;
- 		ConstantBuffer<CB_Mips>			m_CB_Mips;
+		ConstantBuffer<CB_Main>	m_CB_Main;
+ 		ConstantBuffer<CB_Mips>	m_CB_Mips;
 
  		Texture2D		m_texBinaryPattern = null;
  		Texture2D		m_texBinaryPatternCPU = null;
@@ -192,6 +192,7 @@ namespace GenerateBlueNoise
 
 			for ( uint iterationIndex=0; iterationIndex < m_textureTotalSize; iterationIndex++ ) {
 
+pas vraiment random; comme je l'avais déjà remarqué!
 				m_CB_Main.m._randomOffsetX = GetUniformInt( m_textureSize );
 				m_CB_Main.m._randomOffsetY = GetUniformInt( m_textureSize );
 				m_CB_Main.m._iterationIndex = iterationIndex;

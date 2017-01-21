@@ -64,6 +64,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CombineNoise.cs" />
     <Compile Include="GeneratorVoidAndClusterGPU.cs" />
     <Compile Include="GeneratorSolidAngleGPU.cs" />
     <Compile Include="Form1.cs">
