@@ -807,7 +807,7 @@ noiseValue = SimpleRNG.GetUniform() < 0.5 ? 0.5 * Math.Sqrt( 1.0 - noiseValue ) 
 			float2		rangeX = new float2( 0, 10000 );
 //			float2		rangeY = new float2( -10, 10 );
 //			float2		rangeY = new float2( -1, 2 );
-			float2		rangeY = new float2( 0, 100 );
+			float2		rangeY = new float2( 0, 1 );
 
 			float	sigma_i = floatTrackbarControlVariance.Value;	// Default, recommended value by Ulichney is 1.5
 
@@ -840,7 +840,7 @@ noiseValue = SimpleRNG.GetUniform() < 0.5 ? 0.5 * Math.Sqrt( 1.0 - noiseValue ) 
 				graphStatistics.Clear( float4.One );
 //				graphStatistics.PlotGraphAutoRangeY( black, rangeX, ref rangeY, ( float _X ) => {
 				graphStatistics.PlotGraph( black, rangeX, rangeY, ( float _X ) => {
-					int	X = Math.Max( 0, Math.Min( _statistics.Count-1, (int) (_statistics.Count - 10000.0f + _X) ) );
+					int	X = Math.Max( 0, Math.Min( _statistics.Count-1, (int) (_statistics.Count * _X / rangeX.y) ) );
 //					return _statistics[X];
 
 					// Integrate...
@@ -855,6 +855,15 @@ noiseValue = SimpleRNG.GetUniform() < 0.5 ? 0.5 * Math.Sqrt( 1.0 - noiseValue ) 
 				graphStatistics.PlotAxes( black, rangeX, rangeY, 1000.0f, 100.0f );
 				panelImageSpectrum.Bitmap = graphStatistics.AsBitmap;
 //*/
+// 				if ( _progress == 1.0f ) {
+// 					using ( System.IO.FileStream S = new System.IO.FileInfo( "indices.txt" ).Create() ) {
+// 						using ( System.IO.StreamWriter W = new System.IO.StreamWriter( S ) ) {
+// 							for ( int i=0; i < _statistics.Count; i++ ) {
+// 								W.WriteLine( (int) Math.Floor( m_blueNoiseVoidAndCluster.Width*m_blueNoiseVoidAndCluster.Height* _statistics[i] ) );
+// 							}
+// 						}
+// 					}
+// 				}
 			} );
 
 			this.Enabled = true;
@@ -891,15 +900,42 @@ noiseValue = SimpleRNG.GetUniform() < 0.5 ? 0.5 * Math.Sqrt( 1.0 - noiseValue ) 
 		}
 
 		private void buttonCombine_Click( object sender, EventArgs e ) {
-			uint		size = 64;
-			ImageFile	test = new ImageFile( new System.IO.FileInfo( "BlueNoise" + size + "x" + size + "_VoidAndCluster.png" ) );
 
-			CombineNoise	combine = new CombineNoise();
-			ImageFile		alignedLayers = combine.Combine( new ImageFile[] { test, test } );
+			List< ImageFile >	layers = new List<ImageFile>();
+			try {
+				while ( layers.Count < 4 ) {
+					if ( openFileDialog.ShowDialog( this ) != DialogResult.OK )
+						return;	// Cancel
 
-			alignedLayers.Save( new System.IO.FileInfo( "BlueNoise" + size + "x" + size + "_VoidAndCluster_2D.png" ) );
+					ImageFile	layer = new ImageFile( new System.IO.FileInfo( openFileDialog.FileName ) );
+					if ( layer.Width != layer.Height )
+						throw new Exception( "Texture must be square!" );
+					if ( layers.Count != 0 && layers[0].Width != layer.Width )
+						throw new Exception( "Layer sizes mismatch!" );
 
-			panelImage.Bitmap = alignedLayers.AsBitmap;
+					layers.Add( layer );
+
+					if ( layers.Count > 1 && (layers.Count == 4 || MessageBox.Show( this, "Do you wish to combine another layer?", "Blue Noise Generator", MessageBoxButtons.YesNo ) == DialogResult.No) )
+						break;
+				}
+
+				CombineNoise	combine = new CombineNoise();
+				ImageFile		alignedLayers = combine.Combine( layers.ToArray() );
+				panelImage.Bitmap = alignedLayers.AsBitmap;
+
+				if ( saveFileDialog.ShowDialog( this ) != DialogResult.OK )
+					return;
+
+				alignedLayers.Save( new System.IO.FileInfo( saveFileDialog.FileName ) );
+
+			} catch ( Exception _e ) {
+				MessageBox.Show( this, "An error occurred while combining layers:\r\n\r\n" + _e.Message, "Blue Noise Generator", MessageBoxButtons.OK );
+			} finally {
+				while ( layers.Count > 0 ) {
+					layers[0].Dispose();
+					layers.RemoveAt( 0 );
+				}
+			}
 		}
 	}
 }

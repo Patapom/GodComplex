@@ -39,7 +39,7 @@ static const int	KERNEL_HALF_SIZE = 16;
 
 [numthreads( 16, 16, 1 )]
 void	CS__Filter( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : SV_GROUPTHREADID, uint3 _dispatchThreadID : SV_DISPATCHTHREADID ) {
-	int2	pixelIndex = (_dispatchThreadID.xy + _randomOffset) & _textureMask;
+	int2	pixelIndex = _dispatchThreadID.xy;
 	float2	score = float2( 1e6, WritePos( pixelIndex ) );	// Default invalid score
 
 	// Sample central value
@@ -56,13 +56,11 @@ void	CS__Filter( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : SV_GROUPTHR
 	for ( int dY=-KERNEL_HALF_SIZE; dY <= KERNEL_HALF_SIZE; dY++ ) {
 		float	sqDy = dY * dY;
 		uint	finalY = uint( _textureSize + pixelIndex.y + dY ) & _textureMask;
-//		uint	finalY = uint( _textureSize + _dispatchThreadID.y + dY ) & _textureMask;
 
 		[loop]
 		for ( int dX=-KERNEL_HALF_SIZE; dX <= KERNEL_HALF_SIZE; dX++ ) {
 			float	sqDx = dX * dX;
 			uint	finalX = uint( _textureSize + pixelIndex.x + dX ) & _textureMask;
-//			uint	finalX = uint( _textureSize + _dispatchThreadID.x + dX ) & _textureMask;
 
 			score.x += _texBinaryPatternOut[uint2( finalX, finalY )] * exp( _kernelFactor * (sqDx + sqDy) );
 		}
@@ -105,8 +103,8 @@ groupshared float2	gs_scores[8*8];
 // Selects the scores from a 16x16 to a 1x1 target
 [numthreads( 8, 8, 1 )]
 void	CS__DownsampleScore16( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : SV_GROUPTHREADID, uint3 _dispatchThreadID : SV_DISPATCHTHREADID ) {
-#if 1
-	uint2	position00 = _dispatchThreadID.xy << 1U;
+//	uint2	position00 = _dispatchThreadID.xy << 1U;
+	uint2	position00 = ((_dispatchThreadID.xy << 1U) + (_randomOffset & ~1)) & _textureMask;
 	uint2	position11 = position00 + 1U;
 	uint2	position01 = uint2( position11.x, position00.y );
 	uint2	position10 = uint2( position00.x, position11.y );
@@ -169,23 +167,6 @@ void	CS__DownsampleScore16( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : 
 		score10 = gs_scores[threadIndex10];
 		_texFilterOut[_groupID.xy] = KeepBestScore( score00, score01, score10, score11 );
 	}
-#else
-	uint2	threadPos = _groupThreadID.xy;		// Thread position within group
-	uint	threadIndex = 8 * threadPos.y + threadPos.x;
-	if ( threadIndex == 0 ) {
-		float2	bestScore = float2( 1e6, 0 );
-		for ( uint Y=0; Y < 16; Y++ ) {
-			for ( uint X=0; X < 16; X++ ) {
-//				float2	score = LoadSource( _groupID.xy + uint2( X, Y ) );
-				float2	score = LoadSource( uint2( X, Y ) );
-				if ( score.x < bestScore.x )
-					bestScore = score;
-			}
-		}
-
-		_texFilterOut[_groupID.xy] = bestScore;
-	}
-#endif
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -190,9 +190,10 @@ namespace GenerateBlueNoise
 
 			SimpleRNG.SetSeed( _randomSeed, 362436069U );
 
+			List< float >	statistics = new List<float>( (int) m_textureTotalSize );
+
 			for ( uint iterationIndex=0; iterationIndex < m_textureTotalSize; iterationIndex++ ) {
 
-pas vraiment random; comme je l'avais déjà remarqué!
 				m_CB_Main.m._randomOffsetX = GetUniformInt( m_textureSize );
 				m_CB_Main.m._randomOffsetY = GetUniformInt( m_textureSize );
 				m_CB_Main.m._iterationIndex = iterationIndex;
@@ -239,6 +240,11 @@ pas vraiment random; comme je l'avais déjà remarqué!
 							Texture2D	temp = m_texScore0;
 							m_texScore0 = m_texScore1;
 							m_texScore1 = temp;
+
+							// Clear any random offset after first pass
+							m_CB_Main.m._randomOffsetX = 0;
+							m_CB_Main.m._randomOffsetY = 0;
+							m_CB_Main.UpdateData();
 						}
 
 						// 2.2) Downsample to last mip
@@ -268,13 +274,13 @@ pas vraiment random; comme je l'avais déjà remarqué!
 							m_texScore1 = temp;
 						}
 
-#if DEBUG
-//DebugDownsampling();
-//DebugSplatPosition( iterationIndex );
-#endif
+// #if DEBUG
+// DebugDownsampling();
+// //DebugSplatPosition( iterationIndex );
+// #endif
 					}
 				#else
-					DownsampleCPU( iterationIndex );
+					DownsampleCPU( iterationIndex, statistics );
 					m_CB_Mips.m._textureMipTarget = (uint) m_texturePOT;
 				#endif
 
@@ -294,7 +300,7 @@ pas vraiment random; comme je l'avais déjà remarqué!
 					continue;
 
 				ReadBackTexture();
-				_progress( (float) iterationIndex / m_textureTotalSize, m_ditheringArray, null );
+				_progress( (float) iterationIndex / m_textureTotalSize, m_ditheringArray, statistics );
 			}
 
 			m_texBinaryPattern.RemoveFromLastAssignedSlotUAV();
@@ -305,7 +311,7 @@ pas vraiment random; comme je l'avais déjà remarqué!
 
 			// Notify one last time
 			if ( _progress != null )
-				_progress( 1.0f, m_ditheringArray, null );
+				_progress( 1.0f, m_ditheringArray, statistics );
 		}
 
 		/// <summary>
@@ -328,9 +334,10 @@ pas vraiment random; comme je l'avais déjà remarqué!
 		}
 
 		uint[,]		m_binaryPattern;
-#if BYPASS_GPU_DOWNSAMPLING
 		float[,]	m_score;
-		void	DownsampleCPU( uint _iterationIndex ) {
+
+#if BYPASS_GPU_DOWNSAMPLING
+		void	DownsampleCPU( uint _iterationIndex, List< float > _statistics ) {
 			if ( m_score == null ) {
 				m_score = new float[m_textureSize,m_textureSize];
 				m_binaryPattern = new uint[m_textureSize,m_textureSize];
@@ -360,6 +367,8 @@ pas vraiment random; comme je l'avais déjà remarqué!
 				if ( m_binaryPattern[bestX,bestY] != 0 )
 					throw new Exception( "Already selected!" );
 			#endif
+
+// _statistics.Add( (float) (bestY * m_textureSize + bestX) / m_textureTotalSize );
 
 			// Write best minimum to last mip
 			m_texScoreCPU.WritePixels( (uint) m_texturePOT, 0, ( uint _X, uint _Y, System.IO.BinaryWriter _W ) => {
@@ -451,7 +460,7 @@ System.Diagnostics.Debug.WriteLine( "Iteration #" + _iterationIndex + " => X=" +
 			float	kernelValue, filterValue;
 			int		bestPositionX = 0, bestPositionY = 0;
 			uint	finalX, finalY;
-			for ( uint iterationIndex=1; iterationIndex < m_textureTotalSize; iterationIndex++ ) {
+			for ( uint iterationIndex=0; iterationIndex < m_textureTotalSize; iterationIndex++ ) {
 
 				// Find a random offset
 				uint	randomPixelIndex = GetUniformInt( m_textureTotalSize );
