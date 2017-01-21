@@ -560,3 +560,5 @@
 /Tools/GenerateBlueNoise/Images/Data/512_512/LDR_RGB1_0.png
 /Packages/_Unit Tests/TestFourier/Publish
 /Tools/GenerateBlueNoise/Publish
+/Tools/ConvertNormalMap2HeightMap/obj
+/Tools/ConvertNormalMap2HeightMap/bin
