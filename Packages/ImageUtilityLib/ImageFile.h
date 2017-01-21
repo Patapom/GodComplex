@@ -72,7 +72,7 @@ namespace ImageUtilityLib {
 
 			// 8-bits
 			R8		= 0,
-			RG8		= 1,
+//			RG8		= 1,		<== FreeImage believes it's R5G6B5!!!
 			RGB8	= 2,
 			RGBA8	= 3,
 

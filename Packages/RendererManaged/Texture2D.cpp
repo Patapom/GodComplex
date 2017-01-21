@@ -218,12 +218,13 @@ namespace Renderer {
 			case COMPONENT_FORMAT::UNORM:	return PIXEL_FORMAT::R8_UNORM;
 			}
 			break;
-		case ImageFile::PIXEL_FORMAT::RG8:
-			_channelExtension = 2;
-			switch ( _componentFormat ) {
-			case COMPONENT_FORMAT::UNORM:	return PIXEL_FORMAT::RGBA8_UNORM;
-			}
-			break;
+
+// 		case ImageFile::PIXEL_FORMAT::RG8:		<== FreeImage believes it's R5G6B5!!!
+// 			_channelExtension = 2;
+// 			switch ( _componentFormat ) {
+// 			case COMPONENT_FORMAT::UNORM:	return PIXEL_FORMAT::RGBA8_UNORM;
+// 			}
+// 			break;
 		case ImageFile::PIXEL_FORMAT::RGB8:
 			_channelExtension = 1;
 			switch ( _componentFormat ) {

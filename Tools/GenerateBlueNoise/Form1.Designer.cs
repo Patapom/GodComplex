@@ -64,6 +64,7 @@
 			this.saveFileDialog = new System.Windows.Forms.SaveFileDialog();
 			this.panelImageSpectrum = new GenerateBlueNoise.PanelImage(this.components);
 			this.panelImage = new GenerateBlueNoise.PanelImage(this.components);
+			this.buttonCombine = new System.Windows.Forms.Button();
 			this.groupBox1.SuspendLayout();
 			this.SuspendLayout();
 			// 
@@ -441,11 +442,22 @@
 			this.panelImage.TabIndex = 0;
 			this.panelImage.Click += new System.EventHandler(this.panelImage_Click);
 			// 
+			// buttonCombine
+			// 
+			this.buttonCombine.Location = new System.Drawing.Point(417, 639);
+			this.buttonCombine.Name = "buttonCombine";
+			this.buttonCombine.Size = new System.Drawing.Size(75, 23);
+			this.buttonCombine.TabIndex = 11;
+			this.buttonCombine.Text = "Combine";
+			this.buttonCombine.UseVisualStyleBackColor = true;
+			this.buttonCombine.Click += new System.EventHandler(this.buttonCombine_Click);
+			// 
 			// GenerateBlueNoiseForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1072, 770);
+			this.Controls.Add(this.buttonCombine);
 			this.Controls.Add(this.radioButtonRandomMutations);
 			this.Controls.Add(this.radioButtonNeighborMutations);
 			this.Controls.Add(this.groupBox1);
@@ -512,6 +524,7 @@
 		private System.Windows.Forms.Label label11;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlSigma;
 		private System.Windows.Forms.CheckBox checkBoxShowDistribution;
+		private System.Windows.Forms.Button buttonCombine;
 	}
 }
 

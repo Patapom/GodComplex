@@ -1,4 +1,4 @@
-﻿#define COMPUTE_RADIAL_SLICE
+﻿//#define COMPUTE_RADIAL_SLICE
 #define SIGMOID_FITTING
 
 using System;
@@ -40,23 +40,25 @@ namespace GenerateBlueNoise
 		public GenerateBlueNoiseForm() {
 			InitializeComponent();
 
-			uint[]		testHisto = new uint[100];
-			for ( uint i=0; i < 1000000; i++ ) {
-				double	rnd = Math.Sqrt( SimpleRNG.GetUniform() );
-				uint	binIndex = (uint) Math.Floor( rnd * 100 );
-				testHisto[binIndex]++;
-			}
+// Serious fun
+// 			uint[]		testHisto = new uint[100];
+// 			for ( uint i=0; i < 1000000; i++ ) {
+// 				double	rnd = Math.Sqrt( SimpleRNG.GetUniform() );
+// 				uint	binIndex = (uint) Math.Floor( rnd * 100 );
+// 				testHisto[binIndex]++;
+// 			}
+// 
+// 			float[]		normalized = new float[100];
+// 			float[]		partialSum = new float[100];
+// 			float		sum = 0.0f;
+// 			for ( uint i=0; i < 100; i++ ) {
+// 				float	value = (float) testHisto[i] / 10000.0f;
+// 				sum += value;
+// 				normalized[i] = value;
+// 				partialSum[i] = sum;
+// 			}
 
-			float[]		normalized = new float[100];
-			float[]		partialSum = new float[100];
-			float		sum = 0.0f;
-			for ( uint i=0; i < 100; i++ ) {
-				float	value = (float) testHisto[i] / 10000.0f;
-				sum += value;
-				normalized[i] = value;
-				partialSum[i] = sum;
-			}
-
+// Dick fun :D
 // 			ImageFile	dick = new ImageFile( new System.IO.FileInfo( "dick.png" ) );
 // 			uint[]		maxY = new uint[dick.Width];
 // 			dick.ReadPixels( (uint X, uint Y, ref float4 _color ) => {
@@ -87,7 +89,6 @@ namespace GenerateBlueNoise
 // 
 //  			// Build inverse CDF
 //  			float[]	inverseCDF = new float[dick.Width];
-
 		}
 
 		protected override void OnClosed( EventArgs e ) {
@@ -698,25 +699,19 @@ noiseValue = SimpleRNG.GetUniform() < 0.5 ? 0.5 * Math.Sqrt( 1.0 - noiseValue ) 
 				switch ( dimensions ) {
 					case 1: {
 						float[,]	texture = _texture as float[,];
-						for ( uint Y=0; Y < textureSize; Y++ ) {
-							for ( uint X=0; X < textureSize; X++ ) {
-								float	V = texture[X,Y];
-								scanline[X].Set( V, V, V, 1.0f );
-							}
-							m_blueNoiseAnnealing.WriteScanline( Y, scanline );
-						}
+						m_blueNoiseAnnealing.WritePixels( ( uint X, uint Y, ref float4 _color ) => {
+							float	V = texture[X,Y];
+							_color.Set( V, V, V, 1.0f );
+						} );
 						break;
 					}
 
 					case 2: {
 						float2[,]	texture = _texture as float2[,];
-						for ( uint Y=0; Y < textureSize; Y++ ) {
-							for ( uint X=0; X < textureSize; X++ ) {
-								float2	V = texture[X,Y];
-								scanline[X].Set( V.x, V.y, 0, 1.0f );
-							}
-							m_blueNoiseAnnealing.WriteScanline( Y, scanline );
-						}
+						m_blueNoiseAnnealing.WritePixels( ( uint X, uint Y, ref float4 _color ) => {
+							float2	V = texture[X,Y];
+							_color.Set( V.x, V.y, 0, 1.0f );
+						} );
 						break;
 					}
 				}
@@ -822,13 +817,11 @@ noiseValue = SimpleRNG.GetUniform() < 0.5 ? 0.5 * Math.Sqrt( 1.0 - noiseValue ) 
 
 			GeneratorVoidAndClusterGPU	generator = new GeneratorVoidAndClusterGPU( m_device, (uint) (Math.Log(m_blueNoiseVoidAndCluster.Width)/Math.Log(2.0)) );
 			generator.Generate( randomSeed, sigma_i, 0.025f, ( float _progress, float[,] _texture, List< float > _statistics ) => {
-				for ( uint Y=0; Y < textureSize; Y++ ) {
-					for ( uint X=0; X < textureSize; X++ ) {
-						float	V = _texture[X,Y];
-						scanline[X].Set( V, V, V, 1.0f );
-					}
-					m_blueNoiseVoidAndCluster.WriteScanline( Y, scanline );
-				}
+
+				m_blueNoiseVoidAndCluster.WritePixels( ( uint X, uint Y, ref float4 _color ) => {
+					float	V = _texture[X,Y];
+					_color.Set( V, V, V, 1.0f );
+				} );
 
 				if ( m_blueNoiseVoidAndCluster.Width < panelImage.Width )
 					panelImage.Bitmap = m_blueNoiseVoidAndCluster.AsTiledBitmap( (uint) panelImage.Width, (uint) panelImage.Height );
@@ -895,6 +888,18 @@ noiseValue = SimpleRNG.GetUniform() < 0.5 ? 0.5 * Math.Sqrt( 1.0 - noiseValue ) 
 
 		private void checkBoxShowDistribution_CheckedChanged( object sender, EventArgs e ) {
 			UpdatePanels();
+		}
+
+		private void buttonCombine_Click( object sender, EventArgs e ) {
+			uint		size = 64;
+			ImageFile	test = new ImageFile( new System.IO.FileInfo( "BlueNoise" + size + "x" + size + "_VoidAndCluster.png" ) );
+
+			CombineNoise	combine = new CombineNoise();
+			ImageFile		alignedLayers = combine.Combine( new ImageFile[] { test, test } );
+
+			alignedLayers.Save( new System.IO.FileInfo( "BlueNoise" + size + "x" + size + "_VoidAndCluster_2D.png" ) );
+
+			panelImage.Bitmap = alignedLayers.AsBitmap;
 		}
 	}
 }
