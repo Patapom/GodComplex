@@ -9,18 +9,21 @@ namespace SharpMath
     public struct Complex {
 		public double			r, i;
 
-//		public double			R
-//		{
-//			get { return r; }
-//			set { r = value; }
-//		}
-//
-//		public double			I
-//		{
-//			get { return i; }
-//			set { i = value; }
-//		}
-//
+		// Properties
+		public double				SquareMagnitude									{ get { return r * r + i * i; } }
+		public double				Magnitude										{ get { return System.Math.Sqrt( r * r + i * i ); } }
+		public double				Argument										{ get { return Math.Atan2( i, r ); } }
+
+		public double				this[int _index] {
+			get { return _index == 0 ? r : (_index == 1 ? i : double.NaN); }
+			set {
+				if ( _index == 0 )
+					r = value;
+				else if ( _index == 1 )
+					i = value;
+			}
+		}
+
 		// Constructors
 //		public						Complex()										{}
 		public						Complex( Complex _Source )						{ r = _Source.r; i = _Source.i; }
@@ -43,18 +46,14 @@ namespace SharpMath
 			return new Complex( _r >= 0.0f ? Math.Sqrt( _r ) : 0.0f,
 								_r < 0.0f ? Math.Sqrt( -_r ) : 0.0f );
 		}
-		public double				SquareMagnitude()								{ return r * r + i * i; }
-		public double				Magnitude()										{ return System.Math.Sqrt( r * r + i * i ); }
-		public double				Argument()										{ return Math.Atan2( i, r ); }
 		public Complex				Conjugate()										{ return new Complex( r, -i ); }
-		public Complex				Sqrt()											{ Complex R = new Complex(); R.SetPhasor( Math.Pow( SquareMagnitude(), .25 ), .5f * Argument() ); return R; }
+		public Complex				Sqrt()											{ Complex R = new Complex(); R.SetPhasor( Math.Pow( SquareMagnitude, .25 ), .5 * Argument ); return R; }
 
 		public override string		ToString() {
 			return	r.ToString() + " + i * " + i.ToString();
 		}
 
-//		public static Complex			Parse( string _Source )
-//		{
+//		public static Complex			Parse( string _Source ) {
 //			string[]	Members = _Source.Split( new System.Char[] { ';' } );
 //			if ( Members.Length != 3 )
 //				return	null;
@@ -69,16 +68,6 @@ namespace SharpMath
 		public float2				float2()	{
 			return new float2( (float) r, (float) i );
 		}
-		public double				this[int _Index] {
-			get { return _Index == 0 ? r : (_Index == 1 ? i : double.NaN); }
-			set
-			{
-				if ( _Index == 0 )
-					r = value;
-				else if ( _Index == 1 )
-					i = value;
-			}
-		}
 
 		// Arithmetic operators
 		public static Complex			operator-( Complex _Op0 )					{ return new Complex( -_Op0.r, -_Op0.i ); }
@@ -88,7 +77,7 @@ namespace SharpMath
 		public static Complex			operator*( Complex _Op0, Complex _Op1 )		{ return new Complex( _Op0.r * _Op1.r - _Op0.i * _Op1.i, _Op0.r * _Op1.i + _Op1.r * _Op0.i ); }
 		public static Complex			operator*( Complex _Op0, double _s )		{ return new Complex( _Op0.r * _s, _Op0.i * _s ); }
 		public static Complex			operator*( double _s, Complex _Op0 )		{ return new Complex( _Op0.r * _s, _Op0.i * _s ); }
-		public static Complex			operator/( Complex _Op0, Complex _Op1 )		{ double fISMagnitude = 1.0f / _Op1.SquareMagnitude(); return new Complex( (_Op0.r * _Op1.r + _Op0.i * _Op1.i) * fISMagnitude, (_Op0.i * _Op1.r - _Op0.r * _Op1.i) * fISMagnitude ); }
+		public static Complex			operator/( Complex _Op0, Complex _Op1 )		{ double fISMagnitude = 1.0f / _Op1.SquareMagnitude; return new Complex( (_Op0.r * _Op1.r + _Op0.i * _Op1.i) * fISMagnitude, (_Op0.i * _Op1.r - _Op0.r * _Op1.i) * fISMagnitude ); }
 		public static Complex			operator/( Complex _Op0, double _s )		{ double Is = 1.0f / _s; return new Complex( _Op0.r * Is, _Op0.i * Is ); }
 
 		// Logic operators
