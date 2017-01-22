@@ -76,10 +76,8 @@ namespace GenerateHeightMapFromNormalMap
 
 		protected override void OnLoad(EventArgs e) {
 			base.OnLoad(e);
-
 			m_device.Init( imagePanelHeight.Handle, false, true );
-
-			LoadNormalMap( new System.IO.FileInfo( "Example/normals.png" ) );
+//			LoadNormalMap( new System.IO.FileInfo( "Example/normals.png" ) );
 		}
 
 		protected override void OnFormClosing(FormClosingEventArgs e) {
@@ -101,7 +99,7 @@ namespace GenerateHeightMapFromNormalMap
 				double	isPOT = Math.Log( tempImageNormal.Width ) / Math.Log( 2.0 );
 				if (	tempImageNormal.Width != tempImageNormal.Height
 					|| (int) isPOT != isPOT ) {
-					throw new Exception( "The converter only supports square power-of-two textures!" );
+					throw new Exception( "The converter only supports square power-of-two textures!\r\nThis image is " + tempImageNormal.Width + "x" + tempImageNormal.Height );
 				}
 
 				// Replace existing
@@ -118,9 +116,11 @@ namespace GenerateHeightMapFromNormalMap
 				nx = new Complex[m_size,m_size];
 				ny = new Complex[m_size,m_size];
 
+				const float	pipo = 1.0f;	// Amplification test => no real change!
+
 				float3	normal = float3.Zero;
 				m_imageNormal.ReadPixels( ( uint X, uint Y, ref float4 _color ) => {
-					normal.Set( 2.0f * _color.x - 1.0f, 2.0f * _color.y - 1.0f, 2.0f * _color.z - 1.0f );
+					normal.Set( pipo * (2.0f * _color.x - 1.0f), pipo * (2.0f * _color.y - 1.0f), 2.0f * _color.z - 1.0f );
 					normal.Normalize();
 
 					double	fact = normal.z != 0.0 ? 1.0 / normal.z : 0.0;
