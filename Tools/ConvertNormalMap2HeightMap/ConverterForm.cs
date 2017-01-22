@@ -158,24 +158,26 @@ namespace GenerateHeightMapFromNormalMap
 
 		#region Conversion
 
-		private void Convert( bool _centralValue ) {
+		private void Convert( bool _centralValue, float _signX, float _signY ) {
 
-			// Initialize central-valued gradient filter
+			// Initialize gradient filter
 			Complex[,]	dx = new Complex[m_size,m_size];
 			Complex[,]	dy = new Complex[m_size,m_size];
 			Array.Clear( dx, 0, (int) (m_size*m_size) );
 			Array.Clear( dy, 0, (int) (m_size*m_size) );
 
 			if ( _centralValue ) {
-				dx[m_size-1,0].Set( -1, 0 );
-				dx[1,0].Set( 1, 0 );
-				dy[0,m_size-1].Set( 1, 0 );
-				dy[0,1].Set( -1, 0 );
+				// Central-difference
+				dx[m_size-1,0].Set( -_signX, 0 );
+				dx[1,0].Set( _signX, 0 );
+				dy[0,m_size-1].Set( _signY, 0 );
+				dy[0,1].Set( -_signY, 0 );
 			} else {
-				dx[0,0].Set( -1, 0 );
-				dx[1,0].Set( 1, 0 );
-				dy[0,m_size-1].Set( 1, 0 );
-				dy[0,0].Set( -1, 0 );
+				// One-sided difference
+				dx[0,0].Set( -_signX, 0 );
+				dx[1,0].Set( _signX, 0 );
+				dy[0,0].Set( _signY, 0 );
+				dy[0,1].Set( -_signY, 0 );
 			}
 
 			// Apply forward Fourier transform to obtain spectrum
@@ -240,6 +242,8 @@ namespace GenerateHeightMapFromNormalMap
 			}
 
 			factor = 1.0f / (float) (heightMax.r - heightMin.r);
+// heightMin.r = -1.0f;
+// factor = 0.5f;
 
 			m_imageHeight = new ImageFile( m_imageNormal.Width, m_imageNormal.Height, ImageFile.PIXEL_FORMAT.R16, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
 //			m_imageHeight.WritePixels( ( uint X, uint Y, ref float4 _color ) => { _color.x = 1e3f * (float) H[X,Y].Magnitude; } );
@@ -264,7 +268,7 @@ namespace GenerateHeightMapFromNormalMap
 
 		private void buttonConvert_Click(object sender, EventArgs e) {
 			try {
-				Convert( true );
+				Convert( true, radioButtonRight.Checked ? 1.0f : -1.0f, radioButtonTop.Checked ? 1.0f : -1.0f );
 			} catch ( Exception _e ) {
 				MessageBox( "An error occurred during conversion:\r\n\r\n" + _e.Message, MessageBoxButtons.OK, MessageBoxIcon.Error );
 			}
@@ -272,7 +276,7 @@ namespace GenerateHeightMapFromNormalMap
 
 		private void buttonConvertOneSided_Click( object sender, EventArgs e ) {
 			try {
-				Convert( false );
+				Convert( false, radioButtonRight.Checked ? 1.0f : -1.0f, radioButtonTop.Checked ? 1.0f : -1.0f );
 			} catch ( Exception _e ) {
 				MessageBox( "An error occurred during conversion:\r\n\r\n" + _e.Message, MessageBoxButtons.OK, MessageBoxIcon.Error );
 			}

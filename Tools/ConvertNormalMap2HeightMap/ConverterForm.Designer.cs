@@ -34,6 +34,16 @@
 			this.saveFileDialog = new System.Windows.Forms.SaveFileDialog();
 			this.buttonConvert = new System.Windows.Forms.Button();
 			this.buttonConvertOneSided = new System.Windows.Forms.Button();
+			this.panel1 = new System.Windows.Forms.Panel();
+			this.radioButtonLeft = new System.Windows.Forms.RadioButton();
+			this.label1 = new System.Windows.Forms.Label();
+			this.radioButtonRight = new System.Windows.Forms.RadioButton();
+			this.panel2 = new System.Windows.Forms.Panel();
+			this.label2 = new System.Windows.Forms.Label();
+			this.radioButtonBottom = new System.Windows.Forms.RadioButton();
+			this.radioButtonTop = new System.Windows.Forms.RadioButton();
+			this.panel1.SuspendLayout();
+			this.panel2.SuspendLayout();
 			this.SuspendLayout();
 			// 
 			// imagePanelNormal
@@ -69,7 +79,7 @@
 			// openFileDialog
 			// 
 			this.openFileDialog.DefaultExt = "*.png";
-			this.openFileDialog.Filter = "Image Files|*.png,*.tga,*.jpg|All Files|*.*";
+			this.openFileDialog.Filter = "Image Files|*.png;*.tga;*.jpg|All Files|*.*";
 			// 
 			// saveFileDialog
 			// 
@@ -79,7 +89,7 @@
 			// buttonConvert
 			// 
 			this.buttonConvert.Enabled = false;
-			this.buttonConvert.Location = new System.Drawing.Point(570, 199);
+			this.buttonConvert.Location = new System.Drawing.Point(571, 213);
 			this.buttonConvert.Name = "buttonConvert";
 			this.buttonConvert.Size = new System.Drawing.Size(108, 23);
 			this.buttonConvert.TabIndex = 1;
@@ -90,7 +100,7 @@
 			// buttonConvertOneSided
 			// 
 			this.buttonConvertOneSided.Enabled = false;
-			this.buttonConvertOneSided.Location = new System.Drawing.Point(570, 228);
+			this.buttonConvertOneSided.Location = new System.Drawing.Point(571, 242);
 			this.buttonConvertOneSided.Name = "buttonConvertOneSided";
 			this.buttonConvertOneSided.Size = new System.Drawing.Size(108, 23);
 			this.buttonConvertOneSided.TabIndex = 1;
@@ -98,11 +108,95 @@
 			this.buttonConvertOneSided.UseVisualStyleBackColor = true;
 			this.buttonConvertOneSided.Click += new System.EventHandler(this.buttonConvertOneSided_Click);
 			// 
+			// panel1
+			// 
+			this.panel1.Controls.Add(this.label1);
+			this.panel1.Controls.Add(this.radioButtonRight);
+			this.panel1.Controls.Add(this.radioButtonLeft);
+			this.panel1.Location = new System.Drawing.Point(530, 155);
+			this.panel1.Name = "panel1";
+			this.panel1.Size = new System.Drawing.Size(186, 18);
+			this.panel1.TabIndex = 2;
+			// 
+			// radioButtonLeft
+			// 
+			this.radioButtonLeft.AutoSize = true;
+			this.radioButtonLeft.Location = new System.Drawing.Point(94, -2);
+			this.radioButtonLeft.Name = "radioButtonLeft";
+			this.radioButtonLeft.Size = new System.Drawing.Size(39, 17);
+			this.radioButtonLeft.TabIndex = 0;
+			this.radioButtonLeft.Text = "left";
+			this.radioButtonLeft.UseVisualStyleBackColor = true;
+			// 
+			// label1
+			// 
+			this.label1.AutoSize = true;
+			this.label1.Location = new System.Drawing.Point(-2, 0);
+			this.label1.Name = "label1";
+			this.label1.Size = new System.Drawing.Size(88, 13);
+			this.label1.TabIndex = 1;
+			this.label1.Text = "Red points to the";
+			// 
+			// radioButtonRight
+			// 
+			this.radioButtonRight.AutoSize = true;
+			this.radioButtonRight.Checked = true;
+			this.radioButtonRight.Location = new System.Drawing.Point(131, -2);
+			this.radioButtonRight.Name = "radioButtonRight";
+			this.radioButtonRight.Size = new System.Drawing.Size(45, 17);
+			this.radioButtonRight.TabIndex = 0;
+			this.radioButtonRight.TabStop = true;
+			this.radioButtonRight.Text = "right";
+			this.radioButtonRight.UseVisualStyleBackColor = true;
+			// 
+			// panel2
+			// 
+			this.panel2.Controls.Add(this.radioButtonBottom);
+			this.panel2.Controls.Add(this.radioButtonTop);
+			this.panel2.Controls.Add(this.label2);
+			this.panel2.Location = new System.Drawing.Point(530, 179);
+			this.panel2.Name = "panel2";
+			this.panel2.Size = new System.Drawing.Size(191, 18);
+			this.panel2.TabIndex = 2;
+			// 
+			// label2
+			// 
+			this.label2.AutoSize = true;
+			this.label2.Location = new System.Drawing.Point(-2, 0);
+			this.label2.Name = "label2";
+			this.label2.Size = new System.Drawing.Size(97, 13);
+			this.label2.TabIndex = 1;
+			this.label2.Text = "Green points to the";
+			// 
+			// radioButtonBottom
+			// 
+			this.radioButtonBottom.AutoSize = true;
+			this.radioButtonBottom.Location = new System.Drawing.Point(131, -2);
+			this.radioButtonBottom.Name = "radioButtonBottom";
+			this.radioButtonBottom.Size = new System.Drawing.Size(57, 17);
+			this.radioButtonBottom.TabIndex = 0;
+			this.radioButtonBottom.Text = "bottom";
+			this.radioButtonBottom.UseVisualStyleBackColor = true;
+			// 
+			// radioButtonTop
+			// 
+			this.radioButtonTop.AutoSize = true;
+			this.radioButtonTop.Checked = true;
+			this.radioButtonTop.Location = new System.Drawing.Point(94, -2);
+			this.radioButtonTop.Name = "radioButtonTop";
+			this.radioButtonTop.Size = new System.Drawing.Size(40, 17);
+			this.radioButtonTop.TabIndex = 0;
+			this.radioButtonTop.TabStop = true;
+			this.radioButtonTop.Text = "top";
+			this.radioButtonTop.UseVisualStyleBackColor = true;
+			// 
 			// TransformForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1246, 544);
+			this.Controls.Add(this.panel2);
+			this.Controls.Add(this.panel1);
 			this.Controls.Add(this.buttonConvertOneSided);
 			this.Controls.Add(this.buttonConvert);
 			this.Controls.Add(this.imagePanelHeight);
@@ -111,6 +205,10 @@
 			this.Name = "TransformForm";
 			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
 			this.Text = "Normal Map To Height Map Converter";
+			this.panel1.ResumeLayout(false);
+			this.panel1.PerformLayout();
+			this.panel2.ResumeLayout(false);
+			this.panel2.PerformLayout();
 			this.ResumeLayout(false);
 
 		}
@@ -123,6 +221,14 @@
 		private System.Windows.Forms.SaveFileDialog saveFileDialog;
 		private System.Windows.Forms.Button buttonConvert;
 		private System.Windows.Forms.Button buttonConvertOneSided;
+		private System.Windows.Forms.Panel panel1;
+		private System.Windows.Forms.Label label1;
+		private System.Windows.Forms.RadioButton radioButtonLeft;
+		private System.Windows.Forms.RadioButton radioButtonRight;
+		private System.Windows.Forms.Panel panel2;
+		private System.Windows.Forms.RadioButton radioButtonBottom;
+		private System.Windows.Forms.RadioButton radioButtonTop;
+		private System.Windows.Forms.Label label2;
 	}
 }
 
