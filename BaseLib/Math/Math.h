@@ -125,10 +125,10 @@ public:
 	bfloat3		Cross( const bfloat3& v ) const			{ return bfloat3( y*v.z - z*v.y, v.x*z - v.z*x, x*v.y - y*v.x ); }
 
 	// bmayaux (2016-01-04) Original code from http://orbit.dtu.dk/files/57573287/onb_frisvad_jgt2012.pdf
-	// Builds up the 2 remaining vectors to form an orthonormal basis
+	// Builds up the 2 remaining vectors to form an orthonormal basis, assuming this vector is the "right" direction
 	// Expected "this" to be normalized!
 	// This code doesn't involve any square root!
-	void		OrthogonalBasis( bfloat3& left, bfloat3& up ) const;
+	void		OrthogonalBasis( bfloat3& _left, bfloat3& _up ) const;
 
 	float&		operator[]( int _index )				{ return (&x)[_index%3]; }
 	const float&operator[]( int _index ) const			{ return (&x)[_index%3]; }

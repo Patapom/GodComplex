@@ -8,9 +8,6 @@
     <StartWorkingDirectory>D:\Workspaces\GodComplex\Tools\TestFilmCurve\</StartWorkingDirectory>
     <EnableUnmanagedDebugging>true</EnableUnmanagedDebugging>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug DirectX10|x86'">
-    <StartWorkingDirectory>D:\Workspaces\GodComplex\Tools\TestFilmCurve\</StartWorkingDirectory>
-  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
     <StartWorkingDirectory>D:\Workspaces\GodComplex\Tools\TestFilmCurve\</StartWorkingDirectory>
   </PropertyGroup>
@@ -21,12 +18,6 @@
     <StartWorkingDirectory>D:\Workspaces\GodComplex\Tools\TestFilmCurve\</StartWorkingDirectory>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
-    <StartWorkingDirectory>D:\Workspaces\GodComplex\Tools\TestFilmCurve\</StartWorkingDirectory>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug DirectX10|x64'">
-    <StartWorkingDirectory>D:\Workspaces\GodComplex\Tools\TestFilmCurve\</StartWorkingDirectory>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug DirectX10|AnyCPU'">
     <StartWorkingDirectory>D:\Workspaces\GodComplex\Tools\TestFilmCurve\</StartWorkingDirectory>
   </PropertyGroup>
 </Project>

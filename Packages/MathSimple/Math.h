@@ -150,6 +150,24 @@ namespace SharpMath {
 							x * b.y - y * b.x );
 		}
 
+		// bmayaux (2016-01-04) Original code from http://orbit.dtu.dk/files/57573287/onb_frisvad_jgt2012.pdf
+		// Builds up the 2 remaining vectors to form an orthonormal basis, assuming this vector is the "right" direction
+		// Expected "this" to be normalized!
+		// This code doesn't involve any square root!
+		void	OrthogonalBasis( float3% _left, float3% _up ) {
+			if ( z < -0.9999999f ) {
+				// Handle the singularity
+				_left.Set( 0.0f, -1.0f, 0.0f );
+				_up.Set( -1.0f, 0.0f, 0.0f );
+				return;
+			}
+
+			const float	a = 1.0f / (1.0f + z);
+			const float	b = -x*y*a;
+			_left.Set( 1.0f - x*x*a, b, -x );
+			_up.Set( b, 1.0f - y*y*a, -y );
+		}
+
 		static bool			operator==( float3^ _Op0, float3^ _Op1 )	{ return Math::Abs( _Op0->x - _Op1->x ) < float::Epsilon && Math::Abs( _Op0->y - _Op1->y ) < float::Epsilon && Math::Abs( _Op0->z - _Op1->z ) < float::Epsilon; }
 		static bool			operator!=( float3^ _Op0, float3^ _Op1 )	{ return Math::Abs( _Op0->x - _Op1->x ) > float::Epsilon || Math::Abs( _Op0->y - _Op1->y ) > float::Epsilon || Math::Abs( _Op0->z - _Op1->z ) > float::Epsilon; }
 
@@ -354,6 +372,22 @@ namespace SharpMath {
 			float3x3	get() {
 				return float3x3( 1, 0, 0, 0, 1, 0, 0, 0, 1 );
 			}
+		}
+
+		// Generates the rotation matrix that rotates the _Source vector into the _Target vector
+		float3x3	BuildRot( float3 _source, float3 _target ) {
+			float3	ortho = _source.Cross( _target );
+			float	length = ortho.Length;
+			ortho = length > 1e-6f ? ortho / length : float3::UnitX;
+			float	angle = (float) Math::Asin( length );
+			return BuildFromAngleAxis( angle, ortho );
+		}
+		// (2016-01-06) Builds the remaining 2 orthogonal vectors from a given vector (very fast! no normalization or square root involved!)
+		// Original code from http://orbit.dtu.dk/files/57573287/onb_frisvad_jgt2012.pdf
+		float3x3	BuildRot( float3 _vector ) {
+			r0 = _vector;
+			_vector.OrthogonalBasis( r1, r2 );
+			return *this;
 		}
 
 		float3x3	BuildRotationX( float _Angle ) {

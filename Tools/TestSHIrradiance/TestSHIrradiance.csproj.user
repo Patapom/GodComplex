@@ -14,4 +14,10 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
     <StartWorkingDirectory>D:\Workspaces\GodComplex\Tools\TestSHIrradiance\</StartWorkingDirectory>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
+    <StartWorkingDirectory>D:\Workspaces\GodComplex\Tools\TestSHIrradiance\</StartWorkingDirectory>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
+    <StartWorkingDirectory>D:\Workspaces\GodComplex\Tools\TestSHIrradiance\</StartWorkingDirectory>
+  </PropertyGroup>
 </Project>
