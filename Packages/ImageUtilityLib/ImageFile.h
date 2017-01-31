@@ -65,20 +65,37 @@ namespace ImageUtilityLib {
 		// The delegate used to tone map an HDR image into a LDR color (warning: any returned value above 1 will be clamped!)
 		typedef void	(*pixelReaderWriter_t)( U32 _X, U32 _Y, bfloat4& _Color );
 
-		// This enum matches the classes available in PixelFormat.h (which in turn match the DXGI formats)
+		// This enum matches most of the the classes available in BaseLib\PixelFormat.h (which in turn match the DXGI formats)
+		//
+		// Some formats are not supported natively by FreeImage (e.g. RG8, RG16, RG32, etc.) so I made them use the format
+		//	whose size is immediately larger (e.g. RG8 use RGB8, RG16 uses RGB16, etc.) and allocating larger scanlines each time.
+		// Here is an example of a scanline representation for a 8x2 RG8 image, internally supported by an RGB8 image:
+		//
+		//	RGB8 Pixel Index	[  0  |  1  |  2  |  3  |  4  |  5  |  6  |  7  ]
+		//		Scanline 0 >	|R|G|R|G|R|G|R|G|R|G|R|G|R|G|R|G| | | | | | | | |
+		//		Scanline 1 >	|R|G|R|G|R|G|R|G|R|G|R|G|R|G|R|G| | | | | | | | |
+		//
+		// We lose some memory (usually 33% larger) but in turn we get these advantages:
+		//	• We can use images with the appropriate width (i.e. I didn't try to reduce the width to use the least possible memory overhead otherwise the user would have to deal with nightmarish width conversions and pixel size management)
+		//	• We can still read and write sequentially to each scanline without having to skip some components (cf. figure above), we just need to skip the appropriate padding at the end of each scanline
+		//	• Loading a DDS file into a texture, or writing a texture into a DDS file is quite painless
+		//	• Creating procedural DDS files or textures with these formats is also quite easy
+		//
+		// The only problem with these formats is that they cannot be loaded, saved or converted by FreeImage methods otherwise you will get garbage!
+		//
 		enum class PIXEL_FORMAT : U32 {
 			UNKNOWN = ~0U,
-			NOT_NATIVELY_SUPPORTED = 0x80000000U,	// This flag is used by formats that are not natively supported by FreeImage
+			NOT_NATIVELY_SUPPORTED = 0x80000000U,	// This flag is used by formats that are not natively supported by FreeImage and that CANNOT BE LOADED OR SAVED (unless using DDS-related methods)!
 
 			// 8-bits
 			R8		= 0,
-//			RG8		= 1,		<== FreeImage believes it's R5G6B5!!!
+			RG8		= 1		| NOT_NATIVELY_SUPPORTED,	// FreeImage thinks it's R5G6B5! Aliased as RGBA8
 			RGB8	= 2,
 			RGBA8	= 3,
 
 			// 16-bits
 			R16		= 4,
-//			RG16	= 5,		// Unsupported
+			RG16	= 5		| NOT_NATIVELY_SUPPORTED,	// Unsupported by FreeImage, aliased as RGBA16
 			RGB16	= 6,
 			RGBA16	= 7,
 
@@ -95,7 +112,7 @@ namespace ImageUtilityLib {
 
 			// 32-bits
 			R32F	= 12,
-//			RG32F	= 13,		// Unsupported
+			RG32F	= 13	| NOT_NATIVELY_SUPPORTED,	// Unsupported by FreeImage, aliased as RGBA32F
 			RGB32F	= 14,
 			RGBA32F = 15,
 		};
@@ -425,16 +442,19 @@ namespace ImageUtilityLib {
 
 
 	private:
-		static U32					PixelFormat2BPP( PIXEL_FORMAT _pixelFormat );
 
-		static FREE_IMAGE_TYPE		PixelFormat2FIT( PIXEL_FORMAT _pixelFormat );
-		static PIXEL_FORMAT			Bitmap2PixelFormat( const FIBITMAP& _bitmap );
+		static void			DDSLoadCubeMap( const void* _blindPointerImage, const void* _blindPointerMetaData, U32& _cubeMapsCount, ImageFile*& _cubeMapFaces );
 
-		static FILE_FORMAT			FIF2FileFormat( FREE_IMAGE_FORMAT _format )	{ return FILE_FORMAT( _format ); }
-		static FREE_IMAGE_FORMAT	FileFormat2FIF( FILE_FORMAT _format )		{ return FREE_IMAGE_FORMAT( _format ); }
+	private:
+		static U32						PixelFormat2BPP( PIXEL_FORMAT _pixelFormat );
+
+		static FREE_IMAGE_TYPE			PixelFormat2FIT( PIXEL_FORMAT _pixelFormat );
+		static PIXEL_FORMAT				Bitmap2PixelFormat( const FIBITMAP& _bitmap );
+
+		static FILE_FORMAT				FIF2FileFormat( FREE_IMAGE_FORMAT _format )	{ return FILE_FORMAT( _format ); }
+		static FREE_IMAGE_FORMAT		FileFormat2FIF( FILE_FORMAT _format )		{ return FREE_IMAGE_FORMAT( _format ); }
 
 		static const IPixelAccessor&	GetPixelFormatAccessor( PIXEL_FORMAT _pixelFormat );
-
 
 	private:	// Ref-counting for free image lib init/release
 		static U32		ms_freeImageUsageRefCount;

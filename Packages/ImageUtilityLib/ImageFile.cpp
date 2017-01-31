@@ -57,13 +57,13 @@ const IPixelAccessor&	ImageFile::GetPixelFormatAccessor( PIXEL_FORMAT _pixelForm
 	switch ( _pixelFormat ) {
 		// 8-bits
 	case PIXEL_FORMAT::R8:			return PF_R8::Descriptor;
-//	case PIXEL_FORMAT::RG8:			return PF_RG8::Descriptor;		// Unsupported
+	case PIXEL_FORMAT::RG8:			return PF_RG8::Descriptor;
 	case PIXEL_FORMAT::RGB8:		return PF_RGB8::Descriptor;
 	case PIXEL_FORMAT::RGBA8:		return PF_RGBA8::Descriptor;
 
 		// 16-bits
 	case PIXEL_FORMAT::R16:			return PF_R16::Descriptor;
-//	case PIXEL_FORMAT::RG16,		return PF_RG16::Descriptor;		// Unsupported
+	case PIXEL_FORMAT::RG16:		return PF_RG16::Descriptor;
 	case PIXEL_FORMAT::RGB16:		return PF_RGB16::Descriptor;
 	case PIXEL_FORMAT::RGBA16:		return PF_RGBA16::Descriptor;
 
@@ -75,7 +75,7 @@ const IPixelAccessor&	ImageFile::GetPixelFormatAccessor( PIXEL_FORMAT _pixelForm
 
 		// 32-bits
 	case PIXEL_FORMAT::R32F:		return PF_R32F::Descriptor;
-// 	case PIXEL_FORMAT::RG32F:		return PF_RG32F::Descriptor;	// Unsupported
+ 	case PIXEL_FORMAT::RG32F:		return PF_RG32F::Descriptor;
 	case PIXEL_FORMAT::RGB32F:		return PF_RGB32F::Descriptor;
 	case PIXEL_FORMAT::RGBA32F:		return PF_RGBA32F::Descriptor;
 	}
@@ -356,7 +356,7 @@ void	ImageFile::ToneMapFrom( const ImageFile& _source, toneMapper_t _toneMapper 
 	case PIXEL_FORMAT::RGB16F:
 	case PIXEL_FORMAT::RGBA16F:
 	case PIXEL_FORMAT::R32F:
-//	case PIXEL_FORMAT::RG32F:
+	case PIXEL_FORMAT::RG32F:
 	case PIXEL_FORMAT::RGB32F:
 	case PIXEL_FORMAT::RGBA32F:
 		break;	// Okay!
@@ -402,8 +402,7 @@ void	ImageFile::ToneMapFrom( const ImageFile& _source, toneMapper_t _toneMapper 
 		}
 	// ===============================================================================
 	} else if (	_source.m_pixelFormat == ImageFile::PIXEL_FORMAT::RG16F
-//			 || _source.m_pixelFormat == ImageFile::PIXEL_FORMAT::RG32F ) {
-		) {
+			 || _source.m_pixelFormat == ImageFile::PIXEL_FORMAT::RG32F ) {
 		// Convert to RG8
 		m_bitmap = FreeImage_Allocate( W, H, 16, FI_RGBA_RED_MASK, FI_RGBA_GREEN_MASK, 0 );
 
@@ -651,25 +650,25 @@ U32	ImageFile::PixelFormat2BPP( PIXEL_FORMAT _pixelFormat ) {
 	switch (_pixelFormat ) {
 		// 8-bits
 		case PIXEL_FORMAT::R8:		return 8;
-//		case PIXEL_FORMAT::RG8:		return 16;	// Unsupported
+		case PIXEL_FORMAT::RG8:		return 24;	// Supported as RGB8, otherwise FreeImage thinks it's R5G6B5! :(
 		case PIXEL_FORMAT::RGB8:	return 24;
 		case PIXEL_FORMAT::RGBA8:	return 32;
 
 		// 16-bits
 		case PIXEL_FORMAT::R16:		return 16;
-//		case PIXEL_FORMAT::RG16:	return 32;	// Unsupported
+		case PIXEL_FORMAT::RG16:	return 48;	// Supported as RGB16
 		case PIXEL_FORMAT::RGB16:	return 48;
 		case PIXEL_FORMAT::RGBA16:	return 64;
 
 		// 16-bits half-precision floating points
 		case PIXEL_FORMAT::R16F:	return 16;
-		case PIXEL_FORMAT::RG16F:	return 32;
+		case PIXEL_FORMAT::RG16F:	return 48;	// Supported as RGB16F
 		case PIXEL_FORMAT::RGB16F:	return 48;
 		case PIXEL_FORMAT::RGBA16F:	return 64;
 
 		// 32-bits
 		case PIXEL_FORMAT::R32F:	return 32;
-//		case PIXEL_FORMAT::RG32F:	return 64;	// Unsupported
+		case PIXEL_FORMAT::RG32F:	return 96;	// Supported as RGB32F
 		case PIXEL_FORMAT::RGB32F:	return 96;
 		case PIXEL_FORMAT::RGBA32F:	return 128;
 	};
@@ -682,22 +681,22 @@ FREE_IMAGE_TYPE	ImageFile::PixelFormat2FIT( PIXEL_FORMAT _pixelFormat ) {
 	switch ( _pixelFormat ) {
 		// 8-bits
 		case ImageFile::PIXEL_FORMAT::R8:		return FIT_BITMAP;
-//		case ImageFile::PIXEL_FORMAT::RG8:		return FIT_BITMAP;	// Unsupported
+		case ImageFile::PIXEL_FORMAT::RG8:		return FIT_BITMAP;	// Here we unfortunately have to use a larger format to accommodate for our 2 components, otherwise FreeImage thinks it's R5G6B5! :(
 		case ImageFile::PIXEL_FORMAT::RGB8:		return FIT_BITMAP;
 		case ImageFile::PIXEL_FORMAT::RGBA8:	return FIT_BITMAP;
 		// 16-bits
 		case ImageFile::PIXEL_FORMAT::R16:		return FIT_UINT16;
-//		case ImageFile::PIXEL_FORMAT::RG16:		// Unsupported
+		case ImageFile::PIXEL_FORMAT::RG16:		return FIT_RGB16;	// Here we unfortunately have to use a larger format to accommodate for our 2 components
 		case ImageFile::PIXEL_FORMAT::RGB16:	return FIT_RGB16;
 		case ImageFile::PIXEL_FORMAT::RGBA16:	return FIT_RGBA16;
 		// 16-bits half-precision floating points
 		case ImageFile::PIXEL_FORMAT::R16F:		return FIT_UINT16;
-		case ImageFile::PIXEL_FORMAT::RG16F:	return FIT_RGB16;	// Here we unfortunately have to use a larger format to accomodate for our 2 components
+		case ImageFile::PIXEL_FORMAT::RG16F:	return FIT_RGB16;	// Here we unfortunately have to use a larger format to accommodate for our 2 components
 		case ImageFile::PIXEL_FORMAT::RGB16F:	return FIT_RGB16;
 		case ImageFile::PIXEL_FORMAT::RGBA16F:	return FIT_RGBA16;
 		// 32-bits
 		case ImageFile::PIXEL_FORMAT::R32F:		return FIT_FLOAT;
-//		case ImageFile::PIXEL_FORMAT::RG32F:	// Unsupported
+		case ImageFile::PIXEL_FORMAT::RG32F:	return FIT_RGBF;	// Here we unfortunately have to use a larger format to accommodate for our 2 components
 		case ImageFile::PIXEL_FORMAT::RGB32F:	return FIT_RGBF;
 		case ImageFile::PIXEL_FORMAT::RGBA32F:	return FIT_RGBAF;
 	}
@@ -713,7 +712,7 @@ ImageFile::PIXEL_FORMAT	ImageFile::Bitmap2PixelFormat( const FIBITMAP& _bitmap )
 			U32	bpp = FreeImage_GetBPP( const_cast< FIBITMAP* >( &_bitmap ) );
 			switch ( bpp ) {
 				case 8:							return PIXEL_FORMAT::R8;
-//				case 16:						return PIXEL_FORMAT::RG8;	// Unsupported
+				case 16:						return PIXEL_FORMAT::RG8;	// Supported as RGBA8 with padding, otherwise FreeImage thinks it's R5G6B5! :(
 				case 24:						return PIXEL_FORMAT::RGB8;
 				case 32:						return PIXEL_FORMAT::RGBA8;
 			}
@@ -1202,6 +1201,39 @@ void	ImageFile::ImageCoordinates2RangedCoordinates( const bfloat2& _rangeX, cons
 //////////////////////////////////////////////////////////////////////////
 // DDS-Related Helpers
 //
+static void	DDSLoadFile( const wchar_t* _fileName, DirectX::ScratchImage& _texture, DirectX::TexMetadata& _metadata ) {
+	DWORD	flags = DirectX::DDS_FLAGS_NONE;
+	HRESULT	hResult = DirectX::LoadFromDDSFile( _fileName, flags, &_metadata, _texture );
+	if ( hResult != S_OK ) {
+		throw "An error occurred while loading the DDS file!";
+	}
+}
+static void	DDSLoadMemory( U64 _fileSize, void* _fileContent, DirectX::ScratchImage& _texture, DirectX::TexMetadata& _metadata ) {
+	DWORD	flags = DirectX::DDS_FLAGS_NONE;
+	HRESULT	hResult = DirectX::LoadFromDDSMemory( _fileContent, _fileSize, flags, &_metadata, _texture );
+	if ( hResult != S_OK ) {
+		throw "An error occurred while loading the DDS file!";
+	}
+}
+
+static void	DDSSaveFile( const wchar_t* _fileName, DirectX::Image& _image ) {
+	DWORD	flags = DirectX::DDS_FLAGS_FORCE_RGB | DirectX::DDS_FLAGS_NO_16BPP | DirectX::DDS_FLAGS_EXPAND_LUMINANCE | DirectX::DDS_FLAGS_FORCE_DX10_EXT;
+	HRESULT	hResult = DirectX::SaveToDDSFile( _image, flags, _fileName );
+	if ( hResult != S_OK ) {
+		throw "An error occurred while saving the DDS file!";
+	}
+}
+static void	DDSSaveMemory( U64 _fileSize, void* _fileContent, DirectX::Image& _image ) {
+	DirectX::Blob	blob;
+	blob.Initialize( _fileSize );
+	memcpy_s( blob.GetBufferPointer(), blob.GetBufferSize(), _fileContent, _fileSize );
+
+	DWORD	flags = DirectX::DDS_FLAGS_FORCE_RGB | DirectX::DDS_FLAGS_NO_16BPP | DirectX::DDS_FLAGS_EXPAND_LUMINANCE | DirectX::DDS_FLAGS_FORCE_DX10_EXT;
+	HRESULT	hResult = DirectX::SaveToDDSMemory( _image, flags, blob );
+	if ( hResult != S_OK ) {
+		throw "An error occurred while loading the DDS file!";
+	}
+}
 
 // Compresses a single image
 void	ImageFile::DDSCompress( COMPRESSION_TYPE _compressionType, U32& _compressedImageSize, void*& _compressedImage ) {
@@ -1215,10 +1247,120 @@ void	ImageFile::DDSSaveFromMemory( U32 _DDSImageSize, const void* _DDSImage, con
 
 // Cube map handling
 void	ImageFile::DDSLoadCubeMapFile( const wchar_t* _fileName, U32& _cubeMapsCount, ImageFile*& _cubeMapFaces ) {
+	// Load the image
+	DirectX::ScratchImage*	DXT = new DirectX::ScratchImage();
+	DirectX::TexMetadata	meta;
+	DDSLoadFile( _fileName, *DXT, meta );
 
+	// Convert into an array of ImageFile slices
+
+	delete DXT;
 }
 void	ImageFile::DDSLoadCubeMapMemory( U64 _fileSize, void* _fileContent, U32& _cubeMapsCount, ImageFile*& _cubeMapFaces ) {
+	// Load the image
+	DirectX::ScratchImage*	DXT = new DirectX::ScratchImage();
+	DirectX::TexMetadata	meta;
+	DDSLoadMemory( _fileSize, _fileContent, *DXT, meta );
 
+	// Convert into an array of ImageFile slices
+
+	delete DXT;
+}
+void	ImageFile::DDSLoadCubeMap( const void* _blindPointerImage, const void* _blindPointerMetaData, U32& _cubeMapsCount, ImageFile*& _cubeMapFaces ) {
+	const DirectX::ScratchImage&	image = *reinterpret_cast<const DirectX::Image*>( _blindPointerImage );
+	const DirectX::TexMetadata&		meta = *reinterpret_cast<const DirectX::TexMetadata*>( _blindPointerMetaData );
+
+	// Retrieve supported format
+	PIXEL_FORMAT	format = PIXEL_FORMAT::UNKNOWN;
+	int	pixelSize = 0;
+	switch ( meta.format ) {
+		case DXGI_FORMAT_R8_UINT:
+		case DXGI_FORMAT_R8_SINT:
+		case DXGI_FORMAT_R8_SNORM:
+		case DXGI_FORMAT_R8_UNORM:				format = PIXEL_FORMAT::R8;					pixelSize = 1; break;
+
+		case DXGI_FORMAT_R8G8_UINT:
+		case DXGI_FORMAT_R8G8_SINT:
+		case DXGI_FORMAT_R8G8_SNORM:
+		case DXGI_FORMAT_R8G8_UNORM:			format = PIXEL_FORMAT::RG8;					pixelSize = 2; break;
+
+		case DXGI_FORMAT_R8G8B8A8_UINT:
+		case DXGI_FORMAT_R8G8B8A8_SINT:
+		case DXGI_FORMAT_R8G8B8A8_SNORM:
+		case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB:
+		case DXGI_FORMAT_R8G8B8A8_UNORM:		format = PIXEL_FORMAT::RGBA8;				pixelSize = 4; break;
+
+		case DXGI_FORMAT_R16_UINT:
+		case DXGI_FORMAT_R16_SINT:
+		case DXGI_FORMAT_R16_SNORM:
+		case DXGI_FORMAT_R16_UNORM:				format = PIXEL_FORMAT::R16;					pixelSize = 2; break;
+		case DXGI_FORMAT_R16_FLOAT:				format = PIXEL_FORMAT::R16F;				pixelSize = 2; break;
+
+		case DXGI_FORMAT_R16G16_UINT:
+		case DXGI_FORMAT_R16G16_SINT:
+		case DXGI_FORMAT_R16G16_SNORM:
+		case DXGI_FORMAT_R16G16_UNORM:			format = PIXEL_FORMAT::RG16;				pixelSize = 4; break;
+		case DXGI_FORMAT_R16G16_FLOAT:			format = PIXEL_FORMAT::RG16F;				pixelSize = 4; break;
+
+		case DXGI_FORMAT_R16G16B16A16_UINT:
+		case DXGI_FORMAT_R16G16B16A16_SINT:
+		case DXGI_FORMAT_R16G16B16A16_SNORM:
+		case DXGI_FORMAT_R16G16B16A16_UNORM:	format = PIXEL_FORMAT::RGBA16;				pixelSize = 8; break;
+		case DXGI_FORMAT_R16G16B16A16_FLOAT:	format = PIXEL_FORMAT::RGBA16F;				pixelSize = 8; break;
+
+// 		case DXGI_FORMAT_R32_UINT:
+// 		case DXGI_FORMAT_R32_SINT:				format = PIXEL_FORMAT::R32;					pixelSize = 4; break;	// Unsupported!
+		case DXGI_FORMAT_R32_FLOAT:				format = PIXEL_FORMAT::R32F;				pixelSize = 4; break;
+
+// 		case DXGI_FORMAT_R32G32_UINT:
+// 		case DXGI_FORMAT_R32G32_SINT:			format = PIXEL_FORMAT::RG32;				pixelSize = 8; break;	// Unsupported!
+		case DXGI_FORMAT_R32G32_FLOAT:			format = PIXEL_FORMAT::RG32F;				pixelSize = 8; break;
+
+// 		case DXGI_FORMAT_R32G32B32A32_UINT:
+// 		case DXGI_FORMAT_R32G32B32A32_SINT:		format = PIXEL_FORMAT::RGBA32;				pixelSize = 16; break;	// Unsupported!
+		case DXGI_FORMAT_R32G32B32A32_FLOAT:	format = PIXEL_FORMAT::RGBA32F;				pixelSize = 16; break;
+
+// How to support compressed formats? Generic RGBA8 container?
+// 		case DXGI_FORMAT_BC3_UNORM:				format = PIXEL_FORMAT::BC3_UNORM;			pixelSize = 4; break;
+// 		case DXGI_FORMAT_BC3_UNORM_SRGB:		format = PIXEL_FORMAT::BC3_UNORM_sRGB;		pixelSize = 4; break;
+		default:
+			throw "Unsupported format!";
+	}
+
+	// Build content slices
+	if ( image.GetImageCount() != meta.arraySize * meta.mipLevels )
+		throw "Unexpected amount of images!";
+
+	_cubeMapFaces = new ImageFile[meta.arraySize];
+	_cubeMapsCount = meta.arraySize;
+
+ca serait pas mal d'avoir une sorte de container de slices et leurs mips en fait...
+
+	for ( U32 arrayIndex=0; arrayIndex < meta.arraySize; arrayIndex++ ) {
+	}
+
+
+// 	cli::array< Renderer::PixelsBuffer^ >^	content = gcnew cli::array< Renderer::PixelsBuffer^ >( int( meta.arraySize * meta.mipLevels ) );
+// 	for ( int arrayIndex=0; arrayIndex < int(meta.arraySize); arrayIndex++ ) {
+// 		int	W = int( meta.width );
+// 		int	H = int( meta.height );
+// 		for ( int mipIndex=0; mipIndex < int(meta.mipLevels); mipIndex++ ) {
+// 			const DirectX::Image*	sourceImage = DXT->GetImage( mipIndex, arrayIndex, 0U );
+// 
+// 			Renderer::PixelsBuffer^	buffer = gcnew Renderer::PixelsBuffer( int( sourceImage->slicePitch ) );
+// 			content[int( arrayIndex*meta.mipLevels+mipIndex )] = buffer;
+// 
+// 			cli::array< Byte >^	byteArray = gcnew cli::array< Byte >( int( sourceImage->slicePitch ) );
+// 			System::Runtime::InteropServices::Marshal::Copy( (IntPtr) sourceImage->pixels, byteArray, 0, int( sourceImage->slicePitch ) );
+// 
+// 			System::IO::BinaryWriter^	writer = buffer->OpenStreamWrite();
+// 			writer->Write( byteArray );
+// 			buffer->CloseStream();
+// 		}
+// 	}
+// 
+// 	// Build texture
+// 	Renderer::Texture2D^	Result = gcnew Renderer::Texture2D( _Device, int( meta.width ), int( meta.height ), meta.IsCubemap() ? -int(meta.arraySize) : int(meta.arraySize), int( meta.mipLevels ), format, false, false, content );
 }
 void	ImageFile::DDSSaveCubeMapFile( U32 _cubeMapsCount, const ImageFile** _cubeMapFaces, bool _compressBC6H, const wchar_t* _fileName ) {
 

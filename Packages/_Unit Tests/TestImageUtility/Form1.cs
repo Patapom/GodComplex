@@ -579,7 +579,7 @@ if ( Math.Abs( T - whitePointCCT ) < 10.0f )
 
 						ImageFile.PIXEL_FORMAT[]	formats = new ImageFile.PIXEL_FORMAT[] {
 							ImageFile.PIXEL_FORMAT.R8,
-							ImageFile.PIXEL_FORMAT.RG8,
+//							ImageFile.PIXEL_FORMAT.RG8,
 							ImageFile.PIXEL_FORMAT.RGB8,
 							ImageFile.PIXEL_FORMAT.RGBA8,
 							ImageFile.PIXEL_FORMAT.R16,
