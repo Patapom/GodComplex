@@ -600,3 +600,5 @@
 /Tests/TestDCT/obj
 /Tests/TestMSBSDF/Publish
 /Tests/TestFilmCurve/Publish
+/Tests/TestAreaLight/obj
+/Tests/TestAreaLight/bin
