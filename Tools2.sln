@@ -59,6 +59,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConvertNormalMap2HeightMap"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestVonMisesFisher", "Tools\TestVonMisesFisher\TestVonMisesFisher.csproj", "{9888852C-1E10-4F66-853F-6D5A4EF975F6}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Rendering", "Rendering", "{8A960D0C-3AB6-41CC-8F28-F256E418FB79}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VoxelConeTracing", "Tests\VoxelConeTracing\VoxelConeTracing.csproj", "{AA968977-4C07-4BDC-B8D8-1AA1D2292A4D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -793,6 +797,29 @@ Global
 		{9888852C-1E10-4F66-853F-6D5A4EF975F6}.Release|x64.Build.0 = Release|x64
 		{9888852C-1E10-4F66-853F-6D5A4EF975F6}.Release|x86.ActiveCfg = Release|x86
 		{9888852C-1E10-4F66-853F-6D5A4EF975F6}.Release|x86.Build.0 = Release|x86
+		{AA968977-4C07-4BDC-B8D8-1AA1D2292A4D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AA968977-4C07-4BDC-B8D8-1AA1D2292A4D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AA968977-4C07-4BDC-B8D8-1AA1D2292A4D}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{AA968977-4C07-4BDC-B8D8-1AA1D2292A4D}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{AA968977-4C07-4BDC-B8D8-1AA1D2292A4D}.Debug|Win32.ActiveCfg = Debug|Any CPU
+		{AA968977-4C07-4BDC-B8D8-1AA1D2292A4D}.Debug|x64.ActiveCfg = Debug|x64
+		{AA968977-4C07-4BDC-B8D8-1AA1D2292A4D}.Debug|x64.Build.0 = Debug|x64
+		{AA968977-4C07-4BDC-B8D8-1AA1D2292A4D}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{AA968977-4C07-4BDC-B8D8-1AA1D2292A4D}.Profile|Any CPU.ActiveCfg = Release|Any CPU
+		{AA968977-4C07-4BDC-B8D8-1AA1D2292A4D}.Profile|Any CPU.Build.0 = Release|Any CPU
+		{AA968977-4C07-4BDC-B8D8-1AA1D2292A4D}.Profile|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{AA968977-4C07-4BDC-B8D8-1AA1D2292A4D}.Profile|Mixed Platforms.Build.0 = Release|Any CPU
+		{AA968977-4C07-4BDC-B8D8-1AA1D2292A4D}.Profile|Win32.ActiveCfg = Release|Any CPU
+		{AA968977-4C07-4BDC-B8D8-1AA1D2292A4D}.Profile|x64.ActiveCfg = Release|Any CPU
+		{AA968977-4C07-4BDC-B8D8-1AA1D2292A4D}.Profile|x86.ActiveCfg = Release|Any CPU
+		{AA968977-4C07-4BDC-B8D8-1AA1D2292A4D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AA968977-4C07-4BDC-B8D8-1AA1D2292A4D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AA968977-4C07-4BDC-B8D8-1AA1D2292A4D}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{AA968977-4C07-4BDC-B8D8-1AA1D2292A4D}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{AA968977-4C07-4BDC-B8D8-1AA1D2292A4D}.Release|Win32.ActiveCfg = Release|Any CPU
+		{AA968977-4C07-4BDC-B8D8-1AA1D2292A4D}.Release|x64.ActiveCfg = Release|x64
+		{AA968977-4C07-4BDC-B8D8-1AA1D2292A4D}.Release|x64.Build.0 = Release|x64
+		{AA968977-4C07-4BDC-B8D8-1AA1D2292A4D}.Release|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -823,5 +850,6 @@ Global
 		{B741A6E5-1850-49B7-9129-29AF1EA44686} = {4B8CA9CC-B6D2-46E4-848F-35B8710EEE95}
 		{EB400C51-70B9-4809-AC8B-D8D3D6F7C5DE} = {4B8CA9CC-B6D2-46E4-848F-35B8710EEE95}
 		{59AB0801-6E22-4781-B48D-3FD46421204C} = {4B8CA9CC-B6D2-46E4-848F-35B8710EEE95}
+		{AA968977-4C07-4BDC-B8D8-1AA1D2292A4D} = {8A960D0C-3AB6-41CC-8F28-F256E418FB79}
 	EndGlobalSection
 EndGlobal
