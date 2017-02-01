@@ -30,6 +30,7 @@
       </ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="ImageFile.h" />
+    <ClInclude Include="ImagesMatrix.h" />
     <ClInclude Include="MetaData.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
@@ -47,6 +48,7 @@
       </ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="ImageFile.cpp" />
+    <ClCompile Include="ImagesMatrix.cpp" />
     <ClCompile Include="MetaData.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>

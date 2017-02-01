@@ -509,7 +509,7 @@ namespace ImageUtility {
 			BC7,
 			BC7_GPU,
 		};
-
+/*
 		// Compresses a single image
 		NativeByteArray^					DDSCompress( COMPRESSION_TYPE _compressionType );
 
@@ -528,5 +528,6 @@ namespace ImageUtility {
 		static cli::array< ImageFile^ >^	DDSLoad3DTexture( System::IO::Stream^ _imageStream );
 		static void							DDSSave3DTexture( cli::array< ImageFile^ >^ _slices, bool _compressBC6H, System::IO::FileInfo^ _fileName );
 		static void							DDSSave3DTexture( cli::array< ImageFile^ >^ _slices, bool _compressBC6H, System::IO::Stream^ _imageStream );
+*/
 	};
 }

@@ -1201,14 +1201,14 @@ void	ImageFile::ImageCoordinates2RangedCoordinates( const bfloat2& _rangeX, cons
 //////////////////////////////////////////////////////////////////////////
 // DDS-Related Helpers
 //
-static void	DDSLoadFile( const wchar_t* _fileName, DirectX::ScratchImage& _texture, DirectX::TexMetadata& _metadata ) {
+static void	DDSLoadFileRaw( const wchar_t* _fileName, DirectX::ScratchImage& _texture, DirectX::TexMetadata& _metadata ) {
 	DWORD	flags = DirectX::DDS_FLAGS_NONE;
 	HRESULT	hResult = DirectX::LoadFromDDSFile( _fileName, flags, &_metadata, _texture );
 	if ( hResult != S_OK ) {
 		throw "An error occurred while loading the DDS file!";
 	}
 }
-static void	DDSLoadMemory( U64 _fileSize, void* _fileContent, DirectX::ScratchImage& _texture, DirectX::TexMetadata& _metadata ) {
+static void	DDSLoadMemoryRaw( U64 _fileSize, void* _fileContent, DirectX::ScratchImage& _texture, DirectX::TexMetadata& _metadata ) {
 	DWORD	flags = DirectX::DDS_FLAGS_NONE;
 	HRESULT	hResult = DirectX::LoadFromDDSMemory( _fileContent, _fileSize, flags, &_metadata, _texture );
 	if ( hResult != S_OK ) {
@@ -1235,39 +1235,30 @@ static void	DDSSaveMemory( U64 _fileSize, void* _fileContent, DirectX::Image& _i
 	}
 }
 
-// Compresses a single image
-void	ImageFile::DDSCompress( COMPRESSION_TYPE _compressionType, U32& _compressedImageSize, void*& _compressedImage ) {
-//	Implement meeeee!
-}
-
-// Saves a DDS image in memory to disk (usually used after a compression)
-void	ImageFile::DDSSaveFromMemory( U32 _DDSImageSize, const void* _DDSImage, const wchar_t* _fileName ) {
-
-}
-
-// Cube map handling
-void	ImageFile::DDSLoadCubeMapFile( const wchar_t* _fileName, U32& _cubeMapsCount, ImageFile*& _cubeMapFaces ) {
+void	ImageFile::DDSLoadFile( const wchar_t* _fileName, ImagesMatrix& _images ) {
 	// Load the image
 	DirectX::ScratchImage*	DXT = new DirectX::ScratchImage();
 	DirectX::TexMetadata	meta;
-	DDSLoadFile( _fileName, *DXT, meta );
+	DDSLoadFileRaw( _fileName, *DXT, meta );
 
-	// Convert into an array of ImageFile slices
+	// Convert into an images matrix
+	DDSLoad( DXT, &meta, _images );
 
 	delete DXT;
 }
-void	ImageFile::DDSLoadCubeMapMemory( U64 _fileSize, void* _fileContent, U32& _cubeMapsCount, ImageFile*& _cubeMapFaces ) {
+void	ImageFile::DDSLoadMemory( U64 _fileSize, void* _fileContent, ImagesMatrix& _images ) {
 	// Load the image
 	DirectX::ScratchImage*	DXT = new DirectX::ScratchImage();
 	DirectX::TexMetadata	meta;
-	DDSLoadMemory( _fileSize, _fileContent, *DXT, meta );
+	DDSLoadMemoryRaw( _fileSize, _fileContent, *DXT, meta );
 
-	// Convert into an array of ImageFile slices
+	// Convert into an images matrix
+	DDSLoad( DXT, &meta, _images );
 
 	delete DXT;
 }
-void	ImageFile::DDSLoadCubeMap( const void* _blindPointerImage, const void* _blindPointerMetaData, U32& _cubeMapsCount, ImageFile*& _cubeMapFaces ) {
-	const DirectX::ScratchImage&	image = *reinterpret_cast<const DirectX::Image*>( _blindPointerImage );
+void	ImageFile::DDSLoad( const void* _blindPointerImage, const void* _blindPointerMetaData, ImagesMatrix& _cubeMaps ) {
+	const DirectX::ScratchImage&	image = *reinterpret_cast<const DirectX::ScratchImage*>( _blindPointerImage );
 	const DirectX::TexMetadata&		meta = *reinterpret_cast<const DirectX::TexMetadata*>( _blindPointerMetaData );
 
 	// Retrieve supported format
@@ -1328,13 +1319,33 @@ void	ImageFile::DDSLoadCubeMap( const void* _blindPointerImage, const void* _bli
 	}
 
 	// Build content slices
-	if ( image.GetImageCount() != meta.arraySize * meta.mipLevels )
-		throw "Unexpected amount of images!";
+	if ( meta.depth == 1 ) {
+		// We are dealing with a 2D texture
+		if ( image.GetImageCount() != meta.arraySize * meta.mipLevels )
+			throw "Unexpected amount of images!";
 
-	_cubeMapFaces = new ImageFile[meta.arraySize];
-	_cubeMapsCount = meta.arraySize;
+		if ( meta.IsCubemap() ) {
+			// We are dealing with a texture cube array
+			if ( meta.width != meta.height )
+				throw "Image width & height mismatch!";
+			if ( (meta.arraySize % 6) != 0 )
+				throw "Array size is not an integer multiple of 6!";
 
-ca serait pas mal d'avoir une sorte de container de slices et leurs mips en fait...
+			_cubeMaps.InitCubeTextureArray( U32(meta.width), U32(meta.arraySize) / 6, U32(meta.mipLevels) );
+
+
+		} else {
+			// We are dealing with a regular texture 2D array
+			_cubeMaps.InitTexture2DArray( U32(meta.width), U32(meta.height), U32(meta.arraySize), U32(meta.mipLevels) );
+
+		}
+	} else {
+		// We are dealing with a 3D texture
+		_cubeMaps.InitTexture3D( U32(meta.width), U32(meta.height), U32(meta.depth), U32(meta.mipLevels) );
+	}
+
+// 	_cubeMapFaces = new ImageFile[meta.arraySize];
+// 	_cubeMapsCount = meta.arraySize;
 
 	for ( U32 arrayIndex=0; arrayIndex < meta.arraySize; arrayIndex++ ) {
 	}
@@ -1362,26 +1373,36 @@ ca serait pas mal d'avoir une sorte de container de slices et leurs mips en fait
 // 	// Build texture
 // 	Renderer::Texture2D^	Result = gcnew Renderer::Texture2D( _Device, int( meta.width ), int( meta.height ), meta.IsCubemap() ? -int(meta.arraySize) : int(meta.arraySize), int( meta.mipLevels ), format, false, false, content );
 }
-void	ImageFile::DDSSaveCubeMapFile( U32 _cubeMapsCount, const ImageFile** _cubeMapFaces, bool _compressBC6H, const wchar_t* _fileName ) {
+void	ImageFile::DDSSaveFile( const ImagesMatrix& _images, bool _compressBC6H, const wchar_t* _fileName ) {
 
 }
-void	ImageFile::DDSSaveCubeMapMemory( U32 _cubeMapsCount, const ImageFile** _cubeMapFaces, bool _compressBC6H, U64 _fileSize, const void* _fileContent ) {
+void	ImageFile::DDSSaveMemory( const ImagesMatrix& _images, bool _compressBC6H, U64 _fileSize, const void* _fileContent ) {
 
 }
 
-// 3D Texture handling
-void	ImageFile::DDSLoad3DTextureFile( const wchar_t* _fileName, U32& _slicesCount, ImageFile*& _slices ) {
+// Compresses a single image
+void	ImageFile::DDSCompress( COMPRESSION_TYPE _compressionType, U32& _compressedImageSize, void*& _compressedImage ) {
+//	Implement meeeee!
+}
+
+// Saves a DDS image in memory to disk (usually used after a compression)
+void	ImageFile::DDSSaveFromMemory( U32 _DDSImageSize, const void* _DDSImage, const wchar_t* _fileName ) {
 
 }
-void	ImageFile::DDSLoad3DTextureMemory( U64 _fileSize, void* _fileContent, U32& _slicesCount, ImageFile*& _slices ) {
 
-}
-void	ImageFile::DDSSave3DTextureFile( U32 _slicesCount, const ImageFile** _slices, bool _compressBC6H, const wchar_t* _fileName ) {
-
-}
-void	ImageFile::DDSSave3DTextureMemory( U32 _slicesCount, const ImageFile** _slices, bool _compressBC6H, U64 _fileSize, const void* _fileContent ) {
-
-}
+// // 3D Texture handling
+// void	ImageFile::DDSLoad3DTextureFile( const wchar_t* _fileName, U32& _slicesCount, ImageFile*& _slices ) {
+// 
+// }
+// void	ImageFile::DDSLoad3DTextureMemory( U64 _fileSize, void* _fileContent, U32& _slicesCount, ImageFile*& _slices ) {
+// 
+// }
+// void	ImageFile::DDSSave3DTextureFile( U32 _slicesCount, const ImageFile** _slices, bool _compressBC6H, const wchar_t* _fileName ) {
+// 
+// }
+// void	ImageFile::DDSSave3DTextureMemory( U32 _slicesCount, const ImageFile** _slices, bool _compressBC6H, U64 _fileSize, const void* _fileContent ) {
+// 
+// }
 
 //////////////////////////////////////////////////////////////////////////
 #pragma region Old code...

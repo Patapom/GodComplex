@@ -467,6 +467,7 @@ SharpMath::float2	ImageFile::ImageCoordinates2RangedCoordinates( SharpMath::floa
 
 //////////////////////////////////////////////////////////////////////////
 // DDS-related methods
+/*
 
 // Compresses a single image
 NativeByteArray^	ImageFile::DDSCompress( COMPRESSION_TYPE _compressionType ) {
@@ -495,7 +496,7 @@ array< ImageFile^ >^	ImageFile::DDSLoadCubeMap( System::IO::FileInfo^ _fileName 
 	// Call native method
 	U32							imagesCount;
 	ImageUtilityLib::ImageFile*	images;
-	ImageUtilityLib::ImageFile::DDSLoadCubeMapFile( nativeFileName, imagesCount, images );
+	ImageUtilityLib::ImageFile::DDSLoadFile( nativeFileName, imagesCount, images );
 
 	return WrapNativeImages( imagesCount, images, true );
 
@@ -614,3 +615,4 @@ void	ImageFile::DDSSave3DTexture( array< ImageFile^ >^ _slices, bool _compressBC
 	// Write to stream
 	_imageStream->Write( managedBuffer, 0, fileLength );
 }
+*/
