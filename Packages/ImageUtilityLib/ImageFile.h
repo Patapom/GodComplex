@@ -76,8 +76,8 @@ namespace ImageUtilityLib {
 		//		Scanline 0 >	|R|G|R|G|R|G|R|G|R|G|R|G|R|G|R|G| | | | | | | | |
 		//		Scanline 1 >	|R|G|R|G|R|G|R|G|R|G|R|G|R|G|R|G| | | | | | | | |
 		//
-		// We lose some memory (usually 33% larger) but in turn we get these advantages:
-		//	• We can use images with the appropriate width (i.e. I didn't try to reduce the width to use the least possible memory overhead otherwise the user would have to deal with nightmarish width conversions and pixel size management)
+		// We lose some memory (scanlines are usually 33% larger) but in turn we get these advantages:
+		//	• We can use images with the appropriate width (i.e. I didn't try to reduce the width to have the least possible memory overhead otherwise the user would have to deal with nightmarish width conversions and pixel size management)
 		//	• We can still read and write sequentially to each scanline without having to skip some components (cf. figure above), we just need to skip the appropriate padding at the end of each scanline
 		//	• Loading a DDS file into a texture, or writing a texture into a DDS file is quite painless
 		//	• Creating procedural DDS files or textures with these formats is also quite easy
@@ -276,8 +276,8 @@ namespace ImageUtilityLib {
 		#pragma region PROPERTIES
 
 		// Gets the bitmap's raw content
-		void*				GetBits()				{ return FreeImage_GetBits( m_bitmap ); }
-		const void*			GetBits() const			{ return FreeImage_GetBits( m_bitmap ); }
+		U8*					GetBits()				{ return FreeImage_GetBits( m_bitmap ); }
+		const U8*			GetBits() const			{ return FreeImage_GetBits( m_bitmap ); }
 
 		// Gets the image's pixel format
 		PIXEL_FORMAT		GetPixelFormat() const	{ return m_pixelFormat; }

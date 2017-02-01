@@ -2,6 +2,7 @@
 
 #include "ImageFile.h"
 #include "Bitmap.h"
+#include "ImagesMatrix.h"
 
 using namespace ImageUtilityLib;
 
@@ -744,6 +745,8 @@ void	ImageFile::UnUseFreeImage() {
 	}
 }
 
+#pragma region Graph Plotting Helpers
+
 //////////////////////////////////////////////////////////////////////////
 // Graph Plotting Helpers
 const U32	GRAPH_MARGIN = 10;	// 10 pixels margin
@@ -1197,159 +1200,90 @@ void	ImageFile::ImageCoordinates2RangedCoordinates( const bfloat2& _rangeX, cons
 	_rangedCoordinates.y = _rangeY.x + (_imageCoordinates.y - Y0) * (_rangeY.y - _rangeY.x) / (Y1 - Y0);
 }
 
+#pragma endregion
+
+#pragma region DDS-Related Helpers
 
 //////////////////////////////////////////////////////////////////////////
 // DDS-Related Helpers
 //
-static void	DDSLoadFileRaw( const wchar_t* _fileName, DirectX::ScratchImage& _texture, DirectX::TexMetadata& _metadata ) {
-	DWORD	flags = DirectX::DDS_FLAGS_NONE;
-	HRESULT	hResult = DirectX::LoadFromDDSFile( _fileName, flags, &_metadata, _texture );
-	if ( hResult != S_OK ) {
-		throw "An error occurred while loading the DDS file!";
-	}
-}
-static void	DDSLoadMemoryRaw( U64 _fileSize, void* _fileContent, DirectX::ScratchImage& _texture, DirectX::TexMetadata& _metadata ) {
-	DWORD	flags = DirectX::DDS_FLAGS_NONE;
-	HRESULT	hResult = DirectX::LoadFromDDSMemory( _fileContent, _fileSize, flags, &_metadata, _texture );
-	if ( hResult != S_OK ) {
-		throw "An error occurred while loading the DDS file!";
-	}
-}
+static void		DXGIFormat2ImageFileFormat( DXGI_FORMAT _sourceFormat, ImageFile::PIXEL_FORMAT& format, U32& pixelSize ) {
+	format = ImageFile::PIXEL_FORMAT::UNKNOWN;
+	pixelSize = 0;
 
-static void	DDSSaveFile( const wchar_t* _fileName, DirectX::Image& _image ) {
-	DWORD	flags = DirectX::DDS_FLAGS_FORCE_RGB | DirectX::DDS_FLAGS_NO_16BPP | DirectX::DDS_FLAGS_EXPAND_LUMINANCE | DirectX::DDS_FLAGS_FORCE_DX10_EXT;
-	HRESULT	hResult = DirectX::SaveToDDSFile( _image, flags, _fileName );
-	if ( hResult != S_OK ) {
-		throw "An error occurred while saving the DDS file!";
-	}
-}
-static void	DDSSaveMemory( U64 _fileSize, void* _fileContent, DirectX::Image& _image ) {
-	DirectX::Blob	blob;
-	blob.Initialize( _fileSize );
-	memcpy_s( blob.GetBufferPointer(), blob.GetBufferSize(), _fileContent, _fileSize );
-
-	DWORD	flags = DirectX::DDS_FLAGS_FORCE_RGB | DirectX::DDS_FLAGS_NO_16BPP | DirectX::DDS_FLAGS_EXPAND_LUMINANCE | DirectX::DDS_FLAGS_FORCE_DX10_EXT;
-	HRESULT	hResult = DirectX::SaveToDDSMemory( _image, flags, blob );
-	if ( hResult != S_OK ) {
-		throw "An error occurred while loading the DDS file!";
-	}
-}
-
-void	ImageFile::DDSLoadFile( const wchar_t* _fileName, ImagesMatrix& _images ) {
-	// Load the image
-	DirectX::ScratchImage*	DXT = new DirectX::ScratchImage();
-	DirectX::TexMetadata	meta;
-	DDSLoadFileRaw( _fileName, *DXT, meta );
-
-	// Convert into an images matrix
-	DDSLoad( DXT, &meta, _images );
-
-	delete DXT;
-}
-void	ImageFile::DDSLoadMemory( U64 _fileSize, void* _fileContent, ImagesMatrix& _images ) {
-	// Load the image
-	DirectX::ScratchImage*	DXT = new DirectX::ScratchImage();
-	DirectX::TexMetadata	meta;
-	DDSLoadMemoryRaw( _fileSize, _fileContent, *DXT, meta );
-
-	// Convert into an images matrix
-	DDSLoad( DXT, &meta, _images );
-
-	delete DXT;
-}
-void	ImageFile::DDSLoad( const void* _blindPointerImage, const void* _blindPointerMetaData, ImagesMatrix& _cubeMaps ) {
-	const DirectX::ScratchImage&	image = *reinterpret_cast<const DirectX::ScratchImage*>( _blindPointerImage );
-	const DirectX::TexMetadata&		meta = *reinterpret_cast<const DirectX::TexMetadata*>( _blindPointerMetaData );
-
-	// Retrieve supported format
-	PIXEL_FORMAT	format = PIXEL_FORMAT::UNKNOWN;
-	int	pixelSize = 0;
-	switch ( meta.format ) {
+	switch ( _sourceFormat ) {
 		case DXGI_FORMAT_R8_UINT:
 		case DXGI_FORMAT_R8_SINT:
 		case DXGI_FORMAT_R8_SNORM:
-		case DXGI_FORMAT_R8_UNORM:				format = PIXEL_FORMAT::R8;					pixelSize = 1; break;
+		case DXGI_FORMAT_R8_UNORM:				format = ImageFile::PIXEL_FORMAT::R8;				pixelSize = 1; break;
 
 		case DXGI_FORMAT_R8G8_UINT:
 		case DXGI_FORMAT_R8G8_SINT:
 		case DXGI_FORMAT_R8G8_SNORM:
-		case DXGI_FORMAT_R8G8_UNORM:			format = PIXEL_FORMAT::RG8;					pixelSize = 2; break;
+		case DXGI_FORMAT_R8G8_UNORM:			format = ImageFile::PIXEL_FORMAT::RG8;				pixelSize = 2; break;
 
 		case DXGI_FORMAT_R8G8B8A8_UINT:
 		case DXGI_FORMAT_R8G8B8A8_SINT:
 		case DXGI_FORMAT_R8G8B8A8_SNORM:
 		case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB:
-		case DXGI_FORMAT_R8G8B8A8_UNORM:		format = PIXEL_FORMAT::RGBA8;				pixelSize = 4; break;
+		case DXGI_FORMAT_R8G8B8A8_UNORM:		format = ImageFile::PIXEL_FORMAT::RGBA8;			pixelSize = 4; break;
 
 		case DXGI_FORMAT_R16_UINT:
 		case DXGI_FORMAT_R16_SINT:
 		case DXGI_FORMAT_R16_SNORM:
-		case DXGI_FORMAT_R16_UNORM:				format = PIXEL_FORMAT::R16;					pixelSize = 2; break;
-		case DXGI_FORMAT_R16_FLOAT:				format = PIXEL_FORMAT::R16F;				pixelSize = 2; break;
+		case DXGI_FORMAT_R16_UNORM:				format = ImageFile::PIXEL_FORMAT::R16;				pixelSize = 2; break;
+		case DXGI_FORMAT_R16_FLOAT:				format = ImageFile::PIXEL_FORMAT::R16F;				pixelSize = 2; break;
 
 		case DXGI_FORMAT_R16G16_UINT:
 		case DXGI_FORMAT_R16G16_SINT:
 		case DXGI_FORMAT_R16G16_SNORM:
-		case DXGI_FORMAT_R16G16_UNORM:			format = PIXEL_FORMAT::RG16;				pixelSize = 4; break;
-		case DXGI_FORMAT_R16G16_FLOAT:			format = PIXEL_FORMAT::RG16F;				pixelSize = 4; break;
+		case DXGI_FORMAT_R16G16_UNORM:			format = ImageFile::PIXEL_FORMAT::RG16;				pixelSize = 4; break;
+		case DXGI_FORMAT_R16G16_FLOAT:			format = ImageFile::PIXEL_FORMAT::RG16F;			pixelSize = 4; break;
 
 		case DXGI_FORMAT_R16G16B16A16_UINT:
 		case DXGI_FORMAT_R16G16B16A16_SINT:
 		case DXGI_FORMAT_R16G16B16A16_SNORM:
-		case DXGI_FORMAT_R16G16B16A16_UNORM:	format = PIXEL_FORMAT::RGBA16;				pixelSize = 8; break;
-		case DXGI_FORMAT_R16G16B16A16_FLOAT:	format = PIXEL_FORMAT::RGBA16F;				pixelSize = 8; break;
+		case DXGI_FORMAT_R16G16B16A16_UNORM:	format = ImageFile::PIXEL_FORMAT::RGBA16;			pixelSize = 8; break;
+		case DXGI_FORMAT_R16G16B16A16_FLOAT:	format = ImageFile::PIXEL_FORMAT::RGBA16F;			pixelSize = 8; break;
 
 // 		case DXGI_FORMAT_R32_UINT:
-// 		case DXGI_FORMAT_R32_SINT:				format = PIXEL_FORMAT::R32;					pixelSize = 4; break;	// Unsupported!
-		case DXGI_FORMAT_R32_FLOAT:				format = PIXEL_FORMAT::R32F;				pixelSize = 4; break;
+// 		case DXGI_FORMAT_R32_SINT:				format = ImageFile::PIXEL_FORMAT::R32;				pixelSize = 4; break;	// Unsupported!
+		case DXGI_FORMAT_R32_FLOAT:				format = ImageFile::PIXEL_FORMAT::R32F;				pixelSize = 4; break;
 
 // 		case DXGI_FORMAT_R32G32_UINT:
-// 		case DXGI_FORMAT_R32G32_SINT:			format = PIXEL_FORMAT::RG32;				pixelSize = 8; break;	// Unsupported!
-		case DXGI_FORMAT_R32G32_FLOAT:			format = PIXEL_FORMAT::RG32F;				pixelSize = 8; break;
+// 		case DXGI_FORMAT_R32G32_SINT:			format = ImageFile::PIXEL_FORMAT::RG32;				pixelSize = 8; break;	// Unsupported!
+		case DXGI_FORMAT_R32G32_FLOAT:			format = ImageFile::PIXEL_FORMAT::RG32F;			pixelSize = 8; break;
 
 // 		case DXGI_FORMAT_R32G32B32A32_UINT:
-// 		case DXGI_FORMAT_R32G32B32A32_SINT:		format = PIXEL_FORMAT::RGBA32;				pixelSize = 16; break;	// Unsupported!
-		case DXGI_FORMAT_R32G32B32A32_FLOAT:	format = PIXEL_FORMAT::RGBA32F;				pixelSize = 16; break;
+// 		case DXGI_FORMAT_R32G32B32A32_SINT:		format = ImageFile::PIXEL_FORMAT::RGBA32;			pixelSize = 16; break;	// Unsupported!
+		case DXGI_FORMAT_R32G32B32A32_FLOAT:	format = ImageFile::PIXEL_FORMAT::RGBA32F;			pixelSize = 16; break;
 
 // How to support compressed formats? Generic RGBA8 container?
-// 		case DXGI_FORMAT_BC3_UNORM:				format = PIXEL_FORMAT::BC3_UNORM;			pixelSize = 4; break;
-// 		case DXGI_FORMAT_BC3_UNORM_SRGB:		format = PIXEL_FORMAT::BC3_UNORM_sRGB;		pixelSize = 4; break;
-		default:
-			throw "Unsupported format!";
+// 		case DXGI_FORMAT_BC3_UNORM:				format = ImageFile::PIXEL_FORMAT::BC3_UNORM;		pixelSize = 4; break;
+// 		case DXGI_FORMAT_BC3_UNORM_SRGB:		format = ImageFile::PIXEL_FORMAT::BC3_UNORM_sRGB;	pixelSize = 4; break;
+	}
+}
+
+static void		Copy( const DirectX::Image&	_source, ImageFile& _target ) {
+	if (	_source.width != _target.Width()
+		||	_source.height != _target.Height() ) {
+			throw "Source and target image sizes mismatch!";
 	}
 
-	// Build content slices
-	if ( meta.depth == 1 ) {
-		// We are dealing with a 2D texture
-		if ( image.GetImageCount() != meta.arraySize * meta.mipLevels )
-			throw "Unexpected amount of images!";
+// 	U32		expectedScanlinePitch = _target.GetPixelFormatAccessor() * _target.Width();
+// 	U32		actualScanlinePitch = _target.Pitch();
+// 	if ( actualScanlinePitch == expectedScanlinePitch ) {
+// 		// 
+// 	}
 
-		if ( meta.IsCubemap() ) {
-			// We are dealing with a texture cube array
-			if ( meta.width != meta.height )
-				throw "Image width & height mismatch!";
-			if ( (meta.arraySize % 6) != 0 )
-				throw "Array size is not an integer multiple of 6!";
-
-			_cubeMaps.InitCubeTextureArray( U32(meta.width), U32(meta.arraySize) / 6, U32(meta.mipLevels) );
-
-
-		} else {
-			// We are dealing with a regular texture 2D array
-			_cubeMaps.InitTexture2DArray( U32(meta.width), U32(meta.height), U32(meta.arraySize), U32(meta.mipLevels) );
-
-		}
-	} else {
-		// We are dealing with a 3D texture
-		_cubeMaps.InitTexture3D( U32(meta.width), U32(meta.height), U32(meta.depth), U32(meta.mipLevels) );
+//	U32		targetSize = _target.GetPixelFormatAccessor() * _target.Width();
+	U32		targetSize = _target.Pitch();
+	U32		sourceSize = U32(_source.rowPitch);
+	for ( U32 Y=0; Y < _source.height; Y++ ) {
+		const U8*	scanlineSource = _source.pixels + Y * _source.rowPitch;
+		U8*			scanlineTarget = _target.GetBits() + Y * _target.Pitch();
+		memcpy_s( scanlineTarget, targetSize, scanlineSource, sourceSize );
 	}
-
-// 	_cubeMapFaces = new ImageFile[meta.arraySize];
-// 	_cubeMapsCount = meta.arraySize;
-
-	for ( U32 arrayIndex=0; arrayIndex < meta.arraySize; arrayIndex++ ) {
-	}
-
 
 // 	cli::array< Renderer::PixelsBuffer^ >^	content = gcnew cli::array< Renderer::PixelsBuffer^ >( int( meta.arraySize * meta.mipLevels ) );
 // 	for ( int arrayIndex=0; arrayIndex < int(meta.arraySize); arrayIndex++ ) {
@@ -1373,12 +1307,163 @@ void	ImageFile::DDSLoad( const void* _blindPointerImage, const void* _blindPoint
 // 	// Build texture
 // 	Renderer::Texture2D^	Result = gcnew Renderer::Texture2D( _Device, int( meta.width ), int( meta.height ), meta.IsCubemap() ? -int(meta.arraySize) : int(meta.arraySize), int( meta.mipLevels ), format, false, false, content );
 }
+
+void	ImageFile::DDSLoadFile( const wchar_t* _fileName, ImagesMatrix& _images ) {
+	// Load the image
+	DirectX::ScratchImage*	DXT = new DirectX::ScratchImage();
+	DirectX::TexMetadata	meta;
+	DWORD	flags = DirectX::DDS_FLAGS_NONE;
+	HRESULT	hResult = DirectX::LoadFromDDSFile( _fileName, flags, &meta, *DXT );
+	if ( hResult != S_OK ) {
+		throw "An error occurred while loading the DDS file!";
+	}
+
+	// Convert into an image matrix
+	DDSLoad( DXT, &meta, _images );
+
+	delete DXT;
+}
+void	ImageFile::DDSLoadMemory( U64 _fileSize, void* _fileContent, ImagesMatrix& _images ) {
+	// Load the image
+	DirectX::ScratchImage*	DXT = new DirectX::ScratchImage();
+	DirectX::TexMetadata	meta;
+	DWORD	flags = DirectX::DDS_FLAGS_NONE;
+	HRESULT	hResult = DirectX::LoadFromDDSMemory( _fileContent, _fileSize, flags, &meta, *DXT );
+	if ( hResult != S_OK ) {
+		throw "An error occurred while loading the DDS file!";
+	}
+
+	// Convert into an image matrix
+	DDSLoad( DXT, &meta, _images );
+
+	delete DXT;
+}
+void	ImageFile::DDSLoad( const void* _blindPointerImage, const void* _blindPointerMetaData, ImagesMatrix& _images ) {
+	const DirectX::ScratchImage&	image = *reinterpret_cast<const DirectX::ScratchImage*>( _blindPointerImage );
+	const DirectX::TexMetadata&		meta = *reinterpret_cast<const DirectX::TexMetadata*>( _blindPointerMetaData );
+
+	// Retrieve supported format
+	PIXEL_FORMAT	format = PIXEL_FORMAT::UNKNOWN;
+	U32				pixelSize = 0;
+	DXGIFormat2ImageFileFormat( meta.format, format, pixelSize );
+	if ( format == ImageFile::PIXEL_FORMAT::UNKNOWN )
+		throw "Unsupported format!";
+
+	ColorProfile	profile( ColorProfile::STANDARD_PROFILE::sRGB );
+
+	// Build content slices
+	U32	mipLevelsCount = U32(meta.mipLevels);
+	if ( meta.depth == 1 ) {
+		// We are dealing with a 2D texture
+		if ( image.GetImageCount() != meta.arraySize * meta.mipLevels )
+			throw "Unexpected amount of images!";
+
+		U32	arraySize = U32(meta.arraySize);
+
+		if ( meta.IsCubemap() ) {
+			// We are dealing with a texture cube array
+			if ( meta.width != meta.height )
+				throw "Image width & height mismatch!";
+			if ( (meta.arraySize % 6) != 0 )
+				throw "Array size is not an integer multiple of 6!";
+
+			U32	cubeMapsCount = arraySize / 6;
+			_images.InitCubeTextureArray( U32(meta.width), cubeMapsCount, mipLevelsCount );
+		} else {
+			// We are dealing with a regular texture 2D array
+			_images.InitTexture2DArray( U32(meta.width), U32(meta.height), arraySize, mipLevelsCount );
+		}
+
+		// Allocate actual images
+		_images.AllocateImageFiles( format, profile );
+
+		// Fill up the content
+		for ( U32 arrayIndex=0; arrayIndex < arraySize; arrayIndex++ ) {
+// 		for ( U32 cubeMapIndex=0; cubeMapIndex < cubeMapsCount; cubeMapIndex++ ) {
+// 			for ( U32 faceIndex=0; faceIndex < 6; faceIndex++ ) {
+			for ( U32 mipIndex=0; mipIndex < mipLevelsCount; mipIndex++ ) {
+			 	const DirectX::Image*	sourceImage = image.GetImage( mipIndex, arrayIndex, 0U );
+				ImageFile&				targetImage = *_images[arrayIndex][mipIndex][0];
+				Copy( *sourceImage, targetImage );
+			}
+		}
+
+	} else {
+		// We are dealing with a 3D texture
+		_images.InitTexture3D( U32(meta.width), U32(meta.height), U32(meta.depth), U32(meta.mipLevels) );
+
+		// Allocate actual images
+		_images.AllocateImageFiles( format, profile );
+
+		// Fill up the content
+		for ( U32 mipIndex=0; mipIndex < mipLevelsCount; mipIndex++ ) {
+			ImagesMatrix::Mips::Mip&	mip = _images[0][mipIndex];
+
+			for ( U32 sliceIndex=0; sliceIndex < mip.Depth(); sliceIndex++ ) {
+				const DirectX::Image*	sourceImage = image.GetImage( mipIndex, 0U, sliceIndex );
+				ImageFile&				targetImage = *mip[sliceIndex];
+				Copy( *sourceImage, targetImage );
+			}
+		}
+	}
+}
+
 void	ImageFile::DDSSaveFile( const ImagesMatrix& _images, bool _compressBC6H, const wchar_t* _fileName ) {
+
+	DWORD	flags = DirectX::DDS_FLAGS_FORCE_RGB | DirectX::DDS_FLAGS_NO_16BPP | DirectX::DDS_FLAGS_EXPAND_LUMINANCE | DirectX::DDS_FLAGS_FORCE_DX10_EXT;
+	HRESULT	hResult = DirectX::SaveToDDSFile( DXT, flags, _fileName );
+	if ( hResult != S_OK ) {
+		throw "An error occurred while saving the DDS file!";
+	}
+
+	delete DXT;
+
+	// Build DTex scratch image
+	DirectX::ScratchImage*	DXT = new DirectX::ScratchImage();
+
+	DXGI_FORMAT	DXFormat = Descriptor.DirectXFormat();
+	HRESULT	hr = DXT->Initialize2D( DXFormat, W, H, A, MipsCount );
+
+	// Copy staging to scratch
+	for ( int MipLevel=0; MipLevel < MipsCount; MipLevel++ ) {
+		for ( int ArrayIndex=0; ArrayIndex < A; ArrayIndex++ ) {
+			D3D11_MAPPED_SUBRESOURCE	SourceData = TextureStaging->Map( MipLevel, ArrayIndex );
+			const uint8_t*				pSourceBuffer = (uint8_t*) SourceData.pData;
+			const DirectX::Image*		pTarget = DXT->GetImage( MipLevel, ArrayIndex, 0 );
+			ASSERT( pTarget->rowPitch == SourceData.RowPitch, "Row pitches mismatch!" );
+
+			for ( int Y=0; Y < H; Y++ ) {
+				const void*	pSourceScanline = pSourceBuffer + Y * SourceData.RowPitch;
+				void*		pTargetScanline = pTarget->pixels + Y * pTarget->rowPitch;
+				memcpy_s( pTargetScanline, pTarget->rowPitch, pSourceScanline, SourceData.RowPitch );
+			}
+		}
+	} 
+
+	delete TextureStaging;
+
+
+	// Get array of images
+	size_t						ImagesCount = DXT->GetImageCount();
+	const DirectX::Image*		pImages = DXT->GetImages();
+	const DirectX::TexMetadata&	Meta = DXT->GetMetadata();
+
+
 
 }
 void	ImageFile::DDSSaveMemory( const ImagesMatrix& _images, bool _compressBC6H, U64 _fileSize, const void* _fileContent ) {
-
+// 	DirectX::Blob	blob;
+// 	blob.Initialize( _fileSize );
+// 	memcpy_s( blob.GetBufferPointer(), blob.GetBufferSize(), _fileContent, _fileSize );
+// 
+// 	DWORD	flags = DirectX::DDS_FLAGS_FORCE_RGB | DirectX::DDS_FLAGS_NO_16BPP | DirectX::DDS_FLAGS_EXPAND_LUMINANCE | DirectX::DDS_FLAGS_FORCE_DX10_EXT;
+// 	HRESULT	hResult = DirectX::SaveToDDSMemory( _image, flags, blob );
+// 	if ( hResult != S_OK ) {
+// 		throw "An error occurred while loading the DDS file!";
+// 	}
 }
+
+void	ImageFile::DDSSave( const ImagesMatrix& _images, const void* _blindPointerImage, const void* _blindPointerMetaData );
 
 // Compresses a single image
 void	ImageFile::DDSCompress( COMPRESSION_TYPE _compressionType, U32& _compressedImageSize, void*& _compressedImage ) {
@@ -1403,6 +1488,8 @@ void	ImageFile::DDSSaveFromMemory( U32 _DDSImageSize, const void* _DDSImage, con
 // void	ImageFile::DDSSave3DTextureMemory( U32 _slicesCount, const ImageFile** _slices, bool _compressBC6H, U64 _fileSize, const void* _fileContent ) {
 // 
 // }
+
+#pragma endregion
 
 //////////////////////////////////////////////////////////////////////////
 #pragma region Old code...

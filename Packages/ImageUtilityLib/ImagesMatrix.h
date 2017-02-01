@@ -36,6 +36,10 @@ namespace ImageUtilityLib {
 				U32				Height() const	{ return m_height; }
 				U32				Depth() const	{ return m_images.Count(); }
 
+				// Indexers
+				ImageFile*&			operator[]( U32 _index )		{ return m_images[_index]; }
+				ImageFile* const&	operator[]( U32 _index ) const	{ return m_images[_index]; }
+
 			public:
 								Mip() : m_width( 0 ), m_height( 0 ) {}
 				void			Init( U32 _width, U32 _height, U32 _depth );
