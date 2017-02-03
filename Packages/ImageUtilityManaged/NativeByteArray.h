@@ -12,6 +12,7 @@ namespace ImageUtility {
 	private:
 		int			m_length;
 		IntPtr		m_nativePointer;
+		bool		m_freeOnExit;		// True to FreeHGlobal, false to delete[]...
 
 	public:	// PROPERTIES
 		property int					Length {
@@ -33,23 +34,27 @@ namespace ImageUtility {
 	public:	// METHODS
 		NativeByteArray()
 			: m_length( 0 )
-			, m_nativePointer( nullptr ) {
+			, m_nativePointer( nullptr )
+			, m_freeOnExit( false ) {
 		}
 
 		// This constructor transfers the responsibility of deleting the array to this object
 		NativeByteArray( NativeByteArray^ _other ) {
 			m_length = _other->m_length;
 			m_nativePointer = _other->m_nativePointer;
+			m_freeOnExit = _other->m_freeOnExit;
 
 			// Other must release the responsibility!
 			_other->m_length = 0;
 			_other->m_nativePointer = IntPtr::Zero;
+			_other->m_freeOnExit = false;
 		}
 
 		// This constructor transfers the responsibility of deleting the array to this object
 		NativeByteArray( int _length, void* _nativePointer ) {
 			m_length = _length;
 			m_nativePointer = IntPtr( _nativePointer );
+			m_freeOnExit = false;	// Delete[] on exit
 		}
 
 		NativeByteArray( cli::array< Byte >^ _managedArray ) {
@@ -59,11 +64,17 @@ namespace ImageUtility {
 //			m_nativePointer = new Byte[m_length];
 			m_nativePointer = System::Runtime::InteropServices::Marshal::AllocHGlobal( m_length );
 			System::Runtime::InteropServices::Marshal::Copy( _managedArray, 0, m_nativePointer, m_length );
+
+			m_freeOnExit = true;	// FreeHGlobal on exit
 		}
 		~NativeByteArray() {
-//			SAFE_DELETE( m_nativePointer );
-			if ( m_nativePointer != IntPtr::Zero )
-				System::Runtime::InteropServices::Marshal::FreeHGlobal( m_nativePointer );
+			if ( m_nativePointer != IntPtr::Zero ) {
+				if ( m_freeOnExit ) {
+					System::Runtime::InteropServices::Marshal::FreeHGlobal( m_nativePointer );
+				} else {
+					delete[] m_nativePointer.ToPointer();
+				}
+			}
 		}
 	};
 }

@@ -76,8 +76,8 @@ namespace ImageUtilityLib {
 		void	EnumerateDefaultTags( const ImageFile& _image, float& _gammaExponent );
 
 		// Wraps FreeImage's metadata tags getters
- 		static bool	GetString( FREE_IMAGE_MDMODEL _model, FIBITMAP& _bitmap, const char* _keyName, const char*& _value );
- 		static bool	GetInteger( FREE_IMAGE_MDMODEL _model, FIBITMAP& _bitmap, const char* _keyName, S32& _value );
+		static bool	GetString( FREE_IMAGE_MDMODEL _model, FIBITMAP& _bitmap, const char* _keyName, const char*& _value );
+		static bool	GetInteger( FREE_IMAGE_MDMODEL _model, FIBITMAP& _bitmap, const char* _keyName, S32& _value );
 		static bool	GetRational64( FREE_IMAGE_MDMODEL _model, FIBITMAP& _bitmap, const char* _keyName, float& _value );
 		static bool	GetRational64( FREE_IMAGE_MDMODEL _model, FIBITMAP& _bitmap, const char* _keyName, S32& _numerator, S32& _denominator );
 

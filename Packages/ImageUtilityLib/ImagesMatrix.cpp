@@ -4,7 +4,9 @@
 using namespace ImageUtilityLib;
 using namespace BaseLib;
 
-ImagesMatrix::ImagesMatrix() : m_type( TYPE::GENERIC ) {
+ImagesMatrix::ImagesMatrix()
+	: m_type( TYPE::GENERIC )
+	, m_format( ImageFile::PIXEL_FORMAT::UNKNOWN ) {
 }
 ImagesMatrix::~ImagesMatrix() {
 	ReleaseImageFiles();
@@ -61,6 +63,10 @@ void	ImagesMatrix::InitTexture3D( U32 _width, U32 _height, U32 _depth, U32 _mipL
 
 void	ImagesMatrix::AllocateImageFiles( ImageFile::PIXEL_FORMAT _format, const ColorProfile& _colorProfile ) {
 	ReleaseImageFiles();	// Release first
+
+	m_format = _format;
+	m_colorProfile = _colorProfile;
+
 	for ( U32 i=0; i < m_mipsArray.Count(); i++ ) {
 		m_mipsArray[i].AllocateImageFiles( _format, _colorProfile );
 	}
@@ -70,6 +76,8 @@ void	ImagesMatrix::ReleaseImageFiles() {
 	for ( U32 i=0; i < m_mipsArray.Count(); i++ ) {
 		m_mipsArray[i].ReleaseImageFiles();
 	}
+
+	m_format = ImageFile::PIXEL_FORMAT::UNKNOWN;
 }
 
 void	ImagesMatrix::Mips::Init( U32 _mipLevelsCount ) {

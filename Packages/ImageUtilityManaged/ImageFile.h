@@ -46,16 +46,15 @@
 //
 #pragma once
 
-#pragma unmanaged
-#include "..\ImageUtilityLib\ImageFile.h"
-#pragma managed
-
 #include "NativeByteArray.h"
 #include "MetaData.h"
 
 using namespace System;
 
 namespace ImageUtility {
+
+	ref class ImagesMatrix;
+
 	[System::Diagnostics::DebuggerDisplayAttribute( "{Width}x{Height} {PixelFormat} {FileFormat}" )]
 	public ref class ImageFile {
 	public:
@@ -509,6 +508,20 @@ namespace ImageUtility {
 			BC7,
 			BC7_GPU,
 		};
+
+		enum class COMPONENT_FORMAT {
+			AUTO,	// Default value, will select UNORM for integer types and FLOAT for floating-point types
+			UNORM,
+			SNORM,
+			UINT,
+			SINT,
+		};
+
+		static ImagesMatrix^	DDSLoadFile( System::IO::FileInfo^ _fileName );
+		static ImagesMatrix^	DDSLoadMemory( NativeByteArray^ _imageContent );
+		static void				DDSSaveFile( ImagesMatrix^ _images, System::IO::FileInfo^ _fileName, COMPONENT_FORMAT _componentFormat );
+		static NativeByteArray^	DDSSaveMemory( ImagesMatrix^ _images, COMPONENT_FORMAT _componentFormat );
+
 /*
 		// Compresses a single image
 		NativeByteArray^					DDSCompress( COMPRESSION_TYPE _compressionType );

@@ -6,7 +6,7 @@
 
 #include "PixelFormats.h"
 #include "PixelsBuffer.h"
-#include "ImagesMatrix.h"
+//#include "..\ImageUtilityManaged\ImageFile.h"
 
 using namespace System;
 
@@ -179,19 +179,12 @@ namespace Renderer {
 
 		//////////////////////////////////////////////////////////////////////////
 		// Bridge with image library
-		enum class COMPONENT_FORMAT {
-			AUTO,	// Default value, will select UNORM for integer types and float for floating-point types
-			UNORM,
-			SNORM,
-			UINT,
-			SINT,
-		};
 
 		// Creates a texture from an image
 		//	_images, the image matrix containing the texture slices with their mips
 		//	_componentFormat, indicates how individual channels should be encoded
-		static Texture2D^	CreateTexture2D( Device^ _device, ImagesMatrix^ _images ) { return CreateTexture2D( _device, _images, COMPONENT_FORMAT::AUTO ); }
-		static Texture2D^	CreateTexture2D( Device^ _device, ImagesMatrix^ _images, COMPONENT_FORMAT _componentFormat );
+// 		static Texture2D^	CreateTexture2D( Device^ _device, ImagesMatrix^ _images ) { return CreateTexture2D( _device, _images, ImageFile::COMPONENT_FORMAT::AUTO ); }
+// 		static Texture2D^	CreateTexture2D( Device^ _device, ImagesMatrix^ _images, ImageFile::COMPONENT_FORMAT _componentFormat );
 
 		// Helper to compute a size (width or height) at a specific mip level
 		static UInt32		GetSizeAtMip( UInt32 _sizeAtMip0, UInt32 _mipLevelIndex ) {
@@ -200,8 +193,7 @@ namespace Renderer {
 
 	internal:
 
-		// _UNorm, true = prefer UNORM formats, false = 
-		static PIXEL_FORMAT	ImagePixelFormat2TextureFormat( ImageUtility::ImageFile::PIXEL_FORMAT _format, COMPONENT_FORMAT _componentFormat, bool _sRGB, UInt32% _channelExtension );
+//		static PIXEL_FORMAT	ImagePixelFormat2TextureFormat( ImageUtility::ImageFile::PIXEL_FORMAT _format, COMPONENT_FORMAT _componentFormat, bool _sRGB, UInt32% _channelExtension );
 
 		Texture2D( const ::Texture2D& _existingTexture ) {
 			m_pTexture = const_cast< ::Texture2D* >( &_existingTexture );

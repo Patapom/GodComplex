@@ -1,6 +1,11 @@
 #include "stdafx.h"
 
+// #pragma unmanaged
+// #include "..\ImageUtilityLib\ImageFile.h"
+// #pragma managed
+
 #include "ImageFile.h"
+#include "ImagesMatrix.h"
 
 using namespace ImageUtility;
 
@@ -136,7 +141,7 @@ NativeByteArray^	ImageFile::Save( FILE_FORMAT _format, SAVE_FLAGS _options ) {
 
 	System::Drawing::Imaging::BitmapData^	lockedBitmap = result->LockBits( System::Drawing::Rectangle( 0, 0, W, H ), System::Drawing::Imaging::ImageLockMode::ReadOnly, System::Drawing::Imaging::PixelFormat::Format32bppArgb );
 
-	cli::pin_ptr<void>	scan0Ptr = lockedBitmap->Scan0.ToPointer();
+	pin_ptr<void>	scan0Ptr = lockedBitmap->Scan0.ToPointer();
 
 	if ( source->PixelFormat == PIXEL_FORMAT::RGBA8 ) {
 		// 32 bpp
@@ -186,7 +191,7 @@ NativeByteArray^	ImageFile::Save( FILE_FORMAT _format, SAVE_FLAGS _options ) {
 	System::Drawing::Bitmap^	result = gcnew System::Drawing::Bitmap( _width, _height, System::Drawing::Imaging::PixelFormat::Format32bppArgb );
 	System::Drawing::Imaging::BitmapData^	lockedBitmap = result->LockBits( System::Drawing::Rectangle( 0, 0, W, H ), System::Drawing::Imaging::ImageLockMode::ReadOnly, System::Drawing::Imaging::PixelFormat::Format32bppArgb );
 
-	cli::pin_ptr<void>	scan0Ptr = lockedBitmap->Scan0.ToPointer();
+	pin_ptr<void>	scan0Ptr = lockedBitmap->Scan0.ToPointer();
 
 	if ( source->PixelFormat == PIXEL_FORMAT::RGBA8 ) {
 		// 32 bpp
@@ -467,6 +472,38 @@ SharpMath::float2	ImageFile::ImageCoordinates2RangedCoordinates( SharpMath::floa
 
 //////////////////////////////////////////////////////////////////////////
 // DDS-related methods
+ImagesMatrix^	ImageFile::DDSLoadFile( System::IO::FileInfo^ _fileName ) {
+	if ( _fileName->Exists )
+		throw gcnew System::IO::FileNotFoundException( "File not found!", _fileName->FullName );
+
+	pin_ptr< const wchar_t >	nativeFileName = PtrToStringChars( _fileName->FullName );
+
+	ImagesMatrix^	result = gcnew ImagesMatrix();
+	ImageUtilityLib::ImageFile::DDSLoadFile( nativeFileName, *result->m_nativeObject );
+
+	return result;
+}
+ImagesMatrix^	ImageFile::DDSLoadMemory( NativeByteArray^ _imageContent ) {
+	ImagesMatrix^	result = gcnew ImagesMatrix();
+	ImageUtilityLib::ImageFile::DDSLoadMemory( _imageContent->Length, _imageContent->AsBytePointer.ToPointer(), *result->m_nativeObject );
+
+	return result;
+}
+void	ImageFile::DDSSaveFile( ImagesMatrix^ _images, System::IO::FileInfo^ _fileName, COMPONENT_FORMAT _componentFormat ) {
+	pin_ptr< const wchar_t >	nativeFileName = PtrToStringChars( _fileName->FullName );
+
+	ImageUtilityLib::ImageFile::DDSSaveFile( *_images->m_nativeObject, nativeFileName, ImageUtilityLib::ImageFile::COMPONENT_FORMAT( _componentFormat ) );
+}
+NativeByteArray^	ImageFile::DDSSaveMemory( ImagesMatrix^ _images, COMPONENT_FORMAT _componentFormat ) {
+	// Generate native byte array
+	U64		fileSize = 0;
+	void*	fileContent = NULL;
+	ImageUtilityLib::ImageFile::DDSSaveMemory( *_images->m_nativeObject, fileSize, fileContent, ImageUtilityLib::ImageFile::COMPONENT_FORMAT( _componentFormat ) );
+
+	NativeByteArray^	result = gcnew NativeByteArray( int(fileSize), fileContent );
+	return result;
+}
+
 /*
 
 // Compresses a single image

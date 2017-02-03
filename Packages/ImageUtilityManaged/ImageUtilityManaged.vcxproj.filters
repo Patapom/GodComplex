@@ -13,6 +13,7 @@
     <ClCompile Include="NativeByteArray.cpp">
       <Filter>Structures</Filter>
     </ClCompile>
+    <ClCompile Include="ImagesMatrix.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Bitmap.h" />
@@ -28,6 +29,7 @@
     <ClInclude Include="NativeByteArray.h">
       <Filter>Structures</Filter>
     </ClInclude>
+    <ClInclude Include="ImagesMatrix.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Structures">

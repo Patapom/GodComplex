@@ -156,6 +156,7 @@
     <ClCompile Include="Bitmap.cpp" />
     <ClCompile Include="ColorProfile.cpp" />
     <ClCompile Include="ImageFile.cpp" />
+    <ClCompile Include="ImagesMatrix.cpp" />
     <ClCompile Include="MetaData.cpp" />
     <ClCompile Include="NativeByteArray.cpp" />
     <ClCompile Include="stdafx.cpp">
@@ -169,6 +170,7 @@
     <ClInclude Include="Bitmap.h" />
     <ClInclude Include="ColorProfile.h" />
     <ClInclude Include="ImageFile.h" />
+    <ClInclude Include="ImagesMatrix.h" />
     <ClInclude Include="MetaData.h" />
     <ClInclude Include="NativeByteArray.h" />
     <ClInclude Include="stdafx.h" />

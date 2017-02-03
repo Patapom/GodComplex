@@ -423,27 +423,29 @@ namespace ImageUtilityLib {
 			BC7_GPU,
 		};
 
+		enum class COMPONENT_FORMAT {
+			AUTO,	// Default value, will select UNORM for integer types and FLOAT for floating-point types
+			UNORM,
+			SNORM,
+			UINT,
+			SINT,
+		};
+
 		static void			DDSLoadFile( const wchar_t* _fileName, ImagesMatrix& _images );
 		static void			DDSLoadMemory( U64 _fileSize, void* _fileContent, ImagesMatrix& _images );
-		static void			DDSSaveFile( const ImagesMatrix& _images, bool _compressBC6H, const wchar_t* _fileName );
-		static void			DDSSaveMemory( const ImagesMatrix& _images, bool _compressBC6H, U64 _fileSize, const void* _fileContent );	// NOTE: The caller MUST delete[] the returned buffer!
+		static void			DDSSaveFile( const ImagesMatrix& _images, const wchar_t* _fileName, COMPONENT_FORMAT _componentFormat=COMPONENT_FORMAT::AUTO, bool _compressBC6H=false );
+		static void			DDSSaveMemory( const ImagesMatrix& _images, U64& _fileSize, void*& _fileContent, COMPONENT_FORMAT _componentFormat=COMPONENT_FORMAT::AUTO, bool _compressBC6H=false );	// NOTE: The caller MUST delete[] the returned buffer!
 
-		// Compresses a single image
-		void				DDSCompress( COMPRESSION_TYPE _compressionType, U32& _compressedImageSize, void*& _compressedImage );	// NOTE: The caller MUST delete[] the returned buffer!
-
-		// Saves a DDS image in memory to disk (usually used after a compression)
-		static void			DDSSaveFromMemory( U32 _DDSImageSize, const void* _DDSImage, const wchar_t* _fileName );
-
-// 		// 3D Texture handling
-// 		static void			DDSLoad3DTextureFile( const wchar_t* _fileName, U32& _slicesCount, ImageFile*& _slices );				// NOTE: The caller MUST delete[] the returned cube map faces!
-// 		static void			DDSLoad3DTextureMemory( U64 _fileSize, void* _fileContent, U32& _slicesCount, ImageFile*& _slices );	// NOTE: The caller MUST delete[] the returned cube map faces!
-// 		static void			DDSSave3DTextureFile( U32 _slicesCount, const ImageFile** _slices, bool _compressBC6H, const wchar_t* _fileName );
-// 		static void			DDSSave3DTextureMemory( U32 _slicesCount, const ImageFile** _slices, bool _compressBC6H, U64 _fileSize, const void* _fileContent );	// NOTE: The caller MUST delete[] the returned buffer!
-
+// 		// Compresses a single image
+// 		void				DDSCompress( COMPRESSION_TYPE _compressionType, U32& _compressedImageSize, void*& _compressedImage );	// NOTE: The caller MUST delete[] the returned buffer!
+// 
+// 		// Saves a DDS image in memory to disk (usually used after a compression)
+// 		static void			DDSSaveFromMemory( U32 _DDSImageSize, const void* _DDSImage, const wchar_t* _fileName );
 
 	private:
 
 		static void			DDSLoad( const void* _blindPointerImage, const void* _blindPointerMetaData, ImagesMatrix& _images );
+		static void			DDSSave( const ImagesMatrix& _images, void** _blindPointerImage, void* _blindPointerMetaData, COMPONENT_FORMAT _componentFormat, bool _compressBC6H );
 
 	private:
 		static U32						PixelFormat2BPP( PIXEL_FORMAT _pixelFormat );

@@ -162,7 +162,6 @@
     <ClInclude Include="..\RendererManaged\Texture3D.h" />
     <ClInclude Include="..\RendererManaged\VertexFormats.h" />
     <ClInclude Include="FileServer.h" />
-    <ClInclude Include="ImagesMatrix.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\RendererManaged\AssemblyInfo.cpp" />
@@ -183,7 +182,6 @@
     <ClCompile Include="..\RendererManaged\Texture2D.cpp" />
     <ClCompile Include="..\RendererManaged\Texture3D.cpp" />
     <ClCompile Include="FileServer.cpp" />
-    <ClCompile Include="ImagesMatrix.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\BaseLib\BaseLib.vcxproj">

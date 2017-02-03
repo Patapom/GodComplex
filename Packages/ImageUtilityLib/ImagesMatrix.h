@@ -55,7 +55,7 @@ namespace ImageUtilityLib {
 
 		public:
 
- 			U32						MipLevelsCount() const	{ return m_mips.Count(); }
+ 			U32				GetMipLevelsCount() const		{ return m_mips.Count(); }
 
 			// Indexers
 			Mip&			operator[]( U32 _index )		{ return m_mips[_index]; }
@@ -79,17 +79,21 @@ namespace ImageUtilityLib {
 
 	private:
 
-		TYPE			m_type;				// Optional field describing the type of images stored in the matrix
-		List< Mips >	m_mipsArray;		// An array of mip-mapped images
+		TYPE					m_type;				// Optional field describing the type of images stored in the matrix
+		ImageFile::PIXEL_FORMAT	m_format;			// Pixel format of the images in the matrix
+		ColorProfile			m_colorProfile;		// Color profile of the images in the matrix
+		List< Mips >			m_mipsArray;		// An array of mip-mapped images
 
 	public:
 
-		TYPE			GetType() const					{ return m_type; }
-		U32				GetArraySize() const			{ return m_mipsArray.Count(); }
+		TYPE					GetType() const					{ return m_type; }
+		ImageFile::PIXEL_FORMAT	GetFormat() const				{ return m_format; }
+		const ColorProfile&		GetColorProfile() const			{ return m_colorProfile; }
+		U32						GetArraySize() const			{ return m_mipsArray.Count(); }
 
 		// Indexers
-		Mips&			operator[]( U32 _index )		{ return m_mipsArray[_index]; }
-		const Mips&		operator[]( U32 _index ) const	{ return m_mipsArray[_index]; }
+		Mips&					operator[]( U32 _index )		{ return m_mipsArray[_index]; }
+		const Mips&				operator[]( U32 _index ) const	{ return m_mipsArray[_index]; }
 
 	public:
 						ImagesMatrix();
