@@ -46,7 +46,10 @@
 //
 #pragma once
 
+#define IMAGE_FILE_INCLUDED
+
 #include "MetaData.h"
+#include <dxgiformat.h>
 
 namespace ImageUtilityLib {
 
@@ -442,6 +445,9 @@ namespace ImageUtilityLib {
 // 		// Saves a DDS image in memory to disk (usually used after a compression)
 // 		static void			DDSSaveFromMemory( U32 _DDSImageSize, const void* _DDSImage, const wchar_t* _fileName );
 
+		static void			DXGIFormat2ImageFileFormat( DXGI_FORMAT _sourceFormat, PIXEL_FORMAT& _targetFormat, U32& _pixelSize );
+		static void			ImageFileFormat2DXGIFormat( PIXEL_FORMAT _sourceFormat, COMPONENT_FORMAT _componentFormat, bool _sRGB, DXGI_FORMAT& _targetFormat );
+
 	private:
 
 		static void			DDSLoad( const void* _blindPointerImage, const void* _blindPointerMetaData, ImagesMatrix& _images );
@@ -460,8 +466,8 @@ namespace ImageUtilityLib {
 
 	private:	// Ref-counting for free image lib init/release
 		static U32		ms_freeImageUsageRefCount;
-		void	ImageFile::UseFreeImage();
-		void	ImageFile::UnUseFreeImage();
+		void				UseFreeImage();
+		void				UnUseFreeImage();
 	};
 
 }	// namespace

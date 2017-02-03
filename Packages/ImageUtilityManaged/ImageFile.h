@@ -522,25 +522,17 @@ namespace ImageUtility {
 		static void				DDSSaveFile( ImagesMatrix^ _images, System::IO::FileInfo^ _fileName, COMPONENT_FORMAT _componentFormat );
 		static NativeByteArray^	DDSSaveMemory( ImagesMatrix^ _images, COMPONENT_FORMAT _componentFormat );
 
-/*
-		// Compresses a single image
-		NativeByteArray^					DDSCompress( COMPRESSION_TYPE _compressionType );
-
-		// Saves a DDS image in memory to disk (usually used after a compression)
-		static void							DDSSaveFromMemory( NativeByteArray^ _DDSImage, System::IO::FileInfo^ _fileName );
-		static void							DDSSaveFromMemory( NativeByteArray^ _DDSImage, System::IO::Stream^ _imageStream );
-
-		// Cube map handling
-		static cli::array< ImageFile^ >^	DDSLoadCubeMap( System::IO::FileInfo^ _fileName );
-		static cli::array< ImageFile^ >^	DDSLoadCubeMap( System::IO::Stream^ _imageStream );
-		static void							DDSSaveCubeMap( cli::array< ImageFile^ >^ _cubeMapFaces, bool _compressBC6H, System::IO::FileInfo^ _fileName );
-		static void							DDSSaveCubeMap( cli::array< ImageFile^ >^ _cubeMapFaces, bool _compressBC6H, System::IO::Stream^ _imageStream );
-
-		// 3D Texture handling
-		static cli::array< ImageFile^ >^	DDSLoad3DTexture( System::IO::FileInfo^ _fileName, U32& _slicesCount );
-		static cli::array< ImageFile^ >^	DDSLoad3DTexture( System::IO::Stream^ _imageStream );
-		static void							DDSSave3DTexture( cli::array< ImageFile^ >^ _slices, bool _compressBC6H, System::IO::FileInfo^ _fileName );
-		static void							DDSSave3DTexture( cli::array< ImageFile^ >^ _slices, bool _compressBC6H, System::IO::Stream^ _imageStream );
-*/
+		static void				DXGIFormat2ImageFileFormat( DXGI_FORMAT _sourceFormat, PIXEL_FORMAT% _targetFormat, UInt32% _pixelSize ) {
+			ImageUtilityLib::ImageFile::PIXEL_FORMAT	targetFormat;
+			U32											pixelSize;
+			ImageUtilityLib::ImageFile::DXGIFormat2ImageFileFormat( _sourceFormat, targetFormat, pixelSize );
+			_targetFormat = PIXEL_FORMAT( targetFormat );
+			_pixelSize = pixelSize;
+		}
+		static void				ImageFileFormat2DXGIFormat( PIXEL_FORMAT _sourceFormat, COMPONENT_FORMAT _componentFormat, bool _sRGB, DXGI_FORMAT% _targetFormat ) {
+			DXGI_FORMAT	targetFormat;
+			ImageUtilityLib::ImageFile::ImageFileFormat2DXGIFormat( ImageUtilityLib::ImageFile::PIXEL_FORMAT(_sourceFormat), ImageUtilityLib::ImageFile::COMPONENT_FORMAT(_componentFormat), _sRGB, targetFormat );
+			_targetFormat = targetFormat;
+		}
 	};
 }

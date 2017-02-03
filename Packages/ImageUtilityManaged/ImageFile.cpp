@@ -1,9 +1,5 @@
 #include "stdafx.h"
 
-// #pragma unmanaged
-// #include "..\ImageUtilityLib\ImageFile.h"
-// #pragma managed
-
 #include "ImageFile.h"
 #include "ImagesMatrix.h"
 
@@ -472,6 +468,7 @@ SharpMath::float2	ImageFile::ImageCoordinates2RangedCoordinates( SharpMath::floa
 
 //////////////////////////////////////////////////////////////////////////
 // DDS-related methods
+//
 ImagesMatrix^	ImageFile::DDSLoadFile( System::IO::FileInfo^ _fileName ) {
 	if ( _fileName->Exists )
 		throw gcnew System::IO::FileNotFoundException( "File not found!", _fileName->FullName );
@@ -503,153 +500,3 @@ NativeByteArray^	ImageFile::DDSSaveMemory( ImagesMatrix^ _images, COMPONENT_FORM
 	NativeByteArray^	result = gcnew NativeByteArray( int(fileSize), fileContent );
 	return result;
 }
-
-/*
-
-// Compresses a single image
-NativeByteArray^	ImageFile::DDSCompress( COMPRESSION_TYPE _compressionType ) {
-
-	// Call native method
-	void*	compressedImage;
-	U32		compressedImageLength;
-	m_nativeObject->DDSCompress( ImageUtilityLib::ImageFile::COMPRESSION_TYPE( _compressionType ), compressedImageLength, compressedImage );
-
-	return gcnew NativeByteArray( compressedImageLength, compressedImage );
-}
-
-// Saves a DDS image in memory to disk (usually used after a compression)
-void ImageFile::DDSSaveFromMemory( NativeByteArray^ _DDSImage, System::IO::FileInfo^ _fileName ) {
-	pin_ptr< const wchar_t >	nativeFileName = PtrToStringChars( _fileName->FullName );
-	ImageUtilityLib::ImageFile::DDSSaveFromMemory( _DDSImage->Length, _DDSImage->AsBytePointer.ToPointer(), nativeFileName );
-}
-void ImageFile::DDSSaveFromMemory( NativeByteArray^ _DDSImage, System::IO::Stream^ _imageStream ) {
-	_imageStream->Write( _DDSImage->AsByteArray, 0, _DDSImage->Length );
-}
-
-// Cube map handling
-array< ImageFile^ >^	ImageFile::DDSLoadCubeMap( System::IO::FileInfo^ _fileName ) {
-	pin_ptr< const wchar_t >	nativeFileName = PtrToStringChars( _fileName->FullName );
-
-	// Call native method
-	U32							imagesCount;
-	ImageUtilityLib::ImageFile*	images;
-	ImageUtilityLib::ImageFile::DDSLoadFile( nativeFileName, imagesCount, images );
-
-	return WrapNativeImages( imagesCount, images, true );
-
-// Or call streamed version
-// 	System::IO::FileStream^	S = _fileName->OpenRead();
-// 	array< ImageFile^ >^	result = DDSLoadCubeMap( S );
-// 	delete S;
-// 	return result;
-}
-array< ImageFile^ >^	ImageFile::DDSLoadCubeMap( System::IO::Stream^ _imageStream ) {
-	// Load stream into memory
-	array< Byte >^	fileContent = gcnew array< Byte >( int( _imageStream->Length ) );
-	_imageStream->Read( fileContent, 0, int( _imageStream->Length ) );
-
-	NativeByteArray^	temp = gcnew NativeByteArray( fileContent );
-
-	// Call native method
-	U32							imagesCount;
-	ImageUtilityLib::ImageFile*	images;
-	ImageUtilityLib::ImageFile::DDSLoadCubeMapMemory( temp->Length, temp->AsBytePointer.ToPointer(), imagesCount, images );
-
-	// Release native memory
-	delete temp;
-
-	return WrapNativeImages( imagesCount, images, true );
-}
-void	ImageFile::DDSSaveCubeMap( array< ImageFile^ >^ _cubeMapFaces, bool _compressBC6H, System::IO::FileInfo^ _fileName ) {
-	pin_ptr< const wchar_t >	nativeFileName = PtrToStringChars( _fileName->FullName );
-
-	const ImageUtilityLib::ImageFile**	nativeCubeMapFaces = new const ImageUtilityLib::ImageFile*[_cubeMapFaces->Length];
-	for ( int i=0; i < _cubeMapFaces->Length; i++ )
-		nativeCubeMapFaces[i] = _cubeMapFaces[i]->m_nativeObject;
-
-	ImageUtilityLib::ImageFile::DDSSaveCubeMapFile( _cubeMapFaces->Length, nativeCubeMapFaces, _compressBC6H, nativeFileName );
-
-	delete[] nativeCubeMapFaces;
-}
-void	ImageFile::DDSSaveCubeMap( array< ImageFile^ >^ _cubeMapFaces, bool _compressBC6H, System::IO::Stream^ _imageStream ) {
-//	System::Runtime::InteropServices::Marshal::AllocHGlobal( _cubeMapFaces->Length * Sizeof* ); ??
-	const ImageUtilityLib::ImageFile**	nativeCubeMapFaces = new const ImageUtilityLib::ImageFile*[_cubeMapFaces->Length];
-	for ( int i=0; i < _cubeMapFaces->Length; i++ )
-		nativeCubeMapFaces[i] = _cubeMapFaces[i]->m_nativeObject;
-
-	// Call native method
-	void*	fileContent = nullptr;
-	U32		fileLength = 0;
-	ImageUtilityLib::ImageFile::DDSSaveCubeMapMemory( _cubeMapFaces->Length, nativeCubeMapFaces, _compressBC6H, fileLength, fileContent );
-
-	delete[] nativeCubeMapFaces;
-
-	// Write to stream
-	NativeByteArray^	temp = gcnew NativeByteArray( fileLength, fileContent );
-	_imageStream->Write( temp->AsByteArray, 0, temp->Length );
-	delete temp;
-}
-
-// 3D Texture handling
-array< ImageFile^ >^	ImageFile::DDSLoad3DTexture( System::IO::FileInfo^ _fileName, U32& _slicesCount ) {
-	pin_ptr< const wchar_t >	nativeFileName = PtrToStringChars( _fileName->FullName );
-
-	// Call native method
-	U32							imagesCount;
-	ImageUtilityLib::ImageFile*	images;
-	ImageUtilityLib::ImageFile::DDSLoad3DTextureFile( nativeFileName, imagesCount, images );
-
-	return WrapNativeImages( imagesCount, images, true );
-
-// Or call streamed version
-// 	System::IO::FileStream^	S = _fileName->OpenRead();
-// 	array< ImageFile^ >^	result = DDSLoadCubeMap( S );
-// 	delete S;
-// 	return result;
-}
-array< ImageFile^ >^	ImageFile::DDSLoad3DTexture( System::IO::Stream^ _imageStream ) {
-	// Load stream into memory
-	array< Byte >^	fileContent = gcnew array< Byte >( int( _imageStream->Length ) );
-	_imageStream->Read( fileContent, 0, int( _imageStream->Length ) );
-
-	NativeByteArray^	temp = gcnew NativeByteArray( fileContent );
-
-	// Call native method
-	U32							imagesCount;
-	ImageUtilityLib::ImageFile*	images;
-	ImageUtilityLib::ImageFile::DDSLoad3DTextureMemory( temp->Length, temp->AsBytePointer.ToPointer(), imagesCount, images );
-
-	delete temp;
-
-	return WrapNativeImages( imagesCount, images, true );
-}
-void	ImageFile::DDSSave3DTexture( array< ImageFile^ >^ _slices, bool _compressBC6H, System::IO::FileInfo^ _fileName ) {
-	pin_ptr< const wchar_t >	nativeFileName = PtrToStringChars( _fileName->FullName );
-
-	const ImageUtilityLib::ImageFile**	nativeSlices = new const ImageUtilityLib::ImageFile*[_slices->Length];
-	for ( int i=0; i < _slices->Length; i++ )
-		nativeSlices[i] = _slices[i]->m_nativeObject;
-
-	ImageUtilityLib::ImageFile::DDSSave3DTextureFile( _slices->Length, nativeSlices, _compressBC6H, nativeFileName );
-
-	delete[] nativeSlices;
-}
-void	ImageFile::DDSSave3DTexture( array< ImageFile^ >^ _slices, bool _compressBC6H, System::IO::Stream^ _imageStream ) {
-	const ImageUtilityLib::ImageFile**	nativeSlices = new const ImageUtilityLib::ImageFile*[_slices->Length];
-	for ( int i=0; i < _slices->Length; i++ )
-		nativeSlices[i] = _slices[i]->m_nativeObject;
-
-	void*	fileContent = nullptr;
-	U32		fileLength = 0;
-	ImageUtilityLib::ImageFile::DDSSaveCubeMapMemory( _slices->Length, nativeSlices, _compressBC6H, fileLength, fileContent );
-
-	delete[] nativeSlices;
-
-	// Copy to Byte[]
-	array< Byte >^	managedBuffer = gcnew array< Byte >( fileLength );
-	System::Runtime::InteropServices::Marshal::Copy( IntPtr(fileContent), managedBuffer, 0, fileLength );
-
-	// Write to stream
-	_imageStream->Write( managedBuffer, 0, fileLength );
-}
-*/

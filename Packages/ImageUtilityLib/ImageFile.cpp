@@ -1207,7 +1207,7 @@ void	ImageFile::ImageCoordinates2RangedCoordinates( const bfloat2& _rangeX, cons
 //////////////////////////////////////////////////////////////////////////
 // DDS-Related Helpers
 //
-static void		DXGIFormat2ImageFileFormat( DXGI_FORMAT _sourceFormat, ImageFile::PIXEL_FORMAT& _targetFormat, U32& _pixelSize ) {
+void	ImageFile::DXGIFormat2ImageFileFormat( DXGI_FORMAT _sourceFormat, PIXEL_FORMAT& _targetFormat, U32& _pixelSize ) {
 	_targetFormat = ImageFile::PIXEL_FORMAT::UNKNOWN;
 	_pixelSize = 0;
 
@@ -1264,7 +1264,7 @@ static void		DXGIFormat2ImageFileFormat( DXGI_FORMAT _sourceFormat, ImageFile::P
 	}
 }
 
-static void		ImageFileFormat2DXGIFormat( ImageFile::PIXEL_FORMAT _sourceFormat, ImageFile::COMPONENT_FORMAT _componentFormat, bool _sRGB, DXGI_FORMAT& _targetFormat ) {
+void	ImageFile::ImageFileFormat2DXGIFormat( PIXEL_FORMAT _sourceFormat, COMPONENT_FORMAT _componentFormat, bool _sRGB, DXGI_FORMAT& _targetFormat ) {
 	_targetFormat = DXGI_FORMAT_UNKNOWN;
 
 	switch ( _sourceFormat ) {
@@ -1610,6 +1610,7 @@ void	ImageFile::DDSSave( const ImagesMatrix& _images, void** _blindPointerImage,
 	U32	mipLevelsCount = _images[0].GetMipLevelsCount();
 	if ( mipLevelsCount == 0 )
 		throw "Invalid mip levels count!";
+
 	U32	W = _images[0][0].Width();
 	U32	H = _images[0][0].Height();
 	U32	D = _images[0][0].Depth();
@@ -1690,214 +1691,4 @@ void	ImageFile::DDSSave( const ImagesMatrix& _images, void** _blindPointerImage,
 // 
 // }
 
-#pragma endregion
-
-//////////////////////////////////////////////////////////////////////////
-#pragma region Old code...
-// 		// Formatting flags for the Save() method
-// 		enum class FORMAT_FLAGS {
-// 			NONE = 0,
-// 
-// 			// Bits per pixel component
-// 			SAVE_8BITS_UNORM = 0,	// Save as byte
-// 			SAVE_16BITS_UNORM = 1,	// Save as UInt16 if possible (valid for PNG, TIFF)
-// 			SAVE_32BITS_FLOAT = 2,	// Save as float if possible (valid for TIFF)
-// 
-// 			// Gray
-// 			GRAY = 4,				// Save as gray levels
-// 
-// 			SKIP_ALPHA = 8,			// Don't save alpha
-// 			PREMULTIPLY_ALPHA = 16,	// RGB should be multiplied by alpha
-// 		};
-//
-// Save to a stream
-// <param name="_Stream">The stream to write the image to</param>
-// <param name="_FileType">The file type to save as</param>
-// <param name="_Parms">Additional formatting flags</param>
-// <param name="_options">An optional block of options for encoding</param>
-// <exception cref="NotSupportedException">Occurs if the image type is not supported by the Bitmap class</exception>
-// <exception cref="Exception">Occurs if the source image format cannot be converted to RGBA32F which is the generic format we read from</exception>
-//		void	Save( System.IO.Stream _Stream, FILE_FORMAT _FileType, FORMAT_FLAGS _Parms, const FormatEncoderOptions* _options ) const;
-//
-// <summary>
-// Save to a stream
-// </summary>
-// <param name="_Stream">The stream to write the image to</param>
-// <param name="_FileType">The file type to save as</param>
-// <param name="_Parms">Additional formatting flags</param>
-// <param name="_options">An optional block of options for encoding</param>
-// <exception cref="NotSupportedException">Occurs if the image type is not supported by the Bitmap class</exception>
-// <exception cref="Exception">Occurs if the source image format cannot be converted to RGBA32F which is the generic format we read from</exception>
-// void	ImageFile::Save( System.IO.Stream _Stream, FILE_TYPE _FileType, FORMAT_FLAGS _Parms, const FormatEncoderOptions* _options ) const {
-// 	if ( m_colorProfile == null )
-// 		throw new Exception( "You can't save the bitmap if you don't provide a valid color profile!" );
-// 
-// 	try
-// 	{
-// 		switch ( _FileType )
-// 		{
-// 			case FILE_TYPE.JPEG:
-// 			case FILE_TYPE.PNG:
-// 			case FILE_TYPE.TIFF:
-// 			case FILE_TYPE.GIF:
-// 			case FILE_TYPE.BMP:
-// 				{
-// 					BitmapEncoder	Encoder = null;
-// 					switch ( _FileType )
-// 					{
-// 						case FILE_TYPE.JPEG:	Encoder = new JpegBitmapEncoder(); break;
-// 						case FILE_TYPE.PNG:		Encoder = new PngBitmapEncoder(); break;
-// 						case FILE_TYPE.TIFF:	Encoder = new TiffBitmapEncoder(); break;
-// 						case FILE_TYPE.GIF:		Encoder = new GifBitmapEncoder(); break;
-// 						case FILE_TYPE.BMP:		Encoder = new BmpBitmapEncoder(); break;
-// 					}
-// 
-// 					if ( _options != null )
-// 					{
-// 						switch ( _FileType )
-// 						{
-// 							case FILE_TYPE.JPEG:
-// 								(Encoder as JpegBitmapEncoder).QualityLevel = _options.JPEGQualityLevel;
-// 								break;
-// 
-// 							case FILE_TYPE.PNG:
-// 								(Encoder as PngBitmapEncoder).Interlace = _options.PNGInterlace;
-// 								break;
-// 
-// 							case FILE_TYPE.TIFF:
-// 								(Encoder as TiffBitmapEncoder).Compression = _options.TIFFCompression;
-// 								break;
-// 
-// 							case FILE_TYPE.GIF:
-// 								break;
-// 
-// 							case FILE_TYPE.BMP:
-// 								break;
-// 						}
-// 					}
-// 
-// 
-// 					// Find the appropriate pixel format
-// 					int		BitsPerComponent = 8;
-// 					bool	IsFloat = false;
-// 					if ( (_Parms & FORMAT_FLAGS.SAVE_16BITS_UNORM) != 0 )
-// 						BitsPerComponent = 16;
-// 					if ( (_Parms & FORMAT_FLAGS.SAVE_32BITS_FLOAT) != 0 )
-// 					{	// Floating-point format
-// 						BitsPerComponent = 32;
-// 						IsFloat = true;
-// 					}
-// 
-// 					int		ComponentsCount = (_Parms & FORMAT_FLAGS.GRAY) == 0 ? 3 : 1;
-// 					if ( m_hasAlpha && (_Parms & FORMAT_FLAGS.SKIP_ALPHA) == 0 )
-// 						ComponentsCount++;
-// 
-// 					bool	PreMultiplyAlpha = (_Parms & FORMAT_FLAGS.PREMULTIPLY_ALPHA) != 0;
-// 
-// 					System.Windows.Media.PixelFormat	Format;
-// 					if ( ComponentsCount == 1 )
-// 					{	// Gray
-// 						switch ( BitsPerComponent )
-// 						{
-// 							case 8:		Format = System.Windows.Media.PixelFormats.Gray8; break;
-// 							case 16:	Format = System.Windows.Media.PixelFormats.Gray16; break;
-// 							case 32:	Format = System.Windows.Media.PixelFormats.Gray32Float; break;
-// 							default:	throw new Exception( "Unsupported format!" );
-// 						}
-// 					}
-// 					else if ( ComponentsCount == 3 )
-// 					{	// RGB
-// 						switch ( BitsPerComponent )
-// 						{
-// 							case 8:		Format = System.Windows.Media.PixelFormats.Bgr24; break;
-// 							case 16:	Format = System.Windows.Media.PixelFormats.Rgb48; break;
-// 							case 32:	throw new Exception( "32BITS formats aren't supported without ALPHA!" );
-// 							default:	throw new Exception( "Unsupported format!" );
-// 						}
-// 					}
-// 					else
-// 					{	// RGBA
-// 						switch ( BitsPerComponent )
-// 						{
-// 							case 8:		Format = PreMultiplyAlpha ? System.Windows.Media.PixelFormats.Pbgra32 : System.Windows.Media.PixelFormats.Bgra32; break;
-// 							case 16:	Format = PreMultiplyAlpha ? System.Windows.Media.PixelFormats.Prgba64 : System.Windows.Media.PixelFormats.Rgba64; break;
-// 							case 32:	Format = PreMultiplyAlpha ? System.Windows.Media.PixelFormats.Prgba128Float : System.Windows.Media.PixelFormats.Rgba128Float;
-// 								if ( !IsFloat ) throw new Exception( "32BITS_UNORM format isn't supported if not floating-point!" );
-// 								break;
-// 							default:	throw new Exception( "Unsupported format!" );
-// 						}
-// 					}
-// 
-// 					// Convert into appropriate frame
-// 					BitmapFrame	Frame = ConvertFrame( Format );
-// 					Encoder.Frames.Add( Frame );
-// 
-// 					// Save
-// 					Encoder.Save( _Stream );
-// 				}
-// 				break;
-// 
-// //					case FILE_TYPE.TGA:
-// //TODO!
-// // 						{
-// // 							// Load as a System.Drawing.Bitmap and convert to float4
-// // 							using ( System.IO.MemoryStream Stream = new System.IO.MemoryStream( _ImageFileContent ) )
-// // 								using ( TargaImage TGA = new TargaImage( Stream ) )
-// // 								{
-// // 									// Create a default sRGB linear color profile
-// // 									m_ColorProfile = new ColorProfile(
-// // 											ColorProfile.Chromaticities.sRGB,	// Use default sRGB color profile
-// // 											ColorProfile.GAMMA_CURVE.STANDARD,	// But with a standard gamma curve...
-// // 											TGA.ExtensionArea.GammaRatio		// ...whose gamma is retrieved from extension data
-// // 										);
-// // 
-// // 									// Convert
-// // 									byte[]	ImageContent = LoadBitmap( TGA.Image, out m_Width, out m_Height );
-// // 									m_Bitmap = new float4[m_Width,m_Height];
-// // 									byte	A;
-// // 									int		i = 0;
-// // 									for ( int Y=0; Y < m_Height; Y++ )
-// // 										for ( int X=0; X < m_Width; X++ )
-// // 										{
-// // 											m_Bitmap[X,Y].x = BYTE_TO_FLOAT * ImageContent[i++];
-// // 											m_Bitmap[X,Y].y = BYTE_TO_FLOAT * ImageContent[i++];
-// // 											m_Bitmap[X,Y].z = BYTE_TO_FLOAT * ImageContent[i++];
-// // 
-// // 											A = ImageContent[i++];
-// // 											m_bHasAlpha |= A != 0xFF;
-// // 
-// // 											m_Bitmap[X,Y].w = BYTE_TO_FLOAT * A;
-// // 										}
-// // 
-// // 									// Convert to CIEXYZ
-// // 									m_ColorProfile.RGB2XYZ( m_Bitmap );
-// // 								}
-// // 							return;
-// // 						}
-// 
-// //					case FILE_TYPE.HDR:
-// //TODO!
-// // 						{
-// // 							// Load as XYZ
-// // 							m_Bitmap = LoadAndDecodeHDRFormat( _ImageFileContent, true, out m_ColorProfile );
-// // 							m_Width = m_Bitmap.GetLength( 0 );
-// // 							m_Height = m_Bitmap.GetLength( 1 );
-// // 							return;
-// // 						}
-// 
-// 			case FILE_TYPE.CRW:
-// 			case FILE_TYPE.CR2:
-// 			case FILE_TYPE.DNG:
-// 			default:
-// 				throw new NotSupportedException( "The image file type \"" + _FileType + "\" is not supported by the Bitmap class!" );
-// 		}
-// 	}
-// 	catch ( Exception )
-// 	{
-// 		throw;	// Go on !
-// 	}
-// 	finally
-// 	{
-// 	}
-// }
 #pragma endregion

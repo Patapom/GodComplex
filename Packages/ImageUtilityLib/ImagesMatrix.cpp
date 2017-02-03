@@ -61,6 +61,24 @@ void	ImagesMatrix::InitTexture3D( U32 _width, U32 _height, U32 _depth, U32 _mipL
 	}
 }
 
+void	ImagesMatrix::InitTextureGeneric( U32 _width, U32 _height, U32 _depth, U32 _arraySize, U32 _mipLevelsCount ) {
+	m_type = ImagesMatrix::TYPE::GENERIC;
+	m_mipsArray.SetCount( _arraySize );
+	for ( U32 arraySliceIndex=0; arraySliceIndex < _arraySize; arraySliceIndex++ ) {
+		Mips&	sliceMips = m_mipsArray[arraySliceIndex];
+		sliceMips.Init( _mipLevelsCount );
+
+		U32	W = _width;
+		U32	H = _height;
+		U32	D = _depth;
+		for ( U32 mipLevelIndex=0; mipLevelIndex < _mipLevelsCount; mipLevelIndex++ ) {
+			Mips::Mip&	mip = sliceMips[mipLevelIndex];
+			mip.Init( W, H, D );
+			NextMipSize( W, H, D );
+		}
+	}
+}
+
 void	ImagesMatrix::AllocateImageFiles( ImageFile::PIXEL_FORMAT _format, const ColorProfile& _colorProfile ) {
 	ReleaseImageFiles();	// Release first
 

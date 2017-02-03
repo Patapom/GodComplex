@@ -6,7 +6,6 @@
 
 #include "PixelFormats.h"
 #include "PixelsBuffer.h"
-//#include "..\ImageUtilityManaged\ImageFile.h"
 
 using namespace System;
 
@@ -66,6 +65,7 @@ namespace Renderer {
 
 		// _Content must be of size _ArraySize * _MipLevelsCount and must contain all consecutive mips for each slice (e.g. 3 mips and array size 2 : [ Mip0_slice0, Mip1_slice0, Mip2_slice0, Mip0_slice1, Mip1_slice1, Mip2_slice1])
 		Texture2D( Device^ _device, UInt32 _Width, UInt32 _Height, int _ArraySize, UInt32 _MipLevelsCount, PIXEL_FORMAT _PixelFormat, bool _Staging, bool _UAV, cli::array<PixelsBuffer^>^ _Content );
+		Texture2D( Device^ _device, ImageUtility::ImagesMatrix^ _images, ImageUtility::ImageFile::COMPONENT_FORMAT _componentFormat, bool _Staging, bool _UAV );
 		Texture2D( Device^ _device, UInt32 _Width, UInt32 _Height, UInt32 _ArraySize, DEPTH_STENCIL_FORMAT _DepthStencilFormat );
 		~Texture2D() {
  			delete m_pTexture;
@@ -173,18 +173,18 @@ namespace Renderer {
 		void		RemoveFromLastAssignedSlots()	{ m_pTexture->RemoveFromLastAssignedSlots(); }
 
 		// Uploads the texture as a UAV for a compute shader
-		void		SetCSUAV( UInt32 _slotIndex )					{ m_pTexture->SetCSUAV( _slotIndex ); }
+		void		SetCSUAV( UInt32 _slotIndex )	{ m_pTexture->SetCSUAV( _slotIndex ); }
 		void		SetCSUAV( UInt32 _slotIndex, View2D^ _view  );
 		void		RemoveFromLastAssignedSlotUAV()	{ m_pTexture->RemoveFromLastAssignedSlotUAV(); }
 
 		//////////////////////////////////////////////////////////////////////////
 		// Bridge with image library
 
-		// Creates a texture from an image
-		//	_images, the image matrix containing the texture slices with their mips
-		//	_componentFormat, indicates how individual channels should be encoded
-// 		static Texture2D^	CreateTexture2D( Device^ _device, ImagesMatrix^ _images ) { return CreateTexture2D( _device, _images, ImageFile::COMPONENT_FORMAT::AUTO ); }
-// 		static Texture2D^	CreateTexture2D( Device^ _device, ImagesMatrix^ _images, ImageFile::COMPONENT_FORMAT _componentFormat );
+// 		// Creates a texture from an image
+// 		//	_images, the image matrix containing the texture slices with their mips
+// 		//	_componentFormat, indicates how individual channels should be encoded
+// 		static Texture2D^	CreateTexture2D( Device^ _device, ImageUtility::ImagesMatrix^ _images ) { return CreateTexture2D( _device, _images, ImageUtility::ImageFile::COMPONENT_FORMAT::AUTO ); }
+// 		static Texture2D^	CreateTexture2D( Device^ _device, ImageUtility::ImagesMatrix^ _images, ImageUtility::ImageFile::COMPONENT_FORMAT _componentFormat );
 
 		// Helper to compute a size (width or height) at a specific mip level
 		static UInt32		GetSizeAtMip( UInt32 _sizeAtMip0, UInt32 _mipLevelIndex ) {
@@ -193,7 +193,7 @@ namespace Renderer {
 
 	internal:
 
-//		static PIXEL_FORMAT	ImagePixelFormat2TextureFormat( ImageUtility::ImageFile::PIXEL_FORMAT _format, COMPONENT_FORMAT _componentFormat, bool _sRGB, UInt32% _channelExtension );
+//		static PIXEL_FORMAT	ImagePixelFormat2TextureFormat( ImageUtility::ImageFile::PIXEL_FORMAT _format, ImageUtility::ImageFile::COMPONENT_FORMAT _componentFormat, bool _sRGB, UInt32% _channelExtension );
 
 		Texture2D( const ::Texture2D& _existingTexture ) {
 			m_pTexture = const_cast< ::Texture2D* >( &_existingTexture );

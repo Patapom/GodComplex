@@ -18,5 +18,6 @@
 
 // Image Utility lib
 #include "..\ImageUtilityLib\Bitmap.h"
+#include "..\ImageUtilityLib\ImagesMatrix.h"
 
 #pragma managed

@@ -15,3 +15,8 @@
 
 #include "..\BaseLib\Types.h"
 //using namespace BaseLib;
+
+//#include "..\Packages\ImageUtilityLib\stdafx.h"
+#include "FreeImage.h"
+#include "..\Packages\ImageUtilityLib\ImagesMatrix.h"
+

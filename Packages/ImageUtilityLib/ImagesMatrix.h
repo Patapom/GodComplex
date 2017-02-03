@@ -87,8 +87,10 @@ namespace ImageUtilityLib {
 	public:
 
 		TYPE					GetType() const					{ return m_type; }
+		void					SetType( TYPE value )			{ m_type = value; }
 		ImageFile::PIXEL_FORMAT	GetFormat() const				{ return m_format; }
 		const ColorProfile&		GetColorProfile() const			{ return m_colorProfile; }
+		ColorProfile&			GetColorProfile()				{ return m_colorProfile; }
 		U32						GetArraySize() const			{ return m_mipsArray.Count(); }
 
 		// Indexers
@@ -105,6 +107,9 @@ namespace ImageUtilityLib {
 
 		// Allocates a 3D texture
 		void			InitTexture3D( U32 _width, U32 _height, U32 _depth, U32 _mipLevelsCount );
+
+		// Allocates a generic texture
+		void			InitTextureGeneric( U32 _width, U32 _height, U32 _depth, U32 _arraySize, U32 _mipLevelsCount );
 
 		// Allocates/Releases actual ImageFiles
 		void			AllocateImageFiles( ImageFile::PIXEL_FORMAT _format, const ColorProfile& _colorProfile );

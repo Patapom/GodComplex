@@ -6,7 +6,7 @@ namespace ImageUtility {
 
 	// This class is a simple wrapper for native byte* that can be easily converted to and from a managed byte[]
 	// The image utility library uses this intermediary wrapper to carry native pointers around without having to
-	//	convert to and from byte[] every time but only when required by a native method
+	//	convert to and from byte[] every time but only when actually required by a native method
 	//
 	public ref class NativeByteArray {
 	private:
