@@ -24,7 +24,11 @@ private:	// FIELDS
 	U32								m_arraySize;
 	U32								m_mipLevelsCount;
 
-	const IFormatDescriptor*		m_format;
+//	const IFormatDescriptor*		m_format;
+	const BaseLib::IPixelAccessor*	m_pixelFormat;
+	BaseLib::COMPONENT_FORMAT		m_componentFormat;
+	const BaseLib::IDepthAccessor*	m_depthFormat;
+
 	bool							m_isDepthStencil;
 	bool							m_isCubeMap;
 
@@ -47,7 +51,10 @@ public:	 // PROPERTIES
 	U32							GetArraySize() const		{ return m_arraySize; }
 	U32							GetMipLevelsCount() const	{ return m_mipLevelsCount; }
 	bool						IsCubeMap() const			{ return m_isCubeMap; }
-	const IFormatDescriptor&	GetFormatDescriptor() const	{ return *m_format; }
+//	const IFormatDescriptor&	GetFormatDescriptor() const	{ return *m_format; }
+	const BaseLib::IPixelAccessor&	GetPixelFormatDescriptor() const	{ return *m_pixelFormat; }
+	BaseLib::COMPONENT_FORMAT		GetComponentFormat() const			{ return m_componentFormat; }
+	const BaseLib::IDepthAccessor&	GetDepthFormatDescriptor() const	{ return *m_depthFormat; }
 
 	bfloat3						GetdUV() const				{ return bfloat3( 1.0f / m_width, 1.0f / m_height, 0.0f ); }
 
@@ -56,10 +63,12 @@ public:	 // METHODS
 
 	// NOTE: If _ppContents == NULL then the texture is considered a render target !
 	// NOTE: If _arraySize is < 0 then a cube map or cube map array is created (WARNING: the array size must be a valid multiple of 6!)
-	Texture2D( Device& _device, U32 _width, U32 _height, int _arraySize, U32 _mipLevelsCount, const IPixelFormatDescriptor& _format, const void* const* _ppContent, bool _staging=false, bool _UAV=false );
-	Texture2D( Device& _device, ImageUtilityLib::ImagesMatrix& _images, ImageUtilityLib::ImageFile::COMPONENT_FORMAT _componentFormat=ImageUtilityLib::ImageFile::COMPONENT_FORMAT::AUTO, bool _staging=false, bool _UAV=false );
+	Texture2D( Device& _device, U32 _width, U32 _height, int _arraySize, U32 _mipLevelsCount, const BaseLib::IPixelAccessor& _format, BaseLib::COMPONENT_FORMAT _componentFormat, const void* const* _ppContent, bool _staging=false, bool _UAV=false );
+	Texture2D( Device& _device, const ImageUtilityLib::ImagesMatrix& _images, BaseLib::COMPONENT_FORMAT _componentFormat=BaseLib::COMPONENT_FORMAT::AUTO );
 	// This is for creating a depth stencil buffer
-	Texture2D( Device& _device, U32 _width, U32 _height, U32 _arraySize, const IDepthStencilFormatDescriptor& _format );
+	Texture2D( Device& _device, U32 _width, U32 _height, U32 _arraySize, const BaseLib::IDepthAccessor& _format );
+	// Used by the Device for the default backbuffer, shouldn't be used otherwise
+	Texture2D( Device& _device, ID3D11Texture2D& _Texture, const BaseLib::IPixelAccessor& _format, BaseLib::COMPONENT_FORMAT _componentFormat );
 	~Texture2D();
 
 	// _AsArray is used to force the SRV as viewing a Texture2DArray instead of a TextureCube or TextureCubeArray
@@ -82,24 +91,31 @@ public:	 // METHODS
 	void		SetCSUAV( U32 _SlotIndex, ID3D11UnorderedAccessView* _pView=NULL ) const;
 	void		RemoveFromLastAssignedSlotUAV() const;
 
-	// Used by the Device for the default backbuffer
-	Texture2D( Device& _device, ID3D11Texture2D& _Texture, const IPixelFormatDescriptor& _format );
-
 	// Texture access by the CPU
 	void		CopyFrom( Texture2D& _SourceTexture );
 	D3D11_MAPPED_SUBRESOURCE&	Map( U32 _MipLevelIndex, U32 _ArrayIndex );
 	void		UnMap( U32 _MipLevelIndex, U32 _ArrayIndex );
 
-#if defined(_DEBUG) || !defined(GODCOMPLEX)
-	// I/O for staging textures
-	void		Save( const char* _pFileName );
-	void		Load( const char* _pFileName );
+// 	#if defined(_DEBUG) || !defined(GODCOMPLEX)
+// 		// I/O for staging textures
+// 		void		Save( const char* _pFileName );
+// 		void		Load( const char* _pFileName );
+// 
+// 		// Creates an immutable texture from a POM file
+// 		Texture2D( Device& _device, const TextureFilePOM& _POM, bool _UAV=false );
+// 	#endif
 
-	// Creates an immutable texture from a POM file
-	Texture2D( Device& _device, const TextureFilePOM& _POM, bool _UAV=false );
-#endif
+public:	// HELPERS
 
-public:
+	static DXGI_FORMAT	PixelFormat2DXGIFormat( const BaseLib::IPixelAccessor& _pixelFormat, BaseLib::COMPONENT_FORMAT _componentFormat );
+	enum class DEPTH_ACCESS_TYPE {
+		SURFACE_CREATION,	// The DXGI format used when the surface is created
+		VIEW_WRITABLE,		// The DXGI format used by a shader to write the depth values (i.e. surface is used as depth stencil buffer)
+		VIEW_READABLE,		// The DXGI format used by a shader to read the depth values (i.e. surface is used as a regular texture)
+//		VIEW_WRITABLE_CONST,// The DXGI format used by a shader to write the depth values although we can guarantee the view will not be written to (i.e. surface is used as depth stencil buffer but can also be used as a shader resource view)
+	};
+	static DXGI_FORMAT	DepthFormat2DXGIFormat( const BaseLib::IDepthAccessor& _depthFormat, DEPTH_ACCESS_TYPE _accessType );
+
 	static void	NextMipSize( U32& _width, U32& _height );
 	static U32	ComputeMipLevelsCount( U32 _width, U32 _height, U32 _mipLevelsCount );
 	U32			CalcSubResource( U32 _MipLevelIndex, U32 _ArrayIndex );

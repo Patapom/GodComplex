@@ -12,8 +12,7 @@ using namespace SharpMath;
 
 namespace Renderer {
 
-	public enum class	VERTEX_FORMAT
-	{
+	public enum class	VERTEX_FORMAT {
 		Pt4,		// Transformed position (vector4)
 		P3,			// Position
 		P3N3,		// Position+Normal

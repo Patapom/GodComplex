@@ -1,6 +1,7 @@
 #pragma once
 #include "../Renderer.h"
 #include "FormatDescriptor.h"
+/*
 
 struct DepthStencilFormat
 {
@@ -86,3 +87,4 @@ public:
 	U8		Stencil;
 
 };
+*/

@@ -426,14 +426,6 @@ namespace ImageUtilityLib {
 			BC7_GPU,
 		};
 
-		enum class COMPONENT_FORMAT {
-			AUTO,	// Default value, will select UNORM for integer types and FLOAT for floating-point types
-			UNORM,
-			SNORM,
-			UINT,
-			SINT,
-		};
-
 		static void			DDSLoadFile( const wchar_t* _fileName, ImagesMatrix& _images );
 		static void			DDSLoadMemory( U64 _fileSize, void* _fileContent, ImagesMatrix& _images );
 		static void			DDSSaveFile( const ImagesMatrix& _images, const wchar_t* _fileName, COMPONENT_FORMAT _componentFormat=COMPONENT_FORMAT::AUTO, bool _compressBC6H=false );
@@ -445,8 +437,9 @@ namespace ImageUtilityLib {
 // 		// Saves a DDS image in memory to disk (usually used after a compression)
 // 		static void			DDSSaveFromMemory( U32 _DDSImageSize, const void* _DDSImage, const wchar_t* _fileName );
 
-		static void			DXGIFormat2ImageFileFormat( DXGI_FORMAT _sourceFormat, PIXEL_FORMAT& _targetFormat, U32& _pixelSize );
-		static void			ImageFileFormat2DXGIFormat( PIXEL_FORMAT _sourceFormat, COMPONENT_FORMAT _componentFormat, bool _sRGB, DXGI_FORMAT& _targetFormat );
+		// Conversion to and from DXGI pixel formats and image file pixel formats
+		static PIXEL_FORMAT	DXGIFormat2ImageFileFormat( DXGI_FORMAT _sourceFormat, U32& _pixelSize );
+		static DXGI_FORMAT	ImageFileFormat2DXGIFormat( PIXEL_FORMAT _sourceFormat, COMPONENT_FORMAT _componentFormat );
 
 	private:
 

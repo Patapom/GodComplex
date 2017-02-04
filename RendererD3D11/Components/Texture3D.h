@@ -13,37 +13,43 @@ protected:  // CONSTANTS
 
 private:	// FIELDS
 
-	U32				 m_Width;
-	U32				 m_Height;
-	U32				 m_Depth;
-	U32				 m_MipLevelsCount;
-	const IPixelFormatDescriptor&  m_Format;
+	U32								m_width;
+	U32								m_height;
+	U32								m_depth;
+	U32								m_mipLevelsCount;
 
-	ID3D11Texture3D*	m_pTexture;
+//	const IPixelFormatDescriptor&	m_Format;
+	const BaseLib::IPixelAccessor*	m_pixelFormat;
+	BaseLib::COMPONENT_FORMAT		m_componentFormat;
+
+	ID3D11Texture3D*				m_texture;
 
 	// Cached resource views
-	mutable BaseLib::DictionaryU32	m_CachedSRVs;
-	mutable BaseLib::DictionaryU32	m_CachedRTVs;
-	mutable BaseLib::DictionaryU32	m_CachedUAVs;
-	mutable U32						m_LastAssignedSlots[6];
-	mutable U32						m_LastAssignedSlotsUAV;
-	D3D11_MAPPED_SUBRESOURCE		m_LockedResource;
+	mutable BaseLib::DictionaryU32	m_cachedSRVs;
+	mutable BaseLib::DictionaryU32	m_cachedRTVs;
+	mutable BaseLib::DictionaryU32	m_cachedUAVs;
+	mutable U32						m_lastAssignedSlots[6];
+	mutable U32						m_lastAssignedSlotsUAV;
+	D3D11_MAPPED_SUBRESOURCE		m_lockedResource;
 
 
 public:	 // PROPERTIES
 
-	U32	 GetWidth() const			{ return m_Width; }
-	U32	 GetHeight() const			{ return m_Height; }
-	U32	 GetDepth() const			{ return m_Depth; }
-	U32	 GetMipLevelsCount() const	{ return m_MipLevelsCount; }
-	const IFormatDescriptor&	GetFormatDescriptor() const	{ return m_Format; }
+	U32								GetWidth() const			{ return m_width; }
+	U32								GetHeight() const			{ return m_height; }
+	U32								GetDepth() const			{ return m_depth; }
+	U32								GetMipLevelsCount() const	{ return m_mipLevelsCount; }
+//	const IFormatDescriptor&		GetFormatDescriptor() const	{ return m_Format; }
+	const BaseLib::IPixelAccessor&	GetPixelFormatDescriptor() const	{ return *m_pixelFormat; }
+	BaseLib::COMPONENT_FORMAT		GetComponentFormat() const			{ return m_componentFormat; }
 
-	bfloat4	GetdUVW() const		{ return bfloat4( 1.0f / m_Width, 1.0f / m_Height, 1.0f / m_Depth, 0.0f ); }
+	bfloat4							GetdUVW() const			{ return bfloat4( 1.0f / m_width, 1.0f / m_height, 1.0f / m_depth, 0.0f ); }
 
 public:	 // METHODS
 
 	// NOTE: If _ppContents == NULL then the texture is considered a render target !
-	Texture3D( Device& _Device, U32 _Width, U32 _Height, U32 _Depth, U32 _MipLevelsCount, const IPixelFormatDescriptor& _Format, const void* const* _ppContent, bool _bStaging=false, bool _bUnOrderedAccess=false );
+	Texture3D( Device& _device, U32 _width, U32 _height, U32 _depth, U32 _mipLevelsCount, const BaseLib::IPixelAccessor& _format, BaseLib::COMPONENT_FORMAT _componentFormat, const void* const* _ppContent, bool _staging=false, bool _UAV=false );
+	Texture3D( Device& _device, const ImageUtilityLib::ImagesMatrix& _images, BaseLib::COMPONENT_FORMAT _componentFormat=BaseLib::COMPONENT_FORMAT::AUTO );
 	~Texture3D();
 
 	// _AsArray is used to force the SRV as viewing a Texture2DArray instead of a Texture3D (note that otherwise, _FirstWSlice and _WSize are not used)
@@ -70,24 +76,24 @@ public:	 // METHODS
 	D3D11_MAPPED_SUBRESOURCE&	Map( U32 _MipLevelIndex );
 	void		UnMap( U32 _MipLevelIndex );
 
-#if defined(_DEBUG) || !defined(GODCOMPLEX)
-	// I/O for staging textures
-	void		Save( const char* _pFileName );
-	void		Load( const char* _pFileName );
-
-	// Creates an immutable texture from a POM file
-	Texture3D( Device& _Device, const TextureFilePOM& _POM, bool _bUnOrderedAccess=false );
-#endif
+// 	#if defined(_DEBUG) || !defined(GODCOMPLEX)
+// 		// I/O for staging textures
+// 		void		Save( const char* _pFileName );
+// 		void		Load( const char* _pFileName );
+// 
+// 		// Creates an immutable texture from a POM file
+// 		Texture3D( Device& _Device, const TextureFilePOM& _POM, bool _UAV=false );
+// 	#endif
 
 public:
 	static void	NextMipSize( U32& _Width, U32& _Height, U32& _Depth );
 	static U32	ComputeMipLevelsCount( U32 _Width, U32 _Height, U32 _Depth, U32 _MipLevelsCount );
 
 private:
-	// _bStaging, true if this is a staging texture (i.e. CPU accessible as read/write)
-	// _bUnOrderedAccess, true if the texture can also be used as a UAV (Random access read/write from a compute shader)
+	// _staging, true if this is a staging texture (i.e. CPU accessible as read/write)
+	// _UAV, true if the texture can also be used as a UAV (Random access read/write from a compute shader)
 	// _pMipDescriptors, if not NULL then the row pitch & depth pitch will be read from this array for each mip level
 	//
-	void		Init( const void* const* _ppContent, bool _bStaging=false, bool _bUnOrderedAccess=false, TextureFilePOM::MipDescriptor* _pMipDescriptors=NULL );
+	void		Init( const void* const* _ppContent, bool _staging=false, bool _UAV=false, TextureFilePOM::MipDescriptor* _pMipDescriptors=NULL );
 };
 

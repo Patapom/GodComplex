@@ -1,5 +1,6 @@
 //////////////////////////////////////////////////////////////////////////
 // Loads & saves the POM format
+// NOTE: Now I fully support the DDS format thanks to the ImageUtiliy library, you should definitely abandon that lousy format! :D
 //
 #pragma once
 
@@ -10,21 +11,18 @@ class IPixelFormatDescriptor;
 class Texture2D;
 class Texture3D;
 
-class	TextureFilePOM
-{
+class	TextureFilePOM {
 public:		// NESTED TYPES
 
-	enum	TEXTURE_TYPE
-	{
+	enum	TEXTURE_TYPE {
 		TEX_2D = 0,		// 2D
 		TEX_CUBE = 1,	// CUBE
 		TEX_3D = 2,		// 3D
 	};
 
-	struct	MipDescriptor
-	{
-		int					RowPitch;
-		int					DepthPitch;
+	struct	MipDescriptor {
+		int					rowPitch;
+		int					depthPitch;
 	};
 
 public:		// FIELDS

@@ -49,20 +49,19 @@ void	TextureFilePOM::Load( const char* _pFileName )
 	fread_s( &Format, sizeof(U8), sizeof(U8), 1, pFile );
 	DXGI_FORMAT	PixelFormat = DXGI_FORMAT( Format );
 
-	switch ( PixelFormat )
-	{
-	case DXGI_FORMAT_R8_UNORM:				m_pPixelFormat = &PixelFormatR8::DESCRIPTOR; break;
-	case DXGI_FORMAT_R8G8B8A8_UNORM:		m_pPixelFormat = &PixelFormatRGBA8::DESCRIPTOR; break;
-	case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB:	m_pPixelFormat = &PixelFormatRGBA8_sRGB::DESCRIPTOR; break;
-	case DXGI_FORMAT_R16_FLOAT:				m_pPixelFormat = &PixelFormatR16F::DESCRIPTOR; break;
-	case DXGI_FORMAT_R16_UNORM:				m_pPixelFormat = &PixelFormatR16_UNORM::DESCRIPTOR; break;
-	case DXGI_FORMAT_R16G16_FLOAT:			m_pPixelFormat = &PixelFormatRG16F::DESCRIPTOR; break;
-	case DXGI_FORMAT_R16G16B16A16_UINT:		m_pPixelFormat = &PixelFormatRGBA16_UINT::DESCRIPTOR; break;
-	case DXGI_FORMAT_R16G16B16A16_UNORM:	m_pPixelFormat = &PixelFormatRGBA16_UNORM::DESCRIPTOR; break;
-	case DXGI_FORMAT_R16G16B16A16_FLOAT:	m_pPixelFormat = &PixelFormatRGBA16F::DESCRIPTOR; break;
-	case DXGI_FORMAT_R32_FLOAT:				m_pPixelFormat = &PixelFormatR32F::DESCRIPTOR; break;
-	case DXGI_FORMAT_R32G32_FLOAT:			m_pPixelFormat = &PixelFormatRG32F::DESCRIPTOR; break;
-	case DXGI_FORMAT_R32G32B32A32_FLOAT:	m_pPixelFormat = &PixelFormatRGBA32F::DESCRIPTOR; break;
+	switch ( PixelFormat ) {
+		case DXGI_FORMAT_R8_UNORM:				m_pPixelFormat = &PixelFormatR8::DESCRIPTOR; break;
+		case DXGI_FORMAT_R8G8B8A8_UNORM:		m_pPixelFormat = &PixelFormatRGBA8::DESCRIPTOR; break;
+		case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB:	m_pPixelFormat = &PixelFormatRGBA8_sRGB::DESCRIPTOR; break;
+		case DXGI_FORMAT_R16_FLOAT:				m_pPixelFormat = &PixelFormatR16F::DESCRIPTOR; break;
+		case DXGI_FORMAT_R16_UNORM:				m_pPixelFormat = &PixelFormatR16_UNORM::DESCRIPTOR; break;
+		case DXGI_FORMAT_R16G16_FLOAT:			m_pPixelFormat = &PixelFormatRG16F::DESCRIPTOR; break;
+		case DXGI_FORMAT_R16G16B16A16_UINT:		m_pPixelFormat = &PixelFormatRGBA16_UINT::DESCRIPTOR; break;
+		case DXGI_FORMAT_R16G16B16A16_UNORM:	m_pPixelFormat = &PixelFormatRGBA16_UNORM::DESCRIPTOR; break;
+		case DXGI_FORMAT_R16G16B16A16_FLOAT:	m_pPixelFormat = &PixelFormatRGBA16F::DESCRIPTOR; break;
+		case DXGI_FORMAT_R32_FLOAT:				m_pPixelFormat = &PixelFormatR32F::DESCRIPTOR; break;
+		case DXGI_FORMAT_R32G32_FLOAT:			m_pPixelFormat = &PixelFormatRG32F::DESCRIPTOR; break;
+		case DXGI_FORMAT_R32G32B32A32_FLOAT:	m_pPixelFormat = &PixelFormatRGBA32F::DESCRIPTOR; break;
 	}
 	ASSERT( m_pPixelFormat != NULL, "Unsupported pixel format!" );
 
@@ -80,21 +79,21 @@ void	TextureFilePOM::Load( const char* _pFileName )
 	int	Depth = m_ArraySizeOrDepth;
 	for ( int MipLevelIndex=0; MipLevelIndex < m_MipsCount; MipLevelIndex++ )
 	{
-		fread_s( &m_pMipsDescriptors[MipLevelIndex].RowPitch, sizeof(U32), sizeof(U32), 1, pFile );
-		fread_s( &m_pMipsDescriptors[MipLevelIndex].DepthPitch, sizeof(U32), sizeof(U32), 1, pFile );
+		fread_s( &m_pMipsDescriptors[MipLevelIndex].rowPitch, sizeof(U32), sizeof(U32), 1, pFile );
+		fread_s( &m_pMipsDescriptors[MipLevelIndex].depthPitch, sizeof(U32), sizeof(U32), 1, pFile );
 
 		if ( m_Type != TEX_3D )
 		{
 			for ( int SliceIndex=0; SliceIndex < m_ArraySizeOrDepth; SliceIndex++ )
 			{
-				m_ppContent[MipLevelIndex+m_MipsCount*SliceIndex] = new void*[m_pMipsDescriptors[MipLevelIndex].DepthPitch];
-				fread_s( m_ppContent[MipLevelIndex+m_MipsCount*SliceIndex], m_pMipsDescriptors[MipLevelIndex].DepthPitch, m_pMipsDescriptors[MipLevelIndex].DepthPitch, 1, pFile );
+				m_ppContent[MipLevelIndex+m_MipsCount*SliceIndex] = new void*[m_pMipsDescriptors[MipLevelIndex].depthPitch];
+				fread_s( m_ppContent[MipLevelIndex+m_MipsCount*SliceIndex], m_pMipsDescriptors[MipLevelIndex].depthPitch, m_pMipsDescriptors[MipLevelIndex].depthPitch, 1, pFile );
 			}
 		}
 		else
 		{
-			m_ppContent[MipLevelIndex] = new void*[Depth * m_pMipsDescriptors[MipLevelIndex].DepthPitch];
-			fread_s( m_ppContent[MipLevelIndex], Depth * m_pMipsDescriptors[MipLevelIndex].DepthPitch, Depth * m_pMipsDescriptors[MipLevelIndex].DepthPitch, 1, pFile );
+			m_ppContent[MipLevelIndex] = new void*[Depth * m_pMipsDescriptors[MipLevelIndex].depthPitch];
+			fread_s( m_ppContent[MipLevelIndex], Depth * m_pMipsDescriptors[MipLevelIndex].depthPitch, Depth * m_pMipsDescriptors[MipLevelIndex].depthPitch, 1, pFile );
 		}
 
 		Depth = MAX( 1, Depth >> 1 );
@@ -125,16 +124,16 @@ void	TextureFilePOM::Save( const char* _pFileName )
 	int	Depth = m_ArraySizeOrDepth;
 	for ( int MipLevelIndex=0; MipLevelIndex < m_MipsCount; MipLevelIndex++ )
 	{
-		fwrite( &m_pMipsDescriptors[MipLevelIndex].RowPitch, sizeof(U32), 1, pFile );
-		fwrite( &m_pMipsDescriptors[MipLevelIndex].DepthPitch, sizeof(U32), 1, pFile );
+		fwrite( &m_pMipsDescriptors[MipLevelIndex].rowPitch, sizeof(U32), 1, pFile );
+		fwrite( &m_pMipsDescriptors[MipLevelIndex].depthPitch, sizeof(U32), 1, pFile );
 
 		if ( m_Type != TEX_3D )
 		{
 			for ( int SliceIndex=0; SliceIndex < m_ArraySizeOrDepth; SliceIndex++ )
-				fwrite( m_ppContent[MipLevelIndex+m_MipsCount*SliceIndex], m_pMipsDescriptors[MipLevelIndex].DepthPitch, 1, pFile );
+				fwrite( m_ppContent[MipLevelIndex+m_MipsCount*SliceIndex], m_pMipsDescriptors[MipLevelIndex].depthPitch, 1, pFile );
 		}
 		else
-			fwrite( m_ppContent[MipLevelIndex], Depth * m_pMipsDescriptors[MipLevelIndex].DepthPitch, 1, pFile );
+			fwrite( m_ppContent[MipLevelIndex], Depth * m_pMipsDescriptors[MipLevelIndex].depthPitch, 1, pFile );
 
 		Depth = MAX( 1, Depth >> 1 );
 	}

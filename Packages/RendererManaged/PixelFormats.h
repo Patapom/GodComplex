@@ -26,35 +26,34 @@ namespace Renderer {
 		RG32_FLOAT,
 		RGBA32_FLOAT,
 		RGBA32_UINT,
-		BC3_UNORM,
-		BC3_UNORM_sRGB,
+// 		BC3_UNORM,
+// 		BC3_UNORM_sRGB,
 	};
 
-	static ::IPixelFormatDescriptor*	GetDescriptor( PIXEL_FORMAT _Format ) {
- 		IPixelFormatDescriptor*	pDescriptor = NULL;
- 		switch ( _Format ) {
- 			case PIXEL_FORMAT::R8_UNORM:		pDescriptor = &PixelFormatR8::DESCRIPTOR; break;
- 			case PIXEL_FORMAT::RGBA8_UNORM:		pDescriptor = &PixelFormatRGBA8::DESCRIPTOR; break;
- 			case PIXEL_FORMAT::RGBA8_UNORM_sRGB:pDescriptor = &PixelFormatRGBA8_sRGB::DESCRIPTOR; break;
-			case PIXEL_FORMAT::R16_FLOAT:		pDescriptor = &PixelFormatR16F::DESCRIPTOR; break;
-			case PIXEL_FORMAT::R16_UNORM:		pDescriptor = &PixelFormatR16_UNORM::DESCRIPTOR; break;
-			case PIXEL_FORMAT::RG16_FLOAT:		pDescriptor = &PixelFormatRG16F::DESCRIPTOR; break;
-			case PIXEL_FORMAT::RG16_UNORM:		pDescriptor = &PixelFormatRG16_UNORM::DESCRIPTOR; break;
-			case PIXEL_FORMAT::RGBA16_FLOAT:	pDescriptor = &PixelFormatRGBA16F::DESCRIPTOR; break;
-			case PIXEL_FORMAT::RGBA16_UNORM:	pDescriptor = &PixelFormatRGBA16_UNORM::DESCRIPTOR; break;
-			case PIXEL_FORMAT::RGBA16_UINT:		pDescriptor = &PixelFormatRGBA16_UINT::DESCRIPTOR; break;
-			case PIXEL_FORMAT::R32_FLOAT:		pDescriptor = &PixelFormatR32F::DESCRIPTOR; break;
-			case PIXEL_FORMAT::R32_UINT:		pDescriptor = &PixelFormatR32_UINT::DESCRIPTOR; break;
-			case PIXEL_FORMAT::RG32_FLOAT:		pDescriptor = &PixelFormatRG32F::DESCRIPTOR; break;
-			case PIXEL_FORMAT::RGBA32_FLOAT:	pDescriptor = &PixelFormatRGBA32F::DESCRIPTOR; break;
-			case PIXEL_FORMAT::RGBA32_UINT:		pDescriptor = &PixelFormatRGBA32_UINT::DESCRIPTOR; break;
-			case PIXEL_FORMAT::BC3_UNORM:		pDescriptor = &PixelFormatBC3_UNORM::DESCRIPTOR; break;
-			case PIXEL_FORMAT::BC3_UNORM_sRGB:	pDescriptor = &PixelFormatBC3_UNORM_sRGB::DESCRIPTOR; break;
+	static void	GetDescriptor( PIXEL_FORMAT _Format, BaseLib::IPixelAccessor*& _pixelFormat, BaseLib::COMPONENT_FORMAT& _componentFormat ) {
+		_pixelFormat = NULL;
+		_componentFormat = BaseLib::COMPONENT_FORMAT::AUTO;
+		switch ( _Format ) {
+			case PIXEL_FORMAT::R8_UNORM:		_pixelFormat = &BaseLib::PF_R8::Descriptor;	break;
+			case PIXEL_FORMAT::RGBA8_UNORM:		_pixelFormat = &BaseLib::PF_RGBA8::Descriptor; break;
+			case PIXEL_FORMAT::RGBA8_UNORM_sRGB:_pixelFormat = &BaseLib::PF_RGBA8::Descriptor;			_componentFormat = BaseLib::COMPONENT_FORMAT::UNORM_sRGB;break;
+			case PIXEL_FORMAT::R16_FLOAT:		_pixelFormat = &BaseLib::PF_R16F::Descriptor; break;
+			case PIXEL_FORMAT::R16_UNORM:		_pixelFormat = &BaseLib::PF_R16::Descriptor; break;
+			case PIXEL_FORMAT::RG16_FLOAT:		_pixelFormat = &BaseLib::PF_RG16F::Descriptor; break;
+			case PIXEL_FORMAT::RG16_UNORM:		_pixelFormat = &BaseLib::PF_RG16::Descriptor; break;
+			case PIXEL_FORMAT::RGBA16_FLOAT:	_pixelFormat = &BaseLib::PF_RGBA16F::Descriptor; break;
+			case PIXEL_FORMAT::RGBA16_UNORM:	_pixelFormat = &BaseLib::PF_RGBA16::Descriptor; break;
+			case PIXEL_FORMAT::RGBA16_UINT:		_pixelFormat = &BaseLib::PF_RGBA16::Descriptor;	_componentFormat = BaseLib::COMPONENT_FORMAT::UINT;	break;
+			case PIXEL_FORMAT::R32_FLOAT:		_pixelFormat = &BaseLib::PF_R32F::Descriptor;	break;
+			case PIXEL_FORMAT::R32_UINT:		_pixelFormat = &BaseLib::PF_R32::Descriptor; _componentFormat = BaseLib::COMPONENT_FORMAT::UINT; break;
+			case PIXEL_FORMAT::RG32_FLOAT:		_pixelFormat = &BaseLib::PF_RG32F::Descriptor; break;
+			case PIXEL_FORMAT::RGBA32_FLOAT:	_pixelFormat = &BaseLib::PF_RGBA32F::Descriptor; break;
+			case PIXEL_FORMAT::RGBA32_UINT:		_pixelFormat = &BaseLib::PF_RGBA32::Descriptor;	_componentFormat = BaseLib::COMPONENT_FORMAT::UINT; break;
+// 			case PIXEL_FORMAT::BC3_UNORM:		_pixelFormat = &PF_BC3::Descriptor;	_componentFormat = BaseLib::COMPONENT_FORMAT::UNORM;	break;
+// 			case PIXEL_FORMAT::BC3_UNORM_sRGB:	_pixelFormat = &PF_BC3::Descriptor;	_componentFormat = BaseLib::COMPONENT_FORMAT::UNORM_sRGB;	break;
 
 			default:	throw gcnew Exception( "Unsupported pixel format!" );
- 		}
-
-		return pDescriptor;
+		}
 	}
 
 	// Wraps the most useful DXGI formats used for depth stencil buffers
@@ -65,16 +64,14 @@ namespace Renderer {
 		D24S8,
 	};
 
-	static ::IDepthStencilFormatDescriptor*	GetDescriptor( DEPTH_STENCIL_FORMAT _format )
-	{
- 		IDepthStencilFormatDescriptor*	pDescriptor = NULL;
+	static BaseLib::IDepthAccessor*	GetDescriptor( DEPTH_STENCIL_FORMAT _format ) {
  		switch ( _format ) {
-			case DEPTH_STENCIL_FORMAT::D32:		pDescriptor = &DepthStencilFormatD32F::DESCRIPTOR; break;
-			case DEPTH_STENCIL_FORMAT::D24S8:	pDescriptor = &DepthStencilFormatD24S8::DESCRIPTOR; break;
+			case DEPTH_STENCIL_FORMAT::D32:		return &BaseLib::PF_D32::Descriptor;
+			case DEPTH_STENCIL_FORMAT::D24S8:	return &BaseLib::PF_D24S8::Descriptor;
 
 			default:	throw gcnew Exception( "Unsupported depth stencil format!" );
  		}
 
-		return pDescriptor;
+		return NULL;
 	}
 }

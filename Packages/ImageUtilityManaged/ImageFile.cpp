@@ -489,13 +489,13 @@ ImagesMatrix^	ImageFile::DDSLoadMemory( NativeByteArray^ _imageContent ) {
 void	ImageFile::DDSSaveFile( ImagesMatrix^ _images, System::IO::FileInfo^ _fileName, COMPONENT_FORMAT _componentFormat ) {
 	pin_ptr< const wchar_t >	nativeFileName = PtrToStringChars( _fileName->FullName );
 
-	ImageUtilityLib::ImageFile::DDSSaveFile( *_images->m_nativeObject, nativeFileName, ImageUtilityLib::ImageFile::COMPONENT_FORMAT( _componentFormat ) );
+	ImageUtilityLib::ImageFile::DDSSaveFile( *_images->m_nativeObject, nativeFileName, BaseLib::COMPONENT_FORMAT( _componentFormat ) );
 }
 NativeByteArray^	ImageFile::DDSSaveMemory( ImagesMatrix^ _images, COMPONENT_FORMAT _componentFormat ) {
 	// Generate native byte array
 	U64		fileSize = 0;
 	void*	fileContent = NULL;
-	ImageUtilityLib::ImageFile::DDSSaveMemory( *_images->m_nativeObject, fileSize, fileContent, ImageUtilityLib::ImageFile::COMPONENT_FORMAT( _componentFormat ) );
+	ImageUtilityLib::ImageFile::DDSSaveMemory( *_images->m_nativeObject, fileSize, fileContent, BaseLib::COMPONENT_FORMAT( _componentFormat ) );
 
 	NativeByteArray^	result = gcnew NativeByteArray( int(fileSize), fileContent );
 	return result;

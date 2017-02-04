@@ -4,11 +4,12 @@
 
 #include "Texture3D.h"
 
-
 namespace Renderer {
 
 	Texture3D::Texture3D( Device^ _device, UInt32 _width, UInt32 _height, UInt32 _depth, UInt32 _mipLevelsCount, PIXEL_FORMAT _pixelFormat, bool _staging, bool _UAV, cli::array<PixelsBuffer^>^ _mipLevelsContent ) {
- 		IPixelFormatDescriptor*	pDescriptor = GetDescriptor( _pixelFormat );
+ 		BaseLib::IPixelAccessor*	descriptor = NULL;
+		BaseLib::COMPONENT_FORMAT	componentFormat;
+		GetDescriptor( _pixelFormat, descriptor, componentFormat );
 
 		void**	ppContent = NULL;
 		if ( _mipLevelsContent != nullptr ) {
@@ -20,9 +21,13 @@ namespace Renderer {
 			}
 		}
 
-		m_pTexture = new ::Texture3D( *_device->m_pDevice, _width, _height, _depth, _mipLevelsCount, *pDescriptor, ppContent, _staging, _UAV );
+		m_pTexture = new ::Texture3D( *_device->m_pDevice, _width, _height, _depth, _mipLevelsCount, *descriptor, componentFormat, ppContent, _staging, _UAV );
 
 		delete[] ppContent;
+	}
+	Texture3D::Texture3D( Device^ _device, ImageUtility::ImagesMatrix^ _images, ImageUtility::COMPONENT_FORMAT _componentFormat ) {
+		ImageUtilityLib::ImagesMatrix*	nativeObject = reinterpret_cast< ImageUtilityLib::ImagesMatrix* >( _images->NativeObject.ToPointer() );
+		m_pTexture = new ::Texture3D( *_device->m_pDevice, *nativeObject, BaseLib::COMPONENT_FORMAT( _componentFormat ) );
 	}
 
 	void	Texture3D::Set( UInt32 _slotIndex, View3D^ _view )		{ m_pTexture->Set( _slotIndex, true, _view != nullptr ? _view->SRV : NULL ); }

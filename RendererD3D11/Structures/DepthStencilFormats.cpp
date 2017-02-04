@@ -1,7 +1,7 @@
 #include "stdafx.h"
 
 #include "DepthStencilFormats.h"
-
+/*
 DepthStencilFormatD32F::Desc	DepthStencilFormatD32F::DESCRIPTOR;
 DepthStencilFormatD24S8::Desc	DepthStencilFormatD24S8::DESCRIPTOR;
 
@@ -24,3 +24,4 @@ void	DepthStencilFormatD24S8::Desc::Read( const DepthStencilFormat& _Pixel, floa
 	_Depth = iDepth / 16777215.0f;
 	_Stencil = P.Stencil;
 }
+*/

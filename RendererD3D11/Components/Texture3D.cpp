@@ -1,52 +1,118 @@
 #include "stdafx.h"
 
+#include "Texture2D.h"
 #include "Texture3D.h"
 
-Texture3D::Texture3D( Device& _Device, U32 _Width, U32 _Height, U32 _Depth, U32 _MipLevelsCount, const IPixelFormatDescriptor& _Format, const void* const* _ppContent, bool _bStaging, bool _bUnOrderedAccess )
+Texture3D::Texture3D( Device& _Device, U32 _width, U32 _height, U32 _depth, U32 _mipLevelsCount, const BaseLib::IPixelAccessor& _format, BaseLib::COMPONENT_FORMAT _componentFormat, const void* const* _ppContent, bool _staging, bool _UAV )
 	: Component( _Device )
-	, m_Width( _Width )
-	, m_Height( _Height )
-	, m_Depth( _Depth )
-	, m_Format( _Format )
-	, m_MipLevelsCount( _MipLevelsCount )
+	, m_width( _width )
+	, m_height( _height )
+	, m_depth( _depth )
+	, m_pixelFormat( &_format )
+	, m_componentFormat( _componentFormat )
+	, m_mipLevelsCount( _mipLevelsCount )
 {
-	Init( _ppContent, _bStaging, _bUnOrderedAccess );
+	Init( _ppContent, _staging, _UAV );
 }
 
-static void		ReleaseDirectXObject( int _EntryIndex, void*& _pValue, void* _pUserData )
-{
+Texture3D::Texture3D( Device& _device, const ImageUtilityLib::ImagesMatrix& _images, BaseLib::COMPONENT_FORMAT _componentFormat )
+	: Component( _device ) {
+	ASSERT( _images.GetType() == ImageUtilityLib::ImagesMatrix::TYPE::TEXTURE3D, "Invalid images matrix type!" );
+	ASSERT( _images.GetArraySize() == 1, "Unexpected array size! Must be 1 for 3D textures. Other slices will simply be ignored..." );
+	m_mipLevelsCount = _images[0].GetMipLevelsCount();
+	ASSERT( m_mipLevelsCount > 0, "Invalid mip levels count!" );
+
+	// Retrieve default image size
+	const ImageUtilityLib::ImagesMatrix::Mips::Mip&	referenceMip = _images[0][0];
+	m_width = referenceMip.Width();
+	m_height = referenceMip.Height();
+	m_depth = referenceMip.Depth();
+	ASSERT( m_width <= MAX_TEXTURE_SIZE, "Texture size out of range!" );
+	ASSERT( m_height <= MAX_TEXTURE_SIZE, "Texture size out of range!" );
+	ASSERT( m_depth <= MAX_TEXTURE_SIZE, "Texture size out of range!" );
+
+	// Retrieve image format
+	DXGI_FORMAT	textureFormat = ImageUtilityLib::ImageFile::ImageFileFormat2DXGIFormat( _images.GetFormat(), _componentFormat );
+
+	// Prepare main descriptor
+	D3D11_TEXTURE3D_DESC	desc;
+	desc.Width = m_width;
+	desc.Height = m_height;
+	desc.Depth = m_depth;
+	desc.MipLevels = m_mipLevelsCount;
+	desc.Format = textureFormat;
+	desc.Usage = D3D11_USAGE_IMMUTABLE;
+	desc.CPUAccessFlags = D3D11_CPU_ACCESS_FLAG( 0 );
+	desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+	desc.MiscFlags = 0;
+
+	// Prepare individual sub-resource descriptors
+	D3D11_SUBRESOURCE_DATA  subResourceDescriptors[MAX_TEXTURE_POT];
+	const ImageUtilityLib::ImagesMatrix::Mips&	mips = _images[0];
+
+	U32	W = m_width;
+	U32	H = m_height;
+	U32	D = m_depth;
+	for ( U32 mipLevelIndex=0; mipLevelIndex < m_mipLevelsCount; mipLevelIndex++ ) {
+		const ImageUtilityLib::ImagesMatrix::Mips::Mip&	mip = mips[mipLevelIndex];
+		ASSERT( mip.Width() == W && mip.Height() == H && mip.Depth() == D, "Mip's width/height/depth mismatch!" );
+
+		for ( U32 sliceIndex=0; sliceIndex < D; sliceIndex++ ) {
+			const ImageUtilityLib::ImageFile*	sliceImage = mip[sliceIndex];
+			RELEASE_ASSERT( sliceImage != NULL, "Invalid mip slice image!" );
+
+			U32	rowPitch = sliceImage->Pitch();
+			U32	depthPitch = H * rowPitch;
+
+			subResourceDescriptors[sliceIndex*m_mipLevelsCount+mipLevelIndex].pSysMem = sliceImage->GetBits();
+			subResourceDescriptors[sliceIndex*m_mipLevelsCount+mipLevelIndex].SysMemPitch = rowPitch;
+			subResourceDescriptors[sliceIndex*m_mipLevelsCount+mipLevelIndex].SysMemSlicePitch = depthPitch;
+		}
+
+		NextMipSize( W, H, D );
+	}
+
+	Check( m_device.DXDevice().CreateTexture3D( &desc, subResourceDescriptors, &m_texture ) );
+
+	// Clear last assignment slots
+	for ( int ShaderStageIndex=0; ShaderStageIndex < 6; ShaderStageIndex++ )
+		m_lastAssignedSlots[ShaderStageIndex] = ~0U;
+	m_lastAssignedSlotsUAV = ~0U;
+}
+
+static void		ReleaseDirectXObject( int _EntryIndex, void*& _pValue, void* _pUserData ) {
 	IUnknown*	pObject = (IUnknown*) _pValue;
 	pObject->Release();
 }
 
 Texture3D::~Texture3D() {
-	ASSERT( m_pTexture != NULL, "Invalid texture to destroy !" );
+	ASSERT( m_texture != NULL, "Invalid texture to destroy !" );
 
-	m_CachedSRVs.ForEach( ReleaseDirectXObject, NULL );
-	m_CachedRTVs.ForEach( ReleaseDirectXObject, NULL );
-	m_CachedUAVs.ForEach( ReleaseDirectXObject, NULL );
+	m_cachedSRVs.ForEach( ReleaseDirectXObject, NULL );
+	m_cachedRTVs.ForEach( ReleaseDirectXObject, NULL );
+	m_cachedUAVs.ForEach( ReleaseDirectXObject, NULL );
 
-	m_pTexture->Release();
-	m_pTexture = NULL;
+	m_texture->Release();
+	m_texture = NULL;
 }
 
 void	Texture3D::Init( const void* const* _ppContent, bool _bStaging, bool _bUnOrderedAccess, TextureFilePOM::MipDescriptor* _pMipDescriptors ) {
-	ASSERT( m_Width <= MAX_TEXTURE_SIZE, "Texture size out of range !" );
-	ASSERT( m_Height <= MAX_TEXTURE_SIZE, "Texture size out of range !" );
-	ASSERT( m_Depth <= MAX_TEXTURE_SIZE, "Texture size out of range !" );
+	ASSERT( m_width <= MAX_TEXTURE_SIZE, "Texture size out of range !" );
+	ASSERT( m_height <= MAX_TEXTURE_SIZE, "Texture size out of range !" );
+	ASSERT( m_depth <= MAX_TEXTURE_SIZE, "Texture size out of range !" );
 
 	for ( int ShaderStageIndex=0; ShaderStageIndex < 6; ShaderStageIndex++ )
-		m_LastAssignedSlots[ShaderStageIndex] = -1;
-	m_LastAssignedSlotsUAV = -1;
+		m_lastAssignedSlots[ShaderStageIndex] = ~0U;
+	m_lastAssignedSlotsUAV = ~0U;
 
-	m_MipLevelsCount = ComputeMipLevelsCount( m_Width, m_Height, m_Depth, m_MipLevelsCount );
+	m_mipLevelsCount = ComputeMipLevelsCount( m_width, m_height, m_depth, m_mipLevelsCount );
 
 	D3D11_TEXTURE3D_DESC	Desc;
-	Desc.Width = m_Width;
-	Desc.Height = m_Height;
-	Desc.Depth = m_Depth;
-	Desc.MipLevels = m_MipLevelsCount;
-	Desc.Format = m_Format.DirectXFormat();
+	Desc.Width = m_width;
+	Desc.Height = m_height;
+	Desc.Depth = m_depth;
+	Desc.MipLevels = m_mipLevelsCount;
+	Desc.Format = Texture2D::PixelFormat2DXGIFormat( *m_pixelFormat, m_componentFormat );
 	Desc.MiscFlags = D3D11_RESOURCE_MISC_FLAG( 0 );
 
 	if ( _bStaging ) {
@@ -61,115 +127,115 @@ void	Texture3D::Init( const void* const* _ppContent, bool _bStaging, bool _bUnOr
 
 	if ( _ppContent != NULL ) {
 		D3D11_SUBRESOURCE_DATA  pInitialData[MAX_TEXTURE_POT];
-		U32	Width = m_Width;
-		U32	Height = m_Height;
-		U32	Depth = m_Depth;
-		for ( U32 MipLevelIndex=0; MipLevelIndex < m_MipLevelsCount; MipLevelIndex++ ) {
-			U32	RowPitch = _pMipDescriptors != NULL ? _pMipDescriptors[MipLevelIndex].RowPitch : Width * m_Format.Size();
-			U32	DepthPitch = _pMipDescriptors != NULL ? _pMipDescriptors[MipLevelIndex].DepthPitch : Height * RowPitch;
+		U32	W = m_width;
+		U32	H = m_height;
+		U32	D = m_depth;
+		for ( U32 mipLevelIndex=0; mipLevelIndex < m_mipLevelsCount; mipLevelIndex++ ) {
+			U32	rowPitch = _pMipDescriptors != NULL ? _pMipDescriptors[mipLevelIndex].rowPitch : W * m_pixelFormat->Size();
+			U32	depthPitch = _pMipDescriptors != NULL ? _pMipDescriptors[mipLevelIndex].depthPitch : H * rowPitch;
 
-			pInitialData[MipLevelIndex].pSysMem = _ppContent[MipLevelIndex];
-			pInitialData[MipLevelIndex].SysMemPitch = RowPitch;
-			pInitialData[MipLevelIndex].SysMemSlicePitch = DepthPitch;
-			NextMipSize( Width, Height, Depth );
+			pInitialData[mipLevelIndex].pSysMem = _ppContent[mipLevelIndex];
+			pInitialData[mipLevelIndex].SysMemPitch = rowPitch;
+			pInitialData[mipLevelIndex].SysMemSlicePitch = depthPitch;
+			NextMipSize( W, H, D );
 		}
 
-		Check( m_device.DXDevice().CreateTexture3D( &Desc, pInitialData, &m_pTexture ) );
+		Check( m_device.DXDevice().CreateTexture3D( &Desc, pInitialData, &m_texture ) );
 	}
 	else
-		Check( m_device.DXDevice().CreateTexture3D( &Desc, NULL, &m_pTexture ) );
+		Check( m_device.DXDevice().CreateTexture3D( &Desc, NULL, &m_texture ) );
 }
 
-ID3D11ShaderResourceView*	Texture3D::GetSRV( U32 _MipLevelStart, U32 _MipLevelsCount, U32 _FirstWSlice, U32 _WSize, bool _AsArray ) const {
-	if ( _MipLevelsCount == 0 )
-		_MipLevelsCount = m_MipLevelsCount - _MipLevelStart;
+ID3D11ShaderResourceView*	Texture3D::GetSRV( U32 _MipLevelStart, U32 _mipLevelsCount, U32 _FirstWSlice, U32 _WSize, bool _AsArray ) const {
+	if ( _mipLevelsCount == 0 )
+		_mipLevelsCount = m_mipLevelsCount - _MipLevelStart;
 	if ( _WSize == 0 )
-		_WSize = m_Depth - _FirstWSlice;
+		_WSize = m_depth - _FirstWSlice;
 
 	// Check if we already have it
 	U32	Hash;
 	if ( _AsArray )
-		Hash = (_MipLevelStart << 0) | (_FirstWSlice << 4) | (_MipLevelsCount << (4+12)) | (_WSize << (4+12+4));	// Re-organized to have most likely changes (i.e. mip & array starts) first
+		Hash = (_MipLevelStart << 0) | (_FirstWSlice << 4) | (_mipLevelsCount << (4+12)) | (_WSize << (4+12+4));	// Re-organized to have most likely changes (i.e. mip & array starts) first
 	else
-		Hash = _MipLevelStart | (_MipLevelsCount << 4);
+		Hash = _MipLevelStart | (_mipLevelsCount << 4);
 	Hash ^= _AsArray ? 0x80000000UL : 0;
 
-	ID3D11ShaderResourceView*	pExistingView = (ID3D11ShaderResourceView*) m_CachedSRVs.Get( Hash );
+	ID3D11ShaderResourceView*	pExistingView = (ID3D11ShaderResourceView*) m_cachedSRVs.Get( Hash );
 	if ( pExistingView != NULL )
 		return pExistingView;
 
-	D3D11_SHADER_RESOURCE_VIEW_DESC	Desc;
-	Desc.Format = m_Format.DirectXFormat();
+	D3D11_SHADER_RESOURCE_VIEW_DESC	desc;
+	desc.Format = Texture2D::PixelFormat2DXGIFormat( *m_pixelFormat, m_componentFormat );
 	if ( _AsArray ) {
 		// Force as a Texture2DArray
-		Desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
-		Desc.Texture2DArray.MostDetailedMip = _MipLevelStart;
-		Desc.Texture2DArray.MipLevels = _MipLevelsCount;
-		Desc.Texture2DArray.FirstArraySlice = _FirstWSlice;
-		Desc.Texture2DArray.ArraySize = _WSize;
+		desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
+		desc.Texture2DArray.MostDetailedMip = _MipLevelStart;
+		desc.Texture2DArray.MipLevels = _mipLevelsCount;
+		desc.Texture2DArray.FirstArraySlice = _FirstWSlice;
+		desc.Texture2DArray.ArraySize = _WSize;
 	} else {
-		Desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE3D;
-		Desc.Texture3D.MostDetailedMip = _MipLevelStart;
-		Desc.Texture3D.MipLevels = _MipLevelsCount;
+		desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE3D;
+		desc.Texture3D.MostDetailedMip = _MipLevelStart;
+		desc.Texture3D.MipLevels = _mipLevelsCount;
 	}
 
 	ID3D11ShaderResourceView*	pView;
-	Check( m_device.DXDevice().CreateShaderResourceView( m_pTexture, &Desc, &pView ) );
+	Check( m_device.DXDevice().CreateShaderResourceView( m_texture, &desc, &pView ) );
 
-	m_CachedSRVs.Add( Hash, pView );
+	m_cachedSRVs.Add( Hash, pView );
 
 	return pView;
 }
 
 ID3D11RenderTargetView*		Texture3D::GetRTV( U32 _MipLevelIndex, U32 _FirstWSlice, U32 _WSize ) const {
 	if ( _WSize == 0 )
-		_WSize = m_Depth - _FirstWSlice;
+		_WSize = m_depth - _FirstWSlice;
 
 	// Check if we already have it
 //	U32	Hash = _WSize | ((_FirstWSlice | (_MipLevelIndex << 12)) << 12);
 	U32	Hash = (_MipLevelIndex << 0) | (_FirstWSlice << 12) | (_WSize << (4+12));	// Re-organized to have most likely changes (i.e. mip & slice starts) first
-	ID3D11RenderTargetView*	pExistingView = (ID3D11RenderTargetView*) m_CachedRTVs.Get( Hash );
+	ID3D11RenderTargetView*	pExistingView = (ID3D11RenderTargetView*) m_cachedRTVs.Get( Hash );
 	if ( pExistingView != NULL )
 		return pExistingView;
 
 	D3D11_RENDER_TARGET_VIEW_DESC	Desc;
-	Desc.Format = m_Format.DirectXFormat();
+	Desc.Format = Texture2D::PixelFormat2DXGIFormat( *m_pixelFormat, m_componentFormat );
 	Desc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE3D;
 	Desc.Texture3D.MipSlice = _MipLevelIndex;
 	Desc.Texture3D.FirstWSlice = _FirstWSlice;
 	Desc.Texture3D.WSize = _WSize;
 
 	ID3D11RenderTargetView*	pView;
-	Check( m_device.DXDevice().CreateRenderTargetView( m_pTexture, &Desc, &pView ) );
+	Check( m_device.DXDevice().CreateRenderTargetView( m_texture, &Desc, &pView ) );
 
-	m_CachedRTVs.Add( Hash, pView );
+	m_cachedRTVs.Add( Hash, pView );
 
 	return pView;
 }
 
 ID3D11UnorderedAccessView*	Texture3D::GetUAV( U32 _MipLevelIndex, U32 _FirstWSlice, U32 _WSize ) const {
 	if ( _WSize == 0 )
-		_WSize = m_Depth - _FirstWSlice;
+		_WSize = m_depth - _FirstWSlice;
 
 	// Check if we already have it
 //	U32	Hash = _WSize | ((_FirstWSlice | (_MipLevelIndex << 12)) << 12);
 	U32	Hash = (_MipLevelIndex << 0) | (_FirstWSlice << 12) | (_WSize << (4+12));	// Re-organized to have most likely changes (i.e. mip & slice starts) first
-	ID3D11UnorderedAccessView*	pExistingView = (ID3D11UnorderedAccessView*) m_CachedUAVs.Get( Hash );
+	ID3D11UnorderedAccessView*	pExistingView = (ID3D11UnorderedAccessView*) m_cachedUAVs.Get( Hash );
 	if ( pExistingView != NULL )
 		return pExistingView;
 
 	// Create a new one
 	D3D11_UNORDERED_ACCESS_VIEW_DESC	Desc;
-	Desc.Format = m_Format.DirectXFormat();
+	Desc.Format = Texture2D::PixelFormat2DXGIFormat( *m_pixelFormat, m_componentFormat );
 	Desc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE3D;
 	Desc.Texture3D.MipSlice = _MipLevelIndex;
 	Desc.Texture3D.FirstWSlice = _FirstWSlice;
 	Desc.Texture3D.WSize = _WSize;
 
 	ID3D11UnorderedAccessView*	pView;
-	Check( m_device.DXDevice().CreateUnorderedAccessView( m_pTexture, &Desc, &pView ) );
+	Check( m_device.DXDevice().CreateUnorderedAccessView( m_texture, &Desc, &pView ) );
 
-	m_CachedUAVs.Add( Hash, pView );
+	m_cachedUAVs.Add( Hash, pView );
 
 	return pView;
 }
@@ -184,54 +250,54 @@ void	Texture3D::Set( U32 _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderResour
 	m_device.DXContext().GSSetShaderResources( _SlotIndex, 1, &_pView );
 	m_device.DXContext().PSSetShaderResources( _SlotIndex, 1, &_pView );
 	m_device.DXContext().CSSetShaderResources( _SlotIndex, 1, &_pView );
-	m_LastAssignedSlots[0] = _SlotIndex;
-	m_LastAssignedSlots[1] = _SlotIndex;
-	m_LastAssignedSlots[2] = _SlotIndex;
-	m_LastAssignedSlots[3] = _SlotIndex;
-	m_LastAssignedSlots[4] = _SlotIndex;
-	m_LastAssignedSlots[5] = _SlotIndex;
+	m_lastAssignedSlots[0] = _SlotIndex;
+	m_lastAssignedSlots[1] = _SlotIndex;
+	m_lastAssignedSlots[2] = _SlotIndex;
+	m_lastAssignedSlots[3] = _SlotIndex;
+	m_lastAssignedSlots[4] = _SlotIndex;
+	m_lastAssignedSlots[5] = _SlotIndex;
 }
 void	Texture3D::SetVS( U32 _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderResourceView* _pView ) const {
 	ASSERT( _SlotIndex >= 10 || _bIKnowWhatImDoing, "WARNING: Assigning a reserved texture slot ! (i.e. all slots [0,9] are reserved for global textures)" );
 
 	_pView = _pView != NULL ? _pView : GetSRV( 0, 0 );
 	m_device.DXContext().VSSetShaderResources( _SlotIndex, 1, &_pView );
-	m_LastAssignedSlots[0] = _SlotIndex;
+	m_lastAssignedSlots[0] = _SlotIndex;
 }
 void	Texture3D::SetHS( U32 _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderResourceView* _pView ) const {
 	ASSERT( _SlotIndex >= 10 || _bIKnowWhatImDoing, "WARNING: Assigning a reserved texture slot ! (i.e. all slots [0,9] are reserved for global textures)" );
 
 	_pView = _pView != NULL ? _pView : GetSRV( 0, 0 );
 	m_device.DXContext().HSSetShaderResources( _SlotIndex, 1, &_pView );
-	m_LastAssignedSlots[1] = _SlotIndex;
+	m_lastAssignedSlots[1] = _SlotIndex;
 }
 void	Texture3D::SetDS( U32 _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderResourceView* _pView ) const {
 	ASSERT( _SlotIndex >= 10 || _bIKnowWhatImDoing, "WARNING: Assigning a reserved texture slot ! (i.e. all slots [0,9] are reserved for global textures)" );
 
 	_pView = _pView != NULL ? _pView : GetSRV( 0, 0 );
 	m_device.DXContext().DSSetShaderResources( _SlotIndex, 1, &_pView );
-	m_LastAssignedSlots[2] = _SlotIndex;
+	m_lastAssignedSlots[2] = _SlotIndex;
 }
 void	Texture3D::SetGS( U32 _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderResourceView* _pView ) const {
 	ASSERT( _SlotIndex >= 10 || _bIKnowWhatImDoing, "WARNING: Assigning a reserved texture slot ! (i.e. all slots [0,9] are reserved for global textures)" );
 
 	_pView = _pView != NULL ? _pView : GetSRV( 0, 0 );
 	m_device.DXContext().GSSetShaderResources( _SlotIndex, 1, &_pView );
-	m_LastAssignedSlots[3] = _SlotIndex;
+	m_lastAssignedSlots[3] = _SlotIndex;
 }
 void	Texture3D::SetPS( U32 _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderResourceView* _pView ) const {
 	ASSERT( _SlotIndex >= 10 || _bIKnowWhatImDoing, "WARNING: Assigning a reserved texture slot ! (i.e. all slots [0,9] are reserved for global textures)" );
 
 	_pView = _pView != NULL ? _pView : GetSRV( 0, 0 );
 	m_device.DXContext().PSSetShaderResources( _SlotIndex, 1, &_pView );
-	m_LastAssignedSlots[4] = _SlotIndex;
+	m_lastAssignedSlots[4] = _SlotIndex;
 }
 void	Texture3D::SetCS( U32 _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderResourceView* _pView ) const {
 	ASSERT( _SlotIndex >= 10 || _bIKnowWhatImDoing, "WARNING: Assigning a reserved texture slot ! (i.e. all slots [0,9] are reserved for global textures)" );
 
 	_pView = _pView != NULL ? _pView : GetSRV( 0, 0 );
 	m_device.DXContext().CSSetShaderResources( _SlotIndex, 1, &_pView );
-	m_LastAssignedSlots[5] = _SlotIndex;
+	m_lastAssignedSlots[5] = _SlotIndex;
 }
 
 void	Texture3D::RemoveFromLastAssignedSlots() const {
@@ -244,9 +310,9 @@ void	Texture3D::RemoveFromLastAssignedSlots() const {
 		Device::SSF_COMPUTE_SHADER,
 	};
 	for ( U32 ShaderStageIndex=0; ShaderStageIndex < 6; ShaderStageIndex++ )
-		if ( m_LastAssignedSlots[ShaderStageIndex] != -1 ) {
-			m_device.RemoveShaderResources( m_LastAssignedSlots[ShaderStageIndex], 1, pStageFlags[ShaderStageIndex] );
-			m_LastAssignedSlots[ShaderStageIndex] = -1;
+		if ( m_lastAssignedSlots[ShaderStageIndex] != -1 ) {
+			m_device.RemoveShaderResources( m_lastAssignedSlots[ShaderStageIndex], 1, pStageFlags[ShaderStageIndex] );
+			m_lastAssignedSlots[ShaderStageIndex] = -1;
 		}
 }
 
@@ -255,55 +321,55 @@ void	Texture3D::SetCSUAV( U32 _SlotIndex, ID3D11UnorderedAccessView* _pView ) co
 	_pView = _pView != NULL ? _pView : GetUAV( 0, 0, 0 );
 	UINT	InitialCount = -1;
 	m_device.DXContext().CSSetUnorderedAccessViews( _SlotIndex, 1, &_pView, &InitialCount );
-	m_LastAssignedSlotsUAV = _SlotIndex;
+	m_lastAssignedSlotsUAV = _SlotIndex;
 }
 
 void	Texture3D::RemoveFromLastAssignedSlotUAV() const {
 	ID3D11UnorderedAccessView*	pNULL = NULL;
 	UINT	InitialCount = -1;
-	if ( m_LastAssignedSlotsUAV != -1 )
-		m_device.DXContext().CSSetUnorderedAccessViews( m_LastAssignedSlotsUAV, 1, &pNULL, &InitialCount );
-	m_LastAssignedSlotsUAV = -1;
+	if ( m_lastAssignedSlotsUAV != -1 )
+		m_device.DXContext().CSSetUnorderedAccessViews( m_lastAssignedSlotsUAV, 1, &pNULL, &InitialCount );
+	m_lastAssignedSlotsUAV = -1;
 }
 
 
 void	Texture3D::CopyFrom( Texture3D& _SourceTexture ) {
-	ASSERT( _SourceTexture.m_Width == m_Width && _SourceTexture.m_Height == m_Height && _SourceTexture.m_Depth == m_Depth, "Size mismatch!" );
-	ASSERT( _SourceTexture.m_MipLevelsCount == m_MipLevelsCount, "Mips count mismatch!" );
-	ASSERT( _SourceTexture.m_Format.DirectXFormat() == m_Format.DirectXFormat(), "Format mismatch!" );
+	ASSERT( _SourceTexture.m_width == m_width && _SourceTexture.m_height == m_height && _SourceTexture.m_depth == m_depth, "Size mismatch!" );
+	ASSERT( _SourceTexture.m_mipLevelsCount == m_mipLevelsCount, "Mips count mismatch!" );
+	ASSERT( _SourceTexture.m_pixelFormat == m_pixelFormat, "Format mismatch!" );
 
-	m_device.DXContext().CopyResource( m_pTexture, _SourceTexture.m_pTexture );
+	m_device.DXContext().CopyResource( m_texture, _SourceTexture.m_texture );
 }
 
 D3D11_MAPPED_SUBRESOURCE&	Texture3D::Map( U32 _MipLevelIndex ) {
-	Check( m_device.DXContext().Map( m_pTexture, _MipLevelIndex, D3D11_MAP_READ, 0, &m_LockedResource ) );
-	return m_LockedResource;
+	Check( m_device.DXContext().Map( m_texture, _MipLevelIndex, D3D11_MAP_READ, 0, &m_lockedResource ) );
+	return m_lockedResource;
 }
 
 void	Texture3D::UnMap( U32 _MipLevelIndex ) {
-	m_device.DXContext().Unmap( m_pTexture, _MipLevelIndex );
+	m_device.DXContext().Unmap( m_texture, _MipLevelIndex );
 }
 
-void	Texture3D::NextMipSize( U32& _Width, U32& _Height, U32& _Depth ) {
-	_Width = MAX( 1U, _Width >> 1 );
-	_Height = MAX( 1U, _Height >> 1 );
-	_Depth = MAX( 1U, _Depth >> 1 );
+void	Texture3D::NextMipSize( U32& _width, U32& _height, U32& _depth ) {
+	_width = MAX( 1U, _width >> 1 );
+	_height = MAX( 1U, _height >> 1 );
+	_depth = MAX( 1U, _depth >> 1 );
 }
 
-U32	 Texture3D::ComputeMipLevelsCount( U32 _Width, U32 _Height, U32 _Depth, U32 _MipLevelsCount ) {
-	U32 MaxSize = MAX( MAX( _Width, _Height ), _Depth );
+U32	 Texture3D::ComputeMipLevelsCount( U32 _width, U32 _height, U32 _depth, U32 _mipLevelsCount ) {
+	U32 MaxSize = MAX( MAX( _width, _height ), _depth );
 	U32	MaxMipLevelsCount = int( ceilf( logf( MaxSize+1.0f ) / logf( 2.0f ) ) );
 	
-	if ( _MipLevelsCount == 0 )
-		_MipLevelsCount = MaxMipLevelsCount;
+	if ( _mipLevelsCount == 0 )
+		_mipLevelsCount = MaxMipLevelsCount;
 	else
-		_MipLevelsCount = MIN( _MipLevelsCount, MaxMipLevelsCount );
+		_mipLevelsCount = MIN( _mipLevelsCount, MaxMipLevelsCount );
 
-	ASSERT( _MipLevelsCount <= MAX_TEXTURE_POT, "Texture mip level out of range !" );
-	return _MipLevelsCount;
+	ASSERT( _mipLevelsCount <= MAX_TEXTURE_POT, "Texture mip level out of range !" );
+	return _mipLevelsCount;
 }
 
-#if defined(_DEBUG) || !defined(GODCOMPLEX)
+#if 0//defined(_DEBUG) || !defined(GODCOMPLEX)
 
 #include "..\..\Utility\TextureFilePOM.h"
 
@@ -313,16 +379,16 @@ void	Texture3D::Save( const char* _pFileName ) {
 	POM.AllocateContent( *this );
 
 	// Fill up content
- 	int	Depth = m_Depth;
-	for ( U32 MipLevelIndex=0; MipLevelIndex < m_MipLevelsCount; MipLevelIndex++ ) {
+ 	int	Depth = m_depth;
+	for ( U32 MipLevelIndex=0; MipLevelIndex < m_mipLevelsCount; MipLevelIndex++ ) {
 		Map( MipLevelIndex );
 
-		POM.m_ppContent[MipLevelIndex] = new void*[Depth*m_LockedResource.DepthPitch];
+		POM.m_ppContent[MipLevelIndex] = new void*[Depth*m_lockedResource.DepthPitch];
 
-		POM.m_pMipsDescriptors[MipLevelIndex].RowPitch = m_LockedResource.RowPitch;
-		POM.m_pMipsDescriptors[MipLevelIndex].DepthPitch = m_LockedResource.DepthPitch;
+		POM.m_pMipsDescriptors[MipLevelIndex].rowPitch = m_lockedResource.RowPitch;
+		POM.m_pMipsDescriptors[MipLevelIndex].depthPitch = m_lockedResource.DepthPitch;
 
-		memcpy_s( POM.m_ppContent[MipLevelIndex], Depth * m_LockedResource.DepthPitch, m_LockedResource.pData, Depth * m_LockedResource.DepthPitch );
+		memcpy_s( POM.m_ppContent[MipLevelIndex], Depth * m_lockedResource.DepthPitch, m_lockedResource.pData, Depth * m_lockedResource.DepthPitch );
 		UnMap( MipLevelIndex );
 
  		Depth = MAX( 1, Depth >> 1 );
@@ -351,10 +417,10 @@ void	Texture3D::Save( const char* _pFileName ) {
 // 	for ( int MipLevelIndex=0; MipLevelIndex < m_MipLevelsCount; MipLevelIndex++ )
 // 	{
 // 		Map( MipLevelIndex );
-// 		fwrite( &m_LockedResource.RowPitch, sizeof(int), 1, pFile );
-// 		fwrite( &m_LockedResource.DepthPitch, sizeof(int), 1, pFile );
+// 		fwrite( &m_LockedResource.rowPitch, sizeof(int), 1, pFile );
+// 		fwrite( &m_LockedResource.depthPitch, sizeof(int), 1, pFile );
 // 		for ( int SliceIndex=0; SliceIndex < Depth; SliceIndex++ )
-// 			fwrite( ((U8*) m_LockedResource.pData) + SliceIndex * m_LockedResource.DepthPitch, m_LockedResource.DepthPitch, 1, pFile );
+// 			fwrite( ((U8*) m_LockedResource.pData) + SliceIndex * m_LockedResource.depthPitch, m_LockedResource.depthPitch, 1, pFile );
 // 		UnMap( MipLevelIndex );
 // 
 // 		Depth = MAX( 1, Depth >> 1 );
@@ -369,14 +435,14 @@ void	Texture3D::Load( const char* _pFileName ) {
 	POM.Load( _pFileName );
 
 	// Read up content
- 	int	Depth = m_Depth;
-	for ( U32 MipLevelIndex=0; MipLevelIndex < m_MipLevelsCount; MipLevelIndex++ ) {
+ 	int	Depth = m_depth;
+	for ( U32 MipLevelIndex=0; MipLevelIndex < m_mipLevelsCount; MipLevelIndex++ ) {
 		Map( MipLevelIndex );
 
-		ASSERT( POM.m_pMipsDescriptors[MipLevelIndex].RowPitch == m_LockedResource.RowPitch, "Incompatible row pitch!" );
-		ASSERT( POM.m_pMipsDescriptors[MipLevelIndex].DepthPitch == m_LockedResource.DepthPitch, "Incompatible depth pitch!" );
+		ASSERT( POM.m_pMipsDescriptors[MipLevelIndex].rowPitch == m_lockedResource.RowPitch, "Incompatible row pitch!" );
+		ASSERT( POM.m_pMipsDescriptors[MipLevelIndex].depthPitch == m_lockedResource.DepthPitch, "Incompatible depth pitch!" );
 
-		memcpy_s( m_LockedResource.pData, Depth * m_LockedResource.DepthPitch, POM.m_ppContent[MipLevelIndex], Depth * m_LockedResource.DepthPitch );
+		memcpy_s( m_lockedResource.pData, Depth * m_lockedResource.DepthPitch, POM.m_ppContent[MipLevelIndex], Depth * m_lockedResource.DepthPitch );
 		UnMap( MipLevelIndex );
 
 		Depth = MAX( 1, Depth >> 1 );
@@ -411,14 +477,14 @@ void	Texture3D::Load( const char* _pFileName ) {
 // 	for ( int MipLevelIndex=0; MipLevelIndex < m_MipLevelsCount; MipLevelIndex++ )
 // 	{
 // 		Map( MipLevelIndex );
-// 		int	RowPitch, DepthPitch;
-// 		fread_s( &RowPitch, sizeof(int), sizeof(int), 1, pFile );
-// 		fread_s( &DepthPitch, sizeof(int), sizeof(int), 1, pFile );
-// 		ASSERT( RowPitch == m_LockedResource.RowPitch, "Incompatible row pitch!" );
-// 		ASSERT( DepthPitch == m_LockedResource.DepthPitch, "Incompatible depth pitch!" );
+// 		int	rowPitch, depthPitch;
+// 		fread_s( &rowPitch, sizeof(int), sizeof(int), 1, pFile );
+// 		fread_s( &depthPitch, sizeof(int), sizeof(int), 1, pFile );
+// 		ASSERT( rowPitch == m_LockedResource.rowPitch, "Incompatible row pitch!" );
+// 		ASSERT( depthPitch == m_LockedResource.depthPitch, "Incompatible depth pitch!" );
 // 
 // 		for ( int SliceIndex=0; SliceIndex < Depth; SliceIndex++ )
-// 			fread_s( ((U8*) m_LockedResource.pData) + SliceIndex * m_LockedResource.DepthPitch, m_LockedResource.DepthPitch, m_LockedResource.DepthPitch, 1, pFile );
+// 			fread_s( ((U8*) m_LockedResource.pData) + SliceIndex * m_LockedResource.depthPitch, m_LockedResource.depthPitch, m_LockedResource.depthPitch, 1, pFile );
 // 
 // 		UnMap( MipLevelIndex );
 // 
@@ -429,15 +495,14 @@ void	Texture3D::Load( const char* _pFileName ) {
 // 	fclose( pFile );
 }
 
-Texture3D::Texture3D( Device& _Device, const TextureFilePOM& _POM, bool _bUnOrderedAccess )
+Texture3D::Texture3D( Device& _Device, const TextureFilePOM& _POM, bool _UAV )
 	: Component( _Device )
-	, m_Width( _POM.m_Width )
-	, m_Height( _POM.m_Height )
-	, m_Depth( _POM.m_ArraySizeOrDepth )
+	, m_width( _POM.m_Width )
+	, m_height( _POM.m_Height )
+	, m_depth( _POM.m_ArraySizeOrDepth )
 	, m_Format( *_POM.m_pPixelFormat )
-	, m_MipLevelsCount( _POM.m_MipsCount )
-{
-	Init( _POM.m_ppContent, false, _bUnOrderedAccess, _POM.m_pMipsDescriptors );
+	, m_mipLevelsCount( _POM.m_MipsCount ) {
+	Init( _POM.m_ppContent, false, _UAV, _POM.m_pMipsDescriptors );
 }
 
 #endif

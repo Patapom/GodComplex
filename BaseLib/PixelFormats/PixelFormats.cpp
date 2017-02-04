@@ -7,7 +7,6 @@ PF_R8::desc_t			PF_R8::Descriptor;
 PF_RG8::desc_t			PF_RG8::Descriptor;
 PF_RGB8::desc_t			PF_RGB8::Descriptor;
 PF_RGBA8::desc_t		PF_RGBA8::Descriptor;
-PF_RGBA8_sRGB::desc_t	PF_RGBA8_sRGB::Descriptor;
 PF_RGBE::desc_t			PF_RGBE::Descriptor;
 PF_R16::desc_t			PF_R16::Descriptor;
 PF_RG16::desc_t			PF_RG16::Descriptor;
@@ -17,10 +16,18 @@ PF_R16F::desc_t			PF_R16F::Descriptor;
 PF_RG16F::desc_t		PF_RG16F::Descriptor;
 PF_RGB16F::desc_t		PF_RGB16F::Descriptor;
 PF_RGBA16F::desc_t		PF_RGBA16F::Descriptor;
+PF_R32::desc_t			PF_R32::Descriptor;
+PF_RG32::desc_t			PF_RG32::Descriptor;
+PF_RGB32::desc_t		PF_RGB32::Descriptor;
+PF_RGBA32::desc_t		PF_RGBA32::Descriptor;
 PF_R32F::desc_t			PF_R32F::Descriptor;
 PF_RG32F::desc_t		PF_RG32F::Descriptor;
 PF_RGB32F::desc_t		PF_RGB32F::Descriptor;
 PF_RGBA32F::desc_t		PF_RGBA32F::Descriptor;
+
+PF_D16::desc_t			PF_D16::Descriptor;
+PF_D24S8::desc_t		PF_D24S8::Descriptor;
+PF_D32::desc_t			PF_D32::Descriptor;
 
 #ifdef _DEBUG
 

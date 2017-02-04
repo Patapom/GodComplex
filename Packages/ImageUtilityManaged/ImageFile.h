@@ -53,6 +53,15 @@ using namespace System;
 
 namespace ImageUtility {
 
+	// Where to declare this? It should be part of a managed "Base" library as well...
+	public enum class	COMPONENT_FORMAT {
+		AUTO,	// Default value, will select UNORM for integer types and FLOAT for floating-point types
+		UNORM,
+		SNORM,
+		UINT,
+		SINT,
+	};
+
 	ref class ImagesMatrix;
 
 	[System::Diagnostics::DebuggerDisplayAttribute( "{Width}x{Height} {PixelFormat} {FileFormat}" )]
@@ -77,13 +86,13 @@ namespace ImageUtility {
 
 			// 8-bits
 			R8		= 0,
-//			RG8		= 1,		<== FreeImage believes it's R5G6B5!!!
+			RG8		= 1		| NOT_NATIVELY_SUPPORTED,	// FreeImage thinks it's R5G6B5! Aliased as RGBA8
 			RGB8	= 2,
 			RGBA8	= 3,
 
 			// 16-bits
 			R16		= 4,
-//			RG16	= 5,		// Unsupported
+			RG16	= 5		| NOT_NATIVELY_SUPPORTED,	// Unsupported by FreeImage, aliased as RGBA16
 			RGB16	= 6,
 			RGBA16	= 7,
 
@@ -100,7 +109,7 @@ namespace ImageUtility {
 
 			// 32-bits
 			R32F	= 12,
-//			RG32F	= 13,		// Unsupported
+			RG32F	= 13	| NOT_NATIVELY_SUPPORTED,	// Unsupported by FreeImage, aliased as RGBA32F
 			RGB32F	= 14,
 			RGBA32F = 15,
 		};
@@ -509,30 +518,22 @@ namespace ImageUtility {
 			BC7_GPU,
 		};
 
-		enum class COMPONENT_FORMAT {
-			AUTO,	// Default value, will select UNORM for integer types and FLOAT for floating-point types
-			UNORM,
-			SNORM,
-			UINT,
-			SINT,
-		};
-
 		static ImagesMatrix^	DDSLoadFile( System::IO::FileInfo^ _fileName );
 		static ImagesMatrix^	DDSLoadMemory( NativeByteArray^ _imageContent );
 		static void				DDSSaveFile( ImagesMatrix^ _images, System::IO::FileInfo^ _fileName, COMPONENT_FORMAT _componentFormat );
 		static NativeByteArray^	DDSSaveMemory( ImagesMatrix^ _images, COMPONENT_FORMAT _componentFormat );
 
-		static void				DXGIFormat2ImageFileFormat( DXGI_FORMAT _sourceFormat, PIXEL_FORMAT% _targetFormat, UInt32% _pixelSize ) {
-			ImageUtilityLib::ImageFile::PIXEL_FORMAT	targetFormat;
-			U32											pixelSize;
-			ImageUtilityLib::ImageFile::DXGIFormat2ImageFileFormat( _sourceFormat, targetFormat, pixelSize );
-			_targetFormat = PIXEL_FORMAT( targetFormat );
-			_pixelSize = pixelSize;
-		}
-		static void				ImageFileFormat2DXGIFormat( PIXEL_FORMAT _sourceFormat, COMPONENT_FORMAT _componentFormat, bool _sRGB, DXGI_FORMAT% _targetFormat ) {
-			DXGI_FORMAT	targetFormat;
-			ImageUtilityLib::ImageFile::ImageFileFormat2DXGIFormat( ImageUtilityLib::ImageFile::PIXEL_FORMAT(_sourceFormat), ImageUtilityLib::ImageFile::COMPONENT_FORMAT(_componentFormat), _sRGB, targetFormat );
-			_targetFormat = targetFormat;
-		}
+// 		static void				DXGIFormat2ImageFileFormat( DXGI_FORMAT _sourceFormat, PIXEL_FORMAT% _targetFormat, UInt32% _pixelSize ) {
+// 			ImageUtilityLib::ImageFile::PIXEL_FORMAT	targetFormat;
+// 			U32											pixelSize;
+// 			ImageUtilityLib::ImageFile::DXGIFormat2ImageFileFormat( _sourceFormat, targetFormat, pixelSize );
+// 			_targetFormat = PIXEL_FORMAT( targetFormat );
+// 			_pixelSize = pixelSize;
+// 		}
+// 		static void				ImageFileFormat2DXGIFormat( PIXEL_FORMAT _sourceFormat, COMPONENT_FORMAT _componentFormat, bool _sRGB, DXGI_FORMAT% _targetFormat ) {
+// 			DXGI_FORMAT	targetFormat;
+// 			ImageUtilityLib::ImageFile::ImageFileFormat2DXGIFormat( ImageUtilityLib::ImageFile::PIXEL_FORMAT(_sourceFormat), BaseLib::COMPONENT_FORMAT(_componentFormat), _sRGB, targetFormat );
+// 			_targetFormat = targetFormat;
+// 		}
 	};
 }

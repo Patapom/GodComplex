@@ -1207,172 +1207,170 @@ void	ImageFile::ImageCoordinates2RangedCoordinates( const bfloat2& _rangeX, cons
 //////////////////////////////////////////////////////////////////////////
 // DDS-Related Helpers
 //
-void	ImageFile::DXGIFormat2ImageFileFormat( DXGI_FORMAT _sourceFormat, PIXEL_FORMAT& _targetFormat, U32& _pixelSize ) {
-	_targetFormat = ImageFile::PIXEL_FORMAT::UNKNOWN;
+ImageFile::PIXEL_FORMAT	ImageFile::DXGIFormat2ImageFileFormat( DXGI_FORMAT _sourceFormat, U32& _pixelSize ) {
 	_pixelSize = 0;
 
 	switch ( _sourceFormat ) {
 		case DXGI_FORMAT_R8_UINT:
 		case DXGI_FORMAT_R8_SINT:
 		case DXGI_FORMAT_R8_SNORM:
-		case DXGI_FORMAT_R8_UNORM:				_targetFormat = ImageFile::PIXEL_FORMAT::R8;		_pixelSize = 1; break;
+		case DXGI_FORMAT_R8_UNORM:				_pixelSize = 1; return ImageFile::PIXEL_FORMAT::R8;
 
 		case DXGI_FORMAT_R8G8_UINT:
 		case DXGI_FORMAT_R8G8_SINT:
 		case DXGI_FORMAT_R8G8_SNORM:
-		case DXGI_FORMAT_R8G8_UNORM:			_targetFormat = ImageFile::PIXEL_FORMAT::RG8;		_pixelSize = 2; break;
+		case DXGI_FORMAT_R8G8_UNORM:			_pixelSize = 2; return ImageFile::PIXEL_FORMAT::RG8;
 
 		case DXGI_FORMAT_R8G8B8A8_UINT:
 		case DXGI_FORMAT_R8G8B8A8_SINT:
 		case DXGI_FORMAT_R8G8B8A8_SNORM:
 		case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB:
-		case DXGI_FORMAT_R8G8B8A8_UNORM:		_targetFormat = ImageFile::PIXEL_FORMAT::RGBA8;		_pixelSize = 4; break;
+		case DXGI_FORMAT_R8G8B8A8_UNORM:		_pixelSize = 4; return ImageFile::PIXEL_FORMAT::RGBA8;
 
 		case DXGI_FORMAT_R16_UINT:
 		case DXGI_FORMAT_R16_SINT:
 		case DXGI_FORMAT_R16_SNORM:
-		case DXGI_FORMAT_R16_UNORM:				_targetFormat = ImageFile::PIXEL_FORMAT::R16;		_pixelSize = 2; break;
-		case DXGI_FORMAT_R16_FLOAT:				_targetFormat = ImageFile::PIXEL_FORMAT::R16F;		_pixelSize = 2; break;
+		case DXGI_FORMAT_R16_UNORM:				_pixelSize = 2; return ImageFile::PIXEL_FORMAT::R16;
+		case DXGI_FORMAT_R16_FLOAT:				_pixelSize = 2; return ImageFile::PIXEL_FORMAT::R16F;
 
 		case DXGI_FORMAT_R16G16_UINT:
 		case DXGI_FORMAT_R16G16_SINT:
 		case DXGI_FORMAT_R16G16_SNORM:
-		case DXGI_FORMAT_R16G16_UNORM:			_targetFormat = ImageFile::PIXEL_FORMAT::RG16;		_pixelSize = 4; break;
-		case DXGI_FORMAT_R16G16_FLOAT:			_targetFormat = ImageFile::PIXEL_FORMAT::RG16F;		_pixelSize = 4; break;
+		case DXGI_FORMAT_R16G16_UNORM:			_pixelSize = 4; return ImageFile::PIXEL_FORMAT::RG16;
+		case DXGI_FORMAT_R16G16_FLOAT:			_pixelSize = 4; return ImageFile::PIXEL_FORMAT::RG16F;
 
 		case DXGI_FORMAT_R16G16B16A16_UINT:
 		case DXGI_FORMAT_R16G16B16A16_SINT:
 		case DXGI_FORMAT_R16G16B16A16_SNORM:
-		case DXGI_FORMAT_R16G16B16A16_UNORM:	_targetFormat = ImageFile::PIXEL_FORMAT::RGBA16;	_pixelSize = 8; break;
-		case DXGI_FORMAT_R16G16B16A16_FLOAT:	_targetFormat = ImageFile::PIXEL_FORMAT::RGBA16F;	_pixelSize = 8; break;
+		case DXGI_FORMAT_R16G16B16A16_UNORM:	_pixelSize = 8; return ImageFile::PIXEL_FORMAT::RGBA16;
+		case DXGI_FORMAT_R16G16B16A16_FLOAT:	_pixelSize = 8; return ImageFile::PIXEL_FORMAT::RGBA16F;
 
 // 		case DXGI_FORMAT_R32_UINT:
-// 		case DXGI_FORMAT_R32_SINT:				format = ImageFile::PIXEL_FORMAT::R32;				pixelSize = 4; break;	// Unsupported!
-		case DXGI_FORMAT_R32_FLOAT:				_targetFormat = ImageFile::PIXEL_FORMAT::R32F;		_pixelSize = 4; break;
+// 		case DXGI_FORMAT_R32_SINT:				_pixelSize = 4; return ImageFile::PIXEL_FORMAT::R32;	// Unsupported!
+		case DXGI_FORMAT_R32_FLOAT:				_pixelSize = 4; return ImageFile::PIXEL_FORMAT::R32F;
 
 // 		case DXGI_FORMAT_R32G32_UINT:
-// 		case DXGI_FORMAT_R32G32_SINT:			format = ImageFile::PIXEL_FORMAT::RG32;				pixelSize = 8; break;	// Unsupported!
-		case DXGI_FORMAT_R32G32_FLOAT:			_targetFormat = ImageFile::PIXEL_FORMAT::RG32F;		_pixelSize = 8; break;
+// 		case DXGI_FORMAT_R32G32_SINT:			_pixelSize = 8; return ImageFile::PIXEL_FORMAT::RG32;	// Unsupported!
+		case DXGI_FORMAT_R32G32_FLOAT:			_pixelSize = 8; return ImageFile::PIXEL_FORMAT::RG32F;
 
 // 		case DXGI_FORMAT_R32G32B32A32_UINT:
-// 		case DXGI_FORMAT_R32G32B32A32_SINT:		format = ImageFile::PIXEL_FORMAT::RGBA32;			pixelSize = 16; break;	// Unsupported!
-		case DXGI_FORMAT_R32G32B32A32_FLOAT:	_targetFormat = ImageFile::PIXEL_FORMAT::RGBA32F;	_pixelSize = 16; break;
-
-// How to support compressed formats? Generic RGBA8 container?
-// 		case DXGI_FORMAT_BC3_UNORM:				format = ImageFile::PIXEL_FORMAT::BC3_UNORM;		pixelSize = 4; break;
-// 		case DXGI_FORMAT_BC3_UNORM_SRGB:		format = ImageFile::PIXEL_FORMAT::BC3_UNORM_sRGB;	pixelSize = 4; break;
+// 		case DXGI_FORMAT_R32G32B32A32_SINT:		_pixelSize = 16; return ImageFile::PIXEL_FORMAT::RGBA32;	// Unsupported!
+		case DXGI_FORMAT_R32G32B32A32_FLOAT:	_pixelSize = 16; return ImageFile::PIXEL_FORMAT::RGBA32F;
 	}
+
+	return ImageFile::PIXEL_FORMAT::UNKNOWN;
 }
 
-void	ImageFile::ImageFileFormat2DXGIFormat( PIXEL_FORMAT _sourceFormat, COMPONENT_FORMAT _componentFormat, bool _sRGB, DXGI_FORMAT& _targetFormat ) {
-	_targetFormat = DXGI_FORMAT_UNKNOWN;
-
+DXGI_FORMAT	ImageFile::ImageFileFormat2DXGIFormat( PIXEL_FORMAT _sourceFormat, COMPONENT_FORMAT _componentFormat ) {
 	switch ( _sourceFormat ) {
 		// 8-bits formats
 		case ImageFile::PIXEL_FORMAT::R8:
 			switch ( _componentFormat ) {
-				case ImageFile::COMPONENT_FORMAT::AUTO:
-				case ImageFile::COMPONENT_FORMAT::UNORM:	_targetFormat = DXGI_FORMAT_R8_UNORM; break;
-				case ImageFile::COMPONENT_FORMAT::SNORM:	_targetFormat = DXGI_FORMAT_R8_SNORM; break;
-				case ImageFile::COMPONENT_FORMAT::UINT:		_targetFormat = DXGI_FORMAT_R8_UINT; break;
-				case ImageFile::COMPONENT_FORMAT::SINT:		_targetFormat = DXGI_FORMAT_R8_SINT; break;
+				case COMPONENT_FORMAT::AUTO:
+				case COMPONENT_FORMAT::UNORM:	return DXGI_FORMAT_R8_UNORM; break;
+				case COMPONENT_FORMAT::SNORM:	return DXGI_FORMAT_R8_SNORM; break;
+				case COMPONENT_FORMAT::UINT:	return DXGI_FORMAT_R8_UINT; break;
+				case COMPONENT_FORMAT::SINT:	return DXGI_FORMAT_R8_SINT; break;
 			}
 			break;
 
 		case ImageFile::PIXEL_FORMAT::RG8:
 			switch ( _componentFormat ) {
-				case ImageFile::COMPONENT_FORMAT::AUTO:
-				case ImageFile::COMPONENT_FORMAT::UNORM:	_targetFormat = DXGI_FORMAT_R8G8_UNORM; break;
-				case ImageFile::COMPONENT_FORMAT::SNORM:	_targetFormat = DXGI_FORMAT_R8G8_SNORM; break;
-				case ImageFile::COMPONENT_FORMAT::UINT:		_targetFormat = DXGI_FORMAT_R8G8_UINT; break;
-				case ImageFile::COMPONENT_FORMAT::SINT:		_targetFormat = DXGI_FORMAT_R8G8_SINT; break;
+				case COMPONENT_FORMAT::AUTO:
+				case COMPONENT_FORMAT::UNORM:	return DXGI_FORMAT_R8G8_UNORM; break;
+				case COMPONENT_FORMAT::SNORM:	return DXGI_FORMAT_R8G8_SNORM; break;
+				case COMPONENT_FORMAT::UINT:	return DXGI_FORMAT_R8G8_UINT; break;
+				case COMPONENT_FORMAT::SINT:	return DXGI_FORMAT_R8G8_SINT; break;
 			}
 			break;
 
 		case ImageFile::PIXEL_FORMAT::RGBA8:
 			switch ( _componentFormat ) {
-				case ImageFile::COMPONENT_FORMAT::AUTO:
-				case ImageFile::COMPONENT_FORMAT::UNORM:	_targetFormat = _sRGB ? DXGI_FORMAT_R8G8B8A8_UNORM_SRGB : DXGI_FORMAT_R8G8B8A8_UNORM; break;
-				case ImageFile::COMPONENT_FORMAT::SNORM:	_targetFormat = DXGI_FORMAT_R8G8B8A8_SNORM; break;
-				case ImageFile::COMPONENT_FORMAT::UINT:		_targetFormat = DXGI_FORMAT_R8G8B8A8_UINT; break;
-				case ImageFile::COMPONENT_FORMAT::SINT:		_targetFormat = DXGI_FORMAT_R8G8B8A8_SINT; break;
+				case COMPONENT_FORMAT::AUTO:
+				case COMPONENT_FORMAT::UNORM_sRGB:	return DXGI_FORMAT_R8G8B8A8_UNORM_SRGB; break;
+				case COMPONENT_FORMAT::UNORM:	return DXGI_FORMAT_R8G8B8A8_UNORM; break;
+				case COMPONENT_FORMAT::SNORM:	return DXGI_FORMAT_R8G8B8A8_SNORM; break;
+				case COMPONENT_FORMAT::UINT:	return DXGI_FORMAT_R8G8B8A8_UINT; break;
+				case COMPONENT_FORMAT::SINT:	return DXGI_FORMAT_R8G8B8A8_SINT; break;
 			}
 			break;
 
 		// 16-bits formats
 		case ImageFile::PIXEL_FORMAT::R16:
 			switch ( _componentFormat ) {
-				case ImageFile::COMPONENT_FORMAT::UNORM:	_targetFormat = DXGI_FORMAT_R16_UNORM; break;
-				case ImageFile::COMPONENT_FORMAT::SNORM:	_targetFormat = DXGI_FORMAT_R16_SNORM; break;
-				case ImageFile::COMPONENT_FORMAT::UINT:		_targetFormat = DXGI_FORMAT_R16_UINT; break;
-				case ImageFile::COMPONENT_FORMAT::SINT:		_targetFormat = DXGI_FORMAT_R16_SINT; break;
+				case COMPONENT_FORMAT::UNORM:	return DXGI_FORMAT_R16_UNORM; break;
+				case COMPONENT_FORMAT::SNORM:	return DXGI_FORMAT_R16_SNORM; break;
+				case COMPONENT_FORMAT::UINT:	return DXGI_FORMAT_R16_UINT; break;
+				case COMPONENT_FORMAT::SINT:	return DXGI_FORMAT_R16_SINT; break;
 			}
 			break;
 		case ImageFile::PIXEL_FORMAT::R16F:
-			_targetFormat = DXGI_FORMAT_R16_FLOAT;
+			return DXGI_FORMAT_R16_FLOAT;
 			break;
 
 		case ImageFile::PIXEL_FORMAT::RG16:
 			switch ( _componentFormat ) {
-				case ImageFile::COMPONENT_FORMAT::UNORM:	_targetFormat = DXGI_FORMAT_R16G16_UNORM; break;
-				case ImageFile::COMPONENT_FORMAT::SNORM:	_targetFormat = DXGI_FORMAT_R16G16_SNORM; break;
-				case ImageFile::COMPONENT_FORMAT::UINT:		_targetFormat = DXGI_FORMAT_R16G16_UINT; break;
-				case ImageFile::COMPONENT_FORMAT::SINT:		_targetFormat = DXGI_FORMAT_R16G16_SINT; break;
+				case COMPONENT_FORMAT::UNORM:	return DXGI_FORMAT_R16G16_UNORM; break;
+				case COMPONENT_FORMAT::SNORM:	return DXGI_FORMAT_R16G16_SNORM; break;
+				case COMPONENT_FORMAT::UINT:	return DXGI_FORMAT_R16G16_UINT; break;
+				case COMPONENT_FORMAT::SINT:	return DXGI_FORMAT_R16G16_SINT; break;
 			}
 			break;
 		case ImageFile::PIXEL_FORMAT::RG16F:
-			_targetFormat = DXGI_FORMAT_R16G16_FLOAT;
+			return DXGI_FORMAT_R16G16_FLOAT;
 			break;
 
 		case ImageFile::PIXEL_FORMAT::RGBA16:
 			switch ( _componentFormat ) {
-				case ImageFile::COMPONENT_FORMAT::UNORM:	_targetFormat = DXGI_FORMAT_R16G16B16A16_UNORM; break;
-				case ImageFile::COMPONENT_FORMAT::SNORM:	_targetFormat = DXGI_FORMAT_R16G16B16A16_SNORM; break;
-				case ImageFile::COMPONENT_FORMAT::UINT:		_targetFormat = DXGI_FORMAT_R16G16B16A16_UINT; break;
-				case ImageFile::COMPONENT_FORMAT::SINT:		_targetFormat = DXGI_FORMAT_R16G16B16A16_SINT; break;
+				case COMPONENT_FORMAT::UNORM:	return DXGI_FORMAT_R16G16B16A16_UNORM; break;
+				case COMPONENT_FORMAT::SNORM:	return DXGI_FORMAT_R16G16B16A16_SNORM; break;
+				case COMPONENT_FORMAT::UINT:	return DXGI_FORMAT_R16G16B16A16_UINT; break;
+				case COMPONENT_FORMAT::SINT:	return DXGI_FORMAT_R16G16B16A16_SINT; break;
 			}
 			break;
 		case ImageFile::PIXEL_FORMAT::RGBA16F:
-			_targetFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
+			return DXGI_FORMAT_R16G16B16A16_FLOAT;
 			break;
 
 		// 32-bits formats
 // 		case ImageFile::PIXEL_FORMAT::R32:	// Unsupported
 // 			switch ( _componentFormat ) {
-// // 				case ImageFile::COMPONENT_FORMAT::UNORM:	_targetFormat = DXGI_FORMAT_R32_UNORM; break;	// Doesn't exist anyway
-// // 				case ImageFile::COMPONENT_FORMAT::SNORM:	_targetFormat = DXGI_FORMAT_R32_SNORM; break;	// Doesn't exist anyway
-// 				case ImageFile::COMPONENT_FORMAT::UINT:		_targetFormat = DXGI_FORMAT_R32_UINT; break;
-// 				case ImageFile::COMPONENT_FORMAT::SINT:		_targetFormat = DXGI_FORMAT_R32_SINT; break;
+// // 				case COMPONENT_FORMAT::UNORM:	return DXGI_FORMAT_R32_UNORM; break;	// Doesn't exist anyway
+// // 				case COMPONENT_FORMAT::SNORM:	return DXGI_FORMAT_R32_SNORM; break;	// Doesn't exist anyway
+// 				case COMPONENT_FORMAT::UINT:		return DXGI_FORMAT_R32_UINT; break;
+// 				case COMPONENT_FORMAT::SINT:		return DXGI_FORMAT_R32_SINT; break;
 // 			}
 // 			break;
 		case ImageFile::PIXEL_FORMAT::R32F:
-			_targetFormat = DXGI_FORMAT_R32_FLOAT;
+			return DXGI_FORMAT_R32_FLOAT;
 			break;
 
 // 		case ImageFile::PIXEL_FORMAT::RG32:	// Unsupported
 // 			switch ( _componentFormat ) {
-// // 				case ImageFile::COMPONENT_FORMAT::UNORM:	_targetFormat = DXGI_FORMAT_R32G32_UNORM; break;	// Doesn't exist anyway
-// // 				case ImageFile::COMPONENT_FORMAT::SNORM:	_targetFormat = DXGI_FORMAT_R32G32_SNORM; break;	// Doesn't exist anyway
-// 				case ImageFile::COMPONENT_FORMAT::UINT:		_targetFormat = DXGI_FORMAT_R32G32_UINT; break;
-// 				case ImageFile::COMPONENT_FORMAT::SINT:		_targetFormat = DXGI_FORMAT_R32G32_SINT; break;
+// // 				case COMPONENT_FORMAT::UNORM:	return DXGI_FORMAT_R32G32_UNORM; break;	// Doesn't exist anyway
+// // 				case COMPONENT_FORMAT::SNORM:	return DXGI_FORMAT_R32G32_SNORM; break;	// Doesn't exist anyway
+// 				case COMPONENT_FORMAT::UINT:		return DXGI_FORMAT_R32G32_UINT; break;
+// 				case COMPONENT_FORMAT::SINT:		return DXGI_FORMAT_R32G32_SINT; break;
 // 			}
 // 			break;
 		case ImageFile::PIXEL_FORMAT::RG32F:
-			_targetFormat = DXGI_FORMAT_R32G32_FLOAT;
+			return DXGI_FORMAT_R32G32_FLOAT;
 			break;
 
 // 		case ImageFile::PIXEL_FORMAT::RGBA32:	// Unsupported
 // 			switch ( _componentFormat ) {
-// // 				case ImageFile::COMPONENT_FORMAT::UNORM:	_targetFormat = DXGI_FORMAT_R32G32B32A32_UNORM; break;	// Doesn't exist anyway
-// // 				case ImageFile::COMPONENT_FORMAT::SNORM:	_targetFormat = DXGI_FORMAT_R32G32B32A32_SNORM; break;	// Doesn't exist anyway
-// 				case ImageFile::COMPONENT_FORMAT::UINT:		_targetFormat = DXGI_FORMAT_R32G32B32A32_UINT; break;
-// 				case ImageFile::COMPONENT_FORMAT::SINT:		_targetFormat = DXGI_FORMAT_R32G32B32A32_SINT; break;
+// // 				case COMPONENT_FORMAT::UNORM:	return DXGI_FORMAT_R32G32B32A32_UNORM; break;	// Doesn't exist anyway
+// // 				case COMPONENT_FORMAT::SNORM:	return DXGI_FORMAT_R32G32B32A32_SNORM; break;	// Doesn't exist anyway
+// 				case COMPONENT_FORMAT::UINT:		return DXGI_FORMAT_R32G32B32A32_UINT; break;
+// 				case COMPONENT_FORMAT::SINT:		return DXGI_FORMAT_R32G32B32A32_SINT; break;
 // 			}
 // 			break;
 		case ImageFile::PIXEL_FORMAT::RGBA32F:
-			_targetFormat = DXGI_FORMAT_R32G32B32A32_FLOAT;
+			return DXGI_FORMAT_R32G32B32A32_FLOAT;
 			break;
 	}
+
+	return DXGI_FORMAT_UNKNOWN;
 }
 
 static void		Copy( const DirectX::Image& _source, ImageFile& _target ) {
@@ -1480,9 +1478,8 @@ void	ImageFile::DDSLoad( const void* _blindPointerImage, const void* _blindPoint
 	const DirectX::TexMetadata&		meta = *reinterpret_cast<const DirectX::TexMetadata*>( _blindPointerMetaData );
 
 	// Retrieve supported format
-	PIXEL_FORMAT	format = PIXEL_FORMAT::UNKNOWN;
 	U32				pixelSize = 0;
-	DXGIFormat2ImageFileFormat( meta.format, format, pixelSize );
+	PIXEL_FORMAT	format = DXGIFormat2ImageFileFormat( meta.format, pixelSize );
 	if ( format == ImageFile::PIXEL_FORMAT::UNKNOWN )
 		throw "Unsupported format! Cannot find appropriate target image format to support source DXGI format...";
 
@@ -1595,9 +1592,7 @@ void	ImageFile::DDSSave( const ImagesMatrix& _images, void** _blindPointerImage,
 	DirectX::ScratchImage*&	image = *reinterpret_cast<DirectX::ScratchImage**>( _blindPointerImage );
 	DirectX::TexMetadata*	meta = reinterpret_cast<DirectX::TexMetadata*>( _blindPointerMetaData );
 
-	bool		sRGB = _images.GetColorProfile().GetGammaCurve() == ColorProfile::GAMMA_CURVE::sRGB;
-	DXGI_FORMAT	DXFormat = DXGI_FORMAT_UNKNOWN;
-	ImageFileFormat2DXGIFormat( _images.GetFormat(), _componentFormat, sRGB, DXFormat );
+	DXGI_FORMAT	DXFormat = ImageFileFormat2DXGIFormat( _images.GetFormat(), _componentFormat );
 	if ( DXFormat == DXGI_FORMAT_UNKNOWN )
 		throw "Unsupported image format! Cannot find appropriate target DXGI format to support source image format...";
 

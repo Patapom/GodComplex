@@ -7,23 +7,25 @@
 //
 #pragma once
 
-//#include <dxgi.h>
-
 namespace BaseLib {
 
 	#pragma pack(push,1)
+
+	// Additional information about how the individual components of a pixel structure should be treated
+	enum class COMPONENT_FORMAT {
+		AUTO,	// Default value, will select UNORM for integer types and FLOAT for floating-point types
+		UNORM,
+		UNORM_sRGB,
+		SNORM,
+		UINT,
+		SINT,
+	};
 
 	// This is the interface to access pixel format structures needed for images and textures
 	class	IPixelAccessor {
 	public:
 		// Gives the size of the pixel format in bytes
 		virtual U32		Size() const abstract;
-
-		// Tells if the format uses sRGB input (cf. Image<PF> Gamma Correction)
-		virtual bool	sRGB() const abstract;
-
-		// Tells the equivalent DXGI pixel format used by DirectX
-//		virtual DXGI_FORMAT	DirectXFormat() const abstract;
 
 		// LDR pixel writer
 		virtual void	Write( void* _pixel, U32 _R, U32 _G, U32 _B, U32 _A ) const abstract;
@@ -43,44 +45,45 @@ namespace BaseLib {
 
 	protected:	// HELPERS
 
-		// Converts a U8 component to a float component
+		// Converts a U8 component to a [0,1] float component
 		inline static float		U8toF32( U32 _Component ) {
 			return _Component / 255.0f;
 		}
 
-		// Converts a U16 component to a float component
+		// Converts a U16 component to a [0,1] float component
 		inline static float		U16toF32( U32 _Component ) {
 			return _Component / 65535.0f;
 		}
 
-		// Converts a U32 component to a float component
+		// Converts a U32 component to a [0,1] float component
 		inline static float		U32toF32( U32 _Component ) {
 			return _Component / 4294967295.0f;	// / (2^32-1)
 		}
 
-		// Converts a float component to a U8 component
+		// Converts a [0,1] float component to a U8 component
 		inline static U8		F32toU8( float _Component ) {
 			return U8( CLAMP( _Component * 255.0f, 0.0f, 255.0f ) );
 		}
 
-		// Converts a float component to a U16 component
+		// Converts a [0,1] float component to a U16 component
 		inline static U16		F32toU16( float _Component ) {
 			return U16( CLAMP( _Component * 65535.0f, 0.0f, 65535.0f ) );
+		}
+
+		// Converts a [0,1] float component to a U32 component
+		inline static U32		F32toU32( float _Component ) {
+			return U32( _Component * 4294967295.0f );	// / (2^32-1)
 		}
 	};
 
 	
 	// This is the interface to access depth format structures needed for depth stencil buffers
-	// They inherit pixel format data and may define additional data
 	class IDepthAccessor {
 		// Gives the size of the depth format in bytes
 		virtual U32		Size() const abstract;
 
 		// Tells if the format uses stencil bits
 		virtual bool	HasStencil() const abstract;
-
-		// Tells the equivalent DXGI pixel format used by DirectX
-//		virtual DXGI_FORMAT	DirectXFormat() const abstract;
 
 		virtual void	Write( void* _pixel, float _Depth, U8 _Stencil ) abstract;
 		virtual float	Depth( const void* _pixel ) const abstract;
@@ -93,20 +96,19 @@ namespace BaseLib {
 		static class desc_t : public IPixelAccessor {
 		public:
 
-			bool		sRGB() const override			{ return false; }
 			U32			Size() const override			{ return 0; }
 
-			void Write( void* _pixel, U32 _R, U32 _G, U32 _B, U32 _A ) const override {}
-			void Write( void* _pixel, const bfloat4& _Color ) const override {}
-			void Write( void* _pixel, float _R, float _G, float _B, float _A ) const override {}
-			void Write( void* _pixel, U32 _A ) const override {}
-			void Write( void* _pixel, float _A ) const override {}
+			void		Write( void* _pixel, U32 _R, U32 _G, U32 _B, U32 _A ) const override {}
+			void		Write( void* _pixel, const bfloat4& _Color ) const override {}
+			void		Write( void* _pixel, float _R, float _G, float _B, float _A ) const override {}
+			void		Write( void* _pixel, U32 _A ) const override {}
+			void		Write( void* _pixel, float _A ) const override {}
 
-			float	Red( const void* _pixel ) const override					{ return 0; }
-			float	Green( const void* _pixel ) const override					{ return 0; }
-			float	Blue( const void* _pixel ) const override					{ return 0; }
-			float	Alpha( const void* _pixel ) const override					{ return 1;}
-			void	RGBA( const void* _pixel, bfloat4& _Color ) const override	{}
+			float		Red( const void* _pixel ) const override					{ return 0; }
+			float		Green( const void* _pixel ) const override					{ return 0; }
+			float		Blue( const void* _pixel ) const override					{ return 0; }
+			float		Alpha( const void* _pixel ) const override					{ return 1;}
+			void		RGBA( const void* _pixel, bfloat4& _Color ) const override	{}
 
 		}	Descriptor;
 		#pragma endregion
@@ -122,9 +124,7 @@ namespace BaseLib {
 		static class desc_t : public IPixelAccessor {
 		public:
 
-			bool		sRGB() const override			{ return false; }
 			U32			Size() const override			{ return 1; }
-//			DXGI_FORMAT	DirectXFormat() const override	{ return DXGI_FORMAT_R8_UNORM; }
 
 			void Write( void* _pixel, U32 _R, U32 _G, U32 _B, U32 _A ) const override {	PF_R8& P = *((PF_R8*) _pixel);
 				P.R = U8(_R);
@@ -163,28 +163,27 @@ namespace BaseLib {
 		static class desc_t : public IPixelAccessor {
 		public:
 
-			bool	sRGB() const override { return false; }
 			U32		Size() const override { return 2; }
 
-			void Write( void* _pixel, U32 _R, U32 _G, U32 _B, U32 _A ) const override {	PF_RG8& P = *((PF_RG8*) _pixel);
+			void	Write( void* _pixel, U32 _R, U32 _G, U32 _B, U32 _A ) const override {	PF_RG8& P = *((PF_RG8*) _pixel);
 				P.R = (U8) _R;
 				P.G = (U8) _G;
 			}
 
-			void Write( void* _pixel, const bfloat4& _Color ) const override {	PF_RG8& P = *((PF_RG8*) _pixel);
+			void	Write( void* _pixel, const bfloat4& _Color ) const override {	PF_RG8& P = *((PF_RG8*) _pixel);
 				P.R = F32toU8(_Color.x);
 				P.G = F32toU8(_Color.y);
 			}
 
-			void Write( void* _pixel, float _R, float _G, float _B, float _A ) const override {	PF_RG8& P = *((PF_RG8*) _pixel);
+			void	Write( void* _pixel, float _R, float _G, float _B, float _A ) const override {	PF_RG8& P = *((PF_RG8*) _pixel);
 				P.R = F32toU8( _R );
 				P.G = F32toU8( _G );
 			}
 
-			void Write( void* _pixel, U32 _A ) const override {
+			void	Write( void* _pixel, U32 _A ) const override {
 			}
 
-			void Write( void* _pixel, float _A ) const override {
+			void	Write( void* _pixel, float _A ) const override {
 			}
 
 			float	Red( const void* _pixel ) const override					{ return ((PF_RG8*) _pixel)->R / 255.0f; }
@@ -205,7 +204,6 @@ namespace BaseLib {
 		static class desc_t : public IPixelAccessor {
 		public:
 
-			bool	sRGB() const override { return false; }
 			U32		Size() const override { return 3; }
 
 			void Write( void* _pixel, U32 _R, U32 _G, U32 _B, U32 _A ) const override {	PF_RGB8& P = *((PF_RGB8*) _pixel);
@@ -250,7 +248,6 @@ namespace BaseLib {
 		static class desc_t : public IPixelAccessor {
 		public:
 
-			bool	sRGB() const override { return false; }
 			U32		Size() const override { return 4; }
 
 			void Write( void* _pixel, U32 _R, U32 _G, U32 _B, U32 _A ) const override {	PF_RGBA8& P = *((PF_RGBA8*) _pixel);
@@ -293,54 +290,54 @@ namespace BaseLib {
 	};
 
 	// RGBA8_sRGB format
-	struct	PF_RGBA8_sRGB {
-		U8	B, G, R, A;
-
-		#pragma region IPixelAccessor
-		static class desc_t : public IPixelAccessor {
-		public:
-
-			bool	sRGB() const override { return true; }
-			U32		Size() const override { return 4; }
-
-			void Write( void* _pixel, U32 _R, U32 _G, U32 _B, U32 _A ) const override {	PF_RGBA8_sRGB& P = *((PF_RGBA8_sRGB*) _pixel);
-				P.R = (U8) _R;
-				P.G = (U8) _G;
-				P.B = (U8) _B;
-				P.A = (U8) _A;
-			}
-
-			void Write( void* _pixel, const bfloat4& _Color ) const override {	PF_RGBA8_sRGB& P = *((PF_RGBA8_sRGB*) _pixel);
-				P.R = F32toU8(_Color.x);
-				P.G = F32toU8(_Color.y);
-				P.B = F32toU8(_Color.z);
-				P.A = F32toU8(_Color.w);
-			}
-
-			void Write( void* _pixel, float _R, float _G, float _B, float _A ) const override {	PF_RGBA8_sRGB& P = *((PF_RGBA8_sRGB*) _pixel);
-				P.R = F32toU8( _R );
-				P.G = F32toU8( _G );
-				P.B = F32toU8( _B );
-				P.A = F32toU8( _A );
-			}
-
-			void Write( void* _pixel, U32 _A ) const override {	PF_RGBA8_sRGB& P = *((PF_RGBA8_sRGB*) _pixel);
-				P.A = (U8) _A;
-			}
-
-			void Write( void* _pixel, float _A ) const override {	PF_RGBA8_sRGB& P = *((PF_RGBA8_sRGB*) _pixel);
-				P.A = F32toU8( _A );
-			}
-
-			float	Red( const void* _pixel ) const override					{ return ((PF_RGBA8_sRGB*) _pixel)->R / 255.0f; }
-			float	Green( const void* _pixel ) const override					{ return ((PF_RGBA8_sRGB*) _pixel)->G / 255.0f; }
-			float	Blue( const void* _pixel ) const override					{ return ((PF_RGBA8_sRGB*) _pixel)->B / 255.0f; }
-			float	Alpha( const void* _pixel ) const override					{ return ((PF_RGBA8_sRGB*) _pixel)->A / 255.0f; }
-			void	RGBA( const void* _pixel, bfloat4& _Color ) const override	{ _Color.Set( ((PF_RGBA8_sRGB*) _pixel)->R / 255.0f, ((PF_RGBA8_sRGB*) _pixel)->G / 255.0f, ((PF_RGBA8_sRGB*) _pixel)->B / 255.0f, ((PF_RGBA8_sRGB*) _pixel)->A / 255.0f ); }
-
-		} Descriptor;
-		#pragma endregion
-	};
+// 	struct	PF_RGBA8_sRGB {
+// 		U8	B, G, R, A;
+// 
+// 		#pragma region IPixelAccessor
+// 		static class desc_t : public IPixelAccessor {
+// 		public:
+// 
+// //			bool	sRGB() const override { return true; }
+// 			U32		Size() const override { return 4; }
+// 
+// 			void Write( void* _pixel, U32 _R, U32 _G, U32 _B, U32 _A ) const override {	PF_RGBA8_sRGB& P = *((PF_RGBA8_sRGB*) _pixel);
+// 				P.R = (U8) _R;
+// 				P.G = (U8) _G;
+// 				P.B = (U8) _B;
+// 				P.A = (U8) _A;
+// 			}
+// 
+// 			void Write( void* _pixel, const bfloat4& _Color ) const override {	PF_RGBA8_sRGB& P = *((PF_RGBA8_sRGB*) _pixel);
+// 				P.R = F32toU8(_Color.x);
+// 				P.G = F32toU8(_Color.y);
+// 				P.B = F32toU8(_Color.z);
+// 				P.A = F32toU8(_Color.w);
+// 			}
+// 
+// 			void Write( void* _pixel, float _R, float _G, float _B, float _A ) const override {	PF_RGBA8_sRGB& P = *((PF_RGBA8_sRGB*) _pixel);
+// 				P.R = F32toU8( _R );
+// 				P.G = F32toU8( _G );
+// 				P.B = F32toU8( _B );
+// 				P.A = F32toU8( _A );
+// 			}
+// 
+// 			void Write( void* _pixel, U32 _A ) const override {	PF_RGBA8_sRGB& P = *((PF_RGBA8_sRGB*) _pixel);
+// 				P.A = (U8) _A;
+// 			}
+// 
+// 			void Write( void* _pixel, float _A ) const override {	PF_RGBA8_sRGB& P = *((PF_RGBA8_sRGB*) _pixel);
+// 				P.A = F32toU8( _A );
+// 			}
+// 
+// 			float	Red( const void* _pixel ) const override					{ return ((PF_RGBA8_sRGB*) _pixel)->R / 255.0f; }
+// 			float	Green( const void* _pixel ) const override					{ return ((PF_RGBA8_sRGB*) _pixel)->G / 255.0f; }
+// 			float	Blue( const void* _pixel ) const override					{ return ((PF_RGBA8_sRGB*) _pixel)->B / 255.0f; }
+// 			float	Alpha( const void* _pixel ) const override					{ return ((PF_RGBA8_sRGB*) _pixel)->A / 255.0f; }
+// 			void	RGBA( const void* _pixel, bfloat4& _Color ) const override	{ _Color.Set( ((PF_RGBA8_sRGB*) _pixel)->R / 255.0f, ((PF_RGBA8_sRGB*) _pixel)->G / 255.0f, ((PF_RGBA8_sRGB*) _pixel)->B / 255.0f, ((PF_RGBA8_sRGB*) _pixel)->A / 255.0f ); }
+// 
+// 		} Descriptor;
+// 		#pragma endregion
+// 	};
 
 
 	// This format is a special encoding of 3 floating point values into 4 U8 values, aka "Real Pixels"
@@ -358,7 +355,6 @@ namespace BaseLib {
 		static class desc_t : IPixelAccessor {
 		public:
 
-			bool	sRGB() const override { return false; }
 			U32		Size() const override { return 4; }
 
 			void Write( void* _pixel, U32 _R, U32 _G, U32 _B, U32 _A ) const override {	PF_RGBE& P = *((PF_RGBE*) _pixel);
@@ -429,7 +425,6 @@ namespace BaseLib {
 		static class desc_t : public IPixelAccessor {
 		public:
 
-			bool	sRGB() const override { return false; }
 			U32		Size() const override { return 2; }
 
 			void Write( void* _pixel, U32 _R, U32 _G, U32 _B, U32 _A ) const override {	PF_R16& P = *((PF_R16*) _pixel);
@@ -469,7 +464,6 @@ namespace BaseLib {
 		static class desc_t : public IPixelAccessor {
 		public:
 
-			bool	sRGB() const override { return false; }
 			U32		Size() const override { return 4; }
 
 			void Write( void* _pixel, U32 _R, U32 _G, U32 _B, U32 _A ) const override {	PF_RG16& P = *((PF_RG16*) _pixel);
@@ -511,7 +505,6 @@ namespace BaseLib {
 		static class desc_t : public IPixelAccessor {
 		public:
 
-			bool	sRGB() const override { return false; }
 			U32		Size() const override { return 6; }
 
 			void Write( void* _pixel, U32 _R, U32 _G, U32 _B, U32 _A ) const override {	PF_RGB16& P = *((PF_RGB16*) _pixel);
@@ -556,7 +549,6 @@ namespace BaseLib {
 		static class desc_t : public IPixelAccessor {
 		public:
 
-			bool	sRGB() const override { return false; }
 			U32		Size() const override { return 8; }
 
 			void Write( void* _pixel, U32 _R, U32 _G, U32 _B, U32 _A ) const override {	PF_RGBA16& P = *((PF_RGBA16*) _pixel);
@@ -610,7 +602,6 @@ namespace BaseLib {
 		static class desc_t : public IPixelAccessor {
 		public:
 
-			bool	sRGB() const override { return false; }
 			U32		Size() const override { return 2; }
 
 			void Write( void* _pixel, U32 _R, U32 _G, U32 _B, U32 _A ) const override {	PF_R16F& P = *((PF_R16F*) _pixel);
@@ -650,7 +641,6 @@ namespace BaseLib {
 		static class desc_t : public IPixelAccessor {
 		public:
 
-			bool	sRGB() const override { return false; }
 			U32		Size() const override { return 4; }
 
 			void Write( void* _pixel, U32 _R, U32 _G, U32 _B, U32 _A ) const override {	PF_RG16F& P = *((PF_RG16F*) _pixel);
@@ -692,7 +682,6 @@ namespace BaseLib {
 		static class desc_t : public IPixelAccessor {
 		public:
 
-			bool	sRGB() const override { return false; }
 			U32		Size() const override { return 6; }
 
 			void Write( void* _pixel, U32 _R, U32 _G, U32 _B, U32 _A ) const override {	PF_RGB16F& P = *((PF_RGB16F*) _pixel);
@@ -737,7 +726,6 @@ namespace BaseLib {
 		static class desc_t : public IPixelAccessor {
 		public:
 
-			bool	sRGB() const override { return false; }
 			U32		Size() const override { return 8; }
 
 			void Write( void* _pixel, U32 _R, U32 _G, U32 _B, U32 _A ) const override {	PF_RGBA16F& P = *((PF_RGBA16F*) _pixel);
@@ -781,6 +769,183 @@ namespace BaseLib {
 
 	#pragma endregion
 
+	#pragma region 32-Bits Formats
+
+	// R32 format
+	struct	PF_R32 {
+		U32	R;
+
+		#pragma region IPixelAccessor
+		static class desc_t : public IPixelAccessor {
+		public:
+
+			U32		Size() const override { return 4; }
+
+			void Write( void* _pixel, U32 _R, U32 _G, U32 _B, U32 _A ) const override {	PF_R32& P = *((PF_R32*) _pixel);
+				P.R = _R;
+			}
+
+			void Write( void* _pixel, const bfloat4& _Color ) const override {	PF_R32& P = *((PF_R32*) _pixel);
+				P.R = F32toU32(_Color.x);
+			}
+
+			void Write( void* _pixel, float _R, float _G, float _B, float _A ) const override {	PF_R32& P = *((PF_R32*) _pixel);
+				P.R = F32toU32(_R);
+			}
+
+			void Write( void* _pixel, U32 _A ) const override {
+			}
+
+			void Write( void* _pixel, float _A ) const override {
+			}
+
+			float	Red( const void* _pixel ) const override					{ return U32toF32( ((PF_R32*) _pixel)->R ); }
+			float	Green( const void* _pixel ) const override					{ return 0.0f; }
+			float	Blue( const void* _pixel ) const override					{ return 0.0f; }
+			float	Alpha( const void* _pixel ) const override					{ return 1.0f; }
+			// Here I'm taking the risk of returning a grayscale image... :/
+			void	RGBA( const void* _pixel, bfloat4& _Color ) const override	{ float	v = U32toF32( ((PF_R32*) _pixel)->R ); _Color.Set( v, v, v, 1 ); }
+
+		} Descriptor;
+		#pragma endregion
+	};
+
+	// RG32 format
+	struct	PF_RG32 {
+		U32	R, G;
+
+		#pragma region IPixelAccessor
+		static class desc_t : public IPixelAccessor {
+		public:
+
+			U32		Size() const override { return 8; }
+
+			void Write( void* _pixel, U32 _R, U32 _G, U32 _B, U32 _A ) const override {	PF_RG32& P = *((PF_RG32*) _pixel);
+				P.R = _R;
+				P.G = _G;
+			}
+
+			void Write( void* _pixel, const bfloat4& _Color ) const override {	PF_RG32& P = *((PF_RG32*) _pixel);
+				P.R = F32toU32(_Color.x);
+				P.G = F32toU32(_Color.y);
+			}
+
+			void Write( void* _pixel, float _R, float _G, float _B, float _A ) const override {	PF_RG32& P = *((PF_RG32*) _pixel);
+				P.R = F32toU32(_R);
+				P.G = F32toU32(_G);
+			}
+
+			void Write( void* _pixel, U32 _A ) const override {
+			}
+
+			void Write( void* _pixel, float _A ) const override {
+			}
+
+			float	Red( const void* _pixel ) const override					{ return U32toF32( ((PF_RG32*) _pixel)->R ); }
+			float	Green( const void* _pixel ) const override					{ return U32toF32( ((PF_RG32*) _pixel)->G ); }
+			float	Blue( const void* _pixel ) const override					{ return 0.0f; }
+			float	Alpha( const void* _pixel ) const override					{ return 1.0f; }
+			void	RGBA( const void* _pixel, bfloat4& _Color ) const override	{ _Color.Set( U32toF32( ((PF_RG32*) _pixel)->R ), U32toF32( ((PF_RG32*) _pixel)->G ), 0, 1 ); }
+
+		} Descriptor;
+		#pragma endregion
+	};
+
+	// RGB32 format
+	struct	PF_RGB32 {
+		U32	R, G, B;
+
+		#pragma region IPixelAccessor
+		static class desc_t : public IPixelAccessor {
+		public:
+
+			U32		Size() const override { return 12; }
+
+			void Write( void* _pixel, U32 _R, U32 _G, U32 _B, U32 _A ) const override {	PF_RGB32& P = *((PF_RGB32*) _pixel);
+				P.R = _R;
+				P.G = _G;
+				P.B = _B;
+			}
+
+			void Write( void* _pixel, const bfloat4& _Color ) const override {	PF_RGB32& P = *((PF_RGB32*) _pixel);
+				P.R = F32toU32(_Color.x);
+				P.G = F32toU32(_Color.y);
+				P.B = F32toU32(_Color.z);
+			}
+
+			void Write( void* _pixel, float _R, float _G, float _B, float _A ) const override {	PF_RGB32& P = *((PF_RGB32*) _pixel);
+				P.R = F32toU32(_R);
+				P.G = F32toU32(_G);
+				P.B = F32toU32(_B);
+			}
+
+			void Write( void* _pixel, U32 _A ) const override {
+			}
+
+			void Write( void* _pixel, float _A ) const override {
+			}
+
+			float	Red( const void* _pixel ) const override					{ return U32toF32( ((PF_RGB32*) _pixel)->R ); }
+			float	Green( const void* _pixel ) const override					{ return U32toF32( ((PF_RGB32*) _pixel)->G ); }
+			float	Blue( const void* _pixel ) const override					{ return U32toF32( ((PF_RGB32*) _pixel)->B ); }
+			float	Alpha( const void* _pixel ) const override					{ return 1.0f; }
+			void	RGBA( const void* _pixel, bfloat4& _Color ) const override	{ _Color.Set( U32toF32( ((PF_RGB32*) _pixel)->R ), U32toF32( ((PF_RGB32*) _pixel)->G ), U32toF32( ((PF_RGB32*) _pixel)->B ), 1 ); }
+
+		} Descriptor;
+		#pragma endregion
+	};
+	
+	// RGBA32 format
+	struct	PF_RGBA32 {
+		U32	R, G, B, A;
+
+		#pragma region IPixelAccessor
+		static class desc_t : public IPixelAccessor {
+		public:
+
+			U32		Size() const override { return 8; }
+
+			void Write( void* _pixel, U32 _R, U32 _G, U32 _B, U32 _A ) const override {	PF_RGBA32& P = *((PF_RGBA32*) _pixel);
+				P.R = _R;
+				P.G = _G;
+				P.B = _B;
+				P.A = _A;
+			}
+
+			void Write( void* _pixel, const bfloat4& _Color ) const override {	PF_RGBA32& P = *((PF_RGBA32*) _pixel);
+				P.R = F32toU32(_Color.x);
+				P.G = F32toU32(_Color.y);
+				P.B = F32toU32(_Color.z);
+				P.A = F32toU32(_Color.w);
+			}
+
+			void Write( void* _pixel, float _R, float _G, float _B, float _A ) const override {	PF_RGBA32& P = *((PF_RGBA32*) _pixel);
+				P.R = F32toU32(_R);
+				P.G = F32toU32(_G);
+				P.B = F32toU32(_B);
+				P.A = F32toU32(_A);
+			}
+
+			void Write( void* _pixel, U32 _A ) const override {	PF_RGBA32& P = *((PF_RGBA32*) _pixel);
+				P.A = (U16) _A;
+			}
+
+			void Write( void* _pixel, float _A ) const override {	PF_RGBA32& P = *((PF_RGBA32*) _pixel);
+				P.A = F32toU32(_A);
+			}
+
+			float	Red( const void* _pixel ) const override					{ return U16toF32( ((PF_RGBA32*) _pixel)->R ); }
+			float	Green( const void* _pixel ) const override					{ return U16toF32( ((PF_RGBA32*) _pixel)->G ); }
+			float	Blue( const void* _pixel ) const override					{ return U16toF32( ((PF_RGBA32*) _pixel)->B ); }
+			float	Alpha( const void* _pixel ) const override					{ return U16toF32( ((PF_RGBA32*) _pixel)->A ); }
+			void	RGBA( const void* _pixel, bfloat4& _Color ) const override	{ _Color.Set( U16toF32( ((PF_RGBA32*) _pixel)->R ), U16toF32( ((PF_RGBA32*) _pixel)->G ), U16toF32( ((PF_RGBA32*) _pixel)->B ), U16toF32( ((PF_RGBA32*) _pixel)->A ) ); }
+
+		} Descriptor;
+		#pragma endregion
+	};
+
+	#pragma endregion
+
 	#pragma region 32 bits floating points Formats
 
 	// R32F format
@@ -791,7 +956,6 @@ namespace BaseLib {
 		static class desc_t : public IPixelAccessor {
 		public:
 
-			bool	sRGB() const override { return false; }
 			U32		Size() const override { return 4; }
 
 			void Write( void* _pixel, U32 _R, U32 _G, U32 _B, U32 _A ) const override {	PF_R32F& P = *((PF_R32F*) _pixel);
@@ -831,7 +995,6 @@ namespace BaseLib {
 		static class desc_t : public IPixelAccessor {
 		public:
 
-			bool	sRGB() const override { return false; }
 			U32		Size() const override { return 8; }
 
 			void Write( void* _pixel, U32 _R, U32 _G, U32 _B, U32 _A ) const override {	PF_RG32F& P = *((PF_RG32F*) _pixel);
@@ -873,7 +1036,6 @@ namespace BaseLib {
 		static class desc_t : public IPixelAccessor {
 		public:
 
-			bool	sRGB() const override { return false; }
 			U32		Size() const override { return 12; }
 
 			void Write( void* _pixel, U32 _R, U32 _G, U32 _B, U32 _A ) const override {	PF_RGB32F& P = *((PF_RGB32F*) _pixel);
@@ -918,7 +1080,6 @@ namespace BaseLib {
 		static class desc_t : public IPixelAccessor {
 		public:
 
-			bool	sRGB() const override { return false; }
 			U32		Size() const override { return 16; }
 
 			void Write( void* _pixel, U32 _R, U32 _G, U32 _B, U32 _A ) const override {	PF_RGBA32F& P = *((PF_RGBA32F*) _pixel);
@@ -1013,8 +1174,7 @@ namespace BaseLib {
 		} Descriptor;
 		#pragma endregion
 	};
-	
-	
+		
 	// D24S8 format (24 bits depth + 8 bits stencil)
 	struct	PF_D24S8 {
 		U8	D[3];
@@ -1037,7 +1197,7 @@ namespace BaseLib {
 				float&	tempF = (float&) temp;
 				return tempF;
 			}
-			U8		Stencil( const void* _pixel ) const override { ((PF_D24S8*) _pixel)->Stencil; }
+			U8		Stencil( const void* _pixel ) const override { return ((PF_D24S8*) _pixel)->Stencil; }
 			void	DepthStencil( const void* _pixel, float& _Depth, U8& _Stencil ) const override { PF_D24S8& P = *((PF_D24S8*) _pixel);
 				U32	temp = *((U32*) P.D);
 				((U8*) &temp)[3] = 0x3F;

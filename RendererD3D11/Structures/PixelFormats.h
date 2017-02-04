@@ -2,6 +2,7 @@
 #include "../Renderer.h"
 #include "FormatDescriptor.h"
 
+/*
 struct PixelFormat
 {
 };
@@ -354,3 +355,4 @@ public:
 
 	U8		value;
 };
+//*/

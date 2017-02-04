@@ -159,7 +159,10 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\Utility\TextureFilePOM.h" />
+    <ClInclude Include="..\Utility\TextureFilePOM.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
     <ClInclude Include="Components\Component.h" />
     <ClInclude Include="Components\ComputeShader.h" />
     <ClInclude Include="Components\ConstantBuffer.h" />
@@ -181,7 +184,10 @@
     <ClInclude Include="Utility\ShaderCompiler.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\Utility\TextureFilePOM.cpp" />
+    <ClCompile Include="..\Utility\TextureFilePOM.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="Components\Component.cpp" />
     <ClCompile Include="Components\ComputeShader.cpp" />
     <ClCompile Include="Components\ConstantBuffer.cpp" />

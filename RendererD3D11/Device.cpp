@@ -44,14 +44,13 @@ bool	Device::Init( HWND _Handle, bool _Fullscreen, bool _sRGB ) {
 	return Init( Width, Height, _Handle, _Fullscreen, _sRGB );
 }
 
-bool	Device::Init( U32 _Width, U32 _Height, HWND _Handle, bool _Fullscreen, bool _sRGB )
-{
+bool	Device::Init( U32 _width, U32 _height, HWND _handle, bool _fullscreen, bool _sRGB ) {
 	// Create a swap chain with 2 back buffers
 	DXGI_SWAP_CHAIN_DESC	SwapChainDesc;
 
 	// Simple output buffer
-	SwapChainDesc.BufferDesc.Width = _Width;
-	SwapChainDesc.BufferDesc.Height = _Height;
+	SwapChainDesc.BufferDesc.Width = _width;
+	SwapChainDesc.BufferDesc.Height = _height;
 	SwapChainDesc.BufferDesc.Format = _sRGB ? DXGI_FORMAT_R8G8B8A8_UNORM_SRGB : DXGI_FORMAT_R8G8B8A8_UNORM;
 //	SwapChainDesc.BufferDesc.Scaling = DXGI_MODE_SCALING_STRETCHED;
 	SwapChainDesc.BufferDesc.Scaling = DXGI_MODE_SCALING_CENTERED;
@@ -67,8 +66,8 @@ bool	Device::Init( U32 _Width, U32 _Height, HWND _Handle, bool _Fullscreen, bool
 	SwapChainDesc.SampleDesc.Quality = 0;
 
 	SwapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
-	SwapChainDesc.OutputWindow = _Handle;
-	SwapChainDesc.Windowed = !_Fullscreen;
+	SwapChainDesc.OutputWindow = _handle;
+	SwapChainDesc.Windowed = !_fullscreen;
 	SwapChainDesc.Flags = 0;
 
 	int	FeatureLevelsCount = 2;
@@ -96,13 +95,10 @@ bool	Device::Init( U32 _Width, U32 _Height, HWND _Handle, bool _Fullscreen, bool
 	m_pSwapChain->GetBuffer( 0, __uuidof( ID3D11Texture2D ), (void**) &pDefaultRenderSurface );
 	ASSERT( pDefaultRenderSurface != NULL, "Failed to retrieve default render surface !" );
 
-	if ( _sRGB )
-		m_pDefaultRenderTarget = new Texture2D( *this, *pDefaultRenderSurface, PixelFormatRGBA8_sRGB::DESCRIPTOR );
-	else
-		m_pDefaultRenderTarget = new Texture2D( *this, *pDefaultRenderSurface, PixelFormatRGBA8::DESCRIPTOR );
+	m_pDefaultRenderTarget = new Texture2D( *this, *pDefaultRenderSurface, BaseLib::PF_RGBA8::Descriptor, _sRGB ? BaseLib::COMPONENT_FORMAT::UNORM_sRGB : BaseLib::COMPONENT_FORMAT::UNORM );
 
 	// Create the default depth stencil buffer
-	m_pDefaultDepthStencil = new Texture2D( *this, _Width, _Height, 1, DepthStencilFormatD32F::DESCRIPTOR );
+	m_pDefaultDepthStencil = new Texture2D( *this, _width, _height, 1, BaseLib::PF_D32::Descriptor );
 
 
 	//////////////////////////////////////////////////////////////////////////
