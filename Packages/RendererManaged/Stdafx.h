@@ -22,7 +22,6 @@
 #include "../../RendererD3D11/Components/Primitive.h"
 #include "../../RendererD3D11/Components/States.h"
 
-#include "../../RendererD3D11/Structures/PixelFormats.h"
 #include "../../RendererD3D11/Structures/VertexFormats.h"
 
 #include "../../RendererD3D11/Utility/FileServer.h"

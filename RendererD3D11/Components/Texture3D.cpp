@@ -57,22 +57,33 @@ Texture3D::Texture3D( Device& _device, const ImageUtilityLib::ImagesMatrix& _ima
 		const ImageUtilityLib::ImagesMatrix::Mips::Mip&	mip = mips[mipLevelIndex];
 		ASSERT( mip.Width() == W && mip.Height() == H && mip.Depth() == D, "Mip's width/height/depth mismatch!" );
 
-		for ( U32 sliceIndex=0; sliceIndex < D; sliceIndex++ ) {
+		// Allocate temporary memory where we'll store a sequential version of all the slices (at the moment stored inside separate images!)
+		const ImageUtilityLib::ImageFile*	sliceImage = mip[0];
+		RELEASE_ASSERT( sliceImage != NULL, "Invalid mip slice image!" );
+		U32	rowPitch = sliceImage->Pitch();
+		U32	slicePitch = H * rowPitch;
+		subResourceDescriptors[mipLevelIndex].SysMemPitch = rowPitch;
+		subResourceDescriptors[mipLevelIndex].SysMemSlicePitch = slicePitch;
+		U8*	targetSlicePtr = new U8[D * slicePitch];
+		subResourceDescriptors[mipLevelIndex].pSysMem = targetSlicePtr;
+
+		// Concatenate each slice
+		for ( U32 sliceIndex=0; sliceIndex < D; sliceIndex++, targetSlicePtr+=slicePitch ) {
 			const ImageUtilityLib::ImageFile*	sliceImage = mip[sliceIndex];
 			RELEASE_ASSERT( sliceImage != NULL, "Invalid mip slice image!" );
-
-			U32	rowPitch = sliceImage->Pitch();
-			U32	depthPitch = H * rowPitch;
-
-			subResourceDescriptors[sliceIndex*m_mipLevelsCount+mipLevelIndex].pSysMem = sliceImage->GetBits();
-			subResourceDescriptors[sliceIndex*m_mipLevelsCount+mipLevelIndex].SysMemPitch = rowPitch;
-			subResourceDescriptors[sliceIndex*m_mipLevelsCount+mipLevelIndex].SysMemSlicePitch = depthPitch;
+			RELEASE_ASSERT( sliceImage->Pitch() == rowPitch && sliceImage->Width() == W && sliceImage->Height() == H, "Image slice's dimensions mismatch!" );
+			memcpy_s( targetSlicePtr, slicePitch, sliceImage->GetBits(), slicePitch );
 		}
 
 		NextMipSize( W, H, D );
 	}
 
 	Check( m_device.DXDevice().CreateTexture3D( &desc, subResourceDescriptors, &m_texture ) );
+
+	// Release temporary memory
+	for ( U32 mipLevelIndex=0; mipLevelIndex < m_mipLevelsCount; mipLevelIndex++ ) {
+		SAFE_DELETE_ARRAY( subResourceDescriptors[mipLevelIndex].pSysMem );
+	}
 
 	// Clear last assignment slots
 	for ( int ShaderStageIndex=0; ShaderStageIndex < 6; ShaderStageIndex++ )

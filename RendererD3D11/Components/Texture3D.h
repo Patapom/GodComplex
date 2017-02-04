@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Component.h"
-#include "../Structures/PixelFormats.h"
 #include "../../Utility/TextureFilePOM.h"
 
 class Texture3D : public Component

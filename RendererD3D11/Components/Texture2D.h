@@ -1,8 +1,6 @@
 #pragma once
 
 #include "Component.h"
-#include "../Structures/PixelFormats.h"
-#include "../Structures/DepthStencilFormats.h"
 #include "../../Utility/TextureFilePOM.h"
 
 #include "FreeImage.h"

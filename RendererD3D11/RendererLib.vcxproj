@@ -175,9 +175,6 @@
     <ClInclude Include="Device.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="stdafx.h" />
-    <ClInclude Include="Structures\DepthStencilFormats.h" />
-    <ClInclude Include="Structures\FormatDescriptor.h" />
-    <ClInclude Include="Structures\PixelFormats.h" />
     <ClInclude Include="Structures\VertexFormats.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="Utility\FileServer.h" />
@@ -204,8 +201,6 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="Structures\DepthStencilFormats.cpp" />
-    <ClCompile Include="Structures\PixelFormats.cpp" />
     <ClCompile Include="Structures\VertexFormats.cpp" />
     <ClCompile Include="Utility\FileServer.cpp" />
     <ClCompile Include="Utility\ShaderCompiler.cpp" />
