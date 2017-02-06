@@ -10,8 +10,8 @@
 namespace ImageUtilityLib {
 
 	// The images matrix class contains a collection of "Mips"
-	// • For Texture2DArrays and TextureCubes, the collection of mips is of the size of the array
-	// • For Texture3D, the collection contains only a single "Mips" element
+	// • For Texture2DArrays and TextureCubes, the collection of mips is of the size of the array (or 6 times the amount of cube maps)
+	// • For Texture3D, the collection contains only a single "Mips" element but its Mip contain an array of slices
 	//
 	class	ImagesMatrix {
 	public:
@@ -37,8 +37,8 @@ namespace ImageUtilityLib {
 				U32				Depth() const	{ return m_images.Count(); }
 
 				// Indexers
-				ImageFile*&			operator[]( U32 _index )		{ return m_images[_index]; }
-				ImageFile* const&	operator[]( U32 _index ) const	{ return m_images[_index]; }
+				ImageFile*&			operator[]( U32 _index )					{ return m_images[_index]; }
+				ImageFile* const&	operator[]( U32 _index ) const				{ return m_images[_index]; }
 
 			public:
 								Mip() : m_width( 0 ), m_height( 0 ) {}
@@ -70,6 +70,7 @@ namespace ImageUtilityLib {
 			void			ReleaseImageFiles();
 		};
 
+		// The type of texture the matrix is a container for
 		enum class	TYPE {
 			GENERIC,
 			TEXTURE2D,
@@ -119,5 +120,6 @@ namespace ImageUtilityLib {
 		static void		NextMipSize( U32& _size );
 		static void		NextMipSize( U32& _width, U32& _height );
 		static void		NextMipSize( U32& _width, U32& _height, U32& _depth );
+		static U32		ComputeMipsCount( U32 _size );
 	};
 }

@@ -32,6 +32,8 @@ Texture3D::Texture3D( Device& _device, const ImageUtilityLib::ImagesMatrix& _ima
 	ASSERT( m_depth <= MAX_TEXTURE_SIZE, "Texture size out of range!" );
 
 	// Retrieve image format
+	m_pixelFormat = &ImageUtilityLib::ImageFile::PixelFormat2Accessor( _images.GetFormat() );
+	m_componentFormat = _componentFormat;
 	DXGI_FORMAT	textureFormat = ImageUtilityLib::ImageFile::ImageFileFormat2DXGIFormat( _images.GetFormat(), _componentFormat );
 
 	// Prepare main descriptor
@@ -123,7 +125,7 @@ void	Texture3D::Init( const void* const* _ppContent, bool _bStaging, bool _bUnOr
 	Desc.Height = m_height;
 	Desc.Depth = m_depth;
 	Desc.MipLevels = m_mipLevelsCount;
-	Desc.Format = Texture2D::PixelFormat2DXGIFormat( *m_pixelFormat, m_componentFormat );
+	Desc.Format = Texture2D::PixelAccessor2DXGIFormat( *m_pixelFormat, m_componentFormat );
 	Desc.MiscFlags = D3D11_RESOURCE_MISC_FLAG( 0 );
 
 	if ( _bStaging ) {
@@ -176,7 +178,7 @@ ID3D11ShaderResourceView*	Texture3D::GetSRV( U32 _MipLevelStart, U32 _mipLevelsC
 		return pExistingView;
 
 	D3D11_SHADER_RESOURCE_VIEW_DESC	desc;
-	desc.Format = Texture2D::PixelFormat2DXGIFormat( *m_pixelFormat, m_componentFormat );
+	desc.Format = Texture2D::PixelAccessor2DXGIFormat( *m_pixelFormat, m_componentFormat );
 	if ( _AsArray ) {
 		// Force as a Texture2DArray
 		desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
@@ -210,7 +212,7 @@ ID3D11RenderTargetView*		Texture3D::GetRTV( U32 _MipLevelIndex, U32 _FirstWSlice
 		return pExistingView;
 
 	D3D11_RENDER_TARGET_VIEW_DESC	Desc;
-	Desc.Format = Texture2D::PixelFormat2DXGIFormat( *m_pixelFormat, m_componentFormat );
+	Desc.Format = Texture2D::PixelAccessor2DXGIFormat( *m_pixelFormat, m_componentFormat );
 	Desc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE3D;
 	Desc.Texture3D.MipSlice = _MipLevelIndex;
 	Desc.Texture3D.FirstWSlice = _FirstWSlice;
@@ -237,7 +239,7 @@ ID3D11UnorderedAccessView*	Texture3D::GetUAV( U32 _MipLevelIndex, U32 _FirstWSli
 
 	// Create a new one
 	D3D11_UNORDERED_ACCESS_VIEW_DESC	Desc;
-	Desc.Format = Texture2D::PixelFormat2DXGIFormat( *m_pixelFormat, m_componentFormat );
+	Desc.Format = Texture2D::PixelAccessor2DXGIFormat( *m_pixelFormat, m_componentFormat );
 	Desc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE3D;
 	Desc.Texture3D.MipSlice = _MipLevelIndex;
 	Desc.Texture3D.FirstWSlice = _FirstWSlice;

@@ -312,7 +312,7 @@ namespace ImageUtility {
 
 		// Gets the pixel size
 		property UInt32		PixelSize {
-			UInt32	get() { return m_nativeObject->GetPixelFormatAccessor().Size(); }
+			UInt32	get() { return m_nativeObject->PixelFormat2Accessor().Size(); }
 		}
 
 		// Tells if the image has an alpha channel

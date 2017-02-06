@@ -128,8 +128,10 @@ void	TestSolidAngle() {
 		void	LoadHDRImage() {
 //			m_HDRImage.Load( new System.IO.FileInfo( @".\Images\grace-new.hdr" ) );
 			m_HDRImage.Load( new System.IO.FileInfo( @".\Images\ennis_1024x512.hdr" ) );
-			ImagesMatrix	images = new Renderer.ImagesMatrix( new ImageUtility.ImageFile[] { m_HDRImage }, 1 );
-			m_Tex_HDREnvironment = Texture2D.CreateTexture2D( m_device, images );
+			ImageUtility.ImagesMatrix	images = new ImageUtility.ImagesMatrix();
+			images.InitTexture2DArray( m_HDRImage.Width, m_HDRImage.Height, 1, 1 );
+			images[0][0][0] = m_HDRImage;
+			m_Tex_HDREnvironment = new Texture2D( m_device, images, ImageUtility.COMPONENT_FORMAT.AUTO );
 			
 // 			ImageUtility.ImageFile	tempLDRImage = new ImageUtility.ImageFile();
 // 			tempLDRImage.ToneMapFrom( m_HDRImage, ( float3 _HDR, ref float3 _LDR ) => {

@@ -94,8 +94,8 @@ namespace AreaLightTest {
 
 		private Texture2D	m_Tex_AreaLight = null;
 //		private Texture3D	m_Tex_AreaLight3D = null;
-		private Texture2D	m_Tex_AreaLightSAT = null;
-		private Texture2D	m_Tex_AreaLightSATFade = null;
+// 		private Texture2D	m_Tex_AreaLightSAT = null;
+// 		private Texture2D	m_Tex_AreaLightSATFade = null;
 		private Texture2D	m_Tex_FalseColors = null;
 
 // 		private Texture2D	m_Tex_GlossMap = null;
@@ -135,112 +135,60 @@ namespace AreaLightTest {
 		}
 
 
-        #region Test Bisou
+		#region Test Bisou
 
- 
+		// Conversions sRGB RGB <=> CIE XYZ using D65 illuminant (sRGB white point)
+		float3    RGB2XYZ( float3 _RGB ) {
+			return new float3(  _RGB.Dot( new float3( 0.4124f, 0.3576f, 0.1805f ) ),
+								_RGB.Dot( new float3( 0.2126f, 0.7152f, 0.0722f ) ),                                // <= Y component is the LUMINANCE defined above
+								_RGB.Dot( new float3( 0.0193f, 0.1192f, 0.9505f ) ) );
 
-        // Conversions sRGB RGB <=> CIE XYZ using D65 illuminant (sRGB white point)
+		}
 
-        float3    RGB2XYZ( float3 _RGB ) {
+		float3    XYZ2RGB( float3 _XYZ ) {
+			return new float3(  _XYZ.Dot( new float3(  3.2406f, -1.5372f, -0.4986f ) ),
+								_XYZ.Dot( new float3( -0.9689f,  1.8758f,  0.0415f ) ),
+								_XYZ.Dot( new float3(  0.0557f, -0.2040f,  1.0570f ) ) );
+		}
 
-                        return new float3(           _RGB.Dot( new float3( 0.4124f, 0.3576f, 0.1805f ) ),
+		// Conversions CIE XYZ <=> CIE xyY (xy = chromaticities, Y = luminance)
+		// Y = Y
+		// x = X / ( X + Y + Z )
+		// y = Y / ( X + Y + Z )
+		float3    XYZ2xyY( float3 _XYZ ) {
+			float3    xyY;
+			xyY.z  = _XYZ.y;
+			xyY.x = _XYZ.x / (_XYZ.x + _XYZ.y + _XYZ.z);
+			xyY.y = _XYZ.y / (_XYZ.x + _XYZ.y + _XYZ.z);
+			return xyY;
+		}
 
-                                                                                                        _RGB.Dot( new float3( 0.2126f, 0.7152f, 0.0722f ) ),                                // <= Y component is the LUMINANCE defined above
+		// X = x * ( Y / y )
+		// Y = Y
+		// Z = ( 1 - x - y ) * ( Y / y )
+		float3    xyY2XYZ( float3 _xyY ) {
+			float       Y_over_y = _xyY.z / _xyY.y;
+			float3    XYZ;
+			XYZ.x = _xyY.x * Y_over_y;
+			XYZ.y = _xyY.z;
+			XYZ.z = (1.0f - _xyY.x - _xyY.y) * Y_over_y; 
+			return XYZ;
+		}
 
-                                                                                                        _RGB.Dot( new float3( 0.0193f, 0.1192f, 0.9505f ) ) );
+		// Conversions sRGB RGB <=> CIE xyY
+		// Simply re-using the above
+		float3    RGB2xyY( float3 _RGB ) {
+			return XYZ2xyY( RGB2XYZ( _RGB ) );
+		}
 
-        }
+		float3    xyY2RGB( float3 _xyY ) {
+			return XYZ2RGB( xyY2XYZ( _xyY ) );
+		}
 
-                               
+		void		TestBisou() {
+			Random	RNG = new Random( 1 );
 
-        float3    XYZ2RGB( float3 _XYZ ) {
-
-                        return new float3(           _XYZ.Dot( new float3(  3.2406f, -1.5372f, -0.4986f ) ),
-
-                                                                                                        _XYZ.Dot( new float3( -0.9689f,  1.8758f,  0.0415f ) ),
-
-                                                                                                        _XYZ.Dot( new float3(  0.0557f, -0.2040f,  1.0570f ) ) );
-
-        }
-
- 
-
-        // Conversions CIE XYZ <=> CIE xyY (xy = chromaticities, Y = luminance)
-
-        // Y = Y
-
-        // x = X / ( X + Y + Z )
-
-        // y = Y / ( X + Y + Z )
-
-        float3    XYZ2xyY( float3 _XYZ ) {
-
-                        float3    xyY;
-
-                        xyY.z  = _XYZ.y;
-
-                        xyY.x = _XYZ.x / (_XYZ.x + _XYZ.y + _XYZ.z);
-
-                        xyY.y = _XYZ.y / (_XYZ.x + _XYZ.y + _XYZ.z);
-
-                        return xyY;
-
-        }
-
- 
-
-        // X = x * ( Y / y )
-
-        // Y = Y
-
-        // Z = ( 1 - x - y ) * ( Y / y )
-
-        float3    xyY2XYZ( float3 _xyY ) {
-
-                        float       Y_over_y = _xyY.z / _xyY.y;
-
-                                               
-
-                        float3    XYZ;
-
-                        XYZ.x = _xyY.x * Y_over_y;
-
-                        XYZ.y = _xyY.z;
-
-                        XYZ.z = (1.0f - _xyY.x - _xyY.y) * Y_over_y; 
-
-                               
-
-                        return XYZ;
-
-        }
-
- 
-
-        // Conversions sRGB RGB <=> CIE xyY
-
-        // Simply re-using the above
-
-        float3    RGB2xyY( float3 _RGB ) {
-
-                        return XYZ2xyY( RGB2XYZ( _RGB ) );
-
-        }
-
- 
-
-        float3    xyY2RGB( float3 _xyY ) {
-
-                        return XYZ2RGB( xyY2XYZ( _xyY ) );
-
-        }
-
- 
-
-        void                       TestBisou() {
-            Random	RNG = new Random( 1 );
-
-            for ( int i=0; i < 1000; i++ ) {
+			for ( int i=0; i < 1000; i++ ) {
 				float3	color = new float3( (float) RNG.NextDouble(), (float) RNG.NextDouble(), (float) RNG.NextDouble() );
 				float	amount = (float) RNG.NextDouble();
 				float3	ciexyY = RGB2xyY( color );
@@ -249,155 +197,258 @@ namespace AreaLightTest {
 				float3	brightenedColor_xyY = xyY2RGB( ciexyY );
 				float3	brightenedColor = (1.0f + amount) * color;
 				bool	different = (brightenedColor - brightenedColor_xyY).Length > 1e-3f;
-				Console.WriteLine( "color ({0}, {1}, {2}) => brightned_xyY ({3}, {4}, {5}), brightned ({6}, {7}, {8})" + (different ? " ####DIFFERENT####" : ""), color.x, color.y, color.z, brightenedColor_xyY.x, brightenedColor_xyY.y, brightenedColor_xyY.z, brightenedColor.x, brightenedColor.y, brightenedColor.z );
+				Console.WriteLine( "color ({0}, {1}, {2}) => brightned_xyY ({3}, {4}, {5}), brightened ({6}, {7}, {8})" + (different ? " ####DIFFERENT####" : ""), color.x, color.y, color.z, brightenedColor_xyY.x, brightenedColor_xyY.y, brightenedColor_xyY.z, brightenedColor.x, brightenedColor.y, brightenedColor.z );
 	
-            }
+			}
 
-        }
+		}
 
-        #endregion
+		#endregion
 
 		#region Image Helpers
 
-		public Texture2D	Image2Texture( System.IO.FileInfo _FileName ) {
-			using ( System.IO.FileStream S = _FileName.OpenRead() )
-				return Image2Texture( S );
+		public Texture2D	Image2Texture( System.IO.FileInfo _fileName ) {
+			ImageUtility.ImagesMatrix	images = ImageUtility.ImageFile.DDSLoadFile( _fileName );
+			return new Texture2D( m_Device, images, ImageUtility.COMPONENT_FORMAT.AUTO );
 		}
-		public unsafe Texture2D	Image2Texture( System.IO.Stream _Stream ) {
-			int		W, H;
-			byte[]	Content = null;
-			using ( Bitmap B = Bitmap.FromStream( _Stream ) as Bitmap ) {
-				W = B.Width;
-				H = B.Height;
-				Content = new byte[W*H*4];
 
-				BitmapData	LockedBitmap = B.LockBits( new Rectangle( 0, 0, W, H ), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb );
+		public void	ComputeSAT( System.IO.FileInfo _FileName, System.IO.FileInfo _TargetFileName ) {
+
+			ImageUtility.ImageFile	mip0 = new ImageUtility.ImageFile( _FileName );
+			uint		W = mip0.Width;
+			uint		H = mip0.Height;
+			float4[,]	mip0Content = new float4[W,H];
+			mip0.ReadPixels( ( uint X, uint Y, ref float4 _color ) => {
+				mip0Content[X,Y] = _color;
+			} );
+
+			ImageUtility.ImagesMatrix	matrix = new ImageUtility.ImagesMatrix();
+			matrix.InitTexture2DArray( W, H, 1, 0 );
+			matrix[0][0][0] = mip0;	// We provide the first mip for free
+			matrix.AllocateImageFiles( mip0.PixelFormat, mip0.ColorProfile );	// Allocate the next mips
+
+			//////////////////////////////////////////////////////////////////////////
+			// Build mips
+			for ( uint mipLevelIndex=1; mipLevelIndex < matrix[0].MipLevelsCount; mipLevelIndex++ ) {
+				ImageUtility.ImagesMatrix.Mips.Mip	mip = matrix[0][mipLevelIndex];
+
+				// Compute gaussian kernel size
+				float	MipPixelSizeX = (float) W / mip.Width;	// Size of a mip pixel; in amount of original image pixels (i.e. mip #0)
+				float	MipPixelSizeY = (float) H / mip.Height;	// Size of a mip pixel; in amount of original image pixels (i.e. mip #0)
+				int		kernelSize = 2 * (int) Math.Pow( 2, mipLevelIndex );
+				float	sigma = (float) Math.Sqrt( -kernelSize*kernelSize / (2.0 * Math.Log( 0.01 )) );	// So we have a weight of 0.01 at a Kernel Size distance
+				float[]	kernelFactors = new float[1+kernelSize];
+				float	sumWeights = 0.0f;
+				for ( int i=0; i <= kernelSize; i++ ) {
+					kernelFactors[i] = (float) (Math.Exp( -i*i / (2.0 * sigma * sigma)) / Math.Sqrt( 2 * Math.PI * sigma * sigma ) );
+					sumWeights += kernelFactors[i];
+				}
+
+				// Build high-precision mip first by performing a gaussian blur
+
+				// Perform a horizontal blur first
+				float4[,]	mipTemp = new float4[mip.Width, H];
 				for ( int Y=0; Y < H; Y++ ) {
-					byte*	pScanline = (byte*) LockedBitmap.Scan0 + Y * LockedBitmap.Stride;
-					int		Offset = 4*W*Y;
-					for ( int X=0; X < W; X++, Offset+=4 ) {
-						Content[Offset+2] = *pScanline++;	// B
-						Content[Offset+1] = *pScanline++;	// G
-						Content[Offset+0] = *pScanline++;	// R
-						Content[Offset+3] = *pScanline++;	// A
+					for ( int X=0; X < mip.Width; X++ ) {
+						float	CenterX = X * MipPixelSizeX + 0.5f * (MipPixelSizeX-1);
+						float4	Sum = kernelFactors[0] * BilinearSample( mip0Content, CenterX, Y );
+						for ( int i=1; i <= kernelSize; i++ ) {
+							Sum += kernelFactors[i] * BilinearSample( mip0Content, CenterX - i, Y );
+							Sum += kernelFactors[i] * BilinearSample( mip0Content, CenterX + i, Y );
+						}
+						mipTemp[X,Y] = Sum;
 					}
 				}
-				B.UnlockBits( LockedBitmap );
+
+				// Perform vertical blur
+				float4[,]	mipFloat = new float4[mip.Width, mip.Height];
+				for ( int X=0; X < mip.Width; X++ ) {
+					for ( int Y=0; Y < mip.Height; Y++ ) {
+						float	CenterY = Y * MipPixelSizeY + 0.5f * (MipPixelSizeY-1);
+						float4	Sum = kernelFactors[0] * BilinearSample( mipTemp, X, CenterY );
+						for ( int i=1; i <= kernelSize; i++ ) {
+							Sum += kernelFactors[i] * BilinearSample( mipTemp, X, CenterY - i );
+							Sum += kernelFactors[i] * BilinearSample( mipTemp, X, CenterY + i );
+						}
+						mipFloat[X,Y] = Sum;
+					}
+				}
+
+				// Convert to source format
+				matrix[0][mipLevelIndex][0].WritePixels( ( uint X, uint Y, ref float4 _color ) => {
+					_color = mipFloat[X,Y];
+				} );
 			}
-			return Image2Texture( (uint) W, (uint) H, Content );
-		}
-		public Texture2D	Image2Texture( uint _Width, uint _Height, byte[] _Content ) {
-			using ( PixelsBuffer Buff = new PixelsBuffer( (uint) _Content.Length ) ) {
-				using ( System.IO.BinaryWriter W = Buff.OpenStreamWrite() )
-					W.Write( _Content );
 
-				return Image2Texture( _Width, _Height, PIXEL_FORMAT.RGBA8_UNORM_sRGB, Buff );
-			}
+			//////////////////////////////////////////////////////////////////////////
+			// Write as DDS
+			ImageUtility.ImageFile.DDSSaveFile( matrix, _TargetFileName, ImageUtility.COMPONENT_FORMAT.AUTO );
 		}
 
-		public Texture2D	Pipi2Texture( System.IO.FileInfo _FileName ) {
-			using ( System.IO.FileStream S = _FileName.OpenRead() )
-				using ( System.IO.BinaryReader R = new System.IO.BinaryReader( S ) ) {
+		float4	BilinearSample( float4[,] _Source, float _X, float _Y ) {
+			int		X = (int) Math.Floor( _X );
+			float	x = _X - X;
+			int		Y = (int) Math.Floor( _Y );
+			float	y = _Y - Y;
+			int		W = _Source.GetLength( 0 );
+			int		H = _Source.GetLength( 1 );
+			float4	V00 = X >= 0 && Y >= 0 && X < W && Y < H ? _Source[X,Y] : float4.Zero;
+			X++;
+			float4	V01 = X >= 0 && Y >= 0 && X < W && Y < H ? _Source[X,Y] : float4.Zero;
+			Y++;
+			float4	V11 = X >= 0 && Y >= 0 && X < W && Y < H ? _Source[X,Y] : float4.Zero;
+			X--;
+			float4	V10 = X >= 0 && Y >= 0 && X < W && Y < H ? _Source[X,Y] : float4.Zero;
 
-					int				MipLevels = R.ReadInt32();
-					PixelsBuffer[]	Mips = new PixelsBuffer[MipLevels];
-					int				ImageWidth = 0, ImageHeight = 0;
-					for ( int MipLevel=0; MipLevel < MipLevels; MipLevel++ ) {
-						int	W, H;
-						W = R.ReadInt32();
-						H = R.ReadInt32();
-						if ( MipLevel == 0 ) {
-							ImageWidth = W;
-							ImageHeight = H;
-						}
-
-						PixelsBuffer	Buff = new PixelsBuffer( (uint) (4 * W * H * 4) );
-						Mips[MipLevel] = Buff;
-						using ( System.IO.BinaryWriter Wr = Buff.OpenStreamWrite() )
-						{
-							float4	C = new float4();
-							for ( int Y=0; Y < H; Y++ ) {
-								for ( int X=0; X < W; X++ ) {
-									C.x = R.ReadSingle();
-									C.y = R.ReadSingle();
-									C.z = R.ReadSingle();
-									C.w = R.ReadSingle();
-
-									Wr.Write( C.x );
-									Wr.Write( C.y );
-									Wr.Write( C.z );
-									Wr.Write( C.w );
-								}
-							}
-						}
-					}
-
-					return Image2Texture( (uint) ImageWidth, (uint) ImageHeight, PIXEL_FORMAT.RGBA32_FLOAT, Mips );
-				}
+			float4	V0 = (1.0f - x) * V00 + x * V01;
+			float4	V1 = (1.0f - x) * V10 + x * V11;
+			float4	Result = (1.0f - y) * V0 + y * V1;
+			return Result;
 		}
 
-		public Texture3D	Pipu2Texture( System.IO.FileInfo _FileName ) {
-			using ( System.IO.FileStream S = _FileName.OpenRead() )
-				using ( System.IO.BinaryReader R = new System.IO.BinaryReader( S ) ) {
+		#endregion
 
-					int		SlicesCount = R.ReadInt32();
-					int		W = R.ReadInt32();
-					int		H = R.ReadInt32();
+		#region Image Helpers (OLD)
+/*
+// 		public Texture2D	Image2Texture( System.IO.FileInfo _FileName ) {
+// 			using ( System.IO.FileStream S = _FileName.OpenRead() )
+// 				return Image2Texture( S );
+// 		}
+// 		public unsafe Texture2D	Image2Texture( System.IO.Stream _Stream ) {
+// 			int		W, H;
+// 			byte[]	Content = null;
+// 			using ( Bitmap B = Bitmap.FromStream( _Stream ) as Bitmap ) {
+// 				W = B.Width;
+// 				H = B.Height;
+// 				Content = new byte[W*H*4];
+// 
+// 				BitmapData	LockedBitmap = B.LockBits( new Rectangle( 0, 0, W, H ), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb );
+// 				for ( int Y=0; Y < H; Y++ ) {
+// 					byte*	pScanline = (byte*) LockedBitmap.Scan0 + Y * LockedBitmap.Stride;
+// 					int		Offset = 4*W*Y;
+// 					for ( int X=0; X < W; X++, Offset+=4 ) {
+// 						Content[Offset+2] = *pScanline++;	// B
+// 						Content[Offset+1] = *pScanline++;	// G
+// 						Content[Offset+0] = *pScanline++;	// R
+// 						Content[Offset+3] = *pScanline++;	// A
+// 					}
+// 				}
+// 				B.UnlockBits( LockedBitmap );
+// 			}
+// 			return Image2Texture( (uint) W, (uint) H, Content );
+// 		}
+// 		public Texture2D	Image2Texture( uint _Width, uint _Height, byte[] _Content ) {
+// 			using ( PixelsBuffer Buff = new PixelsBuffer( (uint) _Content.Length ) ) {
+// 				using ( System.IO.BinaryWriter W = Buff.OpenStreamWrite() )
+// 					W.Write( _Content );
+// 
+// 				return Image2Texture( _Width, _Height, PIXEL_FORMAT.RGBA8_UNORM_sRGB, Buff );
+// 			}
+// 		}
 
-					PixelsBuffer	Slices = new PixelsBuffer( (uint) (4 * W * H * SlicesCount * 4) );
-					using ( System.IO.BinaryWriter Wr = Slices.OpenStreamWrite() ) {
-						for ( int SliceIndex=0; SliceIndex < SlicesCount; SliceIndex++ ) {
-							float4	C = new float4();
-							for ( int Y=0; Y < H; Y++ ) {
-								for ( int X=0; X < W; X++ ) {
-									C.x = R.ReadSingle();
-									C.y = R.ReadSingle();
-									C.z = R.ReadSingle();
-									C.w = R.ReadSingle();
-
-									Wr.Write( C.x );
-									Wr.Write( C.y );
-									Wr.Write( C.z );
-									Wr.Write( C.w );
-								}
-							}
-						}
-					}
-
-					return Image2Texture3D( (uint) W, (uint) H, (uint) SlicesCount, PIXEL_FORMAT.RGBA32_FLOAT, new PixelsBuffer[] { Slices } );
-				}
-		}
-
-		public Texture2D	PipoImage2Texture( System.IO.FileInfo _FileName ) {
-			using ( System.IO.FileStream S = _FileName.OpenRead() )
-				using ( System.IO.BinaryReader R = new System.IO.BinaryReader( S ) ) {
-
-					int	W, H;
-					W = R.ReadInt32();
-					H = R.ReadInt32();
-
-					PixelsBuffer	Buff = new PixelsBuffer( (uint) (4 * W * H * 4) );
-					using ( System.IO.BinaryWriter Wr = Buff.OpenStreamWrite() )
-					{
-						float4	C = new float4();
-						for ( int Y=0; Y < H; Y++ ) {
-							for ( int X=0; X < W; X++ ) {
-								C.x = R.ReadSingle();
-								C.y = R.ReadSingle();
-								C.z = R.ReadSingle();
-								C.w = R.ReadSingle();
-
-								Wr.Write( C.x );
-								Wr.Write( C.y );
-								Wr.Write( C.z );
-								Wr.Write( C.w );
-							}
-						}
-					}
-
-					return Image2Texture( (uint) W, (uint) H, PIXEL_FORMAT.RGBA32_FLOAT, Buff );
-				}
-		}
+// 		public Texture2D	Pipi2Texture( System.IO.FileInfo _FileName ) {
+// 			using ( System.IO.FileStream S = _FileName.OpenRead() )
+// 				using ( System.IO.BinaryReader R = new System.IO.BinaryReader( S ) ) {
+// 
+// 					int				MipLevels = R.ReadInt32();
+// 					PixelsBuffer[]	Mips = new PixelsBuffer[MipLevels];
+// 					int				ImageWidth = 0, ImageHeight = 0;
+// 					for ( int MipLevel=0; MipLevel < MipLevels; MipLevel++ ) {
+// 						int	W, H;
+// 						W = R.ReadInt32();
+// 						H = R.ReadInt32();
+// 						if ( MipLevel == 0 ) {
+// 							ImageWidth = W;
+// 							ImageHeight = H;
+// 						}
+// 
+// 						PixelsBuffer	Buff = new PixelsBuffer( (uint) (4 * W * H * 4) );
+// 						Mips[MipLevel] = Buff;
+// 						using ( System.IO.BinaryWriter Wr = Buff.OpenStreamWrite() )
+// 						{
+// 							float4	C = new float4();
+// 							for ( int Y=0; Y < H; Y++ ) {
+// 								for ( int X=0; X < W; X++ ) {
+// 									C.x = R.ReadSingle();
+// 									C.y = R.ReadSingle();
+// 									C.z = R.ReadSingle();
+// 									C.w = R.ReadSingle();
+// 
+// 									Wr.Write( C.x );
+// 									Wr.Write( C.y );
+// 									Wr.Write( C.z );
+// 									Wr.Write( C.w );
+// 								}
+// 							}
+// 						}
+// 					}
+// 
+// 					return Image2Texture( (uint) ImageWidth, (uint) ImageHeight, PIXEL_FORMAT.RGBA32_FLOAT, Mips );
+// 				}
+// 		}
+// 
+// 		public Texture3D	Pipu2Texture( System.IO.FileInfo _FileName ) {
+// 			using ( System.IO.FileStream S = _FileName.OpenRead() )
+// 				using ( System.IO.BinaryReader R = new System.IO.BinaryReader( S ) ) {
+// 
+// 					int		SlicesCount = R.ReadInt32();
+// 					int		W = R.ReadInt32();
+// 					int		H = R.ReadInt32();
+// 
+// 					PixelsBuffer	Slices = new PixelsBuffer( (uint) (4 * W * H * SlicesCount * 4) );
+// 					using ( System.IO.BinaryWriter Wr = Slices.OpenStreamWrite() ) {
+// 						for ( int SliceIndex=0; SliceIndex < SlicesCount; SliceIndex++ ) {
+// 							float4	C = new float4();
+// 							for ( int Y=0; Y < H; Y++ ) {
+// 								for ( int X=0; X < W; X++ ) {
+// 									C.x = R.ReadSingle();
+// 									C.y = R.ReadSingle();
+// 									C.z = R.ReadSingle();
+// 									C.w = R.ReadSingle();
+// 
+// 									Wr.Write( C.x );
+// 									Wr.Write( C.y );
+// 									Wr.Write( C.z );
+// 									Wr.Write( C.w );
+// 								}
+// 							}
+// 						}
+// 					}
+// 
+// 					return Image2Texture3D( (uint) W, (uint) H, (uint) SlicesCount, PIXEL_FORMAT.RGBA32_FLOAT, new PixelsBuffer[] { Slices } );
+// 				}
+// 		}
+// 
+// 		public Texture2D	PipoImage2Texture( System.IO.FileInfo _FileName ) {
+// 			using ( System.IO.FileStream S = _FileName.OpenRead() )
+// 				using ( System.IO.BinaryReader R = new System.IO.BinaryReader( S ) ) {
+// 
+// 					int	W, H;
+// 					W = R.ReadInt32();
+// 					H = R.ReadInt32();
+// 
+// 					PixelsBuffer	Buff = new PixelsBuffer( (uint) (4 * W * H * 4) );
+// 					using ( System.IO.BinaryWriter Wr = Buff.OpenStreamWrite() )
+// 					{
+// 						float4	C = new float4();
+// 						for ( int Y=0; Y < H; Y++ ) {
+// 							for ( int X=0; X < W; X++ ) {
+// 								C.x = R.ReadSingle();
+// 								C.y = R.ReadSingle();
+// 								C.z = R.ReadSingle();
+// 								C.w = R.ReadSingle();
+// 
+// 								Wr.Write( C.x );
+// 								Wr.Write( C.y );
+// 								Wr.Write( C.z );
+// 								Wr.Write( C.w );
+// 							}
+// 						}
+// 					}
+// 
+// 					return Image2Texture( (uint) W, (uint) H, PIXEL_FORMAT.RGBA32_FLOAT, Buff );
+// 				}
+// 		}
 		public Texture2D	Image2Texture( uint _Width, uint _Height, PIXEL_FORMAT _Format, PixelsBuffer _Content ) {
 			return Image2Texture( _Width, _Height, _Format, new PixelsBuffer[] { _Content } );
 		}
@@ -507,7 +558,6 @@ namespace AreaLightTest {
 						}
 					}
 				}
-
 
 				string	Pipi = _TargetFileName.FullName;
 				Pipi = System.IO.Path.GetFileNameWithoutExtension( Pipi ) + ".pipi";
@@ -716,7 +766,7 @@ throw new Exception( "Deprecated!" );
 			float4	Result = (1.0f - y) * V0 + y * V1;
 			return Result;
 		}
-
+//*/
 		#endregion
 
 		#region BRDF Integration
@@ -776,17 +826,15 @@ throw new Exception( "Deprecated!" );
 			CS.Dispatch( _TableSize >> 4, _TableSize >> 4, 1 );
 			CS.Dispose();
 
-
-
-			string	DDSFileName = System.IO.Path.GetFileNameWithoutExtension( _TableFileName.FullName ) + ".dds";
-//			DirectXTexManaged.TextureCreator.CreateDDS( DDSFileName, TexTable );
-throw new Exception( "Deprecated!" );
-
-
  
 			Texture2D		TexTableStaging = new Texture2D( m_Device, _TableSize, _TableSize, 1, 1, PIXEL_FORMAT.RG32_FLOAT, true, false, null );
 			TexTableStaging.CopyFrom( TexTable );
 			TexTable.Dispose();
+
+			// Save it to disk as a DDS file
+			string	DDSFileName = System.IO.Path.GetFileNameWithoutExtension( _TableFileName.FullName ) + ".dds";
+			using ( ImageUtility.ImagesMatrix M = TexTableStaging.AsImagesMatrix )
+				ImageUtility.ImageFile.DDSSaveFile( M, new System.IO.FileInfo( DDSFileName ), ImageUtility.COMPONENT_FORMAT.AUTO );
 
 			// Write tables
 			float2	Temp = new float2();
@@ -1751,11 +1799,11 @@ renderProg PostFX/Debug/WardBRDFAlbedo {
 			}
 
 // Build SATs
-// ComputeSAT( new System.IO.FileInfo( "Dummy.png" ), new System.IO.FileInfo( "DummySAT.dds" ) );
-// ComputeSAT( new System.IO.FileInfo( "StainedGlass.png" ), new System.IO.FileInfo( "AreaLightSAT.dds" ) );
-// ComputeSAT( new System.IO.FileInfo( "StainedGlass2.jpg" ), new System.IO.FileInfo( "AreaLightSAT2.dds" ) );
-// ComputeSAT( new System.IO.FileInfo( "StainedGlass3.png" ), new System.IO.FileInfo( "AreaLightSAT3.dds" ) );
-// ComputeSAT( new System.IO.FileInfo( "StainedGlass2Fade.png" ), new System.IO.FileInfo( "AreaLightSAT2Fade.dds" ) );
+ComputeSAT( new System.IO.FileInfo( "Dummy.png" ), new System.IO.FileInfo( "DummySAT.dds" ) );
+ComputeSAT( new System.IO.FileInfo( "StainedGlass.png" ), new System.IO.FileInfo( "AreaLightSAT.dds" ) );
+ComputeSAT( new System.IO.FileInfo( "StainedGlass2.jpg" ), new System.IO.FileInfo( "AreaLightSAT2.dds" ) );
+ComputeSAT( new System.IO.FileInfo( "StainedGlass3.png" ), new System.IO.FileInfo( "AreaLightSAT3.dds" ) );
+ComputeSAT( new System.IO.FileInfo( "StainedGlass2Fade.png" ), new System.IO.FileInfo( "AreaLightSAT2Fade.dds" ) );
 
 			buttonRebuildBRDF_Click( null, EventArgs.Empty );
 
@@ -1764,10 +1812,10 @@ renderProg PostFX/Debug/WardBRDFAlbedo {
 //			m_Tex_AreaLight = Pipi2Texture( new System.IO.FileInfo( "AreaLight.pipi" ) );
 //			m_Tex_AreaLightSAT = PipoImage2Texture( new System.IO.FileInfo( "AreaLightSAT.pipo" ) );
 
-			m_Tex_AreaLight = Pipi2Texture( new System.IO.FileInfo( "AreaLightSAT2.pipi" ) );
+			m_Tex_AreaLight = Image2Texture( new System.IO.FileInfo( "AreaLightSAT2.dds" ) );
 //			m_Tex_AreaLight3D = Pipu2Texture( new System.IO.FileInfo( "AreaLightSAT2.pipu" ) );
-			m_Tex_AreaLightSAT = PipoImage2Texture( new System.IO.FileInfo( "AreaLightSAT2.pipo" ) );
-			m_Tex_AreaLightSATFade = PipoImage2Texture( new System.IO.FileInfo( "AreaLightSAT2Fade.pipo" ) );
+// 			m_Tex_AreaLightSAT = PipoImage2Texture( new System.IO.FileInfo( "AreaLightSAT2.pipo" ) );
+// 			m_Tex_AreaLightSATFade = PipoImage2Texture( new System.IO.FileInfo( "AreaLightSAT2Fade.pipo" ) );
 
 //			m_Tex_AreaLight = Pipi2Texture( new System.IO.FileInfo( "AreaLightSAT3.pipi" ) );
 //			m_Tex_AreaLightSAT = PipoImage2Texture( new System.IO.FileInfo( "AreaLightSAT3.pipo" ) );
@@ -1858,8 +1906,7 @@ renderProg PostFX/Debug/WardBRDFAlbedo {
 			Application.Idle += new EventHandler( Application_Idle );
 		}
 
-		protected override void OnFormClosed( FormClosedEventArgs e )
-		{
+		protected override void OnFormClosed( FormClosedEventArgs e ) {
 			if ( m_Device == null )
 				return;
 
@@ -1909,8 +1956,8 @@ renderProg PostFX/Debug/WardBRDFAlbedo {
 #endif
 			m_Tex_AreaLight.Dispose();
 //			m_Tex_AreaLight3D.Dispose();
-			m_Tex_AreaLightSAT.Dispose();
-			m_Tex_AreaLightSATFade.Dispose();
+// 			m_Tex_AreaLightSAT.Dispose();
+// 			m_Tex_AreaLightSATFade.Dispose();
 
 // 			m_Tex_Normal.Dispose();
 // 			m_Tex_GlossMap.Dispose();
@@ -1927,15 +1974,13 @@ renderProg PostFX/Debug/WardBRDFAlbedo {
 		/// Gets the current game time in seconds
 		/// </summary>
 		/// <returns></returns>
-		public float	GetGameTime()
-		{
+		public float	GetGameTime() {
 			long	Ticks = m_StopWatch.ElapsedTicks;
 			float	Time = (float) (Ticks * m_Ticks2Seconds);
 			return Time;
 		}
 
-		void Camera_CameraTransformChanged( object sender, EventArgs e )
-		{
+		void Camera_CameraTransformChanged( object sender, EventArgs e ) {
 			m_CB_Camera.m._Camera2World = m_Camera.Camera2World;
 			m_CB_Camera.m._World2Camera = m_Camera.World2Camera;
 
@@ -1951,8 +1996,7 @@ renderProg PostFX/Debug/WardBRDFAlbedo {
 		void RenderScene( Shader _Shader ) {
 
 			// Render a floor plane
-			if ( _Shader == m_Shader_RenderScene )
-			{
+			if ( _Shader == m_Shader_RenderScene ) {
 				m_CB_Object.m._Local2World.BuildRotRightHanded( float3.Zero, float3.UnitY, float3.UnitX );
 				m_CB_Object.m._Local2World.Scale( new float3( 16.0f, 16.0f, 1.0f ) );
 				m_CB_Object.m._World2Local = m_CB_Object.m._Local2World.Inverse;
@@ -2051,7 +2095,7 @@ renderProg PostFX/Debug/WardBRDFAlbedo {
 			m_CB_Light.m._AreaLightScaleY = SizeY;
 			m_CB_Light.m._AreaLightDiffusion = floatTrackbarControlProjectionDiffusion.Value;
 			m_CB_Light.m._AreaLightIntensity = floatTrackbarControlLightIntensity.Value;
-			m_CB_Light.m._AreaLightTexDimensions = new float4( m_Tex_AreaLightSAT.Width, m_Tex_AreaLightSAT.Height, 1.0f / m_Tex_AreaLightSAT.Width, 1.0f / m_Tex_AreaLightSAT.Height );
+			m_CB_Light.m._AreaLightTexDimensions = new float4( m_Tex_AreaLight.Width, m_Tex_AreaLight.Height, 1.0f / m_Tex_AreaLight.Width, 1.0f / m_Tex_AreaLight.Height );
 			m_CB_Light.m._ProjectionDirectionDiff = LocalDirection_Diffuse;
 			m_CB_Light.UpdateData();
 
@@ -2147,9 +2191,9 @@ renderProg PostFX/Debug/WardBRDFAlbedo {
 			m_Device.Clear( m_Device.DefaultTarget, float4.Zero );
 			m_Device.ClearDepthStencil( m_Device.DefaultDepthStencil, 1.0f, 0, true, false );
 
-			m_Tex_AreaLightSAT.SetPS( 0 );
+//			m_Tex_AreaLightSAT.SetPS( 0 );
 //			m_Tex_AreaLight3D.SetPS( 0 );
-			m_Tex_AreaLightSATFade.SetPS( 1 );
+//			m_Tex_AreaLightSATFade.SetPS( 1 );
 			m_Tex_AreaLight.SetPS( 4 );
 			m_Tex_FalseColors.SetPS( 6 );
 // 			m_Tex_GlossMap.SetPS( 7 );
@@ -2198,8 +2242,7 @@ renderProg PostFX/Debug/WardBRDFAlbedo {
 				m_Device.ReloadModifiedShaders();
 		}
 
-		private void buttonRebuildBRDF_Click( object sender, EventArgs e )
-		{
+		private void buttonRebuildBRDF_Click( object sender, EventArgs e ) {
 			ComputeBRDFIntegral( new System.IO.FileInfo( "BRDF0_64x64.bin" ), 64 );
 //			ComputeBRDFIntegralImportanceSampling( new System.IO.FileInfo( "BRDF1_64x64.bin" ), 64 );
 
@@ -2209,9 +2252,7 @@ renderProg PostFX/Debug/WardBRDFAlbedo {
 			m_Tex_BRDFIntegral.SetPS( 5 );
 		}
 
-		private void checkBoxUseTexture_CheckedChanged( object sender, EventArgs e )
-		{
-
+		private void checkBoxUseTexture_CheckedChanged( object sender, EventArgs e ) {
 		}
 	}
 }

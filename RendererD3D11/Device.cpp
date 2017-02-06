@@ -95,7 +95,8 @@ bool	Device::Init( U32 _width, U32 _height, HWND _handle, bool _fullscreen, bool
 	m_pSwapChain->GetBuffer( 0, __uuidof( ID3D11Texture2D ), (void**) &pDefaultRenderSurface );
 	ASSERT( pDefaultRenderSurface != NULL, "Failed to retrieve default render surface !" );
 
-	m_pDefaultRenderTarget = new Texture2D( *this, *pDefaultRenderSurface, BaseLib::PF_RGBA8::Descriptor, _sRGB ? BaseLib::COMPONENT_FORMAT::UNORM_sRGB : BaseLib::COMPONENT_FORMAT::UNORM );
+//	m_pDefaultRenderTarget = new Texture2D( *this, *pDefaultRenderSurface, BaseLib::PF_RGBA8::Descriptor, _sRGB ? BaseLib::COMPONENT_FORMAT::UNORM_sRGB : BaseLib::COMPONENT_FORMAT::UNORM );
+	m_pDefaultRenderTarget = new Texture2D( *this, *pDefaultRenderSurface );
 
 	// Create the default depth stencil buffer
 	m_pDefaultDepthStencil = new Texture2D( *this, _width, _height, 1, BaseLib::PF_D32::Descriptor );

@@ -43,7 +43,15 @@ namespace ImageUtility {
 				property UInt32		Width			{ UInt32 get() { return m_nativeObject->Width(); } }
 				property UInt32		Height			{ UInt32 get() { return m_nativeObject->Height(); } }
 				property UInt32		Depth			{ UInt32 get() { return m_nativeObject->Depth(); } }
-				property ImageFile^	default[UInt32]	{ ImageFile^ get( UInt32 _index ) { ImageUtilityLib::ImageFile* nativeImage = (*m_nativeObject)[_index]; return nativeImage != NULL ? gcnew ImageFile( *nativeImage, false ) : nullptr; } }
+				property ImageFile^	default[UInt32]	{
+					ImageFile^ get( UInt32 _index ) {
+						ImageUtilityLib::ImageFile* nativeImage = (*m_nativeObject)[_index];
+						return nativeImage != NULL ? gcnew ImageFile( *nativeImage, false ) : nullptr;
+					}
+					void		set( UInt32 _index, ImageFile^ value ) {
+						(*m_nativeObject)[_index] = value != nullptr ? value->m_nativeObject : NULL;
+					}
+				}
 			};
 
 		public:

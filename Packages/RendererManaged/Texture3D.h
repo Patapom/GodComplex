@@ -42,35 +42,35 @@ namespace Renderer {
 	public ref class Texture3D {
 	public:
 
-		::Texture3D*	m_pTexture;
+		::Texture3D*	m_texture;
 
 	public:
 
-		property UInt32	Width			{ UInt32 get() { return m_pTexture->GetWidth(); } }
-		property UInt32	Height			{ UInt32 get() { return m_pTexture->GetHeight(); } }
-		property UInt32	Depth			{ UInt32 get() { return m_pTexture->GetDepth(); } }
-		property UInt32	MipLevelsCount	{ UInt32 get() { return m_pTexture->GetMipLevelsCount(); } }
+		property UInt32	Width			{ UInt32 get() { return m_texture->GetWidth(); } }
+		property UInt32	Height			{ UInt32 get() { return m_texture->GetHeight(); } }
+		property UInt32	Depth			{ UInt32 get() { return m_texture->GetDepth(); } }
+		property UInt32	MipLevelsCount	{ UInt32 get() { return m_texture->GetMipLevelsCount(); } }
 
 	public:
 
 		Texture3D( Device^ _device, UInt32 _width, UInt32 _height, UInt32 _depth, UInt32 _mipLevelsCount, PIXEL_FORMAT _pixelFormat, bool _staging, bool _UAV, cli::array<PixelsBuffer^>^ _mipLevelsContent );
 		Texture3D( Device^ _device, ImageUtility::ImagesMatrix^ _images, ImageUtility::COMPONENT_FORMAT _componentFormat );
 		~Texture3D() {
- 			delete m_pTexture;
+ 			delete m_texture;
 		}
 
 		// Generally used to copy a GPU texture to a CPU staging resource or vice-versa
 		void	CopyFrom( Texture3D^ _Source ) {
-			m_pTexture->CopyFrom( *_Source->m_pTexture );
+			m_texture->CopyFrom( *_Source->m_texture );
 		}
 
 		PixelsBuffer^	MapRead( int _mipLevelIndex ) {
-			D3D11_MAPPED_SUBRESOURCE&	mappedResource = m_pTexture->Map( _mipLevelIndex );
+			D3D11_MAPPED_SUBRESOURCE&	mappedResource = m_texture->Map( _mipLevelIndex );
 			return gcnew PixelsBuffer( mappedResource, _mipLevelIndex, 0, true );
 		}
 
 		PixelsBuffer^	MapWrite( int _mipLevelIndex ) {
-			D3D11_MAPPED_SUBRESOURCE&	mappedResource = m_pTexture->Map( _mipLevelIndex );
+			D3D11_MAPPED_SUBRESOURCE&	mappedResource = m_texture->Map( _mipLevelIndex );
 			return gcnew PixelsBuffer( mappedResource, _mipLevelIndex, 0, false );
 		}
 
@@ -79,7 +79,7 @@ namespace Renderer {
 				// Write back buffer to mapped sub-resource for upload
 				_mappedSubResource->WriteToMappedSubResource();
 			}
-			m_pTexture->UnMap( _mappedSubResource->m_mappedMipLevelIndex );
+			m_texture->UnMap( _mappedSubResource->m_mappedMipLevelIndex );
 			delete _mappedSubResource;
 		}
 
@@ -104,16 +104,16 @@ namespace Renderer {
 		void		SetGS( UInt32 _slotIndex, View3D^ _view );
 		void		SetPS( UInt32 _slotIndex, View3D^ _view );
 		void		SetCS( UInt32 _slotIndex, View3D^ _view );
-		void		RemoveFromLastAssignedSlots()	{ m_pTexture->RemoveFromLastAssignedSlots(); }
+		void		RemoveFromLastAssignedSlots()	{ m_texture->RemoveFromLastAssignedSlots(); }
 
 		// Upload the texture as a UAV for a compute shader
-		void		SetCSUAV( int _slotIndex )		{ m_pTexture->SetCSUAV( _slotIndex ); }
-		void		RemoveFromLastAssignedSlotUAV()	{ m_pTexture->RemoveFromLastAssignedSlotUAV(); }
+		void		SetCSUAV( int _slotIndex )		{ m_texture->SetCSUAV( _slotIndex ); }
+		void		RemoveFromLastAssignedSlotUAV()	{ m_texture->RemoveFromLastAssignedSlotUAV(); }
 
 	internal:
 
 		Texture3D( const ::Texture3D& _existingTexture ) {
-			m_pTexture = const_cast< ::Texture3D* >( &_existingTexture );
+			m_texture = const_cast< ::Texture3D* >( &_existingTexture );
 		}
 	};
 }

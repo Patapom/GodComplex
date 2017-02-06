@@ -66,7 +66,8 @@ public:	 // METHODS
 	// This is for creating a depth stencil buffer
 	Texture2D( Device& _device, U32 _width, U32 _height, U32 _arraySize, const BaseLib::IDepthAccessor& _format );
 	// Used by the Device for the default backbuffer, shouldn't be used otherwise
-	Texture2D( Device& _device, ID3D11Texture2D& _Texture, const BaseLib::IPixelAccessor& _format, BaseLib::COMPONENT_FORMAT _componentFormat );
+//	Texture2D( Device& _device, ID3D11Texture2D& _Texture, const BaseLib::IPixelAccessor& _format, BaseLib::COMPONENT_FORMAT _componentFormat );
+	Texture2D( Device& _device, ID3D11Texture2D& _Texture );
 	~Texture2D();
 
 	// _AsArray is used to force the SRV as viewing a Texture2DArray instead of a TextureCube or TextureCubeArray
@@ -94,6 +95,9 @@ public:	 // METHODS
 	D3D11_MAPPED_SUBRESOURCE&	Map( U32 _MipLevelIndex, U32 _ArrayIndex );
 	void		UnMap( U32 _MipLevelIndex, U32 _ArrayIndex );
 
+	// Conversion of a CPU-readable (i.e. staging) texture into an ImagesMatrix
+	void		ReadAsImagesMatrix( ImageUtilityLib::ImagesMatrix& _images ) const;
+
 // 	#if defined(_DEBUG) || !defined(GODCOMPLEX)
 // 		// I/O for staging textures
 // 		void		Save( const char* _pFileName );
@@ -105,14 +109,14 @@ public:	 // METHODS
 
 public:	// HELPERS
 
-	static DXGI_FORMAT	PixelFormat2DXGIFormat( const BaseLib::IPixelAccessor& _pixelFormat, BaseLib::COMPONENT_FORMAT _componentFormat );
+ 	static DXGI_FORMAT	PixelAccessor2DXGIFormat( const BaseLib::IPixelAccessor& _pixelAccessor, BaseLib::COMPONENT_FORMAT _componentFormat );
 	enum class DEPTH_ACCESS_TYPE {
 		SURFACE_CREATION,	// The DXGI format used when the surface is created
 		VIEW_WRITABLE,		// The DXGI format used by a shader to write the depth values (i.e. surface is used as depth stencil buffer)
 		VIEW_READABLE,		// The DXGI format used by a shader to read the depth values (i.e. surface is used as a regular texture)
 //		VIEW_WRITABLE_CONST,// The DXGI format used by a shader to write the depth values although we can guarantee the view will not be written to (i.e. surface is used as depth stencil buffer but can also be used as a shader resource view)
 	};
-	static DXGI_FORMAT	DepthFormat2DXGIFormat( const BaseLib::IDepthAccessor& _depthFormat, DEPTH_ACCESS_TYPE _accessType );
+	static DXGI_FORMAT	DepthAccessor2DXGIFormat( const BaseLib::IDepthAccessor& _depthAccessor, DEPTH_ACCESS_TYPE _accessType );
 
 	static void	NextMipSize( U32& _width, U32& _height );
 	static U32	ComputeMipLevelsCount( U32 _width, U32 _height, U32 _mipLevelsCount );

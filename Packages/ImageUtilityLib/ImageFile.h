@@ -286,7 +286,7 @@ namespace ImageUtilityLib {
 		PIXEL_FORMAT		GetPixelFormat() const	{ return m_pixelFormat; }
 
 		// Gets the pixel format's accessor
-		const IPixelAccessor&	GetPixelFormatAccessor() const { return *m_pixelAccessor; }
+		const IPixelAccessor&	PixelFormat2Accessor() const { return *m_pixelAccessor; }
 
 		// Gets the source bitmap type
 		FILE_FORMAT			GetFileFormat() const	{ return m_fileFormat; }
@@ -413,6 +413,10 @@ namespace ImageUtilityLib {
 		void				ImageCoordinates2RangedCoordinates( const bfloat2& _rangeX, const bfloat2& _rangeY, const bfloat2& _imageCoordinates, bfloat2& _rangedCoordinates );
 
 
+		// Easily converts an image's PIXEL_FORMAT into a generic pixel accessor/descriptor
+		static const IPixelAccessor&	PixelFormat2Accessor( PIXEL_FORMAT _pixelFormat );
+		static PIXEL_FORMAT				Accessor2PixelFormat( const IPixelAccessor& _pixelAccessor );
+
 	public:
 		//////////////////////////////////////////////////////////////////////////
 		// DDS-related methods
@@ -438,8 +442,8 @@ namespace ImageUtilityLib {
 // 		static void			DDSSaveFromMemory( U32 _DDSImageSize, const void* _DDSImage, const wchar_t* _fileName );
 
 		// Conversion to and from DXGI pixel formats and image file pixel formats
-		static PIXEL_FORMAT	DXGIFormat2ImageFileFormat( DXGI_FORMAT _sourceFormat, U32& _pixelSize );
-		static DXGI_FORMAT	ImageFileFormat2DXGIFormat( PIXEL_FORMAT _sourceFormat, COMPONENT_FORMAT _componentFormat );
+ 		static PIXEL_FORMAT	DXGIFormat2ImageFileFormat( DXGI_FORMAT _sourceFormat, COMPONENT_FORMAT& _componentFormat, U32& _pixelSize );
+ 		static DXGI_FORMAT	ImageFileFormat2DXGIFormat( PIXEL_FORMAT _sourceFormat, COMPONENT_FORMAT _componentFormat );
 
 	private:
 
@@ -454,8 +458,6 @@ namespace ImageUtilityLib {
 
 		static FILE_FORMAT				FIF2FileFormat( FREE_IMAGE_FORMAT _format )	{ return FILE_FORMAT( _format ); }
 		static FREE_IMAGE_FORMAT		FileFormat2FIF( FILE_FORMAT _format )		{ return FREE_IMAGE_FORMAT( _format ); }
-
-		static const IPixelAccessor&	GetPixelFormatAccessor( PIXEL_FORMAT _pixelFormat );
 
 	private:	// Ref-counting for free image lib init/release
 		static U32		ms_freeImageUsageRefCount;

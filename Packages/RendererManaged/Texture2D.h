@@ -42,14 +42,14 @@ namespace Renderer {
 	public ref class Texture2D {
 	internal:
 
-		::Texture2D*	m_pTexture;
+		::Texture2D*	m_texture;
 
 	public:
 
-		property UInt32	Width			{ UInt32 get() { return m_pTexture->GetWidth(); } }
-		property UInt32	Height			{ UInt32 get() { return m_pTexture->GetHeight(); } }
-		property UInt32	ArraySize		{ UInt32 get() { return m_pTexture->GetArraySize(); } }
-		property UInt32	MipLevelsCount	{ UInt32 get() { return m_pTexture->GetMipLevelsCount(); } }
+		property UInt32	Width			{ UInt32 get() { return m_texture->GetWidth(); } }
+		property UInt32	Height			{ UInt32 get() { return m_texture->GetHeight(); } }
+		property UInt32	ArraySize		{ UInt32 get() { return m_texture->GetArraySize(); } }
+		property UInt32	MipLevelsCount	{ UInt32 get() { return m_texture->GetMipLevelsCount(); } }
 
 		property UInt32	WidthAtMip[UInt32] {
 			UInt32	get( UInt32 _mipLevelIndex ) { return GetSizeAtMip( Width, _mipLevelIndex ); }
@@ -59,7 +59,7 @@ namespace Renderer {
 			UInt32	get( UInt32 _mipLevelIndex ) { return GetSizeAtMip( Height, _mipLevelIndex ); }
 		}
 
-		void*	GetWrappedtexture()	{ return m_pTexture; }
+		void*	GetWrappedtexture()	{ return m_texture; }
 
 	public:
 
@@ -68,13 +68,13 @@ namespace Renderer {
 		Texture2D( Device^ _device, ImageUtility::ImagesMatrix^ _images, ImageUtility::COMPONENT_FORMAT _componentFormat );
 		Texture2D( Device^ _device, UInt32 _Width, UInt32 _Height, UInt32 _ArraySize, DEPTH_STENCIL_FORMAT _DepthStencilFormat );
 		~Texture2D() {
- 			delete m_pTexture;
+ 			delete m_texture;
 		}
 
 
 		// Generally used to copy a GPU texture to a CPU staging resource or vice-versa
 		void	CopyFrom( Texture2D^ _source ) {
-			m_pTexture->CopyFrom( *_source->m_pTexture );
+			m_texture->CopyFrom( *_source->m_texture );
 		}
 
 		// These are simple helpers to ease the reading and writing of textures
@@ -110,6 +110,15 @@ namespace Renderer {
 			UnMap( pixels );
 		}
 
+		// Converts a CPU-readable texture (i.e. staging) into an ImagesMatrix
+		property ImageUtility::ImagesMatrix^	AsImagesMatrix	{
+			ImageUtility::ImagesMatrix^	get() {
+				ImageUtility::ImagesMatrix^	result = gcnew ImageUtility::ImagesMatrix();
+				m_texture->ReadAsImagesMatrix( *reinterpret_cast< ImageUtilityLib::ImagesMatrix* >( result->NativeObject.ToPointer() ) );
+				return result;
+			}
+		}
+
 		// NOTE: The strange "_ImAwareOfStrideAlignmentTo128Bytes" argument in the Map() functions is here so you have to explicitely declare that you're aware of a certain fact:
 		//	• Most video cards have a low-bound alignment of mapped memory of 128 bytes so you have to be careful about the row pitch length of each scanline
 		//	• For example, if your texture is a R32F and your scanline has less than 128/4 = 32 texels the pitch/stride will stay at 128 bytes nonetheless
@@ -120,9 +129,9 @@ namespace Renderer {
 			return MapRead( _mipLevelIndex, _arrayIndex, false );	// Unaware of alignment by default
 		}
 		PixelsBuffer^	MapRead( UInt32 _mipLevelIndex, UInt32 _arrayIndex, bool _ImAwareOfStrideAlignmentTo128Bytes ) {
-			D3D11_MAPPED_SUBRESOURCE&	mappedResource = m_pTexture->Map( _mipLevelIndex, _arrayIndex );
+			D3D11_MAPPED_SUBRESOURCE&	mappedResource = m_texture->Map( _mipLevelIndex, _arrayIndex );
 			#ifdef _DEBUG
-				if ( !_ImAwareOfStrideAlignmentTo128Bytes && m_pTexture->GetPixelFormatDescriptor().Size() * m_pTexture->GetWidth() != mappedResource.RowPitch )
+				if ( !_ImAwareOfStrideAlignmentTo128Bytes && m_texture->GetPixelFormatDescriptor().Size() * m_texture->GetWidth() != mappedResource.RowPitch )
 					throw gcnew Exception( "Be careful about 128 bytes alignment: each scanline should account for proper row stride!" );
 			#endif
 			return gcnew PixelsBuffer( mappedResource, _mipLevelIndex, _arrayIndex, true );
@@ -132,9 +141,9 @@ namespace Renderer {
 			return MapWrite( _mipLevelIndex, _arrayIndex, false );	// Unaware of alignment by default
 		}
 		PixelsBuffer^	MapWrite( UInt32 _mipLevelIndex, UInt32 _arrayIndex, bool _ImAwareOfStrideAlignmentTo128Bytes ) {
-			D3D11_MAPPED_SUBRESOURCE&	mappedResource = m_pTexture->Map( _mipLevelIndex, _arrayIndex );
+			D3D11_MAPPED_SUBRESOURCE&	mappedResource = m_texture->Map( _mipLevelIndex, _arrayIndex );
 			#ifdef _DEBUG
-				if ( !_ImAwareOfStrideAlignmentTo128Bytes && m_pTexture->GetPixelFormatDescriptor().Size() * m_pTexture->GetWidth() != mappedResource.RowPitch )
+				if ( !_ImAwareOfStrideAlignmentTo128Bytes && m_texture->GetPixelFormatDescriptor().Size() * m_texture->GetWidth() != mappedResource.RowPitch )
 					throw gcnew Exception( "Be careful about 128 bytes alignment: each scanline should account for proper row stride!" );
 			#endif
 			return gcnew PixelsBuffer( mappedResource, _mipLevelIndex, _arrayIndex, false );
@@ -145,7 +154,7 @@ namespace Renderer {
 				// Write back buffer to mapped sub-resource for upload
 				_mappedSubResource->WriteToMappedSubResource();
 			}
-			m_pTexture->UnMap( _mappedSubResource->m_mappedMipLevelIndex, _mappedSubResource->m_mappedArrayIndex );
+			m_texture->UnMap( _mappedSubResource->m_mappedMipLevelIndex, _mappedSubResource->m_mappedArrayIndex );
 			delete _mappedSubResource;
 		}
 
@@ -170,12 +179,12 @@ namespace Renderer {
 		void		SetGS( UInt32 _slotIndex, View2D^ _view );
 		void		SetPS( UInt32 _slotIndex, View2D^ _view );
 		void		SetCS( UInt32 _slotIndex, View2D^ _view );
-		void		RemoveFromLastAssignedSlots()	{ m_pTexture->RemoveFromLastAssignedSlots(); }
+		void		RemoveFromLastAssignedSlots()	{ m_texture->RemoveFromLastAssignedSlots(); }
 
 		// Uploads the texture as a UAV for a compute shader
-		void		SetCSUAV( UInt32 _slotIndex )	{ m_pTexture->SetCSUAV( _slotIndex ); }
+		void		SetCSUAV( UInt32 _slotIndex )	{ m_texture->SetCSUAV( _slotIndex ); }
 		void		SetCSUAV( UInt32 _slotIndex, View2D^ _view  );
-		void		RemoveFromLastAssignedSlotUAV()	{ m_pTexture->RemoveFromLastAssignedSlotUAV(); }
+		void		RemoveFromLastAssignedSlotUAV()	{ m_texture->RemoveFromLastAssignedSlotUAV(); }
 
 		// Helper to compute a size (width or height) at a specific mip level
 		static UInt32		GetSizeAtMip( UInt32 _sizeAtMip0, UInt32 _mipLevelIndex ) {
@@ -185,7 +194,7 @@ namespace Renderer {
 	internal:
 
 		Texture2D( const ::Texture2D& _existingTexture ) {
-			m_pTexture = const_cast< ::Texture2D* >( &_existingTexture );
+			m_texture = const_cast< ::Texture2D* >( &_existingTexture );
 		}
 	};
 }

@@ -2,15 +2,21 @@
 
 #include "Texture2D.h"
 
-Texture2D::Texture2D( Device& _device, ID3D11Texture2D& _Texture, const BaseLib::IPixelAccessor& _format, BaseLib::COMPONENT_FORMAT _componentFormat )
+Texture2D::Texture2D( Device& _device, ID3D11Texture2D& _Texture )//, const BaseLib::IPixelAccessor& _format, BaseLib::COMPONENT_FORMAT _componentFormat )
 	: Component( _device )
-	, m_pixelFormat( &_format )
-	, m_componentFormat( _componentFormat )
+// 	, m_pixelFormat( &_format )
+// 	, m_componentFormat( _componentFormat )
+	, m_depthFormat( NULL )
 	, m_isDepthStencil( false )
 	, m_isCubeMap( false )
 {
 	D3D11_TEXTURE2D_DESC	desc;
 	_Texture.GetDesc( &desc );
+
+	// 
+	U32		pixelSize;
+	ImageUtilityLib::ImageFile::PIXEL_FORMAT	pixelFormat = ImageUtilityLib::ImageFile::DXGIFormat2ImageFileFormat( desc.Format, m_componentFormat, pixelSize );
+	m_pixelFormat = &ImageUtilityLib::ImageFile::PixelFormat2Accessor( pixelFormat );
 
 	m_width = desc.Width;
 	m_height = desc.Height;
@@ -30,9 +36,11 @@ Texture2D::Texture2D( Device& _device, U32 _width, U32 _height, int _arraySize, 
 	, m_height( _height )
 	, m_pixelFormat( &_format )
 	, m_componentFormat( _componentFormat )
+	, m_depthFormat( NULL )
 	, m_mipLevelsCount( _mipLevelsCount )
 	, m_isDepthStencil( false )
-	, m_isCubeMap( false ) {
+	, m_isCubeMap( false )
+{
 	if ( _arraySize < 0 ) {
 		// Special cube map case!
 		ASSERT( m_width == m_height, "When creating a cube map, width & height must match!" );
@@ -67,6 +75,9 @@ Texture2D::Texture2D( Device& _device, const ImageUtilityLib::ImagesMatrix& _ima
 	ASSERT( m_height <= MAX_TEXTURE_SIZE, "Texture size out of range!" );
 
 	// Retrieve image format
+	m_pixelFormat = &ImageUtilityLib::ImageFile::PixelFormat2Accessor( _images.GetFormat() );
+	m_componentFormat = _componentFormat;
+	m_depthFormat = NULL;
 	DXGI_FORMAT	textureFormat = ImageUtilityLib::ImageFile::ImageFileFormat2DXGIFormat( _images.GetFormat(), _componentFormat );
 
 	// Prepare main descriptor
@@ -122,9 +133,12 @@ Texture2D::Texture2D( Device& _device, const ImageUtilityLib::ImagesMatrix& _ima
 
 Texture2D::Texture2D( Device& _device, U32 _width, U32 _height, U32 _arraySize, const BaseLib::IDepthAccessor& _format )
 	: Component( _device )
+	, m_pixelFormat( NULL )
+	, m_componentFormat( BaseLib::COMPONENT_FORMAT::AUTO )
 	, m_depthFormat( &_format )
 	, m_isDepthStencil( true )
-	, m_isCubeMap( false ) {
+	, m_isCubeMap( false )
+{
 	ASSERT( _width <= MAX_TEXTURE_SIZE, "Texture size out of range!" );
 	ASSERT( _height <= MAX_TEXTURE_SIZE, "Texture size out of range!" );
 
@@ -142,7 +156,7 @@ Texture2D::Texture2D( Device& _device, U32 _width, U32 _height, U32 _arraySize, 
 	Desc.Height = m_height;
 	Desc.ArraySize = m_arraySize;
 	Desc.MipLevels = 1;
-	Desc.Format = PixelFormat2DXGIFormat( *m_pixelFormat, m_componentFormat );
+	Desc.Format = PixelAccessor2DXGIFormat( *m_pixelFormat, m_componentFormat );
 	Desc.SampleDesc.Count = 1;
 	Desc.SampleDesc.Quality = 0;
 	Desc.Usage = D3D11_USAGE_DEFAULT;
@@ -185,7 +199,7 @@ void	Texture2D::Init( const void* const* _ppContent, bool _staging, bool _UAV, T
 	desc.Height = m_height;
 	desc.ArraySize = m_arraySize;
 	desc.MipLevels = m_mipLevelsCount;
-	desc.Format = PixelFormat2DXGIFormat( *m_pixelFormat, m_componentFormat );
+	desc.Format = PixelAccessor2DXGIFormat( *m_pixelFormat, m_componentFormat );
 	desc.SampleDesc.Count = 1;
 	desc.SampleDesc.Quality = 0;
 	if ( _staging ) {
@@ -243,7 +257,7 @@ ID3D11ShaderResourceView*	Texture2D::GetSRV( U32 _MipLevelStart, U32 _MipLevelsC
 	// Create a new one
 	D3D11_SHADER_RESOURCE_VIEW_DESC	Desc;
 //	Desc.Format = m_isDepthStencil ? ((IDepthStencilFormatDescriptor*) m_format)->ReadableDirectXFormat() : m_format->DirectXFormat();
-	Desc.Format = m_isDepthStencil ? DepthFormat2DXGIFormat( *m_depthFormat, DEPTH_ACCESS_TYPE::VIEW_READABLE ) : PixelFormat2DXGIFormat( *m_pixelFormat, m_componentFormat );
+	Desc.Format = m_isDepthStencil ? DepthAccessor2DXGIFormat( *m_depthFormat, DEPTH_ACCESS_TYPE::VIEW_READABLE ) : PixelAccessor2DXGIFormat( *m_pixelFormat, m_componentFormat );
 	if ( _AsArray ) {
 		// Force as a Texture2DArray
 		Desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
@@ -287,7 +301,7 @@ ID3D11RenderTargetView*		Texture2D::GetRTV( U32 _MipLevelIndex, U32 _ArrayStart,
 
 	// Create a new one
 	D3D11_RENDER_TARGET_VIEW_DESC	Desc;
-	Desc.Format = PixelFormat2DXGIFormat( *m_pixelFormat, m_componentFormat );
+	Desc.Format = PixelAccessor2DXGIFormat( *m_pixelFormat, m_componentFormat );
 	Desc.ViewDimension = m_arraySize > 1 ? D3D11_RTV_DIMENSION_TEXTURE2DARRAY : D3D11_RTV_DIMENSION_TEXTURE2D;
 	Desc.Texture2DArray.MipSlice = _MipLevelIndex;
 	Desc.Texture2DArray.FirstArraySlice = _ArrayStart;
@@ -314,7 +328,7 @@ ID3D11UnorderedAccessView*	Texture2D::GetUAV( U32 _MipLevelIndex, U32 _ArrayStar
 
 	// Create a new one
 	D3D11_UNORDERED_ACCESS_VIEW_DESC	Desc;
-	Desc.Format = PixelFormat2DXGIFormat( *m_pixelFormat, m_componentFormat );
+	Desc.Format = PixelAccessor2DXGIFormat( *m_pixelFormat, m_componentFormat );
 	Desc.ViewDimension = m_arraySize > 1 ? D3D11_UAV_DIMENSION_TEXTURE2DARRAY : D3D11_UAV_DIMENSION_TEXTURE2D;
 	Desc.Texture2DArray.MipSlice = _MipLevelIndex;
 	Desc.Texture2DArray.FirstArraySlice = _ArrayStart;
@@ -340,7 +354,7 @@ ID3D11DepthStencilView*		Texture2D::GetDSV( U32 _ArrayStart, U32 _ArraySize ) co
 
 	D3D11_DEPTH_STENCIL_VIEW_DESC	Desc;
 //	Desc.Format = ((IDepthStencilFormatDescriptor&) m_format).WritableDirectXFormat();
-	Desc.Format = DepthFormat2DXGIFormat( *m_depthFormat, DEPTH_ACCESS_TYPE::VIEW_WRITABLE );
+	Desc.Format = DepthAccessor2DXGIFormat( *m_depthFormat, DEPTH_ACCESS_TYPE::VIEW_WRITABLE );
 	Desc.ViewDimension = m_arraySize == 1 ? D3D11_DSV_DIMENSION_TEXTURE2D : D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
 	Desc.Flags = 0;
 	Desc.Texture2DArray.MipSlice = 0;
@@ -472,11 +486,30 @@ void	Texture2D::UnMap( U32 _MipLevelIndex, U32 _ArrayIndex ) {
 	m_device.DXContext().Unmap( m_texture, CalcSubResource( _MipLevelIndex, _ArrayIndex ) );
 }
 
-DXGI_FORMAT	Texture2D::PixelFormat2DXGIFormat( const BaseLib::IPixelAccessor& _pixelFormat, BaseLib::COMPONENT_FORMAT _componentFormat ) {
-	switch ( _pixelFormat.Size() ) {
+void	Texture2D::ReadAsImagesMatrix( ImageUtilityLib::ImagesMatrix& _images ) const {
+	if ( IsCubeMap() )
+		_images.InitCubeTextureArray( m_width, m_arraySize / 6, m_mipLevelsCount );
+	else
+		_images.InitTexture2DArray( m_width, m_height, m_arraySize, m_mipLevelsCount );
+
+	ImageUtilityLib::ImageFile::PIXEL_FORMAT	format =  ImageUtilityLib::ImageFile::DXGIFormat2ImageFileFormat();
+	_images.AllocateImageFiles();
+
+	for ( U32 arrayIndex=0; arrayIndex < m_arraySize; arrayIndex++ ) {
+		ImageUtilityLib::ImagesMatrix::Mips&	mips = _images[arrayIndex];
+		for ( U32 mipLevelIndex=0; mipLevelIndex < m_mipLevelsCount; mipLevelIndex++ ) {
+			ImageUtilityLib::ImagesMatrix::Mips::Mip&	targetMip = mips[mipLevelIndex];
+
+			targetMip.AllocateImageFiles()
+			_images.
+		}
+	}
+}
+
+DXGI_FORMAT	Texture2D::PixelAccessor2DXGIFormat( const BaseLib::IPixelAccessor& _pixelAccessor, BaseLib::COMPONENT_FORMAT _componentFormat ) {
+	switch ( _pixelAccessor.Size() ) {
 	case 1:
-		// ======= 8-bits formats =======
-		if ( &_pixelFormat == &BaseLib::PF_R8::Descriptor ) {
+		if ( &_pixelAccessor == &BaseLib::PF_R8::Descriptor ) {
 			switch ( _componentFormat ) {
 			case BaseLib::COMPONENT_FORMAT::AUTO:
 			case BaseLib::COMPONENT_FORMAT::UNORM:	return DXGI_FORMAT_R8_UNORM;
@@ -484,7 +517,14 @@ DXGI_FORMAT	Texture2D::PixelFormat2DXGIFormat( const BaseLib::IPixelAccessor& _p
 			case BaseLib::COMPONENT_FORMAT::UINT:	return DXGI_FORMAT_R8_UINT;
 			case BaseLib::COMPONENT_FORMAT::SINT:	return DXGI_FORMAT_R8_SINT;
 			}
-		} else if ( &_pixelFormat == &BaseLib::PF_RG8::Descriptor ) {
+		}
+		break;
+
+	case 2:
+		// ======= 16-bits floating-point formats =======
+		if ( &_pixelAccessor == &BaseLib::PF_R16F::Descriptor ) {
+			return DXGI_FORMAT_R16_FLOAT;
+		} else if ( &_pixelAccessor == &BaseLib::PF_RG8::Descriptor ) {
 			switch ( _componentFormat ) {
 			case BaseLib::COMPONENT_FORMAT::AUTO:
 			case BaseLib::COMPONENT_FORMAT::UNORM:	return DXGI_FORMAT_R8G8_UNORM;
@@ -492,30 +532,15 @@ DXGI_FORMAT	Texture2D::PixelFormat2DXGIFormat( const BaseLib::IPixelAccessor& _p
 			case BaseLib::COMPONENT_FORMAT::UINT:	return DXGI_FORMAT_R8G8_UINT;
 			case BaseLib::COMPONENT_FORMAT::SINT:	return DXGI_FORMAT_R8G8_SINT;
 			}
-		} else if ( &_pixelFormat == &BaseLib::PF_RGBA8::Descriptor ) {
-			switch ( _componentFormat ) {
-			case BaseLib::COMPONENT_FORMAT::AUTO:
-			case BaseLib::COMPONENT_FORMAT::UNORM_sRGB:	return DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
-			case BaseLib::COMPONENT_FORMAT::UNORM:	return DXGI_FORMAT_R8G8B8A8_UNORM;
-			case BaseLib::COMPONENT_FORMAT::SNORM:	return DXGI_FORMAT_R8G8B8A8_SNORM;
-			case BaseLib::COMPONENT_FORMAT::UINT:	return DXGI_FORMAT_R8G8B8A8_UINT;
-			case BaseLib::COMPONENT_FORMAT::SINT:	return DXGI_FORMAT_R8G8B8A8_SINT;
-			}
-		}
-		break;
-
-	case 2:
-		// ======= 16-bits floating-point formats =======
-		if ( &_pixelFormat == &BaseLib::PF_R16F::Descriptor ) {
-			return DXGI_FORMAT_R16_FLOAT;
-		} else if ( &_pixelFormat == &BaseLib::PF_RG16F::Descriptor ) {
+		}		
+		else if ( &_pixelAccessor == &BaseLib::PF_RG16F::Descriptor ) {
 			return DXGI_FORMAT_R16G16_FLOAT;
-		} else if ( &_pixelFormat == &BaseLib::PF_RGBA16F::Descriptor ) {
+		} else if ( &_pixelAccessor == &BaseLib::PF_RGBA16F::Descriptor ) {
 			return DXGI_FORMAT_R16G16B16A16_FLOAT;
 		}
 
 		// ======= 16-bits integer formats =======
-		if ( &_pixelFormat == &BaseLib::PF_R16::Descriptor ) {
+		if ( &_pixelAccessor == &BaseLib::PF_R16::Descriptor ) {
 			switch ( _componentFormat ) {
 			case BaseLib::COMPONENT_FORMAT::AUTO:
 			case BaseLib::COMPONENT_FORMAT::UNORM:	return DXGI_FORMAT_R16_UNORM;
@@ -523,7 +548,7 @@ DXGI_FORMAT	Texture2D::PixelFormat2DXGIFormat( const BaseLib::IPixelAccessor& _p
 			case BaseLib::COMPONENT_FORMAT::UINT:	return DXGI_FORMAT_R16_UINT;
 			case BaseLib::COMPONENT_FORMAT::SINT:	return DXGI_FORMAT_R16_SINT;
 			}
-		} else if ( &_pixelFormat == &BaseLib::PF_RG16::Descriptor ) {
+		} else if ( &_pixelAccessor == &BaseLib::PF_RG16::Descriptor ) {
 			switch ( _componentFormat ) {
 			case BaseLib::COMPONENT_FORMAT::AUTO:
 			case BaseLib::COMPONENT_FORMAT::UNORM:	return DXGI_FORMAT_R16G16_UNORM;
@@ -531,7 +556,7 @@ DXGI_FORMAT	Texture2D::PixelFormat2DXGIFormat( const BaseLib::IPixelAccessor& _p
 			case BaseLib::COMPONENT_FORMAT::UINT:	return DXGI_FORMAT_R16G16_UINT;
 			case BaseLib::COMPONENT_FORMAT::SINT:	return DXGI_FORMAT_R16G16_SINT;
 			}
-		} else if ( &_pixelFormat == &BaseLib::PF_RGBA16::Descriptor ) {
+		} else if ( &_pixelAccessor == &BaseLib::PF_RGBA16::Descriptor ) {
 			switch ( _componentFormat ) {
 			case BaseLib::COMPONENT_FORMAT::AUTO:
 			case BaseLib::COMPONENT_FORMAT::UNORM:	return DXGI_FORMAT_R16G16B16A16_UNORM;
@@ -544,16 +569,28 @@ DXGI_FORMAT	Texture2D::PixelFormat2DXGIFormat( const BaseLib::IPixelAccessor& _p
 
 	case 4:
 		// ======= 32-bits floating-point formats =======
-		if ( &_pixelFormat == &BaseLib::PF_R32F::Descriptor ) {
+		if ( &_pixelAccessor == &BaseLib::PF_R32F::Descriptor ) {
 			return DXGI_FORMAT_R32_FLOAT;
-		} else if ( &_pixelFormat == &BaseLib::PF_RG32F::Descriptor ) {
+		} else if ( &_pixelAccessor == &BaseLib::PF_RGBA8::Descriptor ) {
+			switch ( _componentFormat ) {
+			case BaseLib::COMPONENT_FORMAT::AUTO:
+			case BaseLib::COMPONENT_FORMAT::UNORM_sRGB:	return DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+			case BaseLib::COMPONENT_FORMAT::UNORM:	return DXGI_FORMAT_R8G8B8A8_UNORM;
+			case BaseLib::COMPONENT_FORMAT::SNORM:	return DXGI_FORMAT_R8G8B8A8_SNORM;
+			case BaseLib::COMPONENT_FORMAT::UINT:	return DXGI_FORMAT_R8G8B8A8_UINT;
+			case BaseLib::COMPONENT_FORMAT::SINT:	return DXGI_FORMAT_R8G8B8A8_SINT;
+			}
+		}
+c'est tout faux partout ici!
+		
+		else if ( &_pixelAccessor == &BaseLib::PF_RG32F::Descriptor ) {
 			return DXGI_FORMAT_R32G32_FLOAT;
-		} else if ( &_pixelFormat == &BaseLib::PF_RGBA32F::Descriptor ) {
+		} else if ( &_pixelAccessor == &BaseLib::PF_RGBA32F::Descriptor ) {
 			return DXGI_FORMAT_R32G32B32A32_FLOAT;
 		}
 
 		// ======= 32-bits integer formats =======
-		if ( &_pixelFormat == &BaseLib::PF_R32::Descriptor ) {
+		if ( &_pixelAccessor == &BaseLib::PF_R32::Descriptor ) {
 			switch ( _componentFormat ) {
 			case BaseLib::COMPONENT_FORMAT::AUTO:
 // 			case BaseLib::COMPONENT_FORMAT::UNORM:	return DXGI_FORMAT_R32_UNORM;	// Doesn't exist anyway
@@ -561,7 +598,7 @@ DXGI_FORMAT	Texture2D::PixelFormat2DXGIFormat( const BaseLib::IPixelAccessor& _p
 			case BaseLib::COMPONENT_FORMAT::UINT:	return DXGI_FORMAT_R32_UINT;
 			case BaseLib::COMPONENT_FORMAT::SINT:	return DXGI_FORMAT_R32_SINT;
 			}
-		} else if ( &_pixelFormat == &BaseLib::PF_RG32::Descriptor ) {
+		} else if ( &_pixelAccessor == &BaseLib::PF_RG32::Descriptor ) {
 			switch ( _componentFormat ) {
 			case BaseLib::COMPONENT_FORMAT::AUTO:
 // 			case BaseLib::COMPONENT_FORMAT::UNORM:	return DXGI_FORMAT_R32G32_UNORM;	// Doesn't exist anyway
@@ -569,7 +606,7 @@ DXGI_FORMAT	Texture2D::PixelFormat2DXGIFormat( const BaseLib::IPixelAccessor& _p
 			case BaseLib::COMPONENT_FORMAT::UINT:	return DXGI_FORMAT_R32G32_UINT;
 			case BaseLib::COMPONENT_FORMAT::SINT:	return DXGI_FORMAT_R32G32_SINT;
 			}
-		} else if ( &_pixelFormat == &BaseLib::PF_RGBA32::Descriptor ) {
+		} else if ( &_pixelAccessor == &BaseLib::PF_RGBA32::Descriptor ) {
 			switch ( _componentFormat ) {
 			case BaseLib::COMPONENT_FORMAT::AUTO:
 // 			case BaseLib::COMPONENT_FORMAT::UNORM:	return DXGI_FORMAT_R32G32B32A32_UNORM;	// Doesn't exist anyway
@@ -583,20 +620,21 @@ DXGI_FORMAT	Texture2D::PixelFormat2DXGIFormat( const BaseLib::IPixelAccessor& _p
 
 	return DXGI_FORMAT_UNKNOWN;
 }
-DXGI_FORMAT	Texture2D::DepthFormat2DXGIFormat( const BaseLib::IDepthAccessor& _depthFormat, DEPTH_ACCESS_TYPE _accessType  ) {
-	if ( &_depthFormat == &BaseLib::PF_D32::Descriptor ) {
+
+DXGI_FORMAT	Texture2D::DepthAccessor2DXGIFormat( const BaseLib::IDepthAccessor& _depthAccessor, DEPTH_ACCESS_TYPE _accessType  ) {
+	if ( &_depthAccessor == &BaseLib::PF_D32::Descriptor ) {
 		switch ( _accessType ) {
 			case DEPTH_ACCESS_TYPE::SURFACE_CREATION:		return DXGI_FORMAT_R32_TYPELESS;
 			case DEPTH_ACCESS_TYPE::VIEW_READABLE:			return DXGI_FORMAT_R32_FLOAT;
 			case DEPTH_ACCESS_TYPE::VIEW_WRITABLE:			return DXGI_FORMAT_D32_FLOAT;
 		}
-	} else if ( &_depthFormat == &BaseLib::PF_D24S8::Descriptor ) {
+	} else if ( &_depthAccessor == &BaseLib::PF_D24S8::Descriptor ) {
 		switch ( _accessType ) {
 			case DEPTH_ACCESS_TYPE::SURFACE_CREATION:		return DXGI_FORMAT_R24G8_TYPELESS;
 			case DEPTH_ACCESS_TYPE::VIEW_READABLE:			return DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
 			case DEPTH_ACCESS_TYPE::VIEW_WRITABLE:			return DXGI_FORMAT_D24_UNORM_S8_UINT;
 		}
-	} else if ( &_depthFormat == &BaseLib::PF_D16::Descriptor ) {
+	} else if ( &_depthAccessor == &BaseLib::PF_D16::Descriptor ) {
 		switch ( _accessType ) {
 			case DEPTH_ACCESS_TYPE::SURFACE_CREATION:		return DXGI_FORMAT_R16_TYPELESS;
 			case DEPTH_ACCESS_TYPE::VIEW_READABLE:			return DXGI_FORMAT_R16_UNORM;

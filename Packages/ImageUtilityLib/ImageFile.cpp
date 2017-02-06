@@ -54,7 +54,7 @@ bool	ImageFile::HasAlpha() const {
 	return false;
 }
 
-const IPixelAccessor&	ImageFile::GetPixelFormatAccessor( PIXEL_FORMAT _pixelFormat ) {
+const IPixelAccessor&	ImageFile::PixelFormat2Accessor( PIXEL_FORMAT _pixelFormat ) {
 	switch ( _pixelFormat ) {
 		// 8-bits
 	case PIXEL_FORMAT::R8:			return PF_R8::Descriptor;
@@ -82,6 +82,22 @@ const IPixelAccessor&	ImageFile::GetPixelFormatAccessor( PIXEL_FORMAT _pixelForm
 	}
 
 	return PF_Unknown::Descriptor;
+}
+ImageFile::PIXEL_FORMAT	ImageFile::Accessor2PixelFormat( const IPixelAccessor& _pixelAccessor ) {
+	switch ( _pixelAccessor.Size() ) {
+	case 1:	finir ce tas de bouse!
+		break;
+	case 2:
+		break;
+	case 4:
+		break;
+	case 8:
+		break;
+	case 16:
+		break;
+	case 32:
+		break;
+	}
 }
 
 void	ImageFile::Get( U32 _X, U32 _Y, bfloat4& _color ) const {
@@ -128,7 +144,7 @@ void	ImageFile::Init( U32 _width, U32 _height, PIXEL_FORMAT _format, const Color
 	Exit();
 
 	m_pixelFormat = _format;
-	m_pixelAccessor = &GetPixelFormatAccessor( _format );
+	m_pixelAccessor = &PixelFormat2Accessor( _format );
 
 	FREE_IMAGE_TYPE	bitmapType = PixelFormat2FIT( _format );
 	int				BPP = int( PixelFormat2BPP( _format ) );
@@ -174,7 +190,7 @@ void	ImageFile::Load( const wchar_t* _fileName, FILE_FORMAT _format ) {
 	FreeImage_FlipVertical( m_bitmap );
 
 	m_pixelFormat = Bitmap2PixelFormat( *m_bitmap );
-	m_pixelAccessor = &GetPixelFormatAccessor( m_pixelFormat );
+	m_pixelAccessor = &PixelFormat2Accessor( m_pixelFormat );
 
 	m_metadata.RetrieveFromImage( *this );
 }
@@ -200,7 +216,7 @@ void	ImageFile::Load( const void* _fileContent, U64 _fileSize, FILE_FORMAT _form
 	FreeImage_FlipVertical( m_bitmap );
 
 	m_pixelFormat = Bitmap2PixelFormat( *m_bitmap );
-	m_pixelAccessor = &GetPixelFormatAccessor( m_pixelFormat );
+	m_pixelAccessor = &PixelFormat2Accessor( m_pixelFormat );
 
 	m_metadata.RetrieveFromImage( *this );
 }
@@ -338,7 +354,7 @@ void	ImageFile::ConvertFrom( const ImageFile& _source, PIXEL_FORMAT _targetForma
 
 	// Get pixel format from bitmap
 	m_pixelFormat = Bitmap2PixelFormat( *m_bitmap );
-	m_pixelAccessor = &GetPixelFormatAccessor( m_pixelFormat );
+	m_pixelAccessor = &PixelFormat2Accessor( m_pixelFormat );
 
 	// Copy metadata
 	m_metadata = _source.m_metadata;
@@ -506,7 +522,7 @@ void	ImageFile::ToneMapFrom( const ImageFile& _source, toneMapper_t _toneMapper 
 
 	// Get pixel format from bitmap
 	m_pixelFormat = Bitmap2PixelFormat( *m_bitmap );
-	m_pixelAccessor = &GetPixelFormatAccessor( m_pixelFormat );
+	m_pixelAccessor = &PixelFormat2Accessor( m_pixelFormat );
 
 	// Copy metadata
 	m_metadata = _source.m_metadata;
@@ -1207,55 +1223,56 @@ void	ImageFile::ImageCoordinates2RangedCoordinates( const bfloat2& _rangeX, cons
 //////////////////////////////////////////////////////////////////////////
 // DDS-Related Helpers
 //
-ImageFile::PIXEL_FORMAT	ImageFile::DXGIFormat2ImageFileFormat( DXGI_FORMAT _sourceFormat, U32& _pixelSize ) {
+ImageFile::PIXEL_FORMAT	ImageFile::DXGIFormat2ImageFileFormat( DXGI_FORMAT _sourceFormat, COMPONENT_FORMAT& _componentFormat, U32& _pixelSize ) {
 	_pixelSize = 0;
+	_componentFormat = COMPONENT_FORMAT::AUTO;
 
 	switch ( _sourceFormat ) {
-		case DXGI_FORMAT_R8_UINT:
-		case DXGI_FORMAT_R8_SINT:
-		case DXGI_FORMAT_R8_SNORM:
-		case DXGI_FORMAT_R8_UNORM:				_pixelSize = 1; return ImageFile::PIXEL_FORMAT::R8;
+		case DXGI_FORMAT_R8_UINT:				_pixelSize = 1; _componentFormat = COMPONENT_FORMAT::UINT; return ImageFile::PIXEL_FORMAT::R8;
+		case DXGI_FORMAT_R8_SINT:				_pixelSize = 1; _componentFormat = COMPONENT_FORMAT::SINT; return ImageFile::PIXEL_FORMAT::R8;
+		case DXGI_FORMAT_R8_SNORM:				_pixelSize = 1; _componentFormat = COMPONENT_FORMAT::SNORM; return ImageFile::PIXEL_FORMAT::R8;
+		case DXGI_FORMAT_R8_UNORM:				_pixelSize = 1; _componentFormat = COMPONENT_FORMAT::UNORM; return ImageFile::PIXEL_FORMAT::R8;
 
-		case DXGI_FORMAT_R8G8_UINT:
-		case DXGI_FORMAT_R8G8_SINT:
-		case DXGI_FORMAT_R8G8_SNORM:
-		case DXGI_FORMAT_R8G8_UNORM:			_pixelSize = 2; return ImageFile::PIXEL_FORMAT::RG8;
+		case DXGI_FORMAT_R8G8_UINT:				_pixelSize = 2; _componentFormat = COMPONENT_FORMAT::UINT; return ImageFile::PIXEL_FORMAT::RG8;
+		case DXGI_FORMAT_R8G8_SINT:				_pixelSize = 2; _componentFormat = COMPONENT_FORMAT::SINT; return ImageFile::PIXEL_FORMAT::RG8;
+		case DXGI_FORMAT_R8G8_SNORM:			_pixelSize = 2; _componentFormat = COMPONENT_FORMAT::SNORM; return ImageFile::PIXEL_FORMAT::RG8;
+		case DXGI_FORMAT_R8G8_UNORM:			_pixelSize = 2; _componentFormat = COMPONENT_FORMAT::UNORM; return ImageFile::PIXEL_FORMAT::RG8;
 
-		case DXGI_FORMAT_R8G8B8A8_UINT:
-		case DXGI_FORMAT_R8G8B8A8_SINT:
-		case DXGI_FORMAT_R8G8B8A8_SNORM:
-		case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB:
-		case DXGI_FORMAT_R8G8B8A8_UNORM:		_pixelSize = 4; return ImageFile::PIXEL_FORMAT::RGBA8;
+		case DXGI_FORMAT_R8G8B8A8_UINT:			_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::UINT; return ImageFile::PIXEL_FORMAT::RGBA8;
+		case DXGI_FORMAT_R8G8B8A8_SINT:			_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::SINT; return ImageFile::PIXEL_FORMAT::RGBA8;
+		case DXGI_FORMAT_R8G8B8A8_SNORM:		_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::SNORM; return ImageFile::PIXEL_FORMAT::RGBA8;
+		case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB:	_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::UNORM_sRGB; return ImageFile::PIXEL_FORMAT::RGBA8;
+		case DXGI_FORMAT_R8G8B8A8_UNORM:		_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::UNORM; return ImageFile::PIXEL_FORMAT::RGBA8;
 
-		case DXGI_FORMAT_R16_UINT:
-		case DXGI_FORMAT_R16_SINT:
-		case DXGI_FORMAT_R16_SNORM:
-		case DXGI_FORMAT_R16_UNORM:				_pixelSize = 2; return ImageFile::PIXEL_FORMAT::R16;
-		case DXGI_FORMAT_R16_FLOAT:				_pixelSize = 2; return ImageFile::PIXEL_FORMAT::R16F;
+		case DXGI_FORMAT_R16_UINT:				_pixelSize = 2; _componentFormat = COMPONENT_FORMAT::UINT; return ImageFile::PIXEL_FORMAT::R16;
+		case DXGI_FORMAT_R16_SINT:				_pixelSize = 2; _componentFormat = COMPONENT_FORMAT::SINT; return ImageFile::PIXEL_FORMAT::R16;
+		case DXGI_FORMAT_R16_SNORM:				_pixelSize = 2; _componentFormat = COMPONENT_FORMAT::SNORM; return ImageFile::PIXEL_FORMAT::R16;
+		case DXGI_FORMAT_R16_UNORM:				_pixelSize = 2; _componentFormat = COMPONENT_FORMAT::UNORM; return ImageFile::PIXEL_FORMAT::R16;
+		case DXGI_FORMAT_R16_FLOAT:				_pixelSize = 2; _componentFormat = COMPONENT_FORMAT::AUTO; return ImageFile::PIXEL_FORMAT::R16F;
 
-		case DXGI_FORMAT_R16G16_UINT:
-		case DXGI_FORMAT_R16G16_SINT:
-		case DXGI_FORMAT_R16G16_SNORM:
-		case DXGI_FORMAT_R16G16_UNORM:			_pixelSize = 4; return ImageFile::PIXEL_FORMAT::RG16;
-		case DXGI_FORMAT_R16G16_FLOAT:			_pixelSize = 4; return ImageFile::PIXEL_FORMAT::RG16F;
+		case DXGI_FORMAT_R16G16_UINT:			_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::UINT; return ImageFile::PIXEL_FORMAT::RG16;
+		case DXGI_FORMAT_R16G16_SINT:			_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::SINT; return ImageFile::PIXEL_FORMAT::RG16;
+		case DXGI_FORMAT_R16G16_SNORM:			_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::SNORM; return ImageFile::PIXEL_FORMAT::RG16;
+		case DXGI_FORMAT_R16G16_UNORM:			_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::UNORM; return ImageFile::PIXEL_FORMAT::RG16;
+		case DXGI_FORMAT_R16G16_FLOAT:			_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::AUTO; return ImageFile::PIXEL_FORMAT::RG16F;
 
-		case DXGI_FORMAT_R16G16B16A16_UINT:
-		case DXGI_FORMAT_R16G16B16A16_SINT:
-		case DXGI_FORMAT_R16G16B16A16_SNORM:
-		case DXGI_FORMAT_R16G16B16A16_UNORM:	_pixelSize = 8; return ImageFile::PIXEL_FORMAT::RGBA16;
-		case DXGI_FORMAT_R16G16B16A16_FLOAT:	_pixelSize = 8; return ImageFile::PIXEL_FORMAT::RGBA16F;
+		case DXGI_FORMAT_R16G16B16A16_UINT:		_pixelSize = 8; _componentFormat = COMPONENT_FORMAT::UINT; return ImageFile::PIXEL_FORMAT::RGBA16;
+		case DXGI_FORMAT_R16G16B16A16_SINT:		_pixelSize = 8; _componentFormat = COMPONENT_FORMAT::SINT; return ImageFile::PIXEL_FORMAT::RGBA16;
+		case DXGI_FORMAT_R16G16B16A16_SNORM:	_pixelSize = 8; _componentFormat = COMPONENT_FORMAT::SNORM; return ImageFile::PIXEL_FORMAT::RGBA16;
+		case DXGI_FORMAT_R16G16B16A16_UNORM:	_pixelSize = 8; _componentFormat = COMPONENT_FORMAT::UNORM; return ImageFile::PIXEL_FORMAT::RGBA16;
+		case DXGI_FORMAT_R16G16B16A16_FLOAT:	_pixelSize = 8; _componentFormat = COMPONENT_FORMAT::AUTO; return ImageFile::PIXEL_FORMAT::RGBA16F;
 
-// 		case DXGI_FORMAT_R32_UINT:
-// 		case DXGI_FORMAT_R32_SINT:				_pixelSize = 4; return ImageFile::PIXEL_FORMAT::R32;	// Unsupported!
-		case DXGI_FORMAT_R32_FLOAT:				_pixelSize = 4; return ImageFile::PIXEL_FORMAT::R32F;
+// 		case DXGI_FORMAT_R32_UINT:				_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::UINT; return ImageFile::PIXEL_FORMAT::R32;	// Unsupported!
+// 		case DXGI_FORMAT_R32_SINT:				_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::SINT; return ImageFile::PIXEL_FORMAT::R32;	// Unsupported!
+		case DXGI_FORMAT_R32_FLOAT:				_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::AUTO; return ImageFile::PIXEL_FORMAT::R32F;
 
-// 		case DXGI_FORMAT_R32G32_UINT:
-// 		case DXGI_FORMAT_R32G32_SINT:			_pixelSize = 8; return ImageFile::PIXEL_FORMAT::RG32;	// Unsupported!
-		case DXGI_FORMAT_R32G32_FLOAT:			_pixelSize = 8; return ImageFile::PIXEL_FORMAT::RG32F;
+// 		case DXGI_FORMAT_R32G32_UINT:			_pixelSize = 8; _componentFormat = COMPONENT_FORMAT::UINT; return ImageFile::PIXEL_FORMAT::RG32;	// Unsupported!
+// 		case DXGI_FORMAT_R32G32_SINT:			_pixelSize = 8; _componentFormat = COMPONENT_FORMAT::SINT; return ImageFile::PIXEL_FORMAT::RG32;	// Unsupported!
+		case DXGI_FORMAT_R32G32_FLOAT:			_pixelSize = 8; _componentFormat = COMPONENT_FORMAT::AUTO; return ImageFile::PIXEL_FORMAT::RG32F;
 
-// 		case DXGI_FORMAT_R32G32B32A32_UINT:
-// 		case DXGI_FORMAT_R32G32B32A32_SINT:		_pixelSize = 16; return ImageFile::PIXEL_FORMAT::RGBA32;	// Unsupported!
-		case DXGI_FORMAT_R32G32B32A32_FLOAT:	_pixelSize = 16; return ImageFile::PIXEL_FORMAT::RGBA32F;
+// 		case DXGI_FORMAT_R32G32B32A32_UINT:		_pixelSize = 16; _componentFormat = COMPONENT_FORMAT::UINT; return ImageFile::PIXEL_FORMAT::RGBA32;	// Unsupported!
+// 		case DXGI_FORMAT_R32G32B32A32_SINT:		_pixelSize = 16; _componentFormat = COMPONENT_FORMAT::SINT; return ImageFile::PIXEL_FORMAT::RGBA32;	// Unsupported!
+		case DXGI_FORMAT_R32G32B32A32_FLOAT:	_pixelSize = 16; _componentFormat = COMPONENT_FORMAT::AUTO; return ImageFile::PIXEL_FORMAT::RGBA32F;
 	}
 
 	return ImageFile::PIXEL_FORMAT::UNKNOWN;
@@ -1478,8 +1495,9 @@ void	ImageFile::DDSLoad( const void* _blindPointerImage, const void* _blindPoint
 	const DirectX::TexMetadata&		meta = *reinterpret_cast<const DirectX::TexMetadata*>( _blindPointerMetaData );
 
 	// Retrieve supported format
-	U32				pixelSize = 0;
-	PIXEL_FORMAT	format = DXGIFormat2ImageFileFormat( meta.format, pixelSize );
+	U32					pixelSize = 0;
+	COMPONENT_FORMAT	componentFormat;
+	PIXEL_FORMAT		format = DXGIFormat2ImageFileFormat( meta.format, componentFormat, pixelSize );
 	if ( format == ImageFile::PIXEL_FORMAT::UNKNOWN )
 		throw "Unsupported format! Cannot find appropriate target image format to support source DXGI format...";
 
@@ -1488,7 +1506,7 @@ void	ImageFile::DDSLoad( const void* _blindPointerImage, const void* _blindPoint
 	// Build content slices
 	U32	mipLevelsCount = U32(meta.mipLevels);
 	if ( meta.depth == 1 ) {
-		// We are dealing with a 2D texture
+		// We are dealing with a 2D texture format
 		if ( image.GetImageCount() != meta.arraySize * meta.mipLevels )
 			throw "Unexpected amount of images!";
 
@@ -1523,7 +1541,7 @@ void	ImageFile::DDSLoad( const void* _blindPointerImage, const void* _blindPoint
 		}
 
 	} else {
-		// We are dealing with a 3D texture
+		// We are dealing with a 3D texture format
 		_images.InitTexture3D( U32(meta.width), U32(meta.height), U32(meta.depth), U32(meta.mipLevels) );
 
 		// Allocate actual images

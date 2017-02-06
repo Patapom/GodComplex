@@ -30,15 +30,16 @@ void	Renderer::Device::Clear( float4 _clearColor ) {
 }
 
 void	Renderer::Device::Clear( Texture2D^ _RenderTarget, float4 _clearColor ) {
-	m_pDevice->ClearRenderTarget( *_RenderTarget->m_pTexture, bfloat4( _clearColor.x, _clearColor.y, _clearColor.z, _clearColor.w ) );
+	m_pDevice->ClearRenderTarget( *_RenderTarget->m_texture
+		, bfloat4( _clearColor.x, _clearColor.y, _clearColor.z, _clearColor.w ) );
 }
 
 void	Renderer::Device::Clear( Texture3D^ _RenderTarget, float4 _clearColor ) {
-	m_pDevice->ClearRenderTarget( *_RenderTarget->m_pTexture, bfloat4( _clearColor.x, _clearColor.y, _clearColor.z, _clearColor.w ) );
+	m_pDevice->ClearRenderTarget( *_RenderTarget->m_texture, bfloat4( _clearColor.x, _clearColor.y, _clearColor.z, _clearColor.w ) );
 }
 
 void	Renderer::Device::ClearDepthStencil( Texture2D^ _RenderTarget, float _Z, byte _Stencil, bool _ClearDepth, bool _ClearStencil ) {
-	m_pDevice->ClearDepthStencil( *_RenderTarget->m_pTexture, _Z, _Stencil, _ClearDepth, _ClearStencil );
+	m_pDevice->ClearDepthStencil( *_RenderTarget->m_texture, _Z, _Stencil, _ClearDepth, _ClearStencil );
 }
 
 void	Renderer::Device::SetRenderStates( RASTERIZER_STATE _RS, DEPTHSTENCIL_STATE _DS, BLEND_STATE _BS ) {
@@ -76,7 +77,7 @@ void	Renderer::Device::SetRenderStates( RASTERIZER_STATE _RS, DEPTHSTENCIL_STATE
 }
 
 void	Renderer::Device::SetRenderTarget( Texture2D^ _RenderTarget, Texture2D^ _DepthStencilTarget ) {
-	m_pDevice->SetRenderTarget( *_RenderTarget->m_pTexture, _DepthStencilTarget != nullptr ? _DepthStencilTarget->m_pTexture : NULL );
+	m_pDevice->SetRenderTarget( *_RenderTarget->m_texture, _DepthStencilTarget != nullptr ? _DepthStencilTarget->m_texture : NULL );
 }
 
 void	Renderer::Device::SetRenderTargets( UInt32 _width, UInt32 _height, cli::array<IView^>^ _renderTargetViews, Texture2D^ _depthStencilTarget ) {
@@ -87,7 +88,7 @@ void	Renderer::Device::SetRenderTargets( UInt32 _width, UInt32 _height, cli::arr
 	for ( int i=0; i < _renderTargetViews->Length; i++ )
 		m_ppRenderTargetViews[i] = _renderTargetViews[i]->RTV;
 
-	m_pDevice->SetRenderTargets( _width, _height, _renderTargetViews->Length, m_ppRenderTargetViews, _depthStencilTarget != nullptr ? _depthStencilTarget->m_pTexture->GetDSV() : NULL );
+	m_pDevice->SetRenderTargets( _width, _height, _renderTargetViews->Length, m_ppRenderTargetViews, _depthStencilTarget != nullptr ? _depthStencilTarget->m_texture->GetDSV() : NULL );
 
 //	delete[] ppRenderTargets;
 }

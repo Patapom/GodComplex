@@ -198,11 +198,12 @@ namespace TestFilmicCurve
 							break;
 
 						case Layout.LAYOUT_BC3:
-							switch ( m_type ) {
-								case Type.UNORM: return Renderer.PIXEL_FORMAT.BC3_UNORM;
-								case Type.UNORM_sRGB: return Renderer.PIXEL_FORMAT.BC3_UNORM_sRGB;
-							}
-							break;
+							throw new Exception( "Unsupported format!" );
+// 							switch ( m_type ) {
+// 								case Type.UNORM: return Renderer.PIXEL_FORMAT.BC3_UNORM;
+// 								case Type.UNORM_sRGB: return Renderer.PIXEL_FORMAT.BC3_UNORM_sRGB;
+// 							}
+//							break;
 					}
 
 					throw new Exception( "Unsupported image format " + ToString() );
