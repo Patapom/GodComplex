@@ -15,14 +15,14 @@ namespace Renderer {
 	public ref class PixelsBuffer : public ByteBuffer {
 	internal:
 
-		UInt32						m_rowPitch;
-		UInt32						m_depthPitch;
+		UInt32							m_rowPitch;
+		UInt32							m_depthPitch;
 
 		// When a texture is mapped
-		D3D11_MAPPED_SUBRESOURCE*	m_mappedSubResource;
-		UInt32						m_mappedMipLevelIndex;
-		UInt32						m_mappedArrayIndex;
-		bool						m_readOnly;
+		const D3D11_MAPPED_SUBRESOURCE*	m_mappedSubResource;
+		UInt32							m_mappedMipLevelIndex;
+		UInt32							m_mappedArrayIndex;
+		bool							m_readOnly;
 
 	public:
 
@@ -43,18 +43,18 @@ namespace Renderer {
 		}
 
 	internal:
-		PixelsBuffer( D3D11_MAPPED_SUBRESOURCE& _SubResource, UInt32 _mipLevelIndex, UInt32 _arrayIndex, bool _readOnly ) : ByteBuffer( _SubResource.DepthPitch ) {
-			m_rowPitch = _SubResource.RowPitch;
-			m_depthPitch = _SubResource.DepthPitch;
+		PixelsBuffer( const D3D11_MAPPED_SUBRESOURCE& _subResource, UInt32 _mipLevelIndex, UInt32 _arrayIndex, bool _readOnly ) : ByteBuffer( _subResource.DepthPitch ) {
+			m_rowPitch = _subResource.RowPitch;
+			m_depthPitch = _subResource.DepthPitch;
 
-			m_mappedSubResource = &_SubResource;
+			m_mappedSubResource = &_subResource;
 			m_mappedMipLevelIndex = _mipLevelIndex;
 			m_mappedArrayIndex = _arrayIndex;
 			m_readOnly = _readOnly;
 
 			if ( m_readOnly ) {
 				// Copy mapped resource now
-				System::Runtime::InteropServices::Marshal::Copy( System::IntPtr( _SubResource.pData ), m_Buffer, 0, m_depthPitch );
+				System::Runtime::InteropServices::Marshal::Copy( System::IntPtr( _subResource.pData ), m_Buffer, 0, m_depthPitch );
 			}
 		}
 

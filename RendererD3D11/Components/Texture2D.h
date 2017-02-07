@@ -22,12 +22,10 @@ private:	// FIELDS
 	U32								m_arraySize;
 	U32								m_mipLevelsCount;
 
-//	const IFormatDescriptor*		m_format;
 	const BaseLib::IPixelAccessor*	m_pixelFormat;
 	BaseLib::COMPONENT_FORMAT		m_componentFormat;
 	const BaseLib::IDepthAccessor*	m_depthFormat;
 
-	bool							m_isDepthStencil;
 	bool							m_isCubeMap;
 
 	ID3D11Texture2D*				m_texture;
@@ -39,22 +37,21 @@ private:	// FIELDS
 	mutable BaseLib::DictionaryU32	m_cachedDSVs;
 	mutable U32						m_lastAssignedSlots[6];
 	mutable U32						m_lastAssignedSlotsUAV;
-	D3D11_MAPPED_SUBRESOURCE		m_lockedResource;
+	mutable D3D11_MAPPED_SUBRESOURCE m_lockedResource;
 
 
 public:	 // PROPERTIES
 
-	U32							GetWidth() const			{ return m_width; }
-	U32							GetHeight() const			{ return m_height; }
-	U32							GetArraySize() const		{ return m_arraySize; }
-	U32							GetMipLevelsCount() const	{ return m_mipLevelsCount; }
-	bool						IsCubeMap() const			{ return m_isCubeMap; }
-//	const IFormatDescriptor&	GetFormatDescriptor() const	{ return *m_format; }
+	U32								GetWidth() const			{ return m_width; }
+	U32								GetHeight() const			{ return m_height; }
+	U32								GetArraySize() const		{ return m_arraySize; }
+	U32								GetMipLevelsCount() const	{ return m_mipLevelsCount; }
+	bool							IsCubeMap() const			{ return m_isCubeMap; }
 	const BaseLib::IPixelAccessor&	GetPixelFormatDescriptor() const	{ return *m_pixelFormat; }
 	BaseLib::COMPONENT_FORMAT		GetComponentFormat() const			{ return m_componentFormat; }
 	const BaseLib::IDepthAccessor&	GetDepthFormatDescriptor() const	{ return *m_depthFormat; }
 
-	bfloat3						GetdUV() const				{ return bfloat3( 1.0f / m_width, 1.0f / m_height, 0.0f ); }
+	bfloat3							GetdUV() const				{ return bfloat3( 1.0f / m_width, 1.0f / m_height, 0.0f ); }
 
 
 public:	 // METHODS
@@ -92,8 +89,9 @@ public:	 // METHODS
 
 	// Texture access by the CPU
 	void		CopyFrom( Texture2D& _SourceTexture );
-	D3D11_MAPPED_SUBRESOURCE&	Map( U32 _MipLevelIndex, U32 _ArrayIndex );
-	void		UnMap( U32 _MipLevelIndex, U32 _ArrayIndex );
+	const D3D11_MAPPED_SUBRESOURCE&	MapRead( U32 _MipLevelIndex, U32 _ArrayIndex ) const;
+	const D3D11_MAPPED_SUBRESOURCE&	MapWrite( U32 _MipLevelIndex, U32 _ArrayIndex );
+	void		UnMap( U32 _MipLevelIndex, U32 _ArrayIndex ) const;
 
 	// Conversion of a CPU-readable (i.e. staging) texture into an ImagesMatrix
 	void		ReadAsImagesMatrix( ImageUtilityLib::ImagesMatrix& _images ) const;
@@ -118,9 +116,9 @@ public:	// HELPERS
 	};
 	static DXGI_FORMAT	DepthAccessor2DXGIFormat( const BaseLib::IDepthAccessor& _depthAccessor, DEPTH_ACCESS_TYPE _accessType );
 
-	static void	NextMipSize( U32& _width, U32& _height );
-	static U32	ComputeMipLevelsCount( U32 _width, U32 _height, U32 _mipLevelsCount );
-	U32			CalcSubResource( U32 _MipLevelIndex, U32 _ArrayIndex );
+	static void			NextMipSize( U32& _width, U32& _height );
+	static U32			ComputeMipLevelsCount( U32 _width, U32 _height, U32 _mipLevelsCount );
+	U32					CalcSubResource( U32 _MipLevelIndex, U32 _ArrayIndex ) const;
 
 private:
 	// _staging, true if this is a staging texture (i.e. CPU accessible as read/write)

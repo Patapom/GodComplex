@@ -85,19 +85,45 @@ const IPixelAccessor&	ImageFile::PixelFormat2Accessor( PIXEL_FORMAT _pixelFormat
 }
 ImageFile::PIXEL_FORMAT	ImageFile::Accessor2PixelFormat( const IPixelAccessor& _pixelAccessor ) {
 	switch ( _pixelAccessor.Size() ) {
-	case 1:	finir ce tas de bouse!
+	case 1:
+		if ( &_pixelAccessor == &PF_R8::Descriptor ) return PIXEL_FORMAT::R8;
 		break;
 	case 2:
+		if ( &_pixelAccessor == &PF_RG8::Descriptor ) return PIXEL_FORMAT::RG8;
+		if ( &_pixelAccessor == &PF_R16::Descriptor ) return PIXEL_FORMAT::R16;
+		if ( &_pixelAccessor == &PF_R16F::Descriptor ) return PIXEL_FORMAT::R16F;
+		break;
+	case 3:
+		if ( &_pixelAccessor == &PF_RGB8::Descriptor ) return PIXEL_FORMAT::RGB8;
 		break;
 	case 4:
+		if ( &_pixelAccessor == &PF_RGBA8::Descriptor ) return PIXEL_FORMAT::RGBA8;
+		if ( &_pixelAccessor == &PF_RG16::Descriptor ) return PIXEL_FORMAT::RG16;
+		if ( &_pixelAccessor == &PF_RG16F::Descriptor ) return PIXEL_FORMAT::RG16F;
+//		if ( &_pixelAccessor == &PF_R32::Descriptor ) return PIXEL_FORMAT::R32;
+		if ( &_pixelAccessor == &PF_R32F::Descriptor ) return PIXEL_FORMAT::R32F;
+		break;
+	case 6:
+		if ( &_pixelAccessor == &PF_RGB16::Descriptor ) return PIXEL_FORMAT::RGB16;
+		if ( &_pixelAccessor == &PF_RGB16F::Descriptor ) return PIXEL_FORMAT::RGB16F;
 		break;
 	case 8:
+		if ( &_pixelAccessor == &PF_RGBA16::Descriptor ) return PIXEL_FORMAT::RGBA16;
+		if ( &_pixelAccessor == &PF_RGBA16F::Descriptor ) return PIXEL_FORMAT::RGBA16F;
+//		if ( &_pixelAccessor == &PF_RG32::Descriptor ) return PIXEL_FORMAT::RG32;
+		if ( &_pixelAccessor == &PF_RG32F::Descriptor ) return PIXEL_FORMAT::RG32F;
+		break;
+	case 12:
+//		if ( &_pixelAccessor == &PF_RGB32::Descriptor ) return PIXEL_FORMAT::RGB32;
+		if ( &_pixelAccessor == &PF_RGB32F::Descriptor ) return PIXEL_FORMAT::RGB32F;
 		break;
 	case 16:
-		break;
-	case 32:
+//		if ( &_pixelAccessor == &PF_RGBA32::Descriptor ) return PIXEL_FORMAT::RGBA32;
+		if ( &_pixelAccessor == &PF_RGBA32F::Descriptor ) return PIXEL_FORMAT::RGBA32F;
 		break;
 	}
+
+	return PIXEL_FORMAT::UNKNOWN;
 }
 
 void	ImageFile::Get( U32 _X, U32 _Y, bfloat4& _color ) const {
@@ -1223,7 +1249,7 @@ void	ImageFile::ImageCoordinates2RangedCoordinates( const bfloat2& _rangeX, cons
 //////////////////////////////////////////////////////////////////////////
 // DDS-Related Helpers
 //
-ImageFile::PIXEL_FORMAT	ImageFile::DXGIFormat2ImageFileFormat( DXGI_FORMAT _sourceFormat, COMPONENT_FORMAT& _componentFormat, U32& _pixelSize ) {
+ImageFile::PIXEL_FORMAT	ImageFile::DXGIFormat2PixelFormat( DXGI_FORMAT _sourceFormat, COMPONENT_FORMAT& _componentFormat, U32& _pixelSize ) {
 	_pixelSize = 0;
 	_componentFormat = COMPONENT_FORMAT::AUTO;
 
@@ -1278,7 +1304,7 @@ ImageFile::PIXEL_FORMAT	ImageFile::DXGIFormat2ImageFileFormat( DXGI_FORMAT _sour
 	return ImageFile::PIXEL_FORMAT::UNKNOWN;
 }
 
-DXGI_FORMAT	ImageFile::ImageFileFormat2DXGIFormat( PIXEL_FORMAT _sourceFormat, COMPONENT_FORMAT _componentFormat ) {
+DXGI_FORMAT	ImageFile::PixelFormat2DXGIFormat( PIXEL_FORMAT _sourceFormat, COMPONENT_FORMAT _componentFormat ) {
 	switch ( _sourceFormat ) {
 		// 8-bits formats
 		case ImageFile::PIXEL_FORMAT::R8:
@@ -1497,7 +1523,7 @@ void	ImageFile::DDSLoad( const void* _blindPointerImage, const void* _blindPoint
 	// Retrieve supported format
 	U32					pixelSize = 0;
 	COMPONENT_FORMAT	componentFormat;
-	PIXEL_FORMAT		format = DXGIFormat2ImageFileFormat( meta.format, componentFormat, pixelSize );
+	PIXEL_FORMAT		format = DXGIFormat2PixelFormat( meta.format, componentFormat, pixelSize );
 	if ( format == ImageFile::PIXEL_FORMAT::UNKNOWN )
 		throw "Unsupported format! Cannot find appropriate target image format to support source DXGI format...";
 
@@ -1610,7 +1636,7 @@ void	ImageFile::DDSSave( const ImagesMatrix& _images, void** _blindPointerImage,
 	DirectX::ScratchImage*&	image = *reinterpret_cast<DirectX::ScratchImage**>( _blindPointerImage );
 	DirectX::TexMetadata*	meta = reinterpret_cast<DirectX::TexMetadata*>( _blindPointerMetaData );
 
-	DXGI_FORMAT	DXFormat = ImageFileFormat2DXGIFormat( _images.GetFormat(), _componentFormat );
+	DXGI_FORMAT	DXFormat = PixelFormat2DXGIFormat( _images.GetFormat(), _componentFormat );
 	if ( DXFormat == DXGI_FORMAT_UNKNOWN )
 		throw "Unsupported image format! Cannot find appropriate target DXGI format to support source image format...";
 

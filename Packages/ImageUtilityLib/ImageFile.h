@@ -442,8 +442,8 @@ namespace ImageUtilityLib {
 // 		static void			DDSSaveFromMemory( U32 _DDSImageSize, const void* _DDSImage, const wchar_t* _fileName );
 
 		// Conversion to and from DXGI pixel formats and image file pixel formats
- 		static PIXEL_FORMAT	DXGIFormat2ImageFileFormat( DXGI_FORMAT _sourceFormat, COMPONENT_FORMAT& _componentFormat, U32& _pixelSize );
- 		static DXGI_FORMAT	ImageFileFormat2DXGIFormat( PIXEL_FORMAT _sourceFormat, COMPONENT_FORMAT _componentFormat );
+ 		static PIXEL_FORMAT	DXGIFormat2PixelFormat( DXGI_FORMAT _sourceFormat, COMPONENT_FORMAT& _componentFormat, U32& _pixelSize );
+ 		static DXGI_FORMAT	PixelFormat2DXGIFormat( PIXEL_FORMAT _sourceFormat, COMPONENT_FORMAT _componentFormat );
 
 	private:
 

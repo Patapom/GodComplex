@@ -34,7 +34,7 @@ Texture3D::Texture3D( Device& _device, const ImageUtilityLib::ImagesMatrix& _ima
 	// Retrieve image format
 	m_pixelFormat = &ImageUtilityLib::ImageFile::PixelFormat2Accessor( _images.GetFormat() );
 	m_componentFormat = _componentFormat;
-	DXGI_FORMAT	textureFormat = ImageUtilityLib::ImageFile::ImageFileFormat2DXGIFormat( _images.GetFormat(), _componentFormat );
+	DXGI_FORMAT	textureFormat = ImageUtilityLib::ImageFile::PixelFormat2DXGIFormat( _images.GetFormat(), _componentFormat );
 
 	// Prepare main descriptor
 	D3D11_TEXTURE3D_DESC	desc;
@@ -200,13 +200,13 @@ ID3D11ShaderResourceView*	Texture3D::GetSRV( U32 _MipLevelStart, U32 _mipLevelsC
 	return pView;
 }
 
-ID3D11RenderTargetView*		Texture3D::GetRTV( U32 _MipLevelIndex, U32 _FirstWSlice, U32 _WSize ) const {
+ID3D11RenderTargetView*		Texture3D::GetRTV( U32 _mipLevelIndex, U32 _FirstWSlice, U32 _WSize ) const {
 	if ( _WSize == 0 )
 		_WSize = m_depth - _FirstWSlice;
 
 	// Check if we already have it
-//	U32	Hash = _WSize | ((_FirstWSlice | (_MipLevelIndex << 12)) << 12);
-	U32	Hash = (_MipLevelIndex << 0) | (_FirstWSlice << 12) | (_WSize << (4+12));	// Re-organized to have most likely changes (i.e. mip & slice starts) first
+//	U32	Hash = _WSize | ((_FirstWSlice | (_mipLevelIndex << 12)) << 12);
+	U32	Hash = (_mipLevelIndex << 0) | (_FirstWSlice << 12) | (_WSize << (4+12));	// Re-organized to have most likely changes (i.e. mip & slice starts) first
 	ID3D11RenderTargetView*	pExistingView = (ID3D11RenderTargetView*) m_cachedRTVs.Get( Hash );
 	if ( pExistingView != NULL )
 		return pExistingView;
@@ -214,7 +214,7 @@ ID3D11RenderTargetView*		Texture3D::GetRTV( U32 _MipLevelIndex, U32 _FirstWSlice
 	D3D11_RENDER_TARGET_VIEW_DESC	Desc;
 	Desc.Format = Texture2D::PixelAccessor2DXGIFormat( *m_pixelFormat, m_componentFormat );
 	Desc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE3D;
-	Desc.Texture3D.MipSlice = _MipLevelIndex;
+	Desc.Texture3D.MipSlice = _mipLevelIndex;
 	Desc.Texture3D.FirstWSlice = _FirstWSlice;
 	Desc.Texture3D.WSize = _WSize;
 
@@ -226,13 +226,13 @@ ID3D11RenderTargetView*		Texture3D::GetRTV( U32 _MipLevelIndex, U32 _FirstWSlice
 	return pView;
 }
 
-ID3D11UnorderedAccessView*	Texture3D::GetUAV( U32 _MipLevelIndex, U32 _FirstWSlice, U32 _WSize ) const {
+ID3D11UnorderedAccessView*	Texture3D::GetUAV( U32 _mipLevelIndex, U32 _FirstWSlice, U32 _WSize ) const {
 	if ( _WSize == 0 )
 		_WSize = m_depth - _FirstWSlice;
 
 	// Check if we already have it
-//	U32	Hash = _WSize | ((_FirstWSlice | (_MipLevelIndex << 12)) << 12);
-	U32	Hash = (_MipLevelIndex << 0) | (_FirstWSlice << 12) | (_WSize << (4+12));	// Re-organized to have most likely changes (i.e. mip & slice starts) first
+//	U32	Hash = _WSize | ((_FirstWSlice | (_mipLevelIndex << 12)) << 12);
+	U32	Hash = (_mipLevelIndex << 0) | (_FirstWSlice << 12) | (_WSize << (4+12));	// Re-organized to have most likely changes (i.e. mip & slice starts) first
 	ID3D11UnorderedAccessView*	pExistingView = (ID3D11UnorderedAccessView*) m_cachedUAVs.Get( Hash );
 	if ( pExistingView != NULL )
 		return pExistingView;
@@ -241,7 +241,7 @@ ID3D11UnorderedAccessView*	Texture3D::GetUAV( U32 _MipLevelIndex, U32 _FirstWSli
 	D3D11_UNORDERED_ACCESS_VIEW_DESC	Desc;
 	Desc.Format = Texture2D::PixelAccessor2DXGIFormat( *m_pixelFormat, m_componentFormat );
 	Desc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE3D;
-	Desc.Texture3D.MipSlice = _MipLevelIndex;
+	Desc.Texture3D.MipSlice = _mipLevelIndex;
 	Desc.Texture3D.FirstWSlice = _FirstWSlice;
 	Desc.Texture3D.WSize = _WSize;
 
@@ -346,21 +346,57 @@ void	Texture3D::RemoveFromLastAssignedSlotUAV() const {
 }
 
 
-void	Texture3D::CopyFrom( Texture3D& _SourceTexture ) {
-	ASSERT( _SourceTexture.m_width == m_width && _SourceTexture.m_height == m_height && _SourceTexture.m_depth == m_depth, "Size mismatch!" );
-	ASSERT( _SourceTexture.m_mipLevelsCount == m_mipLevelsCount, "Mips count mismatch!" );
-	ASSERT( _SourceTexture.m_pixelFormat == m_pixelFormat, "Format mismatch!" );
+void	Texture3D::CopyFrom( Texture3D& _sourceTexture ) {
+	ASSERT( _sourceTexture.m_width == m_width && _sourceTexture.m_height == m_height && _sourceTexture.m_depth == m_depth, "Size mismatch!" );
+	ASSERT( _sourceTexture.m_mipLevelsCount == m_mipLevelsCount, "Mips count mismatch!" );
+	ASSERT( _sourceTexture.m_pixelFormat == m_pixelFormat, "Format mismatch!" );
 
-	m_device.DXContext().CopyResource( m_texture, _SourceTexture.m_texture );
+	m_device.DXContext().CopyResource( m_texture, _sourceTexture.m_texture );
 }
 
-D3D11_MAPPED_SUBRESOURCE&	Texture3D::Map( U32 _MipLevelIndex ) {
-	Check( m_device.DXContext().Map( m_texture, _MipLevelIndex, D3D11_MAP_READ, 0, &m_lockedResource ) );
+const D3D11_MAPPED_SUBRESOURCE&	Texture3D::MapRead( U32 _mipLevelIndex ) const {
+	Check( m_device.DXContext().Map( m_texture, _mipLevelIndex, D3D11_MAP_READ, 0, &m_lockedResource ) );
 	return m_lockedResource;
 }
 
-void	Texture3D::UnMap( U32 _MipLevelIndex ) {
-	m_device.DXContext().Unmap( m_texture, _MipLevelIndex );
+const D3D11_MAPPED_SUBRESOURCE&	Texture3D::MapWrite( U32 _mipLevelIndex ) {
+	Check( m_device.DXContext().Map( m_texture, _mipLevelIndex, D3D11_MAP_WRITE, 0, &m_lockedResource ) );
+	return m_lockedResource;
+}
+
+void	Texture3D::UnMap( U32 _mipLevelIndex ) const {
+	m_device.DXContext().Unmap( m_texture, _mipLevelIndex );
+}
+
+void	Texture3D::ReadAsImagesMatrix( ImageUtilityLib::ImagesMatrix& _images ) const {
+	// Initialize the matrix to the proper dimensions
+	_images.InitTexture3D( m_width, m_height, m_depth, m_mipLevelsCount );
+
+	// Allocate actual images
+	ImageUtilityLib::ImageFile::PIXEL_FORMAT	format = ImageUtilityLib::ImageFile::Accessor2PixelFormat( *m_pixelFormat );
+	ImageUtilityLib::ColorProfile				dummyProfile( m_componentFormat == BaseLib::COMPONENT_FORMAT::UNORM_sRGB ? ImageUtilityLib::ColorProfile::STANDARD_PROFILE::sRGB : ImageUtilityLib::ColorProfile::STANDARD_PROFILE::LINEAR );
+	_images.AllocateImageFiles( format, dummyProfile );
+
+	// Fill up each image with mapped content
+	for ( U32 mipLevelIndex=0; mipLevelIndex < m_mipLevelsCount; mipLevelIndex++ ) {
+		ImageUtilityLib::ImagesMatrix::Mips::Mip&	targetMip = _images[0][mipLevelIndex];
+
+		const D3D11_MAPPED_SUBRESOURCE&	mappedSourceMip = MapRead( mipLevelIndex );
+
+		for ( U32 sliceIndex=0; sliceIndex < m_depth; sliceIndex++ ) {
+			ImageUtilityLib::ImageFile&	targetImage = *targetMip[sliceIndex];
+			const U8*					sourceData = reinterpret_cast<U8*>( mappedSourceMip.pData ) + sliceIndex * mappedSourceMip.DepthPitch;
+			U8*							targetData = targetImage.GetBits();
+			U32							targetPitch = targetImage.Pitch();
+			for ( U32 Y=0; Y < targetMip.Height(); Y++ ) {
+				const U8*	sourceScanline = sourceData + mappedSourceMip.RowPitch * Y;
+				U8*			targetScanline = targetData + targetPitch * Y;
+				memcpy_s( targetScanline, targetPitch, sourceScanline, mappedSourceMip.RowPitch );
+			}
+		}
+
+		UnMap( mipLevelIndex );
+	}
 }
 
 void	Texture3D::NextMipSize( U32& _width, U32& _height, U32& _depth ) {

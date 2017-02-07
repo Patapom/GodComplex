@@ -129,7 +129,7 @@ namespace Renderer {
 			return MapRead( _mipLevelIndex, _arrayIndex, false );	// Unaware of alignment by default
 		}
 		PixelsBuffer^	MapRead( UInt32 _mipLevelIndex, UInt32 _arrayIndex, bool _ImAwareOfStrideAlignmentTo128Bytes ) {
-			D3D11_MAPPED_SUBRESOURCE&	mappedResource = m_texture->Map( _mipLevelIndex, _arrayIndex );
+			const D3D11_MAPPED_SUBRESOURCE&	mappedResource = m_texture->MapRead( _mipLevelIndex, _arrayIndex );
 			#ifdef _DEBUG
 				if ( !_ImAwareOfStrideAlignmentTo128Bytes && m_texture->GetPixelFormatDescriptor().Size() * m_texture->GetWidth() != mappedResource.RowPitch )
 					throw gcnew Exception( "Be careful about 128 bytes alignment: each scanline should account for proper row stride!" );
@@ -141,7 +141,7 @@ namespace Renderer {
 			return MapWrite( _mipLevelIndex, _arrayIndex, false );	// Unaware of alignment by default
 		}
 		PixelsBuffer^	MapWrite( UInt32 _mipLevelIndex, UInt32 _arrayIndex, bool _ImAwareOfStrideAlignmentTo128Bytes ) {
-			D3D11_MAPPED_SUBRESOURCE&	mappedResource = m_texture->Map( _mipLevelIndex, _arrayIndex );
+			const D3D11_MAPPED_SUBRESOURCE&	mappedResource = m_texture->MapWrite( _mipLevelIndex, _arrayIndex );
 			#ifdef _DEBUG
 				if ( !_ImAwareOfStrideAlignmentTo128Bytes && m_texture->GetPixelFormatDescriptor().Size() * m_texture->GetWidth() != mappedResource.RowPitch )
 					throw gcnew Exception( "Be careful about 128 bytes alignment: each scanline should account for proper row stride!" );

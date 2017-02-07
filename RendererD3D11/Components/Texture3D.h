@@ -29,7 +29,7 @@ private:	// FIELDS
 	mutable BaseLib::DictionaryU32	m_cachedUAVs;
 	mutable U32						m_lastAssignedSlots[6];
 	mutable U32						m_lastAssignedSlotsUAV;
-	D3D11_MAPPED_SUBRESOURCE		m_lockedResource;
+	mutable D3D11_MAPPED_SUBRESOURCE m_lockedResource;
 
 
 public:	 // PROPERTIES
@@ -38,11 +38,10 @@ public:	 // PROPERTIES
 	U32								GetHeight() const			{ return m_height; }
 	U32								GetDepth() const			{ return m_depth; }
 	U32								GetMipLevelsCount() const	{ return m_mipLevelsCount; }
-//	const IFormatDescriptor&		GetFormatDescriptor() const	{ return m_Format; }
 	const BaseLib::IPixelAccessor&	GetPixelFormatDescriptor() const	{ return *m_pixelFormat; }
 	BaseLib::COMPONENT_FORMAT		GetComponentFormat() const			{ return m_componentFormat; }
 
-	bfloat4							GetdUVW() const			{ return bfloat4( 1.0f / m_width, 1.0f / m_height, 1.0f / m_depth, 0.0f ); }
+	bfloat4							GetdUVW() const				{ return bfloat4( 1.0f / m_width, 1.0f / m_height, 1.0f / m_depth, 0.0f ); }
 
 public:	 // METHODS
 
@@ -72,8 +71,12 @@ public:	 // METHODS
 
 	// Texture access by the CPU
 	void		CopyFrom( Texture3D& _SourceTexture );
-	D3D11_MAPPED_SUBRESOURCE&	Map( U32 _MipLevelIndex );
-	void		UnMap( U32 _MipLevelIndex );
+	const D3D11_MAPPED_SUBRESOURCE&	MapRead( U32 _MipLevelIndex ) const;
+	const D3D11_MAPPED_SUBRESOURCE&	MapWrite( U32 _MipLevelIndex );
+	void		UnMap( U32 _MipLevelIndex ) const;
+
+	// Conversion of a CPU-readable (i.e. staging) texture into an ImagesMatrix
+	void		ReadAsImagesMatrix( ImageUtilityLib::ImagesMatrix& _images ) const;
 
 // 	#if defined(_DEBUG) || !defined(GODCOMPLEX)
 // 		// I/O for staging textures
