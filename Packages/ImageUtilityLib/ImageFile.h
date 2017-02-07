@@ -448,7 +448,7 @@ namespace ImageUtilityLib {
 	private:
 
 		static void			DDSLoad( const void* _blindPointerImage, const void* _blindPointerMetaData, ImagesMatrix& _images );
-		static void			DDSSave( const ImagesMatrix& _images, void** _blindPointerImage, void* _blindPointerMetaData, COMPONENT_FORMAT _componentFormat, bool _compressBC6H );
+		static void			DDSSave( const ImagesMatrix& _images, void** _blindPointerImage, COMPONENT_FORMAT _componentFormat, bool _compressBC6H );
 
 	private:
 		static U32						PixelFormat2BPP( PIXEL_FORMAT _pixelFormat );

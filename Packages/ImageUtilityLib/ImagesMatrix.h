@@ -47,6 +47,7 @@ namespace ImageUtilityLib {
 				// Allocates/Releases actual ImageFiles
 				void			AllocateImageFiles( ImageFile::PIXEL_FORMAT _format, const ColorProfile& _colorProfile );
 				void			ReleaseImageFiles();
+				void			ClearImageFiles();	// Clears pointers but don't release
 			};
 
 		private:
@@ -68,6 +69,7 @@ namespace ImageUtilityLib {
 			// Allocates/Releases actual ImageFiles
 			void			AllocateImageFiles( ImageFile::PIXEL_FORMAT _format, const ColorProfile& _colorProfile );
 			void			ReleaseImageFiles();
+			void			ClearImageFiles();	// Clears pointers but don't release
 		};
 
 		// The type of texture the matrix is a container for
@@ -115,6 +117,7 @@ namespace ImageUtilityLib {
 		// Allocates/Releases actual ImageFiles
 		void			AllocateImageFiles( ImageFile::PIXEL_FORMAT _format, const ColorProfile& _colorProfile );
 		void			ReleaseImageFiles();
+		void			ClearImageFiles();	// Clears pointers but don't release
 
 		// Computes the next mip size
 		static void		NextMipSize( U32& _size );

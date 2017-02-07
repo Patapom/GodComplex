@@ -207,19 +207,39 @@ namespace AreaLightTest {
 
 		#region Image Helpers
 
-		public Texture2D	Image2Texture( System.IO.FileInfo _fileName ) {
-			ImageUtility.ImagesMatrix	images = ImageUtility.ImageFile.DDSLoadFile( _fileName );
-			return new Texture2D( m_Device, images, ImageUtility.COMPONENT_FORMAT.AUTO );
+		public Texture2D	Image2Texture( System.IO.FileInfo _fileName, ImageUtility.COMPONENT_FORMAT _componentFormat ) {
+			ImageUtility.ImagesMatrix	images = null;
+			if ( _fileName.Extension.ToLower() == ".dds" ) {
+				images = ImageUtility.ImageFile.DDSLoadFile( _fileName );
+			} else {
+				ImageUtility.ImageFile	image = new ImageUtility.ImageFile( _fileName );
+				if ( image.PixelFormat != ImageUtility.ImageFile.PIXEL_FORMAT.RGBA8 ) {
+					ImageUtility.ImageFile	badImage = image;
+					image = new ImageUtility.ImageFile();
+					image.ConvertFrom( badImage, ImageUtility.ImageFile.PIXEL_FORMAT.RGBA8 );
+					badImage.Dispose();
+				}
+
+				images = new ImageUtility.ImagesMatrix( new ImageUtility.ImageFile[1,1] { { image } } );
+			}
+			return new Texture2D( m_Device, images, _componentFormat );
 		}
 
 		public void	ComputeSAT( System.IO.FileInfo _FileName, System.IO.FileInfo _TargetFileName ) {
 
-			ImageUtility.ImageFile	mip0 = new ImageUtility.ImageFile( _FileName );
-			uint		W = mip0.Width;
-			uint		H = mip0.Height;
+			ImageUtility.ImageFile	mip0_unknownFormat = new ImageUtility.ImageFile( _FileName );
+			uint		W = mip0_unknownFormat.Width;
+			uint		H = mip0_unknownFormat.Height;
+
+			ImageUtility.ImageFile	mip0 = new ImageUtility.ImageFile();// W, H, ImageUtility.ImageFile.PIXEL_FORMAT.RGBA8, mip0_unknownFormat.ColorProfile );
+			mip0.ConvertFrom( mip0_unknownFormat, ImageUtility.ImageFile.PIXEL_FORMAT.RGBA8 );
+
+			mip0_unknownFormat.Dispose();
+
+			// Read as linear floats
 			float4[,]	mip0Content = new float4[W,H];
 			mip0.ReadPixels( ( uint X, uint Y, ref float4 _color ) => {
-				mip0Content[X,Y] = _color;
+				mip0Content[X,Y].Set( ImageUtility.ColorProfile.sRGB2Linear( _color.x ), ImageUtility.ColorProfile.sRGB2Linear( _color.y ), ImageUtility.ColorProfile.sRGB2Linear( _color.z ), 1.0f );
 			} );
 
 			ImageUtility.ImagesMatrix	matrix = new ImageUtility.ImagesMatrix();
@@ -233,8 +253,8 @@ namespace AreaLightTest {
 				ImageUtility.ImagesMatrix.Mips.Mip	mip = matrix[0][mipLevelIndex];
 
 				// Compute gaussian kernel size
-				float	MipPixelSizeX = (float) W / mip.Width;	// Size of a mip pixel; in amount of original image pixels (i.e. mip #0)
-				float	MipPixelSizeY = (float) H / mip.Height;	// Size of a mip pixel; in amount of original image pixels (i.e. mip #0)
+				float	mipPixelSizeX = (float) W / mip.Width;	// Size of a mip pixel; in amount of original image pixels (i.e. mip #0)
+				float	mipPixelSizeY = (float) H / mip.Height;	// Size of a mip pixel; in amount of original image pixels (i.e. mip #0)
 				int		kernelSize = 2 * (int) Math.Pow( 2, mipLevelIndex );
 				float	sigma = (float) Math.Sqrt( -kernelSize*kernelSize / (2.0 * Math.Log( 0.01 )) );	// So we have a weight of 0.01 at a Kernel Size distance
 				float[]	kernelFactors = new float[1+kernelSize];
@@ -250,13 +270,13 @@ namespace AreaLightTest {
 				float4[,]	mipTemp = new float4[mip.Width, H];
 				for ( int Y=0; Y < H; Y++ ) {
 					for ( int X=0; X < mip.Width; X++ ) {
-						float	CenterX = X * MipPixelSizeX + 0.5f * (MipPixelSizeX-1);
-						float4	Sum = kernelFactors[0] * BilinearSample( mip0Content, CenterX, Y );
+						float	centerX = X * mipPixelSizeX + 0.5f * (mipPixelSizeX-1);
+						float4	sum = kernelFactors[0] * BilinearSample( mip0Content, centerX, Y );
 						for ( int i=1; i <= kernelSize; i++ ) {
-							Sum += kernelFactors[i] * BilinearSample( mip0Content, CenterX - i, Y );
-							Sum += kernelFactors[i] * BilinearSample( mip0Content, CenterX + i, Y );
+							sum += kernelFactors[i] * BilinearSample( mip0Content, centerX - i, Y );
+							sum += kernelFactors[i] * BilinearSample( mip0Content, centerX + i, Y );
 						}
-						mipTemp[X,Y] = Sum;
+						mipTemp[X,Y] = sum;
 					}
 				}
 
@@ -264,25 +284,28 @@ namespace AreaLightTest {
 				float4[,]	mipFloat = new float4[mip.Width, mip.Height];
 				for ( int X=0; X < mip.Width; X++ ) {
 					for ( int Y=0; Y < mip.Height; Y++ ) {
-						float	CenterY = Y * MipPixelSizeY + 0.5f * (MipPixelSizeY-1);
-						float4	Sum = kernelFactors[0] * BilinearSample( mipTemp, X, CenterY );
+						float	centerY = Y * mipPixelSizeY + 0.5f * (mipPixelSizeY-1);
+						float4	sum = kernelFactors[0] * BilinearSample( mipTemp, X, centerY );
 						for ( int i=1; i <= kernelSize; i++ ) {
-							Sum += kernelFactors[i] * BilinearSample( mipTemp, X, CenterY - i );
-							Sum += kernelFactors[i] * BilinearSample( mipTemp, X, CenterY + i );
+							sum += kernelFactors[i] * BilinearSample( mipTemp, X, centerY - i );
+							sum += kernelFactors[i] * BilinearSample( mipTemp, X, centerY + i );
 						}
-						mipFloat[X,Y] = Sum;
+						mipFloat[X,Y] = sum;
 					}
 				}
 
-				// Convert to source format
+				// Convert to source sRGB format
 				matrix[0][mipLevelIndex][0].WritePixels( ( uint X, uint Y, ref float4 _color ) => {
-					_color = mipFloat[X,Y];
+					_color.x = ImageUtility.ColorProfile.Linear2sRGB( mipFloat[X,Y].x );
+					_color.y = ImageUtility.ColorProfile.Linear2sRGB( mipFloat[X,Y].y );
+					_color.z = ImageUtility.ColorProfile.Linear2sRGB( mipFloat[X,Y].z );
+					_color.w = 1.0f;
 				} );
 			}
 
 			//////////////////////////////////////////////////////////////////////////
 			// Write as DDS
-			ImageUtility.ImageFile.DDSSaveFile( matrix, _TargetFileName, ImageUtility.COMPONENT_FORMAT.AUTO );
+			ImageUtility.ImageFile.DDSSaveFile( matrix, _TargetFileName, ImageUtility.COMPONENT_FORMAT.UNORM_sRGB );
 		}
 
 		float4	BilinearSample( float4[,] _Source, float _X, float _Y ) {
@@ -1799,11 +1822,11 @@ renderProg PostFX/Debug/WardBRDFAlbedo {
 			}
 
 // Build SATs
-ComputeSAT( new System.IO.FileInfo( "Dummy.png" ), new System.IO.FileInfo( "DummySAT.dds" ) );
-ComputeSAT( new System.IO.FileInfo( "StainedGlass.png" ), new System.IO.FileInfo( "AreaLightSAT.dds" ) );
-ComputeSAT( new System.IO.FileInfo( "StainedGlass2.jpg" ), new System.IO.FileInfo( "AreaLightSAT2.dds" ) );
-ComputeSAT( new System.IO.FileInfo( "StainedGlass3.png" ), new System.IO.FileInfo( "AreaLightSAT3.dds" ) );
-ComputeSAT( new System.IO.FileInfo( "StainedGlass2Fade.png" ), new System.IO.FileInfo( "AreaLightSAT2Fade.dds" ) );
+// ComputeSAT( new System.IO.FileInfo( "Dummy.png" ), new System.IO.FileInfo( "DummySAT.dds" ) );
+// ComputeSAT( new System.IO.FileInfo( "StainedGlass.png" ), new System.IO.FileInfo( "AreaLightSAT.dds" ) );
+// ComputeSAT( new System.IO.FileInfo( "StainedGlass2.jpg" ), new System.IO.FileInfo( "AreaLightSAT2.dds" ) );
+// ComputeSAT( new System.IO.FileInfo( "StainedGlass3.png" ), new System.IO.FileInfo( "AreaLightSAT3.dds" ) );
+// ComputeSAT( new System.IO.FileInfo( "StainedGlass2Fade.png" ), new System.IO.FileInfo( "AreaLightSAT2Fade.dds" ) );
 
 			buttonRebuildBRDF_Click( null, EventArgs.Empty );
 
@@ -1812,7 +1835,7 @@ ComputeSAT( new System.IO.FileInfo( "StainedGlass2Fade.png" ), new System.IO.Fil
 //			m_Tex_AreaLight = Pipi2Texture( new System.IO.FileInfo( "AreaLight.pipi" ) );
 //			m_Tex_AreaLightSAT = PipoImage2Texture( new System.IO.FileInfo( "AreaLightSAT.pipo" ) );
 
-			m_Tex_AreaLight = Image2Texture( new System.IO.FileInfo( "AreaLightSAT2.dds" ) );
+			m_Tex_AreaLight = Image2Texture( new System.IO.FileInfo( "AreaLightSAT2.dds" ), ImageUtility.COMPONENT_FORMAT.UNORM_sRGB );
 //			m_Tex_AreaLight3D = Pipu2Texture( new System.IO.FileInfo( "AreaLightSAT2.pipu" ) );
 // 			m_Tex_AreaLightSAT = PipoImage2Texture( new System.IO.FileInfo( "AreaLightSAT2.pipo" ) );
 // 			m_Tex_AreaLightSATFade = PipoImage2Texture( new System.IO.FileInfo( "AreaLightSAT2Fade.pipo" ) );
@@ -1820,7 +1843,7 @@ ComputeSAT( new System.IO.FileInfo( "StainedGlass2Fade.png" ), new System.IO.Fil
 //			m_Tex_AreaLight = Pipi2Texture( new System.IO.FileInfo( "AreaLightSAT3.pipi" ) );
 //			m_Tex_AreaLightSAT = PipoImage2Texture( new System.IO.FileInfo( "AreaLightSAT3.pipo" ) );
 
-			m_Tex_FalseColors = Image2Texture( new System.IO.FileInfo( "FalseColorsSpectrum2.png" ) );
+			m_Tex_FalseColors = Image2Texture( new System.IO.FileInfo( "FalseColorsSpectrum2.png" ), ImageUtility.COMPONENT_FORMAT.UNORM_sRGB );
 
 // 			m_Tex_GlossMap = Image2Texture( new System.IO.FileInfo( "wooden_dirty_floor_01_g.png" ) );
 // 			m_Tex_Normal = Image2Texture( new System.IO.FileInfo( "wooden_dirty_floor_01_n.png" ) );

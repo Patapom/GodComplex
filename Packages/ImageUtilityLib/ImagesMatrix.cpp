@@ -100,7 +100,7 @@ void	ImagesMatrix::InitTextureGeneric( U32 _width, U32 _height, U32 _depth, U32 
 }
 
 void	ImagesMatrix::AllocateImageFiles( ImageFile::PIXEL_FORMAT _format, const ColorProfile& _colorProfile ) {
-//	ReleaseImageFiles();	// Release first
+//	ReleaseImageFiles();	// Release first <= NOPE! The user may have already filled some components of the matrix!
 
 	m_format = _format;
 	m_colorProfile = _colorProfile;
@@ -117,6 +117,14 @@ void	ImagesMatrix::ReleaseImageFiles() {
 
 	m_format = ImageFile::PIXEL_FORMAT::UNKNOWN;
 }
+void	ImagesMatrix::ClearImageFiles() {
+	for ( U32 i=0; i < m_mipsArray.Count(); i++ ) {
+		m_mipsArray[i].ClearImageFiles();
+	}
+
+	m_format = ImageFile::PIXEL_FORMAT::UNKNOWN;
+}
+
 
 void	ImagesMatrix::Mips::Init( U32 _mipLevelsCount ) {
 	m_mips.SetCount( _mipLevelsCount );
@@ -132,6 +140,11 @@ void	ImagesMatrix::Mips::AllocateImageFiles( ImageFile::PIXEL_FORMAT _format, co
 void	ImagesMatrix::Mips::ReleaseImageFiles() {
 	for ( U32 i=0; i < m_mips.Count(); i++ ) {
 		m_mips[i].ReleaseImageFiles();
+	}
+}
+void	ImagesMatrix::Mips::ClearImageFiles() {
+	for ( U32 i=0; i < m_mips.Count(); i++ ) {
+		m_mips[i].ClearImageFiles();
 	}
 }
 
@@ -157,9 +170,15 @@ void	ImagesMatrix::Mips::Mip::ReleaseImageFiles() {
 		SAFE_DELETE( m_images[i] );
 	}
 }
+void	ImagesMatrix::Mips::Mip::ClearImageFiles() {
+	for ( U32 i=0; i < m_images.Count(); i++ ) {
+		m_images[i] = NULL;
+	}
+}
 
 void	ImagesMatrix::NextMipSize( U32& _size ) {
-	_size = (1+_size) >> 1;
+//	_size = (1+_size) >> 1;
+	_size = MAX( 1U, _size >> 1 );
 }
 void	ImagesMatrix::NextMipSize( U32& _width, U32& _height ) {
 	NextMipSize( _width );

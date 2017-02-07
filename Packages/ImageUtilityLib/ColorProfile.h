@@ -450,6 +450,8 @@ namespace ImageUtilityLib {
 			SAFE_DELETE( m_internalConverter );
 		}
 
+		ColorProfile&	operator=( const ColorProfile& _other );
+
 		#pragma region IColorConverter Members
 
 		/// <summary>

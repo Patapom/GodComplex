@@ -30,6 +30,17 @@ const ColorProfile::Chromaticities	ColorProfile::Chromaticities::Radiance		( bfl
 //////////////////////////////////////////////////////////////////////////
 // Copy constructor
 ColorProfile::ColorProfile( const ColorProfile& _other ) : m_internalConverter( nullptr ) {
+// 	m_profileFoundInFile = _other.m_profileFoundInFile;
+// 	m_chromaticities = _other.m_chromaticities;
+// 	m_gammaCurve = _other.m_gammaCurve;
+// 	m_gamma = _other.m_gamma;
+// 
+// 	// Rebuild internal converter and matrices
+// 	BuildTransformFromChroma( true );
+
+	*this = _other;
+}
+ColorProfile&	ColorProfile::operator=( const ColorProfile& _other ) {
 	m_profileFoundInFile = _other.m_profileFoundInFile;
 	m_chromaticities = _other.m_chromaticities;
 	m_gammaCurve = _other.m_gammaCurve;
@@ -37,6 +48,8 @@ ColorProfile::ColorProfile( const ColorProfile& _other ) : m_internalConverter( 
 
 	// Rebuild internal converter and matrices
 	BuildTransformFromChroma( true );
+
+	return *this;
 }
 
 //////////////////////////////////////////////////////////////////////////

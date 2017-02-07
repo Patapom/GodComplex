@@ -57,6 +57,7 @@ namespace ImageUtility {
 	public enum class	COMPONENT_FORMAT {
 		AUTO,	// Default value, will select UNORM for integer types and FLOAT for floating-point types
 		UNORM,
+		UNORM_sRGB,
 		SNORM,
 		UINT,
 		SINT,

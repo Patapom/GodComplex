@@ -2,17 +2,15 @@
 
 #include "Texture2D.h"
 
-Texture2D::Texture2D( Device& _device, ID3D11Texture2D& _Texture )//, const BaseLib::IPixelAccessor& _format, BaseLib::COMPONENT_FORMAT _componentFormat )
+Texture2D::Texture2D( Device& _device, ID3D11Texture2D& _texture )//, const BaseLib::IPixelAccessor& _format, BaseLib::COMPONENT_FORMAT _componentFormat )
 	: Component( _device )
-// 	, m_pixelFormat( &_format )
-// 	, m_componentFormat( _componentFormat )
 	, m_depthFormat( NULL )
 	, m_isCubeMap( false )
 {
 	D3D11_TEXTURE2D_DESC	desc;
-	_Texture.GetDesc( &desc );
+	_texture.GetDesc( &desc );
 
-	// 
+	// Extract pixel format from DXGI surface format
 	U32		pixelSize;
 	ImageUtilityLib::ImageFile::PIXEL_FORMAT	pixelFormat = ImageUtilityLib::ImageFile::DXGIFormat2PixelFormat( desc.Format, m_componentFormat, pixelSize );
 	m_pixelFormat = &ImageUtilityLib::ImageFile::PixelFormat2Accessor( pixelFormat );
@@ -26,7 +24,7 @@ Texture2D::Texture2D( Device& _device, ID3D11Texture2D& _Texture )//, const Base
 		m_lastAssignedSlots[ShaderStageIndex] = -1;
 	m_lastAssignedSlotsUAV = -1;
 
-	m_texture = &_Texture;
+	m_texture = &_texture;
 }
 
 Texture2D::Texture2D( Device& _device, U32 _width, U32 _height, int _arraySize, U32 _mipLevelsCount, const BaseLib::IPixelAccessor& _format, BaseLib::COMPONENT_FORMAT _componentFormat, const void* const* _ppContent, bool _staging, bool _UAV )
@@ -147,20 +145,20 @@ Texture2D::Texture2D( Device& _device, U32 _width, U32 _height, U32 _arraySize, 
 	m_arraySize = _arraySize;
 	m_mipLevelsCount = 1;
 
-	D3D11_TEXTURE2D_DESC	Desc;
-	Desc.Width = m_width;
-	Desc.Height = m_height;
-	Desc.ArraySize = m_arraySize;
-	Desc.MipLevels = 1;
-	Desc.Format = PixelAccessor2DXGIFormat( *m_pixelFormat, m_componentFormat );
-	Desc.SampleDesc.Count = 1;
-	Desc.SampleDesc.Quality = 0;
-	Desc.Usage = D3D11_USAGE_DEFAULT;
-	Desc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
-	Desc.CPUAccessFlags = D3D11_CPU_ACCESS_FLAG( 0 );
-	Desc.MiscFlags = D3D11_RESOURCE_MISC_FLAG( 0 );
+	D3D11_TEXTURE2D_DESC	desc;
+	desc.Width = m_width;
+	desc.Height = m_height;
+	desc.ArraySize = m_arraySize;
+	desc.MipLevels = 1;
+	desc.Format = DepthAccessor2DXGIFormat( *m_depthFormat, DEPTH_ACCESS_TYPE::SURFACE_CREATION );
+	desc.SampleDesc.Count = 1;
+	desc.SampleDesc.Quality = 0;
+	desc.Usage = D3D11_USAGE_DEFAULT;
+	desc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
+	desc.CPUAccessFlags = D3D11_CPU_ACCESS_FLAG( 0 );
+	desc.MiscFlags = D3D11_RESOURCE_MISC_FLAG( 0 );
 
-	Check( m_device.DXDevice().CreateTexture2D( &Desc, NULL, &m_texture ) );
+	Check( m_device.DXDevice().CreateTexture2D( &desc, NULL, &m_texture ) );
 }
 
 static void		ReleaseDirectXObject( int _EntryIndex, void*& _pValue, void* _pUserData ) {
@@ -251,33 +249,33 @@ ID3D11ShaderResourceView*	Texture2D::GetSRV( U32 _mipLevelStart, U32 _mipLevelsC
 		return pExistingView;
 
 	// Create a new one
-	D3D11_SHADER_RESOURCE_VIEW_DESC	Desc;
+	D3D11_SHADER_RESOURCE_VIEW_DESC	desc;
 //	Desc.Format = m_depthFormat != NULL ? ((IDepthStencilFormatDescriptor*) m_format)->ReadableDirectXFormat() : m_format->DirectXFormat();
-	Desc.Format = m_depthFormat != NULL ? DepthAccessor2DXGIFormat( *m_depthFormat, DEPTH_ACCESS_TYPE::VIEW_READABLE ) : PixelAccessor2DXGIFormat( *m_pixelFormat, m_componentFormat );
+	desc.Format = m_depthFormat != NULL ? DepthAccessor2DXGIFormat( *m_depthFormat, DEPTH_ACCESS_TYPE::VIEW_READABLE ) : PixelAccessor2DXGIFormat( *m_pixelFormat, m_componentFormat );
 	if ( _asArray ) {
 		// Force as a Texture2DArray
-		Desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
-		Desc.Texture2DArray.MostDetailedMip = _mipLevelStart;
-		Desc.Texture2DArray.MipLevels = _mipLevelsCount;
-		Desc.Texture2DArray.FirstArraySlice = _arrayStart;
-		Desc.Texture2DArray.ArraySize = _arraySize;
+		desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
+		desc.Texture2DArray.MostDetailedMip = _mipLevelStart;
+		desc.Texture2DArray.MipLevels = _mipLevelsCount;
+		desc.Texture2DArray.FirstArraySlice = _arrayStart;
+		desc.Texture2DArray.ArraySize = _arraySize;
 	} else {
-		Desc.ViewDimension = m_arraySize > 1 ? (m_isCubeMap ? (m_arraySize > 6 ? D3D11_SRV_DIMENSION_TEXTURECUBEARRAY : D3D11_SRV_DIMENSION_TEXTURECUBE) : D3D11_SRV_DIMENSION_TEXTURE2DARRAY) : D3D11_SRV_DIMENSION_TEXTURE2D;
+		desc.ViewDimension = m_arraySize > 1 ? (m_isCubeMap ? (m_arraySize > 6 ? D3D11_SRV_DIMENSION_TEXTURECUBEARRAY : D3D11_SRV_DIMENSION_TEXTURECUBE) : D3D11_SRV_DIMENSION_TEXTURE2DARRAY) : D3D11_SRV_DIMENSION_TEXTURE2D;
 		if ( m_isCubeMap ) {
-			Desc.TextureCubeArray.MostDetailedMip = _mipLevelStart;
-			Desc.TextureCubeArray.MipLevels = _mipLevelsCount;
-			Desc.TextureCubeArray.First2DArrayFace = _arrayStart;
-			Desc.TextureCubeArray.NumCubes = _arraySize / 6;
+			desc.TextureCubeArray.MostDetailedMip = _mipLevelStart;
+			desc.TextureCubeArray.MipLevels = _mipLevelsCount;
+			desc.TextureCubeArray.First2DArrayFace = _arrayStart;
+			desc.TextureCubeArray.NumCubes = _arraySize / 6;
 		} else {
-			Desc.Texture2DArray.MostDetailedMip = _mipLevelStart;
-			Desc.Texture2DArray.MipLevels = _mipLevelsCount;
-			Desc.Texture2DArray.FirstArraySlice = _arrayStart;
-			Desc.Texture2DArray.ArraySize = _arraySize;
+			desc.Texture2DArray.MostDetailedMip = _mipLevelStart;
+			desc.Texture2DArray.MipLevels = _mipLevelsCount;
+			desc.Texture2DArray.FirstArraySlice = _arrayStart;
+			desc.Texture2DArray.ArraySize = _arraySize;
 		}
 	}
 
 	ID3D11ShaderResourceView*	pView;
-	Check( m_device.DXDevice().CreateShaderResourceView( m_texture, &Desc, &pView ) );
+	Check( m_device.DXDevice().CreateShaderResourceView( m_texture, &desc, &pView ) );
 
 	m_cachedSRVs.Add( Hash, pView );
 
@@ -348,17 +346,16 @@ ID3D11DepthStencilView*		Texture2D::GetDSV( U32 _ArrayStart, U32 _ArraySize ) co
 	if ( pExistingView != NULL )
 		return pExistingView;
 
-	D3D11_DEPTH_STENCIL_VIEW_DESC	Desc;
-//	Desc.Format = ((IDepthStencilFormatDescriptor&) m_format).WritableDirectXFormat();
-	Desc.Format = DepthAccessor2DXGIFormat( *m_depthFormat, DEPTH_ACCESS_TYPE::VIEW_WRITABLE );
-	Desc.ViewDimension = m_arraySize == 1 ? D3D11_DSV_DIMENSION_TEXTURE2D : D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
-	Desc.Flags = 0;
-	Desc.Texture2DArray.MipSlice = 0;
-	Desc.Texture2DArray.FirstArraySlice = _ArrayStart;
-	Desc.Texture2DArray.ArraySize = _ArraySize;
+	D3D11_DEPTH_STENCIL_VIEW_DESC	desc;
+	desc.Format = DepthAccessor2DXGIFormat( *m_depthFormat, DEPTH_ACCESS_TYPE::VIEW_WRITABLE );
+	desc.ViewDimension = m_arraySize == 1 ? D3D11_DSV_DIMENSION_TEXTURE2D : D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
+	desc.Flags = 0;
+	desc.Texture2DArray.MipSlice = 0;
+	desc.Texture2DArray.FirstArraySlice = _ArrayStart;
+	desc.Texture2DArray.ArraySize = _ArraySize;
 
 	ID3D11DepthStencilView*	pView = NULL;
-	Check( m_device.DXDevice().CreateDepthStencilView( m_texture, &Desc, &pView ) );
+	Check( m_device.DXDevice().CreateDepthStencilView( m_texture, &desc, &pView ) );
 
 	m_cachedDSVs.Add( Hash, pView );
 
@@ -474,8 +471,6 @@ void	Texture2D::CopyFrom( Texture2D& _SourceTexture ) {
 }
 
 const D3D11_MAPPED_SUBRESOURCE&	Texture2D::MapRead( U32 _mipLevelIndex, U32 _arrayIndex ) const {
-//	Device&	notConstDevice = const_cast< Device& >( m_device );
-//	Check( notConstDevice.DXContext().Map( const_cast<ID3D11Texture2D*>( m_texture ), CalcSubResource( _mipLevelIndex, _arrayIndex ), D3D11_MAP_READ, 0, &m_lockedResource ) );
 	Check( m_device.DXContext().Map( m_texture, CalcSubResource( _mipLevelIndex, _arrayIndex ), D3D11_MAP_READ, 0, &m_lockedResource ) );
 	return m_lockedResource;
 }

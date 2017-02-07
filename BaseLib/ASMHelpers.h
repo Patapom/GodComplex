@@ -10,7 +10,7 @@ namespace BaseLib {
 	// Win64 architecture
 	#include <memory.h>	// include regular memset/memcpy/etc.
 
-	#define log2f( a )			(3.3219280948873623478703194294894f * float(log( a )))
+	#define log2f( a )			(1.4426950408889634073599246810019f * float(log( a )))
 
 #else // !defined(_WIN64)
 

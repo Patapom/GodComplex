@@ -1341,6 +1341,7 @@ DXGI_FORMAT	ImageFile::PixelFormat2DXGIFormat( PIXEL_FORMAT _sourceFormat, COMPO
 		// 16-bits formats
 		case ImageFile::PIXEL_FORMAT::R16:
 			switch ( _componentFormat ) {
+				case COMPONENT_FORMAT::AUTO:
 				case COMPONENT_FORMAT::UNORM:	return DXGI_FORMAT_R16_UNORM; break;
 				case COMPONENT_FORMAT::SNORM:	return DXGI_FORMAT_R16_SNORM; break;
 				case COMPONENT_FORMAT::UINT:	return DXGI_FORMAT_R16_UINT; break;
@@ -1353,6 +1354,7 @@ DXGI_FORMAT	ImageFile::PixelFormat2DXGIFormat( PIXEL_FORMAT _sourceFormat, COMPO
 
 		case ImageFile::PIXEL_FORMAT::RG16:
 			switch ( _componentFormat ) {
+				case COMPONENT_FORMAT::AUTO:
 				case COMPONENT_FORMAT::UNORM:	return DXGI_FORMAT_R16G16_UNORM; break;
 				case COMPONENT_FORMAT::SNORM:	return DXGI_FORMAT_R16G16_SNORM; break;
 				case COMPONENT_FORMAT::UINT:	return DXGI_FORMAT_R16G16_UINT; break;
@@ -1365,6 +1367,7 @@ DXGI_FORMAT	ImageFile::PixelFormat2DXGIFormat( PIXEL_FORMAT _sourceFormat, COMPO
 
 		case ImageFile::PIXEL_FORMAT::RGBA16:
 			switch ( _componentFormat ) {
+				case COMPONENT_FORMAT::AUTO:
 				case COMPONENT_FORMAT::UNORM:	return DXGI_FORMAT_R16G16B16A16_UNORM; break;
 				case COMPONENT_FORMAT::SNORM:	return DXGI_FORMAT_R16G16B16A16_SNORM; break;
 				case COMPONENT_FORMAT::UINT:	return DXGI_FORMAT_R16G16B16A16_UINT; break;
@@ -1422,42 +1425,13 @@ static void		Copy( const DirectX::Image& _source, ImageFile& _target ) {
 			throw "Source and target image sizes mismatch!";
 	}
 
-// 	U32		expectedScanlinePitch = _target.GetPixelFormatAccessor() * _target.Width();
-// 	U32		actualScanlinePitch = _target.Pitch();
-// 	if ( actualScanlinePitch == expectedScanlinePitch ) {
-// 		// 
-// 	}
-
-//	U32		targetSize = _target.GetPixelFormatAccessor() * _target.Width();
 	U32		targetSize = _target.Pitch();
 	U32		sourceSize = U32(_source.rowPitch);
 	for ( U32 Y=0; Y < _source.height; Y++ ) {
-		const U8*	scanlineSource = _source.pixels + Y * _source.rowPitch;
-		U8*			scanlineTarget = _target.GetBits() + Y * _target.Pitch();
-		memcpy_s( scanlineTarget, targetSize, scanlineSource, sourceSize );
+		const U8*	scanlineSource = _source.pixels + Y * sourceSize;
+		U8*			scanlineTarget = _target.GetBits() + Y * targetSize;
+		memcpy_s( scanlineTarget, targetSize, scanlineSource, targetSize );
 	}
-
-// 	cli::array< Renderer::PixelsBuffer^ >^	content = gcnew cli::array< Renderer::PixelsBuffer^ >( int( meta.arraySize * meta.mipLevels ) );
-// 	for ( int arrayIndex=0; arrayIndex < int(meta.arraySize); arrayIndex++ ) {
-// 		int	W = int( meta.width );
-// 		int	H = int( meta.height );
-// 		for ( int mipIndex=0; mipIndex < int(meta.mipLevels); mipIndex++ ) {
-// 			const DirectX::Image*	sourceImage = DXT->GetImage( mipIndex, arrayIndex, 0U );
-// 
-// 			Renderer::PixelsBuffer^	buffer = gcnew Renderer::PixelsBuffer( int( sourceImage->slicePitch ) );
-// 			content[int( arrayIndex*meta.mipLevels+mipIndex )] = buffer;
-// 
-// 			cli::array< Byte >^	byteArray = gcnew cli::array< Byte >( int( sourceImage->slicePitch ) );
-// 			System::Runtime::InteropServices::Marshal::Copy( (IntPtr) sourceImage->pixels, byteArray, 0, int( sourceImage->slicePitch ) );
-// 
-// 			System::IO::BinaryWriter^	writer = buffer->OpenStreamWrite();
-// 			writer->Write( byteArray );
-// 			buffer->CloseStream();
-// 		}
-// 	}
-// 
-// 	// Build texture
-// 	Renderer::Texture2D^	Result = gcnew Renderer::Texture2D( _Device, int( meta.width ), int( meta.height ), meta.IsCubemap() ? -int(meta.arraySize) : int(meta.arraySize), int( meta.mipLevels ), format, false, false, content );
 }
 
 static void		Copy( const ImageFile& _source, const DirectX::Image& _target ) {
@@ -1469,21 +1443,10 @@ static void		Copy( const ImageFile& _source, const DirectX::Image& _target ) {
 	U32		targetSize = U32(_target.rowPitch);
 	U32		sourceSize = _source.Pitch();
 	for ( U32 Y=0; Y < _target.height; Y++ ) {
-		const U8*	scanlineSource = _source.GetBits() + Y * _source.Pitch();
-		U8*			scanlineTarget = _target.pixels + Y * _target.rowPitch;
-		memcpy_s( scanlineTarget, targetSize, scanlineSource, sourceSize );
+		const U8*	scanlineSource = _source.GetBits() + Y * sourceSize;
+		U8*			scanlineTarget = _target.pixels + Y * targetSize;
+		memcpy_s( scanlineTarget, targetSize, scanlineSource, targetSize );
 	}
-
-// 	D3D11_MAPPED_SUBRESOURCE	SourceData = TextureStaging->Map( mipLevelIndex, arrayIndex );
-// 	const uint8_t*				pSourceBuffer = (uint8_t*) SourceData.pData;
-// 	const DirectX::Image*		pTarget = DXT->GetImage( mipLevelIndex, arrayIndex, 0 );
-// 	ASSERT( pTarget->rowPitch == SourceData.RowPitch, "Row pitches mismatch!" );
-// 
-// 	for ( int Y=0; Y < H; Y++ ) {
-// 		const void*	pSourceScanline = pSourceBuffer + Y * SourceData.RowPitch;
-// 		void*		pTargetScanline = pTarget->pixels + Y * pTarget->rowPitch;
-// 		memcpy_s( pTargetScanline, pTarget->rowPitch, pSourceScanline, SourceData.RowPitch );
-// 	}
 }
 
 void	ImageFile::DDSLoadFile( const wchar_t* _fileName, ImagesMatrix& _images ) {
@@ -1592,8 +1555,7 @@ void	ImageFile::DDSSaveFile( const ImagesMatrix& _images, const wchar_t* _fileNa
 
 	// Create and fill the image
 	DirectX::ScratchImage*	DXT = NULL;
-	DirectX::TexMetadata	meta;
-	DDSSave( _images, (void**) &DXT, (void*) &meta, _componentFormat, _compressBC6H );
+	DDSSave( _images, (void**) &DXT, _componentFormat, _compressBC6H );
 
 	// Save to disk
 	DWORD	flags = DirectX::DDS_FLAGS_FORCE_RGB | DirectX::DDS_FLAGS_NO_16BPP | DirectX::DDS_FLAGS_EXPAND_LUMINANCE | DirectX::DDS_FLAGS_FORCE_DX10_EXT;
@@ -1611,8 +1573,7 @@ void	ImageFile::DDSSaveMemory( const ImagesMatrix& _images, U64& _fileSize, void
 
 	// Create and fill the image
 	DirectX::ScratchImage*	DXT = NULL;
-	DirectX::TexMetadata	meta;
-	DDSSave( _images, (void**) &DXT, (void*) &meta, _componentFormat, _compressBC6H );
+	DDSSave( _images, (void**) &DXT, _componentFormat, _compressBC6H );
 
 	// Transfer into a memory blob
 	DirectX::Blob	blob;
@@ -1632,9 +1593,8 @@ void	ImageFile::DDSSaveMemory( const ImagesMatrix& _images, U64& _fileSize, void
 	memcpy_s( targetBuffer, _fileSize, blob.GetBufferPointer(), blob.GetBufferSize() );
 }
 
-void	ImageFile::DDSSave( const ImagesMatrix& _images, void** _blindPointerImage, void* _blindPointerMetaData, COMPONENT_FORMAT _componentFormat, bool _compressBC6H ) {
+void	ImageFile::DDSSave( const ImagesMatrix& _images, void** _blindPointerImage, COMPONENT_FORMAT _componentFormat, bool _compressBC6H ) {
 	DirectX::ScratchImage*&	image = *reinterpret_cast<DirectX::ScratchImage**>( _blindPointerImage );
-	DirectX::TexMetadata*	meta = reinterpret_cast<DirectX::TexMetadata*>( _blindPointerMetaData );
 
 	DXGI_FORMAT	DXFormat = PixelFormat2DXGIFormat( _images.GetFormat(), _componentFormat );
 	if ( DXFormat == DXGI_FORMAT_UNKNOWN )

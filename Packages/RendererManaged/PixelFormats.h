@@ -36,7 +36,7 @@ namespace Renderer {
 		switch ( _Format ) {
 			case PIXEL_FORMAT::R8_UNORM:		_pixelFormat = &BaseLib::PF_R8::Descriptor;	break;
 			case PIXEL_FORMAT::RGBA8_UNORM:		_pixelFormat = &BaseLib::PF_RGBA8::Descriptor; break;
-			case PIXEL_FORMAT::RGBA8_UNORM_sRGB:_pixelFormat = &BaseLib::PF_RGBA8::Descriptor;			_componentFormat = BaseLib::COMPONENT_FORMAT::UNORM_sRGB;break;
+			case PIXEL_FORMAT::RGBA8_UNORM_sRGB:_pixelFormat = &BaseLib::PF_RGBA8::Descriptor;	_componentFormat = BaseLib::COMPONENT_FORMAT::UNORM_sRGB;break;
 			case PIXEL_FORMAT::R16_FLOAT:		_pixelFormat = &BaseLib::PF_R16F::Descriptor; break;
 			case PIXEL_FORMAT::R16_UNORM:		_pixelFormat = &BaseLib::PF_R16::Descriptor; break;
 			case PIXEL_FORMAT::RG16_FLOAT:		_pixelFormat = &BaseLib::PF_RG16F::Descriptor; break;

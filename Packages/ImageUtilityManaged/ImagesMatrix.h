@@ -89,6 +89,26 @@ namespace ImageUtility {
 			}
 		}
 
+		// Builds a Texture2DArray with the convention that dimension 0 is the array slices and dimension 1 is the mips
+		ImagesMatrix( array< ImageFile^, 2>^ _images ) {
+			m_ownedObject = true;
+			m_nativeObject = new ImageUtilityLib::ImagesMatrix();
+
+			ImageFile	referenceImage = _images[0,0];
+			InitTexture2DArray( referenceImage.Width, referenceImage.Height, _images->GetLength(0), _images->GetLength(1) );
+
+			for ( int arraySliceIndex=0; arraySliceIndex < _images->GetLength(0); arraySliceIndex++ ) {
+				Mips^	sliceMips = this[arraySliceIndex];
+				for ( int miplevelIndex=0; miplevelIndex < _images->GetLength(1); miplevelIndex++ ) {
+					Mips::Mip^	mip = sliceMips[miplevelIndex];
+					mip[0] = _images[arraySliceIndex,miplevelIndex];
+				}
+			}
+
+			// "Allocate images"... Actually, all images should be already allocated, we just need to assign the format and color profile
+			AllocateImageFiles( referenceImage.PixelFormat, referenceImage.ColorProfile );
+		}
+
 		// Allocates a texture array
 		void			InitTexture2DArray( U32 _width, U32 _height, U32 _arraySize, U32 _mipLevelsCount ) {
 			m_nativeObject->InitTexture2DArray( _width, _height, _arraySize, _mipLevelsCount );
@@ -108,6 +128,9 @@ namespace ImageUtility {
 		}
 		void			ReleaseImageFiles() {
 			m_nativeObject->ReleaseImageFiles();
+		}
+		void			ClearImageFiles() {
+			m_nativeObject->ClearImageFiles();
 		}
 
 		// Computes the next mip size

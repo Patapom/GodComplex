@@ -470,7 +470,7 @@ SharpMath::float2	ImageFile::ImageCoordinates2RangedCoordinates( SharpMath::floa
 // DDS-related methods
 //
 ImagesMatrix^	ImageFile::DDSLoadFile( System::IO::FileInfo^ _fileName ) {
-	if ( _fileName->Exists )
+	if ( !_fileName->Exists )
 		throw gcnew System::IO::FileNotFoundException( "File not found!", _fileName->FullName );
 
 	pin_ptr< const wchar_t >	nativeFileName = PtrToStringChars( _fileName->FullName );
