@@ -119,6 +119,10 @@ namespace ImageUtilityLib {
 			RG32F	= 13	| NOT_NATIVELY_SUPPORTED,	// Unsupported by FreeImage, aliased as RGBA32F
 			RGB32F	= 14,
 			RGBA32F = 15,
+
+			// This is the "raw format" used to support compressed or otherwise unsupported pixel formats like DirectX BCx formats
+			// FreeImage is then only used to allocate a raw buffer of the specified size and no color interpretation can be made on the buffer
+			RAW_BUFFER = 256,
 		};
 
 		// Wraps around free image's "FREE_IMAGE_FORMAT" enum
@@ -432,14 +436,9 @@ namespace ImageUtilityLib {
 
 		static void			DDSLoadFile( const wchar_t* _fileName, ImagesMatrix& _images );
 		static void			DDSLoadMemory( U64 _fileSize, void* _fileContent, ImagesMatrix& _images );
-		static void			DDSSaveFile( const ImagesMatrix& _images, const wchar_t* _fileName, COMPONENT_FORMAT _componentFormat=COMPONENT_FORMAT::AUTO, bool _compressBC6H=false );
-		static void			DDSSaveMemory( const ImagesMatrix& _images, U64& _fileSize, void*& _fileContent, COMPONENT_FORMAT _componentFormat=COMPONENT_FORMAT::AUTO, bool _compressBC6H=false );	// NOTE: The caller MUST delete[] the returned buffer!
-
-// 		// Compresses a single image
-// 		void				DDSCompress( COMPRESSION_TYPE _compressionType, U32& _compressedImageSize, void*& _compressedImage );	// NOTE: The caller MUST delete[] the returned buffer!
-// 
-// 		// Saves a DDS image in memory to disk (usually used after a compression)
-// 		static void			DDSSaveFromMemory( U32 _DDSImageSize, const void* _DDSImage, const wchar_t* _fileName );
+		static void			DDSSaveFile( const ImagesMatrix& _images, const wchar_t* _fileName, COMPONENT_FORMAT _componentFormat=COMPONENT_FORMAT::AUTO );
+		static void			DDSSaveMemory( const ImagesMatrix& _images, U64& _fileSize, void*& _fileContent, COMPONENT_FORMAT _componentFormat=COMPONENT_FORMAT::AUTO );	// NOTE: The caller MUST delete[] the returned buffer!
+ 		void				DDSCompress( COMPRESSION_TYPE _compressionType, ImageFile& _compressedImage ) const;
 
 		// Conversion to and from DXGI pixel formats and image file pixel formats
  		static PIXEL_FORMAT	DXGIFormat2PixelFormat( DXGI_FORMAT _sourceFormat, COMPONENT_FORMAT& _componentFormat, U32& _pixelSize );
@@ -448,7 +447,7 @@ namespace ImageUtilityLib {
 	private:
 
 		static void			DDSLoad( const void* _blindPointerImage, const void* _blindPointerMetaData, ImagesMatrix& _images );
-		static void			DDSSave( const ImagesMatrix& _images, void** _blindPointerImage, COMPONENT_FORMAT _componentFormat, bool _compressBC6H );
+		static void			DDSSave( const ImagesMatrix& _images, void** _blindPointerImage, COMPONENT_FORMAT _componentFormat );
 
 	private:
 		static U32						PixelFormat2BPP( PIXEL_FORMAT _pixelFormat );

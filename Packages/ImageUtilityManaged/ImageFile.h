@@ -524,6 +524,11 @@ namespace ImageUtility {
 		static void				DDSSaveFile( ImagesMatrix^ _images, System::IO::FileInfo^ _fileName, COMPONENT_FORMAT _componentFormat );
 		static NativeByteArray^	DDSSaveMemory( ImagesMatrix^ _images, COMPONENT_FORMAT _componentFormat );
 
+		// Compresses a single image
+		void					DDSCompress( COMPRESSION_TYPE _compressionType, ImageFile^ _compressedImage ) {
+			m_nativeObject->DDSCompress( ImageUtilityLib::ImageFile::COMPRESSION_TYPE( _compressionType ), *_compressedImage->m_nativeObject );
+		}
+
 // 		static void				DXGIFormat2ImageFileFormat( DXGI_FORMAT _sourceFormat, PIXEL_FORMAT% _targetFormat, UInt32% _pixelSize ) {
 // 			ImageUtilityLib::ImageFile::PIXEL_FORMAT	targetFormat;
 // 			U32											pixelSize;

@@ -968,6 +968,8 @@ float	quality = _RAW ? 3.0f : 3.0f;
 			CRW,
 			HDR_RGBE,
 			EXR_RGB32F,
+
+			DDS_2D_RGBA8_MIPS,
 		}
 
 		private void buttonLoad1_Click(object sender, EventArgs e) {
@@ -1038,7 +1040,12 @@ float	quality = _RAW ? 3.0f : 3.0f;
 			TestLoadImage( LOADING_TESTS.TIFF_RGB16F );
 		}
 
+		private void buttonLoadDDS1_Click(object sender, EventArgs e) {
+			TestLoadImage( LOADING_TESTS.DDS_2D_RGBA8_MIPS );
+		}
+
 		void TestLoadImage( LOADING_TESTS _type ) {
+			string	customLines = "";
 			try {
 				switch ( _type ) {
 					// BMP
@@ -1133,6 +1140,21 @@ float	quality = _RAW ? 3.0f : 3.0f;
 						panelLoad.Bitmap = m_imageFile.AsBitmap;
 						break;
 
+
+					// DDS
+					case LOADING_TESTS.DDS_2D_RGBA8_MIPS: {
+//						ImagesMatrix	images = ImageFile.DDSLoadFile( new System.IO.FileInfo( @"..\..\Images\In\DDS\AreaLightSAT.dds" ) );
+						ImagesMatrix	images = ImageFile.DDSLoadFile( new System.IO.FileInfo( @"..\..\Images\In\DDS\caustics2.dds" ) );
+						m_imageFile = images[0][0][0];
+						images[0][0][0] = null;	// Remove it from the matrix so it doesn't get destroyed!
+						panelLoad.Bitmap = m_imageFile.AsBitmap;
+
+						customLines = "\r\n"
+									+ images.ArraySize + " array slices\r\n"
+									+ images[0].MipLevelsCount + " mip levels\r\n";
+						break;
+					}
+
 					default:
 						// High-Dynamic Range Images
 						switch ( _type ) {
@@ -1184,7 +1206,7 @@ float	quality = _RAW ? 3.0f : 3.0f;
 				textBoxEXIF.Lines = new string[] {
 					"File Format: " + m_imageFile.FileFormat,
 					"Pixel Format: " + m_imageFile.PixelFormat + (m_imageFile.HasAlpha ? " (ALPHA)" : " (NO ALPHA)"),
-					"",
+					customLines,
 					"Profile:",
 					"  • Chromaticities: ",
 					"    R = " + Profile.Chromas.Red.ToString(),

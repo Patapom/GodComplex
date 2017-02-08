@@ -30,6 +30,11 @@ namespace ImageUtilityLib {
 				U32					m_height;			// Mip height
 				List< ImageFile* >	m_images;			// The list of images in the mip
 
+				// Raw buffer data
+				U32					m_rowPitch;			// Pitch to reach next row in the buffer
+				U32					m_slicePitch;		// Pitch to reach next slice in the buffer
+				U8*					m_rawBuffer;		// The list of raw buffers in the mip
+
 			public:
 
 				U32				Width() const	{ return m_width; }
@@ -40,14 +45,21 @@ namespace ImageUtilityLib {
 				ImageFile*&			operator[]( U32 _index )					{ return m_images[_index]; }
 				ImageFile* const&	operator[]( U32 _index ) const				{ return m_images[_index]; }
 
+				// Raw buffer access
+				U32				RowPitch() const	{ return m_rowPitch; }
+				U32				SlicePitch() const	{ return m_slicePitch; }
+				U8*				GetRawBuffer()		{ return m_rawBuffer; }
+				const U8*		GetRawBuffer() const{ return m_rawBuffer; }
+
 			public:
-								Mip() : m_width( 0 ), m_height( 0 ) {}
+								Mip() : m_width( 0 ), m_height( 0 ), m_rowPitch( 0 ), m_slicePitch( 0 ), m_rawBuffer( NULL ) {}
 				void			Init( U32 _width, U32 _height, U32 _depth );
 
-				// Allocates/Releases actual ImageFiles
+				// Allocates/Releases actual ImageFiles and Raw buffer
 				void			AllocateImageFiles( ImageFile::PIXEL_FORMAT _format, const ColorProfile& _colorProfile );
-				void			ReleaseImageFiles();
-				void			ClearImageFiles();	// Clears pointers but don't release
+				void			AllocateRawBuffer( U32 _rowPitch, U32 _slicePitch, const U8* _sourceBuffer=NULL );
+				void			ReleasePointers();	// Release image and raw buffer pointers
+				void			ClearPointers();	// Clears pointers but don't release
 			};
 
 		private:
@@ -68,8 +80,8 @@ namespace ImageUtilityLib {
 
 			// Allocates/Releases actual ImageFiles
 			void			AllocateImageFiles( ImageFile::PIXEL_FORMAT _format, const ColorProfile& _colorProfile );
-			void			ReleaseImageFiles();
-			void			ClearImageFiles();	// Clears pointers but don't release
+			void			ReleasePointers();	// Release image and raw buffer pointers
+			void			ClearPointers();	// Clears pointers but don't release
 		};
 
 		// The type of texture the matrix is a container for
@@ -78,6 +90,16 @@ namespace ImageUtilityLib {
 			TEXTURE2D,
 			TEXTURECUBE,
 			TEXTURE3D,
+		};
+
+//		typedef void		(*GetRawBufferSizeDelegate_t)( U32 _arraySliceIndex, U32 _mipLevelIndex, U32& _rowPitch, U32& _slicePitch, U32& _slicesCount );
+		class GetRawBufferSizeFunctor {
+		public:
+			// _arraySliceIndex, _mipLevelIndex, the position nin the array we need raw buffer information for
+			// _rowPitch, the pitch to reach the next row in the buffer
+			// _slicePitch, the pitch to reach the next slice in the buffer
+			// Returns the raw buffer to copy from, or NULL if you want to copy manually later
+			virtual const U8*	operator()( U32 _arraySliceIndex, U32 _mipLevelIndex, U32& _rowPitch, U32& _slicePitch ) const abstract;
 		};
 
 	private:
@@ -116,8 +138,9 @@ namespace ImageUtilityLib {
 
 		// Allocates/Releases actual ImageFiles
 		void			AllocateImageFiles( ImageFile::PIXEL_FORMAT _format, const ColorProfile& _colorProfile );
-		void			ReleaseImageFiles();
-		void			ClearImageFiles();	// Clears pointers but don't release
+		void			AllocateRawBuffers( const GetRawBufferSizeFunctor& _getRawBufferSizeDelegate );
+		void			ReleasePointers();	// Release image and raw buffer pointers
+		void			ClearPointers();	// Clears pointers but don't release
 
 		// Computes the next mip size
 		static void		NextMipSize( U32& _size );

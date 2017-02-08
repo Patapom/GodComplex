@@ -67,6 +67,8 @@ namespace ImageUtility {
 			TEXTURE3D,
 		};
 
+		delegate void	GetRawBufferSizeDelegate( UInt32 _arraySliceIndex, UInt32 _mipLevelIndex, UInt32% _rowPitch, UInt32% _slicePitch, UInt32% _slicesCount );
+
 	public:
 
 		property TYPE						Type				{ TYPE get() { return TYPE( m_nativeObject->GetType() ); } }
@@ -122,15 +124,25 @@ namespace ImageUtility {
 			m_nativeObject->InitTexture3D( _width, _height, _depth, _mipLevelsCount );
 		}
 
-		// Allocates/Releases actual ImageFiles
+		// Allocates/Releases actual ImageFiles or Raw Buffers
 		void			AllocateImageFiles( ImageFile::PIXEL_FORMAT _format, ImageUtility::ColorProfile^ _colorProfile ) {
 			m_nativeObject->AllocateImageFiles( ImageUtilityLib::ImageFile::PIXEL_FORMAT( _format ), *_colorProfile->m_nativeObject );
 		}
-		void			ReleaseImageFiles() {
-			m_nativeObject->ReleaseImageFiles();
+		void			AllocateImageFiles( GetRawBufferSizeDelegate^ _getRawBufferSizeDelegate ) {
+			// Get a function pointer to the delegate
+			System::Runtime::InteropServices::GCHandle	gch = System::Runtime::InteropServices::GCHandle::Alloc( _getRawBufferSizeDelegate );
+			IntPtr		ip = System::Runtime::InteropServices::Marshal::GetFunctionPointerForDelegate( _getRawBufferSizeDelegate );
+
+//			m_nativeObject->AllocateRawBuffers( static_cast< ImageUtilityLib::ImagesMatrix::GetRawBufferSizeDelegate_t >( ip.ToPointer() ) );
+
+			// release reference to delegate  
+			gch.Free();  
 		}
-		void			ClearImageFiles() {
-			m_nativeObject->ClearImageFiles();
+		void			ReleasePointers() {
+			m_nativeObject->ReleasePointers();
+		}
+		void			ClearPointers() {
+			m_nativeObject->ClearPointers();
 		}
 
 		// Computes the next mip size

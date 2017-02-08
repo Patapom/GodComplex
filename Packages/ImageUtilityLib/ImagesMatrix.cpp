@@ -9,7 +9,7 @@ ImagesMatrix::ImagesMatrix()
 	, m_format( ImageFile::PIXEL_FORMAT::UNKNOWN ) {
 }
 ImagesMatrix::~ImagesMatrix() {
-	ReleaseImageFiles();
+	ReleasePointers();
 }
 
 void	ImagesMatrix::InitTexture2DArray( U32 _width, U32 _height, U32 _arraySize, U32 _mipLevelsCount ) {
@@ -18,7 +18,7 @@ void	ImagesMatrix::InitTexture2DArray( U32 _width, U32 _height, U32 _arraySize, 
 	if ( _mipLevelsCount == 0 )
 		_mipLevelsCount = ComputeMipsCount( MAX( _width, _height ) );
 
-	ReleaseImageFiles();
+	ReleasePointers();
 
 	m_type = ImagesMatrix::TYPE::TEXTURE2D;
 	m_mipsArray.SetCount( _arraySize );
@@ -41,7 +41,7 @@ void	ImagesMatrix::InitCubeTextureArray( U32 _cubeMapSize, U32 _cubeMapsCount, U
 	if ( _mipLevelsCount == 0 )
 		_mipLevelsCount = ComputeMipsCount( _cubeMapSize );
 
-	ReleaseImageFiles();
+	ReleasePointers();
 
 	U32	cubeFacesCount = 6 * _cubeMapsCount;
 	m_type = ImagesMatrix::TYPE::TEXTURECUBE;
@@ -64,7 +64,7 @@ void	ImagesMatrix::InitTexture3D( U32 _width, U32 _height, U32 _depth, U32 _mipL
 	if ( _mipLevelsCount == 0 )
 		_mipLevelsCount = ComputeMipsCount( MAX( MAX( _width, _height ), _depth ) );
 
-	ReleaseImageFiles();
+	ReleasePointers();
 
 	m_type = ImagesMatrix::TYPE::TEXTURE3D;
 	m_mipsArray.SetCount( 1 );
@@ -100,7 +100,7 @@ void	ImagesMatrix::InitTextureGeneric( U32 _width, U32 _height, U32 _depth, U32 
 }
 
 void	ImagesMatrix::AllocateImageFiles( ImageFile::PIXEL_FORMAT _format, const ColorProfile& _colorProfile ) {
-//	ReleaseImageFiles();	// Release first <= NOPE! The user may have already filled some components of the matrix!
+//	ReleasePointers();	// Release first <= NOPE! The user may have already filled some components of the matrix!
 
 	m_format = _format;
 	m_colorProfile = _colorProfile;
@@ -110,16 +110,34 @@ void	ImagesMatrix::AllocateImageFiles( ImageFile::PIXEL_FORMAT _format, const Co
 	}
 }
 
-void	ImagesMatrix::ReleaseImageFiles() {
+void	ImagesMatrix::AllocateRawBuffers( const GetRawBufferSizeFunctor& _getRawBufferSizeDelegate ) {
+	m_format = ImageFile::PIXEL_FORMAT::UNKNOWN;
+
+	U32	rowPitch, depthPitch;
+	for ( U32 sliceIndex=0; sliceIndex < m_mipsArray.Count(); sliceIndex++ ) {
+		Mips&	mips = m_mipsArray[sliceIndex];
+		for ( U32 mipLevelIndex=0; mipLevelIndex < mips.GetMipLevelsCount(); mipLevelIndex++ ) {
+			Mips::Mip&	mip = mips[mipLevelIndex];
+
+			// Ask the raw buffer info for that mip
+			const U8*	sourceBuffer = _getRawBufferSizeDelegate( sliceIndex, mipLevelIndex, rowPitch, depthPitch );
+
+			// Actual allocation
+			mip.AllocateRawBuffer( rowPitch, depthPitch, sourceBuffer );
+		}
+	}
+}
+
+void	ImagesMatrix::ReleasePointers() {
 	for ( U32 i=0; i < m_mipsArray.Count(); i++ ) {
-		m_mipsArray[i].ReleaseImageFiles();
+		m_mipsArray[i].ReleasePointers();
 	}
 
 	m_format = ImageFile::PIXEL_FORMAT::UNKNOWN;
 }
-void	ImagesMatrix::ClearImageFiles() {
+void	ImagesMatrix::ClearPointers() {
 	for ( U32 i=0; i < m_mipsArray.Count(); i++ ) {
-		m_mipsArray[i].ClearImageFiles();
+		m_mipsArray[i].ClearPointers();
 	}
 
 	m_format = ImageFile::PIXEL_FORMAT::UNKNOWN;
@@ -131,20 +149,20 @@ void	ImagesMatrix::Mips::Init( U32 _mipLevelsCount ) {
 }
 
 void	ImagesMatrix::Mips::AllocateImageFiles( ImageFile::PIXEL_FORMAT _format, const ColorProfile& _colorProfile ) {
-//	ReleaseImageFiles();	// Release first
+//	ReleasePointers();	// Release first
 	for ( U32 i=0; i < m_mips.Count(); i++ ) {
 		m_mips[i].AllocateImageFiles( _format, _colorProfile );
 	}
 }
 
-void	ImagesMatrix::Mips::ReleaseImageFiles() {
+void	ImagesMatrix::Mips::ReleasePointers() {
 	for ( U32 i=0; i < m_mips.Count(); i++ ) {
-		m_mips[i].ReleaseImageFiles();
+		m_mips[i].ReleasePointers();
 	}
 }
-void	ImagesMatrix::Mips::ClearImageFiles() {
+void	ImagesMatrix::Mips::ClearPointers() {
 	for ( U32 i=0; i < m_mips.Count(); i++ ) {
-		m_mips[i].ClearImageFiles();
+		m_mips[i].ClearPointers();
 	}
 }
 
@@ -156,7 +174,7 @@ void	ImagesMatrix::Mips::Mip::Init( U32 _width, U32 _height, U32 _depth ) {
 }
 
 void	ImagesMatrix::Mips::Mip::AllocateImageFiles( ImageFile::PIXEL_FORMAT _format, const ColorProfile& _colorProfile ) {
-//	ReleaseImageFiles();	// Release first
+//	ReleasePointers();	// Release first
 	for ( U32 i=0; i < m_images.Count(); i++ ) {
 		if ( m_images[i] == NULL ) {
 			ImageFile*	imageSlice = new ImageFile( m_width, m_height, _format, _colorProfile );
@@ -164,16 +182,31 @@ void	ImagesMatrix::Mips::Mip::AllocateImageFiles( ImageFile::PIXEL_FORMAT _forma
 		}
 	}
 }
+void	ImagesMatrix::Mips::Mip::AllocateRawBuffer( U32 _rowPitch, U32 _slicePitch, const U8* _sourceBuffer ) {
+	m_rowPitch = _rowPitch;
+	m_slicePitch = _slicePitch;
 
-void	ImagesMatrix::Mips::Mip::ReleaseImageFiles() {
+	U32	bufferSize = Depth() * m_slicePitch;
+	if ( m_rawBuffer == NULL ) {
+		m_rawBuffer = new U8[bufferSize];
+	}
+
+	if ( _sourceBuffer != NULL ) {
+		memcpy_s( m_rawBuffer, bufferSize, _sourceBuffer, bufferSize );
+	}
+}
+
+void	ImagesMatrix::Mips::Mip::ReleasePointers() {
 	for ( U32 i=0; i < m_images.Count(); i++ ) {
 		SAFE_DELETE( m_images[i] );
 	}
+	SAFE_DELETE_ARRAY( m_rawBuffer );
 }
-void	ImagesMatrix::Mips::Mip::ClearImageFiles() {
+void	ImagesMatrix::Mips::Mip::ClearPointers() {
 	for ( U32 i=0; i < m_images.Count(); i++ ) {
 		m_images[i] = NULL;
 	}
+	m_rawBuffer = NULL;
 }
 
 void	ImagesMatrix::NextMipSize( U32& _size ) {

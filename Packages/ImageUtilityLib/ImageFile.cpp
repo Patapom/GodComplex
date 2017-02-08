@@ -1254,60 +1254,77 @@ ImageFile::PIXEL_FORMAT	ImageFile::DXGIFormat2PixelFormat( DXGI_FORMAT _sourceFo
 	_componentFormat = COMPONENT_FORMAT::AUTO;
 
 	switch ( _sourceFormat ) {
-		case DXGI_FORMAT_R8_UINT:				_pixelSize = 1; _componentFormat = COMPONENT_FORMAT::UINT; return ImageFile::PIXEL_FORMAT::R8;
-		case DXGI_FORMAT_R8_SINT:				_pixelSize = 1; _componentFormat = COMPONENT_FORMAT::SINT; return ImageFile::PIXEL_FORMAT::R8;
-		case DXGI_FORMAT_R8_SNORM:				_pixelSize = 1; _componentFormat = COMPONENT_FORMAT::SNORM; return ImageFile::PIXEL_FORMAT::R8;
-		case DXGI_FORMAT_R8_UNORM:				_pixelSize = 1; _componentFormat = COMPONENT_FORMAT::UNORM; return ImageFile::PIXEL_FORMAT::R8;
+		case DXGI_FORMAT_R8_UINT:				_pixelSize = 1; _componentFormat = COMPONENT_FORMAT::UINT; return PIXEL_FORMAT::R8;
+		case DXGI_FORMAT_R8_SINT:				_pixelSize = 1; _componentFormat = COMPONENT_FORMAT::SINT; return PIXEL_FORMAT::R8;
+		case DXGI_FORMAT_R8_SNORM:				_pixelSize = 1; _componentFormat = COMPONENT_FORMAT::SNORM; return PIXEL_FORMAT::R8;
+		case DXGI_FORMAT_R8_UNORM:				_pixelSize = 1; _componentFormat = COMPONENT_FORMAT::UNORM; return PIXEL_FORMAT::R8;
 
-		case DXGI_FORMAT_R8G8_UINT:				_pixelSize = 2; _componentFormat = COMPONENT_FORMAT::UINT; return ImageFile::PIXEL_FORMAT::RG8;
-		case DXGI_FORMAT_R8G8_SINT:				_pixelSize = 2; _componentFormat = COMPONENT_FORMAT::SINT; return ImageFile::PIXEL_FORMAT::RG8;
-		case DXGI_FORMAT_R8G8_SNORM:			_pixelSize = 2; _componentFormat = COMPONENT_FORMAT::SNORM; return ImageFile::PIXEL_FORMAT::RG8;
-		case DXGI_FORMAT_R8G8_UNORM:			_pixelSize = 2; _componentFormat = COMPONENT_FORMAT::UNORM; return ImageFile::PIXEL_FORMAT::RG8;
+		case DXGI_FORMAT_R8G8_UINT:				_pixelSize = 2; _componentFormat = COMPONENT_FORMAT::UINT; return PIXEL_FORMAT::RG8;
+		case DXGI_FORMAT_R8G8_SINT:				_pixelSize = 2; _componentFormat = COMPONENT_FORMAT::SINT; return PIXEL_FORMAT::RG8;
+		case DXGI_FORMAT_R8G8_SNORM:			_pixelSize = 2; _componentFormat = COMPONENT_FORMAT::SNORM; return PIXEL_FORMAT::RG8;
+		case DXGI_FORMAT_R8G8_UNORM:			_pixelSize = 2; _componentFormat = COMPONENT_FORMAT::UNORM; return PIXEL_FORMAT::RG8;
 
-		case DXGI_FORMAT_R8G8B8A8_UINT:			_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::UINT; return ImageFile::PIXEL_FORMAT::RGBA8;
-		case DXGI_FORMAT_R8G8B8A8_SINT:			_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::SINT; return ImageFile::PIXEL_FORMAT::RGBA8;
-		case DXGI_FORMAT_R8G8B8A8_SNORM:		_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::SNORM; return ImageFile::PIXEL_FORMAT::RGBA8;
-		case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB:	_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::UNORM_sRGB; return ImageFile::PIXEL_FORMAT::RGBA8;
-		case DXGI_FORMAT_R8G8B8A8_UNORM:		_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::UNORM; return ImageFile::PIXEL_FORMAT::RGBA8;
+		case DXGI_FORMAT_R8G8B8A8_UINT:			_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::UINT; return PIXEL_FORMAT::RGBA8;
+		case DXGI_FORMAT_R8G8B8A8_SINT:			_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::SINT; return PIXEL_FORMAT::RGBA8;
+		case DXGI_FORMAT_R8G8B8A8_SNORM:		_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::SNORM; return PIXEL_FORMAT::RGBA8;
+		case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB:	_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::UNORM_sRGB; return PIXEL_FORMAT::RGBA8;
+		case DXGI_FORMAT_R8G8B8A8_UNORM:		_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::UNORM; return PIXEL_FORMAT::RGBA8;
 
-		case DXGI_FORMAT_R16_UINT:				_pixelSize = 2; _componentFormat = COMPONENT_FORMAT::UINT; return ImageFile::PIXEL_FORMAT::R16;
-		case DXGI_FORMAT_R16_SINT:				_pixelSize = 2; _componentFormat = COMPONENT_FORMAT::SINT; return ImageFile::PIXEL_FORMAT::R16;
-		case DXGI_FORMAT_R16_SNORM:				_pixelSize = 2; _componentFormat = COMPONENT_FORMAT::SNORM; return ImageFile::PIXEL_FORMAT::R16;
-		case DXGI_FORMAT_R16_UNORM:				_pixelSize = 2; _componentFormat = COMPONENT_FORMAT::UNORM; return ImageFile::PIXEL_FORMAT::R16;
-		case DXGI_FORMAT_R16_FLOAT:				_pixelSize = 2; _componentFormat = COMPONENT_FORMAT::AUTO; return ImageFile::PIXEL_FORMAT::R16F;
+		case DXGI_FORMAT_R16_UINT:				_pixelSize = 2; _componentFormat = COMPONENT_FORMAT::UINT; return PIXEL_FORMAT::R16;
+		case DXGI_FORMAT_R16_SINT:				_pixelSize = 2; _componentFormat = COMPONENT_FORMAT::SINT; return PIXEL_FORMAT::R16;
+		case DXGI_FORMAT_R16_SNORM:				_pixelSize = 2; _componentFormat = COMPONENT_FORMAT::SNORM; return PIXEL_FORMAT::R16;
+		case DXGI_FORMAT_R16_UNORM:				_pixelSize = 2; _componentFormat = COMPONENT_FORMAT::UNORM; return PIXEL_FORMAT::R16;
+		case DXGI_FORMAT_R16_FLOAT:				_pixelSize = 2; _componentFormat = COMPONENT_FORMAT::AUTO; return PIXEL_FORMAT::R16F;
 
-		case DXGI_FORMAT_R16G16_UINT:			_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::UINT; return ImageFile::PIXEL_FORMAT::RG16;
-		case DXGI_FORMAT_R16G16_SINT:			_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::SINT; return ImageFile::PIXEL_FORMAT::RG16;
-		case DXGI_FORMAT_R16G16_SNORM:			_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::SNORM; return ImageFile::PIXEL_FORMAT::RG16;
-		case DXGI_FORMAT_R16G16_UNORM:			_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::UNORM; return ImageFile::PIXEL_FORMAT::RG16;
-		case DXGI_FORMAT_R16G16_FLOAT:			_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::AUTO; return ImageFile::PIXEL_FORMAT::RG16F;
+		case DXGI_FORMAT_R16G16_UINT:			_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::UINT; return PIXEL_FORMAT::RG16;
+		case DXGI_FORMAT_R16G16_SINT:			_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::SINT; return PIXEL_FORMAT::RG16;
+		case DXGI_FORMAT_R16G16_SNORM:			_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::SNORM; return PIXEL_FORMAT::RG16;
+		case DXGI_FORMAT_R16G16_UNORM:			_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::UNORM; return PIXEL_FORMAT::RG16;
+		case DXGI_FORMAT_R16G16_FLOAT:			_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::AUTO; return PIXEL_FORMAT::RG16F;
 
-		case DXGI_FORMAT_R16G16B16A16_UINT:		_pixelSize = 8; _componentFormat = COMPONENT_FORMAT::UINT; return ImageFile::PIXEL_FORMAT::RGBA16;
-		case DXGI_FORMAT_R16G16B16A16_SINT:		_pixelSize = 8; _componentFormat = COMPONENT_FORMAT::SINT; return ImageFile::PIXEL_FORMAT::RGBA16;
-		case DXGI_FORMAT_R16G16B16A16_SNORM:	_pixelSize = 8; _componentFormat = COMPONENT_FORMAT::SNORM; return ImageFile::PIXEL_FORMAT::RGBA16;
-		case DXGI_FORMAT_R16G16B16A16_UNORM:	_pixelSize = 8; _componentFormat = COMPONENT_FORMAT::UNORM; return ImageFile::PIXEL_FORMAT::RGBA16;
-		case DXGI_FORMAT_R16G16B16A16_FLOAT:	_pixelSize = 8; _componentFormat = COMPONENT_FORMAT::AUTO; return ImageFile::PIXEL_FORMAT::RGBA16F;
+		case DXGI_FORMAT_R16G16B16A16_UINT:		_pixelSize = 8; _componentFormat = COMPONENT_FORMAT::UINT; return PIXEL_FORMAT::RGBA16;
+		case DXGI_FORMAT_R16G16B16A16_SINT:		_pixelSize = 8; _componentFormat = COMPONENT_FORMAT::SINT; return PIXEL_FORMAT::RGBA16;
+		case DXGI_FORMAT_R16G16B16A16_SNORM:	_pixelSize = 8; _componentFormat = COMPONENT_FORMAT::SNORM; return PIXEL_FORMAT::RGBA16;
+		case DXGI_FORMAT_R16G16B16A16_UNORM:	_pixelSize = 8; _componentFormat = COMPONENT_FORMAT::UNORM; return PIXEL_FORMAT::RGBA16;
+		case DXGI_FORMAT_R16G16B16A16_FLOAT:	_pixelSize = 8; _componentFormat = COMPONENT_FORMAT::AUTO; return PIXEL_FORMAT::RGBA16F;
 
-// 		case DXGI_FORMAT_R32_UINT:				_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::UINT; return ImageFile::PIXEL_FORMAT::R32;	// Unsupported!
-// 		case DXGI_FORMAT_R32_SINT:				_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::SINT; return ImageFile::PIXEL_FORMAT::R32;	// Unsupported!
-		case DXGI_FORMAT_R32_FLOAT:				_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::AUTO; return ImageFile::PIXEL_FORMAT::R32F;
+// 		case DXGI_FORMAT_R32_UINT:				_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::UINT; return PIXEL_FORMAT::R32;	// Unsupported!
+// 		case DXGI_FORMAT_R32_SINT:				_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::SINT; return PIXEL_FORMAT::R32;	// Unsupported!
+		case DXGI_FORMAT_R32_FLOAT:				_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::AUTO; return PIXEL_FORMAT::R32F;
 
-// 		case DXGI_FORMAT_R32G32_UINT:			_pixelSize = 8; _componentFormat = COMPONENT_FORMAT::UINT; return ImageFile::PIXEL_FORMAT::RG32;	// Unsupported!
-// 		case DXGI_FORMAT_R32G32_SINT:			_pixelSize = 8; _componentFormat = COMPONENT_FORMAT::SINT; return ImageFile::PIXEL_FORMAT::RG32;	// Unsupported!
-		case DXGI_FORMAT_R32G32_FLOAT:			_pixelSize = 8; _componentFormat = COMPONENT_FORMAT::AUTO; return ImageFile::PIXEL_FORMAT::RG32F;
+// 		case DXGI_FORMAT_R32G32_UINT:			_pixelSize = 8; _componentFormat = COMPONENT_FORMAT::UINT; return PIXEL_FORMAT::RG32;	// Unsupported!
+// 		case DXGI_FORMAT_R32G32_SINT:			_pixelSize = 8; _componentFormat = COMPONENT_FORMAT::SINT; return PIXEL_FORMAT::RG32;	// Unsupported!
+		case DXGI_FORMAT_R32G32_FLOAT:			_pixelSize = 8; _componentFormat = COMPONENT_FORMAT::AUTO; return PIXEL_FORMAT::RG32F;
 
-// 		case DXGI_FORMAT_R32G32B32A32_UINT:		_pixelSize = 16; _componentFormat = COMPONENT_FORMAT::UINT; return ImageFile::PIXEL_FORMAT::RGBA32;	// Unsupported!
-// 		case DXGI_FORMAT_R32G32B32A32_SINT:		_pixelSize = 16; _componentFormat = COMPONENT_FORMAT::SINT; return ImageFile::PIXEL_FORMAT::RGBA32;	// Unsupported!
-		case DXGI_FORMAT_R32G32B32A32_FLOAT:	_pixelSize = 16; _componentFormat = COMPONENT_FORMAT::AUTO; return ImageFile::PIXEL_FORMAT::RGBA32F;
+// 		case DXGI_FORMAT_R32G32B32A32_UINT:		_pixelSize = 16; _componentFormat = COMPONENT_FORMAT::UINT; return PIXEL_FORMAT::RGBA32;	// Unsupported!
+// 		case DXGI_FORMAT_R32G32B32A32_SINT:		_pixelSize = 16; _componentFormat = COMPONENT_FORMAT::SINT; return PIXEL_FORMAT::RGBA32;	// Unsupported!
+		case DXGI_FORMAT_R32G32B32A32_FLOAT:	_pixelSize = 16; _componentFormat = COMPONENT_FORMAT::AUTO; return PIXEL_FORMAT::RGBA32F;
+
+		// Compressed formats should be handled as raw buffers
+		case DXGI_FORMAT_BC1_UNORM:
+		case DXGI_FORMAT_BC1_UNORM_SRGB:
+		case DXGI_FORMAT_BC2_UNORM:
+		case DXGI_FORMAT_BC2_UNORM_SRGB:
+		case DXGI_FORMAT_BC3_UNORM:
+		case DXGI_FORMAT_BC3_UNORM_SRGB:
+		case DXGI_FORMAT_BC4_UNORM:
+		case DXGI_FORMAT_BC4_SNORM:
+		case DXGI_FORMAT_BC5_UNORM:
+		case DXGI_FORMAT_BC5_SNORM:
+		case DXGI_FORMAT_BC6H_UF16:
+		case DXGI_FORMAT_BC6H_SF16:
+		case DXGI_FORMAT_BC7_UNORM:
+		case DXGI_FORMAT_BC7_UNORM_SRGB:
+			_pixelSize = 0; return PIXEL_FORMAT::RAW_BUFFER;
 	}
 
-	return ImageFile::PIXEL_FORMAT::UNKNOWN;
+	return PIXEL_FORMAT::UNKNOWN;
 }
 
 DXGI_FORMAT	ImageFile::PixelFormat2DXGIFormat( PIXEL_FORMAT _sourceFormat, COMPONENT_FORMAT _componentFormat ) {
 	switch ( _sourceFormat ) {
 		// 8-bits formats
-		case ImageFile::PIXEL_FORMAT::R8:
+		case PIXEL_FORMAT::R8:
 			switch ( _componentFormat ) {
 				case COMPONENT_FORMAT::AUTO:
 				case COMPONENT_FORMAT::UNORM:	return DXGI_FORMAT_R8_UNORM; break;
@@ -1317,7 +1334,7 @@ DXGI_FORMAT	ImageFile::PixelFormat2DXGIFormat( PIXEL_FORMAT _sourceFormat, COMPO
 			}
 			break;
 
-		case ImageFile::PIXEL_FORMAT::RG8:
+		case PIXEL_FORMAT::RG8:
 			switch ( _componentFormat ) {
 				case COMPONENT_FORMAT::AUTO:
 				case COMPONENT_FORMAT::UNORM:	return DXGI_FORMAT_R8G8_UNORM; break;
@@ -1327,7 +1344,7 @@ DXGI_FORMAT	ImageFile::PixelFormat2DXGIFormat( PIXEL_FORMAT _sourceFormat, COMPO
 			}
 			break;
 
-		case ImageFile::PIXEL_FORMAT::RGBA8:
+		case PIXEL_FORMAT::RGBA8:
 			switch ( _componentFormat ) {
 				case COMPONENT_FORMAT::AUTO:
 				case COMPONENT_FORMAT::UNORM_sRGB:	return DXGI_FORMAT_R8G8B8A8_UNORM_SRGB; break;
@@ -1339,7 +1356,7 @@ DXGI_FORMAT	ImageFile::PixelFormat2DXGIFormat( PIXEL_FORMAT _sourceFormat, COMPO
 			break;
 
 		// 16-bits formats
-		case ImageFile::PIXEL_FORMAT::R16:
+		case PIXEL_FORMAT::R16:
 			switch ( _componentFormat ) {
 				case COMPONENT_FORMAT::AUTO:
 				case COMPONENT_FORMAT::UNORM:	return DXGI_FORMAT_R16_UNORM; break;
@@ -1348,11 +1365,11 @@ DXGI_FORMAT	ImageFile::PixelFormat2DXGIFormat( PIXEL_FORMAT _sourceFormat, COMPO
 				case COMPONENT_FORMAT::SINT:	return DXGI_FORMAT_R16_SINT; break;
 			}
 			break;
-		case ImageFile::PIXEL_FORMAT::R16F:
+		case PIXEL_FORMAT::R16F:
 			return DXGI_FORMAT_R16_FLOAT;
 			break;
 
-		case ImageFile::PIXEL_FORMAT::RG16:
+		case PIXEL_FORMAT::RG16:
 			switch ( _componentFormat ) {
 				case COMPONENT_FORMAT::AUTO:
 				case COMPONENT_FORMAT::UNORM:	return DXGI_FORMAT_R16G16_UNORM; break;
@@ -1361,11 +1378,11 @@ DXGI_FORMAT	ImageFile::PixelFormat2DXGIFormat( PIXEL_FORMAT _sourceFormat, COMPO
 				case COMPONENT_FORMAT::SINT:	return DXGI_FORMAT_R16G16_SINT; break;
 			}
 			break;
-		case ImageFile::PIXEL_FORMAT::RG16F:
+		case PIXEL_FORMAT::RG16F:
 			return DXGI_FORMAT_R16G16_FLOAT;
 			break;
 
-		case ImageFile::PIXEL_FORMAT::RGBA16:
+		case PIXEL_FORMAT::RGBA16:
 			switch ( _componentFormat ) {
 				case COMPONENT_FORMAT::AUTO:
 				case COMPONENT_FORMAT::UNORM:	return DXGI_FORMAT_R16G16B16A16_UNORM; break;
@@ -1374,12 +1391,12 @@ DXGI_FORMAT	ImageFile::PixelFormat2DXGIFormat( PIXEL_FORMAT _sourceFormat, COMPO
 				case COMPONENT_FORMAT::SINT:	return DXGI_FORMAT_R16G16B16A16_SINT; break;
 			}
 			break;
-		case ImageFile::PIXEL_FORMAT::RGBA16F:
+		case PIXEL_FORMAT::RGBA16F:
 			return DXGI_FORMAT_R16G16B16A16_FLOAT;
 			break;
 
 		// 32-bits formats
-// 		case ImageFile::PIXEL_FORMAT::R32:	// Unsupported
+// 		case PIXEL_FORMAT::R32:	// Unsupported
 // 			switch ( _componentFormat ) {
 // // 				case COMPONENT_FORMAT::UNORM:	return DXGI_FORMAT_R32_UNORM; break;	// Doesn't exist anyway
 // // 				case COMPONENT_FORMAT::SNORM:	return DXGI_FORMAT_R32_SNORM; break;	// Doesn't exist anyway
@@ -1387,11 +1404,11 @@ DXGI_FORMAT	ImageFile::PixelFormat2DXGIFormat( PIXEL_FORMAT _sourceFormat, COMPO
 // 				case COMPONENT_FORMAT::SINT:		return DXGI_FORMAT_R32_SINT; break;
 // 			}
 // 			break;
-		case ImageFile::PIXEL_FORMAT::R32F:
+		case PIXEL_FORMAT::R32F:
 			return DXGI_FORMAT_R32_FLOAT;
 			break;
 
-// 		case ImageFile::PIXEL_FORMAT::RG32:	// Unsupported
+// 		case PIXEL_FORMAT::RG32:	// Unsupported
 // 			switch ( _componentFormat ) {
 // // 				case COMPONENT_FORMAT::UNORM:	return DXGI_FORMAT_R32G32_UNORM; break;	// Doesn't exist anyway
 // // 				case COMPONENT_FORMAT::SNORM:	return DXGI_FORMAT_R32G32_SNORM; break;	// Doesn't exist anyway
@@ -1399,11 +1416,11 @@ DXGI_FORMAT	ImageFile::PixelFormat2DXGIFormat( PIXEL_FORMAT _sourceFormat, COMPO
 // 				case COMPONENT_FORMAT::SINT:		return DXGI_FORMAT_R32G32_SINT; break;
 // 			}
 // 			break;
-		case ImageFile::PIXEL_FORMAT::RG32F:
+		case PIXEL_FORMAT::RG32F:
 			return DXGI_FORMAT_R32G32_FLOAT;
 			break;
 
-// 		case ImageFile::PIXEL_FORMAT::RGBA32:	// Unsupported
+// 		case PIXEL_FORMAT::RGBA32:	// Unsupported
 // 			switch ( _componentFormat ) {
 // // 				case COMPONENT_FORMAT::UNORM:	return DXGI_FORMAT_R32G32B32A32_UNORM; break;	// Doesn't exist anyway
 // // 				case COMPONENT_FORMAT::SNORM:	return DXGI_FORMAT_R32G32B32A32_SNORM; break;	// Doesn't exist anyway
@@ -1411,7 +1428,7 @@ DXGI_FORMAT	ImageFile::PixelFormat2DXGIFormat( PIXEL_FORMAT _sourceFormat, COMPO
 // 				case COMPONENT_FORMAT::SINT:		return DXGI_FORMAT_R32G32B32A32_SINT; break;
 // 			}
 // 			break;
-		case ImageFile::PIXEL_FORMAT::RGBA32F:
+		case PIXEL_FORMAT::RGBA32F:
 			return DXGI_FORMAT_R32G32B32A32_FLOAT;
 			break;
 	}
@@ -1487,7 +1504,7 @@ void	ImageFile::DDSLoad( const void* _blindPointerImage, const void* _blindPoint
 	U32					pixelSize = 0;
 	COMPONENT_FORMAT	componentFormat;
 	PIXEL_FORMAT		format = DXGIFormat2PixelFormat( meta.format, componentFormat, pixelSize );
-	if ( format == ImageFile::PIXEL_FORMAT::UNKNOWN )
+	if ( format == PIXEL_FORMAT::UNKNOWN )
 		throw "Unsupported format! Cannot find appropriate target image format to support source DXGI format...";
 
 	ColorProfile	profile( ColorProfile::STANDARD_PROFILE::sRGB );
@@ -1515,47 +1532,80 @@ void	ImageFile::DDSLoad( const void* _blindPointerImage, const void* _blindPoint
 			_images.InitTexture2DArray( U32(meta.width), U32(meta.height), arraySize, mipLevelsCount );
 		}
 
-		// Allocate actual images
-		_images.AllocateImageFiles( format, profile );
+		if ( format != PIXEL_FORMAT::RAW_BUFFER ) {
+			// Allocate actual images
+			_images.AllocateImageFiles( format, profile );
 
-		// Fill up the content
-		for ( U32 arrayIndex=0; arrayIndex < arraySize; arrayIndex++ ) {
-// 		for ( U32 cubeMapIndex=0; cubeMapIndex < cubeMapsCount; cubeMapIndex++ ) {
-// 			for ( U32 faceIndex=0; faceIndex < 6; faceIndex++ ) {
-			for ( U32 mipIndex=0; mipIndex < mipLevelsCount; mipIndex++ ) {
-			 	const DirectX::Image*	sourceImage = image.GetImage( mipIndex, arrayIndex, 0U );
-				ImageFile&				targetImage = *_images[arrayIndex][mipIndex][0];
-				Copy( *sourceImage, targetImage );
+			// Fill up the content
+			for ( U32 arrayIndex=0; arrayIndex < arraySize; arrayIndex++ ) {
+				for ( U32 mipIndex=0; mipIndex < mipLevelsCount; mipIndex++ ) {
+				 	const DirectX::Image*	sourceImage = image.GetImage( mipIndex, arrayIndex, 0U );
+					ImageFile&				targetImage = *_images[arrayIndex][mipIndex][0];
+					targetImage.m_fileFormat = FILE_FORMAT::DDS;
+					Copy( *sourceImage, targetImage );
+				}
 			}
+		} else {
+			// Copy raw data without any processing
+			class	getSliceSize_t : public ImagesMatrix::GetRawBufferSizeFunctor {
+			public:
+				const DirectX::ScratchImage&	m_image;
+				getSliceSize_t( const DirectX::ScratchImage& _image ) : m_image( _image ) {}
+				const U8*	operator()( U32 _arraySliceIndex, U32 _mipLevelIndex, U32& _rowPitch, U32& _slicePitch ) const override {
+					const DirectX::Image* mipImage = m_image.GetImage( _mipLevelIndex, _arraySliceIndex, 0U );
+					_rowPitch = U32(mipImage->rowPitch);
+					_slicePitch = U32(mipImage->slicePitch);
+
+					return mipImage->pixels;
+				}
+			} getSliceSize( image );
+			_images.AllocateRawBuffers( getSliceSize );
 		}
 
 	} else {
 		// We are dealing with a 3D texture format
 		_images.InitTexture3D( U32(meta.width), U32(meta.height), U32(meta.depth), U32(meta.mipLevels) );
 
-		// Allocate actual images
-		_images.AllocateImageFiles( format, profile );
+		if ( format != PIXEL_FORMAT::RAW_BUFFER ) {
+			// Allocate actual images
+			_images.AllocateImageFiles( format, profile );
 
-		// Fill up the content
-		for ( U32 mipIndex=0; mipIndex < mipLevelsCount; mipIndex++ ) {
-			ImagesMatrix::Mips::Mip&	mip = _images[0][mipIndex];
+			// Fill up the content
+			for ( U32 mipIndex=0; mipIndex < mipLevelsCount; mipIndex++ ) {
+				ImagesMatrix::Mips::Mip&	mip = _images[0][mipIndex];
 
-			for ( U32 sliceIndex=0; sliceIndex < mip.Depth(); sliceIndex++ ) {
-				const DirectX::Image*	sourceImage = image.GetImage( mipIndex, 0U, sliceIndex );
-				ImageFile&				targetImage = *mip[sliceIndex];
-				Copy( *sourceImage, targetImage );
+				for ( U32 sliceIndex=0; sliceIndex < mip.Depth(); sliceIndex++ ) {
+					const DirectX::Image*	sourceImage = image.GetImage( mipIndex, 0U, sliceIndex );
+					ImageFile&				targetImage = *mip[sliceIndex];
+					targetImage.m_fileFormat = FILE_FORMAT::DDS;
+					Copy( *sourceImage, targetImage );
+				}
 			}
+		} else {
+			// Copy raw data without any processing
+			class	getMipSize_t : public ImagesMatrix::GetRawBufferSizeFunctor {
+			public:
+				const DirectX::ScratchImage&	m_image;
+				getMipSize_t( const DirectX::ScratchImage& _image ) : m_image( _image ) {}
+				const U8*	operator()( U32 _arraySliceIndex, U32 _mipLevelIndex, U32& _rowPitch, U32& _slicePitch ) const override {
+					const DirectX::Image* mipImage = m_image.GetImage( _mipLevelIndex, 0U, 0U );
+
+					_rowPitch = U32(mipImage->rowPitch);
+					_slicePitch = U32(mipImage->slicePitch);
+
+					return mipImage->pixels;	// DirectXTex stores the pixels into a contiguous buffer so it's okay to give the first slice's pointer here
+				}
+			} getMipSize( image );
+			_images.AllocateRawBuffers( getMipSize );
 		}
 	}
 }
 
-void	ImageFile::DDSSaveFile( const ImagesMatrix& _images, const wchar_t* _fileName, COMPONENT_FORMAT _componentFormat, bool _compressBC6H ) {
-	if ( _compressBC6H )
-		throw "Unsupported option!";
+void	ImageFile::DDSSaveFile( const ImagesMatrix& _images, const wchar_t* _fileName, COMPONENT_FORMAT _componentFormat ) {
 
 	// Create and fill the image
 	DirectX::ScratchImage*	DXT = NULL;
-	DDSSave( _images, (void**) &DXT, _componentFormat, _compressBC6H );
+	DDSSave( _images, (void**) &DXT, _componentFormat );
 
 	// Save to disk
 	DWORD	flags = DirectX::DDS_FLAGS_FORCE_RGB | DirectX::DDS_FLAGS_NO_16BPP | DirectX::DDS_FLAGS_EXPAND_LUMINANCE | DirectX::DDS_FLAGS_FORCE_DX10_EXT;
@@ -1567,13 +1617,11 @@ void	ImageFile::DDSSaveFile( const ImagesMatrix& _images, const wchar_t* _fileNa
 	// Release the image
 	delete DXT;
 }
-void	ImageFile::DDSSaveMemory( const ImagesMatrix& _images, U64& _fileSize, void*& _fileContent, COMPONENT_FORMAT _componentFormat, bool _compressBC6H ) {
-	if ( _compressBC6H )
-		throw "Unsupported option!";
+void	ImageFile::DDSSaveMemory( const ImagesMatrix& _images, U64& _fileSize, void*& _fileContent, COMPONENT_FORMAT _componentFormat ) {
 
 	// Create and fill the image
 	DirectX::ScratchImage*	DXT = NULL;
-	DDSSave( _images, (void**) &DXT, _componentFormat, _compressBC6H );
+	DDSSave( _images, (void**) &DXT, _componentFormat );
 
 	// Transfer into a memory blob
 	DirectX::Blob	blob;
@@ -1593,7 +1641,7 @@ void	ImageFile::DDSSaveMemory( const ImagesMatrix& _images, U64& _fileSize, void
 	memcpy_s( targetBuffer, _fileSize, blob.GetBufferPointer(), blob.GetBufferSize() );
 }
 
-void	ImageFile::DDSSave( const ImagesMatrix& _images, void** _blindPointerImage, COMPONENT_FORMAT _componentFormat, bool _compressBC6H ) {
+void	ImageFile::DDSSave( const ImagesMatrix& _images, void** _blindPointerImage, COMPONENT_FORMAT _componentFormat ) {
 	DirectX::ScratchImage*&	image = *reinterpret_cast<DirectX::ScratchImage**>( _blindPointerImage );
 
 	DXGI_FORMAT	DXFormat = PixelFormat2DXGIFormat( _images.GetFormat(), _componentFormat );
@@ -1644,13 +1692,29 @@ void	ImageFile::DDSSave( const ImagesMatrix& _images, void** _blindPointerImage,
 // 			}
 
 			// Copy to scratch image
-			for ( U32 mipLevelIndex=0; mipLevelIndex < mipLevelsCount; mipLevelIndex++ ) {
+			if ( _images.GetFormat() != PIXEL_FORMAT::RAW_BUFFER ) {
 				for ( U32 arrayIndex=0; arrayIndex < arraySize; arrayIndex++ ) {
-					const ImageFile*	sourceImage = _images[arrayIndex][mipLevelIndex][0];
-					if ( sourceImage == NULL )
-						throw "Invalid source image! The images matrix is not initialized!";
-					const DirectX::Image*	targetImage = image->GetImage( mipLevelIndex, arrayIndex, 0 );
-					Copy( *sourceImage, *targetImage );
+					const ImagesMatrix::Mips&	sourceMips = _images[arrayIndex];
+					for ( U32 mipLevelIndex=0; mipLevelIndex < mipLevelsCount; mipLevelIndex++ ) {
+						const ImagesMatrix::Mips::Mip&	sourceMip = sourceMips[mipLevelIndex];
+						const ImageFile*				sourceImage = sourceMip[0];
+						if ( sourceImage == NULL )
+							throw "Invalid source image! The images matrix is not initialized!";
+
+						const DirectX::Image*	targetImage = image->GetImage( mipLevelIndex, arrayIndex, 0 );
+						Copy( *sourceImage, *targetImage );
+					}
+				}
+			} else {
+				for ( U32 arrayIndex=0; arrayIndex < arraySize; arrayIndex++ ) {
+					const ImagesMatrix::Mips&	sourceMips = _images[arrayIndex];
+					for ( U32 mipLevelIndex=0; mipLevelIndex < mipLevelsCount; mipLevelIndex++ ) {
+						const ImagesMatrix::Mips::Mip&	sourceMip = sourceMips[mipLevelIndex];
+						U32								sourceSlicePitch = sourceMip.SlicePitch();
+						const U8*						sourceRawBuffer = sourceMip.GetRawBuffer();
+						const DirectX::Image*			targetImage = image->GetImage( mipLevelIndex, arrayIndex, 0 );
+						memcpy_s( targetImage->pixels, targetImage->slicePitch, sourceRawBuffer, sourceSlicePitch );
+					}
 				}
 			}
 			break;
@@ -1659,20 +1723,34 @@ void	ImageFile::DDSSave( const ImagesMatrix& _images, void** _blindPointerImage,
 		case ImagesMatrix::TYPE::TEXTURE3D: {
 			// Assume 3D texture
 			if ( arraySize != 1 )
-				throw "Invalid array size! Must be 1 for a 3D texture!";	// At least, for the moment, DirectX doesn't support arrays of 3D textures (but we do! :D)
+				throw "Invalid array size! Must be 1 for a 3D texture!";	// At least for the moment, DirectX doesn't support arrays of 3D textures (but we do! :D)
 
 			HRESULT	hr = image->Initialize3D( DXFormat, W, H, D, mipLevelsCount );
 			if ( hr != S_OK )
 				throw "Failed to initialize 3D texture!";
 
 			// Copy to scratch image
-			for ( U32 mipLevelIndex=0; mipLevelIndex < mipLevelsCount; mipLevelIndex++ ) {
-				for ( U32 sliceIndex=0; sliceIndex < D; sliceIndex++ ) {
-					const ImageFile*	sourceImage = _images[0][mipLevelIndex][sliceIndex];
-					if ( sourceImage == NULL )
-						throw "Invalid source image! The images matrix is not initialized!";
-					const DirectX::Image*	targetImage = image->GetImage( mipLevelIndex, 0, sliceIndex );
-					Copy( *sourceImage, *targetImage );
+			if ( _images.GetFormat() != PIXEL_FORMAT::RAW_BUFFER ) {
+				for ( U32 mipLevelIndex=0; mipLevelIndex < mipLevelsCount; mipLevelIndex++ ) {
+					for ( U32 sliceIndex=0; sliceIndex < D; sliceIndex++ ) {
+						const ImageFile*	sourceImage = _images[0][mipLevelIndex][sliceIndex];
+						if ( sourceImage == NULL )
+							throw "Invalid source image! The images matrix is not initialized!";
+						const DirectX::Image*	targetImage = image->GetImage( mipLevelIndex, 0, sliceIndex );
+						Copy( *sourceImage, *targetImage );
+					}
+				}
+			} else {
+				const ImagesMatrix::Mips&	sourceMips = _images[0];
+				for ( U32 mipLevelIndex=0; mipLevelIndex < mipLevelsCount; mipLevelIndex++ ) {
+					const ImagesMatrix::Mips::Mip&	sourceMip = sourceMips[mipLevelIndex];
+					U32								sourceSlicePitch = sourceMip.SlicePitch();
+					const U8*						sourceRawBuffer = sourceMip.GetRawBuffer();
+
+					for ( U32 sliceIndex=0; sliceIndex < sourceMip.Depth(); sliceIndex++ ) {
+						const DirectX::Image*	targetImage = image->GetImage( mipLevelIndex, 0, sliceIndex );
+						memcpy_s( targetImage->pixels, targetImage->slicePitch, sourceRawBuffer + sliceIndex * sourceSlicePitch, sourceMip.SlicePitch() );
+					}
 				}
 			}
 			break;
@@ -1680,14 +1758,11 @@ void	ImageFile::DDSSave( const ImagesMatrix& _images, void** _blindPointerImage,
 	}
 }
 
-// // Compresses a single image
-// void	ImageFile::DDSCompress( COMPRESSION_TYPE _compressionType, U32& _compressedImageSize, void*& _compressedImage ) {
-// //	Implement meeeee!
-// }
-// 
-// // Saves a DDS image in memory to disk (usually used after a compression)
-// void	ImageFile::DDSSaveFromMemory( U32 _DDSImageSize, const void* _DDSImage, const wchar_t* _fileName ) {
-// 
-// }
+// Compresses a single image
+void	ImageFile::DDSCompress( COMPRESSION_TYPE _compressionType, ImageFile& _compressedImage ) const {
+
+//	DirectX::Compress( DirectX::TEX_COMPRESS_FLAGS )
+//	Implement meeeee!
+}
 
 #pragma endregion

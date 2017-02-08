@@ -43,6 +43,7 @@
 			this.buttonLoad22 = new System.Windows.Forms.Button();
 			this.buttonLoad14 = new System.Windows.Forms.Button();
 			this.buttonLoad13 = new System.Windows.Forms.Button();
+			this.buttonLoadDDS1 = new System.Windows.Forms.Button();
 			this.buttonLoad12 = new System.Windows.Forms.Button();
 			this.buttonLoad11 = new System.Windows.Forms.Button();
 			this.buttonLoad10 = new System.Windows.Forms.Button();
@@ -63,6 +64,7 @@
 			this.radioButtonFilterGaussian = new System.Windows.Forms.RadioButton();
 			this.radioButtonFilterNone = new System.Windows.Forms.RadioButton();
 			this.buttonLDR2HDRRAW = new System.Windows.Forms.Button();
+			this.buttonLDR11RAW = new System.Windows.Forms.Button();
 			this.buttonLDR5RAW = new System.Windows.Forms.Button();
 			this.buttonLDR3RAW = new System.Windows.Forms.Button();
 			this.buttonLDR2HDRJPG = new System.Windows.Forms.Button();
@@ -82,7 +84,6 @@
 			this.buttonDraw2 = new System.Windows.Forms.Button();
 			this.buttonDraw1 = new System.Windows.Forms.Button();
 			this.panelDrawing = new ImageUtility.UnitTests.PanelOutput(this.components);
-			this.buttonLDR11RAW = new System.Windows.Forms.Button();
 			this.tabControlTests.SuspendLayout();
 			this.tabPageBuilding.SuspendLayout();
 			this.tabPageLoading.SuspendLayout();
@@ -93,7 +94,7 @@
 			// 
 			// textBoxEXIF
 			// 
-			this.textBoxEXIF.Location = new System.Drawing.Point(855, 71);
+			this.textBoxEXIF.Location = new System.Drawing.Point(855, 108);
 			this.textBoxEXIF.Multiline = true;
 			this.textBoxEXIF.Name = "textBoxEXIF";
 			this.textBoxEXIF.ReadOnly = true;
@@ -183,6 +184,7 @@
 			this.tabPageLoading.Controls.Add(this.buttonLoad22);
 			this.tabPageLoading.Controls.Add(this.buttonLoad14);
 			this.tabPageLoading.Controls.Add(this.buttonLoad13);
+			this.tabPageLoading.Controls.Add(this.buttonLoadDDS1);
 			this.tabPageLoading.Controls.Add(this.buttonLoad12);
 			this.tabPageLoading.Controls.Add(this.buttonLoad11);
 			this.tabPageLoading.Controls.Add(this.buttonLoad10);
@@ -254,6 +256,16 @@
 			this.buttonLoad13.Text = "TIFF RGB16";
 			this.buttonLoad13.UseVisualStyleBackColor = true;
 			this.buttonLoad13.Click += new System.EventHandler(this.buttonLoad13_Click);
+			// 
+			// buttonLoadDDS1
+			// 
+			this.buttonLoadDDS1.Location = new System.Drawing.Point(6, 79);
+			this.buttonLoadDDS1.Name = "buttonLoadDDS1";
+			this.buttonLoadDDS1.Size = new System.Drawing.Size(89, 23);
+			this.buttonLoadDDS1.TabIndex = 2;
+			this.buttonLoadDDS1.Text = "DDS 2D";
+			this.buttonLoadDDS1.UseVisualStyleBackColor = true;
+			this.buttonLoadDDS1.Click += new System.EventHandler(this.buttonLoadDDS1_Click);
 			// 
 			// buttonLoad12
 			// 
@@ -378,7 +390,7 @@
 			// panelLoad
 			// 
 			this.panelLoad.Bitmap = null;
-			this.panelLoad.Location = new System.Drawing.Point(6, 71);
+			this.panelLoad.Location = new System.Drawing.Point(6, 108);
 			this.panelLoad.Name = "panelLoad";
 			this.panelLoad.Size = new System.Drawing.Size(842, 568);
 			this.panelLoad.TabIndex = 0;
@@ -468,6 +480,16 @@
 			this.buttonLDR2HDRRAW.Text = "LDR RAW -> HDR";
 			this.buttonLDR2HDRRAW.UseVisualStyleBackColor = true;
 			this.buttonLDR2HDRRAW.Click += new System.EventHandler(this.buttonLDR2HDRRAW_Click);
+			// 
+			// buttonLDR11RAW
+			// 
+			this.buttonLDR11RAW.Location = new System.Drawing.Point(320, 43);
+			this.buttonLDR11RAW.Name = "buttonLDR11RAW";
+			this.buttonLDR11RAW.Size = new System.Drawing.Size(150, 23);
+			this.buttonLDR11RAW.TabIndex = 4;
+			this.buttonLDR11RAW.Text = "11 LDR RAW -> Response";
+			this.buttonLDR11RAW.UseVisualStyleBackColor = true;
+			this.buttonLDR11RAW.Click += new System.EventHandler(this.buttonLDR11RAW_Click);
 			// 
 			// buttonLDR5RAW
 			// 
@@ -659,16 +681,6 @@
 			this.panelDrawing.Size = new System.Drawing.Size(842, 568);
 			this.panelDrawing.TabIndex = 4;
 			// 
-			// buttonLDR11RAW
-			// 
-			this.buttonLDR11RAW.Location = new System.Drawing.Point(320, 43);
-			this.buttonLDR11RAW.Name = "buttonLDR11RAW";
-			this.buttonLDR11RAW.Size = new System.Drawing.Size(150, 23);
-			this.buttonLDR11RAW.TabIndex = 4;
-			this.buttonLDR11RAW.Text = "11 LDR RAW -> Response";
-			this.buttonLDR11RAW.UseVisualStyleBackColor = true;
-			this.buttonLDR11RAW.Click += new System.EventHandler(this.buttonLDR11RAW_Click);
-			// 
 			// TestForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -747,6 +759,7 @@
 		private System.Windows.Forms.Button buttonLoad14;
 		private System.Windows.Forms.RadioButton radioButtonFilterGaussian2Pass;
 		private System.Windows.Forms.Button buttonLDR11RAW;
+		private System.Windows.Forms.Button buttonLoadDDS1;
 
 	}
 }

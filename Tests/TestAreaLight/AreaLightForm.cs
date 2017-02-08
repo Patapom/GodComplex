@@ -1925,6 +1925,7 @@ renderProg PostFX/Debug/WardBRDFAlbedo {
 			m_StartTime = GetGameTime();
 
 			m_Camera.CameraTransformChanged += new EventHandler( Camera_CameraTransformChanged );
+			Camera_CameraTransformChanged( m_Camera, EventArgs.Empty );
 
 			Application.Idle += new EventHandler( Application_Idle );
 		}
@@ -2243,9 +2244,7 @@ renderProg PostFX/Debug/WardBRDFAlbedo {
 			// Render the scene
 			m_Device.SetRenderStates( RASTERIZER_STATE.CULL_BACK, DEPTHSTENCIL_STATE.NOCHANGE, BLEND_STATE.NOCHANGE );
 			if ( m_Shader_RenderScene != null && m_Shader_RenderScene.Use() ) {
-
 				RenderScene( m_Shader_RenderScene );
-
 			} else {
 				m_Device.Clear( new float4( 1, 1, 0, 0 ) );
 			}
