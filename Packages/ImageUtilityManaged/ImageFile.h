@@ -509,21 +509,10 @@ namespace ImageUtility {
 	public:
 		//////////////////////////////////////////////////////////////////////////
 		// DDS-related methods
-// 		enum class COMPRESSION_TYPE {
-// 			BC4,
-// 			BC5,
-// 			BC6H,
-// 			BC7,
-// 		};
-
 		static ImagesMatrix^	DDSLoadFile( System::IO::FileInfo^ _fileName );
 		static ImagesMatrix^	DDSLoadMemory( NativeByteArray^ _imageContent );
 		static void				DDSSaveFile( ImagesMatrix^ _images, System::IO::FileInfo^ _fileName, COMPONENT_FORMAT _componentFormat );
 		static NativeByteArray^	DDSSaveMemory( ImagesMatrix^ _images, COMPONENT_FORMAT _componentFormat );
-
-// 		// Compresses a single image
-// 		// NOTE: Use the RendererLib::Device version to compress using the GPU
-// 		NativeByteArray^		DDSCompress( COMPRESSION_TYPE _compressionType, COMPONENT_FORMAT _componentFormat, UInt32% _rowPitch, UInt32% _slicePitch );
 
 // 		static void				DXGIFormat2ImageFileFormat( DXGI_FORMAT _sourceFormat, PIXEL_FORMAT% _targetFormat, UInt32% _pixelSize ) {
 // 			ImageUtilityLib::ImageFile::PIXEL_FORMAT	targetFormat;

@@ -81,6 +81,9 @@ namespace Renderer {
 
 		void	RenderFullscreenQuad( Shader^ _Shader );
 
+		// Compresses the source image to the appropriate format using GPU acceleration
+		ImageUtility::ImagesMatrix^	DDSCompress( ImageUtility::ImagesMatrix^ _sourceImage, ImageUtility::ImagesMatrix::COMPRESSION_TYPE _compressionType, ImageUtility::COMPONENT_FORMAT _componentFormat );
+
 		void	Present( bool _flushCommands ) {
 			if ( _flushCommands )
 				m_pDevice->DXContext().Flush();

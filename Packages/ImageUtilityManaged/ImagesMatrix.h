@@ -146,7 +146,18 @@ namespace ImageUtility {
 		}
 
 		// DDS-Compression
-		void			DDSCompress( const ImagesMatrix& _source, ImageFile::COMPRESSION_TYPE _compressionType, COMPONENT_FORMAT _componentFormat=COMPONENT_FORMAT::AUTO );
+ 		// NOTE: Use the RendererLib::Device version to compress using the GPU
+		enum class COMPRESSION_TYPE {
+			BC4,
+			BC5,
+			BC6H,
+			BC7,
+		};
+		ImagesMatrix^	DDSCompress( ImagesMatrix^ _sourceImage, COMPRESSION_TYPE _compressionType, COMPONENT_FORMAT _componentFormat ) {
+			ImagesMatrix^	result = gcnew ImagesMatrix();
+			m_nativeObject->DDSCompress( *reinterpret_cast< ImageUtilityLib::ImagesMatrix* >( _sourceImage->NativeObject.ToPointer() ), ImageUtilityLib::ImagesMatrix::COMPRESSION_TYPE( _compressionType ), BaseLib::COMPONENT_FORMAT( _componentFormat ) );
+			return result;
+		}
 
 		// Computes the next mip size
 		static void		NextMipSize( UInt32% _size ) { U32 size; ImageUtilityLib::ImagesMatrix::NextMipSize( size ); _size = size; }

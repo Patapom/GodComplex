@@ -149,12 +149,7 @@ namespace ImageUtilityLib {
 			BC6H,
 			BC7,
 		};
-		void			DDSCompress( const ImagesMatrix& _source, COMPRESSION_TYPE _compressionType, COMPONENT_FORMAT _componentFormat=COMPONENT_FORMAT::AUTO, Device* _blindPointerDevice=NULL );
-
-//		// Compresses a single image
-//		// NOTE: Use the RendererLib::Device version to compress using the GPU
-//		// NOTE: The caller is responsible for delete[] the returned _compressedRawBuffer!
-//		void				DDSCompress( COMPRESSION_TYPE _compressionType, COMPONENT_FORMAT _componentFormat, DXGI_FORMAT& _targetFormat, U32& _rowPitch, U32& _slicePitch, U8*& _compressedRawBuffer ) const;
+		void			DDSCompress( const ImagesMatrix& _source, COMPRESSION_TYPE _compressionType, COMPONENT_FORMAT _componentFormat=COMPONENT_FORMAT::AUTO, void* _blindPointerDevice=NULL );	// NOTE: Pass a valid D3D device to enable GPU compression
 
 		static DXGI_FORMAT	CompressionType2DXGIFormat( COMPRESSION_TYPE _compressionType, COMPONENT_FORMAT _componentFormat );
 

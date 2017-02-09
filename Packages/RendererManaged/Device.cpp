@@ -97,3 +97,9 @@ void	Renderer::Device::RenderFullscreenQuad( Shader^ _shader ) {
 	_shader->m_pShader->Use();
 	m_pScreenQuad->Render( *_shader->m_pShader );
 }
+
+ImageUtility::ImagesMatrix^	Renderer::Device::DDSCompress( ImageUtility::ImagesMatrix^ _sourceImage, ImageUtility::ImagesMatrix::COMPRESSION_TYPE _compressionType, ImageUtility::COMPONENT_FORMAT _componentFormat ) {
+	ImageUtility::ImagesMatrix^	result = gcnew ImageUtility::ImagesMatrix();
+	reinterpret_cast< ImageUtilityLib::ImagesMatrix* >( result->NativeObject.ToPointer() )->DDSCompress( *reinterpret_cast< ImageUtilityLib::ImagesMatrix* >( _sourceImage->NativeObject.ToPointer() ), ImageUtilityLib::ImagesMatrix::COMPRESSION_TYPE( _compressionType ), BaseLib::COMPONENT_FORMAT( _componentFormat ), reinterpret_cast< void* >( &m_pDevice->DXDevice() ) );
+	return result;
+}
