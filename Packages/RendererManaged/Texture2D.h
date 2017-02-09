@@ -64,7 +64,7 @@ namespace Renderer {
 	public:
 
 		// _Content must be of size _ArraySize * _MipLevelsCount and must contain all consecutive mips for each slice (e.g. 3 mips and array size 2 : [ Mip0_slice0, Mip1_slice0, Mip2_slice0, Mip0_slice1, Mip1_slice1, Mip2_slice1])
-		Texture2D( Device^ _device, UInt32 _Width, UInt32 _Height, int _ArraySize, UInt32 _MipLevelsCount, PIXEL_FORMAT _PixelFormat, bool _Staging, bool _UAV, cli::array<PixelsBuffer^>^ _Content );
+		Texture2D( Device^ _device, UInt32 _Width, UInt32 _Height, int _ArraySize, UInt32 _MipLevelsCount, ImageUtility::PIXEL_FORMAT _pixelFormat, ImageUtility::COMPONENT_FORMAT _componentFormat, bool _Staging, bool _UAV, cli::array<PixelsBuffer^>^ _Content );
 		Texture2D( Device^ _device, ImageUtility::ImagesMatrix^ _images, ImageUtility::COMPONENT_FORMAT _componentFormat );
 		Texture2D( Device^ _device, UInt32 _Width, UInt32 _Height, UInt32 _ArraySize, DEPTH_STENCIL_FORMAT _DepthStencilFormat );
 		~Texture2D() {
@@ -131,8 +131,13 @@ namespace Renderer {
 		PixelsBuffer^	MapRead( UInt32 _mipLevelIndex, UInt32 _arrayIndex, bool _ImAwareOfStrideAlignmentTo128Bytes ) {
 			const D3D11_MAPPED_SUBRESOURCE&	mappedResource = m_texture->MapRead( _mipLevelIndex, _arrayIndex );
 			#ifdef _DEBUG
-				if ( !_ImAwareOfStrideAlignmentTo128Bytes && m_texture->GetPixelFormatDescriptor().Size() * m_texture->GetWidth() != mappedResource.RowPitch )
+				if ( !_ImAwareOfStrideAlignmentTo128Bytes ) {
+					BaseLib::COMPONENT_FORMAT	componentFormat;
+					U32							pixelSize;
+					DXGIFormat2PixelFormat( m_texture->GetFormat(), componentFormat, pixelSize );
+					if ( m_texture->GetWidth() * pixelSize != mappedResource.RowPitch )
 					throw gcnew Exception( "Be careful about 128 bytes alignment: each scanline should account for proper row stride!" );
+				}
 			#endif
 			return gcnew PixelsBuffer( mappedResource, _mipLevelIndex, _arrayIndex, true );
 		}
@@ -143,8 +148,13 @@ namespace Renderer {
 		PixelsBuffer^	MapWrite( UInt32 _mipLevelIndex, UInt32 _arrayIndex, bool _ImAwareOfStrideAlignmentTo128Bytes ) {
 			const D3D11_MAPPED_SUBRESOURCE&	mappedResource = m_texture->MapWrite( _mipLevelIndex, _arrayIndex );
 			#ifdef _DEBUG
-				if ( !_ImAwareOfStrideAlignmentTo128Bytes && m_texture->GetPixelFormatDescriptor().Size() * m_texture->GetWidth() != mappedResource.RowPitch )
-					throw gcnew Exception( "Be careful about 128 bytes alignment: each scanline should account for proper row stride!" );
+				if ( !_ImAwareOfStrideAlignmentTo128Bytes ) {
+					BaseLib::COMPONENT_FORMAT	componentFormat;
+					U32							pixelSize;
+					DXGIFormat2PixelFormat( m_texture->GetFormat(), componentFormat, pixelSize );
+					if ( m_texture->GetWidth() * pixelSize != mappedResource.RowPitch )
+						throw gcnew Exception( "Be careful about 128 bytes alignment: each scanline should account for proper row stride!" );
+				}
 			#endif
 			return gcnew PixelsBuffer( mappedResource, _mipLevelIndex, _arrayIndex, false );
 		}

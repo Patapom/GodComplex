@@ -53,7 +53,7 @@ namespace ImageUtility.UnitTests
 			FindFitBFGS( responseCurve.ToArray(), ref a, ref b, ref c, ref d );
 
 			// Render
-			m_imageFile.Init( 1024, 768, ImageFile.PIXEL_FORMAT.RGBA8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
+			m_imageFile.Init( 1024, 768, PIXEL_FORMAT.RGBA8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
 			m_imageFile.Clear( new float4( 1, 1, 1, 1 ) );
 
 			float2	rangeX = new float2( 0, 255 );
@@ -251,7 +251,7 @@ namespace ImageUtility.UnitTests
 
 		void TestGraph( TEST_GRAPH_TYPE _type ) {
 			ColorProfile	sRGB = new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB );
-			m_imageFile.Init( 1024, 768, ImageFile.PIXEL_FORMAT.RGBA8, sRGB );
+			m_imageFile.Init( 1024, 768, PIXEL_FORMAT.RGBA8, sRGB );
 			m_imageFile.Clear( new float4( 1, 1, 1, 1 ) );
 //			m_imageFile.Clear( new float4( 0, 0, 0, 1 ) );
 
@@ -399,7 +399,7 @@ namespace ImageUtility.UnitTests
 					}
 
 					// Build a gradient of white points from 1500K to 8000K
-					m_imageFile.Init( 650, 32, ImageFile.PIXEL_FORMAT.RGBA8, sRGB );
+					m_imageFile.Init( 650, 32, PIXEL_FORMAT.RGBA8, sRGB );
 
 					float4	RGB = new float4( 0, 0, 0, 0 );
 					float3	XYZ = new float3( 0, 0, 0 );
@@ -490,7 +490,7 @@ if ( Math.Abs( T - whitePointCCT ) < 10.0f )
 				switch ( _type ) {
 					case BUILD_TESTS.FILL_PIXEL:
 						// Write pixel per pixel
-						m_imageFile = new ImageFile( 378, 237, ImageFile.PIXEL_FORMAT.RGB16, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
+						m_imageFile = new ImageFile( 378, 237, PIXEL_FORMAT.RGB16, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
 						for ( uint Y=0; Y < m_imageFile.Height; Y++ ) {
 							for ( uint X=0; X < m_imageFile.Width; X++ ) {
 								float	R = (float) (1+X) / m_imageFile.Width;
@@ -502,7 +502,7 @@ if ( Math.Abs( T - whitePointCCT ) < 10.0f )
 
 					case BUILD_TESTS.FILL_SCANLINE:
 						// Write scanline per scanline
-						m_imageFile = new ImageFile( 378, 237, ImageFile.PIXEL_FORMAT.RGB16, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
+						m_imageFile = new ImageFile( 378, 237, PIXEL_FORMAT.RGB16, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
 						float4[]	scanline = new float4[m_imageFile.Width];
 						for ( uint Y=0; Y < m_imageFile.Height; Y++ ) {
 							for ( uint X=0; X < m_imageFile.Width; X++ ) {
@@ -517,7 +517,7 @@ if ( Math.Abs( T - whitePointCCT ) < 10.0f )
 
 					// Buddhabrot
 					case BUILD_TESTS.ADDITIVE_BUDDHABROT: {
-						m_imageFile = new ImageFile( 378, 237, ImageFile.PIXEL_FORMAT.RGB16, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
+						m_imageFile = new ImageFile( 378, 237, PIXEL_FORMAT.RGB16, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
 						uint	W = m_imageFile.Width;
 						uint	H = m_imageFile.Height;
 						float2	Z, Z0;
@@ -577,35 +577,35 @@ if ( Math.Abs( T - whitePointCCT ) < 10.0f )
 
 					case BUILD_TESTS.STRESS_BUILD:
 
-						ImageFile.PIXEL_FORMAT[]	formats = new ImageFile.PIXEL_FORMAT[] {
-							ImageFile.PIXEL_FORMAT.R8,
-//							ImageFile.PIXEL_FORMAT.RG8,
-							ImageFile.PIXEL_FORMAT.RGB8,
-							ImageFile.PIXEL_FORMAT.RGBA8,
-							ImageFile.PIXEL_FORMAT.R16,
-//							ImageFile.PIXEL_FORMAT.RG16,
-							ImageFile.PIXEL_FORMAT.RGB16,
-							ImageFile.PIXEL_FORMAT.RGBA16,
-							ImageFile.PIXEL_FORMAT.R16F,
-							ImageFile.PIXEL_FORMAT.RG16F,
-							ImageFile.PIXEL_FORMAT.RGB16F,
-							ImageFile.PIXEL_FORMAT.RGBA16F,
-							ImageFile.PIXEL_FORMAT.R32F,
-//							ImageFile.PIXEL_FORMAT.RG32F,
-							ImageFile.PIXEL_FORMAT.RGB32F,
-							ImageFile.PIXEL_FORMAT.RGBA32F,
+						PIXEL_FORMAT[]	formats = new PIXEL_FORMAT[] {
+							PIXEL_FORMAT.R8,
+//							PIXEL_FORMAT.RG8,
+							PIXEL_FORMAT.RGB8,
+							PIXEL_FORMAT.RGBA8,
+							PIXEL_FORMAT.R16,
+//							PIXEL_FORMAT.RG16,
+							PIXEL_FORMAT.RGB16,
+							PIXEL_FORMAT.RGBA16,
+							PIXEL_FORMAT.R16F,
+							PIXEL_FORMAT.RG16F,
+							PIXEL_FORMAT.RGB16F,
+							PIXEL_FORMAT.RGBA16F,
+							PIXEL_FORMAT.R32F,
+//							PIXEL_FORMAT.RG32F,
+							PIXEL_FORMAT.RGB32F,
+							PIXEL_FORMAT.RGBA32F,
 						};
 						Random	RNG = new Random( 1 );
 						for ( int i=0; i < 1000; i++ ) {
 
 							uint	W = 100 + (uint) (1000 * RNG.NextDouble());
 							uint	H = 100 + (uint) (1000 * RNG.NextDouble());
-							ImageFile.PIXEL_FORMAT	format = formats[RNG.Next( formats.Length-1 )];
+							PIXEL_FORMAT	format = formats[RNG.Next( formats.Length-1 )];
 							m_imageFile = new ImageFile( W, H,format, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
 							m_imageFile.Dispose();
 						}
 
-						m_imageFile = new ImageFile( 1000, 1000, ImageFile.PIXEL_FORMAT.RGBA8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
+						m_imageFile = new ImageFile( 1000, 1000, PIXEL_FORMAT.RGBA8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
 						m_imageFile.Clear( new float4( 0, 1, 0.2f, 1 ) );
 						break;
 
@@ -777,7 +777,7 @@ if ( Math.Abs( T - whitePointCCT ) < 10.0f )
 
 // Check EXR save is working!
 // ImageFile	pipo = new ImageFile();
-// 			pipo.ConvertFrom( LDRImages[0], ImageFile.PIXEL_FORMAT.RGB32F );
+// 			pipo.ConvertFrom( LDRImages[0], PIXEL_FORMAT.RGB32F );
 // pipo.Save( new System.IO.FileInfo( @"..\..\Images\Out\LDR2HDR\FromJPG\Result.exr" ), ImageFile.FILE_FORMAT.EXR, ImageFile.SAVE_FLAGS.SF_EXR_DEFAULT );
 
 // Check bitmap->tone mapped image file is working
@@ -849,7 +849,7 @@ float	quality = _RAW ? 3.0f : 3.0f;
 				if ( _responseCurveOnly ) {
 					//////////////////////////////////////////////////////////////////////////////////////////////
 					// Render the response curve as a graph
- 					ImageFile	tempCurveBitmap = new ImageFile( 1024, 768, ImageFile.PIXEL_FORMAT.RGB8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
+ 					ImageFile	tempCurveBitmap = new ImageFile( 1024, 768, PIXEL_FORMAT.RGB8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
 
 					int			responseCurveSizeMax = responseCurve.Count-1;
 

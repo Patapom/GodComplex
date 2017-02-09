@@ -3,10 +3,9 @@
 
 namespace Renderer {
 
-	Texture2D::Texture2D( Device^ _device, UInt32 _width, UInt32 _height, int _arraySize, UInt32 _mipLevelsCount, PIXEL_FORMAT _pixelFormat, bool _staging, bool _UAV, array<PixelsBuffer^>^ _content ) {
- 		BaseLib::IPixelAccessor*	descriptor = NULL;
-		BaseLib::COMPONENT_FORMAT	componentFormat;
-		GetDescriptor( _pixelFormat, descriptor, componentFormat );
+	Texture2D::Texture2D( Device^ _device, UInt32 _width, UInt32 _height, int _arraySize, UInt32 _mipLevelsCount, ImageUtility::PIXEL_FORMAT _pixelFormat, ImageUtility::COMPONENT_FORMAT _componentFormat, bool _staging, bool _UAV, array<PixelsBuffer^>^ _content ) {
+ 		BaseLib::PIXEL_FORMAT		pixelFormat = BaseLib::PIXEL_FORMAT( _pixelFormat );
+		BaseLib::COMPONENT_FORMAT	componentFormat = BaseLib::COMPONENT_FORMAT( _componentFormat );
 
 		void**	ppContent = NULL;
 		if ( _content != nullptr ) {
@@ -22,7 +21,7 @@ namespace Renderer {
 			}
 		}
 
-		m_texture = new ::Texture2D( *_device->m_pDevice, _width, _height, _arraySize, _mipLevelsCount, *descriptor, componentFormat, ppContent, _staging, _UAV );
+		m_texture = new ::Texture2D( *_device->m_pDevice, _width, _height, _arraySize, _mipLevelsCount, pixelFormat, componentFormat, ppContent, _staging, _UAV );
 
 		delete[] ppContent;
 	}
@@ -32,8 +31,11 @@ namespace Renderer {
 	}
 
 	Texture2D::Texture2D( Device^ _device, UInt32 _width, UInt32 _height, UInt32 _arraySize, DEPTH_STENCIL_FORMAT _depthStencilFormat ) {
- 		BaseLib::IDepthAccessor*	pDescriptor = GetDescriptor( _depthStencilFormat );
-		m_texture = new ::Texture2D( *_device->m_pDevice, _width, _height, _arraySize, *pDescriptor );
+ 		BaseLib::PIXEL_FORMAT			pixelFormat;
+		BaseLib::DEPTH_COMPONENT_FORMAT	componentFormat;
+		GetDescriptor( _depthStencilFormat, pixelFormat, componentFormat );
+
+		m_texture = new ::Texture2D( *_device->m_pDevice, _width, _height, _arraySize, pixelFormat, componentFormat );
 	}
 
 	void	Texture2D::Set( UInt32 _slotIndex, View2D^ _view )			{ m_texture->Set( _slotIndex, true, _view != nullptr ? _view->SRV : NULL ); }

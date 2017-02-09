@@ -54,78 +54,6 @@ bool	ImageFile::HasAlpha() const {
 	return false;
 }
 
-const IPixelAccessor&	ImageFile::PixelFormat2Accessor( PIXEL_FORMAT _pixelFormat ) {
-	switch ( _pixelFormat ) {
-		// 8-bits
-	case PIXEL_FORMAT::R8:			return PF_R8::Descriptor;
-	case PIXEL_FORMAT::RG8:			return PF_RG8::Descriptor;
-	case PIXEL_FORMAT::RGB8:		return PF_RGB8::Descriptor;
-	case PIXEL_FORMAT::RGBA8:		return PF_RGBA8::Descriptor;
-
-		// 16-bits
-	case PIXEL_FORMAT::R16:			return PF_R16::Descriptor;
-	case PIXEL_FORMAT::RG16:		return PF_RG16::Descriptor;
-	case PIXEL_FORMAT::RGB16:		return PF_RGB16::Descriptor;
-	case PIXEL_FORMAT::RGBA16:		return PF_RGBA16::Descriptor;
-
-		// 16-bits half-precision floating points
-	case PIXEL_FORMAT::R16F:		return PF_R16F::Descriptor;
-	case PIXEL_FORMAT::RG16F:		return PF_RG16F::Descriptor;
-	case PIXEL_FORMAT::RGB16F:		return PF_RGB16F::Descriptor;
-	case PIXEL_FORMAT::RGBA16F:		return PF_RGBA16F::Descriptor;
-
-		// 32-bits
-	case PIXEL_FORMAT::R32F:		return PF_R32F::Descriptor;
- 	case PIXEL_FORMAT::RG32F:		return PF_RG32F::Descriptor;
-	case PIXEL_FORMAT::RGB32F:		return PF_RGB32F::Descriptor;
-	case PIXEL_FORMAT::RGBA32F:		return PF_RGBA32F::Descriptor;
-	}
-
-	return PF_Unknown::Descriptor;
-}
-ImageFile::PIXEL_FORMAT	ImageFile::Accessor2PixelFormat( const IPixelAccessor& _pixelAccessor ) {
-	switch ( _pixelAccessor.Size() ) {
-	case 1:
-		if ( &_pixelAccessor == &PF_R8::Descriptor ) return PIXEL_FORMAT::R8;
-		break;
-	case 2:
-		if ( &_pixelAccessor == &PF_RG8::Descriptor ) return PIXEL_FORMAT::RG8;
-		if ( &_pixelAccessor == &PF_R16::Descriptor ) return PIXEL_FORMAT::R16;
-		if ( &_pixelAccessor == &PF_R16F::Descriptor ) return PIXEL_FORMAT::R16F;
-		break;
-	case 3:
-		if ( &_pixelAccessor == &PF_RGB8::Descriptor ) return PIXEL_FORMAT::RGB8;
-		break;
-	case 4:
-		if ( &_pixelAccessor == &PF_RGBA8::Descriptor ) return PIXEL_FORMAT::RGBA8;
-		if ( &_pixelAccessor == &PF_RG16::Descriptor ) return PIXEL_FORMAT::RG16;
-		if ( &_pixelAccessor == &PF_RG16F::Descriptor ) return PIXEL_FORMAT::RG16F;
-//		if ( &_pixelAccessor == &PF_R32::Descriptor ) return PIXEL_FORMAT::R32;
-		if ( &_pixelAccessor == &PF_R32F::Descriptor ) return PIXEL_FORMAT::R32F;
-		break;
-	case 6:
-		if ( &_pixelAccessor == &PF_RGB16::Descriptor ) return PIXEL_FORMAT::RGB16;
-		if ( &_pixelAccessor == &PF_RGB16F::Descriptor ) return PIXEL_FORMAT::RGB16F;
-		break;
-	case 8:
-		if ( &_pixelAccessor == &PF_RGBA16::Descriptor ) return PIXEL_FORMAT::RGBA16;
-		if ( &_pixelAccessor == &PF_RGBA16F::Descriptor ) return PIXEL_FORMAT::RGBA16F;
-//		if ( &_pixelAccessor == &PF_RG32::Descriptor ) return PIXEL_FORMAT::RG32;
-		if ( &_pixelAccessor == &PF_RG32F::Descriptor ) return PIXEL_FORMAT::RG32F;
-		break;
-	case 12:
-//		if ( &_pixelAccessor == &PF_RGB32::Descriptor ) return PIXEL_FORMAT::RGB32;
-		if ( &_pixelAccessor == &PF_RGB32F::Descriptor ) return PIXEL_FORMAT::RGB32F;
-		break;
-	case 16:
-//		if ( &_pixelAccessor == &PF_RGBA32::Descriptor ) return PIXEL_FORMAT::RGBA32;
-		if ( &_pixelAccessor == &PF_RGBA32F::Descriptor ) return PIXEL_FORMAT::RGBA32F;
-		break;
-	}
-
-	return PIXEL_FORMAT::UNKNOWN;
-}
-
 void	ImageFile::Get( U32 _X, U32 _Y, bfloat4& _color ) const {
 	const unsigned	pitch  = FreeImage_GetPitch( m_bitmap );
 	const U8*		bits = (BYTE*) FreeImage_GetBits( m_bitmap );
@@ -170,7 +98,7 @@ void	ImageFile::Init( U32 _width, U32 _height, PIXEL_FORMAT _format, const Color
 	Exit();
 
 	m_pixelFormat = _format;
-	m_pixelAccessor = &PixelFormat2Accessor( _format );
+	m_pixelAccessor = &BaseLib::PixelFormat2PixelAccessor( _format );
 
 	FREE_IMAGE_TYPE	bitmapType = PixelFormat2FIT( _format );
 	int				BPP = int( PixelFormat2BPP( _format ) );
@@ -216,7 +144,7 @@ void	ImageFile::Load( const wchar_t* _fileName, FILE_FORMAT _format ) {
 	FreeImage_FlipVertical( m_bitmap );
 
 	m_pixelFormat = Bitmap2PixelFormat( *m_bitmap );
-	m_pixelAccessor = &PixelFormat2Accessor( m_pixelFormat );
+	m_pixelAccessor = &PixelFormat2PixelAccessor( m_pixelFormat );
 
 	m_metadata.RetrieveFromImage( *this );
 }
@@ -242,7 +170,7 @@ void	ImageFile::Load( const void* _fileContent, U64 _fileSize, FILE_FORMAT _form
 	FreeImage_FlipVertical( m_bitmap );
 
 	m_pixelFormat = Bitmap2PixelFormat( *m_bitmap );
-	m_pixelAccessor = &PixelFormat2Accessor( m_pixelFormat );
+	m_pixelAccessor = &PixelFormat2PixelAccessor( m_pixelFormat );
 
 	m_metadata.RetrieveFromImage( *this );
 }
@@ -380,7 +308,7 @@ void	ImageFile::ConvertFrom( const ImageFile& _source, PIXEL_FORMAT _targetForma
 
 	// Get pixel format from bitmap
 	m_pixelFormat = Bitmap2PixelFormat( *m_bitmap );
-	m_pixelAccessor = &PixelFormat2Accessor( m_pixelFormat );
+	m_pixelAccessor = &PixelFormat2PixelAccessor( m_pixelFormat );
 
 	// Copy metadata
 	m_metadata = _source.m_metadata;
@@ -413,8 +341,8 @@ void	ImageFile::ToneMapFrom( const ImageFile& _source, toneMapper_t _toneMapper 
 	U32	pixelSize = accessor.Size();
 
 	// Convert source
-	if (	_source.m_pixelFormat == ImageFile::PIXEL_FORMAT::R16F
-		 || _source.m_pixelFormat == ImageFile::PIXEL_FORMAT::R32F ) {
+	if (	_source.m_pixelFormat == PIXEL_FORMAT::R16F
+		 || _source.m_pixelFormat == PIXEL_FORMAT::R32F ) {
 		// Convert to R8
 		m_bitmap = FreeImage_Allocate( W, H, 8, FI_RGBA_RED_MASK, 0, 0 );
 
@@ -444,8 +372,8 @@ void	ImageFile::ToneMapFrom( const ImageFile& _source, toneMapper_t _toneMapper 
 			dst_bits += dst_pitch;
 		}
 	// ===============================================================================
-	} else if (	_source.m_pixelFormat == ImageFile::PIXEL_FORMAT::RG16F
-			 || _source.m_pixelFormat == ImageFile::PIXEL_FORMAT::RG32F ) {
+	} else if (	_source.m_pixelFormat == PIXEL_FORMAT::RG16F
+			 || _source.m_pixelFormat == PIXEL_FORMAT::RG32F ) {
 		// Convert to RG8
 		m_bitmap = FreeImage_Allocate( W, H, 16, FI_RGBA_RED_MASK, FI_RGBA_GREEN_MASK, 0 );
 
@@ -476,8 +404,8 @@ void	ImageFile::ToneMapFrom( const ImageFile& _source, toneMapper_t _toneMapper 
 			dst_bits += dst_pitch;
 		}
 	// ===============================================================================
-	} else if (	_source.m_pixelFormat == ImageFile::PIXEL_FORMAT::RGB16F
-			 || _source.m_pixelFormat == ImageFile::PIXEL_FORMAT::RGB32F ) {
+	} else if (	_source.m_pixelFormat == PIXEL_FORMAT::RGB16F
+			 || _source.m_pixelFormat == PIXEL_FORMAT::RGB32F ) {
 		// Convert to RGB8
 		m_bitmap = FreeImage_Allocate( W, H, 24, FI_RGBA_RED_MASK, FI_RGBA_GREEN_MASK, FI_RGBA_BLUE_MASK );
 
@@ -509,8 +437,8 @@ void	ImageFile::ToneMapFrom( const ImageFile& _source, toneMapper_t _toneMapper 
 			dst_bits += dst_pitch;
 		}
 	// ===============================================================================
-	} else if (	_source.m_pixelFormat == ImageFile::PIXEL_FORMAT::RGBA16F
-			 || _source.m_pixelFormat == ImageFile::PIXEL_FORMAT::RGBA32F ) {
+	} else if (	_source.m_pixelFormat == PIXEL_FORMAT::RGBA16F
+			 || _source.m_pixelFormat == PIXEL_FORMAT::RGBA32F ) {
 		// Convert to RGBA8
 		m_bitmap = FreeImage_Allocate( W, H, 32, FI_RGBA_RED_MASK, FI_RGBA_GREEN_MASK, FI_RGBA_BLUE_MASK );
 
@@ -548,7 +476,7 @@ void	ImageFile::ToneMapFrom( const ImageFile& _source, toneMapper_t _toneMapper 
 
 	// Get pixel format from bitmap
 	m_pixelFormat = Bitmap2PixelFormat( *m_bitmap );
-	m_pixelAccessor = &PixelFormat2Accessor( m_pixelFormat );
+	m_pixelAccessor = &PixelFormat2PixelAccessor( m_pixelFormat );
 
 	// Copy metadata
 	m_metadata = _source.m_metadata;
@@ -723,52 +651,52 @@ U32	ImageFile::PixelFormat2BPP( PIXEL_FORMAT _pixelFormat ) {
 FREE_IMAGE_TYPE	ImageFile::PixelFormat2FIT( PIXEL_FORMAT _pixelFormat ) {
 	switch ( _pixelFormat ) {
 		// 8-bits
-		case ImageFile::PIXEL_FORMAT::R8:		return FIT_BITMAP;
-		case ImageFile::PIXEL_FORMAT::RG8:		return FIT_BITMAP;	// Here we unfortunately have to use a larger format to accommodate for our 2 components, otherwise FreeImage thinks it's R5G6B5! :(
-		case ImageFile::PIXEL_FORMAT::RGB8:		return FIT_BITMAP;
-		case ImageFile::PIXEL_FORMAT::RGBA8:	return FIT_BITMAP;
+		case PIXEL_FORMAT::R8:		return FIT_BITMAP;
+		case PIXEL_FORMAT::RG8:		return FIT_BITMAP;	// Here we unfortunately have to use a larger format to accommodate for our 2 components, otherwise FreeImage thinks it's R5G6B5! :(
+		case PIXEL_FORMAT::RGB8:	return FIT_BITMAP;
+		case PIXEL_FORMAT::RGBA8:	return FIT_BITMAP;
 		// 16-bits
-		case ImageFile::PIXEL_FORMAT::R16:		return FIT_UINT16;
-		case ImageFile::PIXEL_FORMAT::RG16:		return FIT_RGB16;	// Here we unfortunately have to use a larger format to accommodate for our 2 components
-		case ImageFile::PIXEL_FORMAT::RGB16:	return FIT_RGB16;
-		case ImageFile::PIXEL_FORMAT::RGBA16:	return FIT_RGBA16;
+		case PIXEL_FORMAT::R16:		return FIT_UINT16;
+		case PIXEL_FORMAT::RG16:	return FIT_RGB16;	// Here we unfortunately have to use a larger format to accommodate for our 2 components
+		case PIXEL_FORMAT::RGB16:	return FIT_RGB16;
+		case PIXEL_FORMAT::RGBA16:	return FIT_RGBA16;
 		// 16-bits half-precision floating points
-		case ImageFile::PIXEL_FORMAT::R16F:		return FIT_UINT16;
-		case ImageFile::PIXEL_FORMAT::RG16F:	return FIT_RGB16;	// Here we unfortunately have to use a larger format to accommodate for our 2 components
-		case ImageFile::PIXEL_FORMAT::RGB16F:	return FIT_RGB16;
-		case ImageFile::PIXEL_FORMAT::RGBA16F:	return FIT_RGBA16;
+		case PIXEL_FORMAT::R16F:	return FIT_UINT16;
+		case PIXEL_FORMAT::RG16F:	return FIT_RGB16;	// Here we unfortunately have to use a larger format to accommodate for our 2 components
+		case PIXEL_FORMAT::RGB16F:	return FIT_RGB16;
+		case PIXEL_FORMAT::RGBA16F:	return FIT_RGBA16;
 		// 32-bits
-		case ImageFile::PIXEL_FORMAT::R32F:		return FIT_FLOAT;
-		case ImageFile::PIXEL_FORMAT::RG32F:	return FIT_RGBF;	// Here we unfortunately have to use a larger format to accommodate for our 2 components
-		case ImageFile::PIXEL_FORMAT::RGB32F:	return FIT_RGBF;
-		case ImageFile::PIXEL_FORMAT::RGBA32F:	return FIT_RGBAF;
+		case PIXEL_FORMAT::R32F:	return FIT_FLOAT;
+		case PIXEL_FORMAT::RG32F:	return FIT_RGBF;	// Here we unfortunately have to use a larger format to accommodate for our 2 components
+		case PIXEL_FORMAT::RGB32F:	return FIT_RGBF;
+		case PIXEL_FORMAT::RGBA32F:	return FIT_RGBAF;
 	}
 
 	return FIT_UNKNOWN;
 }
 
-ImageFile::PIXEL_FORMAT	ImageFile::Bitmap2PixelFormat( const FIBITMAP& _bitmap ) {
+PIXEL_FORMAT	ImageFile::Bitmap2PixelFormat( const FIBITMAP& _bitmap ) {
 	FREE_IMAGE_TYPE	type = FreeImage_GetImageType( const_cast< FIBITMAP* >( &_bitmap ) );
 	switch ( type ) {
 		// 8-bits
 		case FIT_BITMAP: {
 			U32	bpp = FreeImage_GetBPP( const_cast< FIBITMAP* >( &_bitmap ) );
 			switch ( bpp ) {
-				case 8:							return PIXEL_FORMAT::R8;
-				case 16:						return PIXEL_FORMAT::RG8;	// Supported as RGBA8 with padding, otherwise FreeImage thinks it's R5G6B5! :(
-				case 24:						return PIXEL_FORMAT::RGB8;
-				case 32:						return PIXEL_FORMAT::RGBA8;
+				case 8:				return PIXEL_FORMAT::R8;
+				case 16:			return PIXEL_FORMAT::RG8;	// Supported as RGBA8 with padding, otherwise FreeImage thinks it's R5G6B5! :(
+				case 24:			return PIXEL_FORMAT::RGB8;
+				case 32:			return PIXEL_FORMAT::RGBA8;
 			}
 			break;
 		}
 		// 16-bits
-		case FIT_UINT16:						return PIXEL_FORMAT::R16;
-		case FIT_RGB16:							return PIXEL_FORMAT::RGB16;
-		case FIT_RGBA16:						return PIXEL_FORMAT::RGBA16;
+		case FIT_UINT16:			return PIXEL_FORMAT::R16;
+		case FIT_RGB16:				return PIXEL_FORMAT::RGB16;
+		case FIT_RGBA16:			return PIXEL_FORMAT::RGBA16;
 		// 32-bits
-		case FIT_FLOAT:							return PIXEL_FORMAT::R32F;
-		case FIT_RGBF:							return PIXEL_FORMAT::RGB32F;
-		case FIT_RGBAF:							return PIXEL_FORMAT::RGBA32F;
+		case FIT_FLOAT:				return PIXEL_FORMAT::R32F;
+		case FIT_RGBF:				return PIXEL_FORMAT::RGB32F;
+		case FIT_RGBAF:				return PIXEL_FORMAT::RGBA32F;
 	}
 
 	return PIXEL_FORMAT::UNKNOWN;
@@ -1249,193 +1177,6 @@ void	ImageFile::ImageCoordinates2RangedCoordinates( const bfloat2& _rangeX, cons
 //////////////////////////////////////////////////////////////////////////
 // DDS-Related Helpers
 //
-ImageFile::PIXEL_FORMAT	ImageFile::DXGIFormat2PixelFormat( DXGI_FORMAT _sourceFormat, COMPONENT_FORMAT& _componentFormat, U32& _pixelSize ) {
-	_pixelSize = 0;
-	_componentFormat = COMPONENT_FORMAT::AUTO;
-
-	switch ( _sourceFormat ) {
-		case DXGI_FORMAT_R8_UINT:				_pixelSize = 1; _componentFormat = COMPONENT_FORMAT::UINT; return PIXEL_FORMAT::R8;
-		case DXGI_FORMAT_R8_SINT:				_pixelSize = 1; _componentFormat = COMPONENT_FORMAT::SINT; return PIXEL_FORMAT::R8;
-		case DXGI_FORMAT_R8_SNORM:				_pixelSize = 1; _componentFormat = COMPONENT_FORMAT::SNORM; return PIXEL_FORMAT::R8;
-		case DXGI_FORMAT_R8_UNORM:				_pixelSize = 1; _componentFormat = COMPONENT_FORMAT::UNORM; return PIXEL_FORMAT::R8;
-
-		case DXGI_FORMAT_R8G8_UINT:				_pixelSize = 2; _componentFormat = COMPONENT_FORMAT::UINT; return PIXEL_FORMAT::RG8;
-		case DXGI_FORMAT_R8G8_SINT:				_pixelSize = 2; _componentFormat = COMPONENT_FORMAT::SINT; return PIXEL_FORMAT::RG8;
-		case DXGI_FORMAT_R8G8_SNORM:			_pixelSize = 2; _componentFormat = COMPONENT_FORMAT::SNORM; return PIXEL_FORMAT::RG8;
-		case DXGI_FORMAT_R8G8_UNORM:			_pixelSize = 2; _componentFormat = COMPONENT_FORMAT::UNORM; return PIXEL_FORMAT::RG8;
-
-		case DXGI_FORMAT_R8G8B8A8_UINT:			_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::UINT; return PIXEL_FORMAT::RGBA8;
-		case DXGI_FORMAT_R8G8B8A8_SINT:			_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::SINT; return PIXEL_FORMAT::RGBA8;
-		case DXGI_FORMAT_R8G8B8A8_SNORM:		_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::SNORM; return PIXEL_FORMAT::RGBA8;
-		case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB:	_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::UNORM_sRGB; return PIXEL_FORMAT::RGBA8;
-		case DXGI_FORMAT_R8G8B8A8_UNORM:		_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::UNORM; return PIXEL_FORMAT::RGBA8;
-
-		case DXGI_FORMAT_R16_UINT:				_pixelSize = 2; _componentFormat = COMPONENT_FORMAT::UINT; return PIXEL_FORMAT::R16;
-		case DXGI_FORMAT_R16_SINT:				_pixelSize = 2; _componentFormat = COMPONENT_FORMAT::SINT; return PIXEL_FORMAT::R16;
-		case DXGI_FORMAT_R16_SNORM:				_pixelSize = 2; _componentFormat = COMPONENT_FORMAT::SNORM; return PIXEL_FORMAT::R16;
-		case DXGI_FORMAT_R16_UNORM:				_pixelSize = 2; _componentFormat = COMPONENT_FORMAT::UNORM; return PIXEL_FORMAT::R16;
-		case DXGI_FORMAT_R16_FLOAT:				_pixelSize = 2; _componentFormat = COMPONENT_FORMAT::AUTO; return PIXEL_FORMAT::R16F;
-
-		case DXGI_FORMAT_R16G16_UINT:			_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::UINT; return PIXEL_FORMAT::RG16;
-		case DXGI_FORMAT_R16G16_SINT:			_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::SINT; return PIXEL_FORMAT::RG16;
-		case DXGI_FORMAT_R16G16_SNORM:			_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::SNORM; return PIXEL_FORMAT::RG16;
-		case DXGI_FORMAT_R16G16_UNORM:			_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::UNORM; return PIXEL_FORMAT::RG16;
-		case DXGI_FORMAT_R16G16_FLOAT:			_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::AUTO; return PIXEL_FORMAT::RG16F;
-
-		case DXGI_FORMAT_R16G16B16A16_UINT:		_pixelSize = 8; _componentFormat = COMPONENT_FORMAT::UINT; return PIXEL_FORMAT::RGBA16;
-		case DXGI_FORMAT_R16G16B16A16_SINT:		_pixelSize = 8; _componentFormat = COMPONENT_FORMAT::SINT; return PIXEL_FORMAT::RGBA16;
-		case DXGI_FORMAT_R16G16B16A16_SNORM:	_pixelSize = 8; _componentFormat = COMPONENT_FORMAT::SNORM; return PIXEL_FORMAT::RGBA16;
-		case DXGI_FORMAT_R16G16B16A16_UNORM:	_pixelSize = 8; _componentFormat = COMPONENT_FORMAT::UNORM; return PIXEL_FORMAT::RGBA16;
-		case DXGI_FORMAT_R16G16B16A16_FLOAT:	_pixelSize = 8; _componentFormat = COMPONENT_FORMAT::AUTO; return PIXEL_FORMAT::RGBA16F;
-
-// 		case DXGI_FORMAT_R32_UINT:				_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::UINT; return PIXEL_FORMAT::R32;	// Unsupported!
-// 		case DXGI_FORMAT_R32_SINT:				_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::SINT; return PIXEL_FORMAT::R32;	// Unsupported!
-		case DXGI_FORMAT_R32_FLOAT:				_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::AUTO; return PIXEL_FORMAT::R32F;
-
-// 		case DXGI_FORMAT_R32G32_UINT:			_pixelSize = 8; _componentFormat = COMPONENT_FORMAT::UINT; return PIXEL_FORMAT::RG32;	// Unsupported!
-// 		case DXGI_FORMAT_R32G32_SINT:			_pixelSize = 8; _componentFormat = COMPONENT_FORMAT::SINT; return PIXEL_FORMAT::RG32;	// Unsupported!
-		case DXGI_FORMAT_R32G32_FLOAT:			_pixelSize = 8; _componentFormat = COMPONENT_FORMAT::AUTO; return PIXEL_FORMAT::RG32F;
-
-// 		case DXGI_FORMAT_R32G32B32A32_UINT:		_pixelSize = 16; _componentFormat = COMPONENT_FORMAT::UINT; return PIXEL_FORMAT::RGBA32;	// Unsupported!
-// 		case DXGI_FORMAT_R32G32B32A32_SINT:		_pixelSize = 16; _componentFormat = COMPONENT_FORMAT::SINT; return PIXEL_FORMAT::RGBA32;	// Unsupported!
-		case DXGI_FORMAT_R32G32B32A32_FLOAT:	_pixelSize = 16; _componentFormat = COMPONENT_FORMAT::AUTO; return PIXEL_FORMAT::RGBA32F;
-
-		// Compressed formats should be handled as raw buffers
-		case DXGI_FORMAT_BC1_UNORM:
-		case DXGI_FORMAT_BC1_UNORM_SRGB:
-		case DXGI_FORMAT_BC2_UNORM:
-		case DXGI_FORMAT_BC2_UNORM_SRGB:
-		case DXGI_FORMAT_BC3_UNORM:
-		case DXGI_FORMAT_BC3_UNORM_SRGB:
-		case DXGI_FORMAT_BC4_UNORM:
-		case DXGI_FORMAT_BC4_SNORM:
-		case DXGI_FORMAT_BC5_UNORM:
-		case DXGI_FORMAT_BC5_SNORM:
-		case DXGI_FORMAT_BC6H_UF16:
-		case DXGI_FORMAT_BC6H_SF16:
-		case DXGI_FORMAT_BC7_UNORM:
-		case DXGI_FORMAT_BC7_UNORM_SRGB:
-			_pixelSize = 0; return PIXEL_FORMAT::RAW_BUFFER;
-	}
-
-	return PIXEL_FORMAT::UNKNOWN;
-}
-
-DXGI_FORMAT	ImageFile::PixelFormat2DXGIFormat( PIXEL_FORMAT _sourceFormat, COMPONENT_FORMAT _componentFormat ) {
-	switch ( _sourceFormat ) {
-		// 8-bits formats
-		case PIXEL_FORMAT::R8:
-			switch ( _componentFormat ) {
-				case COMPONENT_FORMAT::AUTO:
-				case COMPONENT_FORMAT::UNORM:	return DXGI_FORMAT_R8_UNORM; break;
-				case COMPONENT_FORMAT::SNORM:	return DXGI_FORMAT_R8_SNORM; break;
-				case COMPONENT_FORMAT::UINT:	return DXGI_FORMAT_R8_UINT; break;
-				case COMPONENT_FORMAT::SINT:	return DXGI_FORMAT_R8_SINT; break;
-			}
-			break;
-
-		case PIXEL_FORMAT::RG8:
-			switch ( _componentFormat ) {
-				case COMPONENT_FORMAT::AUTO:
-				case COMPONENT_FORMAT::UNORM:	return DXGI_FORMAT_R8G8_UNORM; break;
-				case COMPONENT_FORMAT::SNORM:	return DXGI_FORMAT_R8G8_SNORM; break;
-				case COMPONENT_FORMAT::UINT:	return DXGI_FORMAT_R8G8_UINT; break;
-				case COMPONENT_FORMAT::SINT:	return DXGI_FORMAT_R8G8_SINT; break;
-			}
-			break;
-
-		case PIXEL_FORMAT::RGBA8:
-			switch ( _componentFormat ) {
-				case COMPONENT_FORMAT::AUTO:
-				case COMPONENT_FORMAT::UNORM_sRGB:	return DXGI_FORMAT_R8G8B8A8_UNORM_SRGB; break;
-				case COMPONENT_FORMAT::UNORM:	return DXGI_FORMAT_R8G8B8A8_UNORM; break;
-				case COMPONENT_FORMAT::SNORM:	return DXGI_FORMAT_R8G8B8A8_SNORM; break;
-				case COMPONENT_FORMAT::UINT:	return DXGI_FORMAT_R8G8B8A8_UINT; break;
-				case COMPONENT_FORMAT::SINT:	return DXGI_FORMAT_R8G8B8A8_SINT; break;
-			}
-			break;
-
-		// 16-bits formats
-		case PIXEL_FORMAT::R16:
-			switch ( _componentFormat ) {
-				case COMPONENT_FORMAT::AUTO:
-				case COMPONENT_FORMAT::UNORM:	return DXGI_FORMAT_R16_UNORM; break;
-				case COMPONENT_FORMAT::SNORM:	return DXGI_FORMAT_R16_SNORM; break;
-				case COMPONENT_FORMAT::UINT:	return DXGI_FORMAT_R16_UINT; break;
-				case COMPONENT_FORMAT::SINT:	return DXGI_FORMAT_R16_SINT; break;
-			}
-			break;
-		case PIXEL_FORMAT::R16F:
-			return DXGI_FORMAT_R16_FLOAT;
-			break;
-
-		case PIXEL_FORMAT::RG16:
-			switch ( _componentFormat ) {
-				case COMPONENT_FORMAT::AUTO:
-				case COMPONENT_FORMAT::UNORM:	return DXGI_FORMAT_R16G16_UNORM; break;
-				case COMPONENT_FORMAT::SNORM:	return DXGI_FORMAT_R16G16_SNORM; break;
-				case COMPONENT_FORMAT::UINT:	return DXGI_FORMAT_R16G16_UINT; break;
-				case COMPONENT_FORMAT::SINT:	return DXGI_FORMAT_R16G16_SINT; break;
-			}
-			break;
-		case PIXEL_FORMAT::RG16F:
-			return DXGI_FORMAT_R16G16_FLOAT;
-			break;
-
-		case PIXEL_FORMAT::RGBA16:
-			switch ( _componentFormat ) {
-				case COMPONENT_FORMAT::AUTO:
-				case COMPONENT_FORMAT::UNORM:	return DXGI_FORMAT_R16G16B16A16_UNORM; break;
-				case COMPONENT_FORMAT::SNORM:	return DXGI_FORMAT_R16G16B16A16_SNORM; break;
-				case COMPONENT_FORMAT::UINT:	return DXGI_FORMAT_R16G16B16A16_UINT; break;
-				case COMPONENT_FORMAT::SINT:	return DXGI_FORMAT_R16G16B16A16_SINT; break;
-			}
-			break;
-		case PIXEL_FORMAT::RGBA16F:
-			return DXGI_FORMAT_R16G16B16A16_FLOAT;
-			break;
-
-		// 32-bits formats
-// 		case PIXEL_FORMAT::R32:	// Unsupported
-// 			switch ( _componentFormat ) {
-// // 				case COMPONENT_FORMAT::UNORM:	return DXGI_FORMAT_R32_UNORM; break;	// Doesn't exist anyway
-// // 				case COMPONENT_FORMAT::SNORM:	return DXGI_FORMAT_R32_SNORM; break;	// Doesn't exist anyway
-// 				case COMPONENT_FORMAT::UINT:		return DXGI_FORMAT_R32_UINT; break;
-// 				case COMPONENT_FORMAT::SINT:		return DXGI_FORMAT_R32_SINT; break;
-// 			}
-// 			break;
-		case PIXEL_FORMAT::R32F:
-			return DXGI_FORMAT_R32_FLOAT;
-			break;
-
-// 		case PIXEL_FORMAT::RG32:	// Unsupported
-// 			switch ( _componentFormat ) {
-// // 				case COMPONENT_FORMAT::UNORM:	return DXGI_FORMAT_R32G32_UNORM; break;	// Doesn't exist anyway
-// // 				case COMPONENT_FORMAT::SNORM:	return DXGI_FORMAT_R32G32_SNORM; break;	// Doesn't exist anyway
-// 				case COMPONENT_FORMAT::UINT:		return DXGI_FORMAT_R32G32_UINT; break;
-// 				case COMPONENT_FORMAT::SINT:		return DXGI_FORMAT_R32G32_SINT; break;
-// 			}
-// 			break;
-		case PIXEL_FORMAT::RG32F:
-			return DXGI_FORMAT_R32G32_FLOAT;
-			break;
-
-// 		case PIXEL_FORMAT::RGBA32:	// Unsupported
-// 			switch ( _componentFormat ) {
-// // 				case COMPONENT_FORMAT::UNORM:	return DXGI_FORMAT_R32G32B32A32_UNORM; break;	// Doesn't exist anyway
-// // 				case COMPONENT_FORMAT::SNORM:	return DXGI_FORMAT_R32G32B32A32_SNORM; break;	// Doesn't exist anyway
-// 				case COMPONENT_FORMAT::UINT:		return DXGI_FORMAT_R32G32B32A32_UINT; break;
-// 				case COMPONENT_FORMAT::SINT:		return DXGI_FORMAT_R32G32B32A32_SINT; break;
-// 			}
-// 			break;
-		case PIXEL_FORMAT::RGBA32F:
-			return DXGI_FORMAT_R32G32B32A32_FLOAT;
-			break;
-	}
-
-	return DXGI_FORMAT_UNKNOWN;
-}
-
 static void		Copy( const DirectX::Image& _source, ImageFile& _target ) {
 	if (	_source.width != _target.Width()
 		||	_source.height != _target.Height() ) {
@@ -1559,7 +1300,7 @@ void	ImageFile::DDSLoad( const void* _blindPointerImage, const void* _blindPoint
 					return mipImage->pixels;
 				}
 			} getSliceSize( image );
-			_images.AllocateRawBuffers( getSliceSize );
+			_images.AllocateRawBuffers( format, getSliceSize );
 		}
 
 	} else {
@@ -1593,10 +1334,10 @@ void	ImageFile::DDSLoad( const void* _blindPointerImage, const void* _blindPoint
 					_rowPitch = U32(mipImage->rowPitch);
 					_slicePitch = U32(mipImage->slicePitch);
 
-					return mipImage->pixels;	// DirectXTex stores the pixels into a contiguous buffer so it's okay to give the first slice's pointer here
+					return mipImage->pixels;	// DirectXTex stores the pixels into a contiguous buffer so it's okay to only give the first slice's pointer here
 				}
 			} getMipSize( image );
-			_images.AllocateRawBuffers( getMipSize );
+			_images.AllocateRawBuffers( format, getMipSize );
 		}
 	}
 }

@@ -3,15 +3,14 @@
 #include "Texture2D.h"
 #include "Texture3D.h"
 
-Texture3D::Texture3D( Device& _Device, U32 _width, U32 _height, U32 _depth, U32 _mipLevelsCount, const BaseLib::IPixelAccessor& _format, BaseLib::COMPONENT_FORMAT _componentFormat, const void* const* _ppContent, bool _staging, bool _UAV )
+Texture3D::Texture3D( Device& _Device, U32 _width, U32 _height, U32 _depth, U32 _mipLevelsCount, BaseLib::PIXEL_FORMAT _format, BaseLib::COMPONENT_FORMAT _componentFormat, const void* const* _ppContent, bool _staging, bool _UAV )
 	: Component( _Device )
 	, m_width( _width )
 	, m_height( _height )
 	, m_depth( _depth )
-	, m_pixelFormat( &_format )
-	, m_componentFormat( _componentFormat )
 	, m_mipLevelsCount( _mipLevelsCount )
 {
+	m_format = PixelFormat2DXGIFormat( _format, _componentFormat );
 	Init( _ppContent, _staging, _UAV );
 }
 
@@ -31,10 +30,8 @@ Texture3D::Texture3D( Device& _device, const ImageUtilityLib::ImagesMatrix& _ima
 	ASSERT( m_height <= MAX_TEXTURE_SIZE, "Texture size out of range!" );
 	ASSERT( m_depth <= MAX_TEXTURE_SIZE, "Texture size out of range!" );
 
-	// Retrieve image format
-	m_pixelFormat = &ImageUtilityLib::ImageFile::PixelFormat2Accessor( _images.GetFormat() );
-	m_componentFormat = _componentFormat;
-	DXGI_FORMAT	textureFormat = ImageUtilityLib::ImageFile::PixelFormat2DXGIFormat( _images.GetFormat(), _componentFormat );
+	// Retrieve texture format
+	m_format = PixelFormat2DXGIFormat( _images.GetFormat(), _componentFormat );
 
 	// Prepare main descriptor
 	D3D11_TEXTURE3D_DESC	desc;
@@ -42,7 +39,7 @@ Texture3D::Texture3D( Device& _device, const ImageUtilityLib::ImagesMatrix& _ima
 	desc.Height = m_height;
 	desc.Depth = m_depth;
 	desc.MipLevels = m_mipLevelsCount;
-	desc.Format = textureFormat;
+	desc.Format = m_format;
 	desc.Usage = D3D11_USAGE_IMMUTABLE;
 	desc.CPUAccessFlags = D3D11_CPU_ACCESS_FLAG( 0 );
 	desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
@@ -120,12 +117,16 @@ void	Texture3D::Init( const void* const* _ppContent, bool _bStaging, bool _bUnOr
 
 	m_mipLevelsCount = ComputeMipLevelsCount( m_width, m_height, m_depth, m_mipLevelsCount );
 
+	BaseLib::COMPONENT_FORMAT	componentFormat;
+	U32	pixelSize;
+	DXGIFormat2PixelFormat( m_format, componentFormat, pixelSize );
+
 	D3D11_TEXTURE3D_DESC	Desc;
 	Desc.Width = m_width;
 	Desc.Height = m_height;
 	Desc.Depth = m_depth;
 	Desc.MipLevels = m_mipLevelsCount;
-	Desc.Format = Texture2D::PixelAccessor2DXGIFormat( *m_pixelFormat, m_componentFormat );
+	Desc.Format = m_format;
 	Desc.MiscFlags = D3D11_RESOURCE_MISC_FLAG( 0 );
 
 	if ( _bStaging ) {
@@ -144,7 +145,7 @@ void	Texture3D::Init( const void* const* _ppContent, bool _bStaging, bool _bUnOr
 		U32	H = m_height;
 		U32	D = m_depth;
 		for ( U32 mipLevelIndex=0; mipLevelIndex < m_mipLevelsCount; mipLevelIndex++ ) {
-			U32	rowPitch = _pMipDescriptors != NULL ? _pMipDescriptors[mipLevelIndex].rowPitch : W * m_pixelFormat->Size();
+			U32	rowPitch = _pMipDescriptors != NULL ? _pMipDescriptors[mipLevelIndex].rowPitch : W * pixelSize;
 			U32	depthPitch = _pMipDescriptors != NULL ? _pMipDescriptors[mipLevelIndex].depthPitch : H * rowPitch;
 
 			pInitialData[mipLevelIndex].pSysMem = _ppContent[mipLevelIndex];
@@ -178,7 +179,7 @@ ID3D11ShaderResourceView*	Texture3D::GetSRV( U32 _MipLevelStart, U32 _mipLevelsC
 		return pExistingView;
 
 	D3D11_SHADER_RESOURCE_VIEW_DESC	desc;
-	desc.Format = Texture2D::PixelAccessor2DXGIFormat( *m_pixelFormat, m_componentFormat );
+	desc.Format = m_format;
 	if ( _AsArray ) {
 		// Force as a Texture2DArray
 		desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
@@ -212,7 +213,7 @@ ID3D11RenderTargetView*		Texture3D::GetRTV( U32 _mipLevelIndex, U32 _FirstWSlice
 		return pExistingView;
 
 	D3D11_RENDER_TARGET_VIEW_DESC	Desc;
-	Desc.Format = Texture2D::PixelAccessor2DXGIFormat( *m_pixelFormat, m_componentFormat );
+	Desc.Format = m_format;
 	Desc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE3D;
 	Desc.Texture3D.MipSlice = _mipLevelIndex;
 	Desc.Texture3D.FirstWSlice = _FirstWSlice;
@@ -239,7 +240,7 @@ ID3D11UnorderedAccessView*	Texture3D::GetUAV( U32 _mipLevelIndex, U32 _FirstWSli
 
 	// Create a new one
 	D3D11_UNORDERED_ACCESS_VIEW_DESC	Desc;
-	Desc.Format = Texture2D::PixelAccessor2DXGIFormat( *m_pixelFormat, m_componentFormat );
+	Desc.Format = m_format;
 	Desc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE3D;
 	Desc.Texture3D.MipSlice = _mipLevelIndex;
 	Desc.Texture3D.FirstWSlice = _FirstWSlice;
@@ -349,7 +350,7 @@ void	Texture3D::RemoveFromLastAssignedSlotUAV() const {
 void	Texture3D::CopyFrom( Texture3D& _sourceTexture ) {
 	ASSERT( _sourceTexture.m_width == m_width && _sourceTexture.m_height == m_height && _sourceTexture.m_depth == m_depth, "Size mismatch!" );
 	ASSERT( _sourceTexture.m_mipLevelsCount == m_mipLevelsCount, "Mips count mismatch!" );
-	ASSERT( _sourceTexture.m_pixelFormat == m_pixelFormat, "Format mismatch!" );
+	ASSERT( _sourceTexture.m_format == m_format, "Format mismatch!" );
 
 	m_device.DXContext().CopyResource( m_texture, _sourceTexture.m_texture );
 }
@@ -373,8 +374,10 @@ void	Texture3D::ReadAsImagesMatrix( ImageUtilityLib::ImagesMatrix& _images ) con
 	_images.InitTexture3D( m_width, m_height, m_depth, m_mipLevelsCount );
 
 	// Allocate actual images
-	ImageUtilityLib::ImageFile::PIXEL_FORMAT	format = ImageUtilityLib::ImageFile::Accessor2PixelFormat( *m_pixelFormat );
-	ImageUtilityLib::ColorProfile				dummyProfile( m_componentFormat == BaseLib::COMPONENT_FORMAT::UNORM_sRGB ? ImageUtilityLib::ColorProfile::STANDARD_PROFILE::sRGB : ImageUtilityLib::ColorProfile::STANDARD_PROFILE::LINEAR );
+	U32								pixelSize;
+	BaseLib::COMPONENT_FORMAT		componentFormat;
+	BaseLib::PIXEL_FORMAT			format = DXGIFormat2PixelFormat( m_format, componentFormat, pixelSize );
+	ImageUtilityLib::ColorProfile	dummyProfile( componentFormat == BaseLib::COMPONENT_FORMAT::UNORM_sRGB ? ImageUtilityLib::ColorProfile::STANDARD_PROFILE::sRGB : ImageUtilityLib::ColorProfile::STANDARD_PROFILE::LINEAR );
 	_images.AllocateImageFiles( format, dummyProfile );
 
 	// Fill up each image with mapped content
@@ -549,7 +552,7 @@ Texture3D::Texture3D( Device& _Device, const TextureFilePOM& _POM, bool _UAV )
 	, m_width( _POM.m_Width )
 	, m_height( _POM.m_Height )
 	, m_depth( _POM.m_ArraySizeOrDepth )
-	, m_Format( *_POM.m_pPixelFormat )
+	, m_format( *_POM.m_pPixelFormat )
 	, m_mipLevelsCount( _POM.m_MipsCount ) {
 	Init( _POM.m_ppContent, false, _UAV, _POM.m_pMipsDescriptors );
 }

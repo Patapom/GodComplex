@@ -6,10 +6,9 @@
 
 namespace Renderer {
 
-	Texture3D::Texture3D( Device^ _device, UInt32 _width, UInt32 _height, UInt32 _depth, UInt32 _mipLevelsCount, PIXEL_FORMAT _pixelFormat, bool _staging, bool _UAV, cli::array<PixelsBuffer^>^ _mipLevelsContent ) {
- 		BaseLib::IPixelAccessor*	descriptor = NULL;
-		BaseLib::COMPONENT_FORMAT	componentFormat;
-		GetDescriptor( _pixelFormat, descriptor, componentFormat );
+	Texture3D::Texture3D( Device^ _device, UInt32 _width, UInt32 _height, UInt32 _depth, UInt32 _mipLevelsCount, ImageUtility::PIXEL_FORMAT _pixelFormat, ImageUtility::COMPONENT_FORMAT _componentFormat, bool _staging, bool _UAV, cli::array<PixelsBuffer^>^ _mipLevelsContent ) {
+ 		BaseLib::PIXEL_FORMAT		pixelFormat = BaseLib::PIXEL_FORMAT( _pixelFormat );
+		BaseLib::COMPONENT_FORMAT	componentFormat = BaseLib::COMPONENT_FORMAT( _componentFormat );
 
 		void**	ppContent = NULL;
 		if ( _mipLevelsContent != nullptr ) {
@@ -21,7 +20,7 @@ namespace Renderer {
 			}
 		}
 
-		m_texture = new ::Texture3D( *_device->m_pDevice, _width, _height, _depth, _mipLevelsCount, *descriptor, componentFormat, ppContent, _staging, _UAV );
+		m_texture = new ::Texture3D( *_device->m_pDevice, _width, _height, _depth, _mipLevelsCount, pixelFormat, componentFormat, ppContent, _staging, _UAV );
 
 		delete[] ppContent;
 	}

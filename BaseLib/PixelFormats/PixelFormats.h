@@ -7,9 +7,71 @@
 //
 #pragma once
 
+#include <dxgiformat.h>
+
 namespace BaseLib {
 
 	#pragma pack(push,1)
+
+	// This enum matches most of the the classes available as IPixelAccessor's (which in turn match the DXGI formats)
+	//
+	// Some formats are not supported natively by the FreeImage library (e.g. RG8, RG16, RG32, etc.) so I made them use the format
+	//	whose size is immediately larger (e.g. RG8 use RGB8, RG16 uses RGB16, etc.) and allocating larger scanlines each time.
+	// Here is an example of a scanline representation for a 8x2 RG8 image, internally supported by an RGB8 image:
+	//
+	//	RGB8 Pixel Index	[  0  |  1  |  2  |  3  |  4  |  5  |  6  |  7  ]
+	//		Scanline 0 >	|R|G|R|G|R|G|R|G|R|G|R|G|R|G|R|G| | | | | | | | |
+	//		Scanline 1 >	|R|G|R|G|R|G|R|G|R|G|R|G|R|G|R|G| | | | | | | | |
+	//
+	// We lose some memory (scanlines are usually 33% larger) but in turn we get these advantages:
+	//	• We can use images with the appropriate width (i.e. I didn't try to reduce the width to have the least possible memory overhead otherwise the user would have to deal with nightmarish width conversions and pixel size management)
+	//	• We can still read and write sequentially to each scanline without having to skip some components (cf. figure above), we just need to skip the appropriate padding at the end of each scanline
+	//	• Loading a DDS file into a texture, or writing a texture into a DDS file is quite painless
+	//	• Creating procedural DDS files or textures with these formats is also quite easy
+	//
+	// The only problem with these formats is that they cannot be loaded, saved or converted by FreeImage methods otherwise you will get garbage!
+	//
+	enum class PIXEL_FORMAT : U32 {
+		UNKNOWN = ~0U,
+		NOT_NATIVELY_SUPPORTED	= 0x80000000U,	// This flag is used by formats that are not natively supported by the FreeImage library
+		RAW_BUFFER				= 0x40000000U,	// This flag is used to indicate raw buffer formats that are not directly mappable to a recognized pixel format (e.g. compressed formats)
+		COMPRESSED				= 0x20000000U,	// This flag is used by compressed formats that are only supported by DDS images
+
+		// 8-bits
+		R8		= 0,
+		RG8		= 1		| NOT_NATIVELY_SUPPORTED,	// FreeImage thinks it's R5G6B5! Aliased as RGBA8
+		RGB8	= 2,
+		RGBA8	= 3,
+
+		// 16-bits
+		R16		= 4,
+		RG16	= 5		| NOT_NATIVELY_SUPPORTED,	// Unsupported by FreeImage, aliased as RGBA16
+		RGB16	= 6,
+		RGBA16	= 7,
+
+		// 16-bits half-precision floating points
+		// WARNING: These formats are NOT natively supported by FreeImage but can be used by DDS for example so I chose
+		//			 to support them as regular U16 formats but treating the raw U16 as half-floats internally...
+		// NOTE: These are NOT loadable or saveable by the regular Load()/Save() routine, this won't crash but it will produce garbage
+		//		 These formats should only be used for in-memory manipulations and DDS-related routines that can manipulate them
+		//
+		R16F	= 8		| NOT_NATIVELY_SUPPORTED,	// Unsupported by FreeImage, aliased as R16_UNORM
+		RG16F	= 9		| NOT_NATIVELY_SUPPORTED,	// Unsupported by FreeImage, aliased as RGB16_UNORM
+		RGB16F	= 10	| NOT_NATIVELY_SUPPORTED,	// Unsupported by FreeImage, aliased as RGB16_UNORM
+		RGBA16F	= 11	| NOT_NATIVELY_SUPPORTED,	// Unsupported by FreeImage, aliased as RGBA16_UNORM
+
+		// 32-bits
+		R32F	= 12,
+		RG32F	= 13	| NOT_NATIVELY_SUPPORTED,	// Unsupported by FreeImage, aliased as RGBA32F
+		RGB32F	= 14,
+		RGBA32F = 15,
+
+		// This is the "raw compressed format" used to support compressed or otherwise unsupported pixel formats like DirectX BCx formats (only used by DDS images)
+		BC4		= 256	| RAW_BUFFER | COMPRESSED,	// Only supported by DDS, raw buffered images
+		BC5		= 257	| RAW_BUFFER | COMPRESSED,	// Only supported by DDS, raw buffered images
+		BC6H	= 258	| RAW_BUFFER | COMPRESSED,	// Only supported by DDS, raw buffered images
+		BC7		= 259	| RAW_BUFFER | COMPRESSED,	// Only supported by DDS, raw buffered images
+	};
 
 	// Additional information about how the individual components of a pixel structure should be treated
 	enum class COMPONENT_FORMAT {
@@ -19,6 +81,12 @@ namespace BaseLib {
 		SNORM,
 		UINT,
 		SINT,
+	};
+
+	// Additional information about how the individual components of a pixel structure should be treated (for depth stencil)
+	enum class	DEPTH_COMPONENT_FORMAT {
+		DEPTH_ONLY,
+		DEPTH_STENCIL,
 	};
 
 	// This is the interface to access pixel format structures needed for images and textures
@@ -78,7 +146,7 @@ namespace BaseLib {
 
 	
 	// This is the interface to access depth format structures needed for depth stencil buffers
-	class IDepthAccessor {
+	class	IDepthAccessor {
 		// Gives the size of the depth format in bytes
 		virtual U32		Size() const abstract;
 
@@ -91,6 +159,23 @@ namespace BaseLib {
 		virtual void	DepthStencil( const void* _pixel, float& _Depth, U8& _Stencil ) const abstract;
 	};
 
+	//////////////////////////////////////////////////////////////////////////
+	// Helpers
+	//
+
+	// Easily converts an image's PIXEL_FORMAT into a generic pixel accessor/descriptor
+	extern const IPixelAccessor&	PixelFormat2PixelAccessor( PIXEL_FORMAT _pixelFormat );
+	extern PIXEL_FORMAT		PixelAccessor2PixelFormat( const IPixelAccessor& _pixelAccessor );
+
+	// Conversion to and from DXGI pixel formats and standard image pixel formats
+ 	extern PIXEL_FORMAT		DXGIFormat2PixelFormat( DXGI_FORMAT _sourceFormat, COMPONENT_FORMAT& _componentFormat, U32& _pixelSize );
+ 	extern DXGI_FORMAT		PixelFormat2DXGIFormat( PIXEL_FORMAT _sourceFormat, COMPONENT_FORMAT _componentFormat );
+ 	extern DXGI_FORMAT		DepthFormat2DXGIFormat( PIXEL_FORMAT _sourceFormat, DEPTH_COMPONENT_FORMAT _depthComponentFormat );
+
+
+	//////////////////////////////////////////////////////////////////////////
+	// Actual IPixelAccessor implementations
+	//
  	struct	PF_Unknown {
 		#pragma region IPixelAccessor
 		static class desc_t : public IPixelAccessor {

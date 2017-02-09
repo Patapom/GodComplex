@@ -56,7 +56,7 @@ namespace ImageUtilityLib {
 				void			Init( U32 _width, U32 _height, U32 _depth );
 
 				// Allocates/Releases actual ImageFiles and Raw buffer
-				void			AllocateImageFiles( ImageFile::PIXEL_FORMAT _format, const ColorProfile& _colorProfile );
+				void			AllocateImageFiles( PIXEL_FORMAT _format, const ColorProfile& _colorProfile );
 				void			AllocateRawBuffer( U32 _rowPitch, U32 _slicePitch, const U8* _sourceBuffer=NULL );
 				void			ReleasePointers();	// Release image and raw buffer pointers
 				void			ClearPointers();	// Clears pointers but don't release
@@ -79,7 +79,7 @@ namespace ImageUtilityLib {
 			void			Init( U32 _mipLevelsCount );
 
 			// Allocates/Releases actual ImageFiles
-			void			AllocateImageFiles( ImageFile::PIXEL_FORMAT _format, const ColorProfile& _colorProfile );
+			void			AllocateImageFiles( PIXEL_FORMAT _format, const ColorProfile& _colorProfile );
 			void			ReleasePointers();	// Release image and raw buffer pointers
 			void			ClearPointers();	// Clears pointers but don't release
 		};
@@ -92,7 +92,7 @@ namespace ImageUtilityLib {
 			TEXTURE3D,
 		};
 
-//		typedef void		(*GetRawBufferSizeDelegate_t)( U32 _arraySliceIndex, U32 _mipLevelIndex, U32& _rowPitch, U32& _slicePitch, U32& _slicesCount );
+		// Functor class used by the AllocateRawBuffers() method to allocate a raw buffer
 		class GetRawBufferSizeFunctor {
 		public:
 			// _arraySliceIndex, _mipLevelIndex, the position nin the array we need raw buffer information for
@@ -104,16 +104,16 @@ namespace ImageUtilityLib {
 
 	private:
 
-		TYPE					m_type;				// Optional field describing the type of images stored in the matrix
-		ImageFile::PIXEL_FORMAT	m_format;			// Pixel format of the images in the matrix
-		ColorProfile			m_colorProfile;		// Color profile of the images in the matrix
-		List< Mips >			m_mipsArray;		// An array of mip-mapped images
+		TYPE				m_type;				// Optional field describing the type of images stored in the matrix
+		PIXEL_FORMAT		m_format;			// Pixel format of the images in the matrix
+		ColorProfile		m_colorProfile;		// Color profile of the images in the matrix
+		List< Mips >		m_mipsArray;		// An array of mip-mapped images
 
 	public:
 
 		TYPE					GetType() const					{ return m_type; }
 		void					SetType( TYPE value )			{ m_type = value; }
-		ImageFile::PIXEL_FORMAT	GetFormat() const				{ return m_format; }
+		PIXEL_FORMAT			GetFormat() const				{ return m_format; }
 		const ColorProfile&		GetColorProfile() const			{ return m_colorProfile; }
 		ColorProfile&			GetColorProfile()				{ return m_colorProfile; }
 		U32						GetArraySize() const			{ return m_mipsArray.Count(); }
@@ -137,8 +137,8 @@ namespace ImageUtilityLib {
 		void			InitTextureGeneric( U32 _width, U32 _height, U32 _depth, U32 _arraySize, U32 _mipLevelsCount );
 
 		// Allocates/Releases actual ImageFiles
-		void			AllocateImageFiles( ImageFile::PIXEL_FORMAT _format, const ColorProfile& _colorProfile );
-		void			AllocateRawBuffers( const GetRawBufferSizeFunctor& _getRawBufferSizeDelegate );
+		void			AllocateImageFiles( PIXEL_FORMAT _format, const ColorProfile& _colorProfile );
+		void			AllocateRawBuffers( PIXEL_FORMAT _format, const GetRawBufferSizeFunctor& _getRawBufferSizeDelegate );
 		void			ReleasePointers();	// Release image and raw buffer pointers
 		void			ClearPointers();	// Clears pointers but don't release
 

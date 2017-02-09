@@ -131,14 +131,14 @@ namespace TestFourier
 				m_Shader_GenerateSignal1D = new Shader( m_device1D, new System.IO.FileInfo( "./Shaders/GenerateSignal.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 				m_Shader_FilterSignal1D = new Shader( m_device1D, new System.IO.FileInfo( "./Shaders/FilterSignal.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 				m_Shader_Display1D = new Shader( m_device1D, new System.IO.FileInfo( "./Shaders/Display.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
-				m_texSpectrumCopy = new Texture2D( m_device1D, SIGNAL_SIZE, 1, 1, 1, PIXEL_FORMAT.RG32_FLOAT, false, true, null );
+				m_texSpectrumCopy = new Texture2D( m_device1D, SIGNAL_SIZE, 1, 1, 1, ImageUtility.PIXEL_FORMAT.RG32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, true, null );
 
 			} catch ( Exception ) {
 				MessageBox.Show( "Failed to initialize DirectX device! Can't execute GPU FFT!", "DirectX Error", MessageBoxButtons.OK, MessageBoxIcon.Error );
 				m_device1D = null;
 			}
 
-			m_image = new ImageFile( (uint) imagePanel.Width, (uint) imagePanel.Height, ImageFile.PIXEL_FORMAT.RGBA8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
+			m_image = new ImageFile( (uint) imagePanel.Width, (uint) imagePanel.Height, ImageUtility.PIXEL_FORMAT.RGBA8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
 
 			try {
 				m_FFTW_1D = new fftwlib.FFT2D( SIGNAL_SIZE, 1 );	// Allocate on the fly, if the interop fails then it will crash immediately but at least the 
@@ -161,15 +161,15 @@ namespace TestFourier
  				m_Shader_GenerateSignal2D = new Shader( m_device2D, new System.IO.FileInfo( "./Shaders/GenerateSignal2D.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 				m_Shader_FilterSignal2D = new Shader( m_device2D, new System.IO.FileInfo( "./Shaders/FilterSignal2D.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
  				m_Shader_Display2D = new Shader( m_device2D, new System.IO.FileInfo( "./Shaders/Display2D.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
-				m_texOriginalSignalCopy2D = new Texture2D( m_device2D, SIGNAL_SIZE_2D, SIGNAL_SIZE_2D, 1, 1, PIXEL_FORMAT.RG32_FLOAT, false, true, null );
-				m_texSpectrumCopy2D = new Texture2D( m_device2D, SIGNAL_SIZE_2D, SIGNAL_SIZE_2D, 1, 1, PIXEL_FORMAT.RG32_FLOAT, false, true, null );
+				m_texOriginalSignalCopy2D = new Texture2D( m_device2D, SIGNAL_SIZE_2D, SIGNAL_SIZE_2D, 1, 1, ImageUtility.PIXEL_FORMAT.RG32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, true, null );
+				m_texSpectrumCopy2D = new Texture2D( m_device2D, SIGNAL_SIZE_2D, SIGNAL_SIZE_2D, 1, 1, ImageUtility.PIXEL_FORMAT.RG32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, true, null );
 
 			} catch ( Exception _e ) {
 				MessageBox.Show( "Failed to initialize DirectX device! Can't execute GPU FFT!\r\nReason:\r\n" + _e.Message, "DirectX Error", MessageBoxButtons.OK, MessageBoxIcon.Error );
 				m_device2D = null;
 			}
 
-			m_image2D = new ImageFile( (uint) imagePanel2D.Width, (uint) imagePanel2D.Height, ImageFile.PIXEL_FORMAT.RGBA8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
+			m_image2D = new ImageFile( (uint) imagePanel2D.Width, (uint) imagePanel2D.Height, PIXEL_FORMAT.RGBA8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
 
 			imagePanel2D.SkipPaint = true;//checkBoxGPU.Checked;
 
@@ -574,8 +574,8 @@ if ( checkBoxInvertFilter.Checked )
 		void	CheckAgainstFFTW() {
 			if ( m_FFTW_2D == null ) {
 				m_FFTW_2D = new fftwlib.FFT2D( SIGNAL_SIZE_2D, SIGNAL_SIZE_2D );
-				m_test_CPU = new Texture2D( m_device2D, SIGNAL_SIZE_2D, SIGNAL_SIZE_2D, 1, 1, PIXEL_FORMAT.RG32_FLOAT, true, false, null );
-				m_FFTW2D_Output = new Texture2D( m_device2D, SIGNAL_SIZE_2D, SIGNAL_SIZE_2D, 1, 1, PIXEL_FORMAT.RG32_FLOAT, false, true, null );
+				m_test_CPU = new Texture2D( m_device2D, SIGNAL_SIZE_2D, SIGNAL_SIZE_2D, 1, 1, ImageUtility.PIXEL_FORMAT.RG32F, ImageUtility.COMPONENT_FORMAT.AUTO, true, false, null );
+				m_FFTW2D_Output = new Texture2D( m_device2D, SIGNAL_SIZE_2D, SIGNAL_SIZE_2D, 1, 1, ImageUtility.PIXEL_FORMAT.RG32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, true, null );
 			}
 
 			// Retrieve input as CPU-accessible

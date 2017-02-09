@@ -49,7 +49,6 @@
 #define IMAGE_FILE_INCLUDED
 
 #include "MetaData.h"
-#include <dxgiformat.h>
 
 namespace ImageUtilityLib {
 
@@ -68,62 +67,6 @@ namespace ImageUtilityLib {
 
 		// The delegate used to tone map an HDR image into a LDR color (warning: any returned value above 1 will be clamped!)
 		typedef void	(*pixelReaderWriter_t)( U32 _X, U32 _Y, bfloat4& _Color );
-
-		// This enum matches most of the the classes available in BaseLib\PixelFormat.h (which in turn match the DXGI formats)
-		//
-		// Some formats are not supported natively by FreeImage (e.g. RG8, RG16, RG32, etc.) so I made them use the format
-		//	whose size is immediately larger (e.g. RG8 use RGB8, RG16 uses RGB16, etc.) and allocating larger scanlines each time.
-		// Here is an example of a scanline representation for a 8x2 RG8 image, internally supported by an RGB8 image:
-		//
-		//	RGB8 Pixel Index	[  0  |  1  |  2  |  3  |  4  |  5  |  6  |  7  ]
-		//		Scanline 0 >	|R|G|R|G|R|G|R|G|R|G|R|G|R|G|R|G| | | | | | | | |
-		//		Scanline 1 >	|R|G|R|G|R|G|R|G|R|G|R|G|R|G|R|G| | | | | | | | |
-		//
-		// We lose some memory (scanlines are usually 33% larger) but in turn we get these advantages:
-		//	• We can use images with the appropriate width (i.e. I didn't try to reduce the width to have the least possible memory overhead otherwise the user would have to deal with nightmarish width conversions and pixel size management)
-		//	• We can still read and write sequentially to each scanline without having to skip some components (cf. figure above), we just need to skip the appropriate padding at the end of each scanline
-		//	• Loading a DDS file into a texture, or writing a texture into a DDS file is quite painless
-		//	• Creating procedural DDS files or textures with these formats is also quite easy
-		//
-		// The only problem with these formats is that they cannot be loaded, saved or converted by FreeImage methods otherwise you will get garbage!
-		//
-		enum class PIXEL_FORMAT : U32 {
-			UNKNOWN = ~0U,
-			NOT_NATIVELY_SUPPORTED = 0x80000000U,	// This flag is used by formats that are not natively supported by FreeImage and that CANNOT BE LOADED OR SAVED (unless using DDS-related methods)!
-
-			// 8-bits
-			R8		= 0,
-			RG8		= 1		| NOT_NATIVELY_SUPPORTED,	// FreeImage thinks it's R5G6B5! Aliased as RGBA8
-			RGB8	= 2,
-			RGBA8	= 3,
-
-			// 16-bits
-			R16		= 4,
-			RG16	= 5		| NOT_NATIVELY_SUPPORTED,	// Unsupported by FreeImage, aliased as RGBA16
-			RGB16	= 6,
-			RGBA16	= 7,
-
-			// 16-bits half-precision floating points
-			// WARNING: These formats are NOT natively supported by FreeImage but can be used by DDS for example so I chose
-			//			 to support them as regular U16 formats but treating the raw U16 as half-floats internally...
-			// NOTE: These are NOT loadable or saveable by the regular Load()/Save() routine, this won't crash but it will produce garbage
-			//		 These formats should only be used for in-memory manipulations and DDS-related routines that can manipulate them
-			//
-			R16F	= 8		| NOT_NATIVELY_SUPPORTED,	// Unsupported by FreeImage, aliased as R16_UNORM
-			RG16F	= 9		| NOT_NATIVELY_SUPPORTED,	// Unsupported by FreeImage, aliased as RGB16_UNORM
-			RGB16F	= 10	| NOT_NATIVELY_SUPPORTED,	// Unsupported by FreeImage, aliased as RGB16_UNORM
-			RGBA16F	= 11	| NOT_NATIVELY_SUPPORTED,	// Unsupported by FreeImage, aliased as RGBA16_UNORM
-
-			// 32-bits
-			R32F	= 12,
-			RG32F	= 13	| NOT_NATIVELY_SUPPORTED,	// Unsupported by FreeImage, aliased as RGBA32F
-			RGB32F	= 14,
-			RGBA32F = 15,
-
-			// This is the "raw format" used to support compressed or otherwise unsupported pixel formats like DirectX BCx formats
-			// FreeImage is then only used to allocate a raw buffer of the specified size and no color interpretation can be made on the buffer
-			RAW_BUFFER = 256,
-		};
 
 		// Wraps around free image's "FREE_IMAGE_FORMAT" enum
 		enum class	FILE_FORMAT {
@@ -290,7 +233,7 @@ namespace ImageUtilityLib {
 		PIXEL_FORMAT		GetPixelFormat() const	{ return m_pixelFormat; }
 
 		// Gets the pixel format's accessor
-		const IPixelAccessor&	PixelFormat2Accessor() const { return *m_pixelAccessor; }
+		const IPixelAccessor&	GetPixelAccessor() const { return *m_pixelAccessor; }
 
 		// Gets the source bitmap type
 		FILE_FORMAT			GetFileFormat() const	{ return m_fileFormat; }
@@ -417,10 +360,6 @@ namespace ImageUtilityLib {
 		void				ImageCoordinates2RangedCoordinates( const bfloat2& _rangeX, const bfloat2& _rangeY, const bfloat2& _imageCoordinates, bfloat2& _rangedCoordinates );
 
 
-		// Easily converts an image's PIXEL_FORMAT into a generic pixel accessor/descriptor
-		static const IPixelAccessor&	PixelFormat2Accessor( PIXEL_FORMAT _pixelFormat );
-		static PIXEL_FORMAT				Accessor2PixelFormat( const IPixelAccessor& _pixelAccessor );
-
 	public:
 		//////////////////////////////////////////////////////////////////////////
 		// DDS-related methods
@@ -428,10 +367,6 @@ namespace ImageUtilityLib {
 		static void			DDSLoadMemory( U64 _fileSize, void* _fileContent, ImagesMatrix& _images );
 		static void			DDSSaveFile( const ImagesMatrix& _images, const wchar_t* _fileName, COMPONENT_FORMAT _componentFormat=COMPONENT_FORMAT::AUTO );
 		static void			DDSSaveMemory( const ImagesMatrix& _images, U64& _fileSize, void*& _fileContent, COMPONENT_FORMAT _componentFormat=COMPONENT_FORMAT::AUTO );	// NOTE: The caller MUST delete[] the returned buffer!
-
-		// Conversion to and from DXGI pixel formats and image file pixel formats
- 		static PIXEL_FORMAT	DXGIFormat2PixelFormat( DXGI_FORMAT _sourceFormat, COMPONENT_FORMAT& _componentFormat, U32& _pixelSize );
- 		static DXGI_FORMAT	PixelFormat2DXGIFormat( PIXEL_FORMAT _sourceFormat, COMPONENT_FORMAT _componentFormat );
 
 	private:
 

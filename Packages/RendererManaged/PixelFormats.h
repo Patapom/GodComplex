@@ -6,10 +6,10 @@
 using namespace System;
 
 namespace Renderer {
-
+/*
 	// Wraps the most useful DXGI formats used for textures and render targets
 	//
-	public enum class	PIXEL_FORMAT {
+	public enum class	TEXTURE_FORMAT {
 		UNKNOWN,
 		R8_UNORM,
 		RGBA8_UNORM,
@@ -26,11 +26,19 @@ namespace Renderer {
 		RG32_FLOAT,
 		RGBA32_FLOAT,
 		RGBA32_UINT,
-// 		BC3_UNORM,
-// 		BC3_UNORM_sRGB,
+
+		// Compressed formats
+		BC4_UNORM,
+		BC4_SNORM,
+		BC5_UNORM,
+		BC5_SNORM,
+		BC6H_UF16,
+		BC6H_SF16,
+		BC7_UNORM,
+		BC7_UNORM_sRGB,
 	};
 
-	static void	GetDescriptor( PIXEL_FORMAT _Format, BaseLib::IPixelAccessor*& _pixelFormat, BaseLib::COMPONENT_FORMAT& _componentFormat ) {
+	static void	GetDescriptor( TEXTURE_FORMAT _Format, BaseLib::PIXEL_FORMAT& _pixelFormat, BaseLib::COMPONENT_FORMAT& _componentFormat ) {
 		_pixelFormat = NULL;
 		_componentFormat = BaseLib::COMPONENT_FORMAT::AUTO;
 		switch ( _Format ) {
@@ -49,13 +57,14 @@ namespace Renderer {
 			case PIXEL_FORMAT::RG32_FLOAT:		_pixelFormat = &BaseLib::PF_RG32F::Descriptor; break;
 			case PIXEL_FORMAT::RGBA32_FLOAT:	_pixelFormat = &BaseLib::PF_RGBA32F::Descriptor; break;
 			case PIXEL_FORMAT::RGBA32_UINT:		_pixelFormat = &BaseLib::PF_RGBA32::Descriptor;	_componentFormat = BaseLib::COMPONENT_FORMAT::UINT; break;
-// 			case PIXEL_FORMAT::BC3_UNORM:		_pixelFormat = &PF_BC3::Descriptor;	_componentFormat = BaseLib::COMPONENT_FORMAT::UNORM;	break;
+
+ 			case PIXEL_FORMAT::BC4_UNORM:		_pixelFormat = &PF_BC3::Descriptor;	_componentFormat = BaseLib::COMPONENT_FORMAT::UNORM;	break;
 // 			case PIXEL_FORMAT::BC3_UNORM_sRGB:	_pixelFormat = &PF_BC3::Descriptor;	_componentFormat = BaseLib::COMPONENT_FORMAT::UNORM_sRGB;	break;
 
 			default:	throw gcnew Exception( "Unsupported pixel format!" );
 		}
 	}
-
+¨*/
 	// Wraps the most useful DXGI formats used for depth stencil buffers
 	//
 	public enum class	DEPTH_STENCIL_FORMAT {
@@ -64,14 +73,13 @@ namespace Renderer {
 		D24S8,
 	};
 
-	static BaseLib::IDepthAccessor*	GetDescriptor( DEPTH_STENCIL_FORMAT _format ) {
+	static void	GetDescriptor( DEPTH_STENCIL_FORMAT _format, BaseLib::PIXEL_FORMAT& _pixelFormat, BaseLib::DEPTH_COMPONENT_FORMAT& _componentFormat ) {
  		switch ( _format ) {
-			case DEPTH_STENCIL_FORMAT::D32:		return &BaseLib::PF_D32::Descriptor;
-			case DEPTH_STENCIL_FORMAT::D24S8:	return &BaseLib::PF_D24S8::Descriptor;
+			case DEPTH_STENCIL_FORMAT::D16:		_pixelFormat = BaseLib::PIXEL_FORMAT::R16F; _componentFormat = BaseLib::DEPTH_COMPONENT_FORMAT::DEPTH_ONLY; break;
+			case DEPTH_STENCIL_FORMAT::D32:		_pixelFormat = BaseLib::PIXEL_FORMAT::R32F; _componentFormat = BaseLib::DEPTH_COMPONENT_FORMAT::DEPTH_ONLY; break;
+			case DEPTH_STENCIL_FORMAT::D24S8:	_pixelFormat = BaseLib::PIXEL_FORMAT::R32F; _componentFormat = BaseLib::DEPTH_COMPONENT_FORMAT::DEPTH_STENCIL; break;
 
 			default:	throw gcnew Exception( "Unsupported depth stencil format!" );
  		}
-
-		return NULL;
 	}
 }

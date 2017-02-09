@@ -63,6 +63,49 @@ namespace ImageUtility {
 		SINT,
 	};
 
+	// This enum matches the classes available in PixelFormat.h (which in turn match the DXGI formats)
+	public enum class PIXEL_FORMAT : UInt32 {
+		UNKNOWN = ~0U,
+		NOT_NATIVELY_SUPPORTED	= 0x80000000U,	// This flag is used by formats that are not natively supported by the FreeImage library
+		RAW_BUFFER				= 0x40000000U,	// This flag is used to indicate raw buffer formats that are not directly mappable to a recognized pixel format (e.g. compressed formats)
+		COMPRESSED				= 0x20000000U,	// This flag is used by compressed formats that are only supported by DDS images
+
+		// 8-bits
+		R8		= 0,
+		RG8		= 1		| NOT_NATIVELY_SUPPORTED,	// FreeImage thinks it's R5G6B5! Aliased as RGBA8
+		RGB8	= 2,
+		RGBA8	= 3,
+
+		// 16-bits
+		R16		= 4,
+		RG16	= 5		| NOT_NATIVELY_SUPPORTED,	// Unsupported by FreeImage, aliased as RGBA16
+		RGB16	= 6,
+		RGBA16	= 7,
+
+		// 16-bits half-precision floating points
+		// WARNING: These formats are NOT natively supported by FreeImage but can be used by DDS for example so I chose
+		//			 to support them as regular U16 formats but treating the raw U16 as half-floats internally...
+		// NOTE: These are NOT loadable or saveable by the regular Load()/Save() routine, this won't crash but it will produce garbage
+		//		 These formats should only be used for in-memory manipulations and DDS-related routines that can manipulate them
+		//
+		R16F	= 8		| NOT_NATIVELY_SUPPORTED,	// Unsupported by FreeImage, aliased as R16_UNORM
+		RG16F	= 9		| NOT_NATIVELY_SUPPORTED,	// Unsupported by FreeImage, aliased as RGB16_UNORM (WARNING: extra blue channel is "unused", actually pixels RGBRGBRGB... scanlines are treated as RGRGRGRG...)
+		RGB16F	= 10	| NOT_NATIVELY_SUPPORTED,	// Unsupported by FreeImage, aliased as RGB16_UNORM
+		RGBA16F	= 11	| NOT_NATIVELY_SUPPORTED,	// Unsupported by FreeImage, aliased as RGBA16_UNORM
+
+		// 32-bits
+		R32F	= 12,
+		RG32F	= 13	| NOT_NATIVELY_SUPPORTED,	// Unsupported by FreeImage, aliased as RGBA32F
+		RGB32F	= 14,
+		RGBA32F = 15,
+
+		// This is the "raw compressed format" used to support compressed or otherwise unsupported pixel formats like DirectX BCx formats (only used by DDS images)
+		BC4		= 256	| RAW_BUFFER | COMPRESSED,	// Only supported by DDS, raw buffered images
+		BC5		= 257	| RAW_BUFFER | COMPRESSED,	// Only supported by DDS, raw buffered images
+		BC6H	= 258	| RAW_BUFFER | COMPRESSED,	// Only supported by DDS, raw buffered images
+		BC7		= 259	| RAW_BUFFER | COMPRESSED,	// Only supported by DDS, raw buffered images
+	};
+
 	ref class ImagesMatrix;
 
 	[System::Diagnostics::DebuggerDisplayAttribute( "{Width}x{Height} {PixelFormat} {FileFormat}" )]
@@ -79,41 +122,6 @@ namespace ImageUtility {
 
 		// The delegate used to read from/write to an image
 		delegate void	PixelReadWrite( UInt32 _X, UInt32 _Y, float4% _color );
-
-		// This enum matches the classes available in PixelFormat.h (which in turn match the DXGI formats)
-		enum class PIXEL_FORMAT : UInt32 {
-			UNKNOWN = ~0U,
-			NOT_NATIVELY_SUPPORTED = 0x80000000U,	// This flag is used by formats that are not natively supported by FreeImage
-
-			// 8-bits
-			R8		= 0,
-			RG8		= 1		| NOT_NATIVELY_SUPPORTED,	// FreeImage thinks it's R5G6B5! Aliased as RGBA8
-			RGB8	= 2,
-			RGBA8	= 3,
-
-			// 16-bits
-			R16		= 4,
-			RG16	= 5		| NOT_NATIVELY_SUPPORTED,	// Unsupported by FreeImage, aliased as RGBA16
-			RGB16	= 6,
-			RGBA16	= 7,
-
-			// 16-bits half-precision floating points
-			// WARNING: These formats are NOT natively supported by FreeImage but can be used by DDS for example so I chose
-			//			 to support them as regular U16 formats but treating the raw U16 as half-floats internally...
-			// NOTE: These are NOT loadable or saveable by the regular Load()/Save() routine, this won't crash but it will produce garbage
-			//		 These formats should only be used for in-memory manipulations and DDS-related routines that can manipulate them
-			//
-			R16F	= 8		| NOT_NATIVELY_SUPPORTED,	// Unsupported by FreeImage, aliased as R16_UNORM
-			RG16F	= 9		| NOT_NATIVELY_SUPPORTED,	// Unsupported by FreeImage, aliased as RGB16_UNORM (WARNING: extra blue channel is "unused", actually pixels RGBRGBRGB... scanlines are treated as RGRGRGRG...)
-			RGB16F	= 10	| NOT_NATIVELY_SUPPORTED,	// Unsupported by FreeImage, aliased as RGB16_UNORM
-			RGBA16F	= 11	| NOT_NATIVELY_SUPPORTED,	// Unsupported by FreeImage, aliased as RGBA16_UNORM
-
-			// 32-bits
-			R32F	= 12,
-			RG32F	= 13	| NOT_NATIVELY_SUPPORTED,	// Unsupported by FreeImage, aliased as RGBA32F
-			RGB32F	= 14,
-			RGBA32F = 15,
-		};
 
 		enum class	FILE_FORMAT {
 			UNKNOWN = -1,
@@ -283,7 +291,7 @@ namespace ImageUtility {
 		// Gets the image's pixel format
 		property PIXEL_FORMAT	PixelFormat {
 			PIXEL_FORMAT	get() {
-				ImageUtilityLib::ImageFile::PIXEL_FORMAT	nativeFormat = m_nativeObject->GetPixelFormat();
+				BaseLib::PIXEL_FORMAT	nativeFormat = m_nativeObject->GetPixelFormat();
 				return PIXEL_FORMAT( nativeFormat );
 			}
 		}
@@ -313,7 +321,7 @@ namespace ImageUtility {
 
 		// Gets the pixel size
 		property UInt32		PixelSize {
-			UInt32	get() { return m_nativeObject->PixelFormat2Accessor().Size(); }
+			UInt32	get() { return m_nativeObject->GetPixelAccessor().Size(); }
 		}
 
 		// Tells if the image has an alpha channel
@@ -513,18 +521,5 @@ namespace ImageUtility {
 		static ImagesMatrix^	DDSLoadMemory( NativeByteArray^ _imageContent );
 		static void				DDSSaveFile( ImagesMatrix^ _images, System::IO::FileInfo^ _fileName, COMPONENT_FORMAT _componentFormat );
 		static NativeByteArray^	DDSSaveMemory( ImagesMatrix^ _images, COMPONENT_FORMAT _componentFormat );
-
-// 		static void				DXGIFormat2ImageFileFormat( DXGI_FORMAT _sourceFormat, PIXEL_FORMAT% _targetFormat, UInt32% _pixelSize ) {
-// 			ImageUtilityLib::ImageFile::PIXEL_FORMAT	targetFormat;
-// 			U32											pixelSize;
-// 			ImageUtilityLib::ImageFile::DXGIFormat2ImageFileFormat( _sourceFormat, targetFormat, pixelSize );
-// 			_targetFormat = PIXEL_FORMAT( targetFormat );
-// 			_pixelSize = pixelSize;
-// 		}
-// 		static void				ImageFileFormat2DXGIFormat( PIXEL_FORMAT _sourceFormat, COMPONENT_FORMAT _componentFormat, bool _sRGB, DXGI_FORMAT% _targetFormat ) {
-// 			DXGI_FORMAT	targetFormat;
-// 			ImageUtilityLib::ImageFile::ImageFileFormat2DXGIFormat( ImageUtilityLib::ImageFile::PIXEL_FORMAT(_sourceFormat), BaseLib::COMPONENT_FORMAT(_componentFormat), _sRGB, targetFormat );
-// 			_targetFormat = targetFormat;
-// 		}
 	};
 }

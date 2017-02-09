@@ -7,7 +7,7 @@ using namespace BaseLib;
 
 ImagesMatrix::ImagesMatrix()
 	: m_type( TYPE::GENERIC )
-	, m_format( ImageFile::PIXEL_FORMAT::UNKNOWN ) {
+	, m_format( PIXEL_FORMAT::UNKNOWN ) {
 }
 ImagesMatrix::~ImagesMatrix() {
 	ReleasePointers();
@@ -100,7 +100,7 @@ void	ImagesMatrix::InitTextureGeneric( U32 _width, U32 _height, U32 _depth, U32 
 	}
 }
 
-void	ImagesMatrix::AllocateImageFiles( ImageFile::PIXEL_FORMAT _format, const ColorProfile& _colorProfile ) {
+void	ImagesMatrix::AllocateImageFiles( PIXEL_FORMAT _format, const ColorProfile& _colorProfile ) {
 //	ReleasePointers();	// Release first <= NOPE! The user may have already filled some components of the matrix!
 
 	m_format = _format;
@@ -111,8 +111,9 @@ void	ImagesMatrix::AllocateImageFiles( ImageFile::PIXEL_FORMAT _format, const Co
 	}
 }
 
-void	ImagesMatrix::AllocateRawBuffers( const GetRawBufferSizeFunctor& _getRawBufferSizeDelegate ) {
-	m_format = ImageFile::PIXEL_FORMAT::UNKNOWN;
+void	ImagesMatrix::AllocateRawBuffers( PIXEL_FORMAT _format, const GetRawBufferSizeFunctor& _getRawBufferSizeDelegate ) {
+	m_format = _format;
+	RELEASE_ASSERT( (U32(m_format) & U32(PIXEL_FORMAT::RAW_BUFFER)) != 0, "The specified format does NOT have the RAW_BUFFER flag!" );
 
 	U32	rowPitch, depthPitch;
 	for ( U32 sliceIndex=0; sliceIndex < m_mipsArray.Count(); sliceIndex++ ) {
@@ -134,14 +135,14 @@ void	ImagesMatrix::ReleasePointers() {
 		m_mipsArray[i].ReleasePointers();
 	}
 
-	m_format = ImageFile::PIXEL_FORMAT::UNKNOWN;
+	m_format = PIXEL_FORMAT::UNKNOWN;
 }
 void	ImagesMatrix::ClearPointers() {
 	for ( U32 i=0; i < m_mipsArray.Count(); i++ ) {
 		m_mipsArray[i].ClearPointers();
 	}
 
-	m_format = ImageFile::PIXEL_FORMAT::UNKNOWN;
+	m_format = PIXEL_FORMAT::UNKNOWN;
 }
 
 class CompressedImagesCopier : public ImagesMatrix::GetRawBufferSizeFunctor {
@@ -156,14 +157,16 @@ class CompressedImagesCopier : public ImagesMatrix::GetRawBufferSizeFunctor {
 		_rowPitch = U32( referenceSourceImage.rowPitch );
 		_slicePitch = U32( referenceSourceImage.slicePitch );
 
-		U8*		targetPixels = new U8[_slicePitch * D];
-		for ( U32 Z=0; Z < D; Z++ ) {
-			const DirectX::Image&	sourceImage = *m_sourceImages.GetImage( _mipLevelIndex, _arraySliceIndex, Z );
-			U8*						targetSlice = targetPixels + Z * _slicePitch;
-			memcpy_s( targetSlice, _slicePitch, sourceImage.pixels, _slicePitch );
-		}
+		return referenceSourceImage.pixels;	// DirectXTex stores the pixels into a contiguous buffer so it's okay to only give the first slice's pointer here
 
-		return targetPixels;
+// 		U8*		targetPixels = new U8[_slicePitch * D];
+// 		for ( U32 Z=0; Z < D; Z++ ) {
+// 			const DirectX::Image&	sourceImage = *m_sourceImages.GetImage( _mipLevelIndex, _arraySliceIndex, Z );
+// 			U8*						targetSlice = targetPixels + Z * _slicePitch;
+// 			memcpy_s( targetSlice, _slicePitch, sourceImage.pixels, _slicePitch );
+// 		}
+// 
+// 		return targetPixels;
 	}
 	const DirectX::ScratchImage&	m_sourceImages;
 	ImagesMatrix&					m_targetMatrix;
@@ -172,11 +175,11 @@ public:
 };
 
 void	ImagesMatrix::DDSCompress( const ImagesMatrix& _source, COMPRESSION_TYPE _compressionType, COMPONENT_FORMAT _componentFormat, void* _blindPointerDevice ) {
-	if ( _source.m_format == ImageFile::PIXEL_FORMAT::RAW_BUFFER )
-		throw "Unsupported raw buffer source pixel format: the source images must be of an uncompressed type to be compressed!";
+	if ( (U32(_source.m_format) & U32(PIXEL_FORMAT::RAW_BUFFER)) != 0 )
+		throw "Unsupported raw buffer source pixel format: the source images must be of a valid pixel type to be compressed!";
 
 	// Ensure compression is possible
-	DXGI_FORMAT	sourceFormat = ImageFile::PixelFormat2DXGIFormat( _source.m_format, _componentFormat );
+	DXGI_FORMAT	sourceFormat = PixelFormat2DXGIFormat( _source.m_format, _componentFormat );
 	if ( sourceFormat == DXGI_FORMAT_UNKNOWN )
 		throw "Unsupported source format and/or component format!";
 
@@ -248,11 +251,15 @@ void	ImagesMatrix::DDSCompress( const ImagesMatrix& _source, COMPRESSION_TYPE _c
 	// Generic allocate, but overwrite type
 	InitTextureGeneric( W, H, D, arraySize, mipLevelsCount );
 	m_type = _source.m_type;
-	m_format = ImageFile::PIXEL_FORMAT::RAW_BUFFER;
 
 	// Allocate and copy compressed buffers
+	COMPONENT_FORMAT	targetComponentFormat;
+	U32					pixelSize;
+	PIXEL_FORMAT		format = DXGIFormat2PixelFormat( targetFormat, targetComponentFormat, pixelSize );
+	ASSERT( targetComponentFormat == _componentFormat, "Component formats mismatch!" );	// Routine check that's quite useless after all since we chose the component format ourselves so obviously it should be equal to what we chose... :/
+
 	CompressedImagesCopier	 compressor( sourceImagesContainer, *this );
-	AllocateRawBuffers( compressor );
+	AllocateRawBuffers( format, compressor );
 }
 
 // void	ImagesMatrix::DDSCompress( COMPRESSION_TYPE _compressionType, COMPONENT_FORMAT _componentFormat, DXGI_FORMAT& _targetFormat, U32& _rowPitch, U32& _slicePitch, U8*& _compressedRawBuffer ) const {
@@ -327,7 +334,7 @@ void	ImagesMatrix::Mips::Init( U32 _mipLevelsCount ) {
 	m_mips.SetCount( _mipLevelsCount );
 }
 
-void	ImagesMatrix::Mips::AllocateImageFiles( ImageFile::PIXEL_FORMAT _format, const ColorProfile& _colorProfile ) {
+void	ImagesMatrix::Mips::AllocateImageFiles( PIXEL_FORMAT _format, const ColorProfile& _colorProfile ) {
 //	ReleasePointers();	// Release first
 	for ( U32 i=0; i < m_mips.Count(); i++ ) {
 		m_mips[i].AllocateImageFiles( _format, _colorProfile );
@@ -352,7 +359,7 @@ void	ImagesMatrix::Mips::Mip::Init( U32 _width, U32 _height, U32 _depth ) {
 	memset( m_images.Ptr(), 0, _depth*sizeof(ImageFile*) );
 }
 
-void	ImagesMatrix::Mips::Mip::AllocateImageFiles( ImageFile::PIXEL_FORMAT _format, const ColorProfile& _colorProfile ) {
+void	ImagesMatrix::Mips::Mip::AllocateImageFiles( PIXEL_FORMAT _format, const ColorProfile& _colorProfile ) {
 //	ReleasePointers();	// Release first
 	for ( U32 i=0; i < m_images.Count(); i++ ) {
 		if ( m_images[i] == NULL ) {

@@ -22,10 +22,7 @@ private:	// FIELDS
 	U32								m_arraySize;
 	U32								m_mipLevelsCount;
 
-	const BaseLib::IPixelAccessor*	m_pixelFormat;
-	BaseLib::COMPONENT_FORMAT		m_componentFormat;
-	const BaseLib::IDepthAccessor*	m_depthFormat;
-
+	DXGI_FORMAT						m_format;
 	bool							m_isCubeMap;
 
 	ID3D11Texture2D*				m_texture;
@@ -47,9 +44,8 @@ public:	 // PROPERTIES
 	U32								GetArraySize() const		{ return m_arraySize; }
 	U32								GetMipLevelsCount() const	{ return m_mipLevelsCount; }
 	bool							IsCubeMap() const			{ return m_isCubeMap; }
-	const BaseLib::IPixelAccessor&	GetPixelFormatDescriptor() const	{ return *m_pixelFormat; }
-	BaseLib::COMPONENT_FORMAT		GetComponentFormat() const			{ return m_componentFormat; }
-	const BaseLib::IDepthAccessor&	GetDepthFormatDescriptor() const	{ return *m_depthFormat; }
+	bool							IsDepthFormat() const;
+	DXGI_FORMAT						GetFormat() const			{ return m_format; }
 
 	bfloat3							GetdUV() const				{ return bfloat3( 1.0f / m_width, 1.0f / m_height, 0.0f ); }
 
@@ -58,13 +54,10 @@ public:	 // METHODS
 
 	// NOTE: If _ppContents == NULL then the texture is considered a render target !
 	// NOTE: If _arraySize is < 0 then a cube map or cube map array is created (WARNING: the array size must be a valid multiple of 6!)
-	Texture2D( Device& _device, U32 _width, U32 _height, int _arraySize, U32 _mipLevelsCount, const BaseLib::IPixelAccessor& _format, BaseLib::COMPONENT_FORMAT _componentFormat, const void* const* _ppContent, bool _staging=false, bool _UAV=false );
+	Texture2D( Device& _device, U32 _width, U32 _height, int _arraySize, U32 _mipLevelsCount, BaseLib::PIXEL_FORMAT _format, BaseLib::COMPONENT_FORMAT _componentFormat, const void* const* _ppContent, bool _staging=false, bool _UAV=false );
 	Texture2D( Device& _device, const ImageUtilityLib::ImagesMatrix& _images, BaseLib::COMPONENT_FORMAT _componentFormat=BaseLib::COMPONENT_FORMAT::AUTO );
-	// This is for creating a depth stencil buffer
-	Texture2D( Device& _device, U32 _width, U32 _height, U32 _arraySize, const BaseLib::IDepthAccessor& _format );
-	// Used by the Device for the default backbuffer, shouldn't be used otherwise
-//	Texture2D( Device& _device, ID3D11Texture2D& _Texture, const BaseLib::IPixelAccessor& _format, BaseLib::COMPONENT_FORMAT _componentFormat );
-	Texture2D( Device& _device, ID3D11Texture2D& _Texture );
+	Texture2D( Device& _device, U32 _width, U32 _height, U32 _arraySize, BaseLib::PIXEL_FORMAT _format, BaseLib::DEPTH_COMPONENT_FORMAT _depthComponentFormat );	// This is for creating a depth stencil buffer
+	Texture2D( Device& _device, ID3D11Texture2D& _Texture );																										// Used by the Device for the default backbuffer, shouldn't be used otherwise
 	~Texture2D();
 
 	// _AsArray is used to force the SRV as viewing a Texture2DArray instead of a TextureCube or TextureCubeArray
@@ -107,14 +100,13 @@ public:	 // METHODS
 
 public:	// HELPERS
 
- 	static DXGI_FORMAT	PixelAccessor2DXGIFormat( const BaseLib::IPixelAccessor& _pixelAccessor, BaseLib::COMPONENT_FORMAT _componentFormat );
+// 	static DXGI_FORMAT	PixelAccessor2DXGIFormat( const BaseLib::IPixelAccessor& _pixelAccessor, BaseLib::COMPONENT_FORMAT _componentFormat );
 	enum class DEPTH_ACCESS_TYPE {
 		SURFACE_CREATION,	// The DXGI format used when the surface is created
 		VIEW_WRITABLE,		// The DXGI format used by a shader to write the depth values (i.e. surface is used as depth stencil buffer)
 		VIEW_READABLE,		// The DXGI format used by a shader to read the depth values (i.e. surface is used as a regular texture)
-//		VIEW_WRITABLE_CONST,// The DXGI format used by a shader to write the depth values although we can guarantee the view will not be written to (i.e. surface is used as depth stencil buffer but can also be used as a shader resource view)
 	};
-	static DXGI_FORMAT	DepthAccessor2DXGIFormat( const BaseLib::IDepthAccessor& _depthAccessor, DEPTH_ACCESS_TYPE _accessType );
+	DXGI_FORMAT			DepthDXGIFormat( DEPTH_ACCESS_TYPE _accessType ) const;
 
 	static void			NextMipSize( U32& _width, U32& _height );
 	static U32			ComputeMipLevelsCount( U32 _width, U32 _height, U32 _mipLevelsCount );

@@ -31,7 +31,7 @@ ImageFile::ImageFile( System::Drawing::Bitmap^ _bitmap, ImageUtility::ColorProfi
 		throw gcnew Exception( "Failed to load bitmap content into an RGBA[]!" );
 
 	// Initialize an empty native object
-	m_nativeObject->Init( width, height, ImageUtilityLib::ImageFile::PIXEL_FORMAT::RGBA8, *_colorProfile->m_nativeObject );
+	m_nativeObject->Init( width, height, BaseLib::PIXEL_FORMAT::RGBA8, *_colorProfile->m_nativeObject );
 
 	// Copy bitmap content
 	U8*		target = (U8*) m_nativeObject->GetBits();
@@ -51,7 +51,7 @@ ImageFile::~ImageFile() {
 }
 
 void	ImageFile::Init( U32 _width, U32 _height, PIXEL_FORMAT _format, ImageUtility::ColorProfile^ _colorProfile ) {
-	m_nativeObject->Init( _width, _height, ImageUtilityLib::ImageFile::PIXEL_FORMAT( _format ), *_colorProfile->m_nativeObject );
+	m_nativeObject->Init( _width, _height, BaseLib::PIXEL_FORMAT( _format ), *_colorProfile->m_nativeObject );
 }
 
 void	ImageFile::Exit() {
@@ -227,7 +227,7 @@ NativeByteArray^	ImageFile::Save( FILE_FORMAT _format, SAVE_FLAGS _options ) {
 
 // Converts the source image to a target format
 void	ImageFile::ConvertFrom( ImageFile^ _source, PIXEL_FORMAT _targetFormat ) {
-	m_nativeObject->ConvertFrom( *_source->m_nativeObject, ImageUtilityLib::ImageFile::PIXEL_FORMAT( _targetFormat ) );
+	m_nativeObject->ConvertFrom( *_source->m_nativeObject, BaseLib::PIXEL_FORMAT( _targetFormat ) );
 }
 
 // Tone maps a HDR image into a LDR RGBA8 format
@@ -500,16 +500,3 @@ NativeByteArray^	ImageFile::DDSSaveMemory( ImagesMatrix^ _images, COMPONENT_FORM
 	NativeByteArray^	result = gcnew NativeByteArray( int(fileSize), fileContent );
 	return result;
 }
-
-// NativeByteArray^	ImageFile::DDSCompress( COMPRESSION_TYPE _compressionType, COMPONENT_FORMAT _componentFormat, UInt32% _rowPitch, UInt32% _slicePitch ) {
-// 	U32			rowPitch, slicePitch;
-// 	DXGI_FORMAT	targetFormat;
-// 	U8*			compressedRawBuffer;
-// 	m_nativeObject->DDSCompress( ImageUtilityLib::ImageFile::COMPRESSION_TYPE( _compressionType ), BaseLib::COMPONENT_FORMAT(_componentFormat), targetFormat, rowPitch, slicePitch, compressedRawBuffer );
-// 
-// 	_rowPitch = rowPitch;
-// 	_slicePitch = slicePitch;
-// 
-// 	NativeByteArray^	result = gcnew NativeByteArray( slicePitch, compressedRawBuffer );
-// 	return result;
-// }

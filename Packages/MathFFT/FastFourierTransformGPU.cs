@@ -140,9 +140,9 @@ namespace SharpMath.FFT {
 			// Initialize DX stuff
 			m_device = _device;
 			m_CB = new ConstantBuffer<CB>( m_device, 0 );
-			m_texBufferIn = new Texture2D( m_device, (uint) m_size, 1, 1, 1, PIXEL_FORMAT.RG32_FLOAT, false, true, null );
-			m_texBufferOut = new Texture2D( m_device, (uint) m_size, 1, 1, 1, PIXEL_FORMAT.RG32_FLOAT, false, true, null );
-			m_texBufferCPU = new Texture2D( m_device, (uint) m_size, 1, 1, 1, PIXEL_FORMAT.RG32_FLOAT, true, true, null );
+			m_texBufferIn = new Texture2D( m_device, (uint) m_size, 1, 1, 1, ImageUtility.PIXEL_FORMAT.RG32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, true, null );
+			m_texBufferOut = new Texture2D( m_device, (uint) m_size, 1, 1, 1, ImageUtility.PIXEL_FORMAT.RG32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, true, null );
+			m_texBufferCPU = new Texture2D( m_device, (uint) m_size, 1, 1, 1, ImageUtility.PIXEL_FORMAT.RG32F, ImageUtility.COMPONENT_FORMAT.AUTO, true, true, null );
 
 			try {
 				FileServer	server = new FileServer( Properties.Resources.ResourceManager );

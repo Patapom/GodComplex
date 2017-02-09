@@ -72,7 +72,7 @@ namespace ImageUtility {
 	public:
 
 		property TYPE						Type				{ TYPE get() { return TYPE( m_nativeObject->GetType() ); } }
-		property ImageFile::PIXEL_FORMAT	Format				{ ImageFile::PIXEL_FORMAT get() { return ImageFile::PIXEL_FORMAT( m_nativeObject->GetFormat() ); } }
+		property PIXEL_FORMAT				Format				{ PIXEL_FORMAT get() { return PIXEL_FORMAT( m_nativeObject->GetFormat() ); } }
 		property UInt32						ArraySize			{ UInt32 get() { return m_nativeObject->GetArraySize(); } }
 		property ImageUtility::ColorProfile^ColorProfile		{ ImageUtility::ColorProfile^ get() { return gcnew ImageUtility::ColorProfile( m_nativeObject->GetColorProfile() ); } }
 		property Mips^						default[UInt32]		{ Mips^ get( UInt32 _index ) { return gcnew Mips( (*m_nativeObject)[_index] ); } }
@@ -125,8 +125,8 @@ namespace ImageUtility {
 		}
 
 		// Allocates/Releases actual ImageFiles or Raw Buffers
-		void			AllocateImageFiles( ImageFile::PIXEL_FORMAT _format, ImageUtility::ColorProfile^ _colorProfile ) {
-			m_nativeObject->AllocateImageFiles( ImageUtilityLib::ImageFile::PIXEL_FORMAT( _format ), *_colorProfile->m_nativeObject );
+		void			AllocateImageFiles( PIXEL_FORMAT _format, ImageUtility::ColorProfile^ _colorProfile ) {
+			m_nativeObject->AllocateImageFiles( BaseLib::PIXEL_FORMAT( _format ), *_colorProfile->m_nativeObject );
 		}
 		void			AllocateImageFiles( GetRawBufferSizeDelegate^ _getRawBufferSizeDelegate ) {
 			// Get a function pointer to the delegate
