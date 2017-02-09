@@ -145,6 +145,9 @@ namespace ImageUtility {
 			m_nativeObject->ClearPointers();
 		}
 
+		// DDS-Compression
+		void			DDSCompress( const ImagesMatrix& _source, ImageFile::COMPRESSION_TYPE _compressionType, COMPONENT_FORMAT _componentFormat=COMPONENT_FORMAT::AUTO );
+
 		// Computes the next mip size
 		static void		NextMipSize( UInt32% _size ) { U32 size; ImageUtilityLib::ImagesMatrix::NextMipSize( size ); _size = size; }
 		static void		NextMipSize( UInt32% _width, UInt32% _height ) { U32 width, height; ImageUtilityLib::ImagesMatrix::NextMipSize( width, height ); _width = width; _height = height; }

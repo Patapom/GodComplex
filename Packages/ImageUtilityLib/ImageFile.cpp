@@ -1758,11 +1758,4 @@ void	ImageFile::DDSSave( const ImagesMatrix& _images, void** _blindPointerImage,
 	}
 }
 
-// Compresses a single image
-void	ImageFile::DDSCompress( COMPRESSION_TYPE _compressionType, ImageFile& _compressedImage ) const {
-
-//	DirectX::Compress( DirectX::TEX_COMPRESS_FLAGS )
-//	Implement meeeee!
-}
-
 #pragma endregion

@@ -143,7 +143,163 @@ void	ImagesMatrix::ClearPointers() {
 	m_format = ImageFile::PIXEL_FORMAT::UNKNOWN;
 }
 
+class ImageCompressor : public ImagesMatrix::GetRawBufferSizeFunctor {
+	virtual const U8*	operator()( U32 _arraySliceIndex, U32 _mipLevelIndex, U32& _rowPitch, U32& _slicePitch ) const override {
+		const ImagesMatrix::Mips::Mip&	sourceMip = m_sourceMatrix[_arraySliceIndex][_mipLevelIndex];
+		ImagesMatrix::Mips::Mip&		targetMip = m_targetMatrix[_arraySliceIndex][_mipLevelIndex];
 
+		U32	W = sourceMip.Width();
+		U32	H = sourceMip.Height();
+		U32	D = sourceMip.Depth();
+
+		DirectX::ScratchImage	sourceImage;
+		if ( m_sourceMatrix.GetType() != ImagesMatrix::TYPE::TEXTURE3D ) {
+			sourceImage->Initialize2D( );
+		} else {
+			sourceImage->Initialize2D();
+		}
+
+		const ImageFile*	sourceImage = sourceMip[0];
+		if ( sourceImage == NULL )
+			throw "Invalid image: ImagesMatrix must be allocated with valid image files before compression!";
+
+
+
+
+
+
+
+		_rowPitch = sourceImage->Pitch();
+		_slicePitch = _rowPitch * H;
+
+		U8*		targetPixels = new U8[_slicePitch * D];
+		for ( U32 Z=0; Z < D; Z ++ ) {
+			sourceImage = sourceMip[Z];
+			if ( sourceImage == NULL )
+				throw "Invalid image: ImagesMatrix must be allocated with valid image files before compression!";
+		
+			U8*		targetSlice = targetPixels + _slicePitch * Z;
+			for ( U32 Y=0; Y < H; Y++ ) {
+				const U8*	scanlineSource = sourceImage->GetBits() + Y * _rowPitch;
+				U8*			scanlineTarget = targetSlice + Y * _rowPitch;
+				memcpy_s( scanlineTarget, _rowPitch, scanlineSource, _rowPitch );
+			}
+		}
+
+		return targetPixels;
+	}
+	const ImagesMatrix&	m_sourceMatrix;
+	DXGI_FORMAT			m_sourceFormat;
+	ImagesMatrix&		m_targetMatrix;
+	DXGI_FORMAT			m_targetFormat;
+public:
+	ImageCompressor( const ImagesMatrix& _sourceMatrix, ImagesMatrix& _targetMatrix ) : m_sourceMatrix( _sourceMatrix ), m_targetMatrix( _targetMatrix ) {}
+};
+
+void	ImagesMatrix::DDSCompress( const ImagesMatrix& _source, COMPRESSION_TYPE _compressionType, COMPONENT_FORMAT _componentFormat, void* _blindPointerDevice ) {
+	if ( _source.m_format == ImageFile::PIXEL_FORMAT::RAW_BUFFER )
+		throw "Unsupported raw buffer source pixel format: the source images must be of an uncompressed type to be compressed!";
+
+	// Ensure compression is possible
+	DXGI_FORMAT	sourceFormat = ImageFile::PixelFormat2DXGIFormat( _source.m_format, _componentFormat );
+	if ( sourceFormat == DXGI_FORMAT_UNKNOWN )
+		throw "Unsupported source format and/or component format!";
+
+	DXGI_FORMAT	targetFormat = CompressionType2DXGIFormat( _compressionType, _componentFormat );
+	if ( targetFormat == DXGI_FORMAT_UNKNOWN )
+		throw "Unsupported target format and/or component format!";
+
+	// Retrieve texture dimensions
+	U32			arraySize = _source.m_mipsArray.Count();
+	RELEASE_ASSERT( arraySize > 0, "Invalid source array size!" );
+
+	const Mips&	sourceReferenceMips = _source[0];
+	U32			mipLevelsCount = sourceReferenceMips.GetMipLevelsCount();
+	RELEASE_ASSERT( mipLevelsCount > 0, "Invalid source mip levels count!" );
+
+	const Mips::Mip&	sourceReferenceMip = sourceReferenceMips[0];
+	U32			W = sourceReferenceMip.Width();
+	U32			H = sourceReferenceMip.Height();
+	U32			D = sourceReferenceMip.Depth();
+
+	// Generic allocate, and copy type
+	InitTextureGeneric( W, H, D, arraySize, mipLevelsCount );
+	m_type = _source.m_type;
+	m_format = ImageFile::PIXEL_FORMAT::RAW_BUFFER;
+
+	// Compress all input images
+	ImageCompressor	 compressor( _source, sourceFormat, *this, targetFormat );
+	AllocateRawBuffers( compressor );
+}
+
+void	ImageFile::DDSCompress( COMPRESSION_TYPE _compressionType, COMPONENT_FORMAT _componentFormat, DXGI_FORMAT& _targetFormat, U32& _rowPitch, U32& _slicePitch, U8*& _compressedRawBuffer ) const {
+
+	DXGI_FORMAT	sourceFormat = PixelFormat2DXGIFormat( m_pixelFormat, _componentFormat );
+	if ( sourceFormat == DXGI_FORMAT_UNKNOWN )
+		throw "Unsupported source format and/or component format!";
+
+	_targetFormat = CompressionType2DXGIFormat( _compressionType, _componentFormat );
+	if ( _targetFormat == DXGI_FORMAT_UNKNOWN )
+		throw "Unsupported target format and/or component format!";
+
+	// Create temporary DirectXTex container and copy our image into it
+	DirectX::ScratchImage		sourceImagesContainer;
+	sourceImagesContainer.Initialize2D( sourceFormat, Width(), Height(), 1, 1 );
+	const DirectX::Image&		imageSource = *sourceImagesContainer.GetImage( 0, 0, 0 );
+	Copy( *this, imageSource );
+
+	// Compress
+	DirectX::TEX_COMPRESS_FLAGS	flags = DirectX::TEX_COMPRESS_PARALLEL;
+	DirectX::ScratchImage		targetImagesContainer;
+	HRESULT	hr = DirectX::Compress( imageSource, _targetFormat, flags, 0.5f, targetImagesContainer );
+	if ( hr != S_OK )
+		throw "Compression failed while using DirectXTex...";
+
+	// Copy back into compressed buffer
+	const DirectX::Image&		imageTarget = *targetImagesContainer.GetImage( 0, 0, 0 );
+	_rowPitch = U32(imageTarget.rowPitch);
+	_slicePitch = U32(imageTarget.slicePitch);
+	_compressedRawBuffer = new U8[_slicePitch];
+	memcpy_s( _compressedRawBuffer, _slicePitch, imageTarget.pixels, _slicePitch );
+}
+
+DXGI_FORMAT	ImageFile::CompressionType2DXGIFormat( COMPRESSION_TYPE _compressionType, COMPONENT_FORMAT _componentFormat ) {
+	switch ( _compressionType ) {
+	case ImageFile::COMPRESSION_TYPE::BC4:
+		switch ( _componentFormat ) {
+		case COMPONENT_FORMAT::AUTO:
+		case COMPONENT_FORMAT::UNORM:	return DXGI_FORMAT_BC4_UNORM;
+		case COMPONENT_FORMAT::SNORM:	return DXGI_FORMAT_BC4_SNORM;
+		}
+
+	case ImageFile::COMPRESSION_TYPE::BC5:
+		switch ( _componentFormat ) {
+		case COMPONENT_FORMAT::AUTO:
+		case COMPONENT_FORMAT::UNORM:	return DXGI_FORMAT_BC5_UNORM;
+		case COMPONENT_FORMAT::SNORM:	return DXGI_FORMAT_BC5_SNORM;
+		}
+
+	case ImageFile::COMPRESSION_TYPE::BC6H:
+		switch ( _componentFormat ) {
+		case COMPONENT_FORMAT::AUTO:
+		case COMPONENT_FORMAT::UNORM:	return DXGI_FORMAT_BC6H_UF16;
+		case COMPONENT_FORMAT::SNORM:	return DXGI_FORMAT_BC6H_SF16;
+		}
+
+	case ImageFile::COMPRESSION_TYPE::BC7:
+		switch ( _componentFormat ) {
+		case COMPONENT_FORMAT::AUTO:
+		case COMPONENT_FORMAT::UNORM:	return DXGI_FORMAT_BC7_UNORM;
+		case COMPONENT_FORMAT::UNORM_sRGB:	return DXGI_FORMAT_BC7_UNORM_SRGB;
+		}
+	}
+
+	return DXGI_FORMAT_UNKNOWN;
+}
+
+//////////////////////////////////////////////////////////////////////////
+// Mips class
+//
 void	ImagesMatrix::Mips::Init( U32 _mipLevelsCount ) {
 	m_mips.SetCount( _mipLevelsCount );
 }

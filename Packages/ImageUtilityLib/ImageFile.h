@@ -424,21 +424,10 @@ namespace ImageUtilityLib {
 	public:
 		//////////////////////////////////////////////////////////////////////////
 		// DDS-related methods
-		enum class COMPRESSION_TYPE {
-			NONE,
-			BC4,
-			BC5,
-			BC6H,
-			BC6H_GPU,
-			BC7,
-			BC7_GPU,
-		};
-
 		static void			DDSLoadFile( const wchar_t* _fileName, ImagesMatrix& _images );
 		static void			DDSLoadMemory( U64 _fileSize, void* _fileContent, ImagesMatrix& _images );
 		static void			DDSSaveFile( const ImagesMatrix& _images, const wchar_t* _fileName, COMPONENT_FORMAT _componentFormat=COMPONENT_FORMAT::AUTO );
 		static void			DDSSaveMemory( const ImagesMatrix& _images, U64& _fileSize, void*& _fileContent, COMPONENT_FORMAT _componentFormat=COMPONENT_FORMAT::AUTO );	// NOTE: The caller MUST delete[] the returned buffer!
- 		void				DDSCompress( COMPRESSION_TYPE _compressionType, ImageFile& _compressedImage ) const;
 
 		// Conversion to and from DXGI pixel formats and image file pixel formats
  		static PIXEL_FORMAT	DXGIFormat2PixelFormat( DXGI_FORMAT _sourceFormat, COMPONENT_FORMAT& _componentFormat, U32& _pixelSize );

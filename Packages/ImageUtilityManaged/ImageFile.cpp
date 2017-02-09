@@ -500,3 +500,16 @@ NativeByteArray^	ImageFile::DDSSaveMemory( ImagesMatrix^ _images, COMPONENT_FORM
 	NativeByteArray^	result = gcnew NativeByteArray( int(fileSize), fileContent );
 	return result;
 }
+
+// NativeByteArray^	ImageFile::DDSCompress( COMPRESSION_TYPE _compressionType, COMPONENT_FORMAT _componentFormat, UInt32% _rowPitch, UInt32% _slicePitch ) {
+// 	U32			rowPitch, slicePitch;
+// 	DXGI_FORMAT	targetFormat;
+// 	U8*			compressedRawBuffer;
+// 	m_nativeObject->DDSCompress( ImageUtilityLib::ImageFile::COMPRESSION_TYPE( _compressionType ), BaseLib::COMPONENT_FORMAT(_componentFormat), targetFormat, rowPitch, slicePitch, compressedRawBuffer );
+// 
+// 	_rowPitch = rowPitch;
+// 	_slicePitch = slicePitch;
+// 
+// 	NativeByteArray^	result = gcnew NativeByteArray( slicePitch, compressedRawBuffer );
+// 	return result;
+// }
