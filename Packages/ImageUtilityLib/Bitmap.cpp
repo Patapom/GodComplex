@@ -58,7 +58,7 @@ void	Bitmap::FromImageFile( const ImageFile& _sourceFile, const ColorProfile* _p
 // And this method converts back the bitmap to RGBA32F format
 void	Bitmap::ToImageFile( ImageFile& _targetFile, const ColorProfile& _colorProfile, bool _premultiplyAlpha ) const {
 	// Convert back to float4 RGBA using color profile
-	_targetFile.Init( m_width, m_height, PIXEL_FORMAT::RGBA32F, _colorProfile );
+	_targetFile.Init( m_width, m_height, PIXEL_FORMAT::RGBA32, _colorProfile );
 	const bfloat4*	source = m_XYZ;
 	bfloat4*		target = (bfloat4*) _targetFile.GetBits();
 	if ( _premultiplyAlpha ) {

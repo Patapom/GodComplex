@@ -297,29 +297,25 @@ DXGI_FORMAT	ImagesMatrix::CompressionType2DXGIFormat( COMPRESSION_TYPE _compress
 	switch ( _compressionType ) {
 	case COMPRESSION_TYPE::BC4:
 		switch ( _componentFormat ) {
-		case COMPONENT_FORMAT::AUTO:
 		case COMPONENT_FORMAT::UNORM:	return DXGI_FORMAT_BC4_UNORM;
 		case COMPONENT_FORMAT::SNORM:	return DXGI_FORMAT_BC4_SNORM;
 		}
 
 	case COMPRESSION_TYPE::BC5:
 		switch ( _componentFormat ) {
-		case COMPONENT_FORMAT::AUTO:
 		case COMPONENT_FORMAT::UNORM:	return DXGI_FORMAT_BC5_UNORM;
 		case COMPONENT_FORMAT::SNORM:	return DXGI_FORMAT_BC5_SNORM;
 		}
 
 	case COMPRESSION_TYPE::BC6H:
 		switch ( _componentFormat ) {
-		case COMPONENT_FORMAT::AUTO:
 		case COMPONENT_FORMAT::UNORM:	return DXGI_FORMAT_BC6H_UF16;
 		case COMPONENT_FORMAT::SNORM:	return DXGI_FORMAT_BC6H_SF16;
 		}
 
 	case COMPRESSION_TYPE::BC7:
 		switch ( _componentFormat ) {
-		case COMPONENT_FORMAT::AUTO:
-		case COMPONENT_FORMAT::UNORM:	return DXGI_FORMAT_BC7_UNORM;
+		case COMPONENT_FORMAT::UNORM:		return DXGI_FORMAT_BC7_UNORM;
 		case COMPONENT_FORMAT::UNORM_sRGB:	return DXGI_FORMAT_BC7_UNORM_SRGB;
 		}
 	}
