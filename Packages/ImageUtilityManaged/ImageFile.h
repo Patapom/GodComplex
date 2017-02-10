@@ -53,63 +53,57 @@ using namespace System;
 
 namespace ImageUtility {
 
+	// Where to declare this? It should be part of a managed "Base" library as well...
+	public enum class	COMPONENT_FORMAT {
+		AUTO,	// Default value, will select UNORM for integer types and FLOAT for floating-point types
+		UNORM,
+		UNORM_sRGB,
+		SNORM,
+		UINT,
+		SINT,
+	};
+
 	// This enum matches the classes available in PixelFormat.h (which in turn match the DXGI formats)
 	public enum class PIXEL_FORMAT : UInt32 {
 		UNKNOWN = ~0U,
-		RAW_BUFFER				= 0x80000000U,	// This flag is used to indicate raw buffer formats that are not directly mappable to a recognized pixel format (e.g. compressed formats)
-		COMPRESSED				= 0x40000000U,	// This flag is used by compressed formats that are only supported by DDS images
+		NOT_NATIVELY_SUPPORTED	= 0x80000000U,	// This flag is used by formats that are not natively supported by the FreeImage library
+		RAW_BUFFER				= 0x40000000U,	// This flag is used to indicate raw buffer formats that are not directly mappable to a recognized pixel format (e.g. compressed formats)
+		COMPRESSED				= 0x20000000U,	// This flag is used by compressed formats that are only supported by DDS images
 
 		// 8-bits
 		R8		= 0,
-		RG8		= 1,
+		RG8		= 1		| NOT_NATIVELY_SUPPORTED,	// FreeImage thinks it's R5G6B5! Aliased as RGBA8
 		RGB8	= 2,
 		RGBA8	= 3,
 
 		// 16-bits
 		R16		= 4,
-		RG16	= 5,
+		RG16	= 5		| NOT_NATIVELY_SUPPORTED,	// Unsupported by FreeImage, aliased as RGBA16
 		RGB16	= 6,
 		RGBA16	= 7,
 
-// 		// 16-bits half-precision floating points
-// 		// WARNING: These formats are NOT natively supported by FreeImage but can be used by DDS for example so I chose
-// 		//			 to support them as regular U16 formats but treating the raw U16 as half-floats internally...
-// 		// NOTE: These are NOT loadable or saveable by the regular Load()/Save() routine, this won't crash but it will produce garbage
-// 		//		 These formats should only be used for in-memory manipulations and DDS-related routines that can manipulate them
-// 		//
-// 		R16F	= 8		| NOT_NATIVELY_SUPPORTED,	// Unsupported by FreeImage, aliased as R16_UNORM
-// 		RG16F	= 9		| NOT_NATIVELY_SUPPORTED,	// Unsupported by FreeImage, aliased as RGB16_UNORM (WARNING: extra blue channel is "unused", actually pixels RGBRGBRGB... scanlines are treated as RGRGRGRG...)
-// 		RGB16F	= 10	| NOT_NATIVELY_SUPPORTED,	// Unsupported by FreeImage, aliased as RGB16_UNORM
-// 		RGBA16F	= 11	| NOT_NATIVELY_SUPPORTED,	// Unsupported by FreeImage, aliased as RGBA16_UNORM
-
-// 		// 32-bits
-// 		R32F	= 12,
-// 		RG32F	= 13	| NOT_NATIVELY_SUPPORTED,	// Unsupported by FreeImage, aliased as RGBA32F
-// 		RGB32F	= 14,
-// 		RGBA32F = 15,
+		// 16-bits half-precision floating points
+		// WARNING: These formats are NOT natively supported by FreeImage but can be used by DDS for example so I chose
+		//			 to support them as regular U16 formats but treating the raw U16 as half-floats internally...
+		// NOTE: These are NOT loadable or saveable by the regular Load()/Save() routine, this won't crash but it will produce garbage
+		//		 These formats should only be used for in-memory manipulations and DDS-related routines that can manipulate them
+		//
+		R16F	= 8		| NOT_NATIVELY_SUPPORTED,	// Unsupported by FreeImage, aliased as R16_UNORM
+		RG16F	= 9		| NOT_NATIVELY_SUPPORTED,	// Unsupported by FreeImage, aliased as RGB16_UNORM (WARNING: extra blue channel is "unused", actually pixels RGBRGBRGB... scanlines are treated as RGRGRGRG...)
+		RGB16F	= 10	| NOT_NATIVELY_SUPPORTED,	// Unsupported by FreeImage, aliased as RGB16_UNORM
+		RGBA16F	= 11	| NOT_NATIVELY_SUPPORTED,	// Unsupported by FreeImage, aliased as RGBA16_UNORM
 
 		// 32-bits
-		R32		= 8,
-		RG32	= 9,
-		RGB32	= 10,
-		RGBA32	= 11,
+		R32F	= 12,
+		RG32F	= 13	| NOT_NATIVELY_SUPPORTED,	// Unsupported by FreeImage, aliased as RGBA32F
+		RGB32F	= 14,
+		RGBA32F = 15,
 
 		// This is the "raw compressed format" used to support compressed or otherwise unsupported pixel formats like DirectX BCx formats (only used by DDS images)
 		BC4		= 256	| RAW_BUFFER | COMPRESSED,	// Only supported by DDS, raw buffered images
 		BC5		= 257	| RAW_BUFFER | COMPRESSED,	// Only supported by DDS, raw buffered images
 		BC6H	= 258	| RAW_BUFFER | COMPRESSED,	// Only supported by DDS, raw buffered images
 		BC7		= 259	| RAW_BUFFER | COMPRESSED,	// Only supported by DDS, raw buffered images
-	};
-
-	// Where to declare this? It should be part of a managed "Base" library as well...
-	public enum class	COMPONENT_FORMAT {
-//		AUTO,	// Default value, will select UNORM for integer types and FLOAT for floating-point types
-		UNORM,
-		UNORM_sRGB,
-		SNORM,
-		UINT,
-		SINT,
-		FLOAT,
 	};
 
 	ref class ImagesMatrix;

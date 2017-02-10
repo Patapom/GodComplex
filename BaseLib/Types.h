@@ -27,29 +27,6 @@ typedef signed int			S32;
 typedef unsigned long long	U64;
 typedef signed long long	S64;
 
-struct uint2 {
-	U32	x, y;
-};
-
-struct uint3 {
-	U32	x, y, z;
-};
-
-struct uint4 {
-	U32	x, y, z, w;
-};
-
-struct sint2 {
-	S32	x, y;
-};
-
-struct sint3 {
-	S32	x, y, z;
-};
-
-struct sint4 {
-	S32	x, y, z, w;
-};
 
 //////////////////////////////////////////////////////////////////////////
 //

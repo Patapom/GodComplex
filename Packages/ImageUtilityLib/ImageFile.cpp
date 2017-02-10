@@ -47,7 +47,8 @@ bool	ImageFile::HasAlpha() const {
 	switch ( m_pixelFormat ) {
 	case PIXEL_FORMAT::RGBA8:
 	case PIXEL_FORMAT::RGBA16:
-	case PIXEL_FORMAT::RGBA32:
+	case PIXEL_FORMAT::RGBA16F:
+	case PIXEL_FORMAT::RGBA32F:
 		return true;
 	}
 	return false;
@@ -58,7 +59,7 @@ void	ImageFile::Get( U32 _X, U32 _Y, bfloat4& _color ) const {
 	const U8*		bits = (BYTE*) FreeImage_GetBits( m_bitmap );
 	bits += pitch * _Y + m_pixelAccessor->Size() * _X;
 
-	m_pixelAccessor->Read( bits, _color );
+	m_pixelAccessor->RGBA( bits, _color );
 }
 void	ImageFile::Set( U32 _X, U32 _Y, const bfloat4& _color ) {
 	const unsigned	pitch  = FreeImage_GetPitch( m_bitmap );
@@ -73,7 +74,7 @@ void	ImageFile::Add( U32 _X, U32 _Y, const bfloat4& _color ) {
 	bits += pitch * _Y + m_pixelAccessor->Size() * _X;
 
 	bfloat4	temp;
-	m_pixelAccessor->Read( bits, temp );
+	m_pixelAccessor->RGBA( bits, temp );
 	temp += _color;
 	m_pixelAccessor->Write( bits, temp );
 }
@@ -235,10 +236,10 @@ void	ImageFile::Save( FILE_FORMAT _format, SAVE_FLAGS _options, U64 _fileSize, v
 void	ImageFile::ConvertFrom( const ImageFile& _source, PIXEL_FORMAT _targetFormat ) {
 	Exit();
 
-// 	// Ensure we're not dealing with half-precision floats!
-// 	if (	(U32(_source.m_pixelFormat) & U32(PIXEL_FORMAT::NOT_NATIVELY_SUPPORTED))
-// 		 || (U32(_targetFormat) & U32(PIXEL_FORMAT::NOT_NATIVELY_SUPPORTED)) )
-// 		throw "You cannot convert to or from the half-precision floating point formats because they are not natively supported by FreeImage! (and I'm lazy and never wrote the converters myself :/)";
+	// Ensure we're not dealing with half-precision floats!
+	if (	(U32(_source.m_pixelFormat) & U32(PIXEL_FORMAT::NOT_NATIVELY_SUPPORTED))
+		 || (U32(_targetFormat) & U32(PIXEL_FORMAT::NOT_NATIVELY_SUPPORTED)) )
+		throw "You cannot convert to or from the half-precision floating point formats because they are not natively supported by FreeImage! (and I'm lazy and never wrote the converters myself :/)";
 
 	// Convert source
 	FREE_IMAGE_TYPE	sourceType = PixelFormat2FIT( _source.m_pixelFormat );
@@ -321,14 +322,14 @@ void	ImageFile::ToneMapFrom( const ImageFile& _source, toneMapper_t _toneMapper 
 
 	// Check the source is a HDR format
 	switch ( _source.m_pixelFormat ) {
-	case PIXEL_FORMAT::R16:
-	case PIXEL_FORMAT::RG16:
-	case PIXEL_FORMAT::RGB16:
-	case PIXEL_FORMAT::RGBA16:
-	case PIXEL_FORMAT::R32:
-	case PIXEL_FORMAT::RG32:
-	case PIXEL_FORMAT::RGB32:
-	case PIXEL_FORMAT::RGBA32:
+	case PIXEL_FORMAT::R16F:
+	case PIXEL_FORMAT::RG16F:
+	case PIXEL_FORMAT::RGB16F:
+	case PIXEL_FORMAT::RGBA16F:
+	case PIXEL_FORMAT::R32F:
+	case PIXEL_FORMAT::RG32F:
+	case PIXEL_FORMAT::RGB32F:
+	case PIXEL_FORMAT::RGBA32F:
 		break;	// Okay!
 	default:
 		throw "You must provide a HDR format to use the ToneMap() function!";
@@ -340,8 +341,8 @@ void	ImageFile::ToneMapFrom( const ImageFile& _source, toneMapper_t _toneMapper 
 	U32	pixelSize = accessor.Size();
 
 	// Convert source
-	if (	_source.m_pixelFormat == PIXEL_FORMAT::R16
-		 || _source.m_pixelFormat == PIXEL_FORMAT::R32 ) {
+	if (	_source.m_pixelFormat == PIXEL_FORMAT::R16F
+		 || _source.m_pixelFormat == PIXEL_FORMAT::R32F ) {
 		// Convert to R8
 		m_bitmap = FreeImage_Allocate( W, H, 8, FI_RGBA_RED_MASK, 0, 0 );
 
@@ -351,26 +352,28 @@ void	ImageFile::ToneMapFrom( const ImageFile& _source, toneMapper_t _toneMapper 
 		const U8*	src_bits = (U8*) FreeImage_GetBits( _source.m_bitmap );
 		U8*			dst_bits = (U8*) FreeImage_GetBits( m_bitmap );
 
-		bfloat4		tempHDR;
+		bfloat3		tempHDR;
 		bfloat3		tempLDR;
 		for ( U32 Y=0; Y < H; Y++ ) {
 			const U8*	src_pixel = src_bits;
 			U8*			dst_pixel = (BYTE*) dst_bits;
 			for ( U32 X=0; X < W; X++, src_pixel+=pixelSize, dst_pixel++ ) {
 				// Apply tone mapping
-				accessor.Read( src_pixel, tempHDR );
-				(*_toneMapper)( (bfloat3&) tempHDR, tempLDR );
+				tempHDR.x = accessor.Red( src_pixel );
+				tempHDR.y = tempHDR.x;
+				tempHDR.z = tempHDR.x;
+				(*_toneMapper)( tempHDR, tempLDR );
 				tempLDR.x = CLAMP( tempLDR.x, 0.0f, 1.0f );
 
 				// Write clamped LDR value
-				dst_pixel[FI_RGBA_RED] = BYTE(255.0F * tempLDR.x + 0.5F);
+				dst_pixel[FI_RGBA_RED]   = BYTE(255.0F * tempLDR.x + 0.5F);
 			}
 			src_bits += src_pitch;
 			dst_bits += dst_pitch;
 		}
 	// ===============================================================================
-	} else if (	_source.m_pixelFormat == PIXEL_FORMAT::RG16
-			 || _source.m_pixelFormat == PIXEL_FORMAT::RG32 ) {
+	} else if (	_source.m_pixelFormat == PIXEL_FORMAT::RG16F
+			 || _source.m_pixelFormat == PIXEL_FORMAT::RG32F ) {
 		// Convert to RG8
 		m_bitmap = FreeImage_Allocate( W, H, 16, FI_RGBA_RED_MASK, FI_RGBA_GREEN_MASK, 0 );
 
@@ -387,10 +390,11 @@ void	ImageFile::ToneMapFrom( const ImageFile& _source, toneMapper_t _toneMapper 
 			U8*			dst_pixel = (BYTE*) dst_bits;
 			for ( U32 X=0; X < W; X++, src_pixel+=pixelSize, dst_pixel += 2 ) {
 				// Apply tone mapping
-				accessor.Read( src_pixel, tempHDR );
+				accessor.RGBA( src_pixel, tempHDR );
 				(*_toneMapper)( (bfloat3&) tempHDR, tempLDR );
 				tempLDR.x = CLAMP( tempLDR.x, 0.0f, 1.0f );
 				tempLDR.y = CLAMP( tempLDR.y, 0.0f, 1.0f );
+				tempLDR.z = CLAMP( tempLDR.z, 0.0f, 1.0f );
 
 				// Write clamped LDR value
 				dst_pixel[FI_RGBA_RED]   = BYTE(255.0F * tempLDR.x + 0.5F);
@@ -400,8 +404,8 @@ void	ImageFile::ToneMapFrom( const ImageFile& _source, toneMapper_t _toneMapper 
 			dst_bits += dst_pitch;
 		}
 	// ===============================================================================
-	} else if (	_source.m_pixelFormat == PIXEL_FORMAT::RGB16
-			 || _source.m_pixelFormat == PIXEL_FORMAT::RGB32 ) {
+	} else if (	_source.m_pixelFormat == PIXEL_FORMAT::RGB16F
+			 || _source.m_pixelFormat == PIXEL_FORMAT::RGB32F ) {
 		// Convert to RGB8
 		m_bitmap = FreeImage_Allocate( W, H, 24, FI_RGBA_RED_MASK, FI_RGBA_GREEN_MASK, FI_RGBA_BLUE_MASK );
 
@@ -418,7 +422,7 @@ void	ImageFile::ToneMapFrom( const ImageFile& _source, toneMapper_t _toneMapper 
 			U8*			dst_pixel = (BYTE*) dst_bits;
 			for ( U32 X=0; X < W; X++, src_pixel+=pixelSize, dst_pixel += 3 ) {
 				// Apply tone mapping
-				accessor.Read( src_pixel, tempHDR );
+				accessor.RGBA( src_pixel, tempHDR );
 				(*_toneMapper)( (bfloat3&) tempHDR, tempLDR );
 				tempLDR.x = CLAMP( tempLDR.x, 0.0f, 1.0f );
 				tempLDR.y = CLAMP( tempLDR.y, 0.0f, 1.0f );
@@ -433,8 +437,8 @@ void	ImageFile::ToneMapFrom( const ImageFile& _source, toneMapper_t _toneMapper 
 			dst_bits += dst_pitch;
 		}
 	// ===============================================================================
-	} else if (	_source.m_pixelFormat == PIXEL_FORMAT::RGBA16
-			 || _source.m_pixelFormat == PIXEL_FORMAT::RGBA32 ) {
+	} else if (	_source.m_pixelFormat == PIXEL_FORMAT::RGBA16F
+			 || _source.m_pixelFormat == PIXEL_FORMAT::RGBA32F ) {
 		// Convert to RGBA8
 		m_bitmap = FreeImage_Allocate( W, H, 32, FI_RGBA_RED_MASK, FI_RGBA_GREEN_MASK, FI_RGBA_BLUE_MASK );
 
@@ -451,7 +455,7 @@ void	ImageFile::ToneMapFrom( const ImageFile& _source, toneMapper_t _toneMapper 
 			U8*			dst_pixel = (BYTE*) dst_bits;
 			for ( U32 X=0; X < W; X++, src_pixel+=pixelSize, dst_pixel += 4 ) {
 				// Apply tone mapping
-				accessor.Read( src_pixel, tempHDR );
+				accessor.RGBA( src_pixel, tempHDR );
 				(*_toneMapper)( (bfloat3&) tempHDR, tempLDR );
 				tempLDR.x = CLAMP( tempLDR.x, 0.0f, 1.0f );
 				tempLDR.y = CLAMP( tempLDR.y, 0.0f, 1.0f );
@@ -491,7 +495,7 @@ void	ImageFile::ReadScanline( U32 _Y, bfloat4* _color, U32 _startX, U32 _count )
 
 	_count = MIN( _count, W-_startX );
 	for ( U32 i=_count; i > 0; i--, bits += pixelSize, _color++ ) {
-		m_pixelAccessor->Read( bits, *_color );
+		m_pixelAccessor->RGBA( bits, *_color );
 	}
 }
 void	ImageFile::WriteScanline( U32 _Y, const bfloat4* _color, U32 _startX, U32 _count ) {
@@ -656,11 +660,16 @@ FREE_IMAGE_TYPE	ImageFile::PixelFormat2FIT( PIXEL_FORMAT _pixelFormat ) {
 		case PIXEL_FORMAT::RG16:	return FIT_RGB16;	// Here we unfortunately have to use a larger format to accommodate for our 2 components
 		case PIXEL_FORMAT::RGB16:	return FIT_RGB16;
 		case PIXEL_FORMAT::RGBA16:	return FIT_RGBA16;
+		// 16-bits half-precision floating points
+		case PIXEL_FORMAT::R16F:	return FIT_UINT16;
+		case PIXEL_FORMAT::RG16F:	return FIT_RGB16;	// Here we unfortunately have to use a larger format to accommodate for our 2 components
+		case PIXEL_FORMAT::RGB16F:	return FIT_RGB16;
+		case PIXEL_FORMAT::RGBA16F:	return FIT_RGBA16;
 		// 32-bits
-		case PIXEL_FORMAT::R32:		return FIT_FLOAT;
-		case PIXEL_FORMAT::RG32:	return FIT_RGBF;	// Here we unfortunately have to use a larger format to accommodate for our 2 components
-		case PIXEL_FORMAT::RGB32:	return FIT_RGBF;
-		case PIXEL_FORMAT::RGBA32:	return FIT_RGBAF;
+		case PIXEL_FORMAT::R32F:	return FIT_FLOAT;
+		case PIXEL_FORMAT::RG32F:	return FIT_RGBF;	// Here we unfortunately have to use a larger format to accommodate for our 2 components
+		case PIXEL_FORMAT::RGB32F:	return FIT_RGBF;
+		case PIXEL_FORMAT::RGBA32F:	return FIT_RGBAF;
 	}
 
 	return FIT_UNKNOWN;

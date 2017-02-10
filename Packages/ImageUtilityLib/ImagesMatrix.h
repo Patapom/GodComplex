@@ -149,7 +149,7 @@ namespace ImageUtilityLib {
 			BC6H,
 			BC7,
 		};
-		void			DDSCompress( const ImagesMatrix& _source, COMPRESSION_TYPE _compressionType, COMPONENT_FORMAT _componentFormat, void* _blindPointerDevice=NULL );	// NOTE: Pass a valid D3D device to enable GPU compression
+		void			DDSCompress( const ImagesMatrix& _source, COMPRESSION_TYPE _compressionType, COMPONENT_FORMAT _componentFormat=COMPONENT_FORMAT::AUTO, void* _blindPointerDevice=NULL );	// NOTE: Pass a valid D3D device to enable GPU compression
 
 		static DXGI_FORMAT	CompressionType2DXGIFormat( COMPRESSION_TYPE _compressionType, COMPONENT_FORMAT _componentFormat );
 

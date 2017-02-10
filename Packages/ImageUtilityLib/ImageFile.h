@@ -305,24 +305,10 @@ namespace ImageUtilityLib {
 		void				ToneMapFrom( const ImageFile& _source, toneMapper_t _toneMapper );
 
 		// Generic color getter/setter
-		void				ReadScanline_UNORM( U32 _Y, bfloat4* _color, U32 _startX=0, U32 _count=~0U ) const;
-		void				ReadScanline_SNORM( U32 _Y, bfloat4* _color, U32 _startX=0, U32 _count=~0U ) const;
-		void				ReadScanline_UINT( U32 _Y, uint4* _color, U32 _startX=0, U32 _count=~0U ) const;
-		void				ReadScanline_SINT( U32 _Y, sint4* _color, U32 _startX=0, U32 _count=~0U ) const;
-		void				ReadScanline_FLOAT( U32 _Y, bfloat4* _color, U32 _startX=0, U32 _count=~0U ) const;
-
-		void				WriteScanline_UNORM( U32 _Y, const bfloat4* _color, U32 _startX=0, U32 _count=~0U );
-		void				WriteScanline_SNORM( U32 _Y, const bfloat4* _color, U32 _startX=0, U32 _count=~0U );
-		void				WriteScanline_UINT( U32 _Y, const uint4* _color, U32 _startX=0, U32 _count=~0U );
-		void				WriteScanline_SINT( U32 _Y, const sint4* _color, U32 _startX=0, U32 _count=~0U );
-		void				WriteScanline_FLOAT( U32 _Y, const bfloat4* _color, U32 _startX=0, U32 _count=~0U );
-
-		void				ReadPixels_UNORM( pixelReaderWriter_t _reader, U32 _startX=0, U32 _startY=0, U32 _width=~0U, U32 _height=~0U ) const;
-		void				ReadPixels_SNORM( pixelReaderWriter_t _reader, U32 _startX=0, U32 _startY=0, U32 _width=~0U, U32 _height=~0U ) const;
-		void				ReadPixels_FLOAT( pixelReaderWriter_t _reader, U32 _startX=0, U32 _startY=0, U32 _width=~0U, U32 _height=~0U ) const;
-		void				WritePixels_UNORM( pixelReaderWriter_t _writer, U32 _startX=0, U32 _startY=0, U32 _width=~0U, U32 _height=~0U );
-		void				WritePixels_SNORM( pixelReaderWriter_t _writer, U32 _startX=0, U32 _startY=0, U32 _width=~0U, U32 _height=~0U );
-		void				WritePixels_FLOAT( pixelReaderWriter_t _writer, U32 _startX=0, U32 _startY=0, U32 _width=~0U, U32 _height=~0U );
+		void				ReadScanline( U32 _Y, bfloat4* _color, U32 _startX=0, U32 _count=~0U ) const;
+		void				WriteScanline( U32 _Y, const bfloat4* _color, U32 _startX=0, U32 _count=~0U );
+		void				ReadPixels( pixelReaderWriter_t _reader, U32 _startX=0, U32 _startY=0, U32 _width=~0U, U32 _height=~0U ) const;
+		void				WritePixels( pixelReaderWriter_t _writer, U32 _startX=0, U32 _startY=0, U32 _width=~0U, U32 _height=~0U );
 
 		// Retrieves the image file type based on the image file name
 		// WARNING: The image file MUST exist on disk as FreeImage inspects the content!
@@ -379,8 +365,8 @@ namespace ImageUtilityLib {
 		// DDS-related methods
 		static void			DDSLoadFile( const wchar_t* _fileName, ImagesMatrix& _images );
 		static void			DDSLoadMemory( U64 _fileSize, void* _fileContent, ImagesMatrix& _images );
-		static void			DDSSaveFile( const ImagesMatrix& _images, const wchar_t* _fileName, COMPONENT_FORMAT _componentFormat );
-		static void			DDSSaveMemory( const ImagesMatrix& _images, U64& _fileSize, void*& _fileContent, COMPONENT_FORMAT _componentFormat );	// NOTE: The caller MUST delete[] the returned buffer!
+		static void			DDSSaveFile( const ImagesMatrix& _images, const wchar_t* _fileName, COMPONENT_FORMAT _componentFormat=COMPONENT_FORMAT::AUTO );
+		static void			DDSSaveMemory( const ImagesMatrix& _images, U64& _fileSize, void*& _fileContent, COMPONENT_FORMAT _componentFormat=COMPONENT_FORMAT::AUTO );	// NOTE: The caller MUST delete[] the returned buffer!
 
 	private:
 
