@@ -1273,7 +1273,7 @@ void	ImageFile::DDSLoad( const void* _blindPointerImage, const void* _blindPoint
 			_images.InitTexture2DArray( U32(meta.width), U32(meta.height), arraySize, mipLevelsCount );
 		}
 
-		if ( format != PIXEL_FORMAT::RAW_BUFFER ) {
+		if ( (U32(format) & U32(PIXEL_FORMAT::RAW_BUFFER)) == 0 ) {
 			// Allocate actual images
 			_images.AllocateImageFiles( format, profile );
 
@@ -1307,7 +1307,7 @@ void	ImageFile::DDSLoad( const void* _blindPointerImage, const void* _blindPoint
 		// We are dealing with a 3D texture format
 		_images.InitTexture3D( U32(meta.width), U32(meta.height), U32(meta.depth), U32(meta.mipLevels) );
 
-		if ( format != PIXEL_FORMAT::RAW_BUFFER ) {
+		if ( (U32(format) & U32(PIXEL_FORMAT::RAW_BUFFER)) == 0 ) {
 			// Allocate actual images
 			_images.AllocateImageFiles( format, profile );
 
@@ -1433,7 +1433,7 @@ void	ImageFile::DDSSave( const ImagesMatrix& _images, void** _blindPointerImage,
 // 			}
 
 			// Copy to scratch image
-			if ( _images.GetFormat() != PIXEL_FORMAT::RAW_BUFFER ) {
+			if ( (U32(_images.GetFormat()) & U32(PIXEL_FORMAT::RAW_BUFFER)) == 0 ) {
 				for ( U32 arrayIndex=0; arrayIndex < arraySize; arrayIndex++ ) {
 					const ImagesMatrix::Mips&	sourceMips = _images[arrayIndex];
 					for ( U32 mipLevelIndex=0; mipLevelIndex < mipLevelsCount; mipLevelIndex++ ) {
@@ -1471,7 +1471,7 @@ void	ImageFile::DDSSave( const ImagesMatrix& _images, void** _blindPointerImage,
 				throw "Failed to initialize 3D texture!";
 
 			// Copy to scratch image
-			if ( _images.GetFormat() != PIXEL_FORMAT::RAW_BUFFER ) {
+			if ( (U32(_images.GetFormat()) & U32(PIXEL_FORMAT::RAW_BUFFER)) == 0 ) {
 				for ( U32 mipLevelIndex=0; mipLevelIndex < mipLevelsCount; mipLevelIndex++ ) {
 					for ( U32 sliceIndex=0; sliceIndex < D; sliceIndex++ ) {
 						const ImageFile*	sourceImage = _images[0][mipLevelIndex][sliceIndex];

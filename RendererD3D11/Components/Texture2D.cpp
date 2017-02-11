@@ -80,6 +80,8 @@ Texture2D::Texture2D( Device& _device, const ImageUtilityLib::ImagesMatrix& _ima
 	desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
 	desc.MiscFlags = m_isCubeMap ? D3D11_RESOURCE_MISC_TEXTURECUBE : 0;
 
+	bool	isRawBuffer = (U32(_images.GetFormat()) & U32(BaseLib::PIXEL_FORMAT::RAW_BUFFER)) != 0;
+
 	// Prepare individual sub-resource descriptors
 	D3D11_SUBRESOURCE_DATA*	subResourceDescriptors = new D3D11_SUBRESOURCE_DATA[m_mipLevelsCount*m_arraySize];
 
@@ -94,17 +96,24 @@ Texture2D::Texture2D( Device& _device, const ImageUtilityLib::ImagesMatrix& _ima
 			ASSERT( mip.Width() == W && mip.Height() == H, "Mip's width/height mismatch!" );
 			ASSERT( mip.Depth() == 1, "Unexpected mip depth! Must be 1 for 2D textures. Other slices will simply be ignored..." );
 
-throw "TODO: Handle raw buffers!";
+			if ( !isRawBuffer ) {
+				// Regular image
+				const ImageUtilityLib::ImageFile*	mipImage = mip[0];
+				RELEASE_ASSERT( mipImage != NULL, "Invalid mip image!" );
 
-			const ImageUtilityLib::ImageFile*	mipImage = mip[0];
-			RELEASE_ASSERT( mipImage != NULL, "Invalid mip image!" );
+				U32	rowPitch = mipImage->Pitch();
+				U32	depthPitch = H * rowPitch;
 
-			U32	rowPitch = mipImage->Pitch();
-			U32	depthPitch = H * rowPitch;
+				subResourceDescriptors[arrayIndex*m_mipLevelsCount+mipLevelIndex].pSysMem = mipImage->GetBits();
+				subResourceDescriptors[arrayIndex*m_mipLevelsCount+mipLevelIndex].SysMemPitch = rowPitch;
+				subResourceDescriptors[arrayIndex*m_mipLevelsCount+mipLevelIndex].SysMemSlicePitch = depthPitch;
 
-			subResourceDescriptors[arrayIndex*m_mipLevelsCount+mipLevelIndex].pSysMem = mipImage->GetBits();
-			subResourceDescriptors[arrayIndex*m_mipLevelsCount+mipLevelIndex].SysMemPitch = rowPitch;
-			subResourceDescriptors[arrayIndex*m_mipLevelsCount+mipLevelIndex].SysMemSlicePitch = depthPitch;
+			} else {
+				// Raw buffer image
+				subResourceDescriptors[arrayIndex*m_mipLevelsCount+mipLevelIndex].pSysMem = mip.GetRawBuffer();
+				subResourceDescriptors[arrayIndex*m_mipLevelsCount+mipLevelIndex].SysMemPitch = mip.RowPitch();
+				subResourceDescriptors[arrayIndex*m_mipLevelsCount+mipLevelIndex].SysMemSlicePitch = mip.SlicePitch();
+			}
 
 			NextMipSize( W, H );
 		}

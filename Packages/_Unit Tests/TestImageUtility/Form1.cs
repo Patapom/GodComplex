@@ -1144,10 +1144,16 @@ float	quality = _RAW ? 3.0f : 3.0f;
 					// DDS
 					case LOADING_TESTS.DDS_2D_RGBA8_MIPS: {
 //						ImagesMatrix	images = ImageFile.DDSLoadFile( new System.IO.FileInfo( @"..\..\Images\In\DDS\AreaLightSAT.dds" ) );
-						ImagesMatrix	images = ImageFile.DDSLoadFile( new System.IO.FileInfo( @"..\..\Images\In\DDS\caustics2.dds" ) );
+//						ImagesMatrix	images = ImageFile.DDSLoadFile( new System.IO.FileInfo( @"..\..\Images\In\DDS\caustics2.dds" ) );		// BC4_UNORM
+						ImagesMatrix	images = ImageFile.DDSLoadFile( new System.IO.FileInfo( @"..\..\Images\In\DDS\garage4_hd.dds" ) );
+//						ImagesMatrix	images = ImageFile.DDSLoadFile( new System.IO.FileInfo( @"..\..\Images\In\DDS\kitchen_cross.dds" ) );
 						m_imageFile = images[0][0][0];
 						images[0][0][0] = null;	// Remove it from the matrix so it doesn't get destroyed!
-						panelLoad.Bitmap = m_imageFile.AsBitmap;
+//						panelLoad.Bitmap = m_imageFile.AsBitmap;
+						panelLoad.Bitmap = m_imageFile.AsCustomBitmap( ( ref float4 _color ) => {
+							_color *= 1.0f;
+							_color.w = 1;
+						} );
 
 						customLines = "\r\n"
 									+ images.ArraySize + " array slices\r\n"

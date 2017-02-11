@@ -988,7 +988,7 @@ namespace BaseLib {
 		static class desc_t : public IPixelAccessor {
 		public:
 
-			U32		Size() const override { return 8; }
+			U32		Size() const override { return 16; }
 
 			void Write( void* _pixel, U32 _R, U32 _G, U32 _B, U32 _A ) const override {	PF_RGBA32& P = *((PF_RGBA32*) _pixel);
 				P.R = _R;
