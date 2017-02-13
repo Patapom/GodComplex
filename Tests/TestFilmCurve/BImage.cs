@@ -20,8 +20,7 @@ namespace TestFilmicCurve
 
 		#region NESTED TYPES
 
-		public class PixelFormat
-		{
+		public class PixelFormat {
 			#region ENUMS
 
 			public enum Layout {
@@ -143,70 +142,45 @@ namespace TestFilmicCurve
 				}
 			}
 
-			public Renderer.PIXEL_FORMAT	EquivalentRendererFormat {
-				get {
-					switch ( m_layout ) {
-						case Layout.LAYOUT_8: 
-							switch ( m_type ) {
-								case Type.UNORM: return Renderer.PIXEL_FORMAT.R8_UNORM;
-							}
-							break;
+			public void	GetEquivalentRendererFormat( out ImageUtility.PIXEL_FORMAT _pixelFormat, out ImageUtility.COMPONENT_FORMAT _componentFormat ) {
+				switch ( m_type ) {
+					case Type.UINT:			_componentFormat = ImageUtility.COMPONENT_FORMAT.UINT; break;
+					case Type.SINT:			_componentFormat = ImageUtility.COMPONENT_FORMAT.SINT; break;
+					case Type.UNORM:		_componentFormat = ImageUtility.COMPONENT_FORMAT.UNORM; break;
+					case Type.UNORM_sRGB:	_componentFormat = ImageUtility.COMPONENT_FORMAT.UNORM_sRGB; break;
+					case Type.SNORM:		_componentFormat = ImageUtility.COMPONENT_FORMAT.SNORM; break;
+					default:
+						_componentFormat = ImageUtility.COMPONENT_FORMAT.AUTO;
+						break;
+				}
 
-						case Layout.LAYOUT_16:
-							switch ( m_type ) {
-								case Type.UNORM: return Renderer.PIXEL_FORMAT.R16_UNORM;
-								case Type.FLOAT: return Renderer.PIXEL_FORMAT.R16_FLOAT;
-							}
-							break;
+				switch ( m_layout ) {
+					// 8-bits formats
+					case Layout.LAYOUT_8:			_pixelFormat = ImageUtility.PIXEL_FORMAT.R8; break;
+					case Layout.LAYOUT_8_8:			_pixelFormat = ImageUtility.PIXEL_FORMAT.RG8; break;
+					case Layout.LAYOUT_8_8_8:		_pixelFormat = ImageUtility.PIXEL_FORMAT.RGB8; break;
+					case Layout.LAYOUT_8_8_8_8:		_pixelFormat = ImageUtility.PIXEL_FORMAT.RGBA8; break;
 
-						case Layout.LAYOUT_32:
-							switch ( m_type ) {
-								case Type.FLOAT: return Renderer.PIXEL_FORMAT.R32_FLOAT;
-							}
-							break;
+					// 16-bit formats
+					case Layout.LAYOUT_16:			_pixelFormat = m_type == Type.FLOAT ? ImageUtility.PIXEL_FORMAT.R16 : ImageUtility.PIXEL_FORMAT.R16F; break;
+					case Layout.LAYOUT_16_16:		_pixelFormat = m_type == Type.FLOAT ? ImageUtility.PIXEL_FORMAT.RG16 : ImageUtility.PIXEL_FORMAT.RG16F; break;
+					case Layout.LAYOUT_16_16_16:	_pixelFormat = m_type == Type.FLOAT ? ImageUtility.PIXEL_FORMAT.RGB16 : ImageUtility.PIXEL_FORMAT.RGB16F; break;
+					case Layout.LAYOUT_16_16_16_16:	_pixelFormat = m_type == Type.FLOAT ? ImageUtility.PIXEL_FORMAT.RGBA16 : ImageUtility.PIXEL_FORMAT.RGBA16F; break;
 
-						case Layout.LAYOUT_8_8_8_8:
-							switch ( m_type ) {
-								case Type.UNORM: return Renderer.PIXEL_FORMAT.RGBA8_UNORM;
-								case Type.UNORM_sRGB: return Renderer.PIXEL_FORMAT.RGBA8_UNORM_sRGB;
-							}
-							break;
+					// 32-bit formats
+					case Layout.LAYOUT_32:			_pixelFormat = m_type == Type.FLOAT ? ImageUtility.PIXEL_FORMAT.R32 : ImageUtility.PIXEL_FORMAT.R32F; break;
+					case Layout.LAYOUT_32_32:		_pixelFormat = m_type == Type.FLOAT ? ImageUtility.PIXEL_FORMAT.RG32 : ImageUtility.PIXEL_FORMAT.RG32F; break;
+					case Layout.LAYOUT_32_32_32:	_pixelFormat = m_type == Type.FLOAT ? ImageUtility.PIXEL_FORMAT.RGB32 : ImageUtility.PIXEL_FORMAT.RGB32F; break;
+					case Layout.LAYOUT_32_32_32_32:	_pixelFormat = m_type == Type.FLOAT ? ImageUtility.PIXEL_FORMAT.RGBA32 : ImageUtility.PIXEL_FORMAT.RGBA32F; break;
 
-						case Layout.LAYOUT_16_16:
-							switch ( m_type ) {
-								case Type.UNORM: return Renderer.PIXEL_FORMAT.RG16_UNORM;
-								case Type.FLOAT: return Renderer.PIXEL_FORMAT.RG16_FLOAT;
-							}
-							break;
+					// Compressed formats
+					case Layout.LAYOUT_BC4:			_pixelFormat = ImageUtility.PIXEL_FORMAT.BC4; break;
+					case Layout.LAYOUT_BC5:			_pixelFormat = ImageUtility.PIXEL_FORMAT.BC5; break;
+					case Layout.LAYOUT_BC6:			_pixelFormat = ImageUtility.PIXEL_FORMAT.BC6H; break;
+					case Layout.LAYOUT_BC7:			_pixelFormat = ImageUtility.PIXEL_FORMAT.BC7; break;
 
-						case Layout.LAYOUT_32_32:
-							switch ( m_type ) {
-								case Type.FLOAT: return Renderer.PIXEL_FORMAT.RG32_FLOAT;
-							}
-							break;
-
-						case Layout.LAYOUT_16_16_16_16:
-							switch ( m_type ) {
-								case Type.FLOAT: return Renderer.PIXEL_FORMAT.RGBA16_FLOAT;
-							}
-							break;
-
-						case Layout.LAYOUT_32_32_32_32:
-							switch ( m_type ) {
-								case Type.FLOAT: return Renderer.PIXEL_FORMAT.RGBA32_FLOAT;
-							}
-							break;
-
-						case Layout.LAYOUT_BC3:
-							throw new Exception( "Unsupported format!" );
-// 							switch ( m_type ) {
-// 								case Type.UNORM: return Renderer.PIXEL_FORMAT.BC3_UNORM;
-// 								case Type.UNORM_sRGB: return Renderer.PIXEL_FORMAT.BC3_UNORM_sRGB;
-// 							}
-//							break;
-					}
-
-					throw new Exception( "Unsupported image format " + ToString() );
+					default:
+						throw new Exception( "Unsupported image format " + ToString() );
 				}
 			}
 
@@ -412,7 +386,9 @@ namespace TestFilmicCurve
 			if ( m_Opts.m_type != ImageOptions.TYPE.TT_2D )
 				throw new Exception( "The image is not a 2D texture!" );
 
-			Renderer.PIXEL_FORMAT	TextureFormat = m_Opts.m_format.EquivalentRendererFormat;
+			ImageUtility.PIXEL_FORMAT		textureFormat = ImageUtility.PIXEL_FORMAT.UNKNOWN;
+			ImageUtility.COMPONENT_FORMAT	componentFormat;
+			m_Opts.m_format.GetEquivalentRendererFormat( out textureFormat, out componentFormat );
 
 			uint	ArraySize = m_Opts.m_arraySize;
 			uint	MipsCount = m_Opts.m_curNumLevels;
@@ -431,7 +407,7 @@ namespace TestFilmicCurve
 				}
 			}
 
-			Renderer.Texture2D	Result = new Renderer.Texture2D( _Device, m_Opts.m_curWidth, m_Opts.m_curHeight, (int) m_Opts.m_arraySize, m_Opts.m_curNumLevels, TextureFormat, false, false, Content.ToArray() );
+			Renderer.Texture2D	Result = new Renderer.Texture2D( _Device, m_Opts.m_curWidth, m_Opts.m_curHeight, (int) m_Opts.m_arraySize, m_Opts.m_curNumLevels, textureFormat, componentFormat, false, false, Content.ToArray() );
 			return Result;
 		}
 
@@ -439,7 +415,9 @@ namespace TestFilmicCurve
 			if ( m_Opts.m_type != ImageOptions.TYPE.TT_CUBIC )
 				throw new Exception( "The image is not a cube map texture!" );
 
-			Renderer.PIXEL_FORMAT	TextureFormat = m_Opts.m_format.EquivalentRendererFormat;
+			ImageUtility.PIXEL_FORMAT		textureFormat = ImageUtility.PIXEL_FORMAT.UNKNOWN;
+			ImageUtility.COMPONENT_FORMAT	componentFormat;
+			m_Opts.m_format.GetEquivalentRendererFormat( out textureFormat, out componentFormat );
 
 			uint	ArraySize = 6 * m_Opts.m_arraySize;
 			uint	MipsCount = m_Opts.m_curNumLevels;
@@ -458,7 +436,7 @@ namespace TestFilmicCurve
 				}
 			}
 
-			Renderer.Texture2D	Result = new Renderer.Texture2D( _Device, m_Opts.m_curWidth, m_Opts.m_curHeight, -6 * (int) m_Opts.m_arraySize, m_Opts.m_curNumLevels, TextureFormat, false, false, Content.ToArray() );
+			Renderer.Texture2D	Result = new Renderer.Texture2D( _Device, m_Opts.m_curWidth, m_Opts.m_curHeight, -6 * (int) m_Opts.m_arraySize, m_Opts.m_curNumLevels, textureFormat, componentFormat, false, false, Content.ToArray() );
 			return Result;
 		}
 

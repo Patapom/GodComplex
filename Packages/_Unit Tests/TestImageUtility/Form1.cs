@@ -53,7 +53,7 @@ namespace ImageUtility.UnitTests
 			FindFitBFGS( responseCurve.ToArray(), ref a, ref b, ref c, ref d );
 
 			// Render
-			m_imageFile.Init( 1024, 768, PIXEL_FORMAT.RGBA8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
+			m_imageFile.Init( 1024, 768, PIXEL_FORMAT.BGRA8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
 			m_imageFile.Clear( new float4( 1, 1, 1, 1 ) );
 
 			float2	rangeX = new float2( 0, 255 );
@@ -251,7 +251,7 @@ namespace ImageUtility.UnitTests
 
 		void TestGraph( TEST_GRAPH_TYPE _type ) {
 			ColorProfile	sRGB = new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB );
-			m_imageFile.Init( 1024, 768, PIXEL_FORMAT.RGBA8, sRGB );
+			m_imageFile.Init( 1024, 768, PIXEL_FORMAT.BGRA8, sRGB );
 			m_imageFile.Clear( new float4( 1, 1, 1, 1 ) );
 //			m_imageFile.Clear( new float4( 0, 0, 0, 1 ) );
 
@@ -399,7 +399,7 @@ namespace ImageUtility.UnitTests
 					}
 
 					// Build a gradient of white points from 1500K to 8000K
-					m_imageFile.Init( 650, 32, PIXEL_FORMAT.RGBA8, sRGB );
+					m_imageFile.Init( 650, 32, PIXEL_FORMAT.BGRA8, sRGB );
 
 					float4	RGB = new float4( 0, 0, 0, 0 );
 					float3	XYZ = new float3( 0, 0, 0 );
@@ -580,8 +580,8 @@ if ( Math.Abs( T - whitePointCCT ) < 10.0f )
 						PIXEL_FORMAT[]	formats = new PIXEL_FORMAT[] {
 							PIXEL_FORMAT.R8,
 //							PIXEL_FORMAT.RG8,
-							PIXEL_FORMAT.RGB8,
-							PIXEL_FORMAT.RGBA8,
+							PIXEL_FORMAT.BGR8,
+							PIXEL_FORMAT.BGRA8,
 							PIXEL_FORMAT.R16,
 //							PIXEL_FORMAT.RG16,
 							PIXEL_FORMAT.RGB16,
@@ -605,7 +605,7 @@ if ( Math.Abs( T - whitePointCCT ) < 10.0f )
 							m_imageFile.Dispose();
 						}
 
-						m_imageFile = new ImageFile( 1000, 1000, PIXEL_FORMAT.RGBA8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
+						m_imageFile = new ImageFile( 1000, 1000, PIXEL_FORMAT.BGRA8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
 						m_imageFile.Clear( new float4( 0, 1, 0.2f, 1 ) );
 						break;
 
@@ -849,7 +849,7 @@ float	quality = _RAW ? 3.0f : 3.0f;
 				if ( _responseCurveOnly ) {
 					//////////////////////////////////////////////////////////////////////////////////////////////
 					// Render the response curve as a graph
- 					ImageFile	tempCurveBitmap = new ImageFile( 1024, 768, PIXEL_FORMAT.RGB8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
+ 					ImageFile	tempCurveBitmap = new ImageFile( 1024, 768, PIXEL_FORMAT.BGR8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
 
 					int			responseCurveSizeMax = responseCurve.Count-1;
 

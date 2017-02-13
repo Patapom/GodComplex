@@ -210,13 +210,14 @@ namespace AreaLightTest {
 		public Texture2D	Image2Texture( System.IO.FileInfo _fileName, ImageUtility.COMPONENT_FORMAT _componentFormat ) {
 			ImageUtility.ImagesMatrix	images = null;
 			if ( _fileName.Extension.ToLower() == ".dds" ) {
-				images = ImageUtility.ImageFile.DDSLoadFile( _fileName );
+				images = ImageUtility.ImageFile.DDSLoadFile( _fileName, _componentFormat );
+				codé dans le fichier ?? Putain relou je sais plus... Le save devrait embarquer le DXGI_FORMAT!
 			} else {
 				ImageUtility.ImageFile	image = new ImageUtility.ImageFile( _fileName );
-				if ( image.PixelFormat != ImageUtility.ImageFile.PIXEL_FORMAT.RGBA8 ) {
+				if ( image.PixelFormat != ImageUtility.PIXEL_FORMAT.BGRA8 ) {
 					ImageUtility.ImageFile	badImage = image;
 					image = new ImageUtility.ImageFile();
-					image.ConvertFrom( badImage, ImageUtility.ImageFile.PIXEL_FORMAT.RGBA8 );
+					image.ConvertFrom( badImage, ImageUtility.PIXEL_FORMAT.BGRA8 );
 					badImage.Dispose();
 				}
 
@@ -232,7 +233,7 @@ namespace AreaLightTest {
 			uint		H = mip0_unknownFormat.Height;
 
 			ImageUtility.ImageFile	mip0 = new ImageUtility.ImageFile();// W, H, ImageUtility.ImageFile.PIXEL_FORMAT.RGBA8, mip0_unknownFormat.ColorProfile );
-			mip0.ConvertFrom( mip0_unknownFormat, ImageUtility.ImageFile.PIXEL_FORMAT.RGBA8 );
+			mip0.ConvertFrom( mip0_unknownFormat, ImageUtility.PIXEL_FORMAT.BGRA8 );
 
 			mip0_unknownFormat.Dispose();
 
@@ -843,14 +844,14 @@ throw new Exception( "Deprecated!" );
 //			ComputeShader	CS = new ComputeShader( m_Device, new System.IO.FileInfo( "Shaders/ComputeBRDFIntegral.hlsl" ), "CS", new ShaderMacro[0] );
 			ComputeShader	CS = new ComputeShader( m_Device, new System.IO.FileInfo( "Shaders/ComputeBRDFIntegral.hlsl" ), "CS", new ShaderMacro[] { new ShaderMacro( "IMPORTANCE_SAMPLING", "1" ) } );
 
-			Texture2D		TexTable = new Texture2D( m_Device, _TableSize, _TableSize, 1, 1, PIXEL_FORMAT.RG32_FLOAT, false, true, null );
+			Texture2D		TexTable = new Texture2D( m_Device, _TableSize, _TableSize, 1, 1, ImageUtility.PIXEL_FORMAT.RG32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, true, null );
 			TexTable.SetCSUAV( 0 );
 			CS.Use();
 			CS.Dispatch( _TableSize >> 4, _TableSize >> 4, 1 );
 			CS.Dispose();
 
  
-			Texture2D		TexTableStaging = new Texture2D( m_Device, _TableSize, _TableSize, 1, 1, PIXEL_FORMAT.RG32_FLOAT, true, false, null );
+			Texture2D		TexTableStaging = new Texture2D( m_Device, _TableSize, _TableSize, 1, 1, ImageUtility.PIXEL_FORMAT.RG32F, ImageUtility.COMPONENT_FORMAT.AUTO, true, false, null );
 			TexTableStaging.CopyFrom( TexTable );
 			TexTable.Dispose();
 
@@ -1418,8 +1419,8 @@ int main()
 				}
 
 
-//			Texture2D	Result = new Texture2D( m_Device, _TableSize, _TableSize, 1, 1, PIXEL_FORMAT.RG16_UNORM, false, false, new PixelsBuffer[] { Content } );
-			Texture2D	Result = new Texture2D( m_Device, _TableSize, _TableSize, 1, 1, PIXEL_FORMAT.RG32_FLOAT, false, false, new PixelsBuffer[] { Content } );
+//			Texture2D	Result = new Texture2D( m_Device, _TableSize, _TableSize, 1, 1, ImageUtility.PIXEL_FORMAT.RG16, ImageUtility.COMPONENT_FORMAT.UNORM, false, false, new PixelsBuffer[] { Content } );
+			Texture2D	Result = new Texture2D( m_Device, _TableSize, _TableSize, 1, 1, ImageUtility.PIXEL_FORMAT.RG32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, false, new PixelsBuffer[] { Content } );
 			return Result;
 		}
 
@@ -1822,11 +1823,11 @@ renderProg PostFX/Debug/WardBRDFAlbedo {
 			}
 
 // Build SATs
-// ComputeSAT( new System.IO.FileInfo( "Dummy.png" ), new System.IO.FileInfo( "DummySAT.dds" ) );
-// ComputeSAT( new System.IO.FileInfo( "StainedGlass.png" ), new System.IO.FileInfo( "AreaLightSAT.dds" ) );
-// ComputeSAT( new System.IO.FileInfo( "StainedGlass2.jpg" ), new System.IO.FileInfo( "AreaLightSAT2.dds" ) );
-// ComputeSAT( new System.IO.FileInfo( "StainedGlass3.png" ), new System.IO.FileInfo( "AreaLightSAT3.dds" ) );
-// ComputeSAT( new System.IO.FileInfo( "StainedGlass2Fade.png" ), new System.IO.FileInfo( "AreaLightSAT2Fade.dds" ) );
+ComputeSAT( new System.IO.FileInfo( "Dummy.png" ), new System.IO.FileInfo( "DummySAT.dds" ) );
+ComputeSAT( new System.IO.FileInfo( "StainedGlass.png" ), new System.IO.FileInfo( "AreaLightSAT.dds" ) );
+ComputeSAT( new System.IO.FileInfo( "StainedGlass2.jpg" ), new System.IO.FileInfo( "AreaLightSAT2.dds" ) );
+ComputeSAT( new System.IO.FileInfo( "StainedGlass3.png" ), new System.IO.FileInfo( "AreaLightSAT3.dds" ) );
+ComputeSAT( new System.IO.FileInfo( "StainedGlass2Fade.png" ), new System.IO.FileInfo( "AreaLightSAT2Fade.dds" ) );
 
 			buttonRebuildBRDF_Click( null, EventArgs.Empty );
 
@@ -1851,10 +1852,10 @@ renderProg PostFX/Debug/WardBRDFAlbedo {
 			uint	SHADOW_MAP_SIZE = 512;
 			m_Tex_ShadowMap = new Texture2D( m_Device, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 1, DEPTH_STENCIL_FORMAT.D32 );
 #if FILTER_EXP_SHADOW_MAP
-			m_Tex_ShadowMapFiltered[0] = new Texture2D( m_Device, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 1, 1, PIXEL_FORMAT.R16_UNORM, false, false, null );
-			m_Tex_ShadowMapFiltered[1] = new Texture2D( m_Device, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 1, 1, PIXEL_FORMAT.R16_UNORM, false, false, null );
-// 			m_Tex_ShadowMapFiltered[0] = new Texture2D( m_Device, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 1, 1, PIXEL_FORMAT.R32_FLOAT, false, false, null );
-// 			m_Tex_ShadowMapFiltered[1] = new Texture2D( m_Device, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 1, 1, PIXEL_FORMAT.R32_FLOAT, false, false, null );
+			m_Tex_ShadowMapFiltered[0] = new Texture2D( m_Device, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 1, 1, ImageUtility.PIXEL_FORMAT.R16, ImageUtility.COMPONENT_FORMAT.UNORM, false, false, null );
+			m_Tex_ShadowMapFiltered[1] = new Texture2D( m_Device, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 1, 1, ImageUtility.PIXEL_FORMAT.R16, ImageUtility.COMPONENT_FORMAT.UNORM, false, false, null );
+// 			m_Tex_ShadowMapFiltered[0] = new Texture2D( m_Device, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 1, 1, ImageUtility.PIXEL_FORMAT.R32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, false, null );
+// 			m_Tex_ShadowMapFiltered[1] = new Texture2D( m_Device, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 1, 1, ImageUtility.PIXEL_FORMAT.R32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, false, null );
 #else
 			m_Tex_ShadowSmoothie = new Texture2D( m_Device, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 1, 1, PIXEL_FORMAT.RG16_FLOAT, false, false, null );
 			m_Tex_ShadowSmoothiePou[0] = new Texture2D( m_Device, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 1, 1, PIXEL_FORMAT.RG16_FLOAT, false, false, null );

@@ -245,7 +245,7 @@ namespace GenerateHeightMapFromNormalMap
 // heightMin.r = -1.0f;
 // factor = 0.5f;
 
-			m_imageHeight = new ImageFile( m_imageNormal.Width, m_imageNormal.Height, ImageFile.PIXEL_FORMAT.R16, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
+			m_imageHeight = new ImageFile( m_imageNormal.Width, m_imageNormal.Height, PIXEL_FORMAT.R16, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
 //			m_imageHeight.WritePixels( ( uint X, uint Y, ref float4 _color ) => { _color.x = 1e3f * (float) H[X,Y].Magnitude; } );
 //			m_imageHeight.WritePixels( ( uint X, uint Y, ref float4 _color ) => { _color.x = 1e5f * (float) DX[X,Y].Magnitude; } );
  			m_imageHeight.WritePixels( ( uint X, uint Y, ref float4 _color ) => { _color.x = factor * (float) (h[X,Y].r - heightMin.r); } );

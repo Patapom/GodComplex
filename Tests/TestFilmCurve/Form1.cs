@@ -208,12 +208,12 @@ namespace TestFilmicCurve
 			}
 
 			// Create the HDR buffer
-			m_Tex_HDR = new Texture2D( m_Device, (uint) panelOutput.Width, (uint) panelOutput.Height, 1, 1, PIXEL_FORMAT.RGBA32_FLOAT, false, false, null );
+			m_Tex_HDR = new Texture2D( m_Device, (uint) panelOutput.Width, (uint) panelOutput.Height, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, false, null );
 
 			// Create the histogram & auto-exposure buffers
 			int	tallHistogramHeight = (panelOutput.Height + 3) >> 2;
-			m_Tex_TallHistogram = new Texture2D( m_Device, 128, (uint) tallHistogramHeight, 1, 1, PIXEL_FORMAT.R32_UINT, false, true, null );
-			m_Tex_Histogram = new Texture2D( m_Device, 128, 1, 1, 1, PIXEL_FORMAT.R32_UINT, false, true, null );
+			m_Tex_TallHistogram = new Texture2D( m_Device, 128, (uint) tallHistogramHeight, 1, 1, ImageUtility.PIXEL_FORMAT.R32, ImageUtility.COMPONENT_FORMAT.UINT, false, true, null );
+			m_Tex_Histogram = new Texture2D( m_Device, 128, 1, 1, 1, ImageUtility.PIXEL_FORMAT.R32, ImageUtility.COMPONENT_FORMAT.UINT, false, true, null );
 			m_Buffer_AutoExposureSource = new StructuredBuffer<autoExposure_t>( m_Device, 1, true );
 			m_Buffer_AutoExposureSource.m[0].EngineLuminanceFactor = 1.0f;
 			m_Buffer_AutoExposureSource.m[0].TargetLuminance = 1.0f;

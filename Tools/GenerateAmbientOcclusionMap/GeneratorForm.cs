@@ -296,12 +296,12 @@ namespace GenerateSelfShadowedBumpMap
 						}
 					}
 
-				m_textureSourceHeightMap = new Renderer.Texture2D( m_device, W, H, 1, 1, Renderer.PIXEL_FORMAT.R32_FLOAT, false, false, new Renderer.PixelsBuffer[] { SourceHeightMap } );
+				m_textureSourceHeightMap = new Renderer.Texture2D( m_device, W, H, 1, 1, ImageUtility.PIXEL_FORMAT.R32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, false, new Renderer.PixelsBuffer[] { SourceHeightMap } );
 
 				// Build the target UAV & staging texture for readback
-				m_textureTarget0 = new Renderer.Texture2D( m_device, W, H, 1, 1, Renderer.PIXEL_FORMAT.R32_FLOAT, false, true, null );
-				m_textureTarget1 = new Renderer.Texture2D( m_device, W, H, 1, 1, Renderer.PIXEL_FORMAT.R32_FLOAT, false, true, null );
-				m_textureTarget_CPU = new Renderer.Texture2D( m_device, W, H, 1, 1, Renderer.PIXEL_FORMAT.R32_FLOAT, true, false, null );
+				m_textureTarget0 = new Renderer.Texture2D( m_device, W, H, 1, 1, ImageUtility.PIXEL_FORMAT.R32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, true, null );
+				m_textureTarget1 = new Renderer.Texture2D( m_device, W, H, 1, 1, ImageUtility.PIXEL_FORMAT.R32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, true, null );
+				m_textureTarget_CPU = new Renderer.Texture2D( m_device, W, H, 1, 1, ImageUtility.PIXEL_FORMAT.R32F, ImageUtility.COMPONENT_FORMAT.AUTO, true, false, null );
 
 				panelParameters.Enabled = true;
 				buttonGenerate.Focus();
@@ -348,7 +348,7 @@ namespace GenerateSelfShadowedBumpMap
 						}
 					}
 
-				m_TextureSourceNormal = new Renderer.Texture2D( m_device, W, H, 1, 1, Renderer.PIXEL_FORMAT.RGBA32_FLOAT, false, false, new Renderer.PixelsBuffer[] { SourceNormalMap } );
+				m_TextureSourceNormal = new Renderer.Texture2D( m_device, W, H, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, false, new Renderer.PixelsBuffer[] { SourceNormalMap } );
 
 			} catch ( Exception _e ) {
 				MessageBox( "An error occurred while opening the image:\n\n", _e );
@@ -765,7 +765,7 @@ namespace GenerateSelfShadowedBumpMap
 				Wr.Write( 1.0f );
 			}
 
-			m_TextureSourceNormal = new Renderer.Texture2D( m_device, 1, 1, 1, 1, Renderer.PIXEL_FORMAT.RGBA32_FLOAT, false, false, new Renderer.PixelsBuffer[] { SourceNormalMap } );
+			m_TextureSourceNormal = new Renderer.Texture2D( m_device, 1, 1, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, false, new Renderer.PixelsBuffer[] { SourceNormalMap } );
 		}
 
 		#endregion

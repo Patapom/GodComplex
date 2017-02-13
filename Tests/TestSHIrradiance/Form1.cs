@@ -17,7 +17,7 @@ namespace TestSHIrradiance
 {
 	public partial class Form1 : Form {
 
-		ImageUtility.ImageFile	m_image = new ImageUtility.ImageFile( 800, 550, ImageUtility.ImageFile.PIXEL_FORMAT.RGBA8, new ImageUtility.ColorProfile( ImageUtility.ColorProfile.STANDARD_PROFILE.sRGB ) );
+		ImageUtility.ImageFile	m_image = new ImageUtility.ImageFile( 800, 550, ImageUtility.PIXEL_FORMAT.RGBA8, new ImageUtility.ColorProfile( ImageUtility.ColorProfile.STANDARD_PROFILE.sRGB ) );
 		ImageUtility.ImageFile	m_HDRImage = new ImageUtility.ImageFile();
 
 		float4					m_black = new float4( 0, 0, 0, 1 );
@@ -679,7 +679,7 @@ avgDiffA2 /= TABLE_SIZE*TABLE_SIZE;
 				// Create textures
 				LoadHDRImage();
 
-				m_Tex_HDRBuffer = new Texture2D( m_device, (uint) graphPanel.Width, (uint) graphPanel.Height, 2, 1, PIXEL_FORMAT.RGBA32_FLOAT, false, false, null );
+				m_Tex_HDRBuffer = new Texture2D( m_device, (uint) graphPanel.Width, (uint) graphPanel.Height, 2, 1, ImageUtility.PIXEL_FORMAT.RGBA32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, false, null );
 
 				{	// Build noise texture
 					SimpleRNG.SetSeed( 1U );
@@ -691,7 +691,7 @@ avgDiffA2 /= TABLE_SIZE*TABLE_SIZE;
 							W.Write( (float) SimpleRNG.GetUniform() );
 							W.Write( (float) SimpleRNG.GetUniform() );
 						}
-					m_Tex_Noise = new Texture2D( m_device, 256, 256, 1, 1, PIXEL_FORMAT.RGBA32_FLOAT, false, false, new PixelsBuffer[] { content } );
+					m_Tex_Noise = new Texture2D( m_device, 256, 256, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, false, new PixelsBuffer[] { content } );
 				}
 
 				// Build SH coeffs
@@ -727,7 +727,7 @@ avgDiffA2 /= TABLE_SIZE*TABLE_SIZE;
 						}
 					}
 
-					m_Tex_ACoeffs = new Texture2D( m_device, 64, 64, coeffSlices.Length, 1, PIXEL_FORMAT.RGBA32_FLOAT, false, false, coeffSlices );
+					m_Tex_ACoeffs = new Texture2D( m_device, 64, 64, coeffSlices.Length, 1, ImageUtility.PIXEL_FORMAT.RGBA32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, false, coeffSlices );
 				}
 
 				{

@@ -138,7 +138,7 @@ namespace TestFourier
 				m_device1D = null;
 			}
 
-			m_image = new ImageFile( (uint) imagePanel.Width, (uint) imagePanel.Height, ImageUtility.PIXEL_FORMAT.RGBA8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
+			m_image = new ImageFile( (uint) imagePanel.Width, (uint) imagePanel.Height, ImageUtility.PIXEL_FORMAT.BGRA8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
 
 			try {
 				m_FFTW_1D = new fftwlib.FFT2D( SIGNAL_SIZE, 1 );	// Allocate on the fly, if the interop fails then it will crash immediately but at least the 
@@ -169,7 +169,7 @@ namespace TestFourier
 				m_device2D = null;
 			}
 
-			m_image2D = new ImageFile( (uint) imagePanel2D.Width, (uint) imagePanel2D.Height, PIXEL_FORMAT.RGBA8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
+			m_image2D = new ImageFile( (uint) imagePanel2D.Width, (uint) imagePanel2D.Height, PIXEL_FORMAT.BGRA8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
 
 			imagePanel2D.SkipPaint = true;//checkBoxGPU.Checked;
 

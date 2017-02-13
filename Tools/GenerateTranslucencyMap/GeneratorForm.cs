@@ -349,20 +349,20 @@ namespace GenerateTranslucencyMap
 						}
 					}
 
-				m_TextureSourceThickness = new Texture2D( m_Device, W, H, 1, 1, PIXEL_FORMAT.R32_FLOAT, false, false, new PixelsBuffer[] { sourceHeightMap } );
+				m_TextureSourceThickness = new Texture2D( m_Device, W, H, 1, 1, ImageUtility.PIXEL_FORMAT.R32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, false, new PixelsBuffer[] { sourceHeightMap } );
 
 				// Build the 3D visibility texture
-				m_TextureSourceVisibility = new Texture3D( m_Device, W, H, VISIBILITY_SLICES, 1, PIXEL_FORMAT.R16_FLOAT, false, true, null );
+				m_TextureSourceVisibility = new Texture3D( m_Device, W, H, VISIBILITY_SLICES, 1, ImageUtility.PIXEL_FORMAT.R16F, ImageUtility.COMPONENT_FORMAT.AUTO, false, true, null );
 
 				// Build the target UAV & staging texture for readback
-				m_TextureFilteredThickness = new Texture2D( m_Device, W, H, 1, 1, PIXEL_FORMAT.R32_FLOAT, false, true, null );
+				m_TextureFilteredThickness = new Texture2D( m_Device, W, H, 1, 1, ImageUtility.PIXEL_FORMAT.R32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, true, null );
 
 				for ( int i=0; i < 3; i++ ) {
-					m_TextureTargets[i][0] = new Texture2D( m_Device, W, H, 1, 1, PIXEL_FORMAT.RGBA32_FLOAT, false, true, null );
-					m_TextureTargets[i][1] = new Texture2D( m_Device, W, H, 1, 1, PIXEL_FORMAT.RGBA32_FLOAT, false, true, null );
+					m_TextureTargets[i][0] = new Texture2D( m_Device, W, H, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, true, null );
+					m_TextureTargets[i][1] = new Texture2D( m_Device, W, H, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, true, null );
 				}
-				m_TextureTargetCombined = new Texture2D( m_Device, W, H, 1, 1, PIXEL_FORMAT.RGBA32_FLOAT, false, true, null );
-				m_TextureTarget_CPU = new Texture2D( m_Device, W, H, 1, 1, PIXEL_FORMAT.RGBA32_FLOAT, true, false, null );
+				m_TextureTargetCombined = new Texture2D( m_Device, W, H, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, true, null );
+				m_TextureTarget_CPU = new Texture2D( m_Device, W, H, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA32F, ImageUtility.COMPONENT_FORMAT.AUTO, true, false, null );
 
 				groupBoxOptions.Enabled = true;
 				buttonGenerate.Focus();
@@ -405,7 +405,7 @@ namespace GenerateTranslucencyMap
 						}
 					}
 
-				m_TextureSourceNormal = new Texture2D( m_Device, W, H, 1, 1, PIXEL_FORMAT.RGBA32_FLOAT, false, false, new PixelsBuffer[] { sourceNormalMap } );
+				m_TextureSourceNormal = new Texture2D( m_Device, W, H, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, false, new PixelsBuffer[] { sourceNormalMap } );
 			}
 			catch ( Exception _e )
 			{
@@ -452,7 +452,7 @@ namespace GenerateTranslucencyMap
 						}
 					}
 
-				m_TextureSourceTransmittance = new Texture2D( m_Device, W, H, 1, 1, PIXEL_FORMAT.RGBA32_FLOAT, false, false, new PixelsBuffer[] { SourceMap } );
+				m_TextureSourceTransmittance = new Texture2D( m_Device, W, H, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, false, new PixelsBuffer[] { SourceMap } );
 			} catch ( Exception _e ) {
 				MessageBox( "An error occurred while opening the transmittance map \"" + _FileName.FullName + "\":\n\n", _e );
 			}
@@ -497,7 +497,7 @@ namespace GenerateTranslucencyMap
 						}
 					}
 
-				m_TextureSourceAlbedo = new Texture2D( m_Device, W, H, 1, 1, PIXEL_FORMAT.RGBA32_FLOAT, false, false, new PixelsBuffer[] { SourceMap } );
+				m_TextureSourceAlbedo = new Texture2D( m_Device, W, H, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, false, new PixelsBuffer[] { SourceMap } );
 			}
 			catch ( Exception _e ) {
 				MessageBox( "An error occurred while opening the albedo map \"" + _FileName.FullName + "\":\n\n", _e );
@@ -592,7 +592,7 @@ namespace GenerateTranslucencyMap
 							}
 						}
 
-					Results[i] = new Texture2D( m_Device, W, H, 1, 1, PIXEL_FORMAT.RGBA32_FLOAT, false, true, new PixelsBuffer[] { sourceMap } );
+					Results[i] = new Texture2D( m_Device, W, H, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, true, new PixelsBuffer[] { sourceMap } );
 				}
 
 				m_TextureTargets[0][0] = Results[0];
@@ -761,7 +761,7 @@ namespace GenerateTranslucencyMap
 					if ( m_imageResults[i] != null )
 						m_imageResults[i].Dispose();
 //					m_BitmapResults[i] = new ImageUtility.Bitmap( W, H, m_LinearProfile );
-					m_imageResults[i] = new ImageUtility.ImageFile( W, H, ImageUtility.ImageFile.PIXEL_FORMAT.R8, m_sRGBProfile );
+					m_imageResults[i] = new ImageUtility.ImageFile( W, H, ImageUtility.PIXEL_FORMAT.R8, m_sRGBProfile );
 
 					// Copy from GPU to CPU
 					m_TextureTarget_CPU.CopyFrom( m_TextureTargets[i][0] );
@@ -887,7 +887,7 @@ namespace GenerateTranslucencyMap
 			// 2] Copy target to staging for CPU readback and update the resulting bitmaps
 			if ( m_imageResultCombined != null )
 				m_imageResultCombined.Dispose();
-			m_imageResultCombined = new ImageUtility.ImageFile( W, H, ImageUtility.ImageFile.PIXEL_FORMAT.RGBA8, m_sRGBProfile );
+			m_imageResultCombined = new ImageUtility.ImageFile( W, H, ImageUtility.PIXEL_FORMAT.RGBA8, m_sRGBProfile );
 
 			// Copy from GPU to CPU
 			m_TextureTarget_CPU.CopyFrom( m_TextureTargetCombined );

@@ -120,15 +120,15 @@ namespace GenerateBlueNoise
 				m_CB_Main = new ConstantBuffer<CB_Main>( _device, 0 );
 				m_CB_Mips = new ConstantBuffer<CB_Mips>( _device, 1 );
 
-				m_texBinaryPattern = new Texture2D( _device, m_textureSize, m_textureSize, 1, 1, PIXEL_FORMAT.R32_UINT, false, true, null );
+				m_texBinaryPattern = new Texture2D( _device, m_textureSize, m_textureSize, 1, 1, ImageUtility.PIXEL_FORMAT.R32, ImageUtility.COMPONENT_FORMAT.UINT, false, true, null );
 				#if DEBUG_BINARY_PATTERN || BYPASS_GPU_DOWNSAMPLING
 					m_texBinaryPatternCPU = new Texture2D( _device, m_textureSize, m_textureSize, 1, 1, PIXEL_FORMAT.R32_UINT, true, true, null );
 				#endif
-				m_texDitheringArray = new Texture2D( _device, m_textureSize, m_textureSize, 1, 1, PIXEL_FORMAT.R32_FLOAT, false, true, null );
-				m_texDitheringArrayCPU = new Texture2D( _device, m_textureSize, m_textureSize, 1, 1, PIXEL_FORMAT.R32_FLOAT, true, true, null );
-				m_texScore0 = new Texture2D( _device, m_textureSize, m_textureSize, 1, 0, PIXEL_FORMAT.RG32_FLOAT, false, true, null );
-				m_texScore1 = new Texture2D( _device, m_textureSize, m_textureSize, 1, 0, PIXEL_FORMAT.RG32_FLOAT, false, true, null );
-				m_texScoreCPU = new Texture2D( _device, m_textureSize, m_textureSize, 1, 0, PIXEL_FORMAT.RG32_FLOAT, true, true, null );
+				m_texDitheringArray = new Texture2D( _device, m_textureSize, m_textureSize, 1, 1, ImageUtility.PIXEL_FORMAT.R32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, true, null );
+				m_texDitheringArrayCPU = new Texture2D( _device, m_textureSize, m_textureSize, 1, 1, ImageUtility.PIXEL_FORMAT.R32F, ImageUtility.COMPONENT_FORMAT.AUTO, true, true, null );
+				m_texScore0 = new Texture2D( _device, m_textureSize, m_textureSize, 1, 0, ImageUtility.PIXEL_FORMAT.RG32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, true, null );
+				m_texScore1 = new Texture2D( _device, m_textureSize, m_textureSize, 1, 0, ImageUtility.PIXEL_FORMAT.RG32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, true, null );
+				m_texScoreCPU = new Texture2D( _device, m_textureSize, m_textureSize, 1, 0, ImageUtility.PIXEL_FORMAT.RG32F, ImageUtility.COMPONENT_FORMAT.AUTO, true, true, null );
 			} catch ( Exception _e ) {
 				throw new Exception( "An error occurred while creating DirectX structures: " + _e.Message, _e );
 			}

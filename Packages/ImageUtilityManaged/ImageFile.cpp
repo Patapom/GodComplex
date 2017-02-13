@@ -31,7 +31,7 @@ ImageFile::ImageFile( System::Drawing::Bitmap^ _bitmap, ImageUtility::ColorProfi
 		throw gcnew Exception( "Failed to load bitmap content into an RGBA[]!" );
 
 	// Initialize an empty native object
-	m_nativeObject->Init( width, height, BaseLib::PIXEL_FORMAT::RGBA8, *_colorProfile->m_nativeObject );
+	m_nativeObject->Init( width, height, BaseLib::PIXEL_FORMAT::BGRA8, *_colorProfile->m_nativeObject );
 
 	// Copy bitmap content
 	U8*		target = (U8*) m_nativeObject->GetBits();
@@ -126,9 +126,9 @@ NativeByteArray^	ImageFile::Save( FILE_FORMAT _format, SAVE_FLAGS _options ) {
 
 	// Convert source bitmap to a compatible format
 	ImageFile^	source = this;
-	if ( PixelFormat != PIXEL_FORMAT::RGB8 && PixelFormat != PIXEL_FORMAT::RGBA8 ) {
+	if ( PixelFormat != PIXEL_FORMAT::BGR8 && PixelFormat != PIXEL_FORMAT::BGRA8 ) {
 		source = gcnew ImageFile();
-		source->ConvertFrom( this, PIXEL_FORMAT::RGBA8 );
+		source->ConvertFrom( this, PIXEL_FORMAT::BGRA8 );
 	}
 
 	System::Drawing::Bitmap^	result = gcnew System::Drawing::Bitmap( W, H, System::Drawing::Imaging::PixelFormat::Format32bppArgb );
@@ -139,7 +139,7 @@ NativeByteArray^	ImageFile::Save( FILE_FORMAT _format, SAVE_FLAGS _options ) {
 
 	pin_ptr<void>	scan0Ptr = lockedBitmap->Scan0.ToPointer();
 
-	if ( source->PixelFormat == PIXEL_FORMAT::RGBA8 ) {
+	if ( source->PixelFormat == PIXEL_FORMAT::BGRA8 ) {
 		// 32 bpp
 		for ( int Y=0; Y < H; Y++ ) {
 			Byte*	targetPtr = reinterpret_cast<Byte*>(scan0Ptr) + Y * lockedBitmap->Stride;
@@ -177,9 +177,9 @@ NativeByteArray^	ImageFile::Save( FILE_FORMAT _format, SAVE_FLAGS _options ) {
 
 	// Convert source bitmap to a compatible format
 	ImageFile^	source = this;
-	if ( PixelFormat != PIXEL_FORMAT::RGB8 && PixelFormat != PIXEL_FORMAT::RGBA8 ) {
+	if ( PixelFormat != PIXEL_FORMAT::BGR8 && PixelFormat != PIXEL_FORMAT::BGRA8 ) {
 		source = gcnew ImageFile();
-		source->ConvertFrom( this, PIXEL_FORMAT::RGBA8 );
+		source->ConvertFrom( this, PIXEL_FORMAT::BGRA8 );
 	}
 
 	const U8*	sourcePtr = (U8*) source->Bits.ToPointer();
@@ -189,7 +189,7 @@ NativeByteArray^	ImageFile::Save( FILE_FORMAT _format, SAVE_FLAGS _options ) {
 
 	pin_ptr<void>	scan0Ptr = lockedBitmap->Scan0.ToPointer();
 
-	if ( source->PixelFormat == PIXEL_FORMAT::RGBA8 ) {
+	if ( source->PixelFormat == PIXEL_FORMAT::BGRA8 ) {
 		// 32 bpp
 		for ( UInt32 Y=0; Y < _height; Y++ ) {
 			Byte*		targetPtr = reinterpret_cast<Byte*>(scan0Ptr) + Y * lockedBitmap->Stride;

@@ -261,19 +261,25 @@ tabControlGenerators.TabPages.RemoveAt( 1 );
 				float4[]	scanline = new float4[W];
 
 				PixelsBuffer	SourceHeightMap = new PixelsBuffer( W*H*4 );
-				using ( System.IO.BinaryWriter Wr = SourceHeightMap.OpenStreamWrite() )
-					for ( uint Y=0; Y < H; Y++ ) {
-						m_imageSourceHeightMap.ReadScanline( Y, scanline );
-						for ( int X=0; X < W; X++ )
-							Wr.Write( scanline[X].x );
-					}
+// 				using ( System.IO.BinaryWriter Wr = SourceHeightMap.OpenStreamWrite() )
+// 					for ( uint Y=0; Y < H; Y++ ) {
+// 						m_imageSourceHeightMap.ReadScanline( Y, scanline );
+// 						for ( int X=0; X < W; X++ )
+// 							Wr.Write( scanline[X].x );
+// 					}
 
-				m_textureSourceHeightMap = new Texture2D( m_device, W, H, 1, 1, PIXEL_FORMAT.R32_FLOAT, false, false, new PixelsBuffer[] { SourceHeightMap } );
+				using ( System.IO.BinaryWriter Wr = SourceHeightMap.OpenStreamWrite() ) {
+					m_imageSourceHeightMap.ReadPixels( ( uint X, uint Y, ref float4 _color ) => {
+						Wr.Write( _color.x );
+					} );
+				}
+
+				m_textureSourceHeightMap = new Texture2D( m_device, W, H, 1, 1, ImageUtility.PIXEL_FORMAT.R32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, false, new PixelsBuffer[] { SourceHeightMap } );
 
 				// Build the target UAV & staging texture for readback
-				m_textureTarget0 = new Texture2D( m_device, W, H, 1, 1, PIXEL_FORMAT.R32_FLOAT, false, true, null );
-				m_textureTarget1 = new Texture2D( m_device, W, H, 1, 1, PIXEL_FORMAT.RGBA32_FLOAT, false, true, null );
-				m_textureTarget_CPU = new Texture2D( m_device, W, H, 1, 1, PIXEL_FORMAT.RGBA32_FLOAT, true, false, null );
+				m_textureTarget0 = new Texture2D( m_device, W, H, 1, 1, ImageUtility.PIXEL_FORMAT.R32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, true, null );
+				m_textureTarget1 = new Texture2D( m_device, W, H, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, true, null );
+				m_textureTarget_CPU = new Texture2D( m_device, W, H, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA32F, ImageUtility.COMPONENT_FORMAT.AUTO, true, false, null );
 
 				tabControlGenerators.Enabled = true;
 				buttonGenerate.Focus();
@@ -342,7 +348,7 @@ tabControlGenerators.TabPages.RemoveAt( 1 );
 				if ( m_imageResult != null )
 					m_imageResult.Dispose();
 				m_imageResult = null;
-				m_imageResult = new ImageUtility.ImageFile( W, H, ImageUtility.ImageFile.PIXEL_FORMAT.RGBA8, m_linearProfile );
+				m_imageResult = new ImageUtility.ImageFile( W, H, ImageUtility.PIXEL_FORMAT.RGBA8, m_linearProfile );
 
 				float4[]		scanline = new float4[W];
 				PixelsBuffer	pixels = m_textureTarget_CPU.MapRead( 0, 0 );

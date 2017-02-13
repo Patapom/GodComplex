@@ -111,19 +111,19 @@ namespace GenerateBlueNoise
 				m_CB_Mips = new ConstantBuffer<CB_Mips>( _device, 1 );
 				m_SB_Mutations = new StructuredBuffer<SB_Mutation>( _device, MAX_MUTATIONS_RATE, true );
 
-				PIXEL_FORMAT	noiseFormat = PIXEL_FORMAT.UNKNOWN;
+				ImageUtility.PIXEL_FORMAT	noiseFormat = ImageUtility.PIXEL_FORMAT.UNKNOWN;
 				switch ( m_vectorDimension ) {
-					case 1: noiseFormat = PIXEL_FORMAT.R32_FLOAT; break;
-					case 2: noiseFormat = PIXEL_FORMAT.RG32_FLOAT; break;
+					case 1: noiseFormat = ImageUtility.PIXEL_FORMAT.R32F; break;
+					case 2: noiseFormat = ImageUtility.PIXEL_FORMAT.RG32F; break;
 				}
 
-				m_texNoise0 = new Texture2D( _device, m_textureSize, m_textureSize, 1, 1, noiseFormat, false, true, null );
-				m_texNoise1 = new Texture2D( _device, m_textureSize, m_textureSize, 1, 1, noiseFormat, false, true, null );
-				m_texNoiseCPU = new Texture2D( _device, m_textureSize, m_textureSize, 1, 1, noiseFormat, true, true, null );
+				m_texNoise0 = new Texture2D( _device, m_textureSize, m_textureSize, 1, 1, noiseFormat, ImageUtility.COMPONENT_FORMAT.AUTO, false, true, null );
+				m_texNoise1 = new Texture2D( _device, m_textureSize, m_textureSize, 1, 1, noiseFormat, ImageUtility.COMPONENT_FORMAT.AUTO, false, true, null );
+				m_texNoiseCPU = new Texture2D( _device, m_textureSize, m_textureSize, 1, 1, noiseFormat, ImageUtility.COMPONENT_FORMAT.AUTO, true, true, null );
 
-				m_texNoiseScore = new Texture2D( _device, m_textureSize, m_textureSize, 1, 1+_texturePOT, PIXEL_FORMAT.R32_FLOAT, false, true, null );
-				m_texNoiseScore2 = new Texture2D( _device, m_textureSize, m_textureSize, 1, 1+_texturePOT, PIXEL_FORMAT.R32_FLOAT, false, true, null );
-				m_texNoiseScoreCPU = new Texture2D( _device, m_textureSize, m_textureSize, 1, 1+_texturePOT, PIXEL_FORMAT.R32_FLOAT, true, true, null );
+				m_texNoiseScore = new Texture2D( _device, m_textureSize, m_textureSize, 1, 1+_texturePOT, ImageUtility.PIXEL_FORMAT.R32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, true, null );
+				m_texNoiseScore2 = new Texture2D( _device, m_textureSize, m_textureSize, 1, 1+_texturePOT, ImageUtility.PIXEL_FORMAT.R32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, true, null );
+				m_texNoiseScoreCPU = new Texture2D( _device, m_textureSize, m_textureSize, 1, 1+_texturePOT, ImageUtility.PIXEL_FORMAT.R32F, ImageUtility.COMPONENT_FORMAT.AUTO, true, true, null );
 			} catch ( Exception _e ) {
 				throw new Exception( "An error occurred while creating DirectX structures: " + _e.Message, _e );
 			}

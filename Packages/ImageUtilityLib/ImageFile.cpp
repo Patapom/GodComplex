@@ -45,7 +45,8 @@ ImageFile::~ImageFile() {
 
 bool	ImageFile::HasAlpha() const {
 	switch ( m_pixelFormat ) {
-	case PIXEL_FORMAT::RGBA8:
+	case PIXEL_FORMAT::BGRA8:
+//	case PIXEL_FORMAT::RGBA8:	// Shouldn't have to ask as it's not a format natively supported by FreeImage!
 	case PIXEL_FORMAT::RGBA16:
 	case PIXEL_FORMAT::RGBA16F:
 	case PIXEL_FORMAT::RGBA32F:
@@ -236,10 +237,10 @@ void	ImageFile::Save( FILE_FORMAT _format, SAVE_FLAGS _options, U64 _fileSize, v
 void	ImageFile::ConvertFrom( const ImageFile& _source, PIXEL_FORMAT _targetFormat ) {
 	Exit();
 
-	// Ensure we're not dealing with half-precision floats!
-	if (	(U32(_source.m_pixelFormat) & U32(PIXEL_FORMAT::NOT_NATIVELY_SUPPORTED))
-		 || (U32(_targetFormat) & U32(PIXEL_FORMAT::NOT_NATIVELY_SUPPORTED)) )
-		throw "You cannot convert to or from the half-precision floating point formats because they are not natively supported by FreeImage! (and I'm lazy and never wrote the converters myself :/)";
+	// Ensure we're not dealing with unsupported types!
+	if (	(U32(_source.m_pixelFormat) & U32(PIXEL_FORMAT::NOT_FREEIMAGE_SUPPORT))
+		 || (U32(_targetFormat) & U32(PIXEL_FORMAT::NOT_FREEIMAGE_SUPPORT)) )
+		throw "Unsupported source or target type!";
 
 	// Convert source
 	FREE_IMAGE_TYPE	sourceType = PixelFormat2FIT( _source.m_pixelFormat );
@@ -621,9 +622,11 @@ U32	ImageFile::PixelFormat2BPP( PIXEL_FORMAT _pixelFormat ) {
 	switch (_pixelFormat ) {
 		// 8-bits
 		case PIXEL_FORMAT::R8:		return 8;
-		case PIXEL_FORMAT::RG8:		return 24;	// Supported as RGB8, otherwise FreeImage thinks it's R5G6B5! :(
+		case PIXEL_FORMAT::RG8:		return 24;	// Supported as BGR8, otherwise FreeImage thinks it's R5G6B5! :(
 		case PIXEL_FORMAT::RGB8:	return 24;
+		case PIXEL_FORMAT::BGR8:	return 24;
 		case PIXEL_FORMAT::RGBA8:	return 32;
+		case PIXEL_FORMAT::BGRA8:	return 32;
 
 		// 16-bits
 		case PIXEL_FORMAT::R16:		return 16;
@@ -638,6 +641,12 @@ U32	ImageFile::PixelFormat2BPP( PIXEL_FORMAT _pixelFormat ) {
 		case PIXEL_FORMAT::RGBA16F:	return 64;
 
 		// 32-bits
+		case PIXEL_FORMAT::R32:		return 32;
+		case PIXEL_FORMAT::RG32:	return 96;	// Supported as RGB32
+		case PIXEL_FORMAT::RGB32:	return 96;
+		case PIXEL_FORMAT::RGBA32:	return 128;
+
+		// 32-bits floating points
 		case PIXEL_FORMAT::R32F:	return 32;
 		case PIXEL_FORMAT::RG32F:	return 96;	// Supported as RGB32F
 		case PIXEL_FORMAT::RGB32F:	return 96;
@@ -653,8 +662,10 @@ FREE_IMAGE_TYPE	ImageFile::PixelFormat2FIT( PIXEL_FORMAT _pixelFormat ) {
 		// 8-bits
 		case PIXEL_FORMAT::R8:		return FIT_BITMAP;
 		case PIXEL_FORMAT::RG8:		return FIT_BITMAP;	// Here we unfortunately have to use a larger format to accommodate for our 2 components, otherwise FreeImage thinks it's R5G6B5! :(
-		case PIXEL_FORMAT::RGB8:	return FIT_BITMAP;
-		case PIXEL_FORMAT::RGBA8:	return FIT_BITMAP;
+//		case PIXEL_FORMAT::RGB8:	return FIT_BITMAP;	// This is NOT the internal representation of a FreeImage bitmap: use BGR8 instead:
+		case PIXEL_FORMAT::BGR8:	return FIT_BITMAP;
+//		case PIXEL_FORMAT::RGBA8:	return FIT_BITMAP;	// This is NOT the internal representation of a FreeImage bitmap: use BGRA8 instead:
+		case PIXEL_FORMAT::BGRA8:	return FIT_BITMAP;
 		// 16-bits
 		case PIXEL_FORMAT::R16:		return FIT_UINT16;
 		case PIXEL_FORMAT::RG16:	return FIT_RGB16;	// Here we unfortunately have to use a larger format to accommodate for our 2 components
@@ -666,6 +677,11 @@ FREE_IMAGE_TYPE	ImageFile::PixelFormat2FIT( PIXEL_FORMAT _pixelFormat ) {
 		case PIXEL_FORMAT::RGB16F:	return FIT_RGB16;
 		case PIXEL_FORMAT::RGBA16F:	return FIT_RGBA16;
 		// 32-bits
+		case PIXEL_FORMAT::R32:		return FIT_UINT32;
+		case PIXEL_FORMAT::RG32:	return FIT_RGBF;	// Here we unfortunately have to use a larger format to accommodate for our 2 components
+		case PIXEL_FORMAT::RGB32:	return FIT_RGBF;
+		case PIXEL_FORMAT::RGBA32:	return FIT_RGBAF;
+		// 32-bits floating points
 		case PIXEL_FORMAT::R32F:	return FIT_FLOAT;
 		case PIXEL_FORMAT::RG32F:	return FIT_RGBF;	// Here we unfortunately have to use a larger format to accommodate for our 2 components
 		case PIXEL_FORMAT::RGB32F:	return FIT_RGBF;
@@ -683,9 +699,9 @@ PIXEL_FORMAT	ImageFile::Bitmap2PixelFormat( const FIBITMAP& _bitmap ) {
 			U32	bpp = FreeImage_GetBPP( const_cast< FIBITMAP* >( &_bitmap ) );
 			switch ( bpp ) {
 				case 8:				return PIXEL_FORMAT::R8;
-				case 16:			return PIXEL_FORMAT::RG8;	// Supported as RGBA8 with padding, otherwise FreeImage thinks it's R5G6B5! :(
-				case 24:			return PIXEL_FORMAT::RGB8;
-				case 32:			return PIXEL_FORMAT::RGBA8;
+				case 16:			return PIXEL_FORMAT::RG8;	// Supported as BGR8 with padding, otherwise FreeImage thinks it's R5G6B5! :(
+				case 24:			return PIXEL_FORMAT::BGR8;
+				case 32:			return PIXEL_FORMAT::BGRA8;
 			}
 			break;
 		}

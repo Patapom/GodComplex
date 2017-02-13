@@ -149,11 +149,11 @@ namespace GenerateBlueNoise
 			}
 
 			// Create resulting image
-			ImageFile.PIXEL_FORMAT	format = ImageFile.PIXEL_FORMAT.UNKNOWN;
+			PIXEL_FORMAT	format = PIXEL_FORMAT.UNKNOWN;
 			switch ( layersCount ) {
-				case 2: format = ImageFile.PIXEL_FORMAT.RGB8; break;		// FreeImage doesn't support R8G8! It believes we're specifying R5G6B5! :(
-				case 3: format = ImageFile.PIXEL_FORMAT.RGB8; break;
-				case 4: format = ImageFile.PIXEL_FORMAT.RGBA8; break;
+				case 2: format = PIXEL_FORMAT.RGB8; break;		// FreeImage doesn't support R8G8! It believes we're specifying R5G6B5! :(
+				case 3: format = PIXEL_FORMAT.RGB8; break;
+				case 4: format = PIXEL_FORMAT.RGBA8; break;
 			}
 			ImageFile	result = new ImageFile( size, size, format, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
 			result.WritePixels( ( uint X, uint Y, ref float4 _color ) => { _color = alignedLayers[X,Y]; } );

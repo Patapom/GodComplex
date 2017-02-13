@@ -66,38 +66,51 @@ namespace ImageUtility {
 	// This enum matches the classes available in PixelFormat.h (which in turn match the DXGI formats)
 	public enum class PIXEL_FORMAT : UInt32 {
 		UNKNOWN = ~0U,
-		NOT_NATIVELY_SUPPORTED	= 0x80000000U,	// This flag is used by formats that are not natively supported by the FreeImage library
+		NOT_FREEIMAGE_SUPPORT	= 0x80000000U,	// This flag is used by formats that are not natively supported by the FreeImage library
 		RAW_BUFFER				= 0x40000000U,	// This flag is used to indicate raw buffer formats that are not directly mappable to a recognized pixel format (e.g. compressed formats)
 		COMPRESSED				= 0x20000000U,	// This flag is used by compressed formats that are only supported by DDS images
 
 		// 8-bits
 		R8		= 0,
-		RG8		= 1		| NOT_NATIVELY_SUPPORTED,	// FreeImage thinks it's R5G6B5! Aliased as RGBA8
-		RGB8	= 2,
-		RGBA8	= 3,
+		RG8		= 1		| NOT_FREEIMAGE_SUPPORT,	// FreeImage thinks it's R5G6B5! Aliased as RGBA8
+// 		RGB8	= 2		| NOT_FREEIMAGE_SUPPORT,	// FreeImage only supports BGR8 format internally!
+// 		RGBA8	= 3		| NOT_FREEIMAGE_SUPPORT,	// FreeImage only supports BGRA8 format internally!
+		BGR8	= 3,
+		BGRA8	= 4,
 
 		// 16-bits
-		R16		= 4,
-		RG16	= 5		| NOT_NATIVELY_SUPPORTED,	// Unsupported by FreeImage, aliased as RGBA16
-		RGB16	= 6,
-		RGBA16	= 7,
+		R16		= 5,
+		RG16	= 6		| NOT_FREEIMAGE_SUPPORT,	// Unsupported by FreeImage, aliased as RGBA16
+		RGB16	= 7,
+		RGBA16	= 8,
 
 		// 16-bits half-precision floating points
-		// WARNING: These formats are NOT natively supported by FreeImage but can be used by DDS for example so I chose
-		//			 to support them as regular U16 formats but treating the raw U16 as half-floats internally...
+		// WARNING: These formats are NOT natively supported by FreeImage but can be used by DDS or textures for example
+		//			 so I chose to support them as regular U16 formats but treating the raw U16 as half-floats internally...
 		// NOTE: These are NOT loadable or saveable by the regular Load()/Save() routine, this won't crash but it will produce garbage
 		//		 These formats should only be used for in-memory manipulations and DDS-related routines that can manipulate them
 		//
-		R16F	= 8		| NOT_NATIVELY_SUPPORTED,	// Unsupported by FreeImage, aliased as R16_UNORM
-		RG16F	= 9		| NOT_NATIVELY_SUPPORTED,	// Unsupported by FreeImage, aliased as RGB16_UNORM (WARNING: extra blue channel is "unused", actually pixels RGBRGBRGB... scanlines are treated as RGRGRGRG...)
-		RGB16F	= 10	| NOT_NATIVELY_SUPPORTED,	// Unsupported by FreeImage, aliased as RGB16_UNORM
-		RGBA16F	= 11	| NOT_NATIVELY_SUPPORTED,	// Unsupported by FreeImage, aliased as RGBA16_UNORM
+		R16F	= 9		| NOT_FREEIMAGE_SUPPORT,	// Unsupported by FreeImage, aliased as R16
+		RG16F	= 10	| NOT_FREEIMAGE_SUPPORT,	// Unsupported by FreeImage, aliased as RGB16
+		RGB16F	= 11	| NOT_FREEIMAGE_SUPPORT,	// Unsupported by FreeImage, aliased as RGB16
+		RGBA16F	= 12	| NOT_FREEIMAGE_SUPPORT,	// Unsupported by FreeImage, aliased as RGBA16
 
 		// 32-bits
-		R32F	= 12,
-		RG32F	= 13	| NOT_NATIVELY_SUPPORTED,	// Unsupported by FreeImage, aliased as RGBA32F
-		RGB32F	= 14,
-		RGBA32F = 15,
+		// WARNING: These formats are NOT natively supported by FreeImage but can be used by DDS or textures for example
+		//			so I chose to support them as regular F32 formats but treating the F32 as raw U32 internally...
+		// NOTE: These are NOT loadable or saveable by the regular Load()/Save() routine, this won't crash but it will produce garbage
+		//		 These formats should only be used for in-memory manipulations and DDS-related routines that can manipulate them
+		//
+		R32		= 13	| NOT_FREEIMAGE_SUPPORT,	// Unsupported by FreeImage, aliased as R32F
+		RG32	= 14	| NOT_FREEIMAGE_SUPPORT,	// Unsupported by FreeImage, aliased as RGB32F
+		RGB32	= 15	| NOT_FREEIMAGE_SUPPORT,	// Unsupported by FreeImage, aliased as RGB32F
+		RGBA32	= 16	| NOT_FREEIMAGE_SUPPORT,	// Unsupported by FreeImage, aliased as RGBA32F
+
+		// 32-bits floating points
+		R32F	= 17,
+		RG32F	= 18	| NOT_FREEIMAGE_SUPPORT,	// Unsupported by FreeImage, aliased as RGBA32F
+		RGB32F	= 19,
+		RGBA32F = 20,
 
 		// This is the "raw compressed format" used to support compressed or otherwise unsupported pixel formats like DirectX BCx formats (only used by DDS images)
 		BC4		= 256	| RAW_BUFFER | COMPRESSED,	// Only supported by DDS, raw buffered images

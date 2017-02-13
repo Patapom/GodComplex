@@ -33,38 +33,51 @@ namespace BaseLib {
 	//
 	enum class PIXEL_FORMAT : U32 {
 		UNKNOWN = ~0U,
-		NOT_NATIVELY_SUPPORTED	= 0x80000000U,	// This flag is used by formats that are not natively supported by the FreeImage library
+		NOT_FREEIMAGE_SUPPORT	= 0x80000000U,	// This flag is used by formats that are not natively supported by the FreeImage library
 		RAW_BUFFER				= 0x40000000U,	// This flag is used to indicate raw buffer formats that are not directly mappable to a recognized pixel format (e.g. compressed formats)
 		COMPRESSED				= 0x20000000U,	// This flag is used by compressed formats that are only supported by DDS images
 
 		// 8-bits
 		R8		= 0,
-		RG8		= 1		| NOT_NATIVELY_SUPPORTED,	// FreeImage thinks it's R5G6B5! Aliased as RGBA8
-		RGB8	= 2,
-		RGBA8	= 3,
+		RG8		= 1		| NOT_FREEIMAGE_SUPPORT,	// FreeImage thinks it's R5G6B5! Aliased as RGBA8
+		RGB8	= 2		| NOT_FREEIMAGE_SUPPORT,	// FreeImage only supports BGR8 format internally!
+		RGBA8	= 3		| NOT_FREEIMAGE_SUPPORT,	// FreeImage only supports BGRA8 format internally!
+		BGR8	= 3,
+		BGRA8	= 4,
 
 		// 16-bits
-		R16		= 4,
-		RG16	= 5		| NOT_NATIVELY_SUPPORTED,	// Unsupported by FreeImage, aliased as RGBA16
-		RGB16	= 6,
-		RGBA16	= 7,
+		R16		= 5,
+		RG16	= 6		| NOT_FREEIMAGE_SUPPORT,	// Unsupported by FreeImage, aliased as RGBA16
+		RGB16	= 7,
+		RGBA16	= 8,
 
 		// 16-bits half-precision floating points
-		// WARNING: These formats are NOT natively supported by FreeImage but can be used by DDS for example so I chose
-		//			 to support them as regular U16 formats but treating the raw U16 as half-floats internally...
+		// WARNING: These formats are NOT natively supported by FreeImage but can be used by DDS or textures for example
+		//			 so I chose to support them as regular U16 formats but treating the raw U16 as half-floats internally...
 		// NOTE: These are NOT loadable or saveable by the regular Load()/Save() routine, this won't crash but it will produce garbage
 		//		 These formats should only be used for in-memory manipulations and DDS-related routines that can manipulate them
 		//
-		R16F	= 8		| NOT_NATIVELY_SUPPORTED,	// Unsupported by FreeImage, aliased as R16_UNORM
-		RG16F	= 9		| NOT_NATIVELY_SUPPORTED,	// Unsupported by FreeImage, aliased as RGB16_UNORM
-		RGB16F	= 10	| NOT_NATIVELY_SUPPORTED,	// Unsupported by FreeImage, aliased as RGB16_UNORM
-		RGBA16F	= 11	| NOT_NATIVELY_SUPPORTED,	// Unsupported by FreeImage, aliased as RGBA16_UNORM
+		R16F	= 9		| NOT_FREEIMAGE_SUPPORT,	// Unsupported by FreeImage, aliased as R16
+		RG16F	= 10	| NOT_FREEIMAGE_SUPPORT,	// Unsupported by FreeImage, aliased as RGB16
+		RGB16F	= 11	| NOT_FREEIMAGE_SUPPORT,	// Unsupported by FreeImage, aliased as RGB16
+		RGBA16F	= 12	| NOT_FREEIMAGE_SUPPORT,	// Unsupported by FreeImage, aliased as RGBA16
 
 		// 32-bits
-		R32F	= 12,
-		RG32F	= 13	| NOT_NATIVELY_SUPPORTED,	// Unsupported by FreeImage, aliased as RGBA32F
-		RGB32F	= 14,
-		RGBA32F = 15,
+		// WARNING: These formats are NOT natively supported by FreeImage but can be used by DDS or textures for example
+		//			so I chose to support them as regular F32 formats but treating the F32 as raw U32 internally...
+		// NOTE: These are NOT loadable or saveable by the regular Load()/Save() routine, this won't crash but it will produce garbage
+		//		 These formats should only be used for in-memory manipulations and DDS-related routines that can manipulate them
+		//
+		R32		= 13	| NOT_FREEIMAGE_SUPPORT,	// Unsupported by FreeImage, aliased as R32F
+		RG32	= 14	| NOT_FREEIMAGE_SUPPORT,	// Unsupported by FreeImage, aliased as RGB32F
+		RGB32	= 15	| NOT_FREEIMAGE_SUPPORT,	// Unsupported by FreeImage, aliased as RGB32F
+		RGBA32	= 16	| NOT_FREEIMAGE_SUPPORT,	// Unsupported by FreeImage, aliased as RGBA32F
+
+		// 32-bits floating points
+		R32F	= 17,
+		RG32F	= 18	| NOT_FREEIMAGE_SUPPORT,	// Unsupported by FreeImage, aliased as RGBA32F
+		RGB32F	= 19,
+		RGBA32F = 20,
 
 		// This is the "raw compressed format" used to support compressed or otherwise unsupported pixel formats like DirectX BCx formats (only used by DDS images)
 		BC4		= 256	| RAW_BUFFER | COMPRESSED,	// Only supported by DDS, raw buffered images
@@ -281,9 +294,53 @@ namespace BaseLib {
 		#pragma endregion
 	};
 
+	// BGR8 format
+	struct	PF_BGR8 {
+		U8	B, G, R;
+
+		#pragma region IPixelAccessor
+		static class desc_t : public IPixelAccessor {
+		public:
+
+			U32		Size() const override { return 3; }
+
+			void Write( void* _pixel, U32 _R, U32 _G, U32 _B, U32 _A ) const override {	PF_BGR8& P = *((PF_BGR8*) _pixel);
+				P.R = (U8) _R;
+				P.G = (U8) _G;
+				P.B = (U8) _B;
+			}
+
+			void Write( void* _pixel, const bfloat4& _Color ) const override {	PF_BGR8& P = *((PF_BGR8*) _pixel);
+				P.R = F32toU8(_Color.x);
+				P.G = F32toU8(_Color.y);
+				P.B = F32toU8(_Color.z);
+			}
+
+			void Write( void* _pixel, float _R, float _G, float _B, float _A ) const override {	PF_BGR8& P = *((PF_BGR8*) _pixel);
+				P.R = F32toU8( _R );
+				P.G = F32toU8( _G );
+				P.B = F32toU8( _B );
+			}
+
+			void Write( void* _pixel, U32 _A ) const override {
+			}
+
+			void Write( void* _pixel, float _A ) const override {
+			}
+
+			float	Red( const void* _pixel ) const override					{ return ((PF_BGR8*) _pixel)->R / 255.0f; }
+			float	Green( const void* _pixel ) const override					{ return ((PF_BGR8*) _pixel)->G / 255.0f; }
+			float	Blue( const void* _pixel ) const override					{ return ((PF_BGR8*) _pixel)->B / 255.0f; }
+			float	Alpha( const void* _pixel ) const override					{ return 1.0f; }
+			void	RGBA( const void* _pixel, bfloat4& _Color ) const override	{ _Color.Set( ((PF_BGR8*) _pixel)->R / 255.0f, ((PF_BGR8*) _pixel)->G / 255.0f, ((PF_BGR8*) _pixel)->B / 255.0f, 1 ); }
+
+		} Descriptor;
+		#pragma endregion
+	};
+
 	// RGB8 format
 	struct	PF_RGB8 {
-		U8	B, G, R;
+		U8	R, G, B;
 
 		#pragma region IPixelAccessor
 		static class desc_t : public IPixelAccessor {
@@ -326,8 +383,57 @@ namespace BaseLib {
 	};
 
 	// RGBA8 format
-	struct	PF_RGBA8 {
+	struct	PF_BGRA8 {
 		U8	B, G, R, A;
+
+		#pragma region IPixelAccessor
+		static class desc_t : public IPixelAccessor {
+		public:
+
+			U32		Size() const override { return 4; }
+
+			void Write( void* _pixel, U32 _R, U32 _G, U32 _B, U32 _A ) const override {	PF_BGRA8& P = *((PF_BGRA8*) _pixel);
+				P.R = (U8) _R;
+				P.G = (U8) _G;
+				P.B = (U8) _B;
+				P.A = (U8) _A;
+			}
+
+			void Write( void* _pixel, const bfloat4& _Color ) const override {	PF_BGRA8& P = *((PF_BGRA8*) _pixel);
+				P.R = F32toU8(_Color.x);
+				P.G = F32toU8(_Color.y);
+				P.B = F32toU8(_Color.z);
+				P.A = F32toU8(_Color.w);
+			}
+
+			void Write( void* _pixel, float _R, float _G, float _B, float _A ) const override {	PF_BGRA8& P = *((PF_BGRA8*) _pixel);
+				P.R = F32toU8( _R );
+				P.G = F32toU8( _G );
+				P.B = F32toU8( _B );
+				P.A = F32toU8( _A );
+			}
+
+			void Write( void* _pixel, U32 _A ) const override {	PF_BGRA8& P = *((PF_BGRA8*) _pixel);
+				P.A = (U8) _A;
+			}
+
+			void Write( void* _pixel, float _A ) const override {	PF_BGRA8& P = *((PF_BGRA8*) _pixel);
+				P.A = F32toU8( _A );
+			}
+
+			float	Red( const void* _pixel ) const override					{ return ((PF_BGRA8*) _pixel)->R / 255.0f; }
+			float	Green( const void* _pixel ) const override					{ return ((PF_BGRA8*) _pixel)->G / 255.0f; }
+			float	Blue( const void* _pixel ) const override					{ return ((PF_BGRA8*) _pixel)->B / 255.0f; }
+			float	Alpha( const void* _pixel ) const override					{ return ((PF_BGRA8*) _pixel)->A / 255.0f; }
+			void	RGBA( const void* _pixel, bfloat4& _Color ) const override	{ _Color.Set( ((PF_BGRA8*) _pixel)->R / 255.0f, ((PF_BGRA8*) _pixel)->G / 255.0f, ((PF_BGRA8*) _pixel)->B / 255.0f, ((PF_BGRA8*) _pixel)->A / 255.0f ); }
+
+		} Descriptor;
+		#pragma endregion
+	};
+
+	// RGBA8 format
+	struct	PF_RGBA8 {
+		U8	R, G, B, A;
 
 		#pragma region IPixelAccessor
 		static class desc_t : public IPixelAccessor {
@@ -376,6 +482,7 @@ namespace BaseLib {
 
 	// RGBA8_sRGB format
 // 	struct	PF_RGBA8_sRGB {
+//	don't forget BGRA/RGBA!
 // 		U8	B, G, R, A;
 // 
 // 		#pragma region IPixelAccessor
@@ -728,17 +835,17 @@ namespace BaseLib {
 
 			U32		Size() const override { return 4; }
 
-			void Write( void* _pixel, U32 _R, U32 _G, U32 _B, U32 _A ) const override {	PF_RG16F& P = *((PF_RG16F*) _pixel);
+			void Write( void* _pixel, U32 _R, U32 _G, U32 _B, U32 _A ) const override { PF_RG16F& P = *((PF_RG16F*) _pixel);
 				P.R = U16toF32(_R);
 				P.G = U16toF32(_G);
 			}
 
-			void Write( void* _pixel, const bfloat4& _Color ) const override {	PF_RG16F& P = *((PF_RG16F*) _pixel);
+			void Write( void* _pixel, const bfloat4& _Color ) const override { PF_RG16F& P = *((PF_RG16F*) _pixel);
 				P.R = _Color.x;
 				P.G = _Color.y;
 			}
 
-			void Write( void* _pixel, float _R, float _G, float _B, float _A ) const override {	PF_RG16F& P = *((PF_RG16F*) _pixel);
+			void Write( void* _pixel, float _R, float _G, float _B, float _A ) const override { PF_RG16F& P = *((PF_RG16F*) _pixel);
 				P.R = _R;
 				P.G = _G;
 			}

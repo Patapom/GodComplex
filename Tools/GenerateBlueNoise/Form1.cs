@@ -310,8 +310,8 @@ namespace GenerateBlueNoise
 					} catch ( Exception ) {
 					}
 
-					m_handMadeBlueNoise = new ImageFile( NOISE_SIZE, NOISE_SIZE, ImageFile.PIXEL_FORMAT.RGBA8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
-					m_handMadeSpectrum = new ImageFile( m_handMadeBlueNoise.Width, m_handMadeBlueNoise.Height, ImageFile.PIXEL_FORMAT.RGBA8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
+					m_handMadeBlueNoise = new ImageFile( NOISE_SIZE, NOISE_SIZE, PIXEL_FORMAT.RGBA8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
+					m_handMadeSpectrum = new ImageFile( m_handMadeBlueNoise.Width, m_handMadeBlueNoise.Height, PIXEL_FORMAT.RGBA8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
 
 					// Read radial profile from disk
 					Complex[]	radialSliceAverage = new Complex[256];
@@ -672,11 +672,11 @@ noiseValue = SimpleRNG.GetUniform() < 0.5 ? 0.5 * Math.Sqrt( 1.0 - noiseValue ) 
 
 			if ( m_blueNoiseAnnealing != null )
 				m_blueNoiseAnnealing.Dispose();
-			m_blueNoiseAnnealing = new ImageFile( textureSize, textureSize, ImageFile.PIXEL_FORMAT.RGBA8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
+			m_blueNoiseAnnealing = new ImageFile( textureSize, textureSize, PIXEL_FORMAT.RGBA8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
 
 			float4[]	scanline = new float4[textureSize];
 
-			ImageFile	graphStatistics = new ImageFile( (uint) panelImageSpectrum.Width, (uint) panelImageSpectrum.Height, ImageFile.PIXEL_FORMAT.RGBA8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
+			ImageFile	graphStatistics = new ImageFile( (uint) panelImageSpectrum.Width, (uint) panelImageSpectrum.Height, PIXEL_FORMAT.RGBA8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
 			float4		black = new float4( 0, 0, 0, 1 );
 			float2		rangeX = new float2( 0, 10000 );
 //			float2		rangeY = new float2( -10, 10 );
@@ -798,11 +798,11 @@ noiseValue = SimpleRNG.GetUniform() < 0.5 ? 0.5 * Math.Sqrt( 1.0 - noiseValue ) 
 
 			if ( m_blueNoiseVoidAndCluster != null )
 				m_blueNoiseVoidAndCluster.Dispose();
-			m_blueNoiseVoidAndCluster = new ImageFile( textureSize, textureSize, ImageFile.PIXEL_FORMAT.R8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
+			m_blueNoiseVoidAndCluster = new ImageFile( textureSize, textureSize, PIXEL_FORMAT.R8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
 
 			float4[]	scanline = new float4[textureSize];
 
-			ImageFile	graphStatistics = new ImageFile( (uint) panelImageSpectrum.Width, (uint) panelImageSpectrum.Height, ImageFile.PIXEL_FORMAT.RGBA8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
+			ImageFile	graphStatistics = new ImageFile( (uint) panelImageSpectrum.Width, (uint) panelImageSpectrum.Height, PIXEL_FORMAT.RGBA8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
 			float4		black = new float4( 0, 0, 0, 1 );
 			float2		rangeX = new float2( 0, 10000 );
 //			float2		rangeY = new float2( -10, 10 );
