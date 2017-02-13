@@ -970,6 +970,7 @@ float	quality = _RAW ? 3.0f : 3.0f;
 			EXR_RGB32F,
 
 			DDS_2D_RGBA8_MIPS,
+			DDS_2D_RGBA32_CUBE,
 		}
 
 		private void buttonLoad1_Click(object sender, EventArgs e) {
@@ -1042,6 +1043,10 @@ float	quality = _RAW ? 3.0f : 3.0f;
 
 		private void buttonLoadDDS1_Click(object sender, EventArgs e) {
 			TestLoadImage( LOADING_TESTS.DDS_2D_RGBA8_MIPS );
+		}
+
+		private void buttonLoadDDS2_Click(object sender, EventArgs e) {
+			TestLoadImage( LOADING_TESTS.DDS_2D_RGBA32_CUBE );
 		}
 
 		void TestLoadImage( LOADING_TESTS _type ) {
@@ -1141,15 +1146,24 @@ float	quality = _RAW ? 3.0f : 3.0f;
 						break;
 
 
-					// DDS
+					// DDS 8 bits with mips
 					case LOADING_TESTS.DDS_2D_RGBA8_MIPS: {
-//						ImagesMatrix	images = ImageFile.DDSLoadFile( new System.IO.FileInfo( @"..\..\Images\In\DDS\AreaLightSAT.dds" ) );
+						ImagesMatrix	images = ImageFile.DDSLoadFile( new System.IO.FileInfo( @"..\..\Images\In\DDS\AreaLightSAT.dds" ) );
+						m_imageFile = images[0][0][0];
+						images[0][0][0] = null;	// Remove it from the matrix so it doesn't get destroyed!
+						panelLoad.Bitmap = m_imageFile.AsBitmap;
+
+						customLines = "\r\n"
+									+ images.ArraySize + " array slices\r\n"
+									+ images[0].MipLevelsCount + " mip levels\r\n";
+						break;
+					}
+					case LOADING_TESTS.DDS_2D_RGBA32_CUBE: {
 //						ImagesMatrix	images = ImageFile.DDSLoadFile( new System.IO.FileInfo( @"..\..\Images\In\DDS\caustics2.dds" ) );		// BC4_UNORM
 						ImagesMatrix	images = ImageFile.DDSLoadFile( new System.IO.FileInfo( @"..\..\Images\In\DDS\garage4_hd.dds" ) );
 //						ImagesMatrix	images = ImageFile.DDSLoadFile( new System.IO.FileInfo( @"..\..\Images\In\DDS\kitchen_cross.dds" ) );
 						m_imageFile = images[0][0][0];
 						images[0][0][0] = null;	// Remove it from the matrix so it doesn't get destroyed!
-//						panelLoad.Bitmap = m_imageFile.AsBitmap;
 						panelLoad.Bitmap = m_imageFile.AsCustomBitmap( ( ref float4 _color ) => {
 							_color *= 1.0f;
 							_color.w = 1;

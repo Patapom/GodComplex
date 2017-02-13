@@ -36,7 +36,6 @@
 			this.buttonBuild3 = new System.Windows.Forms.Button();
 			this.buttonBuild2 = new System.Windows.Forms.Button();
 			this.buttonBuild1 = new System.Windows.Forms.Button();
-			this.panelBuild = new ImageUtility.UnitTests.PanelOutput(this.components);
 			this.tabPageLoading = new System.Windows.Forms.TabPage();
 			this.buttonLoad21 = new System.Windows.Forms.Button();
 			this.buttonLoad20 = new System.Windows.Forms.Button();
@@ -56,7 +55,6 @@
 			this.buttonLoad3 = new System.Windows.Forms.Button();
 			this.buttonLoad2 = new System.Windows.Forms.Button();
 			this.buttonLoad1 = new System.Windows.Forms.Button();
-			this.panelLoad = new ImageUtility.UnitTests.PanelOutput(this.components);
 			this.tabPageLDR2HDR = new System.Windows.Forms.TabPage();
 			this.radioButtonFilterCurveFitting = new System.Windows.Forms.RadioButton();
 			this.radioButtonFilterTent = new System.Windows.Forms.RadioButton();
@@ -72,17 +70,20 @@
 			this.buttonLDR5JPG = new System.Windows.Forms.Button();
 			this.buttonLDR3JPG = new System.Windows.Forms.Button();
 			this.textBoxHDR = new System.Windows.Forms.TextBox();
-			this.panelOutputHDR = new ImageUtility.UnitTests.PanelOutput(this.components);
 			this.tabPageColorProfiles = new System.Windows.Forms.TabPage();
 			this.buttonProfile4 = new System.Windows.Forms.Button();
 			this.buttonProfile3 = new System.Windows.Forms.Button();
 			this.buttonProfile2 = new System.Windows.Forms.Button();
 			this.buttonProfile1 = new System.Windows.Forms.Button();
-			this.panelColorProfile = new ImageUtility.UnitTests.PanelOutput(this.components);
 			this.tabPageDrawing = new System.Windows.Forms.TabPage();
 			this.buttonDraw3 = new System.Windows.Forms.Button();
 			this.buttonDraw2 = new System.Windows.Forms.Button();
 			this.buttonDraw1 = new System.Windows.Forms.Button();
+			this.buttonLoadDDS2 = new System.Windows.Forms.Button();
+			this.panelBuild = new ImageUtility.UnitTests.PanelOutput(this.components);
+			this.panelLoad = new ImageUtility.UnitTests.PanelOutput(this.components);
+			this.panelOutputHDR = new ImageUtility.UnitTests.PanelOutput(this.components);
+			this.panelColorProfile = new ImageUtility.UnitTests.PanelOutput(this.components);
 			this.panelDrawing = new ImageUtility.UnitTests.PanelOutput(this.components);
 			this.tabControlTests.SuspendLayout();
 			this.tabPageBuilding.SuspendLayout();
@@ -169,14 +170,6 @@
 			this.buttonBuild1.UseVisualStyleBackColor = true;
 			this.buttonBuild1.Click += new System.EventHandler(this.buttonBuild1_Click);
 			// 
-			// panelBuild
-			// 
-			this.panelBuild.Bitmap = null;
-			this.panelBuild.Location = new System.Drawing.Point(6, 86);
-			this.panelBuild.Name = "panelBuild";
-			this.panelBuild.Size = new System.Drawing.Size(842, 568);
-			this.panelBuild.TabIndex = 3;
-			// 
 			// tabPageLoading
 			// 
 			this.tabPageLoading.Controls.Add(this.buttonLoad21);
@@ -184,6 +177,7 @@
 			this.tabPageLoading.Controls.Add(this.buttonLoad22);
 			this.tabPageLoading.Controls.Add(this.buttonLoad14);
 			this.tabPageLoading.Controls.Add(this.buttonLoad13);
+			this.tabPageLoading.Controls.Add(this.buttonLoadDDS2);
 			this.tabPageLoading.Controls.Add(this.buttonLoadDDS1);
 			this.tabPageLoading.Controls.Add(this.buttonLoad12);
 			this.tabPageLoading.Controls.Add(this.buttonLoad11);
@@ -387,14 +381,6 @@
 			this.buttonLoad1.UseVisualStyleBackColor = true;
 			this.buttonLoad1.Click += new System.EventHandler(this.buttonLoad1_Click);
 			// 
-			// panelLoad
-			// 
-			this.panelLoad.Bitmap = null;
-			this.panelLoad.Location = new System.Drawing.Point(6, 108);
-			this.panelLoad.Name = "panelLoad";
-			this.panelLoad.Size = new System.Drawing.Size(842, 568);
-			this.panelLoad.TabIndex = 0;
-			// 
 			// tabPageLDR2HDR
 			// 
 			this.tabPageLDR2HDR.Controls.Add(this.radioButtonFilterCurveFitting);
@@ -560,14 +546,6 @@
 			this.textBoxHDR.Size = new System.Drawing.Size(297, 568);
 			this.textBoxHDR.TabIndex = 3;
 			// 
-			// panelOutputHDR
-			// 
-			this.panelOutputHDR.Bitmap = null;
-			this.panelOutputHDR.Location = new System.Drawing.Point(8, 84);
-			this.panelOutputHDR.Name = "panelOutputHDR";
-			this.panelOutputHDR.Size = new System.Drawing.Size(842, 568);
-			this.panelOutputHDR.TabIndex = 2;
-			// 
 			// tabPageColorProfiles
 			// 
 			this.tabPageColorProfiles.Controls.Add(this.buttonProfile4);
@@ -622,14 +600,6 @@
 			this.buttonProfile1.UseVisualStyleBackColor = true;
 			this.buttonProfile1.Click += new System.EventHandler(this.buttonProfile1_Click);
 			// 
-			// panelColorProfile
-			// 
-			this.panelColorProfile.Bitmap = null;
-			this.panelColorProfile.Location = new System.Drawing.Point(160, 84);
-			this.panelColorProfile.Name = "panelColorProfile";
-			this.panelColorProfile.Size = new System.Drawing.Size(842, 568);
-			this.panelColorProfile.TabIndex = 3;
-			// 
 			// tabPageDrawing
 			// 
 			this.tabPageDrawing.Controls.Add(this.buttonDraw3);
@@ -672,6 +642,48 @@
 			this.buttonDraw1.Text = "Simple Function";
 			this.buttonDraw1.UseVisualStyleBackColor = true;
 			this.buttonDraw1.Click += new System.EventHandler(this.buttonDraw1_Click);
+			// 
+			// buttonLoadDDS2
+			// 
+			this.buttonLoadDDS2.Location = new System.Drawing.Point(101, 79);
+			this.buttonLoadDDS2.Name = "buttonLoadDDS2";
+			this.buttonLoadDDS2.Size = new System.Drawing.Size(123, 23);
+			this.buttonLoadDDS2.TabIndex = 2;
+			this.buttonLoadDDS2.Text = "DDS HDR Cube Map";
+			this.buttonLoadDDS2.UseVisualStyleBackColor = true;
+			this.buttonLoadDDS2.Click += new System.EventHandler(this.buttonLoadDDS2_Click);
+			// 
+			// panelBuild
+			// 
+			this.panelBuild.Bitmap = null;
+			this.panelBuild.Location = new System.Drawing.Point(6, 86);
+			this.panelBuild.Name = "panelBuild";
+			this.panelBuild.Size = new System.Drawing.Size(842, 568);
+			this.panelBuild.TabIndex = 3;
+			// 
+			// panelLoad
+			// 
+			this.panelLoad.Bitmap = null;
+			this.panelLoad.Location = new System.Drawing.Point(6, 108);
+			this.panelLoad.Name = "panelLoad";
+			this.panelLoad.Size = new System.Drawing.Size(842, 568);
+			this.panelLoad.TabIndex = 0;
+			// 
+			// panelOutputHDR
+			// 
+			this.panelOutputHDR.Bitmap = null;
+			this.panelOutputHDR.Location = new System.Drawing.Point(8, 84);
+			this.panelOutputHDR.Name = "panelOutputHDR";
+			this.panelOutputHDR.Size = new System.Drawing.Size(842, 568);
+			this.panelOutputHDR.TabIndex = 2;
+			// 
+			// panelColorProfile
+			// 
+			this.panelColorProfile.Bitmap = null;
+			this.panelColorProfile.Location = new System.Drawing.Point(160, 84);
+			this.panelColorProfile.Name = "panelColorProfile";
+			this.panelColorProfile.Size = new System.Drawing.Size(842, 568);
+			this.panelColorProfile.TabIndex = 3;
 			// 
 			// panelDrawing
 			// 
@@ -760,6 +772,7 @@
 		private System.Windows.Forms.RadioButton radioButtonFilterGaussian2Pass;
 		private System.Windows.Forms.Button buttonLDR11RAW;
 		private System.Windows.Forms.Button buttonLoadDDS1;
+		private System.Windows.Forms.Button buttonLoadDDS2;
 
 	}
 }
