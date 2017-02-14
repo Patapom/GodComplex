@@ -4,11 +4,12 @@ using System.Linq;
 using System.Windows.Forms;
 using System.IO;
 
-using RendererManaged;
+using SharpMath;
+using Renderer;
 
 namespace TestMSBSDF
 {
-	public class	LobeModel : WMath.BFGS.Model {
+	public class	LobeModel : BFGS.Model {
 
 		#region NESTED TYPES
 
@@ -126,23 +127,27 @@ namespace TestMSBSDF
 		/// <param name="_texHistogram_CPU"></param>
 		/// <param name="_scatteringOrder"></param>
 		/// <returns></returns>
-		public static double[,]	HistogramTexture2Array( Texture2D _texHistogram_CPU, int _scatteringOrder ) {
-			int	scattMin = _scatteringOrder-1;		// Because scattering order 1 is actually stored in first slice of the texture array
-			int	scattMax = scattMin+1;				// To simulate a single scattering order
-//			int	scattMax = MAX_SCATTERING_ORDER;	// To simulate all scattering orders accumulated
+		public static double[,]	HistogramTexture2Array( Texture2D _texHistogram_CPU, uint _scatteringOrder ) {
+			uint	scattMin = _scatteringOrder-1;		// Because scattering order 1 is actually stored in first slice of the texture array
+			uint	scattMax = scattMin+1;				// To simulate a single scattering order
+//			uint	scattMax = MAX_SCATTERING_ORDER;	// To simulate all scattering orders accumulated
 
-			int			W = _texHistogram_CPU.Width;
-			int			H = _texHistogram_CPU.Height;
+			uint		W = _texHistogram_CPU.Width;
+			uint		H = _texHistogram_CPU.Height;
 			double[,]	histogramData = new double[W,H];
 
-			for ( int scatteringOrder=scattMin; scatteringOrder < scattMax; scatteringOrder++ ) {
-				PixelsBuffer	Content = _texHistogram_CPU.Map( 0, scatteringOrder );
-				using ( BinaryReader R = Content.OpenStreamRead() )
-					for ( int Y=0; Y < H; Y++ )
-						for ( int X=0; X < W; X++ )
-							histogramData[X,Y] += W * H * R.ReadSingle();
-				Content.CloseStream();
-				_texHistogram_CPU.UnMap( 0, scatteringOrder );
+			for ( uint scatteringOrder=scattMin; scatteringOrder < scattMax; scatteringOrder++ ) {
+// 				PixelsBuffer	Content = _texHistogram_CPU.MapRead( 0, scatteringOrder );
+// 				using ( BinaryReader R = Content.OpenStreamRead() )
+// 					for ( int Y=0; Y < H; Y++ )
+// 						for ( int X=0; X < W; X++ )
+// 							histogramData[X,Y] += W * H * R.ReadSingle();
+// 				Content.CloseStream();
+// 				_texHistogram_CPU.UnMap( Content );
+
+				_texHistogram_CPU.ReadPixels( 0, scatteringOrder, ( uint X, uint Y, BinaryReader R ) => {
+					histogramData[X,Y] += W * H * R.ReadSingle();
+				} );
 			}
 
 			return histogramData;

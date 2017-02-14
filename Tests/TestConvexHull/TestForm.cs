@@ -7,12 +7,13 @@ using System.Linq;
 using System.Text;
 using System.Windows.Forms;
 
-using RendererManaged;
+using SharpMath;
+using Renderer;
 
 //////////////////////////////////////////////////////////////////////////
 // This test starts from a bunch of (position,normal) and attempts to find a convex hull
 // It's easier than the standard algorithm that starts from a set of positions only since
-//	we already start With a bunch of planes that can be used for quick rejcction
+//	we already have a bunch of planes that can be used for quick rejection
 //////////////////////////////////////////////////////////////////////////
 namespace TestConvexHull
 {

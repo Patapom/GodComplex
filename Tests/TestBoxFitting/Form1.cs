@@ -7,7 +7,8 @@ using System.Linq;
 using System.Text;
 using System.Windows.Forms;
 
-using RendererManaged;
+using SharpMath;
+using Renderer;
 
 namespace TestBoxFitting
 {

@@ -9,7 +9,9 @@ using System.Text;
 using System.Windows.Forms;
 using System.IO;
 
-using RendererManaged;
+using SharpMath;
+using Renderer;
+using ImageUtility;
 using Nuaj.Cirrus.Utility;
 
 namespace TestMSBSDF
@@ -203,15 +205,15 @@ namespace TestMSBSDF
 			m_CB_RenderCylinder = new ConstantBuffer<CB_RenderCylinder>( m_Device, 10 );
 
 			try {
-				m_Shader_ComputeBeckmannSurface = new ComputeShader( m_Device, new ShaderFile( new FileInfo( "Shaders/ComputeBeckmannSurface.hlsl" ) ), "CS", null );
-				m_Shader_RayTraceSurface_Conductor = new ComputeShader( m_Device, new ShaderFile( new FileInfo( "Shaders/RayTraceSurface.hlsl" ) ), "CS_Conductor", null );
-				m_Shader_RayTraceSurface_Dielectric = new ComputeShader( m_Device, new ShaderFile( new FileInfo( "Shaders/RayTraceSurface.hlsl" ) ), "CS_Dielectric", null );
-				m_Shader_RayTraceSurface_Diffuse = new ComputeShader( m_Device, new ShaderFile( new FileInfo( "Shaders/RayTraceSurface.hlsl" ) ), "CS_Diffuse", null );
-				m_Shader_AccumulateOutgoingDirections = new ComputeShader( m_Device, new ShaderFile( new FileInfo( "Shaders/AccumulateOutgoingDirections.hlsl" ) ), "CS", null );
-				m_Shader_FinalizeOutgoingDirections = new ComputeShader( m_Device, new ShaderFile( new FileInfo( "Shaders/AccumulateOutgoingDirections.hlsl" ) ), "CS_Finalize", null );
-				m_Shader_RenderHeightField = new Shader( m_Device, new ShaderFile( new FileInfo( "Shaders/RenderHeightField.hlsl" ) ), VERTEX_FORMAT.P3, "VS", null, "PS", null );
-				m_Shader_RenderLobe = new Shader( m_Device, new ShaderFile( new FileInfo( "Shaders/RenderLobe.hlsl" ) ), VERTEX_FORMAT.P3, "VS", null, "PS", null );
-				m_Shader_RenderCylinder = new Shader( m_Device, new ShaderFile( new FileInfo( "Shaders/RenderCylinder.hlsl" ) ), VERTEX_FORMAT.P3, "VS", null, "PS", null );
+				m_Shader_ComputeBeckmannSurface = new ComputeShader( m_Device, new FileInfo( "Shaders/ComputeBeckmannSurface.hlsl" ), "CS", null );
+				m_Shader_RayTraceSurface_Conductor = new ComputeShader( m_Device, new FileInfo( "Shaders/RayTraceSurface.hlsl" ), "CS_Conductor", null );
+				m_Shader_RayTraceSurface_Dielectric = new ComputeShader( m_Device, new FileInfo( "Shaders/RayTraceSurface.hlsl" ), "CS_Dielectric", null );
+				m_Shader_RayTraceSurface_Diffuse = new ComputeShader( m_Device, new FileInfo( "Shaders/RayTraceSurface.hlsl" ), "CS_Diffuse", null );
+				m_Shader_AccumulateOutgoingDirections = new ComputeShader( m_Device, new FileInfo( "Shaders/AccumulateOutgoingDirections.hlsl" ), "CS", null );
+				m_Shader_FinalizeOutgoingDirections = new ComputeShader( m_Device, new FileInfo( "Shaders/AccumulateOutgoingDirections.hlsl" ), "CS_Finalize", null );
+				m_Shader_RenderHeightField = new Shader( m_Device, new FileInfo( "Shaders/RenderHeightField.hlsl" ), VERTEX_FORMAT.P3, "VS", null, "PS", null );
+				m_Shader_RenderLobe = new Shader( m_Device, new FileInfo( "Shaders/RenderLobe.hlsl" ), VERTEX_FORMAT.P3, "VS", null, "PS", null );
+				m_Shader_RenderCylinder = new Shader( m_Device, new FileInfo( "Shaders/RenderCylinder.hlsl" ), VERTEX_FORMAT.P3, "VS", null, "PS", null );
 			} catch ( Exception _e ) {
 				MessageBox( "Shader \"RenderHeightField\" failed to compile!\n\n" + _e.Message );
 			}
@@ -225,15 +227,15 @@ namespace TestMSBSDF
 			BuildRandomTexture();
 			BuildBeckmannSurfaceTexture( floatTrackbarControlBeckmannRoughness.Value );
 			
-			m_Tex_OutgoingDirections_Reflected = new Texture2D( m_Device, HEIGHTFIELD_SIZE, HEIGHTFIELD_SIZE, MAX_SCATTERING_ORDER, 1, PIXEL_FORMAT.RGBA32_FLOAT, false, true, null );
-			m_Tex_OutgoingDirections_Transmitted = new Texture2D( m_Device, HEIGHTFIELD_SIZE, HEIGHTFIELD_SIZE, MAX_SCATTERING_ORDER, 1, PIXEL_FORMAT.RGBA32_FLOAT, false, true, null );
-			m_Tex_LobeHistogram_Reflected_Decimal = new Texture2D( m_Device, LOBES_COUNT_PHI, LOBES_COUNT_THETA, MAX_SCATTERING_ORDER, 1, PIXEL_FORMAT.R32_UINT, false, true, null );
-			m_Tex_LobeHistogram_Reflected_Integer = new Texture2D( m_Device, LOBES_COUNT_PHI, LOBES_COUNT_THETA, MAX_SCATTERING_ORDER, 1, PIXEL_FORMAT.R32_UINT, false, true, null );
-			m_Tex_LobeHistogram_Transmitted_Decimal = new Texture2D( m_Device, LOBES_COUNT_PHI, LOBES_COUNT_THETA, MAX_SCATTERING_ORDER, 1, PIXEL_FORMAT.R32_UINT, false, true, null );
-			m_Tex_LobeHistogram_Transmitted_Integer = new Texture2D( m_Device, LOBES_COUNT_PHI, LOBES_COUNT_THETA, MAX_SCATTERING_ORDER, 1, PIXEL_FORMAT.R32_UINT, false, true, null );
-			m_Tex_LobeHistogram_Reflected = new Texture2D( m_Device, LOBES_COUNT_PHI, LOBES_COUNT_THETA, MAX_SCATTERING_ORDER, 1, PIXEL_FORMAT.R32_FLOAT, false, true, null );
-			m_Tex_LobeHistogram_Transmitted = new Texture2D( m_Device, LOBES_COUNT_PHI, LOBES_COUNT_THETA, MAX_SCATTERING_ORDER, 1, PIXEL_FORMAT.R32_FLOAT, false, true, null );
-			m_Tex_LobeHistogram_CPU = new Texture2D( m_Device, LOBES_COUNT_PHI, LOBES_COUNT_THETA, MAX_SCATTERING_ORDER, 1, PIXEL_FORMAT.R32_FLOAT, true, false, null );
+			m_Tex_OutgoingDirections_Reflected = new Texture2D( m_Device, HEIGHTFIELD_SIZE, HEIGHTFIELD_SIZE, MAX_SCATTERING_ORDER, 1, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.AUTO,  false, true, null );
+			m_Tex_OutgoingDirections_Transmitted = new Texture2D( m_Device, HEIGHTFIELD_SIZE, HEIGHTFIELD_SIZE, MAX_SCATTERING_ORDER, 1, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.AUTO, false, true, null );
+			m_Tex_LobeHistogram_Reflected_Decimal = new Texture2D( m_Device, LOBES_COUNT_PHI, LOBES_COUNT_THETA, MAX_SCATTERING_ORDER, 1, PIXEL_FORMAT.R32, COMPONENT_FORMAT.UINT, false, true, null );
+			m_Tex_LobeHistogram_Reflected_Integer = new Texture2D( m_Device, LOBES_COUNT_PHI, LOBES_COUNT_THETA, MAX_SCATTERING_ORDER, 1, PIXEL_FORMAT.R32, COMPONENT_FORMAT.UINT, false, true, null );
+			m_Tex_LobeHistogram_Transmitted_Decimal = new Texture2D( m_Device, LOBES_COUNT_PHI, LOBES_COUNT_THETA, MAX_SCATTERING_ORDER, 1, PIXEL_FORMAT.R32, COMPONENT_FORMAT.UINT, false, true, null );
+			m_Tex_LobeHistogram_Transmitted_Integer = new Texture2D( m_Device, LOBES_COUNT_PHI, LOBES_COUNT_THETA, MAX_SCATTERING_ORDER, 1, PIXEL_FORMAT.R32, COMPONENT_FORMAT.UINT, false, true, null );
+			m_Tex_LobeHistogram_Reflected = new Texture2D( m_Device, LOBES_COUNT_PHI, LOBES_COUNT_THETA, MAX_SCATTERING_ORDER, 1, PIXEL_FORMAT.R32F, COMPONENT_FORMAT.AUTO, false, true, null );
+			m_Tex_LobeHistogram_Transmitted = new Texture2D( m_Device, LOBES_COUNT_PHI, LOBES_COUNT_THETA, MAX_SCATTERING_ORDER, 1, PIXEL_FORMAT.R32F, COMPONENT_FORMAT.AUTO, false, true, null );
+			m_Tex_LobeHistogram_CPU = new Texture2D( m_Device, LOBES_COUNT_PHI, LOBES_COUNT_THETA, MAX_SCATTERING_ORDER, 1, PIXEL_FORMAT.R32F, COMPONENT_FORMAT.AUTO, true, false, null );
 
 			// Setup camera
 			m_Camera.CreatePerspectiveCamera( (float) (60.0 * Math.PI / 180.0), (float) panelOutput.Width / panelOutput.Height, 0.01f, 100.0f );
@@ -443,8 +445,8 @@ namespace TestMSBSDF
 		#region Textures Generation
 
 		double	GenerateNormalDistributionHeight() {
-			double	U = WMath.SimpleRNG.GetUniform();	// Uniform distribution in ]0,1[
-			double	errfinv = WMath.Functions.erfinv( 2.0 * U - 1.0 );
+			double	U = SimpleRNG.GetUniform();	// Uniform distribution in ]0,1[
+			double	errfinv = Functions.erfinv( 2.0 * U - 1.0 );
 			double	h = SQRT2 * errfinv;
 			return h;
 		}
@@ -455,22 +457,22 @@ namespace TestMSBSDF
 		void	BuildRandomTexture() {
 			PixelsBuffer[]	Content = new PixelsBuffer[4];
 
-			WMath.SimpleRNG.SetSeed( 561321987, 132194982 );
+			SimpleRNG.SetSeed( 561321987, 132194982 );
 			for ( int arrayIndex=0; arrayIndex < 4; arrayIndex++ ) {
-				Content[arrayIndex] = new PixelsBuffer( HEIGHTFIELD_SIZE*HEIGHTFIELD_SIZE*4*System.Runtime.InteropServices.Marshal.SizeOf(typeof(float4)) );
+				Content[arrayIndex] = new PixelsBuffer( (uint) (HEIGHTFIELD_SIZE*HEIGHTFIELD_SIZE*4*System.Runtime.InteropServices.Marshal.SizeOf(typeof(float4))) );
 				using ( BinaryWriter W = Content[arrayIndex].OpenStreamWrite() )
 					for ( int Y=0; Y < HEIGHTFIELD_SIZE; Y++ ) {
 						for ( int X=0; X < HEIGHTFIELD_SIZE; X++ ) {
-							W.Write( (float) WMath.SimpleRNG.GetUniform() );
-							W.Write( (float) WMath.SimpleRNG.GetUniform() );
-							W.Write( (float) WMath.SimpleRNG.GetUniform() );
-							W.Write( (float) WMath.SimpleRNG.GetUniform() );
+							W.Write( (float) SimpleRNG.GetUniform() );
+							W.Write( (float) SimpleRNG.GetUniform() );
+							W.Write( (float) SimpleRNG.GetUniform() );
+							W.Write( (float) SimpleRNG.GetUniform() );
 						}
 					}
 				Content[arrayIndex].CloseStream();
 			}
 
-			m_Tex_Random = new Texture2D( m_Device, HEIGHTFIELD_SIZE, HEIGHTFIELD_SIZE, 4, 1, PIXEL_FORMAT.RGBA32_FLOAT, false, false, Content );
+			m_Tex_Random = new Texture2D( m_Device, HEIGHTFIELD_SIZE, HEIGHTFIELD_SIZE, 4, 1, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.AUTO, false, false, Content );
 		}
 
 		/// <summary>
@@ -488,11 +490,11 @@ namespace TestMSBSDF
 			floatTrackbarControlBeckmannRoughness.Value = _roughness;
 
 			// Precompute stuff that resemble a lot to the Box-Muller algorithm to generate normal distribution random values
-			WMath.SimpleRNG.SetSeed( 521288629, 362436069 );
+			SimpleRNG.SetSeed( 521288629, 362436069 );
 			for ( int i=0; i < m_SB_Beckmann.m.Length; i++ ) {
-				double	U0 = WMath.SimpleRNG.GetUniform();
-				double	U1 = WMath.SimpleRNG.GetUniform();
-				double	U2 = WMath.SimpleRNG.GetUniform();
+				double	U0 = SimpleRNG.GetUniform();
+				double	U1 = SimpleRNG.GetUniform();
+				double	U2 = SimpleRNG.GetUniform();
 
 				m_SB_Beckmann.m[i].m_phase = (float) (2.0 * Math.PI * U0);	// Phase
 
@@ -507,7 +509,7 @@ namespace TestMSBSDF
 
 			#if true
 				if ( m_Tex_Heightfield == null )
-					m_Tex_Heightfield = new Texture2D( m_Device, HEIGHTFIELD_SIZE, HEIGHTFIELD_SIZE, 1, 1, PIXEL_FORMAT.RGBA32_FLOAT, false, true, null );
+					m_Tex_Heightfield = new Texture2D( m_Device, HEIGHTFIELD_SIZE, HEIGHTFIELD_SIZE, 1, 1, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.AUTO, false, true, null );
 
 				// Run the CS
 				if ( m_Shader_ComputeBeckmannSurface.Use() ) {
@@ -577,32 +579,38 @@ namespace TestMSBSDF
 			// Read the bitmap
 			int			W, H;
 			float4[,]	Content = null;
-			using ( Bitmap BM = Bitmap.FromFile( _textureFileName ) as Bitmap ) {
-				W = BM.Width;
-				H = BM.Height;
+// 			using ( Bitmap BM = Bitmap.FromFile( _textureFileName ) as Bitmap ) {
+// 				W = BM.Width;
+// 				H = BM.Height;
+// 				Content = new float4[W,H];
+// 
+// 				BitmapData	LockedBitmap = BM.LockBits( new Rectangle( 0, 0, W, H ), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb );
+// 
+// 				byte	R, G, B, A;
+// 				for ( int Y=0; Y < H; Y++ ) {
+// 					byte*	pScanline = (byte*) LockedBitmap.Scan0.ToPointer() + Y*LockedBitmap.Stride;
+// 					for ( int X=0; X < W; X++ ) {
+// 
+// 						// Read in shitty order
+// 						B = *pScanline++;
+// 						G = *pScanline++;
+// 						R = *pScanline++;
+// 						A = *pScanline++;
+// 
+// // Use this if you really need RGBA data
+// //						Content[X,Y].Set( R / 255.0f, G / 255.0f, B / 255.0f, A / 255.0f );
+// 
+// // But assuming it's a height field, we only store one component into alpha
+// 						Content[X,Y].Set( 0, 0, 0, R / 255.0f );	// Use Red as height
+// 					}
+// 				}
+// 				BM.UnlockBits( LockedBitmap );
+// 			}
+			using ( ImageFile I = new ImageFile( new FileInfo( _textureFileName ) ) ) {
+				W = (int) I.Width;
+				H = (int) I.Height;
 				Content = new float4[W,H];
-
-				BitmapData	LockedBitmap = BM.LockBits( new Rectangle( 0, 0, W, H ), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb );
-
-				byte	R, G, B, A;
-				for ( int Y=0; Y < H; Y++ ) {
-					byte*	pScanline = (byte*) LockedBitmap.Scan0.ToPointer() + Y*LockedBitmap.Stride;
-					for ( int X=0; X < W; X++ ) {
-
-						// Read in shitty order
-						B = *pScanline++;
-						G = *pScanline++;
-						R = *pScanline++;
-						A = *pScanline++;
-
-// Use this if you really need RGBA data
-//						Content[X,Y].Set( R / 255.0f, G / 255.0f, B / 255.0f, A / 255.0f );
-
-// But assuming it's a height field, we only store one component into alpha
-						Content[X,Y].Set( 0, 0, 0, R / 255.0f );	// Use Red as height
-					}
-				}
-				BM.UnlockBits( LockedBitmap );
+				I.ReadPixels( ( uint X, uint Y, ref float4 _color ) => { Content[X,Y] = _color; } );
 			}
 
 			// Build normal (shitty version)
@@ -617,10 +625,17 @@ namespace TestMSBSDF
 					int	pX = (X+W-1) % W;
 					int	nX = (X+1) % W;
 
-					Hx0 = Content[pX,Y].w;
-					Hx1 = Content[nX,Y].w;
-					Hy0 = Content[X,pY].w;
-					Hy1 = Content[X,nY].w;
+					// Use a single row/column
+// 					Hx0 = Content[pX,Y].w;
+// 					Hx1 = Content[nX,Y].w;
+// 					Hy0 = Content[X,pY].w;
+// 					Hy1 = Content[X,nY].w;
+
+					// Use 3 rows/columns
+					Hx0 = (Content[pX,pY].w + Content[pX,Y].w + Content[pX,nY].w) / 3.0f;
+					Hx1 = (Content[nX,pY].w + Content[nX,Y].w + Content[nX,nY].w) / 3.0f;
+					Hy0 = (Content[pX,pY].w + Content[X,pY].w + Content[nX,pY].w) / 3.0f;
+					Hy1 = (Content[pX,nY].w + Content[X,nY].w + Content[nX,nY].w) / 3.0f;
 
 					dNx.z = Hx1 - Hx0;
 					dNy.z = Hy0 - Hy1;	// Assuming +Y is upward
@@ -635,7 +650,7 @@ namespace TestMSBSDF
 			}
 
 			// Build the texture from the array
-			PixelsBuffer	Buf = new PixelsBuffer( W*H*16 );
+			PixelsBuffer	Buf = new PixelsBuffer( (uint) (W*H*16) );
 			using ( BinaryWriter Writer = Buf.OpenStreamWrite() )
 				for ( int Y=0; Y < H; Y++ )
 					for ( int X=0; X < W; X++ ) {
@@ -647,7 +662,7 @@ namespace TestMSBSDF
 					}
 			Buf.CloseStream();
 
-			m_Tex_Heightfield = new Texture2D( m_Device, W, H, 1, 1, PIXEL_FORMAT.RGBA32_FLOAT, false, false, new PixelsBuffer[] { Buf } );
+			m_Tex_Heightfield = new Texture2D( m_Device, (uint) W, (uint) H, 1, 1, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.AUTO, false, false, new PixelsBuffer[] { Buf } );
 		}
 
 		#endregion
@@ -719,8 +734,8 @@ namespace TestMSBSDF
 			m_Device.Clear( m_Tex_LobeHistogram_Transmitted_Decimal, float4.Zero );	// Clear counters
 			m_Device.Clear( m_Tex_LobeHistogram_Transmitted_Integer, float4.Zero );
 
-			WMath.Hammersley	pRNG = new WMath.Hammersley();
-			double[,]			sequence = pRNG.BuildSequence( _iterationsCount, 2 );
+			Hammersley	pRNG = new Hammersley();
+			double[,]	sequence = pRNG.BuildSequence( _iterationsCount, 2 );
 			for ( int iterationIndex=0; iterationIndex < _iterationsCount; iterationIndex++ ) {
 				// 1] Ray-trace surface
 				switch ( m_lastComputedSurfaceType ) {
@@ -1266,7 +1281,7 @@ namespace TestMSBSDF
 		#region Lobe Fitting
 
 		LobeModel	m_lobeModel = null;
-		WMath.BFGS	m_Fitter = new WMath.BFGS();
+		BFGS		m_Fitter = new BFGS();
 
 		void	PerformLobeFitting( float3 _incomingDirection, float _theta, bool _computeInitialThetaUsingCenterOfMass, float _roughness, float _IOR, float _scale, float _flatteningFactor, float _MaskingImportance, float _OversizeFactor, int _scatteringOrder, bool _reflected ) {
 
@@ -1281,7 +1296,7 @@ namespace TestMSBSDF
 				UpdateLobeParameters( _parameters, _reflected );
 			};
 
-			double[,]	histogramData = LobeModel.HistogramTexture2Array( m_Tex_LobeHistogram_CPU, _scatteringOrder );
+			double[,]	histogramData = LobeModel.HistogramTexture2Array( m_Tex_LobeHistogram_CPU, (uint) _scatteringOrder );
 			m_lobeModel.InitTargetData( histogramData );
 
 			LobeModel.LOBE_TYPE	lobeType =	radioButtonAnalyticalPhong.Checked ? LobeModel.LOBE_TYPE.MODIFIED_PHONG :

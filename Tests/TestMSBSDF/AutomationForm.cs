@@ -11,7 +11,8 @@ using System.Xml;
 using Microsoft.Win32;
 using System.Threading;
 
-using RendererManaged;
+using SharpMath;
+using Renderer;
 
 namespace TestMSBSDF
 {
@@ -1220,7 +1221,7 @@ namespace TestMSBSDF
 			bool							m_done = true;
 
 			LobeModel						m_lobeModel = null;
-			WMath.BFGS						m_fitter = new WMath.BFGS();
+			BFGS							m_fitter = new BFGS();
 
 			int								m_maxIterations;
 			double							m_goalTolerance;
@@ -1275,7 +1276,7 @@ namespace TestMSBSDF
 			/// <summary>
 			/// Gets the BFGS fitter used for the computation
 			/// </summary>
-			public WMath.BFGS	Fitter {
+			public BFGS			Fitter {
 				get { return m_fitter; }
 			}
 
@@ -1382,12 +1383,12 @@ namespace TestMSBSDF
 
 				// Read back histogram to CPU for fitting
 				Texture2D	Tex_SimulatedLobeHistogram = m_owner.m_owner.GetSimulationHistogram( true );
-				m_histogramReflected = LobeModel.HistogramTexture2Array( Tex_SimulatedLobeHistogram, m_result.ScatteringOrder );
+				m_histogramReflected = LobeModel.HistogramTexture2Array( Tex_SimulatedLobeHistogram, (uint) m_result.ScatteringOrder );
 
 				if ( m_fitBothLobes ) {
 					// Also read back transmitted lobe
 					Tex_SimulatedLobeHistogram = m_owner.m_owner.GetSimulationHistogram( false );
-					m_histogramTransmitted = LobeModel.HistogramTexture2Array( Tex_SimulatedLobeHistogram, m_result.ScatteringOrder );
+					m_histogramTransmitted = LobeModel.HistogramTexture2Array( Tex_SimulatedLobeHistogram, (uint) m_result.ScatteringOrder );
 				} else
 					m_histogramTransmitted = null;
 			}
