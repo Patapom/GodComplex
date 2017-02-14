@@ -33,21 +33,21 @@ namespace BaseLib {
 	//
 	enum class PIXEL_FORMAT : U32 {
 		UNKNOWN = ~0U,
-		NOT_FREEIMAGE_SUPPORT	= 0x80000000U,	// This flag is used by formats that are not natively supported by the FreeImage library
+		NO_FREEIMAGE_SUPPORT	= 0x80000000U,	// This flag is used by formats that are not natively supported by the FreeImage library
 		RAW_BUFFER				= 0x40000000U,	// This flag is used to indicate raw buffer formats that are not directly mappable to a recognized pixel format (e.g. compressed formats)
 		COMPRESSED				= 0x20000000U,	// This flag is used by compressed formats that are only supported by DDS images
 
 		// 8-bits
 		R8		= 0,
-		RG8		= 1		| NOT_FREEIMAGE_SUPPORT,	// FreeImage thinks it's R5G6B5! Aliased as RGBA8
-		RGB8	= 2		| NOT_FREEIMAGE_SUPPORT,	// FreeImage only supports BGR8 format internally!
-		RGBA8	= 3		| NOT_FREEIMAGE_SUPPORT,	// FreeImage only supports BGRA8 format internally!
+		RG8		= 1		| NO_FREEIMAGE_SUPPORT,	// FreeImage thinks it's R5G6B5! Aliased as RGBA8
+		RGB8	= 2		| NO_FREEIMAGE_SUPPORT,	// FreeImage only supports BGR8 format internally!
+		RGBA8	= 3		| NO_FREEIMAGE_SUPPORT,	// FreeImage only supports BGRA8 format internally!
 		BGR8	= 3,
 		BGRA8	= 4,
 
 		// 16-bits
 		R16		= 5,
-		RG16	= 6		| NOT_FREEIMAGE_SUPPORT,	// Unsupported by FreeImage, aliased as RGBA16
+		RG16	= 6		| NO_FREEIMAGE_SUPPORT,	// Unsupported by FreeImage, aliased as RGBA16
 		RGB16	= 7,
 		RGBA16	= 8,
 
@@ -57,10 +57,10 @@ namespace BaseLib {
 		// NOTE: These are NOT loadable or saveable by the regular Load()/Save() routine, this won't crash but it will produce garbage
 		//		 These formats should only be used for in-memory manipulations and DDS-related routines that can manipulate them
 		//
-		R16F	= 9		| NOT_FREEIMAGE_SUPPORT,	// Unsupported by FreeImage, aliased as R16
-		RG16F	= 10	| NOT_FREEIMAGE_SUPPORT,	// Unsupported by FreeImage, aliased as RGB16
-		RGB16F	= 11	| NOT_FREEIMAGE_SUPPORT,	// Unsupported by FreeImage, aliased as RGB16
-		RGBA16F	= 12	| NOT_FREEIMAGE_SUPPORT,	// Unsupported by FreeImage, aliased as RGBA16
+		R16F	= 9		| NO_FREEIMAGE_SUPPORT,	// Unsupported by FreeImage, aliased as R16
+		RG16F	= 10	| NO_FREEIMAGE_SUPPORT,	// Unsupported by FreeImage, aliased as RGB16
+		RGB16F	= 11	| NO_FREEIMAGE_SUPPORT,	// Unsupported by FreeImage, aliased as RGB16
+		RGBA16F	= 12	| NO_FREEIMAGE_SUPPORT,	// Unsupported by FreeImage, aliased as RGBA16
 
 		// 32-bits
 		// WARNING: These formats are NOT natively supported by FreeImage but can be used by DDS or textures for example
@@ -68,14 +68,14 @@ namespace BaseLib {
 		// NOTE: These are NOT loadable or saveable by the regular Load()/Save() routine, this won't crash but it will produce garbage
 		//		 These formats should only be used for in-memory manipulations and DDS-related routines that can manipulate them
 		//
-		R32		= 13	| NOT_FREEIMAGE_SUPPORT,	// Unsupported by FreeImage, aliased as R32F
-		RG32	= 14	| NOT_FREEIMAGE_SUPPORT,	// Unsupported by FreeImage, aliased as RGB32F
-		RGB32	= 15	| NOT_FREEIMAGE_SUPPORT,	// Unsupported by FreeImage, aliased as RGB32F
-		RGBA32	= 16	| NOT_FREEIMAGE_SUPPORT,	// Unsupported by FreeImage, aliased as RGBA32F
+		R32		= 13	| NO_FREEIMAGE_SUPPORT,	// Unsupported by FreeImage, aliased as R32F
+		RG32	= 14	| NO_FREEIMAGE_SUPPORT,	// Unsupported by FreeImage, aliased as RGB32F
+		RGB32	= 15	| NO_FREEIMAGE_SUPPORT,	// Unsupported by FreeImage, aliased as RGB32F
+		RGBA32	= 16	| NO_FREEIMAGE_SUPPORT,	// Unsupported by FreeImage, aliased as RGBA32F
 
 		// 32-bits floating points
 		R32F	= 17,
-		RG32F	= 18	| NOT_FREEIMAGE_SUPPORT,	// Unsupported by FreeImage, aliased as RGBA32F
+		RG32F	= 18	| NO_FREEIMAGE_SUPPORT,	// Unsupported by FreeImage, aliased as RGBA32F
 		RGB32F	= 19,
 		RGBA32F = 20,
 

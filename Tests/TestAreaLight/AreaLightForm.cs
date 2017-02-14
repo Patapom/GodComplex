@@ -210,8 +210,7 @@ namespace AreaLightTest {
 		public Texture2D	Image2Texture( System.IO.FileInfo _fileName, ImageUtility.COMPONENT_FORMAT _componentFormat ) {
 			ImageUtility.ImagesMatrix	images = null;
 			if ( _fileName.Extension.ToLower() == ".dds" ) {
-				images = ImageUtility.ImageFile.DDSLoadFile( _fileName, _componentFormat );
-				codé dans le fichier ?? Putain relou je sais plus... Le save devrait embarquer le DXGI_FORMAT!
+				images = ImageUtility.ImageFile.DDSLoadFile( _fileName );
 			} else {
 				ImageUtility.ImageFile	image = new ImageUtility.ImageFile( _fileName );
 				if ( image.PixelFormat != ImageUtility.PIXEL_FORMAT.BGRA8 ) {
@@ -220,7 +219,6 @@ namespace AreaLightTest {
 					image.ConvertFrom( badImage, ImageUtility.PIXEL_FORMAT.BGRA8 );
 					badImage.Dispose();
 				}
-
 				images = new ImageUtility.ImagesMatrix( new ImageUtility.ImageFile[1,1] { { image } } );
 			}
 			return new Texture2D( m_Device, images, _componentFormat );
@@ -232,7 +230,7 @@ namespace AreaLightTest {
 			uint		W = mip0_unknownFormat.Width;
 			uint		H = mip0_unknownFormat.Height;
 
-			ImageUtility.ImageFile	mip0 = new ImageUtility.ImageFile();// W, H, ImageUtility.ImageFile.PIXEL_FORMAT.RGBA8, mip0_unknownFormat.ColorProfile );
+			ImageUtility.ImageFile	mip0 = new ImageUtility.ImageFile();
 			mip0.ConvertFrom( mip0_unknownFormat, ImageUtility.PIXEL_FORMAT.BGRA8 );
 
 			mip0_unknownFormat.Dispose();
@@ -1823,11 +1821,11 @@ renderProg PostFX/Debug/WardBRDFAlbedo {
 			}
 
 // Build SATs
-ComputeSAT( new System.IO.FileInfo( "Dummy.png" ), new System.IO.FileInfo( "DummySAT.dds" ) );
-ComputeSAT( new System.IO.FileInfo( "StainedGlass.png" ), new System.IO.FileInfo( "AreaLightSAT.dds" ) );
-ComputeSAT( new System.IO.FileInfo( "StainedGlass2.jpg" ), new System.IO.FileInfo( "AreaLightSAT2.dds" ) );
-ComputeSAT( new System.IO.FileInfo( "StainedGlass3.png" ), new System.IO.FileInfo( "AreaLightSAT3.dds" ) );
-ComputeSAT( new System.IO.FileInfo( "StainedGlass2Fade.png" ), new System.IO.FileInfo( "AreaLightSAT2Fade.dds" ) );
+// ComputeSAT( new System.IO.FileInfo( "Dummy.png" ), new System.IO.FileInfo( "DummySAT.dds" ) );
+// ComputeSAT( new System.IO.FileInfo( "StainedGlass.png" ), new System.IO.FileInfo( "AreaLightSAT.dds" ) );
+// ComputeSAT( new System.IO.FileInfo( "StainedGlass2.jpg" ), new System.IO.FileInfo( "AreaLightSAT2.dds" ) );
+// ComputeSAT( new System.IO.FileInfo( "StainedGlass3.png" ), new System.IO.FileInfo( "AreaLightSAT3.dds" ) );
+// ComputeSAT( new System.IO.FileInfo( "StainedGlass2Fade.png" ), new System.IO.FileInfo( "AreaLightSAT2Fade.dds" ) );
 
 			buttonRebuildBRDF_Click( null, EventArgs.Empty );
 

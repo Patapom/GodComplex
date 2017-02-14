@@ -118,8 +118,9 @@ namespace TestFourier
 		protected override void OnLoad( EventArgs e ) {
 			base.OnLoad( e );
 
-			Nuaj.Cirrus.Utility.ColorPickerForm	picker = new Nuaj.Cirrus.Utility.ColorPickerForm();
-			picker.ShowDialog( this );
+// Quick color picker L*a*b* extension test... (should totally NOT be here! :D)
+//Nuaj.Cirrus.Utility.ColorPickerForm	picker = new Nuaj.Cirrus.Utility.ColorPickerForm();
+//picker.ShowDialog( this );
 
 			//////////////////////////////////////////////////////////////////////////
 			// Initialize 1D data

@@ -162,16 +162,16 @@ namespace TestFilmicCurve
 					case Layout.LAYOUT_8_8_8_8:		_pixelFormat = ImageUtility.PIXEL_FORMAT.RGBA8; break;
 
 					// 16-bit formats
-					case Layout.LAYOUT_16:			_pixelFormat = m_type == Type.FLOAT ? ImageUtility.PIXEL_FORMAT.R16 : ImageUtility.PIXEL_FORMAT.R16F; break;
-					case Layout.LAYOUT_16_16:		_pixelFormat = m_type == Type.FLOAT ? ImageUtility.PIXEL_FORMAT.RG16 : ImageUtility.PIXEL_FORMAT.RG16F; break;
-					case Layout.LAYOUT_16_16_16:	_pixelFormat = m_type == Type.FLOAT ? ImageUtility.PIXEL_FORMAT.RGB16 : ImageUtility.PIXEL_FORMAT.RGB16F; break;
-					case Layout.LAYOUT_16_16_16_16:	_pixelFormat = m_type == Type.FLOAT ? ImageUtility.PIXEL_FORMAT.RGBA16 : ImageUtility.PIXEL_FORMAT.RGBA16F; break;
+					case Layout.LAYOUT_16:			_pixelFormat = m_type != Type.FLOAT ? ImageUtility.PIXEL_FORMAT.R16 : ImageUtility.PIXEL_FORMAT.R16F; break;
+					case Layout.LAYOUT_16_16:		_pixelFormat = m_type != Type.FLOAT ? ImageUtility.PIXEL_FORMAT.RG16 : ImageUtility.PIXEL_FORMAT.RG16F; break;
+					case Layout.LAYOUT_16_16_16:	_pixelFormat = m_type != Type.FLOAT ? ImageUtility.PIXEL_FORMAT.RGB16 : ImageUtility.PIXEL_FORMAT.RGB16F; break;
+					case Layout.LAYOUT_16_16_16_16:	_pixelFormat = m_type != Type.FLOAT ? ImageUtility.PIXEL_FORMAT.RGBA16 : ImageUtility.PIXEL_FORMAT.RGBA16F; break;
 
 					// 32-bit formats
-					case Layout.LAYOUT_32:			_pixelFormat = m_type == Type.FLOAT ? ImageUtility.PIXEL_FORMAT.R32 : ImageUtility.PIXEL_FORMAT.R32F; break;
-					case Layout.LAYOUT_32_32:		_pixelFormat = m_type == Type.FLOAT ? ImageUtility.PIXEL_FORMAT.RG32 : ImageUtility.PIXEL_FORMAT.RG32F; break;
-					case Layout.LAYOUT_32_32_32:	_pixelFormat = m_type == Type.FLOAT ? ImageUtility.PIXEL_FORMAT.RGB32 : ImageUtility.PIXEL_FORMAT.RGB32F; break;
-					case Layout.LAYOUT_32_32_32_32:	_pixelFormat = m_type == Type.FLOAT ? ImageUtility.PIXEL_FORMAT.RGBA32 : ImageUtility.PIXEL_FORMAT.RGBA32F; break;
+					case Layout.LAYOUT_32:			_pixelFormat = m_type != Type.FLOAT ? ImageUtility.PIXEL_FORMAT.R32 : ImageUtility.PIXEL_FORMAT.R32F; break;
+					case Layout.LAYOUT_32_32:		_pixelFormat = m_type != Type.FLOAT ? ImageUtility.PIXEL_FORMAT.RG32 : ImageUtility.PIXEL_FORMAT.RG32F; break;
+					case Layout.LAYOUT_32_32_32:	_pixelFormat = m_type != Type.FLOAT ? ImageUtility.PIXEL_FORMAT.RGB32 : ImageUtility.PIXEL_FORMAT.RGB32F; break;
+					case Layout.LAYOUT_32_32_32_32:	_pixelFormat = m_type != Type.FLOAT ? ImageUtility.PIXEL_FORMAT.RGBA32 : ImageUtility.PIXEL_FORMAT.RGBA32F; break;
 
 					// Compressed formats
 					case Layout.LAYOUT_BC4:			_pixelFormat = ImageUtility.PIXEL_FORMAT.BC4; break;

@@ -238,8 +238,8 @@ void	ImageFile::ConvertFrom( const ImageFile& _source, PIXEL_FORMAT _targetForma
 	Exit();
 
 	// Ensure we're not dealing with unsupported types!
-	if (	(U32(_source.m_pixelFormat) & U32(PIXEL_FORMAT::NOT_FREEIMAGE_SUPPORT))
-		 || (U32(_targetFormat) & U32(PIXEL_FORMAT::NOT_FREEIMAGE_SUPPORT)) )
+	if (	(U32(_source.m_pixelFormat) & U32(PIXEL_FORMAT::NO_FREEIMAGE_SUPPORT))
+		 || (U32(_targetFormat) & U32(PIXEL_FORMAT::NO_FREEIMAGE_SUPPORT)) )
 		throw "Unsupported source or target type!";
 
 	// Convert source
@@ -1264,7 +1264,7 @@ void	ImageFile::DDSLoad( const void* _blindPointerImage, const void* _blindPoint
 	if ( format == PIXEL_FORMAT::UNKNOWN )
 		throw "Unsupported format! Cannot find appropriate target image format to support source DXGI format...";
 
-	ColorProfile	profile( ColorProfile::STANDARD_PROFILE::sRGB );
+	ColorProfile	profile( componentFormat == COMPONENT_FORMAT::UNORM_sRGB ? ColorProfile::STANDARD_PROFILE::sRGB : ColorProfile::STANDARD_PROFILE::LINEAR );
 
 	// Build content slices
 	U32	mipLevelsCount = U32(meta.mipLevels);

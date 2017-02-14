@@ -145,6 +145,51 @@ void	ImagesMatrix::ClearPointers() {
 	m_format = PIXEL_FORMAT::UNKNOWN;
 }
 
+void	ImagesMatrix::ConvertFrom( const ImagesMatrix& _source, PIXEL_FORMAT _targetFormat, const ColorProfile& _colorProfile ) {
+	ReleasePointers();
+
+	// Initialize like the source matrix
+	const Mips::Mip&	sourceRefMip = _source[0][0];
+	U32					mipLevelsCount = _source[0].GetMipLevelsCount();
+
+	switch ( _source.m_type ) {
+	case ImagesMatrix::TYPE::TEXTURE2D:
+		InitTexture2DArray( sourceRefMip.Width(), sourceRefMip.Height(), _source.GetArraySize(), mipLevelsCount );
+		break;
+	case ImagesMatrix::TYPE::TEXTURE3D:
+		InitTexture3D( sourceRefMip.Width(), sourceRefMip.Height(), sourceRefMip.Depth(), mipLevelsCount );
+		break;
+	case ImagesMatrix::TYPE::TEXTURECUBE:
+		InitCubeTextureArray( sourceRefMip.Width(), _source.GetArraySize(), mipLevelsCount );
+		break;
+	case ImagesMatrix::TYPE::GENERIC:
+		InitTextureGeneric( sourceRefMip.Width(), sourceRefMip.Height(), sourceRefMip.Depth(), _source.GetArraySize(), mipLevelsCount );
+		break;
+	}
+
+	// Convert each image
+	for ( U32 arrayIndex=0; arrayIndex < m_mipsArray.Count(); arrayIndex++ ) {
+		const Mips&	sourceMips = _source[arrayIndex];
+		Mips&		targetMips = m_mipsArray[arrayIndex];
+		for ( U32 mipLevelIndex=0; mipLevelIndex < mipLevelsCount; mipLevelIndex++ ) {
+			const Mips::Mip&	sourceMip = sourceMips[mipLevelIndex];
+			Mips::Mip&			targetMip = targetMips[mipLevelIndex];
+
+			for ( U32 Z=0; Z < targetMip.Depth(); Z++ ) {
+				const ImageFile*	sourceImage = sourceMip[Z];
+				RELEASE_ASSERT( sourceImage != NULL, "Invalid source image to convert from!" );
+				ImageFile*&			targetImage = targetMip[Z];
+				targetImage = new ImageFile();
+				targetImage->ConvertFrom( *sourceImage, _targetFormat );
+			}
+		}
+	}
+
+	m_format = _targetFormat;
+	m_colorProfile = _colorProfile;
+}
+
+
 class CompressedImagesCopier : public ImagesMatrix::GetRawBufferSizeFunctor {
 	virtual const U8*	operator()( U32 _arraySliceIndex, U32 _mipLevelIndex, U32& _rowPitch, U32& _slicePitch ) const override {
 		ImagesMatrix::Mips::Mip&	targetMip = m_targetMatrix[_arraySliceIndex][_mipLevelIndex];

@@ -12,6 +12,7 @@ namespace ImageUtility {
 	ref class ImageFile;
 
 	// This class is used to build an array of images and their mips and is used as an argument for the static texture creation methods
+	[System::Diagnostics::DebuggerDisplayAttribute( "{ArraySize} Slices {Type} {Format}" )]
 	public ref class	ImagesMatrix {
 	internal:
 		bool							m_ownedObject;
@@ -143,6 +144,11 @@ namespace ImageUtility {
 		}
 		void			ClearPointers() {
 			m_nativeObject->ClearPointers();
+		}
+
+		// Converts from a source matrix into a target matrix
+		void			ConvertFrom( ImagesMatrix^ _source, PIXEL_FORMAT _targetFormat, ImageUtility::ColorProfile^ _colorProfile ) {
+			m_nativeObject->ConvertFrom( *_source->m_nativeObject, BaseLib::PIXEL_FORMAT( _targetFormat ), *_colorProfile->m_nativeObject );
 		}
 
 		// DDS-Compression

@@ -142,6 +142,9 @@ namespace ImageUtilityLib {
 		void			ReleasePointers();	// Release image and raw buffer pointers
 		void			ClearPointers();	// Clears pointers but don't release
 
+		// Converts from a source matrix into a target matrix
+		void			ConvertFrom( const ImagesMatrix& _source, PIXEL_FORMAT _targetFormat, const ColorProfile& _colorProfile );
+
 		// DDS-Compression
 		enum class COMPRESSION_TYPE {
 			BC4,

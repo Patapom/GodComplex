@@ -17,7 +17,7 @@ namespace TestSHIrradiance
 {
 	public partial class Form1 : Form {
 
-		ImageUtility.ImageFile	m_image = new ImageUtility.ImageFile( 800, 550, ImageUtility.PIXEL_FORMAT.RGBA8, new ImageUtility.ColorProfile( ImageUtility.ColorProfile.STANDARD_PROFILE.sRGB ) );
+		ImageUtility.ImageFile	m_image = new ImageUtility.ImageFile( 800, 550, ImageUtility.PIXEL_FORMAT.BGRA8, new ImageUtility.ColorProfile( ImageUtility.ColorProfile.STANDARD_PROFILE.sRGB ) );
 		ImageUtility.ImageFile	m_HDRImage = new ImageUtility.ImageFile();
 
 		float4					m_black = new float4( 0, 0, 0, 1 );
@@ -128,9 +128,11 @@ void	TestSolidAngle() {
 		void	LoadHDRImage() {
 //			m_HDRImage.Load( new System.IO.FileInfo( @".\Images\grace-new.hdr" ) );
 			m_HDRImage.Load( new System.IO.FileInfo( @".\Images\ennis_1024x512.hdr" ) );
+			ImageUtility.ImagesMatrix	badImages = new ImageUtility.ImagesMatrix( new ImageUtility.ImageFile[,] { { m_HDRImage } } );
 			ImageUtility.ImagesMatrix	images = new ImageUtility.ImagesMatrix();
-			images.InitTexture2DArray( m_HDRImage.Width, m_HDRImage.Height, 1, 1 );
-			images[0][0][0] = m_HDRImage;
+			images.ConvertFrom( badImages, ImageUtility.PIXEL_FORMAT.RGBA32F, badImages.ColorProfile );
+
+
 			m_Tex_HDREnvironment = new Texture2D( m_device, images, ImageUtility.COMPONENT_FORMAT.AUTO );
 			
 // 			ImageUtility.ImageFile	tempLDRImage = new ImageUtility.ImageFile();

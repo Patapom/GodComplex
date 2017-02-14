@@ -641,17 +641,17 @@ m_Tex_TallHistogram.RemoveFromLastAssignedSlots();
 			}
 		}
 
-		Texture2D LoadCubeMap( System.IO.FileInfo _FileName ) {
-			if ( !_FileName.Exists )
+		Texture2D LoadCubeMap( System.IO.FileInfo _fileName ) {
+			if ( !_fileName.Exists )
 				throw new Exception( "File not found!" );
 			
-			string	Ext = _FileName.Extension.ToLower();
+			string	Ext = _fileName.Extension.ToLower();
 			switch ( Ext ) {
 				case ".dds":
-					throw new Exception( "Time to write DDS support in ImageLib!" );
-//					return DirectXTexManaged.TextureCreator.CreateTexture2DFromDDSFile( m_Device, _FileName.FullName );
+					return new Texture2D( m_Device, ImageUtility.ImageFile.DDSLoadFile( _fileName ), ImageUtility.COMPONENT_FORMAT.AUTO );
+
 				case ".bimage": {
-					BImage I = new BImage( _FileName );
+					BImage I = new BImage( _fileName );
 					return I.CreateTextureCube( m_Device );
 				}
 				default:
