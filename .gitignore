@@ -602,3 +602,4 @@
 /Tests/TestFilmCurve/Publish
 /Tests/TestAreaLight/obj
 /Tests/TestAreaLight/bin
+/Tests/TestVoxelConeTracing/*.user

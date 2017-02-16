@@ -32,17 +32,17 @@ float	DistPlane( float3 _wsPosition, float4 _wsPlane ) {
 //	return min( max( d.x, max( d.y, d.z ) ), 0.0 ) + length( max( d, 0.0 ) );
 //}
 
-float	DistBox( float3 _wsPosition, float3 _wsBoxCenter, float3 _wsBoxScale ) {
-//	return DistBox( (_wsPosition - _wsBoxCenter) * 2.0 / _wsBoxScale );
+float	DistBox( float3 _wsPosition, float3 _wsBoxCenter, float3 _wsBoxSize ) {
+//	return DistBox( (_wsPosition - _wsBoxCenter) * 2.0 / _wsBoxSize );
 	_wsPosition -= _wsBoxCenter;
-	_wsBoxScale *= 0.5;
+	_wsBoxSize *= 0.5;
 
-	float x = max( _wsPosition.x - _wsBoxScale.x, -_wsPosition.x - _wsBoxScale.x );
-	float y = max( _wsPosition.y - _wsBoxScale.y, -_wsPosition.y - _wsBoxScale.y );
-	float z = max( _wsPosition.z - _wsBoxScale.z, -_wsPosition.z - _wsBoxScale.z );
+	float x = max( _wsPosition.x - _wsBoxSize.x, -_wsPosition.x - _wsBoxSize.x );
+	float y = max( _wsPosition.y - _wsBoxSize.y, -_wsPosition.y - _wsBoxSize.y );
+	float z = max( _wsPosition.z - _wsBoxSize.z, -_wsPosition.z - _wsBoxSize.z );
 	return max( max( x, y ), z );
 }
-float	DistBox( float3 _wsPosition, float3 _wsBoxCenter, float3 _wsBoxScale, float _rotationAngle ) {
+float	DistBox( float3 _wsPosition, float3 _wsBoxCenter, float3 _wsBoxSize, float _rotationAngle ) {
 	float2	sc;
 	sincos( _rotationAngle, sc.x, sc.y );
 	float3	rotatedX = float3( sc.y, 0.0, sc.x );
@@ -50,7 +50,7 @@ float	DistBox( float3 _wsPosition, float3 _wsBoxCenter, float3 _wsBoxScale, floa
 
 	_wsPosition -= _wsBoxCenter;
 	_wsPosition = float3( dot( _wsPosition, rotatedX ), _wsPosition.y, dot( _wsPosition, rotatedZ ) );
-	return DistBox( _wsPosition, 0, _wsBoxScale );
+	return DistBox( _wsPosition, 0, _wsBoxSize );
 }
 float2	DistMin( float2 a, float2 b ) {
 	return a.x < b.x ? a : b;
@@ -61,7 +61,7 @@ float2	Map( float3 _wsPosition ) {
 			distance = DistMin( distance, float2( DistBox( _wsPosition, float3( 0, CORNELL_SIZE.y, 0 ), float3( CORNELL_SIZE.x, CORNELL_THICKNESS, CORNELL_SIZE.z ) ), 2.0 ) );	// Ceiling
 			distance = DistMin( distance, float2( DistBox( _wsPosition, float3( -0.5 * CORNELL_SIZE.x, 0.5 * CORNELL_SIZE.y, 0 ), float3( CORNELL_THICKNESS, CORNELL_SIZE.y, CORNELL_SIZE.z ) ), 3.0 ) );	// Left wall
 			distance = DistMin( distance, float2( DistBox( _wsPosition, float3( 0.5 * CORNELL_SIZE.xy, 0 ), float3( CORNELL_THICKNESS, CORNELL_SIZE.y, CORNELL_SIZE.z ) ), 4.0 ) );	// Right wall
-			distance = DistMin( distance, float2( DistBox( _wsPosition, float3( 0, 0.5 * CORNELL_SIZE.y, -0.5 * CORNELL_SIZE.z ), float3( CORNELL_SIZE.xy, CORNELL_THICKNESS ) ), 5.0 ) );	// Back wall
+			distance = DistMin( distance, float2( DistBox( _wsPosition, float3( 0, 0.5 * CORNELL_SIZE.y, 0.5 * CORNELL_SIZE.z ), float3( CORNELL_SIZE.xy, CORNELL_THICKNESS ) ), 5.0 ) );	// Back wall
 
 	// Small box
 	distance = DistMin( distance, float2( DistBox( _wsPosition, CORNELL_SMALL_BOX_POS, CORNELL_SMALL_BOX_SIZE, CORNELL_SMALL_BOX_ANGLE ), 6.0 ) );

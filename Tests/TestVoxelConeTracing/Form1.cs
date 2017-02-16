@@ -19,7 +19,9 @@ namespace VoxelConeTracing
 
 		#region CONSTANTS
 
-		const float		CAMERA_FOV = 80.0f * (float) Math.PI / 180.0f;
+		const float		CAMERA_FOV = 60.0f * (float) Math.PI / 180.0f;
+
+		const int		VOLUME_VOXELS_COUNT = 512;
 
 		#endregion
 
@@ -54,6 +56,8 @@ namespace VoxelConeTracing
 
 		Shader						m_shader_RenderDistanceField = null;
 
+		OctreeBuilder				m_octree = null;
+
 		Camera						m_camera = new Camera();
 		CameraManipulator			m_cameraManipulator = new CameraManipulator();
 
@@ -79,7 +83,11 @@ namespace VoxelConeTracing
 				m_camera.CreatePerspectiveCamera( CAMERA_FOV, (float) outputPanel.Width / outputPanel.Height, 0.1f, 100.0f );
 				m_camera.CameraTransformChanged += m_camera_CameraTransformChanged;
 				m_cameraManipulator.Attach( outputPanel, m_camera );
-				m_cameraManipulator.InitializeCamera( new float3( 0, 1.5f, 4.0f ), new float3( 0, 1.5f, 0.0f ), float3.UnitY );
+//				m_cameraManipulator.InitializeCamera( new float3( 0, 1.5f, 4.0f ), new float3( 0, 1.5f, 0.0f ), float3.UnitY );
+				m_cameraManipulator.InitializeCamera( new float3( 0.0f, 2.73f, -8.0f ), new float3( 0.0f, 2.73f, 0.0f ), float3.UnitY );
+
+				// Build static voxel
+				m_octree = new OctreeBuilder( m_device, 5.6f * new float3( -0.5f, 0.0f, -0.5f ), 5.6f * new float3( 0.5f, 1.0f, 0.5f ), 256 );
 
 				m_startTime = DateTime.Now;
 				Application.Idle += Application_Idle;

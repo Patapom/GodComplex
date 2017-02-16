@@ -22,6 +22,7 @@
     <ClInclude Include="ASMHelpers.h" />
     <ClInclude Include="Containers\Hashtable.h" />
     <ClInclude Include="Containers\List.h" />
+    <ClInclude Include="Containers\SpatialHashing.h" />
     <ClInclude Include="Math\Math.h" />
     <ClInclude Include="Math\Random.h" />
     <ClInclude Include="Math\SH.h" />

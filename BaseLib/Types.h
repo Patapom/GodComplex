@@ -73,12 +73,14 @@ template<typename T> void		SafeDeleteArray__( T*& _pBuffer ) {
 
 template<typename T> void	Swap( T& a, T& b ) { T temp = a; a = b; b = temp; }
 
+#include "ASMHelpers.h"
+#include "Math/Math.h"
+
 #include "BString.h"
 #include "Containers/Hashtable.h"
 #include "Containers/List.h"
+#include "Containers/SpatialHashing.h"
 
-#include "ASMHelpers.h"
-#include "Math/Math.h"
 #include "Math/Random.h"
 #include "Math/SH.h"
 #include "PixelFormats/PixelFormats.h"

@@ -13,12 +13,8 @@ public:	virtual int		Compare( const T& a, const T& b ) const = 0;
 };
 
 // Simple list class
-template<typename T> class	List
-{
-protected:	// NESTED TYPES
-
-public:
-
+template<typename T>
+class	List {
 protected:	// FIELDS
 
 	T*		m_pList;	// List of allocated elements

@@ -39,6 +39,9 @@
       <Filter>Utility</Filter>
     </ClInclude>
     <ClInclude Include="BString.h" />
+    <ClInclude Include="Containers\SpatialHashing.h">
+      <Filter>Containers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Containers\Hashtable.cpp">
