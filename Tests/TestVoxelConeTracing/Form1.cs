@@ -113,6 +113,8 @@ namespace VoxelConeTracing
 			Device	device = m_device;
 			m_device = null;
 
+			m_octree.Dispose();
+
 			m_CB_Main.Dispose();
 			m_CB_camera.Dispose();
 

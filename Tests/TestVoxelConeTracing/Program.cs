@@ -16,6 +16,11 @@ namespace VoxelConeTracing
 		{
 			Application.EnableVisualStyles();
 			Application.SetCompatibleTextRenderingDefault(false);
+
+
+Solution.Meuh( null );
+
+
 			Application.Run(new VoxelForm());
 		}
 	}
