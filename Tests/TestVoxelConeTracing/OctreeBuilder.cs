@@ -1,4 +1,5 @@
 ﻿#define LOAD_OCTREE
+#define LOAD_VOXELS
  
 using System;
 using System.Collections.Generic;
@@ -22,6 +23,7 @@ namespace VoxelConeTracing
 
 		[System.Diagnostics.DebuggerDisplay( "Pos=({m_wsCornerMin.x}, {m_wsCornerMin.y}, {m_wsCornerMin.z}) Size={m_size} Lv={m_level} ChCnt={ChildrenCount}" )]
 		class	OctreeNode {
+			#region NESTED TYPES
 
 			[System.Diagnostics.DebuggerDisplay( "RGBA=({albedo.x}, {albedo.y}, {albedo.z}, {opacity}) N=({normal.x}, {normal.y}, {normal.z}) Var={variance} Cnt={accumulationCounter}" )]
 			struct	BrickData {
@@ -30,6 +32,26 @@ namespace VoxelConeTracing
 				public float3	normal;
 				public float	variance;	// Normal variance
 				public int		accumulationCounter;
+
+				public void	Save( System.IO.BinaryWriter _W ) {
+					_W.Write( albedo.x );
+					_W.Write( albedo.y );
+					_W.Write( albedo.z );
+					_W.Write( opacity );
+					_W.Write( normal.x );
+					_W.Write( normal.y );
+					_W.Write( normal.z );
+					_W.Write( variance );
+					_W.Write( accumulationCounter );
+				}
+
+				public void	Load( System.IO.BinaryReader _R ) {
+					albedo.Set( _R.ReadSingle(), _R.ReadSingle(), _R.ReadSingle() );
+					opacity = _R.ReadSingle();
+					normal.Set( _R.ReadSingle(), _R.ReadSingle(), _R.ReadSingle() );
+					variance = _R.ReadSingle();
+					accumulationCounter = _R.ReadInt32();
+				}
 
 				/// <summary>
 				/// Normalizes the brick's data
@@ -52,13 +74,21 @@ namespace VoxelConeTracing
 				}
 			}
 
+			#endregion
+
+			#region FIELDS
+
 			OctreeNode[,,]	m_children = new OctreeNode[2,2,2];
-//			BrickData[,,]	m_brick = new BrickData[2,2,2];
+//			BrickData[]		m_bricks = new BrickData[6];		// Anisotropic bricks!
 			BrickData		m_brick;
 			float3			m_wsCornerMin;
 			int				m_level;
 			float			m_size;
 			float			m_halfSize;
+
+			#endregion
+
+			#region PROPERTIES
 
 			int		ChildrenCount {
 				get {
@@ -74,25 +104,27 @@ namespace VoxelConeTracing
 				}
 			}
 
+			#endregion
+
 			public OctreeNode( float3 _wsCornerMin, float _size, int _level ) {
 				m_wsCornerMin = _wsCornerMin;
 				m_size = _size;
 				m_halfSize = 0.5f * _size;
 				m_level = _level;
 
-// 				for ( int Z=0; Z < 2; Z++ )
-// 					for ( int Y=0; Y < 2; Y++ )
-// 						for ( int X=0; X < 2; X++ ) {
-// 							m_children[X,Y,Z] = null;
-// 							m_brick[X,Y,Z].albedo = float3.Zero;
-// 							m_brick[X,Y,Z].opacity = 0.0f;
-// 							m_brick[X,Y,Z].normal = float3.Zero;
-// 						}
+				// Reset brick
 				m_brick.albedo = float3.Zero;
 				m_brick.opacity = 0.0f;
 				m_brick.normal = float3.Zero;
 				m_brick.variance = 0.0f;
 				m_brick.accumulationCounter = 0;
+			}
+			public OctreeNode( System.IO.BinaryReader _R ) {
+				m_wsCornerMin.Set( _R.ReadSingle(), _R.ReadSingle(), _R.ReadSingle() );
+				m_size = _R.ReadSingle();
+				m_halfSize = 0.5f * m_size;
+				m_level = 0;
+				Load( _R );
 			}
 
 			/// <summary>
@@ -116,29 +148,32 @@ namespace VoxelConeTracing
 				}
 			}
 
-			/// <summary>
-			/// Normalizes all brick data
-			/// </summary>
-			public void	FinalizeLeafVoxels() {
-				for ( int Z=0; Z < 2; Z++ )
-					for ( int Y=0; Y < 2; Y++ )
-						for ( int X=0; X < 2; X++ ) {
-							OctreeNode	child = m_children[X,Y,Z];
-							if ( child != null ) {
-								child.FinalizeLeafVoxels();
-							}
-						}
-
-				// Normalize brick data
-				m_brick.Normalize();
-			}
+// 			/// <summary>
+// 			/// Normalizes all brick data
+// 			/// </summary>
+// 			public void	FinalizeLeafVoxels() {
+// 				for ( int Z=0; Z < 2; Z++ )
+// 					for ( int Y=0; Y < 2; Y++ )
+// 						for ( int X=0; X < 2; X++ ) {
+// 							OctreeNode	child = m_children[X,Y,Z];
+// 							if ( child != null ) {
+// 								child.FinalizeLeafVoxels();
+// 							}
+// 						}
+// 
+// 				// Normalize brick data
+// 				m_brick.Normalize();
+// 			}
 
 			/// <summary>
 			/// Builds all the mip at all levels
 			/// </summary>
 			public void	BuildAllMips() {
-				if ( m_brick.accumulationCounter > 0 )
-					return;	// Already built!
+				if ( m_brick.accumulationCounter > 0 ) {
+					// Already built! Just normalize...
+					m_brick.Normalize();
+					return;
+				}
 
 				for ( int Z=0; Z < 2; Z++ )
 					for ( int Y=0; Y < 2; Y++ )
@@ -157,6 +192,42 @@ namespace VoxelConeTracing
 				// Normalize
 				m_brick.accumulationCounter = 8;	// We always assume all children contribute equally
 				m_brick.Normalize();
+			}
+
+			public void	SaveRoot( System.IO.BinaryWriter _W ) {
+				_W.Write( m_wsCornerMin.x );
+				_W.Write( m_wsCornerMin.y );
+				_W.Write( m_wsCornerMin.z );
+				_W.Write( m_size );
+				Save( _W );
+			}
+
+			void	Save( System.IO.BinaryWriter _W ) {
+				m_brick.Save( _W );
+				_W.Write( ChildrenCount );
+				for ( int Z=0; Z < 2; Z++ )
+					for ( int Y=0; Y < 2; Y++ )
+						for ( int X=0; X < 2; X++ ) {
+							OctreeNode	child = m_children[X,Y,Z];
+							if ( child == null )
+								continue;
+
+							int	childIndex = (Z << 2) | (Y << 1) | X;
+							_W.Write( childIndex );
+							child.Save( _W );
+						}
+			}
+			void	Load( System.IO.BinaryReader _R ) {
+				m_brick.Load( _R );
+				int	childrenCount = _R.ReadInt32();
+				for ( int i=0; i < childrenCount; i++ ) {
+					int	childIndex = _R.ReadInt32();
+					int	X = childIndex & 1;
+					int	Y = (childIndex >> 1) & 1;
+					int	Z = (childIndex >> 2) & 1;
+					OctreeNode	child = GetOrCreateChildNode( X, Y, Z );
+					child.Load( _R );
+				}
 			}
 
 			/// <summary>
@@ -195,10 +266,20 @@ namespace VoxelConeTracing
 			int		subdivisionsCount = 1 << _subdivisionsLevelsCount;
 			float	voxelSize = _volumeSize / subdivisionsCount;
 
+			#if LOAD_OCTREE
+
+			// Load the octree
+			OctreeNode	root = null;
+			using ( System.IO.FileStream S = new System.IO.FileInfo( "CornellBox_" + subdivisionsCount + ".octree" ).OpenRead() )
+				using ( System.IO.BinaryReader R = new System.IO.BinaryReader( S ) )
+					root = new OctreeNode( R );
+
+			#else
+
 			//////////////////////////////////////////////////////////////////////////
 			// 1] Generate a list of non-empty voxels
 			//
-			#if !LOAD_OCTREE
+			#if !LOAD_VOXELS
 				// Start collecting all non-empty voxels
 				float3	dV = voxelSize * float3.One;
 				float3	wsVoxelMin = _wsCornerMin + 0.5f * dV;	// Start voxel center
@@ -301,11 +382,18 @@ namespace VoxelConeTracing
 				root.AddVoxel( ref wsVoxelPosition, V, _subdivisionsLevelsCount );
 			}
 
-			// 2.2) Normalize existing voxels
-			root.FinalizeLeafVoxels();
+// 			// 2.2) Normalize existing voxels
+// 			root.FinalizeLeafVoxels();
 
 			// 2.3) Build mips at all levels
 			root.BuildAllMips();
+
+			// Save the resulting octree
+			using ( System.IO.FileStream S = new System.IO.FileInfo( "CornellBox_" + subdivisionsCount + ".octree" ).Create() )
+				using ( System.IO.BinaryWriter W = new System.IO.BinaryWriter( S ) )
+					root.SaveRoot( W );
+
+			#endif
 		}
 
 		#region Distance-Field Helpers
