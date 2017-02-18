@@ -87,7 +87,7 @@ namespace VoxelConeTracing
 				m_cameraManipulator.InitializeCamera( new float3( 0.0f, 2.73f, -8.0f ), new float3( 0.0f, 2.73f, 0.0f ), float3.UnitY );
 
 				// Build static voxel
-				m_octree = new OctreeBuilder( m_device, 5.6f * new float3( -0.5f, 0.0f, -0.5f ), 5.6f * new float3( 0.5f, 1.0f, 0.5f ), 256 );
+				m_octree = new OctreeBuilder( m_device, 5.6f * new float3( -0.5f, 0.0f, -0.5f ), 5.6f, 8 );
 
 				m_startTime = DateTime.Now;
 				Application.Idle += Application_Idle;
