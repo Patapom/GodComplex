@@ -603,3 +603,5 @@
 /Tests/TestAreaLight/obj
 /Tests/TestAreaLight/bin
 /Tests/TestVoxelConeTracing/*.user
+/Tests/CodinGame/bin
+/Tests/CodinGame/obj
