@@ -133,6 +133,7 @@
     <None Include="Shaders\Global.hlsl" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Shaders\Octree.hlsl" />
     <Content Include="Shaders\RenderDistanceField.hlsl" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
