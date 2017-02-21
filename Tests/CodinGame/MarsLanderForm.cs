@@ -135,32 +135,6 @@ System.Diagnostics.Debug.WriteLine( value );
 			System.Threading.Thread.Sleep( TIMER );
 		}
 
-		void	CheckCrash( float2 _oldPos ) {
-			for ( int i=0; i < m_landscape.Count-1; i++ ) {
-				float2	P0 = m_landscape[i];
-				float2	P1 = m_landscape[i+1];
-				float2	D = (P1 - P0).Normalized;
-				float2	N = new float2( -D.y, D.x );
-
-				float2	Dir = Pos - _oldPos;
-				float	dirLength = Dir.Length;
-						Dir *= dirLength != 0.0f ? 1.0f / dirLength : 0.0f;
-				float	hitDistance = (P0 - Pos).Dot( N ) / Dir.Dot( N );
-				if ( hitDistance < 0.0f || hitDistance > dirLength )
-					continue;	// Outside our ship's trajectory
-
-				float2	HitPos = Pos + hitDistance * Dir;
-//				float	dot = (HitPos - P0).Dot( N );	// Must be 0!
-				if ( HitPos.x < P0.x || HitPos.x > P1.x )
-					continue;	// Outside of landscape segment
-
-				if ( Math.Abs( Vel.y ) >= 40.0f )
-					throw new Exception( "Crash!" );
-				else
-					MessageBox.Show( "SUCCESS!" );
-			}
-		}
-
 		private void panelOutput_OnUpdateBitmap( Graphics _G ) {
 			int	W = panelOutput.Width;
 			int	H = panelOutput.Height;
@@ -186,6 +160,24 @@ System.Diagnostics.Debug.WriteLine( value );
 			_G.DrawLine( Pens.Black, targetPos.x - 10, targetPos.y, targetPos.x + 10, targetPos.y );
 			_G.DrawLine( Pens.Black, targetPos.x, targetPos.y - 10, targetPos.x, targetPos.y + 10 );
 
+			// Draw planned-ahead
+			float2	tempPos = Pos;
+			float2	tempVel = Vel;
+			int		tempAngle = Rotation;
+			int		tempThrust = Thrust;
+			for ( int step=0; step < 100; step++ ) {
+//				int	newAngle, newThrust;
+				Solution.Plan( (int) tempPos.x, (int) tempPos.y, (int) tempVel.x, (int) tempVel.y, tempAngle, tempThrust, out tempAngle, out tempThrust );
+
+				float2	oldPos = tempPos;
+				float2	tempAcc = tempThrust * new float2( (float) Math.Sin( tempAngle * Math.PI / 180 ), (float) Math.Cos( tempAngle * Math.PI / 180 ) );
+				tempAcc.y -= 3.711f;
+				tempVel += tempAcc;
+				tempPos += tempVel;
+				float2	P0 = Landscape2Client( oldPos ), P1 = Landscape2Client( tempPos );
+				_G.DrawLine( Pens.Blue, P0.x, P0.y, P1.x, P1.y );
+			}
+
 			// Draw information
 			float2	Acc = Thrust * new float2( (float) Math.Sin( Rotation * Math.PI / 180 ), (float) Math.Cos( Rotation * Math.PI / 180 ) );
 					Acc.y -= 3.711f;
@@ -199,6 +191,32 @@ System.Diagnostics.Debug.WriteLine( value );
 			float	maxY = 2.0f * m_landscapeMax.y;
 			return new float2(	panelOutput.Width  * (P.x - m_landscapeMin.x) / (m_landscapeMax.x - m_landscapeMin.x),
 								panelOutput.Height * (P.y - maxY) / (m_landscapeMin.x - maxY) );
+		}
+
+		void	CheckCrash( float2 _oldPos ) {
+			for ( int i=0; i < m_landscape.Count-1; i++ ) {
+				float2	P0 = m_landscape[i];
+				float2	P1 = m_landscape[i+1];
+				float2	D = (P1 - P0).Normalized;
+				float2	N = new float2( -D.y, D.x );
+
+				float2	Dir = Pos - _oldPos;
+				float	dirLength = Dir.Length;
+						Dir *= dirLength != 0.0f ? 1.0f / dirLength : 0.0f;
+				float	hitDistance = (P0 - Pos).Dot( N ) / Dir.Dot( N );
+				if ( hitDistance < 0.0f || hitDistance > dirLength )
+					continue;	// Outside our ship's trajectory
+
+				float2	HitPos = Pos + hitDistance * Dir;
+//				float	dot = (HitPos - P0).Dot( N );	// Must be 0!
+				if ( HitPos.x < P0.x || HitPos.x > P1.x )
+					continue;	// Outside of landscape segment
+
+				if ( Math.Abs( Vel.y ) >= 40.0f )
+					throw new Exception( "Crash!" );
+				else
+					MessageBox.Show( "SUCCESS!" );
+			}
 		}
 	}
 }

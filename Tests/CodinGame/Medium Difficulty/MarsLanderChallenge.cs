@@ -20,6 +20,10 @@ class Solution
 	public static float	m_targetY;
 
 	public static void		Plan( float PX, float PY, float VX, float VY, float _angle, float _thrust, out int _newAngle, out int _newThrust ) {
+		_angle = (float) (Math.PI * _angle / 180.0f);
+
+
+
 		_newAngle = (int) (180 * _angle / Math.PI);
 		_newThrust = (int) _thrust;
 	}
@@ -137,7 +141,7 @@ Console.Error.WriteLine( line );
 // 			string  PowerSt = ((int) Math.Max( PowerX, PowerY )).ToString();
 
 			int	newRotation, newThrust;
-			Plan( X, Y, HS, VS, (float) Math.PI * R / 180.0f, P, out newRotation, out newThrust );
+			Plan( X, Y, HS, VS, R, P, out newRotation, out newThrust );
 
 //			Console.WriteLine( AngleDeg + " " + PowerSt ); // R P. R is the desired rotation angle. P is the desired thrust power.
 //Console.WriteLine( R + " " + P );
