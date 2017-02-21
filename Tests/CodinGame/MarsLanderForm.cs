@@ -139,23 +139,25 @@ System.Diagnostics.Debug.WriteLine( value );
 			for ( int i=0; i < m_landscape.Count-1; i++ ) {
 				float2	P0 = m_landscape[i];
 				float2	P1 = m_landscape[i+1];
-				float2	D = P1 - P0;
-				float	L = D.Length;
-				float2	N = new float2( -D.y, D.x ) / L;
+				float2	D = (P1 - P0).Normalized;
+				float2	N = new float2( -D.y, D.x );
 
-				if ( _oldPos.x < Math.Min( P0.x, P1.x ) && Pos.x < Math.Min( P0.x, P1.x ) )
-					continue;
-				if ( _oldPos.x > Math.Max( P0.x, P1.x ) && Pos.x > Math.Max( P0.x, P1.x ) )
-					continue;
+				float2	Dir = Pos - _oldPos;
+				float	dirLength = Dir.Length;
+						Dir *= dirLength != 0.0f ? 1.0f / dirLength : 0.0f;
+				float	hitDistance = (P0 - Pos).Dot( N ) / Dir.Dot( N );
+				if ( hitDistance < 0.0f || hitDistance > dirLength )
+					continue;	// Outside our ship's trajectory
 
-				float	dot0 = (_oldPos - P0).Dot( N );
-				float	dot1 = (Pos - P0).Dot( N );
-				if ( dot0 > 0.0f && dot1 <= 0 ) {
-					if ( Math.Abs( Vel.y ) >= 40.0f )
-						throw new Exception( "Crash!" );
-					else
-						MessageBox.Show( "SUCCESS!" );
-				}
+				float2	HitPos = Pos + hitDistance * Dir;
+//				float	dot = (HitPos - P0).Dot( N );	// Must be 0!
+				if ( HitPos.x < P0.x || HitPos.x > P1.x )
+					continue;	// Outside of landscape segment
+
+				if ( Math.Abs( Vel.y ) >= 40.0f )
+					throw new Exception( "Crash!" );
+				else
+					MessageBox.Show( "SUCCESS!" );
 			}
 		}
 
@@ -178,6 +180,11 @@ System.Diagnostics.Debug.WriteLine( value );
 				float2	P1 = Landscape2Client( m_pastPositions[i+1] );
 				_G.DrawLine( Pens.Red, P0.x, P0.y, P1.x, P1.y );
 			}
+
+			// Draw target
+			float2	targetPos = Landscape2Client( new float2( Solution.m_targetX, Solution.m_targetY ) );
+			_G.DrawLine( Pens.Black, targetPos.x - 10, targetPos.y, targetPos.x + 10, targetPos.y );
+			_G.DrawLine( Pens.Black, targetPos.x, targetPos.y - 10, targetPos.x, targetPos.y + 10 );
 
 			// Draw information
 			float2	Acc = Thrust * new float2( (float) Math.Sin( Rotation * Math.PI / 180 ), (float) Math.Cos( Rotation * Math.PI / 180 ) );
