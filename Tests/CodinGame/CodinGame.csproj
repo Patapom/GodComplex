@@ -13,7 +13,7 @@
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <PlatformTarget>x64</PlatformTarget>
+    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
@@ -64,15 +64,30 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="MarsLanderForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="MarsLanderForm.Designer.cs">
+      <DependentUpon>MarsLanderForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="Medium Difficulty\MarsLanderChallenge.cs" />
     <None Include="SumOfDivisorsChallenge.cs" />
     <None Include="Medium Difficulty\WarChallenge.cs" />
     <None Include="Medium Difficulty\NetworkingChallenge.cs" />
     <None Include="Medium Difficulty\TardisChallenge.cs" />
     <None Include="Medium Difficulty\IndyChallenge.cs" />
+    <Compile Include="PanelOutput.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="PanelOutput.Designer.cs">
+      <DependentUpon>PanelOutput.cs</DependentUpon>
+    </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <None Include="Medium Difficulty\WireChallenge.cs" />
+    <EmbeddedResource Include="MarsLanderForm.resx">
+      <DependentUpon>MarsLanderForm.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
@@ -96,6 +111,10 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\Packages\ImageUtilityManaged\ImageUtilityManaged.vcxproj">
+      <Project>{6c974ba3-ecba-4436-85cb-218eebb33d53}</Project>
+      <Name>ImageUtilityManaged</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\Packages\MathSimple\MathSimple.vcxproj">
       <Project>{cec07704-2a19-4bf1-b46d-8fcf9c5965ee}</Project>
       <Name>MathSimple</Name>

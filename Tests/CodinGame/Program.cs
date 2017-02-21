@@ -548,96 +548,6 @@ static string	ms_inputText =
 "2500 2700 0 0 550 0 0";
 
 
-		class MarsLander {
-			class Writer : StringWriter {
-				public MarsLander	m_owner;
-				public override void WriteLine( string value ) {
-					System.Diagnostics.Debug.WriteLine( value );
-					m_owner.React( value );
-				}
-			}
-			class Reader : TextReader {
-				public List< string >	m_lines = new List< string >();
-				public override string ReadLine() {
-					string	top = m_lines[0];
-					m_lines.RemoveAt( 0 );
-					return top;
-				}
-			}
-			Writer	m_writer = new Writer();
-			Reader	m_reader = new Reader();
-
-			List< float2 >	m_landscape = new List< float2 >();
-
-			float2	Pos;
-			float2	Vel;
-			int		Fuel;
-			int		Rotation, Thrust;
-
-			public MarsLander( string _initialLines ) {
-				m_writer.m_owner = this;
-				Console.SetIn( m_reader );
-				Console.SetOut( m_writer );
-
-				string[]	initialLines = _initialLines.Split( '\n' );
-				for ( int i=0; i < initialLines.Length; i++ )
-					m_reader.m_lines.Add( initialLines[i] );
-
-				int			landscapePointsCount = int.Parse( initialLines[0] );
-				for ( int i=0; i < landscapePointsCount; i++ ) {
-					string[]	coords = initialLines[1+i].Split( ' ' );
-					m_landscape.Add( new float2( float.Parse( coords[0] ), float.Parse( coords[1] ) ) );
-				}
-
-				string[]	initialValues = initialLines[1+landscapePointsCount].Split( ' ' );
-				Pos = new float2( int.Parse( initialValues[0] ), int.Parse( initialValues[1] ) );
-				Vel = new float2( int.Parse( initialValues[2] ), int.Parse( initialValues[3] ) );
-				Fuel = int.Parse( initialValues[4] );
-				Rotation = int.Parse( initialValues[5] );
-				Thrust = int.Parse( initialValues[6] );
-			}
-
-			void	React( string _userCommands ) {
-				string[]	userCommands = _userCommands.Split( ' ' );
-				int			newRotation = int.Parse( userCommands[0] );
-				if ( newRotation < -90 || newRotation > 90 ) throw new Exception( "Too large rotation!" );
-				if ( Math.Abs( newRotation - Rotation ) > 15 ) throw new Exception( "Too large rotation delta!" );
-				int			newThrust = int.Parse( userCommands[1] );
-				if ( newThrust < 0 || newThrust > 4 ) throw new Exception( "Too large thrust!" );
-				if ( Math.Abs( newThrust - Thrust ) > 1 ) throw new Exception( "Too large thrust delta!" );
-
-				Rotation = newRotation;
-				Thrust = newThrust;
-				Fuel--;
-
-				float2	oldPos = Pos;
-
-				float2	Acc = Thrust * new float2( (float) Math.Sin( Rotation * Math.PI / 180 ), (float) Math.Cos( Rotation * Math.PI / 180 ) );
-				Vel += Acc;
-				Pos += Vel;
-				CheckCrash( oldPos );
-
-				string	newLine = ((int) Pos.x) + " " + ((int) Pos.y) + " " + ((int) Vel.x) + " " + ((int) Vel.y) + " " + Fuel + " " + Rotation + " " + Thrust;
-				m_reader.m_lines.Add( newLine );
-			}
-
-			void	CheckCrash( float2 _oldPos ) {
-				for ( int i=0; i < m_landscape.Count-1; i++ ) {
-					float2	P0 = m_landscape[i];
-					float2	P1 = m_landscape[i+1];
-					float2	N = (P1 - P0).Normalized;
-							N.Set( -N.y, N.x );
-
-					float	dot0 = (_oldPos - P0).Dot( N );
-					float	dot1 = (Pos - P0).Dot( N );
-					if ( dot0 > 0.0f && dot1 <= 0 ) {
-						throw new Exception( "Crash!" );
-					}
-				}
-			}
-
-		}
-
 #endregion
 
 		class ConsoleWriterOverride : StringWriter {
@@ -651,6 +561,7 @@ static string	ms_inputText =
 		/// </summary>
 		[STAThread]
 		static void Main() {
+			System.Threading.Thread.CurrentThread.CurrentCulture = new System.Globalization.CultureInfo( "en-US" );
 			Application.EnableVisualStyles();
 			Application.SetCompatibleTextRenderingDefault( false );
 
@@ -659,11 +570,12 @@ static string	ms_inputText =
 			Console.SetError( new ConsoleWriterOverride() );
 
 			#if MARS_LANDER_CHALLENGE
-				MarsLander	controller = new MarsLander( ms_inputText );
+				TestForm.MarsLanderForm	form = new TestForm.MarsLanderForm( ms_inputText );
+				Application.Run( form );
+			#else
+				// Execute
+				Solution.Meuh( null );
 			#endif
-
-			// Execute
-			Solution.Meuh( null );
 		}
 	}
 }

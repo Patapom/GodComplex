@@ -118,7 +118,8 @@ Console.Error.WriteLine( "PowerY = " + PowerY );
 			string  AngleDeg = ((int) (180.0f * Angle / Math.PI)).ToString();
 			string  PowerSt = ((int) Math.Max( PowerX, PowerY )).ToString();
 
-			Console.WriteLine( AngleDeg + " " + PowerSt ); // R P. R is the desired rotation angle. P is the desired thrust power.
+//			Console.WriteLine( AngleDeg + " " + PowerSt ); // R P. R is the desired rotation angle. P is the desired thrust power.
+Console.WriteLine( "0 0" );
 		}
 	}
 }
