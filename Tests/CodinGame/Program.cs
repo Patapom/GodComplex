@@ -534,7 +534,7 @@ static string	ms_inputText =
 #endif
 		#endregion
 
-#region MARS LANDER CONTROLLER
+		#region MARS LANDER CONTROLLER
 
 // 		static string	ms_inputText = 
 // "7\r\n" + 
@@ -597,7 +597,7 @@ static string	ms_inputText =
 // "6999 500\r\n" +
 // "6500 2700 -50 0 1000 90 0";
 
-#endregion
+		#endregion
 
 		class ConsoleWriterOverride : StringWriter {
 			public override void WriteLine( string value ) {
