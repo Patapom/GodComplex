@@ -1,0 +1,49 @@
+Library CircStats
+=================
+Version 0.2-4, 2009/10/12
+Fixed the warnings with R version 2.10.0
+Fixed a bug in pp.plot function
+
+Version 0.2-3, 2007/08/15
+rao.spacing loads locally the dataset rao.table
+
+Version 0.2-2, 2007/08/13
+Add depends in the DESCRIPTION file
+
+Version 0.2-1, 2006/02/13
+
+Version 0.2, 2005/12/06
+Use of atan2 instead of atan where appropriate
+
+Version 0.1-9, 2005/04/10
+
+Version 0.1-8, 2003/11/18
+Fixed a problem in rose.diag
+
+Version 0.1-7, 2003/11/18
+Fixed a bug in circ.plot and fixed a typo in the rao.spacing documentation.
+
+Version 0.1-6, 2003/04/17
+ I.0, I.1 and I.p are aliases of the corresponding besselI functions
+ All the functions use directly besselI. A1, dvm and dmixedvm use expon.scaled=TRUE. Fix a small bug in vm.bootstrap.ci function.
+
+Version 0.1-5, 2002/12/02
+Delete function eqscplot from the package, the function is available from package MASS!
+The function I.1, I.p and A1inv are vectorized. 
+
+Version 0.1, 2002/01/22 
+Changes to the original package:
+1. Re-organisation of the files.
+2. Conversion of the docs.
+3. Change any T or F to TRUE and FALSE
+4. Change all data to x
+5. Change in vm.bootstrap.ci for using bootstrap function of the package bootstrap
+6. Build a function rstable to generate random variables from stable distribution
+7 Change in rwrpstab function for using rstable
+             
+Claudio Agostinelli
+Department of Statistics
+University of Venice
+Italy
+http://www.dst.unive.it/~claudio
+<claudio@unive.it>

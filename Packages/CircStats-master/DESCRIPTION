@@ -1,0 +1,15 @@
+Title: Circular Statistics, from "Topics in circular Statistics" (2001)
+Package: CircStats
+Version: 0.2-4
+Author: S-plus original by Ulric Lund <ulund@calpoly.edu>, R port by
+        Claudio Agostinelli <claudio@unive.it>
+Maintainer: Claudio Agostinelli <claudio@unive.it>
+Date: October 12, 2009.
+Description: Circular Statistics, from "Topics in circular Statistics"
+        (2001) S. Rao Jammalamadaka and A. SenGupta, World Scientific.
+Depends: MASS, boot
+License: GPL-2
+URL: S-plus original at http://statweb.calpoly.edu/lund/
+Packaged: 2012-10-29 08:56:52 UTC; ripley
+Repository: CRAN
+Date/Publication: 2012-10-29 08:56:52

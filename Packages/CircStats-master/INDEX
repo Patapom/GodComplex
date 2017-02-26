@@ -1,0 +1,59 @@
+A1                      Ratio of First and Zeroth Order Bessel
+                        Functions
+A1inv                   Inverse of A1
+change.pt               Change Point Test
+circ.cor                Correlation Coefficient for Angular Variables
+circ.disp               Circular Dispersion
+circ.mean               Mean Direction
+circ.plot               Circular Data Plot
+circ.range              Circular Range
+circ.reg                Circular-Circular Regression
+circ.summary            Circular Summary Statistics
+dcard                   Cardioid Density Function
+deg                     Degrees
+dmixedvm                Mixture of von Mises Distributions
+dtri                    Triangular Density Function
+dvm                     von Mises Density Function
+dwrpcauchy              Wrapped Cauchy Density Function
+dwrpnorm                Wrapped Normal Density Function
+est.kappa               Estimate Kappa
+est.rho                 Mean Resultant Length
+I.0                     Zeroth Order Bessel Function of the First Kind
+I.1                     First Order Bessel Function of the First Kind
+I.p                     P-th Order Bessel Function of the First Kind
+kuiper                  Kuiper's Test
+plot.edf                Plot Empirical Distribution Function
+pp.plot                 von Mises Probability-Probability Plot
+pvm                     Cummulative Probability for the von Mises
+                        Distribution
+rad                     Radians
+rao.homogeneity         Rao's Tests for Homogeneity
+rao.spacing             Rao's Spacing Test of Uniformity
+rao.table               Table for Rao spacing function
+rcard                   Random Generation from the Cardoid
+                        Distribution
+rmixedvm                Random Generation from the Mixed von Mises
+                        Distribution
+rose.diag               Rose Diagram
+rstable                 Random Generator for Stable Family of
+                        Distributions
+r.test                  Rayleigh Test of Uniformity: General Unimodal
+                        Alternative
+rtri                    Random Generation from the Triangular
+                        Distribution
+rvm                     Random Generation from the von Mises
+                        Distribution
+rwrpcauchy              Random Generation from the Wrapped Cauchy
+                        Distribution
+rwrpnorm                Random Generation from the Wrapped Normal
+                        Distribution
+rwrpstab                Random Generation from the Wrapped Stable
+                        Distribution
+trig.moment             Trigonometric Moments
+v0.test                 Rayleigh Test of Uniformity: Alternative with
+                        Specified Mean Direction
+vm.bootstrap.ci         Bootstrap Confidence Intervals
+vm.ml                   von Mises Maximum Likelihood Estimates
+watson                  Watson's Test
+watson.two              Watson's Two-Sample Test of Homogeneity
+wrpcauchy.ml            Wrapped Cauchy Maximum Likelihood Estimates
