@@ -605,3 +605,5 @@
 /Tests/TestVoxelConeTracing/*.user
 /Tests/CodinGame/bin
 /Tests/CodinGame/obj
+/Packages/R-2.12.1
+/Tests/TestToksvig/obj

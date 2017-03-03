@@ -536,17 +536,18 @@ static string	ms_inputText =
 
 		#region MARS LANDER CONTROLLER
 
-// 		static string	ms_inputText = 
-// "7\r\n" + 
-// "0 100\r\n" + 
-// "1000 500\r\n" + 
-// "1500 1500\r\n" + 
-// "3000 1000\r\n" + 
-// "4000 150\r\n" + 
-// "5500 150\r\n" + 
-// "6999 800\r\n" +
-// "2500 2700 0 0 550 0 0";
+		static string	ms_inputText = 
+"7\r\n" + 
+"0 100\r\n" + 
+"1000 500\r\n" + 
+"1500 1500\r\n" + 
+"3000 1000\r\n" + 
+"4000 150\r\n" + 
+"5500 150\r\n" + 
+"6999 800\r\n" +
+"2500 2700 0 0 550 0 0";
 
+/*
 		// Deep canyon
 		static string	ms_inputText = 
 "20\r\n" + 
@@ -571,6 +572,7 @@ static string	ms_inputText =
 "5500 1500\r\n" + 
 "6999 2800\r\n" + 
 "500 2700 100 0 800 -90 0";
+//*/
 
 // 		// High ground
 // 		static string	ms_inputText = 

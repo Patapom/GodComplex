@@ -95,7 +95,7 @@ System.Diagnostics.Debug.WriteLine( value );
 			if ( !m_started ) {
 				//////////////////////////////////////////////////////////////////////////
 				// Execute solution
-				Solution.Meuh( null );
+				Solution.Meuh( null, this );
 				m_started = true;
 			}
 		}
@@ -111,7 +111,7 @@ System.Diagnostics.Debug.WriteLine( value );
 
 			Rotation = newRotation;
 			Thrust = newThrust;
-			Fuel--;
+			Fuel -= newThrust;
 
 			float2	oldPos = Pos;
 
@@ -131,7 +131,10 @@ System.Diagnostics.Debug.WriteLine( value );
 			string	newLine = ((int) Pos.x) + " " + ((int) Pos.y) + " " + ((int) Vel.x) + " " + ((int) Vel.y) + " " + Fuel + " " + Rotation + " " + Thrust;
 			m_reader.m_lines.Add( newLine );
 
-
+			Application.DoEvents();
+			while ( !checkBoxRun.Checked ) {
+				Application.DoEvents();
+			}
 			System.Threading.Thread.Sleep( TIMER );
 		}
 
@@ -156,35 +159,71 @@ System.Diagnostics.Debug.WriteLine( value );
 			}
 
 			// Draw target
-			float2	targetPos = Landscape2Client( new float2( Solution.m_targetX, Solution.m_targetY ) );
+			float2	targetPos = Landscape2Client( new float2( Solution.ms_simulation.m_targetX, Solution.ms_simulation.m_targetY ) );
 			_G.DrawLine( Pens.Black, targetPos.x - 10, targetPos.y, targetPos.x + 10, targetPos.y );
 			_G.DrawLine( Pens.Black, targetPos.x, targetPos.y - 10, targetPos.x, targetPos.y + 10 );
 
-			// Draw planned-ahead
-			float2	tempPos = Pos;
-			float2	tempVel = Vel;
-			int		tempAngle = Rotation;
-			int		tempThrust = Thrust;
-			for ( int step=0; step < 100; step++ ) {
-//				int	newAngle, newThrust;
-				Solution.Plan( (int) tempPos.x, (int) tempPos.y, (int) tempVel.x, (int) tempVel.y, tempAngle, tempThrust, out tempAngle, out tempThrust );
+			// Draw ideal spline
+			float2	expectedPos = new float2(), expectedVel = new float2();
+			{
+				float2	tempPos = float2.Zero;
+				float2	tempVel = float2.Zero;
+				Solution.ms_simulation.SplineTrajectory( 0, out tempPos.x, out tempPos.y, out tempVel.x, out tempVel.y );
+				for ( int step=1; step < 100; step++ ) {
+					float	t = step / 100.0f;
+					float2	oldPos = tempPos;
+					float2	oldVel = tempVel;
+					Solution.ms_simulation.SplineTrajectory( t, out tempPos.x, out tempPos.y, out tempVel.x, out tempVel.y );
 
-				float2	oldPos = tempPos;
-				float2	tempAcc = tempThrust * new float2( (float) Math.Sin( tempAngle * Math.PI / 180 ), (float) Math.Cos( tempAngle * Math.PI / 180 ) );
-				tempAcc.y -= 3.711f;
-				tempVel += tempAcc;
-				tempPos += tempVel;
-				float2	P0 = Landscape2Client( oldPos ), P1 = Landscape2Client( tempPos );
-				_G.DrawLine( Pens.Blue, P0.x, P0.y, P1.x, P1.y );
+					float2	P0 = Landscape2Client( oldPos ), P1 = Landscape2Client( tempPos );
+					_G.DrawLine( Pens.DarkGreen, P0.x, P0.y, P1.x, P1.y );
+				}
+
+				// Show expected position/velocity
+				{
+//					float	t = Solution.m_time / Solution.m_curveTime;
+					float	t = Solution.ms_simulation.MapXToTime( Pos.x, Vel.x );
+
+					Solution.ms_simulation.SplineTrajectory( t, out expectedPos.x, out expectedPos.y, out expectedVel.x, out expectedVel.y );
+					float2	clientExpectedPos = Landscape2Client( expectedPos );
+					float2	clientExpectedPos2 = Landscape2Client( expectedPos + 10.0f * expectedVel );
+					_G.DrawEllipse( Pens.DarkGreen, clientExpectedPos.x-2,clientExpectedPos.y-2,5,5 );
+					_G.DrawLine( Pens.DarkGreen, clientExpectedPos.x, clientExpectedPos.y, clientExpectedPos2.x, clientExpectedPos2.y );
+				}
+			}
+
+			// Draw planned-ahead
+			{
+				Solution.LanderSimulator	tempSimulator = new Solution.LanderSimulator( Solution.ms_simulation );
+
+				float2	tempPos = Pos;
+				float2	tempVel = Vel;
+				int		tempAngle = Rotation;
+				int		tempThrust = Thrust;
+				for ( int step=0; step < 100; step++ ) {
+					tempSimulator.Plan( (int) tempPos.x, (int) tempPos.y, (int) tempVel.x, (int) tempVel.y, ref tempAngle, ref tempThrust );
+
+					float2	oldPos = tempPos;
+					float2	tempAcc = tempThrust * new float2( (float) Math.Sin( tempAngle * Math.PI / 180 ), (float) Math.Cos( tempAngle * Math.PI / 180 ) );
+					tempAcc.y -= 3.711f;
+					tempVel += tempAcc;
+					tempPos += tempVel;
+					float2	P0 = Landscape2Client( oldPos ), P1 = Landscape2Client( tempPos );
+					_G.DrawLine( Pens.Blue, P0.x, P0.y, P1.x, P1.y );
+				}
 			}
 
 			// Draw information
 			float2	Acc = Thrust * new float2( (float) Math.Sin( Rotation * Math.PI / 180 ), (float) Math.Cos( Rotation * Math.PI / 180 ) );
 					Acc.y -= 3.711f;
 
-			_G.DrawString( "A = (" + Acc.x.ToString( "G4" ) + ", " + Acc.y.ToString( "G4" ) + ")", Font, Brushes.Black, 0, 0 );
-			_G.DrawString( "V = (" + Vel.x.ToString( "G4" ) + ", " + Vel.y.ToString( "G4" ) + ")", Font, Brushes.Black, 0, 16 );
-			_G.DrawString( "Fuel = " + Fuel + " Thrust = " + Thrust, Font, Brushes.Black, 0, 32 );
+			_G.DrawString( "P = (" + Pos.x.ToString( "G4" ) + ", " + Pos.y.ToString( "G4" ) + ")", Font, Brushes.Black, 0, 0 );
+			_G.DrawString( "V = (" + Vel.x.ToString( "G4" ) + ", " + Vel.y.ToString( "G4" ) + ") Length = " + Vel.Length.ToString( "G4" ), Font, Brushes.Black, 0, 16 );
+			_G.DrawString( "A = (" + Acc.x.ToString( "G4" ) + ", " + Acc.y.ToString( "G4" ) + ") Length = " + Acc.Length.ToString( "G4" ), Font, Brushes.Black, 0, 32 );
+			_G.DrawString( "Fuel = " + Fuel + " Thrust = " + Thrust + " STATE = " + Solution.ms_simulation.m_state, Font, Brushes.Black, 0, 48 );
+
+			_G.DrawString( "Expected Position = (" + expectedPos.x.ToString( "G4" ) + ", " + expectedPos.y.ToString( "G4" ) + ")", Font, Brushes.DarkGreen, 0, 64 );
+			_G.DrawString( "Expected Velocity = (" + expectedVel.x.ToString( "G4" ) + ", " + expectedVel.y.ToString( "G4" ) + ") Length = " + expectedVel.Length.ToString( "G4" ), Font, Brushes.DarkGreen, 0, 80 );
 		}
 
 		float2	Landscape2Client( float2 P ) {
@@ -217,6 +256,10 @@ System.Diagnostics.Debug.WriteLine( value );
 				else
 					MessageBox.Show( "SUCCESS!" );
 			}
+		}
+
+		private void floatTrackbarControl1_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue ) {
+			panelOutput.UpdateBitmap();
 		}
 	}
 }
