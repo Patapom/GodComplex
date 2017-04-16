@@ -607,3 +607,5 @@
 /Tests/CodinGame/obj
 /Packages/R-2.12.1
 /Tests/TestToksvig/obj
+/Tests/TestPathTracing/obj
+/Tests/TestPathTracing/bin

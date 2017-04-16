@@ -21,32 +21,6 @@ class Solution
 			LANDING,	// Vertical landing
 		}
 
-		/// <summary>
-		/// Attempts to reach the target angle and thrust by following small increments
-		/// </summary>
-		/// <param name="_targetAngle">In radians</param>
-		/// <param name="_targetThrust"></param>
-		/// <param name="_newAngle"></param>
-		/// <param name="_newThrust"></param>
-		static void		NewAngleAndThrust( float _targetAngle, float _targetThrust, ref int _newAngle, ref int _newThrust ) {
-			_targetAngle = (int) (180 * _targetAngle / Math.PI);
-			_targetAngle = Math.Max( -90, Math.Min( 90, _targetAngle ) );
-			_targetThrust = Math.Max( 0, Math.Min( 4, _targetThrust ) );
-
-			// Ensure steps of 15° close to existing angle
-			int	targetAngle = 15 * (int) Math.Round( _targetAngle / 15.0f );
-				targetAngle = Math.Max( _newAngle-15, targetAngle );
-				targetAngle = Math.Min( _newAngle+15, targetAngle );
-
-			// Ensure unit increments close to existing thrust
-			int	targetThrust = (int) Math.Round( _targetThrust );
-				targetThrust = Math.Max( _newThrust-1, targetThrust );
-				targetThrust = Math.Min( _newThrust+1, targetThrust );
-
-			_newAngle = targetAngle;
-			_newThrust = targetThrust;
-		}
-
 		// Prefered trajectory
 		public float	m_startX;
 		public float	m_startY;
@@ -61,6 +35,11 @@ class Solution
 
 		public float	m_peakTime = 0.0f;
 		public float	m_curveLength = 0.0f;
+
+			// 
+		public float	m_distanceX;		// Horizontal distance to travel to reach target
+		public float	m_ascendingDY;		// Vertical distance to travel to reach peak height
+		public float	m_descendingDY;		// Vertical distance to travel to reach target height
 
 		// PID
 		public float	m_sumErrorX = 0.0f;
@@ -131,8 +110,20 @@ Console.Error.WriteLine( line );
 			m_curveLength = _other.m_curveLength;
 		}
 
+		#region Initialization
+
 		bool	m_firstTime = true;
-		void		Init( float PX, float PY, float VX, float VY, int _angle, int _thrust ) {
+
+		/// <summary>
+		/// Initializes the simulation parameters from the initial position/velocity/angle/thrust
+		/// </summary>
+		/// <param name="PX"></param>
+		/// <param name="PY"></param>
+		/// <param name="VX"></param>
+		/// <param name="VY"></param>
+		/// <param name="_angle"></param>
+		/// <param name="_thrust"></param>
+		void	Init( float PX, float PY, float VX, float VY, int _angle, int _thrust ) {
 			float	angle = (float) (Math.PI * _angle / 180.0f);
 
 			m_startX = PX;
@@ -144,31 +135,37 @@ Console.Error.WriteLine( line );
 			m_tangentTargetY = -100.0f * TANGENT_STRENGTH_END;
 
 			// Pre-compute curve length and peak height/time for phase change
-			{
-				float	posX, posY, temp;
-				float	peakY = -float.MaxValue;
-				SplineTrajectory( 0, out posX, out posY, out temp, out temp );
-				for ( int i=1; i < 1000; i++ ) {
-					float	oldPosX = posX, oldPosY = posY;
-					SplineTrajectory( i / 1000.0f, out posX, out posY, out temp, out temp );
+			float	posX, posY, temp;
+			float	peakY = -float.MaxValue;
+			SplineTrajectory( 0, out posX, out posY, out temp, out temp );
+			for ( int i=1; i < 1000; i++ ) {
+				float	oldPosX = posX, oldPosY = posY;
+				SplineTrajectory( i / 1000.0f, out posX, out posY, out temp, out temp );
 
-					float	Dx = posX - oldPosX;
-					float	Dy = posY - oldPosY;
-					float	dL = (float) Math.Sqrt( Dx*Dx + Dy*Dy );
-					m_curveLength += dL;
+				float	Dx = posX - oldPosX;
+				float	Dy = posY - oldPosY;
+				float	dL = (float) Math.Sqrt( Dx*Dx + Dy*Dy );
+				m_curveLength += dL;
 
-					if ( posY > peakY ) {
-						// Store peak Y
-						peakY = posY;
-						m_peakTime = 0.001f * i;
-					}
+				if ( posY > peakY ) {
+					// Store peak Y
+					peakY = posY;
+					m_peakTime = 0.001f * i;
 				}
 			}
 
-			// Assuming a constant velocity, precompute time required to complete curve
-//			const float	CAILLOU = 2.0f;
-//			m_curveTime = CAILLOU * m_curveLength / 2.0f;
+			// Compute distances and target velocities for the various phases of the trajectory
+			m_distanceX = m_targetX - m_startX;
+			m_ascendingDY = peakY - m_startY;
+			m_descendingDY = peakY - m_targetY;
+
+			// calculer une parabole en X demi distance en phase ascendante, demi distance en phase descendante
+			// en prenant en compte la vitesse max qu'on peut espérer obtenir si l'on veut aussi accomplir la parabole verticale...
+			// Quelle vitesse verticale target on souhaite atteindre ?
+			// On sait que la vitesse horizontale target à la fin de la phase descendante doit être 0 déjà
 		}
+
+		#endregion
 
 		public void		Plan( float PX, float PY, float VX, float VY, ref int _angle, ref int _thrust ) {
 			if ( m_firstTime ) {
@@ -198,7 +195,17 @@ Console.Error.WriteLine( line );
 				}
 			}
 
+			// Handle states
 			switch ( m_state ) {
+				case STATE.ASCENDING: {
+
+					break;
+				}
+
+				case STATE.DESCENDING: {
+					break;
+				}
+
 				case STATE.LANDING:
 					expectedVX = 0;
 					expectedVY = 0;
@@ -303,6 +310,32 @@ float	BISOU =  ms_ownerForm.floatTrackbarControl5.Value;
 		}
 
 		#endregion
+
+		/// <summary>
+		/// Attempts to reach the target angle and thrust by following small increments
+		/// </summary>
+		/// <param name="_targetAngle">In radians</param>
+		/// <param name="_targetThrust"></param>
+		/// <param name="_newAngle"></param>
+		/// <param name="_newThrust"></param>
+		static void		NewAngleAndThrust( float _targetAngle, float _targetThrust, ref int _newAngle, ref int _newThrust ) {
+			_targetAngle = (int) (180 * _targetAngle / Math.PI);
+			_targetAngle = Math.Max( -90, Math.Min( 90, _targetAngle ) );
+			_targetThrust = Math.Max( 0, Math.Min( 4, _targetThrust ) );
+
+			// Ensure steps of 15° close to existing angle
+			int	targetAngle = 15 * (int) Math.Round( _targetAngle / 15.0f );
+				targetAngle = Math.Max( _newAngle-15, targetAngle );
+				targetAngle = Math.Min( _newAngle+15, targetAngle );
+
+			// Ensure unit increments close to existing thrust
+			int	targetThrust = (int) Math.Round( _targetThrust );
+				targetThrust = Math.Max( _newThrust-1, targetThrust );
+				targetThrust = Math.Min( _newThrust+1, targetThrust );
+
+			_newAngle = targetAngle;
+			_newThrust = targetThrust;
+		}
 	}
 
 	public static LanderSimulator	ms_simulation = null;
