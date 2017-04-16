@@ -9,6 +9,7 @@ cbuffer CB_Main : register(b0) {
 	float		_Time;
 	float		_GlossRoom;
 	float		_GlossSphere;
+	float		_NoiseInfluence;
 };
 
 cbuffer CB_Camera : register(b1) {

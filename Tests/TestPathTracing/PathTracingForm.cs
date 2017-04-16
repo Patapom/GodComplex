@@ -25,6 +25,7 @@ namespace TestPathTracing {
 			public float	_time;
 			public float	_glossRoom;
 			public float	_glossSphere;
+			public float	_noiseInfluence;
 		}
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
@@ -43,12 +44,15 @@ namespace TestPathTracing {
 
 		private Device								m_device = new Device();
 
+		private Shader								m_Shader_renderWall = null;
 		private Shader								m_Shader_renderGBuffer = null;
 		private Shader								m_Shader_renderScene = null;
 
 		private ConstantBuffer< CB_Main >			m_CB_Main;
 		private ConstantBuffer<CB_Camera>			m_CB_Camera = null;
 
+		private Texture2D							m_Tex_BlueNoise = null;
+		private Texture2D							m_Tex_Wall = null;
 		private Texture2D							m_Tex_GBuffer = null;
 
 		private Camera								m_camera = new Camera();
@@ -66,16 +70,21 @@ namespace TestPathTracing {
 			try {
 				m_device.Init( panelOutput3D.Handle, false, true );
 
+				m_Shader_renderWall = new Shader( m_device, new System.IO.FileInfo( "./Shaders/RenderWall.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 				m_Shader_renderGBuffer = new Shader( m_device, new System.IO.FileInfo( "./Shaders/RenderGBuffer.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 				m_Shader_renderScene = new Shader( m_device, new System.IO.FileInfo( "./Shaders/RenderScene.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 				
 				m_CB_Main = new ConstantBuffer< CB_Main >( m_device, 0 );
 				m_CB_Camera = new ConstantBuffer<CB_Camera>( m_device, 1 );
 
+				using ( ImageFile blueNoise = new ImageFile( new System.IO.FileInfo( "BlueNoise64x64.png" ) ) ) {
+					m_Tex_BlueNoise = new Texture2D( m_device, new ImagesMatrix( new ImageFile[,] { { blueNoise } } ), COMPONENT_FORMAT.UNORM );
+				}
+				m_Tex_Wall = new Texture2D( m_device, 64, 64, 1, 1, PIXEL_FORMAT.RGBA8, COMPONENT_FORMAT.AUTO, false, false, null );
 				m_Tex_GBuffer = new Texture2D( m_device, m_device.DefaultTarget.Width, m_device.DefaultTarget.Height, 2, 1, PIXEL_FORMAT.RGBA16F, COMPONENT_FORMAT.AUTO, false, false, null );
 
 			} catch ( Exception _e ) {
-				MessageBox.Show( this, "Path Tracing Test", "Exception: " + _e.Message, MessageBoxButtons.OK, MessageBoxIcon.Error );
+				MessageBox.Show( this, "Exception: " + _e.Message, "Path Tracing Test", MessageBoxButtons.OK, MessageBoxIcon.Error );
 			}
 
 			m_startTime = DateTime.Now;
@@ -97,12 +106,15 @@ namespace TestPathTracing {
 			m_device = null;
 
 			m_Tex_GBuffer.Dispose();
+			m_Tex_Wall.Dispose();
+			m_Tex_BlueNoise.Dispose();
 
 			m_CB_Camera.Dispose();
 			m_CB_Main.Dispose();
 
 			m_Shader_renderScene.Dispose();
 			m_Shader_renderGBuffer.Dispose();
+			m_Shader_renderWall.Dispose();
 
 			D.Dispose();
 		}
@@ -133,9 +145,19 @@ namespace TestPathTracing {
 			m_CB_Main.m._time = (float) (currentTime - m_startTime).TotalSeconds;
 			m_CB_Main.m._glossRoom = floatTrackbarControlGlossWall.Value;
 			m_CB_Main.m._glossSphere = floatTrackbarControlGlossSphere.Value;
+			m_CB_Main.m._noiseInfluence = floatTrackbarControlNoise.Value;
 			m_CB_Main.UpdateData();
 
 			m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
+
+			m_Tex_BlueNoise.SetPS( 2 );
+
+			//////////////////////////////////////////////////////////////////////////
+			// Render the wall texture
+			if ( m_Shader_renderWall.Use() ) {
+				m_device.SetRenderTarget( m_Tex_Wall, null );
+				m_device.RenderFullscreenQuad( m_Shader_renderWall );
+			}
 
 			//////////////////////////////////////////////////////////////////////////
 			// Render the G-Buffer
@@ -149,10 +171,12 @@ namespace TestPathTracing {
 			if ( m_Shader_renderScene.Use() ) {
 				m_device.SetRenderTarget( m_device.DefaultTarget, null );
 				m_Tex_GBuffer.SetPS( 0 );
+				m_Tex_Wall.SetPS( 1 );
 
 				m_device.RenderFullscreenQuad( m_Shader_renderScene );
 
 				m_Tex_GBuffer.RemoveFromLastAssignedSlots();
+				m_Tex_Wall.RemoveFromLastAssignedSlots();
 			}
 
 			m_device.Present( false );

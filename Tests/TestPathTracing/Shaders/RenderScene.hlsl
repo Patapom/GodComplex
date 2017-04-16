@@ -8,15 +8,19 @@ cbuffer CB_Render : register(b10) {
 };
 
 Texture2DArray< float4 >	_Tex_GBuffer : register(t0);
-
+Texture2D< float4 >			_Tex_Wall : register(t1);
+Texture2D< float4 >			_Tex_BlueNoise : register(t2);
 
 float3	MapColor( float3 _wsPosition, float3 _wsNormal, float _materialID ) {
 	float3	color;
 	if ( _materialID < 0.5 ) {
-		// Map cube color depending on normal
-		float2	UV = _wsPosition.xy;
-		color = float3( UV, 0 );
-		color = 0;
+		// Map wall color depending on normal
+		float2	UV = 0.5 * (1.0 + _wsPosition.xy);
+//		color = float3( UV, 0 );
+		color = 1.0 * _Tex_Wall[uint2( 64.0 * UV )].xyz;
+
+// TODO: Tweak color depending on normal (invert blue and green apparently)
+
 	} else {
 		// Map sphere color depending on height
 		float	V = 0.5 * (1.0 + (_wsPosition.y - SPHERE_CENTER.y) * (1.0 / SPHERE_RADIUS));
@@ -36,7 +40,12 @@ float3	MapColor( float3 _wsPosition, float3 _wsNormal, float _materialID ) {
 
 float3	PS( VS_IN _In ) : SV_TARGET0 {
 	float2	UV = _In.__Position.xy / _Resolution;
-	float3	csView = float3( float(_Resolution.x) / _Resolution.y * (2.0 * UV.x - 1.0), 1.0 - 2.0 * UV.y, 1.0 );
+	float	aspectRatio = float(_Resolution.x) / _Resolution.y;
+
+	float	noise = _NoiseInfluence * _Tex_BlueNoise[uint2( _In.__Position.xy ) & 0x3F].x;
+//return _Tex_BlueNoise.SampleLevel( LinearWrap, 10.0 * float2( aspectRatio * UV.x, UV.y ), 0.0 ).x;
+
+	float3	csView = float3( aspectRatio * (2.0 * UV.x - 1.0), 1.0 - 2.0 * UV.y, 1.0 );
 	float	viewLength = length( csView );
 			csView /= viewLength;
 
@@ -72,7 +81,8 @@ float3	PS( VS_IN _In ) : SV_TARGET0 {
 		// Generate random half vector
 		float	X0 = float(i) / SAMPLES_COUNT;
 		float	X1 = ReverseBits( i );
-		float	phi = 2.0 * PI * X0;
+		float	phi = 2.0 * PI * (X0 + noise);
+//		float	phi = 2.0 * PI * (X0);
 		float2	sinCosPhi;
 		sincos( phi, sinCosPhi.x, sinCosPhi.y );
 
