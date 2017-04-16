@@ -42,10 +42,8 @@ float	IntersectSphere2( float3 _wsPos, float3 _wsView, float3 _wsCenter, float _
 float2	Map2( float3 _wsPos, float3 _wsView, out float3 _wsNormal ) {
 	float2	d = float2( IntersectBox2( _wsPos, _wsView, _wsNormal ), 0 );
 
-	const float3	wsSphereCenter = float3( 0.6, -0.8, 0.8 );
-	const float		SphereRadius = 0.2;
-	float3			wsNormal2;
-	float2	ds = float2( IntersectSphere2( _wsPos, _wsView, wsSphereCenter, SphereRadius, wsNormal2 ), 1 );
+	float3	wsNormal2;
+	float2	ds = float2( IntersectSphere2( _wsPos, _wsView, ComputeSphereCenter(), SPHERE_RADIUS, wsNormal2 ), 1 );
 	if ( ds.x < d.x ) {
 		_wsNormal = wsNormal2;
 	}
@@ -68,7 +66,7 @@ PS_OUT	PS( VS_IN _In ) {
 
 	PS_OUT	Out;
 			Out.RT0 = float4( wsNormal, bisou.x );
-			Out.RT1 = float4( bisou.yyy, 0 );
+			Out.RT1 = float4( bisou.y, 1.0 - lerp( _GlossRoom, _GlossSphere, bisou.y ), 0, 0 );
 
 	return Out;
 }

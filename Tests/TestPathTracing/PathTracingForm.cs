@@ -23,6 +23,8 @@ namespace TestPathTracing {
 			public uint		_resolutionX;
 			public uint		_resolutionY;
 			public float	_time;
+			public float	_glossRoom;
+			public float	_glossSphere;
 		}
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
@@ -129,6 +131,8 @@ namespace TestPathTracing {
 			m_CB_Main.m._resolutionX = (uint) panelOutput3D.Width;
 			m_CB_Main.m._resolutionY = (uint) panelOutput3D.Height;
 			m_CB_Main.m._time = (float) (currentTime - m_startTime).TotalSeconds;
+			m_CB_Main.m._glossRoom = floatTrackbarControlGlossWall.Value;
+			m_CB_Main.m._glossSphere = floatTrackbarControlGlossSphere.Value;
 			m_CB_Main.UpdateData();
 
 			m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );

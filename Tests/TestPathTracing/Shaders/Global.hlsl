@@ -7,6 +7,8 @@
 cbuffer CB_Main : register(b0) {
 	uint2		_Resolution;
 	float		_Time;
+	float		_GlossRoom;
+	float		_GlossSphere;
 };
 
 cbuffer CB_Camera : register(b1) {
@@ -28,6 +30,13 @@ SamplerState LinearBorder	: register( s6 );	// Black border
 
 
 static const float3	LUMINANCE = float3( 0.2126, 0.7152, 0.0722 );	// D65 Illuminant and 2° observer (cf. http://wiki.nuaj.net/index.php?title=Colorimetry)
+
+
+static const float	SPHERE_RADIUS = 0.2;
+static const float3	SPHERE_CENTER = float3( 0.6, -0.8, 0.8 );
+
+//static const float	GLOSS_ROOM = 0.6;
+//static const float	GLOSS_SPHERE = 0.95;
 
 struct VS_IN {
 	float4	__Position : SV_POSITION;
@@ -185,12 +194,13 @@ float	IntersectSphere( float3 _wsPos, float3 _wsView, float3 _wsCenter, float _r
 	return delta >= 0.0 && b < 0.0 ? -b - sqrt( delta ) : INFINITY;
 }
 
+float3	ComputeSphereCenter() {
+//	return SPHERE_CENTER;
+	return float3( 0.6 * sin( 0.5 * _Time ), -0.8, 0.8 );
+}
+
 float2	Map( float3 _wsPos, float3 _wsView ) {
 	float2	d = float2( IntersectBox( _wsPos, _wsView ), 0 );
-
-	const float3	wsSphereCenter = float3( 0.6, -0.8, 0.8 );
-	const float		SphereRadius = 0.2;
-	float2	ds = float2( IntersectSphere( _wsPos, _wsView, wsSphereCenter, SphereRadius ), 1 );
-
+	float2	ds = float2( IntersectSphere( _wsPos, _wsView, ComputeSphereCenter(), SPHERE_RADIUS ), 1 );
 	return d.x < ds.x ? d : ds;
 }
