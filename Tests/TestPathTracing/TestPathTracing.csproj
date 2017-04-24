@@ -125,9 +125,11 @@
     <None Include="Shaders\Global.hlsl" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Shaders\ShaderToyVersion_BufferA.hlsl" />
     <Content Include="Shaders\RenderWall.hlsl" />
     <Content Include="Shaders\RenderGBuffer.hlsl" />
     <Content Include="Shaders\RenderScene.hlsl" />
+    <Content Include="Shaders\ShaderToyVersion.hlsl" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

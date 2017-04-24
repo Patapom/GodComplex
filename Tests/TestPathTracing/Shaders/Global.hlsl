@@ -180,6 +180,13 @@ float erf( float x ) {
 
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
+// Smith Masking term
+float	GSmith( float3 _Wm, float3 _Wi, float _sqrAlpha ) {
+	float	d = dot( _Wm, _Wi );
+	return 2.0 * d / (d + sqrt( _sqrAlpha + (1.0 - _sqrAlpha) * d*d ));
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
 float	IntersectBox( float3 _wsPos, float3 _wsView ) {
 	float3	dir = _wsView < 0.0 ? -1.0 : 1.0;
 	float3	wallDistance = dir - _wsPos;
