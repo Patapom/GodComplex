@@ -4,9 +4,12 @@
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 //
+// TODO: https://www.shadertoy.com/view/4sf3zX
 
 #define saturate( a ) clamp( (a), 0.0, 1.0 )
 #define lerp( a, b, t ) mix( a, b, t )
+
+const float	TEX_SIZE = 128.0;
 
 const float INFINITY = 1e6;
 const float PI = 3.1415926535897932384626433832795;
@@ -15,6 +18,8 @@ const float INVPI = 0.31830988618379067153776752674503;
 const float SPHERE_RADIUS = 0.2;
 
 const uint	SAMPLES_COUNT = 64U;
+const uint	AA_SAMPLES = 8U;
+
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 // Importance Sampling + RNG
@@ -164,17 +169,17 @@ float	IntersectSphereNormal( vec3 _wsPos, vec3 _wsView, vec3 _wsCenter, float _r
 
 // Computes scene intersection distance only
 vec2	Map( vec3 _wsPos, vec3 _wsView, vec3 _wsSpherePosition ) {
-	vec2	d = vec2( IntersectBox( _wsPos, _wsView ), 0 );
-	vec2	ds = vec2( IntersectSphere( _wsPos, _wsView, _wsSpherePosition, SPHERE_RADIUS ), 1 );
+	vec2	d = vec2( IntersectBox( _wsPos, _wsView ), 0.0 );
+	vec2	ds = vec2( IntersectSphere( _wsPos, _wsView, _wsSpherePosition, SPHERE_RADIUS ), 1.0 );
 	return d.x < ds.x ? d : ds;
 }
 
 // Computes scene intersection distance + normal
 vec2	MapNormal( vec3 _wsPos, vec3 _wsView, out vec3 _wsNormal, vec3 _wsSpherePosition ) {
-	vec2	d = vec2( IntersectBoxNormal( _wsPos, _wsView, _wsNormal ), 0 );
+	vec2	d = vec2( IntersectBoxNormal( _wsPos, _wsView, _wsNormal ), 0.0 );
 
 	vec3	wsNormal2;
-	vec2	ds = vec2( IntersectSphereNormal( _wsPos, _wsView, _wsSpherePosition, SPHERE_RADIUS, wsNormal2 ), 1 );
+	vec2	ds = vec2( IntersectSphereNormal( _wsPos, _wsView, _wsSpherePosition, SPHERE_RADIUS, wsNormal2 ), 1.0 );
 	if ( ds.x < d.x ) {
 		_wsNormal = wsNormal2;
 	}
@@ -186,43 +191,51 @@ vec3	MapColor( vec3 _wsPosition, vec3 _wsNormal, vec3 _wsSpherePosition, float _
     vec2	matUV;
 	vec3	color;
 	if ( _materialID < 0.5 ) {
-		// Map wall color depending on normal
+		// Map wall color depending on position
 		matUV = 0.5 * (1.0 + _wsPosition.xy);
+// TODO: Tweak color depending on normal (invert blue and green apparently)
     } else {
         // Map sphere depending on height only, performing an atan would be too expensive...
-        matUV = vec2( 0.0, 2.0 * (1.0 + (_wsPosition.y - _wsSpherePosition.y) / SPHERE_RADIUS) );
+        matUV = vec2( 0.5, 0.5 * (1.0 + (_wsPosition.y - _wsSpherePosition.y) / SPHERE_RADIUS) );
+        matUV = saturate( matUV );
     }
     
+    matUV = clamp( vec2( 0.0 ), vec2( (TEX_SIZE-1.0) / TEX_SIZE ), matUV );
+//    matUV.x = clamp( 0.0, (TEX_SIZE-1.0) / TEX_SIZE, matUV.x );
     matUV.x += _materialID;
-    vec2	UV = vec2( matUV * 64.0 / iChannelResolution[0].xy );
+    
+    vec2	UV = vec2( matUV * TEX_SIZE / iChannelResolution[0].xy );
     return texture( iChannel0, UV, 0.0 ).xyz;
-
-// TODO: Tweak color depending on normal (invert blue and green apparently)
 }
 
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 // 
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////
-// 
 void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
-	vec2	UV = fragCoord.xy / iResolution.xy;
+    vec3	color = vec3( 0.0 );
+    float	rcpAA = 1.0 / float(AA_SAMPLES);
+    for ( uint AA=0U; AA < AA_SAMPLES; AA++ ) {
+        float a = float(AA) * 2.0 * PI * rcpAA;
+//    float a = 0.0;
+//    vec2	pixel = fragCoord.xy + 0.5*vec2(cos(a),sin(a));
+    vec2	pixel = fragCoord.xy + vec2( (float(AA)+1.0) * rcpAA, ReverseBits( AA ) );
+	vec2	UV = pixel / iResolution.xy;
 
-    float	noise = rand( fragCoord.xy );
+    float	noise = rand( pixel );
 
     // Sample sequencing vectors
     vec2	rcpChannel0PixelSize = vec2( 1.0 ) / iChannelResolution[0].xy;
     vec2	sequenceUV = vec2( 0.5 * rcpChannel0PixelSize.x, (iChannelResolution[0].y - 0.5) * rcpChannel0PixelSize.y );
-    vec3	wsCameraPos = 2.0 * texture( iChannel0, sequenceUV, 0.0 ).xyz - vec3( 1.0 );	sequenceUV.x += rcpChannel0PixelSize.x;
-    vec3	wsCameraTarget = 2.0 * texture( iChannel0, sequenceUV, 0.0 ).xyz - vec3( 1.0 );	sequenceUV.x += rcpChannel0PixelSize.x;
-    vec3	wsSpherePosition = 2.0 * texture( iChannel0, sequenceUV, 0.0 ).xyz - vec3( 1.0 );//	sequenceUV.x += rcpChannel0PixelSize.x;
+    vec3	wsCameraPos = texture( iChannel0, sequenceUV, 0.0 ).xyz;	sequenceUV.x += rcpChannel0PixelSize.x;
+    vec3	wsCameraTarget = texture( iChannel0, sequenceUV, 0.0 ).xyz;	sequenceUV.x += rcpChannel0PixelSize.x;
+    vec3	wsCameraUpRef = texture( iChannel0, sequenceUV, 0.0 ).xyz;	sequenceUV.x += rcpChannel0PixelSize.x;
+    vec3	wsSpherePosition = texture( iChannel0, sequenceUV, 0.0 ).xyz; // sequenceUV.x += rcpChannel0PixelSize.x;
 
     
     // Build camera ray
-    vec3	wsPos = wsCameraPos;//vec3( -0.2, 0.0, -0.5 );
-    vec3	wsTarget = vec3( 0.0, -0.2, 0.0 );
-    vec3	wsUpRef = vec3( 0.0, 1.0, 0.0 );
+    vec3	wsPos = wsCameraPos;
+    vec3	wsTarget = wsCameraTarget;
+    vec3	wsUpRef = wsCameraUpRef;
 
     vec3	wsAt = normalize( wsTarget - wsPos );
     vec3	wsRight = normalize( cross( wsAt, wsUpRef ) );
@@ -242,8 +255,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
     float	distance = distanceMatID.x;
     float	matID = distanceMatID.y;
 
-	// march to hit position
-	wsPos += distance * wsView; 
+	wsPos += distance * wsView;	// March to hit position
 
 	// Build tangent space
 	vec3	wsTangent, wsBiTangent;
@@ -255,13 +267,17 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
 
 	///////////////////////////////////////////////////////////////////
 	// Importance sample specular distribution
-	float	alpha = 0.05;
+	float	alpha = lerp( 0.05, 0.025, matID );
 	float	sqrAlpha = alpha * alpha;
 
+    float	F0 = lerp( 0.04,			// Walls = Dielectric
+                       0.9,				// Sphere = Metal
+                       matID );
+ 
 //	float	Gv = GSmith( wsNormal, wsView, sqrAlpha );
 
 	vec3	specular = vec3( 0.0 );
-	for ( uint i=0U; i < SAMPLES_COUNT; i++ ) {
+	for ( uint i=0U; i < SAMPLES_COUNT; i++ ) {        
 		// Generate random half vector
 		float	X0 = float(i) / float(SAMPLES_COUNT);
 		float	X1 = ReverseBits( i );
@@ -285,7 +301,6 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
 		vec3	sceneColor = 10.0 * MapColor( wsSceneHitPos, wsSceneNormal, wsSpherePosition, d.y );
 
 		// Compute Fresnel
-		const float	F0 = 0.04;	// Dielectric
 		float	F = FresnelSchlick( F0, cosTheta );
 
 		// Compute shadowing/masking
@@ -296,8 +311,11 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
 	}
 //	specular *= Gv / SAMPLES_COUNT;
 	specular *= 1.0 / float(SAMPLES_COUNT);
+	color += emissive + specular;
+	}
+	color *= rcpAA;
 
-	fragColor = vec4( emissive + specular, 1.0 );
+	fragColor = vec4( color, 1.0 );
     fragColor.xyz = pow( fragColor.xyz, vec3( 1.0 / 2.2 ) );
 //fragColor = vec4( noise );
 //fragColor = vec4( 0.2 * distance );

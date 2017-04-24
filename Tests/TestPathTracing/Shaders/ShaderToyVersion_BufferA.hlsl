@@ -7,9 +7,15 @@
 #define saturate( a ) clamp( (a), 0.0, 1.0 )
 #define lerp( a, b, t ) mix( a, b, t )
 
-#define T1	12.0
+const float	TEX_SIZE = 128.0;
+
+const float PI = 3.1415926535897932384626433832795;
+const float INVPI = 0.31830988618379067153776752674503;
+
+#define T1	16.0
 #define T2	31.5
-#define T3	60.0
+#define T3	600.0
+#define TEND (7.01 * 60.0)	// Total song length
 
 #define	DT0 (T1)
 #define	DT1 (T2 - T1)
@@ -56,7 +62,7 @@ vec3	Sequence( float _time ) {
     float	dt = 1.0;
 
 //t += T1; // Force sequence 1
-t += T2; // Force sequence 2
+//t += T2; // Force sequence 2
     
     // 0s -> 30s = build up
     if ( t < T1 ) {
@@ -88,18 +94,18 @@ void	ComputeSequencedElements( float _sequenceID, float t, float dt, vec2 _UV,
 	_wsCameraPosition = _wsCameraTarget = _wsSphereCenter = _colorWall = _colorSphere = vec3( 0.0 );
     _wsCameraUp = vec3( 0.0, 1.0, 0.0 );
 
+    vec2	pixel = _UV * TEX_SIZE;
     float	rcpDt = 1.0 / dt;
     float	t2 = saturate( rcpDt * t );	// Time normalized to interval
     
 	/////////////////////////////////////////////////////////////////////////////////////////////////////
-	//
+	// Intro with slow travelings
 	if ( _sequenceID < 2.0 ) {
         // Fixed viewpoint with slow traveling of target...
 //	    _wsCameraPosition = vec3( 0.0, lerp( -0.9, 0.5, t2 ), -0.2 );
 //      _wsCameraTarget = vec3( 0.0, lerp( -2.0, -0.8, t2 ), 0.8 );
 
-		// Fixed, near the corner
-        _wsSphereCenter = vec3( -0.6, -0.8, 0.8 );
+        _wsSphereCenter = vec3( -0.6, -0.8, 0.8 );		// Fixed, near the corner
 
         if ( _sequenceID < 1.0 ) {
             // Vertical traveling
@@ -122,8 +128,27 @@ void	ComputeSequencedElements( float _sequenceID, float t, float dt, vec2 _UV,
         _colorSphere = vec3( 40.0 * max( 0.005, r ) * pow( 1.0 - _UV.y, 2.0 ) );
 	//
 	/////////////////////////////////////////////////////////////////////////////////////////////////////
+	// Dark sphere + flickering lines on walls
+    } else if ( _sequenceID < 3.0 ) {
+        _wsSphereCenter = vec3( -0.6, -0.8, 0.8 );		// Fixed, near the corner
+        
+       	_wsCameraTarget = _wsSphereCenter + vec3( 0.0, 0.0, 0.0 );
+    	_wsCameraPosition = _wsSphereCenter + vec3( 1.2, -0.15, -0.1 );
+
+        // Walls are flickering
+        float	bump = BeatBump();
+        float	part = floor( _UV.x * 4.0 ) + 1.0 * sin( 0.1 * PI * bump );
+        float	rem = fract( _UV.x * 4.0 );
+        float	lit = bump * saturate( 10.0 * fract( 0.1 * (pixel.y + 7.165 * part) + t) - 9.0 );
+        		lit = floor( _UV.x * 4.0 ) == 2.0 ? 0.1 * float( uint( rem * 16.0 ) & (uint( _UV.y * TEX_SIZE + 4.0 * t ) & 7U)): lit;
+        
+//lit = saturate( 10.0 * fract( 0.1 * pixel.y ) - 9.0 );
+        
+        _colorWall = vec3( 10.0 * lit * _UV.y );
 	//
-    } else if ( _sequenceID < 2.0 ) {
+	/////////////////////////////////////////////////////////////////////////////////////////////////////
+	//
+    } else if ( _sequenceID < 4.0 ) {
         // Tests
         _wsSphereCenter = vec3( 0.6 * sin( 0.5 * t ), -0.8, 0.8 );
 
@@ -161,14 +186,14 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
 //	fragColor = pow( fragColor, vec4( 4.0 ) );
     
 	vec3	sequence = Sequence( iChannelTime[0] );
-	vec2	UV = fract( fragCoord.xy / 64.0 );
+	vec2	UV = fract( fragCoord.xy / TEX_SIZE );
 	vec3	wsCameraPosition, wsCameraTarget, wsCameraUp, wsSphereCenter, colorWall, colorSphere;
 	ComputeSequencedElements( sequence.x, sequence.y, sequence.z ,UV, wsCameraPosition, wsCameraTarget, wsCameraUp, wsSphereCenter, colorWall, colorSphere );
 
     vec3	color = vec3( 0.0 );
-    if ( fragCoord.y < 64.0 && fragCoord.x < 128.0 ) {
+    if ( fragCoord.y < TEX_SIZE && fragCoord.x < (2.0*TEX_SIZE) ) {
         // Bottom of the texture will contain the sequenced wall & sphere textures
-		color = fragCoord.x < 64.0 ? colorWall : colorSphere;
+		color = fragCoord.x < TEX_SIZE ? colorWall : colorSphere;
     } else if ( fragCoord.y > iResolution.y-1.0 ) {
         // Top line will contain sequenced positions
         color = fragCoord.x < 1.0 ? wsCameraPosition : (fragCoord.x < 2.0 ? wsCameraTarget : (fragCoord.x < 3.0 ? wsCameraUp : wsSphereCenter));
