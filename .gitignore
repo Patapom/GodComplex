@@ -609,3 +609,6 @@
 /Tests/TestToksvig/obj
 /Tests/TestPathTracing/obj
 /Tests/TestPathTracing/bin
+/Tests/TestVoxelAutomaton/*.user
+/Tests/TestVoxelAutomaton/bin
+/Tests/TestVoxelAutomaton/obj
