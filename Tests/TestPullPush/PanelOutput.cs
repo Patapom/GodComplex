@@ -119,6 +119,7 @@ namespace TestPullPush
 
 		protected override void OnPaintBackground( PaintEventArgs e ) {
 //			base.OnPaintBackground( e );
+			e.Graphics.FillRectangle( Brushes.Black, 0, 0, Width, Height );
 		}
 
 		protected override void OnPaint( PaintEventArgs e ) {
