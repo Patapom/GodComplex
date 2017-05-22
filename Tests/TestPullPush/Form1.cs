@@ -21,6 +21,7 @@ namespace TestPullPush
 
 		float4[,]		m_sparsePixels;
 		float4[][,]		m_inputPixels = new float4[9][,];
+		float4[][,]		m_outputPixels = new float4[9][,];
 
 		public Form1() {
 			InitializeComponent();
@@ -57,8 +58,10 @@ namespace TestPullPush
 			//////////////////////////////////////////////////////////////////////////
 			// Build reconstructed image by pull-push
 			m_imageRecosntructedOutput = new ImageFile( W, H, PIXEL_FORMAT.BGRA8, m_imageInput.ColorProfile );
-			for ( int mipLevel=0; mipLevel < 9; mipLevel++ )
+			for ( int mipLevel=0; mipLevel < 9; mipLevel++ ) {
 				m_inputPixels[mipLevel] = new float4[W >> mipLevel, H >> mipLevel];
+				m_outputPixels[mipLevel] = new float4[W >> mipLevel, H >> mipLevel];
+			}
 			ApplyPullPush( floatTrackbarControlGamma.Value );
 		}
 
@@ -80,6 +83,7 @@ namespace TestPullPush
 				{ 1, 4, 7, 4, 1 },
 			};
 
+			// Initialize source pixels at mip 0
 			for ( uint Y=0; Y < H; Y++ )
 				for ( uint X=0; X < W; X++ )
 					m_inputPixels[0][X,Y] = m_sparsePixels[X,Y];
@@ -119,6 +123,8 @@ namespace TestPullPush
 //						float	clampedWeight = Math.Min( 1.0f, sum.w );
 						float	clampedWeight = 1.0f - (float) Math.Pow( Math.Max( 0.0f, 1.0f - sum.w ), _gamma );
 
+//clampedWeight = 1.0f;
+
 						float	ratio = sum.w > 0.0f ? clampedWeight / sum.w : 0.0f;
 						sum *= ratio;
 						currentLevel[X,Y] = sum;
@@ -134,8 +140,9 @@ namespace TestPullPush
 			for ( int i=8; i > 0; i-- ) {
 				Ws <<= 1;
 				Hs <<= 1;
-				float4[,]	previousLevel = m_inputPixels[i];
-				float4[,]	currentLevel = m_inputPixels[i-1];
+				float4[,]	previousLevel = m_outputPixels[i];
+				float4[,]	currentLevelIn = m_inputPixels[i-1];
+				float4[,]	currentLevelOut = m_outputPixels[i-1];
 
 				for ( uint Y=0; Y < Hs; Y++ ) {
 					for ( uint X=0; X < Ws; X++ ) {
@@ -163,12 +170,12 @@ namespace TestPullPush
 						sum *= normalizer;
 
 						// Blend with existing value
-						float4	currentValue = currentLevel[X,Y];
+						float4	currentValue = currentLevelIn[X,Y];
 						float4	newValue = currentValue + (1.0f - currentValue.w) * sum;
 								newValue.x *= newValue.w;
 								newValue.y *= newValue.w;
 								newValue.z *= newValue.w;
-						currentLevel[X,Y] = newValue;
+						currentLevelOut[X,Y] = newValue;
 					}
 				}
 
@@ -176,13 +183,58 @@ namespace TestPullPush
 				H <<= 1;
 			}
 
-			m_imageRecosntructedOutput.WritePixels( ( uint X, uint Y, ref float4 _color ) => { _color = m_inputPixels[0][X,Y]; } );
+			// Display
+			DisplayResult();
+		}
+
+		float4	Bilerp( float4[,] _values, float _U, float _V ) {
+			int	W = _values.GetLength(0);
+			int	H = _values.GetLength(1);
+			float	x = _U * W;
+			int		X = (int) Math.Floor( x );
+					x -= X;
+			int		Xn = Math.Min( W-1, X+1 );
+			float	y = _V * H;
+			int		Y = (int) Math.Floor( y );
+					y -= Y;
+			int		Yn = Math.Min( H-1, Y+1 );
+
+			float4	V00 = _values[X,Y];
+			float4	V01 = _values[Xn,Y];
+			float4	V10 = _values[X,Yn];
+			float4	V11 = _values[Xn,Yn];
+			float4	V0 = V00 + (V01-V00) * x;
+			float4	V1 = V10 + (V11-V10) * x;
+			float4	V = V0 + (V1 - V0) * y;
+			return V;
+		}
+
+		void	DisplayResult() {
+			uint	W = m_imageInput.Width;
+			uint	H = m_imageInput.Height;
+
+//			m_imageRecosntructedOutput.WritePixels( ( uint X, uint Y, ref float4 _color ) => { _color = m_inputPixels[0][X,Y]; } );
+			float4[,]	source = checkBoxInput.Checked ? m_inputPixels[integerTrackbarControlMipLevel.Value] : m_outputPixels[integerTrackbarControlMipLevel.Value];
+			m_imageRecosntructedOutput.WritePixels( ( uint X, uint Y, ref float4 _color ) => {
+				float	U = (float) X / W;
+				float	V = (float) Y / H;
+				_color = Bilerp( source, U, V );
+//				_color = Bilerp( m_outputPixels[1], U, V );
+			} );
 			panelOutputReconstruction.m_bitmap = m_imageRecosntructedOutput.AsBitmap;
 			panelOutputReconstruction.Refresh();
 		}
 
 		private void floatTrackbarControlGamma_SliderDragStop(Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fStartValue) {
 			ApplyPullPush( _Sender.Value );
+		}
+
+		private void integerTrackbarControlMipLevel_ValueChanged(Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue) {
+			DisplayResult();
+		}
+
+		private void checkBoxInput_CheckedChanged(object sender, EventArgs e) {
+			DisplayResult();
 		}
 	}
 }
