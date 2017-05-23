@@ -29,56 +29,17 @@
 		private void InitializeComponent()
 		{
 			this.components = new System.ComponentModel.Container();
-			this.panelInputImage = new TestPullPush.PanelOutput(this.components);
-			this.panelOutputReconstruction = new TestPullPush.PanelOutput(this.components);
-			this.panelPixelDensity = new TestPullPush.PanelOutput(this.components);
-			this.panelSparseInputImage = new TestPullPush.PanelOutput(this.components);
-			this.floatTrackbarControlGamma = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label1 = new System.Windows.Forms.Label();
-			this.integerTrackbarControlMipLevel = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
 			this.label2 = new System.Windows.Forms.Label();
 			this.checkBoxInput = new System.Windows.Forms.CheckBox();
+			this.integerTrackbarControlMipLevel = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
+			this.floatTrackbarControlGamma = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.panelPixelDensity = new TestPullPush.PanelOutput(this.components);
+			this.panelOutputReconstruction = new TestPullPush.PanelOutput(this.components);
+			this.panelSparseInputImage = new TestPullPush.PanelOutput(this.components);
+			this.panelInputImage = new TestPullPush.PanelOutput(this.components);
+			this.floatTrackbarControlSigma = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.SuspendLayout();
-			// 
-			// panelInputImage
-			// 
-			this.panelInputImage.Location = new System.Drawing.Point(12, 12);
-			this.panelInputImage.Name = "panelInputImage";
-			this.panelInputImage.Size = new System.Drawing.Size(350, 350);
-			this.panelInputImage.TabIndex = 0;
-			// 
-			// panelOutputReconstruction
-			// 
-			this.panelOutputReconstruction.Location = new System.Drawing.Point(724, 12);
-			this.panelOutputReconstruction.Name = "panelOutputReconstruction";
-			this.panelOutputReconstruction.Size = new System.Drawing.Size(350, 350);
-			this.panelOutputReconstruction.TabIndex = 0;
-			// 
-			// panelPixelDensity
-			// 
-			this.panelPixelDensity.Location = new System.Drawing.Point(1080, 12);
-			this.panelPixelDensity.Name = "panelPixelDensity";
-			this.panelPixelDensity.Size = new System.Drawing.Size(350, 350);
-			this.panelPixelDensity.TabIndex = 0;
-			// 
-			// panelSparseInputImage
-			// 
-			this.panelSparseInputImage.Location = new System.Drawing.Point(368, 12);
-			this.panelSparseInputImage.Name = "panelSparseInputImage";
-			this.panelSparseInputImage.Size = new System.Drawing.Size(350, 350);
-			this.panelSparseInputImage.TabIndex = 0;
-			// 
-			// floatTrackbarControlGamma
-			// 
-			this.floatTrackbarControlGamma.Location = new System.Drawing.Point(779, 368);
-			this.floatTrackbarControlGamma.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.floatTrackbarControlGamma.MinimumSize = new System.Drawing.Size(70, 20);
-			this.floatTrackbarControlGamma.Name = "floatTrackbarControlGamma";
-			this.floatTrackbarControlGamma.Size = new System.Drawing.Size(200, 20);
-			this.floatTrackbarControlGamma.TabIndex = 1;
-			this.floatTrackbarControlGamma.Value = 4F;
-			this.floatTrackbarControlGamma.VisibleRangeMax = 16F;
-			this.floatTrackbarControlGamma.SliderDragStop += new Nuaj.Cirrus.Utility.FloatTrackbarControl.SliderDragStopEventHandler(this.floatTrackbarControlGamma_SliderDragStop);
 			// 
 			// label1
 			// 
@@ -88,20 +49,6 @@
 			this.label1.Size = new System.Drawing.Size(52, 13);
 			this.label1.TabIndex = 2;
 			this.label1.Text = "Exponent";
-			// 
-			// integerTrackbarControlMipLevel
-			// 
-			this.integerTrackbarControlMipLevel.Location = new System.Drawing.Point(1010, 368);
-			this.integerTrackbarControlMipLevel.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.integerTrackbarControlMipLevel.MinimumSize = new System.Drawing.Size(70, 20);
-			this.integerTrackbarControlMipLevel.Name = "integerTrackbarControlMipLevel";
-			this.integerTrackbarControlMipLevel.RangeMax = 8;
-			this.integerTrackbarControlMipLevel.RangeMin = 0;
-			this.integerTrackbarControlMipLevel.Size = new System.Drawing.Size(200, 20);
-			this.integerTrackbarControlMipLevel.TabIndex = 3;
-			this.integerTrackbarControlMipLevel.Value = 0;
-			this.integerTrackbarControlMipLevel.VisibleRangeMax = 8;
-			this.integerTrackbarControlMipLevel.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlMipLevel_ValueChanged);
 			// 
 			// label2
 			// 
@@ -123,6 +70,72 @@
 			this.checkBoxInput.UseVisualStyleBackColor = true;
 			this.checkBoxInput.CheckedChanged += new System.EventHandler(this.checkBoxInput_CheckedChanged);
 			// 
+			// integerTrackbarControlMipLevel
+			// 
+			this.integerTrackbarControlMipLevel.Location = new System.Drawing.Point(1010, 368);
+			this.integerTrackbarControlMipLevel.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.integerTrackbarControlMipLevel.MinimumSize = new System.Drawing.Size(70, 20);
+			this.integerTrackbarControlMipLevel.Name = "integerTrackbarControlMipLevel";
+			this.integerTrackbarControlMipLevel.RangeMax = 8;
+			this.integerTrackbarControlMipLevel.RangeMin = 0;
+			this.integerTrackbarControlMipLevel.Size = new System.Drawing.Size(200, 20);
+			this.integerTrackbarControlMipLevel.TabIndex = 3;
+			this.integerTrackbarControlMipLevel.Value = 0;
+			this.integerTrackbarControlMipLevel.VisibleRangeMax = 8;
+			this.integerTrackbarControlMipLevel.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlMipLevel_ValueChanged);
+			// 
+			// floatTrackbarControlGamma
+			// 
+			this.floatTrackbarControlGamma.Location = new System.Drawing.Point(779, 368);
+			this.floatTrackbarControlGamma.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlGamma.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlGamma.Name = "floatTrackbarControlGamma";
+			this.floatTrackbarControlGamma.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlGamma.TabIndex = 1;
+			this.floatTrackbarControlGamma.Value = 4F;
+			this.floatTrackbarControlGamma.VisibleRangeMax = 16F;
+			this.floatTrackbarControlGamma.SliderDragStop += new Nuaj.Cirrus.Utility.FloatTrackbarControl.SliderDragStopEventHandler(this.floatTrackbarControlGamma_SliderDragStop);
+			// 
+			// panelPixelDensity
+			// 
+			this.panelPixelDensity.Location = new System.Drawing.Point(1080, 12);
+			this.panelPixelDensity.Name = "panelPixelDensity";
+			this.panelPixelDensity.Size = new System.Drawing.Size(350, 350);
+			this.panelPixelDensity.TabIndex = 0;
+			// 
+			// panelOutputReconstruction
+			// 
+			this.panelOutputReconstruction.Location = new System.Drawing.Point(724, 12);
+			this.panelOutputReconstruction.Name = "panelOutputReconstruction";
+			this.panelOutputReconstruction.Size = new System.Drawing.Size(350, 350);
+			this.panelOutputReconstruction.TabIndex = 0;
+			// 
+			// panelSparseInputImage
+			// 
+			this.panelSparseInputImage.Location = new System.Drawing.Point(368, 12);
+			this.panelSparseInputImage.Name = "panelSparseInputImage";
+			this.panelSparseInputImage.Size = new System.Drawing.Size(350, 350);
+			this.panelSparseInputImage.TabIndex = 0;
+			// 
+			// panelInputImage
+			// 
+			this.panelInputImage.Location = new System.Drawing.Point(12, 12);
+			this.panelInputImage.Name = "panelInputImage";
+			this.panelInputImage.Size = new System.Drawing.Size(350, 350);
+			this.panelInputImage.TabIndex = 0;
+			// 
+			// floatTrackbarControlSigma
+			// 
+			this.floatTrackbarControlSigma.Location = new System.Drawing.Point(462, 368);
+			this.floatTrackbarControlSigma.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlSigma.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlSigma.Name = "floatTrackbarControlSigma";
+			this.floatTrackbarControlSigma.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlSigma.TabIndex = 1;
+			this.floatTrackbarControlSigma.Value = 4F;
+			this.floatTrackbarControlSigma.VisibleRangeMax = 16F;
+			this.floatTrackbarControlSigma.SliderDragStop += new Nuaj.Cirrus.Utility.FloatTrackbarControl.SliderDragStopEventHandler(this.floatTrackbarControlGamma_SliderDragStop);
+			// 
 			// Form1
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -132,6 +145,7 @@
 			this.Controls.Add(this.integerTrackbarControlMipLevel);
 			this.Controls.Add(this.label2);
 			this.Controls.Add(this.label1);
+			this.Controls.Add(this.floatTrackbarControlSigma);
 			this.Controls.Add(this.floatTrackbarControlGamma);
 			this.Controls.Add(this.panelPixelDensity);
 			this.Controls.Add(this.panelOutputReconstruction);
@@ -157,6 +171,7 @@
 		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlMipLevel;
 		private System.Windows.Forms.Label label2;
 		private System.Windows.Forms.CheckBox checkBoxInput;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlSigma;
 	}
 }
 
