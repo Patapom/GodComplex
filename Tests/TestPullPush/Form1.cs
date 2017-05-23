@@ -226,61 +226,90 @@ namespace TestPullPush
 
 			// ========= PULL ========= 
 			// Build all mips up to 1x1
+
+			// ---- Start by a unique gaussian filtering ----
+
+			// Build gaussian kernel
+			float	sigma = floatTrackbarControlSigma.Value;
+			int		kernelSize = (int) Math.Ceiling( 3.0f * sigma );
+			float[]	kernelValuesD = new float[1+kernelSize];
+			for ( int j=0; j <= kernelSize; j++ )
+				kernelValuesD[j] = (float) Math.Exp( -j*j / (2.0 * sigma * sigma) ) / (float) Math.Sqrt( 2.0 * Math.PI * sigma * sigma );
+
+			// Apply horizontal filtering
+			float4[,]	temp = new float4[W,H];
+			for ( uint Y=0; Y < H; Y++ ) {
+				for ( uint X=0; X < W; X++ ) {
+
+					// Apply filtering kernel
+					float4	sum = float4.Zero;
+					for ( int dX=-kernelSize; dX <= kernelSize; dX++ ) {
+						int	kX = (int) X + dX;
+						if ( kX < 0 || kX >= W )
+							continue;
+
+						float4	V = m_sparsePixels[kX,Y];
+						sum += kernelValuesD[Math.Abs( dX )] * V;
+					}
+
+// 					float	ratio = sum.w > 0.0f ? 1.0f / sum.w : 0.0f;
+// 					sum.x *= ratio;
+// 					sum.y *= ratio;
+// 					sum.z *= ratio;
+					temp[X,Y] = sum;
+				}
+			}
+
+			// Apply vertical filtering
+			for ( uint Y=0; Y < H; Y++ ) {
+				for ( uint X=0; X < W; X++ ) {
+
+					// Apply filtering kernel
+					float4	sum = float4.Zero;
+					for ( int dY=-kernelSize; dY <= kernelSize; dY++ ) {
+						int	kY = (int) Y + dY;
+						if ( kY < 0 || kY >= H )
+							continue;
+
+						float4	V = temp[X,kY];
+						sum += kernelValuesD[Math.Abs( dY )] * V;
+					}
+
+					float	ratio = sum.w > 0.0f ? 1.0f / sum.w : 0.0f;
+					float	clampedWeight = 1.0f - (float) Math.Pow( Math.Max( 0.0f, 1.0f - sum.w ), _gamma );
+					float	normalizer = sum.w > 0.0f ? clampedWeight / sum.w : 0.0f;
+					sum.x *= normalizer;
+					sum.y *= normalizer;
+					sum.z *= normalizer;
+
+//					sum *= ratio;
+					m_inputPixels[0][X,Y] = sum;
+				}
+			}
+
+
+			// ---- Generate simple mips by averaging 4 pixels ----
 			uint	Ws = W;
 			uint	Hs = H;
 			for ( int i=1; i < 9; i++ ) {
 				Ws >>= 1;
 				Hs >>= 1;
 				float4[,]	previousLevel = m_inputPixels[i-1];
-				float4[,]	currentLevel = new float4[Ws,Hs];
-				m_inputPixels[i] = currentLevel;
-
-				// Build gaussian kernel
-				float	sigma = (float) Math.Pow( 2.0f, 1-i ) * _gamma;
-				int		kernelSize = (int) Math.Ceiling( 2.0f * sigma );
-				float[]	kernelValuesD = new float[1+kernelSize];
-				for ( int j=0; j <= kernelSize; j++ )
-					kernelValuesD[j] = (float) Math.Exp( -j*j / (2.0 * sigma * sigma) ) / (float) Math.Sqrt( 2.0 * Math.PI * sigma * sigma );
-
-				// Apply horizontal filtering
-				float4[,]	temp = new float4[Ws,H];
-				for ( uint Y=0; Y < H; Y++ ) {
-					for ( uint X=0; X < Ws; X++ ) {
-
-						// Apply filtering kernel
-						float4	sum = float4.Zero;
-						for ( int dX=-kernelSize; dX <= kernelSize; dX++ ) {
-							int	kX = (int) (2*X) + dX;
-							if ( kX < 0 || kX >= W )
-								continue;
-
-							float4	V = previousLevel[kX,Y];
-							sum += kernelValuesD[Math.Abs( dX )] * V;
-						}
-
-						float	ratio = sum.w > 0.0f ? 1.0f / sum.w : 0.0f;
-						sum *= ratio;
-						temp[X,Y] = sum;
-					}
-				}
-
-				// Apply vertical filtering
+				float4[,]	currentLevel = m_inputPixels[i];
 				for ( uint Y=0; Y < Hs; Y++ ) {
+					uint	Yp = Y << 1;
 					for ( uint X=0; X < Ws; X++ ) {
-
-						// Apply filtering kernel
-						float4	sum = float4.Zero;
-						for ( int dY=-kernelSize; dY <= kernelSize; dY++ ) {
-							int	kY = (int) (2*Y) + dY;
-							if ( kY < 0 || kY >= H )
-								continue;
-
-							float4	V = temp[X,kY];
-							sum += kernelValuesD[Math.Abs( dY )] * V;
-						}
-
-						float	ratio = sum.w > 0.0f ? 1.0f / sum.w : 0.0f;
-						sum *= ratio;
+						uint	Xp = X << 1;
+// 						float4	sum = 0.25f * (previousLevel[Xp,Yp] + previousLevel[Xp+1,Yp] + previousLevel[Xp,Yp+1] + previousLevel[Xp+1,Yp+1]);
+						float4	V00 = Bilerp( previousLevel, (X-0.5f) / Ws, (Y-0.5f) / Hs );
+						float4	V01 = Bilerp( previousLevel, (X+0.5f) / Ws, (Y-0.5f) / Hs );
+						float4	V10 = Bilerp( previousLevel, (X-0.5f) / Ws, (Y+0.5f) / Hs );
+						float4	V11 = Bilerp( previousLevel, (X+0.5f) / Ws, (Y+0.5f) / Hs );
+						float4	sum = 0.25f * (V00 + V01 + V10 + V11);
+// 						float	ratio = sum.w > 0.0f ? 1.0f / sum.w : 0.0f;
+// 								sum.x *= ratio;
+// 								sum.y *= ratio;
+// 								sum.z *= ratio;
 						currentLevel[X,Y] = sum;
 					}
 				}
@@ -346,11 +375,11 @@ namespace TestPullPush
 		float4	Bilerp( float4[,] _values, float _U, float _V ) {
 			int	W = _values.GetLength(0);
 			int	H = _values.GetLength(1);
-			float	x = _U * W;
+			float	x = Math.Max( 0, _U * W );
 			int		X = (int) Math.Floor( x );
 					x -= X;
 			int		Xn = Math.Min( W-1, X+1 );
-			float	y = _V * H;
+			float	y = Math.Max( 0, _V * H );
 			int		Y = (int) Math.Floor( y );
 					y -= Y;
 			int		Yn = Math.Min( H-1, Y+1 );
@@ -384,7 +413,7 @@ namespace TestPullPush
 			m_imageDensity.WritePixels( ( uint X, uint Y, ref float4 _color ) => {
 				float	U = (float) X / W;
 				float	V = (float) Y / H;
-				float4	temp = Bilerp( source, U, V );
+				float4	temp = 10.0f *  Bilerp( source, U, V );
 				_color.Set( temp.w, temp.w, temp.w, 1.0f );
 			} );
 			panelPixelDensity.m_bitmap = m_imageDensity.AsBitmap;
