@@ -523,128 +523,80 @@ Array.Copy( m_inputPixels[MAX_MIP], m_outputPixels[MAX_MIP], W*H );
 			uint	W = m_imageInput.Width;
 			uint	H = m_imageInput.Height;
 
-			float	sigma = floatTrackbarControlSigma.Value;
-			int		kernelHalfSize = (int) Math.Ceiling( 2.0f * sigma );
-			int		kernelSize = 1 + 2 * kernelHalfSize;
-			float[,]	kernelValues = new float[kernelSize,kernelSize];
-			for ( int Y=-kernelHalfSize; Y <= kernelHalfSize; Y++ )
-				for ( int X=-kernelHalfSize; X <= kernelHalfSize; X++ )
-					kernelValues[kernelHalfSize+X,kernelHalfSize+Y] = (float) (Math.Exp( -(X*X + Y*Y) / (2 * sigma * sigma) ) / (2.0 * Math.PI * sigma * sigma) );
-
-// 			int			kernelHalfSize = 2;
-// 			float[,]	kernelValues = new float[5,5] {
-// 				{ 1 / 273.0f, 4 / 273.0f, 7 / 273.0f, 4 / 273.0f, 1 / 273.0f },
-// 				{ 4 / 273.0f, 16 / 273.0f, 26 / 273.0f, 16 / 273.0f, 4 / 273.0f },
-// 				{ 7 / 273.0f, 26 / 273.0f, 41 / 273.0f, 26 / 273.0f, 7 / 273.0f },
-// 				{ 4 / 273.0f, 16 / 273.0f, 26 / 273.0f, 16 / 273.0f, 4 / 273.0f },
-// 				{ 1 / 273.0f, 4 / 273.0f, 7 / 273.0f, 4 / 273.0f, 1 / 273.0f },
-// 			};
-
-
-			// Initialize source pixels at mip 0
+			// Initialize distance field and pixel indices
+			float[][,]	distances = new float[2][,] {
+				new float[W,H], new float[W,H]
+			};
+			uint[][,]	pixelIndex = new uint[2][,] {
+				new uint[W,H], new uint[W,H]
+			};
 			for ( uint Y=0; Y < H; Y++ )
-				for ( uint X=0; X < W; X++ )
-					m_inputPixels[0][X,Y] = m_sparsePixels[X,Y];
-
-			// ========= PULL ========= 
-			// Build all mips up to 1x1
-const int	MAX_MIP = 8;
-
-			uint	Ws = W;
-			uint	Hs = H;
-			for ( int i=1; i <= MAX_MIP; i++ ) {
-				Ws >>= 1;
-				Hs >>= 1;
-				float4[,]	previousLevel = m_inputPixels[i-1];
-				float4[,]	currentLevel = new float4[Ws,Hs];
-				m_inputPixels[i] = currentLevel;
-
-				for ( uint Y=0; Y < Hs; Y++ ) {
-					for ( uint X=0; X < Ws; X++ ) {
-
-						// Apply filtering kernel
-						float4	sum = float4.Zero;
-						for ( int dY=-kernelHalfSize; dY <= kernelHalfSize; dY++ ) {
-							int	kY = (int) (2*Y) + dY;
-							if ( kY < 0 || kY >= H )
-								continue;
-							for ( int dX=-kernelHalfSize; dX <= kernelHalfSize; dX++ ) {
-								int	kX = (int) (2*X) + dX;
-								if ( kX < 0 || kX >= W )
-									continue;
-
-								float4	V = previousLevel[kX,kY];
-								float	kernel = kernelValues[kernelHalfSize+dX,kernelHalfSize+dY];
-								sum += kernel * V;
-							}
-						}
-
-						// Normalize filtered result
-//						float	clampedWeight = Math.Min( 1.0f, sum.w );
-						float	clampedWeight = 1.0f - (float) Math.Pow( Math.Max( 0.0f, 1.0f - sum.w ), _gamma );
-
-//clampedWeight = 1.0f;
-
-						float	ratio = sum.w > 0.0f ? clampedWeight / sum.w : 0.0f;
-						sum *= ratio;
-						currentLevel[X,Y] = sum;
+				for ( uint X=0; X < W; X++ ) {
+					if ( m_sparsePixels[X,Y].w > 0.5f ) {
+						distances[0][X,Y] = 0.0f;
+						pixelIndex[0][X,Y] = W*Y+X;
+					} else {
+						distances[0][X,Y] = float.PositiveInfinity;
+						pixelIndex[0][X,Y] = ~0U;
 					}
 				}
 
-				W >>= 1;
-				H >>= 1;
+			//////////////////////////////////////////////////////////////////////////
+			// Compute distance field
+			const int	S = 256;
+
+			// Horizontal spread
+			for ( uint Y=0; Y < H; Y++ ) {
+				for ( uint X=0; X < W; X++ ) {
+					float	minDistance = distances[0][X,Y];
+					uint	minPixelIndex = pixelIndex[0][X,Y];
+					for ( int dX=-S; dX <= S; dX++ ) {
+						int	kX = (int) X + dX;
+						if ( kX < 0 || kX >= W )
+							continue;
+
+						float	currentDistance = distances[0][kX,Y] + Math.Abs( dX );
+						if ( currentDistance < minDistance ) {
+							minDistance = currentDistance;
+							minPixelIndex = pixelIndex[0][kX,Y];
+						}
+					}
+					distances[1][X,Y] = minDistance;
+					pixelIndex[1][X,Y] = minPixelIndex;
+				}
 			}
 
-Array.Copy( m_inputPixels[MAX_MIP], m_outputPixels[MAX_MIP], W*H );
+			// Vertical spread
+			for ( uint Y=0; Y < H; Y++ ) {
+				for ( uint X=0; X < W; X++ ) {
+					float	minSqDistance = distances[1][X,Y];
+							minSqDistance *= minSqDistance;
+					uint	minPixelIndex = pixelIndex[1][X,Y];
+					for ( int dY=-S; dY <= S; dY++ ) {
+						int	kY = (int) Y + dY;
+						if ( kY < 0 || kY >= H )
+							continue;
 
-			// ========= PUSH ========= 
-			// Build all mips back to finest level by re-using lower mip values
-			for ( int i=MAX_MIP; i > 0; i-- ) {
-				Ws <<= 1;
-				Hs <<= 1;
-				float4[,]	previousLevel = m_outputPixels[i];
-				float4[,]	currentLevelIn = m_inputPixels[i-1];
-				float4[,]	currentLevelOut = m_outputPixels[i-1];
-
-				for ( uint Y=0; Y < Hs; Y++ ) {
-					for ( uint X=0; X < Ws; X++ ) {
-
-						// Apply filtering kernel
-// 						float4	sum = float4.Zero;
-// 						for ( int dY=-kernelHalfSize; dY <= kernelHalfSize; dY++ ) {
-// 							int	kY = (int) (Y>>1) + dY;
-// 							if ( kY < 0 || kY >= H )
-// 								continue;
-// 							for ( int dX=-kernelHalfSize; dX <= kernelHalfSize; dX++ ) {
-// 								int	kX = (int) (X>>1) + dX;
-// 								if ( kX < 0 || kX >= W )
-// 									continue;
-// 
-// 								float4	V = previousLevel[kX,kY];
-// 								float	kernel = kernelValues[kernelHalfSize+dX,kernelHalfSize+dY];
-// 								sum += kernel * V;
-// 							}
-// 						}
-
-						float4	sum = Bilerp( previousLevel, (X+0.5f) / Ws, (Y+0.5f) / Hs );
-
-						// Normalize filtered result
-						float	clampedWeight = Math.Min( 1.0f, sum.w );
-						float	normalizer = sum.w > 0.0f ? 1.0f / clampedWeight : 0.0f;
-						sum *= normalizer;
-
-						// Blend with existing value
-						float4	currentValue = currentLevelIn[X,Y];
-						float4	newValue = currentValue + (1.0f - currentValue.w) * sum;
-								newValue.x *= newValue.w;
-								newValue.y *= newValue.w;
-								newValue.z *= newValue.w;
-						currentLevelOut[X,Y] = newValue;
+						float	currentSqDistance = distances[1][X,kY];
+								currentSqDistance *= currentSqDistance;
+								currentSqDistance += dY*dY;
+						if ( currentSqDistance < minSqDistance ) {
+							minSqDistance = currentSqDistance;
+							minPixelIndex = pixelIndex[1][X,kY];
+						}
 					}
+					distances[0][X,Y] = (float) Math.Sqrt( minSqDistance );
+					pixelIndex[0][X,Y] = minPixelIndex;
 				}
+			}
 
-				W <<= 1;
-				H <<= 1;
+			for ( uint Y=0; Y < H; Y++ ) {
+				for ( uint X=0; X < W; X++ ) {
+					uint	i = pixelIndex[0][X,Y];
+					float4	value = i < W*H ? m_imageSparseInput[i%W,i/W] : float4.Zero;
+					float	distance = 0.05f * distances[0][X,Y];
+					m_outputPixels[0][X,Y].Set( value.x, value.y, value.z, 1.0f + distance );
+				}
 			}
 
 			// Display
@@ -695,6 +647,7 @@ Array.Copy( m_inputPixels[MAX_MIP], m_outputPixels[MAX_MIP], W*H );
 				float	U = (float) X / W;
 				float	V = (float) Y / H;
 				float4	temp = 1.0f *  Bilerp( source, U, V );
+						temp.w -= 1.0f;
 				_color.Set( temp.w, temp.w, temp.w, 1.0f );
 			} );
 			panelPixelDensity.m_bitmap = m_imageDensity.AsBitmap;
