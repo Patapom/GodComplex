@@ -518,84 +518,156 @@ Array.Copy( m_inputPixels[MAX_MIP], m_outputPixels[MAX_MIP], W*H );
 
 		#region Expand Input Influence with a Distance Field + Renormalize
 
+		struct uint4 {
+			public uint	x, y, z, w;
+		}
+		struct distancePixel {
+			public uint4	pixelIndices;
+			public uint4	sqDistances;	// Cached square distances to closest probes
+			public void		Update( uint _X, uint _Y, distancePixel _neighborDistances ) {
+				uint	neighborDistance = SquareDistance( _X, _Y, _neighborDistances.pixelIndices.x );
+				Insert( neighborDistance, _neighborDistances.pixelIndices.x );
+				neighborDistance = SquareDistance( _X, _Y, _neighborDistances.pixelIndices.y );
+				Insert( neighborDistance, _neighborDistances.pixelIndices.y );
+				neighborDistance = SquareDistance( _X, _Y, _neighborDistances.pixelIndices.z );
+				Insert( neighborDistance, _neighborDistances.pixelIndices.z );
+				neighborDistance = SquareDistance( _X, _Y, _neighborDistances.pixelIndices.w );
+				Insert( neighborDistance, _neighborDistances.pixelIndices.w );
+			}
+			public uint	SquareDistance( uint _X, uint _Y, uint _pixelIndex ) {
+				if ( _pixelIndex == ~0U )
+					return uint.MaxValue;
+
+				int	otherX = (int) (_pixelIndex & 0xFF);
+				int	otherY = (int) (_pixelIndex >> 8);
+				int	Dx = (int) _X - otherX;
+				int	Dy = (int) _Y - otherY;
+				return (uint) (Dx*Dx + Dy*Dy);
+			}
+			void Insert( uint _sqDistance, uint _pixelIndex ) {
+				if ( _sqDistance < sqDistances.x ) {
+					sqDistances.w = sqDistances.z;
+					sqDistances.z = sqDistances.y;
+					sqDistances.y = sqDistances.x;
+					sqDistances.x = _sqDistance;
+					pixelIndices.w = pixelIndices.z;
+					pixelIndices.z = pixelIndices.y;
+					pixelIndices.y = pixelIndices.x;
+					pixelIndices.x = _pixelIndex;
+				} else if ( _sqDistance < sqDistances.y ) {
+					sqDistances.w = sqDistances.z;
+					sqDistances.z = sqDistances.y;
+					sqDistances.y = _sqDistance;
+					pixelIndices.w = pixelIndices.z;
+					pixelIndices.z = pixelIndices.y;
+					pixelIndices.y = _pixelIndex;
+				} else if ( _sqDistance < sqDistances.z ) {
+					sqDistances.w = sqDistances.z;
+					sqDistances.z = _sqDistance;
+					pixelIndices.w = pixelIndices.z;
+					pixelIndices.z = _pixelIndex;
+				} else if ( _sqDistance < sqDistances.w ) {
+					sqDistances.w = _sqDistance;
+					pixelIndices.w = _pixelIndex;
+				}
+			}
+		}
+
 		// I'm trying to expand the inut filtering range to avoid sharp patterns here
 		void	ApplyPullPush_DistanceField( float _gamma ) {
 			uint	W = m_imageInput.Width;
 			uint	H = m_imageInput.Height;
 
 			// Initialize distance field and pixel indices
-			float[][,]	distances = new float[2][,] {
-				new float[W,H], new float[W,H]
-			};
-			uint[][,]	pixelIndex = new uint[2][,] {
-				new uint[W,H], new uint[W,H]
+			distancePixel[][,]	distanceFields = new distancePixel[2][,] {
+				new distancePixel[W,H], new distancePixel[W,H]
 			};
 			for ( uint Y=0; Y < H; Y++ )
 				for ( uint X=0; X < W; X++ ) {
+					distanceFields[0][X,Y].sqDistances.x = uint.MaxValue;
+					distanceFields[0][X,Y].sqDistances.y = uint.MaxValue;
+					distanceFields[0][X,Y].sqDistances.z = uint.MaxValue;
+					distanceFields[0][X,Y].sqDistances.w = uint.MaxValue;
+					distanceFields[0][X,Y].pixelIndices.x = ~0U;
+					distanceFields[0][X,Y].pixelIndices.y = ~0U;
+					distanceFields[0][X,Y].pixelIndices.z = ~0U;
+					distanceFields[0][X,Y].pixelIndices.w = ~0U;
 					if ( m_sparsePixels[X,Y].w > 0.5f ) {
-						distances[0][X,Y] = 0.0f;
-						pixelIndex[0][X,Y] = W*Y+X;
-					} else {
-						distances[0][X,Y] = float.PositiveInfinity;
-						pixelIndex[0][X,Y] = ~0U;
+						distanceFields[0][X,Y].sqDistances.x = 0;
+						distanceFields[0][X,Y].pixelIndices.x = W*Y+X;
 					}
 				}
 
+
 			//////////////////////////////////////////////////////////////////////////
 			// Compute distance field
-			const int	S = 256;
+			const int	S = 64;
 
 			// Horizontal spread
 			for ( uint Y=0; Y < H; Y++ ) {
 				for ( uint X=0; X < W; X++ ) {
-					float	minDistance = distances[0][X,Y];
-					uint	minPixelIndex = pixelIndex[0][X,Y];
+					distancePixel	minDistance = distanceFields[0][X,Y];
 					for ( int dX=-S; dX <= S; dX++ ) {
-						int	kX = (int) X + dX;
-						if ( kX < 0 || kX >= W )
-							continue;
-
-						float	currentDistance = distances[0][kX,Y] + Math.Abs( dX );
-						if ( currentDistance < minDistance ) {
-							minDistance = currentDistance;
-							minPixelIndex = pixelIndex[0][kX,Y];
+						if ( dX != 0 ) {
+							int	kX = (int) X + dX;
+							if ( kX >= 0 && kX < W )
+								minDistance.Update( X, Y, distanceFields[0][kX,Y] );
 						}
 					}
-					distances[1][X,Y] = minDistance;
-					pixelIndex[1][X,Y] = minPixelIndex;
+					distanceFields[1][X,Y] = minDistance;
 				}
 			}
 
 			// Vertical spread
 			for ( uint Y=0; Y < H; Y++ ) {
 				for ( uint X=0; X < W; X++ ) {
-					float	minSqDistance = distances[1][X,Y];
-							minSqDistance *= minSqDistance;
-					uint	minPixelIndex = pixelIndex[1][X,Y];
+					distancePixel	minDistance = distanceFields[1][X,Y];
 					for ( int dY=-S; dY <= S; dY++ ) {
-						int	kY = (int) Y + dY;
-						if ( kY < 0 || kY >= H )
-							continue;
-
-						float	currentSqDistance = distances[1][X,kY];
-								currentSqDistance *= currentSqDistance;
-								currentSqDistance += dY*dY;
-						if ( currentSqDistance < minSqDistance ) {
-							minSqDistance = currentSqDistance;
-							minPixelIndex = pixelIndex[1][X,kY];
+						if ( dY != 0 ) {
+							int	kY = (int) Y + dY;
+							if ( kY >= 0 && kY < H )
+								minDistance.Update( X, Y, distanceFields[1][X,kY] );
 						}
 					}
-					distances[0][X,Y] = (float) Math.Sqrt( minSqDistance );
-					pixelIndex[0][X,Y] = minPixelIndex;
+					distanceFields[0][X,Y] = minDistance;
 				}
 			}
 
 			for ( uint Y=0; Y < H; Y++ ) {
 				for ( uint X=0; X < W; X++ ) {
-					uint	i = pixelIndex[0][X,Y];
-					float4	value = i < W*H ? m_imageSparseInput[i%W,i/W] : float4.Zero;
-					float	distance = 0.05f * distances[0][X,Y];
-					m_outputPixels[0][X,Y].Set( value.x, value.y, value.z, 1.0f + distance );
+					distancePixel	distances = distanceFields[0][X,Y];
+// 					uint	pixelIndex = distances.pixelIndices.x;
+// 					float4	value = pixelIndex < W*H ? m_imageSparseInput[pixelIndex%W,pixelIndex/W] : float4.Zero;
+// 					float	distance = 0.05f * (float) Math.Sqrt( distances.SquareDistance( X, Y, pixelIndex ) );
+// 					m_outputPixels[0][X,Y].Set( value.x, value.y, value.z, distance );
+
+					// Try a mixing of the weights
+					uint	pixelIndex = distances.pixelIndices.x;
+					float4	value0 = pixelIndex < W*H ? m_imageSparseInput[pixelIndex%W,pixelIndex/W] : float4.Zero;
+					float	distance0 = (float) Math.Sqrt( distances.SquareDistance( X, Y, pixelIndex ) );
+					pixelIndex = distances.pixelIndices.y;
+					float4	value1 = pixelIndex < W*H ? m_imageSparseInput[pixelIndex%W,pixelIndex/W] : float4.Zero;
+					float	distance1 = (float) Math.Sqrt( distances.SquareDistance( X, Y, pixelIndex ) );
+					pixelIndex = distances.pixelIndices.z;
+					float4	value2 = pixelIndex < W*H ? m_imageSparseInput[pixelIndex%W,pixelIndex/W] : float4.Zero;
+					float	distance2 = (float) Math.Sqrt( distances.SquareDistance( X, Y, pixelIndex ) );
+					pixelIndex = distances.pixelIndices.w;
+					float4	value3 = pixelIndex < W*H ? m_imageSparseInput[pixelIndex%W,pixelIndex/W] : float4.Zero;
+					float	distance3 = (float) Math.Sqrt( distances.SquareDistance( X, Y, pixelIndex ) );
+
+					float	weight0 = 1.0f;
+					float	weight1 = distance0 / distance1;
+					float	weight2 = distance0 / distance2;
+					float	weight3 = distance0 / distance3;
+					float	recSumWeights = 1.0f / (weight0 + weight1 + weight2 + weight3);
+							weight0 *= recSumWeights;
+							weight1 *= recSumWeights;
+							weight2 *= recSumWeights;
+							weight3 *= recSumWeights;
+
+					float4	value = weight0 * value0 + weight1 * value1 + weight2 * value2 + weight3 * value3;
+					float	distance = 0.03f * (weight0 * distance0 + weight1 * distance1 + weight2 * distance2 + weight3 * distance3);
+					m_outputPixels[0][X,Y].Set( value.x, value.y, value.z, distance );
 				}
 			}
 
@@ -637,6 +709,7 @@ Array.Copy( m_inputPixels[MAX_MIP], m_outputPixels[MAX_MIP], W*H );
 				float	U = (float) X / W;
 				float	V = (float) Y / H;
 				_color = Bilerp( source, U, V );
+				_color.w = 1.0f;
 //				_color = Bilerp( m_outputPixels[1], U, V );
 			} );
 			panelOutputReconstruction.m_bitmap = m_imageReconstructedOutput.AsBitmap;
@@ -647,7 +720,6 @@ Array.Copy( m_inputPixels[MAX_MIP], m_outputPixels[MAX_MIP], W*H );
 				float	U = (float) X / W;
 				float	V = (float) Y / H;
 				float4	temp = 1.0f *  Bilerp( source, U, V );
-						temp.w -= 1.0f;
 				_color.Set( temp.w, temp.w, temp.w, 1.0f );
 			} );
 			panelPixelDensity.m_bitmap = m_imageDensity.AsBitmap;
