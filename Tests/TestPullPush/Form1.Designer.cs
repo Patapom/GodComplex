@@ -109,6 +109,7 @@
 			this.panelOutputReconstruction.Name = "panelOutputReconstruction";
 			this.panelOutputReconstruction.Size = new System.Drawing.Size(350, 350);
 			this.panelOutputReconstruction.TabIndex = 0;
+			this.panelOutputReconstruction.MouseDown += new System.Windows.Forms.MouseEventHandler(this.panelOutputReconstruction_MouseDown);
 			// 
 			// panelSparseInputImage
 			// 

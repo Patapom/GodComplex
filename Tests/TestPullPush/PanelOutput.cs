@@ -11,6 +11,7 @@ namespace TestPullPush
 {
 	public partial class PanelOutput : Panel {
 		public Bitmap	m_bitmap = null;
+		public bool		m_paintBackground = false;
 
 		public PanelOutput() {
 			InitializeComponent();
@@ -119,7 +120,8 @@ namespace TestPullPush
 
 		protected override void OnPaintBackground( PaintEventArgs e ) {
 //			base.OnPaintBackground( e );
-			e.Graphics.FillRectangle( Brushes.Black, 0, 0, Width, Height );
+			if ( m_paintBackground )
+				e.Graphics.FillRectangle( Brushes.Black, 0, 0, Width, Height );
 		}
 
 		protected override void OnPaint( PaintEventArgs e ) {

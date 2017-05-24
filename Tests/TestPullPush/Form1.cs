@@ -1,4 +1,6 @@
-﻿using System;
+﻿#define BISOU
+
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -39,21 +41,36 @@ namespace TestPullPush
 			m_imageSparseInput.Clear( float4.UnitW );
 
 			m_sparsePixels = new float4[W,H];
-			m_imageInput.ReadPixels( ( uint X, uint Y, ref float4 _color ) => { m_sparsePixels[X,Y] = _color; } );
-			for ( uint Y=0; Y < H; Y++ ) {
-				float	fY = 2.0f * Y / H - 1.0f;
-				for ( uint X=0; X < W; X++ ) {
-					float	fX = 2.0f * X / W - 1.0f;
-					float	gauss = (float) Math.Exp( -5.0f * (fX*fX + fY*fY) );
-					float	weight = SimpleRNG.GetUniform() < gauss ? 1.0f : 0.0f;
-					m_sparsePixels[X,Y].x *= weight;
-					m_sparsePixels[X,Y].y *= weight;
-					m_sparsePixels[X,Y].z *= weight;
-					m_sparsePixels[X,Y].w *= weight;
-				}
-			}
+// 			m_imageInput.ReadPixels( ( uint X, uint Y, ref float4 _color ) => { m_sparsePixels[X,Y] = _color; } );
+// 			for ( uint Y=0; Y < H; Y++ ) {
+// 				float	fY = 2.0f * Y / H - 1.0f;
+// 				for ( uint X=0; X < W; X++ ) {
+// 					float	fX = 2.0f * X / W - 1.0f;
+// 					float	gauss = (float) Math.Exp( -5.0f * (fX*fX + fY*fY) );
+// 					float	weight = SimpleRNG.GetUniform() < gauss ? 1.0f : 0.0f;
+// 					m_sparsePixels[X,Y].x *= weight;
+// 					m_sparsePixels[X,Y].y *= weight;
+// 					m_sparsePixels[X,Y].z *= weight;
+// 					m_sparsePixels[X,Y].w *= weight;
+// 				}
+// 			}
+
+// Triangle test
+// m_sparsePixels[100, 50] = new float4( 1, 0, 0, 1.0f );
+// m_sparsePixels[50, 160] = new float4( 1, 1, 0, 1.0f );
+// m_sparsePixels[200, 128] = new float4( 0, 1, 1, 1.0f );
+
+for ( int i=0; i < 20; i++ ) {
+	int	X = (int) (128 + 80 * Math.Cos( 2.0 * Math.PI * i / 20 ));
+	int	Y = (int) (128 + 80 * Math.Sin( 2.0 * Math.PI * i / 20 ));
+	m_sparsePixels[X,Y] = new float4( 0.25f + 0.75f * (float) SimpleRNG.GetUniform(), 0.25f + 0.75f * (float) SimpleRNG.GetUniform(), 0.25f + 0.75f * (float) SimpleRNG.GetUniform(), 1.0f );
+}
+
 
 			m_imageSparseInput.WritePixels( ( uint X, uint Y, ref float4 _color ) => { _color = m_sparsePixels[X,Y]; } );
+
+
+			panelSparseInputImage.m_paintBackground = true;
 			panelSparseInputImage.m_bitmap = m_imageSparseInput.AsBitmap;
 
 			//////////////////////////////////////////////////////////////////////////
@@ -64,6 +81,7 @@ namespace TestPullPush
 				m_inputPixels[mipLevel] = new float4[W >> mipLevel, H >> mipLevel];
 				m_outputPixels[mipLevel] = new float4[W >> mipLevel, H >> mipLevel];
 			}
+			PreComputeDistanceField();
 			ApplyPullPush( floatTrackbarControlGamma.Value );
 		}
 
@@ -574,68 +592,73 @@ Array.Copy( m_inputPixels[MAX_MIP], m_outputPixels[MAX_MIP], W*H );
 		}
 
 		// I'm trying to expand the inut filtering range to avoid sharp patterns here
-		void	ApplyPullPush_DistanceField( float _gamma ) {
+		distancePixel[][,]	m_distanceFields = new distancePixel[2][,];
+		void	PreComputeDistanceField() {
 			uint	W = m_imageInput.Width;
 			uint	H = m_imageInput.Height;
 
 			// Initialize distance field and pixel indices
-			distancePixel[][,]	distanceFields = new distancePixel[2][,] {
-				new distancePixel[W,H], new distancePixel[W,H]
-			};
+			m_distanceFields[0] = new distancePixel[W,H];
+			m_distanceFields[1] = new distancePixel[W,H];
 			for ( uint Y=0; Y < H; Y++ )
 				for ( uint X=0; X < W; X++ ) {
-					distanceFields[0][X,Y].sqDistances.x = uint.MaxValue;
-					distanceFields[0][X,Y].sqDistances.y = uint.MaxValue;
-					distanceFields[0][X,Y].sqDistances.z = uint.MaxValue;
-					distanceFields[0][X,Y].sqDistances.w = uint.MaxValue;
-					distanceFields[0][X,Y].pixelIndices.x = ~0U;
-					distanceFields[0][X,Y].pixelIndices.y = ~0U;
-					distanceFields[0][X,Y].pixelIndices.z = ~0U;
-					distanceFields[0][X,Y].pixelIndices.w = ~0U;
+					m_distanceFields[0][X,Y].sqDistances.x = uint.MaxValue;
+					m_distanceFields[0][X,Y].sqDistances.y = uint.MaxValue;
+					m_distanceFields[0][X,Y].sqDistances.z = uint.MaxValue;
+					m_distanceFields[0][X,Y].sqDistances.w = uint.MaxValue;
+					m_distanceFields[0][X,Y].pixelIndices.x = ~0U;
+					m_distanceFields[0][X,Y].pixelIndices.y = ~0U;
+					m_distanceFields[0][X,Y].pixelIndices.z = ~0U;
+					m_distanceFields[0][X,Y].pixelIndices.w = ~0U;
 					if ( m_sparsePixels[X,Y].w > 0.5f ) {
-						distanceFields[0][X,Y].sqDistances.x = 0;
-						distanceFields[0][X,Y].pixelIndices.x = W*Y+X;
+						m_distanceFields[0][X,Y].sqDistances.x = 0;
+						m_distanceFields[0][X,Y].pixelIndices.x = W*Y+X;
 					}
 				}
 
 
 			//////////////////////////////////////////////////////////////////////////
 			// Compute distance field
-			const int	S = 64;
+			const int	S = 256;
 
 			// Horizontal spread
 			for ( uint Y=0; Y < H; Y++ ) {
 				for ( uint X=0; X < W; X++ ) {
-					distancePixel	minDistance = distanceFields[0][X,Y];
+					distancePixel	minDistance = m_distanceFields[0][X,Y];
 					for ( int dX=-S; dX <= S; dX++ ) {
 						if ( dX != 0 ) {
 							int	kX = (int) X + dX;
 							if ( kX >= 0 && kX < W )
-								minDistance.Update( X, Y, distanceFields[0][kX,Y] );
+								minDistance.Update( X, Y, m_distanceFields[0][kX,Y] );
 						}
 					}
-					distanceFields[1][X,Y] = minDistance;
+					m_distanceFields[1][X,Y] = minDistance;
 				}
 			}
 
 			// Vertical spread
 			for ( uint Y=0; Y < H; Y++ ) {
 				for ( uint X=0; X < W; X++ ) {
-					distancePixel	minDistance = distanceFields[1][X,Y];
+					distancePixel	minDistance = m_distanceFields[1][X,Y];
 					for ( int dY=-S; dY <= S; dY++ ) {
 						if ( dY != 0 ) {
 							int	kY = (int) Y + dY;
 							if ( kY >= 0 && kY < H )
-								minDistance.Update( X, Y, distanceFields[1][X,kY] );
+								minDistance.Update( X, Y, m_distanceFields[1][X,kY] );
 						}
 					}
-					distanceFields[0][X,Y] = minDistance;
+					m_distanceFields[0][X,Y] = minDistance;
 				}
 			}
+		}
+		void	ApplyPullPush_DistanceField( float _gamma ) {
+			uint	W = m_imageInput.Width;
+			uint	H = m_imageInput.Height;
 
+			float	sigma = floatTrackbarControlSigma.Value;
 			for ( uint Y=0; Y < H; Y++ ) {
 				for ( uint X=0; X < W; X++ ) {
-					distancePixel	distances = distanceFields[0][X,Y];
+					distancePixel	distances = m_distanceFields[0][X,Y];
 // 					uint	pixelIndex = distances.pixelIndices.x;
 // 					float4	value = pixelIndex < W*H ? m_imageSparseInput[pixelIndex%W,pixelIndex/W] : float4.Zero;
 // 					float	distance = 0.05f * (float) Math.Sqrt( distances.SquareDistance( X, Y, pixelIndex ) );
@@ -655,10 +678,29 @@ Array.Copy( m_inputPixels[MAX_MIP], m_outputPixels[MAX_MIP], W*H );
 					float4	value3 = pixelIndex < W*H ? m_imageSparseInput[pixelIndex%W,pixelIndex/W] : float4.Zero;
 					float	distance3 = (float) Math.Sqrt( distances.SquareDistance( X, Y, pixelIndex ) );
 
+#if !BISOU
+// 					float	weight0 = 1.0f;
+// 					float	weight1 = distance0 / distance1;
+// 					float	weight2 = distance0 / distance2;
+// 					float	weight3 = distance0 / distance3;
+#elif BISOU
 					float	weight0 = 1.0f;
 					float	weight1 = distance0 / distance1;
 					float	weight2 = distance0 / distance2;
 					float	weight3 = distance0 / distance3;
+
+// 					float	homogeneisation = (float) Math.Pow( (distance0 + distance1 + distance2 + distance3) / distance0, sigma );
+// 							homogeneisation = 1.0f - (float) Math.Exp( -(1.0f / _gamma) * homogeneisation );
+// 							weight1 *= homogeneisation;
+// 							weight2 *= homogeneisation;
+// 							weight3 *= homogeneisation;
+
+#else
+// 					float	weight0 = (float) Math.Exp( -0.1f * distance0 );
+// 					float	weight1 = (float) Math.Exp( -0.1f * distance1 );
+// 					float	weight2 = (float) Math.Exp( -0.1f * distance2 );
+// 					float	weight3 = (float) Math.Exp( -0.1f * distance3 );
+#endif
 					float	recSumWeights = 1.0f / (weight0 + weight1 + weight2 + weight3);
 							weight0 *= recSumWeights;
 							weight1 *= recSumWeights;
@@ -667,6 +709,8 @@ Array.Copy( m_inputPixels[MAX_MIP], m_outputPixels[MAX_MIP], W*H );
 
 					float4	value = weight0 * value0 + weight1 * value1 + weight2 * value2 + weight3 * value3;
 					float	distance = 0.03f * (weight0 * distance0 + weight1 * distance1 + weight2 * distance2 + weight3 * distance3);
+//distance = homogeneisation;
+//					float	distance = 0.03f * distance0;
 					m_outputPixels[0][X,Y].Set( value.x, value.y, value.z, distance );
 				}
 			}
@@ -676,6 +720,62 @@ Array.Copy( m_inputPixels[MAX_MIP], m_outputPixels[MAX_MIP], W*H );
 		}
 
 		#endregion
+
+		float2	m_clickedMousePosition = float2.Zero;
+		void	DisplayResult() {
+			uint	W = m_imageInput.Width;
+			uint	H = m_imageInput.Height;
+
+
+//			m_imageRecosntructedOutput.WritePixels( ( uint X, uint Y, ref float4 _color ) => { _color = m_inputPixels[0][X,Y]; } );
+			float4[,]	source = checkBoxInput.Checked ? m_inputPixels[integerTrackbarControlMipLevel.Value] : m_outputPixels[integerTrackbarControlMipLevel.Value];
+			m_imageReconstructedOutput.WritePixels( ( uint X, uint Y, ref float4 _color ) => {
+				float	U = (float) X / W;
+				float	V = (float) Y / H;
+				_color = Bilerp( source, U, V );
+				_color.w = 1.0f;
+//				_color = Bilerp( m_outputPixels[1], U, V );
+			} );
+
+
+			if ( m_clickedMousePosition.x > 0 && m_clickedMousePosition.y > 0 ) {
+				uint	clickedX = (uint) Math.Min( m_imageInput.Width-1, m_clickedMousePosition.x );
+				uint	clickedY = (uint) Math.Min( m_imageInput.Height-1, m_clickedMousePosition.y );
+				uint	closestPixelIndex = m_distanceFields[0][clickedX,clickedY].pixelIndices.x;
+				float	closestPositionX = closestPixelIndex & 0xFF;
+				float	closestPositionY = closestPixelIndex >> 8;
+				m_imageReconstructedOutput.DrawLine( new float4( 1, 0, 0, 1 ), m_clickedMousePosition , new float2( closestPositionX, closestPositionY ) );
+
+				closestPixelIndex = m_distanceFields[0][clickedX,clickedY].pixelIndices.y;
+				closestPositionX = closestPixelIndex & 0xFF;
+				closestPositionY = closestPixelIndex >> 8;
+				m_imageReconstructedOutput.DrawLine( new float4( 0, 1, 0, 1 ), m_clickedMousePosition , new float2( closestPositionX, closestPositionY ) );
+
+				closestPixelIndex = m_distanceFields[0][clickedX,clickedY].pixelIndices.z;
+				closestPositionX = closestPixelIndex & 0xFF;
+				closestPositionY = closestPixelIndex >> 8;
+				m_imageReconstructedOutput.DrawLine( new float4( 0, 0, 1, 1 ), m_clickedMousePosition , new float2( closestPositionX, closestPositionY ) );
+
+				closestPixelIndex = m_distanceFields[0][clickedX,clickedY].pixelIndices.w;
+				closestPositionX = closestPixelIndex & 0xFF;
+				closestPositionY = closestPixelIndex >> 8;
+				m_imageReconstructedOutput.DrawLine( new float4( 1, 1, 0, 1 ), m_clickedMousePosition , new float2( closestPositionX, closestPositionY ) );
+			}
+
+
+			panelOutputReconstruction.m_bitmap = m_imageReconstructedOutput.AsBitmap;
+			panelOutputReconstruction.Refresh();
+
+			// Show weight
+			m_imageDensity.WritePixels( ( uint X, uint Y, ref float4 _color ) => {
+				float	U = (float) X / W;
+				float	V = (float) Y / H;
+				float4	temp = 1.0f *  Bilerp( source, U, V );
+				_color.Set( temp.w, temp.w, temp.w, 1.0f );
+			} );
+			panelPixelDensity.m_bitmap = m_imageDensity.AsBitmap;
+			panelPixelDensity.Refresh();
+		}
 
 		float4	Bilerp( float4[,] _values, float _U, float _V ) {
 			int	W = _values.GetLength(0);
@@ -699,33 +799,6 @@ Array.Copy( m_inputPixels[MAX_MIP], m_outputPixels[MAX_MIP], W*H );
 			return V;
 		}
 
-		void	DisplayResult() {
-			uint	W = m_imageInput.Width;
-			uint	H = m_imageInput.Height;
-
-//			m_imageRecosntructedOutput.WritePixels( ( uint X, uint Y, ref float4 _color ) => { _color = m_inputPixels[0][X,Y]; } );
-			float4[,]	source = checkBoxInput.Checked ? m_inputPixels[integerTrackbarControlMipLevel.Value] : m_outputPixels[integerTrackbarControlMipLevel.Value];
-			m_imageReconstructedOutput.WritePixels( ( uint X, uint Y, ref float4 _color ) => {
-				float	U = (float) X / W;
-				float	V = (float) Y / H;
-				_color = Bilerp( source, U, V );
-				_color.w = 1.0f;
-//				_color = Bilerp( m_outputPixels[1], U, V );
-			} );
-			panelOutputReconstruction.m_bitmap = m_imageReconstructedOutput.AsBitmap;
-			panelOutputReconstruction.Refresh();
-
-			// Show weight
-			m_imageDensity.WritePixels( ( uint X, uint Y, ref float4 _color ) => {
-				float	U = (float) X / W;
-				float	V = (float) Y / H;
-				float4	temp = 1.0f *  Bilerp( source, U, V );
-				_color.Set( temp.w, temp.w, temp.w, 1.0f );
-			} );
-			panelPixelDensity.m_bitmap = m_imageDensity.AsBitmap;
-			panelPixelDensity.Refresh();
-		}
-
 		private void floatTrackbarControlGamma_SliderDragStop(Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fStartValue) {
 			ApplyPullPush( floatTrackbarControlGamma.Value );
 		}
@@ -735,6 +808,11 @@ Array.Copy( m_inputPixels[MAX_MIP], m_outputPixels[MAX_MIP], W*H );
 		}
 
 		private void checkBoxInput_CheckedChanged(object sender, EventArgs e) {
+			DisplayResult();
+		}
+
+		private void panelOutputReconstruction_MouseDown(object sender, MouseEventArgs e) {
+			m_clickedMousePosition = new float2( (float) m_imageInput.Width * e.X / panelOutputReconstruction.Width, (float) m_imageInput.Height * e.Y / panelOutputReconstruction.Height );
 			DisplayResult();
 		}
 	}
