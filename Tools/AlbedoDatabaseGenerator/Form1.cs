@@ -155,7 +155,7 @@ namespace AlbedoDatabaseGenerator
 			{
 				bool	Available = M != null && i < M.m_CustomSwatches.Length;
 				CustomSwatchPanels[i].BackColor = Available ? M.m_CustomSwatches[i].Color : BackColor;
-				panelTexture.CustomSwatches[i] = Available ? new WMath.Vector4D( M.m_CustomSwatches[i].m_LocationTopLeft.x, M.m_CustomSwatches[i].m_LocationTopLeft.y, M.m_CustomSwatches[i].m_LocationBottomRight.x, M.m_CustomSwatches[i].m_LocationBottomRight.y ) : null;
+				panelTexture.CustomSwatches[i] = Available ? new SharpMath.float4( M.m_CustomSwatches[i].m_LocationTopLeft.x, M.m_CustomSwatches[i].m_LocationTopLeft.y, M.m_CustomSwatches[i].m_LocationBottomRight.x, M.m_CustomSwatches[i].m_LocationBottomRight.y ) : SharpMath.float4.Zero;
 			}
 
 			panelTexture.SourceImage = M != null ? M.m_Texture : null;

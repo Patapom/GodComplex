@@ -612,3 +612,8 @@
 /Tests/TestVoxelAutomaton/*.user
 /Tests/TestVoxelAutomaton/bin
 /Tests/TestVoxelAutomaton/obj
+/Tests/TestPullPush/obj
+/Tests/TestPullPush/TestPullPush.csproj.user
+/Tests/TestWaveletATrousFiltering/bin
+/Tests/TestWaveletATrousFiltering/obj
+/Tests/TestWaveletATrousFiltering/TestWaveletATrousFiltering.csproj.user
