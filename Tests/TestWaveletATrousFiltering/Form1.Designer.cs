@@ -1,4 +1,4 @@
-﻿namespace TestPullPush
+﻿namespace TestWaveletATrousFiltering
 {
 	partial class Form1
 	{
@@ -34,10 +34,10 @@
 			this.checkBoxInput = new System.Windows.Forms.CheckBox();
 			this.integerTrackbarControlMipLevel = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
 			this.floatTrackbarControlGamma = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.panelPixelDensity = new TestPullPush.PanelOutput(this.components);
-			this.panelOutputReconstruction = new TestPullPush.PanelOutput(this.components);
-			this.panelSparseInputImage = new TestPullPush.PanelOutput(this.components);
-			this.panelInputImage = new TestPullPush.PanelOutput(this.components);
+			this.panelPixelDensity = new TestWaveletATrousFiltering.PanelOutput(this.components);
+			this.panelOutputReconstruction = new TestWaveletATrousFiltering.PanelOutput(this.components);
+			this.panelSparseInputImage = new TestWaveletATrousFiltering.PanelOutput(this.components);
+			this.panelInputImage = new TestWaveletATrousFiltering.PanelOutput(this.components);
 			this.floatTrackbarControlSigma = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.SuspendLayout();
 			// 
@@ -155,7 +155,7 @@
 			this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedToolWindow;
 			this.Name = "Form1";
 			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-			this.Text = "Pull-Push Algorithm Test";
+			this.Text = "A-Trous Wavelet Filtering Test";
 			this.ResumeLayout(false);
 			this.PerformLayout();
 

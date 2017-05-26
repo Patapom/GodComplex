@@ -6,7 +6,7 @@ using System.Xml;
 using System.Drawing;
 using System.Drawing.Imaging;
 
-using WMath;
+using SharpMath;
 
 namespace AlbedoDatabaseGenerator
 {
@@ -531,10 +531,10 @@ namespace AlbedoDatabaseGenerator
 			public class	Swatch : IDisposable
 			{
 				public string	m_ImageFileName;
-				public Vector	m_xyY;
-				public Vector	m_RGB;
-				public Vector2D	m_LocationTopLeft;
-				public Vector2D	m_LocationBottomRight;
+				public float3	m_xyY;
+				public float3	m_RGB;
+				public float2	m_LocationTopLeft;
+				public float2	m_LocationBottomRight;
 
 				public Bitmap	m_Texture = null;
 
@@ -554,13 +554,13 @@ namespace AlbedoDatabaseGenerator
 				{
 					m_ImageFileName = _Element.GetAttribute( "Name" );
 
-					m_xyY = Vector.Parse( _Element.GetAttribute( "xyY" ) );
-					m_RGB = Vector.Parse( _Element.GetAttribute( "RGB" ) );
+					float3.TryParse( _Element.GetAttribute( "xyY" ), ref m_xyY );
+					float3.TryParse( _Element.GetAttribute( "RGB" ), ref m_RGB );
 
 					if ( _Element.GetAttribute( "SampleTopLeft" ) != "" )
-						m_LocationTopLeft = Vector2D.Parse( _Element.GetAttribute( "SampleTopLeft" ) );
+						float2.TryParse( _Element.GetAttribute( "SampleTopLeft" ), ref m_LocationTopLeft );
 					if ( _Element.GetAttribute( "SampleBottomRight" ) != "" )
-						m_LocationBottomRight = Vector2D.Parse( _Element.GetAttribute( "SampleBottomRight" ) );
+						float2.TryParse( _Element.GetAttribute( "SampleBottomRight" ), ref m_LocationBottomRight );
 				}
 
 				public void	LoadTexture( Manifest _Owner )
@@ -594,7 +594,7 @@ namespace AlbedoDatabaseGenerator
 
 			public bool			m_SpatialCorrectionEnabled;
 			public float		m_WhiteBalanceCorrectionFactor;
-			public Vector		m_WhiteBalancexyY;
+			public float3		m_WhiteBalancexyY;
 
 			public int			m_SwatchesWidth;
 			public int			m_SwatchesHeight;
@@ -647,7 +647,7 @@ namespace AlbedoDatabaseGenerator
 				m_SpatialCorrectionEnabled = SourceInfosElement["SpatialCorrection"].GetAttribute( "Status" ) == "Enabled";
 				m_WhiteBalanceCorrectionFactor = float.Parse( SourceInfosElement["WhiteReflectanceCorrectionFactor"].GetAttribute( "Value" ) );
 				if ( SourceInfosElement["WhiteBalance"] != null )
-					m_WhiteBalancexyY = Vector.Parse( SourceInfosElement["WhiteBalance"].GetAttribute( "xyY" ) );
+					float3.TryParse( SourceInfosElement["WhiteBalance"].GetAttribute( "xyY" ), ref m_WhiteBalancexyY );
 
 				m_SwatchesWidth = int.Parse( SourceInfosElement["SwatchesSize"].GetAttribute( "Width" ) );
 				m_SwatchesHeight = int.Parse( SourceInfosElement["SwatchesSize"].GetAttribute( "Height" ) );

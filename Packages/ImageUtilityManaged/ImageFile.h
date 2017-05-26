@@ -368,17 +368,17 @@ namespace ImageUtility {
 		}
 
 		// Generic color getter/setter
-		property SharpMath::float4		default[UInt32, UInt32] {
-			SharpMath::float4		get( UInt32 _X, UInt32 _Y ) {
+		property float4		default[UInt32, UInt32] {
+			float4		get( UInt32 _X, UInt32 _Y ) {
 				bfloat4	color;
 				m_nativeObject->Get( _X, _Y, color );
-				return SharpMath::float4( color.x, color.y, color.z, color.w );
+				return float4( color.x, color.y, color.z, color.w );
 			}
-			void		set( UInt32 _X, UInt32 _Y, SharpMath::float4 value ) {
+			void		set( UInt32 _X, UInt32 _Y, float4 value ) {
 				m_nativeObject->Set( _X, _Y, bfloat4( value.x, value.y, value.z, value.w ) );
 			}
 		}
-		void		Add( UInt32 _X, UInt32 _Y, SharpMath::float4^ value ) {
+		void		Add( UInt32 _X, UInt32 _Y, float4^ value ) {
 			m_nativeObject->Add( _X, _Y, bfloat4( value->x, value->y, value->z, value->w ) );
 		}
 

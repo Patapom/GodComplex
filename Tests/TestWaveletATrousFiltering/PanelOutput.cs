@@ -7,7 +7,7 @@ using System.Text;
 using System.Windows.Forms;
 using System.Drawing;
 
-namespace TestPullPush
+namespace TestWaveletATrousFiltering
 {
 	public partial class PanelOutput : Panel {
 		public Bitmap	m_bitmap = null;
