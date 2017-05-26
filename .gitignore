@@ -612,3 +612,5 @@
 /Tests/TestVoxelAutomaton/*.user
 /Tests/TestVoxelAutomaton/bin
 /Tests/TestVoxelAutomaton/obj
+/Tests/TestPullPush/obj
+/Tests/TestPullPush/TestPullPush.csproj.user
