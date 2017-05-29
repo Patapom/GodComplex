@@ -136,10 +136,18 @@
       <Project>{cec07704-2a19-4bf1-b46d-8fcf9c5965ee}</Project>
       <Name>MathSimple</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\Packages\RendererManaged\RendererManaged.vcxproj">
+      <Project>{f96cdfd3-8954-4f4f-afb0-2855d98f051b}</Project>
+      <Name>RendererManaged</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\Packages\SharpMath\MathAdvanced.csproj">
       <Project>{dd026a89-c5fe-4150-bc85-a660e427826a}</Project>
       <Name>MathAdvanced</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Shaders\Global.hlsl" />
+    <Content Include="Shaders\PostProcess.hlsl" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
