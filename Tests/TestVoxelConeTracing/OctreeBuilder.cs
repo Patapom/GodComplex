@@ -485,8 +485,8 @@ namespace VoxelConeTracing
 
 		float3	Albedo( float3 _wsPosition, float _materialID ) {
 			switch ( (int) _materialID ) {
-				case 3: return 0.6f * new float3( 0.2f, 0.5f, 1.0f );
-				case 4: return 0.6f * new float3( 1.0f, 0.1f, 0.01f );
+				case 3: return 0.6f * new float3( 0.2f, 0.5f, 1.0f ); break;
+				case 4: return 0.6f * new float3( 1.0f, 0.1f, 0.01f ); break;
 			}
 
 			return 0.6f * float3.One;
