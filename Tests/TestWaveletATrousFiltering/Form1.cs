@@ -53,7 +53,10 @@ namespace TestWaveletATrousFiltering
 		ConstantBuffer< CB_Camera >	m_CB_camera = null;
 		ConstantBuffer< CB_PostProcess >	m_CB_postProcess = null;
 
+		Shader						m_shader_renderGBuffer;
 		Shader						m_shader_postProcess;
+
+		Texture2D					m_tex_GBuffer;
 
 		DateTime					m_startTime;
 
@@ -67,7 +70,10 @@ namespace TestWaveletATrousFiltering
 			try {
 				m_device.Init( panelOutput.Handle, false, true );
 
+				m_shader_renderGBuffer = new Shader( m_device, new System.IO.FileInfo( "./Shaders/RenderGBuffer.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 				m_shader_postProcess = new Shader( m_device, new System.IO.FileInfo( "./Shaders/PostProcess.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+
+				m_tex_GBuffer = new Texture2D( m_device, (uint) panelOutput.Width, (uint) panelOutput.Height, 2, 1, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.UNORM, false, false, null );
 
 				m_CB_global = new ConstantBuffer< CB_Global >( m_device, 0 );
 				m_CB_camera = new ConstantBuffer<CB_Camera>( m_device, 1 );
@@ -120,10 +126,25 @@ namespace TestWaveletATrousFiltering
 			m_CB_postProcess.m._lightSize = floatTrackbarControlLightSize.Value;
 			m_CB_postProcess.UpdateData();
 
+			//////////////////////////////////////////////////////////////////////////
+			// Render the G-Buffer (albedo + gloss + normal + distance)
+			if ( m_shader_renderGBuffer.Use() ) {
+				m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
+				m_device.SetRenderTargets( new IView[] { m_tex_GBuffer.GetView( 0, 1, 0, 1 ), m_tex_GBuffer.GetView( 0, 1, 1, 1 ) }, null );
+				m_device.RenderFullscreenQuad( m_shader_renderGBuffer );
+			}
+
+			//////////////////////////////////////////////////////////////////////////
+			//
 			if ( m_shader_postProcess.Use() ) {
 				m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
 				m_device.SetRenderTarget( m_device.DefaultTarget, null );
+
+				m_tex_GBuffer.Set( 0 );
+
 				m_device.RenderFullscreenQuad( m_shader_postProcess );
+
+				m_tex_GBuffer.RemoveFromLastAssignedSlots();
 			}
 
 			m_device.Present( false );

@@ -146,8 +146,10 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Shaders\DistanceField.hlsl" />
     <Content Include="Shaders\Global.hlsl" />
     <Content Include="Shaders\PostProcess.hlsl" />
+    <Content Include="Shaders\RenderGBuffer.hlsl" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

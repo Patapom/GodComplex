@@ -2139,7 +2139,7 @@ renderProg PostFX/Debug/WardBRDFAlbedo {
 			if ( m_Shader_RenderShadowMap != null && m_Shader_RenderShadowMap.Use() ) {
 				m_Tex_ShadowMap.RemoveFromLastAssignedSlots();
 
-				m_Device.SetRenderTargets( m_Tex_ShadowMap.Width, m_Tex_ShadowMap.Height, new View2D[0], m_Tex_ShadowMap );
+				m_Device.SetRenderTargets( null, m_Tex_ShadowMap );
 #if FILTER_EXP_SHADOW_MAP
 // 				m_Device.ClearDepthStencil( m_Tex_ShadowMap, 0.0f, 0, true, false );
 // 				m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.READ_WRITE_DEPTH_GREATER, BLEND_STATE.DISABLED );	// For exp shadow map, the Z order is reversed
