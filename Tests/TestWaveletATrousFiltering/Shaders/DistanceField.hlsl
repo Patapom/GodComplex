@@ -9,7 +9,7 @@ static const float3	CORNELL_SMALL_BOX_POS = float3( 1.855, 0.5 * CORNELL_SMALL_B
 static const float	CORNELL_SMALL_BOX_ANGLE = 0.29145679447786709199560462143289;	// ~16°
 
 static const float3	CORNELL_LARGE_BOX_SIZE = float3( 1.65, 3.3, 1.65 );
-static const float3	CORNELL_LARGE_BOX_POS = float3( 3.685, 0.5 * CORNELL_LARGE_BOX_SIZE.y, 3.5125 ) - 0.5 * float3( CORNELL_SIZE.x, 0.0, CORNELL_SIZE.z );
+static const float3	CORNELL_LARGE_BOX_POS = float3( 3.685, 0.5 * CORNELL_LARGE_BOX_SIZE.y, 3.6125 ) - 0.5 * float3( CORNELL_SIZE.x, 0.0, CORNELL_SIZE.z );
 static const float	CORNELL_LARGE_BOX_ANGLE = -0.30072115015043337195437489062082;	// ~17°
 
 static const float3	CORNELL_LIGHT_SIZE = float3( 1.3, 0.0, 1.05 );
@@ -98,8 +98,30 @@ float3	Albedo( float3 _wsPosition, float _materialID ) {
 	}
 }
 
+// Traces a ray into the scene and returns hit distance and material ID
+float2	Trace( float3 _wsPos, float3 _wsDir, float _initialDistance, const uint _stepsCount ) {
+	float4	wsPos = float4( _wsPos, 0.0 );
+	float4	wsView = float4( _wsDir, 1.0 );
+	float2	distance = float2( _initialDistance, -1 );
+	for ( uint i=0; i < _stepsCount; i++ ) {
+		wsPos += distance.x * wsView;
+		distance = Map( wsPos.xyz );
+		if ( distance.x < 0.001 )
+			break;
+	}
+	distance.x = wsPos.w;
+	return distance;
+}
+
 // Traces a ray from source to target and returns the visibility
 float	ShadowTrace( float3 _wsSource, float3 _wsTarget, const uint _stepsCount ) {
+#if 1
+	float3	wsDir = _wsTarget - _wsSource;
+	float	dist = length( wsDir );
+			wsDir /= dist;
+	float2	hitDistance = Trace( _wsSource, wsDir, 0.01, _stepsCount );
+	return smoothstep( 0.95, 1.0, hitDistance.x / dist );
+#else
 	float4	wsPos = float4( _wsSource, 0.0 );
 	_wsTarget -= _wsSource;
 	float4	wsView = float4( _wsTarget, length( _wsTarget ) );
@@ -115,19 +137,5 @@ float	ShadowTrace( float3 _wsSource, float3 _wsTarget, const uint _stepsCount ) 
 	}
 
 	return 0.0;
-}
-
-// Traces a ray into the scene and returns hit distance and material ID
-float2	Trace( float3 _wsPos, float3 _wsDir, float _initialDistance, const uint _stepsCount ) {
-	float4	wsPos = float4( _wsPos, 0.0 );
-	float4	wsView = float4( _wsDir, 1.0 );
-	float2	distance = float2( _initialDistance, -1 );
-	for ( uint i=0; i < _stepsCount; i++ ) {
-		wsPos += distance.x * wsView;
-		distance = Map( wsPos.xyz );
-		if ( distance.x < 0.01 )
-			break;
-	}
-	distance.x = wsPos.w;
-	return distance;
+#endif
 }

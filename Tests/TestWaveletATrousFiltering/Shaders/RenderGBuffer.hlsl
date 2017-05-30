@@ -3,10 +3,6 @@
 #include "Global.hlsl"
 #include "DistanceField.hlsl"
 
-cbuffer CB_PostProcess : register(b10) {
-	float	_lightSize;
-};
-
 struct PS_OUT {
 	float4	_albedo_gloss		: SV_TARGET0;
 	float4	_normal_distance	: SV_TARGET1;

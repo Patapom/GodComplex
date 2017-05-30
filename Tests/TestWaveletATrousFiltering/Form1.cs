@@ -57,6 +57,7 @@ namespace TestWaveletATrousFiltering
 		Shader						m_shader_postProcess;
 
 		Texture2D					m_tex_GBuffer;
+		Texture2D					m_Tex_BlueNoise;
 
 		DateTime					m_startTime;
 
@@ -74,6 +75,10 @@ namespace TestWaveletATrousFiltering
 				m_shader_postProcess = new Shader( m_device, new System.IO.FileInfo( "./Shaders/PostProcess.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 
 				m_tex_GBuffer = new Texture2D( m_device, (uint) panelOutput.Width, (uint) panelOutput.Height, 2, 1, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.UNORM, false, false, null );
+
+				using ( ImageFile blueNoise = new ImageFile( new System.IO.FileInfo( "BlueNoise64x64.png" ) ) ) {
+					m_Tex_BlueNoise = new Texture2D( m_device, new ImagesMatrix( new ImageFile[,] { { blueNoise } } ), COMPONENT_FORMAT.UNORM );
+				}
 
 				m_CB_global = new ConstantBuffer< CB_Global >( m_device, 0 );
 				m_CB_camera = new ConstantBuffer<CB_Camera>( m_device, 1 );
@@ -141,6 +146,7 @@ namespace TestWaveletATrousFiltering
 				m_device.SetRenderTarget( m_device.DefaultTarget, null );
 
 				m_tex_GBuffer.Set( 0 );
+				m_Tex_BlueNoise.Set( 1 );
 
 				m_device.RenderFullscreenQuad( m_shader_postProcess );
 

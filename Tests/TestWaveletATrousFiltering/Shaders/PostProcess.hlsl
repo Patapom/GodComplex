@@ -1,12 +1,20 @@
 //
 //
 #include "Global.hlsl"
+#include "DistanceField.hlsl"
+
+cbuffer CB_PostProcess : register(b10) {
+	float	_lightSize;
+};
 
 Texture2DArray<float4>	_Tex_GBuffer : register(t0);
+Texture2D<float4>		_Tex_BlueNoise : register(t1);
 
 
 float4	PS( VS_IN _In ) : SV_TARGET0 {
 	float2	UV = _In.__Position.xy / _resolution;
+
+	float4	noise = _Tex_BlueNoise[uint2( _In.__Position.xy ) & 0x3F];
 
 // 	float3	projView = float3( 2.0 * UV - 1.0, 0.0 );
 // 	float4	wsView_ = mul( float4( projView, 1.0 ), _Proj2World );
@@ -31,22 +39,34 @@ float4	PS( VS_IN _In ) : SV_TARGET0 {
 // 	}
 
 
-	return float4( 0.1 * _Tex_GBuffer.SampleLevel( LinearClamp, float3( UV, 1.0 ), 0.0 ).www, 1 );
-	return float4( _Tex_GBuffer.SampleLevel( LinearClamp, float3( UV, 1.0 ), 0.0 ).xyz, 1 );
+// 	return float4( 0.1 * _Tex_GBuffer.SampleLevel( LinearClamp, float3( UV, 1.0 ), 0.0 ).www, 1 );
+// 	return float4( _Tex_GBuffer.SampleLevel( LinearClamp, float3( UV, 1.0 ), 0.0 ).xyz, 1 );
 
-/*
-	float2	distance = Trace( wsPos, wsView, 0.5, 100 );
-	float	D = distance.x;//length( _Camera2World[3].xyz - wsPos );
-	if ( D > 100.0 )
+//*
+
+// 	float2	distance = Trace( wsPos, wsView, 0.5, 100 );
+//	float	D = distance.x;//length( _Camera2World[3].xyz - wsPos );
+// 	if ( D > 100.0 )
+// 		return 0.0;
+// 
+// 	wsPos += distance.x * wsView;
+// 
+// 	float3	albedo = Albedo( wsPos, distance.y );
+// 	float3	wsNormal = Normal( wsPos );
+
+	float4	albedo_gloss = _Tex_GBuffer.SampleLevel( LinearClamp, float3( UV, 0.0 ), 0.0 );
+	float4	normal_distance = _Tex_GBuffer.SampleLevel( LinearClamp, float3( UV, 1.0 ), 0.0 );
+	float3	albedo = albedo_gloss.xyz;
+	float3	wsNormal = normal_distance.xyz;
+	float	distance = normal_distance.w;
+	if ( distance > 100.0 )
 		return 0.0;
+ 	wsPos += distance * wsView;
 
-	wsPos += distance.x * wsView;
-
-	float3	wsNormal = Normal( wsPos );
 	float3	wsTangent, wsBiTangent;
 	BuildOrthonormalBasis( wsNormal, wsTangent, wsBiTangent );
-	float3	albedo = Albedo( wsPos, distance.y );
 
+//return float4( 0.25 * wsPos, 1.0 );
 // return float4( albedo, 1.0 );
 // return float4( wsNormal, 1.0 );
 // return 0.1 * D;
@@ -56,38 +76,73 @@ float4	PS( VS_IN _In ) : SV_TARGET0 {
 		const float3	LIGHT_ILLUMINANCE = 50.0;
 		float3			LIGHT_SIZE = float3( _lightSize, 0.0, 1.3/1.05 * _lightSize );
 
-		const uint	SCENE_SAMPLES = 8;
-		for ( uint sampleIndex=0; sampleIndex < SCENE_SAMPLES; sampleIndex++ ) {
-			float	randPhi = float(sampleIndex) / SCENE_SAMPLES;
-			float	randTheta = ReverseBits( sampleIndex + uint( _In.__Position.x * _In.__Position.y ) );
-			float	cosTheta = randTheta;
-			float	sinTheta = sqrt( 1.0 - cosTheta*cosTheta );
-			float2	scPhi;
-			sincos( randPhi * 2.0 * PI, scPhi.x, scPhi.y );
+		wsPos += 0.001 * wsNormal;	// Offset a little off the wall to avoid acnea
 
-			float3	lsRayDir = float3( scPhi.x * sinTheta, scPhi.y * sinTheta, cosTheta );
+		/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		// Add indirect lighting contribution
+		const uint	SCENE_SAMPLES = 16;
+		[loop]
+		for ( uint sampleIndex=0; sampleIndex < SCENE_SAMPLES; sampleIndex++ ) {
+//			float	randPhi = (sampleIndex + rand( UV )) / SCENE_SAMPLES;
+//			float	randTheta = ReverseBits( sampleIndex );
+//			float	cosTheta = randTheta;							// cos(theta) importance sampled
+//			float	sinTheta = sqrt( 1.0 - cosTheta*cosTheta );
+//			float2	scPhi;
+//			sincos( randPhi * 2.0 * PI, scPhi.x, scPhi.y );
+			float	X0 = float(sampleIndex) / SCENE_SAMPLES;
+			float	X1 = ReverseBits( sampleIndex );
+			float	phi = 2.0 * PI * (X0 + noise.x);
+			float2	sinCosPhi;
+			sincos( phi, sinCosPhi.x, sinCosPhi.y );
+
+//			float	sqrCosTheta = (1.0 - X1) / ((alpha*alpha - 1.0) * X1 + 1.0);
+			float	cosTheta = sqrt( X1 );
+			float	sinTheta = sqrt( 1.0 - cosTheta*cosTheta );
+
+			float3	lsRayDir = float3( sinTheta * sinCosPhi, cosTheta );
 			float3	wsRayDir = lsRayDir.x * wsTangent + lsRayDir.y * wsBiTangent + lsRayDir.z * wsNormal;
 
+			float2	sceneHitDistance = Trace( wsPos, wsRayDir, 0.0, 100 );
+ 			if ( sceneHitDistance.x  > 10.0 )
+ 				continue;	// No hit...
 
-			float2	sceneHitDistance = Trace( wsPos, wsRayDir, 0.01, 60 );
- 			if ( sceneHitDistance.x > 20.0 )
- 				continue;
-
+			// Retrieve scene information at hit
 			float3	wsSceneHitPos = wsPos + sceneHitDistance.x * wsRayDir;
 			float3	wsSceneHitNormal = Normal( wsSceneHitPos );
 			float3	sceneHitAlbedo = Albedo( wsSceneHitPos, sceneHitDistance.y );
-			float3	wsLightPos = CORNELL_LIGHT_POS + float3( randPhi - 0.5, 0.0, randTheta - 0.5 ) * LIGHT_SIZE;
-//float3	wsLightPos = CORNELL_LIGHT_POS;
+
+			// Trace shadow ray to light
+// 			float3	wsLightPos = CORNELL_LIGHT_POS + float3( X0 * noise.y - 0.5, 0.0, X1 * noise.z - 0.5 ) * LIGHT_SIZE;
+float3	wsLightPos = CORNELL_LIGHT_POS;
 			float3	wsLight = wsLightPos - wsSceneHitPos;
 			float	distance2Light = length( wsLight );
 					wsLight /= distance2Light;
-			float	shadow = ShadowTrace( wsPos, wsLightPos, 100 );
-			float3	sceneLighting = (INVPI * sceneHitAlbedo) * saturate( dot( wsSceneHitNormal, wsLight ) ) * shadow * LIGHT_ILLUMINANCE / (distance2Light * distance2Light);
+			float	shadow = ShadowTrace( wsSceneHitPos, wsLightPos, 100 );
+					shadow *= saturate( wsLight.y );	// saturate( -dot( wsLight, float3( 0, -1, 0 ) ) ) assuming the light is emitting toward the bottom
 
-//			lighting += (INVPI * albedo) * sceneLighting * saturate( dot( wsNormal, wsRayDir ) );
-			lighting += (INVPI * albedo) * sceneLighting;
+			// Compute lighting
+			float3	sceneRadiance = (INVPI * sceneHitAlbedo) * saturate( dot( wsSceneHitNormal, wsLight ) ) * shadow * LIGHT_ILLUMINANCE / (distance2Light * distance2Light);
+
+//			lighting += (INVPI * albedo) * sceneRadiance * saturate( dot( wsNormal, wsRayDir ) );
+			lighting += sceneRadiance * cosTheta;
 		}
-		lighting /= SCENE_SAMPLES;
+		lighting *= 2.0 * PI / SCENE_SAMPLES;
+
+
+		/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		// Add direct lighting contribution
+// 		float3	wsLightPos = CORNELL_LIGHT_POS + float3( noise.y - 0.5, 0.0, noise.z - 0.5 ) * LIGHT_SIZE;
+float3	wsLightPos = CORNELL_LIGHT_POS;
+		float3	wsLight = wsLightPos - wsPos;
+		float	distance2Light = length( wsLight );
+				wsLight /= distance2Light;
+		float	shadow = ShadowTrace( wsPos, wsLightPos, 100 );
+				shadow *= saturate( wsLight.y );	// saturate( -dot( wsLight, float3( 0, -1, 0 ) ) ) assuming the light is emitting toward the bottom
+
+		lighting += saturate( dot( wsNormal, wsLight ) ) * shadow * LIGHT_ILLUMINANCE / (distance2Light * distance2Light);
+
+		lighting *= (INVPI * albedo);
+
 	#else
 		const uint	LIGHT_SAMPLES = 8;
 		for ( uint lightSampleIndex=0; lightSampleIndex < LIGHT_SAMPLES; lightSampleIndex++ ) {
@@ -105,5 +160,5 @@ float4	PS( VS_IN _In ) : SV_TARGET0 {
 	#endif
 
 	return float4( lighting, 1.0 );
-*/
+//*/
 }
