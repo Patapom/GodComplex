@@ -6,6 +6,7 @@
 struct PS_OUT {
 	float4	_albedo_gloss		: SV_TARGET0;
 	float4	_normal_distance	: SV_TARGET1;
+	float4	_wsPosition_empty	: SV_TARGET2;
 };
 
 PS_OUT	PS( VS_IN _In ) {
@@ -20,6 +21,7 @@ PS_OUT	PS( VS_IN _In ) {
 	PS_OUT	Out;
 	Out._albedo_gloss = 0.0;
 	Out._normal_distance = float4( 0, 0, 0, INFINITY );
+	Out._wsPosition_empty = 0.0;
 
 	float2	distance = Trace( wsPos, wsView, 0.5, 100 );
 	float	D = distance.x;//length( _Camera2World[3].xyz - wsPos );
@@ -35,6 +37,7 @@ PS_OUT	PS( VS_IN _In ) {
 
 	Out._albedo_gloss = float4( albedo, 0.0 );
 	Out._normal_distance = float4( wsNormal, distance.x );
+	Out._wsPosition_empty = float4( wsPos, 0.0 );
 
 // 	float3	lighting = 0.0;
 // 	#if 1

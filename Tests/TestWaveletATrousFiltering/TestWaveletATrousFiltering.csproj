@@ -146,10 +146,11 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Shaders\ATrousFilter.hlsl" />
     <Content Include="Shaders\DistanceField.hlsl" />
     <Content Include="Shaders\Global.hlsl" />
     <Content Include="Shaders\PostProcess.hlsl" />
-    <Content Include="Shaders\RayTracing.hlsl" />
+    <Content Include="Shaders\RenderScene.hlsl" />
     <Content Include="Shaders\RenderGBuffer.hlsl" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
