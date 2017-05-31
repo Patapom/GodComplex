@@ -210,9 +210,10 @@ namespace TestWaveletATrousFiltering
 
 					float	POT = (float) Math.Pow( 2.0, levelIndex );
 					float	sigma_Color = SIGMA_COLOR / POT;	// Here, increase range for larger filter sizes
-
 //  Thus the edge-stopping function depends at the first level on wn and wx only.
 // ===> if level index == 0 => wrt = 1 ?
+// 					if ( levelIndex == 0 )
+// 						sigma_Color = 1.0f;
 
 					m_CB_filtering.m._stride = POT;
 					m_CB_filtering.m._sigma_Color = -1.0f / (sigma_Color * sigma_Color);
