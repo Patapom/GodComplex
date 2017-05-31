@@ -11,6 +11,9 @@ Texture2DArray<float4>	_Tex_GBuffer : register(t0);
 Texture2D<float4>		_Tex_BlueNoise : register(t1);
 
 
+static const uint	SCENE_SAMPLES = 4;
+
+
 float4	PS( VS_IN _In ) : SV_TARGET0 {
 	float2	UV = _In.__Position.xy / _resolution;
 
@@ -80,7 +83,6 @@ float4	PS( VS_IN _In ) : SV_TARGET0 {
 
 		/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		// Add indirect lighting contribution
-		const uint	SCENE_SAMPLES = 4;
 		[loop]
 		for ( uint sampleIndex=0; sampleIndex < SCENE_SAMPLES; sampleIndex++ ) {
 			float	X0 = float(sampleIndex) / SCENE_SAMPLES;

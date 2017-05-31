@@ -40,6 +40,11 @@ namespace TestWaveletATrousFiltering
 		}
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
+		private struct CB_RenderScene {
+			public float		_lightSize;
+		}
+
+		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
 		private struct CB_Filtering {
 			public float		_stride;
 			public float		_sigma_Color;
@@ -49,17 +54,18 @@ namespace TestWaveletATrousFiltering
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
 		private struct CB_PostProcess {
-			public float		_lightSize;
+			public uint			_filterLevel;
 		}
 
 		#endregion
 
 		Device						m_device = new Device();
 
-		ConstantBuffer< CB_Global >	m_CB_global;
-		ConstantBuffer< CB_Camera >	m_CB_camera = null;
+		ConstantBuffer< CB_Global >			m_CB_global;
+		ConstantBuffer< CB_Camera >			m_CB_camera = null;
+		ConstantBuffer< CB_RenderScene >	m_CB_renderScene = null;
 		ConstantBuffer< CB_Filtering >		m_CB_filtering = null;
-		ConstantBuffer< CB_PostProcess >	m_CB_renderScene = null;
+		ConstantBuffer< CB_PostProcess >	m_CB_postProcess = null;
 
 		Shader						m_shader_renderGBuffer;
 		Shader						m_shader_renderScene;
@@ -98,8 +104,9 @@ namespace TestWaveletATrousFiltering
 
 				m_CB_global = new ConstantBuffer< CB_Global >( m_device, 0 );
 				m_CB_camera = new ConstantBuffer<CB_Camera>( m_device, 1 );
+				m_CB_renderScene = new ConstantBuffer< CB_RenderScene >( m_device, 10 );
 				m_CB_filtering = new ConstantBuffer< CB_Filtering >( m_device, 10 );
-				m_CB_renderScene = new ConstantBuffer< CB_PostProcess >( m_device, 10 );
+				m_CB_postProcess = new ConstantBuffer< CB_PostProcess >( m_device, 10 );
 
 			} catch ( Exception _e ) {
 				MessageBox.Show( this, "Error", "An exception occurred while creating DX structures:\r\n" + _e.Message );
@@ -167,7 +174,7 @@ namespace TestWaveletATrousFiltering
 			// Render the G-Buffer (albedo + gloss + normal + distance)
 			if ( m_shader_renderGBuffer.Use() ) {
 				m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
-				m_device.SetRenderTargets( new IView[] { m_tex_GBuffer.GetView( 0, 1, 0, 1 ), m_tex_GBuffer.GetView( 0, 1, 1, 1 ) }, null );
+				m_device.SetRenderTargets( new IView[] { m_tex_GBuffer.GetView( 0, 1, 0, 1 ), m_tex_GBuffer.GetView( 0, 1, 1, 1 ), m_tex_GBuffer.GetView( 0, 1, 2, 1 ) }, null );
 				m_device.RenderFullscreenQuad( m_shader_renderGBuffer );
 			}
 
@@ -191,13 +198,15 @@ namespace TestWaveletATrousFiltering
 			if ( m_shader_filter.Use() ) {
 				m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
 
-				const float	SIGMA_COLOR = 0.1f;
-				const float	SIGMA_NORMAL = 0.1f;
-				const float	SIGMA_POSITION = 0.1f;
+				float	SIGMA_COLOR = floatTrackbarControlSigmaColor.Value;
+				float	SIGMA_NORMAL = floatTrackbarControlSigmaNormal.Value;
+				float	SIGMA_POSITION = floatTrackbarControlSigmaPosition.Value;
+
+				m_tex_GBuffer.Set( 0 );
 
 				for ( uint levelIndex=0; levelIndex < FILTER_ITERATIONS_COUNT; levelIndex++ ) {
 					m_device.SetRenderTargets( new IView[] { m_tex_sceneRadiance.GetView( 0, 1, levelIndex+1, 1 ) }, null );
-					m_tex_sceneRadiance.Set( 0, m_tex_sceneRadiance.GetView( 0, 1, levelIndex, 1 ) );
+					m_tex_sceneRadiance.Set( 1, m_tex_sceneRadiance.GetView( 0, 1, levelIndex, 1 ) );
 
 					float	POT = (float) Math.Pow( 2.0, levelIndex );
 					float	sigma_Color = SIGMA_COLOR / POT;	// Here, increase range for larger filter sizes
@@ -223,6 +232,9 @@ namespace TestWaveletATrousFiltering
 
 				m_tex_GBuffer.Set( 0 );
 				m_tex_sceneRadiance.Set( 1 );
+
+				m_CB_postProcess.m._filterLevel = (uint) (checkBoxToggleFilter.Checked ? integerTrackbarControlFilterLevel.Value : 0);
+				m_CB_postProcess.UpdateData();
 
 				m_device.RenderFullscreenQuad( m_shader_postProcess );
 
