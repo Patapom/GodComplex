@@ -80,22 +80,15 @@ float4	PS( VS_IN _In ) : SV_TARGET0 {
 
 		/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		// Add indirect lighting contribution
-		const uint	SCENE_SAMPLES = 16;
+		const uint	SCENE_SAMPLES = 8;
 		[loop]
 		for ( uint sampleIndex=0; sampleIndex < SCENE_SAMPLES; sampleIndex++ ) {
-//			float	randPhi = (sampleIndex + rand( UV )) / SCENE_SAMPLES;
-//			float	randTheta = ReverseBits( sampleIndex );
-//			float	cosTheta = randTheta;							// cos(theta) importance sampled
-//			float	sinTheta = sqrt( 1.0 - cosTheta*cosTheta );
-//			float2	scPhi;
-//			sincos( randPhi * 2.0 * PI, scPhi.x, scPhi.y );
 			float	X0 = float(sampleIndex) / SCENE_SAMPLES;
 			float	X1 = ReverseBits( sampleIndex );
 			float	phi = 2.0 * PI * (X0 + noise.x);
 			float2	sinCosPhi;
 			sincos( phi, sinCosPhi.x, sinCosPhi.y );
 
-//			float	sqrCosTheta = (1.0 - X1) / ((alpha*alpha - 1.0) * X1 + 1.0);
 			float	cosTheta = sqrt( X1 );
 			float	sinTheta = sqrt( 1.0 - cosTheta*cosTheta );
 
@@ -117,7 +110,12 @@ float3	wsLightPos = CORNELL_LIGHT_POS;
 			float3	wsLight = wsLightPos - wsSceneHitPos;
 			float	distance2Light = length( wsLight );
 					wsLight /= distance2Light;
-			float	shadow = ShadowTrace( wsSceneHitPos, wsLightPos, 100 );
+
+			wsSceneHitPos += (0.01 / dot( wsLight, wsSceneHitNormal )) * wsLight;	// Offset a bit from the surface
+
+//			float	shadow = ShadowTrace( wsSceneHitPos, wsLightPos, 100 );
+			float2	shadowDistance = Trace( wsSceneHitPos, wsLight, 0.0, 100 );
+			float	shadow = smoothstep( 0.95, 1.0, shadowDistance.x / distance2Light );
 					shadow *= saturate( wsLight.y );	// saturate( -dot( wsLight, float3( 0, -1, 0 ) ) ) assuming the light is emitting toward the bottom
 
 			// Compute lighting
