@@ -29,6 +29,8 @@ namespace TestPullPush
 		public Form1() {
 			InitializeComponent();
 
+			ConvolveNDF();
+
 			m_imageInput = new ImageFile( new System.IO.FileInfo( "Parrot.png" ) );
 			panelInputImage.m_bitmap = m_imageInput.AsBitmap;
 
@@ -727,6 +729,13 @@ Array.Copy( m_inputPixels[MAX_MIP], m_outputPixels[MAX_MIP], W*H );
 			uint	H = m_imageInput.Height;
 
 
+
+panelPixelDensity.m_bitmap = m_testPlot.AsBitmap;
+panelPixelDensity.Refresh();
+return;
+
+
+
 //			m_imageRecosntructedOutput.WritePixels( ( uint X, uint Y, ref float4 _color ) => { _color = m_inputPixels[0][X,Y]; } );
 			float4[,]	source = checkBoxInput.Checked ? m_inputPixels[integerTrackbarControlMipLevel.Value] : m_outputPixels[integerTrackbarControlMipLevel.Value];
 			m_imageReconstructedOutput.WritePixels( ( uint X, uint Y, ref float4 _color ) => {
@@ -815,5 +824,168 @@ Array.Copy( m_inputPixels[MAX_MIP], m_outputPixels[MAX_MIP], W*H );
 			m_clickedMousePosition = new float2( (float) m_imageInput.Width * e.X / panelOutputReconstruction.Width, (float) m_imageInput.Height * e.Y / panelOutputReconstruction.Height );
 			DisplayResult();
 		}
+
+		#region PIPO
+
+		// http://www.rorydriscoll.com/2012/01/15/cubemap-texel-solid-angle/
+		// http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.5.9464&rep=rep1&type=pdf pp. 46
+		// ArcTan[ xy / Sqrt[1 + x^2 + y^2] ]
+		bool	ComputeArea_CubeMap( double x, double y, out double _area ) {
+			_area = Math.Abs( Math.Atan( x * y / Math.Sqrt( 1.0 + x*x + y*y ) ) );
+			return true;
+		}
+
+		// y ArcTan[x/Sqrt[1 - x^2 - y^2]] + x ArcTan[y/Sqrt[1 - x^2 - y^2]]
+		bool	ComputeArea( double x, double y, out double _area ) {
+			double	sqRadius = x*x  + y*y;
+			if ( sqRadius > 1.0 ) {
+				// Outside unit circle
+				_area = 0.0;
+				return false;
+			}
+
+			double	rcpCosTheta = 1.0 / Math.Sqrt( 1.0 - sqRadius );
+			if ( double.IsInfinity( rcpCosTheta ) ) {
+				if ( x == 0.0 ) x = 1e-12;
+				if ( y == 0.0 ) y = 1e-12;
+			}
+			_area = y * Math.Atan( x * rcpCosTheta ) + x * Math.Atan( y * rcpCosTheta );
+
+			return true;
+		}
+
+		ImageFile	m_testPlot = new ImageFile( 512, 512, PIXEL_FORMAT.BGRA8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
+		void	ConvolveNDF() {
+			ImageFile	tempNDF = new ImageFile( new System.IO.FileInfo( "plastic_blue_NDF.exr" ) );
+
+			// Read and normalize NDF pixels
+			float4		sum = float4.Zero;
+			float4[,]	pixelsNDF = new float4[tempNDF.Width,tempNDF.Height];
+			tempNDF.ReadPixels( ( uint _X, uint _Y, ref float4 _color ) => { pixelsNDF[_X,_Y] = _color; sum += _color; } );
+			sum /= tempNDF.Width * tempNDF.Height;
+			for ( uint Y=0; Y < 128; Y++ )
+				for ( uint X=0; X < 128; X++ )
+					pixelsNDF[X,Y] /= sum;	// Normalize
+
+			const uint	SAMPLES = 256;
+			const uint	SIZE = 1000;
+
+			double	sumSolidAngle = 0.0;
+			for ( uint X=0; X < SIZE-1; X++ ) {
+				double	x0 = (double) X / SIZE;
+				double	x1 = (double) (X+1) / SIZE;
+				double	y = Math.Sqrt( 1.0 - x1*x1 )
+							- 1e-12;
+
+				double	A0, A1;
+				if ( !ComputeArea( x0, y, out A0 ) )
+					throw new Exception( "Shit!" );
+				if ( !ComputeArea( x1, y, out A1 ) )
+					throw new Exception( "Shit!" );
+				double	dA = A1 - A0;
+				if ( dA < 0.0 )
+					throw new Exception( "Shit!" );
+				sumSolidAngle += dA;
+			}
+			// 113.3620499273941
+
+			float3	d = float3.Zero;
+			sumSolidAngle = 0.0;
+			for ( uint Y=SIZE/2; Y < SIZE; Y++ ) {
+				for ( uint X=SIZE/2; X < SIZE; X++ ) {
+					float	x0 = 2.0f * X / SIZE - 1.0f;
+					float	y0 = 2.0f * Y / SIZE - 1.0f;
+					float	x1 = 2.0f * (X+1) / SIZE - 1.0f;
+					float	y1 = 2.0f * (Y+1) / SIZE - 1.0f;
+					if ( x1*x1 + y1*y1 > 0.99f )
+						continue;
+
+					double	A0, A1, A2, A3;
+					if ( !ComputeArea( x0, y0, out A0 ) ) continue;
+					if ( !ComputeArea( x1, y0, out A1 ) ) continue;
+					if ( !ComputeArea( x0, y1, out A2 ) ) continue;
+					if ( !ComputeArea( x1, y1, out A3 ) ) continue;
+
+					double	dA = A3 - A1 - A2 + A0;
+// 					if ( dA <= 0.0 )
+// 						throw new Exception( "Shit" );
+					sumSolidAngle += dA;
+
+// 					int	count = 0;
+// 					for ( uint sY=0; sY < SAMPLES; sY++ ) {
+// 						d.y = 1.0f - (Y + (float) sY / SAMPLES) / 64.0f;
+// 						for ( uint sX=0; sX < SAMPLES; sX++ ) {
+// 							d.x = 1.0f - (X + (float) sX / SAMPLES) / 64.0f;
+// 							d.z = d.x*d.x + d.y*d.y;
+// 							if ( d.z >= 1.0f )
+// 								continue;	// Outside unit circle
+// //							d.z = (float) Math.Sqrt( 1.0f - d.z );
+// 							count++;
+// 						}
+// 					}
+// 
+// 					d.z = (float) Math.Sqrt( d.z );
+				}
+			}
+
+
+// 			// Plot area value on disc's edge
+// 			m_testPlot.Clear( float4.One );
+// //			m_testPlot.PlotGraph( float4.UnitW, new float2( 0.0f, 1.0f ), new float2( 0.0f, 2.0f ), ( float _X ) => {
+// //				float	angle = 0.5f * (float) Math.PI * _X;
+// //				float	x = 0.99f * (float) Math.Cos( angle );
+// //				float	y = 0.99f * (float) Math.Sin( angle );
+// //				double	area = 0.0;
+// //				ComputeArea( x, y, out area );
+// //				return (float) area;
+// //			} );
+// 			m_testPlot.WritePixels( ( uint _X, uint _Y, ref float4 _color ) => {
+// 				double	area;
+// 				ComputeArea( _X / 512.0f, _Y / 512.0f, out area );
+// 				float	V = 0.5f * (float) area;
+// 				_color.Set( V, V, V, 1.0f );
+// 			} );
+// 			m_testPlot.Save( new System.IO.FileInfo( "Area.png" ) );
+
+
+// 			// Compute G
+// 			float4[,]	pixelsG = new float4[tempNDF.Width,tempNDF.Height];
+// 			float3		k = float3.Zero;
+// 			float3		h = float3.Zero;
+// 			for ( uint Y=0; Y < 128; Y++ ) {
+// 				k.y = 1.0f - Y / 64.0f;
+// 				for ( uint X=0; X < 128; X++ ) {
+// 					k.x = X / 64.0f - 1.0f;
+// 					k.z = 1.0f - k.x*k.x - k.y*k.y;
+// 					if ( k.z <= 0.0f )
+// 						continue;
+// 
+// 					k.z = (float) Math.Sqrt( k.z );
+// 
+// 					// Perform an integration with the NDF weighted by the cosine of the angle with that particular direction
+// 					float3	convolution = float3.Zero;
+// 					for ( uint Y2=0; Y2 < 128; Y2++ ) {
+// 						h.y = 1.0f - Y2 / 64.0f;
+// 						for ( uint X2=0; X2 < 128; X2++ ) {
+// 							h.x = X2 / 64.0f - 1.0f;
+// 							float	sqSinTheta = h.x*h.x + h.y*h.y;
+// 							if ( sqSinTheta >= 1.0f )
+// 								continue;
+// 
+// 							h.z = (float) Math.Sqrt( 1.0f - sqSinTheta );
+// 							float	sinTheta = (float) Math.Sqrt( sqSinTheta );
+// 							float	cosTheta = h.z;
+// 
+// 							float	dW = sinTheta;
+// 							convolution += dW * float3.One;
+// 						}
+// 					}
+// 					convolution /= (128*128);
+// 					pixelsG[X,Y] = new float4( convolution, 1.0f );
+// 				}
+// 			}
+		}
+
+		#endregion
 	}
 }
