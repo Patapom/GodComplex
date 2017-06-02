@@ -835,7 +835,7 @@ return;
 			return true;
 		}
 
-		// y ArcTan[x/Sqrt[1 - x^2 - y^2]] + x ArcTan[y/Sqrt[1 - x^2 - y^2]]
+		// y ArcTan[x/Sqrt[1 - x^2 - y^2]] + x ArcTan[y/Sqrt[1 - x^2 - y^2]] + 1/2 (ArcTan[(1 - x - y^2)/(y Sqrt[1 - x^2 - y^2])] - ArcTan[(1 + x - y^2)/(y Sqrt[1 - x^2 - y^2])])
 		bool	ComputeArea( double x, double y, out double _area ) {
 			double	sqRadius = x*x  + y*y;
 			if ( sqRadius > 1.0 ) {
@@ -849,7 +849,8 @@ return;
 				if ( x == 0.0 ) x = 1e-12;
 				if ( y == 0.0 ) y = 1e-12;
 			}
-			_area = y * Math.Atan( x * rcpCosTheta ) + x * Math.Atan( y * rcpCosTheta );
+			_area = y * Math.Atan( x * rcpCosTheta ) + x * Math.Atan( y * rcpCosTheta )
+				+ 0.5 * (Math.Atan( (1 - x - y*y) * rcpCosTheta / y ) - Math.Atan( (1 + x - y*y) * rcpCosTheta / y ));
 
 			return true;
 		}
@@ -870,6 +871,7 @@ return;
 			const uint	SAMPLES = 256;
 			const uint	SIZE = 1000;
 
+			// Compute quarter hemisphere area by splitting into vertical slices
 			double	sumSolidAngle = 0.0;
 			for ( uint X=0; X < SIZE-1; X++ ) {
 				double	x0 = (double) X / SIZE;
@@ -889,6 +891,7 @@ return;
 			}
 			// 113.3620499273941
 
+			// Compute quarter hemisphere area by splitting into many small pixels
 			float3	d = float3.Zero;
 			sumSolidAngle = 0.0;
 			for ( uint Y=SIZE/2; Y < SIZE; Y++ ) {
@@ -928,24 +931,70 @@ return;
 				}
 			}
 
+			const float	RADIUS = 0.70f;
+			double[]	sumSolidAngles = new double[10];
+			uint		STEPS = 4;
+			for ( uint i=0; i < 10; i++ ) {
+				sumSolidAngles[i] = 0.0;
+				for ( uint Y=0; Y < STEPS; Y++ ) {
+					for ( uint X=0; X < STEPS; X++ ) {
+						float	x0 = RADIUS * X / STEPS;
+						float	y0 = RADIUS * Y / STEPS;
+						float	x1 = RADIUS * (X+1) / STEPS;
+						float	y1 = RADIUS * (Y+1) / STEPS;
 
-// 			// Plot area value on disc's edge
+						double	A0, A1, A2, A3;
+						if ( !ComputeArea( x0, y0, out A0 ) ) throw new Exception( "PUTE!" );
+						if ( !ComputeArea( x1, y0, out A1 ) ) throw new Exception( "PUTE!" );
+						if ( !ComputeArea( x0, y1, out A2 ) ) throw new Exception( "PUTE!" );
+						if ( !ComputeArea( x1, y1, out A3 ) ) throw new Exception( "PUTE!" );
+
+						double	dA = A3 - A1 - A2 + A0;
+						if ( dA <= 0.0 )
+							throw new Exception( "Shit" );
+						sumSolidAngles[i] += dA;
+					}
+				}
+				STEPS *= 2;
+			}
+			double	singleArea = 0.0;
+			ComputeArea( RADIUS, RADIUS, out singleArea );
+
+			// Plot area value on disc's edge
 // 			m_testPlot.Clear( float4.One );
-// //			m_testPlot.PlotGraph( float4.UnitW, new float2( 0.0f, 1.0f ), new float2( 0.0f, 2.0f ), ( float _X ) => {
-// //				float	angle = 0.5f * (float) Math.PI * _X;
-// //				float	x = 0.99f * (float) Math.Cos( angle );
-// //				float	y = 0.99f * (float) Math.Sin( angle );
-// //				double	area = 0.0;
-// //				ComputeArea( x, y, out area );
-// //				return (float) area;
-// //			} );
-// 			m_testPlot.WritePixels( ( uint _X, uint _Y, ref float4 _color ) => {
-// 				double	area;
-// 				ComputeArea( _X / 512.0f, _Y / 512.0f, out area );
-// 				float	V = 0.5f * (float) area;
-// 				_color.Set( V, V, V, 1.0f );
-// 			} );
-// 			m_testPlot.Save( new System.IO.FileInfo( "Area.png" ) );
+// 			for ( int i=1; i <= 10; i++ )
+// 				m_testPlot.PlotGraph( float4.UnitW, new float2( 0.0f, 1.0f ), new float2( 0.0f, 2.0f ), ( float _X ) => {
+// 					float	angle = 0.5f * (float) Math.PI * _X;
+// 					float	x = i * 0.099f * (float) Math.Cos( angle );
+// 					float	y = i * 0.099f * (float) Math.Sin( angle );
+// 					double	area = 0.0;
+// 					ComputeArea( x, y, out area );
+// 					return (float) area;
+// 				} );
+
+			m_testPlot.WritePixels( ( uint _X, uint _Y, ref float4 _color ) => {
+				double	area;
+				ComputeArea( _X / 512.0f, _Y / 512.0f, out area );
+				float	V = 0.5f * (float) area;
+				_color.Set( V, V, V, 1.0f );
+			} );
+			m_testPlot.Save( new System.IO.FileInfo( "Area.png" ) );
+
+			m_testPlot.WritePixels( ( uint _X, uint _Y, ref float4 _color ) => {
+				// Compute area differential
+				double	A0, A1, A2, A3;
+				double	area = 0.0;
+				if ( ComputeArea( (_X+0) / 512.0f, (_Y+0) / 512.0f, out A0 ) &&
+					 ComputeArea( (_X+1) / 512.0f, (_Y+0) / 512.0f, out A1 ) &&
+					 ComputeArea( (_X+0) / 512.0f, (_Y+1) / 512.0f, out A2 ) &&
+					 ComputeArea( (_X+1) / 512.0f, (_Y+1) / 512.0f, out A3 ) ) {
+					area = A3 + A0 - A1 - A2;
+				}
+				float	V = 10000.0f * (float) area;
+
+				_color.Set( V, V, V, 1.0f );
+			} );
+			m_testPlot.Save( new System.IO.FileInfo( "DeltaArea.png" ) );
 
 
 // 			// Compute G
