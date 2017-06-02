@@ -30,6 +30,7 @@ namespace SharpMath {
 		static float2	operator*( float2 a, float b )	{ return float2( a.x*b, a.y*b ); }
 		static float2	operator*( float2 a, float2 b )	{ return float2( a.x*b.x, a.y*b.y ); }
 		static float2	operator/( float2 a, float b )	{ return float2( a.x/b, a.y/b ); }
+		static float2	operator/( float2 a, float2 b )	{ return float2( a.x/b.x, a.y/b.y ); }
 
 		property float	Length {
 			float	get() { return (float) Math::Sqrt( x*x + y*y ); }
@@ -114,6 +115,7 @@ namespace SharpMath {
 		static float3	operator*( float3 a, float b )	{ return float3( a.x*b, a.y*b, a.z*b ); }
 		static float3	operator*( float3 a, float3 b )	{ return float3( a.x*b.x, a.y*b.y, a.z*b.z ); }
 		static float3	operator/( float3 a, float b )	{ return float3( a.x/b, a.y/b, a.z/b ); }
+		static float3	operator/( float3 a, float3 b )	{ return float3( a.x/b.x, a.y/b.y, a.z/b.z ); }
 
 		static explicit operator float2( float3 a )		{ return float2( a.x, a.y ); }
 
@@ -231,7 +233,9 @@ namespace SharpMath {
 		static float4	operator-( float4 a )			{ return float4( -a.x, -a.y, -a.z, -a.w ); }
 		static float4	operator*( float a, float4 b )	{ return float4( a*b.x, a*b.y, a*b.z, a*b.w ); }
 		static float4	operator*( float4 a, float b )	{ return float4( a.x*b, a.y*b, a.z*b, a.w*b ); }
+		static float4	operator*( float4 a, float4 b )	{ return float4( a.x*b.x, a.y*b.y, a.z*b.z, a.w*b.w ); }
 		static float4	operator/( float4 a, float b )	{ return float4( a.x/b, a.y/b, a.z/b, a.w/b ); }
+		static float4	operator/( float4 a, float4 b )	{ return float4( a.x/b.x, a.y/b.y, a.z/b.z, a.w/b.w ); }
 
 		static explicit operator float2( float4 a )		{ return float2( a.x, a.y ); }
 		static explicit operator float3( float4 a )		{ return float3( a.x, a.y, a.z ); }

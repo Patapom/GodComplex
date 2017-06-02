@@ -826,6 +826,10 @@ return;
 		}
 
 		#region PIPO
+		
+//		static readonly string		imageBaseName = "plastic_blue";
+		static readonly string		imageBaseName = "fabric_weave";
+		ImageFile	m_imageNDF = new ImageFile( new System.IO.FileInfo( imageBaseName + "_NDF.exr" ) );
 
 		// http://www.rorydriscoll.com/2012/01/15/cubemap-texel-solid-angle/
 		// http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.5.9464&rep=rep1&type=pdf pp. 46
@@ -855,21 +859,115 @@ return;
 			return true;
 		}
 
+		void	Swap( ref double a, ref double b ) {
+			double	t = a;
+			a = b;
+			b = t;
+		}
+		double	ComputeArea( uint _X, uint _Y ) {
+			double	x0 = 2.0 * _X / m_imageNDF.Width - 1.0;
+			double	y0 = 2.0 * _Y / m_imageNDF.Height - 1.0;
+			double	x1 = 2.0 * (_X+1) / m_imageNDF.Width - 1.0;
+			double	y1 = 2.0 * (_Y+1) / m_imageNDF.Height - 1.0;
+// 			x0 = Math.Abs( x0 );
+// 			y0 = Math.Abs( y0 );
+// 			x1 = Math.Abs( x1 );
+// 			y1 = Math.Abs( y1 );
+// 			if ( x0 > x1 ) Swap( ref x0, ref x1 );
+// 			if ( y0 > y1 ) Swap( ref y0, ref y1 );
+
+			double	A0, A1, A2, A3;
+			if ( !ComputeArea( x0, y0, out A0 ) )
+				return 0.0;
+			if ( !ComputeArea( x1, y0, out A1 ) )
+				return 0.0;
+			if ( !ComputeArea( x0, y1, out A2 ) )
+				return 0.0;
+			if ( !ComputeArea( x1, y1, out A3 ) )
+				return 0.0;
+
+			double	dA = A3 - A1 - A2 + A0;
+			return Math.Max( 0.0, dA );
+		}
+
 		ImageFile	m_testPlot = new ImageFile( 512, 512, PIXEL_FORMAT.BGRA8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
 		void	ConvolveNDF() {
-			ImageFile	tempNDF = new ImageFile( new System.IO.FileInfo( "plastic_blue_NDF.exr" ) );
-
 			// Read and normalize NDF pixels
-			float4		sum = float4.Zero;
-			float4[,]	pixelsNDF = new float4[tempNDF.Width,tempNDF.Height];
-			tempNDF.ReadPixels( ( uint _X, uint _Y, ref float4 _color ) => { pixelsNDF[_X,_Y] = _color; sum += _color; } );
-			sum /= tempNDF.Width * tempNDF.Height;
-			for ( uint Y=0; Y < 128; Y++ )
-				for ( uint X=0; X < 128; X++ )
-					pixelsNDF[X,Y] /= sum;	// Normalize
+			float4[,]	pixelsNDF = new float4[m_imageNDF.Width,m_imageNDF.Height];
+			m_imageNDF.ReadPixels( ( uint _X, uint _Y, ref float4 _color ) => { pixelsNDF[_X,_Y] = _color; } );
+
+				// Compute integral sum
+			double	sum = 0.0;
+			for ( uint Y=0; Y < m_imageNDF.Height; Y++ )
+				for ( uint X=0; X < m_imageNDF.Width; X++ ) {
+					double	dA = ComputeArea( X, Y );
+					float	NDF = pixelsNDF[X,Y].x;
+					sum += NDF * dA;
+				}
+			float	normalizer = (float) (1.0 / sum);
+			for ( uint Y=0; Y < m_imageNDF.Height; Y++ )
+				for ( uint X=0; X < m_imageNDF.Width; X++ )
+					pixelsNDF[X,Y] *= normalizer;
+
+			ImageFile	normalizedNDF = new ImageFile( m_imageNDF.Width, m_imageNDF.Height, PIXEL_FORMAT.BGRA8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
+			normalizedNDF.WritePixels( ( uint _X, uint _Y, ref float4 _color ) => { _color = pixelsNDF[_X,_Y]; } );
+			normalizedNDF.Save( new System.IO.FileInfo( imageBaseName + "_NDF_normalized.png" ) );
+			normalizedNDF.Dispose();
+
+
+			// Compute G
+			float4[,]	pixelsG = new float4[m_imageNDF.Width,m_imageNDF.Height];
+			float3		k = float3.Zero;
+			float3		h = float3.Zero;
+			float		maxG = 0.0f;
+			for ( uint Y=0; Y < m_imageNDF.Height; Y++ ) {
+				k.y = 2.0f * Y / m_imageNDF.Height - 1.0f;
+				for ( uint X=0; X < m_imageNDF.Width; X++ ) {
+					k.x = 2.0f * X / m_imageNDF.Width - 1.0f;
+					k.z = 1.0f - k.x*k.x - k.y*k.y;
+					if ( k.z <= 0.0f )
+						continue;
+
+					k.z = (float) Math.Sqrt( k.z );	// = cos( theta_k )
+
+					// Perform an integration with the NDF weighted by the cosine of the angle with that particular direction
+					double	convolution = 0.0;
+					for ( uint Y2=0; Y2 < m_imageNDF.Height; Y2++ ) {
+						h.y = 2.0f * Y2 / m_imageNDF.Height - 1.0f;
+						for ( uint X2=0; X2 < m_imageNDF.Width; X2++ ) {
+							h.x = 2.0f * X2 / m_imageNDF.Width - 1.0f;
+							float	sqSinTheta = h.x*h.x + h.y*h.y;
+							if ( sqSinTheta >= 1.0f )
+								continue;
+
+							h.z = (float) Math.Sqrt( 1.0f - sqSinTheta );
+
+							float	k_o_h = k.Dot( h );			// k.h
+							double	D = pixelsNDF[X2,Y2].x;		// D(h)
+							double	dW = ComputeArea( X2, Y2 );	// dW
+
+							convolution += k_o_h * D * dW;
+						}
+					}
+					float	G = (float) (k.z / convolution);
+					if ( G > maxG && G < 1.05f )
+						maxG = G;
+					pixelsG[X,Y] = new float4( G, G, G, 1.0f );
+				}
+			}
+
+			// Make sure we normalize to avoid going over 1
+			for ( uint Y=0; Y < m_imageNDF.Height; Y++ )
+				for ( uint X=0; X < m_imageNDF.Width; X++ )
+					pixelsG[X,Y] /= maxG;
+
+			ImageFile	resultG = new ImageFile( m_imageNDF.Width, m_imageNDF.Height, PIXEL_FORMAT.BGRA8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
+			resultG.WritePixels( ( uint _X, uint _Y, ref float4 _color ) => { _color = pixelsG[_X,_Y]; } );
+			resultG.Save( new System.IO.FileInfo( imageBaseName + "_G.png" ) );
+			resultG.Dispose();
 
 			const uint	SAMPLES = 256;
-			const uint	SIZE = 1000;
+			const uint	SIZE = 10000;
 
 			// Compute quarter hemisphere area by splitting into vertical slices
 			double	sumSolidAngle = 0.0;
@@ -889,47 +987,34 @@ return;
 					throw new Exception( "Shit!" );
 				sumSolidAngle += dA;
 			}
-			// 113.3620499273941
+			// 1.5347680642049228
 
 			// Compute quarter hemisphere area by splitting into many small pixels
-			float3	d = float3.Zero;
 			sumSolidAngle = 0.0;
-			for ( uint Y=SIZE/2; Y < SIZE; Y++ ) {
-				for ( uint X=SIZE/2; X < SIZE; X++ ) {
-					float	x0 = 2.0f * X / SIZE - 1.0f;
-					float	y0 = 2.0f * Y / SIZE - 1.0f;
-					float	x1 = 2.0f * (X+1) / SIZE - 1.0f;
-					float	y1 = 2.0f * (Y+1) / SIZE - 1.0f;
-					if ( x1*x1 + y1*y1 > 0.99f )
+			for ( uint Y=0; Y < SIZE; Y++ ) {
+				for ( uint X=0; X < SIZE; X++ ) {
+					float	x0 = (float) X / SIZE;
+					float	y0 = (float) Y / SIZE;
+					float	x1 = (float) (X+1) / SIZE;
+					float	y1 = (float) (Y+1) / SIZE;
+//					if ( x1*x1 + y1*y1 > 0.99f )
+					if ( x1*x1 + y1*y1 >= 1.0f )
 						continue;
 
 					double	A0, A1, A2, A3;
-					if ( !ComputeArea( x0, y0, out A0 ) ) continue;
-					if ( !ComputeArea( x1, y0, out A1 ) ) continue;
-					if ( !ComputeArea( x0, y1, out A2 ) ) continue;
-					if ( !ComputeArea( x1, y1, out A3 ) ) continue;
+					if ( !ComputeArea( x0, y0, out A0 ) ) throw new Exception( "Prout!" );
+					if ( !ComputeArea( x1, y0, out A1 ) ) throw new Exception( "Prout!" );
+					if ( !ComputeArea( x0, y1, out A2 ) ) throw new Exception( "Prout!" );
+					if ( !ComputeArea( x1, y1, out A3 ) ) throw new Exception( "Prout!" );
 
 					double	dA = A3 - A1 - A2 + A0;
-// 					if ( dA <= 0.0 )
-// 						throw new Exception( "Shit" );
+					if ( dA <= 0.0 )
+						throw new Exception( "Shit" );
 					sumSolidAngle += dA;
-
-// 					int	count = 0;
-// 					for ( uint sY=0; sY < SAMPLES; sY++ ) {
-// 						d.y = 1.0f - (Y + (float) sY / SAMPLES) / 64.0f;
-// 						for ( uint sX=0; sX < SAMPLES; sX++ ) {
-// 							d.x = 1.0f - (X + (float) sX / SAMPLES) / 64.0f;
-// 							d.z = d.x*d.x + d.y*d.y;
-// 							if ( d.z >= 1.0f )
-// 								continue;	// Outside unit circle
-// //							d.z = (float) Math.Sqrt( 1.0f - d.z );
-// 							count++;
-// 						}
-// 					}
-// 
-// 					d.z = (float) Math.Sqrt( d.z );
 				}
 			}
+			// 1000 => 1.5161477196715312
+			// 10000 => 1.5535995614989679
 
 			const float	RADIUS = 0.70f;
 			double[]	sumSolidAngles = new double[10];
@@ -998,7 +1083,7 @@ return;
 
 
 // 			// Compute G
-// 			float4[,]	pixelsG = new float4[tempNDF.Width,tempNDF.Height];
+// 			float4[,]	pixelsG = new float4[m_imageNDF.Width,m_imageNDF.Height];
 // 			float3		k = float3.Zero;
 // 			float3		h = float3.Zero;
 // 			for ( uint Y=0; Y < 128; Y++ ) {
@@ -1038,3 +1123,27 @@ return;
 		#endregion
 	}
 }
+/*
+ // Perform an integration with the NDF weighted by the cosine of the angle with that particular direction
+ float3 k = given;
+ float3 h;
+ float  convolution = 0.0;
+ for ( uint Y=0; Y < Height; Y++ ) {
+   h.y = 2.0f * Y / Height - 1.0f;
+   for ( uint X=0; X < Width; X++ ) {
+     h.x = 2.0f * X / Width - 1.0f;
+     float  sqSinTheta = h.x*h.x + h.y*h.y;
+     if ( sqSinTheta >= 1.0f )
+       continue;
+     
+     h.z = sqrt( 1.0f - sqSinTheta );
+     
+     float  k_o_h = k.Dot( h );         // k.h
+     float  D = NDF[X,Y].x;             // D(h)
+     float  dW = ComputeArea( X, Y );   // dW
+     
+     convolution += k_o_h * D * dW;
+   }
+ }
+ float	G = k.z / convolution;
+ */
