@@ -81,7 +81,7 @@ namespace TriangleCurvature
 			// Initialize camera
 			m_camera.CreatePerspectiveCamera( 60.0f * (float) Math.PI / 180.0f, (float) panelOutput.Width / panelOutput.Height, 0.01f, 10.0f );
 			m_manipulator.Attach( panelOutput, m_camera );
-			m_manipulator.InitializeCamera( new float3( 0, 0, -4.0f ), float3.Zero, float3.UnitY );
+			m_manipulator.InitializeCamera( new float3( 0, 0, 4.0f ), float3.Zero, float3.UnitY );
 			m_camera.CameraTransformChanged += m_camera_CameraTransformChanged;
 			m_camera_CameraTransformChanged( null, EventArgs.Empty );
 
@@ -111,11 +111,22 @@ namespace TriangleCurvature
 // 		}
 
 		Primitive	BuildCube() {
-			VertexP3N3G3B3T2[]	defaultFace = new VertexP3N3G3B3T2[4] {
-				new VertexP3N3G3B3T2() { P = new float3( -1.0f,  1.0f, 1.0f ), N = new float3( -1.0f,  1.0f, 1.0f ).Normalized, T = new float3( 0, 0, 1 ), B = new float3( 0, 0, 1 ), UV = new float2( 0, 0 ) },
-				new VertexP3N3G3B3T2() { P = new float3( -1.0f, -1.0f, 1.0f ), N = new float3( -1.0f, -1.0f, 1.0f ).Normalized, T = new float3( 0, 0, 1 ), B = new float3( 0, 0, 1 ), UV = new float2( 0, 1 ) },
-				new VertexP3N3G3B3T2() { P = new float3(  1.0f, -1.0f, 1.0f ), N = new float3(  1.0f, -1.0f, 1.0f ).Normalized, T = new float3( 0, 0, 1 ), B = new float3( 0, 0, 1 ), UV = new float2( 1, 1 ) },
-				new VertexP3N3G3B3T2() { P = new float3(  1.0f,  1.0f, 1.0f ), N = new float3(  1.0f,  1.0f, 1.0f ).Normalized, T = new float3( 0, 0, 1 ), B = new float3( 0, 0, 1 ), UV = new float2( 1, 0 ) },
+			// Default example face where B is used to stored the triangle's center and 
+			float3	C0 = (new float3( -1.0f,  1.0f, 1.0f ) + new float3( -1.0f, -1.0f, 1.0f ) + new float3(  1.0f, -1.0f, 1.0f )) / 3.0f;
+			float3	C1 = (new float3( -1.0f,  1.0f, 1.0f ) + new float3(  1.0f, -1.0f, 1.0f ) + new float3(  1.0f,  1.0f, 1.0f )) / 3.0f;
+
+			float	bend = 1.0f;
+
+			VertexP3N3G3B3T2[]	defaultFace = new VertexP3N3G3B3T2[6] {
+				// First triangle
+				new VertexP3N3G3B3T2() { P = new float3( -1.0f,  1.0f, 1.0f ), N = new float3( bend * -1.0f, bend *  1.0f, 1.0f ).Normalized, T = new float3( 0, 0, 1 ), B = C0, UV = new float2( 0, 0 ) },
+				new VertexP3N3G3B3T2() { P = new float3( -1.0f, -1.0f, 1.0f ), N = new float3( bend * -1.0f, bend * -1.0f, 1.0f ).Normalized, T = new float3( 0, 0, 1 ), B = C0, UV = new float2( 0, 1 ) },
+				new VertexP3N3G3B3T2() { P = new float3(  1.0f, -1.0f, 1.0f ), N = new float3( bend *  1.0f, bend * -1.0f, 1.0f ).Normalized, T = new float3( 0, 0, 1 ), B = C0, UV = new float2( 1, 1 ) },
+
+				// 2nd triangle
+				new VertexP3N3G3B3T2() { P = new float3( -1.0f,  1.0f, 1.0f ), N = new float3( bend * -1.0f, bend *  1.0f, 1.0f ).Normalized, T = new float3( 0, 0, 1 ), B = C1, UV = new float2( 0, 0 ) },
+				new VertexP3N3G3B3T2() { P = new float3(  1.0f, -1.0f, 1.0f ), N = new float3( bend *  1.0f, bend * -1.0f, 1.0f ).Normalized, T = new float3( 0, 0, 1 ), B = C1, UV = new float2( 1, 1 ) },
+				new VertexP3N3G3B3T2() { P = new float3(  1.0f,  1.0f, 1.0f ), N = new float3( bend *  1.0f, bend *  1.0f, 1.0f ).Normalized, T = new float3( 0, 0, 1 ), B = C1, UV = new float2( 1, 0 ) },
 			};
 
 			float3[]	faceNormals = new float3[6] {
@@ -137,31 +148,37 @@ namespace TriangleCurvature
 
 			Func<float3,float3,float3,float3,float3>	lambdaTransform = ( float3 _P, float3 _T, float3 _B, float3 _N ) => _P.x * _T + _P.y * _B + _P.z * _N;
 
-			VertexP3N3G3B3T2[]	vertices = new VertexP3N3G3B3T2[6*4];
+			VertexP3N3G3B3T2[]	vertices = new VertexP3N3G3B3T2[6*2*3];
 			for ( int faceIndex=0; faceIndex < 6; faceIndex++ ) {
 				float3	N = faceNormals[faceIndex];
 				float3	T = faceTangents[faceIndex];
 				float3	B = N.Cross( T );
 
-				for ( int i=0; i < 4; i++ ) {
+				for ( int i=0; i < 6; i++ ) {
 					VertexP3N3G3B3T2	V = defaultFace[i];
-					vertices[4*faceIndex+i].P = lambdaTransform( V.P, T, B, N );
-					vertices[4*faceIndex+i].N = lambdaTransform( V.N, T, B, N );
-					vertices[4*faceIndex+i].T = lambdaTransform( V.T, T, B, N );
-					vertices[4*faceIndex+i].B = lambdaTransform( V.B, T, B, N );
-					vertices[4*faceIndex+i].UV = V.UV;
+					vertices[6*faceIndex+i].P = lambdaTransform( V.P, T, B, N );
+					vertices[6*faceIndex+i].N = lambdaTransform( V.N, T, B, N );
+					vertices[6*faceIndex+i].T = lambdaTransform( V.T, T, B, N );
+					vertices[6*faceIndex+i].B = lambdaTransform( V.B, T, B, N );
+					vertices[6*faceIndex+i].UV = V.UV;
 				}
 			}
 			uint[]				indices = new uint[6 * 2*3] {
-				0, 1, 2, 0, 2, 3,
-				4, 5, 6, 4, 6, 7,
-				8, 9, 10, 8, 10, 11,
-				12, 13, 14, 12, 14, 15,
-				16, 17, 18, 16, 18, 19,
-				20, 21, 22, 20, 22, 23,
+// 				0, 1, 2, 0, 2, 3,
+// 				4, 5, 6, 4, 6, 7,
+// 				8, 9, 10, 8, 10, 11,
+// 				12, 13, 14, 12, 14, 15,
+// 				16, 17, 18, 16, 18, 19,
+// 				20, 21, 22, 20, 22, 23,
+				0, 1, 2, 3, 4, 5,
+				6, 7, 8, 9, 10, 11,
+				12, 13, 14, 15, 16, 17,
+				18, 19, 20, 21, 22, 23,
+				24, 25, 26, 27, 28, 29,
+				30, 31, 32, 33, 34, 35
 			};
 
-			return new Primitive( m_device, 6 * 4, VertexP3N3G3B3T2.FromArray( vertices ), indices, Primitive.TOPOLOGY.TRIANGLE_LIST, VERTEX_FORMAT.P3N3G3B3T2 );
+			return new Primitive( m_device, vertices.Length, VertexP3N3G3B3T2.FromArray( vertices ), indices, Primitive.TOPOLOGY.TRIANGLE_LIST, VERTEX_FORMAT.P3N3G3B3T2 );
 		}
 
 		#endregion
