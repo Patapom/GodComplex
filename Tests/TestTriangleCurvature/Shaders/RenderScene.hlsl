@@ -24,12 +24,11 @@ struct PS_IN {
 	float3	wsNormal : NORMAL;
 
 	float	sphereRadius : RADIUS;
-	float3	wsFaceNormal : FACE_NORMAL;
-	float3	wsFaceCenter: FACE_CENTER;
+	float3	wsSphereCenter: SPHERE_CENTER;
 
 	float2	UV : TEXCOORD0;
 };
-
+/*
 float	OffsetPosition( inout float3 _wsPosition, float3 _wsNormal, float _sphereRadius, float3 _wsFaceCenter, float3 _wsFaceNormal ) {
 	float3	P = _wsPosition;
 	float3	N = _wsNormal;
@@ -152,8 +151,9 @@ float	OffsetPosition2( inout float3 _wsPosition, float3 _wsNormal, float _sphere
 
 	return offset;
 }
+*/
 
-float	OffsetPosition3( inout float3 _wsPosition, float3 _wsView, float _sphereRadius, float3 _wsSphereCenter, float3 _wsFaceNormal ) {
+float	OffsetPosition3( inout float3 _wsPosition, inout float3 _wsNormal, float3 _wsView, float3 _wsSphereCenter, float _sphereRadius ) {
 	float3	P = _wsPosition;
 	float3	V = _wsView;
 	float3	C = _wsSphereCenter;
@@ -165,6 +165,7 @@ float	OffsetPosition3( inout float3 _wsPosition, float3 _wsView, float _sphereRa
 	float	offset = -b + sqrt( delta );
 
 	_wsPosition += offset * V;
+	_wsNormal = normalize( _wsPosition - _wsSphereCenter );
 
 	return offset;
 }
@@ -174,21 +175,17 @@ PS_IN	VS( VS_IN _In ) {
 
 	Out.__Position = mul( float4( _In.Position, 1.0 ), _World2Proj );
 	Out.wsPosition = _In.Position;	// Assume already in world space
-	Out.wsNormal = _In.Normal;
-	Out.wsFaceNormal = _In.Tangent;
-	Out.wsFaceCenter = _In.BiTangent;
+	Out.wsNormal = normalize( lerp( _In.Normal, _In.Position, _Bend ) );
 	Out.UV = _In.UV;
 
-	// Compute sphere radius
-	float	NdotNt = dot( Out.wsNormal, Out.wsFaceNormal );
-	float	cosTheta = sqrt( 1.0 - NdotNt * NdotNt );
-	Out.sphereRadius = length( Out.wsPosition - Out.wsFaceCenter ) / max( 1e-6, cosTheta );
-//Out.sphereRadius = length( Out.wsPosition - Out.wsFaceCenter );
-//Out.sphereRadius = 0.5;
+//	// Compute sphere center and radius
+//	float	NdotNt = dot( Out.wsNormal, Out.wsFaceNormal );
+//	float	cosTheta = sqrt( 1.0 - NdotNt * NdotNt );
+//	Out.sphereRadius = length( Out.wsPosition - Out.wsSphereCenter ) / max( 1e-6, cosTheta );
 
-Out.wsFaceCenter = 0.0;	// Assume given
-//Out.sphereRadius = length( wsPosition - wsSphereCenter );
-Out.sphereRadius = sqrt( 3.0 );	// Assume only computed at non-subdivided triangles
+//Out.sphereRadius = _In.BiTangent.x;// sqrt( 3.0 );	// Assume given
+Out.sphereRadius = sqrt( 3.0 ) / max( 1e-4, _Bend );	// Assume given, but here we make it dynamic
+Out.wsSphereCenter = Out.wsPosition - Out.sphereRadius * Out.wsNormal;
 
 	return Out;
 }
@@ -197,18 +194,20 @@ float3	PS( PS_IN _In ) : SV_TARGET0 {
 
 	float3	wsPosition = _In.wsPosition;
 	float3	wsNormal = normalize( _In.wsNormal );
+	if ( _Flags & 1U )
+		return wsNormal;
 
 	float3	wsView = normalize( _Camera2World[3].xyz - wsPosition );
 
-//wsNormal = _In.wsFaceNormal;
-
-//	float	offset = OffsetPosition( wsPosition, wsNormal, _In.sphereRadius, _In.wsFaceCenter, _In.wsFaceNormal );
-//	float	offset = OffsetPosition2( wsPosition, wsNormal, _In.sphereRadius, _In.wsFaceCenter, _In.wsFaceNormal );
-	float	offset = OffsetPosition3( wsPosition, wsView, _In.sphereRadius, _In.wsFaceCenter, _In.wsFaceNormal );
-	wsNormal = normalize( wsPosition - _In.wsFaceCenter );
+//	float	offset = OffsetPosition( wsPosition, wsNormal, _In.sphereRadius, _In.wsSphereCenter, _In.wsFaceNormal );
+//	float	offset = OffsetPosition2( wsPosition, wsNormal, _In.sphereRadius, _In.wsSphereCenter, _In.wsFaceNormal );
+	if ( _Flags & 2U )
+		float	offset = OffsetPosition3( wsPosition, wsNormal, wsView, _In.wsSphereCenter, _In.sphereRadius );
+//return 0.001 * _In.sphereRadius;
+//return abs(offset);
 //return offset;
 //return 0.25 * _In.sphereRadius;
-//return 0.25 * length( wsPosition - _In.wsFaceCenter );
+//return 0.25 * length( wsPosition - _In.wsSphereCenter );
 //return wsNormal;
 
 	float3	wsLight = LIGHT_POSITION - wsPosition;

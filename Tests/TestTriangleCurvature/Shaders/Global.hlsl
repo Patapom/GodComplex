@@ -8,6 +8,7 @@ cbuffer CB_Main : register(b0) {
 	uint2		_Resolution;
 	float		_Time;
 	uint		_Flags;
+	float		_Bend;
 };
 
 cbuffer CB_Camera : register(b1) {

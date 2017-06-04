@@ -64,6 +64,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="PanelOutput.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="PanelOutput.Designer.cs">
+      <DependentUpon>PanelOutput.cs</DependentUpon>
+    </Compile>
     <Compile Include="TriangleCurvatureTestForm.cs">
       <SubType>Form</SubType>
     </Compile>

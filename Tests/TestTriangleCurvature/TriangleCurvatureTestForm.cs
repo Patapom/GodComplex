@@ -11,15 +11,23 @@
 //
 // You can refer to the calculus sheets in this folder to have an idea on how I wanted to do that but basically
 //	it boiled down to express a tangential sphere at each vertex then interpolating its center and radius along
-//	the triangle and try to reproject the triangle's position onto that sphere...
+//	the triangle and try to reproject the triangle's position onto that sphere, exactly like parallax mapping...
 //
-// Turns out it's pretty useless because pushing the position onto the curved surface leaves a gap at the edges
-//	of the triangle so we're basically left with trying what parallax mapping does: moving along the view ray
-//	to project onto the actual surface.
+// My cube example shows that it correctly leave the cube's apparent shape intact but the lighting shows no discontinuities,
+//	behaving as if it were a sphere...
 //
-// My cube example shows that it correctly leave the cube's apparent shape intact but the lighting shows no discontinuities, as if it were a sphere...
+// All the complicated computations are after all simplified by providing an additional radius of curvature per vertex.
+// In the vertex shader you simply output the center of the tangent sphere as:
 //
-// 
+//		C = World Space Position - Radius * World Space Normal
+//
+// Then in the pixel shader you compute the intersection of the view ray with the interpolated sphere, and recompute the normal
+//	as it's orthogonal to the sphere at the new position.
+// An interesting fact is that the center and radius of the tangent sphere actually replace the usual normal that we don't need
+//	to pass to the pixel shader anymore...
+//
+// -----------------------------------------------------------------------------------------------------------
+// To know how compute the radius associated to each vertex, please refer to the special calculus sheet in the project directory.
 //
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -52,6 +60,7 @@ namespace TriangleCurvature
 			public uint		_resolutionY;
 			public float	_time;
 			public uint		_flags;
+			public float	_bend;
 		}
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
@@ -86,6 +95,16 @@ namespace TriangleCurvature
 		public TestTriangleCurvatureForm()
 		{
 			InitializeComponent();
+
+// 			float3	P = new float3( 1, 1, 1 );
+// 			float3	N = P.Normalized;
+// 			float	R = ComputeTangentSphereRadius( P, N, new float3[] { new float3( 1, 1, -1 ), new float3( -1, 1, 1 ), new float3( 1, -1, 1 ) } );
+
+			float3	P = new float3( 1, 1, 0 );
+			float3	N = P.Normalized;
+			float	R = ComputeTangentSphereRadius( P, N, new float3[] { new float3( -1, 1, 0 ), new float3( 1, -1, 0 ) } );
+
+			float3	C = P - R * N;
 		}
 
 		protected override void OnLoad( EventArgs e ) {
@@ -137,14 +156,82 @@ namespace TriangleCurvature
 			D.Dispose();
 		}
 
+		#region Vertex Tangent Sphere Radius Computation
+
+		/// <summary>
+		/// Computes the radius of the sphere tangent to a vertex given a set of neighbor vertices
+		/// </summary>
+		/// <param name="_P"></param>
+		/// <param name="_N"></param>
+		/// <param name="_neighbors"></param>
+		/// <returns></returns>
+		float	ComputeTangentSphereRadius( float3 _P, float3 _N, float3[] _neighbors ) {
+
+ImageFile	graph = new ImageFile( (uint) panelOutputGraph.Width, (uint) panelOutputGraph.Height, PIXEL_FORMAT.BGRA8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
+graph.Clear( float4.One );
+
+			Func<float3,float3[],float>		SquareDistance = ( float3 _C, float3[] _Pns ) => { float result = 0.0f; foreach ( float3 Pn in _Pns ) result += (Pn - _C).LengthSquared; return result; };
+//			Func<float3,float3[],float>		SquareDistance = ( float3 _C, float3[] _Pns ) => { float result = 0.0f; foreach ( float3 Pn in _Pns ) result += (Pn - _C).Length; return result / _Pns.Length; };
+
+float2	rangeX = new float2( 0, 4 ), rangeY = new float2( 0, 50 );
+graph.PlotAxes( float4.UnitW, rangeX, rangeY, 0.5f, 5.0f );
+graph.PlotGraph( float4.UnitW, rangeX, rangeY, ( float x ) => { return SquareDistance( _P - x * _N, _neighbors ); } );
+
+			const float	eps = 0.01f;
+			const float	tol = 0.01f;
+
+			float	previousR = -float.MaxValue;
+			float	R = 0.0f;
+			float3	C = _P;
+			int		iterationsCount = 0;
+//			while ( Math.Abs( R - previousR ) > tol ) {
+			while ( R > previousR && R < 10000.0f && iterationsCount < 1000 ) {
+				// Compute gradient
+				float	sqDistance = SquareDistance( C, _neighbors );
+				float	sqDistance2 = SquareDistance( C - eps * _N, _neighbors );
+				float	grad = (sqDistance2 - sqDistance) / eps;
+
+				// Follow opposite gradient direction toward minimum
+				previousR = R;
+//				R -= 0.01f * gradSqDistance;
+R -= 0.1f * grad;
+				C = _P - R * _N;
+				iterationsCount++;
+
+graph.DrawLine( new float4( 1, 0, 0, 1 ), graph.RangedCoordinates2ImageCoordinates( rangeX, rangeY, new float2( previousR, sqDistance ) ), graph.RangedCoordinates2ImageCoordinates( rangeX, rangeY, new float2( R, SquareDistance( _P - R * _N, _neighbors ) ) ) );
+
+float	k = 1.0f;
+graph.DrawLine( new float4( 0, 0.5f, 0, 1 ), graph.RangedCoordinates2ImageCoordinates( rangeX, rangeY, new float2( previousR, k * (iterationsCount-1) ) ), graph.RangedCoordinates2ImageCoordinates( rangeX, rangeY, new float2( R, k * iterationsCount ) ) );
+			}
+
+			// Since we crossed the minimum, take the average for a better result
+			R = 0.5f * (R + previousR);
+
+panelOutputGraph.m_bitmap = graph.AsBitmap;
+
+MessageBox.Show( "R = " + R );
+
+			return R;
+		}
+
+// 		float	SquareDistance( float3 _C, float3[] _neighbors ) {
+// 
+// 		}
+
+		#endregion
+
 		#region Primitive Building
 
-		const float	BEND = 1.0f;
+		const float	BEND = 0.0f;
 
 		Primitive	BuildCube() {
 			// Default example face where B is used to stored the triangle's center and 
-			float3	C0 = (new float3( -1.0f,  1.0f, 1.0f ) + new float3( -1.0f, -1.0f, 1.0f ) + new float3(  1.0f, -1.0f, 1.0f )) / 3.0f;
-			float3	C1 = (new float3( -1.0f,  1.0f, 1.0f ) + new float3(  1.0f, -1.0f, 1.0f ) + new float3(  1.0f,  1.0f, 1.0f )) / 3.0f;
+// 			float3	C0 = (new float3( -1.0f,  1.0f, 1.0f ) + new float3( -1.0f, -1.0f, 1.0f ) + new float3(  1.0f, -1.0f, 1.0f )) / 3.0f;
+// 			float3	C1 = (new float3( -1.0f,  1.0f, 1.0f ) + new float3(  1.0f, -1.0f, 1.0f ) + new float3(  1.0f,  1.0f, 1.0f )) / 3.0f;
+
+			float	R = (float) Math.Sqrt( 3.0f ) / BEND;
+			float3	C0 = new float3( R, 0, 0 );
+			float3	C1 = new float3( R, 0, 0 );
 
 			VertexP3N3G3B3T2[]	defaultFace = new VertexP3N3G3B3T2[6] {
 				// First triangle
@@ -188,7 +275,8 @@ namespace TriangleCurvature
 					vertices[6*faceIndex+i].P = lambdaTransform( V.P, T, B, N );
 					vertices[6*faceIndex+i].N = lambdaTransform( V.N, T, B, N );
 					vertices[6*faceIndex+i].T = lambdaTransform( V.T, T, B, N );
-					vertices[6*faceIndex+i].B = lambdaTransform( V.B, T, B, N );
+//					vertices[6*faceIndex+i].B = lambdaTransform( V.B, T, B, N );
+vertices[6*faceIndex+i].B = V.B;
 					vertices[6*faceIndex+i].UV = V.UV;
 				}
 			}
@@ -341,7 +429,10 @@ namespace TriangleCurvature
 			m_CB_Main.m._resolutionX = (uint) panelOutput.Width;
 			m_CB_Main.m._resolutionY = (uint) panelOutput.Height;
 			m_CB_Main.m._time = (float) (currentTime - m_startTime).TotalSeconds;
-			m_CB_Main.m._flags = (uint) (checkBox1.Checked ? 1U : 0U);
+			m_CB_Main.m._flags = (uint) (	(checkBoxShowNormal.Checked ? 1U : 0U)
+										  | (checkBoxEnableCorrection.Checked ? 2U : 0U)
+										);
+			m_CB_Main.m._bend = floatTrackbarControlCurvatureStrength.Value;
 			m_CB_Main.UpdateData();
 
 			m_device.SetRenderStates( RASTERIZER_STATE.CULL_BACK, DEPTHSTENCIL_STATE.READ_WRITE_DEPTH_LESS, BLEND_STATE.DISABLED );
