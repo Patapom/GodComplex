@@ -7,9 +7,7 @@
 cbuffer CB_Main : register(b0) {
 	uint2		_Resolution;
 	float		_Time;
-	float		_GlossRoom;
-	float		_GlossSphere;
-	float		_NoiseInfluence;
+	uint		_Flags;
 };
 
 cbuffer CB_Camera : register(b1) {
@@ -177,6 +175,19 @@ float erf( float x ) {
 float	GSmith( float3 _Wm, float3 _Wi, float _sqrAlpha ) {
 	float	d = dot( _Wm, _Wi );
 	return 2.0 * d / (d + sqrt( _sqrAlpha + (1.0 - _sqrAlpha) * d*d ));
+}
+
+float	NDF_GGX( float _cosTheta, float _alpha ) {
+	float	a2 = _alpha * _alpha;
+	float	c2 = _cosTheta * _cosTheta;
+	float	k  = 1 + c2 * (a2 - 1.0);
+	return a2 / (PI * k * k);
+}
+float	SmithG( float _cosTheta, float _alpha ) {
+	float	a2 = _alpha * _alpha;
+	float	c = saturate( _cosTheta );
+	float	c2 = c * c;
+	return 2.0 * c / (c + sqrt( c2 + a2 * (1 - c2) ));
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////

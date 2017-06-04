@@ -24,6 +24,7 @@ namespace TriangleCurvature
 			public uint		_resolutionX;
 			public uint		_resolutionY;
 			public float	_time;
+			public uint		_flags;
 		}
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
@@ -65,12 +66,14 @@ namespace TriangleCurvature
 			try {
 				m_device.Init( panelOutput.Handle, false, true );
 
-				m_Shader_renderScene = new Shader( m_device, new System.IO.FileInfo( "./Shaders/RenderScene.hlsl" ), VERTEX_FORMAT.P3N3G3B3T2, "VS", null, "PS", null );
+//				m_Shader_renderScene = new Shader( m_device, new System.IO.FileInfo( "./Shaders/RenderScene.hlsl" ), VERTEX_FORMAT.P3N3G3B3T2, "VS", null, "PS", null );
+				m_Shader_renderScene = new Shader( m_device, new System.IO.FileInfo( "./Shaders/RenderScene_Subdiv.hlsl" ), VERTEX_FORMAT.P3N3G3B3T2, "VS", null, "PS", null );
 				
 				m_CB_Main = new ConstantBuffer< CB_Main >( m_device, 0 );
 				m_CB_Camera = new ConstantBuffer<CB_Camera>( m_device, 1 );
 
-				m_Prim_Cube = BuildCube();
+//				m_Prim_Cube = BuildCube();
+				m_Prim_Cube = BuildSubdividedCube();
 
 			} catch ( Exception _e ) {
 				MessageBox.Show( this, "Exception: " + _e.Message, "Path Tracing Test", MessageBoxButtons.OK, MessageBoxIcon.Error );
@@ -105,10 +108,6 @@ namespace TriangleCurvature
 		}
 
 		#region Primitive Building
-
-// 		float3	Transform( float3 _P, float3 _T, float3 _B, float3 _N ) {
-// 			return _P.x * _T + _P.y * _B + _P.y * _N;
-// 		}
 
 		Primitive	BuildCube() {
 			// Default example face where B is used to stored the triangle's center and 
@@ -181,6 +180,113 @@ namespace TriangleCurvature
 			return new Primitive( m_device, vertices.Length, VertexP3N3G3B3T2.FromArray( vertices ), indices, Primitive.TOPOLOGY.TRIANGLE_LIST, VERTEX_FORMAT.P3N3G3B3T2 );
 		}
 
+		Primitive	BuildSubdividedCube() {
+			// Default example face where B is used to stored the triangle's center and 
+			float3	C0 = (new float3( -1.0f,  1.0f, 1.0f ) + new float3( -1.0f, -1.0f, 1.0f ) + new float3(  1.0f, -1.0f, 1.0f )) / 3.0f;
+			float3	C1 = (new float3( -1.0f,  1.0f, 1.0f ) + new float3(  1.0f, -1.0f, 1.0f ) + new float3(  1.0f,  1.0f, 1.0f )) / 3.0f;
+
+			float	bend = 1.0f;
+
+			VertexP3N3G3B3T2[]	defaultFace = new VertexP3N3G3B3T2[6] {
+				// First triangle
+				new VertexP3N3G3B3T2() { P = new float3( -1.0f,  1.0f, 1.0f ), N = new float3( bend * -1.0f, bend *  1.0f, 1.0f ).Normalized, T = new float3( 0, 0, 1 ), B = C0, UV = new float2( 0, 0 ) },
+				new VertexP3N3G3B3T2() { P = new float3( -1.0f, -1.0f, 1.0f ), N = new float3( bend * -1.0f, bend * -1.0f, 1.0f ).Normalized, T = new float3( 0, 0, 1 ), B = C0, UV = new float2( 0, 1 ) },
+				new VertexP3N3G3B3T2() { P = new float3(  1.0f, -1.0f, 1.0f ), N = new float3( bend *  1.0f, bend * -1.0f, 1.0f ).Normalized, T = new float3( 0, 0, 1 ), B = C0, UV = new float2( 1, 1 ) },
+
+				// 2nd triangle
+				new VertexP3N3G3B3T2() { P = new float3( -1.0f,  1.0f, 1.0f ), N = new float3( bend * -1.0f, bend *  1.0f, 1.0f ).Normalized, T = new float3( 0, 0, 1 ), B = C1, UV = new float2( 0, 0 ) },
+				new VertexP3N3G3B3T2() { P = new float3(  1.0f, -1.0f, 1.0f ), N = new float3( bend *  1.0f, bend * -1.0f, 1.0f ).Normalized, T = new float3( 0, 0, 1 ), B = C1, UV = new float2( 1, 1 ) },
+				new VertexP3N3G3B3T2() { P = new float3(  1.0f,  1.0f, 1.0f ), N = new float3( bend *  1.0f, bend *  1.0f, 1.0f ).Normalized, T = new float3( 0, 0, 1 ), B = C1, UV = new float2( 1, 0 ) },
+			};
+
+			float3[]	faceNormals = new float3[6] {
+				-float3.UnitX,
+				 float3.UnitX,
+				-float3.UnitY,
+				 float3.UnitY,
+				-float3.UnitZ,
+				 float3.UnitZ,
+			};
+			float3[]	faceTangents = new float3[6] {
+				 float3.UnitZ,
+				-float3.UnitZ,
+				 float3.UnitX,
+				 float3.UnitX,
+				-float3.UnitX,
+				 float3.UnitX,
+			};
+
+			Func<float3,float3,float3,float3,float3>	lambdaTransform = ( float3 _P, float3 _T, float3 _B, float3 _N ) => _P.x * _T + _P.y * _B + _P.z * _N;
+
+			List< VertexP3N3G3B3T2 >	vertices = new List<VertexP3N3G3B3T2>();
+			List< uint >				indices = new List<uint>();
+
+			const uint	SUBVIVS_COUNT = 5;
+
+			VertexP3N3G3B3T2[]	temp = new VertexP3N3G3B3T2[3];
+//			for ( int faceIndex=3; faceIndex < 4; faceIndex++ ) {
+			for ( int faceIndex=0; faceIndex < 6; faceIndex++ ) {
+				float3	N = faceNormals[faceIndex];
+				float3	T = faceTangents[faceIndex];
+				float3	B = N.Cross( T );
+
+				for ( uint triIndex=0; triIndex < 2; triIndex++ ) {
+					for ( int i=0; i < 3; i++ ) {
+						VertexP3N3G3B3T2	V = defaultFace[3*triIndex+i];
+						temp[i].P = lambdaTransform( V.P, T, B, N );
+						temp[i].N = lambdaTransform( V.N, T, B, N );
+						temp[i].T = lambdaTransform( V.T, T, B, N );
+						temp[i].B = lambdaTransform( V.B, T, B, N );
+						temp[i].UV = V.UV;
+					}
+
+					SubdivTriangle( temp, SUBVIVS_COUNT, vertices, indices );
+				}
+			}
+
+			return new Primitive( m_device, vertices.Count, VertexP3N3G3B3T2.FromArray( vertices.ToArray() ), indices.ToArray(), Primitive.TOPOLOGY.TRIANGLE_LIST, VERTEX_FORMAT.P3N3G3B3T2 );
+		}
+
+		void	SubdivTriangle( VertexP3N3G3B3T2[] _triangle, uint _count, List< VertexP3N3G3B3T2 > _vertices, List< uint > _indices ) {
+			if ( _count == 0 ) {
+				// Push triangle
+// _triangle[0].B.x = (float) _vertices.Count;
+// _triangle[1].B.x = (float) _vertices.Count+1;
+// _triangle[2].B.x = (float) _vertices.Count+2;
+				_indices.Add( (uint) _vertices.Count );
+				_vertices.Add( _triangle[0] );
+				_indices.Add( (uint) _vertices.Count );
+				_vertices.Add( _triangle[1] );
+				_indices.Add( (uint) _vertices.Count );
+				_vertices.Add( _triangle[2] );
+				return;
+			}
+
+			VertexP3N3G3B3T2[]	insideTriangle = new VertexP3N3G3B3T2[3] {
+				new VertexP3N3G3B3T2() { P = 0.5f * (_triangle[0].P + _triangle[1].P), N = 0.5f * (_triangle[0].N + _triangle[1].N), UV = 0.5f * (_triangle[0].UV + _triangle[1].UV), T = 0.5f * (_triangle[0].T + _triangle[1].T), B = 0.5f * (_triangle[0].B + _triangle[1].B) },
+				new VertexP3N3G3B3T2() { P = 0.5f * (_triangle[1].P + _triangle[2].P), N = 0.5f * (_triangle[1].N + _triangle[2].N), UV = 0.5f * (_triangle[1].UV + _triangle[2].UV), T = 0.5f * (_triangle[1].T + _triangle[2].T), B = 0.5f * (_triangle[1].B + _triangle[2].B) },
+				new VertexP3N3G3B3T2() { P = 0.5f * (_triangle[2].P + _triangle[0].P), N = 0.5f * (_triangle[2].N + _triangle[0].N), UV = 0.5f * (_triangle[2].UV + _triangle[0].UV), T = 0.5f * (_triangle[2].T + _triangle[0].T), B = 0.5f * (_triangle[2].B + _triangle[0].B) },
+			};
+
+			VertexP3N3G3B3T2[]	temp = new VertexP3N3G3B3T2[3];
+			temp[0] = _triangle[0];
+			temp[1] = insideTriangle[0];
+			temp[2] = insideTriangle[2];
+			SubdivTriangle( temp, _count-1, _vertices, _indices );
+			temp[0] = insideTriangle[0];
+			temp[1] = _triangle[1];
+			temp[2] = insideTriangle[1];
+			SubdivTriangle( temp, _count-1, _vertices, _indices );
+			temp[0] = insideTriangle[0];
+			temp[1] = insideTriangle[1];
+			temp[2] = insideTriangle[2];
+			SubdivTriangle( temp, _count-1, _vertices, _indices );
+			temp[0] = insideTriangle[2];
+			temp[1] = insideTriangle[1];
+			temp[2] = _triangle[2];
+			SubdivTriangle( temp, _count-1, _vertices, _indices );
+		}
+
 		#endregion
 
 		void m_camera_CameraTransformChanged( object sender, EventArgs e ) {
@@ -207,13 +313,15 @@ namespace TriangleCurvature
 			m_CB_Main.m._resolutionX = (uint) panelOutput.Width;
 			m_CB_Main.m._resolutionY = (uint) panelOutput.Height;
 			m_CB_Main.m._time = (float) (currentTime - m_startTime).TotalSeconds;
+			m_CB_Main.m._flags = (uint) (checkBox1.Checked ? 1U : 0U);
 			m_CB_Main.UpdateData();
 
 			m_device.SetRenderStates( RASTERIZER_STATE.CULL_BACK, DEPTHSTENCIL_STATE.READ_WRITE_DEPTH_LESS, BLEND_STATE.DISABLED );
 			m_device.Clear( float4.Zero );
+			m_device.ClearDepthStencil( m_device.DefaultDepthStencil, 1.0f, (byte) 0U, true, false );
 
 			if ( m_Shader_renderScene.Use() ) {
-				m_device.SetRenderTarget( m_device.DefaultTarget, null );
+				m_device.SetRenderTarget( m_device.DefaultTarget, m_device.DefaultDepthStencil );
 
 				m_Prim_Cube.Render( m_Shader_renderScene );
 			}
