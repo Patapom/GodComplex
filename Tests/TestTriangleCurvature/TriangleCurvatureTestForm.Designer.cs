@@ -36,6 +36,7 @@
 			this.checkBoxEnableCorrection = new System.Windows.Forms.CheckBox();
 			this.panelOutput = new TriangleCurvature.PanelOutput3D(this.components);
 			this.panelOutputGraph = new TriangleCurvature.PanelOutput(this.components);
+			this.labelResult = new System.Windows.Forms.Label();
 			this.SuspendLayout();
 			// 
 			// buttonReload
@@ -107,11 +108,21 @@
 			this.panelOutputGraph.Size = new System.Drawing.Size(350, 350);
 			this.panelOutputGraph.TabIndex = 5;
 			// 
+			// labelResult
+			// 
+			this.labelResult.AutoSize = true;
+			this.labelResult.Location = new System.Drawing.Point(1298, 365);
+			this.labelResult.Name = "labelResult";
+			this.labelResult.Size = new System.Drawing.Size(31, 13);
+			this.labelResult.TabIndex = 6;
+			this.labelResult.Text = "aaaa";
+			// 
 			// TestTriangleCurvatureForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1664, 815);
+			this.Controls.Add(this.labelResult);
 			this.Controls.Add(this.panelOutputGraph);
 			this.Controls.Add(this.label1);
 			this.Controls.Add(this.floatTrackbarControlCurvatureStrength);
@@ -136,6 +147,7 @@
 		private System.Windows.Forms.Label label1;
 		private System.Windows.Forms.CheckBox checkBoxEnableCorrection;
 		private PanelOutput panelOutputGraph;
+		private System.Windows.Forms.Label labelResult;
 	}
 }
 
