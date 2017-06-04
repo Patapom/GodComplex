@@ -1,4 +1,31 @@
-﻿using System;
+﻿//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// I attempted to realize an idea I had a long time ago: make the triangles "pop out" depending on the actual surface's curvature they're representing
+//
+// The idea is that flat triangles in low-poly models actually represent a curved surface:
+//
+//			            -------
+//			      ----           ---	<== Actual shape it represents
+//	   N0 \	   -                      -     / N1
+//		   \ /                           \ /
+//		 P0 *-----------------------------* P1	<== Flat triangle
+//
+// You can refer to the calculus sheets in this folder to have an idea on how I wanted to do that but basically
+//	it boiled down to express a tangential sphere at each vertex then interpolating its center and radius along
+//	the triangle and try to reproject the triangle's position onto that sphere...
+//
+// Turns out it's pretty useless because pushing the position onto the curved surface leaves a gap at the edges
+//	of the triangle so we're basically left with trying what parallax mapping does: moving along the view ray
+//	to project onto the actual surface.
+//
+// My cube example shows that it correctly leave the cube's apparent shape intact but the lighting shows no discontinuities, as if it were a sphere...
+//
+// 
+//
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//#define USE_SUBDIVIDED_CUBE
+
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -29,6 +56,7 @@ namespace TriangleCurvature
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
 		private struct CB_Camera {
+
 			public float4x4		_Camera2World;
 			public float4x4		_World2Camera;
 			public float4x4		_Proj2World;
@@ -65,18 +93,20 @@ namespace TriangleCurvature
 
 			try {
 				m_device.Init( panelOutput.Handle, false, true );
-
-//				m_Shader_renderScene = new Shader( m_device, new System.IO.FileInfo( "./Shaders/RenderScene.hlsl" ), VERTEX_FORMAT.P3N3G3B3T2, "VS", null, "PS", null );
-				m_Shader_renderScene = new Shader( m_device, new System.IO.FileInfo( "./Shaders/RenderScene_Subdiv.hlsl" ), VERTEX_FORMAT.P3N3G3B3T2, "VS", null, "PS", null );
 				
 				m_CB_Main = new ConstantBuffer< CB_Main >( m_device, 0 );
 				m_CB_Camera = new ConstantBuffer<CB_Camera>( m_device, 1 );
 
-//				m_Prim_Cube = BuildCube();
-				m_Prim_Cube = BuildSubdividedCube();
+				#if USE_SUBDIVIDED_CUBE
+					m_Prim_Cube = BuildSubdividedCube();
+					m_Shader_renderScene = new Shader( m_device, new System.IO.FileInfo( "./Shaders/RenderScene_Subdiv.hlsl" ), VERTEX_FORMAT.P3N3G3B3T2, "VS", null, "PS", null );
+				#else
+					m_Prim_Cube = BuildCube();
+					m_Shader_renderScene = new Shader( m_device, new System.IO.FileInfo( "./Shaders/RenderScene.hlsl" ), VERTEX_FORMAT.P3N3G3B3T2, "VS", null, "PS", null );
+				#endif
 
 			} catch ( Exception _e ) {
-				MessageBox.Show( this, "Exception: " + _e.Message, "Path Tracing Test", MessageBoxButtons.OK, MessageBoxIcon.Error );
+				MessageBox.Show( this, "Exception: " + _e.Message, "Curvature Test", MessageBoxButtons.OK, MessageBoxIcon.Error );
 			}
 
 			m_startTime = DateTime.Now;
@@ -109,23 +139,23 @@ namespace TriangleCurvature
 
 		#region Primitive Building
 
+		const float	BEND = 1.0f;
+
 		Primitive	BuildCube() {
 			// Default example face where B is used to stored the triangle's center and 
 			float3	C0 = (new float3( -1.0f,  1.0f, 1.0f ) + new float3( -1.0f, -1.0f, 1.0f ) + new float3(  1.0f, -1.0f, 1.0f )) / 3.0f;
 			float3	C1 = (new float3( -1.0f,  1.0f, 1.0f ) + new float3(  1.0f, -1.0f, 1.0f ) + new float3(  1.0f,  1.0f, 1.0f )) / 3.0f;
 
-			float	bend = 1.0f;
-
 			VertexP3N3G3B3T2[]	defaultFace = new VertexP3N3G3B3T2[6] {
 				// First triangle
-				new VertexP3N3G3B3T2() { P = new float3( -1.0f,  1.0f, 1.0f ), N = new float3( bend * -1.0f, bend *  1.0f, 1.0f ).Normalized, T = new float3( 0, 0, 1 ), B = C0, UV = new float2( 0, 0 ) },
-				new VertexP3N3G3B3T2() { P = new float3( -1.0f, -1.0f, 1.0f ), N = new float3( bend * -1.0f, bend * -1.0f, 1.0f ).Normalized, T = new float3( 0, 0, 1 ), B = C0, UV = new float2( 0, 1 ) },
-				new VertexP3N3G3B3T2() { P = new float3(  1.0f, -1.0f, 1.0f ), N = new float3( bend *  1.0f, bend * -1.0f, 1.0f ).Normalized, T = new float3( 0, 0, 1 ), B = C0, UV = new float2( 1, 1 ) },
+				new VertexP3N3G3B3T2() { P = new float3( -1.0f,  1.0f, 1.0f ), N = new float3( BEND * -1.0f, BEND *  1.0f, 1.0f ).Normalized, T = new float3( 0, 0, 1 ), B = C0, UV = new float2( 0, 0 ) },
+				new VertexP3N3G3B3T2() { P = new float3( -1.0f, -1.0f, 1.0f ), N = new float3( BEND * -1.0f, BEND * -1.0f, 1.0f ).Normalized, T = new float3( 0, 0, 1 ), B = C0, UV = new float2( 0, 1 ) },
+				new VertexP3N3G3B3T2() { P = new float3(  1.0f, -1.0f, 1.0f ), N = new float3( BEND *  1.0f, BEND * -1.0f, 1.0f ).Normalized, T = new float3( 0, 0, 1 ), B = C0, UV = new float2( 1, 1 ) },
 
 				// 2nd triangle
-				new VertexP3N3G3B3T2() { P = new float3( -1.0f,  1.0f, 1.0f ), N = new float3( bend * -1.0f, bend *  1.0f, 1.0f ).Normalized, T = new float3( 0, 0, 1 ), B = C1, UV = new float2( 0, 0 ) },
-				new VertexP3N3G3B3T2() { P = new float3(  1.0f, -1.0f, 1.0f ), N = new float3( bend *  1.0f, bend * -1.0f, 1.0f ).Normalized, T = new float3( 0, 0, 1 ), B = C1, UV = new float2( 1, 1 ) },
-				new VertexP3N3G3B3T2() { P = new float3(  1.0f,  1.0f, 1.0f ), N = new float3( bend *  1.0f, bend *  1.0f, 1.0f ).Normalized, T = new float3( 0, 0, 1 ), B = C1, UV = new float2( 1, 0 ) },
+				new VertexP3N3G3B3T2() { P = new float3( -1.0f,  1.0f, 1.0f ), N = new float3( BEND * -1.0f, BEND *  1.0f, 1.0f ).Normalized, T = new float3( 0, 0, 1 ), B = C1, UV = new float2( 0, 0 ) },
+				new VertexP3N3G3B3T2() { P = new float3(  1.0f, -1.0f, 1.0f ), N = new float3( BEND *  1.0f, BEND * -1.0f, 1.0f ).Normalized, T = new float3( 0, 0, 1 ), B = C1, UV = new float2( 1, 1 ) },
+				new VertexP3N3G3B3T2() { P = new float3(  1.0f,  1.0f, 1.0f ), N = new float3( BEND *  1.0f, BEND *  1.0f, 1.0f ).Normalized, T = new float3( 0, 0, 1 ), B = C1, UV = new float2( 1, 0 ) },
 			};
 
 			float3[]	faceNormals = new float3[6] {
@@ -185,18 +215,16 @@ namespace TriangleCurvature
 			float3	C0 = (new float3( -1.0f,  1.0f, 1.0f ) + new float3( -1.0f, -1.0f, 1.0f ) + new float3(  1.0f, -1.0f, 1.0f )) / 3.0f;
 			float3	C1 = (new float3( -1.0f,  1.0f, 1.0f ) + new float3(  1.0f, -1.0f, 1.0f ) + new float3(  1.0f,  1.0f, 1.0f )) / 3.0f;
 
-			float	bend = 1.0f;
-
 			VertexP3N3G3B3T2[]	defaultFace = new VertexP3N3G3B3T2[6] {
 				// First triangle
-				new VertexP3N3G3B3T2() { P = new float3( -1.0f,  1.0f, 1.0f ), N = new float3( bend * -1.0f, bend *  1.0f, 1.0f ).Normalized, T = new float3( 0, 0, 1 ), B = C0, UV = new float2( 0, 0 ) },
-				new VertexP3N3G3B3T2() { P = new float3( -1.0f, -1.0f, 1.0f ), N = new float3( bend * -1.0f, bend * -1.0f, 1.0f ).Normalized, T = new float3( 0, 0, 1 ), B = C0, UV = new float2( 0, 1 ) },
-				new VertexP3N3G3B3T2() { P = new float3(  1.0f, -1.0f, 1.0f ), N = new float3( bend *  1.0f, bend * -1.0f, 1.0f ).Normalized, T = new float3( 0, 0, 1 ), B = C0, UV = new float2( 1, 1 ) },
+				new VertexP3N3G3B3T2() { P = new float3( -1.0f,  1.0f, 1.0f ), N = new float3( BEND * -1.0f, BEND *  1.0f, 1.0f ).Normalized, T = new float3( 0, 0, 1 ), B = C0, UV = new float2( 0, 0 ) },
+				new VertexP3N3G3B3T2() { P = new float3( -1.0f, -1.0f, 1.0f ), N = new float3( BEND * -1.0f, BEND * -1.0f, 1.0f ).Normalized, T = new float3( 0, 0, 1 ), B = C0, UV = new float2( 0, 1 ) },
+				new VertexP3N3G3B3T2() { P = new float3(  1.0f, -1.0f, 1.0f ), N = new float3( BEND *  1.0f, BEND * -1.0f, 1.0f ).Normalized, T = new float3( 0, 0, 1 ), B = C0, UV = new float2( 1, 1 ) },
 
 				// 2nd triangle
-				new VertexP3N3G3B3T2() { P = new float3( -1.0f,  1.0f, 1.0f ), N = new float3( bend * -1.0f, bend *  1.0f, 1.0f ).Normalized, T = new float3( 0, 0, 1 ), B = C1, UV = new float2( 0, 0 ) },
-				new VertexP3N3G3B3T2() { P = new float3(  1.0f, -1.0f, 1.0f ), N = new float3( bend *  1.0f, bend * -1.0f, 1.0f ).Normalized, T = new float3( 0, 0, 1 ), B = C1, UV = new float2( 1, 1 ) },
-				new VertexP3N3G3B3T2() { P = new float3(  1.0f,  1.0f, 1.0f ), N = new float3( bend *  1.0f, bend *  1.0f, 1.0f ).Normalized, T = new float3( 0, 0, 1 ), B = C1, UV = new float2( 1, 0 ) },
+				new VertexP3N3G3B3T2() { P = new float3( -1.0f,  1.0f, 1.0f ), N = new float3( BEND * -1.0f, BEND *  1.0f, 1.0f ).Normalized, T = new float3( 0, 0, 1 ), B = C1, UV = new float2( 0, 0 ) },
+				new VertexP3N3G3B3T2() { P = new float3(  1.0f, -1.0f, 1.0f ), N = new float3( BEND *  1.0f, BEND * -1.0f, 1.0f ).Normalized, T = new float3( 0, 0, 1 ), B = C1, UV = new float2( 1, 1 ) },
+				new VertexP3N3G3B3T2() { P = new float3(  1.0f,  1.0f, 1.0f ), N = new float3( BEND *  1.0f, BEND *  1.0f, 1.0f ).Normalized, T = new float3( 0, 0, 1 ), B = C1, UV = new float2( 1, 0 ) },
 			};
 
 			float3[]	faceNormals = new float3[6] {

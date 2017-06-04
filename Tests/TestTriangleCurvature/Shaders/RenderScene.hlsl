@@ -205,7 +205,8 @@ float3	PS( PS_IN _In ) : SV_TARGET0 {
 //	float	offset = OffsetPosition( wsPosition, wsNormal, _In.sphereRadius, _In.wsFaceCenter, _In.wsFaceNormal );
 //	float	offset = OffsetPosition2( wsPosition, wsNormal, _In.sphereRadius, _In.wsFaceCenter, _In.wsFaceNormal );
 	float	offset = OffsetPosition3( wsPosition, wsView, _In.sphereRadius, _In.wsFaceCenter, _In.wsFaceNormal );
-return offset;
+	wsNormal = normalize( wsPosition - _In.wsFaceCenter );
+//return offset;
 //return 0.25 * _In.sphereRadius;
 //return 0.25 * length( wsPosition - _In.wsFaceCenter );
 //return wsNormal;

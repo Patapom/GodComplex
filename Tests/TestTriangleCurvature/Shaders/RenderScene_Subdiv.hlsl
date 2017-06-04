@@ -194,22 +194,22 @@ float3	wsSphereCenter = 0.0;	// Assume given
 Out.sphereRadius = sqrt( 3.0 );	// Assume only computed at non-subdivided triangles
 
 //	float	offset = OffsetPosition2( wsPosition, Out.wsNormal, Out.sphereRadius, wsSphereCenter, Out.wsFaceNormal );
-	float	offset = OffsetPosition3( wsPosition, wsView, Out.sphereRadius, wsSphereCenter, Out.wsFaceNormal );
+	float	offset = OffsetPosition3( wsPosition, Out.wsNormal, Out.sphereRadius, wsSphereCenter, Out.wsFaceNormal );
 
 	if ( _Flags & 1U ) {
-//		wsPosition = sqrt( 3.0 ) * normalize( wsPosition );
+		wsPosition = sqrt( 3.0 ) * normalize( _In.Position );
 //		wsPosition = Out.sphereRadius * normalize( wsPosition );
 	}
 
 	Out.__Position = mul( float4( wsPosition, 1.0 ), _World2Proj );
 	Out.wsPosition = wsPosition;
 
-	if ( _Flags & 1U ) {
-		Out.wsPosition = abs( offset );
-		Out.wsPosition = 0.5 * offset;
-//		Out.wsPosition = 0.1 * abs( Out.sphereRadius );
-//		Out.wsPosition = Out.wsNormal;
-	}
+//	if ( _Flags & 1U ) {
+//		Out.wsPosition = abs( offset );
+//		Out.wsPosition = 0.5 * offset;
+////		Out.wsPosition = 0.1 * abs( Out.sphereRadius );
+////		Out.wsPosition = Out.wsNormal;
+//	}
 
 	return Out;
 }
