@@ -617,3 +617,5 @@
 /Tests/TestWaveletATrousFiltering/bin
 /Tests/TestWaveletATrousFiltering/obj
 /Tests/TestWaveletATrousFiltering/TestWaveletATrousFiltering.csproj.user
+/Tests/TestTriangleCurvature/obj
+/Tests/TestTriangleCurvature/App.config

@@ -92,9 +92,10 @@ namespace TriangleCurvature
 
 		#endregion
 
-		public TestTriangleCurvatureForm()
-		{
+		public TestTriangleCurvatureForm() {
 			InitializeComponent();
+
+			graph = new ImageFile( (uint) panelOutputGraph.Width, (uint) panelOutputGraph.Height, PIXEL_FORMAT.BGRA8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
 			UpdateGraph();
 		}
 
@@ -149,6 +150,8 @@ namespace TriangleCurvature
 
 		#region Vertex Tangent Sphere Radius Computation
 
+		ImageFile	graph;
+
 		void	UpdateGraph() {
 // 			float3	P = new float3( 1, 1, 1 );
 // 			float3	N = P.Normalized;
@@ -180,7 +183,7 @@ namespace TriangleCurvature
 // 			float	L1 = (new float3( 0, a, A ) - P).Length;
 // 			float	L2 = (new float3( -b, -0.5f * a, A ) - P).Length;
 // 			float	L3 = (new float3( b, -0.5f * a, A ) - P).Length;
-			float	R = ComputeTangentSphereRadius( P, N, new float3[] { new float3( 0, a, A ), new float3( -b, -0.5f * a, B ), new float3( b, -0.5f * a, C ) } );
+			float	R = ComputeTangentSphereRadius( P, N, new float3[] { new float3( 0, a, A ), new float3( -b, -0.5f * a, B ), new float3( b, -0.5f * a, C ) }, true );
 		}
 
 		/// <summary>
@@ -190,49 +193,42 @@ namespace TriangleCurvature
 		/// <param name="_N"></param>
 		/// <param name="_neighbors"></param>
 		/// <returns></returns>
-		float	ComputeTangentSphereRadius( float3 _P, float3 _N, float3[] _neighbors ) {
+		float	ComputeTangentSphereRadius( float3 _P, float3 _N, float3[] _neighbors, bool _debugGraph ) {
 
-ImageFile	graph = new ImageFile( (uint) panelOutputGraph.Width, (uint) panelOutputGraph.Height, PIXEL_FORMAT.BGRA8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
-graph.Clear( float4.One );
+			Func<float3,double,float3[],double>	SquareDistance = ( float3 _C, double _R, float3[] _Pns ) => { double result = 0.0f; foreach ( float3 Pn in _Pns ) result += (Pn - _C).LengthSquared - _R*_R; return result; };
 
-			Func<float3,float,float3[],float>	SquareDistance = ( float3 _C, float _R, float3[] _Pns ) => { float result = 0.0f; foreach ( float3 Pn in _Pns ) result += (Pn - _C).LengthSquared - _R*_R; return result; };
-//			Func<float3,float3[],float>		SquareDistance = ( float3 _C, float3[] _Pns ) => { float result = 0.0f; foreach ( float3 Pn in _Pns ) result += (Pn - _C).Length; return result / _Pns.Length; };
+float2	rangeX = new float2( -4, 4 ), rangeY = new float2( -50, 50 );
+if ( _debugGraph ) {
+	graph.Clear( float4.One );
+	graph.PlotAxes( float4.UnitW, rangeX, rangeY, 0.5f, 5.0f );
+	graph.PlotGraph( float4.UnitW, rangeX, rangeY, ( float x ) => { return (float) SquareDistance( _P - x * _N, x, _neighbors ); } );
+}
 
-float2	rangeX = new float2( 0, 4 ), rangeY = new float2( -50, 50 );
-graph.PlotAxes( float4.UnitW, rangeX, rangeY, 0.5f, 5.0f );
-graph.PlotGraph( float4.UnitW, rangeX, rangeY, ( float x ) => { return SquareDistance( _P - x * _N, x, _neighbors ); } );
+			const float		eps = 0.01f;
+			const double	tol = 1e-3;
 
-			const float	eps = 0.01f;
-			const float	tol = 1e-3f;
-
-			float	previousR = -float.MaxValue;
-			float	R = 0.0f;
+			double	previousR = -double.MaxValue;
+			double	R = 0.0f;
 			float3	C = _P;
 			int		iterationsCount = 0;
-			float	previousSqDistance = float.MaxValue;
-			float	bestSqDistance = float.MaxValue;
-			float	bestR = 0.0f;
+			double	previousSqDistance = double.MaxValue;
+			double	bestSqDistance = double.MaxValue;
+			double	bestR = 0.0f;
 			int		bestIterationsCount = 0;
-			while ( R < 10000.0f && iterationsCount < 1000 ) {
+			while ( Math.Abs( R ) < 10000.0f && iterationsCount < 1000 ) {
 				// Compute gradient
-				float	sqDistance = SquareDistance( C, R, _neighbors );
-				float	sqDistance2 = SquareDistance( C - eps * _N, R + eps, _neighbors );
-				float	grad = (sqDistance2 - sqDistance) / eps;
+				double	sqDistance = SquareDistance( C, R, _neighbors );
+				double	sqDistance2 = SquareDistance( C - eps * _N, R + eps, _neighbors );
+				double	grad = (sqDistance2 - sqDistance) / eps;
 
 				// Compute intersection with secant Y=0
-				float	t = -sqDistance * (Math.Abs( grad ) > 1e-6f ? 1.0f / grad : (Math.Sign( grad ) * 1e6f));
+				double	t = -sqDistance * (Math.Abs( grad ) > 1e-6f ? 1.0f / grad : (Math.Sign( grad ) * 1e6));
 				if ( Math.Abs( t ) < tol )
 					break;
-				R += t;
 
-// 				if ( previousSqDistance < sqDistance ) {
-// 					step *= 0.95f;	// Climbing up again, roll down slower...
-// 				}
-// 
-// 				// Follow opposite gradient direction toward minimum
-// 				previousR = R;
-// 				R -= step * grad;
-				C = _P - R * _N;
+				previousR = R;
+				R += t;
+				C = _P - (float) R * _N;
 				iterationsCount++;
 
 				previousSqDistance = sqDistance;
@@ -242,18 +238,24 @@ graph.PlotGraph( float4.UnitW, rangeX, rangeY, ( float x ) => { return SquareDis
 					bestIterationsCount = iterationsCount;
 				}
 
-graph.DrawLine( new float4( 1, 0, 0, 1 ), graph.RangedCoordinates2ImageCoordinates( rangeX, rangeY, new float2( previousR, sqDistance ) ), graph.RangedCoordinates2ImageCoordinates( rangeX, rangeY, new float2( R, SquareDistance( _P - R * _N, R, _neighbors ) ) ) );
-
-float	k = 0.1f;
-graph.DrawLine( new float4( 0, 0.5f, 0, 1 ), graph.RangedCoordinates2ImageCoordinates( rangeX, rangeY, new float2( previousR, k * (iterationsCount-1) ) ), graph.RangedCoordinates2ImageCoordinates( rangeX, rangeY, new float2( R, k * iterationsCount ) ) );
+if ( _debugGraph ) {
+	graph.DrawLine( new float4( 1, 0, 0, 1 ), graph.RangedCoordinates2ImageCoordinates( rangeX, rangeY, new float2( (float) previousR, (float) sqDistance ) ), graph.RangedCoordinates2ImageCoordinates( rangeX, rangeY, new float2( (float) R, (float) SquareDistance( _P - (float) R * _N, R, _neighbors ) ) ) );
+	float	k = 0.1f;
+	graph.DrawLine( new float4( 0, 0.5f, 0, 1 ), graph.RangedCoordinates2ImageCoordinates( rangeX, rangeY, new float2( (float) previousR, k * (iterationsCount-1) ) ), graph.RangedCoordinates2ImageCoordinates( rangeX, rangeY, new float2( (float) R, k * iterationsCount ) ) );
+}
 			}
 
+if ( _debugGraph ) {
+	panelOutputGraph.m_bitmap = graph.AsBitmap;
+	panelOutputGraph.Refresh();
+	labelResult.Text = "R = " + R + " (" + previousSqDistance + ") in " + iterationsCount + " iterations...\r\nBest = " + bestR + " (" + bestSqDistance + ") in " + bestIterationsCount + " iterations...";
+}
 
-panelOutputGraph.m_bitmap = graph.AsBitmap;
-panelOutputGraph.Refresh();
-labelResult.Text = "R = " + R + " (" + previousSqDistance + ") in " + iterationsCount + " iterations...\r\nBest = " + bestR + " (" + bestSqDistance + ") in " + bestIterationsCount + " iterations...";
+// 			if ( R < 1000.0 )
+// 				throw new Exception( "Maybe R should be Math.Abs()'ed? (neighbors are all lying on a flat plane or in a ?" );
+			R = Math.Max( -10000.0, Math.Min( 10000.0, R ) );
 
-			return R;
+			return (float) R;
 		}
 
 		/// <summary>
@@ -330,7 +332,7 @@ labelResult.Text = "R = " + R + " (" + previousSqDistance + ") in " + iterations
 
 		#region Primitive Building
 
-		const float	BEND = 0.0f;
+		const float	BEND = 1.0f;
 
 		Primitive	BuildCube() {
 			// Default example face where B is used to stored the triangle's center and 
