@@ -547,6 +547,7 @@ vertices[6*faceIndex+i].B = V.B;
 
 					V.P = C + RADIUS1 * N;
 					V.N = N;
+					V.T = Y;
 					V.UV = new float2( 4.0f * i / SUBDIVS0, 1.0f * j / SUBDIVS1 );
 
 					vertices.Add( V );

@@ -22,6 +22,7 @@ struct PS_IN {
 	float4	__Position : SV_POSITION;
 	float3	wsPosition : POSITION;
 	float3	wsNormal : NORMAL;
+	float3	wsTangent : TANGENT;
 
 	float3	wsSphereCenter: SPHERE_CENTER;
 	float	sphereRadius : RADIUS;
@@ -52,6 +53,7 @@ PS_IN	VS( VS_IN _In ) {
 	Out.__Position = mul( float4( _In.Position, 1.0 ), _World2Proj );
 	Out.wsPosition = _In.Position;	// Assume already in world space
 	Out.wsNormal = _In.Normal;
+	Out.wsTangent = _In.Tangent;
 	Out.UV = _In.UV;
 	Out.sphereRadius = _In.BiTangent.x;	// Computed and stored as a new component of the mesh
 	Out.wsSphereCenter = Out.wsPosition - Out.sphereRadius * Out.wsNormal;
@@ -77,6 +79,7 @@ float3	PS( PS_IN _In ) : SV_TARGET0 {
 //return 0.25 * length( wsPosition - _In.wsSphereCenter );
 
 	if ( _Flags & 1U )
+//		return normalize( _In.wsTangent );
 		return wsNormal;
 
 	float3	wsLight = LIGHT_POSITION - wsPosition;
