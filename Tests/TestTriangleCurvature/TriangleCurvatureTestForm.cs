@@ -299,6 +299,83 @@ labelResult.Text = "R = " + R + " (" + previousSqDistance + ") in " + iterations
 			return R;
 		}
 
+		/// <summary>
+		/// Computes the radius of the sphere tangent to a vertex given a set of neighbor vertices
+		/// </summary>
+		/// <param name="_P"></param>
+		/// <param name="_N"></param>
+		/// <param name="_neighbors"></param>
+		/// <returns></returns>
+		float2	ComputeTangentCurvatureRadii( float3 _P, float3 _N, float3 _T, float3[] _neighbors, bool _debugGraph ) {
+
+			// Compute the square distance between the 
+			Func<double,double,float3[],double>	SquareDistance = ( double _Rt, double _Rb, float3[] _Pns ) => {
+				double result = 0.0;
+				foreach ( float3 Pn in _Pns ) {
+					double	Fxy = _Rt * Pn.x * Pn.x + _Rb * Pn.y * Pn.y;
+					double	Dz = Fxy - Pn.z;
+					result += Dz * Dz;
+				}
+				return result;
+			};
+
+			// Transform neighbors into local space
+			float3		B = _T.Cross( _N ).Normalized;
+			float3[]	neighbors = new float3[_neighbors.Length];
+			for ( int neighborIndex=0; neighborIndex < _neighbors.Length; neighborIndex++ ) {
+				float3	D = _neighbors[neighborIndex] - _P;
+				neighbors[neighborIndex].Set( D.Dot( _T ), D.Dot( B ), D.Dot( _N ) );
+			}
+
+			const float		eps = 0.01f;
+			const double	tol = 1e-3;
+
+			// Compute gradient descent
+			double	previousRt = -double.MaxValue;
+			double	previousRb = -double.MaxValue;
+			double	Rt = 0.0, Rb = 0.0;
+			int		iterationsCount = 0;
+			double	previousSqDistance = double.MaxValue;
+			double	bestSqDistance = double.MaxValue;
+			double	bestRt = 0.0;
+			double	bestRb = 0.0;
+			int		bestIterationsCount = 0;
+			while ( Math.Abs( Rt ) < 10000.0f && Math.Abs( Rb ) < 10000.0f && iterationsCount < 1000 ) {
+				// Compute gradient
+				double	sqDistance = SquareDistance( Rt, Rb, neighbors );	// Central value
+				double	sqDistance_dT = SquareDistance( Rt + eps, Rb, neighbors );
+				double	sqDistance_dB = SquareDistance( Rt, Rb + eps, neighbors );
+				double	grad_dT = (sqDistance_dT - sqDistance) / eps;
+				double	grad_dB = (sqDistance_dB - sqDistance) / eps;
+
+				// Compute intersection with secant Y=0
+				double	t_T = -sqDistance * (Math.Abs( grad_dT ) > 1e-6 ? 1.0 / grad_dT : (Math.Sign( grad_dT ) * 1e6));
+				double	t_B = -sqDistance * (Math.Abs( grad_dB ) > 1e-6 ? 1.0 / grad_dB : (Math.Sign( grad_dB ) * 1e6));
+				if ( Math.Abs( t_T ) < tol && Math.Abs( t_B ) < tol )
+					break;
+
+				previousRt = Rt;
+				previousRb = Rb;
+				Rt += t_T;
+				Rb += t_B;
+				iterationsCount++;
+
+				// Keep best results
+				previousSqDistance = sqDistance;
+				if ( sqDistance < bestSqDistance ) {
+					bestSqDistance = sqDistance;
+					bestRt = previousRt;
+					bestRb = previousRb;
+					bestIterationsCount = iterationsCount;
+				}
+			}
+
+			Rt = Math.Max( -10000.0, Math.Min( 10000.0, Rt ) );
+			Rb = Math.Max( -10000.0, Math.Min( 10000.0, Rb ) );
+
+			return new float2( (float) Rt, (float) Rb );
+		}
+
 		void	UpdateGraph() {
 // 			float3	P = new float3( 1, 1, 1 );
 // 			float3	N = P.Normalized;
@@ -557,10 +634,10 @@ vertices[6*faceIndex+i].B = V.B;
 			// Build indices and curvature
 			uint[,]			neighborIndices = new uint[3,3];
 			float3[]		neighbors = new float3[8];
-			List< float >	curvatures = new List<float>();
-			float			minCurvature = float.MaxValue;
-			float			maxCurvature = -float.MaxValue;
-			float			avgCurvature = 0.0f;
+			List< float2 >	curvatures = new List<float2>();
+			float2			minCurvature = new float2( float.MaxValue, float.MaxValue );
+			float2			maxCurvature = new float2( -float.MaxValue, -float.MaxValue );
+			float2			avgCurvature = float2.Zero;
 			int				count = 0;
 			for ( uint i=0; i < SUBDIVS0; i++ ) {
 				uint	Pi = (i+SUBDIVS0-1) % SUBDIVS0;
@@ -603,13 +680,21 @@ vertices[6*faceIndex+i].B = V.B;
 					neighbors[5] = vertices[(int) neighborIndices[0,2]].P;
 					neighbors[6] = vertices[(int) neighborIndices[1,2]].P;
 					neighbors[7] = vertices[(int) neighborIndices[2,2]].P;
-					float	curvature = ComputeTangentSphereRadius( centerVertex.P, centerVertex.N, neighbors, false );
-					centerVertex.B.x = curvature;
+
+					// Single curvature
+// 					float	curvature = ComputeTangentSphereRadius( centerVertex.P, centerVertex.N, neighbors, false );
+// 					centerVertex.B.x = curvature;
+				
+					// Single curvature
+					float2	curvature = ComputeTangentCurvatureRadii( centerVertex.P, centerVertex.N, centerVertex.T, neighbors, false );
+					centerVertex.B.x = curvature.x;
+					centerVertex.B.y = curvature.y;
+
 					vertices[(int) neighborIndices[1,1]] = centerVertex;
 
 					curvatures.Add( curvature );
-					minCurvature = Math.Min( minCurvature, curvature );
-					maxCurvature = Math.Max( maxCurvature, curvature );
+					minCurvature.Min( curvature );
+					maxCurvature.Max( curvature );
 					avgCurvature += curvature;
 					count++;
 				}
