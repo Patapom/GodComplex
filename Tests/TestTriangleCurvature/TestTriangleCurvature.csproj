@@ -113,6 +113,7 @@
     <None Include="Shaders\Global.hlsl" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Shaders\RenderScene_Final.hlsl" />
     <Content Include="Shaders\RenderScene_Subdiv.hlsl" />
     <Content Include="Shaders\RenderScene.hlsl" />
   </ItemGroup>

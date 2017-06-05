@@ -81,11 +81,13 @@ namespace TriangleCurvature
 		private Device								m_device = new Device();
 
 		private Shader								m_Shader_renderScene = null;
+		private Shader								m_Shader_renderSceneFinal = null;
 
 		private ConstantBuffer< CB_Main >			m_CB_Main;
 		private ConstantBuffer< CB_Camera >			m_CB_Camera = null;
 
 		private Primitive							m_Prim_Cube = null;
+		private Primitive							m_Prim_Torus = null;
 
 		private Camera								m_camera = new Camera();
 		private CameraManipulator					m_manipulator = new CameraManipulator();
@@ -115,6 +117,9 @@ namespace TriangleCurvature
 					m_Prim_Cube = BuildCube();
 					m_Shader_renderScene = new Shader( m_device, new System.IO.FileInfo( "./Shaders/RenderScene.hlsl" ), VERTEX_FORMAT.P3N3G3B3T2, "VS", null, "PS", null );
 				#endif
+
+				m_Prim_Torus = BuildTorus();
+				m_Shader_renderSceneFinal = new Shader( m_device, new System.IO.FileInfo( "./Shaders/RenderScene_Final.hlsl" ), VERTEX_FORMAT.P3N3G3B3T2, "VS", null, "PS", null );
 
 			} catch ( Exception _e ) {
 				MessageBox.Show( this, "Exception: " + _e.Message, "Curvature Test", MessageBoxButtons.OK, MessageBoxIcon.Error );
@@ -151,40 +156,6 @@ namespace TriangleCurvature
 		#region Vertex Tangent Sphere Radius Computation
 
 		ImageFile	graph;
-
-		void	UpdateGraph() {
-// 			float3	P = new float3( 1, 1, 1 );
-// 			float3	N = P.Normalized;
-// 			float	R = ComputeTangentSphereRadius( P, N, new float3[] { new float3( 1, 1, -1 ), new float3( -1, 1, 1 ), new float3( 1, -1, 1 ) } );
-// //			float	R = ComputeTangentSphereRadius( P, N, new float3[] { new float3( 1, 1, 0 ), new float3( 0, 1, 1 ), new float3( 1, 0, 1 ) } );
-// 
-// // 			float3	P = new float3( 1, 1, 0 );
-// // 			float3	N = P.Normalized;
-// // 			float	R = ComputeTangentSphereRadius( P, N, new float3[] { new float3( -1, 1, 0 ), new float3( 1, -1, 0 ) } );
-
-			float3	V0 = float3.One;
-			float3	N0 = V0.Normalized;
-			float3	V1 = new float3( 1, 1, -1 );
-			float3	V2 = new float3( -1, 1, 1 );
-			float3	V3 = new float3( 1, -1, 1 );
-			float3	D0 = V1 - V0;
-			float3	D1 = V2 - V0;
-			float3	D2 = V3 - V0;
-			float	L = D0.Length;
-			float	L_ = (V1 - D0.Dot( N0 ) * N0 - V0).Length;
-
-			float3	P = float3.Zero;
-			float3	N = float3.UnitZ;
-			float	A = floatTrackbarControlA.Value;
-			float	B = floatTrackbarControlB.Value;
-			float	C = floatTrackbarControlC.Value;
-			float	a = (float) (2 * Math.Sqrt( 2.0 / 3 ));
-			float	b = a * (float) Math.Sqrt( 3 ) / 2.0f;
-// 			float	L1 = (new float3( 0, a, A ) - P).Length;
-// 			float	L2 = (new float3( -b, -0.5f * a, A ) - P).Length;
-// 			float	L3 = (new float3( b, -0.5f * a, A ) - P).Length;
-			float	R = ComputeTangentSphereRadius( P, N, new float3[] { new float3( 0, a, A ), new float3( -b, -0.5f * a, B ), new float3( b, -0.5f * a, C ) }, true );
-		}
 
 		/// <summary>
 		/// Computes the radius of the sphere tangent to a vertex given a set of neighbor vertices
@@ -326,6 +297,40 @@ panelOutputGraph.Refresh();
 labelResult.Text = "R = " + R + " (" + previousSqDistance + ") in " + iterationsCount + " iterations...\r\nBest = " + bestR + " (" + bestSqDistance + ") in " + bestIterationsCount + " iterations...";
 
 			return R;
+		}
+
+		void	UpdateGraph() {
+// 			float3	P = new float3( 1, 1, 1 );
+// 			float3	N = P.Normalized;
+// 			float	R = ComputeTangentSphereRadius( P, N, new float3[] { new float3( 1, 1, -1 ), new float3( -1, 1, 1 ), new float3( 1, -1, 1 ) } );
+// //			float	R = ComputeTangentSphereRadius( P, N, new float3[] { new float3( 1, 1, 0 ), new float3( 0, 1, 1 ), new float3( 1, 0, 1 ) } );
+// 
+// // 			float3	P = new float3( 1, 1, 0 );
+// // 			float3	N = P.Normalized;
+// // 			float	R = ComputeTangentSphereRadius( P, N, new float3[] { new float3( -1, 1, 0 ), new float3( 1, -1, 0 ) } );
+
+			float3	V0 = float3.One;
+			float3	N0 = V0.Normalized;
+			float3	V1 = new float3( 1, 1, -1 );
+			float3	V2 = new float3( -1, 1, 1 );
+			float3	V3 = new float3( 1, -1, 1 );
+			float3	D0 = V1 - V0;
+			float3	D1 = V2 - V0;
+			float3	D2 = V3 - V0;
+			float	L = D0.Length;
+			float	L_ = (V1 - D0.Dot( N0 ) * N0 - V0).Length;
+
+			float3	P = float3.Zero;
+			float3	N = float3.UnitZ;
+			float	A = floatTrackbarControlA.Value;
+			float	B = floatTrackbarControlB.Value;
+			float	C = floatTrackbarControlC.Value;
+			float	a = (float) (2 * Math.Sqrt( 2.0 / 3 ));
+			float	b = a * (float) Math.Sqrt( 3 ) / 2.0f;
+// 			float	L1 = (new float3( 0, a, A ) - P).Length;
+// 			float	L2 = (new float3( -b, -0.5f * a, A ) - P).Length;
+// 			float	L3 = (new float3( b, -0.5f * a, A ) - P).Length;
+			float	R = ComputeTangentSphereRadius( P, N, new float3[] { new float3( 0, a, A ), new float3( -b, -0.5f * a, B ), new float3( b, -0.5f * a, C ) }, true );
 		}
 
 		#endregion
@@ -473,7 +478,7 @@ vertices[6*faceIndex+i].B = V.B;
 			return new Primitive( m_device, vertices.Count, VertexP3N3G3B3T2.FromArray( vertices.ToArray() ), indices.ToArray(), Primitive.TOPOLOGY.TRIANGLE_LIST, VERTEX_FORMAT.P3N3G3B3T2 );
 		}
 
-		void	SubdivTriangle( VertexP3N3G3B3T2[] _triangle, uint _count, List< VertexP3N3G3B3T2 > _vertices, List< uint > _indices ) {
+		void		SubdivTriangle( VertexP3N3G3B3T2[] _triangle, uint _count, List< VertexP3N3G3B3T2 > _vertices, List< uint > _indices ) {
 			if ( _count == 0 ) {
 				// Push triangle
 // _triangle[0].B.x = (float) _vertices.Count;
@@ -513,6 +518,108 @@ vertices[6*faceIndex+i].B = V.B;
 			SubdivTriangle( temp, _count-1, _vertices, _indices );
 		}
 
+// 		const uint	SUBDIVS0 = 40;
+// 		const uint	SUBDIVS1 = 20;
+		const uint	SUBDIVS0 = 20;
+		const uint	SUBDIVS1 = 10;
+		const float	RADIUS0 = 1.0f;
+		const float	RADIUS1 = 0.5f;
+
+		Primitive	BuildTorus() {
+			List< VertexP3N3G3B3T2 >	vertices = new List<VertexP3N3G3B3T2>();
+			List< uint >				indices = new List<uint>();
+
+			// Build vertices
+			VertexP3N3G3B3T2	V = new VertexP3N3G3B3T2();
+			for ( uint i=0; i < SUBDIVS0; i++ ) {
+				float	a0 = 2.0f * (float) Math.PI * i / SUBDIVS0;
+				float3	X = new float3( (float) Math.Cos( a0 ), (float) Math.Sin( a0 ), 0.0f );
+				float3	Y = new float3( -X.y, X.x, 0.0f );
+				float3	Z = X.Cross( Y );
+				float3	C = RADIUS0 * X;	// Center of little ring, around large ring
+
+				for ( uint j=0; j < SUBDIVS1; j++ ) {
+					float	a1 = 2.0f * (float) Math.PI * j / SUBDIVS1;
+					float3	lsN = new float3( (float) Math.Cos( a1 ), (float) Math.Sin( a1 ), 0.0f );
+					float3	lsN2 = new float3( -lsN.y, lsN.x, 0.0f );
+					float3	N = lsN.x * X + lsN.y * Z;
+					float3	N2 = lsN2.x * X + lsN2.y * Z;
+
+					V.P = C + RADIUS1 * N;
+					V.N = N;
+					V.UV = new float2( 4.0f * i / SUBDIVS0, 1.0f * j / SUBDIVS1 );
+
+					vertices.Add( V );
+				}
+			}
+
+			// Build indices and curvature
+			uint[,]			neighborIndices = new uint[3,3];
+			float3[]		neighbors = new float3[8];
+			List< float >	curvatures = new List<float>();
+			float			minCurvature = float.MaxValue;
+			float			maxCurvature = -float.MaxValue;
+			float			avgCurvature = 0.0f;
+			int				count = 0;
+			for ( uint i=0; i < SUBDIVS0; i++ ) {
+				uint	Pi = (i+SUBDIVS0-1) % SUBDIVS0;
+				uint	Ni = (i+1) % SUBDIVS0;
+
+				uint	ringCurrent = SUBDIVS1 * i;
+				uint	ringPrevious = SUBDIVS1 * Pi;
+				uint	ringNext = SUBDIVS1 * Ni;
+
+				for ( uint j=0; j < SUBDIVS1; j++ ) {
+					uint	Pj = (j+SUBDIVS1-1) % SUBDIVS1;
+					uint	Nj = (j+1) % SUBDIVS1;
+
+					neighborIndices[0,0] = ringPrevious + Pj;
+					neighborIndices[0,1] = ringPrevious + j;
+					neighborIndices[0,2] = ringPrevious + Nj;
+					neighborIndices[1,0] = ringCurrent + Pj;
+					neighborIndices[1,1] = ringCurrent + j;
+					neighborIndices[1,2] = ringCurrent + Nj;
+					neighborIndices[2,0] = ringNext + Pj;
+					neighborIndices[2,1] = ringNext + j;
+					neighborIndices[2,2] = ringNext + Nj;
+
+					// Build 2 triangles
+					indices.Add( neighborIndices[1,2] );
+					indices.Add( neighborIndices[1,1] );
+					indices.Add( neighborIndices[2,1] );
+					indices.Add( neighborIndices[1,2] );
+					indices.Add( neighborIndices[2,1] );
+					indices.Add( neighborIndices[2,2] );
+
+					// Compute central vertex's curvature
+					VertexP3N3G3B3T2	centerVertex = vertices[(int) neighborIndices[1,1]];
+					neighbors[0] = vertices[(int) neighborIndices[0,0]].P;
+					neighbors[1] = vertices[(int) neighborIndices[1,0]].P;
+					neighbors[2] = vertices[(int) neighborIndices[2,0]].P;
+					neighbors[3] = vertices[(int) neighborIndices[0,1]].P;
+//					neighbors[1] = vertices[(int) neighborIndices[1,1]].P;
+					neighbors[4] = vertices[(int) neighborIndices[2,1]].P;
+					neighbors[5] = vertices[(int) neighborIndices[0,2]].P;
+					neighbors[6] = vertices[(int) neighborIndices[1,2]].P;
+					neighbors[7] = vertices[(int) neighborIndices[2,2]].P;
+					float	curvature = ComputeTangentSphereRadius( centerVertex.P, centerVertex.N, neighbors, false );
+					centerVertex.B.x = curvature;
+					vertices[(int) neighborIndices[1,1]] = centerVertex;
+
+					curvatures.Add( curvature );
+					minCurvature = Math.Min( minCurvature, curvature );
+					maxCurvature = Math.Max( maxCurvature, curvature );
+					avgCurvature += curvature;
+					count++;
+				}
+			}
+			avgCurvature /= count;
+
+			labelMeshInfo.Text = "Curvature Avg. = " + avgCurvature + " - Min = " + minCurvature + " - Max = " + maxCurvature;
+
+			return new Primitive( m_device, vertices.Count, VertexP3N3G3B3T2.FromArray( vertices.ToArray() ), indices.ToArray(), Primitive.TOPOLOGY.TRIANGLE_LIST, VERTEX_FORMAT.P3N3G3B3T2 );
+		}
+
 		#endregion
 
 		void m_camera_CameraTransformChanged( object sender, EventArgs e ) {
@@ -549,10 +656,13 @@ vertices[6*faceIndex+i].B = V.B;
 			m_device.Clear( float4.Zero );
 			m_device.ClearDepthStencil( m_device.DefaultDepthStencil, 1.0f, (byte) 0U, true, false );
 
-			if ( m_Shader_renderScene.Use() ) {
+// 			if ( m_Shader_renderScene.Use() ) {
+// 				m_device.SetRenderTarget( m_device.DefaultTarget, m_device.DefaultDepthStencil );
+// 				m_Prim_Cube.Render( m_Shader_renderScene );
+// 			}
+			if ( m_Shader_renderSceneFinal.Use() ) {
 				m_device.SetRenderTarget( m_device.DefaultTarget, m_device.DefaultDepthStencil );
-
-				m_Prim_Cube.Render( m_Shader_renderScene );
+				m_Prim_Torus.Render( m_Shader_renderSceneFinal );
 			}
 
 			m_device.Present( false );
