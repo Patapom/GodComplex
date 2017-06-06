@@ -123,6 +123,10 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Shaders\ATrousFilter.hlsl" />
+    <Content Include="Shaders\RenderVoxels.hlsl" />
+    <Content Include="Shaders\CornellBox.hlsl" />
+    <Content Include="Shaders\Voxel.hlsl" />
+    <Content Include="Shaders\VoxelizeScene.hlsl" />
     <Content Include="Shaders\DistanceField.hlsl" />
     <Content Include="Shaders\Global.hlsl" />
     <Content Include="Shaders\PostProcess.hlsl" />

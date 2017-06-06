@@ -1,19 +1,6 @@
-// Distance Field Scene Tracer
+// Distance Field Scene Tracer and Map function to render the Cornell box
 //
-static const float3	CORNELL_SIZE = float3( 5.528f, 5.488f, 5.592f );
-static const float3	CORNELL_POS = 0.0;
-static const float	CORNELL_THICKNESS = 0.1f;
-
-static const float3	CORNELL_SMALL_BOX_SIZE = float3( 1.65, 1.65, 1.65 );	// It's a cube
-static const float3	CORNELL_SMALL_BOX_POS = float3( 1.855, 0.5 * CORNELL_SMALL_BOX_SIZE.y, 1.69 ) - 0.5 * float3( CORNELL_SIZE.x, 0.0, CORNELL_SIZE.z );
-static const float	CORNELL_SMALL_BOX_ANGLE = 0.29145679447786709199560462143289;	// ~16°
-
-static const float3	CORNELL_LARGE_BOX_SIZE = float3( 1.65, 3.3, 1.65 );
-static const float3	CORNELL_LARGE_BOX_POS = float3( 3.685, 0.5 * CORNELL_LARGE_BOX_SIZE.y, 3.6125 ) - 0.5 * float3( CORNELL_SIZE.x, 0.0, CORNELL_SIZE.z );
-static const float	CORNELL_LARGE_BOX_ANGLE = -0.30072115015043337195437489062082;	// ~17°
-
-static const float3	CORNELL_LIGHT_SIZE = float3( 1.3, 0.0, 1.05 );
-static const float3	CORNELL_LIGHT_POS = float3( 2.78, 5.2, 2.795 ) - 0.0 * float3( CORNELL_LIGHT_SIZE.x, 0.0, CORNELL_LIGHT_SIZE.z ) - 0.5 * float3( CORNELL_SIZE.x, 0.0, CORNELL_SIZE.z );
+#include "CornellBox.hlsl"
 
 float	DistBox( float3 _wsPosition, float3 _wsBoxCenter, float3 _wsBoxSize ) {
 	_wsPosition -= _wsBoxCenter;
@@ -75,7 +62,7 @@ float3	Normal( float3 _wsPosition ) {
 /// <returns></returns>
 float2	Map( float3 _wsPosition ) {
 	// Walls
-	float2	distance = float2( DistBox( _wsPosition, float3( 0, 0, 0 ), float3( CORNELL_SIZE.x, CORNELL_THICKNESS, CORNELL_SIZE.z ) ), 1.0 );	// Floor
+	float2	distance =					  float2( DistBox( _wsPosition, float3( 0, 0, 0 ), float3( CORNELL_SIZE.x, CORNELL_THICKNESS, CORNELL_SIZE.z ) ), 1.0 );	// Floor
 			distance = DistMin( distance, float2( DistBox( _wsPosition, float3( 0, CORNELL_SIZE.y, 0 ), float3( CORNELL_SIZE.x, CORNELL_THICKNESS, CORNELL_SIZE.z ) ), 2.0 ) );	// Ceiling
 			distance = DistMin( distance, float2( DistBox( _wsPosition, float3( -0.5f * CORNELL_SIZE.x, 0.5f * CORNELL_SIZE.y, 0 ), float3( CORNELL_THICKNESS, CORNELL_SIZE.y, CORNELL_SIZE.z ) ), 3.0 ) );	// Left wall
 			distance = DistMin( distance, float2( DistBox( _wsPosition, float3( 0.5f * CORNELL_SIZE.x, 0.5f * CORNELL_SIZE.y, 0 ), float3( CORNELL_THICKNESS, CORNELL_SIZE.y, CORNELL_SIZE.z ) ), 4.0 ) );	// Right wall

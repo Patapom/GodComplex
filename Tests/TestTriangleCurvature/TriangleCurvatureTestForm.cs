@@ -299,8 +299,12 @@ labelResult.Text = "R = " + R + " (" + previousSqDistance + ") in " + iterations
 			return R;
 		}
 
+		#endregion
+
+		#region Vertex Tangent Surface Radius Computation
+
 		/// <summary>
-		/// Computes the radius of the sphere tangent to a vertex given a set of neighbor vertices
+		/// Computes the 2 radii of the surface tangent to a vertex given a set of neighbor vertices
 		/// </summary>
 		/// <param name="_P"></param>
 		/// <param name="_N"></param>
@@ -308,7 +312,7 @@ labelResult.Text = "R = " + R + " (" + previousSqDistance + ") in " + iterations
 		/// <returns></returns>
 		float2	ComputeTangentCurvatureRadii( float3 _P, float3 _N, float3 _T, float3[] _neighbors, bool _debugGraph ) {
 
-			// Compute the square distance between the 
+			// Compute the square distance between the local neighbors and the double curvature surface of equation f(x,y) = Rt * x² + Rb * y²
 			Func<double,double,float3[],double>	SquareDistance = ( double _Rt, double _Rb, float3[] _Pns ) => {
 				double result = 0.0;
 				foreach ( float3 Pn in _Pns ) {
@@ -339,19 +343,20 @@ labelResult.Text = "R = " + R + " (" + previousSqDistance + ") in " + iterations
 			double	bestSqDistance = double.MaxValue;
 			double	bestRt = 0.0;
 			double	bestRb = 0.0;
-			int		bestIterationsCount = 0;
+/*			int		bestIterationsCount = 0;
 			while ( Math.Abs( Rt ) < 10000.0f && Math.Abs( Rb ) < 10000.0f && iterationsCount < 1000 ) {
 				// Compute gradient
-				double	sqDistance = SquareDistance( Rt, Rb, neighbors );	// Central value
-				double	sqDistance_dT = SquareDistance( Rt + eps, Rb, neighbors );
-				double	sqDistance_dB = SquareDistance( Rt, Rb + eps, neighbors );
+				double	sqDistance00 = SquareDistance( Rt, Rb, neighbors );	// Central value
+				double	sqDistance01 = SquareDistance( Rt + eps, Rb, neighbors );
+				double	sqDistance10 = SquareDistance( Rt, Rb + eps, neighbors );
+				double	sqDistance11 = SquareDistance( Rt + eps, Rb + eps, neighbors );
 				double	grad_dT = (sqDistance_dT - sqDistance) / eps;
 				double	grad_dB = (sqDistance_dB - sqDistance) / eps;
 
 				// Compute intersection with secant Y=0
 				double	t_T = -sqDistance * (Math.Abs( grad_dT ) > 1e-6 ? 1.0 / grad_dT : (Math.Sign( grad_dT ) * 1e6));
 				double	t_B = -sqDistance * (Math.Abs( grad_dB ) > 1e-6 ? 1.0 / grad_dB : (Math.Sign( grad_dB ) * 1e6));
-				if ( Math.Abs( t_T ) < tol && Math.Abs( t_B ) < tol )
+				if ( t_T*t_T + t_B*t_B < tol*tol )
 					break;
 
 				previousRt = Rt;
@@ -369,6 +374,7 @@ labelResult.Text = "R = " + R + " (" + previousSqDistance + ") in " + iterations
 					bestIterationsCount = iterationsCount;
 				}
 			}
+*/
 
 			Rt = Math.Max( -10000.0, Math.Min( 10000.0, Rt ) );
 			Rb = Math.Max( -10000.0, Math.Min( 10000.0, Rb ) );
@@ -487,7 +493,7 @@ vertices[6*faceIndex+i].B = V.B;
 				30, 31, 32, 33, 34, 35
 			};
 
-			return new Primitive( m_device, vertices.Length, VertexP3N3G3B3T2.FromArray( vertices ), indices, Primitive.TOPOLOGY.TRIANGLE_LIST, VERTEX_FORMAT.P3N3G3B3T2 );
+			return new Primitive( m_device, (uint) vertices.Length, VertexP3N3G3B3T2.FromArray( vertices ), indices, Primitive.TOPOLOGY.TRIANGLE_LIST, VERTEX_FORMAT.P3N3G3B3T2 );
 		}
 
 		Primitive	BuildSubdividedCube() {
@@ -552,7 +558,7 @@ vertices[6*faceIndex+i].B = V.B;
 				}
 			}
 
-			return new Primitive( m_device, vertices.Count, VertexP3N3G3B3T2.FromArray( vertices.ToArray() ), indices.ToArray(), Primitive.TOPOLOGY.TRIANGLE_LIST, VERTEX_FORMAT.P3N3G3B3T2 );
+			return new Primitive( m_device, (uint) vertices.Count, VertexP3N3G3B3T2.FromArray( vertices.ToArray() ), indices.ToArray(), Primitive.TOPOLOGY.TRIANGLE_LIST, VERTEX_FORMAT.P3N3G3B3T2 );
 		}
 
 		void		SubdivTriangle( VertexP3N3G3B3T2[] _triangle, uint _count, List< VertexP3N3G3B3T2 > _vertices, List< uint > _indices ) {
@@ -703,7 +709,7 @@ vertices[6*faceIndex+i].B = V.B;
 
 			labelMeshInfo.Text = "Curvature Avg. = " + avgCurvature + " - Min = " + minCurvature + " - Max = " + maxCurvature;
 
-			return new Primitive( m_device, vertices.Count, VertexP3N3G3B3T2.FromArray( vertices.ToArray() ), indices.ToArray(), Primitive.TOPOLOGY.TRIANGLE_LIST, VERTEX_FORMAT.P3N3G3B3T2 );
+			return new Primitive( m_device, (uint) vertices.Count, VertexP3N3G3B3T2.FromArray( vertices.ToArray() ), indices.ToArray(), Primitive.TOPOLOGY.TRIANGLE_LIST, VERTEX_FORMAT.P3N3G3B3T2 );
 		}
 
 		#endregion

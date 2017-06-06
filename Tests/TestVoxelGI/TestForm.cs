@@ -18,7 +18,6 @@ namespace TestVoxelGI
 	public partial class TestForm : Form {
 
 		const float	CAMERA_FOV = (float) (90.0 * Math.PI / 180.0);
-		const uint	FILTER_ITERATIONS_COUNT = 5;
 
 		#region NESTED TYPES
 
@@ -67,14 +66,17 @@ namespace TestVoxelGI
 		ConstantBuffer< CB_Filtering >		m_CB_filtering = null;
 		ConstantBuffer< CB_PostProcess >	m_CB_postProcess = null;
 
+		ComputeShader				m_shader_voxelizeScene;
 		Shader						m_shader_renderGBuffer;
 		Shader						m_shader_renderScene;
-		Shader						m_shader_filter;
+		Shader						m_shader_renderVoxels;
 		Shader						m_shader_postProcess;
 
 		Texture2D					m_tex_GBuffer;
 		Texture2D					m_tex_sceneRadiance;
 		Texture2D					m_Tex_BlueNoise;
+
+		Primitive					m_prim_Cube;
 
 		DateTime					m_startTime;
 
@@ -85,18 +87,17 @@ namespace TestVoxelGI
 		public TestForm() {
 			InitializeComponent();
 
-// 			BuildKernelWeights();
-
 			try {
 				m_device.Init( panelOutput.Handle, false, true );
 
+				m_shader_voxelizeScene = new ComputeShader( m_device, new System.IO.FileInfo( "./Shaders/VoxelizeScene.hlsl" ), "CS", null );
 				m_shader_renderGBuffer = new Shader( m_device, new System.IO.FileInfo( "./Shaders/RenderGBuffer.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 				m_shader_renderScene = new Shader( m_device, new System.IO.FileInfo( "./Shaders/RenderScene.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
-				m_shader_filter = new Shader( m_device, new System.IO.FileInfo( "./Shaders/ATrousFilter.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+				m_shader_renderVoxels = new Shader( m_device, new System.IO.FileInfo( "./Shaders/RenderVoxels.hlsl" ), VERTEX_FORMAT.P3, "VS", null, "PS", null );
 				m_shader_postProcess = new Shader( m_device, new System.IO.FileInfo( "./Shaders/PostProcess.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 
 				m_tex_GBuffer = new Texture2D( m_device, (uint) panelOutput.Width, (uint) panelOutput.Height, 3, 1, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.UNORM, false, false, null );
-				m_tex_sceneRadiance = new Texture2D( m_device, (uint) panelOutput.Width, (uint) panelOutput.Height, 1+(int)FILTER_ITERATIONS_COUNT, 1, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.UNORM, false, false, null );
+				m_tex_sceneRadiance = new Texture2D( m_device, (uint) panelOutput.Width, (uint) panelOutput.Height, 1, 1, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.UNORM, false, false, null );
 
 				using ( ImageFile blueNoise = new ImageFile( new System.IO.FileInfo( "BlueNoise64x64.png" ) ) ) {
 					m_Tex_BlueNoise = new Texture2D( m_device, new ImagesMatrix( new ImageFile[,] { { blueNoise } } ), COMPONENT_FORMAT.UNORM );
@@ -107,6 +108,32 @@ namespace TestVoxelGI
 				m_CB_renderScene = new ConstantBuffer< CB_RenderScene >( m_device, 10 );
 				m_CB_filtering = new ConstantBuffer< CB_Filtering >( m_device, 10 );
 				m_CB_postProcess = new ConstantBuffer< CB_PostProcess >( m_device, 10 );
+
+				// Build the cube primitive used to render voxels
+				{
+					VertexP3[]	vertices = new VertexP3[] {
+						new VertexP3() { P = new float3( -1, -1, -1 ) },
+						new VertexP3() { P = new float3(  1, -1, -1 ) },
+						new VertexP3() { P = new float3(  1,  1, -1 ) },
+						new VertexP3() { P = new float3( -1,  1, -1 ) },
+						new VertexP3() { P = new float3( -1, -1, +1 ) },
+						new VertexP3() { P = new float3(  1, -1, +1 ) },
+						new VertexP3() { P = new float3(  1,  1, +1 ) },
+						new VertexP3() { P = new float3( -1,  1, +1 ) },
+					};
+					uint[]		indices = new uint[] {
+						3, 0, 4, 3, 4, 7,
+						6, 5, 1, 6, 1, 2,
+						3, 7, 6, 3, 6, 2,
+						4, 0, 1, 4, 1, 5,
+						2, 1, 0, 2, 0, 3,
+						7,4, 5, 7, 5, 6,
+					};
+					m_prim_Cube = new Primitive( m_device, (uint) vertices.Length, VertexP3.FromArray( vertices ), indices, Primitive.TOPOLOGY.TRIANGLE_LIST, VERTEX_FORMAT.P3 );
+				}
+
+				// Voxelize the scene
+				Voxelize();
 
 			} catch ( Exception _e ) {
 				MessageBox.Show( this, "An exception occurred while creating DX structures:\r\n" + _e.Message, "Error" );
@@ -131,23 +158,26 @@ namespace TestVoxelGI
 			D.Dispose();
 		}
 
-		void	BuildKernelWeights() {
-			double[]	B3Spline = new double[5] { 1/16.0, 1/4.0, 3/8.0, 1/4.0, 1/16.0 };
-			double		sum = 0.0;
-			double[,]	kernel = new double[5,5];
-			for ( int Y=-2; Y <=2; Y++ )
-				for ( int X=-2; X <=2; X++ ) {
-					double	weight = B3Spline[2+Y] * B3Spline[2+X];
-					kernel[2+X,2+Y] = weight;
-					sum += weight;
-				}
+		#region Scene Voxelization
 
-			// Normalize
-			double	norm = 1.0 / sum;
-			for ( int Y=-2; Y <=2; Y++ )
-				for ( int X=-2; X <=2; X++ )
-					kernel[2+X,2+Y] *= norm;
+		const uint	VOLUME_SIZE = 128;
+		Texture3D	m_Tex_VoxelScene_Albedo = null;
+		Texture3D	m_Tex_VoxelScene_Normal = null;
+
+		void	Voxelize() {
+			if ( !m_shader_voxelizeScene.Use() )
+				throw new Exception( "Can't use voxelization shader! Failed to compile?" );
+
+			m_Tex_VoxelScene_Albedo = new Texture3D( m_device, VOLUME_SIZE, VOLUME_SIZE, VOLUME_SIZE, 8, PIXEL_FORMAT.RGBA8 , COMPONENT_FORMAT.UNORM, false, true, null );
+			m_Tex_VoxelScene_Normal = new Texture3D( m_device, VOLUME_SIZE, VOLUME_SIZE, VOLUME_SIZE, 8, PIXEL_FORMAT.RGBA8 , COMPONENT_FORMAT.UNORM, false, true, null );
+			m_Tex_VoxelScene_Albedo.SetCSUAV( 0 );
+			m_Tex_VoxelScene_Normal.SetCSUAV( 1 );
+			m_shader_voxelizeScene.Dispatch( VOLUME_SIZE / 16, VOLUME_SIZE / 16, VOLUME_SIZE );
+			m_Tex_VoxelScene_Albedo.RemoveFromLastAssignedSlotUAV();
+			m_Tex_VoxelScene_Normal.RemoveFromLastAssignedSlotUAV();
 		}
+
+		#endregion
 
 		void m_camera_CameraTransformChanged(object sender, EventArgs e) {
 			m_CB_camera.m._Camera2World = m_camera.Camera2World;
@@ -170,6 +200,8 @@ namespace TestVoxelGI
 			m_CB_global.m._time = totalTime;
 			m_CB_global.UpdateData();
 
+			m_device.ClearDepthStencil( m_device.DefaultDepthStencil, 1.0f, 0, true, false );
+
 			//////////////////////////////////////////////////////////////////////////
 			// Render the G-Buffer (albedo + gloss + normal + distance)
 			if ( m_shader_renderGBuffer.Use() ) {
@@ -182,7 +214,7 @@ namespace TestVoxelGI
 			// Render the GI scene
 			if ( m_shader_renderScene.Use() ) {
 				m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
-				m_device.SetRenderTargets( new IView[] { m_tex_sceneRadiance.GetView( 0, 1, 0, 1 ) }, null );
+				m_device.SetRenderTarget( m_tex_sceneRadiance, null );
 
 				m_tex_GBuffer.Set( 0 );
 				m_Tex_BlueNoise.Set( 1 );
@@ -194,35 +226,15 @@ namespace TestVoxelGI
 			}
 
 			//////////////////////////////////////////////////////////////////////////
-			// Apply à-trous filtering
-			if ( m_shader_filter.Use() ) {
-				m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
+			// Render many instanced voxel cubes
+			if ( m_shader_renderVoxels.Use() ) {
+				m_device.SetRenderStates( RASTERIZER_STATE.CULL_BACK, DEPTHSTENCIL_STATE.READ_WRITE_DEPTH_LESS, BLEND_STATE.DISABLED );
+				m_device.SetRenderTarget( m_tex_sceneRadiance, m_device.DefaultDepthStencil );
 
-				float	SIGMA_COLOR = 0.01f;//floatTrackbarControlSigmaColor.Value;
-				float	SIGMA_NORMAL = 0.01f;//floatTrackbarControlSigmaNormal.Value;
-				float	SIGMA_POSITION = 0.01f;//floatTrackbarControlSigmaPosition.Value;
+				m_Tex_VoxelScene_Albedo.SetVS( 0 );
+				m_Tex_VoxelScene_Normal.SetVS( 1 );
 
-				m_tex_GBuffer.Set( 0 );
-
-				for ( uint levelIndex=0; levelIndex < FILTER_ITERATIONS_COUNT; levelIndex++ ) {
-					m_device.SetRenderTargets( new IView[] { m_tex_sceneRadiance.GetView( 0, 1, levelIndex+1, 1 ) }, null );
-					m_tex_sceneRadiance.Set( 1, m_tex_sceneRadiance.GetView( 0, 1, levelIndex, 1 ) );
-
-					float	POT = (float) Math.Pow( 2.0, levelIndex );
-					float	sigma_Color = SIGMA_COLOR / POT;	// Here, increase range for larger filter sizes
-//  Thus the edge-stopping function depends at the first level on wn and wx only.
-// ===> if level index == 0 => wrt = 1 ?
-// 					if ( levelIndex == 0 )
-// 						sigma_Color = 1.0f;
-
-					m_CB_filtering.m._stride = POT;
-					m_CB_filtering.m._sigma_Color = -1.0f / (sigma_Color * sigma_Color);
-					m_CB_filtering.m._sigma_Normal = -1.0f / (SIGMA_NORMAL * SIGMA_NORMAL);
-					m_CB_filtering.m._sigma_Position = -1.0f / (SIGMA_POSITION * SIGMA_POSITION);
-					m_CB_filtering.UpdateData();
-
-					m_device.RenderFullscreenQuad( m_shader_filter );
-				}
+				m_prim_Cube.RenderInstanced( m_shader_renderVoxels, VOLUME_SIZE*VOLUME_SIZE*VOLUME_SIZE );
 			}
 
 			//////////////////////////////////////////////////////////////////////////
@@ -234,7 +246,7 @@ namespace TestVoxelGI
 				m_tex_GBuffer.Set( 0 );
 				m_tex_sceneRadiance.Set( 1 );
 
-				m_CB_postProcess.m._filterLevel = 5;//(uint) (checkBoxToggleFilter.Checked ? integerTrackbarControlFilterLevel.Value : 0);
+				m_CB_postProcess.m._filterLevel = 4;//(uint) (checkBoxToggleFilter.Checked ? integerTrackbarControlFilterLevel.Value : 0);
 				m_CB_postProcess.UpdateData();
 
 				m_device.RenderFullscreenQuad( m_shader_postProcess );

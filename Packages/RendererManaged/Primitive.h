@@ -30,13 +30,13 @@ namespace Renderer {
 
 	public:
 
-		Primitive( Device^ _device, int _verticesCount, ByteBuffer^ _vertices, cli::array<UInt32>^ _indices, TOPOLOGY _topology, VERTEX_FORMAT _vertexFormat );
+		Primitive( Device^ _device, UInt32 _verticesCount, ByteBuffer^ _vertices, cli::array<UInt32>^ _indices, TOPOLOGY _topology, VERTEX_FORMAT _vertexFormat );
 		~Primitive() {
 			delete m_pPrimitive;
 		}
 
 		void	Render( Shader^ _shader );
-		void	RenderInstanced( Shader^ _shader, int _instancesCount );
-		void	RenderInstanced( Shader^ _shader, int _instancesCount, int _startVertex, int _verticesCount, int _startIndex, int _indicesCount, int _baseVertexOffset );
+		void	RenderInstanced( Shader^ _shader, UInt32 _instancesCount );
+		void	RenderInstanced( Shader^ _shader, UInt32 _instancesCount, UInt32 _startVertex, UInt32 _verticesCount, UInt32 _startIndex, UInt32 _indicesCount, UInt32 _baseVertexOffset );
 	};
 }
