@@ -76,9 +76,6 @@ float4	PS( VS_IN _In ) : SV_TARGET0 {
 
 	float3	lighting = 0.0;
 	#if 1
-		const float3	LIGHT_ILLUMINANCE = 50.0;
-		float3			LIGHT_SIZE = float3( _lightSize, 0.0, 1.3/1.05 * _lightSize );
-
 		wsPos += 0.001 * wsNormal;	// Offset a little off the wall to avoid acnea
 
 		/////////////////////////////////////////////////////////////////////////////////////////////////////////////////

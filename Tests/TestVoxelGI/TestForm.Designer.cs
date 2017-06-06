@@ -31,6 +31,8 @@
 			this.components = new System.ComponentModel.Container();
 			this.panelOutput = new TestVoxelGI.PanelOutput(this.components);
 			this.buttonReload = new System.Windows.Forms.Button();
+			this.label1 = new System.Windows.Forms.Label();
+			this.integerTrackbarControlVoxelMipIndex = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
 			this.SuspendLayout();
 			// 
 			// panelOutput
@@ -47,15 +49,39 @@
 			this.buttonReload.Name = "buttonReload";
 			this.buttonReload.Size = new System.Drawing.Size(75, 23);
 			this.buttonReload.TabIndex = 2;
-			this.buttonReload.Text = "button1";
+			this.buttonReload.Text = "Reload";
 			this.buttonReload.UseVisualStyleBackColor = true;
 			this.buttonReload.Click += new System.EventHandler(this.buttonReload_Click);
+			// 
+			// label1
+			// 
+			this.label1.AutoSize = true;
+			this.label1.Location = new System.Drawing.Point(12, 741);
+			this.label1.Name = "label1";
+			this.label1.Size = new System.Drawing.Size(82, 13);
+			this.label1.TabIndex = 3;
+			this.label1.Text = "Voxel Mip Level";
+			// 
+			// integerTrackbarControlVoxelMipIndex
+			// 
+			this.integerTrackbarControlVoxelMipIndex.Location = new System.Drawing.Point(100, 738);
+			this.integerTrackbarControlVoxelMipIndex.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.integerTrackbarControlVoxelMipIndex.MinimumSize = new System.Drawing.Size(70, 20);
+			this.integerTrackbarControlVoxelMipIndex.Name = "integerTrackbarControlVoxelMipIndex";
+			this.integerTrackbarControlVoxelMipIndex.RangeMax = 8;
+			this.integerTrackbarControlVoxelMipIndex.RangeMin = 0;
+			this.integerTrackbarControlVoxelMipIndex.Size = new System.Drawing.Size(200, 20);
+			this.integerTrackbarControlVoxelMipIndex.TabIndex = 4;
+			this.integerTrackbarControlVoxelMipIndex.Value = 0;
+			this.integerTrackbarControlVoxelMipIndex.VisibleRangeMax = 8;
 			// 
 			// TestForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1536, 919);
+			this.Controls.Add(this.integerTrackbarControlVoxelMipIndex);
+			this.Controls.Add(this.label1);
 			this.Controls.Add(this.buttonReload);
 			this.Controls.Add(this.panelOutput);
 			this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
@@ -63,6 +89,7 @@
 			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
 			this.Text = "Voxel GI Test";
 			this.ResumeLayout(false);
+			this.PerformLayout();
 
 		}
 
@@ -70,6 +97,8 @@
 
 		private TestVoxelGI.PanelOutput panelOutput;
 		private System.Windows.Forms.Button buttonReload;
+		private System.Windows.Forms.Label label1;
+		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlVoxelMipIndex;
 	}
 }
 
