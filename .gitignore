@@ -619,3 +619,6 @@
 /Tests/TestWaveletATrousFiltering/TestWaveletATrousFiltering.csproj.user
 /Tests/TestTriangleCurvature/obj
 /Tests/TestTriangleCurvature/App.config
+/Tests/TestVoxelGI/bin
+/Tests/TestVoxelGI/obj
+/Tests/TestVoxelGI/TestVoxelGI.csproj.user

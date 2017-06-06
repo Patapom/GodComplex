@@ -4,11 +4,11 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{09CF756F-3958-41CB-AA3B-15DF41D71470}</ProjectGuid>
+    <ProjectGuid>{66C92C22-3CC3-4A5F-98C3-D79ECCE98521}</ProjectGuid>
     <OutputType>WinExe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>TestTriangleCurvature</RootNamespace>
-    <AssemblyName>TriangleCurvature</AssemblyName>
+    <RootNamespace>TestVoxelGI</RootNamespace>
+    <AssemblyName>TestVoxelGI</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
@@ -70,22 +70,16 @@
     <Compile Include="PanelOutput.Designer.cs">
       <DependentUpon>PanelOutput.cs</DependentUpon>
     </Compile>
-    <Compile Include="TriangleCurvatureTestForm.cs">
+    <Compile Include="TestForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="TriangleCurvatureTestForm.Designer.cs">
-      <DependentUpon>TriangleCurvatureTestForm.cs</DependentUpon>
-    </Compile>
-    <Compile Include="PanelOutput3D.cs">
-      <SubType>Component</SubType>
+    <Compile Include="TestForm.Designer.cs">
+      <DependentUpon>TestForm.cs</DependentUpon>
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <EmbeddedResource Include="TriangleCurvatureTestForm.resx">
-      <DependentUpon>TriangleCurvatureTestForm.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="PanelOutput3D.resx">
-      <DependentUpon>PanelOutput3D.cs</DependentUpon>
+    <EmbeddedResource Include="TestForm.resx">
+      <DependentUpon>TestForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
@@ -107,12 +101,7 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Shaders\Global.hlsl" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="Shaders\RenderScene_Final.hlsl" />
-    <Content Include="Shaders\RenderScene_Subdiv.hlsl" />
-    <Content Include="Shaders\RenderScene.hlsl" />
+    <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Packages\Cirrus.Utility\Utility.csproj">
@@ -131,10 +120,14 @@
       <Project>{f96cdfd3-8954-4f4f-afb0-2855d98f051b}</Project>
       <Name>RendererManaged</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\Packages\SharpMath\MathAdvanced.csproj">
-      <Project>{dd026a89-c5fe-4150-bc85-a660e427826a}</Project>
-      <Name>MathAdvanced</Name>
-    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Shaders\ATrousFilter.hlsl" />
+    <Content Include="Shaders\DistanceField.hlsl" />
+    <Content Include="Shaders\Global.hlsl" />
+    <Content Include="Shaders\PostProcess.hlsl" />
+    <Content Include="Shaders\RenderGBuffer.hlsl" />
+    <Content Include="Shaders\RenderScene.hlsl" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

@@ -13,9 +13,9 @@ using ImageUtility;
 using Renderer;
 using Nuaj.Cirrus.Utility;
 
-namespace TestWaveletATrousFiltering
+namespace TestVoxelGI
 {
-	public partial class Form1 : Form {
+	public partial class TestForm : Form {
 
 		const float	CAMERA_FOV = (float) (90.0 * Math.PI / 180.0);
 		const uint	FILTER_ITERATIONS_COUNT = 5;
@@ -82,7 +82,7 @@ namespace TestWaveletATrousFiltering
 		CameraManipulator			m_cameraManipulator = new CameraManipulator();
 
 
-		public Form1() {
+		public TestForm() {
 			InitializeComponent();
 
 // 			BuildKernelWeights();
@@ -109,7 +109,7 @@ namespace TestWaveletATrousFiltering
 				m_CB_postProcess = new ConstantBuffer< CB_PostProcess >( m_device, 10 );
 
 			} catch ( Exception _e ) {
-				MessageBox.Show( this, "Error", "An exception occurred while creating DX structures:\r\n" + _e.Message );
+				MessageBox.Show( this, "An exception occurred while creating DX structures:\r\n" + _e.Message, "Error" );
 			}
 
 			// Initialize camera
@@ -187,7 +187,7 @@ namespace TestWaveletATrousFiltering
 				m_tex_GBuffer.Set( 0 );
 				m_Tex_BlueNoise.Set( 1 );
 
-				m_CB_renderScene.m._lightSize = floatTrackbarControlLightSize.Value;
+//				m_CB_renderScene.m._lightSize = floatTrackbarControlLightSize.Value;
 				m_CB_renderScene.UpdateData();
 
 				m_device.RenderFullscreenQuad( m_shader_renderScene );
@@ -198,9 +198,9 @@ namespace TestWaveletATrousFiltering
 			if ( m_shader_filter.Use() ) {
 				m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
 
-				float	SIGMA_COLOR = floatTrackbarControlSigmaColor.Value;
-				float	SIGMA_NORMAL = floatTrackbarControlSigmaNormal.Value;
-				float	SIGMA_POSITION = floatTrackbarControlSigmaPosition.Value;
+				float	SIGMA_COLOR = 0.01f;//floatTrackbarControlSigmaColor.Value;
+				float	SIGMA_NORMAL = 0.01f;//floatTrackbarControlSigmaNormal.Value;
+				float	SIGMA_POSITION = 0.01f;//floatTrackbarControlSigmaPosition.Value;
 
 				m_tex_GBuffer.Set( 0 );
 
@@ -234,7 +234,7 @@ namespace TestWaveletATrousFiltering
 				m_tex_GBuffer.Set( 0 );
 				m_tex_sceneRadiance.Set( 1 );
 
-				m_CB_postProcess.m._filterLevel = (uint) (checkBoxToggleFilter.Checked ? integerTrackbarControlFilterLevel.Value : 0);
+				m_CB_postProcess.m._filterLevel = 5;//(uint) (checkBoxToggleFilter.Checked ? integerTrackbarControlFilterLevel.Value : 0);
 				m_CB_postProcess.UpdateData();
 
 				m_device.RenderFullscreenQuad( m_shader_postProcess );
