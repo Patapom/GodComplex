@@ -47,11 +47,6 @@ namespace Renderer {
 	void	Texture2D::SetCS( UInt32 _slotIndex, View2D^ _view )		{ m_texture->SetCS( _slotIndex, true, _view != nullptr ? _view->SRV : NULL ); }
 	void	Texture2D::SetCSUAV( UInt32 _slotIndex, View2D^ _view )		{ m_texture->SetCSUAV( _slotIndex, _view != nullptr ? _view->UAV : NULL ); }
 
-// 	ImagesMatrix^	Texture2D::AsImagesMatrix::get() {
-// 		ImagesMatrix^	result = m_texture->;
-// 		return result;
-// 	}
-
 
 	//////////////////////////////////////////////////////////////////////////
 	// View

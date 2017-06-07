@@ -8,21 +8,22 @@ using System.Windows.Forms;
 using System.Drawing;
 using System.Drawing.Imaging;
 
+using SharpMath;
+
 namespace AlbedoDatabaseGenerator
 {
 	public partial class TexturePanel : Panel
 	{
 		#region FIELDS
 
-		private WMath.Vector4D[]	m_CustomSwatches = new WMath.Vector4D[9];
-		private Bitmap				m_SourceImage = null;
+		private float4[]	m_CustomSwatches = new float4[9];
+		private Bitmap		m_SourceImage = null;
 
 		#endregion
 
 		#region PROPERTIES
 
-		public WMath.Vector4D[]	CustomSwatches
-		{
+		public float4[]	CustomSwatches {
 			get { return m_CustomSwatches; }
 		}
 
@@ -106,9 +107,8 @@ namespace AlbedoDatabaseGenerator
 			// Show custom swatches' location
 			RectangleF		R = ImageClientRectangle;
 			for ( int SwatchIndex=0; SwatchIndex < m_CustomSwatches.Length; SwatchIndex++ )
-				if ( m_CustomSwatches[SwatchIndex] != null )
-				{
-					WMath.Vector4D	Location = m_CustomSwatches[SwatchIndex];
+				if ( m_CustomSwatches[SwatchIndex] != null ) {
+					SharpMath.float4	Location = m_CustomSwatches[SwatchIndex];
 
 					PointF	TopLeft = new PointF( R.Left + Location.x * R.Width, R.Top + Location.y * R.Height );
 					PointF	BottomRight = new PointF( R.Left + Location.z * R.Width, R.Top + Location.w * R.Height );

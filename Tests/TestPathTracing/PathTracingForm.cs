@@ -162,7 +162,7 @@ namespace TestPathTracing {
 			//////////////////////////////////////////////////////////////////////////
 			// Render the G-Buffer
 			if ( m_Shader_renderGBuffer.Use() ) {
-				m_device.SetRenderTargets( m_Tex_GBuffer.Width, m_Tex_GBuffer.Height, new IView[] { m_Tex_GBuffer.GetView( 0, 1, 0, 1 ), m_Tex_GBuffer.GetView( 0, 1, 1, 1 ) }, null );
+				m_device.SetRenderTargets( new IView[] { m_Tex_GBuffer.GetView( 0, 1, 0, 1 ), m_Tex_GBuffer.GetView( 0, 1, 1, 1 ) }, null );
 				m_device.RenderFullscreenQuad( m_Shader_renderGBuffer );
 			}
 

@@ -1674,7 +1674,7 @@ renderProg PostFX/Debug/WardBRDFAlbedo {
 
 				ByteBuffer	VerticesBuffer = VertexPt4.FromArray( Vertices );
 
-				m_Prim_Quad = new Primitive( m_Device, Vertices.Length, VerticesBuffer, null, Primitive.TOPOLOGY.TRIANGLE_STRIP, VERTEX_FORMAT.Pt4 );
+				m_Prim_Quad = new Primitive( m_Device, (uint) Vertices.Length, VerticesBuffer, null, Primitive.TOPOLOGY.TRIANGLE_STRIP, VERTEX_FORMAT.Pt4 );
 			}
 
 			{
@@ -1686,7 +1686,7 @@ renderProg PostFX/Debug/WardBRDFAlbedo {
 
 				ByteBuffer	VerticesBuffer = VertexP3N3G3B3T2.FromArray( Vertices );
 
-				m_Prim_Rectangle = new Primitive( m_Device, Vertices.Length, VerticesBuffer, null, Primitive.TOPOLOGY.TRIANGLE_STRIP, VERTEX_FORMAT.P3N3G3B3T2 );
+				m_Prim_Rectangle = new Primitive( m_Device, (uint) Vertices.Length, VerticesBuffer, null, Primitive.TOPOLOGY.TRIANGLE_STRIP, VERTEX_FORMAT.P3N3G3B3T2 );
 			}
 
 			{	// Build the sphere
@@ -1731,7 +1731,7 @@ renderProg PostFX/Debug/WardBRDFAlbedo {
 					}
 				}
 
-				m_Prim_Sphere = new Primitive( m_Device, Vertices.Length, VerticesBuffer, Indices, Primitive.TOPOLOGY.TRIANGLE_STRIP, VERTEX_FORMAT.P3N3G3B3T2 );
+				m_Prim_Sphere = new Primitive( m_Device, (uint) Vertices.Length, VerticesBuffer, Indices, Primitive.TOPOLOGY.TRIANGLE_STRIP, VERTEX_FORMAT.P3N3G3B3T2 );
 			}
 
 			{	// Build the cube
@@ -1800,7 +1800,7 @@ renderProg PostFX/Debug/WardBRDFAlbedo {
 
 				ByteBuffer	VerticesBuffer = VertexP3N3G3B3T2.FromArray( Vertices );
 
-				m_Prim_Cube = new Primitive( m_Device, Vertices.Length, VerticesBuffer, Indices, Primitive.TOPOLOGY.TRIANGLE_LIST, VERTEX_FORMAT.P3N3G3B3T2 );
+				m_Prim_Cube = new Primitive( m_Device, (uint) Vertices.Length, VerticesBuffer, Indices, Primitive.TOPOLOGY.TRIANGLE_LIST, VERTEX_FORMAT.P3N3G3B3T2 );
 			}
 		}
 
@@ -2139,7 +2139,7 @@ renderProg PostFX/Debug/WardBRDFAlbedo {
 			if ( m_Shader_RenderShadowMap != null && m_Shader_RenderShadowMap.Use() ) {
 				m_Tex_ShadowMap.RemoveFromLastAssignedSlots();
 
-				m_Device.SetRenderTargets( m_Tex_ShadowMap.Width, m_Tex_ShadowMap.Height, new View2D[0], m_Tex_ShadowMap );
+				m_Device.SetRenderTargets( null, m_Tex_ShadowMap );
 #if FILTER_EXP_SHADOW_MAP
 // 				m_Device.ClearDepthStencil( m_Tex_ShadowMap, 0.0f, 0, true, false );
 // 				m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.READ_WRITE_DEPTH_GREATER, BLEND_STATE.DISABLED );	// For exp shadow map, the Z order is reversed

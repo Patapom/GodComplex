@@ -36,6 +36,7 @@ namespace Renderer {
 	void	Texture3D::SetGS( UInt32 _slotIndex, View3D^ _view )	{ m_texture->SetGS( _slotIndex, true, _view != nullptr ? _view->SRV : NULL ); }
 	void	Texture3D::SetPS( UInt32 _slotIndex, View3D^ _view )	{ m_texture->SetPS( _slotIndex, true, _view != nullptr ? _view->SRV : NULL ); }
 	void	Texture3D::SetCS( UInt32 _slotIndex, View3D^ _view )	{ m_texture->SetCS( _slotIndex, true, _view != nullptr ? _view->SRV : NULL ); }
+	void	Texture3D::SetCSUAV( int _slotIndex, View3D^ _view  )	{ m_texture->SetCSUAV( _slotIndex, _view != nullptr ? _view->UAV : NULL ); }
 
 
 	UInt32							View3D::Width::get() { return m_Owner->Width; }

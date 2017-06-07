@@ -2,7 +2,7 @@
 
 #include "Primitive.h"
 
-Primitive::Primitive( Device& _Device, int _VerticesCount, const void* _pVertices, int _IndicesCount, const U32* _pIndices, D3D11_PRIMITIVE_TOPOLOGY _Topology, const IVertexFormatDescriptor& _Format ) : Component( _Device )
+Primitive::Primitive( Device& _Device, U32 _VerticesCount, const void* _pVertices, U32 _IndicesCount, const U32* _pIndices, D3D11_PRIMITIVE_TOPOLOGY _Topology, const IVertexFormatDescriptor& _Format ) : Component( _Device )
 	, m_VerticesCount( _VerticesCount )
 	, m_IndicesCount( _IndicesCount )
 	, m_Format( _Format )
@@ -28,7 +28,7 @@ Primitive::Primitive( Device& _Device, const IVertexFormatDescriptor& _Format ) 
 	// Deferred construction...
 }
 
-Primitive::Primitive( Device& _Device, int _VerticesCount, int _IndicesCount, D3D11_PRIMITIVE_TOPOLOGY _Topology, const IVertexFormatDescriptor& _Format ) : Component( _Device )
+Primitive::Primitive( Device& _Device, U32 _VerticesCount, U32 _IndicesCount, D3D11_PRIMITIVE_TOPOLOGY _Topology, const IVertexFormatDescriptor& _Format ) : Component( _Device )
 	, m_VerticesCount( _VerticesCount )
 	, m_IndicesCount( _IndicesCount )
 	, m_Format( _Format )
@@ -85,11 +85,10 @@ void	Primitive::Render( Shader& _Material, int _StartVertex, int _VerticesCount,
 	}
 }
 
-void	Primitive::RenderInstanced( Shader& _Material, int _InstancesCount )
-{
+void	Primitive::RenderInstanced( Shader& _Material, U32 _InstancesCount ) {
 	RenderInstanced( _Material, _InstancesCount, 0, m_VerticesCount, 0, m_IndicesCount, 0 );
 }
-void	Primitive::RenderInstanced( Shader& _Material, int _InstancesCount, int _StartVertex, int _VerticesCount, int _StartIndex, int _IndicesCount, int _BaseVertexOffset )
+void	Primitive::RenderInstanced( Shader& _Material, U32 _InstancesCount, U32 _StartVertex, U32 _VerticesCount, U32 _StartIndex, U32 _IndicesCount, U32 _BaseVertexOffset )
 {
 	ASSERT( m_device.CurrentMaterial() == &_Material, "Attempting to render with a material that is not the currently used material!" );
 

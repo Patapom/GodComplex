@@ -21,6 +21,8 @@ namespace SharpMath {
 			return "{ " + x + ", " + y + " }";
 		}
 
+		static bool		TryParse( String^ _stringValue, float2% _value );
+
 		static float2	operator+( float2 a, float2 b )	{ return float2( a.x+b.x, a.y+b.y ); }
 		static float2	operator-( float2 a, float2 b )	{ return float2( a.x-b.x, a.y-b.y ); }
 		static float2	operator-( float2 a )			{ return float2( -a.x, -a.y ); }
@@ -28,6 +30,7 @@ namespace SharpMath {
 		static float2	operator*( float2 a, float b )	{ return float2( a.x*b, a.y*b ); }
 		static float2	operator*( float2 a, float2 b )	{ return float2( a.x*b.x, a.y*b.y ); }
 		static float2	operator/( float2 a, float b )	{ return float2( a.x/b, a.y/b ); }
+		static float2	operator/( float2 a, float2 b )	{ return float2( a.x/b.x, a.y/b.y ); }
 
 		property float	Length {
 			float	get() { return (float) Math::Sqrt( x*x + y*y ); }
@@ -69,8 +72,20 @@ namespace SharpMath {
 		float3	Cross( float2 b );
 		float	CrossZ( float2 b )	{ return x * b.y - y * b.x; }	// Returns the Z component of the orthogonal vector
 
-		static bool			operator==( float2^ _Op0, float2^ _Op1 )	{ return Math::Abs( _Op0->x - _Op1->x ) < float::Epsilon && Math::Abs( _Op0->y - _Op1->y ) < float::Epsilon; }
-		static bool			operator!=( float2^ _Op0, float2^ _Op1 )	{ return Math::Abs( _Op0->x - _Op1->x ) > float::Epsilon || Math::Abs( _Op0->y - _Op1->y ) > float::Epsilon; }
+		static bool			operator==( float2^ _Op0, float2^ _Op1 ) {
+			if ( ((Object^) _Op0) == nullptr && ((Object^) _Op1) == nullptr )
+				return true;
+			if ( ((Object^) _Op0) == nullptr || ((Object^) _Op1) == nullptr )
+				return false;
+			return Math::Abs( _Op0->x - _Op1->x ) < float::Epsilon && Math::Abs( _Op0->y - _Op1->y ) < float::Epsilon;
+		}
+		static bool			operator!=( float2^ _Op0, float2^ _Op1 ) {
+			if ( ((Object^) _Op0) == nullptr && ((Object^) _Op1) == nullptr )
+				return false;
+			if ( ((Object^) _Op0) == nullptr || ((Object^) _Op1) == nullptr )
+				return true;
+			return Math::Abs( _Op0->x - _Op1->x ) > float::Epsilon || Math::Abs( _Op0->y - _Op1->y ) > float::Epsilon;
+		}
 
 		static property float2	Zero	{ float2 get() { return float2( 0, 0 ); } }
 		static property float2	UnitX	{ float2 get() { return float2( 1, 0 ); } }
@@ -100,6 +115,7 @@ namespace SharpMath {
 		static float3	operator*( float3 a, float b )	{ return float3( a.x*b, a.y*b, a.z*b ); }
 		static float3	operator*( float3 a, float3 b )	{ return float3( a.x*b.x, a.y*b.y, a.z*b.z ); }
 		static float3	operator/( float3 a, float b )	{ return float3( a.x/b, a.y/b, a.z/b ); }
+		static float3	operator/( float3 a, float3 b )	{ return float3( a.x/b.x, a.y/b.y, a.z/b.z ); }
 
 		static explicit operator float2( float3 a )		{ return float2( a.x, a.y ); }
 
@@ -116,6 +132,10 @@ namespace SharpMath {
 				float	InvLength = 1.0f / Length;
 				return float3( InvLength * x, InvLength * y, InvLength * z );
 			}
+		}
+
+		property float2	xy	{
+			float2	get() { return float2( x, y ); }
 		}
 
 		property float	default[int] {
@@ -168,8 +188,20 @@ namespace SharpMath {
 			_up.Set( b, 1.0f - y*y*a, -y );
 		}
 
-		static bool			operator==( float3^ _Op0, float3^ _Op1 )	{ return Math::Abs( _Op0->x - _Op1->x ) < float::Epsilon && Math::Abs( _Op0->y - _Op1->y ) < float::Epsilon && Math::Abs( _Op0->z - _Op1->z ) < float::Epsilon; }
-		static bool			operator!=( float3^ _Op0, float3^ _Op1 )	{ return Math::Abs( _Op0->x - _Op1->x ) > float::Epsilon || Math::Abs( _Op0->y - _Op1->y ) > float::Epsilon || Math::Abs( _Op0->z - _Op1->z ) > float::Epsilon; }
+		static bool			operator==( float3^ _Op0, float3^ _Op1 ) {
+			if ( ((Object^) _Op0) == nullptr && ((Object^) _Op1) == nullptr )
+				return true;
+			if ( ((Object^) _Op0) == nullptr || ((Object^) _Op1) == nullptr )
+				return false;
+			return Math::Abs( _Op0->x - _Op1->x ) < float::Epsilon && Math::Abs( _Op0->y - _Op1->y ) < float::Epsilon && Math::Abs( _Op0->z - _Op1->z ) < float::Epsilon;
+		}
+		static bool			operator!=( float3^ _Op0, float3^ _Op1 ) {
+			if ( ((Object^) _Op0) == nullptr && ((Object^) _Op1) == nullptr )
+				return false;
+			if ( ((Object^) _Op0) == nullptr || ((Object^) _Op1) == nullptr )
+				return true;
+			return Math::Abs( _Op0->x - _Op1->x ) > float::Epsilon || Math::Abs( _Op0->y - _Op1->y ) > float::Epsilon || Math::Abs( _Op0->z - _Op1->z ) > float::Epsilon;
+		}
 
 		static property float3	Zero	{ float3 get() { return float3( 0, 0, 0 ); } }
 		static property float3	UnitX	{ float3 get() { return float3( 1, 0, 0 ); } }
@@ -201,7 +233,9 @@ namespace SharpMath {
 		static float4	operator-( float4 a )			{ return float4( -a.x, -a.y, -a.z, -a.w ); }
 		static float4	operator*( float a, float4 b )	{ return float4( a*b.x, a*b.y, a*b.z, a*b.w ); }
 		static float4	operator*( float4 a, float b )	{ return float4( a.x*b, a.y*b, a.z*b, a.w*b ); }
+		static float4	operator*( float4 a, float4 b )	{ return float4( a.x*b.x, a.y*b.y, a.z*b.z, a.w*b.w ); }
 		static float4	operator/( float4 a, float b )	{ return float4( a.x/b, a.y/b, a.z/b, a.w/b ); }
+		static float4	operator/( float4 a, float4 b )	{ return float4( a.x/b.x, a.y/b.y, a.z/b.z, a.w/b.w ); }
 
 		static explicit operator float2( float4 a )		{ return float2( a.x, a.y ); }
 		static explicit operator float3( float4 a )		{ return float3( a.x, a.y, a.z ); }
@@ -219,6 +253,13 @@ namespace SharpMath {
 				float	InvLength = 1.0f / Length;
 				return float4( InvLength * x, InvLength * y, InvLength * z, InvLength * w );
 			}
+		}
+
+		property float2	xy	{
+			float2	get() { return float2( x, y ); }
+		}
+		property float3	xyz	{
+			float3	get() { return float3( x, y, z ); }
 		}
 
 		property float	default[int] {
@@ -243,8 +284,20 @@ namespace SharpMath {
 
 		float	Dot( float4 b )	{ return x*b.x + y*b.y + z*b.z + w*b.w; }
 
-		static bool			operator==( float4^ _Op0, float4^ _Op1 )	{ return Math::Abs( _Op0->x - _Op1->x ) < float::Epsilon && Math::Abs( _Op0->y - _Op1->y ) < float::Epsilon && Math::Abs( _Op0->z - _Op1->z ) < float::Epsilon && Math::Abs( _Op0->w - _Op1->w ) < float::Epsilon; }
-		static bool			operator!=( float4^ _Op0, float4^ _Op1 )	{ return Math::Abs( _Op0->x - _Op1->x ) > float::Epsilon || Math::Abs( _Op0->y - _Op1->y ) > float::Epsilon || Math::Abs( _Op0->z - _Op1->z ) > float::Epsilon || Math::Abs( _Op0->w - _Op1->w ) > float::Epsilon; }
+		static bool			operator==( float4^ _Op0, float4^ _Op1 ) {
+			if ( ((Object^) _Op0) == nullptr && ((Object^) _Op1) == nullptr )
+				return true;
+			if ( ((Object^) _Op0) == nullptr || ((Object^) _Op1) == nullptr )
+				return false;
+			return Math::Abs( _Op0->x - _Op1->x ) < float::Epsilon && Math::Abs( _Op0->y - _Op1->y ) < float::Epsilon && Math::Abs( _Op0->z - _Op1->z ) < float::Epsilon && Math::Abs( _Op0->w - _Op1->w ) < float::Epsilon;
+		}
+		static bool			operator!=( float4^ _Op0, float4^ _Op1 ) {
+			if ( ((Object^) _Op0) == nullptr && ((Object^) _Op1) == nullptr )
+				return false;
+			if ( ((Object^) _Op0) == nullptr || ((Object^) _Op1) == nullptr )
+				return true;
+			return Math::Abs( _Op0->x - _Op1->x ) > float::Epsilon || Math::Abs( _Op0->y - _Op1->y ) > float::Epsilon || Math::Abs( _Op0->z - _Op1->z ) > float::Epsilon || Math::Abs( _Op0->w - _Op1->w ) > float::Epsilon;
+		}
 
 		static property float4	Zero	{ float4 get() { return float4( 0, 0, 0, 0 ); } }
 		static property float4	UnitX	{ float4 get() { return float4( 1, 0, 0, 0 ); } }

@@ -171,18 +171,18 @@ void	Texture3D::Init( const void* const* _ppContent, bool _bStaging, bool _bUnOr
 		Check( m_device.DXDevice().CreateTexture3D( &Desc, NULL, &m_texture ) );
 }
 
-ID3D11ShaderResourceView*	Texture3D::GetSRV( U32 _MipLevelStart, U32 _mipLevelsCount, U32 _FirstWSlice, U32 _WSize, bool _AsArray ) const {
+ID3D11ShaderResourceView*	Texture3D::GetSRV( U32 _mipLevelStart, U32 _mipLevelsCount, U32 _firstWSlice, U32 _WSize, bool _AsArray ) const {
 	if ( _mipLevelsCount == 0 )
-		_mipLevelsCount = m_mipLevelsCount - _MipLevelStart;
+		_mipLevelsCount = m_mipLevelsCount - _mipLevelStart;
 	if ( _WSize == 0 )
-		_WSize = m_depth - _FirstWSlice;
+		_WSize = (m_depth >> _mipLevelStart) - _firstWSlice;
 
 	// Check if we already have it
 	U32	Hash;
 	if ( _AsArray )
-		Hash = (_MipLevelStart << 0) | (_FirstWSlice << 4) | (_mipLevelsCount << (4+12)) | (_WSize << (4+12+4));	// Re-organized to have most likely changes (i.e. mip & array starts) first
+		Hash = (_mipLevelStart << 0) | (_firstWSlice << 4) | (_mipLevelsCount << (4+12)) | (_WSize << (4+12+4));	// Re-organized to have most likely changes (i.e. mip & array starts) first
 	else
-		Hash = _MipLevelStart | (_mipLevelsCount << 4);
+		Hash = _mipLevelStart | (_mipLevelsCount << 4);
 	Hash ^= _AsArray ? 0x80000000UL : 0;
 
 	ID3D11ShaderResourceView*	pExistingView = (ID3D11ShaderResourceView*) m_cachedSRVs.Get( Hash );
@@ -194,13 +194,13 @@ ID3D11ShaderResourceView*	Texture3D::GetSRV( U32 _MipLevelStart, U32 _mipLevelsC
 	if ( _AsArray ) {
 		// Force as a Texture2DArray
 		desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
-		desc.Texture2DArray.MostDetailedMip = _MipLevelStart;
+		desc.Texture2DArray.MostDetailedMip = _mipLevelStart;
 		desc.Texture2DArray.MipLevels = _mipLevelsCount;
-		desc.Texture2DArray.FirstArraySlice = _FirstWSlice;
+		desc.Texture2DArray.FirstArraySlice = _firstWSlice;
 		desc.Texture2DArray.ArraySize = _WSize;
 	} else {
 		desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE3D;
-		desc.Texture3D.MostDetailedMip = _MipLevelStart;
+		desc.Texture3D.MostDetailedMip = _mipLevelStart;
 		desc.Texture3D.MipLevels = _mipLevelsCount;
 	}
 
@@ -212,13 +212,13 @@ ID3D11ShaderResourceView*	Texture3D::GetSRV( U32 _MipLevelStart, U32 _mipLevelsC
 	return pView;
 }
 
-ID3D11RenderTargetView*		Texture3D::GetRTV( U32 _mipLevelIndex, U32 _FirstWSlice, U32 _WSize ) const {
+ID3D11RenderTargetView*		Texture3D::GetRTV( U32 _mipLevelIndex, U32 _firstWSlice, U32 _WSize ) const {
 	if ( _WSize == 0 )
-		_WSize = m_depth - _FirstWSlice;
+		_WSize = (m_depth >> _mipLevelIndex) - _firstWSlice;
 
 	// Check if we already have it
-//	U32	Hash = _WSize | ((_FirstWSlice | (_mipLevelIndex << 12)) << 12);
-	U32	Hash = (_mipLevelIndex << 0) | (_FirstWSlice << 12) | (_WSize << (4+12));	// Re-organized to have most likely changes (i.e. mip & slice starts) first
+//	U32	Hash = _WSize | ((_firstWSlice | (_mipLevelIndex << 12)) << 12);
+	U32	Hash = (_mipLevelIndex << 0) | (_firstWSlice << 12) | (_WSize << (4+12));	// Re-organized to have most likely changes (i.e. mip & slice starts) first
 	ID3D11RenderTargetView*	pExistingView = (ID3D11RenderTargetView*) m_cachedRTVs.Get( Hash );
 	if ( pExistingView != NULL )
 		return pExistingView;
@@ -227,7 +227,7 @@ ID3D11RenderTargetView*		Texture3D::GetRTV( U32 _mipLevelIndex, U32 _FirstWSlice
 	Desc.Format = m_format;
 	Desc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE3D;
 	Desc.Texture3D.MipSlice = _mipLevelIndex;
-	Desc.Texture3D.FirstWSlice = _FirstWSlice;
+	Desc.Texture3D.FirstWSlice = _firstWSlice;
 	Desc.Texture3D.WSize = _WSize;
 
 	ID3D11RenderTargetView*	pView;
@@ -238,13 +238,13 @@ ID3D11RenderTargetView*		Texture3D::GetRTV( U32 _mipLevelIndex, U32 _FirstWSlice
 	return pView;
 }
 
-ID3D11UnorderedAccessView*	Texture3D::GetUAV( U32 _mipLevelIndex, U32 _FirstWSlice, U32 _WSize ) const {
+ID3D11UnorderedAccessView*	Texture3D::GetUAV( U32 _mipLevelIndex, U32 _firstWSlice, U32 _WSize ) const {
 	if ( _WSize == 0 )
-		_WSize = m_depth - _FirstWSlice;
+		_WSize = (m_depth >> _mipLevelIndex) - _firstWSlice;
 
 	// Check if we already have it
-//	U32	Hash = _WSize | ((_FirstWSlice | (_mipLevelIndex << 12)) << 12);
-	U32	Hash = (_mipLevelIndex << 0) | (_FirstWSlice << 12) | (_WSize << (4+12));	// Re-organized to have most likely changes (i.e. mip & slice starts) first
+//	U32	Hash = _WSize | ((_firstWSlice | (_mipLevelIndex << 12)) << 12);
+	U32	Hash = (_mipLevelIndex << 0) | (_firstWSlice << 12) | (_WSize << (4+12));	// Re-organized to have most likely changes (i.e. mip & slice starts) first
 	ID3D11UnorderedAccessView*	pExistingView = (ID3D11UnorderedAccessView*) m_cachedUAVs.Get( Hash );
 	if ( pExistingView != NULL )
 		return pExistingView;
@@ -254,7 +254,7 @@ ID3D11UnorderedAccessView*	Texture3D::GetUAV( U32 _mipLevelIndex, U32 _FirstWSli
 	Desc.Format = m_format;
 	Desc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE3D;
 	Desc.Texture3D.MipSlice = _mipLevelIndex;
-	Desc.Texture3D.FirstWSlice = _FirstWSlice;
+	Desc.Texture3D.FirstWSlice = _firstWSlice;
 	Desc.Texture3D.WSize = _WSize;
 
 	ID3D11UnorderedAccessView*	pView;

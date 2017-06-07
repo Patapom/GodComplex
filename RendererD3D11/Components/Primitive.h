@@ -51,15 +51,15 @@ public:	 // PROPERTIES
 
 public:	 // METHODS
 
-	Primitive( Device& _Device, int _VerticesCount, const void* _pVertices, int _IndicesCount, const U32* _pIndices, D3D11_PRIMITIVE_TOPOLOGY _Topology, const IVertexFormatDescriptor& _Format );
+	Primitive( Device& _Device, U32 _VerticesCount, const void* _pVertices, U32 _IndicesCount, const U32* _pIndices, D3D11_PRIMITIVE_TOPOLOGY _Topology, const IVertexFormatDescriptor& _Format );
 	Primitive( Device& _Device, const IVertexFormatDescriptor& _Format );	// Used by geometry builders
-	Primitive( Device& _Device, int _VerticesCount, int _IndicesCount, D3D11_PRIMITIVE_TOPOLOGY _Topology, const IVertexFormatDescriptor& _Format );	// Used to build dynamic buffers
+	Primitive( Device& _Device, U32 _VerticesCount, U32 _IndicesCount, D3D11_PRIMITIVE_TOPOLOGY _Topology, const IVertexFormatDescriptor& _Format );	// Used to build dynamic buffers
 	~Primitive();
 
 	void			Render( Shader& _Material );
 	void			Render( Shader& _Material, int _StartVertex, int _VerticesCount, int _StartIndex, int _IndicesCount, int _BaseVertexOffset );
-	void			RenderInstanced( Shader& _Material, int _InstancesCount );
-	void			RenderInstanced( Shader& _Material, int _InstancesCount, int _StartVertex, int _VerticesCount, int _StartIndex, int _IndicesCount, int _BaseVertexOffset );
+	void			RenderInstanced( Shader& _Material, U32 _InstancesCount );
+	void			RenderInstanced( Shader& _Material, U32 _InstancesCount, U32 _StartVertex, U32 _VerticesCount, U32 _StartIndex, U32 _IndicesCount, U32 _BaseVertexOffset );
 
 	void			UpdateDynamic( void* _pVertices, U16* _pIndices, int _VerticesCount=-1, int _IndicesCount=-1 );
 

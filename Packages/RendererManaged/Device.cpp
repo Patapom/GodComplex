@@ -80,17 +80,23 @@ void	Renderer::Device::SetRenderTarget( Texture2D^ _RenderTarget, Texture2D^ _De
 	m_pDevice->SetRenderTarget( *_RenderTarget->m_texture, _DepthStencilTarget != nullptr ? _DepthStencilTarget->m_texture : NULL );
 }
 
-void	Renderer::Device::SetRenderTargets( UInt32 _width, UInt32 _height, cli::array<IView^>^ _renderTargetViews, Texture2D^ _depthStencilTarget ) {
-	if ( _renderTargetViews == nullptr )
-		throw gcnew Exception( "Invalid render targets array!" );
+void	Renderer::Device::SetRenderTargets( cli::array<IView^>^ _renderTargetViews, Texture2D^ _depthStencilTarget ) {
+	U32	W, H;
+	U32	renderTargetsCount = 0;
+	if ( _renderTargetViews != nullptr && _renderTargetViews->Length > 0 ) {
+		W = _renderTargetViews[0]->Width;
+		H = _renderTargetViews[0]->Height;
+		renderTargetsCount = _renderTargetViews->Length;
+		for ( int i=0; i < _renderTargetViews->Length; i++ )
+			m_ppRenderTargetViews[i] = _renderTargetViews[i]->RTV;
+	} else if ( _depthStencilTarget != nullptr ) {
+		W = _depthStencilTarget->Width;
+		H = _depthStencilTarget->Height;
+	} else {
+		throw gcnew Exception( "Render target views and depth stencil view cannot both be null!" );
+	}
+	m_pDevice->SetRenderTargets( W, H, renderTargetsCount, m_ppRenderTargetViews, _depthStencilTarget != nullptr ? _depthStencilTarget->m_texture->GetDSV() : NULL );
 
-// 	ppRenderTargets = new ::ID3D11RenderTargetView*[_RenderTargetViews->Length];
-	for ( int i=0; i < _renderTargetViews->Length; i++ )
-		m_ppRenderTargetViews[i] = _renderTargetViews[i]->RTV;
-
-	m_pDevice->SetRenderTargets( _width, _height, _renderTargetViews->Length, m_ppRenderTargetViews, _depthStencilTarget != nullptr ? _depthStencilTarget->m_texture->GetDSV() : NULL );
-
-//	delete[] ppRenderTargets;
 }
 
 void	Renderer::Device::RenderFullscreenQuad( Shader^ _shader ) {

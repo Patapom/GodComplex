@@ -119,7 +119,7 @@
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>ImageUtilityLib.lib;FreeImageLibd.lib</AdditionalDependencies>
+      <AdditionalDependencies>ImageUtilityLib.lib;FreeImaged.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -142,7 +142,7 @@
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>ImageUtilityLib.lib;FreeImageLib.lib</AdditionalDependencies>
+      <AdditionalDependencies>ImageUtilityLib.lib;FreeImage.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
