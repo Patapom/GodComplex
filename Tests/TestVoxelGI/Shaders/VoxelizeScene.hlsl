@@ -48,7 +48,7 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 
 	// Compute lighting
 	float3	sceneRadiance = (INVPI * albedo) * saturate( dot( wsNormal, wsLight ) ) * shadow * LIGHT_ILLUMINANCE / (distance2Light * distance2Light);
-	_Tex_VoxelScene_Lighting[voxelIndex] = float4( sceneRadiance, 0.0 );
+	_Tex_VoxelScene_Lighting[voxelIndex] = float4( sceneRadiance, albedo );	// We also store the albedo here so we need only read the lighting texture to know if a voxel is empty or not
 }
 
 //cbuffer CB_BuildMips : register(b10) {

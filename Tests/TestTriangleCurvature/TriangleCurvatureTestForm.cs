@@ -343,15 +343,22 @@ labelResult.Text = "R = " + R + " (" + previousSqDistance + ") in " + iterations
 			double	bestSqDistance = double.MaxValue;
 			double	bestRt = 0.0;
 			double	bestRb = 0.0;
-/*			int		bestIterationsCount = 0;
+			int		bestIterationsCount = 0;
 			while ( Math.Abs( Rt ) < 10000.0f && Math.Abs( Rb ) < 10000.0f && iterationsCount < 1000 ) {
 				// Compute gradient
-				double	sqDistance00 = SquareDistance( Rt, Rb, neighbors );	// Central value
-				double	sqDistance01 = SquareDistance( Rt + eps, Rb, neighbors );
-				double	sqDistance10 = SquareDistance( Rt, Rb + eps, neighbors );
-				double	sqDistance11 = SquareDistance( Rt + eps, Rb + eps, neighbors );
+				double	sqDistance = SquareDistance( Rt, Rb, neighbors );	// Central value
+				if ( Math.Abs( sqDistance - previousSqDistance ) / sqDistance < tol ) {
+					break;	// Relative error is low enough
+				}
+
+				double	sqDistance_dT = SquareDistance( Rt + eps, Rb, neighbors );
+				double	sqDistance_dB = SquareDistance( Rt, Rb + eps, neighbors );
+				double	sqDistance_dTdB = SquareDistance( Rt + eps, Rb + eps, neighbors );
 				double	grad_dT = (sqDistance_dT - sqDistance) / eps;
 				double	grad_dB = (sqDistance_dB - sqDistance) / eps;
+				double	grad_dTdB = (sqDistance_dTdB - sqDistance) / eps;
+						grad_dT = 0.5 * (grad_dT + grad_dTdB);
+						grad_dB = 0.5 * (grad_dB + grad_dTdB);
 
 				// Compute intersection with secant Y=0
 				double	t_T = -sqDistance * (Math.Abs( grad_dT ) > 1e-6 ? 1.0 / grad_dT : (Math.Sign( grad_dT ) * 1e6));
@@ -374,7 +381,6 @@ labelResult.Text = "R = " + R + " (" + previousSqDistance + ") in " + iterations
 					bestIterationsCount = iterationsCount;
 				}
 			}
-*/
 
 			Rt = Math.Max( -10000.0, Math.Min( 10000.0, Rt ) );
 			Rb = Math.Max( -10000.0, Math.Min( 10000.0, Rb ) );

@@ -7,7 +7,9 @@ using System.Linq;
 using System.Text;
 using System.Windows.Forms;
 
-using RendererManaged;
+using Renderer;
+using ImageUtility;
+using SharpMath;
 using Nuaj.Cirrus.Utility;
 
 namespace VoronoiVisualizer
@@ -45,7 +47,7 @@ namespace VoronoiVisualizer
 
 		Texture2D[]			m_RT_WorldPositions = new Texture2D[2];
 
-		WMath.Hammersley	m_Hammersley = new WMath.Hammersley();
+		Hammersley			m_hammersley = new Hammersley();
 		float3[]			m_NeighborPositions = null;
 		float3[]			m_NeighborColors = null;
 
@@ -59,11 +61,11 @@ namespace VoronoiVisualizer
 			m_Device = new Device();
 			m_Device.Init( panel1.Handle, false, false );
 
-			m_Shader_RenderCellPlanes = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "RenderCellPlanes.hlsl" ) ), VERTEX_FORMAT.T2, "VS", null, "PS", null );
-			m_Shader_RenderCellMesh = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "RenderCellMesh.hlsl" ) ), VERTEX_FORMAT.P3N3, "VS", null, "PS", null );
-			m_Shader_RenderCellMesh_Opaque = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "RenderCellMesh_Opaque.hlsl" ) ), VERTEX_FORMAT.P3N3, "VS", null, "PS", null );
-			m_Shader_PostProcess = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "PostProcess.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
-			m_Shader_PostProcess2 = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "PostProcess.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+			m_Shader_RenderCellPlanes = new Shader( m_Device, new System.IO.FileInfo( "RenderCellPlanes.hlsl" ), VERTEX_FORMAT.T2, "VS", null, "PS", null );
+			m_Shader_RenderCellMesh = new Shader( m_Device, new System.IO.FileInfo( "RenderCellMesh.hlsl" ), VERTEX_FORMAT.P3N3, "VS", null, "PS", null );
+			m_Shader_RenderCellMesh_Opaque = new Shader( m_Device, new System.IO.FileInfo( "RenderCellMesh_Opaque.hlsl" ), VERTEX_FORMAT.P3N3, "VS", null, "PS", null );
+			m_Shader_PostProcess = new Shader( m_Device, new System.IO.FileInfo( "PostProcess.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+			m_Shader_PostProcess2 = new Shader( m_Device, new System.IO.FileInfo( "PostProcess.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 
 			VertexT2[]	Vertices = new VertexT2[4] {
 				new VertexT2() { UV = new float2( 0, 0 ) },
@@ -74,8 +76,8 @@ namespace VoronoiVisualizer
 			m_Prim_Quad = new Primitive( m_Device, 4, VertexT2.FromArray( Vertices ), null, Primitive.TOPOLOGY.TRIANGLE_STRIP, VERTEX_FORMAT.T2 );
 
 
-			m_RT_WorldPositions[0] = new Texture2D( m_Device, panel1.Width, panel1.Height, 1, 1, PIXEL_FORMAT.RGBA32_FLOAT, false, false, null );
-			m_RT_WorldPositions[1] = new Texture2D( m_Device, panel1.Width, panel1.Height, 1, 1, PIXEL_FORMAT.RGBA32_FLOAT, false, false, null );
+			m_RT_WorldPositions[0] = new Texture2D( m_Device, (uint) panel1.Width, (uint) panel1.Height, 1, 1, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.AUTO, false, false, null );
+			m_RT_WorldPositions[1] = new Texture2D( m_Device, (uint) panel1.Width, (uint) panel1.Height, 1, 1, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.AUTO, false, false, null );
 			m_Device.Clear( m_RT_WorldPositions[0], float4.Zero );
 			m_Device.Clear( m_RT_WorldPositions[1], float4.Zero );
 
@@ -169,7 +171,7 @@ namespace VoronoiVisualizer
 
 					m_SB_Neighbors.SetInput( 0 );
 
-					m_Prim_Quad.RenderInstanced( m_Shader_RenderCellPlanes, m_SB_Neighbors.m.Length );
+					m_Prim_Quad.RenderInstanced( m_Shader_RenderCellPlanes, (uint) m_SB_Neighbors.m.Length );
 				}
 			}
 
@@ -203,18 +205,18 @@ namespace VoronoiVisualizer
 			int	NeighborsCount = integerTrackbarControlNeighborsCount.Value;
 			if ( m_SB_Neighbors != null )
 				m_SB_Neighbors.Dispose();
-			m_SB_Neighbors = new StructuredBuffer< SB_Neighbor >( m_Device, NeighborsCount, true );
+			m_SB_Neighbors = new StructuredBuffer< SB_Neighbor >( m_Device, (uint) NeighborsCount, true );
 
-			WMath.Vector[]	Directions = null;
+			float3[]	directions = null;
 			if ( radioButtonHammersley.Checked ) {
-				double[,]		Samples = m_Hammersley.BuildSequence( NeighborsCount, 2 );
-				Directions = m_Hammersley.MapSequenceToSphere( Samples );
+				double[,]	samples = m_hammersley.BuildSequence( NeighborsCount, 2 );
+				directions = m_hammersley.MapSequenceToSphere( samples );
 			} else {
 				Random	TempRNG = new Random();
-				Directions = new WMath.Vector[NeighborsCount];
+				directions = new float3[NeighborsCount];
 				for ( int i=0; i < NeighborsCount; i++ ) {
-					Directions[i] = new WMath.Vector( 2.0f * (float) TempRNG.NextDouble() - 1.0f, 2.0f * (float) TempRNG.NextDouble() - 1.0f, 2.0f * (float) TempRNG.NextDouble() - 1.0f );
-					Directions[i].Normalize();
+					directions[i] = new float3( 2.0f * (float) TempRNG.NextDouble() - 1.0f, 2.0f * (float) TempRNG.NextDouble() - 1.0f, 2.0f * (float) TempRNG.NextDouble() - 1.0f );
+					directions[i].Normalize();
 				}
 			}
 
@@ -224,7 +226,7 @@ namespace VoronoiVisualizer
 			m_NeighborColors = new float3[NeighborsCount];
 			for ( int NeighborIndex=0; NeighborIndex < NeighborsCount; NeighborIndex++ ) {
 				float	Radius = 2.0f;	// Make that random!
-				m_NeighborPositions[NeighborIndex] = Radius * new float3( Directions[NeighborIndex].x, Directions[NeighborIndex].y, Directions[NeighborIndex].z );
+				m_NeighborPositions[NeighborIndex] = Radius * new float3( directions[NeighborIndex].x, directions[NeighborIndex].y, directions[NeighborIndex].z );
 
 				float	R = (float) RNG.NextDouble();
 				float	G = (float) RNG.NextDouble();
@@ -384,8 +386,8 @@ namespace VoronoiVisualizer
 // 			float		AreaThresholdLow = m_AreaAvg / 1.5f;
 // 			float		AreaThresholdHigh = 1.5f * m_AreaAvg;
 
-			List<VertexP3N3>	Vertices = new List<VertexP3N3>();
-			List<uint>			Indices_Faces = new List<uint>();
+			List<VertexP3N3>	vertices = new List<VertexP3N3>();
+			List<uint>			indices_Faces = new List<uint>();
 			List<uint>			Indices_Edges = new List<uint>();
 
 			float	AreaMin = float.MaxValue;
@@ -406,14 +408,14 @@ namespace VoronoiVisualizer
 					}
 
 				// Append vertices & indices for both faces & edges
-				uint	VertexOffset = (uint) Vertices.Count;
+				uint	VertexOffset = (uint) vertices.Count;
 				uint	VerticesCount = (uint) Polygon.m_Vertices.Length;
 
 				float	PolygonArea = 0.0f;
 				for ( uint FaceTriangleIndex=0; FaceTriangleIndex < VerticesCount-2; FaceTriangleIndex++ ) {
-					Indices_Faces.Add( VertexOffset + 0 );
-					Indices_Faces.Add( VertexOffset + 1 + FaceTriangleIndex );
-					Indices_Faces.Add( VertexOffset + 2 + FaceTriangleIndex );
+					indices_Faces.Add( VertexOffset + 0 );
+					indices_Faces.Add( VertexOffset + 1 + FaceTriangleIndex );
+					indices_Faces.Add( VertexOffset + 2 + FaceTriangleIndex );
 
 					float	Area = 0.5f * (Polygon.m_Vertices[2 + FaceTriangleIndex] - Polygon.m_Vertices[0]).Cross( Polygon.m_Vertices[1 + FaceTriangleIndex] - Polygon.m_Vertices[0] ).Length;
 					PolygonArea += Area;
@@ -430,7 +432,7 @@ namespace VoronoiVisualizer
 				float3	Color = PolygonArea < AreaThresholdLow ? new float3( 1, 0, 0 ) : PolygonArea > AreaThresholdHigh ? new float3( 0, 1, 0 ) : new float3( 1, 1, 0 );
 
 				foreach ( float3 Vertex in Polygon.m_Vertices ) {
-					Vertices.Add( new VertexP3N3() { P = Vertex, N = Color } );
+					vertices.Add( new VertexP3N3() { P = Vertex, N = Color } );
 				}
 
 			}
@@ -443,8 +445,8 @@ namespace VoronoiVisualizer
 							+ "Area average: " + m_AreaAvg + "\r\n"
 							+ "Area total: " + TotalArea + "\r\n";
 
-			m_Prim_CellFaces = new Primitive( m_Device, Vertices.Count, VertexP3N3.FromArray( Vertices.ToArray() ), Indices_Faces.ToArray(), Primitive.TOPOLOGY.TRIANGLE_LIST, VERTEX_FORMAT.P3N3 );
-			m_Prim_CellEdges = new Primitive( m_Device, Vertices.Count, VertexP3N3.FromArray( Vertices.ToArray() ), Indices_Edges.ToArray(), Primitive.TOPOLOGY.LINE_LIST, VERTEX_FORMAT.P3N3 );
+			m_Prim_CellFaces = new Primitive( m_Device, (uint) vertices.Count, VertexP3N3.FromArray( vertices.ToArray() ), indices_Faces.ToArray(), Primitive.TOPOLOGY.TRIANGLE_LIST, VERTEX_FORMAT.P3N3 );
+			m_Prim_CellEdges = new Primitive( m_Device, (uint) vertices.Count, VertexP3N3.FromArray( vertices.ToArray() ), Indices_Edges.ToArray(), Primitive.TOPOLOGY.LINE_LIST, VERTEX_FORMAT.P3N3 );
 		}
 
 		#endregion

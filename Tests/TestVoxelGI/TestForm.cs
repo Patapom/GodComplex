@@ -22,7 +22,7 @@ namespace TestVoxelGI
 		#region NESTED TYPES
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
-		private struct CB_BuildMips {
+		private struct CB_ComputeIndirectLighting {
 			public uint			_mipLevel;
 		}
 
@@ -81,7 +81,7 @@ namespace TestVoxelGI
 
 		Device						m_device = new Device();
 
-		ConstantBuffer< CB_BuildMips >		m_CB_buildMips;
+		ConstantBuffer< CB_ComputeIndirectLighting >	m_CB_computeIndirect;
 		ConstantBuffer< CB_Global >			m_CB_global;
 		ConstantBuffer< CB_Camera >			m_CB_camera = null;
 		ConstantBuffer< CB_RenderScene >	m_CB_renderScene = null;
@@ -91,6 +91,7 @@ namespace TestVoxelGI
 
 		ComputeShader				m_shader_voxelizeScene;
 		ComputeShader				m_shader_buildVoxelMips;
+		ComputeShader				m_shader_computeIndirectLighting;
 		Shader						m_shader_renderGBuffer;
 		Shader						m_shader_renderScene;
 		Shader						m_shader_renderVoxels;
@@ -110,12 +111,14 @@ namespace TestVoxelGI
 
 		public TestForm() {
 			InitializeComponent();
+			ComputeConeDirections();
 
 			try {
 				m_device.Init( panelOutput.Handle, false, true );
 
 				m_shader_voxelizeScene = new ComputeShader( m_device, new System.IO.FileInfo( "./Shaders/VoxelizeScene.hlsl" ), "CS", null );
 				m_shader_buildVoxelMips = new ComputeShader( m_device, new System.IO.FileInfo( "./Shaders/VoxelizeScene.hlsl" ), "CS_Mip", null );
+				m_shader_computeIndirectLighting = new ComputeShader( m_device, new System.IO.FileInfo( "./Shaders/ComputeIndirectLighting.hlsl" ), "CS", null );
 				m_shader_renderGBuffer = new Shader( m_device, new System.IO.FileInfo( "./Shaders/RenderGBuffer.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 				m_shader_renderScene = new Shader( m_device, new System.IO.FileInfo( "./Shaders/RenderScene.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 				m_shader_renderVoxels = new Shader( m_device, new System.IO.FileInfo( "./Shaders/RenderVoxels.hlsl" ), VERTEX_FORMAT.P3, "VS", null, "PS", null );
@@ -128,7 +131,7 @@ namespace TestVoxelGI
 					m_Tex_BlueNoise = new Texture2D( m_device, new ImagesMatrix( new ImageFile[,] { { blueNoise } } ), COMPONENT_FORMAT.UNORM );
 				}
 
-				m_CB_buildMips = new ConstantBuffer< CB_BuildMips >( m_device, 10 );
+				m_CB_computeIndirect = new ConstantBuffer< CB_ComputeIndirectLighting >( m_device, 10 );
 				m_CB_global = new ConstantBuffer< CB_Global >( m_device, 0 );
 				m_CB_camera = new ConstantBuffer<CB_Camera>( m_device, 1 );
 				m_CB_renderScene = new ConstantBuffer< CB_RenderScene >( m_device, 10 );
@@ -235,6 +238,54 @@ namespace TestVoxelGI
 				m_Tex_VoxelScene_Normal.RemoveFromLastAssignedSlotUAV();
 				m_Tex_VoxelScene_Lighting.RemoveFromLastAssignedSlotUAV();
 			}
+		}
+
+		#endregion
+
+		#region Indirect Lighting Computation
+
+		Texture3D	m_Tex_VoxelScene_IndirectLighting0 = null;
+		Texture3D	m_Tex_VoxelScene_IndirectLighting1 = null;
+
+		void	ComputeConeDirections() {
+			uint	CONES_COUNT = 6;
+			float	CONE_APERTURE = (float) (60.0f * Math.PI / 180.0f);
+
+			float3[]	directions = new float3[CONES_COUNT];
+			for ( int i=0; i < CONES_COUNT; i++ )
+				directions[i] = float3.UnitZ;
+			for ( int iterationIndex=0; iterationIndex < 1000; iterationIndex++ ) {
+
+				for ( int coneIndex=1; coneIndex < CONES_COUNT; coneIndex++ ) {
+
+					for ( int coneIndex2=0; coneIndex2 < CONES_COUNT; coneIndex2++ ) {
+
+					}
+				}
+
+			}
+		}
+
+		void	ComputeIndirectLighting() {
+			if ( !m_shader_computeIndirectLighting.Use() )
+				throw new Exception( "Can't use voxelization shader! Failed to compile?" );
+
+			m_Tex_VoxelScene_IndirectLighting0 = new Texture3D( m_device, VOLUME_SIZE, VOLUME_SIZE, VOLUME_SIZE, 8, PIXEL_FORMAT.RGBA16F , COMPONENT_FORMAT.AUTO, false, true, null );
+			m_Tex_VoxelScene_IndirectLighting1 = new Texture3D( m_device, VOLUME_SIZE, VOLUME_SIZE, VOLUME_SIZE, 8, PIXEL_FORMAT.RGBA16F , COMPONENT_FORMAT.AUTO, false, true, null );
+
+			m_Tex_VoxelScene_Albedo.SetCS( 0 );
+			m_Tex_VoxelScene_Normal.SetCS( 1 );
+			m_Tex_VoxelScene_Lighting.SetCS( 2 );
+
+			m_Tex_VoxelScene_IndirectLighting1.SetCSUAV( 0 );
+
+			m_shader_computeIndirectLighting.Dispatch( VOLUME_SIZE >> 4, VOLUME_SIZE >> 4, VOLUME_SIZE );
+
+			m_Tex_VoxelScene_Albedo.RemoveFromLastAssignedSlots();
+			m_Tex_VoxelScene_Normal.RemoveFromLastAssignedSlots();
+			m_Tex_VoxelScene_Lighting.RemoveFromLastAssignedSlots();
+
+			m_Tex_VoxelScene_IndirectLighting1.RemoveFromLastAssignedSlotUAV();
 		}
 
 		#endregion

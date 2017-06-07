@@ -122,6 +122,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Shaders\ComputeIndirectLighting.hlsl" />
     <Content Include="Shaders\RenderVoxels.hlsl" />
     <Content Include="Shaders\CornellBox.hlsl" />
     <Content Include="Shaders\Voxel.hlsl" />
