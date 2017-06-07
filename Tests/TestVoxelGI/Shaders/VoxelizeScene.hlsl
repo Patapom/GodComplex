@@ -48,7 +48,7 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 
 	// Compute lighting
 	float3	sceneRadiance = (INVPI * albedo) * saturate( dot( wsNormal, wsLight ) ) * shadow * LIGHT_ILLUMINANCE / (distance2Light * distance2Light);
-	_Tex_VoxelScene_Lighting[voxelIndex] = float4( sceneRadiance, 0.0 );
+	_Tex_VoxelScene_Lighting[voxelIndex] = float4( sceneRadiance, 1.0 );
 }
 
 Texture3D< float4 >		_Tex_SourceVoxelScene_Albedo : register(t0);
