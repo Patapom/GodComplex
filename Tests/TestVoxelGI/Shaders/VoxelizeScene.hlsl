@@ -125,19 +125,19 @@ void	CS_Mip( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADI
 // 	normal111.xyz = 2.0 * normal111.xyz - 1.0;
 // 	normal110.xyz = 2.0 * normal110.xyz - 1.0;
 		// Un-premultiply
-//	normal000 *= invAlpha000;
-//	normal001 *= invAlpha001;
-//	normal011 *= invAlpha011;
-//	normal010 *= invAlpha010;
-//	normal100 *= invAlpha100;
-//	normal101 *= invAlpha101;
-//	normal111 *= invAlpha111;
-//	normal110 *= invAlpha110;
+	normal000 *= invAlpha000;
+	normal001 *= invAlpha001;
+	normal011 *= invAlpha011;
+	normal010 *= invAlpha010;
+	normal100 *= invAlpha100;
+	normal101 *= invAlpha101;
+	normal111 *= invAlpha111;
+	normal110 *= invAlpha110;
 
 	float4	normal = 0.125 * (normal000 + normal001 + normal011 + normal010 + normal100 + normal101 + normal111 + normal110);
 	float	normalLength = length( normal.xyz );
 			normal.xyz *= normalLength > 0.0 ? 1.0 / normalLength : 0.0;
-//			normal *= albedo.w;						// Re-premultiply
+			normal *= albedo.w;						// Re-premultiply
 //			normal.xyz = 0.5 * (1.0 + normal.xyz);	// Re-pack (UNORM)
 
 	_Tex_VoxelScene_Normal[targetVoxelIndex] = normal;

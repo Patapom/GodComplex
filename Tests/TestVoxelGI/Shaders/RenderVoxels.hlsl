@@ -44,8 +44,8 @@ PS_IN	VS( VS_IN_P3 _In, uint _instanceIndex : SV_INSTANCEID ) {
 
 float4	normal = _Tex_VoxelScene_Normal.mips[_mipLevel][voxelIndex];
 // 		normal.xyz = 2.0 * normal.xyz - 1.0;					// Un-pack (UNORM)
-//		normal.xyz *= albedo.w > 0.0 ? 1.0 / albedo.w : 0.0;	// Un-premultiply
-		normal.xyz = normalize( normal.xyz );	// This seems useless while we're not interpolating between voxels, otherwise it's necessary! (Or is it? Test without)
+		normal.xyz *= albedo.w > 0.0 ? 1.0 / albedo.w : 0.0;	// Un-premultiply
+//		normal.xyz = normalize( normal.xyz );	// This seems useless while we're not interpolating between voxels, otherwise it's necessary! (Or is it? Test without it)
 //albedo.xyz = normal.xyz;
 albedo.xyz = 0.5 * (1.0 + normal.xyz);
 //albedo.xyz = 2.0 * normal.xyz - 1.0;

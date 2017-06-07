@@ -68,7 +68,7 @@
 			this.integerTrackbarControlVoxelMipIndex.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.integerTrackbarControlVoxelMipIndex.MinimumSize = new System.Drawing.Size(70, 20);
 			this.integerTrackbarControlVoxelMipIndex.Name = "integerTrackbarControlVoxelMipIndex";
-			this.integerTrackbarControlVoxelMipIndex.RangeMax = 8;
+			this.integerTrackbarControlVoxelMipIndex.RangeMax = 7;
 			this.integerTrackbarControlVoxelMipIndex.RangeMin = 0;
 			this.integerTrackbarControlVoxelMipIndex.Size = new System.Drawing.Size(200, 20);
 			this.integerTrackbarControlVoxelMipIndex.TabIndex = 4;

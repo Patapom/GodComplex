@@ -284,6 +284,7 @@ namespace TestVoxelGI
 // 
 // 				m_device.RenderFullscreenQuad( m_shader_renderScene );
 // 			}
+m_device.Clear( m_tex_sceneRadiance, float4.Zero );
 
 			//////////////////////////////////////////////////////////////////////////
 			// Render many instanced voxel cubes
