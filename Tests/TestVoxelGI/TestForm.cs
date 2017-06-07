@@ -197,7 +197,7 @@ namespace TestVoxelGI
 				throw new Exception( "Can't use voxelization shader! Failed to compile?" );
 
 			m_Tex_VoxelScene_Albedo = new Texture3D( m_device, VOLUME_SIZE, VOLUME_SIZE, VOLUME_SIZE, 8, PIXEL_FORMAT.RGBA8 , COMPONENT_FORMAT.UNORM, false, true, null );
-			m_Tex_VoxelScene_Normal = new Texture3D( m_device, VOLUME_SIZE, VOLUME_SIZE, VOLUME_SIZE, 8, PIXEL_FORMAT.RGBA8 , COMPONENT_FORMAT.UNORM, false, true, null );
+			m_Tex_VoxelScene_Normal = new Texture3D( m_device, VOLUME_SIZE, VOLUME_SIZE, VOLUME_SIZE, 8, PIXEL_FORMAT.RGBA8 , COMPONENT_FORMAT.SNORM, false, true, null );
 			m_Tex_VoxelScene_Lighting = new Texture3D( m_device, VOLUME_SIZE, VOLUME_SIZE, VOLUME_SIZE, 8, PIXEL_FORMAT.RGBA16F , COMPONENT_FORMAT.AUTO, false, true, null );
 
 			m_Tex_VoxelScene_Albedo.SetCSUAV( 0 );

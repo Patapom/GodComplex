@@ -21,7 +21,8 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 	if ( abs( distance.x ) > 0.5 * VOXEL_DIAG_SIZE ) {
 		// Empty
 		_Tex_VoxelScene_Albedo[voxelIndex] = 0.0;
-		_Tex_VoxelScene_Normal[voxelIndex] = float4( 0.5.xxx, 0 );
+//		_Tex_VoxelScene_Normal[voxelIndex] = float4( 0.5.xxx, 0 );	// UNORM
+		_Tex_VoxelScene_Normal[voxelIndex] = float4( 0.0.xxx, 0 );	// SNORM
 		_Tex_VoxelScene_Lighting[voxelIndex] = 0.0;
 		return;
 	}
@@ -31,7 +32,8 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 			albedo = sqrt( albedo );		// Store as sqrt() to simulate sRGB (sRGB is forbidden when buffer is set as UAV)
 	float3	wsNormal = Normal( wsVoxelCenter );
 	_Tex_VoxelScene_Albedo[voxelIndex] = float4( albedo, 1.0 );
-	_Tex_VoxelScene_Normal[voxelIndex] = float4( 0.5 * (1.0 + wsNormal ), 0 );
+//	_Tex_VoxelScene_Normal[voxelIndex] = float4( 0.5 * (1.0 + wsNormal ), 0 );	// UNORM
+	_Tex_VoxelScene_Normal[voxelIndex] = float4( wsNormal, 0 );					// SNORM
 
 	// Compute lighting
 	float3	wsLightPos = CORNELL_LIGHT_POS;
@@ -113,30 +115,30 @@ void	CS_Mip( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADI
 	float4	normal111 = _Tex_SourceVoxelScene_Normal[sourceVoxelIndex];	sourceVoxelIndex.x--;
 	float4	normal110 = _Tex_SourceVoxelScene_Normal[sourceVoxelIndex]; sourceVoxelIndex.y--; 	sourceVoxelIndex.z--;
 
-		// Un-pack
-	normal000.xyz = 2.0 * normal000.xyz - 1.0;
-	normal001.xyz = 2.0 * normal001.xyz - 1.0;
-	normal011.xyz = 2.0 * normal011.xyz - 1.0;
-	normal010.xyz = 2.0 * normal010.xyz - 1.0;
-	normal100.xyz = 2.0 * normal100.xyz - 1.0;
-	normal101.xyz = 2.0 * normal101.xyz - 1.0;
-	normal111.xyz = 2.0 * normal111.xyz - 1.0;
-	normal110.xyz = 2.0 * normal110.xyz - 1.0;
+// 		// Un-pack (UNORM)
+// 	normal000.xyz = 2.0 * normal000.xyz - 1.0;
+// 	normal001.xyz = 2.0 * normal001.xyz - 1.0;
+// 	normal011.xyz = 2.0 * normal011.xyz - 1.0;
+// 	normal010.xyz = 2.0 * normal010.xyz - 1.0;
+// 	normal100.xyz = 2.0 * normal100.xyz - 1.0;
+// 	normal101.xyz = 2.0 * normal101.xyz - 1.0;
+// 	normal111.xyz = 2.0 * normal111.xyz - 1.0;
+// 	normal110.xyz = 2.0 * normal110.xyz - 1.0;
 		// Un-premultiply
-	normal000 *= invAlpha000;
-	normal001 *= invAlpha001;
-	normal011 *= invAlpha011;
-	normal010 *= invAlpha010;
-	normal100 *= invAlpha100;
-	normal101 *= invAlpha101;
-	normal111 *= invAlpha111;
-	normal110 *= invAlpha110;
+//	normal000 *= invAlpha000;
+//	normal001 *= invAlpha001;
+//	normal011 *= invAlpha011;
+//	normal010 *= invAlpha010;
+//	normal100 *= invAlpha100;
+//	normal101 *= invAlpha101;
+//	normal111 *= invAlpha111;
+//	normal110 *= invAlpha110;
 
 	float4	normal = 0.125 * (normal000 + normal001 + normal011 + normal010 + normal100 + normal101 + normal111 + normal110);
 	float	normalLength = length( normal.xyz );
 			normal.xyz *= normalLength > 0.0 ? 1.0 / normalLength : 0.0;
-			normal *= albedo.w;						// Re-premultiply
-			normal.xyz = 0.5 * (1.0 + normal.xyz);	// Re-pack
+//			normal *= albedo.w;						// Re-premultiply
+//			normal.xyz = 0.5 * (1.0 + normal.xyz);	// Re-pack (UNORM)
 
 	_Tex_VoxelScene_Normal[targetVoxelIndex] = normal;
 
