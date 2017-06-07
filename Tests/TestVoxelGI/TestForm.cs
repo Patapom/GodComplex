@@ -162,8 +162,9 @@ namespace TestVoxelGI
 					m_prim_Cube = new Primitive( m_device, (uint) vertices.Length, VertexP3.FromArray( vertices ), indices, Primitive.TOPOLOGY.TRIANGLE_LIST, VERTEX_FORMAT.P3 );
 				}
 
-				// Voxelize the scene
+				// Voxelize the scene & compute indirect lighting
 				Voxelize();
+				ComputeIndirectLighting();
 
 			} catch ( Exception _e ) {
 				MessageBox.Show( this, "An exception occurred while creating DX structures:\r\n" + _e.Message, "Error" );
@@ -247,31 +248,77 @@ namespace TestVoxelGI
 		Texture3D	m_Tex_VoxelScene_IndirectLighting0 = null;
 		Texture3D	m_Tex_VoxelScene_IndirectLighting1 = null;
 
+		/// <summary>
+		/// Uses the same "repulsion" algorithm as the Voronoi Visualizer tool
+		/// </summary>
 		void	ComputeConeDirections() {
-			uint	CONES_COUNT = 6;
+			uint	CONES_COUNT = 7;
 			float	CONE_APERTURE = (float) (60.0f * Math.PI / 180.0f);
+			float	FORCE = 1.0f;
 
-			float3[]	directions = new float3[CONES_COUNT];
-			for ( int i=0; i < CONES_COUNT; i++ )
-				directions[i] = float3.UnitZ;
+			float	COS_HALF_ANGLE = (float) Math.Cos( 0.5 * CONE_APERTURE );
+
+			float3[]	positions = new float3[CONES_COUNT];
+			positions[0] = float3.UnitZ ;
+			for ( int i=0; i < 6; i++ ) {
+				float	phi = 2.0f * (float) Math.PI * i / 6;
+				float	theta = 60.0f * (float) Math.PI / 180.0f;
+
+				float	sinTheta = (float) Math.Sin( theta );
+				float	cosTheta = (float) Math.Cos( theta );
+
+				positions[1+i] = new float3( sinTheta * (float) Math.Cos( phi ), sinTheta * (float) Math.Sin( phi ), cosTheta );
+			}
+
+/*			float3[]	forces = new float3[CONES_COUNT];
 			for ( int iterationIndex=0; iterationIndex < 1000; iterationIndex++ ) {
 
-				for ( int coneIndex=1; coneIndex < CONES_COUNT; coneIndex++ ) {
+				// Compute forces to apply to each cone
+				for ( int coneIndex=0; coneIndex < CONES_COUNT-1; coneIndex++ ) {
+					float3	D0 = positions[coneIndex];
+					for ( int neighborConeIndex=coneIndex+1; neighborConeIndex < CONES_COUNT; neighborConeIndex++ ) {
+						float3	D1 = positions[neighborConeIndex];
 
-					for ( int coneIndex2=0; coneIndex2 < CONES_COUNT; coneIndex2++ ) {
+						float3	Dir = (D1 - D0).Normalized;
 
+						float	dot = D0.Dot( D1 ) - 1.0f;			// in [0,-2]
+						float	force = FORCE * (float) Math.Exp( dot );
+						forces[coneIndex] -= force * Dir;			// Pushes 0 away from 1
+						forces[neighborConeIndex] = + force * Dir;	// Pushes 1 away from 0
 					}
+
+					// Apply force to prevent cone to go below z=0 plane
+					float	planeForce = Math.Max( 0.0f, COS_HALF_ANGLE / D0.z - 1.0f );
+					forces[coneIndex] += planeForce * float3.UnitZ;
 				}
 
+				// Apply force (except first one that is fixed along normal)
+				for ( int i=1; i < CONES_COUNT; i++ ) {
+					positions[i] = (positions[i] + forces[i]).Normalized;
+				}
 			}
+*/
+
+
+			// Transform into text
+			string	code = "{\r\n";
+			for ( int i=0; i < CONES_COUNT; i++ ) {
+				code += "	float3( " + positions[i].x + ", " + positions[i].y + ", " + positions[i].z + " ),\r\n" ;
+			}
+			code += "};\r\n" ;
 		}
 
 		void	ComputeIndirectLighting() {
 			if ( !m_shader_computeIndirectLighting.Use() )
 				throw new Exception( "Can't use voxelization shader! Failed to compile?" );
 
-			m_Tex_VoxelScene_IndirectLighting0 = new Texture3D( m_device, VOLUME_SIZE, VOLUME_SIZE, VOLUME_SIZE, 8, PIXEL_FORMAT.RGBA16F , COMPONENT_FORMAT.AUTO, false, true, null );
-			m_Tex_VoxelScene_IndirectLighting1 = new Texture3D( m_device, VOLUME_SIZE, VOLUME_SIZE, VOLUME_SIZE, 8, PIXEL_FORMAT.RGBA16F , COMPONENT_FORMAT.AUTO, false, true, null );
+			if ( m_Tex_VoxelScene_IndirectLighting0 == null ) {
+				m_Tex_VoxelScene_IndirectLighting0 = new Texture3D( m_device, VOLUME_SIZE, VOLUME_SIZE, VOLUME_SIZE, 8, PIXEL_FORMAT.RGBA16F , COMPONENT_FORMAT.AUTO, false, true, null );
+				m_Tex_VoxelScene_IndirectLighting1 = new Texture3D( m_device, VOLUME_SIZE, VOLUME_SIZE, VOLUME_SIZE, 8, PIXEL_FORMAT.RGBA16F , COMPONENT_FORMAT.AUTO, false, true, null );
+			}
+
+			m_Tex_VoxelScene_IndirectLighting0.RemoveFromLastAssignedSlots();
+			m_Tex_VoxelScene_IndirectLighting1.RemoveFromLastAssignedSlots();
 
 			m_Tex_VoxelScene_Albedo.SetCS( 0 );
 			m_Tex_VoxelScene_Normal.SetCS( 1 );
@@ -346,6 +393,7 @@ m_device.Clear( m_tex_sceneRadiance, float4.Zero );
 				m_Tex_VoxelScene_Albedo.SetVS( 0 );
 				m_Tex_VoxelScene_Normal.SetVS( 1 );
 				m_Tex_VoxelScene_Lighting.SetVS( 2 );
+				m_Tex_VoxelScene_IndirectLighting1.SetVS( 3 );
 
 				uint	POT = (uint) (7 - integerTrackbarControlVoxelMipIndex.Value);
 				uint	count = (uint) (1 << (int) POT);
@@ -376,6 +424,7 @@ m_device.Clear( m_tex_sceneRadiance, float4.Zero );
 				m_tex_sceneRadiance.Set( 1 );
 
 m_Tex_VoxelScene_Lighting.Set( 2 );
+m_Tex_VoxelScene_IndirectLighting1.Set( 3 );
 
 				m_CB_postProcess.m._filterLevel = (uint) integerTrackbarControlVoxelMipIndex.Value;
 				m_CB_postProcess.UpdateData();
@@ -391,6 +440,11 @@ m_Tex_VoxelScene_Lighting.Set( 2 );
 
 		private void buttonReload_Click(object sender, EventArgs e) {
 			m_device.ReloadModifiedShaders();
+		}
+
+		private void buttonComputeIndirect_Click(object sender, EventArgs e)
+		{
+			ComputeIndirectLighting();
 		}
 	}
 }

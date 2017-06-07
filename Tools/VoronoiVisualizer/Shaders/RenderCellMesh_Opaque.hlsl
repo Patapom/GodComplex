@@ -22,7 +22,7 @@ PS_IN	VS( VS_IN _In ) {
 
 	float4		wsPosition = float4( _In.Position, 1.0 );
 	Out.__Position = mul( wsPosition, _World2Proj );
-	Out.wsPosition = wsPosition.xyz;
+	Out.wsPosition = 0.1 * wsPosition.xyz;
 
 	return Out;
 }

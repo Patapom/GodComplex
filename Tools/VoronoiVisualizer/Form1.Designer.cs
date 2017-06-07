@@ -43,6 +43,8 @@
 			this.checkBoxRenderCell = new System.Windows.Forms.CheckBox();
 			this.labelStats = new System.Windows.Forms.Label();
 			this.buttonDumpDirections = new System.Windows.Forms.Button();
+			this.checkBoxHemisphere = new System.Windows.Forms.CheckBox();
+			this.checkBoxForceOneSample = new System.Windows.Forms.CheckBox();
 			this.SuspendLayout();
 			// 
 			// buttonReload
@@ -195,11 +197,33 @@
 			this.buttonDumpDirections.UseVisualStyleBackColor = true;
 			this.buttonDumpDirections.Click += new System.EventHandler(this.buttonDumpDirections_Click);
 			// 
+			// checkBoxHemisphere
+			// 
+			this.checkBoxHemisphere.AutoSize = true;
+			this.checkBoxHemisphere.Location = new System.Drawing.Point(927, 123);
+			this.checkBoxHemisphere.Name = "checkBoxHemisphere";
+			this.checkBoxHemisphere.Size = new System.Drawing.Size(106, 17);
+			this.checkBoxHemisphere.TabIndex = 11;
+			this.checkBoxHemisphere.Text = "Only Hemisphere";
+			this.checkBoxHemisphere.UseVisualStyleBackColor = true;
+			// 
+			// checkBoxForceOneSample
+			// 
+			this.checkBoxForceOneSample.AutoSize = true;
+			this.checkBoxForceOneSample.Location = new System.Drawing.Point(927, 146);
+			this.checkBoxForceOneSample.Name = "checkBoxForceOneSample";
+			this.checkBoxForceOneSample.Size = new System.Drawing.Size(100, 17);
+			this.checkBoxForceOneSample.TabIndex = 11;
+			this.checkBoxForceOneSample.Text = "Force 1 Sample";
+			this.checkBoxForceOneSample.UseVisualStyleBackColor = true;
+			// 
 			// Form1
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1037, 669);
+			this.Controls.Add(this.checkBoxForceOneSample);
+			this.Controls.Add(this.checkBoxHemisphere);
 			this.Controls.Add(this.buttonDumpDirections);
 			this.Controls.Add(this.labelStats);
 			this.Controls.Add(this.checkBoxRenderCell);
@@ -237,6 +261,8 @@
 		private System.Windows.Forms.CheckBox checkBoxRenderCell;
 		private System.Windows.Forms.Label labelStats;
 		private System.Windows.Forms.Button buttonDumpDirections;
+		private System.Windows.Forms.CheckBox checkBoxHemisphere;
+		private System.Windows.Forms.CheckBox checkBoxForceOneSample;
 	}
 }
 

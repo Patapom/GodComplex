@@ -15,6 +15,7 @@ cbuffer CB_RenderVoxels : register(b10) {
 Texture3D< float4 >	_Tex_VoxelScene_Albedo : register(t0);
 Texture3D< float4 >	_Tex_VoxelScene_Normal : register(t1);
 Texture3D< float4 >	_Tex_VoxelScene_Lighting : register(t2);
+Texture3D< float4 >	_Tex_VoxelScene_IndirectLighting : register(t3);
 
 struct VS_IN_P3 {
 	float3	Position : POSITION;
@@ -53,7 +54,8 @@ albedo.xyz = 0.5 * (1.0 + normal.xyz);
 //albedo.xyz = normalize( albedo.xyz );
 
 //albedo = albedo.w;
-//albedo = _Tex_VoxelScene_Lighting.mips[_mipLevel][voxelIndex];
+albedo = _Tex_VoxelScene_Lighting.mips[_mipLevel][voxelIndex];
+albedo = _Tex_VoxelScene_IndirectLighting.mips[_mipLevel][voxelIndex];
 //albedo = 0.001 * _instanceIndex;
 	}
 	Out.Color = albedo;

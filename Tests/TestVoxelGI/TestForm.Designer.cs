@@ -33,6 +33,7 @@
 			this.buttonReload = new System.Windows.Forms.Button();
 			this.label1 = new System.Windows.Forms.Label();
 			this.integerTrackbarControlVoxelMipIndex = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
+			this.buttonComputeIndirect = new System.Windows.Forms.Button();
 			this.SuspendLayout();
 			// 
 			// panelOutput
@@ -73,13 +74,24 @@
 			this.integerTrackbarControlVoxelMipIndex.Size = new System.Drawing.Size(200, 20);
 			this.integerTrackbarControlVoxelMipIndex.TabIndex = 4;
 			this.integerTrackbarControlVoxelMipIndex.Value = 0;
-			this.integerTrackbarControlVoxelMipIndex.VisibleRangeMax = 8;
+			this.integerTrackbarControlVoxelMipIndex.VisibleRangeMax = 7;
+			// 
+			// buttonComputeIndirect
+			// 
+			this.buttonComputeIndirect.Location = new System.Drawing.Point(400, 738);
+			this.buttonComputeIndirect.Name = "buttonComputeIndirect";
+			this.buttonComputeIndirect.Size = new System.Drawing.Size(75, 23);
+			this.buttonComputeIndirect.TabIndex = 5;
+			this.buttonComputeIndirect.Text = "Compute Indirect";
+			this.buttonComputeIndirect.UseVisualStyleBackColor = true;
+			this.buttonComputeIndirect.Click += new System.EventHandler(this.buttonComputeIndirect_Click);
 			// 
 			// TestForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1536, 919);
+			this.Controls.Add(this.buttonComputeIndirect);
 			this.Controls.Add(this.integerTrackbarControlVoxelMipIndex);
 			this.Controls.Add(this.label1);
 			this.Controls.Add(this.buttonReload);
@@ -99,6 +111,7 @@
 		private System.Windows.Forms.Button buttonReload;
 		private System.Windows.Forms.Label label1;
 		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlVoxelMipIndex;
+		private System.Windows.Forms.Button buttonComputeIndirect;
 	}
 }
 
