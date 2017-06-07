@@ -24,6 +24,10 @@ float	DistBox( float3 _wsPosition, float3 _wsBoxCenter, float3 _wsBoxSize, float
 float2	DistMin( float2 a, float2 b ) {
 	return a.x < b.x ? a : b;
 }
+float	DistPlane( float3 _wsPosition, float3 _wsPlanePosition, float3 _wsPlaneNormal ) {
+	return dot( _wsPosition - _wsPlanePosition, _wsPlaneNormal );
+}
+
 
 float2	Map( float3 _wsPosition );
 
@@ -62,11 +66,16 @@ float3	Normal( float3 _wsPosition ) {
 /// <returns></returns>
 float2	Map( float3 _wsPosition ) {
 	// Walls
-	float2	distance =					  float2( DistBox( _wsPosition, float3( 0, 0, 0 ), float3( CORNELL_SIZE.x, CORNELL_THICKNESS, CORNELL_SIZE.z ) ), 1.0 );	// Floor
-			distance = DistMin( distance, float2( DistBox( _wsPosition, float3( 0, CORNELL_SIZE.y, 0 ), float3( CORNELL_SIZE.x, CORNELL_THICKNESS, CORNELL_SIZE.z ) ), 2.0 ) );	// Ceiling
-			distance = DistMin( distance, float2( DistBox( _wsPosition, float3( -0.5f * CORNELL_SIZE.x, 0.5f * CORNELL_SIZE.y, 0 ), float3( CORNELL_THICKNESS, CORNELL_SIZE.y, CORNELL_SIZE.z ) ), 3.0 ) );	// Left wall
-			distance = DistMin( distance, float2( DistBox( _wsPosition, float3( 0.5f * CORNELL_SIZE.x, 0.5f * CORNELL_SIZE.y, 0 ), float3( CORNELL_THICKNESS, CORNELL_SIZE.y, CORNELL_SIZE.z ) ), 4.0 ) );	// Right wall
-			distance = DistMin( distance, float2( DistBox( _wsPosition, float3( 0, 0.5f * CORNELL_SIZE.y, 0.5f * CORNELL_SIZE.z ), float3( CORNELL_SIZE.x, CORNELL_SIZE.y, CORNELL_THICKNESS ) ), 5.0 ) );	// Back wall
+// 	float2	distance =					  float2( DistBox( _wsPosition, float3( 0, 0, 0 ), float3( CORNELL_SIZE.x, CORNELL_THICKNESS, CORNELL_SIZE.z ) ), 1.0 );	// Floor
+// 			distance = DistMin( distance, float2( DistBox( _wsPosition, float3( 0, CORNELL_SIZE.y, 0 ), float3( CORNELL_SIZE.x, CORNELL_THICKNESS, CORNELL_SIZE.z ) ), 2.0 ) );	// Ceiling
+// 			distance = DistMin( distance, float2( DistBox( _wsPosition, float3( -0.5f * CORNELL_SIZE.x, 0.5f * CORNELL_SIZE.y, 0 ), float3( CORNELL_THICKNESS, CORNELL_SIZE.y, CORNELL_SIZE.z ) ), 3.0 ) );	// Left wall
+// 			distance = DistMin( distance, float2( DistBox( _wsPosition, float3( 0.5f * CORNELL_SIZE.x, 0.5f * CORNELL_SIZE.y, 0 ), float3( CORNELL_THICKNESS, CORNELL_SIZE.y, CORNELL_SIZE.z ) ), 4.0 ) );	// Right wall
+// 			distance = DistMin( distance, float2( DistBox( _wsPosition, float3( 0, 0.5f * CORNELL_SIZE.y, 0.5f * CORNELL_SIZE.z ), float3( CORNELL_SIZE.x, CORNELL_SIZE.y, CORNELL_THICKNESS ) ), 5.0 ) );	// Back wall
+	float2	distance =					  float2( DistPlane( _wsPosition, float3( 0, 0, 0 ), float3( 0, 1, 0 ) ), 1.0 );	// Floor
+			distance = DistMin( distance, float2( DistPlane( _wsPosition, float3( 0, CORNELL_SIZE.y, 0 ), float3( 0, -1, 0 ) ), 2.0 ) );	// Ceiling
+			distance = DistMin( distance, float2( DistPlane( _wsPosition, float3( -0.5f * CORNELL_SIZE.x, 0.5f * CORNELL_SIZE.y, 0 ), float3( 1, 0, 0 ) ), 3.0 ) );	// Left wall
+			distance = DistMin( distance, float2( DistPlane( _wsPosition, float3( 0.5f * CORNELL_SIZE.x, 0.5f * CORNELL_SIZE.y, 0 ), float3( -1, 0, 0 ) ), 4.0 ) );	// Right wall
+			distance = DistMin( distance, float2( DistPlane( _wsPosition, float3( 0, 0.5f * CORNELL_SIZE.y, 0.5f * CORNELL_SIZE.z ), float3( 0, 0, -1 ) ), 5.0 ) );	// Back wall
 
 	// Small box
 	distance = DistMin( distance, float2( DistBox( _wsPosition, CORNELL_SMALL_BOX_POS, CORNELL_SMALL_BOX_SIZE, CORNELL_SMALL_BOX_ANGLE ), 6.0 ) );
