@@ -16,9 +16,16 @@ const float PI = 3.1415926535897932384626433832795;
 const float INVPI = 0.31830988618379067153776752674503;
 
 const float SPHERE_RADIUS = 0.2;
+const float F0_WALLS = 0.04;	// Dielectric
+const float F0_SPHERE = 0.75;	// Somewhat metal
 
-const uint	SAMPLES_COUNT = 64U;
-const uint	AA_SAMPLES = 8U;
+const float ROUGHNESS_WALLS = 0.05;
+const float ROUGHNESS_SPHERE = 0.015;
+
+const float	TAN_HALF_FOV = 0.57735026918962576450914878050196;	// tan( 60° / 2 )
+
+const uint	SAMPLES_COUNT = 128U;
+const uint	AA_SAMPLES = 2U;
 
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -175,7 +182,7 @@ vec2	Map( vec3 _wsPos, vec3 _wsView, vec3 _wsSpherePosition ) {
 }
 
 // Computes scene intersection distance + normal
-vec2	MapNormal( vec3 _wsPos, vec3 _wsView, out vec3 _wsNormal, vec3 _wsSpherePosition ) {
+vec2	MapNormal( vec3 _wsPos, vec3 _wsView, vec3 _wsSpherePosition, out vec3 _wsNormal ) {
 	vec2	d = vec2( IntersectBoxNormal( _wsPos, _wsView, _wsNormal ), 0.0 );
 
 	vec3	wsNormal2;
@@ -223,7 +230,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
 
     float	noise = rand( pixel );
 
-    // Sample sequencing vectors
+    // Sample sequencing data
     vec2	rcpChannel0PixelSize = vec2( 1.0 ) / iChannelResolution[0].xy;
     vec2	sequenceUV = vec2( 0.5 * rcpChannel0PixelSize.x, (iChannelResolution[0].y - 0.5) * rcpChannel0PixelSize.y );
     vec3	wsCameraPos = texture( iChannel0, sequenceUV, 0.0 ).xyz;	sequenceUV.x += rcpChannel0PixelSize.x;
@@ -240,10 +247,8 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
     vec3	wsAt = normalize( wsTarget - wsPos );
     vec3	wsRight = normalize( cross( wsAt, wsUpRef ) );
     vec3	wsUp = cross( wsRight, wsAt );
-    
-    const float	tanHalfFOV = 0.57735026918962576450914878050196;	// tan( 60° / 2 )
 
-    vec3	csView = vec3( tanHalfFOV * (2.0 * UV.xy - 1.0), 1.0 );
+    vec3	csView = vec3( TAN_HALF_FOV * (2.0 * UV.xy - 1.0), 1.0 );
     		csView.x *= float(iResolution.x) / iResolution.y;
 	float	viewLength = length( csView );
 			csView /= viewLength;
@@ -251,7 +256,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
 
     // Compute scene hit
     vec3	wsNormal;
-    vec2	distanceMatID = MapNormal( wsPos, wsView, wsNormal, wsSpherePosition );
+    vec2	distanceMatID = MapNormal( wsPos, wsView, wsSpherePosition, wsNormal );
     float	distance = distanceMatID.x;
     float	matID = distanceMatID.y;
 
@@ -261,20 +266,17 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
 	vec3	wsTangent, wsBiTangent;
 	BuildOrthonormalBasis( wsNormal, wsTangent, wsBiTangent );
 
-	///////////////////////////////////////////////////////////////////
 	// Compute emissive color
 	vec3	emissive = MapColor( wsPos, wsNormal, wsSpherePosition, matID );
 
 	///////////////////////////////////////////////////////////////////
-	// Importance sample specular distribution
-	float	alpha = lerp( 0.05, 0.025, matID );
+	// Importance sample normal distribution to compute specular
+	float	alpha = lerp( ROUGHNESS_WALLS, ROUGHNESS_SPHERE, matID );
 	float	sqrAlpha = alpha * alpha;
 
-    float	F0 = lerp( 0.04,			// Walls = Dielectric
-                       0.9,				// Sphere = Metal
-                       matID );
+    float	F0 = lerp( F0_WALLS, F0_SPHERE, matID );
  
-//	float	Gv = GSmith( wsNormal, wsView, sqrAlpha );
+	float	Gv = 1.0;//GSmith( wsNormal, wsView, sqrAlpha );
 
 	vec3	specular = vec3( 0.0 );
 	for ( uint i=0U; i < SAMPLES_COUNT; i++ ) {        
@@ -295,30 +297,38 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
 		vec3	wsLight = wsView - 2.0 * dot( wsHalf, wsView ) * wsHalf;
 
 		// Intersect scene in light direction
-		vec2	d = Map( wsPos, wsLight, wsSpherePosition );
+		vec3	wsSceneNormal = vec3( 0.0 );
+//		vec2	d = Map( wsPos, wsLight, wsSpherePosition );
+		vec2	d = MapNormal( wsPos, wsLight, wsSpherePosition, wsSceneNormal );
 		vec3	wsSceneHitPos = wsPos + d.x * wsLight;
-		vec3	wsSceneNormal = vec3( 0.0 );	// !!!!!TODO!!!!!
-		vec3	sceneColor = 10.0 * MapColor( wsSceneHitPos, wsSceneNormal, wsSpherePosition, d.y );
+		vec3	sceneEmissive = 10.0 * MapColor( wsSceneHitPos, wsSceneNormal, wsSpherePosition, d.y );
 
 		// Compute Fresnel
-		float	F = FresnelSchlick( F0, cosTheta );
+		float	F = FresnelSchlick( F0, cosTheta );	// Light => Micro-facet normal
+	    float	sceneF0 = lerp( F0_WALLS, F0_SPHERE, d.y );
+            	F *= 1.0 - FresnelSchlick( sceneF0, saturate( -dot( wsSceneNormal, wsLight ) ) );	// Light => Scene normal
 
 		// Compute shadowing/masking
 //		float	Gl = GSmith( wsNormal, wsLight, sqrAlpha );
 		float	Gl = 1.0;
 
-		specular += sceneColor * F * Gl;
+		specular += sceneEmissive * (F * Gl) * dot( wsLight, wsNormal );
 	}
-//	specular *= Gv / SAMPLES_COUNT;
-	specular *= 1.0 / float(SAMPLES_COUNT);
-	color += emissive + specular;
+	specular *= Gv / float(SAMPLES_COUNT);
+	color += emissive * (1.0 - FresnelSchlick( F0, saturate( -dot( wsView, wsNormal ) ) )) + specular;
+        
+//fragColor = vec4( noise );
+//fragColor = vec4( 0.2 * distance );
+//fragColor = vec4( matID );
+//fragColor = texture( iChannel0, UV, 0.0 );
+//fragColor = vec4( wsNormal, 1.0 );
+//fragColor = vec4( saturate( -dot( wsView, wsNormal ) ) );
+//fragColor = vec4( 1.0 - FresnelSchlick( F0, saturate( -dot( wsView, wsNormal ) ) ) );
+//fragColor = vec4( saturate( iMouse.z ) );
+//return;
 	}
 	color *= rcpAA;
 
 	fragColor = vec4( color, 1.0 );
     fragColor.xyz = pow( fragColor.xyz, vec3( 1.0 / 2.2 ) );
-//fragColor = vec4( noise );
-//fragColor = vec4( 0.2 * distance );
-//fragColor = vec4( matID );
-//fragColor = texture( iChannel0, UV, 0.0 );
 }
