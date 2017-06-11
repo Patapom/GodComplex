@@ -206,7 +206,7 @@ namespace TestWaveletATrousFiltering
 
 				for ( uint levelIndex=0; levelIndex < FILTER_ITERATIONS_COUNT; levelIndex++ ) {
 					m_device.SetRenderTargets( new IView[] { m_tex_sceneRadiance.GetView( 0, 1, levelIndex+1, 1 ) }, null );
-					m_tex_sceneRadiance.Set( 1, m_tex_sceneRadiance.GetView( 0, 1, levelIndex, 1 ) );
+					m_tex_sceneRadiance.GetView( 0, 1, levelIndex, 1 ).Set( 1 );
 
 					float	POT = (float) Math.Pow( 2.0, levelIndex );
 					float	sigma_Color = SIGMA_COLOR / POT;	// Here, increase range for larger filter sizes

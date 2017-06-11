@@ -424,7 +424,7 @@ namespace GenerateBlueNoise
 // 					m_texNoiseScore.SetCSUAV( 0, targetView );
 
 					m_texNoiseScore.SetCS( 0 );
-					m_texNoiseScore2.SetCSUAV( 0, m_texNoiseScore2.GetView( mipLevelIndex, 1, 0, 1 ) );
+					m_texNoiseScore2.GetView( mipLevelIndex, 1, 0, 1 ).SetCSUAV( 0 );
 
 					m_CB_Mips.m._textureMipSource = m_CB_Mips.m._textureMipTarget;
 					m_CB_Mips.m._textureMipTarget = mipLevelIndex;
@@ -458,7 +458,7 @@ namespace GenerateBlueNoise
 // 					m_texNoiseScore.SetCSUAV( 0, targetView );
 
 					m_texNoiseScore.SetCS( 0 );
-					m_texNoiseScore2.SetCSUAV( 0, m_texNoiseScore2.GetView( (uint) m_texturePOT, 1, 0, 1 ) );
+					m_texNoiseScore2.GetView( (uint) m_texturePOT, 1, 0, 1 ).SetCSUAV( 0 );
 
 					m_CB_Mips.m._textureMipSource = m_CB_Mips.m._textureMipTarget;
 					m_CB_Mips.m._textureMipTarget = (uint) m_texturePOT;

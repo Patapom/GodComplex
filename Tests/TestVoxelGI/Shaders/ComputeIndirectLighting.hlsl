@@ -15,6 +15,10 @@ Texture3D< float4 >		_Tex_VoxelScene_Normal : register(t1);
 Texture3D< float4 >		_Tex_VoxelScene_SourceLighting : register(t2);
 RWTexture3D< float4 >	_Tex_VoxelScene_TargetLighting : register(u0);
 
+cbuffer glou : register(b10) {
+	uint	_trucs;
+};
+
 // Traces a cone through the scene
 // We're asking for the sine of the half angle because at each step we need the radius of the sphere tangent to the cone and although the cone's radius is R = distance * tan( half angle ), we want r = cos( half angle ) * R = distance * sin( half angle )
 float3	ConeTrace( float3 _wsPosition, float3 _wsDirection, float _initialDistance, float _sinHalfAngle, out float _hitDistance ) {
@@ -82,7 +86,7 @@ float3	positionUVW = (wsPos - VOXEL_MIN) * INV_VOXEL_VOLUME_SIZE;	// TODO: Optim
 #if 1
 		// Continuous algorithm that keeps accumulating with
 		const float	ALPHA_THRESHOLD = 1.0 / 255.0;
-		const float	TRANSPARENCY_THRESHOLD = 0.1;
+		const float	TRANSPARENCY_THRESHOLD = 0.01;
 		const float	EXTINCTION_FACTOR = 10.0;
 		const float	SCATTERING_ALBEDO = 0.9;	// Scatters half as much as it extincts
 
@@ -141,6 +145,11 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 	float3	T, B;
 	BuildOrthonormalBasis( N, T, B );
 	
+if ( _trucs == 1 ) {
+	_Tex_VoxelScene_TargetLighting[voxelIndex] = float4( 1, 0, 0, 0 );
+	return;
+}
+
 #if 0	// DEBUG
 float	hitDistance;
 float3	wsConeDirection = N;
@@ -159,16 +168,19 @@ _Tex_VoxelScene_TargetLighting[voxelIndex] = float4( value, 0 );
 #else
 	// Cast 7 cones to cover the top hemisphere
 	const uint		CONES_COUNT = 7;
-	const float		CONE_APERTURE = 60.0 * PI / 180.0;		// 60° aperture
-	const float		SOLID_ANGLE = 2.0 * PI / CONES_COUNT;	// The sum of all cones must cover the 2PI steradians hemisphere
-	const float		SIN_HALF_ANGLE = 0.5;						// sin( 30 )
+	const float		CONE_APERTURE = 60.0 * PI / 180.0;				// 60° aperture
+	const float		SOLID_ANGLE = 2.0 * PI / CONES_COUNT;			// The sum of all cones must cover the 2PI steradians hemisphere
+	const float		SIN_HALF_ANGLE = sin( 0.5 * CONE_APERTURE );	// sin( 30 )
+
+const float	prout = 0.5;
+
 	const float3	LS_CONE_DIRECTIONS[7] = {	float3( 0, 0, 1 ),
-												float3( 0.8660254, 0, 0.5 ),
-												float3( 0.4330127, 0.7500001, 0.5 ),
-												float3( -0.4330128, 0.75, 0.5 ),
-												float3( -0.8660254, -7.571035E-08, 0.5 ),
-												float3( -0.4330126, -0.7500001, 0.5 ),
-												float3( 0.433013, -0.7499999, 0.5 ),
+												float3( 0.8660254, 0, prout ),
+												float3( 0.4330127, 0.7500001, prout ),
+												float3( -0.4330128, 0.75, prout ),
+												float3( -0.8660254, -7.571035E-08, prout ),
+												float3( -0.4330126, -0.7500001, prout ),
+												float3( 0.433013, -0.7499999, prout ),
 											};
 
 	float3	sumIrradiance = 0.0;
@@ -177,10 +189,14 @@ _Tex_VoxelScene_TargetLighting[voxelIndex] = float4( value, 0 );
 		float3	lsConeDirection = LS_CONE_DIRECTIONS[coneIndex];
 		float3	wsConeDirection = lsConeDirection.x * T + lsConeDirection.y * B + lsConeDirection.z * N;
 //		float	initialDistance = 0.5 * VOXEL_SIZE / lsConeDirection.z;	// Offset half a voxel away
-		float	initialDistance = VOXEL_SIZE / max( max( abs( wsConeDirection.x ), abs( wsConeDirection.y ) ), abs( wsConeDirection.z ) );
+		float	initialDistance = 0;//VOXEL_SIZE / max( max( abs( lsConeDirection.x ), abs( lsConeDirection.y ) ), abs( lsConeDirection.z ) );
 		float	hitDistance;
 //		float3	irradiance = ConeTrace( wsVoxelCenter, wsConeDirection, initialDistance, SIN_HALF_ANGLE, hitDistance );
-		float4	irradiance = ConeTrace2( wsVoxelCenter, wsConeDirection, initialDistance, SIN_HALF_ANGLE, hitDistance );
+
+//float3	wsStartPosition = wsVoxelCenter + 4*VOXEL_SIZE * N;
+float3	wsStartPosition = wsVoxelCenter + 1.0 * VOXEL_SIZE * N / max( max( abs( N.x ), abs( N.y ) ), abs( N.z ) );
+
+		float4	irradiance = ConeTrace2( wsStartPosition, wsConeDirection, initialDistance, SIN_HALF_ANGLE, hitDistance );
 		sumIrradiance += irradiance.xyz * lsConeDirection.z;
 	}
 	sumIrradiance *= 2.0 * PI;

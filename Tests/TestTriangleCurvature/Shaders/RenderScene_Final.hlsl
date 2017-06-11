@@ -24,8 +24,9 @@ struct PS_IN {
 	float3	wsNormal : NORMAL;
 	float3	wsTangent : TANGENT;
 
-	float3	wsSphereCenter: SPHERE_CENTER;
-	float	sphereRadius : RADIUS;
+	float3	wsSphereCenter0 : SPHERE_CENTER0;
+	float3	wsSphereCenter1 : SPHERE_CENTER1;
+	float2	sphereRadius : RADIUS;
 
 	float2	UV : TEXCOORD0;
 };
@@ -55,8 +56,9 @@ PS_IN	VS( VS_IN _In ) {
 	Out.wsNormal = _In.Normal;
 	Out.wsTangent = _In.Tangent;
 	Out.UV = _In.UV;
-	Out.sphereRadius = _In.BiTangent.x;	// Computed and stored as a new component of the mesh
-	Out.wsSphereCenter = Out.wsPosition - Out.sphereRadius * Out.wsNormal;
+	Out.sphereRadius = _In.BiTangent.xy;	// Computed and stored as a new component of the mesh
+	Out.wsSphereCenter0 = Out.wsPosition - Out.sphereRadius.x * Out.wsNormal;
+	Out.wsSphereCenter1 = Out.wsPosition - Out.sphereRadius.y * Out.wsNormal;
 
 	return Out;
 }
@@ -70,7 +72,7 @@ float3	PS( PS_IN _In ) : SV_TARGET0 {
 
 	float	offset = 0.0;
 	if ( _Flags & 2U ) {
-		offset = OffsetPosition( wsPosition, wsNormal, wsView, _In.wsSphereCenter, _In.sphereRadius );
+		offset = OffsetPosition( wsPosition, wsNormal, wsView, _In.wsSphereCenter0, _In.sphereRadius.x );
 	}
 //return 0.001 * _In.sphereRadius;
 //return abs(offset);
@@ -78,9 +80,13 @@ float3	PS( PS_IN _In ) : SV_TARGET0 {
 //return 0.25 * _In.sphereRadius;
 //return 0.25 * length( wsPosition - _In.wsSphereCenter );
 
-	if ( _Flags & 1U )
+	if ( _Flags & 1U ) {
 //		return normalize( _In.wsTangent );
+		return abs( _In.sphereRadius.x );
+		return -_In.sphereRadius.y;
+		return float3( abs( _In.sphereRadius.xy ), 0 );
 		return wsNormal;
+	}
 
 	float3	wsLight = LIGHT_POSITION - wsPosition;
 	float	distance2Light = length( wsLight );

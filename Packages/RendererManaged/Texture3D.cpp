@@ -29,20 +29,31 @@ namespace Renderer {
 		m_texture = new ::Texture3D( *_device->m_pDevice, *nativeObject, BaseLib::COMPONENT_FORMAT( _componentFormat ) );
 	}
 
-	void	Texture3D::Set( UInt32 _slotIndex, View3D^ _view )		{ m_texture->Set( _slotIndex, true, _view != nullptr ? _view->SRV : NULL ); }
-	void	Texture3D::SetVS( UInt32 _slotIndex, View3D^ _view )	{ m_texture->SetVS( _slotIndex, true, _view != nullptr ? _view->SRV : NULL ); }
-	void	Texture3D::SetHS( UInt32 _slotIndex, View3D^ _view )	{ m_texture->SetHS( _slotIndex, true, _view != nullptr ? _view->SRV : NULL ); }
-	void	Texture3D::SetDS( UInt32 _slotIndex, View3D^ _view )	{ m_texture->SetDS( _slotIndex, true, _view != nullptr ? _view->SRV : NULL ); }
-	void	Texture3D::SetGS( UInt32 _slotIndex, View3D^ _view )	{ m_texture->SetGS( _slotIndex, true, _view != nullptr ? _view->SRV : NULL ); }
-	void	Texture3D::SetPS( UInt32 _slotIndex, View3D^ _view )	{ m_texture->SetPS( _slotIndex, true, _view != nullptr ? _view->SRV : NULL ); }
-	void	Texture3D::SetCS( UInt32 _slotIndex, View3D^ _view )	{ m_texture->SetCS( _slotIndex, true, _view != nullptr ? _view->SRV : NULL ); }
-	void	Texture3D::SetCSUAV( int _slotIndex, View3D^ _view  )	{ m_texture->SetCSUAV( _slotIndex, _view != nullptr ? _view->UAV : NULL ); }
+	void	Texture3D::Set( UInt32 _slotIndex )		{ m_texture->Set( _slotIndex, true, NULL ); }
+	void	Texture3D::SetVS( UInt32 _slotIndex )	{ m_texture->SetVS( _slotIndex, true, NULL ); }
+	void	Texture3D::SetHS( UInt32 _slotIndex )	{ m_texture->SetHS( _slotIndex, true, NULL ); }
+	void	Texture3D::SetDS( UInt32 _slotIndex )	{ m_texture->SetDS( _slotIndex, true, NULL ); }
+	void	Texture3D::SetGS( UInt32 _slotIndex )	{ m_texture->SetGS( _slotIndex, true, NULL ); }
+	void	Texture3D::SetPS( UInt32 _slotIndex )	{ m_texture->SetPS( _slotIndex, true, NULL ); }
+	void	Texture3D::SetCS( UInt32 _slotIndex )	{ m_texture->SetCS( _slotIndex, true, NULL ); }
+	void	Texture3D::SetCSUAV( int _slotIndex )	{ m_texture->SetCSUAV( _slotIndex, NULL ); }
 
 
-	UInt32							View3D::Width::get() { return m_Owner->Width; }
-	UInt32							View3D::Height::get() { return m_Owner->Height; }
-	UInt32							View3D::ArraySizeOrDepth::get() { return m_Owner->Depth; }
-	::ID3D11ShaderResourceView*		View3D::SRV::get() { return m_AsArray ? m_Owner->m_texture->GetSRV( m_MipLevelStart, m_MipLevelsCount, m_SliceStart, m_SlicesCount, m_AsArray ) : m_Owner->m_texture->GetSRV( m_MipLevelStart, m_MipLevelsCount ); }
-	::ID3D11RenderTargetView*		View3D::RTV::get() { return m_Owner->m_texture->GetRTV( m_MipLevelStart, m_SliceStart, m_SlicesCount ); }
-	::ID3D11UnorderedAccessView*	View3D::UAV::get() { return m_Owner->m_texture->GetUAV( m_MipLevelStart, m_SliceStart, m_SlicesCount ); }
+	//////////////////////////////////////////////////////////////////////////
+	// View
+	UInt32							View3D::Width::get()			{ return m_owner->Width; }
+	UInt32							View3D::Height::get()			{ return m_owner->Height; }
+	UInt32							View3D::ArraySizeOrDepth::get()	{ return m_owner->Depth; }
+	::ID3D11ShaderResourceView*		View3D::SRV::get() { return m_asArray ? m_owner->m_texture->GetSRV( m_mipLevelStart, m_mipLevelsCount, m_sliceStart, m_slicesCount, m_asArray ) : m_owner->m_texture->GetSRV( m_mipLevelStart, m_mipLevelsCount ); }
+	::ID3D11RenderTargetView*		View3D::RTV::get() { return m_owner->m_texture->GetRTV( m_mipLevelStart, m_sliceStart, m_slicesCount ); }
+	::ID3D11UnorderedAccessView*	View3D::UAV::get() { return m_owner->m_texture->GetUAV( m_mipLevelStart, m_sliceStart, m_slicesCount ); }
+
+	void	View3D::Set( UInt32 _slotIndex )		{ m_owner->m_texture->Set(		_slotIndex, true, SRV ); }
+	void	View3D::SetVS( UInt32 _slotIndex )		{ m_owner->m_texture->SetVS(	_slotIndex, true, SRV ); }
+	void	View3D::SetHS( UInt32 _slotIndex )		{ m_owner->m_texture->SetHS(	_slotIndex, true, SRV ); }
+	void	View3D::SetDS( UInt32 _slotIndex )		{ m_owner->m_texture->SetDS(	_slotIndex, true, SRV ); }
+	void	View3D::SetGS( UInt32 _slotIndex )		{ m_owner->m_texture->SetGS(	_slotIndex, true, SRV ); }
+	void	View3D::SetPS( UInt32 _slotIndex )		{ m_owner->m_texture->SetPS(	_slotIndex, true, SRV ); }
+	void	View3D::SetCS( UInt32 _slotIndex )		{ m_owner->m_texture->SetCS(	_slotIndex, true, SRV ); }
+	void	View3D::SetCSUAV( UInt32 _slotIndex )	{ m_owner->m_texture->SetCSUAV(	_slotIndex,		  UAV ); }
 }

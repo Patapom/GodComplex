@@ -37,13 +37,15 @@
 			this.labelResult = new System.Windows.Forms.Label();
 			this.floatTrackbarControlA = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label2 = new System.Windows.Forms.Label();
-			this.panelOutputGraph = new TriangleCurvature.PanelOutput(this.components);
-			this.panelOutput = new TriangleCurvature.PanelOutput3D(this.components);
 			this.floatTrackbarControlB = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label3 = new System.Windows.Forms.Label();
 			this.floatTrackbarControlC = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label4 = new System.Windows.Forms.Label();
 			this.labelMeshInfo = new System.Windows.Forms.Label();
+			this.floatTrackbarControlD = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.label5 = new System.Windows.Forms.Label();
+			this.panelOutputGraph = new TriangleCurvature.PanelOutput(this.components);
+			this.panelOutput = new TriangleCurvature.PanelOutput3D(this.components);
 			this.SuspendLayout();
 			// 
 			// buttonReload
@@ -134,20 +136,6 @@
 			this.label2.TabIndex = 4;
 			this.label2.Text = "Vertex A";
 			// 
-			// panelOutputGraph
-			// 
-			this.panelOutputGraph.Location = new System.Drawing.Point(1298, 12);
-			this.panelOutputGraph.Name = "panelOutputGraph";
-			this.panelOutputGraph.Size = new System.Drawing.Size(350, 350);
-			this.panelOutputGraph.TabIndex = 5;
-			// 
-			// panelOutput
-			// 
-			this.panelOutput.Location = new System.Drawing.Point(12, 12);
-			this.panelOutput.Name = "panelOutput";
-			this.panelOutput.Size = new System.Drawing.Size(1280, 720);
-			this.panelOutput.TabIndex = 0;
-			// 
 			// floatTrackbarControlB
 			// 
 			this.floatTrackbarControlB.Location = new System.Drawing.Point(1361, 441);
@@ -206,6 +194,45 @@
 			this.labelMeshInfo.TabIndex = 6;
 			this.labelMeshInfo.Text = "aaaa";
 			// 
+			// floatTrackbarControlD
+			// 
+			this.floatTrackbarControlD.Location = new System.Drawing.Point(1361, 493);
+			this.floatTrackbarControlD.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlD.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlD.Name = "floatTrackbarControlD";
+			this.floatTrackbarControlD.RangeMax = 1000F;
+			this.floatTrackbarControlD.RangeMin = -1000F;
+			this.floatTrackbarControlD.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlD.TabIndex = 3;
+			this.floatTrackbarControlD.Value = -1.154701F;
+			this.floatTrackbarControlD.VisibleRangeMax = 0F;
+			this.floatTrackbarControlD.VisibleRangeMin = -2F;
+			this.floatTrackbarControlD.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlA_ValueChanged);
+			// 
+			// label5
+			// 
+			this.label5.AutoSize = true;
+			this.label5.Location = new System.Drawing.Point(1308, 496);
+			this.label5.Name = "label5";
+			this.label5.Size = new System.Drawing.Size(48, 13);
+			this.label5.TabIndex = 4;
+			this.label5.Text = "Vertex D";
+			// 
+			// panelOutputGraph
+			// 
+			this.panelOutputGraph.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+			this.panelOutputGraph.Location = new System.Drawing.Point(1298, 12);
+			this.panelOutputGraph.Name = "panelOutputGraph";
+			this.panelOutputGraph.Size = new System.Drawing.Size(350, 350);
+			this.panelOutputGraph.TabIndex = 5;
+			// 
+			// panelOutput
+			// 
+			this.panelOutput.Location = new System.Drawing.Point(12, 12);
+			this.panelOutput.Name = "panelOutput";
+			this.panelOutput.Size = new System.Drawing.Size(1280, 720);
+			this.panelOutput.TabIndex = 0;
+			// 
 			// TestTriangleCurvatureForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -214,10 +241,12 @@
 			this.Controls.Add(this.labelMeshInfo);
 			this.Controls.Add(this.labelResult);
 			this.Controls.Add(this.panelOutputGraph);
+			this.Controls.Add(this.label5);
 			this.Controls.Add(this.label4);
 			this.Controls.Add(this.label3);
 			this.Controls.Add(this.label2);
 			this.Controls.Add(this.label1);
+			this.Controls.Add(this.floatTrackbarControlD);
 			this.Controls.Add(this.floatTrackbarControlC);
 			this.Controls.Add(this.floatTrackbarControlB);
 			this.Controls.Add(this.floatTrackbarControlA);
@@ -251,6 +280,8 @@
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlC;
 		private System.Windows.Forms.Label label4;
 		private System.Windows.Forms.Label labelMeshInfo;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlD;
+		private System.Windows.Forms.Label label5;
 	}
 }
 

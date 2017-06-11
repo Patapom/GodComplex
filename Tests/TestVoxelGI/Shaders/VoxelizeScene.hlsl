@@ -51,6 +51,11 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 	_Tex_VoxelScene_Lighting[voxelIndex] = float4( sceneRadiance, 1.0 );
 }
 
+
+//////////////////////////////////////////////////////////////////////////////////////////////
+// Computes the mips of 3D textures (caution: many values are pre-multiplied by alpha!)
+//////////////////////////////////////////////////////////////////////////////////////////////
+// 
 Texture3D< float4 >		_Tex_SourceVoxelScene_Albedo : register(t0);
 Texture3D< float4 >		_Tex_SourceVoxelScene_Normal : register(t1);
 Texture3D< float4 >		_Tex_SourceVoxelScene_Lighting : register(t2);
@@ -150,4 +155,45 @@ void	CS_Mip( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADI
 	_Tex_VoxelScene_Lighting[targetVoxelIndex] = 0.125 * (lighting000 + lighting001 + lighting011 + lighting010 + lighting100 + lighting101 + lighting111 + lighting110);
 
 // _Tex_VoxelScene_Lighting[targetVoxelIndex] = float4( targetVoxelIndex / 63.0, 0 );
+}
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////
+// Computes the mips of a single 3D texture used to store lighting information
+//////////////////////////////////////////////////////////////////////////////////////////////
+// 
+[numthreads( 16, 16, 1 )]
+void	CS_SingleMip( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, uint3 _DispatchThreadID : SV_DISPATCHTHREADID ) {
+	uint3	targetVoxelIndex = _DispatchThreadID;
+	uint3	sourceVoxelIndex = targetVoxelIndex << 1;
+
+	// Average lighting
+	float4	lighting000 = _Tex_SourceVoxelScene_Lighting[sourceVoxelIndex];	sourceVoxelIndex.x++;
+	float4	lighting001 = _Tex_SourceVoxelScene_Lighting[sourceVoxelIndex];	sourceVoxelIndex.y++;
+	float4	lighting011 = _Tex_SourceVoxelScene_Lighting[sourceVoxelIndex];	sourceVoxelIndex.x--;
+	float4	lighting010 = _Tex_SourceVoxelScene_Lighting[sourceVoxelIndex];	sourceVoxelIndex.y--; 	sourceVoxelIndex.z++;
+	float4	lighting100 = _Tex_SourceVoxelScene_Lighting[sourceVoxelIndex];	sourceVoxelIndex.x++;
+	float4	lighting101 = _Tex_SourceVoxelScene_Lighting[sourceVoxelIndex];	sourceVoxelIndex.y++;
+	float4	lighting111 = _Tex_SourceVoxelScene_Lighting[sourceVoxelIndex];	sourceVoxelIndex.x--;
+	float4	lighting110 = _Tex_SourceVoxelScene_Lighting[sourceVoxelIndex];	//sourceVoxelIndex.y--; 	sourceVoxelIndex.z--;
+
+	_Tex_VoxelScene_Lighting[targetVoxelIndex] = 0.125 * (lighting000 + lighting001 + lighting011 + lighting010 + lighting100 + lighting101 + lighting111 + lighting110);
+}
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////
+// Accumulates source voxels into target voxels
+//////////////////////////////////////////////////////////////////////////////////////////////
+// 
+Texture3D< float4 >		_Tex_SourceVoxelScene_Lighting2 : register(t3);
+
+[numthreads( 16, 16, 1 )]
+void	CS_Accumulate( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, uint3 _DispatchThreadID : SV_DISPATCHTHREADID ) {
+	uint3	voxelIndex = _DispatchThreadID;
+
+	float4	lighting0 = _Tex_SourceVoxelScene_Lighting[voxelIndex];
+	float4	lighting1 = _Tex_SourceVoxelScene_Lighting2[voxelIndex];
+
+//	_Tex_VoxelScene_Lighting[voxelIndex] = lighting0 + lighting1;
+_Tex_VoxelScene_Lighting[voxelIndex] = lighting0 + 0.1 * float4( 1, 0.5, 0, 0 );
 }
