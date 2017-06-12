@@ -57,6 +57,7 @@ albedo.xyz = 0.5 * (1.0 + normal.xyz);
 //albedo = albedo.w;
 
 albedo = _Tex_VoxelScene_Lighting.mips[_mipLevel][voxelIndex];
+albedo.xyz *= albedo.xyz;
 albedo /= albedo.w;
 if ( _flags & 2U )
 	albedo += _Tex_VoxelScene_IndirectLighting2.mips[_mipLevel][voxelIndex];
