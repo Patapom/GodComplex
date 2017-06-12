@@ -61,7 +61,7 @@ namespace TestVoxelGI
 			public uint			_voxelMasksX;
 			public uint			_voxelMasksY;
 			public uint			_voxelMasksZ;
-			public uint			__PAD2;
+			public uint			_flags;
 		}
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
@@ -74,6 +74,7 @@ namespace TestVoxelGI
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
 		private struct CB_PostProcess {
+			public uint			_flags;
 			public uint			_filterLevel;
 		}
 
@@ -226,10 +227,6 @@ namespace TestVoxelGI
 			for ( uint mipLevelIndex=1; mipLevelIndex < m_Tex_VoxelScene_Albedo.MipLevelsCount; mipLevelIndex++ ) {
 				volumeSize >>= 1;
 
-// useless
-// 				m_CB_buildMips.m._mipLevel = mipLevelIndex;
-// 				m_CB_buildMips.UpdateData();
-
 				m_Tex_VoxelScene_Albedo.GetView( mipLevelIndex-1, 1, 0, 0 ).SetCS( 0 );
 				m_Tex_VoxelScene_Normal.GetView( mipLevelIndex-1, 1, 0, 0 ).SetCS( 1 );
 				m_Tex_VoxelScene_Lighting.GetView( mipLevelIndex-1, 1, 0, 0 ).SetCS( 2 );
@@ -282,8 +279,8 @@ namespace TestVoxelGI
 					// Source lighting to bounce one more time is supposed to be in m_Tex_VoxelScene_IndirectLighting0 at this point (and assigned to input slot t2)
 					m_Tex_VoxelScene_IndirectLighting1.SetCSUAV( 0 );
 
-m_CB_postProcess.m._filterLevel = bounceIndex;
-m_CB_postProcess.UpdateData();
+m_CB_computeIndirect.m._mipLevel = bounceIndex;
+m_CB_computeIndirect.UpdateData();
 
 					m_shader_computeIndirectLighting.Dispatch( VOLUME_SIZE >> 4, VOLUME_SIZE >> 4, VOLUME_SIZE );
 
@@ -500,6 +497,7 @@ m_device.Clear( m_tex_sceneRadiance, float4.Zero );
 				m_CB_renderVoxels.m._voxelMasksX = mask;
 				m_CB_renderVoxels.m._voxelMasksY = mask;
 				m_CB_renderVoxels.m._voxelMasksZ = mask;
+				m_CB_renderVoxels.m._flags = checkBoxEnableIndirect.Checked ? 2U : 0U;
 				m_CB_renderVoxels.UpdateData();
 
 				m_prim_Cube.RenderInstanced( m_shader_renderVoxels, count * count * count );
@@ -519,6 +517,7 @@ m_Tex_VoxelScene_IndirectLighting0.Set( 3 );
 m_Tex_VoxelScene_IndirectLighting1.Set( 4 );
 m_Tex_VoxelScene_IndirectLighting2.Set( 5 );
 
+				m_CB_postProcess.m._flags = (checkBoxRenderAsVoxels.Checked ? 1U : 0U) | (checkBoxEnableIndirect.Checked ? 2U : 0U);
 				m_CB_postProcess.m._filterLevel = (uint) integerTrackbarControlVoxelMipIndex.Value;
 				m_CB_postProcess.UpdateData();
 
