@@ -57,8 +57,8 @@ albedo.xyz = 0.5 * (1.0 + normal.xyz);
 
 //albedo = albedo.w;
 albedo = _Tex_VoxelScene_Lighting.mips[_mipLevel][voxelIndex];
-albedo = _Tex_VoxelScene_IndirectLighting0.mips[_mipLevel][voxelIndex];
-//albedo /= albedo.w;
+albedo /= albedo.w;
+albedo += _Tex_VoxelScene_IndirectLighting2.mips[_mipLevel][voxelIndex];
 //albedo = 0.001 * _instanceIndex;
 	}
 	Out.Color = albedo;

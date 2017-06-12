@@ -15,9 +15,40 @@ Texture3D< float4 >		_Tex_VoxelScene_Normal : register(t1);
 Texture3D< float4 >		_Tex_VoxelScene_SourceLighting : register(t2);
 RWTexture3D< float4 >	_Tex_VoxelScene_TargetLighting : register(u0);
 
+
+#define USE_PHASE_FUNCTION 1
+
 cbuffer glou : register(b10) {
 	uint	_trucs;
 };
+
+float	Phase( float _cosTheta, float _anisotropy ) {
+	const float	g = _anisotropy;
+
+// Simplest, solid medium case
+//	return saturate( -_cosTheta );
+
+	// Rayleigh
+// 	return (3.0 / (16.0 * PI)) * (1.0 + _cosTheta * _cosTheta);
+
+	// Henyey-Greenstein
+	return (1.5 / (4.0 * PI)) * (1.0 - g*g) * pow( max( 0.00001, 1.0 + (g*g) - 2.0*g*_cosTheta ), -1.5 ) * (1.0 + _cosTheta * _cosTheta) / (2.0 + g*g);
+
+// 	// Schlick's simplified Henyey-Greenstein
+// 	float	den = (1.0 - g * _cosTheta);
+// 	return (0.25 / PI) * (1.0 - g*g) / (den * den);
+
+	// Draine: An interesting variation and more general phase function taking 2 parameters (from: http://arxiv.org/pdf/astro-ph/0304060.pdf)
+	//	g is the same as usual, i.e. Henyey-Greenstein scattering anisotropy
+	//	a is new and interestingly gives:
+	//		• a=0, g!=0 reverts back to Henyey-Greenstein
+	//		• a=0, g=0 reverts back to Rayleigh scattering
+	//		• a=1, g!=0 reverts back to Cornette-Shanks
+	//
+	const float	a = 1;
+	return (1.0 - g*g) * (1.0 + a * _cosTheta*_cosTheta) /
+			(4.0 * PI * (1.0 + a * (1.0 + 2.0*g*g)/3.0) * pow( max( 0.00001, 1.0 + (g*g) - 2.0*g*_cosTheta ), 1.5 ));
+}
 
 // Traces a cone through the scene
 // We're asking for the sine of the half angle because at each step we need the radius of the sphere tangent to the cone and although the cone's radius is R = distance * tan( half angle ), we want r = cos( half angle ) * R = distance * sin( half angle )
@@ -28,14 +59,15 @@ float4	ConeTrace( float3 _wsPosition, float3 _wsDirection, float _initialDistanc
 	float4	irradiance = float4( 0, 0, 0, 1 );
 	for ( uint stepIndex=0; stepIndex < 64; stepIndex++ ) {
 		// March and increase cone radius
-//		float	radius = max( 0.5 * VOXEL_SIZE, _hitDistance * _sinHalfAngle );		// This is actually the tangent sphere's radius at current distance
-		float	radius = _hitDistance * _sinHalfAngle;		// This is actually the tangent sphere's radius at current distance
-//float	radius = max( 0.5 * VOXEL_SIZE, 0.5 * _hitDistance );
-//float	radius = 0.5 * VOXEL_SIZE;
 		float3	wsPos = _wsPosition + _hitDistance * _wsDirection;
+//		float	radius = _hitDistance * _sinHalfAngle;		// This is actually the tangent sphere's radius at current distance
+// This is a way of biasing the mip level and smoothing the result but on top of that it also increases the marching speed which is even better
+float	radius = 2 * _hitDistance * _sinHalfAngle;		// This is actually the tangent sphere's radius at current distance
 
 		// Compute mip level depending on how many voxels the sphere is covering
 		float	mipLevel = 1.0 + log2( radius / VOXEL_SIZE );
+// Bias the mip to smooth the result, but doesn't increase marching step size: better to do that by multiplying radius
+//float	mipLevel = 3.0 + log2( radius / VOXEL_SIZE );
 
 //float3	positionUVW = (wsPos - VOXEL_MIN) * INV_VOXEL_VOLUME_SIZE;	// TODO: Optimize by always computing in UVW space
 float3	positionUVW = (wsPos - VOXEL_MIN) * INV_VOXEL_VOLUME_SIZE;	// TODO: Optimize by always computing in UVW space
@@ -51,15 +83,26 @@ float3	positionUVW = (wsPos - VOXEL_MIN) * INV_VOXEL_VOLUME_SIZE;	// TODO: Optim
 		float4	irradiance_alpha = _Tex_VoxelScene_SourceLighting.SampleLevel( LinearClamp, positionUVW, mipLevel );
 		if ( irradiance_alpha.w > ALPHA_THRESHOLD ) {
 
+#if USE_PHASE_FUNCTION
 // Use a phase function depending on normal? NDF? lobe variance?
 float3	wsNormal = _Tex_VoxelScene_Normal.SampleLevel( LinearClamp, positionUVW, mipLevel ).xyz;
+		wsNormal *= irradiance_alpha.w > 0.0 ? 1.0 / irradiance_alpha.w : 0.0;
+// Test to make sure albedo's alpha and irradiance's alpha are the same
+//float4	albedo = _Tex_VoxelScene_Albedo.SampleLevel( LinearClamp, positionUVW, mipLevel );
+//		wsNormal *= albedo.w > 0.0 ? 1.0 / albedo.w : 0.0;
 float	normalLength = length( wsNormal );
 		wsNormal *= normalLength > 0.0 ? 1.0 / normalLength : 0.0;
-float	NdotV = -dot( _wsDirection, wsNormal );
+float	anisotropy = lerp( 0, -0.5, saturate(normalLength) );	// The length of the normal dictates the anisotropy of the voxel
+irradiance_alpha.xyz *= Phase( dot( _wsDirection, wsNormal ), anisotropy );
+#endif
 
 			float	marchedDistance = _hitDistance - previousDistance;
 			float	extinction = exp( -EXTINCTION_FACTOR * marchedDistance * irradiance_alpha.w );	// Use alpha as a measure of density
-			float3	scattering = SCATTERING_ALBEDO * (1.0 - extinction) * irradiance_alpha.xyz;// / irradiance_alpha.w;
+			#if PREMULTIPLY_LIGHTING
+				float3	scattering = SCATTERING_ALBEDO * (1.0 - extinction) * irradiance_alpha.xyz / irradiance_alpha.w;
+			#else
+				float3	scattering = SCATTERING_ALBEDO * (1.0 - extinction) * irradiance_alpha.xyz;
+			#endif
 			irradiance.xyz += irradiance.w * scattering;	// Add voxel's irradiance as perceived through our accumulated extinction
 			irradiance.w *= extinction;						// And accumulate extinction
 
@@ -92,14 +135,6 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 	float3	N = normalize( _Tex_VoxelScene_Normal[voxelIndex].xyz );
 	float3	T, B;
 	BuildOrthonormalBasis( N, T, B );
-	
-// if ( _trucs == 1 ) {
-// //	_Tex_VoxelScene_TargetLighting[voxelIndex] = float4( 1, 0, 0, 0 );
-// //	_Tex_VoxelScene_TargetLighting[voxelIndex] = albedo;
-// //	_Tex_VoxelScene_TargetLighting[voxelIndex] = _Tex_VoxelScene_Normal[voxelIndex];
-// 	_Tex_VoxelScene_TargetLighting[voxelIndex] = _Tex_VoxelScene_SourceLighting.mips[0][voxelIndex>>0];
-// 	return;
-// }
 
 #if 0	// DEBUG
 float	hitDistance;
@@ -146,6 +181,9 @@ const float	prout = 0.5;
 		float4	irradiance = ConeTrace( wsStartPosition, wsConeDirection, initialDistance, SIN_HALF_ANGLE, hitDistance );
 		sumIrradiance += irradiance.xyz * lsConeDirection.z;
 	}
+	#if USE_PHASE_FUNCTION
+		sumIrradiance *= 4.0 * PI;
+	#endif
 	sumIrradiance *= 2.0 * PI;
 
 //	_Tex_VoxelScene_TargetLighting[voxelIndex] = float4( sumIrradiance * INVPI * albedo.xyz, albedo.w );
