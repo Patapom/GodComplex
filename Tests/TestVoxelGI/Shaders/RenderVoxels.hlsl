@@ -15,9 +15,9 @@ cbuffer CB_RenderVoxels : register(b10) {
 Texture3D< float4 >	_Tex_VoxelScene_Albedo : register(t0);
 Texture3D< float4 >	_Tex_VoxelScene_Normal : register(t1);
 Texture3D< float4 >	_Tex_VoxelScene_Lighting : register(t2);
-Texture3D< float4 >	_Tex_VoxelScene_IndirectLighting0 : register(t3);
-Texture3D< float4 >	_Tex_VoxelScene_IndirectLighting1 : register(t4);
-Texture3D< float4 >	_Tex_VoxelScene_IndirectLighting2 : register(t5);
+Texture3D< float4 >	_Tex_VoxelScene_IndirectLighting0 : register(t3);	// Current indirect lighting
+Texture3D< float4 >	_Tex_VoxelScene_IndirectLighting1 : register(t4);	// Previous indirect lighting (used as source for current indirect lighting)
+Texture3D< float4 >	_Tex_VoxelScene_IndirectLighting2 : register(t5);	// Final, accumulated indirect lighting
 
 struct VS_IN_P3 {
 	float3	Position : POSITION;
@@ -58,6 +58,7 @@ albedo.xyz = 0.5 * (1.0 + normal.xyz);
 //albedo = albedo.w;
 albedo = _Tex_VoxelScene_Lighting.mips[_mipLevel][voxelIndex];
 albedo = _Tex_VoxelScene_IndirectLighting0.mips[_mipLevel][voxelIndex];
+//albedo /= albedo.w;
 //albedo = 0.001 * _instanceIndex;
 	}
 	Out.Color = albedo;

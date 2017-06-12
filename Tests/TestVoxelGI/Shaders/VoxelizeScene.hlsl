@@ -6,6 +6,8 @@
 #include "DistanceField.hlsl"
 #include "Voxel.hlsl"
 
+//#define	PREMULTIPLY_LIGHTING	1
+
 RWTexture3D< float4 >	_Tex_VoxelScene_Albedo : register(u0);
 RWTexture3D< float4 >	_Tex_VoxelScene_Normal : register(u1);
 RWTexture3D< float4 >	_Tex_VoxelScene_Lighting : register(u2);
@@ -21,8 +23,7 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 	if ( abs( distance.x ) > 0.5 * VOXEL_DIAG_SIZE ) {
 		// Empty
 		_Tex_VoxelScene_Albedo[voxelIndex] = 0.0;
-//		_Tex_VoxelScene_Normal[voxelIndex] = float4( 0.5.xxx, 0 );	// UNORM
-		_Tex_VoxelScene_Normal[voxelIndex] = float4( 0.0.xxx, 0 );	// SNORM
+		_Tex_VoxelScene_Normal[voxelIndex] = 0.0;
 		_Tex_VoxelScene_Lighting[voxelIndex] = 0.0;
 		return;
 	}
@@ -32,8 +33,7 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 			albedo = sqrt( albedo );		// Store as sqrt() to simulate sRGB (sRGB is forbidden when buffer is set as UAV)
 	float3	wsNormal = Normal( wsVoxelCenter );
 	_Tex_VoxelScene_Albedo[voxelIndex] = float4( albedo, 1.0 );
-//	_Tex_VoxelScene_Normal[voxelIndex] = float4( 0.5 * (1.0 + wsNormal ), 0 );	// UNORM
-	_Tex_VoxelScene_Normal[voxelIndex] = float4( wsNormal, 0 );					// SNORM
+	_Tex_VoxelScene_Normal[voxelIndex] = float4( wsNormal, 0 );	// SNORM
 
 	// Compute lighting
 	float3	wsLightPos = CORNELL_LIGHT_POS;
@@ -115,16 +115,6 @@ void	CS_Mip( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADI
 	float4	normal101 = _Tex_SourceVoxelScene_Normal[sourceVoxelIndex];	sourceVoxelIndex.y++;
 	float4	normal111 = _Tex_SourceVoxelScene_Normal[sourceVoxelIndex];	sourceVoxelIndex.x--;
 	float4	normal110 = _Tex_SourceVoxelScene_Normal[sourceVoxelIndex]; sourceVoxelIndex.y--; 	sourceVoxelIndex.z--;
-
-// 		// Un-pack (UNORM)
-// 	normal000.xyz = 2.0 * normal000.xyz - 1.0;
-// 	normal001.xyz = 2.0 * normal001.xyz - 1.0;
-// 	normal011.xyz = 2.0 * normal011.xyz - 1.0;
-// 	normal010.xyz = 2.0 * normal010.xyz - 1.0;
-// 	normal100.xyz = 2.0 * normal100.xyz - 1.0;
-// 	normal101.xyz = 2.0 * normal101.xyz - 1.0;
-// 	normal111.xyz = 2.0 * normal111.xyz - 1.0;
-// 	normal110.xyz = 2.0 * normal110.xyz - 1.0;
 		// Un-premultiply
 	normal000 *= invAlpha000;
 	normal001 *= invAlpha001;
@@ -138,8 +128,7 @@ void	CS_Mip( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADI
 	float4	normal = 0.125 * (normal000 + normal001 + normal011 + normal010 + normal100 + normal101 + normal111 + normal110);
 	float	normalLength = length( normal.xyz );
 			normal.xyz *= normalLength > 0.0 ? 1.0 / normalLength : 0.0;
-			normal *= albedo.w;						// Re-premultiply
-//			normal.xyz = 0.5 * (1.0 + normal.xyz);	// Re-pack (UNORM)
+			normal *= albedo.w;		// Re-premultiply
 
 	_Tex_VoxelScene_Normal[targetVoxelIndex] = normal;
 
@@ -152,9 +141,27 @@ void	CS_Mip( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADI
 	float4	lighting101 = _Tex_SourceVoxelScene_Lighting[sourceVoxelIndex];	sourceVoxelIndex.y++;
 	float4	lighting111 = _Tex_SourceVoxelScene_Lighting[sourceVoxelIndex];	sourceVoxelIndex.x--;
 	float4	lighting110 = _Tex_SourceVoxelScene_Lighting[sourceVoxelIndex];	sourceVoxelIndex.y--; 	sourceVoxelIndex.z--;
-	_Tex_VoxelScene_Lighting[targetVoxelIndex] = 0.125 * (lighting000 + lighting001 + lighting011 + lighting010 + lighting100 + lighting101 + lighting111 + lighting110);
 
-// _Tex_VoxelScene_Lighting[targetVoxelIndex] = float4( targetVoxelIndex / 63.0, 0 );
+	#if PREMULTIPLY_LIGHTING
+			// Un-premultiply
+		lighting000 *= invAlpha000;
+		lighting001 *= invAlpha001;
+		lighting011 *= invAlpha011;
+		lighting010 *= invAlpha010;
+		lighting100 *= invAlpha100;
+		lighting101 *= invAlpha101;
+		lighting111 *= invAlpha111;
+		lighting110 *= invAlpha110;
+	#endif
+
+	float4	lighting = 0.125 * (lighting000 + lighting001 + lighting011 + lighting010 + lighting100 + lighting101 + lighting111 + lighting110);
+
+	#if PREMULTIPLY_LIGHTING
+ 		lighting.xyz *= albedo.w;	// Re-premultiply
+		lighting.w = albedo.w;
+	#endif
+
+	_Tex_VoxelScene_Lighting[targetVoxelIndex] = lighting;
 }
 
 
@@ -177,7 +184,27 @@ void	CS_SingleMip( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPT
 	float4	lighting111 = _Tex_SourceVoxelScene_Lighting[sourceVoxelIndex];	sourceVoxelIndex.x--;
 	float4	lighting110 = _Tex_SourceVoxelScene_Lighting[sourceVoxelIndex];	//sourceVoxelIndex.y--; 	sourceVoxelIndex.z--;
 
-	_Tex_VoxelScene_Lighting[targetVoxelIndex] = 0.125 * (lighting000 + lighting001 + lighting011 + lighting010 + lighting100 + lighting101 + lighting111 + lighting110);
+	#if PREMULTIPLY_LIGHTING
+		// Un-premultiply
+		lighting000 *= lighting000.w > 0.0 ? 1.0 / lighting000.w : 0.0;
+		lighting001 *= lighting001.w > 0.0 ? 1.0 / lighting001.w : 0.0;
+		lighting011 *= lighting011.w > 0.0 ? 1.0 / lighting011.w : 0.0;
+		lighting010 *= lighting010.w > 0.0 ? 1.0 / lighting010.w : 0.0;
+		lighting100 *= lighting100.w > 0.0 ? 1.0 / lighting100.w : 0.0;
+		lighting101 *= lighting101.w > 0.0 ? 1.0 / lighting101.w : 0.0;
+		lighting111 *= lighting111.w > 0.0 ? 1.0 / lighting111.w : 0.0;
+		lighting110 *= lighting110.w > 0.0 ? 1.0 / lighting110.w : 0.0;
+	#endif
+
+	float4	lighting = 0.125 * (lighting000 + lighting001 + lighting011 + lighting010 + lighting100 + lighting101 + lighting111 + lighting110);
+
+	#if PREMULTIPLY_LIGHTING
+//		lighting.xyz *= lighting.w;	// Re-premultiply
+// Curiously, the line below is the correct thing to do but I prefer the bugged line that keeps on multiplying the albedo by itself! (smoother result!)
+lighting *= lighting.w;	// Re-premultiply
+	#endif
+
+	_Tex_VoxelScene_Lighting[targetVoxelIndex] = lighting;
 }
 
 
@@ -194,6 +221,5 @@ void	CS_Accumulate( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUP
 	float4	lighting0 = _Tex_SourceVoxelScene_Lighting[voxelIndex];
 	float4	lighting1 = _Tex_SourceVoxelScene_Lighting2[voxelIndex];
 
-//	_Tex_VoxelScene_Lighting[voxelIndex] = lighting0 + lighting1;
-_Tex_VoxelScene_Lighting[voxelIndex] = lighting0 + 0.1 * float4( 1, 0.5, 0, 0 );
+	_Tex_VoxelScene_Lighting[voxelIndex] = lighting0 + lighting1;
 }

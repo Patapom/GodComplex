@@ -68,7 +68,7 @@ float4	ConeTrace2( float3 _wsPosition, float3 _wsDirection, float _initialDistan
 	_hitDistance = _initialDistance;
 	float	previousDistance = _hitDistance;
 	float4	irradiance = float4( 0, 0, 0, 1 );
-	for ( uint stepIndex=0; stepIndex < 256; stepIndex++ ) {
+	for ( uint stepIndex=0; stepIndex < 64; stepIndex++ ) {
 		// March and increase cone radius
 		float	radius = max( 0.5 * VOXEL_SIZE, _hitDistance * _sinHalfAngle );		// This is actually the tangent sphere's radius at current distance
 //float	radius = max( 0.5 * VOXEL_SIZE, 0.5 * _hitDistance );
@@ -84,21 +84,21 @@ float3	positionUVW = (wsPos - VOXEL_MIN) * INV_VOXEL_VOLUME_SIZE;	// TODO: Optim
 // 	break;	// Outside of the volume
 
 #if 1
-		// Continuous algorithm that keeps accumulating with
+		// Continuous algorithm that keeps accumulating along the ray
 		const float	ALPHA_THRESHOLD = 1.0 / 255.0;
-		const float	TRANSPARENCY_THRESHOLD = 0.01;
+		const float	TRANSPARENCY_THRESHOLD = 0.05;
 		const float	EXTINCTION_FACTOR = 10.0;
-		const float	SCATTERING_ALBEDO = 0.9;	// Scatters half as much as it extincts
+		const float	SCATTERING_ALBEDO = 1.0;	// Scatters half as much as it extincts
 
 		float4	irradiance_alpha = _Tex_VoxelScene_SourceLighting.SampleLevel( LinearClamp, positionUVW, mipLevel );
 		if ( irradiance_alpha.w > ALPHA_THRESHOLD ) {
 			float	marchedDistance = _hitDistance - previousDistance;
 			float	extinction = exp( -EXTINCTION_FACTOR * marchedDistance * irradiance_alpha.w );	// Use alpha as a measure of density
-			float3	scattering = SCATTERING_ALBEDO * (1.0 - extinction) * irradiance_alpha.xyz;
+			float3	scattering = SCATTERING_ALBEDO * (1.0 - extinction) * irradiance_alpha.xyz;// / irradiance_alpha.w;
 			irradiance.xyz += irradiance.w * scattering;	// Add voxel's irradiance as perceived through our accumulated extinction
 			irradiance.w *= extinction;						// And accumulate extinction
-// 			if ( irradiance.w < TRANSPARENCY_THRESHOLD )
-// 				break;	// Opaque!
+			if ( irradiance.w < TRANSPARENCY_THRESHOLD )
+				break;	// Opaque!
 		}
 #else
 		// Blocker algorithm that stops accumulating after an alpha threshold is met
@@ -120,10 +120,9 @@ float3	positionUVW = (wsPos - VOXEL_MIN) * INV_VOXEL_VOLUME_SIZE;	// TODO: Optim
 
 		// Advance by sphere radius
 		previousDistance = _hitDistance;
-		_hitDistance += 0.125 * radius;
+		_hitDistance += 4 * 0.125 * radius;
 	}
 
-// 	_hitDistance = INFINITY;
 	return irradiance;
 }
 
@@ -145,10 +144,13 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 	float3	T, B;
 	BuildOrthonormalBasis( N, T, B );
 	
-if ( _trucs == 1 ) {
-	_Tex_VoxelScene_TargetLighting[voxelIndex] = float4( 1, 0, 0, 0 );
-	return;
-}
+// if ( _trucs == 1 ) {
+// //	_Tex_VoxelScene_TargetLighting[voxelIndex] = float4( 1, 0, 0, 0 );
+// //	_Tex_VoxelScene_TargetLighting[voxelIndex] = albedo;
+// //	_Tex_VoxelScene_TargetLighting[voxelIndex] = _Tex_VoxelScene_Normal[voxelIndex];
+// 	_Tex_VoxelScene_TargetLighting[voxelIndex] = _Tex_VoxelScene_SourceLighting.mips[0][voxelIndex>>0];
+// 	return;
+// }
 
 #if 0	// DEBUG
 float	hitDistance;
@@ -193,14 +195,15 @@ const float	prout = 0.5;
 		float	hitDistance;
 //		float3	irradiance = ConeTrace( wsVoxelCenter, wsConeDirection, initialDistance, SIN_HALF_ANGLE, hitDistance );
 
-//float3	wsStartPosition = wsVoxelCenter + 4*VOXEL_SIZE * N;
-float3	wsStartPosition = wsVoxelCenter + 1.0 * VOXEL_SIZE * N / max( max( abs( N.x ), abs( N.y ) ), abs( N.z ) );
+float3	wsStartPosition = wsVoxelCenter + VOXEL_SIZE * N;
+//float3	wsStartPosition = wsVoxelCenter + sqrt(3) * VOXEL_SIZE * N / max( max( abs( N.x ), abs( N.y ) ), abs( N.z ) );
 
 		float4	irradiance = ConeTrace2( wsStartPosition, wsConeDirection, initialDistance, SIN_HALF_ANGLE, hitDistance );
 		sumIrradiance += irradiance.xyz * lsConeDirection.z;
 	}
 	sumIrradiance *= 2.0 * PI;
 
-	_Tex_VoxelScene_TargetLighting[voxelIndex] = float4( sumIrradiance * INVPI * albedo.xyz, 0.0 );
+//	_Tex_VoxelScene_TargetLighting[voxelIndex] = float4( sumIrradiance * INVPI * albedo.xyz, albedo.w );
+	_Tex_VoxelScene_TargetLighting[voxelIndex] = float4( sumIrradiance * INVPI * albedo.xyz, 1.0 );
 #endif
 }

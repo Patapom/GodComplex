@@ -49,10 +49,12 @@ namespace Renderer {
 	};
 
 	// Wraps a 3D texture
+	[System::Diagnostics::DebuggerDisplayAttribute( "{Width,d}x{Height,d}x{Depth,d}x{MipLevelsCount,d} {Tag}" )]
 	public ref class Texture3D {
 	public:
 
 		::Texture3D*	m_texture;
+		Object^			m_tag;
 
 	public:
 
@@ -60,6 +62,8 @@ namespace Renderer {
 		property UInt32	Height			{ UInt32 get() { return m_texture->GetHeight(); } }
 		property UInt32	Depth			{ UInt32 get() { return m_texture->GetDepth(); } }
 		property UInt32	MipLevelsCount	{ UInt32 get() { return m_texture->GetMipLevelsCount(); } }
+
+		property Object^	Tag { Object^ get() { return m_tag; } void set( Object^ _value ) { m_tag = _value; } }
 
 	public:
 

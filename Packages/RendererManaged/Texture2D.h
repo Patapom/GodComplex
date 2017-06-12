@@ -49,10 +49,12 @@ namespace Renderer {
 	};
 
 	// Wraps a 2D texture (2D, 2DArray, CubeMap, CubeMapArray, RenderTarget, DepthStencilBuffer)
+	[System::Diagnostics::DebuggerDisplayAttribute( "{Width,d}x{Height,d}x{ArraySize,d}x{MipLevelsCount,d} {Tag}" )]
 	public ref class Texture2D {
 	internal:
 
 		::Texture2D*	m_texture;
+		Object^			m_tag;
 
 	public:
 
@@ -68,6 +70,8 @@ namespace Renderer {
 		property UInt32	HeightAtMip[UInt32] {
 			UInt32	get( UInt32 _mipLevelIndex ) { return GetSizeAtMip( Height, _mipLevelIndex ); }
 		}
+
+		property Object^	Tag { Object^ get() { return m_tag; } void set( Object^ _value ) { m_tag = _value; } }
 
 		void*	GetWrappedtexture()	{ return m_texture; }
 

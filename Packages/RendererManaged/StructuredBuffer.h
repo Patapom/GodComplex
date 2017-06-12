@@ -15,9 +15,12 @@ namespace Renderer {
 	private:
 
 		::StructuredBuffer*	m_pStructuredBuffer;
+		Object^				m_tag;
 
 	public:
 		cli::array<T>^		m;
+
+		property Object^	Tag { Object^ get() { return m_tag; } void set( Object^ _value ) { m_tag = _value; } }
 
 	public:
 
