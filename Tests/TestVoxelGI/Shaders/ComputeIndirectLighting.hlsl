@@ -21,56 +21,15 @@ cbuffer glou : register(b10) {
 
 // Traces a cone through the scene
 // We're asking for the sine of the half angle because at each step we need the radius of the sphere tangent to the cone and although the cone's radius is R = distance * tan( half angle ), we want r = cos( half angle ) * R = distance * sin( half angle )
-float3	ConeTrace( float3 _wsPosition, float3 _wsDirection, float _initialDistance, float _sinHalfAngle, out float _hitDistance ) {
-
-	const float	ALPHA_THRESHOLD = 16.0 / 255.0;
-
-//	float3	positionUVW = (_wsPosition - VOXEL_MIN) * INV_VOXEL_VOLUME_SIZE;
-//	float3	directionUVW = _wsDirection * INV_VOXEL_VOLUME_SIZE;
-
-	_hitDistance = _initialDistance;
-	for ( uint stepIndex=0; stepIndex < 128; stepIndex++ ) {
-		// March and increase cone radius
-//		float	radius = max( 0.5 * VOXEL_SIZE, _hitDistance * _sinHalfAngle );		// This is actually the tangent sphere's radius at current distance
-float	radius = max( 0.5 * VOXEL_SIZE, 0.2 * _hitDistance );
-		float3	wsPos = _wsPosition + _hitDistance * _wsDirection;
-
-		// Compute mip level depending on how many voxels the sphere is covering
-		float	mipLevel = 0.0;// 1.0 + log2( radius / VOXEL_SIZE );
-
-//float3	positionUVW = (wsPos - VOXEL_MIN) * INV_VOXEL_VOLUME_SIZE;	// TODO: Optimize by always computing in UVW space
-float3	positionUVW = (wsPos - VOXEL_MIN) * INV_VOXEL_VOLUME_SIZE;	// TODO: Optimize by always computing in UVW space
-
-		// Sample albedo at position
-		float4	albedo = _Tex_VoxelScene_Albedo.SampleLevel( LinearClamp, positionUVW, mipLevel );
-		if ( albedo.w > ALPHA_THRESHOLD ) {
-			// We have a non empty voxel, sample lighting here
-			float3	irradiance = _Tex_VoxelScene_SourceLighting.SampleLevel( LinearClamp, positionUVW, mipLevel ).xyz;
-			float3	wsNormal = _Tex_VoxelScene_Normal.SampleLevel( LinearClamp, positionUVW, mipLevel ).xyz;
-			float	normalLength = length( wsNormal );
-					wsNormal *= normalLength > 0.0 ? 1.0 / normalLength : 0.0;
-			float	NdotV = -dot( _wsDirection, wsNormal );
-//			return albedo.xyz * irradiance * saturate( NdotV );	// TODO: Store incoming irradiance so we can multiply by albedo and solid angle!
-
-return irradiance * saturate( NdotV );
-		}
-
-		// Advance by sphere radius
-		_hitDistance += 0.125 * radius;
-	}
-
-	_hitDistance = INFINITY;
-	return 0.0;	// No hit
-}
-
-float4	ConeTrace2( float3 _wsPosition, float3 _wsDirection, float _initialDistance, float _sinHalfAngle, out float _hitDistance ) {
+float4	ConeTrace( float3 _wsPosition, float3 _wsDirection, float _initialDistance, float _sinHalfAngle, out float _hitDistance ) {
 
 	_hitDistance = _initialDistance;
 	float	previousDistance = _hitDistance;
 	float4	irradiance = float4( 0, 0, 0, 1 );
 	for ( uint stepIndex=0; stepIndex < 64; stepIndex++ ) {
 		// March and increase cone radius
-		float	radius = max( 0.5 * VOXEL_SIZE, _hitDistance * _sinHalfAngle );		// This is actually the tangent sphere's radius at current distance
+//		float	radius = max( 0.5 * VOXEL_SIZE, _hitDistance * _sinHalfAngle );		// This is actually the tangent sphere's radius at current distance
+		float	radius = _hitDistance * _sinHalfAngle;		// This is actually the tangent sphere's radius at current distance
 //float	radius = max( 0.5 * VOXEL_SIZE, 0.5 * _hitDistance );
 //float	radius = 0.5 * VOXEL_SIZE;
 		float3	wsPos = _wsPosition + _hitDistance * _wsDirection;
@@ -83,7 +42,6 @@ float3	positionUVW = (wsPos - VOXEL_MIN) * INV_VOXEL_VOLUME_SIZE;	// TODO: Optim
 // if ( any(abs(positionUVW-0.5)) > 0.5 )
 // 	break;	// Outside of the volume
 
-#if 1
 		// Continuous algorithm that keeps accumulating along the ray
 		const float	ALPHA_THRESHOLD = 1.0 / 255.0;
 		const float	TRANSPARENCY_THRESHOLD = 0.05;
@@ -92,31 +50,22 @@ float3	positionUVW = (wsPos - VOXEL_MIN) * INV_VOXEL_VOLUME_SIZE;	// TODO: Optim
 
 		float4	irradiance_alpha = _Tex_VoxelScene_SourceLighting.SampleLevel( LinearClamp, positionUVW, mipLevel );
 		if ( irradiance_alpha.w > ALPHA_THRESHOLD ) {
+
+// Use a phase function depending on normal? NDF? lobe variance?
+float3	wsNormal = _Tex_VoxelScene_Normal.SampleLevel( LinearClamp, positionUVW, mipLevel ).xyz;
+float	normalLength = length( wsNormal );
+		wsNormal *= normalLength > 0.0 ? 1.0 / normalLength : 0.0;
+float	NdotV = -dot( _wsDirection, wsNormal );
+
 			float	marchedDistance = _hitDistance - previousDistance;
 			float	extinction = exp( -EXTINCTION_FACTOR * marchedDistance * irradiance_alpha.w );	// Use alpha as a measure of density
 			float3	scattering = SCATTERING_ALBEDO * (1.0 - extinction) * irradiance_alpha.xyz;// / irradiance_alpha.w;
 			irradiance.xyz += irradiance.w * scattering;	// Add voxel's irradiance as perceived through our accumulated extinction
 			irradiance.w *= extinction;						// And accumulate extinction
+
 			if ( irradiance.w < TRANSPARENCY_THRESHOLD )
 				break;	// Opaque!
 		}
-#else
-		// Blocker algorithm that stops accumulating after an alpha threshold is met
-		const float	ALPHA_THRESHOLD = 16.0 / 255.0;
-
-		float4	albedo = _Tex_VoxelScene_Albedo.SampleLevel( LinearClamp, positionUVW, mipLevel );
-		if ( albedo.w > ALPHA_THRESHOLD ) {
-			// We have a non empty voxel, sample lighting here
-			float3	flux = _Tex_VoxelScene_SourceLighting.SampleLevel( LinearClamp, positionUVW, mipLevel ).xyz;
-			float3	wsNormal = _Tex_VoxelScene_Normal.SampleLevel( LinearClamp, positionUVW, mipLevel ).xyz;
-			float	normalLength = length( wsNormal );
-					wsNormal *= normalLength > 0.0 ? 1.0 / normalLength : 0.0;
-			float	NdotV = -dot( _wsDirection, wsNormal );
-//			irradiance = albedo.xyz * flux * saturate( NdotV );	// TODO: Store incoming irradiance so we can multiply by albedo and solid angle!
-			irradiance = flux * saturate( NdotV );
-			break;
-		}
-#endif
 
 		// Advance by sphere radius
 		previousDistance = _hitDistance;
@@ -155,7 +104,7 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 #if 0	// DEBUG
 float	hitDistance;
 float3	wsConeDirection = N;
-float4	irradiance = ConeTrace2( wsVoxelCenter, wsConeDirection, VOXEL_SIZE / max( max( abs( wsConeDirection.x ), abs( wsConeDirection.y ) ), abs( wsConeDirection.z ) ), 0.5, hitDistance );
+float4	irradiance = ConeTrace( wsVoxelCenter, wsConeDirection, VOXEL_SIZE / max( max( abs( wsConeDirection.x ), abs( wsConeDirection.y ) ), abs( wsConeDirection.z ) ), 0.5, hitDistance );
 //float3	value = 0.05 * hitDistance;
 float3	value = 2.0 * PI * irradiance.xyz;
 //float3	value = irradiance.w;
@@ -190,15 +139,11 @@ const float	prout = 0.5;
 	for ( uint coneIndex=0; coneIndex < CONES_COUNT; coneIndex++ ) {
 		float3	lsConeDirection = LS_CONE_DIRECTIONS[coneIndex];
 		float3	wsConeDirection = lsConeDirection.x * T + lsConeDirection.y * B + lsConeDirection.z * N;
-//		float	initialDistance = 0.5 * VOXEL_SIZE / lsConeDirection.z;	// Offset half a voxel away
-		float	initialDistance = 0;//VOXEL_SIZE / max( max( abs( lsConeDirection.x ), abs( lsConeDirection.y ) ), abs( lsConeDirection.z ) );
+		float	initialDistance = 0.5 * VOXEL_SIZE / lsConeDirection.z;	// Offset half a voxel away
+//		float	initialDistance = VOXEL_SIZE;// / max( max( abs( lsConeDirection.x ), abs( lsConeDirection.y ) ), abs( lsConeDirection.z ) );
 		float	hitDistance;
-//		float3	irradiance = ConeTrace( wsVoxelCenter, wsConeDirection, initialDistance, SIN_HALF_ANGLE, hitDistance );
-
-float3	wsStartPosition = wsVoxelCenter + VOXEL_SIZE * N;
-//float3	wsStartPosition = wsVoxelCenter + sqrt(3) * VOXEL_SIZE * N / max( max( abs( N.x ), abs( N.y ) ), abs( N.z ) );
-
-		float4	irradiance = ConeTrace2( wsStartPosition, wsConeDirection, initialDistance, SIN_HALF_ANGLE, hitDistance );
+		float3	wsStartPosition = wsVoxelCenter;	// + VOXEL_SIZE * N;
+		float4	irradiance = ConeTrace( wsStartPosition, wsConeDirection, initialDistance, SIN_HALF_ANGLE, hitDistance );
 		sumIrradiance += irradiance.xyz * lsConeDirection.z;
 	}
 	sumIrradiance *= 2.0 * PI;
