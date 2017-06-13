@@ -20,8 +20,8 @@ namespace BImageViewer
 
 		#region NESTED TYPES
 
-		public class PixelFormat
-		{
+		public class PixelFormat {
+
 			#region ENUMS
 
 			public enum Layout {
