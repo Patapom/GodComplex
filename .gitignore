@@ -625,3 +625,8 @@
 /Tests/TestMultiLayersMaterial/bin
 /Tests/TestMultiLayersMaterial/obj
 /Tests/TestMultiLayersMaterial/TestMultiLayersMaterial.csproj.user
+Publish
+/Tests/TestBoxFitting/TestBoxFitting.csproj.user
+/Tests/TestConvexHull/TestConvexHull.csproj.user
+/Tools/ConvertNormalMap2HeightMap/*.user
+/Packages/DirectXTex/DirectXTex/*.user
