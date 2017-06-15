@@ -16,4 +16,12 @@
     <EnableUnmanagedDebugging>true</EnableUnmanagedDebugging>
     <StartWorkingDirectory>V:\Pom\Workspaces\GodComplex\Tests\TestTriangleCurvature\</StartWorkingDirectory>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
+    <StartWorkingDirectory>V:\Pom\Workspaces\GodComplex\Tests\TestTriangleCurvature\</StartWorkingDirectory>
+    <EnableUnmanagedDebugging>true</EnableUnmanagedDebugging>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
+    <StartWorkingDirectory>V:\Pom\Workspaces\GodComplex\Tests\TestTriangleCurvature\</StartWorkingDirectory>
+    <EnableUnmanagedDebugging>true</EnableUnmanagedDebugging>
+  </PropertyGroup>
 </Project>
