@@ -45,6 +45,10 @@
 			this.panelOutputLevels = new TestMultiLayersMaterial.PanelOutput(this.components);
 			this.panelOutputMask = new TestMultiLayersMaterial.PanelOutput(this.components);
 			this.buttonResetLevels = new System.Windows.Forms.Button();
+			this.floatTrackbarControlTangent1_Out = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlTangent2_Out = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.checkBoxSplit1 = new System.Windows.Forms.CheckBox();
+			this.checkBoxSplit2 = new System.Windows.Forms.CheckBox();
 			this.SuspendLayout();
 			// 
 			// floatTrackbarControlTangent0
@@ -130,6 +134,7 @@
 			this.floatTrackbarControlTangent3.Size = new System.Drawing.Size(200, 20);
 			this.floatTrackbarControlTangent3.TabIndex = 1;
 			this.floatTrackbarControlTangent3.Value = 0F;
+			this.floatTrackbarControlTangent3.Visible = false;
 			this.floatTrackbarControlTangent3.VisibleRangeMax = 1F;
 			this.floatTrackbarControlTangent3.VisibleRangeMin = -1F;
 			this.floatTrackbarControlTangent3.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlTangent0_ValueChanged_1);
@@ -142,6 +147,7 @@
 			this.label4.Size = new System.Drawing.Size(85, 13);
 			this.label4.TabIndex = 2;
 			this.label4.Text = "Tangent Layer 3";
+			this.label4.Visible = false;
 			// 
 			// floatTrackbarControlBrushStrength
 			// 
@@ -220,11 +226,69 @@
 			this.buttonResetLevels.UseVisualStyleBackColor = true;
 			this.buttonResetLevels.Click += new System.EventHandler(this.buttonResetLevels_Click);
 			// 
+			// floatTrackbarControlTangent1_Out
+			// 
+			this.floatTrackbarControlTangent1_Out.Enabled = false;
+			this.floatTrackbarControlTangent1_Out.Location = new System.Drawing.Point(345, 627);
+			this.floatTrackbarControlTangent1_Out.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlTangent1_Out.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlTangent1_Out.Name = "floatTrackbarControlTangent1_Out";
+			this.floatTrackbarControlTangent1_Out.RangeMax = 1F;
+			this.floatTrackbarControlTangent1_Out.RangeMin = -1F;
+			this.floatTrackbarControlTangent1_Out.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlTangent1_Out.TabIndex = 1;
+			this.floatTrackbarControlTangent1_Out.Value = 0F;
+			this.floatTrackbarControlTangent1_Out.Visible = false;
+			this.floatTrackbarControlTangent1_Out.VisibleRangeMax = 1F;
+			this.floatTrackbarControlTangent1_Out.VisibleRangeMin = -1F;
+			this.floatTrackbarControlTangent1_Out.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlTangent0_ValueChanged_1);
+			// 
+			// floatTrackbarControlTangent2_Out
+			// 
+			this.floatTrackbarControlTangent2_Out.Enabled = false;
+			this.floatTrackbarControlTangent2_Out.Location = new System.Drawing.Point(345, 653);
+			this.floatTrackbarControlTangent2_Out.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlTangent2_Out.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlTangent2_Out.Name = "floatTrackbarControlTangent2_Out";
+			this.floatTrackbarControlTangent2_Out.RangeMax = 1F;
+			this.floatTrackbarControlTangent2_Out.RangeMin = -1F;
+			this.floatTrackbarControlTangent2_Out.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlTangent2_Out.TabIndex = 1;
+			this.floatTrackbarControlTangent2_Out.Value = 0F;
+			this.floatTrackbarControlTangent2_Out.Visible = false;
+			this.floatTrackbarControlTangent2_Out.VisibleRangeMax = 1F;
+			this.floatTrackbarControlTangent2_Out.VisibleRangeMin = -1F;
+			this.floatTrackbarControlTangent2_Out.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlTangent0_ValueChanged_1);
+			// 
+			// checkBoxSplit1
+			// 
+			this.checkBoxSplit1.AutoSize = true;
+			this.checkBoxSplit1.Location = new System.Drawing.Point(324, 629);
+			this.checkBoxSplit1.Name = "checkBoxSplit1";
+			this.checkBoxSplit1.Size = new System.Drawing.Size(15, 14);
+			this.checkBoxSplit1.TabIndex = 4;
+			this.checkBoxSplit1.UseVisualStyleBackColor = true;
+			this.checkBoxSplit1.Visible = false;
+			this.checkBoxSplit1.CheckedChanged += new System.EventHandler(this.checkBoxSplit1_CheckedChanged);
+			// 
+			// checkBoxSplit2
+			// 
+			this.checkBoxSplit2.AutoSize = true;
+			this.checkBoxSplit2.Location = new System.Drawing.Point(324, 655);
+			this.checkBoxSplit2.Name = "checkBoxSplit2";
+			this.checkBoxSplit2.Size = new System.Drawing.Size(15, 14);
+			this.checkBoxSplit2.TabIndex = 4;
+			this.checkBoxSplit2.UseVisualStyleBackColor = true;
+			this.checkBoxSplit2.Visible = false;
+			this.checkBoxSplit2.CheckedChanged += new System.EventHandler(this.checkBoxSplit2_CheckedChanged);
+			// 
 			// TestForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1055, 811);
+			this.Controls.Add(this.checkBoxSplit2);
+			this.Controls.Add(this.checkBoxSplit1);
 			this.Controls.Add(this.panelOutputLevels);
 			this.Controls.Add(this.buttonClearGradient);
 			this.Controls.Add(this.buttonResetLevels);
@@ -235,7 +299,9 @@
 			this.Controls.Add(this.label5);
 			this.Controls.Add(this.label1);
 			this.Controls.Add(this.floatTrackbarControlTangent3);
+			this.Controls.Add(this.floatTrackbarControlTangent2_Out);
 			this.Controls.Add(this.floatTrackbarControlTangent2);
+			this.Controls.Add(this.floatTrackbarControlTangent1_Out);
 			this.Controls.Add(this.floatTrackbarControlTangent1);
 			this.Controls.Add(this.floatTrackbarControlBrushStrength);
 			this.Controls.Add(this.floatTrackbarControlTangent0);
@@ -267,6 +333,10 @@
 		private System.Windows.Forms.Button buttonClearGradient;
 		private PanelOutput panelOutputLevels;
 		private System.Windows.Forms.Button buttonResetLevels;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlTangent1_Out;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlTangent2_Out;
+		private System.Windows.Forms.CheckBox checkBoxSplit1;
+		private System.Windows.Forms.CheckBox checkBoxSplit2;
 	}
 }
 

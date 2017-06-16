@@ -1,4 +1,7 @@
-﻿using System;
+﻿//#define	CUBIC_SPLINES
+#define	POWERS
+
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -89,24 +92,55 @@ namespace TestMultiLayersMaterial
 // 				}
 // 			}
 
-// 			float[]		powers = new float[LAYERS_COUNT-1];
-// 			powers[0] = floatTrackbarControlTangent0.Value;
-// 			powers[1] = floatTrackbarControlTangent1.Value;
-// 			powers[2] = floatTrackbarControlTangent2.Value;
-// 			powers[0] = powers[0] < 0.0f ? 1.0f / (1.0f - 9.0f * powers[0]) : 1.0f + 9.0f * powers[0];
-// 			powers[1] = powers[1] < 0.0f ? 1.0f / (1.0f - 9.0f * powers[1]) : 1.0f + 9.0f * powers[1];
-// 			powers[2] = powers[2] < 0.0f ? 1.0f / (1.0f - 9.0f * powers[2]) : 1.0f + 9.0f * powers[2];
+			#if CUBIC_SPLINES
+				float	F = 4.0f;
+				float	T0 = F * (0*1.0f + floatTrackbarControlTangent0.Value);
+				float	T1_in = F * (0*1.0f + floatTrackbarControlTangent1.Value);
+				float	T1_out = checkBoxSplit1.Checked ? F * (0*1.0f + floatTrackbarControlTangent1_Out.Value) : T1_in;
+				float	T2_in = F * (0*1.0f + floatTrackbarControlTangent2.Value);
+				float	T2_out = checkBoxSplit2.Checked ? F * (0*1.0f + floatTrackbarControlTangent2_Out.Value) : T2_in;
+				float	T3 = F * (0*1.0f + floatTrackbarControlTangent3.Value);
 
-			float	F = 1.0f / (LAYERS_COUNT-1);
-			float	T0 = F * (1.0f + floatTrackbarControlTangent0.Value);
-			float	T1 = F * (1.0f + floatTrackbarControlTangent1.Value);
-			float	T2 = F * (1.0f + floatTrackbarControlTangent2.Value);
-			float	T3 = F * (1.0f + floatTrackbarControlTangent3.Value);
+				float4[]	hermites = new float4[6];
+// 				hermites[0].Set( 0.0f, T0, 1.0f, T1 );
+// 				hermites[1].Set( 0.0f, T1, 1.0f, T2 );
+// 				hermites[2].Set( 0.0f, T2, 1.0f, T3 );
 
-			float4[]	hermites = new float4[3];
-			hermites[0].Set( 0.0f / (LAYERS_COUNT-1), T0, 1.0f / (LAYERS_COUNT-1), T1 );
-			hermites[1].Set( 1.0f / (LAYERS_COUNT-1), T1, 2.0f / (LAYERS_COUNT-1), T2 );
-			hermites[2].Set( 2.0f / (LAYERS_COUNT-1), T2, 3.0f / (LAYERS_COUNT-1), T3 );
+				hermites[0].Set( 0.0f, T0, 0.5f, -0.5f * (T0-T1_in) );
+				hermites[1].Set( 0.5f, -0.5f * (T0-T1_in), 1.0f, T1_in );
+				hermites[2].Set( 0.0f, T1_out, 0.5f, 0.5f * (T1_out+T2_in) );
+				hermites[3].Set( 0.5f, 0.5f * (T1_out+T2_in), 1.0f, T2_in );
+				hermites[4].Set( 0.0f, T2_out, 0.5f, 0.5f * (T2_out+T3) );
+				hermites[5].Set( 0.5f, 0.5f * (T2_out+T3), 1.0f, T3 );
+			#elif POWERS
+// 				float[]		powers = new float[LAYERS_COUNT-1];
+// 				powers[0] = floatTrackbarControlTangent0.Value;
+// 				powers[1] = floatTrackbarControlTangent1.Value;
+// 				powers[2] = floatTrackbarControlTangent2.Value;
+// 				powers[0] = powers[0] < 0.0f ? 1.0f / (1.0f - 9.0f * powers[0]) : 1.0f + 9.0f * powers[0];
+// 				powers[1] = powers[1] < 0.0f ? 1.0f / (1.0f - 9.0f * powers[1]) : 1.0f + 9.0f * powers[1];
+// 				powers[2] = powers[2] < 0.0f ? 1.0f / (1.0f - 9.0f * powers[2]) : 1.0f + 9.0f * powers[2];
+
+				float[]		powers = new float[LAYERS_COUNT-1];
+				float[]		scalesX = new float[LAYERS_COUNT-1];
+				float[]		scalesY = new float[LAYERS_COUNT-1];
+				powers[0] = floatTrackbarControlTangent0.Value;
+				powers[1] = floatTrackbarControlTangent1.Value;
+				powers[2] = floatTrackbarControlTangent2.Value;
+// 				powers[0] = powers[0] < 0.0f ? 1.0f / (1.0f - 9.0f * powers[0]) : 1.0f + 9.0f * powers[0];
+// 				powers[1] = powers[1] < 0.0f ? 1.0f / (1.0f - 9.0f * powers[1]) : 1.0f + 9.0f * powers[1];
+// 				powers[2] = powers[2] < 0.0f ? 1.0f / (1.0f - 9.0f * powers[2]) : 1.0f + 9.0f * powers[2];
+				powers[0] = (float) Math.Pow( 10.0, 3.0 * powers[0] );
+				powers[1] = (float) Math.Pow( 10.0, 3.0 * powers[1] );
+				powers[2] = (float) Math.Pow( 10.0, 3.0 * powers[2] );
+				scalesX[0] = 1.0f;// + 0.5f * Math.Max( 0.0f,  floatTrackbarControlTangent0.Value );
+				scalesY[0] = 1.0f;// + 0.5f * Math.Max( 0.0f, -floatTrackbarControlTangent0.Value );
+				scalesX[1] = 1.0f;// + 0.5f * Math.Max( 0.0f,  floatTrackbarControlTangent1.Value );
+				scalesY[1] = 1.0f;// + 0.5f * Math.Max( 0.0f, -floatTrackbarControlTangent1.Value );
+				scalesX[2] = 1.0f;// + 0.5f * Math.Max( 0.0f,  floatTrackbarControlTangent2.Value );
+				scalesY[2] = 1.0f;// + 0.5f * Math.Max( 0.0f, -floatTrackbarControlTangent2.Value );
+
+			#endif
 
  			for ( uint bucketIndex=0; bucketIndex < LEVEL_BUCKETS_COUNT; bucketIndex++ ) {
 				float	maskIn = (float) bucketIndex / (LEVEL_BUCKETS_COUNT-1);
@@ -115,18 +149,37 @@ namespace TestMultiLayersMaterial
 				uint	layerStart = Math.Min( LAYERS_COUNT-2, (uint) Math.Floor( scaledMask ) );
 				float	t = scaledMask - layerStart;
 
-// 				// Apply curves
-// 				float	tIn = 2.0f * t - 1.0f;
-// 				float	tOut = Math.Sign( tIn ) * (float) Math.Pow( Math.Abs( tIn ), powers[layerStart] );
-// 				float	maskOut = (layerStart + 0.5f * (1.0f + tOut)) / (LAYERS_COUNT-1);
+				#if CUBIC_SPLINES
+					// Compute Hermite curves
+// 					float4	hermite = hermites[layerStart];
+// 					float	maskOut = hermite.x * (1+2*t)*(1-t)*(1-t)
+// 									+ hermite.y * t*(1-t)*(1-t)
+// 									+ hermite.z * t*t*(3-2*t)
+// 									+ hermite.w * t*t*(t-1);
 
-				// Compute Hermite curves
-				float4	hermite = hermites[layerStart];
-				float	maskOut = hermite.x * (1+2*t)*(1-t)*(1-t)
-								+ hermite.y * t*(1-t)*(1-t)
-								+ hermite.z * t*t*(3-2*t)
-								+ hermite.w * t*t*(t-1);
+					t = 2.0f * t;
+					uint	hermiteIndex = 2*layerStart;
+					if ( t > 1.0f ) {
+						hermiteIndex++;
+						t -= 1.0f;
+					}
+					float4	hermite = hermites[hermiteIndex];
+					float	maskOut = hermite.x * (1+2*t)*(1-t)*(1-t)
+									+ hermite.y * t*(1-t)*(1-t)
+									+ hermite.z * t*t*(3-2*t)
+									+ hermite.w * t*t*(t-1);
 
+				#elif POWERS
+// 					// Apply curves
+// 					float	tIn = 2.0f * t - 1.0f;
+// 					float	tOut = Math.Sign( tIn ) * (float) Math.Pow( Math.Abs( tIn ), powers[layerStart] );
+// 					float	maskOut = (layerStart + 0.5f * (1.0f + tOut)) / (LAYERS_COUNT-1);
+
+					float	maskOut = scalesY[layerStart] * (float) Math.Pow( t / scalesX[layerStart], powers[layerStart] );
+				#endif
+
+						maskOut = Math.Max( 0, Math.Min( 1, maskOut ) );
+						maskOut = (layerStart + maskOut) / (LAYERS_COUNT-1);
 				m_levels[bucketIndex] = maskOut;
 			}
 
@@ -250,8 +303,22 @@ namespace TestMultiLayersMaterial
 		private void buttonResetLevels_Click(object sender, EventArgs e) {
 			floatTrackbarControlTangent0.Value = 0.0f;
 			floatTrackbarControlTangent1.Value = 0.0f;
+			floatTrackbarControlTangent1_Out.Value = 0.0f;
 			floatTrackbarControlTangent2.Value = 0.0f;
+			floatTrackbarControlTangent2_Out.Value = 0.0f;
 			floatTrackbarControlTangent3.Value = 0.0f;
+		}
+
+		private void checkBoxSplit1_CheckedChanged(object sender, EventArgs e) {
+			floatTrackbarControlTangent1_Out.Enabled = checkBoxSplit1.Checked;
+			UpdateLevels();
+			UpdateMaterial();
+		}
+
+		private void checkBoxSplit2_CheckedChanged(object sender, EventArgs e) {
+			floatTrackbarControlTangent2_Out.Enabled = checkBoxSplit2.Checked;
+			UpdateLevels();
+			UpdateMaterial();
 		}
 	}
 }
