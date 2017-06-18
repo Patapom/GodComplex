@@ -49,6 +49,14 @@
 			this.floatTrackbarControlTangent2_Out = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.checkBoxSplit1 = new System.Windows.Forms.CheckBox();
 			this.checkBoxSplit2 = new System.Windows.Forms.CheckBox();
+			this.buttonSaveMask = new System.Windows.Forms.Button();
+			this.buttonLoadMat1 = new System.Windows.Forms.Button();
+			this.buttonLoadMat0 = new System.Windows.Forms.Button();
+			this.buttonLoadMat2 = new System.Windows.Forms.Button();
+			this.buttonLoadMat3 = new System.Windows.Forms.Button();
+			this.openFileDialog = new System.Windows.Forms.OpenFileDialog();
+			this.saveFileDialog = new System.Windows.Forms.SaveFileDialog();
+			this.buttonLoadMask = new System.Windows.Forms.Button();
 			this.SuspendLayout();
 			// 
 			// floatTrackbarControlTangent0
@@ -282,6 +290,77 @@
 			this.checkBoxSplit2.Visible = false;
 			this.checkBoxSplit2.CheckedChanged += new System.EventHandler(this.checkBoxSplit2_CheckedChanged);
 			// 
+			// buttonSaveMask
+			// 
+			this.buttonSaveMask.Location = new System.Drawing.Point(290, 776);
+			this.buttonSaveMask.Name = "buttonSaveMask";
+			this.buttonSaveMask.Size = new System.Drawing.Size(111, 23);
+			this.buttonSaveMask.TabIndex = 3;
+			this.buttonSaveMask.Text = "Save Height Mask";
+			this.buttonSaveMask.UseVisualStyleBackColor = true;
+			this.buttonSaveMask.Click += new System.EventHandler(this.buttonSaveMask_Click);
+			// 
+			// buttonLoadMat1
+			// 
+			this.buttonLoadMat1.Location = new System.Drawing.Point(12, 776);
+			this.buttonLoadMat1.Name = "buttonLoadMat1";
+			this.buttonLoadMat1.Size = new System.Drawing.Size(111, 23);
+			this.buttonLoadMat1.TabIndex = 3;
+			this.buttonLoadMat1.Text = "Load Material 1";
+			this.buttonLoadMat1.UseVisualStyleBackColor = true;
+			this.buttonLoadMat1.Click += new System.EventHandler(this.buttonLoadMat1_Click);
+			// 
+			// buttonLoadMat0
+			// 
+			this.buttonLoadMat0.Location = new System.Drawing.Point(12, 747);
+			this.buttonLoadMat0.Name = "buttonLoadMat0";
+			this.buttonLoadMat0.Size = new System.Drawing.Size(111, 23);
+			this.buttonLoadMat0.TabIndex = 3;
+			this.buttonLoadMat0.Text = "Load Material 0";
+			this.buttonLoadMat0.UseVisualStyleBackColor = true;
+			this.buttonLoadMat0.Click += new System.EventHandler(this.buttonLoadMat0_Click);
+			// 
+			// buttonLoadMat2
+			// 
+			this.buttonLoadMat2.Location = new System.Drawing.Point(129, 747);
+			this.buttonLoadMat2.Name = "buttonLoadMat2";
+			this.buttonLoadMat2.Size = new System.Drawing.Size(111, 23);
+			this.buttonLoadMat2.TabIndex = 3;
+			this.buttonLoadMat2.Text = "Load Material 2";
+			this.buttonLoadMat2.UseVisualStyleBackColor = true;
+			this.buttonLoadMat2.Click += new System.EventHandler(this.buttonLoadMat2_Click);
+			// 
+			// buttonLoadMat3
+			// 
+			this.buttonLoadMat3.Location = new System.Drawing.Point(129, 776);
+			this.buttonLoadMat3.Name = "buttonLoadMat3";
+			this.buttonLoadMat3.Size = new System.Drawing.Size(111, 23);
+			this.buttonLoadMat3.TabIndex = 3;
+			this.buttonLoadMat3.Text = "Load Material 3";
+			this.buttonLoadMat3.UseVisualStyleBackColor = true;
+			this.buttonLoadMat3.Click += new System.EventHandler(this.buttonLoadMat3_Click);
+			// 
+			// openFileDialog
+			// 
+			this.openFileDialog.DefaultExt = "*.png";
+			this.openFileDialog.Filter = "Image Files|*.png;*.jpg";
+			// 
+			// saveFileDialog
+			// 
+			this.saveFileDialog.DefaultExt = "*.png";
+			this.saveFileDialog.Filter = "PNG Files|*.png";
+			this.saveFileDialog.RestoreDirectory = true;
+			// 
+			// buttonLoadMask
+			// 
+			this.buttonLoadMask.Location = new System.Drawing.Point(290, 747);
+			this.buttonLoadMask.Name = "buttonLoadMask";
+			this.buttonLoadMask.Size = new System.Drawing.Size(111, 23);
+			this.buttonLoadMask.TabIndex = 3;
+			this.buttonLoadMask.Text = "Load Height Mask";
+			this.buttonLoadMask.UseVisualStyleBackColor = true;
+			this.buttonLoadMask.Click += new System.EventHandler(this.buttonLoadMask_Click);
+			// 
 			// TestForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -291,6 +370,12 @@
 			this.Controls.Add(this.checkBoxSplit1);
 			this.Controls.Add(this.panelOutputLevels);
 			this.Controls.Add(this.buttonClearGradient);
+			this.Controls.Add(this.buttonLoadMat0);
+			this.Controls.Add(this.buttonLoadMat3);
+			this.Controls.Add(this.buttonLoadMat2);
+			this.Controls.Add(this.buttonLoadMat1);
+			this.Controls.Add(this.buttonLoadMask);
+			this.Controls.Add(this.buttonSaveMask);
 			this.Controls.Add(this.buttonResetLevels);
 			this.Controls.Add(this.buttonClear);
 			this.Controls.Add(this.label4);
@@ -307,6 +392,7 @@
 			this.Controls.Add(this.floatTrackbarControlTangent0);
 			this.Controls.Add(this.panelOutputResult);
 			this.Controls.Add(this.panelOutputMask);
+			this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
 			this.Name = "TestForm";
 			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
 			this.Text = "Multi-Layers Material Painter";
@@ -337,6 +423,14 @@
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlTangent2_Out;
 		private System.Windows.Forms.CheckBox checkBoxSplit1;
 		private System.Windows.Forms.CheckBox checkBoxSplit2;
+		private System.Windows.Forms.Button buttonSaveMask;
+		private System.Windows.Forms.Button buttonLoadMat1;
+		private System.Windows.Forms.Button buttonLoadMat0;
+		private System.Windows.Forms.Button buttonLoadMat2;
+		private System.Windows.Forms.Button buttonLoadMat3;
+		private System.Windows.Forms.OpenFileDialog openFileDialog;
+		private System.Windows.Forms.SaveFileDialog saveFileDialog;
+		private System.Windows.Forms.Button buttonLoadMask;
 	}
 }
 

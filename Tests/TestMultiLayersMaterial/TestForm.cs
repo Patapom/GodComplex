@@ -320,5 +320,88 @@ namespace TestMultiLayersMaterial
 			UpdateLevels();
 			UpdateMaterial();
 		}
+
+		float4[,]	LoadImage() {
+			if ( openFileDialog.ShowDialog( this ) != System.Windows.Forms.DialogResult.OK )
+				return null;
+
+			try {
+				using ( ImageFile I = new ImageFile( new System.IO.FileInfo( openFileDialog.FileName ) ) ) {
+					float4[,]	result = new float4[I.Width,I.Height];
+					I.ReadPixels( ( uint _X, uint _Y, ref float4 _color ) => { result[_X,_Y] = _color; } );
+					if ( I.Width != MASK_SIZE || I.Height != MASK_SIZE ) {
+						// Resize
+						float4[,]	wrongResult = result;
+						result = new float4[MASK_SIZE,MASK_SIZE];
+						for ( uint Y=0; Y < MASK_SIZE; Y++ )
+							for ( uint X=0; X < MASK_SIZE; X++ )
+								ImageFile.BilerpClamp( wrongResult, (float) X * I.Width / MASK_SIZE, (float) Y * I.Height / MASK_SIZE, ref result[X,Y] );
+					}
+
+					return result;
+				}
+			} catch ( Exception _e ) {
+				MessageBox.Show( this, "An error occurred:\r\n" + _e.Message, "Painter Test", MessageBoxButtons.OK );
+			}
+
+			return null;
+		}
+
+		private void buttonLoadMat0_Click(object sender, EventArgs e) {
+			float4[,]	material = LoadImage();
+			if ( material != null ) {
+				m_layers[0] = material;
+				UpdateMaterial();
+			}
+		}
+
+		private void buttonLoadMat1_Click(object sender, EventArgs e) {
+			float4[,]	material = LoadImage();
+			if ( material != null ) {
+				m_layers[1] = material;
+				UpdateMaterial();
+			}
+		}
+
+		private void buttonLoadMat2_Click(object sender, EventArgs e) {
+			float4[,]	material = LoadImage();
+			if ( material != null ) {
+				m_layers[2] = material;
+				UpdateMaterial();
+			}
+		}
+
+		private void buttonLoadMat3_Click(object sender, EventArgs e) {
+			float4[,]	material = LoadImage();
+			if ( material != null ) {
+				m_layers[3] = material;
+				UpdateMaterial();
+			}
+		}
+
+		private void buttonLoadMask_Click(object sender, EventArgs e) {
+			float4[,]	mask = LoadImage();
+			if ( mask != null ) {
+				for ( uint Y=0; Y < MASK_SIZE; Y++ )
+					for ( uint X=0; X < MASK_SIZE; X++ )
+						m_mask[X,Y] = mask[X,Y].y;
+				UpdateMask();
+				UpdateMaterial();
+			}
+		}
+
+		private void buttonSaveMask_Click(object sender, EventArgs e) {
+			if ( saveFileDialog.ShowDialog( this ) != System.Windows.Forms.DialogResult.OK )
+				return;
+
+			try {
+				using ( ImageFile I = new ImageFile( MASK_SIZE, MASK_SIZE, PIXEL_FORMAT.R8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) ) ) {
+					I.WritePixels( ( uint _X, uint _Y, ref float4 _color ) => { float V = m_mask[_X,_Y]; _color.Set( V, V, V, 1 ); } );
+					I.Save( new System.IO.FileInfo( saveFileDialog.FileName ) );
+				}
+			} catch ( Exception _e ) {
+				MessageBox.Show( this, "An error occurred:\r\n" + _e.Message, "Painter Test", MessageBoxButtons.OK );
+			}
+		}
 	}
 }
