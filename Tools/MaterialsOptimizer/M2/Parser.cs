@@ -155,7 +155,7 @@ namespace MaterialsOptimizer
 			return Result;
 		}
 
-		// Reads a float3 in the form { <x>, <y>, <z>, <w> }
+		// Reads a float4 in the form { <x>, <y>, <z>, <w> }
 		public float4	ReadFloat4() {
 			string	Block = ReadBlock();
 			return ReadFloat4( Block );
