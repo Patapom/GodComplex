@@ -218,17 +218,17 @@ void	Texture2D::Init( const void* const* _ppContent, bool _staging, bool _UAV, T
 	if ( _ppContent != NULL ) {
 		D3D11_SUBRESOURCE_DATA*	pInitialData = new D3D11_SUBRESOURCE_DATA[m_mipLevelsCount*m_arraySize];
 
-		for ( U32 ArrayIndex=0; ArrayIndex < m_arraySize; ArrayIndex++ ) {
-			U32	Width = m_width;
-			U32	Height = m_height;
-			for ( U32 MipLevelIndex=0; MipLevelIndex < m_mipLevelsCount; MipLevelIndex++ ) {
-				U32	rowPitch = _pMipDescriptors != NULL ? _pMipDescriptors[MipLevelIndex].rowPitch : Width * pixelSize;
-				U32	depthPitch = _pMipDescriptors != NULL ? _pMipDescriptors[MipLevelIndex].depthPitch : Height * rowPitch;
+		for ( U32 arrayIndex=0; arrayIndex < m_arraySize; arrayIndex++ ) {
+			U32	width = m_width;
+			U32	height = m_height;
+			for ( U32 mipLevelIndex=0; mipLevelIndex < m_mipLevelsCount; mipLevelIndex++ ) {
+				U32	rowPitch = _pMipDescriptors != NULL ? _pMipDescriptors[mipLevelIndex].rowPitch : width * pixelSize;
+				U32	depthPitch = _pMipDescriptors != NULL ? _pMipDescriptors[mipLevelIndex].depthPitch : height * rowPitch;
 
-				pInitialData[ArrayIndex*m_mipLevelsCount+MipLevelIndex].pSysMem = _ppContent[ArrayIndex*m_mipLevelsCount+MipLevelIndex];
-				pInitialData[ArrayIndex*m_mipLevelsCount+MipLevelIndex].SysMemPitch = rowPitch;
-				pInitialData[ArrayIndex*m_mipLevelsCount+MipLevelIndex].SysMemSlicePitch = depthPitch;
-				NextMipSize( Width, Height );
+				pInitialData[arrayIndex*m_mipLevelsCount+mipLevelIndex].pSysMem = _ppContent[arrayIndex*m_mipLevelsCount+mipLevelIndex];
+				pInitialData[arrayIndex*m_mipLevelsCount+mipLevelIndex].SysMemPitch = rowPitch;
+				pInitialData[arrayIndex*m_mipLevelsCount+mipLevelIndex].SysMemSlicePitch = depthPitch;
+				NextMipSize( width, height );
 			}
 		}
 

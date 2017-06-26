@@ -61,9 +61,6 @@
     <ProjectReference Include="..\..\BaseLib\BaseLib.vcxproj">
       <Project>{df55758a-7f37-452d-a01c-201735bf86f2}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\DirectXTex\DirectXTex\DirectXTex_Desktop_2012.vcxproj">
-      <Project>{371b9fa9-4c90-4ac6-a123-aced756d6c77}</Project>
-    </ProjectReference>
     <ProjectReference Include="..\MathSolvers\MathSolversLib.vcxproj">
       <Project>{4ceff180-c07c-4ad5-b9ca-5f90e30391e5}</Project>
     </ProjectReference>
