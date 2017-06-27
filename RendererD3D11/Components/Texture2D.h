@@ -111,6 +111,7 @@ public:	// HELPERS
 	static void			NextMipSize( U32& _width, U32& _height );
 	static U32			ComputeMipLevelsCount( U32 _width, U32 _height, U32 _mipLevelsCount );
 	U32					CalcSubResource( U32 _MipLevelIndex, U32 _ArrayIndex ) const;
+	static bool			IsCompressedFormat( DXGI_FORMAT _format );
 
 private:
 	// _staging, true if this is a staging texture (i.e. CPU accessible as read/write)

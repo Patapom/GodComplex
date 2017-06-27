@@ -630,3 +630,6 @@ Publish
 /Tests/TestConvexHull/TestConvexHull.csproj.user
 /Tools/ConvertNormalMap2HeightMap/*.user
 /Packages/DirectXTex/DirectXTex/*.user
+/Packages/MathSimple/*.user
+/Packages/_Unit Tests/TestFourier/*.user
+/Tools/AlbedoDatabaseGenerator/*.user

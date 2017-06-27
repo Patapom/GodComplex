@@ -218,17 +218,50 @@ void	Texture2D::Init( const void* const* _ppContent, bool _staging, bool _UAV, T
 	if ( _ppContent != NULL ) {
 		D3D11_SUBRESOURCE_DATA*	pInitialData = new D3D11_SUBRESOURCE_DATA[m_mipLevelsCount*m_arraySize];
 
-		for ( U32 arrayIndex=0; arrayIndex < m_arraySize; arrayIndex++ ) {
-			U32	width = m_width;
-			U32	height = m_height;
-			for ( U32 mipLevelIndex=0; mipLevelIndex < m_mipLevelsCount; mipLevelIndex++ ) {
-				U32	rowPitch = _pMipDescriptors != NULL ? _pMipDescriptors[mipLevelIndex].rowPitch : width * pixelSize;
-				U32	depthPitch = _pMipDescriptors != NULL ? _pMipDescriptors[mipLevelIndex].depthPitch : height * rowPitch;
+		if ( !IsCompressedFormat( m_format ) || _pMipDescriptors != NULL ) {
+			for ( U32 arrayIndex=0; arrayIndex < m_arraySize; arrayIndex++ ) {
+				U32	width = m_width;
+				U32	height = m_height;
+				for ( U32 mipLevelIndex=0; mipLevelIndex < m_mipLevelsCount; mipLevelIndex++ ) {
+					U32	rowPitch = _pMipDescriptors != NULL ? _pMipDescriptors[mipLevelIndex].rowPitch : width * pixelSize;
+					U32	depthPitch = _pMipDescriptors != NULL ? _pMipDescriptors[mipLevelIndex].depthPitch : height * rowPitch;
 
-				pInitialData[arrayIndex*m_mipLevelsCount+mipLevelIndex].pSysMem = _ppContent[arrayIndex*m_mipLevelsCount+mipLevelIndex];
-				pInitialData[arrayIndex*m_mipLevelsCount+mipLevelIndex].SysMemPitch = rowPitch;
-				pInitialData[arrayIndex*m_mipLevelsCount+mipLevelIndex].SysMemSlicePitch = depthPitch;
-				NextMipSize( width, height );
+					pInitialData[arrayIndex*m_mipLevelsCount+mipLevelIndex].pSysMem = _ppContent[arrayIndex*m_mipLevelsCount+mipLevelIndex];
+					pInitialData[arrayIndex*m_mipLevelsCount+mipLevelIndex].SysMemPitch = rowPitch;
+					pInitialData[arrayIndex*m_mipLevelsCount+mipLevelIndex].SysMemSlicePitch = depthPitch;
+					NextMipSize( width, height );
+				}
+			}
+		} else {
+			// Handle compressed formats
+			// Compressed formats use 4x4 blocks of pixels
+			U32	srcBlockBytes = 16;
+			switch ( m_format ) {
+				case DXGI_FORMAT_BC1_TYPELESS		:
+				case DXGI_FORMAT_BC1_UNORM			:
+				case DXGI_FORMAT_BC1_UNORM_SRGB		:
+				case DXGI_FORMAT_BC4_TYPELESS		:
+				case DXGI_FORMAT_BC4_UNORM			:
+				case DXGI_FORMAT_BC4_SNORM			:
+					srcBlockBytes = 8;
+					break;
+			}
+
+			for ( U32 arrayIndex=0; arrayIndex < m_arraySize; arrayIndex++ ) {
+				U32	width = m_width;
+				U32	height = m_height;
+				for ( U32 mipLevelIndex=0; mipLevelIndex < m_mipLevelsCount; mipLevelIndex++ ) {
+					U32	width_inBlocks = (width + 3) >> 2;
+					U32	height_inBlocks = (height + 3) >> 2;
+
+					U32	rowPitch = width_inBlocks * srcBlockBytes;
+					U32	depthPitch = height * rowPitch;
+
+					pInitialData[arrayIndex*m_mipLevelsCount+mipLevelIndex].pSysMem = _ppContent[arrayIndex*m_mipLevelsCount+mipLevelIndex];
+					pInitialData[arrayIndex*m_mipLevelsCount+mipLevelIndex].SysMemPitch = rowPitch;
+					pInitialData[arrayIndex*m_mipLevelsCount+mipLevelIndex].SysMemSlicePitch = depthPitch;
+					NextMipSize( width, height );
+				}
 			}
 		}
 
@@ -612,6 +645,36 @@ U32	 Texture2D::ComputeMipLevelsCount( U32 _Width, U32 _Height, U32 _MipLevelsCo
 U32	Texture2D::CalcSubResource( U32 _mipLevelIndex, U32 _arrayIndex ) const {
 	return _mipLevelIndex + (_arrayIndex * m_mipLevelsCount);
 }
+
+bool	Texture2D::IsCompressedFormat( DXGI_FORMAT _format ) {
+	switch ( _format ) {
+		case DXGI_FORMAT_BC1_TYPELESS       :
+		case DXGI_FORMAT_BC1_UNORM          :
+		case DXGI_FORMAT_BC1_UNORM_SRGB     :
+		case DXGI_FORMAT_BC2_TYPELESS       :
+		case DXGI_FORMAT_BC2_UNORM          :
+		case DXGI_FORMAT_BC2_UNORM_SRGB     :
+		case DXGI_FORMAT_BC3_TYPELESS       :
+		case DXGI_FORMAT_BC3_UNORM          :
+		case DXGI_FORMAT_BC3_UNORM_SRGB     :
+		case DXGI_FORMAT_BC4_TYPELESS       :
+		case DXGI_FORMAT_BC4_UNORM          :
+		case DXGI_FORMAT_BC4_SNORM          :
+		case DXGI_FORMAT_BC5_TYPELESS       :
+		case DXGI_FORMAT_BC5_UNORM          :
+		case DXGI_FORMAT_BC5_SNORM          :
+		case DXGI_FORMAT_BC6H_TYPELESS      :
+		case DXGI_FORMAT_BC6H_UF16          :
+		case DXGI_FORMAT_BC6H_SF16          :
+		case DXGI_FORMAT_BC7_TYPELESS       :
+		case DXGI_FORMAT_BC7_UNORM          :
+		case DXGI_FORMAT_BC7_UNORM_SRGB     :
+			return true;
+	}
+
+	return false;
+}
+
 
 #if 0//defined(_DEBUG) || !defined(GODCOMPLEX)
 
