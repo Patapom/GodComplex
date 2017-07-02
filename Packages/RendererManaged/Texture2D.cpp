@@ -38,14 +38,14 @@ namespace Renderer {
 		m_texture = new ::Texture2D( *_device->m_pDevice, _width, _height, _arraySize, pixelFormat, componentFormat );
 	}
 
-	void	Texture2D::Set( UInt32 _slotIndex, View2D^ _view )			{ m_texture->Set( _slotIndex, true, _view != nullptr ? _view->SRV : NULL ); }
-	void	Texture2D::SetVS( UInt32 _slotIndex, View2D^ _view )		{ m_texture->SetVS( _slotIndex, true, _view != nullptr ? _view->SRV : NULL ); }
-	void	Texture2D::SetHS( UInt32 _slotIndex, View2D^ _view )		{ m_texture->SetHS( _slotIndex, true, _view != nullptr ? _view->SRV : NULL ); }
-	void	Texture2D::SetDS( UInt32 _slotIndex, View2D^ _view )		{ m_texture->SetDS( _slotIndex, true, _view != nullptr ? _view->SRV : NULL ); }
-	void	Texture2D::SetGS( UInt32 _slotIndex, View2D^ _view )		{ m_texture->SetGS( _slotIndex, true, _view != nullptr ? _view->SRV : NULL ); }
-	void	Texture2D::SetPS( UInt32 _slotIndex, View2D^ _view )		{ m_texture->SetPS( _slotIndex, true, _view != nullptr ? _view->SRV : NULL ); }
-	void	Texture2D::SetCS( UInt32 _slotIndex, View2D^ _view )		{ m_texture->SetCS( _slotIndex, true, _view != nullptr ? _view->SRV : NULL ); }
-	void	Texture2D::SetCSUAV( UInt32 _slotIndex, View2D^ _view )		{ m_texture->SetCSUAV( _slotIndex, _view != nullptr ? _view->UAV : NULL ); }
+	void	Texture2D::Set( UInt32 _slotIndex )			{ m_texture->Set( _slotIndex, true, NULL ); }
+	void	Texture2D::SetVS( UInt32 _slotIndex )		{ m_texture->SetVS( _slotIndex, true, NULL ); }
+	void	Texture2D::SetHS( UInt32 _slotIndex )		{ m_texture->SetHS( _slotIndex, true, NULL ); }
+	void	Texture2D::SetDS( UInt32 _slotIndex )		{ m_texture->SetDS( _slotIndex, true, NULL ); }
+	void	Texture2D::SetGS( UInt32 _slotIndex )		{ m_texture->SetGS( _slotIndex, true, NULL ); }
+	void	Texture2D::SetPS( UInt32 _slotIndex )		{ m_texture->SetPS( _slotIndex, true, NULL ); }
+	void	Texture2D::SetCS( UInt32 _slotIndex )		{ m_texture->SetCS( _slotIndex, true, NULL ); }
+	void	Texture2D::SetCSUAV( UInt32 _slotIndex )	{ m_texture->SetCSUAV( _slotIndex, NULL ); }
 
 
 	//////////////////////////////////////////////////////////////////////////
@@ -57,4 +57,13 @@ namespace Renderer {
 	::ID3D11RenderTargetView*		View2D::RTV::get() { return m_owner->m_texture->GetRTV( m_mipLevelStart, m_arrayStart, m_arraySize ); }
 	::ID3D11UnorderedAccessView*	View2D::UAV::get() { return m_owner->m_texture->GetUAV( m_mipLevelStart, m_arrayStart, m_arraySize ); }
 	::ID3D11DepthStencilView*		View2D::DSV::get() { return m_owner->m_texture->GetDSV( m_arrayStart, m_arraySize ); }
+
+	void	View2D::Set( UInt32 _slotIndex )		{ m_owner->m_texture->Set(		_slotIndex, true, SRV ); }
+	void	View2D::SetVS( UInt32 _slotIndex )		{ m_owner->m_texture->SetVS(	_slotIndex, true, SRV ); }
+	void	View2D::SetHS( UInt32 _slotIndex )		{ m_owner->m_texture->SetHS(	_slotIndex, true, SRV ); }
+	void	View2D::SetDS( UInt32 _slotIndex )		{ m_owner->m_texture->SetDS(	_slotIndex, true, SRV ); }
+	void	View2D::SetGS( UInt32 _slotIndex )		{ m_owner->m_texture->SetGS(	_slotIndex, true, SRV ); }
+	void	View2D::SetPS( UInt32 _slotIndex )		{ m_owner->m_texture->SetPS(	_slotIndex, true, SRV ); }
+	void	View2D::SetCS( UInt32 _slotIndex )		{ m_owner->m_texture->SetCS(	_slotIndex, true, SRV ); }
+	void	View2D::SetCSUAV( UInt32 _slotIndex )	{ m_owner->m_texture->SetCSUAV(	_slotIndex,		  UAV ); }
 }

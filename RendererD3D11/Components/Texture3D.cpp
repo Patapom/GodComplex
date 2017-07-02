@@ -175,7 +175,7 @@ ID3D11ShaderResourceView*	Texture3D::GetSRV( U32 _mipLevelStart, U32 _mipLevelsC
 	if ( _mipLevelsCount == 0 )
 		_mipLevelsCount = m_mipLevelsCount - _mipLevelStart;
 	if ( _WSize == 0 )
-		_WSize = (m_depth >> _mipLevelStart) - _firstWSlice;
+		_WSize = MAX( 1U, m_depth >> _mipLevelStart) - _firstWSlice;
 
 	// Check if we already have it
 	U32	Hash;
@@ -214,7 +214,7 @@ ID3D11ShaderResourceView*	Texture3D::GetSRV( U32 _mipLevelStart, U32 _mipLevelsC
 
 ID3D11RenderTargetView*		Texture3D::GetRTV( U32 _mipLevelIndex, U32 _firstWSlice, U32 _WSize ) const {
 	if ( _WSize == 0 )
-		_WSize = (m_depth >> _mipLevelIndex) - _firstWSlice;
+		_WSize = MAX( 1U, m_depth >> _mipLevelIndex ) - _firstWSlice;
 
 	// Check if we already have it
 //	U32	Hash = _WSize | ((_firstWSlice | (_mipLevelIndex << 12)) << 12);
@@ -240,7 +240,7 @@ ID3D11RenderTargetView*		Texture3D::GetRTV( U32 _mipLevelIndex, U32 _firstWSlice
 
 ID3D11UnorderedAccessView*	Texture3D::GetUAV( U32 _mipLevelIndex, U32 _firstWSlice, U32 _WSize ) const {
 	if ( _WSize == 0 )
-		_WSize = (m_depth >> _mipLevelIndex) - _firstWSlice;
+		_WSize = MAX( 1U, m_depth >> _mipLevelIndex ) - _firstWSlice;
 
 	// Check if we already have it
 //	U32	Hash = _WSize | ((_firstWSlice | (_mipLevelIndex << 12)) << 12);

@@ -166,7 +166,12 @@ namespace TriangleCurvature
 		/// <returns></returns>
 		float	ComputeTangentSphereRadius( float3 _P, float3 _N, float3[] _neighbors, bool _debugGraph ) {
 
-			Func<float3,double,float3[],double>	SquareDistance = ( float3 _C, double _R, float3[] _Pns ) => { double result = 0.0f; foreach ( float3 Pn in _Pns ) result += (Pn - _C).LengthSquared - _R*_R; return result; };
+			Func<float3,double,float3[],double>	SquareDistance = ( float3 _C, double _R, float3[] _Pns ) => {
+				double result = 0.0f;
+				foreach ( float3 Pn in _Pns )
+					result += (Pn - _C).LengthSquared - _R*_R;
+				return result;
+			};
 
 float2	rangeX = new float2( -4, 4 ), rangeY = new float2( -50, 50 );
 if ( _debugGraph ) {
@@ -301,7 +306,7 @@ labelResult.Text = "R = " + R + " (" + previousSqDistance + ") in " + iterations
 
 		#endregion
 
-		#region Vertex Tangent Surface Radius Computation
+		#region Tangent Surface Radii Computation
 
 		/// <summary>
 		/// Computes the 2 radii of the surface tangent to a vertex given a set of neighbor vertices
@@ -319,6 +324,7 @@ labelResult.Text = "R = " + R + " (" + previousSqDistance + ") in " + iterations
 					double	Fxy = _Rt * Pn.x * Pn.x + _Rb * Pn.y * Pn.y;
 					double	Dz = Fxy - Pn.z;
 					result += Dz * Dz;
+//					result += Dz;
 				}
 				return result;
 			};
@@ -330,6 +336,20 @@ labelResult.Text = "R = " + R + " (" + previousSqDistance + ") in " + iterations
 				float3	D = _neighbors[neighborIndex] - _P;
 				neighbors[neighborIndex].Set( D.Dot( _T ), D.Dot( B ), D.Dot( _N ) );
 			}
+
+float2	rangeX = new float2( -100, 100 ), rangeY = new float2( -1000, 1000 );
+float4	pipo = new float4( 1, 0, 0, 1 );
+if ( _debugGraph ) {
+	graph.WritePixels( ( uint X, uint Y, ref float4 _color ) => {
+		float	R0 = rangeX.x + X * (rangeX.y - rangeX.x) / graph.Width;
+		float	R1 = rangeY.y + Y * (rangeY.x - rangeY.y) / graph.Height;
+		float	sqDistance = (float) SquareDistance( R0, R1, _neighbors );
+		float	V = Math.Abs( sqDistance / 200.0f );
+		_color.Set( V, V, V, 1 );
+	} );
+	graph.DrawLine( new float4( 0, 0, 1, 1 ), new float2( 0, 0.5f * graph.Height ), new float2( graph.Width, 0.5f * graph.Height ) );
+	graph.DrawLine( new float4( 0, 0, 1, 1 ), new float2( 0.5f * graph.Width, 0 ), new float2( 0.5f * graph.Width, graph.Height ) );
+}
 
 			const float		eps = 0.01f;
 			const double	tol = 1e-3;
@@ -343,6 +363,7 @@ labelResult.Text = "R = " + R + " (" + previousSqDistance + ") in " + iterations
 			double	bestSqDistance = double.MaxValue;
 			double	bestRt = 0.0;
 			double	bestRb = 0.0;
+			double	stepSize = 10.0;
 			int		bestIterationsCount = 0;
 			while ( Math.Abs( Rt ) < 10000.0f && Math.Abs( Rb ) < 10000.0f && iterationsCount < 1000 ) {
 				// Compute gradient
@@ -353,16 +374,18 @@ labelResult.Text = "R = " + R + " (" + previousSqDistance + ") in " + iterations
 
 				double	sqDistance_dT = SquareDistance( Rt + eps, Rb, neighbors );
 				double	sqDistance_dB = SquareDistance( Rt, Rb + eps, neighbors );
-				double	sqDistance_dTdB = SquareDistance( Rt + eps, Rb + eps, neighbors );
+//				double	sqDistance_dTdB = SquareDistance( Rt + eps, Rb + eps, neighbors );
 				double	grad_dT = (sqDistance_dT - sqDistance) / eps;
 				double	grad_dB = (sqDistance_dB - sqDistance) / eps;
-				double	grad_dTdB = (sqDistance_dTdB - sqDistance) / eps;
-						grad_dT = 0.5 * (grad_dT + grad_dTdB);
-						grad_dB = 0.5 * (grad_dB + grad_dTdB);
+// 				double	grad_dTdB = (sqDistance_dTdB - sqDistance) / eps;
+// 						grad_dT = 0.5 * (grad_dT + grad_dTdB);
+// 						grad_dB = 0.5 * (grad_dB + grad_dTdB);
 
 				// Compute intersection with secant Y=0
-				double	t_T = -sqDistance * (Math.Abs( grad_dT ) > 1e-6 ? 1.0 / grad_dT : (Math.Sign( grad_dT ) * 1e6));
-				double	t_B = -sqDistance * (Math.Abs( grad_dB ) > 1e-6 ? 1.0 / grad_dB : (Math.Sign( grad_dB ) * 1e6));
+// 				double	t_T = -sqDistance * (Math.Abs( grad_dT ) > 1e-6 ? 1.0 / grad_dT : (Math.Sign( grad_dT ) * 1e6));
+// 				double	t_B = -sqDistance * (Math.Abs( grad_dB ) > 1e-6 ? 1.0 / grad_dB : (Math.Sign( grad_dB ) * 1e6));
+				double	t_T = -stepSize * eps * grad_dT;
+				double	t_B = -stepSize * eps * grad_dB;
 				if ( t_T*t_T + t_B*t_B < tol*tol )
 					break;
 
@@ -371,6 +394,11 @@ labelResult.Text = "R = " + R + " (" + previousSqDistance + ") in " + iterations
 				Rt += t_T;
 				Rb += t_B;
 				iterationsCount++;
+
+if ( _debugGraph ) {
+	graph.DrawLine( pipo, new float2( ((float) previousRt - rangeX.x) *  graph.Width / (rangeX.y - rangeX.x), ((float) previousRb - rangeY.y) * graph.Height / (rangeY.x - rangeY.y) )
+						, new float2( ((float) Rt - rangeX.x) *  graph.Width / (rangeX.y - rangeX.x), ((float) Rb - rangeY.y) * graph.Height / (rangeY.x - rangeY.y) ) );
+}
 
 				// Keep best results
 				previousSqDistance = sqDistance;
@@ -384,6 +412,12 @@ labelResult.Text = "R = " + R + " (" + previousSqDistance + ") in " + iterations
 
 			Rt = Math.Max( -10000.0, Math.Min( 10000.0, Rt ) );
 			Rb = Math.Max( -10000.0, Math.Min( 10000.0, Rb ) );
+
+if ( _debugGraph ) {
+	panelOutputGraph.m_bitmap = graph.AsBitmap;
+	panelOutputGraph.Refresh();
+	labelResult.Text = "R = " + Rt.ToString( "G4" ) + ", " + Rb.ToString( "G4" ) + " (" + previousSqDistance.ToString( "G4" ) + ") in " + iterationsCount + " iterations...\r\nBest = " + bestRt.ToString( "G4" ) + ", " + bestRb.ToString( "G4" ) + " (" + bestSqDistance.ToString( "G4" ) + ") in " + bestIterationsCount + " iterations...";
+}
 
 			return new float2( (float) Rt, (float) Rb );
 		}
@@ -419,7 +453,41 @@ labelResult.Text = "R = " + R + " (" + previousSqDistance + ") in " + iterations
 // 			float	L1 = (new float3( 0, a, A ) - P).Length;
 // 			float	L2 = (new float3( -b, -0.5f * a, A ) - P).Length;
 // 			float	L3 = (new float3( b, -0.5f * a, A ) - P).Length;
-			float	R = ComputeTangentSphereRadius( P, N, new float3[] { new float3( 0, a, A ), new float3( -b, -0.5f * a, B ), new float3( b, -0.5f * a, C ) }, true );
+//			float	R = ComputeTangentSphereRadius( P, N, new float3[] { new float3( 0, a, A ), new float3( -b, -0.5f * a, B ), new float3( b, -0.5f * a, C ) }, true );
+
+			float	D = floatTrackbarControlD.Value;
+// 			float2	curvature = ComputeTangentCurvatureRadii( P, N, float3.UnitX, new float3[] { new float3( -1, 0, A ), new float3( +1, 0, B ), new float3( 0, -1, C ), new float3( 0, +1, D ) }, true );
+
+			// Torus inner vertex
+					P = new float3( 0.5f, 0.0f, 0.0f );
+					N = new float3( -1.0f, 0.0f, 0.0f );
+			float3	T = new float3( 0.0f, 1.0f, 0.0f );
+			float3[]	neighbors = new float3[] {
+				new float3( 0.566346049f, -0.184016943f, 0.2938926f ),
+				new float3( 0.595491469f, 0.0f, 0.2938926f ),
+				new float3( 0.566346049f, 0.184016988f, 0.2938926f ),
+				new float3( 0.47552827f, -0.154508471f, 0.0f ),
+				new float3( 0.47552827f, 0.1545085f, 0.0f ),
+				new float3( 0.5663461f, -0.184016973f, -0.293892682f ),
+				new float3( 0.5954915f, 0.0f, -0.293892682f ),
+				new float3( 0.5663461f, 0.184017f, -0.293892682f )
+			};
+			float2	curvature2 = ComputeTangentCurvatureRadii( P, N, T, neighbors, true );
+
+					P = new float3( 1.5f, 0.0f, 0.0f );
+					N = new float3( 1.0f, 0.0f, 0.0f );
+					T = new float3( 0.0f, 1.0f, 0.0f );
+			neighbors = new float3[] {
+				new float3( 1.335767f, -0.4340169f, -0.293892652f ),
+				new float3( 1.40450847f, 0.0f, -0.293892652f ),
+				new float3( 1.335767f, 0.434017f, -0.293892652f ),
+				new float3( 1.42658484f, -0.4635254f, 0.0f ),
+				new float3( 1.42658484f, 0.4635255f, 0.0f ),
+				new float3( 1.335767f, -0.4340169f, 0.293892622f ),
+				new float3( 1.40450847f, 0.0f, 0.293892622f ),
+				new float3( 1.335767f, 0.434017f, 0.293892622f ),
+			};
+			float2	curvature3 = ComputeTangentCurvatureRadii( P, N, T, neighbors, true );
 		}
 
 		#endregion
@@ -630,9 +698,9 @@ vertices[6*faceIndex+i].B = V.B;
 				for ( uint j=0; j < SUBDIVS1; j++ ) {
 					float	a1 = 2.0f * (float) Math.PI * j / SUBDIVS1;
 					float3	lsN = new float3( (float) Math.Cos( a1 ), (float) Math.Sin( a1 ), 0.0f );
-					float3	lsN2 = new float3( -lsN.y, lsN.x, 0.0f );
+//					float3	lsN2 = new float3( -lsN.y, lsN.x, 0.0f );
 					float3	N = lsN.x * X + lsN.y * Z;
-					float3	N2 = lsN2.x * X + lsN2.y * Z;
+//					float3	N2 = lsN2.x * X + lsN2.y * Z;
 
 					V.P = C + RADIUS1 * N;
 					V.N = N;
@@ -687,7 +755,7 @@ vertices[6*faceIndex+i].B = V.B;
 					neighbors[1] = vertices[(int) neighborIndices[1,0]].P;
 					neighbors[2] = vertices[(int) neighborIndices[2,0]].P;
 					neighbors[3] = vertices[(int) neighborIndices[0,1]].P;
-//					neighbors[1] = vertices[(int) neighborIndices[1,1]].P;
+//					neighbors[] = vertices[(int) neighborIndices[1,1]].P;
 					neighbors[4] = vertices[(int) neighborIndices[2,1]].P;
 					neighbors[5] = vertices[(int) neighborIndices[0,2]].P;
 					neighbors[6] = vertices[(int) neighborIndices[1,2]].P;
@@ -697,7 +765,7 @@ vertices[6*faceIndex+i].B = V.B;
 // 					float	curvature = ComputeTangentSphereRadius( centerVertex.P, centerVertex.N, neighbors, false );
 // 					centerVertex.B.x = curvature;
 				
-					// Single curvature
+					// Double curvature
 					float2	curvature = ComputeTangentCurvatureRadii( centerVertex.P, centerVertex.N, centerVertex.T, neighbors, false );
 					centerVertex.B.x = curvature.x;
 					centerVertex.B.y = curvature.y;

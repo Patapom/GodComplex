@@ -7,6 +7,7 @@ struct PS_OUT {
 	float4	_albedo_gloss		: SV_TARGET0;
 	float4	_normal_distance	: SV_TARGET1;
 	float4	_wsPosition_empty	: SV_TARGET2;
+	float4	_lighting_empty		: SV_TARGET3;
 };
 
 PS_OUT	PS( VS_IN _In ) {
@@ -22,6 +23,7 @@ PS_OUT	PS( VS_IN _In ) {
 	Out._albedo_gloss = 0.0;
 	Out._normal_distance = float4( 0, 0, 0, INFINITY );
 	Out._wsPosition_empty = 0.0;
+	Out._lighting_empty = 0.0;
 
 	float2	distance = Trace( wsPos, wsView, 0.5, 100 );
 	float	D = distance.x;//length( _Camera2World[3].xyz - wsPos );
@@ -38,6 +40,20 @@ PS_OUT	PS( VS_IN _In ) {
 	Out._albedo_gloss = float4( albedo, 0.0 );
 	Out._normal_distance = float4( wsNormal, distance.x );
 	Out._wsPosition_empty = float4( wsPos, 0.0 );
+
+	// Compute quick direct lighting as we would in-engine
+	float3	wsLight = CORNELL_LIGHT_POS - wsPos;
+	float	distance2Light = length( wsLight );
+			wsLight /= distance2Light;
+
+	float3	wsSceneHitPos = wsPos + (0.01 / dot( wsLight, wsNormal )) * wsLight;	// Offset a bit from the surface
+	float2	shadowDistance = Trace( wsSceneHitPos, wsLight, 0.0, 100 );
+	float	shadow = smoothstep( 0.95, 1.0, shadowDistance.x / distance2Light );
+			shadow *= saturate( wsLight.y );	// saturate( -dot( wsLight, float3( 0, -1, 0 ) ) ) assuming the light is emitting toward the bottom
+
+	// Compute lighting
+	float3	sceneRadiance = (INVPI * albedo) * saturate( dot( wsNormal, wsLight ) ) * shadow * LIGHT_ILLUMINANCE / (distance2Light * distance2Light);
+	Out._lighting_empty = float4( sceneRadiance * saturate( dot( wsNormal, wsLight ) ), 0 );
 
 // 	float3	lighting = 0.0;
 // 	#if 1

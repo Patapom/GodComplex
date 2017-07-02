@@ -622,3 +622,14 @@
 /Tests/TestVoxelGI/bin
 /Tests/TestVoxelGI/obj
 /Tests/TestVoxelGI/TestVoxelGI.csproj.user
+/Tests/TestMultiLayersMaterial/bin
+/Tests/TestMultiLayersMaterial/obj
+/Tests/TestMultiLayersMaterial/TestMultiLayersMaterial.csproj.user
+Publish
+/Tests/TestBoxFitting/TestBoxFitting.csproj.user
+/Tests/TestConvexHull/TestConvexHull.csproj.user
+/Tools/ConvertNormalMap2HeightMap/*.user
+/Packages/DirectXTex/DirectXTex/*.user
+/Packages/MathSimple/*.user
+/Packages/_Unit Tests/TestFourier/*.user
+/Tools/AlbedoDatabaseGenerator/*.user

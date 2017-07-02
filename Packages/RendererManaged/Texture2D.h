@@ -36,13 +36,25 @@ namespace Renderer {
 		virtual property ::ID3D11RenderTargetView*		RTV { ::ID3D11RenderTargetView*		get(); }
 		virtual property ::ID3D11UnorderedAccessView*	UAV { ::ID3D11UnorderedAccessView*	get(); }
 		virtual property ::ID3D11DepthStencilView*		DSV { ::ID3D11DepthStencilView*		get(); }
+
+	public:	// Setters to shader inputs
+		void		Set( UInt32 _slotIndex );
+		void		SetVS( UInt32 _slotIndex );
+		void		SetHS( UInt32 _slotIndex );
+		void		SetDS( UInt32 _slotIndex );
+		void		SetGS( UInt32 _slotIndex );
+		void		SetPS( UInt32 _slotIndex );
+		void		SetCS( UInt32 _slotIndex );
+		void		SetCSUAV( UInt32 _slotIndex );
 	};
 
 	// Wraps a 2D texture (2D, 2DArray, CubeMap, CubeMapArray, RenderTarget, DepthStencilBuffer)
+	[System::Diagnostics::DebuggerDisplayAttribute( "{Width,d}x{Height,d}x{ArraySize,d}x{MipLevelsCount,d} {Tag}" )]
 	public ref class Texture2D {
 	internal:
 
 		::Texture2D*	m_texture;
+		Object^			m_tag;
 
 	public:
 
@@ -58,6 +70,8 @@ namespace Renderer {
 		property UInt32	HeightAtMip[UInt32] {
 			UInt32	get( UInt32 _mipLevelIndex ) { return GetSizeAtMip( Height, _mipLevelIndex ); }
 		}
+
+		property Object^	Tag { Object^ get() { return m_tag; } void set( Object^ _value ) { m_tag = _value; } }
 
 		void*	GetWrappedtexture()	{ return m_texture; }
 
@@ -174,26 +188,17 @@ namespace Renderer {
 		View2D^		GetView( UInt32 _mipLevelStart, UInt32 _mipLevelsCount, UInt32 _arrayStart, UInt32 _arraySize, bool _asArray )	{ return gcnew View2D( this, _mipLevelStart, _mipLevelsCount, _arrayStart, _arraySize, _asArray ); }
 
 		// Uploads the texture to the shader
-		void		Set( UInt32 _slotIndex )	{ Set( _slotIndex, nullptr ); }
-		void		SetVS( UInt32 _slotIndex )	{ SetVS( _slotIndex, nullptr ); }
-		void		SetHS( UInt32 _slotIndex )	{ SetHS( _slotIndex, nullptr ); }
-		void		SetDS( UInt32 _slotIndex )	{ SetDS( _slotIndex, nullptr ); }
-		void		SetGS( UInt32 _slotIndex )	{ SetGS( _slotIndex, nullptr ); }
-		void		SetPS( UInt32 _slotIndex )	{ SetPS( _slotIndex, nullptr ); }
-		void		SetCS( UInt32 _slotIndex )	{ SetCS( _slotIndex, nullptr ); }
-
-		void		Set( UInt32 _slotIndex, View2D^ _view );
-		void		SetVS( UInt32 _slotIndex, View2D^ _view );
-		void		SetHS( UInt32 _slotIndex, View2D^ _view );
-		void		SetDS( UInt32 _slotIndex, View2D^ _view );
-		void		SetGS( UInt32 _slotIndex, View2D^ _view );
-		void		SetPS( UInt32 _slotIndex, View2D^ _view );
-		void		SetCS( UInt32 _slotIndex, View2D^ _view );
+		void		Set( UInt32 _slotIndex );
+		void		SetVS( UInt32 _slotIndex );
+		void		SetHS( UInt32 _slotIndex );
+		void		SetDS( UInt32 _slotIndex );
+		void		SetGS( UInt32 _slotIndex );
+		void		SetPS( UInt32 _slotIndex );
+		void		SetCS( UInt32 _slotIndex );
 		void		RemoveFromLastAssignedSlots()	{ m_texture->RemoveFromLastAssignedSlots(); }
 
 		// Uploads the texture as a UAV for a compute shader
-		void		SetCSUAV( UInt32 _slotIndex )	{ m_texture->SetCSUAV( _slotIndex ); }
-		void		SetCSUAV( UInt32 _slotIndex, View2D^ _view  );
+		void		SetCSUAV( UInt32 _slotIndex );
 		void		RemoveFromLastAssignedSlotUAV()	{ m_texture->RemoveFromLastAssignedSlotUAV(); }
 
 		// Helper to compute a size (width or height) at a specific mip level

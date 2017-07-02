@@ -864,11 +864,11 @@ return;
 			a = b;
 			b = t;
 		}
-		double	ComputeArea( uint _X, uint _Y ) {
-			double	x0 = 2.0 * _X / m_imageNDF.Width - 1.0;
-			double	y0 = 2.0 * _Y / m_imageNDF.Height - 1.0;
-			double	x1 = 2.0 * (_X+1) / m_imageNDF.Width - 1.0;
-			double	y1 = 2.0 * (_Y+1) / m_imageNDF.Height - 1.0;
+		double	ComputeArea( uint _X, uint _Y, double _normalizerX, double _normalizerY ) {
+			double	x0 = 2.0 * _normalizerX * _X - 1.0;
+			double	y0 = 2.0 * _normalizerY * _Y - 1.0;
+			double	x1 = 2.0 * _normalizerX * (_X+1) - 1.0;
+			double	y1 = 2.0 * _normalizerY * (_Y+1) - 1.0;
 // 			x0 = Math.Abs( x0 );
 // 			y0 = Math.Abs( y0 );
 // 			x1 = Math.Abs( x1 );
@@ -896,11 +896,14 @@ return;
 			float4[,]	pixelsNDF = new float4[m_imageNDF.Width,m_imageNDF.Height];
 			m_imageNDF.ReadPixels( ( uint _X, uint _Y, ref float4 _color ) => { pixelsNDF[_X,_Y] = _color; } );
 
+			double		kX = 1.0 / m_imageNDF.Width;
+			double		kY = 1.0 / m_imageNDF.Height;
+
 				// Compute integral sum
 			double	sum = 0.0;
 			for ( uint Y=0; Y < m_imageNDF.Height; Y++ )
 				for ( uint X=0; X < m_imageNDF.Width; X++ ) {
-					double	dA = ComputeArea( X, Y );
+					double	dA = ComputeArea( X, Y, kX, kY );
 					float	NDF = pixelsNDF[X,Y].x;
 					sum += NDF * dA;
 				}
@@ -920,6 +923,9 @@ return;
 			float3		k = float3.Zero;
 			float3		h = float3.Zero;
 			float		maxG = 0.0f;
+			double		sumG = 0.0;
+			double		sumG_dw = 0.0;
+			int			count = 0;
 			for ( uint Y=0; Y < m_imageNDF.Height; Y++ ) {
 				k.y = 2.0f * Y / m_imageNDF.Height - 1.0f;
 				for ( uint X=0; X < m_imageNDF.Width; X++ ) {
@@ -944,7 +950,9 @@ return;
 
 							float	k_o_h = k.Dot( h );			// k.h
 							double	D = pixelsNDF[X2,Y2].x;		// D(h)
-							double	dW = ComputeArea( X2, Y2 );	// dW
+							double	dW = ComputeArea( X2, Y2, kX, kY );	// dW
+// 							if ( double.IsNaN( D ) )
+// 								throw new Exception( "MERDE" );
 
 							convolution += k_o_h * D * dW;
 						}
@@ -953,6 +961,20 @@ return;
 					if ( G > maxG && G < 1.05f )
 						maxG = G;
 					pixelsG[X,Y] = new float4( G, G, G, 1.0f );
+					sumG += G;
+					sumG_dw += G * ComputeArea( X, Y, kX, kY );
+					count++;
+				}
+			}
+
+			sumG /= count;
+
+			using ( System.IO.StreamWriter W = new System.IO.FileInfo( imageBaseName + "_G.csv" ).CreateText() ) {
+				for ( uint Y=0; Y < m_imageNDF.Height; Y++ ) {
+					for ( uint X=0; X < m_imageNDF.Width; X++ ) {
+						W.Write( pixelsG[X,Y].x + ", " );
+					}
+					W.WriteLine( "" );
 				}
 			}
 

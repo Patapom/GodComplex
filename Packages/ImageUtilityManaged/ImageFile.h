@@ -526,6 +526,9 @@ namespace ImageUtility {
 		// Converts (X,Y) pixel coordinates into "ranged coordinates"
 		SharpMath::float2	ImageCoordinates2RangedCoordinates( SharpMath::float2^ _rangeX, SharpMath::float2^ _rangeY, SharpMath::float2^ _imageCoordinates );
 
+		// Helpers to perform bilinear interpolation on a fixed size array
+		static void			BilerpClamp( cli::array<float4,2>^ _pixels, float _x, float _y, SharpMath::float4% _color );
+		static void			BilerpWrap( cli::array<float4,2>^ _pixels, float _x, float _y, SharpMath::float4% _color );
 
 	public:
 		//////////////////////////////////////////////////////////////////////////

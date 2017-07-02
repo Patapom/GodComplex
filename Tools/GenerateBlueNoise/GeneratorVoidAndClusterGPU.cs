@@ -225,7 +225,7 @@ namespace GenerateBlueNoise
 							groupsCount >>= 4;
 
 							m_texScore0.SetCS( 0 );
-							m_texScore1.SetCSUAV( 2, m_texScore1.GetView( mipLevelIndex, 1, 0, 1 ) );
+							m_texScore1.GetView( mipLevelIndex, 1, 0, 1 ).SetCSUAV( 2 );
 
 							m_CB_Mips.m._textureMipSource = m_CB_Mips.m._textureMipTarget;
 							m_CB_Mips.m._textureMipTarget = mipLevelIndex;
@@ -257,7 +257,7 @@ namespace GenerateBlueNoise
 						if ( CSLastMip != null && CSLastMip.Use() ) {
 
 							m_texScore0.SetCS( 0 );
-							m_texScore1.SetCSUAV( 2, m_texScore1.GetView( (uint) m_texturePOT, 1, 0, 1 ) );
+							m_texScore1.GetView( (uint) m_texturePOT, 1, 0, 1 ).SetCSUAV( 2 );
 
 							m_CB_Mips.m._textureMipSource = m_CB_Mips.m._textureMipTarget;
 							m_CB_Mips.m._textureMipTarget = (uint) m_texturePOT;

@@ -467,6 +467,57 @@ SharpMath::float2	ImageFile::ImageCoordinates2RangedCoordinates( SharpMath::floa
 
 
 //////////////////////////////////////////////////////////////////////////
+// Helpers to perform bilinear interpolation on a fixed size array
+void	ImageFile::BilerpClamp( cli::array<float4,2>^ _pixels, float _x, float _y, SharpMath::float4% _color ) {
+	UInt32	W = (UInt32) _pixels->GetLength( 0 );
+	UInt32	H = (UInt32) _pixels->GetLength( 1 );
+
+	UInt32	X0 = (UInt32) Math::Floor( _x );
+	UInt32	Y0 = (UInt32) Math::Floor( _y );
+	_x -= X0;
+	_y -= Y0;
+	X0 = Math::Max( 0U, Math::Min( W-1, X0 ) );
+	Y0 = Math::Max( 0U, Math::Min( H-1, Y0 ) );
+	UInt32	X1 = Math::Min( W-1, X0+1 );
+	UInt32	Y1 = Math::Min( H-1, Y0+1 );
+
+	float4	V00 = _pixels[X0,Y0];
+	float4	V01 = _pixels[X1,Y0];
+	float4	V10 = _pixels[X0,Y1];
+	float4	V11 = _pixels[X1,Y1];
+	float4	V0 = V00 + (V01 - V00) * _x;
+	float4	V1 = V10 + (V11 - V10) * _x;
+	_color.x = V0.x + (V1.x - V0.x) * _y;
+	_color.y = V0.y + (V1.y - V0.y) * _y;
+	_color.z = V0.z + (V1.z - V0.z) * _y;
+	_color.w = V0.w + (V1.w - V0.w) * _y;
+}
+void	ImageFile::BilerpWrap( cli::array<float4,2>^ _pixels, float _x, float _y, SharpMath::float4% _color ) {
+	UInt32	W = (UInt32) _pixels->GetLength( 0 );
+	UInt32	H = (UInt32) _pixels->GetLength( 1 );
+
+	UInt32	X0 = (UInt32) Math::Floor( _x );
+	UInt32	Y0 = (UInt32) Math::Floor( _y );
+	_x -= X0;
+	_y -= Y0;
+	X0 = (1000U * W + X0) % W;
+	Y0 = (1000U * H + Y0) % H;
+	UInt32	X1 = (1000U * W + X0 + 1) % W;
+	UInt32	Y1 = (1000U * H + Y0 + 1) % H;
+
+	float4	V00 = _pixels[X0,Y0];
+	float4	V01 = _pixels[X1,Y0];
+	float4	V10 = _pixels[X0,Y1];
+	float4	V11 = _pixels[X1,Y1];
+	float4	V0 = V00 + (V01 - V00) * _x;
+	float4	V1 = V10 + (V11 - V10) * _x;
+	_color.x = V0.x + (V1.x - V0.x) * _y;
+	_color.y = V0.y + (V1.y - V0.y) * _y;
+	_color.z = V0.z + (V1.z - V0.z) * _y;
+	_color.w = V0.w + (V1.w - V0.w) * _y;
+}
+
+//////////////////////////////////////////////////////////////////////////
 // DDS-related methods
 //
 ImagesMatrix^	ImageFile::DDSLoadFile( System::IO::FileInfo^ _fileName ) {

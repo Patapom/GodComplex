@@ -843,7 +843,7 @@ avgDiffA2 /= TABLE_SIZE*TABLE_SIZE;
 			Shader	S = radioButtonSimpleScene.Checked ? m_shader_RenderScene : m_shader_RenderSphere;
 			if ( S.Use() ) {
 				m_device.SetRenderTargets( new IView[] { targetView }, null );
-				m_Tex_HDRBuffer.SetPS( 1, sourceView );
+				sourceView.SetPS( 1 );
 				m_Tex_Noise.SetPS( 2 );
 				m_Tex_ACoeffs.SetPS( 3 );
 				m_device.RenderFullscreenQuad( S );
@@ -852,7 +852,7 @@ avgDiffA2 /= TABLE_SIZE*TABLE_SIZE;
 			// Render to LDR back buffer
 			if ( m_shader_RenderLDR.Use() ) {
 				m_device.SetRenderTarget( m_device.DefaultTarget, null );
-				m_Tex_HDRBuffer.SetPS( 1, targetView );
+				targetView.SetPS( 1 );
 				m_device.RenderFullscreenQuad( m_shader_RenderLDR );
 			}
 
