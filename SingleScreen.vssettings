@@ -120,95 +120,6 @@
 				<PropertyValue name="Outlining">true</PropertyValue>
 				<PropertyValue name="PrettyListing">true</PropertyValue>
 			</ToolsOptionsSubCategory>
-			<ToolsOptionsSubCategory name="C/C++" RegisteredName="C/C++" PackageName="Text Management Package">
-				<PropertyValue name="TabSize">4</PropertyValue>
-				<PropertyValue name="AutoListMembers">true</PropertyValue>
-				<PropertyValue name="IndentStyle">2</PropertyValue>
-				<PropertyValue name="HideAdvancedMembers">true</PropertyValue>
-				<PropertyValue name="ShowNavigationBar">true</PropertyValue>
-				<PropertyValue name="VirtualSpace">false</PropertyValue>
-				<PropertyValue name="InsertTabs">true</PropertyValue>
-				<PropertyValue name="WordWrapGlyphs">true</PropertyValue>
-				<PropertyValue name="EnableLeftClickForURLs">true</PropertyValue>
-				<PropertyValue name="ShowLineNumbers">false</PropertyValue>
-				<PropertyValue name="WordWrap">false</PropertyValue>
-				<PropertyValue name="IndentSize">4</PropertyValue>
-				<PropertyValue name="CutCopyBlankLines">true</PropertyValue>
-				<PropertyValue name="AutoListParams">true</PropertyValue>
-			</ToolsOptionsSubCategory>
-			<ToolsOptionsSubCategory name="C/C++ Specific" RegisteredName="C/C++ Specific" PackageName="Visual C++ Language Manager Package">
-				<PropertyValue name="DisableAggressiveMemberList">false</PropertyValue>
-				<PropertyValue name="MaximumCachedTranslationUnits">2</PropertyValue>
-				<PropertyValue name="RecreateDatabase">false</PropertyValue>
-				<PropertyValue name="DisablePreLoadNavigateToCache">false</PropertyValue>
-				<PropertyValue name="EnterOutliningModeWhenFilesOpen">true</PropertyValue>
-				<PropertyValue name="MemberListCommitCharacters">{}[]().,:;+-*/%&amp;|^!=&lt;&gt;?@#\</PropertyValue>
-				<PropertyValue name="DisableReferenceHighlighting">false</PropertyValue>
-				<PropertyValue name="DoNotWarnIfFallbackLocationUsed">false</PropertyValue>
-				<PropertyValue name="DisableDatabaseImplicitAutoCleanup">false</PropertyValue>
-				<PropertyValue name="UseForwardSlashForIncludeAutoComplete">false</PropertyValue>
-				<PropertyValue name="DisableInactiveCodeOpacity">false</PropertyValue>
-				<PropertyValue name="HighlightMatchingTokens">true</PropertyValue>
-				<PropertyValue name="DisableDatabaseUpdates">false</PropertyValue>
-				<PropertyValue name="DisableIntelliSenseUpdating">false</PropertyValue>
-				<PropertyValue name="FallbackLocation"/>
-				<PropertyValue name="DisableErrorReporting">true</PropertyValue>
-				<PropertyValue name="DisableDatabaseImplicitFiles">false</PropertyValue>
-				<PropertyValue name="SmartMemberListCommitOnEnter">false</PropertyValue>
-				<PropertyValue name="DisableReferencesResolving">true</PropertyValue>
-				<PropertyValue name="DisableExternalDependenciesFolders">false</PropertyValue>
-				<PropertyValue name="DisableIntelliSense">true</PropertyValue>
-				<PropertyValue name="AutomaticOutliningOfStatementBlocks">false</PropertyValue>
-				<PropertyValue name="LoggingLevel">5</PropertyValue>
-				<PropertyValue name="MemberListFilterMode">3</PropertyValue>
-				<PropertyValue name="ColorizeInactiveBlocksDifferently">true</PropertyValue>
-				<PropertyValue name="RescanSolutionInterval">60</PropertyValue>
-				<PropertyValue name="AlwaysUseFallbackLocation">false</PropertyValue>
-				<PropertyValue name="DisableDatabaseAutoUpdates">false</PropertyValue>
-				<PropertyValue name="DisableSquiggles">true</PropertyValue>
-				<PropertyValue name="EnableQuickInfoToolTips">false</PropertyValue>
-				<PropertyValue name="DisableSemanticColoring">false</PropertyValue>
-				<PropertyValue name="InactiveCodeOpacityPercent">65</PropertyValue>
-				<PropertyValue name="IndentBraces">false</PropertyValue>
-				<PropertyValue name="HideUnconfirmedReferencesResults">true</PropertyValue>
-				<PropertyValue name="AutoIndentOnTab">false</PropertyValue>
-				<PropertyValue name="DisableMemberListKeywords">false</PropertyValue>
-				<PropertyValue name="EnumerateCommentTasks">false</PropertyValue>
-				<PropertyValue name="AutomaticOutliningOfPragmaRegions">true</PropertyValue>
-				<PropertyValue name="DisableMemberListExpansions">false</PropertyValue>
-				<PropertyValue name="LoggingFilter">0</PropertyValue>
-				<PropertyValue name="RescanSolution">false</PropertyValue>
-				<PropertyValue name="DisableDatabase">false</PropertyValue>
-				<PropertyValue name="DisableIncludeAutoComplete">false</PropertyValue>
-				<PropertyValue name="EnableLogging">false</PropertyValue>
-			</ToolsOptionsSubCategory>
-			<ToolsOptionsSubCategory name="CSS" RegisteredName="CSS" PackageName="Text Management Package">
-				<PropertyValue name="TabSize">4</PropertyValue>
-				<PropertyValue name="AutoListMembers">true</PropertyValue>
-				<PropertyValue name="IndentStyle">2</PropertyValue>
-				<PropertyValue name="HideAdvancedMembers">true</PropertyValue>
-				<PropertyValue name="ShowNavigationBar">false</PropertyValue>
-				<PropertyValue name="VirtualSpace">false</PropertyValue>
-				<PropertyValue name="InsertTabs">true</PropertyValue>
-				<PropertyValue name="WordWrapGlyphs">true</PropertyValue>
-				<PropertyValue name="EnableLeftClickForURLs">true</PropertyValue>
-				<PropertyValue name="ShowLineNumbers">false</PropertyValue>
-				<PropertyValue name="WordWrap">false</PropertyValue>
-				<PropertyValue name="IndentSize">4</PropertyValue>
-				<PropertyValue name="CutCopyBlankLines">true</PropertyValue>
-				<PropertyValue name="AutoListParams">true</PropertyValue>
-			</ToolsOptionsSubCategory>
-			<ToolsOptionsSubCategory name="CSS Specific" RegisteredName="CSS Specific" PackageName="Visual Studio CSS Editing Package">
-				<PropertyValue name="ColorPickerDefaultFormat">3</PropertyValue>
-				<PropertyValue name="ColorPickerEnabled">1</PropertyValue>
-				<PropertyValue name="DetectErrorsEnabled">1</PropertyValue>
-				<PropertyValue name="DetectInvalidValuesEnabled">1</PropertyValue>
-				<PropertyValue name="DetectUnknownPropsEnabled">1</PropertyValue>
-				<PropertyValue name="ErrorLevel">1</PropertyValue>
-				<PropertyValue name="FormatPropCase">0</PropertyValue>
-				<PropertyValue name="FormatStyle">1</PropertyValue>
-				<PropertyValue name="IndentRuleHierarchy">1</PropertyValue>
-			</ToolsOptionsSubCategory>
 			<ToolsOptionsSubCategory name="CSharp" RegisteredName="CSharp" PackageName="Text Management Package">
 				<PropertyValue name="TabSize">4</PropertyValue>
 				<PropertyValue name="AutoListMembers">true</PropertyValue>
@@ -344,6 +255,95 @@
 				<PropertyValue name="EncapsulateField_SearchInComments">0</PropertyValue>
 				<PropertyValue name="Refactoring_Verification_Enabled">0</PropertyValue>
 				<PropertyValue name="ProgressDialogDelaySeconds">2</PropertyValue>
+			</ToolsOptionsSubCategory>
+			<ToolsOptionsSubCategory name="C/C++" RegisteredName="C/C++" PackageName="Text Management Package">
+				<PropertyValue name="TabSize">4</PropertyValue>
+				<PropertyValue name="AutoListMembers">true</PropertyValue>
+				<PropertyValue name="IndentStyle">2</PropertyValue>
+				<PropertyValue name="HideAdvancedMembers">true</PropertyValue>
+				<PropertyValue name="ShowNavigationBar">true</PropertyValue>
+				<PropertyValue name="VirtualSpace">false</PropertyValue>
+				<PropertyValue name="InsertTabs">true</PropertyValue>
+				<PropertyValue name="WordWrapGlyphs">true</PropertyValue>
+				<PropertyValue name="EnableLeftClickForURLs">true</PropertyValue>
+				<PropertyValue name="ShowLineNumbers">false</PropertyValue>
+				<PropertyValue name="WordWrap">false</PropertyValue>
+				<PropertyValue name="IndentSize">4</PropertyValue>
+				<PropertyValue name="CutCopyBlankLines">true</PropertyValue>
+				<PropertyValue name="AutoListParams">true</PropertyValue>
+			</ToolsOptionsSubCategory>
+			<ToolsOptionsSubCategory name="C/C++ Specific" RegisteredName="C/C++ Specific" PackageName="Visual C++ Language Manager Package">
+				<PropertyValue name="DisableAggressiveMemberList">false</PropertyValue>
+				<PropertyValue name="MaximumCachedTranslationUnits">2</PropertyValue>
+				<PropertyValue name="RecreateDatabase">false</PropertyValue>
+				<PropertyValue name="DisablePreLoadNavigateToCache">false</PropertyValue>
+				<PropertyValue name="EnterOutliningModeWhenFilesOpen">true</PropertyValue>
+				<PropertyValue name="MemberListCommitCharacters">{}[]().,:;+-*/%&amp;|^!=&lt;&gt;?@#\</PropertyValue>
+				<PropertyValue name="DisableReferenceHighlighting">false</PropertyValue>
+				<PropertyValue name="DoNotWarnIfFallbackLocationUsed">false</PropertyValue>
+				<PropertyValue name="DisableDatabaseImplicitAutoCleanup">false</PropertyValue>
+				<PropertyValue name="UseForwardSlashForIncludeAutoComplete">false</PropertyValue>
+				<PropertyValue name="DisableInactiveCodeOpacity">false</PropertyValue>
+				<PropertyValue name="HighlightMatchingTokens">true</PropertyValue>
+				<PropertyValue name="DisableDatabaseUpdates">false</PropertyValue>
+				<PropertyValue name="DisableIntelliSenseUpdating">false</PropertyValue>
+				<PropertyValue name="FallbackLocation"/>
+				<PropertyValue name="DisableErrorReporting">true</PropertyValue>
+				<PropertyValue name="DisableDatabaseImplicitFiles">false</PropertyValue>
+				<PropertyValue name="SmartMemberListCommitOnEnter">false</PropertyValue>
+				<PropertyValue name="DisableReferencesResolving">true</PropertyValue>
+				<PropertyValue name="DisableExternalDependenciesFolders">false</PropertyValue>
+				<PropertyValue name="DisableIntelliSense">true</PropertyValue>
+				<PropertyValue name="AutomaticOutliningOfStatementBlocks">false</PropertyValue>
+				<PropertyValue name="LoggingLevel">5</PropertyValue>
+				<PropertyValue name="MemberListFilterMode">3</PropertyValue>
+				<PropertyValue name="ColorizeInactiveBlocksDifferently">true</PropertyValue>
+				<PropertyValue name="RescanSolutionInterval">60</PropertyValue>
+				<PropertyValue name="AlwaysUseFallbackLocation">false</PropertyValue>
+				<PropertyValue name="DisableDatabaseAutoUpdates">false</PropertyValue>
+				<PropertyValue name="DisableSquiggles">true</PropertyValue>
+				<PropertyValue name="EnableQuickInfoToolTips">false</PropertyValue>
+				<PropertyValue name="DisableSemanticColoring">false</PropertyValue>
+				<PropertyValue name="InactiveCodeOpacityPercent">65</PropertyValue>
+				<PropertyValue name="IndentBraces">false</PropertyValue>
+				<PropertyValue name="HideUnconfirmedReferencesResults">true</PropertyValue>
+				<PropertyValue name="AutoIndentOnTab">false</PropertyValue>
+				<PropertyValue name="DisableMemberListKeywords">false</PropertyValue>
+				<PropertyValue name="EnumerateCommentTasks">false</PropertyValue>
+				<PropertyValue name="AutomaticOutliningOfPragmaRegions">true</PropertyValue>
+				<PropertyValue name="DisableMemberListExpansions">false</PropertyValue>
+				<PropertyValue name="LoggingFilter">0</PropertyValue>
+				<PropertyValue name="RescanSolution">false</PropertyValue>
+				<PropertyValue name="DisableDatabase">false</PropertyValue>
+				<PropertyValue name="DisableIncludeAutoComplete">false</PropertyValue>
+				<PropertyValue name="EnableLogging">false</PropertyValue>
+			</ToolsOptionsSubCategory>
+			<ToolsOptionsSubCategory name="CSS" RegisteredName="CSS" PackageName="Text Management Package">
+				<PropertyValue name="TabSize">4</PropertyValue>
+				<PropertyValue name="AutoListMembers">true</PropertyValue>
+				<PropertyValue name="IndentStyle">2</PropertyValue>
+				<PropertyValue name="HideAdvancedMembers">true</PropertyValue>
+				<PropertyValue name="ShowNavigationBar">false</PropertyValue>
+				<PropertyValue name="VirtualSpace">false</PropertyValue>
+				<PropertyValue name="InsertTabs">true</PropertyValue>
+				<PropertyValue name="WordWrapGlyphs">true</PropertyValue>
+				<PropertyValue name="EnableLeftClickForURLs">true</PropertyValue>
+				<PropertyValue name="ShowLineNumbers">false</PropertyValue>
+				<PropertyValue name="WordWrap">false</PropertyValue>
+				<PropertyValue name="IndentSize">4</PropertyValue>
+				<PropertyValue name="CutCopyBlankLines">true</PropertyValue>
+				<PropertyValue name="AutoListParams">true</PropertyValue>
+			</ToolsOptionsSubCategory>
+			<ToolsOptionsSubCategory name="CSS Specific" RegisteredName="CSS Specific" PackageName="Visual Studio CSS Editing Package">
+				<PropertyValue name="ColorPickerDefaultFormat">3</PropertyValue>
+				<PropertyValue name="ColorPickerEnabled">1</PropertyValue>
+				<PropertyValue name="DetectErrorsEnabled">1</PropertyValue>
+				<PropertyValue name="DetectInvalidValuesEnabled">1</PropertyValue>
+				<PropertyValue name="DetectUnknownPropsEnabled">1</PropertyValue>
+				<PropertyValue name="ErrorLevel">1</PropertyValue>
+				<PropertyValue name="FormatPropCase">0</PropertyValue>
+				<PropertyValue name="FormatStyle">1</PropertyValue>
+				<PropertyValue name="IndentRuleHierarchy">1</PropertyValue>
 			</ToolsOptionsSubCategory>
 			<ToolsOptionsSubCategory name="FSharp" RegisteredName="FSharp" PackageName="Text Management Package">
 				<PropertyValue name="TabSize">4</PropertyValue>
@@ -554,6 +554,22 @@
 				<PropertyValue name="CutCopyBlankLines">true</PropertyValue>
 				<PropertyValue name="AutoListParams">true</PropertyValue>
 			</ToolsOptionsSubCategory>
+			<ToolsOptionsSubCategory name="SQL Server Tools" RegisteredName="SQL Server Tools" PackageName="Text Management Package">
+				<PropertyValue name="TabSize">4</PropertyValue>
+				<PropertyValue name="AutoListMembers">true</PropertyValue>
+				<PropertyValue name="IndentStyle">1</PropertyValue>
+				<PropertyValue name="HideAdvancedMembers">true</PropertyValue>
+				<PropertyValue name="ShowNavigationBar">false</PropertyValue>
+				<PropertyValue name="VirtualSpace">false</PropertyValue>
+				<PropertyValue name="InsertTabs">true</PropertyValue>
+				<PropertyValue name="WordWrapGlyphs">true</PropertyValue>
+				<PropertyValue name="EnableLeftClickForURLs">true</PropertyValue>
+				<PropertyValue name="ShowLineNumbers">false</PropertyValue>
+				<PropertyValue name="WordWrap">false</PropertyValue>
+				<PropertyValue name="IndentSize">4</PropertyValue>
+				<PropertyValue name="CutCopyBlankLines">true</PropertyValue>
+				<PropertyValue name="AutoListParams">true</PropertyValue>
+			</ToolsOptionsSubCategory>
 			<ToolsOptionsSubCategory name="T-SQL90" RegisteredName="T-SQL90" PackageName="Text Management Package">
 				<PropertyValue name="TabSize">4</PropertyValue>
 				<PropertyValue name="AutoListMembers">true</PropertyValue>
@@ -602,168 +618,8 @@
 				<PropertyValue name="CutCopyBlankLines">true</PropertyValue>
 				<PropertyValue name="AutoListParams">true</PropertyValue>
 			</ToolsOptionsSubCategory>
-			<ToolsOptionsSubCategory name="SQL Server Tools" RegisteredName="SQL Server Tools" PackageName="Text Management Package">
-				<PropertyValue name="TabSize">4</PropertyValue>
-				<PropertyValue name="AutoListMembers">true</PropertyValue>
-				<PropertyValue name="IndentStyle">1</PropertyValue>
-				<PropertyValue name="HideAdvancedMembers">true</PropertyValue>
-				<PropertyValue name="ShowNavigationBar">false</PropertyValue>
-				<PropertyValue name="VirtualSpace">false</PropertyValue>
-				<PropertyValue name="InsertTabs">true</PropertyValue>
-				<PropertyValue name="WordWrapGlyphs">true</PropertyValue>
-				<PropertyValue name="EnableLeftClickForURLs">true</PropertyValue>
-				<PropertyValue name="ShowLineNumbers">false</PropertyValue>
-				<PropertyValue name="WordWrap">false</PropertyValue>
-				<PropertyValue name="IndentSize">4</PropertyValue>
-				<PropertyValue name="CutCopyBlankLines">true</PropertyValue>
-				<PropertyValue name="AutoListParams">true</PropertyValue>
-			</ToolsOptionsSubCategory>
 		</ToolsOptionsCategory>
 	</ToolsOptions>
-	<Category name="Code Analysis" Category="{533A534C-AD06-4B18-BBBC-BFD7C74F58CE}" Package="{72391CE3-743A-4a55-8927-4217541F6517}" RegisteredName="Code Analysis" PackageName="StanPackage"/>
-	<Category name="Debugger" Category="{EEDBF29A-5C8B-4E01-827C-263382C18CFE}" Package="{C9DD4A57-47FB-11D2-83E7-00C04F9902C1}" RegisteredName="Debugger" PackageName="Visual Studio Debugger">
-		<PropertyValue name="ConfirmDeleteAllBreakpoints">1</PropertyValue>
-		<PropertyValue name="StopAllProcesses">1</PropertyValue>
-		<PropertyValue name="StopOnExceptionCrossingManagedBoundary">0</PropertyValue>
-		<PropertyValue name="EnableAddressLevelDebugging">1</PropertyValue>
-		<PropertyValue name="ShowDisassemblyWhenNoSource">1</PropertyValue>
-		<PropertyValue name="EnableBreakpointConstraints">1</PropertyValue>
-		<PropertyValue name="UseExceptionHelper">0</PropertyValue>
-		<PropertyValue name="AutoUnwindOnException">1</PropertyValue>
-		<PropertyValue name="JustMyCode">1</PropertyValue>
-		<PropertyValue name="ShowNonPublicMembers">0</PropertyValue>
-		<PropertyValue name="WarnIfNoUserCodeOnLaunch">1</PropertyValue>
-		<PropertyValue name="FrameworkSourceStepping">0</PropertyValue>
-		<PropertyValue name="WarnAboutSymbolCacheDuringRemoteManagedDebugging">1</PropertyValue>
-		<PropertyValue name="EnableStepFiltering">0</PropertyValue>
-		<PropertyValue name="WarnOnStepFilter">1</PropertyValue>
-		<PropertyValue name="AllowImplicitFuncEval">1</PropertyValue>
-		<PropertyValue name="AllowToString">1</PropertyValue>
-		<PropertyValue name="UseSourceServer">0</PropertyValue>
-		<PropertyValue name="ShowSourceServerDiagnostics">0</PropertyValue>
-		<PropertyValue name="AlwaysColorMarkerText">0</PropertyValue>
-		<PropertyValue name="UseDocumentChecksum">0</PropertyValue>
-		<PropertyValue name="OutputToImmediate">0</PropertyValue>
-		<PropertyValue name="ShowRawStructures">0</PropertyValue>
-		<PropertyValue name="DisableJITOptimization">1</PropertyValue>
-		<PropertyValue name="ShowNoSymbolsDialog">0</PropertyValue>
-		<PropertyValue name="ShowScriptDebuggingDisabledDialog">1</PropertyValue>
-		<PropertyValue name="EnableILInterpreterMinidump">1</PropertyValue>
-		<PropertyValue name="EnableILInterpreterLive">0</PropertyValue>
-		<PropertyValue name="HexDisplay">1</PropertyValue>
-		<PropertyValue name="HexInput">0</PropertyValue>
-		<PropertyValue name="MapClientBreakpoints">1</PropertyValue>
-		<PropertyValue name="AddUnmappedBreakpointAtMappedLocation">0</PropertyValue>
-		<PropertyValue name="StepIntoOnRestart">0</PropertyValue>
-		<PropertyValue name="ENCEnable">0</PropertyValue>
-		<PropertyValue name="ENCApplyChangesOnContinue">1</PropertyValue>
-		<PropertyValue name="ENCWelcome">0</PropertyValue>
-		<PropertyValue name="ENCStaleCodeWarning">1</PropertyValue>
-		<PropertyValue name="ENCPrecompile">1</PropertyValue>
-		<PropertyValue name="ENCRelink">1</PropertyValue>
-		<PropertyValue name="NOENCAllowEdits">1</PropertyValue>
-		<PropertyValue name="NOENCIgnore">0</PropertyValue>
-		<PropertyValue name="NOENCRebuild">0</PropertyValue>
-		<PropertyValue name="ENCEnableWhenRemoteDebugging">0</PropertyValue>
-		<PropertyValue name="ConfirmFoundFiles">0</PropertyValue>
-		<PropertyValue name="DisasmLineNumbers">0</PropertyValue>
-		<PropertyValue name="ModulesShowAll">0</PropertyValue>
-		<PropertyValue name="UseCodeSense">1</PropertyValue>
-		<PropertyValue name="DisasmFields">67577</PropertyValue>
-		<PropertyValue name="CallStackViewOptions">7799040</PropertyValue>
-		<PropertyValue name="ShowExternalCode">0</PropertyValue>
-		<PropertyValue name="SourceStepUnit">0</PropertyValue>
-		<PropertyValue name="DisasmStepUnit">2</PropertyValue>
-		<PropertyValue name="CrossThreadCallStack">1</PropertyValue>
-		<PropertyValue name="ShowOnlyFlaggedThreads">0</PropertyValue>
-		<PropertyValue name="ConcurrencySupport">1</PropertyValue>
-		<PropertyValue name="GuessAtThreadNames">1</PropertyValue>
-		<PropertyValue name="ShowOtherThreadIpMarkers">0</PropertyValue>
-		<PropertyValue name="ShowThreadCategory">1</PropertyValue>
-		<PropertyValue name="SaveRemoteDumps">1</PropertyValue>
-		<PropertyValue name="LongEvalTimeout">10000</PropertyValue>
-		<PropertyValue name="NormalEvalTimeout">5000</PropertyValue>
-		<PropertyValue name="QuickwatchTimeout">15000</PropertyValue>
-		<PropertyValue name="DataTipTimeout">1500</PropertyValue>
-		<PropertyValue name="AutosReturnValsTimeout">1000</PropertyValue>
-		<PropertyValue name="AutosRegistersTimeout">1000</PropertyValue>
-		<PropertyValue name="LocalsTimeout">1000</PropertyValue>
-		<PropertyValue name="RegistersTimeout">2000</PropertyValue>
-		<PropertyValue name="AddressExpressionTimeout">2000</PropertyValue>
-		<PropertyValue name="ScriptDocsTimeout">5000</PropertyValue>
-		<PropertyValue name="ImmediateWindowTimeout">10000</PropertyValue>
-		<PropertyValue name="SetValueTimeout">10000</PropertyValue>
-		<PropertyValue name="TreeGridRePaintTimer">250</PropertyValue>
-		<PropertyValue name="TreeGridBusyPaintTimer">1000</PropertyValue>
-		<PropertyValue name="ModulesWindowUpdateTimer">500</PropertyValue>
-		<PropertyValue name="TreeGridDelayOnEnterTimer">125</PropertyValue>
-		<PropertyValue name="DelayTreeGridPaintOnBreak">1</PropertyValue>
-		<PropertyValue name="ShowNonprintableCharsAsGlyphs">0</PropertyValue>
-		<PropertyValue name="ShowSystemProcesses">0</PropertyValue>
-		<PropertyValue name="ShowProcessesFromAllSessions">0</PropertyValue>
-		<PropertyValue name="EnhancedDataTips">1</PropertyValue>
-		<PropertyValue name="DataTipDismissalSensitivity">1</PropertyValue>
-		<PropertyValue name="DataTipKeyboardDismissal">0</PropertyValue>
-		<PropertyValue name="UserSpecifiedEngines">1</PropertyValue>
-		<PropertyValue name="OutputOnException">1</PropertyValue>
-		<PropertyValue name="OutputOnStepFilter">1</PropertyValue>
-		<PropertyValue name="OutputOnModuleLoad">1</PropertyValue>
-		<PropertyValue name="OutputOnModuleUnload">1</PropertyValue>
-		<PropertyValue name="OutputOnModuleSymbolSearch">1</PropertyValue>
-		<PropertyValue name="OutputOnProcessDestroy">1</PropertyValue>
-		<PropertyValue name="OutputOnThreadDestroy">1</PropertyValue>
-		<PropertyValue name="OutputOnOutputDebugString">1</PropertyValue>
-		<PropertyValue name="OutputOnDebuggerMessage">1</PropertyValue>
-		<PropertyValue name="VariableWindowIcons">1</PropertyValue>
-		<PropertyValue name="DisableAttachSecurityWarning">0</PropertyValue>
-		<PropertyValue name="LoadDllExports">0</PropertyValue>
-		<PropertyValue name="NativeRPC">0</PropertyValue>
-		<PropertyValue name="AllowSideEffectEval">0</PropertyValue>
-		<PropertyValue name="LoadSymbolsWhenSettingsChanged">1</PropertyValue>
-		<PropertyValue name="SymbolUseExcludeList">1</PropertyValue>
-		<PropertyValue name="SymbolsAlwaysLoadAdjacent">1</PropertyValue>
-		<PropertyValue name="DontForceCacheOnManualLoad">0</PropertyValue>
-		<PropertyValue name="SymbolUseMSSymbolServers">0</PropertyValue>
-		<PropertyValue name="AutoLoadFromSymbolPath">1</PropertyValue>
-		<PropertyValue name="OneClickEdit">0</PropertyValue>
-		<PropertyValue name="OfferArrayExpansion">0</PropertyValue>
-		<PropertyValue name="VariableWindowPromptOnLargeExpansion">1</PropertyValue>
-		<PropertyValue name="VariableWindowMaxSupportedChildren">1000000</PropertyValue>
-		<PropertyValue name="PromptToAddSourceToIgnoreList">0</PropertyValue>
-		<PropertyValue name="OwnerDrawDebugLocationToolbar">1</PropertyValue>
-		<PropertyValue name="EnableSelectedBreakpointHighlight">1</PropertyValue>
-		<PropertyValue name="DisableUniscribe">0</PropertyValue>
-		<PropertyValue name="ShowParallelStacksBottomUp">0</PropertyValue>
-		<PropertyValue name="ThreadsWindowGroupingColumn">2048</PropertyValue>
-		<PropertyValue name="ThreadsWindowVisibleColumns">509</PropertyValue>
-		<PropertyValue name="ThreadsWindowShowTipWhenCallStackExpanded">0</PropertyValue>
-		<PropertyValue name="AllowDesignModePinning">0</PropertyValue>
-		<PropertyValue name="CallStackParamToString">0</PropertyValue>
-		<PropertyValue name="CheckRDTForFilesFirst">1</PropertyValue>
-		<PropertyValue name="AllowSourceServerInPartialTrust">0</PropertyValue>
-		<PropertyValue name="ENCEnableCrossUser">0</PropertyValue>
-		<PropertyValue name="ENCEnableNative">0</PropertyValue>
-		<PropertyValue name="OpenNewFilesProvisionally">1</PropertyValue>
-		<PropertyValue name="ForceRealFuncEval">1</PropertyValue>
-		<PropertyValue name="ShowOnlyCurrentProcess">0</PropertyValue>
-		<PropertyValue name="GpuRaceHazardsAllowSame">0</PropertyValue>
-		<PropertyValue name="DisasmToolbarIsExpanded">0</PropertyValue>
-		<PropertyValue name="SourceServerExtractToDirectory"/>
-		<PropertyValue name="FrameworkSourceServerName">http://referencesource.microsoft.com/symbols</PropertyValue>
-		<PropertyValue name="PublicSymbolServerName"/>
-		<PropertyValue name="PublicSymbolServerName2">http://msdl.microsoft.com/download/symbols</PropertyValue>
-		<PropertyValue name="DefaultTracepointMessage">Function: $FUNCTION, Thread: $TID $TNAME</PropertyValue>
-		<PropertyValue name="ProgramToDebugPath"/>
-		<PropertyValue name="AttachToProcessDefaultEngineList">{5FFF7536-0C87-462D-8FD2-7971D948E6DC}</PropertyValue>
-		<PropertyValue name="SecureSourceLocalDirectory"/>
-		<PropertyValue name="SymbolPath"/>
-		<PropertyValue name="SymbolPathState"/>
-		<PropertyValue name="SymbolCacheDir">C:\Users\Patapom\AppData\Local\Temp\SymbolCache</PropertyValue>
-		<PropertyValue name="SymbolIncludeList"/>
-		<PropertyValue name="SymbolIncludeListState"/>
-		<PropertyValue name="SymbolExcludeList"/>
-		<PropertyValue name="SymbolExcludeListState"/>
-	</Category>
 	<Category name="Environment_Group" RegisteredName="Environment_Group">
 		<Category name="Environment_Aliases" Category="{AD334E74-368A-4c46-9AF8-F53ABF0775F2}" Package="{DA9FB551-C724-11d0-AE1F-00A0C90FFFC3}" RegisteredName="Environment_Aliases" PackageName="Visual Studio Environment Package">
 			<Aliases Version="1.0">
@@ -867,6 +723,26 @@
 				<Alias Name="ClearBook" Definition="Edit.ClearBookmarks"/>
 			</Aliases>
 		</Category>
+		<Category name="Environment_ExternalTools" Category="{E8FAE9E8-FBA2-4474-B134-AB0FFCFB291D}" Package="{DA9FB551-C724-11d0-AE1F-00A0C90FFFC3}" RegisteredName="Environment_ExternalTools" PackageName="Visual Studio Environment Package">
+			<ExternalTools>
+				<UserCreatedTool>
+					<Arguments>/k "C:\Program Files (x86)\Microsoft Visual Studio 11.0\Common7\Tools\VsDevCmd.bat"</Arguments>
+					<CloseOnExit>true</CloseOnExit>
+					<Command>C:\Windows\System32\cmd.exe</Command>
+					<Index>6</Index>
+					<InitialDirectory>$(ProjectDir)</InitialDirectory>
+					<IsGUIapp>false</IsGUIapp>
+					<NameID>0</NameID>
+					<Package>{00000000-0000-0000-0000-000000000000}</Package>
+					<PromptForArguments>false</PromptForArguments>
+					<SaveAllDocs>true</SaveAllDocs>
+					<Title>Command Prompt</Title>
+					<Unicode>false</Unicode>
+					<UseOutputWindow>false</UseOutputWindow>
+					<UseTaskList>false</UseTaskList>
+				</UserCreatedTool>
+			</ExternalTools>
+		</Category>
 		<Category name="Environment_CallBrowser" Category="{50B05A5D-9174-48eb-851A-B1C616A0B43D}" Package="{DA9FB551-C724-11d0-AE1F-00A0C90FFFC3}" RegisteredName="Environment_CallBrowser" PackageName="Visual Studio Environment Package">
 			<PropertyValue name="CallBrowserSortAlphabetically">true</PropertyValue>
 			<PropertyValue name="CallBrowserSortByAccess">false</PropertyValue>
@@ -895,6 +771,220 @@
 			<PropertyValue name="ClassViewMembersSortAlphabetically">false</PropertyValue>
 			<PropertyValue name="ClassViewMembersSortByType">true</PropertyValue>
 			<PropertyValue name="ClassViewMembersSortByAccess">false</PropertyValue>
+		</Category>
+		<Category name="Environment_Expansions" Category="{0B9A10B2-C0D0-4a6a-8353-115E9CACF34A}" Package="{F5E7E720-1401-11d1-883B-0000F87579D2}" RegisteredName="Environment_Expansions" PackageName="Text Management Package">
+			<Expansions Default="true" Version="1.0"/>
+		</Category>
+		<Category name="Environment_ErrorList" Category="{68897077-DF64-4628-9BD4-025923684F2F}" Package="{4A9B7E50-AA16-11d0-A8C5-00A0C921A4D2}" RegisteredName="Environment_ErrorList" PackageName="Visual Studio Task List Package">
+			<PropertyValue name="Version">1</PropertyValue>
+			<PropertyValue name="ErrorListShowsErrors">true</PropertyValue>
+			<PropertyValue name="ErrorListShowsWarnings">false</PropertyValue>
+			<PropertyValue name="ErrorListShowsMessages">true</PropertyValue>
+			<PropertyValue name="ErrorListScopeFilteringActive">false</PropertyValue>
+			<PropertyValue name="ErrorListFilterScope">3</PropertyValue>
+			<PropertyValue name="ActiveProvider">{7E5BB8D2-57E5-4FA9-9542-3870395C16A1}</PropertyValue>
+			<TaskProviders>
+				<Provider GUID="{7E5BB8D2-57E5-4FA9-9542-3870395C16A1}">
+					<Columns>
+						<Column Name="Priority" Width="20" Visibility="Invisible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="Bitmap" Width="17" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="ProviderKnowsOrder" Width="18" Visibility="Visible" SortPriority="0" SortDirection="Up"/>
+						<Column Name="Checked" Width="28" Visibility="Invisible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="Description" Width="1452" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="File" Width="120" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="Line" Width="70" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="Column" Width="70" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="Project" Width="120" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="Category" Width="0" Visibility="Invisible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="Subcategory" Width="0" Visibility="Invisible" SortPriority="-1" SortDirection="Up"/>
+					</Columns>
+				</Provider>
+			</TaskProviders>
+		</Category>
+		<Category name="Environment_ExtensionManager" Category="{539391d7-9414-4715-b033-8669db0abee1}" Package="{e7576c05-1874-450c-9e98-cf3a0897a069}" RegisteredName="Environment_ExtensionManager" PackageName="ExtensionManagerPackage">
+			<PropertyValue name="AutomaticallyCheckForUpdates2">True</PropertyValue>
+			<PropertyValue name="CustomRepositories">&lt;ExtensionRepositoryConfigList Capacity="0" xmlns="clr-namespace:Microsoft.VisualStudio.ExtensionManager;assembly=Microsoft.VisualStudio.ExtensionManager.Implementation" /&gt;</PropertyValue>
+			<PropertyValue name="EnableAdminExtensions">True</PropertyValue>
+		</Category>
+		<Category name="Environment_DefaultEditors" Category="{68161AEE-BCA8-4214-B2E4-7875263E49C5}" Package="{DA9FB551-C724-11d0-AE1F-00A0C90FFFC3}" RegisteredName="Environment_DefaultEditors" PackageName="Visual Studio Environment Package">
+			<PropertyValue name="NumberOfMappings">10</PropertyValue>
+			<PropertyValue name="FileMapping&gt;0">cb&gt;{8B382828-6202-11D1-8870-0000F87579D2}&gt;{694DD9B6-B865-4C5B-AD85-86356E9C88DC}</PropertyValue>
+			<PropertyValue name="FileMapping&gt;1">cginc&gt;{8B382828-6202-11D1-8870-0000F87579D2}&gt;{B2F072B0-ABC1-11D0-9D62-00C04FD9DFD9}</PropertyValue>
+			<PropertyValue name="FileMapping&gt;2">fx&gt;{8B382828-6202-11D1-8870-0000F87579D2}&gt;{B2F072B0-ABC1-11D0-9D62-00C04FD9DFD9}</PropertyValue>
+			<PropertyValue name="FileMapping&gt;3">hlsl&gt;{8B382828-6202-11D1-8870-0000F87579D2}&gt;{B2F072B0-ABC1-11D0-9D62-00C04FD9DFD9}</PropertyValue>
+			<PropertyValue name="FileMapping&gt;4">java&gt;{8B382828-6202-11D1-8870-0000F87579D2}&gt;{694DD9B6-B865-4C5B-AD85-86356E9C88DC}</PropertyValue>
+			<PropertyValue name="FileMapping&gt;5">js&gt;{A52A054C-5228-4819-B568-E5B8040801B5}&gt;{00000000-0000-0000-0000-000000000000}</PropertyValue>
+			<PropertyValue name="FileMapping&gt;6">php&gt;{C76D83F8-A489-11D0-8195-00A0C91BBEE3}&gt;{00000000-0000-0000-0000-000000000000}</PropertyValue>
+			<PropertyValue name="FileMapping&gt;7">ps&gt;{8B382828-6202-11D1-8870-0000F87579D2}&gt;{B2F072B0-ABC1-11D0-9D62-00C04FD9DFD9}</PropertyValue>
+			<PropertyValue name="FileMapping&gt;8">shader&gt;{8B382828-6202-11D1-8870-0000F87579D2}&gt;{B2F072B0-ABC1-11D0-9D62-00C04FD9DFD9}</PropertyValue>
+			<PropertyValue name="FileMapping&gt;9">vs&gt;{8B382828-6202-11D1-8870-0000F87579D2}&gt;{B2F072B0-ABC1-11D0-9D62-00C04FD9DFD9}</PropertyValue>
+			<PropertyValue name="NumberOfDefaultEditors">0</PropertyValue>
+		</Category>
+		<Category name="Environment_UnifiedFind" Category="{DF00ADDF-C14C-4ffd-9325-634FD605850B}" Package="{DA9FB551-C724-11d0-AE1F-00A0C90FFFC3}" RegisteredName="Environment_UnifiedFind" PackageName="Visual Studio Environment Package">
+			<PropertyValue name="Options">MatchCase=1 WholeWord=1 Hidden=0 Up=0 Selection=0 Block=0 KeepCase=0 SubFolders=0 KeepOpen=0 NameOnly=0 Plain Document Find</PropertyValue>
+			<PropertyValue name="DialogOptions">MatchCase=0 WholeWord=0 Hidden=1 Up=0 Selection=0 Block=0 KeepCase=0 SubFolders=1 KeepOpen=0 NameOnly=0 Plain Solution FindAll</PropertyValue>
+			<PropertyValue name="AdornmentOptions">MatchCase=1 WholeWord=1 Hidden=0 Up=0 Selection=0 Block=0 KeepCase=0 SubFolders=0 KeepOpen=0 NameOnly=0 Plain Document Find</PropertyValue>
+			<PropertyValue name="Result list">1</PropertyValue>
+			<PropertyValue name="ShowEndOfSearch">1</PropertyValue>
+			<PropertyValue name="ShowNoFound">1</PropertyValue>
+			<PropertyValue name="ShowAllReplacementsNotAllowed">0</PropertyValue>
+			<PropertyValue name="ShowSomeReplacementsNotAllowed">0</PropertyValue>
+			<PropertyValue name="ShowNoMore">1</PropertyValue>
+			<PropertyValue name="ShowFindStart">1</PropertyValue>
+			<PropertyValue name="ShowCancel">1</PropertyValue>
+			<PropertyValue name="ShowCancelBeforeReplacementsMade">1</PropertyValue>
+			<PropertyValue name="ShowReplaceInFilesWarning">0</PropertyValue>
+			<PropertyValue name="ShowCancelEntireReplaceAfterCancellingSCC">0</PropertyValue>
+			<PropertyValue name="FindTextFromEditor">1</PropertyValue>
+			<PropertyValue name="HitReplaced">1</PropertyValue>
+			<PropertyValue name="Syntax">Regex</PropertyValue>
+			<PropertyValue name="In Files Pane Display Options">256</PropertyValue>
+			<PropertyValue name="NumberOfScopes">0</PropertyValue>
+		</Category>
+		<Category name="Environment_FindSymbol" Category="{C93260BC-0C07-484a-8188-6F4763BD7FD4}" Package="{DA9FB551-C724-11d0-AE1F-00A0C90FFFC3}" RegisteredName="Environment_FindSymbol" PackageName="Visual Studio Environment Package">
+			<PropertyValue name="FindOptionsIsExpanded">false</PropertyValue>
+			<PropertyValue name="LookinReferencesIsChecked">true</PropertyValue>
+			<PropertyValue name="MatchCaseIsChecked">false</PropertyValue>
+			<PropertyValue name="Type">2</PropertyValue>
+			<PropertyValue name="SelectedScope">{B1BA9461-FC54-45B3-A484-CB6DD0B95C94}</PropertyValue>
+			<PropertyValue name="SelectedScopeSubScope">0</PropertyValue>
+		</Category>
+		<Category name="Environment_FontsAndColors" Category="{1EDA5DD4-927A-43a7-810E-7FD247D0DA1D}" Package="{DA9FB551-C724-11d0-AE1F-00A0C90FFFC3}" RegisteredName="Environment_FontsAndColors" PackageName="Visual Studio Environment Package">
+			<PropertyValue name="Version">2</PropertyValue>
+			<FontsAndColors Version="2.0">
+				<Categories>
+					<Category GUID="{24908F31-6647-42B7-BEE5-556C73736824}" FontIsDefault="Yes">
+						<Items>
+							<Item Name="Comment" Foreground="0x00006400" Background="0x02000000" BoldFont="No"/>
+						</Items>
+					</Category>
+					<Category GUID="{358463D0-D084-400F-997E-A34FC570BC72}" FontName="Tahoma" FontSize="8" CharSet="0" FontIsDefault="No">
+						<Items/>
+					</Category>
+					<Category GUID="{40660F54-80FA-4375-89A3-8D06AA954EBA}" FontIsDefault="Yes">
+						<Items>
+							<Item Name="Plain Text" Foreground="0x02000000" Background="0x00AAAAAA" BoldFont="No"/>
+							<Item Name="Selected Text" Foreground="0x02000000" Background="0x02000000" BoldFont="No"/>
+							<Item Name="Inactive Selected Text" Foreground="0x02000000" Background="0x02000000" BoldFont="No"/>
+						</Items>
+					</Category>
+					<Category GUID="{75A05685-00A8-4DED-BAE5-E7A50BFA929A}" FontIsDefault="Yes">
+						<Items>
+							<Item Name="VA Brace Matching" Foreground="0x02000000" Background="0x02000000" BoldFont="Yes"/>
+							<Item Name="VA Brace Error" Foreground="0x000000FF" Background="0x02000000" BoldFont="Yes"/>
+							<Item Name="VA Find Reference" Foreground="0x02000000" Background="0x00FFFFE0" BoldFont="No"/>
+							<Item Name="VA Find Reference (Modified)" Foreground="0x02000000" Background="0x00E1E4FF" BoldFont="No"/>
+							<Item Name="VA Find Result" Foreground="0x02000000" Background="0x00B7FFFF" BoldFont="No"/>
+						</Items>
+					</Category>
+					<Category GUID="{8259ACED-490A-41B3-A0FB-64C842CCDC80}" FontName="Tahoma" FontSize="8" CharSet="0" FontIsDefault="No">
+						<Items/>
+					</Category>
+					<Category GUID="{9E632E6E-D786-4F9A-8D3E-B9398836C784}" FontIsDefault="Yes">
+						<Items>
+							<Item Name="Plain Text" Foreground="0x02000000" Background="0x00AAAAAA" BoldFont="No"/>
+							<Item Name="Selected Text" Foreground="0x02000000" Background="0x02000000" BoldFont="No"/>
+							<Item Name="Inactive Selected Text" Foreground="0x02000000" Background="0x02000000" BoldFont="No"/>
+						</Items>
+					</Category>
+					<Category GUID="{A7EE6BEE-D0AA-4B2F-AD9D-748276A725F6}" FontName="Tahoma" FontSize="8" CharSet="0" FontIsDefault="No">
+						<Items/>
+					</Category>
+					<Category GUID="{A9A5637F-B2A8-422E-8FB5-DFB4625F0111}" FontName="Tahoma" FontSize="8" CharSet="0" FontIsDefault="No">
+						<Items/>
+					</Category>
+					<Category GUID="{B36B0228-DBAD-4DB0-B9C7-2AD3E572010F}" FontName="Segoe UI" FontSize="9" CharSet="1" FontIsDefault="No">
+						<Items>
+							<Item Name="Different content" Foreground="0x000014E5" Background="0x00FFFFFF" BoldFont="No"/>
+							<Item Name="Identical content" Foreground="0x00000000" Background="0x00FFFFFF" BoldFont="No"/>
+							<Item Name="Source Only" Foreground="0x00000000" Background="0x00FFFFFF" BoldFont="No"/>
+							<Item Name="Target Only" Foreground="0x00000000" Background="0x00FFFFFF" BoldFont="No"/>
+							<Item Name="Not Downloaded" Foreground="0x00999999" Background="0x00FFFFFF" BoldFont="No"/>
+							<Item Name="Even Row Items" Foreground="0x00000000" Background="0x00FFFFFF" BoldFont="No"/>
+							<Item Name="Odd Row Items" Foreground="0x00000000" Background="0x00FFFFFF" BoldFont="No"/>
+						</Items>
+					</Category>
+					<Category GUID="{CE2ECED5-C21C-464C-9B45-15E10E9F9EF9}" FontIsDefault="Yes">
+						<Items>
+							<Item Name="Plain Text" Foreground="0x02000000" Background="0x00AAAAAA" BoldFont="No"/>
+							<Item Name="Selected Text" Foreground="0x02000000" Background="0x02000000" BoldFont="No"/>
+							<Item Name="Inactive Selected Text" Foreground="0x02000000" Background="0x02000000" BoldFont="No"/>
+						</Items>
+					</Category>
+				</Categories>
+			</FontsAndColors>
+		</Category>
+		<Category name="Environment_KeyBindings" Category="{F09035F1-80D2-4312-8EC4-4D354A4BCB4C}" Package="{DA9FB551-C724-11d0-AE1F-00A0C90FFFC3}" RegisteredName="Environment_KeyBindings" PackageName="Visual Studio Environment Package">
+			<Version>11.0.0.0</Version>
+			<KeyboardShortcuts>
+				<ScopeDefinitions>
+					<Scope Name="Team Explorer" ID="{7AA20502-9463-47B7-BF43-341BAF51157C}"/>
+					<Scope Name="VC Dialog Editor" ID="{543E0C02-8C85-4E43-933A-5EF320E3431F}"/>
+					<Scope Name="UML Class Diagram" ID="{FE170F05-DE3A-4067-A3ED-08AE56B31DB3}"/>
+					<Scope Name="UML Component Diagram" ID="{13C19B18-BD05-42F3-9D3A-2A55E6E9169F}"/>
+					<Scope Name="XML (Text) Editor" ID="{FA3CD31E-987B-443A-9B81-186104E8DAC1}"/>
+					<Scope Name="Text Editor" ID="{8B382828-6202-11D1-8870-0000F87579D2}"/>
+					<Scope Name="XAML UI Designer" ID="{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"/>
+					<Scope Name="Work Item Results View" ID="{7026002D-01F6-44E7-95CF-A896C00DA3F8}"/>
+					<Scope Name="ADO.NET Entity Data Model Designer" ID="{C99AEA30-8E36-4515-B76F-496F5A48A6AA}"/>
+					<Scope Name="Solution Explorer" ID="{3AE79031-E1BC-11D0-8F78-00A0C9110057}"/>
+					<Scope Name="Query Designer" ID="{B2C40B32-3A37-4CA9-97B9-FA44248B69FF}"/>
+					<Scope Name="WebBrowser" ID="{E8B06F41-6D01-11D2-AA7D-00C04F990343}"/>
+					<Scope Name="Graphics Designers" ID="{58961B49-13E0-48C0-9258-13CBC4D40279}"/>
+					<Scope Name="AppManifestDesigner" ID="{4D47164B-07B6-4A52-A855-728D6A2E2AA3}"/>
+					<Scope Name="DataSet Editor" ID="{B334A759-F450-40A5-BE2A-65937BCD5415}"/>
+					<Scope Name="Graph Document Editor" ID="{295A0962-5A59-4F4F-9E12-6BC670C15C3B}"/>
+					<Scope Name="F# Interactive" ID="{DEE22B65-9761-4A26-8FB2-759B971D6DFC}"/>
+					<Scope Name="View Designer" ID="{B968E165-98E0-41F0-8FBE-A8ED1D246A90}"/>
+					<Scope Name="Microsoft SQL Server Data Tools, Table Designer" ID="{2366CF66-2394-4701-AFCA-37ED7FD41648}"/>
+					<Scope Name="Global" ID="{5EFC7975-14BC-11CF-9B2B-00AA00573819}"/>
+					<Scope Name="Class Diagram" ID="{59B0B277-7DDF-4E36-A3ED-02DAC5B9E2FA}"/>
+					<Scope Name="UML Activity Diagram" ID="{950C3878-B510-4BC5-9051-42798A870364}"/>
+					<Scope Name="UML Use Case Diagram" ID="{FCFECC7C-3151-4B48-A85A-909F50500A70}"/>
+					<Scope Name="Work Item Query View" ID="{B6303490-B828-410C-9216-AE727D0E282D}"/>
+					<Scope Name="Team Foundation Build Detail Editor" ID="{86306A97-84F2-4F5A-889B-1318501AEB5F}"/>
+					<Scope Name="CSS Source Editor" ID="{A764E89A-518D-11D2-9A89-00C04F79EFC3}"/>
+					<Scope Name="Database Designer" ID="{CFF78A9B-78A3-45A3-9142-0267AFC261FA}"/>
+					<Scope Name="Work Item Editor" ID="{40A91D9D-8076-4D28-87C5-5AF9F0ACFE0F}"/>
+					<Scope Name="Sequence Diagram" ID="{5028BC9F-844B-4C51-A624-0005945D14AE}"/>
+					<Scope Name="Graphics Debugger" ID="{D27456A1-9094-4CDE-BADA-82994ED560D8}"/>
+					<Scope Name="VC String Editor" ID="{58442DA9-10DA-4AA9-A2AF-96E4D481379B}"/>
+					<Scope Name="Merge Editor Window" ID="{9A9A8AAA-ACD2-4DB6-BD81-8D64176C52B6}"/>
+					<Scope Name="Settings Designer" ID="{515231AD-C9DC-4AA3-808F-E1B65E72081C}"/>
+					<Scope Name="VisualStudio" ID="{B465B5AD-8799-4507-B90A-EE29ACF36AF9}"/>
+					<Scope Name="Windows Forms Designer" ID="{BA09E2AF-9DF2-4068-B2F0-4C7E5CC19E2F}"/>
+					<Scope Name="VC Accelerator Editor" ID="{EB56D0B5-BEE7-4D0C-8BE6-88A8ED256695}"/>
+					<Scope Name="Report Designer" ID="{CB3675B8-701E-4F56-9167-2714E167FF3F}"/>
+					<Scope Name="Workflow Designer" ID="{D4D9FCBC-B26A-4C41-AB9F-11FD2466829A}"/>
+					<Scope Name="Managed Resources Editor" ID="{FEA4DCC9-3645-44CD-92E7-84B55A16465C}"/>
+					<Scope Name="Page Inspector" ID="{B8F809CA-7D14-4935-8657-727DC294E16B}"/>
+					<Scope Name="Coded UI Test Editor" ID="{E91F82D5-B532-47E9-ADAD-72F96EF9D35F}"/>
+					<Scope Name="Concurrency Report" ID="{5FCCFCD6-6237-4D02-B1DC-B6321AF08CE5}"/>
+					<Scope Name="Difference Viewer" ID="{79D52DDF-52BC-43F1-9663-B3E85CDCA912}"/>
+					<Scope Name="Microsoft SQL Server Data Tools, Schema Compare" ID="{00E9D2E3-9044-47D1-978C-BE2825249219}"/>
+					<Scope Name="Table Designer" ID="{4194FEE5-6777-419F-A5FC-47A536DF1BDB}"/>
+					<Scope Name="Layer Diagram" ID="{305563E9-FDF9-485B-B73E-D9FEDCC36F2E}"/>
+					<Scope Name="HTML Editor Design View" ID="{CB3FCFEA-03DF-11D1-81D2-00A0C91BBEE3}"/>
+					<Scope Name="HTML Editor Source View" ID="{CB3FCFEB-03DF-11D1-81D2-00A0C91BBEE3}"/>
+					<Scope Name="VC Image Editor" ID="{C0BA70ED-069E-412B-9C06-7442E28A11B9}"/>
+					<Scope Name="Microsoft SQL Server Data Tools, T-SQL Editor" ID="{CC5D8DF0-88F4-4BB2-9DBB-B48CEE65C30A}"/>
+					<Scope Name="Query Results" ID="{0058A1F7-65F3-4DB9-B3D0-CA7E64DD73CD}"/>
+					<Scope Name="Test Explorer" ID="{E1B7D1F8-9B3C-49B1-8F4F-BFC63A88835D}"/>
+					<Scope Name="XML Schema Designer" ID="{DEE6CEF9-3BCA-449A-82A6-FC757D6956FB}"/>
+				</ScopeDefinitions>
+				<DefaultShortcuts/>
+				<ShortcutsScheme>Visual C# 2005</ShortcutsScheme>
+				<UserShortcuts>
+					<RemoveShortcut Command="Build.BuildSolution" Scope="Global">F6</RemoveShortcut>
+					<RemoveShortcut Command="Build.BuildSolution" Scope="Global">Ctrl+Shift+B</RemoveShortcut>
+					<RemoveShortcut Command="View.ViewCode" Scope="Global">F7</RemoveShortcut>
+					<Shortcut Command="Build.BuildSolution" Scope="Global">F7</Shortcut>
+					<Shortcut Command="Build.RebuildSolution" Scope="Global">Ctrl+Shift+F7</Shortcut>
+					<RemoveShortcut Command="View.ViewCode" Scope="Settings Designer">F7</RemoveShortcut>
+					<Shortcut Command="View.Output" Scope="Global">Alt+2</Shortcut>
+					<Shortcut Command="View.SolutionExplorer" Scope="Global">Alt+1</Shortcut>
+				</UserShortcuts>
+			</KeyboardShortcuts>
 		</Category>
 		<Category name="Environment_CommandBars" Category="{B9D9C123-B500-4202-B887-57C829CBD08F}" Package="{DA9FB551-C724-11d0-AE1F-00A0C90FFFC3}" RegisteredName="Environment_CommandBars" PackageName="Visual Studio Environment Package">
 			<CommandBars Version="05072811">
@@ -1148,175 +1238,6 @@
 			<PropertyValue name="ShowLargeButtons">false</PropertyValue>
 			<PropertyValue name="ShowScreenTips">true</PropertyValue>
 			<PropertyValue name="ShowScreenTipShortcutKeys">false</PropertyValue>
-		</Category>
-		<Category name="Environment_DefaultEditors" Category="{68161AEE-BCA8-4214-B2E4-7875263E49C5}" Package="{DA9FB551-C724-11d0-AE1F-00A0C90FFFC3}" RegisteredName="Environment_DefaultEditors" PackageName="Visual Studio Environment Package">
-			<PropertyValue name="NumberOfMappings">10</PropertyValue>
-			<PropertyValue name="FileMapping&gt;0">cb&gt;{8B382828-6202-11D1-8870-0000F87579D2}&gt;{694DD9B6-B865-4C5B-AD85-86356E9C88DC}</PropertyValue>
-			<PropertyValue name="FileMapping&gt;1">cginc&gt;{8B382828-6202-11D1-8870-0000F87579D2}&gt;{B2F072B0-ABC1-11D0-9D62-00C04FD9DFD9}</PropertyValue>
-			<PropertyValue name="FileMapping&gt;2">fx&gt;{8B382828-6202-11D1-8870-0000F87579D2}&gt;{B2F072B0-ABC1-11D0-9D62-00C04FD9DFD9}</PropertyValue>
-			<PropertyValue name="FileMapping&gt;3">hlsl&gt;{8B382828-6202-11D1-8870-0000F87579D2}&gt;{B2F072B0-ABC1-11D0-9D62-00C04FD9DFD9}</PropertyValue>
-			<PropertyValue name="FileMapping&gt;4">java&gt;{8B382828-6202-11D1-8870-0000F87579D2}&gt;{694DD9B6-B865-4C5B-AD85-86356E9C88DC}</PropertyValue>
-			<PropertyValue name="FileMapping&gt;5">js&gt;{A52A054C-5228-4819-B568-E5B8040801B5}&gt;{00000000-0000-0000-0000-000000000000}</PropertyValue>
-			<PropertyValue name="FileMapping&gt;6">php&gt;{C76D83F8-A489-11D0-8195-00A0C91BBEE3}&gt;{00000000-0000-0000-0000-000000000000}</PropertyValue>
-			<PropertyValue name="FileMapping&gt;7">ps&gt;{8B382828-6202-11D1-8870-0000F87579D2}&gt;{B2F072B0-ABC1-11D0-9D62-00C04FD9DFD9}</PropertyValue>
-			<PropertyValue name="FileMapping&gt;8">shader&gt;{8B382828-6202-11D1-8870-0000F87579D2}&gt;{B2F072B0-ABC1-11D0-9D62-00C04FD9DFD9}</PropertyValue>
-			<PropertyValue name="FileMapping&gt;9">vs&gt;{8B382828-6202-11D1-8870-0000F87579D2}&gt;{B2F072B0-ABC1-11D0-9D62-00C04FD9DFD9}</PropertyValue>
-			<PropertyValue name="NumberOfDefaultEditors">0</PropertyValue>
-		</Category>
-		<Category name="Environment_ErrorList" Category="{68897077-DF64-4628-9BD4-025923684F2F}" Package="{4A9B7E50-AA16-11d0-A8C5-00A0C921A4D2}" RegisteredName="Environment_ErrorList" PackageName="Visual Studio Task List Package">
-			<PropertyValue name="Version">1</PropertyValue>
-			<PropertyValue name="ErrorListShowsErrors">true</PropertyValue>
-			<PropertyValue name="ErrorListShowsWarnings">false</PropertyValue>
-			<PropertyValue name="ErrorListShowsMessages">true</PropertyValue>
-			<PropertyValue name="ErrorListScopeFilteringActive">false</PropertyValue>
-			<PropertyValue name="ErrorListFilterScope">3</PropertyValue>
-			<PropertyValue name="ActiveProvider">{7E5BB8D2-57E5-4FA9-9542-3870395C16A1}</PropertyValue>
-			<TaskProviders>
-				<Provider GUID="{7E5BB8D2-57E5-4FA9-9542-3870395C16A1}">
-					<Columns>
-						<Column Name="Priority" Width="20" Visibility="Invisible" SortPriority="-1" SortDirection="Up"/>
-						<Column Name="Bitmap" Width="17" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
-						<Column Name="ProviderKnowsOrder" Width="18" Visibility="Visible" SortPriority="0" SortDirection="Up"/>
-						<Column Name="Checked" Width="28" Visibility="Invisible" SortPriority="-1" SortDirection="Up"/>
-						<Column Name="Description" Width="18" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
-						<Column Name="File" Width="120" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
-						<Column Name="Line" Width="70" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
-						<Column Name="Column" Width="70" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
-						<Column Name="Project" Width="120" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
-						<Column Name="Category" Width="0" Visibility="Invisible" SortPriority="-1" SortDirection="Up"/>
-						<Column Name="Subcategory" Width="0" Visibility="Invisible" SortPriority="-1" SortDirection="Up"/>
-					</Columns>
-				</Provider>
-			</TaskProviders>
-		</Category>
-		<Category name="Environment_Expansions" Category="{0B9A10B2-C0D0-4a6a-8353-115E9CACF34A}" Package="{F5E7E720-1401-11d1-883B-0000F87579D2}" RegisteredName="Environment_Expansions" PackageName="Text Management Package">
-			<Expansions Default="true" Version="1.0"/>
-		</Category>
-		<Category name="Environment_ExtensionManager" Category="{539391d7-9414-4715-b033-8669db0abee1}" Package="{e7576c05-1874-450c-9e98-cf3a0897a069}" RegisteredName="Environment_ExtensionManager" PackageName="ExtensionManagerPackage">
-			<PropertyValue name="AutomaticallyCheckForUpdates2">True</PropertyValue>
-			<PropertyValue name="CustomRepositories">&lt;ExtensionRepositoryConfigList Capacity="0" xmlns="clr-namespace:Microsoft.VisualStudio.ExtensionManager;assembly=Microsoft.VisualStudio.ExtensionManager.Implementation" /&gt;</PropertyValue>
-			<PropertyValue name="EnableAdminExtensions">True</PropertyValue>
-		</Category>
-		<Category name="Environment_ExternalTools" Category="{E8FAE9E8-FBA2-4474-B134-AB0FFCFB291D}" Package="{DA9FB551-C724-11d0-AE1F-00A0C90FFFC3}" RegisteredName="Environment_ExternalTools" PackageName="Visual Studio Environment Package">
-			<ExternalTools>
-				<UserCreatedTool>
-					<Arguments>/k "C:\Program Files (x86)\Microsoft Visual Studio 11.0\Common7\Tools\VsDevCmd.bat"</Arguments>
-					<CloseOnExit>true</CloseOnExit>
-					<Command>C:\Windows\System32\cmd.exe</Command>
-					<Index>6</Index>
-					<InitialDirectory>$(ProjectDir)</InitialDirectory>
-					<IsGUIapp>false</IsGUIapp>
-					<NameID>0</NameID>
-					<Package>{00000000-0000-0000-0000-000000000000}</Package>
-					<PromptForArguments>false</PromptForArguments>
-					<SaveAllDocs>true</SaveAllDocs>
-					<Title>Command Prompt</Title>
-					<Unicode>false</Unicode>
-					<UseOutputWindow>false</UseOutputWindow>
-					<UseTaskList>false</UseTaskList>
-				</UserCreatedTool>
-			</ExternalTools>
-		</Category>
-		<Category name="Environment_FindSymbol" Category="{C93260BC-0C07-484a-8188-6F4763BD7FD4}" Package="{DA9FB551-C724-11d0-AE1F-00A0C90FFFC3}" RegisteredName="Environment_FindSymbol" PackageName="Visual Studio Environment Package">
-			<PropertyValue name="FindOptionsIsExpanded">false</PropertyValue>
-			<PropertyValue name="LookinReferencesIsChecked">true</PropertyValue>
-			<PropertyValue name="MatchCaseIsChecked">false</PropertyValue>
-			<PropertyValue name="Type">2</PropertyValue>
-			<PropertyValue name="SelectedScope">{B1BA9461-FC54-45B3-A484-CB6DD0B95C94}</PropertyValue>
-			<PropertyValue name="SelectedScopeSubScope">0</PropertyValue>
-		</Category>
-		<Category name="Environment_FontsAndColors" Category="{1EDA5DD4-927A-43a7-810E-7FD247D0DA1D}" Package="{DA9FB551-C724-11d0-AE1F-00A0C90FFFC3}" RegisteredName="Environment_FontsAndColors" PackageName="Visual Studio Environment Package">
-			<PropertyValue name="Version">2</PropertyValue>
-			<FontsAndColors Version="2.0">
-				<Categories>
-					<Category GUID="{24908F31-6647-42B7-BEE5-556C73736824}" FontIsDefault="Yes">
-						<Items>
-							<Item Name="Comment" Foreground="0x00006400" Background="0x02000000" BoldFont="No"/>
-						</Items>
-					</Category>
-					<Category GUID="{358463D0-D084-400F-997E-A34FC570BC72}" FontName="Tahoma" FontSize="8" CharSet="0" FontIsDefault="No">
-						<Items/>
-					</Category>
-					<Category GUID="{40660F54-80FA-4375-89A3-8D06AA954EBA}" FontIsDefault="Yes">
-						<Items>
-							<Item Name="Plain Text" Foreground="0x02000000" Background="0x00AAAAAA" BoldFont="No"/>
-							<Item Name="Selected Text" Foreground="0x02000000" Background="0x02000000" BoldFont="No"/>
-							<Item Name="Inactive Selected Text" Foreground="0x02000000" Background="0x02000000" BoldFont="No"/>
-						</Items>
-					</Category>
-					<Category GUID="{75A05685-00A8-4DED-BAE5-E7A50BFA929A}" FontIsDefault="Yes">
-						<Items>
-							<Item Name="VA Brace Matching" Foreground="0x02000000" Background="0x02000000" BoldFont="Yes"/>
-							<Item Name="VA Brace Error" Foreground="0x000000FF" Background="0x02000000" BoldFont="Yes"/>
-						</Items>
-					</Category>
-					<Category GUID="{8259ACED-490A-41B3-A0FB-64C842CCDC80}" FontName="Tahoma" FontSize="8" CharSet="0" FontIsDefault="No">
-						<Items/>
-					</Category>
-					<Category GUID="{9E632E6E-D786-4F9A-8D3E-B9398836C784}" FontIsDefault="Yes">
-						<Items>
-							<Item Name="Plain Text" Foreground="0x02000000" Background="0x00AAAAAA" BoldFont="No"/>
-							<Item Name="Selected Text" Foreground="0x02000000" Background="0x02000000" BoldFont="No"/>
-							<Item Name="Inactive Selected Text" Foreground="0x02000000" Background="0x02000000" BoldFont="No"/>
-						</Items>
-					</Category>
-					<Category GUID="{A7EE6BEE-D0AA-4B2F-AD9D-748276A725F6}" FontName="Tahoma" FontSize="8" CharSet="0" FontIsDefault="No">
-						<Items/>
-					</Category>
-					<Category GUID="{A9A5637F-B2A8-422E-8FB5-DFB4625F0111}" FontName="Tahoma" FontSize="8" CharSet="0" FontIsDefault="No">
-						<Items/>
-					</Category>
-					<Category GUID="{B36B0228-DBAD-4DB0-B9C7-2AD3E572010F}" FontName="Segoe UI" FontSize="9" CharSet="1" FontIsDefault="No">
-						<Items>
-							<Item Name="Different content" Foreground="0x000014E5" Background="0x00FFFFFF" BoldFont="No"/>
-							<Item Name="Identical content" Foreground="0x00000000" Background="0x00FFFFFF" BoldFont="No"/>
-							<Item Name="Source Only" Foreground="0x00000000" Background="0x00FFFFFF" BoldFont="No"/>
-							<Item Name="Target Only" Foreground="0x00000000" Background="0x00FFFFFF" BoldFont="No"/>
-							<Item Name="Not Downloaded" Foreground="0x00999999" Background="0x00FFFFFF" BoldFont="No"/>
-							<Item Name="Even Row Items" Foreground="0x00000000" Background="0x00FFFFFF" BoldFont="No"/>
-							<Item Name="Odd Row Items" Foreground="0x00000000" Background="0x00FFFFFF" BoldFont="No"/>
-						</Items>
-					</Category>
-					<Category GUID="{CE2ECED5-C21C-464C-9B45-15E10E9F9EF9}" FontIsDefault="Yes">
-						<Items>
-							<Item Name="Plain Text" Foreground="0x02000000" Background="0x00AAAAAA" BoldFont="No"/>
-							<Item Name="Selected Text" Foreground="0x02000000" Background="0x02000000" BoldFont="No"/>
-							<Item Name="Inactive Selected Text" Foreground="0x02000000" Background="0x02000000" BoldFont="No"/>
-						</Items>
-					</Category>
-				</Categories>
-			</FontsAndColors>
-		</Category>
-		<Category name="Environment_KeyBindings" Category="{F09035F1-80D2-4312-8EC4-4D354A4BCB4C}" Package="{DA9FB551-C724-11d0-AE1F-00A0C90FFFC3}" RegisteredName="Environment_KeyBindings" PackageName="Visual Studio Environment Package">
-			<KeyboardShortcuts Version="8.0">
-				<ScopeDefinitions>
-					<Scope Name="Class Diagram" ID="{59B0B277-7DDF-4E36-A3ED-02DAC5B9E2FA}"/>
-					<Scope Name="Deployment Diagram" ID="{D056D361-43FC-4DDD-8559-0D40EB8C77D7}"/>
-					<Scope Name="Logical Datacenter Diagram" ID="{222AC579-87F1-44CE-AE8C-B7D95931ED9F}"/>
-					<Scope Name="Application Connection Diagram" ID="{5A1FF380-5684-4D47-8E04-BDED2D53DCA4}"/>
-					<Scope Name="{FB87333B-16C8-400E-BC8F-F6B890410582}" ID="{FB87333B-16C8-400E-BC8F-F6B890410582}"/>
-					<Scope Name="XML Editor Data View" ID="{F482F8AF-1E66-4760-919E-964707265994}"/>
-					<Scope Name="XML Editor Schema View" ID="{E6631B5B-2EAB-41E8-82FD-6469645C76C9}"/>
-					<Scope Name="HTML Editor Source View" ID="{CB3FCFEB-03DF-11D1-81D2-00A0C91BBEE3}"/>
-					<Scope Name="Managed Resources Editor" ID="{FEA4DCC9-3645-44CD-92E7-84B55A16465C}"/>
-					<Scope Name="DataSet Editor" ID="{B334A759-F450-40A5-BE2A-65937BCD5415}"/>
-					<Scope Name="HTML Editor Design View" ID="{CB3FCFEA-03DF-11D1-81D2-00A0C91BBEE3}"/>
-					<Scope Name="Windows Forms Designer" ID="{BA09E2AF-9DF2-4068-B2F0-4C7E5CC19E2F}"/>
-					<Scope Name="{28D4A6C1-6FBF-42A9-8CC7-A705F524AEC8}" ID="{28D4A6C1-6FBF-42A9-8CC7-A705F524AEC8}"/>
-					<Scope Name="TOC Editor" ID="{75DC5041-469F-11D3-8F04-00C04F5E0C38}"/>
-					<Scope Name="Text Editor" ID="{8B382828-6202-11D1-8870-0000F87579D2}"/>
-					<Scope Name="{F17BDAE0-A16D-11D0-9F04-00A0C911004F}" ID="{F17BDAE0-A16D-11D0-9F04-00A0C911004F}"/>
-					<Scope Name="WebBrowser" ID="{E8B06F41-6D01-11D2-AA7D-00C04F990343}"/>
-					<Scope Name="View Designer" ID="{B968E165-98E0-41F0-8FBE-A8ED1D246A90}"/>
-					<Scope Name="Query Designer" ID="{B2C40B32-3A37-4CA9-97B9-FA44248B69FF}"/>
-					<Scope Name="VC Accelerator Editor" ID="{EB56D0B5-BEE7-4D0C-8BE6-88A8ED256695}"/>
-					<Scope Name="VC String Editor" ID="{58442DA9-10DA-4AA9-A2AF-96E4D481379B}"/>
-					<Scope Name="VC Image Editor" ID="{C0BA70ED-069E-412B-9C06-7442E28A11B9}"/>
-					<Scope Name="VC Dialog Editor" ID="{543E0C02-8C85-4E43-933A-5EF320E3431F}"/>
-					<Scope Name="Global" ID="{5EFC7975-14BC-11CF-9B2B-00AA00573819}"/>
-				</ScopeDefinitions>
-				<ShortcutsScheme>Visual C# 2005</ShortcutsScheme>
-			</KeyboardShortcuts>
 		</Category>
 		<Category name="Environment_NewProjectDialogPreferredLanguage" Category="{77E22C0C-9F4A-4bfb-AD3A-3F3F4711E9ED}" Package="{DA9FB551-C724-11d0-AE1F-00A0C90FFFC3}" RegisteredName="Environment_NewProjectDialogPreferredLanguage" PackageName="Visual Studio Environment Package">
 			<PropertyValue name="HasNewProjectDialogPreferredLanguage">true</PropertyValue>
@@ -1891,18 +1812,578 @@
 						<Column Name="Subcategory" Width="0" Visibility="Invisible" SortPriority="3" SortDirection="Up"/>
 					</Columns>
 				</Provider>
+				<Provider GUID="{00000000-0000-0000-0000-000000000000}">
+					<Columns>
+						<Column Name="Priority" Width="20" Visibility="Visible" SortPriority="0" SortDirection="Up"/>
+						<Column Name="Bitmap" Width="17" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="ProviderKnowsOrder" Width="17" Visibility="Invisible" SortPriority="2" SortDirection="Up"/>
+						<Column Name="Checked" Width="28" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="Description" Width="18" Visibility="Visible" SortPriority="7" SortDirection="Up"/>
+						<Column Name="File" Width="120" Visibility="Visible" SortPriority="4" SortDirection="Up"/>
+						<Column Name="Line" Width="70" Visibility="Visible" SortPriority="5" SortDirection="Up"/>
+						<Column Name="Column" Width="70" Visibility="Invisible" SortPriority="6" SortDirection="Up"/>
+						<Column Name="Category" Width="0" Visibility="Invisible" SortPriority="1" SortDirection="Up"/>
+						<Column Name="Subcategory" Width="0" Visibility="Invisible" SortPriority="3" SortDirection="Up"/>
+					</Columns>
+				</Provider>
+				<Provider GUID="{00000000-0000-0000-0000-000000000000}">
+					<Columns>
+						<Column Name="Priority" Width="20" Visibility="Visible" SortPriority="0" SortDirection="Up"/>
+						<Column Name="Bitmap" Width="17" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="ProviderKnowsOrder" Width="17" Visibility="Invisible" SortPriority="2" SortDirection="Up"/>
+						<Column Name="Checked" Width="28" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="Description" Width="18" Visibility="Visible" SortPriority="7" SortDirection="Up"/>
+						<Column Name="File" Width="120" Visibility="Visible" SortPriority="4" SortDirection="Up"/>
+						<Column Name="Line" Width="70" Visibility="Visible" SortPriority="5" SortDirection="Up"/>
+						<Column Name="Column" Width="70" Visibility="Invisible" SortPriority="6" SortDirection="Up"/>
+						<Column Name="Category" Width="0" Visibility="Invisible" SortPriority="1" SortDirection="Up"/>
+						<Column Name="Subcategory" Width="0" Visibility="Invisible" SortPriority="3" SortDirection="Up"/>
+					</Columns>
+				</Provider>
+				<Provider GUID="{00000000-0000-0000-0000-000000000000}">
+					<Columns>
+						<Column Name="Priority" Width="20" Visibility="Visible" SortPriority="0" SortDirection="Up"/>
+						<Column Name="Bitmap" Width="17" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="ProviderKnowsOrder" Width="17" Visibility="Invisible" SortPriority="2" SortDirection="Up"/>
+						<Column Name="Checked" Width="28" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="Description" Width="18" Visibility="Visible" SortPriority="7" SortDirection="Up"/>
+						<Column Name="File" Width="120" Visibility="Visible" SortPriority="4" SortDirection="Up"/>
+						<Column Name="Line" Width="70" Visibility="Visible" SortPriority="5" SortDirection="Up"/>
+						<Column Name="Column" Width="70" Visibility="Invisible" SortPriority="6" SortDirection="Up"/>
+						<Column Name="Category" Width="0" Visibility="Invisible" SortPriority="1" SortDirection="Up"/>
+						<Column Name="Subcategory" Width="0" Visibility="Invisible" SortPriority="3" SortDirection="Up"/>
+					</Columns>
+				</Provider>
+				<Provider GUID="{00000000-0000-0000-0000-000000000000}">
+					<Columns>
+						<Column Name="Priority" Width="20" Visibility="Visible" SortPriority="0" SortDirection="Up"/>
+						<Column Name="Bitmap" Width="17" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="ProviderKnowsOrder" Width="17" Visibility="Invisible" SortPriority="2" SortDirection="Up"/>
+						<Column Name="Checked" Width="28" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="Description" Width="18" Visibility="Visible" SortPriority="7" SortDirection="Up"/>
+						<Column Name="File" Width="120" Visibility="Visible" SortPriority="4" SortDirection="Up"/>
+						<Column Name="Line" Width="70" Visibility="Visible" SortPriority="5" SortDirection="Up"/>
+						<Column Name="Column" Width="70" Visibility="Invisible" SortPriority="6" SortDirection="Up"/>
+						<Column Name="Category" Width="0" Visibility="Invisible" SortPriority="1" SortDirection="Up"/>
+						<Column Name="Subcategory" Width="0" Visibility="Invisible" SortPriority="3" SortDirection="Up"/>
+					</Columns>
+				</Provider>
+				<Provider GUID="{00000000-0000-0000-0000-000000000000}">
+					<Columns>
+						<Column Name="Priority" Width="20" Visibility="Visible" SortPriority="0" SortDirection="Up"/>
+						<Column Name="Bitmap" Width="17" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="ProviderKnowsOrder" Width="17" Visibility="Invisible" SortPriority="2" SortDirection="Up"/>
+						<Column Name="Checked" Width="28" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="Description" Width="18" Visibility="Visible" SortPriority="7" SortDirection="Up"/>
+						<Column Name="File" Width="120" Visibility="Visible" SortPriority="4" SortDirection="Up"/>
+						<Column Name="Line" Width="70" Visibility="Visible" SortPriority="5" SortDirection="Up"/>
+						<Column Name="Column" Width="70" Visibility="Invisible" SortPriority="6" SortDirection="Up"/>
+						<Column Name="Category" Width="0" Visibility="Invisible" SortPriority="1" SortDirection="Up"/>
+						<Column Name="Subcategory" Width="0" Visibility="Invisible" SortPriority="3" SortDirection="Up"/>
+					</Columns>
+				</Provider>
+				<Provider GUID="{00000000-0000-0000-0000-000000000000}">
+					<Columns>
+						<Column Name="Priority" Width="20" Visibility="Visible" SortPriority="0" SortDirection="Up"/>
+						<Column Name="Bitmap" Width="17" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="ProviderKnowsOrder" Width="17" Visibility="Invisible" SortPriority="2" SortDirection="Up"/>
+						<Column Name="Checked" Width="28" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="Description" Width="18" Visibility="Visible" SortPriority="7" SortDirection="Up"/>
+						<Column Name="File" Width="120" Visibility="Visible" SortPriority="4" SortDirection="Up"/>
+						<Column Name="Line" Width="70" Visibility="Visible" SortPriority="5" SortDirection="Up"/>
+						<Column Name="Column" Width="70" Visibility="Invisible" SortPriority="6" SortDirection="Up"/>
+						<Column Name="Category" Width="0" Visibility="Invisible" SortPriority="1" SortDirection="Up"/>
+						<Column Name="Subcategory" Width="0" Visibility="Invisible" SortPriority="3" SortDirection="Up"/>
+					</Columns>
+				</Provider>
+				<Provider GUID="{00000000-0000-0000-0000-000000000000}">
+					<Columns>
+						<Column Name="Priority" Width="20" Visibility="Visible" SortPriority="0" SortDirection="Up"/>
+						<Column Name="Bitmap" Width="17" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="ProviderKnowsOrder" Width="17" Visibility="Invisible" SortPriority="2" SortDirection="Up"/>
+						<Column Name="Checked" Width="28" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="Description" Width="18" Visibility="Visible" SortPriority="7" SortDirection="Up"/>
+						<Column Name="File" Width="120" Visibility="Visible" SortPriority="4" SortDirection="Up"/>
+						<Column Name="Line" Width="70" Visibility="Visible" SortPriority="5" SortDirection="Up"/>
+						<Column Name="Column" Width="70" Visibility="Invisible" SortPriority="6" SortDirection="Up"/>
+						<Column Name="Category" Width="0" Visibility="Invisible" SortPriority="1" SortDirection="Up"/>
+						<Column Name="Subcategory" Width="0" Visibility="Invisible" SortPriority="3" SortDirection="Up"/>
+					</Columns>
+				</Provider>
+				<Provider GUID="{00000000-0000-0000-0000-000000000000}">
+					<Columns>
+						<Column Name="Priority" Width="20" Visibility="Visible" SortPriority="0" SortDirection="Up"/>
+						<Column Name="Bitmap" Width="17" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="ProviderKnowsOrder" Width="17" Visibility="Invisible" SortPriority="2" SortDirection="Up"/>
+						<Column Name="Checked" Width="28" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="Description" Width="18" Visibility="Visible" SortPriority="7" SortDirection="Up"/>
+						<Column Name="File" Width="120" Visibility="Visible" SortPriority="4" SortDirection="Up"/>
+						<Column Name="Line" Width="70" Visibility="Visible" SortPriority="5" SortDirection="Up"/>
+						<Column Name="Column" Width="70" Visibility="Invisible" SortPriority="6" SortDirection="Up"/>
+						<Column Name="Category" Width="0" Visibility="Invisible" SortPriority="1" SortDirection="Up"/>
+						<Column Name="Subcategory" Width="0" Visibility="Invisible" SortPriority="3" SortDirection="Up"/>
+					</Columns>
+				</Provider>
+				<Provider GUID="{00000000-0000-0000-0000-000000000000}">
+					<Columns>
+						<Column Name="Priority" Width="20" Visibility="Visible" SortPriority="0" SortDirection="Up"/>
+						<Column Name="Bitmap" Width="17" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="ProviderKnowsOrder" Width="17" Visibility="Invisible" SortPriority="2" SortDirection="Up"/>
+						<Column Name="Checked" Width="28" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="Description" Width="18" Visibility="Visible" SortPriority="7" SortDirection="Up"/>
+						<Column Name="File" Width="120" Visibility="Visible" SortPriority="4" SortDirection="Up"/>
+						<Column Name="Line" Width="70" Visibility="Visible" SortPriority="5" SortDirection="Up"/>
+						<Column Name="Column" Width="70" Visibility="Invisible" SortPriority="6" SortDirection="Up"/>
+						<Column Name="Category" Width="0" Visibility="Invisible" SortPriority="1" SortDirection="Up"/>
+						<Column Name="Subcategory" Width="0" Visibility="Invisible" SortPriority="3" SortDirection="Up"/>
+					</Columns>
+				</Provider>
+				<Provider GUID="{00000000-0000-0000-0000-000000000000}">
+					<Columns>
+						<Column Name="Priority" Width="20" Visibility="Visible" SortPriority="0" SortDirection="Up"/>
+						<Column Name="Bitmap" Width="17" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="ProviderKnowsOrder" Width="17" Visibility="Invisible" SortPriority="2" SortDirection="Up"/>
+						<Column Name="Checked" Width="28" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="Description" Width="18" Visibility="Visible" SortPriority="7" SortDirection="Up"/>
+						<Column Name="File" Width="120" Visibility="Visible" SortPriority="4" SortDirection="Up"/>
+						<Column Name="Line" Width="70" Visibility="Visible" SortPriority="5" SortDirection="Up"/>
+						<Column Name="Column" Width="70" Visibility="Invisible" SortPriority="6" SortDirection="Up"/>
+						<Column Name="Category" Width="0" Visibility="Invisible" SortPriority="1" SortDirection="Up"/>
+						<Column Name="Subcategory" Width="0" Visibility="Invisible" SortPriority="3" SortDirection="Up"/>
+					</Columns>
+				</Provider>
+				<Provider GUID="{00000000-0000-0000-0000-000000000000}">
+					<Columns>
+						<Column Name="Priority" Width="20" Visibility="Visible" SortPriority="0" SortDirection="Up"/>
+						<Column Name="Bitmap" Width="17" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="ProviderKnowsOrder" Width="17" Visibility="Invisible" SortPriority="2" SortDirection="Up"/>
+						<Column Name="Checked" Width="28" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="Description" Width="18" Visibility="Visible" SortPriority="7" SortDirection="Up"/>
+						<Column Name="File" Width="120" Visibility="Visible" SortPriority="4" SortDirection="Up"/>
+						<Column Name="Line" Width="70" Visibility="Visible" SortPriority="5" SortDirection="Up"/>
+						<Column Name="Column" Width="70" Visibility="Invisible" SortPriority="6" SortDirection="Up"/>
+						<Column Name="Category" Width="0" Visibility="Invisible" SortPriority="1" SortDirection="Up"/>
+						<Column Name="Subcategory" Width="0" Visibility="Invisible" SortPriority="3" SortDirection="Up"/>
+					</Columns>
+				</Provider>
+				<Provider GUID="{00000000-0000-0000-0000-000000000000}">
+					<Columns>
+						<Column Name="Priority" Width="20" Visibility="Visible" SortPriority="0" SortDirection="Up"/>
+						<Column Name="Bitmap" Width="17" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="ProviderKnowsOrder" Width="17" Visibility="Invisible" SortPriority="2" SortDirection="Up"/>
+						<Column Name="Checked" Width="28" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="Description" Width="18" Visibility="Visible" SortPriority="7" SortDirection="Up"/>
+						<Column Name="File" Width="120" Visibility="Visible" SortPriority="4" SortDirection="Up"/>
+						<Column Name="Line" Width="70" Visibility="Visible" SortPriority="5" SortDirection="Up"/>
+						<Column Name="Column" Width="70" Visibility="Invisible" SortPriority="6" SortDirection="Up"/>
+						<Column Name="Category" Width="0" Visibility="Invisible" SortPriority="1" SortDirection="Up"/>
+						<Column Name="Subcategory" Width="0" Visibility="Invisible" SortPriority="3" SortDirection="Up"/>
+					</Columns>
+				</Provider>
+				<Provider GUID="{00000000-0000-0000-0000-000000000000}">
+					<Columns>
+						<Column Name="Priority" Width="20" Visibility="Visible" SortPriority="0" SortDirection="Up"/>
+						<Column Name="Bitmap" Width="17" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="ProviderKnowsOrder" Width="17" Visibility="Invisible" SortPriority="2" SortDirection="Up"/>
+						<Column Name="Checked" Width="28" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="Description" Width="18" Visibility="Visible" SortPriority="7" SortDirection="Up"/>
+						<Column Name="File" Width="120" Visibility="Visible" SortPriority="4" SortDirection="Up"/>
+						<Column Name="Line" Width="70" Visibility="Visible" SortPriority="5" SortDirection="Up"/>
+						<Column Name="Column" Width="70" Visibility="Invisible" SortPriority="6" SortDirection="Up"/>
+						<Column Name="Category" Width="0" Visibility="Invisible" SortPriority="1" SortDirection="Up"/>
+						<Column Name="Subcategory" Width="0" Visibility="Invisible" SortPriority="3" SortDirection="Up"/>
+					</Columns>
+				</Provider>
+				<Provider GUID="{00000000-0000-0000-0000-000000000000}">
+					<Columns>
+						<Column Name="Priority" Width="20" Visibility="Visible" SortPriority="0" SortDirection="Up"/>
+						<Column Name="Bitmap" Width="17" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="ProviderKnowsOrder" Width="17" Visibility="Invisible" SortPriority="2" SortDirection="Up"/>
+						<Column Name="Checked" Width="28" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="Description" Width="18" Visibility="Visible" SortPriority="7" SortDirection="Up"/>
+						<Column Name="File" Width="120" Visibility="Visible" SortPriority="4" SortDirection="Up"/>
+						<Column Name="Line" Width="70" Visibility="Visible" SortPriority="5" SortDirection="Up"/>
+						<Column Name="Column" Width="70" Visibility="Invisible" SortPriority="6" SortDirection="Up"/>
+						<Column Name="Category" Width="0" Visibility="Invisible" SortPriority="1" SortDirection="Up"/>
+						<Column Name="Subcategory" Width="0" Visibility="Invisible" SortPriority="3" SortDirection="Up"/>
+					</Columns>
+				</Provider>
+				<Provider GUID="{00000000-0000-0000-0000-000000000000}">
+					<Columns>
+						<Column Name="Priority" Width="20" Visibility="Visible" SortPriority="0" SortDirection="Up"/>
+						<Column Name="Bitmap" Width="17" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="ProviderKnowsOrder" Width="17" Visibility="Invisible" SortPriority="2" SortDirection="Up"/>
+						<Column Name="Checked" Width="28" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="Description" Width="18" Visibility="Visible" SortPriority="7" SortDirection="Up"/>
+						<Column Name="File" Width="120" Visibility="Visible" SortPriority="4" SortDirection="Up"/>
+						<Column Name="Line" Width="70" Visibility="Visible" SortPriority="5" SortDirection="Up"/>
+						<Column Name="Column" Width="70" Visibility="Invisible" SortPriority="6" SortDirection="Up"/>
+						<Column Name="Category" Width="0" Visibility="Invisible" SortPriority="1" SortDirection="Up"/>
+						<Column Name="Subcategory" Width="0" Visibility="Invisible" SortPriority="3" SortDirection="Up"/>
+					</Columns>
+				</Provider>
+				<Provider GUID="{00000000-0000-0000-0000-000000000000}">
+					<Columns>
+						<Column Name="Priority" Width="20" Visibility="Visible" SortPriority="0" SortDirection="Up"/>
+						<Column Name="Bitmap" Width="17" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="ProviderKnowsOrder" Width="17" Visibility="Invisible" SortPriority="2" SortDirection="Up"/>
+						<Column Name="Checked" Width="28" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="Description" Width="18" Visibility="Visible" SortPriority="7" SortDirection="Up"/>
+						<Column Name="File" Width="120" Visibility="Visible" SortPriority="4" SortDirection="Up"/>
+						<Column Name="Line" Width="70" Visibility="Visible" SortPriority="5" SortDirection="Up"/>
+						<Column Name="Column" Width="70" Visibility="Invisible" SortPriority="6" SortDirection="Up"/>
+						<Column Name="Category" Width="0" Visibility="Invisible" SortPriority="1" SortDirection="Up"/>
+						<Column Name="Subcategory" Width="0" Visibility="Invisible" SortPriority="3" SortDirection="Up"/>
+					</Columns>
+				</Provider>
+				<Provider GUID="{00000000-0000-0000-0000-000000000000}">
+					<Columns>
+						<Column Name="Priority" Width="20" Visibility="Visible" SortPriority="0" SortDirection="Up"/>
+						<Column Name="Bitmap" Width="17" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="ProviderKnowsOrder" Width="17" Visibility="Invisible" SortPriority="2" SortDirection="Up"/>
+						<Column Name="Checked" Width="28" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="Description" Width="18" Visibility="Visible" SortPriority="7" SortDirection="Up"/>
+						<Column Name="File" Width="120" Visibility="Visible" SortPriority="4" SortDirection="Up"/>
+						<Column Name="Line" Width="70" Visibility="Visible" SortPriority="5" SortDirection="Up"/>
+						<Column Name="Column" Width="70" Visibility="Invisible" SortPriority="6" SortDirection="Up"/>
+						<Column Name="Category" Width="0" Visibility="Invisible" SortPriority="1" SortDirection="Up"/>
+						<Column Name="Subcategory" Width="0" Visibility="Invisible" SortPriority="3" SortDirection="Up"/>
+					</Columns>
+				</Provider>
+				<Provider GUID="{00000000-0000-0000-0000-000000000000}">
+					<Columns>
+						<Column Name="Priority" Width="20" Visibility="Visible" SortPriority="0" SortDirection="Up"/>
+						<Column Name="Bitmap" Width="17" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="ProviderKnowsOrder" Width="17" Visibility="Invisible" SortPriority="2" SortDirection="Up"/>
+						<Column Name="Checked" Width="28" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="Description" Width="18" Visibility="Visible" SortPriority="7" SortDirection="Up"/>
+						<Column Name="File" Width="120" Visibility="Visible" SortPriority="4" SortDirection="Up"/>
+						<Column Name="Line" Width="70" Visibility="Visible" SortPriority="5" SortDirection="Up"/>
+						<Column Name="Column" Width="70" Visibility="Invisible" SortPriority="6" SortDirection="Up"/>
+						<Column Name="Category" Width="0" Visibility="Invisible" SortPriority="1" SortDirection="Up"/>
+						<Column Name="Subcategory" Width="0" Visibility="Invisible" SortPriority="3" SortDirection="Up"/>
+					</Columns>
+				</Provider>
+				<Provider GUID="{00000000-0000-0000-0000-000000000000}">
+					<Columns>
+						<Column Name="Priority" Width="20" Visibility="Visible" SortPriority="0" SortDirection="Up"/>
+						<Column Name="Bitmap" Width="17" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="ProviderKnowsOrder" Width="17" Visibility="Invisible" SortPriority="2" SortDirection="Up"/>
+						<Column Name="Checked" Width="28" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="Description" Width="18" Visibility="Visible" SortPriority="7" SortDirection="Up"/>
+						<Column Name="File" Width="120" Visibility="Visible" SortPriority="4" SortDirection="Up"/>
+						<Column Name="Line" Width="70" Visibility="Visible" SortPriority="5" SortDirection="Up"/>
+						<Column Name="Column" Width="70" Visibility="Invisible" SortPriority="6" SortDirection="Up"/>
+						<Column Name="Category" Width="0" Visibility="Invisible" SortPriority="1" SortDirection="Up"/>
+						<Column Name="Subcategory" Width="0" Visibility="Invisible" SortPriority="3" SortDirection="Up"/>
+					</Columns>
+				</Provider>
+				<Provider GUID="{00000000-0000-0000-0000-000000000000}">
+					<Columns>
+						<Column Name="Priority" Width="20" Visibility="Visible" SortPriority="0" SortDirection="Up"/>
+						<Column Name="Bitmap" Width="17" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="ProviderKnowsOrder" Width="17" Visibility="Invisible" SortPriority="2" SortDirection="Up"/>
+						<Column Name="Checked" Width="28" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="Description" Width="18" Visibility="Visible" SortPriority="7" SortDirection="Up"/>
+						<Column Name="File" Width="120" Visibility="Visible" SortPriority="4" SortDirection="Up"/>
+						<Column Name="Line" Width="70" Visibility="Visible" SortPriority="5" SortDirection="Up"/>
+						<Column Name="Column" Width="70" Visibility="Invisible" SortPriority="6" SortDirection="Up"/>
+						<Column Name="Category" Width="0" Visibility="Invisible" SortPriority="1" SortDirection="Up"/>
+						<Column Name="Subcategory" Width="0" Visibility="Invisible" SortPriority="3" SortDirection="Up"/>
+					</Columns>
+				</Provider>
+				<Provider GUID="{00000000-0000-0000-0000-000000000000}">
+					<Columns>
+						<Column Name="Priority" Width="20" Visibility="Visible" SortPriority="0" SortDirection="Up"/>
+						<Column Name="Bitmap" Width="17" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="ProviderKnowsOrder" Width="17" Visibility="Invisible" SortPriority="2" SortDirection="Up"/>
+						<Column Name="Checked" Width="28" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="Description" Width="18" Visibility="Visible" SortPriority="7" SortDirection="Up"/>
+						<Column Name="File" Width="120" Visibility="Visible" SortPriority="4" SortDirection="Up"/>
+						<Column Name="Line" Width="70" Visibility="Visible" SortPriority="5" SortDirection="Up"/>
+						<Column Name="Column" Width="70" Visibility="Invisible" SortPriority="6" SortDirection="Up"/>
+						<Column Name="Category" Width="0" Visibility="Invisible" SortPriority="1" SortDirection="Up"/>
+						<Column Name="Subcategory" Width="0" Visibility="Invisible" SortPriority="3" SortDirection="Up"/>
+					</Columns>
+				</Provider>
+				<Provider GUID="{00000000-0000-0000-0000-000000000000}">
+					<Columns>
+						<Column Name="Priority" Width="20" Visibility="Visible" SortPriority="0" SortDirection="Up"/>
+						<Column Name="Bitmap" Width="17" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="ProviderKnowsOrder" Width="17" Visibility="Invisible" SortPriority="2" SortDirection="Up"/>
+						<Column Name="Checked" Width="28" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="Description" Width="18" Visibility="Visible" SortPriority="7" SortDirection="Up"/>
+						<Column Name="File" Width="120" Visibility="Visible" SortPriority="4" SortDirection="Up"/>
+						<Column Name="Line" Width="70" Visibility="Visible" SortPriority="5" SortDirection="Up"/>
+						<Column Name="Column" Width="70" Visibility="Invisible" SortPriority="6" SortDirection="Up"/>
+						<Column Name="Category" Width="0" Visibility="Invisible" SortPriority="1" SortDirection="Up"/>
+						<Column Name="Subcategory" Width="0" Visibility="Invisible" SortPriority="3" SortDirection="Up"/>
+					</Columns>
+				</Provider>
+				<Provider GUID="{00000000-0000-0000-0000-000000000000}">
+					<Columns>
+						<Column Name="Priority" Width="20" Visibility="Visible" SortPriority="0" SortDirection="Up"/>
+						<Column Name="Bitmap" Width="17" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="ProviderKnowsOrder" Width="17" Visibility="Invisible" SortPriority="2" SortDirection="Up"/>
+						<Column Name="Checked" Width="28" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="Description" Width="18" Visibility="Visible" SortPriority="7" SortDirection="Up"/>
+						<Column Name="File" Width="120" Visibility="Visible" SortPriority="4" SortDirection="Up"/>
+						<Column Name="Line" Width="70" Visibility="Visible" SortPriority="5" SortDirection="Up"/>
+						<Column Name="Column" Width="70" Visibility="Invisible" SortPriority="6" SortDirection="Up"/>
+						<Column Name="Category" Width="0" Visibility="Invisible" SortPriority="1" SortDirection="Up"/>
+						<Column Name="Subcategory" Width="0" Visibility="Invisible" SortPriority="3" SortDirection="Up"/>
+					</Columns>
+				</Provider>
+				<Provider GUID="{00000000-0000-0000-0000-000000000000}">
+					<Columns>
+						<Column Name="Priority" Width="20" Visibility="Visible" SortPriority="0" SortDirection="Up"/>
+						<Column Name="Bitmap" Width="17" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="ProviderKnowsOrder" Width="17" Visibility="Invisible" SortPriority="2" SortDirection="Up"/>
+						<Column Name="Checked" Width="28" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="Description" Width="18" Visibility="Visible" SortPriority="7" SortDirection="Up"/>
+						<Column Name="File" Width="120" Visibility="Visible" SortPriority="4" SortDirection="Up"/>
+						<Column Name="Line" Width="70" Visibility="Visible" SortPriority="5" SortDirection="Up"/>
+						<Column Name="Column" Width="70" Visibility="Invisible" SortPriority="6" SortDirection="Up"/>
+						<Column Name="Category" Width="0" Visibility="Invisible" SortPriority="1" SortDirection="Up"/>
+						<Column Name="Subcategory" Width="0" Visibility="Invisible" SortPriority="3" SortDirection="Up"/>
+					</Columns>
+				</Provider>
+				<Provider GUID="{00000000-0000-0000-0000-000000000000}">
+					<Columns>
+						<Column Name="Priority" Width="20" Visibility="Visible" SortPriority="0" SortDirection="Up"/>
+						<Column Name="Bitmap" Width="17" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="ProviderKnowsOrder" Width="17" Visibility="Invisible" SortPriority="2" SortDirection="Up"/>
+						<Column Name="Checked" Width="28" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="Description" Width="18" Visibility="Visible" SortPriority="7" SortDirection="Up"/>
+						<Column Name="File" Width="120" Visibility="Visible" SortPriority="4" SortDirection="Up"/>
+						<Column Name="Line" Width="70" Visibility="Visible" SortPriority="5" SortDirection="Up"/>
+						<Column Name="Column" Width="70" Visibility="Invisible" SortPriority="6" SortDirection="Up"/>
+						<Column Name="Category" Width="0" Visibility="Invisible" SortPriority="1" SortDirection="Up"/>
+						<Column Name="Subcategory" Width="0" Visibility="Invisible" SortPriority="3" SortDirection="Up"/>
+					</Columns>
+				</Provider>
+				<Provider GUID="{00000000-0000-0000-0000-000000000000}">
+					<Columns>
+						<Column Name="Priority" Width="20" Visibility="Visible" SortPriority="0" SortDirection="Up"/>
+						<Column Name="Bitmap" Width="17" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="ProviderKnowsOrder" Width="17" Visibility="Invisible" SortPriority="2" SortDirection="Up"/>
+						<Column Name="Checked" Width="28" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="Description" Width="18" Visibility="Visible" SortPriority="7" SortDirection="Up"/>
+						<Column Name="File" Width="120" Visibility="Visible" SortPriority="4" SortDirection="Up"/>
+						<Column Name="Line" Width="70" Visibility="Visible" SortPriority="5" SortDirection="Up"/>
+						<Column Name="Column" Width="70" Visibility="Invisible" SortPriority="6" SortDirection="Up"/>
+						<Column Name="Category" Width="0" Visibility="Invisible" SortPriority="1" SortDirection="Up"/>
+						<Column Name="Subcategory" Width="0" Visibility="Invisible" SortPriority="3" SortDirection="Up"/>
+					</Columns>
+				</Provider>
+				<Provider GUID="{00000000-0000-0000-0000-000000000000}">
+					<Columns>
+						<Column Name="Priority" Width="20" Visibility="Visible" SortPriority="0" SortDirection="Up"/>
+						<Column Name="Bitmap" Width="17" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="ProviderKnowsOrder" Width="17" Visibility="Invisible" SortPriority="2" SortDirection="Up"/>
+						<Column Name="Checked" Width="28" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="Description" Width="18" Visibility="Visible" SortPriority="7" SortDirection="Up"/>
+						<Column Name="File" Width="120" Visibility="Visible" SortPriority="4" SortDirection="Up"/>
+						<Column Name="Line" Width="70" Visibility="Visible" SortPriority="5" SortDirection="Up"/>
+						<Column Name="Column" Width="70" Visibility="Invisible" SortPriority="6" SortDirection="Up"/>
+						<Column Name="Category" Width="0" Visibility="Invisible" SortPriority="1" SortDirection="Up"/>
+						<Column Name="Subcategory" Width="0" Visibility="Invisible" SortPriority="3" SortDirection="Up"/>
+					</Columns>
+				</Provider>
+				<Provider GUID="{00000000-0000-0000-0000-000000000000}">
+					<Columns>
+						<Column Name="Priority" Width="20" Visibility="Visible" SortPriority="0" SortDirection="Up"/>
+						<Column Name="Bitmap" Width="17" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="ProviderKnowsOrder" Width="17" Visibility="Invisible" SortPriority="2" SortDirection="Up"/>
+						<Column Name="Checked" Width="28" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="Description" Width="18" Visibility="Visible" SortPriority="7" SortDirection="Up"/>
+						<Column Name="File" Width="120" Visibility="Visible" SortPriority="4" SortDirection="Up"/>
+						<Column Name="Line" Width="70" Visibility="Visible" SortPriority="5" SortDirection="Up"/>
+						<Column Name="Column" Width="70" Visibility="Invisible" SortPriority="6" SortDirection="Up"/>
+						<Column Name="Category" Width="0" Visibility="Invisible" SortPriority="1" SortDirection="Up"/>
+						<Column Name="Subcategory" Width="0" Visibility="Invisible" SortPriority="3" SortDirection="Up"/>
+					</Columns>
+				</Provider>
+				<Provider GUID="{00000000-0000-0000-0000-000000000000}">
+					<Columns>
+						<Column Name="Priority" Width="20" Visibility="Visible" SortPriority="0" SortDirection="Up"/>
+						<Column Name="Bitmap" Width="17" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="ProviderKnowsOrder" Width="17" Visibility="Invisible" SortPriority="2" SortDirection="Up"/>
+						<Column Name="Checked" Width="28" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="Description" Width="18" Visibility="Visible" SortPriority="7" SortDirection="Up"/>
+						<Column Name="File" Width="120" Visibility="Visible" SortPriority="4" SortDirection="Up"/>
+						<Column Name="Line" Width="70" Visibility="Visible" SortPriority="5" SortDirection="Up"/>
+						<Column Name="Column" Width="70" Visibility="Invisible" SortPriority="6" SortDirection="Up"/>
+						<Column Name="Category" Width="0" Visibility="Invisible" SortPriority="1" SortDirection="Up"/>
+						<Column Name="Subcategory" Width="0" Visibility="Invisible" SortPriority="3" SortDirection="Up"/>
+					</Columns>
+				</Provider>
+				<Provider GUID="{00000000-0000-0000-0000-000000000000}">
+					<Columns>
+						<Column Name="Priority" Width="20" Visibility="Visible" SortPriority="0" SortDirection="Up"/>
+						<Column Name="Bitmap" Width="17" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="ProviderKnowsOrder" Width="17" Visibility="Invisible" SortPriority="2" SortDirection="Up"/>
+						<Column Name="Checked" Width="28" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="Description" Width="18" Visibility="Visible" SortPriority="7" SortDirection="Up"/>
+						<Column Name="File" Width="120" Visibility="Visible" SortPriority="4" SortDirection="Up"/>
+						<Column Name="Line" Width="70" Visibility="Visible" SortPriority="5" SortDirection="Up"/>
+						<Column Name="Column" Width="70" Visibility="Invisible" SortPriority="6" SortDirection="Up"/>
+						<Column Name="Category" Width="0" Visibility="Invisible" SortPriority="1" SortDirection="Up"/>
+						<Column Name="Subcategory" Width="0" Visibility="Invisible" SortPriority="3" SortDirection="Up"/>
+					</Columns>
+				</Provider>
+				<Provider GUID="{00000000-0000-0000-0000-000000000000}">
+					<Columns>
+						<Column Name="Priority" Width="20" Visibility="Visible" SortPriority="0" SortDirection="Up"/>
+						<Column Name="Bitmap" Width="17" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="ProviderKnowsOrder" Width="17" Visibility="Invisible" SortPriority="2" SortDirection="Up"/>
+						<Column Name="Checked" Width="28" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="Description" Width="18" Visibility="Visible" SortPriority="7" SortDirection="Up"/>
+						<Column Name="File" Width="120" Visibility="Visible" SortPriority="4" SortDirection="Up"/>
+						<Column Name="Line" Width="70" Visibility="Visible" SortPriority="5" SortDirection="Up"/>
+						<Column Name="Column" Width="70" Visibility="Invisible" SortPriority="6" SortDirection="Up"/>
+						<Column Name="Category" Width="0" Visibility="Invisible" SortPriority="1" SortDirection="Up"/>
+						<Column Name="Subcategory" Width="0" Visibility="Invisible" SortPriority="3" SortDirection="Up"/>
+					</Columns>
+				</Provider>
+				<Provider GUID="{00000000-0000-0000-0000-000000000000}">
+					<Columns>
+						<Column Name="Priority" Width="20" Visibility="Visible" SortPriority="0" SortDirection="Up"/>
+						<Column Name="Bitmap" Width="17" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="ProviderKnowsOrder" Width="17" Visibility="Invisible" SortPriority="2" SortDirection="Up"/>
+						<Column Name="Checked" Width="28" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="Description" Width="18" Visibility="Visible" SortPriority="7" SortDirection="Up"/>
+						<Column Name="File" Width="120" Visibility="Visible" SortPriority="4" SortDirection="Up"/>
+						<Column Name="Line" Width="70" Visibility="Visible" SortPriority="5" SortDirection="Up"/>
+						<Column Name="Column" Width="70" Visibility="Invisible" SortPriority="6" SortDirection="Up"/>
+						<Column Name="Category" Width="0" Visibility="Invisible" SortPriority="1" SortDirection="Up"/>
+						<Column Name="Subcategory" Width="0" Visibility="Invisible" SortPriority="3" SortDirection="Up"/>
+					</Columns>
+				</Provider>
+				<Provider GUID="{00000000-0000-0000-0000-000000000000}">
+					<Columns>
+						<Column Name="Priority" Width="20" Visibility="Visible" SortPriority="0" SortDirection="Up"/>
+						<Column Name="Bitmap" Width="17" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="ProviderKnowsOrder" Width="17" Visibility="Invisible" SortPriority="2" SortDirection="Up"/>
+						<Column Name="Checked" Width="28" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="Description" Width="18" Visibility="Visible" SortPriority="7" SortDirection="Up"/>
+						<Column Name="File" Width="120" Visibility="Visible" SortPriority="4" SortDirection="Up"/>
+						<Column Name="Line" Width="70" Visibility="Visible" SortPriority="5" SortDirection="Up"/>
+						<Column Name="Column" Width="70" Visibility="Invisible" SortPriority="6" SortDirection="Up"/>
+						<Column Name="Category" Width="0" Visibility="Invisible" SortPriority="1" SortDirection="Up"/>
+						<Column Name="Subcategory" Width="0" Visibility="Invisible" SortPriority="3" SortDirection="Up"/>
+					</Columns>
+				</Provider>
+				<Provider GUID="{00000000-0000-0000-0000-000000000000}">
+					<Columns>
+						<Column Name="Priority" Width="20" Visibility="Visible" SortPriority="0" SortDirection="Up"/>
+						<Column Name="Bitmap" Width="17" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="ProviderKnowsOrder" Width="17" Visibility="Invisible" SortPriority="2" SortDirection="Up"/>
+						<Column Name="Checked" Width="28" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="Description" Width="18" Visibility="Visible" SortPriority="7" SortDirection="Up"/>
+						<Column Name="File" Width="120" Visibility="Visible" SortPriority="4" SortDirection="Up"/>
+						<Column Name="Line" Width="70" Visibility="Visible" SortPriority="5" SortDirection="Up"/>
+						<Column Name="Column" Width="70" Visibility="Invisible" SortPriority="6" SortDirection="Up"/>
+						<Column Name="Category" Width="0" Visibility="Invisible" SortPriority="1" SortDirection="Up"/>
+						<Column Name="Subcategory" Width="0" Visibility="Invisible" SortPriority="3" SortDirection="Up"/>
+					</Columns>
+				</Provider>
+				<Provider GUID="{00000000-0000-0000-0000-000000000000}">
+					<Columns>
+						<Column Name="Priority" Width="20" Visibility="Visible" SortPriority="0" SortDirection="Up"/>
+						<Column Name="Bitmap" Width="17" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="ProviderKnowsOrder" Width="17" Visibility="Invisible" SortPriority="2" SortDirection="Up"/>
+						<Column Name="Checked" Width="28" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="Description" Width="18" Visibility="Visible" SortPriority="7" SortDirection="Up"/>
+						<Column Name="File" Width="120" Visibility="Visible" SortPriority="4" SortDirection="Up"/>
+						<Column Name="Line" Width="70" Visibility="Visible" SortPriority="5" SortDirection="Up"/>
+						<Column Name="Column" Width="70" Visibility="Invisible" SortPriority="6" SortDirection="Up"/>
+						<Column Name="Category" Width="0" Visibility="Invisible" SortPriority="1" SortDirection="Up"/>
+						<Column Name="Subcategory" Width="0" Visibility="Invisible" SortPriority="3" SortDirection="Up"/>
+					</Columns>
+				</Provider>
+				<Provider GUID="{00000000-0000-0000-0000-000000000000}">
+					<Columns>
+						<Column Name="Priority" Width="20" Visibility="Visible" SortPriority="0" SortDirection="Up"/>
+						<Column Name="Bitmap" Width="17" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="ProviderKnowsOrder" Width="17" Visibility="Invisible" SortPriority="2" SortDirection="Up"/>
+						<Column Name="Checked" Width="28" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="Description" Width="18" Visibility="Visible" SortPriority="7" SortDirection="Up"/>
+						<Column Name="File" Width="120" Visibility="Visible" SortPriority="4" SortDirection="Up"/>
+						<Column Name="Line" Width="70" Visibility="Visible" SortPriority="5" SortDirection="Up"/>
+						<Column Name="Column" Width="70" Visibility="Invisible" SortPriority="6" SortDirection="Up"/>
+						<Column Name="Category" Width="0" Visibility="Invisible" SortPriority="1" SortDirection="Up"/>
+						<Column Name="Subcategory" Width="0" Visibility="Invisible" SortPriority="3" SortDirection="Up"/>
+					</Columns>
+				</Provider>
+				<Provider GUID="{00000000-0000-0000-0000-000000000000}">
+					<Columns>
+						<Column Name="Priority" Width="20" Visibility="Visible" SortPriority="0" SortDirection="Up"/>
+						<Column Name="Bitmap" Width="17" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="ProviderKnowsOrder" Width="17" Visibility="Invisible" SortPriority="2" SortDirection="Up"/>
+						<Column Name="Checked" Width="28" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="Description" Width="18" Visibility="Visible" SortPriority="7" SortDirection="Up"/>
+						<Column Name="File" Width="120" Visibility="Visible" SortPriority="4" SortDirection="Up"/>
+						<Column Name="Line" Width="70" Visibility="Visible" SortPriority="5" SortDirection="Up"/>
+						<Column Name="Column" Width="70" Visibility="Invisible" SortPriority="6" SortDirection="Up"/>
+						<Column Name="Category" Width="0" Visibility="Invisible" SortPriority="1" SortDirection="Up"/>
+						<Column Name="Subcategory" Width="0" Visibility="Invisible" SortPriority="3" SortDirection="Up"/>
+					</Columns>
+				</Provider>
+				<Provider GUID="{00000000-0000-0000-0000-000000000000}">
+					<Columns>
+						<Column Name="Priority" Width="20" Visibility="Visible" SortPriority="0" SortDirection="Up"/>
+						<Column Name="Bitmap" Width="17" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="ProviderKnowsOrder" Width="17" Visibility="Invisible" SortPriority="2" SortDirection="Up"/>
+						<Column Name="Checked" Width="28" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="Description" Width="18" Visibility="Visible" SortPriority="7" SortDirection="Up"/>
+						<Column Name="File" Width="120" Visibility="Visible" SortPriority="4" SortDirection="Up"/>
+						<Column Name="Line" Width="70" Visibility="Visible" SortPriority="5" SortDirection="Up"/>
+						<Column Name="Column" Width="70" Visibility="Invisible" SortPriority="6" SortDirection="Up"/>
+						<Column Name="Category" Width="0" Visibility="Invisible" SortPriority="1" SortDirection="Up"/>
+						<Column Name="Subcategory" Width="0" Visibility="Invisible" SortPriority="3" SortDirection="Up"/>
+					</Columns>
+				</Provider>
+				<Provider GUID="{00000000-0000-0000-0000-000000000000}">
+					<Columns>
+						<Column Name="Priority" Width="20" Visibility="Visible" SortPriority="0" SortDirection="Up"/>
+						<Column Name="Bitmap" Width="17" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="ProviderKnowsOrder" Width="17" Visibility="Invisible" SortPriority="2" SortDirection="Up"/>
+						<Column Name="Checked" Width="28" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="Description" Width="18" Visibility="Visible" SortPriority="7" SortDirection="Up"/>
+						<Column Name="File" Width="120" Visibility="Visible" SortPriority="4" SortDirection="Up"/>
+						<Column Name="Line" Width="70" Visibility="Visible" SortPriority="5" SortDirection="Up"/>
+						<Column Name="Column" Width="70" Visibility="Invisible" SortPriority="6" SortDirection="Up"/>
+						<Column Name="Category" Width="0" Visibility="Invisible" SortPriority="1" SortDirection="Up"/>
+						<Column Name="Subcategory" Width="0" Visibility="Invisible" SortPriority="3" SortDirection="Up"/>
+					</Columns>
+				</Provider>
+				<Provider GUID="{00000000-0000-0000-0000-000000000000}">
+					<Columns>
+						<Column Name="Priority" Width="20" Visibility="Visible" SortPriority="0" SortDirection="Up"/>
+						<Column Name="Bitmap" Width="17" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="ProviderKnowsOrder" Width="17" Visibility="Invisible" SortPriority="2" SortDirection="Up"/>
+						<Column Name="Checked" Width="28" Visibility="Visible" SortPriority="-1" SortDirection="Up"/>
+						<Column Name="Description" Width="18" Visibility="Visible" SortPriority="7" SortDirection="Up"/>
+						<Column Name="File" Width="120" Visibility="Visible" SortPriority="4" SortDirection="Up"/>
+						<Column Name="Line" Width="70" Visibility="Visible" SortPriority="5" SortDirection="Up"/>
+						<Column Name="Column" Width="70" Visibility="Invisible" SortPriority="6" SortDirection="Up"/>
+						<Column Name="Category" Width="0" Visibility="Invisible" SortPriority="1" SortDirection="Up"/>
+						<Column Name="Subcategory" Width="0" Visibility="Invisible" SortPriority="3" SortDirection="Up"/>
+					</Columns>
+				</Provider>
 			</TaskProviders>
 		</Category>
 		<Category name="Environment_Toolbox" Category="{481999F2-7479-4e03-83D5-BE808BA142DF}" Package="{DA9FB551-C724-11d0-AE1F-00A0C90FFFC3}" RegisteredName="Environment_Toolbox" PackageName="Visual Studio Environment Package">
 			<PropertyValue name="ShowAllTabs">false</PropertyValue>
 			<PropertyValue name="Version">1</PropertyValue>
 			<PropertyValue name="DeletedTabCount">0</PropertyValue>
-			<PropertyValue name="Tab0.Name">HDRCubeMapConvolver Components</PropertyValue>
+			<PropertyValue name="Tab0.Name">ProbeSHEncoderGPU Components</PropertyValue>
 			<PropertyValue name="Tab0.View">0</PropertyValue>
 			<PropertyValue name="Tab0.UseDefaultName">true</PropertyValue>
 			<PropertyValue name="Tab0.RecordType">1</PropertyValue>
 			<PropertyValue name="Tab0.Position">9</PropertyValue>
-			<PropertyValue name="Tab1.Name">ProbeSHEncoderGPU Components</PropertyValue>
+			<PropertyValue name="Tab1.Name">HDRCubeMapConvolver Components</PropertyValue>
 			<PropertyValue name="Tab1.View">0</PropertyValue>
 			<PropertyValue name="Tab1.UseDefaultName">true</PropertyValue>
 			<PropertyValue name="Tab1.RecordType">1</PropertyValue>
@@ -2153,27 +2634,6 @@
 			<PropertyValue name="Item7.Position">12</PropertyValue>
 			<PropertyValue name="ItemCount">8</PropertyValue>
 		</Category>
-		<Category name="Environment_UnifiedFind" Category="{DF00ADDF-C14C-4ffd-9325-634FD605850B}" Package="{DA9FB551-C724-11d0-AE1F-00A0C90FFFC3}" RegisteredName="Environment_UnifiedFind" PackageName="Visual Studio Environment Package">
-			<PropertyValue name="Options">MatchCase=1 WholeWord=1 Hidden=0 Up=0 Selection=0 Block=0 KeepCase=0 SubFolders=0 KeepOpen=0 NameOnly=0 Plain Document Find</PropertyValue>
-			<PropertyValue name="DialogOptions">MatchCase=0 WholeWord=0 Hidden=1 Up=0 Selection=0 Block=0 KeepCase=0 SubFolders=1 KeepOpen=0 NameOnly=0 Plain Solution FindAll</PropertyValue>
-			<PropertyValue name="AdornmentOptions">MatchCase=1 WholeWord=1 Hidden=0 Up=0 Selection=0 Block=0 KeepCase=0 SubFolders=0 KeepOpen=0 NameOnly=0 Plain Document Find</PropertyValue>
-			<PropertyValue name="Result list">1</PropertyValue>
-			<PropertyValue name="ShowEndOfSearch">1</PropertyValue>
-			<PropertyValue name="ShowNoFound">1</PropertyValue>
-			<PropertyValue name="ShowAllReplacementsNotAllowed">0</PropertyValue>
-			<PropertyValue name="ShowSomeReplacementsNotAllowed">0</PropertyValue>
-			<PropertyValue name="ShowNoMore">1</PropertyValue>
-			<PropertyValue name="ShowFindStart">1</PropertyValue>
-			<PropertyValue name="ShowCancel">1</PropertyValue>
-			<PropertyValue name="ShowCancelBeforeReplacementsMade">1</PropertyValue>
-			<PropertyValue name="ShowReplaceInFilesWarning">0</PropertyValue>
-			<PropertyValue name="ShowCancelEntireReplaceAfterCancellingSCC">0</PropertyValue>
-			<PropertyValue name="FindTextFromEditor">1</PropertyValue>
-			<PropertyValue name="HitReplaced">1</PropertyValue>
-			<PropertyValue name="Syntax">Regex</PropertyValue>
-			<PropertyValue name="In Files Pane Display Options">256</PropertyValue>
-			<PropertyValue name="NumberOfScopes">0</PropertyValue>
-		</Category>
 		<Category name="Environment_WindowLayout" Category="{eb4ba109-a9db-4445-bd09-e7604bcdce84}" Package="{DA9FB551-C724-11d0-AE1F-00A0C90FFFC3}" RegisteredName="Environment_WindowLayout" PackageName="Visual Studio Environment Package">
 			<PropertyValue name="Version">7</PropertyValue>
 			<PropertyValue name="WindowProfileNames">Design|Debug|NoToolWin</PropertyValue>
@@ -2200,7 +2660,7 @@
 								<AutoHideGroup IsVisible="True">
 									<wm:ToolWindowView ForceCreate="DontForceCreate" IconIndex="1" IconResourceID="108" IconResourcePackage="44630d46-96b5-488c-8df9-26e21db8c1a3" Name="ST:0:0:{6bf43c00-192e-4279-9dd1-c19a4c0ab983}" DockedHeight="398" DockedWidth="874" FloatingTop="148" FloatingLeft="1925" FloatingHeight="398" FloatingWidth="874"/>
 									<wm:ToolWindowView ContextVisibilityEnabled="False" ForceCreate="ForceCreate" IconIndex="11" IconResourceID="6650" IconResourcePackage="da9fb551-c724-11d0-ae1f-00a0c90fffc3" Name="ST:0:0:{0f887920-c2b6-11d2-9375-0080c747d9a0}" IsVisible="True" DockedHeight="398" DockedWidth="874" AutoHideHeight="406" FloatingTop="602" FloatingLeft="380" FloatingHeight="398" FloatingWidth="874"/>
-									<wm:ToolWindowView ContextVisibilityEnabled="False" ForceCreate="ForceCreate" IconIndex="3" IconResourceID="6650" IconResourcePackage="da9fb551-c724-11d0-ae1f-00a0c90fffc3" Name="ST:0:0:{34e76e81-ee4a-11d0-ae2e-00a0c90fffc3}" IsVisible="True" DockedHeight="398" DockedWidth="874" AutoHideHeight="421" FloatingTop="602" FloatingLeft="380" FloatingHeight="398" FloatingWidth="874"/>
+									<wm:ToolWindowView ContextVisibilityEnabled="False" ForceCreate="ForceCreate" IconIndex="3" IconResourceID="6650" IconResourcePackage="da9fb551-c724-11d0-ae1f-00a0c90fffc3" Name="ST:0:0:{34e76e81-ee4a-11d0-ae2e-00a0c90fffc3}" IsSelected="True" IsVisible="True" DockedHeight="398" DockedWidth="874" AutoHideHeight="421" FloatingTop="602" FloatingLeft="380" FloatingHeight="398" FloatingWidth="874"/>
 								</AutoHideGroup>
 							</AutoHideChannel>
 							<DockRoot IsVisible="True" DockedHeight="*" DockedWidth="*">
@@ -2232,8 +2692,8 @@
 											<wm:ToolWindowView ForceCreate="ForceCreate" IconIndex="1" IconResourceID="301" IconResourcePackage="8c28e535-abc9-4f92-b5c9-6c16617c8884" Name="ST:0:0:{b8f809ca-7d14-4935-8657-727dc294e16b}" DockedWidth="650" FloatingTop="100" FloatingLeft="100" FloatingHeight="450" FloatingWidth="450"/>
 											<DockGroup Orientation="Vertical" IsVisible="True" DockedHeight="*" DockedWidth="*">
 												<DockGroup IsVisible="True" DockedHeight="*" DockedWidth="*">
-													<DocumentGroupContainer Orientation="Vertical" IsVisible="True" DockedHeight="*" DockedWidth="*">
-														<wm:WMDocumentGroup>
+													<DocumentGroupContainer IsVisible="True" DockedHeight="*" DockedWidth="*">
+														<wm:WMDocumentGroup IsVisible="True">
 															<wm:ToolWindowView ContextVisibilityEnabled="False" Name="ST:0:0:{46c87f81-5a06-43a8-9e25-85d33bac49f8}" FloatingHeight="614.4" FloatingWidth="819.2"/>
 															<wm:ToolWindowView ContextVisibilityEnabled="False" ForceCreate="ForceCreate" IconIndex="4" IconResourceID="6650" IconResourcePackage="da9fb551-c724-11d0-ae1f-00a0c90fffc3" Name="ST:0:0:{269a02dc-6af8-11d3-bdc4-00c04f688e50}" FloatingHeight="614.4" FloatingWidth="819.2"/>
 															<wm:ToolWindowView ForceCreate="ForceCreate" Name="ST:0:0:{99b8fa2f-ab90-4f57-9c32-949f146f1914}" FloatingHeight="614.4" FloatingWidth="819.2"/>
@@ -2523,7 +2983,7 @@
 											<DockGroup Orientation="Vertical" IsVisible="True" DockedHeight="*" DockedWidth="*">
 												<DockGroup IsVisible="True" DockedHeight="*" DockedWidth="*">
 													<DocumentGroupContainer Orientation="Vertical" IsVisible="True" DockedHeight="*" DockedWidth="*">
-														<wm:WMDocumentGroup IsVisible="True" DockedWidth="263.320463320463">
+														<wm:WMDocumentGroup DockedWidth="263.320463320463">
 															<wm:ToolWindowView ContextVisibilityEnabled="False" ForceCreate="DontForceCreate" Name="ST:0:0:{387cb18d-6153-4156-9257-9ac3f9207bbe}" DockedWidth="263.320463320463" FloatingHeight="614.4" FloatingWidth="819.2"/>
 															<wm:ToolWindowView ContextVisibilityEnabled="False" Name="ST:0:0:{46c87f81-5a06-43a8-9e25-85d33bac49f8}" DockedWidth="263.320463320463" FloatingHeight="614.4" FloatingWidth="819.2"/>
 															<wm:ToolWindowView ContextVisibilityEnabled="False" ForceCreate="ForceCreate" Name="ST:0:0:{269a02dc-6af8-11d3-bdc4-00c04f688e50}" DockedWidth="263.320463320463" FloatingHeight="614.4" FloatingWidth="819.2"/>
@@ -2988,35 +3448,175 @@
 			</NoToolWin>
 		</Category>
 	</Category>
+	<Category name="SQL Server Tools" RegisteredName="SQL Server Tools">
+		<Category name="Database Errors and Warnings" Category="{000CE8DF-39CB-47F7-8FFE-047DB354E987}" Package="{00FEE386-5F9F-4577-99F4-F327FAFC0FB9}" RegisteredName="Database Errors and Warnings" PackageName="Microsoft SQL Server Data Tools"/>
+		<Category name="Online Editing" Category="{0CEF8E75-0396-498B-A411-FC67F6782E9A}" Package="{00FEE386-5F9F-4577-99F4-F327FAFC0FB9}" RegisteredName="Online Editing" PackageName="Microsoft SQL Server Data Tools"/>
+	</Category>
+	<Category name="Code Analysis" Category="{533A534C-AD06-4B18-BBBC-BFD7C74F58CE}" Package="{72391CE3-743A-4a55-8927-4217541F6517}" RegisteredName="Code Analysis" PackageName="StanPackage"/>
+	<Category name="Debugger" Category="{EEDBF29A-5C8B-4E01-827C-263382C18CFE}" Package="{C9DD4A57-47FB-11D2-83E7-00C04F9902C1}" RegisteredName="Debugger" PackageName="Visual Studio Debugger">
+		<PropertyValue name="ConfirmDeleteAllBreakpoints">1</PropertyValue>
+		<PropertyValue name="StopAllProcesses">1</PropertyValue>
+		<PropertyValue name="StopOnExceptionCrossingManagedBoundary">0</PropertyValue>
+		<PropertyValue name="EnableAddressLevelDebugging">1</PropertyValue>
+		<PropertyValue name="ShowDisassemblyWhenNoSource">1</PropertyValue>
+		<PropertyValue name="EnableBreakpointConstraints">1</PropertyValue>
+		<PropertyValue name="UseExceptionHelper">0</PropertyValue>
+		<PropertyValue name="AutoUnwindOnException">1</PropertyValue>
+		<PropertyValue name="JustMyCode">1</PropertyValue>
+		<PropertyValue name="ShowNonPublicMembers">0</PropertyValue>
+		<PropertyValue name="WarnIfNoUserCodeOnLaunch">1</PropertyValue>
+		<PropertyValue name="FrameworkSourceStepping">0</PropertyValue>
+		<PropertyValue name="WarnAboutSymbolCacheDuringRemoteManagedDebugging">1</PropertyValue>
+		<PropertyValue name="EnableStepFiltering">0</PropertyValue>
+		<PropertyValue name="WarnOnStepFilter">1</PropertyValue>
+		<PropertyValue name="AllowImplicitFuncEval">1</PropertyValue>
+		<PropertyValue name="AllowToString">1</PropertyValue>
+		<PropertyValue name="UseSourceServer">0</PropertyValue>
+		<PropertyValue name="ShowSourceServerDiagnostics">0</PropertyValue>
+		<PropertyValue name="AlwaysColorMarkerText">0</PropertyValue>
+		<PropertyValue name="UseDocumentChecksum">0</PropertyValue>
+		<PropertyValue name="OutputToImmediate">0</PropertyValue>
+		<PropertyValue name="ShowRawStructures">0</PropertyValue>
+		<PropertyValue name="DisableJITOptimization">1</PropertyValue>
+		<PropertyValue name="ShowNoSymbolsDialog">0</PropertyValue>
+		<PropertyValue name="ShowScriptDebuggingDisabledDialog">1</PropertyValue>
+		<PropertyValue name="EnableILInterpreterMinidump">1</PropertyValue>
+		<PropertyValue name="EnableILInterpreterLive">0</PropertyValue>
+		<PropertyValue name="HexDisplay">1</PropertyValue>
+		<PropertyValue name="HexInput">0</PropertyValue>
+		<PropertyValue name="MapClientBreakpoints">1</PropertyValue>
+		<PropertyValue name="AddUnmappedBreakpointAtMappedLocation">0</PropertyValue>
+		<PropertyValue name="StepIntoOnRestart">0</PropertyValue>
+		<PropertyValue name="ENCEnable">0</PropertyValue>
+		<PropertyValue name="ENCApplyChangesOnContinue">1</PropertyValue>
+		<PropertyValue name="ENCWelcome">0</PropertyValue>
+		<PropertyValue name="ENCStaleCodeWarning">1</PropertyValue>
+		<PropertyValue name="ENCPrecompile">1</PropertyValue>
+		<PropertyValue name="ENCRelink">1</PropertyValue>
+		<PropertyValue name="NOENCAllowEdits">1</PropertyValue>
+		<PropertyValue name="NOENCIgnore">0</PropertyValue>
+		<PropertyValue name="NOENCRebuild">0</PropertyValue>
+		<PropertyValue name="ENCEnableWhenRemoteDebugging">0</PropertyValue>
+		<PropertyValue name="ConfirmFoundFiles">0</PropertyValue>
+		<PropertyValue name="DisasmLineNumbers">0</PropertyValue>
+		<PropertyValue name="ModulesShowAll">0</PropertyValue>
+		<PropertyValue name="UseCodeSense">1</PropertyValue>
+		<PropertyValue name="DisasmFields">67577</PropertyValue>
+		<PropertyValue name="CallStackViewOptions">7799040</PropertyValue>
+		<PropertyValue name="ShowExternalCode">0</PropertyValue>
+		<PropertyValue name="SourceStepUnit">0</PropertyValue>
+		<PropertyValue name="DisasmStepUnit">2</PropertyValue>
+		<PropertyValue name="CrossThreadCallStack">1</PropertyValue>
+		<PropertyValue name="ShowOnlyFlaggedThreads">0</PropertyValue>
+		<PropertyValue name="ConcurrencySupport">1</PropertyValue>
+		<PropertyValue name="GuessAtThreadNames">1</PropertyValue>
+		<PropertyValue name="ShowOtherThreadIpMarkers">0</PropertyValue>
+		<PropertyValue name="ShowThreadCategory">1</PropertyValue>
+		<PropertyValue name="SaveRemoteDumps">1</PropertyValue>
+		<PropertyValue name="LongEvalTimeout">10000</PropertyValue>
+		<PropertyValue name="NormalEvalTimeout">5000</PropertyValue>
+		<PropertyValue name="QuickwatchTimeout">15000</PropertyValue>
+		<PropertyValue name="DataTipTimeout">1500</PropertyValue>
+		<PropertyValue name="AutosReturnValsTimeout">1000</PropertyValue>
+		<PropertyValue name="AutosRegistersTimeout">1000</PropertyValue>
+		<PropertyValue name="LocalsTimeout">1000</PropertyValue>
+		<PropertyValue name="RegistersTimeout">2000</PropertyValue>
+		<PropertyValue name="AddressExpressionTimeout">2000</PropertyValue>
+		<PropertyValue name="ScriptDocsTimeout">5000</PropertyValue>
+		<PropertyValue name="ImmediateWindowTimeout">10000</PropertyValue>
+		<PropertyValue name="SetValueTimeout">10000</PropertyValue>
+		<PropertyValue name="TreeGridRePaintTimer">250</PropertyValue>
+		<PropertyValue name="TreeGridBusyPaintTimer">1000</PropertyValue>
+		<PropertyValue name="ModulesWindowUpdateTimer">500</PropertyValue>
+		<PropertyValue name="TreeGridDelayOnEnterTimer">125</PropertyValue>
+		<PropertyValue name="DelayTreeGridPaintOnBreak">1</PropertyValue>
+		<PropertyValue name="ShowNonprintableCharsAsGlyphs">0</PropertyValue>
+		<PropertyValue name="ShowSystemProcesses">0</PropertyValue>
+		<PropertyValue name="ShowProcessesFromAllSessions">0</PropertyValue>
+		<PropertyValue name="EnhancedDataTips">1</PropertyValue>
+		<PropertyValue name="DataTipDismissalSensitivity">1</PropertyValue>
+		<PropertyValue name="DataTipKeyboardDismissal">0</PropertyValue>
+		<PropertyValue name="UserSpecifiedEngines">1</PropertyValue>
+		<PropertyValue name="OutputOnException">1</PropertyValue>
+		<PropertyValue name="OutputOnStepFilter">1</PropertyValue>
+		<PropertyValue name="OutputOnModuleLoad">1</PropertyValue>
+		<PropertyValue name="OutputOnModuleUnload">1</PropertyValue>
+		<PropertyValue name="OutputOnModuleSymbolSearch">1</PropertyValue>
+		<PropertyValue name="OutputOnProcessDestroy">1</PropertyValue>
+		<PropertyValue name="OutputOnThreadDestroy">1</PropertyValue>
+		<PropertyValue name="OutputOnOutputDebugString">1</PropertyValue>
+		<PropertyValue name="OutputOnDebuggerMessage">1</PropertyValue>
+		<PropertyValue name="VariableWindowIcons">1</PropertyValue>
+		<PropertyValue name="DisableAttachSecurityWarning">0</PropertyValue>
+		<PropertyValue name="LoadDllExports">0</PropertyValue>
+		<PropertyValue name="NativeRPC">0</PropertyValue>
+		<PropertyValue name="AllowSideEffectEval">0</PropertyValue>
+		<PropertyValue name="LoadSymbolsWhenSettingsChanged">1</PropertyValue>
+		<PropertyValue name="SymbolUseExcludeList">1</PropertyValue>
+		<PropertyValue name="SymbolsAlwaysLoadAdjacent">1</PropertyValue>
+		<PropertyValue name="DontForceCacheOnManualLoad">0</PropertyValue>
+		<PropertyValue name="SymbolUseMSSymbolServers">0</PropertyValue>
+		<PropertyValue name="AutoLoadFromSymbolPath">1</PropertyValue>
+		<PropertyValue name="OneClickEdit">0</PropertyValue>
+		<PropertyValue name="OfferArrayExpansion">0</PropertyValue>
+		<PropertyValue name="VariableWindowPromptOnLargeExpansion">1</PropertyValue>
+		<PropertyValue name="VariableWindowMaxSupportedChildren">1000000</PropertyValue>
+		<PropertyValue name="PromptToAddSourceToIgnoreList">0</PropertyValue>
+		<PropertyValue name="OwnerDrawDebugLocationToolbar">1</PropertyValue>
+		<PropertyValue name="EnableSelectedBreakpointHighlight">1</PropertyValue>
+		<PropertyValue name="DisableUniscribe">0</PropertyValue>
+		<PropertyValue name="ShowParallelStacksBottomUp">0</PropertyValue>
+		<PropertyValue name="ThreadsWindowGroupingColumn">2048</PropertyValue>
+		<PropertyValue name="ThreadsWindowVisibleColumns">509</PropertyValue>
+		<PropertyValue name="ThreadsWindowShowTipWhenCallStackExpanded">0</PropertyValue>
+		<PropertyValue name="AllowDesignModePinning">0</PropertyValue>
+		<PropertyValue name="CallStackParamToString">0</PropertyValue>
+		<PropertyValue name="CheckRDTForFilesFirst">1</PropertyValue>
+		<PropertyValue name="AllowSourceServerInPartialTrust">0</PropertyValue>
+		<PropertyValue name="ENCEnableCrossUser">0</PropertyValue>
+		<PropertyValue name="ENCEnableNative">0</PropertyValue>
+		<PropertyValue name="OpenNewFilesProvisionally">1</PropertyValue>
+		<PropertyValue name="ForceRealFuncEval">1</PropertyValue>
+		<PropertyValue name="ShowOnlyCurrentProcess">0</PropertyValue>
+		<PropertyValue name="GpuRaceHazardsAllowSame">0</PropertyValue>
+		<PropertyValue name="DisasmToolbarIsExpanded">0</PropertyValue>
+		<PropertyValue name="SourceServerExtractToDirectory"/>
+		<PropertyValue name="FrameworkSourceServerName">http://referencesource.microsoft.com/symbols</PropertyValue>
+		<PropertyValue name="PublicSymbolServerName"/>
+		<PropertyValue name="PublicSymbolServerName2">http://msdl.microsoft.com/download/symbols</PropertyValue>
+		<PropertyValue name="DefaultTracepointMessage">Function: $FUNCTION, Thread: $TID $TNAME</PropertyValue>
+		<PropertyValue name="ProgramToDebugPath"/>
+		<PropertyValue name="AttachToProcessDefaultEngineList">{5FFF7536-0C87-462D-8FD2-7971D948E6DC}</PropertyValue>
+		<PropertyValue name="SecureSourceLocalDirectory"/>
+		<PropertyValue name="SymbolPath"/>
+		<PropertyValue name="SymbolPathState"/>
+		<PropertyValue name="SymbolCacheDir">C:\Users\Patapom\AppData\Local\Temp\SymbolCache</PropertyValue>
+		<PropertyValue name="SymbolIncludeList"/>
+		<PropertyValue name="SymbolIncludeListState"/>
+		<PropertyValue name="SymbolExcludeList"/>
+		<PropertyValue name="SymbolExcludeListState"/>
+	</Category>
 	<Category name="HTML Tag Specific" Category="{7583bb73-a453-40e8-8951-b6986ddb1d9b}" Package="{1B437D20-F8FE-11D2-A6AE-00104BCC7269}" RegisteredName="HTML Tag Specific" PackageName="Visual Studio HTM Editor Package"/>
 	<Category name="Performance" Category="{7A697B67-8D8F-43c2-A11C-57568FE3F513}" Package="{f4a63b2a-49ab-4b2d-aa59-a10f01026c89}" RegisteredName="Performance" PackageName="PerformancePackage">
-		<PropertyValue name="performancereport.hotpathcandidateratio">3.0</PropertyValue>
-		<PropertyValue name="performancereport.noisereductionfold">0</PropertyValue>
-		<PropertyValue name="performancereport.noisereductionfoldthreshold">3.0</PropertyValue>
-		<PropertyValue name="performancereport.noisereductiontrim">0</PropertyValue>
-		<PropertyValue name="performancereport.noisereductiontrimthreshold">2.0</PropertyValue>
-		<PropertyValue name="performancereport.shownoisereductionwarning">1</PropertyValue>
+		<PropertyValue name="toolsoptions.numfunc">5</PropertyValue>
+		<PropertyValue name="toolsoptions.showtimetick">0</PropertyValue>
+		<PropertyValue name="toolsoptions.numbuffer">64</PropertyValue>
+		<PropertyValue name="toolsoptions.sizebuffer">64</PropertyValue>
+		<PropertyValue name="toolsoptions.serialize">1</PropertyValue>
 		<PropertyValue name="performancereport.showquery">0</PropertyValue>
+		<PropertyValue name="toolsoptions.formatcounters">1</PropertyValue>
+		<PropertyValue name="toolsoptions.exportpath"/>
+		<PropertyValue name="toolsoptions.exportformat">csv</PropertyValue>
+		<PropertyValue name="performancereport.hotpathcandidateratio">3.0</PropertyValue>
+		<PropertyValue name="performancereport.shownoisereductionwarning">1</PropertyValue>
+		<PropertyValue name="performancereport.noisereductiontrim">0</PropertyValue>
+		<PropertyValue name="performancereport.noisereductionfold">0</PropertyValue>
+		<PropertyValue name="performancereport.noisereductiontrimthreshold">2.0</PropertyValue>
+		<PropertyValue name="performancereport.noisereductionfoldthreshold">3.0</PropertyValue>
 		<PropertyValue name="tools.options.justmycode">1</PropertyValue>
 		<PropertyValue name="tools.options.justmycode.callee">1</PropertyValue>
 		<PropertyValue name="tools.options.justmycode.caller">0</PropertyValue>
-		<PropertyValue name="tools.options.rules.actions"/>
-		<PropertyValue name="toolsoptions.exportformat">csv</PropertyValue>
-		<PropertyValue name="toolsoptions.exportpath"/>
-		<PropertyValue name="toolsoptions.formatcounters">1</PropertyValue>
-		<PropertyValue name="toolsoptions.numbuffer">64</PropertyValue>
-		<PropertyValue name="toolsoptions.numfunc">5</PropertyValue>
-		<PropertyValue name="toolsoptions.serialize">1</PropertyValue>
-		<PropertyValue name="toolsoptions.showtimetick">0</PropertyValue>
-		<PropertyValue name="toolsoptions.sizebuffer">64</PropertyValue>
-	</Category>
-	<Category name="Source Control_TeamFoundation" Category="{2A718788-A6D9-44C5-90EF-438BF5B06A74}" Package="{4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}" RegisteredName="Source Control_TeamFoundation" PackageName="Microsoft.VisualStudio.TeamFoundation.VersionControl.HatPackage, Microsoft.VisualStudio.TeamFoundation.VersionControl, Version=11.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-		<PropertyValue name="GetLatestOnCheckOut">false</PropertyValue>
-		<PropertyValue name="IsProxyEnabled">False</PropertyValue>
-		<PropertyValue name="OpenSceToMostRecentPath">false</PropertyValue>
-		<PropertyValue name="PromptToConfirmMergeResult">-1</PropertyValue>
-		<PropertyValue name="ProxyUrl"/>
-		<PropertyValue name="ShowDeletedItems">false</PropertyValue>
+		<PropertyValue name="tools.options.rules.actions">1,Warning;2,Error;3,Warning;4,Warning;5,Warning;6,Warning;7,Warning;8,Warning;10,Warning;11,Warning;12,Warning;13,Warning;14,Warning;17,Information;18,Warning;21,Information;22,Warning;23,Information;24,Warning;25,Information;26,Information;29,Warning;30,Information;37,Information;38,Information;39,Warning;40,Error;501,Information;502,Information;503,Information;504,Information;505,Information;506,Information;</PropertyValue>
 	</Category>
 	<Category name="Test Tools_Test Execution" Category="{48d11193-265d-1458-743e-2b88c655b377}" Package="{a9405ae6-9ac6-4f0e-a03f-7afe45f6fcb7}" RegisteredName="Test Tools_Test Execution" PackageName="Microsoft.VisualStudio.TestTools.TestCaseManagement.QualityToolsPackage, Microsoft.VisualStudio.QualityTools.TestCaseManagement, Version=11.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
 		<PropertyValue name="IsCodeColoringEnabled">True</PropertyValue>
@@ -3026,6 +3626,18 @@
 		<PropertyValue name="PathToWebRoot"/>
 		<PropertyValue name="UnitTestResultNavigatePointOfFailure">True</PropertyValue>
 	</Category>
+	<Category name="Source Control_TeamFoundation" Category="{2A718788-A6D9-44C5-90EF-438BF5B06A74}" Package="{4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}" RegisteredName="Source Control_TeamFoundation" PackageName="Microsoft.VisualStudio.TeamFoundation.VersionControl.HatPackage, Microsoft.VisualStudio.TeamFoundation.VersionControl, Version=11.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+		<PropertyValue name="GetLatestOnCheckOut">false</PropertyValue>
+		<PropertyValue name="IsProxyEnabled">False</PropertyValue>
+		<PropertyValue name="OpenSceToMostRecentPath">false</PropertyValue>
+		<PropertyValue name="PromptToConfirmMergeResult">-1</PropertyValue>
+		<PropertyValue name="ProxyUrl"/>
+		<PropertyValue name="ShowDeletedItems">false</PropertyValue>
+	</Category>
+	<Category name="WebProjects" Category="{C78AFEEB-A722-4cf3-AD3F-8694126C2145}" Package="{39c9c826-8ef8-4079-8c95-428f5b1c323f}" RegisteredName="WebProjects" PackageName="Visual Web Developer Project System Package">
+		<PropertyValue name="UseIISExpressByDefault">true</PropertyValue>
+		<PropertyValue name="WarnBeforeRunIfErrors">false</PropertyValue>
+	</Category>
 	<Category name="Test Tools_Web Test" Category="{9DE2E186-C1A8-4BEE-B5D6-2BC59BBE140B}" Package="{a9405ae6-9ac6-4f0e-a03f-7afe45f6fcb7}" RegisteredName="Test Tools_Web Test" PackageName="Microsoft.VisualStudio.TestTools.TestCaseManagement.QualityToolsPackage, Microsoft.VisualStudio.QualityTools.TestCaseManagement, Version=11.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
 		<PropertyValue name="AttemptDependentMatching">True</PropertyValue>
 		<PropertyValue name="BinaryHttpBodyContentTypes">application/soap+msbin1</PropertyValue>
@@ -3034,10 +3646,6 @@
 		<PropertyValue name="RecordEmptyContentTypeAsBinaryBody">False</PropertyValue>
 		<PropertyValue name="RecordFromMultipleBrowsers">True</PropertyValue>
 		<PropertyValue name="StartingURL">about:blank</PropertyValue>
-	</Category>
-	<Category name="WebProjects" Category="{C78AFEEB-A722-4cf3-AD3F-8694126C2145}" Package="{39c9c826-8ef8-4079-8c95-428f5b1c323f}" RegisteredName="WebProjects" PackageName="Visual Web Developer Project System Package">
-		<PropertyValue name="UseIISExpressByDefault">true</PropertyValue>
-		<PropertyValue name="WarnBeforeRunIfErrors">false</PropertyValue>
 	</Category>
 	<Category name="WindowsFormsDesigner_General" Category="{de03177c-918d-40af-8c17-c9d63670c175}" Package="{7b5d447b-0b12-41ea-a84e-c822034422d4}" RegisteredName="WindowsFormsDesigner_General" PackageName="Windows Forms Designer Resources Package">
 		<PropertyValue name="AutoToolboxPopulate">True</PropertyValue>
@@ -3049,23 +3657,6 @@
 		<PropertyValue name="ShowGrid">True</PropertyValue>
 		<PropertyValue name="SnapToGrid">True</PropertyValue>
 		<PropertyValue name="UseOptimizedCodeGeneration">True</PropertyValue>
-	</Category>
-	<Category name="XmlEditor" Category="{4E1CDE49-B840-4826-8CC6-8FB80D7EF455}" Package="{87569308-4813-40a0-9cd0-d7a30838ca3f}" RegisteredName="XmlEditor" PackageName="Visual Studio XML Editor Package">
-		<PropertyValue name="AttributeFormatting">None</PropertyValue>
-		<PropertyValue name="AutoDownload">True</PropertyValue>
-		<PropertyValue name="AutoInsertAttributeQuotes">True</PropertyValue>
-		<PropertyValue name="AutoInsertEndTags">True</PropertyValue>
-		<PropertyValue name="AutoInsertNamespaceDeclarations">True</PropertyValue>
-		<PropertyValue name="AutoInsertOther">True</PropertyValue>
-		<PropertyValue name="AutoOutlining">True</PropertyValue>
-		<PropertyValue name="AutoReformatOnEndTag">True</PropertyValue>
-		<PropertyValue name="AutoReformatOnPaste">True</PropertyValue>
-		<PropertyValue name="FormatMixedContentByDefault">True</PropertyValue>
-		<PropertyValue name="SchemaCacheLocation">%VsInstallDir%\xml\Schemas</PropertyValue>
-	</Category>
-	<Category name="SQL Server Tools" RegisteredName="SQL Server Tools">
-		<Category name="Database Errors and Warnings" Category="{000CE8DF-39CB-47F7-8FFE-047DB354E987}" Package="{00FEE386-5F9F-4577-99F4-F327FAFC0FB9}" RegisteredName="Database Errors and Warnings" PackageName="Microsoft SQL Server Data Tools"/>
-		<Category name="Online Editing" Category="{0CEF8E75-0396-498B-A411-FC67F6782E9A}" Package="{00FEE386-5F9F-4577-99F4-F327FAFC0FB9}" RegisteredName="Online Editing" PackageName="Microsoft SQL Server Data Tools"/>
 	</Category>
 	<Category name="XAML_Formatting" Category="{dac05320-0c3a-4ead-a332-8c23b0cfc130}" Package="{512be089-83ec-4cc6-8483-cf16565ae209}" RegisteredName="XAML_Formatting" PackageName="DesignerPackage">
 		<PropertyValue name="AttributeFormat">Preserve</PropertyValue>
@@ -3085,5 +3676,18 @@
 		<PropertyValue name="QuoteStyle">DoubleQuote</PropertyValue>
 		<PropertyValue name="WrapColumn">120</PropertyValue>
 		<PropertyValue name="WrapTags">False</PropertyValue>
+	</Category>
+	<Category name="XmlEditor" Category="{4E1CDE49-B840-4826-8CC6-8FB80D7EF455}" Package="{87569308-4813-40a0-9cd0-d7a30838ca3f}" RegisteredName="XmlEditor" PackageName="Visual Studio XML Editor Package">
+		<PropertyValue name="AttributeFormatting">None</PropertyValue>
+		<PropertyValue name="AutoDownload">True</PropertyValue>
+		<PropertyValue name="AutoInsertAttributeQuotes">True</PropertyValue>
+		<PropertyValue name="AutoInsertEndTags">True</PropertyValue>
+		<PropertyValue name="AutoInsertNamespaceDeclarations">True</PropertyValue>
+		<PropertyValue name="AutoInsertOther">True</PropertyValue>
+		<PropertyValue name="AutoOutlining">True</PropertyValue>
+		<PropertyValue name="AutoReformatOnEndTag">True</PropertyValue>
+		<PropertyValue name="AutoReformatOnPaste">True</PropertyValue>
+		<PropertyValue name="FormatMixedContentByDefault">True</PropertyValue>
+		<PropertyValue name="SchemaCacheLocation">%VsInstallDir%\xml\Schemas</PropertyValue>
 	</Category>
 </UserSettings>
