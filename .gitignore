@@ -633,3 +633,5 @@ Publish
 /Packages/MathSimple/*.user
 /Packages/_Unit Tests/TestFourier/*.user
 /Tools/AlbedoDatabaseGenerator/*.user
+/Tests/TestArduinoSerialPacketDecoder/obj
+/Tests/TestArduinoSerialPacketDecoder/bin
