@@ -73,7 +73,9 @@
     <Compile Include="MarsLanderForm.Designer.cs">
       <DependentUpon>MarsLanderForm.cs</DependentUpon>
     </Compile>
+    <None Include="Medium Difficulty\GenomeSequencing.cs" />
     <Compile Include="Medium Difficulty\MarsLanderChallenge.cs" />
+    <None Include="Puzzles of the Week\ElementaryCellularAutomaton.cs" />
     <None Include="SumOfDivisorsChallenge.cs" />
     <None Include="Medium Difficulty\WarChallenge.cs" />
     <None Include="Medium Difficulty\NetworkingChallenge.cs" />

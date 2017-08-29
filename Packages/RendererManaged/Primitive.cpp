@@ -8,7 +8,8 @@
 
 namespace Renderer {
 
-	Primitive::Primitive( Device^ _device, UInt32 _verticesCount, ByteBuffer^ _vertices, cli::array<UInt32>^ _indices, TOPOLOGY _topology, VERTEX_FORMAT _vertexFormat ) {
+	void	Primitive::Build( Device^ _device, UInt32 _verticesCount, ByteBuffer^ _vertices, cli::array<UInt32>^ _indices, TOPOLOGY _topology, VERTEX_FORMAT _vertexFormat, bool _allowSRV, bool _allowUAV ) {
+
 		D3D11_PRIMITIVE_TOPOLOGY	topology = D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED;
 		switch ( _topology ) {
 		case TOPOLOGY::POINT_LIST:		topology = D3D11_PRIMITIVE_TOPOLOGY_POINTLIST; break;
@@ -29,7 +30,7 @@ namespace Renderer {
 
 		IVertexFormatDescriptor*	descriptor = GetDescriptor( _vertexFormat );
 
-		m_pPrimitive = new ::Primitive( *_device->m_pDevice, _verticesCount, pVertices, _indices != nullptr ? _indices->Length : 0, pinnedIndices, topology, *descriptor );
+		m_pPrimitive = new ::Primitive( *_device->m_pDevice, _verticesCount, pVertices, _indices != nullptr ? _indices->Length : 0, pinnedIndices, topology, *descriptor, _allowSRV, _allowUAV );
 	}
 
 	void	Primitive::Render( Shader^ _shader ) {

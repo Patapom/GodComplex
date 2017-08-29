@@ -16,6 +16,8 @@ namespace Renderer {
 		Pt4,		// Transformed position (vector4)
 		P3,			// Position
 		P3N3,		// Position+Normal
+		P3T2,		// Position+UV
+		P3N3T2,		// Position+Normal+UV
 		P3N3G3T2,	// Position+Normal+Tangent+UV
 		P3N3G3B3T2,	// Position+Normal+Tangent+Bitangent+UV
 		T2,			// UV
@@ -26,7 +28,9 @@ namespace Renderer {
 		switch ( _format ) {
 		case VERTEX_FORMAT::Pt4:		pDescriptor = &VertexFormatPt4::DESCRIPTOR; break;
 		case VERTEX_FORMAT::P3:			pDescriptor = &VertexFormatP3::DESCRIPTOR; break;
+		case VERTEX_FORMAT::P3T2:		pDescriptor = &VertexFormatP3T2::DESCRIPTOR; break;
 		case VERTEX_FORMAT::P3N3:		pDescriptor = &VertexFormatP3N3::DESCRIPTOR; break;
+		case VERTEX_FORMAT::P3N3T2:		pDescriptor = &VertexFormatP3N3T2::DESCRIPTOR; break;
 		case VERTEX_FORMAT::P3N3G3T2:	pDescriptor = &VertexFormatP3N3G3T2::DESCRIPTOR; break;
 		case VERTEX_FORMAT::P3N3G3B3T2:	pDescriptor = &VertexFormatP3N3G3B3T2::DESCRIPTOR; break;
 		case VERTEX_FORMAT::T2:			pDescriptor = &VertexFormatT2::DESCRIPTOR; break;
@@ -105,6 +109,64 @@ namespace Renderer {
 					W->Write( _vertices[VertexIndex].N.x );
 					W->Write( _vertices[VertexIndex].N.y );
 					W->Write( _vertices[VertexIndex].N.z );
+				}
+				Buffer->CloseStream();
+			}
+			return Buffer;
+		}
+	};
+
+	//////////////////////////////////////////////////////////////////////////
+	// P3T2
+	[System::Runtime::InteropServices::StructLayoutAttribute( System::Runtime::InteropServices::LayoutKind::Sequential )]
+	public value struct VertexP3T2
+	{
+		float3	P;		// Position
+		float2	UV;		// TexCoords
+
+		static property int	SizeOf	{ int get() { return System::Runtime::InteropServices::Marshal::SizeOf(VertexP3T2::typeid); } }
+		static ByteBuffer^	FromArray( cli::array<VertexP3T2>^ _vertices )
+		{
+			ByteBuffer^	Buffer = gcnew ByteBuffer( _vertices->Length * VertexP3T2::SizeOf );
+			{
+				System::IO::BinaryWriter^ W = Buffer->OpenStreamWrite();
+				for ( int VertexIndex=0; VertexIndex < _vertices->Length; VertexIndex++ ) {
+					W->Write( _vertices[VertexIndex].P.x );
+					W->Write( _vertices[VertexIndex].P.y );
+					W->Write( _vertices[VertexIndex].P.z );
+					W->Write( _vertices[VertexIndex].UV.x );
+					W->Write( _vertices[VertexIndex].UV.y );
+				}
+				Buffer->CloseStream();
+			}
+			return Buffer;
+		}
+	};
+
+	//////////////////////////////////////////////////////////////////////////
+	// P3N3T2
+	[System::Runtime::InteropServices::StructLayoutAttribute( System::Runtime::InteropServices::LayoutKind::Sequential )]
+	public value struct VertexP3N3T2
+	{
+		float3	P;		// Position
+		float3	N;		// Normal
+		float2	UV;		// TexCoords
+
+		static property int	SizeOf	{ int get() { return System::Runtime::InteropServices::Marshal::SizeOf(VertexP3N3T2::typeid); } }
+		static ByteBuffer^	FromArray( cli::array<VertexP3N3T2>^ _vertices )
+		{
+			ByteBuffer^	Buffer = gcnew ByteBuffer( _vertices->Length * VertexP3N3T2::SizeOf );
+			{
+				System::IO::BinaryWriter^ W = Buffer->OpenStreamWrite();
+				for ( int VertexIndex=0; VertexIndex < _vertices->Length; VertexIndex++ ) {
+					W->Write( _vertices[VertexIndex].P.x );
+					W->Write( _vertices[VertexIndex].P.y );
+					W->Write( _vertices[VertexIndex].P.z );
+					W->Write( _vertices[VertexIndex].N.x );
+					W->Write( _vertices[VertexIndex].N.y );
+					W->Write( _vertices[VertexIndex].N.z );
+					W->Write( _vertices[VertexIndex].UV.x );
+					W->Write( _vertices[VertexIndex].UV.y );
 				}
 				Buffer->CloseStream();
 			}

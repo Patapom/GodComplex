@@ -199,6 +199,32 @@ public:
 
 // Position
 // Normal
+// UV
+struct VertexFormatP3N3T2
+{
+public:
+
+	static class Desc : public IVertexFormatDescriptor {
+		static D3D11_INPUT_ELEMENT_DESC	ms_pInputElements[3];
+
+	public:
+
+		virtual int			Size() const							{ return sizeof(VertexFormatP3N3T2); }
+		virtual const D3D11_INPUT_ELEMENT_DESC*  GetInputElements() const	{ return ms_pInputElements; }
+		virtual int			GetInputElementsCount() const			{ return 3; }
+		virtual void		Write( void* _pVertex, const bfloat3& _Position, const bfloat3& _Normal, const bfloat3& _Tangent, const bfloat3& _BiTangent, const bfloat2& _UV ) const;
+	} DESCRIPTOR;
+
+public:
+
+	bfloat3	P;
+	bfloat3	N;
+	bfloat2	UV;
+
+};
+
+// Position
+// Normal
 // Tangent
 // UV
 struct VertexFormatP3N3G3T2

@@ -60,31 +60,31 @@ public:	 // METHODS
 	Texture2D( Device& _device, ID3D11Texture2D& _Texture );																										// Used by the Device for the default backbuffer, shouldn't be used otherwise
 	~Texture2D();
 
-	// _AsArray is used to force the SRV as viewing a Texture2DArray instead of a TextureCube or TextureCubeArray
-	ID3D11ShaderResourceView*	GetSRV( U32 _MipLevelStart=0, U32 _mipLevelsCount=0, U32 _ArrayStart=0, U32 _arraySize=0, bool _AsArray=false ) const;	// Shader Resource View => Read-Only Input
-	ID3D11RenderTargetView*		GetRTV( U32 _MipLevelIndex=0, U32 _ArrayStart=0, U32 _arraySize=0 ) const;												// Render Target View => Write-Only Output
-	ID3D11UnorderedAccessView*	GetUAV( U32 _MipLevelIndex=0, U32 _ArrayStart=0, U32 _arraySize=0 ) const;												// Unordered Access View => Read/Write
-	ID3D11DepthStencilView*		GetDSV( U32 _ArrayStart=0, U32 _arraySize=0 ) const;																	// Depth Stencil View => Write-Only Depth Stencil Output
+	// _asArray is used to force the SRV as viewing a Texture2DArray instead of a TextureCube or TextureCubeArray
+	ID3D11ShaderResourceView*	GetSRV( U32 _mipLevelStart=0, U32 _mipLevelsCount=0, U32 _arrayStart=0, U32 _arraySize=0, bool _asArray=false ) const;	// Shader Resource View => Read-Only Input
+	ID3D11RenderTargetView*		GetRTV( U32 _mipLevelIndex=0, U32 _arrayStart=0, U32 _arraySize=0 ) const;												// Render Target View => Write-Only Output
+	ID3D11UnorderedAccessView*	GetUAV( U32 _mipLevelIndex=0, U32 _arrayStart=0, U32 _arraySize=0 ) const;												// Unordered Access View => Read/Write
+	ID3D11DepthStencilView*		GetDSV( U32 _arrayStart=0, U32 _arraySize=0 ) const;																	// Depth Stencil View => Write-Only Depth Stencil Output
 
 	// Uploads the texture to the shader
-	void		Set( U32 _SlotIndex, bool _bIKnowWhatImDoing=false, ID3D11ShaderResourceView* _pView=NULL ) const;
-	void		SetVS( U32 _SlotIndex, bool _bIKnowWhatImDoing=false, ID3D11ShaderResourceView* _pView=NULL ) const;
-	void		SetHS( U32 _SlotIndex, bool _bIKnowWhatImDoing=false, ID3D11ShaderResourceView* _pView=NULL ) const;
-	void		SetDS( U32 _SlotIndex, bool _bIKnowWhatImDoing=false, ID3D11ShaderResourceView* _pView=NULL ) const;
-	void		SetGS( U32 _SlotIndex, bool _bIKnowWhatImDoing=false, ID3D11ShaderResourceView* _pView=NULL ) const;
-	void		SetPS( U32 _SlotIndex, bool _bIKnowWhatImDoing=false, ID3D11ShaderResourceView* _pView=NULL ) const;
-	void		SetCS( U32 _SlotIndex, bool _bIKnowWhatImDoing=false, ID3D11ShaderResourceView* _pView=NULL ) const;
+	void		Set( U32 _slotIndex, bool _bIKnowWhatImDoing=false, ID3D11ShaderResourceView* _view=NULL ) const;
+	void		SetVS( U32 _slotIndex, bool _bIKnowWhatImDoing=false, ID3D11ShaderResourceView* _view=NULL ) const;
+	void		SetHS( U32 _slotIndex, bool _bIKnowWhatImDoing=false, ID3D11ShaderResourceView* _view=NULL ) const;
+	void		SetDS( U32 _slotIndex, bool _bIKnowWhatImDoing=false, ID3D11ShaderResourceView* _view=NULL ) const;
+	void		SetGS( U32 _slotIndex, bool _bIKnowWhatImDoing=false, ID3D11ShaderResourceView* _view=NULL ) const;
+	void		SetPS( U32 _slotIndex, bool _bIKnowWhatImDoing=false, ID3D11ShaderResourceView* _view=NULL ) const;
+	void		SetCS( U32 _slotIndex, bool _bIKnowWhatImDoing=false, ID3D11ShaderResourceView* _view=NULL ) const;
 	void		RemoveFromLastAssignedSlots() const;
 
 	// Upload the texture as a UAV for a compute shader
-	void		SetCSUAV( U32 _SlotIndex, ID3D11UnorderedAccessView* _pView=NULL ) const;
+	void		SetCSUAV( U32 _slotIndex, ID3D11UnorderedAccessView* _view=NULL ) const;
 	void		RemoveFromLastAssignedSlotUAV() const;
 
 	// Texture access by the CPU
 	void		CopyFrom( Texture2D& _SourceTexture );
-	const D3D11_MAPPED_SUBRESOURCE&	MapRead( U32 _MipLevelIndex, U32 _ArrayIndex ) const;
-	const D3D11_MAPPED_SUBRESOURCE&	MapWrite( U32 _MipLevelIndex, U32 _ArrayIndex );
-	void		UnMap( U32 _MipLevelIndex, U32 _ArrayIndex ) const;
+	const D3D11_MAPPED_SUBRESOURCE&	MapRead( U32 _mipLevelIndex, U32 _arrayIndex ) const;
+	const D3D11_MAPPED_SUBRESOURCE&	MapWrite( U32 _mipLevelIndex, U32 _arrayIndex );
+	void		UnMap( U32 _mipLevelIndex, U32 _arrayIndex ) const;
 
 	// Conversion of a CPU-readable (i.e. staging) texture into an ImagesMatrix
 	void		ReadAsImagesMatrix( ImageUtilityLib::ImagesMatrix& _images ) const;
@@ -110,7 +110,7 @@ public:	// HELPERS
 
 	static void			NextMipSize( U32& _width, U32& _height );
 	static U32			ComputeMipLevelsCount( U32 _width, U32 _height, U32 _mipLevelsCount );
-	U32					CalcSubResource( U32 _MipLevelIndex, U32 _ArrayIndex ) const;
+	U32					CalcSubResource( U32 _mipLevelIndex, U32 _arrayIndex ) const;
 	static bool			IsCompressedFormat( DXGI_FORMAT _format );
 
 private:

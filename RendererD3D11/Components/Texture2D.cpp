@@ -296,9 +296,9 @@ ID3D11ShaderResourceView*	Texture2D::GetSRV( U32 _mipLevelStart, U32 _mipLevelsC
 	U32	Hash = (_mipLevelStart << 0) | (_arrayStart << 4) | (_mipLevelsCount << (4+12)) | (_arraySize << (4+12+4));	// Re-organized to have most likely changes (i.e. mip & array starts) first
 		Hash ^= _asArray ? 0x80000000UL : 0;
 
-	ID3D11ShaderResourceView*	pExistingView = (ID3D11ShaderResourceView*) m_cachedSRVs.Get( Hash );
-	if ( pExistingView != NULL )
-		return pExistingView;
+	ID3D11ShaderResourceView*	existingView = (ID3D11ShaderResourceView*) m_cachedSRVs.Get( Hash );
+	if ( existingView != NULL )
+		return existingView;
 
 	// Create a new one
 	D3D11_SHADER_RESOURCE_VIEW_DESC	desc;
@@ -344,9 +344,9 @@ ID3D11RenderTargetView*		Texture2D::GetRTV( U32 _mipLevelIndex, U32 _ArrayStart,
 	// Check if we already have it
 //	U32	Hash = _ArraySize | ((_ArrayStart | (_mipLevelIndex << 12)) << 12);
 	U32	Hash = (_mipLevelIndex << 0) | (_ArrayStart << 4) | (_ArraySize << (4+12));	// Re-organized to have most likely changes (i.e. mip & array starts) first
-	ID3D11RenderTargetView*	pExistingView = (ID3D11RenderTargetView*) m_cachedRTVs.Get( Hash );
-	if ( pExistingView != NULL )
-		return pExistingView;
+	ID3D11RenderTargetView*	existingView = (ID3D11RenderTargetView*) m_cachedRTVs.Get( Hash );
+	if ( existingView != NULL )
+		return existingView;
 
 	// Create a new one
 	D3D11_RENDER_TARGET_VIEW_DESC	Desc;
@@ -371,9 +371,9 @@ ID3D11UnorderedAccessView*	Texture2D::GetUAV( U32 _mipLevelIndex, U32 _ArrayStar
 	// Check if we already have it
 //	U32	Hash = _ArraySize | ((_ArrayStart | (_mipLevelIndex << 12)) << 12);
 	U32	Hash = (_mipLevelIndex << 0) | (_ArrayStart << 4) | (_ArraySize << (4+12));	// Re-organized to have most likely changes (i.e. mip & array starts) first
-	ID3D11UnorderedAccessView*	pExistingView = (ID3D11UnorderedAccessView*) m_cachedUAVs.Get( Hash );
-	if ( pExistingView != NULL )
-		return pExistingView;
+	ID3D11UnorderedAccessView*	existingView = (ID3D11UnorderedAccessView*) m_cachedUAVs.Get( Hash );
+	if ( existingView != NULL )
+		return existingView;
 
 	// Create a new one
 	D3D11_UNORDERED_ACCESS_VIEW_DESC	desc;
@@ -401,9 +401,9 @@ ID3D11DepthStencilView*		Texture2D::GetDSV( U32 _ArrayStart, U32 _ArraySize ) co
 
 	// Check if we already have it
 	U32	Hash = (_ArrayStart << 0) | (_ArraySize << 12);
-	ID3D11DepthStencilView*	pExistingView = (ID3D11DepthStencilView*) m_cachedDSVs.Get( Hash );
-	if ( pExistingView != NULL )
-		return pExistingView;
+	ID3D11DepthStencilView*	existingView = (ID3D11DepthStencilView*) m_cachedDSVs.Get( Hash );
+	if ( existingView != NULL )
+		return existingView;
 
 	D3D11_DEPTH_STENCIL_VIEW_DESC	desc;
 	desc.Format = DepthDXGIFormat( DEPTH_ACCESS_TYPE::VIEW_WRITABLE );
@@ -439,48 +439,42 @@ void	Texture2D::Set( U32 _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderResour
 	m_lastAssignedSlots[5] = _SlotIndex;
 }
 
-void	Texture2D::SetVS( U32 _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderResourceView* _pView ) const
-{
+void	Texture2D::SetVS( U32 _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderResourceView* _pView ) const {
 	ASSERT( _SlotIndex >= 10 || _bIKnowWhatImDoing, "WARNING: Assigning a reserved texture slot! (i.e. all slots [0,9] are reserved for global textures)" );
 
 	_pView = _pView != NULL ? _pView : GetSRV( 0, 0, 0, 0 );
 	m_device.DXContext().VSSetShaderResources( _SlotIndex, 1, &_pView );
 	m_lastAssignedSlots[0] = _SlotIndex;
 }
-void	Texture2D::SetHS( U32 _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderResourceView* _pView ) const
-{
+void	Texture2D::SetHS( U32 _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderResourceView* _pView ) const {
 	ASSERT( _SlotIndex >= 10 || _bIKnowWhatImDoing, "WARNING: Assigning a reserved texture slot! (i.e. all slots [0,9] are reserved for global textures)" );
 
 	_pView = _pView != NULL ? _pView : GetSRV( 0, 0, 0, 0 );
 	m_device.DXContext().HSSetShaderResources( _SlotIndex, 1, &_pView );
 	m_lastAssignedSlots[1] = _SlotIndex;
 }
-void	Texture2D::SetDS( U32 _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderResourceView* _pView ) const
-{
+void	Texture2D::SetDS( U32 _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderResourceView* _pView ) const {
 	ASSERT( _SlotIndex >= 10 || _bIKnowWhatImDoing, "WARNING: Assigning a reserved texture slot! (i.e. all slots [0,9] are reserved for global textures)" );
 
 	_pView = _pView != NULL ? _pView : GetSRV( 0, 0, 0, 0 );
 	m_device.DXContext().DSSetShaderResources( _SlotIndex, 1, &_pView );
 	m_lastAssignedSlots[2] = _SlotIndex;
 }
-void	Texture2D::SetGS( U32 _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderResourceView* _pView ) const
-{
+void	Texture2D::SetGS( U32 _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderResourceView* _pView ) const {
 	ASSERT( _SlotIndex >= 10 || _bIKnowWhatImDoing, "WARNING: Assigning a reserved texture slot! (i.e. all slots [0,9] are reserved for global textures)" );
 
 	_pView = _pView != NULL ? _pView : GetSRV( 0, 0, 0, 0 );
 	m_device.DXContext().GSSetShaderResources( _SlotIndex, 1, &_pView );
 	m_lastAssignedSlots[3] = _SlotIndex;
 }
-void	Texture2D::SetPS( U32 _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderResourceView* _pView ) const
-{
+void	Texture2D::SetPS( U32 _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderResourceView* _pView ) const {
 	ASSERT( _SlotIndex >= 10 || _bIKnowWhatImDoing, "WARNING: Assigning a reserved texture slot! (i.e. all slots [0,9] are reserved for global textures)" );
 
 	_pView = _pView != NULL ? _pView : GetSRV( 0, 0, 0, 0 );
 	m_device.DXContext().PSSetShaderResources( _SlotIndex, 1, &_pView );
 	m_lastAssignedSlots[4] = _SlotIndex;
 }
-void	Texture2D::SetCS( U32 _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderResourceView* _pView ) const
-{
+void	Texture2D::SetCS( U32 _SlotIndex, bool _bIKnowWhatImDoing, ID3D11ShaderResourceView* _pView ) const {
 	ASSERT( _SlotIndex >= 10 || _bIKnowWhatImDoing, "WARNING: Assigning a reserved texture slot! (i.e. all slots [0,9] are reserved for global textures)" );
 
 	_pView = _pView != NULL ? _pView : GetSRV( 0, 0, 0, 0 );

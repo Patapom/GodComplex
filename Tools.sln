@@ -51,6 +51,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AlbedoDatabaseGenerator", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VoronoiVisualizer", "Tools\VoronoiVisualizer\VoronoiVisualizer.csproj", "{2CC01836-7A66-4176-A55C-7A53B4C73745}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BImageViewer", "Tools\BImageViewer\BImageViewer.csproj", "{2BEBFD43-4EC8-4B31-B6F5-D4A9E5F5FB70}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -695,6 +697,32 @@ Global
 		{2CC01836-7A66-4176-A55C-7A53B4C73745}.Release|x64.Build.0 = Release|x64
 		{2CC01836-7A66-4176-A55C-7A53B4C73745}.Release|x86.ActiveCfg = Release|x86
 		{2CC01836-7A66-4176-A55C-7A53B4C73745}.Release|x86.Build.0 = Release|x86
+		{2BEBFD43-4EC8-4B31-B6F5-D4A9E5F5FB70}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{2BEBFD43-4EC8-4B31-B6F5-D4A9E5F5FB70}.Debug|Mixed Platforms.ActiveCfg = Debug|x86
+		{2BEBFD43-4EC8-4B31-B6F5-D4A9E5F5FB70}.Debug|Mixed Platforms.Build.0 = Debug|x86
+		{2BEBFD43-4EC8-4B31-B6F5-D4A9E5F5FB70}.Debug|Win32.ActiveCfg = Debug|x86
+		{2BEBFD43-4EC8-4B31-B6F5-D4A9E5F5FB70}.Debug|Win32.Build.0 = Debug|x86
+		{2BEBFD43-4EC8-4B31-B6F5-D4A9E5F5FB70}.Debug|x64.ActiveCfg = Debug|x64
+		{2BEBFD43-4EC8-4B31-B6F5-D4A9E5F5FB70}.Debug|x64.Build.0 = Debug|x64
+		{2BEBFD43-4EC8-4B31-B6F5-D4A9E5F5FB70}.Debug|x86.ActiveCfg = Debug|x86
+		{2BEBFD43-4EC8-4B31-B6F5-D4A9E5F5FB70}.Debug|x86.Build.0 = Debug|x86
+		{2BEBFD43-4EC8-4B31-B6F5-D4A9E5F5FB70}.Profile|Any CPU.ActiveCfg = Release|x86
+		{2BEBFD43-4EC8-4B31-B6F5-D4A9E5F5FB70}.Profile|Mixed Platforms.ActiveCfg = Release|x86
+		{2BEBFD43-4EC8-4B31-B6F5-D4A9E5F5FB70}.Profile|Mixed Platforms.Build.0 = Release|x86
+		{2BEBFD43-4EC8-4B31-B6F5-D4A9E5F5FB70}.Profile|Win32.ActiveCfg = Release|x86
+		{2BEBFD43-4EC8-4B31-B6F5-D4A9E5F5FB70}.Profile|Win32.Build.0 = Release|x86
+		{2BEBFD43-4EC8-4B31-B6F5-D4A9E5F5FB70}.Profile|x64.ActiveCfg = Release|x86
+		{2BEBFD43-4EC8-4B31-B6F5-D4A9E5F5FB70}.Profile|x86.ActiveCfg = Release|x86
+		{2BEBFD43-4EC8-4B31-B6F5-D4A9E5F5FB70}.Profile|x86.Build.0 = Release|x86
+		{2BEBFD43-4EC8-4B31-B6F5-D4A9E5F5FB70}.Release|Any CPU.ActiveCfg = Release|x86
+		{2BEBFD43-4EC8-4B31-B6F5-D4A9E5F5FB70}.Release|Mixed Platforms.ActiveCfg = Release|x86
+		{2BEBFD43-4EC8-4B31-B6F5-D4A9E5F5FB70}.Release|Mixed Platforms.Build.0 = Release|x86
+		{2BEBFD43-4EC8-4B31-B6F5-D4A9E5F5FB70}.Release|Win32.ActiveCfg = Release|x86
+		{2BEBFD43-4EC8-4B31-B6F5-D4A9E5F5FB70}.Release|Win32.Build.0 = Release|x86
+		{2BEBFD43-4EC8-4B31-B6F5-D4A9E5F5FB70}.Release|x64.ActiveCfg = Release|x64
+		{2BEBFD43-4EC8-4B31-B6F5-D4A9E5F5FB70}.Release|x64.Build.0 = Release|x64
+		{2BEBFD43-4EC8-4B31-B6F5-D4A9E5F5FB70}.Release|x86.ActiveCfg = Release|x86
+		{2BEBFD43-4EC8-4B31-B6F5-D4A9E5F5FB70}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -722,5 +750,6 @@ Global
 		{EB400C51-70B9-4809-AC8B-D8D3D6F7C5DE} = {4B8CA9CC-B6D2-46E4-848F-35B8710EEE95}
 		{59AB0801-6E22-4781-B48D-3FD46421204C} = {4B8CA9CC-B6D2-46E4-848F-35B8710EEE95}
 		{2CC01836-7A66-4176-A55C-7A53B4C73745} = {4B8CA9CC-B6D2-46E4-848F-35B8710EEE95}
+		{2BEBFD43-4EC8-4B31-B6F5-D4A9E5F5FB70} = {4B8CA9CC-B6D2-46E4-848F-35B8710EEE95}
 	EndGlobalSection
 EndGlobal
