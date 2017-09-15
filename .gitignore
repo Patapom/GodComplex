@@ -635,3 +635,5 @@ Publish
 /Tools/AlbedoDatabaseGenerator/*.user
 /Tests/TestArduinoSerialPacketDecoder/obj
 /Tests/TestArduinoSerialPacketDecoder/bin
+/Tools/GenerateBlueNoise/*.user
+/Tests/TestArduinoSerialPacketDecoder/*.user
