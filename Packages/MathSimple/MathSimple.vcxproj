@@ -147,9 +147,11 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Math.cpp" />
+    <ClCompile Include="Vectors.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Math.h" />
+    <ClInclude Include="Vectors.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
