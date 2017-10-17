@@ -6,6 +6,8 @@
 
 using namespace System;
 
+#include "Math.h"
+
 namespace SharpMath {
 
 	value struct	float3;
@@ -67,6 +69,8 @@ namespace SharpMath {
 		float	Max()			{ return Math::Max( x, y ); }
 		void	Min( float2 p )	{ x = Math::Min( x, p.x ); y = Math::Min( y, p.y ); }
 		void	Max( float2 p )	{ x = Math::Max( x, p.x ); y = Math::Max( y, p.y ); }
+		float2	Clamp( float _min, float _max )	{ return float2( Mathf::Clamp( x, _min, _max ), Mathf::Clamp( y, _min, _max ) ); }
+		float2	Saturate()						{ return float2( Mathf::Clamp( x, 0, 1 ), Mathf::Clamp( y, 0, 1 ) ); }
 
 		float	Dot( float2 b )		{ return x*b.x + y*b.y; }
 		float3	Cross( float2 b );
@@ -160,6 +164,8 @@ namespace SharpMath {
 		float	Max()			{ return Math::Max( Math::Max( x, y ), z ); }
 		void	Min( float3 p )	{ x = Math::Min( x, p.x ); y = Math::Min( y, p.y ); z = Math::Min( z, p.z ); }
 		void	Max( float3 p )	{ x = Math::Max( x, p.x ); y = Math::Max( y, p.y ); z = Math::Max( z, p.z ); }
+		float3	Clamp( float _min, float _max )	{ return float3( Mathf::Clamp( x, _min, _max ), Mathf::Clamp( y, _min, _max ), Mathf::Clamp( z, _min, _max ) ); }
+		float3	Saturate()						{ return float3( Mathf::Clamp( x, 0, 1 ), Mathf::Clamp( y, 0, 1 ), Mathf::Clamp( z, 0, 1 ) ); }
 
 		float	Dot( float3 b )	{ return x*b.x + y*b.y + z*b.z; }
 		void	Normalize()		{ float recLength = 1.0f / Length; x *= recLength; y *= recLength; z *= recLength; }
@@ -217,6 +223,7 @@ namespace SharpMath {
 
 		float4( float _x, float _y, float _z, float _w )		{ Set( _x, _y, _z, _w ); }
 		float4( float2 _xy, float _z, float _w )				{ Set( _xy.x, _xy.y, _z, _w ); }
+		float4( float2 _xy, float2 _zw )						{ Set( _xy.x, _xy.y, _zw.x, _zw.y ); }
 		float4( float3 _xyz, float _w )							{ Set( _xyz.x, _xyz.y, _xyz.z, _w ); }
 //		explicit float4( System::Drawing::Color^ _Color, float _Alpha )	{ Set( _Color->R / 255.0f, _Color->G / 255.0f, _Color->B / 255.0f, _Alpha ); }
 		void	Set( float _x, float _y, float _z, float _w )	{ x = _x; y = _y; z = _z; w = _w; }
@@ -258,6 +265,9 @@ namespace SharpMath {
 		property float2	xy	{
 			float2	get() { return float2( x, y ); }
 		}
+		property float2	zw	{
+			float2	get() { return float2( z, w ); }
+		}
 		property float3	xyz	{
 			float3	get() { return float3( x, y, z ); }
 		}
@@ -282,7 +292,15 @@ namespace SharpMath {
 			}
 		}
 
+		float	Min()			{ return Math::Min( Math::Min( Math::Min( x, y ), z ), w ); }
+		float	Max()			{ return Math::Max( Math::Max( Math::Max( x, y ), z ), w ); }
+		void	Min( float4 p )	{ x = Math::Min( x, p.x ); y = Math::Min( y, p.y ); z = Math::Min( z, p.z ); w = Math::Min( w, p.w ); }
+		void	Max( float4 p )	{ x = Math::Max( x, p.x ); y = Math::Max( y, p.y ); z = Math::Max( z, p.z ); w = Math::Max( w, p.w ); }
+		float4	Clamp( float _min, float _max )	{ return float4( Mathf::Clamp( x, _min, _max ), Mathf::Clamp( y, _min, _max ), Mathf::Clamp( z, _min, _max ), Mathf::Clamp( w, _min, _max ) ); }
+		float4	Saturate()						{ return float4( Mathf::Clamp( x, 0, 1 ), Mathf::Clamp( y, 0, 1 ), Mathf::Clamp( z, 0, 1 ), Mathf::Clamp( w, 0, 1 ) ); }
+
 		float	Dot( float4 b )	{ return x*b.x + y*b.y + z*b.z + w*b.w; }
+		void	Normalize()		{ float recLength = 1.0f / Length; x *= recLength; y *= recLength; z *= recLength; w*= recLength; }
 
 		static bool			operator==( float4^ _Op0, float4^ _Op1 ) {
 			if ( ((Object^) _Op0) == nullptr && ((Object^) _Op1) == nullptr )

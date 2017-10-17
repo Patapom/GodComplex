@@ -90,8 +90,16 @@ namespace SharpMath {
 		static bool				Almost( float a, float b, float _epsilon )			{ return Abs( a - b ) < _epsilon; }
 		static bool				Almost( double a, double b )						{ return Almost( a, b, double(ALMOST_EPSILON) ); }
 		static bool				Almost( double a, double b, double _epsilon )		{ return Abs( a - b ) < _epsilon; }
+
+		//////////////////////////////////////////////////////////////////////////
+		// Conversions
 		static float			ToDeg( float _radians )								{ return 180.0f * _radians * INVPI; }
 		static float			ToRad( float _degrees )								{ return PI * _degrees / 180.0f; }
+
+		static Byte				ToU8( float value )									{ return (Byte) (Saturate( value ) * 255.0f); }
+		static UInt16			ToU16( float value )								{ return (UInt16) (Saturate( value ) * 65535.0f); }
+		static float			FromU8( Byte value )								{ return value / 255.0f; }
+		static float			FromU16( UInt16 value )								{ return value / 65535.0f; }
 	};
 
 
