@@ -488,10 +488,10 @@ namespace ImageUtilityLib {
 			m_internalConverter->RGB2XYZ( _RGB, _XYZ, _length );
 		}
 
-		void		GammaRGB2LinearRGB( const bfloat4& _gammaRGB, bfloat4& _linearRGB ) const {
+		void	GammaRGB2LinearRGB( const bfloat4& _gammaRGB, bfloat4& _linearRGB ) const {
 			m_internalConverter->GammaRGB2LinearRGB( _gammaRGB, _linearRGB );
 		}
-		void		LinearRGB2GammaRGB( const bfloat4& _linearRGB, bfloat4& _gammaRGB ) const {
+		void	LinearRGB2GammaRGB( const bfloat4& _linearRGB, bfloat4& _gammaRGB ) const {
 			m_internalConverter->LinearRGB2GammaRGB( _linearRGB, _gammaRGB );
 		}
 

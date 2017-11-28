@@ -345,6 +345,41 @@ public:
 
 };
 
+// Position
+// Normal
+// Tangent
+// BiTangent
+// UV0
+// Color0
+// Color1
+struct VertexFormatP3N3G3B3T3C4C4
+{
+public:
+
+	static class Desc : public IVertexFormatDescriptor
+	{
+		static D3D11_INPUT_ELEMENT_DESC	ms_pInputElements[7];
+
+	public:
+
+		virtual int			Size() const							{ return sizeof(VertexFormatP3N3G3B3T3C4C4); }
+		virtual const D3D11_INPUT_ELEMENT_DESC*  GetInputElements() const	{ return ms_pInputElements; }
+		virtual int			GetInputElementsCount() const			{ return 7; }
+		virtual void		Write( void* _pVertex, const bfloat3& _Position, const bfloat3& _Normal, const bfloat3& _Tangent, const bfloat3& _BiTangent, const bfloat2& _UV ) const;
+	} DESCRIPTOR;
+
+public:
+
+	bfloat3	Position;
+	bfloat3	Normal;
+	bfloat3	Tangent;
+	bfloat3	BiTangent;
+	bfloat3	UV0;
+	U32		Color0;
+	U32		Color1;
+
+};
+
 // Simple U32
 struct VertexFormatU32
 {

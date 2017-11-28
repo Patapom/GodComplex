@@ -67,6 +67,55 @@ bool	float4::TryParse( String^ _stringValue, float4% _value ) {
 	return true;
 }
 
+bool	float3x3::TryParse( String^ _stringValue, float3x3% _value ) {
+	_stringValue = _stringValue->Trim();
+	if ( !_stringValue->StartsWith( "{" )
+		|| !_stringValue->EndsWith( "}" ) ) {
+		return false;
+	}
+	array<String^>^	components = _stringValue->Substring( 1, _stringValue->Length-2 )->Split( ',' );
+	if ( components->Length != 9 )
+		return false;
+	components[0] += "," + components[1] + "," + components[2];
+	components[3] += "," + components[4] + "," + components[5];
+	components[6] += "," + components[7] + "," + components[8];
+
+	if ( !float3::TryParse( components[0], _value.r0 ) )
+		return false;
+	if ( !float3::TryParse( components[3], _value.r1 ) )
+		return false;
+	if ( !float3::TryParse( components[6], _value.r2 ) )
+		return false;
+
+	return true;
+}
+
+bool	float4x4::TryParse( String^ _stringValue, float4x4% _value ) {
+	_stringValue = _stringValue->Trim();
+	if ( !_stringValue->StartsWith( "{" )
+		|| !_stringValue->EndsWith( "}" ) ) {
+		return false;
+	}
+	array<String^>^	components = _stringValue->Substring( 1, _stringValue->Length-2 )->Split( ',' );
+	if ( components->Length != 16 )
+		return false;
+	components[0] += "," + components[1] + "," + components[2] + "," + components[3];
+	components[4] += "," + components[5] + "," + components[6] + "," + components[7];
+	components[8] += "," + components[9] + "," + components[10] + "," + components[11];
+	components[12] += "," + components[13] + "," + components[14] + "," + components[15];
+
+	if ( !float4::TryParse( components[0], _value.r0 ) )
+		return false;
+	if ( !float4::TryParse( components[4], _value.r1 ) )
+		return false;
+	if ( !float4::TryParse( components[8], _value.r2 ) )
+		return false;
+	if ( !float4::TryParse( components[12], _value.r3 ) )
+		return false;
+
+	return true;
+}
+
 
 #ifdef _DEBUG
 

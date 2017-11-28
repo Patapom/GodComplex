@@ -113,10 +113,16 @@ namespace ImageUtility {
 		RGBA32F = 20,
 
 		// This is the "raw compressed format" used to support compressed or otherwise unsupported pixel formats like DirectX BCx formats (only used by DDS images)
-		BC4		= 256	| RAW_BUFFER | COMPRESSED,	// Only supported by DDS, raw buffered images
-		BC5		= 257	| RAW_BUFFER | COMPRESSED,	// Only supported by DDS, raw buffered images
-		BC6H	= 258	| RAW_BUFFER | COMPRESSED,	// Only supported by DDS, raw buffered images
-		BC7		= 259	| RAW_BUFFER | COMPRESSED,	// Only supported by DDS, raw buffered images
+		BC1		= 256	| RAW_BUFFER | COMPRESSED,	// Only supported by DDS, raw buffered images
+		BC1_sRGB= 257	| RAW_BUFFER | COMPRESSED,	// Only supported by DDS, raw buffered images
+		BC2		= 258	| RAW_BUFFER | COMPRESSED,	// Only supported by DDS, raw buffered images
+		BC2_sRGB= 259	| RAW_BUFFER | COMPRESSED,	// Only supported by DDS, raw buffered images
+		BC3		= 260	| RAW_BUFFER | COMPRESSED,	// Only supported by DDS, raw buffered images
+		BC3_sRGB= 261	| RAW_BUFFER | COMPRESSED,	// Only supported by DDS, raw buffered images
+		BC4		= 262	| RAW_BUFFER | COMPRESSED,	// Only supported by DDS, raw buffered images
+		BC5		= 263	| RAW_BUFFER | COMPRESSED,	// Only supported by DDS, raw buffered images
+		BC6H	= 264	| RAW_BUFFER | COMPRESSED,	// Only supported by DDS, raw buffered images
+		BC7		= 265	| RAW_BUFFER | COMPRESSED,	// Only supported by DDS, raw buffered images
 	};
 
 	ref class ImagesMatrix;
@@ -484,6 +490,11 @@ namespace ImageUtility {
 		// Warning: throws an exception if your image format is HDR! (cf. ToneMapFrom())
 		// The 2 parameters are the Width and Height of the expected bitmap, the image will tile as much as possible to fill the target bitmap size
 		System::Drawing::Bitmap^	AsTiledBitmap( UInt32 _width, UInt32 _height );
+
+		// Updates a System.Drawing.Bitmap from the image
+		// Same as AsBitmap property except it doesn't create a bitmap every time
+		// NOTE: if the provided bitmap is larger than the image then borders are left untouched
+		void						AsBitmapInPlace( System::Drawing::Bitmap^ _bitmap );
 
 
 	public:

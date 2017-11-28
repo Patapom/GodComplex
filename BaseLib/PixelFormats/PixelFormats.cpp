@@ -167,12 +167,12 @@ PIXEL_FORMAT	BaseLib::DXGIFormat2PixelFormat( DXGI_FORMAT _sourceFormat, COMPONE
 		case DXGI_FORMAT_R32G32B32A32_FLOAT:	_pixelSize = 16; _componentFormat = COMPONENT_FORMAT::AUTO; return PIXEL_FORMAT::RGBA32F;
 
 		// Compressed formats should be handled as raw buffers
-// 		case DXGI_FORMAT_BC1_UNORM:
-// 		case DXGI_FORMAT_BC1_UNORM_SRGB:
-// 		case DXGI_FORMAT_BC2_UNORM:
-// 		case DXGI_FORMAT_BC2_UNORM_SRGB:
-// 		case DXGI_FORMAT_BC3_UNORM:
-// 		case DXGI_FORMAT_BC3_UNORM_SRGB:
+		case DXGI_FORMAT_BC1_UNORM:				_pixelSize = 1; _componentFormat = COMPONENT_FORMAT::UNORM; return PIXEL_FORMAT::BC1;
+		case DXGI_FORMAT_BC1_UNORM_SRGB:		_pixelSize = 1; _componentFormat = COMPONENT_FORMAT::UNORM_sRGB; return PIXEL_FORMAT::BC1_sRGB;
+		case DXGI_FORMAT_BC2_UNORM:				_pixelSize = 1; _componentFormat = COMPONENT_FORMAT::UNORM; return PIXEL_FORMAT::BC2;
+		case DXGI_FORMAT_BC2_UNORM_SRGB:		_pixelSize = 1; _componentFormat = COMPONENT_FORMAT::UNORM_sRGB; return PIXEL_FORMAT::BC2_sRGB;
+		case DXGI_FORMAT_BC3_UNORM:				_pixelSize = 1; _componentFormat = COMPONENT_FORMAT::UNORM; return PIXEL_FORMAT::BC3;
+		case DXGI_FORMAT_BC3_UNORM_SRGB:		_pixelSize = 1; _componentFormat = COMPONENT_FORMAT::UNORM_sRGB; return PIXEL_FORMAT::BC3_sRGB;
 		case DXGI_FORMAT_BC4_UNORM:				_pixelSize = 1; _componentFormat = COMPONENT_FORMAT::UNORM; return PIXEL_FORMAT::BC4;
 		case DXGI_FORMAT_BC4_SNORM:				_pixelSize = 1; _componentFormat = COMPONENT_FORMAT::SNORM; return PIXEL_FORMAT::BC4;
 		case DXGI_FORMAT_BC5_UNORM:				_pixelSize = 1; _componentFormat = COMPONENT_FORMAT::UNORM; return PIXEL_FORMAT::BC5;
@@ -305,6 +305,48 @@ DXGI_FORMAT	BaseLib::PixelFormat2DXGIFormat( PIXEL_FORMAT _sourceFormat, COMPONE
 
 
 		// ========================= Compressed Formats =========================
+		case PIXEL_FORMAT::BC1:
+			switch ( _componentFormat ) {
+			case COMPONENT_FORMAT::AUTO:
+			case COMPONENT_FORMAT::UNORM:			return DXGI_FORMAT_BC1_UNORM;
+			}
+			break;
+
+		case PIXEL_FORMAT::BC1_sRGB:
+			switch ( _componentFormat ) {
+			case COMPONENT_FORMAT::AUTO:
+			case COMPONENT_FORMAT::UNORM_sRGB:		return DXGI_FORMAT_BC1_UNORM_SRGB;
+			}
+			break;
+
+		case PIXEL_FORMAT::BC2:
+			switch ( _componentFormat ) {
+			case COMPONENT_FORMAT::AUTO:
+			case COMPONENT_FORMAT::UNORM:			return DXGI_FORMAT_BC2_UNORM;
+			}
+			break;
+
+		case PIXEL_FORMAT::BC2_sRGB:
+			switch ( _componentFormat ) {
+			case COMPONENT_FORMAT::AUTO:
+			case COMPONENT_FORMAT::UNORM_sRGB:		return DXGI_FORMAT_BC2_UNORM_SRGB;
+			}
+			break;
+
+		case PIXEL_FORMAT::BC3:
+			switch ( _componentFormat ) {
+			case COMPONENT_FORMAT::AUTO:
+			case COMPONENT_FORMAT::UNORM:			return DXGI_FORMAT_BC3_UNORM;
+			}
+			break;
+
+		case PIXEL_FORMAT::BC3_sRGB:
+			switch ( _componentFormat ) {
+			case COMPONENT_FORMAT::AUTO:
+			case COMPONENT_FORMAT::UNORM_sRGB:		return DXGI_FORMAT_BC3_UNORM_SRGB;
+			}
+			break;
+
 		case PIXEL_FORMAT::BC4:
 			switch ( _componentFormat ) {
 			case COMPONENT_FORMAT::AUTO:

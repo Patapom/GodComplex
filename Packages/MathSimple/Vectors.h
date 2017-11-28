@@ -351,6 +351,12 @@ namespace SharpMath {
 			r2.Set( r20, r21, r22 );
 		}
 
+		String^	ToString() override {
+			return "{ " + r0.ToString() + ", " + r1.ToString() + ", " + r2.ToString() + " }";
+		}
+
+		static bool		TryParse( String^ _stringValue, float3x3% _value );
+
 		void	Scale( float3 _Scale ) {
 			r0 *= _Scale.x;
 			r1 *= _Scale.y;
@@ -550,6 +556,12 @@ namespace SharpMath {
 			r2.Set( r20, r21, r22, r23 );
 			r3.Set( r30, r31, r32, r33 );
 		}
+
+		String^	ToString() override {
+			return "{ " + r0.ToString() + ", " + r1.ToString() + ", " + r2.ToString() + ", " + r3.ToString() + " }";
+		}
+
+		static bool		TryParse( String^ _stringValue, float4x4% _value );
 
 		void	Scale( float3 _Scale ) {
 			r0 *= _Scale.x;

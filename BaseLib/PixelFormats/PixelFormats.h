@@ -80,10 +80,16 @@ namespace BaseLib {
 		RGBA32F = 20,
 
 		// This is the "raw compressed format" used to support compressed or otherwise unsupported pixel formats like DirectX BCx formats (only used by DDS images)
-		BC4		= 256	| RAW_BUFFER | COMPRESSED,	// Only supported by DDS, raw buffered images
-		BC5		= 257	| RAW_BUFFER | COMPRESSED,	// Only supported by DDS, raw buffered images
-		BC6H	= 258	| RAW_BUFFER | COMPRESSED,	// Only supported by DDS, raw buffered images
-		BC7		= 259	| RAW_BUFFER | COMPRESSED,	// Only supported by DDS, raw buffered images
+		BC1		= 256	| RAW_BUFFER | COMPRESSED,	// Only supported by DDS, raw buffered images
+		BC1_sRGB= 257	| RAW_BUFFER | COMPRESSED,	// Only supported by DDS, raw buffered images
+		BC2		= 258	| RAW_BUFFER | COMPRESSED,	// Only supported by DDS, raw buffered images
+		BC2_sRGB= 259	| RAW_BUFFER | COMPRESSED,	// Only supported by DDS, raw buffered images
+		BC3		= 260	| RAW_BUFFER | COMPRESSED,	// Only supported by DDS, raw buffered images
+		BC3_sRGB= 261	| RAW_BUFFER | COMPRESSED,	// Only supported by DDS, raw buffered images
+		BC4		= 262	| RAW_BUFFER | COMPRESSED,	// Only supported by DDS, raw buffered images
+		BC5		= 263	| RAW_BUFFER | COMPRESSED,	// Only supported by DDS, raw buffered images
+		BC6H	= 264	| RAW_BUFFER | COMPRESSED,	// Only supported by DDS, raw buffered images
+		BC7		= 265	| RAW_BUFFER | COMPRESSED,	// Only supported by DDS, raw buffered images
 	};
 
 	// Additional information about how the individual components of a pixel structure should be treated

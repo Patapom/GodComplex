@@ -85,7 +85,7 @@ namespace SharpMath {
 		static float			Clamp( float x, float min, float max )				{ return x < min ? min : (x > max ? max : x); }
 		static float			Lerp( float a, float b, float t )					{ return a * (1.0f - t) + b * t; }
 		static float			Saturate( float x )									{ return x < 0.0f ? 0.0f : (x > 1.0f ? 1.0f : x); }
-		static float			Sqr( float a )										{ return a * a;  }
+		static float			Square( float a )									{ return a * a;  }
 		static bool				Almost( float a, float b )							{ return Almost( a, b, ALMOST_EPSILON ); }
 		static bool				Almost( float a, float b, float _epsilon )			{ return Abs( a - b ) < _epsilon; }
 		static bool				Almost( double a, double b )						{ return Almost( a, b, double(ALMOST_EPSILON) ); }

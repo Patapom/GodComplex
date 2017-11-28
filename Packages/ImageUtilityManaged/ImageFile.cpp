@@ -135,7 +135,7 @@ NativeByteArray^	ImageFile::Save( FILE_FORMAT _format, SAVE_FLAGS _options ) {
 
 	const U8*		sourcePtr = (U8*) source->Bits.ToPointer();
 
-	System::Drawing::Imaging::BitmapData^	lockedBitmap = result->LockBits( System::Drawing::Rectangle( 0, 0, W, H ), System::Drawing::Imaging::ImageLockMode::ReadOnly, System::Drawing::Imaging::PixelFormat::Format32bppArgb );
+	System::Drawing::Imaging::BitmapData^	lockedBitmap = result->LockBits( System::Drawing::Rectangle( 0, 0, W, H ), System::Drawing::Imaging::ImageLockMode::WriteOnly, System::Drawing::Imaging::PixelFormat::Format32bppArgb );
 
 	pin_ptr<void>	scan0Ptr = lockedBitmap->Scan0.ToPointer();
 
@@ -185,7 +185,7 @@ NativeByteArray^	ImageFile::Save( FILE_FORMAT _format, SAVE_FLAGS _options ) {
 	const U8*	sourcePtr = (U8*) source->Bits.ToPointer();
 
 	System::Drawing::Bitmap^	result = gcnew System::Drawing::Bitmap( _width, _height, System::Drawing::Imaging::PixelFormat::Format32bppArgb );
-	System::Drawing::Imaging::BitmapData^	lockedBitmap = result->LockBits( System::Drawing::Rectangle( 0, 0, W, H ), System::Drawing::Imaging::ImageLockMode::ReadOnly, System::Drawing::Imaging::PixelFormat::Format32bppArgb );
+	System::Drawing::Imaging::BitmapData^	lockedBitmap = result->LockBits( System::Drawing::Rectangle( 0, 0, W, H ), System::Drawing::Imaging::ImageLockMode::WriteOnly, System::Drawing::Imaging::PixelFormat::Format32bppArgb );
 
 	pin_ptr<void>	scan0Ptr = lockedBitmap->Scan0.ToPointer();
 
@@ -355,6 +355,55 @@ void	ImageFile::AsCustomBitmap( System::Drawing::Bitmap^ _bitmap, ColorTransform
 	_bitmap->UnlockBits( lockedBitmap );
 }
 
+void	ImageFile::AsBitmapInPlace( System::Drawing::Bitmap^ _bitmap ) {
+	if ( _bitmap == nullptr )
+		throw gcnew Exception( "Invalid bitmap!" );
+
+	UInt32	W = Math::Min( (UInt32) _bitmap->Width, Width );
+	UInt32	H = Math::Max( (UInt32) _bitmap->Height, Height );
+
+	// Convert source bitmap to a compatible format
+	ImageFile^	source = this;
+	if ( PixelFormat != PIXEL_FORMAT::BGR8 && PixelFormat != PIXEL_FORMAT::BGRA8 ) {
+		source = gcnew ImageFile();
+		source->ConvertFrom( this, PIXEL_FORMAT::BGRA8 );
+	}
+
+	const U8*		sourcePtr = (U8*) source->Bits.ToPointer();
+
+	System::Drawing::Imaging::BitmapData^	lockedBitmap = _bitmap->LockBits( System::Drawing::Rectangle( 0, 0, W, H ), System::Drawing::Imaging::ImageLockMode::WriteOnly, System::Drawing::Imaging::PixelFormat::Format32bppArgb );
+
+	pin_ptr<void>	scan0Ptr = lockedBitmap->Scan0.ToPointer();
+
+	if ( source->PixelFormat == PIXEL_FORMAT::BGRA8 ) {
+		// 32 bpp
+		for ( UInt32 Y=0; Y < H; Y++ ) {
+			Byte*	targetPtr = reinterpret_cast<Byte*>(scan0Ptr) + Y * lockedBitmap->Stride;
+			for ( UInt32 X=0; X < W; X++ ) {
+				*targetPtr++ = *sourcePtr++;	// B
+				*targetPtr++ = *sourcePtr++;	// G
+				*targetPtr++ = *sourcePtr++;	// R
+				*targetPtr++ = *sourcePtr++;	// A
+			}
+		}
+	} else {
+		// 24 bpp
+		for ( UInt32 Y=0; Y < H; Y++ ) {
+			Byte*	targetPtr = reinterpret_cast<Byte*>(scan0Ptr) + Y * lockedBitmap->Stride;
+			for ( UInt32 X=0; X < W; X++ ) {
+				*targetPtr++ = *sourcePtr++;	// B
+				*targetPtr++ = *sourcePtr++;	// G
+				*targetPtr++ = *sourcePtr++;	// R
+				*targetPtr++ = 0xFFU;			// A
+			}
+		}
+	}
+
+	_bitmap->UnlockBits( lockedBitmap );
+
+	if ( source != this )
+		delete source;	// We had to make a temporary conversion so now we must delete it
+}
 
 
 //////////////////////////////////////////////////////////////////////////

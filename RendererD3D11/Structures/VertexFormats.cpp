@@ -7,7 +7,7 @@ static const char*	POSITION_TRANSFORMED = "SV_POSITION";
 static const char*	NORMAL = "NORMAL";
 static const char*	TANGENT = "TANGENT";
 static const char*	BITANGENT = "BITANGENT";
-// static const char*	COLOR = "COLOR";
+static const char*	COLOR = "COLOR";
 // static const char*	VIEW = "VIEW";
 // static const char*	CURVATURE = "CURVATURE";
 static const char*	TEXCOORD = "TEXCOORD";	// In the shader, this semantic is written as TEXCOORD0, TEXCOORD1, etc.
@@ -93,6 +93,18 @@ D3D11_INPUT_ELEMENT_DESC	VertexFormatP3N3G3B3T2::Desc::ms_pInputElements[] =
 	{ TEXCOORD, 0, DXGI_FORMAT_R32G32_FLOAT, 0, 48, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 };
 
+VertexFormatP3N3G3B3T3C4C4::Desc	VertexFormatP3N3G3B3T3C4C4::DESCRIPTOR;
+D3D11_INPUT_ELEMENT_DESC	VertexFormatP3N3G3B3T3C4C4::Desc::ms_pInputElements[] =
+{
+	{ POSITION, 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+	{ NORMAL, 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+	{ TANGENT, 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+	{ BITANGENT, 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 36, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+	{ TEXCOORD, 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 48, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+	{ COLOR, 0, DXGI_FORMAT_R8G8B8A8_UNORM, 0, 60, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+	{ COLOR, 1, DXGI_FORMAT_R8G8B8A8_UNORM, 0, 64, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+};
+
 VertexFormatU32::Desc	VertexFormatU32::DESCRIPTOR;
 D3D11_INPUT_ELEMENT_DESC	VertexFormatU32::Desc::ms_pInputElements[] =
 {
@@ -176,6 +188,18 @@ void	VertexFormatP3N3G3B3T2::Desc::Write( void* _pVertex, const bfloat3& _Positi
 	V.Tangent = _Tangent;
 	V.BiTangent = _BiTangent;
 	V.UV = _UV;
+}
+
+void	VertexFormatP3N3G3B3T3C4C4::Desc::Write( void* _pVertex, const bfloat3& _Position, const bfloat3& _Normal, const bfloat3& _Tangent, const bfloat3& _BiTangent, const bfloat2& _UV ) const
+{
+	VertexFormatP3N3G3B3T3C4C4&	V = *((VertexFormatP3N3G3B3T3C4C4*) _pVertex);
+	V.Position = _Position;
+	V.Normal = _Normal;
+	V.Tangent = _Tangent;
+	V.BiTangent = _BiTangent;
+	V.UV0.Set( _UV, 0 );
+	V.Color0 = 0xFFFFFFFFU;
+	V.Color1 = 0xFFFFFFFFU;
 }
 
 void	VertexFormatU32::Desc::Write( void* _pVertex, const bfloat3& _Position, const bfloat3& _Normal, const bfloat3& _Tangent, const bfloat3& _BiTangent, const bfloat2& _UV ) const
