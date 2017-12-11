@@ -11,42 +11,7 @@ using namespace System;
 
 namespace Renderer {
 
-	ref class Texture3D;
-
-	// Wraps a 3D texture view (SRV, RTV, DSV or UAV)
-	public ref class	View3D : public IView {
-	internal:
-		Texture3D^	m_owner;
-		UInt32		m_mipLevelStart;
-		UInt32		m_mipLevelsCount;
-		UInt32		m_sliceStart;
-		UInt32		m_slicesCount;
-		bool		m_asArray;
-
-		View3D( Texture3D^ _Owner, UInt32 _MipLevelStart, UInt32 _MipLevelsCount, UInt32 _SliceStart, UInt32 _SlicesCount ) : m_owner( _Owner ), m_mipLevelStart( _MipLevelStart ), m_mipLevelsCount( _MipLevelsCount ), m_sliceStart( _SliceStart ), m_slicesCount( _SlicesCount ), m_asArray( false ) {}
-		View3D( Texture3D^ _Owner, UInt32 _MipLevelStart, UInt32 _MipLevelsCount, UInt32 _SliceStart, UInt32 _SlicesCount, bool _AsArray ) : m_owner( _Owner ), m_mipLevelStart( _MipLevelStart ), m_mipLevelsCount( _MipLevelsCount ), m_sliceStart( _SliceStart ), m_slicesCount( _SlicesCount ), m_asArray( _AsArray ) {}
-
-	public:
-
-		virtual property UInt32	Width				{ UInt32 get(); }
-		virtual property UInt32	Height				{ UInt32 get(); }
-		virtual property UInt32	ArraySizeOrDepth	{ UInt32 get(); }
-
-		virtual property ::ID3D11ShaderResourceView*	SRV { ::ID3D11ShaderResourceView*	get(); }
-		virtual property ::ID3D11RenderTargetView*		RTV { ::ID3D11RenderTargetView*		get(); }
-		virtual property ::ID3D11UnorderedAccessView*	UAV { ::ID3D11UnorderedAccessView*	get(); }
-		virtual property ::ID3D11DepthStencilView*		DSV { ::ID3D11DepthStencilView*		get() { throw gcnew Exception( "3D Textures cannot be used as depth stencil buffers!" ); } }
-
-	public:	// Setters to shader inputs
-		void		Set( UInt32 _slotIndex );
-		void		SetVS( UInt32 _slotIndex );
-		void		SetHS( UInt32 _slotIndex );
-		void		SetDS( UInt32 _slotIndex );
-		void		SetGS( UInt32 _slotIndex );
-		void		SetPS( UInt32 _slotIndex );
-		void		SetCS( UInt32 _slotIndex );
-		void		SetCSUAV( UInt32 _slotIndex );
-	};
+	ref class View3D;
 
 	// Wraps a 3D texture
 	[System::Diagnostics::DebuggerDisplayAttribute( "{Width,d}x{Height,d}x{Depth,d}x{MipLevelsCount,d} {Tag}" )]
@@ -98,9 +63,9 @@ namespace Renderer {
 		}
 
 		// Views
-		View3D^		GetView()				{ return GetView( 0, 0, 0, 0 ); }
-		View3D^		GetView( UInt32 _mipLevelStart, UInt32 _mipLevelsCount, UInt32 _sliceStart, UInt32 _slicesCount ) { return gcnew View3D( this, _mipLevelStart, _mipLevelsCount, _sliceStart, _slicesCount ); }
-		View3D^		GetView( UInt32 _mipLevelStart, UInt32 _mipLevelsCount, UInt32 _sliceStart, UInt32 _slicesCount, bool _asArray ) { return gcnew View3D( this, _mipLevelStart, _mipLevelsCount, _sliceStart, _slicesCount, _asArray ); }
+		View3D^		GetView()	{ return GetView( 0, 0, 0, 0 ); }
+		View3D^		GetView( UInt32 _mipLevelStart, UInt32 _mipLevelsCount, UInt32 _sliceStart, UInt32 _slicesCount );
+		View3D^		GetView( UInt32 _mipLevelStart, UInt32 _mipLevelsCount, UInt32 _sliceStart, UInt32 _slicesCount, bool _asArray );
 
 		// Uploads the texture to the shader
 		void		Set( UInt32 _slotIndex );
@@ -121,5 +86,40 @@ namespace Renderer {
 		Texture3D( const ::Texture3D& _existingTexture ) {
 			m_texture = const_cast< ::Texture3D* >( &_existingTexture );
 		}
+	};
+
+	// Wraps a 3D texture view (SRV, RTV, DSV or UAV)
+	public ref class	View3D : public IView {
+	internal:
+		Texture3D^	m_owner;
+		UInt32		m_mipLevelStart;
+		UInt32		m_mipLevelsCount;
+		UInt32		m_sliceStart;
+		UInt32		m_slicesCount;
+		bool		m_asArray;
+
+		View3D( Texture3D^ _Owner, UInt32 _MipLevelStart, UInt32 _MipLevelsCount, UInt32 _SliceStart, UInt32 _SlicesCount ) : m_owner( _Owner ), m_mipLevelStart( _MipLevelStart ), m_mipLevelsCount( _MipLevelsCount ), m_sliceStart( _SliceStart ), m_slicesCount( _SlicesCount ), m_asArray( false ) {}
+		View3D( Texture3D^ _Owner, UInt32 _MipLevelStart, UInt32 _MipLevelsCount, UInt32 _SliceStart, UInt32 _SlicesCount, bool _AsArray ) : m_owner( _Owner ), m_mipLevelStart( _MipLevelStart ), m_mipLevelsCount( _MipLevelsCount ), m_sliceStart( _SliceStart ), m_slicesCount( _SlicesCount ), m_asArray( _AsArray ) {}
+
+	public:
+
+		virtual property UInt32	Width				{ UInt32 get(); }
+		virtual property UInt32	Height				{ UInt32 get(); }
+		virtual property UInt32	ArraySizeOrDepth	{ UInt32 get(); }
+
+		virtual property ::ID3D11ShaderResourceView*	SRV { ::ID3D11ShaderResourceView*	get(); }
+		virtual property ::ID3D11RenderTargetView*		RTV { ::ID3D11RenderTargetView*		get(); }
+		virtual property ::ID3D11UnorderedAccessView*	UAV { ::ID3D11UnorderedAccessView*	get(); }
+		virtual property ::ID3D11DepthStencilView*		DSV { ::ID3D11DepthStencilView*		get() { throw gcnew Exception( "3D Textures cannot be used as depth stencil buffers!" ); } }
+
+	public:	// Setters to shader inputs
+		void		Set( UInt32 _slotIndex );
+		void		SetVS( UInt32 _slotIndex );
+		void		SetHS( UInt32 _slotIndex );
+		void		SetDS( UInt32 _slotIndex );
+		void		SetGS( UInt32 _slotIndex );
+		void		SetPS( UInt32 _slotIndex );
+		void		SetCS( UInt32 _slotIndex );
+		void		SetCSUAV( UInt32 _slotIndex );
 	};
 }

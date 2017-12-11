@@ -38,6 +38,8 @@ namespace Renderer {
 	void	Texture3D::SetCS( UInt32 _slotIndex )	{ m_texture->SetCS( _slotIndex, true, NULL ); }
 	void	Texture3D::SetCSUAV( int _slotIndex )	{ m_texture->SetCSUAV( _slotIndex, NULL ); }
 
+	View3D^		Texture3D::GetView( UInt32 _mipLevelStart, UInt32 _mipLevelsCount, UInt32 _sliceStart, UInt32 _slicesCount ) { return gcnew View3D( this, _mipLevelStart, _mipLevelsCount, _sliceStart, _slicesCount ); }
+	View3D^		Texture3D::GetView( UInt32 _mipLevelStart, UInt32 _mipLevelsCount, UInt32 _sliceStart, UInt32 _slicesCount, bool _asArray ) { return gcnew View3D( this, _mipLevelStart, _mipLevelsCount, _sliceStart, _slicesCount, _asArray ); }
 
 	//////////////////////////////////////////////////////////////////////////
 	// View

@@ -8,7 +8,7 @@
 
 namespace Renderer {
 
-	void	Primitive::Build( Device^ _device, UInt32 _verticesCount, ByteBuffer^ _vertices, cli::array<UInt32>^ _indices, TOPOLOGY _topology, VERTEX_FORMAT _vertexFormat, bool _allowSRV, bool _allowUAV ) {
+	void	Primitive::Build( Device^ _device, UInt32 _verticesCount, ByteBuffer^ _vertices, cli::array<UInt32>^ _indices, TOPOLOGY _topology, VERTEX_FORMAT _vertexFormat, bool _allowSRV, bool _allowUAV, bool _makeStructuredBuffer ) {
 
 		D3D11_PRIMITIVE_TOPOLOGY	topology = D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED;
 		switch ( _topology ) {
@@ -30,7 +30,7 @@ namespace Renderer {
 
 		IVertexFormatDescriptor*	descriptor = GetDescriptor( _vertexFormat );
 
-		m_pPrimitive = new ::Primitive( *_device->m_pDevice, _verticesCount, pVertices, _indices != nullptr ? _indices->Length : 0, pinnedIndices, topology, *descriptor, _allowSRV, _allowUAV );
+		m_pPrimitive = new ::Primitive( *_device->m_pDevice, _verticesCount, pVertices, _indices != nullptr ? _indices->Length : 0, pinnedIndices, topology, *descriptor, _allowSRV, _allowUAV, _makeStructuredBuffer );
 	}
 
 	void	Primitive::Render( Shader^ _shader ) {

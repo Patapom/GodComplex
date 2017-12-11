@@ -33,7 +33,7 @@ public:		// PROPERTIES
 
 public:		// METHODS
 
-	StructuredBuffer( Device& _Device, U32 _ElementSize, U32 _ElementsCount, bool _bWriteable );
+	StructuredBuffer( Device& _Device, U32 _ElementSize, U32 _ElementsCount, bool _bWriteable, bool _allowRawView );
 	~StructuredBuffer();
 
 	// Read/Write for CPU interchange

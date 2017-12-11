@@ -51,7 +51,7 @@ namespace Renderer {
 
 		static property int	SizeOf	{ int get() { return System::Runtime::InteropServices::Marshal::SizeOf(VertexPt4::typeid); } }
 		static ByteBuffer^	FromArray( cli::array<VertexPt4>^ _vertices ) {
-			ByteBuffer^	Buffer = gcnew ByteBuffer( _vertices->Length * VertexPt4::SizeOf );
+			ByteBuffer^	Buffer = gcnew ByteBuffer( _vertices->Length * VertexPt4::SizeOf, 0 );
 			{
 				System::IO::BinaryWriter^ W = Buffer->OpenStreamWrite();
 				for ( int VertexIndex=0; VertexIndex < _vertices->Length; VertexIndex++ ) {
@@ -76,7 +76,7 @@ namespace Renderer {
 		static property int	SizeOf	{ int get() { return System::Runtime::InteropServices::Marshal::SizeOf(VertexP3::typeid); } }
 		static ByteBuffer^	FromArray( cli::array<VertexP3>^ _vertices )
 		{
-			ByteBuffer^	Buffer = gcnew ByteBuffer( _vertices->Length * VertexP3::SizeOf );
+			ByteBuffer^	Buffer = gcnew ByteBuffer( _vertices->Length * VertexP3::SizeOf, 0 );
 			{
 				System::IO::BinaryWriter^ W = Buffer->OpenStreamWrite();
 				for ( int VertexIndex=0; VertexIndex < _vertices->Length; VertexIndex++ ) {
@@ -101,7 +101,7 @@ namespace Renderer {
 		static property int	SizeOf	{ int get() { return System::Runtime::InteropServices::Marshal::SizeOf(VertexP3N3::typeid); } }
 		static ByteBuffer^	FromArray( cli::array<VertexP3N3>^ _vertices )
 		{
-			ByteBuffer^	Buffer = gcnew ByteBuffer( _vertices->Length * VertexP3N3::SizeOf );
+			ByteBuffer^	Buffer = gcnew ByteBuffer( _vertices->Length * VertexP3N3::SizeOf, 0 );
 			{
 				System::IO::BinaryWriter^ W = Buffer->OpenStreamWrite();
 				for ( int VertexIndex=0; VertexIndex < _vertices->Length; VertexIndex++ ) {
@@ -129,7 +129,7 @@ namespace Renderer {
 		static property int	SizeOf	{ int get() { return System::Runtime::InteropServices::Marshal::SizeOf(VertexP3T2::typeid); } }
 		static ByteBuffer^	FromArray( cli::array<VertexP3T2>^ _vertices )
 		{
-			ByteBuffer^	Buffer = gcnew ByteBuffer( _vertices->Length * VertexP3T2::SizeOf );
+			ByteBuffer^	Buffer = gcnew ByteBuffer( _vertices->Length * VertexP3T2::SizeOf, 0 );
 			{
 				System::IO::BinaryWriter^ W = Buffer->OpenStreamWrite();
 				for ( int VertexIndex=0; VertexIndex < _vertices->Length; VertexIndex++ ) {
@@ -157,7 +157,7 @@ namespace Renderer {
 		static property int	SizeOf	{ int get() { return System::Runtime::InteropServices::Marshal::SizeOf(VertexP3N3T2::typeid); } }
 		static ByteBuffer^	FromArray( cli::array<VertexP3N3T2>^ _vertices )
 		{
-			ByteBuffer^	Buffer = gcnew ByteBuffer( _vertices->Length * VertexP3N3T2::SizeOf );
+			ByteBuffer^	Buffer = gcnew ByteBuffer( _vertices->Length * VertexP3N3T2::SizeOf, 0 );
 			{
 				System::IO::BinaryWriter^ W = Buffer->OpenStreamWrite();
 				for ( int VertexIndex=0; VertexIndex < _vertices->Length; VertexIndex++ ) {
@@ -189,7 +189,7 @@ namespace Renderer {
 		static property int	SizeOf	{ int get() { return System::Runtime::InteropServices::Marshal::SizeOf(VertexP3N3G3T2::typeid); } }
 		static ByteBuffer^	FromArray( cli::array<VertexP3N3G3T2>^ _vertices )
 		{
-			ByteBuffer^	Buffer = gcnew ByteBuffer( _vertices->Length * VertexP3N3G3T2::SizeOf );
+			ByteBuffer^	Buffer = gcnew ByteBuffer( _vertices->Length * VertexP3N3G3T2::SizeOf, 0 );
 			{
 				System::IO::BinaryWriter^ W = Buffer->OpenStreamWrite();
 				for ( int VertexIndex=0; VertexIndex < _vertices->Length; VertexIndex++ ) {
@@ -225,7 +225,7 @@ namespace Renderer {
 		static property int	SizeOf	{ int get() { return System::Runtime::InteropServices::Marshal::SizeOf(VertexP3N3G3B3T2::typeid); } }
 		static ByteBuffer^	FromArray( cli::array<VertexP3N3G3B3T2>^ _vertices )
 		{
-			ByteBuffer^	Buffer = gcnew ByteBuffer( _vertices->Length * VertexP3N3G3B3T2::SizeOf );
+			ByteBuffer^	Buffer = gcnew ByteBuffer( _vertices->Length * VertexP3N3G3B3T2::SizeOf, 0 );
 			{
 				System::IO::BinaryWriter^ W = Buffer->OpenStreamWrite();
 				for ( int VertexIndex=0; VertexIndex < _vertices->Length; VertexIndex++ ) {
@@ -266,7 +266,7 @@ namespace Renderer {
 		static property int	SizeOf	{ int get() { return System::Runtime::InteropServices::Marshal::SizeOf(VertexP3N3G3B3T3C4C4::typeid); } }
 		static ByteBuffer^	FromArray( cli::array<VertexP3N3G3B3T3C4C4>^ _vertices )
 		{
-			ByteBuffer^	Buffer = gcnew ByteBuffer( _vertices->Length * VertexP3N3G3B3T3C4C4::SizeOf );
+			ByteBuffer^	Buffer = gcnew ByteBuffer( _vertices->Length * VertexP3N3G3B3T3C4C4::SizeOf, 0 );
 			{
 				System::IO::BinaryWriter^ W = Buffer->OpenStreamWrite();
 				for ( int VertexIndex=0; VertexIndex < _vertices->Length; VertexIndex++ ) {
@@ -304,7 +304,7 @@ namespace Renderer {
 		static property int	SizeOf	{ int get() { return System::Runtime::InteropServices::Marshal::SizeOf(VertexT2::typeid); } }
 		static ByteBuffer^	FromArray( cli::array<VertexT2>^ _vertices )
 		{
-			ByteBuffer^	Buffer = gcnew ByteBuffer( _vertices->Length * VertexT2::SizeOf );
+			ByteBuffer^	Buffer = gcnew ByteBuffer( _vertices->Length * VertexT2::SizeOf, 0 );
 			{
 				System::IO::BinaryWriter^ W = Buffer->OpenStreamWrite();
 				for ( int VertexIndex=0; VertexIndex < _vertices->Length; VertexIndex++ ) {

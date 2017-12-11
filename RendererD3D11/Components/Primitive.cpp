@@ -2,7 +2,7 @@
 
 #include "Primitive.h"
 
-Primitive::Primitive( Device& _device, U32 _verticesCount, const void* _vertices, U32 _indicesCount, const U32* _indices, D3D11_PRIMITIVE_TOPOLOGY _topology, const IVertexFormatDescriptor& _format, bool _allowSRV, bool _allowUAV ) : Component( _device )
+Primitive::Primitive( Device& _device, U32 _verticesCount, const void* _vertices, U32 _indicesCount, const U32* _indices, D3D11_PRIMITIVE_TOPOLOGY _topology, const IVertexFormatDescriptor& _format, bool _allowSRV, bool _allowUAV, bool _makeStructuredBuffer ) : Component( _device )
 	, m_verticesCount( _verticesCount )
 	, m_indicesCount( _indicesCount )
 	, m_format( _format )
@@ -16,7 +16,7 @@ Primitive::Primitive( Device& _device, U32 _verticesCount, const void* _vertices
 	, m_cachedIB_UAV( NULL )
 {
 	m_stride = _format.Size();
-	Build( _vertices, _indices, false, _allowSRV, _allowUAV );
+	Build( _vertices, _indices, false, _allowSRV, _allowUAV, _makeStructuredBuffer );
 }
 
 Primitive::Primitive( Device& _device, const IVertexFormatDescriptor& _format ) : Component( _device )
@@ -36,7 +36,7 @@ Primitive::Primitive( Device& _device, const IVertexFormatDescriptor& _format ) 
 	// Deferred construction...
 }
 
-Primitive::Primitive( Device& _device, U32 _verticesCount, U32 _indicesCount, D3D11_PRIMITIVE_TOPOLOGY _topology, const IVertexFormatDescriptor& _format, bool _allowSRV, bool _allowUAV ) : Component( _device )
+Primitive::Primitive( Device& _device, U32 _verticesCount, U32 _indicesCount, D3D11_PRIMITIVE_TOPOLOGY _topology, const IVertexFormatDescriptor& _format, bool _allowSRV, bool _allowUAV, bool _makeStructuredBuffer ) : Component( _device )
 	, m_verticesCount( _verticesCount )
 	, m_indicesCount( _indicesCount )
 	, m_format( _format )
@@ -50,7 +50,7 @@ Primitive::Primitive( Device& _device, U32 _verticesCount, U32 _indicesCount, D3
 	, m_cachedIB_UAV( NULL )
 {
 	m_stride = _format.Size();
-	Build( NULL, NULL, true, _allowSRV, _allowUAV );
+	Build( NULL, NULL, true, _allowSRV, _allowUAV, _makeStructuredBuffer );
 }
 
 Primitive::~Primitive() {
@@ -127,17 +127,19 @@ void	Primitive::RenderInstanced( Shader& _material, U32 _instancesCount, U32 _st
 	}
 }
 
-void	Primitive::Build( const void* _vertices, const U32* _indices, bool _dynamic, bool _allowSRV, bool _allowUAV ) {
+void	Primitive::Build( const void* _vertices, const U32* _indices, bool _dynamic, bool _allowSRV, bool _allowUAV, bool _makeStructuredBuffer ) {
 //	ASSERT( m_VerticesCount <= 65536, "Time to upgrade to U32 indices!" );
 
 	{   // Create the vertex buffer
 		D3D11_BUFFER_DESC   desc;
 		desc.ByteWidth = m_verticesCount * m_stride;
 		desc.Usage = _dynamic ? D3D11_USAGE_DYNAMIC : (_allowUAV ? D3D11_USAGE_DEFAULT : D3D11_USAGE_IMMUTABLE);
-		desc.BindFlags = D3D11_BIND_VERTEX_BUFFER | (_allowSRV ? D3D11_BIND_SHADER_RESOURCE : 0) | (_allowUAV ? D3D11_BIND_UNORDERED_ACCESS : 0);
+		desc.BindFlags  = (_makeStructuredBuffer ? 0 : D3D11_BIND_VERTEX_BUFFER)
+						| (_allowSRV ? D3D11_BIND_SHADER_RESOURCE : 0)
+						| (_allowUAV ? D3D11_BIND_UNORDERED_ACCESS : 0);
 		desc.CPUAccessFlags = _dynamic ? D3D11_CPU_ACCESS_WRITE : 0;
-		desc.MiscFlags = 0;
-		desc.StructureByteStride = 0;
+		desc.MiscFlags = _makeStructuredBuffer ? D3D11_RESOURCE_MISC_BUFFER_STRUCTURED : 0;
+		desc.StructureByteStride = m_stride;
 
 		if ( !_dynamic ) {
 			D3D11_SUBRESOURCE_DATA	initData;
@@ -167,10 +169,10 @@ void	Primitive::Build( const void* _vertices, const U32* _indices, bool _dynamic
 //		desc.ByteWidth = m_IndicesCount * sizeof(U16);		 // For now, we only support U16 primitives
 		desc.ByteWidth = m_indicesCount * sizeof(U32);
 		desc.Usage = _dynamic ? D3D11_USAGE_DYNAMIC : (_allowUAV ? D3D11_USAGE_DEFAULT : D3D11_USAGE_IMMUTABLE);
-		desc.BindFlags = D3D11_BIND_INDEX_BUFFER | (_allowSRV ? D3D11_BIND_SHADER_RESOURCE : 0) | (_allowUAV ? D3D11_BIND_UNORDERED_ACCESS : 0);;
+		desc.BindFlags = D3D11_BIND_INDEX_BUFFER | (_allowSRV ? D3D11_BIND_SHADER_RESOURCE : 0) | (_allowUAV ? D3D11_BIND_UNORDERED_ACCESS : 0);
 		desc.CPUAccessFlags = _dynamic ? D3D11_CPU_ACCESS_WRITE : 0;
 		desc.MiscFlags = 0;
-		desc.StructureByteStride = 0;
+		desc.StructureByteStride = sizeof(U32);
 
 		if ( !_dynamic ) {
 			D3D11_SUBRESOURCE_DATA	initData;
@@ -249,10 +251,11 @@ void	Primitive::BindVertexStream( U32 _streamIndex, Primitive& _boundPrimitive, 
 void	Primitive::VBSetCS( U32 _slotIndex ) const {
 	if ( m_cachedVB_SRV == NULL ) {
 		D3D11_SHADER_RESOURCE_VIEW_DESC	desc;
-		desc.Format = DXGI_FORMAT_R32_UINT;
+		desc.Format = DXGI_FORMAT_UNKNOWN;
 		desc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
 		desc.Buffer.FirstElement = 0;
-		desc.Buffer.NumElements = m_verticesCount * m_stride >> 2;	// Total size in bytes / sizeof(UINT)
+//		desc.Buffer.NumElements = m_verticesCount * m_stride >> 2;	// Total size in bytes / sizeof(UINT)
+		desc.Buffer.NumElements = m_verticesCount;
 		Check( m_device.DXDevice().CreateShaderResourceView( m_VB, &desc, &m_cachedVB_SRV ) );
 	}
 	m_device.DXContext().CSSetShaderResources( _slotIndex, 1, &m_cachedVB_SRV );
@@ -271,7 +274,7 @@ void	Primitive::IBSetCS( U32 _slotIndex ) const {
 void	Primitive::VBSetCS_UAV( U32 _slotIndex ) const {
 	if ( m_cachedVB_UAV == NULL ) {
 		D3D11_UNORDERED_ACCESS_VIEW_DESC	desc;
-		desc.Format = DXGI_FORMAT_R32_UINT;
+		desc.Format = DXGI_FORMAT_UNKNOWN;
 		desc.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
 		desc.Buffer.FirstElement = 0;
 		desc.Buffer.NumElements = m_verticesCount * m_stride >> 2;	// Total size in bytes / sizeof(UINT)

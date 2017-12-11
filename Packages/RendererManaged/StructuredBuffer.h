@@ -24,17 +24,17 @@ namespace Renderer {
 
 	public:
 
-		StructuredBuffer( Device^ _device, UInt32 _elementsCount, bool _writeable ) {
-			Init( _device, _elementsCount, _writeable );
+		StructuredBuffer( Device^ _device, UInt32 _elementsCount, bool _writeable, bool _allowRawView ) {
+			Init( _device, _elementsCount, _writeable, _allowRawView );
 		}
 
 		~StructuredBuffer() {
 			delete m_pStructuredBuffer;
 		}
 
-		void	Init(  Device^ _device, UInt32 _elementsCount, bool _writeable ) {
+		void	Init(  Device^ _device, UInt32 _elementsCount, bool _writeable, bool _allowRawView ) {
 			m = gcnew array<T>( _elementsCount );
-			m_pStructuredBuffer = new ::StructuredBuffer( *_device->m_pDevice, System::Runtime::InteropServices::Marshal::SizeOf( T::typeid ), _elementsCount, _writeable );
+			m_pStructuredBuffer = new ::StructuredBuffer( *_device->m_pDevice, System::Runtime::InteropServices::Marshal::SizeOf( T::typeid ), _elementsCount, _writeable, _allowRawView );
 		}
 
 		void	Read() { Read( ~0U ); }

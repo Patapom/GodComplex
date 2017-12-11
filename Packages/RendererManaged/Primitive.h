@@ -36,8 +36,8 @@ namespace Renderer {
 
 	public:
 
-		Primitive( Device^ _device, UInt32 _verticesCount, ByteBuffer^ _vertices, cli::array<UInt32>^ _indices, TOPOLOGY _topology, VERTEX_FORMAT _vertexFormat ) { Build( _device, _verticesCount, _vertices, _indices, _topology, _vertexFormat, false, false ); }
-		Primitive( Device^ _device, UInt32 _verticesCount, ByteBuffer^ _vertices, cli::array<UInt32>^ _indices, TOPOLOGY _topology, VERTEX_FORMAT _vertexFormat, bool _allowSRV, bool _allowUAV )  { Build( _device, _verticesCount, _vertices, _indices, _topology, _vertexFormat, _allowSRV, _allowUAV ); }
+		Primitive( Device^ _device, UInt32 _verticesCount, ByteBuffer^ _vertices, cli::array<UInt32>^ _indices, TOPOLOGY _topology, VERTEX_FORMAT _vertexFormat ) { Build( _device, _verticesCount, _vertices, _indices, _topology, _vertexFormat, false, false, false ); }
+		Primitive( Device^ _device, UInt32 _verticesCount, ByteBuffer^ _vertices, cli::array<UInt32>^ _indices, TOPOLOGY _topology, VERTEX_FORMAT _vertexFormat, bool _allowSRV, bool _allowUAV, bool _makeStructuredBuffer )  { Build( _device, _verticesCount, _vertices, _indices, _topology, _vertexFormat, _allowSRV, _allowUAV, _makeStructuredBuffer ); }
 		~Primitive() { delete m_pPrimitive; }
 
 		void	Render( Shader^ _shader );
@@ -50,6 +50,6 @@ namespace Renderer {
 		void	IBSetCS_UAV( U32 _slotIndex )	{ m_pPrimitive->IBSetCS_UAV( _slotIndex ); }	// Sets the index buffer as an UAV for a compute shader
 
 	private:
-		void	Build( Device^ _device, UInt32 _verticesCount, ByteBuffer^ _vertices, cli::array<UInt32>^ _indices, TOPOLOGY _topology, VERTEX_FORMAT _vertexFormat, bool _allowSRV, bool _allowUAV );
+		void	Build( Device^ _device, UInt32 _verticesCount, ByteBuffer^ _vertices, cli::array<UInt32>^ _indices, TOPOLOGY _topology, VERTEX_FORMAT _vertexFormat, bool _allowSRV, bool _allowUAV, bool _makeStructuredBuffer );
 	};
 }

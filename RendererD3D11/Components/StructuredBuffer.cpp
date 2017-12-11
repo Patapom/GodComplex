@@ -8,7 +8,7 @@
 //
 StructuredBuffer*	StructuredBuffer::ms_ppOutputs[D3D11_PS_CS_UAV_REGISTER_COUNT] = { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };
 
-StructuredBuffer::StructuredBuffer( Device& _Device, U32 _ElementSize, U32 _ElementsCount, bool _bWriteable )
+StructuredBuffer::StructuredBuffer( Device& _Device, U32 _ElementSize, U32 _ElementsCount, bool _bWriteable, bool _allowRawView )
 	: Component( _Device )
 {
 	ASSERT( _ElementSize > 0, "Buffer must have at least one element!" );
@@ -28,7 +28,8 @@ StructuredBuffer::StructuredBuffer( Device& _Device, U32 _ElementSize, U32 _Elem
 	Desc.Usage = D3D11_USAGE_DEFAULT;
 	Desc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
 	Desc.CPUAccessFlags = 0;
-	Desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+	Desc.MiscFlags = (_allowRawView ? 0 : D3D11_RESOURCE_MISC_BUFFER_STRUCTURED)
+				   | (_allowRawView ? D3D11_RESOURCE_MISC_BUFFER_ALLOW_RAW_VIEWS : 0);
 	Desc.StructureByteStride = _ElementSize;
 
 	Check( m_device.DXDevice().CreateBuffer( &Desc, NULL, &m_pBuffer ) );
@@ -37,6 +38,7 @@ StructuredBuffer::StructuredBuffer( Device& _Device, U32 _ElementSize, U32 _Elem
 	Desc.Usage = D3D11_USAGE_STAGING;
 	Desc.BindFlags = 0;
 	Desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ | (_bWriteable ? D3D11_CPU_ACCESS_WRITE : 0);
+	Desc.MiscFlags = 0;
 	
 	Check( m_device.DXDevice().CreateBuffer( &Desc, NULL, &m_pCPUBuffer ) );
 
@@ -44,7 +46,7 @@ StructuredBuffer::StructuredBuffer( Device& _Device, U32 _ElementSize, U32 _Elem
 	//////////////////////////////////////////////////////////////////////////
 	// Create the Shader Resource View for the reading
 	D3D11_SHADER_RESOURCE_VIEW_DESC	ViewDesc;
-	ViewDesc.Format = DXGI_FORMAT_UNKNOWN;
+	ViewDesc.Format = _allowRawView ? DXGI_FORMAT_R32_UINT : DXGI_FORMAT_UNKNOWN;
 	ViewDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
 	ViewDesc.Buffer.FirstElement = 0;
 	ViewDesc.Buffer.NumElements = _ElementsCount;
@@ -55,11 +57,11 @@ StructuredBuffer::StructuredBuffer( Device& _Device, U32 _ElementSize, U32 _Elem
 	// Create the Unordered Access View for the Buffers
 	// This is used for writing the buffer during the sort and transpose
 	D3D11_UNORDERED_ACCESS_VIEW_DESC	UnorderedViewDesc;
-	UnorderedViewDesc.Format = DXGI_FORMAT_UNKNOWN;
+	UnorderedViewDesc.Format = _allowRawView ? DXGI_FORMAT_R32_TYPELESS : DXGI_FORMAT_UNKNOWN;
 	UnorderedViewDesc.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
 	UnorderedViewDesc.Buffer.FirstElement = 0;
 	UnorderedViewDesc.Buffer.NumElements = _ElementsCount;
-	UnorderedViewDesc.Buffer.Flags = 0;
+	UnorderedViewDesc.Buffer.Flags = _allowRawView ? D3D11_BUFFER_UAV_FLAG_RAW : 0;
 
 	Check( m_device.DXDevice().CreateUnorderedAccessView( m_pBuffer, &UnorderedViewDesc, &m_pUnorderedAccessView ) );
 }

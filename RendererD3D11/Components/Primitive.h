@@ -56,9 +56,9 @@ public:	 // PROPERTIES
 public:	 // METHODS
 
 	// _allowSRV, _allowUAV, if true then the bind flags allow the VB and IB to be used as SRV or UAV by a compute shader (see VBSetCS and IBSetCS)
-	Primitive( Device& _device, U32 _verticesCount, const void* _vertices, U32 _indicesCount, const U32* _indices, D3D11_PRIMITIVE_TOPOLOGY _topology, const IVertexFormatDescriptor& _format, bool _allowSRV=false, bool _allowUAV=false );
+	Primitive( Device& _device, U32 _verticesCount, const void* _vertices, U32 _indicesCount, const U32* _indices, D3D11_PRIMITIVE_TOPOLOGY _topology, const IVertexFormatDescriptor& _format, bool _allowSRV=false, bool _allowUAV=false, bool _makeStructuredBuffer=false );
+	Primitive( Device& _device, U32 _verticesCount, U32 _indicesCount, D3D11_PRIMITIVE_TOPOLOGY _Topology, const IVertexFormatDescriptor& _format, bool _allowSRV=false, bool _allowUAV=false, bool _makeStructuredBuffer=false );	// Used to build dynamic buffers
 	Primitive( Device& _device, const IVertexFormatDescriptor& _Format );	// Used by geometry builders
-	Primitive( Device& _device, U32 _verticesCount, U32 _indicesCount, D3D11_PRIMITIVE_TOPOLOGY _Topology, const IVertexFormatDescriptor& _format, bool _allowSRV=false, bool _allowUAV=false );	// Used to build dynamic buffers
 	~Primitive();
 
 	void			Render( Shader& _material );
@@ -97,6 +97,6 @@ public:	 // METHODS
 
 private:
 
-	void			Build( const void* _vertices, const U32* _indices, bool _dynamic, bool _allowSRV, bool _allowUAV );
+	void			Build( const void* _vertices, const U32* _indices, bool _dynamic, bool _allowSRV, bool _allowUAV, bool _makeStructuredBuffer );
 };
 

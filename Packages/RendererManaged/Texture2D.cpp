@@ -47,6 +47,9 @@ namespace Renderer {
 	void	Texture2D::SetCS( UInt32 _slotIndex )		{ m_texture->SetCS( _slotIndex, true, NULL ); }
 	void	Texture2D::SetCSUAV( UInt32 _slotIndex )	{ m_texture->SetCSUAV( _slotIndex, NULL ); }
 
+	View2D^		Texture2D::GetView( UInt32 _mipLevelStart, UInt32 _mipLevelsCount, UInt32 _arrayStart, UInt32 _arraySize )					{ return gcnew View2D( this, _mipLevelStart, _mipLevelsCount, _arrayStart, _arraySize ); }
+	View2D^		Texture2D::GetView( UInt32 _mipLevelStart, UInt32 _mipLevelsCount, UInt32 _arrayStart, UInt32 _arraySize, bool _asArray )	{ return gcnew View2D( this, _mipLevelStart, _mipLevelsCount, _arrayStart, _arraySize, _asArray ); }
+
 
 	//////////////////////////////////////////////////////////////////////////
 	// View

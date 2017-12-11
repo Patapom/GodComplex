@@ -16,8 +16,30 @@ namespace Renderer {
 
 	public:
 
-		ByteBuffer( UInt32 _ContentSize ) {
+		ByteBuffer( UInt32 _ContentSize, UInt32 _clearValue ) {
 			m_Buffer = gcnew array<System::Byte>( _ContentSize );
+			if ( _clearValue == 0 )
+				return;
+			UInt32	count = _ContentSize >> 2;
+			byte	A = (_clearValue >> 24) & 0xFF;
+			byte	R = (_clearValue >> 16) & 0xFF;
+			byte	G = (_clearValue >> 8) & 0xFF;
+			byte	B = (_clearValue >> 0) & 0xFF;
+			UInt32	offset = 0;
+			for ( UInt32 i=0; i < count; i++ ) {
+				m_Buffer[offset++] = B;
+				m_Buffer[offset++] = G;
+				m_Buffer[offset++] = R;
+				m_Buffer[offset++] = A;
+			}
+			switch ( _ContentSize & 3 ) {
+			case 3:
+				m_Buffer[offset++] = B;
+			case 2:
+				m_Buffer[offset++] = G;
+			case 1:
+				m_Buffer[offset++] = R;
+			}
 		}
 		~ByteBuffer() {
 			delete m_Stream;
