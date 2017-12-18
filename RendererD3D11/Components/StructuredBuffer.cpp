@@ -46,10 +46,11 @@ StructuredBuffer::StructuredBuffer( Device& _Device, U32 _ElementSize, U32 _Elem
 	//////////////////////////////////////////////////////////////////////////
 	// Create the Shader Resource View for the reading
 	D3D11_SHADER_RESOURCE_VIEW_DESC	ViewDesc;
-	ViewDesc.Format = _allowRawView ? DXGI_FORMAT_R32_UINT : DXGI_FORMAT_UNKNOWN;
-	ViewDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
-	ViewDesc.Buffer.FirstElement = 0;
-	ViewDesc.Buffer.NumElements = _ElementsCount;
+	ViewDesc.Format = _allowRawView ? DXGI_FORMAT_R32_TYPELESS : DXGI_FORMAT_UNKNOWN;
+	ViewDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFEREX;
+	ViewDesc.BufferEx.FirstElement = 0;
+	ViewDesc.BufferEx.NumElements = _ElementsCount;
+	ViewDesc.BufferEx.Flags = _allowRawView ? D3D11_BUFFEREX_SRV_FLAG_RAW : 0;
 
 	Check( m_device.DXDevice().CreateShaderResourceView( m_pBuffer, &ViewDesc, &m_pShaderView ) );
 
@@ -119,17 +120,7 @@ void	StructuredBuffer::SetInput( int _SlotIndex ) {
 	//	when a buffer seems to be empty in the compute shader, whereas it has silently been NOT ASSIGNED AS INPUT
 	//	for the only reason that it's still assigned as output somewhere...
 	//
-	{
-		U32							UAVInitialCount = -1;
-		ID3D11UnorderedAccessView*	pView = NULL;
-		for ( int OutputSlotIndex=0; OutputSlotIndex < D3D11_PS_CS_UAV_REGISTER_COUNT; OutputSlotIndex++ )
-			if ( m_pAssignedToOutputSlot[OutputSlotIndex] != -1 )
-			{	// We're still assigned to an output...
-				m_device.DXContext().CSSetUnorderedAccessViews( OutputSlotIndex, 1, &pView, &UAVInitialCount );
-				m_pAssignedToOutputSlot[OutputSlotIndex] = -1;
-				ms_ppOutputs[OutputSlotIndex] = NULL;
-			}
-	}
+	RemoveFromLastAssignedSlotUAV();
 
 	// We can now safely assign it as an input
 	ID3D11ShaderResourceView*	pView = GetShaderView();
@@ -180,5 +171,17 @@ void	StructuredBuffer::RemoveFromLastAssignedSlots() const
 		if ( m_LastAssignedSlots[ShaderStageIndex] != -1 ) {
 			m_device.RemoveShaderResources( m_LastAssignedSlots[ShaderStageIndex], 1, pStageFlags[ShaderStageIndex] );
 			m_LastAssignedSlots[ShaderStageIndex] = -1;
+		}
+}
+
+void	StructuredBuffer::RemoveFromLastAssignedSlotUAV() const {
+	U32							UAVInitialCount = -1;
+	ID3D11UnorderedAccessView*	pView = NULL;
+	for ( int OutputSlotIndex=0; OutputSlotIndex < D3D11_PS_CS_UAV_REGISTER_COUNT; OutputSlotIndex++ )
+		if ( m_pAssignedToOutputSlot[OutputSlotIndex] != -1 )
+		{	// We're still assigned to an output...
+			m_device.DXContext().CSSetUnorderedAccessViews( OutputSlotIndex, 1, &pView, &UAVInitialCount );
+			m_pAssignedToOutputSlot[OutputSlotIndex] = -1;
+			ms_ppOutputs[OutputSlotIndex] = NULL;
 		}
 }

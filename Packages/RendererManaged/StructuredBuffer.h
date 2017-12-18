@@ -27,6 +27,9 @@ namespace Renderer {
 		StructuredBuffer( Device^ _device, UInt32 _elementsCount, bool _writeable, bool _allowRawView ) {
 			Init( _device, _elementsCount, _writeable, _allowRawView );
 		}
+		StructuredBuffer( Device^ _device, UInt32 _elementsCount, bool _writeable ) {
+			Init( _device, _elementsCount, _writeable, false );
+		}
 
 		~StructuredBuffer() {
 			delete m_pStructuredBuffer;
@@ -56,5 +59,6 @@ namespace Renderer {
 		}
 		void	SetOutput( int _SlotIndex )		{ m_pStructuredBuffer->SetOutput( _SlotIndex ); }
  		void	RemoveFromLastAssignedSlots()	{ m_pStructuredBuffer->RemoveFromLastAssignedSlots(); }
+ 		void	RemoveFromLastAssignedSlotUAV()	{ m_pStructuredBuffer->RemoveFromLastAssignedSlotUAV(); }
 	};
 }

@@ -637,3 +637,5 @@ Publish
 /Tests/TestArduinoSerialPacketDecoder/bin
 /Tools/GenerateBlueNoise/*.user
 /Tests/TestArduinoSerialPacketDecoder/*.user
+/Tests/TestGroundTruthAOFitting/bin
+/Tests/TestGroundTruthAOFitting/obj

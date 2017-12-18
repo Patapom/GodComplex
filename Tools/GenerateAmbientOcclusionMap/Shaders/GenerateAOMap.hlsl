@@ -94,8 +94,7 @@ void BuildOrthonormalBasis( float3 _normal, out float3 _tangent, out float3 _bit
 }
 
 [numthreads( MAX_THREADS, 1, 1 )]
-void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID )
-{
+void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID ) {
 	uint2	PixelPosition = uint2( _GroupID.x, _Y0 + _GroupID.y );
 
 	uint	RayIndex = _GroupThreadID.x;

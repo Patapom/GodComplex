@@ -208,7 +208,7 @@ namespace VoronoiVisualizer
 			int	NeighborsCount = integerTrackbarControlNeighborsCount.Value;
 			if ( m_SB_Neighbors != null )
 				m_SB_Neighbors.Dispose();
-			m_SB_Neighbors = new StructuredBuffer< SB_Neighbor >( m_Device, (uint) NeighborsCount, true );
+			m_SB_Neighbors = new StructuredBuffer< SB_Neighbor >( m_Device, (uint) NeighborsCount, true, false );
 
 			float3[]	directions = null;
 			if ( radioButtonHammersley.Checked ) {

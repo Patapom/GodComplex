@@ -222,7 +222,7 @@ namespace TestMSBSDF
 			BuildPrimLobe();
 			BuildPrimCylinder();
 
-			m_SB_Beckmann = new StructuredBuffer<SB_Beckmann>( m_Device, 1024, true );
+			m_SB_Beckmann = new StructuredBuffer<SB_Beckmann>( m_Device, 1024, true, false );
 
 			BuildRandomTexture();
 			BuildBeckmannSurfaceTexture( floatTrackbarControlBeckmannRoughness.Value );

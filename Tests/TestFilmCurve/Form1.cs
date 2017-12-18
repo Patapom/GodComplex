@@ -214,7 +214,7 @@ namespace TestFilmicCurve
 			int	tallHistogramHeight = (panelOutput.Height + 3) >> 2;
 			m_Tex_TallHistogram = new Texture2D( m_Device, 128, (uint) tallHistogramHeight, 1, 1, ImageUtility.PIXEL_FORMAT.R32, ImageUtility.COMPONENT_FORMAT.UINT, false, true, null );
 			m_Tex_Histogram = new Texture2D( m_Device, 128, 1, 1, 1, ImageUtility.PIXEL_FORMAT.R32, ImageUtility.COMPONENT_FORMAT.UINT, false, true, null );
-			m_Buffer_AutoExposureSource = new StructuredBuffer<autoExposure_t>( m_Device, 1, true );
+			m_Buffer_AutoExposureSource = new StructuredBuffer<autoExposure_t>( m_Device, 1, true, false );
 			m_Buffer_AutoExposureSource.m[0].EngineLuminanceFactor = 1.0f;
 			m_Buffer_AutoExposureSource.m[0].TargetLuminance = 1.0f;
 			m_Buffer_AutoExposureSource.m[0].MinLuminanceLDR = 0.0f;
@@ -224,7 +224,7 @@ namespace TestFilmicCurve
 			m_Buffer_AutoExposureSource.m[0].Fstop = 0.0f;
 			m_Buffer_AutoExposureSource.m[0].PeakHistogramValue = 0;
 			m_Buffer_AutoExposureSource.Write();
-			m_Buffer_AutoExposureTarget = new StructuredBuffer<autoExposure_t>( m_Device, 1, true );
+			m_Buffer_AutoExposureTarget = new StructuredBuffer<autoExposure_t>( m_Device, 1, true, false );
 
 			// Load cube map
 			try {

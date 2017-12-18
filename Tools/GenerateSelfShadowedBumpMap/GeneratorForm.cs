@@ -164,7 +164,7 @@ tabControlGenerators.TabPages.RemoveAt( 1 );
 				m_CB_Display.m._Height = (uint) m_viewerForm.Height;
 
 				// Create our structured buffer containing the rays
-				m_SB_Rays = new StructuredBuffer<float3>( m_device, 3*MAX_THREADS, true );
+				m_SB_Rays = new StructuredBuffer<float3>( m_device, 3*MAX_THREADS, true, false );
 				integerTrackbarControlRaysCount_SliderDragStop( integerTrackbarControlRaysCount, 0 );
 
 //				LoadHeightMap( new System.IO.FileInfo( "eye_generic_01_disp.png" ) );

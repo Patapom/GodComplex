@@ -109,7 +109,7 @@ namespace GenerateBlueNoise
 
 				m_CB_Main = new ConstantBuffer<CB_Main>( _device, 0 );
 				m_CB_Mips = new ConstantBuffer<CB_Mips>( _device, 1 );
-				m_SB_Mutations = new StructuredBuffer<SB_Mutation>( _device, MAX_MUTATIONS_RATE, true );
+				m_SB_Mutations = new StructuredBuffer<SB_Mutation>( _device, MAX_MUTATIONS_RATE, true, false );
 
 				ImageUtility.PIXEL_FORMAT	noiseFormat = ImageUtility.PIXEL_FORMAT.UNKNOWN;
 				switch ( m_vectorDimension ) {

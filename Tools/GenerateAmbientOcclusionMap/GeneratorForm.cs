@@ -138,7 +138,7 @@ namespace GenerateSelfShadowedBumpMap
 				m_CB_Filter = new Renderer.ConstantBuffer<CBFilter>( m_device, 0 );
 
 				// Create our structured buffer containing the rays
-				m_SB_Rays = new Renderer.StructuredBuffer<float3>( m_device, MAX_THREADS, true );
+				m_SB_Rays = new Renderer.StructuredBuffer<float3>( m_device, MAX_THREADS, true, false );
 				integerTrackbarControlRaysCount_SliderDragStop( integerTrackbarControlRaysCount, 0 );
 
 				// Create the default, planar normal map
@@ -655,7 +655,7 @@ namespace GenerateSelfShadowedBumpMap
 			string	SourceFileName = m_SourceFileName.FullName;
 			string	TargetFileName = System.IO.Path.Combine( System.IO.Path.GetDirectoryName( SourceFileName ), System.IO.Path.GetFileNameWithoutExtension( SourceFileName ) + "_ao.png" );
 
-			saveFileDialogImage.InitialDirectory = System.IO.Path.GetFullPath( TargetFileName );
+			saveFileDialogImage.InitialDirectory = System.IO.Path.GetDirectoryName( TargetFileName );
 			saveFileDialogImage.FileName = System.IO.Path.GetFileName( TargetFileName );
 			if ( saveFileDialogImage.ShowDialog( this ) != DialogResult.OK )
 				return;
@@ -675,7 +675,7 @@ namespace GenerateSelfShadowedBumpMap
 
 		private void outputPanelInputHeightMap_Click( object sender, EventArgs e ) {
 			string	OldFileName = GetRegKey( "HeightMapFileName", System.IO.Path.Combine( m_ApplicationPath, "Example.jpg" ) );
-			openFileDialogImage.InitialDirectory = System.IO.Path.GetFullPath( OldFileName );
+			openFileDialogImage.InitialDirectory = System.IO.Path.GetDirectoryName( OldFileName );
 			openFileDialogImage.FileName = System.IO.Path.GetFileName( OldFileName );
 			if ( openFileDialogImage.ShowDialog( this ) != DialogResult.OK )
 				return;
@@ -716,7 +716,7 @@ namespace GenerateSelfShadowedBumpMap
 
 		private void outputPanelInputNormalMap_Click( object sender, EventArgs e ) {
 			string	OldFileName = GetRegKey( "NormalMapFileName", System.IO.Path.Combine( m_ApplicationPath, "Example.jpg" ) );
-			openFileDialogImage.InitialDirectory = System.IO.Path.GetFullPath( OldFileName );
+			openFileDialogImage.InitialDirectory = System.IO.Path.GetDirectoryName( OldFileName );
 			openFileDialogImage.FileName = System.IO.Path.GetFileName( OldFileName );
 			if ( openFileDialogImage.ShowDialog( this ) != DialogResult.OK )
 				return;

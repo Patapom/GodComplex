@@ -18,7 +18,7 @@ protected:	// FIELDS
 
 	// Structure to keep track of current inputs/outputs
 	mutable int					m_LastAssignedSlots[6];
-	int							m_pAssignedToOutputSlot[D3D11_PS_CS_UAV_REGISTER_COUNT];
+	mutable int					m_pAssignedToOutputSlot[D3D11_PS_CS_UAV_REGISTER_COUNT];
 	static StructuredBuffer*	ms_ppOutputs[D3D11_PS_CS_UAV_REGISTER_COUNT];
 
 
