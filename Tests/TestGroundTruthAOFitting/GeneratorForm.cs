@@ -62,7 +62,7 @@ namespace GenerateSelfShadowedBumpMap
 		private RegistryKey							m_AppKey;
 		private string								m_ApplicationPath;
 
-		private System.IO.FileInfo					m_SourceFileName = null;
+		private System.IO.FileInfo					m_sourceFileName = null;
 		private uint								W, H;
 		private ImageUtility.ImageFile				m_imageSourceHeight = null;
 		private ImageUtility.ImageFile				m_imageSourceNormal = null;
@@ -157,6 +157,9 @@ namespace GenerateSelfShadowedBumpMap
 			}
 
 
+
+D'où sort ce putain de noise sur la map d'AO??
+1.3GB de data!! => Process par tile? On abandonne et on fait autrement? Genre on balance plein de rayons en plusieurs passes?
 
 
 LoadHeightMap( new System.IO.FileInfo( GetRegKey( "HeightMapFileName", System.IO.Path.Combine( m_ApplicationPath, "Example.jpg" ) ) ) );
@@ -293,7 +296,7 @@ Generate();
 
 				// Load the source image
 				// Assume it's in linear space
-				m_SourceFileName = _FileName;
+				m_sourceFileName = _FileName;
 				m_imageSourceHeight = new ImageUtility.ImageFile( _FileName );
 				outputPanelInputHeightMap.Bitmap = m_imageSourceHeight.AsBitmap;
 
@@ -390,17 +393,12 @@ Generate();
 				m_SB_Rays.SetInput( 1 );
 				m_TextureSourceNormal.SetCS( 2 );
 
-
 				// Create the counter & indirect pixel buffers
 				Renderer.StructuredBuffer<SBPixel>	SB_IndirectPixelsStack = new Renderer.StructuredBuffer<SBPixel>( m_device, MAX_LINES*1024*1024, true );	// A lot!! :'(
 				Renderer.StructuredBuffer<uint>		SB_IndirectPixelsCounter = new Renderer.StructuredBuffer<uint>( m_device, 1, true );
 
-// 				Renderer.Texture2D					textureTempAccumulator = new Renderer.Texture2D( m_device, W, H, 1, 1, ImageUtility.PIXEL_FORMAT.R32, ImageUtility.COMPONENT_FORMAT.UINT, false, true, null );
-// 				m_device.Clear( textureTempAccumulator, float4.Zero );	// Reset pixel accumulators
-
 				SB_IndirectPixelsCounter.SetOutput( 1 );
 				SB_IndirectPixelsStack.SetOutput( 2 );
-//				textureTempAccumulator.SetCSUAV( 3 );
 
 				m_CB_Input.m.RaysCount = (UInt32) Math.Min( MAX_THREADS, integerTrackbarControlRaysCount.Value );
 				m_CB_Input.m.MaxStepsCount = (UInt32) integerTrackbarControlMaxStepsCount.Value;
@@ -415,22 +413,18 @@ Generate();
 				uint	h = Math.Max( 1, MAX_LINES*1024 / W );
 				uint	callsCount = (uint) Math.Ceiling( (float) H / h );
 
-				uint[][]listOfIndirectPixels = new uint[h][];
-				for ( int callIndex=0; callIndex < callsCount; callIndex++ )
-					listOfIndirectPixels[callIndex] = new uint[0];
-				
+				uint	totalIndirectPixelsCount = 0;
+				uint[][]listOfListsOfIndirectPixels = new uint[callsCount][];
 				uint[,]	offsetsInListOfIndirectPixels = new uint[W,H];
 				uint[,]	countersInListOfIndirectPixels = new uint[W,H];
 
-				for ( int callIndex=0; callIndex < callsCount; callIndex++ ) {
-					uint	Y0 = (UInt32) (callIndex * h);
+				for ( uint callIndex=0; callIndex < callsCount; callIndex++ ) {
+					uint	Y0 = callIndex * h;
 					m_CB_Input.m.Y0 = Y0;
 					m_CB_Input.UpdateData();
 
 					SB_IndirectPixelsCounter.m[0] = 0;	// Reset stack counter
 					SB_IndirectPixelsCounter.Write();
-// 					SB_IndirectPixelsCounter.Read();
-// 					uint	indirectPixelsStackSize0 = SB_IndirectPixelsCounter.m[0];
 
 					m_CS_GenerateAOMap.Dispatch( W, h, 1 );
 
@@ -438,25 +432,23 @@ Generate();
 					SB_IndirectPixelsCounter.Read();
 					SB_IndirectPixelsStack.Read();
 					uint	indirectPixelsStackSize = SB_IndirectPixelsCounter.m[0];
+					totalIndirectPixelsCount += indirectPixelsStackSize;
 
-					uint	startFillIndex = (uint) listOfIndirectPixels.Length;
 					uint[]	newList = new uint[indirectPixelsStackSize];	// Grow the list of indirect pixels
-					listOfIndirectPixels[callIndex] = newList
+					listOfListsOfIndirectPixels[callIndex] = newList;
 
 					// Browse once to count how many indirect pixels affect our source pixels (establishes the size of source pixel lists)
 					for ( uint i=0; i < indirectPixelsStackSize; i++ ) {
 						SBPixel	packedIndirectPixel = SB_IndirectPixelsStack.m[i];
 						uint	sourcePixelPositionX = packedIndirectPixel.sourcePixelIndex & 0xFFFFU;
 						uint	sourcePixelPositionY = packedIndirectPixel.sourcePixelIndex >> 16;
-// 						uint	targetPixelPositionX = packedIndirectPixel.targetPixelIndex & 0xFFFFU;
-// 						uint	targetPixelPositionY = packedIndirectPixel.targetPixelIndex >> 16;
 
 						countersInListOfIndirectPixels[sourcePixelPositionX,sourcePixelPositionY]++;
 					}
 
 					// Accumulate size of source pixel lists to establish final list offsets
 					uint	Y1 = Math.Min( H, Y0+h );
-					uint	currentOffset = startFillIndex;							// Start at the end of previous list
+					uint	currentOffset = 0;
 					for ( uint Y=Y0; Y < Y1; Y++ ) {
 						for ( uint X=0; X < W; X++ ) {
 							offsetsInListOfIndirectPixels[X,Y] = currentOffset;
@@ -470,8 +462,6 @@ Generate();
 						SBPixel	packedIndirectPixel = SB_IndirectPixelsStack.m[i];
 						uint	sourcePixelPositionX = packedIndirectPixel.sourcePixelIndex & 0xFFFFU;
 						uint	sourcePixelPositionY = packedIndirectPixel.sourcePixelIndex >> 16;
-// 						uint	targetPixelPositionX = packedIndirectPixel.targetPixelIndex & 0xFFFFU;
-// 						uint	targetPixelPositionY = packedIndirectPixel.targetPixelIndex >> 16;
 
 						uint	sourcePixelOffset = offsetsInListOfIndirectPixels[sourcePixelPositionX,sourcePixelPositionY];	// Finally indicates where to start storing target pixels
 						uint	sourcePixelCounter = countersInListOfIndirectPixels[sourcePixelPositionX,sourcePixelPositionY];	// Current size of source pixel list
@@ -496,18 +486,8 @@ Generate();
 // 				m_CS_GenerateSSBumpMap.Dispatch( W, H, 1 );
 
 
-
-				//////////////////////////////////////////////////////////////////////////
-				// 3] Build a collapsed list of indirect pixels
-// 
-// 				Renderer.Texture2D	textureTargetHistogram = new Renderer.Texture2D( m_device, W, H, 1, 1, ImageUtility.PIXEL_FORMAT.RG32, ImageUtility.COMPONENT_FORMAT.UINT, false, false, content );
-// //				Renderer.Texture2D	textureTargetHistogram_CPU = new Renderer.Texture2D( m_device, textureTargetHistogram.Width, textureTargetHistogram.Height, 1, 1, ImageUtility.PIXEL_FORMAT.R32, ImageUtility.COMPONENT_FORMAT.UINT, true, false, null );
-// //				textureTargetHistogram_CPU.CopyFrom( textureTargetHistogram );
-// 
-
 				SB_IndirectPixelsCounter.Dispose();
 				SB_IndirectPixelsStack.Dispose();
-//				textureTargetHistogram.Dispose();
 
 
 				//////////////////////////////////////////////////////////////////////////
@@ -546,6 +526,47 @@ Generate();
 
 				// Assign result
 				viewportPanelResult.Bitmap = m_imageResult.AsBitmap;
+
+
+				//////////////////////////////////////////////////////////////////////////
+				// 4] Store raw binary data
+				System.IO.FileInfo	binaryDataFileName = new System.IO.FileInfo( System.IO.Path.GetFileNameWithoutExtension( m_sourceFileName.FullName ) + ".indirectMap" );
+				using ( System.IO.FileStream S = binaryDataFileName.Create() )
+					using ( System.IO.BinaryWriter Wr = new System.IO.BinaryWriter( S ) ) {
+
+						// 4.1) We start by writing a WxH array of (AO,offset,count) triplets
+						Wr.Write( W );
+						Wr.Write( H );
+
+						uint	currentIndirectPixelsCount = 0;
+						for ( uint callIndex=0; callIndex < callsCount; callIndex++ ) {
+							uint	Y0 = callIndex * h;
+							uint	Y1 = Math.Min( H, Y0+h );
+
+							uint[]	listOfIndirectPixels = listOfListsOfIndirectPixels[callIndex];
+							for ( uint Y=Y0; Y < Y1; Y++ ) {
+								for ( uint X=0; X < W; X++ ) {
+									Wr.Write( tempBitmap[X,Y].z );
+
+									uint	localListOffset = offsetsInListOfIndirectPixels[X,Y];
+									uint	globalListOffset = currentIndirectPixelsCount + localListOffset;
+									Wr.Write( globalListOffset );
+									uint	localListCounter = countersInListOfIndirectPixels[X,Y];
+									Wr.Write( globalListOffset );
+								}
+							}
+
+							currentIndirectPixelsCount += (uint) listOfIndirectPixels.Length;
+						}
+
+						// 4.2) Then we write the full list of indirect pixels
+						for ( uint callIndex=0; callIndex < callsCount; callIndex++ ) {
+							uint[]	listOfIndirectPixels = listOfListsOfIndirectPixels[callIndex];
+							uint	length = (uint) listOfIndirectPixels.Length;
+							for ( uint i=0; i < length; i++ )
+								Wr.Write( listOfIndirectPixels[i] );
+						}
+					}
 
 			} catch ( Exception _e ) {
 				MessageBox( "An error occurred during generation!\r\n\r\nDetails: ", _e );
@@ -665,8 +686,7 @@ Generate();
 
 		#region EVENT HANDLERS
 
- 		private unsafe void buttonGenerate_Click( object sender, EventArgs e )
- 		{
+ 		private unsafe void buttonGenerate_Click( object sender, EventArgs e ) {
  			Generate();
 //			Generate_CPU( integerTrackbarControlRaysCount.Value );
 		}
@@ -753,7 +773,7 @@ Generate();
 				return;
 			}
 
-			string	SourceFileName = m_SourceFileName.FullName;
+			string	SourceFileName = m_sourceFileName.FullName;
 			string	TargetFileName = System.IO.Path.Combine( System.IO.Path.GetDirectoryName( SourceFileName ), System.IO.Path.GetFileNameWithoutExtension( SourceFileName ) + "_ao.png" );
 
 			saveFileDialogImage.InitialDirectory = System.IO.Path.GetDirectoryName( TargetFileName );
