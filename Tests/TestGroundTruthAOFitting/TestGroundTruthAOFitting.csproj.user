@@ -5,6 +5,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
     <StartWorkingDirectory>D:\Workspaces\GodComplex\Tests\TestGroundTruthAOFitting\</StartWorkingDirectory>
+    <EnableUnmanagedDebugging>true</EnableUnmanagedDebugging>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
     <StartWorkingDirectory>D:\Workspaces\GodComplex\Tests\TestGroundTruthAOFitting\</StartWorkingDirectory>
@@ -17,5 +18,18 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
     <StartWorkingDirectory>D:\Workspaces\GodComplex\Tests\TestGroundTruthAOFitting\</StartWorkingDirectory>
+  </PropertyGroup>
+  <PropertyGroup>
+    <PublishUrlHistory />
+    <InstallUrlHistory />
+    <SupportUrlHistory />
+    <UpdateUrlHistory />
+    <BootstrapperUrlHistory />
+    <ErrorReportUrlHistory />
+    <FallbackCulture>en-US</FallbackCulture>
+    <VerifyUploadedFiles>false</VerifyUploadedFiles>
+  </PropertyGroup>
+  <PropertyGroup>
+    <EnableSecurityDebugging>false</EnableSecurityDebugging>
   </PropertyGroup>
 </Project>

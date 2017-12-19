@@ -19,38 +19,51 @@ cbuffer	CBInput : register( b0 )
 	float	_Displacement_mm;	// Height map max encoded displacement in millimeters
 }
 
-Texture2D<float>			_Source : register( t0 );
-RWTexture2D<float>			_Target : register( u0 );
+Texture2D<float>			_source : register( t0 );
+RWTexture2D<float>			_target : register( u0 );
 
-StructuredBuffer<float3>	_Rays : register( t1 );
+StructuredBuffer<float3>	_rays : register( t1 );
 
-Texture2D<float3>			_SourceNormals : register( t2 );
+Texture2D<float3>			_sourceNormals : register( t2 );
 
-groupshared float			gs_Occlusion[MAX_THREADS];
+RWStructuredBuffer<uint>	_indirectPixelsStackSize : register( u1 );
+RWStructuredBuffer<uint2>	_indirectPixelsStack : register( u2 );
+//RWTexture2D<uint>			_indirectPixelsHistogram : register( u3 );
 
+
+groupshared float			gs_occlusion[MAX_THREADS];
+
+
+uint	PackPixelPosition( float2 _position ) {
+	uint2	intPosition = uint2( floor( _position ) );
+	return ((intPosition.y & 0xFFFFU) << 16) | (intPosition.x & 0xFFFFU);
+}
 
 // Computes the occlusion of the pixel in the specified direction
-//	_TextureDimensions, size of the texture in pixels
-//	_Position, position of the ray in the texture (XY = pixel position offset by 0.5, Z = initial height in millimeters)
-//	_Direction, direction of the ray
+//	_textureDimensions, size of the texture in pixels
+//	_position, position of the ray in the texture (XY = pixel position offset by 0.5, Z = initial height in millimeters)
+//	_direction, direction of the ray
 //
 // Returns an occlusion value in [0,1] where 0 is completely occluded and 1 completely visible
 //
-float	ComputeDirectionalOcclusion( float2 _TextureDimensions, float3 _Position, float3 _Direction ) {
+float	ComputeDirectionalOcclusion( float2 _textureDimensions, float3 _position, float3 _direction ) {
 
 	#if 1
 		// Scale the ray so we ensure to always walk at least a texel in the texture
-		_Direction *= _Direction.z < 1.0 ? 1.0 / sqrt( 1.0 - _Direction.z * _Direction.z ) : 1.0;
+		_direction *= _direction.z < 1.0 ? 1.0 / sqrt( 1.0 - _direction.z * _direction.z ) : 1.0;
 	#endif
 
-//_Direction.z *= 0.001;
-//_Direction *= 2.0;
+//_direction.z *= 0.001;
+//_direction *= 2.0;
 
-	float3	UVH = float3( _Position.xy / _TextureDimensions, _Position.z );
-	float3	dUVH = float3( _Direction.xy / _TextureDimensions, _Direction.z * _TexelSize_mm );
+	float3	UVH = float3( _position.xy / _textureDimensions, _position.z );
+	float3	dUVH = float3( _direction.xy / _textureDimensions, _direction.z * _TexelSize_mm );
 	float	prevH_mm = UVH.z;
 
-	float	Occlusion = 1.0;	// Start unoccluded
+	uint2	sourcePixelPosition = uint2( floor( _position.xy ) );
+	uint	sourcePackedPixelPosition = PackPixelPosition( _position.xy );
+
+	float	occlusion = 1.0;	// Start unoccluded
 	for ( uint StepIndex=0; StepIndex < _MaxStepsCount; StepIndex++ ) {
 		UVH += dUVH;	
 		if ( UVH.z >= _Displacement_mm )
@@ -65,8 +78,8 @@ float	ComputeDirectionalOcclusion( float2 _TextureDimensions, float3 _Position, 
 				break;	// Escaped the texture...
 		}
 
-//		float	H_mm = _Displacement_mm * _Source.Load( int3( UVH.xy, 0 ) );
-		float	H_mm = _Displacement_mm * _Source.SampleLevel( LinearClamp, UVH.xy, 0 );
+//		float	H_mm = _Displacement_mm * _source.Load( int3( UVH.xy, 0 ) );
+		float	H_mm = _Displacement_mm * _source.SampleLevel( LinearClamp, UVH.xy, 0 );
 
 		// Simple test for a fully extruded height
 		if ( UVH.z < H_mm ) {
@@ -74,28 +87,41 @@ float	ComputeDirectionalOcclusion( float2 _TextureDimensions, float3 _Position, 
 			float	t = (H_mm - UVH.z) / (2.0*UVH.z - dUVH.z + H_mm - prevH_mm);
 			UVH -= t * dUVH;
 
-			// Build local tangent space to orient rays
-			float3	Normal = _SourceNormals.SampleLevel( LinearClamp, UVH.xy, 0 );
-//			float3	Tangent, BiTangent;
-//			BuildOrthonormalBasis( Normal, Tangent, BiTangent );
+			// Register a new hit
+			uint	stackIndex;
+			InterlockedAdd( _indirectPixelsStackSize[0], 1, stackIndex );	// Allocate a new slot where to store our indirect hit
 
-			// Reflect ray against plane
-			float	d = dot( _Direction, Normal );
-			_Direction -= 2.0 * d * Normal;
+			uint	targetPackedPixelPosition = PackPixelPosition( UVH.xy * _textureDimensions );
 
-			_Position.xy = UVH.xy * _TextureDimensions;
+			_indirectPixelsStack[stackIndex] = uint2( sourcePackedPixelPosition, targetPackedPixelPosition );	// Register indirect hit
 
-			_Position += 1e-2 * Normal;	// Nudge a little to avoid acnea
+			return 0;
 
-			// Update UVs
-			UVH.xy = _Position / _TextureDimensions;
-			dUVH = float3( _Direction.xy / _TextureDimensions, _Direction.z * _TexelSize_mm );
+//			uint	onSenFout;
+//			InterlockedAdd( _indirectPixelsHistogram[sourcePixelPosition], 1, onSenFout );		// Increase histogram counter for our source pixel
+
+//			// Build local tangent space to orient rays
+//			float3	Normal = _sourceNormals.SampleLevel( LinearClamp, UVH.xy, 0 );
+////			float3	Tangent, BiTangent;
+////			BuildOrthonormalBasis( Normal, Tangent, BiTangent );
+//
+//			// Reflect ray against plane
+//			float	d = dot( _direction, Normal );
+//			_direction -= 2.0 * d * Normal;
+//
+//			_position.xy = UVH.xy * _textureDimensions;
+//
+//			_position += 1e-2 * Normal;	// Nudge a little to avoid acnea
+//
+//			// Update UVs
+//			UVH.xy = _position / _textureDimensions;
+//			dUVH = float3( _direction.xy / _textureDimensions, _direction.z * _TexelSize_mm );
 		}
 
 		prevH_mm = H_mm;
 	}
 
-	return Occlusion;
+	return occlusion;
 }
 
 // Build orthonormal basis from a 3D Unit Vector Without normalization [Frisvad2012])
@@ -116,17 +142,17 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID ) 
 		float2	fPixelPosition = 0.5 + PixelPosition;
 
 		uint2	Dimensions;
-		_Source.GetDimensions( Dimensions.x, Dimensions.y );
+		_source.GetDimensions( Dimensions.x, Dimensions.y );
 
-//		_Direction.z *= _TexelSize_mm / max( 1e-4, _Displacement_mm );	// Scale the vertical step so we're the proper size when comparing to normalized height map
+//		_direction.z *= _TexelSize_mm / max( 1e-4, _Displacement_mm );	// Scale the vertical step so we're the proper size when comparing to normalized height map
 //		float	MaxHeightPerTexel = _TexelSize_mm > 0.0 ? _Displacement_mm / _TexelSize_mm : 0.0;
-		float	H0_mm = _Displacement_mm * _Source.Load( int3( PixelPosition, 0 ) );
+		float	H0_mm = _Displacement_mm * _source.Load( int3( PixelPosition, 0 ) );
 
 		float3	RayPosition = float3( fPixelPosition, H0_mm );
-		float3	RayDirection = _Rays[RayIndex];
+		float3	RayDirection = _rays[RayIndex];
 
 		// Build local tangent space to orient rays
-		float3	Normal = _SourceNormals.SampleLevel( LinearClamp, fPixelPosition / Dimensions, 0 );
+		float3	Normal = _sourceNormals.SampleLevel( LinearClamp, fPixelPosition / Dimensions, 0 );
 		float3	Tangent, BiTangent;
 		BuildOrthonormalBasis( Normal, Tangent, BiTangent );
 
@@ -135,12 +161,12 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID ) 
 //RayPosition.z += 1e-2;	// Nudge a little to avoid acnea
 RayPosition += 1e-2 * Normal;	// Nudge a little to avoid acnea
 
-		gs_Occlusion[RayIndex] = ComputeDirectionalOcclusion( Dimensions, RayPosition, RayDirection );
+		gs_occlusion[RayIndex] = ComputeDirectionalOcclusion( Dimensions, RayPosition, RayDirection );
 
-//gs_Occlusion[RayIndex] = Normal.y;
+//gs_occlusion[RayIndex] = Normal.y;
 	} else {
 		// Clear remaining rays so they don't interfere with the accumulation
-		gs_Occlusion[RayIndex] = 0.0;
+		gs_occlusion[RayIndex] = 0.0;
 	}
 
 	GroupMemoryBarrierWithGroupSync();
@@ -148,12 +174,12 @@ RayPosition += 1e-2 * Normal;	// Nudge a little to avoid acnea
 	if ( RayIndex == 0 ) {
 		float	Result = 0.0;
 		for ( uint i=0; i < _RaysCount; i++ )
-			Result += gs_Occlusion[i];
+			Result += gs_occlusion[i];
 		Result /= _RaysCount;
 
 // Shows bilateral filtered source
-//Result = _Source.Load( int3( PixelPosition, 0 ) ).x;
+//Result = _source.Load( int3( PixelPosition, 0 ) ).x;
 
-		_Target[PixelPosition] = Result;
+		_target[PixelPosition] = Result;
 	}
 }

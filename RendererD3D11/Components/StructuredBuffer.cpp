@@ -14,8 +14,8 @@ StructuredBuffer::StructuredBuffer( Device& _Device, U32 _ElementSize, U32 _Elem
 	ASSERT( _ElementSize > 0, "Buffer must have at least one element!" );
 	ASSERT( (_ElementSize&3)==0, "Element size must be a multiple of 4!" );
 
-	for ( int ShaderStageIndex=0; ShaderStageIndex < 6; ShaderStageIndex++ )
-		m_LastAssignedSlots[ShaderStageIndex] = -1;
+	for ( int shaderStageIndex=0; shaderStageIndex < 6; shaderStageIndex++ )
+		m_LastAssignedSlots[shaderStageIndex] = -1;
 	for ( int i=0; i < D3D11_PS_CS_UAV_REGISTER_COUNT; i++ )
 		m_pAssignedToOutputSlot[i] = -1;
 	m_ElementSize = _ElementSize;
@@ -23,24 +23,24 @@ StructuredBuffer::StructuredBuffer( Device& _Device, U32 _ElementSize, U32 _Elem
 	m_Size = _ElementSize * _ElementsCount;
 
 	// Create the buffer
-	D3D11_BUFFER_DESC   Desc;
-	Desc.ByteWidth = m_Size;
-	Desc.Usage = D3D11_USAGE_DEFAULT;
-	Desc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
-	Desc.CPUAccessFlags = 0;
-	Desc.MiscFlags = (_allowRawView ? 0 : D3D11_RESOURCE_MISC_BUFFER_STRUCTURED)
-				   | (_allowRawView ? D3D11_RESOURCE_MISC_BUFFER_ALLOW_RAW_VIEWS : 0);
-	Desc.StructureByteStride = _ElementSize;
+	D3D11_BUFFER_DESC   desc;
+	desc.ByteWidth = m_Size;
+	desc.Usage = D3D11_USAGE_DEFAULT;
+	desc.CPUAccessFlags = 0;
+	desc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
+	desc.MiscFlags = (_allowRawView ? 0 : D3D11_RESOURCE_MISC_BUFFER_STRUCTURED)
+					| (_allowRawView ? D3D11_RESOURCE_MISC_BUFFER_ALLOW_RAW_VIEWS : 0);
+	desc.StructureByteStride = _ElementSize;
 
-	Check( m_device.DXDevice().CreateBuffer( &Desc, NULL, &m_pBuffer ) );
+	Check( m_device.DXDevice().CreateBuffer( &desc, NULL, &m_pBuffer ) );
 
 	// Create the CPU accessible version of the buffer
-	Desc.Usage = D3D11_USAGE_STAGING;
-	Desc.BindFlags = 0;
-	Desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ | (_bWriteable ? D3D11_CPU_ACCESS_WRITE : 0);
-	Desc.MiscFlags = 0;
+	desc.Usage = D3D11_USAGE_STAGING;
+	desc.BindFlags = 0;
+	desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ | (_bWriteable ? D3D11_CPU_ACCESS_WRITE : 0);
+	desc.MiscFlags = 0;
 	
-	Check( m_device.DXDevice().CreateBuffer( &Desc, NULL, &m_pCPUBuffer ) );
+	Check( m_device.DXDevice().CreateBuffer( &desc, NULL, &m_pCPUBuffer ) );
 
 
 	//////////////////////////////////////////////////////////////////////////

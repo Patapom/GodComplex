@@ -19,10 +19,10 @@ namespace GenerateSelfShadowedBumpMap
 	public partial class GeneratorForm : Form {
 		#region CONSTANTS
 
-		private const int		MAX_THREADS = 1024;			// Maximum threads run by the compute shader
+		private const uint		MAX_THREADS = 1024;			// Maximum threads run by the compute shader
 
 		private const int		BILATERAL_PROGRESS = 50;	// Bilateral filtering is considered as this % of the total task (bilateral is quite long so I decided it was equivalent to 50% of the complete computation task)
-		private const int		MAX_LINES = 16;				// Process at most that amount of lines of a 4096x4096 image for a single dispatch
+		private const uint		MAX_LINES = 16;				// Process at most that amount of lines of a 4096x4096 image for a single dispatch
 
 		#endregion
 
@@ -48,6 +48,13 @@ namespace GenerateSelfShadowedBumpMap
 			public UInt32	Tile;				// Tiling flag
 		}
 
+		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
+		[System.Diagnostics.DebuggerDisplay( "({sourcePixelIndex&0xFFFF},{sourcePixelIndex>>16}) - ({targetPixelIndex&0xFFFF},{targetPixelIndex>>16})" )]
+		private struct	SBPixel {
+			public uint		sourcePixelIndex;	// Index of the pixel that issued this entry
+			public uint		targetPixelIndex;	// Index of the pixel that is perceived by the source pixel
+		}
+
 		#endregion
 
 		#region FIELDS
@@ -67,7 +74,7 @@ namespace GenerateSelfShadowedBumpMap
 		internal Renderer.Texture2D					m_textureTarget1 = null;
 		internal Renderer.Texture2D					m_textureTarget_CPU = null;
 
-		// SSBump Generation
+		// AO Generation
 		private Renderer.ConstantBuffer<CBInput>	m_CB_Input;
 		private Renderer.StructuredBuffer<float3>	m_SB_Rays = null;
 		private Renderer.ComputeShader				m_CS_GenerateAOMap = null;
@@ -148,6 +155,14 @@ namespace GenerateSelfShadowedBumpMap
 				MessageBox( "Failed to create DX11 device and default shaders:\r\n", _e );
 				Close();
 			}
+
+
+
+
+LoadHeightMap( new System.IO.FileInfo( GetRegKey( "HeightMapFileName", System.IO.Path.Combine( m_ApplicationPath, "Example.jpg" ) ) ) );
+LoadNormalMap( new System.IO.FileInfo( GetRegKey( "NormalMapFileName", System.IO.Path.Combine( m_ApplicationPath, "Example.jpg" ) ) ) );
+Generate();
+
 		}
 
 		protected override void OnClosing( CancelEventArgs e )
@@ -157,6 +172,7 @@ namespace GenerateSelfShadowedBumpMap
 				m_CS_BilateralFilter.Dispose();
 
 				m_SB_Rays.Dispose();
+
 				m_CB_Filter.Dispose();
 				m_CB_Input.Dispose();
 
@@ -296,12 +312,12 @@ namespace GenerateSelfShadowedBumpMap
 						}
 					}
 
-				m_textureSourceHeightMap = new Renderer.Texture2D( m_device, W, H, 1, 1, ImageUtility.PIXEL_FORMAT.R32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, false, new Renderer.PixelsBuffer[] { SourceHeightMap } );
-
 				// Build the target UAV & staging texture for readback
 				m_textureTarget0 = new Renderer.Texture2D( m_device, W, H, 1, 1, ImageUtility.PIXEL_FORMAT.R32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, true, null );
 				m_textureTarget1 = new Renderer.Texture2D( m_device, W, H, 1, 1, ImageUtility.PIXEL_FORMAT.R32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, true, null );
 				m_textureTarget_CPU = new Renderer.Texture2D( m_device, W, H, 1, 1, ImageUtility.PIXEL_FORMAT.R32F, ImageUtility.COMPONENT_FORMAT.AUTO, true, false, null );
+
+				m_textureSourceHeightMap = new Renderer.Texture2D( m_device, W, H, 1, 1, ImageUtility.PIXEL_FORMAT.R32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, false, new Renderer.PixelsBuffer[] { SourceHeightMap } );
 
 				panelParameters.Enabled = true;
 				buttonGenerate.Focus();
@@ -374,6 +390,18 @@ namespace GenerateSelfShadowedBumpMap
 				m_SB_Rays.SetInput( 1 );
 				m_TextureSourceNormal.SetCS( 2 );
 
+
+				// Create the counter & indirect pixel buffers
+				Renderer.StructuredBuffer<SBPixel>	SB_IndirectPixelsStack = new Renderer.StructuredBuffer<SBPixel>( m_device, MAX_LINES*1024*1024, true );	// A lot!! :'(
+				Renderer.StructuredBuffer<uint>		SB_IndirectPixelsCounter = new Renderer.StructuredBuffer<uint>( m_device, 1, true );
+
+// 				Renderer.Texture2D					textureTempAccumulator = new Renderer.Texture2D( m_device, W, H, 1, 1, ImageUtility.PIXEL_FORMAT.R32, ImageUtility.COMPONENT_FORMAT.UINT, false, true, null );
+// 				m_device.Clear( textureTempAccumulator, float4.Zero );	// Reset pixel accumulators
+
+				SB_IndirectPixelsCounter.SetOutput( 1 );
+				SB_IndirectPixelsStack.SetOutput( 2 );
+//				textureTempAccumulator.SetCSUAV( 3 );
+
 				m_CB_Input.m.RaysCount = (UInt32) Math.Min( MAX_THREADS, integerTrackbarControlRaysCount.Value );
 				m_CB_Input.m.MaxStepsCount = (UInt32) integerTrackbarControlMaxStepsCount.Value;
 				m_CB_Input.m.Tile = (uint) (checkBoxWrap.Checked ? 1 : 0);
@@ -385,16 +413,75 @@ namespace GenerateSelfShadowedBumpMap
 					throw new Exception( "Can't generate self-shadowed bump map as compute shader failed to compile!" );
 
 				uint	h = Math.Max( 1, MAX_LINES*1024 / W );
-				uint	CallsCount = (uint) Math.Ceiling( (float) H / h );
-				for ( int i=0; i < CallsCount; i++ ) {
-					m_CB_Input.m.Y0 = (UInt32) (i * h);
+				uint	callsCount = (uint) Math.Ceiling( (float) H / h );
+
+				uint[][]listOfIndirectPixels = new uint[h][];
+				for ( int callIndex=0; callIndex < callsCount; callIndex++ )
+					listOfIndirectPixels[callIndex] = new uint[0];
+				
+				uint[,]	offsetsInListOfIndirectPixels = new uint[W,H];
+				uint[,]	countersInListOfIndirectPixels = new uint[W,H];
+
+				for ( int callIndex=0; callIndex < callsCount; callIndex++ ) {
+					uint	Y0 = (UInt32) (callIndex * h);
+					m_CB_Input.m.Y0 = Y0;
 					m_CB_Input.UpdateData();
+
+					SB_IndirectPixelsCounter.m[0] = 0;	// Reset stack counter
+					SB_IndirectPixelsCounter.Write();
+// 					SB_IndirectPixelsCounter.Read();
+// 					uint	indirectPixelsStackSize0 = SB_IndirectPixelsCounter.m[0];
 
 					m_CS_GenerateAOMap.Dispatch( W, h, 1 );
 
-					m_device.Present( true );
+					// Read back and accumulate indirect pixels
+					SB_IndirectPixelsCounter.Read();
+					SB_IndirectPixelsStack.Read();
+					uint	indirectPixelsStackSize = SB_IndirectPixelsCounter.m[0];
 
-					progressBar.Value = (int) (0.01f * (BILATERAL_PROGRESS + (100-BILATERAL_PROGRESS) * (i+1) / (CallsCount)) * progressBar.Maximum);
+					uint	startFillIndex = (uint) listOfIndirectPixels.Length;
+					uint[]	newList = new uint[indirectPixelsStackSize];	// Grow the list of indirect pixels
+					listOfIndirectPixels[callIndex] = newList
+
+					// Browse once to count how many indirect pixels affect our source pixels (establishes the size of source pixel lists)
+					for ( uint i=0; i < indirectPixelsStackSize; i++ ) {
+						SBPixel	packedIndirectPixel = SB_IndirectPixelsStack.m[i];
+						uint	sourcePixelPositionX = packedIndirectPixel.sourcePixelIndex & 0xFFFFU;
+						uint	sourcePixelPositionY = packedIndirectPixel.sourcePixelIndex >> 16;
+// 						uint	targetPixelPositionX = packedIndirectPixel.targetPixelIndex & 0xFFFFU;
+// 						uint	targetPixelPositionY = packedIndirectPixel.targetPixelIndex >> 16;
+
+						countersInListOfIndirectPixels[sourcePixelPositionX,sourcePixelPositionY]++;
+					}
+
+					// Accumulate size of source pixel lists to establish final list offsets
+					uint	Y1 = Math.Min( H, Y0+h );
+					uint	currentOffset = startFillIndex;							// Start at the end of previous list
+					for ( uint Y=Y0; Y < Y1; Y++ ) {
+						for ( uint X=0; X < W; X++ ) {
+							offsetsInListOfIndirectPixels[X,Y] = currentOffset;
+							currentOffset += countersInListOfIndirectPixels[X,Y];	// Leave room for that pixel's list of indirect pixel entries
+							countersInListOfIndirectPixels[X,Y] = 0;				// Reset counter so we can use it to start counting again
+						}
+					}
+
+					// Browse a second time to accumulate
+					for ( uint i=0; i < indirectPixelsStackSize; i++ ) {
+						SBPixel	packedIndirectPixel = SB_IndirectPixelsStack.m[i];
+						uint	sourcePixelPositionX = packedIndirectPixel.sourcePixelIndex & 0xFFFFU;
+						uint	sourcePixelPositionY = packedIndirectPixel.sourcePixelIndex >> 16;
+// 						uint	targetPixelPositionX = packedIndirectPixel.targetPixelIndex & 0xFFFFU;
+// 						uint	targetPixelPositionY = packedIndirectPixel.targetPixelIndex >> 16;
+
+						uint	sourcePixelOffset = offsetsInListOfIndirectPixels[sourcePixelPositionX,sourcePixelPositionY];	// Finally indicates where to start storing target pixels
+						uint	sourcePixelCounter = countersInListOfIndirectPixels[sourcePixelPositionX,sourcePixelPositionY];	// Current size of source pixel list
+						newList[sourcePixelOffset+sourcePixelCounter] = packedIndirectPixel.targetPixelIndex;					// Store target pixel link into source pixel list
+						countersInListOfIndirectPixels[sourcePixelPositionX,sourcePixelPositionY]++;							// Increment size of source pixel list
+					}
+
+//					m_device.Present( true );
+
+					progressBar.Value = (int) (0.01f * (BILATERAL_PROGRESS + (100-BILATERAL_PROGRESS) * (callIndex+1) / callsCount) * progressBar.Maximum);
 //					for ( int a=0; a < 10; a++ )
 						Application.DoEvents();
 				}
@@ -407,6 +494,20 @@ namespace GenerateSelfShadowedBumpMap
 // 				m_CB_Input.m.y = 0;
 // 				m_CB_Input.UpdateData();
 // 				m_CS_GenerateSSBumpMap.Dispatch( W, H, 1 );
+
+
+
+				//////////////////////////////////////////////////////////////////////////
+				// 3] Build a collapsed list of indirect pixels
+// 
+// 				Renderer.Texture2D	textureTargetHistogram = new Renderer.Texture2D( m_device, W, H, 1, 1, ImageUtility.PIXEL_FORMAT.RG32, ImageUtility.COMPONENT_FORMAT.UINT, false, false, content );
+// //				Renderer.Texture2D	textureTargetHistogram_CPU = new Renderer.Texture2D( m_device, textureTargetHistogram.Width, textureTargetHistogram.Height, 1, 1, ImageUtility.PIXEL_FORMAT.R32, ImageUtility.COMPONENT_FORMAT.UINT, true, false, null );
+// //				textureTargetHistogram_CPU.CopyFrom( textureTargetHistogram );
+// 
+
+				SB_IndirectPixelsCounter.Dispose();
+				SB_IndirectPixelsStack.Dispose();
+//				textureTargetHistogram.Dispose();
 
 
 				//////////////////////////////////////////////////////////////////////////
@@ -487,7 +588,7 @@ namespace GenerateSelfShadowedBumpMap
 		}
 
 		private void	GenerateRays( int _RaysCount, float _MaxConeAngle, Renderer.StructuredBuffer<float3> _Target ) {
-			_RaysCount = Math.Min( MAX_THREADS, _RaysCount );
+			_RaysCount = Math.Min( (int) MAX_THREADS, _RaysCount );
 
 			Hammersley	hammersley = new Hammersley();
 			double[,]	sequence = hammersley.BuildSequence( _RaysCount, 2 );
