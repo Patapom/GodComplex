@@ -639,3 +639,4 @@ Publish
 /Tests/TestArduinoSerialPacketDecoder/*.user
 /Tests/TestGroundTruthAOFitting/bin
 /Tests/TestGroundTruthAOFitting/obj
+/Tests/TestGroundTruthAOFitting/*.indirectMap
