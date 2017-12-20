@@ -39,6 +39,14 @@ namespace GenerateSelfShadowedBumpMap
 		}
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
+		private struct	CBIndirect {
+			public uint		_DimensionsX;
+			public uint		_DimensionsY;
+			public float	TexelSize_mm;		// Size of a texel (in millimeters)
+			public float	Displacement_mm;	// Max displacement value encoded by the height map (in millimeters)
+		}
+
+		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
 		private struct	CBFilter {
 			public UInt32	Y0;					// Index of the texture line we're processing
 // 			public float	Radius;				// Radius of the bilateral filter
@@ -69,7 +77,7 @@ namespace GenerateSelfShadowedBumpMap
 
 		internal Renderer.Device					m_device = new Renderer.Device();
 		internal Renderer.Texture2D					m_textureSourceHeightMap = null;
-		internal Renderer.Texture2D					m_TextureSourceNormal = null;
+		internal Renderer.Texture2D					m_textureSourceNormal = null;
 		internal Renderer.Texture2D					m_textureTarget0 = null;
 		internal Renderer.Texture2D					m_textureTarget1 = null;
 		internal Renderer.Texture2D					m_textureTarget_CPU = null;
@@ -78,6 +86,10 @@ namespace GenerateSelfShadowedBumpMap
 		private Renderer.ConstantBuffer<CBInput>	m_CB_Input;
 		private Renderer.StructuredBuffer<float3>	m_SB_Rays = null;
 		private Renderer.ComputeShader				m_CS_GenerateAOMap = null;
+
+		// Indirect Lighting Computation
+		private Renderer.ConstantBuffer<CBIndirect>	m_CB_Indirect;
+		private Renderer.ComputeShader				m_CS_ComputeIndirectLighting = null;
 
 		// Bilateral filtering pre-processing
 		private Renderer.ConstantBuffer<CBFilter>	m_CB_Filter;
@@ -109,17 +121,6 @@ namespace GenerateSelfShadowedBumpMap
  			m_AppKey = Registry.CurrentUser.CreateSubKey( @"Software\GodComplex\TestGroundTruthAOFitting" );
 			m_ApplicationPath = System.IO.Path.GetDirectoryName( Application.ExecutablePath );
 
-// N.Silvagni test with Adobe RGB
-//			ImageUtility.Bitmap	Test = new ImageUtility.Bitmap( 1, 1, new ImageUtility.ColorProfile( ImageUtility.ColorProfile.STANDARD_PROFILE.sRGB ) );
-//			Test.ContentXYZ[0,0] = Test.Profile.RGB2XYZ( new ImageUtility.float4( 0, 1, 0, 1 ) );
-//			ImageUtility.ColorProfile	AdobeProfile = new ImageUtility.ColorProfile( ImageUtility.ColorProfile.STANDARD_PROFILE.ADOBE_RGB_D65 );
-//			ImageUtility.ColorProfile	AdobeProfile2 = new ImageUtility.ColorProfile( ImageUtility.ColorProfile.STANDARD_PROFILE.ADOBE_RGB_D50 );
-//
-//
-//			ImageUtility.float4	Glou0 = AdobeProfile.XYZ2RGB( Test.ContentXYZ[0,0] );
-//			ImageUtility.float4	Glou1 = AdobeProfile2.XYZ2RGB( Test.ContentXYZ[0,0] );
-//			ImageUtility.float4	Glou2 = Test.Profile.XYZ2RGB( Test.ContentXYZ[0,0] );
-
 			#if DEBUG
 				buttonReload.Visible = true;
 			#endif
@@ -138,10 +139,12 @@ namespace GenerateSelfShadowedBumpMap
 				{
 					m_CS_BilateralFilter = new Renderer.ComputeShader( m_device, new System.IO.FileInfo( "./Shaders/BilateralFiltering.hlsl" ), "CS", null );
 					m_CS_GenerateAOMap = new Renderer.ComputeShader( m_device, new System.IO.FileInfo( "./Shaders/GenerateAOMap.hlsl" ), "CS", null );
+//					m_CS_ComputeIndirectLighting = new Renderer.ComputeShader( m_device, new System.IO.FileInfo( "./Shaders/ComputeIndirectLighting.hlsl" ), "CS", null );
 				}
 
 				// Create our constant buffers
 				m_CB_Input = new Renderer.ConstantBuffer<CBInput>( m_device, 0 );
+				m_CB_Indirect = new Renderer.ConstantBuffer<CBIndirect>( m_device, 0 );
 				m_CB_Filter = new Renderer.ConstantBuffer<CBFilter>( m_device, 0 );
 
 				// Create our structured buffer containing the rays
@@ -161,18 +164,21 @@ namespace GenerateSelfShadowedBumpMap
 LoadHeightMap( new System.IO.FileInfo( GetRegKey( "HeightMapFileName", System.IO.Path.Combine( m_ApplicationPath, "Example.jpg" ) ) ) );
 LoadNormalMap( new System.IO.FileInfo( GetRegKey( "NormalMapFileName", System.IO.Path.Combine( m_ApplicationPath, "Example.jpg" ) ) ) );
 Generate();
+buttonComputeIndirect_Click( null, EventArgs.Empty );
 
 		}
 
 		protected override void OnClosing( CancelEventArgs e )
 		{
 			try {
+				m_CS_ComputeIndirectLighting.Dispose();
 				m_CS_GenerateAOMap.Dispose();
 				m_CS_BilateralFilter.Dispose();
 
 				m_SB_Rays.Dispose();
 
 				m_CB_Filter.Dispose();
+				m_CB_Indirect.Dispose();
 				m_CB_Input.Dispose();
 
 				if ( m_textureTarget_CPU != null )
@@ -181,8 +187,8 @@ Generate();
 					m_textureTarget1.Dispose();
 				if ( m_textureTarget0 != null )
 					m_textureTarget0.Dispose();
-				if ( m_TextureSourceNormal != null )
-					m_TextureSourceNormal.Dispose();
+				if ( m_textureSourceNormal != null )
+					m_textureSourceNormal.Dispose();
 				if ( m_textureSourceHeightMap != null )
 					m_textureSourceHeightMap.Dispose();
 
@@ -333,9 +339,9 @@ Generate();
 					m_imageSourceNormal.Dispose();
 				m_imageSourceNormal = null;
 
-				if ( m_TextureSourceNormal != null )
-					m_TextureSourceNormal.Dispose();
-				m_TextureSourceNormal = null;
+				if ( m_textureSourceNormal != null )
+					m_textureSourceNormal.Dispose();
+				m_textureSourceNormal = null;
 
 				// Load the source image
 				// Assume it's in linear space (all normal maps should be in linear space, with the default value being (0.5, 0.5, 1))
@@ -363,7 +369,7 @@ Generate();
 						}
 					}
 
-				m_TextureSourceNormal = new Renderer.Texture2D( m_device, W, H, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, false, new Renderer.PixelsBuffer[] { SourceNormalMap } );
+				m_textureSourceNormal = new Renderer.Texture2D( m_device, W, H, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, false, new Renderer.PixelsBuffer[] { SourceNormalMap } );
 
 			} catch ( Exception _e ) {
 				MessageBox( "An error occurred while opening the image:\n\n", _e );
@@ -387,7 +393,7 @@ Generate();
 				m_textureTarget0.SetCS( 0 );
 				m_textureTarget1.SetCSUAV( 0 );
 				m_SB_Rays.SetInput( 1 );
-				m_TextureSourceNormal.SetCS( 2 );
+				m_textureSourceNormal.SetCS( 2 );
 
 				// Create the counter & indirect pixel buffers
 				Renderer.StructuredBuffer<SBPixel>	SB_IndirectPixelsStack = new Renderer.StructuredBuffer<SBPixel>( m_device, MAX_LINES*1024*1024, true );	// A lot!! :'(
@@ -548,7 +554,7 @@ Generate();
 									uint	globalListOffset = currentIndirectPixelsCount + localListOffset;
 									Wr.Write( globalListOffset );
 									uint	localListCounter = countersInListOfIndirectPixels[X,Y];
-									Wr.Write( globalListOffset );
+									Wr.Write( localListCounter );
 								}
 							}
 
@@ -556,6 +562,8 @@ Generate();
 						}
 
 						// 4.2) Then we write the full list of indirect pixels
+						Wr.Write( totalIndirectPixelsCount );
+
 						for ( uint callIndex=0; callIndex < callsCount; callIndex++ ) {
 							uint[]	listOfIndirectPixels = listOfListsOfIndirectPixels[callIndex];
 							uint	length = (uint) listOfIndirectPixels.Length;
@@ -688,7 +696,122 @@ Generate();
 		}
 
 		private void buttonComputeIndirect_Click( object sender, EventArgs e ) {
-			todo!
+			try {
+				panelParameters.Enabled = false;
+
+				if ( m_textureSourceNormal == null )
+					throw new Exception( "Need normal texture!" );
+				if ( !m_CS_ComputeIndirectLighting.Use() )
+					throw new Exception( "Failed to use Indirect Lighting compute shader!" );
+
+				//////////////////////////////////////////////////////////////////////////
+				// 1] Load raw binary data
+				Renderer.Texture2D	texAO = null;
+				Renderer.Texture2D	texOffsetCount = null;
+				Renderer.StructuredBuffer<uint>	SBIndirectPixelsStack = null;
+
+				System.IO.FileInfo	binaryDataFileName = new System.IO.FileInfo( System.IO.Path.GetFileNameWithoutExtension( m_sourceFileName.FullName ) + ".indirectMap" );
+				using ( System.IO.FileStream S = binaryDataFileName.OpenRead() )
+					using ( System.IO.BinaryReader R = new System.IO.BinaryReader( S ) ) {
+
+						// 1.1) We start by reading a WxH array of (AO,offset,count) triplets
+						uint	tempW = R.ReadUInt32();
+						uint	tempH = R.ReadUInt32();
+						if ( tempW != W || tempH != H )
+							throw new Exception( "Dimensions mismatch!" );
+
+						Renderer.PixelsBuffer	contentAO = new Renderer.PixelsBuffer( W*H*4 );
+						Renderer.PixelsBuffer	contentOffsetCount = new Renderer.PixelsBuffer( W*H*2*4 );
+// 						float[,]	AO = new float[W,H];
+// 						SBPixel[,]	OffsetCount = new SBPixel[W,H];
+
+						using ( System.IO.BinaryWriter W_AO = contentAO.OpenStreamWrite() ) {
+							using ( System.IO.BinaryWriter W_OffsetCount = contentOffsetCount.OpenStreamWrite() ) {
+								for ( uint Y=0; Y < H; Y++ ) {
+									for ( uint X=0; X < W; X++ ) {
+// 										AO[X,Y] = R.ReadSingle();
+// 										OffsetCount[X,Y].sourcePixelIndex = R.ReadUInt32();
+// 										OffsetCount[X,Y].targetPixelIndex = R.ReadUInt32();
+										W_AO.Write( R.ReadSingle() );
+										W_OffsetCount.Write( R.ReadUInt32() );
+										W_OffsetCount.Write( R.ReadUInt32() );
+									}
+								}
+							}
+						}
+
+						texAO = new Renderer.Texture2D( m_device, W, H, 1, 1, ImageUtility.PIXEL_FORMAT.R32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, false, new Renderer.PixelsBuffer[] { contentAO } );
+						texOffsetCount = new Renderer.Texture2D( m_device, W, H, 1, 1, ImageUtility.PIXEL_FORMAT.RG32, ImageUtility.COMPONENT_FORMAT.UINT, false, false, new Renderer.PixelsBuffer[] { contentOffsetCount } );
+
+						// 1.2) Then we read the full list of indirect pixels
+						uint	stackSize = R.ReadUInt32();
+						SBIndirectPixelsStack = new Renderer.StructuredBuffer<uint>( m_device, stackSize, true );
+						for ( uint i=0; i < stackSize; i++ ) {
+							SBIndirectPixelsStack.m[i] = R.ReadUInt32();
+						}
+					}
+
+				//////////////////////////////////////////////////////////////////////////
+				// 2] Compute multiple bounces of indirect lighting
+				Renderer.Texture2D	sourceIlluminance = new Renderer.Texture2D( m_device, W, H, 1, 1, ImageUtility.PIXEL_FORMAT.R32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, true, null );
+				Renderer.Texture2D	targetIlluminance = new Renderer.Texture2D( m_device, W, H, 1, 1, ImageUtility.PIXEL_FORMAT.R32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, true, null );
+
+				Renderer.Texture2D	targetIlluminance_CPU = new Renderer.Texture2D( m_device, W, H, 1, 1, ImageUtility.PIXEL_FORMAT.R32F, ImageUtility.COMPONENT_FORMAT.AUTO, true, false, null );
+
+				m_device.Clear( sourceIlluminance, float4.One );
+
+				texAO.SetCS( 1 );
+				texOffsetCount.SetCS( 2 );
+				m_textureSourceHeightMap.SetCS( 3 );
+				m_textureSourceNormal.SetCS( 4 );
+				SBIndirectPixelsStack.SetInput( 5 );
+
+				m_CB_Indirect.m._DimensionsX = W;
+				m_CB_Indirect.m._DimensionsY = H;
+				m_CB_Indirect.m.TexelSize_mm = TextureSize_mm / Math.Max( W, H );
+				m_CB_Indirect.m.Displacement_mm = TextureHeight_mm;
+				m_CB_Indirect.UpdateData();
+
+				const uint	MAX_BOUNCE = 4;
+				float[][,]	arrayOfIlluminanceValues = new float[MAX_BOUNCE][,];
+
+				for ( uint bounceIndex=0; bounceIndex < MAX_BOUNCE; bounceIndex++ ) {
+
+					// Compute a single bounce
+					sourceIlluminance.SetCS( 0 );
+					targetIlluminance.SetCSUAV( 0 );
+
+					m_CS_ComputeIndirectLighting.Dispatch( W, H, 1 );
+
+					// Read back
+					targetIlluminance_CPU.CopyFrom( targetIlluminance );
+
+					float[,]	illuminanceValues = new float[W,H];
+					arrayOfIlluminanceValues[bounceIndex] = illuminanceValues;
+					targetIlluminance_CPU.ReadPixels( 0, 0, ( uint X, uint Y, System.IO.BinaryReader _R ) => { illuminanceValues[X,Y] = _R.ReadSingle(); } );
+
+					// Swap source and target illuminance values for next bounce
+					targetIlluminance.RemoveFromLastAssignedSlotUAV();
+					sourceIlluminance.RemoveFromLastAssignedSlots();
+
+					Renderer.Texture2D	temp = sourceIlluminance;
+					sourceIlluminance = targetIlluminance;
+					targetIlluminance = temp;
+				}
+
+				targetIlluminance_CPU.Dispose();
+				targetIlluminance.Dispose();
+				sourceIlluminance.Dispose();
+
+				SBIndirectPixelsStack.Dispose();
+				texOffsetCount.Dispose();
+				texAO.Dispose();
+
+			} catch ( Exception _e ) {
+				MessageBox( "An error occurred during generation!\r\n\r\nDetails: ", _e );
+			} finally {
+				panelParameters.Enabled = true;
+			}
 		}
 
 		private void buttonTestBilateral_Click( object sender, EventArgs e ) {
@@ -866,9 +989,9 @@ Generate();
 		}
 
 		private void clearNormalToolStripMenuItem_Click( object sender, EventArgs e ) {
-			if ( m_TextureSourceNormal != null )
-				m_TextureSourceNormal.Dispose();
-			m_TextureSourceNormal = null;
+			if ( m_textureSourceNormal != null )
+				m_textureSourceNormal.Dispose();
+			m_textureSourceNormal = null;
 			imagePanelNormalMap.Bitmap = null;
 
 			// Create the default, planar normal map
@@ -880,7 +1003,7 @@ Generate();
 				Wr.Write( 1.0f );
 			}
 
-			m_TextureSourceNormal = new Renderer.Texture2D( m_device, 1, 1, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, false, new Renderer.PixelsBuffer[] { SourceNormalMap } );
+			m_textureSourceNormal = new Renderer.Texture2D( m_device, 1, 1, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, false, new Renderer.PixelsBuffer[] { SourceNormalMap } );
 		}
 
 		#endregion
