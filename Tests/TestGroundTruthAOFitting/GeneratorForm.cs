@@ -158,10 +158,6 @@ namespace GenerateSelfShadowedBumpMap
 
 
 
-D'où sort ce putain de noise sur la map d'AO??
-1.3GB de data!! => Process par tile? On abandonne et on fait autrement? Genre on balance plein de rayons en plusieurs passes?
-
-
 LoadHeightMap( new System.IO.FileInfo( GetRegKey( "HeightMapFileName", System.IO.Path.Combine( m_ApplicationPath, "Example.jpg" ) ) ) );
 LoadNormalMap( new System.IO.FileInfo( GetRegKey( "NormalMapFileName", System.IO.Path.Combine( m_ApplicationPath, "Example.jpg" ) ) ) );
 Generate();
@@ -428,7 +424,7 @@ Generate();
 
 					m_CS_GenerateAOMap.Dispatch( W, h, 1 );
 
-					// Read back and accumulate indirect pixels
+//*					// Read back and accumulate indirect pixels
 					SB_IndirectPixelsCounter.Read();
 					SB_IndirectPixelsStack.Read();
 					uint	indirectPixelsStackSize = SB_IndirectPixelsCounter.m[0];
@@ -468,7 +464,7 @@ Generate();
 						newList[sourcePixelOffset+sourcePixelCounter] = packedIndirectPixel.targetPixelIndex;					// Store target pixel link into source pixel list
 						countersInListOfIndirectPixels[sourcePixelPositionX,sourcePixelPositionY]++;							// Increment size of source pixel list
 					}
-
+//*/
 //					m_device.Present( true );
 
 					progressBar.Value = (int) (0.01f * (BILATERAL_PROGRESS + (100-BILATERAL_PROGRESS) * (callIndex+1) / callsCount) * progressBar.Maximum);
@@ -528,7 +524,7 @@ Generate();
 				viewportPanelResult.Bitmap = m_imageResult.AsBitmap;
 
 
-				//////////////////////////////////////////////////////////////////////////
+//*				//////////////////////////////////////////////////////////////////////////
 				// 4] Store raw binary data
 				System.IO.FileInfo	binaryDataFileName = new System.IO.FileInfo( System.IO.Path.GetFileNameWithoutExtension( m_sourceFileName.FullName ) + ".indirectMap" );
 				using ( System.IO.FileStream S = binaryDataFileName.Create() )
@@ -567,7 +563,7 @@ Generate();
 								Wr.Write( listOfIndirectPixels[i] );
 						}
 					}
-
+//*/
 			} catch ( Exception _e ) {
 				MessageBox( "An error occurred during generation!\r\n\r\nDetails: ", _e );
 			} finally {
