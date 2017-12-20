@@ -50,6 +50,7 @@
 			this.imagePanelNormalMap = new GenerateSelfShadowedBumpMap.ImagePanel();
 			this.contextMenuStripNormal = new System.Windows.Forms.ContextMenuStrip(this.components);
 			this.clearNormalToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.buttonComputeIndirect = new System.Windows.Forms.Button();
 			this.panelParameters.SuspendLayout();
 			this.contextMenuStripNormal.SuspendLayout();
 			this.SuspendLayout();
@@ -68,11 +69,11 @@
 			// 
 			// buttonGenerate
 			// 
-			this.buttonGenerate.Location = new System.Drawing.Point(111, 250);
+			this.buttonGenerate.Location = new System.Drawing.Point(74, 250);
 			this.buttonGenerate.Name = "buttonGenerate";
-			this.buttonGenerate.Size = new System.Drawing.Size(105, 35);
+			this.buttonGenerate.Size = new System.Drawing.Size(78, 38);
 			this.buttonGenerate.TabIndex = 0;
-			this.buttonGenerate.Text = "Generate";
+			this.buttonGenerate.Text = "Generate Indirect Map";
 			this.buttonGenerate.UseVisualStyleBackColor = true;
 			this.buttonGenerate.Click += new System.EventHandler(this.buttonGenerate_Click);
 			// 
@@ -161,6 +162,7 @@
 			// 
 			// panelParameters
 			// 
+			this.panelParameters.Controls.Add(this.buttonComputeIndirect);
 			this.panelParameters.Controls.Add(this.buttonTestBilateral);
 			this.panelParameters.Controls.Add(this.floatTrackbarControlMaxConeAngle);
 			this.panelParameters.Controls.Add(this.floatTrackbarControlHeight);
@@ -186,9 +188,9 @@
 			// 
 			// buttonTestBilateral
 			// 
-			this.buttonTestBilateral.Location = new System.Drawing.Point(229, 250);
+			this.buttonTestBilateral.Location = new System.Drawing.Point(241, 250);
 			this.buttonTestBilateral.Name = "buttonTestBilateral";
-			this.buttonTestBilateral.Size = new System.Drawing.Size(84, 23);
+			this.buttonTestBilateral.Size = new System.Drawing.Size(72, 38);
 			this.buttonTestBilateral.TabIndex = 12;
 			this.buttonTestBilateral.Text = "Test Bilateral";
 			this.buttonTestBilateral.UseVisualStyleBackColor = true;
@@ -459,6 +461,16 @@
 			this.clearNormalToolStripMenuItem.Text = "Clear Normal";
 			this.clearNormalToolStripMenuItem.Click += new System.EventHandler(this.clearNormalToolStripMenuItem_Click);
 			// 
+			// buttonComputeIndirect
+			// 
+			this.buttonComputeIndirect.Location = new System.Drawing.Point(158, 250);
+			this.buttonComputeIndirect.Name = "buttonComputeIndirect";
+			this.buttonComputeIndirect.Size = new System.Drawing.Size(75, 38);
+			this.buttonComputeIndirect.TabIndex = 13;
+			this.buttonComputeIndirect.Text = "Compute Indirect";
+			this.buttonComputeIndirect.UseVisualStyleBackColor = true;
+			this.buttonComputeIndirect.Click += new System.EventHandler(this.buttonComputeIndirect_Click);
+			// 
 			// GeneratorForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -525,6 +537,7 @@
 		private ImagePanel imagePanelNormalMap;
 		private System.Windows.Forms.ContextMenuStrip contextMenuStripNormal;
 		private System.Windows.Forms.ToolStripMenuItem clearNormalToolStripMenuItem;
+		private System.Windows.Forms.Button buttonComputeIndirect;
 	}
 }
 

@@ -687,6 +687,10 @@ Generate();
 //			Generate_CPU( integerTrackbarControlRaysCount.Value );
 		}
 
+		private void buttonComputeIndirect_Click( object sender, EventArgs e ) {
+			todo!
+		}
+
 		private void buttonTestBilateral_Click( object sender, EventArgs e ) {
 			try {
 				panelParameters.Enabled = false;
@@ -733,33 +737,27 @@ Generate();
 			}
 		}
 
-		private void integerTrackbarControlRaysCount_SliderDragStop( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _StartValue )
-		{
+		private void integerTrackbarControlRaysCount_SliderDragStop( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _StartValue ) {
 			GenerateRays( _Sender.Value, floatTrackbarControlMaxConeAngle.Value * (float) (Math.PI / 180.0), m_SB_Rays );
 		}
 
-		private void floatTrackbarControlMaxConeAngle_SliderDragStop( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fStartValue )
-		{
+		private void floatTrackbarControlMaxConeAngle_SliderDragStop( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fStartValue ) {
 			GenerateRays( integerTrackbarControlRaysCount.Value, floatTrackbarControlMaxConeAngle.Value * (float) (Math.PI / 180.0), m_SB_Rays );
 		}
 
-		private void checkBoxViewsRGB_CheckedChanged( object sender, EventArgs e )
-		{
+		private void checkBoxViewsRGB_CheckedChanged( object sender, EventArgs e ) {
 			viewportPanelResult.ViewLinear = !checkBoxViewsRGB.Checked;
 		}
 
-		private void floatTrackbarControlBrightness_SliderDragStop( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fStartValue )
-		{
+		private void floatTrackbarControlBrightness_SliderDragStop( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fStartValue ) {
 			viewportPanelResult.Brightness = _Sender.Value;
 		}
 
-		private void floatTrackbarControlContrast_SliderDragStop( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fStartValue )
-		{
+		private void floatTrackbarControlContrast_SliderDragStop( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fStartValue ) {
 			viewportPanelResult.Contrast = _Sender.Value;
 		}
 
-		private void floatTrackbarControlGamma_SliderDragStop( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fStartValue )
-		{
+		private void floatTrackbarControlGamma_SliderDragStop( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fStartValue ) {
 			viewportPanelResult.Gamma = _Sender.Value;
 		}
 

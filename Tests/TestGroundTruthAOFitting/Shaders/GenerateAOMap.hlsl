@@ -48,10 +48,8 @@ uint	PackPixelPosition( float2 _position ) {
 //
 float	ComputeDirectionalOcclusion( uint2 _pixelPosition, float2 _textureDimensions, float3 _position, float3 _direction ) {
 
-	#if 1
-		// Scale the ray so we ensure to always walk at least a texel in the texture
-		_direction *= _direction.z < 1.0 ? 1.0 / sqrt( 1.0 - _direction.z * _direction.z ) : 1.0;
-	#endif
+	// Scale the ray so we ensure to always walk at least a texel in the texture
+	_direction *= _direction.z < 1.0 ? 1.0 / sqrt( 1.0 - _direction.z * _direction.z ) : 1.0;
 
 	float3	UVH = float3( _position.xy / _textureDimensions, _position.z );
 	float3	dUVH = float3( _direction.xy / _textureDimensions, _direction.z * _TexelSize_mm );
@@ -59,13 +57,10 @@ float	ComputeDirectionalOcclusion( uint2 _pixelPosition, float2 _textureDimensio
 
 	uint	sourcePackedPixelPosition = PackPixelPosition( _pixelPosition );
 
-	float	occlusion = 1.0;	// Start unoccluded
 	for ( uint stepIndex=0; stepIndex < _MaxStepsCount; stepIndex++ ) {
 		UVH += dUVH;	
 		if ( UVH.z >= _Displacement_mm )
 			break;		// Definitely escaped the surface!
-		if ( UVH.z < 0.0 )
-			return 0.0;	// Definitely occluded!
 
 		if ( _Tile ) {
 			UVH.xy = frac( UVH.xy );
@@ -74,7 +69,6 @@ float	ComputeDirectionalOcclusion( uint2 _pixelPosition, float2 _textureDimensio
 				break;	// Escaped the texture...
 		}
 
-//		float	H_mm = _Displacement_mm * _source.Load( int3( UVH.xy, 0 ) );
 		float	H_mm = _Displacement_mm * _source.SampleLevel( LinearClamp, UVH.xy, 0 );
 
 		// Simple test for a fully extruded height
@@ -94,16 +88,16 @@ float	ComputeDirectionalOcclusion( uint2 _pixelPosition, float2 _textureDimensio
 
 			_indirectPixelsStack[stackIndex] = uint2( sourcePackedPixelPosition, targetPackedPixelPosition );	// Register indirect hit
 
-			return 0;
-
 //			uint	onSenFout;
 //			InterlockedAdd( _indirectPixelsHistogram[sourcePixelPosition], 1, onSenFout );		// Increase histogram counter for our source pixel
+
+			return 0.0;
 		}
 
 		prevH_mm = H_mm;
 	}
 
-	return occlusion;
+	return 1.0;
 }
 
 // Build orthonormal basis from a 3D Unit Vector Without normalization [Frisvad2012])
@@ -141,7 +135,7 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID ) 
 		rayDirection = rayDirection.x * Tangent + rayDirection.y * BiTangent + rayDirection.z * Normal;
 
 //rayPosition.z += 1e-2 * _Displacement_mm;			// Nudge a little to avoid acnea
-rayPosition += 1e-2 * _Displacement_mm / _TexelSize_mm * Normal;	// Nudge a little to avoid acnea
+rayPosition += 1e-2 * (_Displacement_mm / _TexelSize_mm) * Normal;	// Nudge a little to avoid acnea
 
 		gs_occlusion[rayIndex] = ComputeDirectionalOcclusion( pixelPosition, dimensions, rayPosition, rayDirection );
 
