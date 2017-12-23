@@ -166,8 +166,8 @@ namespace GenerateSelfShadowedBumpMap
 
 LoadHeightMap( new System.IO.FileInfo( GetRegKey( "HeightMapFileName", System.IO.Path.Combine( m_ApplicationPath, "Example.jpg" ) ) ) );
 LoadNormalMap( new System.IO.FileInfo( GetRegKey( "NormalMapFileName", System.IO.Path.Combine( m_ApplicationPath, "Example.jpg" ) ) ) );
-Generate();
-buttonComputeIndirect_Click( null, EventArgs.Empty );
+//Generate();
+//buttonComputeIndirect_Click( null, EventArgs.Empty );
 
 		}
 
@@ -449,6 +449,16 @@ buttonComputeIndirect_Click( null, EventArgs.Empty );
 				textureAO_CPU.CopyFrom( textureAO );
 				textureAO.Dispose();
 
+				float[,]	AOValues = new float[textureAO_CPU.Width,textureAO_CPU.Height];
+
+
+// textureAO_CPU.ReadPixels( 0, 0, ( uint X, uint Y, System.IO.BinaryReader R ) => {
+// 	float	v = R.ReadSingle();
+// 	AOValues[X,Y] = v / Mathf.PI;
+// } );
+
+
+//*
 				System.IO.FileInfo	binaryDataFileName = new System.IO.FileInfo( System.IO.Path.GetFileNameWithoutExtension( m_sourceFileName.FullName ) + ".indirectMap" );
 				using ( System.IO.FileStream S = binaryDataFileName.Create() )
 					using ( System.IO.BinaryWriter Wr = new System.IO.BinaryWriter( S ) ) {
@@ -459,6 +469,7 @@ buttonComputeIndirect_Click( null, EventArgs.Empty );
 
 						textureAO_CPU.ReadPixels( 0, 0, ( uint X, uint Y, System.IO.BinaryReader R ) => {
 							float	v = R.ReadSingle();
+							AOValues[X,Y] = v;
 							Wr.Write( v );
 						} );
 
@@ -468,6 +479,26 @@ buttonComputeIndirect_Click( null, EventArgs.Empty );
 
 				textureAO_CPU.Dispose();
 //*/
+
+//*				//////////////////////////////////////////////////////////////////////////
+				// 4] Update the resulting bitmap
+				if ( m_imageResult != null )
+					m_imageResult.Dispose();
+				m_imageResult = new ImageUtility.ImageFile( W, H, ImageUtility.PIXEL_FORMAT.BGRA8, new ImageUtility.ColorProfile( ImageUtility.ColorProfile.STANDARD_PROFILE.sRGB ) );
+
+//				textureAO_CPU.ReadPixels( 0, 0, ( uint X, uint Y, System.IO.BinaryReader R ) => { AOValues[X,Y] = R.ReadSingle(); } );
+
+				m_imageResult.WritePixels( ( uint X, uint Y, ref float4 _color ) => {
+					float	v = AOValues[X,Y] / Mathf.PI;
+//float	v = AOValues[X,Y] / (2.0f * Mathf.PI);
+//v = Mathf.Pow( v, 0.454545f );	// Quick gamma correction to have more precision in the shadows???
+					
+					_color.Set( v, v, v, 1.0f );
+				} );
+
+				// Assign result
+				viewportPanelResult.Bitmap = m_imageResult.AsBitmap;
+
 			} catch ( Exception _e ) {
 				MessageBox( "An error occurred during generation!\r\n\r\nDetails: ", _e );
 			} finally {
@@ -512,7 +543,7 @@ buttonComputeIndirect_Click( null, EventArgs.Empty );
 			_raysCount = Math.Min( (int) MAX_THREADS, _raysCount );
 
 //*
-_maxConeAngle = Mathf.PI;
+//_maxConeAngle = Mathf.PI;
 
 			Hammersley	hammersley = new Hammersley();
 			double[,]	sequence = hammersley.BuildSequence( _raysCount, 2 );
@@ -529,16 +560,6 @@ _maxConeAngle = Mathf.PI;
 			}
 			sumCosTheta /= _raysCount;	// Summing cos(theta) yields 1/2 as expected
 //*/
-
-////			float	pipo = 0.0f;
-// 			float	pipo2 = 0.0f;
-// 			for ( int Y=0; Y < 100; Y++ ) {
-// 				float	theta = 2.0f * (float) Math.Acos( Math.Sqrt( 1.0f - 0.5 * (Y + SimpleRNG.GetUniform()) / 100.0 ) );
-// 				pipo += Mathf.Cos( theta );
-// 				pipo2 += Mathf.Sin( (Y+0.5f) * Mathf.PI / 200.0f ) * Mathf.PI / 200.0f;
-// 			}
-// 			pipo *= 2.0f * Mathf.PI / 100.0f;
-// 			pipo2 *= 2.0f * Mathf.PI;
 
 			_target.Write();
 		}

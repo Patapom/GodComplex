@@ -26,8 +26,7 @@ namespace GenerateSelfShadowedBumpMap
 		private float				m_Contrast = 0.0f;
 		private float				m_Gamma = 0.0f;
 
-		public Bitmap		Bitmap
-		{
+		public Bitmap		Bitmap {
 			get { return m_Bitmap; }
 			set {
 				m_Bitmap = value;
@@ -35,8 +34,7 @@ namespace GenerateSelfShadowedBumpMap
 			}
 		}
 
-		public float		Brightness
-		{
+		public float		Brightness {
 			get { return m_Brightness; }
 			set {
 				m_Brightness = value;
@@ -44,8 +42,7 @@ namespace GenerateSelfShadowedBumpMap
 			}
 		}
 
-		public float		Contrast
-		{
+		public float		Contrast {
 			get { return m_Contrast; }
 			set {
 				m_Contrast = value;
@@ -53,8 +50,7 @@ namespace GenerateSelfShadowedBumpMap
 			}
 		}
 
-		public float		Gamma
-		{
+		public float		Gamma {
 			get { return m_Gamma; }
 			set {
 				m_Gamma = value;
@@ -63,11 +59,9 @@ namespace GenerateSelfShadowedBumpMap
 		}
 
 		private bool		m_viewLinear = false;
-		public bool			ViewLinear
-		{
+		public bool			ViewLinear {
 			get { return m_viewLinear; }
-			set
-			{
+			set {
 				m_viewLinear = value;
 				UpdateBitmap();
 			}
@@ -130,36 +124,29 @@ namespace GenerateSelfShadowedBumpMap
 		}
 #endif
 
-		protected override void OnSizeChanged( EventArgs e )
-		{
+		protected override void OnSizeChanged( EventArgs e ) {
 			base.OnSizeChanged( e );
 			Invalidate();
 		}
 
-		protected override void OnPaintBackground( PaintEventArgs e )
-		{
+		protected override void OnPaintBackground( PaintEventArgs e ) {
 //			base.OnPaintBackground( e );
 		}
 
-		protected override void OnPaint( PaintEventArgs e )
-		{
+		protected override void OnPaint( PaintEventArgs e ) {
 			base.OnPaint( e );
 
 			e.Graphics.FillRectangle( Brushes.Black, 0, 0, Width, Height );
-			if ( m_Bitmap != null )
-			{
+			if ( m_Bitmap != null ) {
 				RectangleF	Rect = ImageClientRect;
 				e.Graphics.DrawImage( m_Bitmap, Rect, new RectangleF( 0, 0, m_Bitmap.Width, m_Bitmap.Height ), GraphicsUnit.Pixel );
-			}
-			else if ( m_MessageOnEmpty != null )
-			{
+			} else if ( m_MessageOnEmpty != null ) {
 				SizeF	MessageSize = e.Graphics.MeasureString( m_MessageOnEmpty, Font, Width );
 				e.Graphics.DrawString( m_MessageOnEmpty, Font, Brushes.White, 0.5f * (Width-MessageSize.Width), 0.5f * (Height-MessageSize.Height) );
 			}
 		}
 
-		private unsafe void	UpdateBitmap()
-		{
+		private unsafe void	UpdateBitmap() {
 // 			if ( m_Image == null )
 // 				return;
 // 

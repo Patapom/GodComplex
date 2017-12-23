@@ -206,7 +206,7 @@
 			this.floatTrackbarControlMaxConeAngle.RangeMin = 1F;
 			this.floatTrackbarControlMaxConeAngle.Size = new System.Drawing.Size(200, 20);
 			this.floatTrackbarControlMaxConeAngle.TabIndex = 2;
-			this.floatTrackbarControlMaxConeAngle.Value = 160F;
+			this.floatTrackbarControlMaxConeAngle.Value = 179F;
 			this.floatTrackbarControlMaxConeAngle.VisibleRangeMax = 180F;
 			this.floatTrackbarControlMaxConeAngle.VisibleRangeMin = 1F;
 			this.floatTrackbarControlMaxConeAngle.SliderDragStop += new Nuaj.Cirrus.Utility.FloatTrackbarControl.SliderDragStopEventHandler(this.floatTrackbarControlMaxConeAngle_SliderDragStop);
