@@ -419,8 +419,12 @@ LoadNormalMap( new System.IO.FileInfo( GetRegKey( "NormalMapFileName", System.IO
 					uint	sourceOffset = 0;
 					for ( uint Y=Y0; Y < Y1; Y++ ) {
 						for ( uint X=0; X < W; X++ ) {
-							for ( uint rayIndex=0; rayIndex < raysCount; rayIndex++ )
-								indirectPixels[targetOffset++] = SB_IndirectPixels.m[sourceOffset++];
+							for ( uint rayIndex=0; rayIndex < raysCount; rayIndex++ ) {
+								uint	v = SB_IndirectPixels.m[sourceOffset++];
+// 								if ( v != raysCount * (W*Y+X) + rayIndex )
+// 									throw new Exception( "Unexpected index!" );
+								indirectPixels[targetOffset++] = v;
+							}
 						}
 					}
 //*/
@@ -636,6 +640,9 @@ LoadNormalMap( new System.IO.FileInfo( GetRegKey( "NormalMapFileName", System.IO
 				if ( !m_CS_ComputeIndirectLighting.Use() )
 					throw new Exception( "Failed to use Indirect Lighting compute shader!" );
 
+				const uint	MAX_BOUNCE = 4;
+				float[][,]	arrayOfIlluminanceValues = new float[1+MAX_BOUNCE][,];
+
 				//////////////////////////////////////////////////////////////////////////
 				// 1] Load raw binary data
 				Renderer.Texture2D				texAO = null;
@@ -657,10 +664,14 @@ LoadNormalMap( new System.IO.FileInfo( GetRegKey( "NormalMapFileName", System.IO
 
 						Renderer.PixelsBuffer	contentAO = new Renderer.PixelsBuffer( W*H*4 );
 
+						float[,]	illuminanceValues = new float[W,H];
+						arrayOfIlluminanceValues[0] = illuminanceValues;
 						using ( System.IO.BinaryWriter W_AO = contentAO.OpenStreamWrite() ) {
 							for ( uint Y=0; Y < H; Y++ ) {
 								for ( uint X=0; X < W; X++ ) {
-									W_AO.Write( R.ReadSingle() );
+									float	v = R.ReadSingle();
+									illuminanceValues[X,Y] = v;
+									W_AO.Write( v );
 								}
 							}
 						}
@@ -671,23 +682,30 @@ LoadNormalMap( new System.IO.FileInfo( GetRegKey( "NormalMapFileName", System.IO
 						uint	stackSize = tempW * tempH * raysCount;
 						SBIndirectPixelsStack = new Renderer.StructuredBuffer<uint>( m_device, stackSize, true );
 						for ( uint i=0; i < stackSize; i++ ) {
-							SBIndirectPixelsStack.m[i] = R.ReadUInt32();
+							uint	v = R.ReadUInt32();
+// 							if ( v != i )
+// 								throw new Exception( "Unexpected index!" );
+							SBIndirectPixelsStack.m[i] = v;
 						}
+						SBIndirectPixelsStack.Write();
 					}
 
 				//////////////////////////////////////////////////////////////////////////
 				// 2] Compute multiple bounces of indirect lighting
-				Renderer.Texture2D	sourceIlluminance = new Renderer.Texture2D( m_device, W, H, 1, 1, ImageUtility.PIXEL_FORMAT.R32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, true, null );
 				Renderer.Texture2D	targetIlluminance = new Renderer.Texture2D( m_device, W, H, 1, 1, ImageUtility.PIXEL_FORMAT.R32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, true, null );
+				Renderer.Texture2D	sourceIlluminance = new Renderer.Texture2D( m_device, W, H, 1, 1, ImageUtility.PIXEL_FORMAT.R32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, true, null );
 
 				Renderer.Texture2D	targetIlluminance_CPU = new Renderer.Texture2D( m_device, W, H, 1, 1, ImageUtility.PIXEL_FORMAT.R32F, ImageUtility.COMPONENT_FORMAT.AUTO, true, false, null );
 
-				m_device.Clear( sourceIlluminance, float4.One );
+//				m_device.Clear( sourceIlluminance, float4.One );
+				sourceIlluminance.CopyFrom( texAO );
 
-				texAO.SetCS( 1 );
-				m_textureSourceHeightMap.SetCS( 2 );
-				m_textureSourceNormal.SetCS( 3 );
-				SBIndirectPixelsStack.SetInput( 4 );
+//				texAO.SetCS( 1 );
+				m_textureSourceHeightMap.SetCS( 1 );
+				m_textureSourceNormal.SetCS( 2 );
+				SBIndirectPixelsStack.SetInput( 3 );
+
+m_SB_Rays.SetInput( 4 );
 
 				m_CB_Indirect.m._DimensionsX = W;
 				m_CB_Indirect.m._DimensionsY = H;
@@ -695,9 +713,6 @@ LoadNormalMap( new System.IO.FileInfo( GetRegKey( "NormalMapFileName", System.IO
 				m_CB_Indirect.m.TexelSize_mm = TextureSize_mm / Math.Max( W, H );
 				m_CB_Indirect.m.Displacement_mm = TextureHeight_mm;
 				m_CB_Indirect.UpdateData();
-
-				const uint	MAX_BOUNCE = 4;
-				float[][,]	arrayOfIlluminanceValues = new float[MAX_BOUNCE][,];
 
 				for ( uint bounceIndex=0; bounceIndex < MAX_BOUNCE; bounceIndex++ ) {
 
@@ -708,10 +723,9 @@ LoadNormalMap( new System.IO.FileInfo( GetRegKey( "NormalMapFileName", System.IO
 					m_CS_ComputeIndirectLighting.Dispatch( W, H, 1 );
 
 					// Read back
-					targetIlluminance_CPU.CopyFrom( targetIlluminance );
-
 					float[,]	illuminanceValues = new float[W,H];
-					arrayOfIlluminanceValues[bounceIndex] = illuminanceValues;
+					arrayOfIlluminanceValues[1+bounceIndex] = illuminanceValues;
+					targetIlluminance_CPU.CopyFrom( targetIlluminance );
 					targetIlluminance_CPU.ReadPixels( 0, 0, ( uint X, uint Y, System.IO.BinaryReader _R ) => { illuminanceValues[X,Y] = _R.ReadSingle(); } );
 
 					// Swap source and target illuminance values for next bounce
@@ -729,6 +743,40 @@ LoadNormalMap( new System.IO.FileInfo( GetRegKey( "NormalMapFileName", System.IO
 
 				SBIndirectPixelsStack.Dispose();
 				texAO.Dispose();
+
+
+				//////////////////////////////////////////////////////////////////////////
+				// 3] Write resulting data
+				System.IO.FileInfo	resultDataFileName = new System.IO.FileInfo( System.IO.Path.GetFileNameWithoutExtension( m_sourceFileName.FullName ) + ".AO" );
+				using ( System.IO.FileStream S = resultDataFileName.Create() )
+					using ( System.IO.BinaryWriter Wr = new System.IO.BinaryWriter( S ) ) {
+						Wr.Write( W );
+						Wr.Write( H );
+						Wr.Write( 1+MAX_BOUNCE );
+						for ( uint bounceIndex=0; bounceIndex <= MAX_BOUNCE; bounceIndex++ ) {
+							float[,]	illuminanceValues = arrayOfIlluminanceValues[bounceIndex];
+							for ( uint Y=0; Y < H; Y++ )
+								for ( uint X=0; X < W; X++ )
+									Wr.Write( illuminanceValues[X,Y] );
+						}
+					}
+
+//*				//////////////////////////////////////////////////////////////////////////
+				// 4] Update the resulting bitmap
+				if ( m_imageResult != null )
+					m_imageResult.Dispose();
+				m_imageResult = new ImageUtility.ImageFile( W, H, ImageUtility.PIXEL_FORMAT.BGRA8, new ImageUtility.ColorProfile( ImageUtility.ColorProfile.STANDARD_PROFILE.sRGB ) );
+
+				m_imageResult.WritePixels( ( uint X, uint Y, ref float4 _color ) => {
+					float	v = arrayOfIlluminanceValues[1][X,Y] / Mathf.PI;
+//float	v = arrayOfIlluminanceValues[0][X,Y] / (2.0f * Mathf.PI);
+//v = Mathf.Pow( v, 0.454545f );	// Quick gamma correction to have more precision in the shadows???
+					
+					_color.Set( v, v, v, 1.0f );
+				} );
+
+				// Assign result
+				viewportPanelResult.Bitmap = m_imageResult.AsBitmap;
 
 			} catch ( Exception _e ) {
 				MessageBox( "An error occurred during generation!\r\n\r\nDetails: ", _e );

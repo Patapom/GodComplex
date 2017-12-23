@@ -19,23 +19,15 @@ cbuffer	CBInput : register( b0 ) {
 Texture2D<float>			_sourceIlluminance : register( t0 );
 RWTexture2D<float>			_targetIlluminance : register( u0 );
 
-Texture2D<float>			_sourceAO : register( t1 );
-Texture2D<float>			_sourceHeight : register( t2 );
-Texture2D<float3>			_sourceNormals : register( t3 );
-StructuredBuffer<uint>		_indirectPixelsStack : register( t4 );
+Texture2D<float>			_sourceHeight : register( t1 );
+Texture2D<float3>			_sourceNormals : register( t2 );
+StructuredBuffer<uint>		_indirectPixelsStack : register( t3 );
+StructuredBuffer<float3>	_rays : register( t4 );
 
-
-//groupshared uint2			gs_offsetCount;
-//groupshared float			gs_sumCosTheta;
 groupshared float3			gs_position_mm;
 groupshared float3			gs_normal;
 groupshared uint			gs_accumulator = 0;
 
-
-uint	PackPixelPosition( float2 _position ) {
-	uint2	intPosition = uint2( floor( _position ) );
-	return ((intPosition.y & 0xFFFFU) << 16) | (intPosition.x & 0xFFFFU);
-}
 
 // Build orthonormal basis from a 3D Unit Vector Without normalization [Frisvad2012])
 void BuildOrthonormalBasis( float3 _normal, out float3 _tangent, out float3 _bitangent ) {
@@ -59,68 +51,89 @@ void	CS( uint3 _groupID : SV_groupID, uint3 _groupThreadID : SV_groupThreadID ) 
 
 	GroupMemoryBarrierWithGroupSync();
 
+//*
 	if ( rayIndex < _raysCount ) {
 		// Accumulate indirect luminance
-		uint	packedNeighborPixelPosition = _indirectPixelsStack[_raysCount * (_textureDimensions.x * _groupID.y + _groupID.x) + rayIndex];
+		uint	packedNeighborPixelPosition = _indirectPixelsStack[_raysCount * (_textureDimensions.x * pixelPosition.y + pixelPosition.x) + rayIndex];
 		if ( packedNeighborPixelPosition != ~0U ) {
-			// Retrieve indirect sample's position and normal
-			uint2	neighborPixelPosition = uint2( packedNeighborPixelPosition & 0xFFFFU, packedNeighborPixelPosition >> 16 );
-			uint2	tiledNeighborPixelPosition = neighborPixelPosition % _textureDimensions;
+			#if 1
+				// Retrieve indirect sample's position
+				uint2	neighborPixelPosition = uint2( packedNeighborPixelPosition & 0xFFFFU, packedNeighborPixelPosition >> 16 );
+				uint2	tiledNeighborPixelPosition = neighborPixelPosition % _textureDimensions;
 
-//			float3	neighborNormal = _sourceNormals.SampleLevel( LinearClamp, neighborUV, 0 );
-			float3	neighborPosition_mm = float3( _texelSize_mm * neighborPixelPosition, _displacement_mm * _sourceHeight[tiledNeighborPixelPosition] );
+				// Sample neighbor's illuminance
+				float	neighborIlluminance = _sourceIlluminance[tiledNeighborPixelPosition];
 
-			// Compute perceived luminance
-			float	neighborAO = _sourceAO[tiledNeighborPixelPosition];
-			float	neighborIlluminance = _sourceIlluminance[tiledNeighborPixelPosition];
+				float	albedo = 1.0;	// Assuming a unit albedo (will be scaled on CPU by actual albedo since bounces are stored independently)
+				float	neighborLuminance = (albedo / PI) * neighborIlluminance;
 
-			#if 0
-			// We're approximating the direct lighting perceived by the neighbor position by computing the
-			//	unit luminance L0 directly perceived by the neighbor position and weighted by the cos(theta)
-			//	through a cone whose aperture angle is given by AO:
-			//
-			//	E(x) = 2PI * Integral[0,alpha]( L0 cos(theta) sin(theta) dtheta )
-			//	alpha = PI/2 * AO the aperture angle of the cone
-			//
-			// This integral reduces into:
-			//	E(x) = L0 * 2PI * (-1/2) * [cos²(alpha) - cos²(0)] = L0 * PI * [1 - cos²(alpha)] = L0 * PI * sin²(alpha)
-			//
-			// We obtain reflected luminance Li(x,w) as:
-			//	Li(x,w) = E(x) * rho/PI
-			//	rho = neighbor surface's albedo that we assume to be 1 everywhere and that will be properly weighted on CPU side
-			//
-			float	sinAlpha = sin( neighborAO * PI / 2.0 );
-			float	directNeighborIlluminance = PI * sinAlpha * sinAlpha * neighborIlluminance;	// Assuming a unit luminance in all directions from normal cone
+				// Compute incoming ray's dot product with normal
+				float3	lsRayDirection = _rays[rayIndex];
+				float	cosTheta = lsRayDirection.z;
 			#else
-				// The AO texture directly gives us the cosine-weighted direct illuminance perceived by the neighbor position
-				float	directNeighborIlluminance = neighborAO * neighborIlluminance;
+				// Original version but not precise enough with cos(theta) and needs to have 2 pixel positions, one for position computation and the other for texture sampling
+				// It's better to use the ray direction from the texture to extract the cos(theta)
+				//
+
+				// Retrieve indirect sample's position
+				int2	neighborPixelPosition = int2( packedNeighborPixelPosition & 0xFFFFU, packedNeighborPixelPosition >> 16 ) - _textureDimensions;
+				uint2	tiledNeighborPixelPosition = neighborPixelPosition % _textureDimensions;
+				float3	neighborPosition_mm = float3( _texelSize_mm * neighborPixelPosition, _displacement_mm * _sourceHeight[tiledNeighborPixelPosition] );
+
+				// Compute perceived luminance
+				#if 0
+					// We're approximating the direct lighting perceived by the neighbor position by computing the
+					//	unit luminance L0 directly perceived by the neighbor position and weighted by the cos(theta)
+					//	through a cone whose aperture angle is given by AO:
+					//
+					//	E(x) = 2PI * Integral[0,alpha]( L0 cos(theta) sin(theta) dtheta )
+					//	alpha = PI/2 * AO the aperture angle of the cone
+					//
+					// This integral reduces into:
+					//	E(x) = L0 * 2PI * (-1/2) * [cos²(alpha) - cos²(0)] = L0 * PI * [1 - cos²(alpha)] = L0 * PI * sin²(alpha)
+					//
+					// We obtain reflected luminance Li(x,w) as:
+					//	Li(x,w) = E(x) * rho/PI
+					//	rho = neighbor surface's albedo that we assume to be 1 everywhere and that will be properly weighted on CPU side
+					//
+					fetch AO, but for what reason? This is wrong!
+					float	sinAlpha = sin( neighborAO * PI / 2.0 );
+					float	neighborIlluminance = PI * sinAlpha * sinAlpha * _sourceIlluminance[tiledNeighborPixelPosition];	// Assuming a unit luminance in all directions from normal cone
+				#else
+					// Direct illuminance at the neighbor position
+					float	neighborIlluminance = _sourceIlluminance[tiledNeighborPixelPosition];
+				#endif
+				float	albedo = 1.0;	// Assuming a unit albedo (will be scaled on CPU by actual albedo since bounces are stored independently)
+				float	neighborLuminance = (albedo / PI) * neighborIlluminance;
+
+				// Compute incoming ray's dot product with normal
+				float3	incomingDirection = neighborPosition_mm - gs_position_mm;
+				float	distance2Neighbor = length( incomingDirection );
+						incomingDirection *= distance2Neighbor > 0.0 ? 1.0 / distance2Neighbor : 0.0;
+
+				float	cosTheta = saturate( dot( incomingDirection, gs_normal ) );
 			#endif
-			float	albedo = 1.0;	// Assuming a unit albedo (will be scaled on CPU by actual albedo)
-			float	directNeighborLuminance = (albedo / PI) * directNeighborIlluminance;
 
 			// We then accumulate the neighbor's luminance weighted by the cosine of the angle formed by the incoming ray and normal
-			float3	incomingDirection = neighborPosition_mm - gs_position_mm;
-			float	distance2Neighbor = length( incomingDirection );
-					incomingDirection *= distance2Neighbor > 0.0 ? 1.0 / distance2Neighbor : 0.0;
-
-			float	cosTheta = saturate( dot( incomingDirection, gs_normal ) );
-//			float	sinTheta = sqrt( 1.0 - cosTheta*cosTheta );
-//			float	solidAngle = sinTheta * dTheta;	// C'est quoi dTHeta???
-			float	solidAngle = 1.0;				// Assume equal solid angle distribution of samples
-
 			float	dontCare;
-			InterlockedAdd( gs_accumulator, uint( 1024.0 * directNeighborLuminance * cosTheta * solidAngle ), dontCare );
+			InterlockedAdd( gs_accumulator, uint( 65536.0 * neighborLuminance * cosTheta ), dontCare );
+//InterlockedAdd( gs_accumulator, uint( 65536.0 * cosTheta ), dontCare );
+//InterlockedAdd( gs_accumulator, uint( 65536.0 * _rays[rayIndex].z ), dontCare );
+
+// Accumulate non-hit to verify we have the same results as AO generation
+//} else {
+//	float3	lsRayDirection = _rays[rayIndex];
+//	float	dontCare;
+//	InterlockedAdd( gs_accumulator, uint( 65536.0 * lsRayDirection.z ), dontCare );
 		}
 	}
 
 	GroupMemoryBarrierWithGroupSync();
-
+//*/
 	// Use thread 0 to accumulate final result
 	if ( rayIndex == 0 ) {
-//		float	result = 0.0;
-//		for ( uint i=0; i < _raysCount.y; i++ )
-//			result += gs_accumulator[i];
-//		_targetIlluminance[pixelPosition] = result;
-		_targetIlluminance[pixelPosition] = gs_accumulator / 1024.0;
+		_targetIlluminance[pixelPosition] = 2.0 * PI * gs_accumulator / (65536.0 * _raysCount);
+//		_targetIlluminance[pixelPosition] = _sourceIlluminance[pixelPosition];
+//		_targetIlluminance[pixelPosition] = 2.0 * PI * float( _indirectPixelsStack[_raysCount * (_textureDimensions.x * pixelPosition.y + pixelPosition.x) + 0] ) / (_raysCount * _textureDimensions.x * _textureDimensions.y);
 	}
 }

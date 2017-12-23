@@ -10,16 +10,16 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[      4008,        131]
-NotebookOptionsPosition[      3581,        112]
-NotebookOutlinePosition[      3929,        127]
-CellTagsIndexPosition[      3886,        124]
+NotebookDataLength[     10187,        337]
+NotebookOptionsPosition[      9758,        318]
+NotebookOutlinePosition[     10103,        333]
+CellTagsIndexPosition[     10060,        330]
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
 Notebook[{
 Cell[TextData[{
- "Symbolic integration of  ",
+ "Symbolic integration of the cosine-weighted constant visibility function ",
  Cell[BoxData[
   FormBox[
    RowBox[{
@@ -48,7 +48,8 @@ Cell[TextData[{
   FormatType->"TraditionalForm"]
 }], "Text",
  CellChangeTimes->{{3.723036112061536*^9, 3.723036313166605*^9}, {
-  3.7230365034170094`*^9, 3.723036527140775*^9}}],
+  3.7230365034170094`*^9, 3.723036527140775*^9}, {3.7230464317220573`*^9, 
+  3.7230464607625704`*^9}}],
 
 Cell[CellGroupData[{
 
@@ -70,16 +71,24 @@ Cell[BoxData["\[Pi]"], "Output",
 
 Cell[TextData[{
  "We can then assume that the Ambient Occlusion value of a flat, unoccluded \
-pixel should equal \[Pi], which is then scaled to 1.\nSo \
-let\[CloseCurlyQuote]s decide that an AO map\[CloseCurlyQuote]s value should \
-be scaled by \[Pi] when read, multiplied by ",
+surface should equal \[Pi], which is then scaled to 1 to be stored into a \
+classical AO texture.\nSo let\[CloseCurlyQuote]s decide that an AO map\
+\[CloseCurlyQuote]s value should be scaled by \[Pi] when read by a shader, \
+multiplied by ",
  Cell[BoxData[
   FormBox[
    FractionBox["\[Rho]", "\[Pi]"], TraditionalForm]],
   FormatType->"TraditionalForm"],
  "the surface\[CloseCurlyQuote]s albedo to obtain a [0,1] ambient reflectance \
 value, then multiplied by the irradiance perceived by the surface to finally \
-obtain the reflected radiance:\n\t",
+obtain the reflected radiance in the outgoing direction ",
+ Cell[BoxData[
+  FormBox[
+   StyleBox[
+    SubscriptBox["\[Omega]", "o"],
+    FontWeight->"Bold"], TraditionalForm]],
+  FormatType->"TraditionalForm"],
+ ":\n\t",
  Cell[BoxData[
   FormBox[
    RowBox[{
@@ -105,13 +114,210 @@ obtain the reflected radiance:\n\t",
   FormatType->"TraditionalForm"]
 }], "Text",
  CellChangeTimes->{{3.7230363977403526`*^9, 3.723036423036231*^9}, {
-  3.723036538318673*^9, 3.7230369539683084`*^9}}],
+  3.723036538318673*^9, 3.7230369539683084`*^9}, {3.7230426139151125`*^9, 
+  3.723042651755843*^9}, {3.723046409358283*^9, 3.7230464101067867`*^9}, {
+  3.723046501722507*^9, 3.723046503042441*^9}}],
 
-Cell[BoxData[""], "Input",
- CellChangeTimes->{{3.723036333186748*^9, 3.7230363350380597`*^9}}]
+Cell[TextData[{
+ "We can write the \[OpenCurlyDoubleQuote]direct\[CloseCurlyDoubleQuote] \
+irradiance estimate as:\n\t",
+ Cell[BoxData[
+  FormBox[
+   RowBox[{
+    RowBox[{
+     SubscriptBox["E", "0"], "(", 
+     StyleBox["x",
+      FontWeight->"Bold"], ")"}], "=", 
+    RowBox[{
+     SubsuperscriptBox["\[Integral]", "\[CapitalOmega]", "\[Placeholder]"], 
+     RowBox[{
+      SubscriptBox["L", "0"], " ", 
+      RowBox[{
+       SubscriptBox["V", "dir"], "(", 
+       StyleBox[
+        SubscriptBox["\[Omega]", "i"],
+        FontWeight->"Bold"], ")"}], 
+      RowBox[{"(", 
+       RowBox[{
+        StyleBox["n",
+         FontWeight->"Bold"], ".", 
+        StyleBox[
+         SubscriptBox["\[Omega]", "i"],
+         FontWeight->"Bold"]}], ")"}], 
+      RowBox[{"\[DifferentialD]", 
+       SubscriptBox["\[Omega]", "i"]}]}]}]}], TraditionalForm]],
+  FormatType->"TraditionalForm"],
+ "\nWhere ",
+ Cell[BoxData[
+  FormBox[
+   RowBox[{
+    SubscriptBox["L", "0"], "=", "1"}], TraditionalForm]]],
+ " and ",
+ Cell[BoxData[
+  FormBox[
+   RowBox[{
+    SubscriptBox["V", "dir"], "(", 
+    StyleBox[
+     SubscriptBox["\[Omega]", "i"],
+     FontWeight->"Bold"], ")"}], TraditionalForm]]],
+ " represents the direct visibility function that equals 1 if the ray is \
+unoccluded by the surface, 0 otherwise.\nWe notice that ",
+ Cell[BoxData[
+  FormBox[
+   RowBox[{
+    SubscriptBox["E", "0"], "(", 
+    StyleBox["x",
+     FontWeight->"Bold"], ")"}], TraditionalForm]]],
+ " is exactly the value computed for the Ambient Occlusion, so ",
+ Cell[BoxData[
+  FormBox[
+   RowBox[{
+    RowBox[{
+     SubscriptBox["E", "0"], "(", 
+     StyleBox["x",
+      FontWeight->"Bold"], ")"}], "=", "AO"}], TraditionalForm]]],
+ ".\[LineSeparator]\nWe can then write the general expression for the \
+\[OpenCurlyDoubleQuote]indirect\[CloseCurlyDoubleQuote] irradiance estimate \
+as:\n\t",
+ Cell[BoxData[
+  FormBox[
+   RowBox[{
+    RowBox[{
+     SubscriptBox["E", 
+      RowBox[{"n", "+", "1"}]], "(", 
+     StyleBox["x",
+      FontWeight->"Bold"], ")"}], "=", 
+    RowBox[{
+     SubsuperscriptBox["\[Integral]", "\[CapitalOmega]", "\[Placeholder]"], 
+     RowBox[{
+      RowBox[{
+       SubscriptBox["L", "i"], "(", 
+       RowBox[{
+        StyleBox["x",
+         FontWeight->"Bold"], ",", 
+        StyleBox[
+         SubscriptBox["\[Omega]", "i"],
+         FontWeight->"Bold"]}], " ", ")"}], 
+      RowBox[{
+       SubscriptBox["V", "ind"], "(", 
+       StyleBox[
+        SubscriptBox["\[Omega]", "i"],
+        FontWeight->"Bold"], ")"}], 
+      RowBox[{"(", 
+       RowBox[{
+        StyleBox["n",
+         FontWeight->"Bold"], ".", 
+        StyleBox[
+         SubscriptBox["\[Omega]", "i"],
+         FontWeight->"Bold"]}], ")"}], 
+      RowBox[{"\[DifferentialD]", 
+       SubscriptBox["\[Omega]", "i"]}]}]}]}], TraditionalForm]],
+  FormatType->"TraditionalForm"],
+ "\nWhere ",
+ Cell[BoxData[
+  FormBox[
+   RowBox[{
+    SubscriptBox["V", "ind"], "(", 
+    StyleBox[
+     SubscriptBox["\[Omega]", "i"],
+     FontWeight->"Bold"], ")"}], TraditionalForm]]],
+ " represents the indirect visibility function that equals 1 if the ray ",
+ StyleBox["is",
+  FontWeight->"Bold"],
+ " occluded by the surface, 0 otherwise (so ",
+ Cell[BoxData[
+  FormBox[
+   RowBox[{
+    RowBox[{
+     SubscriptBox["V", "ind"], "(", 
+     StyleBox[
+      SubscriptBox["\[Omega]", "i"],
+      FontWeight->"Bold"], ")"}], "=", 
+    RowBox[{"1", "-", 
+     RowBox[{
+      SubscriptBox["V", "dir"], "(", 
+      StyleBox[
+       SubscriptBox["\[Omega]", "i"],
+       FontWeight->"Bold"], ")"}]}]}], TraditionalForm]]],
+ " ).\nWe can rewrite the perceived incoming luminance ",
+ Cell[BoxData[
+  FormBox[
+   RowBox[{
+    SubscriptBox["L", "i"], "(", 
+    RowBox[{
+     StyleBox["x",
+      FontWeight->"Bold"], ",", 
+     StyleBox[
+      SubscriptBox["\[Omega]", "i"],
+      FontWeight->"Bold"]}], " ", ")"}], TraditionalForm]]],
+ " from a neighbor location ",
+ Cell[BoxData[
+  FormBox[
+   StyleBox[
+    RowBox[{"x", "'"}],
+    FontWeight->"Bold"], TraditionalForm]],
+  FormatType->"TraditionalForm"],
+ " as:\n\t",
+ Cell[BoxData[
+  FormBox[
+   RowBox[{
+    RowBox[{
+     SubscriptBox["L", "i"], "(", 
+     RowBox[{
+      StyleBox["x",
+       FontWeight->"Bold"], ",", 
+      StyleBox[
+       SubscriptBox["\[Omega]", "i"],
+       FontWeight->"Bold"]}], " ", ")"}], "=", 
+    RowBox[{
+     FractionBox["\[Rho]", "\[Pi]"], " ", 
+     RowBox[{
+      SubscriptBox["E", "n"], "(", 
+      StyleBox[
+       RowBox[{"x", "'"}],
+       FontWeight->"Bold"], ")"}]}]}], TraditionalForm]]],
+ "\nAnd finally:\n\t",
+ Cell[BoxData[
+  FormBox[
+   RowBox[{
+    RowBox[{
+     SubscriptBox["E", 
+      RowBox[{"n", "+", "1"}]], "(", 
+     StyleBox["x",
+      FontWeight->"Bold"], ")"}], "=", 
+    RowBox[{
+     SubsuperscriptBox["\[Integral]", "\[CapitalOmega]", "\[Placeholder]"], 
+     RowBox[{
+      FractionBox["\[Rho]", "\[Pi]"], " ", 
+      RowBox[{
+       SubscriptBox["E", "n"], "(", 
+       StyleBox[
+        RowBox[{"x", "'"}],
+        FontWeight->"Bold"], ")"}], 
+      RowBox[{
+       SubscriptBox["V", "ind"], "(", 
+       StyleBox[
+        SubscriptBox["\[Omega]", "i"],
+        FontWeight->"Bold"], ")"}], 
+      RowBox[{"(", 
+       RowBox[{
+        StyleBox["n",
+         FontWeight->"Bold"], ".", 
+        StyleBox[
+         SubscriptBox["\[Omega]", "i"],
+         FontWeight->"Bold"]}], ")"}], 
+      RowBox[{"\[DifferentialD]", 
+       SubscriptBox["\[Omega]", "i"]}]}]}]}], TraditionalForm]],
+  FormatType->"TraditionalForm"],
+ "\n\nWe easily see that we can compute the irradiance incrementally by \
+re-using the previous irradiance at the indirect neighbor locations."
+}], "Text",
+ CellChangeTimes->{{3.7230465873379946`*^9, 3.723047157411728*^9}, {
+  3.723047189639493*^9, 3.7230472105492654`*^9}, {3.7230472432953997`*^9, 
+  3.723047340647176*^9}}]
 },
-WindowSize->{1920, 1007},
-WindowMargins->{{-8, Automatic}, {Automatic, -8}},
+WindowSize->{1608, 991},
+WindowMargins->{{0, Automatic}, {Automatic, 0}},
 FrontEndVersion->"10.0 for Microsoft Windows (64-bit) (September 9, 2014)",
 StyleDefinitions->"Default.nb"
 ]
@@ -126,13 +332,13 @@ CellTagsIndex->{}
 *)
 (*NotebookFileOutline
 Notebook[{
-Cell[558, 20, 1027, 30, 71, "Text"],
+Cell[558, 20, 1128, 31, 71, "Text"],
 Cell[CellGroupData[{
-Cell[1610, 54, 393, 10, 44, "Input"],
-Cell[2006, 66, 98, 1, 31, "Output"]
+Cell[1711, 55, 393, 10, 44, "Input"],
+Cell[2107, 67, 98, 1, 31, "Output"]
 }, Open  ]],
-Cell[2119, 70, 1361, 37, 90, "Text"],
-Cell[3483, 109, 94, 1, 31, "Input"]
+Cell[2220, 71, 1750, 47, 109, "Text"],
+Cell[3973, 120, 5781, 196, 313, "Text"]
 }
 ]
 *)
