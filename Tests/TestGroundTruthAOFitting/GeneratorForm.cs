@@ -512,7 +512,7 @@ buttonComputeIndirect_Click( null, EventArgs.Empty );
 			_raysCount = Math.Min( (int) MAX_THREADS, _raysCount );
 
 //*
-//_maxConeAngle = Mathf.PI;
+_maxConeAngle = Mathf.PI;
 
 			Hammersley	hammersley = new Hammersley();
 			double[,]	sequence = hammersley.BuildSequence( _raysCount, 2 );

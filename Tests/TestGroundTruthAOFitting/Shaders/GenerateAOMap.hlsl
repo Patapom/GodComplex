@@ -92,11 +92,6 @@ void BuildOrthonormalBasis( float3 _normal, out float3 _tangent, out float3 _bit
 void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID ) {
 	uint2	pixelPosition = uint2( _GroupID.x, _Y0 + _GroupID.y );
 
-//	if ( _GroupThreadID.x == 0 )
-//		gs_accumulator = 0;
-//
-//	GroupMemoryBarrierWithGroupSync();
-
 	uint	rayIndex = _GroupThreadID.x;
 	if ( rayIndex < _raysCount ) {
 
@@ -119,19 +114,19 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID ) 
 
 		uint	packedPixelPosition = ~0U;
 		if ( hitDistance_mm < 1e4 ) {
-			float	hitDistance_pixels = hitDistance_mm / _texelSize_mm;
-			float2	hitPosition = 0.5 + pixelPosition + hitDistance_pixels * rayDirection.xy;
-			packedPixelPosition = PackPixelPosition(  _textureDimensions + hitPosition );	// Offset with texture dimension so pixel index is always positive
+			float3	hitPosition_mm = rayPosition_mm + hitDistance_mm * rayDirection;
+			float2	hitPosition_pixels = hitPosition_mm.xy / _texelSize_mm;
+			packedPixelPosition = PackPixelPosition(  _textureDimensions + hitPosition_pixels );	// Offset with texture dimension so pixel index is always positive
 		} else {
-			// Accumulate cos(theta)
-//			uint	dontCare;
-//			InterlockedAdd( gs_accumulator, uint( 1024.0 * lsRayDirection.z ), dontCare );
+			// Accumulate cos(theta), that will be multiplied by input luminance later
+			uint	dontCare;
+			InterlockedAdd( gs_accumulator, uint( 65536.0 * lsRayDirection.z ), dontCare );
 		}
 
-	
-uint	dontCare;
+
+// Verify summing cos(theta) yields 0.5 as expected
+//uint	dontCare;
 //InterlockedAdd( gs_accumulator, uint( 1024.0 * lsRayDirection.z ), dontCare );
-InterlockedAdd( gs_accumulator, uint( 512.0 ), dontCare );
 
 
 		_indirectPixels[_raysCount * (_textureDimensions.x * pixelPosition.y + pixelPosition.x) + rayIndex] = packedPixelPosition;
@@ -140,5 +135,5 @@ InterlockedAdd( gs_accumulator, uint( 512.0 ), dontCare );
 	GroupMemoryBarrierWithGroupSync();
 
 	if ( rayIndex == 0 )
-		_targetAO[pixelPosition] = gs_accumulator / (1024.0 * _raysCount);	// Store direct lighting perception, weighted by cos(theta)
+		_targetAO[pixelPosition] = gs_accumulator / (65536.0 * _raysCount);	// Store direct lighting perception, weighted by cos(theta)
 }
