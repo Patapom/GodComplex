@@ -168,6 +168,8 @@ LoadHeightMap( new System.IO.FileInfo( GetRegKey( "HeightMapFileName", System.IO
 LoadNormalMap( new System.IO.FileInfo( GetRegKey( "NormalMapFileName", System.IO.Path.Combine( m_ApplicationPath, "Example.jpg" ) ) ) );
 //Generate();
 //buttonComputeIndirect_Click( null, EventArgs.Empty );
+//Compile();
+
 
 		}
 
@@ -568,6 +570,100 @@ LoadNormalMap( new System.IO.FileInfo( GetRegKey( "NormalMapFileName", System.IO
 			_target.Write();
 		}
 
+		private void	Compile() {
+			try {
+				const uint	HISTOGRAM_SIZE = 100;
+
+				//////////////////////////////////////////////////////////////////////////
+				// 1] Read resulting data
+				float[][]	histograms = null;
+
+				System.IO.FileInfo	resultDataFileName = new System.IO.FileInfo( System.IO.Path.GetFileNameWithoutExtension( m_sourceFileName.FullName ) + ".AO" );
+				using ( System.IO.FileStream S = resultDataFileName.OpenRead() )
+					using ( System.IO.BinaryReader R = new System.IO.BinaryReader( S ) ) {
+						uint	tempW = R.ReadUInt32();
+						uint	tempH = R.ReadUInt32();
+						uint	bouncesCount = R.ReadUInt32();
+
+						histograms = new float[bouncesCount][];
+
+						// Build AO histogram
+						uint[]		targetBinIndex = new uint[tempW*tempH];
+						uint[]		histogramAOBinSize = new uint[HISTOGRAM_SIZE];
+						float[]		histogramAONormalizer = new float[HISTOGRAM_SIZE];
+						{
+							for ( uint i=0; i < tempW*tempH; i++ ) {
+								float	AO = R.ReadSingle() / Mathf.PI;
+								uint	intAO = Math.Min( HISTOGRAM_SIZE-1, (uint) (AO * HISTOGRAM_SIZE) );
+								targetBinIndex[i] = intAO;
+								histogramAOBinSize[intAO]++;
+							}
+							for ( uint binIndex=0; binIndex < HISTOGRAM_SIZE; binIndex++ ) {
+								if ( histogramAOBinSize[binIndex] > 0 )
+									histogramAONormalizer[binIndex] = 1.0f / histogramAOBinSize[binIndex];
+								else
+									histogramAONormalizer[binIndex] = 0.0f;
+							}
+						}
+
+						for ( uint bounceIndex=1; bounceIndex < bouncesCount; bounceIndex++ ) {
+							float[]		histogram = new float[HISTOGRAM_SIZE];
+							histograms[bounceIndex] = histogram;
+
+							// Accumulate bounce values
+							for ( uint i=0; i < tempW*tempH; i++ ) {
+								float	bounce = R.ReadSingle();
+								uint	binIndex = targetBinIndex[i];
+								histogram[binIndex] += bounce;
+							}
+							// Normalize histogram values to get an average
+							for ( uint binIndex=0; binIndex < HISTOGRAM_SIZE; binIndex++ ) {
+								histogram[binIndex] *= histogramAONormalizer[binIndex];
+							}
+						}
+					}
+
+				//////////////////////////////////////////////////////////////////////////
+				// 2] Save histograms
+				for ( uint bounceIndex=1; bounceIndex < histograms.GetLength(0); bounceIndex++ ) {
+					System.IO.FileInfo	finalCurveDataFileName = new System.IO.FileInfo( System.IO.Path.GetFileNameWithoutExtension( m_sourceFileName.FullName ) + bounceIndex + ".float" );
+					using ( System.IO.FileStream S = finalCurveDataFileName.Create() )
+						using ( System.IO.BinaryWriter Wr = new System.IO.BinaryWriter( S ) ) {
+							float[]	histogram = histograms[bounceIndex];
+							for ( uint binIndex=0; binIndex < histogram.Length; binIndex++ ) {
+								Wr.Write( histogram[binIndex] );
+							}
+						}
+				}
+
+				//////////////////////////////////////////////////////////////////////////
+				// 3] Plot values
+				if ( m_imageResult != null )
+					m_imageResult.Dispose();
+				m_imageResult = new ImageUtility.ImageFile( W, H, ImageUtility.PIXEL_FORMAT.BGRA8, new ImageUtility.ColorProfile( ImageUtility.ColorProfile.STANDARD_PROFILE.sRGB ) );
+
+				m_imageResult.Clear( float4.One );
+				float4[]	colors = new float4[] {
+					new float4( 0, 0, 0, 1 ),
+					new float4( 1, 0, 0, 1 ),
+					new float4( 0, 0.5f, 0, 1 ),
+					new float4( 0, 0, 1, 1 ),
+				};
+				for ( uint bounceIndex=1; bounceIndex < histograms.GetLength(0); bounceIndex++ ) {
+					m_imageResult.PlotGraph( colors[(bounceIndex-1) & 3], new float2( 0.0f, 1.0f ), new float2( 0.0f, Mathf.PI ), ( float X ) => {
+						float	bounceValue = histograms[bounceIndex][Math.Min( HISTOGRAM_SIZE-1, (uint) (HISTOGRAM_SIZE*X) )];
+						return bounceValue;
+//						return Mathf.PI * X + bounceValue;
+					} );
+				}
+
+				// Assign result
+				viewportPanelResult.Bitmap = m_imageResult.AsBitmap;
+			} catch ( Exception _e ) {
+				MessageBox( "Error displaying compiled data: " + _e.Message );
+			}
+		}
+
 		#region Helpers
 
 		private string	GetRegKey( string _Key, string _Default )
@@ -640,7 +736,7 @@ LoadNormalMap( new System.IO.FileInfo( GetRegKey( "NormalMapFileName", System.IO
 				if ( !m_CS_ComputeIndirectLighting.Use() )
 					throw new Exception( "Failed to use Indirect Lighting compute shader!" );
 
-				const uint	MAX_BOUNCE = 4;
+				const uint	MAX_BOUNCE = 10;
 				float[][,]	arrayOfIlluminanceValues = new float[1+MAX_BOUNCE][,];
 
 				//////////////////////////////////////////////////////////////////////////
@@ -786,51 +882,52 @@ m_SB_Rays.SetInput( 4 );
 		}
 
 		private void buttonTestBilateral_Click( object sender, EventArgs e ) {
-			try {
-				panelParameters.Enabled = false;
-
-				//////////////////////////////////////////////////////////////////////////
-				// 1] Apply bilateral filtering to the input texture as a pre-process
-				ApplyBilateralFiltering( m_textureSourceHeightMap, m_textureFilteredHeightMap, floatTrackbarControlBilateralRadius.Value, floatTrackbarControlBilateralTolerance.Value, checkBoxWrap.Checked, 100 );
-
-				progressBar.Value = progressBar.Maximum;
-
-				//////////////////////////////////////////////////////////////////////////
-				// 2] Copy target to staging for CPU readback and update the resulting bitmap
-				Renderer.Texture2D	tempTexture_CPU = new Renderer.Texture2D( m_device, m_textureFilteredHeightMap.Width, m_textureFilteredHeightMap.Height, 1, 1, ImageUtility.PIXEL_FORMAT.R32F, ImageUtility.COMPONENT_FORMAT.AUTO, true, false, null );
-				tempTexture_CPU.CopyFrom( m_textureFilteredHeightMap );
-
-				ImageUtility.Bitmap		tempBitmap = new ImageUtility.Bitmap( W, H );
-				Renderer.PixelsBuffer	pixels = tempTexture_CPU.MapRead( 0, 0 );
-				using ( System.IO.BinaryReader R = pixels.OpenStreamRead() )
-					for ( uint Y=0; Y < H; Y++ ) {
-						R.BaseStream.Position = Y * pixels.RowPitch;
-						for ( uint X=0; X < W; X++ ) {
-							float	AO = R.ReadSingle();
-							tempBitmap[X,Y] = new float4( AO, AO, AO, 1 );
-						}
-					}
-
-				tempTexture_CPU.UnMap( pixels );
-				tempTexture_CPU.Dispose();
-
-				// Convert to RGB
-//				ImageUtility.ColorProfile	Profile = m_ProfilesRGB;	// AO maps are sRGB! (although strange, that's certainly to have more range in dark values)
-				ImageUtility.ColorProfile	Profile = m_profilesRGB;	// AO maps are sRGB! (although strange, that's certainly to have more range in dark values)
-
-				if ( m_imageResult != null )
-					m_imageResult.Dispose();
-				m_imageResult = new ImageUtility.ImageFile();
-				tempBitmap.ToImageFile( m_imageResult, Profile );
-
-				// Assign result
-				viewportPanelResult.Bitmap = m_imageResult.AsCustomBitmap( ( ref float4 _color ) => {} );
-
-			} catch ( Exception _e ) {
-				MessageBox( "An error occurred during generation!\r\n\r\nDetails: ", _e );
-			} finally {
-				panelParameters.Enabled = true;
-			}
+			Compile();
+// 			try {
+// 				panelParameters.Enabled = false;
+// 
+// 				//////////////////////////////////////////////////////////////////////////
+// 				// 1] Apply bilateral filtering to the input texture as a pre-process
+// 				ApplyBilateralFiltering( m_textureSourceHeightMap, m_textureFilteredHeightMap, floatTrackbarControlBilateralRadius.Value, floatTrackbarControlBilateralTolerance.Value, checkBoxWrap.Checked, 100 );
+// 
+// 				progressBar.Value = progressBar.Maximum;
+// 
+// 				//////////////////////////////////////////////////////////////////////////
+// 				// 2] Copy target to staging for CPU readback and update the resulting bitmap
+// 				Renderer.Texture2D	tempTexture_CPU = new Renderer.Texture2D( m_device, m_textureFilteredHeightMap.Width, m_textureFilteredHeightMap.Height, 1, 1, ImageUtility.PIXEL_FORMAT.R32F, ImageUtility.COMPONENT_FORMAT.AUTO, true, false, null );
+// 				tempTexture_CPU.CopyFrom( m_textureFilteredHeightMap );
+// 
+// 				ImageUtility.Bitmap		tempBitmap = new ImageUtility.Bitmap( W, H );
+// 				Renderer.PixelsBuffer	pixels = tempTexture_CPU.MapRead( 0, 0 );
+// 				using ( System.IO.BinaryReader R = pixels.OpenStreamRead() )
+// 					for ( uint Y=0; Y < H; Y++ ) {
+// 						R.BaseStream.Position = Y * pixels.RowPitch;
+// 						for ( uint X=0; X < W; X++ ) {
+// 							float	AO = R.ReadSingle();
+// 							tempBitmap[X,Y] = new float4( AO, AO, AO, 1 );
+// 						}
+// 					}
+// 
+// 				tempTexture_CPU.UnMap( pixels );
+// 				tempTexture_CPU.Dispose();
+// 
+// 				// Convert to RGB
+// //				ImageUtility.ColorProfile	Profile = m_ProfilesRGB;	// AO maps are sRGB! (although strange, that's certainly to have more range in dark values)
+// 				ImageUtility.ColorProfile	Profile = m_profilesRGB;	// AO maps are sRGB! (although strange, that's certainly to have more range in dark values)
+// 
+// 				if ( m_imageResult != null )
+// 					m_imageResult.Dispose();
+// 				m_imageResult = new ImageUtility.ImageFile();
+// 				tempBitmap.ToImageFile( m_imageResult, Profile );
+// 
+// 				// Assign result
+// 				viewportPanelResult.Bitmap = m_imageResult.AsCustomBitmap( ( ref float4 _color ) => {} );
+// 
+// 			} catch ( Exception _e ) {
+// 				MessageBox( "An error occurred during generation!\r\n\r\nDetails: ", _e );
+// 			} finally {
+// 				panelParameters.Enabled = true;
+// 			}
 		}
 
 		private void integerTrackbarControlRaysCount_SliderDragStop( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _StartValue ) {
