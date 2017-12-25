@@ -570,6 +570,11 @@ LoadNormalMap( new System.IO.FileInfo( GetRegKey( "NormalMapFileName", System.IO
 			_target.Write();
 		}
 
+
+const string	SUFFIX = "";
+//const string	SUFFIX = " - rho=0.5";
+
+
 		private void	Compile() {
 			try {
 				const uint	HISTOGRAM_SIZE = 100;
@@ -578,7 +583,7 @@ LoadNormalMap( new System.IO.FileInfo( GetRegKey( "NormalMapFileName", System.IO
 				// 1] Read resulting data
 				float[][]	histograms = null;
 
-				System.IO.FileInfo	resultDataFileName = new System.IO.FileInfo( System.IO.Path.GetFileNameWithoutExtension( m_sourceFileName.FullName ) + ".AO" );
+				System.IO.FileInfo	resultDataFileName = new System.IO.FileInfo( System.IO.Path.GetFileNameWithoutExtension( m_sourceFileName.FullName ) + SUFFIX + ".AO" );
 				using ( System.IO.FileStream S = resultDataFileName.OpenRead() )
 					using ( System.IO.BinaryReader R = new System.IO.BinaryReader( S ) ) {
 						uint	tempW = R.ReadUInt32();
@@ -626,7 +631,7 @@ LoadNormalMap( new System.IO.FileInfo( GetRegKey( "NormalMapFileName", System.IO
 				//////////////////////////////////////////////////////////////////////////
 				// 2] Save histograms
 				for ( uint bounceIndex=1; bounceIndex < histograms.GetLength(0); bounceIndex++ ) {
-					System.IO.FileInfo	finalCurveDataFileName = new System.IO.FileInfo( System.IO.Path.GetFileNameWithoutExtension( m_sourceFileName.FullName ) + bounceIndex + ".float" );
+					System.IO.FileInfo	finalCurveDataFileName = new System.IO.FileInfo( System.IO.Path.GetFileNameWithoutExtension( m_sourceFileName.FullName ) + bounceIndex + SUFFIX + ".float" );
 					using ( System.IO.FileStream S = finalCurveDataFileName.Create() )
 						using ( System.IO.BinaryWriter Wr = new System.IO.BinaryWriter( S ) ) {
 							float[]	histogram = histograms[bounceIndex];
@@ -843,7 +848,7 @@ m_SB_Rays.SetInput( 4 );
 
 				//////////////////////////////////////////////////////////////////////////
 				// 3] Write resulting data
-				System.IO.FileInfo	resultDataFileName = new System.IO.FileInfo( System.IO.Path.GetFileNameWithoutExtension( m_sourceFileName.FullName ) + ".AO" );
+				System.IO.FileInfo	resultDataFileName = new System.IO.FileInfo( System.IO.Path.GetFileNameWithoutExtension( m_sourceFileName.FullName ) + SUFFIX + ".AO" );
 				using ( System.IO.FileStream S = resultDataFileName.Create() )
 					using ( System.IO.BinaryWriter Wr = new System.IO.BinaryWriter( S ) ) {
 						Wr.Write( W );

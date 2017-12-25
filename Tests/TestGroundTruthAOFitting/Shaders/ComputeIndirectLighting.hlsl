@@ -65,6 +65,9 @@ void	CS( uint3 _groupID : SV_groupID, uint3 _groupThreadID : SV_groupThreadID ) 
 				float	neighborIlluminance = _sourceIlluminance[tiledNeighborPixelPosition];
 
 				float	albedo = 1.0;	// Assuming a unit albedo (will be scaled on CPU by actual albedo since bounces are stored independently)
+
+//albedo = 0.5;
+
 				float	neighborLuminance = (albedo / PI) * neighborIlluminance;
 
 				// Compute incoming ray's dot product with normal
