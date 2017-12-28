@@ -7,6 +7,10 @@ static const uint	MAX_THREADS = 1024;
 
 static const float	PI = 3.1415926535897932384626433832795;
 
+#ifndef ALBEDO
+	#define ALBEDO	1.0	// Assuming a unit albedo (will be scaled on CPU by actual albedo since bounces are stored independently)
+#endif
+
 SamplerState LinearClamp	: register( s0 );
 
 cbuffer	CBInput : register( b0 ) {
@@ -51,7 +55,6 @@ void	CS( uint3 _groupID : SV_groupID, uint3 _groupThreadID : SV_groupThreadID ) 
 
 	GroupMemoryBarrierWithGroupSync();
 
-//*
 	if ( rayIndex < _raysCount ) {
 		// Accumulate indirect luminance
 		uint	packedNeighborPixelPosition = _indirectPixelsStack[_raysCount * (_textureDimensions.x * pixelPosition.y + pixelPosition.x) + rayIndex];
@@ -61,14 +64,9 @@ void	CS( uint3 _groupID : SV_groupID, uint3 _groupThreadID : SV_groupThreadID ) 
 				uint2	neighborPixelPosition = uint2( packedNeighborPixelPosition & 0xFFFFU, packedNeighborPixelPosition >> 16 );
 				uint2	tiledNeighborPixelPosition = neighborPixelPosition % _textureDimensions;
 
-				// Sample neighbor's illuminance
+				// Sample neighbor's illuminance and compute incoming bounced luminance
 				float	neighborIlluminance = _sourceIlluminance[tiledNeighborPixelPosition];
-
-				float	albedo = 1.0;	// Assuming a unit albedo (will be scaled on CPU by actual albedo since bounces are stored independently)
-
-//albedo = 0.5;
-
-				float	neighborLuminance = (albedo / PI) * neighborIlluminance;
+				float	incomingLuminance = (ALBEDO / PI) * neighborIlluminance;
 
 				// Compute incoming ray's dot product with normal
 				float3	lsRayDirection = _rays[rayIndex];
@@ -106,8 +104,7 @@ void	CS( uint3 _groupID : SV_groupID, uint3 _groupThreadID : SV_groupThreadID ) 
 					// Direct illuminance at the neighbor position
 					float	neighborIlluminance = _sourceIlluminance[tiledNeighborPixelPosition];
 				#endif
-				float	albedo = 1.0;	// Assuming a unit albedo (will be scaled on CPU by actual albedo since bounces are stored independently)
-				float	neighborLuminance = (albedo / PI) * neighborIlluminance;
+				float	incomingLuminance = (ALBEDO / PI) * neighborIlluminance;
 
 				// Compute incoming ray's dot product with normal
 				float3	incomingDirection = neighborPosition_mm - gs_position_mm;
@@ -119,7 +116,7 @@ void	CS( uint3 _groupID : SV_groupID, uint3 _groupThreadID : SV_groupThreadID ) 
 
 			// We then accumulate the neighbor's luminance weighted by the cosine of the angle formed by the incoming ray and normal
 			float	dontCare;
-			InterlockedAdd( gs_accumulator, uint( 65536.0 * neighborLuminance * cosTheta ), dontCare );
+			InterlockedAdd( gs_accumulator, uint( 65536.0 * incomingLuminance * cosTheta ), dontCare );
 //InterlockedAdd( gs_accumulator, uint( 65536.0 * cosTheta ), dontCare );
 //InterlockedAdd( gs_accumulator, uint( 65536.0 * _rays[rayIndex].z ), dontCare );
 
@@ -132,11 +129,9 @@ void	CS( uint3 _groupID : SV_groupID, uint3 _groupThreadID : SV_groupThreadID ) 
 	}
 
 	GroupMemoryBarrierWithGroupSync();
-//*/
+
 	// Use thread 0 to accumulate final result
 	if ( rayIndex == 0 ) {
 		_targetIlluminance[pixelPosition] = 2.0 * PI * gs_accumulator / (65536.0 * _raysCount);
-//		_targetIlluminance[pixelPosition] = _sourceIlluminance[pixelPosition];
-//		_targetIlluminance[pixelPosition] = 2.0 * PI * float( _indirectPixelsStack[_raysCount * (_textureDimensions.x * pixelPosition.y + pixelPosition.x) + 0] ) / (_raysCount * _textureDimensions.x * _textureDimensions.y);
 	}
 }

@@ -51,6 +51,7 @@
 			this.imagePanelNormalMap = new GenerateSelfShadowedBumpMap.ImagePanel();
 			this.contextMenuStripNormal = new System.Windows.Forms.ContextMenuStrip(this.components);
 			this.clearNormalToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.integerTrackbarControlBounceIndex = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
 			this.panelParameters.SuspendLayout();
 			this.contextMenuStripNormal.SuspendLayout();
 			this.SuspendLayout();
@@ -471,6 +472,21 @@
 			this.clearNormalToolStripMenuItem.Text = "Clear Normal";
 			this.clearNormalToolStripMenuItem.Click += new System.EventHandler(this.clearNormalToolStripMenuItem_Click);
 			// 
+			// integerTrackbarControlBounceIndex
+			// 
+			this.integerTrackbarControlBounceIndex.Location = new System.Drawing.Point(725, 456);
+			this.integerTrackbarControlBounceIndex.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.integerTrackbarControlBounceIndex.MinimumSize = new System.Drawing.Size(70, 20);
+			this.integerTrackbarControlBounceIndex.Name = "integerTrackbarControlBounceIndex";
+			this.integerTrackbarControlBounceIndex.RangeMax = 20;
+			this.integerTrackbarControlBounceIndex.RangeMin = 0;
+			this.integerTrackbarControlBounceIndex.Size = new System.Drawing.Size(124, 20);
+			this.integerTrackbarControlBounceIndex.TabIndex = 1;
+			this.integerTrackbarControlBounceIndex.Value = 0;
+			this.integerTrackbarControlBounceIndex.VisibleRangeMax = 8;
+			this.integerTrackbarControlBounceIndex.VisibleRangeMin = 0;
+			this.integerTrackbarControlBounceIndex.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlBounceIndex_ValueChanged);
+			// 
 			// GeneratorForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -481,6 +497,7 @@
 			this.Controls.Add(this.buttonReload);
 			this.Controls.Add(this.progressBar);
 			this.Controls.Add(this.checkBoxViewsRGB);
+			this.Controls.Add(this.integerTrackbarControlBounceIndex);
 			this.Controls.Add(this.viewportPanelResult);
 			this.Controls.Add(this.label10);
 			this.Controls.Add(this.label9);
@@ -538,6 +555,7 @@
 		private System.Windows.Forms.ContextMenuStrip contextMenuStripNormal;
 		private System.Windows.Forms.ToolStripMenuItem clearNormalToolStripMenuItem;
 		private System.Windows.Forms.Button buttonComputeIndirect;
+		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlBounceIndex;
 	}
 }
 

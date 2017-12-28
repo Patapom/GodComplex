@@ -24,18 +24,19 @@ Texture2D<float>			_sourceHeights : register( t0 );
 Texture2D<float3>			_sourceNormals : register( t1 );
 StructuredBuffer<float3>	_rays : register( t2 );
 
-RWTexture2D<float>			_targetAO : register( u0 );
+RWTexture2D<float2>			_targetAO : register( u0 );
 RWStructuredBuffer<uint>	_indirectPixels : register( u1 );
 
-groupshared uint			gs_accumulator = 0;
+groupshared uint			gs_accumulatorAO = 0;	// AO accumulator where integral of the visibility term is done (without the cosine-weighting!)
+groupshared uint			gs_accumulatorE0 = 0;	// Direct illuminance accumulator where integral of the visibility term times the cosine term is done
 
-uint	PackpixelPosition( float2 _position ) {
+uint	PackPixelPosition( float2 _position ) {
 	uint2	intPosition = uint2( floor( _position ) );
 	return ((intPosition.y & 0xFFFFU) << 16) | (intPosition.x & 0xFFFFU);
 }
 
 // Computes the occlusion of the pixel in the specified direction
-//	_position_mm, position of the ray in the texture (XY = pixel position offset by 0.5, Z = initial height in millimeters)
+//	_position_mm, position of the ray in the "world" (i.e. in actual millimeters)
 //	_direction, direction of the ray
 //
 // Returns an occlusion value in [0,1] where 0 is completely occluded and 1 completely visible
@@ -45,8 +46,8 @@ float	ComputeSurfaceHit( float3 _position_mm, float3 _direction ) {
 	float3	startPosition_mm = _position_mm;
 
 	// Scale the ray so we ensure to always walk at least a texel in the texture
-	_direction *= _direction.z < 1.0 ? 1.0 / sqrt( 1.0 - _direction.z * _direction.z ) : 1.0;
-	_direction *= _texelSize_mm;
+	_direction *= _direction.z < 1.0 ? 1.0 / sqrt( 1.0 - _direction.z * _direction.z ) : 1.0;	// Ensure we always walk a single millimeter
+	_direction *= _texelSize_mm;																// Scale by the amount of millimeters to walk a whole pixel
 
 	float	prevH_mm = _position_mm.z;
 	for ( uint stepIndex=0; stepIndex < _maxStepsCount; stepIndex++ ) {
@@ -109,22 +110,23 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID ) 
 		float3	rayPosition_mm  = float3( _texelSize_mm * (0.5 + pixelPosition), H0_mm );
 
 		// Nudge a little to avoid acnea
-//		rayPosition_mm   += 1e-2 * _displacement_mm * normal;	// This may push inside surface in deep cavities
+//		rayPosition_mm   += 1e-2 * _displacement_mm * normal;	// This may push inside the surface in deep cavities
 		rayPosition_mm.z += 1e-2 * _displacement_mm;			// Use vertical nudge instead!
 
 		// Compute hit position
 		float	hitDistance_mm = ComputeSurfaceHit( rayPosition_mm, rayDirection );
 
-		uint	packedpixelPosition = ~0U;
+		uint	packedPixelPosition = ~0U;
 		if ( hitDistance_mm < 1e4 ) {
+			// Store link to indirect bounce pixel
 			float3	hitPosition_mm = rayPosition_mm + hitDistance_mm * rayDirection;
 			float2	hitPosition_pixels = hitPosition_mm.xy / _texelSize_mm;
-			packedpixelPosition = PackpixelPosition(  _textureDimensions + hitPosition_pixels );	// Offset with texture dimension so pixel index is always positive
+			packedPixelPosition = PackPixelPosition( _textureDimensions + hitPosition_pixels );	// Offset with texture dimension so pixel index is always positive
 		} else {
-			// Accumulate cos(theta), that will be multiplied by input luminance later
+			// Accumulate unit luminance with cos(theta)
 			uint	dontCare;
-			InterlockedAdd( gs_accumulator, uint( 65536.0 * lsRayDirection.z ), dontCare );
-//InterlockedAdd( gs_accumulator, uint( 65536.0 * 1.0 ), dontCare );	// Without cosine-weighting !DEBUG!
+			InterlockedAdd( gs_accumulatorAO, uint( 65536.0 * 1.0 ), dontCare );				// Without cosine-weighting ==> AO output
+			InterlockedAdd( gs_accumulatorE0, uint( 65536.0 * lsRayDirection.z ), dontCare );	// Cosine-weighting ==> Unit luminance
 		}
 
 
@@ -133,13 +135,11 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID ) 
 //InterlockedAdd( gs_accumulator, uint( 1024.0 * lsRayDirection.z ), dontCare );
 
 
-		_indirectPixels[_raysCount * (_textureDimensions.x * _GroupID.y + _GroupID.x) + rayIndex] = packedpixelPosition;
-//_indirectPixels[_raysCount * (_textureDimensions.x * _GroupID.y + _GroupID.x) + rayIndex] = _raysCount * (_textureDimensions.x * pixelPosition.y + pixelPosition.x) + rayIndex;
-//_indirectPixels[_raysCount * (_textureDimensions.x * _GroupID.y + _GroupID.x) + rayIndex] = _textureDimensions.x * pixelPosition.y + pixelPosition.x;
+		_indirectPixels[_raysCount * (_textureDimensions.x * _GroupID.y + _GroupID.x) + rayIndex] = packedPixelPosition;
 	}
 
 	GroupMemoryBarrierWithGroupSync();
 
 	if ( rayIndex == 0 )
-		_targetAO[pixelPosition] = 2.0 * PI * gs_accumulator / (65536.0 * _raysCount);	// Store direct lighting perception, weighted by cos(theta)
+		_targetAO[pixelPosition] = 2.0 * PI * float2( gs_accumulatorAO, gs_accumulatorE0 ) / (65536.0 * _raysCount);	// Store AO and direct illuminance terms
 }

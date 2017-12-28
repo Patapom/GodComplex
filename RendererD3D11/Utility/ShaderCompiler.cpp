@@ -77,7 +77,7 @@ ID3DBlob*   ShaderCompiler::CompileShader( IFileServer& _fileServer, const BStri
 
 	#if defined(_DEBUG) || defined(DEBUG_SHADER)
 		bool	hasWarningOrErrors = errorsBlob != NULL;	// Represents warnings and errors
-		bool	hasErrors = codeBlob == NULL;			// Surely an error if no shader is returned!
+		bool	hasErrors = codeBlob == NULL;				// Surely an error if no shader is returned!
 		if ( hasWarningOrErrors && (ms_warningsAsError || hasErrors) ) {
 			const char*	pErrorText = (LPCSTR) errorsBlob->GetBufferPointer();
 			MessageBoxA( NULL, pErrorText, "Shader Compilation Error!", MB_OK | MB_ICONERROR );
