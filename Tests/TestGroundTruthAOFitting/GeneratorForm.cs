@@ -29,8 +29,8 @@ namespace GenerateSelfShadowedBumpMap
 
 const float		ALBEDO = 1.0f;
 const string	SUFFIX = "";
-//const float	ALBEDO = 0.5f;
-//const string	SUFFIX = " - rho=0.5";
+// const float		ALBEDO = 0.5f;
+// const string	SUFFIX = " - rho=0.5";
 
 		#endregion
 
