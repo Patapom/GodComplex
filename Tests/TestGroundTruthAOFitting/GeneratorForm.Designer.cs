@@ -1,4 +1,4 @@
-﻿namespace GenerateSelfShadowedBumpMap
+﻿namespace TestGroundTruthAOFitting
 {
 	partial class GeneratorForm
 	{
@@ -39,19 +39,16 @@
 			this.floatTrackbarControlBilateralRadius = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.floatTrackbarControlPixelDensity = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.floatTrackbarControlBilateralTolerance = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.floatTrackbarControlBrightness = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label8 = new System.Windows.Forms.Label();
-			this.floatTrackbarControlContrast = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label9 = new System.Windows.Forms.Label();
-			this.floatTrackbarControlGamma = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label10 = new System.Windows.Forms.Label();
-			this.checkBoxViewsRGB = new System.Windows.Forms.CheckBox();
-			this.viewportPanelResult = new GenerateSelfShadowedBumpMap.ImagePanel();
-			this.outputPanelInputHeightMap = new GenerateSelfShadowedBumpMap.ImagePanel();
-			this.imagePanelNormalMap = new GenerateSelfShadowedBumpMap.ImagePanel();
+			this.viewportPanelResult = new TestGroundTruthAOFitting.ImagePanel();
+			this.outputPanelInputHeightMap = new TestGroundTruthAOFitting.ImagePanel();
+			this.imagePanelNormalMap = new TestGroundTruthAOFitting.ImagePanel();
 			this.contextMenuStripNormal = new System.Windows.Forms.ContextMenuStrip(this.components);
 			this.clearNormalToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.integerTrackbarControlBounceIndex = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
+			this.buttonDemo = new System.Windows.Forms.Button();
 			this.panelParameters.SuspendLayout();
 			this.contextMenuStripNormal.SuspendLayout();
 			this.SuspendLayout();
@@ -315,22 +312,6 @@
 			this.floatTrackbarControlBilateralTolerance.Value = 0.2F;
 			this.floatTrackbarControlBilateralTolerance.VisibleRangeMax = 1F;
 			// 
-			// floatTrackbarControlBrightness
-			// 
-			this.floatTrackbarControlBrightness.Location = new System.Drawing.Point(641, 360);
-			this.floatTrackbarControlBrightness.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.floatTrackbarControlBrightness.MinimumSize = new System.Drawing.Size(70, 20);
-			this.floatTrackbarControlBrightness.Name = "floatTrackbarControlBrightness";
-			this.floatTrackbarControlBrightness.RangeMax = 1F;
-			this.floatTrackbarControlBrightness.RangeMin = -1F;
-			this.floatTrackbarControlBrightness.Size = new System.Drawing.Size(200, 20);
-			this.floatTrackbarControlBrightness.TabIndex = 2;
-			this.floatTrackbarControlBrightness.Value = 0F;
-			this.floatTrackbarControlBrightness.Visible = false;
-			this.floatTrackbarControlBrightness.VisibleRangeMax = 1F;
-			this.floatTrackbarControlBrightness.VisibleRangeMin = -1F;
-			this.floatTrackbarControlBrightness.SliderDragStop += new Nuaj.Cirrus.Utility.FloatTrackbarControl.SliderDragStopEventHandler(this.floatTrackbarControlBrightness_SliderDragStop);
-			// 
 			// label8
 			// 
 			this.label8.AutoSize = true;
@@ -340,22 +321,6 @@
 			this.label8.TabIndex = 3;
 			this.label8.Text = "Brightness";
 			this.label8.Visible = false;
-			// 
-			// floatTrackbarControlContrast
-			// 
-			this.floatTrackbarControlContrast.Location = new System.Drawing.Point(641, 386);
-			this.floatTrackbarControlContrast.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.floatTrackbarControlContrast.MinimumSize = new System.Drawing.Size(70, 20);
-			this.floatTrackbarControlContrast.Name = "floatTrackbarControlContrast";
-			this.floatTrackbarControlContrast.RangeMax = 1F;
-			this.floatTrackbarControlContrast.RangeMin = -1F;
-			this.floatTrackbarControlContrast.Size = new System.Drawing.Size(200, 20);
-			this.floatTrackbarControlContrast.TabIndex = 2;
-			this.floatTrackbarControlContrast.Value = 0F;
-			this.floatTrackbarControlContrast.Visible = false;
-			this.floatTrackbarControlContrast.VisibleRangeMax = 1F;
-			this.floatTrackbarControlContrast.VisibleRangeMin = -1F;
-			this.floatTrackbarControlContrast.SliderDragStop += new Nuaj.Cirrus.Utility.FloatTrackbarControl.SliderDragStopEventHandler(this.floatTrackbarControlContrast_SliderDragStop);
 			// 
 			// label9
 			// 
@@ -367,22 +332,6 @@
 			this.label9.Text = "Contrast";
 			this.label9.Visible = false;
 			// 
-			// floatTrackbarControlGamma
-			// 
-			this.floatTrackbarControlGamma.Location = new System.Drawing.Point(641, 412);
-			this.floatTrackbarControlGamma.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.floatTrackbarControlGamma.MinimumSize = new System.Drawing.Size(70, 20);
-			this.floatTrackbarControlGamma.Name = "floatTrackbarControlGamma";
-			this.floatTrackbarControlGamma.RangeMax = 1F;
-			this.floatTrackbarControlGamma.RangeMin = -1F;
-			this.floatTrackbarControlGamma.Size = new System.Drawing.Size(200, 20);
-			this.floatTrackbarControlGamma.TabIndex = 2;
-			this.floatTrackbarControlGamma.Value = 0F;
-			this.floatTrackbarControlGamma.Visible = false;
-			this.floatTrackbarControlGamma.VisibleRangeMax = 1F;
-			this.floatTrackbarControlGamma.VisibleRangeMin = -1F;
-			this.floatTrackbarControlGamma.SliderDragStop += new Nuaj.Cirrus.Utility.FloatTrackbarControl.SliderDragStopEventHandler(this.floatTrackbarControlGamma_SliderDragStop);
-			// 
 			// label10
 			// 
 			this.label10.AutoSize = true;
@@ -392,20 +341,6 @@
 			this.label10.TabIndex = 3;
 			this.label10.Text = "Gamma";
 			this.label10.Visible = false;
-			// 
-			// checkBoxViewsRGB
-			// 
-			this.checkBoxViewsRGB.AutoSize = true;
-			this.checkBoxViewsRGB.Checked = true;
-			this.checkBoxViewsRGB.CheckState = System.Windows.Forms.CheckState.Checked;
-			this.checkBoxViewsRGB.Location = new System.Drawing.Point(750, 338);
-			this.checkBoxViewsRGB.Name = "checkBoxViewsRGB";
-			this.checkBoxViewsRGB.Size = new System.Drawing.Size(94, 17);
-			this.checkBoxViewsRGB.TabIndex = 4;
-			this.checkBoxViewsRGB.Text = "View as sRGB";
-			this.checkBoxViewsRGB.UseVisualStyleBackColor = true;
-			this.checkBoxViewsRGB.Visible = false;
-			this.checkBoxViewsRGB.CheckedChanged += new System.EventHandler(this.checkBoxViewsRGB_CheckedChanged);
 			// 
 			// viewportPanelResult
 			// 
@@ -484,28 +419,34 @@
 			this.integerTrackbarControlBounceIndex.TabIndex = 1;
 			this.integerTrackbarControlBounceIndex.Value = 0;
 			this.integerTrackbarControlBounceIndex.VisibleRangeMax = 8;
-			this.integerTrackbarControlBounceIndex.VisibleRangeMin = 0;
 			this.integerTrackbarControlBounceIndex.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlBounceIndex_ValueChanged);
+			// 
+			// buttonDemo
+			// 
+			this.buttonDemo.Location = new System.Drawing.Point(747, 358);
+			this.buttonDemo.Name = "buttonDemo";
+			this.buttonDemo.Size = new System.Drawing.Size(75, 44);
+			this.buttonDemo.TabIndex = 12;
+			this.buttonDemo.Text = "Demo";
+			this.buttonDemo.UseVisualStyleBackColor = true;
+			this.buttonDemo.Click += new System.EventHandler(this.buttonDemo_Click);
 			// 
 			// GeneratorForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1379, 536);
+			this.Controls.Add(this.buttonDemo);
 			this.Controls.Add(this.imagePanelNormalMap);
 			this.Controls.Add(this.panelParameters);
 			this.Controls.Add(this.buttonReload);
 			this.Controls.Add(this.progressBar);
-			this.Controls.Add(this.checkBoxViewsRGB);
 			this.Controls.Add(this.integerTrackbarControlBounceIndex);
 			this.Controls.Add(this.viewportPanelResult);
 			this.Controls.Add(this.label10);
 			this.Controls.Add(this.label9);
 			this.Controls.Add(this.label8);
 			this.Controls.Add(this.outputPanelInputHeightMap);
-			this.Controls.Add(this.floatTrackbarControlGamma);
-			this.Controls.Add(this.floatTrackbarControlContrast);
-			this.Controls.Add(this.floatTrackbarControlBrightness);
 			this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedToolWindow;
 			this.Name = "GeneratorForm";
 			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
@@ -544,18 +485,15 @@
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlMaxConeAngle;
 		private System.Windows.Forms.Label label5;
 		private System.Windows.Forms.Button buttonTestBilateral;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlBrightness;
 		private System.Windows.Forms.Label label8;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlContrast;
 		private System.Windows.Forms.Label label9;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlGamma;
 		private System.Windows.Forms.Label label10;
-		private System.Windows.Forms.CheckBox checkBoxViewsRGB;
 		private ImagePanel imagePanelNormalMap;
 		private System.Windows.Forms.ContextMenuStrip contextMenuStripNormal;
 		private System.Windows.Forms.ToolStripMenuItem clearNormalToolStripMenuItem;
 		private System.Windows.Forms.Button buttonComputeIndirect;
 		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlBounceIndex;
+		private System.Windows.Forms.Button buttonDemo;
 	}
 }
 

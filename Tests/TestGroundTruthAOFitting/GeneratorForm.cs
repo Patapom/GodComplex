@@ -14,7 +14,7 @@ using Microsoft.Win32;
 
 using SharpMath;
 
-namespace GenerateSelfShadowedBumpMap
+namespace TestGroundTruthAOFitting
 {
 	public partial class GeneratorForm : Form {
 
@@ -82,6 +82,7 @@ const string	SUFFIX = "";
 		private string								m_ApplicationPath;
 
 		private System.IO.FileInfo					m_sourceFileName = null;
+		private System.IO.FileInfo					m_resultFileName = null;
 		private uint								W, H;
 		private ImageUtility.ImageFile				m_imageSourceHeight = null;
 		private ImageUtility.ImageFile				m_imageSourceNormal = null;
@@ -101,6 +102,7 @@ const string	SUFFIX = "";
 		private Renderer.ConstantBuffer<CBIndirect>	m_CB_Indirect;
 		private Renderer.ComputeShader				m_CS_ComputeIndirectLighting = null;
 
+		private float2[,]							m_AOValues = null;
 		private float[][,]							m_arrayOfIlluminanceValues = new float[1+MAX_BOUNCE][,];
 
 		// Bilateral filtering pre-processing
@@ -300,8 +302,12 @@ LoadNormalMap( new System.IO.FileInfo( GetRegKey( "NormalMapFileName", System.IO
 				// Load the source image
 				// Assume it's in linear space
 				m_sourceFileName = _FileName;
+//				m_resultFileName = new System.IO.FileInfo( System.IO.Path.Combine( System.IO.Path.GetDirectoryName( _FileName.FullName ), "Results", System.IO.Path.GetFileNameWithoutExtension( _FileName.FullName ) ) );
+				m_resultFileName = new System.IO.FileInfo( System.IO.Path.Combine( "Results", System.IO.Path.GetFileNameWithoutExtension( _FileName.FullName ) ) );	// Store into "Results" directory
 				m_imageSourceHeight = new ImageUtility.ImageFile( _FileName );
 				outputPanelInputHeightMap.Bitmap = m_imageSourceHeight.AsBitmap;
+
+				m_demoForm.ImageHeight = m_imageSourceHeight;	// Send to demo form
 
 				W = m_imageSourceHeight.Width;
 				H = m_imageSourceHeight.Height;
@@ -344,6 +350,8 @@ LoadNormalMap( new System.IO.FileInfo( GetRegKey( "NormalMapFileName", System.IO
 				// Assume it's in linear space (all normal maps should be in linear space, with the default value being (0.5, 0.5, 1))
 				m_imageSourceNormal = new ImageUtility.ImageFile( _FileName );
 				imagePanelNormalMap.Bitmap = m_imageSourceNormal.AsBitmap;
+
+				m_demoForm.ImageNormal = m_imageSourceNormal;	// Send to demo form
 
 				uint	W = m_imageSourceNormal.Width;
 				uint	H = m_imageSourceNormal.Height;
@@ -464,8 +472,7 @@ LoadNormalMap( new System.IO.FileInfo( GetRegKey( "NormalMapFileName", System.IO
 				textureAO_CPU.CopyFrom( textureAO );
 				textureAO.Dispose();
 
-				float2[,]	AOValues = new float2[textureAO_CPU.Width,textureAO_CPU.Height];
-
+				m_AOValues = new float2[textureAO_CPU.Width,textureAO_CPU.Height];
 
 // textureAO_CPU.ReadPixels( 0, 0, ( uint X, uint Y, System.IO.BinaryReader R ) => {
 // 	float	v = R.ReadSingle();
@@ -474,7 +481,7 @@ LoadNormalMap( new System.IO.FileInfo( GetRegKey( "NormalMapFileName", System.IO
 
 
 //*
-				System.IO.FileInfo	binaryDataFileName = new System.IO.FileInfo( System.IO.Path.GetFileNameWithoutExtension( m_sourceFileName.FullName ) + ".indirectMap" );
+				System.IO.FileInfo	binaryDataFileName = new System.IO.FileInfo( m_resultFileName.FullName + ".indirectMap" );
 				using ( System.IO.FileStream S = binaryDataFileName.Create() )
 					using ( System.IO.BinaryWriter Wr = new System.IO.BinaryWriter( S ) ) {
 
@@ -485,7 +492,7 @@ LoadNormalMap( new System.IO.FileInfo( GetRegKey( "NormalMapFileName", System.IO
 						textureAO_CPU.ReadPixels( 0, 0, ( uint X, uint Y, System.IO.BinaryReader R ) => {
 							float	AO = R.ReadSingle();
 							float	illuminance = R.ReadSingle();
-							AOValues[X,Y].Set( AO, illuminance );
+							m_AOValues[X,Y].Set( AO, illuminance );
 							Wr.Write( AO );
 							Wr.Write( illuminance );
 						} );
@@ -493,6 +500,8 @@ LoadNormalMap( new System.IO.FileInfo( GetRegKey( "NormalMapFileName", System.IO
 						for ( uint i=0; i < targetOffset; i++ )
 							Wr.Write( indirectPixels[i] );
 					}
+
+				m_demoForm.AOValues = m_AOValues;	// Send to demo form
 
 				textureAO_CPU.Dispose();
 //*/
@@ -506,8 +515,8 @@ LoadNormalMap( new System.IO.FileInfo( GetRegKey( "NormalMapFileName", System.IO
 //				textureAO_CPU.ReadPixels( 0, 0, ( uint X, uint Y, System.IO.BinaryReader R ) => { AOValues[X,Y] = R.ReadSingle(); } );
 
 				m_imageResult.WritePixels( ( uint X, uint Y, ref float4 _color ) => {
-					float	v = AOValues[X,Y].x / (2.0f * Mathf.PI);	// Show AO
-//					float	v = AOValues[X,Y].y / Mathf.PI;				// Show illuminance
+					float	v = m_AOValues[X,Y].x / (2.0f * Mathf.PI);	// Show AO
+//					float	v = m_AOValues[X,Y].y / Mathf.PI;				// Show illuminance
 //v = Mathf.Pow( v, 0.454545f );	// Quick gamma correction to have more precision in the shadows???
 					
 					_color.Set( v, v, v, 1.0f );
@@ -599,7 +608,7 @@ LoadNormalMap( new System.IO.FileInfo( GetRegKey( "NormalMapFileName", System.IO
 
 				float[,]	AOValues = null;
 
-				System.IO.FileInfo	binaryDataFileName = new System.IO.FileInfo( System.IO.Path.GetFileNameWithoutExtension( m_sourceFileName.FullName ) + ".indirectMap" );
+				System.IO.FileInfo	binaryDataFileName = new System.IO.FileInfo( m_resultFileName.FullName + ".indirectMap" );
 				using ( System.IO.FileStream S = binaryDataFileName.OpenRead() )
 					using ( System.IO.BinaryReader R = new System.IO.BinaryReader( S ) ) {
 
@@ -698,7 +707,7 @@ m_SB_Rays.SetInput( 4 );
 
 				//////////////////////////////////////////////////////////////////////////
 				// 3] Write resulting data
-				System.IO.FileInfo	resultDataFileName = new System.IO.FileInfo( System.IO.Path.GetFileNameWithoutExtension( m_sourceFileName.FullName ) + SUFFIX + ".AO" );
+				System.IO.FileInfo	resultDataFileName = new System.IO.FileInfo( m_resultFileName.FullName + SUFFIX + ".AO" );
 				using ( System.IO.FileStream S = resultDataFileName.Create() )
 					using ( System.IO.BinaryWriter Wr = new System.IO.BinaryWriter( S ) ) {
 						Wr.Write( W );
@@ -735,7 +744,7 @@ m_SB_Rays.SetInput( 4 );
 				// 1] Read resulting data
 				float[][]	histograms = null;
 
-				System.IO.FileInfo	resultDataFileName = new System.IO.FileInfo( System.IO.Path.GetFileNameWithoutExtension( m_sourceFileName.FullName ) + SUFFIX + ".AO" );
+				System.IO.FileInfo	resultDataFileName = new System.IO.FileInfo( m_resultFileName.FullName + SUFFIX + ".AO" );
 				using ( System.IO.FileStream S = resultDataFileName.OpenRead() )
 					using ( System.IO.BinaryReader R = new System.IO.BinaryReader( S ) ) {
 						uint	tempW = R.ReadUInt32();
@@ -786,7 +795,7 @@ m_SB_Rays.SetInput( 4 );
 				//////////////////////////////////////////////////////////////////////////
 				// 2] Save histograms
 				for ( uint bounceIndex=0; bounceIndex < histograms.GetLength(0); bounceIndex++ ) {
-					System.IO.FileInfo	finalCurveDataFileName = new System.IO.FileInfo( System.IO.Path.GetFileNameWithoutExtension( m_sourceFileName.FullName ) + bounceIndex + SUFFIX + ".float" );
+					System.IO.FileInfo	finalCurveDataFileName = new System.IO.FileInfo( m_resultFileName.FullName + bounceIndex + SUFFIX + ".float" );
 					using ( System.IO.FileStream S = finalCurveDataFileName.Create() )
 						using ( System.IO.BinaryWriter Wr = new System.IO.BinaryWriter( S ) ) {
 							float[]	histogram = histograms[bounceIndex];
@@ -970,22 +979,6 @@ m_SB_Rays.SetInput( 4 );
 			viewportPanelResult.Bitmap = m_imageResult.AsBitmap;
 		}
 
-		private void checkBoxViewsRGB_CheckedChanged( object sender, EventArgs e ) {
-			viewportPanelResult.ViewLinear = !checkBoxViewsRGB.Checked;
-		}
-
-		private void floatTrackbarControlBrightness_SliderDragStop( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fStartValue ) {
-			viewportPanelResult.Brightness = _Sender.Value;
-		}
-
-		private void floatTrackbarControlContrast_SliderDragStop( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fStartValue ) {
-			viewportPanelResult.Contrast = _Sender.Value;
-		}
-
-		private void floatTrackbarControlGamma_SliderDragStop( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fStartValue ) {
-			viewportPanelResult.Gamma = _Sender.Value;
-		}
-
 		private unsafe void viewportPanelResult_Click( object sender, EventArgs e ) {
 			if ( m_imageResult == null ) {
 				MessageBox( "There is no result image to save!" );
@@ -1112,6 +1105,12 @@ m_SB_Rays.SetInput( 4 );
 
 		private void buttonReload_Click( object sender, EventArgs e ) {
 			m_device.ReloadModifiedShaders();
+		}
+
+		DemoForm	m_demoForm = new DemoForm();
+		private void buttonDemo_Click( object sender, EventArgs e ) {
+			m_demoForm.SetImages( m_imageSourceHeight, m_imageSourceNormal, m_AOValues );//, m_arrayOfIlluminanceValues );
+			m_demoForm.Show( this );
 		}
 
 		#endregion

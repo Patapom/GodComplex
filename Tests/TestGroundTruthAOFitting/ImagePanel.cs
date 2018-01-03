@@ -10,7 +10,7 @@ using System.Drawing.Imaging;
 
 using SharpMath;
 
-namespace GenerateSelfShadowedBumpMap
+namespace TestGroundTruthAOFitting
 {
 	public partial class ImagePanel : Panel
 	{

@@ -1,4 +1,4 @@
-﻿namespace GenerateSelfShadowedBumpMap
+﻿namespace TestGroundTruthAOFitting
 {
 	partial class ImagePanel
 	{

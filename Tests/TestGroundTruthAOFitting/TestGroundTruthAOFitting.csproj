@@ -142,6 +142,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DemoForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="DemoForm.Designer.cs">
+      <DependentUpon>DemoForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="GeneratorForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -154,8 +160,17 @@
     <Compile Include="ImagePanel.Designer.cs">
       <DependentUpon>ImagePanel.cs</DependentUpon>
     </Compile>
+    <Compile Include="PanelOutput.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="PanelOutput.Designer.cs">
+      <DependentUpon>PanelOutput.cs</DependentUpon>
+    </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <EmbeddedResource Include="DemoForm.resx">
+      <DependentUpon>DemoForm.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="GeneratorForm.resx">
       <DependentUpon>GeneratorForm.cs</DependentUpon>
     </EmbeddedResource>
@@ -201,10 +216,17 @@
       <Project>{dd026a89-c5fe-4150-bc85-a660e427826a}</Project>
       <Name>MathAdvanced</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\Packages\SphericalHarmonicsLibrary\SphericalHarmonicsLibrary.csproj">
+      <Project>{e96e2072-c7ef-46bb-a3f1-8cf6b26bf019}</Project>
+      <Name>SphericalHarmonicsLibrary</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Content Include="Shaders\BilateralFiltering.hlsl" />
     <Content Include="Shaders\ComputeIndirectLighting.hlsl" />
+    <Content Include="Shaders\SphericalHarmonics.hlsl" />
+    <None Include="Shaders\Global.hlsl" />
+    <Content Include="Shaders\Render.hlsl" />
     <Content Include="Shaders\GenerateAOMap.hlsl" />
   </ItemGroup>
   <ItemGroup>
