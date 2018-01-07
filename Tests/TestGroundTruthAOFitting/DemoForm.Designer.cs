@@ -24,6 +24,8 @@
 			this.radioButtonOn = new System.Windows.Forms.RadioButton();
 			this.radioButtonGroundTruth = new System.Windows.Forms.RadioButton();
 			this.integerTrackbarControlBounceIndex = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
+			this.floatTrackbarControlExposure = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.label2 = new System.Windows.Forms.Label();
 			this.SuspendLayout();
 			// 
 			// timer
@@ -98,7 +100,7 @@
 			// 
 			// integerTrackbarControlBounceIndex
 			// 
-			this.integerTrackbarControlBounceIndex.Location = new System.Drawing.Point(312, 544);
+			this.integerTrackbarControlBounceIndex.Location = new System.Drawing.Point(12, 542);
 			this.integerTrackbarControlBounceIndex.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.integerTrackbarControlBounceIndex.MinimumSize = new System.Drawing.Size(70, 20);
 			this.integerTrackbarControlBounceIndex.Name = "integerTrackbarControlBounceIndex";
@@ -109,6 +111,28 @@
 			this.integerTrackbarControlBounceIndex.Value = 0;
 			this.integerTrackbarControlBounceIndex.VisibleRangeMax = 20;
 			// 
+			// floatTrackbarControlExposure
+			// 
+			this.floatTrackbarControlExposure.Location = new System.Drawing.Point(312, 542);
+			this.floatTrackbarControlExposure.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlExposure.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlExposure.Name = "floatTrackbarControlExposure";
+			this.floatTrackbarControlExposure.RangeMax = 10F;
+			this.floatTrackbarControlExposure.RangeMin = 0F;
+			this.floatTrackbarControlExposure.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlExposure.TabIndex = 3;
+			this.floatTrackbarControlExposure.Value = 1F;
+			this.floatTrackbarControlExposure.VisibleRangeMax = 1F;
+			// 
+			// label2
+			// 
+			this.label2.AutoSize = true;
+			this.label2.Location = new System.Drawing.Point(241, 545);
+			this.label2.Name = "label2";
+			this.label2.Size = new System.Drawing.Size(51, 13);
+			this.label2.TabIndex = 4;
+			this.label2.Text = "Exposure";
+			// 
 			// DemoForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -118,7 +142,9 @@
 			this.Controls.Add(this.radioButtonGroundTruth);
 			this.Controls.Add(this.radioButtonOn);
 			this.Controls.Add(this.radioButtonOff);
+			this.Controls.Add(this.label2);
 			this.Controls.Add(this.label1);
+			this.Controls.Add(this.floatTrackbarControlExposure);
 			this.Controls.Add(this.floatTrackbarControlReflectance);
 			this.Controls.Add(this.panelOutput);
 			this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedToolWindow;
@@ -140,5 +166,7 @@
 		private System.Windows.Forms.RadioButton radioButtonOn;
 		private System.Windows.Forms.RadioButton radioButtonGroundTruth;
 		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlBounceIndex;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlExposure;
+		private System.Windows.Forms.Label label2;
 	}
 }

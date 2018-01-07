@@ -24,6 +24,7 @@ namespace TestGroundTruthAOFitting
 			public uint		_bounceIndex;
 
 			public float3	_rho;
+			public float	_exposure;
 		}
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
@@ -80,6 +81,7 @@ namespace TestGroundTruthAOFitting
 				m_CB_Main.m._flags |= 2U;
 			m_CB_Main.m._bounceIndex = (uint) integerTrackbarControlBounceIndex.Value;
 			m_CB_Main.m._rho = floatTrackbarControlReflectance.Value * new float3( 1.0f, 0.9f, 0.7f );
+			m_CB_Main.m._exposure = floatTrackbarControlExposure.Value;
 			m_CB_Main.UpdateData();
 
 			m_CB_SH.m._SH0.Set( m_rotatedLightSH[0], 0 );

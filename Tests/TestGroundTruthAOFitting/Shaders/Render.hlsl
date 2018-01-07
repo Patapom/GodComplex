@@ -11,6 +11,7 @@ cbuffer	CBMain : register( b0 ) {
 	uint	_bounceIndex;
 
 	float3	_rho;
+	float	_exposure;
 }
 
 Texture2D<float>	_texHeight : register( t0 );
@@ -63,9 +64,6 @@ float3	GroundTruth( float2 _UV, float3 _rho, float3 _E0 ) {
 
 // Computes an improved AO factor based on original AO and surface reflectance
 float3	ComputeAO( float _AO, float3 _rho ) {
-//	float	a = _AO;
-//	float	ra = 1.0 - a;
-
 	const float	A = 27.576937094210384876503293303541;
 	const float	B = 3.3364392003423804;
 
@@ -75,7 +73,6 @@ float3	ComputeAO( float _AO, float3 _rho ) {
 	float	F1 = A * _AO * pow( 1.0 - _AO, 1.5 ) * exp( -B * pow( _AO, 0.25 ) );	// = `27.576937094210384876503293303541\)*\[Alpha]*(1 - \[Alpha])^1.5 * Exp[-\!\(TraditionalForm\`3.3364392003423804\)*Sqrt[Sqrt[\[Alpha]]]
 	float	tau = 1.0 - F1 / (0.01 + saturate( 1.0 - F0 ));
 	return F0 + _rho / (1.0 - _rho * tau) * F1;
-//	return F0 + _rho / (PI - _rho * tau) * F1;
 }
 
 float3	PS( VS_IN _In ) : SV_TARGET0 {
@@ -91,12 +88,8 @@ float3	PS( VS_IN _In ) : SV_TARGET0 {
 		AO = ComputeAO( AO.x, _rho );
 		break;
 	case 2:
-		return GroundTruth( UV, _rho, E0 );
+		return _exposure * GroundTruth( UV, _rho, E0 );
 	}
 
-	return (_rho / PI) * E0 * AO;
-
-//	return _reflectance;
-//	return pow( saturate( AO ), 2.2 );
-//	return float3( UV, 0 );
+	return _exposure * (_rho / PI) * E0 * AO;
 }
