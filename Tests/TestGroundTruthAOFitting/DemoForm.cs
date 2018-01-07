@@ -471,10 +471,14 @@ namespace TestGroundTruthAOFitting
 			_radiance.Max( float3.Zero );
 		}
 
-		Texture2D	m_tex_GroundTruth = null;
 		float3		m_groundTruthLastRho = float3.Zero;
+		Texture2D	m_tex_GroundTruth = null;
+		float4[][,]	m_lastGroundTruth = null;
 		void	UpdateGroundTruth( float3 _rho ) {
 			float4[][,]	groundTruth = m_owner.GenerateGroundTruth( _rho, m_rotatedLightSH );
+			if ( groundTruth == m_lastGroundTruth )
+				return;	// No change
+			m_lastGroundTruth = groundTruth;
 
 			if ( m_tex_GroundTruth != null )
 				m_tex_GroundTruth.Dispose();

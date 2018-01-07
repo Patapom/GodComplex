@@ -48,13 +48,17 @@ float3	GroundTruth( float2 _UV, float3 _rho, float3 _E0 ) {
 		E += pow( r, 1+bounceIndex ) * _texIrradianceBounces.Sample( LinearClamp, float3( _UV, bounceIndex ) );
 	}
 #endif
+	return (_rho / PI) * E * _E0;
 */
 
 //return _texGroundTruth.Sample( LinearClamp, _UV ).xyz;
-return (_rho / PI) * _texGroundTruth.Sample( LinearClamp, float3( _UV, _bounceIndex ) ).xyz;
+//return (_rho / PI) * _texGroundTruth.Sample( LinearClamp, float3( _UV, _bounceIndex ) ).xyz;
 
-
-	return (_rho / PI) * E * _E0;
+	float3	L = (_rho / PI) * _texGroundTruth.Sample( LinearClamp, float3( _UV, 0 ) ).xyz;
+	for ( uint bounceIndex=1; bounceIndex <= 20; bounceIndex++ ) {
+		L += (_rho / PI) * _texGroundTruth.Sample( LinearClamp, float3( _UV, bounceIndex ) ).xyz;
+	}
+	return L;
 }
 
 // Computes an improved AO factor based on original AO and surface reflectance
@@ -70,8 +74,8 @@ float3	ComputeAO( float _AO, float3 _rho ) {
 	float	F0 = _AO * (1.0 + 0.5 * pow( 1.0 - _AO, 0.75 ));						// = \[Alpha]*(1 + 0.5*(1 - \[Alpha])^0.75)
 	float	F1 = A * _AO * pow( 1.0 - _AO, 1.5 ) * exp( -B * pow( _AO, 0.25 ) );	// = `27.576937094210384876503293303541\)*\[Alpha]*(1 - \[Alpha])^1.5 * Exp[-\!\(TraditionalForm\`3.3364392003423804\)*Sqrt[Sqrt[\[Alpha]]]
 	float	tau = 1.0 - F1 / (0.01 + saturate( 1.0 - F0 ));
-//	return F0 + _rho / (1.0 - _rho * tau) * F1;
-	return F0 + _rho / (PI - _rho * tau) * F1;
+	return F0 + _rho / (1.0 - _rho * tau) * F1;
+//	return F0 + _rho / (PI - _rho * tau) * F1;
 }
 
 float3	PS( VS_IN _In ) : SV_TARGET0 {
