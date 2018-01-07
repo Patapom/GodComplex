@@ -18,7 +18,7 @@ cbuffer	CBInput : register( b0 ) {
 	float3	_rho;				// Reflectance
 }
 
-Texture2D<float>			_sourceIlluminance : register( t0 );
+Texture2D<float4>			_sourceIlluminance : register( t0 );
 RWTexture2D<float4>			_targetIlluminance : register( u0 );
 
 //Texture2D<float>			_sourceHeight : register( t1 );
@@ -76,7 +76,7 @@ void	CS_Direct( uint3 _groupID : SV_groupID, uint3 _groupThreadID : SV_groupThre
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// 
+// Compute reflecting radiance
 //
 [numthreads( MAX_THREADS, 1, 1 )]
 void	CS_Indirect( uint3 _groupID : SV_groupID, uint3 _groupThreadID : SV_groupThreadID ) {
@@ -93,12 +93,16 @@ void	CS_Indirect( uint3 _groupID : SV_groupID, uint3 _groupThreadID : SV_groupTh
 
 	if ( rayIndex < _raysCount ) {
 		uint	packedNeighborPixelPosition = _indirectPixelsStack[_raysCount * (_textureDimensions.x * _groupID.y + _groupID.x) + rayIndex];
-		if ( packedNeighborPixelPosition == ~0U ) {
-			// Direct visibility
-			float3	lsRayDirection = _rays[rayIndex];
-			float3	wsRayDirection = mul( lsRayDirection, gs_Local2World );
-			float3	incomingRadiance = EvaluateSHRadiance( wsRayDirection, _SH ).xyz;
+		if ( packedNeighborPixelPosition != ~0U ) {
+			// Retrieve indirect sample's position
+			uint2	neighborPixelPosition = uint2( packedNeighborPixelPosition & 0xFFFFU, packedNeighborPixelPosition >> 16 );
+			uint2	tiledNeighborPixelPosition = neighborPixelPosition % _textureDimensions;
 
+			// Sample neighbor's illuminance and compute incoming bounced luminance
+			float3	neighborIrradiance = _sourceIlluminance[tiledNeighborPixelPosition].xyz;
+			float3	incomingRadiance = (_rho / PI) * neighborIrradiance;
+
+			float3	lsRayDirection = _rays[rayIndex];
 			float3	outgoingRadiance = incomingRadiance * lsRayDirection.z;	// L(x,Wi) * (N.Wi)
 
 			InterlockedAdd( gs_accumulator.x, uint( 65536.0 * outgoingRadiance.x ) );
@@ -116,6 +120,5 @@ void	CS_Indirect( uint3 _groupID : SV_groupID, uint3 _groupThreadID : SV_groupTh
 							/ _raysCount;
 
 		_targetIlluminance[pixelPosition] = float4( normalizer * gs_accumulator / 65536.0, 0.0 );
-//		_targetIlluminance[pixelPosition] = float4( (float2) pixelPosition / _textureDimensions, 0, 0.0 );
 	}
 }

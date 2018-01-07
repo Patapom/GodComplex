@@ -125,6 +125,7 @@ const string	SUFFIX = "";
 		private Renderer.ConstantBuffer<CB_GroundTruth>	m_CB_GroundTruth;
 		private Renderer.ConstantBuffer<DemoForm.CB_SH>	m_CB_SH;
 		private Renderer.ComputeShader				m_CS_GenerateGroundTruth_Direct = null;
+		private Renderer.ComputeShader				m_CS_GenerateGroundTruth_Indirect = null;
 
 		// Bilateral filtering pre-processing
 		private Renderer.ConstantBuffer<CBFilter>	m_CB_Filter;
@@ -175,6 +176,7 @@ const string	SUFFIX = "";
 				#endif
 				{
 					m_CS_GenerateGroundTruth_Direct = new Renderer.ComputeShader( m_device, new System.IO.FileInfo( "./Shaders/ComputeGroundTruth.hlsl" ), "CS_Direct", null );
+					m_CS_GenerateGroundTruth_Indirect = new Renderer.ComputeShader( m_device, new System.IO.FileInfo( "./Shaders/ComputeGroundTruth.hlsl" ), "CS_Indirect", null );
 					m_CS_GenerateAOMap = new Renderer.ComputeShader( m_device, new System.IO.FileInfo( "./Shaders/GenerateAOMap.hlsl" ), "CS", null );
 					m_CS_ComputeIndirectLighting = new Renderer.ComputeShader( m_device, new System.IO.FileInfo( "./Shaders/ComputeIndirectLighting.hlsl" ), "CS", new Renderer.ShaderMacro[] { new Renderer.ShaderMacro( "ALBEDO", ALBEDO.ToString() ) } );
 					m_CS_BilateralFilter = new Renderer.ComputeShader( m_device, new System.IO.FileInfo( "./Shaders/BilateralFiltering.hlsl" ), "CS", null );
@@ -212,6 +214,8 @@ LoadNormalMap( new System.IO.FileInfo( GetRegKey( "NormalMapFileName", System.IO
 
 		protected override void OnClosing( CancelEventArgs e ) {
 			try {
+				m_CS_GenerateGroundTruth_Direct.Dispose();
+				m_CS_GenerateGroundTruth_Indirect.Dispose();
 				m_CS_ComputeIndirectLighting.Dispose();
 				m_CS_GenerateAOMap.Dispose();
 				m_CS_BilateralFilter.Dispose();
@@ -757,7 +761,7 @@ m_SB_Rays.SetInput( 4 );
 						}
 					}
 
-				m_demoForm.ArrayOfIlluminanceValues = m_arrayOfIlluminanceValues;				// Send to demo form
+//				m_demoForm.ArrayOfIlluminanceValues = m_arrayOfIlluminanceValues;				// Send to demo form
 				m_demoForm.SetIndirectPixelIndices( W, H, raysCount,  indirectPixelIndices );	// Send to demo form
 
 //*				//////////////////////////////////////////////////////////////////////////
@@ -870,14 +874,14 @@ m_SB_Rays.SetInput( 4 );
 
 		#region Ground Truth Generation
 
-		float4[,]	m_image_GroundTruth = null;
+		float4[][,]	m_images_GroundTruth = null;
 		float3		m_groundTruthLastRho = float3.Zero;
 		uint[]		m_indirectPixelIndices = null;
 		uint		m_raysCount = 0;
 
-		internal float4[,] GenerateGroundTruth( float3 _rho, float3[] _SH ) {
-			if ( m_image_GroundTruth != null && _rho == m_groundTruthLastRho )
-				return m_image_GroundTruth;	// Already computed!
+		internal float4[][,] GenerateGroundTruth( float3 _rho, float3[] _SH ) {
+			if ( m_images_GroundTruth != null && _rho == m_groundTruthLastRho )
+				return m_images_GroundTruth;	// Already computed!
 			if ( m_textureSourceNormal == null )
 				return null;
 
@@ -942,9 +946,7 @@ m_SB_Rays.SetInput( 4 );
 				Renderer.StructuredBuffer<uint>	SBIndirectPixelsStack = new Renderer.StructuredBuffer<uint>( m_device, W * SCANLINES_COUNT * m_raysCount, true );
 				Renderer.Texture2D	tex_irradiance0 = new Renderer.Texture2D( m_device, W, H, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, true, null );
 				Renderer.Texture2D	tex_irradiance1 = new Renderer.Texture2D( m_device, W, H, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, true, null );
-
-				if ( !m_CS_GenerateGroundTruth_Direct.Use() )
-					throw new Exception( "Failed to use Ground Truth compute shader!" );
+				Renderer.Texture2D	tex_groundTruth_CPU = new Renderer.Texture2D( m_device, W, H, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA32F, ImageUtility.COMPONENT_FORMAT.AUTO, true, true, null );
 
 				m_CB_GroundTruth.m._dimensionsX = W;
 				m_CB_GroundTruth.m._dimensionsY = H;
@@ -957,9 +959,14 @@ m_SB_Rays.SetInput( 4 );
 				SBIndirectPixelsStack.SetInput( 3 );
 				m_SB_Rays.SetInput( 4 );
 
+				m_images_GroundTruth = new float4[1+BOUNCES_COUNT][,];
+
 
 				// ===============================================================
 				// 2.1] Generate direct irradiance
+				if ( !m_CS_GenerateGroundTruth_Direct.Use() )
+					throw new Exception( "Failed to use Ground Truth compute shader!" );
+
 				tex_irradiance0.SetCSUAV( 0 );
 
 				uint	batchesCountY = (H + SCANLINES_COUNT-1) / SCANLINES_COUNT;
@@ -982,9 +989,20 @@ m_SB_Rays.SetInput( 4 );
 
 				tex_irradiance0.RemoveFromLastAssignedSlotUAV();
 
+				// Copy to CPU
+				tex_groundTruth_CPU.CopyFrom( tex_irradiance0 );
+				float4[,]	imageSlice = new float4[W,H];
+				m_images_GroundTruth[0] = imageSlice;
+				tex_groundTruth_CPU.ReadPixels( 0, 0, ( uint X, uint Y, System.IO.BinaryReader _R ) => {
+					imageSlice[X,Y].Set( _R.ReadSingle(), _R.ReadSingle(), _R.ReadSingle(), _R.ReadSingle() );
+				} );
 
-/*				// ===============================================================
+
+//*				// ===============================================================
 				// 2.2] Generate new bounces
+				if ( !m_CS_GenerateGroundTruth_Indirect.Use() )
+					throw new Exception( "Failed to use Ground Truth compute shader!" );
+
 				for ( uint bounceIndex=1; bounceIndex <= BOUNCES_COUNT; bounceIndex++ ) {
 
 					tex_irradiance0.SetCS( 0 );
@@ -1001,7 +1019,7 @@ m_SB_Rays.SetInput( 4 );
 						SBIndirectPixelsStack.Write();
 
 						// 2.2.2) Render batch
-						m_CS_GenerateGroundTruth_Direct.Dispatch( W, SCANLINES_COUNT, 1 );
+						m_CS_GenerateGroundTruth_Indirect.Dispatch( W, SCANLINES_COUNT, 1 );
 
 						progressBar.Value = (int) (0.01f * (bounceIndex+(batchIndex+1)) / (BOUNCES_COUNT*batchesCountY) * progressBar.Maximum);
 						Application.DoEvents();
@@ -1014,23 +1032,19 @@ m_SB_Rays.SetInput( 4 );
 					Renderer.Texture2D	temp = tex_irradiance0;
 					tex_irradiance0 = tex_irradiance1;
 					tex_irradiance1 = temp;
+
+					// Copy to CPU
+					tex_groundTruth_CPU.CopyFrom( tex_irradiance0 );
+					imageSlice = new float4[W,H];
+					m_images_GroundTruth[bounceIndex] = imageSlice;
+					tex_groundTruth_CPU.ReadPixels( 0, 0, ( uint X, uint Y, System.IO.BinaryReader _R ) => {
+						imageSlice[X,Y].Set( _R.ReadSingle(), _R.ReadSingle(), _R.ReadSingle(), _R.ReadSingle() );
+					} );
 				}
 //*/
 				progressBar.Value = progressBar.Maximum;
 
 				SBIndirectPixelsStack.Dispose();
-
-				//////////////////////////////////////////////////////////////////////////
-				// 3] Store as CPU image
-				Renderer.Texture2D	tex_groundTruth_CPU = new Renderer.Texture2D( m_device, W, H, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA32F, ImageUtility.COMPONENT_FORMAT.AUTO, true, true, null );
-
-tex_groundTruth_CPU.CopyFrom( tex_irradiance0 );
-
-				m_image_GroundTruth = new float4[W,H];
-				tex_groundTruth_CPU.ReadPixels( 0, 0, ( uint X, uint Y, System.IO.BinaryReader _R ) => {
-					m_image_GroundTruth[X,Y].Set( _R.ReadSingle(), _R.ReadSingle(), _R.ReadSingle(), _R.ReadSingle() );
-				} );
-
 
 				tex_irradiance1.Dispose();
 				tex_irradiance0.Dispose();
@@ -1072,7 +1086,7 @@ tex_groundTruth_CPU.CopyFrom( tex_irradiance0 );
 				panelParameters.Enabled = true;
 			}
 
-			return m_image_GroundTruth;
+			return m_images_GroundTruth;
 		}
 
 		#endregion

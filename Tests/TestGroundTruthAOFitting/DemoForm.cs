@@ -21,7 +21,9 @@ namespace TestGroundTruthAOFitting
 			public uint		_resolutionX;
 			public uint		_resolutionY;
 			public uint		_flags;
-			public float	_reflectance;
+			public uint		_bounceIndex;
+
+			public float3	_rho;
 		}
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
@@ -66,18 +68,18 @@ namespace TestGroundTruthAOFitting
 			m_tex_Height.Set( 0 );
 			m_tex_Normal.Set( 1 );
 			m_tex_AO.Set( 2 );
-			if ( m_tex_Illuminance != null )
-				m_tex_Illuminance.Set( 3 );
+// 			if ( m_tex_Illuminance != null )
+// 				m_tex_Illuminance.Set( 3 );
 			if ( m_tex_GroundTruth != null )
-				m_tex_GroundTruth.Set( 4 );
+				m_tex_GroundTruth.Set( 3 );
 
 			m_CB_Main.m._flags = 0U;
 			if ( radioButtonOn.Checked )
 				m_CB_Main.m._flags |= 1U;
 			else if ( radioButtonGroundTruth.Checked )
 				m_CB_Main.m._flags |= 2U;
-
-			m_CB_Main.m._reflectance = floatTrackbarControlReflectance.Value;
+			m_CB_Main.m._bounceIndex = (uint) integerTrackbarControlBounceIndex.Value;
+			m_CB_Main.m._rho = floatTrackbarControlReflectance.Value * new float3( 1.0f, 0.9f, 0.7f );
 			m_CB_Main.UpdateData();
 
 			m_CB_SH.m._SH0.Set( m_rotatedLightSH[0], 0 );
@@ -187,50 +189,50 @@ namespace TestGroundTruthAOFitting
 				m_tex_AO = new Texture2D( m_device, W, H, 1, 1, ImageUtility.PIXEL_FORMAT.RG32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, false, new PixelsBuffer[] { content } );
 			}
 		}
-		Texture2D	m_tex_Illuminance = null;
-		float[][,]	m_arrayOfIlluminanceValues = null;
-		public float[][,]	ArrayOfIlluminanceValues {
-			get { return m_arrayOfIlluminanceValues; }
-			set {
-				if ( value == m_arrayOfIlluminanceValues && value != null && m_arrayOfIlluminanceValues != null && value[0] == m_arrayOfIlluminanceValues[0] )
-					return;
-
-				if ( m_tex_Illuminance != null )
-					m_tex_Illuminance.Dispose();
-				m_tex_Illuminance = null;
-
-				if ( m_arrayOfIlluminanceValues == null )
-					m_arrayOfIlluminanceValues = new float[value.Length][,];
-				Array.Copy( value, m_arrayOfIlluminanceValues, value.Length );
-				if ( m_arrayOfIlluminanceValues == null || m_arrayOfIlluminanceValues[0] == null )
-					return;
-
-				uint	bouncesCount = (uint) m_arrayOfIlluminanceValues.Length;
-				uint	W = (uint) m_arrayOfIlluminanceValues[0].GetLength( 0 );
-				uint	H = (uint) m_arrayOfIlluminanceValues[0].GetLength( 1 );
-				PixelsBuffer[]	arraySlices = new PixelsBuffer[bouncesCount];
-				for ( uint bounceIndex=0; bounceIndex < bouncesCount; bounceIndex++ ) {
-					PixelsBuffer	content = new PixelsBuffer( W*H*4 );
-					arraySlices[bounceIndex] = content;
-					float[,]		illuminanceValues = m_arrayOfIlluminanceValues[bounceIndex];
-					using ( System.IO.BinaryWriter Wr = content.OpenStreamWrite() ) {
-						for ( uint Y=0; Y < H; Y++ )
-							for ( uint X=0; X < W; X++ ) {
-								float	E = illuminanceValues[X,Y];
-								Wr.Write( E );
-							}
-					}
-				}
-
-				m_tex_Illuminance = new Texture2D( m_device, W, H, (int) bouncesCount, 1, ImageUtility.PIXEL_FORMAT.R32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, false, arraySlices );
-			}
-		}
+// 		Texture2D	m_tex_Illuminance = null;
+// 		float[][,]	m_arrayOfIlluminanceValues = null;
+// 		public float[][,]	ArrayOfIlluminanceValues {
+// 			get { return m_arrayOfIlluminanceValues; }
+// 			set {
+// 				if ( value == m_arrayOfIlluminanceValues && value != null && m_arrayOfIlluminanceValues != null && value[0] == m_arrayOfIlluminanceValues[0] )
+// 					return;
+// 
+// 				if ( m_tex_Illuminance != null )
+// 					m_tex_Illuminance.Dispose();
+// 				m_tex_Illuminance = null;
+// 
+// 				if ( m_arrayOfIlluminanceValues == null )
+// 					m_arrayOfIlluminanceValues = new float[value.Length][,];
+// 				Array.Copy( value, m_arrayOfIlluminanceValues, value.Length );
+// 				if ( m_arrayOfIlluminanceValues == null || m_arrayOfIlluminanceValues[0] == null )
+// 					return;
+// 
+// 				uint	bouncesCount = (uint) m_arrayOfIlluminanceValues.Length;
+// 				uint	W = (uint) m_arrayOfIlluminanceValues[0].GetLength( 0 );
+// 				uint	H = (uint) m_arrayOfIlluminanceValues[0].GetLength( 1 );
+// 				PixelsBuffer[]	arraySlices = new PixelsBuffer[bouncesCount];
+// 				for ( uint bounceIndex=0; bounceIndex < bouncesCount; bounceIndex++ ) {
+// 					PixelsBuffer	content = new PixelsBuffer( W*H*4 );
+// 					arraySlices[bounceIndex] = content;
+// 					float[,]		illuminanceValues = m_arrayOfIlluminanceValues[bounceIndex];
+// 					using ( System.IO.BinaryWriter Wr = content.OpenStreamWrite() ) {
+// 						for ( uint Y=0; Y < H; Y++ )
+// 							for ( uint X=0; X < W; X++ ) {
+// 								float	E = illuminanceValues[X,Y];
+// 								Wr.Write( E );
+// 							}
+// 					}
+// 				}
+// 
+// 				m_tex_Illuminance = new Texture2D( m_device, W, H, (int) bouncesCount, 1, ImageUtility.PIXEL_FORMAT.R32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, false, arraySlices );
+// 			}
+// 		}
 
 		public void	SetImages( ImageFile _imageHeight, ImageFile _imageSourceNormal, float2[,] _AOValues, float[][,] _arrayOfIlluminanceValues ) {
 			ImageHeight = _imageHeight;
 			ImageNormal = _imageSourceNormal;
 			AOValues = _AOValues;
-			ArrayOfIlluminanceValues = _arrayOfIlluminanceValues;
+// 			ArrayOfIlluminanceValues = _arrayOfIlluminanceValues;
 		}
 
 		#endregion
@@ -265,8 +267,8 @@ namespace TestGroundTruthAOFitting
 				m_tex_Height.Dispose();
 			if ( m_tex_Normal != null )
 				m_tex_Normal.Dispose();
-			if ( m_tex_Illuminance != null )
-				m_tex_Illuminance.Dispose();
+// 			if ( m_tex_Illuminance != null )
+// 				m_tex_Illuminance.Dispose();
 			if ( m_tex_GroundTruth != null )
 				m_tex_GroundTruth.Dispose();
 
@@ -472,24 +474,30 @@ namespace TestGroundTruthAOFitting
 		Texture2D	m_tex_GroundTruth = null;
 		float3		m_groundTruthLastRho = float3.Zero;
 		void	UpdateGroundTruth( float3 _rho ) {
-			float4[,]	groundTruth = m_owner.GenerateGroundTruth( _rho, m_rotatedLightSH );
+			float4[][,]	groundTruth = m_owner.GenerateGroundTruth( _rho, m_rotatedLightSH );
 
 			if ( m_tex_GroundTruth != null )
 				m_tex_GroundTruth.Dispose();
 
-			uint			W = (uint) groundTruth.GetLength( 0 );
-			uint			H = (uint) groundTruth.GetLength( 1 );
-			PixelsBuffer	content = new PixelsBuffer( W*H*16 );
-			using ( System.IO.BinaryWriter Wr = content.OpenStreamWrite() ) {
-				for ( uint Y=0; Y < H; Y++ )
-					for ( uint X=0; X < W; X++ ) {
-						Wr.Write( groundTruth[X,Y].x );
-						Wr.Write( groundTruth[X,Y].y );
-						Wr.Write( groundTruth[X,Y].z );
-						Wr.Write( groundTruth[X,Y].w );
-					}
+			int				slicesCount = groundTruth.Length;
+			uint			W = (uint) groundTruth[0].GetLength( 0 );
+			uint			H = (uint) groundTruth[0].GetLength( 1 );
+			PixelsBuffer[]	content = new PixelsBuffer[slicesCount];
+			for ( int sliceIndex=0; sliceIndex < slicesCount; sliceIndex++ ) {
+				float4[,]		sourceContent = groundTruth[sliceIndex];
+				PixelsBuffer	sliceContent = new PixelsBuffer( W*H*16 );
+				content[sliceIndex] = sliceContent;
+				using ( System.IO.BinaryWriter Wr = sliceContent.OpenStreamWrite() ) {
+					for ( uint Y=0; Y < H; Y++ )
+						for ( uint X=0; X < W; X++ ) {
+							Wr.Write( sourceContent[X,Y].x );
+							Wr.Write( sourceContent[X,Y].y );
+							Wr.Write( sourceContent[X,Y].z );
+							Wr.Write( sourceContent[X,Y].w );
+						}
+				}
 			}
-			m_tex_GroundTruth = new Texture2D( m_device, W, H, 1, 1, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.AUTO, false, false, new PixelsBuffer[] { content } );
+			m_tex_GroundTruth = new Texture2D( m_device, W, H, slicesCount, 1, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.AUTO, false, false, content );
 
 /*			if ( m_tex_GroundTruth != null && _rho == m_groundTruthLastRho )
 				return;	// Already computed!

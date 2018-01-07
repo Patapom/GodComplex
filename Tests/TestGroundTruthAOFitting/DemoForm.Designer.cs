@@ -23,6 +23,7 @@
 			this.radioButtonOff = new System.Windows.Forms.RadioButton();
 			this.radioButtonOn = new System.Windows.Forms.RadioButton();
 			this.radioButtonGroundTruth = new System.Windows.Forms.RadioButton();
+			this.integerTrackbarControlBounceIndex = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
 			this.SuspendLayout();
 			// 
 			// timer
@@ -95,11 +96,25 @@
 			this.radioButtonGroundTruth.UseVisualStyleBackColor = true;
 			this.radioButtonGroundTruth.CheckedChanged += new System.EventHandler(this.radioButtonGroundTruth_CheckedChanged);
 			// 
+			// integerTrackbarControlBounceIndex
+			// 
+			this.integerTrackbarControlBounceIndex.Location = new System.Drawing.Point(312, 544);
+			this.integerTrackbarControlBounceIndex.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.integerTrackbarControlBounceIndex.MinimumSize = new System.Drawing.Size(70, 20);
+			this.integerTrackbarControlBounceIndex.Name = "integerTrackbarControlBounceIndex";
+			this.integerTrackbarControlBounceIndex.RangeMax = 20;
+			this.integerTrackbarControlBounceIndex.RangeMin = 0;
+			this.integerTrackbarControlBounceIndex.Size = new System.Drawing.Size(200, 20);
+			this.integerTrackbarControlBounceIndex.TabIndex = 6;
+			this.integerTrackbarControlBounceIndex.Value = 0;
+			this.integerTrackbarControlBounceIndex.VisibleRangeMax = 20;
+			// 
 			// DemoForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-			this.ClientSize = new System.Drawing.Size(525, 546);
+			this.ClientSize = new System.Drawing.Size(525, 568);
+			this.Controls.Add(this.integerTrackbarControlBounceIndex);
 			this.Controls.Add(this.radioButtonGroundTruth);
 			this.Controls.Add(this.radioButtonOn);
 			this.Controls.Add(this.radioButtonOff);
@@ -124,5 +139,6 @@
 		private System.Windows.Forms.RadioButton radioButtonOff;
 		private System.Windows.Forms.RadioButton radioButtonOn;
 		private System.Windows.Forms.RadioButton radioButtonGroundTruth;
+		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlBounceIndex;
 	}
 }

@@ -8,16 +8,18 @@
 cbuffer	CBMain : register( b0 ) {
 	uint2	_resolution;		// 
 	uint	_flags;				// 
-	float	_reflectance;
+	uint	_bounceIndex;
+
+	float3	_rho;
 }
 
 Texture2D<float>	_texHeight : register( t0 );
 Texture2D<float3>	_texNormal : register( t1 );
 Texture2D<float2>	_texAO : register( t2 );
 
-Texture2DArray<float>	_texIrradianceBounces : register( t3 );
-
-Texture2D<float4>	_texGroundTruth : register( t4 );
+//Texture2DArray<float>	_texIrradianceBounces : register( t3 );
+//Texture2D<float4>	_texGroundTruth : register( t4 );
+Texture2DArray<float4>	_texGroundTruth : register( t3 );
 
 struct VS_IN {
 	float4	__Position : SV_POSITION;
@@ -31,6 +33,8 @@ float3	GroundTruth( float2 _UV, float3 _rho, float3 _E0 ) {
 //		E *= (_rho / PI);
 //		E += _texIrradianceBounces.Sample( LinearClamp, float3( _UV, bounceIndex ) );
 //	}
+
+/*
 #if 0
 	float3	r = saturate( _rho / PI );
 //	float3	r = saturate( _rho );
@@ -44,9 +48,10 @@ float3	GroundTruth( float2 _UV, float3 _rho, float3 _E0 ) {
 		E += pow( r, 1+bounceIndex ) * _texIrradianceBounces.Sample( LinearClamp, float3( _UV, bounceIndex ) );
 	}
 #endif
+*/
 
 //return _texGroundTruth.Sample( LinearClamp, _UV ).xyz;
-return (_rho / PI) * _texGroundTruth.Sample( LinearClamp, _UV ).xyz;
+return (_rho / PI) * _texGroundTruth.Sample( LinearClamp, float3( _UV, _bounceIndex ) ).xyz;
 
 
 	return (_rho / PI) * E * _E0;
@@ -73,20 +78,19 @@ float3	PS( VS_IN _In ) : SV_TARGET0 {
 	float2	UV = _In.__Position.xy / _resolution;
 	float3	AO = _texAO.Sample( LinearClamp, UV ).x;
 	float3	normal = 2.0 * _texNormal.Sample( LinearClamp, UV ) - 1.0;
-	float3	rho = _reflectance * float3( 1.0, 0.9, 0.7 );
 
 	float3	SH[9] = { _SH[0].xyz, _SH[1].xyz, _SH[2].xyz, _SH[3].xyz, _SH[4].xyz, _SH[5].xyz, _SH[6].xyz, _SH[7].xyz, _SH[8].xyz };
 	float3	E0 = EvaluateSHIrradiance( normal, SH );
 
 	switch ( _flags & 0x3U ) {
 	case 1:
-		AO = ComputeAO( AO.x, rho );
+		AO = ComputeAO( AO.x, _rho );
 		break;
 	case 2:
-		return GroundTruth( UV, rho, E0 );
+		return GroundTruth( UV, _rho, E0 );
 	}
 
-	return (rho / PI) * E0 * AO;
+	return (_rho / PI) * E0 * AO;
 
 //	return _reflectance;
 //	return pow( saturate( AO ), 2.2 );
