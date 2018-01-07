@@ -287,7 +287,7 @@ float3	EstimateLambertReflectanceFactors( float _cosThetaAO, float _coneBendAngl
 // Evaluates the SH coefficients in the requested direction
 // Analytic method from http://www1.cs.columbia.edu/~ravir/papers/envmap/envmap.pdf eq. 3
 //
-float3	EvaluateSHRadiance( float3 _direction, float3 _SH[9] ) {
+float4	EvaluateSHRadiance( float3 _direction, float4 _SH[9] ) {
 	const float	f0 = 0.28209479177387814347403972578039;		// 0.5 / sqrt(PI);
 	const float	f1 = 0.48860251190291992158638462283835;		// 0.5 * sqrt(3/PI);
 	const float	f2 = 1.0925484305920790705433857058027;			// 0.5 * sqrt(15/PI);

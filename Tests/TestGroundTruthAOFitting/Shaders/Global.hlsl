@@ -3,10 +3,9 @@
 #define INVPI	0.31830988618379067153776752674503
 #define SQRT2	1.4142135623730950488016887242097
 
-//cbuffer CB_Main : register(b0) {
-//	float3	iResolution;	// viewport resolution (in pixels)
-//	float	iGlobalTime;	// shader playback time (in seconds)
-//};
+cbuffer	CBSH : register( b1 ) {
+	float4	_SH[9];
+}
 
 SamplerState LinearClamp	: register( s0 );
 SamplerState PointClamp		: register( s1 );

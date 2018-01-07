@@ -22,6 +22,10 @@ namespace TestGroundTruthAOFitting
 			public uint		_resolutionY;
 			public uint		_flags;
 			public float	_reflectance;
+		}
+
+		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
+		internal struct	CB_SH {
 			public float4	_SH0;
 			public float4	_SH1;
 			public float4	_SH2;
@@ -33,12 +37,16 @@ namespace TestGroundTruthAOFitting
 			public float4	_SH8;
 		}
 
-		Device		m_device = new Device();
+		GeneratorForm	m_owner = null;
+
+		Device			m_device = new Device();
 
 		ConstantBuffer< CB_Main >	m_CB_Main = null;
-		Shader		m_shader_Render = null;
+		ConstantBuffer< CB_SH >		m_CB_SH = null;
+		Shader			m_shader_Render = null;
 
-		public DemoForm() {
+		public DemoForm( GeneratorForm _owner ) {
+			m_owner = _owner;
 			InitializeComponent();
 			InitD3D();
 		}
@@ -58,19 +66,30 @@ namespace TestGroundTruthAOFitting
 			m_tex_Height.Set( 0 );
 			m_tex_Normal.Set( 1 );
 			m_tex_AO.Set( 2 );
+			if ( m_tex_Illuminance != null )
+				m_tex_Illuminance.Set( 3 );
+			if ( m_tex_GroundTruth != null )
+				m_tex_GroundTruth.Set( 4 );
 
-			m_CB_Main.m._flags = (uint) (checkBoxEnableAO.Checked ? 1 : 0);
+			m_CB_Main.m._flags = 0U;
+			if ( radioButtonOn.Checked )
+				m_CB_Main.m._flags |= 1U;
+			else if ( radioButtonGroundTruth.Checked )
+				m_CB_Main.m._flags |= 2U;
+
 			m_CB_Main.m._reflectance = floatTrackbarControlReflectance.Value;
-			m_CB_Main.m._SH0.Set( m_rotatedLightSH[0], 0 );
-			m_CB_Main.m._SH1.Set( m_rotatedLightSH[1], 0 );
-			m_CB_Main.m._SH2.Set( m_rotatedLightSH[2], 0 );
-			m_CB_Main.m._SH3.Set( m_rotatedLightSH[3], 0 );
-			m_CB_Main.m._SH4.Set( m_rotatedLightSH[4], 0 );
-			m_CB_Main.m._SH5.Set( m_rotatedLightSH[5], 0 );
-			m_CB_Main.m._SH6.Set( m_rotatedLightSH[6], 0 );
-			m_CB_Main.m._SH7.Set( m_rotatedLightSH[7], 0 );
-			m_CB_Main.m._SH8.Set( m_rotatedLightSH[8], 0 );
 			m_CB_Main.UpdateData();
+
+			m_CB_SH.m._SH0.Set( m_rotatedLightSH[0], 0 );
+			m_CB_SH.m._SH1.Set( m_rotatedLightSH[1], 0 );
+			m_CB_SH.m._SH2.Set( m_rotatedLightSH[2], 0 );
+			m_CB_SH.m._SH3.Set( m_rotatedLightSH[3], 0 );
+			m_CB_SH.m._SH4.Set( m_rotatedLightSH[4], 0 );
+			m_CB_SH.m._SH5.Set( m_rotatedLightSH[5], 0 );
+			m_CB_SH.m._SH6.Set( m_rotatedLightSH[6], 0 );
+			m_CB_SH.m._SH7.Set( m_rotatedLightSH[7], 0 );
+			m_CB_SH.m._SH8.Set( m_rotatedLightSH[8], 0 );
+			m_CB_SH.UpdateData();
 
 			m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
 			m_device.SetRenderTarget( m_device.DefaultTarget, null );
@@ -84,13 +103,11 @@ namespace TestGroundTruthAOFitting
 
 		Texture2D	CreateTextureFromImage( ImageFile _image ) {
 			if ( _image.PixelFormat == PIXEL_FORMAT.BGR8 ) {
-//				ImageFile	convertedImage = new ImageFile( _image.Width, _image.Height, PIXEL_FORMAT.RG);
 				ImageFile	convertedImage = new ImageFile();
 				convertedImage.ConvertFrom( _image, PIXEL_FORMAT.BGRA8 );
 				_image = convertedImage;
 			}
 
-//			m_tex_Height = new Texture2D( m_device, m_imageHeight.Width, m_imageHeight.Height, 1, 1, ImageUtility.PIXEL_FORMAT.R8, ImageUtility.COMPONENT_FORMAT.UNORM, false, false, new PixelsBuffer[] { content } );
 			ImagesMatrix	matrix = new ImagesMatrix( new ImageFile[,] { { _image } } );
 			Texture2D		result = new Texture2D( m_device, matrix, ImageUtility.COMPONENT_FORMAT.UNORM );
 			return result;
@@ -170,19 +187,50 @@ namespace TestGroundTruthAOFitting
 				m_tex_AO = new Texture2D( m_device, W, H, 1, 1, ImageUtility.PIXEL_FORMAT.RG32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, false, new PixelsBuffer[] { content } );
 			}
 		}
-// 		float[][,]	m_arrayOfIlluminanceValues = null;
-// 		float[][,]	arrayOfIlluminanceValues {
-// 			get { return m_arrayOfIlluminanceValues; }
-// 			set {
-// 				if ( value == m_arrayOfIlluminanceValues )
-// 					return;
-// 			}
-// 		}
+		Texture2D	m_tex_Illuminance = null;
+		float[][,]	m_arrayOfIlluminanceValues = null;
+		public float[][,]	ArrayOfIlluminanceValues {
+			get { return m_arrayOfIlluminanceValues; }
+			set {
+				if ( value == m_arrayOfIlluminanceValues && value != null && m_arrayOfIlluminanceValues != null && value[0] == m_arrayOfIlluminanceValues[0] )
+					return;
 
-		public void	SetImages( ImageFile _imageHeight, ImageFile _imageSourceNormal, float2[,] _AOValues ) {
+				if ( m_tex_Illuminance != null )
+					m_tex_Illuminance.Dispose();
+				m_tex_Illuminance = null;
+
+				if ( m_arrayOfIlluminanceValues == null )
+					m_arrayOfIlluminanceValues = new float[value.Length][,];
+				Array.Copy( value, m_arrayOfIlluminanceValues, value.Length );
+				if ( m_arrayOfIlluminanceValues == null || m_arrayOfIlluminanceValues[0] == null )
+					return;
+
+				uint	bouncesCount = (uint) m_arrayOfIlluminanceValues.Length;
+				uint	W = (uint) m_arrayOfIlluminanceValues[0].GetLength( 0 );
+				uint	H = (uint) m_arrayOfIlluminanceValues[0].GetLength( 1 );
+				PixelsBuffer[]	arraySlices = new PixelsBuffer[bouncesCount];
+				for ( uint bounceIndex=0; bounceIndex < bouncesCount; bounceIndex++ ) {
+					PixelsBuffer	content = new PixelsBuffer( W*H*4 );
+					arraySlices[bounceIndex] = content;
+					float[,]		illuminanceValues = m_arrayOfIlluminanceValues[bounceIndex];
+					using ( System.IO.BinaryWriter Wr = content.OpenStreamWrite() ) {
+						for ( uint Y=0; Y < H; Y++ )
+							for ( uint X=0; X < W; X++ ) {
+								float	E = illuminanceValues[X,Y];
+								Wr.Write( E );
+							}
+					}
+				}
+
+				m_tex_Illuminance = new Texture2D( m_device, W, H, (int) bouncesCount, 1, ImageUtility.PIXEL_FORMAT.R32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, false, arraySlices );
+			}
+		}
+
+		public void	SetImages( ImageFile _imageHeight, ImageFile _imageSourceNormal, float2[,] _AOValues, float[][,] _arrayOfIlluminanceValues ) {
 			ImageHeight = _imageHeight;
 			ImageNormal = _imageSourceNormal;
 			AOValues = _AOValues;
+			ArrayOfIlluminanceValues = _arrayOfIlluminanceValues;
 		}
 
 		#endregion
@@ -199,7 +247,10 @@ namespace TestGroundTruthAOFitting
 				m_CB_Main.m._resolutionX = (uint) panelOutput.Width;
 				m_CB_Main.m._resolutionY = (uint) panelOutput.Height;
 
+				m_CB_SH = new ConstantBuffer<CB_SH>( m_device, 1 );
+
 				InitEnvironmentSH();
+				UpdateSH();
 
 				Application.Idle += Application_Idle;
 			} catch ( Exception ) {
@@ -214,7 +265,12 @@ namespace TestGroundTruthAOFitting
 				m_tex_Height.Dispose();
 			if ( m_tex_Normal != null )
 				m_tex_Normal.Dispose();
+			if ( m_tex_Illuminance != null )
+				m_tex_Illuminance.Dispose();
+			if ( m_tex_GroundTruth != null )
+				m_tex_GroundTruth.Dispose();
 
+			m_CB_SH.Dispose();
 			m_CB_Main.Dispose();
 			m_shader_Render.Dispose();
 			m_device.Dispose();
@@ -279,7 +335,7 @@ namespace TestGroundTruthAOFitting
 
 			if ( (m_buttonDown & System.Windows.Forms.MouseButtons.Left) != 0 ) {
 				float	Dx = e.Location.X - m_buttonDownPosition.X;
-				float	Dy = m_buttonDownPosition.Y - e.Location.Y;
+				float	Dy = e.Location.Y - m_buttonDownPosition.Y;
 				Quat	rotY = new Quat( new AngleAxis( 0.01f * Dx, float3.UnitY ) );
 				Quat	rotX = new Quat( new AngleAxis( 0.01f * Dy, float3.UnitX ) );
 				m_lightQuat = m_buttonDownLightQuat * rotX * rotY;
@@ -344,6 +400,192 @@ namespace TestGroundTruthAOFitting
 
 			SphericalHarmonics.SHFunctions.FilterHanning( m_lightSH, 1.8f );
 		}
+
+		#endregion
+
+		#region Ground Truth Computation
+
+		uint		m_width, m_height, m_raysCount;
+		uint[]		m_indirectPixelIndices = null;
+		public void		SetIndirectPixelIndices( uint _width, uint _height, uint _raysCount, uint[] _indirectPixelIndices ) {
+			if ( m_tex_GroundTruth != null )
+				m_tex_GroundTruth.Dispose();
+			m_tex_GroundTruth = null;
+
+			m_width = _width;
+			m_height = _height;
+			m_raysCount = _raysCount;
+			m_indirectPixelIndices = _indirectPixelIndices;
+		}
+
+		private void radioButtonGroundTruth_CheckedChanged( object sender, EventArgs e ) {
+			if ( !radioButtonGroundTruth.Checked )
+				return;
+
+			float3	rho = floatTrackbarControlReflectance.Value * new float3( 1.0f, 0.9f, 0.7f );
+			UpdateGroundTruth( rho );
+		}
+
+		// Build orthonormal basis from a 3D Unit Vector Without normalization [Frisvad2012])
+		void BuildOrthonormalBasis( float3 _normal, ref float3 _tangent, ref float3 _bitangent ) {
+			float a = _normal.z > -0.9999999f ? 1.0f / (1.0f + _normal.z) : 0.0f;
+			float b = -_normal.x * _normal.y * a;
+
+			_tangent.Set( 1.0f - _normal.x*_normal.x*a, b, -_normal.x );
+			_bitangent.Set( b, 1.0f - _normal.y*_normal.y*a, -_normal.y );
+		}
+
+		// Evaluates the SH coefficients in the requested direction
+		// Analytic method from http://www1.cs.columbia.edu/~ravir/papers/envmap/envmap.pdf eq. 3
+		//
+		void	EvaluateSHRadiance( ref float3 _direction, ref float3 _radiance ) {
+			const float	f0 = 0.28209479177387814347403972578039f;		// 0.5 / sqrt(PI);
+			const float	f1 = 0.48860251190291992158638462283835f;		// 0.5 * sqrt(3/PI);
+			const float	f2 = 1.0925484305920790705433857058027f;		// 0.5 * sqrt(15/PI);
+			const float	f3 = 0.31539156525252000603089369029571f;		// 0.25 * sqrt(5.PI);
+
+			float	SH0 = f0;
+			float	SH1 = f1 * _direction.y;
+			float	SH2 = f1 * _direction.z;
+			float	SH3 = f1 * _direction.x;
+			float	SH4 = f2 * _direction.x * _direction.y;
+			float	SH5 = f2 * _direction.y * _direction.z;
+			float	SH6 = f3 * (3.0f * _direction.z*_direction.z - 1.0f);
+			float	SH7 = f2 * _direction.x * _direction.z;
+			float	SH8 = f2 * 0.5f * (_direction.x*_direction.x - _direction.y*_direction.y);
+
+			float3[]	_SH = m_rotatedLightSH;
+
+			// Dot the SH together
+			_radiance = SH0 * _SH[0]
+					  + SH1 * _SH[1]
+					  + SH2 * _SH[2]
+					  + SH3 * _SH[3]
+					  + SH4 * _SH[4]
+					  + SH5 * _SH[5]
+					  + SH6 * _SH[6]
+					  + SH7 * _SH[7]
+					  + SH8 * _SH[8];
+			_radiance.Max( float3.Zero );
+		}
+
+		Texture2D	m_tex_GroundTruth = null;
+		float3		m_groundTruthLastRho = float3.Zero;
+		void	UpdateGroundTruth( float3 _rho ) {
+			float4[,]	groundTruth = m_owner.GenerateGroundTruth( _rho, m_rotatedLightSH );
+
+			if ( m_tex_GroundTruth != null )
+				m_tex_GroundTruth.Dispose();
+
+			uint			W = (uint) groundTruth.GetLength( 0 );
+			uint			H = (uint) groundTruth.GetLength( 1 );
+			PixelsBuffer	content = new PixelsBuffer( W*H*16 );
+			using ( System.IO.BinaryWriter Wr = content.OpenStreamWrite() ) {
+				for ( uint Y=0; Y < H; Y++ )
+					for ( uint X=0; X < W; X++ ) {
+						Wr.Write( groundTruth[X,Y].x );
+						Wr.Write( groundTruth[X,Y].y );
+						Wr.Write( groundTruth[X,Y].z );
+						Wr.Write( groundTruth[X,Y].w );
+					}
+			}
+			m_tex_GroundTruth = new Texture2D( m_device, W, H, 1, 1, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.AUTO, false, false, new PixelsBuffer[] { content } );
+
+/*			if ( m_tex_GroundTruth != null && _rho == m_groundTruthLastRho )
+				return;	// Already computed!
+			if ( m_indirectPixelIndices == null || m_imageNormal == null )
+				return;
+
+			m_groundTruthLastRho = _rho;
+
+			if ( m_tex_GroundTruth != null )
+				m_tex_GroundTruth.Dispose();
+			m_tex_GroundTruth = null;
+
+			uint		W = m_width;
+			uint		H = m_height;
+			uint		X, Y, rayIndex, neighborIndex;
+
+			float3[]	rays = GeneratorForm.GenerateRays( (int) m_raysCount, Mathf.ToRad( 179.0f ) );
+			float3		lsRayDirection, wsRayDirection;
+			float3		radiance = float3.Zero;
+			float3		irradiance = float3.Zero;
+			float3		T = float3.One, B = float3.One, N = float3.One;
+
+			// IMPORTANT
+			_rho /= Mathf.PI;	// We actually need rho/PI to integrate the radiance
+			// IMPORTANT
+
+
+			const int	BOUNCES_COUNT = 20;
+			float3[][,]	irradianceBounces = new float3[1+BOUNCES_COUNT][,];
+
+
+			//////////////////////////////////////////////////////////////////////////
+			// 1] Retrieve world normals
+			// 
+			float3[,]	normals = new float3[W,H];
+			float3[,]	tangents = new float3[W,H];
+			float3[,]	biTangents = new float3[W,H];
+			m_imageNormal.ReadPixels( ( uint _X, uint _Y, ref float4 _color ) => {
+				N = new float3( 2.0f * _color.x - 1.0f, 2.0f * _color.y - 1.0f, 2.0f * _color.z - 1.0f );
+				BuildOrthonormalBasis( N, ref T, ref B );
+				normals[_X,_Y] = N;
+				tangents[_X,_Y] = T;
+				biTangents[_X,_Y] = B;
+			} );
+
+
+			//////////////////////////////////////////////////////////////////////////
+			// 2] Compute irradiance perceived directly
+			{
+				float3[,]	E0 = new float3[W,H];
+				irradianceBounces[0] = E0;
+
+				float	normalizer = 2.0f * Mathf.PI		// This factor is here because are actually integrating over the entire hemisphere of directions
+															//	and we only accounted for cosine-weighted distribution along theta, we need to account for phi as well!
+								   / m_raysCount;
+
+				neighborIndex = 0;
+				for ( Y=0; Y < H; Y++ ) {
+					for ( X=0; X < W; X++ ) {
+						T = tangents[X,Y];
+						B = biTangents[X,Y];
+						N = normals[X,Y];
+
+						irradiance = float3.Zero;
+						for ( rayIndex=0; rayIndex < m_raysCount; rayIndex++ ) {
+							uint	packedNeighborPixelPosition = m_indirectPixelIndices[neighborIndex++];
+							if ( packedNeighborPixelPosition != ~0U )
+								continue;	// Obstructed
+
+							lsRayDirection = rays[rayIndex];
+							wsRayDirection = lsRayDirection.x * T + lsRayDirection.y * B + lsRayDirection.z * N;
+							EvaluateSHRadiance( ref wsRayDirection, ref radiance );
+
+							irradiance += radiance * lsRayDirection.z;	// L(x,Wi) * (N.Wi)
+						}
+						irradiance *= normalizer;
+						E0[X,Y] = irradiance;
+					}
+				}
+			}
+
+			//////////////////////////////////////////////////////////////////////////
+			// ]
+			PixelsBuffer	content = new PixelsBuffer( W*H*4*4 );
+			using ( System.IO.BinaryWriter Wr = content.OpenStreamWrite() ) {
+				for ( Y=0; Y < H; Y++ ) {
+					for ( X=0; X < W; X++ ) {
+						Wr.Write( irradianceBounces[0][X,Y].x );
+						Wr.Write( irradianceBounces[0][X,Y].y );
+						Wr.Write( irradianceBounces[0][X,Y].z );
+						Wr.Write( 1 );
+					}
+				}
+			}
+			m_tex_GroundTruth = new Texture2D( m_device, W, H, 1, 1, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.AUTO, false, false, new PixelsBuffer[] { content } );
+*/		}
 
 		#endregion
 	}

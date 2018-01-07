@@ -37,24 +37,40 @@ const string	SUFFIX = "";
 		#region NESTED TYPES
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
-		private struct	CBInput {
-			public uint		_DimensionsX;
-			public uint		_DimensionsY;
-			public UInt32	Y0;					// Index of the texture line we're processing
-			public UInt32	RaysCount;			// Amount of rays in the structured buffer
-			public UInt32	MaxStepsCount;		// Maximum amount of steps to take before stopping
-			public UInt32	Tile;				// Tiling flag
-			public float	TexelSize_mm;		// Size of a texel (in millimeters)
-			public float	Displacement_mm;	// Max displacement value encoded by the height map (in millimeters)
+		private struct	CB_AO {
+			public uint		_dimensionsX;
+			public uint		_dimensionsY;
+			public uint		Y0;					// Index of the texture line we're processing
+			public uint		_raysCount;			// Amount of rays in the structured buffer
+			public uint		_maxStepsCount;		// Maximum amount of steps to take before stopping
+			public uint		_tile;				// Tiling flag
+			public float	_texelSize_mm;		// Size of a texel (in millimeters)
+			public float	_displacement_mm;	// Max displacement value encoded by the height map (in millimeters)
 		}
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
-		private struct	CBIndirect {
-			public uint		_DimensionsX;
-			public uint		_DimensionsY;
-			public UInt32	RaysCount;			// Amount of rays in the structured buffer
-			public float	TexelSize_mm;		// Size of a texel (in millimeters)
-			public float	Displacement_mm;	// Max displacement value encoded by the height map (in millimeters)
+		private struct	CB_Indirect {
+			public uint		_dimensionsX;
+			public uint		_dimensionsY;
+			public uint		_raysCount;			// Amount of rays in the structured buffer
+			public float	_texelSize_mm;		// Size of a texel (in millimeters)
+			public float	_displacement_mm;	// Max displacement value encoded by the height map (in millimeters)
+		}
+
+		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
+		private struct	CB_GroundTruth {
+			public uint		_dimensionsX;
+			public uint		_dimensionsY;
+			public uint		Y0;					// Index of the texture line we're processing
+			public uint		_raysCount;			// Amount of rays in the structured buffer
+
+			public float	_texelSize_mm;		// Size of a texel (in millimeters)
+			public float	_displacement_mm;	// Max displacement value encoded by the height map (in millimeters)
+			float			__PAD0;
+			float			__PAD1;
+
+			public float3	_rho;				// Reflectance
+			float			__PAD2;
 		}
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
@@ -64,7 +80,7 @@ const string	SUFFIX = "";
 // 			public float	Tolerance;			// Range tolerance of the bilateral filter
 			public float	Sigma_Radius;		// Radius of the bilateral filter
 			public float	Sigma_Tolerance;	// Range tolerance of the bilateral filter
-			public UInt32	Tile;				// Tiling flag
+			public UInt32	_tile;				// Tiling flag
 		}
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
@@ -94,16 +110,21 @@ const string	SUFFIX = "";
 		internal Renderer.Texture2D					m_textureFilteredHeightMap = null;
 
 		// AO Generation
-		private Renderer.ConstantBuffer<CBInput>	m_CB_Input;
+		private Renderer.ConstantBuffer<CB_AO>		m_CB_AO;
 		private Renderer.StructuredBuffer<float3>	m_SB_Rays = null;
 		private Renderer.ComputeShader				m_CS_GenerateAOMap = null;
 
 		// Indirect Lighting Computation
-		private Renderer.ConstantBuffer<CBIndirect>	m_CB_Indirect;
+		private Renderer.ConstantBuffer<CB_Indirect>m_CB_Indirect;
 		private Renderer.ComputeShader				m_CS_ComputeIndirectLighting = null;
 
 		private float2[,]							m_AOValues = null;
 		private float[][,]							m_arrayOfIlluminanceValues = new float[1+MAX_BOUNCE][,];
+
+		// Ground Truth Computation
+		private Renderer.ConstantBuffer<CB_GroundTruth>	m_CB_GroundTruth;
+		private Renderer.ConstantBuffer<DemoForm.CB_SH>	m_CB_SH;
+		private Renderer.ComputeShader				m_CS_GenerateGroundTruth_Direct = null;
 
 		// Bilateral filtering pre-processing
 		private Renderer.ConstantBuffer<CBFilter>	m_CB_Filter;
@@ -138,6 +159,8 @@ const string	SUFFIX = "";
 			#if DEBUG
 				buttonReload.Visible = true;
 			#endif
+
+			m_demoForm = new DemoForm( this );
 		}
 
 		protected override void  OnLoad(EventArgs e) {
@@ -151,14 +174,17 @@ const string	SUFFIX = "";
 					using ( Renderer.ScopedForceShadersLoadFromBinary scope = new Renderer.ScopedForceShadersLoadFromBinary() )
 				#endif
 				{
+					m_CS_GenerateGroundTruth_Direct = new Renderer.ComputeShader( m_device, new System.IO.FileInfo( "./Shaders/ComputeGroundTruth.hlsl" ), "CS_Direct", null );
 					m_CS_GenerateAOMap = new Renderer.ComputeShader( m_device, new System.IO.FileInfo( "./Shaders/GenerateAOMap.hlsl" ), "CS", null );
 					m_CS_ComputeIndirectLighting = new Renderer.ComputeShader( m_device, new System.IO.FileInfo( "./Shaders/ComputeIndirectLighting.hlsl" ), "CS", new Renderer.ShaderMacro[] { new Renderer.ShaderMacro( "ALBEDO", ALBEDO.ToString() ) } );
 					m_CS_BilateralFilter = new Renderer.ComputeShader( m_device, new System.IO.FileInfo( "./Shaders/BilateralFiltering.hlsl" ), "CS", null );
 				}
 
 				// Create our constant buffers
-				m_CB_Input = new Renderer.ConstantBuffer<CBInput>( m_device, 0 );
-				m_CB_Indirect = new Renderer.ConstantBuffer<CBIndirect>( m_device, 0 );
+				m_CB_AO = new Renderer.ConstantBuffer<CB_AO>( m_device, 0 );
+				m_CB_Indirect = new Renderer.ConstantBuffer<CB_Indirect>( m_device, 0 );
+				m_CB_GroundTruth = new Renderer.ConstantBuffer<CB_GroundTruth>( m_device, 0 );
+				m_CB_SH = new Renderer.ConstantBuffer<DemoForm.CB_SH>( m_device, 1 );
 				m_CB_Filter = new Renderer.ConstantBuffer<CBFilter>( m_device, 0 );
 
 				// Create our structured buffer containing the rays
@@ -193,8 +219,9 @@ LoadNormalMap( new System.IO.FileInfo( GetRegKey( "NormalMapFileName", System.IO
 				m_SB_Rays.Dispose();
 
 				m_CB_Filter.Dispose();
+				m_CB_GroundTruth.Dispose();
 				m_CB_Indirect.Dispose();
-				m_CB_Input.Dispose();
+				m_CB_AO.Dispose();
 
 				if ( m_textureSourceNormal != null )
 					m_textureSourceNormal.Dispose();
@@ -406,13 +433,13 @@ LoadNormalMap( new System.IO.FileInfo( GetRegKey( "NormalMapFileName", System.IO
 				textureAO.SetCSUAV( 0 );
 				SB_IndirectPixels.SetOutput( 1 );
 
-				m_CB_Input.m._DimensionsX = W;
-				m_CB_Input.m._DimensionsY = H;
-				m_CB_Input.m.RaysCount = raysCount;
-				m_CB_Input.m.MaxStepsCount = (uint) integerTrackbarControlMaxStepsCount.Value;
-				m_CB_Input.m.Tile = (uint) (checkBoxWrap.Checked ? 1 : 0);
-				m_CB_Input.m.TexelSize_mm = TextureSize_mm / Math.Max( W, H );
-				m_CB_Input.m.Displacement_mm = TextureHeight_mm;
+				m_CB_AO.m._dimensionsX = W;
+				m_CB_AO.m._dimensionsY = H;
+				m_CB_AO.m._raysCount = raysCount;
+				m_CB_AO.m._maxStepsCount = (uint) integerTrackbarControlMaxStepsCount.Value;
+				m_CB_AO.m._tile = (uint) (checkBoxWrap.Checked ? 1 : 0);
+				m_CB_AO.m._texelSize_mm = TextureSize_mm / Math.Max( W, H );
+				m_CB_AO.m._displacement_mm = TextureHeight_mm;
 
 				// Start
 				if ( !m_CS_GenerateAOMap.Use() )
@@ -421,12 +448,12 @@ LoadNormalMap( new System.IO.FileInfo( GetRegKey( "NormalMapFileName", System.IO
 				uint	h = Math.Max( 1, MAX_LINES*1024 / W );
 				uint	callsCount = (uint) Math.Ceiling( (float) H / h );
 
-				uint[]	indirectPixels = new uint[W*H*m_CB_Input.m.RaysCount];
+				uint[]	indirectPixels = new uint[W*H*m_CB_AO.m._raysCount];
 				uint	targetOffset = 0;
 				for ( uint callIndex=0; callIndex < callsCount; callIndex++ ) {
 					uint	Y0 = callIndex * h;
-					m_CB_Input.m.Y0 = Y0;
-					m_CB_Input.UpdateData();
+					m_CB_AO.m.Y0 = Y0;
+					m_CB_AO.UpdateData();
 
 					m_CS_GenerateAOMap.Dispatch( W, h, 1 );
 
@@ -540,7 +567,7 @@ LoadNormalMap( new System.IO.FileInfo( GetRegKey( "NormalMapFileName", System.IO
 // 			m_CB_Filter.m.Tolerance = _BilateralTolerance;
 			m_CB_Filter.m.Sigma_Radius = (float) (-0.5 * Math.Pow( _BilateralRadius / 3.0f, -2.0 ));
 			m_CB_Filter.m.Sigma_Tolerance = _BilateralTolerance > 0.0f ? (float) (-0.5 * Math.Pow( _BilateralTolerance, -2.0 )) : -1e6f;
-			m_CB_Filter.m.Tile = (uint) (_Wrap ? 1 : 0);
+			m_CB_Filter.m._tile = (uint) (_Wrap ? 1 : 0);
 
 			m_CS_BilateralFilter.Use();
 
@@ -565,12 +592,7 @@ LoadNormalMap( new System.IO.FileInfo( GetRegKey( "NormalMapFileName", System.IO
 			_Target.RemoveFromLastAssignedSlotUAV();	// So we can use it as input for next stage
 		}
 
-		private void	GenerateRays( int _raysCount, float _maxConeAngle, Renderer.StructuredBuffer<float3> _target ) {
-			_raysCount = Math.Min( (int) MAX_THREADS, _raysCount );
-
-//*
-//_maxConeAngle = Mathf.PI;
-
+		internal static float3[] GenerateRays( int _raysCount, float _maxConeAngle ) {
 			Hammersley	hammersley = new Hammersley();
 			double[,]	sequence = hammersley.BuildSequence( _raysCount, 2 );
 			float3[]	rays = hammersley.MapSequenceToSphere( sequence, 0.5f * _maxConeAngle );
@@ -579,13 +601,20 @@ LoadNormalMap( new System.IO.FileInfo( GetRegKey( "NormalMapFileName", System.IO
 			float	sumCosTheta = 0.0f;
 			for ( int rayIndex=0; rayIndex < _raysCount; rayIndex++ ) {
 				float3	ray = rays[rayIndex];
-
-				_target.m[rayIndex].Set( ray.x, -ray.z, ray.y );
-
+				rays[rayIndex].Set( ray.x, -ray.z, ray.y );
 				sumCosTheta += ray.y;
 			}
 			sumCosTheta /= _raysCount;	// Summing cos(theta) yields 1/2 as expected
-//*/
+
+			return rays;
+		}
+		private void	GenerateRays( int _raysCount, float _maxConeAngle, Renderer.StructuredBuffer<float3> _target ) {
+			_raysCount = Math.Min( (int) MAX_THREADS, _raysCount );
+
+			float3[]	rays = GenerateRays( _raysCount, _maxConeAngle );
+			for ( int rayIndex=0; rayIndex < _raysCount; rayIndex++ ) {
+				m_SB_Rays.m[rayIndex] = rays[rayIndex];
+			}
 
 			_target.Write();
 		}
@@ -607,6 +636,7 @@ LoadNormalMap( new System.IO.FileInfo( GetRegKey( "NormalMapFileName", System.IO
 				uint		raysCount = 0;
 
 				float[,]	AOValues = null;
+				uint[]		indirectPixelIndices = null;
 
 				System.IO.FileInfo	binaryDataFileName = new System.IO.FileInfo( m_resultFileName.FullName + ".indirectMap" );
 				using ( System.IO.FileStream S = binaryDataFileName.OpenRead() )
@@ -641,12 +671,14 @@ LoadNormalMap( new System.IO.FileInfo( GetRegKey( "NormalMapFileName", System.IO
 
 						// 1.2) Then we read the full list of indirect pixels
 						uint	stackSize = tempW * tempH * raysCount;
+						indirectPixelIndices = new uint[stackSize];
 						SBIndirectPixelsStack = new Renderer.StructuredBuffer<uint>( m_device, stackSize, true );
 						for ( uint i=0; i < stackSize; i++ ) {
 							uint	v = R.ReadUInt32();
 // 							if ( v != i )
 // 								throw new Exception( "Unexpected index!" );
 							SBIndirectPixelsStack.m[i] = v;
+							indirectPixelIndices[i] = v;
 						}
 						SBIndirectPixelsStack.Write();
 					}
@@ -668,11 +700,11 @@ LoadNormalMap( new System.IO.FileInfo( GetRegKey( "NormalMapFileName", System.IO
 
 m_SB_Rays.SetInput( 4 );
 
-				m_CB_Indirect.m._DimensionsX = W;
-				m_CB_Indirect.m._DimensionsY = H;
-				m_CB_Indirect.m.RaysCount = raysCount;
-				m_CB_Indirect.m.TexelSize_mm = TextureSize_mm / Math.Max( W, H );
-				m_CB_Indirect.m.Displacement_mm = TextureHeight_mm;
+				m_CB_Indirect.m._dimensionsX = W;
+				m_CB_Indirect.m._dimensionsY = H;
+				m_CB_Indirect.m._raysCount = raysCount;
+				m_CB_Indirect.m._texelSize_mm = TextureSize_mm / Math.Max( W, H );
+				m_CB_Indirect.m._displacement_mm = TextureHeight_mm;
 				m_CB_Indirect.UpdateData();
 
 				for ( uint bounceIndex=0; bounceIndex < MAX_BOUNCE; bounceIndex++ ) {
@@ -724,6 +756,9 @@ m_SB_Rays.SetInput( 4 );
 									Wr.Write( illuminanceValues[X,Y] );
 						}
 					}
+
+				m_demoForm.ArrayOfIlluminanceValues = m_arrayOfIlluminanceValues;				// Send to demo form
+				m_demoForm.SetIndirectPixelIndices( W, H, raysCount,  indirectPixelIndices );	// Send to demo form
 
 //*				//////////////////////////////////////////////////////////////////////////
 				// 4] Update the resulting bitmap
@@ -833,6 +868,215 @@ m_SB_Rays.SetInput( 4 );
 			}
 		}
 
+		#region Ground Truth Generation
+
+		float4[,]	m_image_GroundTruth = null;
+		float3		m_groundTruthLastRho = float3.Zero;
+		uint[]		m_indirectPixelIndices = null;
+		uint		m_raysCount = 0;
+
+		internal float4[,] GenerateGroundTruth( float3 _rho, float3[] _SH ) {
+			if ( m_image_GroundTruth != null && _rho == m_groundTruthLastRho )
+				return m_image_GroundTruth;	// Already computed!
+			if ( m_textureSourceNormal == null )
+				return null;
+
+			const uint	SCANLINES_COUNT = 64;
+			const uint	BOUNCES_COUNT = 20;
+
+			try {
+ 				panelParameters.Enabled = false;
+
+				// Upload environment SH
+				m_CB_SH.m._SH0.Set( _SH[0], 0 );
+				m_CB_SH.m._SH1.Set( _SH[1], 0 );
+				m_CB_SH.m._SH2.Set( _SH[2], 0 );
+				m_CB_SH.m._SH3.Set( _SH[3], 0 );
+				m_CB_SH.m._SH4.Set( _SH[4], 0 );
+				m_CB_SH.m._SH5.Set( _SH[5], 0 );
+				m_CB_SH.m._SH6.Set( _SH[6], 0 );
+				m_CB_SH.m._SH7.Set( _SH[7], 0 );
+				m_CB_SH.m._SH8.Set( _SH[8], 0 );
+				m_CB_SH.UpdateData();
+
+				//////////////////////////////////////////////////////////////////////////
+				// 1] Load raw binary data
+				if ( m_indirectPixelIndices == null ) {
+					System.IO.FileInfo	binaryDataFileName = new System.IO.FileInfo( m_resultFileName.FullName + ".indirectMap" );
+					using ( System.IO.FileStream S = binaryDataFileName.OpenRead() )
+						using ( System.IO.BinaryReader R = new System.IO.BinaryReader( S ) ) {
+
+							// 1.1) We start by reading a WxH array of (AO,offset,count) triplets
+							uint	tempW = R.ReadUInt32();
+							uint	tempH = R.ReadUInt32();
+							if ( tempW != W || tempH != H )
+								throw new Exception( "Dimensions mismatch!" );
+
+							m_raysCount = R.ReadUInt32();
+
+							Renderer.PixelsBuffer	contentAO = new Renderer.PixelsBuffer( W*H*4 );
+
+							float[,]	AOValues = new float[W,H];
+							float[,]	illuminanceValues = new float[W,H];
+							for ( uint Y=0; Y < H; Y++ ) {
+								for ( uint X=0; X < W; X++ ) {
+									float	AO = R.ReadSingle();
+									float	illuminance0 = R.ReadSingle();
+									AOValues[X,Y] = AO;
+									illuminanceValues[X,Y] = illuminance0;
+								}
+							}
+
+							// 1.2) Then we read the full list of indirect pixels
+							uint	stackSize = tempW * tempH * m_raysCount;
+							m_indirectPixelIndices = new uint[stackSize];
+							for ( uint i=0; i < stackSize; i++ ) {
+								uint	v = R.ReadUInt32();
+								m_indirectPixelIndices[i] = v;
+							}
+						}
+				}
+
+				//////////////////////////////////////////////////////////////////////////
+				// 2] Generate ground truth
+				Renderer.StructuredBuffer<uint>	SBIndirectPixelsStack = new Renderer.StructuredBuffer<uint>( m_device, W * SCANLINES_COUNT * m_raysCount, true );
+				Renderer.Texture2D	tex_irradiance0 = new Renderer.Texture2D( m_device, W, H, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, true, null );
+				Renderer.Texture2D	tex_irradiance1 = new Renderer.Texture2D( m_device, W, H, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, true, null );
+
+				if ( !m_CS_GenerateGroundTruth_Direct.Use() )
+					throw new Exception( "Failed to use Ground Truth compute shader!" );
+
+				m_CB_GroundTruth.m._dimensionsX = W;
+				m_CB_GroundTruth.m._dimensionsY = H;
+				m_CB_GroundTruth.m._raysCount = m_raysCount;
+				m_CB_GroundTruth.m._texelSize_mm = TextureSize_mm / Math.Max( W, H );
+				m_CB_GroundTruth.m._displacement_mm = TextureHeight_mm;
+				m_CB_GroundTruth.m._rho = _rho;
+
+				m_textureSourceNormal.SetCS( 2 );
+				SBIndirectPixelsStack.SetInput( 3 );
+				m_SB_Rays.SetInput( 4 );
+
+
+				// ===============================================================
+				// 2.1] Generate direct irradiance
+				tex_irradiance0.SetCSUAV( 0 );
+
+				uint	batchesCountY = (H + SCANLINES_COUNT-1) / SCANLINES_COUNT;
+				for ( uint batchIndex=0; batchIndex < batchesCountY; batchIndex++ ) {
+
+					// 2.1.1) Prepare scanline data
+					uint	Y0 = batchIndex * SCANLINES_COUNT;
+					m_CB_GroundTruth.m.Y0 = Y0;
+					m_CB_GroundTruth.UpdateData();
+
+					Array.Copy( m_indirectPixelIndices, W*m_raysCount * SCANLINES_COUNT * batchIndex, SBIndirectPixelsStack.m, 0, Math.Min( H - SCANLINES_COUNT * batchIndex, SCANLINES_COUNT ) * W*m_raysCount );
+					SBIndirectPixelsStack.Write();
+
+					// 2.1.2) Render batch
+					m_CS_GenerateGroundTruth_Direct.Dispatch( W, SCANLINES_COUNT, 1 );
+
+					progressBar.Value = (int) (0.01f * (batchIndex+1) / (BOUNCES_COUNT*batchesCountY) * progressBar.Maximum);
+					Application.DoEvents();
+				}
+
+				tex_irradiance0.RemoveFromLastAssignedSlotUAV();
+
+
+/*				// ===============================================================
+				// 2.2] Generate new bounces
+				for ( uint bounceIndex=1; bounceIndex <= BOUNCES_COUNT; bounceIndex++ ) {
+
+					tex_irradiance0.SetCS( 0 );
+					tex_irradiance1.SetCSUAV( 0 );
+
+					for ( uint batchIndex=0; batchIndex < batchesCountY; batchIndex++ ) {
+
+						// 2.2.1) Prepare scanline data
+						uint	Y0 = batchIndex * SCANLINES_COUNT;
+						m_CB_GroundTruth.m.Y0 = Y0;
+						m_CB_GroundTruth.UpdateData();
+
+						Array.Copy( m_indirectPixelIndices, W*m_raysCount * SCANLINES_COUNT * batchIndex, SBIndirectPixelsStack.m, 0, Math.Min( H - SCANLINES_COUNT * batchIndex, SCANLINES_COUNT ) * W*m_raysCount );
+						SBIndirectPixelsStack.Write();
+
+						// 2.2.2) Render batch
+						m_CS_GenerateGroundTruth_Direct.Dispatch( W, SCANLINES_COUNT, 1 );
+
+						progressBar.Value = (int) (0.01f * (bounceIndex+(batchIndex+1)) / (BOUNCES_COUNT*batchesCountY) * progressBar.Maximum);
+						Application.DoEvents();
+					}
+
+					tex_irradiance1.RemoveFromLastAssignedSlotUAV();
+					tex_irradiance0.RemoveFromLastAssignedSlots();
+
+					// Swap
+					Renderer.Texture2D	temp = tex_irradiance0;
+					tex_irradiance0 = tex_irradiance1;
+					tex_irradiance1 = temp;
+				}
+//*/
+				progressBar.Value = progressBar.Maximum;
+
+				SBIndirectPixelsStack.Dispose();
+
+				//////////////////////////////////////////////////////////////////////////
+				// 3] Store as CPU image
+				Renderer.Texture2D	tex_groundTruth_CPU = new Renderer.Texture2D( m_device, W, H, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA32F, ImageUtility.COMPONENT_FORMAT.AUTO, true, true, null );
+
+tex_groundTruth_CPU.CopyFrom( tex_irradiance0 );
+
+				m_image_GroundTruth = new float4[W,H];
+				tex_groundTruth_CPU.ReadPixels( 0, 0, ( uint X, uint Y, System.IO.BinaryReader _R ) => {
+					m_image_GroundTruth[X,Y].Set( _R.ReadSingle(), _R.ReadSingle(), _R.ReadSingle(), _R.ReadSingle() );
+				} );
+
+
+				tex_irradiance1.Dispose();
+				tex_irradiance0.Dispose();
+				tex_groundTruth_CPU.Dispose();
+
+/*				//////////////////////////////////////////////////////////////////////////
+				// 3] Store raw binary data
+				Renderer.Texture2D	textureAO_CPU = new Renderer.Texture2D( m_device, W, H, 1, 1, ImageUtility.PIXEL_FORMAT.RG32F, ImageUtility.COMPONENT_FORMAT.AUTO, true, false, null );
+				textureAO_CPU.CopyFrom( textureAO );
+				textureAO.Dispose();
+
+				m_AOValues = new float2[textureAO_CPU.Width,textureAO_CPU.Height];
+
+/*				//////////////////////////////////////////////////////////////////////////
+				// 4] Update the resulting bitmap
+				if ( m_imageResult != null )
+					m_imageResult.Dispose();
+				m_imageResult = new ImageUtility.ImageFile( W, H, ImageUtility.PIXEL_FORMAT.BGRA8, new ImageUtility.ColorProfile( ImageUtility.ColorProfile.STANDARD_PROFILE.sRGB ) );
+
+//				textureAO_CPU.ReadPixels( 0, 0, ( uint X, uint Y, System.IO.BinaryReader R ) => { AOValues[X,Y] = R.ReadSingle(); } );
+
+				m_imageResult.WritePixels( ( uint X, uint Y, ref float4 _color ) => {
+					float	v = m_AOValues[X,Y].x / (2.0f * Mathf.PI);	// Show AO
+//					float	v = m_AOValues[X,Y].y / Mathf.PI;				// Show illuminance
+//v = Mathf.Pow( v, 0.454545f );	// Quick gamma correction to have more precision in the shadows???
+					
+					_color.Set( v, v, v, 1.0f );
+				} );
+
+				// Assign result
+				viewportPanelResult.Bitmap = m_imageResult.AsBitmap;
+*/
+
+				m_groundTruthLastRho = _rho;
+
+			} catch ( Exception _e ) {
+				MessageBox( "An error occurred during generation!\r\n\r\nDetails: ", _e );
+			} finally {
+				panelParameters.Enabled = true;
+			}
+
+			return m_image_GroundTruth;
+		}
+
+		#endregion
+
 		#region Helpers
 
 		private string	GetRegKey( string _Key, string _Default )
@@ -902,51 +1146,6 @@ m_SB_Rays.SetInput( 4 );
 
 		private void buttonTestBilateral_Click( object sender, EventArgs e ) {
 			Compile();
-// 			try {
-// 				panelParameters.Enabled = false;
-// 
-// 				//////////////////////////////////////////////////////////////////////////
-// 				// 1] Apply bilateral filtering to the input texture as a pre-process
-// 				ApplyBilateralFiltering( m_textureSourceHeightMap, m_textureFilteredHeightMap, floatTrackbarControlBilateralRadius.Value, floatTrackbarControlBilateralTolerance.Value, checkBoxWrap.Checked, 100 );
-// 
-// 				progressBar.Value = progressBar.Maximum;
-// 
-// 				//////////////////////////////////////////////////////////////////////////
-// 				// 2] Copy target to staging for CPU readback and update the resulting bitmap
-// 				Renderer.Texture2D	tempTexture_CPU = new Renderer.Texture2D( m_device, m_textureFilteredHeightMap.Width, m_textureFilteredHeightMap.Height, 1, 1, ImageUtility.PIXEL_FORMAT.R32F, ImageUtility.COMPONENT_FORMAT.AUTO, true, false, null );
-// 				tempTexture_CPU.CopyFrom( m_textureFilteredHeightMap );
-// 
-// 				ImageUtility.Bitmap		tempBitmap = new ImageUtility.Bitmap( W, H );
-// 				Renderer.PixelsBuffer	pixels = tempTexture_CPU.MapRead( 0, 0 );
-// 				using ( System.IO.BinaryReader R = pixels.OpenStreamRead() )
-// 					for ( uint Y=0; Y < H; Y++ ) {
-// 						R.BaseStream.Position = Y * pixels.RowPitch;
-// 						for ( uint X=0; X < W; X++ ) {
-// 							float	AO = R.ReadSingle();
-// 							tempBitmap[X,Y] = new float4( AO, AO, AO, 1 );
-// 						}
-// 					}
-// 
-// 				tempTexture_CPU.UnMap( pixels );
-// 				tempTexture_CPU.Dispose();
-// 
-// 				// Convert to RGB
-// //				ImageUtility.ColorProfile	Profile = m_ProfilesRGB;	// AO maps are sRGB! (although strange, that's certainly to have more range in dark values)
-// 				ImageUtility.ColorProfile	Profile = m_profilesRGB;	// AO maps are sRGB! (although strange, that's certainly to have more range in dark values)
-// 
-// 				if ( m_imageResult != null )
-// 					m_imageResult.Dispose();
-// 				m_imageResult = new ImageUtility.ImageFile();
-// 				tempBitmap.ToImageFile( m_imageResult, Profile );
-// 
-// 				// Assign result
-// 				viewportPanelResult.Bitmap = m_imageResult.AsCustomBitmap( ( ref float4 _color ) => {} );
-// 
-// 			} catch ( Exception _e ) {
-// 				MessageBox( "An error occurred during generation!\r\n\r\nDetails: ", _e );
-// 			} finally {
-// 				panelParameters.Enabled = true;
-// 			}
 		}
 
 		private void integerTrackbarControlRaysCount_SliderDragStop( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _StartValue ) {
@@ -967,6 +1166,8 @@ m_SB_Rays.SetInput( 4 );
 			m_imageResult = new ImageUtility.ImageFile( W, H, ImageUtility.PIXEL_FORMAT.BGRA8, new ImageUtility.ColorProfile( ImageUtility.ColorProfile.STANDARD_PROFILE.sRGB ) );
 
 			float[,]	illuminanceValues = m_arrayOfIlluminanceValues[_Sender.Value];
+			if ( illuminanceValues == null )
+				return;	// Not available yet
 			m_imageResult.WritePixels( ( uint X, uint Y, ref float4 _color ) => {
 				float	v = illuminanceValues[X,Y] / Mathf.PI;
 //float	v = arrayOfIlluminanceValues[0][X,Y] / (2.0f * Mathf.PI);
@@ -1107,9 +1308,9 @@ m_SB_Rays.SetInput( 4 );
 			m_device.ReloadModifiedShaders();
 		}
 
-		DemoForm	m_demoForm = new DemoForm();
+		DemoForm	m_demoForm = null;
 		private void buttonDemo_Click( object sender, EventArgs e ) {
-			m_demoForm.SetImages( m_imageSourceHeight, m_imageSourceNormal, m_AOValues );//, m_arrayOfIlluminanceValues );
+			m_demoForm.SetImages( m_imageSourceHeight, m_imageSourceNormal, m_AOValues, m_arrayOfIlluminanceValues );
 			m_demoForm.Show( this );
 		}
 
