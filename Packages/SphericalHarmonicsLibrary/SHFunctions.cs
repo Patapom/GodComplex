@@ -1027,17 +1027,17 @@ namespace SphericalHarmonics
 
 		// Filtering stolen from http://csc.lsu.edu/~kooima/sht/sh.hpp
 		// Apply a Hanning window of width w (usually the SH order).
-		public static void	FilterHanning( float3[] _SH, int w )
+		public static void	FilterHanning( float3[] _SH, float w )
 		{
 			for (int l = 0; l < 3; l++)
-				if ( l > w )
+				if ( l > w+1 )
 					Filter( _SH, l, 0 );
 				else
 					Filter( _SH, l, (float) ((Math.Cos(Math.PI * l / w) + 1.0) * 0.5) );
 		}
 
 		// Apply a Lanczos window of width w (usually the SH order).
-		public static void	FilterLanczos( float3[] _SH, int w )
+		public static void	FilterLanczos( float3[] _SH, float w )
 		{
 			for (int l = 0; l < 3; l++)
 				if ( l == 0 )
@@ -1047,7 +1047,7 @@ namespace SphericalHarmonics
 		}
 
 		// Apply a Gaussian window of width w (usually the SH order).
-		public static void	FilterGaussian( float3[] _SH, int w )
+		public static void	FilterGaussian( float3[] _SH, float w )
 		{
 			for ( int l = 0; l < 3; l++ )
 				Filter( _SH, l, (float) Math.Exp( -(Math.PI * l / w) * (Math.PI * l / w) / 2.0 ) );
@@ -1061,7 +1061,7 @@ namespace SphericalHarmonics
 		}
 
 		// Apply a Hanning window of width w (usually the SH order).
-		public static void	FilterHanning( float[] _SH, int w )
+		public static void	FilterHanning( float[] _SH, float w )
 		{
 			for (int l = 0; l < 3; l++)
 				if ( l > w )
@@ -1071,7 +1071,7 @@ namespace SphericalHarmonics
 		}
 
 		// Apply a Lanczos window of width w (usually the SH order).
-		public static void	FilterLanczos( float[] _SH, int w )
+		public static void	FilterLanczos( float[] _SH, float w )
 		{
 			for (int l = 0; l < 3; l++)
 				if ( l == 0 )
@@ -1081,7 +1081,7 @@ namespace SphericalHarmonics
 		}
 
 		// Apply a Gaussian window of width w (usually the SH order).
-		public static void	FilterGaussian( float[] _SH, int w )
+		public static void	FilterGaussian( float[] _SH, float w )
 		{
 			for ( int l = 0; l < 3; l++ )
 				Filter( _SH, l, (float) Math.Exp( -(Math.PI * l / w) * (Math.PI * l / w) / 2.0 ) );
