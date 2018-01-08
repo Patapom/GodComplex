@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[   3330426,      56829]
-NotebookOptionsPosition[   3323538,      56618]
-NotebookOutlinePosition[   3323908,      56634]
-CellTagsIndexPosition[   3323865,      56631]
+NotebookDataLength[   3330515,      56831]
+NotebookOptionsPosition[   3323626,      56620]
+NotebookOutlinePosition[   3323996,      56636]
+CellTagsIndexPosition[   3323953,      56633]
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -56522,10 +56522,12 @@ entirety of the irradiance \[OpenCurlyDoubleQuote]crosses\
 \[CloseCurlyDoubleQuote] the area enclosed by the curve and is thus \
 guaranteed to reach the bottom of the cavity where it\[CloseCurlyQuote]s \
 eventually sampled.
+We pose that all normals along the closed curve must have the same vertical \
+component
 \
 \>", "Text",
  CellChangeTimes->{
-  3.7234580521348906`*^9, {3.724338362364156*^9, 3.7243384791878376`*^9}}],
+  3.7234580521348906`*^9, {3.724338362364156*^9, 3.7243385153799076`*^9}}],
 
 Cell[BoxData[
  RowBox[{"\[IndentingNewLine]", "\[IndentingNewLine]", "\[IndentingNewLine]", 
@@ -56820,13 +56822,13 @@ Cell[3248398, 55301, 71298, 1204, 476, "Output"]
 }, Open  ]],
 Cell[CellGroupData[{
 Cell[3319757, 56512, 126, 2, 84, "Section"],
-Cell[3319886, 56516, 564, 11, 81, "Text"],
-Cell[3320453, 56529, 248, 4, 175, "Input"],
-Cell[3320704, 56535, 1542, 44, 77, "Text"],
+Cell[3319886, 56516, 652, 13, 103, "Text"],
+Cell[3320541, 56531, 248, 4, 175, "Input"],
+Cell[3320792, 56537, 1542, 44, 77, "Text"],
 Cell[CellGroupData[{
-Cell[3322271, 56583, 711, 18, 87, "Input"],
-Cell[3322985, 56603, 239, 3, 36, "Output"],
-Cell[3323227, 56608, 259, 4, 36, "Output"]
+Cell[3322359, 56585, 711, 18, 87, "Input"],
+Cell[3323073, 56605, 239, 3, 36, "Output"],
+Cell[3323315, 56610, 259, 4, 36, "Output"]
 }, Open  ]]
 }, Open  ]]
 }, Open  ]]
