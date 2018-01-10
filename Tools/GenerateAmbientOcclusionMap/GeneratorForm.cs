@@ -121,7 +121,7 @@ namespace GenerateSelfShadowedBumpMap
 			#endif
 		}
 
-		protected override void  OnLoad(EventArgs e) {
+		protected override void OnLoad(EventArgs e) {
  			base.OnLoad(e);
 
 			try {
@@ -211,7 +211,6 @@ namespace GenerateSelfShadowedBumpMap
 			public bool		tile = true;
 			public float	bilateralRadius = 1.0f;
 			public float	bilateralTolerance = 0.2f;
-
 		}
 
 		bool	m_silentMode = false;
@@ -418,6 +417,7 @@ namespace GenerateSelfShadowedBumpMap
 				// 3] Copy target to staging for CPU readback and update the resulting bitmap
 				m_textureTarget_CPU.CopyFrom( m_textureTarget1 );
 
+/* Annoyingly complicated and useless code
 //				ImageUtility.ColorProfile	profile = m_profilesRGB;	// AO maps are sRGB! (although strange, that's certainly to have more range in dark values)
 				ImageUtility.ColorProfile	profile = m_profileLinear;
 
@@ -447,6 +447,18 @@ namespace GenerateSelfShadowedBumpMap
 				m_imageResult.ToneMapFrom( temmpImageRGBA32F, ( float3 _HDR, ref float3 _LDR ) => {
 					_LDR = _HDR;	// Return as-is..
 				} );
+*/
+
+				float[,]	AOMap = new float[W,H];
+				m_textureTarget_CPU.ReadPixels( 0, 0, ( uint _X, uint _Y, System.IO.BinaryReader _R ) => { AOMap[_X,_Y] = _R.ReadSingle(); } );
+
+				if ( m_imageResult != null )
+					m_imageResult.Dispose();
+				m_imageResult = new ImageUtility.ImageFile( W, H, ImageUtility.PIXEL_FORMAT.BGRA8, new ImageUtility.ColorProfile( ImageUtility.ColorProfile.STANDARD_PROFILE.sRGB ) );
+				m_imageResult.WritePixels( ( uint _X, uint _Y, ref float4 _color ) => {
+					float	AO = AOMap[_X,_Y];
+					_color.Set( AO, AO, AO, 1.0f );
+				} );
 
 				// Assign result
 				viewportPanelResult.Bitmap = m_imageResult.AsBitmap;
@@ -468,12 +480,14 @@ namespace GenerateSelfShadowedBumpMap
 
 
 				//////////////////////////////////////////////////////////////////////////
-				// 2] Compute directional occlusion
+				// 2] Compute bent normal map
+				Renderer.Texture2D	textureBentNormal = new Renderer.Texture2D( m_device, W, H, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, true, null );
+
 				m_textureTarget1.RemoveFromLastAssignedSlots();
 
 				// Prepare computation parameters
 				m_textureTarget0.SetCS( 0 );
-				m_textureTarget1.SetCSUAV( 0 );
+				textureBentNormal.SetCSUAV( 0 );
 				m_SB_Rays.SetInput( 1 );
 				m_TextureSourceNormal.SetCS( 2 );
 
@@ -490,8 +504,8 @@ namespace GenerateSelfShadowedBumpMap
 					throw new Exception( "Can't generate self-shadowed bump map as compute shader failed to compile!" );
 
 				uint	h = Math.Max( 1, MAX_LINES*1024 / W );
-				uint	CallsCount = (uint) Math.Ceiling( (float) H / h );
-				for ( int i=0; i < CallsCount; i++ ) {
+				uint	callsCount = (uint) Math.Ceiling( (float) H / h );
+				for ( int i=0; i < callsCount; i++ ) {
 					m_CB_Input.m._Y0 = (UInt32) (i * h);
 					m_CB_Input.UpdateData();
 
@@ -499,53 +513,36 @@ namespace GenerateSelfShadowedBumpMap
 
 					m_device.Present( true );
 
-					progressBar.Value = (int) (0.01f * (BILATERAL_PROGRESS + (100-BILATERAL_PROGRESS) * (i+1) / (CallsCount)) * progressBar.Maximum);
-//					for ( int a=0; a < 10; a++ )
-						Application.DoEvents();
+					progressBar.Value = (int) (0.01f * (BILATERAL_PROGRESS + (100-BILATERAL_PROGRESS) * (i+1) / (callsCount)) * progressBar.Maximum);
+					Application.DoEvents();
 				}
 
-				m_textureTarget1.RemoveFromLastAssignedSlotUAV();	// So we can use it as input for next stage
+//				m_textureTarget1.RemoveFromLastAssignedSlotUAV();	// So we can use it as input for next stage
 
 				progressBar.Value = progressBar.Maximum;
-
-				// Compute in a single shot (this is madness!)
-// 				m_CB_Input.m.y = 0;
-// 				m_CB_Input.UpdateData();
-// 				m_CS_GenerateSSBumpMap.Dispatch( W, H, 1 );
 
 
 				//////////////////////////////////////////////////////////////////////////
 				// 3] Copy target to staging for CPU readback and update the resulting bitmap
-				m_textureTarget_CPU.CopyFrom( m_textureTarget1 );
+				Renderer.Texture2D	textureBentNormal_CPU = new Renderer.Texture2D( m_device, W, H, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA32F, ImageUtility.COMPONENT_FORMAT.AUTO, true, false, null );
+				textureBentNormal_CPU.CopyFrom( textureBentNormal );
+				textureBentNormal.Dispose();
 
-//				ImageUtility.ColorProfile	profile = m_profilesRGB;	// AO maps are sRGB! (although strange, that's certainly to have more range in dark values)
-				ImageUtility.ColorProfile	profile = m_profileLinear;
+				float4[,]	bentNormal = new float4[W,H];
+				textureBentNormal_CPU.ReadPixels( 0, 0, ( uint _X, uint _Y, System.IO.BinaryReader _R ) => {
+					bentNormal[_X,_Y].x = _R.ReadSingle();
+					bentNormal[_X,_Y].y = _R.ReadSingle();
+					bentNormal[_X,_Y].z = _R.ReadSingle();
+					bentNormal[_X,_Y].w = _R.ReadSingle();
+				} );
 
-				float3	whitePoint_xyY = new float3( profile.Chromas.White, 0 );
-				float3	whitePoint_XYZ = new float3();
+				textureBentNormal_CPU.Dispose();
 
-				ImageUtility.Bitmap		tempBitmap = new ImageUtility.Bitmap( W, H );
-				Renderer.PixelsBuffer	Pixels = m_textureTarget_CPU.MapRead( 0, 0 );
-				using ( System.IO.BinaryReader R = Pixels.OpenStreamRead() )
-					for ( uint Y=0; Y < H; Y++ ) {
-						R.BaseStream.Position = Y * Pixels.RowPitch;
-						for ( uint X=0; X < W; X++ ) {
-							whitePoint_xyY.z = R.ReadSingle();		// Linear value
-							ImageUtility.ColorProfile.xyY2XYZ( whitePoint_xyY, ref whitePoint_XYZ );
-							tempBitmap[X,Y] = new float4( whitePoint_XYZ, 1 );
-						}
-					}
-
-				m_textureTarget_CPU.UnMap( Pixels );
-
-				// Convert to RGB
-				ImageUtility.ImageFile	temmpImageRGBA32F = new ImageUtility.ImageFile();
-				tempBitmap.ToImageFile( temmpImageRGBA32F, profile );
-
-				if ( m_imageResult == null )
-					m_imageResult = new ImageUtility.ImageFile();
-				m_imageResult.ToneMapFrom( temmpImageRGBA32F, ( float3 _HDR, ref float3 _LDR ) => {
-					_LDR = _HDR;	// Return as-is..
+				if ( m_imageResult != null )
+					m_imageResult.Dispose();
+				m_imageResult = new ImageUtility.ImageFile( W, H, ImageUtility.PIXEL_FORMAT.BGRA8, new ImageUtility.ColorProfile( ImageUtility.ColorProfile.STANDARD_PROFILE.sRGB ) );
+				m_imageResult.WritePixels( ( uint _X, uint _Y, ref float4 _color ) => {
+					_color = bentNormal[_X,_Y];
 				} );
 
 				// Assign result

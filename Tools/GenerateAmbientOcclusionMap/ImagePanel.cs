@@ -26,8 +26,7 @@ namespace GenerateSelfShadowedBumpMap
 		private float				m_Contrast = 0.0f;
 		private float				m_Gamma = 0.0f;
 
-		public Bitmap		Bitmap
-		{
+		public Bitmap		Bitmap {
 			get { return m_Bitmap; }
 			set {
 				m_Bitmap = value;
@@ -35,8 +34,7 @@ namespace GenerateSelfShadowedBumpMap
 			}
 		}
 
-		public float		Brightness
-		{
+		public float		Brightness {
 			get { return m_Brightness; }
 			set {
 				m_Brightness = value;
@@ -44,8 +42,7 @@ namespace GenerateSelfShadowedBumpMap
 			}
 		}
 
-		public float		Contrast
-		{
+		public float		Contrast {
 			get { return m_Contrast; }
 			set {
 				m_Contrast = value;
@@ -53,8 +50,7 @@ namespace GenerateSelfShadowedBumpMap
 			}
 		}
 
-		public float		Gamma
-		{
+		public float		Gamma {
 			get { return m_Gamma; }
 			set {
 				m_Gamma = value;
@@ -63,11 +59,9 @@ namespace GenerateSelfShadowedBumpMap
 		}
 
 		private bool		m_viewLinear = false;
-		public bool			ViewLinear
-		{
+		public bool			ViewLinear {
 			get { return m_viewLinear; }
-			set
-			{
+			set {
 				m_viewLinear = value;
 				UpdateBitmap();
 			}
@@ -103,7 +97,7 @@ namespace GenerateSelfShadowedBumpMap
 			InitializeComponent();
 		}
 
-		public float	ApplyBrightnessContrastGamma( float _Source, float _Brightness, float _Contrast, float _Gamma ) {
+		public float		ApplyBrightnessContrastGamma( float _Source, float _Brightness, float _Contrast, float _Gamma ) {
 			_Source += _Brightness;
 			_Source = 0.5f + (_Source - 0.5f) * (1.0f + _Contrast);
 			_Source = Math.Max( 0.0f, Math.Min( 1.0f, _Source ) );
@@ -130,19 +124,16 @@ namespace GenerateSelfShadowedBumpMap
 		}
 #endif
 
-		protected override void OnSizeChanged( EventArgs e )
-		{
+		protected override void OnSizeChanged( EventArgs e ) {
 			base.OnSizeChanged( e );
 			Invalidate();
 		}
 
-		protected override void OnPaintBackground( PaintEventArgs e )
-		{
+		protected override void OnPaintBackground( PaintEventArgs e ) {
 //			base.OnPaintBackground( e );
 		}
 
-		protected override void OnPaint( PaintEventArgs e )
-		{
+		protected override void OnPaint( PaintEventArgs e ) {
 			base.OnPaint( e );
 
 			e.Graphics.FillRectangle( Brushes.Black, 0, 0, Width, Height );
@@ -158,48 +149,7 @@ namespace GenerateSelfShadowedBumpMap
 			}
 		}
 
-		private unsafe void	UpdateBitmap()
-		{
-// 			if ( m_Image == null )
-// 				return;
-// 
-// 			// Fill pixel per pixel
-// 			int	W = m_Image.Width;
-// 			int	H = m_Image.Height;
-// 			if ( m_Bitmap != null && (m_Bitmap.Width != W || m_Bitmap.Height != H) )
-// 			{
-// 				m_Bitmap.Dispose();
-// 				m_Bitmap = null;
-// 			}
-// 			if ( m_Bitmap == null )
-// 				m_Bitmap = new Bitmap( W, H, PixelFormat.Format32bppArgb );
-// 
-// 			float4[,]	OriginalContentRGB = new float4[W,H];
-// 			if ( m_ViewLinear )
-// 				m_ProfileLinear.XYZ2RGB( m_Image.ContentXYZ, OriginalContentRGB );
-// 			else
-// 				m_ProfilesRGB.XYZ2RGB( m_Image.ContentXYZ, OriginalContentRGB );
-// 
-// //			float4[,]	ContentRGB = ApplyBrightnessContrastGamma( OriginalContentRGB, m_Brightness, m_Contrast, m_Gamma );
-// 			float4[,]	ContentRGB = OriginalContentRGB;
-// 
-// 			BitmapData	LockedBitmap = m_Bitmap.LockBits( new Rectangle( 0, 0, W, H ), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb );
-// 			for ( int Y=0; Y < H; Y++ ) {
-// 				byte*	pScanline = (byte*) LockedBitmap.Scan0.ToPointer() + LockedBitmap.Stride * Y;
-// 				for ( int X=0; X < W; X++ ) {
-// 					byte	R = (byte) Math.Max( 0, Math.Min( 255, 255 * ContentRGB[X,Y].x ) );
-// 					byte	G = (byte) Math.Max( 0, Math.Min( 255, 255 * ContentRGB[X,Y].y ) );
-// 					byte	B = (byte) Math.Max( 0, Math.Min( 255, 255 * ContentRGB[X,Y].z ) );
-// 					byte	A = (byte) Math.Max( 0, Math.Min( 255, 255 * (m_ViewLinear ? ContentRGB[X,Y].w : ImageUtility.ColorProfile.Linear2sRGB( ContentRGB[X,Y].w )) ) );
-// 
-// 					*pScanline++ = B;
-// 					*pScanline++ = G;
-// 					*pScanline++ = R;
-// 					*pScanline++ = 0xFF;
-// 				}
-// 			}
-// 			m_Bitmap.UnlockBits( LockedBitmap );
-
+		private unsafe void	UpdateBitmap() {
 			Refresh();
 		}
 	}
