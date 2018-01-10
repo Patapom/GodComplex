@@ -88,7 +88,8 @@ float3	PS( VS_IN _In ) : SV_TARGET0 {
 		AO = ComputeAO( AO.x, _rho );
 		break;
 	case 2:
-		return _exposure * GroundTruth( UV, _rho, E0 );
+//		return _exposure * GroundTruth( UV, _rho, E0 );
+		return _exposure * (dot( GroundTruth( UV, _rho, E0 ), LUMINANCE ) - dot( (_rho / PI) * E0 * AO, LUMINANCE ));
 	}
 
 	return _exposure * (_rho / PI) * E0 * AO;

@@ -27,9 +27,6 @@ StructuredBuffer<uint>		_indirectPixelsStack : register( t3 );
 StructuredBuffer<float3>	_rays : register( t4 );
 
 groupshared float3x3		gs_Local2World;
-
-//groupshared float3			gs_position_mm;
-//groupshared float3			gs_normal;
 groupshared uint3			gs_accumulator = 0;
 
 
@@ -71,7 +68,6 @@ void	CS_Direct( uint3 _groupID : SV_groupID, uint3 _groupThreadID : SV_groupThre
 							/ _raysCount;
 
 		_targetIlluminance[pixelPosition] = float4( normalizer * gs_accumulator / 65536.0, 0.0 );
-//		_targetIlluminance[pixelPosition] = float4( (float2) pixelPosition / _textureDimensions, 0, 0.0 );
 	}
 }
 

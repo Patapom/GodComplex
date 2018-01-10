@@ -29,6 +29,7 @@
 			this.saveFileDialogImage = new System.Windows.Forms.SaveFileDialog();
 			this.buttonReload = new System.Windows.Forms.Button();
 			this.panelParameters = new System.Windows.Forms.Panel();
+			this.buttonGenerateBentCone = new System.Windows.Forms.Button();
 			this.buttonTestBilateral = new System.Windows.Forms.Button();
 			this.floatTrackbarControlMaxConeAngle = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.floatTrackbarControlHeight = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
@@ -59,7 +60,7 @@
 			this.checkBoxWrap.AutoSize = true;
 			this.checkBoxWrap.Checked = true;
 			this.checkBoxWrap.CheckState = System.Windows.Forms.CheckState.Checked;
-			this.checkBoxWrap.Location = new System.Drawing.Point(15, 260);
+			this.checkBoxWrap.Location = new System.Drawing.Point(119, 56);
 			this.checkBoxWrap.Name = "checkBoxWrap";
 			this.checkBoxWrap.Size = new System.Drawing.Size(43, 17);
 			this.checkBoxWrap.TabIndex = 4;
@@ -68,11 +69,11 @@
 			// 
 			// buttonGenerate
 			// 
-			this.buttonGenerate.Location = new System.Drawing.Point(111, 250);
+			this.buttonGenerate.Location = new System.Drawing.Point(105, 256);
 			this.buttonGenerate.Name = "buttonGenerate";
 			this.buttonGenerate.Size = new System.Drawing.Size(105, 35);
 			this.buttonGenerate.TabIndex = 0;
-			this.buttonGenerate.Text = "Generate";
+			this.buttonGenerate.Text = "Generate AO";
 			this.buttonGenerate.UseVisualStyleBackColor = true;
 			this.buttonGenerate.Click += new System.EventHandler(this.buttonGenerate_Click);
 			// 
@@ -87,7 +88,7 @@
 			// label7
 			// 
 			this.label7.AutoSize = true;
-			this.label7.Location = new System.Drawing.Point(2, 224);
+			this.label7.Location = new System.Drawing.Point(1, 196);
 			this.label7.Name = "label7";
 			this.label7.Size = new System.Drawing.Size(95, 13);
 			this.label7.TabIndex = 3;
@@ -96,7 +97,7 @@
 			// label6
 			// 
 			this.label6.AutoSize = true;
-			this.label6.Location = new System.Drawing.Point(2, 198);
+			this.label6.Location = new System.Drawing.Point(1, 175);
 			this.label6.Name = "label6";
 			this.label6.Size = new System.Drawing.Size(80, 13);
 			this.label6.TabIndex = 3;
@@ -104,7 +105,7 @@
 			// 
 			// label2
 			// 
-			this.label2.Location = new System.Drawing.Point(0, 2);
+			this.label2.Location = new System.Drawing.Point(1, 2);
 			this.label2.Name = "label2";
 			this.label2.Size = new System.Drawing.Size(113, 26);
 			this.label2.TabIndex = 3;
@@ -113,7 +114,7 @@
 			// label4
 			// 
 			this.label4.AutoSize = true;
-			this.label4.Location = new System.Drawing.Point(0, 103);
+			this.label4.Location = new System.Drawing.Point(1, 109);
 			this.label4.Name = "label4";
 			this.label4.Size = new System.Drawing.Size(111, 13);
 			this.label4.TabIndex = 3;
@@ -122,7 +123,7 @@
 			// label1
 			// 
 			this.label1.AutoSize = true;
-			this.label1.Location = new System.Drawing.Point(0, 77);
+			this.label1.Location = new System.Drawing.Point(1, 83);
 			this.label1.Name = "label1";
 			this.label1.Size = new System.Drawing.Size(74, 13);
 			this.label1.TabIndex = 3;
@@ -161,6 +162,7 @@
 			// 
 			// panelParameters
 			// 
+			this.panelParameters.Controls.Add(this.buttonGenerateBentCone);
 			this.panelParameters.Controls.Add(this.buttonTestBilateral);
 			this.panelParameters.Controls.Add(this.floatTrackbarControlMaxConeAngle);
 			this.panelParameters.Controls.Add(this.floatTrackbarControlHeight);
@@ -184,9 +186,19 @@
 			this.panelParameters.Size = new System.Drawing.Size(320, 291);
 			this.panelParameters.TabIndex = 11;
 			// 
+			// button1
+			// 
+			this.buttonGenerateBentCone.Location = new System.Drawing.Point(216, 256);
+			this.buttonGenerateBentCone.Name = "button1";
+			this.buttonGenerateBentCone.Size = new System.Drawing.Size(103, 35);
+			this.buttonGenerateBentCone.TabIndex = 13;
+			this.buttonGenerateBentCone.Text = "Generate\nBent Cone";
+			this.buttonGenerateBentCone.UseVisualStyleBackColor = true;
+			this.buttonGenerateBentCone.Click += new System.EventHandler(this.buttonGenerateBentCone_Click);
+			// 
 			// buttonTestBilateral
 			// 
-			this.buttonTestBilateral.Location = new System.Drawing.Point(229, 250);
+			this.buttonTestBilateral.Location = new System.Drawing.Point(0, 217);
 			this.buttonTestBilateral.Name = "buttonTestBilateral";
 			this.buttonTestBilateral.Size = new System.Drawing.Size(84, 23);
 			this.buttonTestBilateral.TabIndex = 12;
@@ -196,7 +208,7 @@
 			// 
 			// floatTrackbarControlMaxConeAngle
 			// 
-			this.floatTrackbarControlMaxConeAngle.Location = new System.Drawing.Point(119, 125);
+			this.floatTrackbarControlMaxConeAngle.Location = new System.Drawing.Point(119, 131);
 			this.floatTrackbarControlMaxConeAngle.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlMaxConeAngle.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlMaxConeAngle.Name = "floatTrackbarControlMaxConeAngle";
@@ -225,7 +237,7 @@
 			// 
 			// integerTrackbarControlRaysCount
 			// 
-			this.integerTrackbarControlRaysCount.Location = new System.Drawing.Point(119, 73);
+			this.integerTrackbarControlRaysCount.Location = new System.Drawing.Point(119, 79);
 			this.integerTrackbarControlRaysCount.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.integerTrackbarControlRaysCount.MinimumSize = new System.Drawing.Size(70, 20);
 			this.integerTrackbarControlRaysCount.Name = "integerTrackbarControlRaysCount";
@@ -241,7 +253,7 @@
 			// label5
 			// 
 			this.label5.AutoSize = true;
-			this.label5.Location = new System.Drawing.Point(0, 129);
+			this.label5.Location = new System.Drawing.Point(1, 135);
 			this.label5.Name = "label5";
 			this.label5.Size = new System.Drawing.Size(112, 13);
 			this.label5.TabIndex = 3;
@@ -249,7 +261,7 @@
 			// 
 			// integerTrackbarControlMaxStepsCount
 			// 
-			this.integerTrackbarControlMaxStepsCount.Location = new System.Drawing.Point(119, 99);
+			this.integerTrackbarControlMaxStepsCount.Location = new System.Drawing.Point(119, 105);
 			this.integerTrackbarControlMaxStepsCount.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.integerTrackbarControlMaxStepsCount.MinimumSize = new System.Drawing.Size(70, 20);
 			this.integerTrackbarControlMaxStepsCount.Name = "integerTrackbarControlMaxStepsCount";
@@ -263,7 +275,7 @@
 			// 
 			// floatTrackbarControlBilateralRadius
 			// 
-			this.floatTrackbarControlBilateralRadius.Location = new System.Drawing.Point(119, 194);
+			this.floatTrackbarControlBilateralRadius.Location = new System.Drawing.Point(120, 171);
 			this.floatTrackbarControlBilateralRadius.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlBilateralRadius.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlBilateralRadius.Name = "floatTrackbarControlBilateralRadius";
@@ -291,7 +303,7 @@
 			// 
 			// floatTrackbarControlBilateralTolerance
 			// 
-			this.floatTrackbarControlBilateralTolerance.Location = new System.Drawing.Point(119, 220);
+			this.floatTrackbarControlBilateralTolerance.Location = new System.Drawing.Point(120, 195);
 			this.floatTrackbarControlBilateralTolerance.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlBilateralTolerance.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlBilateralTolerance.Name = "floatTrackbarControlBilateralTolerance";
@@ -525,6 +537,7 @@
 		private ImagePanel imagePanelNormalMap;
 		private System.Windows.Forms.ContextMenuStrip contextMenuStripNormal;
 		private System.Windows.Forms.ToolStripMenuItem clearNormalToolStripMenuItem;
+		private System.Windows.Forms.Button buttonGenerateBentCone;
 	}
 }
 

@@ -30,22 +30,24 @@ namespace GenerateSelfShadowedBumpMap
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
 		private struct	CBInput {
-			public UInt32	Y0;					// Index of the texture line we're processing
-			public UInt32	RaysCount;			// Amount of rays in the structured buffer
-			public UInt32	MaxStepsCount;		// Maximum amount of steps to take before stopping
-			public UInt32	Tile;				// Tiling flag
-			public float	TexelSize_mm;		// Size of a texel (in millimeters)
-			public float	Displacement_mm;	// Max displacement value encoded by the height map (in millimeters)
+			public uint		_textureDimensionX;
+			public uint		_textureDimensionY;
+			public uint		_Y0;				// Index of the texture line we're processing
+			public uint		_raysCount;			// Amount of rays in the structured buffer
+			public uint		_maxStepsCount;		// Maximum amount of steps to take before stopping
+			public uint		_tile;				// Tiling flag
+			public float	_texelSize_mm;		// Size of a texel (in millimeters)
+			public float	_displacement_mm;	// Max displacement value encoded by the height map (in millimeters)
 		}
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
 		private struct	CBFilter {
-			public UInt32	Y0;					// Index of the texture line we're processing
-// 			public float	Radius;				// Radius of the bilateral filter
-// 			public float	Tolerance;			// Range tolerance of the bilateral filter
-			public float	Sigma_Radius;		// Radius of the bilateral filter
-			public float	Sigma_Tolerance;	// Range tolerance of the bilateral filter
-			public UInt32	Tile;				// Tiling flag
+			public uint		_Y0;				// Index of the texture line we're processing
+// 			public float	_radius;			// Radius of the bilateral filter
+// 			public float	_tolerance;			// Range tolerance of the bilateral filter
+			public float	_sigma_Radius;		// Radius of the bilateral filter
+			public float	_sigma_Tolerance;	// Range tolerance of the bilateral filter
+			public uint		_tile;				// Tiling flag
 		}
 
 		#endregion
@@ -71,6 +73,7 @@ namespace GenerateSelfShadowedBumpMap
 		private Renderer.ConstantBuffer<CBInput>	m_CB_Input;
 		private Renderer.StructuredBuffer<float3>	m_SB_Rays = null;
 		private Renderer.ComputeShader				m_CS_GenerateAOMap = null;
+		private Renderer.ComputeShader				m_CS_GenerateBentConeMap = null;
 
 		// Bilateral filtering pre-processing
 		private Renderer.ConstantBuffer<CBFilter>	m_CB_Filter;
@@ -131,6 +134,7 @@ namespace GenerateSelfShadowedBumpMap
 				{
 					m_CS_BilateralFilter = new Renderer.ComputeShader( m_device, new System.IO.FileInfo( "./Shaders/BilateralFiltering.hlsl" ), "CS", null );
 					m_CS_GenerateAOMap = new Renderer.ComputeShader( m_device, new System.IO.FileInfo( "./Shaders/GenerateAOMap.hlsl" ), "CS", null );
+					m_CS_GenerateBentConeMap = new Renderer.ComputeShader( m_device, new System.IO.FileInfo( "./Shaders/GenerateBentConeMap.hlsl" ), "CS", null );
 				}
 
 				// Create our constant buffers
@@ -150,9 +154,9 @@ namespace GenerateSelfShadowedBumpMap
 			}
 		}
 
-		protected override void OnClosing( CancelEventArgs e )
-		{
+		protected override void OnClosing( CancelEventArgs e ) {
 			try {
+				m_CS_GenerateBentConeMap.Dispose();
 				m_CS_GenerateAOMap.Dispose();
 				m_CS_BilateralFilter.Dispose();
 
@@ -183,8 +187,7 @@ namespace GenerateSelfShadowedBumpMap
 		/// Clean up any resources being used.
 		/// </summary>
 		/// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
-		protected override void Dispose( bool disposing )
-		{
+		protected override void Dispose( bool disposing ) {
 			if ( disposing && (components != null) )
 			{
 				components.Dispose();
@@ -243,7 +246,7 @@ namespace GenerateSelfShadowedBumpMap
 			}
 
 			// Generate
- 			Generate();
+ 			GenerateAO();
 
 			// Save results
 			m_imageResult.Save( new System.IO.FileInfo( _args.AOMapFileName ) );
@@ -355,7 +358,7 @@ namespace GenerateSelfShadowedBumpMap
 			}
 		}
 
-		private void	Generate() {
+		private void	GenerateAO() {
 			try {
 				panelParameters.Enabled = false;
 
@@ -374,11 +377,13 @@ namespace GenerateSelfShadowedBumpMap
 				m_SB_Rays.SetInput( 1 );
 				m_TextureSourceNormal.SetCS( 2 );
 
-				m_CB_Input.m.RaysCount = (UInt32) Math.Min( MAX_THREADS, integerTrackbarControlRaysCount.Value );
-				m_CB_Input.m.MaxStepsCount = (UInt32) integerTrackbarControlMaxStepsCount.Value;
-				m_CB_Input.m.Tile = (uint) (checkBoxWrap.Checked ? 1 : 0);
-				m_CB_Input.m.TexelSize_mm = TextureSize_mm / Math.Max( W, H );
-				m_CB_Input.m.Displacement_mm = TextureHeight_mm;
+				m_CB_Input.m._textureDimensionX = W;
+				m_CB_Input.m._textureDimensionY = H;
+				m_CB_Input.m._raysCount = (UInt32) Math.Min( MAX_THREADS, integerTrackbarControlRaysCount.Value );
+				m_CB_Input.m._maxStepsCount = (UInt32) integerTrackbarControlMaxStepsCount.Value;
+				m_CB_Input.m._tile = (uint) (checkBoxWrap.Checked ? 1 : 0);
+				m_CB_Input.m._texelSize_mm = TextureSize_mm / Math.Max( W, H );
+				m_CB_Input.m._displacement_mm = TextureHeight_mm;
 
 				// Start
 				if ( !m_CS_GenerateAOMap.Use() )
@@ -387,10 +392,110 @@ namespace GenerateSelfShadowedBumpMap
 				uint	h = Math.Max( 1, MAX_LINES*1024 / W );
 				uint	CallsCount = (uint) Math.Ceiling( (float) H / h );
 				for ( int i=0; i < CallsCount; i++ ) {
-					m_CB_Input.m.Y0 = (UInt32) (i * h);
+					m_CB_Input.m._Y0 = (UInt32) (i * h);
 					m_CB_Input.UpdateData();
 
 					m_CS_GenerateAOMap.Dispatch( W, h, 1 );
+
+					m_device.Present( true );
+
+					progressBar.Value = (int) (0.01f * (BILATERAL_PROGRESS + (100-BILATERAL_PROGRESS) * (i+1) / (CallsCount)) * progressBar.Maximum);
+//					for ( int a=0; a < 10; a++ )
+						Application.DoEvents();
+				}
+
+				m_textureTarget1.RemoveFromLastAssignedSlotUAV();	// So we can use it as input for next stage
+
+				progressBar.Value = progressBar.Maximum;
+
+				// Compute in a single shot (this is madness!)
+// 				m_CB_Input.m.y = 0;
+// 				m_CB_Input.UpdateData();
+// 				m_CS_GenerateSSBumpMap.Dispatch( W, H, 1 );
+
+
+				//////////////////////////////////////////////////////////////////////////
+				// 3] Copy target to staging for CPU readback and update the resulting bitmap
+				m_textureTarget_CPU.CopyFrom( m_textureTarget1 );
+
+//				ImageUtility.ColorProfile	profile = m_profilesRGB;	// AO maps are sRGB! (although strange, that's certainly to have more range in dark values)
+				ImageUtility.ColorProfile	profile = m_profileLinear;
+
+				float3	whitePoint_xyY = new float3( profile.Chromas.White, 0 );
+				float3	whitePoint_XYZ = new float3();
+
+				ImageUtility.Bitmap		tempBitmap = new ImageUtility.Bitmap( W, H );
+				Renderer.PixelsBuffer	Pixels = m_textureTarget_CPU.MapRead( 0, 0 );
+				using ( System.IO.BinaryReader R = Pixels.OpenStreamRead() )
+					for ( uint Y=0; Y < H; Y++ ) {
+						R.BaseStream.Position = Y * Pixels.RowPitch;
+						for ( uint X=0; X < W; X++ ) {
+							whitePoint_xyY.z = R.ReadSingle();		// Linear value
+							ImageUtility.ColorProfile.xyY2XYZ( whitePoint_xyY, ref whitePoint_XYZ );
+							tempBitmap[X,Y] = new float4( whitePoint_XYZ, 1 );
+						}
+					}
+
+				m_textureTarget_CPU.UnMap( Pixels );
+
+				// Convert to RGB
+				ImageUtility.ImageFile	temmpImageRGBA32F = new ImageUtility.ImageFile();
+				tempBitmap.ToImageFile( temmpImageRGBA32F, profile );
+
+				if ( m_imageResult == null )
+					m_imageResult = new ImageUtility.ImageFile();
+				m_imageResult.ToneMapFrom( temmpImageRGBA32F, ( float3 _HDR, ref float3 _LDR ) => {
+					_LDR = _HDR;	// Return as-is..
+				} );
+
+				// Assign result
+				viewportPanelResult.Bitmap = m_imageResult.AsBitmap;
+
+			} catch ( Exception _e ) {
+				MessageBox( "An error occurred during generation!\r\n\r\nDetails: ", _e );
+			} finally {
+				panelParameters.Enabled = true;
+			}
+		}
+
+		private void	GenerateBentCone() {
+			try {
+				panelParameters.Enabled = false;
+
+				//////////////////////////////////////////////////////////////////////////
+				// 1] Apply bilateral filtering to the input texture as a pre-process
+				ApplyBilateralFiltering( m_textureSourceHeightMap, m_textureTarget0, floatTrackbarControlBilateralRadius.Value, floatTrackbarControlBilateralTolerance.Value, checkBoxWrap.Checked, BILATERAL_PROGRESS );
+
+
+				//////////////////////////////////////////////////////////////////////////
+				// 2] Compute directional occlusion
+				m_textureTarget1.RemoveFromLastAssignedSlots();
+
+				// Prepare computation parameters
+				m_textureTarget0.SetCS( 0 );
+				m_textureTarget1.SetCSUAV( 0 );
+				m_SB_Rays.SetInput( 1 );
+				m_TextureSourceNormal.SetCS( 2 );
+
+				m_CB_Input.m._textureDimensionX = W;
+				m_CB_Input.m._textureDimensionY = H;
+				m_CB_Input.m._raysCount = (UInt32) Math.Min( MAX_THREADS, integerTrackbarControlRaysCount.Value );
+				m_CB_Input.m._maxStepsCount = (UInt32) integerTrackbarControlMaxStepsCount.Value;
+				m_CB_Input.m._tile = (uint) (checkBoxWrap.Checked ? 1 : 0);
+				m_CB_Input.m._texelSize_mm = TextureSize_mm / Math.Max( W, H );
+				m_CB_Input.m._displacement_mm = TextureHeight_mm;
+
+				// Start
+				if ( !m_CS_GenerateBentConeMap.Use() )
+					throw new Exception( "Can't generate self-shadowed bump map as compute shader failed to compile!" );
+
+				uint	h = Math.Max( 1, MAX_LINES*1024 / W );
+				uint	CallsCount = (uint) Math.Ceiling( (float) H / h );
+				for ( int i=0; i < CallsCount; i++ ) {
+					m_CB_Input.m._Y0 = (UInt32) (i * h);
+					m_CB_Input.UpdateData();
+
+					m_CS_GenerateBentConeMap.Dispatch( W, h, 1 );
 
 					m_device.Present( true );
 
@@ -457,18 +562,18 @@ namespace GenerateSelfShadowedBumpMap
 			_Source.SetCS( 0 );
 			_Target.SetCSUAV( 0 );
 
-// 			m_CB_Filter.m.Radius = _BilateralRadius;
-// 			m_CB_Filter.m.Tolerance = _BilateralTolerance;
-			m_CB_Filter.m.Sigma_Radius = (float) (-0.5 * Math.Pow( _BilateralRadius / 3.0f, -2.0 ));
-			m_CB_Filter.m.Sigma_Tolerance = _BilateralTolerance > 0.0f ? (float) (-0.5 * Math.Pow( _BilateralTolerance, -2.0 )) : -1e6f;
-			m_CB_Filter.m.Tile = (uint) (_Wrap ? 1 : 0);
+// 			m_CB_Filter.m._radius = _BilateralRadius;
+// 			m_CB_Filter.m._tolerance = _BilateralTolerance;
+			m_CB_Filter.m._sigma_Radius = (float) (-0.5 * Math.Pow( _BilateralRadius / 3.0f, -2.0 ));
+			m_CB_Filter.m._sigma_Tolerance = _BilateralTolerance > 0.0f ? (float) (-0.5 * Math.Pow( _BilateralTolerance, -2.0 )) : -1e6f;
+			m_CB_Filter.m._tile = (uint) (_Wrap ? 1 : 0);
 
 			m_CS_BilateralFilter.Use();
 
 			uint	h = Math.Max( 1, MAX_LINES*1024 / W );
 			uint	CallsCount = (uint) Math.Ceiling( (float) H / h );
 			for ( uint i=0; i < CallsCount; i++ ) {
-				m_CB_Filter.m.Y0 = (UInt32) (i * h);
+				m_CB_Filter.m._Y0 = (UInt32) (i * h);
 				m_CB_Filter.UpdateData();
 
 				m_CS_BilateralFilter.Dispatch( W, h, 1 );
@@ -564,10 +669,13 @@ namespace GenerateSelfShadowedBumpMap
 
 		#region EVENT HANDLERS
 
- 		private unsafe void buttonGenerate_Click( object sender, EventArgs e )
- 		{
- 			Generate();
+ 		private unsafe void buttonGenerate_Click( object sender, EventArgs e ) {
+ 			GenerateAO();
 //			Generate_CPU( integerTrackbarControlRaysCount.Value );
+		}
+
+		private void buttonGenerateBentCone_Click( object sender, EventArgs e ) {
+ 			GenerateBentCone();
 		}
 
 		private void buttonTestBilateral_Click( object sender, EventArgs e ) {
@@ -616,33 +724,27 @@ namespace GenerateSelfShadowedBumpMap
 			}
 		}
 
-		private void integerTrackbarControlRaysCount_SliderDragStop( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _StartValue )
-		{
+		private void integerTrackbarControlRaysCount_SliderDragStop( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _StartValue ) {
 			GenerateRays( _Sender.Value, floatTrackbarControlMaxConeAngle.Value * (float) (Math.PI / 180.0), m_SB_Rays );
 		}
 
-		private void floatTrackbarControlMaxConeAngle_SliderDragStop( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fStartValue )
-		{
+		private void floatTrackbarControlMaxConeAngle_SliderDragStop( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fStartValue ) {
 			GenerateRays( integerTrackbarControlRaysCount.Value, floatTrackbarControlMaxConeAngle.Value * (float) (Math.PI / 180.0), m_SB_Rays );
 		}
 
-		private void checkBoxViewsRGB_CheckedChanged( object sender, EventArgs e )
-		{
+		private void checkBoxViewsRGB_CheckedChanged( object sender, EventArgs e ) {
 			viewportPanelResult.ViewLinear = !checkBoxViewsRGB.Checked;
 		}
 
-		private void floatTrackbarControlBrightness_SliderDragStop( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fStartValue )
-		{
+		private void floatTrackbarControlBrightness_SliderDragStop( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fStartValue ) {
 			viewportPanelResult.Brightness = _Sender.Value;
 		}
 
-		private void floatTrackbarControlContrast_SliderDragStop( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fStartValue )
-		{
+		private void floatTrackbarControlContrast_SliderDragStop( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fStartValue ) {
 			viewportPanelResult.Contrast = _Sender.Value;
 		}
 
-		private void floatTrackbarControlGamma_SliderDragStop( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fStartValue )
-		{
+		private void floatTrackbarControlGamma_SliderDragStop( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fStartValue ) {
 			viewportPanelResult.Gamma = _Sender.Value;
 		}
 
