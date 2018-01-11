@@ -112,6 +112,7 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID ) 
 		float	H0 = _Tex_Height[pixelPosition];
 		gs_position = float3( pixelPosition + 0.5, H0 );
 
+// Don't use this because nudging in normal's direction can offset the start position INSIDE the height map. Use vertical nudge instead.
 //		float3	RayPosition_mm = rayPosition * float3( _texelSize_mm.xx, _displacement_mm );
 //		RayPosition_mm += 0.01 * _displacement_mm * normal;	// Nudge a little to avoid acnea
 //		gs_position = RayPosition_mm / float3( _texelSize_mm.xx, _displacement_mm );
@@ -128,23 +129,41 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID ) 
 
 		float	weight = occlusion * lsRayDirection.z;
 //float	weight = occlusion;
+//float	weight = lsRayDirection.z > 0.98 ? 1.0 : 0.0;
 
 //weight = 1.0;
 //lsRayDirection = float3( (pixelPosition+0.5) / _textureDimensions, 0 );
 
 		uint	dontCare;
-		InterlockedAdd( gs_occlusionDirectionAccumulator.x, uint(65536.0 * weight * lsRayDirection.x), dontCare );
-		InterlockedAdd( gs_occlusionDirectionAccumulator.y, uint(65536.0 * weight * lsRayDirection.y), dontCare );
-		InterlockedAdd( gs_occlusionDirectionAccumulator.z, uint(65536.0 * weight * lsRayDirection.z), dontCare );
+		InterlockedAdd( gs_occlusionDirectionAccumulator.x, uint(65536.0 * weight * (1.0 + wsRayDirection.x)), dontCare );
+		InterlockedAdd( gs_occlusionDirectionAccumulator.y, uint(65536.0 * weight * (1.0 + wsRayDirection.y)), dontCare );
+		InterlockedAdd( gs_occlusionDirectionAccumulator.z, uint(65536.0 * weight * (1.0 + wsRayDirection.z)), dontCare );
 		InterlockedAdd( gs_occlusionDirectionAccumulator.w, uint(65536.0 * weight), dontCare );
 	}
 
 	GroupMemoryBarrierWithGroupSync();
 
 	if ( rayIndex == 0 ) {
-//		float	normalizer = 1.0 / gs_occlusionDirectionAccumulator.w / _raysCount;
 		float	normalizer = 1.0 / gs_occlusionDirectionAccumulator.w;
-		_Target[pixelPosition] = float4( normalizer * gs_occlusionDirectionAccumulator.xyz, 1 );
+		float3	bentNormal = normalizer * gs_occlusionDirectionAccumulator.xyz - 1.0;
+
+
+_Target[pixelPosition] = float4( dot( normalize(bentNormal), gs_local2World[2] ).xxx, 1 );
+return;
+
+
+
+		bentNormal.y = -bentNormal.y;	// Normal textures are stored with inverted Y
+
+
+//bentNormal = normalize( bentNormal );
+
+//		_Target[pixelPosition] = float4( bentNormal, 1 );
+_Target[pixelPosition] = float4( 0.5 * (1.0+bentNormal), 1 );	// Ready for texture
+
+//_Target[pixelPosition] = float4( 0.5 * (1.0+gs_local2World[2]), 1 );	// Ready for texture
+
+//_Target[pixelPosition] = float4( dot( normalize(bentNormal), gs_local2World[2] ).xxx, 1 );
 //_Target[pixelPosition] = float4( _raysCount.xxx / 2048.0, 1 );
 //_Target[pixelPosition] = float4( float2( pixelPosition ) / _textureDimensions, 0, 1 );
 	}
