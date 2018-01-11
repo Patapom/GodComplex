@@ -49,6 +49,7 @@
 			this.clearNormalToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.integerTrackbarControlBounceIndex = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
 			this.buttonDemo = new System.Windows.Forms.Button();
+			this.imagePanelBentCone = new TestGroundTruthAOFitting.ImagePanel();
 			this.panelParameters.SuspendLayout();
 			this.contextMenuStripNormal.SuspendLayout();
 			this.SuspendLayout();
@@ -149,7 +150,7 @@
 			// 
 			// buttonReload
 			// 
-			this.buttonReload.Location = new System.Drawing.Point(771, 499);
+			this.buttonReload.Location = new System.Drawing.Point(775, 437);
 			this.buttonReload.Name = "buttonReload";
 			this.buttonReload.Size = new System.Drawing.Size(75, 23);
 			this.buttonReload.TabIndex = 10;
@@ -409,7 +410,7 @@
 			// 
 			// integerTrackbarControlBounceIndex
 			// 
-			this.integerTrackbarControlBounceIndex.Location = new System.Drawing.Point(725, 456);
+			this.integerTrackbarControlBounceIndex.Location = new System.Drawing.Point(726, 397);
 			this.integerTrackbarControlBounceIndex.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.integerTrackbarControlBounceIndex.MinimumSize = new System.Drawing.Size(70, 20);
 			this.integerTrackbarControlBounceIndex.Name = "integerTrackbarControlBounceIndex";
@@ -423,7 +424,7 @@
 			// 
 			// buttonDemo
 			// 
-			this.buttonDemo.Location = new System.Drawing.Point(747, 358);
+			this.buttonDemo.Location = new System.Drawing.Point(775, 347);
 			this.buttonDemo.Name = "buttonDemo";
 			this.buttonDemo.Size = new System.Drawing.Size(75, 44);
 			this.buttonDemo.TabIndex = 12;
@@ -431,12 +432,29 @@
 			this.buttonDemo.UseVisualStyleBackColor = true;
 			this.buttonDemo.Click += new System.EventHandler(this.buttonDemo_Click);
 			// 
+			// imagePanelBentCone
+			// 
+			this.imagePanelBentCone.AllowDrop = true;
+			this.imagePanelBentCone.Bitmap = null;
+			this.imagePanelBentCone.Brightness = 0F;
+			this.imagePanelBentCone.Contrast = 0F;
+			this.imagePanelBentCone.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F);
+			this.imagePanelBentCone.Gamma = 0F;
+			this.imagePanelBentCone.Location = new System.Drawing.Point(726, 474);
+			this.imagePanelBentCone.MessageOnEmpty = "Bent cone";
+			this.imagePanelBentCone.Name = "imagePanelBentCone";
+			this.imagePanelBentCone.Size = new System.Drawing.Size(50, 50);
+			this.imagePanelBentCone.TabIndex = 0;
+			this.imagePanelBentCone.ViewLinear = false;
+			this.imagePanelBentCone.Click += new System.EventHandler(this.outputPanelInputBentCone_Click);
+			// 
 			// GeneratorForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1379, 536);
 			this.Controls.Add(this.buttonDemo);
+			this.Controls.Add(this.imagePanelBentCone);
 			this.Controls.Add(this.imagePanelNormalMap);
 			this.Controls.Add(this.panelParameters);
 			this.Controls.Add(this.buttonReload);
@@ -494,6 +512,7 @@
 		private System.Windows.Forms.Button buttonComputeIndirect;
 		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlBounceIndex;
 		private System.Windows.Forms.Button buttonDemo;
+		private ImagePanel imagePanelBentCone;
 	}
 }
 

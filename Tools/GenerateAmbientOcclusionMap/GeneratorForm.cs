@@ -543,6 +543,8 @@ namespace GenerateSelfShadowedBumpMap
 				m_imageResult = new ImageUtility.ImageFile( W, H, ImageUtility.PIXEL_FORMAT.BGRA8, new ImageUtility.ColorProfile( ImageUtility.ColorProfile.STANDARD_PROFILE.sRGB ) );
 				m_imageResult.WritePixels( ( uint _X, uint _Y, ref float4 _color ) => {
 					_color = bentNormal[_X,_Y];
+// 					_color.Set( bentNormal[_X,_Y].xyz, 1.0f );
+// 					_color.Set( bentNormal[_X,_Y].w, bentNormal[_X,_Y].w, bentNormal[_X,_Y].w, 1.0f );
 				} );
 
 				// Assign result

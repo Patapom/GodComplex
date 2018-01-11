@@ -7,6 +7,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 //
 static const uint	MAX_THREADS = 1024;
+static const uint	ANGLE_BINS_COUNT = 16;
 
 static const float	PI = 3.1415926535897932384626433832795;
 
@@ -31,7 +32,12 @@ Texture2D<float3>			_Tex_Normal : register( t2 );
 
 groupshared float3			gs_position;				// Initial position, common to all rays
 groupshared float3x3		gs_local2World;
+groupshared float3			gs_lsRayDirection[MAX_THREADS];
+groupshared float3			gs_wsRayDirection[MAX_THREADS];
+groupshared float			gs_occlusion[MAX_THREADS];
 groupshared uint4			gs_occlusionDirectionAccumulator = 0;
+groupshared float3			gs_bentNormal;				// Computed direction for the bent normal
+groupshared uint			gs_maxCosAngle[ANGLE_BINS_COUNT];
 
 
 // Computes the occlusion of the pixel in the specified direction
@@ -102,6 +108,11 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID ) 
 	if ( rayIndex == 0 ) {
 		// Build local tangent space to orient rays
 		float3	normal = _Tex_Normal[pixelPosition];
+
+
+//normal = float3( 0, 0, 1 );
+
+
 		float3	tangent, biTangent;
 		BuildOrthonormalBasis( normal, tangent, biTangent );
 
@@ -120,49 +131,102 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID ) 
 		gs_position.z += 1e-2;	// Nudge a little to avoid acnea
 	}
 
+	if ( rayIndex < ANGLE_BINS_COUNT ) {
+		gs_maxCosAngle[rayIndex] = 0;	// Initialize to 0 since we're looking for the maximum of the cos(angle) here
+	}
+
 	GroupMemoryBarrierWithGroupSync();
 
+	////////////////////////////////////////////////////////////////////////
+	// Average unoccluded directions to obtain main "bent normal" direction
 	if ( rayIndex < _raysCount ) {
 		float3	lsRayDirection = _Rays[rayIndex];
 		float3	wsRayDirection = mul( lsRayDirection, gs_local2World );
 		float	occlusion = ComputeDirectionalOcclusion( gs_position, wsRayDirection );
 
+
+//occlusion = 1.0;
+
+
 		float	weight = occlusion * lsRayDirection.z;
 //float	weight = occlusion;
 //float	weight = lsRayDirection.z > 0.98 ? 1.0 : 0.0;
-
-//weight = 1.0;
-//lsRayDirection = float3( (pixelPosition+0.5) / _textureDimensions, 0 );
 
 		uint	dontCare;
 		InterlockedAdd( gs_occlusionDirectionAccumulator.x, uint(65536.0 * weight * (1.0 + wsRayDirection.x)), dontCare );
 		InterlockedAdd( gs_occlusionDirectionAccumulator.y, uint(65536.0 * weight * (1.0 + wsRayDirection.y)), dontCare );
 		InterlockedAdd( gs_occlusionDirectionAccumulator.z, uint(65536.0 * weight * (1.0 + wsRayDirection.z)), dontCare );
 		InterlockedAdd( gs_occlusionDirectionAccumulator.w, uint(65536.0 * weight), dontCare );
+
+		gs_lsRayDirection[rayIndex] = lsRayDirection;
+		gs_wsRayDirection[rayIndex] = wsRayDirection;
+		gs_occlusion[rayIndex] = occlusion;
 	}
 
 	GroupMemoryBarrierWithGroupSync();
 
+	////////////////////////////////////////////////////////////////////////
+	// Finalize average bent normal direction (unnormalized)
 	if ( rayIndex == 0 ) {
-		float	normalizer = 1.0 / gs_occlusionDirectionAccumulator.w;
-		float3	bentNormal = normalizer * gs_occlusionDirectionAccumulator.xyz - 1.0;
+		gs_bentNormal = float3( gs_occlusionDirectionAccumulator.xyz ) / gs_occlusionDirectionAccumulator.w - 1.0;
+		gs_occlusionDirectionAccumulator = 0;
+
+		// Rebuild tangent space around the new bent normal
+		gs_local2World[2] = gs_bentNormal;
+		BuildOrthonormalBasis( gs_bentNormal, gs_local2World[0], gs_local2World[1] );
+	}
+
+	GroupMemoryBarrierWithGroupSync();
+
+	////////////////////////////////////////////////////////////////////////
+	// Compute average cone aperture angle
+	if ( rayIndex < _raysCount ) {
+		float3	wsRayDirection = gs_wsRayDirection[rayIndex];
+		float	occlusion = gs_occlusion[rayIndex];
 
 
-_Target[pixelPosition] = float4( dot( normalize(bentNormal), gs_local2World[2] ).xxx, 1 );
-return;
+		#if 1
+			float3	lsRayDirection = float3(	dot( wsRayDirection, gs_local2World[0] ),
+												dot( wsRayDirection, gs_local2World[1] ),
+												dot( wsRayDirection, gs_local2World[2] )
+											);
 
+			uint	angleBinIndex = uint( ANGLE_BINS_COUNT * (1.0 + atan2( lsRayDirection.y, lsRayDirection.x ) / PI) ) & (ANGLE_BINS_COUNT-1);
 
+			// Keep maximum cos( angle ) for each bin
+			uint	dontCare;
+			InterlockedMax( gs_maxCosAngle[angleBinIndex], uint( 65536.0 * lerp( lsRayDirection.z, 0.0, occlusion ) ), dontCare );
+		#else
+			float3	lsRayDirection = gs_lsRayDirection[rayIndex];
 
-		bentNormal.y = -bentNormal.y;	// Normal textures are stored with inverted Y
+//			float	weight = occlusion * lsRayDirection.z;
+			float	weight = occlusion;
 
+			uint	dontCare;
+			InterlockedAdd( gs_occlusionDirectionAccumulator.x, uint(65536.0 * weight * dot( wsRayDirection, gs_bentNormal )), dontCare );
+			InterlockedAdd( gs_occlusionDirectionAccumulator.w, uint(65536.0 * weight), dontCare );
+		#endif
+	}
 
-//bentNormal = normalize( bentNormal );
+	GroupMemoryBarrierWithGroupSync();
 
-//		_Target[pixelPosition] = float4( bentNormal, 1 );
-_Target[pixelPosition] = float4( 0.5 * (1.0+bentNormal), 1 );	// Ready for texture
+	////////////////////////////////////////////////////////////////////////
+	// Finalize average bent normal direction (unnormalized)
+	if ( rayIndex == 0 ) {
+//		float	averageCos = float(gs_occlusionDirectionAccumulator.x) / gs_occlusionDirectionAccumulator.w;
 
+		float	averageAngle = 0.0;
+		for ( uint angleBinIndex=0; angleBinIndex < ANGLE_BINS_COUNT; angleBinIndex++ )
+			averageAngle += acos( saturate( gs_maxCosAngle[angleBinIndex] / 65536.0 ) );
+		averageAngle /= ANGLE_BINS_COUNT;
+		float	averageCos = cos( averageAngle );
+
+averageCos = 2.0 * averageAngle / PI;	// Store as angle, makes more sense visually and brings more precision
+
+		gs_bentNormal.y = -gs_bentNormal.y;	// Normal textures are stored with inverted Y
+
+_Target[pixelPosition] = float4( 0.5 * (1.0+gs_bentNormal), averageCos );	// Ready for texture
 //_Target[pixelPosition] = float4( 0.5 * (1.0+gs_local2World[2]), 1 );	// Ready for texture
-
 //_Target[pixelPosition] = float4( dot( normalize(bentNormal), gs_local2World[2] ).xxx, 1 );
 //_Target[pixelPosition] = float4( _raysCount.xxx / 2048.0, 1 );
 //_Target[pixelPosition] = float4( float2( pixelPosition ) / _textureDimensions, 0, 1 );

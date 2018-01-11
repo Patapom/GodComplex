@@ -73,12 +73,16 @@ namespace TestGroundTruthAOFitting
 // 				m_tex_Illuminance.Set( 3 );
 			if ( m_tex_GroundTruth != null )
 				m_tex_GroundTruth.Set( 3 );
+			if ( m_tex_BentCone != null )
+				m_tex_BentCone.Set( 4 );
 
 			m_CB_Main.m._flags = 0U;
 			if ( radioButtonOn.Checked )
 				m_CB_Main.m._flags |= 1U;
-			else if ( radioButtonGroundTruth.Checked )
+			else if ( radioButtonBentCone.Checked )
 				m_CB_Main.m._flags |= 2U;
+			else if ( radioButtonGroundTruth.Checked )
+				m_CB_Main.m._flags |= 3U;
 			m_CB_Main.m._bounceIndex = (uint) integerTrackbarControlBounceIndex.Value;
 			m_CB_Main.m._rho = floatTrackbarControlReflectance.Value * new float3( 1.0f, 0.9f, 0.7f );
 			m_CB_Main.m._exposure = floatTrackbarControlExposure.Value;
@@ -136,6 +140,7 @@ namespace TestGroundTruthAOFitting
 				m_tex_Height = CreateTextureFromImage( m_imageHeight );
 			}
 		}
+
 		Texture2D	m_tex_Normal = null;
 		ImageFile	m_imageNormal = null;
 		public ImageFile	ImageNormal {
@@ -155,6 +160,27 @@ namespace TestGroundTruthAOFitting
 				m_tex_Normal = CreateTextureFromImage( m_imageNormal );
 			}
 		}
+
+		Texture2D	m_tex_BentCone = null;
+		ImageFile	m_imageBentCone = null;
+		public ImageFile	ImageBentCone {
+			get { return m_imageBentCone; }
+			set {
+				if ( value == m_imageBentCone )
+					return;
+
+				if ( m_tex_BentCone != null )
+					m_tex_BentCone.Dispose();
+				m_tex_BentCone = null;
+
+				m_imageBentCone = value;
+				if ( m_imageBentCone == null )
+					return;
+
+				m_tex_BentCone = CreateTextureFromImage( m_imageBentCone );
+			}
+		}
+
 		Texture2D	m_tex_AO = null;
 		float2[,]	m_AOValues = null;
 		public float2[,]	AOValues {
@@ -191,6 +217,7 @@ namespace TestGroundTruthAOFitting
 				m_tex_AO = new Texture2D( m_device, W, H, 1, 1, ImageUtility.PIXEL_FORMAT.RG32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, false, new PixelsBuffer[] { content } );
 			}
 		}
+
 // 		Texture2D	m_tex_Illuminance = null;
 // 		float[][,]	m_arrayOfIlluminanceValues = null;
 // 		public float[][,]	ArrayOfIlluminanceValues {

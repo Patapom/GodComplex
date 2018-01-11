@@ -102,10 +102,12 @@ const string	SUFFIX = "";
 		private uint								W, H;
 		private ImageUtility.ImageFile				m_imageSourceHeight = null;
 		private ImageUtility.ImageFile				m_imageSourceNormal = null;
+		private ImageUtility.ImageFile				m_imageSourceBentCone = null;
 
 		internal Renderer.Device					m_device = new Renderer.Device();
 		internal Renderer.Texture2D					m_textureSourceHeightMap = null;
 		internal Renderer.Texture2D					m_textureSourceNormal = null;
+		internal Renderer.Texture2D					m_textureSourceBentCone = null;
 
 		internal Renderer.Texture2D					m_textureFilteredHeightMap = null;
 
@@ -227,6 +229,8 @@ LoadNormalMap( new System.IO.FileInfo( GetRegKey( "NormalMapFileName", System.IO
 				m_CB_Indirect.Dispose();
 				m_CB_AO.Dispose();
 
+				if ( m_textureSourceBentCone != null )
+					m_textureSourceBentCone.Dispose();
 				if ( m_textureSourceNormal != null )
 					m_textureSourceNormal.Dispose();
 				if ( m_textureSourceHeightMap != null )
@@ -406,6 +410,52 @@ LoadNormalMap( new System.IO.FileInfo( GetRegKey( "NormalMapFileName", System.IO
 					}
 
 				m_textureSourceNormal = new Renderer.Texture2D( m_device, W, H, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, false, new Renderer.PixelsBuffer[] { SourceNormalMap } );
+
+			} catch ( Exception _e ) {
+				MessageBox( "An error occurred while opening the image:\n\n", _e );
+			}
+		}
+
+		private void	LoadBentConeMap( System.IO.FileInfo _FileName ) {
+			try {
+				// Dispose of existing resources
+				if ( m_imageSourceBentCone != null )
+					m_imageSourceBentCone.Dispose();
+				m_imageSourceBentCone = null;
+
+				if ( m_textureSourceBentCone != null )
+					m_textureSourceBentCone.Dispose();
+				m_textureSourceBentCone = null;
+
+				// Load the source image
+				// Assume it's in linear space (all normal maps should be in linear space, with the default value being (0.5, 0.5, 1))
+				m_imageSourceBentCone = new ImageUtility.ImageFile( _FileName );
+				imagePanelBentCone.Bitmap = m_imageSourceBentCone.AsBitmap;
+
+				m_demoForm.ImageBentCone = m_imageSourceBentCone;	// Send to demo form
+
+				uint	W = m_imageSourceBentCone.Width;
+				uint	H = m_imageSourceBentCone.Height;
+
+				// Build the source texture
+				float4[]	scanline = new float4[W];
+
+// 				Renderer.PixelsBuffer	SourceNormalMap = new Renderer.PixelsBuffer( W*H*4*4 );
+// 				using ( System.IO.BinaryWriter Wr = SourceNormalMap.OpenStreamWrite() )
+// 					for ( int Y=0; Y < H; Y++ ) {
+// 						m_imageSourceNormal.ReadScanline( (uint) Y, scanline );
+// 						for ( int X=0; X < W; X++ ) {
+// 							float	Nx = 2.0f * scanline[X].x - 1.0f;
+// 							float	Ny = 1.0f - 2.0f * scanline[X].y;
+// 							float	Nz = 2.0f * scanline[X].z - 1.0f;
+// 							Wr.Write( Nx );
+// 							Wr.Write( Ny );
+// 							Wr.Write( Nz );
+// 							Wr.Write( 1.0f );
+// 						}
+// 					}
+// 
+// 				m_textureSourceNormal = new Renderer.Texture2D( m_device, W, H, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, false, new Renderer.PixelsBuffer[] { SourceNormalMap } );
 
 			} catch ( Exception _e ) {
 				MessageBox( "An error occurred while opening the image:\n\n", _e );
@@ -1222,9 +1272,9 @@ m_SB_Rays.SetInput( 4 );
 		#region Height Map
 
 		private void outputPanelInputHeightMap_Click( object sender, EventArgs e ) {
-			string	OldFileName = GetRegKey( "HeightMapFileName", System.IO.Path.Combine( m_ApplicationPath, "Example.jpg" ) );
-			openFileDialogImage.InitialDirectory = System.IO.Path.GetDirectoryName( OldFileName );
-			openFileDialogImage.FileName = System.IO.Path.GetFileName( OldFileName );
+			string	oldFileName = GetRegKey( "HeightMapFileName", System.IO.Path.Combine( m_ApplicationPath, "Example.jpg" ) );
+			openFileDialogImage.InitialDirectory = System.IO.Path.GetDirectoryName( oldFileName );
+			openFileDialogImage.FileName = System.IO.Path.GetFileName( oldFileName );
 			if ( openFileDialogImage.ShowDialog( this ) != DialogResult.OK )
 				return;
 
@@ -1233,9 +1283,9 @@ m_SB_Rays.SetInput( 4 );
 			LoadHeightMap( new System.IO.FileInfo( openFileDialogImage.FileName ) );
 		}
 
-		private string	m_DraggedFileName = null;
+		private string	m_draggedFileName = null;
 		private void outputPanelInputHeightMap_DragEnter( object sender, DragEventArgs e ) {
-			m_DraggedFileName = null;
+			m_draggedFileName = null;
 			if ( (e.AllowedEffect & DragDropEffects.Copy) != DragDropEffects.Copy )
 				return;
 
@@ -1248,14 +1298,14 @@ m_SB_Rays.SetInput( 4 );
 			string	DraggedFileName = (data as string[])[0];
 
 			if ( ImageUtility.ImageFile.GetFileTypeFromFileNameOnly( new System.IO.FileInfo( DraggedFileName ) ) != ImageUtility.ImageFile.FILE_FORMAT.UNKNOWN ) {
-				m_DraggedFileName = DraggedFileName;	// Supported!
+				m_draggedFileName = DraggedFileName;	// Supported!
 				e.Effect = DragDropEffects.Copy;
 			}
 		}
 
 		private void outputPanelInputHeightMap_DragDrop( object sender, DragEventArgs e ) {
-			if ( m_DraggedFileName != null )
-				LoadHeightMap( new System.IO.FileInfo( m_DraggedFileName ) );
+			if ( m_draggedFileName != null )
+				LoadHeightMap( new System.IO.FileInfo( m_draggedFileName ) );
 		}
 
 		#endregion
@@ -1263,9 +1313,9 @@ m_SB_Rays.SetInput( 4 );
 		#region Normal Map
 
 		private void outputPanelInputNormalMap_Click( object sender, EventArgs e ) {
-			string	OldFileName = GetRegKey( "NormalMapFileName", System.IO.Path.Combine( m_ApplicationPath, "Example.jpg" ) );
-			openFileDialogImage.InitialDirectory = System.IO.Path.GetDirectoryName( OldFileName );
-			openFileDialogImage.FileName = System.IO.Path.GetFileName( OldFileName );
+			string	oldFileName = GetRegKey( "NormalMapFileName", System.IO.Path.Combine( m_ApplicationPath, "Example.jpg" ) );
+			openFileDialogImage.InitialDirectory = System.IO.Path.GetDirectoryName( oldFileName );
+			openFileDialogImage.FileName = System.IO.Path.GetFileName( oldFileName );
 			if ( openFileDialogImage.ShowDialog( this ) != DialogResult.OK )
 				return;
 
@@ -1275,7 +1325,7 @@ m_SB_Rays.SetInput( 4 );
 		}
 
 		private void outputPanelInputNormalMap_DragEnter( object sender, DragEventArgs e ) {
-			m_DraggedFileName = null;
+			m_draggedFileName = null;
 			if ( (e.AllowedEffect & DragDropEffects.Copy) != DragDropEffects.Copy )
 				return;
 
@@ -1288,17 +1338,75 @@ m_SB_Rays.SetInput( 4 );
 			string	DraggedFileName = (data as string[])[0];
 
 			if ( ImageUtility.ImageFile.GetFileTypeFromFileNameOnly( new System.IO.FileInfo( DraggedFileName ) ) != ImageUtility.ImageFile.FILE_FORMAT.UNKNOWN ) {
-				m_DraggedFileName = DraggedFileName;	// Supported!
+				m_draggedFileName = DraggedFileName;	// Supported!
 				e.Effect = DragDropEffects.Copy;
 			}
 		}
 
 		private void outputPanelInputNormalMap_DragDrop( object sender, DragEventArgs e ) {
-			if ( m_DraggedFileName != null )
-				LoadNormalMap( new System.IO.FileInfo( m_DraggedFileName ) );
+			if ( m_draggedFileName != null )
+				LoadNormalMap( new System.IO.FileInfo( m_draggedFileName ) );
 		}
 
 		private void clearNormalToolStripMenuItem_Click( object sender, EventArgs e ) {
+			if ( m_textureSourceNormal != null )
+				m_textureSourceNormal.Dispose();
+			m_textureSourceNormal = null;
+			imagePanelNormalMap.Bitmap = null;
+
+			// Create the default, planar normal map
+			Renderer.PixelsBuffer	SourceNormalMap = new Renderer.PixelsBuffer( 4*4 );
+			using ( System.IO.BinaryWriter Wr = SourceNormalMap.OpenStreamWrite() ) {
+				Wr.Write( 0.0f );
+				Wr.Write( 0.0f );
+				Wr.Write( 1.0f );
+				Wr.Write( 1.0f );
+			}
+
+			m_textureSourceNormal = new Renderer.Texture2D( m_device, 1, 1, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, false, new Renderer.PixelsBuffer[] { SourceNormalMap } );
+		}
+
+		#endregion
+
+		#region Bent Cone Map
+
+		private void outputPanelInputBentCone_Click( object sender, EventArgs e ) {
+			string	oldFileName = GetRegKey( "BentConeMapFileName", System.IO.Path.Combine( m_ApplicationPath, "Example.jpg" ) );
+			openFileDialogImage.InitialDirectory = System.IO.Path.GetDirectoryName( oldFileName );
+			openFileDialogImage.FileName = System.IO.Path.GetFileName( oldFileName );
+			if ( openFileDialogImage.ShowDialog( this ) != DialogResult.OK )
+				return;
+
+			SetRegKey( "BentConeMapFileName", openFileDialogImage.FileName );
+
+			LoadBentConeMap( new System.IO.FileInfo( openFileDialogImage.FileName ) );
+		}
+
+		private void outputPanelInputBentCone_DragEnter( object sender, DragEventArgs e ) {
+			m_draggedFileName = null;
+			if ( (e.AllowedEffect & DragDropEffects.Copy) != DragDropEffects.Copy )
+				return;
+
+			Array	data = ((IDataObject) e.Data).GetData( "FileNameW" ) as Array;
+			if ( data == null || data.Length != 1 )
+				return;
+			if ( !(data.GetValue(0) is String) )
+				return;
+
+			string	draggedFileName = (data as string[])[0];
+
+			if ( ImageUtility.ImageFile.GetFileTypeFromFileNameOnly( new System.IO.FileInfo( draggedFileName ) ) != ImageUtility.ImageFile.FILE_FORMAT.UNKNOWN ) {
+				m_draggedFileName = draggedFileName;	// Supported!
+				e.Effect = DragDropEffects.Copy;
+			}
+		}
+
+		private void outputPanelInputBentCone_DragDrop( object sender, DragEventArgs e ) {
+			if ( m_draggedFileName != null )
+				LoadBentConeMap( new System.IO.FileInfo( m_draggedFileName ) );
+		}
+
+		private void clearBentConeToolStripMenuItem_Click( object sender, EventArgs e ) {
 			if ( m_textureSourceNormal != null )
 				m_textureSourceNormal.Dispose();
 			m_textureSourceNormal = null;

@@ -22,6 +22,8 @@ Texture2D<float2>	_texAO : register( t2 );
 //Texture2D<float4>	_texGroundTruth : register( t4 );
 Texture2DArray<float4>	_texGroundTruth : register( t3 );
 
+Texture2D<float4>	_texBentCone : register( t4 );
+
 struct VS_IN {
 	float4	__Position : SV_POSITION;
 };
@@ -63,7 +65,7 @@ float3	GroundTruth( float2 _UV, float3 _rho, float3 _E0 ) {
 }
 
 // Computes an improved AO factor based on original AO and surface reflectance
-float3	ComputeAO( float _AO, float3 _rho ) {
+float3	ComputeAO( float _AO, float _tauFactor, float3 _rho ) {
 	const float	A = 27.576937094210384876503293303541;
 	const float	B = 3.3364392003423804;
 
@@ -72,7 +74,8 @@ float3	ComputeAO( float _AO, float3 _rho ) {
 	float	F0 = _AO * (1.0 + 0.5 * pow( 1.0 - _AO, 0.75 ));						// = \[Alpha]*(1 + 0.5*(1 - \[Alpha])^0.75)
 	float	F1 = A * _AO * pow( 1.0 - _AO, 1.5 ) * exp( -B * pow( _AO, 0.25 ) );	// = `27.576937094210384876503293303541\)*\[Alpha]*(1 - \[Alpha])^1.5 * Exp[-\!\(TraditionalForm\`3.3364392003423804\)*Sqrt[Sqrt[\[Alpha]]]
 	float	tau = 1.0 - F1 / (0.01 + saturate( 1.0 - F0 ));
-	return F0 + _rho / (1.0 - _rho * tau) * F1;
+//	return F0 + _rho / (1.0 - _rho * tau) * F1;
+	return F0 + _rho / (1.0 - saturate(_rho * _tauFactor * tau)) * F1;
 }
 
 float3	PS( VS_IN _In ) : SV_TARGET0 {
@@ -83,13 +86,31 @@ float3	PS( VS_IN _In ) : SV_TARGET0 {
 	float3	SH[9] = { _SH[0].xyz, _SH[1].xyz, _SH[2].xyz, _SH[3].xyz, _SH[4].xyz, _SH[5].xyz, _SH[6].xyz, _SH[7].xyz, _SH[8].xyz };
 	float3	E0 = EvaluateSHIrradiance( normal, SH );
 
+	float	tauFactor = 1.0;
+	if ( (_flags & 0x3U) == 2 ) {
+		// Estimate SH in the direction of the bent normal, and reduce the irradiance integration to the aperture of the cone
+		float4	bentCone = _texBentCone.Sample( LinearClamp, UV );
+				bentCone.xyz = 2.0 * bentCone.xyz - 1.0;
+//return normal.xyz;
+//return bentCone.xyz;
+		normal = normalize( bentCone.xyz );
+		float	cosTheta = cos( bentCone.w * 0.5 * PI );
+cosTheta = 0.0;
+		E0 = EvaluateSHIrradiance( normal, cosTheta, SH );
+//		E0 = EvaluateSHIrradiance( normal, SH );
+
+//		tauFactor = 1.0 + 0.5 * dot( bentCone.xyz, normal );
+		tauFactor = 1.0 + (1.0-bentCone.w) * dot( bentCone.xyz, normal );
+	}
+
 	switch ( _flags & 0x3U ) {
 	case 1:
-		AO = ComputeAO( AO.x, _rho );
-		break;
 	case 2:
-//		return _exposure * GroundTruth( UV, _rho, E0 );
-		return _exposure * (dot( GroundTruth( UV, _rho, E0 ), LUMINANCE ) - dot( (_rho / PI) * E0 * AO, LUMINANCE ));
+		AO = ComputeAO( AO.x, tauFactor, _rho );
+		break;
+	case 3:
+		return _exposure * GroundTruth( UV, _rho, E0 );
+//		return _exposure * (dot( GroundTruth( UV, _rho, E0 ), LUMINANCE ) - dot( (_rho / PI) * E0 * AO, LUMINANCE ));
 	}
 
 	return _exposure * (_rho / PI) * E0 * AO;
