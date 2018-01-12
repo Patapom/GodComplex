@@ -25,6 +25,8 @@ namespace TestGroundTruthAOFitting
 
 			public float3	_rho;
 			public float	_exposure;
+
+			public float4	_debugValue;
 		}
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
@@ -86,6 +88,7 @@ namespace TestGroundTruthAOFitting
 			m_CB_Main.m._bounceIndex = (uint) integerTrackbarControlBounceIndex.Value;
 			m_CB_Main.m._rho = floatTrackbarControlReflectance.Value * new float3( 1.0f, 0.9f, 0.7f );
 			m_CB_Main.m._exposure = floatTrackbarControlExposure.Value;
+			m_CB_Main.m._debugValue.Set( floatTrackbarControlDebug0.Value, floatTrackbarControlDebug1.Value, 0, 0 );
 			m_CB_Main.UpdateData();
 
 			m_CB_SH.m._SH0.Set( m_rotatedLightSH[0], 0 );
@@ -204,7 +207,7 @@ namespace TestGroundTruthAOFitting
 				using ( System.IO.BinaryWriter Wr = content.OpenStreamWrite() ) {
 					for ( uint Y=0; Y < H; Y++ )
 						for ( uint X=0; X < W; X++ ) {
-							float	AO = m_AOValues[X,Y].x / Mathf.TWOPI;
+							float	AO = m_AOValues[X,Y].x;
 							float	E0 = m_AOValues[X,Y].y;
 							maxAO = Mathf.Max( maxAO, AO );
 //							byte	V = (byte) (255.0f * Mathf.Saturate( AO ));

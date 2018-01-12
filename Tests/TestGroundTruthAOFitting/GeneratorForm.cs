@@ -207,6 +207,7 @@ const string	SUFFIX = "";
 
 LoadHeightMap( new System.IO.FileInfo( GetRegKey( "HeightMapFileName", System.IO.Path.Combine( m_ApplicationPath, "Example.jpg" ) ) ) );
 LoadNormalMap( new System.IO.FileInfo( GetRegKey( "NormalMapFileName", System.IO.Path.Combine( m_ApplicationPath, "Example.jpg" ) ) ) );
+LoadBentConeMap( new System.IO.FileInfo( GetRegKey( "BentConeMapFileName", System.IO.Path.Combine( m_ApplicationPath, "Example.jpg" ) ) ) );
 //Generate();
 //buttonComputeIndirect_Click( null, EventArgs.Empty );
 //Compile();

@@ -27,6 +27,8 @@
 			this.floatTrackbarControlExposure = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label2 = new System.Windows.Forms.Label();
 			this.radioButtonBentCone = new System.Windows.Forms.RadioButton();
+			this.floatTrackbarControlDebug0 = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlDebug1 = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.SuspendLayout();
 			// 
 			// timer
@@ -107,7 +109,7 @@
 			this.integerTrackbarControlBounceIndex.Name = "integerTrackbarControlBounceIndex";
 			this.integerTrackbarControlBounceIndex.RangeMax = 20;
 			this.integerTrackbarControlBounceIndex.RangeMin = 0;
-			this.integerTrackbarControlBounceIndex.Size = new System.Drawing.Size(200, 20);
+			this.integerTrackbarControlBounceIndex.Size = new System.Drawing.Size(114, 20);
 			this.integerTrackbarControlBounceIndex.TabIndex = 7;
 			this.integerTrackbarControlBounceIndex.Value = 0;
 			this.integerTrackbarControlBounceIndex.VisibleRangeMax = 20;
@@ -144,11 +146,37 @@
 			this.radioButtonBentCone.Text = "Bent Cone";
 			this.radioButtonBentCone.UseVisualStyleBackColor = true;
 			// 
+			// floatTrackbarControlDebug0
+			// 
+			this.floatTrackbarControlDebug0.Location = new System.Drawing.Point(12, 568);
+			this.floatTrackbarControlDebug0.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlDebug0.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlDebug0.Name = "floatTrackbarControlDebug0";
+			this.floatTrackbarControlDebug0.RangeMax = 10F;
+			this.floatTrackbarControlDebug0.RangeMin = 0F;
+			this.floatTrackbarControlDebug0.Size = new System.Drawing.Size(145, 20);
+			this.floatTrackbarControlDebug0.TabIndex = 5;
+			this.floatTrackbarControlDebug0.Value = 0.3333F;
+			this.floatTrackbarControlDebug0.VisibleRangeMax = 1F;
+			// 
+			// floatTrackbarControlDebug1
+			// 
+			this.floatTrackbarControlDebug1.Location = new System.Drawing.Point(163, 568);
+			this.floatTrackbarControlDebug1.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlDebug1.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlDebug1.Name = "floatTrackbarControlDebug1";
+			this.floatTrackbarControlDebug1.RangeMax = 10F;
+			this.floatTrackbarControlDebug1.RangeMin = 0F;
+			this.floatTrackbarControlDebug1.Size = new System.Drawing.Size(145, 20);
+			this.floatTrackbarControlDebug1.TabIndex = 5;
+			this.floatTrackbarControlDebug1.Value = 0.5185F;
+			this.floatTrackbarControlDebug1.VisibleRangeMax = 1F;
+			// 
 			// DemoForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-			this.ClientSize = new System.Drawing.Size(525, 568);
+			this.ClientSize = new System.Drawing.Size(525, 587);
 			this.Controls.Add(this.integerTrackbarControlBounceIndex);
 			this.Controls.Add(this.radioButtonGroundTruth);
 			this.Controls.Add(this.radioButtonOn);
@@ -156,6 +184,8 @@
 			this.Controls.Add(this.radioButtonOff);
 			this.Controls.Add(this.label2);
 			this.Controls.Add(this.label1);
+			this.Controls.Add(this.floatTrackbarControlDebug1);
+			this.Controls.Add(this.floatTrackbarControlDebug0);
 			this.Controls.Add(this.floatTrackbarControlExposure);
 			this.Controls.Add(this.floatTrackbarControlReflectance);
 			this.Controls.Add(this.panelOutput);
@@ -181,5 +211,7 @@
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlExposure;
 		private System.Windows.Forms.Label label2;
 		private System.Windows.Forms.RadioButton radioButtonBentCone;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlDebug0;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlDebug1;
 	}
 }

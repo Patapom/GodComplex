@@ -285,7 +285,7 @@ float3	EstimateLambertReflectanceFactors( float _cosThetaAO, float _coneBendAngl
 }
 
 // Evaluates the SH coefficients in the requested direction
-// Analytic method from http://www1.cs.columbia.edu/~ravir/papers/envmap/envmap.pdf eq. 3
+// Analytic method from https://cseweb.ucsd.edu/~ravir/papers/envmap/envmap.pdf eq. 3
 //
 float4	EvaluateSHRadiance( float3 _direction, float4 _SH[9] ) {
 	const float	f0 = 0.28209479177387814347403972578039;		// 0.5 / sqrt(PI);
@@ -318,7 +318,7 @@ float4	EvaluateSHRadiance( float3 _direction, float4 _SH[9] ) {
 }
 
 // Evaluates the irradiance perceived in the provided direction
-// Analytic method from http://www1.cs.columbia.edu/~ravir/papers/envmap/envmap.pdf eq. 13
+// Analytic method from https://cseweb.ucsd.edu/~ravir/papers/envmap/envmap.pdf eq. 13
 //
 float3	EvaluateSHIrradiance( float3 _direction, float3 _SH[9] ) {
 	const float	c1 = 0.42904276540489171563379376569857;	// 4 * Â2.Y22 = 1/4 * sqrt(15.PI)
@@ -342,7 +342,7 @@ float3	EvaluateSHIrradiance( float3 _direction, float3 _SH[9] ) {
 // Details can be found at http://wiki.nuaj.net/index.php?title=SphericalHarmonicsPortal
 // Here, _cosThetaAO = cos( PI/2 * AO ) and represents the cosine of the cone half-angle that drives the amount of light a surface is perceiving
 //
-float3	EvaluateSHIrradiance( float3 _direction, float _cosThetaAO,  float3 _SH[9] ) {
+float3	EvaluateSHIrradiance( float3 _direction, float _cosThetaAO, float3 _SH[9] ) {
 	float		t2 = _cosThetaAO*_cosThetaAO;
 	float		t3 = t2*_cosThetaAO;
 	float		t4 = t3*_cosThetaAO;
@@ -357,11 +357,13 @@ float3	EvaluateSHIrradiance( float3 _direction, float _cosThetaAO,  float3 _SH[9
 	float		y = _direction.y;
 	float		z = _direction.z;
 
-	return	max( 0.0, c0 * _SH[0]										// c0.L00
-			+ c1 * (_SH[1]*y + _SH[2]*z + _SH[3]*x)						// c1.(L1-1.y + L10.z + L11.x)
-			+ c2 * (_SH[6]*(3.0*z*z - 1.0)								// c2.L20.(3z²-1)
-				+ sqrt3 * (_SH[8]*(x*x - y*y)							// sqrt(3).c2.L22.(x²-y²)
-					+ 2.0 * (_SH[4]*x*y + _SH[5]*y*z + _SH[7]*z*x)))	// 2sqrt(3).c2.(L2-2.xy + L2-1.yz + L21.zx)
+	return	max( 0.0, c0 * _SH[0]													// c0.L00
+			+ c1 * (_SH[1]*y + _SH[2]*z + _SH[3]*x)									// c1.(L1-1.y + L10.z + L11.x)
+			+ c2 * (_SH[6]*(3.0*z*z - 1.0)											// c2.L20.(3z²-1)
+					+ sqrt3 * (_SH[8]*(x*x - y*y)									// sqrt(3).c2.L22.(x²-y²)
+								+ 2.0 * (_SH[4]*x*y + _SH[5]*y*z + _SH[7]*z*x)		// 2sqrt(3).c2.(L2-2.xy + L2-1.yz + L21.zx)
+							  )
+				   )
 		);
 }
 
