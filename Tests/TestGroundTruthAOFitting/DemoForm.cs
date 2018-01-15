@@ -79,15 +79,15 @@ namespace TestGroundTruthAOFitting
 				return;
 
 			if ( m_tex_Height == null
-				|| m_tex_Normal == null
-				|| m_tex_AO == null )
+				|| m_tex_Normal == null )
 				return;
 
 			//////////////////////////////////////////////////////////////////////////
 			// Setup variables
 			m_tex_Height.Set( 0 );
 			m_tex_Normal.Set( 1 );
-			m_tex_AO.Set( 2 );
+			if ( m_tex_AO != null )
+				m_tex_AO.Set( 2 );
 			if ( m_tex_GroundTruth != null )
 				m_tex_GroundTruth.Set( 3 );
 			if ( m_tex_BentCone != null )
@@ -131,7 +131,7 @@ m_CB_Main.m._rho = floatTrackbarControlReflectance.Value * float3.One;
 
 				m_CB_ComputeIrradiance.m._resolutionX = m_tex_Height.Width;
 				m_CB_ComputeIrradiance.m._resolutionY = m_tex_Height.Height;
-				m_CB_ComputeIrradiance.m._texelSize_mm = m_owner.TextureSize_mm;
+				m_CB_ComputeIrradiance.m._texelSize_mm = m_owner.TextureSize_mm / Math.Max( m_tex_Height.Width, m_tex_Height.Height );
 				m_CB_ComputeIrradiance.m._displacement_mm = m_owner.TextureHeight_mm;
 				m_CB_ComputeIrradiance.m._rho = m_CB_Main.m._rho;
 				m_CB_ComputeIrradiance.UpdateData();

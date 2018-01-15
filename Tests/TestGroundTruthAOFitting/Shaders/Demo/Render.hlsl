@@ -29,7 +29,8 @@ Texture2DArray<float4>	_texGroundTruthIrradiance : register( t3 );
 
 Texture2D<float4>	_texBentCone : register( t4 );
 
-Texture2D<float4>	_texIndirectMap : register( t5 );
+Texture2D<float4>	_texIrradiance : register( t5 );
+Texture2D<float4>	_texComputedBentCone : register( t6 );
 
 
 struct VS_IN {
@@ -199,7 +200,9 @@ E0 *= lerp( 1.0, boostFactor, _debugValue.y );	// _debugValue.y = 0.5185
 	if ( _flags & 0x10U )
 		result = abs( resultAnalytical - GroundTruth( UV, _rho ) );	// Show difference
 
-result = _texIndirectMap.Sample( LinearClamp, UV ).xyz;
+//result = 0.1 * _texIrradiance.Sample( LinearClamp, UV ).xyz;
+result = _texComputedBentCone.Sample( LinearClamp, UV ).xyz;
+//result = _texComputedBentCone.Sample( LinearClamp, UV ).w;
 
 	return _exposure * result;
 }

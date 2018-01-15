@@ -33,12 +33,12 @@ static const float3	EnvironmentSH[9] = {
 };
 
 // 400 SH coefficients representing the surrounding environment
-cbuffer _CB_Coeffs : register( b1 ) {
-	float4	_environmentSH[400];
-//	float	_environmentSH_R[400];
-//	float	_environmentSH_G[400];
-//	float	_environmentSH_B[400];
-};
+//cbuffer _CB_Coeffs : register( b1 ) {
+//	float4	_environmentSH[400];
+////	float	_environmentSH_R[400];
+////	float	_environmentSH_G[400];
+////	float	_environmentSH_B[400];
+//};
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -177,7 +177,7 @@ void	Ylm( float3 _direction, out float _SH[9] ) {
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 //
-float3	General_EvaluateSHRadiance( float3 _direction, int _maxOrder, float _filterWindowSize, float _A[20] ) {
+/*float3	General_EvaluateSHRadiance( float3 _direction, int _maxOrder, float _filterWindowSize, float _A[20] ) {
 	float	cosTheta = _direction.z;
 //	float	phi = atan2( _direction.y, _direction.x );	// Produces NaNs if atan2( 0, 0 )!!
 	float	phi = abs(_direction.x) > 1e-6 ? atan2( _direction.y, _direction.x ) : 0.0;
@@ -237,7 +237,7 @@ float3	General_EvaluateSHRadiance( float3 _direction, int _maxOrder, float _filt
 
 	return radiance;
 }
-
+*/
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 // Radiance/Irradiance Evaluators
