@@ -5,12 +5,12 @@
 #include "Global.hlsl"
 #include "SphericalHarmonics.hlsl"
 
+static const uint	MAX_ANGLES = 8;			// Amount of angular subdivisions of the circle
+static const uint	MAX_RADIUS = 8;			// Amount of radial subdivisions of the circle
+static const float	RADIUS_STEP_SIZE = 1.0;	// Radial step size (in pixels)
 
-const uint	MAX_ANGLES = 8;			// Amount of angular subdivisions of the circle
-const uint	MAX_RADIUS = 8;			// Amount of radial subdivisions of the circle
-const float	RADIUS_STEP_SIZE = 1.0;	// Radial step size (in pixels)
 
-cbuffer	CBMain : register( b0 ) {
+cbuffer	CBCompute : register( b2 ) {
 	uint2	_textureDimensions;	// Height map resolution
 	float	_texelSize_mm;		// Texel size in millimeters
 	float	_displacement_mm;	// Height map max encoded displacement in millimeters
@@ -24,7 +24,7 @@ Texture2D<float2>		_texAO : register( t2 );
 //Texture2DArray<float4>	_texGroundTruthIrradiance : register( t3 );
 //Texture2D<float4>		_texBentCone : register( t4 );
 
-Texture2D<float4>		_texSourceIrradiance : register();		// Irradiance from last frame
+Texture2D<float4>		_texSourceIrradiance : register( t5 );		// Irradiance from last frame
 
 struct VS_IN {
 	float4	__Position : SV_POSITION;
@@ -150,7 +150,7 @@ PS_OUT	PS( VS_IN _In ) {
 		float3	tsBentNormal = normalize( tsHorizon_p + tsHorizon_n );
 		tsAverageBentNormal += tsBentNormal;		// Accumulate bent normal direction by rebuilding and averaging the horizon vectors
 
-		// Compute aperture angle
+		// Update average aperture angle and variance
 		float	coneAngle = acos( saturate( dot( tsBentNormal, normalize( tsHorizon_p ) ) ) );
 
 		// We're using running variance computation from https://www.johndcook.com/blog/standard_deviation/
@@ -162,14 +162,23 @@ PS_OUT	PS( VS_IN _In ) {
 		averageConeAngle += (coneAngle + averageConeAngle) * (angleIndex+1);
 		varianceConeAngle += (coneAngle - previousAverageConeAngle) * (coneAngle - averageConeAngle); 
 	}
+
+	// Finalize bent cone
 	varianceConeAngle /= MAX_ANGLES - 1;
 	tsAverageBentNormal /= MAX_ANGLES;
+	float3	csBentNormal = tsAverageBentNormal.x * T + tsAverageBentNormal.y * B + tsAverageBentNormal.z * N;	// Back in camera space!
 
+	// Finalize indirect irradiance
 	const float	dPhi = PI / MAX_ANGLES;	// Hemisphere is sliced into 2*MAX_ANGLES parts
+	sumIrradiance *= dPhi;
+
+	// Compute this frame's irradiance
+	// #TODO!
+//	sumIrradiance += ;
 
 	PS_OUT	Out;
-	Out.irradiance = sumIrradiance * dPhi;
-	Out.bentCone = float4( tsAverageBentNormal, varianceConeAngle );
+	Out.irradiance = float4( sumIrradiance, 0.0 );
+	Out.bentCone = float4( csBentNormal, varianceConeAngle );
 
 	return Out;
 }

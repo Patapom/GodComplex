@@ -17,6 +17,16 @@ namespace TestGroundTruthAOFitting
 	public partial class DemoForm : Form {
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
+		struct CB_ComputeIrradiance {
+			public uint		_resolutionX;
+			public uint		_resolutionY;
+			public float	_texelSize_mm;		// Size of a texel (in millimeters)
+			public float	_displacement_mm;	// Max displacement value encoded by the height map (in millimeters)
+
+			public float3	_rho;				// Global surface reflectance (should come from a texture though)
+		}
+
+		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
 		struct CB_Main {
 			public uint		_resolutionX;
 			public uint		_resolutionY;
@@ -48,12 +58,15 @@ namespace TestGroundTruthAOFitting
 
 		ConstantBuffer< CB_Main >	m_CB_Main = null;
 		ConstantBuffer< CB_SH >		m_CB_SH = null;
+		ConstantBuffer< CB_ComputeIrradiance >	m_CB_ComputeIrradiance = null;
+
 		Shader			m_shader_ComputeIndirectIrradiance = null;
 		Shader			m_shader_FilterIndirectIrradiance = null;
-		Shader			m_shader_ComputeIndirectMap = null;
 		Shader			m_shader_Render = null;
 
-		Texture2D		m_tex_IndirectMap = null;
+		Texture2D		m_tex_Irradiance0 = null;
+		Texture2D		m_tex_Irradiance1 = null;
+		Texture2D		m_tex_ComputedBentCone = null;
 
 		public DemoForm( GeneratorForm _owner ) {
 			m_owner = _owner;
@@ -75,8 +88,6 @@ namespace TestGroundTruthAOFitting
 			m_tex_Height.Set( 0 );
 			m_tex_Normal.Set( 1 );
 			m_tex_AO.Set( 2 );
-// 			if ( m_tex_Illuminance != null )
-// 				m_tex_Illuminance.Set( 3 );
 			if ( m_tex_GroundTruth != null )
 				m_tex_GroundTruth.Set( 3 );
 			if ( m_tex_BentCone != null )
@@ -113,19 +124,36 @@ m_CB_Main.m._rho = floatTrackbarControlReflectance.Value * float3.One;
 			m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
 
 			//////////////////////////////////////////////////////////////////////////
-			// Compute indirect map
-// 			if ( m_shader_ComputeIndirectMap.Use() ) {
-// 				m_device.SetRenderTarget( m_tex_IndirectMap, null );
-// 				m_device.RenderFullscreenQuad( m_shader_ComputeIndirectMap );
-// 			}
+			// Compute indirect irradiance & bent cone map
+			if ( m_shader_ComputeIndirectIrradiance.Use() ) {
+				m_device.SetRenderTargets( new IView[] { m_tex_Irradiance1.GetView(), m_tex_ComputedBentCone.GetView() }, null );
+				m_tex_Irradiance0.Set( 5 );
+
+				m_CB_ComputeIrradiance.m._resolutionX = m_tex_Height.Width;
+				m_CB_ComputeIrradiance.m._resolutionY = m_tex_Height.Height;
+				m_CB_ComputeIrradiance.m._texelSize_mm = m_owner.TextureSize_mm;
+				m_CB_ComputeIrradiance.m._displacement_mm = m_owner.TextureHeight_mm;
+				m_CB_ComputeIrradiance.m._rho = m_CB_Main.m._rho;
+				m_CB_ComputeIrradiance.UpdateData();
+
+				m_device.RenderFullscreenQuad( m_shader_ComputeIndirectIrradiance );
+
+				Texture2D	temp = m_tex_Irradiance0;
+				m_tex_Irradiance0 = m_tex_Irradiance1;
+				m_tex_Irradiance1 = temp;
+			}
 
 			//////////////////////////////////////////////////////////////////////////
 			// Render
 			if ( m_shader_Render.Use() ) {
 				m_device.SetRenderTarget( m_device.DefaultTarget, null );
-				m_tex_IndirectMap.Set( 5 );
+				m_tex_Irradiance0.Set( 5 );
+				m_tex_ComputedBentCone.Set( 6 );
+
 				m_device.RenderFullscreenQuad( m_shader_Render );
-				m_tex_IndirectMap.RemoveFromLastAssignedSlots();
+
+				m_tex_Irradiance0.RemoveFromLastAssignedSlots();
+				m_tex_ComputedBentCone.RemoveFromLastAssignedSlots();
 			}
 
 			m_device.Present( false );
@@ -155,7 +183,9 @@ m_CB_Main.m._rho = floatTrackbarControlReflectance.Value * float3.One;
 
 				if ( m_tex_Height != null ) {
 					m_tex_Height.Dispose();
-					m_tex_IndirectMap.Dispose();
+					m_tex_Irradiance0.Dispose();
+					m_tex_Irradiance1.Dispose();
+					m_tex_ComputedBentCone.Dispose();
 				}
 				m_tex_Height = null;
 
@@ -164,7 +194,12 @@ m_CB_Main.m._rho = floatTrackbarControlReflectance.Value * float3.One;
 					return;
 
 				m_tex_Height = CreateTextureFromImage( m_imageHeight );
-				m_tex_IndirectMap = new Texture2D( m_device, m_tex_Height.Width, m_tex_Height.Height, 1, 2, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.AUTO, false, false, null );
+				m_tex_Irradiance0 = new Texture2D( m_device, m_tex_Height.Width, m_tex_Height.Height, 1, 1, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.AUTO, false, false, null );
+				m_tex_Irradiance1 = new Texture2D( m_device, m_tex_Height.Width, m_tex_Height.Height, 1, 1, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.AUTO, false, false, null );
+				m_tex_ComputedBentCone = new Texture2D( m_device, m_tex_Height.Width, m_tex_Height.Height, 1, 1, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.AUTO, false, false, null );
+
+				m_device.Clear( m_tex_Irradiance0, float4.Zero );
+				m_device.Clear( m_tex_Irradiance1, float4.Zero );
 			}
 		}
 
@@ -300,15 +335,17 @@ m_CB_Main.m._rho = floatTrackbarControlReflectance.Value * float3.One;
 				m_device.Init( panelOutput.Handle, false, true );
 
 				m_shader_Render = new Shader( m_device, new System.IO.FileInfo( "Shaders/Demo/Render.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
-				m_shader_ComputeIndirectMap = new Shader( m_device, new System.IO.FileInfo( "Shaders/Demo/ComputeIndirectMap.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+//				m_shader_ComputeIndirectMap = new Shader( m_device, new System.IO.FileInfo( "Shaders/Demo/ComputeIndirectMap.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 				m_shader_ComputeIndirectIrradiance = new Shader( m_device, new System.IO.FileInfo( "Shaders/Demo/ComputeIndirectIrradiance.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
-				m_shader_FilterIndirectIrradiance = new Shader( m_device, new System.IO.FileInfo( "Shaders/Demo/FilterIndirectIrradiance.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+//				m_shader_FilterIndirectIrradiance = new Shader( m_device, new System.IO.FileInfo( "Shaders/Demo/FilterIndirectIrradiance.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 
 				m_CB_Main = new ConstantBuffer<CB_Main>( m_device, 0 );
 				m_CB_Main.m._resolutionX = (uint) panelOutput.Width;
 				m_CB_Main.m._resolutionY = (uint) panelOutput.Height;
 
 				m_CB_SH = new ConstantBuffer<CB_SH>( m_device, 1 );
+
+				m_CB_ComputeIrradiance = new ConstantBuffer<CB_ComputeIrradiance>( m_device, 2 );
 
 				InitEnvironmentSH();
 				UpdateSH();
@@ -324,8 +361,12 @@ m_CB_Main.m._rho = floatTrackbarControlReflectance.Value * float3.One;
 				m_tex_AO.Dispose();
 			if ( m_tex_Height != null )
 				m_tex_Height.Dispose();
-			if ( m_tex_IndirectMap != null )
-				m_tex_IndirectMap.Dispose();
+			if ( m_tex_ComputedBentCone != null )
+				m_tex_ComputedBentCone.Dispose();
+			if ( m_tex_Irradiance1 != null )
+				m_tex_Irradiance1.Dispose();
+			if ( m_tex_Irradiance0 != null )
+				m_tex_Irradiance0.Dispose();
 			if ( m_tex_Normal != null )
 				m_tex_Normal.Dispose();
 // 			if ( m_tex_Illuminance != null )
@@ -333,9 +374,12 @@ m_CB_Main.m._rho = floatTrackbarControlReflectance.Value * float3.One;
 			if ( m_tex_GroundTruth != null )
 				m_tex_GroundTruth.Dispose();
 
+			m_CB_ComputeIrradiance.Dispose();
 			m_CB_SH.Dispose();
 			m_CB_Main.Dispose();
-			m_shader_ComputeIndirectMap.Dispose();
+//			m_shader_FilterIndirectIrradiance.Dispose();
+			m_shader_ComputeIndirectIrradiance.Dispose();
+//			m_shader_ComputeIndirectMap.Dispose();
 			m_shader_Render.Dispose();
 			m_device.Dispose();
 		}
