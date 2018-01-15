@@ -29,6 +29,7 @@
 			this.radioButtonBentCone = new System.Windows.Forms.RadioButton();
 			this.floatTrackbarControlDebug0 = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.floatTrackbarControlDebug1 = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.checkBoxDiff = new System.Windows.Forms.CheckBox();
 			this.SuspendLayout();
 			// 
 			// timer
@@ -172,11 +173,22 @@
 			this.floatTrackbarControlDebug1.Value = 0.5185F;
 			this.floatTrackbarControlDebug1.VisibleRangeMax = 1F;
 			// 
+			// checkBoxDiff
+			// 
+			this.checkBoxDiff.AutoSize = true;
+			this.checkBoxDiff.Location = new System.Drawing.Point(189, 545);
+			this.checkBoxDiff.Name = "checkBoxDiff";
+			this.checkBoxDiff.Size = new System.Drawing.Size(42, 17);
+			this.checkBoxDiff.TabIndex = 8;
+			this.checkBoxDiff.Text = "Diff";
+			this.checkBoxDiff.UseVisualStyleBackColor = true;
+			// 
 			// DemoForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(525, 587);
+			this.Controls.Add(this.checkBoxDiff);
 			this.Controls.Add(this.integerTrackbarControlBounceIndex);
 			this.Controls.Add(this.radioButtonGroundTruth);
 			this.Controls.Add(this.radioButtonOn);
@@ -213,5 +225,6 @@
 		private System.Windows.Forms.RadioButton radioButtonBentCone;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlDebug0;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlDebug1;
+		private System.Windows.Forms.CheckBox checkBoxDiff;
 	}
 }

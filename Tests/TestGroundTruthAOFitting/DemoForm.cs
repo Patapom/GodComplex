@@ -48,7 +48,12 @@ namespace TestGroundTruthAOFitting
 
 		ConstantBuffer< CB_Main >	m_CB_Main = null;
 		ConstantBuffer< CB_SH >		m_CB_SH = null;
+		Shader			m_shader_ComputeIndirectIrradiance = null;
+		Shader			m_shader_FilterIndirectIrradiance = null;
+		Shader			m_shader_ComputeIndirectMap = null;
 		Shader			m_shader_Render = null;
+
+		Texture2D		m_tex_IndirectMap = null;
 
 		public DemoForm( GeneratorForm _owner ) {
 			m_owner = _owner;
@@ -65,9 +70,8 @@ namespace TestGroundTruthAOFitting
 				|| m_tex_AO == null )
 				return;
 
-			if ( !m_shader_Render.Use() )
-				return;
-
+			//////////////////////////////////////////////////////////////////////////
+			// Setup variables
 			m_tex_Height.Set( 0 );
 			m_tex_Normal.Set( 1 );
 			m_tex_AO.Set( 2 );
@@ -86,7 +90,11 @@ namespace TestGroundTruthAOFitting
 			else if ( radioButtonGroundTruth.Checked )
 				m_CB_Main.m._flags |= 3U;
 			m_CB_Main.m._bounceIndex = (uint) integerTrackbarControlBounceIndex.Value;
-			m_CB_Main.m._rho = floatTrackbarControlReflectance.Value * new float3( 1.0f, 0.9f, 0.7f );
+			m_CB_Main.m._flags |= checkBoxDiff.Checked ? 0x10U : 0x0U;
+
+//			m_CB_Main.m._rho = floatTrackbarControlReflectance.Value * new float3( 1.0f, 0.9f, 0.7f );
+m_CB_Main.m._rho = floatTrackbarControlReflectance.Value * float3.One;
+
 			m_CB_Main.m._exposure = floatTrackbarControlExposure.Value;
 			m_CB_Main.m._debugValue.Set( floatTrackbarControlDebug0.Value, floatTrackbarControlDebug1.Value, 0, 0 );
 			m_CB_Main.UpdateData();
@@ -103,9 +111,22 @@ namespace TestGroundTruthAOFitting
 			m_CB_SH.UpdateData();
 
 			m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
-			m_device.SetRenderTarget( m_device.DefaultTarget, null );
 
-			m_device.RenderFullscreenQuad( m_shader_Render );
+			//////////////////////////////////////////////////////////////////////////
+			// Compute indirect map
+// 			if ( m_shader_ComputeIndirectMap.Use() ) {
+// 				m_device.SetRenderTarget( m_tex_IndirectMap, null );
+// 				m_device.RenderFullscreenQuad( m_shader_ComputeIndirectMap );
+// 			}
+
+			//////////////////////////////////////////////////////////////////////////
+			// Render
+			if ( m_shader_Render.Use() ) {
+				m_device.SetRenderTarget( m_device.DefaultTarget, null );
+				m_tex_IndirectMap.Set( 5 );
+				m_device.RenderFullscreenQuad( m_shader_Render );
+				m_tex_IndirectMap.RemoveFromLastAssignedSlots();
+			}
 
 			m_device.Present( false );
 		}
@@ -132,8 +153,10 @@ namespace TestGroundTruthAOFitting
 				if ( value == m_imageHeight )
 					return;
 
-				if ( m_tex_Height != null )
+				if ( m_tex_Height != null ) {
 					m_tex_Height.Dispose();
+					m_tex_IndirectMap.Dispose();
+				}
 				m_tex_Height = null;
 
 				m_imageHeight = value;
@@ -141,6 +164,7 @@ namespace TestGroundTruthAOFitting
 					return;
 
 				m_tex_Height = CreateTextureFromImage( m_imageHeight );
+				m_tex_IndirectMap = new Texture2D( m_device, m_tex_Height.Width, m_tex_Height.Height, 1, 2, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.AUTO, false, false, null );
 			}
 		}
 
@@ -275,7 +299,10 @@ namespace TestGroundTruthAOFitting
 			try {
 				m_device.Init( panelOutput.Handle, false, true );
 
-				m_shader_Render = new Shader( m_device, new System.IO.FileInfo( "Shaders/Render.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+				m_shader_Render = new Shader( m_device, new System.IO.FileInfo( "Shaders/Demo/Render.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+				m_shader_ComputeIndirectMap = new Shader( m_device, new System.IO.FileInfo( "Shaders/Demo/ComputeIndirectMap.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+				m_shader_ComputeIndirectIrradiance = new Shader( m_device, new System.IO.FileInfo( "Shaders/Demo/ComputeIndirectIrradiance.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+				m_shader_FilterIndirectIrradiance = new Shader( m_device, new System.IO.FileInfo( "Shaders/Demo/FilterIndirectIrradiance.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 
 				m_CB_Main = new ConstantBuffer<CB_Main>( m_device, 0 );
 				m_CB_Main.m._resolutionX = (uint) panelOutput.Width;
@@ -297,6 +324,8 @@ namespace TestGroundTruthAOFitting
 				m_tex_AO.Dispose();
 			if ( m_tex_Height != null )
 				m_tex_Height.Dispose();
+			if ( m_tex_IndirectMap != null )
+				m_tex_IndirectMap.Dispose();
 			if ( m_tex_Normal != null )
 				m_tex_Normal.Dispose();
 // 			if ( m_tex_Illuminance != null )
@@ -306,6 +335,7 @@ namespace TestGroundTruthAOFitting
 
 			m_CB_SH.Dispose();
 			m_CB_Main.Dispose();
+			m_shader_ComputeIndirectMap.Dispose();
 			m_shader_Render.Dispose();
 			m_device.Dispose();
 		}
@@ -456,7 +486,8 @@ namespace TestGroundTruthAOFitting
 			if ( !radioButtonGroundTruth.Checked )
 				return;
 
-			float3	rho = floatTrackbarControlReflectance.Value * new float3( 1.0f, 0.9f, 0.7f );
+//			float3	rho = floatTrackbarControlReflectance.Value * new float3( 1.0f, 0.9f, 0.7f );
+			float3	rho = m_CB_Main.m._rho;
 			UpdateGroundTruth( rho );
 		}
 

@@ -50,12 +50,11 @@ void	CS_Direct( uint3 _groupID : SV_groupID, uint3 _groupThreadID : SV_groupThre
 			float3	lsRayDirection = _rays[rayIndex];
 			float3	wsRayDirection = mul( lsRayDirection, gs_Local2World );
 			float3	incomingRadiance = EvaluateSHRadiance( wsRayDirection, _SH ).xyz;
+					incomingRadiance *= lsRayDirection.z;	// L(x,Wi) * (N.Wi)
 
-			float3	outgoingRadiance = incomingRadiance * lsRayDirection.z;	// L(x,Wi) * (N.Wi)
-
-			InterlockedAdd( gs_accumulator.x, uint( 65536.0 * outgoingRadiance.x ) );
-			InterlockedAdd( gs_accumulator.y, uint( 65536.0 * outgoingRadiance.y ) );
-			InterlockedAdd( gs_accumulator.z, uint( 65536.0 * outgoingRadiance.z ) );
+			InterlockedAdd( gs_accumulator.x, uint( 65536.0 * incomingRadiance.x ) );
+			InterlockedAdd( gs_accumulator.y, uint( 65536.0 * incomingRadiance.y ) );
+			InterlockedAdd( gs_accumulator.z, uint( 65536.0 * incomingRadiance.z ) );
 		}
 	}
 
@@ -67,7 +66,7 @@ void	CS_Direct( uint3 _groupID : SV_groupID, uint3 _groupThreadID : SV_groupThre
 											//	and we only accounted for cosine-weighted distribution along theta, we need to account for phi as well!
 							/ _raysCount;
 
-		_targetIlluminance[pixelPosition] = float4( normalizer * gs_accumulator / 65536.0, 0.0 );
+		_targetIlluminance[pixelPosition] = float4( normalizer * gs_accumulator / 65536.0, 0.0 );	// We're storing direct IRRADIANCE E0
 	}
 }
 
@@ -95,15 +94,15 @@ void	CS_Indirect( uint3 _groupID : SV_groupID, uint3 _groupThreadID : SV_groupTh
 			uint2	tiledNeighborPixelPosition = neighborPixelPosition % _textureDimensions;
 
 			// Sample neighbor's illuminance and compute incoming bounced luminance
-			float3	neighborIrradiance = _sourceIlluminance[tiledNeighborPixelPosition].xyz;
-			float3	incomingRadiance = (_rho / PI) * neighborIrradiance;
+			float3	neighborIrradiance = _sourceIlluminance[tiledNeighborPixelPosition].xyz;	// Ei-1 from previous bounce
+			float3	incomingRadiance = (_rho / PI) * neighborIrradiance;						// Li-1
 
 			float3	lsRayDirection = _rays[rayIndex];
-			float3	outgoingRadiance = incomingRadiance * lsRayDirection.z;	// L(x,Wi) * (N.Wi)
+			incomingRadiance *= lsRayDirection.z;	// L(x,Wi) * (N.Wi)
 
-			InterlockedAdd( gs_accumulator.x, uint( 65536.0 * outgoingRadiance.x ) );
-			InterlockedAdd( gs_accumulator.y, uint( 65536.0 * outgoingRadiance.y ) );
-			InterlockedAdd( gs_accumulator.z, uint( 65536.0 * outgoingRadiance.z ) );
+			InterlockedAdd( gs_accumulator.x, uint( 65536.0 * incomingRadiance.x ) );
+			InterlockedAdd( gs_accumulator.y, uint( 65536.0 * incomingRadiance.y ) );
+			InterlockedAdd( gs_accumulator.z, uint( 65536.0 * incomingRadiance.z ) );
 		}
 	}
 
@@ -115,6 +114,6 @@ void	CS_Indirect( uint3 _groupID : SV_groupID, uint3 _groupThreadID : SV_groupTh
 											//	and we only accounted for cosine-weighted distribution along theta, we need to account for phi as well!
 							/ _raysCount;
 
-		_targetIlluminance[pixelPosition] = float4( normalizer * gs_accumulator / 65536.0, 0.0 );
+		_targetIlluminance[pixelPosition] = float4( normalizer * gs_accumulator / 65536.0, 0.0 );	// We're storing indirect IRRADIANCE Ei
 	}
 }

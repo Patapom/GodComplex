@@ -177,8 +177,8 @@ const string	SUFFIX = "";
 					using ( Renderer.ScopedForceShadersLoadFromBinary scope = new Renderer.ScopedForceShadersLoadFromBinary() )
 				#endif
 				{
-					m_CS_GenerateGroundTruth_Direct = new Renderer.ComputeShader( m_device, new System.IO.FileInfo( "./Shaders/ComputeGroundTruth.hlsl" ), "CS_Direct", null );
-					m_CS_GenerateGroundTruth_Indirect = new Renderer.ComputeShader( m_device, new System.IO.FileInfo( "./Shaders/ComputeGroundTruth.hlsl" ), "CS_Indirect", null );
+					m_CS_GenerateGroundTruth_Direct = new Renderer.ComputeShader( m_device, new System.IO.FileInfo( "./Shaders/Demo/ComputeGroundTruth.hlsl" ), "CS_Direct", null );
+					m_CS_GenerateGroundTruth_Indirect = new Renderer.ComputeShader( m_device, new System.IO.FileInfo( "./Shaders/Demo/ComputeGroundTruth.hlsl" ), "CS_Indirect", null );
 					m_CS_GenerateAOMap = new Renderer.ComputeShader( m_device, new System.IO.FileInfo( "./Shaders/GenerateAOMap.hlsl" ), "CS", null );
 					m_CS_ComputeIndirectLighting = new Renderer.ComputeShader( m_device, new System.IO.FileInfo( "./Shaders/ComputeIndirectLighting.hlsl" ), "CS", new Renderer.ShaderMacro[] { new Renderer.ShaderMacro( "ALBEDO", ALBEDO.ToString() ) } );
 					m_CS_BilateralFilter = new Renderer.ComputeShader( m_device, new System.IO.FileInfo( "./Shaders/BilateralFiltering.hlsl" ), "CS", null );
@@ -434,29 +434,6 @@ LoadBentConeMap( new System.IO.FileInfo( GetRegKey( "BentConeMapFileName", Syste
 				imagePanelBentCone.Bitmap = m_imageSourceBentCone.AsBitmap;
 
 				m_demoForm.ImageBentCone = m_imageSourceBentCone;	// Send to demo form
-
-				uint	W = m_imageSourceBentCone.Width;
-				uint	H = m_imageSourceBentCone.Height;
-
-				// Build the source texture
-				float4[]	scanline = new float4[W];
-
-// 				Renderer.PixelsBuffer	SourceNormalMap = new Renderer.PixelsBuffer( W*H*4*4 );
-// 				using ( System.IO.BinaryWriter Wr = SourceNormalMap.OpenStreamWrite() )
-// 					for ( int Y=0; Y < H; Y++ ) {
-// 						m_imageSourceNormal.ReadScanline( (uint) Y, scanline );
-// 						for ( int X=0; X < W; X++ ) {
-// 							float	Nx = 2.0f * scanline[X].x - 1.0f;
-// 							float	Ny = 1.0f - 2.0f * scanline[X].y;
-// 							float	Nz = 2.0f * scanline[X].z - 1.0f;
-// 							Wr.Write( Nx );
-// 							Wr.Write( Ny );
-// 							Wr.Write( Nz );
-// 							Wr.Write( 1.0f );
-// 						}
-// 					}
-// 
-// 				m_textureSourceNormal = new Renderer.Texture2D( m_device, W, H, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, false, new Renderer.PixelsBuffer[] { SourceNormalMap } );
 
 			} catch ( Exception _e ) {
 				MessageBox( "An error occurred while opening the image:\n\n", _e );
