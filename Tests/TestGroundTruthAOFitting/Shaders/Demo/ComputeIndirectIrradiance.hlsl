@@ -5,9 +5,9 @@
 #include "Global.hlsl"
 #include "SphericalHarmonics.hlsl"
 
-static const uint	MAX_ANGLES = 16;			// Amount of angular subdivisions of the circle
-static const uint	MAX_RADIUS = 16;			// Amount of radial subdivisions of the circle
-static const float	RADIUS_STEP_SIZE = 2.0;	// Radial step size (in pixels)
+#define	MAX_ANGLES	16			// Amount of angular subdivisions of the circle
+#define	MAX_RADIUS	16			// Amount of radial subdivisions of the circle
+#define	RADIUS_STEP_SIZE 2.0	// Radial step size (in pixels)
 
 #define	SAMPLER	LinearWrap
 
@@ -143,7 +143,7 @@ PS_OUT	PS( VS_IN _In ) {
 		float2	ssDirection;
 		sincos( phi, ssDirection.y, ssDirection.x );
 
-		float3	tsDirection = float3( dot( ssDirection, T.xy ), dot( ssDirection, B.xy ), dot( ssDirection, N.xy ) );
+		float2	tsDirection = float2( dot( ssDirection, T.xy ), dot( ssDirection, B.xy ) );
 		float	L = length( tsDirection );
 				tsDirection *= L > 0.0 ? 1.0 / L : 0.0;
 
@@ -164,22 +164,26 @@ PS_OUT	PS( VS_IN _In ) {
 //maxCos2_n = 0;
 
 		// Accumulate bent normal direction by rebuilding and averaging the front & back horizon vectors
-		float3	tsHorizon_p = (1.0 - maxCos2_p) * tsDirection + float3( 0, 0, maxCos2_p );	// UN-NORMALIZED!!
-#if 0
+		float3	tsHorizon_p = float3( (1.0 - maxCos2_p) * tsDirection, maxCos2_p );	// UN-NORMALIZED!!
+#if 1
 // Verbose
-		float3	tsHorizon_n = (maxCos2_n - 1.0) * tsDirection + float3( 0, 0, maxCos2_n );	// UN-NORMALIZED!!
+		float3	tsHorizon_n = float3( (maxCos2_n - 1.0) * tsDirection, maxCos2_n );	// UN-NORMALIZED!!
 //		float3	tsBentNormal = normalize( tsHorizon_p + tsHorizon_n );
 		float3	tsBentNormal = tsHorizon_p + tsHorizon_n;
 		tsAverageBentNormal += tsBentNormal;
 #else
 // Optimized
-		float3	tsBentNormal = (maxCos2_n - maxCos2_p) * tsDirection;
-				tsBentNormal.z += maxCos2_n + maxCos2_p;
+		float3	tsBentNormal = float3( (maxCos2_n - maxCos2_p) * tsDirection, maxCos2_n + maxCos2_p );
 		tsAverageBentNormal += tsBentNormal;
 #endif
 
 		// Update average aperture angle and variance
+#if 1
 		float	coneAngle = acos( saturate( dot( tsBentNormal, normalize( tsHorizon_p ) ) ) );	// #TODO: Optimize! Can't exploit cos² and sin² for a fast dot?
+#else
+		float	sqSinConeAngle = dot( tsBentNormal, tsBentNormal ) / (4.0 * dot( tsHorizon_p, tsHorizon_p ));	// Build parallelogram with the 2 horizon vectors and the normal, realize half normal + one of the vectors forms a right triangle, find angle...
+		float	coneAngle = asin( saturate( sqrt( sqSinConeAngle ) ) );
+#endif
 
 		// We're using running variance computation from https://www.johndcook.com/blog/standard_deviation/
 		//	Avg(N) = Avg(N-1) + [V(N) - Avg(N-1)] / N
@@ -195,7 +199,8 @@ PS_OUT	PS( VS_IN _In ) {
 	#if MAX_ANGLES > 1
 		varianceConeAngle /= MAX_ANGLES - 1;
 	#endif
-//	tsAverageBentNormal /= MAX_ANGLES;
+	tsAverageBentNormal /= MAX_ANGLES;
+//tsAverageBentNormal = normalize(tsAverageBentNormal);
 	float3	csBentNormal = tsAverageBentNormal.x * T + tsAverageBentNormal.y * B + tsAverageBentNormal.z * N;	// Back in camera space!
 
 
@@ -226,10 +231,10 @@ PS_OUT	PS( VS_IN _In ) {
 	PS_OUT	Out;
 	Out.irradiance = float4( sumIrradiance, 0.0 );
 	Out.bentCone = float4( csBentNormal, varianceConeAngle );
-//	Out.bentCone = float4( N, varianceConeAngle );
 
 //Out.bentCone.xyz = csCenterPosition_mm / 1024.0;
 //Out.bentCone.xyz = N;
+//Out.bentCone.xyz = 0.5 * (1.0 + csBentNormal);
 //Out.bentCone = _texelSize_mm / (1000.0 / 512) / 2;
 
 	return Out;
