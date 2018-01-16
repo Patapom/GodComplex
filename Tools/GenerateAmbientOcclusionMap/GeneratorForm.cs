@@ -1,4 +1,6 @@
-﻿//////////////////////////////////////////////////////////////////////////
+﻿#define USE_OPTIMIZED_BENT_CONE
+
+//////////////////////////////////////////////////////////////////////////
 // Builds an AO map from a height maps
 //
 using System;
@@ -74,6 +76,7 @@ namespace GenerateSelfShadowedBumpMap
 		private Renderer.StructuredBuffer<float3>	m_SB_Rays = null;
 		private Renderer.ComputeShader				m_CS_GenerateAOMap = null;
 		private Renderer.ComputeShader				m_CS_GenerateBentConeMap = null;
+		private Renderer.ComputeShader				m_CS_GenerateBentConeMapOpt = null;
 
 		// Bilateral filtering pre-processing
 		private Renderer.ConstantBuffer<CBFilter>	m_CB_Filter;
@@ -135,6 +138,7 @@ namespace GenerateSelfShadowedBumpMap
 					m_CS_BilateralFilter = new Renderer.ComputeShader( m_device, new System.IO.FileInfo( "./Shaders/BilateralFiltering.hlsl" ), "CS", null );
 					m_CS_GenerateAOMap = new Renderer.ComputeShader( m_device, new System.IO.FileInfo( "./Shaders/GenerateAOMap.hlsl" ), "CS", null );
 					m_CS_GenerateBentConeMap = new Renderer.ComputeShader( m_device, new System.IO.FileInfo( "./Shaders/GenerateBentConeMap.hlsl" ), "CS", null );
+					m_CS_GenerateBentConeMapOpt = new Renderer.ComputeShader( m_device, new System.IO.FileInfo( "./Shaders/GenerateBentConeMapOpt.hlsl" ), "CS", null );
 				}
 
 				// Create our constant buffers
@@ -156,6 +160,7 @@ namespace GenerateSelfShadowedBumpMap
 
 		protected override void OnClosing( CancelEventArgs e ) {
 			try {
+				m_CS_GenerateBentConeMapOpt.Dispose();
 				m_CS_GenerateBentConeMap.Dispose();
 				m_CS_GenerateAOMap.Dispose();
 				m_CS_BilateralFilter.Dispose();
@@ -500,22 +505,41 @@ namespace GenerateSelfShadowedBumpMap
 				m_CB_Input.m._displacement_mm = TextureHeight_mm;
 
 				// Start
-				if ( !m_CS_GenerateBentConeMap.Use() )
-					throw new Exception( "Can't generate self-shadowed bump map as compute shader failed to compile!" );
+				#if USE_OPTIMIZED_BENT_CONE
+					if ( !m_CS_GenerateBentConeMapOpt.Use() )
+						throw new Exception( "Can't generate self-shadowed bump map as compute shader failed to compile!" );
 
-				uint	h = Math.Max( 1, MAX_LINES*1024 / W );
-				uint	callsCount = (uint) Math.Ceiling( (float) H / h );
-				for ( int i=0; i < callsCount; i++ ) {
-					m_CB_Input.m._Y0 = (UInt32) (i * h);
-					m_CB_Input.UpdateData();
+					uint	h = Math.Max( 1, MAX_LINES*1024 / W );
+					uint	callsCount = (uint) Math.Ceiling( (float) H / h );
+					for ( int i=0; i < callsCount; i++ ) {
+						m_CB_Input.m._Y0 = (UInt32) (i * h);
+						m_CB_Input.UpdateData();
 
-					m_CS_GenerateBentConeMap.Dispatch( W, h, 1 );
+						m_CS_GenerateBentConeMapOpt.Dispatch( W, h, 1 );
 
-					m_device.Present( true );
+						m_device.Present( true );
 
-					progressBar.Value = (int) (0.01f * (BILATERAL_PROGRESS + (100-BILATERAL_PROGRESS) * (i+1) / (callsCount)) * progressBar.Maximum);
-					Application.DoEvents();
-				}
+						progressBar.Value = (int) (0.01f * (BILATERAL_PROGRESS + (100-BILATERAL_PROGRESS) * (i+1) / (callsCount)) * progressBar.Maximum);
+						Application.DoEvents();
+					}
+				#else
+					if ( !m_CS_GenerateBentConeMap.Use() )
+						throw new Exception( "Can't generate self-shadowed bump map as compute shader failed to compile!" );
+
+					uint	h = Math.Max( 1, MAX_LINES*1024 / W );
+					uint	callsCount = (uint) Math.Ceiling( (float) H / h );
+					for ( int i=0; i < callsCount; i++ ) {
+						m_CB_Input.m._Y0 = (UInt32) (i * h);
+						m_CB_Input.UpdateData();
+
+						m_CS_GenerateBentConeMap.Dispatch( W, h, 1 );
+
+						m_device.Present( true );
+
+						progressBar.Value = (int) (0.01f * (BILATERAL_PROGRESS + (100-BILATERAL_PROGRESS) * (i+1) / (callsCount)) * progressBar.Maximum);
+						Application.DoEvents();
+					}
+				#endif
 
 //				m_textureTarget1.RemoveFromLastAssignedSlotUAV();	// So we can use it as input for next stage
 
