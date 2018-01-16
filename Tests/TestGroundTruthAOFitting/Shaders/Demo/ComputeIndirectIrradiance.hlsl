@@ -164,25 +164,42 @@ PS_OUT	PS( VS_IN _In ) {
 //maxCos2_n = 0;
 
 		// Accumulate bent normal direction by rebuilding and averaging the front & back horizon vectors
+#if 0
+// =========================
+// STOOPID 3D VERSION
 		float3	tsHorizon_p = float3( (1.0 - maxCos2_p) * tsDirection, maxCos2_p );	// UN-NORMALIZED!!
-#if 1
-// Verbose
-		float3	tsHorizon_n = float3( (maxCos2_n - 1.0) * tsDirection, maxCos2_n );	// UN-NORMALIZED!!
-//		float3	tsBentNormal = normalize( tsHorizon_p + tsHorizon_n );
-		float3	tsBentNormal = tsHorizon_p + tsHorizon_n;
-		tsAverageBentNormal += tsBentNormal;
-#else
-// Optimized
-		float3	tsBentNormal = float3( (maxCos2_n - maxCos2_p) * tsDirection, maxCos2_n + maxCos2_p );
-		tsAverageBentNormal += tsBentNormal;
-#endif
+		#if 1
+		// Verbose
+			float3	tsHorizon_n = float3( (maxCos2_n - 1.0) * tsDirection, maxCos2_n );	// UN-NORMALIZED!!
+//			float3	tsBentNormal = normalize( tsHorizon_p + tsHorizon_n );
+			float3	tsBentNormal = tsHorizon_p + tsHorizon_n;
+			tsAverageBentNormal += tsBentNormal;
+		#else
+		// Optimized
+			float3	tsBentNormal = float3( (maxCos2_n - maxCos2_p) * tsDirection, maxCos2_n + maxCos2_p );
+			tsAverageBentNormal += tsBentNormal;
+		#endif
 
 		// Update average aperture angle and variance
-#if 1
-		float	coneAngle = acos( saturate( dot( tsBentNormal, normalize( tsHorizon_p ) ) ) );	// #TODO: Optimize! Can't exploit cos² and sin² for a fast dot?
+		#if 1
+			float	coneAngle = acos( saturate( dot( tsBentNormal, normalize( tsHorizon_p ) ) ) );	// #TODO: Optimize! Can't exploit cos² and sin² for a fast dot?
+		#else
+			float	sqSinConeAngle = dot( tsBentNormal, tsBentNormal ) / (4.0 * dot( tsHorizon_p, tsHorizon_p ));	// Build parallelogram with the 2 horizon vectors and the normal, realize half normal + one of the vectors forms a right triangle, find angle...
+			float	coneAngle = asin( saturate( sqrt( sqSinConeAngle ) ) );
+		#endif
 #else
-		float	sqSinConeAngle = dot( tsBentNormal, tsBentNormal ) / (4.0 * dot( tsHorizon_p, tsHorizon_p ));	// Build parallelogram with the 2 horizon vectors and the normal, realize half normal + one of the vectors forms a right triangle, find angle...
-		float	coneAngle = asin( saturate( sqrt( sqSinConeAngle ) ) );
+// =========================
+// SIMPLE 2D VERSION
+//		float2	horizon_p = float2( 1.0 - maxCos2_p, maxCos2_p );
+//		float2	horizon_n = float2( maxCos2_n - 1.0, maxCos2_n );
+//		float2	halfVector = horizon_n + horizon_p;
+		float2	halfVector = float2( maxCos2_n - maxCos2_p, 1e-3 + maxCos2_n + maxCos2_p );	// Optimized
+				halfVector = normalize( halfVector );
+		float3	tsBentNormal = float3( halfVector.x * tsDirection, halfVector.y );
+		tsAverageBentNormal += tsBentNormal;
+
+		// Update average aperture angle and variance
+		float	coneAngle = acos( saturate( dot( halfVector, normalize( float2( 1.0 - maxCos2_p, maxCos2_p ) ) ) ) );
 #endif
 
 		// We're using running variance computation from https://www.johndcook.com/blog/standard_deviation/
