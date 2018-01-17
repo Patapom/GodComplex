@@ -36,6 +36,7 @@ namespace GenerateSelfShadowedBumpMap
 			public uint		_textureDimensionY;
 			public uint		_Y0;				// Index of the texture line we're processing
 			public uint		_raysCount;			// Amount of rays in the structured buffer
+
 			public uint		_maxStepsCount;		// Maximum amount of steps to take before stopping
 			public uint		_tile;				// Tiling flag
 			public float	_texelSize_mm;		// Size of a texel (in millimeters)
@@ -492,6 +493,9 @@ namespace GenerateSelfShadowedBumpMap
 
 				// Prepare computation parameters
 				m_textureTarget0.SetCS( 0 );
+
+//m_textureSourceHeightMap.SetCS( 0 );
+
 				textureBentNormal.SetCSUAV( 0 );
 				m_SB_Rays.SetInput( 1 );
 				m_TextureSourceNormal.SetCS( 2 );

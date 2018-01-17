@@ -225,6 +225,10 @@ averageCos = 2.0 * averageAngle / PI;	// Store as angle, makes more sense visual
 
 		gs_bentNormal.y = -gs_bentNormal.y;	// Normal textures are stored with inverted Y
 
+
+//averageCos = 1.0;
+
+
 _Target[pixelPosition] = float4( 0.5 * (1.0+gs_bentNormal), averageCos );	// Ready for texture
 //_Target[pixelPosition] = float4( 0.5 * (1.0+gs_local2World[2]), 1 );	// Ready for texture
 //_Target[pixelPosition] = float4( dot( normalize(bentNormal), gs_local2World[2] ).xxx, 1 );

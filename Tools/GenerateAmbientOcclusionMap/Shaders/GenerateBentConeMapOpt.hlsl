@@ -37,10 +37,14 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 //
+//#define SCREEN_SPACE	1
+
 static const uint	MAX_THREADS = 1024;
 static const uint	ANGLE_BINS_COUNT = 16;
 
 static const float	PI = 3.1415926535897932384626433832795;
+
+static const uint	STEP_SIZE = 1;
 
 SamplerState LinearClamp	: register( s0 );
 
@@ -48,6 +52,7 @@ cbuffer	CBInput : register( b0 ) {
 	uint2	_textureDimensions;
 	uint	_Y0;				// Start scanline for this group
 	uint	_raysCount;			// Amount of rays to cast
+
 	uint	_maxStepsCount;		// Maximum amount of steps to take before stopping
 	bool	_tile;				// Tiling flag
 	float	_texelSize_mm;		// Texel size in millimeters
@@ -70,57 +75,6 @@ groupshared uint3			gs_occlusionDirectionAccumulator = 0;
 groupshared float3			gs_bentNormal;				// Computed direction for the bent normal
 groupshared uint			gs_maxCosAngle[ANGLE_BINS_COUNT];
 
-
-// Computes the occlusion of the pixel in the specified direction
-//	_position, position of the ray in the texture (XY = pixel position offset by 0.5, Z = initial height)
-//	_direction, direction of the ray
-//
-// Returns an occlusion value in [0,1] where 0 is completely occluded and 1 completely visible
-//
-float	ComputeDirectionalOcclusion( float3 _position, float3 _direction ) {
-
-	#if 1
-		// Scale the ray so we ensure to always walk at least a texel in the texture
-		_direction *= 1.0 / sqrt( 1.0 - _direction.z * _direction.z );
-	#endif
-
-	// Scale the vertical step so we're the proper size
-	_direction.z *= _texelSize_mm / max( 1e-4, _displacement_mm );
-
-	float	occlusion = 1.0;	// Start unoccluded
-	for ( uint stepIndex=0; stepIndex < _maxStepsCount; stepIndex++ ) {
-		_position += _direction;	
-		if ( _position.z >= 1.0 )
-			break;		// Definitely escaped the surface!
-		if ( _position.z < 0.0 )
-			return 0.0;	// Definitely occluded!
-
-		if ( _tile ) {
-			_position.xy = fmod( _position.xy + _textureDimensions, _textureDimensions );
-		} else {
-			if (	_position.x < 0 || _position.x >= float(_textureDimensions.x)
-				||	_position.y < 0 || _position.y >= float(_textureDimensions.y) )
-				break;
-		}
-
-//		float	H = _Tex_Height.Load( int3( _position.xy, 0 ) );
-		float	H = _Tex_Height.SampleLevel( LinearClamp, _position.xy / _textureDimensions, 0 );
-
-		#if 1
-			// Simple test for a fully extruded height
-			if ( _position.z < H )
-				return 0.0;
-		#else
-			// Assume a height interval
-			float	Hmax = H;
-			float	Hmin = H - 0.01;
-			if ( _position.z > Hmin && _position.z < Hmax )
-				return 0.0;
-		#endif
-	}
-
-	return occlusion;
-}
 
 // Build orthonormal basis from a 3D Unit Vector Without normalization [Frisvad2012])
 void BuildOrthonormalBasis( float3 _normal, out float3 _tangent, out float3 _bitangent ) {
@@ -171,10 +125,22 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID ) 
 
 		float	heightFactor = _displacement_mm / _texelSize_mm;
 
+		// Project normal into ssDirection's plane and compute front & back horizon cos(angles)
+		float3	ssOrthoDirection = float3( -ssDirection.y, ssDirection.x, 0.0 );
+		float3	ssReprojectedNormal = normalize( gs_local2World[2] - dot( gs_local2World[2], ssOrthoDirection ) * ssOrthoDirection );
+//		float	ssCosThetaMin_Front = -1.0;
+//		float	ssCosThetaMin_Back = -1.0;
+		float2	lsReprojectedNormal = float2( dot( ssReprojectedNormal.xy, ssDirection ), ssReprojectedNormal.z );
+//		float2	lsHorizon_Front = float2( lsReprojectedNormal.y, -lsReprojectedNormal.x );
+//		float2	lsHorizon_Back = float2( -lsReprojectedNormal.y, lsReprojectedNormal.x );
+		float	ssCosThetaMin_Front = -lsReprojectedNormal.x;
+		float	ssCosThetaMin_Back = lsReprojectedNormal.x;
+
 		// March many pixels around central position in the slice's direction and find the horizons
-		float4	ssPosition_Front = float4( pixelPosition + 0.5, 0.0, 1.0 );
-		float4	ssPosition_Back = float4( pixelPosition + 0.5, 0.0, 1.0 );
-		for ( uint radius=1; radius <= _maxStepsCount; radius++ ) {
+		float4	ssPosition_Front = float4( pixelPosition + 0.5, ssCosThetaMin_Front, 1.0 );
+		float4	ssPosition_Back = float4( pixelPosition + 0.5, ssCosThetaMin_Back, 1.0 );
+
+		for ( uint radius=1; radius <= _maxStepsCount; radius+=STEP_SIZE ) {
 			ssPosition_Front.xy += ssDirection;
 			ssPosition_Back.xy -= ssDirection;
 			if ( _tile ) {
@@ -194,43 +160,105 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID ) 
 			// Read height difference and update horizon angles
 			float	deltaH_Front = _Tex_Height.SampleLevel( LinearClamp, ssPosition_Front.xy / _textureDimensions, 0 ) - gs_position.z;
 					deltaH_Front *= heightFactor;	// Correct against aspect ratio
-			float	cos2_Front = deltaH_Front*deltaH_Front / (deltaH_Front*deltaH_Front + radius*radius);
-			ssPosition_Front.z = max( ssPosition_Front.z, ssPosition_Front.w * cos2_Front );
+			float	cos_Front = deltaH_Front / sqrt(deltaH_Front*deltaH_Front + radius*radius);
+			ssPosition_Front.z = max( ssPosition_Front.z, ssPosition_Front.w * cos_Front );
 
 			float	deltaH_Back = _Tex_Height.SampleLevel( LinearClamp, ssPosition_Back.xy / _textureDimensions, 0 ) - gs_position.z;
 					deltaH_Back *= heightFactor;	// Correct against aspect ratio
-			float	cos2_Back = deltaH_Back*deltaH_Back / (deltaH_Back*deltaH_Back + radius*radius);
-			ssPosition_Back.z = max( ssPosition_Back.z, ssPosition_Back.w * cos2_Back );
+			float	cos_Back = deltaH_Back / sqrt(deltaH_Back*deltaH_Back + radius*radius);
+			ssPosition_Back.z = max( ssPosition_Back.z, ssPosition_Back.w * cos_Back );
 		}
 
-		// Reproject normal into the slice's plane & built tangent direction
-		float3	ssOrthoDirection = float3( -ssDirection.y, ssDirection.x, 0.0 );
-		float3	slicePlaneN = normalize( gs_local2World[2] - dot( gs_local2World[2], ssOrthoDirection ) * ssOrthoDirection );
-		float2	ssNormal = float2( dot( slicePlaneN.xy, ssDirection ), slicePlaneN.z );
-		float2	ssTangent = float2( ssNormal.y, -ssNormal.x );
+#if SCREEN_SPACE
+		// ===============================================================================
+		// SCREEN-SPACE
+		// Results are very smooth and don't use normal map, this gives bad results when used at runtime
+		// PROBLEM: theta is aligned on screen-space normal (0,0,1) instead of actual normal!
+		//
+		float	cosTheta0 = ssPosition_Front.z;
+		float	cosTheta1 = ssPosition_Back.z;
+		#if 1
+			// Regular integration
+			float	averageCosTheta = 0.5 * (cosTheta1*cosTheta1 - cosTheta0*cosTheta0);
+			float3	ssBentNormal = float3( averageCosTheta * ssDirection, sqrt( 1.0 - averageCosTheta*averageCosTheta ) );
+		#else
+			// Vectors recomposition
+			float2	horizonFront = float2( sqrt(1.0-cosTheta0*cosTheta0), cosTheta0 );
+			float2	horizonBack = float2( -sqrt(1.0-cosTheta1*cosTheta1), cosTheta1 );
+			float2	averageHorizon = horizonFront + horizonBack;
+			float	L = length( averageHorizon );
+					averageHorizon = L > 0.0 && averageHorizon.y > 0.0 ? averageHorizon / L : float2( 0, 1 ); 
+			float3	ssBentNormal = float3( averageHorizon.x * ssDirection, averageHorizon.y );
+		#endif
+#else
+		// ===============================================================================
+		// TANGENT-SPACE
+		// Results are sharper and more accurate for real time usage
+		//
+		#if 1
+			float	ssCosThetaFront = ssPosition_Front.z;
+			float	ssCosThetaBack = ssPosition_Back.z;
 
-		// Transform horizons back into tangent space
-		float2	ssHorizon_Front = float2( ssPosition_Front.z, 1.0 - ssPosition_Front.z );
-		float2	tsHorizon_Front = float2( dot( ssHorizon_Front, ssTangent ), dot( ssHorizon_Front, ssNormal ) );
-		float2	ssHorizon_Back = float2( ssPosition_Back.z, 1.0 - ssPosition_Back.z );
-		float2	tsHorizon_Back = float2( dot( ssHorizon_Back, ssTangent ), dot( ssHorizon_Back, ssNormal ) );
+			float3	ssHorizonFront = float3( sqrt(1.0-ssCosThetaFront*ssCosThetaFront) * ssDirection, ssCosThetaFront );
+			float3	ssHorizonBack = float3( -sqrt(1.0-ssCosThetaBack*ssCosThetaBack) * ssDirection, ssCosThetaBack );
 
-		// Unfortunately here, we're already dealing with cos²(theta) but not from the same axes so we need
-		//	to normalize the vectors and retrieve the new theta's in tangent space...
-		tsHorizon_Front = normalize( tsHorizon_Front );
-		tsHorizon_Back = normalize( tsHorizon_Back );
+			float3	tsHorizonFront = float3( dot( ssHorizonFront, gs_local2World[0] ), dot( ssHorizonFront, gs_local2World[1] ), dot( ssHorizonFront, gs_local2World[2] ) );
+			float3	tsHorizonBack = float3( dot( ssHorizonBack, gs_local2World[0] ), dot( ssHorizonBack, gs_local2World[1] ), dot( ssHorizonBack, gs_local2World[2] ) );
 
-		// Perform integration of bent normal
+			#if 1
+				// Regular integration
+				float3	tsDirection = float3( dot( ssDirection, gs_local2World[0].xy ), dot( ssDirection, gs_local2World[1].xy ), dot( ssDirection, gs_local2World[2].xy ) );
+				float	tsCosTheta0 = max( 0.0, dot( tsHorizonFront, gs_local2World[2] ) );
+				float	tsCosTheta1 = max( 0.0, dot( tsHorizonBack, gs_local2World[2] ) );
+				float	tsAverageCosTheta = 0.5 * (tsCosTheta1*tsCosTheta1 - tsCosTheta0*tsCosTheta0);
+				float3	tsBentNormal = tsAverageCosTheta * tsDirection + sqrt( 1.0 - tsAverageCosTheta*tsAverageCosTheta ) * float3( 0, 0, 1 );
+			#else
+				// Vectors recomposition
+				tsHorizonFront.z = max( 0.0, tsHorizonFront.z );	// This is useless since we properly initialized min horizon angles before entering the loop but better be safe than sorry! :D
+				tsHorizonBack.z = max( 0.0, tsHorizonBack.z );
+
+//if ( tsHorizonFront.z < -1e-3 || tsHorizonBack.z < -1e-3 ) {
+//	// ERROR!
+//	tsHorizonFront = float3( 10, 0, 0 );
+//	tsHorizonBack = 0.0;
+//}
+
+				float3	tsBentNormal = tsHorizonFront + tsHorizonBack + float3( 0, 0, 1e-3 );
+				float	L = length( tsBentNormal );
+						tsBentNormal = L > 0.0 ? tsBentNormal / L : float3( 0, 0, 1 ); 
+			#endif
+
+			float3	ssBentNormal = tsBentNormal.x * gs_local2World[0] + tsBentNormal.y * gs_local2World[1] + tsBentNormal.z * gs_local2World[2];
+
+		#else
+			// Reproject normal into the slice's plane & built tangent direction
+			float3	ssOrthoDirection = float3( -ssDirection.y, ssDirection.x, 0.0 );
+			float3	slicePlaneN = normalize( gs_local2World[2] - dot( gs_local2World[2], ssOrthoDirection ) * ssOrthoDirection );
+			float2	ssNormal = float2( dot( slicePlaneN.xy, ssDirection ), slicePlaneN.z );
+			float2	ssTangent = float2( ssNormal.y, -ssNormal.x );
+
+			// Transform horizons back into tangent space
+			float2	ssHorizon_Front = float2( ssPosition_Front.z, 1.0 - ssPosition_Front.z );
+			float2	tsHorizon_Front = float2( dot( ssHorizon_Front, ssTangent ), dot( ssHorizon_Front, ssNormal ) );
+			float2	ssHorizon_Back = float2( ssPosition_Back.z, 1.0 - ssPosition_Back.z );
+			float2	tsHorizon_Back = float2( dot( ssHorizon_Back, ssTangent ), dot( ssHorizon_Back, ssNormal ) );
+
+			// Unfortunately here, we're already dealing with cos²(theta) but not from the same axes so we need
+			//	to normalize the vectors and retrieve the new theta's in tangent space...
+			tsHorizon_Front = normalize( tsHorizon_Front );
+			tsHorizon_Back = normalize( tsHorizon_Back );
+
+			// Perform integration of bent normal
 // #TODO: Optimize later!
-		float	theta0 = atan2( tsHorizon_Front.y, tsHorizon_Front.x );
-		float	theta1 = atan2( tsHorizon_Back.y, tsHorizon_Back.x );
-		float	averageCosTheta = 0.5 * (cos(theta1)*cos(theta1) - cos(theta0)*cos(theta0));
-		float	finalTheta = acos( saturate( averageCosTheta ) );
+			float	theta0 = atan2( tsHorizon_Front.y, tsHorizon_Front.x );
+			float	theta1 = atan2( tsHorizon_Back.y, tsHorizon_Back.x );
+			float	averageCosTheta = 0.5 * (cos(theta1)*cos(theta1) - cos(theta0)*cos(theta0));
+			float	finalTheta = acos( saturate( averageCosTheta ) );
 
-		float2	ssBentNormal2D = cos(finalTheta) * ssTangent + sin(finalTheta) * ssNormal;
-		float3	ssBentNormal = float3( ssBentNormal2D.x * ssDirection, ssBentNormal2D.y );
-//float	weight = occlusion;
-//float	weight = lsRayDirection.z > 0.98 ? 1.0 : 0.0;
+			float2	ssBentNormal2D = cos(finalTheta) * ssTangent + sin(finalTheta) * ssNormal;
+			float3	ssBentNormal = float3( ssBentNormal2D.x * ssDirection, ssBentNormal2D.y );
+		#endif
+#endif
 
 //ssBentNormal = float3( -1, -1, -1 );
 
