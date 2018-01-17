@@ -139,7 +139,7 @@ namespace GenerateSelfShadowedBumpMap
 					m_CS_BilateralFilter = new Renderer.ComputeShader( m_device, new System.IO.FileInfo( "./Shaders/BilateralFiltering.hlsl" ), "CS", null );
 					m_CS_GenerateAOMap = new Renderer.ComputeShader( m_device, new System.IO.FileInfo( "./Shaders/GenerateAOMap.hlsl" ), "CS", null );
 					m_CS_GenerateBentConeMap = new Renderer.ComputeShader( m_device, new System.IO.FileInfo( "./Shaders/GenerateBentConeMap.hlsl" ), "CS", null );
-					m_CS_GenerateBentConeMapOpt = new Renderer.ComputeShader( m_device, new System.IO.FileInfo( "./Shaders/GenerateBentConeMapOpt.hlsl" ), "CS", null );
+					m_CS_GenerateBentConeMapOpt = new Renderer.ComputeShader( m_device, new System.IO.FileInfo( "./Shaders/GenerateBentConeMapOpt2.hlsl" ), "CS", null );
 				}
 
 				// Create our constant buffers

@@ -204,6 +204,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Shaders\BilateralFiltering.hlsl" />
+    <Content Include="Shaders\GenerateBentConeMapOpt2.hlsl" />
     <Content Include="Shaders\GenerateBentConeMapOpt.hlsl" />
     <Content Include="Shaders\GenerateBentConeMap.hlsl" />
     <Content Include="Shaders\GenerateAOMap.hlsl" />

@@ -2,7 +2,9 @@
 // Bent Cone Map generator
 // This compute shader will generate the bent normal/bent cone over a specific texel and store the result into a target UAV
 //
-// 
+// 1024 rays uniformly generated over an hemisphere are ray-cast across the height field for each pixel
+//	and their direction is accumulated with a weight = (1-occluded) * dot( direction, normal )
+// The average of the angles to the horizon across multiple azimutal directions is returned as the cone's aperture angle and stored in alpha
 //
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -92,7 +94,7 @@ float	ComputeDirectionalOcclusion( float3 _position, float3 _direction ) {
 }
 
 // Build orthonormal basis from a 3D Unit Vector Without normalization [Frisvad2012])
-void BuildOrthonormalBasis( float3 _normal, out float3 _tangent, out float3 _bitangent ) {
+void	BuildOrthonormalBasis( float3 _normal, out float3 _tangent, out float3 _bitangent ) {
 	float a = _normal.z > -0.9999999 ? 1.0 / (1.0 + _normal.z) : 0.0;
 	float b = -_normal.x * _normal.y * a;
 
@@ -108,11 +110,6 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID ) 
 	if ( rayIndex == 0 ) {
 		// Build local tangent space to orient rays
 		float3	normal = _Tex_Normal[pixelPosition];
-
-
-//normal = float3( 0, 0, 1 );
-
-
 		float3	tangent, biTangent;
 		BuildOrthonormalBasis( normal, tangent, biTangent );
 

@@ -108,7 +108,7 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID ) 
 //		RayPosition_mm += 0.01 * _displacement_mm * normal;	// Nudge a little to avoid acnea
 //		gs_position = RayPosition_mm / float3( _texelSize_mm.xx, _displacement_mm );
 
-		gs_position.z += 1e-2;	// Nudge a little to avoid acnea
+//		gs_position.z += 1e-2;	// Nudge a little to avoid acnea
 	}
 
 //	if ( rayIndex < ANGLE_BINS_COUNT ) {
@@ -126,15 +126,13 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID ) 
 		float	heightFactor = _displacement_mm / _texelSize_mm;
 
 		// Project normal into ssDirection's plane and compute front & back horizon cos(angles)
-		float3	ssOrthoDirection = float3( -ssDirection.y, ssDirection.x, 0.0 );
-		float3	ssReprojectedNormal = normalize( gs_local2World[2] - dot( gs_local2World[2], ssOrthoDirection ) * ssOrthoDirection );
-//		float	ssCosThetaMin_Front = -1.0;
-//		float	ssCosThetaMin_Back = -1.0;
-		float2	lsReprojectedNormal = float2( dot( ssReprojectedNormal.xy, ssDirection ), ssReprojectedNormal.z );
-//		float2	lsHorizon_Front = float2( lsReprojectedNormal.y, -lsReprojectedNormal.x );
-//		float2	lsHorizon_Back = float2( -lsReprojectedNormal.y, lsReprojectedNormal.x );
-		float	ssCosThetaMin_Front = -lsReprojectedNormal.x;
-		float	ssCosThetaMin_Back = lsReprojectedNormal.x;
+//		float3	ssOrthoDirection = float3( -ssDirection.y, ssDirection.x, 0.0 );
+//		float3	ssReprojectedNormal = normalize( gs_local2World[2] - dot( gs_local2World[2], ssOrthoDirection ) * ssOrthoDirection );
+//		float2	lsReprojectedNormal = float2( dot( ssReprojectedNormal.xy, ssDirection ), ssReprojectedNormal.z );
+//		float	ssCosThetaMin_Front = -lsReprojectedNormal.x;
+//		float	ssCosThetaMin_Back = lsReprojectedNormal.x;
+		float	ssCosThetaMin_Front = -1.0;
+		float	ssCosThetaMin_Back = -1.0;
 
 		// March many pixels around central position in the slice's direction and find the horizons
 		float4	ssPosition_Front = float4( pixelPosition + 0.5, ssCosThetaMin_Front, 1.0 );
@@ -191,7 +189,44 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID ) 
 			float3	ssBentNormal = float3( averageHorizon.x * ssDirection, averageHorizon.y );
 		#endif
 #else
-		// ===============================================================================
+
+		#if 0
+			// Still not the proper result, essentially because I forgot to include the solid angle
+			// Problem is: the solid angle of the tangent-space hemisphere is hell of a shithole
+			float	ssCosThetaFront = ssPosition_Front.z;
+			float	ssCosThetaBack = ssPosition_Back.z;
+
+			float3	ssHorizonFront = float3( sqrt(1.0-ssCosThetaFront*ssCosThetaFront) * ssDirection, ssCosThetaFront );
+			float3	ssHorizonBack = float3( -sqrt(1.0-ssCosThetaBack*ssCosThetaBack) * ssDirection, ssCosThetaBack );
+
+			float3	tsHorizonFront = float3( dot( ssHorizonFront, gs_local2World[0] ), dot( ssHorizonFront, gs_local2World[1] ), dot( ssHorizonFront, gs_local2World[2] ) );
+			float3	tsHorizonBack = float3( dot( ssHorizonBack, gs_local2World[0] ), dot( ssHorizonBack, gs_local2World[1] ), dot( ssHorizonBack, gs_local2World[2] ) );
+
+			float	tsCosTheta0 = max( 0.0, tsHorizonFront.z );
+			float	tsCosTheta1 = max( 0.0, tsHorizonBack.z );
+			float	tsAverageSinTheta = tsCosTheta1 - tsCosTheta0;
+
+			float3	tsDirection = float3( dot( ssDirection, gs_local2World[0].xy ), dot( ssDirection, gs_local2World[1].xy ), dot( ssDirection, gs_local2World[2].xy ) );
+			float3	tsBentNormal = tsAverageSinTheta * tsDirection + sqrt( 1.0 - tsAverageSinTheta*tsAverageSinTheta ) * float3( 0, 0, 1 );
+			float3	ssBentNormal = tsBentNormal.x * gs_local2World[0] + tsBentNormal.y * gs_local2World[1] + tsBentNormal.z * gs_local2World[2];
+
+		#else
+			// Half brute force where we perform the integration numerically as a sum...
+			float	thetaBack = 0.5*PI + acos( ssPosition_Back.z );
+			float	thetaFront = 0.5*PI - acos( ssPosition_Front.z );
+			float3	ssBentNormal = 0.0;
+			for ( uint i=0; i < 256; i++ ) {
+				float	theta = lerp( thetaFront, thetaBack, (i+0.5) / 256.0 );
+				float2	scTheta;
+				sincos( theta, scTheta.x, scTheta.y );
+				float3	ssUnOccludedDirection = float3( scTheta.y * ssDirection, scTheta.x );
+				float	weight = saturate( dot( ssUnOccludedDirection, gs_local2World[2] ) );
+				ssBentNormal += weight * ssUnOccludedDirection;
+			}
+			ssBentNormal /= 128.0;
+		#endif
+
+/*		// ===============================================================================
 		// TANGENT-SPACE
 		// Results are sharper and more accurate for real time usage
 		//
@@ -208,10 +243,13 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID ) 
 			#if 1
 				// Regular integration
 				float3	tsDirection = float3( dot( ssDirection, gs_local2World[0].xy ), dot( ssDirection, gs_local2World[1].xy ), dot( ssDirection, gs_local2World[2].xy ) );
-				float	tsCosTheta0 = max( 0.0, dot( tsHorizonFront, gs_local2World[2] ) );
-				float	tsCosTheta1 = max( 0.0, dot( tsHorizonBack, gs_local2World[2] ) );
-				float	tsAverageCosTheta = 0.5 * (tsCosTheta1*tsCosTheta1 - tsCosTheta0*tsCosTheta0);
-				float3	tsBentNormal = tsAverageCosTheta * tsDirection + sqrt( 1.0 - tsAverageCosTheta*tsAverageCosTheta ) * float3( 0, 0, 1 );
+//				float3	tsDirection = normalize( tsHorizonFront );
+//				float	tsCosTheta0 = max( 0.0, tsHorizonFront.z );
+//				float	tsCosTheta1 = max( 0.0, tsHorizonBack.z );
+				float	tsCosTheta0 = tsHorizonFront.z;
+				float	tsCosTheta1 = tsHorizonBack.z;
+				float	tsAverageSinTheta = 0.5 * (tsCosTheta1*tsCosTheta1 - tsCosTheta0*tsCosTheta0);
+				float3	tsBentNormal = tsAverageSinTheta * tsDirection + sqrt( 1.0 - tsAverageSinTheta*tsAverageSinTheta ) * float3( 0, 0, 1 );
 			#else
 				// Vectors recomposition
 				tsHorizonFront.z = max( 0.0, tsHorizonFront.z );	// This is useless since we properly initialized min horizon angles before entering the loop but better be safe than sorry! :D
@@ -258,6 +296,7 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID ) 
 			float2	ssBentNormal2D = cos(finalTheta) * ssTangent + sin(finalTheta) * ssNormal;
 			float3	ssBentNormal = float3( ssBentNormal2D.x * ssDirection, ssBentNormal2D.y );
 		#endif
+*/
 #endif
 
 //ssBentNormal = float3( -1, -1, -1 );
