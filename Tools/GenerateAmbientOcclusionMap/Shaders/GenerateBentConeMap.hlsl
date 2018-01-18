@@ -146,7 +146,7 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID ) 
 		InterlockedAdd( gs_occlusionDirectionAccumulator.x, uint(65536.0 * (1.0 + weight * wsRayDirection.x)), dontCare );
 		InterlockedAdd( gs_occlusionDirectionAccumulator.y, uint(65536.0 * (1.0 + weight * wsRayDirection.y)), dontCare );
 		InterlockedAdd( gs_occlusionDirectionAccumulator.z, uint(65536.0 * (1.0 + weight * wsRayDirection.z)), dontCare );
-		InterlockedAdd( gs_occlusionDirectionAccumulator.w, 65536, dontCare );
+		InterlockedAdd( gs_occlusionDirectionAccumulator.w, 65536 * weight, dontCare );
 
 		gs_lsRayDirection[rayIndex] = lsRayDirection;
 		gs_wsRayDirection[rayIndex] = wsRayDirection;
@@ -158,7 +158,7 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID ) 
 	////////////////////////////////////////////////////////////////////////
 	// Finalize average bent normal direction (unnormalized)
 	if ( rayIndex == 0 ) {
-		gs_bentNormal = float3( gs_occlusionDirectionAccumulator.xyz ) / gs_occlusionDirectionAccumulator.w - 1.0;
+		gs_bentNormal = (float3( gs_occlusionDirectionAccumulator.xyz ) - _raysCount * 65536.0) / gs_occlusionDirectionAccumulator.w;
 		gs_bentNormal = normalize( gs_bentNormal );
 
 		// Rebuild tangent space around the new bent normal

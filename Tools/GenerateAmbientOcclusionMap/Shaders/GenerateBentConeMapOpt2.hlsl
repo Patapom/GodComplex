@@ -105,6 +105,7 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID ) 
 		gs_local2World[2] = normal;
 
 		gs_ssCenterPosition = float3( pixelPosition + 0.5, (_displacement_mm / _texelSize_mm) * _Tex_Height[pixelPosition] );
+		gs_ssCenterPosition.z = (_displacement_mm / _texelSize_mm) * _Tex_Height.SampleLevel( LinearClamp, gs_ssCenterPosition.xy / _textureDimensions, 0 );
 	}
 
 //	if ( rayIndex < ANGLE_BINS_COUNT ) {
@@ -141,12 +142,18 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID ) 
 			ssPosition_Front.z *= heightFactor;	// Correct against aspect ratio
 			float3	ssDeltaPosition_Front = ssPosition_Front - gs_ssCenterPosition;
 			float3	tsPosition_Front = float3( dot( ssDeltaPosition_Front, gs_local2World[0] ), dot( ssDeltaPosition_Front, gs_local2World[1] ), dot( ssDeltaPosition_Front, gs_local2World[2] ) );
+
+//tsPosition_Front.z *= 4.0;
+
 			maxCos_Front = max( maxCos_Front, tsPosition_Front.z / length( tsPosition_Front ) );
 
 			ssPosition_Back.z = _Tex_Height.SampleLevel( LinearClamp, ssPosition_Back.xy / _textureDimensions, 0 );
 			ssPosition_Back.z *= heightFactor;	// Correct against aspect ratio
 			float3	ssDeltaPosition_Back = ssPosition_Back - gs_ssCenterPosition;
 			float3	tsPosition_Back = float3( dot( ssDeltaPosition_Back, gs_local2World[0] ), dot( ssDeltaPosition_Back, gs_local2World[1] ), dot( ssDeltaPosition_Back, gs_local2World[2] ) );
+
+//tsPosition_Back.z *= 4.0;
+
 			maxCos_Back = max( maxCos_Back, tsPosition_Back.z / length( tsPosition_Back ) );
 		}
 
@@ -161,6 +168,9 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID ) 
 //		float	sinFirstMoment = maxCos_Back - maxCos_Front;
 
 		float3	tsBentNormal = float3( sinFirstMoment * tsDirection, sqrt( 1.0 - sinFirstMoment*sinFirstMoment ) );
+
+		float	sumWeights = 0;
+
 	#elif 0
 		// EQUI-ANGULAR DISTRIBUTION IS WRONG => Doesn't account for solid angle at the top of the hemi-circle that is reduced
 		// Half brute force where we perform the integration numerically as a sum...
@@ -182,7 +192,9 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID ) 
 //ssBentNormal = gs_local2World[2];
 //ssBentNormal = float3( 1.0 * maxCos_Front, 0, 0 );
 
-	#elif 0
+		float	sumWeights = 0;
+
+	#elif 1
 		// Half brute force where we perform the integration numerically as a sum...
 		float3	tsBentNormal = 0.0;
 		float	sumWeights = 0.0;
@@ -197,8 +209,8 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID ) 
 			sumWeights += weight;
 
 			// Accumulate back
-					tsUnOccludedDirection = float3( -sinTheta * tsDirection, cosTheta );
-					weight = (cosTheta > maxCos_Back ? 1.0 : 0.0) * cosTheta;
+			tsUnOccludedDirection = float3( -sinTheta * tsDirection, cosTheta );
+			weight = (cosTheta > maxCos_Back ? 1.0 : 0.0) * cosTheta;
 			tsBentNormal += weight * tsUnOccludedDirection;
 			sumWeights += weight;
 		}
@@ -220,28 +232,31 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID ) 
 			float3	tsUnOccludedDirection = float3( sinTheta * tsDirection, cosTheta );
 			float	weight = (cosTheta > maxCos_Front ? 1.0 : 0.0) * cosTheta;
 			float3	wsDirection = mul( tsUnOccludedDirection, gs_local2World );
-			wsBentNormal += weight * (1.0 + wsDirection);
+			wsBentNormal += weight * wsDirection;
 			sumWeights += weight;
+//sumWeights += 1;
 
 			// Accumulate back
-					tsUnOccludedDirection = float3( -sinTheta * tsDirection, cosTheta );
-					weight = (cosTheta > maxCos_Back ? 1.0 : 0.0) * cosTheta;
-					wsDirection = mul( tsUnOccludedDirection, gs_local2World );
-			wsBentNormal += weight * (1.0 + wsDirection);
+			tsUnOccludedDirection = float3( -sinTheta * tsDirection, cosTheta );
+//			tsUnOccludedDirection.xy *= -1.0;
+			weight = (cosTheta > maxCos_Back ? 1.0 : 0.0) * cosTheta;
+			wsDirection = mul( tsUnOccludedDirection, gs_local2World );
+			wsBentNormal += weight * wsDirection;
 			sumWeights += weight;
+//sumWeights += 1;
 		}
-//		wsBentNormal /= 256.0;
-//		sumWeights /= 256.0;
+		wsBentNormal /= 256.0;
+		sumWeights /= 256.0;
 
 	#endif
 
 		uint	dontCare;
-//		InterlockedAdd( gs_occlusionDirectionAccumulator.x, uint(65536.0 * (1.0 + tsBentNormal.x)), dontCare );
-//		InterlockedAdd( gs_occlusionDirectionAccumulator.y, uint(65536.0 * (1.0 + tsBentNormal.y)), dontCare );
-//		InterlockedAdd( gs_occlusionDirectionAccumulator.z, uint(65536.0 * (1.0 + tsBentNormal.z)), dontCare );
-		InterlockedAdd( gs_occlusionDirectionAccumulator.x, uint(65536.0 * wsBentNormal.x), dontCare );
-		InterlockedAdd( gs_occlusionDirectionAccumulator.y, uint(65536.0 * wsBentNormal.y), dontCare );
-		InterlockedAdd( gs_occlusionDirectionAccumulator.z, uint(65536.0 * wsBentNormal.z), dontCare );
+		InterlockedAdd( gs_occlusionDirectionAccumulator.x, uint(65536.0 * (1.0 + tsBentNormal.x)), dontCare );
+		InterlockedAdd( gs_occlusionDirectionAccumulator.y, uint(65536.0 * (1.0 + tsBentNormal.y)), dontCare );
+		InterlockedAdd( gs_occlusionDirectionAccumulator.z, uint(65536.0 * (1.0 + tsBentNormal.z)), dontCare );
+//		InterlockedAdd( gs_occlusionDirectionAccumulator.x, uint(65536.0 * (1.0 + wsBentNormal.x)), dontCare );
+//		InterlockedAdd( gs_occlusionDirectionAccumulator.y, uint(65536.0 * (1.0 + wsBentNormal.y)), dontCare );
+//		InterlockedAdd( gs_occlusionDirectionAccumulator.z, uint(65536.0 * (1.0 + wsBentNormal.z)), dontCare );
 		InterlockedAdd( gs_occlusionDirectionAccumulator.w, uint(65536.0 * sumWeights), dontCare );
 	}
 
@@ -306,13 +321,13 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID ) 
 //
 //averageCos = 2.0 * averageAngle / PI;	// Store as angle, makes more sense visually and brings more precision
 
-//		float3	tsBentNormal = gs_occlusionDirectionAccumulator / 65536.0 / _raysCount - 1.0;
-		float3	tsBentNormal = float3( gs_occlusionDirectionAccumulator.xyz ) / gs_occlusionDirectionAccumulator.w - 1.0;
+		float3	tsBentNormal = (gs_occlusionDirectionAccumulator.xyz - 65536.0 * _raysCount) / 65536.0;
+//		float3	tsBentNormal = (float3( gs_occlusionDirectionAccumulator.xyz ) - _raysCount * 65536.0) / gs_occlusionDirectionAccumulator.w;
 
-//tsBentNormal = normalize( tsBentNormal );
+tsBentNormal = normalize( tsBentNormal );
 
-//		float3	ssBentNormal = tsBentNormal.x * gs_local2World[0] + tsBentNormal.y * gs_local2World[1] + tsBentNormal.z * gs_local2World[2];
-float3	ssBentNormal = tsBentNormal;
+		float3	ssBentNormal = tsBentNormal.x * gs_local2World[0] + tsBentNormal.y * gs_local2World[1] + tsBentNormal.z * gs_local2World[2];
+//float3	ssBentNormal = tsBentNormal;
 
 				ssBentNormal.y = -ssBentNormal.y;	// Normal textures are stored with inverted Y
 

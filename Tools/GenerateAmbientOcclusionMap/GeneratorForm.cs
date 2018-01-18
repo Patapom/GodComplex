@@ -383,8 +383,8 @@ namespace GenerateSelfShadowedBumpMap
 
 				m_CB_Input.m._textureDimensionX = W;
 				m_CB_Input.m._textureDimensionY = H;
-				m_CB_Input.m._raysCount = (UInt32) Math.Min( MAX_THREADS, integerTrackbarControlRaysCount.Value );
-				m_CB_Input.m._maxStepsCount = (UInt32) integerTrackbarControlMaxStepsCount.Value;
+				m_CB_Input.m._raysCount = (uint) Math.Min( MAX_THREADS, integerTrackbarControlRaysCount.Value );
+				m_CB_Input.m._maxStepsCount = (uint) integerTrackbarControlMaxStepsCount.Value;
 				m_CB_Input.m._tile = (uint) (checkBoxWrap.Checked ? 1 : 0);
 				m_CB_Input.m._texelSize_mm = TextureSize_mm / Math.Max( W, H );
 				m_CB_Input.m._displacement_mm = TextureHeight_mm;
@@ -396,7 +396,7 @@ namespace GenerateSelfShadowedBumpMap
 				uint	h = Math.Max( 1, MAX_LINES*1024 / W );
 				uint	CallsCount = (uint) Math.Ceiling( (float) H / h );
 				for ( int i=0; i < CallsCount; i++ ) {
-					m_CB_Input.m._Y0 = (UInt32) (i * h);
+					m_CB_Input.m._Y0 = (uint) (i * h);
 					m_CB_Input.UpdateData();
 
 					m_CS_GenerateAOMap.Dispatch( W, h, 1 );
@@ -501,8 +501,8 @@ namespace GenerateSelfShadowedBumpMap
 
 				m_CB_Input.m._textureDimensionX = W;
 				m_CB_Input.m._textureDimensionY = H;
-				m_CB_Input.m._raysCount = (UInt32) Math.Min( MAX_THREADS, integerTrackbarControlRaysCount.Value );
-				m_CB_Input.m._maxStepsCount = (UInt32) integerTrackbarControlMaxStepsCount.Value;
+				m_CB_Input.m._raysCount = (uint) Math.Min( MAX_THREADS, integerTrackbarControlRaysCount.Value );
+				m_CB_Input.m._maxStepsCount = (uint) integerTrackbarControlMaxStepsCount.Value;
 				m_CB_Input.m._tile = (uint) (checkBoxWrap.Checked ? 1 : 0);
 				m_CB_Input.m._texelSize_mm = TextureSize_mm / Math.Max( W, H );
 				m_CB_Input.m._displacement_mm = TextureHeight_mm;
@@ -515,7 +515,7 @@ namespace GenerateSelfShadowedBumpMap
 				uint	h = Math.Max( 1, MAX_LINES*1024 / W );
 				uint	callsCount = (uint) Math.Ceiling( (float) H / h );
 				for ( int i=0; i < callsCount; i++ ) {
-					m_CB_Input.m._Y0 = (UInt32) (i * h);
+					m_CB_Input.m._Y0 = (uint) (i * h);
 					m_CB_Input.UpdateData();
 
 					shaderGenerateBentCone.Dispatch( W, h, 1 );
@@ -581,7 +581,7 @@ namespace GenerateSelfShadowedBumpMap
 			uint	h = Math.Max( 1, MAX_LINES*1024 / W );
 			uint	CallsCount = (uint) Math.Ceiling( (float) H / h );
 			for ( uint i=0; i < CallsCount; i++ ) {
-				m_CB_Filter.m._Y0 = (UInt32) (i * h);
+				m_CB_Filter.m._Y0 = (uint) (i * h);
 				m_CB_Filter.UpdateData();
 
 				m_CS_BilateralFilter.Dispatch( W, h, 1 );
