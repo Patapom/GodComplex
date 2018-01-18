@@ -9,7 +9,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 //
 static const uint	MAX_THREADS = 1024;
-static const uint	ANGLE_BINS_COUNT = 16;
+static const uint	ANGLE_BINS_COUNT = 64;
 
 static const float	PI = 3.1415926535897932384626433832795;
 
@@ -140,20 +140,13 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID ) 
 		float3	lsRayDirection = _Rays[rayIndex];
 		float3	wsRayDirection = mul( lsRayDirection, gs_local2World );
 		float	occlusion = ComputeDirectionalOcclusion( gs_position, wsRayDirection );
-
-
-//occlusion = 1.0;
-
-
 		float	weight = occlusion * lsRayDirection.z;
-//float	weight = occlusion;
-//float	weight = lsRayDirection.z > 0.98 ? 1.0 : 0.0;
 
 		uint	dontCare;
-		InterlockedAdd( gs_occlusionDirectionAccumulator.x, uint(65536.0 * weight * (1.0 + wsRayDirection.x)), dontCare );
-		InterlockedAdd( gs_occlusionDirectionAccumulator.y, uint(65536.0 * weight * (1.0 + wsRayDirection.y)), dontCare );
-		InterlockedAdd( gs_occlusionDirectionAccumulator.z, uint(65536.0 * weight * (1.0 + wsRayDirection.z)), dontCare );
-		InterlockedAdd( gs_occlusionDirectionAccumulator.w, uint(65536.0 * weight), dontCare );
+		InterlockedAdd( gs_occlusionDirectionAccumulator.x, uint(65536.0 * (1.0 + weight * wsRayDirection.x)), dontCare );
+		InterlockedAdd( gs_occlusionDirectionAccumulator.y, uint(65536.0 * (1.0 + weight * wsRayDirection.y)), dontCare );
+		InterlockedAdd( gs_occlusionDirectionAccumulator.z, uint(65536.0 * (1.0 + weight * wsRayDirection.z)), dontCare );
+		InterlockedAdd( gs_occlusionDirectionAccumulator.w, 65536, dontCare );
 
 		gs_lsRayDirection[rayIndex] = lsRayDirection;
 		gs_wsRayDirection[rayIndex] = wsRayDirection;
@@ -166,11 +159,13 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID ) 
 	// Finalize average bent normal direction (unnormalized)
 	if ( rayIndex == 0 ) {
 		gs_bentNormal = float3( gs_occlusionDirectionAccumulator.xyz ) / gs_occlusionDirectionAccumulator.w - 1.0;
-		gs_occlusionDirectionAccumulator = 0;
+		gs_bentNormal = normalize( gs_bentNormal );
 
 		// Rebuild tangent space around the new bent normal
 		gs_local2World[2] = gs_bentNormal;
 		BuildOrthonormalBasis( gs_bentNormal, gs_local2World[0], gs_local2World[1] );
+
+		gs_occlusionDirectionAccumulator = 0;
 	}
 
 	GroupMemoryBarrierWithGroupSync();
@@ -180,7 +175,6 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID ) 
 	if ( rayIndex < _raysCount ) {
 		float3	wsRayDirection = gs_wsRayDirection[rayIndex];
 		float	occlusion = gs_occlusion[rayIndex];
-
 
 		#if 1
 			float3	lsRayDirection = float3(	dot( wsRayDirection, gs_local2World[0] ),
@@ -216,14 +210,14 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID ) 
 		for ( uint angleBinIndex=0; angleBinIndex < ANGLE_BINS_COUNT; angleBinIndex++ )
 			averageAngle += acos( saturate( gs_maxCosAngle[angleBinIndex] / 65536.0 ) );
 		averageAngle /= ANGLE_BINS_COUNT;
-		float	averageCos = cos( averageAngle );
+//		float	averageCos = cos( averageAngle );
+		float	averageCos = 2.0 * averageAngle / PI;	// Store as angle, makes more sense visually and brings more precision
 
-averageCos = 2.0 * averageAngle / PI;	// Store as angle, makes more sense visually and brings more precision
 
 		gs_bentNormal.y = -gs_bentNormal.y;	// Normal textures are stored with inverted Y
 
 
-//averageCos = 1.0;
+averageCos = 1.0;
 
 
 _Target[pixelPosition] = float4( 0.5 * (1.0+gs_bentNormal), averageCos );	// Ready for texture

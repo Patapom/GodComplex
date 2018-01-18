@@ -1,6 +1,4 @@
-﻿#define USE_OPTIMIZED_BENT_CONE
-
-//////////////////////////////////////////////////////////////////////////
+﻿//////////////////////////////////////////////////////////////////////////
 // Builds an AO map from a height maps
 //
 using System;
@@ -122,6 +120,7 @@ namespace GenerateSelfShadowedBumpMap
 
 			#if DEBUG
 				buttonReload.Visible = true;
+				checkBoxBruteForce.Visible = true;
 			#endif
 		}
 
@@ -509,41 +508,23 @@ namespace GenerateSelfShadowedBumpMap
 				m_CB_Input.m._displacement_mm = TextureHeight_mm;
 
 				// Start
-				#if USE_OPTIMIZED_BENT_CONE
-					if ( !m_CS_GenerateBentConeMapOpt.Use() )
-						throw new Exception( "Can't generate self-shadowed bump map as compute shader failed to compile!" );
+				Renderer.ComputeShader	shaderGenerateBentCone = checkBoxBruteForce.Checked ? m_CS_GenerateBentConeMap : m_CS_GenerateBentConeMapOpt;
+				if ( !shaderGenerateBentCone.Use() )
+					throw new Exception( "Can't generate self-shadowed bump map as compute shader failed to compile!" );
 
-					uint	h = Math.Max( 1, MAX_LINES*1024 / W );
-					uint	callsCount = (uint) Math.Ceiling( (float) H / h );
-					for ( int i=0; i < callsCount; i++ ) {
-						m_CB_Input.m._Y0 = (UInt32) (i * h);
-						m_CB_Input.UpdateData();
+				uint	h = Math.Max( 1, MAX_LINES*1024 / W );
+				uint	callsCount = (uint) Math.Ceiling( (float) H / h );
+				for ( int i=0; i < callsCount; i++ ) {
+					m_CB_Input.m._Y0 = (UInt32) (i * h);
+					m_CB_Input.UpdateData();
 
-						m_CS_GenerateBentConeMapOpt.Dispatch( W, h, 1 );
+					shaderGenerateBentCone.Dispatch( W, h, 1 );
 
-						m_device.Present( true );
+					m_device.Present( true );
 
-						progressBar.Value = (int) (0.01f * (BILATERAL_PROGRESS + (100-BILATERAL_PROGRESS) * (i+1) / (callsCount)) * progressBar.Maximum);
-						Application.DoEvents();
-					}
-				#else
-					if ( !m_CS_GenerateBentConeMap.Use() )
-						throw new Exception( "Can't generate self-shadowed bump map as compute shader failed to compile!" );
-
-					uint	h = Math.Max( 1, MAX_LINES*1024 / W );
-					uint	callsCount = (uint) Math.Ceiling( (float) H / h );
-					for ( int i=0; i < callsCount; i++ ) {
-						m_CB_Input.m._Y0 = (UInt32) (i * h);
-						m_CB_Input.UpdateData();
-
-						m_CS_GenerateBentConeMap.Dispatch( W, h, 1 );
-
-						m_device.Present( true );
-
-						progressBar.Value = (int) (0.01f * (BILATERAL_PROGRESS + (100-BILATERAL_PROGRESS) * (i+1) / (callsCount)) * progressBar.Maximum);
-						Application.DoEvents();
-					}
-				#endif
+					progressBar.Value = (int) (0.01f * (BILATERAL_PROGRESS + (100-BILATERAL_PROGRESS) * (i+1) / (callsCount)) * progressBar.Maximum);
+					Application.DoEvents();
+				}
 
 //				m_textureTarget1.RemoveFromLastAssignedSlotUAV();	// So we can use it as input for next stage
 

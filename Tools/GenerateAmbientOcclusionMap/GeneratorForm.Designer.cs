@@ -51,6 +51,7 @@
 			this.imagePanelNormalMap = new GenerateSelfShadowedBumpMap.ImagePanel();
 			this.contextMenuStripNormal = new System.Windows.Forms.ContextMenuStrip(this.components);
 			this.clearNormalToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.checkBoxBruteForce = new System.Windows.Forms.CheckBox();
 			this.panelParameters.SuspendLayout();
 			this.contextMenuStripNormal.SuspendLayout();
 			this.SuspendLayout();
@@ -162,6 +163,7 @@
 			// 
 			// panelParameters
 			// 
+			this.panelParameters.Controls.Add(this.checkBoxBruteForce);
 			this.panelParameters.Controls.Add(this.buttonGenerateBentCone);
 			this.panelParameters.Controls.Add(this.buttonTestBilateral);
 			this.panelParameters.Controls.Add(this.floatTrackbarControlMaxConeAngle);
@@ -186,10 +188,10 @@
 			this.panelParameters.Size = new System.Drawing.Size(320, 291);
 			this.panelParameters.TabIndex = 11;
 			// 
-			// button1
+			// buttonGenerateBentCone
 			// 
 			this.buttonGenerateBentCone.Location = new System.Drawing.Point(216, 256);
-			this.buttonGenerateBentCone.Name = "button1";
+			this.buttonGenerateBentCone.Name = "buttonGenerateBentCone";
 			this.buttonGenerateBentCone.Size = new System.Drawing.Size(103, 35);
 			this.buttonGenerateBentCone.TabIndex = 13;
 			this.buttonGenerateBentCone.Text = "Generate\nBent Cone";
@@ -471,6 +473,17 @@
 			this.clearNormalToolStripMenuItem.Text = "Clear Normal";
 			this.clearNormalToolStripMenuItem.Click += new System.EventHandler(this.clearNormalToolStripMenuItem_Click);
 			// 
+			// checkBoxBruteForce
+			// 
+			this.checkBoxBruteForce.AutoSize = true;
+			this.checkBoxBruteForce.Location = new System.Drawing.Point(220, 233);
+			this.checkBoxBruteForce.Name = "checkBoxBruteForce";
+			this.checkBoxBruteForce.Size = new System.Drawing.Size(81, 17);
+			this.checkBoxBruteForce.TabIndex = 14;
+			this.checkBoxBruteForce.Text = "Brute Force";
+			this.checkBoxBruteForce.UseVisualStyleBackColor = true;
+			this.checkBoxBruteForce.Visible = false;
+			// 
 			// GeneratorForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -538,6 +551,7 @@
 		private System.Windows.Forms.ContextMenuStrip contextMenuStripNormal;
 		private System.Windows.Forms.ToolStripMenuItem clearNormalToolStripMenuItem;
 		private System.Windows.Forms.Button buttonGenerateBentCone;
+		private System.Windows.Forms.CheckBox checkBoxBruteForce;
 	}
 }
 
