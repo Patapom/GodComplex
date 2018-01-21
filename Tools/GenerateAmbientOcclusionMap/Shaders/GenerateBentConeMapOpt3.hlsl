@@ -6,7 +6,20 @@
 // It's optimized in the sense it doesn't deal with the entire hemisphere of directions but rather a disk
 //	subdivided into multiple slices and for each slice we compute the forward & backward horizon (like HBAO)
 // Then we approximate the average "bent angle" which is not exactly the half angle between the 2 horizons
-//	but a cosine-weighted average of the vectors instead.
+//	but a weighted average of the vectors instead.
+//
+// Our main problem comes from the fact that the vectors should be weighted by the solid angle expressed in the tangent space given by the normal
+//	whereas we have no choice than to samples positions along a disc expressed in screen space (it's mandatory otherwise if we do our computations
+//	in tangent space then we MUST ray-trace the height field from the tangent space's plane to find where we intersect the height field below,
+//	and that would lose all interest as opposed to the brute force method that ray-casts lots of rays).
+//
+// 
+//
+//
+//
+//
+//
+//
 //
 // Technically, the brute force algorithm just does:
 //		bentNormal = 1/N * Sum{i=1,N}[ (1-V(Wi)).(Wi.N).Wi ]
@@ -73,11 +86,6 @@ Texture2D<float3>			_Tex_Normal : register( t2 );
 groupshared float3			gs_ssCenterPosition;		// Initial position, common to all rays
 groupshared float3x3		gs_local2World;
 groupshared uint4			gs_occlusionDirectionAccumulator = 0;
-//groupshared float3			gs_lsRayDirection[MAX_THREADS];
-//groupshared float3			gs_wsRayDirection[MAX_THREADS];
-//groupshared float			gs_occlusion[MAX_THREADS];
-//groupshared float3			gs_bentNormal;				// Computed direction for the bent normal
-//groupshared uint			gs_maxCosAngle[ANGLE_BINS_COUNT];
 
 
 // Build orthonormal basis from a 3D Unit Vector Without normalization [Frisvad2012])
@@ -105,30 +113,23 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID ) 
 		gs_local2World[2] = normal;
 
 		gs_ssCenterPosition = float3( pixelPosition + 0.5, (_displacement_mm / _texelSize_mm) * _Tex_Height[pixelPosition] );
-//		gs_ssCenterPosition.z = (_displacement_mm / _texelSize_mm) * _Tex_Height.SampleLevel( LinearClamp, gs_ssCenterPosition.xy / _textureDimensions, 0 );
 	}
-
-//	if ( rayIndex < ANGLE_BINS_COUNT ) {
-//		gs_maxCosAngle[rayIndex] = 0;	// Initialize to 0 since we're looking for the maximum of the cos(angle) here
-//	}
 
 	GroupMemoryBarrierWithGroupSync();
 
 	////////////////////////////////////////////////////////////////////////
 	// Average unoccluded directions to obtain main "bent normal" direction
 	if ( rayIndex < _raysCount ) {
-		float2	tsDirection;
-		sincos( PI * rayIndex / _raysCount, tsDirection.y, tsDirection.x );
-
-		float2	ssDirection = normalize( tsDirection.x * gs_local2World[0].xy + tsDirection.y * gs_local2World[1].xy );
+		float2	ssDirection;
+		sincos( PI * rayIndex / _raysCount, ssDirection.y, ssDirection.x );
 
 		float	heightFactor = _displacement_mm / _texelSize_mm;
 
 		// March many pixels around central position in the slice's direction and find the horizons
 		float3	ssPosition_Front = float3( pixelPosition + 0.5, 0.0 );
 		float3	ssPosition_Back = float3( pixelPosition + 0.5, 0.0 );
-		float	maxAngle_Front = 0.0;
-		float	minAngle_Back = PI;
+		float	maxCos_Front = -1.0;
+		float	maxCos_Back = -1.0;
 		for ( uint radius=1; radius <= _maxStepsCount; radius++ ) {
 			ssPosition_Front.xy += ssDirection;
 			ssPosition_Back.xy -= ssDirection;
@@ -141,79 +142,47 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID ) 
 			ssPosition_Front.z = _Tex_Height.SampleLevel( LinearClamp, ssPosition_Front.xy / _textureDimensions, 0 );
 			ssPosition_Front.z *= heightFactor;	// Correct against aspect ratio
 			float3	ssDeltaPosition_Front = ssPosition_Front - gs_ssCenterPosition;
-			float3	tsPosition_Front = float3( dot( ssDeltaPosition_Front, gs_local2World[0] ), dot( ssDeltaPosition_Front, gs_local2World[1] ), dot( ssDeltaPosition_Front, gs_local2World[2] ) );
-			maxAngle_Front = max( maxAngle_Front, atan2( tsPosition_Front.z, dot( tsPosition_Front.xy, tsDirection ) ) );
+			float	cos_Front = ssDeltaPosition_Front.z / sqrt( radius*radius + ssDeltaPosition_Front.z * ssDeltaPosition_Front.z );
+			maxCos_Front = max( maxCos_Front, cos_Front );
 
 			ssPosition_Back.z = _Tex_Height.SampleLevel( LinearClamp, ssPosition_Back.xy / _textureDimensions, 0 );
 			ssPosition_Back.z *= heightFactor;	// Correct against aspect ratio
 			float3	ssDeltaPosition_Back = ssPosition_Back - gs_ssCenterPosition;
-			float3	tsPosition_Back = float3( dot( ssDeltaPosition_Back, gs_local2World[0] ), dot( ssDeltaPosition_Back, gs_local2World[1] ), dot( ssDeltaPosition_Back, gs_local2World[2] ) );
-			minAngle_Back = min( minAngle_Back, atan2( tsPosition_Back.z, dot( tsPosition_Back.xy, tsDirection ) ) );
+			float	cos_Back = ssDeltaPosition_Back.z / sqrt( radius*radius + ssDeltaPosition_Back.z * ssDeltaPosition_Back.z );
+			maxCos_Back = max( maxCos_Back, cos_Back );
 		}
 
-	#if 0
-		// Perform integration of the cosine-weighted unoccluded directions between the 2 horizon angles
-//		float	sinTheta_Front = sqrt( 1.0 - maxCos_Front*maxCos_Front );
-//		float	sinTheta_Back = sqrt( 1.0 - maxCos_Back*maxCos_Back );
-//		float	sinFirstMoment = (sinTheta_Front*sinTheta_Front*sinTheta_Front - sinTheta_Back*sinTheta_Back*sinTheta_Back) / 3.0;
-
-		float	cos_Back = cos(minAngle_Back);
-		float	cos_Front = cos(maxAngle_Front);
-		float	cosFirstMoment = (cos_Back*cos_Back*cos_Back - cos_Front*cos_Front*cos_Front) / 3.0;
-
-		float3	tsBentNormal = float3( cosFirstMoment * tsDirection, sqrt( 1.0 - cosFirstMoment*cosFirstMoment ) );
-
-		float	sumWeights = 0;
-
-	#elif 0
-		// EQUI-ANGULAR DISTRIBUTION IS WRONG => Doesn't account for solid angle at the top of the hemi-circle that is reduced
 		// Half brute force where we perform the integration numerically as a sum...
-		float	thetaFront = 0.5*PI - acos( saturate( maxCos_Front ) );
-		float	thetaBack = 0.5*PI + acos( saturate( maxCos_Back ) );
+		// EQUI-ANGULAR DISTRIBUTION IS WRONG => Doesn't account for solid angle at the top of the hemi-circle that is reduced
+		float	thetaFront = acos( maxCos_Front );
+		float	thetaBack = -acos( maxCos_Back );
 
-		float3	tsBentNormal = 0.0;
+//thetaFront = 0.0;
+//thetaBack = PI;
+
+		float3	tsBentNormal = 0.01 * float3( 0, 0, 1 );
+		float	sumWeights = 0.01;
+//*
 		for ( uint i=0; i < 256; i++ ) {
 			float	theta = lerp( thetaFront, thetaBack, (i+0.5) / 256.0 );
 			float2	scTheta;
 			sincos( theta, scTheta.x, scTheta.y );
-			float3	tsUnOccludedDirection = float3( scTheta.y * tsDirection, scTheta.x );
-			float	weight = tsUnOccludedDirection.z;
-			tsBentNormal += weight * tsUnOccludedDirection;
-		}
-		tsBentNormal /= 128.0;
+			float3	ssUnOccludedDirection = float3( scTheta.x * ssDirection, scTheta.y );
 
-//ssBentNormal = float3( ssDirection, 0 );
-//ssBentNormal = gs_local2World[2];
-//ssBentNormal = float3( 1.0 * maxCos_Front, 0, 0 );
+			float3	tsUnOccludedDirection = float3( dot( ssUnOccludedDirection, gs_local2World[0] ), dot( ssUnOccludedDirection, gs_local2World[1] ), dot( ssUnOccludedDirection, gs_local2World[2] ) );
 
-		float	sumWeights = 0;
-
-	#else
-		// Half brute force where we perform the integration numerically as a sum...
-		float3	tsBentNormal = 0.0;
-		float	sumWeights = 0.0;
-		for ( uint i=0; i < 32; i++ ) {
-			float	cosTheta = (i+0.5) / 32.0;
+			float	cosTheta = max( 0.0, tsUnOccludedDirection.z );
 			float	sinTheta = sqrt( 1.0 - cosTheta*cosTheta );
-
-			// Accumulate front
-			float3	tsUnOccludedDirection = float3( sinTheta * tsDirection, cosTheta );
-			float	angle_Front = 0.5*PI - acos(cosTheta);
-			float	weight_Front = ((angle_Front > maxAngle_Front && angle_Front < minAngle_Back) ? 1.0 : 0.0) * cosTheta;
-			tsBentNormal += weight_Front * tsUnOccludedDirection;
-			sumWeights += weight_Front;
-
-			// Accumulate back
-			tsUnOccludedDirection = float3( -sinTheta * tsDirection, cosTheta );
-			float	angle_Back = 0.5*PI + acos(cosTheta);
-			float	weight_Back = ((angle_Back > maxAngle_Front && angle_Back < minAngle_Back) ? 1.0 : 0.0) * cosTheta;
-			tsBentNormal += weight_Back * tsUnOccludedDirection;
-			sumWeights += weight_Back;
+			float	weight = cosTheta * sinTheta;	// #TODO: Compute solid angle in tangent space
+			tsBentNormal += weight * tsUnOccludedDirection;
+			sumWeights += weight;
 		}
-//		tsBentNormal /= 256.0;
-//		sumWeights /= 256.0;
-
-	#endif
+//*/
+//		tsBentNormal /= sumWeights;
+//		sumWeights = 1.0;
+		tsBentNormal /= 256.0;
+		sumWeights /= 256.0;
+//		tsBentNormal += float3( 0, 0, 1e-3 );
 
 		uint	dontCare;
 		InterlockedAdd( gs_occlusionDirectionAccumulator.x, uint(65536.0 * (1.0 + tsBentNormal.x)), dontCare );
@@ -224,81 +193,18 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID ) 
 
 	GroupMemoryBarrierWithGroupSync();
 
-/*	////////////////////////////////////////////////////////////////////////
-	// Finalize average bent normal direction (unnormalized)
-	if ( rayIndex == 0 ) {
-		gs_bentNormal = float3( gs_occlusionDirectionAccumulator.xyz ) / gs_occlusionDirectionAccumulator.w - 1.0;
-		gs_occlusionDirectionAccumulator = 0;
-
-		// Rebuild tangent space around the new bent normal
-		gs_local2World[2] = gs_bentNormal;
-		BuildOrthonormalBasis( gs_bentNormal, gs_local2World[0], gs_local2World[1] );
-	}
-
-	GroupMemoryBarrierWithGroupSync();
-
-	////////////////////////////////////////////////////////////////////////
-	// Compute average cone aperture angle
-	if ( rayIndex < _raysCount ) {
-		float3	wsRayDirection = gs_wsRayDirection[rayIndex];
-		float	occlusion = gs_occlusion[rayIndex];
-
-
-		#if 1
-			float3	lsRayDirection = float3(	dot( wsRayDirection, gs_local2World[0] ),
-												dot( wsRayDirection, gs_local2World[1] ),
-												dot( wsRayDirection, gs_local2World[2] )
-											);
-
-			uint	angleBinIndex = uint( ANGLE_BINS_COUNT * (1.0 + atan2( lsRayDirection.y, lsRayDirection.x ) / PI) ) & (ANGLE_BINS_COUNT-1);
-
-			// Keep maximum cos( angle ) for each bin
-			uint	dontCare;
-			InterlockedMax( gs_maxCosAngle[angleBinIndex], uint( 65536.0 * lerp( lsRayDirection.z, 0.0, occlusion ) ), dontCare );
-		#else
-			float3	lsRayDirection = gs_lsRayDirection[rayIndex];
-
-//			float	weight = occlusion * lsRayDirection.z;
-			float	weight = occlusion;
-
-			uint	dontCare;
-			InterlockedAdd( gs_occlusionDirectionAccumulator.x, uint(65536.0 * weight * dot( wsRayDirection, gs_bentNormal )), dontCare );
-			InterlockedAdd( gs_occlusionDirectionAccumulator.w, uint(65536.0 * weight), dontCare );
-		#endif
-	}
-
-	GroupMemoryBarrierWithGroupSync();
-	*/
-
 	////////////////////////////////////////////////////////////////////////
 	// Finalize average bent normal direction (unnormalized)
 	if ( rayIndex == 0 ) {
-//		float	averageCos = float(gs_occlusionDirectionAccumulator.x) / gs_occlusionDirectionAccumulator.w;
-
-//		float	averageAngle = 0.0;
-//		for ( uint angleBinIndex=0; angleBinIndex < ANGLE_BINS_COUNT; angleBinIndex++ )
-//			averageAngle += acos( saturate( gs_maxCosAngle[angleBinIndex] / 65536.0 ) );
-//		averageAngle /= ANGLE_BINS_COUNT;
-//		float	averageCos = cos( averageAngle );
-//
-//averageCos = 2.0 * averageAngle / PI;	// Store as angle, makes more sense visually and brings more precision
-
-//		float3	tsBentNormal = (gs_occlusionDirectionAccumulator.xyz - 65536.0 * _raysCount) / 65536.0;
 		float3	tsBentNormal = (float3( gs_occlusionDirectionAccumulator.xyz ) - _raysCount * 65536.0) / gs_occlusionDirectionAccumulator.w;
-
-tsBentNormal = normalize( tsBentNormal );
+//		float	L = length( tsBentNormal );
+//		tsBentNormal = L > 1e-3 ? tsBentNormal / L : float3( 0, 0, 1 );
+tsBentNormal  = normalize( tsBentNormal );
 
 		float3	ssBentNormal = tsBentNormal.x * gs_local2World[0] + tsBentNormal.y * gs_local2World[1] + tsBentNormal.z * gs_local2World[2];
-//float3	ssBentNormal = tsBentNormal;
 
 				ssBentNormal.y = -ssBentNormal.y;	// Normal textures are stored with inverted Y
 
-//ssBentNormal = normalize( ssBentNormal );
-
 		_Target[pixelPosition] = float4( 0.5 * (1.0+ssBentNormal), 1.0 );	// Ready for texture
-//_Target[pixelPosition] = float4( 0.5 * (1.0+gs_local2World[2]), 1 );	// Ready for texture
-//_Target[pixelPosition] = float4( dot( normalize(bentNormal), gs_local2World[2] ).xxx, 1 );
-//_Target[pixelPosition] = float4( _raysCount.xxx / 2048.0, 1 );
-//_Target[pixelPosition] = float4( float2( pixelPosition ) / _textureDimensions, 0, 1 );
 	}
 }

@@ -138,7 +138,7 @@ namespace GenerateSelfShadowedBumpMap
 					m_CS_BilateralFilter = new Renderer.ComputeShader( m_device, new System.IO.FileInfo( "./Shaders/BilateralFiltering.hlsl" ), "CS", null );
 					m_CS_GenerateAOMap = new Renderer.ComputeShader( m_device, new System.IO.FileInfo( "./Shaders/GenerateAOMap.hlsl" ), "CS", null );
 					m_CS_GenerateBentConeMap = new Renderer.ComputeShader( m_device, new System.IO.FileInfo( "./Shaders/GenerateBentConeMap.hlsl" ), "CS", null );
-					m_CS_GenerateBentConeMapOpt = new Renderer.ComputeShader( m_device, new System.IO.FileInfo( "./Shaders/GenerateBentConeMapOpt2.hlsl" ), "CS", null );
+					m_CS_GenerateBentConeMapOpt = new Renderer.ComputeShader( m_device, new System.IO.FileInfo( "./Shaders/GenerateBentConeMapOpt3.hlsl" ), "CS", null );
 				}
 
 				// Create our constant buffers
@@ -566,6 +566,189 @@ namespace GenerateSelfShadowedBumpMap
 			}
 		}
 
+		#region CPU Computation (DEBUG PURPOSE)
+
+		float[,]	m_tempHeights = null;
+		float3[,]	m_tempNormals = null;
+
+		// Build orthonormal basis from a 3D Unit Vector Without normalization [Frisvad2012])
+		void BuildOrthonormalBasis( ref float3 _normal, ref float3 _tangent, ref float3 _bitangent ) {
+			float a = _normal.z > -0.9999999f ? 1.0f / (1.0f + _normal.z) : 0.0f;
+			float b = -_normal.x * _normal.y * a;
+
+			_tangent = new float3( 1.0f - _normal.x*_normal.x*a, b, -_normal.x );
+			_bitangent = new float3( b, 1.0f - _normal.y*_normal.y*a, -_normal.y );
+		}
+
+		float	SampleHeight( ref float3 _ssPosition ) {
+			int		X0 = (int) Mathf.Floor( _ssPosition.x );
+			float	x = _ssPosition.x - X0;
+					X0 = X0 & ((int)W-1);
+			int		X1 = (X0+1) & ((int)W-1);
+
+			int		Y0 = (int) Mathf.Floor( _ssPosition.x );
+			float	y = _ssPosition.x - X0;
+					Y0 = Y0 & ((int)H-1);
+			int		Y1 = (Y0+1) & ((int)H-1);
+
+			float	H00 = m_tempHeights[X0,Y0];
+			float	H10 = m_tempHeights[X1,Y0];
+			float	H01 = m_tempHeights[X0,Y1];
+			float	H11 = m_tempHeights[X1,Y1];
+			float	H0 = (1.0f-x) * H00 + x * H10;
+			float	H1 = (1.0f-x) * H01 + x * H11;
+			float	Hfinal = (1.0f-y) * H0 + y * H1;
+			return Hfinal;
+		}
+
+		private void	GenerateBentCone_CPU() {
+			try {
+				panelParameters.Enabled = false;
+
+				//////////////////////////////////////////////////////////////////////////
+				// Read back textures
+				float	pixelSize_mm = TextureSize_mm / Math.Max( W, H );
+				float	factor = TextureHeight_mm / pixelSize_mm;
+				m_tempHeights = new float[W,H];
+				m_imageSourceHeight.ReadPixels( ( uint X, uint Y, ref float4 _color ) => {
+					m_tempHeights[X,Y] = _color.y * factor;
+				} );
+
+				m_tempNormals = new float3[W,H];
+				m_imageSourceNormal.ReadPixels( (uint X, uint Y, ref float4 _color ) => {
+					m_tempNormals[X,Y].Set( 2.0f * _color.x - 1.0f, 1.0f - 2.0f * _color.y, 2.0f * _color.z - 1.0f );
+				} );
+
+				//////////////////////////////////////////////////////////////////////////
+				// Process
+				// Test: X = 238, Y = 178
+				//
+				const uint	ANGLE_STEPS = 16;
+				float		H0;
+				float3		T = float3.Zero, B = float3.Zero, N;
+				float		phi;
+				float2		tsDirection = float2.Zero, ssDirection = float2.Zero;
+				float3		ssPosition_Front = float3.Zero, ssPosition_Back = float3.Zero;
+				float3		ssDeltaPosition_Front = float3.Zero, ssDeltaPosition_Back = float3.Zero;
+				float3		tsDeltaPosition_Front = float3.Zero, tsDeltaPosition_Back = float3.Zero;
+				float		maxAngle_Front, minAngle_Back;
+				float3		tsBentNormal, ssBentNormal;
+				float		sumWeights;
+				float3		tsTempDirection = float3.Zero;
+				float		angle_Front, angle_Back;
+				float		weight_Front, weight_Back;
+				float4[,]	resultBentCone = new float4[W,H];
+
+				for ( uint Y=178; Y < H; Y++ ) {
+					for ( uint X=238; X < W; X++ ) {
+						N = m_tempNormals[X,Y];
+						BuildOrthonormalBasis( ref N, ref T, ref B );
+						H0 = m_tempHeights[X,Y];
+
+						float4	tsAccumulator = float4.Zero;
+						for ( uint angleIndex=0; angleIndex < ANGLE_STEPS; angleIndex++ ) {
+							phi = Mathf.PI * angleIndex / ANGLE_STEPS;
+							tsDirection.x = Mathf.Cos( phi );
+							tsDirection.y = Mathf.Sin( phi );
+
+							ssDirection = tsDirection.x * T.xy + ssDirection.y * B.xy;
+							ssDirection.Normalize();
+
+							ssPosition_Front.Set( X, Y, H0 );
+							ssPosition_Back.Set( X, Y, H0 );
+
+							// Gather min/max horizon angles
+							maxAngle_Front = 0.0f;
+							minAngle_Back = Mathf.PI;
+							for ( uint radius=1; radius < 100; radius++ ) {
+								ssPosition_Front.x += ssDirection.x;
+								ssPosition_Front.y += ssDirection.y;
+								ssPosition_Front.z = SampleHeight( ref ssPosition_Front );
+								ssDeltaPosition_Front.Set( ssPosition_Front.x - X, ssPosition_Front.y - Y, ssPosition_Front.z - H0 );
+								tsDeltaPosition_Front.Set( ssDeltaPosition_Front.Dot( T ), ssDeltaPosition_Front.Dot( B ), ssDeltaPosition_Front.Dot( N ) );
+//								maxAngle_Front = Mathf.Max( maxAngle_Front, Mathf.Atan2( tsDeltaPosition_Front.z, tsDeltaPosition_Front.xy.Dot( tsDirection ) ) );
+float	tsDistance = tsDeltaPosition_Front.xy.Dot( tsDirection );
+float	tsAngle = Mathf.Atan2( tsDeltaPosition_Front.z, tsDistance );
+maxAngle_Front = Mathf.Max( maxAngle_Front, tsAngle );
+
+								ssPosition_Back.x -= ssDirection.x;
+								ssPosition_Back.y -= ssDirection.y;
+								ssPosition_Back.z = SampleHeight( ref ssPosition_Back );
+								ssDeltaPosition_Back.Set( ssPosition_Back.x - X, ssPosition_Back.y - Y, ssPosition_Back.z - H0 );
+								tsDeltaPosition_Back.Set( ssDeltaPosition_Back.Dot( T ), ssDeltaPosition_Back.Dot( B ), ssDeltaPosition_Back.Dot( N ) );
+//								minAngle_Back = Mathf.Min( minAngle_Back, Mathf.Atan2( tsDeltaPosition_Back.z, tsDeltaPosition_Back.xy.Dot( tsDirection ) ) );
+tsDistance = tsDeltaPosition_Back.xy.Dot( tsDirection );
+tsAngle = Mathf.Atan2( tsDeltaPosition_Back.z, tsDistance );
+minAngle_Back = Mathf.Min( minAngle_Back, tsAngle );
+							}
+
+							// Half brute force where we perform the integration numerically as a sum...
+							tsBentNormal = float3.Zero;
+							sumWeights = 0.0f;
+							for ( uint i=0; i < 32; i++ ) {
+								float	cosTheta = (i+0.5f) / 32.0f;
+								float	sinTheta = Mathf.Sqrt( 1.0f - cosTheta*cosTheta );
+
+								// Accumulate front
+								tsTempDirection.Set( sinTheta * tsDirection.x, sinTheta * tsDirection.y, cosTheta );
+								angle_Front = 0.5f*Mathf.PI - Mathf.Acos(cosTheta);
+								weight_Front = (angle_Front > maxAngle_Front && angle_Front < minAngle_Back) ? cosTheta : 0.0f;
+								tsBentNormal += weight_Front * tsTempDirection;
+								sumWeights += weight_Front;
+
+								// Accumulate back
+								tsTempDirection.Set( -sinTheta * tsDirection.x, -sinTheta * tsDirection.y, cosTheta );
+								angle_Back = 0.5f*Mathf.PI + Mathf.Acos(cosTheta);
+								weight_Back = (angle_Back > maxAngle_Front && angle_Back < minAngle_Back) ? cosTheta : 0.0f;
+								tsBentNormal += weight_Back * tsTempDirection;
+								sumWeights += weight_Back;
+							}
+
+							tsAccumulator.x += tsBentNormal.x;
+							tsAccumulator.y += tsBentNormal.y;
+							tsAccumulator.z += tsBentNormal.z;
+							tsAccumulator.w += sumWeights;
+						}
+
+						// Store result
+						tsBentNormal = tsAccumulator.xyz;
+						tsBentNormal.Normalize();
+
+						ssBentNormal = tsBentNormal.x * T + tsBentNormal.y * B + tsBentNormal.z * N;
+						ssBentNormal.y *= -1.0f;
+
+						resultBentCone[X,Y].Set( ssBentNormal, 1.0f );
+					}
+
+					progressBar.Value = (int) (Y * progressBar.Maximum / H);
+					Application.DoEvents();
+				}
+				progressBar.Value = progressBar.Maximum;
+
+
+				//////////////////////////////////////////////////////////////////////////
+				// 3] Copy target to staging for CPU readback and update the resulting bitmap
+				if ( m_imageResult != null )
+					m_imageResult.Dispose();
+				m_imageResult = new ImageUtility.ImageFile( W, H, ImageUtility.PIXEL_FORMAT.BGRA8, new ImageUtility.ColorProfile( ImageUtility.ColorProfile.STANDARD_PROFILE.sRGB ) );
+				m_imageResult.WritePixels( ( uint _X, uint _Y, ref float4 _color ) => {
+					_color = resultBentCone[_X,_Y];
+// 					_color.Set( bentNormal[_X,_Y].xyz, 1.0f );
+// 					_color.Set( bentNormal[_X,_Y].w, bentNormal[_X,_Y].w, bentNormal[_X,_Y].w, 1.0f );
+				} );
+
+				// Assign result
+				viewportPanelResult.Bitmap = m_imageResult.AsBitmap;
+
+			} catch ( Exception _e ) {
+				MessageBox( "An error occurred during generation!\r\n\r\nDetails: ", _e );
+			} finally {
+				panelParameters.Enabled = true;
+			}
+		}
+
+		#endregion
+
 		private void	ApplyBilateralFiltering( Renderer.Texture2D _Source, Renderer.Texture2D _Target, float _BilateralRadius, float _BilateralTolerance, bool _Wrap, int _ProgressBarMax ) {
 			_Source.SetCS( 0 );
 			_Target.SetCSUAV( 0 );
@@ -684,6 +867,7 @@ namespace GenerateSelfShadowedBumpMap
 
 		private void buttonGenerateBentCone_Click( object sender, EventArgs e ) {
  			GenerateBentCone();
+// 			GenerateBentCone_CPU();
 		}
 
 		private void buttonTestBilateral_Click( object sender, EventArgs e ) {
