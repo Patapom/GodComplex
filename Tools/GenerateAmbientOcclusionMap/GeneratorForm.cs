@@ -515,7 +515,8 @@ namespace GenerateSelfShadowedBumpMap
 
 				m_CB_Input.m._textureDimensionX = W;
 				m_CB_Input.m._textureDimensionY = H;
-				m_CB_Input.m._raysCount = (uint) Math.Min( MAX_THREADS, integerTrackbarControlRaysCount.Value );
+//				m_CB_Input.m._raysCount = (uint) Math.Min( MAX_THREADS, integerTrackbarControlRaysCount.Value );
+				m_CB_Input.m._raysCount = (uint) Math.Min( 256, integerTrackbarControlRaysCount.Value );	// Useless to go above and we need to make sure we've less than 256 rays so we can store a counter on 8 bits
 				m_CB_Input.m._maxStepsCount = (uint) integerTrackbarControlMaxStepsCount.Value;
 				m_CB_Input.m._tile = (uint) (checkBoxWrap.Checked ? 1 : 0);
 				m_CB_Input.m._texelSize_mm = TextureSize_mm / Math.Max( W, H );
