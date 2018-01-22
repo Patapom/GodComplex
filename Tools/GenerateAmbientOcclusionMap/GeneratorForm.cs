@@ -118,6 +118,20 @@ namespace GenerateSelfShadowedBumpMap
 //			ImageUtility.float4	Glou1 = AdobeProfile2.XYZ2RGB( Test.ContentXYZ[0,0] );
 //			ImageUtility.float4	Glou2 = Test.Profile.XYZ2RGB( Test.ContentXYZ[0,0] );
 
+
+// 			float	phi = 0.0f;
+// 			float	thetaBack = -0.5f * Mathf.PI;
+// 			float	thetaFront = 0.5f * Mathf.PI;
+// 			float2	ssDirection = new float2( Mathf.Cos( phi ), Mathf.Sin( phi ) );
+// 			float3	ssBentNormal = float3.Zero;
+// 			for ( uint i=0; i < 256; i++ ) {
+// 				float	theta = Mathf.Lerp( thetaBack, thetaFront, (i+0.5f) / 256 );
+// 				float	sinTheta = Mathf.Sin( theta );
+// 				float	cosTheta = Mathf.Cos( theta );
+// 				float3	ssUnOccludedDirection = new float3( sinTheta * ssDirection, cosTheta );
+// 				ssBentNormal += Math.Abs( sinTheta ) * ssUnOccludedDirection;
+// 			}
+
 			#if DEBUG
 				buttonReload.Visible = true;
 				checkBoxBruteForce.Visible = true;
