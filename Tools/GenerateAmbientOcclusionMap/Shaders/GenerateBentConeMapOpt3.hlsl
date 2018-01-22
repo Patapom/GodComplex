@@ -128,8 +128,22 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID ) 
 		// March many pixels around central position in the slice's direction and find the horizons
 		float3	ssPosition_Front = float3( pixelPosition + 0.5, 0.0 );
 		float3	ssPosition_Back = float3( pixelPosition + 0.5, 0.0 );
-		float	maxCos_Front = -1.0;
-		float	maxCos_Back = -1.0;
+		#if 0
+			float	maxCos_Front = -1.0;
+			float	maxCos_Back = -1.0;
+		#else
+			// Project screen-space direction onto tangent plane
+			float3	N = gs_local2World[2];
+			float	recZdotN = abs(N.z) > 1e-6 ? 1.0 / N.z : 1e6 * sign(N.z);
+			float	hitDistance_Front = -dot( ssDirection, N.xy ) * recZdotN;
+			float3	tsDirection_Front = normalize( float3( ssDirection, hitDistance_Front ) );
+			float	maxCos_Front = tsDirection_Front.z;
+//			float	hitDistance_Back = dot( ssDirection, N.xy ) * recZdotN;
+//			float3	tsDirection_Back = normalize( float3( -ssDirection, hitDistance_Back ) );
+//			float	maxCos_Back = tsDirection_Back.z;
+			float	maxCos_Back = -tsDirection_Front.z;
+		#endif
+
 		for ( uint radius=1; radius <= _maxStepsCount; radius++ ) {
 			ssPosition_Front.xy += ssDirection;
 			ssPosition_Back.xy -= ssDirection;
@@ -159,7 +173,7 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID ) 
 
 //thetaFront = 0.0;
 //thetaBack = PI;
-
+#if 0
 		float3	tsBentNormal = 0.01 * float3( 0, 0, 1 );
 		float	sumWeights = 0.01;
 //*
@@ -183,6 +197,14 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID ) 
 		tsBentNormal /= 256.0;
 		sumWeights /= 256.0;
 //		tsBentNormal += float3( 0, 0, 1e-3 );
+#else
+		float3	ssFront = float3( sin( thetaFront ) * ssDirection, cos( thetaFront ) );
+		float3	ssBack  = float3( sin( thetaBack )  * ssDirection, cos( thetaBack ) );
+		float3	tsFront = float3( dot( ssFront, gs_local2World[0] ), dot( ssFront, gs_local2World[1] ), dot( ssFront, gs_local2World[2] ) );
+		float3	tsBack = float3( dot( ssBack, gs_local2World[0] ), dot( ssBack, gs_local2World[1] ), dot( ssBack, gs_local2World[2] ) );
+		float3	tsBentNormal = normalize( 0.01 * float3( 0, 0, 1 ) + tsFront + tsBack );
+		float	sumWeights = 1.0;
+#endif
 
 		uint	dontCare;
 		InterlockedAdd( gs_occlusionDirectionAccumulator.x, uint(65536.0 * (1.0 + tsBentNormal.x)), dontCare );
