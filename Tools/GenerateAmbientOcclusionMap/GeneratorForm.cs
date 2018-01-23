@@ -132,6 +132,32 @@ namespace GenerateSelfShadowedBumpMap
 // 				ssBentNormal += Math.Abs( sinTheta ) * ssUnOccludedDirection;
 // 			}
 
+		float	phi = 0.0f;
+		float	theta0 = 0.75f * Mathf.PI;
+		float	theta1 = 0.25f * Mathf.PI;
+
+		float2	ssDirection = new float2( Mathf.Cos( phi ), Mathf.Sin( phi ) );
+		float3	N = new float3( 1, 2, 1 ).Normalized;
+
+		float	cosAlpha = N.Dot( float3.UnitZ );
+		float	sinAlpha = Mathf.Sqrt( 1.0f - cosAlpha*cosAlpha );
+		float	cosPhi = N.xy.Normalized.Dot( ssDirection );
+
+		float	cosTheta0 = Mathf.Cos( theta0 );
+		float	sinTheta0 = Mathf.Sin( theta0 );
+		float	cosTheta1 = Mathf.Cos( theta1 );
+		float	sinTheta1 = Mathf.Sin( theta1 );
+		float	cosTheta0_3 = cosTheta0*cosTheta0*cosTheta0;
+		float	sinTheta0_3 = sinTheta0*sinTheta0*sinTheta0;
+		float	cosTheta1_3 = cosTheta1*cosTheta1*cosTheta1;
+		float	sinTheta1_3 = sinTheta1*sinTheta1*sinTheta1;
+
+// 		float	X = cosAlpha * (sinTheta0_3 - sinTheta1_3) + sinAlpha * cosPhi * (cosTheta0_3 - 3*cosTheta0 + cosTheta1_3 - 3*cosTheta1 + 4) + sinAlpha * (cosTheta1_3 - 3*cosTheta1);
+// 		float	Y = cosAlpha * (cosTheta1_3 - cosTheta0_3) + sinAlpha * cosPhi * (sinTheta0_3 + sinTheta1_3) + sinAlpha * sinTheta1_3;
+
+		float	X = cosAlpha * (sinTheta0_3 - sinTheta1_3) + sinAlpha * cosPhi * (cosTheta0_3 - 3*cosTheta0 + cosTheta1_3 - 3*cosTheta1 + 4) - sinAlpha * (cosTheta1_3 - 3*cosTheta1 + 2);
+		float	Y = cosAlpha * (2 - cosTheta1_3 - cosTheta0_3) + sinAlpha * cosPhi * (sinTheta0_3 - sinTheta1_3) + sinAlpha * sinTheta1_3;
+
 			#if DEBUG
 				buttonReload.Visible = true;
 				checkBoxBruteForce.Visible = true;

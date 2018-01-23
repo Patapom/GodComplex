@@ -168,55 +168,116 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID ) 
 		}
 
 		// Compute the "average" bent normal weighted by the cos(alpha) where alpha is the angle with the actual normal
-#if 1
-		// Half brute force where we perform the integration numerically as a sum...
-		float	thetaFront = acos( maxCos_Front );
-		float	thetaBack = -acos( maxCos_Back );
+		#if 1
+			// Half brute force where we perform the integration numerically as a sum...
+			// This solution is prefered to the analytical integral that shows some precision artefacts unfortunately...
+			//
+			float	thetaFront = acos( maxCos_Front );
+			float	thetaBack = -acos( maxCos_Back );
 
-		float3	ssBentNormal = 0.001 * N;
-		const uint	STEPS_COUNT = 256;
-		for ( uint i=0; i < STEPS_COUNT; i++ ) {
-			float	theta = lerp( thetaBack, thetaFront, (i+0.5) / STEPS_COUNT );
-			float2	scTheta;
-			sincos( theta, scTheta.x, scTheta.y );
-			float3	ssUnOccludedDirection = float3( scTheta.x * ssDirection, scTheta.y );
+			float3	ssBentNormal = 0.001 * N;
+			const uint	STEPS_COUNT = 256;
+			for ( uint i=0; i < STEPS_COUNT; i++ ) {
+				float	theta = lerp( thetaBack, thetaFront, (i+0.5) / STEPS_COUNT );
+				float2	scTheta;
+				sincos( theta, scTheta.x, scTheta.y );
+				float3	ssUnOccludedDirection = float3( scTheta.x * ssDirection, scTheta.y );
 
-			float	cosAlpha = saturate( dot( ssUnOccludedDirection, N ) );
+				float	cosAlpha = saturate( dot( ssUnOccludedDirection, N ) );
 
-			float	weight = cosAlpha * abs(scTheta.x);		// cos(alpha) * sin(theta).dTheta
-			ssBentNormal += weight * ssUnOccludedDirection;
-		}
+				float	weight = cosAlpha * abs(scTheta.x);		// cos(alpha) * sin(theta).dTheta
+				ssBentNormal += weight * ssUnOccludedDirection;
+			}
 
-		float	dTheta = (thetaFront - thetaBack) / STEPS_COUNT; 
-		ssBentNormal *= dTheta;
+			float	dTheta = (thetaFront - thetaBack) / STEPS_COUNT;
+			ssBentNormal *= dTheta;
 
-		uint	dontCare;
-		InterlockedAdd( gs_occlusionDirectionAccumulator.x, uint(65536.0 * (1.0 + ssBentNormal.x)), dontCare );
-		InterlockedAdd( gs_occlusionDirectionAccumulator.y, uint(65536.0 * (1.0 + ssBentNormal.y)), dontCare );
-		InterlockedAdd( gs_occlusionDirectionAccumulator.z, uint(65536.0 * (1.0 + ssBentNormal.z)), dontCare );
-#else
-//		float3	ssFront = float3( sin( thetaFront ) * ssDirection, cos( thetaFront ) );
-//		float3	ssBack  = float3( sin( thetaBack )  * ssDirection, cos( thetaBack ) );
-//		float3	tsFront = float3( dot( ssFront, gs_local2World[0] ), dot( ssFront, gs_local2World[1] ), dot( ssFront, gs_local2World[2] ) );
-//		float3	tsBack = float3( dot( ssBack, gs_local2World[0] ), dot( ssBack, gs_local2World[1] ), dot( ssBack, gs_local2World[2] ) );
-//		float3	tsBentNormal = normalize( 0.01 * float3( 0, 0, 1 ) + tsFront + tsBack );
-//		float	sumWeights = 1.0;
+			uint	dontCare;
+			InterlockedAdd( gs_occlusionDirectionAccumulator.x, uint(65536.0 * (1.0 + ssBentNormal.x)), dontCare );
+			InterlockedAdd( gs_occlusionDirectionAccumulator.y, uint(65536.0 * (1.0 + ssBentNormal.y)), dontCare );
+			InterlockedAdd( gs_occlusionDirectionAccumulator.z, uint(65536.0 * (1.0 + ssBentNormal.z)), dontCare );
 
-		float	theta0 = acos( maxCos_Front );
-		float	theta1 = -acos( maxCos_Back );
+		#elif 1
+			// Integral computation
+			// The result is not as accurate as the method above and some noise artefacts pop up
+			//
+			// The idea is to integrate the contribution of a direction vector W(theta) = {sin(theta), cos(theta), 0} expressed in the current slice
+			//	and weighted with the dot( W, N ) and the solid angle sin(theta).dTheta.
+			// W is split into its X and Y integration in the following way:
+			//	~X = Integral[0,theta0]{ sin(theta).cos(psi).sin(theta).dtheta } - Integral[0,theta1]{ sin(theta).cos(psi).sin(theta).dtheta }
+			//	~Y = Integral[0,theta0]{ cos(theta).cos(psi).sin(theta).dtheta } + Integral[0,theta1]{ cos(theta).cos(psi).sin(theta).dtheta }
+			//
+			// psi is the angle between W(theta) and N and can be found from the spherical law of cosines (https://en.wikipedia.org/wiki/Spherical_law_of_cosines):
+			//	• We are given the length of 2 sides which are
+			//		theta, the angle between W and the Z axis (0,0,1)
+			//		alpha, the angle between the normal and the Z axis
+			//	• We know the azimutal angle phi between the slice and the plane containing Z and the normal
+			//
+			// Thus cos(psi) = cos(theta).cos(alpha) + sin(theta).sin(alpha).cos(phi)
+			//
+			// I'll spare you the computation details as it's kind of verbose but in the end we basically have to integrate sin²(x).cos(x) or cos²(x).sin(x)
+			//	or even sin^3(x) and re-order the terms properly...
+			//
+			float	cosAlpha = N.z;// saturate( dot( N, float3( 0, 0, 1 ) ) );
+			float	sinAlpha = sqrt( 1.0 - cosAlpha*cosAlpha );
+			float	cosPhi = dot( normalize( N.xy ), ssDirection );
 
-		float	I1 = (cos(3*theta0) + cos(3*theta1) - 9*(cos(theta0) + cos(theta1)) + 16) / 12;
-		float	I2 = (pow( sin(theta0), 3.0 ) + pow( sin( theta1 ), 3.0 )) / 3;
-		float3	ssBentNormal = float3(	PI * I1 * N.x / 2,
-										PI * N.y * I1 / 2 + 2 * I2 * N.z,
-										2 * I1 * N.y + PI * I2 * N.z
-									);
+			#if 1
+				float	cosTheta0 = maxCos_Front;
+				float	cosTheta0_2 = cosTheta0 * cosTheta0;
+				float	cosTheta0_3 = cosTheta0_2 * cosTheta0;
+				float	sinTheta0_2 = 1.0 - cosTheta0_2;
+				float	sinTheta0 = sqrt( sinTheta0_2 );
+				float	sinTheta0_3 = sinTheta0_2 * sinTheta0;
 
-		uint	dontCare;
-		InterlockedAdd( gs_occlusionDirectionAccumulator.x, uint(65536.0 * (1.0 + ssBentNormal.x)), dontCare );
-		InterlockedAdd( gs_occlusionDirectionAccumulator.y, uint(65536.0 * (1.0 + ssBentNormal.y)), dontCare );
-		InterlockedAdd( gs_occlusionDirectionAccumulator.z, uint(65536.0 * (1.0 + ssBentNormal.z)), dontCare );
-#endif
+				float	cosTheta1 = maxCos_Back;
+				float	cosTheta1_2 = cosTheta1 * cosTheta1;
+				float	cosTheta1_3 = cosTheta1_2 * cosTheta1;
+				float	sinTheta1_2 = 1.0 - cosTheta1_2;
+				float	sinTheta1 = sqrt( sinTheta1_2 );
+				float	sinTheta1_3 = sinTheta1_2 * sinTheta1;
+			#else
+				// Detailed computaiton
+				float	theta0 = acos( maxCos_Front );
+				float	theta1 = acos( maxCos_Back );
+
+				float	cosTheta0 = cos( theta0 );
+				float	sinTheta0 = sin( theta0 );
+				float	cosTheta1 = cos( theta1 );
+				float	sinTheta1 = sin( theta1 );
+				float	cosTheta0_3 = cosTheta0*cosTheta0*cosTheta0;
+				float	sinTheta0_3 = sinTheta0*sinTheta0*sinTheta0;
+				float	cosTheta1_3 = cosTheta1*cosTheta1*cosTheta1;
+				float	sinTheta1_3 = sinTheta1*sinTheta1*sinTheta1;
+			#endif
+
+			float	X = cosAlpha * (sinTheta0_3 - sinTheta1_3) + sinAlpha * cosPhi * (4.0 - 3.0*(cosTheta0 + cosTheta1_3) + cosTheta0_3 + cosTheta1_3) - sinAlpha * (2.0 - 3.0*cosTheta1 + cosTheta1_3);
+			float	Y = cosAlpha * (2.0 - cosTheta1_3 - cosTheta0_3) + sinAlpha * cosPhi * (sinTheta0_3 - sinTheta1_3) + sinAlpha * sinTheta1_3;
+			float3	ssBentNormal = float3( X * ssDirection, Y );
+					ssBentNormal = normalize( ssBentNormal );
+
+			uint	dontCare;
+			InterlockedAdd( gs_occlusionDirectionAccumulator.x, uint(65536.0 * (1.0 + ssBentNormal.x)), dontCare );
+			InterlockedAdd( gs_occlusionDirectionAccumulator.y, uint(65536.0 * (1.0 + ssBentNormal.y)), dontCare );
+			InterlockedAdd( gs_occlusionDirectionAccumulator.z, uint(65536.0 * (1.0 + ssBentNormal.z)), dontCare );
+
+		#else
+			// Martin's integral computation (didn't manage to make it work :'()
+			float	theta0 = -acos( maxCos_Front );
+			float	theta1 = acos( maxCos_Back );
+
+			float	I1 = (pow( cos(theta0), 3.0 ) + pow( cos(theta1), 3.0 )) / 3.0 - (cos(theta0) + cos(theta1)) + 4.0 / 3.0;
+			float	I2 = 2.0 - (pow( cos(theta0), 3.0 ) + pow( cos(theta1), 3.0 ));
+			float3	ssBentNormal = float3(	N.x * I1 * PI / 2.0,
+											N.y * I1 * PI / 2.0,
+											N.z * I2 * PI / 3.0
+										);
+
+			uint	dontCare;
+			InterlockedAdd( gs_occlusionDirectionAccumulator.x, uint(65536.0 * (1.0 + ssBentNormal.x)), dontCare );
+			InterlockedAdd( gs_occlusionDirectionAccumulator.y, uint(65536.0 * (1.0 + ssBentNormal.y)), dontCare );
+			InterlockedAdd( gs_occlusionDirectionAccumulator.z, uint(65536.0 * (1.0 + ssBentNormal.z)), dontCare );
+		#endif
 
 		// Accumulate horizon angles & their variance
 		// We're using running variance computation from https://www.johndcook.com/blog/standard_deviation/
@@ -246,17 +307,21 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID ) 
 		float3	ssBentNormal = float3( gs_occlusionDirectionAccumulator.xyz ) - _raysCount * 65536.0;
 				ssBentNormal = normalize( ssBentNormal );
 
-		uint	finalCount = gs_horizonAngleAccumulator.x >> 24;
-				finalCount = finalCount == 0 ? 256 : finalCount;	// When rays count == 256, the counter gets overflowed
-		float	averageAngle = ((gs_horizonAngleAccumulator.x & 0x00FFFFFFU) / 65536.0) / max( 1, finalCount );
-		float	varianceAngle = (gs_horizonAngleAccumulator.y / 256.0) / max( 1, finalCount-1 );
-		float	stdDeviation = sqrt( varianceAngle );
+		#if 1
+			uint	finalCount = gs_horizonAngleAccumulator.x >> 24;
+					finalCount = finalCount == 0 ? 256 : finalCount;	// When rays count == 256, the counter gets overflowed
+			float	averageAngle = ((gs_horizonAngleAccumulator.x & 0x00FFFFFFU) / 65536.0) / max( 1, finalCount );
+			float	varianceAngle = (gs_horizonAngleAccumulator.y / 256.0) / max( 1, finalCount-1 );
+			float	stdDeviation = sqrt( varianceAngle );
 
 //stdDeviation = cos( 0.5 * PI * stdDeviation );
 
-		float	normalWeight = cos( 0.5 * PI * averageAngle );
-//		ssBentNormal = normalWeight > 0.0 ? normalWeight * ssBentNormal : gs_local2World[2];
-		ssBentNormal = max( 0.01, normalWeight ) * ssBentNormal;
+			float	normalWeight = cos( 0.5 * PI * averageAngle );
+//			ssBentNormal = normalWeight > 0.0 ? normalWeight * ssBentNormal : gs_local2World[2];
+			ssBentNormal = max( 0.01, normalWeight ) * ssBentNormal;
+		#else
+			float	stdDeviation = 0.0;
+		#endif
 
 		ssBentNormal.y = -ssBentNormal.y;	// Normal textures are stored with inverted Y
 
