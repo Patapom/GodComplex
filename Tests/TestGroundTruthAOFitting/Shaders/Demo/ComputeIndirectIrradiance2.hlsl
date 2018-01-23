@@ -235,6 +235,7 @@ PS_OUT	PS( VS_IN _In ) {
 //	Out.bentCone = float4( max( 0.01, cos( averageConeAngle ) ) * ssAverageBentNormal, 1.0 - stdDeviation );
 ssAverageBentNormal.y *= -1.0;
 Out.bentCone = float4( ssAverageBentNormal, 1.0 );
+Out.bentCone = float4( 0.1 * averageConeAngle.xxx / PI, 1.0 );
 
 //ssAverageBentNormal.y *= -1.0;
 //Out.bentCone = float4( 0.5 * (1.0+ssAverageBentNormal), 1.0 );
