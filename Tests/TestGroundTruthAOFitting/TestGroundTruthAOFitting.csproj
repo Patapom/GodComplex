@@ -227,6 +227,7 @@
     <Content Include="Shaders\Demo\ComputeGroundTruth.hlsl" />
     <Content Include="Shaders\Demo\ComputeIndirectMap.hlsl" />
     <Content Include="Shaders\Demo\ComputeIndirectIrradiance.hlsl" />
+    <Content Include="Shaders\Demo\ComputeIndirectIrradiance2.hlsl" />
     <Content Include="Shaders\Demo\FilterIndirectIrradiance.hlsl" />
     <Content Include="Shaders\Demo\SphericalHarmonics.hlsl" />
     <None Include="Shaders\Demo\Global.hlsl" />
@@ -236,22 +237,22 @@
   <ItemGroup>
     <PublishFile Include="Shaders\BilateralFiltering.hlsl">
       <Visible>False</Visible>
-      <PublishState>Exclude</PublishState>
-      <IncludeHash>True</IncludeHash>
       <Group>
       </Group>
       <TargetPath>
       </TargetPath>
+      <PublishState>Exclude</PublishState>
+      <IncludeHash>True</IncludeHash>
       <FileType>File</FileType>
     </PublishFile>
     <PublishFile Include="Shaders\GenerateAOMap.hlsl">
       <Visible>False</Visible>
-      <PublishState>Exclude</PublishState>
-      <IncludeHash>True</IncludeHash>
       <Group>
       </Group>
       <TargetPath>
       </TargetPath>
+      <PublishState>Exclude</PublishState>
+      <IncludeHash>True</IncludeHash>
       <FileType>File</FileType>
     </PublishFile>
   </ItemGroup>
