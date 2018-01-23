@@ -100,6 +100,7 @@ float3	EvaluateSHIrradianceBentCone( float4 _bentCone, float2 _AO_E0, float3 _SH
 	// Reduce bent cone angle
 	// TODO: Compute it better to avoid using this!!! STOP USING MIN/MAX, THIS IS SHIT!
 	_bentCone.w = 0.2 + 0.8 * saturate( _bentCone.w );
+//	_bentCone.w = 0.99;
 
 	// Estimate reduced irradiance in the bent cone's direction
 	float3	bentNormal = normalize( _bentCone.xyz );
@@ -198,11 +199,11 @@ E0 *= lerp( 1.0, boostFactor, _debugValue.y );	// _debugValue.y = 0.5185
 		result = resultGroundTruth;
 
 	if ( _flags & 0x10U )
-		result = abs( resultAnalytical - GroundTruth( UV, _rho ) );	// Show difference
+		result = abs( result - GroundTruth( UV, _rho ) );	// Show difference
 
 //result = 0.1 * _texIrradiance.Sample( LinearClamp, UV ).xyz;
-result = _texComputedBentCone.Sample( LinearClamp, UV ).xyz;
 //result = _texComputedBentCone.Sample( LinearClamp, UV ).w;
+result = _texComputedBentCone.Sample( LinearClamp, UV ).xyz;
 
 	return _exposure * result;
 }

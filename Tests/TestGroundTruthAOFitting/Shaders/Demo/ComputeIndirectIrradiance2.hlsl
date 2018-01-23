@@ -36,7 +36,7 @@ struct PS_OUT {
 };
 
 VS_IN	VS( VS_IN _In ) { return _In; }
-
+/*
 float2	CameraSpacePosition_mm2UV( float3 _position_mm ) {
 	return _position_mm.xy / (_texelSize_mm * _textureDimensions);
 }
@@ -70,31 +70,22 @@ float3	Project( float3 _csPosition_mm, float3 _csCenterPosition_mm, float3 _T, f
 float	IntegrateSolidAngle( float _cos2Theta0, float _cos2Theta1 ) {
 	return 0.5 * (_cos2Theta0 - _cos2Theta1);
 }
-
-// Samples the radiance reflected from a screen-space position located around 
+*/
+// Samples the radiance reflected from a screen-space position located around the center pixel position
 //	_ssPosition, the screen-space position to sample
-//	_csCenterPosition_mm, the camera-space center position
-//	_radius_mm, the radius (in millimeters) from the center position
+//	_radius, the radius from the center position
 //	T, B, N, the local tangent space
 //	_centerRho, the reflectance of the center pixel (fallback only necessary if no albedo map is available)
-//	_maxCos2, the floating max cos²(theta) that indicates the perceived horzion
+//	_maxCos, the floating max cos(theta) that indicates the perceived horzion
 //
-float3	SampleRadiance( float2 _ssPosition, float3 _csCenterPosition_mm, float _radius_mm, float3 _T, float3 _B, float3 _N, float3 _centerRho, inout float _maxCos2 ) {
-	// Transform screen-space position into tangent-space position
-	float3	csNeighborCameraPosition_mm = GetCameraSpacePosition_mm( _ssPosition );
-	float3	lsNeighborPosition_mm = Project( csNeighborCameraPosition_mm, _csCenterPosition_mm, _T, _B, _N );
+float3	SampleRadiance( float2 _ssPosition, float _radius, float3 _T, float3 _B, float3 _N, float3 _centerRho, inout float _maxCos ) {
 
-//return float3( csNeighborCameraPosition_mm.xy / 1000.0, 0 );
-//return float3( lsNeighborPosition_mm.xy / 10.0, 0 );
-//return (csNeighborCameraPosition_mm - _csCenterPosition_mm) / 20.0;
-//return float3( (csNeighborCameraPosition_mm - _csCenterPosition_mm).xy / 20.0, 0 );
-
-	float	H2 = lsNeighborPosition_mm.z*lsNeighborPosition_mm.z;
-	float	hyp2 = _radius_mm*_radius_mm + H2;	// Square hypotenuse
-	float	cos2 = H2 / hyp2;					// Square cosine
-//return 0.01 * hyp2;
-//return cos2;
-	if ( cos2 <= _maxCos2 )
+	// Sample new height and update horizon angle
+	float	H = (_displacement_mm / _texelSize_mm) * _texHeight.SampleLevel( SAMPLER, _ssPosition / _textureDimensions, 0.0 );
+	float	H2 * H * H;
+	float	hyp2 = _radius*_radius + H2;	// Square hypotenuse
+	float	cosHorizon = H / sqrt( hyp2 );	// Cosine to horizon angle
+	if ( cosHorizon <= _maxCos )
 		return 0.0;	// Below the horizon... No visible contribution.
 
 	// Compute bounced incoming radiance
@@ -109,32 +100,19 @@ float3	SampleRadiance( float2 _ssPosition, float3 _csCenterPosition_mm, float _r
 
 	// #TODO: Integrate with linear interpolation of irradiance as well??
 
-	_maxCos2 = cos2;		// Register a new positive horizon
+	_maxCos = cosHorizon;		// Register a new positive horizon
 
 	return incomingRadiance;
 }
 
 PS_OUT	PS( VS_IN _In ) {
-//	float2	UV = _In.__Position.xy / _resolution;
-//	float2	AO_E0 = _texAO.Sample( SAMPLER, UV );
-//	return AO_E0.x / (2.0*PI);
-
 	// Retrieve central height and TBN
-//	float3	csCenterPosition_mm = float3( _texelSize_mm * _In.__Position.xy, 0.0 );
-//			csCenterPosition_mm.z = _displacement_mm * _texHeight.SampleLevel( SAMPLER, CameraSpacePosition_mm2UV( csCenterPosition_mm ), 0.0 );
-	float3	csCenterPosition_mm = GetCameraSpacePosition_mm( _In.__Position.xy );
-	float3	N = 2.0 * _texNormal.SampleLevel( SAMPLER, CameraSpacePosition_mm2UV( csCenterPosition_mm ), 0.0 ).xyz - 1.0;
+	float3	N = 2.0 * _texNormal[_In.__Position.xy].xyz - 1.0;
 //			N.y *= -1.0;
 	float3	T, B;
 	BuildOrthonormalBasis( N, T, B );
 
 	float3	centerRho = _rho;	// Uniform reflectance
-
-	float	verticalRatio = _texelSize_mm / _displacement_mm;
-//	float	verticalRatio = _displacement_mm / _texelSize_mm;
-//	T.z *= verticalRatio;
-//	B.z *= verticalRatio;
-//	N.z *= verticalRatio;
 
 	// Samples circular surroundings in screen space
 	float3	tsAverageBentNormal = 0.0;
@@ -150,69 +128,58 @@ PS_OUT	PS( VS_IN _In ) {
 		uint	angleIndex = 0;
 	#endif
 
-		// Compute normalized screen-space and tangent-space direction
+		// Compute direction of the screen-space slice
 		float	phi = PI * angleIndex / MAX_ANGLES;
 		float2	ssDirection;
 		sincos( phi, ssDirection.y, ssDirection.x );
 
-		float2	tsDirection = float2( dot( ssDirection, T.xy ), dot( ssDirection, B.xy ) );
-		float	L = length( tsDirection );
-				tsDirection *= L > 0.0 ? 1.0 / L : 0.0;
+		// Project screen-space direction onto tangent plane to determine max possible horizon angles
+		float	recZdotN = abs(N.z) > 1e-6 ? 1.0 / N.z : 1e6 * sign(N.z);
+		float	hitDistance_Front = -dot( ssDirection, N.xy ) * recZdotN;
+		float3	tsDirection_Front = normalize( float3( ssDirection, hitDistance_Front ) );
+		float	maxCos_Front = tsDirection_Front.z;
+		float	maxCos_Back = -tsDirection_Front.z;
 
-// #TODO: Project first, convert in mm, use this to advance in SS in //, reproject?
+		// Accumulate perceived irradiance in front and back & update floating horizon (in the form of cos(horizon angle))
+		float2	ssPosition_Front = _In.__Position.xy;
+		float2	ssPosition_Back = _In.__Position.xy;
+		float2	ssStep = ssDirection * RADIUS_STEP_SIZE;
 
-		// Accumulate perceived irradiance in front & back + update floating horizon (in the form of cos²(horizon angle))
-		float	maxCos2_p = 1e-3;	// Initialize positive horizon to flat
-		float	maxCos2_n = 1e-3;	// Initialize negative horizon to flat
 		for ( uint radiusIndex=1; radiusIndex <= MAX_RADIUS; radiusIndex++ ) {
-			float	radiusPixel = RADIUS_STEP_SIZE * radiusIndex;
-			float	radius_mm = _texelSize_mm * radiusPixel;
-			sumIrradiance += SampleRadiance( _In.__Position.xy + radiusPixel * ssDirection, csCenterPosition_mm, radius_mm, T, B, N, centerRho, maxCos2_p );	// Sample forward
-			sumIrradiance += SampleRadiance( _In.__Position.xy - radiusPixel * ssDirection, csCenterPosition_mm, radius_mm, T, B, N, centerRho, maxCos2_n );	// Sample backward
+			ssPosition_Front += ssStep;
+			ssPosition_Back -= ssStep;
+			sumIrradiance += SampleRadiance( ssPosition_Front, radius, T, B, N, centerRho, maxCos_Front );	// Sample forward
+			sumIrradiance += SampleRadiance( ssPosition_Back, radius, T, B, N, centerRho, maxCos_Back );	// Sample backward
 		}
 
-
-//maxCos2_p = 0;
-//maxCos2_n = 0;
-
 		// Accumulate bent normal direction by rebuilding and averaging the front & back horizon vectors
-#if 0
-// =========================
-// STOOPID 3D VERSION
-		float3	tsHorizon_p = float3( (1.0 - maxCos2_p) * tsDirection, maxCos2_p );	// UN-NORMALIZED!!
-		#if 1
-		// Verbose
-			float3	tsHorizon_n = float3( (maxCos2_n - 1.0) * tsDirection, maxCos2_n );	// UN-NORMALIZED!!
-//			float3	tsBentNormal = normalize( tsHorizon_p + tsHorizon_n );
-			float3	tsBentNormal = tsHorizon_p + tsHorizon_n;
-			tsAverageBentNormal += tsBentNormal;
-		#else
-		// Optimized
-			float3	tsBentNormal = float3( (maxCos2_n - maxCos2_p) * tsDirection, maxCos2_n + maxCos2_p );
-			tsAverageBentNormal += tsBentNormal;
-		#endif
+		// Half brute force where we perform the integration numerically as a sum...
+		// This solution is prefered to the analytical integral that shows some precision artefacts unfortunately...
+		//
+		float	thetaFront = acos( maxCos_Front );
+		float	thetaBack = -acos( maxCos_Back );
 
-		// Update average aperture angle and variance
-		#if 1
-			float	coneAngle = acos( saturate( dot( tsBentNormal, normalize( tsHorizon_p ) ) ) );	// #TODO: Optimize! Can't exploit cos² and sin² for a fast dot?
-		#else
-			float	sqSinConeAngle = dot( tsBentNormal, tsBentNormal ) / (4.0 * dot( tsHorizon_p, tsHorizon_p ));	// Build parallelogram with the 2 horizon vectors and the normal, realize half normal + one of the vectors forms a right triangle, find angle...
-			float	coneAngle = asin( saturate( sqrt( sqSinConeAngle ) ) );
-		#endif
-#else
-// =========================
-// SIMPLE 2D VERSION
-//		float2	horizon_p = float2( 1.0 - maxCos2_p, maxCos2_p );
-//		float2	horizon_n = float2( maxCos2_n - 1.0, maxCos2_n );
-//		float2	halfVector = horizon_n + horizon_p;
-		float2	halfVector = float2( maxCos2_n - maxCos2_p, 1e-3 + maxCos2_n + maxCos2_p );	// Optimized
-				halfVector = normalize( halfVector );
-		float3	tsBentNormal = float3( halfVector.x * tsDirection, halfVector.y );
-		tsAverageBentNormal += tsBentNormal;
+		float3	ssBentNormal = 0.001 * N;
+		const uint	STEPS_COUNT = 256;
+		for ( uint i=0; i < STEPS_COUNT; i++ ) {
+			float	theta = lerp( thetaBack, thetaFront, (i+0.5) / STEPS_COUNT );
+			float2	scTheta;
+			sincos( theta, scTheta.x, scTheta.y );
+			float3	ssUnOccludedDirection = float3( scTheta.x * ssDirection, scTheta.y );
 
-		// Update average aperture angle and variance
-		float	coneAngle = acos( saturate( dot( halfVector, normalize( float2( 1.0 - maxCos2_p, maxCos2_p ) ) ) ) );
-#endif
+			float	cosAlpha = saturate( dot( ssUnOccludedDirection, N ) );
+
+			float	weight = cosAlpha * abs(scTheta.x);		// cos(alpha) * sin(theta).dTheta  (be very careful to take abs(sin(theta)) because our theta crosses the pole and becomes negative here!)
+			ssBentNormal += weight * ssUnOccludedDirection;
+		}
+
+		float	dTheta = (thetaFront - thetaBack) / STEPS_COUNT;
+		ssBentNormal *= dTheta;
+		ssBentNormal = normalize( ssBentNormal );
+
+		// Compute cone angle
+		float3	ssHorizon = float3( sqrt( 1.0 - maxCos_Front*maxCos_Front ) * ssDirection, maxCos_Front );
+		float	coneAngle = acos( dot( ssBentNormal, ssHorizon ) );
 
 		// We're using running variance computation from https://www.johndcook.com/blog/standard_deviation/
 		//	Avg(N) = Avg(N-1) + [V(N) - Avg(N-1)] / N
@@ -220,12 +187,12 @@ PS_OUT	PS( VS_IN _In ) {
 		// And variance = S(finalN) / (finalN-1)
 		//
 		float	previousAverageConeAngle = averageConeAngle;
-		averageConeAngle += (coneAngle + averageConeAngle) * (angleIndex+1);
+		averageConeAngle += (coneAngle + averageConeAngle) / (angleIndex+1);
 		varianceConeAngle += (coneAngle - previousAverageConeAngle) * (coneAngle - averageConeAngle); 
 	}
 
 	// Finalize bent cone
-	#if MAX_ANGLES > 1
+	#if MAX_ANGLES > 2
 		varianceConeAngle /= MAX_ANGLES - 1;
 	#endif
 	tsAverageBentNormal /= MAX_ANGLES;

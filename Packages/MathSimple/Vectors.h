@@ -73,6 +73,8 @@ namespace SharpMath {
 		float2	Saturate()						{ return float2( Mathf::Clamp( x, 0, 1 ), Mathf::Clamp( y, 0, 1 ) ); }
 
 		float	Dot( float2 b )		{ return x*b.x + y*b.y; }
+		void	Normalize()			{ float recLength = 1.0f / Length; x *= recLength; y *= recLength; }
+
 		float3	Cross( float2 b );
 		float	CrossZ( float2 b )	{ return x * b.y - y * b.x; }	// Returns the Z component of the orthogonal vector
 

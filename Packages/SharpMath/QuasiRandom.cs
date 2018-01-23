@@ -53,7 +53,7 @@ namespace SharpMath
 		}
 		public float3[]	MapSequenceToSphere( double[,] _sequence, double _maxTheta ) {
 			if ( _sequence.GetLength( 1 ) != 2 )
-				throw new Exception( "Expecting a 2-dimensional sequence !" );
+				throw new Exception( "Expecting a 2-dimensional sequence!" );
 
 			double		cosMaxTheta = Math.Cos( _maxTheta );
 //			double		exponent = 1.0 / (1.0 + _lobeExponent);

@@ -168,7 +168,7 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID ) 
 		}
 
 		// Compute the "average" bent normal weighted by the cos(alpha) where alpha is the angle with the actual normal
-		#if 1
+		#if 0
 			// Half brute force where we perform the integration numerically as a sum...
 			// This solution is prefered to the analytical integral that shows some precision artefacts unfortunately...
 			//
@@ -196,6 +196,10 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID ) 
 			InterlockedAdd( gs_occlusionDirectionAccumulator.x, uint(65536.0 * (1.0 + ssBentNormal.x)), dontCare );
 			InterlockedAdd( gs_occlusionDirectionAccumulator.y, uint(65536.0 * (1.0 + ssBentNormal.y)), dontCare );
 			InterlockedAdd( gs_occlusionDirectionAccumulator.z, uint(65536.0 * (1.0 + ssBentNormal.z)), dontCare );
+
+		#elif 1
+
+//#TODO: Same as half brute force but using lerp( cos(theta_Front), cos(theta_Back) ) instead of linearly interpolating angles!!
 
 		#elif 1
 			// Integral computation
