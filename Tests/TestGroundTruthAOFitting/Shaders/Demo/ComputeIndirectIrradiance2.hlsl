@@ -115,12 +115,11 @@ PS_OUT	PS( VS_IN _In ) {
 	float3	centerRho = _rho;	// Uniform reflectance
 
 	// Samples circular surroundings in screen space
-	float3	tsAverageBentNormal = 0.0;
+	float3	ssAverageBentNormal = 0.0;
 	float	averageConeAngle = 0.0;
 	float	varianceConeAngle = 0.0;
 	float3	sumIrradiance = 0.0;
 
-#if 1
 	#if MAX_ANGLES > 1
 		for ( uint angleIndex=0; angleIndex < MAX_ANGLES; angleIndex++ ) {
 	#else
@@ -176,6 +175,7 @@ PS_OUT	PS( VS_IN _In ) {
 		float	dTheta = (thetaFront - thetaBack) / STEPS_COUNT;
 		ssBentNormal *= dTheta;
 		ssBentNormal = normalize( ssBentNormal );
+		ssAverageBentNormal += ssBentNormal;
 
 		// Compute cone angle
 		float3	ssHorizon = float3( sqrt( 1.0 - maxCos_Front*maxCos_Front ) * ssDirection, maxCos_Front );
@@ -195,14 +195,9 @@ PS_OUT	PS( VS_IN _In ) {
 	#if MAX_ANGLES > 2
 		varianceConeAngle /= MAX_ANGLES - 1;
 	#endif
-	tsAverageBentNormal /= MAX_ANGLES;
-//tsAverageBentNormal = normalize(tsAverageBentNormal);
-	float3	csBentNormal = tsAverageBentNormal.x * T + tsAverageBentNormal.y * B + tsAverageBentNormal.z * N;	// Back in camera space!
+	ssAverageBentNormal = normalize( ssAverageBentNormal );
 
-
-//csBentNormal = tsAverageBentNormal;
-//csBentNormal = normalize(csBentNormal);
-
+	float	stdDeviation = sqrt( varianceConeAngle );
 
 	// Finalize indirect irradiance
 	const float	dPhi = PI / MAX_ANGLES;	// Hemisphere is sliced into 2*MAX_ANGLES parts
@@ -210,24 +205,14 @@ PS_OUT	PS( VS_IN _In ) {
 
 	// Compute this frame's irradiance
 	float3	SH[9] = { _SH[0].xyz, _SH[1].xyz, _SH[2].xyz, _SH[3].xyz, _SH[4].xyz, _SH[5].xyz, _SH[6].xyz, _SH[7].xyz, _SH[8].xyz };
-	sumIrradiance += EvaluateSHIrradiance( N, 0.0, SH );
+//	sumIrradiance += EvaluateSHIrradiance( N, 0.0, SH );
+	sumIrradiance += EvaluateSHIrradiance( ssAverageBentNormal, cos( averageConeAngle ), SH );
 
 //sumIrradiance =0;
 
-#else
-	// DEBUG
-	float2	scPhi = float2( 0, 1 );
-	float	radiusPixel = 4.0;
-	float	radius_mm = _texelSize_mm * radiusPixel;
-	float	maxCos2_p = 1e-3;
-	float3	csBentNormal = SampleRadiance( _In.__Position.xy + radiusPixel * scPhi.yx, csCenterPosition_mm, radius_mm, T, B, N, centerRho, maxCos2_p );
-
-//csBentNormal = maxCos2_p * 0.5;
-#endif
-
 	PS_OUT	Out;
 	Out.irradiance = float4( sumIrradiance, 0.0 );
-	Out.bentCone = float4( csBentNormal, varianceConeAngle );
+	Out.bentCone = float4( max( 0.01, cos( averageConeAngle ) ) * ssAverageBentNormal, 1.0 - stdDeviation );
 
 //Out.bentCone.xyz = csCenterPosition_mm / 1024.0;
 //Out.bentCone.xyz = N;
