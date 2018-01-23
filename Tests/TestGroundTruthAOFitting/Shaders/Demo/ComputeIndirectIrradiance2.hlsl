@@ -184,11 +184,16 @@ PS_OUT	PS( VS_IN _In ) {
 		ssBentNormal *= dTheta;
 
 		ssBentNormal = normalize( ssBentNormal );
+
+Pourquoi est-ce si différent de Tools.sln si on ne normalise pas ???
+
 		ssAverageBentNormal += ssBentNormal;
 
 		// Compute cone angle
-		float3	ssHorizon = float3( sqrt( 1.0 - maxCos_Front*maxCos_Front ) * ssDirection, maxCos_Front );
-		float	coneAngle = acos( dot( ssBentNormal, ssHorizon ) );
+		float3	ssHorizon_Front = float3( sqrt( 1.0 - maxCos_Front*maxCos_Front ) * ssDirection, maxCos_Front );
+		float3	ssHorizon_Back = float3( -sqrt( 1.0 - maxCos_Back*maxCos_Back ) * ssDirection, maxCos_Back );
+		float	coneAngle_Front = acos( dot( ssBentNormal, ssHorizon_Front ) );
+		float	coneAngle_Back = acos( dot( ssBentNormal, ssHorizon_Back ) );
 
 		// We're using running variance computation from https://www.johndcook.com/blog/standard_deviation/
 		//	Avg(N) = Avg(N-1) + [V(N) - Avg(N-1)] / N
@@ -196,13 +201,17 @@ PS_OUT	PS( VS_IN _In ) {
 		// And variance = S(finalN) / (finalN-1)
 		//
 		float	previousAverageConeAngle = averageConeAngle;
-		averageConeAngle += (coneAngle + averageConeAngle) / (angleIndex+1);
-		varianceConeAngle += (coneAngle - previousAverageConeAngle) * (coneAngle - averageConeAngle); 
+		averageConeAngle += (coneAngle_Front - averageConeAngle) / (2*angleIndex+1);
+		varianceConeAngle += (coneAngle_Front - previousAverageConeAngle) * (coneAngle_Front - averageConeAngle);
+
+		previousAverageConeAngle = averageConeAngle;
+		averageConeAngle += (coneAngle_Back - averageConeAngle) / (2*angleIndex+2);
+		varianceConeAngle += (coneAngle_Back - previousAverageConeAngle) * (coneAngle_Back - averageConeAngle);
 	}
 
 	// Finalize bent cone
 	#if MAX_ANGLES > 2
-		varianceConeAngle /= MAX_ANGLES - 1;
+		varianceConeAngle /= 2*MAX_ANGLES - 1;
 	#endif
 	ssAverageBentNormal = normalize( ssAverageBentNormal );
 
@@ -225,17 +234,19 @@ PS_OUT	PS( VS_IN _In ) {
 	// This MUST be done either now, or later when the irradiance is used!
 	// My advice is to use it right now before writing to the texture so next frame, (rho/PI) * Irradiance is available straight from the sampler
 	//	and this avoids to sample the neighbor albedo map
-		sumIrradiance *= (centerRho / PI);
+		sumIrradiance *= (_rho / PI);
+//		sumIrradiance *= (0.5 * float3( 1.0, 0.9, 0.8 ) / PI);
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	#endif
 
 
 	PS_OUT	Out;
 	Out.irradiance = float4( sumIrradiance, 0.0 );
-//	Out.bentCone = float4( max( 0.01, cos( averageConeAngle ) ) * ssAverageBentNormal, 1.0 - stdDeviation );
+	Out.bentCone = float4( max( 0.01, cos( averageConeAngle ) ) * ssAverageBentNormal, 1.0 - stdDeviation );
 ssAverageBentNormal.y *= -1.0;
-Out.bentCone = float4( ssAverageBentNormal, 1.0 );
-Out.bentCone = float4( 0.1 * averageConeAngle.xxx / PI, 1.0 );
+//Out.bentCone = float4( ssAverageBentNormal, 1.0 );
+//Out.bentCone = float4( 1.0 * averageConeAngle.xxx * 2.0 / PI, 1.0 );
+//Out.bentCone = float4( 1.0 * varianceConeAngle.xxx * 2.0 / PI, 1.0 );
 
 //ssAverageBentNormal.y *= -1.0;
 //Out.bentCone = float4( 0.5 * (1.0+ssAverageBentNormal), 1.0 );

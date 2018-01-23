@@ -198,12 +198,13 @@ E0 *= lerp( 1.0, boostFactor, _debugValue.y );	// _debugValue.y = 0.5185
 	if ( (_flags & 0x3U) == 3 )
 		result = resultGroundTruth;
 
-	if ( _flags & 0x10U )
+	if ( _flags & 0x10U ) {
 		result = abs( result - GroundTruth( UV, _rho ) );	// Show difference
 
-//result = 0.1 * _texIrradiance.Sample( LinearClamp, UV ).xyz;
+result = 1.0 * _texIrradiance.Sample( LinearClamp, UV ).xyz;
 //result = _texComputedBentCone.Sample( LinearClamp, UV ).w;
-result = _texComputedBentCone.Sample( LinearClamp, UV ).xyz;
+//result = _texComputedBentCone.Sample( LinearClamp, UV ).xyz;
+	}
 
 	return _exposure * result;
 }
