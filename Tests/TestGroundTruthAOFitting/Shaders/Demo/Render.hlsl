@@ -95,6 +95,31 @@ return F0 + tempF1;
 	return F0 + _rho / (1.0 - saturate(_rho * _tauFactor * tau)) * F1;
 }
 
+#if 1
+// NEW BENT CONE MAP
+float3	EvaluateSHIrradianceBentCone( float4 _bentCone, float2 _AO_E0, float3 _SH[9] ) {
+	// Bent cone is encoded as:
+	//	_bentCone.xyz = cos(alpha) * bentNormalDirection
+	//	_bentCone.w = standard deviation from average angle alpha / (PI/2)
+	float	cosAlpha = length( _bentCone.xyz );
+	float3	bentNormal = _bentCone.xyz * (cosAlpha > 0.0 ? 1.0 / cosAlpha : 1.0);
+	float	stdDeviation = _bentCone.w;
+
+// Open cone angle a little more
+//cosAlpha = cos( acos( cosAlpha ) + _debugValue.x * stdDeviation );
+cosAlpha = cos( acos( cosAlpha ) + 0.16 * stdDeviation * PI / 2.0 );
+
+	// Estimate reduced irradiance in the bent cone's direction
+	float3	E0 = EvaluateSHIrradiance( bentNormal, cosAlpha, _SH );
+
+	// Boost resulting irradiance
+	float boostFactor = 2.0 * _AO_E0.y / _AO_E0.x;		// Use ratio of unit irradiance over AO to boost result
+	E0 *= 0.5 * (1.0 + boostFactor);
+
+	return E0;
+}
+#else
+// FORMER BENT CONE MAP
 float3	EvaluateSHIrradianceBentCone( float4 _bentCone, float2 _AO_E0, float3 _SH[9] ) {
 
 	// Reduce bent cone angle
@@ -113,6 +138,7 @@ float3	EvaluateSHIrradianceBentCone( float4 _bentCone, float2 _AO_E0, float3 _SH
 
 	return E0;
 }
+#endif
 
 float3	PS( VS_IN _In ) : SV_TARGET0 {
 	float2	UV = _In.__Position.xy / _resolution;

@@ -112,7 +112,8 @@ float3	SampleRadiance( float2 _ssPosition, float _H0, float _radius, float2 _sin
 
 PS_OUT	PS( VS_IN _In ) {
 	// Retrieve central height and TBN
-	float	H0 = (_displacement_mm / _texelSize_mm) * _texHeight.SampleLevel( SAMPLER, _In.__Position.xy / _textureDimensions, 0.0 );
+	float	heightEpsilon = 1e-2;	// Add a tiny epsilon to avoid horizon acnea
+	float	H0 = (_displacement_mm / _texelSize_mm) * (heightEpsilon + _texHeight.SampleLevel( SAMPLER, _In.__Position.xy / _textureDimensions, 0.0 ));
 	float3	N = 2.0 * _texNormal[_In.__Position.xy].xyz - 1.0;
 			N.y *= -1.0;
 	float3	T, B;
@@ -182,10 +183,9 @@ PS_OUT	PS( VS_IN _In ) {
 
 		float	dTheta = (thetaFront - thetaBack) / STEPS_COUNT;
 		ssBentNormal *= dTheta;
-
 		ssBentNormal = normalize( ssBentNormal );
 
-Pourquoi est-ce si différent de Tools.sln si on ne normalise pas ???
+//Pourquoi est-ce si différent de Tools.sln si on ne normalise pas ???
 
 		ssAverageBentNormal += ssBentNormal;
 
