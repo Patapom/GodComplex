@@ -198,8 +198,9 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID ) 
 			float	thetaFront = acos( maxCos_Front );
 			float	thetaBack = -acos( maxCos_Back );
 
-			float3	ssBentNormal = 0.001 * N;
 			const uint	STEPS_COUNT = 256;
+
+			float3	ssBentNormal = 0.001 * N;
 			for ( uint i=0; i < STEPS_COUNT; i++ ) {
 				float	theta = lerp( thetaBack, thetaFront, (i+0.5) / STEPS_COUNT );
 				float2	scTheta;
@@ -300,15 +301,41 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID ) 
 		InterlockedAdd( gs_occlusionDirectionAccumulator.z, uint(65536.0 * (1.0 + ssBentNormal.z)), dontCare );
 
 		// Accumulate horizon angles & their variance
+		ssBentNormal = normalize( ssBentNormal );
 		float3	ssHorizon_Front = float3( sqrt( 1.0 - maxCos_Front*maxCos_Front ) * ssDirection, maxCos_Front );
 		float3	ssHorizon_Back = float3( -sqrt( 1.0 - maxCos_Back*maxCos_Back ) * ssDirection, maxCos_Back );
-		float	coneAngle_Front = acos( dot( normalize( ssBentNormal ), ssHorizon_Front ) );
-		float	coneAngle_Back = acos( dot( normalize( ssBentNormal ), ssHorizon_Back ) );
+		float	coneAngle_Front = acos( dot( ssBentNormal, ssHorizon_Front ) );
+		float	coneAngle_Back = acos( dot( ssBentNormal, ssHorizon_Back ) );
+//		float	coneAngle_Front = acos( saturate( dot( ssBentNormal, ssHorizon_Front ) ) );
+//		float	coneAngle_Back = acos( saturate( dot( ssBentNormal, ssHorizon_Back ) ) );
 
-Pourquoi on a du noise dans ces putains de valeurs ?????
+		#if 0
+			AccumulateAverageConeAngle( coneAngle_Front );
+			AccumulateAverageConeAngle( coneAngle_Back );
+		#else
+			float	normalizedConeAngle_Front = coneAngle_Front / (0.5 * PI);
+			float	normalizedConeAngle_Back = coneAngle_Back / (0.5 * PI);
 
-		AccumulateAverageConeAngle( coneAngle_Front );
-		AccumulateAverageConeAngle( coneAngle_Back );
+			// Accumulate new angles
+			uint	previousSum;
+			InterlockedAdd( gs_horizonAngleAccumulator.x, (uint(256.0 * (normalizedConeAngle_Front + normalizedConeAngle_Back)) & 0x000FFFFFU) | 0x00100000U, previousSum );	// Sum only 1 count, knowing we sum 2 angles each time (so we must be careful when dividing)
+			uint	previousCount = 2 * (previousSum >> 20);
+			float	previousAverage = (previousSum & 0x000FFFFFU) / 256.0 / max( 1, previousCount );
+
+			// Accumulate variance for front angle
+			previousCount++;
+			float	newAverage = previousAverage + (normalizedConeAngle_Front - previousAverage) / previousCount;
+			float	variance = (normalizedConeAngle_Front - previousAverage) * (normalizedConeAngle_Front - newAverage);
+
+			// Accumulate variance for back angle
+			previousAverage = newAverage;
+			previousCount++;
+			newAverage += (normalizedConeAngle_Back - previousAverage) / previousCount;
+			variance += (normalizedConeAngle_Back - previousAverage) * (normalizedConeAngle_Back - newAverage);
+
+			uint	previousVariance;
+			InterlockedAdd( gs_horizonAngleAccumulator.y, uint(256.0 * variance), previousVariance );
+		#endif
 	}
 
 	GroupMemoryBarrierWithGroupSync();
@@ -320,10 +347,10 @@ Pourquoi on a du noise dans ces putains de valeurs ?????
 				ssBentNormal = normalize( ssBentNormal );
 
 		#if 1
-			uint	finalCount = gs_horizonAngleAccumulator.x >> 20;
+			uint	finalCount = max( 1, 2 * (gs_horizonAngleAccumulator.x >> 20) );
 //					finalCount = finalCount == 0 ? 256 : finalCount;	// When rays count == 256, the counter gets overflowed
-			float	averageAngle = ((gs_horizonAngleAccumulator.x & 0x000FFFFFU) / 256.0) / max( 1, finalCount );
-			float	varianceAngle = (gs_horizonAngleAccumulator.y / 256.0) / max( 1, finalCount-1 );
+			float	averageAngle = ((gs_horizonAngleAccumulator.x & 0x000FFFFFU) / 256.0) / finalCount;
+			float	varianceAngle = (gs_horizonAngleAccumulator.y / 256.0) / (finalCount-1);
 			float	stdDeviation = sqrt( varianceAngle );
 
 //stdDeviation = cos( 0.5 * PI * stdDeviation );
