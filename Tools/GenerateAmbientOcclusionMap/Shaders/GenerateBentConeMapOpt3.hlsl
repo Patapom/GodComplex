@@ -254,6 +254,7 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID ) 
 			float	cosPhi = dot( normalize( N.xy ), ssDirection );
 
 			#if 1
+				// Optimized computation
 				float	cosTheta0 = maxCos_Front;
 				float	cosTheta0_2 = cosTheta0 * cosTheta0;
 				float	cosTheta0_3 = cosTheta0_2 * cosTheta0;
@@ -312,8 +313,6 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID ) 
 
 		float	coneAngle_Front = acos( dot( ssBentNormal, ssHorizon_Front ) );
 		float	coneAngle_Back = acos( dot( ssBentNormal, ssHorizon_Back ) );
-//		float	coneAngle_Front = acos( saturate( dot( ssBentNormal, ssHorizon_Front ) ) );
-//		float	coneAngle_Back = acos( saturate( dot( ssBentNormal, ssHorizon_Back ) ) );
 
 		#if 0
 			AccumulateAverageConeAngle( coneAngle_Front );
@@ -345,7 +344,7 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID ) 
 			variance += (normalizedConeAngle_Back - previousAverage) * (normalizedConeAngle_Back - newAverage);
 
 			uint	previousVariance;
-			InterlockedAdd( gs_horizonAngleAccumulator.y, uint(256.0 * variance), previousVariance );
+			InterlockedAdd( gs_horizonAngleAccumulator.y, uint(65536.0 * variance), previousVariance );
 
 /*
 //normalizedConeAngle_Front = abs( sin( rayIndex ) );
@@ -387,7 +386,7 @@ uint	previousDebug;
 			uint	finalCount = max( 1, 2 * (gs_horizonAngleAccumulator.x >> 20) );
 //					finalCount = finalCount == 0 ? 256 : finalCount;	// When rays count == 256, the counter gets overflowed
 			float	averageAngle = ((gs_horizonAngleAccumulator.x & 0x000FFFFFU) / 256.0) / finalCount;
-			float	varianceAngle = (gs_horizonAngleAccumulator.y / 256.0) / (finalCount-1);
+			float	varianceAngle = (gs_horizonAngleAccumulator.y / 65536.0) / (finalCount-1);
 			float	stdDeviation = sqrt( varianceAngle );
 
 //stdDeviation = cos( 0.5 * PI * stdDeviation );	// Encode as cosine? ==> NO! Not enough precision...
@@ -395,7 +394,8 @@ uint	previousDebug;
 			float	normalWeight = cos( 0.5 * PI * averageAngle );
 //			ssBentNormal = normalWeight > 0.0 ? normalWeight * ssBentNormal : gs_local2World[2];
 			ssBentNormal = max( 0.01, normalWeight ) * ssBentNormal;
-/*
+
+/* Display debug information...
 //ssBentNormal = averageAngle;
 //ssBentNormal = normalWeight;
 ssBentNormal = stdDeviation;
@@ -416,7 +416,7 @@ stdDeviation = 0;
 //	_Target[pixelPosition] = float4( 0, 1, 1, 1 );
 //	return;
 //}
-*/
+//*/
 		#else
 			float	stdDeviation = 0.0;
 		#endif
