@@ -87,6 +87,7 @@ groupshared float3			gs_ssCenterPosition;		// Initial position, common to all ra
 groupshared float3x3		gs_local2World;
 groupshared uint3			gs_occlusionDirectionAccumulator = 0;
 groupshared uint2			gs_horizonAngleAccumulator = 0;
+groupshared uint4			gs_DEBUG = 0;
 
 
 // Build orthonormal basis from a 3D Unit Vector Without normalization [Frisvad2012])
@@ -125,6 +126,8 @@ void	AccumulateAverageConeAngle( float _coneAngle ) {
 void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID ) {
 	uint2	pixelPosition = uint2( _GroupID.x, _Y0 + _GroupID.y );
 
+//pixelPosition = uint2( 273, 126 );
+
 	uint	rayIndex = _GroupThreadID.x;
 	if ( rayIndex == 0 ) {
 		// Build local tangent space to orient rays
@@ -137,6 +140,7 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID ) 
 		gs_local2World[2] = normal;
 
 		gs_ssCenterPosition = float3( pixelPosition + 0.5, (_displacement_mm / _texelSize_mm) * _Tex_Height[pixelPosition] );
+		gs_ssCenterPosition.z += 1e-2 * _displacement_mm / _texelSize_mm;	// Important to avoid horizon acnea!
 	}
 
 	GroupMemoryBarrierWithGroupSync();
@@ -165,7 +169,7 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID ) 
 //		float	maxCos_Back = tsDirection_Back.z;
 		float	maxCos_Back = -tsDirection_Front.z;
 
-		// Walk along positive and negative screen space directions to update the front & back horizons
+//*		// Walk along positive and negative screen space directions to update the front & back horizons
 		for ( uint radius=1; radius <= _maxStepsCount; radius++ ) {
 			ssPosition_Front.xy += ssDirection;
 			ssPosition_Back.xy -= ssDirection;
@@ -189,7 +193,7 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID ) 
 			float	cos_Back = ssDeltaPosition_Back.z / length( ssDeltaPosition_Back );
 			maxCos_Back = max( maxCos_Back, cos_Back );
 		}
-
+//*/
 		// Compute the "average" bent normal weighted by the cos(alpha) where alpha is the angle with the actual normal
 		#if 1
 			// Half brute force where we perform the integration numerically as a sum...
@@ -203,21 +207,22 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID ) 
 			float3	ssBentNormal = 0.001 * N;
 			for ( uint i=0; i < STEPS_COUNT; i++ ) {
 				float	theta = lerp( thetaBack, thetaFront, (i+0.5) / STEPS_COUNT );
-				float2	scTheta;
-				sincos( theta, scTheta.x, scTheta.y );
-				float3	ssUnOccludedDirection = float3( scTheta.x * ssDirection, scTheta.y );
+				float	sinTheta, cosTheta;
+				sincos( theta, sinTheta, cosTheta );
+				float3	ssUnOccludedDirection = float3( sinTheta * ssDirection, cosTheta );
 
 				float	cosAlpha = saturate( dot( ssUnOccludedDirection, N ) );
 
-				float	weight = cosAlpha * abs(scTheta.x);		// cos(alpha) * sin(theta).dTheta
+				float	weight = cosAlpha * abs(sinTheta);		// cos(alpha) * sin(theta).dTheta
+
+//weight = cosAlpha * sqrt( 1.0 - cosAlpha*cosAlpha );
+
 				ssBentNormal += weight * ssUnOccludedDirection;
 			}
 
 			float	dTheta = (thetaFront - thetaBack) / STEPS_COUNT;
 			ssBentNormal *= dTheta;
-
-// Summing normalized vectors doesn't change anything to the result
-//ssBentNormal = normalize( ssBentNormal );
+			ssBentNormal = normalize( ssBentNormal );
 
 		#elif 0
 
@@ -301,9 +306,10 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID ) 
 		InterlockedAdd( gs_occlusionDirectionAccumulator.z, uint(65536.0 * (1.0 + ssBentNormal.z)), dontCare );
 
 		// Accumulate horizon angles & their variance
-		ssBentNormal = normalize( ssBentNormal );
-		float3	ssHorizon_Front = float3( sqrt( 1.0 - maxCos_Front*maxCos_Front ) * ssDirection, maxCos_Front );
-		float3	ssHorizon_Back = float3( -sqrt( 1.0 - maxCos_Back*maxCos_Back ) * ssDirection, maxCos_Back );
+//		ssBentNormal = normalize( ssBentNormal );
+		float3	ssHorizon_Front = float3( sqrt( saturate( 1.0 - maxCos_Front*maxCos_Front ) ) * ssDirection, maxCos_Front );
+		float3	ssHorizon_Back = float3( -sqrt( saturate( 1.0 - maxCos_Back*maxCos_Back ) ) * ssDirection, maxCos_Back );
+
 		float	coneAngle_Front = acos( dot( ssBentNormal, ssHorizon_Front ) );
 		float	coneAngle_Back = acos( dot( ssBentNormal, ssHorizon_Back ) );
 //		float	coneAngle_Front = acos( saturate( dot( ssBentNormal, ssHorizon_Front ) ) );
@@ -313,8 +319,13 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID ) 
 			AccumulateAverageConeAngle( coneAngle_Front );
 			AccumulateAverageConeAngle( coneAngle_Back );
 		#else
-			float	normalizedConeAngle_Front = coneAngle_Front / (0.5 * PI);
-			float	normalizedConeAngle_Back = coneAngle_Back / (0.5 * PI);
+			// We're using running variance computation from https://www.johndcook.com/blog/standard_deviation/
+			//	Avg(N) = Avg(N-1) + [V(N) - Avg(N-1)] / N
+			//	S(N) = S(N-1) + [V(N) - Avg(N-1)] * [V(N) - Avg(N)]
+			// And variance = S(finalN) / (finalN-1)
+			//
+			float	normalizedConeAngle_Front = saturate( coneAngle_Front / (0.5 * PI) );
+			float	normalizedConeAngle_Back = saturate( coneAngle_Back / (0.5 * PI) );
 
 			// Accumulate new angles
 			uint	previousSum;
@@ -335,6 +346,32 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID ) 
 
 			uint	previousVariance;
 			InterlockedAdd( gs_horizonAngleAccumulator.y, uint(256.0 * variance), previousVariance );
+
+/*
+//normalizedConeAngle_Front = abs( sin( rayIndex ) );
+//normalizedConeAngle_Back = 0.0;
+
+InterlockedAdd( gs_DEBUG.x, uint(65536.0 * (normalizedConeAngle_Front + normalizedConeAngle_Back)), previousSum );
+InterlockedAdd( gs_DEBUG.y, uint(2), previousSum );
+
+
+uint	previousDebug;
+//InterlockedMax( gs_DEBUG.x, (dot( N, ssHorizon_Front ) < -1e-3 || dot( N, ssHorizon_Back ) < -1e-3) ? 1U : 0U, previousDebug );
+//float glou = -1e-3;
+////InterlockedMax( gs_DEBUG.y, (dot( ssBentNormal, ssHorizon_Front ) < glou) ? 1U : 0U, previousDebug );
+////InterlockedMax( gs_DEBUG.y, (dot( ssBentNormal, ssHorizon_Back ) < glou) ? 1U : 0U, previousDebug );
+//InterlockedMax( gs_DEBUG.y, (dot( ssBentNormal, ssHorizon_Front ) < glou || dot( ssBentNormal, ssHorizon_Back ) < glou) ? 1U : 0U, previousDebug );
+
+
+//InterlockedMax( gs_DEBUG.x, asuint(maxCos_Front), previousDebug );
+//InterlockedMax( gs_DEBUG.y, asuint(maxCos_Back), previousDebug );
+//InterlockedMax( gs_DEBUG.x, asuint(N.x), previousDebug );
+//InterlockedMax( gs_DEBUG.y, asuint(N.y), previousDebug );
+//InterlockedMax( gs_DEBUG.z, asuint(N.z), previousDebug );
+//InterlockedMax( gs_DEBUG.x, asuint(ssBentNormal.x), previousDebug );
+//InterlockedMax( gs_DEBUG.y, asuint(ssBentNormal.y), previousDebug );
+//InterlockedMax( gs_DEBUG.z, asuint(ssBentNormal.z), previousDebug );
+*/
 		#endif
 	}
 
@@ -353,21 +390,33 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID ) 
 			float	varianceAngle = (gs_horizonAngleAccumulator.y / 256.0) / (finalCount-1);
 			float	stdDeviation = sqrt( varianceAngle );
 
-//stdDeviation = cos( 0.5 * PI * stdDeviation );
+//stdDeviation = cos( 0.5 * PI * stdDeviation );	// Encode as cosine? ==> NO! Not enough precision...
 
 			float	normalWeight = cos( 0.5 * PI * averageAngle );
 //			ssBentNormal = normalWeight > 0.0 ? normalWeight * ssBentNormal : gs_local2World[2];
 			ssBentNormal = max( 0.01, normalWeight ) * ssBentNormal;
-
-ssBentNormal = averageAngle;
+/*
+//ssBentNormal = averageAngle;
 //ssBentNormal = normalWeight;
-//ssBentNormal = stdDeviation;
+ssBentNormal = stdDeviation;
 //ssBentNormal = 0.25 * finalCount / _raysCount;
+//ssBentNormal = (gs_DEBUG.x / 65536.0) / gs_DEBUG.y;
 
 ssBentNormal = 2.0 * ssBentNormal - 1.0;
 ssBentNormal.y*=-1.0;
 stdDeviation = 0;
 
+//_Target[pixelPosition] = float4( asfloat(gs_DEBUG.xyz), 1 );
+//return;
+//if ( gs_DEBUG.x != 0 ) {
+//	_Target[pixelPosition] = float4( 1, 0, 1, 1 );
+//	return;
+//}
+//if ( gs_DEBUG.y != 0 ) {
+//	_Target[pixelPosition] = float4( 0, 1, 1, 1 );
+//	return;
+//}
+*/
 		#else
 			float	stdDeviation = 0.0;
 		#endif
