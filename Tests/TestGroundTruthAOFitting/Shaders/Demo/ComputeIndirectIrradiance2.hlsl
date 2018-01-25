@@ -5,13 +5,21 @@
 #include "Global.hlsl"
 #include "SphericalHarmonics.hlsl"
 
-#define	MAX_ANGLES	32			// Amount of angular subdivisions of the circle
-#define	MAX_RADIUS	32			// Amount of radial subdivisions of the circle
-#define	RADIUS_STEP_SIZE 4.0	// Radial step size (in pixels)
+#if 0
+	// Quality values
+	#define	MAX_ANGLES	32			// Amount of angular subdivisions of the circle
+	#define	MAX_RADIUS	32			// Amount of radial subdivisions of the circle
+	#define	RADIUS_STEP_SIZE 2.0	// Radial step size (in pixels)
+#else
+	// Optimum values
+	#define	MAX_ANGLES	4			// Amount of angular subdivisions of the circle
+	#define	MAX_RADIUS	4			// Amount of radial subdivisions of the circle
+	#define	RADIUS_STEP_SIZE 16.0	// Radial step size (in pixels)
+#endif
 
 #define	SAMPLER	LinearWrap
 
-//#define SAMPLE_BENT_CONE_MAP 1	// Define this to use precomputed bent-cone map instead of our own runtime computation (more precise to start with) (DEBUG ONLY!)
+#define SAMPLE_BENT_CONE_MAP 1	// Define this to use precomputed bent-cone map instead of our own runtime computation (more precise to start with) (DEBUG ONLY!)
 
 // !!SLIGHTLY LESS ACCURATE!!
 //#define USE_FAST_ACOS 1			// Define this to use the "fast acos" function instead of true acos()
@@ -242,14 +250,17 @@ PS_OUT	PS( VS_IN _In ) {
 		float	maxCos_Back = -tsDirection_Front.z;
 
 //*		// Accumulate perceived irradiance in front and back & update floating horizon (in the form of cos(horizon angle))
+		float	stepSize = RADIUS_STEP_SIZE;
+//		float	stepSize = 16 * _debugValues.w;	// Good value => _debugValues.w = 0.13
+
 		float2	ssPosition_Front = _In.__Position.xy;
 		float2	ssPosition_Back = _In.__Position.xy;
-		float2	ssStep = ssDirection * RADIUS_STEP_SIZE;
+		float2	ssStep = ssDirection * stepSize;
 		float	radius = 0.0;
 		for ( uint radiusIndex=1; radiusIndex <= MAX_RADIUS; radiusIndex++ ) {
 			ssPosition_Front += ssStep;
 			ssPosition_Back -= ssStep;
-			radius += RADIUS_STEP_SIZE;
+			radius += stepSize;
 			sumIrradiance += SampleIrradiance( ssPosition_Front, H0, radius, integralFactors_Front, maxCos_Front, centerRho );	// Sample forward
 			sumIrradiance += SampleIrradiance( ssPosition_Back, H0, radius, integralFactors_Back, maxCos_Back, centerRho );		// Sample backward
 		}
