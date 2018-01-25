@@ -24,6 +24,9 @@ namespace TestGroundTruthAOFitting
 			public float	_displacement_mm;	// Max displacement value encoded by the height map (in millimeters)
 
 			public float3	_rho;				// Global surface reflectance (should come from a texture though)
+			float			__PAD;
+
+			public float4	_debugValue;
 		}
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
@@ -138,6 +141,7 @@ m_CB_Main.m._rho = floatTrackbarControlReflectance.Value * float3.One;
 				m_CB_ComputeIrradiance.m._texelSize_mm = m_owner.TextureSize_mm / Math.Max( m_tex_Height.Width, m_tex_Height.Height );
 				m_CB_ComputeIrradiance.m._displacement_mm = m_owner.TextureHeight_mm;
 				m_CB_ComputeIrradiance.m._rho = m_CB_Main.m._rho;
+				m_CB_ComputeIrradiance.m._debugValue.Set( floatTrackbarControlDebug0.Value, floatTrackbarControlDebug1.Value, floatTrackbarControlDebug2.Value, floatTrackbarControlDebug3.Value );
 				m_CB_ComputeIrradiance.UpdateData();
 
 				m_device.RenderFullscreenQuad( m_shader_ComputeIndirectIrradiance );

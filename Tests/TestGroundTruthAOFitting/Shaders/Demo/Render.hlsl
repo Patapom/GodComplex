@@ -223,7 +223,9 @@ E0 *= lerp( 1.0, boostFactor, _debugValue.y );	// _debugValue.y = 0.5185
 	// Simulated ground truth
 	float3	resultSimulated = 0.0;
 	if ( renderType == RENDER_GROUND_TRUTH_SIMULATION ) {
-		resultSimulated = _texIrradiance.Sample( LinearClamp, UV ).xyz;
+		resultSimulated = _texIrradiance.Sample( LinearClamp, UV ).xyz;	// If albédo is pre-multiplied
+//		resultSimulated = (_rho / PI) * _texIrradiance.Sample( LinearClamp, UV ).xyz;	// Otherwise...
+
 //resultSimulated = _texComputedBentCone.Sample( LinearClamp, UV ).w;
 //resultSimulated = _texComputedBentCone.Sample( LinearClamp, UV ).xyz;
 	}

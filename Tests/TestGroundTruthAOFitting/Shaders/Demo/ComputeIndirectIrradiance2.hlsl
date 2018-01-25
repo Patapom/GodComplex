@@ -7,11 +7,11 @@
 
 #define	MAX_ANGLES	32			// Amount of angular subdivisions of the circle
 #define	MAX_RADIUS	32			// Amount of radial subdivisions of the circle
-#define	RADIUS_STEP_SIZE 1.0	// Radial step size (in pixels)
+#define	RADIUS_STEP_SIZE 2.0	// Radial step size (in pixels)
 
 #define	SAMPLER	LinearWrap
 
-#define SAMPLE_BENT_CONE_MAP 1	// Define this to use precomputed bent-cone map instead of our own runtime computation (more precise to start with) (DEBUG ONLY!)
+//#define SAMPLE_BENT_CONE_MAP 1	// Define this to use precomputed bent-cone map instead of our own runtime computation (more precise to start with) (DEBUG ONLY!)
 
 #define PREMULTIPLY_ALBEDO 1	// Define this to store (albedo/PI)*Irradiance instead of simply Irradiance
 								// The main interest is to be able to use the value straight from the sampler
@@ -23,6 +23,8 @@ cbuffer	CBCompute : register( b2 ) {
 	float	_displacement_mm;	// Height map max encoded displacement in millimeters
 
 	float3	_rho;
+
+	float4	_debugValues;
 }
 
 Texture2D<float>		_texHeight : register( t0 );
@@ -62,6 +64,49 @@ VS_IN	VS( VS_IN _In ) { return _In; }
 // The integral transforms into an irradiance-agnostic version:
 //	E = L(Xi) * I
 //
+#if 0
+// With:
+//	I = Integral[theta0, theta1]{ cos(psi).sin(theta) dtheta }
+// Here psi is the angle between Wi and N that can be found by:
+//	cos(psi) = cos(theta).cos(alpha) + sin(theta).sin(alpha).cos(beta)
+// Where:
+//	alpha, the angle between the normal and the vertical Z axis (0,0,1)
+//	beta, the azimutal angle between the slice plane and the normal
+//
+// Thus:
+//	I = Integral[theta0, theta1]{ cos(alpha).cos(theta).sin(theta) dtheta }
+//	  + Integral[theta0, theta1]{ sin(alpha).cos(beta).cos(theta).sin(theta) dtheta }
+//
+// And finally:
+//	I = cos(alpha)           * {-1/2 cos²(theta)}[theta0, theta1]
+//	  + sin(alpha).cos(beta) * {theta/2 - sin(theta).cos(theta)/2}[theta0, theta1]
+//
+float	IntegrateSolidAngle( float2 _integralFactors, float _cosTheta0, float _cosTheta1 ) {
+	float	sinTheta0 = sqrt( 1.0 - _cosTheta0*_cosTheta0 );
+	float	sinTheta1 = sqrt( 1.0 - _cosTheta1*_cosTheta1 );
+
+	// SUPER EXPENSIVE PART!
+	// #TODO: Replace with some fast approximation instead!
+	float	theta0 = acos( _cosTheta0 );
+	float	theta1 = acos( _cosTheta1 );
+
+	return 0.5 * (
+			  _integralFactors.x * (_cosTheta0*_cosTheta0 - _cosTheta1*_cosTheta1)
+			+ _integralFactors.y * (theta1 - theta0 - _cosTheta1*sinTheta1 + _cosTheta0*sinTheta0)
+		);
+}
+float2	ComputeIntegralFactors( float2 _ssDirection, float3 _N ) {
+	float	cosAlpha = _N.z;
+// Actual computation
+//	float	sinAlpha = sqrt( 1.0 - cosAlpha*cosAlpha );
+//	float	L = length( _N.xy );
+//	float	cosBeta = dot( _N.xy, _ssDirection );
+//			cosBeta *= L > 0.0 ? 1.0 / L : 0.0;
+//	return float2( cosAlpha, sinAlpha * cosBeta );
+	// But we end up doing sin(alpha) * dot( _N.xy, _ssDirection ) / sin(alpha) so what's the point? :D
+	return float2( cosAlpha, dot( _N.xy, _ssDirection ) );
+}
+#else
 // With:
 //	I = Integral[theta0, theta1]{ (Wi.N) sin(theta) dTheta }
 //	  = Integral[theta0, theta1]{ cos(phi).sin(theta).Nx.sin(theta) dTheta }	<= I0
@@ -72,23 +117,31 @@ VS_IN	VS( VS_IN _In ) { return _In; }
 //	I1 = [sin(phi).Ny] * Integral[theta0, theta1]{ sin²(theta) dTheta } = [sin(phi).Ny] * { 1/2 * (theta - sin(theta)*cos(theta)) }[theta0,theta1]
 //	I2 = Nz * Integral[theta0, theta1]{ cos(theta).sin(theta) dTheta } = Nz * { 1/2 * cos²(theta)) }[theta1,theta0]	<== Watch out for theta reverse here!
 //
-float	IntegrateSolidAngle( float2 _sinCosPhi, float _cosTheta0, float _cosTheta1, float3 _N ) {
+float2	ComputeIntegralFactors( float2 _ssDirection, float3 _N ) {
+	return float2( dot( _N.xy, _ssDirection ), _N.z );
+}
+float	IntegrateSolidAngle( float2 _integralFactors, float _cosTheta0, float _cosTheta1 ) {
+	float	sinTheta0 = sqrt( 1.0 - _cosTheta0*_cosTheta0 );
+	float	sinTheta1 = sqrt( 1.0 - _cosTheta1*_cosTheta1 );
 	float	theta0 = acos( _cosTheta0 );
 	float	theta1 = acos( _cosTheta1 );
-	float	I0 = (theta1 - sqrt( 1.0 - _cosTheta1*_cosTheta1 )*_cosTheta1)
-			   - (theta0 - sqrt( 1.0 - _cosTheta0*_cosTheta0 )*_cosTheta0);
-	float	I1 = _cosTheta1*_cosTheta1 - _cosTheta0*_cosTheta0;
-	return 0.5 * ((_sinCosPhi.y * _N.x + _sinCosPhi.x * _N.y) * I0 + _N.z * I1);
+	float	I0 = (theta1 - sinTheta1*_cosTheta1)
+			   - (theta0 - sinTheta0*_cosTheta0);
+	float	I1 = _cosTheta0*_cosTheta0 - _cosTheta1*_cosTheta1;
+	return 0.5 * (_integralFactors.x * I0 + _integralFactors.y * I1);
 }
+#endif
 
-// Samples the radiance reflected from a screen-space position located around the center pixel position
+// Samples the irradiance reflected from a screen-space position located around the center pixel position
 //	_ssPosition, the screen-space position to sample
+//	_H0, the center height
 //	_radius, the radius from the center position
+//	_sinCosPhi, sin(phi) and cos(phi) where phi is the angle by which is rotated the screen-space slice
 //	T, B, N, the local tangent space
-//	_centerRho, the reflectance of the center pixel (fallback only necessary if no albedo map is available)
-//	_maxCos, the floating max cos(theta) that indicates the perceived horzion
+//	_centerRho, the reflectance of the center pixel (fallback only necessary if no albedo map is available and if it's only irradiance that is stored in the source irradiance map instead of radiance, in which case albedo is already pre-mutliplied)
+//	_maxCos, the floating maximum cos(theta) that indicates the angle of the perceived horizon
 //
-float3	SampleIrradiance( float2 _ssPosition, float _H0, float _radius, float2 _sinCosPhi, float3 _T, float3 _B, float3 _N, float3 _centerRho, inout float _maxCos ) {
+float3	SampleIrradiance( float2 _ssPosition, float _H0, float _radius, float2 _integralFactors, float3 _centerRho, inout float _maxCos ) {
 
 	// Sample new height and update horizon angle
 	float	deltaH = (_displacement_mm / _texelSize_mm) * _texHeight.SampleLevel( SAMPLER, _ssPosition / _textureDimensions, 0.0 ) - _H0;
@@ -114,8 +167,8 @@ float3	SampleIrradiance( float2 _ssPosition, float _H0, float _radius, float2 _s
 		float3	incomingRadiance = (neighborRho / PI) * neighborIrradiance;
 	#endif
 
-	// Integrate over horizon difference
-	incomingRadiance *= IntegrateSolidAngle( _sinCosPhi, _maxCos, cosHorizon, _N );
+	// Integrate over horizon difference (always from smallest to largest angle otherwise we get negative results!)
+	incomingRadiance *= IntegrateSolidAngle( _integralFactors, cosHorizon, _maxCos );
 
 	// #TODO: Integrate with linear interpolation of irradiance as well??
 
@@ -159,7 +212,10 @@ PS_OUT	PS( VS_IN _In ) {
 		sincos( phi, sinCosPhi.x, sinCosPhi.y );
 		float2	ssDirection = float2( sinCosPhi.y, sinCosPhi.x );
 
-sinCosPhi *= -1.0;
+		// Pre-compute factors for the integrals
+		// (NOTE: There's still room for optimization as the 1/N.z computation is uselessly repeated here)
+		float2	integralFactors_Front = ComputeIntegralFactors( ssDirection, N );
+		float2	integralFactors_Back = ComputeIntegralFactors( -ssDirection, N );
 
 		// Project screen-space direction onto tangent plane to determine max possible horizon angles
 		float	hitDistance_Front = -dot( ssDirection, N.xy ) * recZdotN;
@@ -176,8 +232,8 @@ sinCosPhi *= -1.0;
 			ssPosition_Front += ssStep;
 			ssPosition_Back -= ssStep;
 			radius += RADIUS_STEP_SIZE;
-			sumIrradiance += SampleIrradiance( ssPosition_Front, H0, radius, sinCosPhi, T, B, N, centerRho, maxCos_Front );	// Sample forward
-			sumIrradiance += SampleIrradiance( ssPosition_Back, H0, radius, float2( -sinCosPhi.x, sinCosPhi.y ), T, B, N, centerRho, maxCos_Back );	// Sample backward
+			sumIrradiance += SampleIrradiance( ssPosition_Front, H0, radius, integralFactors_Front, centerRho, maxCos_Front );	// Sample forward
+			sumIrradiance += SampleIrradiance( ssPosition_Back, H0, radius, integralFactors_Back, centerRho, maxCos_Back );		// Sample backward
 		}
 //*/
 		// Accumulate bent normal direction by rebuilding and averaging the front & back horizon vectors
@@ -250,6 +306,7 @@ sinCosPhi *= -1.0;
 	// Increase cone aperture a little (based on manual fitting of irradiance compared to ground truth with 0 bounce)
 //	averageConeAngle += 0.18 * stdDeviation;
 //	averageConeAngle = min( 0.5 * PI, averageConeAngle + 0.09 * stdDeviation );
+	averageConeAngle += stdDeviation * lerp( -1.0, 1.0, _debugValues.z );
 
 	// Finalize indirect irradiance
 	const float	dPhi = PI / MAX_ANGLES;	// Hemisphere is sliced into 2*MAX_ANGLES parts

@@ -216,7 +216,7 @@
 			this.floatTrackbarControlDebug2.RangeMin = 0F;
 			this.floatTrackbarControlDebug2.Size = new System.Drawing.Size(145, 20);
 			this.floatTrackbarControlDebug2.TabIndex = 5;
-			this.floatTrackbarControlDebug2.Value = 0F;
+			this.floatTrackbarControlDebug2.Value = 0.5F;
 			this.floatTrackbarControlDebug2.VisibleRangeMax = 1F;
 			// 
 			// floatTrackbarControlDebug3
