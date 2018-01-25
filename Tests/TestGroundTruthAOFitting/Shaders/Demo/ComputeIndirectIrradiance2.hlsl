@@ -22,7 +22,7 @@
 //#define SAMPLE_BENT_CONE_MAP 1	// Define this to use precomputed bent-cone map instead of our own runtime computation (more precise to start with) (DEBUG ONLY!)
 
 // !!SLIGHTLY LESS ACCURATE!!
-//#define USE_FAST_ACOS 1			// Define this to use the "fast acos" function instead of true acos()
+#define USE_FAST_ACOS 1			// Define this to use the "fast acos" function instead of true acos()
 // !!SLIGHTLY LESS ACCURATE!!
 
 // !!MORE EXPENSIVE AND LESS ACCURATE => DON'T USE EXCEPT FOR DEBUG!!
@@ -314,15 +314,15 @@ PS_OUT	PS( VS_IN _In ) {
 
 		ssAverageBentNormal += ssBentNormal;
 
-		// Compute cone angle
+		// Compute cone angles
 		float3	ssHorizon_Front = float3( sqrt( 1.0 - maxCos_Front*maxCos_Front ) * ssDirection, maxCos_Front );
 		float3	ssHorizon_Back = float3( -sqrt( 1.0 - maxCos_Back*maxCos_Back ) * ssDirection, maxCos_Back );
-		#if 1//USE_FAST_ACOS
+		#if USE_FAST_ACOS
 			float	coneAngle_Front = fastPosAcos( saturate( dot( ssBentNormal, ssHorizon_Front ) ) );
 			float	coneAngle_Back = fastPosAcos( saturate( dot( ssBentNormal, ssHorizon_Back ) ) ) ;
 		#else
-			float	coneAngle_Front = acos( dot( ssBentNormal, ssHorizon_Front ) );
-			float	coneAngle_Back = acos( dot( ssBentNormal, ssHorizon_Back ) );
+			float	coneAngle_Front = acos( saturate( dot( ssBentNormal, ssHorizon_Front ) ) );
+			float	coneAngle_Back = acos( saturate( dot( ssBentNormal, ssHorizon_Back ) ) );
 		#endif
 
 		// We're using running variance computation from https://www.johndcook.com/blog/standard_deviation/
@@ -354,23 +354,22 @@ PS_OUT	PS( VS_IN _In ) {
 				bentCone.y *= -1.0;
 		float	cosAlpha = length( bentCone.xyz );
 		ssAverageBentNormal = bentCone.xyz * (cosAlpha > 0.0 ? 1.0 / cosAlpha : 0.0);
-		stdDeviation = 0.5 * PI * bentCone.w;
+		stdDeviation = 0.5 * PI * (1.0 - bentCone.w);
 		averageConeAngle = acos( cosAlpha );
 	#endif
-
-	// Increase cone aperture a little (based on manual fitting of irradiance compared to ground truth with 0 bounce)
-//	averageConeAngle += 0.18 * stdDeviation;
-//	averageConeAngle = min( 0.5 * PI, averageConeAngle + 0.09 * stdDeviation );
-	averageConeAngle += stdDeviation * lerp( -1.0, 1.0, _debugValues.z );
 
 	// Finalize indirect irradiance
 	const float	dPhi = PI / MAX_ANGLES;	// Hemisphere is sliced into 2*MAX_ANGLES parts
 	sumIrradiance *= dPhi;
 
 	// Compute this frame's irradiance
+	// Increase cone aperture a little (based on manual fitting of irradiance compared to ground truth)
+//	float	samplingConeAngle = averageConeAngle + stdDeviation * lerp( -1.0, 1.0, _debugValues.z );
+	float	samplingConeAngle = averageConeAngle + -0.2 * stdDeviation;	// Good value
+
 	float3	SH[9] = { _SH[0].xyz, _SH[1].xyz, _SH[2].xyz, _SH[3].xyz, _SH[4].xyz, _SH[5].xyz, _SH[6].xyz, _SH[7].xyz, _SH[8].xyz };
 //	float3	directIrradiance = EvaluateSHIrradiance( N, 0.0, SH );											// Use normal direction
-	float3	directIrradiance = EvaluateSHIrradiance( ssAverageBentNormal, cos( averageConeAngle ), SH );	// Use bent-normal direction + cone angle
+	float3	directIrradiance = EvaluateSHIrradiance( ssAverageBentNormal, cos( samplingConeAngle ), SH );	// Use bent-normal direction + cone angle
 
 	sumIrradiance += directIrradiance;
 
@@ -397,8 +396,6 @@ ssAverageBentNormal.y *= -1.0;
 //Out.bentCone = float4( ssAverageBentNormal, 1.0 );
 //Out.bentCone = float4( 1.0 * averageConeAngle.xxx * 2.0 / PI, 1.0 );
 //Out.bentCone = float4( 1.0 * varianceConeAngle.xxx * 2.0 / PI, 1.0 );
-
-//ssAverageBentNormal.y *= -1.0;
 //Out.bentCone = float4( 0.5 * (1.0+ssAverageBentNormal), 1.0 );
 
 	return Out;

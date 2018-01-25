@@ -238,15 +238,16 @@ E0 *= lerp( 1.0, boostFactor, _debugValue.y );	// _debugValue.y = 0.5185
 //		resultSimulated = (_rho / PI) * _texIrradiance.Sample( LinearClamp, UV ).xyz;	// Otherwise...
 
 //resultSimulated = normalize( SampleComputedBentCone( UV ).xyz );
-resultSimulated = length( SampleComputedBentCone( UV ).xyz );
-//resultSimulated = normalize( SampleBentCone( UV ).xyz );
+//resultSimulated = length( SampleComputedBentCone( UV ).xyz );
+//resultSimulated = 1-SampleComputedBentCone( UV ).w;
 	}
 
 	///////////////////////////////////////////////////////////
 	// Ground Truth solution
 	float3	resultGroundTruth = GroundTruth( UV, _rho );
 //	float3	resultGroundTruth = (dot( GroundTruth( UV, _rho ), LUMINANCE ) - dot( (_rho / PI) * E0 * AO, LUMINANCE ));
-resultGroundTruth = length( SampleBentCone( UV ).xyz );
+//resultGroundTruth = length( SampleBentCone( UV ).xyz );
+//resultGroundTruth = 1-SampleBentCone( UV ).w;
 
 	///////////////////////////////////////////////////////////
 	// Combine result
@@ -257,8 +258,9 @@ resultGroundTruth = length( SampleBentCone( UV ).xyz );
 		result = resultGroundTruth;
 
 	if ( _flags & 0x10U ) {
-//		result = abs( result - GroundTruth( UV, _rho ) );	// Show difference
-result = abs( result - length( SampleBentCone( UV ).xyz ) );
+		result = abs( result - GroundTruth( UV, _rho ) );	// Show difference
+//result = abs( result - length( SampleBentCone( UV ).xyz ) );
+//result = abs( result - 1+SampleBentCone( UV ).w );
 	}
 
 	return _exposure * result;
