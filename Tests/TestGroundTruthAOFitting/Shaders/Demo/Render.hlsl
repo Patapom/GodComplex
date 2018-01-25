@@ -6,12 +6,18 @@
 #include "SphericalHarmonics.hlsl"
 
 //#define	GROUND_TRUTH_MAX_BOUNCES	20
-#define	GROUND_TRUTH_MAX_BOUNCES	1
+#define	GROUND_TRUTH_MAX_BOUNCES	0
+
+static const uint	RENDER_CORRECT_AO_OFF = 0U;
+static const uint	RENDER_CORRECT_AO_ON = 1U;
+static const uint	RENDER_BENT_CONE = 2U;
+static const uint	RENDER_GROUND_TRUTH_SIMULATION = 3U;
+static const uint	RENDER_GROUND_TRUTH = 4U;
 
 cbuffer	CBMain : register( b0 ) {
-	uint2	_resolution;		// 
-	uint	_flags;				// 
-	uint	_bounceIndex;
+	uint2	_resolution;
+	uint	_flags;
+	uint	_bouncesCount;
 
 	float3	_rho;
 	float	_exposure;
@@ -23,8 +29,6 @@ Texture2D<float>	_texHeight : register( t0 );
 Texture2D<float3>	_texNormal : register( t1 );
 Texture2D<float2>	_texAO : register( t2 );
 
-//Texture2DArray<float>	_texIrradianceBounces : register( t3 );
-//Texture2D<float4>	_texGroundTruthIrradiance : register( t4 );
 Texture2DArray<float4>	_texGroundTruthIrradiance : register( t3 );
 
 Texture2D<float4>	_texBentCone : register( t4 );
@@ -106,15 +110,19 @@ float3	EvaluateSHIrradianceBentCone( float4 _bentCone, float2 _AO_E0, float3 _SH
 	float	stdDeviation = _bentCone.w;
 
 // Open cone angle a little more
-//cosAlpha = cos( acos( cosAlpha ) + _debugValue.x * stdDeviation );
-cosAlpha = cos( acos( cosAlpha ) + 0.16 * stdDeviation * PI / 2.0 );
+//cosAlpha = cos( acos( cosAlpha ) + _debugValue.x * stdDeviation * PI / 2.0 );	// _debugValue.x = 0.18
+//float	alpha = acos( cosAlpha );
+//float	stdDevRatio = stdDeviation * PI / 2.0 / alpha;
+//cosAlpha = cos( alpha * (_debugValue.x > 0.5 ? 1.0 + 2.0 * (_debugValue.x-0.5) * stdDevRatio : 1.0 / (1.0 + 2.0 * (0.5-_debugValue.x) * stdDevRatio) ) );
+cosAlpha = cos( acos( cosAlpha ) + 0.18 * stdDeviation * PI / 2.0 );
 
 	// Estimate reduced irradiance in the bent cone's direction
 	float3	E0 = EvaluateSHIrradiance( bentNormal, cosAlpha, _SH );
 
 	// Boost resulting irradiance
 	float boostFactor = 2.0 * _AO_E0.y / _AO_E0.x;		// Use ratio of unit irradiance over AO to boost result
-	E0 *= 0.5 * (1.0 + boostFactor);
+	E0 *= 0.65 + 0.35 * boostFactor;
+//E0 *= lerp( 1.0, boostFactor, _debugValue.y );	// _debugValue.y = 0.35
 
 	return E0;
 }
@@ -135,6 +143,7 @@ float3	EvaluateSHIrradianceBentCone( float4 _bentCone, float2 _AO_E0, float3 _SH
 	// Boost resulting irradiance
 	float boostFactor = 2.0 * _AO_E0.y / _AO_E0.x;		// Use ratio of unit irradiance over AO to boost result
 	E0 *= 0.5 * (1.0 + boostFactor);
+//E0 *= lerp( 1.0, boostFactor, _debugValue.y );	// _debugValue.y = 0.5185
 
 	return E0;
 }
@@ -148,20 +157,17 @@ float3	PS( VS_IN _In ) : SV_TARGET0 {
 
 	float3	SH[9] = { _SH[0].xyz, _SH[1].xyz, _SH[2].xyz, _SH[3].xyz, _SH[4].xyz, _SH[5].xyz, _SH[6].xyz, _SH[7].xyz, _SH[8].xyz };
 
+	uint	renderType = _flags & 0x7U;
+
 	///////////////////////////////////////////////////////////
 	// Estimate direct irradiance
 	float3	E0 = 0.0;
 	float	tauFactor = 1.0;
-	if ( (_flags & 0x3U) == 2 ) {
+	if ( renderType == RENDER_BENT_CONE ) {
 		// Estimate SH in the direction of the bent normal, and reduce the irradiance integration to the aperture of the cone
 		float4	bentCone = _texBentCone.Sample( LinearClamp, UV );
 				bentCone.xyz = 2.0 * bentCone.xyz - 1.0;
 				bentCone.y *= -1.0;	// Reverse Y (done everywhere else at texture creation level, but not here)
-//return normal.xyz;
-//return bentCone.xyz;
-
-//return _debugValue.x * pow( saturate(1 - AO_E0.y/PI), _debugValue.y );
-//return 1 - dot( bentCone.xyz, normal );
 
 #if 1
 		E0 = EvaluateSHIrradianceBentCone( bentCone, AO_E0, SH );
@@ -207,11 +213,20 @@ E0 *= lerp( 1.0, boostFactor, _debugValue.y );	// _debugValue.y = 0.5185
 	///////////////////////////////////////////////////////////
 	// Analytical solution
 	float3	AO = AO_E0.x / (2.0 * PI);
-	if ( (_flags & 0x3U) == 1 || (_flags & 0x3U) == 2 ) {
+	if ( renderType == RENDER_CORRECT_AO_ON || renderType == RENDER_BENT_CONE ) {
 //		AO = ComputeAO( AO.x, tauFactor, _rho );
 		AO = ComputeAO_TEST( AO_E0, tauFactor, _rho );
 	}
 	float3	resultAnalytical = (_rho / PI) * E0 * AO;
+
+	///////////////////////////////////////////////////////////
+	// Simulated ground truth
+	float3	resultSimulated = 0.0;
+	if ( renderType == RENDER_GROUND_TRUTH_SIMULATION ) {
+		resultSimulated = _texIrradiance.Sample( LinearClamp, UV ).xyz;
+//resultSimulated = _texComputedBentCone.Sample( LinearClamp, UV ).w;
+//resultSimulated = _texComputedBentCone.Sample( LinearClamp, UV ).xyz;
+	}
 
 	///////////////////////////////////////////////////////////
 	// Ground Truth solution
@@ -221,15 +236,13 @@ E0 *= lerp( 1.0, boostFactor, _debugValue.y );	// _debugValue.y = 0.5185
 	///////////////////////////////////////////////////////////
 	// Combine result
 	float3	result = resultAnalytical;
-	if ( (_flags & 0x3U) == 3 )
+	if ( renderType == RENDER_GROUND_TRUTH_SIMULATION )
+		result = resultSimulated;
+	else if ( renderType == RENDER_GROUND_TRUTH )
 		result = resultGroundTruth;
 
 	if ( _flags & 0x10U ) {
 		result = abs( result - GroundTruth( UV, _rho ) );	// Show difference
-
-result = 1.0 * _texIrradiance.Sample( LinearClamp, UV ).xyz;
-//result = _texComputedBentCone.Sample( LinearClamp, UV ).w;
-//result = _texComputedBentCone.Sample( LinearClamp, UV ).xyz;
 	}
 
 	return _exposure * result;

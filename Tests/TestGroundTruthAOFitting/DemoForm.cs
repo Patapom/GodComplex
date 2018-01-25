@@ -31,7 +31,7 @@ namespace TestGroundTruthAOFitting
 			public uint		_resolutionX;
 			public uint		_resolutionY;
 			public uint		_flags;
-			public uint		_bounceIndex;
+			public uint		_bouncesCount;
 
 			public float3	_rho;
 			public float	_exposure;
@@ -98,16 +98,18 @@ namespace TestGroundTruthAOFitting
 				m_CB_Main.m._flags |= 1U;
 			else if ( radioButtonBentCone.Checked )
 				m_CB_Main.m._flags |= 2U;
-			else if ( radioButtonGroundTruth.Checked )
+			else if ( radioButtonSimul.Checked )
 				m_CB_Main.m._flags |= 3U;
-			m_CB_Main.m._bounceIndex = (uint) integerTrackbarControlBounceIndex.Value;
+			else if ( radioButtonGroundTruth.Checked )
+				m_CB_Main.m._flags |= 4U;
+			m_CB_Main.m._bouncesCount = (uint) integerTrackbarControlBouncesCount.Value;
 			m_CB_Main.m._flags |= checkBoxDiff.Checked ? 0x10U : 0x0U;
 
 //			m_CB_Main.m._rho = floatTrackbarControlReflectance.Value * new float3( 1.0f, 0.9f, 0.7f );
 m_CB_Main.m._rho = floatTrackbarControlReflectance.Value * float3.One;
 
 			m_CB_Main.m._exposure = floatTrackbarControlExposure.Value;
-			m_CB_Main.m._debugValue.Set( floatTrackbarControlDebug0.Value, floatTrackbarControlDebug1.Value, 0, 0 );
+			m_CB_Main.m._debugValue.Set( floatTrackbarControlDebug0.Value, floatTrackbarControlDebug1.Value, floatTrackbarControlDebug2.Value, floatTrackbarControlDebug3.Value );
 			m_CB_Main.UpdateData();
 
 			m_CB_SH.m._SH0.Set( m_rotatedLightSH[0], 0 );
@@ -125,7 +127,7 @@ m_CB_Main.m._rho = floatTrackbarControlReflectance.Value * float3.One;
 
 			//////////////////////////////////////////////////////////////////////////
 			// Compute indirect irradiance & bent cone map
-			if ( m_shader_ComputeIndirectIrradiance.Use() ) {
+			if ( radioButtonSimul.Checked && m_shader_ComputeIndirectIrradiance.Use() ) {
 				m_device.SetRenderTargets( new IView[] { m_tex_Irradiance1.GetView(), m_tex_ComputedBentCone.GetView() }, null );
 				m_tex_Irradiance0.Set( 5 );
 
