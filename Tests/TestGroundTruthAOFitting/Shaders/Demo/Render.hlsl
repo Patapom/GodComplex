@@ -5,8 +5,8 @@
 #include "Global.hlsl"
 #include "SphericalHarmonics.hlsl"
 
-//#define	GROUND_TRUTH_MAX_BOUNCES	20
-#define	GROUND_TRUTH_MAX_BOUNCES	0
+#define	GROUND_TRUTH_MAX_BOUNCES	20
+//#define	GROUND_TRUTH_MAX_BOUNCES	0
 
 static const uint	RENDER_CORRECT_AO_OFF = 0U;
 static const uint	RENDER_CORRECT_AO_ON = 1U;
@@ -107,14 +107,14 @@ float3	EvaluateSHIrradianceBentCone( float4 _bentCone, float2 _AO_E0, float3 _SH
 	//	_bentCone.w = standard deviation from average angle alpha / (PI/2)
 	float	cosAlpha = length( _bentCone.xyz );
 	float3	bentNormal = _bentCone.xyz * (cosAlpha > 0.0 ? 1.0 / cosAlpha : 1.0);
-	float	stdDeviation = _bentCone.w;
+	float	stdDeviation = 0.5 * PI * _bentCone.w;
 
 // Open cone angle a little more
 //cosAlpha = cos( acos( cosAlpha ) + _debugValue.x * stdDeviation * PI / 2.0 );	// _debugValue.x = 0.18
 //float	alpha = acos( cosAlpha );
 //float	stdDevRatio = stdDeviation * PI / 2.0 / alpha;
 //cosAlpha = cos( alpha * (_debugValue.x > 0.5 ? 1.0 + 2.0 * (_debugValue.x-0.5) * stdDevRatio : 1.0 / (1.0 + 2.0 * (0.5-_debugValue.x) * stdDevRatio) ) );
-cosAlpha = cos( acos( cosAlpha ) + 0.18 * stdDeviation * PI / 2.0 );
+cosAlpha = cos( acos( cosAlpha ) + 0.18 * stdDeviation );
 
 	// Estimate reduced irradiance in the bent cone's direction
 	float3	E0 = EvaluateSHIrradiance( bentNormal, cosAlpha, _SH );

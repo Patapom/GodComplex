@@ -64,6 +64,7 @@ namespace TestGroundTruthAOFitting
 		Shader			m_shader_FilterIndirectIrradiance = null;
 		Shader			m_shader_Render = null;
 
+		Texture2D		m_tex_BlueNoise = null;
 		Texture2D		m_tex_Irradiance0 = null;
 		Texture2D		m_tex_Irradiance1 = null;
 		Texture2D		m_tex_ComputedBentCone = null;
@@ -92,6 +93,7 @@ namespace TestGroundTruthAOFitting
 				m_tex_GroundTruth.Set( 3 );
 			if ( m_tex_BentCone != null )
 				m_tex_BentCone.Set( 4 );
+			m_tex_BlueNoise.Set( 10 );
 
 			m_CB_Main.m._flags = 0U;
 			if ( radioButtonOn.Checked )
@@ -349,6 +351,13 @@ m_CB_Main.m._rho = floatTrackbarControlReflectance.Value * float3.One;
 
 				m_CB_ComputeIrradiance = new ConstantBuffer<CB_ComputeIrradiance>( m_device, 2 );
 
+				using ( ImageFile I = new ImageFile( new System.IO.FileInfo( "BlueNoise64x64.png" ) ) ) {
+					using ( ImageFile monoI = new ImageFile() ) {
+						monoI.ConvertFrom( I, PIXEL_FORMAT.R8 );
+						m_tex_BlueNoise = new Texture2D( m_device, new ImagesMatrix( new ImageFile[,] { { monoI } } ), COMPONENT_FORMAT.UNORM );
+					}
+				}
+
 				InitEnvironmentSH();
 				UpdateSH();
 
@@ -375,6 +384,7 @@ m_CB_Main.m._rho = floatTrackbarControlReflectance.Value * float3.One;
 // 				m_tex_Illuminance.Dispose();
 			if ( m_tex_GroundTruth != null )
 				m_tex_GroundTruth.Dispose();
+			m_tex_BlueNoise.Dispose();
 
 			m_CB_ComputeIrradiance.Dispose();
 			m_CB_SH.Dispose();
