@@ -13,6 +13,10 @@
 
 //#define SAMPLE_BENT_CONE_MAP 1	// Define this to use precomputed bent-cone map instead of our own runtime computation (more precise to start with) (DEBUG ONLY!)
 
+//#define USE_FAST_ACOS 1			// Define this to use the "fast acos" function instead of true acos()
+
+//#define USE_NUMERICAL_INTEGRATION 1	// Define this to compute bent normal numerically
+
 #define PREMULTIPLY_ALBEDO 1	// Define this to store (albedo/PI)*Irradiance instead of simply Irradiance
 								// The main interest is to be able to use the value straight from the sampler
 								//	next frame and avoid to sample the albedo buffer to redo the computation manually...
@@ -67,7 +71,7 @@ VS_IN	VS( VS_IN _In ) { return _In; }
 #if 0
 // With:
 //	I = Integral[theta0, theta1]{ cos(psi).sin(theta) dtheta }
-// Here psi is the angle between Wi and N that can be found by:
+// Here psi is the angle between Wi and N that can be found by the spherical law of cosines (https://en.wikipedia.org/wiki/Spherical_law_of_cosines):
 //	cos(psi) = cos(theta).cos(alpha) + sin(theta).sin(alpha).cos(beta)
 // Where:
 //	alpha, the angle between the normal and the vertical Z axis (0,0,1)
@@ -86,9 +90,13 @@ float	IntegrateSolidAngle( float2 _integralFactors, float _cosTheta0, float _cos
 	float	sinTheta1 = sqrt( 1.0 - _cosTheta1*_cosTheta1 );
 
 	// SUPER EXPENSIVE PART!
-	// #TODO: Replace with some fast approximation instead!
-	float	theta0 = acos( _cosTheta0 );
-	float	theta1 = acos( _cosTheta1 );
+	#if USE_FAST_ACOS
+		float	theta0 = fastPosAcos( _cosTheta0 );
+		float	theta1 = fastPosAcos( _cosTheta1 );
+	#else
+		float	theta0 = acos( _cosTheta0 );
+		float	theta1 = acos( _cosTheta1 );
+	#endif
 
 	return 0.5 * (
 			  _integralFactors.x * (_cosTheta0*_cosTheta0 - _cosTheta1*_cosTheta1)
@@ -123,8 +131,16 @@ float2	ComputeIntegralFactors( float2 _ssDirection, float3 _N ) {
 float	IntegrateSolidAngle( float2 _integralFactors, float _cosTheta0, float _cosTheta1 ) {
 	float	sinTheta0 = sqrt( 1.0 - _cosTheta0*_cosTheta0 );
 	float	sinTheta1 = sqrt( 1.0 - _cosTheta1*_cosTheta1 );
-	float	theta0 = acos( _cosTheta0 );
-	float	theta1 = acos( _cosTheta1 );
+
+	// SUPER EXPENSIVE PART!
+	#if USE_FAST_ACOS
+		float	theta0 = fastPosAcos( _cosTheta0 );
+		float	theta1 = fastPosAcos( _cosTheta1 );
+	#else
+		float	theta0 = acos( _cosTheta0 );
+		float	theta1 = acos( _cosTheta1 );
+	#endif
+
 	float	I0 = (theta1 - sinTheta1*_cosTheta1)
 			   - (theta0 - sinTheta0*_cosTheta0);
 	float	I1 = _cosTheta0*_cosTheta0 - _cosTheta1*_cosTheta1;
@@ -136,17 +152,16 @@ float	IntegrateSolidAngle( float2 _integralFactors, float _cosTheta0, float _cos
 //	_ssPosition, the screen-space position to sample
 //	_H0, the center height
 //	_radius, the radius from the center position
-//	_sinCosPhi, sin(phi) and cos(phi) where phi is the angle by which is rotated the screen-space slice
-//	T, B, N, the local tangent space
-//	_centerRho, the reflectance of the center pixel (fallback only necessary if no albedo map is available and if it's only irradiance that is stored in the source irradiance map instead of radiance, in which case albedo is already pre-mutliplied)
+//	_integralFactors, some pre-computed factors to feed the integral
 //	_maxCos, the floating maximum cos(theta) that indicates the angle of the perceived horizon
+//	_optionnal_centerRho, the reflectance of the center pixel (fallback only necessary if no albedo map is available and if it's only irradiance that is stored in the source irradiance map instead of radiance, in which case albedo is already pre-mutliplied)
 //
-float3	SampleIrradiance( float2 _ssPosition, float _H0, float _radius, float2 _integralFactors, float3 _centerRho, inout float _maxCos ) {
+float3	SampleIrradiance( float2 _ssPosition, float _H0, float _radius, float2 _integralFactors, inout float _maxCos, float3 _optionnal_centerRho ) {
 
 	// Sample new height and update horizon angle
 	float	deltaH = (_displacement_mm / _texelSize_mm) * _texHeight.SampleLevel( SAMPLER, _ssPosition / _textureDimensions, 0.0 ) - _H0;
 	float	H2 = deltaH * deltaH;
-	float	hyp2 = _radius*_radius + H2;		// Square hypotenuse
+	float	hyp2 = _radius * _radius + H2;		// Square hypotenuse
 	float	cosHorizon = deltaH / sqrt( hyp2 );	// Cosine to horizon angle
 	if ( cosHorizon <= _maxCos )
 		return 0.0;	// Below the horizon... No visible contribution.
@@ -163,7 +178,7 @@ float3	SampleIrradiance( float2 _ssPosition, float _H0, float _radius, float2 _i
 		// This is more costly...
 		float3	neighborIrradiance = _texSourceIrradiance.SampleLevel( SAMPLER, neighborUV, 0.0 ).xyz;
 //		float3	neighborRho = _texSourceAlbedo.SampleLevel( SAMPLER, neighborUV, 0.0 ).xyz;				// #TODO: Sample albedo G-buffer entry for better reflectance
-		float3	neighborRho = _centerRho;																// Uniform reflectance in neighborhood
+		float3	neighborRho = _optionnal_centerRho;														// Uniform reflectance in neighborhood
 		float3	incomingRadiance = (neighborRho / PI) * neighborIrradiance;
 	#endif
 
@@ -191,7 +206,7 @@ PS_OUT	PS( VS_IN _In ) {
 
 	float	recZdotN = abs(N.z) > 1e-6 ? 1.0 / N.z : 1e6 * sign(N.z);
 
-	float3	centerRho = _rho;	// Uniform reflectance
+	float3	centerRho = _rho;	// Uniform reflectance all around our central pixel
 
 	// Samples circular surroundings in screen space
 	float3	ssAverageBentNormal = 0.0;
@@ -213,7 +228,6 @@ PS_OUT	PS( VS_IN _In ) {
 		float2	ssDirection = float2( sinCosPhi.y, sinCosPhi.x );
 
 		// Pre-compute factors for the integrals
-		// (NOTE: There's still room for optimization as the 1/N.z computation is uselessly repeated here)
 		float2	integralFactors_Front = ComputeIntegralFactors( ssDirection, N );
 		float2	integralFactors_Back = ComputeIntegralFactors( -ssDirection, N );
 
@@ -232,34 +246,97 @@ PS_OUT	PS( VS_IN _In ) {
 			ssPosition_Front += ssStep;
 			ssPosition_Back -= ssStep;
 			radius += RADIUS_STEP_SIZE;
-			sumIrradiance += SampleIrradiance( ssPosition_Front, H0, radius, integralFactors_Front, centerRho, maxCos_Front );	// Sample forward
-			sumIrradiance += SampleIrradiance( ssPosition_Back, H0, radius, integralFactors_Back, centerRho, maxCos_Back );		// Sample backward
+			sumIrradiance += SampleIrradiance( ssPosition_Front, H0, radius, integralFactors_Front, maxCos_Front, centerRho );	// Sample forward
+			sumIrradiance += SampleIrradiance( ssPosition_Back, H0, radius, integralFactors_Back, maxCos_Back, centerRho );		// Sample backward
 		}
 //*/
 		// Accumulate bent normal direction by rebuilding and averaging the front & back horizon vectors
-		// Half brute force where we perform the integration numerically as a sum...
-		// This solution is prefered to the analytical integral that shows some precision artefacts unfortunately...
-		//
-		float	thetaFront = acos( maxCos_Front );
-		float	thetaBack = -acos( maxCos_Back );
+		#if USE_NUMERICAL_INTEGRATION
+			// Half brute force where we perform the integration numerically as a sum...
+			// This solution is prefered to the analytical integral that shows some precision artefacts unfortunately...
+			//
+			float	thetaFront = acos( maxCos_Front );
+			float	thetaBack = -acos( maxCos_Back );
 
-		const uint	STEPS_COUNT = 256;
+			const uint	STEPS_COUNT = 256;
 
-		float3	ssBentNormal = 0.001 * N;
-		for ( uint i=0; i < STEPS_COUNT; i++ ) {
-			float	theta = lerp( thetaBack, thetaFront, (i+0.5) / STEPS_COUNT );
-			float	sinTheta, cosTheta;
-			sincos( theta, sinTheta, cosTheta );
-			float3	ssUnOccludedDirection = float3( sinTheta * ssDirection, cosTheta );
+			float3	ssBentNormal = 0.001 * N;
+			for ( uint i=0; i < STEPS_COUNT; i++ ) {
+				float	theta = lerp( thetaBack, thetaFront, (i+0.5) / STEPS_COUNT );
+				float	sinTheta, cosTheta;
+				sincos( theta, sinTheta, cosTheta );
+				float3	ssUnOccludedDirection = float3( sinTheta * ssDirection, cosTheta );
 
-			float	cosAlpha = saturate( dot( ssUnOccludedDirection, N ) );
+				float	cosAlpha = saturate( dot( ssUnOccludedDirection, N ) );
 
-			float	weight = cosAlpha * abs(sinTheta);		// cos(alpha) * sin(theta).dTheta  (be very careful to take abs(sin(theta)) because our theta crosses the pole and becomes negative here!)
-			ssBentNormal += weight * ssUnOccludedDirection;
-		}
+				float	weight = cosAlpha * abs(sinTheta);		// cos(alpha) * sin(theta).dTheta  (be very careful to take abs(sin(theta)) because our theta crosses the pole and becomes negative here!)
+				ssBentNormal += weight * ssUnOccludedDirection;
+			}
 
-		float	dTheta = (thetaFront - thetaBack) / STEPS_COUNT;
-		ssBentNormal *= dTheta;
+			float	dTheta = (thetaFront - thetaBack) / STEPS_COUNT;
+			ssBentNormal *= dTheta;
+		#else
+			// Integral computation
+			// The result is not as accurate as the method above and some noise artefacts pop up
+			//
+			// The idea is to integrate the contribution of a direction vector W(theta) = {sin(theta), cos(theta), 0} expressed in the current slice
+			//	and weighted with the dot( W, N ) and the solid angle sin(theta).dTheta.
+			// W is split into its X and Y integration in the following way:
+			//	~X = Integral[0,theta0]{ sin(theta).cos(psi).sin(theta).dtheta } - Integral[0,theta1]{ sin(theta).cos(psi).sin(theta).dtheta }
+			//	~Y = Integral[0,theta0]{ cos(theta).cos(psi).sin(theta).dtheta } + Integral[0,theta1]{ cos(theta).cos(psi).sin(theta).dtheta }
+			//
+			// psi is the angle between W(theta) and N and can be found from the spherical law of cosines (https://en.wikipedia.org/wiki/Spherical_law_of_cosines):
+			//	• We are given the length of 2 sides which are
+			//		theta, the angle between W and the Z axis (0,0,1)
+			//		alpha, the angle between the normal and the Z axis
+			//	• We know the azimutal angle phi between the slice and the plane containing Z and the normal
+			//
+			// Thus cos(psi) = cos(theta).cos(alpha) + sin(theta).sin(alpha).cos(phi)
+			//
+			// I'll spare you the computation details as it's kind of verbose but in the end we basically have to integrate sin²(x).cos(x) or cos²(x).sin(x)
+			//	or even sin^3(x) and re-order the terms properly...
+			//
+			float	cosAlpha = N.z;// saturate( dot( N, float3( 0, 0, 1 ) ) );
+			float	sinAlpha = sqrt( 1.0 - cosAlpha*cosAlpha );
+//			float	cosPhi = dot( normalize( N.xy ), ssDirection );
+//			float	sinAlphaCosPhi = sinAlpha * cosPhi;			// This basically does sin(alpha) * dot( N.xy / sin(alpha), ssDirection ) so...
+			float	sinAlphaCosPhi = dot( N.xy, ssDirection );
+
+			#if 0
+				// Optimized computation
+				float	cosTheta0 = maxCos_Front;
+				float	cosTheta0_2 = cosTheta0 * cosTheta0;
+				float	cosTheta0_3 = cosTheta0_2 * cosTheta0;
+				float	sinTheta0_2 = 1.0 - cosTheta0_2;
+				float	sinTheta0 = sqrt( sinTheta0_2 );
+				float	sinTheta0_3 = sinTheta0_2 * sinTheta0;
+
+				float	cosTheta1 = maxCos_Back;
+				float	cosTheta1_2 = cosTheta1 * cosTheta1;
+				float	cosTheta1_3 = cosTheta1_2 * cosTheta1;
+				float	sinTheta1_2 = 1.0 - cosTheta1_2;
+				float	sinTheta1 = sqrt( sinTheta1_2 );
+				float	sinTheta1_3 = sinTheta1_2 * sinTheta1;
+			#else
+				// Detailed computation
+				float	theta0 = acos( maxCos_Front );
+				float	theta1 = -acos( maxCos_Back );
+
+				float	cosTheta0 = cos( theta0 );
+				float	sinTheta0 = sin( theta0 );
+				float	cosTheta1 = cos( theta1 );
+				float	sinTheta1 = sin( theta1 );
+				float	cosTheta0_3 = cosTheta0*cosTheta0*cosTheta0;
+				float	sinTheta0_3 = sinTheta0*sinTheta0*sinTheta0;
+				float	cosTheta1_3 = cosTheta1*cosTheta1*cosTheta1;
+				float	sinTheta1_3 = sinTheta1*sinTheta1*sinTheta1;
+			#endif
+
+			float	X = cosAlpha * (sinTheta0_3 - sinTheta1_3) + sinAlphaCosPhi * (4.0 - 3.0*(cosTheta0 + cosTheta1_3) + cosTheta0_3 + cosTheta1_3) - sinAlpha * (2.0 - 3.0*cosTheta1 + cosTheta1_3);
+			float	Y = cosAlpha * (2.0 - cosTheta1_3 - cosTheta0_3) + sinAlphaCosPhi * (sinTheta0_3 - sinTheta1_3) + sinAlpha * sinTheta1_3;
+			float3	ssBentNormal = float3( X * ssDirection, Y );
+		#endif
+
 		ssBentNormal = normalize( ssBentNormal );
 
 		ssAverageBentNormal += ssBentNormal;
@@ -292,16 +369,16 @@ PS_OUT	PS( VS_IN _In ) {
 
 	float	stdDeviation = sqrt( varianceConeAngle );
 
-#if SAMPLE_BENT_CONE_MAP
-	// Replace runtime computation by precise bent cone map sampling
-	float4	bentCone = _texBentCone[pixelPosition];
-			bentCone.xyz = 2.0 * bentCone.xyz - 1.0;
-			bentCone.y *= -1.0;
-	float	cosAlpha = length( bentCone.xyz );
-	ssAverageBentNormal = bentCone.xyz * (cosAlpha > 0.0 ? 1.0 / cosAlpha : 0.0);
-	stdDeviation = 0.5 * PI * bentCone.w;
-	averageConeAngle = acos( cosAlpha );
-#endif
+	#if SAMPLE_BENT_CONE_MAP
+		// Replace runtime computation by precise bent cone map sampling
+		float4	bentCone = _texBentCone[pixelPosition];
+				bentCone.xyz = 2.0 * bentCone.xyz - 1.0;
+				bentCone.y *= -1.0;
+		float	cosAlpha = length( bentCone.xyz );
+		ssAverageBentNormal = bentCone.xyz * (cosAlpha > 0.0 ? 1.0 / cosAlpha : 0.0);
+		stdDeviation = 0.5 * PI * bentCone.w;
+		averageConeAngle = acos( cosAlpha );
+	#endif
 
 	// Increase cone aperture a little (based on manual fitting of irradiance compared to ground truth with 0 bounce)
 //	averageConeAngle += 0.18 * stdDeviation;

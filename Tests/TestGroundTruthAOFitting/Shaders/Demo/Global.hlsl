@@ -28,3 +28,33 @@ void BuildOrthonormalBasis( float3 _normal, out float3 _tangent, out float3 _bit
 	_tangent = float3( 1.0 - _normal.x*_normal.x*a, b, -_normal.x );
 	_bitangent = float3( b, 1.0 - _normal.y*_normal.y*a, -_normal.y );
 }
+
+// Handbook of Mathematical Functions
+// M. Abramowitz and I.A. Stegun, Ed.
+// Absolute error <= 6.7e-5
+// Source: https://web.archive.org/web/20161223122122/http://http.developer.nvidia.com:80/Cg/acos.html
+float fastAcos( float x ) {
+  float negate = float(x < 0);
+  x = abs(x);
+  float ret = -0.0187293;
+  ret = ret * x;
+  ret = ret + 0.0742610;
+  ret = ret * x;
+  ret = ret - 0.2121144;
+  ret = ret * x;
+  ret = ret + 1.5707288;
+  ret = ret * sqrt(1.0-x);
+  ret = ret - 2 * negate * ret;
+  return negate * PI + ret;
+}
+float fastPosAcos( float x ) {	// If you're sure x>0 then use this version
+  float ret = -0.0187293;
+  ret = ret * x;
+  ret = ret + 0.0742610;
+  ret = ret * x;
+  ret = ret - 0.2121144;
+  ret = ret * x;
+  ret = ret + 1.5707288;
+  ret = ret * sqrt(1.0-x);
+  return ret;
+}

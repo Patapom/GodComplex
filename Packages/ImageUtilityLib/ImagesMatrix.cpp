@@ -380,7 +380,7 @@ void	ImagesMatrix::Mips::Init( U32 _mipLevelsCount ) {
 }
 
 void	ImagesMatrix::Mips::AllocateImageFiles( PIXEL_FORMAT _format, const ColorProfile& _colorProfile ) {
-//	ReleasePointers();	// Release first
+//	ReleasePointers();	// Release first <= DON'T! User may already have provided some images as valid components of the matrix, we just need to allocate empty slots!
 	for ( U32 i=0; i < m_mips.Count(); i++ ) {
 		m_mips[i].AllocateImageFiles( _format, _colorProfile );
 	}
@@ -405,7 +405,7 @@ void	ImagesMatrix::Mips::Mip::Init( U32 _width, U32 _height, U32 _depth ) {
 }
 
 void	ImagesMatrix::Mips::Mip::AllocateImageFiles( PIXEL_FORMAT _format, const ColorProfile& _colorProfile ) {
-//	ReleasePointers();	// Release first
+//	ReleasePointers();	// Release first <= DON'T! User may already have provided some images as valid components of the matrix, we just need to allocate empty slots!
 	for ( U32 i=0; i < m_images.Count(); i++ ) {
 		if ( m_images[i] == NULL ) {
 			ImageFile*	imageSlice = new ImageFile( m_width, m_height, _format, _colorProfile );

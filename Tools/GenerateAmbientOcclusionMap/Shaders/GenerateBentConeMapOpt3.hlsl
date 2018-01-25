@@ -131,7 +131,7 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID ) 
 	uint	rayIndex = _GroupThreadID.x;
 	if ( rayIndex == 0 ) {
 		// Build local tangent space to orient rays
-		float3	normal = _Tex_Normal[pixelPosition];
+		float3	normal = normalize( _Tex_Normal[pixelPosition] );
 		float3	tangent, biTangent;
 		BuildOrthonormalBasis( normal, tangent, biTangent );
 
@@ -195,7 +195,7 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID ) 
 		}
 //*/
 		// Compute the "average" bent normal weighted by the cos(alpha) where alpha is the angle with the actual normal
-		#if 1
+		#if 0
 			// Half brute force where we perform the integration numerically as a sum...
 			// This solution is prefered to the analytical integral that shows some precision artefacts unfortunately...
 			//
@@ -204,33 +204,49 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID ) 
 
 			const uint	STEPS_COUNT = 256;
 
-			float3	ssBentNormal = 0.001 * N;
-			for ( uint i=0; i < STEPS_COUNT; i++ ) {
-				float	theta = lerp( thetaBack, thetaFront, (i+0.5) / STEPS_COUNT );
-				float	sinTheta, cosTheta;
-				sincos( theta, sinTheta, cosTheta );
-				float3	ssUnOccludedDirection = float3( sinTheta * ssDirection, cosTheta );
+			#if 0
+				// Do the integration in 3D
+				float3	ssBentNormal = 0.001 * N;
+				for ( uint i=0; i < STEPS_COUNT; i++ ) {
+					float	theta = lerp( thetaBack, thetaFront, (i+0.5) / STEPS_COUNT );
+					float	sinTheta, cosTheta;
+					sincos( theta, sinTheta, cosTheta );
+					float3	ssUnOccludedDirection = float3( sinTheta * ssDirection, cosTheta );
 
-				float	cosAlpha = saturate( dot( ssUnOccludedDirection, N ) );
+					float	cosAlpha = saturate( dot( ssUnOccludedDirection, N ) );
 
-				float	weight = cosAlpha * abs(sinTheta);		// cos(alpha) * sin(theta).dTheta
+					float	weight = cosAlpha * abs(sinTheta);		// cos(alpha) * sin(theta).dTheta
 
 //weight = cosAlpha * sqrt( 1.0 - cosAlpha*cosAlpha );
 
-				ssBentNormal += weight * ssUnOccludedDirection;
-			}
+					ssBentNormal += weight * ssUnOccludedDirection;
+				}
+			#else
+				// Do the integration in 2D (in slice space)
+				float2	sliceSpaceNormal = float2( dot( N.xy, ssDirection ), N.z );
+				float2	sliceSpaceBentNormal = 0.0;
+				for ( uint i=0; i < STEPS_COUNT; i++ ) {
+					float	theta = lerp( thetaBack, thetaFront, (i+0.5) / STEPS_COUNT );
+					float	sinTheta, cosTheta;
+					sincos( theta, sinTheta, cosTheta );
+					float2	sliceSpaceOmega = float2( sinTheta, cosTheta );
+					float	cosAlpha = saturate( dot( sliceSpaceOmega, sliceSpaceNormal ) );
+					float	weight = cosAlpha * abs(sinTheta);		// cos(alpha) * sin(theta).dTheta
+					sliceSpaceBentNormal += weight * sliceSpaceOmega;
+				}
+				float3	ssBentNormal = float3( sliceSpaceBentNormal.x * ssDirection, sliceSpaceBentNormal.y );
+			#endif
 
 			float	dTheta = (thetaFront - thetaBack) / STEPS_COUNT;
 			ssBentNormal *= dTheta;
-			ssBentNormal = normalize( ssBentNormal );
 
 		#elif 0
 
 #TODO: Same as half brute force but using lerp( cos(theta_Front), cos(theta_Back) ) instead of linearly interpolating angles!!
 
-		#elif 1
+		#elif 0
 			// Integral computation
-			// The result is not as accurate as the method above and some noise artefacts pop up
+			// The result is not as accurate as the method above for reasons I don't understand
 			//
 			// The idea is to integrate the contribution of a direction vector W(theta) = {sin(theta), cos(theta), 0} expressed in the current slice
 			//	and weighted with the dot( W, N ) and the solid angle sin(theta).dTheta.
@@ -251,7 +267,9 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID ) 
 			//
 			float	cosAlpha = N.z;// saturate( dot( N, float3( 0, 0, 1 ) ) );
 			float	sinAlpha = sqrt( 1.0 - cosAlpha*cosAlpha );
-			float	cosPhi = dot( normalize( N.xy ), ssDirection );
+//			float	cosPhi = dot( normalize( N.xy ), ssDirection );
+//			float	sinAlphaCosPhi = sinAlpha * cosPhi;			// This basically does sin(alpha) * dot( N.xy / sin(alpha), ssDirection ) so...
+			float	sinAlphaCosPhi = dot( N.xy, ssDirection );
 
 			#if 1
 				// Optimized computation
@@ -269,7 +287,7 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID ) 
 				float	sinTheta1 = sqrt( sinTheta1_2 );
 				float	sinTheta1_3 = sinTheta1_2 * sinTheta1;
 			#else
-				// Detailed computaiton
+				// Detailed computation
 				float	theta0 = acos( maxCos_Front );
 				float	theta1 = acos( maxCos_Back );
 
@@ -283,23 +301,52 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID ) 
 				float	sinTheta1_3 = sinTheta1*sinTheta1*sinTheta1;
 			#endif
 
-			float	X = cosAlpha * (sinTheta0_3 - sinTheta1_3) + sinAlpha * cosPhi * (4.0 - 3.0*(cosTheta0 + cosTheta1_3) + cosTheta0_3 + cosTheta1_3) - sinAlpha * (2.0 - 3.0*cosTheta1 + cosTheta1_3);
-			float	Y = cosAlpha * (2.0 - cosTheta1_3 - cosTheta0_3) + sinAlpha * cosPhi * (sinTheta0_3 - sinTheta1_3) + sinAlpha * sinTheta1_3;
+			float	X = cosAlpha * (sinTheta0_3 - sinTheta1_3) + sinAlphaCosPhi * (4.0 - 3.0*(cosTheta0 + cosTheta1_3) + cosTheta0_3 + cosTheta1_3) - sinAlpha * (2.0 - 3.0*cosTheta1 + cosTheta1_3);
+			float	Y = cosAlpha * (2.0 - cosTheta1_3 - cosTheta0_3) + sinAlphaCosPhi * (sinTheta0_3 - sinTheta1_3) + sinAlpha * sinTheta1_3;
 			float3	ssBentNormal = float3( X * ssDirection, Y );
-					ssBentNormal = normalize( ssBentNormal );
+
+		#elif 1
+			// Redid my integration in a smarter way
+			float	cosTheta0 = maxCos_Front;
+			float	cosTheta1 = maxCos_Back;
+			float	sinTheta0 = sqrt( 1.0 - cosTheta0*cosTheta0 );
+			float	sinTheta1 = sqrt( 1.0 - cosTheta1*cosTheta1 );
+			float	cosTheta0_3 = cosTheta0*cosTheta0*cosTheta0;
+			float	cosTheta1_3 = cosTheta1*cosTheta1*cosTheta1;
+			float	sinTheta0_3 = sinTheta0*sinTheta0*sinTheta0;
+			float	sinTheta1_3 = sinTheta1*sinTheta1*sinTheta1;
+
+			float2	sliceSpaceNormal = float2( dot( N.xy, ssDirection ), N.z );
+
+			float	averageX = sliceSpaceNormal.x * (cosTheta0_3 + cosTheta1_3 - 3.0 * (cosTheta0 + cosTheta1) + 4.0)
+							 + sliceSpaceNormal.y * (sinTheta0_3 - sinTheta1_3);
+
+			float	averageY = sliceSpaceNormal.x * (sinTheta0_3 - sinTheta1_3)
+							 + sliceSpaceNormal.y * (2.0 - cosTheta0_3 - cosTheta1_3);
+
+			float3	ssBentNormal = float3( averageX * ssDirection, averageY );
 
 		#else
-			// Martin's integral computation (didn't manage to make it work :'()
-			float	theta0 = -acos( maxCos_Front );
-			float	theta1 = acos( maxCos_Back );
+			// Martin's integral computation (didn't manage to make it work :'() (even redid the computation myself but still doesn't work!)
+			float	cosTheta0 = maxCos_Front;
+			float	cosTheta1 = maxCos_Back;
 
-			float	I1 = (pow( cos(theta0), 3.0 ) + pow( cos(theta1), 3.0 )) / 3.0 - (cos(theta0) + cos(theta1)) + 4.0 / 3.0;
-			float	I2 = 2.0 - (pow( cos(theta0), 3.0 ) + pow( cos(theta1), 3.0 ));
-			float3	ssBentNormal = float3(	N.x * I1 * PI / 2.0,
-											N.y * I1 * PI / 2.0,
-											N.z * I2 * PI / 3.0
-										);
+//			float	I1 = (pow( cos(theta0), 3.0 ) + pow( cos(theta1), 3.0 )) / 3.0 - (cos(theta0) + cos(theta1)) * 4.0 / 3.0;
+//			float	I2 = 2.0 - (pow( cos(theta0), 3.0 ) + pow( cos(theta1), 3.0 ));
+//			float3	ssBentNormal = float3(	N.x * I1 * PI / 2.0,
+//											N.y * I1 * PI / 2.0,
+//											N.z * I2 * PI / 3.0
+//										);
+			float	cosTheta0_3 = cosTheta0*cosTheta0*cosTheta0;
+			float	cosTheta1_3 = cosTheta1*cosTheta1*cosTheta1;
+
+			float	I1 = cosTheta0_3 - cosTheta1_3 - 3.0 * (cosTheta0 - cosTheta1);
+			float	I2 = 2.0 - cosTheta0_3 - cosTheta1_3;
+			float3	ssBentNormal = float3( ssDirection.x*ssDirection.x*N.x * I1 * ssDirection.x, ssDirection.y*ssDirection.y*N.y * I1 * ssDirection.y, N.z * I2 );
+
 		#endif
+
+		ssBentNormal = normalize( ssBentNormal );
 
 		uint	dontCare;
 		InterlockedAdd( gs_occlusionDirectionAccumulator.x, uint(65536.0 * (1.0 + ssBentNormal.x)), dontCare );
@@ -382,7 +429,7 @@ uint	previousDebug;
 		float3	ssBentNormal = float3( gs_occlusionDirectionAccumulator.xyz ) - _raysCount * 65536.0;
 				ssBentNormal = normalize( ssBentNormal );
 
-		#if 1
+		#if 0
 			uint	finalCount = max( 1, 2 * (gs_horizonAngleAccumulator.x >> 20) );
 //					finalCount = finalCount == 0 ? 256 : finalCount;	// When rays count == 256, the counter gets overflowed
 			float	averageAngle = ((gs_horizonAngleAccumulator.x & 0x000FFFFFU) / 256.0) / finalCount;
