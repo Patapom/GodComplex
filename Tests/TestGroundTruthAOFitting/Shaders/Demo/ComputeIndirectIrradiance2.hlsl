@@ -7,15 +7,19 @@
 
 #define	MAX_ANGLES	32			// Amount of angular subdivisions of the circle
 #define	MAX_RADIUS	32			// Amount of radial subdivisions of the circle
-#define	RADIUS_STEP_SIZE 2.0	// Radial step size (in pixels)
+#define	RADIUS_STEP_SIZE 4.0	// Radial step size (in pixels)
 
 #define	SAMPLER	LinearWrap
 
 //#define SAMPLE_BENT_CONE_MAP 1	// Define this to use precomputed bent-cone map instead of our own runtime computation (more precise to start with) (DEBUG ONLY!)
 
+// !!SLIGHTLY LESS ACCURATE!!
 //#define USE_FAST_ACOS 1			// Define this to use the "fast acos" function instead of true acos()
+// !!SLIGHTLY LESS ACCURATE!!
 
-//#define USE_NUMERICAL_INTEGRATION 1	// Define this to compute bent normal numerically
+// !!MORE EXPENSIVE AND LESS ACCURATE => DON'T USE EXCEPT FOR DEBUG!!
+//#define USE_NUMERICAL_INTEGRATION 256	// Define this to compute bent normal numerically (value = integration steps count)
+// !!MORE EXPENSIVE AND LESS ACCURATE => DON'T USE EXCEPT FOR DEBUG!!
 
 #define PREMULTIPLY_ALBEDO 1	// Define this to store (albedo/PI)*Irradiance instead of simply Irradiance
 								// The main interest is to be able to use the value straight from the sampler
@@ -258,11 +262,9 @@ PS_OUT	PS( VS_IN _In ) {
 			float	thetaFront = acos( maxCos_Front );
 			float	thetaBack = -acos( maxCos_Back );
 
-			const uint	STEPS_COUNT = 256;
-
 			float3	ssBentNormal = 0.001 * N;
-			for ( uint i=0; i < STEPS_COUNT; i++ ) {
-				float	theta = lerp( thetaBack, thetaFront, (i+0.5) / STEPS_COUNT );
+			for ( uint i=0; i < USE_NUMERICAL_INTEGRATION; i++ ) {
+				float	theta = lerp( thetaBack, thetaFront, (i+0.5) / USE_NUMERICAL_INTEGRATION );
 				float	sinTheta, cosTheta;
 				sincos( theta, sinTheta, cosTheta );
 				float3	ssUnOccludedDirection = float3( sinTheta * ssDirection, cosTheta );
@@ -273,68 +275,28 @@ PS_OUT	PS( VS_IN _In ) {
 				ssBentNormal += weight * ssUnOccludedDirection;
 			}
 
-			float	dTheta = (thetaFront - thetaBack) / STEPS_COUNT;
+			float	dTheta = (thetaFront - thetaBack) / USE_NUMERICAL_INTEGRATION;
 			ssBentNormal *= dTheta;
 		#else
 			// Integral computation
-			// The result is not as accurate as the method above and some noise artefacts pop up
-			//
-			// The idea is to integrate the contribution of a direction vector W(theta) = {sin(theta), cos(theta), 0} expressed in the current slice
-			//	and weighted with the dot( W, N ) and the solid angle sin(theta).dTheta.
-			// W is split into its X and Y integration in the following way:
-			//	~X = Integral[0,theta0]{ sin(theta).cos(psi).sin(theta).dtheta } - Integral[0,theta1]{ sin(theta).cos(psi).sin(theta).dtheta }
-			//	~Y = Integral[0,theta0]{ cos(theta).cos(psi).sin(theta).dtheta } + Integral[0,theta1]{ cos(theta).cos(psi).sin(theta).dtheta }
-			//
-			// psi is the angle between W(theta) and N and can be found from the spherical law of cosines (https://en.wikipedia.org/wiki/Spherical_law_of_cosines):
-			//	• We are given the length of 2 sides which are
-			//		theta, the angle between W and the Z axis (0,0,1)
-			//		alpha, the angle between the normal and the Z axis
-			//	• We know the azimutal angle phi between the slice and the plane containing Z and the normal
-			//
-			// Thus cos(psi) = cos(theta).cos(alpha) + sin(theta).sin(alpha).cos(phi)
-			//
-			// I'll spare you the computation details as it's kind of verbose but in the end we basically have to integrate sin²(x).cos(x) or cos²(x).sin(x)
-			//	or even sin^3(x) and re-order the terms properly...
-			//
-			float	cosAlpha = N.z;// saturate( dot( N, float3( 0, 0, 1 ) ) );
-			float	sinAlpha = sqrt( 1.0 - cosAlpha*cosAlpha );
-//			float	cosPhi = dot( normalize( N.xy ), ssDirection );
-//			float	sinAlphaCosPhi = sinAlpha * cosPhi;			// This basically does sin(alpha) * dot( N.xy / sin(alpha), ssDirection ) so...
-			float	sinAlphaCosPhi = dot( N.xy, ssDirection );
+			float	cosTheta0 = maxCos_Front;
+			float	cosTheta1 = maxCos_Back;
+			float	sinTheta0 = sqrt( 1.0 - cosTheta0*cosTheta0 );
+			float	sinTheta1 = sqrt( 1.0 - cosTheta1*cosTheta1 );
+			float	cosTheta0_3 = cosTheta0*cosTheta0*cosTheta0;
+			float	cosTheta1_3 = cosTheta1*cosTheta1*cosTheta1;
+			float	sinTheta0_3 = sinTheta0*sinTheta0*sinTheta0;
+			float	sinTheta1_3 = sinTheta1*sinTheta1*sinTheta1;
 
-			#if 0
-				// Optimized computation
-				float	cosTheta0 = maxCos_Front;
-				float	cosTheta0_2 = cosTheta0 * cosTheta0;
-				float	cosTheta0_3 = cosTheta0_2 * cosTheta0;
-				float	sinTheta0_2 = 1.0 - cosTheta0_2;
-				float	sinTheta0 = sqrt( sinTheta0_2 );
-				float	sinTheta0_3 = sinTheta0_2 * sinTheta0;
+			float2	sliceSpaceNormal = float2( dot( N.xy, ssDirection ), N.z );
 
-				float	cosTheta1 = maxCos_Back;
-				float	cosTheta1_2 = cosTheta1 * cosTheta1;
-				float	cosTheta1_3 = cosTheta1_2 * cosTheta1;
-				float	sinTheta1_2 = 1.0 - cosTheta1_2;
-				float	sinTheta1 = sqrt( sinTheta1_2 );
-				float	sinTheta1_3 = sinTheta1_2 * sinTheta1;
-			#else
-				// Detailed computation
-				float	theta0 = acos( maxCos_Front );
-				float	theta1 = -acos( maxCos_Back );
+			float	averageX = sliceSpaceNormal.x * (cosTheta0_3 + cosTheta1_3 - 3.0 * (cosTheta0 + cosTheta1) + 4.0)
+							 + sliceSpaceNormal.y * (sinTheta0_3 - sinTheta1_3);
 
-				float	cosTheta0 = cos( theta0 );
-				float	sinTheta0 = sin( theta0 );
-				float	cosTheta1 = cos( theta1 );
-				float	sinTheta1 = sin( theta1 );
-				float	cosTheta0_3 = cosTheta0*cosTheta0*cosTheta0;
-				float	sinTheta0_3 = sinTheta0*sinTheta0*sinTheta0;
-				float	cosTheta1_3 = cosTheta1*cosTheta1*cosTheta1;
-				float	sinTheta1_3 = sinTheta1*sinTheta1*sinTheta1;
-			#endif
+			float	averageY = sliceSpaceNormal.x * (sinTheta0_3 - sinTheta1_3)
+							 + sliceSpaceNormal.y * (2.0 - cosTheta0_3 - cosTheta1_3);
 
-			float	X = cosAlpha * (sinTheta0_3 - sinTheta1_3) + sinAlphaCosPhi * (4.0 - 3.0*(cosTheta0 + cosTheta1_3) + cosTheta0_3 + cosTheta1_3) - sinAlpha * (2.0 - 3.0*cosTheta1 + cosTheta1_3);
-			float	Y = cosAlpha * (2.0 - cosTheta1_3 - cosTheta0_3) + sinAlphaCosPhi * (sinTheta0_3 - sinTheta1_3) + sinAlpha * sinTheta1_3;
-			float3	ssBentNormal = float3( X * ssDirection, Y );
+			float3	ssBentNormal = float3( averageX * ssDirection, averageY );
 		#endif
 
 		ssBentNormal = normalize( ssBentNormal );
