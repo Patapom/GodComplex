@@ -43,6 +43,19 @@ struct VS_IN {
 
 VS_IN	VS( VS_IN _In ) { return _In; }
 
+float4	SampleBentCone( float2 _UV ) {
+	float4	bentCone = _texBentCone.Sample( LinearClamp, _UV );
+			bentCone.xyz = 2.0 * bentCone.xyz - 1.0;
+			bentCone.y *= -1.0;	// Reverse Y (done everywhere else at texture creation level, but not here)
+	return bentCone;
+}
+
+float4	SampleComputedBentCone( float2 _UV ) {
+	float4	bentCone = _texComputedBentCone.Sample( LinearClamp, _UV );
+			bentCone.y *= -1.0;	// Reverse Y (done everywhere else at texture creation level, but not here)
+	return bentCone;
+}
+
 float3	GroundTruth( float2 _UV, float3 _rho ) {
 	float3	E0 = _texGroundTruthIrradiance.Sample( LinearClamp, float3( _UV, 0 ) ).xyz;			// Direct irradiance E0
 	float3	E = E0;
@@ -165,9 +178,7 @@ float3	PS( VS_IN _In ) : SV_TARGET0 {
 	float	tauFactor = 1.0;
 	if ( renderType == RENDER_BENT_CONE ) {
 		// Estimate SH in the direction of the bent normal, and reduce the irradiance integration to the aperture of the cone
-		float4	bentCone = _texBentCone.Sample( LinearClamp, UV );
-				bentCone.xyz = 2.0 * bentCone.xyz - 1.0;
-				bentCone.y *= -1.0;	// Reverse Y (done everywhere else at texture creation level, but not here)
+		float4	bentCone = SampleBentCone( UV );
 
 #if 1
 		E0 = EvaluateSHIrradianceBentCone( bentCone, AO_E0, SH );
@@ -223,17 +234,19 @@ E0 *= lerp( 1.0, boostFactor, _debugValue.y );	// _debugValue.y = 0.5185
 	// Simulated ground truth
 	float3	resultSimulated = 0.0;
 	if ( renderType == RENDER_GROUND_TRUTH_SIMULATION ) {
-		resultSimulated = _texIrradiance.Sample( LinearClamp, UV ).xyz;	// If albédo is pre-multiplied
+		resultSimulated = _texIrradiance.Sample( LinearClamp, UV ).xyz;	// If albedo is pre-multiplied
 //		resultSimulated = (_rho / PI) * _texIrradiance.Sample( LinearClamp, UV ).xyz;	// Otherwise...
 
-//resultSimulated = _texComputedBentCone.Sample( LinearClamp, UV ).w;
-//resultSimulated = _texComputedBentCone.Sample( LinearClamp, UV ).xyz;
+//resultSimulated = normalize( SampleComputedBentCone( UV ).xyz );
+resultSimulated = length( SampleComputedBentCone( UV ).xyz );
+//resultSimulated = normalize( SampleBentCone( UV ).xyz );
 	}
 
 	///////////////////////////////////////////////////////////
 	// Ground Truth solution
 	float3	resultGroundTruth = GroundTruth( UV, _rho );
 //	float3	resultGroundTruth = (dot( GroundTruth( UV, _rho ), LUMINANCE ) - dot( (_rho / PI) * E0 * AO, LUMINANCE ));
+resultGroundTruth = length( SampleBentCone( UV ).xyz );
 
 	///////////////////////////////////////////////////////////
 	// Combine result
@@ -244,7 +257,8 @@ E0 *= lerp( 1.0, boostFactor, _debugValue.y );	// _debugValue.y = 0.5185
 		result = resultGroundTruth;
 
 	if ( _flags & 0x10U ) {
-		result = abs( result - GroundTruth( UV, _rho ) );	// Show difference
+//		result = abs( result - GroundTruth( UV, _rho ) );	// Show difference
+result = abs( result - length( SampleBentCone( UV ).xyz ) );
 	}
 
 	return _exposure * result;

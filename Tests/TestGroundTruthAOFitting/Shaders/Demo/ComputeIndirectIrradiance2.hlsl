@@ -5,7 +5,7 @@
 #include "Global.hlsl"
 #include "SphericalHarmonics.hlsl"
 
-#if 0
+#if 1
 	// Quality values
 	#define	MAX_ANGLES	32			// Amount of angular subdivisions of the circle
 	#define	MAX_RADIUS	32			// Amount of radial subdivisions of the circle
@@ -19,7 +19,7 @@
 
 #define	SAMPLER	LinearWrap
 
-#define SAMPLE_BENT_CONE_MAP 1	// Define this to use precomputed bent-cone map instead of our own runtime computation (more precise to start with) (DEBUG ONLY!)
+//#define SAMPLE_BENT_CONE_MAP 1	// Define this to use precomputed bent-cone map instead of our own runtime computation (more precise to start with) (DEBUG ONLY!)
 
 // !!SLIGHTLY LESS ACCURATE!!
 //#define USE_FAST_ACOS 1			// Define this to use the "fast acos" function instead of true acos()
@@ -317,8 +317,13 @@ PS_OUT	PS( VS_IN _In ) {
 		// Compute cone angle
 		float3	ssHorizon_Front = float3( sqrt( 1.0 - maxCos_Front*maxCos_Front ) * ssDirection, maxCos_Front );
 		float3	ssHorizon_Back = float3( -sqrt( 1.0 - maxCos_Back*maxCos_Back ) * ssDirection, maxCos_Back );
-		float	coneAngle_Front = acos( dot( ssBentNormal, ssHorizon_Front ) );
-		float	coneAngle_Back = acos( dot( ssBentNormal, ssHorizon_Back ) );
+		#if 1//USE_FAST_ACOS
+			float	coneAngle_Front = fastPosAcos( saturate( dot( ssBentNormal, ssHorizon_Front ) ) );
+			float	coneAngle_Back = fastPosAcos( saturate( dot( ssBentNormal, ssHorizon_Back ) ) ) ;
+		#else
+			float	coneAngle_Front = acos( dot( ssBentNormal, ssHorizon_Front ) );
+			float	coneAngle_Back = acos( dot( ssBentNormal, ssHorizon_Back ) );
+		#endif
 
 		// We're using running variance computation from https://www.johndcook.com/blog/standard_deviation/
 		//	Avg(N) = Avg(N-1) + [V(N) - Avg(N-1)] / N
@@ -336,7 +341,7 @@ PS_OUT	PS( VS_IN _In ) {
 
 	// Finalize bent cone
 	#if MAX_ANGLES > 2
-		varianceConeAngle /= 2*MAX_ANGLES - 1;
+		varianceConeAngle /= 2.0*MAX_ANGLES - 1.0;
 	#endif
 	ssAverageBentNormal = normalize( ssAverageBentNormal );
 
