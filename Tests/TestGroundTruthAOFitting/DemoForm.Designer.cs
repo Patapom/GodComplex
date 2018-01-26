@@ -35,6 +35,7 @@
 			this.floatTrackbarControlDebug2 = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.floatTrackbarControlDebug3 = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.radioButtonGroundTruth = new System.Windows.Forms.RadioButton();
+			this.checkBoxMix = new System.Windows.Forms.CheckBox();
 			this.SuspendLayout();
 			// 
 			// timer
@@ -243,11 +244,22 @@
 			this.radioButtonGroundTruth.UseVisualStyleBackColor = true;
 			this.radioButtonGroundTruth.CheckedChanged += new System.EventHandler(this.radioButtonGroundTruth_CheckedChanged);
 			// 
+			// checkBoxMix
+			// 
+			this.checkBoxMix.AutoSize = true;
+			this.checkBoxMix.Location = new System.Drawing.Point(237, 563);
+			this.checkBoxMix.Name = "checkBoxMix";
+			this.checkBoxMix.Size = new System.Drawing.Size(42, 17);
+			this.checkBoxMix.TabIndex = 5;
+			this.checkBoxMix.Text = "Mix";
+			this.checkBoxMix.UseVisualStyleBackColor = true;
+			// 
 			// DemoForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(679, 622);
+			this.Controls.Add(this.checkBoxMix);
 			this.Controls.Add(this.checkBoxDiff);
 			this.Controls.Add(this.integerTrackbarControlBouncesCount);
 			this.Controls.Add(this.radioButtonGroundTruth);
@@ -296,5 +308,6 @@
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlDebug2;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlDebug3;
 		private System.Windows.Forms.RadioButton radioButtonGroundTruth;
+		private System.Windows.Forms.CheckBox checkBoxMix;
 	}
 }

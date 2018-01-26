@@ -109,9 +109,10 @@ namespace TestGroundTruthAOFitting
 				m_CB_Main.m._flags |= 4U;
 			m_CB_Main.m._bouncesCount = (uint) integerTrackbarControlBouncesCount.Value;
 			m_CB_Main.m._flags |= checkBoxDiff.Checked ? 0x10U : 0x0U;
+			m_CB_Main.m._flags |= checkBoxMix.Checked ? 0x20U : 0x0U;
 
-//			m_CB_Main.m._rho = floatTrackbarControlReflectance.Value * new float3( 1.0f, 0.9f, 0.7f );
-m_CB_Main.m._rho = floatTrackbarControlReflectance.Value * float3.One;
+			m_CB_Main.m._rho = floatTrackbarControlReflectance.Value * new float3( 1.0f, 0.9f, 0.7f );
+//m_CB_Main.m._rho = floatTrackbarControlReflectance.Value * float3.One;
 
 			m_CB_Main.m._exposure = floatTrackbarControlExposure.Value;
 			m_CB_Main.m._debugValue.Set( floatTrackbarControlDebug0.Value, floatTrackbarControlDebug1.Value, floatTrackbarControlDebug2.Value, floatTrackbarControlDebug3.Value );

@@ -11,10 +11,10 @@
 	#define	MAX_RADIUS	32			// Amount of radial subdivisions of the circle
 	#define	RADIUS_STEP_SIZE 2.0	// Radial step size (in pixels)
 #else
-	// Optimum values
-	#define	MAX_ANGLES	4			// Amount of angular subdivisions of the circle
-	#define	MAX_RADIUS	4			// Amount of radial subdivisions of the circle
-	#define	RADIUS_STEP_SIZE 16.0	// Radial step size (in pixels)
+	// Fast values
+	#define	MAX_ANGLES	2			// Amount of angular subdivisions of the circle
+	#define	MAX_RADIUS	8			// Amount of radial subdivisions of the circle
+	#define	RADIUS_STEP_SIZE 8.0	// Radial step size (in pixels)
 #endif
 
 #define	SAMPLER	LinearWrap
@@ -261,6 +261,9 @@ PS_OUT	PS( VS_IN _In ) {
 			ssPosition_Front += ssStep;
 			ssPosition_Back -= ssStep;
 			radius += stepSize;
+
+Try non linear radius sampling!
+
 			sumIrradiance += SampleIrradiance( ssPosition_Front, H0, radius, integralFactors_Front, maxCos_Front, centerRho );	// Sample forward
 			sumIrradiance += SampleIrradiance( ssPosition_Back, H0, radius, integralFactors_Back, maxCos_Back, centerRho );		// Sample backward
 		}

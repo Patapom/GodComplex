@@ -258,9 +258,16 @@ E0 *= lerp( 1.0, boostFactor, _debugValue.y );	// _debugValue.y = 0.5185
 		result = resultGroundTruth;
 
 	if ( _flags & 0x10U ) {
-		result = abs( result - GroundTruth( UV, _rho ) );	// Show difference
+//		result = abs( result - GroundTruth( UV, _rho ) );	// Show difference
+		result = abs( dot( result, LUMINANCE ) - dot( GroundTruth( UV, _rho ), LUMINANCE ) );	// Show difference
 //result = abs( result - length( SampleBentCone( UV ).xyz ) );
 //result = abs( result - 1+SampleBentCone( UV ).w );
+	} else if ( _flags & 0x20U ) {
+		uint2	pixelIndex = _In.__Position.xy;
+		result = lerp( result, resultGroundTruth, ((pixelIndex.x>>3)&1)^((pixelIndex.y>>3)&1) );	// Checker board
+//		result = lerp( result, resultGroundTruth, ((pixelIndex.x+pixelIndex.y)>>3)&1 );				// Diagonal bands
+//		result = lerp( result, resultGroundTruth, ((pixelIndex.x)>>3)&1 );				// Vertical stripes
+//		result = lerp( result, resultGroundTruth, ((pixelIndex.y)>>3)&1 );				// Horizontal stripes
 	}
 
 	return _exposure * result;

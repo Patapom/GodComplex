@@ -126,8 +126,6 @@ void	AccumulateAverageConeAngle( float _coneAngle ) {
 void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID ) {
 	uint2	pixelPosition = uint2( _GroupID.x, _Y0 + _GroupID.y );
 
-//pixelPosition = uint2( 273, 126 );
-
 	uint	rayIndex = _GroupThreadID.x;
 	if ( rayIndex == 0 ) {
 		// Build local tangent space to orient rays
@@ -306,7 +304,7 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID ) 
 			float3	ssBentNormal = float3( X * ssDirection, Y );
 
 		#elif 1
-			// Redid my integration in a smarter way
+			// Redid my integration in a smarter way and this time it's EXACTLY the same as numerical integration!
 			float	cosTheta0 = maxCos_Front;
 			float	cosTheta1 = maxCos_Back;
 			float	sinTheta0 = sqrt( 1.0 - cosTheta0*cosTheta0 );
@@ -429,12 +427,13 @@ uint	previousDebug;
 		float3	ssBentNormal = float3( gs_occlusionDirectionAccumulator.xyz ) - _raysCount * 65536.0;
 				ssBentNormal = normalize( ssBentNormal );
 
-		#if 0
+		#if 1
 			uint	finalCount = max( 1, 2 * (gs_horizonAngleAccumulator.x >> 20) );
 //					finalCount = finalCount == 0 ? 256 : finalCount;	// When rays count == 256, the counter gets overflowed
 			float	averageAngle = ((gs_horizonAngleAccumulator.x & 0x000FFFFFU) / 256.0) / finalCount;
 			float	varianceAngle = (gs_horizonAngleAccumulator.y / 65536.0) / (finalCount-1);
-			float	stdDeviation = sqrt( varianceAngle );
+//			float	stdDeviation = sqrt( varianceAngle );
+			float	stdDeviation = sqrt( 0.25 * PI * PI * varianceAngle ) / (0.5 * PI);
 
 //stdDeviation = cos( 0.5 * PI * stdDeviation );	// Encode as cosine? ==> NO! Not enough precision...
 
