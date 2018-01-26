@@ -5,7 +5,7 @@
 #define INVPI	0.31830988618379067153776752674503
 
 cbuffer CB_Main : register(b0) {
-	float3	iResolution;	// viewport resolution (in pixels)
+	float2	iResolution;	// viewport resolution (in pixels)
 	float	iGlobalTime;	// shader playback time (in seconds)
 };
 
