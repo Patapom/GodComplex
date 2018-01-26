@@ -17,7 +17,11 @@
 #define speed 1.
 
 #define VOLUME 0.001
-#define time iGlobalTime
+
+float glmod(float x, float y) {
+	return x - y * floor(x/y);
+//	return x - y * trunc(x/y);
+}
 
 // raymarching toolbox
 float rng (float2 seed) { return frac(sin(dot(seed*.1684,float2(54.649,321.547)))*450315.); }
@@ -28,11 +32,11 @@ float sdDisk (float3 p, float3 s) { return max(max(length(p.xz)-s.x, s.y), abs(p
 float sdIso(float3 p, float r) { return max(0.,dot(p,normalize(sign(p))))-r; }
 float sdBox( float3 p, float3 b ) { float3 d = abs(p) - b; return min(max(d.x,max(d.y,d.z)),0.0) + length(max(d,0.0)); }
 float sdTorus( float3 p, float2 t ) { float2 q = float2(length(p.xz)-t.x,p.y); return length(q)-t.y; }
-float amod (inout float2 p, float count) { float an = 2.*PI/count; float a = atan(p.y,p.x)+an/2.; float c = floor(a/an); c = mix(c,abs(c),step(count*.5,abs(c))); a = mod(a,an)-an/2.; p.xy = float2(cos(a),sin(a))*length(p); return c; }
+float amod (inout float2 p, float count) { float an = 2.*PI/count; float a = atan(p.y,p.x)+an/2.; float c = floor(a/an); c = mix(c,abs(c),step(count*.5,abs(c))); a = glmod(a,an)-an/2.; p.xy = float2(cos(a),sin(a))*length(p); return c; }
 float amodIndex (float2 p, float count) { float an = 2.*PI/count; float a = atan(p.y,p.x)+an/2.; float c = floor(a/an); c = mix(c,abs(c),step(count*.5,abs(c))); return c; }
-float repeat (float v, float c) { return mod(v,c)-c/2.; }
-float2 repeat (float2 v, float2 c) { return mod(v,c)-c/2.; }
-float3 repeat (float3 v, float c) { return mod(v,c)-c/2.; }
+float repeat (float v, float c) { return glmod(v,c)-c/2.; }
+float2 repeat (float2 v, float2 c) { return glmod(v,c)-c/2.; }
+float3 repeat (float3 v, float c) { return glmod(v,c)-c/2.; }
 float smoo (float a, float b, float r) { return clamp(.5+.5*(b-a)/r, 0., 1.); }
 float smin (float a, float b, float r) { float h = smoo(a,b,r); return mix(b,a,h)-r*h*(1.-h); }
 float smax (float a, float b, float r) { float h = smoo(a,b,r); return mix(a,b,h)+r*h*(1.-h); }
@@ -111,7 +115,7 @@ float map (float3 pos) {
     pDonut.xz = displaceLoop(pDonut.xz, donut);
     pDonut.z *= donut;
     pDonut.xzy = pDonut.xyz;
-    pDonut.xz *= rot(time*.05*speed);
+    pDonut.xz *= rot(_time*.05*speed);
 
     // ground
     p = pDonut;
@@ -119,7 +123,7 @@ float map (float3 pos) {
 
     // walls
     p = pDonut;
-    float py = p.y + time * speed;
+    float py = p.y + _time * speed;
     indexY = floor(py / (cell+thin));
     p.y = repeat(py, cell+thin);
     scene = min(scene, max(abs(p.y)-thin, sdCylinder(p.xz, radius)));
@@ -130,7 +134,7 @@ float map (float3 pos) {
     // horizontal windot
     p = pDonut;
     p.xz *= rot(PI/segments);
-    py = p.y + time * speed;
+    py = p.y + _time * speed;
     indexY = floor(py / (cell+thin));
     p.y = repeat(py, cell+thin);
     indexX = amodIndex(p.xz, segments);
@@ -145,7 +149,7 @@ float map (float3 pos) {
 
     // vertical window
     p = pDonut;
-    py = p.y + cell/2. + time * speed;
+    py = p.y + cell/2. + _time * speed;
     indexY = floor(py / (cell+thin));
     p.y = repeat(py, cell+thin);
     indexX = amodIndex(p.xz, segments);
@@ -161,7 +165,7 @@ float map (float3 pos) {
     // elements
     p = pDonut;
     p.xz *= rot(PI/segments);
-    py = p.y + cell/2. + time * speed;
+    py = p.y + cell/2. + _time * speed;
     indexY = floor(py / (cell+thin));
     p.y = repeat(py, cell+thin);
     indexX = amodIndex(p.xz, segments);
@@ -180,7 +184,7 @@ void mainImage( out float4 color, in float2 coord ) {
     float3 ray = normalize(float3(uv, 1.3));
     camera(eye);
     camera(ray);
-    float dither = rng(uv+frac(time));
+    float dither = rng(uv+frac(_time));
     float3 pos = eye;
     float shade = 0.;
 

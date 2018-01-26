@@ -108,7 +108,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <None Include="Shaders\SceneRayMarchingLibrary.hlsl" />
     <None Include="Shaders\SceneRayMarchingInfiniteRooms.hlsl" />
-    <Content Include="Shaders\RenderShadowMap.hlsl" />
+    <Content Include="Shaders\PostProcess.hlsl" />
     <EmbeddedResource Include="TestHBILForm.resx">
       <DependentUpon>TestHBILForm.cs</DependentUpon>
     </EmbeddedResource>

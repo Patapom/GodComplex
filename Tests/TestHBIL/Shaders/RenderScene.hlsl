@@ -1,127 +1,40 @@
 #include "Global.hlsl"
+#include "SceneRayMarchingLibrary.hlsl"
 
-cbuffer CB_Object : register(b4) {
-	float4x4	_Local2World;
-	float4x4	_World2Local;
-	float3		_DiffuseAlbedo;
-	float		_Gloss;
-	float3		_SpecularTint;
-	float		_Metal;
-	uint		_UseTexture;
-	uint		_FalseColors;
-	float		_FalseColorsMaxRange;
+float4	VS( float4 __Position : SV_POSITION ) : SV_POSITION { return __Position; }
+
+struct PS_OUT {
+	float3	albedo : SV_TARGET0;
+	float3	normal : SV_TARGET1;
+	float2	motionVectors : SV_TARGET2;
+	float	depth : SV_DEPTH;
 };
 
-struct VS_IN {
-	float3	Position : POSITION;
-	float3	Normal : NORMAL;
-	float3	Tangent : TANGENT;
-	float3	BiTangent : BITANGENT;
-	float2	UV : TEXCOORD0;
-};
-
-struct PS_IN {
-	float4	__Position : SV_POSITION;
-	float3	Position : POSITION;
-	float3	Normal : NORMAL;
-	float3	Tangent : TANGENT;
-	float3	BiTangent : BITANGENT;
-	float2	UV : TEXCOORDS0;
-};
-
-PS_IN	VS( VS_IN _In ) {
-	
-	PS_IN	Out;
-
-	float4	WorldPosition = mul( float4( _In.Position, 1.0 ), _Local2World );
-	Out.__Position = mul( WorldPosition, _World2Proj );
-	Out.Position = WorldPosition.xyz;
-	Out.Normal = mul( float4( _In.Normal, 0.0 ), _Local2World ).xyz;
-	Out.Tangent = mul( float4( _In.Tangent, 0.0 ), _Local2World ).xyz;
-	Out.BiTangent = mul( float4( _In.BiTangent, 0.0 ), _Local2World ).xyz;
-	Out.UV = _In.UV;
-	
-	return Out;
+// Builds an **unnormalized** camera ray from a screen UV
+float3	BuildCameraRay2( float2 _UV ) {
+	_UV = 2.0 * _UV - 1.0;
+	_UV.x *= TAN_HALF_FOV * _resolution.x / _resolution.y;	// Account for aspect ratio
+	_UV.y *= -TAN_HALF_FOV;									// Positive Y as we go up the screen
+	return float3( _UV, 1.0 );								// Not normalized!
 }
 
-float4	PS( PS_IN _In ) : SV_TARGET0 {
-	float4	Debug = 0.0;
+PS_OUT	PS_Depth( float4 __Position : SV_POSITION ) {
+	float2	UV = __Position.xy / _resolution;
 
-	float3	wsPosition = _In.Position;
-	float3	wsNormal = normalize( _In.Normal );
-	float3	wsTangent = normalize( _In.Tangent );
-	float3	wsBiTangent = normalize( _In.BiTangent );
-	float3	wsView = normalize( wsPosition - _Camera2World[3].xyz );
-	
-	float	Roughness = 1.0 - _Gloss;// * _TexGloss.Sample( LinearWrap, 10.0 * _In.UV );
-	
-//return _TexGloss.Sample( LinearWrap, 2.0 * _In.UV );
+	float3	csView = BuildCameraRay2( UV );
+	float	Z2Distance = length( csView );
+			csView /= Z2Distance;
+	float3	wsView = mul( float4( csView, 0.0 ), _Camera2World ).xyz;
+	float3	wsPos = _Camera2World[3].xyz;
 
-	const float3	RhoD = _DiffuseAlbedo;
-	const float3	F0 = lerp( 0.04, _SpecularTint, _Metal );
-	float3	IOR = Fresnel_IORFromF0( F0 );
-	
-	float	Shadow = ComputeShadow( wsPosition, wsNormal, Debug );
-	
-	float	RadiusFalloff = 16.0;
-	float	RadiusCutoff = 20.0;
-	
-// 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// 	// Add small normal perturbations
-// 	wsNormal.x += 0.05 * sin( 1000.0 * wsPosition.x );
-// 	wsNormal.z += 0.05 * sin( 1000.0 * wsPosition.z );
-// 	wsNormal = normalize( wsNormal );
-	
-// 	float3	tsNormal = _TexNormal.Sample( LinearWrap, 10.0 * _In.UV );
-// 	wsNormal = tsNormal.x * wsTangent + tsNormal.y * wsBiTangent + tsNormal.z * wsNormal;
-// 	wsTangent = normalize( cross( wsNormal, wsBiTangent ) );
-// 	wsBiTangent = cross( wsTangent, wsNormal );
-	
-	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	//
-	SurfaceContext	surf;
-	surf.wsPosition = wsPosition;
-	surf.wsNormal = wsNormal;
-	surf.wsTangent = wsTangent;
-	surf.wsBiTangent = wsBiTangent;
-	surf.wsView = -wsView;	// In BSP, view points away from the surface 
-	surf.diffuseAlbedo = RhoD / PI;
-	surf.roughness = Roughness;
-	surf.IOR = IOR;
-	surf.fresnelStrength = 1.0;
+	Intersection	result = RayMarchScene( wsPos, wsView, UV );
 
-	uint	AreaLightSliceIndex = _UseTexture ? 0 : ~0U;
-	
-// 	float3	RadianceDiffuse, RadianceSpecular;
-// 	ComputeAreaLightLighting( surf, AreaLightSliceIndex, Shadow, float2( RadiusFalloff, RadiusCutoff ), RadianceDiffuse, RadianceSpecular );
-	
-	ComputeLightingResult	Accum = (ComputeLightingResult) 0;
-	AreaLightContext		AreaContext = CreateAreaLightContext( surf, AreaLightSliceIndex, Shadow, float2( RadiusFalloff, RadiusCutoff ), 2 );
-	ComputeAreaLightLighting( Accum, surf, AreaContext );
- 	float3	RadianceDiffuse = Accum.accumDiffuse;
-	float3	RadianceSpecular = Accum.accumSpecular;
-	
-	float3	Result = 0.01 * float3( 1, 0.98, 0.8 ) + RadianceDiffuse + RadianceSpecular;
-	
-//Result =  RadianceDiffuse;
-//Result =  RadianceSpecular;
-	
-	
-//Shadow = smoothstep( 0.0, 0.1, Shadow );
-//Result = Shadow;
-	
+	PS_OUT	Out;
+	Out.motionVectors = float2( sin( 10.0 * UV.x + _time ), sin( PI * UV.y * UV.x - 0.9 * _time ) );
+	Out.albedo = result.albedo;
+	Out.normal = result.wsNormal;
+	Out.depth = 0.01 * result.hitPosition.w;// / Z2Distance;
+//Out.normal = wsView;
 
-//float3	wsLight = normalize( -_ProjectionDirectionDiff );
-//Result = ComputeWard( wsLight, surf.wsView, surf.wsNormal, surf.wsTangent, surf.wsBiTangent, max( 0.01, Roughness ) );
-//Result = RadianceSpecular;
-
-
-	if ( _FalseColors )
-		Result = _TexFalseColors.SampleLevel( LinearClamp, float2( dot( LUMINANCE, Result ) / _FalseColorsMaxRange, 0.5 ), 0.0 ).xyz;
-		
-
-//Result = normalize( -_ProjectionDirectionDiff );
-//Result = wsLight;
-
-	return float4( Result, 1 );
+	return Out;
 }

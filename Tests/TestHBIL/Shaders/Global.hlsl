@@ -1,12 +1,17 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 // Global Definitions
 //
+#ifndef __GLOBAL_INCLUDED
+#define __GLOBAL_INCLUDED
+
 #define PI		3.1415926535897932384626433832795
 #define INVPI	0.31830988618379067153776752674503
 
+#define TAN_HALF_FOV	1.0	// tan( vertical FOV / 2 ) with vertical FOV = 90°
+
 cbuffer CB_Main : register(b0) {
-	float2	iResolution;	// viewport resolution (in pixels)
-	float	iGlobalTime;	// shader playback time (in seconds)
+	float2	_resolution;	// viewport resolution (in pixels)
+	float	_time;
 };
 
 cbuffer CB_Camera : register(b1) {
@@ -103,6 +108,14 @@ void BuildOrthonormalBasis( float3 _normal, out float3 _tangent, out float3 _bit
 	_bitangent = float3( b, 1.0 - _normal.y*_normal.y*a, -_normal.y );
 }
 
+// Builds an **unnormalized** camera ray from a screen UV
+float3	BuildCameraRay( float2 _UV ) {
+	_UV = 2.0 * _UV - 1.0;
+	_UV.x *= TAN_HALF_FOV * _resolution.x / _resolution.y;	// Account for aspect ratio
+	_UV.y *= -TAN_HALF_FOV;									// Positive Y as we go up the screen
+	return float3( _UV, 1.0 );								// Not normalized!
+}
+
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 // MATH
 
@@ -141,3 +154,5 @@ float SmoothMin( float a, float b, float k ) {
     float res = exp( -k*a ) + exp( -k*b );
     return -log( res ) / k;
 }
+
+#endif	// #ifndef __GLOBAL_INCLUDED
