@@ -6,18 +6,20 @@
 
 #define PI		3.1415926535897932384626433832795
 #define INVPI	0.31830988618379067153776752674503
+#define SQRT2	1.4142135623730950488016887242097
 
 #define TAN_HALF_FOV	0.6		// tan( vertical FOV / 2 ) with vertical FOV = 90°
 #define Z_FAR			100.0	// 100m max encoded in the depth buffer
 
 //#define USE_DEBUG_TEXTURES	1	// Define this to sample scene from height + normal textures instead of 3D scene
-#define	DEBUG_TEXTURE_SIZE	1.0	// Size of the texture in meters
+#define	DEBUG_TEXTURE_SIZE			1.0	// Size of the texture in meters
 #define	DEBUG_TEXTURE_MAX_HEIGHT	0.45	// Maximum height encoded in the debug height map
 
 cbuffer CB_Main : register(b0) {
 	float2	_resolution;	// viewport resolution (in pixels)
 	float	_time;
 	uint	_flags;
+	float	_environmentIntensity;
 };
 
 cbuffer CB_Camera : register(b1) {
@@ -28,6 +30,10 @@ cbuffer CB_Camera : register(b1) {
 	float4x4	_Camera2Proj;
 	float4x4	_Proj2Camera;
 };
+
+cbuffer	CBSH : register( b2 ) {
+	float4	_SH[9];
+}
 
 SamplerState LinearClamp	: register( s0 );
 SamplerState PointClamp		: register( s1 );

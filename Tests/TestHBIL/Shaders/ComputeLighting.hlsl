@@ -3,6 +3,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // 
 #include "Global.hlsl"
+#include "SphericalHarmonics.hlsl"
 
 Texture2D<float4>		_tex_Albedo : register(t0);
 Texture2D<float4>		_tex_Normal : register(t1);
@@ -42,7 +43,10 @@ PS_OUT	PS( float4 __Position : SV_POSITION ) {
 	float3	wsUp = cross( wsRight, wsView );
 	float3	wsBentNormal = csBentNormal.x * wsRight + csBentNormal.y * wsUp - csBentNormal.z * wsView;
 
-//wsBentNormal = _tex_Normal[pixelPosition].xyz;
+	if ( (_flags & 2) == 0 ) {
+		wsBentNormal = _tex_Normal[pixelPosition].xyz;
+		cosConeAnglesMinMax = 0;
+	}
 
 	// Read back albedo, depth/distance & rebuild world space position
 	float3	albedo = _tex_Albedo[pixelPosition].xyz;
@@ -50,12 +54,26 @@ PS_OUT	PS( float4 __Position : SV_POSITION ) {
 	float3	wsPos = _Camera2World[3].xyz + Z * Z2Distance * wsView;
 
 	////////////////////////////////////////////////////////////////////////////////
-	// Compute lighting
-	float3	indirectIrradiance = _tex_Radiance[uint3( pixelPosition, 0 )].xyz;	// Gathered from the screen by HBIL
+	// Compute indirect lighting
 
-	if ( _flags & 1 )
-		indirectIrradiance *= 0.0;
+	// Retrieve IL gathered from the screen by HBIL
+	float3	HBILIrradiance = _tex_Radiance[uint3( pixelPosition, 0 )].xyz;
+	if ( (_flags & 1) == 0 )
+		HBILIrradiance *= 0.0;
 
+	// Compute this frame's distant environment coming from some SH probe
+	float	samplingConeAngle = averageConeAngle - 0.2 * stdDeviationConeAngle;	// Good empirical value
+	if ( (_flags & 4) == 0 )
+		samplingConeAngle = 0.5 * PI;
+
+	float3	SH[9] = { _SH[0].xyz, _SH[1].xyz, _SH[2].xyz, _SH[3].xyz, _SH[4].xyz, _SH[5].xyz, _SH[6].xyz, _SH[7].xyz, _SH[8].xyz };
+	float3	directEnvironmentIrradiance = EvaluateSHIrradiance( wsBentNormal, cos( samplingConeAngle ), SH );	// Use bent-normal direction + cone angle
+			directEnvironmentIrradiance *= _environmentIntensity;
+
+	float3	indirectIrradiance = HBILIrradiance + directEnvironmentIrradiance;
+
+	////////////////////////////////////////////////////////////////////////////////
+	// Compute direct lighting
 	const float3	LIGHT_POS = float3( 0, 10, 0 );
 	const float3	LIGHT_FLUX = 1000.0;
 
@@ -67,6 +85,8 @@ PS_OUT	PS( float4 __Position : SV_POSITION ) {
 	float3	lightIrradiance = LIGHT_FLUX / (4.0 * PI * sqDistance2Light);	// Assume point source
 
 	float	coneVisibility = smoothstep( cosConeAnglesMinMax.y, cosConeAnglesMinMax.x, NdotL );		// Check if the light is standing inside the visibility cone of the surface
+	if ( (_flags & 4) == 0 )
+		coneVisibility = 1.0;
 	float3	diffuse = coneVisibility * NdotL * lightIrradiance;
 
 	float3	specular = 0.0;	// #TODO

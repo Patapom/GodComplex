@@ -39,7 +39,7 @@
 			this.label2 = new System.Windows.Forms.Label();
 			this.floatTrackbarControlProjectionPhi = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label3 = new System.Windows.Forms.Label();
-			this.floatTrackbarControlGloss = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlEnvironmentIntensity = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label4 = new System.Windows.Forms.Label();
 			this.floatTrackbarControlLightIntensity = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label5 = new System.Windows.Forms.Label();
@@ -51,6 +51,8 @@
 			this.buttonClear = new System.Windows.Forms.Button();
 			this.panelOutput = new TestHBIL.PanelOutput(this.components);
 			this.checkBoxEnableHBIL = new System.Windows.Forms.CheckBox();
+			this.checkBoxEnableBentNormal = new System.Windows.Forms.CheckBox();
+			this.checkBoxEnableConeVisibility = new System.Windows.Forms.CheckBox();
 			this.SuspendLayout();
 			// 
 			// floatTrackbarControlProjectionDiffusion
@@ -143,19 +145,19 @@
 			this.label3.TabIndex = 3;
 			this.label3.Text = "Projection Phi";
 			// 
-			// floatTrackbarControlGloss
+			// floatTrackbarControlEnvironmentIntensity
 			// 
-			this.floatTrackbarControlGloss.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-			this.floatTrackbarControlGloss.Location = new System.Drawing.Point(1427, 147);
-			this.floatTrackbarControlGloss.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.floatTrackbarControlGloss.MinimumSize = new System.Drawing.Size(70, 20);
-			this.floatTrackbarControlGloss.Name = "floatTrackbarControlGloss";
-			this.floatTrackbarControlGloss.RangeMax = 1F;
-			this.floatTrackbarControlGloss.RangeMin = 0F;
-			this.floatTrackbarControlGloss.Size = new System.Drawing.Size(200, 20);
-			this.floatTrackbarControlGloss.TabIndex = 1;
-			this.floatTrackbarControlGloss.Value = 0F;
-			this.floatTrackbarControlGloss.VisibleRangeMax = 1F;
+			this.floatTrackbarControlEnvironmentIntensity.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+			this.floatTrackbarControlEnvironmentIntensity.Location = new System.Drawing.Point(1427, 634);
+			this.floatTrackbarControlEnvironmentIntensity.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlEnvironmentIntensity.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlEnvironmentIntensity.Name = "floatTrackbarControlEnvironmentIntensity";
+			this.floatTrackbarControlEnvironmentIntensity.RangeMax = 100F;
+			this.floatTrackbarControlEnvironmentIntensity.RangeMin = 0F;
+			this.floatTrackbarControlEnvironmentIntensity.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlEnvironmentIntensity.TabIndex = 1;
+			this.floatTrackbarControlEnvironmentIntensity.Value = 1F;
+			this.floatTrackbarControlEnvironmentIntensity.VisibleRangeMax = 1F;
 			// 
 			// label4
 			// 
@@ -207,13 +209,13 @@
 			// 
 			// label6
 			// 
-			this.label6.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+			this.label6.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
 			this.label6.AutoSize = true;
-			this.label6.Location = new System.Drawing.Point(1306, 180);
+			this.label6.Location = new System.Drawing.Point(1306, 638);
 			this.label6.Name = "label6";
-			this.label6.Size = new System.Drawing.Size(33, 13);
+			this.label6.Size = new System.Drawing.Size(108, 13);
 			this.label6.TabIndex = 3;
-			this.label6.Text = "Metal";
+			this.label6.Text = "Environment Intensity";
 			// 
 			// panel1
 			// 
@@ -264,9 +266,13 @@
 			this.panelOutput.Name = "panelOutput";
 			this.panelOutput.Size = new System.Drawing.Size(1280, 720);
 			this.panelOutput.TabIndex = 0;
+			this.panelOutput.MouseDown += new System.Windows.Forms.MouseEventHandler(this.panelOutput_MouseDown);
+			this.panelOutput.MouseMove += new System.Windows.Forms.MouseEventHandler(this.panelOutput_MouseMove);
+			this.panelOutput.MouseUp += new System.Windows.Forms.MouseEventHandler(this.panelOutput_MouseUp);
 			// 
 			// checkBoxEnableHBIL
 			// 
+			this.checkBoxEnableHBIL.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
 			this.checkBoxEnableHBIL.AutoSize = true;
 			this.checkBoxEnableHBIL.Checked = true;
 			this.checkBoxEnableHBIL.CheckState = System.Windows.Forms.CheckState.Checked;
@@ -277,11 +283,40 @@
 			this.checkBoxEnableHBIL.Text = "HBIL";
 			this.checkBoxEnableHBIL.UseVisualStyleBackColor = true;
 			// 
+			// checkBoxEnableBentNormal
+			// 
+			this.checkBoxEnableBentNormal.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+			this.checkBoxEnableBentNormal.AutoSize = true;
+			this.checkBoxEnableBentNormal.Checked = true;
+			this.checkBoxEnableBentNormal.CheckState = System.Windows.Forms.CheckState.Checked;
+			this.checkBoxEnableBentNormal.Location = new System.Drawing.Point(1379, 664);
+			this.checkBoxEnableBentNormal.Name = "checkBoxEnableBentNormal";
+			this.checkBoxEnableBentNormal.Size = new System.Drawing.Size(106, 17);
+			this.checkBoxEnableBentNormal.TabIndex = 8;
+			this.checkBoxEnableBentNormal.Text = "Use Bent Normal";
+			this.checkBoxEnableBentNormal.UseVisualStyleBackColor = true;
+			// 
+			// checkBoxEnableConeVisibility
+			// 
+			this.checkBoxEnableConeVisibility.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+			this.checkBoxEnableConeVisibility.AutoSize = true;
+			this.checkBoxEnableConeVisibility.Checked = true;
+			this.checkBoxEnableConeVisibility.CheckState = System.Windows.Forms.CheckState.Checked;
+			this.checkBoxEnableConeVisibility.Location = new System.Drawing.Point(1491, 664);
+			this.checkBoxEnableConeVisibility.Name = "checkBoxEnableConeVisibility";
+			this.checkBoxEnableConeVisibility.Size = new System.Drawing.Size(108, 17);
+			this.checkBoxEnableConeVisibility.TabIndex = 8;
+			this.checkBoxEnableConeVisibility.Text = "Use Cone Angles";
+			this.checkBoxEnableConeVisibility.UseVisualStyleBackColor = true;
+			// 
 			// TestHBILForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1639, 744);
+			this.Controls.Add(this.floatTrackbarControlEnvironmentIntensity);
+			this.Controls.Add(this.checkBoxEnableConeVisibility);
+			this.Controls.Add(this.checkBoxEnableBentNormal);
 			this.Controls.Add(this.checkBoxEnableHBIL);
 			this.Controls.Add(this.buttonClear);
 			this.Controls.Add(this.panel1);
@@ -293,7 +328,6 @@
 			this.Controls.Add(this.label1);
 			this.Controls.Add(this.buttonReload);
 			this.Controls.Add(this.floatTrackbarControlMetal);
-			this.Controls.Add(this.floatTrackbarControlGloss);
 			this.Controls.Add(this.floatTrackbarControlLightIntensity);
 			this.Controls.Add(this.floatTrackbarControlProjectionPhi);
 			this.Controls.Add(this.floatTrackbarControlProjectionTheta);
@@ -321,7 +355,7 @@
 		private System.Windows.Forms.Label label2;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlProjectionPhi;
 		private System.Windows.Forms.Label label3;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlGloss;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlEnvironmentIntensity;
 		private System.Windows.Forms.Label label4;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlLightIntensity;
 		private System.Windows.Forms.Label label5;
@@ -332,6 +366,8 @@
 		private System.Windows.Forms.CheckBox checkBoxPause;
 		private System.Windows.Forms.Button buttonClear;
 		private System.Windows.Forms.CheckBox checkBoxEnableHBIL;
+		private System.Windows.Forms.CheckBox checkBoxEnableBentNormal;
+		private System.Windows.Forms.CheckBox checkBoxEnableConeVisibility;
 	}
 }
 
