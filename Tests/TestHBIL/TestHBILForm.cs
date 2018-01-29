@@ -273,6 +273,7 @@ namespace TestHBIL {
 			m_CB_Main.m._flags |= checkBoxEnableHBIL.Checked ? 1U : 0;
 			m_CB_Main.m._flags |= checkBoxEnableBentNormal.Checked ? 2U : 0;
 			m_CB_Main.m._flags |= checkBoxEnableConeVisibility.Checked ? 4U : 0;
+			m_CB_Main.m._flags |= checkBoxForceAlbedo.Checked ? 8U : 0;
 			m_CB_Main.m._environmentIntensity = floatTrackbarControlEnvironmentIntensity.Value;
 			m_CB_Main.UpdateData();
 

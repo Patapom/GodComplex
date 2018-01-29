@@ -10,12 +10,26 @@
 //
 #include "Global.hlsl"
 
+#define MAT_WALL	1
+#define MAT_FLOOR	2
+#define MAT_STAIRS	3
+#define MAT_PANEL	5
+#define MAT_PAPERS	6
+#define MAT_BOOKS	10
+
 #define repeat(v,c) (glmod(v,c)-0.5*c)
 #define sDist(v,r) (length(v)-r)
 
 float glmod(float x, float y) {
 	return x - y * floor(x/y);
 //	return x - y * trunc(x/y);
+}
+
+void	smin( inout float2 _d0, float _d1, float _mat ) {
+	_d0 = _d0.x <= _d1 ? _d0 : float2( _d1, _mat );
+}
+void	smax( inout float2 _d0, float _d1, float _mat ) {
+	_d0 = _d0.x >= _d1 ? _d0 : float2( _d1, _mat );
 }
 
 void rot( inout float2 p, float a) {
@@ -36,15 +50,15 @@ float amod( inout float2 p, float count ) {
 	return c;
 }
 //float aindex (float2 p, float count) { float an = 2.*PI/count; float a = atan(p.y,p.x)+an/2.; float c = floor(a/an); return mix(c,abs(c),step(count*.5,abs(c))); }
-float map (float3 pos);
-float3 getNormal (float3 p) { float2 e = float2(.001,0); return normalize(float3(map(p+e.xyy)-map(p-e.xyy),map(p+e.yxy)-map(p-e.yxy),map(p+e.yyx)-map(p-e.yyx))); }
+float2 map (float3 pos);
+float3 getNormal (float3 p) { float2 e = float2(.001,0); return normalize(float3(map(p+e.xyy).x-map(p-e.xyy).x,map(p+e.yxy).x-map(p-e.yxy).x,map(p+e.yyx).x-map(p-e.yyx).x)); }
 
 float hardShadow (float3 pos, float3 light) {
     float3 dir = normalize(light - pos);
     float maxt = length(light - pos);
     float t = .02;
     for (float i = 0.; i <= 1.; i += 1./30.) {
-        float dist = map(pos + dir * t);
+        float dist = map(pos + dir * t).x;
         if (dist < 0.01) return 0.;
         t += dist;
         if (t >= maxt) break;
@@ -52,8 +66,8 @@ float hardShadow (float3 pos, float3 light) {
     return 1.;
 }
 
-float map (float3 pos) {
-  float scene = 1000.;
+float2 map(float3 pos) {
+  float2 scene = float2( 1000., -1 );
   float wallThin = .2;
   float wallRadius = 8.;
   float wallOffset = .2;
@@ -88,15 +102,15 @@ float map (float3 pos) {
   p = pos;
   amod(p.xz, wallCount);
   p.x -= wallRadius;
-  scene = min(scene, max(-p.x, abs(p.z)-wallThin));
-  scene = max(scene, -sDist(pos.xz, wallRadius-wallOffset));
+  smin( scene, max(-p.x, abs(p.z)-wallThin), MAT_WALL );
+  smax( scene, -sDist(pos.xz, wallRadius-wallOffset), MAT_WALL );
 
   // floors
   p = pos;
   p.y = repeat(p.y, cell.y);
   float disk = max(sDist(p.xz, 1000.), abs(p.y)-floorThin);
   disk = max(disk, -sDist(pos.xz, wallRadius));
-  scene = min(scene, disk);
+  smin( scene, disk, MAT_FLOOR );
 
   // stairs
   p = pos;
@@ -104,19 +118,19 @@ float map (float3 pos) {
   p.y -= stairIndex*stairHeight;
   p.y = repeat(p.y, stairCount*stairHeight);
   float stair = sdBox(p, float3(100,stairHeight,stairDepth));
-  scene = min(scene, max(stair, max(holeWall, -holeStair)));
+  smin( scene, max(stair, max(holeWall, -holeStair)), MAT_STAIRS );
   p = pos;
   rot(p.xz,PI/stairCount);
   stairIndex = amod(p.xz, stairCount);
   p.y -= stairIndex*stairHeight;
   p.y = repeat(p.y, stairCount*stairHeight);
   stair = sdBox(p, float3(100,stairHeight,stairDepth));
-  scene = min(scene, max(stair, max(holeWall, -holeStair)));
+  smin( scene, max(stair, max(holeWall, -holeStair)), MAT_STAIRS);
   p = pos;
   p.y += stairHeight*.5;
   p.y -= stairHeight*stairCount*atan2(p.z,p.x)/(2.*PI);
   p.y = repeat(p.y, stairCount*stairHeight);
-  scene = min(scene, max(max(sDist(p.xz, wallRadius), abs(p.y)-stairHeight), -holeStair));
+  smin( scene, max(max(sDist(p.xz, wallRadius), abs(p.y)-stairHeight), -holeStair), MAT_STAIRS );
 
   // books
   p = pos;
@@ -134,7 +148,7 @@ float map (float3 pos) {
   p.x -= bookRadius + wallOffset;
   p.x += cos(p.z*2.) - bookSize.x - salt * .25;
   p.x += .01*smoothstep(.99,1.,sin(p.y*(1.+10.*salt)));
-  scene = min(scene, max(sdBox(p, float3(bookSize.x,100.,bookSize.z)), p.y-bookSize.y));
+  smin( scene, max(sdBox(p, float3(bookSize.x,100.,bookSize.z)), p.y-bookSize.y), MAT_BOOKS + salt );
 
   // panel
   p = pos;
@@ -146,7 +160,7 @@ float map (float3 pos) {
   float pz = p.z;
   p.z = repeat(p.z, .2+.3*salt);
   panel = min(panel, max(sdBox(p, float3(.1,.1,.04)), abs(pz)-panelSize.z*.8));
-  scene = min(scene, panel);
+  smin( scene, panel, MAT_PANEL );
 
   // papers
   p = pos;
@@ -161,7 +175,7 @@ float map (float3 pos) {
   p.y = repeat(p.y, ry);
   rot(p.xy, p.z);
   rot(p.xz, PI/4.+salt+_time);
-  scene = min(scene, sdBox(p, paperSize));
+  smin( scene, sdBox(p, paperSize), MAT_PAPERS );
 
   return scene;
 }
@@ -192,6 +206,7 @@ struct Intersection {
 	float4	hitPosition;
 	float	shade;
 	float3	wsNormal;
+	float	materialID;
 	float3	albedo;
 };
 
@@ -213,13 +228,14 @@ Intersection RayMarchScene( float3 _wsPos, float3 _wsDir, float2 _UV, uint _step
 
 	float4	unitStep = float4( _wsDir, 1.0 );
 	for ( float i=0; i <= 1.0; i+=STEP ) {
-		float d = map( result.hitPosition.xyz );
-		if ( d < 0.01 ) {
+		float2 d = map( result.hitPosition.xyz );
+		if ( d.x < 0.01 ) {
 			result.shade = 1.0-i;
+			result.materialID = d.y;
 			break;
 		}
-		d *= 0.8;	// Tends to miss features if larger than 0.5 (???)
-		result.hitPosition += d * unitStep;
+		d.x *= 0.8;	// Tends to miss features if larger than 0.5 (???)
+		result.hitPosition += d.x * unitStep;
 	}
 
 	result.wsNormal = 0.0;
@@ -228,6 +244,18 @@ Intersection RayMarchScene( float3 _wsPos, float3 _wsDir, float2 _UV, uint _step
 	}
 
 	result.albedo = 0.5 * float3( 1, 1, 1 );
+	switch ( result.materialID ) {
+		case MAT_WALL	: result.albedo = 0.10 * float3( 1.0, 0.6, 0.2 ); break;
+		case MAT_FLOOR	: result.albedo = 0.15 * float3( 1.0, 0.6, 0.2 ); break;
+		case MAT_STAIRS	: result.albedo = 0.4 * float3( 1.0, 0.9, 0.85 ); break;
+		case MAT_PANEL	: result.albedo = 0.7 * float3( 1.0, 0.9, 0.05 ); break;
+		case MAT_PAPERS	: result.albedo = 0.7 * float3( 1.0, 1.0, 1.0 ); break;
+	}
+	if ( result.materialID >= MAT_BOOKS	) {
+		float	salt = result.materialID - MAT_BOOKS;
+//		result.albedo = 0.05 * float3( 1.0, 0.3, 0.1 );
+		result.albedo = lerp( 0.05, 0.2, 1.0 - salt ) * float3( lerp( 0.8, 1.0, sin( -376.564 * salt ) ), lerp( 0.3, 0.6, salt ), lerp( 0.1, 0.2, sin( 12374.56 * salt ) ) );
+	}
 
 	return result;
 //  float4 color = float4(shade);

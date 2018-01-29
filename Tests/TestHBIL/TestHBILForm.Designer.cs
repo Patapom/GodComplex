@@ -53,6 +53,7 @@
 			this.checkBoxEnableHBIL = new System.Windows.Forms.CheckBox();
 			this.checkBoxEnableBentNormal = new System.Windows.Forms.CheckBox();
 			this.checkBoxEnableConeVisibility = new System.Windows.Forms.CheckBox();
+			this.checkBoxForceAlbedo = new System.Windows.Forms.CheckBox();
 			this.SuspendLayout();
 			// 
 			// floatTrackbarControlProjectionDiffusion
@@ -309,6 +310,17 @@
 			this.checkBoxEnableConeVisibility.Text = "Use Cone Angles";
 			this.checkBoxEnableConeVisibility.UseVisualStyleBackColor = true;
 			// 
+			// checkBoxForceAlbedo
+			// 
+			this.checkBoxForceAlbedo.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+			this.checkBoxForceAlbedo.AutoSize = true;
+			this.checkBoxForceAlbedo.Location = new System.Drawing.Point(1309, 609);
+			this.checkBoxForceAlbedo.Name = "checkBoxForceAlbedo";
+			this.checkBoxForceAlbedo.Size = new System.Drawing.Size(82, 17);
+			this.checkBoxForceAlbedo.TabIndex = 4;
+			this.checkBoxForceAlbedo.Text = "Albedo 50%";
+			this.checkBoxForceAlbedo.UseVisualStyleBackColor = true;
+			// 
 			// TestHBILForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -333,6 +345,7 @@
 			this.Controls.Add(this.floatTrackbarControlProjectionTheta);
 			this.Controls.Add(this.floatTrackbarControlProjectionDiffusion);
 			this.Controls.Add(this.checkBoxPause);
+			this.Controls.Add(this.checkBoxForceAlbedo);
 			this.Controls.Add(this.checkBoxAnimate);
 			this.Controls.Add(this.panelOutput);
 			this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedToolWindow;
@@ -368,6 +381,7 @@
 		private System.Windows.Forms.CheckBox checkBoxEnableHBIL;
 		private System.Windows.Forms.CheckBox checkBoxEnableBentNormal;
 		private System.Windows.Forms.CheckBox checkBoxEnableConeVisibility;
+		private System.Windows.Forms.CheckBox checkBoxForceAlbedo;
 	}
 }
 
