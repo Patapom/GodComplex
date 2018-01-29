@@ -33,6 +33,8 @@ namespace TestHBIL {
 			public float		_time;
 			public uint			_flags;
 			public float		_environmentIntensity;
+			public float		_forcedAlbedo;
+			public float		_exposure;
 		}
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
@@ -275,6 +277,8 @@ namespace TestHBIL {
 			m_CB_Main.m._flags |= checkBoxEnableConeVisibility.Checked ? 4U : 0;
 			m_CB_Main.m._flags |= checkBoxForceAlbedo.Checked ? 8U : 0;
 			m_CB_Main.m._environmentIntensity = floatTrackbarControlEnvironmentIntensity.Value;
+			m_CB_Main.m._forcedAlbedo = floatTrackbarControlAlbedo.Value;
+			m_CB_Main.m._exposure = floatTrackbarControlExposure.Value;
 			m_CB_Main.UpdateData();
 
 			m_CB_SH.m._SH0.Set( m_rotatedLightSH[0], 0 );
@@ -533,6 +537,10 @@ m_tex_texDebugNormals.SetPS( 33 );
 		}
 
 		#endregion
+
+		private void checkBoxForceAlbedo_CheckedChanged( object sender, EventArgs e ) {
+			floatTrackbarControlAlbedo.Enabled = checkBoxForceAlbedo.Checked;
+		}
 
 		#endregion
 

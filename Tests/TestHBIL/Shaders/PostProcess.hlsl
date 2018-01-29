@@ -14,7 +14,7 @@ float4	VS( float4 __Position : SV_POSITION ) : SV_POSITION { return __Position; 
 float3	PS( float4 __Position : SV_POSITION ) : SV_TARGET0 {
 	float2	UV = __Position.xy / _resolution;
 //	return float3( UV, 0 );
-return _tex_FinalRender[__Position.xy].xyz;
+return _exposure * _tex_FinalRender[__Position.xy].xyz;
 return length(_tex_BentCone[__Position.xy].xyz);
 return _tex_BentCone[__Position.xy].w;
 return _tex_BentCone[__Position.xy].xyz;

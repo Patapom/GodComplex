@@ -20,6 +20,8 @@ cbuffer CB_Main : register(b0) {
 	float	_time;
 	uint	_flags;
 	float	_environmentIntensity;
+	float	_forcedAlbedo;
+	float	_exposure;
 };
 
 cbuffer CB_Camera : register(b1) {
