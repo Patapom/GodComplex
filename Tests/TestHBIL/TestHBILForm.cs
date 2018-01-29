@@ -1,4 +1,12 @@
-﻿using System;
+﻿//////////////////////////////////////////////////////////////////////////
+// Horizon-Based Indirect Lighting Demo
+//////////////////////////////////////////////////////////////////////////
+//
+// IDEAS / #TODOS:
+//	• Use push/pull (with bilateral) to fill in reprojected radiance voids!!!
+//
+//
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -44,14 +52,20 @@ namespace TestHBIL {
 		private ConstantBuffer<CB_Main>			m_CB_Main = null;
 		private ConstantBuffer<CB_Camera>		m_CB_Camera = null;
 
-		private Shader				m_shader_RenderScene_DepthPass = null;
-
+		private Shader				m_shader_RenderScene_DepthGBufferPass = null;
+		private Shader				m_shader_ReprojectRadiance = null;
+		private Shader				m_shader_ComputeHBIL = null;
 		private Shader				m_shader_PostProcess = null;
 
 		// G-Buffer
 		private Texture2D			m_tex_albedo = null;
 		private Texture2D			m_tex_normal = null;
 		private Texture2D			m_tex_motionVectors = null;
+
+		// HBIL Results
+		private Texture2D			m_tex_bentCone = null;
+		private Texture2D			m_tex_radiance = null;
+		private uint				m_radianceSourceSliceIndex = 0;
 
 		private Texture2D			m_tex_BlueNoise = null;
 
@@ -117,7 +131,9 @@ namespace TestHBIL {
 			m_CB_Camera = new ConstantBuffer<CB_Camera>( m_device, 1 );
 
 			try {
-				m_shader_RenderScene_DepthPass = new Shader( m_device, new System.IO.FileInfo( "Shaders/RenderScene.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS_Depth", null );
+				m_shader_RenderScene_DepthGBufferPass = new Shader( m_device, new System.IO.FileInfo( "Shaders/RenderScene.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS_Depth", null );
+ 				m_shader_ReprojectRadiance = new Shader( m_device, new System.IO.FileInfo( "Shaders/ComputeHBIL.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS_Reproject", null );
+ 				m_shader_ComputeHBIL = new Shader( m_device, new System.IO.FileInfo( "Shaders/ComputeHBIL.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 				m_shader_PostProcess = new Shader( m_device, new System.IO.FileInfo( "Shaders/PostProcess.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 			} catch ( Exception _e ) {
 				MessageBox.Show( "Shader failed to compile!\n\n" + _e.Message, "HBIL Test", MessageBoxButtons.OK, MessageBoxIcon.Error );
@@ -127,6 +143,10 @@ namespace TestHBIL {
 			m_tex_albedo = new Texture2D( m_device, W, H, 1, 1, PIXEL_FORMAT.RGBA8, COMPONENT_FORMAT.UNORM, false, false, null );
 			m_tex_normal = new Texture2D( m_device, W, H, 1, 1, PIXEL_FORMAT.RGBA16F, COMPONENT_FORMAT.AUTO, false, false, null );
 			m_tex_motionVectors = new Texture2D( m_device, W, H, 1, 1, PIXEL_FORMAT.RG8, COMPONENT_FORMAT.SNORM, false, false, null );
+
+			// Create HBIL buffers
+			m_tex_bentCone = new Texture2D( m_device, W, H, 1, 1, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.AUTO, false, false, null );
+			m_tex_radiance = new Texture2D( m_device, W, H, 2, 1, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.AUTO, false, false, null );
 
 			// Create textures
 			using ( ImageFile I = new ImageFile( new System.IO.FileInfo( "Textures/BlueNoise64x64.png" ) ) )
@@ -139,7 +159,7 @@ namespace TestHBIL {
 			m_camera.CreatePerspectiveCamera( (float) (60.0 * Math.PI / 180.0), (float) panelOutput.Width / panelOutput.Height, 0.01f, 100.0f );
 			m_manipulator.Attach( panelOutput, m_camera );
 //			m_manipulator.InitializeCamera( new float3( 0, 1, 4 ), new float3( 0, 1, 0 ), float3.UnitY );
-			m_manipulator.InitializeCamera( new float3( 0, -4.5f, 5.0f ), new float3( 0, 0, 0 ), float3.UnitY );
+			m_manipulator.InitializeCamera( new float3( 0, 5.0f, -4.5f ), new float3( 0, 0, 0 ), float3.UnitY );
 
 			// Start game time
 			m_ticks2Seconds = 1.0 / System.Diagnostics.Stopwatch.Frequency;
@@ -156,13 +176,18 @@ namespace TestHBIL {
 			if ( m_device == null )
 				return;
 
+			m_tex_radiance.Dispose();
+			m_tex_bentCone.Dispose();
+
 			m_tex_BlueNoise.Dispose();
 			m_tex_motionVectors.Dispose();
 			m_tex_normal.Dispose();
 			m_tex_albedo.Dispose();
 
 			m_shader_PostProcess.Dispose();
-			m_shader_RenderScene_DepthPass.Dispose();
+			m_shader_ComputeHBIL.Dispose();
+			m_shader_ReprojectRadiance.Dispose();
+			m_shader_RenderScene_DepthGBufferPass.Dispose();
 
 			m_CB_Camera.Dispose();
 			m_CB_Main.Dispose();
@@ -175,7 +200,7 @@ namespace TestHBIL {
 		#endregion
 
 		void Application_Idle( object sender, EventArgs e ) {
-			if ( m_device == null )
+			if ( m_device == null || checkBoxPause.Checked )
 				return;
 
 			// Setup global data
@@ -184,15 +209,60 @@ namespace TestHBIL {
 			m_CB_Main.UpdateData();
 
 			//////////////////////////////////////////////////////////////////////////
-			// =========== Render Depth Pass ===========
-//			m_device.DefaultDepthStencil
+			// =========== Render Depth / G-Buffer Pass  ===========
+			// We're actually doing all in one here...
+			//
 			m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.WRITE_ALWAYS, BLEND_STATE.DISABLED );
 
-			if ( m_shader_RenderScene_DepthPass.Use() ) {
+			if ( m_shader_RenderScene_DepthGBufferPass.Use() ) {
 				m_device.SetRenderTargets( new IView[] { m_tex_albedo.GetView( 0, 1, 0, 1 ), m_tex_normal.GetView( 0, 1, 0, 1 ), m_tex_motionVectors.GetView( 0, 1, 0, 1 ) }, m_device.DefaultDepthStencil );
-				m_device.RenderFullscreenQuad( m_shader_RenderScene_DepthPass );
+				m_device.RenderFullscreenQuad( m_shader_RenderScene_DepthGBufferPass );
 			}
 
+//*			//////////////////////////////////////////////////////////////////////////
+			// =========== Reproject Last Frame Radiance ===========
+			//
+			m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
+
+			if ( m_shader_ReprojectRadiance.Use() ) {
+				m_device.SetRenderTargets( new IView[] { m_tex_radiance.GetView( 0, 1, 1-m_radianceSourceSliceIndex, 1 ) }, null );
+
+				m_tex_radiance.GetView( 0, 1, m_radianceSourceSliceIndex, 1 ).SetPS( 0 );	// Source radiance from last frame
+
+				m_device.RenderFullscreenQuad( m_shader_ReprojectRadiance );
+
+				m_radianceSourceSliceIndex = 1-m_radianceSourceSliceIndex;
+
+				m_tex_radiance.RemoveFromLastAssignedSlots();
+			}
+
+			//////////////////////////////////////////////////////////////////////////
+			// =========== Compute Bent Cone Map and Irradiance Bounces  ===========
+			// 
+			m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
+
+			if ( m_shader_ComputeHBIL.Use() ) {
+				m_device.SetRenderTargets( new IView[] { m_tex_radiance.GetView( 0, 1, 1-m_radianceSourceSliceIndex, 1 ), m_tex_bentCone.GetView( 0, 1, 0, 1 ) }, null );
+
+				m_tex_radiance.GetView( 0, 1, m_radianceSourceSliceIndex, 1 ).SetPS( 0 );	// Reprojected source radiance from last frame
+				m_tex_normal.SetPS( 1 );
+				m_device.DefaultDepthStencil.SetPS( 2 );
+				m_tex_BlueNoise.SetPS( 3 );
+
+				m_device.RenderFullscreenQuad( m_shader_ComputeHBIL );
+
+				m_radianceSourceSliceIndex = 1-m_radianceSourceSliceIndex;
+
+				m_tex_radiance.RemoveFromLastAssignedSlots();
+			}
+
+			//////////////////////////////////////////////////////////////////////////
+			// =========== Compute lighting & finalize radiance  ===========
+			// 
+			m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
+
+// #TODO
+//*/
 			//////////////////////////////////////////////////////////////////////////
 			// =========== Post-Process ===========
 			m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
@@ -205,12 +275,18 @@ namespace TestHBIL {
 				m_tex_motionVectors.SetPS( 2 );
 				m_device.DefaultDepthStencil.SetPS( 3 );
 
+				m_tex_radiance.SetPS( 8 );
+				m_tex_bentCone.SetPS( 9 );
+
 				m_device.RenderFullscreenQuad( m_shader_PostProcess );
 
 				m_device.DefaultDepthStencil.RemoveFromLastAssignedSlots();
 				m_tex_motionVectors.RemoveFromLastAssignedSlots();
 				m_tex_normal.RemoveFromLastAssignedSlots();
 				m_tex_albedo.RemoveFromLastAssignedSlots();
+
+				m_tex_radiance.RemoveFromLastAssignedSlots();
+				m_tex_bentCone.RemoveFromLastAssignedSlots();
 			}
 
 			// Show!

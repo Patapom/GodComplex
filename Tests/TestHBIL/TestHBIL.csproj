@@ -106,6 +106,9 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <None Include="Shaders\HBIL.hlsl" />
+    <None Include="Shaders\ComputeHBIL.hlsl" />
+    <Content Include="Shaders\SphericalHarmonics.hlsl" />
     <None Include="Shaders\SceneRayMarchingLibrary.hlsl" />
     <None Include="Shaders\SceneRayMarchingInfiniteRooms.hlsl" />
     <Content Include="Shaders\PostProcess.hlsl" />

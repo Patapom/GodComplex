@@ -165,7 +165,7 @@ float map (float3 pos) {
 
   return scene;
 }
-//*
+/*
 float3 getCamera (float3 eye, float2 uv) {
   float3 lookAt = 0;
 //  float click = 0;//clamp(iMouse.w,0.,1.);
@@ -195,7 +195,7 @@ struct Intersection {
 	float3	albedo;
 };
 
-Intersection RayMarchScene( float3 _wsPos, float3 _wsDir, float2 _UV ) {
+Intersection RayMarchScene( float3 _wsPos, float3 _wsDir, float2 _UV, uint _stepsCount ) {
 //  float2 uv = (gl_FragCoord.xy-.5*iResolution.xy)/iResolution.y;
 //  float dither = rng(uv+frac(time));
 
@@ -205,7 +205,7 @@ Intersection RayMarchScene( float3 _wsPos, float3 _wsDir, float2 _UV ) {
 //	_wsPos = float3(0,5,-4.5);
 //	_wsDir = getCamera(_wsPos, _UV);
 
-	const float STEP = 1.0 / 50;
+	const float STEP = 1.0 / _stepsCount;
 
 	Intersection	result;
 	result.shade = 0;
@@ -218,7 +218,7 @@ Intersection RayMarchScene( float3 _wsPos, float3 _wsDir, float2 _UV ) {
 			result.shade = 1.0-i;
 			break;
 		}
-		d *= .5;// + .1 * dither;
+		d *= 0.8;	// Tends to miss features if larger than 0.5 (???)
 		result.hitPosition += d * unitStep;
 	}
 

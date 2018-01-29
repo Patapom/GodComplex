@@ -47,7 +47,7 @@
 			this.label6 = new System.Windows.Forms.Label();
 			this.panel1 = new System.Windows.Forms.Panel();
 			this.checkBoxAnimate = new System.Windows.Forms.CheckBox();
-			this.checkBoxCullFront = new System.Windows.Forms.CheckBox();
+			this.checkBoxPause = new System.Windows.Forms.CheckBox();
 			this.panelOutput = new TestHBIL.PanelOutput(this.components);
 			this.SuspendLayout();
 			// 
@@ -235,18 +235,16 @@
 			this.checkBoxAnimate.Text = "Animate";
 			this.checkBoxAnimate.UseVisualStyleBackColor = true;
 			// 
-			// checkBoxCullFront
+			// checkBoxPause
 			// 
-			this.checkBoxCullFront.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-			this.checkBoxCullFront.AutoSize = true;
-			this.checkBoxCullFront.Checked = true;
-			this.checkBoxCullFront.CheckState = System.Windows.Forms.CheckState.Checked;
-			this.checkBoxCullFront.Location = new System.Drawing.Point(1379, 688);
-			this.checkBoxCullFront.Name = "checkBoxCullFront";
-			this.checkBoxCullFront.Size = new System.Drawing.Size(43, 17);
-			this.checkBoxCullFront.TabIndex = 4;
-			this.checkBoxCullFront.Text = "Cull";
-			this.checkBoxCullFront.UseVisualStyleBackColor = true;
+			this.checkBoxPause.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+			this.checkBoxPause.AutoSize = true;
+			this.checkBoxPause.Location = new System.Drawing.Point(1366, 688);
+			this.checkBoxPause.Name = "checkBoxPause";
+			this.checkBoxPause.Size = new System.Drawing.Size(56, 17);
+			this.checkBoxPause.TabIndex = 4;
+			this.checkBoxPause.Text = "Pause";
+			this.checkBoxPause.UseVisualStyleBackColor = true;
 			// 
 			// panelOutput
 			// 
@@ -274,7 +272,7 @@
 			this.Controls.Add(this.floatTrackbarControlProjectionPhi);
 			this.Controls.Add(this.floatTrackbarControlProjectionTheta);
 			this.Controls.Add(this.floatTrackbarControlProjectionDiffusion);
-			this.Controls.Add(this.checkBoxCullFront);
+			this.Controls.Add(this.checkBoxPause);
 			this.Controls.Add(this.checkBoxAnimate);
 			this.Controls.Add(this.panelOutput);
 			this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedToolWindow;
@@ -305,7 +303,7 @@
 		private System.Windows.Forms.Label label6;
 		private System.Windows.Forms.Panel panel1;
 		private System.Windows.Forms.CheckBox checkBoxAnimate;
-		private System.Windows.Forms.CheckBox checkBoxCullFront;
+		private System.Windows.Forms.CheckBox checkBoxPause;
 	}
 }
 

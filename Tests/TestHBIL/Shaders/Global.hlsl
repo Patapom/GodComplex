@@ -7,7 +7,8 @@
 #define PI		3.1415926535897932384626433832795
 #define INVPI	0.31830988618379067153776752674503
 
-#define TAN_HALF_FOV	1.0	// tan( vertical FOV / 2 ) with vertical FOV = 90°
+#define TAN_HALF_FOV	0.6		// tan( vertical FOV / 2 ) with vertical FOV = 90°
+#define Z_FAR			100.0	// 100m max encoded in the depth buffer
 
 cbuffer CB_Main : register(b0) {
 	float2	_resolution;	// viewport resolution (in pixels)
@@ -124,29 +125,29 @@ float3	BuildCameraRay( float2 _UV ) {
 // Absolute error <= 6.7e-5
 // Source: https://web.archive.org/web/20161223122122/http://http.developer.nvidia.com:80/Cg/acos.html
 float fastAcos( float x ) {
-  float negate = float(x < 0);
-  x = abs(x);
-  float ret = -0.0187293;
-  ret = ret * x;
-  ret = ret + 0.0742610;
-  ret = ret * x;
-  ret = ret - 0.2121144;
-  ret = ret * x;
-  ret = ret + 1.5707288;
-  ret = ret * sqrt(1.0-x);
-  ret = ret - 2 * negate * ret;
-  return negate * PI + ret;
+	float negate = float(x < 0);
+	x = abs(x);
+	float ret = -0.0187293;
+	ret = ret * x;
+	ret = ret + 0.0742610;
+	ret = ret * x;
+	ret = ret - 0.2121144;
+	ret = ret * x;
+	ret = ret + 1.5707288;
+	ret = ret * sqrt(1.0-x);
+	ret = ret - 2 * negate * ret;
+	return negate * PI + ret;
 }
-float fastPosAcos( float x ) {	// If you're sure x>0 then use this version
-  float ret = -0.0187293;
-  ret = ret * x;
-  ret = ret + 0.0742610;
-  ret = ret * x;
-  ret = ret - 0.2121144;
-  ret = ret * x;
-  ret = ret + 1.5707288;
-  ret = ret * sqrt(1.0-x);
-  return ret;
+float FastPosAcos( float x ) {	// If you're sure x>0 then use this version
+	float ret = -0.0187293;
+	ret = ret * x;
+	ret = ret + 0.0742610;
+	ret = ret * x;
+	ret = ret - 0.2121144;
+	ret = ret * x;
+	ret = ret + 1.5707288;
+	ret = ret * sqrt(1.0-x);
+	return ret;
 }
 
 // Smooth minimum by iQ
