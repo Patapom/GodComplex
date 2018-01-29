@@ -31,6 +31,7 @@ namespace TestHBIL {
 		private struct CB_Main {
 			public float2		_resolution;
 			public float		_time;
+			public uint			_flags;
 		}
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
@@ -55,6 +56,7 @@ namespace TestHBIL {
 		private Shader				m_shader_RenderScene_DepthGBufferPass = null;
 		private Shader				m_shader_ReprojectRadiance = null;
 		private Shader				m_shader_ComputeHBIL = null;
+		private Shader				m_shader_ComputeLighting = null;
 		private Shader				m_shader_PostProcess = null;
 
 		// G-Buffer
@@ -65,9 +67,14 @@ namespace TestHBIL {
 		// HBIL Results
 		private Texture2D			m_tex_bentCone = null;
 		private Texture2D			m_tex_radiance = null;
+		private Texture2D			m_tex_finalRender = null;
 		private uint				m_radianceSourceSliceIndex = 0;
 
 		private Texture2D			m_tex_BlueNoise = null;
+
+		// Dummy textures with pre-computed heights and normals used to debug the computation
+		private Texture2D			m_tex_texDebugHeights = null;
+		private Texture2D			m_tex_texDebugNormals = null;
 
 		private Camera				m_camera = new Camera();
 		private CameraManipulator	m_manipulator = new CameraManipulator();
@@ -134,6 +141,7 @@ namespace TestHBIL {
 				m_shader_RenderScene_DepthGBufferPass = new Shader( m_device, new System.IO.FileInfo( "Shaders/RenderScene.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS_Depth", null );
  				m_shader_ReprojectRadiance = new Shader( m_device, new System.IO.FileInfo( "Shaders/ComputeHBIL.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS_Reproject", null );
  				m_shader_ComputeHBIL = new Shader( m_device, new System.IO.FileInfo( "Shaders/ComputeHBIL.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+				m_shader_ComputeLighting = new Shader( m_device, new System.IO.FileInfo( "Shaders/ComputeLighting.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 				m_shader_PostProcess = new Shader( m_device, new System.IO.FileInfo( "Shaders/PostProcess.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 			} catch ( Exception _e ) {
 				MessageBox.Show( "Shader failed to compile!\n\n" + _e.Message, "HBIL Test", MessageBoxButtons.OK, MessageBoxIcon.Error );
@@ -148,12 +156,40 @@ namespace TestHBIL {
 			m_tex_bentCone = new Texture2D( m_device, W, H, 1, 1, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.AUTO, false, false, null );
 			m_tex_radiance = new Texture2D( m_device, W, H, 2, 1, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.AUTO, false, false, null );
 
+			m_tex_finalRender = new Texture2D( m_device, W, H, 1, 1, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.AUTO, false, false, null );
+
 			// Create textures
 			using ( ImageFile I = new ImageFile( new System.IO.FileInfo( "Textures/BlueNoise64x64.png" ) ) )
 				using ( ImageFile Imono = new ImageFile() ) {
 					Imono.ConvertFrom( I, PIXEL_FORMAT.R8 );
 					m_tex_BlueNoise = new Texture2D( m_device, new ImagesMatrix( new ImageFile[,] {{ Imono }} ), COMPONENT_FORMAT.UNORM );
 				}
+
+			using ( ImageFile I = new ImageFile( new System.IO.FileInfo( "Textures/heights.png" ) ) )
+				using ( ImageFile Imono = new ImageFile() ) {
+					Imono.ConvertFrom( I, PIXEL_FORMAT.R8 );
+					m_tex_texDebugHeights = new Texture2D( m_device, new ImagesMatrix( new ImageFile[,] {{ Imono }} ), COMPONENT_FORMAT.UNORM );
+				}
+
+			using ( ImageFile I = new ImageFile( new System.IO.FileInfo( "Textures/normals.png" ) ) ) {
+				float4[]				scanline = new float4[W];
+				Renderer.PixelsBuffer	SourceNormalMap = new  Renderer.PixelsBuffer( W*H*4*4 );
+				using ( System.IO.BinaryWriter Wr = SourceNormalMap.OpenStreamWrite() )
+					for ( int Y=0; Y < I.Height; Y++ ) {
+						I.ReadScanline( (uint) Y, scanline );
+						for ( int X=0; X < I.Width; X++ ) {
+							float	Nx = 2.0f * scanline[X].x - 1.0f;
+							float	Ny = 2.0f * scanline[X].y - 1.0f;
+							float	Nz = 2.0f * scanline[X].z - 1.0f;
+							Wr.Write( Nx );
+							Wr.Write( Ny );
+							Wr.Write( Nz );
+							Wr.Write( 1.0f );
+						}
+					}
+
+				m_tex_texDebugNormals = new Renderer.Texture2D( m_device, I.Width, I.Height, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, false, new Renderer.PixelsBuffer[] { SourceNormalMap } );
+			}
 
 			// Setup camera
 			m_camera.CreatePerspectiveCamera( (float) (60.0 * Math.PI / 180.0), (float) panelOutput.Width / panelOutput.Height, 0.01f, 100.0f );
@@ -176,15 +212,20 @@ namespace TestHBIL {
 			if ( m_device == null )
 				return;
 
+			m_tex_finalRender.Dispose();
+
 			m_tex_radiance.Dispose();
 			m_tex_bentCone.Dispose();
 
+			m_tex_texDebugNormals.Dispose();
+			m_tex_texDebugHeights.Dispose();
 			m_tex_BlueNoise.Dispose();
 			m_tex_motionVectors.Dispose();
 			m_tex_normal.Dispose();
 			m_tex_albedo.Dispose();
 
 			m_shader_PostProcess.Dispose();
+			m_shader_ComputeLighting.Dispose();
 			m_shader_ComputeHBIL.Dispose();
 			m_shader_ReprojectRadiance.Dispose();
 			m_shader_RenderScene_DepthGBufferPass.Dispose();
@@ -206,6 +247,8 @@ namespace TestHBIL {
 			// Setup global data
 			if ( checkBoxAnimate.Checked )
 				m_CB_Main.m._time = GetGameTime() - m_startTime;
+			m_CB_Main.m._flags = 0U;
+			m_CB_Main.m._flags |= checkBoxEnableHBIL.Checked ? 1U : 0;
 			m_CB_Main.UpdateData();
 
 			//////////////////////////////////////////////////////////////////////////
@@ -249,6 +292,9 @@ namespace TestHBIL {
 				m_device.DefaultDepthStencil.SetPS( 2 );
 				m_tex_BlueNoise.SetPS( 3 );
 
+m_tex_texDebugHeights.SetPS( 32 );
+m_tex_texDebugNormals.SetPS( 33 );
+
 				m_device.RenderFullscreenQuad( m_shader_ComputeHBIL );
 
 				m_radianceSourceSliceIndex = 1-m_radianceSourceSliceIndex;
@@ -261,7 +307,23 @@ namespace TestHBIL {
 			// 
 			m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
 
-// #TODO
+			if ( m_shader_ComputeLighting.Use() ) {
+				m_device.SetRenderTargets( new IView[] { m_tex_radiance.GetView( 0, 1, 1-m_radianceSourceSliceIndex, 1 ), m_tex_finalRender.GetView( 0, 1, 0, 1 ) }, null );
+
+				m_tex_albedo.SetPS( 0 );
+				m_tex_normal.SetPS( 1 );
+				m_tex_motionVectors.SetPS( 2 );
+				m_device.DefaultDepthStencil.SetPS( 3 );
+
+				m_tex_radiance.GetView( 0, 1, m_radianceSourceSliceIndex, 1 ).SetPS( 8 );
+				m_tex_bentCone.SetPS( 9 );
+
+				m_device.RenderFullscreenQuad( m_shader_ComputeLighting );
+
+				m_radianceSourceSliceIndex = 1-m_radianceSourceSliceIndex;
+
+				m_tex_radiance.RemoveFromLastAssignedSlots();
+			}
 //*/
 			//////////////////////////////////////////////////////////////////////////
 			// =========== Post-Process ===========
@@ -270,13 +332,8 @@ namespace TestHBIL {
 			if ( m_shader_PostProcess.Use() ) {
 				m_device.SetRenderTarget( m_device.DefaultTarget, null );
 
-				m_tex_albedo.SetPS( 0 );
-				m_tex_normal.SetPS( 1 );
-				m_tex_motionVectors.SetPS( 2 );
-				m_device.DefaultDepthStencil.SetPS( 3 );
-
 				m_tex_radiance.SetPS( 8 );
-				m_tex_bentCone.SetPS( 9 );
+				m_tex_finalRender.SetPS( 10 );
 
 				m_device.RenderFullscreenQuad( m_shader_PostProcess );
 
@@ -287,6 +344,7 @@ namespace TestHBIL {
 
 				m_tex_radiance.RemoveFromLastAssignedSlots();
 				m_tex_bentCone.RemoveFromLastAssignedSlots();
+				m_tex_finalRender.RemoveFromLastAssignedSlots();
 			}
 
 			// Show!
@@ -323,6 +381,10 @@ namespace TestHBIL {
 		private void buttonReload_Click( object sender, EventArgs e ) {
 			if ( m_device != null )
 				m_device.ReloadModifiedShaders();
+		}
+
+		private void buttonClear_Click( object sender, EventArgs e ) {
+			m_device.Clear( m_tex_radiance, float4.Zero );
 		}
 
 		#endregion

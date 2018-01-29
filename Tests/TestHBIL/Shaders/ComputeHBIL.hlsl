@@ -16,20 +16,64 @@ Texture2D< float4 >	_tex_normal : register(t1);
 Texture2D< float >	_tex_depth : register(t2);			// Depth or distance buffer (here we're given distances)
 Texture2D< float >	_tex_blueNoise : register(t3);
 
+#if USE_DEBUG_TEXTURES
+Texture2D< float >	_tex_debugHeightMap : register(t32);
+Texture2D< float3 >	_tex_debugNormalMap : register(t33);
+#endif
+
 float4	VS( float4 __Position : SV_POSITION ) : SV_POSITION { return __Position; }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Implement the methods expected by the HBIL header
-float	FetchDepth( float2 _pixelPosition ) {
-	return Z_FAR * _tex_depth.SampleLevel( LinearClamp, _pixelPosition / _resolution, 0.0 );
-}
+#if !USE_DEBUG_TEXTURES
+	float	FetchDepth( float2 _pixelPosition ) {
+		return Z_FAR * _tex_depth.SampleLevel( LinearClamp, _pixelPosition / _resolution, 0.0 );
+	}
+#else
+	float	FetchDepth( float2 _pixelPosition ) {
+		return DEBUG_TEXTURE_MAX_HEIGHT * (1.0 - _tex_debugHeightMap.SampleLevel( LinearClamp, float2( 0.5 + (_pixelPosition.x - 0.5 * _resolution.x) / _resolution.y, _pixelPosition.y / _resolution.y ), 0.0 ));
+//		return DEBUG_TEXTURE_MAX_HEIGHT * _tex_debugHeightMap.SampleLevel( LinearClamp, _pixelPosition / _resolution, 0.0 );
+	}
+#endif
 
 float3	FetchRadiance( float2 _pixelPosition ) {
 	return _tex_sourceRadiance.SampleLevel( LinearClamp, _pixelPosition / _resolution, 0.0 ).xyz;
 }
 
 
-float3	GatherIrradiance_DEBUG( float2 _ssPosition, float2 _ssDirection, float _Z0, float3 _csNormal, float _radialStepSize, uint _stepsCount, out float3 _ssBentNormal, out float2 _coneAngles, inout float4 _DEBUG ) {
+// Samples the irradiance reflected from a screen-space position located around the center pixel position
+//	_ssPosition, the screen-space position to sample
+//	_H0, the center height
+//	_radius_m, the radius (in meters) from the center position
+//	_integralFactors, some pre-computed factors to feed the integral
+//	_maxCos, the floating maximum cos(theta) that indicates the angle of the perceived horizon
+//	_optionnal_centerRho, the reflectance of the center pixel (fallback only necessary if no albedo map is available and if it's only irradiance that is stored in the source irradiance map instead of radiance, in which case albedo is already pre-mutliplied)
+//
+float3	SampleIrradiance_DEBUG( float2 _ssPosition, float _H0, float _radius, float2 _integralFactors, inout float _maxCos ) {
+
+	// Sample new height and update horizon angle
+	float	deltaH = _H0 - FetchDepth( _ssPosition );
+	float	H2 = deltaH * deltaH;
+	float	hyp2 = _radius * _radius + H2;		// Square hypotenuse
+	float	cosHorizon = deltaH / sqrt( hyp2 );	// Cosine to horizon angle
+	if ( cosHorizon <= _maxCos )
+		return 0.0;	// Below the horizon... No visible contribution.
+
+	// Source texture directly contains Li-1
+	// (Ei-1 is already pre-multiplied by albedo/rho from last frame so don't bother!)
+	float3	incomingRadiance = FetchRadiance( _ssPosition );
+
+	// Integrate over horizon difference (always from smallest to largest angle otherwise we get negative results!)
+	incomingRadiance *= IntegrateSolidAngle( _integralFactors, cosHorizon, _maxCos );
+
+	// #TODO: Integrate with linear interpolation of irradiance as well??
+
+	_maxCos = cosHorizon;		// Register a new positive horizon
+
+	return incomingRadiance;
+}
+
+float3	GatherIrradiance_DEBUG( float2 _ssPosition, float2 _ssDirection, float _Z0, float3 _csNormal, float2 _radialStepSizes, uint _stepsCount, out float3 _ssBentNormal, out float2 _coneAngles, inout float4 _DEBUG ) {
 
 	// Pre-compute factors for the integrals
 	float2	integralFactors_Front = ComputeIntegralFactors( _ssDirection, _csNormal );
@@ -62,24 +106,26 @@ float3	GatherIrradiance_DEBUG( float2 _ssPosition, float2 _ssDirection, float _Z
 
 	// Gather irradiance from front & back directions while updating the horizon angles at the same time
 	float3	sumRadiance = 0.0;
-	float	radius = 0.0;
-	float2	ssStep = _radialStepSize * _ssDirection;
+	float	radius_meters = 0.0;
+	float2	ssStep = _radialStepSizes.x * _ssDirection;
 	float2	ssPosition_Front = _ssPosition;
 	float2	ssPosition_Back = _ssPosition;
 	for ( uint stepIndex=0; stepIndex < _stepsCount; stepIndex++ ) {
-		radius += _radialStepSize;
+		radius_meters += _radialStepSizes.y;
 		ssPosition_Front += ssStep;
 		ssPosition_Back -= ssStep;
 
-		sumRadiance += SampleIrradiance( ssPosition_Front, _Z0, radius, integralFactors_Front, maxCos_Front );
-		sumRadiance += SampleIrradiance( ssPosition_Back, _Z0, radius, integralFactors_Back, maxCos_Back );
+		sumRadiance += SampleIrradiance_DEBUG( ssPosition_Front, _Z0, radius_meters, integralFactors_Front, maxCos_Front );
+		sumRadiance += SampleIrradiance_DEBUG( ssPosition_Back, _Z0, radius_meters, integralFactors_Back, maxCos_Back );
 	}
 
-//_DEBUG = 0.008 * radius;
+//_DEBUG = 0.008 * radius_meters;
+//_DEBUG = radius_meters;// / 128.0;
 //_DEBUG = float4( ssPosition_Back - _ssPosition, 0, 0 );
-//_DEBUG = maxCos_Front;
+//_DEBUG = maxCos_Back;
 //_DEBUG = max( maxCos_Back, maxCos_Front );
 //_DEBUG = min( maxCos_Back, maxCos_Front );
+//_DEBUG = maxCos_Front;
 
 	// Accumulate bent normal direction by rebuilding and averaging the front & back horizon vectors
 	#if USE_NUMERICAL_INTEGRATION
@@ -165,6 +211,7 @@ PS_OUT	PS( float4 __Position : SV_POSITION ) {
 
 	// Read back depth/distance & normal + rebuild camera-space TBN
 	float	Z = FetchDepth( pixelPosition );
+#if !USE_DEBUG_TEXTURES
 	float	distance = Z * Z2Distance;
 	float3	wsNormal = normalize( _tex_normal[pixelPosition].xyz );
 	#if 0
@@ -195,8 +242,20 @@ PS_OUT	PS( float4 __Position : SV_POSITION ) {
 	float	screenSize_m = 2.0 * Z * TAN_HALF_FOV;	// Vertical size of the screen in meters when extended to distance Z
 	float	sphereRadius_pixels = _resolution.y * GATHER_SPHERE_RADIUS_M / screenSize_m;
 			sphereRadius_pixels = min( GATHER_SPHERE_MAX_RADIUS_P, sphereRadius_pixels );							// Prevent it to grow larger than our fixed limit
-	float	radiusStepSize_pixels = max( 1.0, sphereRadius_pixels / MAX_SAMPLES );									// This gives us our radial step size
+	float	radiusStepSize_pixels = max( 1.0, sphereRadius_pixels / MAX_SAMPLES );									// This gives us our radial step size in pixels
 	uint	samplesCount = clamp( uint( ceil( sphereRadius_pixels / radiusStepSize_pixels ) ), 1, MAX_SAMPLES );	// Reduce samples count if possible
+
+	float	radiusStepSize_meters = sphereRadius_pixels * screenSize_m / (samplesCount * _resolution.y);			// This gives us our radial step size in meters
+
+#else // #if USE_DEBUG_TEXTURES
+	float3	N = normalize( _tex_debugNormalMap.Sample( LinearWrap, UV ).xyz );
+	float3	T, B;
+	BuildOrthonormalBasis( N, T, B );
+
+	uint	samplesCount = MAX_SAMPLES;
+	float	radiusStepSize_pixels = 2.0;
+	float	radiusStepSize_meters = radiusStepSize_pixels * (DEBUG_TEXTURE_SIZE / _resolution.y);
+#endif
 
 	// Start gathering radiance and bent normal by subdividing the screen-space disk around our pixel into Z slices
 	float4	GATHER_DEBUG = 0.0;
@@ -211,13 +270,16 @@ PS_OUT	PS( float4 __Position : SV_POSITION ) {
 #endif
 	{
 		float	phi = (angleIndex + noise) * PI / MAX_ANGLES;
+
+//phi = 0.0;
+
 		float2	ssDirection;
 		sincos( phi, ssDirection.y, ssDirection.x );
 
 		// Gather irradiance and average cone direction for that slice
 		float3	ssBentNormal;
 		float2	coneAngles;
-		sumIrradiance += GatherIrradiance_DEBUG( __Position.xy, ssDirection, Z, N, radiusStepSize_pixels, samplesCount, ssBentNormal, coneAngles, GATHER_DEBUG );
+		sumIrradiance += GatherIrradiance_DEBUG( __Position.xy, ssDirection, Z, N, float2( radiusStepSize_pixels, radiusStepSize_meters ), samplesCount, ssBentNormal, coneAngles, GATHER_DEBUG );
 
 		ssAverageBentNormal += ssBentNormal;
 
@@ -244,6 +306,12 @@ PS_OUT	PS( float4 __Position : SV_POSITION ) {
 
 	sumIrradiance *= PI / MAX_ANGLES;
 
+//sumIrradiance += float3( 0.1, 0, 0 );
+
+	sumIrradiance = max( 0.0, sumIrradiance );
+
+//sumIrradiance = float3( 1, 0, 1 );
+
 float3	DEBUG_VALUE = float3( 1,0,1 );
 DEBUG_VALUE = ssAverageBentNormal;
 //DEBUG_VALUE = cos( averageConeAngle );
@@ -253,11 +321,11 @@ DEBUG_VALUE = ssAverageBentNormal;
 //DEBUG_VALUE = 0.1 * (radiusStepSize_pixels-1);
 //DEBUG_VALUE = 0.5 * float(samplesCount) / MAX_SAMPLES;
 //DEBUG_VALUE = varianceConeAngle;
-DEBUG_VALUE = stdDeviation;
+//DEBUG_VALUE = stdDeviation;
 //DEBUG_VALUE = float3( GATHER_DEBUG.xy, 0 );
 //DEBUG_VALUE = float3( GATHER_DEBUG.zw, 0 );
 //DEBUG_VALUE = GATHER_DEBUG.xyz;
-//DEBUG_VALUE = N;
+//DEBUG_VALUE = 2.0 * Z;
 
 	PS_OUT	Out;
 	Out.irradiance = float4( sumIrradiance, 0 );

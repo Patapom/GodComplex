@@ -10,9 +10,14 @@
 #define TAN_HALF_FOV	0.6		// tan( vertical FOV / 2 ) with vertical FOV = 90°
 #define Z_FAR			100.0	// 100m max encoded in the depth buffer
 
+//#define USE_DEBUG_TEXTURES	1	// Define this to sample scene from height + normal textures instead of 3D scene
+#define	DEBUG_TEXTURE_SIZE	1.0	// Size of the texture in meters
+#define	DEBUG_TEXTURE_MAX_HEIGHT	0.45	// Maximum height encoded in the debug height map
+
 cbuffer CB_Main : register(b0) {
 	float2	_resolution;	// viewport resolution (in pixels)
 	float	_time;
+	uint	_flags;
 };
 
 cbuffer CB_Camera : register(b1) {

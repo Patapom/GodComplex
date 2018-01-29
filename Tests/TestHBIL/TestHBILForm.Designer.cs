@@ -48,7 +48,9 @@
 			this.panel1 = new System.Windows.Forms.Panel();
 			this.checkBoxAnimate = new System.Windows.Forms.CheckBox();
 			this.checkBoxPause = new System.Windows.Forms.CheckBox();
+			this.buttonClear = new System.Windows.Forms.Button();
 			this.panelOutput = new TestHBIL.PanelOutput(this.components);
+			this.checkBoxEnableHBIL = new System.Windows.Forms.CheckBox();
 			this.SuspendLayout();
 			// 
 			// floatTrackbarControlProjectionDiffusion
@@ -239,12 +241,22 @@
 			// 
 			this.checkBoxPause.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
 			this.checkBoxPause.AutoSize = true;
-			this.checkBoxPause.Location = new System.Drawing.Point(1366, 688);
+			this.checkBoxPause.Location = new System.Drawing.Point(1379, 687);
 			this.checkBoxPause.Name = "checkBoxPause";
 			this.checkBoxPause.Size = new System.Drawing.Size(56, 17);
 			this.checkBoxPause.TabIndex = 4;
 			this.checkBoxPause.Text = "Pause";
 			this.checkBoxPause.UseVisualStyleBackColor = true;
+			// 
+			// buttonClear
+			// 
+			this.buttonClear.Location = new System.Drawing.Point(1309, 711);
+			this.buttonClear.Name = "buttonClear";
+			this.buttonClear.Size = new System.Drawing.Size(75, 23);
+			this.buttonClear.TabIndex = 6;
+			this.buttonClear.Text = "Clear";
+			this.buttonClear.UseVisualStyleBackColor = true;
+			this.buttonClear.Click += new System.EventHandler(this.buttonClear_Click);
 			// 
 			// panelOutput
 			// 
@@ -253,11 +265,25 @@
 			this.panelOutput.Size = new System.Drawing.Size(1280, 720);
 			this.panelOutput.TabIndex = 0;
 			// 
+			// checkBoxEnableHBIL
+			// 
+			this.checkBoxEnableHBIL.AutoSize = true;
+			this.checkBoxEnableHBIL.Checked = true;
+			this.checkBoxEnableHBIL.CheckState = System.Windows.Forms.CheckState.Checked;
+			this.checkBoxEnableHBIL.Location = new System.Drawing.Point(1309, 664);
+			this.checkBoxEnableHBIL.Name = "checkBoxEnableHBIL";
+			this.checkBoxEnableHBIL.Size = new System.Drawing.Size(50, 17);
+			this.checkBoxEnableHBIL.TabIndex = 7;
+			this.checkBoxEnableHBIL.Text = "HBIL";
+			this.checkBoxEnableHBIL.UseVisualStyleBackColor = true;
+			// 
 			// TestHBILForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1639, 744);
+			this.Controls.Add(this.checkBoxEnableHBIL);
+			this.Controls.Add(this.buttonClear);
 			this.Controls.Add(this.panel1);
 			this.Controls.Add(this.label6);
 			this.Controls.Add(this.label4);
@@ -304,6 +330,8 @@
 		private System.Windows.Forms.Panel panel1;
 		private System.Windows.Forms.CheckBox checkBoxAnimate;
 		private System.Windows.Forms.CheckBox checkBoxPause;
+		private System.Windows.Forms.Button buttonClear;
+		private System.Windows.Forms.CheckBox checkBoxEnableHBIL;
 	}
 }
 
