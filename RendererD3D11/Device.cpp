@@ -541,7 +541,7 @@ void	Device::PerfEndFrame() {
 	m_framesCount++;
 	DoubleBufferedQuery::ms_currentFrameQueryIndex = (DoubleBufferedQuery::ms_currentFrameQueryIndex + 1) % DoubleBufferedQuery::MAX_FRAMES;	// Swap!
 
-	m_queryClockFrequency = 0;
+//	m_queryClockFrequency = 0;
 	if ( m_deviceContext->GetData( *m_queryDisjoint, NULL, 0, 0 ) != S_OK )
 		return;
 // 	while ( m_deviceContext->GetData( m_queryDisjoint, NULL, 0, 0 ) == S_FALSE ) {
