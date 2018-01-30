@@ -3,14 +3,11 @@
 //////////////////////////////////////////////////////////////////////////
 //
 // IDEAS / #TODOS:
-//	• Move render G-Buffer first (before repro and push pull)
 //	• Use push/pull (with bilateral) to fill in reprojected radiance voids!!!
 //	• float	GetBilateralWeight( Z0, Z1, radius, ref sqHypotenuse ) => Outside of unit sphere???
 //	• Use radius² as progression + sample mips for larger footprint (only if mip is bilateral filtered!)
 //	• Keep previous radiance in case we reject height sample but accept radiance, and don't want to interpolate foreground radiance? Will that even occur?
 //	• Write interleaved sampling + reconstruction based on bilateral weight (store it some place? Like alpha somewhere?)
-//	• Flag for monochromatic rendering
-//	• Slider for bent cone angle aperture bias
 //
 using System;
 using System.Collections.Generic;
@@ -40,6 +37,7 @@ namespace TestHBIL {
 			public uint			_flags;
 			public float		_environmentIntensity;
 			public float		_forcedAlbedo;
+			public float		_coneAngleBias;
 			public float		_exposure;
 		}
 
@@ -285,9 +283,11 @@ namespace TestHBIL {
 			m_CB_Main.m._flags |= checkBoxEnableHBIL.Checked ? 1U : 0;
 			m_CB_Main.m._flags |= checkBoxEnableBentNormal.Checked ? 2U : 0;
 			m_CB_Main.m._flags |= checkBoxEnableConeVisibility.Checked ? 4U : 0;
-			m_CB_Main.m._flags |= checkBoxForceAlbedo.Checked ? 8U : 0;
+			m_CB_Main.m._flags |= checkBoxMonochrome.Checked ? 8U : 0;
+			m_CB_Main.m._flags |= checkBoxForceAlbedo.Checked ? 0x10U : 0;
 			m_CB_Main.m._environmentIntensity = floatTrackbarControlEnvironmentIntensity.Value;
 			m_CB_Main.m._forcedAlbedo = floatTrackbarControlAlbedo.Value;
+			m_CB_Main.m._coneAngleBias = floatTrackbarControlConeAngleBias.Value;
 			m_CB_Main.m._exposure = floatTrackbarControlExposure.Value;
 			m_CB_Main.UpdateData();
 

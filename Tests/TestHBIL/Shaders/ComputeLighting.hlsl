@@ -62,7 +62,7 @@ PS_OUT	PS( float4 __Position : SV_POSITION ) {
 		HBILIrradiance *= 0.0;
 
 	// Compute this frame's distant environment coming from some SH probe
-	float	samplingConeAngle = averageConeAngle - 0.2 * stdDeviationConeAngle;	// Good empirical value
+	float	samplingConeAngle = clamp( averageConeAngle + _coneAngleBias * stdDeviationConeAngle, 0.0, 0.5 * PI );	// -0.2 is a good empirical value
 	if ( (_flags & 4) == 0 )
 		samplingConeAngle = 0.5 * PI;
 

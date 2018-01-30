@@ -21,6 +21,7 @@ cbuffer CB_Main : register(b0) {
 	uint	_flags;
 	float	_environmentIntensity;
 	float	_forcedAlbedo;
+	float	_coneAngleBias;
 	float	_exposure;
 };
 

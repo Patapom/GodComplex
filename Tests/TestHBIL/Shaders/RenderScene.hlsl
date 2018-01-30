@@ -25,6 +25,8 @@ PS_OUT	PS_Depth( float4 __Position : SV_POSITION ) {
 	Out.motionVectors = float2( sin( 10.0 * UV.x + _time ), sin( PI * UV.y * UV.x - 0.9 * _time ) );
 	Out.albedo = result.albedo;
 	if ( _flags & 0x8 )
+		Out.albedo = dot( Out.albedo, LUMINANCE );
+	if ( _flags & 0x10 )
 		Out.albedo = _forcedAlbedo * float3( 1, 1, 1 );			// Force albedo (default = 50%)
 	Out.normal = result.wsNormal;
 	Out.depth = result.hitPosition.w / (Z2Distance * Z_FAR);	// Store Z
