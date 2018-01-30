@@ -7,15 +7,15 @@
 
 #if 1
 	// Quality values
-	#define	MAX_ANGLES	32			// Amount of angular subdivisions of the circle
-	#define	MAX_RADIUS	32			// Amount of radial subdivisions of the circle
-	#define	RADIUS_STEP_SIZE 2.0	// Radial step size (in pixels)
+	#define	SUBDIV_COUNT_ANGULAR	32		// Amount of angular subdivisions of the circle
+	#define	SUBDIV_COUNT_RADIAL		32		// Amount of radial subdivisions of the circle
 #else
 	// Fast values
-	#define	MAX_ANGLES	2			// Amount of angular subdivisions of the circle
-	#define	MAX_RADIUS	8			// Amount of radial subdivisions of the circle
-	#define	RADIUS_STEP_SIZE 8.0	// Radial step size (in pixels)
+	#define	SUBDIV_COUNT_ANGULAR	2		// Amount of angular subdivisions of the circle
+	#define	SUBDIV_COUNT_RADIAL		8		// Amount of radial subdivisions of the circle
 #endif
+
+#define	MAX_SIZE_RADIUS			128.0		// Maximum covered radius (in pixels)
 
 #define	SAMPLER	LinearWrap
 
@@ -29,9 +29,15 @@
 //#define USE_NUMERICAL_INTEGRATION 256	// Define this to compute bent normal numerically (value = integration steps count)
 // !!MORE EXPENSIVE AND LESS ACCURATE => DON'T USE EXCEPT FOR DEBUG!!
 
+// !!MORE EXPENSIVE FOR NO REAL IMPROVEMENT IN QUALITY
+//#define USE_QUADRATIC_PROGRESSION	1
+// !!MORE EXPENSIVE FOR NO REAL IMPROVEMENT IN QUALITY
+
+
 #define PREMULTIPLY_ALBEDO 1	// Define this to store (albedo/PI)*Irradiance instead of simply Irradiance
 								// The main interest is to be able to use the value straight from the sampler
 								//	next frame and avoid to sample the albedo buffer to redo the computation manually...
+
 
 cbuffer	CBCompute : register( b2 ) {
 	uint2	_textureDimensions;	// Height map resolution
@@ -103,8 +109,8 @@ float	IntegrateSolidAngle( float2 _integralFactors, float _cosTheta0, float _cos
 
 	// SUPER EXPENSIVE PART!
 	#if USE_FAST_ACOS
-		float	theta0 = fastPosAcos( _cosTheta0 );
-		float	theta1 = fastPosAcos( _cosTheta1 );
+		float	theta0 = FastPosAcos( _cosTheta0 );
+		float	theta1 = FastPosAcos( _cosTheta1 );
 	#else
 		float	theta0 = acos( _cosTheta0 );
 		float	theta1 = acos( _cosTheta1 );
@@ -146,8 +152,8 @@ float	IntegrateSolidAngle( float2 _integralFactors, float _cosTheta0, float _cos
 
 	// SUPER EXPENSIVE PART!
 	#if USE_FAST_ACOS
-		float	theta0 = fastPosAcos( _cosTheta0 );
-		float	theta1 = fastPosAcos( _cosTheta1 );
+		float	theta0 = FastPosAcos( _cosTheta0 );
+		float	theta1 = FastPosAcos( _cosTheta1 );
 	#else
 		float	theta0 = acos( _cosTheta0 );
 		float	theta1 = acos( _cosTheta1 );
@@ -226,15 +232,15 @@ PS_OUT	PS( VS_IN _In ) {
 	float	varianceConeAngle = 0.0;
 	float3	sumIrradiance = 0.0;
 
-	#if MAX_ANGLES > 1
-		for ( uint angleIndex=0; angleIndex < MAX_ANGLES; angleIndex++ ) {
+	#if SUBDIV_COUNT_ANGULAR > 1
+		for ( uint angleIndex=0; angleIndex < SUBDIV_COUNT_ANGULAR; angleIndex++ ) {
 	#else
 	{
 		uint	angleIndex = 0;
 	#endif
 
 		// Compute direction of the screen-space slice
-		float	phi = PI * (angleIndex + noise) / MAX_ANGLES;
+		float	phi = PI * (angleIndex + noise) / SUBDIV_COUNT_ANGULAR;
 		float2	sinCosPhi;
 		sincos( phi, sinCosPhi.x, sinCosPhi.y );
 		float2	ssDirection = float2( sinCosPhi.y, sinCosPhi.x );
@@ -250,19 +256,25 @@ PS_OUT	PS( VS_IN _In ) {
 		float	maxCos_Back = -tsDirection_Front.z;
 
 //*		// Accumulate perceived irradiance in front and back & update floating horizon (in the form of cos(horizon angle))
-		float	stepSize = RADIUS_STEP_SIZE;
-//		float	stepSize = 16 * _debugValues.w;	// Good value => _debugValues.w = 0.13
+		#if !USE_QUADRATIC_PROGRESSION
+			float	stepSize = MAX_SIZE_RADIUS / SUBDIV_COUNT_RADIAL;
+//			float	stepSize = 16 * _debugValues.w;	// Good value => _debugValues.w = 0.13
+			float2	ssStep = ssDirection * stepSize;
+		#endif
+		float	radius = 0.0;
 
 		float2	ssPosition_Front = _In.__Position.xy;
 		float2	ssPosition_Back = _In.__Position.xy;
-		float2	ssStep = ssDirection * stepSize;
-		float	radius = 0.0;
-		for ( uint radiusIndex=1; radiusIndex <= MAX_RADIUS; radiusIndex++ ) {
-			ssPosition_Front += ssStep;
-			ssPosition_Back -= ssStep;
-			radius += stepSize;
-
-Try non linear radius sampling!
+		for ( uint radiusIndex=0; radiusIndex < SUBDIV_COUNT_RADIAL; radiusIndex++ ) {
+			#if USE_QUADRATIC_PROGRESSION
+				radius = 1.0 + (MAX_SIZE_RADIUS-1.0) * (1.0+radiusIndex) / SUBDIV_COUNT_RADIAL;
+				ssPosition_Front = _In.__Position.xy + radius * ssDirection;
+				ssPosition_Back = _In.__Position.xy - radius * ssDirection;
+			#else
+				ssPosition_Front += ssStep;
+				ssPosition_Back -= ssStep;
+				radius += stepSize;
+			#endif
 
 			sumIrradiance += SampleIrradiance( ssPosition_Front, H0, radius, integralFactors_Front, maxCos_Front, centerRho );	// Sample forward
 			sumIrradiance += SampleIrradiance( ssPosition_Back, H0, radius, integralFactors_Back, maxCos_Back, centerRho );		// Sample backward
@@ -321,8 +333,8 @@ Try non linear radius sampling!
 		float3	ssHorizon_Front = float3( sqrt( 1.0 - maxCos_Front*maxCos_Front ) * ssDirection, maxCos_Front );
 		float3	ssHorizon_Back = float3( -sqrt( 1.0 - maxCos_Back*maxCos_Back ) * ssDirection, maxCos_Back );
 		#if USE_FAST_ACOS
-			float	coneAngle_Front = fastPosAcos( saturate( dot( ssBentNormal, ssHorizon_Front ) ) );
-			float	coneAngle_Back = fastPosAcos( saturate( dot( ssBentNormal, ssHorizon_Back ) ) ) ;
+			float	coneAngle_Front = FastPosAcos( saturate( dot( ssBentNormal, ssHorizon_Front ) ) );
+			float	coneAngle_Back = FastPosAcos( saturate( dot( ssBentNormal, ssHorizon_Back ) ) ) ;
 		#else
 			float	coneAngle_Front = acos( saturate( dot( ssBentNormal, ssHorizon_Front ) ) );
 			float	coneAngle_Back = acos( saturate( dot( ssBentNormal, ssHorizon_Back ) ) );
@@ -343,8 +355,8 @@ Try non linear radius sampling!
 	}
 
 	// Finalize bent cone
-	#if MAX_ANGLES > 2
-		varianceConeAngle /= 2.0*MAX_ANGLES - 1.0;
+	#if SUBDIV_COUNT_ANGULAR > 2
+		varianceConeAngle /= 2.0*SUBDIV_COUNT_ANGULAR - 1.0;
 	#endif
 	ssAverageBentNormal = normalize( ssAverageBentNormal );
 
@@ -362,7 +374,7 @@ Try non linear radius sampling!
 	#endif
 
 	// Finalize indirect irradiance
-	const float	dPhi = PI / MAX_ANGLES;	// Hemisphere is sliced into 2*MAX_ANGLES parts
+	const float	dPhi = PI / SUBDIV_COUNT_ANGULAR;	// Hemisphere is sliced into 2*SUBDIV_COUNT_ANGULAR parts
 	sumIrradiance *= dPhi;
 
 	// Compute this frame's irradiance

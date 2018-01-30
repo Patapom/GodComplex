@@ -3,8 +3,14 @@
 //////////////////////////////////////////////////////////////////////////
 //
 // IDEAS / #TODOS:
+//	• Move render G-Buffer first (before repro and push pull)
 //	• Use push/pull (with bilateral) to fill in reprojected radiance voids!!!
-//
+//	• float	GetBilateralWeight( Z0, Z1, radius, ref sqHypotenuse ) => Outside of unit sphere???
+//	• Use radius² as progression + sample mips for larger footprint (only if mip is bilateral filtered!)
+//	• Keep previous radiance in case we reject height sample but accept radiance, and don't want to interpolate foreground radiance? Will that even occur?
+//	• Write interleaved sampling + reconstruction based on bilateral weight (store it some place? Like alpha somewhere?)
+//	• Flag for monochromatic rendering
+//	• Slider for bent cone angle aperture bias
 //
 using System;
 using System.Collections.Generic;

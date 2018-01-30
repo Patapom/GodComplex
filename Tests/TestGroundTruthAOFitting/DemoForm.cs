@@ -427,7 +427,7 @@ namespace TestGroundTruthAOFitting
 
 		#endregion
 
-		#region Manipulation
+		#region Light Manipulation
 
 		Quat			m_lightQuat = new Quat( new AngleAxis( 0.0f, float3.UnitZ ) );
 		float3x3		m_lightRotation = float3x3.Identity;

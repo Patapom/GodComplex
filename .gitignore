@@ -641,3 +641,4 @@ Publish
 /Tests/TestGroundTruthAOFitting/obj
 /Tests/TestGroundTruthAOFitting/*.indirectMap
 /Tests/TestGroundTruthAOFitting/Results/heights360.AO
+/Tests/TestHBIL/obj

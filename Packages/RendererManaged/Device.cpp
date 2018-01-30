@@ -60,6 +60,7 @@ void	Renderer::Device::SetRenderStates( RASTERIZER_STATE _RS, DEPTHSTENCIL_STATE
 		case DEPTHSTENCIL_STATE::READ_DEPTH_LESS_EQUAL:		pDS = m_pDevice->m_pDS_ReadLessEqual; break;
 		case DEPTHSTENCIL_STATE::READ_WRITE_DEPTH_LESS:		pDS = m_pDevice->m_pDS_ReadWriteLess; break;
 		case DEPTHSTENCIL_STATE::READ_WRITE_DEPTH_GREATER:	pDS = m_pDevice->m_pDS_ReadWriteGreater; break;
+		case DEPTHSTENCIL_STATE::WRITE_ALWAYS:				pDS = m_pDevice->m_pDS_WriteAlways; break;
 		default: throw gcnew Exception( "Unsupported depth stencil state!" );
 	}
 
@@ -96,7 +97,6 @@ void	Renderer::Device::SetRenderTargets( cli::array<IView^>^ _renderTargetViews,
 		throw gcnew Exception( "Render target views and depth stencil view cannot both be null!" );
 	}
 	m_pDevice->SetRenderTargets( W, H, renderTargetsCount, m_ppRenderTargetViews, _depthStencilTarget != nullptr ? _depthStencilTarget->m_texture->GetDSV() : NULL );
-
 }
 
 void	Renderer::Device::RenderFullscreenQuad( Shader^ _shader ) {

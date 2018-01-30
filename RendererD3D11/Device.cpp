@@ -153,6 +153,9 @@ bool	Device::Init( U32 _width, U32 _height, HWND _handle, bool _fullscreen, bool
 		Desc.DepthFunc = D3D11_COMPARISON_GREATER;
 		m_pDS_ReadWriteGreater = new DepthStencilState( *this, Desc ); m_StatesCount++;
 
+		Desc.DepthFunc = D3D11_COMPARISON_ALWAYS;	// Always write
+		m_pDS_WriteAlways = new DepthStencilState( *this, Desc ); m_StatesCount++;
+
 		Desc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
 		Desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
 		m_pDS_ReadLessEqual = new DepthStencilState( *this, Desc ); m_StatesCount++;

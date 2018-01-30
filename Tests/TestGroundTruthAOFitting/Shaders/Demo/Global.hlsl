@@ -47,7 +47,7 @@ float fastAcos( float x ) {
   ret = ret - 2 * negate * ret;
   return negate * PI + ret;
 }
-float fastPosAcos( float x ) {	// If you're sure x>0 then use this version
+float FastPosAcos( float x ) {	// If you're sure x>0 then use this version
   float ret = -0.0187293;
   ret = ret * x;
   ret = ret + 0.0742610;

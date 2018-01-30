@@ -61,6 +61,7 @@ public:
 	DepthStencilState*		m_pDS_Disabled;
 	DepthStencilState*		m_pDS_ReadWriteLess;
 	DepthStencilState*		m_pDS_ReadWriteGreater;
+	DepthStencilState*		m_pDS_WriteAlways;
 		// Write disabled
 	DepthStencilState*		m_pDS_ReadLessEqual;
 	DepthStencilState*		m_pDS_ReadLessEqual_StencilIncBackDecFront;	// Useful for deferred rendering

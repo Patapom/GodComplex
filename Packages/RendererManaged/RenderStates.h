@@ -26,6 +26,7 @@ namespace Renderer {
 		READ_DEPTH_LESS_EQUAL,
 		READ_WRITE_DEPTH_LESS,
 		READ_WRITE_DEPTH_GREATER,
+		WRITE_ALWAYS,
 	};
 
 	public enum class	BLEND_STATE {
