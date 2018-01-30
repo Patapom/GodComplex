@@ -247,8 +247,7 @@ template<typename T> void	Dictionary<T>::Clear() {
 	memset( m_ppTable, 0, m_Size*sizeof(Node*) );
 }
 
-template<typename T> void	Dictionary<T>::ForEach( VisitorDelegate _pDelegate, void* _pUserData )
-{
+template<typename T> void	Dictionary<T>::ForEach( VisitorDelegate _pDelegate, void* _pUserData ) {
 	int	EntryIndex = 0;
 	for ( int i=0; i < m_Size; i++ ) {
 		Node*	pNode = m_ppTable[i];

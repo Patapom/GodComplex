@@ -81,9 +81,6 @@ namespace Renderer {
 
 		void	RenderFullscreenQuad( Shader^ _Shader );
 
-		// Compresses the source image to the appropriate format using GPU acceleration
-		ImageUtility::ImagesMatrix^	DDSCompress( ImageUtility::ImagesMatrix^ _sourceImage, ImageUtility::ImagesMatrix::COMPRESSION_TYPE _compressionType, ImageUtility::COMPONENT_FORMAT _componentFormat );
-
 		void	Present( bool _flushCommands ) {
 			if ( _flushCommands )
 				m_pDevice->DXContext().Flush();
@@ -96,5 +93,15 @@ namespace Renderer {
 			::Shader::WatchShadersModifications();
 			::ComputeShader::WatchShadersModifications();
 		}
+
+		// Patapom [18/01/30] Performance queries
+		void		PerfBeginFrame()											{ m_pDevice->PerfBeginFrame(); }
+		void		PerfSetMarker( U32 _markerID )								{ m_pDevice->PerfSetMarker( _markerID ); }
+		void		PerfEndFrame()												{ m_pDevice->PerfEndFrame(); }
+		double		PerfGetMilliSeconds( U32 _markerID )						{ return m_pDevice->PerfGetMilliSeconds( _markerID ); }
+		double		PerfGetMilliSeconds( U32 _markerIDStart, U32 _markerIDEnd ) { return m_pDevice->PerfGetMilliSeconds( _markerIDStart, _markerIDEnd ); }
+
+		// Compresses the source image to the appropriate format using GPU acceleration
+		ImageUtility::ImagesMatrix^	DDSCompress( ImageUtility::ImagesMatrix^ _sourceImage, ImageUtility::ImagesMatrix::COMPRESSION_TYPE _compressionType, ImageUtility::COMPONENT_FORMAT _componentFormat );
 	};
 }

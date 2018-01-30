@@ -47,6 +47,7 @@
 			this.checkBoxEnableConeVisibility = new System.Windows.Forms.CheckBox();
 			this.checkBoxForceAlbedo = new System.Windows.Forms.CheckBox();
 			this.panelOutput = new TestHBIL.PanelOutput(this.components);
+			this.textBoxInfo = new System.Windows.Forms.TextBox();
 			this.SuspendLayout();
 			// 
 			// buttonReload
@@ -160,6 +161,7 @@
 			this.checkBoxPause.TabIndex = 4;
 			this.checkBoxPause.Text = "Pause";
 			this.checkBoxPause.UseVisualStyleBackColor = true;
+			this.checkBoxPause.CheckedChanged += new System.EventHandler(this.checkBoxPause_CheckedChanged);
 			// 
 			// buttonClear
 			// 
@@ -232,11 +234,22 @@
 			this.panelOutput.MouseMove += new System.Windows.Forms.MouseEventHandler(this.panelOutput_MouseMove);
 			this.panelOutput.MouseUp += new System.Windows.Forms.MouseEventHandler(this.panelOutput_MouseUp);
 			// 
+			// textBoxInfo
+			// 
+			this.textBoxInfo.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+			this.textBoxInfo.Location = new System.Drawing.Point(1298, 12);
+			this.textBoxInfo.Multiline = true;
+			this.textBoxInfo.Name = "textBoxInfo";
+			this.textBoxInfo.ReadOnly = true;
+			this.textBoxInfo.Size = new System.Drawing.Size(329, 267);
+			this.textBoxInfo.TabIndex = 9;
+			// 
 			// TestHBILForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1639, 744);
+			this.Controls.Add(this.textBoxInfo);
 			this.Controls.Add(this.floatTrackbarControlEnvironmentIntensity);
 			this.Controls.Add(this.checkBoxEnableConeVisibility);
 			this.Controls.Add(this.checkBoxEnableBentNormal);
@@ -279,6 +292,7 @@
 		private System.Windows.Forms.CheckBox checkBoxEnableBentNormal;
 		private System.Windows.Forms.CheckBox checkBoxEnableConeVisibility;
 		private System.Windows.Forms.CheckBox checkBoxForceAlbedo;
+		private System.Windows.Forms.TextBox textBoxInfo;
 	}
 }
 

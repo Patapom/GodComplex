@@ -26,30 +26,54 @@ public:		// NESTED TYPES
 		SSF_ALL					= (1 << 6)-1	// WARNING: SSF_ALL doesn't include UAVs!
 	};
 
+	class DoubleBufferedQuery {
+	public:
+		static U32	MAX_FRAMES;
+		U32							m_markerID;
+		U32							m_nextMarkerID;
+		ID3D11Query*				m_queries[16];	// Actual queries count is defined by MAX_FRAME (maybe altered at runtime depending on debug state)
+		U64							m_timeStamp;
+
+		static U32					ms_currentFrameQueryIndex;
+		DoubleBufferedQuery( Device& _owner, U32 _markerID, D3D11_QUERY _queryType );
+		~DoubleBufferedQuery();
+		operator ID3D11Query*() const	{ return m_queries[ms_currentFrameQueryIndex]; }
+		U64			GetTimeStamp( Device& _owner );
+	};
+
 private:	// FIELDS
 
-	ID3D11Device*			m_pDevice;
-	ID3D11DeviceContext*	m_pDeviceContext;
-	IDXGISwapChain*			m_pSwapChain;
+	ID3D11Device*			m_device;
+	ID3D11DeviceContext*	m_deviceContext;
+	IDXGISwapChain*			m_swapChain;
 
 	Texture2D*				m_pDefaultRenderTarget;	// The back buffer to render to the screen
 	Texture2D*				m_pDefaultDepthStencil;	// The default depth stencil
 
 	ID3D11SamplerState*		m_ppSamplers[SAMPLERS_COUNT];
 
-	Component*				m_pComponentsStackTop;	// Remember this is the stack TOP so access the components using their m_pNext pointer to reach back to the bottom
+	Component*				m_componentsStackTop;	// Remember this is the stack TOP so access the components using their m_pNext pointer to reach back to the bottom
 
 	Shader*					m_pCurrentMaterial;		// The currently used material
 	RasterizerState*		m_pCurrentRasterizerState;
 	DepthStencilState*		m_pCurrentDepthStencilState;
 	BlendState*				m_pCurrentBlendState;
 
-	int						m_StatesCount;
+	int						m_statesCount;
 
 	// Default blend & stencil refs
-	bfloat4					m_BlendFactors;
-	U32						m_BlendMasks;
-	U8						m_StencilRef;
+	bfloat4					m_blendFactors;
+	U32						m_blendMasks;
+	U8						m_stencilRef;
+
+	// Performance queries
+	DoubleBufferedQuery*	m_queryDisjoint;
+	DoubleBufferedQuery*	m_queryFrameBegin;
+	DoubleBufferedQuery*	m_queryFrameEnd;
+	BaseLib::Dictionary<DoubleBufferedQuery*>	m_performanceQueries;
+	DoubleBufferedQuery*	m_lastQuery;	// The last querried query :D
+	U64						m_queryClockFrequency;
+	U64						m_framesCount;
 
 public:
 
@@ -81,12 +105,12 @@ public:
 
 public:	 // PROPERTIES
 
-	bool					IsInitialized() const		{ return m_pDeviceContext != NULL; }
+	bool					IsInitialized() const		{ return m_deviceContext != NULL; }
 	int						ComponentsCount() const;
 
-	ID3D11Device&			DXDevice()					{ return *m_pDevice; }
-	ID3D11DeviceContext&	DXContext()					{ return *m_pDeviceContext; }
-	IDXGISwapChain&			DXSwapChain()				{ return *m_pSwapChain; }
+	ID3D11Device&			DXDevice()					{ return *m_device; }
+	ID3D11DeviceContext&	DXContext()					{ return *m_deviceContext; }
+	IDXGISwapChain&			DXSwapChain()				{ return *m_swapChain; }
 
 	const Texture2D&		DefaultRenderTarget() const	{ return *m_pDefaultRenderTarget; }
 	const Texture2D&		DefaultDepthStencil() const	{ return *m_pDefaultDepthStencil; }
@@ -117,6 +141,14 @@ public:	 // METHODS
 	void	SetStates( RasterizerState* _pRasterizerState, DepthStencilState* _pDepthStencilState, BlendState* _pBlendState );
 	void	SetStatesReferences( const bfloat4& _BlendMasks, U32 _BlendSampleMask, U8 _StencilRef );
 	void	SetScissorRect( const D3D11_RECT* _pScissor=NULL );
+
+	// Performance queries
+	// Inspired by: http://www.reedbeta.com/blog/gpu-profiling-101/
+	void	PerfBeginFrame();				// Must be called at the beginning of the frame
+	void	PerfSetMarker( U32 _markerID );	// Must be called at the beginning of your task
+	void	PerfEndFrame();					// Must be called AFTER Present()
+	// Returns the time (in milliseconds) elapsed between start and end markers (by default, if no end marker is specified then it will use the marker immediately after the start marker, or the end of frame if none exists)
+	double	PerfGetMilliSeconds( U32 _markerIDStart, U32 _markerIDEnd=~0U );
 
 	// Clears the shader resource registers
 	// Useful to cleanup textures that may otherwise be considered as required by shaders that don't really need them.

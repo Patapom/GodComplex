@@ -105,10 +105,10 @@ namespace TestHBIL {
 		//////////////////////////////////////////////////////////////////////////
 		// Timing
 		public System.Diagnostics.Stopwatch	m_stopWatch = new System.Diagnostics.Stopwatch();
-		private double						m_ticks2Seconds;
-		public float						m_startTime = 0;
-		public float						m_currentTime = 0;
-		public float						m_deltaTime = 0;		// Delta time used for the current frame
+		private double				m_ticks2Seconds;
+		private float				m_startTime = 0;
+		private float				m_lastDisplayTime = 0;
+		private uint				m_framesCount = 0;
 
 		#endregion
 
@@ -230,6 +230,7 @@ namespace TestHBIL {
 			m_ticks2Seconds = 1.0 / System.Diagnostics.Stopwatch.Frequency;
 			m_stopWatch.Start();
 			m_startTime = GetGameTime();
+			m_lastDisplayTime = m_startTime;
 
 			m_camera.CameraTransformChanged += new EventHandler( Camera_CameraTransformChanged );
 			Camera_CameraTransformChanged( m_camera, EventArgs.Empty );
@@ -274,9 +275,12 @@ namespace TestHBIL {
 			if ( m_device == null || checkBoxPause.Checked )
 				return;
 
+			m_device.PerfBeginFrame();
+
 			// Setup global data
+			float	currentTime = GetGameTime();
 			if ( checkBoxAnimate.Checked )
-				m_CB_Main.m._time = GetGameTime() - m_startTime;
+				m_CB_Main.m._time = currentTime - m_startTime;
 			m_CB_Main.m._flags = 0U;
 			m_CB_Main.m._flags |= checkBoxEnableHBIL.Checked ? 1U : 0;
 			m_CB_Main.m._flags |= checkBoxEnableBentNormal.Checked ? 2U : 0;
@@ -302,6 +306,7 @@ namespace TestHBIL {
 			// =========== Render Depth / G-Buffer Pass  ===========
 			// We're actually doing all in one here...
 			//
+			m_device.PerfSetMarker( 0 );
 			m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.WRITE_ALWAYS, BLEND_STATE.DISABLED );
 
 			if ( m_shader_RenderScene_DepthGBufferPass.Use() ) {
@@ -312,6 +317,7 @@ namespace TestHBIL {
 //*			//////////////////////////////////////////////////////////////////////////
 			// =========== Reproject Last Frame Radiance ===========
 			//
+			m_device.PerfSetMarker( 1 );
 			m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
 
 			if ( m_shader_ReprojectRadiance.Use() ) {
@@ -329,6 +335,7 @@ namespace TestHBIL {
 			//////////////////////////////////////////////////////////////////////////
 			// =========== Compute Bent Cone Map and Irradiance Bounces  ===========
 			// 
+			m_device.PerfSetMarker( 2 );
 			m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
 
 			if ( m_shader_ComputeHBIL.Use() ) {
@@ -352,6 +359,7 @@ m_tex_texDebugNormals.SetPS( 33 );
 			//////////////////////////////////////////////////////////////////////////
 			// =========== Compute lighting & finalize radiance  ===========
 			// 
+			m_device.PerfSetMarker( 3 );
 			m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
 
 			if ( m_shader_ComputeLighting.Use() ) {
@@ -374,6 +382,7 @@ m_tex_texDebugNormals.SetPS( 33 );
 //*/
 			//////////////////////////////////////////////////////////////////////////
 			// =========== Post-Process ===========
+			m_device.PerfSetMarker( 4 );
 			m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
 
 			if ( m_shader_PostProcess.Use() ) {
@@ -396,7 +405,30 @@ m_tex_texDebugNormals.SetPS( 33 );
 
 			// Show!
 			m_device.Present( false );
+			m_device.PerfEndFrame();
+			m_framesCount++;
 
+			if ( currentTime - m_lastDisplayTime < 1.0f )
+				return;
+			m_lastDisplayTime = currentTime;
+
+			double	timeRenderGBuffer = m_device.PerfGetMilliSeconds( 0 );
+			double	timeReprojection = m_device.PerfGetMilliSeconds( 1 );
+			double	timeHBIL = m_device.PerfGetMilliSeconds( 2 );
+			double	timeComputeLighting = m_device.PerfGetMilliSeconds( 3 );
+			double	timePostProcess = m_device.PerfGetMilliSeconds( 4 );
+
+			float	totalTime = currentTime - m_startTime;
+			textBoxInfo.Text = "Total Time = " + totalTime + "s\r\n"
+							 + "Average frame time = " + (1000.0f * totalTime / m_framesCount).ToString( "G6" ) + " ms\r\n"
+							 + "\r\n"
+							 + "G-Buffer Rendering: " + timeRenderGBuffer.ToString( "G4" ) + " ms\r\n"
+							 + "Reprojection: " + timeReprojection.ToString( "G4" ) + " ms\r\n"
+							 + "HBIL: " + timeHBIL.ToString( "G4" ) + " ms\r\n"
+							 + "Lighting: " + timeComputeLighting.ToString( "G4" ) + " ms\r\n"
+							 + "Post-Processing: " + timePostProcess.ToString( "G4" ) + " ms\r\n"
+							 + "\r\n"
+							 ;
 
 			// Update window text
 //			Text = "Test HBIL Prototype - " + m_Game.m_CurrentGameTime.ToString( "G5" ) + "s";
@@ -407,9 +439,9 @@ m_tex_texDebugNormals.SetPS( 33 );
 		/// </summary>
 		/// <returns></returns>
 		public float	GetGameTime() {
-			long	Ticks = m_stopWatch.ElapsedTicks;
-			float	Time = (float) (Ticks * m_ticks2Seconds);
-			return Time;
+			long	ticks = m_stopWatch.ElapsedTicks;
+			float	time = (float) (ticks * m_ticks2Seconds);
+			return time;
 		}
 
 		private void buttonReload_Click( object sender, EventArgs e ) {
@@ -548,7 +580,13 @@ m_tex_texDebugNormals.SetPS( 33 );
 			floatTrackbarControlAlbedo.Enabled = checkBoxForceAlbedo.Checked;
 		}
 
-		#endregion
+		private void checkBoxPause_CheckedChanged( object sender, EventArgs e ) {
+			if ( checkBoxPause.Checked )
+				m_stopWatch.Stop();
+			else
+				m_stopWatch.Start();
+		}
 
+		#endregion
 	}
 }
