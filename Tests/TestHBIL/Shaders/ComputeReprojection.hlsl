@@ -59,6 +59,11 @@ void	CS_Reproject( uint3 _groupID : SV_groupID, uint3 _groupThreadID : SV_groupT
 //
 // Actually, this is called the "pull" phase in the original algorithm but I prefer thinking of it as pushing valid values down to the lower mips...
 //
+float	Depth2Weight( float _depth ) {
+	return _depth < 1e-3 ? 0.0	// Keep uninitialized values as invalid
+						 : smoothstep( 0.0, 1.0, _depth ) * smoothstep( 100.0, 40.0, _depth );	// Otherwise, we maximize the weights of samples whose depth is between 1 and 40 meters
+}
+
 [numthreads( THREADS_X, THREADS_Y, 1 )]
 void	CS_Push( uint3 _groupID : SV_groupID, uint3 _groupThreadID : SV_groupThreadID, uint3 _dispatchThreadID : SV_dispatchThreadID ) {
 	uint2	targetPixelIndex = _dispatchThreadID.xy;
@@ -71,19 +76,37 @@ void	CS_Push( uint3 _groupID : SV_groupID, uint3 _groupThreadID : SV_groupThread
 	float4	V10 = _tex_sourceRadiance[sourcePixelIndex];	sourcePixelIndex.y++;
 	float4	V11 = _tex_sourceRadiance[sourcePixelIndex];	sourcePixelIndex.x--;
 	float4	V01 = _tex_sourceRadiance[sourcePixelIndex];	sourcePixelIndex.y--;
-    
+
+	#if FIRST_PASS
+		// Mip 0 contains depth information that we must transform into proper weights
+		V00.w = Depth2Weight( V00.w );
+		V10.w = Depth2Weight( V10.w );
+		V11.w = Depth2Weight( V11.w );
+		V01.w = Depth2Weight( V01.w );
+	#endif
+
+//V10 = V11 = V01 = float4( V00.xyz, 1.0 );
+
+//V00.w = saturate( V00.w );
+//V10.w = saturate( V10.w );
+//V11.w = saturate( V11.w );
+//V01.w = saturate( V01.w );
+
 	// Pre-multiply by alpha
-	float3	C = V00.w * V00.xyz;
-			  + V10.w * V10.xyz;
-			  + V01.w * V01.xyz;
+	float3	C = V00.w * V00.xyz
+			  + V10.w * V10.xyz
+			  + V01.w * V01.xyz
 			  + V11.w * V11.xyz;
 
 	float	sumWeights = V00.w + V10.w + V01.w + V11.w;
 	float	A = saturate( sumWeights );
-	float	normalization = sumWeights > 0.0 ? A / sumWeights : 0.0;
+	C *= sumWeights > 0.0 ? A / sumWeights : 0.0;
+//	C *= sumWeights > 0.0 ? 1.0 / sumWeights : 0.0;
+
+//C = 0.25 * (V00.xyz + V10.xyz + V01.xyz + V11.xyz);
 
 	// Store de-premultiplied color
-	_tex_reprojectedRadiance[targetPixelIndex] = float4( normalization * C, A );
+	_tex_reprojectedRadiance[targetPixelIndex] = float4( C, A );
 }
 
 
@@ -105,6 +128,10 @@ void	CS_Pull( uint3 _groupID : SV_groupID, uint3 _groupThreadID : SV_groupThread
 //	float4	oldV = UV.xyxy;//_tex_reprojectedRadiance.SampleLevel( LinearClamp, UV + 0.5 * dUV, 0.0 );
 //	oldV.w = 0.0;
 
+	#if LAST_PASS
+		oldV.w = Depth2Weight( oldV.w );	// Mip 0 contains depth information
+	#endif
+
 	// Bilinear interpolate the 4 surrounding, lower mip pixels
 	float4	V00 = _tex_sourceRadiance.SampleLevel( LinearClamp, UV, 0.0 );	UV.x += dUV.x;
 	float4	V10 = _tex_sourceRadiance.SampleLevel( LinearClamp, UV, 0.0 );	UV.y += dUV.y;
@@ -112,9 +139,9 @@ void	CS_Pull( uint3 _groupID : SV_groupID, uint3 _groupThreadID : SV_groupThread
 	float4	V01 = _tex_sourceRadiance.SampleLevel( LinearClamp, UV, 0.0 );	UV.y -= dUV.y;
     
 	// Pre-multiply by alpha
-	float3	C = V00.w * V00.xyz;
-			  + V10.w * V10.xyz;
-			  + V01.w * V01.xyz;
+	float3	C = V00.w * V00.xyz
+			  + V10.w * V10.xyz
+			  + V01.w * V01.xyz
 			  + V11.w * V11.xyz;
 
 	float	sumWeights = V00.w + V10.w + V01.w + V11.w;

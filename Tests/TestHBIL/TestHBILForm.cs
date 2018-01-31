@@ -91,8 +91,10 @@ namespace TestHBIL {
 
 		private Shader				m_shader_RenderScene_DepthGBufferPass = null;
 		private ComputeShader		m_shader_ReprojectRadiance = null;
+		private ComputeShader		m_shader_Push_FirstPass = null;
 		private ComputeShader		m_shader_Push = null;
 		private ComputeShader		m_shader_Pull = null;
+		private ComputeShader		m_shader_Pull_LastPass = null;
 		private Shader				m_shader_ComputeHBIL = null;
 		private Shader				m_shader_ComputeLighting = null;
 		private Shader				m_shader_PostProcess = null;
@@ -183,8 +185,10 @@ namespace TestHBIL {
 				m_shader_RenderScene_DepthGBufferPass = new Shader( m_device, new System.IO.FileInfo( "Shaders/RenderScene.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS_Depth", null );
  //				m_shader_ReprojectRadiance = new Shader( m_device, new System.IO.FileInfo( "Shaders/ComputeReprojection.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS_Reproject", null );
  				m_shader_ReprojectRadiance = new ComputeShader( m_device, new System.IO.FileInfo( "Shaders/ComputeReprojection.hlsl" ), "CS_Reproject", null );
+ 				m_shader_Push_FirstPass = new ComputeShader( m_device, new System.IO.FileInfo( "Shaders/ComputeReprojection.hlsl" ), "CS_Push", new ShaderMacro[] { new ShaderMacro( "FIRST_PASS", "1" ) } );
  				m_shader_Push = new ComputeShader( m_device, new System.IO.FileInfo( "Shaders/ComputeReprojection.hlsl" ), "CS_Push", null );
- 				m_shader_Pull = new ComputeShader( m_device, new System.IO.FileInfo( "Shaders/ComputeReprojection.hlsl" ), "CS_Pull", null );
+ 				m_shader_Pull = new ComputeShader( m_device, new System.IO.FileInfo( "Shaders/ComputeReprojection.hlsl" ), "CS_Pull", new ShaderMacro[] { new ShaderMacro( "LAST_PASS", "1" ) } );
+				m_shader_Pull_LastPass = new ComputeShader( m_device, new System.IO.FileInfo( "Shaders/ComputeReprojection.hlsl" ), "CS_Pull", null );
  				m_shader_ComputeHBIL = new Shader( m_device, new System.IO.FileInfo( "Shaders/ComputeHBIL.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 				m_shader_ComputeLighting = new Shader( m_device, new System.IO.FileInfo( "Shaders/ComputeLighting.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 				m_shader_PostProcess = new Shader( m_device, new System.IO.FileInfo( "Shaders/PostProcess.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
@@ -200,8 +204,8 @@ namespace TestHBIL {
 			// Create HBIL buffers
 			m_tex_bentCone = new Texture2D( m_device, W, H, 1, 1, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.AUTO, false, false, null );
 			m_tex_radiance = new Texture2D( m_device, W, H, 2, 1, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.AUTO, false, false, null );
-			m_tex_sourceRadiance_PUSH = new Texture2D( m_device, W, H, 1, 10, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.AUTO, false, true, null );
-			m_tex_sourceRadiance_PULL = new Texture2D( m_device, W, H, 1, 10, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.AUTO, false, true, null );
+			m_tex_sourceRadiance_PUSH = new Texture2D( m_device, W, H, 1, 0, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.AUTO, false, true, null );
+			m_tex_sourceRadiance_PULL = new Texture2D( m_device, W, H, 1, 0, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.AUTO, false, true, null );
 
 			m_tex_finalRender = new Texture2D( m_device, W, H, 1, 1, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.AUTO, false, false, null );
 
@@ -282,8 +286,10 @@ namespace TestHBIL {
 			m_shader_PostProcess.Dispose();
 			m_shader_ComputeLighting.Dispose();
 			m_shader_ComputeHBIL.Dispose();
+			m_shader_Pull_LastPass.Dispose();
 			m_shader_Pull.Dispose();
 			m_shader_Push.Dispose();
+			m_shader_Push_FirstPass.Dispose();
 			m_shader_ReprojectRadiance.Dispose();
 			m_shader_RenderScene_DepthGBufferPass.Dispose();
 
@@ -406,13 +412,13 @@ namespace TestHBIL {
 			m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
 
 			{
-				const uint	MAX_MIP = 8;
+				const uint	MAX_MIP = 11;
 				uint	mipLevel = 1;
 // 				uint	W = m_tex_sourceRadiance.Width;
 // 				uint	H = m_tex_sourceRadiance.Height;
 
-				if ( m_shader_Push.Use() ) {
-//					m_CB_PushPull.m._firstPass = true;
+				if ( m_shader_Push_FirstPass.Use() ) {
+					ComputeShader	currentCS = m_shader_Push_FirstPass;
 					for ( ; mipLevel < MAX_MIP; mipLevel++ ) {
 //						W = (W+1) >> 1;
 //						H = (H+1) >> 1;
@@ -421,31 +427,39 @@ namespace TestHBIL {
 						View2D	targetView = m_tex_sourceRadiance_PUSH.GetView( mipLevel, 1, 0, 1 );
 						targetView.SetCSUAV( 0 );
 						m_tex_sourceRadiance_PUSH.GetView( mipLevel-1, 1, 0, 1 ).SetCS( 0 );
+// 						if ( targetView.Width != W || targetView.Height != H )
+// 							throw new Exception( );
 
 						m_CB_PushPull.m._sizeX = targetView.Width;
 						m_CB_PushPull.m._sizeY = targetView.Height;
 						m_CB_PushPull.UpdateData();
-//						m_CB_PushPull.m._firstPass = false;
 
-// 						if ( targetView.Width != W || targetView.Height != H )
-// 							throw new Exception( );
-
-						m_shader_Push.Dispatch( (m_CB_PushPull.m._sizeX+15) >> 4, (m_CB_PushPull.m._sizeY+15) >> 4, 1 );
+						currentCS.Dispatch( (m_CB_PushPull.m._sizeX+15) >> 4, (m_CB_PushPull.m._sizeY+15) >> 4, 1 );
+						if ( currentCS == m_shader_Push_FirstPass ) {
+							// Use regular push shader for other passes
+							currentCS = m_shader_Push;
+							currentCS.Use();
+						}
 					}
-//					m_tex_sourceRadiance_PUSH.RemoveFromLastAssignedSlotUAV();
 				}
  				if ( m_shader_Pull.Use() ) {
-					for ( ; mipLevel > 0; mipLevel-- ) {
+					ComputeShader	currentCS = m_shader_Pull;
+					for (  mipLevel--; mipLevel > 0; mipLevel-- ) {
 						View2D	targetView = m_tex_sourceRadiance_PULL.GetView( mipLevel-1, 1, 0, 1 );	// Write to current mip of PULL texture
 						targetView.SetCSUAV( 0 );
-						m_tex_sourceRadiance_PULL.GetView( mipLevel, 1, 0, 1 ).SetCS( 0 );				// Read from previous mip of PULL texture
+						m_tex_sourceRadiance_PUSH.GetView( mipLevel, 1, 0, 1 ).SetCS( 0 );				// Read from previous mip of PULL texture
 						m_tex_sourceRadiance_PUSH.GetView( mipLevel-1, 1, 0, 1 ).SetCS( 3 );			// Read from current mip of PUSH texture (because we can't read and write from a RWTexture other than UINT type!)
 
 						m_CB_PushPull.m._sizeX = targetView.Width;
 						m_CB_PushPull.m._sizeY = targetView.Height;
 						m_CB_PushPull.UpdateData();
 
-						m_shader_Pull.Dispatch( (m_CB_PushPull.m._sizeX+15) >> 4, (m_CB_PushPull.m._sizeY+15) >> 4, 1 );
+						currentCS.Dispatch( (m_CB_PushPull.m._sizeX+15) >> 4, (m_CB_PushPull.m._sizeY+15) >> 4, 1 );
+						if ( mipLevel == 2 ) {
+							// Use last pass shader
+							currentCS = m_shader_Pull_LastPass;
+							currentCS.Use();
+						}
 					}
 
 					m_tex_sourceRadiance_PUSH.RemoveFromLastAssignedSlots();
