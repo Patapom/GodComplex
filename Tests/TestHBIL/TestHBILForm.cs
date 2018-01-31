@@ -3,6 +3,7 @@
 //////////////////////////////////////////////////////////////////////////
 //
 // IDEAS / #TODOS:
+//	✓
 //	• Use push/pull (with bilateral) to fill in reprojected radiance voids!!!
 //	• float	GetBilateralWeight( Z0, Z1, radius, ref sqHypotenuse ) => Outside of unit sphere???
 //	• Use radius² as progression + sample mips for larger footprint (only if mip is bilateral filtered!)
@@ -37,6 +38,7 @@ namespace TestHBIL {
 			public float		_deltaTime;
 			public uint			_flags;
 			public uint			_sourceRadianceIndex;
+			public uint			_debugMipIndex;
 			public float		_environmentIntensity;
 			public float		_forcedAlbedo;
 			public float		_coneAngleBias;
@@ -70,6 +72,12 @@ namespace TestHBIL {
 			public float4	_SH8;
 		}
 
+		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
+		internal struct	CB_PushPull {
+			public uint		_sizeX;
+			public uint		_sizeY;
+		}
+
 		#endregion
 
 		#region FIELDS
@@ -79,11 +87,12 @@ namespace TestHBIL {
 		private ConstantBuffer<CB_Main>			m_CB_Main = null;
 		private ConstantBuffer<CB_Camera>		m_CB_Camera = null;
 		private ConstantBuffer<CB_SH>			m_CB_SH = null;
+		private ConstantBuffer<CB_PushPull>		m_CB_PushPull = null;
 
 		private Shader				m_shader_RenderScene_DepthGBufferPass = null;
 		private ComputeShader		m_shader_ReprojectRadiance = null;
-		private Shader				m_shader_Push = null;
-		private Shader				m_shader_Pull = null;
+		private ComputeShader		m_shader_Push = null;
+		private ComputeShader		m_shader_Pull = null;
 		private Shader				m_shader_ComputeHBIL = null;
 		private Shader				m_shader_ComputeLighting = null;
 		private Shader				m_shader_PostProcess = null;
@@ -96,7 +105,8 @@ namespace TestHBIL {
 		// HBIL Results
 		private Texture2D			m_tex_bentCone = null;
 		private Texture2D			m_tex_radiance = null;
-		private Texture2D			m_tex_sourceRadiance = null;
+		private Texture2D			m_tex_sourceRadiance_PUSH = null;
+		private Texture2D			m_tex_sourceRadiance_PULL = null;
 		private Texture2D			m_tex_finalRender = null;
 		private uint				m_radianceSourceSliceIndex = 0;
 
@@ -167,13 +177,14 @@ namespace TestHBIL {
 			m_CB_Main.m._resolution.Set( W, H );
 			m_CB_Camera = new ConstantBuffer<CB_Camera>( m_device, 1 );
 			m_CB_SH = new ConstantBuffer<CB_SH>( m_device, 2 );
+			m_CB_PushPull = new ConstantBuffer<CB_PushPull>( m_device, 3 );
 
 			try {
 				m_shader_RenderScene_DepthGBufferPass = new Shader( m_device, new System.IO.FileInfo( "Shaders/RenderScene.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS_Depth", null );
  //				m_shader_ReprojectRadiance = new Shader( m_device, new System.IO.FileInfo( "Shaders/ComputeReprojection.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS_Reproject", null );
  				m_shader_ReprojectRadiance = new ComputeShader( m_device, new System.IO.FileInfo( "Shaders/ComputeReprojection.hlsl" ), "CS_Reproject", null );
-// 				m_shader_Push = new Shader( m_device, new System.IO.FileInfo( "Shaders/ComputeReprojection.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS_Push", null );
-// 				m_shader_Pull = new Shader( m_device, new System.IO.FileInfo( "Shaders/ComputeReprojection.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS_Pull", null );
+ 				m_shader_Push = new ComputeShader( m_device, new System.IO.FileInfo( "Shaders/ComputeReprojection.hlsl" ), "CS_Push", null );
+ 				m_shader_Pull = new ComputeShader( m_device, new System.IO.FileInfo( "Shaders/ComputeReprojection.hlsl" ), "CS_Pull", null );
  				m_shader_ComputeHBIL = new Shader( m_device, new System.IO.FileInfo( "Shaders/ComputeHBIL.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 				m_shader_ComputeLighting = new Shader( m_device, new System.IO.FileInfo( "Shaders/ComputeLighting.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 				m_shader_PostProcess = new Shader( m_device, new System.IO.FileInfo( "Shaders/PostProcess.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
@@ -189,7 +200,8 @@ namespace TestHBIL {
 			// Create HBIL buffers
 			m_tex_bentCone = new Texture2D( m_device, W, H, 1, 1, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.AUTO, false, false, null );
 			m_tex_radiance = new Texture2D( m_device, W, H, 2, 1, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.AUTO, false, false, null );
-			m_tex_sourceRadiance = new Texture2D( m_device, W, H, 1, 10, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.AUTO, false, true, null );
+			m_tex_sourceRadiance_PUSH = new Texture2D( m_device, W, H, 1, 10, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.AUTO, false, true, null );
+			m_tex_sourceRadiance_PULL = new Texture2D( m_device, W, H, 1, 10, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.AUTO, false, true, null );
 
 			m_tex_finalRender = new Texture2D( m_device, W, H, 1, 1, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.AUTO, false, false, null );
 
@@ -255,7 +267,8 @@ namespace TestHBIL {
 
 			m_tex_finalRender.Dispose();
 
-			m_tex_sourceRadiance.Dispose();
+			m_tex_sourceRadiance_PULL.Dispose();
+			m_tex_sourceRadiance_PUSH.Dispose();
 			m_tex_radiance.Dispose();
 			m_tex_bentCone.Dispose();
 
@@ -274,6 +287,7 @@ namespace TestHBIL {
 			m_shader_ReprojectRadiance.Dispose();
 			m_shader_RenderScene_DepthGBufferPass.Dispose();
 
+			m_CB_PushPull.Dispose();
 			m_CB_SH.Dispose();
 			m_CB_Camera.Dispose();
 			m_CB_Main.Dispose();
@@ -285,7 +299,8 @@ namespace TestHBIL {
 
 		#endregion
 
-		float4x4		m_previousFrameCamera2World = float4x4.Identity;
+		float4x4	m_previousFrameCamera2World = float4x4.Identity;
+		float		m_currentTime;
 
 		void Application_Idle( object sender, EventArgs e ) {
 			if ( m_device == null || checkBoxPause.Checked )
@@ -294,11 +309,13 @@ namespace TestHBIL {
 			m_device.PerfBeginFrame();
 
 			// Setup global data
-			float	currentTime = GetGameTime();
+			float	newCurrentTime = GetGameTime() - m_startTime;
+			float	deltaTime = newCurrentTime - m_currentTime;
+			m_currentTime = newCurrentTime;
+
 			if ( checkBoxAnimate.Checked ) {
-				float	newTime = currentTime - m_startTime;
-				m_CB_Main.m._deltaTime = newTime - m_CB_Main.m._time;
-				m_CB_Main.m._time = newTime;
+				m_CB_Main.m._deltaTime = deltaTime;
+				m_CB_Main.m._time = newCurrentTime;
 			} else {
 				m_CB_Main.m._deltaTime = 0.0f;
 			}
@@ -308,7 +325,9 @@ namespace TestHBIL {
 			m_CB_Main.m._flags |= checkBoxEnableConeVisibility.Checked ? 4U : 0;
 			m_CB_Main.m._flags |= checkBoxMonochrome.Checked ? 8U : 0;
 			m_CB_Main.m._flags |= checkBoxForceAlbedo.Checked ? 0x10U : 0;
+			m_CB_Main.m._flags |= radioButtonPULL.Checked ? 0x100U : 0;
 			m_CB_Main.m._sourceRadianceIndex = 0;
+			m_CB_Main.m._debugMipIndex = (uint) integerTrackbarControlDebugMip.Value;
 			m_CB_Main.m._environmentIntensity = floatTrackbarControlEnvironmentIntensity.Value;
 			m_CB_Main.m._forcedAlbedo = floatTrackbarControlAlbedo.Value;
 			m_CB_Main.m._coneAngleBias = floatTrackbarControlConeAngleBias.Value;
@@ -353,16 +372,16 @@ namespace TestHBIL {
 			m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
 
 			if ( m_shader_ReprojectRadiance.Use() ) {
-				m_device.Clear( m_tex_sourceRadiance, float4.Zero );
+				m_device.Clear( m_tex_sourceRadiance_PUSH, float4.Zero );
 
 				m_tex_radiance.GetView( 0, 1, m_radianceSourceSliceIndex, 1 ).SetCS( 0 );	// Source radiance from last frame
 				m_device.DefaultDepthStencil.SetCS( 1 );									// Source depth buffer from last frame
 				m_tex_motionVectors.SetCS( 2 );												// Motion vectors for dynamic objects
-				m_tex_sourceRadiance.SetCSUAV( 0 );
+				m_tex_sourceRadiance_PUSH.SetCSUAV( 0 );
 
-				m_shader_ReprojectRadiance.Dispatch( m_tex_sourceRadiance.Width >> 4, m_tex_sourceRadiance.Height >> 4, 1 );
+				m_shader_ReprojectRadiance.Dispatch( m_tex_sourceRadiance_PUSH.Width >> 4, m_tex_sourceRadiance_PUSH.Height >> 4, 1 );
 
-				m_tex_sourceRadiance.RemoveFromLastAssignedSlotUAV();
+				m_tex_sourceRadiance_PUSH.RemoveFromLastAssignedSlotUAV();
 				m_tex_motionVectors.RemoveFromLastAssignedSlots();
 				m_tex_radiance.RemoveFromLastAssignedSlots();
 				m_device.DefaultDepthStencil.RemoveFromLastAssignedSlots();
@@ -380,29 +399,59 @@ namespace TestHBIL {
 				m_device.RenderFullscreenQuad( m_shader_RenderScene_DepthGBufferPass );
 			}
 
-//*				//////////////////////////////////////////////////////////////////////////
+//*			//////////////////////////////////////////////////////////////////////////
 			// =========== Apply Push-Pull ===========
 			//
 			m_device.PerfSetMarker( 2 );
-/*			m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
+			m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
 
-			if ( m_shader_Push.Use() ) {
-				m_device.SetRenderTargets( new IView[] { m_tex_radiance.GetView( 0, 1, 1-m_radianceSourceSliceIndex, 1 ) }, null );
+			{
+				const uint	MAX_MIP = 8;
+				uint	mipLevel = 1;
+// 				uint	W = m_tex_sourceRadiance.Width;
+// 				uint	H = m_tex_sourceRadiance.Height;
 
-				m_tex_radiance.GetView( 0, 1, m_radianceSourceSliceIndex, 1 ).SetPS( 0 );	// Source radiance from last frame
+				if ( m_shader_Push.Use() ) {
+//					m_CB_PushPull.m._firstPass = true;
+					for ( ; mipLevel < MAX_MIP; mipLevel++ ) {
+//						W = (W+1) >> 1;
+//						H = (H+1) >> 1;
+//						W = Math.Max( 1, W >> 1 );
+//						H = Math.Max( 1, H >> 1 );
+						View2D	targetView = m_tex_sourceRadiance_PUSH.GetView( mipLevel, 1, 0, 1 );
+						targetView.SetCSUAV( 0 );
+						m_tex_sourceRadiance_PUSH.GetView( mipLevel-1, 1, 0, 1 ).SetCS( 0 );
 
-				m_device.RenderFullscreenQuad( m_shader_Push );
+						m_CB_PushPull.m._sizeX = targetView.Width;
+						m_CB_PushPull.m._sizeY = targetView.Height;
+						m_CB_PushPull.UpdateData();
+//						m_CB_PushPull.m._firstPass = false;
 
-				m_tex_radiance.RemoveFromLastAssignedSlots();
-			}
-			if ( m_shader_Pull.Use() ) {
-				m_device.SetRenderTargets( new IView[] { m_tex_radiance.GetView( 0, 1, 1-m_radianceSourceSliceIndex, 1 ) }, null );
+// 						if ( targetView.Width != W || targetView.Height != H )
+// 							throw new Exception( );
 
-				m_tex_radiance.GetView( 0, 1, m_radianceSourceSliceIndex, 1 ).SetPS( 0 );	// Source radiance from last frame
+						m_shader_Push.Dispatch( (m_CB_PushPull.m._sizeX+15) >> 4, (m_CB_PushPull.m._sizeY+15) >> 4, 1 );
+					}
+//					m_tex_sourceRadiance_PUSH.RemoveFromLastAssignedSlotUAV();
+				}
+ 				if ( m_shader_Pull.Use() ) {
+					for ( ; mipLevel > 0; mipLevel-- ) {
+						View2D	targetView = m_tex_sourceRadiance_PULL.GetView( mipLevel-1, 1, 0, 1 );	// Write to current mip of PULL texture
+						targetView.SetCSUAV( 0 );
+						m_tex_sourceRadiance_PULL.GetView( mipLevel, 1, 0, 1 ).SetCS( 0 );				// Read from previous mip of PULL texture
+						m_tex_sourceRadiance_PUSH.GetView( mipLevel-1, 1, 0, 1 ).SetCS( 3 );			// Read from current mip of PUSH texture (because we can't read and write from a RWTexture other than UINT type!)
 
-				m_device.RenderFullscreenQuad( m_shader_Pull );
+						m_CB_PushPull.m._sizeX = targetView.Width;
+						m_CB_PushPull.m._sizeY = targetView.Height;
+						m_CB_PushPull.UpdateData();
 
-				m_tex_radiance.RemoveFromLastAssignedSlots();
+						m_shader_Pull.Dispatch( (m_CB_PushPull.m._sizeX+15) >> 4, (m_CB_PushPull.m._sizeY+15) >> 4, 1 );
+					}
+
+					m_tex_sourceRadiance_PUSH.RemoveFromLastAssignedSlots();
+					m_tex_sourceRadiance_PULL.RemoveFromLastAssignedSlots();
+					m_tex_sourceRadiance_PULL.RemoveFromLastAssignedSlotUAV();
+ 				}
 			}
 //*/
 
@@ -416,7 +465,7 @@ namespace TestHBIL {
 				m_device.SetRenderTargets( new IView[] { m_tex_radiance.GetView( 0, 1, 1-m_radianceSourceSliceIndex, 1 ), m_tex_bentCone.GetView( 0, 1, 0, 1 ) }, null );
 
 //				m_tex_radiance.GetView( 0, 1, m_radianceSourceSliceIndex, 1 ).SetPS( 0 );	// Reprojected source radiance from last frame
-				m_tex_sourceRadiance.SetPS( 0 );	// Reprojected source radiance
+				m_tex_sourceRadiance_PULL.SetPS( 0 );	// Reprojected source radiance
 				m_tex_normal.SetPS( 1 );
 				m_device.DefaultDepthStencil.SetPS( 2 );
 				m_tex_BlueNoise.SetPS( 3 );
@@ -465,7 +514,8 @@ m_tex_texDebugNormals.SetPS( 33 );
 
 				m_tex_radiance.SetPS( 8 );
 				m_tex_finalRender.SetPS( 10 );
-				m_tex_sourceRadiance.SetPS( 11 );
+				m_tex_sourceRadiance_PUSH.SetPS( 11 );
+				m_tex_sourceRadiance_PULL.SetPS( 12 );
 
 				m_device.RenderFullscreenQuad( m_shader_PostProcess );
 
@@ -474,7 +524,8 @@ m_tex_texDebugNormals.SetPS( 33 );
 				m_tex_normal.RemoveFromLastAssignedSlots();
 				m_tex_albedo.RemoveFromLastAssignedSlots();
 
-				m_tex_sourceRadiance.RemoveFromLastAssignedSlots();
+				m_tex_sourceRadiance_PUSH.RemoveFromLastAssignedSlots();
+				m_tex_sourceRadiance_PULL.RemoveFromLastAssignedSlots();
 				m_tex_radiance.RemoveFromLastAssignedSlots();
 				m_tex_bentCone.RemoveFromLastAssignedSlots();
 				m_tex_finalRender.RemoveFromLastAssignedSlots();
@@ -485,9 +536,20 @@ m_tex_texDebugNormals.SetPS( 33 );
 			m_device.PerfEndFrame();
 			m_framesCount++;
 
-			if ( currentTime - m_lastDisplayTime < 1.0f )
+			//////////////////////////////////////////////////////////////////////////
+			// Update auto camera rotation
+			if ( checkBoxAutoRotateCamera.Checked ) {
+				float4x4	camera2World = m_camera.Camera2World;
+				float4x4	rot = float4x4.Identity;
+							rot.BuildRotationY( floatTrackbarControlCameraRotateSpeed.Value * deltaTime );
+				m_camera.Camera2World = camera2World * rot;
+			}
+
+			//////////////////////////////////////////////////////////////////////////
+			// Update information box
+			if ( m_currentTime - m_lastDisplayTime < 1.0f )
 				return;
-			m_lastDisplayTime = currentTime;
+			m_lastDisplayTime = m_currentTime;
 
 			double	timeReprojection = m_device.PerfGetMilliSeconds( 0 );
 			double	timeRenderGBuffer = m_device.PerfGetMilliSeconds( 1 );
@@ -496,7 +558,7 @@ m_tex_texDebugNormals.SetPS( 33 );
 			double	timeComputeLighting = m_device.PerfGetMilliSeconds( 4 );
 			double	timePostProcess = m_device.PerfGetMilliSeconds( 5 );
 
-			float	totalTime = currentTime - m_startTime;
+			float	totalTime = m_currentTime - m_startTime;
 			textBoxInfo.Text = "Total Time = " + totalTime + "s\r\n"
 							 + "Average frame time = " + (1000.0f * totalTime / m_framesCount).ToString( "G6" ) + " ms\r\n"
 							 + "\r\n"

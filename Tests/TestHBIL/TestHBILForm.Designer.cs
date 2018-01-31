@@ -51,6 +51,14 @@
 			this.checkBoxMonochrome = new System.Windows.Forms.CheckBox();
 			this.label1 = new System.Windows.Forms.Label();
 			this.floatTrackbarControlConeAngleBias = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.integerTrackbarControlDebugMip = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
+			this.label2 = new System.Windows.Forms.Label();
+			this.checkBoxAutoRotateCamera = new System.Windows.Forms.CheckBox();
+			this.floatTrackbarControlCameraRotateSpeed = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.panel2 = new System.Windows.Forms.Panel();
+			this.radioButtonPUSH = new System.Windows.Forms.RadioButton();
+			this.radioButtonPULL = new System.Windows.Forms.RadioButton();
+			this.panel2.SuspendLayout();
 			this.SuspendLayout();
 			// 
 			// buttonReload
@@ -286,12 +294,98 @@
 			this.floatTrackbarControlConeAngleBias.VisibleRangeMax = 1F;
 			this.floatTrackbarControlConeAngleBias.VisibleRangeMin = -1F;
 			// 
+			// integerTrackbarControlDebugMip
+			// 
+			this.integerTrackbarControlDebugMip.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+			this.integerTrackbarControlDebugMip.Location = new System.Drawing.Point(129, 22);
+			this.integerTrackbarControlDebugMip.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.integerTrackbarControlDebugMip.MinimumSize = new System.Drawing.Size(70, 20);
+			this.integerTrackbarControlDebugMip.Name = "integerTrackbarControlDebugMip";
+			this.integerTrackbarControlDebugMip.RangeMin = 0;
+			this.integerTrackbarControlDebugMip.Size = new System.Drawing.Size(200, 20);
+			this.integerTrackbarControlDebugMip.TabIndex = 10;
+			this.integerTrackbarControlDebugMip.Value = 0;
+			this.integerTrackbarControlDebugMip.VisibleRangeMax = 10;
+			// 
+			// label2
+			// 
+			this.label2.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+			this.label2.AutoSize = true;
+			this.label2.Location = new System.Drawing.Point(57, 26);
+			this.label2.Name = "label2";
+			this.label2.Size = new System.Drawing.Size(59, 13);
+			this.label2.TabIndex = 3;
+			this.label2.Text = "Debug Mip";
+			// 
+			// checkBoxAutoRotateCamera
+			// 
+			this.checkBoxAutoRotateCamera.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+			this.checkBoxAutoRotateCamera.AutoSize = true;
+			this.checkBoxAutoRotateCamera.Location = new System.Drawing.Point(1299, 396);
+			this.checkBoxAutoRotateCamera.Name = "checkBoxAutoRotateCamera";
+			this.checkBoxAutoRotateCamera.Size = new System.Drawing.Size(122, 17);
+			this.checkBoxAutoRotateCamera.TabIndex = 4;
+			this.checkBoxAutoRotateCamera.Text = "Auto-Rotate Camera";
+			this.checkBoxAutoRotateCamera.UseVisualStyleBackColor = true;
+			this.checkBoxAutoRotateCamera.CheckedChanged += new System.EventHandler(this.checkBoxForceAlbedo_CheckedChanged);
+			// 
+			// floatTrackbarControlCameraRotateSpeed
+			// 
+			this.floatTrackbarControlCameraRotateSpeed.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+			this.floatTrackbarControlCameraRotateSpeed.Location = new System.Drawing.Point(1427, 396);
+			this.floatTrackbarControlCameraRotateSpeed.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlCameraRotateSpeed.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlCameraRotateSpeed.Name = "floatTrackbarControlCameraRotateSpeed";
+			this.floatTrackbarControlCameraRotateSpeed.RangeMax = 1000F;
+			this.floatTrackbarControlCameraRotateSpeed.RangeMin = -1000F;
+			this.floatTrackbarControlCameraRotateSpeed.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlCameraRotateSpeed.TabIndex = 1;
+			this.floatTrackbarControlCameraRotateSpeed.Value = 4.0F;
+			this.floatTrackbarControlCameraRotateSpeed.VisibleRangeMax = 4F;
+			this.floatTrackbarControlCameraRotateSpeed.VisibleRangeMin = -4F;
+			// 
+			// panel2
+			// 
+			this.panel2.Controls.Add(this.radioButtonPULL);
+			this.panel2.Controls.Add(this.radioButtonPUSH);
+			this.panel2.Controls.Add(this.integerTrackbarControlDebugMip);
+			this.panel2.Controls.Add(this.label2);
+			this.panel2.Location = new System.Drawing.Point(1298, 435);
+			this.panel2.Name = "panel2";
+			this.panel2.Size = new System.Drawing.Size(329, 49);
+			this.panel2.TabIndex = 11;
+			// 
+			// radioButtonPUSH
+			// 
+			this.radioButtonPUSH.AutoSize = true;
+			this.radioButtonPUSH.Checked = true;
+			this.radioButtonPUSH.Location = new System.Drawing.Point(8, 3);
+			this.radioButtonPUSH.Name = "radioButtonPUSH";
+			this.radioButtonPUSH.Size = new System.Drawing.Size(85, 17);
+			this.radioButtonPUSH.TabIndex = 11;
+			this.radioButtonPUSH.TabStop = true;
+			this.radioButtonPUSH.Text = "PUSH Chain";
+			this.radioButtonPUSH.UseVisualStyleBackColor = true;
+			// 
+			// radioButton1
+			// 
+			this.radioButtonPULL.AutoSize = true;
+			this.radioButtonPULL.Location = new System.Drawing.Point(99, 3);
+			this.radioButtonPULL.Name = "radioButton1";
+			this.radioButtonPULL.Size = new System.Drawing.Size(82, 17);
+			this.radioButtonPULL.TabIndex = 11;
+			this.radioButtonPULL.TabStop = true;
+			this.radioButtonPULL.Text = "PULL Chain";
+			this.radioButtonPULL.UseVisualStyleBackColor = true;
+			// 
 			// TestHBILForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1639, 744);
+			this.Controls.Add(this.panel2);
 			this.Controls.Add(this.textBoxInfo);
+			this.Controls.Add(this.floatTrackbarControlCameraRotateSpeed);
 			this.Controls.Add(this.floatTrackbarControlConeAngleBias);
 			this.Controls.Add(this.floatTrackbarControlEnvironmentIntensity);
 			this.Controls.Add(this.checkBoxEnableConeVisibility);
@@ -307,6 +401,7 @@
 			this.Controls.Add(this.floatTrackbarControlExposure);
 			this.Controls.Add(this.checkBoxPause);
 			this.Controls.Add(this.checkBoxMonochrome);
+			this.Controls.Add(this.checkBoxAutoRotateCamera);
 			this.Controls.Add(this.checkBoxForceAlbedo);
 			this.Controls.Add(this.checkBoxAnimate);
 			this.Controls.Add(this.panelOutput);
@@ -314,6 +409,8 @@
 			this.Name = "TestHBILForm";
 			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
 			this.Text = "HBIL Test";
+			this.panel2.ResumeLayout(false);
+			this.panel2.PerformLayout();
 			this.ResumeLayout(false);
 			this.PerformLayout();
 
@@ -341,6 +438,13 @@
 		private System.Windows.Forms.CheckBox checkBoxMonochrome;
 		private System.Windows.Forms.Label label1;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlConeAngleBias;
+		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlDebugMip;
+		private System.Windows.Forms.Label label2;
+		private System.Windows.Forms.CheckBox checkBoxAutoRotateCamera;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlCameraRotateSpeed;
+		private System.Windows.Forms.Panel panel2;
+		private System.Windows.Forms.RadioButton radioButtonPULL;
+		private System.Windows.Forms.RadioButton radioButtonPUSH;
 	}
 }
 

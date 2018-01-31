@@ -21,6 +21,7 @@ cbuffer CB_Main : register(b0) {
 	float	_deltaTime;
 	uint	_flags;
 	uint	_sourceRadianceIndex;
+	uint	_debugMipIndex;
 	float	_environmentIntensity;
 	float	_forcedAlbedo;
 	float	_coneAngleBias;
