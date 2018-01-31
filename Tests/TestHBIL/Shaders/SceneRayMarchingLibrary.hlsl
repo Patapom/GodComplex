@@ -17,6 +17,9 @@
 #define MAT_PAPERS	6
 #define MAT_BOOKS	10
 
+#define PAPER_VELOCITY float3( 0, 2.0, 0 );
+
+
 #define repeat(v,c) (glmod(v,c)-0.5*c)
 #define sDist(v,r) (length(v)-r)
 
@@ -165,7 +168,7 @@ float2 map(float3 pos) {
   // papers
   p = pos;
   p.y -= stairHeight;
-  p.y += _time*2.;
+  p += _time * PAPER_VELOCITY;
   rot(p.xz,PI/stairCount);
   float ry = 8.;
   float iy = floor(p.y/ry);
@@ -208,6 +211,7 @@ struct Intersection {
 	float3	wsNormal;
 	float	materialID;
 	float3	albedo;
+	float3	wsVelocity;	// World-space velocity vector
 };
 
 Intersection RayMarchScene( float3 _wsPos, float3 _wsDir, float2 _UV, uint _stepsCount ) {
@@ -244,12 +248,13 @@ Intersection RayMarchScene( float3 _wsPos, float3 _wsDir, float2 _UV, uint _step
 	}
 
 	result.albedo = 0.5 * float3( 1, 1, 1 );
+	result.wsVelocity = 0.0;
 	switch ( result.materialID ) {
 		case MAT_WALL	: result.albedo = 0.10 * float3( 1.0, 0.6, 0.2 ); break;
 		case MAT_FLOOR	: result.albedo = 0.15 * float3( 1.0, 0.6, 0.2 ); break;
 		case MAT_STAIRS	: result.albedo = 0.4 * float3( 1.0, 0.9, 0.85 ); break;
 		case MAT_PANEL	: result.albedo = 0.7 * float3( 1.0, 0.9, 0.05 ); break;
-		case MAT_PAPERS	: result.albedo = 0.7 * float3( 1.0, 1.0, 1.0 ); break;
+		case MAT_PAPERS	: result.albedo = 0.7 * float3( 1.0, 1.0, 1.0 ); result.wsVelocity = PAPER_VELOCITY; break;
 	}
 	if ( result.materialID >= MAT_BOOKS	) {
 		float	salt = result.materialID - MAT_BOOKS;

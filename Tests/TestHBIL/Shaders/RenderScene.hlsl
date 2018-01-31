@@ -6,7 +6,7 @@ float4	VS( float4 __Position : SV_POSITION ) : SV_POSITION { return __Position; 
 struct PS_OUT {
 	float3	albedo : SV_TARGET0;
 	float3	normal : SV_TARGET1;
-	float2	motionVectors : SV_TARGET2;
+	float3	csVelocity : SV_TARGET2;	// Camera-space velocity
 	float	depth : SV_DEPTH;
 };
 
@@ -22,7 +22,8 @@ PS_OUT	PS_Depth( float4 __Position : SV_POSITION ) {
 	Intersection	result = RayMarchScene( wsPos, wsView, UV, 100 );
 
 	PS_OUT	Out;
-	Out.motionVectors = float2( sin( 10.0 * UV.x + _time ), sin( PI * UV.y * UV.x - 0.9 * _time ) );
+//	Out.csVelocity = float3( sin( 10.0 * UV.x + _time ), sin( PI * UV.y * UV.x - 0.9 * _time ), 0 );
+	Out.csVelocity = mul( float4( result.wsVelocity, 0.0 ), _World2Camera ).xyz;
 	Out.albedo = result.albedo;
 	if ( _flags & 0x8 )
 		Out.albedo = dot( Out.albedo, LUMINANCE );

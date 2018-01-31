@@ -335,9 +335,3 @@ DEBUG_VALUE = ssAverageBentNormal;
 
 	return Out;
 }
-
-////////////////////////////////////////////////////////////////////////////////
-// Reprojects last frame's radiance
-float4	PS_Reproject( float4 __Position : SV_POSITION ) : SV_TARGET0 {
-	return _tex_sourceRadiance[uint2(floor(__Position.xy))];	// #TODO!
-}

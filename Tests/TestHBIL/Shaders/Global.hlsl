@@ -18,7 +18,9 @@
 cbuffer CB_Main : register(b0) {
 	float2	_resolution;	// viewport resolution (in pixels)
 	float	_time;
+	float	_deltaTime;
 	uint	_flags;
+	uint	_sourceRadianceIndex;
 	float	_environmentIntensity;
 	float	_forcedAlbedo;
 	float	_coneAngleBias;
@@ -32,6 +34,9 @@ cbuffer CB_Camera : register(b1) {
 	float4x4	_World2Proj;
 	float4x4	_Camera2Proj;
 	float4x4	_Proj2Camera;
+
+	float4x4	_PrevioucCamera2CurrentCamera;
+	float4x4	_CurrentCamera2PrevioucCamera;
 };
 
 cbuffer	CBSH : register( b2 ) {

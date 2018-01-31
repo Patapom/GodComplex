@@ -34,7 +34,9 @@ namespace TestHBIL {
 		private struct CB_Main {
 			public float2		_resolution;
 			public float		_time;
+			public float		_deltaTime;
 			public uint			_flags;
+			public uint			_sourceRadianceIndex;
 			public float		_environmentIntensity;
 			public float		_forcedAlbedo;
 			public float		_coneAngleBias;
@@ -49,6 +51,10 @@ namespace TestHBIL {
 			public float4x4		_World2Proj;
 			public float4x4		_Camera2Proj;
 			public float4x4		_Proj2Camera;
+
+			// Reprojection matrix
+			public float4x4		_PrevCamera2Camera;
+			public float4x4		_Camera2PrevCamera;
 		}
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
@@ -75,7 +81,9 @@ namespace TestHBIL {
 		private ConstantBuffer<CB_SH>			m_CB_SH = null;
 
 		private Shader				m_shader_RenderScene_DepthGBufferPass = null;
-		private Shader				m_shader_ReprojectRadiance = null;
+		private ComputeShader		m_shader_ReprojectRadiance = null;
+		private Shader				m_shader_Push = null;
+		private Shader				m_shader_Pull = null;
 		private Shader				m_shader_ComputeHBIL = null;
 		private Shader				m_shader_ComputeLighting = null;
 		private Shader				m_shader_PostProcess = null;
@@ -88,6 +96,7 @@ namespace TestHBIL {
 		// HBIL Results
 		private Texture2D			m_tex_bentCone = null;
 		private Texture2D			m_tex_radiance = null;
+		private Texture2D			m_tex_sourceRadiance = null;
 		private Texture2D			m_tex_finalRender = null;
 		private uint				m_radianceSourceSliceIndex = 0;
 
@@ -161,7 +170,10 @@ namespace TestHBIL {
 
 			try {
 				m_shader_RenderScene_DepthGBufferPass = new Shader( m_device, new System.IO.FileInfo( "Shaders/RenderScene.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS_Depth", null );
- 				m_shader_ReprojectRadiance = new Shader( m_device, new System.IO.FileInfo( "Shaders/ComputeHBIL.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS_Reproject", null );
+ //				m_shader_ReprojectRadiance = new Shader( m_device, new System.IO.FileInfo( "Shaders/ComputeReprojection.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS_Reproject", null );
+ 				m_shader_ReprojectRadiance = new ComputeShader( m_device, new System.IO.FileInfo( "Shaders/ComputeReprojection.hlsl" ), "CS_Reproject", null );
+// 				m_shader_Push = new Shader( m_device, new System.IO.FileInfo( "Shaders/ComputeReprojection.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS_Push", null );
+// 				m_shader_Pull = new Shader( m_device, new System.IO.FileInfo( "Shaders/ComputeReprojection.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS_Pull", null );
  				m_shader_ComputeHBIL = new Shader( m_device, new System.IO.FileInfo( "Shaders/ComputeHBIL.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 				m_shader_ComputeLighting = new Shader( m_device, new System.IO.FileInfo( "Shaders/ComputeLighting.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 				m_shader_PostProcess = new Shader( m_device, new System.IO.FileInfo( "Shaders/PostProcess.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
@@ -172,11 +184,12 @@ namespace TestHBIL {
 			// Create buffers
 			m_tex_albedo = new Texture2D( m_device, W, H, 1, 1, PIXEL_FORMAT.RGBA8, COMPONENT_FORMAT.UNORM, false, false, null );
 			m_tex_normal = new Texture2D( m_device, W, H, 1, 1, PIXEL_FORMAT.RGBA16F, COMPONENT_FORMAT.AUTO, false, false, null );
-			m_tex_motionVectors = new Texture2D( m_device, W, H, 1, 1, PIXEL_FORMAT.RG8, COMPONENT_FORMAT.SNORM, false, false, null );
+			m_tex_motionVectors = new Texture2D( m_device, W, H, 1, 1, PIXEL_FORMAT.RGBA16F, COMPONENT_FORMAT.AUTO, false, false, null );
 
 			// Create HBIL buffers
 			m_tex_bentCone = new Texture2D( m_device, W, H, 1, 1, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.AUTO, false, false, null );
 			m_tex_radiance = new Texture2D( m_device, W, H, 2, 1, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.AUTO, false, false, null );
+			m_tex_sourceRadiance = new Texture2D( m_device, W, H, 1, 10, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.AUTO, false, true, null );
 
 			m_tex_finalRender = new Texture2D( m_device, W, H, 1, 1, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.AUTO, false, false, null );
 
@@ -242,6 +255,7 @@ namespace TestHBIL {
 
 			m_tex_finalRender.Dispose();
 
+			m_tex_sourceRadiance.Dispose();
 			m_tex_radiance.Dispose();
 			m_tex_bentCone.Dispose();
 
@@ -255,6 +269,8 @@ namespace TestHBIL {
 			m_shader_PostProcess.Dispose();
 			m_shader_ComputeLighting.Dispose();
 			m_shader_ComputeHBIL.Dispose();
+			m_shader_Pull.Dispose();
+			m_shader_Push.Dispose();
 			m_shader_ReprojectRadiance.Dispose();
 			m_shader_RenderScene_DepthGBufferPass.Dispose();
 
@@ -269,6 +285,8 @@ namespace TestHBIL {
 
 		#endregion
 
+		float4x4		m_previousFrameCamera2World = float4x4.Identity;
+
 		void Application_Idle( object sender, EventArgs e ) {
 			if ( m_device == null || checkBoxPause.Checked )
 				return;
@@ -277,14 +295,20 @@ namespace TestHBIL {
 
 			// Setup global data
 			float	currentTime = GetGameTime();
-			if ( checkBoxAnimate.Checked )
-				m_CB_Main.m._time = currentTime - m_startTime;
+			if ( checkBoxAnimate.Checked ) {
+				float	newTime = currentTime - m_startTime;
+				m_CB_Main.m._deltaTime = newTime - m_CB_Main.m._time;
+				m_CB_Main.m._time = newTime;
+			} else {
+				m_CB_Main.m._deltaTime = 0.0f;
+			}
 			m_CB_Main.m._flags = 0U;
 			m_CB_Main.m._flags |= checkBoxEnableHBIL.Checked ? 1U : 0;
 			m_CB_Main.m._flags |= checkBoxEnableBentNormal.Checked ? 2U : 0;
 			m_CB_Main.m._flags |= checkBoxEnableConeVisibility.Checked ? 4U : 0;
 			m_CB_Main.m._flags |= checkBoxMonochrome.Checked ? 8U : 0;
 			m_CB_Main.m._flags |= checkBoxForceAlbedo.Checked ? 0x10U : 0;
+			m_CB_Main.m._sourceRadianceIndex = 0;
 			m_CB_Main.m._environmentIntensity = floatTrackbarControlEnvironmentIntensity.Value;
 			m_CB_Main.m._forcedAlbedo = floatTrackbarControlAlbedo.Value;
 			m_CB_Main.m._coneAngleBias = floatTrackbarControlConeAngleBias.Value;
@@ -302,11 +326,53 @@ namespace TestHBIL {
 			m_CB_SH.m._SH8.Set( m_rotatedLightSH[8], 0 );
 			m_CB_SH.UpdateData();
 
+			// Finalize camera matrices
+			{
+				float4x4	previousCamera2World = m_previousFrameCamera2World;
+				float4x4	currentCamera2World = m_CB_Camera.m._Camera2World;
+// 				float3		currentX = currentCamera2World.r0.xyz;
+// 				float3		currentY = currentCamera2World.r1.xyz;
+// 				float3		currentZ = currentCamera2World.r2.xyz;
+// 
+// 				float3		deltaPosition = currentCamera2World.r3.xyz - previousCamera2World.r3.xyz;
+// 				float3		prevCamera2CurrentCamera_Position = deltaPosition;
+// 				float3		prevX = previousCamera2World.r0.xyz;
+// 				float3		newX = new float3( prevX.Dot( currentX ) );
+
+				m_CB_Camera.m._PrevCamera2Camera = previousCamera2World * m_CB_Camera.m._World2Camera;
+				m_CB_Camera.m._Camera2PrevCamera = m_CB_Camera.m._Camera2World * previousCamera2World.Inverse;
+				m_CB_Camera.UpdateData();
+			}
+
+			m_previousFrameCamera2World = m_CB_Camera.m._Camera2World;
+
+			//////////////////////////////////////////////////////////////////////////
+			// =========== Reproject Last Frame Radiance ===========
+			//
+			m_device.PerfSetMarker( 0 );
+			m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
+
+			if ( m_shader_ReprojectRadiance.Use() ) {
+				m_device.Clear( m_tex_sourceRadiance, float4.Zero );
+
+				m_tex_radiance.GetView( 0, 1, m_radianceSourceSliceIndex, 1 ).SetCS( 0 );	// Source radiance from last frame
+				m_device.DefaultDepthStencil.SetCS( 1 );									// Source depth buffer from last frame
+				m_tex_motionVectors.SetCS( 2 );												// Motion vectors for dynamic objects
+				m_tex_sourceRadiance.SetCSUAV( 0 );
+
+				m_shader_ReprojectRadiance.Dispatch( m_tex_sourceRadiance.Width >> 4, m_tex_sourceRadiance.Height >> 4, 1 );
+
+				m_tex_sourceRadiance.RemoveFromLastAssignedSlotUAV();
+				m_tex_motionVectors.RemoveFromLastAssignedSlots();
+				m_tex_radiance.RemoveFromLastAssignedSlots();
+				m_device.DefaultDepthStencil.RemoveFromLastAssignedSlots();
+			}
+
 			//////////////////////////////////////////////////////////////////////////
 			// =========== Render Depth / G-Buffer Pass  ===========
 			// We're actually doing all in one here...
 			//
-			m_device.PerfSetMarker( 0 );
+			m_device.PerfSetMarker( 1 );
 			m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.WRITE_ALWAYS, BLEND_STATE.DISABLED );
 
 			if ( m_shader_RenderScene_DepthGBufferPass.Use() ) {
@@ -314,34 +380,43 @@ namespace TestHBIL {
 				m_device.RenderFullscreenQuad( m_shader_RenderScene_DepthGBufferPass );
 			}
 
-//*			//////////////////////////////////////////////////////////////////////////
-			// =========== Reproject Last Frame Radiance ===========
+//*				//////////////////////////////////////////////////////////////////////////
+			// =========== Apply Push-Pull ===========
 			//
-			m_device.PerfSetMarker( 1 );
-			m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
+			m_device.PerfSetMarker( 2 );
+/*			m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
 
-			if ( m_shader_ReprojectRadiance.Use() ) {
+			if ( m_shader_Push.Use() ) {
 				m_device.SetRenderTargets( new IView[] { m_tex_radiance.GetView( 0, 1, 1-m_radianceSourceSliceIndex, 1 ) }, null );
 
 				m_tex_radiance.GetView( 0, 1, m_radianceSourceSliceIndex, 1 ).SetPS( 0 );	// Source radiance from last frame
 
-				m_device.RenderFullscreenQuad( m_shader_ReprojectRadiance );
-
-				m_radianceSourceSliceIndex = 1-m_radianceSourceSliceIndex;
+				m_device.RenderFullscreenQuad( m_shader_Push );
 
 				m_tex_radiance.RemoveFromLastAssignedSlots();
 			}
+			if ( m_shader_Pull.Use() ) {
+				m_device.SetRenderTargets( new IView[] { m_tex_radiance.GetView( 0, 1, 1-m_radianceSourceSliceIndex, 1 ) }, null );
+
+				m_tex_radiance.GetView( 0, 1, m_radianceSourceSliceIndex, 1 ).SetPS( 0 );	// Source radiance from last frame
+
+				m_device.RenderFullscreenQuad( m_shader_Pull );
+
+				m_tex_radiance.RemoveFromLastAssignedSlots();
+			}
+//*/
 
 			//////////////////////////////////////////////////////////////////////////
 			// =========== Compute Bent Cone Map and Irradiance Bounces  ===========
 			// 
-			m_device.PerfSetMarker( 2 );
+			m_device.PerfSetMarker( 3 );
 			m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
 
 			if ( m_shader_ComputeHBIL.Use() ) {
 				m_device.SetRenderTargets( new IView[] { m_tex_radiance.GetView( 0, 1, 1-m_radianceSourceSliceIndex, 1 ), m_tex_bentCone.GetView( 0, 1, 0, 1 ) }, null );
 
-				m_tex_radiance.GetView( 0, 1, m_radianceSourceSliceIndex, 1 ).SetPS( 0 );	// Reprojected source radiance from last frame
+//				m_tex_radiance.GetView( 0, 1, m_radianceSourceSliceIndex, 1 ).SetPS( 0 );	// Reprojected source radiance from last frame
+				m_tex_sourceRadiance.SetPS( 0 );	// Reprojected source radiance
 				m_tex_normal.SetPS( 1 );
 				m_device.DefaultDepthStencil.SetPS( 2 );
 				m_tex_BlueNoise.SetPS( 3 );
@@ -359,7 +434,7 @@ m_tex_texDebugNormals.SetPS( 33 );
 			//////////////////////////////////////////////////////////////////////////
 			// =========== Compute lighting & finalize radiance  ===========
 			// 
-			m_device.PerfSetMarker( 3 );
+			m_device.PerfSetMarker( 4 );
 			m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
 
 			if ( m_shader_ComputeLighting.Use() ) {
@@ -382,7 +457,7 @@ m_tex_texDebugNormals.SetPS( 33 );
 //*/
 			//////////////////////////////////////////////////////////////////////////
 			// =========== Post-Process ===========
-			m_device.PerfSetMarker( 4 );
+			m_device.PerfSetMarker( 5 );
 			m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
 
 			if ( m_shader_PostProcess.Use() ) {
@@ -390,6 +465,7 @@ m_tex_texDebugNormals.SetPS( 33 );
 
 				m_tex_radiance.SetPS( 8 );
 				m_tex_finalRender.SetPS( 10 );
+				m_tex_sourceRadiance.SetPS( 11 );
 
 				m_device.RenderFullscreenQuad( m_shader_PostProcess );
 
@@ -398,6 +474,7 @@ m_tex_texDebugNormals.SetPS( 33 );
 				m_tex_normal.RemoveFromLastAssignedSlots();
 				m_tex_albedo.RemoveFromLastAssignedSlots();
 
+				m_tex_sourceRadiance.RemoveFromLastAssignedSlots();
 				m_tex_radiance.RemoveFromLastAssignedSlots();
 				m_tex_bentCone.RemoveFromLastAssignedSlots();
 				m_tex_finalRender.RemoveFromLastAssignedSlots();
@@ -412,18 +489,20 @@ m_tex_texDebugNormals.SetPS( 33 );
 				return;
 			m_lastDisplayTime = currentTime;
 
-			double	timeRenderGBuffer = m_device.PerfGetMilliSeconds( 0 );
-			double	timeReprojection = m_device.PerfGetMilliSeconds( 1 );
-			double	timeHBIL = m_device.PerfGetMilliSeconds( 2 );
-			double	timeComputeLighting = m_device.PerfGetMilliSeconds( 3 );
-			double	timePostProcess = m_device.PerfGetMilliSeconds( 4 );
+			double	timeReprojection = m_device.PerfGetMilliSeconds( 0 );
+			double	timeRenderGBuffer = m_device.PerfGetMilliSeconds( 1 );
+			double	timePushPull = m_device.PerfGetMilliSeconds( 2 );
+			double	timeHBIL = m_device.PerfGetMilliSeconds( 3 );
+			double	timeComputeLighting = m_device.PerfGetMilliSeconds( 4 );
+			double	timePostProcess = m_device.PerfGetMilliSeconds( 5 );
 
 			float	totalTime = currentTime - m_startTime;
 			textBoxInfo.Text = "Total Time = " + totalTime + "s\r\n"
 							 + "Average frame time = " + (1000.0f * totalTime / m_framesCount).ToString( "G6" ) + " ms\r\n"
 							 + "\r\n"
-							 + "G-Buffer Rendering: " + timeRenderGBuffer.ToString( "G4" ) + " ms\r\n"
 							 + "Reprojection: " + timeReprojection.ToString( "G4" ) + " ms\r\n"
+							 + "G-Buffer Rendering: " + timeRenderGBuffer.ToString( "G4" ) + " ms\r\n"
+							 + "Push-Pull: " + timePushPull.ToString( "G4" ) + " ms\r\n"
 							 + "HBIL: " + timeHBIL.ToString( "G4" ) + " ms\r\n"
 							 + "Lighting: " + timeComputeLighting.ToString( "G4" ) + " ms\r\n"
 							 + "Post-Processing: " + timePostProcess.ToString( "G4" ) + " ms\r\n"
@@ -434,10 +513,6 @@ m_tex_texDebugNormals.SetPS( 33 );
 //			Text = "Test HBIL Prototype - " + m_Game.m_CurrentGameTime.ToString( "G5" ) + "s";
 		}
 
-		/// <summary>
-		/// Gets the current game time in seconds
-		/// </summary>
-		/// <returns></returns>
 		public float	GetGameTime() {
 			long	ticks = m_stopWatch.ElapsedTicks;
 			float	time = (float) (ticks * m_ticks2Seconds);
@@ -468,8 +543,6 @@ m_tex_texDebugNormals.SetPS( 33 );
 
 			m_CB_Camera.m._World2Proj = m_CB_Camera.m._World2Camera * m_CB_Camera.m._Camera2Proj;
 			m_CB_Camera.m._Proj2World = m_CB_Camera.m._Proj2Camera * m_CB_Camera.m._Camera2World;
-
-			m_CB_Camera.UpdateData();
 		}
 
 		Quat			m_lightQuat = new Quat( new AngleAxis( 0.0f, float3.UnitZ ) );
