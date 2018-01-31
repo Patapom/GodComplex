@@ -119,7 +119,7 @@ void	CS_Pull( uint3 _groupID : SV_groupID, uint3 _groupThreadID : SV_groupThread
 
 	// Bilinear interpolate the 4 surrounding, lower mip pixels
 	#if 1
-		float2	UV = float2( targetPixelIndex & ~1 ) / _targetSize;
+		float2	UV = float2( targetPixelIndex ) / _targetSize;
 		float2	dUV = 2.0 / _targetSize;
 
 		float4	V00 = _tex_sourceRadiance.SampleLevel( LinearClamp, UV, 0.0 );	UV.x += dUV.x;
@@ -137,6 +137,7 @@ void	CS_Pull( uint3 _groupID : SV_groupID, uint3 _groupThreadID : SV_groupThread
 		float	A = saturate( sumWeights );
 		C *= sumWeights > 0.0 ? A / sumWeights : 0.0;	// Un-premultiply color
 	#else
+		// Complicated biasing toward valid weights...
 		uint2	sourcePixelIndex = targetPixelIndex >> 1;
 		float4	V00 = _tex_sourceRadiance[sourcePixelIndex];	sourcePixelIndex.x++;
 		float4	V10 = _tex_sourceRadiance[sourcePixelIndex];	sourcePixelIndex.y++;
@@ -163,10 +164,7 @@ void	CS_Pull( uint3 _groupID : SV_groupID, uint3 _groupThreadID : SV_groupThread
 
 	float4	newV = float4( C, A );
 
-//oldV = 0;
-//newV = 
-
 	// Store the color with the most significance (i.e. best weight)
-//	_tex_reprojectedRadiance[targetPixelIndex] = lerp( newV, oldV, saturate( oldV.w ) );
 	_tex_reprojectedRadiance[targetPixelIndex] = (1.0 - saturate( oldV.w )) * newV + oldV;
+//	_tex_reprojectedRadiance[targetPixelIndex] = lerp( newV, oldV, saturate( oldV.w ) );
 }
