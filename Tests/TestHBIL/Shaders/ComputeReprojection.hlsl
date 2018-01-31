@@ -85,13 +85,6 @@ void	CS_Push( uint3 _groupID : SV_groupID, uint3 _groupThreadID : SV_groupThread
 		V01.w = Depth2Weight( V01.w );
 	#endif
 
-//V10 = V11 = V01 = float4( V00.xyz, 1.0 );
-
-//V00.w = saturate( V00.w );
-//V10.w = saturate( V10.w );
-//V11.w = saturate( V11.w );
-//V01.w = saturate( V01.w );
-
 	// Pre-multiply by alpha
 	float3	C = V00.w * V00.xyz
 			  + V10.w * V10.xyz
@@ -100,12 +93,9 @@ void	CS_Push( uint3 _groupID : SV_groupID, uint3 _groupThreadID : SV_groupThread
 
 	float	sumWeights = V00.w + V10.w + V01.w + V11.w;
 	float	A = saturate( sumWeights );
-	C *= sumWeights > 0.0 ? A / sumWeights : 0.0;
-//	C *= sumWeights > 0.0 ? 1.0 / sumWeights : 0.0;
+	C *= sumWeights > 0.0 ? A / sumWeights : 0.0;	// Store un-premultiplied color
+//	C *= sumWeights > 0.0 ? 1.0 / sumWeights : 0.0;	// Store un-premultiplied color
 
-//C = 0.25 * (V00.xyz + V10.xyz + V01.xyz + V11.xyz);
-
-	// Store de-premultiplied color
 	_tex_reprojectedRadiance[targetPixelIndex] = float4( C, A );
 }
 
@@ -120,36 +110,63 @@ void	CS_Pull( uint3 _groupID : SV_groupID, uint3 _groupThreadID : SV_groupThread
 	if ( any( targetPixelIndex > _targetSize ) )
 		return;
 
-	float2	UV = float2(targetPixelIndex) / _targetSize;
-	float2	dUV = 1.0 / _targetSize;
-
 	// Read currently existing value (possibly already valid)
 	float4	oldV = _tex_sourceRadianceCurrentMip[targetPixelIndex];
-//	float4	oldV = UV.xyxy;//_tex_reprojectedRadiance.SampleLevel( LinearClamp, UV + 0.5 * dUV, 0.0 );
-//	oldV.w = 0.0;
 
 	#if LAST_PASS
 		oldV.w = Depth2Weight( oldV.w );	// Mip 0 contains depth information
 	#endif
 
 	// Bilinear interpolate the 4 surrounding, lower mip pixels
-	float4	V00 = _tex_sourceRadiance.SampleLevel( LinearClamp, UV, 0.0 );	UV.x += dUV.x;
-	float4	V10 = _tex_sourceRadiance.SampleLevel( LinearClamp, UV, 0.0 );	UV.y += dUV.y;
-	float4	V11 = _tex_sourceRadiance.SampleLevel( LinearClamp, UV, 0.0 );	UV.x -= dUV.x;
-	float4	V01 = _tex_sourceRadiance.SampleLevel( LinearClamp, UV, 0.0 );	UV.y -= dUV.y;
-    
-	// Pre-multiply by alpha
-	float3	C = V00.w * V00.xyz
-			  + V10.w * V10.xyz
-			  + V01.w * V01.xyz
-			  + V11.w * V11.xyz;
+	#if 0
+		float2	UV = float2( targetPixelIndex & ~1 ) / _targetSize;
+		float2	dUV = 2.0 / _targetSize;
 
-	float	sumWeights = V00.w + V10.w + V01.w + V11.w;
-	float	A = saturate( sumWeights );
-	float	normalization = sumWeights > 0.0 ? A / sumWeights : 0.0;
+		float4	V00 = _tex_sourceRadiance.SampleLevel( LinearClamp, UV, 0.0 );	UV.x += dUV.x;
+		float4	V10 = _tex_sourceRadiance.SampleLevel( LinearClamp, UV, 0.0 );	UV.y += dUV.y;
+		float4	V11 = _tex_sourceRadiance.SampleLevel( LinearClamp, UV, 0.0 );	UV.x -= dUV.x;
+		float4	V01 = _tex_sourceRadiance.SampleLevel( LinearClamp, UV, 0.0 );	UV.y -= dUV.y;
 
-	float4	newV = float4( normalization * C, A );	// De-premultiply color
+		// Pre-multiply by alpha
+		float3	C = V00.w * V00.xyz
+				  + V10.w * V10.xyz
+				  + V01.w * V01.xyz
+				  + V11.w * V11.xyz;
+
+		float	sumWeights = V00.w + V10.w + V01.w + V11.w;
+		float	A = saturate( sumWeights );
+		C *= sumWeights > 0.0 ? A / sumWeights : 0.0;	// Un-premultiply color
+	#else
+		uint2	sourcePixelIndex = targetPixelIndex >> 1;
+		float4	V00 = _tex_sourceRadiance[sourcePixelIndex];	sourcePixelIndex.x++;
+		float4	V10 = _tex_sourceRadiance[sourcePixelIndex];	sourcePixelIndex.y++;
+		float4	V11 = _tex_sourceRadiance[sourcePixelIndex];	sourcePixelIndex.x--;
+		float4	V01 = _tex_sourceRadiance[sourcePixelIndex];	sourcePixelIndex.y--;
+
+		V00.xyz *= V00.w;
+		V10.xyz *= V10.w;
+		V01.xyz *= V01.w;
+		V11.xyz *= V11.w;
+
+		float2	dPixel = targetPixelIndex - 2.0 * sourcePixelIndex;	// Will yield values in {0,0} => {1,1} range
+				dPixel += float2( -1, -1 ) * V00.w;
+				dPixel += float2( +1, -1 ) * V10.w;
+				dPixel += float2( -1, +1 ) * V01.w;
+				dPixel += float2( +1, +1 ) * V11.w;
+				dPixel = saturate( dPixel );
+		float4	V0 = lerp( V00, V10, dPixel.x );
+		float4	V1 = lerp( V01, V11, dPixel.x );
+		float4	V = lerp( V0, V1, dPixel.y );
+		float	A = saturate( V.w );
+		float3	C = V.w > 0.0 ? V.xyz * A / V.w : 0.0;
+	#endif    
+
+	float4	newV = float4( C, A );
+
+//oldV = 0;
+//newV = 
 
 	// Store the color with the most significance (i.e. best weight)
-	_tex_reprojectedRadiance[targetPixelIndex] = lerp( newV, oldV, saturate( oldV.w ) );
+//	_tex_reprojectedRadiance[targetPixelIndex] = lerp( newV, oldV, saturate( oldV.w ) );
+	_tex_reprojectedRadiance[targetPixelIndex] = (1.0 - saturate( oldV.w )) * newV + oldV;
 }

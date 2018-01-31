@@ -9,6 +9,8 @@
 //	• Use radius² as progression + sample mips for larger footprint (only if mip is bilateral filtered!)
 //	• Keep previous radiance in case we reject height sample but accept radiance, and don't want to interpolate foreground radiance? Will that even occur?
 //	• Write interleaved sampling + reconstruction based on bilateral weight (store it some place? Like alpha somewhere?)
+//	• Keep failed reprojected pixels into some "surrounding buffer", some sort of paraboloid-projected buffer containing off-screen values???
+//		=> Exponential decay of off-screen values
 //
 using System;
 using System.Collections.Generic;
@@ -447,7 +449,7 @@ namespace TestHBIL {
 					for (  mipLevel--; mipLevel > 0; mipLevel-- ) {
 						View2D	targetView = m_tex_sourceRadiance_PULL.GetView( mipLevel-1, 1, 0, 1 );	// Write to current mip of PULL texture
 						targetView.SetCSUAV( 0 );
-						m_tex_sourceRadiance_PUSH.GetView( mipLevel, 1, 0, 1 ).SetCS( 0 );				// Read from previous mip of PULL texture
+						m_tex_sourceRadiance_PULL.GetView( mipLevel, 1, 0, 1 ).SetCS( 0 );				// Read from previous mip of PULL texture
 						m_tex_sourceRadiance_PUSH.GetView( mipLevel-1, 1, 0, 1 ).SetCS( 3 );			// Read from current mip of PUSH texture (because we can't read and write from a RWTexture other than UINT type!)
 
 						m_CB_PushPull.m._sizeX = targetView.Width;
