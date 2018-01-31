@@ -118,7 +118,7 @@ void	CS_Pull( uint3 _groupID : SV_groupID, uint3 _groupThreadID : SV_groupThread
 	#endif
 
 	// Bilinear interpolate the 4 surrounding, lower mip pixels
-	#if 0
+	#if 1
 		float2	UV = float2( targetPixelIndex & ~1 ) / _targetSize;
 		float2	dUV = 2.0 / _targetSize;
 
