@@ -7,7 +7,7 @@
 #define THREADS_X	16
 #define THREADS_Y	16
 
-#define PIXEL_SHIFT			0
+#define PIXEL_SHIFT			2
 #define PIXEL_STRIDE		(1 << PIXEL_SHIFT)
 #define USE_NOISE_JITTER	0
 
@@ -80,8 +80,9 @@ void	CS_Reproject( uint3 _groupID : SV_groupID, uint3 _groupThreadID : SV_groupT
 
 // Returns a very weak weight if depths are deemed un-interesting (too close or too far away) but never 0 (0 is reserved for uninitialized values)
 float	Depth2Weight( float _depth ) {
-	return _depth < 1e-3 ? 0.0	// Keep uninitialized values as invalid
-						 : lerp( 0.001, 1.0, smoothstep( 0.0, 1.0, _depth ) * smoothstep( 100.0, 40.0, _depth ) );	// Otherwise, we maximize the weights of samples whose depth is between 1 and 40 meters
+	return step( 1e-3, _depth );
+//	return _depth < 1e-3 ? 0.0	// Keep uninitialized values as invalid
+//						 : lerp( 0.001, 1.0, smoothstep( 0.0, 1.0, _depth ) * smoothstep( 100.0, 40.0, _depth ) );	// Otherwise, we maximize the weights of samples whose depth is between 1 and 40 meters
 }
 
 // Returns 0 if the depths are too far appart from each other...
@@ -104,6 +105,7 @@ void	CS_Push( uint3 _groupID : SV_groupID, uint3 _groupThreadID : SV_groupThread
 	float4	V01 = _tex_sourceRadiance[sourcePixelIndex];	sourcePixelIndex.y--;
 
 	// Compute depth weight
+	// Will return 0 for invalid pixels and low values for "non important depths"
 	float	w00 = Depth2Weight( V00.w );
 	float	w10 = Depth2Weight( V10.w );
 	float	w11 = Depth2Weight( V11.w );
@@ -111,6 +113,7 @@ void	CS_Push( uint3 _groupID : SV_groupID, uint3 _groupThreadID : SV_groupThread
 	float	sumWeights = w00 + w10 + w01 + w11;
 
 	// Compute average depth by harmonic mean with offset
+	// averageZ = 1 / Sum( 1 / (offset+Z) ) - offset
 	float	meanOffset = _preferedDepth;
 	float	avgZ = w00 / (meanOffset + V00.w)
 				 + w10 / (meanOffset + V10.w)
@@ -118,7 +121,7 @@ void	CS_Push( uint3 _groupID : SV_groupID, uint3 _groupThreadID : SV_groupThread
 				 + w11 / (meanOffset + V11.w);
 			avgZ = avgZ > 0.0 ? sumWeights / avgZ - meanOffset : 0.0;
 
-	// Compute bilateral weights
+	// Compute bilateral weights that yields 0 if the depth vary too much from average depth
 	w00 *= BilateralWeight( V00.w, avgZ );
 	w10 *= BilateralWeight( V10.w, avgZ );
 	w01 *= BilateralWeight( V01.w, avgZ );
@@ -139,10 +142,9 @@ void	CS_Push( uint3 _groupID : SV_groupID, uint3 _groupThreadID : SV_groupThread
 	_tex_reprojectedRadiance[targetPixelIndex] = float4( C, avgZ );
 }
 
-
 ////////////////////////////////////////////////////////////////////////////////
 // Implements the PULL phase of the push/pull algorithm described in "The Pull-Push Algorithm Revisited" M. Kraus (2009)
-// Actually, this is called the "push" phase in the original algorithm but I prefer thinking of it as pulling valid values up from to the lower mips...
+// Actually, this is called the "push" phase in the original algorithm but I prefer thinking of it as pulling valid values from to the lower mips up to the level 0...
 //
 [numthreads( THREADS_X, THREADS_Y, 1 )]
 void	CS_Pull( uint3 _groupID : SV_groupID, uint3 _groupThreadID : SV_groupThreadID, uint3 _dispatchThreadID : SV_dispatchThreadID ) {
@@ -152,59 +154,33 @@ void	CS_Pull( uint3 _groupID : SV_groupID, uint3 _groupThreadID : SV_groupThread
 
 	// Read currently existing value (possibly already valid)
 	float4	oldV = _tex_sourceRadianceCurrentMip[targetPixelIndex];
+	float	oldW = Depth2Weight( oldV.w );
+/*	if ( oldW > 0.999 )
+		return;	// This pixel is already filled up with a valid value...
 
-	#if LAST_PASS
-		oldV.w = Depth2Weight( oldV.w );	// Mip 0 contains depth information
-	#endif
+	// Read the lower mip's 4 values surrounding our invalid value
+	// Now we KNOW that ALL of these values are guaranteed to be valid since we're reconstructing
+	//	entire mip levels one by one and no pixel can be left empty anymore so any mip below our
+	//	current level is completely filled up...
+	uint2	sourcePixelIndex = targetPixelIndex >> 1;
+	float4	V00 = _tex_sourceRadiance[sourcePixelIndex];	sourcePixelIndex.x++;
+	float4	V10 = _tex_sourceRadiance[sourcePixelIndex];	sourcePixelIndex.y++;
+	float4	V11 = _tex_sourceRadiance[sourcePixelIndex];	sourcePixelIndex.x--;
+	float4	V01 = _tex_sourceRadiance[sourcePixelIndex];	sourcePixelIndex.y--;
 
-	// Bilinear interpolate the 4 surrounding, lower mip pixels
-	#if 1
-		float2	UV = float2( targetPixelIndex ) / _targetSize;
-		float2	dUV = 2.0 / _targetSize;
+	// Compute depth weight
+	// Will return 0 for invalid pixels and low values for "non important depths"
+	float	w00 = Depth2Weight( V00.w );
+	float	w10 = Depth2Weight( V10.w );
+	float	w11 = Depth2Weight( V11.w );
+	float	w01 = Depth2Weight( V01.w );
+	float	sumWeights = w00 + w10 + w01 + w11;
 
-		float4	V00 = _tex_sourceRadiance.SampleLevel( LinearClamp, UV, 0.0 );	UV.x += dUV.x;
-		float4	V10 = _tex_sourceRadiance.SampleLevel( LinearClamp, UV, 0.0 );	UV.y += dUV.y;
-		float4	V11 = _tex_sourceRadiance.SampleLevel( LinearClamp, UV, 0.0 );	UV.x -= dUV.x;
-		float4	V01 = _tex_sourceRadiance.SampleLevel( LinearClamp, UV, 0.0 );	UV.y -= dUV.y;
-
-		// Pre-multiply by alpha
-		float3	C = V00.w * V00.xyz
-				  + V10.w * V10.xyz
-				  + V01.w * V01.xyz
-				  + V11.w * V11.xyz;
-
-		float	sumWeights = V00.w + V10.w + V01.w + V11.w;
-		float	A = saturate( sumWeights );
-		C *= sumWeights > 0.0 ? A / sumWeights : 0.0;	// Un-premultiply color
-	#else
-		// Complicated biasing toward valid weights...
-		uint2	sourcePixelIndex = targetPixelIndex >> 1;
-		float4	V00 = _tex_sourceRadiance[sourcePixelIndex];	sourcePixelIndex.x++;
-		float4	V10 = _tex_sourceRadiance[sourcePixelIndex];	sourcePixelIndex.y++;
-		float4	V11 = _tex_sourceRadiance[sourcePixelIndex];	sourcePixelIndex.x--;
-		float4	V01 = _tex_sourceRadiance[sourcePixelIndex];	sourcePixelIndex.y--;
-
-		V00.xyz *= V00.w;
-		V10.xyz *= V10.w;
-		V01.xyz *= V01.w;
-		V11.xyz *= V11.w;
-
-		float2	dPixel = targetPixelIndex - 2.0 * sourcePixelIndex;	// Will yield values in {0,0} => {1,1} range
-				dPixel += float2( -1, -1 ) * V00.w;
-				dPixel += float2( +1, -1 ) * V10.w;
-				dPixel += float2( -1, +1 ) * V01.w;
-				dPixel += float2( +1, +1 ) * V11.w;
-				dPixel = saturate( dPixel );
-		float4	V0 = lerp( V00, V10, dPixel.x );
-		float4	V1 = lerp( V01, V11, dPixel.x );
-		float4	V = lerp( V0, V1, dPixel.y );
-		float	A = saturate( V.w );
-		float3	C = V.w > 0.0 ? V.xyz * A / V.w : 0.0;
-	#endif    
-
-	float4	newV = float4( C, A );
-
-	// Store the color with the most significance (i.e. best weight)
-	_tex_reprojectedRadiance[targetPixelIndex] = (1.0 - saturate( oldV.w )) * newV + oldV;
-//	_tex_reprojectedRadiance[targetPixelIndex] = lerp( newV, oldV, saturate( oldV.w ) );
+	// Perform a simple bilinear interpolation...
+	_tex_reprojectedRadiance[targetPixelIndex] = _tex_sourceRadiance.SampleLevel( LinearClamp, float2( targetPixelIndex + 0.5 ) / _targetSize, 0.0 );
+*/
+	if ( oldW > 0.999 )
+		_tex_reprojectedRadiance[targetPixelIndex] = oldV;
+	else
+		_tex_reprojectedRadiance[targetPixelIndex] = _tex_sourceRadiance.SampleLevel( LinearClamp, float2( targetPixelIndex + 0.5 ) / _targetSize, 0.0 );
 }

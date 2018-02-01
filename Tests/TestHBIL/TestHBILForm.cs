@@ -421,9 +421,6 @@ namespace TestHBIL {
 
 			{
 				const uint	MAX_MIP = 11;
-				uint	mipLevel = 1;
-// 				uint	W = m_tex_sourceRadiance.Width;
-// 				uint	H = m_tex_sourceRadiance.Height;
 
 				m_CB_PushPull.m._bilateralDepths.Set( floatTrackbarControlBilateralDepthDeltaMin.Value, floatTrackbarControlBilateralDepthDeltaMax.Value );
 				m_CB_PushPull.m._bilateralDepths.x *= m_CB_PushPull.m._bilateralDepths.x;
@@ -432,16 +429,14 @@ namespace TestHBIL {
 
 				if ( m_shader_Push_FirstPass.Use() ) {
 					ComputeShader	currentCS = m_shader_Push_FirstPass;
-					for ( ; mipLevel < MAX_MIP; mipLevel++ ) {
-//						W = (W+1) >> 1;
-//						H = (H+1) >> 1;
-//						W = Math.Max( 1, W >> 1 );
-//						H = Math.Max( 1, H >> 1 );
-						View2D	targetView = m_tex_sourceRadiance_PUSH.GetView( mipLevel, 1, 0, 1 );
+					for ( uint mipLevel=1; mipLevel < MAX_MIP; mipLevel++ ) {
+						View2D	targetView = null;
+						if ( mipLevel == MAX_MIP-1 )
+							targetView = m_tex_sourceRadiance_PULL.GetView( mipLevel, 1, 0, 1 );		// Write last pass to last mip of PULL texture!
+						else
+							targetView = m_tex_sourceRadiance_PUSH.GetView( mipLevel, 1, 0, 1 );
 						targetView.SetCSUAV( 0 );
 						m_tex_sourceRadiance_PUSH.GetView( mipLevel-1, 1, 0, 1 ).SetCS( 0 );
-// 						if ( targetView.Width != W || targetView.Height != H )
-// 							throw new Exception( );
 
 						m_CB_PushPull.m._sizeX = targetView.Width;
 						m_CB_PushPull.m._sizeY = targetView.Height;
@@ -457,7 +452,7 @@ namespace TestHBIL {
 				}
  				if ( m_shader_Pull.Use() ) {
 					ComputeShader	currentCS = m_shader_Pull;
-					for (  mipLevel--; mipLevel > 0; mipLevel-- ) {
+					for ( uint mipLevel=MAX_MIP-1; mipLevel > 0; mipLevel-- ) {
 						View2D	targetView = m_tex_sourceRadiance_PULL.GetView( mipLevel-1, 1, 0, 1 );	// Write to current mip of PULL texture
 						targetView.SetCSUAV( 0 );
 						m_tex_sourceRadiance_PULL.GetView( mipLevel, 1, 0, 1 ).SetCS( 0 );				// Read from previous mip of PULL texture
