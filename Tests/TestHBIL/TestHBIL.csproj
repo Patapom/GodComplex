@@ -113,6 +113,7 @@
     <None Include="Shaders\ComputeReprojection2.hlsl" />
     <None Include="Shaders\ComputeHBIL.hlsl" />
     <None Include="Shaders\HBIL.hlsl" />
+    <None Include="Shaders\DownSampleDepth.hlsl" />
     <Content Include="Shaders\SphericalHarmonics.hlsl" />
     <None Include="Shaders\SceneRayMarchingLibrary.hlsl" />
     <None Include="Shaders\SceneRayMarchingInfiniteRooms.hlsl" />

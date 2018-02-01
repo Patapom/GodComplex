@@ -87,6 +87,12 @@ namespace TestHBIL {
 		}
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
+		internal struct	CB_DownSample {
+			public uint		_sizeX;
+			public uint		_sizeY;
+		}
+
+		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
 		internal struct	CB_HBIL {
 			public float	_gatherSphereMaxRadius_m;	// Maximum radius (in meters) of the IL gather sphere
 			public float2	_bilateralValues;
@@ -102,9 +108,9 @@ namespace TestHBIL {
 		private ConstantBuffer<CB_Camera>		m_CB_Camera = null;
 		private ConstantBuffer<CB_SH>			m_CB_SH = null;
 		private ConstantBuffer<CB_PushPull>		m_CB_PushPull = null;
+		private ConstantBuffer<CB_DownSample>	m_CB_DownSample = null;
 		private ConstantBuffer<CB_HBIL>			m_CB_HBIL = null;
 
-		private Shader				m_shader_RenderScene_DepthGBufferPass = null;
 		private ComputeShader		m_shader_ReprojectRadiance = null;
 
 		private ComputeShader		m_shader_Push = null;
@@ -113,6 +119,8 @@ namespace TestHBIL {
 			private ComputeShader		m_shader_Push_FirstPass = null;
 			private ComputeShader		m_shader_Pull_LastPass = null;
 		#endif
+		private Shader				m_shader_RenderScene_DepthGBufferPass = null;
+		private ComputeShader		m_shader_DownSampleDepth = null;
 		private Shader				m_shader_ComputeHBIL = null;
 		private Shader				m_shader_ComputeLighting = null;
 		private Shader				m_shader_PostProcess = null;
@@ -121,6 +129,7 @@ namespace TestHBIL {
 		private Texture2D			m_tex_albedo = null;
 		private Texture2D			m_tex_normal = null;
 		private Texture2D			m_tex_motionVectors = null;
+		private Texture2D			m_tex_depthWithMips = null;
 
 		// HBIL Results
 		private Texture2D			m_tex_bentCone = null;
@@ -198,6 +207,7 @@ namespace TestHBIL {
 			m_CB_Camera = new ConstantBuffer<CB_Camera>( m_device, 1 );
 			m_CB_SH = new ConstantBuffer<CB_SH>( m_device, 2 );
 			m_CB_PushPull = new ConstantBuffer<CB_PushPull>( m_device, 3 );
+			m_CB_DownSample = new ConstantBuffer<CB_DownSample>( m_device, 3 );
 			m_CB_HBIL = new ConstantBuffer<CB_HBIL>( m_device, 3 );
 
 			try {
@@ -210,6 +220,7 @@ namespace TestHBIL {
  					m_shader_Pull_LastPass = new ComputeShader( m_device, new System.IO.FileInfo( "Shaders/ComputeReprojection2.hlsl" ), "CS_Pull", new ShaderMacro[] { new ShaderMacro( "LAST_PASS", "1" ) } );
 				#endif
 				m_shader_RenderScene_DepthGBufferPass = new Shader( m_device, new System.IO.FileInfo( "Shaders/RenderScene.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS_Depth", null );
+				m_shader_DownSampleDepth = new ComputeShader( m_device, new System.IO.FileInfo( "Shaders/DownSampleDepth.hlsl" ), "CS", null );
 
 				#if BRUTE_FORCE_HBIL
  					m_shader_ComputeHBIL = new Shader( m_device, new System.IO.FileInfo( "Shaders/BruteForce/ComputeHBIL.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
@@ -227,6 +238,8 @@ namespace TestHBIL {
 			m_tex_albedo = new Texture2D( m_device, W, H, 1, 1, PIXEL_FORMAT.RGBA8, COMPONENT_FORMAT.UNORM, false, false, null );
 			m_tex_normal = new Texture2D( m_device, W, H, 1, 1, PIXEL_FORMAT.RGBA16F, COMPONENT_FORMAT.AUTO, false, false, null );
 			m_tex_motionVectors = new Texture2D( m_device, W, H, 1, 1, PIXEL_FORMAT.RGBA16F, COMPONENT_FORMAT.AUTO, false, false, null );
+			m_tex_depthWithMips = new Texture2D( m_device, W, H, 1, 0, PIXEL_FORMAT.R32F, COMPONENT_FORMAT.AUTO, false, true, null );
+//			m_tex_depthWithMips = new Texture2D( m_device, W, H, 1, 0, DEPTH_STENCIL_FORMAT.D32 );	// Can't have UAV flag so can't use CS for mip downsampling
 
 			// Create HBIL buffers
 			m_tex_bentCone = new Texture2D( m_device, W, H, 1, 1, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.AUTO, false, false, null );
@@ -306,6 +319,7 @@ namespace TestHBIL {
 			m_tex_texDebugNormals.Dispose();
 			m_tex_texDebugHeights.Dispose();
 			m_tex_BlueNoise.Dispose();
+			m_tex_depthWithMips.Dispose();
 			m_tex_motionVectors.Dispose();
 			m_tex_normal.Dispose();
 			m_tex_albedo.Dispose();
@@ -313,6 +327,8 @@ namespace TestHBIL {
 			m_shader_PostProcess.Dispose();
 			m_shader_ComputeLighting.Dispose();
 			m_shader_ComputeHBIL.Dispose();
+			m_shader_DownSampleDepth.Dispose();
+			m_shader_RenderScene_DepthGBufferPass.Dispose();
 			m_shader_Pull.Dispose();
 			m_shader_Push.Dispose();
 			#if !BILATERAL_PUSH_PULL
@@ -320,9 +336,9 @@ namespace TestHBIL {
 				m_shader_Push_FirstPass.Dispose();
 			#endif
 			m_shader_ReprojectRadiance.Dispose();
-			m_shader_RenderScene_DepthGBufferPass.Dispose();
 
 			m_CB_HBIL.Dispose();
+			m_CB_DownSample.Dispose();
 			m_CB_PushPull.Dispose();
 			m_CB_SH.Dispose();
 			m_CB_Camera.Dispose();
@@ -508,10 +524,31 @@ namespace TestHBIL {
 			//
 			m_device.PerfSetMarker( 2 );
 			m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.WRITE_ALWAYS, BLEND_STATE.DISABLED );
+//			m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
 
 			if ( m_shader_RenderScene_DepthGBufferPass.Use() ) {
 				m_device.SetRenderTargets( new IView[] { m_tex_albedo.GetView( 0, 1, 0, 1 ), m_tex_normal.GetView( 0, 1, 0, 1 ), m_tex_motionVectors.GetView( 0, 1, 0, 1 ) }, m_device.DefaultDepthStencil );
+//				m_device.SetRenderTargets( new IView[] { m_tex_albedo.GetView( 0, 1, 0, 1 ), m_tex_normal.GetView( 0, 1, 0, 1 ), m_tex_motionVectors.GetView( 0, 1, 0, 1 ), m_tex_depthWithMips.GetView( 0, 1, 0, 1 ) }, null );
 				m_device.RenderFullscreenQuad( m_shader_RenderScene_DepthGBufferPass );
+				m_device.RemoveRenderTargets();
+			}
+
+			// Downsample depth-stencil
+			if ( m_shader_DownSampleDepth.Use() ) {
+				for ( uint mipLevel=1; mipLevel < m_tex_depthWithMips.MipLevelsCount; mipLevel++ ) {
+					View2D	targetView = m_tex_depthWithMips.GetView( mipLevel, 1, 0, 1 );
+					targetView.SetCSUAV( 0 );
+					m_tex_depthWithMips.GetView( mipLevel-1, 1, 0, 1 ).SetCS( 0 );
+
+					m_CB_DownSample.m._sizeX = targetView.Width;
+					m_CB_DownSample.m._sizeY = targetView.Height;
+					m_CB_DownSample.UpdateData();
+
+					m_shader_DownSampleDepth.Dispatch( (m_CB_DownSample.m._sizeX+15) >> 4, (m_CB_DownSample.m._sizeY+15) >> 4, 1 );
+				}
+
+				m_tex_depthWithMips.RemoveFromLastAssignedSlots();
+				m_tex_depthWithMips.RemoveFromLastAssignedSlotUAV();
 			}
 
 			//////////////////////////////////////////////////////////////////////////
@@ -527,7 +564,7 @@ namespace TestHBIL {
 //					m_tex_radiance.GetView( 0, 1, m_radianceSourceSliceIndex, 1 ).SetPS( 0 );	// Reprojected source radiance from last frame
 					m_tex_sourceRadiance_PULL.SetPS( 0 );	// Reprojected source radiance
 					m_tex_normal.SetPS( 1 );
-					m_device.DefaultDepthStencil.SetPS( 2 );
+					m_tex_depthWithMips.SetPS( 2 );
 					m_tex_BlueNoise.SetPS( 3 );
 
 m_tex_texDebugHeights.SetPS( 32 );
@@ -550,6 +587,7 @@ m_tex_texDebugNormals.SetPS( 33 );
 					m_tex_sourceRadiance_PULL.SetPS( 0 );	// Reprojected + reconstructed source radiance from last frame with all mips
 					m_tex_normal.SetPS( 1 );
 					m_device.DefaultDepthStencil.SetPS( 2 );
+//					m_tex_depthWithMips.SetPS( 2 );
 					m_tex_BlueNoise.SetPS( 3 );
 
 					m_device.RenderFullscreenQuad( m_shader_ComputeHBIL );
@@ -573,6 +611,7 @@ m_tex_texDebugNormals.SetPS( 33 );
 				m_tex_normal.SetPS( 1 );
 				m_tex_motionVectors.SetPS( 2 );
 				m_device.DefaultDepthStencil.SetPS( 3 );
+//				m_tex_depthWithMips.SetPS( 3 );
 
 				m_tex_radiance.GetView( 0, 1, m_radianceSourceSliceIndex, 1 ).SetPS( 8 );
 				m_tex_bentCone.SetPS( 9 );
@@ -599,7 +638,7 @@ m_tex_texDebugNormals.SetPS( 33 );
 
 				m_device.RenderFullscreenQuad( m_shader_PostProcess );
 
-				m_device.DefaultDepthStencil.RemoveFromLastAssignedSlots();
+				m_tex_depthWithMips.RemoveFromLastAssignedSlots();
 				m_tex_motionVectors.RemoveFromLastAssignedSlots();
 				m_tex_normal.RemoveFromLastAssignedSlots();
 				m_tex_albedo.RemoveFromLastAssignedSlots();

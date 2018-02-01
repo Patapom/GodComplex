@@ -39,8 +39,9 @@ float3	PS( float4 __Position : SV_POSITION ) : SV_TARGET0 {
 #endif
 
 return _tex_Radiance[uint3(__Position.xy, _sourceRadianceIndex)].xyz;
+return _tex_Depth.SampleLevel( LinearClamp, __Position.xy / _resolution, _debugMipIndex );
+return _tex_Depth.mips[_debugMipIndex][__Position.xy];
 return _tex_Normal[__Position.xy].xyz;
 //return 0.5 * (1.0 + _tex_Normal[__Position.xy].xyz);
-return _tex_Depth[__Position.xy];
 return float3( _tex_MotionVectors[__Position.xy], 0 );
 }

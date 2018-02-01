@@ -2,6 +2,8 @@
 // Shaders to compute HBIL
 ////////////////////////////////////////////////////////////////////////////////
 //
+//#define AVERAGE_COSINES 1
+
 #include "Global.hlsl"
 #include "HBIL.hlsl"
 
@@ -24,12 +26,13 @@ float4	VS( float4 __Position : SV_POSITION ) : SV_POSITION { return __Position; 
 
 ////////////////////////////////////////////////////////////////////////////////
 // Implement the methods expected by the HBIL header
-float	FetchDepth( float2 _pixelPosition ) {
-	return Z_FAR * _tex_depth.SampleLevel( LinearClamp, _pixelPosition / _resolution, 0.0 );
+float	FetchDepth( float2 _pixelPosition, float _mipLevel ) {
+//	return _tex_sourceRadiance.SampleLevel( LinearClamp, _pixelPosition / _resolution, _mipLevel ).w;
+	return Z_FAR * _tex_depth.SampleLevel( LinearClamp, _pixelPosition / _resolution, _mipLevel );
 }
 
-float3	FetchRadiance( float2 _pixelPosition ) {
-	return _tex_sourceRadiance.SampleLevel( LinearClamp, _pixelPosition / _resolution, 0.0 ).xyz;
+float3	FetchRadiance( float2 _pixelPosition, float _mipLevel ) {
+	return _tex_sourceRadiance.SampleLevel( LinearClamp, _pixelPosition / _resolution, _mipLevel ).xyz;
 }
 
 float	BilateralFilterDepth( float _centralZ, float _neighborZ, float _radius_m ) {
@@ -98,7 +101,7 @@ PS_OUT	PS( float4 __Position : SV_POSITION ) {
 	float3	wsPos = _Camera2World[3].xyz;
 
 	// Read back depth/distance & normal + rebuild camera-space TBN
-	float	Z = FetchDepth( pixelPosition );
+	float	Z = FetchDepth( pixelPosition, 0.0 );
 	float	distance = Z * Z2Distance;
 	float3	wsNormal = normalize( _tex_normal[pixelPosition].xyz );
 
@@ -120,7 +123,6 @@ PS_OUT	PS( float4 __Position : SV_POSITION ) {
 			sphereRadius_pixels = min( GATHER_SPHERE_MAX_RADIUS_P, sphereRadius_pixels );							// Prevent it to grow larger than our fixed limit
 	float	radiusStepSize_pixels = max( 1.0, sphereRadius_pixels / MAX_SAMPLES );									// This gives us our radial step size in pixels
 	uint	samplesCount = clamp( uint( ceil( sphereRadius_pixels / radiusStepSize_pixels ) ), 1, MAX_SAMPLES );	// Reduce samples count if possible
-
 	float	radiusStepSize_meters = sphereRadius_pixels * screenSize_m / (samplesCount * _resolution.y);			// This gives us our radial step size in meters
 
 	// Start gathering radiance and bent normal by subdividing the screen-space disk around our pixel into Z slices
@@ -169,6 +171,15 @@ PS_OUT	PS( float4 __Position : SV_POSITION ) {
 	#endif
 	ssAverageBentNormal = normalize( ssAverageBentNormal );
 	float	stdDeviation = sqrt( varianceConeAngle );
+
+
+
+#if AVERAGE_COSINES
+averageConeAngle = acos( averageConeAngle );
+varianceConeAngle = acos( varianceConeAngle );
+#endif
+
+
 
 	sumIrradiance *= PI / MAX_ANGLES;
 

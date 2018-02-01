@@ -19,8 +19,8 @@
 
 
 // We assume there exist such methods declared somewhere where _pixelPosition is the position in screen space
-float	FetchDepth( float2 _pixelPosition );				// The return value must be the depth (in meters)
-float3	FetchRadiance( float2 _pixelPosition );				// The return value must be the radiance from last frame (DIFFUSE ONLY!)
+float	FetchDepth( float2 _pixelPosition, float _mipLevel );							// The return value must be the depth (in meters)
+float3	FetchRadiance( float2 _pixelPosition, float _mipLevel );						// The return value must be the radiance from last frame (DIFFUSE ONLY!)
 float	BilateralFilterDepth( float _centralZ, float _neighborZ, float _radius_m );		// The return value must be a [0,1] weight telling whether or not we accept the sample at the specified radius and depth (in meter)
 float	BilateralFilterRadiance( float _centralZ, float _neighborZ, float _radius_m );	// The return value must be a [0,1] weight telling whether or not we accept the sample at the specified radius and depth (in meter)
 
@@ -76,10 +76,10 @@ float2	ComputeIntegralFactors( float2 _ssDirection, float3 _N ) {
 //	_maxCos, the floating maximum cos(theta) that indicates the angle of the perceived horizon
 //	_optionnal_centerRho, the reflectance of the center pixel (fallback only necessary if no albedo map is available and if it's only irradiance that is stored in the source irradiance map instead of radiance, in which case albedo is already pre-mutliplied)
 //
-float3	SampleIrradiance( float2 _ssPosition, float _H0, float _radius, float2 _integralFactors, inout float3 _previousRadiance, inout float _maxCos ) {
+float3	SampleIrradiance( float2 _ssPosition, float _H0, float _radius, float _mipLevel, float2 _integralFactors, inout float3 _previousRadiance, inout float _maxCos ) {
 
 	// Sample new height and update horizon angle
-	float	neighborH = FetchDepth( _ssPosition );
+	float	neighborH = FetchDepth( _ssPosition, _mipLevel );
 	float	deltaH = _H0 - neighborH;
 			deltaH *= BilateralFilterDepth(  _H0, neighborH, _radius );
 	float	H2 = deltaH * deltaH;
@@ -96,7 +96,7 @@ float3	SampleIrradiance( float2 _ssPosition, float _H0, float _radius, float2 _i
 //			_previousRadiance = lerp( _previousRadiance, FetchRadiance( _ssPosition ), bilateralWeight );	// Accept new height and its radiance value
 
 		// Sample always (actually, it's okay now we accepted the height through the first bilateral filter earlier)
-		_previousRadiance = FetchRadiance( _ssPosition );
+		_previousRadiance = FetchRadiance( _ssPosition, _mipLevel );
 	#endif
 
 	// Integrate over horizon difference (always from smallest to largest angle otherwise we get negative results!)
@@ -111,7 +111,7 @@ float3	SampleIrradiance( float2 _ssPosition, float _H0, float _radius, float2 _i
 
 // Gathers the irradiance around the central position
 //	_ssPosition, the central screen-space position (in pixel) where to gather from
-//	_ssDirection, the screen-space direction in which to sample from
+//	_ssDirection, the screen-space direction of the disc slice we're sampling
 //	_Z0, the central depth value (WARNING: Always offset it toward the camera by a little epsilon to avoid horizon acnea)
 //	_csNormal, camera-space normal
 //	_radialStepSizes, size of a radial step to jump from one sample to another (X=step size in pixels, Y=step size in meters)
@@ -155,8 +155,10 @@ float3	GatherIrradiance( float2 _ssPosition, float2 _ssDirection, float _Z0, flo
 		ssPosition_Front += ssStep;
 		ssPosition_Back -= ssStep;
 
-		sumRadiance += SampleIrradiance( ssPosition_Front, _Z0, radius_meters, integralFactors_Front, previousRadiance_Front, maxCos_Front );
-		sumRadiance += SampleIrradiance( ssPosition_Back, _Z0, radius_meters, integralFactors_Back, previousRadianceBack, maxCos_Back );
+		float	mipLevel = 0.0;
+
+		sumRadiance += SampleIrradiance( ssPosition_Front, _Z0, radius_meters, mipLevel, integralFactors_Front, previousRadiance_Front, maxCos_Front );
+		sumRadiance += SampleIrradiance( ssPosition_Back, _Z0, radius_meters, mipLevel, integralFactors_Back, previousRadianceBack, maxCos_Back );
 	}
 
 	// Accumulate bent normal direction by rebuilding and averaging the front & back horizon vectors
@@ -216,6 +218,12 @@ float3	GatherIrradiance( float2 _ssPosition, float2 _ssDirection, float _Z0, flo
 		_coneAngles.x = acos( saturate( dot( _ssBentNormal, ssHorizon_Front ) ) );
 		_coneAngles.y = acos( saturate( dot( _ssBentNormal, ssHorizon_Back ) ) );
 	#endif
+
+
+#if AVERAGE_COSINES
+_coneAngles = float2( saturate( dot( _ssBentNormal, ssHorizon_Front ) ), saturate( dot( _ssBentNormal, ssHorizon_Back ) ) );
+#endif
+
 
 	return sumRadiance;
 }
