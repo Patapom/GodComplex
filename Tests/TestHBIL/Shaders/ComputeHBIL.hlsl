@@ -28,7 +28,7 @@ float4	VS( float4 __Position : SV_POSITION ) : SV_POSITION { return __Position; 
 // Implement the methods expected by the HBIL header
 float	FetchDepth( float2 _pixelPosition, float _mipLevel ) {
 //	return _tex_sourceRadiance.SampleLevel( LinearClamp, _pixelPosition / _resolution, _mipLevel ).w;
-	return Z_FAR * _tex_depth.SampleLevel( LinearClamp, _pixelPosition / _resolution, _mipLevel );
+	return Z_FAR * _tex_depth.SampleLevel( LinearClamp, _pixelPosition / _resolution, 0 );
 }
 
 float3	FetchRadiance( float2 _pixelPosition, float _mipLevel ) {

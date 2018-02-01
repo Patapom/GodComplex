@@ -1,5 +1,6 @@
-﻿//#define BRUTE_FORCE_HBIL	// 25ms at 1280x720... :D
+﻿//#define BRUTE_FORCE_HBIL		// 25ms at 1280x720... :D
 #define BILATERAL_PUSH_PULL
+#define RENDER_IN_DEPTH_STENCIL	// If defined, use the depth-stencil (single mip level) to render, instead of multi-mip RT (this RT allows larger sample footprints when gathering radiance and accelerates the HBIL pass)
 
 //////////////////////////////////////////////////////////////////////////
 // Horizon-Based Indirect Lighting Demo
@@ -219,7 +220,11 @@ namespace TestHBIL {
  					m_shader_Push_FirstPass = new ComputeShader( m_device, new System.IO.FileInfo( "Shaders/ComputeReprojection2.hlsl" ), "CS_Push", new ShaderMacro[] { new ShaderMacro( "FIRST_PASS", "1" ) } );
  					m_shader_Pull_LastPass = new ComputeShader( m_device, new System.IO.FileInfo( "Shaders/ComputeReprojection2.hlsl" ), "CS_Pull", new ShaderMacro[] { new ShaderMacro( "LAST_PASS", "1" ) } );
 				#endif
-				m_shader_RenderScene_DepthGBufferPass = new Shader( m_device, new System.IO.FileInfo( "Shaders/RenderScene.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS_Depth", null );
+				#if RENDER_IN_DEPTH_STENCIL
+					m_shader_RenderScene_DepthGBufferPass = new Shader( m_device, new System.IO.FileInfo( "Shaders/RenderScene.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS_Depth", new ShaderMacro[] { new ShaderMacro( "USE_DEPTH_STENCIL", "1" ) } );
+				#else
+					m_shader_RenderScene_DepthGBufferPass = new Shader( m_device, new System.IO.FileInfo( "Shaders/RenderScene.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS_Depth", null );
+				#endif
 				m_shader_DownSampleDepth = new ComputeShader( m_device, new System.IO.FileInfo( "Shaders/DownSampleDepth.hlsl" ), "CS", null );
 
 				#if BRUTE_FORCE_HBIL
@@ -419,6 +424,12 @@ namespace TestHBIL {
 
 			m_previousFrameCamera2World = m_CB_Camera.m._Camera2World;
 
+			#if RENDER_IN_DEPTH_STENCIL
+				Texture2D	targetDepthStencil = m_device.DefaultDepthStencil;
+			#else
+				Texture2D	targetDepthStencil = m_tex_depthWithMips;
+			#endif
+
 			//////////////////////////////////////////////////////////////////////////
 			// =========== Reproject Last Frame Radiance ===========
 			//
@@ -429,7 +440,7 @@ namespace TestHBIL {
 				m_device.Clear( m_tex_sourceRadiance_PUSH, float4.Zero );
 
 				m_tex_radiance.GetView( 0, 1, m_radianceSourceSliceIndex, 1 ).SetCS( 0 );	// Source radiance from last frame
-				m_device.DefaultDepthStencil.SetCS( 1 );									// Source depth buffer from last frame
+				targetDepthStencil.SetCS( 1 );												// Source depth buffer from last frame
 				m_tex_motionVectors.SetCS( 2 );												// Motion vectors for dynamic objects
 				m_tex_BlueNoise.SetCS( 3 );
 				m_tex_sourceRadiance_PUSH.SetCSUAV( 0 );
@@ -439,7 +450,7 @@ namespace TestHBIL {
 				m_tex_sourceRadiance_PUSH.RemoveFromLastAssignedSlotUAV();
 				m_tex_motionVectors.RemoveFromLastAssignedSlots();
 				m_tex_radiance.RemoveFromLastAssignedSlots();
-				m_device.DefaultDepthStencil.RemoveFromLastAssignedSlots();
+				targetDepthStencil.RemoveFromLastAssignedSlots();
 			}
 
 //*			//////////////////////////////////////////////////////////////////////////
@@ -523,34 +534,42 @@ namespace TestHBIL {
 			// We're actually doing all in one here...
 			//
 			m_device.PerfSetMarker( 2 );
-//			m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.WRITE_ALWAYS, BLEND_STATE.DISABLED );
-			m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
+			#if RENDER_IN_DEPTH_STENCIL
+				m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.WRITE_ALWAYS, BLEND_STATE.DISABLED );
+			#else
+				m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
+			#endif
 
 			if ( m_shader_RenderScene_DepthGBufferPass.Use() ) {
-//				m_device.SetRenderTargets( new IView[] { m_tex_albedo.GetView( 0, 1, 0, 1 ), m_tex_normal.GetView( 0, 1, 0, 1 ), m_tex_motionVectors.GetView( 0, 1, 0, 1 ) }, m_device.DefaultDepthStencil );
-				m_device.SetRenderTargets( new IView[] { m_tex_albedo.GetView( 0, 1, 0, 1 ), m_tex_normal.GetView( 0, 1, 0, 1 ), m_tex_motionVectors.GetView( 0, 1, 0, 1 ), m_tex_depthWithMips.GetView( 0, 1, 0, 1 ) }, null );
+				#if RENDER_IN_DEPTH_STENCIL
+					m_device.SetRenderTargets( new IView[] { m_tex_albedo.GetView( 0, 1, 0, 1 ), m_tex_normal.GetView( 0, 1, 0, 1 ), m_tex_motionVectors.GetView( 0, 1, 0, 1 ) }, targetDepthStencil );
+				#else
+					m_device.SetRenderTargets( new IView[] { m_tex_albedo.GetView( 0, 1, 0, 1 ), m_tex_normal.GetView( 0, 1, 0, 1 ), m_tex_motionVectors.GetView( 0, 1, 0, 1 ), targetDepthStencil.GetView( 0, 1, 0, 1 ) }, null );
+				#endif
 				m_device.RenderFullscreenQuad( m_shader_RenderScene_DepthGBufferPass );
 				m_device.RemoveRenderTargets();
 			}
 
 			// Downsample depth-stencil
 			m_device.PerfSetMarker( 3 );
-			if ( m_shader_DownSampleDepth.Use() ) {
-				for ( uint mipLevel=1; mipLevel < m_tex_depthWithMips.MipLevelsCount; mipLevel++ ) {
-					View2D	targetView = m_tex_depthWithMips.GetView( mipLevel, 1, 0, 1 );
-					targetView.SetCSUAV( 0 );
-					m_tex_depthWithMips.GetView( mipLevel-1, 1, 0, 1 ).SetCS( 0 );
+			#if !RENDER_IN_DEPTH_STENCIL
+				if ( m_shader_DownSampleDepth.Use() ) {
+					for ( uint mipLevel=1; mipLevel < m_tex_depthWithMips.MipLevelsCount; mipLevel++ ) {
+						View2D	targetView = m_tex_depthWithMips.GetView( mipLevel, 1, 0, 1 );
+						targetView.SetCSUAV( 0 );
+						m_tex_depthWithMips.GetView( mipLevel-1, 1, 0, 1 ).SetCS( 0 );
 
-					m_CB_DownSample.m._sizeX = targetView.Width;
-					m_CB_DownSample.m._sizeY = targetView.Height;
-					m_CB_DownSample.UpdateData();
+						m_CB_DownSample.m._sizeX = targetView.Width;
+						m_CB_DownSample.m._sizeY = targetView.Height;
+						m_CB_DownSample.UpdateData();
 
-					m_shader_DownSampleDepth.Dispatch( (m_CB_DownSample.m._sizeX+15) >> 4, (m_CB_DownSample.m._sizeY+15) >> 4, 1 );
+						m_shader_DownSampleDepth.Dispatch( (m_CB_DownSample.m._sizeX+15) >> 4, (m_CB_DownSample.m._sizeY+15) >> 4, 1 );
+					}
+
+					m_tex_depthWithMips.RemoveFromLastAssignedSlots();
+					m_tex_depthWithMips.RemoveFromLastAssignedSlotUAV();
 				}
-
-				m_tex_depthWithMips.RemoveFromLastAssignedSlots();
-				m_tex_depthWithMips.RemoveFromLastAssignedSlotUAV();
-			}
+			#endif
 
 			//////////////////////////////////////////////////////////////////////////
 			// =========== Compute Bent Cone Map and Irradiance Bounces  ===========
@@ -565,7 +584,7 @@ namespace TestHBIL {
 //					m_tex_radiance.GetView( 0, 1, m_radianceSourceSliceIndex, 1 ).SetPS( 0 );	// Reprojected source radiance from last frame
 					m_tex_sourceRadiance_PULL.SetPS( 0 );	// Reprojected source radiance
 					m_tex_normal.SetPS( 1 );
-					m_tex_depthWithMips.SetPS( 2 );
+					targetDepthStencil.SetPS( 2 );
 					m_tex_BlueNoise.SetPS( 3 );
 
 m_tex_texDebugHeights.SetPS( 32 );
@@ -585,8 +604,7 @@ m_tex_texDebugNormals.SetPS( 33 );
 					m_CB_HBIL.m._bilateralValues.Set( floatTrackbarControlBilateral0.Value, floatTrackbarControlBilateral1.Value );
 					m_CB_HBIL.UpdateData();
 
-//					m_device.DefaultDepthStencil.SetPS( 0 );
-					m_tex_depthWithMips.SetPS( 0 );
+					targetDepthStencil.SetPS( 0 );
 					m_tex_sourceRadiance_PULL.SetPS( 1 );	// Reprojected + reconstructed source radiance from last frame with all mips
 					m_tex_normal.SetPS( 2 );
 					m_tex_BlueNoise.SetPS( 3 );
@@ -611,8 +629,7 @@ m_tex_texDebugNormals.SetPS( 33 );
 				m_tex_albedo.SetPS( 0 );
 				m_tex_normal.SetPS( 1 );
 				m_tex_motionVectors.SetPS( 2 );
-//				m_device.DefaultDepthStencil.SetPS( 3 );
-				m_tex_depthWithMips.SetPS( 3 );
+				targetDepthStencil.SetPS( 3 );
 
 				m_tex_radiance.GetView( 0, 1, m_radianceSourceSliceIndex, 1 ).SetPS( 8 );
 				m_tex_bentCone.SetPS( 9 );
@@ -639,7 +656,7 @@ m_tex_texDebugNormals.SetPS( 33 );
 
 				m_device.RenderFullscreenQuad( m_shader_PostProcess );
 
-				m_tex_depthWithMips.RemoveFromLastAssignedSlots();
+				targetDepthStencil.RemoveFromLastAssignedSlots();
 				m_tex_motionVectors.RemoveFromLastAssignedSlots();
 				m_tex_normal.RemoveFromLastAssignedSlots();
 				m_tex_albedo.RemoveFromLastAssignedSlots();
