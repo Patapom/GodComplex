@@ -523,17 +523,18 @@ namespace TestHBIL {
 			// We're actually doing all in one here...
 			//
 			m_device.PerfSetMarker( 2 );
-			m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.WRITE_ALWAYS, BLEND_STATE.DISABLED );
-//			m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
+//			m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.WRITE_ALWAYS, BLEND_STATE.DISABLED );
+			m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
 
 			if ( m_shader_RenderScene_DepthGBufferPass.Use() ) {
-				m_device.SetRenderTargets( new IView[] { m_tex_albedo.GetView( 0, 1, 0, 1 ), m_tex_normal.GetView( 0, 1, 0, 1 ), m_tex_motionVectors.GetView( 0, 1, 0, 1 ) }, m_device.DefaultDepthStencil );
-//				m_device.SetRenderTargets( new IView[] { m_tex_albedo.GetView( 0, 1, 0, 1 ), m_tex_normal.GetView( 0, 1, 0, 1 ), m_tex_motionVectors.GetView( 0, 1, 0, 1 ), m_tex_depthWithMips.GetView( 0, 1, 0, 1 ) }, null );
+//				m_device.SetRenderTargets( new IView[] { m_tex_albedo.GetView( 0, 1, 0, 1 ), m_tex_normal.GetView( 0, 1, 0, 1 ), m_tex_motionVectors.GetView( 0, 1, 0, 1 ) }, m_device.DefaultDepthStencil );
+				m_device.SetRenderTargets( new IView[] { m_tex_albedo.GetView( 0, 1, 0, 1 ), m_tex_normal.GetView( 0, 1, 0, 1 ), m_tex_motionVectors.GetView( 0, 1, 0, 1 ), m_tex_depthWithMips.GetView( 0, 1, 0, 1 ) }, null );
 				m_device.RenderFullscreenQuad( m_shader_RenderScene_DepthGBufferPass );
 				m_device.RemoveRenderTargets();
 			}
 
 			// Downsample depth-stencil
+			m_device.PerfSetMarker( 3 );
 			if ( m_shader_DownSampleDepth.Use() ) {
 				for ( uint mipLevel=1; mipLevel < m_tex_depthWithMips.MipLevelsCount; mipLevel++ ) {
 					View2D	targetView = m_tex_depthWithMips.GetView( mipLevel, 1, 0, 1 );
@@ -554,7 +555,7 @@ namespace TestHBIL {
 			//////////////////////////////////////////////////////////////////////////
 			// =========== Compute Bent Cone Map and Irradiance Bounces  ===========
 			// 
-			m_device.PerfSetMarker( 3 );
+			m_device.PerfSetMarker( 4 );
 			m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
 
 			#if BRUTE_FORCE_HBIL
@@ -584,10 +585,10 @@ m_tex_texDebugNormals.SetPS( 33 );
 					m_CB_HBIL.m._bilateralValues.Set( floatTrackbarControlBilateral0.Value, floatTrackbarControlBilateral1.Value );
 					m_CB_HBIL.UpdateData();
 
-					m_tex_sourceRadiance_PULL.SetPS( 0 );	// Reprojected + reconstructed source radiance from last frame with all mips
-					m_tex_normal.SetPS( 1 );
-					m_device.DefaultDepthStencil.SetPS( 2 );
-//					m_tex_depthWithMips.SetPS( 2 );
+//					m_device.DefaultDepthStencil.SetPS( 0 );
+					m_tex_depthWithMips.SetPS( 0 );
+					m_tex_sourceRadiance_PULL.SetPS( 1 );	// Reprojected + reconstructed source radiance from last frame with all mips
+					m_tex_normal.SetPS( 2 );
 					m_tex_BlueNoise.SetPS( 3 );
 
 					m_device.RenderFullscreenQuad( m_shader_ComputeHBIL );
@@ -601,7 +602,7 @@ m_tex_texDebugNormals.SetPS( 33 );
 			//////////////////////////////////////////////////////////////////////////
 			// =========== Compute lighting & finalize radiance  ===========
 			// 
-			m_device.PerfSetMarker( 4 );
+			m_device.PerfSetMarker( 5 );
 			m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
 
 			if ( m_shader_ComputeLighting.Use() ) {
@@ -610,8 +611,8 @@ m_tex_texDebugNormals.SetPS( 33 );
 				m_tex_albedo.SetPS( 0 );
 				m_tex_normal.SetPS( 1 );
 				m_tex_motionVectors.SetPS( 2 );
-				m_device.DefaultDepthStencil.SetPS( 3 );
-//				m_tex_depthWithMips.SetPS( 3 );
+//				m_device.DefaultDepthStencil.SetPS( 3 );
+				m_tex_depthWithMips.SetPS( 3 );
 
 				m_tex_radiance.GetView( 0, 1, m_radianceSourceSliceIndex, 1 ).SetPS( 8 );
 				m_tex_bentCone.SetPS( 9 );
@@ -625,7 +626,7 @@ m_tex_texDebugNormals.SetPS( 33 );
 //*/
 			//////////////////////////////////////////////////////////////////////////
 			// =========== Post-Process ===========
-			m_device.PerfSetMarker( 5 );
+			m_device.PerfSetMarker( 6 );
 			m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
 
 			if ( m_shader_PostProcess.Use() ) {
@@ -673,9 +674,10 @@ m_tex_texDebugNormals.SetPS( 33 );
 			double	timeReprojection = m_device.PerfGetMilliSeconds( 0 );
 			double	timePushPull = m_device.PerfGetMilliSeconds( 1 );
 			double	timeRenderGBuffer = m_device.PerfGetMilliSeconds( 2 );
-			double	timeHBIL = m_device.PerfGetMilliSeconds( 3 );
-			double	timeComputeLighting = m_device.PerfGetMilliSeconds( 4 );
-			double	timePostProcess = m_device.PerfGetMilliSeconds( 5 );
+			double	timeDownSampleDepth = m_device.PerfGetMilliSeconds( 3 );
+			double	timeHBIL = m_device.PerfGetMilliSeconds( 4 );
+			double	timeComputeLighting = m_device.PerfGetMilliSeconds( 5 );
+			double	timePostProcess = m_device.PerfGetMilliSeconds( 6 );
 
 			float	totalTime = m_currentTime - m_startTime;
 			textBoxInfo.Text = "Total Time = " + totalTime + " seconds\r\n"
@@ -684,6 +686,7 @@ m_tex_texDebugNormals.SetPS( 33 );
 							 + "Reprojection: " + timeReprojection.ToString( "G4" ) + " ms\r\n"
 							 + "Push-Pull: " + timePushPull.ToString( "G4" ) + " ms\r\n"
 							 + "G-Buffer Rendering: " + timeRenderGBuffer.ToString( "G4" ) + " ms\r\n"
+							 + "DownSample Depth: " + timeDownSampleDepth.ToString( "G4" ) + " ms\r\n"
 							 + "HBIL: " + timeHBIL.ToString( "G4" ) + " ms\r\n"
 							 + "Lighting: " + timeComputeLighting.ToString( "G4" ) + " ms\r\n"
 							 + "Post-Processing: " + timePostProcess.ToString( "G4" ) + " ms\r\n"

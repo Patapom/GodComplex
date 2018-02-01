@@ -12,9 +12,9 @@ static const float	GATHER_SPHERE_MAX_RADIUS_P = 100.0;	// Maximum radius (in pix
 #define MAX_ANGLES	8									// Amount of circle subdivisions per pixel
 #define MAX_SAMPLES	32									// Maximum amount of samples per circle subdivision
 
-Texture2D< float4 >	_tex_sourceRadiance : register(t0);
-Texture2D< float4 >	_tex_normal : register(t1);
-Texture2D< float >	_tex_depth : register(t2);			// Depth or distance buffer (here we're given distances)
+Texture2D< float >	_tex_depth : register(t0);			// Depth or distance buffer (here we're given depth)
+Texture2D< float4 >	_tex_sourceRadiance : register(t1);	// Last frame's reprojected radiance buffer
+Texture2D< float4 >	_tex_normal : register(t2);			// Camera-space normal vectors
 Texture2D< float >	_tex_blueNoise : register(t3);
 
 cbuffer CB_HBIL : register( b3 ) {

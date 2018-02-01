@@ -21,7 +21,9 @@ float	Depth2Weight( float _depth ) {
 float3	PS( float4 __Position : SV_POSITION ) : SV_TARGET0 {
 	float2	UV = __Position.xy / _resolution;
 //	return float3( UV, 0 );
+
 //return _exposure * _tex_FinalRender[__Position.xy].xyz;
+
 //return length(_tex_BentCone[__Position.xy].xyz);
 //return _tex_BentCone[__Position.xy].w;
 //return _tex_BentCone[__Position.xy].xyz;
@@ -38,7 +40,7 @@ float3	PS( float4 __Position : SV_POSITION ) : SV_TARGET0 {
 	return V.xyz;
 #endif
 
-return _tex_Radiance[uint3(__Position.xy, _sourceRadianceIndex)].xyz;
+//return _tex_Radiance[uint3(__Position.xy, _sourceRadianceIndex)].xyz;
 return _tex_Depth.SampleLevel( LinearClamp, __Position.xy / _resolution, _debugMipIndex );
 return _tex_Depth.mips[_debugMipIndex][__Position.xy];
 return _tex_Normal[__Position.xy].xyz;

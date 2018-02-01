@@ -7,8 +7,8 @@ struct PS_OUT {
 	float3	albedo : SV_TARGET0;
 	float3	normal : SV_TARGET1;
 	float3	csVelocity : SV_TARGET2;	// Camera-space velocity
-	float	depth : SV_DEPTH;			// When using a regular depth-stencil buffer
-//	float	depth : SV_TARGET3;			// When using a R32 target
+//	float	depth : SV_DEPTH;			// When using a regular depth-stencil buffer
+	float	depth : SV_TARGET3;			// When using a R32 target
 };
 
 PS_OUT	PS_Depth( float4 __Position : SV_POSITION ) {
