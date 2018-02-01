@@ -7,7 +7,8 @@
 #define THREADS_X	16
 #define THREADS_Y	16
 
-#define PIXEL_SHIFT			2
+// Change pixel shift to skip 1 every N pixels (reprojection will be cheaper but reconstruction will be rougher)
+#define PIXEL_SHIFT			0
 #define PIXEL_STRIDE		(1 << PIXEL_SHIFT)
 #define USE_NOISE_JITTER	0
 
@@ -80,7 +81,7 @@ void	CS_Reproject( uint3 _groupID : SV_groupID, uint3 _groupThreadID : SV_groupT
 
 // Returns a very weak weight if depths are deemed un-interesting (too close or too far away) but never 0 (0 is reserved for uninitialized values)
 float	Depth2Weight( float _depth ) {
-	return step( 1e-3, _depth );
+	return step( 1e-3, _depth );	// Simple ON / OFF validation
 //	return _depth < 1e-3 ? 0.0	// Keep uninitialized values as invalid
 //						 : lerp( 0.001, 1.0, smoothstep( 0.0, 1.0, _depth ) * smoothstep( 100.0, 40.0, _depth ) );	// Otherwise, we maximize the weights of samples whose depth is between 1 and 40 meters
 }

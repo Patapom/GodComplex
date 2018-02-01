@@ -2,9 +2,10 @@
 // Shaders to compute HBIL
 ////////////////////////////////////////////////////////////////////////////////
 //
-#include "Global.hlsl"
+#include "../Global.hlsl"
 #include "HBIL.hlsl"
 
+static const float	GATHER_SPHERE_RADIUS_M = 1.0;		// Radius of the sphere that will gather our irradiance samples (in meters)
 static const float	GATHER_SPHERE_MAX_RADIUS_P = 100.0;	// Maximum radius (in pixels) that we allow our sphere to get
 
 #define MAX_ANGLES	8									// Amount of circle subdivisions per pixel
@@ -15,17 +16,29 @@ Texture2D< float4 >	_tex_normal : register(t1);
 Texture2D< float >	_tex_depth : register(t2);			// Depth or distance buffer (here we're given distances)
 Texture2D< float >	_tex_blueNoise : register(t3);
 
-cbuffer CB_HBIL : register( b3 ) {
-	float	_gatherSphereMaxRadius_m;		// Radius of the sphere that will gather our irradiance samples (in meters)
-};
+//#define USE_DEBUG_TEXTURES	1	// Define this to sample scene from height + normal textures instead of 3D scene
+#define	DEBUG_TEXTURE_SIZE			1.0	// Size of the texture in meters
+#define	DEBUG_TEXTURE_MAX_HEIGHT	0.45	// Maximum height encoded in the debug height map
+
+#if USE_DEBUG_TEXTURES
+Texture2D< float >	_tex_debugHeightMap : register(t32);
+Texture2D< float3 >	_tex_debugNormalMap : register(t33);
+#endif
 
 float4	VS( float4 __Position : SV_POSITION ) : SV_POSITION { return __Position; }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Implement the methods expected by the HBIL header
-float	FetchDepth( float2 _pixelPosition ) {
-	return Z_FAR * _tex_depth.SampleLevel( LinearClamp, _pixelPosition / _resolution, 0.0 );
-}
+#if !USE_DEBUG_TEXTURES
+	float	FetchDepth( float2 _pixelPosition ) {
+		return Z_FAR * _tex_depth.SampleLevel( LinearClamp, _pixelPosition / _resolution, 0.0 );
+	}
+#else
+	float	FetchDepth( float2 _pixelPosition ) {
+		return DEBUG_TEXTURE_MAX_HEIGHT * (1.0 - _tex_debugHeightMap.SampleLevel( LinearClamp, float2( 0.5 + (_pixelPosition.x - 0.5 * _resolution.x) / _resolution.y, _pixelPosition.y / _resolution.y ), 0.0 ));
+//		return DEBUG_TEXTURE_MAX_HEIGHT * _tex_debugHeightMap.SampleLevel( LinearClamp, _pixelPosition / _resolution, 0.0 );
+	}
+#endif
 
 float3	FetchRadiance( float2 _pixelPosition ) {
 	return _tex_sourceRadiance.SampleLevel( LinearClamp, _pixelPosition / _resolution, 0.0 ).xyz;
@@ -202,6 +215,7 @@ PS_OUT	PS( float4 __Position : SV_POSITION ) {
 
 	// Read back depth/distance & normal + rebuild camera-space TBN
 	float	Z = FetchDepth( pixelPosition );
+#if !USE_DEBUG_TEXTURES
 	float	distance = Z * Z2Distance;
 	float3	wsNormal = normalize( _tex_normal[pixelPosition].xyz );
 	#if 0
@@ -230,12 +244,22 @@ PS_OUT	PS( float4 __Position : SV_POSITION ) {
 
 	// Compute screen radius of gather sphere
 	float	screenSize_m = 2.0 * Z * TAN_HALF_FOV;	// Vertical size of the screen in meters when extended to distance Z
-	float	sphereRadius_pixels = _resolution.y * _gatherSphereMaxRadius_m / screenSize_m;
+	float	sphereRadius_pixels = _resolution.y * GATHER_SPHERE_RADIUS_M / screenSize_m;
 			sphereRadius_pixels = min( GATHER_SPHERE_MAX_RADIUS_P, sphereRadius_pixels );							// Prevent it to grow larger than our fixed limit
 	float	radiusStepSize_pixels = max( 1.0, sphereRadius_pixels / MAX_SAMPLES );									// This gives us our radial step size in pixels
 	uint	samplesCount = clamp( uint( ceil( sphereRadius_pixels / radiusStepSize_pixels ) ), 1, MAX_SAMPLES );	// Reduce samples count if possible
 
 	float	radiusStepSize_meters = sphereRadius_pixels * screenSize_m / (samplesCount * _resolution.y);			// This gives us our radial step size in meters
+
+#else // #if USE_DEBUG_TEXTURES
+	float3	N = normalize( _tex_debugNormalMap.Sample( LinearWrap, UV ).xyz );
+	float3	T, B;
+	BuildOrthonormalBasis( N, T, B );
+
+	uint	samplesCount = MAX_SAMPLES;
+	float	radiusStepSize_pixels = 2.0;
+	float	radiusStepSize_meters = radiusStepSize_pixels * (DEBUG_TEXTURE_SIZE / _resolution.y);
+#endif
 
 	// Start gathering radiance and bent normal by subdividing the screen-space disk around our pixel into Z slices
 	float4	GATHER_DEBUG = 0.0;

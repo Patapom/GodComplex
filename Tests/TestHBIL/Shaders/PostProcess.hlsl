@@ -29,7 +29,7 @@ float3	PS( float4 __Position : SV_POSITION ) : SV_TARGET0 {
 //return _tex_SourceRadiance.mips[_debugMipIndex][__Position.xy].xyz;
 //return saturate( _tex_SourceRadiance.SampleLevel( LinearClamp, __Position.xy / _resolution, _debugMipIndex ).w );
 
-#if 1
+#if 0	// DEBUG PUSH/PULL
 	float4	V = (_flags & 0x100U) ? _tex_SourceRadiance_PULL.SampleLevel( LinearClamp, __Position.xy / _resolution, _debugMipIndex ) : _tex_SourceRadiance_PUSH.SampleLevel( LinearClamp, __Position.xy / _resolution, _debugMipIndex );
 //	if ( _debugMipIndex == 0 )
 //		V.w = Depth2Weight( V.w );
