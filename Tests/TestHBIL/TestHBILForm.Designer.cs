@@ -47,17 +47,24 @@
 			this.checkBoxEnableConeVisibility = new System.Windows.Forms.CheckBox();
 			this.checkBoxForceAlbedo = new System.Windows.Forms.CheckBox();
 			this.textBoxInfo = new System.Windows.Forms.TextBox();
-			this.panelOutput = new TestHBIL.PanelOutput(this.components);
 			this.checkBoxMonochrome = new System.Windows.Forms.CheckBox();
 			this.label1 = new System.Windows.Forms.Label();
 			this.floatTrackbarControlConeAngleBias = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.integerTrackbarControlDebugMip = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
-			this.label2 = new System.Windows.Forms.Label();
 			this.checkBoxAutoRotateCamera = new System.Windows.Forms.CheckBox();
 			this.floatTrackbarControlCameraRotateSpeed = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.panel2 = new System.Windows.Forms.Panel();
-			this.radioButtonPUSH = new System.Windows.Forms.RadioButton();
 			this.radioButtonPULL = new System.Windows.Forms.RadioButton();
+			this.radioButtonPUSH = new System.Windows.Forms.RadioButton();
+			this.label2 = new System.Windows.Forms.Label();
+			this.label7 = new System.Windows.Forms.Label();
+			this.label4 = new System.Windows.Forms.Label();
+			this.label3 = new System.Windows.Forms.Label();
+			this.floatTrackbarControlHarmonicPreferedDepth = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlBilateralDepthDeltaMax = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlBilateralDepthDeltaMin = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.panelOutput = new TestHBIL.PanelOutput(this.components);
+			this.checkBoxFreezePrev2CurrentCamMatrix = new System.Windows.Forms.CheckBox();
 			this.panel2.SuspendLayout();
 			this.SuspendLayout();
 			// 
@@ -245,16 +252,6 @@
 			this.textBoxInfo.Size = new System.Drawing.Size(329, 267);
 			this.textBoxInfo.TabIndex = 9;
 			// 
-			// panelOutput
-			// 
-			this.panelOutput.Location = new System.Drawing.Point(12, 12);
-			this.panelOutput.Name = "panelOutput";
-			this.panelOutput.Size = new System.Drawing.Size(1280, 720);
-			this.panelOutput.TabIndex = 0;
-			this.panelOutput.MouseDown += new System.Windows.Forms.MouseEventHandler(this.panelOutput_MouseDown);
-			this.panelOutput.MouseMove += new System.Windows.Forms.MouseEventHandler(this.panelOutput_MouseMove);
-			this.panelOutput.MouseUp += new System.Windows.Forms.MouseEventHandler(this.panelOutput_MouseUp);
-			// 
 			// checkBoxMonochrome
 			// 
 			this.checkBoxMonochrome.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
@@ -296,8 +293,7 @@
 			// 
 			// integerTrackbarControlDebugMip
 			// 
-			this.integerTrackbarControlDebugMip.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-			this.integerTrackbarControlDebugMip.Location = new System.Drawing.Point(129, 22);
+			this.integerTrackbarControlDebugMip.Location = new System.Drawing.Point(129, 3);
 			this.integerTrackbarControlDebugMip.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.integerTrackbarControlDebugMip.MinimumSize = new System.Drawing.Size(70, 20);
 			this.integerTrackbarControlDebugMip.Name = "integerTrackbarControlDebugMip";
@@ -307,21 +303,11 @@
 			this.integerTrackbarControlDebugMip.Value = 0;
 			this.integerTrackbarControlDebugMip.VisibleRangeMax = 10;
 			// 
-			// label2
-			// 
-			this.label2.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-			this.label2.AutoSize = true;
-			this.label2.Location = new System.Drawing.Point(57, 26);
-			this.label2.Name = "label2";
-			this.label2.Size = new System.Drawing.Size(59, 13);
-			this.label2.TabIndex = 3;
-			this.label2.Text = "Debug Mip";
-			// 
 			// checkBoxAutoRotateCamera
 			// 
 			this.checkBoxAutoRotateCamera.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
 			this.checkBoxAutoRotateCamera.AutoSize = true;
-			this.checkBoxAutoRotateCamera.Location = new System.Drawing.Point(1299, 396);
+			this.checkBoxAutoRotateCamera.Location = new System.Drawing.Point(1298, 333);
 			this.checkBoxAutoRotateCamera.Name = "checkBoxAutoRotateCamera";
 			this.checkBoxAutoRotateCamera.Size = new System.Drawing.Size(122, 17);
 			this.checkBoxAutoRotateCamera.TabIndex = 4;
@@ -332,7 +318,7 @@
 			// floatTrackbarControlCameraRotateSpeed
 			// 
 			this.floatTrackbarControlCameraRotateSpeed.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-			this.floatTrackbarControlCameraRotateSpeed.Location = new System.Drawing.Point(1427, 396);
+			this.floatTrackbarControlCameraRotateSpeed.Location = new System.Drawing.Point(1426, 333);
 			this.floatTrackbarControlCameraRotateSpeed.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlCameraRotateSpeed.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlCameraRotateSpeed.Name = "floatTrackbarControlCameraRotateSpeed";
@@ -340,20 +326,38 @@
 			this.floatTrackbarControlCameraRotateSpeed.RangeMin = -1000F;
 			this.floatTrackbarControlCameraRotateSpeed.Size = new System.Drawing.Size(200, 20);
 			this.floatTrackbarControlCameraRotateSpeed.TabIndex = 1;
-			this.floatTrackbarControlCameraRotateSpeed.Value = 4.0F;
+			this.floatTrackbarControlCameraRotateSpeed.Value = 4F;
 			this.floatTrackbarControlCameraRotateSpeed.VisibleRangeMax = 4F;
 			this.floatTrackbarControlCameraRotateSpeed.VisibleRangeMin = -4F;
 			// 
 			// panel2
 			// 
+			this.panel2.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
 			this.panel2.Controls.Add(this.radioButtonPULL);
 			this.panel2.Controls.Add(this.radioButtonPUSH);
 			this.panel2.Controls.Add(this.integerTrackbarControlDebugMip);
 			this.panel2.Controls.Add(this.label2);
-			this.panel2.Location = new System.Drawing.Point(1298, 435);
+			this.panel2.Controls.Add(this.label7);
+			this.panel2.Controls.Add(this.label4);
+			this.panel2.Controls.Add(this.label3);
+			this.panel2.Controls.Add(this.floatTrackbarControlHarmonicPreferedDepth);
+			this.panel2.Controls.Add(this.floatTrackbarControlBilateralDepthDeltaMax);
+			this.panel2.Controls.Add(this.floatTrackbarControlBilateralDepthDeltaMin);
+			this.panel2.Location = new System.Drawing.Point(1297, 372);
 			this.panel2.Name = "panel2";
-			this.panel2.Size = new System.Drawing.Size(329, 49);
+			this.panel2.Size = new System.Drawing.Size(339, 133);
 			this.panel2.TabIndex = 11;
+			// 
+			// radioButtonPULL
+			// 
+			this.radioButtonPULL.AutoSize = true;
+			this.radioButtonPULL.Location = new System.Drawing.Point(8, 25);
+			this.radioButtonPULL.Name = "radioButtonPULL";
+			this.radioButtonPULL.Size = new System.Drawing.Size(82, 17);
+			this.radioButtonPULL.TabIndex = 11;
+			this.radioButtonPULL.TabStop = true;
+			this.radioButtonPULL.Text = "PULL Chain";
+			this.radioButtonPULL.UseVisualStyleBackColor = true;
 			// 
 			// radioButtonPUSH
 			// 
@@ -367,16 +371,103 @@
 			this.radioButtonPUSH.Text = "PUSH Chain";
 			this.radioButtonPUSH.UseVisualStyleBackColor = true;
 			// 
-			// radioButton1
+			// label2
 			// 
-			this.radioButtonPULL.AutoSize = true;
-			this.radioButtonPULL.Location = new System.Drawing.Point(99, 3);
-			this.radioButtonPULL.Name = "radioButton1";
-			this.radioButtonPULL.Size = new System.Drawing.Size(82, 17);
-			this.radioButtonPULL.TabIndex = 11;
-			this.radioButtonPULL.TabStop = true;
-			this.radioButtonPULL.Text = "PULL Chain";
-			this.radioButtonPULL.UseVisualStyleBackColor = true;
+			this.label2.AutoSize = true;
+			this.label2.Location = new System.Drawing.Point(99, 5);
+			this.label2.Name = "label2";
+			this.label2.Size = new System.Drawing.Size(24, 13);
+			this.label2.TabIndex = 3;
+			this.label2.Text = "Mip";
+			// 
+			// label7
+			// 
+			this.label7.AutoSize = true;
+			this.label7.Location = new System.Drawing.Point(7, 107);
+			this.label7.Name = "label7";
+			this.label7.Size = new System.Drawing.Size(79, 13);
+			this.label7.TabIndex = 3;
+			this.label7.Text = "Prefered Depth";
+			// 
+			// label4
+			// 
+			this.label4.AutoSize = true;
+			this.label4.Location = new System.Drawing.Point(8, 81);
+			this.label4.Name = "label4";
+			this.label4.Size = new System.Drawing.Size(95, 13);
+			this.label4.TabIndex = 3;
+			this.label4.Text = "Bilateral Delta Max";
+			// 
+			// label3
+			// 
+			this.label3.AutoSize = true;
+			this.label3.Location = new System.Drawing.Point(8, 55);
+			this.label3.Name = "label3";
+			this.label3.Size = new System.Drawing.Size(92, 13);
+			this.label3.TabIndex = 3;
+			this.label3.Text = "Bilateral Delta Min";
+			// 
+			// floatTrackbarControlHarmonicPreferedDepth
+			// 
+			this.floatTrackbarControlHarmonicPreferedDepth.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+			this.floatTrackbarControlHarmonicPreferedDepth.Location = new System.Drawing.Point(128, 104);
+			this.floatTrackbarControlHarmonicPreferedDepth.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlHarmonicPreferedDepth.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlHarmonicPreferedDepth.Name = "floatTrackbarControlHarmonicPreferedDepth";
+			this.floatTrackbarControlHarmonicPreferedDepth.RangeMax = 1000F;
+			this.floatTrackbarControlHarmonicPreferedDepth.RangeMin = 0F;
+			this.floatTrackbarControlHarmonicPreferedDepth.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlHarmonicPreferedDepth.TabIndex = 1;
+			this.floatTrackbarControlHarmonicPreferedDepth.Value = 5F;
+			// 
+			// floatTrackbarControlBilateralDepthDeltaMax
+			// 
+			this.floatTrackbarControlBilateralDepthDeltaMax.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+			this.floatTrackbarControlBilateralDepthDeltaMax.Location = new System.Drawing.Point(129, 78);
+			this.floatTrackbarControlBilateralDepthDeltaMax.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlBilateralDepthDeltaMax.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlBilateralDepthDeltaMax.Name = "floatTrackbarControlBilateralDepthDeltaMax";
+			this.floatTrackbarControlBilateralDepthDeltaMax.RangeMax = 1000F;
+			this.floatTrackbarControlBilateralDepthDeltaMax.RangeMin = 0F;
+			this.floatTrackbarControlBilateralDepthDeltaMax.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlBilateralDepthDeltaMax.TabIndex = 1;
+			this.floatTrackbarControlBilateralDepthDeltaMax.Value = 4F;
+			this.floatTrackbarControlBilateralDepthDeltaMax.VisibleRangeMax = 4F;
+			// 
+			// floatTrackbarControlBilateralDepthDeltaMin
+			// 
+			this.floatTrackbarControlBilateralDepthDeltaMin.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+			this.floatTrackbarControlBilateralDepthDeltaMin.Location = new System.Drawing.Point(129, 52);
+			this.floatTrackbarControlBilateralDepthDeltaMin.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlBilateralDepthDeltaMin.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlBilateralDepthDeltaMin.Name = "floatTrackbarControlBilateralDepthDeltaMin";
+			this.floatTrackbarControlBilateralDepthDeltaMin.RangeMax = 1000F;
+			this.floatTrackbarControlBilateralDepthDeltaMin.RangeMin = 0F;
+			this.floatTrackbarControlBilateralDepthDeltaMin.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlBilateralDepthDeltaMin.TabIndex = 1;
+			this.floatTrackbarControlBilateralDepthDeltaMin.Value = 0F;
+			this.floatTrackbarControlBilateralDepthDeltaMin.VisibleRangeMax = 1F;
+			// 
+			// panelOutput
+			// 
+			this.panelOutput.Location = new System.Drawing.Point(12, 12);
+			this.panelOutput.Name = "panelOutput";
+			this.panelOutput.Size = new System.Drawing.Size(1280, 720);
+			this.panelOutput.TabIndex = 0;
+			this.panelOutput.MouseDown += new System.Windows.Forms.MouseEventHandler(this.panelOutput_MouseDown);
+			this.panelOutput.MouseMove += new System.Windows.Forms.MouseEventHandler(this.panelOutput_MouseMove);
+			this.panelOutput.MouseUp += new System.Windows.Forms.MouseEventHandler(this.panelOutput_MouseUp);
+			// 
+			// checkBoxFreezePrev2CurrentCamMatrix
+			// 
+			this.checkBoxFreezePrev2CurrentCamMatrix.AutoSize = true;
+			this.checkBoxFreezePrev2CurrentCamMatrix.Location = new System.Drawing.Point(1298, 353);
+			this.checkBoxFreezePrev2CurrentCamMatrix.Name = "checkBoxFreezePrev2CurrentCamMatrix";
+			this.checkBoxFreezePrev2CurrentCamMatrix.Size = new System.Drawing.Size(175, 17);
+			this.checkBoxFreezePrev2CurrentCamMatrix.TabIndex = 4;
+			this.checkBoxFreezePrev2CurrentCamMatrix.Text = "Freeze Temporal Camera Matrix";
+			this.checkBoxFreezePrev2CurrentCamMatrix.UseVisualStyleBackColor = true;
+			this.checkBoxFreezePrev2CurrentCamMatrix.CheckedChanged += new System.EventHandler(this.checkBoxForceAlbedo_CheckedChanged);
 			// 
 			// TestHBILForm
 			// 
@@ -401,14 +492,17 @@
 			this.Controls.Add(this.floatTrackbarControlExposure);
 			this.Controls.Add(this.checkBoxPause);
 			this.Controls.Add(this.checkBoxMonochrome);
+			this.Controls.Add(this.checkBoxFreezePrev2CurrentCamMatrix);
 			this.Controls.Add(this.checkBoxAutoRotateCamera);
 			this.Controls.Add(this.checkBoxForceAlbedo);
 			this.Controls.Add(this.checkBoxAnimate);
 			this.Controls.Add(this.panelOutput);
 			this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedToolWindow;
+			this.KeyPreview = true;
 			this.Name = "TestHBILForm";
 			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
 			this.Text = "HBIL Test";
+			this.KeyDown += new System.Windows.Forms.KeyEventHandler(this.TestHBILForm_KeyDown);
 			this.panel2.ResumeLayout(false);
 			this.panel2.PerformLayout();
 			this.ResumeLayout(false);
@@ -439,12 +533,19 @@
 		private System.Windows.Forms.Label label1;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlConeAngleBias;
 		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlDebugMip;
-		private System.Windows.Forms.Label label2;
 		private System.Windows.Forms.CheckBox checkBoxAutoRotateCamera;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlCameraRotateSpeed;
 		private System.Windows.Forms.Panel panel2;
 		private System.Windows.Forms.RadioButton radioButtonPULL;
 		private System.Windows.Forms.RadioButton radioButtonPUSH;
+		private System.Windows.Forms.Label label2;
+		private System.Windows.Forms.Label label4;
+		private System.Windows.Forms.Label label3;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlBilateralDepthDeltaMax;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlBilateralDepthDeltaMin;
+		private System.Windows.Forms.Label label7;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlHarmonicPreferedDepth;
+		private System.Windows.Forms.CheckBox checkBoxFreezePrev2CurrentCamMatrix;
 	}
 }
 

@@ -21,6 +21,8 @@ RWTexture2D< float4 >	_tex_reprojectedRadiance : register(u0);
 
 cbuffer CB_PushPull : register( b3 ) {
 	uint2	_targetSize;
+	float2	_bilateralDepths;
+	float	_preferedDepth;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -64,11 +66,6 @@ void	CS_Reproject( uint3 _groupID : SV_groupID, uint3 _groupThreadID : SV_groupT
 
 	float3	previousRadiance = _tex_sourceRadiance[pixelPosition].xyz;
 
-//previousRadiance = float3( UV, 0 );
-//previousRadiance = float3( newUV, 0 );
-//previousRadiance = float3( 1, 0, 1 );
-//previousRadiance = float( noise1D ) / PIXEL_STRIDE*PIXEL_STRIDE;
-
 	_tex_reprojectedRadiance[newPixelPosition] = float4( previousRadiance, newZ );	// Store depth in alpha (will be used for bilateral filtering later)
 }
 
@@ -87,6 +84,12 @@ float	Depth2Weight( float _depth ) {
 						 : lerp( 0.001, 1.0, smoothstep( 0.0, 1.0, _depth ) * smoothstep( 100.0, 40.0, _depth ) );	// Otherwise, we maximize the weights of samples whose depth is between 1 and 40 meters
 }
 
+// Returns 0 if the depths are too far appart from each other...
+float	BilateralWeight( float _depth0, float _depth1 ) {
+	float	dZ = _depth0 - _depth1;
+	return 1e-3 + smoothstep( _bilateralDepths.y, _bilateralDepths.x, dZ * dZ );
+}
+
 [numthreads( THREADS_X, THREADS_Y, 1 )]
 void	CS_Push( uint3 _groupID : SV_groupID, uint3 _groupThreadID : SV_groupThreadID, uint3 _dispatchThreadID : SV_dispatchThreadID ) {
 	uint2	targetPixelIndex = _dispatchThreadID.xy;
@@ -100,26 +103,40 @@ void	CS_Push( uint3 _groupID : SV_groupID, uint3 _groupThreadID : SV_groupThread
 	float4	V11 = _tex_sourceRadiance[sourcePixelIndex];	sourcePixelIndex.x--;
 	float4	V01 = _tex_sourceRadiance[sourcePixelIndex];	sourcePixelIndex.y--;
 
-	#if FIRST_PASS
-		// Mip 0 contains depth information that we must transform into proper weights
-		V00.w = Depth2Weight( V00.w );
-		V10.w = Depth2Weight( V10.w );
-		V11.w = Depth2Weight( V11.w );
-		V01.w = Depth2Weight( V01.w );
-	#endif
+	// Compute depth weight
+	float	w00 = Depth2Weight( V00.w );
+	float	w10 = Depth2Weight( V10.w );
+	float	w11 = Depth2Weight( V11.w );
+	float	w01 = Depth2Weight( V01.w );
+	float	sumWeights = w00 + w10 + w01 + w11;
 
-	// Pre-multiply by alpha
-	float3	C = V00.w * V00.xyz
-			  + V10.w * V10.xyz
-			  + V01.w * V01.xyz
-			  + V11.w * V11.xyz;
+	// Compute average depth by harmonic mean with offset
+	float	meanOffset = _preferedDepth;
+	float	avgZ = w00 / (meanOffset + V00.w)
+				 + w10 / (meanOffset + V10.w)
+				 + w01 / (meanOffset + V01.w)
+				 + w11 / (meanOffset + V11.w);
+			avgZ = avgZ > 0.0 ? sumWeights / avgZ - meanOffset : 0.0;
 
-	float	sumWeights = V00.w + V10.w + V01.w + V11.w;
-	float	A = saturate( sumWeights );
-	C *= sumWeights > 0.0 ? A / sumWeights : 0.0;	// Store un-premultiplied color
-//	C *= sumWeights > 0.0 ? 1.0 / sumWeights : 0.0;	// Store un-premultiplied color
+	// Compute bilateral weights
+	w00 *= BilateralWeight( V00.w, avgZ );
+	w10 *= BilateralWeight( V10.w, avgZ );
+	w01 *= BilateralWeight( V01.w, avgZ );
+	w11 *= BilateralWeight( V11.w, avgZ );
 
-	_tex_reprojectedRadiance[targetPixelIndex] = float4( C, A );
+	// Pre-multiply colors by weights
+	float3	C = w00 * V00.xyz
+			  + w10 * V10.xyz
+			  + w01 * V01.xyz
+			  + w11 * V11.xyz;
+
+	sumWeights = w00 + w10 + w01 + w11;
+	C *= sumWeights > 0.0 ? saturate( sumWeights ) / sumWeights : 0.0;	// Store un-premultiplied color
+
+//if ( sumWeights < 1e-3 && avgZ > 1e-3 )
+//	C = float3( 1, 0, 1 );	// Can it happen that we nullified all colors because of invalid weights although we have valid colors in the lot???
+
+	_tex_reprojectedRadiance[targetPixelIndex] = float4( C, avgZ );
 }
 
 

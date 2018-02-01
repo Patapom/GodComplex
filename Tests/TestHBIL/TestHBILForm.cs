@@ -78,6 +78,8 @@ namespace TestHBIL {
 		internal struct	CB_PushPull {
 			public uint		_sizeX;
 			public uint		_sizeY;
+			public float2	_bilateralDepths;
+			public float	_preferedDepth;
 		}
 
 		#endregion
@@ -184,13 +186,14 @@ namespace TestHBIL {
 			m_CB_PushPull = new ConstantBuffer<CB_PushPull>( m_device, 3 );
 
 			try {
+				// Reprojection shaders
+ 				m_shader_ReprojectRadiance = new ComputeShader( m_device, new System.IO.FileInfo( "Shaders/ComputeReprojection2.hlsl" ), "CS_Reproject", null );
+ 				m_shader_Push_FirstPass = new ComputeShader( m_device, new System.IO.FileInfo( "Shaders/ComputeReprojection2.hlsl" ), "CS_Push", new ShaderMacro[] { new ShaderMacro( "FIRST_PASS", "1" ) } );
+ 				m_shader_Push = new ComputeShader( m_device, new System.IO.FileInfo( "Shaders/ComputeReprojection2.hlsl" ), "CS_Push", null );
+ 				m_shader_Pull = new ComputeShader( m_device, new System.IO.FileInfo( "Shaders/ComputeReprojection2.hlsl" ), "CS_Pull", new ShaderMacro[] { new ShaderMacro( "LAST_PASS", "1" ) } );
+				m_shader_Pull_LastPass = new ComputeShader( m_device, new System.IO.FileInfo( "Shaders/ComputeReprojection2.hlsl" ), "CS_Pull", null );
+
 				m_shader_RenderScene_DepthGBufferPass = new Shader( m_device, new System.IO.FileInfo( "Shaders/RenderScene.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS_Depth", null );
- //				m_shader_ReprojectRadiance = new Shader( m_device, new System.IO.FileInfo( "Shaders/ComputeReprojection.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS_Reproject", null );
- 				m_shader_ReprojectRadiance = new ComputeShader( m_device, new System.IO.FileInfo( "Shaders/ComputeReprojection.hlsl" ), "CS_Reproject", null );
- 				m_shader_Push_FirstPass = new ComputeShader( m_device, new System.IO.FileInfo( "Shaders/ComputeReprojection.hlsl" ), "CS_Push", new ShaderMacro[] { new ShaderMacro( "FIRST_PASS", "1" ) } );
- 				m_shader_Push = new ComputeShader( m_device, new System.IO.FileInfo( "Shaders/ComputeReprojection.hlsl" ), "CS_Push", null );
- 				m_shader_Pull = new ComputeShader( m_device, new System.IO.FileInfo( "Shaders/ComputeReprojection.hlsl" ), "CS_Pull", new ShaderMacro[] { new ShaderMacro( "LAST_PASS", "1" ) } );
-				m_shader_Pull_LastPass = new ComputeShader( m_device, new System.IO.FileInfo( "Shaders/ComputeReprojection.hlsl" ), "CS_Pull", null );
  				m_shader_ComputeHBIL = new Shader( m_device, new System.IO.FileInfo( "Shaders/ComputeHBIL.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 				m_shader_ComputeLighting = new Shader( m_device, new System.IO.FileInfo( "Shaders/ComputeLighting.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 				m_shader_PostProcess = new Shader( m_device, new System.IO.FileInfo( "Shaders/PostProcess.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
@@ -366,8 +369,10 @@ namespace TestHBIL {
 // 				float3		prevX = previousCamera2World.r0.xyz;
 // 				float3		newX = new float3( prevX.Dot( currentX ) );
 
-				m_CB_Camera.m._PrevCamera2Camera = previousCamera2World * m_CB_Camera.m._World2Camera;
-				m_CB_Camera.m._Camera2PrevCamera = m_CB_Camera.m._Camera2World * previousCamera2World.Inverse;
+				if ( !checkBoxFreezePrev2CurrentCamMatrix.Checked ) {
+					m_CB_Camera.m._PrevCamera2Camera = previousCamera2World * m_CB_Camera.m._World2Camera;
+					m_CB_Camera.m._Camera2PrevCamera = m_CB_Camera.m._Camera2World * previousCamera2World.Inverse;
+				}
 				m_CB_Camera.UpdateData();
 			}
 
@@ -385,6 +390,7 @@ namespace TestHBIL {
 				m_tex_radiance.GetView( 0, 1, m_radianceSourceSliceIndex, 1 ).SetCS( 0 );	// Source radiance from last frame
 				m_device.DefaultDepthStencil.SetCS( 1 );									// Source depth buffer from last frame
 				m_tex_motionVectors.SetCS( 2 );												// Motion vectors for dynamic objects
+				m_tex_BlueNoise.SetCS( 3 );
 				m_tex_sourceRadiance_PUSH.SetCSUAV( 0 );
 
 				m_shader_ReprojectRadiance.Dispatch( m_tex_sourceRadiance_PUSH.Width >> 4, m_tex_sourceRadiance_PUSH.Height >> 4, 1 );
@@ -418,6 +424,11 @@ namespace TestHBIL {
 				uint	mipLevel = 1;
 // 				uint	W = m_tex_sourceRadiance.Width;
 // 				uint	H = m_tex_sourceRadiance.Height;
+
+				m_CB_PushPull.m._bilateralDepths.Set( floatTrackbarControlBilateralDepthDeltaMin.Value, floatTrackbarControlBilateralDepthDeltaMax.Value );
+				m_CB_PushPull.m._bilateralDepths.x *= m_CB_PushPull.m._bilateralDepths.x;
+				m_CB_PushPull.m._bilateralDepths.y *= m_CB_PushPull.m._bilateralDepths.y;
+				m_CB_PushPull.m._preferedDepth = floatTrackbarControlHarmonicPreferedDepth.Value;
 
 				if ( m_shader_Push_FirstPass.Use() ) {
 					ComputeShader	currentCS = m_shader_Push_FirstPass;
@@ -736,6 +747,11 @@ m_tex_texDebugNormals.SetPS( 33 );
 				m_stopWatch.Stop();
 			else
 				m_stopWatch.Start();
+		}
+
+		private void TestHBILForm_KeyDown( object sender, KeyEventArgs e ) {
+			if ( e.KeyCode == Keys.A )
+				checkBoxFreezePrev2CurrentCamMatrix.Checked ^= true;
 		}
 
 		#endregion
