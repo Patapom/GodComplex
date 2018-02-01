@@ -63,8 +63,9 @@ float	BilateralFilterRadiance( float _centralZ, float _neighborZ, float _radius_
 	#if 1
 		// Relative test
 		float	relativeZ = abs( deltaZ ) / _centralZ;
-//		return smoothstep( 0.1*_bilateralValues.y, _bilateralValues.x, relativeZ );	// Discard when deltaZ is larger than 1% central Z
-		return smoothstep( 0.015, 0.0, relativeZ );	// Discard when deltaZ is larger than 1.5% central Z (empirical value)
+//		return smoothstep( 0.1*_bilateralValues.y, 0.1*_bilateralValues.x, relativeZ );	// Discard when deltaZ is larger than 1% central Z
+//		return smoothstep( 0.015, 0.0, relativeZ );	// Discard when deltaZ is larger than 1.5% central Z (empirical value)
+		return smoothstep( 0.15, 0.0, relativeZ );	// Discard when deltaZ is larger than 1.5% central Z (empirical value)
 	#elif 0
 		// Absolute test
 		return smoothstep( 1.0, 0.0, abs(deltaZ) );

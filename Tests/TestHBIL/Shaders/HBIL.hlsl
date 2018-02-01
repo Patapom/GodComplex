@@ -89,10 +89,14 @@ float3	SampleIrradiance( float2 _ssPosition, float _H0, float _radius, float2 _i
 		return 0.0;	// Below the horizon... No visible contribution.
 
 	#if SAMPLE_NEIGHBOR_RADIANCE
-		// Sample neighbor's incoming radiance value, only if difference in depth is not too large
-		float	bilateralWeight = BilateralFilterRadiance( _H0, neighborH, _radius );
-		if ( bilateralWeight > 0.0 )
-			_previousRadiance = lerp( _previousRadiance, FetchRadiance( _ssPosition ), bilateralWeight );	// Accept new height and its radiance value
+// NOW USELESS I THINK...
+//		// Sample neighbor's incoming radiance value, only if difference in depth is not too large
+//		float	bilateralWeight = BilateralFilterRadiance( _H0, neighborH, _radius );
+//		if ( bilateralWeight > 0.0 )
+//			_previousRadiance = lerp( _previousRadiance, FetchRadiance( _ssPosition ), bilateralWeight );	// Accept new height and its radiance value
+
+		// Sample always (actually, it's okay now we accepted the height through the first bilateral filter earlier)
+		_previousRadiance = FetchRadiance( _ssPosition );
 	#endif
 
 	// Integrate over horizon difference (always from smallest to largest angle otherwise we get negative results!)
