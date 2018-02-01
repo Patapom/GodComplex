@@ -3,7 +3,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 //
 #include "../Global.hlsl"
-#include "HBIL.hlsl"
+#include "BruteForce/HBIL.hlsl"
 
 static const float	GATHER_SPHERE_RADIUS_M = 1.0;		// Radius of the sphere that will gather our irradiance samples (in meters)
 static const float	GATHER_SPHERE_MAX_RADIUS_P = 100.0;	// Maximum radius (in pixels) that we allow our sphere to get
@@ -283,7 +283,7 @@ PS_OUT	PS( float4 __Position : SV_POSITION ) {
 		// Gather irradiance and average cone direction for that slice
 		float3	ssBentNormal;
 		float2	coneAngles;
-		sumIrradiance += GatherIrradiance_DEBUG( __Position.xy, ssDirection, Z, N, float2( radiusStepSize_pixels, radiusStepSize_meters ), samplesCount, ssBentNormal, coneAngles, GATHER_DEBUG );
+		sumIrradiance += GatherIrradiance( __Position.xy, ssDirection, Z, N, float2( radiusStepSize_pixels, radiusStepSize_meters ), samplesCount, ssBentNormal, coneAngles, GATHER_DEBUG );
 
 		ssAverageBentNormal += ssBentNormal;
 

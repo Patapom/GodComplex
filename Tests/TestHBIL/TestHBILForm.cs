@@ -6,14 +6,15 @@
 //////////////////////////////////////////////////////////////////////////
 //
 // IDEAS / #TODOS:
-//	✓
-//	• Use push/pull (with bilateral) to fill in reprojected radiance voids!!!
+//	✓ Use push/pull (with bilateral) to fill in reprojected radiance voids!!!
 //	• float	GetBilateralWeight( Z0, Z1, radius, ref sqHypotenuse ) => Outside of unit sphere???
-//	• Use radius² as progression + sample mips for larger footprint (only if mip is bilateral filtered!)
+//	✓ Use radius² as progression
+//		=> Doesn't provide any significant improvement
+//	• Sample mips for larger footprint (only if mip is bilateral filtered!)
 //	• Keep previous radiance in case we reject height sample but accept radiance, and don't want to interpolate foreground radiance? Will that even occur?
 //	• Write interleaved sampling + reconstruction based on bilateral weight (store it some place? Like alpha somewhere?)
 //	• Keep failed reprojected pixels into some "surrounding buffer", some sort of paraboloid-projected buffer containing off-screen values???
-//		=> Exponential decay of off-screen values
+//		=> Exponential decay of off-screen values with decay rate depending on camera's linear velocity?? (fun idea!)
 //
 using System;
 using System.Collections.Generic;
@@ -88,6 +89,7 @@ namespace TestHBIL {
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
 		internal struct	CB_HBIL {
 			public float	_gatherSphereMaxRadius_m;	// Maximum radius (in meters) of the IL gather sphere
+			public float2	_bilateralValues;
 		}
 
 		#endregion
@@ -541,16 +543,14 @@ m_tex_texDebugNormals.SetPS( 33 );
 				if ( m_shader_ComputeHBIL.Use() ) {
 					m_device.SetRenderTargets( new IView[] { m_tex_radiance.GetView( 0, 1, 1-m_radianceSourceSliceIndex, 1 ), m_tex_bentCone.GetView( 0, 1, 0, 1 ) }, null );
 
-					m_CB_HBIL.m._gatherSphereMaxRadius_m = 1.0f;
+					m_CB_HBIL.m._gatherSphereMaxRadius_m = floatTrackbarControlGatherSphereRadius.Value;
+					m_CB_HBIL.m._bilateralValues.Set( floatTrackbarControlBilateral0.Value, floatTrackbarControlBilateral1.Value );
 					m_CB_HBIL.UpdateData();
 
 					m_tex_sourceRadiance_PULL.SetPS( 0 );	// Reprojected + reconstructed source radiance from last frame with all mips
 					m_tex_normal.SetPS( 1 );
 					m_device.DefaultDepthStencil.SetPS( 2 );
 					m_tex_BlueNoise.SetPS( 3 );
-
-m_tex_texDebugHeights.SetPS( 32 );
-m_tex_texDebugNormals.SetPS( 33 );
 
 					m_device.RenderFullscreenQuad( m_shader_ComputeHBIL );
 

@@ -9,15 +9,20 @@
 #define USE_FAST_ACOS 1			// Define this to use the "fast acos" function instead of true acos()
 // !!SLIGHTLY LESS ACCURATE!!
 
+// !!MORE ACCURATE BUT ALSO MORE EXPENSIVE!!
+#define SAMPLE_NEIGHBOR_RADIANCE	1	// Define this to sample neighbor samples' radiance, otherwise only the central sample's radiance is used (much faster but also less accurate)
+// !!MORE ACCURATE BUT ALSO MORE EXPENSIVE!!
+
 // !!MORE EXPENSIVE AND LESS ACCURATE => DON'T USE EXCEPT FOR DEBUG!!
 //#define USE_NUMERICAL_INTEGRATION 256	// Define this to compute bent normal numerically (value = integration steps count)
 // !!MORE EXPENSIVE AND LESS ACCURATE => DON'T USE EXCEPT FOR DEBUG!!
 
 
 // We assume there exist such methods declared somewhere where _pixelPosition is the position in screen space
-float	FetchDepth( float2 _pixelPosition );	// The return value must be the depth (in meters)
-float3	FetchRadiance( float2 _pixelPosition );	// The return value must be the radiance from last frame (DIFFUSE ONLY!)
-
+float	FetchDepth( float2 _pixelPosition );				// The return value must be the depth (in meters)
+float3	FetchRadiance( float2 _pixelPosition );				// The return value must be the radiance from last frame (DIFFUSE ONLY!)
+float	BilateralFilterDepth( float _centralZ, float _neighborZ, float _radius_m );		// The return value must be a [0,1] weight telling whether or not we accept the sample at the specified radius and depth (in meter)
+float	BilateralFilterRadiance( float _centralZ, float _neighborZ, float _radius_m );	// The return value must be a [0,1] weight telling whether or not we accept the sample at the specified radius and depth (in meter)
 
 // Integrates the dot product of the normal with a vector interpolated between slice horizon angle theta0 and theta1
 // We're looking to obtain the irradiance reflected from a tiny slice of terrain:
@@ -71,22 +76,27 @@ float2	ComputeIntegralFactors( float2 _ssDirection, float3 _N ) {
 //	_maxCos, the floating maximum cos(theta) that indicates the angle of the perceived horizon
 //	_optionnal_centerRho, the reflectance of the center pixel (fallback only necessary if no albedo map is available and if it's only irradiance that is stored in the source irradiance map instead of radiance, in which case albedo is already pre-mutliplied)
 //
-float3	SampleIrradiance( float2 _ssPosition, float _H0, float _radius, float2 _integralFactors, inout float _maxCos ) {
+float3	SampleIrradiance( float2 _ssPosition, float _H0, float _radius, float2 _integralFactors, inout float3 _previousRadiance, inout float _maxCos ) {
 
 	// Sample new height and update horizon angle
-	float	deltaH = _H0 - FetchDepth( _ssPosition );
+	float	neighborH = FetchDepth( _ssPosition );
+	float	deltaH = _H0 - neighborH;
+			deltaH *= BilateralFilterDepth(  _H0, neighborH, _radius );
 	float	H2 = deltaH * deltaH;
 	float	hyp2 = _radius * _radius + H2;		// Square hypotenuse
 	float	cosHorizon = deltaH / sqrt( hyp2 );	// Cosine to horizon angle
 	if ( cosHorizon <= _maxCos )
 		return 0.0;	// Below the horizon... No visible contribution.
 
-	// Source texture directly contains Li-1
-	// (Ei-1 is already pre-multiplied by albedo/rho from last frame so don't bother!)
-	float3	incomingRadiance = FetchRadiance( _ssPosition );
+	#if SAMPLE_NEIGHBOR_RADIANCE
+		// Sample neighbor's incoming radiance value, only if difference in depth is not too large
+		float	bilateralWeight = BilateralFilterRadiance( _H0, neighborH, _radius );
+		if ( bilateralWeight > 0.0 )
+			_previousRadiance = lerp( _previousRadiance, FetchRadiance( _ssPosition ), bilateralWeight );	// Accept new height and its radiance value
+	#endif
 
 	// Integrate over horizon difference (always from smallest to largest angle otherwise we get negative results!)
-	incomingRadiance *= IntegrateSolidAngle( _integralFactors, cosHorizon, _maxCos );
+	float3	incomingRadiance = _previousRadiance * IntegrateSolidAngle( _integralFactors, cosHorizon, _maxCos );
 
 	// #TODO: Integrate with linear interpolation of irradiance as well??
 
@@ -102,12 +112,13 @@ float3	SampleIrradiance( float2 _ssPosition, float _H0, float _radius, float2 _i
 //	_csNormal, camera-space normal
 //	_radialStepSizes, size of a radial step to jump from one sample to another (X=step size in pixels, Y=step size in meters)
 //	_stepsCount, amount of steps to take (front & back so actual samples count will always be twice that value!)
+//	_centralRadiance, last frame's radiance at central position that we can always use as a safe backup for irradiance integration (in case bilateral filter rejects neighbor height as too different)
 //	[OUT] _ssBentNormal, the average bent normal
 //	[OUT] _coneAngles, the front & back cone angles from the direction of the bent normal to the front & back horizons
 //
 // Returns the irradiance gathered along the sampling
 //
-float3	GatherIrradiance( float2 _ssPosition, float2 _ssDirection, float _Z0, float3 _csNormal, float2 _radialStepSizes, uint _stepsCount, out float3 _ssBentNormal, out float2 _coneAngles, inout float4 _DEBUG ) {
+float3	GatherIrradiance( float2 _ssPosition, float2 _ssDirection, float _Z0, float3 _csNormal, float2 _radialStepSizes, uint _stepsCount, float3 _centralRadiance, out float3 _ssBentNormal, out float2 _coneAngles, inout float4 _DEBUG ) {
 
 	// Pre-compute factors for the integrals
 	float2	integralFactors_Front = ComputeIntegralFactors( _ssDirection, _csNormal );
@@ -133,13 +144,15 @@ float3	GatherIrradiance( float2 _ssPosition, float2 _ssDirection, float _Z0, flo
 	float2	ssStep = _radialStepSizes.x * _ssDirection;
 	float2	ssPosition_Front = _ssPosition;
 	float2	ssPosition_Back = _ssPosition;
+	float3	previousRadiance_Front = _centralRadiance;
+	float3	previousRadianceBack = _centralRadiance;
 	for ( uint stepIndex=0; stepIndex < _stepsCount; stepIndex++ ) {
 		radius_meters += _radialStepSizes.y;
 		ssPosition_Front += ssStep;
 		ssPosition_Back -= ssStep;
 
-		sumRadiance += SampleIrradiance( ssPosition_Front, _Z0, radius_meters, integralFactors_Front, maxCos_Front );
-		sumRadiance += SampleIrradiance( ssPosition_Back, _Z0, radius_meters, integralFactors_Back, maxCos_Back );
+		sumRadiance += SampleIrradiance( ssPosition_Front, _Z0, radius_meters, integralFactors_Front, previousRadiance_Front, maxCos_Front );
+		sumRadiance += SampleIrradiance( ssPosition_Back, _Z0, radius_meters, integralFactors_Back, previousRadianceBack, maxCos_Back );
 	}
 
 	// Accumulate bent normal direction by rebuilding and averaging the front & back horizon vectors

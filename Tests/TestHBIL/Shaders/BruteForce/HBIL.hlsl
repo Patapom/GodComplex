@@ -123,7 +123,7 @@ float3	GatherIrradiance( float2 _ssPosition, float2 _ssDirection, float _Z0, flo
 	//             --- *..........>+ ssDirection
 	//        --- 
 	//
-	float	hitDistance_Front = -dot( _ssDirection, _csNormal.xy ) * (abs(_csNormal.z) > 1e-6 ? 1.0 / _csNormal.z : 0.0);
+	float	hitDistance_Front = -dot( _ssDirection, _csNormal.xy ) * (abs(_csNormal.z) > 1e-4 ? 1.0 / _csNormal.z : 1.0);
 	float	maxCos_Front = hitDistance_Front / sqrt( hitDistance_Front*hitDistance_Front + dot(_ssDirection,_ssDirection) );
 	float	maxCos_Back = -maxCos_Front;	// Back cosine is simply the mirror value
 

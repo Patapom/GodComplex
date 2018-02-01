@@ -38,10 +38,13 @@ PS_OUT	PS( float4 __Position : SV_POSITION ) {
 	float2	cosConeAnglesMinMax = float2( cos( max( 0.0, averageConeAngle - stdDeviationConeAngle ) ), cos( min( 0.5 * PI, averageConeAngle + stdDeviationConeAngle ) ) );
 
 	float3	csBentNormal = csBentCone.xyz / cosAverageConeAngle;
+//	float3	csBentNormal = normalize( csBentCone.xyz );
 
 	float3	wsRight = normalize( cross( wsView, _World2Camera[1].xyz ) );
 	float3	wsUp = cross( wsRight, wsView );
 	float3	wsBentNormal = csBentNormal.x * wsRight + csBentNormal.y * wsUp - csBentNormal.z * wsView;
+
+//wsBentNormal = mul( float4( csBentNormal, 0 ), _Camera2World ).xyz;
 
 	if ( (_flags & 2) == 0 ) {
 		wsBentNormal = _tex_Normal[pixelPosition].xyz;
@@ -68,6 +71,7 @@ PS_OUT	PS( float4 __Position : SV_POSITION ) {
 
 	float3	SH[9] = { _SH[0].xyz, _SH[1].xyz, _SH[2].xyz, _SH[3].xyz, _SH[4].xyz, _SH[5].xyz, _SH[6].xyz, _SH[7].xyz, _SH[8].xyz };
 	float3	directEnvironmentIrradiance = EvaluateSHIrradiance( wsBentNormal, cos( samplingConeAngle ), SH );	// Use bent-normal direction + cone angle
+//float3	directEnvironmentIrradiance = EvaluateSHIrradiance( wsBentNormal, SH );	// Use bent-normal direction + cone angle
 			directEnvironmentIrradiance *= _environmentIntensity;
 
 	float3	indirectIrradiance = HBILIrradiance + directEnvironmentIrradiance;

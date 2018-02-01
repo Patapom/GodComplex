@@ -214,7 +214,7 @@ struct Intersection {
 	float3	wsVelocity;	// World-space velocity vector
 };
 
-Intersection RayMarchScene( float3 _wsPos, float3 _wsDir, float2 _UV, uint _stepsCount ) {
+Intersection RayMarchScene( float3 _wsPos, float3 _wsDir, float2 _UV, uint _stepsCount, float _distanceFactor=0.8 ) {
 //  float2 uv = (gl_FragCoord.xy-.5*iResolution.xy)/iResolution.y;
 //  float dither = rng(uv+frac(time));
 
@@ -238,14 +238,14 @@ Intersection RayMarchScene( float3 _wsPos, float3 _wsDir, float2 _UV, uint _step
 			result.materialID = d.y;
 			break;
 		}
-		d.x *= 0.8;	// Tends to miss features if larger than 0.5 (???)
+		d.x *= _distanceFactor;	// Tends to miss features if larger than 0.5 (???)
 		result.hitPosition += d.x * unitStep;
 	}
 
-	result.wsNormal = 0.0;
-	if ( result.shade > 0 ) {
+	result.wsNormal = float3( 0, 0.001, 0 );
+//	if ( result.shade > 0 ) {
 		result.wsNormal = getNormal( result.hitPosition.xyz );
-	}
+//	}
 
 	result.albedo = 0.5 * float3( 1, 1, 1 );
 	result.wsVelocity = 0.0;
