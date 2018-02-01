@@ -24,6 +24,11 @@ void	CS( uint3 _groupID : SV_groupID, uint3 _groupThreadID : SV_groupThreadID, u
 		float2	UV = float2( targetPixelIndex + 0.5 ) / _targetSize;
 		float4	V = _tex_sourceDepth.Gather( PointClamp, UV );
 		_tex_targetDepth[targetPixelIndex] = 0.25 * (V.x + V.y + V.z + V.w);
+//		const float	offs = 1.0;
+//		_tex_targetDepth[targetPixelIndex] = (0.25 / (1.0 / (offs + V.x) + 1.0 / (offs + V.y) + 1.0 / (offs + V.z) + 1.0 / (offs + V.w)) - offs) / Z_FAR;	// Harmonic mean with offset
+//		_tex_targetDepth[targetPixelIndex] = max( max( max( V.x, V.y ), V.z ), V.w );
+//		_tex_targetDepth[targetPixelIndex] = min( min( min( V.x, V.y ), V.z ), V.w );
+
 	#else
 		// What the hell is this fucking bug??? Is the operator[] still bugged after all these years???
 		uint2	sourcePixelIndex = targetPixelIndex << 1;

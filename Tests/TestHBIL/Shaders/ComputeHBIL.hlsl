@@ -28,7 +28,7 @@ float4	VS( float4 __Position : SV_POSITION ) : SV_POSITION { return __Position; 
 // Implement the methods expected by the HBIL header
 float	FetchDepth( float2 _pixelPosition, float _mipLevel ) {
 //	return _tex_sourceRadiance.SampleLevel( LinearClamp, _pixelPosition / _resolution, _mipLevel ).w;
-	return Z_FAR * _tex_depth.SampleLevel( LinearClamp, _pixelPosition / _resolution, 0 );
+	return Z_FAR * _tex_depth.SampleLevel( LinearClamp, _pixelPosition / _resolution, _mipLevel );
 }
 
 float3	FetchRadiance( float2 _pixelPosition, float _mipLevel ) {
@@ -44,7 +44,7 @@ float	BilateralFilterDepth( float _centralZ, float _neighborZ, float _radius_m )
 		// Relative test
 		float	relativeZ = abs( deltaZ ) / _centralZ;
 //		return smoothstep( _bilateralValues.y, _bilateralValues.x, relativeZ );
-		return smoothstep( 0.4, 0.0, relativeZ );	// Discard when deltaZ is larger than 50% central Z (empirical value)
+		return smoothstep( 0.4, 0.0, relativeZ );	// Discard when deltaZ is larger than 40% central Z (empirical value)
 	#elif 0
 		// Absolute test
 		return smoothstep( _bilateralValues.y, _bilateralValues.x, abs(deltaZ) );
@@ -80,6 +80,19 @@ float	BilateralFilterRadiance( float _centralZ, float _neighborZ, float _radius_
 		return smoothstep( 0.1*0.1 * sqSphereZ, 0.0 * sqSphereZ, deltaZ*deltaZ );	// Empirical values
 	#endif
 }
+
+
+float2	ComputeMipLevel( float2 _radius, float2 _radialStepSizes ) {
+//return 0;
+	float	radiusPixel = _radius.x;
+	float	deltaRadius = _radialStepSizes.x;
+	float	pixelArea = PI / (2.0 * MAX_ANGLES) * 2.0 * radiusPixel * deltaRadius;
+//	return 0.5 * log2( pixelArea ) * _bilateralValues;
+	return 0.5 * log2( pixelArea ) * float2( 0, 2 );	// Unfortunately, sampling lower mips for depth gives very nasty halos! Maybe use max depth? Meh. Not conclusive either...
+	return 1.5 * 0.5 * log2( pixelArea );
+	return 0.5 * log2( pixelArea );
+}
+
 
 ////////////////////////////////////////////////////////////////////////////////
 // Computes bent cone & irradiance gathering from pixel's surroundings

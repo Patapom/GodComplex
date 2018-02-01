@@ -23,6 +23,7 @@ float	FetchDepth( float2 _pixelPosition, float _mipLevel );							// The return 
 float3	FetchRadiance( float2 _pixelPosition, float _mipLevel );						// The return value must be the radiance from last frame (DIFFUSE ONLY!)
 float	BilateralFilterDepth( float _centralZ, float _neighborZ, float _radius_m );		// The return value must be a [0,1] weight telling whether or not we accept the sample at the specified radius and depth (in meter)
 float	BilateralFilterRadiance( float _centralZ, float _neighborZ, float _radius_m );	// The return value must be a [0,1] weight telling whether or not we accept the sample at the specified radius and depth (in meter)
+float2	ComputeMipLevel( float2 _radius, float2 _radialStepSizes );
 
 // Integrates the dot product of the normal with a vector interpolated between slice horizon angle theta0 and theta1
 // We're looking to obtain the irradiance reflected from a tiny slice of terrain:
@@ -76,10 +77,10 @@ float2	ComputeIntegralFactors( float2 _ssDirection, float3 _N ) {
 //	_maxCos, the floating maximum cos(theta) that indicates the angle of the perceived horizon
 //	_optionnal_centerRho, the reflectance of the center pixel (fallback only necessary if no albedo map is available and if it's only irradiance that is stored in the source irradiance map instead of radiance, in which case albedo is already pre-mutliplied)
 //
-float3	SampleIrradiance( float2 _ssPosition, float _H0, float _radius, float _mipLevel, float2 _integralFactors, inout float3 _previousRadiance, inout float _maxCos ) {
+float3	SampleIrradiance( float2 _ssPosition, float _H0, float _radius, float2 _mipLevel, float2 _integralFactors, inout float3 _previousRadiance, inout float _maxCos ) {
 
 	// Sample new height and update horizon angle
-	float	neighborH = FetchDepth( _ssPosition, _mipLevel );
+	float	neighborH = FetchDepth( _ssPosition, _mipLevel.x );
 	float	deltaH = _H0 - neighborH;
 			deltaH *= BilateralFilterDepth(  _H0, neighborH, _radius );
 	float	H2 = deltaH * deltaH;
@@ -96,7 +97,7 @@ float3	SampleIrradiance( float2 _ssPosition, float _H0, float _radius, float _mi
 //			_previousRadiance = lerp( _previousRadiance, FetchRadiance( _ssPosition ), bilateralWeight );	// Accept new height and its radiance value
 
 		// Sample always (actually, it's okay now we accepted the height through the first bilateral filter earlier)
-		_previousRadiance = FetchRadiance( _ssPosition, _mipLevel );
+		_previousRadiance = FetchRadiance( _ssPosition, _mipLevel.y );
 	#endif
 
 	// Integrate over horizon difference (always from smallest to largest angle otherwise we get negative results!)
@@ -144,21 +145,21 @@ float3	GatherIrradiance( float2 _ssPosition, float2 _ssDirection, float _Z0, flo
 
 	// Gather irradiance from front & back directions while updating the horizon angles at the same time
 	float3	sumRadiance = 0.0;
-	float	radius_meters = 0.0;
+	float2	radius = 0.0;
 	float2	ssStep = _radialStepSizes.x * _ssDirection;
 	float2	ssPosition_Front = _ssPosition;
 	float2	ssPosition_Back = _ssPosition;
 	float3	previousRadiance_Front = _centralRadiance;
 	float3	previousRadianceBack = _centralRadiance;
 	for ( uint stepIndex=0; stepIndex < _stepsCount; stepIndex++ ) {
-		radius_meters += _radialStepSizes.y;
+		radius += _radialStepSizes;
 		ssPosition_Front += ssStep;
 		ssPosition_Back -= ssStep;
 
-		float	mipLevel = 0.0;
+		float2	mipLevel = ComputeMipLevel( radius, _radialStepSizes );
 
-		sumRadiance += SampleIrradiance( ssPosition_Front, _Z0, radius_meters, mipLevel, integralFactors_Front, previousRadiance_Front, maxCos_Front );
-		sumRadiance += SampleIrradiance( ssPosition_Back, _Z0, radius_meters, mipLevel, integralFactors_Back, previousRadianceBack, maxCos_Back );
+		sumRadiance += SampleIrradiance( ssPosition_Front, _Z0, radius.y, mipLevel, integralFactors_Front, previousRadiance_Front, maxCos_Front );
+		sumRadiance += SampleIrradiance( ssPosition_Back, _Z0, radius.y, mipLevel, integralFactors_Back, previousRadianceBack, maxCos_Back );
 	}
 
 	// Accumulate bent normal direction by rebuilding and averaging the front & back horizon vectors

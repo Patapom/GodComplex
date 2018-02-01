@@ -1,6 +1,6 @@
 ﻿//#define BRUTE_FORCE_HBIL		// 25ms at 1280x720... :D
+//#define RENDER_IN_DEPTH_STENCIL	// If defined, use the depth-stencil (single mip level) to render, instead of multi-mip RT (this RT allows larger sample footprints when gathering radiance and accelerates the HBIL pass)
 #define BILATERAL_PUSH_PULL
-#define RENDER_IN_DEPTH_STENCIL	// If defined, use the depth-stencil (single mip level) to render, instead of multi-mip RT (this RT allows larger sample footprints when gathering radiance and accelerates the HBIL pass)
 
 //////////////////////////////////////////////////////////////////////////
 // Horizon-Based Indirect Lighting Demo
@@ -29,7 +29,7 @@ using System.Drawing.Imaging;
 
 using SharpMath;
 using ImageUtility;
-using Renderer;
+usin}g Renderer;
 using Nuaj.Cirrus.Utility;
 using Nuaj.Cirrus;
 
