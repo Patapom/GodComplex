@@ -9,32 +9,162 @@
 
 // Cornell Box Dimensions
 //
-#ifndef CORNELL_BOX_INCLUDED
-#define CORNELL_BOX_INCLUDED
-
 static const float3	CORNELL_SIZE = float3( 5.528f, 5.488f, 5.592f );
 static const float3	CORNELL_POS = 0.0;
 static const float	CORNELL_THICKNESS = 0.1f;
+static const float3	CORNELL_ROOM_REFLECTANCE = 0.5 * float3( 1.0, 1.0, 1.0 );
+static const float3	CORNELL_LEFT_WALL_REFLECTANCE = 0.5 * float3( 1.0, 0.2, 0.02 );
+static const float3	CORNELL_RIGHT_WALL_REFLECTANCE = 0.5 * float3( 0.2, 1.0, 0.05 );
 
 // Small box setup
 static const float3	CORNELL_SMALL_BOX_SIZE = float3( 1.65, 1.65, 1.65 );	// It's a cube
-static const float3	CORNELL_SMALL_BOX_POS = float3( 1.855, 0.5 * CORNELL_SMALL_BOX_SIZE.y, 1.69 ) - 0.5 * float3( CORNELL_SIZE.x, 0.0, CORNELL_SIZE.z );
+static const float3	CORNELL_SMALL_BOX_POS = float3( 1.855, 0.5 * CORNELL_SMALL_BOX_SIZE.y, 1.69 ) - 0.5 * CORNELL_SIZE;
 static const float	CORNELL_SMALL_BOX_ANGLE = 0.29145679447786709199560462143289;	// ~16°
+static const float3	CORNELL_SMALL_BOX_REFLECTANCE = 0.5 * float3( 1.0, 1.0, 1.0 );
 
 // Large box setup
 static const float3	CORNELL_LARGE_BOX_SIZE = float3( 1.65, 3.3, 1.65 );
-static const float3	CORNELL_LARGE_BOX_POS = float3( 3.685, 0.5 * CORNELL_LARGE_BOX_SIZE.y, 3.6125 ) - 0.5 * float3( CORNELL_SIZE.x, 0.0, CORNELL_SIZE.z );
+static const float3	CORNELL_LARGE_BOX_POS = float3( 3.685, 0.5 * CORNELL_LARGE_BOX_SIZE.y, 3.6125 ) - 0.5 * CORNELL_SIZE;
 static const float	CORNELL_LARGE_BOX_ANGLE = -0.30072115015043337195437489062082;	// ~17°
+static const float3	CORNELL_LARGE_BOX_REFLECTANCE = 0.5 * float3( 1.0, 1.0, 1.0 );
 
 // Light setup
 static const float3	CORNELL_LIGHT_SIZE = float3( 1.3, 0.0, 1.05 );
 static const float3	CORNELL_LIGHT_POS = float3( 2.78, 5.2, 2.795 ) - 0.0 * float3( CORNELL_LIGHT_SIZE.x, 0.0, CORNELL_LIGHT_SIZE.z ) - 0.5 * float3( CORNELL_SIZE.x, 0.0, CORNELL_SIZE.z );
-static const float3	LIGHT_ILLUMINANCE = 50.0;
+static const float3	LIGHT_ILLUMINANCE = 2500.0;
+static const float3	LIGHT_REFLECTANCE = 0.78;
 static const float3	LIGHT_SIZE = float3( 1.0, 0.0, 1.0 );
 
+static const float	MAT_ROOM = 1;
+static const float	MAT_ROOM_WALL_LEFT = 2;
+static const float	MAT_ROOM_WALL_RIGHT = 3;
+static const float	MAT_SMALL_BOX = 4;
+static const float	MAT_LARGE_BOX = 5;
+static const float	MAT_LIGHT = 6;
+
+
+float2	ComputeBoxIntersections( float3 _position, float3 _view, float3 _boxCenter, float3 _boxInvHalfSize, out uint2 _hitSides ) {
+	float3	normPos = (_position - _boxCenter) * _boxInvHalfSize;
+	float3	normView = _view * _boxInvHalfSize;
+
+	float2	tempX = float2( 1.0 - normPos.x, -1.0 - normPos.x ) / normView.x;
+	float2	tempY = float2( 1.0 - normPos.y, -1.0 - normPos.y ) / normView.y;
+	float2	tempZ = float2( 1.0 - normPos.z, -1.0 - normPos.z ) / normView.z;
+
+	tempX = _view.x >= 0.0 ? tempX.yx : tempX;
+	tempY = _view.y >= 0.0 ? tempY.yx : tempY;
+	tempZ = _view.z >= 0.0 ? tempZ.yx : tempZ;
+
+#if 1
+	// Verbose code but returns hit sides
+	_hitSides = uint2( _view.x >= 0.0 ? 0 : 1, _view.x >= 0.0 ? 1 : 0 );
+	float2	hitDistances = tempX;
+	if ( tempY.x > hitDistances.x ) {
+		hitDistances.x = tempY.x;
+		_hitSides.x = _view.y >= 0 ? 2 : 3;
+	}
+	if ( tempZ.x > hitDistances.x ) {
+		hitDistances.x = tempZ.x;
+		_hitSides.x = _view.z >= 0 ? 4 : 5;
+	}
+	if ( tempY.y < hitDistances.y ) {
+		hitDistances.y = tempY.y;
+		_hitSides.y = _view.y >= 0 ? 3 : 2;
+	}
+	if ( tempZ.y < hitDistances.y ) {
+		hitDistances.y = tempZ.y;
+		_hitSides.y = _view.z >= 0 ? 5 : 4;
+	}
+
+	return hitDistances;
+#else
+	// Fast result without hit side info
+	_hitSides = 0;
+	return float2(	max( max( tempX.x, tempY.x ), tempZ.x ),
+					min( min( tempX.y, tempY.y ), tempZ.y ) );
 #endif
+}
+float3x3	BuildBoxRotation( float _angle ) {
+	float2	scAngle;
+	sincos( _angle, scAngle.x, scAngle.y );
+	return float3x3( scAngle.y, 0, scAngle.x, 0, 1, 0, -scAngle.x, 0, scAngle.y );
+}
+float2	ComputeRotatedBoxIntersections( float3 _position, float3 _view, float3 _boxCenter, float3 _boxInvHalfSize, float _angle, out uint2 _hitSides ) {
+	_position -= _boxCenter;
+
+	float3x3	rot = BuildBoxRotation( _angle );
+	_position = mul( _position, rot );
+	_view = mul( _view, rot );
+
+	return ComputeBoxIntersections( _position, _view, 0, _boxInvHalfSize, _hitSides );
+}
+float3	Side2Normal( uint _side ) {
+	return _side == 0 ? float3( -1, 0, 0 ) : (_side == 1 ? float3( 1, 0, 0 ) : (_side == 2 ? float3( 0, -1, 0 ) : (_side == 3 ? float3( 0, 1, 0 ) : (_side == 4 ? float3( 0, 0, -1 ) : float3( 0, 0, 1 )))));
+}
+
+Intersection	TraceScene( float3 _wsPos, float3 _wsDir ) {
+	Intersection	result = (Intersection) 0;
+	result.shade = 0;
+	result.wsHitPosition = float4( _wsPos, 0.0 );
+
+	// Test the 3 boxes
+	float2	hitDistance = float2( 1e6, 0 );
+	uint2	hitSides;
+	float2	testDistances = ComputeBoxIntersections( _wsPos, _wsDir, CORNELL_POS, 2.0 / CORNELL_SIZE, hitSides );
+	if ( testDistances.x < testDistances.y ) {
+		hitDistance = float2( testDistances.y, hitSides.y == 0 ? MAT_ROOM_WALL_RIGHT : (hitSides.y == 1 ? MAT_ROOM_WALL_LEFT : MAT_ROOM) );
+		result.wsNormal = -Side2Normal( hitSides.y );	// Turn normals inside out
+	}
+
+	testDistances = ComputeRotatedBoxIntersections( _wsPos, _wsDir, CORNELL_SMALL_BOX_POS, 2.0 / CORNELL_SMALL_BOX_SIZE, CORNELL_SMALL_BOX_ANGLE, hitSides );
+	if ( testDistances.x < testDistances.y && testDistances.x > 0 && testDistances.x < hitDistance.x ) {
+		hitDistance = float2( testDistances.x, MAT_SMALL_BOX );
+		float3x3	rot = BuildBoxRotation( CORNELL_SMALL_BOX_ANGLE );
+		result.wsNormal = mul( rot, Side2Normal( hitSides.x ) );
+//		result.wsNormal = Side2Normal( hitSides.x );
+	}
+
+//	float	testAngle = CORNELL_LARGE_BOX_ANGLE;
+	float	testAngle = _time;
+	testDistances = ComputeRotatedBoxIntersections( _wsPos, _wsDir, CORNELL_LARGE_BOX_POS, 2.0 / CORNELL_LARGE_BOX_SIZE, testAngle, hitSides );
+	if ( testDistances.x < testDistances.y && testDistances.x > 0 && testDistances.x < hitDistance.x ) {
+		hitDistance = float2( testDistances.x, MAT_LARGE_BOX );
+		float3x3	rot = BuildBoxRotation( testAngle );
+		result.wsNormal = mul( rot, Side2Normal( hitSides.x ) );
+//		result.wsNormal = Side2Normal( hitSides.x );
+	}
+
+	// Update result
+	result.wsHitPosition += hitDistance.x * float4( _wsDir, 1.0 );
+	result.shade = hitDistance.x < 1e-5;
+	result.roughness = 0;
+	result.F0 = 0;
+	result.materialID = hitDistance.y;
+	switch ( uint(result.materialID) ) {
+		case MAT_ROOM :				result.albedo = CORNELL_ROOM_REFLECTANCE; break;
+		case MAT_ROOM_WALL_LEFT :	result.albedo = CORNELL_LEFT_WALL_REFLECTANCE; break;
+		case MAT_ROOM_WALL_RIGHT :	result.albedo = CORNELL_RIGHT_WALL_REFLECTANCE; break;
+		case MAT_SMALL_BOX :		result.albedo = CORNELL_SMALL_BOX_REFLECTANCE; break;
+		case MAT_LARGE_BOX :		result.albedo = CORNELL_LARGE_BOX_REFLECTANCE; break;
+	}
+
+	return result;
+}
+
+LightingResult	LightScene( float3 _wsPosition, float3 _wsNormal, float2 _cosConeAnglesMinMax ) {
+	LightInfoPoint	lightInfo;
+					lightInfo.flux = LIGHT_ILLUMINANCE;
+					lightInfo.wsPosition = CORNELL_LIGHT_POS;
+					lightInfo.distanceAttenuation = float2( 100.0, 1000.0 );	// Don't care, let natural 1/r² take care of attenuation
+
+	LightingResult	result = (LightingResult) 0;
+	ComputeLightPoint( _wsPosition, _wsNormal, _cosConeAnglesMinMax, lightInfo, result );
+
+	return result;
+}
 
 
+/*
 struct Plane 
 {
     vec3 center;
@@ -190,7 +320,8 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
     
 	fragColor.xyz = toSRGB(shade(intersectionPoint, intersectionNormal, primaryRay.direction, materialIndex));
 }
-
+*/
+/*
 Material makeMaterial(in vec3 d, in vec3 e)
 {
     Material m;
@@ -232,11 +363,11 @@ void populatePlanes()
     lights[0].plane = 5;
 }
 
-/*
- *
- * shading happens here
- *
- */
+//
+//
+// shading happens here
+//
+//
 vec3 toLinear(in vec3 srgb)
 {
     return pow(srgb, vec3(2.2));
@@ -329,3 +460,4 @@ vec3 shade(in vec3 position, in vec3 normal, in vec3 view, in int materialId)
     
     return lightColor * materialColor * ltc; // abs(ltc - bruteforced);
 }
+*/

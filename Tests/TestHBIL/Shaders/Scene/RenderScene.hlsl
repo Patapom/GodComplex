@@ -106,6 +106,7 @@ PS_OUT_FINAL	PS_Light( float4 __Position : SV_POSITION ) {
 	float3	Z = Z_FAR * _tex_Depth[pixelPosition];
 	wsPos += Z * Z2Distance * wsView;
 
+
 	////////////////////////////////////////////////////////////////////////////////
 	// Compute indirect lighting
 
@@ -125,6 +126,7 @@ PS_OUT_FINAL	PS_Light( float4 __Position : SV_POSITION ) {
 			directEnvironmentIrradiance *= _environmentIntensity;
 
 	float3	indirectIrradiance = HBILIrradiance + directEnvironmentIrradiance;
+
 
 	////////////////////////////////////////////////////////////////////////////////
 	// Compute direct lighting

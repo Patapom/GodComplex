@@ -23,4 +23,5 @@ LightingResult	LightScene( float3 _wsPosition, float3 _wsNormal, float2 _cosCone
 // Scene inclusion
 ////////////////////////////////////////////////////////////////////////////////
 //
-#include "Scene/SceneRayMarchingLibrary.hlsl"
+//#include "Scene/SceneRayMarchingLibrary.hlsl"
+#include "Scene/SceneRayTraceCornell.hlsl"
