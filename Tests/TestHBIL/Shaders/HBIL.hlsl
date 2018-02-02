@@ -228,3 +228,28 @@ _coneAngles = float2( saturate( dot( _ssBentNormal, ssHorizon_Front ) ), saturat
 
 	return sumRadiance;
 }
+
+////////////////////////////////////////////////////////////////////////////////
+// Helper to reconstruct world-space bent cone
+////////////////////////////////////////////////////////////////////////////////
+//
+void	ReconstructBentCone( float4x4 _Camera2World, float4 _ssBentCone, out float3 _csBentNormal, out float3 _wsBentNormal, out float _cosAverageConeAngle, out float _stdDeviationConeAngle ) {
+	_cosAverageConeAngle = length( _ssBentCone.xyz );
+	_stdDeviationConeAngle = 0.5 * PI * (1.0 - _ssBentCone.w);
+	_csBentNormal = _ssBentCone.xyz / _cosAverageConeAngle;
+//	_csBentNormal = normalize( _ssBentCone.xyz );
+
+	#if 1
+		// Z plane
+		float3	wsRight = _Camera2World[0].xyz;
+		float3	wsUp = _Camera2World[1].xyz;
+		float3	wsAt = _Camera2World[2].xyz;
+	#else
+		// Face-cam
+		float3	wsRight = normalize( cross( wsView, _Camera2World[1].xyz ) );
+		float3	wsUp = cross( wsRight, wsView );
+		float3	wsAt = wsView;
+	#endif
+
+	_wsBentNormal = _csBentNormal.x * wsRight - _csBentNormal.y * wsUp - _csBentNormal.z * wsAt;
+}

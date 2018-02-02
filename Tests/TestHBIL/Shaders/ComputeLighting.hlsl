@@ -40,7 +40,7 @@ PS_OUT	PS( float4 __Position : SV_POSITION ) {
 	float3	csBentNormal = csBentCone.xyz / cosAverageConeAngle;
 //	float3	csBentNormal = normalize( csBentCone.xyz );
 
-	float3	wsRight = normalize( cross( wsView, _World2Camera[1].xyz ) );
+	float3	wsRight = normalize( cross( wsView, _Camera2World[1].xyz ) );
 	float3	wsUp = cross( wsRight, wsView );
 	float3	wsBentNormal = csBentNormal.x * wsRight + csBentNormal.y * wsUp - csBentNormal.z * wsView;
 

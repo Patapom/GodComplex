@@ -233,7 +233,7 @@ PS_OUT	PS( float4 __Position : SV_POSITION ) {
 		float3	B = cross( N, T );
 	#else
 		// Face-cam normal
-		float3	wsRight = normalize( cross( wsView, _World2Camera[1].xyz ) );
+		float3	wsRight = normalize( cross( wsView, _Camera2World[1].xyz ) );
 		float3	wsUp = cross( wsRight, wsView );
 		float3	N = float3( dot( wsNormal, wsRight ), dot( wsNormal, wsUp ), -dot( wsNormal, wsView ) );	// Camera-space normal
 		float3	T, B;

@@ -1,6 +1,7 @@
 #include "Global.hlsl"
 #include "Scene/Scene.hlsl"
 #include "SphericalHarmonics.hlsl"
+#include "HBIL.hlsl"
 
 float4	VS( float4 __Position : SV_POSITION ) : SV_POSITION { return __Position; }
 
@@ -80,20 +81,12 @@ PS_OUT_FINAL	PS_Light( float4 __Position : SV_POSITION ) {
 	BuildCameraRay( UV, wsPos, csView, wsView, Z2Distance );
 
 	// Read back bent normal
-	float4	csBentCone = _tex_BentCone[pixelPosition];
-	float	cosAverageConeAngle = length( csBentCone.xyz );
+	float4	ssBentCone = _tex_BentCone[pixelPosition];
+	float3	csBentNormal, wsBentNormal;
+	float	cosAverageConeAngle, stdDeviationConeAngle;
+	ReconstructBentCone( _Camera2World, ssBentCone, csBentNormal, wsBentNormal, cosAverageConeAngle, stdDeviationConeAngle );
 	float	averageConeAngle = FastPosAcos( cosAverageConeAngle );
-	float	stdDeviationConeAngle = 0.5 * PI * (1.0 - csBentCone.w);
 	float2	cosConeAnglesMinMax = float2( cos( max( 0.0, averageConeAngle - stdDeviationConeAngle ) ), cos( min( 0.5 * PI, averageConeAngle + stdDeviationConeAngle ) ) );
-
-	float3	csBentNormal = csBentCone.xyz / cosAverageConeAngle;
-//	float3	csBentNormal = normalize( csBentCone.xyz );
-
-	float3	wsRight = normalize( cross( wsView, _World2Camera[1].xyz ) );
-	float3	wsUp = cross( wsRight, wsView );
-	float3	wsBentNormal = csBentNormal.x * wsRight + csBentNormal.y * wsUp - csBentNormal.z * wsView;
-
-//wsBentNormal = mul( float4( csBentNormal, 0 ), _Camera2World ).xyz;
 
 	if ( (_flags & 2) == 0 ) {
 		wsBentNormal = _tex_Normal[pixelPosition].xyz;

@@ -121,12 +121,17 @@ PS_OUT	PS( float4 __Position : SV_POSITION ) {
 	// Read back last frame's radiance value that we always can use as a default for neighbor areas
 	float3	centralRadiance = _tex_sourceRadiance[pixelPosition].xyz;
 
-	// Face-cam normal
-	float3	wsRight = normalize( cross( wsView, _World2Camera[1].xyz ) );
-	float3	wsUp = cross( wsRight, wsView );
-	float3	N = float3( dot( wsNormal, wsRight ), dot( wsNormal, wsUp ), -dot( wsNormal, wsView ) );	// Camera-space normal
-	float3	T, B;
-	BuildOrthonormalBasis( N, T, B );
+	#if 1
+		// Regular normal
+		float3	N = float3( dot( wsNormal, _Camera2World[0].xyz ), -dot( wsNormal, _Camera2World[1].xyz ), -dot( wsNormal, _Camera2World[2].xyz ) );	// Camera-space normal
+	#else
+		// Compute face-cam normal
+		float3	wsRight = normalize( cross( wsView, _Camera2World[1].xyz ) );
+		float3	wsUp = cross( wsRight, wsView );
+		float3	N = float3( dot( wsNormal, wsRight ), -dot( wsNormal, wsUp ), -dot( wsNormal, wsView ) );	// Camera-space normal
+	#endif
+//	float3	T, B;
+//	BuildOrthonormalBasis( N, T, B );
 
 	Z -= 1e-2;	// Prevent acnea by offseting the central depth closer
 
@@ -203,7 +208,7 @@ varianceConeAngle = acos( varianceConeAngle );
 //sumIrradiance = float3( 1, 0, 1 );
 
 float3	DEBUG_VALUE = float3( 1,0,1 );
-DEBUG_VALUE = ssAverageBentNormal;
+//DEBUG_VALUE = ssAverageBentNormal;
 //DEBUG_VALUE = cos( averageConeAngle );
 //DEBUG_VALUE = dot( ssAverageBentNormal, N );
 //DEBUG_VALUE = 0.01 * Z;
@@ -215,13 +220,13 @@ DEBUG_VALUE = ssAverageBentNormal;
 //DEBUG_VALUE = float3( GATHER_DEBUG.xy, 0 );
 //DEBUG_VALUE = float3( GATHER_DEBUG.zw, 0 );
 //DEBUG_VALUE = GATHER_DEBUG.xyz;
-//DEBUG_VALUE = 2.0 * Z;
+DEBUG_VALUE = N;
 
 	PS_OUT	Out;
 	Out.irradiance = float4( sumIrradiance, 0 );
 	Out.bentCone = float4( max( 0.01, cos( averageConeAngle ) ) * ssAverageBentNormal, 1.0 - stdDeviation / (0.5 * PI) );
 
-//Out.bentCone = float4( DEBUG_VALUE, 1 );
+Out.bentCone = float4( DEBUG_VALUE, 1 );
 
 	return Out;
 }

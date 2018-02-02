@@ -674,7 +674,7 @@ m_tex_texDebugNormals.SetPS( 33 );
 
 			// Show!
 			m_device.Present( false );
-			m_device.PerfEndFrame();
+			double	totalFrameTime = m_device.PerfEndFrame();
 			m_framesCount++;
 
 			//////////////////////////////////////////////////////////////////////////
@@ -711,6 +711,7 @@ m_tex_texDebugNormals.SetPS( 33 );
 							 + "HBIL: " + timeHBIL.ToString( "G4" ) + " ms\r\n"
 							 + "Lighting: " + timeComputeLighting.ToString( "G4" ) + " ms\r\n"
 							 + "Post-Processing: " + timePostProcess.ToString( "G4" ) + " ms\r\n"
+							 + "Total frame time = " + totalFrameTime.ToString( "G6" ) + " ms\r\n"
 							 + "\r\n"
 							 ;
 		}
