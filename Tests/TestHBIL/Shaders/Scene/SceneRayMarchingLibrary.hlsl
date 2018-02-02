@@ -205,49 +205,34 @@ float getLight (float3 pos, float3 eye) {
 }
 //*/
 
-struct Intersection {
-	float4	hitPosition;
-	float	shade;
-	float3	wsNormal;
-	float	materialID;
-	float3	albedo;
-	float3	wsVelocity;	// World-space velocity vector
-};
-
-Intersection RayMarchScene( float3 _wsPos, float3 _wsDir, float2 _UV, uint _stepsCount, float _distanceFactor=0.8 ) {
-//  float2 uv = (gl_FragCoord.xy-.5*iResolution.xy)/iResolution.y;
-//  float dither = rng(uv+frac(time));
-
-//	_UV = 2.0 * _UV - 1.0;
-//	_UV.x *= _resolution.x / _resolution.y;
-//	_UV.y *= -1.0;
-//	_wsPos = float3(0,5,-4.5);
-//	_wsDir = getCamera(_wsPos, _UV);
+Intersection RayMarchScene( float3 _wsPos, float3 _wsDir, uint _stepsCount, float _distanceFactor=0.8 ) {
 
 	const float STEP = 1.0 / _stepsCount;
 
 	Intersection	result;
 	result.shade = 0;
-	result.hitPosition = float4( _wsPos, 0.0 );
+	result.wsHitPosition = float4( _wsPos, 0.0 );
 
 	float4	unitStep = float4( _wsDir, 1.0 );
 	for ( float i=0; i <= 1.0; i+=STEP ) {
-		float2 d = map( result.hitPosition.xyz );
+		float2 d = map( result.wsHitPosition.xyz );
 		if ( d.x < 0.01 ) {
 			result.shade = 1.0-i;
 			result.materialID = d.y;
 			break;
 		}
 		d.x *= _distanceFactor;	// Tends to miss features if larger than 0.5 (???)
-		result.hitPosition += d.x * unitStep;
+		result.wsHitPosition += d.x * unitStep;
 	}
 
 	result.wsNormal = float3( 0, 0.001, 0 );
 //	if ( result.shade > 0 ) {
-		result.wsNormal = getNormal( result.hitPosition.xyz );
+		result.wsNormal = getNormal( result.wsHitPosition.xyz );
 //	}
 
 	result.albedo = 0.5 * float3( 1, 1, 1 );
+	result.roughness = 1.0;	// Totally rough
+	result.F0 = 0.0;		// Dielectric
 	result.wsVelocity = 0.0;
 	switch ( result.materialID ) {
 		case MAT_WALL	: result.albedo = 0.10 * float3( 1.0, 0.6, 0.2 ); break;
@@ -268,4 +253,24 @@ Intersection RayMarchScene( float3 _wsPos, float3 _wsDir, float2 _UV, uint _step
 //  color = smoothstep(.0, .5, color);
 //  color = sqrt(color);
 //  return color;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Interface methods
+////////////////////////////////////////////////////////////////////////////////
+//
+Intersection	TraceScene( float3 _wsPos, float3 _wsDir ) {
+	return RayMarchScene( _wsPos, _wsDir, 100, 0.8 );
+}
+
+LightingResult	LightScene( float3 _wsPosition, float3 _wsNormal, float2 _cosConeAnglesMinMax ) {
+	LightInfoPoint	lightInfo;
+					lightInfo.flux = 1000.0;
+					lightInfo.wsPosition = float3( 0, 10, 0 );
+					lightInfo.distanceAttenuation = float2( 100.0, 1000.0 );	// Don't care, let natural 1/r² take care of attenuation
+
+	LightingResult	result = (LightingResult) 0;
+	ComputeLightPoint( _wsPosition, _wsNormal, _cosConeAnglesMinMax, lightInfo, result );
+
+	return result;
 }

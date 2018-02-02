@@ -29,7 +29,7 @@ using System.Drawing.Imaging;
 
 using SharpMath;
 using ImageUtility;
-usin}g Renderer;
+using Renderer;
 using Nuaj.Cirrus.Utility;
 using Nuaj.Cirrus;
 
@@ -220,20 +220,24 @@ namespace TestHBIL {
  					m_shader_Push_FirstPass = new ComputeShader( m_device, new System.IO.FileInfo( "Shaders/ComputeReprojection2.hlsl" ), "CS_Push", new ShaderMacro[] { new ShaderMacro( "FIRST_PASS", "1" ) } );
  					m_shader_Pull_LastPass = new ComputeShader( m_device, new System.IO.FileInfo( "Shaders/ComputeReprojection2.hlsl" ), "CS_Pull", new ShaderMacro[] { new ShaderMacro( "LAST_PASS", "1" ) } );
 				#endif
-				#if RENDER_IN_DEPTH_STENCIL
-					m_shader_RenderScene_DepthGBufferPass = new Shader( m_device, new System.IO.FileInfo( "Shaders/RenderScene.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS_Depth", new ShaderMacro[] { new ShaderMacro( "USE_DEPTH_STENCIL", "1" ) } );
-				#else
-					m_shader_RenderScene_DepthGBufferPass = new Shader( m_device, new System.IO.FileInfo( "Shaders/RenderScene.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS_Depth", null );
-				#endif
-				m_shader_DownSampleDepth = new ComputeShader( m_device, new System.IO.FileInfo( "Shaders/DownSampleDepth.hlsl" ), "CS", null );
 
+				// Scene rendering & lighting
+				#if RENDER_IN_DEPTH_STENCIL
+					m_shader_RenderScene_DepthGBufferPass = new Shader( m_device, new System.IO.FileInfo( "Shaders/Scene/RenderScene.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS_RenderGBuffer", new ShaderMacro[] { new ShaderMacro( "USE_DEPTH_STENCIL", "1" ) } );
+				#else
+					m_shader_RenderScene_DepthGBufferPass = new Shader( m_device, new System.IO.FileInfo( "Shaders/Scene/RenderScene.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS_RenderGBuffer", null );
+				#endif
+				m_shader_ComputeLighting = new Shader( m_device, new System.IO.FileInfo( "Shaders/Scene/RenderScene.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS_Light", null );
+
+				// HBIL
 				#if BRUTE_FORCE_HBIL
  					m_shader_ComputeHBIL = new Shader( m_device, new System.IO.FileInfo( "Shaders/BruteForce/ComputeHBIL.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 				#else
  					m_shader_ComputeHBIL = new Shader( m_device, new System.IO.FileInfo( "Shaders/ComputeHBIL.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 				#endif
 
-				m_shader_ComputeLighting = new Shader( m_device, new System.IO.FileInfo( "Shaders/ComputeLighting.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+				// Stuff
+				m_shader_DownSampleDepth = new ComputeShader( m_device, new System.IO.FileInfo( "Shaders/DownSampleDepth.hlsl" ), "CS", null );
 				m_shader_PostProcess = new Shader( m_device, new System.IO.FileInfo( "Shaders/PostProcess.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 			} catch ( Exception _e ) {
 				MessageBox.Show( "Shader failed to compile!\n\n" + _e.Message, "HBIL Test", MessageBoxButtons.OK, MessageBoxIcon.Error );

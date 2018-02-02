@@ -114,9 +114,12 @@
     <None Include="Shaders\ComputeHBIL.hlsl" />
     <None Include="Shaders\HBIL.hlsl" />
     <None Include="Shaders\DownSampleDepth.hlsl" />
+    <None Include="Shaders\Scene\SceneRayTraceCornell.hlsl" />
+    <None Include="Shaders\Scene\Scene.hlsl" />
+    <None Include="Shaders\Scene\Lighting.hlsl" />
     <Content Include="Shaders\SphericalHarmonics.hlsl" />
-    <None Include="Shaders\SceneRayMarchingLibrary.hlsl" />
-    <None Include="Shaders\SceneRayMarchingInfiniteRooms.hlsl" />
+    <None Include="Shaders\Scene\SceneRayMarchingLibrary.hlsl" />
+    <None Include="Shaders\Scene\SceneRayMarchingInfiniteRooms.hlsl" />
     <Content Include="Shaders\PostProcess.hlsl" />
     <EmbeddedResource Include="TestHBILForm.resx">
       <DependentUpon>TestHBILForm.cs</DependentUpon>
@@ -169,7 +172,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Shaders\RenderScene.hlsl" />
+    <None Include="Shaders\Scene\RenderScene.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\Global.hlsl" />
