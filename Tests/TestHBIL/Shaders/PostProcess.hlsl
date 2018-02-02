@@ -29,7 +29,15 @@ float3	PS( float4 __Position : SV_POSITION ) : SV_TARGET0 {
 
 //return _exposure * _tex_FinalRender[__Position.xy].xyz;
 
-//return _tex_BentCone[__Position.xy].xyz;
+float4	csBentConeDev = _tex_BentCone[__Position.xy];
+float	cosAverageConeAngle = length( csBentConeDev );
+float3	csBentCone = csBentConeDev.xyz / cosAverageConeAngle;
+float	averageConeAngle = acos( cosAverageConeAngle );
+float	stdDeviationConeAngle = 0.5 * PI * (1.0 - csBentConeDev.w);
+//return cosAverageConeAngle;
+//return averageConeAngle * 2.0 / PI;
+//return stdDeviationConeAngle;
+return csBentCone;
 //return length(_tex_BentCone[__Position.xy].xyz);
 //return _tex_BentCone[__Position.xy].w;
 

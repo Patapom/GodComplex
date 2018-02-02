@@ -29,7 +29,7 @@ void	ComputeGenericData( float3 _wsPosition, float3 _wsNormal, float2 _cosConeAn
 
 	_attenuation = 1.0 / sqDistance2Light;	// Physical 1/r²
 	_attenuation *= smoothstep( _distanceAttenuation.y, _distanceAttenuation.x, distance2Light );	// Now with forced smooth cutoff (so we keep the physically correct 1/r² but can nonetheless artificially attenuate early)
-	_attenuation *= smoothstep( _cosConeAnglesMinMax.y, _cosConeAnglesMinMax.x, _NdotL );			// Check if the light is standing inside the visibility cone of the surface
+//	_attenuation *= smoothstep( _cosConeAnglesMinMax.y, _cosConeAnglesMinMax.x, _NdotL );			// Check if the light is standing inside the visibility cone of the surface
 }
 
 // This must be called by the scene for each of its point lights
