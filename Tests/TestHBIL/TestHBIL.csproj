@@ -95,6 +95,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ComputeHBIL.cs" />
     <Compile Include="PanelOutput.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -108,7 +109,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <None Include="Shaders\BruteForce\HBIL.hlsl" />
     <None Include="Shaders\BruteForce\ComputeHBIL.hlsl" />
-    <Content Include="Shaders\ComputeLighting.hlsl" />
+    <Content Include="Shaders\RenderDebugCone.hlsl" />
     <None Include="Shaders\ComputeReprojection.hlsl" />
     <None Include="Shaders\ComputeReprojection2.hlsl" />
     <None Include="Shaders\ComputeHBIL.hlsl" />

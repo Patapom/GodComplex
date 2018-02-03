@@ -9,7 +9,7 @@
 
 static const float	GATHER_SPHERE_MAX_RADIUS_P = 100.0;	// Maximum radius (in pixels) that we allow our sphere to get
 
-#define MAX_ANGLES	8									// Amount of circle subdivisions per pixel
+#define MAX_ANGLES	1									// Amount of circle subdivisions per pixel
 #define MAX_SAMPLES	32									// Maximum amount of samples per circle subdivision
 
 Texture2D< float >	_tex_depth : register(t0);			// Depth or distance buffer (here we're given depth)
@@ -83,7 +83,7 @@ float	BilateralFilterRadiance( float _centralZ, float _neighborZ, float _radius_
 
 
 float2	ComputeMipLevel( float2 _radius, float2 _radialStepSizes ) {
-//return 0;
+return 0;
 	float	radiusPixel = _radius.x;
 	float	deltaRadius = _radialStepSizes.x;
 	float	pixelArea = PI / (2.0 * MAX_ANGLES) * 2.0 * radiusPixel * deltaRadius;
@@ -91,6 +91,118 @@ float2	ComputeMipLevel( float2 _radius, float2 _radialStepSizes ) {
 	return 0.5 * log2( pixelArea ) * float2( 0, 2 );	// Unfortunately, sampling lower mips for depth gives very nasty halos! Maybe use max depth? Meh. Not conclusive either...
 	return 1.5 * 0.5 * log2( pixelArea );
 	return 0.5 * log2( pixelArea );
+}
+
+
+float3	GatherIrradiance_TEMP( float2 _ssPosition, float2 _ssDirection, float _Z0, float3 _csNormal, float2 _radialStepSizes, uint _stepsCount, float3 _centralRadiance, out float3 _ssBentNormal, out float2 _coneAngles, inout float4 _DEBUG ) {
+
+	// Pre-compute factors for the integrals
+	float2	integralFactors_Front = ComputeIntegralFactors( _ssDirection, _csNormal );
+	float2	integralFactors_Back = ComputeIntegralFactors( -_ssDirection, _csNormal );
+
+	// Compute initial cos(angle) for front & back horizons
+	// We do that by projecting the screen-space direction ssDirection onto the tangent plane given by the normal
+	//	then the cosine of the angle from the Z axis is simply given by the Pythagorean theorem:
+	//                             P
+	//			   N\  |Z		  -*-
+	//				 \ |	  ---  ^
+	//				  \|  ---      |
+	//             --- *..........>+ ssDirection
+	//        --- 
+	//
+	float	hitDistance_Front = -dot( _ssDirection, _csNormal.xy ) * (abs(_csNormal.z) > 1e-6 ? 1.0 / _csNormal.z : 0.0);
+//	float	maxCos_Front = hitDistance_Front / sqrt( hitDistance_Front*hitDistance_Front + dot(_ssDirection,_ssDirection) );
+	float	maxCos_Front = hitDistance_Front / sqrt( hitDistance_Front*hitDistance_Front + 1.0 );
+	float	maxCos_Back = -maxCos_Front;	// Back cosine is simply the mirror value
+
+	// Gather irradiance from front & back directions while updating the horizon angles at the same time
+	float3	sumRadiance = 0.0;
+	float2	radius = 0.0;
+	float2	ssStep = _radialStepSizes.x * _ssDirection;
+	float2	ssPosition_Front = _ssPosition;
+	float2	ssPosition_Back = _ssPosition;
+	float3	previousRadiance_Front = _centralRadiance;
+	float3	previousRadianceBack = _centralRadiance;
+	for ( uint stepIndex=0; stepIndex < _stepsCount; stepIndex++ ) {
+		radius += _radialStepSizes;
+		ssPosition_Front += ssStep;
+		ssPosition_Back -= ssStep;
+
+		float2	mipLevel = ComputeMipLevel( radius, _radialStepSizes );
+
+		sumRadiance += SampleIrradiance( ssPosition_Front, _Z0, radius.y, mipLevel, integralFactors_Front, previousRadiance_Front, maxCos_Front );
+		sumRadiance += SampleIrradiance( ssPosition_Back, _Z0, radius.y, mipLevel, integralFactors_Back, previousRadianceBack, maxCos_Back );
+	}
+
+	// Accumulate bent normal direction by rebuilding and averaging the front & back horizon vectors
+	#if USE_NUMERICAL_INTEGRATION
+		// Half brute force where we perform the integration numerically as a sum...
+		// This solution is prefered to the analytical integral that shows some precision artefacts unfortunately...
+		//
+		float	thetaFront = acos( maxCos_Front );
+		float	thetaBack = -acos( maxCos_Back );
+
+		_ssBentNormal = 0.001 * _N;
+		for ( uint i=0; i < USE_NUMERICAL_INTEGRATION; i++ ) {
+			float	theta = lerp( thetaBack, thetaFront, (i+0.5) / USE_NUMERICAL_INTEGRATION );
+			float	sinTheta, cosTheta;
+			sincos( theta, sinTheta, cosTheta );
+			float3	ssUnOccludedDirection = float3( sinTheta * _ssDirection, cosTheta );
+
+			float	cosAlpha = saturate( dot( ssUnOccludedDirection, _N ) );
+
+			float	weight = cosAlpha * abs(sinTheta);		// cos(alpha) * sin(theta).dTheta  (be very careful to take abs(sin(theta)) because our theta crosses the pole and becomes negative here!)
+			_ssBentNormal += weight * ssUnOccludedDirection;
+		}
+
+		float	dTheta = (thetaFront - thetaBack) / USE_NUMERICAL_INTEGRATION;
+		_ssBentNormal *= dTheta;
+	#else
+		// Analytical solution
+		float	cosTheta0 = maxCos_Front;
+		float	cosTheta1 = maxCos_Back;
+		float	sinTheta0 = sqrt( 1.0 - cosTheta0*cosTheta0 );
+		float	sinTheta1 = sqrt( 1.0 - cosTheta1*cosTheta1 );
+		float	cosTheta0_3 = cosTheta0*cosTheta0*cosTheta0;
+		float	cosTheta1_3 = cosTheta1*cosTheta1*cosTheta1;
+		float	sinTheta0_3 = sinTheta0*sinTheta0*sinTheta0;
+		float	sinTheta1_3 = sinTheta1*sinTheta1*sinTheta1;
+
+		float2	sliceSpaceNormal = float2( dot( _csNormal.xy, _ssDirection ), _csNormal.z );
+
+		float	averageX = sliceSpaceNormal.x * (cosTheta0_3 + cosTheta1_3 - 3.0 * (cosTheta0 + cosTheta1) + 4.0)
+						 + sliceSpaceNormal.y * (sinTheta0_3 - sinTheta1_3);
+
+		float	averageY = sliceSpaceNormal.x * (sinTheta0_3 - sinTheta1_3)
+						 + sliceSpaceNormal.y * (2.0 - cosTheta0_3 - cosTheta1_3);
+
+		_ssBentNormal = float3( averageX * _ssDirection, averageY );
+	#endif
+
+	_ssBentNormal = normalize( _ssBentNormal );
+
+	// Compute cone angles
+	float3	ssHorizon_Front = float3( sqrt( 1.0 - maxCos_Front*maxCos_Front ) * _ssDirection, maxCos_Front );
+	float3	ssHorizon_Back = float3( -sqrt( 1.0 - maxCos_Back*maxCos_Back ) * _ssDirection, maxCos_Back );
+	#if USE_FAST_ACOS
+		_coneAngles.x = FastPosAcos( saturate( dot( _ssBentNormal, ssHorizon_Front ) ) );
+		_coneAngles.y = FastPosAcos( saturate( dot( _ssBentNormal, ssHorizon_Back ) ) ) ;
+	#else
+		_coneAngles.x = acos( saturate( dot( _ssBentNormal, ssHorizon_Front ) ) );
+		_coneAngles.y = acos( saturate( dot( _ssBentNormal, ssHorizon_Back ) ) );
+	#endif
+
+
+#if AVERAGE_COSINES
+_coneAngles = float2( saturate( dot( _ssBentNormal, ssHorizon_Front ) ), saturate( dot( _ssBentNormal, ssHorizon_Back ) ) );
+#endif
+
+
+//_DEBUG = float4( _coneAngles, 0, 0 );
+_DEBUG = _coneAngles.x / (0.5*PI);
+
+
+	return sumRadiance;
 }
 
 
@@ -157,7 +269,7 @@ PS_OUT	PS( float4 __Position : SV_POSITION ) {
 	{
 		float	phi = (angleIndex + noise) * PI / MAX_ANGLES;
 
-//phi = 0.0;
+phi = 0.0;
 
 		float2	ssDirection;
 		sincos( phi, ssDirection.y, ssDirection.x );
@@ -165,7 +277,7 @@ PS_OUT	PS( float4 __Position : SV_POSITION ) {
 		// Gather irradiance and average cone direction for that slice
 		float3	ssBentNormal;
 		float2	coneAngles;
-		sumIrradiance += GatherIrradiance( __Position.xy, ssDirection, Z, N, float2( radiusStepSize_pixels, radiusStepSize_meters ), samplesCount, centralRadiance, ssBentNormal, coneAngles, GATHER_DEBUG );
+		sumIrradiance += GatherIrradiance_TEMP( __Position.xy, ssDirection, Z, N, float2( radiusStepSize_pixels, radiusStepSize_meters ), samplesCount, centralRadiance, ssBentNormal, coneAngles, GATHER_DEBUG );
 
 		ssAverageBentNormal += ssBentNormal;
 
@@ -208,7 +320,8 @@ varianceConeAngle = acos( varianceConeAngle );
 //sumIrradiance = float3( 1, 0, 1 );
 
 float3	DEBUG_VALUE = float3( 1,0,1 );
-//DEBUG_VALUE = ssAverageBentNormal;
+DEBUG_VALUE = ssAverageBentNormal;
+DEBUG_VALUE = ssAverageBentNormal.x * _Camera2World[0].xyz - ssAverageBentNormal.y * _Camera2World[1].xyz - ssAverageBentNormal.z * _Camera2World[2].xyz;	// World-space normal
 //DEBUG_VALUE = cos( averageConeAngle );
 //DEBUG_VALUE = dot( ssAverageBentNormal, N );
 //DEBUG_VALUE = 0.01 * Z;
@@ -219,8 +332,8 @@ float3	DEBUG_VALUE = float3( 1,0,1 );
 //DEBUG_VALUE = stdDeviation;
 //DEBUG_VALUE = float3( GATHER_DEBUG.xy, 0 );
 //DEBUG_VALUE = float3( GATHER_DEBUG.zw, 0 );
-//DEBUG_VALUE = GATHER_DEBUG.xyz;
-DEBUG_VALUE = N;
+DEBUG_VALUE = GATHER_DEBUG.xyz;
+//DEBUG_VALUE = N;
 
 	PS_OUT	Out;
 	Out.irradiance = float4( sumIrradiance, 0 );

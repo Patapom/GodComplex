@@ -103,7 +103,8 @@ float3	SampleIrradiance( float2 _ssPosition, float _H0, float _radius, float2 _m
 	// Integrate over horizon difference (always from smallest to largest angle otherwise we get negative results!)
 	float3	incomingRadiance = _previousRadiance * IntegrateSolidAngle( _integralFactors, cosHorizon, _maxCos );
 
-	// #TODO: Integrate with linear interpolation of irradiance as well??
+// #TODO: Integrate with linear interpolation of irradiance as well??
+// #TODO: Integrate with Fresnel F0!
 
 	_maxCos = cosHorizon;		// Register a new positive horizon
 

@@ -99,6 +99,15 @@ namespace TestHBIL {
 			public float2	_bilateralValues;
 		}
 
+		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
+		internal struct	CB_DebugCone {
+			public float3	_wsConePosition;
+			public float	_coneAngle;
+			public float3	_wsConeDirection;
+			public float	_coneStdDeviation;
+			public uint		_flags;
+		}
+
 		#endregion
 
 		#region FIELDS
@@ -111,6 +120,7 @@ namespace TestHBIL {
 		private ConstantBuffer<CB_PushPull>		m_CB_PushPull = null;
 		private ConstantBuffer<CB_DownSample>	m_CB_DownSample = null;
 		private ConstantBuffer<CB_HBIL>			m_CB_HBIL = null;
+		private ConstantBuffer<CB_DebugCone>	m_CB_DebugCone = null;
 
 		private ComputeShader		m_shader_ReprojectRadiance = null;
 
@@ -148,6 +158,11 @@ namespace TestHBIL {
 
 		private Camera				m_camera = new Camera();
 		private CameraManipulator	m_manipulator = new CameraManipulator();
+
+		// DEBUG
+		private ComputeHBIL			m_softwareHBILComputer = null;	// For DEBUG purposes
+		private Primitive			m_primCylinder;
+		private Shader				m_shader_RenderDebugCone = null;
 
 		//////////////////////////////////////////////////////////////////////////
 		// Timing
@@ -210,6 +225,7 @@ namespace TestHBIL {
 			m_CB_PushPull = new ConstantBuffer<CB_PushPull>( m_device, 3 );
 			m_CB_DownSample = new ConstantBuffer<CB_DownSample>( m_device, 3 );
 			m_CB_HBIL = new ConstantBuffer<CB_HBIL>( m_device, 3 );
+			m_CB_DebugCone = new ConstantBuffer<CB_DebugCone>( m_device, 3 );
 
 			try {
 				// Reprojection shaders
@@ -239,6 +255,7 @@ namespace TestHBIL {
 				// Stuff
 				m_shader_DownSampleDepth = new ComputeShader( m_device, new System.IO.FileInfo( "Shaders/DownSampleDepth.hlsl" ), "CS", null );
 				m_shader_PostProcess = new Shader( m_device, new System.IO.FileInfo( "Shaders/PostProcess.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+				m_shader_RenderDebugCone = new Shader( m_device, new System.IO.FileInfo( "Shaders/RenderDebugCone.hlsl" ), VERTEX_FORMAT.P3, "VS", null, "PS", null );
 			} catch ( Exception _e ) {
 				MessageBox.Show( "Shader failed to compile!\n\n" + _e.Message, "HBIL Test", MessageBoxButtons.OK, MessageBoxIcon.Error );
 			}
@@ -302,6 +319,26 @@ namespace TestHBIL {
 			InitEnvironmentSH();
 			UpdateSH();
 
+			// Create software computer for debugging purposes
+			m_softwareHBILComputer = new ComputeHBIL( m_device );
+			{
+				VertexP3[]	vertices = new VertexP3[2*100];
+				uint[]		indices = new uint[2*3*100];
+				for ( uint i=0; i < 100; i++ ) {
+					float	a = Mathf.PI * i / 50;
+					vertices[i] = new VertexP3() { P = new float3( Mathf.Cos( a ), Mathf.Sin( a ), 0 ) };
+					vertices[100+i] = new VertexP3() { P = new float3( Mathf.Cos( a ), Mathf.Sin( a ), 1 ) };
+					uint	Ni = (i+1) % 100;
+					indices[2*3*i+0] = i;
+					indices[2*3*i+1] = 100+i;
+					indices[2*3*i+2] = 100+Ni;
+					indices[2*3*i+3] = i;
+					indices[2*3*i+4] = 100+Ni;
+					indices[2*3*i+5] = Ni;
+				}
+				m_primCylinder = new Primitive( m_device, 2*100, VertexP3.FromArray( vertices ), indices, Primitive.TOPOLOGY.TRIANGLE_LIST, VERTEX_FORMAT.P3 );
+			}
+
 			// Start game time
 			m_ticks2Seconds = 1.0 / System.Diagnostics.Stopwatch.Frequency;
 			m_stopWatch.Start();
@@ -318,6 +355,10 @@ namespace TestHBIL {
 			if ( m_device == null )
 				return;
 
+			m_shader_RenderDebugCone.Dispose();
+			m_primCylinder.Dispose();
+			m_softwareHBILComputer.Dispose();
+
 			m_tex_finalRender.Dispose();
 
 			m_tex_sourceRadiance_PULL.Dispose();
@@ -333,6 +374,7 @@ namespace TestHBIL {
 			m_tex_normal.Dispose();
 			m_tex_albedo.Dispose();
 
+			m_shader_RenderDebugCone.Dispose();
 			m_shader_PostProcess.Dispose();
 			m_shader_ComputeLighting.Dispose();
 			m_shader_ComputeHBIL.Dispose();
@@ -346,6 +388,7 @@ namespace TestHBIL {
 			#endif
 			m_shader_ReprojectRadiance.Dispose();
 
+			m_CB_DebugCone.Dispose();
 			m_CB_HBIL.Dispose();
 			m_CB_DownSample.Dispose();
 			m_CB_PushPull.Dispose();
@@ -672,6 +715,26 @@ m_tex_texDebugNormals.SetPS( 33 );
 				m_tex_finalRender.RemoveFromLastAssignedSlots();
 			}
 
+			//////////////////////////////////////////////////////////////////////////
+			// Debug cone
+			if ( m_shader_RenderDebugCone.Use() ) {
+				m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.READ_WRITE_DEPTH_LESS, BLEND_STATE.DISABLED );
+				m_device.ClearDepthStencil( m_device.DefaultDepthStencil, 1.0f, 0, true, false );
+				m_device.SetRenderTarget( m_device.DefaultTarget, m_device.DefaultDepthStencil );
+
+				m_CB_DebugCone.m._wsConePosition = m_softwareHBILComputer.wsConePosition;
+				m_CB_DebugCone.m._wsConeDirection = m_softwareHBILComputer.wsConeDirection;
+				m_CB_DebugCone.m._coneAngle = m_softwareHBILComputer.coneAngle;
+				m_CB_DebugCone.m._coneStdDeviation = m_softwareHBILComputer.stdDeviation;
+				m_CB_DebugCone.m._flags = 0;
+				m_CB_DebugCone.UpdateData();
+				m_primCylinder.Render( m_shader_RenderDebugCone );
+
+				m_CB_DebugCone.m._flags = 1;
+				m_CB_DebugCone.UpdateData();
+				m_primCylinder.Render( m_shader_RenderDebugCone );
+			}
+
 			// Show!
 			m_device.Present( false );
 			double	totalFrameTime = m_device.PerfEndFrame();
@@ -761,6 +824,9 @@ m_tex_texDebugNormals.SetPS( 33 );
 		Quat			m_buttonDownLightQuat;
 
 		private void panelOutput_MouseDown( object sender, MouseEventArgs e ) {
+			if ( Control.ModifierKeys == Keys.Control )
+				DebugHBIL( (uint) e.X, (uint) e.Y );
+
 			if ( m_manipulator_EnableMouseAction( e ) )
 				return;	// Don't do anything if camera manipulator is enabled
 
@@ -866,6 +932,13 @@ m_tex_texDebugNormals.SetPS( 33 );
 		private void TestHBILForm_KeyDown( object sender, KeyEventArgs e ) {
 			if ( e.KeyCode == Keys.A )
 				checkBoxFreezePrev2CurrentCamMatrix.Checked ^= true;
+		}
+
+		private void	DebugHBIL( uint _X, uint _Y ) {
+			m_softwareHBILComputer.Setup( m_tex_depthWithMips, m_tex_normal, m_tex_sourceRadiance_PULL );
+			m_softwareHBILComputer.GatherSphereMaxRadius_m = floatTrackbarControlGatherSphereRadius.Value;
+			m_softwareHBILComputer.Camera2World = m_CB_Camera.m._Camera2World;
+			m_softwareHBILComputer.Compute( _X, _Y );
 		}
 
 		#endregion
