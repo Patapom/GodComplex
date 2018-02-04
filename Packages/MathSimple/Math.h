@@ -83,6 +83,8 @@ namespace SharpMath {
 		//////////////////////////////////////////////////////////////////////////
 		// Additional helpers
 		static float			Clamp( float x, float min, float max )				{ return x < min ? min : (x > max ? max : x); }
+		static int				Clamp( int x, int min, int max )					{ return x < min ? min : (x > max ? max : x); }
+		static UInt32			Clamp( UInt32 x, UInt32 min, UInt32 max )			{ return x < min ? min : (x > max ? max : x); }
 		static float			Lerp( float a, float b, float t )					{ return a * (1.0f - t) + b * t; }
 		static float			Saturate( float x )									{ return x < 0.0f ? 0.0f : (x > 1.0f ? 1.0f : x); }
 		static float			Square( float a )									{ return a * a;  }
@@ -90,6 +92,10 @@ namespace SharpMath {
 		static bool				Almost( float a, float b, float _epsilon )			{ return Abs( a - b ) < _epsilon; }
 		static bool				Almost( double a, double b )						{ return Almost( a, b, double(ALMOST_EPSILON) ); }
 		static bool				Almost( double a, double b, double _epsilon )		{ return Abs( a - b ) < _epsilon; }
+
+		static float			Log2( float v )										{ return 0.69314718055994530941723212145818f * Log( v ); }	// Ln(x)/Ln(2)
+		static float			Step( float a, float b )							{ return a < b ? 1.0f : 0.0f; }
+		static float			Smoothstep( float a, float b, float x )				{ float t = (x - a) / (b - a); return 3*t*t - 2*t*t*t; }
 
 		//////////////////////////////////////////////////////////////////////////
 		// Conversions

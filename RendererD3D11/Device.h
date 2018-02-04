@@ -146,7 +146,7 @@ public:	 // METHODS
 	// Inspired by: http://www.reedbeta.com/blog/gpu-profiling-101/
 	void	PerfBeginFrame();				// Must be called at the beginning of the frame
 	void	PerfSetMarker( U32 _markerID );	// Must be called at the beginning of your task
-	void	PerfEndFrame();					// Must be called AFTER Present()
+	double	PerfEndFrame();					// Must be called AFTER Present(). Returns total frame time in milliseconds
 	// Returns the time (in milliseconds) elapsed between start and end markers (by default, if no end marker is specified then it will use the marker immediately after the start marker, or the end of frame if none exists)
 	double	PerfGetMilliSeconds( U32 _markerIDStart, U32 _markerIDEnd=~0U );
 

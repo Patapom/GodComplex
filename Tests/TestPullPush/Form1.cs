@@ -29,7 +29,7 @@ namespace TestPullPush
 		public Form1() {
 			InitializeComponent();
 
-			ConvolveNDF();
+//			ConvolveNDF();
 
 			m_imageInput = new ImageFile( new System.IO.FileInfo( "Parrot.png" ) );
 			panelInputImage.m_bitmap = m_imageInput.AsBitmap;
@@ -38,35 +38,35 @@ namespace TestPullPush
 			uint	H = m_imageInput.Height;
 
 			//////////////////////////////////////////////////////////////////////////
-			// Build the sparse input image which is the original image but with many holes in pixels
+			// Build the sparse input image which is the original image but with many holes
 			m_imageSparseInput = new ImageFile( W, H, PIXEL_FORMAT.BGRA8, m_imageInput.ColorProfile );
 			m_imageSparseInput.Clear( float4.UnitW );
 
 			m_sparsePixels = new float4[W,H];
-// 			m_imageInput.ReadPixels( ( uint X, uint Y, ref float4 _color ) => { m_sparsePixels[X,Y] = _color; } );
-// 			for ( uint Y=0; Y < H; Y++ ) {
-// 				float	fY = 2.0f * Y / H - 1.0f;
-// 				for ( uint X=0; X < W; X++ ) {
-// 					float	fX = 2.0f * X / W - 1.0f;
-// 					float	gauss = (float) Math.Exp( -5.0f * (fX*fX + fY*fY) );
-// 					float	weight = SimpleRNG.GetUniform() < gauss ? 1.0f : 0.0f;
-// 					m_sparsePixels[X,Y].x *= weight;
-// 					m_sparsePixels[X,Y].y *= weight;
-// 					m_sparsePixels[X,Y].z *= weight;
-// 					m_sparsePixels[X,Y].w *= weight;
-// 				}
-// 			}
+			m_imageInput.ReadPixels( ( uint X, uint Y, ref float4 _color ) => { m_sparsePixels[X,Y] = _color; } );
+			for ( uint Y=0; Y < H; Y++ ) {
+				float	fY = 2.0f * Y / H - 1.0f;
+				for ( uint X=0; X < W; X++ ) {
+					float	fX = 2.0f * X / W - 1.0f;
+					float	gauss = (float) Math.Exp( -5.0f * (fX*fX + fY*fY) );
+					float	weight = SimpleRNG.GetUniform() < gauss ? 1.0f : 0.0f;
+					m_sparsePixels[X,Y].x *= weight;
+					m_sparsePixels[X,Y].y *= weight;
+					m_sparsePixels[X,Y].z *= weight;
+					m_sparsePixels[X,Y].w *= weight;
+				}
+			}
 
 // Triangle test
 // m_sparsePixels[100, 50] = new float4( 1, 0, 0, 1.0f );
 // m_sparsePixels[50, 160] = new float4( 1, 1, 0, 1.0f );
 // m_sparsePixels[200, 128] = new float4( 0, 1, 1, 1.0f );
 
-for ( int i=0; i < 20; i++ ) {
-	int	X = (int) (128 + 80 * Math.Cos( 2.0 * Math.PI * i / 20 ));
-	int	Y = (int) (128 + 80 * Math.Sin( 2.0 * Math.PI * i / 20 ));
-	m_sparsePixels[X,Y] = new float4( 0.25f + 0.75f * (float) SimpleRNG.GetUniform(), 0.25f + 0.75f * (float) SimpleRNG.GetUniform(), 0.25f + 0.75f * (float) SimpleRNG.GetUniform(), 1.0f );
-}
+// for ( int i=0; i < 20; i++ ) {
+// 	int	X = (int) (128 + 80 * Math.Cos( 2.0 * Math.PI * i / 20 ));
+// 	int	Y = (int) (128 + 80 * Math.Sin( 2.0 * Math.PI * i / 20 ));
+// 	m_sparsePixels[X,Y] = new float4( 0.25f + 0.75f * (float) SimpleRNG.GetUniform(), 0.25f + 0.75f * (float) SimpleRNG.GetUniform(), 0.25f + 0.75f * (float) SimpleRNG.GetUniform(), 1.0f );
+// }
 
 
 			m_imageSparseInput.WritePixels( ( uint X, uint Y, ref float4 _color ) => { _color = m_sparsePixels[X,Y]; } );
@@ -94,13 +94,19 @@ for ( int i=0; i < 20; i++ ) {
 		}
 
 		void	ApplyPullPush( float _gamma ) {
-//			ApplyPullPush_Original( _gamma );
+			ApplyPullPush_Original( _gamma );
 //			ApplyPullPush_Expand( _gamma );		// Good result!
-			ApplyPullPush_DistanceField( _gamma );
+//			ApplyPullPush_DistanceField( _gamma );
 		}
 
 		#region Working but Ugly
 
+		/// <summary>
+		/// Original push/pull algorithm from "THE PULL-PUSH ALGORITHM REVISITED" M. Kraus (2009)
+		/// https://wwwcg.in.tum.de/fileadmin/user_upload/Lehrstuehle/Lehrstuhl_XV/Research/Publications/2009/grapp09.pdf
+		/// </summary>
+		/// <remarks>Found a shadertoy implementation with only 2 levels here: https://www.shadertoy.com/view/XsfyRr</remarks>
+		/// <param name="_gamma"></param>
 		void	ApplyPullPush_Original( float _gamma ) {
 			uint	W = m_imageInput.Width;
 			uint	H = m_imageInput.Height;
@@ -121,7 +127,6 @@ for ( int i=0; i < 20; i++ ) {
 				{ 4 / 273.0f, 16 / 273.0f, 26 / 273.0f, 16 / 273.0f, 4 / 273.0f },
 				{ 1 / 273.0f, 4 / 273.0f, 7 / 273.0f, 4 / 273.0f, 1 / 273.0f },
 			};
-
 
 			// Initialize source pixels at mip 0
 			for ( uint Y=0; Y < H; Y++ )
@@ -593,7 +598,7 @@ Array.Copy( m_inputPixels[MAX_MIP], m_outputPixels[MAX_MIP], W*H );
 			}
 		}
 
-		// I'm trying to expand the inut filtering range to avoid sharp patterns here
+		// I'm trying to expand the input filtering range to avoid sharp patterns here
 		distancePixel[][,]	m_distanceFields = new distancePixel[2][,];
 		void	PreComputeDistanceField() {
 			uint	W = m_imageInput.Width;
@@ -730,13 +735,13 @@ Array.Copy( m_inputPixels[MAX_MIP], m_outputPixels[MAX_MIP], W*H );
 
 
 
-panelPixelDensity.m_bitmap = m_testPlot.AsBitmap;
-panelPixelDensity.Refresh();
-return;
+//panelPixelDensity.m_bitmap = m_testPlot.AsBitmap;
+//panelPixelDensity.Refresh();
+//return;
 
 
 
-//			m_imageRecosntructedOutput.WritePixels( ( uint X, uint Y, ref float4 _color ) => { _color = m_inputPixels[0][X,Y]; } );
+//			m_imageReconstructedOutput.WritePixels( ( uint X, uint Y, ref float4 _color ) => { _color = m_inputPixels[0][X,Y]; } );
 			float4[,]	source = checkBoxInput.Checked ? m_inputPixels[integerTrackbarControlMipLevel.Value] : m_outputPixels[integerTrackbarControlMipLevel.Value];
 			m_imageReconstructedOutput.WritePixels( ( uint X, uint Y, ref float4 _color ) => {
 				float	U = (float) X / W;

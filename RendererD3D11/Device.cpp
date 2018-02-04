@@ -103,7 +103,7 @@ bool	Device::Init( U32 _width, U32 _height, HWND _handle, bool _fullscreen, bool
 	m_pDefaultRenderTarget = new Texture2D( *this, *pDefaultRenderSurface );
 
 	// Create the default depth stencil buffer
-	m_pDefaultDepthStencil = new Texture2D( *this, _width, _height, 1, BaseLib::PIXEL_FORMAT::R32F, BaseLib::DEPTH_COMPONENT_FORMAT::DEPTH_ONLY );
+	m_pDefaultDepthStencil = new Texture2D( *this, _width, _height, 1, 1, BaseLib::PIXEL_FORMAT::R32F, BaseLib::DEPTH_COMPONENT_FORMAT::DEPTH_ONLY );
 
 
 	//////////////////////////////////////////////////////////////////////////
@@ -533,7 +533,7 @@ static void		QueryTimeStamps( int _entryIndex, Device::DoubleBufferedQuery*& _qu
 	_query->GetTimeStamp( *((Device*) _pUserData) );
 }
 
-void	Device::PerfEndFrame() {
+double	Device::PerfEndFrame() {
 	m_deviceContext->End( *m_queryFrameEnd );
 	m_deviceContext->End( *m_queryDisjoint );
 	m_lastQuery->m_nextMarkerID = m_queryFrameEnd->m_markerID;
@@ -543,7 +543,7 @@ void	Device::PerfEndFrame() {
 
 //	m_queryClockFrequency = 0;
 	if ( m_deviceContext->GetData( *m_queryDisjoint, NULL, 0, 0 ) != S_OK )
-		return;
+		return -1.0;
 // 	while ( m_deviceContext->GetData( m_queryDisjoint, NULL, 0, 0 ) == S_FALSE ) {
 //         Sleep(1);       // Wait a bit, but give other threads a chance to run
 //     }
@@ -551,15 +551,19 @@ void	Device::PerfEndFrame() {
 	// Check whether timestamps were disjoint during the last frame
 	D3D11_QUERY_DATA_TIMESTAMP_DISJOINT	tsDisjoint;
 	if ( m_deviceContext->GetData( *m_queryDisjoint, &tsDisjoint, sizeof(tsDisjoint), 0 ) != S_OK )
-		return;	// Maybe first frame?
+		return -1.0;	// Maybe first frame?
 	if ( tsDisjoint.Disjoint )
-		return;
+		return - 1.0;
 	m_queryClockFrequency = tsDisjoint.Frequency;
 
 	// Get all the timestamps
 	m_queryFrameBegin->GetTimeStamp( *this );
 	m_queryFrameEnd->GetTimeStamp( *this );
 	m_performanceQueries.ForEach( QueryTimeStamps, this );
+
+	U64		timeStampDelta = m_queryFrameEnd->m_timeStamp - m_queryFrameBegin->m_timeStamp;
+	double	result = 1000.0 * double( timeStampDelta ) / m_queryClockFrequency;
+	return result;
 }
 
 double		Device::PerfGetMilliSeconds( U32 _markerIDStart, U32 _markerIDEnd ) {

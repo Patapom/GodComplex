@@ -21,12 +21,29 @@ namespace Renderer {
 		::Texture3D*	m_texture;
 		Object^			m_tag;
 
+		ImageUtility::PIXEL_FORMAT		m_pixelFormat;
+		ImageUtility::COMPONENT_FORMAT	m_componentFormat;
+
 	public:
 
 		property UInt32	Width			{ UInt32 get() { return m_texture->GetWidth(); } }
 		property UInt32	Height			{ UInt32 get() { return m_texture->GetHeight(); } }
 		property UInt32	Depth			{ UInt32 get() { return m_texture->GetDepth(); } }
 		property UInt32	MipLevelsCount	{ UInt32 get() { return m_texture->GetMipLevelsCount(); } }
+		property ImageUtility::PIXEL_FORMAT	PixelFormat { ImageUtility::PIXEL_FORMAT get() { return m_pixelFormat; } }
+		property ImageUtility::COMPONENT_FORMAT	ComponentFormat { ImageUtility::COMPONENT_FORMAT get() { return m_componentFormat; } }
+
+		property UInt32	WidthAtMip[UInt32] {
+			UInt32	get( UInt32 _mipLevelIndex ) { return GetSizeAtMip( Width, _mipLevelIndex ); }
+		}
+
+		property UInt32	HeightAtMip[UInt32] {
+			UInt32	get( UInt32 _mipLevelIndex ) { return GetSizeAtMip( Height, _mipLevelIndex ); }
+		}
+
+		property UInt32	DepthAtMip[UInt32] {
+			UInt32	get( UInt32 _mipLevelIndex ) { return GetSizeAtMip( Depth, _mipLevelIndex ); }
+		}
 
 		property Object^	Tag { Object^ get() { return m_tag; } void set( Object^ _value ) { m_tag = _value; } }
 
@@ -80,6 +97,11 @@ namespace Renderer {
 		// Upload the texture as a UAV for a compute shader
 		void		SetCSUAV( int _slotIndex );
 		void		RemoveFromLastAssignedSlotUAV()	{ m_texture->RemoveFromLastAssignedSlotUAV(); }
+
+		// Helper to compute a size (width, height or depth) at a specific mip level
+		static UInt32		GetSizeAtMip( UInt32 _sizeAtMip0, UInt32 _mipLevelIndex ) {
+			return Math::Max( 1U, _sizeAtMip0 >> _mipLevelIndex );
+		}
 
 	internal:
 

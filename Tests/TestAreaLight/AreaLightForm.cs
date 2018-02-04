@@ -1848,7 +1848,7 @@ renderProg PostFX/Debug/WardBRDFAlbedo {
 // 			m_Tex_Normal = Image2Texture( new System.IO.FileInfo( "wooden_dirty_floor_01_n.png" ) );
 
 			uint	SHADOW_MAP_SIZE = 512;
-			m_Tex_ShadowMap = new Texture2D( m_Device, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 1, DEPTH_STENCIL_FORMAT.D32 );
+			m_Tex_ShadowMap = new Texture2D( m_Device, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 1, 1, DEPTH_STENCIL_FORMAT.D32 );
 #if FILTER_EXP_SHADOW_MAP
 			m_Tex_ShadowMapFiltered[0] = new Texture2D( m_Device, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 1, 1, ImageUtility.PIXEL_FORMAT.R16, ImageUtility.COMPONENT_FORMAT.UNORM, false, false, null );
 			m_Tex_ShadowMapFiltered[1] = new Texture2D( m_Device, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 1, 1, ImageUtility.PIXEL_FORMAT.R16, ImageUtility.COMPONENT_FORMAT.UNORM, false, false, null );

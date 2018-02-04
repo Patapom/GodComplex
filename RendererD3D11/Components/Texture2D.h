@@ -56,7 +56,7 @@ public:	 // METHODS
 	// NOTE: If _arraySize is < 0 then a cube map or cube map array is created (WARNING: the array size must be a valid multiple of 6!)
 	Texture2D( Device& _device, U32 _width, U32 _height, int _arraySize, U32 _mipLevelsCount, BaseLib::PIXEL_FORMAT _format, BaseLib::COMPONENT_FORMAT _componentFormat, const void* const* _ppContent, bool _staging=false, bool _UAV=false );
 	Texture2D( Device& _device, const ImageUtilityLib::ImagesMatrix& _images, BaseLib::COMPONENT_FORMAT _componentFormat=BaseLib::COMPONENT_FORMAT::AUTO );
-	Texture2D( Device& _device, U32 _width, U32 _height, U32 _arraySize, BaseLib::PIXEL_FORMAT _format, BaseLib::DEPTH_COMPONENT_FORMAT _depthComponentFormat );	// This is for creating a depth stencil buffer
+	Texture2D( Device& _device, U32 _width, U32 _height, U32 _arraySize, U32 _mipLevelsCount, BaseLib::PIXEL_FORMAT _format, BaseLib::DEPTH_COMPONENT_FORMAT _depthComponentFormat );	// This is for creating a depth stencil buffer
 	Texture2D( Device& _device, ID3D11Texture2D& _Texture );																										// Used by the Device for the default backbuffer, shouldn't be used otherwise
 	~Texture2D();
 

@@ -97,7 +97,7 @@ namespace Renderer {
 		// Patapom [18/01/30] Performance queries
 		void		PerfBeginFrame()											{ m_pDevice->PerfBeginFrame(); }
 		void		PerfSetMarker( U32 _markerID )								{ m_pDevice->PerfSetMarker( _markerID ); }
-		void		PerfEndFrame()												{ m_pDevice->PerfEndFrame(); }
+		double		PerfEndFrame()												{ return m_pDevice->PerfEndFrame(); }
 		double		PerfGetMilliSeconds( U32 _markerID )						{ return m_pDevice->PerfGetMilliSeconds( _markerID ); }
 		double		PerfGetMilliSeconds( U32 _markerIDStart, U32 _markerIDEnd ) { return m_pDevice->PerfGetMilliSeconds( _markerIDStart, _markerIDEnd ); }
 

@@ -70,7 +70,7 @@ namespace SharpMath {
 		void	Min( float2 p )	{ x = Math::Min( x, p.x ); y = Math::Min( y, p.y ); }
 		void	Max( float2 p )	{ x = Math::Max( x, p.x ); y = Math::Max( y, p.y ); }
 		float2	Clamp( float _min, float _max )	{ return float2( Mathf::Clamp( x, _min, _max ), Mathf::Clamp( y, _min, _max ) ); }
-		float2	Saturate()						{ return float2( Mathf::Clamp( x, 0, 1 ), Mathf::Clamp( y, 0, 1 ) ); }
+		float2	Saturate()						{ return float2( Mathf::Clamp( x, 0.0f, 1.0f ), Mathf::Clamp( y, 0.0f, 1.0f ) ); }
 
 		float	Dot( float2 b )		{ return x*b.x + y*b.y; }
 		void	Normalize()			{ float recLength = 1.0f / Length; x *= recLength; y *= recLength; }
@@ -167,7 +167,7 @@ namespace SharpMath {
 		void	Min( float3 p )	{ x = Math::Min( x, p.x ); y = Math::Min( y, p.y ); z = Math::Min( z, p.z ); }
 		void	Max( float3 p )	{ x = Math::Max( x, p.x ); y = Math::Max( y, p.y ); z = Math::Max( z, p.z ); }
 		float3	Clamp( float _min, float _max )	{ return float3( Mathf::Clamp( x, _min, _max ), Mathf::Clamp( y, _min, _max ), Mathf::Clamp( z, _min, _max ) ); }
-		float3	Saturate()						{ return float3( Mathf::Clamp( x, 0, 1 ), Mathf::Clamp( y, 0, 1 ), Mathf::Clamp( z, 0, 1 ) ); }
+		float3	Saturate()						{ return float3( Mathf::Clamp( x, 0.0f, 1.0f ), Mathf::Clamp( y, 0.0f, 1.0f ), Mathf::Clamp( z, 0.0f, 1.0f ) ); }
 
 		float	Dot( float3 b )	{ return x*b.x + y*b.y + z*b.z; }
 		void	Normalize()		{ float recLength = 1.0f / Length; x *= recLength; y *= recLength; z *= recLength; }
@@ -299,7 +299,7 @@ namespace SharpMath {
 		void	Min( float4 p )	{ x = Math::Min( x, p.x ); y = Math::Min( y, p.y ); z = Math::Min( z, p.z ); w = Math::Min( w, p.w ); }
 		void	Max( float4 p )	{ x = Math::Max( x, p.x ); y = Math::Max( y, p.y ); z = Math::Max( z, p.z ); w = Math::Max( w, p.w ); }
 		float4	Clamp( float _min, float _max )	{ return float4( Mathf::Clamp( x, _min, _max ), Mathf::Clamp( y, _min, _max ), Mathf::Clamp( z, _min, _max ), Mathf::Clamp( w, _min, _max ) ); }
-		float4	Saturate()						{ return float4( Mathf::Clamp( x, 0, 1 ), Mathf::Clamp( y, 0, 1 ), Mathf::Clamp( z, 0, 1 ), Mathf::Clamp( w, 0, 1 ) ); }
+		float4	Saturate()						{ return float4( Mathf::Clamp( x, 0.0f, 1.0f ), Mathf::Clamp( y, 0.0f, 1.0f ), Mathf::Clamp( z, 0.0f, 1.0f ), Mathf::Clamp( w, 0.0f, 1.0f ) ); }
 
 		float	Dot( float4 b )	{ return x*b.x + y*b.y + z*b.z + w*b.w; }
 		void	Normalize()		{ float recLength = 1.0f / Length; x *= recLength; y *= recLength; z *= recLength; w*= recLength; }

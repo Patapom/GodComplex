@@ -21,12 +21,17 @@ namespace Renderer {
 		::Texture2D*	m_texture;
 		Object^			m_tag;
 
+		ImageUtility::PIXEL_FORMAT		m_pixelFormat;
+		ImageUtility::COMPONENT_FORMAT	m_componentFormat;
+
 	public:
 
 		property UInt32	Width			{ UInt32 get() { return m_texture->GetWidth(); } }
 		property UInt32	Height			{ UInt32 get() { return m_texture->GetHeight(); } }
 		property UInt32	ArraySize		{ UInt32 get() { return m_texture->GetArraySize(); } }
 		property UInt32	MipLevelsCount	{ UInt32 get() { return m_texture->GetMipLevelsCount(); } }
+		property ImageUtility::PIXEL_FORMAT	PixelFormat { ImageUtility::PIXEL_FORMAT get() { return m_pixelFormat; } }
+		property ImageUtility::COMPONENT_FORMAT	ComponentFormat { ImageUtility::COMPONENT_FORMAT get() { return m_componentFormat; } }
 
 		property UInt32	WidthAtMip[UInt32] {
 			UInt32	get( UInt32 _mipLevelIndex ) { return GetSizeAtMip( Width, _mipLevelIndex ); }
@@ -42,10 +47,10 @@ namespace Renderer {
 
 	public:
 
-		// _Content must be of size _ArraySize * _MipLevelsCount and must contain all consecutive mips for each slice (e.g. 3 mips and array size 2 : [ Mip0_slice0, Mip1_slice0, Mip2_slice0, Mip0_slice1, Mip1_slice1, Mip2_slice1])
-		Texture2D( Device^ _device, UInt32 _Width, UInt32 _Height, int _ArraySize, UInt32 _MipLevelsCount, ImageUtility::PIXEL_FORMAT _pixelFormat, ImageUtility::COMPONENT_FORMAT _componentFormat, bool _Staging, bool _UAV, cli::array<PixelsBuffer^>^ _Content );
+		// _Content must be of size _arraySize * _mipLevelsCount and must contain all consecutive mips for each slice (e.g. 3 mips and array size 2 : [ Mip0_slice0, Mip1_slice0, Mip2_slice0, Mip0_slice1, Mip1_slice1, Mip2_slice1])
+		Texture2D( Device^ _device, UInt32 _width, UInt32 _height, int _arraySize, UInt32 _mipLevelsCount, ImageUtility::PIXEL_FORMAT _pixelFormat, ImageUtility::COMPONENT_FORMAT _componentFormat, bool _staging, bool _UAV, cli::array<PixelsBuffer^>^ _Content );
 		Texture2D( Device^ _device, ImageUtility::ImagesMatrix^ _images, ImageUtility::COMPONENT_FORMAT _componentFormat );
-		Texture2D( Device^ _device, UInt32 _Width, UInt32 _Height, UInt32 _ArraySize, DEPTH_STENCIL_FORMAT _DepthStencilFormat );
+		Texture2D( Device^ _device, UInt32 _width, UInt32 _height, UInt32 _arraySize, UInt32 _mipLevelsCount, DEPTH_STENCIL_FORMAT _DepthStencilFormat );
 		~Texture2D() {
  			delete m_texture;
 		}
@@ -188,8 +193,8 @@ namespace Renderer {
 		UInt32		m_arraySize;
 		bool		m_asArray;
 
-		View2D( Texture2D^ _Owner, UInt32 _MipLevelStart, UInt32 _MipLevelsCount, UInt32 _ArrayStart, UInt32 _ArraySize ) : m_owner( _Owner ), m_mipLevelStart( _MipLevelStart ), m_mipLevelsCount( _MipLevelsCount ), m_arrayStart( _ArrayStart ), m_arraySize( _ArraySize ), m_asArray( false ) {}
-		View2D( Texture2D^ _Owner, UInt32 _MipLevelStart, UInt32 _MipLevelsCount, UInt32 _ArrayStart, UInt32 _ArraySize, bool _AsArray ) : m_owner( _Owner ), m_mipLevelStart( _MipLevelStart ), m_mipLevelsCount( _MipLevelsCount ), m_arrayStart( _ArrayStart ), m_arraySize( _ArraySize ), m_asArray( _AsArray ) {}
+		View2D( Texture2D^ _Owner, UInt32 _MipLevelStart, UInt32 _mipLevelsCount, UInt32 _ArrayStart, UInt32 _arraySize ) : m_owner( _Owner ), m_mipLevelStart( _MipLevelStart ), m_mipLevelsCount( _mipLevelsCount ), m_arrayStart( _ArrayStart ), m_arraySize( _arraySize ), m_asArray( false ) {}
+		View2D( Texture2D^ _Owner, UInt32 _MipLevelStart, UInt32 _mipLevelsCount, UInt32 _ArrayStart, UInt32 _arraySize, bool _AsArray ) : m_owner( _Owner ), m_mipLevelStart( _MipLevelStart ), m_mipLevelsCount( _mipLevelsCount ), m_arrayStart( _ArrayStart ), m_arraySize( _arraySize ), m_asArray( _AsArray ) {}
 
 	public:
 

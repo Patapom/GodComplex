@@ -129,7 +129,7 @@ Texture2D::Texture2D( Device& _device, const ImageUtilityLib::ImagesMatrix& _ima
 	m_lastAssignedSlotsUAV = ~0U;
 }
 
-Texture2D::Texture2D( Device& _device, U32 _width, U32 _height, U32 _arraySize, BaseLib::PIXEL_FORMAT _format, BaseLib::DEPTH_COMPONENT_FORMAT _depthComponentFormat )
+Texture2D::Texture2D( Device& _device, U32 _width, U32 _height, U32 _arraySize, U32 _mipLevelsCount, BaseLib::PIXEL_FORMAT _format, BaseLib::DEPTH_COMPONENT_FORMAT _depthComponentFormat )
 	: Component( _device )
 	, m_isCubeMap( false )
 {
@@ -143,7 +143,7 @@ Texture2D::Texture2D( Device& _device, U32 _width, U32 _height, U32 _arraySize, 
 	m_width = _width;
 	m_height = _height;
 	m_arraySize = _arraySize;
-	m_mipLevelsCount = 1;
+	m_mipLevelsCount = ComputeMipLevelsCount( m_width, m_height, _mipLevelsCount );
 
 	// Retrieve depth stencil format
 	m_format = DepthFormat2DXGIFormat( _format, _depthComponentFormat );
@@ -152,7 +152,7 @@ Texture2D::Texture2D( Device& _device, U32 _width, U32 _height, U32 _arraySize, 
 	desc.Width = m_width;
 	desc.Height = m_height;
 	desc.ArraySize = m_arraySize;
-	desc.MipLevels = 1;
+	desc.MipLevels = m_mipLevelsCount;
 	desc.Format = DepthDXGIFormat( DEPTH_ACCESS_TYPE::SURFACE_CREATION );	// Use typeless formats when creating the surface
 	desc.SampleDesc.Count = 1;
 	desc.SampleDesc.Quality = 0;
