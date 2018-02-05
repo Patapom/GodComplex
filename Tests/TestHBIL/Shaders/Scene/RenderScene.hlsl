@@ -84,7 +84,7 @@ PS_OUT_FINAL	PS_Light( float4 __Position : SV_POSITION ) {
 	float4	ssBentCone = _tex_BentCone[pixelPosition];
 	float3	csBentNormal, wsBentNormal;
 	float	cosAverageConeAngle, stdDeviationConeAngle;
-	ReconstructBentCone( _Camera2World, wsView, ssBentCone, csBentNormal, wsBentNormal, cosAverageConeAngle, stdDeviationConeAngle );
+	ReconstructBentCone( wsView, _Camera2World[1].xyz, ssBentCone, csBentNormal, wsBentNormal, cosAverageConeAngle, stdDeviationConeAngle );
 	float	averageConeAngle = FastPosAcos( cosAverageConeAngle );
 	float2	cosConeAnglesMinMax = float2( cos( max( 0.0, averageConeAngle - stdDeviationConeAngle ) ), cos( min( 0.5 * PI, averageConeAngle + stdDeviationConeAngle ) ) );
 

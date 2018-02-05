@@ -65,8 +65,8 @@ float	IntegrateSolidAngle( float2 _integralFactors, float _cosTheta0, float _cos
 	float	I1 = _cosTheta0*_cosTheta0 - _cosTheta1*_cosTheta1;
 	return 0.5 * (_integralFactors.x * I0 + _integralFactors.y * I1);
 }
-float2	ComputeIntegralFactors( float2 _ssDirection, float3 _N ) {
-	return float2( dot( _N.xy, _ssDirection ), _N.z );
+float2	ComputeIntegralFactors( float2 _csDirection, float3 _N ) {
+	return float2( dot( _N.xy, _csDirection ), _N.z );
 }
 
 // Samples the irradiance reflected from a screen-space position located around the center pixel position
@@ -111,9 +111,11 @@ float3	SampleIrradiance( float2 _ssPosition, float _H0, float _radius, float2 _m
 	return incomingRadiance;
 }
 
+////////////////////////////////////////////////////////////////////////////////
 // Gathers the irradiance around the central position
 //	_ssPosition, the central screen-space position (in pixel) where to gather from
 //	_ssDirection, the screen-space direction of the disc slice we're sampling
+//	_csDirection, the camear-space direction of the disc slice we're sampling
 //	_Z0, the central depth value (WARNING: Always offset it toward the camera by a little epsilon to avoid horizon acnea)
 //	_csNormal, camera-space normal
 //	_radialStepSizes, size of a radial step to jump from one sample to another (X=step size in pixels, Y=step size in meters)
@@ -121,14 +123,14 @@ float3	SampleIrradiance( float2 _ssPosition, float _H0, float _radius, float2 _m
 //	_centralRadiance, last frame's radiance at central position that we can always use as a safe backup for irradiance integration (in case bilateral filter rejects neighbor height as too different)
 //	[OUT] _ssBentNormal, the average bent normal
 //	[OUT] _coneAngles, the front & back cone angles from the direction of the bent normal to the front & back horizons
+// Returns:
+//	The irradiance gathered along the sampling
 //
-// Returns the irradiance gathered along the sampling
-//
-float3	GatherIrradiance( float2 _ssPosition, float2 _ssDirection, float _Z0, float3 _csNormal, float2 _radialStepSizes, uint _stepsCount, float3 _centralRadiance, out float3 _ssBentNormal, out float2 _coneAngles, inout float4 _DEBUG ) {
+float3	GatherIrradiance( float2 _ssPosition, float2 _ssDirection, float2 _csDirection, float _Z0, float3 _csNormal, float2 _radialStepSizes, uint _stepsCount, float3 _centralRadiance, out float3 _csBentNormal, out float2 _coneAngles, inout float4 _DEBUG ) {
 
 	// Pre-compute factors for the integrals
-	float2	integralFactors_Front = ComputeIntegralFactors( _ssDirection, _csNormal );
-	float2	integralFactors_Back = ComputeIntegralFactors( -_ssDirection, _csNormal );
+	float2	integralFactors_Front = ComputeIntegralFactors( _csDirection, _csNormal );
+	float2	integralFactors_Back = ComputeIntegralFactors( -_csDirection, _csNormal );
 
 	// Compute initial cos(angle) for front & back horizons
 	// We do that by projecting the screen-space direction ssDirection onto the tangent plane given by the normal
@@ -140,8 +142,8 @@ float3	GatherIrradiance( float2 _ssPosition, float2 _ssDirection, float _Z0, flo
 	//             --- *..........>+ ssDirection
 	//        --- 
 	//
-	float	hitDistance_Front = -dot( _ssDirection, _csNormal.xy ) * (abs(_csNormal.z) > 1e-6 ? 1.0 / _csNormal.z : 0.0);
-	float	maxCos_Front = hitDistance_Front / sqrt( hitDistance_Front*hitDistance_Front + dot(_ssDirection,_ssDirection) );
+	float	hitDistance_Front = -dot( _csDirection, _csNormal.xy ) * (abs(_csNormal.z) > 1e-6 ? 1.0 / _csNormal.z : 0.0);
+	float	maxCos_Front = hitDistance_Front / sqrt( hitDistance_Front*hitDistance_Front + dot(_csDirection,_csDirection) );
 	float	maxCos_Back = -maxCos_Front;	// Back cosine is simply the mirror value
 
 	// Gather irradiance from front & back directions while updating the horizon angles at the same time
@@ -176,7 +178,7 @@ float3	GatherIrradiance( float2 _ssPosition, float2 _ssDirection, float _Z0, flo
 			float	theta = lerp( thetaBack, thetaFront, (i+0.5) / USE_NUMERICAL_INTEGRATION );
 			float	sinTheta, cosTheta;
 			sincos( theta, sinTheta, cosTheta );
-			float3	ssUnOccludedDirection = float3( sinTheta * _ssDirection, cosTheta );
+			float3	ssUnOccludedDirection = float3( sinTheta * _csDirection, cosTheta );
 
 			float	cosAlpha = saturate( dot( ssUnOccludedDirection, _N ) );
 
@@ -197,7 +199,7 @@ float3	GatherIrradiance( float2 _ssPosition, float2 _ssDirection, float _Z0, flo
 		float	sinTheta0_3 = sinTheta0*sinTheta0*sinTheta0;
 		float	sinTheta1_3 = sinTheta1*sinTheta1*sinTheta1;
 
-		float2	sliceSpaceNormal = float2( dot( _csNormal.xy, _ssDirection ), _csNormal.z );
+		float2	sliceSpaceNormal = float2( dot( _csNormal.xy, _csDirection ), _csNormal.z );
 
 		float	averageX = sliceSpaceNormal.x * (cosTheta0_3 + cosTheta1_3 - 3.0 * (cosTheta0 + cosTheta1) + 4.0)
 						 + sliceSpaceNormal.y * (sinTheta0_3 - sinTheta1_3);
@@ -205,52 +207,54 @@ float3	GatherIrradiance( float2 _ssPosition, float2 _ssDirection, float _Z0, flo
 		float	averageY = sliceSpaceNormal.x * (sinTheta0_3 - sinTheta1_3)
 						 + sliceSpaceNormal.y * (2.0 - cosTheta0_3 - cosTheta1_3);
 
-		_ssBentNormal = float3( averageX * _ssDirection, averageY );
+		_csBentNormal = float3( averageX * _csDirection, averageY );
 	#endif
 
-	_ssBentNormal = normalize( _ssBentNormal );
+	_csBentNormal = normalize( _csBentNormal );
 
 	// Compute cone angles
-	float3	ssHorizon_Front = float3( sqrt( 1.0 - maxCos_Front*maxCos_Front ) * _ssDirection, maxCos_Front );
-	float3	ssHorizon_Back = float3( -sqrt( 1.0 - maxCos_Back*maxCos_Back ) * _ssDirection, maxCos_Back );
+	float3	csHorizon_Front = float3( sqrt( 1.0 - maxCos_Front*maxCos_Front ) * _csDirection, maxCos_Front );
+	float3	csHorizon_Back = float3( -sqrt( 1.0 - maxCos_Back*maxCos_Back ) * _csDirection, maxCos_Back );
 	#if USE_FAST_ACOS
-		_coneAngles.x = FastPosAcos( saturate( dot( _ssBentNormal, ssHorizon_Front ) ) );
-		_coneAngles.y = FastPosAcos( saturate( dot( _ssBentNormal, ssHorizon_Back ) ) ) ;
+		_coneAngles.x = FastPosAcos( saturate( dot( _csBentNormal, csHorizon_Front ) ) );
+		_coneAngles.y = FastPosAcos( saturate( dot( _csBentNormal, csHorizon_Back ) ) ) ;
 	#else
-		_coneAngles.x = acos( saturate( dot( _ssBentNormal, ssHorizon_Front ) ) );
-		_coneAngles.y = acos( saturate( dot( _ssBentNormal, ssHorizon_Back ) ) );
+		_coneAngles.x = acos( saturate( dot( _csBentNormal, csHorizon_Front ) ) );
+		_coneAngles.y = acos( saturate( dot( _csBentNormal, csHorizon_Back ) ) );
 	#endif
 
 
 #if AVERAGE_COSINES
-_coneAngles = float2( saturate( dot( _ssBentNormal, ssHorizon_Front ) ), saturate( dot( _ssBentNormal, ssHorizon_Back ) ) );
+_coneAngles = float2( saturate( dot( _csBentNormal, csHorizon_Front ) ), saturate( dot( _csBentNormal, csHorizon_Back ) ) );
 #endif
 
 
 	return sumRadiance;
 }
 
+
 ////////////////////////////////////////////////////////////////////////////////
 // Helper to reconstruct world-space bent cone
 ////////////////////////////////////////////////////////////////////////////////
 //
-void	ReconstructBentCone( float4x4 _Camera2World, float3 _wsView, float4 _ssBentCone, out float3 _csBentNormal, out float3 _wsBentNormal, out float _cosAverageConeAngle, out float _stdDeviationConeAngle ) {
-	_cosAverageConeAngle = length( _ssBentCone.xyz );
-	_stdDeviationConeAngle = 0.5 * PI * (1.0 - _ssBentCone.w);
-	_csBentNormal = _ssBentCone.xyz / _cosAverageConeAngle;
-//	_csBentNormal = normalize( _ssBentCone.xyz );
+//	_wsView, the world-space view direction of the camera (pointing toward the scene)
+//	_wsCameraUp, the world-space "Up" direction of the camera (pointing up)
+//	_lcsBentCone, the local camera-space packed bent-cone data sampled from the bent-cone buffer
+// Returns:
+//	_wsBentNormal, the world-space normalized bent-normal direction
+//	_cosAverageConeAngle, the cosine of the average cone half aperture angle
+//	_stdDeviationConeAngle, the standard deviation of the cone half aperture angle in [0,PI/2] (beware that the average aperture angle + or - this standard deviation could exceed the [0,PI/2] interval so DO clamp!)
+//
+void	ReconstructBentCone( float3 _wsView, float3 _wsCameraUp, float4 _lcsBentCone, out float3 _csBentNormal, out float3 _wsBentNormal, out float _cosAverageConeAngle, out float _stdDeviationConeAngle ) {
+	// Extract information from the packed bent cone data
+	_cosAverageConeAngle = length( _lcsBentCone.xyz );	// Technically never 0
+	_stdDeviationConeAngle = 0.5 * PI * (1.0 - _lcsBentCone.w);
+	_csBentNormal = _lcsBentCone.xyz / _cosAverageConeAngle;
 
-	#if 0
-		// Z plane
-		float3	wsRight = _Camera2World[0].xyz;
-		float3	wsUp = _Camera2World[1].xyz;
-		float3	wsAt = _Camera2World[2].xyz;
-	#else
-		// Face-cam
-		float3	wsRight = normalize( cross( _wsView, _Camera2World[1].xyz ) );
-		float3	wsUp = cross( wsRight, _wsView );
-		float3	wsAt = _wsView;
-	#endif
+	// Rebuild local camera space
+	float3	wsRight = normalize( cross( _wsView, _wsCameraUp ) );
+	float3	wsUp = cross( wsRight, _wsView );
 
-	_wsBentNormal = _csBentNormal.x * wsRight - _csBentNormal.y * wsUp - _csBentNormal.z * wsAt;
+	// Transform local camera-space bent cone back into world space
+	_wsBentNormal = _csBentNormal.x * wsRight - _csBentNormal.y * wsUp - _csBentNormal.z * _wsView;
 }

@@ -29,19 +29,12 @@ float3	PS( float4 __Position : SV_POSITION ) : SV_TARGET0 {
 
 //return _exposure * _tex_FinalRender[__Position.xy].xyz;
 
-#if 1	// DEBUG BENT CONE
+#if 0	// DEBUG BENT CONE
 
-	#if 1
-		// Z-Plane
-		float3	wsRight = _Camera2World[0].xyz;
-		float3	wsUp = _Camera2World[1].xyz;
-		float3	wsAt = _Camera2World[2].xyz;
-	#else
-		// Face-cam
-		float3	wsRight = normalize( cross( wsView, _Camera2World[1].xyz ) );
-		float3	wsUp = cross( wsRight, wsView );
-		float3	wsAt = wsView;
-	#endif
+	// Face-cam
+	float3	wsRight = normalize( cross( wsView, _Camera2World[1].xyz ) );
+	float3	wsUp = cross( wsRight, wsView );
+	float3	wsAt = wsView;
 //float3	N = float3( dot( wsNormal, wsRight ), dot( wsNormal, wsUp ), -dot( wsNormal, wsView ) );	// Camera-space normal
 
 float4	csBentConeDev = _tex_BentCone[__Position.xy];
@@ -53,10 +46,10 @@ float	stdDeviationConeAngle = 0.5 * PI * (1.0 - csBentConeDev.w);
 float3	wsBentCone = csBentCone.x * wsRight - csBentCone.y * wsUp + csBentCone.z * wsAt;
 
 //return cosAverageConeAngle;
-//return averageConeAngle * 2.0 / PI;
+return averageConeAngle * 2.0 / PI;
 //return stdDeviationConeAngle;
 //return csBentCone;
-//return wsBentCone;
+return wsBentCone;
 return csBentConeDev.xyz;
 #endif
 
@@ -70,8 +63,8 @@ return csBentConeDev.xyz;
 #endif
 
 //return _tex_Radiance[uint3(__Position.xy, _sourceRadianceIndex)].xyz;
-//return _tex_Albedo[__Position.xy].xyz;
-return _tex_Normal[__Position.xy].xyz;
+return _tex_Albedo[__Position.xy].xyz;
+//return _tex_Normal[__Position.xy].xyz;
 return _tex_Depth.SampleLevel( LinearClamp, __Position.xy / _resolution, _debugMipIndex );
 return _tex_Depth.mips[_debugMipIndex][__Position.xy];
 //return 0.5 * (1.0 + _tex_Normal[__Position.xy].xyz);
