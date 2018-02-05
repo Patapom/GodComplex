@@ -1,3 +1,4 @@
+#define SAMPLE_NEIGHBOR_RADIANCE
 using System;
 using System.ComponentModel;
 using System.Collections;
@@ -40,7 +41,7 @@ namespace TestHBIL
 
 		private float3		m_wsConePosition = float3.Zero;
 		private float3		m_wsConeDirection = float3.UnitY;
-		private float		m_coneAngle = 0.25f * Mathf.PI;
+		private float		m_averageConeAngle = 0.25f * Mathf.PI;
 		private float		m_stdDeviation = 0.0f;
 
 		private float2		m_resolution;
@@ -67,7 +68,7 @@ namespace TestHBIL
 
 		public float3	wsConePosition	{ get { return m_wsConePosition; } }
 		public float3	wsConeDirection	{ get { return m_wsConeDirection; } }
-		public float	coneAngle		{ get { return m_coneAngle; } }
+		public float	averageConeAngle{ get { return m_averageConeAngle; } }
 		public float	stdDeviation	{ get { return m_stdDeviation; } }
 
 		#endregion
@@ -117,19 +118,21 @@ namespace TestHBIL
 
 			// Read back depth/distance & normal + rebuild camera-space TBN
 			float	Z = FetchDepth( __Position, 0.0f );
-			float	distance = Z * Z2Distance;
+//			float	distance = Z * Z2Distance;
 			float3	wsNormal = m_arrayNormal[0][pixelPositionX,pixelPositionY].xyz.Normalized;
 
 			// Read back last frame's radiance value that we always can use as a default for neighbor areas
 			float3	centralRadiance = m_arrayIrradiance[0][pixelPositionX,pixelPositionY].xyz;
 
-			// Regular normal
-			float3	N = new float3( wsNormal.Dot( m_camera2World[0].xyz ), -wsNormal.Dot( m_camera2World[1].xyz ), -wsNormal.Dot( m_camera2World[2].xyz ) );	// Camera-space normal
-
-// 			// Compute face-cam normal
-// 			float3	wsRight = normalize( cross( wsView, m_camera2World[1].xyz ) );
-// 			float3	wsUp = cross( wsRight, wsView );
-// 			float3	N = float3( dot( wsNormal, wsRight ), -dot( wsNormal, wsUp ), -dot( wsNormal, wsView ) );	// Camera-space normal
+ 			// Regular normal
+// 			float3	wsRight = m_camera2World[0].xyz;
+// 			float3	wsUp = m_camera2World[1].xyz;
+// 			float3	wsAt = m_camera2World[2].xyz;
+			// Face-cam normal
+			float3	wsRight = wsView.Cross( m_camera2World[1].xyz ).Normalized;
+			float3	wsUp = wsRight.Cross( wsView );
+			float3	wsAt = wsView;
+ 			float3	N = new float3( wsNormal.Dot( wsRight ), -wsNormal.Dot( wsUp ), -wsNormal.Dot( wsAt ) );	// Camera-space normal
 
 //			float3	T, B;
 //			BuildOrthonormalBasis( N, T, B );
@@ -198,7 +201,7 @@ phi = 0.0f;
 
 float3	DEBUG_VALUE = new float3( 1,0,1 );
 DEBUG_VALUE = ssAverageBentNormal;
-DEBUG_VALUE = ssAverageBentNormal.x * m_camera2World[0].xyz - ssAverageBentNormal.y * m_camera2World[1].xyz - ssAverageBentNormal.z * m_camera2World[2].xyz;	// World-space normal
+DEBUG_VALUE = ssAverageBentNormal.x * wsRight - ssAverageBentNormal.y * wsUp - ssAverageBentNormal.z * wsAt;	// World-space normal
 //DEBUG_VALUE = cos( averageConeAngle );
 //DEBUG_VALUE = dot( ssAverageBentNormal, N );
 //DEBUG_VALUE = 0.01 * Z;
@@ -212,78 +215,14 @@ DEBUG_VALUE = ssAverageBentNormal.x * m_camera2World[0].xyz - ssAverageBentNorma
 DEBUG_VALUE = GATHER_DEBUG.xyz;
 //DEBUG_VALUE = N;
 //m_bentCone = float4( DEBUG_VALUE, 1 );
+
+			//////////////////////////////////////////////////////////////////////////
+			// Finalize bent code debug info
+			m_wsConePosition = wsPos + Z * wsView;
+			m_wsConeDirection = ssAverageBentNormal.x * wsRight - ssAverageBentNormal.y * wsUp - ssAverageBentNormal.z * wsAt;
+			m_averageConeAngle = averageConeAngle;
+			m_stdDeviation = stdDeviation;
 		}
-
-
-		////////////////////////////////////////////////////////////////////////////////
-		// Implement the methods expected by the HBIL header
-		float	FetchDepth( float2 _pixelPosition, float _mipLevel ) {
-//			return _tex_sourceRadiance.SampleLevel( LinearClamp, _pixelPosition / _resolution, _mipLevel ).w;
-			return Z_FAR * SampleLevel( m_arrayDepth, _pixelPosition / m_resolution, _mipLevel ).x;
-		}
-
-		float3	FetchRadiance( float2 _pixelPosition, float _mipLevel ) {
-			return SampleLevel( m_arrayIrradiance, _pixelPosition / m_resolution, _mipLevel ).xyz;
-		}
-
-		float	BilateralFilterDepth( float _centralZ, float _neighborZ, float _radius_m ) {
-		//return 1.0;	// Accept always
-
-			float	deltaZ = _neighborZ - _centralZ;
-
-// 			#if 1
-				// Relative test
-				float	relativeZ = Math.Abs( deltaZ ) / _centralZ;
-//				return smoothstep( _bilateralValues.y, _bilateralValues.x, relativeZ );
-				return Mathf.Smoothstep( 0.4f, 0.0f, relativeZ );	// Discard when deltaZ is larger than 40% central Z (empirical value)
-// 			#elif 0
-// 				// Absolute test
-// 				return smoothstep( _bilateralValues.y, _bilateralValues.x, abs(deltaZ) );
-// 				return smoothstep( 1.0, 0.0, abs(deltaZ) );
-// 			#else
-// 				// Reject if outside of gather sphere radius
-// 				float	r = _radius_m / _gatherSphereMaxRadius_m;
-// 				float	sqSphereZ = 1.0 - r*r;
-// 				return smoothstep( _bilateralValues.y*_bilateralValues.y * sqSphereZ, _bilateralValues.x*_bilateralValues.x * sqSphereZ, deltaZ*deltaZ );
-// 				return smoothstep( 0.1*0.1 * sqSphereZ, 0.0 * sqSphereZ, deltaZ*deltaZ );	// Empirical values
-// 			#endif
-		}
-		float	BilateralFilterRadiance( float _centralZ, float _neighborZ, float _radius_m ) {
-		//return 1.0;	// Accept always
-		//return 0.0;	// Reject always
-
-			float	deltaZ = _neighborZ - _centralZ;
-
-//			#if 1
-				// Relative test
-				float	relativeZ = Math.Abs( deltaZ ) / _centralZ;
-//				return smoothstep( 0.1*_bilateralValues.y, 0.1*_bilateralValues.x, relativeZ );	// Discard when deltaZ is larger than 1% central Z
-//				return smoothstep( 0.015, 0.0, relativeZ );	// Discard when deltaZ is larger than 1.5% central Z (empirical value)
-				return Mathf.Smoothstep( 0.15f, 0.0f, relativeZ );	// Discard when deltaZ is larger than 1.5% central Z (empirical value)
-// 			#elif 0
-// 				// Absolute test
-// 				return smoothstep( 1.0, 0.0, abs(deltaZ) );
-// 			#else
-// 				// Reject if outside of gather sphere radius
-// 				float	r = _radius_m / _gatherSphereMaxRadius_m;
-// 				float	sqSphereZ = 1.0 - r*r;
-// 				return smoothstep( _bilateralValues.y*_bilateralValues.y * sqSphereZ, _bilateralValues.x*_bilateralValues.x * sqSphereZ, deltaZ*deltaZ );
-// 				return smoothstep( 0.1*0.1 * sqSphereZ, 0.0 * sqSphereZ, deltaZ*deltaZ );	// Empirical values
-// 			#endif
-		}
-
-
-		float2	ComputeMipLevel( float2 _radius, float2 _radialStepSizes ) {
-return float2.Zero;
-			float	radiusPixel = _radius.x;
-			float	deltaRadius = _radialStepSizes.x;
-			float	pixelArea = Mathf.PI / (2.0f * MAX_ANGLES) * 2.0f * radiusPixel * deltaRadius;
-//			return 0.5f * Mathf.Log2( pixelArea ) * _bilateralValues;
-			return 0.5f * Mathf.Log2( pixelArea ) * new float2( 0, 2 );	// Unfortunately, sampling lower mips for depth gives very nasty halos! Maybe use max depth? Meh. Not conclusive either...
-			return 1.5f * 0.5f * Mathf.Log2( pixelArea ) * float2.One;
-			return 0.5f * Mathf.Log2( pixelArea ) * float2.One;
-		}
-
 
 		float3	GatherIrradiance( float2 _ssPosition, float2 _ssDirection, float _Z0, float3 _csNormal, float2 _radialStepSizes, uint _stepsCount, float3 _centralRadiance, out float3 _ssBentNormal, out float2 _coneAngles, ref float4 _DEBUG ) {
 
@@ -447,7 +386,8 @@ _DEBUG = _coneAngles.x / (0.5f*Mathf.PI) * float4.One;
 			// Sample new height and update horizon angle
 			float	neighborH = FetchDepth( _ssPosition, _mipLevel.x );
 			float	deltaH = _H0 - neighborH;
-					deltaH *= BilateralFilterDepth(  _H0, neighborH, _radius );
+			float	filter = BilateralFilterDepth( _H0, neighborH, _radius );
+					deltaH *= filter;
 			float	H2 = deltaH * deltaH;
 			float	hyp2 = _radius * _radius + H2;				// Square hypotenuse
 			float	cosHorizon = deltaH / Mathf.Sqrt( hyp2 );	// Cosine to horizon angle
@@ -466,7 +406,8 @@ _DEBUG = _coneAngles.x / (0.5f*Mathf.PI) * float4.One;
 			#endif
 
 			// Integrate over horizon difference (always from smallest to largest angle otherwise we get negative results!)
-			float3	incomingRadiance = _previousRadiance * IntegrateSolidAngle( _integralFactors, cosHorizon, _maxCos );
+			float	integral = IntegrateSolidAngle( _integralFactors, cosHorizon, _maxCos );
+			float3	incomingRadiance = _previousRadiance * integral;
 
 // #TODO: Integrate with linear interpolation of irradiance as well??
 // #TODO: Integrate with Fresnel F0!
@@ -475,6 +416,83 @@ _DEBUG = _coneAngles.x / (0.5f*Mathf.PI) * float4.One;
 
 			return incomingRadiance;
 		}
+
+		#region Filters
+
+
+		////////////////////////////////////////////////////////////////////////////////
+		// Implement the methods expected by the HBIL header
+		float	FetchDepth( float2 _pixelPosition, float _mipLevel ) {
+//			return _tex_sourceRadiance.SampleLevel( LinearClamp, _pixelPosition / _resolution, _mipLevel ).w;
+			return Z_FAR * SampleLevel( m_arrayDepth, _pixelPosition / m_resolution, _mipLevel ).x;
+		}
+
+		float3	FetchRadiance( float2 _pixelPosition, float _mipLevel ) {
+			return SampleLevel( m_arrayIrradiance, _pixelPosition / m_resolution, _mipLevel ).xyz;
+		}
+
+		float	BilateralFilterDepth( float _centralZ, float _neighborZ, float _radius_m ) {
+		//return 1.0;	// Accept always
+
+			float	deltaZ = _neighborZ - _centralZ;
+
+// 			#if 1
+				// Relative test
+				float	relativeZ = Math.Abs( deltaZ ) / _centralZ;
+//				return smoothstep( _bilateralValues.y, _bilateralValues.x, relativeZ );
+				return Mathf.Smoothstep( 0.4f, 0.0f, relativeZ );	// Discard when deltaZ is larger than 40% central Z (empirical value)
+// 			#elif 0
+// 				// Absolute test
+// 				return smoothstep( _bilateralValues.y, _bilateralValues.x, abs(deltaZ) );
+// 				return smoothstep( 1.0, 0.0, abs(deltaZ) );
+// 			#else
+// 				// Reject if outside of gather sphere radius
+// 				float	r = _radius_m / _gatherSphereMaxRadius_m;
+// 				float	sqSphereZ = 1.0 - r*r;
+// 				return smoothstep( _bilateralValues.y*_bilateralValues.y * sqSphereZ, _bilateralValues.x*_bilateralValues.x * sqSphereZ, deltaZ*deltaZ );
+// 				return smoothstep( 0.1*0.1 * sqSphereZ, 0.0 * sqSphereZ, deltaZ*deltaZ );	// Empirical values
+// 			#endif
+		}
+		float	BilateralFilterRadiance( float _centralZ, float _neighborZ, float _radius_m ) {
+		//return 1.0;	// Accept always
+		//return 0.0;	// Reject always
+
+			float	deltaZ = _neighborZ - _centralZ;
+
+//			#if 1
+				// Relative test
+				float	relativeZ = Math.Abs( deltaZ ) / _centralZ;
+//				return smoothstep( 0.1*_bilateralValues.y, 0.1*_bilateralValues.x, relativeZ );	// Discard when deltaZ is larger than 1% central Z
+//				return smoothstep( 0.015, 0.0, relativeZ );	// Discard when deltaZ is larger than 1.5% central Z (empirical value)
+				float	result = Mathf.Smoothstep( 0.15f, 0.0f, relativeZ );	// Discard when deltaZ is larger than 1.5% central Z (empirical value)
+				return result;
+// 			#elif 0
+// 				// Absolute test
+// 				return smoothstep( 1.0, 0.0, abs(deltaZ) );
+// 			#else
+// 				// Reject if outside of gather sphere radius
+// 				float	r = _radius_m / _gatherSphereMaxRadius_m;
+// 				float	sqSphereZ = 1.0 - r*r;
+// 				return smoothstep( _bilateralValues.y*_bilateralValues.y * sqSphereZ, _bilateralValues.x*_bilateralValues.x * sqSphereZ, deltaZ*deltaZ );
+// 				return smoothstep( 0.1*0.1 * sqSphereZ, 0.0 * sqSphereZ, deltaZ*deltaZ );	// Empirical values
+// 			#endif
+		}
+
+		float2	ComputeMipLevel( float2 _radius, float2 _radialStepSizes ) {
+return float2.Zero;
+/*
+			float	radiusPixel = _radius.x;
+			float	deltaRadius = _radialStepSizes.x;
+			float	pixelArea = Mathf.PI / (2.0f * MAX_ANGLES) * 2.0f * radiusPixel * deltaRadius;
+//			return 0.5f * Mathf.Log2( pixelArea ) * _bilateralValues;
+			return 0.5f * Mathf.Log2( pixelArea ) * new float2( 0, 2 );	// Unfortunately, sampling lower mips for depth gives very nasty halos! Maybe use max depth? Meh. Not conclusive either...
+			return 1.5f * 0.5f * Mathf.Log2( pixelArea ) * float2.One;
+			return 0.5f * Mathf.Log2( pixelArea ) * float2.One;
+*/
+		}
+
+
+		#endregion
 
 		#region IDisposable Members
 
@@ -498,9 +516,27 @@ _DEBUG = _coneAngles.x / (0.5f*Mathf.PI) * float4.One;
 				uint		H = _texture_Staging.get_HeightAtMip( mipLevelIndex );
 				float4[,]	mip = new float4[W,H];
 				_array[mipLevelIndex] = mip;
-				_texture_Staging.ReadPixels( mipLevelIndex, 0, ( uint _X, uint _Y, System.IO.BinaryReader _R ) => {
-					mip[_X,_Y].Set( _R.ReadSingle(), _R.ReadSingle(), _R.ReadSingle(), _R.ReadSingle() );
-				} );
+
+				if ( _texture_Staging.PixelFormat == PIXEL_FORMAT.RGBA32F ) {
+					_texture_Staging.ReadPixels( mipLevelIndex, 0, ( uint _X, uint _Y, System.IO.BinaryReader _R ) => {
+						mip[_X,_Y].Set( _R.ReadSingle(), _R.ReadSingle(), _R.ReadSingle(), _R.ReadSingle() );
+					} );
+				} else if ( _texture_Staging.PixelFormat == PIXEL_FORMAT.RGBA16F ) {
+					half	R, G, B, A;
+					_texture_Staging.ReadPixels( mipLevelIndex, 0, ( uint _X, uint _Y, System.IO.BinaryReader _R ) => {
+						R.raw = _R.ReadUInt16();
+						G.raw = _R.ReadUInt16();
+						B.raw = _R.ReadUInt16();
+						A.raw = _R.ReadUInt16();
+						mip[_X,_Y].Set( R, G, B, A );
+					} );
+				} else if ( _texture_Staging.PixelFormat == PIXEL_FORMAT.R32F ) {
+					_texture_Staging.ReadPixels( mipLevelIndex, 0, ( uint _X, uint _Y, System.IO.BinaryReader _R ) => {
+						float	V = _R.ReadSingle();
+						mip[_X,_Y].Set( V, V, V, V );
+					} );
+				} else
+					throw new Exception( "Unsupproted format!" );
 			}
 		}
 
@@ -520,11 +556,11 @@ _DEBUG = _coneAngles.x / (0.5f*Mathf.PI) * float4.One;
 		float4	Sample( float4[,] _array, float2 _UV ) {
 			uint	W = (uint) _array.GetLength( 0 );
 			uint	H = (uint) _array.GetLength( 1 );
-			float	fX = _UV.x * W;
+			float	fX = _UV.x * W - 0.5f;
 			float	u = fX - Mathf.Floor( fX );
 			uint	X0 = Mathf.Clamp( (uint) Math.Floor( fX ), 0, W-1 );
 			uint	X1 = Math.Min( W-1, X0+1 );
-			float	fY = _UV.y * H;
+			float	fY = _UV.y * H - 0.5f;
 			float	v = fY - Mathf.Floor( fY );
 			uint	Y0 = Mathf.Clamp( (uint) Math.Floor( fY ), 0, H-1 );
 			uint	Y1 = Math.Min( H-1, Y0+1 );

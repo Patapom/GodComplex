@@ -1,0 +1,77 @@
+%<TpX v="5" ArrowsSize="0.7" StarsSize="1" DefaultFontHeight="5" DefaultSymbolSize="30" ApproximationPrecision="0.01" PicScale="1" Border="2" BitmapRes="20000" HatchingStep="2" DottedSize="0.5" DashSize="1" LineWidth="0.3">
+%  <group>
+%    <group>
+%      <group>
+%        <line x1="202" y1="15" x2="232" y2="140" li="dot" ha="4"/>
+%        <group>
+%          <text x="211" y="43" t="Camera Z" h="5" ha="4"/>
+%          <line x1="202" y1="15" x2="209" y2="45" arr2="h44" ha="4"/>
+%          <line x1="202" y1="15" x2="232" y2="8" arr2="h44" ha="4"/>
+%          <text x="219" y="3" t="Camera X" h="5" ha="4"/>
+%        </group>
+%      </group>
+%      <group>
+%        <sector x="202" y="15" d="257.099" a1="1.33525" a2="2.27942" lw="0.50" lc="maroon"/>
+%        <sector x="202" y="15" d="257.099" a1="0.397741" a2="1.33525" lw="0.50" lc="maroon"/>
+%      </group>
+%    </group>
+%    <star x="202" y="15" li="dot" lw="2.00"/>
+%  </group>
+%  <group>
+%    <line x1="160" y1="130" x2="280" y2="130"/>
+%    <line x1="160" y1="20" x2="160" y2="130"/>
+%    <polygon li="none" ha="4">160,20 152,26 148,57 148,117 152,136 164,141 214,141 274,139 280,130 160,130 160,20</polygon>
+%  </group>
+%  <line x1="202" y1="15" x2="160" y2="73" lw="2.00"/>
+%  <group>
+%    <line x1="165.122" y1="76.5486" x2="128.387" y2="47.9914" lw="2.00"/>
+%    <line x1="165.122" y1="76.5486" x2="203.662" y2="106.427" arr2="h44" lw="2.00"/>
+%    <text x="194.536" y="92.0723" t="Local X" h="5" rotdeg="37.4306" lw="2.00"/>
+%  </group>
+%  <star x="160" y="73"/>
+%  <line x1="160" y1="73" x2="213" y2="62" li="dot"/>
+%  <star x="213" y="62" li="dot"/>
+%  <text x="215" y="61" t="Z0" h="5" li="dot"/>
+%  <star x="181.453" y="68.1774" li="dot"/>
+%  <text x="152" y="75" t="X0" h="5" li="dot"/>
+%  <text x="183" y="70" t="X1" h="5" li="dot"/>
+%  <line x1="202" y1="15" x2="160" y2="124" li="dot"/>
+%  <star x="160" y="124" li="dot"/>
+%  <line x1="160" y1="124" x2="226" y2="113" li="dot"/>
+%  <star x="226" y="113" li="dot"/>
+%  <text x="228" y="110" t="Z1" h="5" li="dot"/>
+%  <star x="185.558" y="92.4465" li="dot"/>
+%  <text x="183" y="98" t="X&apos;1" h="5" li="dot"/>
+%  <line x1="160" y1="124" x2="186" y2="92" li="dot" lw="2.00"/>
+%  <rect x="181.4" y="93.066" w="3" h="2.99999" rotdeg="306.939" li="dot" lw="2.00"/>
+%</TpX>
+\begin{figure}
+\centering
+\ifpdf
+  \setlength{\unitlength}{1bp}%
+  \begin{picture}(584.43, 412.81)(0,0)
+  \put(0,0){\includegraphics{Local Camera Space.pdf}}
+  \put(268.32,122.12){\fontsize{14.23}{17.07}\selectfont Camera Z}
+  \put(291.00,8.73){\fontsize{14.23}{17.07}\selectfont Camera X}
+  \put(221.66,261.22){\rotatebox{37.43}{\fontsize{14.23}{17.07}\selectfont \smash{\makebox[0pt][l]{Local X}}}}
+  \put(279.66,173.14){\fontsize{14.23}{17.07}\selectfont Z0}
+  \put(101.08,212.83){\fontsize{14.23}{17.07}\selectfont X0}
+  \put(188.95,198.65){\fontsize{14.23}{17.07}\selectfont X1}
+  \put(316.51,312.04){\fontsize{14.23}{17.07}\selectfont Z1}
+  \put(188.95,278.02){\fontsize{14.23}{17.07}\selectfont X'1}
+  \end{picture}%
+\else
+  \setlength{\unitlength}{1bp}%
+  \begin{picture}(584.43, 412.81)(0,0)
+  \put(0,0){\includegraphics{Local Camera Space}}
+  \put(268.32,122.12){\fontsize{14.23}{17.07}\selectfont Camera Z}
+  \put(291.00,8.73){\fontsize{14.23}{17.07}\selectfont Camera X}
+  \put(221.66,261.22){\rotatebox{37.43}{\fontsize{14.23}{17.07}\selectfont \smash{\makebox[0pt][l]{Local X}}}}
+  \put(279.66,173.14){\fontsize{14.23}{17.07}\selectfont Z0}
+  \put(101.08,212.83){\fontsize{14.23}{17.07}\selectfont X0}
+  \put(188.95,198.65){\fontsize{14.23}{17.07}\selectfont X1}
+  \put(316.51,312.04){\fontsize{14.23}{17.07}\selectfont Z1}
+  \put(188.95,278.02){\fontsize{14.23}{17.07}\selectfont X'1}
+  \end{picture}%
+\fi
+\end{figure}

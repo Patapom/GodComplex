@@ -1,0 +1,57 @@
+%<TpX v="5" ArrowsSize="0.7" StarsSize="1" DefaultFontHeight="5" DefaultSymbolSize="30" ApproximationPrecision="0.01" PicScale="1" Border="2" BitmapRes="20000" HatchingStep="2" DottedSize="0.5" DashSize="1" LineWidth="0.3">
+%  <line x1="150" y1="70" x2="150" y2="105" arr2="h44" lw="4.00"/>
+%  <text x="152" y="106" t="Z" h="5"/>
+%  <line x1="150.319" y1="69.847" x2="199" y2="85" arr2="h44" lw="4.00"/>
+%  <text x="197" y="76" t="D" h="5"/>
+%  <star x="150" y="70" lw="4.00"/>
+%  <text x="151" y="64" t="Z0" h="5" lw="4.00"/>
+%  <line x1="150" y1="70" x2="138" y2="84" arr2="h44"/>
+%  <text x="141" y="84" t="N" h="5"/>
+%  <line x1="243" y1="117" x2="167" y2="139"/>
+%  <line x1="91" y1="53" x2="151" y2="3"/>
+%  <line x1="151" y1="3" x2="243" y2="117"/>
+%  <line x1="126" y1="92" x2="167" y2="139"/>
+%  <line x1="110" y1="74" x2="91" y2="53"/>
+%  <line x1="110" y1="74" x2="126" y2="92" li="dash" lw="0.50"/>
+%  <line x1="190" y1="67" x2="129" y2="49" li="dash" lw="0.50"/>
+%  <line x1="190" y1="108" x2="190" y2="67" li="dash" lw="0.50"/>
+%  <line x1="187" y1="107" x2="190" y2="108" li="dash" lw="0.50"/>
+%  <line x1="129" y1="49" x2="187" y2="107"/>
+%  <line x1="129" y1="49" x2="110" y2="43"/>
+%  <line x1="110" y1="43" x2="110" y2="88"/>
+%  <line x1="110" y1="88" x2="187" y2="107"/>
+%  <text x="119.547" y="31.8963" t="Normal Plane" h="5" rotdeg="320.561" li="dash"/>
+%  <text x="110.957" y="45.6757" t="Slice Plane" h="5" rotdeg="17.6576" li="dash"/>
+%  <line x1="200" y1="85" x2="200" y2="120" li="dot"/>
+%  <star x="200" y="120"/>
+%  <line x1="187" y1="107" x2="200" y2="120" li="dot"/>
+%  <text x="202" y="100" t="t" h="5" li="dot"/>
+%</TpX>
+\begin{figure}
+\centering
+\ifpdf
+  \setlength{\unitlength}{1bp}%
+  \begin{picture}(442.20, 396.85)(0,0)
+  \put(0,0){\includegraphics{Plane Intersection.pdf}}
+  \put(178.58,297.64){\fontsize{14.23}{17.07}\selectfont Z}
+  \put(306.14,212.60){\fontsize{14.23}{17.07}\selectfont D}
+  \put(175.75,178.58){\fontsize{14.23}{17.07}\selectfont Z0}
+  \put(147.40,235.28){\fontsize{14.23}{17.07}\selectfont N}
+  \put(86.59,87.58){\rotatebox{320.56}{\fontsize{14.23}{17.07}\selectfont \smash{\makebox[0pt][l]{Normal Plane}}}}
+  \put(62.24,126.64){\rotatebox{17.66}{\fontsize{14.23}{17.07}\selectfont \smash{\makebox[0pt][l]{Slice Plane}}}}
+  \put(320.31,280.63){\fontsize{14.23}{17.07}\selectfont t}
+  \end{picture}%
+\else
+  \setlength{\unitlength}{1bp}%
+  \begin{picture}(442.20, 396.85)(0,0)
+  \put(0,0){\includegraphics{Plane Intersection}}
+  \put(178.58,297.64){\fontsize{14.23}{17.07}\selectfont Z}
+  \put(306.14,212.60){\fontsize{14.23}{17.07}\selectfont D}
+  \put(175.75,178.58){\fontsize{14.23}{17.07}\selectfont Z0}
+  \put(147.40,235.28){\fontsize{14.23}{17.07}\selectfont N}
+  \put(86.59,87.58){\rotatebox{320.56}{\fontsize{14.23}{17.07}\selectfont \smash{\makebox[0pt][l]{Normal Plane}}}}
+  \put(62.24,126.64){\rotatebox{17.66}{\fontsize{14.23}{17.07}\selectfont \smash{\makebox[0pt][l]{Slice Plane}}}}
+  \put(320.31,280.63){\fontsize{14.23}{17.07}\selectfont t}
+  \end{picture}%
+\fi
+\end{figure}

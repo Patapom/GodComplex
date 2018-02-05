@@ -233,15 +233,19 @@ PS_OUT	PS( float4 __Position : SV_POSITION ) {
 	// Read back last frame's radiance value that we always can use as a default for neighbor areas
 	float3	centralRadiance = _tex_sourceRadiance[pixelPosition].xyz;
 
-	#if 1
-		// Regular normal
-		float3	N = float3( dot( wsNormal, _Camera2World[0].xyz ), -dot( wsNormal, _Camera2World[1].xyz ), -dot( wsNormal, _Camera2World[2].xyz ) );	// Camera-space normal
+	#if 0
+		// Z-Plane
+		float3	wsRight = _Camera2World[0].xyz;
+		float3	wsUp = _Camera2World[1].xyz;
+		float3	wsAt = _Camera2World[2].xyz;
 	#else
 		// Compute face-cam normal
 		float3	wsRight = normalize( cross( wsView, _Camera2World[1].xyz ) );
 		float3	wsUp = cross( wsRight, wsView );
-		float3	N = float3( dot( wsNormal, wsRight ), -dot( wsNormal, wsUp ), -dot( wsNormal, wsView ) );	// Camera-space normal
+		float3	wsAt = wsView;
 	#endif
+	float3	N = float3( dot( wsNormal, wsRight ), -dot( wsNormal, wsUp ), -dot( wsNormal, wsAt ) );	// Camera-space normal
+
 //	float3	T, B;
 //	BuildOrthonormalBasis( N, T, B );
 
@@ -321,7 +325,7 @@ varianceConeAngle = acos( varianceConeAngle );
 
 float3	DEBUG_VALUE = float3( 1,0,1 );
 DEBUG_VALUE = ssAverageBentNormal;
-DEBUG_VALUE = ssAverageBentNormal.x * _Camera2World[0].xyz - ssAverageBentNormal.y * _Camera2World[1].xyz - ssAverageBentNormal.z * _Camera2World[2].xyz;	// World-space normal
+DEBUG_VALUE = ssAverageBentNormal.x * wsRight - ssAverageBentNormal.y * wsUp - ssAverageBentNormal.z * wsAt;	// World-space normal
 //DEBUG_VALUE = cos( averageConeAngle );
 //DEBUG_VALUE = dot( ssAverageBentNormal, N );
 //DEBUG_VALUE = 0.01 * Z;

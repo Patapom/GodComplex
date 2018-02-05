@@ -8,7 +8,7 @@
 //
 // IDEAS / #TODOS:
 //	✓ Use push/pull (with bilateral) to fill in reprojected radiance voids!!!
-//	• float	GetBilateralWeight( Z0, Z1, radius, ref sqHypotenuse ) => Outside of unit sphere???
+//	✓ float	GetBilateralWeight( Z0, Z1, radius, ref sqHypotenuse ) => Outside of unit sphere???
 //	✓ Use radius² as progression
 //		=> Doesn't provide any significant improvement
 //	• Sample mips for larger footprint (only if mip is bilateral filtered!)
@@ -16,6 +16,8 @@
 //	• Write interleaved sampling + reconstruction based on bilateral weight (store it some place? Like alpha somewhere?)
 //	• Keep failed reprojected pixels into some "surrounding buffer", some sort of paraboloid-projected buffer containing off-screen values???
 //		=> Exponential decay of off-screen values with decay rate depending on camera's linear velocity?? (fun idea!)
+//	• Use W linear attenuation as in HBAO?
+//	• Compute AO value!!
 //
 using System;
 using System.Collections.Generic;
@@ -724,7 +726,7 @@ m_tex_texDebugNormals.SetPS( 33 );
 
 				m_CB_DebugCone.m._wsConePosition = m_softwareHBILComputer.wsConePosition;
 				m_CB_DebugCone.m._wsConeDirection = m_softwareHBILComputer.wsConeDirection;
-				m_CB_DebugCone.m._coneAngle = m_softwareHBILComputer.coneAngle;
+				m_CB_DebugCone.m._coneAngle = m_softwareHBILComputer.averageConeAngle;
 				m_CB_DebugCone.m._coneStdDeviation = m_softwareHBILComputer.stdDeviation;
 				m_CB_DebugCone.m._flags = 0;
 				m_CB_DebugCone.UpdateData();

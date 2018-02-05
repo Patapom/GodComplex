@@ -1,0 +1,25 @@
+%<TpX v="5" ArrowsSize="0.7" StarsSize="1" DefaultFontHeight="5" DefaultSymbolSize="30" ApproximationPrecision="0.01" PicScale="1" Border="2" BitmapRes="20000" HatchingStep="2" DottedSize="0.5" DashSize="1" LineWidth="0.3">
+%  <bezier>68.9837,85.9246 75.8412,88.4659 93.7145,90.2766 100.577,87.1057 111.56,82.0303 109.445,61.9177 113.568,52.8553 118.417,42.1978 128.43,30.5612 141.618,32.6299 153.899,34.5561 159.777,46.3755 159.777,57.2842 161.969,66.2475 180.148,72.5053 188.27,72.3426 193.05,72.3426 193.251,71.791 201.704,67.0279 213.267,60.5123 226.086,70.1578 228.425,76.7715 230.267,81.9795 240.402,88.5299 246.141,90.7965</bezier>
+%  <line x1="119.916" y1="42.8164" x2="142.061" y2="62.5989" arr2="h44" lw="2.00"/>
+%  <line x1="119.916" y1="42.8164" x2="92.0141" y2="124.752" li="dash"/>
+%  <line x1="119.916" y1="42.8164" x2="219.124" y2="91.2394" li="dash"/>
+%  <text x="134.384" y="61.8608" t="N" h="5" li="dash" lw="2.00"/>
+%  <arc x="119.916" y="42.6688" d="155.289" a1="0.456845" a2="1.89857" lw="0.50"/>
+%  <star x="119.901" y="43.016" lw="0.50"/>
+%</TpX>
+\begin{figure}
+\centering
+\ifpdf
+  \setlength{\unitlength}{1bp}%
+  \begin{picture}(513.52, 273.15)(0,0)
+  \put(0,0){\includegraphics{HBAO.pdf}}
+  \put(191.06,89.21){\fontsize{14.23}{17.07}\selectfont N}
+  \end{picture}%
+\else
+  \setlength{\unitlength}{1bp}%
+  \begin{picture}(513.52, 273.15)(0,0)
+  \put(0,0){\includegraphics{HBAO}}
+  \put(191.06,89.21){\fontsize{14.23}{17.07}\selectfont N}
+  \end{picture}%
+\fi
+\end{figure}
