@@ -1,13 +1,9 @@
 %<TpX v="5" ArrowsSize="0.7" StarsSize="1" DefaultFontHeight="5" DefaultSymbolSize="30" ApproximationPrecision="0.01" PicScale="1" Border="2" BitmapRes="20000" HatchingStep="2" DottedSize="0.5" DashSize="1" LineWidth="0.3">
 %  <line x1="150" y1="55" x2="150" y2="105" arr2="h44" lw="4.00"/>
-%  <text x="152" y="106" t="Z" h="5"/>
 %  <line x1="150" y1="55" x2="198" y2="69" arr2="h44" lw="4.00"/>
-%  <text x="192" y="71" t="D" h="5"/>
 %  <star x="150" y="55" lw="4.00"/>
 %  <star x="150" y="70" lw="4.00"/>
-%  <text x="153" y="67" t="Z0" h="5" lw="4.00"/>
 %  <line x1="150" y1="70" x2="138" y2="84" arr2="h44"/>
-%  <text x="141" y="84" t="N" h="5"/>
 %  <line x1="232" y1="104" x2="156" y2="126"/>
 %  <line x1="82" y1="42" x2="146" y2="-3"/>
 %  <line x1="146" y1="-3" x2="232" y2="104"/>
@@ -24,19 +20,34 @@
 %    <line x1="110" y1="88" x2="187" y2="107"/>
 %  </group>
 %  <line x1="150" y1="70" x2="125" y2="88" arr2="h44"/>
-%  <text x="122" y="82" t="N&apos;" h="5" li="dash" lw="0.50"/>
 %  <line x1="138" y1="84" x2="125" y2="88" li="dash" lc="firebrick"/>
 %  <text x="85" y="42" t="Normal Plane" h="5" rotdeg="324.894" li="dash"/>
 %  <text x="110.957" y="45.6757" t="Slice Plane" h="5" rotdeg="17.6576" li="dash"/>
 %  <line x1="150" y1="55" x2="199" y2="45" arr2="h44"/>
 %  <text x="198" y="48" t="X" h="5" li="dash"/>
-%  <line x1="150" y1="55" x2="126.306" y2="22.3" arr2="h44"/>
-%  <text x="129.821" y="21.2724" t="Y" h="5" li="dash"/>
+%  <line x1="150" y1="55" x2="183" y2="78" arr2="h44"/>
+%  <text x="179.513" y="80.8112" t="Y" h="5" li="dash"/>
 %  <arc arr2="h44" x="159" y="66" d="58.4733" a1="5.63638" a2="6.28319"/>
 %</TpX>
 \begin{figure}
 \centering
 \ifpdf
+  \setlength{\unitlength}{1bp}%
+  \begin{picture}(436.54, 377.01)(0,0)
+  \put(0,0){\includegraphics{3D Slice.pdf}}
+  \put(14.17,133.23){\rotatebox{324.89}{\fontsize{14.23}{17.07}\selectfont \smash{\makebox[0pt][l]{Normal Plane}}}}
+  \put(87.75,143.65){\rotatebox{17.66}{\fontsize{14.23}{17.07}\selectfont \smash{\makebox[0pt][l]{Slice Plane}}}}
+  \put(334.49,150.24){\fontsize{14.23}{17.07}\selectfont X}
+  \put(282.08,243.24){\fontsize{14.23}{17.07}\selectfont Y}
+  \end{picture}%
 \else
+  \setlength{\unitlength}{1bp}%
+  \begin{picture}(436.54, 377.01)(0,0)
+  \put(0,0){\includegraphics{3D Slice}}
+  \put(14.17,133.23){\rotatebox{324.89}{\fontsize{14.23}{17.07}\selectfont \smash{\makebox[0pt][l]{Normal Plane}}}}
+  \put(87.75,143.65){\rotatebox{17.66}{\fontsize{14.23}{17.07}\selectfont \smash{\makebox[0pt][l]{Slice Plane}}}}
+  \put(334.49,150.24){\fontsize{14.23}{17.07}\selectfont X}
+  \put(282.08,243.24){\fontsize{14.23}{17.07}\selectfont Y}
+  \end{picture}%
 \fi
 \end{figure}
