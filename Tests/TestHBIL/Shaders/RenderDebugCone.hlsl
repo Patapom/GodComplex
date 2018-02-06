@@ -36,7 +36,7 @@ PS_IN	VS( float3 _Position : POSITION ) {
 	} else {
 		// Render cone
 		if ( _Position.z > 0.5 ) {
-			wsPosition = 2*VECTOR_SIZE * (sin( _coneAngle ) * (_Position.x * T + _Position.y * B) + cos( _coneAngle ) * N);
+			wsPosition = _wsConePosition + 2*VECTOR_SIZE * (sin( _coneAngle ) * (_Position.x * T + _Position.y * B) + cos( _coneAngle ) * N);
 		}
 		lsNormal = float3( sin( _coneAngle ) * _Position.xy, - cos( _coneAngle ) );
 	}

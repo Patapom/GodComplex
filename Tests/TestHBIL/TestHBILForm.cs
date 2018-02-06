@@ -940,6 +940,7 @@ m_tex_texDebugNormals.SetPS( 33 );
 			m_softwareHBILComputer.Setup( m_tex_depthWithMips, m_tex_normal, m_tex_sourceRadiance_PULL );
 			m_softwareHBILComputer.GatherSphereMaxRadius_m = floatTrackbarControlGatherSphereRadius.Value;
 			m_softwareHBILComputer.Camera2World = m_CB_Camera.m._Camera2World;
+			m_softwareHBILComputer.World2Proj = m_CB_Camera.m._World2Proj;
 			m_softwareHBILComputer.Compute( _X, _Y );
 		}
 

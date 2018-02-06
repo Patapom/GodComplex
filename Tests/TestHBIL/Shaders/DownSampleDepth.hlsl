@@ -31,6 +31,7 @@ void	CS( uint3 _groupID : SV_groupID, uint3 _groupThreadID : SV_groupThreadID, u
 
 	#else
 		// What the hell is this fucking bug??? Is the operator[] still bugged after all these years???
+		// It still doesn't work if you're creating views to read and write from the same texture but different mip level FFS!
 		uint2	sourcePixelIndex = targetPixelIndex << 1;
 		float	V00 = _tex_sourceDepth[sourcePixelIndex];	sourcePixelIndex.x++;
 		float	V10 = _tex_sourceDepth[sourcePixelIndex];	sourcePixelIndex.y++;

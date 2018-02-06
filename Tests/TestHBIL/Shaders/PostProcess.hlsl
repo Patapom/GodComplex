@@ -40,7 +40,7 @@ float3	PS( float4 __Position : SV_POSITION ) : SV_TARGET0 {
 //float3	N = float3( dot( wsNormal, wsRight ), dot( wsNormal, wsUp ), -dot( wsNormal, wsView ) );	// Camera-space normal
 
 	float4	csBentConeDev = _tex_BentCone[__Position.xy];
-	float	cosAverageConeAngle = length( csBentConeDev );
+	float	cosAverageConeAngle = length( csBentConeDev.xyz );
 	float3	csBentCone = csBentConeDev.xyz / cosAverageConeAngle;
 	float	averageConeAngle = acos( cosAverageConeAngle );
 	float	stdDeviationConeAngle = 0.5 * PI * (1.0 - csBentConeDev.w);
@@ -61,12 +61,12 @@ return csBentConeDev.xyz;	// Show RAW value
 //		V.w = Depth2Weight( V.w );
 	return 0.01 * V.w;
 //	return V.xyz / V.w;
-//	return V.xyz;
+	return V.xyz;
 #endif
 
 //return _tex_Radiance[uint3(__Position.xy, _sourceRadianceIndex)].xyz;
 //return _tex_Albedo[__Position.xy].xyz;
-//return _tex_Normal[__Position.xy].xyz;
+return _tex_Normal[__Position.xy].xyz;
 return _tex_Depth.SampleLevel( LinearClamp, __Position.xy / _resolution, _debugMipIndex );
 return _tex_Depth.mips[_debugMipIndex][__Position.xy];
 //return 0.5 * (1.0 + _tex_Normal[__Position.xy].xyz);

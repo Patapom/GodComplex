@@ -173,21 +173,21 @@ float3	GatherIrradiance( float2 _ssPosition, float2 _ssDirection, float2 _csDire
 		float	thetaFront = acos( maxCos_Front );
 		float	thetaBack = -acos( maxCos_Back );
 
-		_ssBentNormal = 0.001 * _N;
+		_csBentNormal = 0.001 * _csNormal;
 		for ( uint i=0; i < USE_NUMERICAL_INTEGRATION; i++ ) {
 			float	theta = lerp( thetaBack, thetaFront, (i+0.5) / USE_NUMERICAL_INTEGRATION );
 			float	sinTheta, cosTheta;
 			sincos( theta, sinTheta, cosTheta );
 			float3	ssUnOccludedDirection = float3( sinTheta * _csDirection, cosTheta );
 
-			float	cosAlpha = saturate( dot( ssUnOccludedDirection, _N ) );
+			float	cosAlpha = saturate( dot( ssUnOccludedDirection, _csNormal ) );
 
 			float	weight = cosAlpha * abs(sinTheta);		// cos(alpha) * sin(theta).dTheta  (be very careful to take abs(sin(theta)) because our theta crosses the pole and becomes negative here!)
-			_ssBentNormal += weight * ssUnOccludedDirection;
+			_csBentNormal += weight * ssUnOccludedDirection;
 		}
 
 		float	dTheta = (thetaFront - thetaBack) / USE_NUMERICAL_INTEGRATION;
-		_ssBentNormal *= dTheta;
+		_csBentNormal *= dTheta;
 	#else
 		// Analytical solution
 		float	cosTheta0 = maxCos_Front;
@@ -256,5 +256,5 @@ void	ReconstructBentCone( float3 _wsView, float3 _wsCameraUp, float4 _lcsBentCon
 	float3	wsUp = cross( wsRight, _wsView );
 
 	// Transform local camera-space bent cone back into world space
-	_wsBentNormal = _csBentNormal.x * wsRight - _csBentNormal.y * wsUp - _csBentNormal.z * _wsView;
+	_wsBentNormal = _csBentNormal.x * wsRight + _csBentNormal.y * wsUp - _csBentNormal.z * _wsView;
 }

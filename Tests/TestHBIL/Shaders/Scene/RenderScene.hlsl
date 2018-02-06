@@ -81,10 +81,10 @@ PS_OUT_FINAL	PS_Light( float4 __Position : SV_POSITION ) {
 	BuildCameraRay( UV, wsPos, csView, wsView, Z2Distance );
 
 	// Read back bent normal
-	float4	ssBentCone = _tex_BentCone[pixelPosition];
+	float4	csBentCone = _tex_BentCone[pixelPosition];
 	float3	csBentNormal, wsBentNormal;
 	float	cosAverageConeAngle, stdDeviationConeAngle;
-	ReconstructBentCone( wsView, _Camera2World[1].xyz, ssBentCone, csBentNormal, wsBentNormal, cosAverageConeAngle, stdDeviationConeAngle );
+	ReconstructBentCone( wsView, _Camera2World[1].xyz, csBentCone, csBentNormal, wsBentNormal, cosAverageConeAngle, stdDeviationConeAngle );
 	float	averageConeAngle = FastPosAcos( cosAverageConeAngle );
 	float2	cosConeAnglesMinMax = float2( cos( max( 0.0, averageConeAngle - stdDeviationConeAngle ) ), cos( min( 0.5 * PI, averageConeAngle + stdDeviationConeAngle ) ) );
 
@@ -110,7 +110,7 @@ PS_OUT_FINAL	PS_Light( float4 __Position : SV_POSITION ) {
 		HBILIrradiance *= 0.0;
 
 	// Compute this frame's distant environment coming from some SH probe
-	float	samplingConeAngle = clamp( averageConeAngle + _coneAngleBias * stdDeviationConeAngle, 0.0, 0.5 * PI );	// -0.2 is a good empirical value
+	float	samplingConeAngle = clamp( averageConeAngle + _coneAngleBias * stdDeviationConeAngle, 0.0, 0.5 * PI );	// -0.2 seems to be a good empirical value
 	if ( (_flags & 4) == 0 )
 		samplingConeAngle = 0.5 * PI;
 

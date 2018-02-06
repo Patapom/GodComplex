@@ -2,7 +2,9 @@
 // Shaders to compute HBIL
 ////////////////////////////////////////////////////////////////////////////////
 //
+
 //#define AVERAGE_COSINES 1
+//#define USE_NUMERICAL_INTEGRATION 256	// Define this to compute bent normal numerically (value = integration steps count)
 
 #include "Global.hlsl"
 #include "HBIL.hlsl"
@@ -172,8 +174,8 @@ float3	GatherIrradiance_TEMP( float2 _csDirection, float4x3 _localCamera2World, 
 	float3	sumRadiance = 0.0;
 	float3	previousRadiance_Front = _centralRadiance;
 	float3	previousRadianceBack = _centralRadiance;
-
-/*	float2	csStep = _stepSize_meters * _csDirection;
+//*
+	float2	csStep = _stepSize_meters * _csDirection;
 	float2	csPosition_Front = 0.0;
 	float2	csPosition_Back = 0.0;
 	for ( uint stepIndex=0; stepIndex < _stepsCount; stepIndex++ ) {
@@ -186,7 +188,7 @@ float2	mipLevel = 0.0;
 		sumRadiance += SampleIrradiance_TEMP( csPosition_Front, _localCamera2World, mipLevel, integralFactors_Front, previousRadiance_Front, maxCos_Front );
 		sumRadiance += SampleIrradiance_TEMP( csPosition_Back, _localCamera2World, mipLevel, integralFactors_Back, previousRadianceBack, maxCos_Back );
 	}
-	*/
+//*/
 
 	// Accumulate bent normal direction by rebuilding and averaging the front & back horizon vectors
 	#if USE_NUMERICAL_INTEGRATION
@@ -196,14 +198,14 @@ float2	mipLevel = 0.0;
 		float	thetaFront = acos( maxCos_Front );
 		float	thetaBack = -acos( maxCos_Back );
 
-		_csBentNormal = 0.001 * _N;
+		_csBentNormal = 0.001 * _csNormal;
 		for ( uint i=0; i < USE_NUMERICAL_INTEGRATION; i++ ) {
 			float	theta = lerp( thetaBack, thetaFront, (i+0.5) / USE_NUMERICAL_INTEGRATION );
 			float	sinTheta, cosTheta;
 			sincos( theta, sinTheta, cosTheta );
 			float3	csUnOccludedDirection = float3( sinTheta * _csDirection, cosTheta );
 
-			float	cosAlpha = saturate( dot( csUnOccludedDirection, _N ) );
+			float	cosAlpha = saturate( dot( csUnOccludedDirection, _csNormal ) );
 
 			float	weight = cosAlpha * abs(sinTheta);		// cos(alpha) * sin(theta).dTheta  (be very careful to take abs(sin(theta)) because our theta crosses the pole and becomes negative here!)
 			_csBentNormal += weight * csUnOccludedDirection;
@@ -233,7 +235,7 @@ float2	mipLevel = 0.0;
 		_csBentNormal = float3( averageX * _csDirection, averageY );							// Rebuild normal in camera space
 	#endif
 
-	_csBentNormal = normalize( _csBentNormal );
+//	_csBentNormal = normalize( _csBentNormal );
 
 	// Compute cone angles
 	float3	csHorizon_Front = float3( sqrt( 1.0 - maxCos_Front*maxCos_Front ) * _csDirection, maxCos_Front );
