@@ -259,7 +259,6 @@
 			// checkBoxMonochrome
 			// 
 			this.checkBoxMonochrome.AutoSize = true;
-			this.checkBoxMonochrome.CheckState = System.Windows.Forms.CheckState.Checked;
 			this.checkBoxMonochrome.Location = new System.Drawing.Point(6, 71);
 			this.checkBoxMonochrome.Name = "checkBoxMonochrome";
 			this.checkBoxMonochrome.Size = new System.Drawing.Size(118, 17);

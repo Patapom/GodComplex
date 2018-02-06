@@ -21,32 +21,34 @@ float	Depth2Weight( float _depth ) {
 float3	PS( float4 __Position : SV_POSITION ) : SV_TARGET0 {
 	float2	UV = __Position.xy / _resolution;
 	float3	csView = BuildCameraRay( UV );
+	float	Z2Distance = length( csView );
+			csView /= Z2Distance;
 	float3	wsView = mul( float4( csView, 0 ), _Camera2World ).xyz;
-	float3	wsPos = _Camera2World[3].xyz + Z_FAR * _tex_Depth[__Position.xy] * wsView;
+	float3	wsPos = _Camera2World[3].xyz + Z2Distance * Z_FAR * _tex_Depth[__Position.xy] * wsView;
 //return csView;
 //return wsView;
 //return 0.5 * wsPos;
 
 //return _exposure * _tex_FinalRender[__Position.xy].xyz;
 
-#if 0	// DEBUG BENT CONE
+#if 1	// DEBUG BENT CONE
 
 	// Face-cam
 	float3	wsRight = normalize( cross( wsView, _Camera2World[1].xyz ) );
 	float3	wsUp = cross( wsRight, wsView );
-	float3	wsAt = wsView;
+	float3	wsAt = -wsView;
 //float3	N = float3( dot( wsNormal, wsRight ), dot( wsNormal, wsUp ), -dot( wsNormal, wsView ) );	// Camera-space normal
 
-float4	csBentConeDev = _tex_BentCone[__Position.xy];
-float	cosAverageConeAngle = length( csBentConeDev );
-float3	csBentCone = csBentConeDev.xyz / cosAverageConeAngle;
-float	averageConeAngle = acos( cosAverageConeAngle );
-float	stdDeviationConeAngle = 0.5 * PI * (1.0 - csBentConeDev.w);
+	float4	csBentConeDev = _tex_BentCone[__Position.xy];
+	float	cosAverageConeAngle = length( csBentConeDev );
+	float3	csBentCone = csBentConeDev.xyz / cosAverageConeAngle;
+	float	averageConeAngle = acos( cosAverageConeAngle );
+	float	stdDeviationConeAngle = 0.5 * PI * (1.0 - csBentConeDev.w);
 
-float3	wsBentCone = csBentCone.x * wsRight - csBentCone.y * wsUp + csBentCone.z * wsAt;
+	float3	wsBentCone = csBentCone.x * wsRight + csBentCone.y * wsUp + csBentCone.z * wsAt;
 
 //return cosAverageConeAngle;
-return averageConeAngle * 2.0 / PI;
+//return averageConeAngle * 2.0 / PI;
 //return stdDeviationConeAngle;
 //return csBentCone;
 return wsBentCone;
@@ -63,7 +65,7 @@ return csBentConeDev.xyz;
 #endif
 
 //return _tex_Radiance[uint3(__Position.xy, _sourceRadianceIndex)].xyz;
-return _tex_Albedo[__Position.xy].xyz;
+//return _tex_Albedo[__Position.xy].xyz;
 //return _tex_Normal[__Position.xy].xyz;
 return _tex_Depth.SampleLevel( LinearClamp, __Position.xy / _resolution, _debugMipIndex );
 return _tex_Depth.mips[_debugMipIndex][__Position.xy];
