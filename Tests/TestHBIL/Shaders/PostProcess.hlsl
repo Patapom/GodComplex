@@ -52,7 +52,7 @@ float3	PS( float4 __Position : SV_POSITION ) : SV_TARGET0 {
 //return stdDeviationConeAngle;
 //return csBentCone;
 return wsBentCone;
-return csBentConeDev.xyz;
+return csBentConeDev.xyz;	// Show RAW value
 #endif
 
 #if 0	// DEBUG PUSH/PULL

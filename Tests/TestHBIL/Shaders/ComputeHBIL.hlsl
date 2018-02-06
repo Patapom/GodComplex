@@ -9,7 +9,7 @@
 
 static const float	GATHER_SPHERE_MAX_RADIUS_P = 100.0;	// Maximum radius (in pixels) that we allow our sphere to get
 
-#define MAX_ANGLES	1									// Amount of circle subdivisions per pixel
+#define MAX_ANGLES	8									// Amount of circle subdivisions per pixel
 #define MAX_SAMPLES	32									// Maximum amount of samples per circle subdivision
 
 Texture2D< float >	_tex_depth : register(t0);			// Depth or distance buffer (here we're given depth)
@@ -83,7 +83,6 @@ float	BilateralFilterRadiance( float _centralZ, float _neighborZ, float _radius_
 
 
 float2	ComputeMipLevel( float2 _radius, float2 _radialStepSizes ) {
-return 0;
 	float	radiusPixel = _radius.x;
 	float	deltaRadius = _radialStepSizes.x;
 	float	pixelArea = PI / (2.0 * MAX_ANGLES) * 2.0 * radiusPixel * deltaRadius;
@@ -94,16 +93,16 @@ return 0;
 }
 
 
-
 float3	SampleIrradiance_TEMP( float2 _csPosition, float4x3 _localCamera2World, float2 _mipLevel, float2 _integralFactors, inout float3 _previousRadiance, inout float _maxCos ) {
 
 	// Transform camera-space position into screen space
-	float3	wsPosition = _localCamera2World[3] + _csPosition.x * _localCamera2World[0] + _csPosition.y * _localCamera2World[1];
-//	float3	deltaPos = wsPosition = _Camera2World[3].xyz;
+	float3	wsNeighborPosition = _localCamera2World[3] + _csPosition.x * _localCamera2World[0] + _csPosition.y * _localCamera2World[1];
+//	float3	deltaPos = wsNeighborPosition = _Camera2World[3].xyz;
 //	float2	gcsPosition = float3( dot( deltaPos, _Camera2World[0].xyz ), dot( deltaPos, _Camera2World[1].xyz ), dot( deltaPos, _Camera2World[2].xyz ) );
 
+
 // #TODO: Optimize!
-float4	projPosition = mul( float4( wsPosition, 1.0 ), _World2Proj );
+float4	projPosition = mul( float4( wsNeighborPosition, 1.0 ), _World2Proj );
 		projPosition.xyz /= projPosition.w;
 float2	ssPosition = float2( 0.5 * (1.0 + projPosition.x) * _resolution.x, 0.5 * (1.0 - projPosition.y) * _resolution.y );
 
@@ -111,15 +110,15 @@ float2	ssPosition = float2( 0.5 * (1.0 + projPosition.x) * _resolution.x, 0.5 * 
 	// Sample new depth and rebuild final world-space position
 	float	neighborZ = FetchDepth( ssPosition, _mipLevel.x );
 	
-	float3	wsView = wsPosition - _Camera2World[3].xyz;		// Neighbor world-space position (not projected), offset from camera
-			wsView /= dot( wsView, _Camera2World[2].xyz );	// Scaled so its length against the camera's Z axis is 1
-			wsView *= neighborZ;							// Scaled again so its length agains the camera's Z axis equals our sampled Z
+	float3	wsView = wsNeighborPosition - _Camera2World[3].xyz;		// Neighbor world-space position (not projected), relative to camera
+			wsView /= abs(dot( wsView, _Camera2World[2].xyz ));		// Scaled so its length against the camera's Z axis is 1
+			wsView *= neighborZ;									// Scaled again so its length agains the camera's Z axis equals our sampled Z
 
-	wsPosition = _Camera2World[3].xyz + wsView;				// Final reprojected world-space position
+	wsNeighborPosition = _Camera2World[3].xyz + wsView;				// Final reprojected world-space position
 
 	// Update horizon angle following eq. (3) from the paper
-	wsPosition -= _localCamera2World[3];					// Neighbor position - central position
-	float3	csNeighborPosition = float3( dot( wsPosition, _localCamera2World[0] ), dot( wsPosition, _localCamera2World[1] ), dot( wsPosition, _localCamera2World[2] ) );
+	wsNeighborPosition -= _localCamera2World[3];					// Neighbor position - central position
+	float3	csNeighborPosition = float3( dot( wsNeighborPosition, _localCamera2World[0] ), dot( wsNeighborPosition, _localCamera2World[1] ), dot( wsNeighborPosition, _localCamera2World[2] ) );
 	float	radius = length( csNeighborPosition.xy );
 	float	d = csNeighborPosition.z;
 //			d *= BilateralFilterDepth( 0.0, d, _radius );	// Attenuate
@@ -149,7 +148,7 @@ float2	ssPosition = float2( 0.5 * (1.0 + projPosition.x) * _resolution.x, 0.5 * 
 	return incomingRadiance;
 }
 
-float3	GatherIrradiance_TEMP( float2 _ssPosition, float2 _csDirection, float4x3 _localCamera2World, float3 _csNormal, float _stepSize_meters, uint _stepsCount, float3 _centralRadiance, out float3 _csBentNormal, out float2 _coneAngles, inout float4 _DEBUG ) {
+float3	GatherIrradiance_TEMP( float2 _csDirection, float4x3 _localCamera2World, float3 _csNormal, float _stepSize_meters, uint _stepsCount, float3 _centralRadiance, out float3 _csBentNormal, out float2 _coneAngles, inout float4 _DEBUG ) {
 
 	// Pre-compute factors for the integrals
 	float2	integralFactors_Front = ComputeIntegralFactors( _csDirection, _csNormal );
@@ -173,21 +172,21 @@ float3	GatherIrradiance_TEMP( float2 _ssPosition, float2 _csDirection, float4x3 
 	float3	sumRadiance = 0.0;
 	float3	previousRadiance_Front = _centralRadiance;
 	float3	previousRadianceBack = _centralRadiance;
-	float	radius_meters = 0.0;
-	float2	csStep = _stepSize_meters * _csDirection;
+
+/*	float2	csStep = _stepSize_meters * _csDirection;
 	float2	csPosition_Front = 0.0;
 	float2	csPosition_Back = 0.0;
 	for ( uint stepIndex=0; stepIndex < _stepsCount; stepIndex++ ) {
-		radius_meters += _stepSize_meters;
 		csPosition_Front += csStep;
 		csPosition_Back -= csStep;
 
 //		float2	mipLevel = ComputeMipLevel( radius, _radialStepSizes );
-		float2	mipLevel = 0.0;
+float2	mipLevel = 0.0;
 
 		sumRadiance += SampleIrradiance_TEMP( csPosition_Front, _localCamera2World, mipLevel, integralFactors_Front, previousRadiance_Front, maxCos_Front );
 		sumRadiance += SampleIrradiance_TEMP( csPosition_Back, _localCamera2World, mipLevel, integralFactors_Back, previousRadianceBack, maxCos_Back );
 	}
+	*/
 
 	// Accumulate bent normal direction by rebuilding and averaging the front & back horizon vectors
 	#if USE_NUMERICAL_INTEGRATION
@@ -213,9 +212,9 @@ float3	GatherIrradiance_TEMP( float2 _ssPosition, float2 _csDirection, float4x3 
 		float	dTheta = (thetaFront - thetaBack) / USE_NUMERICAL_INTEGRATION;
 		_csBentNormal *= dTheta;
 	#else
-		// Analytical solution
+		// Analytical solution for equations (5) and (6) from the paper
 		float	cosTheta0 = maxCos_Front;
-		float	cosTheta1 = maxCos_Back;
+		float	cosTheta1 = maxCos_Back;	// This should be in [-PI,0] but instead I take the absolute value so [0,PI] instead
 		float	sinTheta0 = sqrt( 1.0 - cosTheta0*cosTheta0 );
 		float	sinTheta1 = sqrt( 1.0 - cosTheta1*cosTheta1 );
 		float	cosTheta0_3 = cosTheta0*cosTheta0*cosTheta0;
@@ -294,6 +293,7 @@ PS_OUT	PS( float4 __Position : SV_POSITION ) {
 	float3	wsRight = normalize( cross( wsView, _Camera2World[1].xyz ) );
 	float3	wsUp = cross( wsRight, wsView );
 	float3	wsAt = -wsView;
+
 	float4x3	localCamera2World = float4x3( wsRight, wsUp, wsAt, wsPos );
 
 	// Compute local camera-space normal
@@ -324,7 +324,7 @@ PS_OUT	PS( float4 __Position : SV_POSITION ) {
 	{
 		float	phi = (angleIndex + noise) * PI / MAX_ANGLES;
 
-phi = 0.0;
+//phi = 0.0;
 
 		// Build camera-space and screen-space walk directions
 		float2	csDirection;
@@ -336,7 +336,12 @@ phi = 0.0;
 		// Gather irradiance and average cone direction for that slice
 		float3	csBentNormal;
 		float2	coneAngles;
-		sumIrradiance += GatherIrradiance_TEMP( __Position.xy, csDirection, localCamera2World, N, radiusStepSize_meters, samplesCount, centralRadiance, csBentNormal, coneAngles, GATHER_DEBUG );
+		sumIrradiance += GatherIrradiance_TEMP( csDirection, localCamera2World, N, radiusStepSize_meters, samplesCount, centralRadiance, csBentNormal, coneAngles, GATHER_DEBUG );
+
+
+//csBentNormal = N;
+//coneAngles = 0.5 * float2( -PI, PI );
+
 
 		csAverageBentNormal += csBentNormal;
 
@@ -391,16 +396,40 @@ DEBUG_VALUE = csAverageBentNormal.x * wsRight + csAverageBentNormal.y * wsUp + c
 //DEBUG_VALUE = stdDeviation;
 //DEBUG_VALUE = float3( GATHER_DEBUG.xy, 0 );
 //DEBUG_VALUE = float3( GATHER_DEBUG.zw, 0 );
-DEBUG_VALUE = GATHER_DEBUG.xyz;
-DEBUG_VALUE = N;
-//DEBUG_VALUE = wsRight;
-//DEBUG_VALUE = 0.25 * wsPos;
+//DEBUG_VALUE = N;
+//DEBUG_VALUE = 0.4 * localCamera2World[3];
+//DEBUG_VALUE = GATHER_DEBUG.xyz;
+
+//float4	projPosition = mul( float4( localCamera2World[3], 1.0 ), _World2Proj );
+//		projPosition.xyz /= projPosition.w;
+//DEBUG_VALUE = float3( 0.5 * (1.0 + projPosition.x), 0.5 * (1.0 - projPosition.y), 0 );
+
+
+#if 0
+{
+	// Transform camera-space position into screen space
+	float2	csPosition = 0.5 * float2( cos(_time), sin(_time) );
+	float3	wsNeighborPosition = localCamera2World[3] + csPosition.x * localCamera2World[0] + csPosition.y * localCamera2World[1];
+	float4	projPosition = mul( float4( wsNeighborPosition, 1.0 ), _World2Proj );
+			projPosition.xyz /= projPosition.w;
+	float2	ssPosition = float2( 0.5 * (1.0 + projPosition.x) * _resolution.x, 0.5 * (1.0 - projPosition.y) * _resolution.y );
+	// Sample new depth and rebuild final world-space position
+	float	neighborZ = FetchDepth( ssPosition, 0 );
+	float3	wsView = wsNeighborPosition - _Camera2World[3].xyz;		// Neighbor world-space position (not projected), relative to camera
+			wsView /= abs(dot( wsView, _Camera2World[2].xyz ));		// Scaled so its length against the camera's Z axis is 1
+			wsView *= neighborZ;									// Scaled again so its length agains the camera's Z axis equals our sampled Z
+
+	wsNeighborPosition = _Camera2World[3].xyz + wsView;				// Final reprojected world-space position
+	DEBUG_VALUE = 0.4 * wsNeighborPosition;
+}
+#endif
+
 
 	PS_OUT	Out;
 	Out.irradiance = float4( sumIrradiance, 0 );
 	Out.bentCone = float4( max( 0.01, cos( averageConeAngle ) ) * csAverageBentNormal, 1.0 - stdDeviation / (0.5 * PI) );
 
-Out.bentCone = float4( DEBUG_VALUE, 1 );
+//Out.bentCone = float4( DEBUG_VALUE, 1 );
 
 	return Out;
 }
