@@ -1,0 +1,22 @@
+%<TpX v="5" ArrowsSize="0.7" StarsSize="1" DefaultFontHeight="5" DefaultSymbolSize="30" ApproximationPrecision="0.01" PicScale="1" Border="2" BitmapRes="20000" HatchingStep="2" DottedSize="0.5" DashSize="1" LineWidth="0.3">
+%  <line x1="200" y1="40" x2="200" y2="90" arr2="h44"/>
+%  <line x1="170" y1="40" x2="260" y2="40" arr2="h44"/>
+%  <line x1="200" y1="40" x2="170" y2="100" li="dash"/>
+%  <line x1="200" y1="40" x2="260" y2="70" li="dash"/>
+%  <arc arr1="h40" x="200" y="40" d="92.1303" a1="0.473356" a2="1.5708" li="dash"/>
+%  <arc arr2="h40" x="200" y="40" d="82.2922" a1="1.5708" a2="2.02357" li="dash"/>
+%</TpX>
+\begin{figure}
+\centering
+\ifpdf
+  \setlength{\unitlength}{1bp}%
+  \begin{picture}(266.46, 183.40)(0,0)
+  \put(0,0){\includegraphics{BentNormalIntegration.pdf}}
+  \end{picture}%
+\else
+  \setlength{\unitlength}{1bp}%
+  \begin{picture}(266.46, 183.40)(0,0)
+  \put(0,0){\includegraphics{BentNormalIntegration}}
+  \end{picture}%
+\fi
+\end{figure}
