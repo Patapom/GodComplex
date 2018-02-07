@@ -78,7 +78,7 @@ float3	BuildCameraRay( float2 _UV ) {
 // M. Abramowitz and I.A. Stegun, Ed.
 // Absolute error <= 6.7e-5
 // Source: https://web.archive.org/web/20161223122122/http://http.developer.nvidia.com:80/Cg/acos.html
-float fastAcos( float x ) {
+float FastAcos( float x ) {
 	float negate = float(x < 0);
 	x = abs(x);
 	float ret = -0.0187293;

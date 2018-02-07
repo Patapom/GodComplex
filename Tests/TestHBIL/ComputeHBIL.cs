@@ -23,8 +23,8 @@ namespace TestHBIL
 		const float			GATHER_SPHERE_MAX_RADIUS_P = 100;
 
 		// Not const so we can change it while debugging
-//		uint		MAX_ANGLES = 8;
-		uint		MAX_ANGLES = 1;
+//		uint		MAX_ANGLES = 1;
+		uint		MAX_ANGLES = 16;
 		uint		MAX_SAMPLES = 32;
 
 		#endregion
@@ -118,7 +118,7 @@ namespace TestHBIL
 			float	noise = 0.0f;//_tex_blueNoise[pixelPosition & 0x3F];
 
 
-PerformIntegrationTest();
+//PerformIntegrationTest();
 
 
 			// Setup camera ray
@@ -178,8 +178,8 @@ PerformIntegrationTest();
 
 				// Gather irradiance and average cone direction for that slice
 				float3	csBentNormal;
-				float2	coneAngles;
-				sumIrradiance += GatherIrradiance( csDirection, localCamera2World, N, radiusStepSize_meters, samplesCount, centralRadiance, out csBentNormal, out coneAngles, ref GATHER_DEBUG );
+				float4	coneAngles;
+				sumIrradiance += GatherIrradiance( csDirection, localCamera2World, N, radiusStepSize_meters, samplesCount, Z, centralRadiance, out csBentNormal, out coneAngles, ref GATHER_DEBUG );
 
 				csAverageBentNormal += csBentNormal;
 
@@ -238,7 +238,7 @@ DEBUG_VALUE = GATHER_DEBUG.xyz;
 			m_stdDeviation = stdDeviation;
 		}
 
-		float3	GatherIrradiance( float2 _csDirection, float4x4 _localCamera2World, float3 _csNormal, float _stepSize_meters, uint _stepsCount, float3 _centralRadiance, out float3 _csBentNormal, out float2 _coneAngles, ref float4 _DEBUG ) {
+		float3	GatherIrradiance( float2 _csDirection, float4x4 _localCamera2World, float3 _csNormal, float _stepSize_meters, uint _stepsCount, float _Z0, float3 _centralRadiance, out float3 _csBentNormal, out float4 _coneAngles, ref float4 _DEBUG ) {
 
 			// Pre-compute factors for the integrals
 			float2	integralFactors_Front = ComputeIntegralFactors( _csDirection, _csNormal );
@@ -275,8 +275,8 @@ DEBUG_VALUE = GATHER_DEBUG.xyz;
 //				float2	mipLevel = ComputeMipLevel( radius, _radialStepSizes );
 float2	mipLevel = float2.Zero;
 
-				sumRadiance += SampleIrradiance( csPosition_Front, _localCamera2World, mipLevel, integralFactors_Front, ref previousRadiance_Front, ref maxCosTheta_Front );
-				sumRadiance += SampleIrradiance( csPosition_Back, _localCamera2World, mipLevel, integralFactors_Back, ref previousRadianceBack, ref maxCosTheta_Back );
+				sumRadiance += SampleIrradiance( csPosition_Front, _localCamera2World, _Z0, mipLevel, integralFactors_Front, ref previousRadiance_Front, ref maxCosTheta_Front );
+				sumRadiance += SampleIrradiance( csPosition_Back, _localCamera2World, _Z0, mipLevel, integralFactors_Back, ref previousRadianceBack, ref maxCosTheta_Back );
 			}
 //*/
 			// Accumulate bent normal direction by rebuilding and averaging the front & back horizon vectors
@@ -298,6 +298,8 @@ float2	mipLevel = float2.Zero;
 
 					float	cosAlpha = Mathf.Saturate( ssOmega.Dot( ssNormal ) );
 
+cosAlpha = 1.0f;
+
 					float	weight = cosAlpha * Mathf.Abs(sinTheta);		// cos(alpha) * sin(theta).dTheta  (be very careful to take abs(sin(theta)) because our theta crosses the pole and becomes negative here!)
 
 					ssBentNormal += weight * ssOmega;
@@ -310,38 +312,56 @@ float2	mipLevel = float2.Zero;
 
 			#else
 				// Analytical solution
-				float	cosTheta0 = maxCosTheta_Front;
-				float	cosTheta1 = maxCosTheta_Back;
-				float	sinTheta0 = Mathf.Sqrt( 1.0f - cosTheta0*cosTheta0 );
-				float	sinTheta1 = Mathf.Sqrt( 1.0f - cosTheta1*cosTheta1 );
-				float	cosTheta0_3 = cosTheta0*cosTheta0*cosTheta0;
-				float	cosTheta1_3 = cosTheta1*cosTheta1*cosTheta1;
-				float	sinTheta0_3 = sinTheta0*sinTheta0*sinTheta0;
-				float	sinTheta1_3 = sinTheta1*sinTheta1*sinTheta1;
+// Accounts for dot product with normal
+// 				float	cosTheta0 = maxCosTheta_Front;
+// 				float	cosTheta1 = maxCosTheta_Back;
+// 				float	sinTheta0 = Mathf.Sqrt( 1.0f - cosTheta0*cosTheta0 );
+// 				float	sinTheta1 = Mathf.Sqrt( 1.0f - cosTheta1*cosTheta1 );
+// 
+// 				float	cosTheta0_3 = cosTheta0*cosTheta0*cosTheta0;
+// 				float	cosTheta1_3 = cosTheta1*cosTheta1*cosTheta1;
+// 				float	sinTheta0_3 = sinTheta0*sinTheta0*sinTheta0;
+// 				float	sinTheta1_3 = sinTheta1*sinTheta1*sinTheta1;
+// 
+// 				float	averageX = ssNormal.x * (cosTheta0_3 + cosTheta1_3 - 3.0f * (cosTheta0 + cosTheta1) + 4.0f)
+// 								 + ssNormal.y * (sinTheta0_3 - sinTheta1_3);
+// 
+// 				float	averageY = ssNormal.x * (sinTheta0_3 - sinTheta1_3)
+// 								 + ssNormal.y * (2.0f - cosTheta0_3 - cosTheta1_3);
+// 
 
-				float	averageX = ssNormal.x * (cosTheta0_3 + cosTheta1_3 - 3.0f * (cosTheta0 + cosTheta1) + 4.0f)
-								 + ssNormal.y * (sinTheta0_3 - sinTheta1_3);
+				// Raw integration, without dot product with normal
+				float	theta0 = -Mathf.Acos( maxCosTheta_Back );
+				float	theta1 = Mathf.Acos( maxCosTheta_Front );
 
-				float	averageY = ssNormal.x * (sinTheta0_3 - sinTheta1_3)
-								 + ssNormal.y * (2.0f - cosTheta0_3 - cosTheta1_3);
+				float	averageX = theta1 + theta0 - Mathf.Sin( theta0 )*Mathf.Cos( theta0 ) - Mathf.Sin( theta1 )*Mathf.Cos( theta1 );
+				float	averageY = 2.0f - Mathf.Cos( theta0 )*Mathf.Cos( theta0 ) - Mathf.Cos( theta1 )*Mathf.Cos( theta1 );
 
 				_csBentNormal = new float3( averageX * _csDirection, averageY );
 			#endif
 
-				// DON'T NORMALIZE RESULT!!
+			// DON'T NORMALIZE RESULT!!
 //			_csBentNormal = _csBentNormal.Normalized;
 
 			// Compute cone angles
 			float3	csNormalizedBentNormal = _csBentNormal.Normalized;
-			float3	ssHorizon_Front = new float3( Mathf.Sqrt( 1.0f - maxCosTheta_Front*maxCosTheta_Front ) * _csDirection, maxCosTheta_Front );
-			float3	ssHorizon_Back = new float3( -Mathf.Sqrt( 1.0f - maxCosTheta_Back*maxCosTheta_Back ) * _csDirection, maxCosTheta_Back );
+			float3	csHorizon_Front = new float3( Mathf.Sqrt( 1.0f - maxCosTheta_Front*maxCosTheta_Front ) * _csDirection, maxCosTheta_Front );
+			float3	csHorizon_Back = new float3( -Mathf.Sqrt( 1.0f - maxCosTheta_Back*maxCosTheta_Back ) * _csDirection, maxCosTheta_Back );
+
 			#if USE_FAST_ACOS
-				_coneAngles.x = FastPosAcos( saturate( dot( csNormalizedBentNormal, ssHorizon_Front ) ) );
-				_coneAngles.y = FastPosAcos( saturate( dot( csNormalizedBentNormal, ssHorizon_Back ) ) ) ;
+				_coneAngles.x = FastPosAcos( saturate( dot( csNormalizedBentNormal, csHorizon_Front ) ) );
+				_coneAngles.y = FastPosAcos( saturate( dot( csNormalizedBentNormal, csHorizon_Back ) ) ) ;
 			#else
-				_coneAngles.x = Mathf.Acos( Mathf.Saturate( csNormalizedBentNormal.Dot( ssHorizon_Front ) ) );
-				_coneAngles.y = Mathf.Acos( Mathf.Saturate( csNormalizedBentNormal.Dot( ssHorizon_Back ) ) );
+				_coneAngles.x = Mathf.Acos( Mathf.Saturate( csNormalizedBentNormal.Dot( csHorizon_Front ) ) );
+				_coneAngles.y = Mathf.Acos( Mathf.Saturate( csNormalizedBentNormal.Dot( csHorizon_Back ) ) );
 			#endif
+
+//float	weight = ssNormal.y;
+////_coneAngles.x *= weight;
+////_coneAngles.y *= weight;
+//_coneAngles.z = weight;
+//_coneAngles.w = weight;
+_coneAngles.z = _coneAngles.w = 1.0f;
 
 //_DEBUG = float4( _coneAngles, 0, 0 );
 _DEBUG = _coneAngles.x / (0.5f*Mathf.PI) * float4.One;
@@ -402,7 +422,7 @@ _DEBUG = _coneAngles.x / (0.5f*Mathf.PI) * float4.One;
 		//	_maxCos, the floating maximum cos(theta) that indicates the angle of the perceived horizon
 		//	_optionnal_centerRho, the reflectance of the center pixel (fallback only necessary if no albedo map is available and if it's only irradiance that is stored in the source irradiance map instead of radiance, in which case albedo is already pre-mutliplied)
 		//
-		float3	SampleIrradiance( float2 _csPosition, float4x4 _localCamera2World, float2 _mipLevel, float2 _integralFactors, ref float3 _previousRadiance, ref float _maxCos ) {
+		float3	SampleIrradiance( float2 _csPosition, float4x4 _localCamera2World, float _Z0, float2 _mipLevel, float2 _integralFactors, ref float3 _previousRadiance, ref float _maxCos ) {
 
 			// Transform camera-space position into screen space
 			float3	wsNeighborPosition = _localCamera2World[3].xyz + _csPosition.x * _localCamera2World[0].xyz + _csPosition.y * _localCamera2World[1].xyz;
@@ -431,7 +451,10 @@ float2	ssPosition = UV * m_resolution;
 			float3	csNeighborPosition = new float3( wsNeighborPosition.Dot( _localCamera2World[0].xyz ), wsNeighborPosition.Dot( _localCamera2World[1].xyz ), wsNeighborPosition.Dot( _localCamera2World[2].xyz ) );
 			float	radius = csNeighborPosition.xy.Length;
 			float	d = csNeighborPosition.z;
-//					d *= BilateralFilterDepth( 0.0, d, _radius );	// Attenuate
+
+//float	bilateralWeight = BilateralFilterDepth( _Z0, neighborZ, radius );	// Attenuate
+//d *= bilateralWeight;
+
 			float	cosHorizon = d / Mathf.Sqrt( radius*radius + d*d );	// Cosine to horizon angle
 			if ( cosHorizon <= _maxCos )
 				return float3.Zero;	// Below the horizon... No visible contribution.
@@ -460,7 +483,6 @@ float2	ssPosition = UV * m_resolution;
 
 		#region Filters
 
-
 		////////////////////////////////////////////////////////////////////////////////
 		// Implement the methods expected by the HBIL header
 		float	FetchDepth( float2 _pixelPosition, float _mipLevel ) {
@@ -481,7 +503,8 @@ float2	ssPosition = UV * m_resolution;
 				// Relative test
 				float	relativeZ = Math.Abs( deltaZ ) / _centralZ;
 //				return smoothstep( _bilateralValues.y, _bilateralValues.x, relativeZ );
-				return Mathf.Smoothstep( 0.4f, 0.0f, relativeZ );	// Discard when deltaZ is larger than 40% central Z (empirical value)
+				float	result = Mathf.Smoothstep( 0.3f, 0.0f, relativeZ ) / (0.01f + _radius_m);	// Discard when deltaZ is larger than 1.5% central Z (empirical value)
+				return result;	// Discard when deltaZ is larger than 40% central Z (empirical value)
 // 			#elif 0
 // 				// Absolute test
 // 				return smoothstep( _bilateralValues.y, _bilateralValues.x, abs(deltaZ) );
@@ -705,8 +728,6 @@ return float2.Zero;
 
 				csAverageBentNormal += csBentNormal;
 			}
-//l'orientation marche toujours pas avec UP!
-//check aussi pourquoi l'angle average fait un rond avec le centre de la cam??
 
 			float3	csFinalNormal = csAverageBentNormal.Normalized;
 		}

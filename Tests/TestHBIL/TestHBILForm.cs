@@ -21,6 +21,11 @@
 //	• Advance in local camera space but using screen-space steps
 //		=> Must be a linear combination of vector so that advancing 2 pixels equals advancing N meters in camera space...
 //
+//	!!!!!!!!!!!!!!!!!!!
+//	• Use normal dot product weighting anyway?? It looks closer to ground truth in the ground truth simulator! Check it!
+//	!!!!!!!!!!!!!!!!!!!
+//
+//
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;

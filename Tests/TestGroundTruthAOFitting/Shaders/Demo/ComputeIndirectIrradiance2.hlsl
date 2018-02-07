@@ -29,6 +29,12 @@
 //#define USE_NUMERICAL_INTEGRATION 256	// Define this to compute bent normal numerically (value = integration steps count)
 // !!MORE EXPENSIVE AND LESS ACCURATE => DON'T USE EXCEPT FOR DEBUG!!
 
+// !!WRONG IF YOU INTEND TO FOLLOW THE TRUE DEFINITION OF THE BENT NORMAL THAT DOESN'T INVOLVE THE DOT PRODUCT IN THE WEIGHT!!
+// Personnaly, I think we're closer to the ground truth than using the plain bent normal definition...
+// We'll see...
+#define	ACCOUNT_FOR_DOT_PRODUCT_WITH_NORMAL	1	// Define this to account for dot product with normal when computing the bent-normal
+// !!WRONG IF YOU INTEND TO FOLLOW THE TRUE DEFINITION OF THE BENT NORMAL THAT DOESN'T INVOLVE THE DOT PRODUCT IN THE WEIGHT!!
+
 // !!MORE EXPENSIVE FOR NO REAL IMPROVEMENT IN QUALITY
 //#define USE_QUADRATIC_PROGRESSION	1
 // !!MORE EXPENSIVE FOR NO REAL IMPROVEMENT IN QUALITY
@@ -252,8 +258,8 @@ PS_OUT	PS( VS_IN _In ) {
 		// Project screen-space direction onto tangent plane to determine max possible horizon angles
 		float	hitDistance_Front = -dot( ssDirection, N.xy ) * recZdotN;
 		float3	tsDirection_Front = normalize( float3( ssDirection, hitDistance_Front ) );
-		float	maxCos_Front = tsDirection_Front.z;
-		float	maxCos_Back = -tsDirection_Front.z;
+		float	maxCosTheta_Front = tsDirection_Front.z;
+		float	maxCosTheta_Back = -tsDirection_Front.z;
 
 //*		// Accumulate perceived irradiance in front and back & update floating horizon (in the form of cos(horizon angle))
 		#if !USE_QUADRATIC_PROGRESSION
@@ -276,62 +282,99 @@ PS_OUT	PS( VS_IN _In ) {
 				radius += stepSize;
 			#endif
 
-			sumIrradiance += SampleIrradiance( ssPosition_Front, H0, radius, integralFactors_Front, maxCos_Front, centerRho );	// Sample forward
-			sumIrradiance += SampleIrradiance( ssPosition_Back, H0, radius, integralFactors_Back, maxCos_Back, centerRho );		// Sample backward
+			sumIrradiance += SampleIrradiance( ssPosition_Front, H0, radius, integralFactors_Front, maxCosTheta_Front, centerRho );	// Sample forward
+			sumIrradiance += SampleIrradiance( ssPosition_Back, H0, radius, integralFactors_Back, maxCosTheta_Back, centerRho );		// Sample backward
 		}
 //*/
 		// Accumulate bent normal direction by rebuilding and averaging the front & back horizon vectors
-		#if USE_NUMERICAL_INTEGRATION
-			// Half brute force where we perform the integration numerically as a sum...
-			// This solution is prefered to the analytical integral that shows some precision artefacts unfortunately...
-			//
-			float	thetaFront = acos( maxCos_Front );
-			float	thetaBack = -acos( maxCos_Back );
+		#if ACCOUNT_FOR_DOT_PRODUCT_WITH_NORMAL
+			#if USE_NUMERICAL_INTEGRATION
+				// Half brute force where we perform the integration numerically as a sum...
+				// This solution is prefered to the analytical integral that shows some precision artefacts unfortunately...
+				//
+				float	thetaFront = acos( maxCosTheta_Front );
+				float	thetaBack = -acos( maxCosTheta_Back );
 
-			float3	ssBentNormal = 0.001 * N;
-			for ( uint i=0; i < USE_NUMERICAL_INTEGRATION; i++ ) {
-				float	theta = lerp( thetaBack, thetaFront, (i+0.5) / USE_NUMERICAL_INTEGRATION );
-				float	sinTheta, cosTheta;
-				sincos( theta, sinTheta, cosTheta );
-				float3	ssUnOccludedDirection = float3( sinTheta * ssDirection, cosTheta );
+				float3	ssBentNormal = 0.001 * N;
+				for ( uint i=0; i < USE_NUMERICAL_INTEGRATION; i++ ) {
+					float	theta = lerp( thetaBack, thetaFront, (i+0.5) / USE_NUMERICAL_INTEGRATION );
+					float	sinTheta, cosTheta;
+					sincos( theta, sinTheta, cosTheta );
+					float3	ssUnOccludedDirection = float3( sinTheta * ssDirection, cosTheta );
 
-				float	cosAlpha = saturate( dot( ssUnOccludedDirection, N ) );
+					float	cosAlpha = saturate( dot( ssUnOccludedDirection, N ) );
 
-				float	weight = cosAlpha * abs(sinTheta);		// cos(alpha) * sin(theta).dTheta  (be very careful to take abs(sin(theta)) because our theta crosses the pole and becomes negative here!)
-				ssBentNormal += weight * ssUnOccludedDirection;
-			}
+					float	weight = cosAlpha * abs(sinTheta);		// cos(alpha) * sin(theta).dTheta  (be very careful to take abs(sin(theta)) because our theta crosses the pole and becomes negative here!)
+					ssBentNormal += weight * ssUnOccludedDirection;
+				}
 
-			float	dTheta = (thetaFront - thetaBack) / USE_NUMERICAL_INTEGRATION;
-			ssBentNormal *= dTheta;
-		#else
-			// Integral computation
-			float	cosTheta0 = maxCos_Front;
-			float	cosTheta1 = maxCos_Back;
-			float	sinTheta0 = sqrt( 1.0 - cosTheta0*cosTheta0 );
-			float	sinTheta1 = sqrt( 1.0 - cosTheta1*cosTheta1 );
-			float	cosTheta0_3 = cosTheta0*cosTheta0*cosTheta0;
-			float	cosTheta1_3 = cosTheta1*cosTheta1*cosTheta1;
-			float	sinTheta0_3 = sinTheta0*sinTheta0*sinTheta0;
-			float	sinTheta1_3 = sinTheta1*sinTheta1*sinTheta1;
+				float	dTheta = (thetaFront - thetaBack) / USE_NUMERICAL_INTEGRATION;
+				ssBentNormal *= dTheta;
+			#else
+				// Integral computation
+				float	cosTheta0 = maxCosTheta_Front;
+				float	cosTheta1 = maxCosTheta_Back;
+				float	sinTheta0 = sqrt( 1.0 - cosTheta0*cosTheta0 );
+				float	sinTheta1 = sqrt( 1.0 - cosTheta1*cosTheta1 );
+				float	cosTheta0_3 = cosTheta0*cosTheta0*cosTheta0;
+				float	cosTheta1_3 = cosTheta1*cosTheta1*cosTheta1;
+				float	sinTheta0_3 = sinTheta0*sinTheta0*sinTheta0;
+				float	sinTheta1_3 = sinTheta1*sinTheta1*sinTheta1;
 
-			float2	sliceSpaceNormal = float2( dot( N.xy, ssDirection ), N.z );
+				float2	sliceSpaceNormal = float2( dot( N.xy, ssDirection ), N.z );
 
-			float	averageX = sliceSpaceNormal.x * (cosTheta0_3 + cosTheta1_3 - 3.0 * (cosTheta0 + cosTheta1) + 4.0)
-							 + sliceSpaceNormal.y * (sinTheta0_3 - sinTheta1_3);
+				float	averageX = sliceSpaceNormal.x * (cosTheta0_3 + cosTheta1_3 - 3.0 * (cosTheta0 + cosTheta1) + 4.0)
+								 + sliceSpaceNormal.y * (sinTheta0_3 - sinTheta1_3);
 
-			float	averageY = sliceSpaceNormal.x * (sinTheta0_3 - sinTheta1_3)
-							 + sliceSpaceNormal.y * (2.0 - cosTheta0_3 - cosTheta1_3);
+				float	averageY = sliceSpaceNormal.x * (sinTheta0_3 - sinTheta1_3)
+								 + sliceSpaceNormal.y * (2.0 - cosTheta0_3 - cosTheta1_3);
 
-			float3	ssBentNormal = float3( averageX * ssDirection, averageY );
+				float3	ssBentNormal = float3( averageX * ssDirection, averageY );
+			#endif
+		#else // if !ACCOUNT_FOR_DOT_PRODUCT_WITH_NORMAL
+			#if USE_NUMERICAL_INTEGRATION
+				// Half brute force where we perform the integration numerically as a sum...
+				// This solution is prefered to the analytical integral that shows some precision artefacts unfortunately...
+				//
+				float	thetaFront = acos( maxCosTheta_Front );
+				float	thetaBack = -acos( maxCosTheta_Back );
+
+				float3	ssBentNormal = 0.001 * N;
+				for ( uint i=0; i < USE_NUMERICAL_INTEGRATION; i++ ) {
+					float	theta = lerp( thetaBack, thetaFront, (i+0.5) / USE_NUMERICAL_INTEGRATION );
+					float	sinTheta, cosTheta;
+					sincos( theta, sinTheta, cosTheta );
+					float3	ssUnOccludedDirection = float3( sinTheta * ssDirection, cosTheta );
+
+					float	weight = abs(sinTheta);		// cos(alpha) * sin(theta).dTheta  (be very careful to take abs(sin(theta)) because our theta crosses the pole and becomes negative here!)
+					ssBentNormal += weight * ssUnOccludedDirection;
+				}
+
+				float	dTheta = (thetaFront - thetaBack) / USE_NUMERICAL_INTEGRATION;
+				ssBentNormal *= dTheta;
+			#else
+				// Integral computation
+				float	theta0 = -acos( maxCosTheta_Back );
+				float	theta1 = acos( maxCosTheta_Front );
+				float	cosTheta0 = maxCosTheta_Back;
+				float	cosTheta1 = maxCosTheta_Front;
+				float	sinTheta0 = -sqrt( 1.0 - cosTheta0*cosTheta0 );
+				float	sinTheta1 = sqrt( 1.0 - cosTheta1*cosTheta1 );
+
+				float	averageX = theta1 + theta0 - sinTheta0*cosTheta0 - sinTheta1*cosTheta1;
+				float	averageY = 2.0 - cosTheta0*cosTheta0 - cosTheta1*cosTheta1;
+
+				float3	ssBentNormal = float3( averageX * ssDirection, averageY );
+			#endif
 		#endif
 
-		ssBentNormal = normalize( ssBentNormal );
-
-		ssAverageBentNormal += ssBentNormal;
+		ssAverageBentNormal += ssBentNormal;	// Accumulate unnormalized!
 
 		// Compute cone angles
-		float3	ssHorizon_Front = float3( sqrt( 1.0 - maxCos_Front*maxCos_Front ) * ssDirection, maxCos_Front );
-		float3	ssHorizon_Back = float3( -sqrt( 1.0 - maxCos_Back*maxCos_Back ) * ssDirection, maxCos_Back );
+		ssBentNormal = normalize( ssBentNormal );
+
+		float3	ssHorizon_Front = float3( sqrt( 1.0 - maxCosTheta_Front*maxCosTheta_Front ) * ssDirection, maxCosTheta_Front );
+		float3	ssHorizon_Back = float3( -sqrt( 1.0 - maxCosTheta_Back*maxCosTheta_Back ) * ssDirection, maxCosTheta_Back );
 		#if USE_FAST_ACOS
 			float	coneAngle_Front = FastPosAcos( saturate( dot( ssBentNormal, ssHorizon_Front ) ) );
 			float	coneAngle_Back = FastPosAcos( saturate( dot( ssBentNormal, ssHorizon_Back ) ) ) ;

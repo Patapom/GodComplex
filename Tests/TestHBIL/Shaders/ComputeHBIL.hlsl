@@ -44,9 +44,10 @@ float	BilateralFilterDepth( float _centralZ, float _neighborZ, float _radius_m )
 
 	#if 1
 		// Relative test
-		float	relativeZ = abs( deltaZ ) / _centralZ;
-//		return smoothstep( _bilateralValues.y, _bilateralValues.x, relativeZ );
-		return smoothstep( 0.4, 0.0, relativeZ );	// Discard when deltaZ is larger than 40% central Z (empirical value)
+//		float	relativeZ = abs( deltaZ ) / _centralZ;
+		float	relativeZ = -deltaZ / _centralZ;		// Discard only pixels in front of us
+		return smoothstep( _bilateralValues.y, 0.0, relativeZ ) / (_bilateralValues.x+_radius_m);
+//		return smoothstep( 1.0, 0.0, relativeZ ) / (1+_radius_m);	// Discard when deltaZ is larger than 40% central Z (empirical value)
 	#elif 0
 		// Absolute test
 		return smoothstep( _bilateralValues.y, _bilateralValues.x, abs(deltaZ) );
@@ -95,7 +96,7 @@ float2	ComputeMipLevel( float2 _radius, float2 _radialStepSizes ) {
 }
 
 
-float3	SampleIrradiance_TEMP( float2 _csPosition, float4x3 _localCamera2World, float2 _mipLevel, float2 _integralFactors, inout float3 _previousRadiance, inout float _maxCos ) {
+float3	SampleIrradiance_TEMP( float2 _csPosition, float4x3 _localCamera2World, float _Z0, float2 _mipLevel, float2 _integralFactors, inout float3 _previousRadiance, inout float _maxCos ) {
 
 	// Transform camera-space position into screen space
 	float3	wsNeighborPosition = _localCamera2World[3] + _csPosition.x * _localCamera2World[0] + _csPosition.y * _localCamera2World[1];
@@ -123,7 +124,10 @@ float2	ssPosition = float2( 0.5 * (1.0 + projPosition.x) * _resolution.x, 0.5 * 
 	float3	csNeighborPosition = float3( dot( wsNeighborPosition, _localCamera2World[0] ), dot( wsNeighborPosition, _localCamera2World[1] ), dot( wsNeighborPosition, _localCamera2World[2] ) );
 	float	radius = length( csNeighborPosition.xy );
 	float	d = csNeighborPosition.z;
-//			d *= BilateralFilterDepth( 0.0, d, radius );	// Attenuate
+
+float	bilateralWeight = BilateralFilterDepth( _Z0, neighborZ, radius );	// Attenuate
+d *= bilateralWeight;
+
 	float	cosHorizon = d / sqrt( radius*radius + d*d );	// Cosine to horizon angle
 	if ( cosHorizon <= _maxCos )
 		return 0.0;	// Below the horizon... No visible contribution.
@@ -150,7 +154,7 @@ float2	ssPosition = float2( 0.5 * (1.0 + projPosition.x) * _resolution.x, 0.5 * 
 	return incomingRadiance;
 }
 
-float3	GatherIrradiance_TEMP( float2 _csDirection, float4x3 _localCamera2World, float3 _csNormal, float _stepSize_meters, uint _stepsCount, float3 _centralRadiance, out float3 _csBentNormal, out float2 _coneAngles, inout float4 _DEBUG ) {
+float3	GatherIrradiance_TEMP( float2 _csDirection, float4x3 _localCamera2World, float3 _csNormal, float _stepSize_meters, uint _stepsCount, float _Z0, float3 _centralRadiance, out float3 _csBentNormal, out float2 _coneAngles, inout float4 _DEBUG ) {
 
 	// Pre-compute factors for the integrals
 	float2	integralFactors_Front = ComputeIntegralFactors( _csDirection, _csNormal );
@@ -185,8 +189,8 @@ float3	GatherIrradiance_TEMP( float2 _csDirection, float4x3 _localCamera2World, 
 //		float2	mipLevel = ComputeMipLevel( radius, _radialStepSizes );
 float2	mipLevel = 0.0;
 
-		sumRadiance += SampleIrradiance_TEMP( csPosition_Front, _localCamera2World, mipLevel, integralFactors_Front, previousRadiance_Front, maxCosTheta_Front );
-		sumRadiance += SampleIrradiance_TEMP( csPosition_Back, _localCamera2World, mipLevel, integralFactors_Back, previousRadianceBack, maxCosTheta_Back );
+		sumRadiance += SampleIrradiance_TEMP( csPosition_Front, _localCamera2World, _Z0, mipLevel, integralFactors_Front, previousRadiance_Front, maxCosTheta_Front );
+		sumRadiance += SampleIrradiance_TEMP( csPosition_Back, _localCamera2World, _Z0, mipLevel, integralFactors_Back, previousRadianceBack, maxCosTheta_Back );
 	}
 //*/
 
@@ -219,6 +223,8 @@ float2	mipLevel = 0.0;
 
 			float	cosAlpha = saturate( dot( ssOmega, ssNormal ) );
 
+cosAlpha = 1.0;	// No influence after all!!
+
 			float	weight = cosAlpha * abs(sinTheta);		// cos(alpha) * sin(theta).dTheta  (be very careful to take abs(sin(theta)) because our theta crosses the pole and becomes negative here!)
 
 			ssBentNormal += weight * ssOmega;
@@ -228,8 +234,28 @@ float2	mipLevel = 0.0;
 		ssBentNormal *= dTheta;
 
 		_csBentNormal = float3( ssBentNormal.x * _csDirection, ssBentNormal.y );
+	#elif 1
+		// Analytical solution for equations (5) and (6) from the paper
+		// 
+		#if USE_FAST_ACOS
+			float	theta0 = -FastAcos( maxCosTheta_Back );
+			float	theta1 = FastAcos( maxCosTheta_Front );
+		#else
+			float	theta0 = -acos( maxCosTheta_Back );
+			float	theta1 = acos( maxCosTheta_Front );
+		#endif
+		float	cosTheta0 = maxCosTheta_Back;
+		float	cosTheta1 = maxCosTheta_Front;
+		float	sinTheta0 = -sqrt( 1.0 - cosTheta0*cosTheta0 );
+		float	sinTheta1 = sqrt( 1.0 - cosTheta1*cosTheta1 );
+
+		float	averageX = theta1 + theta0 - sinTheta0*cosTheta0 - sinTheta1*cosTheta1;
+		float	averageY = 2.0 - cosTheta0*cosTheta0 - cosTheta1*cosTheta1;
+
+		_csBentNormal = float3( averageX * _csDirection, averageY );	// Rebuild normal in camera space
 	#else
 		// Analytical solution for equations (5) and (6) from the paper
+		// These integrals are more complicated and we used to account for the dot product with the normal but that's not the way to compute the bent normal after all!!
 		float	cosTheta0 = maxCosTheta_Front;
 		float	cosTheta1 = maxCosTheta_Back;	// This should be in [-PI,0] but instead I take the absolute value so [0,PI] instead
 		float	sinTheta0 = sqrt( 1.0 - cosTheta0*cosTheta0 );
@@ -255,6 +281,7 @@ float2	mipLevel = 0.0;
 	float3	csNormalizedBentNormal = normalize( _csBentNormal );
 	float3	csHorizon_Front = float3( sqrt( 1.0 - maxCosTheta_Front*maxCosTheta_Front ) * _csDirection, maxCosTheta_Front );
 	float3	csHorizon_Back = float3( -sqrt( 1.0 - maxCosTheta_Back*maxCosTheta_Back ) * _csDirection, maxCosTheta_Back );
+
 	#if USE_FAST_ACOS
 		_coneAngles.x = FastPosAcos( saturate( dot( csNormalizedBentNormal, csHorizon_Front ) ) );
 		_coneAngles.y = FastPosAcos( saturate( dot( csNormalizedBentNormal, csHorizon_Back ) ) ) ;
@@ -287,7 +314,7 @@ struct PS_OUT {
 PS_OUT	PS( float4 __Position : SV_POSITION ) {
 	float2	UV = __Position.xy / _resolution;
 	uint2	pixelPosition = uint2( floor( __Position.xy ) );
-	float	noise = _tex_blueNoise[pixelPosition & 0x3F];
+	float	noise = frac( _time + _tex_blueNoise[pixelPosition & 0x3F] );
 
 	// Setup camera ray
 	float3	csView = BuildCameraRay( UV );
@@ -353,7 +380,7 @@ PS_OUT	PS( float4 __Position : SV_POSITION ) {
 		// Gather irradiance and average cone direction for that slice
 		float3	csBentNormal;
 		float2	coneAngles;
-		sumIrradiance += GatherIrradiance_TEMP( csDirection, localCamera2World, N, radiusStepSize_meters, samplesCount, centralRadiance, csBentNormal, coneAngles, GATHER_DEBUG );
+		sumIrradiance += GatherIrradiance_TEMP( csDirection, localCamera2World, N, radiusStepSize_meters, samplesCount, Z, centralRadiance, csBentNormal, coneAngles, GATHER_DEBUG );
 
 
 //csBentNormal = N;

@@ -133,7 +133,7 @@ namespace TestGroundTruthAOFitting
 
 			//////////////////////////////////////////////////////////////////////////
 			// Compute indirect irradiance & bent cone map
-			if ( radioButtonSimul.Checked && m_shader_ComputeIndirectIrradiance.Use() ) {
+			if ( m_shader_ComputeIndirectIrradiance.Use() ) {
 				m_device.SetRenderTargets( new IView[] { m_tex_Irradiance1.GetView(), m_tex_ComputedBentCone.GetView() }, null );
 				m_tex_Irradiance0.Set( 5 );
 

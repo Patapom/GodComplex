@@ -178,7 +178,7 @@ float3	PS( VS_IN _In ) : SV_TARGET0 {
 	float	tauFactor = 1.0;
 	if ( renderType == RENDER_BENT_CONE ) {
 		// Estimate SH in the direction of the bent normal, and reduce the irradiance integration to the aperture of the cone
-		float4	bentCone = SampleBentCone( UV );
+		float4	bentCone = SampleComputedBentCone( UV );
 
 #if 1
 		E0 = EvaluateSHIrradianceBentCone( bentCone, AO_E0, SH );
@@ -246,8 +246,12 @@ E0 *= lerp( 1.0, boostFactor, _debugValue.y );	// _debugValue.y = 0.5185
 	// Ground Truth solution
 	float3	resultGroundTruth = GroundTruth( UV, _rho );
 //	float3	resultGroundTruth = (dot( GroundTruth( UV, _rho ), LUMINANCE ) - dot( (_rho / PI) * E0 * AO, LUMINANCE ));
-//resultGroundTruth = length( SampleBentCone( UV ).xyz );
-//resultGroundTruth = 1-SampleBentCone( UV ).w;
+//resultGroundTruth = length( SampleComputedBentCone( UV ).xyz );
+//resultGroundTruth = 1-SampleComputedBentCone( UV ).w;
+//resultGroundTruth = 0.5 * (1.0 + normalize( SampleComputedBentCone( UV ).xyz ));
+//resultGroundTruth.y = 1.0 - resultGroundTruth.y;
+//resultGroundTruth = normalize( SampleComputedBentCone( UV ).xyz );
+//resultGroundTruth.y *= -1.0;
 
 	///////////////////////////////////////////////////////////
 	// Combine result
