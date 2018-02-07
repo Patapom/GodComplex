@@ -121,9 +121,10 @@ float3	SampleIrradiance( float2 _ssPosition, float _H0, float _radius, float2 _m
 //	_radialStepSizes, size of a radial step to jump from one sample to another (X=step size in pixels, Y=step size in meters)
 //	_stepsCount, amount of steps to take (front & back so actual samples count will always be twice that value!)
 //	_centralRadiance, last frame's radiance at central position that we can always use as a safe backup for irradiance integration (in case bilateral filter rejects neighbor height as too different)
-//	[OUT] _ssBentNormal, the average bent normal
-//	[OUT] _coneAngles, the front & back cone angles from the direction of the bent normal to the front & back horizons
+//
 // Returns:
+//	[OUT] _csBentNormal, the average bent normal for the slice (Warning: NOT NORMALIZED, and must be accumulated unnormalized otherwise result will get biased!)
+//	[OUT] _coneAngles, the front & back cone angles from the direction of the bent normal to the front & back horizons
 //	The irradiance gathered along the sampling
 //
 float3	GatherIrradiance( float2 _ssPosition, float2 _ssDirection, float2 _csDirection, float _Z0, float3 _csNormal, float2 _radialStepSizes, uint _stepsCount, float3 _centralRadiance, out float3 _csBentNormal, out float2 _coneAngles, inout float4 _DEBUG ) {
@@ -209,6 +210,7 @@ float3	GatherIrradiance( float2 _ssPosition, float2 _ssDirection, float2 _csDire
 		_csBentNormal = float3( averageX * _csDirection, averageY );
 	#endif
 
+	// DON4T
 	_csBentNormal = normalize( _csBentNormal );
 
 	// Compute cone angles

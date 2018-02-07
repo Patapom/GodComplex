@@ -640,29 +640,20 @@ return float2.Zero;
 				float	maxCosTheta_Front = t / Mathf.Sqrt( t*t + 1.0f );
 				float	maxCosTheta_Back = -maxCosTheta_Front;	// Back cosine is simply the mirror value
 
- 				float	theta_Front = Mathf.Acos( maxCosTheta_Front );
- 				float	theta_Back = -Mathf.Acos( maxCosTheta_Back );	// Technically, this is theta0 and it should be in [-PI,0] but we took its absolute value to ease our computation
-
 // =======================
 // Here, the runtime algorithm is normally updating the horizon angles but we keep them flat: our goal is to obtain the original csNormal!
 // =======================
 
-				// Express angles in local normal space
+				// Accumulate bent normal direction by rebuilding and averaging the front & back horizon vectors
 				float2	ssNormal = new float2( csNormal.xy.Dot( csDirection ), csNormal.z );	// Slice-space normal
-//				float2	ssTangent = new float2( ssNormal.y, -ssNormal.x );						// Slice-space tangent
-
-// 				float2	ssHorizon_Front = new float2( Mathf.Sqrt( 1.0f - maxCosTheta_Front*maxCosTheta_Front ), maxCosTheta_Front );	// Front horizon direction
-// 				float2	ssHorizon_Back = new float2( -Mathf.Sqrt( 1.0f - maxCosTheta_Back*maxCosTheta_Back ), maxCosTheta_Back );		// Back horizon direction
-// 
-// 				float	nsCosTheta_Front = ssHorizon_Front.Dot( ssNormal );
-// 				float	nsCosTheta_Back = ssHorizon_Back.Dot( ssNormal );
-// 				float	nsTheta_Front = Mathf.Acos( nsCosTheta_Front );
-// 				float	nsTheta_Back = -Mathf.Acos( nsCosTheta_Back );
 
 /*				// Numerical integration
 				// Half brute force where we perform the integration numerically as a sum...
 				//
 				const uint	STEPS_COUNT = 256;
+
+ 				float	theta_Front = Mathf.Acos( maxCosTheta_Front );
+ 				float	theta_Back = -Mathf.Acos( maxCosTheta_Back );	// Technically, this is theta0 and it should be in [-PI,0] but we took its absolute value to ease our computation
 
 				float2	ssBentNormal = float2.Zero;// 0.001f * float2.UnitY;
 				for ( uint i=0; i < STEPS_COUNT; i++ ) {
@@ -692,13 +683,11 @@ return float2.Zero;
 				float	sinTheta0_3 = sinTheta0*sinTheta0*sinTheta0;
 				float	sinTheta1_3 = sinTheta1*sinTheta1*sinTheta1;
 
-				float2	sliceSpaceNormal = new float2( csNormal.xy.Dot( csDirection ), csNormal.z );
+				float	averageX = ssNormal.x * (cosTheta0_3 + cosTheta1_3 - 3.0f * (cosTheta0 + cosTheta1) + 4.0f)
+								 + ssNormal.y * (sinTheta0_3 - sinTheta1_3);
 
-				float	averageX = sliceSpaceNormal.x * (cosTheta0_3 + cosTheta1_3 - 3.0f * (cosTheta0 + cosTheta1) + 4.0f)
-								 + sliceSpaceNormal.y * (sinTheta0_3 - sinTheta1_3);
-
-				float	averageY = sliceSpaceNormal.x * (sinTheta0_3 - sinTheta1_3)
-								 + sliceSpaceNormal.y * (2.0f - cosTheta0_3 - cosTheta1_3);
+				float	averageY = ssNormal.x * (sinTheta0_3 - sinTheta1_3)
+								 + ssNormal.y * (2.0f - cosTheta0_3 - cosTheta1_3);
 
 				float3	csBentNormal = new float3( averageX * csDirection, averageY );
 //*/

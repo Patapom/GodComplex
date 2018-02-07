@@ -174,7 +174,7 @@ float3	GatherIrradiance_TEMP( float2 _csDirection, float4x3 _localCamera2World, 
 	float3	sumRadiance = 0.0;
 	float3	previousRadiance_Front = _centralRadiance;
 	float3	previousRadianceBack = _centralRadiance;
-//*
+/*
 	float2	csStep = _stepSize_meters * _csDirection;
 	float2	csPosition_Front = 0.0;
 	float2	csPosition_Back = 0.0;
@@ -191,27 +191,32 @@ float2	mipLevel = 0.0;
 //*/
 
 	// Accumulate bent normal direction by rebuilding and averaging the front & back horizon vectors
+	float2	ssNormal = float2( dot( _csNormal.xy, _csDirection ), _csNormal.z );	// Project normal onto the slice plane
+
 	#if USE_NUMERICAL_INTEGRATION
 		// Half brute force where we perform the integration numerically as a sum...
 		//
 		float	thetaFront = acos( maxCosTheta_Front );
 		float	thetaBack = -acos( maxCosTheta_Back );
 
-		_csBentNormal = 0.001 * _csNormal;
+		float2	ssBentNormal = 0.0;
 		for ( uint i=0; i < USE_NUMERICAL_INTEGRATION; i++ ) {
 			float	theta = lerp( thetaBack, thetaFront, (i+0.5) / USE_NUMERICAL_INTEGRATION );
 			float	sinTheta, cosTheta;
 			sincos( theta, sinTheta, cosTheta );
-			float3	csUnOccludedDirection = float3( sinTheta * _csDirection, cosTheta );
+			float2	ssOmega = float2( sinTheta, cosTheta );
 
-			float	cosAlpha = saturate( dot( csUnOccludedDirection, _csNormal ) );
+			float	cosAlpha = saturate( dot( ssOmega, ssNormal ) );
 
 			float	weight = cosAlpha * abs(sinTheta);		// cos(alpha) * sin(theta).dTheta  (be very careful to take abs(sin(theta)) because our theta crosses the pole and becomes negative here!)
-			_csBentNormal += weight * csUnOccludedDirection;
+
+			ssBentNormal += weight * ssOmega;
 		}
 
 		float	dTheta = (thetaFront - thetaBack) / USE_NUMERICAL_INTEGRATION;
-		_csBentNormal *= dTheta;
+		ssBentNormal *= dTheta;
+
+		_csBentNormal = float3( ssBentNormal.x * _csDirection, ssBentNormal.y );
 	#else
 		// Analytical solution for equations (5) and (6) from the paper
 		float	cosTheta0 = maxCosTheta_Front;
@@ -223,33 +228,33 @@ float2	mipLevel = 0.0;
 		float	sinTheta0_3 = sinTheta0*sinTheta0*sinTheta0;
 		float	sinTheta1_3 = sinTheta1*sinTheta1*sinTheta1;
 
-		float2	sliceSpaceNormal = float2( dot( _csNormal.xy, _csDirection ), _csNormal.z );	// Project normal onto the slice plane
+		float	averageX = ssNormal.x * (cosTheta0_3 + cosTheta1_3 - 3.0 * (cosTheta0 + cosTheta1) + 4.0)
+						 + ssNormal.y * (sinTheta0_3 - sinTheta1_3);
 
-		float	averageX = sliceSpaceNormal.x * (cosTheta0_3 + cosTheta1_3 - 3.0 * (cosTheta0 + cosTheta1) + 4.0)
-						 + sliceSpaceNormal.y * (sinTheta0_3 - sinTheta1_3);
+		float	averageY = ssNormal.x * (sinTheta0_3 - sinTheta1_3)
+						 + ssNormal.y * (2.0 - cosTheta0_3 - cosTheta1_3);
 
-		float	averageY = sliceSpaceNormal.x * (sinTheta0_3 - sinTheta1_3)
-						 + sliceSpaceNormal.y * (2.0 - cosTheta0_3 - cosTheta1_3);
-
-		_csBentNormal = float3( averageX * _csDirection, averageY );							// Rebuild normal in camera space
+		_csBentNormal = float3( averageX * _csDirection, averageY );	// Rebuild normal in camera space
 	#endif
 
+	// DON'T NORMALIZE THE RESULT OR WE GET BIAS!
 //	_csBentNormal = normalize( _csBentNormal );
 
 	// Compute cone angles
+	float3	csNormalizedBentNormal = normalize( _csBentNormal );
 	float3	csHorizon_Front = float3( sqrt( 1.0 - maxCosTheta_Front*maxCosTheta_Front ) * _csDirection, maxCosTheta_Front );
 	float3	csHorizon_Back = float3( -sqrt( 1.0 - maxCosTheta_Back*maxCosTheta_Back ) * _csDirection, maxCosTheta_Back );
 	#if USE_FAST_ACOS
-		_coneAngles.x = FastPosAcos( saturate( dot( _csBentNormal, csHorizon_Front ) ) );
-		_coneAngles.y = FastPosAcos( saturate( dot( _csBentNormal, csHorizon_Back ) ) ) ;
+		_coneAngles.x = FastPosAcos( saturate( dot( csNormalizedBentNormal, csHorizon_Front ) ) );
+		_coneAngles.y = FastPosAcos( saturate( dot( csNormalizedBentNormal, csHorizon_Back ) ) ) ;
 	#else
-		_coneAngles.x = acos( saturate( dot( _csBentNormal, csHorizon_Front ) ) );
-		_coneAngles.y = acos( saturate( dot( _csBentNormal, csHorizon_Back ) ) );
+		_coneAngles.x = acos( saturate( dot( csNormalizedBentNormal, csHorizon_Front ) ) );
+		_coneAngles.y = acos( saturate( dot( csNormalizedBentNormal, csHorizon_Back ) ) );
 	#endif
 
 
 #if AVERAGE_COSINES
-_coneAngles = float2( saturate( dot( _csBentNormal, csHorizon_Front ) ), saturate( dot( _csBentNormal, csHorizon_Back ) ) );
+_coneAngles = float2( saturate( dot( csNormalizedBentNormal, csHorizon_Front ) ), saturate( dot( csNormalizedBentNormal, csHorizon_Back ) ) );
 #endif
 
 
@@ -385,6 +390,7 @@ varianceConeAngle = acos( varianceConeAngle );
 //sumIrradiance = float3( 1, 0, 1 );
 
 float3	DEBUG_VALUE = float3( 1,0,1 );
+DEBUG_VALUE = N;
 DEBUG_VALUE = csAverageBentNormal;
 DEBUG_VALUE = csAverageBentNormal.x * wsRight + csAverageBentNormal.y * wsUp + csAverageBentNormal.z * wsAt;	// World-space normal
 //DEBUG_VALUE = cos( averageConeAngle );
@@ -397,7 +403,6 @@ DEBUG_VALUE = csAverageBentNormal.x * wsRight + csAverageBentNormal.y * wsUp + c
 //DEBUG_VALUE = stdDeviation;
 //DEBUG_VALUE = float3( GATHER_DEBUG.xy, 0 );
 //DEBUG_VALUE = float3( GATHER_DEBUG.zw, 0 );
-//DEBUG_VALUE = N;
 //DEBUG_VALUE = 0.4 * localCamera2World[3];
 //DEBUG_VALUE = GATHER_DEBUG.xyz;
 
