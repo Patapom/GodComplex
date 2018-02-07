@@ -1,4 +1,6 @@
 #define SAMPLE_NEIGHBOR_RADIANCE
+//#define USE_NUMERICAL_INTEGRATION
+
 using System;
 using System.ComponentModel;
 using System.Collections;
@@ -260,7 +262,7 @@ DEBUG_VALUE = GATHER_DEBUG.xyz;
 			float3	sumRadiance = float3.Zero;
 			float3	previousRadiance_Front = _centralRadiance;
 			float3	previousRadianceBack = _centralRadiance;
-/*
+//*
 //			float2	radius = float2.Zero;
 			float2	csStep = _stepSize_meters * _csDirection;
 			float2	csPosition_Front = float2.Zero;
@@ -278,28 +280,34 @@ float2	mipLevel = float2.Zero;
 			}
 //*/
 			// Accumulate bent normal direction by rebuilding and averaging the front & back horizon vectors
+			float2	ssNormal = new float2( _csNormal.xy.Dot( _csDirection ), _csNormal.z );
+
 			#if USE_NUMERICAL_INTEGRATION
 				// Half brute force where we perform the integration numerically as a sum...
-				// This solution is prefered to the analytical integral that shows some precision artefacts unfortunately...
 				//
-				float	thetaFront = acos( maxCosTheta_Front );
-				float	thetaBack = -acos( maxCosTheta_Back );
+				const uint STEPS = 256;
 
-				_csBentNormal = 0.001 * _N;
-				for ( uint i=0; i < USE_NUMERICAL_INTEGRATION; i++ ) {
-					float	theta = lerp( thetaBack, thetaFront, (i+0.5) / USE_NUMERICAL_INTEGRATION );
-					float	sinTheta, cosTheta;
-					sincos( theta, sinTheta, cosTheta );
-					float3	ssUnOccludedDirection = float3( sinTheta * _csDirection, cosTheta );
+				float	thetaFront = Mathf.Acos( maxCosTheta_Front );
+				float	thetaBack = -Mathf.Acos( maxCosTheta_Back );
 
-					float	cosAlpha = saturate( dot( ssUnOccludedDirection, _N ) );
+				float2	ssBentNormal = float2.Zero;
+				for ( uint i=0; i < STEPS; i++ ) {
+					float	theta = Mathf.Lerp( thetaBack, thetaFront, (i+0.5f) / STEPS );
+					float	sinTheta = Mathf.Sin( theta ), cosTheta = Mathf.Cos( theta );
+					float2	ssOmega = new float2( sinTheta, cosTheta );
 
-					float	weight = cosAlpha * abs(sinTheta);		// cos(alpha) * sin(theta).dTheta  (be very careful to take abs(sin(theta)) because our theta crosses the pole and becomes negative here!)
-					_csBentNormal += weight * ssUnOccludedDirection;
+					float	cosAlpha = Mathf.Saturate( ssOmega.Dot( ssNormal ) );
+
+					float	weight = cosAlpha * Mathf.Abs(sinTheta);		// cos(alpha) * sin(theta).dTheta  (be very careful to take abs(sin(theta)) because our theta crosses the pole and becomes negative here!)
+
+					ssBentNormal += weight * ssOmega;
 				}
 
-				float	dTheta = (thetaFront - thetaBack) / USE_NUMERICAL_INTEGRATION;
-				_csBentNormal *= dTheta;
+				float	dTheta = (thetaFront - thetaBack) / STEPS;
+				ssBentNormal *= dTheta;
+
+				_csBentNormal = new float3( ssBentNormal.x * _csDirection, ssBentNormal.y );
+
 			#else
 				// Analytical solution
 				float	cosTheta0 = maxCosTheta_Front;
@@ -311,29 +319,28 @@ float2	mipLevel = float2.Zero;
 				float	sinTheta0_3 = sinTheta0*sinTheta0*sinTheta0;
 				float	sinTheta1_3 = sinTheta1*sinTheta1*sinTheta1;
 
-				float2	sliceSpaceNormal = new float2( _csNormal.xy.Dot( _csDirection ), _csNormal.z );
+				float	averageX = ssNormal.x * (cosTheta0_3 + cosTheta1_3 - 3.0f * (cosTheta0 + cosTheta1) + 4.0f)
+								 + ssNormal.y * (sinTheta0_3 - sinTheta1_3);
 
-				float	averageX = sliceSpaceNormal.x * (cosTheta0_3 + cosTheta1_3 - 3.0f * (cosTheta0 + cosTheta1) + 4.0f)
-								 + sliceSpaceNormal.y * (sinTheta0_3 - sinTheta1_3);
-
-				float	averageY = sliceSpaceNormal.x * (sinTheta0_3 - sinTheta1_3)
-								 + sliceSpaceNormal.y * (2.0f - cosTheta0_3 - cosTheta1_3);
+				float	averageY = ssNormal.x * (sinTheta0_3 - sinTheta1_3)
+								 + ssNormal.y * (2.0f - cosTheta0_3 - cosTheta1_3);
 
 				_csBentNormal = new float3( averageX * _csDirection, averageY );
 			#endif
 
+				// DON'T NORMALIZE RESULT!!
 //			_csBentNormal = _csBentNormal.Normalized;
-//scale par Delta-Theta plutôt ??
 
 			// Compute cone angles
+			float3	csNormalizedBentNormal = _csBentNormal.Normalized;
 			float3	ssHorizon_Front = new float3( Mathf.Sqrt( 1.0f - maxCosTheta_Front*maxCosTheta_Front ) * _csDirection, maxCosTheta_Front );
 			float3	ssHorizon_Back = new float3( -Mathf.Sqrt( 1.0f - maxCosTheta_Back*maxCosTheta_Back ) * _csDirection, maxCosTheta_Back );
 			#if USE_FAST_ACOS
-				_coneAngles.x = FastPosAcos( saturate( dot( _csBentNormal, ssHorizon_Front ) ) );
-				_coneAngles.y = FastPosAcos( saturate( dot( _csBentNormal, ssHorizon_Back ) ) ) ;
+				_coneAngles.x = FastPosAcos( saturate( dot( csNormalizedBentNormal, ssHorizon_Front ) ) );
+				_coneAngles.y = FastPosAcos( saturate( dot( csNormalizedBentNormal, ssHorizon_Back ) ) ) ;
 			#else
-				_coneAngles.x = Mathf.Acos( Mathf.Saturate( _csBentNormal.Dot( ssHorizon_Front ) ) );
-				_coneAngles.y = Mathf.Acos( Mathf.Saturate( _csBentNormal.Dot( ssHorizon_Back ) ) );
+				_coneAngles.x = Mathf.Acos( Mathf.Saturate( csNormalizedBentNormal.Dot( ssHorizon_Front ) ) );
+				_coneAngles.y = Mathf.Acos( Mathf.Saturate( csNormalizedBentNormal.Dot( ssHorizon_Back ) ) );
 			#endif
 
 //_DEBUG = float4( _coneAngles, 0, 0 );
@@ -406,20 +413,21 @@ _DEBUG = _coneAngles.x / (0.5f*Mathf.PI) * float4.One;
 // #TODO: Optimize!
 float4	projPosition = new float4( wsNeighborPosition, 1.0f ) * m_world2Proj;
 		projPosition /= projPosition.w;
-float2	ssPosition = new float2( 0.5f * (1.0f + projPosition.x) * m_resolution.x, 0.5f * (1.0f - projPosition.y) * m_resolution.y );
+float2	UV = new float2( 0.5f * (1.0f + projPosition.x), 0.5f * (1.0f - projPosition.y) );
+float2	ssPosition = UV * m_resolution;
 
 
 			// Sample new depth and rebuild final world-space position
 			float	neighborZ = FetchDepth( ssPosition, _mipLevel.x );
 	
-			float3	wsView = wsNeighborPosition - m_camera2World[3].xyz;		// Neighbor world-space position (not projected), relative to camera
-					wsView /= Math.Abs(wsView.Dot(m_camera2World[2].xyz ));		// Scaled so its length against the camera's Z axis is 1
-					wsView *= neighborZ;										// Scaled again so its length agains the camera's Z axis equals our sampled Z
+			float3	wsView = wsNeighborPosition - m_camera2World[3].xyz;	// Neighbor world-space position (not projected), relative to camera
+					wsView /= wsView.Dot(m_camera2World[2].xyz );			// Scaled so its length against the camera's Z axis is 1
+					wsView *= neighborZ;									// Scaled again so its length agains the camera's Z axis equals our sampled Z
 
-			wsNeighborPosition = m_camera2World[3].xyz + wsView;				// Final reprojected world-space position
+			wsNeighborPosition = m_camera2World[3].xyz + wsView;			// Final reprojected world-space position
 
 			// Update horizon angle following eq. (3) from the paper
-			wsNeighborPosition -= _localCamera2World[3].xyz;					// Neighbor position - central position
+			wsNeighborPosition -= _localCamera2World[3].xyz;				// Neighbor position, relative to central position
 			float3	csNeighborPosition = new float3( wsNeighborPosition.Dot( _localCamera2World[0].xyz ), wsNeighborPosition.Dot( _localCamera2World[1].xyz ), wsNeighborPosition.Dot( _localCamera2World[2].xyz ) );
 			float	radius = csNeighborPosition.xy.Length;
 			float	d = csNeighborPosition.z;
@@ -465,7 +473,7 @@ float2	ssPosition = new float2( 0.5f * (1.0f + projPosition.x) * m_resolution.x,
 		}
 
 		float	BilateralFilterDepth( float _centralZ, float _neighborZ, float _radius_m ) {
-		//return 1.0;	// Accept always
+//return 1.0;	// Accept always
 
 			float	deltaZ = _neighborZ - _centralZ;
 
@@ -697,6 +705,8 @@ return float2.Zero;
 
 				csAverageBentNormal += csBentNormal;
 			}
+//l'orientation marche toujours pas avec UP!
+//check aussi pourquoi l'angle average fait un rond avec le centre de la cam??
 
 			float3	csFinalNormal = csAverageBentNormal.Normalized;
 		}

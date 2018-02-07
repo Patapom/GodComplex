@@ -113,17 +113,17 @@ float2	ssPosition = float2( 0.5 * (1.0 + projPosition.x) * _resolution.x, 0.5 * 
 	float	neighborZ = FetchDepth( ssPosition, _mipLevel.x );
 	
 	float3	wsView = wsNeighborPosition - _Camera2World[3].xyz;		// Neighbor world-space position (not projected), relative to camera
-			wsView /= abs(dot( wsView, _Camera2World[2].xyz ));		// Scaled so its length against the camera's Z axis is 1
+			wsView /= dot( wsView, _Camera2World[2].xyz );			// Scaled so its length against the camera's Z axis is 1
 			wsView *= neighborZ;									// Scaled again so its length agains the camera's Z axis equals our sampled Z
 
 	wsNeighborPosition = _Camera2World[3].xyz + wsView;				// Final reprojected world-space position
 
 	// Update horizon angle following eq. (3) from the paper
-	wsNeighborPosition -= _localCamera2World[3];					// Neighbor position - central position
+	wsNeighborPosition -= _localCamera2World[3];					// Neighbor position, relative to central position
 	float3	csNeighborPosition = float3( dot( wsNeighborPosition, _localCamera2World[0] ), dot( wsNeighborPosition, _localCamera2World[1] ), dot( wsNeighborPosition, _localCamera2World[2] ) );
 	float	radius = length( csNeighborPosition.xy );
 	float	d = csNeighborPosition.z;
-//			d *= BilateralFilterDepth( 0.0, d, _radius );	// Attenuate
+//			d *= BilateralFilterDepth( 0.0, d, radius );	// Attenuate
 	float	cosHorizon = d / sqrt( radius*radius + d*d );	// Cosine to horizon angle
 	if ( cosHorizon <= _maxCos )
 		return 0.0;	// Below the horizon... No visible contribution.
@@ -174,7 +174,7 @@ float3	GatherIrradiance_TEMP( float2 _csDirection, float4x3 _localCamera2World, 
 	float3	sumRadiance = 0.0;
 	float3	previousRadiance_Front = _centralRadiance;
 	float3	previousRadianceBack = _centralRadiance;
-/*
+//*
 	float2	csStep = _stepSize_meters * _csDirection;
 	float2	csPosition_Front = 0.0;
 	float2	csPosition_Back = 0.0;
@@ -192,6 +192,17 @@ float2	mipLevel = 0.0;
 
 	// Accumulate bent normal direction by rebuilding and averaging the front & back horizon vectors
 	float2	ssNormal = float2( dot( _csNormal.xy, _csDirection ), _csNormal.z );	// Project normal onto the slice plane
+
+
+//maxCosTheta_Front = cos( atan2( ssNormal.x, ssNormal.y ) + 1.5 );
+//maxCosTheta_Back = cos( atan2( ssNormal.x, ssNormal.y ) - 1.5 );
+
+//float	horizonCosTheta_Front = hitDistance_Front / sqrt( hitDistance_Front*hitDistance_Front + 1.0 );
+//float	horizonCosTheta_Back = -horizonCosTheta_Front;
+//if ( maxCosTheta_Front < horizonCosTheta_Front || maxCosTheta_Back < horizonCosTheta_Back )
+//	_DEBUG = float4( 1, 0, 1, 1 );
+//_DEBUG = maxCosTheta_Front;
+//_DEBUG = maxCosTheta_Back;
 
 	#if USE_NUMERICAL_INTEGRATION
 		// Half brute force where we perform the integration numerically as a sum...
@@ -257,9 +268,9 @@ float2	mipLevel = 0.0;
 _coneAngles = float2( saturate( dot( csNormalizedBentNormal, csHorizon_Front ) ), saturate( dot( csNormalizedBentNormal, csHorizon_Back ) ) );
 #endif
 
-
+_DEBUG = float4( _csBentNormal, 0 );
 //_DEBUG = float4( _coneAngles, 0, 0 );
-_DEBUG = _coneAngles.x / (0.5*PI);
+//_DEBUG = _coneAngles.x / (0.5*PI);
 
 
 	return sumRadiance;
@@ -404,7 +415,7 @@ DEBUG_VALUE = csAverageBentNormal.x * wsRight + csAverageBentNormal.y * wsUp + c
 //DEBUG_VALUE = float3( GATHER_DEBUG.xy, 0 );
 //DEBUG_VALUE = float3( GATHER_DEBUG.zw, 0 );
 //DEBUG_VALUE = 0.4 * localCamera2World[3];
-//DEBUG_VALUE = GATHER_DEBUG.xyz;
+DEBUG_VALUE = GATHER_DEBUG.xyz;
 
 //float4	projPosition = mul( float4( localCamera2World[3], 1.0 ), _World2Proj );
 //		projPosition.xyz /= projPosition.w;

@@ -18,6 +18,8 @@
 //		=> Exponential decay of off-screen values with decay rate depending on camera's linear velocity?? (fun idea!)
 //	• Use W linear attenuation as in HBAO?
 //	• Compute AO value!!
+//	• Advance in local camera space but using screen-space steps
+//		=> Must be a linear combination of vector so that advancing 2 pixels equals advancing N meters in camera space...
 //
 using System;
 using System.Collections.Generic;
@@ -311,7 +313,8 @@ namespace TestHBIL {
 			}
 
 			// Setup camera
-			m_camera.CreatePerspectiveCamera( (float) (60.0 * Math.PI / 180.0), (float) panelOutput.Width / panelOutput.Height, 0.01f, 100.0f );
+			// BEWARE: Must correspond to TAN_HALF_FOV declared in global.hlsl!
+			m_camera.CreatePerspectiveCamera( 2.0f * Mathf.Atan( 0.6f ), (float) panelOutput.Width / panelOutput.Height, 0.01f, 100.0f );
 			m_manipulator.Attach( panelOutput, m_camera );
 //			m_manipulator.InitializeCamera( new float3( 0, 1, 4 ), new float3( 0, 1, 0 ), float3.UnitY );
 			m_manipulator.InitializeCamera( new float3( 0, 5.0f, -4.5f ), new float3( 0, 0, 0 ), float3.UnitY );
