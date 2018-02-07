@@ -12,7 +12,7 @@
 //	✓ Use radius² as progression
 //		=> Doesn't provide any significant improvement
 //	• Sample mips for larger footprint (only if mip is bilateral filtered!)
-//	• Keep previous radiance in case we reject height sample but accept radiance, and don't want to interpolate foreground radiance? Will that even occur?
+//	✓ Keep previous radiance in case we reject height sample but accept radiance, and don't want to interpolate foreground radiance? Will that even occur?
 //	• Write interleaved sampling + reconstruction based on bilateral weight (store it some place? Like alpha somewhere?)
 //	• Keep failed reprojected pixels into some "surrounding buffer", some sort of paraboloid-projected buffer containing off-screen values???
 //		=> Exponential decay of off-screen values with decay rate depending on camera's linear velocity?? (fun idea!)
@@ -24,6 +24,9 @@
 //	!!!!!!!!!!!!!!!!!!!
 //	• Use normal dot product weighting anyway?? It looks closer to ground truth in the ground truth simulator! Check it!
 //	!!!!!!!!!!!!!!!!!!!
+//
+// BUGS:
+//	• Horrible noise in reprojection buffer ==> OLD->NEW Camera transform???
 //
 //
 using System;
@@ -104,8 +107,8 @@ namespace TestHBIL {
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
 		internal struct	CB_HBIL {
+			public float4	_bilateralValues;
 			public float	_gatherSphereMaxRadius_m;	// Maximum radius (in meters) of the IL gather sphere
-			public float2	_bilateralValues;
 		}
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
@@ -658,7 +661,7 @@ m_tex_texDebugNormals.SetPS( 33 );
 					m_device.SetRenderTargets( new IView[] { m_tex_radiance.GetView( 0, 1, 1-m_radianceSourceSliceIndex, 1 ), m_tex_bentCone.GetView( 0, 1, 0, 1 ) }, null );
 
 					m_CB_HBIL.m._gatherSphereMaxRadius_m = floatTrackbarControlGatherSphereRadius.Value;
-					m_CB_HBIL.m._bilateralValues.Set( floatTrackbarControlBilateral0.Value, floatTrackbarControlBilateral1.Value );
+					m_CB_HBIL.m._bilateralValues.Set( floatTrackbarControlBilateral0.Value, floatTrackbarControlBilateral1.Value, floatTrackbarControlBilateral2.Value, floatTrackbarControlBilateral3.Value );
 					m_CB_HBIL.UpdateData();
 
 					targetDepthStencil.SetPS( 0 );

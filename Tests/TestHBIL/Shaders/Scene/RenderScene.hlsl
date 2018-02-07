@@ -90,7 +90,6 @@ PS_OUT_FINAL	PS_Light( float4 __Position : SV_POSITION ) {
 
 	if ( (_flags & 2) == 0 ) {
 		wsBentNormal = _tex_Normal[pixelPosition].xyz;
-		cosConeAnglesMinMax = 0;
 	}
 	if ( (_flags & 4) == 0 )
 		cosConeAnglesMinMax = float2( 0, -1 );	// Make sure we're always inside cone so visibility is always 1

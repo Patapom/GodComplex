@@ -66,12 +66,14 @@
 			this.checkBoxFreezePrev2CurrentCamMatrix = new System.Windows.Forms.CheckBox();
 			this.groupBoxPushPull = new System.Windows.Forms.GroupBox();
 			this.groupBoxHBIL = new System.Windows.Forms.GroupBox();
+			this.floatTrackbarControlBilateral1 = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlBilateral0 = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.label9 = new System.Windows.Forms.Label();
 			this.floatTrackbarControlGatherSphereRadius = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label8 = new System.Windows.Forms.Label();
 			this.groupBoxLighting = new System.Windows.Forms.GroupBox();
-			this.label9 = new System.Windows.Forms.Label();
-			this.floatTrackbarControlBilateral0 = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.floatTrackbarControlBilateral1 = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlBilateral2 = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlBilateral3 = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.groupBoxPushPull.SuspendLayout();
 			this.groupBoxHBIL.SuspendLayout();
 			this.groupBoxLighting.SuspendLayout();
@@ -161,7 +163,7 @@
 			this.panel1.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("panel1.BackgroundImage")));
 			this.panel1.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
 			this.panel1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-			this.panel1.Location = new System.Drawing.Point(1441, 492);
+			this.panel1.Location = new System.Drawing.Point(134, 57);
 			this.panel1.Name = "panel1";
 			this.panel1.Size = new System.Drawing.Size(186, 12);
 			this.panel1.TabIndex = 5;
@@ -447,6 +449,7 @@
 			// 
 			// groupBoxPushPull
 			// 
+			this.groupBoxPushPull.Controls.Add(this.panel1);
 			this.groupBoxPushPull.Controls.Add(this.radioButtonPUSH);
 			this.groupBoxPushPull.Controls.Add(this.checkBoxAutoRotateCamera);
 			this.groupBoxPushPull.Controls.Add(this.radioButtonPULL);
@@ -469,17 +472,54 @@
 			// 
 			// groupBoxHBIL
 			// 
+			this.groupBoxHBIL.Controls.Add(this.floatTrackbarControlBilateral3);
 			this.groupBoxHBIL.Controls.Add(this.floatTrackbarControlBilateral1);
+			this.groupBoxHBIL.Controls.Add(this.floatTrackbarControlBilateral2);
 			this.groupBoxHBIL.Controls.Add(this.floatTrackbarControlBilateral0);
 			this.groupBoxHBIL.Controls.Add(this.label9);
 			this.groupBoxHBIL.Controls.Add(this.floatTrackbarControlGatherSphereRadius);
 			this.groupBoxHBIL.Controls.Add(this.label8);
 			this.groupBoxHBIL.Location = new System.Drawing.Point(1298, 377);
 			this.groupBoxHBIL.Name = "groupBoxHBIL";
-			this.groupBoxHBIL.Size = new System.Drawing.Size(335, 109);
+			this.groupBoxHBIL.Size = new System.Drawing.Size(335, 146);
 			this.groupBoxHBIL.TabIndex = 13;
 			this.groupBoxHBIL.TabStop = false;
 			this.groupBoxHBIL.Text = "HBIL";
+			// 
+			// floatTrackbarControlBilateral1
+			// 
+			this.floatTrackbarControlBilateral1.Location = new System.Drawing.Point(129, 71);
+			this.floatTrackbarControlBilateral1.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlBilateral1.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlBilateral1.Name = "floatTrackbarControlBilateral1";
+			this.floatTrackbarControlBilateral1.RangeMax = 1000F;
+			this.floatTrackbarControlBilateral1.RangeMin = 0F;
+			this.floatTrackbarControlBilateral1.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlBilateral1.TabIndex = 1;
+			this.floatTrackbarControlBilateral1.Value = 1F;
+			this.floatTrackbarControlBilateral1.VisibleRangeMax = 1F;
+			// 
+			// floatTrackbarControlBilateral0
+			// 
+			this.floatTrackbarControlBilateral0.Location = new System.Drawing.Point(129, 45);
+			this.floatTrackbarControlBilateral0.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlBilateral0.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlBilateral0.Name = "floatTrackbarControlBilateral0";
+			this.floatTrackbarControlBilateral0.RangeMax = 1000F;
+			this.floatTrackbarControlBilateral0.RangeMin = 0F;
+			this.floatTrackbarControlBilateral0.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlBilateral0.TabIndex = 1;
+			this.floatTrackbarControlBilateral0.Value = 1F;
+			this.floatTrackbarControlBilateral0.VisibleRangeMax = 1F;
+			// 
+			// label9
+			// 
+			this.label9.AutoSize = true;
+			this.label9.Location = new System.Drawing.Point(6, 48);
+			this.label9.Name = "label9";
+			this.label9.Size = new System.Drawing.Size(79, 13);
+			this.label9.TabIndex = 3;
+			this.label9.Text = "Bilateral Values";
 			// 
 			// floatTrackbarControlGatherSphereRadius
 			// 
@@ -522,47 +562,37 @@
 			this.groupBoxLighting.TabStop = false;
 			this.groupBoxLighting.Text = "Lighting";
 			// 
-			// label9
+			// floatTrackbarControlBilateral2
 			// 
-			this.label9.AutoSize = true;
-			this.label9.Location = new System.Drawing.Point(6, 48);
-			this.label9.Name = "label9";
-			this.label9.Size = new System.Drawing.Size(79, 13);
-			this.label9.TabIndex = 3;
-			this.label9.Text = "Bilateral Values";
+			this.floatTrackbarControlBilateral2.Location = new System.Drawing.Point(129, 97);
+			this.floatTrackbarControlBilateral2.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlBilateral2.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlBilateral2.Name = "floatTrackbarControlBilateral2";
+			this.floatTrackbarControlBilateral2.RangeMax = 1000F;
+			this.floatTrackbarControlBilateral2.RangeMin = 0F;
+			this.floatTrackbarControlBilateral2.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlBilateral2.TabIndex = 1;
+			this.floatTrackbarControlBilateral2.Value = 1F;
+			this.floatTrackbarControlBilateral2.VisibleRangeMax = 1F;
 			// 
-			// floatTrackbarControlBilateral0
+			// floatTrackbarControlBilateral3
 			// 
-			this.floatTrackbarControlBilateral0.Location = new System.Drawing.Point(129, 45);
-			this.floatTrackbarControlBilateral0.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.floatTrackbarControlBilateral0.MinimumSize = new System.Drawing.Size(70, 20);
-			this.floatTrackbarControlBilateral0.Name = "floatTrackbarControlBilateral0";
-			this.floatTrackbarControlBilateral0.RangeMax = 1000F;
-			this.floatTrackbarControlBilateral0.RangeMin = 0F;
-			this.floatTrackbarControlBilateral0.Size = new System.Drawing.Size(200, 20);
-			this.floatTrackbarControlBilateral0.TabIndex = 1;
-			this.floatTrackbarControlBilateral0.Value = 1F;
-			this.floatTrackbarControlBilateral0.VisibleRangeMax = 1F;
-			// 
-			// floatTrackbarControlBilateral1
-			// 
-			this.floatTrackbarControlBilateral1.Location = new System.Drawing.Point(129, 71);
-			this.floatTrackbarControlBilateral1.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.floatTrackbarControlBilateral1.MinimumSize = new System.Drawing.Size(70, 20);
-			this.floatTrackbarControlBilateral1.Name = "floatTrackbarControlBilateral1";
-			this.floatTrackbarControlBilateral1.RangeMax = 1000F;
-			this.floatTrackbarControlBilateral1.RangeMin = 0F;
-			this.floatTrackbarControlBilateral1.Size = new System.Drawing.Size(200, 20);
-			this.floatTrackbarControlBilateral1.TabIndex = 1;
-			this.floatTrackbarControlBilateral1.Value = 1F;
-			this.floatTrackbarControlBilateral1.VisibleRangeMax = 1F;
+			this.floatTrackbarControlBilateral3.Location = new System.Drawing.Point(129, 123);
+			this.floatTrackbarControlBilateral3.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlBilateral3.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlBilateral3.Name = "floatTrackbarControlBilateral3";
+			this.floatTrackbarControlBilateral3.RangeMax = 1000F;
+			this.floatTrackbarControlBilateral3.RangeMin = 0F;
+			this.floatTrackbarControlBilateral3.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlBilateral3.TabIndex = 1;
+			this.floatTrackbarControlBilateral3.Value = 1F;
+			this.floatTrackbarControlBilateral3.VisibleRangeMax = 1F;
 			// 
 			// TestHBILForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1639, 744);
-			this.Controls.Add(this.panel1);
 			this.Controls.Add(this.groupBoxLighting);
 			this.Controls.Add(this.groupBoxHBIL);
 			this.Controls.Add(this.groupBoxPushPull);
@@ -634,6 +664,8 @@
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlBilateral1;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlBilateral0;
 		private System.Windows.Forms.Label label9;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlBilateral3;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlBilateral2;
 	}
 }
 
