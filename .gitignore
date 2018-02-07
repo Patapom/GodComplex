@@ -645,3 +645,5 @@ Publish
 /Tests/TestGroundTruthAOFitting/Results/*.AO
 /Tests/TestGroundTruthAOFitting/Results/*.indirectMap
 /Tests/TestGroundTruthAOFitting/Results/*.float
+/Tests/TestHBIL/Doc/*.pdf
+/Tests/TestHBIL/Doc/*.eps

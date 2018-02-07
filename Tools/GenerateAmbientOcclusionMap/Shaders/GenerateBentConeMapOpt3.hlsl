@@ -195,7 +195,6 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID ) 
 		// Compute the "average" bent normal weighted by the cos(alpha) where alpha is the angle with the actual normal
 		#if 0
 			// Half brute force where we perform the integration numerically as a sum...
-			// This solution is prefered to the analytical integral that shows some precision artefacts unfortunately...
 			//
 			float	thetaFront = acos( maxCos_Front );
 			float	thetaBack = -acos( maxCos_Back );
@@ -228,8 +227,11 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID ) 
 					float	sinTheta, cosTheta;
 					sincos( theta, sinTheta, cosTheta );
 					float2	sliceSpaceOmega = float2( sinTheta, cosTheta );
+
 					float	cosAlpha = saturate( dot( sliceSpaceOmega, sliceSpaceNormal ) );
+
 					float	weight = cosAlpha * abs(sinTheta);		// cos(alpha) * sin(theta).dTheta
+
 					sliceSpaceBentNormal += weight * sliceSpaceOmega;
 				}
 				float3	ssBentNormal = float3( sliceSpaceBentNormal.x * ssDirection, sliceSpaceBentNormal.y );
@@ -324,6 +326,8 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID ) 
 
 			float3	ssBentNormal = float3( averageX * ssDirection, averageY );
 
+ssBentNormal *= 0.01;	// Scale down so it fits into our idiotic uint3 registers...
+
 		#else
 			// Martin's integral computation (didn't manage to make it work :'() (even redid the computation myself but still doesn't work!)
 			float	cosTheta0 = maxCos_Front;
@@ -344,7 +348,8 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID ) 
 
 		#endif
 
-		ssBentNormal = normalize( ssBentNormal );
+		// We must NOT normalize at the end
+//		ssBentNormal = normalize( ssBentNormal );
 
 		uint	dontCare;
 		InterlockedAdd( gs_occlusionDirectionAccumulator.x, uint(65536.0 * (1.0 + ssBentNormal.x)), dontCare );
@@ -352,7 +357,7 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID ) 
 		InterlockedAdd( gs_occlusionDirectionAccumulator.z, uint(65536.0 * (1.0 + ssBentNormal.z)), dontCare );
 
 		// Accumulate horizon angles & their variance
-//		ssBentNormal = normalize( ssBentNormal );
+		ssBentNormal = normalize( ssBentNormal );
 		float3	ssHorizon_Front = float3( sqrt( saturate( 1.0 - maxCos_Front*maxCos_Front ) ) * ssDirection, maxCos_Front );
 		float3	ssHorizon_Back = float3( -sqrt( saturate( 1.0 - maxCos_Back*maxCos_Back ) ) * ssDirection, maxCos_Back );
 
@@ -466,6 +471,8 @@ stdDeviation = 0;
 		#else
 			float	stdDeviation = 0.0;
 		#endif
+
+//ssBentNormal = gs_local2World[2];	// Reference
 
 		ssBentNormal.y = -ssBentNormal.y;	// Normal textures are stored with inverted Y
 
