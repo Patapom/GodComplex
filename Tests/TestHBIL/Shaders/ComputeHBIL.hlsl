@@ -167,8 +167,8 @@ float3	GatherIrradiance_TEMP( float2 _csDirection, float4x3 _localCamera2World, 
 	//        --- 
 	//
 	float	hitDistance_Front = -dot( _csDirection, _csNormal.xy ) / _csNormal.z;
-	float	maxCos_Front = hitDistance_Front / sqrt( hitDistance_Front*hitDistance_Front + 1.0 );	// Assuming length(_csDirection) == 1
-	float	maxCos_Back = -maxCos_Front;	// Back cosine is simply the mirror value
+	float	maxCosTheta_Front = hitDistance_Front / sqrt( hitDistance_Front*hitDistance_Front + 1.0 );	// Assuming length(_csDirection) == 1
+	float	maxCosTheta_Back = -maxCosTheta_Front;	// Back cosine is simply the mirror value
 
 	// Gather irradiance from front & back directions while updating the horizon angles at the same time
 	float3	sumRadiance = 0.0;
@@ -185,18 +185,17 @@ float3	GatherIrradiance_TEMP( float2 _csDirection, float4x3 _localCamera2World, 
 //		float2	mipLevel = ComputeMipLevel( radius, _radialStepSizes );
 float2	mipLevel = 0.0;
 
-		sumRadiance += SampleIrradiance_TEMP( csPosition_Front, _localCamera2World, mipLevel, integralFactors_Front, previousRadiance_Front, maxCos_Front );
-		sumRadiance += SampleIrradiance_TEMP( csPosition_Back, _localCamera2World, mipLevel, integralFactors_Back, previousRadianceBack, maxCos_Back );
+		sumRadiance += SampleIrradiance_TEMP( csPosition_Front, _localCamera2World, mipLevel, integralFactors_Front, previousRadiance_Front, maxCosTheta_Front );
+		sumRadiance += SampleIrradiance_TEMP( csPosition_Back, _localCamera2World, mipLevel, integralFactors_Back, previousRadianceBack, maxCosTheta_Back );
 	}
 //*/
 
 	// Accumulate bent normal direction by rebuilding and averaging the front & back horizon vectors
 	#if USE_NUMERICAL_INTEGRATION
 		// Half brute force where we perform the integration numerically as a sum...
-		// This solution is prefered to the analytical integral that shows some precision artefacts unfortunately...
 		//
-		float	thetaFront = acos( maxCos_Front );
-		float	thetaBack = -acos( maxCos_Back );
+		float	thetaFront = acos( maxCosTheta_Front );
+		float	thetaBack = -acos( maxCosTheta_Back );
 
 		_csBentNormal = 0.001 * _csNormal;
 		for ( uint i=0; i < USE_NUMERICAL_INTEGRATION; i++ ) {
@@ -215,8 +214,8 @@ float2	mipLevel = 0.0;
 		_csBentNormal *= dTheta;
 	#else
 		// Analytical solution for equations (5) and (6) from the paper
-		float	cosTheta0 = maxCos_Front;
-		float	cosTheta1 = maxCos_Back;	// This should be in [-PI,0] but instead I take the absolute value so [0,PI] instead
+		float	cosTheta0 = maxCosTheta_Front;
+		float	cosTheta1 = maxCosTheta_Back;	// This should be in [-PI,0] but instead I take the absolute value so [0,PI] instead
 		float	sinTheta0 = sqrt( 1.0 - cosTheta0*cosTheta0 );
 		float	sinTheta1 = sqrt( 1.0 - cosTheta1*cosTheta1 );
 		float	cosTheta0_3 = cosTheta0*cosTheta0*cosTheta0;
@@ -238,8 +237,8 @@ float2	mipLevel = 0.0;
 //	_csBentNormal = normalize( _csBentNormal );
 
 	// Compute cone angles
-	float3	csHorizon_Front = float3( sqrt( 1.0 - maxCos_Front*maxCos_Front ) * _csDirection, maxCos_Front );
-	float3	csHorizon_Back = float3( -sqrt( 1.0 - maxCos_Back*maxCos_Back ) * _csDirection, maxCos_Back );
+	float3	csHorizon_Front = float3( sqrt( 1.0 - maxCosTheta_Front*maxCosTheta_Front ) * _csDirection, maxCosTheta_Front );
+	float3	csHorizon_Back = float3( -sqrt( 1.0 - maxCosTheta_Back*maxCosTheta_Back ) * _csDirection, maxCosTheta_Back );
 	#if USE_FAST_ACOS
 		_coneAngles.x = FastPosAcos( saturate( dot( _csBentNormal, csHorizon_Front ) ) );
 		_coneAngles.y = FastPosAcos( saturate( dot( _csBentNormal, csHorizon_Back ) ) ) ;

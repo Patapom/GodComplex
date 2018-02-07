@@ -143,7 +143,6 @@ float3	GatherIrradiance( float2 _ssPosition, float2 _ssDirection, float _Z0, flo
 	// Accumulate bent normal direction by rebuilding and averaging the front & back horizon vectors
 	#if USE_NUMERICAL_INTEGRATION
 		// Half brute force where we perform the integration numerically as a sum...
-		// This solution is prefered to the analytical integral that shows some precision artefacts unfortunately...
 		//
 		float	thetaFront = acos( maxCos_Front );
 		float	thetaBack = -acos( maxCos_Back );

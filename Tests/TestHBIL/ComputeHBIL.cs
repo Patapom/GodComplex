@@ -115,6 +115,10 @@ namespace TestHBIL
 			uint	pixelPositionY = (uint) Mathf.Floor( __Position.y );
 			float	noise = 0.0f;//_tex_blueNoise[pixelPosition & 0x3F];
 
+
+PerformIntegrationTest();
+
+
 			// Setup camera ray
 			float3	csView = BuildCameraRay( UV );
 			float	Z2Distance = csView.Length;
@@ -249,8 +253,8 @@ DEBUG_VALUE = GATHER_DEBUG.xyz;
 			//        --- 
 			//
 			float	hitDistance_Front = -_csDirection.Dot( _csNormal.xy ) / _csNormal.z;
-			float	maxCos_Front = hitDistance_Front / Mathf.Sqrt( hitDistance_Front*hitDistance_Front + 1.0f );
-			float	maxCos_Back = -maxCos_Front;	// Back cosine is simply the mirror value
+			float	maxCosTheta_Front = hitDistance_Front / Mathf.Sqrt( hitDistance_Front*hitDistance_Front + 1.0f );
+			float	maxCosTheta_Back = -maxCosTheta_Front;	// Back cosine is simply the mirror value
 
 			// Gather irradiance from front & back directions while updating the horizon angles at the same time
 			float3	sumRadiance = float3.Zero;
@@ -269,8 +273,8 @@ DEBUG_VALUE = GATHER_DEBUG.xyz;
 //				float2	mipLevel = ComputeMipLevel( radius, _radialStepSizes );
 float2	mipLevel = float2.Zero;
 
-				sumRadiance += SampleIrradiance( csPosition_Front, _localCamera2World, mipLevel, integralFactors_Front, ref previousRadiance_Front, ref maxCos_Front );
-				sumRadiance += SampleIrradiance( csPosition_Back, _localCamera2World, mipLevel, integralFactors_Back, ref previousRadianceBack, ref maxCos_Back );
+				sumRadiance += SampleIrradiance( csPosition_Front, _localCamera2World, mipLevel, integralFactors_Front, ref previousRadiance_Front, ref maxCosTheta_Front );
+				sumRadiance += SampleIrradiance( csPosition_Back, _localCamera2World, mipLevel, integralFactors_Back, ref previousRadianceBack, ref maxCosTheta_Back );
 			}
 //*/
 			// Accumulate bent normal direction by rebuilding and averaging the front & back horizon vectors
@@ -278,8 +282,8 @@ float2	mipLevel = float2.Zero;
 				// Half brute force where we perform the integration numerically as a sum...
 				// This solution is prefered to the analytical integral that shows some precision artefacts unfortunately...
 				//
-				float	thetaFront = acos( maxCos_Front );
-				float	thetaBack = -acos( maxCos_Back );
+				float	thetaFront = acos( maxCosTheta_Front );
+				float	thetaBack = -acos( maxCosTheta_Back );
 
 				_csBentNormal = 0.001 * _N;
 				for ( uint i=0; i < USE_NUMERICAL_INTEGRATION; i++ ) {
@@ -298,8 +302,8 @@ float2	mipLevel = float2.Zero;
 				_csBentNormal *= dTheta;
 			#else
 				// Analytical solution
-				float	cosTheta0 = maxCos_Front;
-				float	cosTheta1 = maxCos_Back;
+				float	cosTheta0 = maxCosTheta_Front;
+				float	cosTheta1 = maxCosTheta_Back;
 				float	sinTheta0 = Mathf.Sqrt( 1.0f - cosTheta0*cosTheta0 );
 				float	sinTheta1 = Mathf.Sqrt( 1.0f - cosTheta1*cosTheta1 );
 				float	cosTheta0_3 = cosTheta0*cosTheta0*cosTheta0;
@@ -319,10 +323,11 @@ float2	mipLevel = float2.Zero;
 			#endif
 
 //			_csBentNormal = _csBentNormal.Normalized;
+//scale par Delta-Theta plutôt ??
 
 			// Compute cone angles
-			float3	ssHorizon_Front = new float3( Mathf.Sqrt( 1.0f - maxCos_Front*maxCos_Front ) * _csDirection, maxCos_Front );
-			float3	ssHorizon_Back = new float3( -Mathf.Sqrt( 1.0f - maxCos_Back*maxCos_Back ) * _csDirection, maxCos_Back );
+			float3	ssHorizon_Front = new float3( Mathf.Sqrt( 1.0f - maxCosTheta_Front*maxCosTheta_Front ) * _csDirection, maxCosTheta_Front );
+			float3	ssHorizon_Back = new float3( -Mathf.Sqrt( 1.0f - maxCosTheta_Back*maxCosTheta_Back ) * _csDirection, maxCosTheta_Back );
 			#if USE_FAST_ACOS
 				_coneAngles.x = FastPosAcos( saturate( dot( _csBentNormal, ssHorizon_Front ) ) );
 				_coneAngles.y = FastPosAcos( saturate( dot( _csBentNormal, ssHorizon_Back ) ) ) ;
@@ -612,6 +617,115 @@ return float2.Zero;
 			_UV.y *= -TAN_HALF_FOV;										// Positive Y as we go up the screen
 			return new float3( _UV, 1.0f );								// Not normalized!
 		}
+
+		#region Integration Test
+
+		/// <summary>
+		/// This function performs a simple integration test by slicing a bent plane into N slice and using the integrals
+		/// to compute the resulting average bent normal for each slice, then finalizing the resulting normal which should
+		/// equal the initial test normal
+		/// </summary>
+		void	PerformIntegrationTest() {
+			float3	csNormal = new float3( 10, 0, 1 ).Normalized;	// Simple 45° bent normal
+
+			uint	SLICES_COUNT = 128;
+
+			float3	csAverageBentNormal = float3.Zero;
+			for ( uint sliceIndex=0; sliceIndex < SLICES_COUNT; sliceIndex++ ) {
+				float	phi = sliceIndex * Mathf.PI / SLICES_COUNT;
+				float2	csDirection = new float2( Mathf.Cos( phi ), Mathf.Sin( phi ) );
+
+				// Compute initial horizon angles
+				float	t = -csDirection.Dot( csNormal.xy ) / csNormal.z;
+				float	maxCosTheta_Front = t / Mathf.Sqrt( t*t + 1.0f );
+				float	maxCosTheta_Back = -maxCosTheta_Front;	// Back cosine is simply the mirror value
+
+// 				float	theta_Front = Mathf.Acos( maxCosTheta_Front );
+// 				float	theta_Back = -Mathf.Acos( maxCosTheta_Back );	// Technically, this is theta0 and it should be in [-PI,0] but we took its absolute value to ease our computation
+
+// Here, the runtime algorithm is normally updating the horizon angles but we keep them flat: our goal is to obtain the original csNormal!
+
+				// Express angles in local normal space
+				float2	ssNormal_raw = new float2( csNormal.xy.Dot( csDirection ), csNormal.z );
+				float	normalWeight = ssNormal_raw.Length;
+				float2	ssNormal = ssNormal_raw / normalWeight;				// Slice-space normal
+				float2	ssTangent = new float2( ssNormal.y, -ssNormal.x );	// Slice-space tangent
+
+				float2	ssHorizon_Front = new float2( Mathf.Sqrt( 1.0f - maxCosTheta_Front*maxCosTheta_Front ), maxCosTheta_Front );	// Front horizon direction
+				float2	ssHorizon_Back = new float2( -Mathf.Sqrt( 1.0f - maxCosTheta_Back*maxCosTheta_Back ), maxCosTheta_Back );		// Back horizon direction
+
+				float	nsCosTheta_Front = ssHorizon_Front.Dot( ssNormal );
+				float	nsCosTheta_Back = ssHorizon_Back.Dot( ssNormal );
+				float	nsTheta_Front = Mathf.Acos( nsCosTheta_Front );
+				float	nsTheta_Back = -Mathf.Acos( nsCosTheta_Back );
+
+//*				// Numerical integration
+				// Half brute force where we perform the integration numerically as a sum...
+				//
+				const uint	STEPS_COUNT = 256;
+
+				float2	nsBentNormal = 0.001f * float2.UnitY;
+				for ( uint i=0; i < STEPS_COUNT; i++ ) {
+					float	theta = Mathf.Lerp( nsTheta_Back, nsTheta_Front, (i+0.5f) / STEPS_COUNT );
+					float	sinTheta = Mathf.Sin( theta ), cosTheta = Mathf.Cos( theta );
+					float2	nsUnOccludedDirection = new float2( sinTheta, cosTheta );
+
+					float2	ssUnOccludedDirection = nsUnOccludedDirection.x * ssTangent + nsUnOccludedDirection.y * ssNormal;
+					float3	csUnOccludedDirection = new float3( ssUnOccludedDirection.x * csDirection, ssUnOccludedDirection.y );
+					float	cosAlpha = Mathf.Saturate( csUnOccludedDirection.Dot( csNormal ) );
+//					float	cosAlpha = cosTheta;
+
+					float	weight = cosAlpha * Mathf.Abs( sinTheta );		// cos(alpha) * sin(theta).dTheta  (be very careful to take abs(sin(theta)) because our theta crosses the pole and becomes negative here!)
+					nsBentNormal += weight * nsUnOccludedDirection;
+				}
+
+				float	dTheta = (nsTheta_Front - nsTheta_Back) / STEPS_COUNT;
+				nsBentNormal *= dTheta;
+//				float3	csBentNormal = new float3( (nsBentNormal.y * ssNormal.x + nsBentNormal.x * ssTangent.x) * csDirection, nsBentNormal.y * ssNormal.y + nsBentNormal.x * ssTangent.y );
+				float2	ssBentNormal = nsBentNormal.x * ssTangent + nsBentNormal.y * ssNormal;
+				float3	csBentNormal = new float3( ssBentNormal.x * csDirection, ssBentNormal.y );
+
+// Il ressort que X est fortement privilégié.
+// Forcément puisque le plan est incliné vers X donc tous les vecteurs vont être 2 fois plus influencés par X que par Z ici...
+// Ca signifie que c'est encore pas le bon calcul...
+
+//*/
+/*				// Analytical integration
+				float	cosTheta0 = maxCosTheta_Front;
+				float	cosTheta1 = maxCosTheta_Back;
+				float	sinTheta0 = Mathf.Sqrt( 1.0f - cosTheta0*cosTheta0 );
+				float	sinTheta1 = Mathf.Sqrt( 1.0f - cosTheta1*cosTheta1 );
+				float	cosTheta0_3 = cosTheta0*cosTheta0*cosTheta0;
+				float	cosTheta1_3 = cosTheta1*cosTheta1*cosTheta1;
+				float	sinTheta0_3 = sinTheta0*sinTheta0*sinTheta0;
+				float	sinTheta1_3 = sinTheta1*sinTheta1*sinTheta1;
+
+				float2	sliceSpaceNormal = new float2( csNormal.xy.Dot( csDirection ), csNormal.z );
+
+				float	averageX = sliceSpaceNormal.x * (cosTheta0_3 + cosTheta1_3 - 3.0f * (cosTheta0 + cosTheta1) + 4.0f)
+								 + sliceSpaceNormal.y * (sinTheta0_3 - sinTheta1_3);
+
+				float	averageY = sliceSpaceNormal.x * (sinTheta0_3 - sinTheta1_3)
+								 + sliceSpaceNormal.y * (2.0f - cosTheta0_3 - cosTheta1_3);
+
+//averageX *= sliceSpaceNormal.x;
+
+				float3	csBentNormal = new float3( averageX * csDirection, averageY );
+//*/
+
+// Original routine normalizes each slice
+//csBentNormal.Normalize();
+
+// Try weighing by the angular gap that we covered instead
+//csBentNormal /= theta_Front - theta_Back;
+
+				csAverageBentNormal += csBentNormal;
+			}
+
+			float3	csFinalNormal = csAverageBentNormal.Normalized;
+		}
+
+		#endregion
 
 		#endregion
 	}
