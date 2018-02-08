@@ -74,10 +74,10 @@ namespace TestHBIL
 			set { m_world2Proj = value; }
 		}
 
-		public float3	wsConePosition	{ get { return m_wsConePosition; } }
-		public float3	wsConeDirection	{ get { return m_wsConeDirection; } }
-		public float	averageConeAngle{ get { return m_averageConeAngle; } }
-		public float	stdDeviation	{ get { return m_stdDeviation; } }
+		public float3	WorldSpaceConePosition	{ get { return m_wsConePosition; } }
+		public float3	WorldSpaceConeDirection	{ get { return m_wsConeDirection; } }
+		public float	AverageConeAngle		{ get { return m_averageConeAngle; } }
+		public float	StandardDeviation		{ get { return m_stdDeviation; } }
 
 		#endregion
 
@@ -165,8 +165,9 @@ namespace TestHBIL
 			float4	GATHER_DEBUG = float4.Zero;
 			float3	sumIrradiance = float3.Zero;
 			float3	csAverageBentNormal = float3.Zero;
-			float	averageConeAngle = 0.0f;
-			float	varianceConeAngle = 0.0f;
+// 			float	averageConeAngle = 0.0f;
+// 			float	varianceConeAngle = 0.0f;
+			float	sumAO = 0.0f;
 			for ( uint angleIndex=0; angleIndex < MAX_ANGLES; angleIndex++ ) {
 				float	phi = (angleIndex + noise) * Mathf.PI / MAX_ANGLES;
 
@@ -178,31 +179,47 @@ namespace TestHBIL
 
 				// Gather irradiance and average cone direction for that slice
 				float3	csBentNormal;
-				float4	coneAngles;
-				sumIrradiance += GatherIrradiance( csDirection, localCamera2World, N, radiusStepSize_meters, samplesCount, Z, centralRadiance, out csBentNormal, out coneAngles, ref GATHER_DEBUG );
+				float2	coneAngles;
+				float	AO;
+				sumIrradiance += GatherIrradiance( csDirection, localCamera2World, N, radiusStepSize_meters, samplesCount, Z, centralRadiance, out csBentNormal, out coneAngles, out AO, ref GATHER_DEBUG );
+
+// if ( AO < -0.01f || AO > 1.01f )
+// 	throw new Exception( "MERDE!" );
 
 				csAverageBentNormal += csBentNormal;
+				sumAO += AO;
 
-				// We're using running variance computation from https://www.johndcook.com/blog/standard_deviation/
-				//	Avg(N) = Avg(N-1) + [V(N) - Avg(N-1)] / N
-				//	S(N) = S(N-1) + [V(N) - Avg(N-1)] * [V(N) - Avg(N)]
-				// And variance = S(finalN) / (finalN-1)
-				//
-				float	previousAverageConeAngle = averageConeAngle;
-				averageConeAngle += (coneAngles.x - averageConeAngle) / (2*angleIndex+1);
-				varianceConeAngle += (coneAngles.x - previousAverageConeAngle) * (coneAngles.x - averageConeAngle);
-
-				previousAverageConeAngle = averageConeAngle;
-				averageConeAngle += (coneAngles.y - averageConeAngle) / (2*angleIndex+2);
-				varianceConeAngle += (coneAngles.y - previousAverageConeAngle) * (coneAngles.y - averageConeAngle);
+// 				// We're using running variance computation from https://www.johndcook.com/blog/standard_deviation/
+// 				//	Avg(N) = Avg(N-1) + [V(N) - Avg(N-1)] / N
+// 				//	S(N) = S(N-1) + [V(N) - Avg(N-1)] * [V(N) - Avg(N)]
+// 				// And variance = S(finalN) / (finalN-1)
+// 				//
+// 				float	previousAverageConeAngle = averageConeAngle;
+// 				averageConeAngle += (coneAngles.x - averageConeAngle) / (2*angleIndex+1);
+// 				varianceConeAngle += (coneAngles.x - previousAverageConeAngle) * (coneAngles.x - averageConeAngle);
+// 
+// 				previousAverageConeAngle = averageConeAngle;
+// 				averageConeAngle += (coneAngles.y - averageConeAngle) / (2*angleIndex+2);
+// 				varianceConeAngle += (coneAngles.y - previousAverageConeAngle) * (coneAngles.y - averageConeAngle);
 			}
 
 			// Finalize bent cone & irradiance
-			varianceConeAngle /= 2.0f*MAX_ANGLES - 1.0f;
-			csAverageBentNormal = csAverageBentNormal.Normalized;
-			float	stdDeviation = Mathf.Sqrt( varianceConeAngle );
+ 			csAverageBentNormal = csAverageBentNormal.Normalized;
+
+//csAverageBentNormal *= Mathf.PI / MAX_ANGLES;
 
 			sumIrradiance *= Mathf.PI / MAX_ANGLES;
+
+// 			varianceConeAngle /= 2.0f*MAX_ANGLES - 1.0f;
+// 			float	stdDeviation = Mathf.Sqrt( varianceConeAngle );
+
+			sumAO /= 2.0f * MAX_ANGLES;
+//if ( sumAO < 0.0f || sumAO > 1.0f )
+//	throw new Exception( "MERDE!" );
+
+			float	averageConeAngle = Mathf.Acos( 1.0f - sumAO );
+			float	varianceConeAngle = 0.0f;	// Unfortunately, we don't have a proper value for the variance anymore... :'(
+ 			float	stdDeviation = Mathf.Sqrt( varianceConeAngle );
 
 			sumIrradiance.Max( float3.Zero );
 
@@ -238,7 +255,7 @@ DEBUG_VALUE = GATHER_DEBUG.xyz;
 			m_stdDeviation = stdDeviation;
 		}
 
-		float3	GatherIrradiance( float2 _csDirection, float4x4 _localCamera2World, float3 _csNormal, float _stepSize_meters, uint _stepsCount, float _Z0, float3 _centralRadiance, out float3 _csBentNormal, out float4 _coneAngles, ref float4 _DEBUG ) {
+		float3	GatherIrradiance( float2 _csDirection, float4x4 _localCamera2World, float3 _csNormal, float _stepSize_meters, uint _stepsCount, float _Z0, float3 _centralRadiance, out float3 _csBentNormal, out float2 _coneAngles, out float _AO, ref float4 _DEBUG ) {
 
 			// Pre-compute factors for the integrals
 			float2	integralFactors_Front = ComputeIntegralFactors( _csDirection, _csNormal );
@@ -356,16 +373,16 @@ cosAlpha = 1.0f;
 				_coneAngles.y = Mathf.Acos( Mathf.Saturate( csNormalizedBentNormal.Dot( csHorizon_Back ) ) );
 			#endif
 
-//float	weight = ssNormal.y;
-////_coneAngles.x *= weight;
-////_coneAngles.y *= weight;
-//_coneAngles.z = weight;
-//_coneAngles.w = weight;
-_coneAngles.z = _coneAngles.w = 1.0f;
-
-//_DEBUG = float4( _coneAngles, 0, 0 );
-_DEBUG = _coneAngles.x / (0.5f*Mathf.PI) * float4.One;
-
+			// Compute AO using equation 11 of the paper
+			_AO = 2.0f - maxCosTheta_Back - maxCosTheta_Front;
+// 			_AO = 0.0f;
+// // 			float	theta0 = -Mathf.Acos( maxCosTheta_Back );
+// // 			float	theta1 = Mathf.Acos( maxCosTheta_Front );
+// 			for ( uint i=0; i < 256; i++ ) {
+// 				float	theta = Mathf.Lerp( theta0, theta1, (i+0.5f) / 256 );
+// 				_AO += Math.Abs( Mathf.Sin( theta ) );
+// 			}
+// 			_AO *= (theta1 - theta0) / 256.0f;
 
 			return sumRadiance;
 		}

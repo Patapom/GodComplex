@@ -66,14 +66,16 @@
 			this.checkBoxFreezePrev2CurrentCamMatrix = new System.Windows.Forms.CheckBox();
 			this.groupBoxPushPull = new System.Windows.Forms.GroupBox();
 			this.groupBoxHBIL = new System.Windows.Forms.GroupBox();
+			this.floatTrackbarControlBilateral3 = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.floatTrackbarControlBilateral1 = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlBilateral2 = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.floatTrackbarControlBilateral0 = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label9 = new System.Windows.Forms.Label();
 			this.floatTrackbarControlGatherSphereRadius = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label8 = new System.Windows.Forms.Label();
 			this.groupBoxLighting = new System.Windows.Forms.GroupBox();
-			this.floatTrackbarControlBilateral2 = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.floatTrackbarControlBilateral3 = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.checkBoxEnableBentNormalDirect = new System.Windows.Forms.CheckBox();
+			this.checkBoxEnableConeVisibilityDirect = new System.Windows.Forms.CheckBox();
 			this.groupBoxPushPull.SuspendLayout();
 			this.groupBoxHBIL.SuspendLayout();
 			this.groupBoxLighting.SuspendLayout();
@@ -136,7 +138,7 @@
 			// floatTrackbarControlAlbedo
 			// 
 			this.floatTrackbarControlAlbedo.Enabled = false;
-			this.floatTrackbarControlAlbedo.Location = new System.Drawing.Point(124, 93);
+			this.floatTrackbarControlAlbedo.Location = new System.Drawing.Point(124, 98);
 			this.floatTrackbarControlAlbedo.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlAlbedo.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlAlbedo.Name = "floatTrackbarControlAlbedo";
@@ -240,7 +242,7 @@
 			// checkBoxForceAlbedo
 			// 
 			this.checkBoxForceAlbedo.AutoSize = true;
-			this.checkBoxForceAlbedo.Location = new System.Drawing.Point(6, 96);
+			this.checkBoxForceAlbedo.Location = new System.Drawing.Point(6, 101);
 			this.checkBoxForceAlbedo.Name = "checkBoxForceAlbedo";
 			this.checkBoxForceAlbedo.Size = new System.Drawing.Size(89, 17);
 			this.checkBoxForceAlbedo.TabIndex = 4;
@@ -261,7 +263,7 @@
 			// checkBoxMonochrome
 			// 
 			this.checkBoxMonochrome.AutoSize = true;
-			this.checkBoxMonochrome.Location = new System.Drawing.Point(6, 71);
+			this.checkBoxMonochrome.Location = new System.Drawing.Point(6, 76);
 			this.checkBoxMonochrome.Name = "checkBoxMonochrome";
 			this.checkBoxMonochrome.Size = new System.Drawing.Size(118, 17);
 			this.checkBoxMonochrome.TabIndex = 4;
@@ -272,7 +274,7 @@
 			// label1
 			// 
 			this.label1.AutoSize = true;
-			this.label1.Location = new System.Drawing.Point(3, 46);
+			this.label1.Location = new System.Drawing.Point(3, 59);
 			this.label1.Name = "label1";
 			this.label1.Size = new System.Drawing.Size(85, 13);
 			this.label1.TabIndex = 3;
@@ -280,7 +282,7 @@
 			// 
 			// floatTrackbarControlConeAngleBias
 			// 
-			this.floatTrackbarControlConeAngleBias.Location = new System.Drawing.Point(124, 42);
+			this.floatTrackbarControlConeAngleBias.Location = new System.Drawing.Point(124, 55);
 			this.floatTrackbarControlConeAngleBias.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlConeAngleBias.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlConeAngleBias.Name = "floatTrackbarControlConeAngleBias";
@@ -486,6 +488,19 @@
 			this.groupBoxHBIL.TabStop = false;
 			this.groupBoxHBIL.Text = "HBIL";
 			// 
+			// floatTrackbarControlBilateral3
+			// 
+			this.floatTrackbarControlBilateral3.Location = new System.Drawing.Point(129, 123);
+			this.floatTrackbarControlBilateral3.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlBilateral3.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlBilateral3.Name = "floatTrackbarControlBilateral3";
+			this.floatTrackbarControlBilateral3.RangeMax = 1000F;
+			this.floatTrackbarControlBilateral3.RangeMin = 0F;
+			this.floatTrackbarControlBilateral3.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlBilateral3.TabIndex = 1;
+			this.floatTrackbarControlBilateral3.Value = 1F;
+			this.floatTrackbarControlBilateral3.VisibleRangeMax = 1F;
+			// 
 			// floatTrackbarControlBilateral1
 			// 
 			this.floatTrackbarControlBilateral1.Location = new System.Drawing.Point(129, 71);
@@ -498,6 +513,19 @@
 			this.floatTrackbarControlBilateral1.TabIndex = 1;
 			this.floatTrackbarControlBilateral1.Value = 1F;
 			this.floatTrackbarControlBilateral1.VisibleRangeMax = 1F;
+			// 
+			// floatTrackbarControlBilateral2
+			// 
+			this.floatTrackbarControlBilateral2.Location = new System.Drawing.Point(129, 97);
+			this.floatTrackbarControlBilateral2.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlBilateral2.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlBilateral2.Name = "floatTrackbarControlBilateral2";
+			this.floatTrackbarControlBilateral2.RangeMax = 1000F;
+			this.floatTrackbarControlBilateral2.RangeMin = 0F;
+			this.floatTrackbarControlBilateral2.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlBilateral2.TabIndex = 1;
+			this.floatTrackbarControlBilateral2.Value = 1F;
+			this.floatTrackbarControlBilateral2.VisibleRangeMax = 1F;
 			// 
 			// floatTrackbarControlBilateral0
 			// 
@@ -547,7 +575,9 @@
 			// 
 			this.groupBoxLighting.Controls.Add(this.checkBoxEnableHBIL);
 			this.groupBoxLighting.Controls.Add(this.label1);
+			this.groupBoxLighting.Controls.Add(this.checkBoxEnableBentNormalDirect);
 			this.groupBoxLighting.Controls.Add(this.checkBoxEnableBentNormal);
+			this.groupBoxLighting.Controls.Add(this.checkBoxEnableConeVisibilityDirect);
 			this.groupBoxLighting.Controls.Add(this.checkBoxEnableConeVisibility);
 			this.groupBoxLighting.Controls.Add(this.floatTrackbarControlEnvironmentIntensity);
 			this.groupBoxLighting.Controls.Add(this.floatTrackbarControlConeAngleBias);
@@ -562,31 +592,29 @@
 			this.groupBoxLighting.TabStop = false;
 			this.groupBoxLighting.Text = "Lighting";
 			// 
-			// floatTrackbarControlBilateral2
+			// checkBoxEnableBentNormalDirect
 			// 
-			this.floatTrackbarControlBilateral2.Location = new System.Drawing.Point(129, 97);
-			this.floatTrackbarControlBilateral2.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.floatTrackbarControlBilateral2.MinimumSize = new System.Drawing.Size(70, 20);
-			this.floatTrackbarControlBilateral2.Name = "floatTrackbarControlBilateral2";
-			this.floatTrackbarControlBilateral2.RangeMax = 1000F;
-			this.floatTrackbarControlBilateral2.RangeMin = 0F;
-			this.floatTrackbarControlBilateral2.Size = new System.Drawing.Size(200, 20);
-			this.floatTrackbarControlBilateral2.TabIndex = 1;
-			this.floatTrackbarControlBilateral2.Value = 1F;
-			this.floatTrackbarControlBilateral2.VisibleRangeMax = 1F;
+			this.checkBoxEnableBentNormalDirect.AutoSize = true;
+			this.checkBoxEnableBentNormalDirect.Checked = true;
+			this.checkBoxEnableBentNormalDirect.CheckState = System.Windows.Forms.CheckState.Checked;
+			this.checkBoxEnableBentNormalDirect.Location = new System.Drawing.Point(76, 37);
+			this.checkBoxEnableBentNormalDirect.Name = "checkBoxEnableBentNormalDirect";
+			this.checkBoxEnableBentNormalDirect.Size = new System.Drawing.Size(94, 17);
+			this.checkBoxEnableBentNormalDirect.TabIndex = 8;
+			this.checkBoxEnableBentNormalDirect.Text = "For Direct Too";
+			this.checkBoxEnableBentNormalDirect.UseVisualStyleBackColor = true;
 			// 
-			// floatTrackbarControlBilateral3
+			// checkBoxEnableConeVisibilityDirect
 			// 
-			this.floatTrackbarControlBilateral3.Location = new System.Drawing.Point(129, 123);
-			this.floatTrackbarControlBilateral3.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.floatTrackbarControlBilateral3.MinimumSize = new System.Drawing.Size(70, 20);
-			this.floatTrackbarControlBilateral3.Name = "floatTrackbarControlBilateral3";
-			this.floatTrackbarControlBilateral3.RangeMax = 1000F;
-			this.floatTrackbarControlBilateral3.RangeMin = 0F;
-			this.floatTrackbarControlBilateral3.Size = new System.Drawing.Size(200, 20);
-			this.floatTrackbarControlBilateral3.TabIndex = 1;
-			this.floatTrackbarControlBilateral3.Value = 1F;
-			this.floatTrackbarControlBilateral3.VisibleRangeMax = 1F;
+			this.checkBoxEnableConeVisibilityDirect.AutoSize = true;
+			this.checkBoxEnableConeVisibilityDirect.Checked = true;
+			this.checkBoxEnableConeVisibilityDirect.CheckState = System.Windows.Forms.CheckState.Checked;
+			this.checkBoxEnableConeVisibilityDirect.Location = new System.Drawing.Point(188, 37);
+			this.checkBoxEnableConeVisibilityDirect.Name = "checkBoxEnableConeVisibilityDirect";
+			this.checkBoxEnableConeVisibilityDirect.Size = new System.Drawing.Size(94, 17);
+			this.checkBoxEnableConeVisibilityDirect.TabIndex = 8;
+			this.checkBoxEnableConeVisibilityDirect.Text = "For Direct Too";
+			this.checkBoxEnableConeVisibilityDirect.UseVisualStyleBackColor = true;
 			// 
 			// TestHBILForm
 			// 
@@ -666,6 +694,8 @@
 		private System.Windows.Forms.Label label9;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlBilateral3;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlBilateral2;
+		private System.Windows.Forms.CheckBox checkBoxEnableBentNormalDirect;
+		private System.Windows.Forms.CheckBox checkBoxEnableConeVisibilityDirect;
 	}
 }
 

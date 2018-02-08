@@ -440,8 +440,10 @@ namespace TestHBIL {
 			m_CB_Main.m._flags |= checkBoxEnableHBIL.Checked ? 1U : 0;
 			m_CB_Main.m._flags |= checkBoxEnableBentNormal.Checked ? 2U : 0;
 			m_CB_Main.m._flags |= checkBoxEnableConeVisibility.Checked ? 4U : 0;
-			m_CB_Main.m._flags |= checkBoxMonochrome.Checked ? 8U : 0;
-			m_CB_Main.m._flags |= checkBoxForceAlbedo.Checked ? 0x10U : 0;
+			m_CB_Main.m._flags |= checkBoxEnableBentNormalDirect.Checked ? 0x8U : 0;
+			m_CB_Main.m._flags |= checkBoxEnableConeVisibilityDirect.Checked ? 0x10U : 0;
+			m_CB_Main.m._flags |= checkBoxMonochrome.Checked ? 0x20U : 0;
+			m_CB_Main.m._flags |= checkBoxForceAlbedo.Checked ? 0x40U : 0;
 			m_CB_Main.m._flags |= radioButtonPULL.Checked ? 0x100U : 0;
 			m_CB_Main.m._sourceRadianceIndex = 0;
 			m_CB_Main.m._debugMipIndex = (uint) integerTrackbarControlDebugMip.Value;
@@ -735,10 +737,10 @@ m_tex_texDebugNormals.SetPS( 33 );
 				m_device.ClearDepthStencil( m_device.DefaultDepthStencil, 1.0f, 0, true, false );
 				m_device.SetRenderTarget( m_device.DefaultTarget, m_device.DefaultDepthStencil );
 
-				m_CB_DebugCone.m._wsConePosition = m_softwareHBILComputer.wsConePosition;
-				m_CB_DebugCone.m._wsConeDirection = m_softwareHBILComputer.wsConeDirection;
-				m_CB_DebugCone.m._coneAngle = m_softwareHBILComputer.averageConeAngle;
-				m_CB_DebugCone.m._coneStdDeviation = m_softwareHBILComputer.stdDeviation;
+				m_CB_DebugCone.m._wsConePosition = m_softwareHBILComputer.WorldSpaceConePosition;
+				m_CB_DebugCone.m._wsConeDirection = m_softwareHBILComputer.WorldSpaceConeDirection;
+				m_CB_DebugCone.m._coneAngle = m_softwareHBILComputer.AverageConeAngle;
+				m_CB_DebugCone.m._coneStdDeviation = m_softwareHBILComputer.StandardDeviation;
 				m_CB_DebugCone.m._flags = 0;
 				m_CB_DebugCone.UpdateData();
 				m_primCylinder.Render( m_shader_RenderDebugCone );

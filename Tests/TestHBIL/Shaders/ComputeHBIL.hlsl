@@ -181,7 +181,7 @@ float2	ssPosition = float2( 0.5 * (1.0 + projPosition.x) * _resolution.x, 0.5 * 
 	return incomingRadiance;
 }
 
-float3	GatherIrradiance_TEMP( float2 _csDirection, float4x3 _localCamera2World, float3 _csNormal, float _stepSize_meters, uint _stepsCount, float _centralZ, float3 _centralRadiance, out float3 _csBentNormal, out float2 _coneAngles, inout float4 _DEBUG ) {
+float3	GatherIrradiance_TEMP( float2 _csDirection, float4x3 _localCamera2World, float3 _csNormal, float _stepSize_meters, uint _stepsCount, float _centralZ, float3 _centralRadiance, out float3 _csBentNormal, out float _AO, out float2 _coneAngles, inout float4 _DEBUG ) {
 
 	// Pre-compute factors for the integrals
 	float2	integralFactors_Front = ComputeIntegralFactors( _csDirection, _csNormal );
@@ -301,6 +301,9 @@ cosAlpha = 1.0;	// No influence after all!!
 	// DON'T NORMALIZE THE RESULT OR WE GET BIAS!
 //	_csBentNormal = normalize( _csBentNormal );
 
+	// Compute AO for this slice (in [0,2]!!)
+	_AO = 2.0 - maxCosTheta_Back - maxCosTheta_Front;
+
 	// Compute cone angles
 	float3	csNormalizedBentNormal = normalize( _csBentNormal );
 	float3	csHorizon_Front = float3( sqrt( 1.0 - maxCosTheta_Front*maxCosTheta_Front ) * _csDirection, maxCosTheta_Front );
@@ -381,6 +384,7 @@ PS_OUT	PS( float4 __Position : SV_POSITION ) {
 	// Start gathering radiance and bent normal by subdividing the screen-space disk around our pixel into N slices
 	float4	GATHER_DEBUG = 0.0;
 	float3	sumIrradiance = 0.0;
+	float	sumAO = 0.0;
 	float3	csAverageBentNormal = 0.0;
 	float	averageConeAngle = 0.0;
 	float	varianceConeAngle = 0.0;
@@ -404,14 +408,10 @@ PS_OUT	PS( float4 __Position : SV_POSITION ) {
 		// Gather irradiance and average cone direction for that slice
 		float3	csBentNormal;
 		float2	coneAngles;
-		sumIrradiance += GatherIrradiance_TEMP( csDirection, localCamera2World, N, radiusStepSize_meters, samplesCount, Z, centralRadiance, csBentNormal, coneAngles, GATHER_DEBUG );
-
-
-//csBentNormal = N;
-//coneAngles = 0.5 * float2( -PI, PI );
-
-
+		float	AO;
+		sumIrradiance += GatherIrradiance_TEMP( csDirection, localCamera2World, N, radiusStepSize_meters, samplesCount, Z, centralRadiance, csBentNormal, AO, coneAngles, GATHER_DEBUG );
 		csAverageBentNormal += csBentNormal;
+		sumAO += AO;
 
 		// We're using running variance computation from https://www.johndcook.com/blog/standard_deviation/
 		//	Avg(N) = Avg(N-1) + [V(N) - Avg(N-1)] / N
@@ -427,26 +427,39 @@ PS_OUT	PS( float4 __Position : SV_POSITION ) {
 		varianceConeAngle += (coneAngles.y - previousAverageConeAngle) * (coneAngles.y - averageConeAngle);
 	}
 
-	// Finalize bent cone & irradiance
-	#if MAX_ANGLES > 1
-		varianceConeAngle /= 2.0*MAX_ANGLES - 1.0;
-	#endif
+	// Finalize bent cone
 	csAverageBentNormal = normalize( csAverageBentNormal );
-	float	stdDeviation = sqrt( varianceConeAngle );
 
+#define USE_STD_DEV 1
+	#if USE_STD_DEV
+		#if MAX_ANGLES > 1
+			varianceConeAngle /= 2.0*MAX_ANGLES - 1.0;
+		#endif
+		#if AVERAGE_COSINES
+			float	cosAverageConeAngle = averageConeAngle;	// Already a cosine!
+			varianceConeAngle = acos( varianceConeAngle );
+		#else
+			float	cosAverageConeAngle = cos( averageConeAngle );
+		#endif
 
+		float	stdDeviation = sqrt( varianceConeAngle );
 
-#if AVERAGE_COSINES
-averageConeAngle = acos( averageConeAngle );
-varianceConeAngle = acos( varianceConeAngle );
-#endif
+//stdDeviation = 0.0;
 
+	#else
+		// Use AO to compute cone angle instead...
+		sumAO /= 2.0 * MAX_ANGLES;	// Normalize
+		float	cosAverageConeAngle = 1.0 - sumAO;
 
+		#if MAX_ANGLES > 1
+			varianceConeAngle /= 2.0*MAX_ANGLES - 1.0;
+		#endif
+		float	stdDeviation = sqrt( varianceConeAngle );
+//stdDeviation = 0.0;
+	#endif
 
+	// Finalize irradiance
 	sumIrradiance *= PI / MAX_ANGLES;
-
-//sumIrradiance += float3( 0.1, 0, 0 );
-
 	sumIrradiance = max( 0.0, sumIrradiance );
 
 //sumIrradiance = float3( 1, 0, 1 );
@@ -455,7 +468,7 @@ float3	DEBUG_VALUE = float3( 1,0,1 );
 DEBUG_VALUE = N;
 DEBUG_VALUE = csAverageBentNormal;
 DEBUG_VALUE = csAverageBentNormal.x * wsRight + csAverageBentNormal.y * wsUp + csAverageBentNormal.z * wsAt;	// World-space normal
-//DEBUG_VALUE = cos( averageConeAngle );
+//DEBUG_VALUE = cosAverageConeAngle;
 //DEBUG_VALUE = dot( ssAverageBentNormal, N );
 //DEBUG_VALUE = 0.01 * Z;
 //DEBUG_VALUE = sphereRadius_pixels / GATHER_SPHERE_MAX_RADIUS_P;
@@ -495,7 +508,7 @@ DEBUG_VALUE = GATHER_DEBUG.xyz;
 
 	PS_OUT	Out;
 	Out.irradiance = float4( sumIrradiance, 0 );
-	Out.bentCone = float4( max( 0.01, cos( averageConeAngle ) ) * csAverageBentNormal, 1.0 - stdDeviation / (0.5 * PI) );
+	Out.bentCone = float4( max( 0.01, cosAverageConeAngle ) * csAverageBentNormal, 1.0 - stdDeviation / (0.5 * PI) );
 
 //Out.bentCone = float4( DEBUG_VALUE, 1 );
 

@@ -28,7 +28,7 @@ float3	PS( float4 __Position : SV_POSITION ) : SV_TARGET0 {
 
 return _exposure * _tex_FinalRender[__Position.xy].xyz;
 
-#if 0	// DEBUG BENT CONE
+#if 1	// DEBUG BENT CONE
 
 	// Face-cam
 	float3	wsRight = normalize( cross( wsView, _Camera2World[1].xyz ) );
@@ -44,7 +44,7 @@ return _exposure * _tex_FinalRender[__Position.xy].xyz;
 
 	float3	wsBentCone = csBentCone.x * wsRight + csBentCone.y * wsUp + csBentCone.z * wsAt;
 
-//return cosAverageConeAngle;
+return 1-cosAverageConeAngle;	// a.k.a. the ambient occlusion
 //return averageConeAngle * 2.0 / PI;
 //return stdDeviationConeAngle;
 //return csBentCone;

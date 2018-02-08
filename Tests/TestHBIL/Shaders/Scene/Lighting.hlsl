@@ -19,7 +19,10 @@ struct LightInfoSpot {
 	float2	angularAttenuation;		// X=Fall off cos(alpha), Y=Cut off cos(alpha)
 };
 
-void	ComputeGenericData( float3 _wsPosition, float3 _wsNormal, float2 _cosConeAnglesMinMax, float3 _wsLightPosition, float2 _distanceAttenuation, out float _NdotL, out float _attenuation ) {
+// Computes generic angular and distance attenuation values
+//	_cosConeAnglesHotSpotFallOff, X=cos(HotSpot Angle) Y=cos(FallOff Angle).
+//	_distanceAttenuation, X=HotSpot distance, Y=FallOff distance
+void	ComputeGenericData( float3 _wsPosition, float3 _wsNormal, float2 _cosConeAnglesHotSpotFallOff, float3 _wsLightPosition, float2 _distanceAttenuation, out float _NdotL, out float _attenuation ) {
 	float3	wsPosition2Light = _wsLightPosition - _wsPosition;
 	float	sqDistance2Light = dot( wsPosition2Light, wsPosition2Light );
 	float	distance2Light = sqrt( sqDistance2Light );
@@ -28,14 +31,14 @@ void	ComputeGenericData( float3 _wsPosition, float3 _wsNormal, float2 _cosConeAn
 	_NdotL = saturate( dot( wsPosition2Light, _wsNormal ) );
 
 	_attenuation = 1.0 / sqDistance2Light;	// Physical 1/r²
-	_attenuation *= smoothstep( _distanceAttenuation.y, _distanceAttenuation.x, distance2Light );	// Now with forced smooth cutoff (so we keep the physically correct 1/r² but can nonetheless artificially attenuate early)
-	_attenuation *= smoothstep( _cosConeAnglesMinMax.y, _cosConeAnglesMinMax.x, _NdotL );			// Check if the light is standing inside the visibility cone of the surface
+	_attenuation *= smoothstep( _distanceAttenuation.y, _distanceAttenuation.x, distance2Light );			// Add forced smooth cutoff (so we keep the physically correct 1/r² but can nonetheless artificially attenuate early)
+	_attenuation *= smoothstep( _cosConeAnglesHotSpotFallOff.y, _cosConeAnglesHotSpotFallOff.x, _NdotL );	// Check if the light is standing inside the visibility cone of the surface
 }
 
 // This must be called by the scene for each of its point lights
-void	ComputeLightPoint( float3 _wsPosition, float3 _wsNormal, float2 _cosConeAnglesMinMax, LightInfoPoint _light, inout LightingResult _result ) {
+void	ComputeLightPoint( float3 _wsPosition, float3 _wsNormal, float2 _cosConeAnglesHotSpotFallOff, LightInfoPoint _light, inout LightingResult _result ) {
 	float	NdotL, attenuation;
-	ComputeGenericData( _wsPosition, _wsNormal, _cosConeAnglesMinMax, _light.wsPosition, _light.distanceAttenuation, NdotL, attenuation );
+	ComputeGenericData( _wsPosition, _wsNormal, _cosConeAnglesHotSpotFallOff, _light.wsPosition, _light.distanceAttenuation, NdotL, attenuation );
 
 	float3	lightIrradiance = (_light.flux / (4.0 * PI)) * attenuation;	// Assume point source
 	_result.diffuse += lightIrradiance * NdotL;
@@ -43,9 +46,9 @@ void	ComputeLightPoint( float3 _wsPosition, float3 _wsNormal, float2 _cosConeAng
 }
 
 // This must be called by the scene for each of its spot lights
-void	ComputeLightSpot( float3 _wsPosition, float3 _wsNormal, float2 _cosConeAnglesMinMax, LightInfoSpot _light, inout LightingResult _result ) {
+void	ComputeLightSpot( float3 _wsPosition, float3 _wsNormal, float2 _cosConeAnglesHotSpotFallOff, LightInfoSpot _light, inout LightingResult _result ) {
 	float	NdotL, attenuation;
-	ComputeGenericData( _wsPosition, _wsNormal, _cosConeAnglesMinMax, _light.wsPosition, _light.distanceAttenuation, NdotL, attenuation );
+	ComputeGenericData( _wsPosition, _wsNormal, _cosConeAnglesHotSpotFallOff, _light.wsPosition, _light.distanceAttenuation, NdotL, attenuation );
 
 	attenuation *= smoothstep( _light.angularAttenuation.y, _light.angularAttenuation.x, NdotL );
 
