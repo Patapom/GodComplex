@@ -135,8 +135,8 @@ Intersection	TraceScene( float3 _wsPos, float3 _wsDir ) {
 	}
 
 	// Update result
-	result.wsHitPosition += hitDistance.x * float4( _wsDir, 1.0 );
-	result.shade = hitDistance.x < 1e-5;
+	result.shade = step( 1e-5, hitDistance.x );
+	result.wsHitPosition += hitDistance.x * float4( _wsDir, result.shade );	// W kept at 0 (invalid) if no hit
 	result.roughness = 0;
 	result.F0 = 0;
 	result.materialID = hitDistance.y;

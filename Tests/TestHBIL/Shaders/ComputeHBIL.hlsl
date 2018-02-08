@@ -11,8 +11,8 @@
 
 static const float	GATHER_SPHERE_MAX_RADIUS_P = 200.0;	// Maximum radius (in pixels) that we allow our sphere to get
 
-#define MAX_ANGLES	8									// Amount of circle subdivisions per pixel
-#define MAX_SAMPLES	32									// Maximum amount of samples per circle subdivision
+#define MAX_ANGLES	16									// Amount of circle subdivisions per pixel
+#define MAX_SAMPLES	16									// Maximum amount of samples per circle subdivision
 
 Texture2D< float >	_tex_depth : register(t0);			// Depth or distance buffer (here we're given depth)
 Texture2D< float4 >	_tex_sourceRadiance : register(t1);	// Last frame's reprojected radiance buffer
@@ -47,136 +47,77 @@ float2	ComputeMipLevel( float2 _radius, float2 _radialStepSizes ) {
 	return 0.5 * log2( pixelArea );
 }
 
-float	BilateralFilterDepth( float _centralZ, float _previousDeltaZ, float _newDeltaZ, float _previousCosTheta, float _newCosTheta, float _radius_m ) {
-return 1.0;	// Accept always
+float	BilateralFilterDepth( float _centralZ, float _previousDeltaZ, float _newDeltaZ, float _horizonCosTheta, float _newCosTheta, float _radius_m ) {
+//return 1;
+	// Compute an horizon penalty when the horizon rises too quickly
+	float	deltaTheta = saturate( (acos(_horizonCosTheta) - acos(_newCosTheta)) / PI );
+	float	penaltyCos = saturate( (deltaTheta - _bilateralValues.x) / _bilateralValues.y );
 
-//#TODO: TO FUCKING DO! Hate that piece of crap code!
+//return 1.0 - penaltyCos;
 
-float	previousTheta = acos( _previousCosTheta );
-float	newTheta = acos( _newCosTheta );
-return smoothstep( 0.1 * PI, 0.0 * PI, newTheta - previousTheta );
-
-
+	// Compute a delta Z penalty when the depth rises too quickly
 	float	relativeZ0 = max( 0.0, _previousDeltaZ ) / _centralZ;
 	float	relativeZ1 = max( 0.0, _newDeltaZ ) / _centralZ;
+	float	penaltyZ = 1.0 - saturate( (relativeZ0 - relativeZ1 - _bilateralValues.z) / _bilateralValues.w );
 
-//return saturate( smoothstep( 10.0, 0.0, relativeZ1 ) );// / (0.1+_radius_m);	// Discard when deltaZ is larger than 40% central Z (empirical value)
+//return 1.0 - penaltyZ;
 
-	// We want to inflict a strong penalty for sudden jumps in Z as well as sudden jumps in cosine values
-	float	penaltyZ = smoothstep( _bilateralValues.x, _bilateralValues.y, relativeZ1 - relativeZ0 );
-	float	penaltyCos = smoothstep( _bilateralValues.z, _bilateralValues.w, _newCosTheta - _previousCosTheta );
-	return 1.0 - penaltyZ * penaltyCos;
-//	return 1.0 - (1.0 - penaltyZ) * (1.0 - penaltyCos);
-	return 1.0 - penaltyCos;
-	return 1.0 - penaltyZ;
-
-//	#if 1
-//		// Relative test
-////		float	relativeZ = abs( deltaZ ) / _centralZ;
-//		float	relativeZ = -deltaZ / _centralZ;		// Discard only pixels in front of us 
-////		return smoothstep( 1.0, 0.0, relativeZ ) / (1+_radius_m);	// Discard when deltaZ is larger than 40% central Z (empirical value)
-////		return smoothstep( 1.0, 0.0, relativeZ );
-////		return saturate( smoothstep( _bilateralValues.x, 0.0, relativeZ ) / (_bilateralValues.y + _radius_m) );
-////		return saturate( smoothstep( 1.0, 0.0, relativeZ ) / (_bilateralValues.x + _bilateralValues.y * _radius_m) );
-//		return saturate( smoothstep( _bilateralValues.x, 0.0, relativeZ ) ) * exp2( -_bilateralValues.y * _radius_m );
-//	#elif 0
-//		// Absolute test
-//		return smoothstep( _bilateralValues.y, _bilateralValues.x, abs(deltaZ) );
-//		return smoothstep( 1.0, 0.0, abs(deltaZ) );
-//	#else
-//		// Reject if outside of gather sphere radius
-//		float	r = _radius_m / _gatherSphereMaxRadius_m;
-//		float	sqSphereZ = 1.0 - r*r;
-//		return smoothstep( _bilateralValues.y*_bilateralValues.y * sqSphereZ, _bilateralValues.x*_bilateralValues.x * sqSphereZ, deltaZ*deltaZ );
-//		return smoothstep( 0.1*0.1 * sqSphereZ, 0.0 * sqSphereZ, deltaZ*deltaZ );	// Empirical values
-//	#endif
+	// If the penalty flag is raised, we accept rising the horizon only if the difference in relative depth is not too high
+	return 1.0 - penaltyCos * penaltyZ;
 }
-//float	BilateralFilterRadiance( float _previousZ, float _newZ, float _previousCosTheta, float _newCosTheta, float _radius_m ) {
-////return 1.0;	// Accept always
-////return 0.0;	// Reject always
-//
-//	float	deltaZ = _previousZ - _centralZ;
-//
-//	#if 1
-//		// Relative test
-//		float	relativeZ = abs( deltaZ ) / _centralZ;
-////		return smoothstep( 0.1*_bilateralValues.y, 0.1*_bilateralValues.x, relativeZ );	// Discard when deltaZ is larger than 1% central Z
-////		return smoothstep( 0.015, 0.0, relativeZ );	// Discard when deltaZ is larger than 1.5% central Z (empirical value)
-//		return smoothstep( 0.15, 0.0, relativeZ );	// Discard when deltaZ is larger than 1.5% central Z (empirical value)
-//	#elif 0
-//		// Absolute test
-//		return smoothstep( 1.0, 0.0, abs(deltaZ) );
-//	#else
-//		// Reject if outside of gather sphere radius
-//		float	r = _radius_m / _gatherSphereMaxRadius_m;
-//		float	sqSphereZ = 1.0 - r*r;
-//		return smoothstep( _bilateralValues.y*_bilateralValues.y * sqSphereZ, _bilateralValues.x*_bilateralValues.x * sqSphereZ, deltaZ*deltaZ );
-//		return smoothstep( 0.1*0.1 * sqSphereZ, 0.0 * sqSphereZ, deltaZ*deltaZ );	// Empirical values
-//	#endif
-//}
 
 
+float3	SampleIrradiance_TEMP( float2 _csPosition, float4x3 _localCamera2World, float _centralZ, float2 _mipLevel, float2 _integralFactors, float _planeCosTheta, inout float _previousDeltaZ, inout float3 _previousRadiance, inout float _maxCosTheta ) {
 
-float3	SampleIrradiance_TEMP( float2 _csPosition, float4x3 _localCamera2World, float _centralZ, float2 _mipLevel, float2 _integralFactors, float _planeCosTheta, inout float _newCosTheta, inout float _previousDeltaZ, inout float3 _previousRadiance, inout float _maxCosTheta ) {
-
-	// Transform camera-space position into screen space
-	float3	wsNeighborPosition = _localCamera2World[3] + _csPosition.x * _localCamera2World[0] + _csPosition.y * _localCamera2World[1];
-//	float3	deltaPos = wsNeighborPosition = _Camera2World[3].xyz;
-//	float2	gcsPosition = float3( dot( deltaPos, _Camera2World[0].xyz ), dot( deltaPos, _Camera2World[1].xyz ), dot( deltaPos, _Camera2World[2].xyz ) );
-
-
+//////////////////
 // #TODO: Optimize!
+
+// Transform camera-space position into screen space
+float3	wsNeighborPosition = _localCamera2World[3] + _csPosition.x * _localCamera2World[0] + _csPosition.y * _localCamera2World[1];
+
 float4	projPosition = mul( float4( wsNeighborPosition, 1.0 ), _World2Proj );
 		projPosition.xyz /= projPosition.w;
 float2	ssPosition = float2( 0.5 * (1.0 + projPosition.x) * _resolution.x, 0.5 * (1.0 - projPosition.y) * _resolution.y );
 
 
-	// Sample new depth and rebuild final world-space position
-	float	Z = FetchDepth( ssPosition, _mipLevel.x );
+// Sample new depth and rebuild final world-space position
+float	Z = FetchDepth( ssPosition, _mipLevel.x );
 	
-	float3	wsView = wsNeighborPosition - _Camera2World[3].xyz;		// Neighbor world-space position (not projected), relative to camera
-			wsView /= dot( wsView, _Camera2World[2].xyz );			// Scaled so its length against the camera's Z axis is 1
-			wsView *= Z;											// Scaled again so its length agains the camera's Z axis equals our sampled Z
+float3	wsView = wsNeighborPosition - _Camera2World[3].xyz;		// Neighbor world-space position (not projected), relative to camera
+		wsView /= dot( wsView, _Camera2World[2].xyz );			// Scaled so its length against the camera's Z axis is 1
+		wsView *= Z;											// Scaled again so its length agains the camera's Z axis equals our sampled Z
 
-	wsNeighborPosition = _Camera2World[3].xyz + wsView;				// Final reprojected world-space position
+wsNeighborPosition = _Camera2World[3].xyz + wsView;				// Final reprojected world-space position
 
-	// Update horizon angle following eq. (3) from the paper
-	wsNeighborPosition -= _localCamera2World[3];					// Neighbor position, relative to central position
-	float3	csNeighborPosition = float3( dot( wsNeighborPosition, _localCamera2World[0] ), dot( wsNeighborPosition, _localCamera2World[1] ), dot( wsNeighborPosition, _localCamera2World[2] ) );
-	float	radius = length( csNeighborPosition.xy );
-	float	d = csNeighborPosition.z;
+// Update horizon angle following eq. (3) from the paper
+wsNeighborPosition -= _localCamera2World[3];					// Neighbor position, relative to central position
+float3	csNeighborPosition = float3( dot( wsNeighborPosition, _localCamera2World[0] ), dot( wsNeighborPosition, _localCamera2World[1] ), dot( wsNeighborPosition, _localCamera2World[2] ) );
+float	radius = length( csNeighborPosition.xy );
+float	d = csNeighborPosition.z;
+float	cosTheta = d / sqrt( radius*radius + d*d );				// Cosine to candidate horizon angle
+//////////////////
 
-	float	previousCosTheta = _newCosTheta;
-	_newCosTheta = d / sqrt( radius*radius + d*d );	// Cosine to horizon angle
 
 	// Filter outlier horizon values
-	float	bilateralWeight = BilateralFilterDepth( _centralZ, _previousDeltaZ, d, previousCosTheta, _newCosTheta, radius );
-	//cosHorizon = lerp( -_maxCosTheta, cosHorizon, bilateralWeight );	// SYMPA!
-	_newCosTheta = lerp( _planeCosTheta, _newCosTheta, bilateralWeight );	// Blend toward normal plane start angle
+	float	bilateralWeight = BilateralFilterDepth( _centralZ, _previousDeltaZ, d, _maxCosTheta, cosTheta, radius );
+	cosTheta = lerp( _planeCosTheta, cosTheta, bilateralWeight );	// Flatten to plane if rejected
 
 	// Update any rising horizon
-	if ( _newCosTheta <= _maxCosTheta )
+	if ( cosTheta <= _maxCosTheta )
 		return 0.0;	// Below the horizon... No visible contribution.
 
 	#if SAMPLE_NEIGHBOR_RADIANCE
-// NOW USELESS I THINK...
-//		// Sample neighbor's incoming radiance value, only if difference in depth is not too large
-//		float	bilateralWeight = BilateralFilterRadiance( _H0, neighborH, _radius );
-//		if ( bilateralWeight > 0.0 )
-//			_previousRadiance = lerp( _previousRadiance, FetchRadiance( _ssPosition ), bilateralWeight );	// Accept new height and its radiance value
-
-		// Sample always (actually, it's okay now we accepted the height through the first bilateral filter earlier)
 		_previousRadiance = FetchRadiance( ssPosition, _mipLevel.y );
 	#endif
 
 	// Integrate over horizon difference (always from smallest to largest angle otherwise we get negative results!)
-	float3	incomingRadiance = _previousRadiance * IntegrateSolidAngle( _integralFactors, _newCosTheta, _maxCosTheta );
+	float3	incomingRadiance = _previousRadiance * IntegrateSolidAngle( _integralFactors, cosTheta, _maxCosTheta );
 
 // #TODO: Integrate with linear interpolation of irradiance as well??
 // #TODO: Integrate with Fresnel F0!
 
-	_maxCosTheta = _newCosTheta;	// Register a new positive horizon
-	_previousDeltaZ = d;			// Accept new depth difference
+	_maxCosTheta = cosTheta;	// Register a new positive horizon
+	_previousDeltaZ = d;		// Accept new depth difference
 
 	return incomingRadiance;
 }
@@ -211,10 +152,9 @@ float3	GatherIrradiance_TEMP( float2 _csDirection, float4x3 _localCamera2World, 
 	float2	csPosition_Back = 0.0;
 	float	Z_Front = _centralZ;
 	float	Z_Back = _centralZ;
-	float	cosTheta_Front = planeCosTheta_Front;
-	float	cosTheta_Back = planeCosTheta_Back;
 	float	maxCosTheta_Front = planeCosTheta_Front;
 	float	maxCosTheta_Back = planeCosTheta_Back;
+	[loop]
 	for ( uint stepIndex=0; stepIndex < _stepsCount; stepIndex++ ) {
 		csPosition_Front += csStep;
 		csPosition_Back -= csStep;
@@ -222,8 +162,8 @@ float3	GatherIrradiance_TEMP( float2 _csDirection, float4x3 _localCamera2World, 
 //		float2	mipLevel = ComputeMipLevel( radius, _radialStepSizes );
 float2	mipLevel = 0.0;
 
-		sumRadiance += SampleIrradiance_TEMP( csPosition_Front, _localCamera2World, _centralZ, mipLevel, integralFactors_Front, planeCosTheta_Front, cosTheta_Front, Z_Front, previousRadiance_Front, maxCosTheta_Front );
-		sumRadiance += SampleIrradiance_TEMP( csPosition_Back, _localCamera2World, _centralZ, mipLevel, integralFactors_Back, planeCosTheta_Back, cosTheta_Back, Z_Back, previousRadianceBack, maxCosTheta_Back );
+		sumRadiance += SampleIrradiance_TEMP( csPosition_Front, _localCamera2World, _centralZ, mipLevel, integralFactors_Front, planeCosTheta_Front, Z_Front, previousRadiance_Front, maxCosTheta_Front );
+		sumRadiance += SampleIrradiance_TEMP( csPosition_Back, _localCamera2World, _centralZ, mipLevel, integralFactors_Back, planeCosTheta_Back, Z_Back, previousRadianceBack, maxCosTheta_Back );
 	}
 //*/
 
@@ -324,6 +264,8 @@ PS_OUT	PS( float4 __Position : SV_POSITION ) {
 	float2	UV = __Position.xy / _resolution;
 	uint2	pixelPosition = uint2( floor( __Position.xy ) );
 	float	noise = frac( _time + _tex_blueNoise[pixelPosition & 0x3F] );
+//	float	noise = 0.0;
+//	float	noise2 = frac( sin( 14357.91 * noise ) );
 
 	// Setup camera ray
 	float3	csView = BuildCameraRay( UV );
@@ -336,7 +278,6 @@ PS_OUT	PS( float4 __Position : SV_POSITION ) {
 
 			Z -= 1e-2;	// !IMPORTANT! Prevent acnea by offseting the central depth a tiny bit closer
 
-//	float	distance = Z * Z2Distance;
 	float3	wsNormal = normalize( _tex_normal[pixelPosition].xyz );
 
 	float3	centralRadiance = _tex_sourceRadiance[pixelPosition].xyz;	// Read back last frame's radiance value that we can use as a fallback for neighbor areas
@@ -371,6 +312,7 @@ PS_OUT	PS( float4 __Position : SV_POSITION ) {
 	float	averageAO = 0.0;
 	float	varianceAO = 0.0;
 #if MAX_ANGLES > 1
+	[loop]
 	for ( uint angleIndex=0; angleIndex < MAX_ANGLES; angleIndex++ )
 #else
 	uint	angleIndex = 0;

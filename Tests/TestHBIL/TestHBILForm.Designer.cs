@@ -524,7 +524,7 @@
 			this.floatTrackbarControlBilateral2.RangeMin = 0F;
 			this.floatTrackbarControlBilateral2.Size = new System.Drawing.Size(200, 20);
 			this.floatTrackbarControlBilateral2.TabIndex = 1;
-			this.floatTrackbarControlBilateral2.Value = 1F;
+			this.floatTrackbarControlBilateral2.Value = 0.5F;
 			this.floatTrackbarControlBilateral2.VisibleRangeMax = 1F;
 			// 
 			// floatTrackbarControlBilateral0
@@ -537,7 +537,7 @@
 			this.floatTrackbarControlBilateral0.RangeMin = 0F;
 			this.floatTrackbarControlBilateral0.Size = new System.Drawing.Size(200, 20);
 			this.floatTrackbarControlBilateral0.TabIndex = 1;
-			this.floatTrackbarControlBilateral0.Value = 1F;
+			this.floatTrackbarControlBilateral0.Value = 0F;
 			this.floatTrackbarControlBilateral0.VisibleRangeMax = 1F;
 			// 
 			// label9
