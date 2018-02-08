@@ -181,7 +181,7 @@ float2	ssPosition = float2( 0.5 * (1.0 + projPosition.x) * _resolution.x, 0.5 * 
 	return incomingRadiance;
 }
 
-float3	GatherIrradiance_TEMP( float2 _csDirection, float4x3 _localCamera2World, float3 _csNormal, float _stepSize_meters, uint _stepsCount, float _centralZ, float3 _centralRadiance, out float3 _csBentNormal, out float _AO, out float2 _coneAngles, inout float4 _DEBUG ) {
+float3	GatherIrradiance_TEMP( float2 _csDirection, float4x3 _localCamera2World, float3 _csNormal, float _stepSize_meters, uint _stepsCount, float _centralZ, float3 _centralRadiance, out float3 _csBentNormal, out float _AO, inout float4 _DEBUG ) {
 
 	// Pre-compute factors for the integrals
 	float2	integralFactors_Front = ComputeIntegralFactors( _csDirection, _csNormal );
@@ -258,7 +258,7 @@ cosAlpha = 1.0;	// No influence after all!!
 		_csBentNormal = float3( ssBentNormal.x * _csDirection, ssBentNormal.y );
 	#elif 1
 		// Analytical solution for equations (5) and (6) from the paper
-		// ==== NO NORMAL INFLUENCE ==== 
+		// ==== WITHOUT NORMAL INFLUENCE ==== 
 		// 
 		#if USE_FAST_ACOS
 			float	theta0 = -FastAcos( maxCosTheta_Back );
@@ -298,33 +298,15 @@ cosAlpha = 1.0;	// No influence after all!!
 		_csBentNormal = float3( averageX * _csDirection, averageY );	// Rebuild normal in camera space
 	#endif
 
-	// DON'T NORMALIZE THE RESULT OR WE GET BIAS!
+	// DON'T NORMALIZE THE RESULT NOW OR WE GET BIAS!
 //	_csBentNormal = normalize( _csBentNormal );
 
 	// Compute AO for this slice (in [0,2]!!)
 	_AO = 2.0 - maxCosTheta_Back - maxCosTheta_Front;
 
-	// Compute cone angles
-	float3	csNormalizedBentNormal = normalize( _csBentNormal );
-	float3	csHorizon_Front = float3( sqrt( 1.0 - maxCosTheta_Front*maxCosTheta_Front ) * _csDirection, maxCosTheta_Front );
-	float3	csHorizon_Back = float3( -sqrt( 1.0 - maxCosTheta_Back*maxCosTheta_Back ) * _csDirection, maxCosTheta_Back );
 
-	#if USE_FAST_ACOS
-		_coneAngles.x = FastPosAcos( saturate( dot( csNormalizedBentNormal, csHorizon_Front ) ) );
-		_coneAngles.y = FastPosAcos( saturate( dot( csNormalizedBentNormal, csHorizon_Back ) ) ) ;
-	#else
-		_coneAngles.x = acos( saturate( dot( csNormalizedBentNormal, csHorizon_Front ) ) );
-		_coneAngles.y = acos( saturate( dot( csNormalizedBentNormal, csHorizon_Back ) ) );
-	#endif
-
-
-#if AVERAGE_COSINES
-_coneAngles = float2( saturate( dot( csNormalizedBentNormal, csHorizon_Front ) ), saturate( dot( csNormalizedBentNormal, csHorizon_Back ) ) );
-#endif
 
 _DEBUG = float4( _csBentNormal, 0 );
-//_DEBUG = float4( _coneAngles, 0, 0 );
-//_DEBUG = _coneAngles.x / (0.5*PI);
 
 
 	return sumRadiance;
@@ -386,8 +368,8 @@ PS_OUT	PS( float4 __Position : SV_POSITION ) {
 	float3	sumIrradiance = 0.0;
 	float	sumAO = 0.0;
 	float3	csAverageBentNormal = 0.0;
-	float	averageConeAngle = 0.0;
-	float	varianceConeAngle = 0.0;
+	float	averageAO = 0.0;
+	float	varianceAO = 0.0;
 #if MAX_ANGLES > 1
 	for ( uint angleIndex=0; angleIndex < MAX_ANGLES; angleIndex++ )
 #else
@@ -402,14 +384,10 @@ PS_OUT	PS( float4 __Position : SV_POSITION ) {
 		float2	csDirection;
 		sincos( phi, csDirection.y, csDirection.x );
 
-//		float3	wsDirection = csDirection.x * wsRight + csDirection.y * wsUp;
-//		float2	ssDirection = normalize( float2( dot( wsDirection, _Camera2World[0].xyz ), dot( wsDirection, _Camera2World[1].xyz ) ) );
-
 		// Gather irradiance and average cone direction for that slice
 		float3	csBentNormal;
-		float2	coneAngles;
 		float	AO;
-		sumIrradiance += GatherIrradiance_TEMP( csDirection, localCamera2World, N, radiusStepSize_meters, samplesCount, Z, centralRadiance, csBentNormal, AO, coneAngles, GATHER_DEBUG );
+		sumIrradiance += GatherIrradiance_TEMP( csDirection, localCamera2World, N, radiusStepSize_meters, samplesCount, Z, centralRadiance, csBentNormal, AO, GATHER_DEBUG );
 		csAverageBentNormal += csBentNormal;
 		sumAO += AO;
 
@@ -418,52 +396,38 @@ PS_OUT	PS( float4 __Position : SV_POSITION ) {
 		//	S(N) = S(N-1) + [V(N) - Avg(N-1)] * [V(N) - Avg(N)]
 		// And variance = S(finalN) / (finalN-1)
 		//
-		float	previousAverageConeAngle = averageConeAngle;
-		averageConeAngle += (coneAngles.x - averageConeAngle) / (2*angleIndex+1);
-		varianceConeAngle += (coneAngles.x - previousAverageConeAngle) * (coneAngles.x - averageConeAngle);
-
-		previousAverageConeAngle = averageConeAngle;
-		averageConeAngle += (coneAngles.y - averageConeAngle) / (2*angleIndex+2);
-		varianceConeAngle += (coneAngles.y - previousAverageConeAngle) * (coneAngles.y - averageConeAngle);
+		float	previousAverageAO = averageAO;
+		averageAO += (AO - averageAO) / (1+angleIndex);
+		varianceAO += (AO - previousAverageAO) * (AO - averageAO);
 	}
 
 	// Finalize bent cone
 	csAverageBentNormal = normalize( csAverageBentNormal );
 
-#define USE_STD_DEV 1
-	#if USE_STD_DEV
-		#if MAX_ANGLES > 1
-			varianceConeAngle /= 2.0*MAX_ANGLES - 1.0;
-		#endif
-		#if AVERAGE_COSINES
-			float	cosAverageConeAngle = averageConeAngle;	// Already a cosine!
-			varianceConeAngle = acos( varianceConeAngle );
-		#else
-			float	cosAverageConeAngle = cos( averageConeAngle );
-		#endif
+	// Use AO to compute cone angle
+	sumAO /= 2.0 * MAX_ANGLES;	// Normalize
+	float	cosAverageConeAngle = 1.0 - sumAO;
 
-		float	stdDeviation = sqrt( varianceConeAngle );
-
-//stdDeviation = 0.0;
-
-	#else
-		// Use AO to compute cone angle instead...
-		sumAO /= 2.0 * MAX_ANGLES;	// Normalize
-		float	cosAverageConeAngle = 1.0 - sumAO;
-
-		#if MAX_ANGLES > 1
-			varianceConeAngle /= 2.0*MAX_ANGLES - 1.0;
-		#endif
-		float	stdDeviation = sqrt( varianceConeAngle );
-//stdDeviation = 0.0;
+	#if MAX_ANGLES > 1
+		varianceAO /= MAX_ANGLES;
 	#endif
+//	float	stdDeviation = PI * sqrt( varianceAO );		// Technically in [0,2PI]
+	float	stdDeviation = 0.5 * sqrt( varianceAO );	// Now AO standard deviation in [0,1]
+
+//stdDeviation = 0.0;
 
 	// Finalize irradiance
 	sumIrradiance *= PI / MAX_ANGLES;
 	sumIrradiance = max( 0.0, sumIrradiance );
 
-//sumIrradiance = float3( 1, 0, 1 );
+	// Write result
+	PS_OUT	Out;
+	Out.irradiance = float4( sumIrradiance, 0 );
+	Out.bentCone = float4( max( 0.01, cosAverageConeAngle ) * csAverageBentNormal, stdDeviation );
 
+
+//////////////////////////////////////////////
+// WRITE DEBUG VALUE INTO BENT CONE BUFFER
 float3	DEBUG_VALUE = float3( 1,0,1 );
 DEBUG_VALUE = N;
 DEBUG_VALUE = csAverageBentNormal;
@@ -480,37 +444,9 @@ DEBUG_VALUE = csAverageBentNormal.x * wsRight + csAverageBentNormal.y * wsUp + c
 //DEBUG_VALUE = float3( GATHER_DEBUG.zw, 0 );
 //DEBUG_VALUE = 0.4 * localCamera2World[3];
 DEBUG_VALUE = GATHER_DEBUG.xyz;
-
-//float4	projPosition = mul( float4( localCamera2World[3], 1.0 ), _World2Proj );
-//		projPosition.xyz /= projPosition.w;
-//DEBUG_VALUE = float3( 0.5 * (1.0 + projPosition.x), 0.5 * (1.0 - projPosition.y), 0 );
-
-
-#if 0
-{
-	// Transform camera-space position into screen space
-	float2	csPosition = 0.5 * float2( cos(_time), sin(_time) );
-	float3	wsNeighborPosition = localCamera2World[3] + csPosition.x * localCamera2World[0] + csPosition.y * localCamera2World[1];
-	float4	projPosition = mul( float4( wsNeighborPosition, 1.0 ), _World2Proj );
-			projPosition.xyz /= projPosition.w;
-	float2	ssPosition = float2( 0.5 * (1.0 + projPosition.x) * _resolution.x, 0.5 * (1.0 - projPosition.y) * _resolution.y );
-	// Sample new depth and rebuild final world-space position
-	float	neighborZ = FetchDepth( ssPosition, 0 );
-	float3	wsView = wsNeighborPosition - _Camera2World[3].xyz;		// Neighbor world-space position (not projected), relative to camera
-			wsView /= abs(dot( wsView, _Camera2World[2].xyz ));		// Scaled so its length against the camera's Z axis is 1
-			wsView *= neighborZ;									// Scaled again so its length agains the camera's Z axis equals our sampled Z
-
-	wsNeighborPosition = _Camera2World[3].xyz + wsView;				// Final reprojected world-space position
-	DEBUG_VALUE = 0.4 * wsNeighborPosition;
-}
-#endif
-
-
-	PS_OUT	Out;
-	Out.irradiance = float4( sumIrradiance, 0 );
-	Out.bentCone = float4( max( 0.01, cosAverageConeAngle ) * csAverageBentNormal, 1.0 - stdDeviation / (0.5 * PI) );
-
 //Out.bentCone = float4( DEBUG_VALUE, 1 );
+//
+//////////////////////////////////////////////
 
 	return Out;
 }

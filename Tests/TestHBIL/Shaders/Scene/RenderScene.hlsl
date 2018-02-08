@@ -3,6 +3,13 @@
 #include "SphericalHarmonics.hlsl"
 #include "HBIL.hlsl"
 
+#define USE_CONE_ANGLE 1	// Define this to use the cone aperture angle to get reduced estimate of the environment SH
+							// If not defined, the full hemisphere is used and the result is later weighed by F0(AO) (Not as good a result IMHO)
+
+#define USE_STD_DEV 1		// Define this to use the standard deviation of the cone aperture angle to estimate a smoothstep interval for direct lighting and bias the cone a little
+
+
+
 float4	VS( float4 __Position : SV_POSITION ) : SV_POSITION { return __Position; }
 
 void	BuildCameraRay( float2 _UV, out float3 _wsPos, out float3 _csView, out float3 _wsView, out float _Z2Distance ) {
@@ -83,8 +90,8 @@ PS_OUT_FINAL	PS_Light( float4 __Position : SV_POSITION ) {
 	// Read back bent normal
 	float4	csBentCone = _tex_BentCone[pixelPosition];
 	float3	csBentNormal, wsBentNormal;
-	float	cosAverageConeAngle, stdDeviationConeAngle;
-	ReconstructBentCone( wsView, _Camera2World[1].xyz, csBentCone, csBentNormal, wsBentNormal, cosAverageConeAngle, stdDeviationConeAngle );
+	float	cosConeAngle, stdDeviationAO;
+	ReconstructBentCone( wsView, _Camera2World[1].xyz, csBentCone, csBentNormal, wsBentNormal, cosConeAngle, stdDeviationAO );
 
 	// Check if we should use the bent normal (for direct & indirect lighting)
 	float3	wsNormalDirect = _tex_Normal[pixelPosition].xyz;
@@ -93,30 +100,32 @@ PS_OUT_FINAL	PS_Light( float4 __Position : SV_POSITION ) {
 		wsNormalIndirect = wsBentNormal;
 	if ( _flags & 0x8 ) {
 		wsNormalDirect = wsBentNormal;
-//wsNormalDirect = lerp( wsBentNormal, wsNormalDirect, 1-cosAverageConeAngle );	// Experiment blending normals depending on AO => a fully open cone gives the bent normal
+//wsNormalDirect = lerp( wsBentNormal, wsNormalDirect, 1-cosConeAngle );	// Experiment blending normals depending on AO => a fully open cone gives the bent normal
 	}
 
 	// Check if we should use the cone angle (for direct & indirect lighting)
-#define USE_STD_DEV 1
 	float	cosSamplingConeAngle = 0.0;
 	if ( _flags & 0x4 ) {
 		#if USE_STD_DEV
-			float	averageConeAngle = FastPosAcos( cosAverageConeAngle );
-			float	samplingConeAngle = clamp( averageConeAngle + _coneAngleBias * stdDeviationConeAngle, 0.0, 0.5 * PI );	// -0.2 seems to be a good empirical value
+			float	coneAngle = FastPosAcos( cosConeAngle );
+			float	stdDeviationConeAngle = FastPosAcos( 1.0 - stdDeviationAO );
+			float	samplingConeAngle = clamp( coneAngle + _coneAngleBias * stdDeviationConeAngle, 0.0, 0.5 * PI );	// -0.2 seems to be a good empirical value
 			cosSamplingConeAngle = cos( samplingConeAngle );
 		#else
-			cosSamplingConeAngle = cosAverageConeAngle;
+			cosSamplingConeAngle = cosConeAngle;
 		#endif
 	}
 	float2	cosConeAnglesMinMax = float2( 0, -1 );	// Make sure we're always inside cone so visibility is always 1
 	if ( _flags & 0x10 ) {
 		#if USE_STD_DEV
-			float	averageConeAngle = FastPosAcos( cosAverageConeAngle );
-			cosConeAnglesMinMax = float2( cos( max( 0.0, averageConeAngle - stdDeviationConeAngle ) ), cos( min( 0.5 * PI, averageConeAngle + stdDeviationConeAngle ) ) );	// If deviation is available
+			float	coneAngle = FastPosAcos( cosConeAngle );
+			float	stdDeviationConeAngle = FastPosAcos( 1.0 - stdDeviationAO );
+//			cosConeAnglesMinMax = float2( cos( max( 0.0, coneAngle - abs(_coneAngleBias) * stdDeviationConeAngle ) ), cos( min( 0.5 * PI, coneAngle + abs(_coneAngleBias) * stdDeviationConeAngle ) ) );	// If deviation is available
+			cosConeAnglesMinMax = float2( cos( max( 0.0, coneAngle - stdDeviationConeAngle ) ), cos( min( 0.5 * PI, coneAngle + stdDeviationConeAngle ) ) );	// If deviation is available
 		#else
-//			cosConeAnglesMinMax = float2( cosAverageConeAngle, _coneAngleBias );
-//			cosConeAnglesMinMax = float2( cosAverageConeAngle, 0.0 );
-			cosConeAnglesMinMax = float2( cosAverageConeAngle, 0.95 * cosAverageConeAngle );
+//			cosConeAnglesMinMax = float2( cosConeAngle, _coneAngleBias );
+//			cosConeAnglesMinMax = float2( cosConeAngle, 0.0 );
+			cosConeAnglesMinMax = float2( cosConeAngle, 0.95 * cosConeAngle );
 		#endif
 	}
 
@@ -136,11 +145,16 @@ PS_OUT_FINAL	PS_Light( float4 __Position : SV_POSITION ) {
 
 	// Compute this frame's distant environment coming from some SH probe
 	float3	SH[9] = { _SH[0].xyz, _SH[1].xyz, _SH[2].xyz, _SH[3].xyz, _SH[4].xyz, _SH[5].xyz, _SH[6].xyz, _SH[7].xyz, _SH[8].xyz };
-	float3	distantEnvironmentIrradiance = EvaluateSHIrradiance( wsNormalIndirect, cosSamplingConeAngle, SH );	// Use bent-normal direction + cone angle
-//float3	distantEnvironmentIrradiance = EvaluateSHIrradiance( wsNormalIndirect, SH );	// Use bent-normal direction, full aperture
-			distantEnvironmentIrradiance *= _environmentIntensity;
-
-	apply F0!!
+	#if USE_CONE_ANGLE
+		// Use bent-normal direction + cone angle for reduced SH estimate (I think it's better)
+		float3	distantEnvironmentIrradiance = _environmentIntensity * EvaluateSHIrradiance( wsNormalIndirect, cosSamplingConeAngle, SH );
+	#else
+		// Use bent-normal direction at full aperture and attenuate by AO
+		float3	distantEnvironmentIrradiance = _environmentIntensity * EvaluateSHIrradiance( wsNormalIndirect, SH );
+		float	a = saturate( 1.0 - cosConeAngle );	// a.k.a. AO
+		float	F0 = a * (1.0 + 0.5 * pow( 1.0 - a, 0.75 ));
+		distantEnvironmentIrradiance *= F0;
+	#endif
 
 	float3	indirectIrradiance = HBILIrradiance + distantEnvironmentIrradiance;
 
@@ -159,7 +173,7 @@ PS_OUT_FINAL	PS_Light( float4 __Position : SV_POSITION ) {
 //Out.finalColor.xyz = wsView;
 //Out.finalColor.xyz = lighting.diffuse;
 //Out.finalColor.xyz = wsBentNormal;
-//Out.finalColor.xyz = cosAverageConeAngle;
+//Out.finalColor.xyz = cosConeAngle;
 //Out.finalColor.xyz = cosConeAnglesMinMax.y;
 //Out.finalColor.xyz = indirectIrradiance;
 	return Out;

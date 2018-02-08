@@ -37,16 +37,16 @@ return _exposure * _tex_FinalRender[__Position.xy].xyz;
 //float3	N = float3( dot( wsNormal, wsRight ), dot( wsNormal, wsUp ), -dot( wsNormal, wsView ) );	// Camera-space normal
 
 	float4	csBentConeDev = _tex_BentCone[__Position.xy];
-	float	cosAverageConeAngle = length( csBentConeDev.xyz );
-	float3	csBentCone = csBentConeDev.xyz / cosAverageConeAngle;
-	float	averageConeAngle = acos( cosAverageConeAngle );
-	float	stdDeviationConeAngle = 0.5 * PI * (1.0 - csBentConeDev.w);
+	float	cosConeAngle = length( csBentConeDev.xyz );
+	float3	csBentCone = csBentConeDev.xyz / cosConeAngle;
+	float	coneAngle = acos( cosConeAngle );
+	float	stdDeviationAO = csBentConeDev.w;
 
 	float3	wsBentCone = csBentCone.x * wsRight + csBentCone.y * wsUp + csBentCone.z * wsAt;
 
-return 1-cosAverageConeAngle;	// a.k.a. the ambient occlusion
-//return averageConeAngle * 2.0 / PI;
-//return stdDeviationConeAngle;
+//return 1-cosConeAngle;	// a.k.a. the ambient occlusion
+//return coneAngle * 2.0 / PI;
+return stdDeviationAO;
 //return csBentCone;
 return wsBentCone;
 return csBentConeDev.xyz;	// Show RAW value

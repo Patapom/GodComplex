@@ -243,14 +243,15 @@ _coneAngles = float2( saturate( dot( _csBentNormal, csHorizon_Front ) ), saturat
 //	_lcsBentCone, the local camera-space packed bent-cone data sampled from the bent-cone buffer
 // Returns:
 //	_wsBentNormal, the world-space normalized bent-normal direction
-//	_cosAverageConeAngle, the cosine of the average cone half aperture angle
-//	_stdDeviationConeAngle, the standard deviation of the cone half aperture angle in [0,PI/2] (beware that the average aperture angle + or - this standard deviation could exceed the [0,PI/2] interval so DO clamp!)
+//	_cosConeAngle, the cosine of the cone half aperture angle. NOTE: AO = 1-_cosConeAngle
+//	_stdDeviationAO, the standard deviation of the AO value, that can be thought of as the deviation in angle since stdDevAngle = acos( 1 - _stdDeviationAO )
+//						(beware that the average AO + or - this standard deviation could exceed the [0,1] interval so DO clamp!)
 //
-void	ReconstructBentCone( float3 _wsView, float3 _wsCameraUp, float4 _lcsBentCone, out float3 _csBentNormal, out float3 _wsBentNormal, out float _cosAverageConeAngle, out float _stdDeviationConeAngle ) {
+void	ReconstructBentCone( float3 _wsView, float3 _wsCameraUp, float4 _lcsBentCone, out float3 _csBentNormal, out float3 _wsBentNormal, out float _cosConeAngle, out float _stdDeviationAO ) {
 	// Extract information from the packed bent cone data
-	_cosAverageConeAngle = length( _lcsBentCone.xyz );	// Technically never 0
-	_stdDeviationConeAngle = 0.5 * PI * (1.0 - _lcsBentCone.w);
-	_csBentNormal = _lcsBentCone.xyz / _cosAverageConeAngle;
+	_cosConeAngle = length( _lcsBentCone.xyz );	// Technically never 0
+	_csBentNormal = _lcsBentCone.xyz / _cosConeAngle;
+	_stdDeviationAO = _lcsBentCone.w;
 
 	// Rebuild local camera space
 	float3	wsRight = normalize( cross( _wsView, _wsCameraUp ) );
