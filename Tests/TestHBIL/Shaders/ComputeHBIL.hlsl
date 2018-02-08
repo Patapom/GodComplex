@@ -48,8 +48,9 @@ float2	ComputeMipLevel( float2 _radius, float2 _radialStepSizes ) {
 }
 
 float	BilateralFilterDepth( float _centralZ, float _previousDeltaZ, float _newDeltaZ, float _previousCosTheta, float _newCosTheta, float _radius_m ) {
-//return 1.0;	// Accept always
+return 1.0;	// Accept always
 
+//#TODO: TO FUCKING DO! Hate that piece of crap code!
 
 float	previousTheta = acos( _previousCosTheta );
 float	newTheta = acos( _newCosTheta );
@@ -72,7 +73,7 @@ return smoothstep( 0.1 * PI, 0.0 * PI, newTheta - previousTheta );
 //	#if 1
 //		// Relative test
 ////		float	relativeZ = abs( deltaZ ) / _centralZ;
-//		float	relativeZ = -deltaZ / _centralZ;		// Discard only pixels in front of us
+//		float	relativeZ = -deltaZ / _centralZ;		// Discard only pixels in front of us 
 ////		return smoothstep( 1.0, 0.0, relativeZ ) / (1+_radius_m);	// Discard when deltaZ is larger than 40% central Z (empirical value)
 ////		return smoothstep( 1.0, 0.0, relativeZ );
 ////		return saturate( smoothstep( _bilateralValues.x, 0.0, relativeZ ) / (_bilateralValues.y + _radius_m) );
