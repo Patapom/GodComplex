@@ -4,11 +4,11 @@
 %  <star x="150" y="55" lw="4.00"/>
 %  <star x="150" y="70" lw="4.00"/>
 %  <line x1="150" y1="70" x2="138" y2="84" arr2="h44"/>
-%  <line x1="232" y1="104" x2="156" y2="126"/>
-%  <line x1="82" y1="42" x2="146" y2="-3"/>
-%  <line x1="146" y1="-3" x2="232" y2="104"/>
-%  <line x1="126" y1="92" x2="156" y2="126"/>
-%  <line x1="110" y1="74" x2="82" y2="42"/>
+%  <line x1="242" y1="116" x2="167" y2="138"/>
+%  <line x1="87" y1="48" x2="151" y2="3"/>
+%  <line x1="151" y1="3" x2="242" y2="116"/>
+%  <line x1="126" y1="92" x2="167" y2="138"/>
+%  <line x1="110" y1="74" x2="87" y2="48"/>
 %  <line x1="110" y1="74" x2="126" y2="92" li="dash" lw="0.50"/>
 %  <group>
 %    <line x1="190" y1="67" x2="129" y2="49" li="dash" lw="0.50"/>
@@ -21,33 +21,40 @@
 %  </group>
 %  <line x1="150" y1="70" x2="125" y2="88" arr2="h44"/>
 %  <line x1="138" y1="84" x2="125" y2="88" li="dash" lc="firebrick"/>
-%  <text x="85" y="42" t="Normal Plane" h="5" rotdeg="324.894" li="dash"/>
+%  <text x="128" y="22" t="Normal Plane" h="5" rotdeg="324.894" li="dash"/>
 %  <text x="110.957" y="45.6757" t="Slice Plane" h="5" rotdeg="17.6576" li="dash"/>
 %  <line x1="150" y1="55" x2="199" y2="45" arr2="h44"/>
 %  <text x="198" y="48" t="X" h="5" li="dash"/>
 %  <line x1="150" y1="55" x2="183" y2="78" arr2="h44"/>
 %  <text x="179.513" y="80.8112" t="Y" h="5" li="dash"/>
 %  <arc arr2="h44" x="159" y="66" d="58.4733" a1="5.63638" a2="6.28319"/>
+%  <line x1="200" y1="70" x2="200" y2="120" li="dot"/>
+%  <line x1="187" y1="107" x2="200" y2="120" li="dot"/>
+%  <star x="200" y="120" li="dot"/>
+%  <text x="202" y="92" t="t" h="5" li="dot"/>
+%  <bezier arr2="h44" li="dot">150,95 156,96 164,92 166,87</bezier>
 %</TpX>
 \begin{figure}
 \centering
 \ifpdf
   \setlength{\unitlength}{1bp}%
-  \begin{picture}(436.54, 377.01)(0,0)
+  \begin{picture}(450.71, 394.02)(0,0)
   \put(0,0){\includegraphics{3D Slice.pdf}}
-  \put(14.17,133.23){\rotatebox{324.89}{\fontsize{14.23}{17.07}\selectfont \smash{\makebox[0pt][l]{Normal Plane}}}}
-  \put(87.75,143.65){\rotatebox{17.66}{\fontsize{14.23}{17.07}\selectfont \smash{\makebox[0pt][l]{Slice Plane}}}}
-  \put(334.49,150.24){\fontsize{14.23}{17.07}\selectfont X}
-  \put(282.08,243.24){\fontsize{14.23}{17.07}\selectfont Y}
+  \put(121.89,59.53){\rotatebox{324.89}{\fontsize{14.23}{17.07}\selectfont \smash{\makebox[0pt][l]{Normal Plane}}}}
+  \put(73.58,126.64){\rotatebox{17.66}{\fontsize{14.23}{17.07}\selectfont \smash{\makebox[0pt][l]{Slice Plane}}}}
+  \put(320.31,133.23){\fontsize{14.23}{17.07}\selectfont X}
+  \put(267.91,226.24){\fontsize{14.23}{17.07}\selectfont Y}
+  \put(331.65,257.95){\fontsize{14.23}{17.07}\selectfont t}
   \end{picture}%
 \else
   \setlength{\unitlength}{1bp}%
-  \begin{picture}(436.54, 377.01)(0,0)
+  \begin{picture}(450.71, 394.02)(0,0)
   \put(0,0){\includegraphics{3D Slice}}
-  \put(14.17,133.23){\rotatebox{324.89}{\fontsize{14.23}{17.07}\selectfont \smash{\makebox[0pt][l]{Normal Plane}}}}
-  \put(87.75,143.65){\rotatebox{17.66}{\fontsize{14.23}{17.07}\selectfont \smash{\makebox[0pt][l]{Slice Plane}}}}
-  \put(334.49,150.24){\fontsize{14.23}{17.07}\selectfont X}
-  \put(282.08,243.24){\fontsize{14.23}{17.07}\selectfont Y}
+  \put(121.89,59.53){\rotatebox{324.89}{\fontsize{14.23}{17.07}\selectfont \smash{\makebox[0pt][l]{Normal Plane}}}}
+  \put(73.58,126.64){\rotatebox{17.66}{\fontsize{14.23}{17.07}\selectfont \smash{\makebox[0pt][l]{Slice Plane}}}}
+  \put(320.31,133.23){\fontsize{14.23}{17.07}\selectfont X}
+  \put(267.91,226.24){\fontsize{14.23}{17.07}\selectfont Y}
+  \put(331.65,257.95){\fontsize{14.23}{17.07}\selectfont t}
   \end{picture}%
 \fi
 \end{figure}

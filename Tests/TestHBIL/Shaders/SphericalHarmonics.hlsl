@@ -340,7 +340,7 @@ float3	EvaluateSHIrradiance( float3 _direction, float3 _SH[9] ) {
 
 // Evaluates the irradiance perceived in the provided direction, also accounting for Ambient Occlusion
 // Details can be found at http://wiki.nuaj.net/index.php?title=SphericalHarmonicsPortal
-// Here, _cosThetaAO = cos( PI/2 * AO ) and represents the cosine of the cone half-angle that drives the amount of light a surface is perceiving
+// Here, _cosThetaAO = 1-AO and represents the cosine of the cone half-angle that drives the amount of light a surface is perceiving
 //
 float3	EvaluateSHIrradiance( float3 _direction, float _cosThetaAO, float3 _SH[9] ) {
 	float		t2 = _cosThetaAO*_cosThetaAO;

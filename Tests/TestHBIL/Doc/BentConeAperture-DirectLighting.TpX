@@ -1,0 +1,25 @@
+%<TpX v="5" ArrowsSize="0.7" StarsSize="1" DefaultFontHeight="5" DefaultSymbolSize="30" ApproximationPrecision="0.01" PicScale="1" Border="2" BitmapRes="20000" HatchingStep="2" DottedSize="0.5" DashSize="1" LineWidth="0.3">
+%  <sector x="190" y="50" d="62.1289" a1="0.579077" a2="2.14987" lw="0.50" fill="bisque"/>
+%  <sector x="190" y="50" d="62.1289" a1="0.991722" a2="1.79288" lw="0.50" fill="lightgoldenrodyellow"/>
+%  <line x1="190" y1="50" x2="195" y2="80" arr2="h44"/>
+%  <line x1="190" y1="50" x2="230" y2="98" li="dash" lw="0.50"/>
+%  <line x1="190" y1="50" x2="210" y2="74" arr2="h44"/>
+%  <star x="229" y="97" s="star5" d="3" li="dash" lw="0.50" fill="gold"/>
+%  <star x="190" y="50" li="dash" lw="0.50"/>
+%  <arc arr1="h44" arrs="0.5" x="190" y="50" d="47.7074" a1="0.994421" a2="1.39861" lw="0.50"/>
+%  <arc arr1="h44" arrs="0.5" x="190" y="50" d="38.4708" a1="0.588003" a2="1.41419" lw="0.50"/>
+%</TpX>
+\begin{figure}
+\centering
+\ifpdf
+  \setlength{\unitlength}{1bp}%
+  \begin{picture}(183.00, 161.01)(0,0)
+  \put(0,0){\includegraphics{BentConeAperture-DirectLighting.pdf}}
+  \end{picture}%
+\else
+  \setlength{\unitlength}{1bp}%
+  \begin{picture}(183.00, 161.01)(0,0)
+  \put(0,0){\includegraphics{BentConeAperture-DirectLighting}}
+  \end{picture}%
+\fi
+\end{figure}
