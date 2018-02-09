@@ -1,0 +1,38 @@
+%<TpX v="5" ArrowsSize="0.7" StarsSize="1" DefaultFontHeight="5" DefaultSymbolSize="30" ApproximationPrecision="0.01" PicScale="1" Border="2" BitmapRes="20000" HatchingStep="2" DottedSize="0.5" DashSize="1" LineWidth="0.3">
+%  <star x="180" y="30"/>
+%  <line x1="180" y1="30" x2="218" y2="106" arr2="h44" arrs="3" lw="2.00"/>
+%  <group>
+%    <line x1="180" y1="30" x2="177" y2="99" arrs="3" li="dot"/>
+%    <line x1="180" y1="30" x2="241" y2="76" arrs="3" li="dot"/>
+%    <ellipse x="209.5" y="90" dx="69" dy="30.0001" rotdeg="339.55" li="dot"/>
+%  </group>
+%  <group>
+%    <line x1="180" y1="30" x2="155" y2="52" arrs="3" li="dot"/>
+%    <line x1="180" y1="30" x2="223" y2="27" arrs="3" li="dot"/>
+%    <ellipse x="196.5" y="61" dx="115" dy="58" rotdeg="339.324" li="dot"/>
+%  </group>
+%  <ellipse x="200.615" y="77.0023" dx="87.4346" dy="48.2398" rotdeg="339.324"/>
+%  <line x1="180" y1="30" x2="231" y2="52" arrs="3"/>
+%  <line x1="180" y1="30" x2="161" y2="79" arrs="3"/>
+%  <bezier arr2="h44" arrs="2">212,95 199,99 184.922,95.2207 179,93 171,90 169,87 161,79</bezier>
+%  <star x="212.348" y="94.7551"/>
+%  <star x="161" y="79"/>
+%  <bezier arr2="h44" li="dot">212,95 203,100 188,103 177,100</bezier>
+%  <bezier arr2="h44" li="dot">212,95 203.389,93.38 195.214,89.9734 188,85 181.174,80.2935 175.379,74.3039 170,68 165.366,62.5694 161.027,56.8947 157,51</bezier>
+%  <star x="157" y="51" d="0.5" li="dot"/>
+%  <star x="176.791" y="99.7705" d="0.5" li="dot"/>
+%</TpX>
+\begin{figure}
+\centering
+\ifpdf
+  \setlength{\unitlength}{1bp}%
+  \begin{picture}(321.80, 242.41)(0,0)
+  \put(0,0){\includegraphics{ConeAngleVariance.pdf}}
+  \end{picture}%
+\else
+  \setlength{\unitlength}{1bp}%
+  \begin{picture}(321.80, 242.41)(0,0)
+  \put(0,0){\includegraphics{ConeAngleVariance}}
+  \end{picture}%
+\fi
+\end{figure}
