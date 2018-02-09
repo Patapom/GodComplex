@@ -44,9 +44,9 @@ return _exposure * _tex_FinalRender[__Position.xy].xyz;
 
 	float3	wsBentCone = csBentCone.x * wsRight + csBentCone.y * wsUp + csBentCone.z * wsAt;
 
-//return 1-cosConeAngle;	// a.k.a. the ambient occlusion
+return 1-cosConeAngle;	// a.k.a. the ambient occlusion
 //return coneAngle * 2.0 / PI;
-//return stdDeviationAO;
+return stdDeviationAO;
 //return csBentCone;
 return 0.5*(1.0+wsBentCone);
 return wsBentCone;

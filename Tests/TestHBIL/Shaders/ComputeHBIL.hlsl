@@ -48,7 +48,9 @@ float2	ComputeMipLevel( float2 _radius, float2 _radialStepSizes ) {
 }
 
 float	BilateralFilterDepth( float _centralZ, float _previousDeltaZ, float _newDeltaZ, float _horizonCosTheta, float _newCosTheta, float _radius_m ) {
-//return 1;
+Il fout grave la merde!
+
+return 1;
 	// Compute an horizon penalty when the horizon rises too quickly
 	float	deltaTheta = saturate( (acos(_horizonCosTheta) - acos(_newCosTheta)) / PI );
 	float	penaltyCos = saturate( (deltaTheta - _bilateralValues.x) / _bilateralValues.y );
