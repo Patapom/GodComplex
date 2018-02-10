@@ -647,3 +647,4 @@ Publish
 /Tests/TestGroundTruthAOFitting/Results/*.float
 /Tests/TestHBIL/Doc/*.pdf
 /Tests/TestHBIL/Doc/*.eps
+/Tests/TestHBIL_Ref/obj
