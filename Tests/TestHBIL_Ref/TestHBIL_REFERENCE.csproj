@@ -109,6 +109,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <None Include="Shaders\BruteForce\HBIL.hlsl" />
     <None Include="Shaders\BruteForce\ComputeHBIL.hlsl" />
+    <Content Include="Shaders\AddEmissive.hlsl" />
     <Content Include="Shaders\RenderDebugCone.hlsl" />
     <None Include="Shaders\ComputeReprojection.hlsl" />
     <None Include="Shaders\ComputeReprojection2.hlsl" />
@@ -118,6 +119,7 @@
     <None Include="Shaders\Scene\SceneRayTraceCornell.hlsl" />
     <None Include="Shaders\Scene\Scene.hlsl" />
     <None Include="Shaders\Scene\Lighting.hlsl" />
+    <None Include="Shaders\Scene\SceneRayTraceHeightfield.hlsl" />
     <Content Include="Shaders\SphericalHarmonics.hlsl" />
     <None Include="Shaders\Scene\SceneRayMarchingLibrary.hlsl" />
     <None Include="Shaders\Scene\SceneRayMarchingInfiniteRooms.hlsl" />

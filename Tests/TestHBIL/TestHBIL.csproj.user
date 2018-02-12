@@ -2,18 +2,18 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
     <EnableUnmanagedDebugging>true</EnableUnmanagedDebugging>
-    <StartWorkingDirectory>D:\Workspaces\GodComplex\Tests\TestAreaLight\</StartWorkingDirectory>
+    <StartWorkingDirectory>D:\Workspaces\GodComplex\Tests\TestHBIL\</StartWorkingDirectory>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
     <StartWorkingDirectory>D:\Workspaces\GodComplex\Tests\TestHBIL\</StartWorkingDirectory>
     <EnableUnmanagedDebugging>true</EnableUnmanagedDebugging>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
-    <StartWorkingDirectory>D:\Workspaces\GodComplex\Tests\TestAreaLight\</StartWorkingDirectory>
+    <StartWorkingDirectory>D:\Workspaces\GodComplex\Tests\TestHBIL\</StartWorkingDirectory>
     <EnableUnmanagedDebugging>true</EnableUnmanagedDebugging>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
-    <StartWorkingDirectory>D:\Workspaces\GodComplex\Tests\TestAreaLight\</StartWorkingDirectory>
+    <StartWorkingDirectory>D:\Workspaces\GodComplex\Tests\TestHBIL\</StartWorkingDirectory>
     <EnableUnmanagedDebugging>true</EnableUnmanagedDebugging>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
@@ -21,7 +21,7 @@
     <EnableUnmanagedDebugging>true</EnableUnmanagedDebugging>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
-    <StartWorkingDirectory>D:\Workspaces\GodComplex\Tests\TestAreaLight\</StartWorkingDirectory>
+    <StartWorkingDirectory>D:\Workspaces\GodComplex\Tests\TestHBIL\</StartWorkingDirectory>
     <EnableUnmanagedDebugging>true</EnableUnmanagedDebugging>
   </PropertyGroup>
 </Project>

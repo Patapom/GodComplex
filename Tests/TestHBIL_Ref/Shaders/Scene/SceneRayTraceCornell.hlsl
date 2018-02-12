@@ -1,6 +1,4 @@
 ///////////////////////////////////////////////////////////////////////////////////
-// Shamelessly stolen from https://www.shadertoy.com/view/Xt2fWK
-//
 // Adapted for true Cornell Box dimensions (as given by https://www.graphics.cornell.edu/online/box/data.html)
 //
 ///////////////////////////////////////////////////////////////////////////////////
@@ -41,6 +39,8 @@ static const float	MAT_ROOM_WALL_RIGHT = 3;
 static const float	MAT_SMALL_BOX = 4;
 static const float	MAT_LARGE_BOX = 5;
 static const float	MAT_LIGHT = 6;
+static const float	MAT_EMISSIVE = 7;
+
 
 
 float2	ComputeBoxIntersections( float3 _position, float3 _view, float3 _boxCenter, float3 _boxInvHalfSize, out uint2 _hitSides ) {
@@ -134,28 +134,45 @@ Intersection	TraceScene( float3 _wsPos, float3 _wsDir ) {
 //		result.wsNormal = Side2Normal( hitSides.x );
 	}
 
+	// Test some emissive area light...
+const float3	CORNELL_EMISSIVE_RECT_POS = float3( 4.6, 0.6, 1.6 ) - 0.5 * CORNELL_SIZE;
+const float3	CORNELL_EMISSIVE_RECT_SIZE = float3( 1.0, 1.0, 0.1 );	// It's a thin rectangle
+const float		CORNELL_EMISSIVE_RECT_ANGLE = 0.29145679447786709199560462143289;	// ~16°
+	testDistances = ComputeRotatedBoxIntersections( _wsPos, _wsDir, CORNELL_EMISSIVE_RECT_POS, 2.0 / CORNELL_EMISSIVE_RECT_SIZE, CORNELL_EMISSIVE_RECT_ANGLE, hitSides );
+	if ( testDistances.x < testDistances.y && testDistances.x > 0 && testDistances.x < hitDistance.x ) {
+		hitDistance = float2( testDistances.x, MAT_EMISSIVE );
+		float3x3	rot = BuildBoxRotation( CORNELL_EMISSIVE_RECT_ANGLE );
+		result.wsNormal = mul( rot, Side2Normal( hitSides.x ) );
+	}
+
 	// Update result
 	result.shade = step( 1e-5, hitDistance.x );
 	result.wsHitPosition += hitDistance.x * float4( _wsDir, result.shade );	// W kept at 0 (invalid) if no hit
 	result.roughness = 0;
 	result.F0 = 0;
 	result.materialID = hitDistance.y;
+	result.emissive = 0.0;
 	switch ( uint(result.materialID) ) {
 		case MAT_ROOM :				result.albedo = CORNELL_ROOM_REFLECTANCE; break;
 		case MAT_ROOM_WALL_LEFT :	result.albedo = CORNELL_LEFT_WALL_REFLECTANCE; break;
 		case MAT_ROOM_WALL_RIGHT :	result.albedo = CORNELL_RIGHT_WALL_REFLECTANCE; break;
 		case MAT_SMALL_BOX :		result.albedo = CORNELL_SMALL_BOX_REFLECTANCE; break;
 		case MAT_LARGE_BOX :		result.albedo = CORNELL_LARGE_BOX_REFLECTANCE; break;
+		case MAT_EMISSIVE :			result.emissive = 4.0 * float3( 0.2, 0.8, 1.0 ); break;
 	}
 
 	return result;
 }
 
+Texture2DArray<float>	_tex_ShadowMap : register( t6 );
+
 LightingResult	LightScene( float3 _wsPosition, float3 _wsNormal, float2 _cosConeAnglesMinMax ) {
 	LightInfoPoint	lightInfo;
 					lightInfo.flux = LIGHT_ILLUMINANCE;
-					lightInfo.wsPosition = CORNELL_LIGHT_POS;
-					lightInfo.distanceAttenuation = float2( 100.0, 1000.0 );	// Don't care, let natural 1/r² take care of attenuation
+					lightInfo.wsPosition = GetPointLightPosition( lightInfo.distanceAttenuation );
+
+	// Sample shadow map
+	lightInfo.flux *= GetShadow( _wsPosition, lightInfo.wsPosition, lightInfo.distanceAttenuation.y, _tex_ShadowMap );
 
 	LightingResult	result = (LightingResult) 0;
 	ComputeLightPoint( _wsPosition, _wsNormal, _cosConeAnglesMinMax, lightInfo, result );
@@ -163,8 +180,16 @@ LightingResult	LightScene( float3 _wsPosition, float3 _wsNormal, float2 _cosCone
 	return result;
 }
 
+float3			GetPointLightPosition( out float2 _distanceNearFar ) {
+	_distanceNearFar = float2( 100.0, 1000.0 );	// Don't care, let natural 1/r² take care of attenuation
+	return CORNELL_LIGHT_POS;
+}
+
 
 /*
+// Shamelessly stolen from https://www.shadertoy.com/view/Xt2fWK
+// NOT USED AFTER ALL
+//
 struct Plane 
 {
     vec3 center;
@@ -320,8 +345,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
     
 	fragColor.xyz = toSRGB(shade(intersectionPoint, intersectionNormal, primaryRay.direction, materialIndex));
 }
-*/
-/*
+
 Material makeMaterial(in vec3 d, in vec3 e)
 {
     Material m;

@@ -68,13 +68,13 @@ namespace Renderer {
 		}
 
 		void	Clear( SharpMath::float4 _clearColor );
-		void	Clear( Texture2D^ _RenderTarget, SharpMath::float4 _clearColor );
-		void	Clear( Texture3D^ _RenderTarget, SharpMath::float4 _clearColor );
-		void	ClearDepthStencil( Texture2D^ _RenderTarget, float _Z, byte _Stencil, bool _ClearDepth, bool _ClearStencil );
+		void	Clear( Texture2D^ _renderTarget, SharpMath::float4 _clearColor );
+		void	Clear( Texture3D^ _renderTarget, SharpMath::float4 _clearColor );
+		void	ClearDepthStencil( Texture2D^ _renderTarget, float _Z, byte _Stencil, bool _ClearDepth, bool _ClearStencil );
 
 		void	SetRenderStates( RASTERIZER_STATE _RS, DEPTHSTENCIL_STATE _DS, BLEND_STATE _BS );
-		void	SetRenderTarget( Texture2D^ _RenderTarget, Texture2D^ _DepthStencilTarget );
-		void	SetRenderTargets( cli::array<IView^>^ _RenderTargetViews, Texture2D^ _DepthStencilTarget );
+		void	SetRenderTarget( Texture2D^ _renderTarget, Texture2D^ _depthStencilTarget );
+		void	SetRenderTargets( cli::array<IView^>^ _RenderTargetViews, IView^ _depthStencilTargetView );
 
 		void	RemoveRenderTargets()	{ m_pDevice->RemoveRenderTargets(); }
 		void	RemoveUAVs()			{ m_pDevice->RemoveUAVs(); }

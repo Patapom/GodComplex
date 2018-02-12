@@ -4,7 +4,7 @@
 
 //#define SCENE_LIBRARY
 #define SCENE_CORNELL
-//#define SCENE_HEIGHFIELD
+//#define SCENE_HEIGHTFIELD
 
 //////////////////////////////////////////////////////////////////////////
 // Horizon-Based Indirect Lighting Demo
@@ -283,7 +283,7 @@ namespace TestHBIL {
 					macros.Add( new ShaderMacro( "SCENE_TYPE", "0" ) );
 				#elif SCENE_CORNELL
 					macros.Add( new ShaderMacro( "SCENE_TYPE", "1" ) );
-				#elif SCENE_HEIGHFIELD
+				#elif SCENE_HEIGHTFIELD
 					macros.Add( new ShaderMacro( "SCENE_TYPE", "2" ) );
 				#endif
 
@@ -364,7 +364,13 @@ namespace TestHBIL {
 			m_camera.CreatePerspectiveCamera( 2.0f * Mathf.Atan( 0.6f ), (float) panelOutput.Width / panelOutput.Height, 0.01f, 100.0f );
 			m_manipulator.Attach( panelOutput, m_camera );
 //			m_manipulator.InitializeCamera( new float3( 0, 1, 4 ), new float3( 0, 1, 0 ), float3.UnitY );
-			m_manipulator.InitializeCamera( new float3( 0, 5.0f, -4.5f ), new float3( 0, 0, 0 ), float3.UnitY );
+			#if SCENE_LIBRARY
+				m_manipulator.InitializeCamera( new float3( 0, 5.0f, -4.5f ), new float3( 0, 0, 0 ), float3.UnitY );	// Library
+			#elif SCENE_CORNELL
+				m_manipulator.InitializeCamera( new float3( 0, -0.5f, -6.0f ), new float3( 0, -0.5f, 0 ), float3.UnitY );
+			#elif SCENE_HEIGHTFIELD
+				m_manipulator.InitializeCamera( new float3( 0, 3.0f, 0.01f ), new float3( 0, 0, 0 ), float3.UnitY );
+			#endif
 			m_manipulator.EnableMouseAction += m_manipulator_EnableMouseAction;
 
 			// Setup environment SH coefficients
@@ -652,7 +658,7 @@ namespace TestHBIL {
 					m_device.SetRenderTargets( new IView[] { m_tex_albedo.GetView( 0, 1, 0, 1 ), m_tex_normal.GetView( 0, 1, 0, 1 ), m_tex_emissive.GetView( 0, 1, 0, 1 ), m_tex_motionVectors.GetView( 0, 1, 0, 1 ), targetDepthStencil.GetView( 0, 1, 0, 1 ) }, null );
 				#endif
 
-				#if SCENE_HEIGHFIELD
+				#if SCENE_HEIGHTFIELD
 					// Used by the heightfield scene
 					m_tex_texDebugHeights.SetPS( 32 );
 					m_tex_texDebugNormals.SetPS( 33 );

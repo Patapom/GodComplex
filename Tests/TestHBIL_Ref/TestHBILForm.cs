@@ -2,6 +2,10 @@
 //#define RENDER_IN_DEPTH_STENCIL	// If defined, use the depth-stencil (single mip level) to render, instead of multi-mip RT (this RT allows larger sample footprints when gathering radiance and accelerates the HBIL pass)
 #define BILATERAL_PUSH_PULL
 
+//#define SCENE_LIBRARY
+#define SCENE_CORNELL
+//#define SCENE_HEIGHFIELD
+
 //////////////////////////////////////////////////////////////////////////
 // Horizon-Based Indirect Lighting Demo
 //////////////////////////////////////////////////////////////////////////
@@ -17,9 +21,11 @@
 //	• Keep failed reprojected pixels into some "surrounding buffer", some sort of paraboloid-projected buffer containing off-screen values???
 //		=> Exponential decay of off-screen values with decay rate depending on camera's linear velocity?? (fun idea!)
 //	• Use W linear attenuation as in HBAO?
-//	• Compute AO value!!
+//	✓ Compute AO value!!
 //	• Advance in local camera space but using screen-space steps
 //		=> Must be a linear combination of vector so that advancing 2 pixels equals advancing N meters in camera space...
+//
+//	✓ Emissive surfaces???
 //
 //	!!!!!!!!!!!!!!!!!!!
 //	• Use normal dot product weighting anyway?? It looks closer to ground truth in the ground truth simulator! Check it!
@@ -47,6 +53,12 @@ using Nuaj.Cirrus;
 
 namespace TestHBIL {
 	public partial class TestHBILForm : Form {
+
+		#region CONSTANTS
+
+		const uint	SHADOW_MAP_SIZE = 512;		// Caution! Must match value declared in Lighting.hlsl!
+
+		#endregion
 
 		#region NESTED TYPES
 
@@ -106,6 +118,11 @@ namespace TestHBIL {
 		}
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
+		internal struct	CB_Shadow {
+			public uint		_faceIndex;
+		}
+
+		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
 		internal struct	CB_HBIL {
 			public float4	_bilateralValues;
 			public float	_gatherSphereMaxRadius_m;	// Maximum radius (in meters) of the IL gather sphere
@@ -131,6 +148,7 @@ namespace TestHBIL {
 		private ConstantBuffer<CB_SH>			m_CB_SH = null;
 		private ConstantBuffer<CB_PushPull>		m_CB_PushPull = null;
 		private ConstantBuffer<CB_DownSample>	m_CB_DownSample = null;
+		private ConstantBuffer<CB_Shadow>		m_CB_Shadow = null;
 		private ConstantBuffer<CB_HBIL>			m_CB_HBIL = null;
 		private ConstantBuffer<CB_DebugCone>	m_CB_DebugCone = null;
 
@@ -144,6 +162,8 @@ namespace TestHBIL {
 		#endif
 		private Shader				m_shader_RenderScene_DepthGBufferPass = null;
 		private ComputeShader		m_shader_DownSampleDepth = null;
+		private Shader				m_shader_AddEmissive = null;
+		private Shader				m_shader_RenderScene_Shadow = null;
 		private Shader				m_shader_ComputeHBIL = null;
 		private Shader				m_shader_ComputeLighting = null;
 		private Shader				m_shader_PostProcess = null;
@@ -152,7 +172,11 @@ namespace TestHBIL {
 		private Texture2D			m_tex_albedo = null;
 		private Texture2D			m_tex_normal = null;
 		private Texture2D			m_tex_motionVectors = null;
+		private Texture2D			m_tex_emissive = null;
 		private Texture2D			m_tex_depthWithMips = null;
+
+		// Shadow map
+		private Texture2D			m_tex_shadow = null;
 
 		// HBIL Results
 		private Texture2D			m_tex_bentCone = null;
@@ -162,9 +186,9 @@ namespace TestHBIL {
 		private Texture2D			m_tex_finalRender = null;
 		private uint				m_radianceSourceSliceIndex = 0;
 
+		// Regular textures
 		private Texture2D			m_tex_BlueNoise = null;
-
-		// Dummy textures with pre-computed heights and normals used to debug the computation
+			// Dummy textures with pre-computed heights and normals used to debug the computation
 		private Texture2D			m_tex_texDebugHeights = null;
 		private Texture2D			m_tex_texDebugNormals = null;
 
@@ -236,6 +260,7 @@ namespace TestHBIL {
 			m_CB_SH = new ConstantBuffer<CB_SH>( m_device, 2 );
 			m_CB_PushPull = new ConstantBuffer<CB_PushPull>( m_device, 3 );
 			m_CB_DownSample = new ConstantBuffer<CB_DownSample>( m_device, 3 );
+			m_CB_Shadow = new ConstantBuffer<CB_Shadow>( m_device, 3 );
 			m_CB_HBIL = new ConstantBuffer<CB_HBIL>( m_device, 3 );
 			m_CB_DebugCone = new ConstantBuffer<CB_DebugCone>( m_device, 3 );
 
@@ -250,12 +275,21 @@ namespace TestHBIL {
 				#endif
 
 				// Scene rendering & lighting
+				List< ShaderMacro >	macros = new List<ShaderMacro>();
 				#if RENDER_IN_DEPTH_STENCIL
-					m_shader_RenderScene_DepthGBufferPass = new Shader( m_device, new System.IO.FileInfo( "Shaders/Scene/RenderScene.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS_RenderGBuffer", new ShaderMacro[] { new ShaderMacro( "USE_DEPTH_STENCIL", "1" ) } );
-				#else
-					m_shader_RenderScene_DepthGBufferPass = new Shader( m_device, new System.IO.FileInfo( "Shaders/Scene/RenderScene.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS_RenderGBuffer", null );
+					macros.Add( new ShaderMacro( "USE_DEPTH_STENCIL", "1" ) );
 				#endif
-				m_shader_ComputeLighting = new Shader( m_device, new System.IO.FileInfo( "Shaders/Scene/RenderScene.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS_Light", null );
+				#if SCENE_LIBRARY
+					macros.Add( new ShaderMacro( "SCENE_TYPE", "0" ) );
+				#elif SCENE_CORNELL
+					macros.Add( new ShaderMacro( "SCENE_TYPE", "1" ) );
+				#elif SCENE_HEIGHFIELD
+					macros.Add( new ShaderMacro( "SCENE_TYPE", "2" ) );
+				#endif
+
+				m_shader_RenderScene_DepthGBufferPass = new Shader( m_device, new System.IO.FileInfo( "Shaders/Scene/RenderScene.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS_RenderGBuffer", macros.ToArray() );
+				m_shader_RenderScene_Shadow = new Shader( m_device, new System.IO.FileInfo( "Shaders/Scene/RenderScene.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS_RenderShadow", macros.ToArray() );
+				m_shader_ComputeLighting = new Shader( m_device, new System.IO.FileInfo( "Shaders/Scene/RenderScene.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS_Light", macros.ToArray() );
 
 				// HBIL
 				#if BRUTE_FORCE_HBIL
@@ -265,6 +299,7 @@ namespace TestHBIL {
 				#endif
 
 				// Stuff
+				m_shader_AddEmissive = new Shader( m_device, new System.IO.FileInfo( "Shaders/AddEmissive.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 				m_shader_DownSampleDepth = new ComputeShader( m_device, new System.IO.FileInfo( "Shaders/DownSampleDepth.hlsl" ), "CS", null );
 				m_shader_PostProcess = new Shader( m_device, new System.IO.FileInfo( "Shaders/PostProcess.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 				m_shader_RenderDebugCone = new Shader( m_device, new System.IO.FileInfo( "Shaders/RenderDebugCone.hlsl" ), VERTEX_FORMAT.P3, "VS", null, "PS", null );
@@ -275,9 +310,13 @@ namespace TestHBIL {
 			// Create buffers
 			m_tex_albedo = new Texture2D( m_device, W, H, 1, 1, PIXEL_FORMAT.RGBA8, COMPONENT_FORMAT.UNORM, false, false, null );
 			m_tex_normal = new Texture2D( m_device, W, H, 1, 1, PIXEL_FORMAT.RGBA16F, COMPONENT_FORMAT.AUTO, false, false, null );
+			m_tex_emissive = new Texture2D( m_device, W, H, 1, 1, PIXEL_FORMAT.RGBA16F, COMPONENT_FORMAT.AUTO, false, false, null );
 			m_tex_motionVectors = new Texture2D( m_device, W, H, 1, 1, PIXEL_FORMAT.RGBA16F, COMPONENT_FORMAT.AUTO, false, false, null );
 			m_tex_depthWithMips = new Texture2D( m_device, W, H, 1, 0, PIXEL_FORMAT.R32F, COMPONENT_FORMAT.AUTO, false, true, null );
 //			m_tex_depthWithMips = new Texture2D( m_device, W, H, 1, 0, DEPTH_STENCIL_FORMAT.D32 );	// Can't have UAV flag so can't use CS for mip downsampling
+
+			// Create shadow map
+			m_tex_shadow = new Texture2D( m_device, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 6, 1, DEPTH_STENCIL_FORMAT.D32 );
 
 			// Create HBIL buffers
 			m_tex_bentCone = new Texture2D( m_device, W, H, 1, 1, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.AUTO, false, false, null );
@@ -368,7 +407,6 @@ namespace TestHBIL {
 			if ( m_device == null )
 				return;
 
-			m_shader_RenderDebugCone.Dispose();
 			m_primCylinder.Dispose();
 			m_softwareHBILComputer.Dispose();
 
@@ -382,16 +420,20 @@ namespace TestHBIL {
 			m_tex_texDebugNormals.Dispose();
 			m_tex_texDebugHeights.Dispose();
 			m_tex_BlueNoise.Dispose();
+			m_tex_shadow.Dispose();
 			m_tex_depthWithMips.Dispose();
 			m_tex_motionVectors.Dispose();
+			m_tex_emissive.Dispose();
 			m_tex_normal.Dispose();
 			m_tex_albedo.Dispose();
 
 			m_shader_RenderDebugCone.Dispose();
+			m_shader_AddEmissive.Dispose();
 			m_shader_PostProcess.Dispose();
-			m_shader_ComputeLighting.Dispose();
 			m_shader_ComputeHBIL.Dispose();
 			m_shader_DownSampleDepth.Dispose();
+			m_shader_ComputeLighting.Dispose();
+			m_shader_RenderScene_Shadow.Dispose();
 			m_shader_RenderScene_DepthGBufferPass.Dispose();
 			m_shader_Pull.Dispose();
 			m_shader_Push.Dispose();
@@ -403,6 +445,7 @@ namespace TestHBIL {
 
 			m_CB_DebugCone.Dispose();
 			m_CB_HBIL.Dispose();
+			m_CB_Shadow.Dispose();
 			m_CB_DownSample.Dispose();
 			m_CB_PushPull.Dispose();
 			m_CB_SH.Dispose();
@@ -604,10 +647,17 @@ namespace TestHBIL {
 
 			if ( m_shader_RenderScene_DepthGBufferPass.Use() ) {
 				#if RENDER_IN_DEPTH_STENCIL
-					m_device.SetRenderTargets( new IView[] { m_tex_albedo.GetView( 0, 1, 0, 1 ), m_tex_normal.GetView( 0, 1, 0, 1 ), m_tex_motionVectors.GetView( 0, 1, 0, 1 ) }, targetDepthStencil );
+					m_device.SetRenderTargets( new IView[] { m_tex_albedo.GetView( 0, 1, 0, 1 ), m_tex_normal.GetView( 0, 1, 0, 1 ), m_tex_emissive.GetView( 0, 1, 0, 1 ), m_tex_motionVectors.GetView( 0, 1, 0, 1 ) }, targetDepthStencil );
 				#else
-					m_device.SetRenderTargets( new IView[] { m_tex_albedo.GetView( 0, 1, 0, 1 ), m_tex_normal.GetView( 0, 1, 0, 1 ), m_tex_motionVectors.GetView( 0, 1, 0, 1 ), targetDepthStencil.GetView( 0, 1, 0, 1 ) }, null );
+					m_device.SetRenderTargets( new IView[] { m_tex_albedo.GetView( 0, 1, 0, 1 ), m_tex_normal.GetView( 0, 1, 0, 1 ), m_tex_emissive.GetView( 0, 1, 0, 1 ), m_tex_motionVectors.GetView( 0, 1, 0, 1 ), targetDepthStencil.GetView( 0, 1, 0, 1 ) }, null );
 				#endif
+
+				#if SCENE_HEIGHFIELD
+					// Used by the heightfield scene
+					m_tex_texDebugHeights.SetPS( 32 );
+					m_tex_texDebugNormals.SetPS( 33 );
+				#endif
+
 				m_device.RenderFullscreenQuad( m_shader_RenderScene_DepthGBufferPass );
 				m_device.RemoveRenderTargets();
 			}
@@ -634,9 +684,42 @@ namespace TestHBIL {
 			#endif
 
 			//////////////////////////////////////////////////////////////////////////
+			// =========== Add Emissive Map to Reprojected Radiance ===========
+			// (this way it's used as indirect radiance source in this frame as well)
+			//
+			if ( m_shader_AddEmissive.Use() ) {
+
+// WARNING: #TODO! Do reprojection + push/pull phase WITH added emissive radiance from this frame so the emissive is pulled down the mips as well!
+
+				m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.ADDITIVE );
+				m_device.SetRenderTarget( m_tex_sourceRadiance_PULL, null );
+				m_tex_emissive.SetPS( 0 );
+				m_device.RenderFullscreenQuad( m_shader_AddEmissive );
+			}
+
+			//////////////////////////////////////////////////////////////////////////
+			// =========== Compute Shadow Map ===========
+			m_device.PerfSetMarker( 4 );
+			#if SCENE_CORNELL || SCENE_LIBRARY
+				if ( m_shader_RenderScene_Shadow.Use() ) {
+					m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.WRITE_ALWAYS, BLEND_STATE.DISABLED );
+
+					m_tex_shadow.RemoveFromLastAssignedSlots();
+					for ( uint faceIndex=0; faceIndex < 6; faceIndex++ ) {
+						m_device.SetRenderTargets( null, m_tex_shadow.GetView( 0, 1, faceIndex, 1 ) );
+						
+						m_CB_Shadow.m._faceIndex = faceIndex;
+						m_CB_Shadow.UpdateData();
+
+						m_device.RenderFullscreenQuad( m_shader_RenderScene_Shadow );
+					}
+				}
+			#endif
+
+			//////////////////////////////////////////////////////////////////////////
 			// =========== Compute Bent Cone Map and Irradiance Bounces  ===========
 			// 
-			m_device.PerfSetMarker( 4 );
+			m_device.PerfSetMarker( 5 );
 			m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
 
 			#if BRUTE_FORCE_HBIL
@@ -682,7 +765,7 @@ m_tex_texDebugNormals.SetPS( 33 );
 			//////////////////////////////////////////////////////////////////////////
 			// =========== Compute lighting & finalize radiance  ===========
 			// 
-			m_device.PerfSetMarker( 5 );
+			m_device.PerfSetMarker( 6 );
 			m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
 
 			if ( m_shader_ComputeLighting.Use() ) {
@@ -690,8 +773,10 @@ m_tex_texDebugNormals.SetPS( 33 );
 
 				m_tex_albedo.SetPS( 0 );
 				m_tex_normal.SetPS( 1 );
-				m_tex_motionVectors.SetPS( 2 );
+				m_tex_emissive.SetPS( 2 );
 				targetDepthStencil.SetPS( 3 );
+
+				m_tex_shadow.SetPS( 6 );
 
 				m_tex_radiance.GetView( 0, 1, m_radianceSourceSliceIndex, 1 ).SetPS( 8 );
 				m_tex_bentCone.SetPS( 9 );
@@ -705,11 +790,13 @@ m_tex_texDebugNormals.SetPS( 33 );
 //*/
 			//////////////////////////////////////////////////////////////////////////
 			// =========== Post-Process ===========
-			m_device.PerfSetMarker( 6 );
+			m_device.PerfSetMarker( 7 );
 			m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
 
 			if ( m_shader_PostProcess.Use() ) {
 				m_device.SetRenderTarget( m_device.DefaultTarget, null );
+
+				m_tex_motionVectors.SetPS( 4 );
 
 				m_tex_radiance.SetPS( 8 );
 				m_tex_finalRender.SetPS( 10 );
@@ -719,6 +806,7 @@ m_tex_texDebugNormals.SetPS( 33 );
 				m_device.RenderFullscreenQuad( m_shader_PostProcess );
 
 				targetDepthStencil.RemoveFromLastAssignedSlots();
+				m_tex_emissive.RemoveFromLastAssignedSlots();
 				m_tex_motionVectors.RemoveFromLastAssignedSlots();
 				m_tex_normal.RemoveFromLastAssignedSlots();
 				m_tex_albedo.RemoveFromLastAssignedSlots();
@@ -774,17 +862,19 @@ m_tex_texDebugNormals.SetPS( 33 );
 			double	timePushPull = m_device.PerfGetMilliSeconds( 1 );
 			double	timeRenderGBuffer = m_device.PerfGetMilliSeconds( 2 );
 			double	timeDownSampleDepth = m_device.PerfGetMilliSeconds( 3 );
-			double	timeHBIL = m_device.PerfGetMilliSeconds( 4 );
-			double	timeComputeLighting = m_device.PerfGetMilliSeconds( 5 );
-			double	timePostProcess = m_device.PerfGetMilliSeconds( 6 );
+			double	timeShadow = m_device.PerfGetMilliSeconds( 4 );
+			double	timeHBIL = m_device.PerfGetMilliSeconds( 5 );
+			double	timeComputeLighting = m_device.PerfGetMilliSeconds( 6 );
+			double	timePostProcess = m_device.PerfGetMilliSeconds( 7 );
 
 			float	totalTime = m_currentTime - m_startTime;
-			textBoxInfo.Text = "Total Time = " + totalTime + " seconds\r\n"
+			textBoxInfo.Text = "" //"Total Time = " + totalTime + " seconds\r\n"
 							 + "Average frame time = " + (1000.0f * totalTime / m_framesCount).ToString( "G6" ) + " ms\r\n"
 							 + "\r\n"
 							 + "Reprojection: " + timeReprojection.ToString( "G4" ) + " ms\r\n"
 							 + "Push-Pull: " + timePushPull.ToString( "G4" ) + " ms\r\n"
 							 + "G-Buffer Rendering: " + timeRenderGBuffer.ToString( "G4" ) + " ms\r\n"
+							 + "Shadow Map: " + timeShadow.ToString( "G4" ) + " ms\r\n"
 							 + "DownSample Depth: " + timeDownSampleDepth.ToString( "G4" ) + " ms\r\n"
 							 + "HBIL: " + timeHBIL.ToString( "G4" ) + " ms\r\n"
 							 + "Lighting: " + timeComputeLighting.ToString( "G4" ) + " ms\r\n"

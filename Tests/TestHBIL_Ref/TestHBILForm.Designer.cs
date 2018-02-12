@@ -595,8 +595,7 @@
 			// checkBoxEnableBentNormalDirect
 			// 
 			this.checkBoxEnableBentNormalDirect.AutoSize = true;
-			this.checkBoxEnableBentNormalDirect.Checked = true;
-			this.checkBoxEnableBentNormalDirect.CheckState = System.Windows.Forms.CheckState.Checked;
+			this.checkBoxEnableBentNormalDirect.Checked = false;
 			this.checkBoxEnableBentNormalDirect.Location = new System.Drawing.Point(76, 37);
 			this.checkBoxEnableBentNormalDirect.Name = "checkBoxEnableBentNormalDirect";
 			this.checkBoxEnableBentNormalDirect.Size = new System.Drawing.Size(94, 17);
@@ -607,8 +606,7 @@
 			// checkBoxEnableConeVisibilityDirect
 			// 
 			this.checkBoxEnableConeVisibilityDirect.AutoSize = true;
-			this.checkBoxEnableConeVisibilityDirect.Checked = true;
-			this.checkBoxEnableConeVisibilityDirect.CheckState = System.Windows.Forms.CheckState.Checked;
+			this.checkBoxEnableConeVisibilityDirect.Checked = false;
 			this.checkBoxEnableConeVisibilityDirect.Location = new System.Drawing.Point(188, 37);
 			this.checkBoxEnableConeVisibilityDirect.Name = "checkBoxEnableConeVisibilityDirect";
 			this.checkBoxEnableConeVisibilityDirect.Size = new System.Drawing.Size(94, 17);

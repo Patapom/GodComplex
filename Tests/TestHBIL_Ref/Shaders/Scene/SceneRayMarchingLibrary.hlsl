@@ -19,7 +19,6 @@
 
 #define PAPER_VELOCITY float3( 0, 2.0, 0 );
 
-
 #define repeat(v,c) (glmod(v,c)-0.5*c)
 #define sDist(v,r) (length(v)-r)
 
@@ -45,7 +44,7 @@ float rng(float2 seed) { return frac(sin(dot(seed*.1684,float2(32.649,321.547)))
 float sdBox( float3 p, float3 b ) { float3 d = abs(p) - b; return min(max(d.x,max(d.y,d.z)),0.0) + length(max(d,0.0)); }
 float amod( inout float2 p, float count ) {
 	float an = 2.*PI/count;
-	float a = atan2(p.y,p.x)+an/2.;
+	float a = atan2(p.y,p.x)+0.5 * an;
 	float c = floor(a/an);
 	c = lerp(c,abs(c), step( count*.5, abs(c) ) );
 	a = glmod(a,an)-an/2.;
@@ -56,18 +55,18 @@ float amod( inout float2 p, float count ) {
 float2 map (float3 pos);
 float3 getNormal (float3 p) { float2 e = float2(.001,0); return normalize(float3(map(p+e.xyy).x-map(p-e.xyy).x,map(p+e.yxy).x-map(p-e.yxy).x,map(p+e.yyx).x-map(p-e.yyx).x)); }
 
-float hardShadow (float3 pos, float3 light) {
-    float3 dir = normalize(light - pos);
-    float maxt = length(light - pos);
-    float t = .02;
-    for (float i = 0.; i <= 1.; i += 1./30.) {
-        float dist = map(pos + dir * t).x;
-        if (dist < 0.01) return 0.;
-        t += dist;
-        if (t >= maxt) break;
-    }
-    return 1.;
-}
+//float hardShadow (float3 pos, float3 light) {
+//    float3 dir = normalize(light - pos);
+//    float maxt = length(light - pos);
+//    float t = .02;
+//    for (float i = 0.; i <= 1.; i += 1./30.) {
+//        float dist = map(pos + dir * t).x;
+//        if (dist < 0.01) return 0.;
+//        t += dist;
+//        if (t >= maxt) break;
+//    }
+//    return 1.;
+//}
 
 float2 map(float3 pos) {
   float2 scene = float2( 1000., -1 );
@@ -134,7 +133,7 @@ float2 map(float3 pos) {
   p.y -= stairHeight*stairCount*atan2(p.z,p.x)/(2.*PI);
   p.y = repeat(p.y, stairCount*stairHeight);
   smin( scene, max(max(sDist(p.xz, wallRadius), abs(p.y)-stairHeight), -holeStair), MAT_STAIRS );
-
+  
   // books
   p = pos;
   p.y -= cell.y*.5;
@@ -152,6 +151,7 @@ float2 map(float3 pos) {
   p.x += cos(p.z*2.) - bookSize.x - salt * .25;
   p.x += .01*smoothstep(.99,1.,sin(p.y*(1.+10.*salt)));
   smin( scene, max(sdBox(p, float3(bookSize.x,100.,bookSize.z)), p.y-bookSize.y), MAT_BOOKS + salt );
+
 
   // panel
   p = pos;
@@ -182,35 +182,13 @@ float2 map(float3 pos) {
 
   return scene;
 }
-/*
-float3 getCamera (float3 eye, float2 uv) {
-  float3 lookAt = 0;
-//  float click = 0;//clamp(iMouse.w,0.,1.);
-//  lookAt.x += mix(0.,((iMouse.x/iResolution.x)*2.-1.) * 10., click);
-//  lookAt.y += mix(0.,iMouse.y/iResolution.y * 10., click);
-  float fov = .65;
-  float3 forward = normalize(lookAt - eye);
-  float3 right = normalize(cross(float3(0,1,0), forward));
-  float3 up = normalize(cross(forward, right));
-  return normalize(fov * forward + uv.x * right + uv.y * up);
-}
-
-float getLight (float3 pos, float3 eye) {
-  float3 light = float3(-.5,7.,1.);
-  float3 normal = getNormal(pos);
-  float3 view = normalize(eye-pos);
-  float shade = dot(normal, view);
-  shade *= hardShadow(pos, light);
-  return shade;
-}
-//*/
 
 Intersection RayMarchScene( float3 _wsPos, float3 _wsDir, uint _stepsCount, float _distanceFactor=0.8 ) {
 
 	const float STEP = 1.0 / _stepsCount;
 
-	Intersection	result;
-	result.shade = 0;
+	Intersection	result = (Intersection) 0;
+	result.shade = 0.0;
 	result.wsHitPosition = float4( _wsPos, 0.0 );
 
 	float4	unitStep = float4( _wsDir, 1.0 );
@@ -225,14 +203,12 @@ Intersection RayMarchScene( float3 _wsPos, float3 _wsDir, uint _stepsCount, floa
 		result.wsHitPosition += d.x * unitStep;
 	}
 
-	result.wsNormal = float3( 0, 0.001, 0 );
-//	if ( result.shade > 0 ) {
-		result.wsNormal = getNormal( result.wsHitPosition.xyz );
-//	}
+	result.wsNormal = getNormal( result.wsHitPosition.xyz );
 
 	result.albedo = 0.5 * float3( 1, 1, 1 );
 	result.roughness = 1.0;	// Totally rough
 	result.F0 = 0.0;		// Dielectric
+	result.emissive = 0.0;
 	result.wsVelocity = 0.0;
 	switch ( result.materialID ) {
 		case MAT_WALL	: result.albedo = 0.10 * float3( 1.0, 0.6, 0.2 ); break;
@@ -259,6 +235,8 @@ Intersection RayMarchScene( float3 _wsPos, float3 _wsDir, uint _stepsCount, floa
 // Interface methods
 ////////////////////////////////////////////////////////////////////////////////
 //
+Texture2DArray<float>	_tex_ShadowMap : register( t6 );
+
 Intersection	TraceScene( float3 _wsPos, float3 _wsDir ) {
 	return RayMarchScene( _wsPos, _wsDir, 100, 0.8 );
 }
@@ -266,11 +244,18 @@ Intersection	TraceScene( float3 _wsPos, float3 _wsDir ) {
 LightingResult	LightScene( float3 _wsPosition, float3 _wsNormal, float2 _cosConeAnglesMinMax ) {
 	LightInfoPoint	lightInfo;
 					lightInfo.flux = 1000.0;
-					lightInfo.wsPosition = float3( 0, 10, 0 );
-					lightInfo.distanceAttenuation = float2( 100.0, 1000.0 );	// Don't care, let natural 1/r² take care of attenuation
+					lightInfo.wsPosition = GetPointLightPosition( lightInfo.distanceAttenuation );
+
+	// Sample shadow map
+	lightInfo.flux *= GetShadow( _wsPosition, lightInfo.wsPosition, lightInfo.distanceAttenuation.y, _tex_ShadowMap );
 
 	LightingResult	result = (LightingResult) 0;
 	ComputeLightPoint( _wsPosition, _wsNormal, _cosConeAnglesMinMax, lightInfo, result );
 
 	return result;
+}
+
+float3			GetPointLightPosition( out float2 _distanceNearFar ) {
+	_distanceNearFar = float2( 10.0, 100.0 );	// Don't care, let natural 1/r² take care of attenuation
+	return float3( 0, 10, 0 );
 }

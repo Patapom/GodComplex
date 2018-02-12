@@ -1,10 +1,13 @@
 #include "Global.hlsl"
+#include "Scene/Scene.hlsl"
 
 Texture2D<float4>		_tex_Albedo : register(t0);
 Texture2D<float4>		_tex_Normal : register(t1);
-Texture2D<float2>		_tex_MotionVectors : register(t2);
+Texture2D<float3>		_tex_Emissive : register(t2);
 Texture2D<float>		_tex_Depth : register(t3);
+Texture2D<float2>		_tex_MotionVectors : register(t4);
 
+//Texture2DArray<float>	_tex_ShadowMap : register(t6);
 Texture2DArray<float4>	_tex_Radiance : register(t8);
 Texture2D<float4>		_tex_BentCone : register(t9);
 Texture2D<float4>		_tex_FinalRender : register(t10);
@@ -28,7 +31,8 @@ float3	PS( float4 __Position : SV_POSITION ) : SV_TARGET0 {
 
 return _exposure * _tex_FinalRender[__Position.xy].xyz;
 
-#if 1	// DEBUG BENT CONE
+
+#if 0	// DEBUG BENT CONE
 
 	// Face-cam
 	float3	wsRight = normalize( cross( wsView, _Camera2World[1].xyz ) );
@@ -53,18 +57,21 @@ return wsBentCone;
 return csBentConeDev.xyz;	// Show RAW value
 #endif
 
-#if 1	// DEBUG PUSH/PULL
+#if 0	// DEBUG PUSH/PULL
 	float4	V = (_flags & 0x100U) ? _tex_SourceRadiance_PULL.SampleLevel( LinearClamp, __Position.xy / _resolution, _debugMipIndex ) : _tex_SourceRadiance_PUSH.SampleLevel( LinearClamp, __Position.xy / _resolution, _debugMipIndex );
 //	if ( _debugMipIndex == 0 )
 //		V.w = Depth2Weight( V.w );
-	return 0.01 * V.w;
+//	return 0.1 * V.w;
 //	return V.xyz / V.w;
 	return V.xyz;
 #endif
 
+return 10.0 * _tex_ShadowMap.SampleLevel( LinearClamp, float3( __Position.xy / 512.0, _debugMipIndex ), 0.0 );	// Debug shadow map
+
+//return _tex_Emissive[__Position.xy].xyz;
 //return _tex_Radiance[uint3(__Position.xy, _sourceRadianceIndex)].xyz;
 //return _tex_Albedo[__Position.xy].xyz;
-return _tex_Normal[__Position.xy].xyz;
+//return _tex_Normal[__Position.xy].xyz;
 return _tex_Depth.SampleLevel( LinearClamp, __Position.xy / _resolution, _debugMipIndex );
 return _tex_Depth.mips[_debugMipIndex][__Position.xy];
 //return 0.5 * (1.0 + _tex_Normal[__Position.xy].xyz);

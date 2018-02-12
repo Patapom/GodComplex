@@ -72,6 +72,10 @@ cbuffer CB_Shadow : register(b3) {
 };
 
 float	PS_RenderShadow( float4 __Position : SV_POSITION ) : SV_DEPTH {
+
+#if SCENE_TYPE == 1
+	// FAILS COMPILING FOR LIBRARY SCENE FOR SOME REASON I CAN'T EXPLAIN
+
 	float2	UV = __Position.xy / SHADOW_MAP_SIZE;
 
 	float3x3	shadowMap2World;
@@ -89,6 +93,9 @@ float	PS_RenderShadow( float4 __Position : SV_POSITION ) : SV_DEPTH {
 
 	Intersection	result = TraceScene( wsLightPos, wsView );
 	return result.shade > 0.5 ? result.wsHitPosition.w / (Z2Distance * distanceNearFar.y) : 1.0;	// Store Z
+#else
+	return 1.0;
+#endif
 }
 
 
@@ -98,7 +105,7 @@ float	PS_RenderShadow( float4 __Position : SV_POSITION ) : SV_DEPTH {
 // 
 Texture2D<float4>		_tex_Albedo : register(t0);
 Texture2D<float4>		_tex_Normal : register(t1);
-Texture2D<float3>		_tex_emissive : register(t2);
+Texture2D<float3>		_tex_Emissive : register(t2);
 Texture2D<float>		_tex_Depth : register(t3);
 
 Texture2DArray<float4>	_tex_Radiance : register(t8);
@@ -135,7 +142,7 @@ PS_OUT_FINAL	PS_Light( float4 __Position : SV_POSITION ) {
 //wsNormalDirect = lerp( wsBentNormal, wsNormalDirect, 1-cosConeAngle );	// Experiment blending normals depending on AO => a fully open cone gives the bent normal
 	}
 
-	// Check if we should use the cone angle (for direct & indirect lighting)
+	// Check if we should use the cone angle for indirect lighting
 	float	cosSamplingConeAngle = 0.0;
 	if ( _flags & 0x4 ) {
 		#if USE_STD_DEV
@@ -147,6 +154,8 @@ PS_OUT_FINAL	PS_Light( float4 __Position : SV_POSITION ) {
 			cosSamplingConeAngle = cosConeAngle;
 		#endif
 	}
+
+	// Check if we should use the cone angle for direct lighting
 	float2	cosConeAnglesMinMax = float2( 0, -1 );	// Make sure we're always inside cone so visibility is always 1
 	if ( _flags & 0x10 ) {
 		#if USE_STD_DEV
@@ -154,6 +163,7 @@ PS_OUT_FINAL	PS_Light( float4 __Position : SV_POSITION ) {
 			float	stdDeviationConeAngle = FastPosAcos( 1.0 - stdDeviationAO );
 //			cosConeAnglesMinMax = float2( cos( max( 0.0, coneAngle - abs(_coneAngleBias) * stdDeviationConeAngle ) ), cos( min( 0.5 * PI, coneAngle + abs(_coneAngleBias) * stdDeviationConeAngle ) ) );	// If deviation is available
 			cosConeAnglesMinMax = float2( cos( max( 0.0, coneAngle - stdDeviationConeAngle ) ), cos( min( 0.5 * PI, coneAngle + stdDeviationConeAngle ) ) );	// If deviation is available
+//cosConeAnglesMinMax = float2( cos( max( 0.0, coneAngle + stdDeviationConeAngle ) ), -1 );
 		#else
 //			cosConeAnglesMinMax = float2( cosConeAngle, _coneAngleBias );
 //			cosConeAnglesMinMax = float2( cosConeAngle, 0.0 );
@@ -195,7 +205,7 @@ PS_OUT_FINAL	PS_Light( float4 __Position : SV_POSITION ) {
 	// Compute direct lighting
 	LightingResult	lighting = LightScene( wsPos, wsNormalDirect, cosConeAnglesMinMax );
 
-	float3	emissive = _tex_emissive[pixelPosition];
+	float3	emissive = _tex_Emissive[pixelPosition];
 
 	PS_OUT_FINAL	Out;
 	Out.radiance = float4( emissive + (albedo / PI) * (lighting.diffuse + indirectIrradiance), 0 );		// Transform irradiance into radiance + add direct contribution. This is ready for reprojection next frame...

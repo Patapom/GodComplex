@@ -41,7 +41,7 @@ namespace TestHBIL
 		private float4[][,]	m_arrayNormal;
 		private float4[][,]	m_arrayIrradiance;
 
-		private float3		m_wsConePosition = float3.Zero;
+		private float3		m_wsConePosition = new float3( 1000, 0, 0 );
 		private float3		m_wsConeDirection = float3.UnitY;
 		private float		m_averageConeAngle = 0.25f * Mathf.PI;
 		private float		m_stdDeviation = 0.0f;
