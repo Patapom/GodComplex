@@ -400,7 +400,8 @@ namespace TestHBIL {
 			#if SCENE_LIBRARY
 				m_manipulator.InitializeCamera( new float3( 0, 5.0f, -4.5f ), new float3( 0, 0, 0 ), float3.UnitY );	// Library
 			#elif SCENE_CORNELL
-				m_manipulator.InitializeCamera( new float3( 0, -0.5f, -6.0f ), new float3( 0, -0.5f, 0 ), float3.UnitY );
+				m_manipulator.InitializeCamera( new float3( 0, -0.7f, -6.0f ), new float3( 0, -0.7f, 0 ), float3.UnitY );
+				floatTrackbarControlEnvironmentIntensity.Value = 0.25f;
 			#elif SCENE_HEIGHTFIELD
 				m_manipulator.InitializeCamera( new float3( 0, 3.0f, 0.01f ), new float3( 0, 0, 0 ), float3.UnitY );
 			#endif
