@@ -149,16 +149,25 @@ Intersection	TraceScene( float3 _wsPos, float3 _wsDir ) {
 	return result;
 }
 
+Texture2DArray<float>	_tex_ShadowMap : register( t6 );
+
 LightingResult	LightScene( float3 _wsPosition, float3 _wsNormal, float2 _cosConeAnglesMinMax ) {
 	LightInfoPoint	lightInfo;
 					lightInfo.flux = LIGHT_ILLUMINANCE;
-					lightInfo.wsPosition = CORNELL_LIGHT_POS;
-					lightInfo.distanceAttenuation = float2( 100.0, 1000.0 );	// Don't care, let natural 1/r² take care of attenuation
+					lightInfo.wsPosition = GetPointLightPosition( lightInfo.distanceAttenuation );
+
+	// Sample shadow map
+	lightInfo.flux *= GetShadow( _wsPosition, lightInfo.wsPosition, lightInfo.distanceAttenuation.y, _tex_ShadowMap );
 
 	LightingResult	result = (LightingResult) 0;
 	ComputeLightPoint( _wsPosition, _wsNormal, _cosConeAnglesMinMax, lightInfo, result );
 
 	return result;
+}
+
+float3			GetPointLightPosition( out float2 _distanceNearFar ) {
+	_distanceNearFar = float2( 100.0, 1000.0 );	// Don't care, let natural 1/r² take care of attenuation
+	return CORNELL_LIGHT_POS;
 }
 
 

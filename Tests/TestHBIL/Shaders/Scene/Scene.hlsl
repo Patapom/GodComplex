@@ -18,11 +18,16 @@ struct Intersection {
 // These methods must be provided by the scene
 Intersection	TraceScene( float3 _wsPos, float3 _wsDir );
 LightingResult	LightScene( float3 _wsPosition, float3 _wsNormal, float2 _cosConeAnglesMinMax );
+float3			GetPointLightPosition( out float2 _distanceNearFar );	// Returns world-space position for the point light and the (near,far) clip distances
 
 ////////////////////////////////////////////////////////////////////////////////
 // Scene inclusion
 ////////////////////////////////////////////////////////////////////////////////
 //
-//#include "Scene/SceneRayMarchingLibrary.hlsl"
-//#include "Scene/SceneRayTraceCornell.hlsl"
-#include "Scene/SceneRayTraceHeightfield.hlsl"
+#if SCENE_TYPE == 0
+	#include "Scene/SceneRayMarchingLibrary.hlsl"
+#elif SCENE_TYPE == 1
+	#include "Scene/SceneRayTraceCornell.hlsl"
+#elif SCENE_TYPE == 2
+	#include "Scene/SceneRayTraceHeightfield.hlsl"
+#endif

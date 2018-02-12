@@ -225,7 +225,7 @@ Intersection RayMarchScene( float3 _wsPos, float3 _wsDir, uint _stepsCount, floa
 		result.wsHitPosition += d.x * unitStep;
 	}
 
-	result.wsNormal = float3( 0, 0.001, 0 );
+//	result.wsNormal = float3( 0, 0.001, 0 );
 //	if ( result.shade > 0 ) {
 		result.wsNormal = getNormal( result.wsHitPosition.xyz );
 //	}
@@ -266,11 +266,15 @@ Intersection	TraceScene( float3 _wsPos, float3 _wsDir ) {
 LightingResult	LightScene( float3 _wsPosition, float3 _wsNormal, float2 _cosConeAnglesMinMax ) {
 	LightInfoPoint	lightInfo;
 					lightInfo.flux = 1000.0;
-					lightInfo.wsPosition = float3( 0, 10, 0 );
-					lightInfo.distanceAttenuation = float2( 100.0, 1000.0 );	// Don't care, let natural 1/r² take care of attenuation
+					lightInfo.wsPosition = GetPointLightPosition( lightInfo.distanceAttenuation );
 
 	LightingResult	result = (LightingResult) 0;
 	ComputeLightPoint( _wsPosition, _wsNormal, _cosConeAnglesMinMax, lightInfo, result );
 
 	return result;
+}
+
+float3			GetPointLightPosition( out float2 _distanceNearFar ) {
+	_distanceNearFar = float2( 100.0, 1000.0 );	// Don't care, let natural 1/r² take care of attenuation
+	return float3( 0, 10, 0 );
 }

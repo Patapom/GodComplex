@@ -50,7 +50,9 @@ float2	ComputeMipLevel( float2 _radius, float2 _radialStepSizes ) {
 float	BilateralFilterDepth( float _centralZ, float _previousDeltaZ, float _newDeltaZ, float _horizonCosTheta, float _newCosTheta, float _radius_m ) {
 //Il fout grave la merde!
 
+//return 1.0 - pow( saturate( _bilateralValues.x * _radius_m / _gatherSphereMaxRadius_m ), 2.0 * _bilateralValues.y );	// As per http://developer.download.nvidia.com/presentations/2008/SIGGRAPH/HBAO_SIG08b.pdf pp. 23
 return 1;
+
 	// Compute an horizon penalty when the horizon rises too quickly
 	float	deltaTheta = saturate( (acos(_horizonCosTheta) - acos(_newCosTheta)) / PI );
 //	float	penaltyCos = saturate( (deltaTheta - _bilateralValues.x) / _bilateralValues.y );
