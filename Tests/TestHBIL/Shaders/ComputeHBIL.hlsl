@@ -293,6 +293,12 @@ PS_OUT	PS( float4 __Position : SV_POSITION ) {
 
 	float3	centralRadiance = _tex_sourceRadiance[pixelPosition].xyz;	// Read back last frame's radiance value that we can use as a fallback for neighbor areas
 
+
+
+//centralRadiance = _tex_emissive[pixelPosition];	// [18/02/12]
+
+
+
 	// Compute local camera-space
 	float3	wsPos = _Camera2World[3].xyz + Z * Z2Distance * wsView;
 	float3	wsRight = normalize( cross( wsView, _Camera2World[1].xyz ) );

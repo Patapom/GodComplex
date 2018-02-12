@@ -263,10 +263,17 @@ Intersection	TraceScene( float3 _wsPos, float3 _wsDir ) {
 	return RayMarchScene( _wsPos, _wsDir, 100, 0.8 );
 }
 
+Texture2DArray<float>	_tex_ShadowMap : register( t6 );
+
 LightingResult	LightScene( float3 _wsPosition, float3 _wsNormal, float2 _cosConeAnglesMinMax ) {
 	LightInfoPoint	lightInfo;
 					lightInfo.flux = 1000.0;
-					lightInfo.wsPosition = GetPointLightPosition( lightInfo.distanceAttenuation );
+//					lightInfo.wsPosition = GetPointLightPosition( lightInfo.distanceAttenuation );
+					lightInfo.wsPosition = float3( 0, 10, 0 );
+					lightInfo.distanceAttenuation = float2( 100.0, 1000.0 );	// Don't care, let natural 1/r² take care of attenuation
+
+//	// Sample shadow map
+//	lightInfo.flux *= GetShadow( _wsPosition, lightInfo.wsPosition, lightInfo.distanceAttenuation.y, _tex_ShadowMap );
 
 	LightingResult	result = (LightingResult) 0;
 	ComputeLightPoint( _wsPosition, _wsNormal, _cosConeAnglesMinMax, lightInfo, result );

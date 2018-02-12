@@ -10,6 +10,7 @@ struct Intersection {
 	float3	wsNormal;		// World-space normal
 	float	materialID;		// Material ID (integer part) + salt (decimal part)
 	float3	albedo;			// Surface albedo
+	float3	emissive;		// Emissive radiance value for the material
 	float	roughness;		// Surface roughness
 	float3	F0;				// Surface's specular F0
 	float3	wsVelocity;		// World-space velocity vector

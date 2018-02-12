@@ -162,6 +162,7 @@ namespace TestHBIL {
 		#endif
 		private Shader				m_shader_RenderScene_DepthGBufferPass = null;
 		private ComputeShader		m_shader_DownSampleDepth = null;
+		private Shader				m_shader_AddEmissive = null;
 		private Shader				m_shader_RenderScene_Shadow = null;
 		private Shader				m_shader_ComputeHBIL = null;
 		private Shader				m_shader_ComputeLighting = null;
@@ -171,6 +172,7 @@ namespace TestHBIL {
 		private Texture2D			m_tex_albedo = null;
 		private Texture2D			m_tex_normal = null;
 		private Texture2D			m_tex_motionVectors = null;
+		private Texture2D			m_tex_emissive = null;
 		private Texture2D			m_tex_depthWithMips = null;
 
 		// Shadow map
@@ -297,6 +299,7 @@ namespace TestHBIL {
 				#endif
 
 				// Stuff
+				m_shader_AddEmissive = new Shader( m_device, new System.IO.FileInfo( "Shaders/AddEmissive.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 				m_shader_DownSampleDepth = new ComputeShader( m_device, new System.IO.FileInfo( "Shaders/DownSampleDepth.hlsl" ), "CS", null );
 				m_shader_PostProcess = new Shader( m_device, new System.IO.FileInfo( "Shaders/PostProcess.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 				m_shader_RenderDebugCone = new Shader( m_device, new System.IO.FileInfo( "Shaders/RenderDebugCone.hlsl" ), VERTEX_FORMAT.P3, "VS", null, "PS", null );
@@ -307,6 +310,7 @@ namespace TestHBIL {
 			// Create buffers
 			m_tex_albedo = new Texture2D( m_device, W, H, 1, 1, PIXEL_FORMAT.RGBA8, COMPONENT_FORMAT.UNORM, false, false, null );
 			m_tex_normal = new Texture2D( m_device, W, H, 1, 1, PIXEL_FORMAT.RGBA16F, COMPONENT_FORMAT.AUTO, false, false, null );
+			m_tex_emissive = new Texture2D( m_device, W, H, 1, 1, PIXEL_FORMAT.RGBA16F, COMPONENT_FORMAT.AUTO, false, false, null );
 			m_tex_motionVectors = new Texture2D( m_device, W, H, 1, 1, PIXEL_FORMAT.RGBA16F, COMPONENT_FORMAT.AUTO, false, false, null );
 			m_tex_depthWithMips = new Texture2D( m_device, W, H, 1, 0, PIXEL_FORMAT.R32F, COMPONENT_FORMAT.AUTO, false, true, null );
 //			m_tex_depthWithMips = new Texture2D( m_device, W, H, 1, 0, DEPTH_STENCIL_FORMAT.D32 );	// Can't have UAV flag so can't use CS for mip downsampling
@@ -419,10 +423,12 @@ namespace TestHBIL {
 			m_tex_shadow.Dispose();
 			m_tex_depthWithMips.Dispose();
 			m_tex_motionVectors.Dispose();
+			m_tex_emissive.Dispose();
 			m_tex_normal.Dispose();
 			m_tex_albedo.Dispose();
 
 			m_shader_RenderDebugCone.Dispose();
+			m_shader_AddEmissive.Dispose();
 			m_shader_PostProcess.Dispose();
 			m_shader_ComputeHBIL.Dispose();
 			m_shader_DownSampleDepth.Dispose();
@@ -641,9 +647,9 @@ namespace TestHBIL {
 
 			if ( m_shader_RenderScene_DepthGBufferPass.Use() ) {
 				#if RENDER_IN_DEPTH_STENCIL
-					m_device.SetRenderTargets( new IView[] { m_tex_albedo.GetView( 0, 1, 0, 1 ), m_tex_normal.GetView( 0, 1, 0, 1 ), m_tex_motionVectors.GetView( 0, 1, 0, 1 ) }, targetDepthStencil );
+					m_device.SetRenderTargets( new IView[] { m_tex_albedo.GetView( 0, 1, 0, 1 ), m_tex_normal.GetView( 0, 1, 0, 1 ), m_tex_emissive.GetView( 0, 1, 0, 1 ), m_tex_motionVectors.GetView( 0, 1, 0, 1 ) }, targetDepthStencil );
 				#else
-					m_device.SetRenderTargets( new IView[] { m_tex_albedo.GetView( 0, 1, 0, 1 ), m_tex_normal.GetView( 0, 1, 0, 1 ), m_tex_motionVectors.GetView( 0, 1, 0, 1 ), targetDepthStencil.GetView( 0, 1, 0, 1 ) }, null );
+					m_device.SetRenderTargets( new IView[] { m_tex_albedo.GetView( 0, 1, 0, 1 ), m_tex_normal.GetView( 0, 1, 0, 1 ), m_tex_emissive.GetView( 0, 1, 0, 1 ), m_tex_motionVectors.GetView( 0, 1, 0, 1 ), targetDepthStencil.GetView( 0, 1, 0, 1 ) }, null );
 				#endif
 
 				#if SCENE_HEIGHFIELD
@@ -678,7 +684,21 @@ namespace TestHBIL {
 			#endif
 
 			//////////////////////////////////////////////////////////////////////////
-			// =========== Compute Shadow Map  ===========
+			// =========== Add Emissive Map to Reprojected Radiance ===========
+			// (this way it's used as indirect radiance source in this frame as well)
+			//
+			if ( m_shader_AddEmissive.Use() ) {
+
+// WARNING: #TODO! Do reprojection + push/pull phase WITH added emissive radiance from this frame so the emissive is pulled down the mips as well!
+
+				m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.ADDITIVE );
+				m_device.SetRenderTarget( m_tex_sourceRadiance_PULL, null );
+				m_tex_emissive.SetPS( 0 );
+				m_device.RenderFullscreenQuad( m_shader_AddEmissive );
+			}
+
+			//////////////////////////////////////////////////////////////////////////
+			// =========== Compute Shadow Map ===========
 			m_device.PerfSetMarker( 4 );
 			#if !SCENE_HEIGHFIELD
 				if ( m_shader_RenderScene_Shadow.Use() ) {
@@ -753,7 +773,7 @@ m_tex_texDebugNormals.SetPS( 33 );
 
 				m_tex_albedo.SetPS( 0 );
 				m_tex_normal.SetPS( 1 );
-				m_tex_motionVectors.SetPS( 2 );
+				m_tex_emissive.SetPS( 2 );
 				targetDepthStencil.SetPS( 3 );
 
 				m_tex_shadow.SetPS( 6 );
@@ -776,6 +796,8 @@ m_tex_texDebugNormals.SetPS( 33 );
 			if ( m_shader_PostProcess.Use() ) {
 				m_device.SetRenderTarget( m_device.DefaultTarget, null );
 
+				m_tex_motionVectors.SetPS( 4 );
+
 				m_tex_radiance.SetPS( 8 );
 				m_tex_finalRender.SetPS( 10 );
 				m_tex_sourceRadiance_PUSH.SetPS( 11 );
@@ -784,6 +806,7 @@ m_tex_texDebugNormals.SetPS( 33 );
 				m_device.RenderFullscreenQuad( m_shader_PostProcess );
 
 				targetDepthStencil.RemoveFromLastAssignedSlots();
+				m_tex_emissive.RemoveFromLastAssignedSlots();
 				m_tex_motionVectors.RemoveFromLastAssignedSlots();
 				m_tex_normal.RemoveFromLastAssignedSlots();
 				m_tex_albedo.RemoveFromLastAssignedSlots();

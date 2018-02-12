@@ -39,6 +39,8 @@ static const float	MAT_ROOM_WALL_RIGHT = 3;
 static const float	MAT_SMALL_BOX = 4;
 static const float	MAT_LARGE_BOX = 5;
 static const float	MAT_LIGHT = 6;
+static const float	MAT_EMISSIVE = 7;
+
 
 
 float2	ComputeBoxIntersections( float3 _position, float3 _view, float3 _boxCenter, float3 _boxInvHalfSize, out uint2 _hitSides ) {
@@ -132,18 +134,31 @@ Intersection	TraceScene( float3 _wsPos, float3 _wsDir ) {
 //		result.wsNormal = Side2Normal( hitSides.x );
 	}
 
+	// Test some emissive area light...
+const float3	CORNELL_EMISSIVE_RECT_POS = float3( 4.6, 0.6, 1.6 ) - 0.5 * CORNELL_SIZE;
+const float3	CORNELL_EMISSIVE_RECT_SIZE = float3( 1.0, 1.0, 0.1 );	// It's a thin rectangle
+const float		CORNELL_EMISSIVE_RECT_ANGLE = 0.29145679447786709199560462143289;	// ~16°
+	testDistances = ComputeRotatedBoxIntersections( _wsPos, _wsDir, CORNELL_EMISSIVE_RECT_POS, 2.0 / CORNELL_EMISSIVE_RECT_SIZE, CORNELL_EMISSIVE_RECT_ANGLE, hitSides );
+	if ( testDistances.x < testDistances.y && testDistances.x > 0 && testDistances.x < hitDistance.x ) {
+		hitDistance = float2( testDistances.x, MAT_EMISSIVE );
+		float3x3	rot = BuildBoxRotation( CORNELL_EMISSIVE_RECT_ANGLE );
+		result.wsNormal = mul( rot, Side2Normal( hitSides.x ) );
+	}
+
 	// Update result
 	result.shade = step( 1e-5, hitDistance.x );
 	result.wsHitPosition += hitDistance.x * float4( _wsDir, result.shade );	// W kept at 0 (invalid) if no hit
 	result.roughness = 0;
 	result.F0 = 0;
 	result.materialID = hitDistance.y;
+	result.emissive = 0.0;
 	switch ( uint(result.materialID) ) {
 		case MAT_ROOM :				result.albedo = CORNELL_ROOM_REFLECTANCE; break;
 		case MAT_ROOM_WALL_LEFT :	result.albedo = CORNELL_LEFT_WALL_REFLECTANCE; break;
 		case MAT_ROOM_WALL_RIGHT :	result.albedo = CORNELL_RIGHT_WALL_REFLECTANCE; break;
 		case MAT_SMALL_BOX :		result.albedo = CORNELL_SMALL_BOX_REFLECTANCE; break;
 		case MAT_LARGE_BOX :		result.albedo = CORNELL_LARGE_BOX_REFLECTANCE; break;
+		case MAT_EMISSIVE :			result.emissive = 4.0 * float3( 0.2, 0.8, 1.0 ); break;
 	}
 
 	return result;

@@ -109,7 +109,7 @@ float	GetShadow( float3 _wsPosition, float3 _wsLightPosition, float _lightFar, T
 	// Sample shadow map
 	float2	UV = float2( 0.5 * (1.0 + ssPosition.x), 0.5 * (1.0 - ssPosition.y) );
 //	float2	dUV = 1.0 * Z / (SHADOW_MAP_SIZE * _lightFar);
-	float2	dUV = 0.25 / SHADOW_MAP_SIZE;
+	float2	dUV = 0.5 / SHADOW_MAP_SIZE;
 
 	float	shadow = 0.0;
 	for ( int Y=-2; Y <= 2; Y++ ) {

@@ -27,11 +27,12 @@ void	BuildCameraRay( float2 _UV, out float3 _wsPos, out float3 _csView, out floa
 struct PS_OUT {
 	float3	albedo : SV_TARGET0;
 	float3	normal : SV_TARGET1;
-	float3	csVelocity : SV_TARGET2;	// Camera-space velocity
+	float3	emissive : SV_TARGET2;
+	float3	csVelocity : SV_TARGET3;	// Camera-space velocity
 	#if USE_DEPTH_STENCIL
 		float	depth : SV_DEPTH;		// When using a regular depth-stencil buffer
 	#else
-		float	depth : SV_TARGET3;		// When using a R32 target with mips
+		float	depth : SV_TARGET4;		// When using a R32 target with mips
 	#endif
 };
 
@@ -53,13 +54,13 @@ PS_OUT	PS_RenderGBuffer( float4 __Position : SV_POSITION ) {
 	if ( _flags & 0x40 )
 		Out.albedo = _forcedAlbedo * float3( 1, 1, 1 );			// Force albedo (default = 50%)
 
+	Out.emissive = result.emissive;
 	Out.normal = result.wsNormal;
 	Out.depth = result.wsHitPosition.w / (Z2Distance * Z_FAR);	// Store Z
 //	Out.depth = result.wsHitPosition.w / Z_FAR;					// Store distance
 
 	return Out;
 }
-
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -97,7 +98,7 @@ float	PS_RenderShadow( float4 __Position : SV_POSITION ) : SV_DEPTH {
 // 
 Texture2D<float4>		_tex_Albedo : register(t0);
 Texture2D<float4>		_tex_Normal : register(t1);
-Texture2D<float2>		_tex_MotionVectors : register(t2);
+Texture2D<float3>		_tex_emissive : register(t2);
 Texture2D<float>		_tex_Depth : register(t3);
 
 Texture2DArray<float4>	_tex_Radiance : register(t8);
@@ -194,10 +195,12 @@ PS_OUT_FINAL	PS_Light( float4 __Position : SV_POSITION ) {
 	// Compute direct lighting
 	LightingResult	lighting = LightScene( wsPos, wsNormalDirect, cosConeAnglesMinMax );
 
+	float3	emissive = _tex_emissive[pixelPosition];
+
 	PS_OUT_FINAL	Out;
-	Out.radiance = float4( (albedo / PI) * (lighting.diffuse + indirectIrradiance), 0 );		// Transform irradiance into radiance + add direct contribution. This is ready for reprojection next frame...
+	Out.radiance = float4( emissive + (albedo / PI) * (lighting.diffuse + indirectIrradiance), 0 );		// Transform irradiance into radiance + add direct contribution. This is ready for reprojection next frame...
 //Out.radiance = 0;
-	Out.finalColor = float4( (albedo / PI) * (lighting.diffuse + indirectIrradiance + lighting.specular), 0 );
+	Out.finalColor = float4( emissive + (albedo / PI) * (lighting.diffuse + indirectIrradiance + lighting.specular), 0 );
 //Out.finalColor = 0.1 * sqDistance2Light;
 //Out.finalColor.xyz = 0.1 * wsPos;
 //Out.finalColor.xyz = 0.1 * Z;
@@ -209,3 +212,4 @@ PS_OUT_FINAL	PS_Light( float4 __Position : SV_POSITION ) {
 //Out.finalColor.xyz = indirectIrradiance;
 	return Out;
 }
+
