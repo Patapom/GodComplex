@@ -1,6 +1,4 @@
 ///////////////////////////////////////////////////////////////////////////////////
-// Shamelessly stolen from https://www.shadertoy.com/view/Xt2fWK
-//
 // Adapted for true Cornell Box dimensions (as given by https://www.graphics.cornell.edu/online/box/data.html)
 //
 ///////////////////////////////////////////////////////////////////////////////////
@@ -165,6 +163,9 @@ LightingResult	LightScene( float3 _wsPosition, float3 _wsNormal, float2 _cosCone
 
 
 /*
+// Shamelessly stolen from https://www.shadertoy.com/view/Xt2fWK
+// NOT USED AFTER ALL
+//
 struct Plane 
 {
     vec3 center;
@@ -320,8 +321,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
     
 	fragColor.xyz = toSRGB(shade(intersectionPoint, intersectionNormal, primaryRay.direction, materialIndex));
 }
-*/
-/*
+
 Material makeMaterial(in vec3 d, in vec3 e)
 {
     Material m;

@@ -17,7 +17,7 @@
 //	• Keep failed reprojected pixels into some "surrounding buffer", some sort of paraboloid-projected buffer containing off-screen values???
 //		=> Exponential decay of off-screen values with decay rate depending on camera's linear velocity?? (fun idea!)
 //	• Use W linear attenuation as in HBAO?
-//	• Compute AO value!!
+//	✓ Compute AO value!!
 //	• Advance in local camera space but using screen-space steps
 //		=> Must be a linear combination of vector so that advancing 2 pixels equals advancing N meters in camera space...
 //
@@ -162,6 +162,7 @@ namespace TestHBIL {
 		private Texture2D			m_tex_finalRender = null;
 		private uint				m_radianceSourceSliceIndex = 0;
 
+		// Regular textures
 		private Texture2D			m_tex_BlueNoise = null;
 
 		// Dummy textures with pre-computed heights and normals used to debug the computation
@@ -608,6 +609,11 @@ namespace TestHBIL {
 				#else
 					m_device.SetRenderTargets( new IView[] { m_tex_albedo.GetView( 0, 1, 0, 1 ), m_tex_normal.GetView( 0, 1, 0, 1 ), m_tex_motionVectors.GetView( 0, 1, 0, 1 ), targetDepthStencil.GetView( 0, 1, 0, 1 ) }, null );
 				#endif
+
+// Used by the heightfield scene
+m_tex_texDebugHeights.SetPS( 32 );
+m_tex_texDebugNormals.SetPS( 33 );
+
 				m_device.RenderFullscreenQuad( m_shader_RenderScene_DepthGBufferPass );
 				m_device.RemoveRenderTargets();
 			}

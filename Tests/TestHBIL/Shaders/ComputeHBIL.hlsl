@@ -48,24 +48,27 @@ float2	ComputeMipLevel( float2 _radius, float2 _radialStepSizes ) {
 }
 
 float	BilateralFilterDepth( float _centralZ, float _previousDeltaZ, float _newDeltaZ, float _horizonCosTheta, float _newCosTheta, float _radius_m ) {
-Il fout grave la merde!
+//Il fout grave la merde!
 
 return 1;
 	// Compute an horizon penalty when the horizon rises too quickly
 	float	deltaTheta = saturate( (acos(_horizonCosTheta) - acos(_newCosTheta)) / PI );
-	float	penaltyCos = saturate( (deltaTheta - _bilateralValues.x) / _bilateralValues.y );
+//	float	penaltyCos = saturate( (deltaTheta - _bilateralValues.x) / _bilateralValues.y );
+float	penaltyCos = saturate( (deltaTheta - 0.0) / 1.0 );
 
 //return 1.0 - penaltyCos;
 
 	// Compute a delta Z penalty when the depth rises too quickly
 	float	relativeZ0 = max( 0.0, _previousDeltaZ ) / _centralZ;
 	float	relativeZ1 = max( 0.0, _newDeltaZ ) / _centralZ;
-	float	penaltyZ = 1.0 - saturate( (relativeZ0 - relativeZ1 - _bilateralValues.z) / _bilateralValues.w );
+//	float	penaltyZ = 1.0 - saturate( (relativeZ0 - relativeZ1 - _bilateralValues.z) / _bilateralValues.w );
+float	penaltyZ = 1.0 - saturate( (relativeZ0 - relativeZ1 - 0.5) / 1.0 );
 
 //return 1.0 - penaltyZ;
 
 	// If the penalty flag is raised, we accept rising the horizon only if the difference in relative depth is not too high
-	return 1.0 - penaltyCos * penaltyZ;
+//	return 1.0 - penaltyCos * penaltyZ / (40.0*_radius_m);
+	return 1.0 - penaltyCos * penaltyZ / (100.0*_bilateralValues.x*_radius_m);
 }
 
 
@@ -143,6 +146,10 @@ float3	GatherIrradiance_TEMP( float2 _csDirection, float4x3 _localCamera2World, 
 	float	hitDistance_Front = -dot( _csDirection, _csNormal.xy ) / _csNormal.z;
 	float	planeCosTheta_Front = hitDistance_Front / sqrt( hitDistance_Front*hitDistance_Front + 1.0 );	// Assuming length(_csDirection) == 1
 	float	planeCosTheta_Back = -planeCosTheta_Front;	// Back cosine is simply the mirror value
+
+// Show horizon effect ON/OFF
+//planeCosTheta_Front = -1.0;
+//planeCosTheta_Back = -1.0;
 
 	// Gather irradiance from front & back directions while updating the horizon angles at the same time
 	float3	sumRadiance = 0.0;
@@ -294,7 +301,7 @@ PS_OUT	PS( float4 __Position : SV_POSITION ) {
 
 	// Compute local camera-space normal
 	float3	N = float3( dot( wsNormal, wsRight ), dot( wsNormal, wsUp ), dot( wsNormal, wsAt ) );
-			N.z = max( 1e-4, N.z );	// Make sure it's never 0!
+			N.z = max( 1e-3, N.z );	// Make sure it's never 0!
 //	float3	T, B;
 //	BuildOrthonormalBasis( N, T, B );
 

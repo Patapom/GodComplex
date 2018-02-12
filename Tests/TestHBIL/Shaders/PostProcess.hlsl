@@ -57,14 +57,14 @@ return csBentConeDev.xyz;	// Show RAW value
 	float4	V = (_flags & 0x100U) ? _tex_SourceRadiance_PULL.SampleLevel( LinearClamp, __Position.xy / _resolution, _debugMipIndex ) : _tex_SourceRadiance_PUSH.SampleLevel( LinearClamp, __Position.xy / _resolution, _debugMipIndex );
 //	if ( _debugMipIndex == 0 )
 //		V.w = Depth2Weight( V.w );
-	return 0.01 * V.w;
+	return 0.1 * V.w;
 //	return V.xyz / V.w;
 	return V.xyz;
 #endif
 
 //return _tex_Radiance[uint3(__Position.xy, _sourceRadianceIndex)].xyz;
 //return _tex_Albedo[__Position.xy].xyz;
-return _tex_Normal[__Position.xy].xyz;
+//return _tex_Normal[__Position.xy].xyz;
 return _tex_Depth.SampleLevel( LinearClamp, __Position.xy / _resolution, _debugMipIndex );
 return _tex_Depth.mips[_debugMipIndex][__Position.xy];
 //return 0.5 * (1.0 + _tex_Normal[__Position.xy].xyz);

@@ -118,6 +118,7 @@
     <None Include="Shaders\Scene\SceneRayTraceCornell.hlsl" />
     <None Include="Shaders\Scene\Scene.hlsl" />
     <None Include="Shaders\Scene\Lighting.hlsl" />
+    <None Include="Shaders\Scene\SceneRayTraceHeightfield.hlsl" />
     <Content Include="Shaders\SphericalHarmonics.hlsl" />
     <None Include="Shaders\Scene\SceneRayMarchingLibrary.hlsl" />
     <None Include="Shaders\Scene\SceneRayMarchingInfiniteRooms.hlsl" />

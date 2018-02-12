@@ -24,4 +24,5 @@ LightingResult	LightScene( float3 _wsPosition, float3 _wsNormal, float2 _cosCone
 ////////////////////////////////////////////////////////////////////////////////
 //
 //#include "Scene/SceneRayMarchingLibrary.hlsl"
-#include "Scene/SceneRayTraceCornell.hlsl"
+//#include "Scene/SceneRayTraceCornell.hlsl"
+#include "Scene/SceneRayTraceHeightfield.hlsl"
