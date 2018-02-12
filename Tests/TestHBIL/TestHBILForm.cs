@@ -25,7 +25,7 @@
 //	• Advance in local camera space but using screen-space steps
 //		=> Must be a linear combination of vector so that advancing 2 pixels equals advancing N meters in camera space...
 //
-//	• Emissive surfaces???
+//	✓ Emissive surfaces???
 //
 //	!!!!!!!!!!!!!!!!!!!
 //	• Use normal dot product weighting anyway?? It looks closer to ground truth in the ground truth simulator! Check it!
@@ -700,7 +700,7 @@ namespace TestHBIL {
 			//////////////////////////////////////////////////////////////////////////
 			// =========== Compute Shadow Map ===========
 			m_device.PerfSetMarker( 4 );
-			#if !SCENE_HEIGHFIELD
+			#if SCENE_CORNELL || SCENE_LIBRARY
 				if ( m_shader_RenderScene_Shadow.Use() ) {
 					m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.WRITE_ALWAYS, BLEND_STATE.DISABLED );
 

@@ -72,22 +72,22 @@ cbuffer CB_Shadow : register(b3) {
 };
 
 float	PS_RenderShadow( float4 __Position : SV_POSITION ) : SV_DEPTH {
+	float2	UV = __Position.xy / SHADOW_MAP_SIZE;
+
 	float3x3	shadowMap2World;
 	GetShadowMapTransform( _faceIndex, shadowMap2World );
 
-	// Build camera ray
-	float2	UV = __Position.xy / SHADOW_MAP_SIZE;
+	// Setup camera ray
 	float3	csView = float3( 2.0 * UV.x - 1.0, 1.0 - 2.0 * UV.y, 1.0 );
 	float	Z2Distance = length( csView );
 			csView /= Z2Distance;
 
 	// Transform into shadow-map space
 	float3	wsView = mul( csView, shadowMap2World );
-	float2	distanceNearFar;
+	float2	distanceNearFar = 10.0;
 	float3	wsLightPos = GetPointLightPosition( distanceNearFar );
 
 	Intersection	result = TraceScene( wsLightPos, wsView );
-
 	return result.shade > 0.5 ? result.wsHitPosition.w / (Z2Distance * distanceNearFar.y) : 1.0;	// Store Z
 }
 
