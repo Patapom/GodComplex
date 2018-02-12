@@ -403,7 +403,6 @@ namespace TestHBIL {
 			if ( m_device == null )
 				return;
 
-			m_shader_RenderDebugCone.Dispose();
 			m_primCylinder.Dispose();
 			m_softwareHBILComputer.Dispose();
 

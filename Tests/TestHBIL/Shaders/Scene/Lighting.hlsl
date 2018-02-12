@@ -78,6 +78,11 @@ void	GetShadowMapTransform( uint _faceIndex, out float3x3 _shadowMap2World ) {
 	_shadowMap2World[1] = cross( axisX, axisZ );
 	_shadowMap2World[2] = axisZ;
 }
+float	SampleShadowMap( float3 _UV, Texture2DArray<float> _texShadow ) {
+	float	shadowZ = _texShadow.SampleLevel( LinearClamp, _UV, 0.0 );
+			shadowZ += 1e-3;	// Bias
+	return shadowZ;
+}
 float	GetShadow( float3 _wsPosition, float3 _wsLightPosition, float _lightFar, Texture2DArray<float> _texShadow ) {
 	float3	wsDelta = _wsPosition - _wsLightPosition;
 	float3	dir = wsDelta;
@@ -99,10 +104,19 @@ float	GetShadow( float3 _wsPosition, float3 _wsLightPosition, float _lightFar, T
 	float	Z = ssPosition.z;
 			ssPosition.xy /= Z;
 
+	Z /= _lightFar;
+
 	// Sample shadow map
 	float2	UV = float2( 0.5 * (1.0 + ssPosition.x), 0.5 * (1.0 - ssPosition.y) );
-	float	shadowZ = _texShadow.SampleLevel( LinearClamp, float3( UV, axisIndex.x ), 0.0 );
-			shadowZ += 1e-3;	// Bias
-			shadowZ *= _lightFar;
-	return step( Z, shadowZ );
+//	float2	dUV = 1.0 * Z / (SHADOW_MAP_SIZE * _lightFar);
+	float2	dUV = 0.25 / SHADOW_MAP_SIZE;
+
+	float	shadow = 0.0;
+	for ( int Y=-2; Y <= 2; Y++ ) {
+		for ( int X=-2; X <= 2; X++ ) {
+			shadow += step( Z, SampleShadowMap( float3( UV + dUV * float2( X, Y ), axisIndex.x ), _texShadow ) );
+		}
+	}
+
+	return shadow / 25.0;
 }
