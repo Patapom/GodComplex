@@ -5,6 +5,10 @@
 //
 #include "Global.hlsl"
 
+Texture2D<float3>	_tex_FloorAlbedo : register(t32);
+Texture2D<float3>	_tex_FloorNormal : register(t33);
+Texture2D<float>	_tex_FloorRoughness : register(t34);
+
 // Cornell Box Dimensions
 //
 static const float3	CORNELL_SIZE = float3( 5.528f, 5.488f, 5.592f );
@@ -34,12 +38,13 @@ static const float3	LIGHT_REFLECTANCE = 0.78;
 static const float3	LIGHT_SIZE = float3( 1.0, 0.0, 1.0 );
 
 static const float	MAT_ROOM = 1;
-static const float	MAT_ROOM_WALL_LEFT = 2;
-static const float	MAT_ROOM_WALL_RIGHT = 3;
-static const float	MAT_SMALL_BOX = 4;
-static const float	MAT_LARGE_BOX = 5;
-static const float	MAT_LIGHT = 6;
-static const float	MAT_EMISSIVE = 7;
+static const float	MAT_ROOM_FLOOR = 2;
+static const float	MAT_ROOM_WALL_LEFT = 3;
+static const float	MAT_ROOM_WALL_RIGHT = 4;
+static const float	MAT_SMALL_BOX = 5;
+static const float	MAT_LARGE_BOX = 6;
+static const float	MAT_LIGHT = 7;
+static const float	MAT_EMISSIVE = 8;
 
 
 
@@ -114,6 +119,17 @@ Intersection	TraceScene( float3 _wsPos, float3 _wsDir ) {
 	if ( testDistances.x < testDistances.y ) {
 		hitDistance = float2( testDistances.y, hitSides.y == 0 ? MAT_ROOM_WALL_RIGHT : (hitSides.y == 1 ? MAT_ROOM_WALL_LEFT : MAT_ROOM) );
 		result.wsNormal = -Side2Normal( hitSides.y );	// Turn normals inside out
+
+		if ( hitSides.y == 2 ) {
+			// Sample floor textures
+			hitDistance.y = MAT_ROOM_FLOOR;
+			float2	wsFloorPos = result.wsHitPosition.xz + hitDistance.x * _wsDir.xz;
+			float2	floorUV = 0.5 + wsFloorPos / CORNELL_SIZE.xz;
+			result.albedo = _tex_FloorAlbedo.SampleLevel( LinearClamp, floorUV, 0.0 );
+			result.wsNormal = _tex_FloorNormal.SampleLevel( LinearClamp, floorUV, 0.0 ).xzy;
+result.wsNormal = normalize( result.wsNormal * float3( 1, 0.5, 1 ) );	// Amplify a bit
+			result.roughness = _tex_FloorRoughness.SampleLevel( LinearClamp, floorUV, 0.0 );
+		}
 	}
 
 	testDistances = ComputeRotatedBoxIntersections( _wsPos, _wsDir, CORNELL_SMALL_BOX_POS, 2.0 / CORNELL_SMALL_BOX_SIZE, CORNELL_SMALL_BOX_ANGLE, hitSides );
@@ -143,13 +159,14 @@ const float		CORNELL_EMISSIVE_RECT_ANGLE = 0.29145679447786709199560462143289;	/
 		hitDistance = float2( testDistances.x, MAT_EMISSIVE );
 		float3x3	rot = BuildBoxRotation( CORNELL_EMISSIVE_RECT_ANGLE );
 		result.wsNormal = mul( rot, Side2Normal( hitSides.x ) );
+		result.albedo = 0;
 	}
 
 	// Update result
 	result.shade = step( 1e-5, hitDistance.x );
 	result.wsHitPosition += hitDistance.x * float4( _wsDir, result.shade );	// W kept at 0 (invalid) if no hit
-	result.roughness = 0;
-	result.F0 = 0;
+//	result.roughness = 0;
+//	result.F0 = 0;
 	result.materialID = hitDistance.y;
 	result.emissive = 0.0;
 	switch ( uint(result.materialID) ) {

@@ -15,8 +15,8 @@ static const float	GATHER_SPHERE_MAX_RADIUS_P = 200.0;	// Maximum radius (in pix
 #define MAX_SAMPLES	16									// Maximum amount of samples per circle subdivision
 
 Texture2D< float >	_tex_depth : register(t0);			// Depth or distance buffer (here we're given depth)
-Texture2D< float4 >	_tex_sourceRadiance : register(t1);	// Last frame's reprojected radiance buffer
-Texture2D< float4 >	_tex_normal : register(t2);			// Camera-space normal vectors
+Texture2D< float3 >	_tex_normal : register(t1);			// World-space normal vectors
+Texture2D< float4 >	_tex_sourceRadiance : register(t2);	// Last frame's reprojected radiance buffer
 Texture2D< float >	_tex_blueNoise : register(t3);
 
 cbuffer CB_HBIL : register( b3 ) {
@@ -289,7 +289,7 @@ PS_OUT	PS( float4 __Position : SV_POSITION ) {
 
 			Z -= 1e-2;	// !IMPORTANT! Prevent acnea by offseting the central depth a tiny bit closer
 
-	float3	wsNormal = normalize( _tex_normal[pixelPosition].xyz );
+	float3	wsNormal = normalize( _tex_normal[pixelPosition] );
 
 	float3	centralRadiance = _tex_sourceRadiance[pixelPosition].xyz;	// Read back last frame's radiance value that we can use as a fallback for neighbor areas
 

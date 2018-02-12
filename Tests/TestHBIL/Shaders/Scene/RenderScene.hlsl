@@ -62,7 +62,6 @@ PS_OUT	PS_RenderGBuffer( float4 __Position : SV_POSITION ) {
 	return Out;
 }
 
-
 ////////////////////////////////////////////////////////////////////////////////
 // Render shadow map
 ////////////////////////////////////////////////////////////////////////////////
@@ -74,7 +73,7 @@ cbuffer CB_Shadow : register(b3) {
 float	PS_RenderShadow( float4 __Position : SV_POSITION ) : SV_DEPTH {
 
 #if SCENE_TYPE == 1
-	// FAILS COMPILING FOR LIBRARY SCENE FOR SOME REASON I CAN'T EXPLAIN
+	// FAILS COMPILING FOR LIBRARY SCENE FOR SOME REASON I CAN'T EXPLAIN (YET)
 
 	float2	UV = __Position.xy / SHADOW_MAP_SIZE;
 

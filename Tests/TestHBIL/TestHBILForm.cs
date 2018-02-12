@@ -15,21 +15,19 @@
 //	✓ float	GetBilateralWeight( Z0, Z1, radius, ref sqHypotenuse ) => Outside of unit sphere???
 //	✓ Use radius² as progression
 //		=> Doesn't provide any significant improvement
-//	• Sample mips for larger footprint (only if mip is bilateral filtered!)
+//	✓ Compute AO value!!
+//	✓ Emissive surfaces???
 //	✓ Keep previous radiance in case we reject height sample but accept radiance, and don't want to interpolate foreground radiance? Will that even occur?
+//	✓ Use normal dot product weighting anyway?? It looks closer to ground truth in the ground truth simulator! Check it!
+//		=> Nope. Looks better with actual bent normal.
+//
+//	• Sample mips for larger footprint (only if mip is bilateral filtered!)
 //	• Write interleaved sampling + reconstruction based on bilateral weight (store it some place? Like alpha somewhere?)
 //	• Keep failed reprojected pixels into some "surrounding buffer", some sort of paraboloid-projected buffer containing off-screen values???
 //		=> Exponential decay of off-screen values with decay rate depending on camera's linear velocity?? (fun idea!)
 //	• Use W linear attenuation as in HBAO?
-//	✓ Compute AO value!!
 //	• Advance in local camera space but using screen-space steps
 //		=> Must be a linear combination of vector so that advancing 2 pixels equals advancing N meters in camera space...
-//
-//	✓ Emissive surfaces???
-//
-//	!!!!!!!!!!!!!!!!!!!
-//	• Use normal dot product weighting anyway?? It looks closer to ground truth in the ground truth simulator! Check it!
-//	!!!!!!!!!!!!!!!!!!!
 //
 // BUGS:
 //	• Horrible noise in reprojection buffer ==> OLD->NEW Camera transform???
@@ -192,6 +190,12 @@ namespace TestHBIL {
 		private Texture2D			m_tex_texDebugHeights = null;
 		private Texture2D			m_tex_texDebugNormals = null;
 
+		#if SCENE_CORNELL	
+			private Texture2D			m_tex_tomettesAlbedo = null;
+			private Texture2D			m_tex_tomettesNormal = null;
+			private Texture2D			m_tex_tomettesRoughness = null;
+		#endif
+
 		private Camera				m_camera = new Camera();
 		private CameraManipulator	m_manipulator = new CameraManipulator();
 
@@ -341,8 +345,8 @@ namespace TestHBIL {
 
 			using ( ImageFile I = new ImageFile( new System.IO.FileInfo( "Textures/normals.png" ) ) ) {
 				float4[]				scanline = new float4[W];
-				Renderer.PixelsBuffer	SourceNormalMap = new  Renderer.PixelsBuffer( W*H*4*4 );
-				using ( System.IO.BinaryWriter Wr = SourceNormalMap.OpenStreamWrite() )
+				Renderer.PixelsBuffer	sourceNormalMap = new  Renderer.PixelsBuffer( W*H*4*4 );
+				using ( System.IO.BinaryWriter Wr = sourceNormalMap.OpenStreamWrite() )
 					for ( int Y=0; Y < I.Height; Y++ ) {
 						I.ReadScanline( (uint) Y, scanline );
 						for ( int X=0; X < I.Width; X++ ) {
@@ -356,8 +360,37 @@ namespace TestHBIL {
 						}
 					}
 
-				m_tex_texDebugNormals = new Renderer.Texture2D( m_device, I.Width, I.Height, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, false, new Renderer.PixelsBuffer[] { SourceNormalMap } );
+				m_tex_texDebugNormals = new Renderer.Texture2D( m_device, I.Width, I.Height, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, false, new Renderer.PixelsBuffer[] { sourceNormalMap } );
 			}
+
+			#if SCENE_CORNELL
+				using ( ImageFile I = new ImageFile( new System.IO.FileInfo( "Textures/tomettes_basecolor.png" ) ) )
+					using ( ImageFile Isecure = new ImageFile() ) {
+						Isecure.ConvertFrom( I, PIXEL_FORMAT.BGRA8 );
+						m_tex_tomettesAlbedo = new Texture2D( m_device, new ImagesMatrix( new ImageFile[,] {{ Isecure }} ), COMPONENT_FORMAT.UNORM );
+					}
+				using ( ImageFile I = new ImageFile( new System.IO.FileInfo( "Textures/tomettes_normal.png" ) ) ) {
+					float4[]				scanline = new float4[I.Width];
+					Renderer.PixelsBuffer	sourceNormalMap = new  Renderer.PixelsBuffer( I.Width*I.Height*4 );
+					using ( System.IO.BinaryWriter Wr = sourceNormalMap.OpenStreamWrite() )
+						for ( int Y=0; Y < I.Height; Y++ ) {
+							I.ReadScanline( (uint) Y, scanline );
+							for ( int X=0; X < I.Width; X++ ) {
+								Wr.Write( (sbyte) Mathf.Clamp( 256.0f * scanline[X].x - 128.0f, -128, 127 ) );
+								Wr.Write( (sbyte) Mathf.Clamp( 256.0f * scanline[X].y - 128.0f, -128, 127 ) );
+								Wr.Write( (sbyte) Mathf.Clamp( 256.0f * scanline[X].z - 128.0f, -128, 127 ) );
+								Wr.Write( (byte) 255 );
+							}
+						}
+
+					m_tex_tomettesNormal = new Renderer.Texture2D( m_device, I.Width, I.Height, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA8, ImageUtility.COMPONENT_FORMAT.SNORM, false, false, new Renderer.PixelsBuffer[] { sourceNormalMap } );
+				}
+				using ( ImageFile I = new ImageFile( new System.IO.FileInfo( "Textures/tomettes_roughness.png" ) ) )
+					using ( ImageFile Imono = new ImageFile() ) {
+						Imono.ConvertFrom( I, PIXEL_FORMAT.R8 );
+						m_tex_tomettesRoughness = new Texture2D( m_device, new ImagesMatrix( new ImageFile[,] {{ Imono }} ), COMPONENT_FORMAT.UNORM );
+					}
+			#endif
 
 			// Setup camera
 			// BEWARE: Must correspond to TAN_HALF_FOV declared in global.hlsl!
@@ -422,6 +455,12 @@ namespace TestHBIL {
 			m_tex_sourceRadiance_PUSH.Dispose();
 			m_tex_radiance.Dispose();
 			m_tex_bentCone.Dispose();
+
+			#if SCENE_CORNELL
+				m_tex_tomettesRoughness.Dispose();
+				m_tex_tomettesNormal.Dispose();
+				m_tex_tomettesAlbedo.Dispose();
+			#endif
 
 			m_tex_texDebugNormals.Dispose();
 			m_tex_texDebugHeights.Dispose();
@@ -659,9 +698,12 @@ namespace TestHBIL {
 				#endif
 
 				#if SCENE_HEIGHTFIELD
-					// Used by the heightfield scene
 					m_tex_texDebugHeights.SetPS( 32 );
 					m_tex_texDebugNormals.SetPS( 33 );
+				#elif SCENE_CORNELL
+					m_tex_tomettesAlbedo.SetPS( 32 );
+					m_tex_tomettesNormal.SetPS( 33 );
+					m_tex_tomettesRoughness.SetPS( 34 );
 				#endif
 
 				m_device.RenderFullscreenQuad( m_shader_RenderScene_DepthGBufferPass );
@@ -696,6 +738,7 @@ namespace TestHBIL {
 			if ( m_shader_AddEmissive.Use() ) {
 
 // WARNING: #TODO! Do reprojection + push/pull phase WITH added emissive radiance from this frame so the emissive is pulled down the mips as well!
+// Unfortunately that means doing the radiance reprojection AFTER the G-buffer rendering
 
 				m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.ADDITIVE );
 				m_device.SetRenderTarget( m_tex_sourceRadiance_PULL, null );
@@ -756,8 +799,8 @@ m_tex_texDebugNormals.SetPS( 33 );
 					m_CB_HBIL.UpdateData();
 
 					targetDepthStencil.SetPS( 0 );
-					m_tex_sourceRadiance_PULL.SetPS( 1 );	// Reprojected + reconstructed source radiance from last frame with all mips
-					m_tex_normal.SetPS( 2 );
+					m_tex_normal.SetPS( 1 );
+					m_tex_sourceRadiance_PULL.SetPS( 2 );	// Reprojected + reconstructed source radiance from last frame with all mips
 					m_tex_BlueNoise.SetPS( 3 );
 
 					m_device.RenderFullscreenQuad( m_shader_ComputeHBIL );
