@@ -6,6 +6,8 @@
 //
 #include "Global.hlsl"
 
+#define SAMPLE_HEIGHT_MAP	1
+
 Texture2D<float>	_tex_Height : register(t32);
 Texture2D<float3>	_tex_NormalMap : register(t33);
 
@@ -54,6 +56,88 @@ float2	ComputeBoxIntersections( float3 _position, float3 _view, float3 _boxCente
 #endif
 }
 
+#if SAMPLE_HEIGHT_MAP
+float	SampleHeight( float2 _UV ) {
+	return _tex_Height.SampleLevel( LinearClamp, _UV, 0.0 );
+}
+float3	SampleNormal( float2 _UV ) {
+	return _tex_NormalMap.SampleLevel( LinearClamp, _UV, 0.0 );
+}
+#else
+
+static const float	SC = 1.0;
+//#define SC (250.0)
+static const float2x2 m2 = float2x2(0.8,-0.6,0.6,0.8);
+
+//float hash( const in float n ) {
+//    return fract(sin(n)*43758.5453123);
+//}
+float hash( const in float2 p ) {
+	float h = dot(p,float2(127.1,311.7));	
+    return frac(sin(h)*43758.5453123);
+}
+
+// value noise, and its analytical derivatives
+float3 noised( in float2 x ) {
+    float2 f = frac(x);
+    float2 u = f*f*(3.0-2.0*f);
+
+#if 1
+	int2 p = int2(floor(x));
+    float a = hash( (p+int2(0,0)) );
+    float b = hash( (p+int2(1,0)) );
+    float c = hash( (p+int2(0,1)) );
+    float d = hash( (p+int2(1,1)) );
+#elif 1
+    // texel fetch version
+    int2 p = int2(floor(x));
+    float a = texelFetch( iChannel0, (p+int2(0,0))&255, 0 ).x;
+	float b = texelFetch( iChannel0, (p+int2(1,0))&255, 0 ).x;
+	float c = texelFetch( iChannel0, (p+int2(0,1))&255, 0 ).x;
+	float d = texelFetch( iChannel0, (p+int2(1,1))&255, 0 ).x;
+#else    
+    // texture version    
+    float2 p = floor(x);
+	float a = textureLod( iChannel0, (p+float2(0.5,0.5))/256.0, 0.0 ).x;
+	float b = textureLod( iChannel0, (p+float2(1.5,0.5))/256.0, 0.0 ).x;
+	float c = textureLod( iChannel0, (p+float2(0.5,1.5))/256.0, 0.0 ).x;
+	float d = textureLod( iChannel0, (p+float2(1.5,1.5))/256.0, 0.0 ).x;
+#endif
+    
+	return float3(a+(b-a)*u.x+(c-a)*u.y+(a-b-c+d)*u.x*u.y,
+				6.0*f*(1.0-f)*(float2(b-a,c-a)+(a-b-c+d)*u.yx));
+}
+
+float terrainM( in float2 x ) {
+	float2  p = x / SC;
+    float a = 0.0;
+    float b = 1.0;
+	float2  d = 0.0;
+    for( int i=0; i<9; i++ ) {
+        float3 n = noised(p);
+        d += n.yz;
+        a += b*n.x/(1.0+dot(d,d));
+		b *= 0.5;
+        p = mul( m2, p*2.0 );
+    }
+	return 0.5 * SC*a;
+}
+
+float	SampleHeight( float2 _UV ) {
+	return terrainM( 2.0 * 1.537989 * _UV );
+}
+
+float3	SampleNormal( float2 _UV ) {
+	const float t = 1.0;
+    float2	eps = float2( 0.002*t, 0.0 );
+    return normalize( float3(	SampleHeight(_UV-eps.xy) - SampleHeight(_UV+eps.xy),
+								SampleHeight(_UV-eps.yx) - SampleHeight(_UV+eps.yx),
+								2.0*eps.x )
+					);
+}
+
+#endif
+
 float	ComputeHeightFieldIntersection( float3 _lsPosIn, float3 _lsDir, float _length, uint _stepsCount, inout float3 _lsNormal ) {
 	float4	lsPos = float4( _lsPosIn, 0.0 );
 	float4	lsStep = float4( _lsDir, 1.0 ) * _length / _stepsCount;
@@ -62,7 +146,7 @@ float	ComputeHeightFieldIntersection( float3 _lsPosIn, float3 _lsDir, float _len
 	[loop]
 	for ( uint stepIndex=0; stepIndex < _stepsCount; stepIndex++ ) {
 		float2	UV = lsPos.xz;
-		float	H = _tex_Height.SampleLevel( LinearClamp, UV, 0.0 );
+		float	H = SampleHeight( UV );
 		if ( lsPos.y < H ) {
 			// Got a hit! Compute precise intersection...
 			float	Z0 = lsPos.y - lsStep.y;
@@ -72,7 +156,7 @@ float	ComputeHeightFieldIntersection( float3 _lsPosIn, float3 _lsDir, float _len
 			float	t = (Z0 - H0) / (Dh - Dz);
 			lsPos += (t-1.0) * lsStep;
 			UV = lsPos.xz;
-			_lsNormal = _tex_NormalMap.SampleLevel( LinearClamp, UV, 0.0 );
+			_lsNormal = SampleNormal( UV );
 			return lsPos.w;
 		}
 		lsPos += lsStep;
@@ -105,7 +189,7 @@ Intersection	TraceScene( float3 _wsPos, float3 _wsDir ) {
 				lsDir /= L;
 
 		float3	lsNormal = 0;
-		float	lsHitDistance = ComputeHeightFieldIntersection( lsPosIn, lsDir, L, 100, lsNormal );
+		float	lsHitDistance = ComputeHeightFieldIntersection( lsPosIn, lsDir, L, 200, lsNormal );
 		float3	lsHitPos = lsPosIn + lsHitDistance * lsDir;
 		float3	wsHitPos = BBOX_MIN + lsHitPos * 2.0 * BOX_HALF_SIZE;
 
