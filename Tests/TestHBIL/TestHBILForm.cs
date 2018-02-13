@@ -194,6 +194,10 @@ namespace TestHBIL {
 			private Texture2D			m_tex_tomettesAlbedo = null;
 			private Texture2D			m_tex_tomettesNormal = null;
 			private Texture2D			m_tex_tomettesRoughness = null;
+			private Texture2D			m_tex_concreteAlbedo = null;
+			private Texture2D			m_tex_concreteNormal = null;
+			private Texture2D			m_tex_concreteRoughness = null;
+
 		#endif
 
 		private Camera				m_camera = new Camera();
@@ -313,22 +317,22 @@ namespace TestHBIL {
 
 			// Create buffers
 			m_tex_albedo = new Texture2D( m_device, W, H, 1, 1, PIXEL_FORMAT.RGBA8, COMPONENT_FORMAT.UNORM, false, false, null );
-			m_tex_normal = new Texture2D( m_device, W, H, 1, 1, PIXEL_FORMAT.RGBA16F, COMPONENT_FORMAT.AUTO, false, false, null );
+			m_tex_normal = new Texture2D( m_device, W, H, 1, 1, PIXEL_FORMAT.RGBA8, COMPONENT_FORMAT.SNORM, false, false, null );
 			m_tex_emissive = new Texture2D( m_device, W, H, 1, 1, PIXEL_FORMAT.RGBA16F, COMPONENT_FORMAT.AUTO, false, false, null );
 			m_tex_motionVectors = new Texture2D( m_device, W, H, 1, 1, PIXEL_FORMAT.RGBA16F, COMPONENT_FORMAT.AUTO, false, false, null );
-			m_tex_depthWithMips = new Texture2D( m_device, W, H, 1, 0, PIXEL_FORMAT.R32F, COMPONENT_FORMAT.AUTO, false, true, null );
+			m_tex_depthWithMips = new Texture2D( m_device, W, H, 1, 0, PIXEL_FORMAT.R16F, COMPONENT_FORMAT.AUTO, false, true, null );
 //			m_tex_depthWithMips = new Texture2D( m_device, W, H, 1, 0, DEPTH_STENCIL_FORMAT.D32 );	// Can't have UAV flag so can't use CS for mip downsampling
 
 			// Create shadow map
 			m_tex_shadow = new Texture2D( m_device, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 6, 1, DEPTH_STENCIL_FORMAT.D32 );
 
 			// Create HBIL buffers
-			m_tex_bentCone = new Texture2D( m_device, W, H, 1, 1, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.AUTO, false, false, null );
-			m_tex_radiance = new Texture2D( m_device, W, H, 2, 1, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.AUTO, false, false, null );
-			m_tex_sourceRadiance_PUSH = new Texture2D( m_device, W, H, 1, 0, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.AUTO, false, true, null );
-			m_tex_sourceRadiance_PULL = new Texture2D( m_device, W, H, 1, 0, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.AUTO, false, true, null );
+			m_tex_bentCone = new Texture2D( m_device, W, H, 1, 1, PIXEL_FORMAT.RGBA16F, COMPONENT_FORMAT.AUTO, false, false, null );
+			m_tex_radiance = new Texture2D( m_device, W, H, 2, 1, PIXEL_FORMAT.RGBA16F, COMPONENT_FORMAT.AUTO, false, false, null );
+			m_tex_sourceRadiance_PUSH = new Texture2D( m_device, W, H, 1, 0, PIXEL_FORMAT.RGBA16F, COMPONENT_FORMAT.AUTO, false, true, null );
+			m_tex_sourceRadiance_PULL = new Texture2D( m_device, W, H, 1, 0, PIXEL_FORMAT.RGBA16F, COMPONENT_FORMAT.AUTO, false, true, null );
 
-			m_tex_finalRender = new Texture2D( m_device, W, H, 1, 1, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.AUTO, false, false, null );
+			m_tex_finalRender = new Texture2D( m_device, W, H, 1, 1, PIXEL_FORMAT.RGBA16F, COMPONENT_FORMAT.AUTO, false, false, null );
 
 			// Create textures
 			using ( ImageFile I = new ImageFile( new System.IO.FileInfo( "Textures/BlueNoise64x64.png" ) ) )
@@ -364,6 +368,7 @@ namespace TestHBIL {
 			}
 
 			#if SCENE_CORNELL
+				// Tomettes Floor
 				using ( ImageFile I = new ImageFile( new System.IO.FileInfo( "Textures/tomettes_basecolor.png" ) ) )
 					using ( ImageFile Isecure = new ImageFile() ) {
 						Isecure.ConvertFrom( I, PIXEL_FORMAT.BGRA8 );
@@ -389,6 +394,34 @@ namespace TestHBIL {
 					using ( ImageFile Imono = new ImageFile() ) {
 						Imono.ConvertFrom( I, PIXEL_FORMAT.R8 );
 						m_tex_tomettesRoughness = new Texture2D( m_device, new ImagesMatrix( new ImageFile[,] {{ Imono }} ), COMPONENT_FORMAT.UNORM );
+					}
+
+				// Concrete Walls
+				using ( ImageFile I = new ImageFile( new System.IO.FileInfo( "Textures/concrete_diffuse.png" ) ) )
+					using ( ImageFile Isecure = new ImageFile() ) {
+						Isecure.ConvertFrom( I, PIXEL_FORMAT.BGRA8 );
+						m_tex_concreteAlbedo = new Texture2D( m_device, new ImagesMatrix( new ImageFile[,] {{ Isecure }} ), COMPONENT_FORMAT.UNORM );
+					}
+				using ( ImageFile I = new ImageFile( new System.IO.FileInfo( "Textures/concrete_normal.png" ) ) ) {
+					float4[]				scanline = new float4[I.Width];
+					Renderer.PixelsBuffer	sourceNormalMap = new  Renderer.PixelsBuffer( I.Width*I.Height*4 );
+					using ( System.IO.BinaryWriter Wr = sourceNormalMap.OpenStreamWrite() )
+						for ( int Y=0; Y < I.Height; Y++ ) {
+							I.ReadScanline( (uint) Y, scanline );
+							for ( int X=0; X < I.Width; X++ ) {
+								Wr.Write( (sbyte) Mathf.Clamp( 256.0f * scanline[X].x - 128.0f, -128, 127 ) );
+								Wr.Write( (sbyte) Mathf.Clamp( 256.0f * scanline[X].y - 128.0f, -128, 127 ) );
+								Wr.Write( (sbyte) Mathf.Clamp( 256.0f * scanline[X].z - 128.0f, -128, 127 ) );
+								Wr.Write( (byte) 255 );
+							}
+						}
+
+					m_tex_concreteNormal = new Renderer.Texture2D( m_device, I.Width, I.Height, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA8, ImageUtility.COMPONENT_FORMAT.SNORM, false, false, new Renderer.PixelsBuffer[] { sourceNormalMap } );
+				}
+				using ( ImageFile I = new ImageFile( new System.IO.FileInfo( "Textures/concrete_roughness.png" ) ) )
+					using ( ImageFile Imono = new ImageFile() ) {
+						Imono.ConvertFrom( I, PIXEL_FORMAT.R8 );
+						m_tex_concreteRoughness = new Texture2D( m_device, new ImagesMatrix( new ImageFile[,] {{ Imono }} ), COMPONENT_FORMAT.UNORM );
 					}
 			#endif
 
@@ -461,6 +494,10 @@ namespace TestHBIL {
 				m_tex_tomettesRoughness.Dispose();
 				m_tex_tomettesNormal.Dispose();
 				m_tex_tomettesAlbedo.Dispose();
+
+				m_tex_concreteAlbedo.Dispose();
+				m_tex_concreteNormal.Dispose();
+				m_tex_concreteRoughness.Dispose();
 			#endif
 
 			m_tex_texDebugNormals.Dispose();
@@ -705,6 +742,9 @@ namespace TestHBIL {
 					m_tex_tomettesAlbedo.SetPS( 32 );
 					m_tex_tomettesNormal.SetPS( 33 );
 					m_tex_tomettesRoughness.SetPS( 34 );
+					m_tex_concreteAlbedo.SetPS( 35 );
+					m_tex_concreteNormal.SetPS( 36 );
+					m_tex_concreteRoughness.SetPS( 37 );
 				#endif
 
 				m_device.RenderFullscreenQuad( m_shader_RenderScene_DepthGBufferPass );

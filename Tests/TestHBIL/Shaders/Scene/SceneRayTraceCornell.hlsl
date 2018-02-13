@@ -5,9 +5,14 @@
 //
 #include "Global.hlsl"
 
+// Tomettes Floor
 Texture2D<float3>	_tex_FloorAlbedo : register(t32);
 Texture2D<float3>	_tex_FloorNormal : register(t33);
 Texture2D<float>	_tex_FloorRoughness : register(t34);
+// Concrete Walls
+Texture2D<float3>	_tex_WallAlbedo : register(t35);
+Texture2D<float3>	_tex_WallNormal : register(t36);
+Texture2D<float>	_tex_WallRoughness : register(t37);
 
 // Cornell Box Dimensions
 //
@@ -41,10 +46,12 @@ static const float	MAT_ROOM = 1;
 static const float	MAT_ROOM_FLOOR = 2;
 static const float	MAT_ROOM_WALL_LEFT = 3;
 static const float	MAT_ROOM_WALL_RIGHT = 4;
-static const float	MAT_SMALL_BOX = 5;
-static const float	MAT_LARGE_BOX = 6;
-static const float	MAT_LIGHT = 7;
-static const float	MAT_EMISSIVE = 8;
+static const float	MAT_ROOM_WALL_FRONT = 5;
+static const float	MAT_ROOM_WALL_BACK = 6;
+static const float	MAT_SMALL_BOX = 7;
+static const float	MAT_LARGE_BOX = 8;
+static const float	MAT_LIGHT = 9;
+static const float	MAT_EMISSIVE = 10;
 
 
 
@@ -129,6 +136,14 @@ Intersection	TraceScene( float3 _wsPos, float3 _wsDir ) {
 			result.wsNormal = _tex_FloorNormal.SampleLevel( LinearClamp, floorUV, 0.0 ).xzy;
 result.wsNormal = normalize( result.wsNormal * float3( 1, 0.5, 1 ) );	// Amplify a bit
 			result.roughness = _tex_FloorRoughness.SampleLevel( LinearClamp, floorUV, 0.0 );
+		} else if ( hitSides.y == 4 || hitSides.y == 5 ) {
+			hitDistance.y = hitSides.y == 4 ? MAT_ROOM_WALL_BACK : MAT_ROOM_WALL_FRONT;
+			float2	wsWallPos = result.wsHitPosition.xy + hitDistance.x * _wsDir.xy;
+			float2	wallUV = 0.5 + wsWallPos / CORNELL_SIZE.xy;
+			result.albedo = _tex_WallAlbedo.SampleLevel( LinearClamp, wallUV, 0.0 );
+			result.wsNormal = _tex_WallNormal.SampleLevel( LinearClamp, wallUV, 0.0 ).xzy;
+//result.wsNormal = normalize( result.wsNormal * float3( 1, 0.5, 1 ) );	// Amplify a bit
+			result.roughness = _tex_WallRoughness.SampleLevel( LinearClamp, wallUV, 0.0 );
 		}
 	}
 
