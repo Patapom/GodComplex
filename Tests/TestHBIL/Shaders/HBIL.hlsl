@@ -252,6 +252,7 @@ void	ReconstructBentCone( float3 _wsView, float3 _wsCameraUp, float4 _lcsBentCon
 	_cosConeAngle = length( _lcsBentCone.xyz );	// Technically never 0
 	_csBentNormal = _lcsBentCone.xyz / _cosConeAngle;
 	_stdDeviationAO = _lcsBentCone.w;
+	_cosConeAngle *= _cosConeAngle;	// Cosine was stored sqrt
 
 	// Rebuild local camera space
 	float3	wsRight = normalize( cross( _wsView, _wsCameraUp ) );

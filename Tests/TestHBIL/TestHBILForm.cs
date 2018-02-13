@@ -327,7 +327,7 @@ namespace TestHBIL {
 			m_tex_shadow = new Texture2D( m_device, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 6, 1, DEPTH_STENCIL_FORMAT.D32 );
 
 			// Create HBIL buffers
-			m_tex_bentCone = new Texture2D( m_device, W, H, 1, 1, PIXEL_FORMAT.RGBA16F, COMPONENT_FORMAT.AUTO, false, false, null );
+			m_tex_bentCone = new Texture2D( m_device, W, H, 1, 1, PIXEL_FORMAT.RGBA8, COMPONENT_FORMAT.SNORM, false, false, null );
 			m_tex_radiance = new Texture2D( m_device, W, H, 2, 1, PIXEL_FORMAT.RGBA16F, COMPONENT_FORMAT.AUTO, false, false, null );
 			m_tex_sourceRadiance_PUSH = new Texture2D( m_device, W, H, 1, 0, PIXEL_FORMAT.RGBA16F, COMPONENT_FORMAT.AUTO, false, true, null );
 			m_tex_sourceRadiance_PULL = new Texture2D( m_device, W, H, 1, 0, PIXEL_FORMAT.RGBA16F, COMPONENT_FORMAT.AUTO, false, true, null );

@@ -43,6 +43,9 @@ return _exposure * _tex_FinalRender[__Position.xy].xyz;
 	float4	csBentConeDev = _tex_BentCone[__Position.xy];
 	float	cosConeAngle = length( csBentConeDev.xyz );
 	float3	csBentCone = csBentConeDev.xyz / cosConeAngle;
+
+cosConeAngle *= cosConeAngle;	// Now stored as sqrt!
+
 	float	coneAngle = acos( cosConeAngle );
 	float	stdDeviationAO = csBentConeDev.w;
 

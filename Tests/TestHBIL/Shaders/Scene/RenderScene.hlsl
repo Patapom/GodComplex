@@ -116,7 +116,6 @@ struct PS_OUT_FINAL {
 	float4	finalColor : SV_TARGET1;
 };
 
-
 PS_OUT_FINAL	PS_Light( float4 __Position : SV_POSITION ) {
 	uint2	pixelPosition = uint2( floor( __Position.xy ) );
 	float2	UV = __Position.xy / _resolution;
