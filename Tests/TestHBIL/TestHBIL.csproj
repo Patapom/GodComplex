@@ -112,7 +112,6 @@
     <Content Include="Shaders\AddEmissive.hlsl" />
     <Content Include="Shaders\RenderDebugCone.hlsl" />
     <None Include="Shaders\ComputeReprojection.hlsl" />
-    <None Include="Shaders\ComputeReprojection2.hlsl" />
     <None Include="Shaders\ComputeHBIL.hlsl" />
     <None Include="Shaders\HBIL.hlsl" />
     <None Include="Shaders\DownSampleDepth.hlsl" />

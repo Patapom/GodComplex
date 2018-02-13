@@ -181,6 +181,7 @@ namespace TestHBIL {
 		private Texture2D			m_tex_radiance = null;
 		private Texture2D			m_tex_sourceRadiance_PUSH = null;
 		private Texture2D			m_tex_sourceRadiance_PULL = null;
+		private Texture2D			m_tex_reprojectedDepthBuffer = null;
 		private Texture2D			m_tex_finalRender = null;
 		private uint				m_radianceSourceSliceIndex = 0;
 
@@ -274,12 +275,12 @@ namespace TestHBIL {
 
 			try {
 				// Reprojection shaders
- 				m_shader_ReprojectRadiance = new ComputeShader( m_device, new System.IO.FileInfo( "Shaders/ComputeReprojection2.hlsl" ), "CS_Reproject", null );
- 				m_shader_Push = new ComputeShader( m_device, new System.IO.FileInfo( "Shaders/ComputeReprojection2.hlsl" ), "CS_Push", null );
-				m_shader_Pull = new ComputeShader( m_device, new System.IO.FileInfo( "Shaders/ComputeReprojection2.hlsl" ), "CS_Pull", null );
+ 				m_shader_ReprojectRadiance = new ComputeShader( m_device, new System.IO.FileInfo( "Shaders/ComputeReprojection.hlsl" ), "CS_Reproject", null );
+ 				m_shader_Push = new ComputeShader( m_device, new System.IO.FileInfo( "Shaders/ComputeReprojection.hlsl" ), "CS_Push", null );
+				m_shader_Pull = new ComputeShader( m_device, new System.IO.FileInfo( "Shaders/ComputeReprojection.hlsl" ), "CS_Pull", null );
 				#if !BILATERAL_PUSH_PULL
- 					m_shader_Push_FirstPass = new ComputeShader( m_device, new System.IO.FileInfo( "Shaders/ComputeReprojection2.hlsl" ), "CS_Push", new ShaderMacro[] { new ShaderMacro( "FIRST_PASS", "1" ) } );
- 					m_shader_Pull_LastPass = new ComputeShader( m_device, new System.IO.FileInfo( "Shaders/ComputeReprojection2.hlsl" ), "CS_Pull", new ShaderMacro[] { new ShaderMacro( "LAST_PASS", "1" ) } );
+ 					m_shader_Push_FirstPass = new ComputeShader( m_device, new System.IO.FileInfo( "Shaders/ComputeReprojection.hlsl" ), "CS_Push", new ShaderMacro[] { new ShaderMacro( "FIRST_PASS", "1" ) } );
+ 					m_shader_Pull_LastPass = new ComputeShader( m_device, new System.IO.FileInfo( "Shaders/ComputeReprojection.hlsl" ), "CS_Pull", new ShaderMacro[] { new ShaderMacro( "LAST_PASS", "1" ) } );
 				#endif
 
 				// Scene rendering & lighting
@@ -331,6 +332,7 @@ namespace TestHBIL {
 			m_tex_radiance = new Texture2D( m_device, W, H, 2, 1, PIXEL_FORMAT.R11G11B10, COMPONENT_FORMAT.AUTO, false, false, null );
 			m_tex_sourceRadiance_PUSH = new Texture2D( m_device, W, H, 1, 0, PIXEL_FORMAT.RGBA16F, COMPONENT_FORMAT.AUTO, false, true, null );
 			m_tex_sourceRadiance_PULL = new Texture2D( m_device, W, H, 1, 0, PIXEL_FORMAT.RGBA16F, COMPONENT_FORMAT.AUTO, false, true, null );
+			m_tex_reprojectedDepthBuffer = new Texture2D( m_device, W, H, 1, 0, PIXEL_FORMAT.R32, COMPONENT_FORMAT.UINT, false, true, null );
 
 			m_tex_finalRender = new Texture2D( m_device, W, H, 1, 1, PIXEL_FORMAT.RGB10A2, COMPONENT_FORMAT.UNORM, false, false, null );
 
@@ -485,6 +487,7 @@ namespace TestHBIL {
 
 			m_tex_finalRender.Dispose();
 
+			m_tex_reprojectedDepthBuffer.Dispose();
 			m_tex_sourceRadiance_PULL.Dispose();
 			m_tex_sourceRadiance_PUSH.Dispose();
 			m_tex_radiance.Dispose();
@@ -626,15 +629,24 @@ namespace TestHBIL {
 
 			if ( m_shader_ReprojectRadiance.Use() ) {
 				m_device.Clear( m_tex_sourceRadiance_PUSH, float4.Zero );
+				m_device.Clear( m_tex_reprojectedDepthBuffer, 4294967000.0f * float4.One );	// Clear to Z Far
+
+//Texture2D	pipo = new Texture2D( m_device, m_tex_reprojectedDepthBuffer.Width, m_tex_reprojectedDepthBuffer.Height, 1, 0, PIXEL_FORMAT.R32, COMPONENT_FORMAT.UINT, true, false, null );
+//pipo.CopyFrom( m_tex_reprojectedDepthBuffer );
+//uint[,]	p = new uint[m_tex_reprojectedDepthBuffer.Width,m_tex_reprojectedDepthBuffer.Height];
+//pipo.ReadPixels( 0, 0, ( uint X, uint Y, System.IO.BinaryReader _R ) => { p[X,Y] = _R.ReadUInt32(); } );
+
 
 				m_tex_radiance.GetView( 0, 1, m_radianceSourceSliceIndex, 1 ).SetCS( 0 );	// Source radiance from last frame
 				targetDepthStencil.SetCS( 1 );												// Source depth buffer from last frame
 				m_tex_motionVectors.SetCS( 2 );												// Motion vectors for dynamic objects
 				m_tex_BlueNoise.SetCS( 3 );
 				m_tex_sourceRadiance_PUSH.SetCSUAV( 0 );
+				m_tex_reprojectedDepthBuffer.SetCSUAV( 1 );
 
 				m_shader_ReprojectRadiance.Dispatch( m_tex_sourceRadiance_PUSH.Width >> 4, m_tex_sourceRadiance_PUSH.Height >> 4, 1 );
 
+				m_tex_reprojectedDepthBuffer.RemoveFromLastAssignedSlotUAV();
 				m_tex_sourceRadiance_PUSH.RemoveFromLastAssignedSlotUAV();
 				m_tex_motionVectors.RemoveFromLastAssignedSlots();
 				m_tex_radiance.RemoveFromLastAssignedSlots();

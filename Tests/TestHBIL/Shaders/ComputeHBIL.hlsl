@@ -387,8 +387,8 @@ PS_OUT	PS( float4 __Position : SV_POSITION ) {
 
 	// [18/02/13] RGBA8_SNORM requires some encoding
 //	Out.bentCone = float4( max( 0.01, cosAverageConeAngle ) * csAverageBentNormal, stdDeviation );
-	const float	MIN_ENCODABLE_VALUE = 1.0 / 64.0;
-	csAverageBentNormal = max( MIN_ENCODABLE_VALUE, sqrt(cosAverageConeAngle) ) * csAverageBentNormal;
+	const float	MIN_ENCODABLE_VALUE = 1.0 / 128.0;
+	csAverageBentNormal = sqrt( max( MIN_ENCODABLE_VALUE, cosAverageConeAngle ) ) * csAverageBentNormal;
 	Out.bentCone = float4( csAverageBentNormal, stdDeviation );
 
 

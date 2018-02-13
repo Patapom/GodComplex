@@ -29,7 +29,7 @@ float3	PS( float4 __Position : SV_POSITION ) : SV_TARGET0 {
 	float3	wsView = mul( float4( csView, 0 ), _Camera2World ).xyz;
 	float3	wsPos = _Camera2World[3].xyz + Z2Distance * Z_FAR * _tex_Depth[__Position.xy] * wsView;
 
-return _exposure * _tex_FinalRender[__Position.xy].xyz;
+	return _exposure * _tex_FinalRender[__Position.xy].xyz;
 
 
 #if 0	// DEBUG BENT CONE
@@ -60,11 +60,11 @@ return wsBentCone;
 return csBentConeDev.xyz;	// Show RAW value
 #endif
 
-#if 0	// DEBUG PUSH/PULL
+#if 1	// DEBUG PUSH/PULL
 	float4	V = (_flags & 0x100U) ? _tex_SourceRadiance_PULL.SampleLevel( LinearClamp, __Position.xy / _resolution, _debugMipIndex ) : _tex_SourceRadiance_PUSH.SampleLevel( LinearClamp, __Position.xy / _resolution, _debugMipIndex );
 //	if ( _debugMipIndex == 0 )
 //		V.w = Depth2Weight( V.w );
-//	return 0.1 * V.w;
+//	return 0.05 * V.w;
 //	return V.xyz / V.w;
 	return V.xyz;
 #endif

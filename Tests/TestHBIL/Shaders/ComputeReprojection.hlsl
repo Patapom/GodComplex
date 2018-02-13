@@ -7,6 +7,7 @@
 #define THREADS_X	16
 #define THREADS_Y	16
 
+// Change pixel shift to skip 1 every N pixels (reprojection will be cheaper but reconstruction will be rougher)
 #define PIXEL_SHIFT			0
 #define PIXEL_STRIDE		(1 << PIXEL_SHIFT)
 #define USE_NOISE_JITTER	0
@@ -18,9 +19,12 @@ Texture2D< float >		_tex_blueNoise : register(t3);
 
 Texture2D< float4 >		_tex_sourceRadianceCurrentMip : register(t3);
 RWTexture2D< float4 >	_tex_reprojectedRadiance : register(u0);
+RWTexture2D< uint >		_tex_reprojectedDepthBuffer : register(u1);
 
 cbuffer CB_PushPull : register( b3 ) {
 	uint2	_targetSize;
+	float2	_bilateralDepths;
+	float	_preferedDepth;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -44,7 +48,11 @@ void	CS_Reproject( uint3 _groupID : SV_groupID, uint3 _groupThreadID : SV_groupT
 	float2	UV = float2( pixelPosition + 0.5 ) / _resolution;
 
 	// Compute previous camera-space position
-	float	previousZ = Z_FAR * _tex_depth[pixelPosition];
+	float	previousZ = _tex_depth[pixelPosition];
+	if ( previousZ > 0.999 )
+		return;	// Don't reproject infinite pixels
+	previousZ *= Z_FAR;
+
 	float3	csView = BuildCameraRay( UV );
 //	float	Z2Distance = length( csView );
 	float3	csPreviousPosition = csView * previousZ;
@@ -61,15 +69,17 @@ void	CS_Reproject( uint3 _groupID : SV_groupID, uint3 _groupThreadID : SV_groupT
 
 	if ( any( newPixelPosition < 0 ) || any( newPixelPosition >= _resolution ) )
 		return;	// Off screen..
+				// #TODO: Maybe collect into a paraboloid-projected map representing the offscreen environment so we can still benefit from off-screen reflections??
 
 	float3	previousRadiance = _tex_sourceRadiance[pixelPosition].xyz;
 
-//previousRadiance = float3( UV, 0 );
-//previousRadiance = float3( newUV, 0 );
-//previousRadiance = float3( 1, 0, 1 );
-//previousRadiance = float( noise1D ) / PIXEL_STRIDE*PIXEL_STRIDE;
-
-	_tex_reprojectedRadiance[newPixelPosition] = float4( previousRadiance, newZ );	// Store depth in alpha (will be used for bilateral filtering later)
+	// Check existing Z before writing
+	uint	newZ_uint = uint( (newZ / Z_FAR) * 4294967000.0 );	// Not exactly 2^32-1 but close enough
+	uint	existingZ_uint;
+	InterlockedMin( _tex_reprojectedDepthBuffer[newPixelPosition], newZ_uint, existingZ_uint );
+		
+	if ( newZ_uint < existingZ_uint )
+		_tex_reprojectedRadiance[newPixelPosition] = float4( previousRadiance, newZ );	// Store depth in alpha (will be used for bilateral filtering later)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -83,8 +93,15 @@ void	CS_Reproject( uint3 _groupID : SV_groupID, uint3 _groupThreadID : SV_groupT
 
 // Returns a very weak weight if depths are deemed un-interesting (too close or too far away) but never 0 (0 is reserved for uninitialized values)
 float	Depth2Weight( float _depth ) {
-	return _depth < 1e-3 ? 0.0	// Keep uninitialized values as invalid
-						 : lerp( 0.001, 1.0, smoothstep( 0.0, 1.0, _depth ) * smoothstep( 100.0, 40.0, _depth ) );	// Otherwise, we maximize the weights of samples whose depth is between 1 and 40 meters
+	return step( 1e-3, _depth );	// Simple ON / OFF validation
+//	return _depth < 1e-3 ? 0.0	// Keep uninitialized values as invalid
+//						 : lerp( 0.001, 1.0, smoothstep( 0.0, 1.0, _depth ) * smoothstep( 100.0, 40.0, _depth ) );	// Otherwise, we maximize the weights of samples whose depth is between 1 and 40 meters
+}
+
+// Returns 0 if the depths are too far appart from each other...
+float	BilateralWeight( float _depth0, float _depth1 ) {
+	float	dZ = _depth0 - _depth1;
+	return 1e-3 + smoothstep( _bilateralDepths.y, _bilateralDepths.x, dZ * dZ );
 }
 
 [numthreads( THREADS_X, THREADS_Y, 1 )]
@@ -100,32 +117,47 @@ void	CS_Push( uint3 _groupID : SV_groupID, uint3 _groupThreadID : SV_groupThread
 	float4	V11 = _tex_sourceRadiance[sourcePixelIndex];	sourcePixelIndex.x--;
 	float4	V01 = _tex_sourceRadiance[sourcePixelIndex];	sourcePixelIndex.y--;
 
-	#if FIRST_PASS
-		// Mip 0 contains depth information that we must transform into proper weights
-		V00.w = Depth2Weight( V00.w );
-		V10.w = Depth2Weight( V10.w );
-		V11.w = Depth2Weight( V11.w );
-		V01.w = Depth2Weight( V01.w );
-	#endif
+	// Compute depth weight
+	// Will return 0 for invalid pixels and low values for "non important depths"
+	float	w00 = Depth2Weight( V00.w );
+	float	w10 = Depth2Weight( V10.w );
+	float	w11 = Depth2Weight( V11.w );
+	float	w01 = Depth2Weight( V01.w );
+	float	sumWeights = w00 + w10 + w01 + w11;
 
-	// Pre-multiply by alpha
-	float3	C = V00.w * V00.xyz
-			  + V10.w * V10.xyz
-			  + V01.w * V01.xyz
-			  + V11.w * V11.xyz;
+	// Compute average depth by harmonic mean with offset
+	// averageZ = 1 / Sum( 1 / (offset+Z) ) - offset
+	float	meanOffset = _preferedDepth;
+	float	avgZ = w00 / (meanOffset + V00.w)
+				 + w10 / (meanOffset + V10.w)
+				 + w01 / (meanOffset + V01.w)
+				 + w11 / (meanOffset + V11.w);
+			avgZ = avgZ > 0.0 ? sumWeights / avgZ - meanOffset : 0.0;
 
-	float	sumWeights = V00.w + V10.w + V01.w + V11.w;
-	float	A = saturate( sumWeights );
-	C *= sumWeights > 0.0 ? A / sumWeights : 0.0;	// Store un-premultiplied color
-//	C *= sumWeights > 0.0 ? 1.0 / sumWeights : 0.0;	// Store un-premultiplied color
+	// Compute bilateral weights that yields 0 if the depth vary too much from average depth
+	w00 *= BilateralWeight( V00.w, avgZ );
+	w10 *= BilateralWeight( V10.w, avgZ );
+	w01 *= BilateralWeight( V01.w, avgZ );
+	w11 *= BilateralWeight( V11.w, avgZ );
 
-	_tex_reprojectedRadiance[targetPixelIndex] = float4( C, A );
+	// Pre-multiply colors by weights
+	float3	C = w00 * V00.xyz
+			  + w10 * V10.xyz
+			  + w01 * V01.xyz
+			  + w11 * V11.xyz;
+
+	sumWeights = w00 + w10 + w01 + w11;
+	C *= sumWeights > 0.0 ? saturate( sumWeights ) / sumWeights : 0.0;	// Store un-premultiplied color
+
+//if ( sumWeights < 1e-3 && avgZ > 1e-3 )
+//	C = float3( 1, 0, 1 );	// Can it happen that we nullified all colors because of invalid weights although we have valid colors in the lot???
+
+	_tex_reprojectedRadiance[targetPixelIndex] = float4( C, avgZ );
 }
-
 
 ////////////////////////////////////////////////////////////////////////////////
 // Implements the PULL phase of the push/pull algorithm described in "The Pull-Push Algorithm Revisited" M. Kraus (2009)
-// Actually, this is called the "push" phase in the original algorithm but I prefer thinking of it as pulling valid values up from to the lower mips...
+// Actually, this is called the "push" phase in the original algorithm but I prefer thinking of it as pulling valid values from to the lower mips up to the level 0...
 //
 [numthreads( THREADS_X, THREADS_Y, 1 )]
 void	CS_Pull( uint3 _groupID : SV_groupID, uint3 _groupThreadID : SV_groupThreadID, uint3 _dispatchThreadID : SV_dispatchThreadID ) {
@@ -135,59 +167,33 @@ void	CS_Pull( uint3 _groupID : SV_groupID, uint3 _groupThreadID : SV_groupThread
 
 	// Read currently existing value (possibly already valid)
 	float4	oldV = _tex_sourceRadianceCurrentMip[targetPixelIndex];
+	float	oldW = Depth2Weight( oldV.w );
+/*	if ( oldW > 0.999 )
+		return;	// This pixel is already filled up with a valid value...
 
-	#if LAST_PASS
-		oldV.w = Depth2Weight( oldV.w );	// Mip 0 contains depth information
-	#endif
+	// Read the lower mip's 4 values surrounding our invalid value
+	// Now we KNOW that ALL of these values are guaranteed to be valid since we're reconstructing
+	//	entire mip levels one by one and no pixel can be left empty anymore so any mip below our
+	//	current level is completely filled up...
+	uint2	sourcePixelIndex = targetPixelIndex >> 1;
+	float4	V00 = _tex_sourceRadiance[sourcePixelIndex];	sourcePixelIndex.x++;
+	float4	V10 = _tex_sourceRadiance[sourcePixelIndex];	sourcePixelIndex.y++;
+	float4	V11 = _tex_sourceRadiance[sourcePixelIndex];	sourcePixelIndex.x--;
+	float4	V01 = _tex_sourceRadiance[sourcePixelIndex];	sourcePixelIndex.y--;
 
-	// Bilinear interpolate the 4 surrounding, lower mip pixels
-	#if 1
-		float2	UV = float2( targetPixelIndex ) / _targetSize;
-		float2	dUV = 2.0 / _targetSize;
+	// Compute depth weight
+	// Will return 0 for invalid pixels and low values for "non important depths"
+	float	w00 = Depth2Weight( V00.w );
+	float	w10 = Depth2Weight( V10.w );
+	float	w11 = Depth2Weight( V11.w );
+	float	w01 = Depth2Weight( V01.w );
+	float	sumWeights = w00 + w10 + w01 + w11;
 
-		float4	V00 = _tex_sourceRadiance.SampleLevel( LinearClamp, UV, 0.0 );	UV.x += dUV.x;
-		float4	V10 = _tex_sourceRadiance.SampleLevel( LinearClamp, UV, 0.0 );	UV.y += dUV.y;
-		float4	V11 = _tex_sourceRadiance.SampleLevel( LinearClamp, UV, 0.0 );	UV.x -= dUV.x;
-		float4	V01 = _tex_sourceRadiance.SampleLevel( LinearClamp, UV, 0.0 );	UV.y -= dUV.y;
-
-		// Pre-multiply by alpha
-		float3	C = V00.w * V00.xyz
-				  + V10.w * V10.xyz
-				  + V01.w * V01.xyz
-				  + V11.w * V11.xyz;
-
-		float	sumWeights = V00.w + V10.w + V01.w + V11.w;
-		float	A = saturate( sumWeights );
-		C *= sumWeights > 0.0 ? A / sumWeights : 0.0;	// Un-premultiply color
-	#else
-		// Complicated biasing toward valid weights...
-		uint2	sourcePixelIndex = targetPixelIndex >> 1;
-		float4	V00 = _tex_sourceRadiance[sourcePixelIndex];	sourcePixelIndex.x++;
-		float4	V10 = _tex_sourceRadiance[sourcePixelIndex];	sourcePixelIndex.y++;
-		float4	V11 = _tex_sourceRadiance[sourcePixelIndex];	sourcePixelIndex.x--;
-		float4	V01 = _tex_sourceRadiance[sourcePixelIndex];	sourcePixelIndex.y--;
-
-		V00.xyz *= V00.w;
-		V10.xyz *= V10.w;
-		V01.xyz *= V01.w;
-		V11.xyz *= V11.w;
-
-		float2	dPixel = targetPixelIndex - 2.0 * sourcePixelIndex;	// Will yield values in {0,0} => {1,1} range
-				dPixel += float2( -1, -1 ) * V00.w;
-				dPixel += float2( +1, -1 ) * V10.w;
-				dPixel += float2( -1, +1 ) * V01.w;
-				dPixel += float2( +1, +1 ) * V11.w;
-				dPixel = saturate( dPixel );
-		float4	V0 = lerp( V00, V10, dPixel.x );
-		float4	V1 = lerp( V01, V11, dPixel.x );
-		float4	V = lerp( V0, V1, dPixel.y );
-		float	A = saturate( V.w );
-		float3	C = V.w > 0.0 ? V.xyz * A / V.w : 0.0;
-	#endif    
-
-	float4	newV = float4( C, A );
-
-	// Store the color with the most significance (i.e. best weight)
-	_tex_reprojectedRadiance[targetPixelIndex] = (1.0 - saturate( oldV.w )) * newV + oldV;
-//	_tex_reprojectedRadiance[targetPixelIndex] = lerp( newV, oldV, saturate( oldV.w ) );
+	// Perform a simple bilinear interpolation...
+	_tex_reprojectedRadiance[targetPixelIndex] = _tex_sourceRadiance.SampleLevel( LinearClamp, float2( targetPixelIndex + 0.5 ) / _targetSize, 0.0 );
+*/
+	if ( oldW > 0.999 )
+		_tex_reprojectedRadiance[targetPixelIndex] = oldV;	// Old value is definitely good, don't bother interpolating from lower mip
+	else
+		_tex_reprojectedRadiance[targetPixelIndex] = _tex_sourceRadiance.SampleLevel( LinearClamp, float2( targetPixelIndex + 0.5 ) / _targetSize, 0.0 );
 }
