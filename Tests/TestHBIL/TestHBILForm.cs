@@ -328,11 +328,11 @@ namespace TestHBIL {
 
 			// Create HBIL buffers
 			m_tex_bentCone = new Texture2D( m_device, W, H, 1, 1, PIXEL_FORMAT.RGBA8, COMPONENT_FORMAT.SNORM, false, false, null );
-			m_tex_radiance = new Texture2D( m_device, W, H, 2, 1, PIXEL_FORMAT.RGBA16F, COMPONENT_FORMAT.AUTO, false, false, null );
+			m_tex_radiance = new Texture2D( m_device, W, H, 2, 1, PIXEL_FORMAT.R11G11B10, COMPONENT_FORMAT.AUTO, false, false, null );
 			m_tex_sourceRadiance_PUSH = new Texture2D( m_device, W, H, 1, 0, PIXEL_FORMAT.RGBA16F, COMPONENT_FORMAT.AUTO, false, true, null );
 			m_tex_sourceRadiance_PULL = new Texture2D( m_device, W, H, 1, 0, PIXEL_FORMAT.RGBA16F, COMPONENT_FORMAT.AUTO, false, true, null );
 
-			m_tex_finalRender = new Texture2D( m_device, W, H, 1, 1, PIXEL_FORMAT.RGB10A2, COMPONENT_FORMAT.AUTO, false, false, null );
+			m_tex_finalRender = new Texture2D( m_device, W, H, 1, 1, PIXEL_FORMAT.RGB10A2, COMPONENT_FORMAT.UNORM, false, false, null );
 
 			// Create textures
 			using ( ImageFile I = new ImageFile( new System.IO.FileInfo( "Textures/BlueNoise64x64.png" ) ) )
@@ -851,6 +851,14 @@ m_tex_texDebugNormals.SetPS( 33 );
 					m_tex_radiance.RemoveFromLastAssignedSlots();
 				}
 			#endif
+
+
+//Texture2D	pipoCPU = new Texture2D( m_device, m_tex_radiance.Width, m_tex_radiance.Height, 2, 1, PIXEL_FORMAT.RGB10A2, COMPONENT_FORMAT.AUTO, true, false, null );
+//pipoCPU.CopyFrom( m_tex_radiance );
+//uint[,]	pixels = new uint[m_tex_radiance.Width,m_tex_radiance.Height];
+//pipoCPU.ReadPixels( 0, m_radianceSourceSliceIndex, ( uint _X, uint _Y, System.IO.BinaryReader _R ) => {
+//	pixels[_X,_Y] = _R.ReadUInt32();
+//} );
 
 			//////////////////////////////////////////////////////////////////////////
 			// =========== Compute lighting & finalize radiance  ===========

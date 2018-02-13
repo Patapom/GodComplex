@@ -377,6 +377,12 @@ PS_OUT	PS( float4 __Position : SV_POSITION ) {
 	PS_OUT	Out;
 	Out.irradiance = float4( sumIrradiance, 0 );
 
+
+//Out.irradiance = float4( 0, 0, 0, 0.75 / 4.0 );
+//Out.irradiance = float4( 0, 0, 0, 1.999 / 3.0 );
+
+
+
 	// [18/02/13] RGBA8_SNORM requires some encoding
 //	Out.bentCone = float4( max( 0.01, cosAverageConeAngle ) * csAverageBentNormal, stdDeviation );
 	const float	MIN_ENCODABLE_VALUE = 1.0 / 64.0;
