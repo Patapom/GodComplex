@@ -177,6 +177,9 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\BaseLib\BaseLib.vcxproj">
+      <Project>{df55758a-7f37-452d-a01c-201735bf86f2}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\ImageUtilityLib\ImageUtilityLib.vcxproj">
       <Project>{2d5bf212-72a6-405a-b30d-3f24d9969e9c}</Project>
     </ProjectReference>

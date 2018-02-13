@@ -378,8 +378,10 @@ PS_OUT	PS( float4 __Position : SV_POSITION ) {
 	Out.irradiance = float4( sumIrradiance, 0 );
 
 
+// Debugging the RGB10A2 and R11G11B10_FLOAT formats
 //Out.irradiance = float4( 0, 0, 0, 0.75 / 4.0 );
 //Out.irradiance = float4( 0, 0, 0, 1.999 / 3.0 );
+//Out.irradiance = float4( 1, 0, 0, 1 );
 
 
 

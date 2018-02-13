@@ -683,8 +683,9 @@ namespace BaseLib {
 
 	private:
 		void	EncodeValue( float _value, U8& _exponent, U8& _mantissa ) {
-			float	exponent = ceilf( log2f( _value ) );
-			float	mantissa = _value / powf( 2.0f, exponent );
+throw "Encoding is wrong! FIX! Be careful about compiler failing to recompile changes for some reason!";
+			U32		exponent = U32( ceilf( log2f( _value ) ) );
+			float	mantissa = _value / float(1 << exponent);
 			if ( mantissa == 1.0f ) {
 				// Step to next order
 				mantissa = 0.5f;
@@ -695,6 +696,7 @@ namespace BaseLib {
 		}
 
 		float	DecodeValue( U8 _exponent, U8 _mantissa ) {
+throw "Decoding is wrong! FIX! Be careful about compiler failing to recompile changes for some reason!";
 			float	exponent = _exponent < 15 ? 1.0f / (1 << (15-_exponent)) : (1 << (_exponent - 15));
 			float	mantissa = _mantissa / 64.0f;
 			float	result = mantissa * exponent;

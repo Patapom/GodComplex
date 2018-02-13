@@ -853,12 +853,13 @@ m_tex_texDebugNormals.SetPS( 33 );
 			#endif
 
 
-//Texture2D	pipoCPU = new Texture2D( m_device, m_tex_radiance.Width, m_tex_radiance.Height, 2, 1, PIXEL_FORMAT.RGB10A2, COMPONENT_FORMAT.AUTO, true, false, null );
-//pipoCPU.CopyFrom( m_tex_radiance );
-//uint[,]	pixels = new uint[m_tex_radiance.Width,m_tex_radiance.Height];
-//pipoCPU.ReadPixels( 0, m_radianceSourceSliceIndex, ( uint _X, uint _Y, System.IO.BinaryReader _R ) => {
-//	pixels[_X,_Y] = _R.ReadUInt32();
-//} );
+// DEBUG RGB10A2 and R11G11B10_FLOAT formats
+// Texture2D	pipoCPU = new Texture2D( m_device, m_tex_radiance.Width, m_tex_radiance.Height, 2, 1, PIXEL_FORMAT.R11G11B10, COMPONENT_FORMAT.AUTO, true, false, null );
+// pipoCPU.CopyFrom( m_tex_radiance );
+// uint[,]	pixels = new uint[m_tex_radiance.Width,m_tex_radiance.Height];
+// pipoCPU.ReadPixels( 0, m_radianceSourceSliceIndex, ( uint _X, uint _Y, System.IO.BinaryReader _R ) => {
+// 	pixels[_X,_Y] = _R.ReadUInt32();
+// } );
 
 			//////////////////////////////////////////////////////////////////////////
 			// =========== Compute lighting & finalize radiance  ===========
