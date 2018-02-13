@@ -72,7 +72,7 @@ namespace ImageUtility {
 
 		// 8-bits
 		R8		= 0,
-		RG8		= 1		| NO_FREEIMAGE_SUPPORT,	// FreeImage thinks it's R5G6B5! Aliased as RGBA8
+		RG8		= 1		| NO_FREEIMAGE_SUPPORT,	// FreeImage thinks it's R5G6B5! Aliased as BGRA8
 		RGB8	= 2		| NO_FREEIMAGE_SUPPORT,	// FreeImage only supports BGR8 format internally!
 		RGBA8	= 3		| NO_FREEIMAGE_SUPPORT,	// FreeImage only supports BGRA8 format internally!
 		BGR8	= 3,
@@ -111,6 +111,11 @@ namespace ImageUtility {
 		RG32F	= 18	| NO_FREEIMAGE_SUPPORT,	// Unsupported by FreeImage, aliased as RGBA32F
 		RGB32F	= 19,
 		RGBA32F = 20,
+
+		// Special formats
+		RGBE	= 32	| NO_FREEIMAGE_SUPPORT,	// Unsupported by FreeImage, aliased as BGRA8
+		RGB10A2	= 33	| NO_FREEIMAGE_SUPPORT,	// Unsupported by FreeImage, aliased as BGRA8
+		R11G11B10= 34	| NO_FREEIMAGE_SUPPORT,	// Unsupported by FreeImage, aliased as BGRA8
 
 		// This is the "raw compressed format" used to support compressed or otherwise unsupported pixel formats like DirectX BCx formats (only used by DDS images)
 		BC1		= 256	| RAW_BUFFER | COMPRESSED,	// Only supported by DDS, raw buffered images

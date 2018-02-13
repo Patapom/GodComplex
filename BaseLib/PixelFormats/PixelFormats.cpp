@@ -10,6 +10,8 @@ PF_RGBA8::desc_t		PF_RGBA8::Descriptor;
 PF_BGR8::desc_t			PF_BGR8::Descriptor;
 PF_BGRA8::desc_t		PF_BGRA8::Descriptor;
 PF_RGBE::desc_t			PF_RGBE::Descriptor;
+PF_RGB10A2::desc_t		PF_RGB10A2::Descriptor;
+PF_R11G11B10::desc_t	PF_R11G11B10::Descriptor;
 PF_R16::desc_t			PF_R16::Descriptor;
 PF_RG16::desc_t			PF_RG16::Descriptor;
 PF_RGB16::desc_t		PF_RGB16::Descriptor;
@@ -40,6 +42,9 @@ const IPixelAccessor&	BaseLib::PixelFormat2PixelAccessor( PIXEL_FORMAT _pixelFor
 	case PIXEL_FORMAT::BGRA8:		return PF_BGRA8::Descriptor;
 	case PIXEL_FORMAT::RGB8:		return PF_RGB8::Descriptor;
 	case PIXEL_FORMAT::RGBA8:		return PF_RGBA8::Descriptor;
+	case PIXEL_FORMAT::RGBE:		return PF_RGBE::Descriptor;
+	case PIXEL_FORMAT::RGB10A2:		return PF_RGB10A2::Descriptor;
+	case PIXEL_FORMAT::R11G11B10:	return PF_R11G11B10::Descriptor;
 
 		// 16-bits
 	case PIXEL_FORMAT::R16:			return PF_R16::Descriptor;
@@ -85,6 +90,8 @@ PIXEL_FORMAT	BaseLib::PixelAccessor2PixelFormat( const IPixelAccessor& _pixelAcc
 	case 4:
 		if ( &_pixelAccessor == &PF_BGRA8::Descriptor ) return PIXEL_FORMAT::BGRA8;
 		if ( &_pixelAccessor == &PF_RGBA8::Descriptor ) return PIXEL_FORMAT::RGBA8;
+		if ( &_pixelAccessor == &PF_RGBE::Descriptor ) return PIXEL_FORMAT::RGBE;
+		if ( &_pixelAccessor == &PF_RGB10A2::Descriptor ) return PIXEL_FORMAT::RGB10A2;
 		if ( &_pixelAccessor == &PF_RG16::Descriptor ) return PIXEL_FORMAT::RG16;
 		if ( &_pixelAccessor == &PF_RG16F::Descriptor ) return PIXEL_FORMAT::RG16F;
 		if ( &_pixelAccessor == &PF_R32::Descriptor ) return PIXEL_FORMAT::R32;
@@ -136,6 +143,9 @@ PIXEL_FORMAT	BaseLib::DXGIFormat2PixelFormat( DXGI_FORMAT _sourceFormat, COMPONE
 		case DXGI_FORMAT_B8G8R8A8_UNORM_SRGB:	_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::UNORM_sRGB; return PIXEL_FORMAT::BGRA8;
 		case DXGI_FORMAT_B8G8R8A8_UNORM:		_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::UNORM; return PIXEL_FORMAT::BGRA8;
 
+		case DXGI_FORMAT_R10G10B10A2_UNORM:		_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::UNORM; return PIXEL_FORMAT::RGB10A2;
+		case DXGI_FORMAT_R10G10B10A2_UINT:		_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::UINT; return PIXEL_FORMAT::RGB10A2;
+
 		case DXGI_FORMAT_R16_UINT:				_pixelSize = 2; _componentFormat = COMPONENT_FORMAT::UINT; return PIXEL_FORMAT::R16;
 		case DXGI_FORMAT_R16_SINT:				_pixelSize = 2; _componentFormat = COMPONENT_FORMAT::SINT; return PIXEL_FORMAT::R16;
 		case DXGI_FORMAT_R16_SNORM:				_pixelSize = 2; _componentFormat = COMPONENT_FORMAT::SNORM; return PIXEL_FORMAT::R16;
@@ -154,16 +164,16 @@ PIXEL_FORMAT	BaseLib::DXGIFormat2PixelFormat( DXGI_FORMAT _sourceFormat, COMPONE
 		case DXGI_FORMAT_R16G16B16A16_UNORM:	_pixelSize = 8; _componentFormat = COMPONENT_FORMAT::UNORM; return PIXEL_FORMAT::RGBA16;
 		case DXGI_FORMAT_R16G16B16A16_FLOAT:	_pixelSize = 8; _componentFormat = COMPONENT_FORMAT::AUTO; return PIXEL_FORMAT::RGBA16F;
 
- 		case DXGI_FORMAT_R32_UINT:				_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::UINT; return PIXEL_FORMAT::R32;	// Unsupported!
- 		case DXGI_FORMAT_R32_SINT:				_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::SINT; return PIXEL_FORMAT::R32;	// Unsupported!
+ 		case DXGI_FORMAT_R32_UINT:				_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::UINT; return PIXEL_FORMAT::R32;
+ 		case DXGI_FORMAT_R32_SINT:				_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::SINT; return PIXEL_FORMAT::R32;
 		case DXGI_FORMAT_R32_FLOAT:				_pixelSize = 4; _componentFormat = COMPONENT_FORMAT::AUTO; return PIXEL_FORMAT::R32F;
 
- 		case DXGI_FORMAT_R32G32_UINT:			_pixelSize = 8; _componentFormat = COMPONENT_FORMAT::UINT; return PIXEL_FORMAT::RG32;	// Unsupported!
- 		case DXGI_FORMAT_R32G32_SINT:			_pixelSize = 8; _componentFormat = COMPONENT_FORMAT::SINT; return PIXEL_FORMAT::RG32;	// Unsupported!
+ 		case DXGI_FORMAT_R32G32_UINT:			_pixelSize = 8; _componentFormat = COMPONENT_FORMAT::UINT; return PIXEL_FORMAT::RG32;
+ 		case DXGI_FORMAT_R32G32_SINT:			_pixelSize = 8; _componentFormat = COMPONENT_FORMAT::SINT; return PIXEL_FORMAT::RG32;
 		case DXGI_FORMAT_R32G32_FLOAT:			_pixelSize = 8; _componentFormat = COMPONENT_FORMAT::AUTO; return PIXEL_FORMAT::RG32F;
 
- 		case DXGI_FORMAT_R32G32B32A32_UINT:		_pixelSize = 16; _componentFormat = COMPONENT_FORMAT::UINT; return PIXEL_FORMAT::RGBA32;	// Unsupported!
- 		case DXGI_FORMAT_R32G32B32A32_SINT:		_pixelSize = 16; _componentFormat = COMPONENT_FORMAT::SINT; return PIXEL_FORMAT::RGBA32;	// Unsupported!
+ 		case DXGI_FORMAT_R32G32B32A32_UINT:		_pixelSize = 16; _componentFormat = COMPONENT_FORMAT::UINT; return PIXEL_FORMAT::RGBA32;
+ 		case DXGI_FORMAT_R32G32B32A32_SINT:		_pixelSize = 16; _componentFormat = COMPONENT_FORMAT::SINT; return PIXEL_FORMAT::RGBA32;
 		case DXGI_FORMAT_R32G32B32A32_FLOAT:	_pixelSize = 16; _componentFormat = COMPONENT_FORMAT::AUTO; return PIXEL_FORMAT::RGBA32F;
 
 		// Compressed formats should be handled as raw buffers
@@ -223,6 +233,21 @@ DXGI_FORMAT	BaseLib::PixelFormat2DXGIFormat( PIXEL_FORMAT _sourceFormat, COMPONE
 			switch ( _componentFormat ) {
 				case COMPONENT_FORMAT::UNORM_sRGB:	return DXGI_FORMAT_B8G8R8A8_UNORM_SRGB; break;
 				case COMPONENT_FORMAT::UNORM:	return DXGI_FORMAT_B8G8R8A8_UNORM; break;
+			}
+			break;
+
+		// Special formats
+		case PIXEL_FORMAT::RGBE:
+			switch ( _componentFormat ) {
+				case COMPONENT_FORMAT::AUTO:
+				case COMPONENT_FORMAT::UNORM:	return DXGI_FORMAT_R8G8B8A8_UNORM; break;
+			}
+			break;
+		case PIXEL_FORMAT::RGB10A2:
+			switch ( _componentFormat ) {
+				case COMPONENT_FORMAT::AUTO:
+				case COMPONENT_FORMAT::UNORM:	return DXGI_FORMAT_R10G10B10A2_UNORM; break;
+				case COMPONENT_FORMAT::UINT:	return DXGI_FORMAT_R10G10B10A2_UINT; break;
 			}
 			break;
 

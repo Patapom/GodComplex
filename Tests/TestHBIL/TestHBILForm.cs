@@ -332,7 +332,7 @@ namespace TestHBIL {
 			m_tex_sourceRadiance_PUSH = new Texture2D( m_device, W, H, 1, 0, PIXEL_FORMAT.RGBA16F, COMPONENT_FORMAT.AUTO, false, true, null );
 			m_tex_sourceRadiance_PULL = new Texture2D( m_device, W, H, 1, 0, PIXEL_FORMAT.RGBA16F, COMPONENT_FORMAT.AUTO, false, true, null );
 
-			m_tex_finalRender = new Texture2D( m_device, W, H, 1, 1, PIXEL_FORMAT.RGBA16F, COMPONENT_FORMAT.AUTO, false, false, null );
+			m_tex_finalRender = new Texture2D( m_device, W, H, 1, 1, PIXEL_FORMAT.RGB10A2, COMPONENT_FORMAT.AUTO, false, false, null );
 
 			// Create textures
 			using ( ImageFile I = new ImageFile( new System.IO.FileInfo( "Textures/BlueNoise64x64.png" ) ) )

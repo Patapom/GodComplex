@@ -648,3 +648,5 @@ Publish
 /Tests/TestHBIL/Doc/*.pdf
 /Tests/TestHBIL/Doc/*.eps
 /Tests/TestHBIL_Ref/obj
+/Tests/TestHBIL_Ref/Textures
+/Tests/TestHBIL_Ref/Doc
