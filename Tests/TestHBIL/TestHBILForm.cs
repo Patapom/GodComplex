@@ -647,16 +647,85 @@ namespace TestHBIL {
 				m_shader_ReprojectRadiance.Dispatch( m_tex_sourceRadiance_PUSH.Width >> 4, m_tex_sourceRadiance_PUSH.Height >> 4, 1 );
 
 				m_tex_reprojectedDepthBuffer.RemoveFromLastAssignedSlotUAV();
-				m_tex_sourceRadiance_PUSH.RemoveFromLastAssignedSlotUAV();
 				m_tex_motionVectors.RemoveFromLastAssignedSlots();
 				m_tex_radiance.RemoveFromLastAssignedSlots();
 				targetDepthStencil.RemoveFromLastAssignedSlots();
 			}
 
+			//////////////////////////////////////////////////////////////////////////
+			// =========== Render Depth / G-Buffer Pass  ===========
+			// We're actually doing all in one here...
+			//
+			m_device.PerfSetMarker( 1 );
+			#if RENDER_IN_DEPTH_STENCIL
+				m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.WRITE_ALWAYS, BLEND_STATE.DISABLED );
+			#else
+				m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
+			#endif
+
+			if ( m_shader_RenderScene_DepthGBufferPass.Use() ) {
+				#if RENDER_IN_DEPTH_STENCIL
+					m_device.SetRenderTargets( new IView[] { m_tex_albedo.GetView( 0, 1, 0, 1 ), m_tex_normal.GetView( 0, 1, 0, 1 ), m_tex_emissive.GetView( 0, 1, 0, 1 ), m_tex_motionVectors.GetView( 0, 1, 0, 1 ) }, targetDepthStencil );
+				#else
+					m_device.SetRenderTargets( new IView[] { m_tex_albedo.GetView( 0, 1, 0, 1 ), m_tex_normal.GetView( 0, 1, 0, 1 ), m_tex_emissive.GetView( 0, 1, 0, 1 ), m_tex_motionVectors.GetView( 0, 1, 0, 1 ), targetDepthStencil.GetView( 0, 1, 0, 1 ) }, null );
+				#endif
+
+				#if SCENE_HEIGHTFIELD
+					m_tex_texDebugHeights.SetPS( 32 );
+					m_tex_texDebugNormals.SetPS( 33 );
+				#elif SCENE_CORNELL
+					m_tex_tomettesAlbedo.SetPS( 32 );
+					m_tex_tomettesNormal.SetPS( 33 );
+					m_tex_tomettesRoughness.SetPS( 34 );
+					m_tex_concreteAlbedo.SetPS( 35 );
+					m_tex_concreteNormal.SetPS( 36 );
+					m_tex_concreteRoughness.SetPS( 37 );
+				#endif
+
+				m_device.RenderFullscreenQuad( m_shader_RenderScene_DepthGBufferPass );
+				m_device.RemoveRenderTargets();
+			}
+
+			// Downsample depth-stencil
+			m_device.PerfSetMarker( 2 );
+			#if !RENDER_IN_DEPTH_STENCIL
+				if ( m_shader_DownSampleDepth.Use() ) {
+					for ( uint mipLevel=1; mipLevel < m_tex_depthWithMips.MipLevelsCount; mipLevel++ ) {
+						View2D	targetView = m_tex_depthWithMips.GetView( mipLevel, 1, 0, 1 );
+						targetView.SetCSUAV( 0 );
+						m_tex_depthWithMips.GetView( mipLevel-1, 1, 0, 1 ).SetCS( 0 );
+
+						m_CB_DownSample.m._sizeX = targetView.Width;
+						m_CB_DownSample.m._sizeY = targetView.Height;
+						m_CB_DownSample.UpdateData();
+
+						m_shader_DownSampleDepth.Dispatch( (m_CB_DownSample.m._sizeX+15) >> 4, (m_CB_DownSample.m._sizeY+15) >> 4, 1 );
+					}
+
+					m_tex_depthWithMips.RemoveFromLastAssignedSlots();
+					m_tex_depthWithMips.RemoveFromLastAssignedSlotUAV();
+				}
+			#endif
+
+			//////////////////////////////////////////////////////////////////////////
+			// =========== Add Emissive Map to Reprojected Radiance ===========
+			// (this way it's used as indirect radiance source in this frame as well)
+			//
+			if ( m_shader_AddEmissive.Use() ) {
+				m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.ADDITIVE );
+				m_device.SetRenderTargets( new View2D[] { m_tex_sourceRadiance_PUSH.GetView( 0, 1, 0, 1 ) }, null );
+
+				m_tex_emissive.SetPS( 0 );
+
+				m_device.RenderFullscreenQuad( m_shader_AddEmissive );
+
+				m_device.RemoveRenderTargets();	// We need the mip 0 available as SRV right afterward
+			}
+
 //*			//////////////////////////////////////////////////////////////////////////
 			// =========== Apply Push-Pull to Reconstruct Missing Pixels ===========
 			//
-			m_device.PerfSetMarker( 1 );
+			m_device.PerfSetMarker( 3 );
 			m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
 
 			{
@@ -728,76 +797,6 @@ namespace TestHBIL {
  				}
 			}
 //*/
-
-			//////////////////////////////////////////////////////////////////////////
-			// =========== Render Depth / G-Buffer Pass  ===========
-			// We're actually doing all in one here...
-			//
-			m_device.PerfSetMarker( 2 );
-			#if RENDER_IN_DEPTH_STENCIL
-				m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.WRITE_ALWAYS, BLEND_STATE.DISABLED );
-			#else
-				m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
-			#endif
-
-			if ( m_shader_RenderScene_DepthGBufferPass.Use() ) {
-				#if RENDER_IN_DEPTH_STENCIL
-					m_device.SetRenderTargets( new IView[] { m_tex_albedo.GetView( 0, 1, 0, 1 ), m_tex_normal.GetView( 0, 1, 0, 1 ), m_tex_emissive.GetView( 0, 1, 0, 1 ), m_tex_motionVectors.GetView( 0, 1, 0, 1 ) }, targetDepthStencil );
-				#else
-					m_device.SetRenderTargets( new IView[] { m_tex_albedo.GetView( 0, 1, 0, 1 ), m_tex_normal.GetView( 0, 1, 0, 1 ), m_tex_emissive.GetView( 0, 1, 0, 1 ), m_tex_motionVectors.GetView( 0, 1, 0, 1 ), targetDepthStencil.GetView( 0, 1, 0, 1 ) }, null );
-				#endif
-
-				#if SCENE_HEIGHTFIELD
-					m_tex_texDebugHeights.SetPS( 32 );
-					m_tex_texDebugNormals.SetPS( 33 );
-				#elif SCENE_CORNELL
-					m_tex_tomettesAlbedo.SetPS( 32 );
-					m_tex_tomettesNormal.SetPS( 33 );
-					m_tex_tomettesRoughness.SetPS( 34 );
-					m_tex_concreteAlbedo.SetPS( 35 );
-					m_tex_concreteNormal.SetPS( 36 );
-					m_tex_concreteRoughness.SetPS( 37 );
-				#endif
-
-				m_device.RenderFullscreenQuad( m_shader_RenderScene_DepthGBufferPass );
-				m_device.RemoveRenderTargets();
-			}
-
-			// Downsample depth-stencil
-			m_device.PerfSetMarker( 3 );
-			#if !RENDER_IN_DEPTH_STENCIL
-				if ( m_shader_DownSampleDepth.Use() ) {
-					for ( uint mipLevel=1; mipLevel < m_tex_depthWithMips.MipLevelsCount; mipLevel++ ) {
-						View2D	targetView = m_tex_depthWithMips.GetView( mipLevel, 1, 0, 1 );
-						targetView.SetCSUAV( 0 );
-						m_tex_depthWithMips.GetView( mipLevel-1, 1, 0, 1 ).SetCS( 0 );
-
-						m_CB_DownSample.m._sizeX = targetView.Width;
-						m_CB_DownSample.m._sizeY = targetView.Height;
-						m_CB_DownSample.UpdateData();
-
-						m_shader_DownSampleDepth.Dispatch( (m_CB_DownSample.m._sizeX+15) >> 4, (m_CB_DownSample.m._sizeY+15) >> 4, 1 );
-					}
-
-					m_tex_depthWithMips.RemoveFromLastAssignedSlots();
-					m_tex_depthWithMips.RemoveFromLastAssignedSlotUAV();
-				}
-			#endif
-
-			//////////////////////////////////////////////////////////////////////////
-			// =========== Add Emissive Map to Reprojected Radiance ===========
-			// (this way it's used as indirect radiance source in this frame as well)
-			//
-			if ( m_shader_AddEmissive.Use() ) {
-
-// WARNING: #TODO! Do reprojection + push/pull phase WITH added emissive radiance from this frame so the emissive is pulled down the mips as well!
-// Unfortunately that means doing the radiance reprojection AFTER the G-buffer rendering
-
-				m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.ADDITIVE );
-				m_device.SetRenderTarget( m_tex_sourceRadiance_PULL, null );
-				m_tex_emissive.SetPS( 0 );
-				m_device.RenderFullscreenQuad( m_shader_AddEmissive );
-			}
 
 			//////////////////////////////////////////////////////////////////////////
 			// =========== Compute Shadow Map ===========
@@ -970,9 +969,9 @@ m_tex_texDebugNormals.SetPS( 33 );
 			m_lastDisplayTime = m_currentTime;
 
 			double	timeReprojection = m_device.PerfGetMilliSeconds( 0 );
-			double	timePushPull = m_device.PerfGetMilliSeconds( 1 );
-			double	timeRenderGBuffer = m_device.PerfGetMilliSeconds( 2 );
-			double	timeDownSampleDepth = m_device.PerfGetMilliSeconds( 3 );
+			double	timeRenderGBuffer = m_device.PerfGetMilliSeconds( 1 );
+			double	timeDownSampleDepth = m_device.PerfGetMilliSeconds( 2 );
+			double	timePushPull = m_device.PerfGetMilliSeconds( 3 );
 			double	timeShadow = m_device.PerfGetMilliSeconds( 4 );
 			double	timeHBIL = m_device.PerfGetMilliSeconds( 5 );
 			double	timeComputeLighting = m_device.PerfGetMilliSeconds( 6 );
