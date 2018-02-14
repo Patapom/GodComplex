@@ -185,75 +185,7 @@ float2	mipLevel = 0.0;
 //*/
 
 	// Accumulate bent normal direction by rebuilding and averaging the front & back horizon vectors
-	float2	ssNormal = float2( dot( _csNormal.xy, _csDirection ), _csNormal.z );	// Project normal onto the slice plane
-
-	#if USE_NUMERICAL_INTEGRATION
-		// Half brute force where we perform the integration numerically as a sum...
-		//
-		float	thetaFront = acos( maxCosTheta_Front );
-		float	thetaBack = -acos( maxCosTheta_Back );
-
-		float2	ssBentNormal = 0.0;
-		for ( uint i=0; i < USE_NUMERICAL_INTEGRATION; i++ ) {
-			float	theta = lerp( thetaBack, thetaFront, (i+0.5) / USE_NUMERICAL_INTEGRATION );
-			float	sinTheta, cosTheta;
-			sincos( theta, sinTheta, cosTheta );
-			float2	ssOmega = float2( sinTheta, cosTheta );
-
-			float	cosAlpha = saturate( dot( ssOmega, ssNormal ) );
-
-cosAlpha = 1.0;	// No influence after all!!
-
-			float	weight = cosAlpha * abs(sinTheta);		// cos(alpha) * sin(theta).dTheta  (be very careful to take abs(sin(theta)) because our theta crosses the pole and becomes negative here!)
-
-			ssBentNormal += weight * ssOmega;
-		}
-
-		float	dTheta = (thetaFront - thetaBack) / USE_NUMERICAL_INTEGRATION;
-		ssBentNormal *= dTheta;
-
-		_csBentNormal = float3( ssBentNormal.x * _csDirection, ssBentNormal.y );
-	#elif 1
-		// Analytical solution for equations (5) and (6) from the paper
-		// ==== WITHOUT NORMAL INFLUENCE ==== 
-		// 
-		#if USE_FAST_ACOS
-			float	theta0 = -FastAcos( maxCosTheta_Back );
-			float	theta1 = FastAcos( maxCosTheta_Front );
-		#else
-			float	theta0 = -acos( maxCosTheta_Back );
-			float	theta1 = acos( maxCosTheta_Front );
-		#endif
-		float	cosTheta0 = maxCosTheta_Back;
-		float	cosTheta1 = maxCosTheta_Front;
-		float	sinTheta0 = -sqrt( 1.0 - cosTheta0*cosTheta0 );
-		float	sinTheta1 = sqrt( 1.0 - cosTheta1*cosTheta1 );
-
-		float	averageX = theta1 + theta0 - sinTheta0*cosTheta0 - sinTheta1*cosTheta1;
-		float	averageY = 2.0 - cosTheta0*cosTheta0 - cosTheta1*cosTheta1;
-
-		_csBentNormal = float3( averageX * _csDirection, averageY );	// Rebuild normal in camera space
-	#else
-		// Analytical solution for equations (5) and (6) from the paper
-		// ==== WITH NORMAL INFLUENCE ==== 
-		// These integrals are more complicated and we used to account for the dot product with the normal but that's not the way to compute the bent normal after all!!
-		float	cosTheta0 = maxCosTheta_Front;
-		float	cosTheta1 = maxCosTheta_Back;	// This should be in [-PI,0] but instead I take the absolute value so [0,PI] instead
-		float	sinTheta0 = sqrt( 1.0 - cosTheta0*cosTheta0 );
-		float	sinTheta1 = sqrt( 1.0 - cosTheta1*cosTheta1 );
-		float	cosTheta0_3 = cosTheta0*cosTheta0*cosTheta0;
-		float	cosTheta1_3 = cosTheta1*cosTheta1*cosTheta1;
-		float	sinTheta0_3 = sinTheta0*sinTheta0*sinTheta0;
-		float	sinTheta1_3 = sinTheta1*sinTheta1*sinTheta1;
-
-		float	averageX = ssNormal.x * (cosTheta0_3 + cosTheta1_3 - 3.0 * (cosTheta0 + cosTheta1) + 4.0)
-						 + ssNormal.y * (sinTheta0_3 - sinTheta1_3);
-
-		float	averageY = ssNormal.x * (sinTheta0_3 - sinTheta1_3)
-						 + ssNormal.y * (2.0 - cosTheta0_3 - cosTheta1_3);
-
-		_csBentNormal = float3( averageX * _csDirection, averageY );	// Rebuild normal in camera space
-	#endif
+	_csBentNormal = IntegrateNormal( _csDirection, _csNormal, maxCosTheta_Back, maxCosTheta_Front );
 
 	// DON'T NORMALIZE THE RESULT NOW OR WE GET BIAS!
 //	_csBentNormal = normalize( _csBentNormal );

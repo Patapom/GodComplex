@@ -69,6 +69,87 @@ float2	ComputeIntegralFactors( float2 _csDirection, float3 _N ) {
 	return float2( dot( _N.xy, _csDirection ), _N.z );
 }
 
+// Integrates the bent normal between the 2 horizon angles
+//	_csDirection, the slice direction (in camera-space)
+//	_csNormal, the normal direction (in camera-space)
+//	_cosThetaBack, the cosine of the backward horizon angle
+//	_cosThetaFront, the cosine of the forward horizon angle
+// Returns the average bent normal for the slice
+//
+float3	IntegrateNormal( float2 _csDirection, float3 _csNormal, float _cosThetaBack, float _cosThetaFront ) {
+	float2	ssNormal = float2( dot( _csNormal.xy, _csDirection ), _csNormal.z );	// Project normal onto the slice plane
+
+	#if USE_NUMERICAL_INTEGRATION
+		// Half brute force where we perform the integration numerically as a sum...
+		//
+		float	thetaFront = acos( _cosThetaFront );
+		float	thetaBack = -acos( _cosThetaBack );
+
+		float2	ssBentNormal = 0.0;
+		for ( uint i=0; i < USE_NUMERICAL_INTEGRATION; i++ ) {
+			float	theta = lerp( thetaBack, thetaFront, (i+0.5) / USE_NUMERICAL_INTEGRATION );
+			float	sinTheta, cosTheta;
+			sincos( theta, sinTheta, cosTheta );
+			float2	ssOmega = float2( sinTheta, cosTheta );
+
+			float	cosAlpha = saturate( dot( ssOmega, ssNormal ) );
+
+cosAlpha = 1.0;	// No influence after all!!
+
+			float	weight = cosAlpha * abs(sinTheta);		// cos(alpha) * sin(theta).dTheta  (be very careful to take abs(sin(theta)) because our theta crosses the pole and becomes negative here!)
+
+			ssBentNormal += weight * ssOmega;
+		}
+
+		float	dTheta = (thetaFront - thetaBack) / USE_NUMERICAL_INTEGRATION;
+		ssBentNormal *= dTheta;
+
+		float3	csBentNormal = float3( ssBentNormal.x * _csDirection, ssBentNormal.y );
+	#elif 1
+		// Analytical solution for equations (5) and (6) from the paper
+		// ==== WITHOUT NORMAL INFLUENCE ==== 
+		// 
+		#if USE_FAST_ACOS
+			float	theta0 = -FastAcos( _cosThetaBack );
+			float	theta1 = FastAcos( _cosThetaFront );
+		#else
+			float	theta0 = -acos( _cosThetaBack );
+			float	theta1 = acos( _cosThetaFront );
+		#endif
+		float	cosTheta0 = _cosThetaBack;
+		float	cosTheta1 = _cosThetaFront;
+		float	sinTheta0 = -sqrt( 1.0 - cosTheta0*cosTheta0 );
+		float	sinTheta1 = sqrt( 1.0 - cosTheta1*cosTheta1 );
+
+		float	averageX = theta1 + theta0 - sinTheta0*cosTheta0 - sinTheta1*cosTheta1;
+		float	averageY = 2.0 - cosTheta0*cosTheta0 - cosTheta1*cosTheta1;
+
+		float3	csBentNormal = float3( averageX * _csDirection, averageY );	// Rebuild normal in camera space
+	#else
+		// Analytical solution for equations (5) and (6) from the paper
+		// ==== WITH NORMAL INFLUENCE ==== 
+		// These integrals are more complicated and we used to account for the dot product with the normal but that's not the way to compute the bent normal after all!!
+		float	cosTheta0 = _cosThetaFront;
+		float	cosTheta1 = _cosThetaBack;	// This should be in [-PI,0] but instead I take the absolute value so [0,PI] instead
+		float	sinTheta0 = sqrt( 1.0 - cosTheta0*cosTheta0 );
+		float	sinTheta1 = sqrt( 1.0 - cosTheta1*cosTheta1 );
+		float	cosTheta0_3 = cosTheta0*cosTheta0*cosTheta0;
+		float	cosTheta1_3 = cosTheta1*cosTheta1*cosTheta1;
+		float	sinTheta0_3 = sinTheta0*sinTheta0*sinTheta0;
+		float	sinTheta1_3 = sinTheta1*sinTheta1*sinTheta1;
+
+		float	averageX = ssNormal.x * (cosTheta0_3 + cosTheta1_3 - 3.0 * (cosTheta0 + cosTheta1) + 4.0)
+						 + ssNormal.y * (sinTheta0_3 - sinTheta1_3);
+
+		float	averageY = ssNormal.x * (sinTheta0_3 - sinTheta1_3)
+						 + ssNormal.y * (2.0 - cosTheta0_3 - cosTheta1_3);
+
+		float3	csBentNormal = float3( averageX * _csDirection, averageY );	// Rebuild normal in camera space
+	#endif
+
+	return csBentNormal;
+}
+
 // Samples the irradiance reflected from a screen-space position located around the center pixel position
 //	_ssPosition, the screen-space position to sample
 //	_H0, the center height
@@ -167,51 +248,10 @@ float3	GatherIrradiance( float2 _ssPosition, float2 _ssDirection, float2 _csDire
 	}
 
 	// Accumulate bent normal direction by rebuilding and averaging the front & back horizon vectors
-	#if USE_NUMERICAL_INTEGRATION
-		// Half brute force where we perform the integration numerically as a sum...
-		//
-		float	thetaFront = acos( maxCosTheta_Front );
-		float	thetaBack = -acos( maxCosTheta_Back );
+	_csBentNormal = IntegrateNormal( _csDirection, _csNormal, maxCosTheta_Back, maxCosTheta_Front );
 
-		_csBentNormal = 0.001 * _csNormal;
-		for ( uint i=0; i < USE_NUMERICAL_INTEGRATION; i++ ) {
-			float	theta = lerp( thetaBack, thetaFront, (i+0.5) / USE_NUMERICAL_INTEGRATION );
-			float	sinTheta, cosTheta;
-			sincos( theta, sinTheta, cosTheta );
-			float3	ssUnOccludedDirection = float3( sinTheta * _csDirection, cosTheta );
-
-			float	cosAlpha = saturate( dot( ssUnOccludedDirection, _csNormal ) );
-
-			float	weight = cosAlpha * abs(sinTheta);		// cos(alpha) * sin(theta).dTheta  (be very careful to take abs(sin(theta)) because our theta crosses the pole and becomes negative here!)
-			_csBentNormal += weight * ssUnOccludedDirection;
-		}
-
-		float	dTheta = (thetaFront - thetaBack) / USE_NUMERICAL_INTEGRATION;
-		_csBentNormal *= dTheta;
-	#else
-		// Analytical solution
-		float	cosTheta0 = maxCosTheta_Front;
-		float	cosTheta1 = maxCosTheta_Back;
-		float	sinTheta0 = sqrt( 1.0 - cosTheta0*cosTheta0 );
-		float	sinTheta1 = sqrt( 1.0 - cosTheta1*cosTheta1 );
-		float	cosTheta0_3 = cosTheta0*cosTheta0*cosTheta0;
-		float	cosTheta1_3 = cosTheta1*cosTheta1*cosTheta1;
-		float	sinTheta0_3 = sinTheta0*sinTheta0*sinTheta0;
-		float	sinTheta1_3 = sinTheta1*sinTheta1*sinTheta1;
-
-		float2	sliceSpaceNormal = float2( dot( _csNormal.xy, _csDirection ), _csNormal.z );
-
-		float	averageX = sliceSpaceNormal.x * (cosTheta0_3 + cosTheta1_3 - 3.0 * (cosTheta0 + cosTheta1) + 4.0)
-						 + sliceSpaceNormal.y * (sinTheta0_3 - sinTheta1_3);
-
-		float	averageY = sliceSpaceNormal.x * (sinTheta0_3 - sinTheta1_3)
-						 + sliceSpaceNormal.y * (2.0 - cosTheta0_3 - cosTheta1_3);
-
-		_csBentNormal = float3( averageX * _csDirection, averageY );
-	#endif
-
-	// DON4T
-	_csBentNormal = normalize( _csBentNormal );
+	// DON'T!
+//	_csBentNormal = normalize( _csBentNormal );
 
 	// Compute cone angles
 	float3	csHorizon_Front = float3( sqrt( 1.0 - maxCosTheta_Front*maxCosTheta_Front ) * _csDirection, maxCosTheta_Front );
