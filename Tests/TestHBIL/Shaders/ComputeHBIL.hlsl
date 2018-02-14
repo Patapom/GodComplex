@@ -106,15 +106,14 @@ float3	SampleIrradiance_TEMP( float2 _ssPosition, float _radius_meters, float2 _
 ////////////////////
 
 	// Read new Z and compute new horizon angle candidate
-	float	Z = _centralZ - FetchDepth( _ssPosition, _mipLevel.x );
-
+	float	Z = _centralZ - FetchDepth( _ssPosition, _mipLevel.x );							// Z difference, in meters
 	float	recHypo = rsqrt( _radius_meters*_radius_meters + Z*Z );							// 1 / sqrt( z² + r² )
 	float	cosTheta = (_sinCosGamma.x * _radius_meters + _sinCosGamma.y * Z) * recHypo;	// cos(theta) = [sin(gamma)*r + cos(gamma)*z] / sqrt( z² + r² )
 
 	// Filter outlier horizon values
-float	previousZ = 0.0;	// NEEDED?
-	float	bilateralWeight = BilateralFilterDepth( _centralZ, previousZ, Z, _maxCosTheta, cosTheta, _radius_meters );
-	cosTheta = lerp( -1.0, cosTheta, bilateralWeight );	// Flatten if rejected
+//float	previousZ = 0.0;	// NEEDED?
+//	float	bilateralWeight = BilateralFilterDepth( _centralZ, previousZ, Z, _maxCosTheta, cosTheta, _radius_meters );
+//	cosTheta = lerp( -1.0, cosTheta, bilateralWeight );	// Flatten if rejected
 
 	// Update any rising horizon
 	if ( cosTheta <= _maxCosTheta )
@@ -350,8 +349,9 @@ PS_OUT	PS( float4 __Position : SV_POSITION ) {
 	// We notice that it behaves a bit like a rotation and is finally an angular interpolation between sin(b) and cos(b) that depends on the camera axis deviation...
 	//
 	float2	sinCosGamma;
-	sinCosGamma.y = dot( wsView, _Camera2World[2].xyz );
+	sinCosGamma.y = csView.z;// dot( wsView, _Camera2World[2].xyz );
 	sinCosGamma.x = sqrt( 1.0 - sinCosGamma.y*sinCosGamma.y );
+	sinCosGamma *= 0.99;	// Needed otherwise sometimes the cos(theta) is outside the [-1,1] range and acos gives a NaN!
 
 
 // Simulate perfect alignment
