@@ -16,7 +16,7 @@ static const float	GATHER_SPHERE_MAX_RADIUS_P = 200.0;	// Maximum radius (in pix
 
 Texture2D< float >	_tex_depth : register(t0);			// Depth or distance buffer (here we're given depth)
 Texture2D< float3 >	_tex_normal : register(t1);			// World-space normal vectors
-Texture2D< float4 >	_tex_sourceRadiance : register(t2);	// Last frame's reprojected radiance buffer
+Texture2D< float3 >	_tex_sourceRadiance : register(t2);	// Last frame's reprojected radiance buffer
 Texture2D< float >	_tex_blueNoise : register(t3);
 
 cbuffer CB_HBIL : register( b3 ) {
@@ -47,12 +47,12 @@ float2	ComputeMipLevel( float2 _radius, float2 _radialStepSizes ) {
 	return 0.5 * log2( pixelArea );
 }
 
-float	BilateralFilterDepth( float _centralZ, float _previousDeltaZ, float _newDeltaZ, float _horizonCosTheta, float _newCosTheta, float _radius_m ) {
+float	BilateralFilterDepth( float _centralZ, float _previousDeltaZ, float _newDeltaZ, float _horizonCosTheta, float _newCosTheta, float _radius_meters ) {
 //Il fout grave la merde!
 
 //return 1.0 - pow( saturate( _bilateralValues.x * _radius_m / _gatherSphereMaxRadius_m ), 2.0 * _bilateralValues.y );	// As per http://developer.download.nvidia.com/presentations/2008/SIGGRAPH/HBAO_SIG08b.pdf pp. 23
 return 1;
-
+/*
 	// Compute an horizon penalty when the horizon rises too quickly
 	float	deltaTheta = saturate( (acos(_horizonCosTheta) - acos(_newCosTheta)) / PI );
 //	float	penaltyCos = saturate( (deltaTheta - _bilateralValues.x) / _bilateralValues.y );
@@ -71,50 +71,57 @@ float	penaltyZ = 1.0 - saturate( (relativeZ0 - relativeZ1 - 0.5) / 1.0 );
 	// If the penalty flag is raised, we accept rising the horizon only if the difference in relative depth is not too high
 //	return 1.0 - penaltyCos * penaltyZ / (40.0*_radius_m);
 	return 1.0 - penaltyCos * penaltyZ / (100.0*_bilateralValues.x*_radius_m);
+*/
 }
 
 
-float3	SampleIrradiance_TEMP( float2 _csPosition, float4x3 _localCamera2World, float _centralZ, float2 _mipLevel, float2 _integralFactors, float _planeCosTheta, inout float _previousDeltaZ, inout float3 _previousRadiance, inout float _maxCosTheta ) {
+float3	SampleIrradiance_TEMP( float2 _ssPosition, float _radius_meters, float2 _sinCosGamma, float _centralZ, float2 _mipLevel, float2 _integralFactors, inout float3 _previousRadiance, inout float _maxCosTheta ) {
 
 //////////////////
 // #TODO: Optimize!
+//
+//// Transform camera-space position into screen space
+//float3	wsNeighborPosition = _localCamera2World[3] + _csPosition.x * _localCamera2World[0] + _csPosition.y * _localCamera2World[1];
+//
+//float4	projPosition = mul( float4( wsNeighborPosition, 1.0 ), _World2Proj );
+//		projPosition.xyz /= projPosition.w;
+//float2	ssPosition = float2( 0.5 * (1.0 + projPosition.x) * _resolution.x, 0.5 * (1.0 - projPosition.y) * _resolution.y );
+//
+//
+//// Sample new depth and rebuild final world-space position
+//float	Z = FetchDepth( ssPosition, _mipLevel.x );
+//	
+//float3	wsView = wsNeighborPosition - _Camera2World[3].xyz;		// Neighbor world-space position (not projected), relative to camera
+//		wsView /= dot( wsView, _Camera2World[2].xyz );			// Scaled so its length against the camera's Z axis is 1
+//		wsView *= Z;											// Scaled again so its length agains the camera's Z axis equals our sampled Z
+//
+//wsNeighborPosition = _Camera2World[3].xyz + wsView;				// Final reprojected world-space position
+//
+//// Update horizon angle following eq. (3) from the paper
+//wsNeighborPosition -= _localCamera2World[3];					// Neighbor position, relative to central position
+//float3	csNeighborPosition = float3( dot( wsNeighborPosition, _localCamera2World[0] ), dot( wsNeighborPosition, _localCamera2World[1] ), dot( wsNeighborPosition, _localCamera2World[2] ) );
+//float	radius = length( csNeighborPosition.xy );
+//float	d = csNeighborPosition.z;
+//float	cosTheta = d / sqrt( radius*radius + d*d );				// Cosine to candidate horizon angle
+////////////////////
 
-// Transform camera-space position into screen space
-float3	wsNeighborPosition = _localCamera2World[3] + _csPosition.x * _localCamera2World[0] + _csPosition.y * _localCamera2World[1];
+	// Read new Z and compute new horizon angle candidate
+	float	Z = _centralZ - FetchDepth( _ssPosition, _mipLevel.x );
 
-float4	projPosition = mul( float4( wsNeighborPosition, 1.0 ), _World2Proj );
-		projPosition.xyz /= projPosition.w;
-float2	ssPosition = float2( 0.5 * (1.0 + projPosition.x) * _resolution.x, 0.5 * (1.0 - projPosition.y) * _resolution.y );
-
-
-// Sample new depth and rebuild final world-space position
-float	Z = FetchDepth( ssPosition, _mipLevel.x );
-	
-float3	wsView = wsNeighborPosition - _Camera2World[3].xyz;		// Neighbor world-space position (not projected), relative to camera
-		wsView /= dot( wsView, _Camera2World[2].xyz );			// Scaled so its length against the camera's Z axis is 1
-		wsView *= Z;											// Scaled again so its length agains the camera's Z axis equals our sampled Z
-
-wsNeighborPosition = _Camera2World[3].xyz + wsView;				// Final reprojected world-space position
-
-// Update horizon angle following eq. (3) from the paper
-wsNeighborPosition -= _localCamera2World[3];					// Neighbor position, relative to central position
-float3	csNeighborPosition = float3( dot( wsNeighborPosition, _localCamera2World[0] ), dot( wsNeighborPosition, _localCamera2World[1] ), dot( wsNeighborPosition, _localCamera2World[2] ) );
-float	radius = length( csNeighborPosition.xy );
-float	d = csNeighborPosition.z;
-float	cosTheta = d / sqrt( radius*radius + d*d );				// Cosine to candidate horizon angle
-//////////////////
-
+	float	recHypo = rsqrt( _radius_meters*_radius_meters + Z*Z );							// 1 / sqrt( z² + r² )
+	float	cosTheta = (_sinCosGamma.x * _radius_meters + _sinCosGamma.y * Z) * recHypo;	// cos(theta) = [sin(gamma)*r + cos(gamma)*z] / sqrt( z² + r² )
 
 	// Filter outlier horizon values
-	float	bilateralWeight = BilateralFilterDepth( _centralZ, _previousDeltaZ, d, _maxCosTheta, cosTheta, radius );
-	cosTheta = lerp( _planeCosTheta, cosTheta, bilateralWeight );	// Flatten to plane if rejected
+float	previousZ = 0.0;	// NEEDED?
+	float	bilateralWeight = BilateralFilterDepth( _centralZ, previousZ, Z, _maxCosTheta, cosTheta, _radius_meters );
+	cosTheta = lerp( -1.0, cosTheta, bilateralWeight );	// Flatten if rejected
 
 	// Update any rising horizon
 	if ( cosTheta <= _maxCosTheta )
 		return 0.0;	// Below the horizon... No visible contribution.
 
 	#if SAMPLE_NEIGHBOR_RADIANCE
-		_previousRadiance = FetchRadiance( ssPosition, _mipLevel.y );
+		_previousRadiance = FetchRadiance( _ssPosition, _mipLevel.y );
 	#endif
 
 	// Integrate over horizon difference (always from smallest to largest angle otherwise we get negative results!)
@@ -124,16 +131,17 @@ float	cosTheta = d / sqrt( radius*radius + d*d );				// Cosine to candidate hori
 // #TODO: Integrate with Fresnel F0!
 
 	_maxCosTheta = cosTheta;	// Register a new positive horizon
-	_previousDeltaZ = d;		// Accept new depth difference
+//	_previousDeltaZ = Z;		// Accept new depth difference
 
 	return incomingRadiance;
 }
 
-float3	GatherIrradiance_TEMP( float2 _csDirection, float4x3 _localCamera2World, float3 _csNormal, float _stepSize_meters, uint _stepsCount, float _centralZ, float3 _centralRadiance, out float3 _csBentNormal, out float _AO, inout float4 _DEBUG ) {
+float3	GatherIrradiance_TEMP( float2 _ssPosition, float2 _csDirection, float2 _ssStep, float3 _csNormal, float2 _sinCosGamma, float _stepSize_meters, uint _stepsCount, float _centralZ, float3 _centralRadiance, out float3 _csBentNormal, out float _AO, inout float4 _DEBUG ) {
 
 	// Pre-compute factors for the integrals
 	float2	integralFactors_Front = ComputeIntegralFactors( _csDirection, _csNormal );
-	float2	integralFactors_Back = ComputeIntegralFactors( -_csDirection, _csNormal );
+//	float2	integralFactors_Back = ComputeIntegralFactors( -_csDirection, _csNormal );
+	float2	integralFactors_Back = float2( -integralFactors_Front.x, integralFactors_Front.y );
 
 	// Compute initial cos(angle) for front & back horizons
 	// We do that by projecting the camera-space direction csDirection onto the tangent plane given by the normal
@@ -158,23 +166,22 @@ float3	GatherIrradiance_TEMP( float2 _csDirection, float4x3 _localCamera2World, 
 	float3	previousRadiance_Front = _centralRadiance;
 	float3	previousRadianceBack = _centralRadiance;
 //*
-	float2	csStep = _stepSize_meters * _csDirection;
-	float2	csPosition_Front = 0.0;
-	float2	csPosition_Back = 0.0;
-	float	Z_Front = _centralZ;
-	float	Z_Back = _centralZ;
+	float	radius_meters = 0.0;
+	float2	ssPosition_Front = _ssPosition;
+	float2	ssPosition_Back = _ssPosition;
 	float	maxCosTheta_Front = planeCosTheta_Front;
 	float	maxCosTheta_Back = planeCosTheta_Back;
 	[loop]
 	for ( uint stepIndex=0; stepIndex < _stepsCount; stepIndex++ ) {
-		csPosition_Front += csStep;
-		csPosition_Back -= csStep;
+		radius_meters += _stepSize_meters;
+		ssPosition_Front += _ssStep;
+		ssPosition_Back -= _ssStep;
 
 //		float2	mipLevel = ComputeMipLevel( radius, _radialStepSizes );
 float2	mipLevel = 0.0;
 
-		sumRadiance += SampleIrradiance_TEMP( csPosition_Front, _localCamera2World, _centralZ, mipLevel, integralFactors_Front, planeCosTheta_Front, Z_Front, previousRadiance_Front, maxCosTheta_Front );
-		sumRadiance += SampleIrradiance_TEMP( csPosition_Back, _localCamera2World, _centralZ, mipLevel, integralFactors_Back, planeCosTheta_Back, Z_Back, previousRadianceBack, maxCosTheta_Back );
+		sumRadiance += SampleIrradiance_TEMP( ssPosition_Front, radius_meters, _sinCosGamma, _centralZ, mipLevel, integralFactors_Front, previousRadiance_Front, maxCosTheta_Front );
+		sumRadiance += SampleIrradiance_TEMP( ssPosition_Back, radius_meters, _sinCosGamma, _centralZ, mipLevel, integralFactors_Back, previousRadianceBack, maxCosTheta_Back );
 	}
 //*/
 
@@ -256,7 +263,6 @@ cosAlpha = 1.0;	// No influence after all!!
 	_AO = 2.0 - maxCosTheta_Back - maxCosTheta_Front;
 
 
-
 _DEBUG = float4( _csBentNormal, 0 );
 
 
@@ -275,6 +281,7 @@ PS_OUT	PS( float4 __Position : SV_POSITION ) {
 	float2	UV = __Position.xy / _resolution;
 	uint2	pixelPosition = uint2( floor( __Position.xy ) );
 	float	noise = frac( _time + _tex_blueNoise[pixelPosition & 0x3F] );
+	float	noise2 = frac( _time + _tex_blueNoise[uint2( float2( 32659.167 * UV.x, 173227.3 * UV.y ) ) & 0x3F] );
 //	float	noise = 0.0;
 //	float	noise2 = frac( sin( 14357.91 * noise ) );
 
@@ -299,21 +306,71 @@ PS_OUT	PS( float4 __Position : SV_POSITION ) {
 	float3	wsUp = cross( wsRight, wsView );
 	float3	wsAt = -wsView;
 
-	float4x3	localCamera2World = float4x3( wsRight, wsUp, wsAt, wsPos );
+	// Express local camera-space vectors in global camera-space
+	float3	gcsRight = float3( dot( wsRight, _Camera2World[0].xyz ), dot( wsRight, _Camera2World[1].xyz ), dot( wsRight, _Camera2World[2].xyz ) );
+	float3	gcsUp = float3( dot( wsUp, _Camera2World[0].xyz ), dot( wsUp, _Camera2World[1].xyz ), dot( wsUp, _Camera2World[2].xyz ) );
+
+
+
+// Simulate perfect alignment
+//gcsRight = float3( 1, 0, 0 );
+//gcsUp = float3( 0, 1, 0 );
+
+
+
+	// Compute the correction factors for our horizon angles
+	// The idea is that we need to walk in screen space but still want to express our angles in local camera space
+	// The configuration of the problem for this situation is something like this:
+	//	
+	//	             ---
+	//	        ---
+	//	x  ---  a      x'
+	//	*------R-------* Z0 ---> X
+	//	|\--    b      |
+	//	|    --        |
+	//	| \     --     z
+	//	|          --  |
+	//	|  \   theta  -* Z1
+	//	|              |
+	//	|   \          |
+	//	|              |
+	//	|    \         |
+	//	|              |
+	//	|  a  \        |
+	//
+	// We walk from x to x' along the global camera space's X axis for a distance R and we sample a new depth Z1 (along the camera's Z axis)
+	// The local camera space's view axis makes an angle "a" with the global camera space's Z axis (the vertical axis).
+	// Its tangent plane (represented at the top, starting slant from x) also makes an angle alpha with the screen plane represented by X
+	// We are looking for cos(theta) and we simply note that theta + a + b = PI/2
+	// Thus, cos(theta) = cos( PI/2 - a - b ) = sin( a + b ) = sin(a)*cos(b) + cos(a)*sin(b)
+	// We easily find that cos(b) = R / sqrt( z² + R² ) and sin(b) = z / sqrt( z² + R² )
+	// So finaly:
+	//	cos(theta) = [sin(a)*R + cos(a)*z] / sqrt( z² + R² )
+	//
+	// We notice that it behaves a bit like a rotation and is finally an angular interpolation between sin(b) and cos(b) that depends on the camera axis deviation...
+	//
+	float2	sinCosGamma;
+	sinCosGamma.y = dot( wsView, _Camera2World[2].xyz );
+	sinCosGamma.x = sqrt( 1.0 - sinCosGamma.y*sinCosGamma.y );
+
+
+// Simulate perfect alignment
+//sinCosGamma = float2( 0, 1 );
+
 
 	// Compute local camera-space normal
 	float3	N = float3( dot( wsNormal, wsRight ), dot( wsNormal, wsUp ), dot( wsNormal, wsAt ) );
 			N.z = max( 1e-3, N.z );	// Make sure it's never 0!
-//	float3	T, B;
-//	BuildOrthonormalBasis( N, T, B );
 
 	// Compute screen radius of gather sphere
-	float	screenSize_m = 2.0 * Z * TAN_HALF_FOV;	// Vertical size of the screen in meters when extended to distance Z
-	float	sphereRadius_pixels = _resolution.y * _gatherSphereMaxRadius_m / screenSize_m;
+	float	screenSize_m = 2.0 * Z * TAN_HALF_FOV;																	// Vertical size of the screen in meters when extended to distance Z
+	float	meter2Pixel = _resolution.y / screenSize_m;																// Gives us the conversion factor to go from meters to pixels
+	float	sphereRadius_pixels = meter2Pixel * _gatherSphereMaxRadius_m;
 			sphereRadius_pixels = min( GATHER_SPHERE_MAX_RADIUS_P, sphereRadius_pixels );							// Prevent it to grow larger than our fixed limit
 	float	radiusStepSize_pixels = max( 1.0, sphereRadius_pixels / MAX_SAMPLES );									// This gives us our radial step size in pixels
 	uint	samplesCount = clamp( uint( ceil( sphereRadius_pixels / radiusStepSize_pixels ) ), 1, MAX_SAMPLES );	// Reduce samples count if possible
-	float	radiusStepSize_meters = sphereRadius_pixels * screenSize_m / (samplesCount * _resolution.y);			// This gives us our radial step size in meters
+//	float	radiusStepSize_meters = sphereRadius_pixels / (samplesCount * meter2Pixel);								// This gives us our radial step size in meters
+	float	radiusStepSize_meters = radiusStepSize_pixels / (sinCosGamma.y * meter2Pixel);							// This gives us our radial step size in meters
 
 	// Start gathering radiance and bent normal by subdividing the screen-space disk around our pixel into N slices
 	float4	GATHER_DEBUG = 0.0;
@@ -337,10 +394,15 @@ PS_OUT	PS( float4 __Position : SV_POSITION ) {
 		float2	csDirection;
 		sincos( phi, csDirection.y, csDirection.x );
 
+		float2	gcsDirection2D = csDirection.x * gcsRight.xy + csDirection.y * gcsUp.xy;	// Since csDirection gives us the components along local camera-space's right and up vectors, and we know their expression in global camera-space, it's easy find the equivalent global camera-space direction...
+		float2	ssDirection = normalize( gcsDirection2D );									// We normalize since we want to take integer pixel steps
+				ssDirection.y = -ssDirection.y;												// Going upward in camera space means going downward in screen space...
+				ssDirection *= radiusStepSize_pixels;										// Scale by our step size
+
 		// Gather irradiance and average cone direction for that slice
 		float3	csBentNormal;
 		float	AO;
-		sumIrradiance += GatherIrradiance_TEMP( csDirection, localCamera2World, N, radiusStepSize_meters, samplesCount, Z, centralRadiance, csBentNormal, AO, GATHER_DEBUG );
+		sumIrradiance += GatherIrradiance_TEMP( __Position.xy, csDirection, ssDirection, N, sinCosGamma, radiusStepSize_meters, samplesCount, Z, centralRadiance, csBentNormal, AO, GATHER_DEBUG );
 		csAverageBentNormal += csBentNormal;
 		sumAO += AO;
 
