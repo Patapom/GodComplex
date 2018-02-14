@@ -38,7 +38,8 @@ static const float3	CORNELL_LARGE_BOX_REFLECTANCE = 0.5 * float3( 1.0, 1.0, 1.0 
 // Light setup
 static const float3	CORNELL_LIGHT_SIZE = float3( 1.3, 0.0, 1.05 );
 static const float3	CORNELL_LIGHT_POS = float3( 2.78, 5.2, 2.795 ) - 0.0 * float3( CORNELL_LIGHT_SIZE.x, 0.0, CORNELL_LIGHT_SIZE.z ) - 0.5 * float3( CORNELL_SIZE.x, 0.0, CORNELL_SIZE.z );
-static const float3	LIGHT_ILLUMINANCE = 2500.0;
+//static const float3	LIGHT_ILLUMINANCE = 2500.0;
+static const float3	LIGHT_ILLUMINANCE = 1500.0;
 static const float3	LIGHT_REFLECTANCE = 0.78;
 static const float3	LIGHT_SIZE = float3( 1.0, 0.0, 1.0 );
 

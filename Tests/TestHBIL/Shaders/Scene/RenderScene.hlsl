@@ -9,7 +9,6 @@
 #define USE_STD_DEV 1		// Define this to use the standard deviation of the cone aperture angle to estimate a smoothstep interval for direct lighting and bias the cone a little
 
 
-
 float4	VS( float4 __Position : SV_POSITION ) : SV_POSITION { return __Position; }
 
 void	BuildCameraRay( float2 _UV, out float3 _wsPos, out float3 _csView, out float3 _wsView, out float _Z2Distance ) {

@@ -37,17 +37,17 @@ float3	FetchRadiance( float2 _pixelPosition, float _mipLevel ) {
 	return _tex_sourceRadiance.SampleLevel( LinearClamp, _pixelPosition / _resolution, _mipLevel ).xyz;
 }
 
-float2	ComputeMipLevel( float2 _radius, float2 _radialStepSizes ) {
-	float	radiusPixel = _radius.x;
-	float	deltaRadius = _radialStepSizes.x;
-	float	pixelArea = PI / (2.0 * MAX_ANGLES) * 2.0 * radiusPixel * deltaRadius;
-//	return 0.5 * log2( pixelArea ) * _bilateralValues;
-	return 0.5 * log2( pixelArea ) * float2( 0, 2 );	// Unfortunately, sampling lower mips for depth gives very nasty halos! Maybe use max depth? Meh. Not conclusive either...
-	return 1.5 * 0.5 * log2( pixelArea );
-	return 0.5 * log2( pixelArea );
+// This clearly doesn't work: nasty silhouettes show up around objects
+float	ComputeMipLevel_Depth( float _radius_pixels, float _stepSize_pixels ) {
+//return _debugMipIndex;
+	float	pixelArea = PI / (2.0 * MAX_ANGLES) * 2.0 * _radius_pixels * _stepSize_pixels;
+	return 0.5 * log2( pixelArea ) * _bilateralValues.y;
+//	return 0.5 * log2( pixelArea ) * float2( 0, 2 );	// Unfortunately, sampling lower mips for depth gives very nasty halos! Maybe use max depth? Meh. Not conclusive either...
+//	return 1.5 * 0.5 * log2( pixelArea );
+//	return 0.5 * log2( pixelArea );
 }
 
-float	ComputeMipLevel_Irradiance( float2 _ssPosition, float _centralZ, float _currentZ, float _radius_meters ) {
+float	ComputeMipLevel_Radiance( float2 _ssPosition, float _centralZ, float _currentZ, float _radius_meters ) {
 	float	deltaZ = _centralZ - _currentZ;
 	float	distance = sqrt( _radius_meters*_radius_meters + deltaZ*deltaZ );	// Distance from origin
 	float	sphereRadius_meters = (0.5 * PI / MAX_ANGLES) * distance;			// Radius of the sphere (in meters) that will serve as footprint for mip computation
@@ -93,10 +93,10 @@ float	penaltyZ = 1.0 - saturate( (relativeZ0 - relativeZ1 - 0.5) / 1.0 );
 }
 
 
-float3	SampleIrradiance_TEMP( float2 _ssPosition, float _radius_meters, float2 _sinCosGamma, float _centralZ, float2 _mipLevel, float2 _integralFactors, inout float3 _previousRadiance, inout float _maxCosTheta ) {
+float3	SampleIrradiance_TEMP( float2 _ssPosition, float _radius_meters, float2 _sinCosGamma, float _centralZ, float _mipLevelDepth, float2 _integralFactors, inout float3 _previousRadiance, inout float _maxCosTheta ) {
 
 	// Read new Z and compute new horizon angle candidate
-	float	Z = _centralZ - FetchDepth( _ssPosition, _mipLevel.x );							// Z difference, in meters
+	float	Z = _centralZ - FetchDepth( _ssPosition, _mipLevelDepth );						// Z difference, in meters
 	float	recHypo = rsqrt( _radius_meters*_radius_meters + Z*Z );							// 1 / sqrt( z² + r² )
 	float	cosTheta = (_sinCosGamma.x * _radius_meters + _sinCosGamma.y * Z) * recHypo;	// cos(theta) = [sin(gamma)*r + cos(gamma)*z] / sqrt( z² + r² )
 
@@ -109,13 +109,9 @@ float3	SampleIrradiance_TEMP( float2 _ssPosition, float _radius_meters, float2 _
 	if ( cosTheta <= _maxCosTheta )
 		return 0.0;	// Below the horizon... No visible contribution.
 
-
-_mipLevel.y = _debugMipIndex;
-_mipLevel.y = ComputeMipLevel_Irradiance( _ssPosition, _centralZ, _centralZ - Z, _radius_meters );
-
-
 	#if SAMPLE_NEIGHBOR_RADIANCE
-		_previousRadiance = FetchRadiance( _ssPosition, _mipLevel.y );
+		float	mipLevel_Radiance = ComputeMipLevel_Radiance( _ssPosition, _centralZ, _centralZ - Z, _radius_meters );
+		_previousRadiance = FetchRadiance( _ssPosition, mipLevel_Radiance );
 	#endif
 
 	// Integrate over horizon difference (always from smallest to largest angle otherwise we get negative results!)
@@ -130,7 +126,7 @@ _mipLevel.y = ComputeMipLevel_Irradiance( _ssPosition, _centralZ, _centralZ - Z,
 	return incomingRadiance;
 }
 
-float3	GatherIrradiance_TEMP( float2 _ssPosition, float2 _csDirection, float2 _ssStep, float3 _csNormal, float2 _sinCosGamma, float _stepSize_meters, uint _stepsCount, float _centralZ, float3 _centralRadiance, out float3 _csBentNormal, out float _AO, inout float4 _DEBUG ) {
+float3	GatherIrradiance_TEMP( float2 _ssPosition, float2 _csDirection, float2 _ssStep, float3 _csNormal, float _noise, float2 _sinCosGamma, float _stepSize_meters, uint _stepsCount, float _centralZ, float3 _centralRadiance, out float3 _csBentNormal, out float _AO, inout float4 _DEBUG ) {
 
 	// Pre-compute factors for the integrals
 	float2	integralFactors_Front = ComputeIntegralFactors( _csDirection, _csNormal );
@@ -161,6 +157,8 @@ float3	GatherIrradiance_TEMP( float2 _ssPosition, float2 _csDirection, float2 _s
 	float3	previousRadianceBack = _centralRadiance;
 //*
 	float	radius_meters = 0.0;
+//float	radius_pixels = 0.0;
+//float	stepSize_pixels = length(_ssStep);
 	float2	ssPosition_Front = _ssPosition;
 	float2	ssPosition_Back = _ssPosition;
 	float	maxCosTheta_Front = planeCosTheta_Front;
@@ -171,8 +169,9 @@ float3	GatherIrradiance_TEMP( float2 _ssPosition, float2 _csDirection, float2 _s
 		ssPosition_Front += _ssStep;
 		ssPosition_Back -= _ssStep;
 
-//		float2	mipLevel = ComputeMipLevel( radius, _radialStepSizes );
-float2	mipLevel = 0.0;
+//radius_pixels += stepSize_pixels;
+//float	mipLevel = ComputeMipLevel_Depth( radius_pixels, stepSize_pixels );
+float	mipLevel = 0.0;
 
 		sumRadiance += SampleIrradiance_TEMP( ssPosition_Front, radius_meters, _sinCosGamma, _centralZ, mipLevel, integralFactors_Front, previousRadiance_Front, maxCosTheta_Front );
 		sumRadiance += SampleIrradiance_TEMP( ssPosition_Back, radius_meters, _sinCosGamma, _centralZ, mipLevel, integralFactors_Back, previousRadianceBack, maxCosTheta_Back );
@@ -210,6 +209,8 @@ PS_OUT	PS( float4 __Position : SV_POSITION ) {
 	float	noise2 = frac( _time + _tex_blueNoise[uint2( float2( 32659.167 * UV.x, 173227.3 * UV.y ) ) & 0x3F] );
 //	float	noise = 0.0;
 //	float	noise2 = frac( sin( 14357.91 * noise ) );
+
+noise2 = lerp( 0.1, 1.0, noise );
 
 	// Setup camera ray
 	float3	csView = BuildCameraRay( UV );
@@ -329,7 +330,7 @@ PS_OUT	PS( float4 __Position : SV_POSITION ) {
 		// Gather irradiance and average cone direction for that slice
 		float3	csBentNormal;
 		float	AO;
-		sumIrradiance += GatherIrradiance_TEMP( __Position.xy, csDirection, ssDirection, N, sinCosGamma, radiusStepSize_meters, samplesCount, Z, centralRadiance, csBentNormal, AO, GATHER_DEBUG );
+		sumIrradiance += GatherIrradiance_TEMP( __Position.xy, csDirection, ssDirection, N, noise2, sinCosGamma, radiusStepSize_meters, samplesCount, Z, centralRadiance, csBentNormal, AO, GATHER_DEBUG );
 		csAverageBentNormal += csBentNormal;
 		sumAO += AO;
 

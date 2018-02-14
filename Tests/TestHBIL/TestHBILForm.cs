@@ -3,14 +3,14 @@
 #define BILATERAL_PUSH_PULL
 
 //#define SCENE_LIBRARY
-#define SCENE_CORNELL
-//#define SCENE_HEIGHTFIELD
+//#define SCENE_CORNELL
+#define SCENE_HEIGHTFIELD
 
 //////////////////////////////////////////////////////////////////////////
 // Horizon-Based Indirect Lighting Demo
 //////////////////////////////////////////////////////////////////////////
 //
-// IDEAS / #TODOS:
+// ------------------------- DONE ------------------------- 
 //	✓ Use push/pull (with bilateral) to fill in reprojected radiance voids!!!
 //	✓ float	GetBilateralWeight( Z0, Z1, radius, ref sqHypotenuse ) => Outside of unit sphere???
 //	✓ Use radius² as progression
@@ -20,18 +20,25 @@
 //	✓ Keep previous radiance in case we reject height sample but accept radiance, and don't want to interpolate foreground radiance? Will that even occur?
 //	✓ Use normal dot product weighting anyway?? It looks closer to ground truth in the ground truth simulator! Check it!
 //		=> Nope. Looks better with actual bent normal.
+//	✓ Advance in local camera space but using screen-space steps
+//		=> Must be a linear combination of vector so that advancing 2 pixels equals advancing N meters in camera space...
+//	✓ Sample mips for larger footprint for IRRADIANCE sampling (only if mip is bilateral filtered!)
+//		=> Works super fine!
+//	✓ Sample mips for larger footprint for DEPTH sampling (only if mip is bilateral filtered!)
+//		=> DOESN'T WORK AT ALL! Nasty silhouettes appear around objects, I have no immediate idea on how to fix that...
 //
-//	• Sample mips for larger footprint (only if mip is bilateral filtered!)
+// ------------------------- DONE ------------------------- 
+//
+// IDEAS / #TODOS:
 //	• Write interleaved sampling + reconstruction based on bilateral weight (store it some place? Like alpha somewhere?)
 //	• Keep failed reprojected pixels into some "surrounding buffer", some sort of paraboloid-projected buffer containing off-screen values???
 //		=> Exponential decay of off-screen values with decay rate depending on camera's linear velocity?? (fun idea!)
 //	• Use W linear attenuation as in HBAO?
-//	• Advance in local camera space but using screen-space steps
-//		=> Must be a linear combination of vector so that advancing 2 pixels equals advancing N meters in camera space...
 //
 // BUGS:
-//	• Horrible noise in reprojection buffer ==> OLD->NEW Camera transform???
-//
+//	• Horrible noise in reprojection buffer
+//		==> Due to race condition for 2 pixels wanting to reproject at the same place
+//		==> Tried to use a poor man's ZBuffer as uint + interlockedMin(), reduced the noise a little but not completely for some reason I can't explain... :/
 //
 using System;
 using System.Collections.Generic;
