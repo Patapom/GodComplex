@@ -987,7 +987,7 @@ m_tex_texDebugNormals.SetPS( 33 );
 							 + "G-Buffer Rendering: " + timeRenderGBuffer.ToString( "G4" ) + " ms\r\n"
 							 + "Shadow Map: " + timeShadow.ToString( "G4" ) + " ms\r\n"
 							 + "DownSample Depth: " + timeDownSampleDepth.ToString( "G4" ) + " ms\r\n"
-							 + "HBIL: " + timeHBIL.ToString( "G4" ) + " ms\r\n"
+							 + "HBIL: " + timeHBIL.ToString( "G4" ) + " ms (" + (1.729f * timeHBIL).ToString( "G4" ) + " ms XB1)\r\n"
 							 + "Lighting: " + timeComputeLighting.ToString( "G4" ) + " ms\r\n"
 							 + "Post-Processing: " + timePostProcess.ToString( "G4" ) + " ms\r\n"
 							 + "Total frame time = " + totalFrameTime.ToString( "G6" ) + " ms\r\n"

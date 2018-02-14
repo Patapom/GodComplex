@@ -47,6 +47,24 @@ float2	ComputeMipLevel( float2 _radius, float2 _radialStepSizes ) {
 	return 0.5 * log2( pixelArea );
 }
 
+float	ComputeMipLevel_Irradiance( float2 _ssPosition, float _centralZ, float _currentZ, float _radius_meters ) {
+	float	deltaZ = _centralZ - _currentZ;
+	float	distance = sqrt( _radius_meters*_radius_meters + deltaZ*deltaZ );	// Distance from origin
+	float	sphereRadius_meters = (0.5 * PI / MAX_ANGLES) * distance;			// Radius of the sphere (in meters) that will serve as footprint for mip computation
+
+	// Estimate how many pixels a disc
+	float	screenSize_m = 2.0 * TAN_HALF_FOV * _currentZ;						// Size (in meters) covered by the entire screen at current Z
+	float	meters2Pixels = _resolution.y / screenSize_m;
+	float	sphereRadius_pixels = meters2Pixels * sphereRadius_meters;			// Radius of the sphere (in pixels)
+
+//	return _bilateralValues.y * log2( sphereRadius_pixels );
+	return 1.5 * log2( sphereRadius_pixels );	// Empirical
+
+//	float	pixelArea = PI * sphereRadius_pixels * sphereRadius_pixels;			// Area of the disc covered by the sphere (in square pixels)
+//	return _bilateralValues.y * 0.5 * log2( pixelArea );
+}
+
+
 float	BilateralFilterDepth( float _centralZ, float _previousDeltaZ, float _newDeltaZ, float _horizonCosTheta, float _newCosTheta, float _radius_meters ) {
 //Il fout grave la merde!
 
@@ -77,34 +95,6 @@ float	penaltyZ = 1.0 - saturate( (relativeZ0 - relativeZ1 - 0.5) / 1.0 );
 
 float3	SampleIrradiance_TEMP( float2 _ssPosition, float _radius_meters, float2 _sinCosGamma, float _centralZ, float2 _mipLevel, float2 _integralFactors, inout float3 _previousRadiance, inout float _maxCosTheta ) {
 
-//////////////////
-// #TODO: Optimize!
-//
-//// Transform camera-space position into screen space
-//float3	wsNeighborPosition = _localCamera2World[3] + _csPosition.x * _localCamera2World[0] + _csPosition.y * _localCamera2World[1];
-//
-//float4	projPosition = mul( float4( wsNeighborPosition, 1.0 ), _World2Proj );
-//		projPosition.xyz /= projPosition.w;
-//float2	ssPosition = float2( 0.5 * (1.0 + projPosition.x) * _resolution.x, 0.5 * (1.0 - projPosition.y) * _resolution.y );
-//
-//
-//// Sample new depth and rebuild final world-space position
-//float	Z = FetchDepth( ssPosition, _mipLevel.x );
-//	
-//float3	wsView = wsNeighborPosition - _Camera2World[3].xyz;		// Neighbor world-space position (not projected), relative to camera
-//		wsView /= dot( wsView, _Camera2World[2].xyz );			// Scaled so its length against the camera's Z axis is 1
-//		wsView *= Z;											// Scaled again so its length agains the camera's Z axis equals our sampled Z
-//
-//wsNeighborPosition = _Camera2World[3].xyz + wsView;				// Final reprojected world-space position
-//
-//// Update horizon angle following eq. (3) from the paper
-//wsNeighborPosition -= _localCamera2World[3];					// Neighbor position, relative to central position
-//float3	csNeighborPosition = float3( dot( wsNeighborPosition, _localCamera2World[0] ), dot( wsNeighborPosition, _localCamera2World[1] ), dot( wsNeighborPosition, _localCamera2World[2] ) );
-//float	radius = length( csNeighborPosition.xy );
-//float	d = csNeighborPosition.z;
-//float	cosTheta = d / sqrt( radius*radius + d*d );				// Cosine to candidate horizon angle
-////////////////////
-
 	// Read new Z and compute new horizon angle candidate
 	float	Z = _centralZ - FetchDepth( _ssPosition, _mipLevel.x );							// Z difference, in meters
 	float	recHypo = rsqrt( _radius_meters*_radius_meters + Z*Z );							// 1 / sqrt( z² + r² )
@@ -118,6 +108,11 @@ float3	SampleIrradiance_TEMP( float2 _ssPosition, float _radius_meters, float2 _
 	// Update any rising horizon
 	if ( cosTheta <= _maxCosTheta )
 		return 0.0;	// Below the horizon... No visible contribution.
+
+
+_mipLevel.y = _debugMipIndex;
+_mipLevel.y = ComputeMipLevel_Irradiance( _ssPosition, _centralZ, _centralZ - Z, _radius_meters );
+
 
 	#if SAMPLE_NEIGHBOR_RADIANCE
 		_previousRadiance = FetchRadiance( _ssPosition, _mipLevel.y );
