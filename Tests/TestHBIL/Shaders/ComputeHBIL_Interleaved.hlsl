@@ -316,7 +316,8 @@ PS_OUT	PS( float4 __Position : SV_POSITION ) {
 
 	/////////////////////////////////////////////////////////////////////
 	// Write result
-	sumIrradiance = max( 0.0, 0.5 * PI * sumIrradiance );	// * PI / 2 directions
+	sumIrradiance = max( 0.0, 0.5 * PI * sumIrradiance );	// * PI / 2 (directions)
+	sumAO *= 0.25;											// / 2 (slice interval in [0,2]) / 2 (directions)
 
 	PS_OUT	Out;
 	Out.irradiance = float4( sumIrradiance, 0 );

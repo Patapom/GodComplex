@@ -2,8 +2,8 @@
 //#define RENDER_IN_DEPTH_STENCIL	// If defined, use the depth-stencil (single mip level) to render, instead of multi-mip RT (this RT allows larger sample footprints when gathering radiance and accelerates the HBIL pass)
 #define BILATERAL_PUSH_PULL
 
-//#define SCENE_LIBRARY
-#define SCENE_CORNELL
+#define SCENE_LIBRARY
+//#define SCENE_CORNELL
 //#define SCENE_HEIGHTFIELD
 
 //////////////////////////////////////////////////////////////////////////
@@ -26,11 +26,12 @@
 //		=> Works super fine!
 //	✓ Sample mips for larger footprint for DEPTH sampling (only if mip is bilateral filtered!)
 //		=> DOESN'T WORK AT ALL! Nasty silhouettes appear around objects, I have no immediate idea on how to fix that...
+//	✓ Write interleaved sampling
 //
 // ------------------------- DONE ------------------------- 
 //
 // IDEAS / #TODOS:
-//	• Write interleaved sampling + reconstruction based on bilateral weight (store it some place? Like alpha somewhere?)
+//	• Reconstruct interleaved sampling based on bilateral weight (store it some place? Like alpha somewhere?)
 //	• Write mips for split irradiance
 //	• Keep failed reprojected pixels into some "surrounding buffer", some sort of paraboloid-projected buffer containing off-screen values???
 //		=> Exponential decay of off-screen values with decay rate depending on camera's linear velocity?? (fun idea!)
@@ -940,7 +941,7 @@ namespace TestHBIL {
 			}
 
 			// 2] Compute 4x4 small vignettes
-//			m_device.PerfSetMarker( 51 );
+			m_device.PerfSetMarker( 51 );
 			if ( m_shader_ComputeHBIL.Use() ) {
 				m_CB_HBIL.m._targetResolutionX = m_tex_splitRadiance.Width;
 				m_CB_HBIL.m._targetResolutionY = m_tex_splitRadiance.Height;
@@ -958,8 +959,8 @@ namespace TestHBIL {
 					for ( uint X=0; X < 4; X++, passIndex++ ) {
 						m_device.SetRenderTargets( new IView[] { m_tex_splitIrradiance.GetView( 0, 1, passIndex, 1 ), m_tex_splitBentCone.GetView( 0, 1, passIndex, 1 ) }, null );
 
-						float	phi = B4( X, Y ) * 0.5f * Mathf.PI / 16.0f;	// Use Bayer for maximum discrepancy between pixels
-//						float	phi = (B4( X, Y ) + (m_framesCount & 0x1F) / 32.0f) * 0.5f * Mathf.PI / 16.0f;	// Use Bayer for maximum discrepancy between pixels
+//						float	phi = B4( X, Y ) * 0.5f * Mathf.PI / 16.0f;	// Use Bayer for maximum discrepancy between pixels
+						float	phi = (B4( X, Y ) + (m_framesCount & 0x1F) / 32.0f) * 0.5f * Mathf.PI / 16.0f;	// Use Bayer for maximum discrepancy between pixels
 
 						m_CB_HBIL.m._renderPassIndexX = X;
 						m_CB_HBIL.m._renderPassIndexY = Y;
@@ -977,7 +978,7 @@ namespace TestHBIL {
 			}
 
 			// 3] Recompose results
-//			m_device.PerfSetMarker( 52 );
+			m_device.PerfSetMarker( 52 );
 			if ( m_shader_Recompose.Use() ) {
 				m_CB_DownSample.m._sizeX = m_tex_splitDepth.Width;
 				m_CB_DownSample.m._sizeY = m_tex_splitDepth.Height;
@@ -990,7 +991,7 @@ namespace TestHBIL {
 				m_tex_radiance0.SetCSUAV( 0 );
 				m_tex_bentCone.SetCSUAV( 1 );
 
-				m_shader_Recompose.Dispatch( m_CB_DownSample.m._sizeX >> 4, m_CB_DownSample.m._sizeY >> 4, 1 );
+				m_shader_Recompose.Dispatch( (m_CB_DownSample.m._sizeX+7) >> 3, (m_CB_DownSample.m._sizeY+7) >> 3, 1 );
 
 				m_tex_radiance0.RemoveFromLastAssignedSlotUAV();
 				m_tex_bentCone.RemoveFromLastAssignedSlotUAV();

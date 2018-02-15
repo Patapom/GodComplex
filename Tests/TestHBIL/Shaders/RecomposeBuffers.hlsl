@@ -55,9 +55,9 @@ void	CS( uint3 _groupID : SV_groupID, uint3 _groupThreadID : SV_groupThreadID, u
 	}
 
 	sumRadiance /= MAX_ANGLES;
+	sumAO /= MAX_ANGLES;
 
 	// Use AO to compute cone angle
-	sumAO /= 2.0 * MAX_ANGLES;
 	float	cosAverageConeAngle = 1.0 - sumAO;
 	float3	csAverageBentNormal = normalize( sumBentNormal );
 	float	stdDeviation = 0.0;
