@@ -25,7 +25,7 @@ float	BilateralFilterDepth( float _centralZ, float _neighborZ, float _radius_m )
 float	BilateralFilterRadiance( float _centralZ, float _neighborZ, float _radius_m );	// The return value must be a [0,1] weight telling whether or not we accept the sample at the specified radius and depth (in meter)
 float2	ComputeMipLevel( float2 _radius, float2 _radialStepSizes );
 
-// Integrates the dot product of the normal with a vector interpolated between slice horizon angle theta0 and theta1
+// Integrates the dot product of the normal with a vector interpolated between slice horizon angle theta0 and theta1 (equation 18 from the paper)
 // We're looking to obtain the irradiance reflected from a tiny slice of terrain:
 //	E = Integral[theta0, theta1]{ L(Xi) (Wi.N) sin(theta) dTheta }
 // Where
@@ -63,13 +63,13 @@ float	IntegrateSolidAngle( float2 _integralFactors, float _cosTheta0, float _cos
 	float	I0 = (theta1 - sinTheta1*_cosTheta1)
 			   - (theta0 - sinTheta0*_cosTheta0);
 	float	I1 = _cosTheta0*_cosTheta0 - _cosTheta1*_cosTheta1;
-	return 0.5 * (_integralFactors.x * I0 + _integralFactors.y * I1);
+	return _integralFactors.x * I0 + _integralFactors.y * I1;
 }
 float2	ComputeIntegralFactors( float2 _csDirection, float3 _N ) {
-	return float2( dot( _N.xy, _csDirection ), _N.z );
+	return 0.5 * float2( dot( _N.xy, _csDirection ), _N.z );
 }
 
-// Integrates the bent normal between the 2 horizon angles
+// Integrates the bent normal between the 2 horizon angles (equations 5 and 6 from the paper)
 //	_csDirection, the slice direction (in camera-space)
 //	_csNormal, the normal direction (in camera-space)
 //	_cosThetaBack, the cosine of the backward horizon angle
@@ -106,7 +106,7 @@ cosAlpha = 1.0;	// No influence after all!!
 
 		float3	csBentNormal = float3( ssBentNormal.x * _csDirection, ssBentNormal.y );
 	#elif 1
-		// Analytical solution for equations (5) and (6) from the paper
+		// Analytical solution
 		// ==== WITHOUT NORMAL INFLUENCE ==== 
 		// 
 		#if USE_FAST_ACOS
@@ -126,7 +126,7 @@ cosAlpha = 1.0;	// No influence after all!!
 
 		float3	csBentNormal = float3( averageX * _csDirection, averageY );	// Rebuild normal in camera space
 	#else
-		// Analytical solution for equations (5) and (6) from the paper
+		// Analytical solution
 		// ==== WITH NORMAL INFLUENCE ==== 
 		// These integrals are more complicated and we used to account for the dot product with the normal but that's not the way to compute the bent normal after all!!
 		float	cosTheta0 = _cosThetaFront;

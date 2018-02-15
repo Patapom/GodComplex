@@ -110,6 +110,10 @@
     <None Include="Shaders\BruteForce\HBIL.hlsl" />
     <None Include="Shaders\BruteForce\ComputeHBIL.hlsl" />
     <Content Include="Shaders\AddEmissive.hlsl" />
+    <None Include="Shaders\ComputeHBIL_Interleaved.hlsl" />
+    <None Include="Shaders\SplitBuffers.hlsl" />
+    <None Include="Shaders\RecomposeBuffers.hlsl" />
+    <None Include="Shaders\SplitBuffersPS.hlsl" />
     <Content Include="Shaders\RenderDebugCone.hlsl" />
     <None Include="Shaders\ComputeReprojection.hlsl" />
     <None Include="Shaders\ComputeHBIL.hlsl" />

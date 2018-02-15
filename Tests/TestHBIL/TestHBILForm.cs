@@ -1,10 +1,10 @@
-﻿//#define BRUTE_FORCE_HBIL		// 25ms at 1280x720... :D
+﻿//#define BRUTE_FORCE_HBIL			// 25ms at 1280x720... :D
 //#define RENDER_IN_DEPTH_STENCIL	// If defined, use the depth-stencil (single mip level) to render, instead of multi-mip RT (this RT allows larger sample footprints when gathering radiance and accelerates the HBIL pass)
 #define BILATERAL_PUSH_PULL
 
 //#define SCENE_LIBRARY
-//#define SCENE_CORNELL
-#define SCENE_HEIGHTFIELD
+#define SCENE_CORNELL
+//#define SCENE_HEIGHTFIELD
 
 //////////////////////////////////////////////////////////////////////////
 // Horizon-Based Indirect Lighting Demo
@@ -31,14 +31,21 @@
 //
 // IDEAS / #TODOS:
 //	• Write interleaved sampling + reconstruction based on bilateral weight (store it some place? Like alpha somewhere?)
+//	• Write mips for split irradiance
 //	• Keep failed reprojected pixels into some "surrounding buffer", some sort of paraboloid-projected buffer containing off-screen values???
 //		=> Exponential decay of off-screen values with decay rate depending on camera's linear velocity?? (fun idea!)
 //	• Use W linear attenuation as in HBAO?
+//	• Cut if outside screen + blend to 0 when grazing angles
 //
 // BUGS:
 //	• Horrible noise in reprojection buffer
 //		==> Due to race condition for 2 pixels wanting to reproject at the same place
 //		==> Tried to use a poor man's ZBuffer as uint + interlockedMin(), reduced the noise a little but not completely for some reason I can't explain... :/
+//
+//
+// ------------------------- RESOURCES ------------------------- 
+//	• Interleaved sampling: https://www.geforce.com/hardware/technology/hbao-plus/technology
+//		+ 2013 Bavoil, Jensen - Particle Shadows and Cache-Efficient Post-Processing (GDC).pdf
 //
 using System;
 using System.Collections.Generic;
@@ -120,6 +127,7 @@ namespace TestHBIL {
 		internal struct	CB_DownSample {
 			public uint		_sizeX;
 			public uint		_sizeY;
+			public uint		_passIndex;
 		}
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
@@ -129,8 +137,18 @@ namespace TestHBIL {
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
 		internal struct	CB_HBIL {
-			public float4	_bilateralValues;
+			public uint		_targetResolutionX;
+			public uint		_targetResolutionY;
+			public float2	_csDirection;
+
+			public uint		_renderPassIndexX;
+			public uint		_renderPassIndexY;
+			public uint		_renderPassIndexCount;
 			public float	_gatherSphereMaxRadius_m;	// Maximum radius (in meters) of the IL gather sphere
+
+			public float4	_bilateralValues;
+
+			public float	_gatherSphereMaxRadius_pixels;	// Maximum radius (in pixels) of the IL gather sphere
 		}
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
@@ -167,6 +185,11 @@ namespace TestHBIL {
 		#endif
 		private Shader				m_shader_RenderScene_DepthGBufferPass = null;
 		private ComputeShader		m_shader_DownSampleDepth = null;
+		private ComputeShader		m_shader_SplitFloat1 = null;
+		private ComputeShader		m_shader_SplitFloat3 = null;
+		private ComputeShader		m_shader_Recompose = null;
+// 		private Shader				m_shader_SplitFloat1 = null;
+// 		private Shader				m_shader_SplitFloat3 = null;
 		private Shader				m_shader_AddEmissive = null;
 		private Shader				m_shader_RenderScene_Shadow = null;
 		private Shader				m_shader_ComputeHBIL = null;
@@ -184,13 +207,20 @@ namespace TestHBIL {
 		private Texture2D			m_tex_shadow = null;
 
 		// HBIL Results
+		private Texture2D			m_tex_splitDepth = null;
+		private Texture2D			m_tex_splitNormal = null;
+		private Texture2D			m_tex_splitRadiance = null;
+		private Texture2D			m_tex_splitBentCone = null;
+		private Texture2D			m_tex_splitIrradiance = null;
+
 		private Texture2D			m_tex_bentCone = null;
-		private Texture2D			m_tex_radiance = null;
+		private Texture2D			m_tex_radiance0 = null;
+		private Texture2D			m_tex_radiance1 = null;
+
 		private Texture2D			m_tex_sourceRadiance_PUSH = null;
 		private Texture2D			m_tex_sourceRadiance_PULL = null;
 		private Texture2D			m_tex_reprojectedDepthBuffer = null;
 		private Texture2D			m_tex_finalRender = null;
-		private uint				m_radianceSourceSliceIndex = 0;
 
 		// Regular textures
 		private Texture2D			m_tex_BlueNoise = null;
@@ -231,27 +261,6 @@ namespace TestHBIL {
 		public TestHBILForm() {
 			InitializeComponent();
 		}
-
-		#region Image Helpers
-
-		public Texture2D	Image2Texture( System.IO.FileInfo _fileName, COMPONENT_FORMAT _componentFormat ) {
-			ImagesMatrix	images = null;
-			if ( _fileName.Extension.ToLower() == ".dds" ) {
-				images = ImageFile.DDSLoadFile( _fileName );
-			} else {
-				ImageFile	image = new ImageFile( _fileName );
-				if ( image.PixelFormat != PIXEL_FORMAT.BGRA8 ) {
-					ImageFile	badImage = image;
-					image = new ImageFile();
-					image.ConvertFrom( badImage, PIXEL_FORMAT.BGRA8 );
-					badImage.Dispose();
-				}
-				images = new ImagesMatrix( new ImageFile[1,1] { { image } } );
-			}
-			return new Texture2D( m_device, images, _componentFormat );
-		}
-
-		#endregion
 
 		#region Init/Exit
 
@@ -311,12 +320,17 @@ namespace TestHBIL {
 				#if BRUTE_FORCE_HBIL
  					m_shader_ComputeHBIL = new Shader( m_device, new System.IO.FileInfo( "Shaders/BruteForce/ComputeHBIL.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 				#else
- 					m_shader_ComputeHBIL = new Shader( m_device, new System.IO.FileInfo( "Shaders/ComputeHBIL.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+ 					m_shader_ComputeHBIL = new Shader( m_device, new System.IO.FileInfo( "Shaders/ComputeHBIL_Interleaved.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 				#endif
 
 				// Stuff
 				m_shader_AddEmissive = new Shader( m_device, new System.IO.FileInfo( "Shaders/AddEmissive.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 				m_shader_DownSampleDepth = new ComputeShader( m_device, new System.IO.FileInfo( "Shaders/DownSampleDepth.hlsl" ), "CS", null );
+ 				m_shader_SplitFloat1 = new ComputeShader( m_device, new System.IO.FileInfo( "Shaders/SplitBuffers.hlsl" ), "CS_SplitFloat1", null );
+ 				m_shader_SplitFloat3 = new ComputeShader( m_device, new System.IO.FileInfo( "Shaders/SplitBuffers.hlsl" ), "CS_SplitFloat3", null );
+//				m_shader_SplitFloat1 = new Shader( m_device, new System.IO.FileInfo( "Shaders/SplitBuffersPS.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS_SplitFloat1", null );
+//				m_shader_SplitFloat3 = new Shader( m_device, new System.IO.FileInfo( "Shaders/SplitBuffersPS.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS_SplitFloat3", null );
+				m_shader_Recompose = new ComputeShader( m_device, new System.IO.FileInfo( "Shaders/RecomposeBuffers.hlsl" ), "CS", null );
 				m_shader_PostProcess = new Shader( m_device, new System.IO.FileInfo( "Shaders/PostProcess.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 				m_shader_RenderDebugCone = new Shader( m_device, new System.IO.FileInfo( "Shaders/RenderDebugCone.hlsl" ), VERTEX_FORMAT.P3, "VS", null, "PS", null );
 			} catch ( Exception _e ) {
@@ -334,9 +348,19 @@ namespace TestHBIL {
 			// Create shadow map
 			m_tex_shadow = new Texture2D( m_device, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 6, 1, DEPTH_STENCIL_FORMAT.D32 );
 
-			// Create HBIL buffers
-			m_tex_bentCone = new Texture2D( m_device, W, H, 1, 1, PIXEL_FORMAT.RGBA8, COMPONENT_FORMAT.SNORM, false, false, null );
-			m_tex_radiance = new Texture2D( m_device, W, H, 2, 1, PIXEL_FORMAT.R11G11B10, COMPONENT_FORMAT.AUTO, false, false, null );
+			// Create HBIL quarter-res buffers
+			uint	qW = W >> 2; if ( 4*qW != W ) throw new Exception( "Must be integer 4!" );
+			uint	qH = H >> 2; if ( 4*qH != H ) throw new Exception( "Must be integer 4!" );
+			m_tex_splitDepth = new Texture2D( m_device, qW, qH, 16, 1, PIXEL_FORMAT.R16F, COMPONENT_FORMAT.AUTO, false, true, null );
+			m_tex_splitNormal = new Texture2D( m_device, qW, qH, 16, 1, PIXEL_FORMAT.RGBA8, COMPONENT_FORMAT.SNORM, false, true, null );
+			m_tex_splitRadiance = new Texture2D( m_device, qW, qH, 16, 1, PIXEL_FORMAT.R11G11B10, COMPONENT_FORMAT.AUTO, false, true, null );
+			m_tex_splitIrradiance = new Texture2D( m_device, qW, qH, 16, 1, PIXEL_FORMAT.R11G11B10, COMPONENT_FORMAT.AUTO, false, true, null );
+			m_tex_splitBentCone = new Texture2D( m_device, qW, qH, 16, 1, PIXEL_FORMAT.RGBA16F, COMPONENT_FORMAT.AUTO, false, true, null );		// Can't use R11G11B10: We need the alpha slot!
+
+			// Create HBIL full-res buffers
+			m_tex_bentCone = new Texture2D( m_device, W, H, 1, 1, PIXEL_FORMAT.RGBA8, COMPONENT_FORMAT.SNORM, false, true, null );
+			m_tex_radiance0 = new Texture2D( m_device, W, H, 1, 1, PIXEL_FORMAT.R11G11B10, COMPONENT_FORMAT.AUTO, false, true, null );
+			m_tex_radiance1 = new Texture2D( m_device, W, H, 1, 1, PIXEL_FORMAT.R11G11B10, COMPONENT_FORMAT.AUTO, false, true, null );
 			m_tex_sourceRadiance_PUSH = new Texture2D( m_device, W, H, 1, 0, PIXEL_FORMAT.RGBA16F, COMPONENT_FORMAT.AUTO, false, true, null );
 			m_tex_sourceRadiance_PULL = new Texture2D( m_device, W, H, 1, 0, PIXEL_FORMAT.RGBA16F, COMPONENT_FORMAT.AUTO, false, true, null );
 			m_tex_reprojectedDepthBuffer = new Texture2D( m_device, W, H, 1, 0, PIXEL_FORMAT.R32, COMPONENT_FORMAT.UINT, false, true, null );
@@ -494,10 +518,17 @@ namespace TestHBIL {
 
 			m_tex_finalRender.Dispose();
 
+			m_tex_splitIrradiance.Dispose();
+			m_tex_splitBentCone.Dispose();
+			m_tex_splitNormal.Dispose();
+			m_tex_splitRadiance.Dispose();
+			m_tex_splitDepth.Dispose();
+
 			m_tex_reprojectedDepthBuffer.Dispose();
 			m_tex_sourceRadiance_PULL.Dispose();
 			m_tex_sourceRadiance_PUSH.Dispose();
-			m_tex_radiance.Dispose();
+			m_tex_radiance1.Dispose();
+			m_tex_radiance0.Dispose();
 			m_tex_bentCone.Dispose();
 
 			#if SCENE_CORNELL
@@ -524,6 +555,9 @@ namespace TestHBIL {
 			m_shader_AddEmissive.Dispose();
 			m_shader_PostProcess.Dispose();
 			m_shader_ComputeHBIL.Dispose();
+			m_shader_Recompose.Dispose();
+			m_shader_SplitFloat3.Dispose();
+			m_shader_SplitFloat1.Dispose();
 			m_shader_DownSampleDepth.Dispose();
 			m_shader_ComputeLighting.Dispose();
 			m_shader_RenderScene_Shadow.Dispose();
@@ -644,9 +678,9 @@ namespace TestHBIL {
 //pipo.ReadPixels( 0, 0, ( uint X, uint Y, System.IO.BinaryReader _R ) => { p[X,Y] = _R.ReadUInt32(); } );
 
 
-				m_tex_radiance.GetView( 0, 1, m_radianceSourceSliceIndex, 1 ).SetCS( 0 );	// Source radiance from last frame
-				targetDepthStencil.SetCS( 1 );												// Source depth buffer from last frame
-				m_tex_motionVectors.SetCS( 2 );												// Motion vectors for dynamic objects
+				m_tex_radiance1.SetCS( 0 );		// Source radiance from last frame
+				targetDepthStencil.SetCS( 1 );	// Source depth buffer from last frame
+				m_tex_motionVectors.SetCS( 2 );	// Motion vectors for dynamic objects
 				m_tex_BlueNoise.SetCS( 3 );
 				m_tex_sourceRadiance_PUSH.SetCSUAV( 0 );
 				m_tex_reprojectedDepthBuffer.SetCSUAV( 1 );
@@ -654,8 +688,9 @@ namespace TestHBIL {
 				m_shader_ReprojectRadiance.Dispatch( m_tex_sourceRadiance_PUSH.Width >> 4, m_tex_sourceRadiance_PUSH.Height >> 4, 1 );
 
 				m_tex_reprojectedDepthBuffer.RemoveFromLastAssignedSlotUAV();
+				m_tex_sourceRadiance_PUSH.RemoveFromLastAssignedSlotUAV();
 				m_tex_motionVectors.RemoveFromLastAssignedSlots();
-				m_tex_radiance.RemoveFromLastAssignedSlots();
+				m_tex_radiance1.RemoveFromLastAssignedSlots();
 				targetDepthStencil.RemoveFromLastAssignedSlots();
 			}
 
@@ -663,7 +698,7 @@ namespace TestHBIL {
 			// =========== Render Depth / G-Buffer Pass  ===========
 			// We're actually doing all in one here...
 			//
-			m_device.PerfSetMarker( 1 );
+			m_device.PerfSetMarker( 10 );
 			#if RENDER_IN_DEPTH_STENCIL
 				m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.WRITE_ALWAYS, BLEND_STATE.DISABLED );
 			#else
@@ -694,25 +729,25 @@ namespace TestHBIL {
 			}
 
 			// Downsample depth-stencil
-			m_device.PerfSetMarker( 2 );
-			#if !RENDER_IN_DEPTH_STENCIL
-				if ( m_shader_DownSampleDepth.Use() ) {
-					for ( uint mipLevel=1; mipLevel < m_tex_depthWithMips.MipLevelsCount; mipLevel++ ) {
-						View2D	targetView = m_tex_depthWithMips.GetView( mipLevel, 1, 0, 1 );
-						targetView.SetCSUAV( 0 );
-						m_tex_depthWithMips.GetView( mipLevel-1, 1, 0, 1 ).SetCS( 0 );
-
-						m_CB_DownSample.m._sizeX = targetView.Width;
-						m_CB_DownSample.m._sizeY = targetView.Height;
-						m_CB_DownSample.UpdateData();
-
-						m_shader_DownSampleDepth.Dispatch( (m_CB_DownSample.m._sizeX+15) >> 4, (m_CB_DownSample.m._sizeY+15) >> 4, 1 );
-					}
-
-					m_tex_depthWithMips.RemoveFromLastAssignedSlots();
-					m_tex_depthWithMips.RemoveFromLastAssignedSlotUAV();
-				}
-			#endif
+			m_device.PerfSetMarker( 20 );
+// 			#if !RENDER_IN_DEPTH_STENCIL
+// 				if ( m_shader_DownSampleDepth.Use() ) {
+// 					for ( uint mipLevel=1; mipLevel < m_tex_depthWithMips.MipLevelsCount; mipLevel++ ) {
+// 						View2D	targetView = m_tex_depthWithMips.GetView( mipLevel, 1, 0, 1 );
+// 						targetView.SetCSUAV( 0 );
+// 						m_tex_depthWithMips.GetView( mipLevel-1, 1, 0, 1 ).SetCS( 0 );
+// 
+// 						m_CB_DownSample.m._sizeX = targetView.Width;
+// 						m_CB_DownSample.m._sizeY = targetView.Height;
+// 						m_CB_DownSample.UpdateData();
+// 
+// 						m_shader_DownSampleDepth.Dispatch( (m_CB_DownSample.m._sizeX+15) >> 4, (m_CB_DownSample.m._sizeY+15) >> 4, 1 );
+// 					}
+// 
+// 					m_tex_depthWithMips.RemoveFromLastAssignedSlots();
+// 					m_tex_depthWithMips.RemoveFromLastAssignedSlotUAV();
+// 				}
+// 			#endif
 
 			//////////////////////////////////////////////////////////////////////////
 			// =========== Add Emissive Map to Reprojected Radiance ===========
@@ -732,7 +767,7 @@ namespace TestHBIL {
 //*			//////////////////////////////////////////////////////////////////////////
 			// =========== Apply Push-Pull to Reconstruct Missing Pixels ===========
 			//
-			m_device.PerfSetMarker( 3 );
+			m_device.PerfSetMarker( 30 );
 			m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
 
 			{
@@ -807,7 +842,7 @@ namespace TestHBIL {
 
 			//////////////////////////////////////////////////////////////////////////
 			// =========== Compute Shadow Map ===========
-			m_device.PerfSetMarker( 4 );
+			m_device.PerfSetMarker( 40 );
 			#if SCENE_CORNELL || SCENE_LIBRARY
 				if ( m_shader_RenderScene_Shadow.Use() ) {
 					m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.WRITE_ALWAYS, BLEND_STATE.DISABLED );
@@ -827,66 +862,155 @@ namespace TestHBIL {
 			//////////////////////////////////////////////////////////////////////////
 			// =========== Compute Bent Cone Map and Irradiance Bounces  ===========
 			// 
-			m_device.PerfSetMarker( 5 );
+			m_device.PerfSetMarker( 50 );
 			m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
 
-			#if BRUTE_FORCE_HBIL
-				if ( m_shader_ComputeHBIL.Use() ) {
-					m_device.SetRenderTargets( new IView[] { m_tex_radiance.GetView( 0, 1, 1-m_radianceSourceSliceIndex, 1 ), m_tex_bentCone.GetView( 0, 1, 0, 1 ) }, null );
+			// 1] Split buffers into 4x4 tiny quarter res buffers
 
-//					m_tex_radiance.GetView( 0, 1, m_radianceSourceSliceIndex, 1 ).SetPS( 0 );	// Reprojected source radiance from last frame
-					m_tex_sourceRadiance_PULL.SetPS( 0 );	// Reprojected source radiance
-					m_tex_normal.SetPS( 1 );
-					targetDepthStencil.SetPS( 2 );
-					m_tex_BlueNoise.SetPS( 3 );
+// This motherfucker compiler doesn't work with compute shaders taking 16 samples and dispatching them to 16 slices!
+// 			if ( m_shader_SplitFloat1.Use() ) {
+// 				m_CB_DownSample.m._sizeX = m_tex_splitDepth.Width;
+// 				m_CB_DownSample.m._sizeY = m_tex_splitDepth.Height;
+// 				m_CB_DownSample.UpdateData();
+// 
+// 				uint	groupsCountX = (m_CB_DownSample.m._sizeX + 7) >> 3;
+// 				uint	groupsCountY = (m_CB_DownSample.m._sizeY + 7) >> 3;
+// 
+// 				// Split source depth
+// 				m_tex_depthWithMips.SetCS( 0 );
+// 				m_tex_splitDepth.SetCSUAV( 0 );
+// 				m_shader_SplitFloat1.Dispatch( groupsCountX, groupsCountY, 1 );
+// 
+// 				// Split source normal
+// 				m_shader_SplitFloat3.Use();
+// 				m_tex_normal.SetCS( 1 );
+// 				m_tex_splitNormal.SetCSUAV( 1 );
+// 				m_shader_SplitFloat3.Dispatch( groupsCountX, groupsCountY, 1 );
+// 
+// 				// Split source radiance
+// 				m_tex_sourceRadiance_PULL.SetCS( 1 );	// Reprojected + reconstructed source radiance from last frame with all mips
+// 				m_tex_splitRadiance.SetCSUAV( 1 );
+// 				m_shader_SplitFloat3.Dispatch( groupsCountX, groupsCountY, 1 );
+// 
+// 				m_tex_splitRadiance.RemoveFromLastAssignedSlotUAV();
+// 				m_tex_splitNormal.RemoveFromLastAssignedSlotUAV();
+// 				m_tex_splitDepth.RemoveFromLastAssignedSlotUAV();
+// 			}
 
-m_tex_texDebugHeights.SetPS( 32 );
-m_tex_texDebugNormals.SetPS( 33 );
+// Instead, we have to call 16 times dispatch and take a single sample to store it into a single slice at a time
+// It's shameful but I don't have time to bother understanding why!!
+			if ( m_shader_SplitFloat1.Use() ) {
+				m_CB_DownSample.m._sizeX = m_tex_splitDepth.Width;
+				m_CB_DownSample.m._sizeY = m_tex_splitDepth.Height;
 
-					m_device.RenderFullscreenQuad( m_shader_ComputeHBIL );
+				uint	groupsCountX = (m_CB_DownSample.m._sizeX + 7) >> 3;
+				uint	groupsCountY = (m_CB_DownSample.m._sizeY + 7) >> 3;
 
-					m_radianceSourceSliceIndex = 1-m_radianceSourceSliceIndex;
-	
-					m_tex_radiance.RemoveFromLastAssignedSlots();
+				// Split source depth
+				m_tex_depthWithMips.SetCS( 0 );
+				m_tex_splitDepth.SetCSUAV( 0 );
+				for ( uint passIndex=0; passIndex < 16; passIndex++ ) {
+					m_CB_DownSample.m._passIndex = passIndex;
+					m_CB_DownSample.UpdateData();
+					m_shader_SplitFloat1.Dispatch( groupsCountX, groupsCountY, 1 );
 				}
-			#else
-				if ( m_shader_ComputeHBIL.Use() ) {
-					m_device.SetRenderTargets( new IView[] { m_tex_radiance.GetView( 0, 1, 1-m_radianceSourceSliceIndex, 1 ), m_tex_bentCone.GetView( 0, 1, 0, 1 ) }, null );
 
-					m_CB_HBIL.m._gatherSphereMaxRadius_m = floatTrackbarControlGatherSphereRadius.Value;
-					m_CB_HBIL.m._bilateralValues.Set( floatTrackbarControlBilateral0.Value, floatTrackbarControlBilateral1.Value, floatTrackbarControlBilateral2.Value, floatTrackbarControlBilateral3.Value );
-					m_CB_HBIL.UpdateData();
-
-					targetDepthStencil.SetPS( 0 );
-					m_tex_normal.SetPS( 1 );
-					m_tex_sourceRadiance_PULL.SetPS( 2 );	// Reprojected + reconstructed source radiance from last frame with all mips
-					m_tex_BlueNoise.SetPS( 3 );
-
-					m_device.RenderFullscreenQuad( m_shader_ComputeHBIL );
-
-					m_radianceSourceSliceIndex = 1-m_radianceSourceSliceIndex;
-
-					m_tex_radiance.RemoveFromLastAssignedSlots();
+				// Split source normal
+				m_shader_SplitFloat3.Use();
+				m_tex_normal.SetCS( 1 );
+				m_tex_splitNormal.SetCSUAV( 1 );
+				for ( uint passIndex=0; passIndex < 16; passIndex++ ) {
+					m_CB_DownSample.m._passIndex = passIndex;
+					m_CB_DownSample.UpdateData();
+					m_shader_SplitFloat3.Dispatch( groupsCountX, groupsCountY, 1 );
 				}
-			#endif
 
+				// Split source radiance
+				m_tex_sourceRadiance_PULL.SetCS( 1 );	// Reprojected + reconstructed source radiance from last frame with all mips
+				m_tex_splitRadiance.SetCSUAV( 1 );
+				for ( uint passIndex=0; passIndex < 16; passIndex++ ) {
+					m_CB_DownSample.m._passIndex = passIndex;
+					m_CB_DownSample.UpdateData();
+					m_shader_SplitFloat3.Dispatch( groupsCountX, groupsCountY, 1 );
+				}
+
+				m_tex_splitRadiance.RemoveFromLastAssignedSlotUAV();
+				m_tex_splitNormal.RemoveFromLastAssignedSlotUAV();
+				m_tex_splitDepth.RemoveFromLastAssignedSlotUAV();
+			}
+
+			// 2] Compute 4x4 small vignettes
+//			m_device.PerfSetMarker( 51 );
+			if ( m_shader_ComputeHBIL.Use() ) {
+				m_CB_HBIL.m._targetResolutionX = m_tex_splitRadiance.Width;
+				m_CB_HBIL.m._targetResolutionY = m_tex_splitRadiance.Height;
+				m_CB_HBIL.m._gatherSphereMaxRadius_m = floatTrackbarControlGatherSphereRadius_meters.Value;
+				m_CB_HBIL.m._bilateralValues.Set( floatTrackbarControlBilateral0.Value, floatTrackbarControlBilateral1.Value, floatTrackbarControlBilateral2.Value, floatTrackbarControlBilateral3.Value );
+				m_CB_HBIL.m._gatherSphereMaxRadius_pixels = floatTrackbarControlGatherSphereRadius_pixels.Value / 4.0f;
+
+				m_tex_splitDepth.SetPS( 0 );
+				m_tex_splitNormal.SetPS( 1 );
+				m_tex_splitRadiance.SetPS( 2 );
+				m_tex_BlueNoise.SetPS( 3 );
+
+				uint	passIndex = 0;
+				for ( uint Y=0; Y < 4; Y++ ) {
+					for ( uint X=0; X < 4; X++, passIndex++ ) {
+						m_device.SetRenderTargets( new IView[] { m_tex_splitIrradiance.GetView( 0, 1, passIndex, 1 ), m_tex_splitBentCone.GetView( 0, 1, passIndex, 1 ) }, null );
+
+						float	phi = B4( X, Y ) * 0.5f * Mathf.PI / 16.0f;	// Use Bayer for maximum discrepancy between pixels
+
+						m_CB_HBIL.m._renderPassIndexX = X;
+						m_CB_HBIL.m._renderPassIndexY = Y;
+						m_CB_HBIL.m._renderPassIndexCount = passIndex;
+						m_CB_HBIL.m._csDirection.Set( Mathf.Sin( phi ), Mathf.Cos( phi ) );
+						m_CB_HBIL.UpdateData();
+
+						m_device.RenderFullscreenQuad( m_shader_ComputeHBIL );
+					}
+				}
+
+//				m_tex_splitIrradiance.RemoveFromLastAssignedSlotUAV();
+//				m_tex_splitBentCone.RemoveFromLastAssignedSlotUAV();
+				m_device.RemoveRenderTargets();
+			}
+
+			// 3] Recompose results
+//			m_device.PerfSetMarker( 52 );
+			if ( m_shader_Recompose.Use() ) {
+				m_CB_DownSample.m._sizeX = m_tex_splitDepth.Width;
+				m_CB_DownSample.m._sizeY = m_tex_splitDepth.Height;
+				m_CB_DownSample.UpdateData();
+
+				m_tex_splitIrradiance.SetCS( 0 );
+				m_tex_splitBentCone.SetCS( 1 );
+				m_tex_depthWithMips.SetCS( 2 );
+
+				m_tex_radiance0.SetCSUAV( 0 );
+				m_tex_bentCone.SetCSUAV( 1 );
+
+				m_shader_Recompose.Dispatch( m_CB_DownSample.m._sizeX >> 4, m_CB_DownSample.m._sizeY >> 4, 1 );
+
+				m_tex_radiance0.RemoveFromLastAssignedSlotUAV();
+				m_tex_bentCone.RemoveFromLastAssignedSlotUAV();
+			}
 
 // DEBUG RGB10A2 and R11G11B10_FLOAT formats
-// Texture2D	pipoCPU = new Texture2D( m_device, m_tex_radiance.Width, m_tex_radiance.Height, 2, 1, PIXEL_FORMAT.R11G11B10, COMPONENT_FORMAT.AUTO, true, false, null );
-// pipoCPU.CopyFrom( m_tex_radiance );
-// uint[,]	pixels = new uint[m_tex_radiance.Width,m_tex_radiance.Height];
-// pipoCPU.ReadPixels( 0, m_radianceSourceSliceIndex, ( uint _X, uint _Y, System.IO.BinaryReader _R ) => {
+// Texture2D	pipoCPU = new Texture2D( m_device, m_tex_radiance0.Width, m_tex_radiance0.Height, 1, 1, PIXEL_FORMAT.R11G11B10, COMPONENT_FORMAT.AUTO, true, false, null );
+// pipoCPU.CopyFrom( m_tex_radiance0 );
+// uint[,]	pixels = new uint[m_tex_radiance0.Width,m_tex_radiance0.Height];
+// pipoCPU.ReadPixels( 0, 0, ( uint _X, uint _Y, System.IO.BinaryReader _R ) => {
 // 	pixels[_X,_Y] = _R.ReadUInt32();
 // } );
 
 			//////////////////////////////////////////////////////////////////////////
 			// =========== Compute lighting & finalize radiance  ===========
 			// 
-			m_device.PerfSetMarker( 6 );
+			m_device.PerfSetMarker( 60 );
 			m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
 
 			if ( m_shader_ComputeLighting.Use() ) {
-				m_device.SetRenderTargets( new IView[] { m_tex_radiance.GetView( 0, 1, 1-m_radianceSourceSliceIndex, 1 ), m_tex_finalRender.GetView( 0, 1, 0, 1 ) }, null );
+				m_device.SetRenderTargets( new IView[] { m_tex_radiance1.GetView( 0, 1, 0, 1 ), m_tex_finalRender.GetView( 0, 1, 0, 1 ) }, null );
 
 				m_tex_albedo.SetPS( 0 );
 				m_tex_normal.SetPS( 1 );
@@ -895,19 +1019,17 @@ m_tex_texDebugNormals.SetPS( 33 );
 
 				m_tex_shadow.SetPS( 6 );
 
-				m_tex_radiance.GetView( 0, 1, m_radianceSourceSliceIndex, 1 ).SetPS( 8 );
+				m_tex_radiance0.SetPS( 8 );
 				m_tex_bentCone.SetPS( 9 );
 
 				m_device.RenderFullscreenQuad( m_shader_ComputeLighting );
 
-				m_radianceSourceSliceIndex = 1-m_radianceSourceSliceIndex;
-
-				m_tex_radiance.RemoveFromLastAssignedSlots();
+				m_tex_radiance0.RemoveFromLastAssignedSlots();
 			}
 //*/
 			//////////////////////////////////////////////////////////////////////////
 			// =========== Post-Process ===========
-			m_device.PerfSetMarker( 7 );
+			m_device.PerfSetMarker( 70 );
 			m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
 
 			if ( m_shader_PostProcess.Use() ) {
@@ -915,10 +1037,21 @@ m_tex_texDebugNormals.SetPS( 33 );
 
 				m_tex_motionVectors.SetPS( 4 );
 
-				m_tex_radiance.SetPS( 8 );
-				m_tex_finalRender.SetPS( 10 );
-				m_tex_sourceRadiance_PUSH.SetPS( 11 );
-				m_tex_sourceRadiance_PULL.SetPS( 12 );
+				m_tex_radiance0.SetPS( 8 );
+				m_tex_radiance1.SetPS( 9 );
+				m_tex_bentCone.SetPS( 10 );
+				m_tex_finalRender.SetPS( 11 );
+
+				// DEBUG PUSH/PULL
+				m_tex_sourceRadiance_PUSH.SetPS( 12 );
+				m_tex_sourceRadiance_PULL.SetPS( 13 );
+
+				// DEBUG SPLIT BUFFERS
+				m_tex_splitDepth.SetPS( 20 );
+				m_tex_splitNormal.SetPS( 21 );
+				m_tex_splitRadiance.SetPS( 22 );
+				m_tex_splitIrradiance.SetPS( 23 );
+				m_tex_splitBentCone.SetPS( 24 );
 
 				m_device.RenderFullscreenQuad( m_shader_PostProcess );
 
@@ -928,11 +1061,19 @@ m_tex_texDebugNormals.SetPS( 33 );
 				m_tex_normal.RemoveFromLastAssignedSlots();
 				m_tex_albedo.RemoveFromLastAssignedSlots();
 
-				m_tex_sourceRadiance_PUSH.RemoveFromLastAssignedSlots();
-				m_tex_sourceRadiance_PULL.RemoveFromLastAssignedSlots();
-				m_tex_radiance.RemoveFromLastAssignedSlots();
+				m_tex_radiance0.RemoveFromLastAssignedSlots();
+				m_tex_radiance1.RemoveFromLastAssignedSlots();
 				m_tex_bentCone.RemoveFromLastAssignedSlots();
 				m_tex_finalRender.RemoveFromLastAssignedSlots();
+
+				m_tex_sourceRadiance_PUSH.RemoveFromLastAssignedSlots();
+				m_tex_sourceRadiance_PULL.RemoveFromLastAssignedSlots();
+
+				m_tex_splitDepth.RemoveFromLastAssignedSlots();
+				m_tex_splitNormal.RemoveFromLastAssignedSlots();
+				m_tex_splitRadiance.RemoveFromLastAssignedSlots();
+				m_tex_splitIrradiance.RemoveFromLastAssignedSlots();
+				m_tex_splitBentCone.RemoveFromLastAssignedSlots();
 			}
 
 			//////////////////////////////////////////////////////////////////////////
@@ -976,13 +1117,13 @@ m_tex_texDebugNormals.SetPS( 33 );
 			m_lastDisplayTime = m_currentTime;
 
 			double	timeReprojection = m_device.PerfGetMilliSeconds( 0 );
-			double	timeRenderGBuffer = m_device.PerfGetMilliSeconds( 1 );
-			double	timeDownSampleDepth = m_device.PerfGetMilliSeconds( 2 );
-			double	timePushPull = m_device.PerfGetMilliSeconds( 3 );
-			double	timeShadow = m_device.PerfGetMilliSeconds( 4 );
-			double	timeHBIL = m_device.PerfGetMilliSeconds( 5 );
-			double	timeComputeLighting = m_device.PerfGetMilliSeconds( 6 );
-			double	timePostProcess = m_device.PerfGetMilliSeconds( 7 );
+			double	timeRenderGBuffer = m_device.PerfGetMilliSeconds( 10 );
+			double	timeDownSampleDepth = m_device.PerfGetMilliSeconds( 20 );
+			double	timePushPull = m_device.PerfGetMilliSeconds( 30 );
+			double	timeShadow = m_device.PerfGetMilliSeconds( 40 );
+			double	timeHBIL = m_device.PerfGetMilliSeconds( 50, 60 );
+			double	timeComputeLighting = m_device.PerfGetMilliSeconds( 60 );
+			double	timePostProcess = m_device.PerfGetMilliSeconds( 70 );
 
 			float	totalTime = m_currentTime - m_startTime;
 			textBoxInfo.Text = "" //"Total Time = " + totalTime + " seconds\r\n"
@@ -1007,13 +1148,62 @@ m_tex_texDebugNormals.SetPS( 33 );
 			return time;
 		}
 
+		#region Bayer
+
+		// Simple recursive Bayer matrix generation
+		// We start from the root permutation matrix:
+		//	I2 = |1 2|
+		//       |3 0|
+		//
+		// Next, we can recursively obtain successive matrices by applying:
+		//  I2n = | 4*In+1 4*In+2 |
+		//        | 4*In+3 4*In+0 |
+		//
+		// Generates the basic 2x2 Bayer permutation matrix:
+		//  [1 2]
+		//  [3 0]
+		// Expects _P in [0,1]
+		uint B2( uint _X, uint _Y ) {
+			return ((_Y << 1) + _X + 1) & 3;
+		}
+
+		// Generates the 4x4 matrix
+		// Expects _P any pixel coordinate
+		float B4( uint _X, uint _Y ) {
+			return (B2( _X & 1, _Y & 1 ) << 2)
+				  + B2( (_X >> 1) & 1, (_Y >> 1) & 1);
+		}
+
+		#endregion
+
+		#region Image Helpers
+
+		public Texture2D	Image2Texture( System.IO.FileInfo _fileName, COMPONENT_FORMAT _componentFormat ) {
+			ImagesMatrix	images = null;
+			if ( _fileName.Extension.ToLower() == ".dds" ) {
+				images = ImageFile.DDSLoadFile( _fileName );
+			} else {
+				ImageFile	image = new ImageFile( _fileName );
+				if ( image.PixelFormat != PIXEL_FORMAT.BGRA8 ) {
+					ImageFile	badImage = image;
+					image = new ImageFile();
+					image.ConvertFrom( badImage, PIXEL_FORMAT.BGRA8 );
+					badImage.Dispose();
+				}
+				images = new ImagesMatrix( new ImageFile[1,1] { { image } } );
+			}
+			return new Texture2D( m_device, images, _componentFormat );
+		}
+
+		#endregion
+
 		private void buttonReload_Click( object sender, EventArgs e ) {
 			if ( m_device != null )
 				m_device.ReloadModifiedShaders();
 		}
 
 		private void buttonClear_Click( object sender, EventArgs e ) {
-			m_device.Clear( m_tex_radiance, float4.Zero );
+			m_device.Clear( m_tex_radiance1, float4.Zero );
 		}
 
 		#region Camera & Environment Light Manipulation
@@ -1158,7 +1348,7 @@ m_tex_texDebugNormals.SetPS( 33 );
 
 		private void	DebugHBIL( uint _X, uint _Y ) {
 			m_softwareHBILComputer.Setup( m_tex_depthWithMips, m_tex_normal, m_tex_sourceRadiance_PULL );
-			m_softwareHBILComputer.GatherSphereMaxRadius_m = floatTrackbarControlGatherSphereRadius.Value;
+			m_softwareHBILComputer.GatherSphereMaxRadius_m = floatTrackbarControlGatherSphereRadius_meters.Value;
 			m_softwareHBILComputer.Camera2World = m_CB_Camera.m._Camera2World;
 			m_softwareHBILComputer.World2Proj = m_CB_Camera.m._World2Proj;
 			m_softwareHBILComputer.Compute( _X, _Y );

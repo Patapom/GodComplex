@@ -8,11 +8,22 @@ Texture2D<float>		_tex_Depth : register(t3);
 Texture2D<float2>		_tex_MotionVectors : register(t4);
 
 //Texture2DArray<float>	_tex_ShadowMap : register(t6);
-Texture2DArray<float4>	_tex_Radiance : register(t8);
-Texture2D<float4>		_tex_BentCone : register(t9);
-Texture2D<float4>		_tex_FinalRender : register(t10);
-Texture2D<float4>		_tex_SourceRadiance_PUSH : register(t11);
-Texture2D<float4>		_tex_SourceRadiance_PULL : register(t12);
+Texture2D<float4>		_tex_Radiance0 : register(t8);
+Texture2D<float4>		_tex_Radiance1 : register(t9);
+Texture2D<float4>		_tex_BentCone : register(t10);
+Texture2D<float4>		_tex_FinalRender : register(t11);
+
+// Push/pull
+Texture2D<float4>		_tex_SourceRadiance_PUSH : register(t12);
+Texture2D<float4>		_tex_SourceRadiance_PULL : register(t13);
+
+// Split buffers
+Texture2DArray<float>	_tex_splitDepth : register(t20);
+Texture2DArray<float4>	_tex_splitNormal : register(t21);
+Texture2DArray<float4>	_tex_splitRadiance : register(t22);
+Texture2DArray<float4>	_tex_splitIrradiance : register(t23);
+Texture2DArray<float4>	_tex_splitBentCone : register(t24);
+
 
 float4	VS( float4 __Position : SV_POSITION ) : SV_POSITION { return __Position; }
 
@@ -31,7 +42,7 @@ float3	PS( float4 __Position : SV_POSITION ) : SV_TARGET0 {
 
 
 // Render full result
-return _exposure * _tex_FinalRender[__Position.xy].xyz;
+//return _exposure * _tex_FinalRender[__Position.xy].xyz;
 
 
 #if 0	// DEBUG BENT CONE
@@ -62,7 +73,7 @@ return wsBentCone;
 return csBentConeDev.xyz;	// Show RAW value
 #endif
 
-#if 1	// DEBUG PUSH/PULL
+#if 0	// DEBUG PUSH/PULL
 	float4	V = (_flags & 0x100U) ? _tex_SourceRadiance_PULL.SampleLevel( LinearClamp, __Position.xy / _resolution, _debugMipIndex ) : _tex_SourceRadiance_PUSH.SampleLevel( LinearClamp, __Position.xy / _resolution, _debugMipIndex );
 //	if ( _debugMipIndex == 0 )
 //		V.w = Depth2Weight( V.w );
@@ -71,10 +82,21 @@ return csBentConeDev.xyz;	// Show RAW value
 	return V.xyz;
 #endif
 
+#if 1	// DEBUG SPLIT BUFFERS
+//	float	splitZ = _tex_splitDepth.SampleLevel( LinearClamp, float3( __Position.xy / _resolution, _debugMipIndex ), 0.0 );
+//	return 1.0 * splitZ;
+//	float3	splitN = _tex_splitNormal.SampleLevel( LinearClamp, float3( __Position.xy / _resolution, _debugMipIndex ), 0.0 ).xyz;
+//	return 0.5 * (1.0 + splitN);
+//	float3	splitL = _tex_splitRadiance.SampleLevel( LinearClamp, float3( __Position.xy / _resolution, _debugMipIndex ), 0.0 ).xyz;
+//	return splitL;
+	float3	splitE = _tex_splitIrradiance.SampleLevel( LinearClamp, float3( __Position.xy / _resolution, _debugMipIndex ), 0.0 ).xyz;
+	return splitE;
+#endif
+
 return 10.0 * _tex_ShadowMap.SampleLevel( LinearClamp, float3( __Position.xy / 512.0, _debugMipIndex ), 0.0 );	// Debug shadow map
 
 //return _tex_Emissive[__Position.xy].xyz;
-//return _tex_Radiance[uint3(__Position.xy, _sourceRadianceIndex)].xyz;
+//return _tex_Radiance0[__Position.xy].xyz;
 //return _tex_Albedo[__Position.xy].xyz;
 //return _tex_Normal[__Position.xy].xyz;
 return _tex_Depth.SampleLevel( LinearClamp, __Position.xy / _resolution, _debugMipIndex );
