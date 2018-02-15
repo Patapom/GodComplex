@@ -959,6 +959,7 @@ namespace TestHBIL {
 						m_device.SetRenderTargets( new IView[] { m_tex_splitIrradiance.GetView( 0, 1, passIndex, 1 ), m_tex_splitBentCone.GetView( 0, 1, passIndex, 1 ) }, null );
 
 						float	phi = B4( X, Y ) * 0.5f * Mathf.PI / 16.0f;	// Use Bayer for maximum discrepancy between pixels
+//						float	phi = (B4( X, Y ) + (m_framesCount & 0x1F) / 32.0f) * 0.5f * Mathf.PI / 16.0f;	// Use Bayer for maximum discrepancy between pixels
 
 						m_CB_HBIL.m._renderPassIndexX = X;
 						m_CB_HBIL.m._renderPassIndexY = Y;
@@ -1169,7 +1170,7 @@ namespace TestHBIL {
 
 		// Generates the 4x4 matrix
 		// Expects _P any pixel coordinate
-		float B4( uint _X, uint _Y ) {
+		uint B4( uint _X, uint _Y ) {
 			return (B2( _X & 1, _Y & 1 ) << 2)
 				  + B2( (_X >> 1) & 1, (_Y >> 1) & 1);
 		}

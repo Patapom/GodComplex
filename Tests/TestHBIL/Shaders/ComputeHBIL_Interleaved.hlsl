@@ -314,7 +314,10 @@ PS_OUT	PS( float4 __Position : SV_POSITION ) {
 	csAverageBentNormal += csBentNormal;
 	sumAO += AO;
 
+	/////////////////////////////////////////////////////////////////////
 	// Write result
+	sumIrradiance = max( 0.0, 0.5 * PI * sumIrradiance );	// * PI / 2 directions
+
 	PS_OUT	Out;
 	Out.irradiance = float4( sumIrradiance, 0 );
 	Out.bentCone = float4( csAverageBentNormal, sumAO );
