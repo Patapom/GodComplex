@@ -2,9 +2,9 @@
 //#define RENDER_IN_DEPTH_STENCIL	// If defined, use the depth-stencil (single mip level) to render, instead of multi-mip RT (this RT allows larger sample footprints when gathering radiance and accelerates the HBIL pass)
 #define BILATERAL_PUSH_PULL
 
-#define SCENE_LIBRARY
+//#define SCENE_LIBRARY
 //#define SCENE_CORNELL
-//#define SCENE_HEIGHTFIELD
+#define SCENE_HEIGHTFIELD
 
 //////////////////////////////////////////////////////////////////////////
 // Horizon-Based Indirect Lighting Demo
@@ -30,15 +30,29 @@
 //
 // ------------------------- DONE ------------------------- 
 //
-// IDEAS / #TODOS:
+// #TODOS:
 //	• Reconstruct interleaved sampling based on bilateral weight (store it some place? Like alpha somewhere?)
+//	• Try to use spiral sampling pattern in the manner of scalable ambient obscurance (http://research.nvidia.com/sites/default/files/pubs/2012-06_Scalable-Ambient-Obscurance/McGuire12SAO.pdf)
+//		=> At the cost of cache coherence I suppose... :'(
 //	• Write mips for split irradiance
+//		=> Moreover, use already computed mips from full-res source! Don't recompute mips. This way, we could hope to achieve more quality since we'll sample more pixels from more slices...
+//		=> Maybe it's a general idea we could use => Use mips to spread pixels "cross slices"
+//
+// IDEAS:
 //	• Keep failed reprojected pixels into some "surrounding buffer", some sort of paraboloid-projected buffer containing off-screen values???
 //		=> Exponential decay of off-screen values with decay rate depending on camera's linear velocity?? (fun idea!)
 //	• Use W linear attenuation as in HBAO?
 //	• Cut if outside screen + blend to 0 when grazing angles
 //
 // BUGS:
+//	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ==> 
+//	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ==> 
+//	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ==> 
+//	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ==> Check pourquoi on a un halo sur le height field vers les bords des pyramides???
+//	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ==> 
+//	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ==> 
+//	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ==> 
+
 //	• Horrible noise in reprojection buffer
 //		==> Due to race condition for 2 pixels wanting to reproject at the same place
 //		==> Tried to use a poor man's ZBuffer as uint + interlockedMin(), reduced the noise a little but not completely for some reason I can't explain... :/
@@ -987,6 +1001,7 @@ namespace TestHBIL {
 				m_tex_splitIrradiance.SetCS( 0 );
 				m_tex_splitBentCone.SetCS( 1 );
 				m_tex_depthWithMips.SetCS( 2 );
+				m_tex_normal.SetCS( 3 );
 
 				m_tex_radiance0.SetCSUAV( 0 );
 				m_tex_bentCone.SetCSUAV( 1 );
