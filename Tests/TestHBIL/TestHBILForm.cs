@@ -383,14 +383,25 @@ namespace TestHBIL {
 			m_tex_splitBentCone = new Texture2D( m_device, qW, qH, 16, 1, PIXEL_FORMAT.RGBA16F, COMPONENT_FORMAT.AUTO, false, true, null );		// Can't use R11G11B10: We need the alpha slot!
 
 			// Create HBIL full-res buffers
-			m_tex_bentCone = new Texture2D( m_device, W, H, 1, 1, PIXEL_FORMAT.RGBA8, COMPONENT_FORMAT.SNORM, false, true, null );
-			m_tex_radiance0 = new Texture2D( m_device, W, H, 1, 1, PIXEL_FORMAT.R11G11B10, COMPONENT_FORMAT.AUTO, false, true, null );
-			m_tex_radiance1 = new Texture2D( m_device, W, H, 1, 1, PIXEL_FORMAT.R11G11B10, COMPONENT_FORMAT.AUTO, false, true, null );
-			m_tex_sourceRadiance_PUSH = new Texture2D( m_device, W, H, 1, 0, PIXEL_FORMAT.RGBA16F, COMPONENT_FORMAT.AUTO, false, true, null );
-			m_tex_sourceRadiance_PULL = new Texture2D( m_device, W, H, 1, 0, PIXEL_FORMAT.RGBA16F, COMPONENT_FORMAT.AUTO, false, true, null );
-			m_tex_reprojectedDepthBuffer = new Texture2D( m_device, W, H, 1, 0, PIXEL_FORMAT.R32, COMPONENT_FORMAT.UINT, false, true, null );
+			#if BRUTE_FORCE_HBIL
+				m_tex_bentCone = new Texture2D( m_device, W, H, 1, 1, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.AUTO, false, false, null );
+				m_tex_radiance0 = new Texture2D( m_device, W, H, 1, 1, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.AUTO, false, false, null );
+				m_tex_radiance1 = new Texture2D( m_device, W, H, 1, 1, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.AUTO, false, false, null );
+				m_tex_sourceRadiance_PUSH = new Texture2D( m_device, W, H, 1, 0, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.AUTO, false, true, null );
+				m_tex_sourceRadiance_PULL = new Texture2D( m_device, W, H, 1, 0, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.AUTO, false, true, null );
+				m_tex_reprojectedDepthBuffer = new Texture2D( m_device, W, H, 1, 0, PIXEL_FORMAT.R32, COMPONENT_FORMAT.UINT, false, true, null );
 
-			m_tex_finalRender = new Texture2D( m_device, W, H, 1, 1, PIXEL_FORMAT.RGB10A2, COMPONENT_FORMAT.UNORM, false, false, null );
+				m_tex_finalRender = new Texture2D( m_device, W, H, 1, 1, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.AUTO, false, false, null );
+			#else
+				m_tex_bentCone = new Texture2D( m_device, W, H, 1, 1, PIXEL_FORMAT.RGBA8, COMPONENT_FORMAT.SNORM, false, true, null );
+				m_tex_radiance0 = new Texture2D( m_device, W, H, 1, 1, PIXEL_FORMAT.R11G11B10, COMPONENT_FORMAT.AUTO, false, true, null );
+				m_tex_radiance1 = new Texture2D( m_device, W, H, 1, 1, PIXEL_FORMAT.R11G11B10, COMPONENT_FORMAT.AUTO, false, true, null );
+				m_tex_sourceRadiance_PUSH = new Texture2D( m_device, W, H, 1, 0, PIXEL_FORMAT.RGBA16F, COMPONENT_FORMAT.AUTO, false, true, null );
+				m_tex_sourceRadiance_PULL = new Texture2D( m_device, W, H, 1, 0, PIXEL_FORMAT.RGBA16F, COMPONENT_FORMAT.AUTO, false, true, null );
+				m_tex_reprojectedDepthBuffer = new Texture2D( m_device, W, H, 1, 0, PIXEL_FORMAT.R32, COMPONENT_FORMAT.UINT, false, true, null );
+
+				m_tex_finalRender = new Texture2D( m_device, W, H, 1, 1, PIXEL_FORMAT.RGB10A2, COMPONENT_FORMAT.UNORM, false, false, null );
+			#endif
 
 			// Create textures
 			using ( ImageFile I = new ImageFile( new System.IO.FileInfo( "Textures/BlueNoise64x64.png" ) ) )

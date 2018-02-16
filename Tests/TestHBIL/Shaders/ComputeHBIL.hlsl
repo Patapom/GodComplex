@@ -376,9 +376,10 @@ noise2 = lerp( 0.1, 1.0, noise );
 
 	// [18/02/13] RGBA8_SNORM requires some encoding
 //	Out.bentCone = float4( max( 0.01, cosAverageConeAngle ) * csAverageBentNormal, stdDeviation );
-	const float	MIN_ENCODABLE_VALUE = 1.0 / 128.0;
-	csAverageBentNormal = sqrt( max( MIN_ENCODABLE_VALUE, cosAverageConeAngle ) ) * csAverageBentNormal;
-	Out.bentCone = float4( csAverageBentNormal, stdDeviation );
+	Out.bentCone = float4( max( 0.01, sqrt( cosAverageConeAngle ) ) * csAverageBentNormal, stdDeviation );
+//	const float	MIN_ENCODABLE_VALUE = 1.0 / 128.0;
+//	csAverageBentNormal = sqrt( max( MIN_ENCODABLE_VALUE, cosAverageConeAngle ) ) * csAverageBentNormal;
+//	Out.bentCone = float4( csAverageBentNormal, stdDeviation );
 
 
 //////////////////////////////////////////////
