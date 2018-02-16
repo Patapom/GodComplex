@@ -1,4 +1,4 @@
-﻿#define BRUTE_FORCE_HBIL			// 25ms at 1280x720... :D
+﻿//#define BRUTE_FORCE_HBIL			// 25ms at 1280x720... :D
 //#define RENDER_IN_DEPTH_STENCIL	// If defined, use the depth-stencil (single mip level) to render, instead of multi-mip RT (this RT allows larger sample footprints when gathering radiance and accelerates the HBIL pass)
 #define BILATERAL_PUSH_PULL
 

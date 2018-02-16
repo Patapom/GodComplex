@@ -164,6 +164,7 @@ float3	GatherIrradiance_TEMP( float2 _ssPosition, float2 _csDirection, float2 _s
 	float2	ssPosition_Back = _ssPosition;
 	float	maxCosTheta_Front = planeCosTheta_Front;
 	float	maxCosTheta_Back = planeCosTheta_Back;
+	float2	backSinCosGamma = float2( -_sinCosGamma.x, _sinCosGamma.y );
 	[loop]
 	for ( uint stepIndex=0; stepIndex < _stepsCount; stepIndex++ ) {
 		radius_meters += _stepSize_meters;
@@ -175,7 +176,7 @@ float3	GatherIrradiance_TEMP( float2 _ssPosition, float2 _csDirection, float2 _s
 float	mipLevel = 0.0;
 
 		sumRadiance += SampleIrradiance_TEMP( ssPosition_Front, radius_meters, _sinCosGamma, _centralZ, mipLevel, integralFactors_Front, previousRadiance_Front, maxCosTheta_Front );
-		sumRadiance += SampleIrradiance_TEMP( ssPosition_Back, radius_meters, _sinCosGamma, _centralZ, mipLevel, integralFactors_Back, previousRadianceBack, maxCosTheta_Back );
+		sumRadiance += SampleIrradiance_TEMP( ssPosition_Back, radius_meters, backSinCosGamma, _centralZ, mipLevel, integralFactors_Back, previousRadianceBack, maxCosTheta_Back );
 	}
 //*/
 
@@ -262,9 +263,9 @@ PS_OUT	PS( float4 __Position : SV_POSITION ) {
 	// We notice that it behaves a bit like a rotation and is finally an angular interpolation between sin(b) and cos(b) that depends on the camera axis deviation...
 	//
 	float2	sinCosGamma;
-	sinCosGamma.y = csView.z;// dot( wsView, _Camera2World[2].xyz );
-	sinCosGamma.x = sqrt( 1.0 - sinCosGamma.y*sinCosGamma.y );
-	sinCosGamma *= 0.99;	// Needed otherwise sometimes the cos(theta) is outside the [-1,1] range and acos gives a NaN!
+//	sinCosGamma.y = csView.z;// dot( wsView, _Camera2World[2].xyz );
+//	sinCosGamma.x = sqrt( 1.0 - sinCosGamma.y*sinCosGamma.y );
+//	sinCosGamma *= 0.99;	// Needed otherwise sometimes the cos(theta) is outside the [-1,1] range and acos gives a NaN!
 
 	// Compute local camera-space normal
 	float3	N = float3( dot( wsNormal, wsRight ), dot( wsNormal, wsUp ), dot( wsNormal, wsAt ) );
@@ -278,7 +279,7 @@ PS_OUT	PS( float4 __Position : SV_POSITION ) {
 	float	radiusStepSize_pixels = max( 1.0, sphereRadius_pixels / MAX_SAMPLES );									// This gives us our radial step size in pixels
 	uint	samplesCount = clamp( uint( ceil( sphereRadius_pixels / radiusStepSize_pixels ) ), 1, MAX_SAMPLES );	// Reduce samples count if possible
 //	float	radiusStepSize_meters = sphereRadius_pixels / (samplesCount * meter2Pixel);								// This gives us our radial step size in meters
-	float	radiusStepSize_meters = radiusStepSize_pixels / (sinCosGamma.y * meter2Pixel);							// This gives us our radial step size in meters
+	float	radiusStepSize_meters = radiusStepSize_pixels / (csView.z * meter2Pixel);								// This gives us our radial step size in meters
 
 	// Start gathering radiance and bent normal by subdividing the screen-space disk around our pixel into N slices
 	float3	sumIrradiance = 0.0;
@@ -292,10 +293,15 @@ PS_OUT	PS( float4 __Position : SV_POSITION ) {
 	/////////////////////////////////////////////////////////////////////
 	// Build camera-space and screen-space walk directions
 	float2	csDirection = _csDirection;
-	float2	gcsDirection2D = csDirection.x * gcsRight.xy + csDirection.y * gcsUp.xy;	// Since csDirection gives us the components along local camera-space's right and up vectors, and we know their expression in global camera-space, it's easy find the equivalent global camera-space direction...
-	float2	ssDirection = normalize( gcsDirection2D );									// We normalize since we want to take integer pixel steps
-			ssDirection *= radiusStepSize_pixels;										// Scale by our step size
-			ssDirection.y = -ssDirection.y;												// Going upward in camera space means going downward in screen space...
+	float3	gcsDirection = csDirection.x * gcsRight + csDirection.y * gcsUp;	// Since csDirection gives us the components along local camera-space's right and up vectors, and we know their expression in global camera-space, it's easy find the equivalent global camera-space direction...
+	float2	ssDirection = normalize( gcsDirection.xy );							// We normalize since we want to take integer pixel steps
+			ssDirection *= radiusStepSize_pixels;								// Scale by our step size
+			ssDirection.y = -ssDirection.y;										// Going upward in camera space means going downward in screen space...
+
+	// Build angular correction based on deviation from central camera axis
+	sinCosGamma.x = gcsDirection.z;
+	sinCosGamma.y = sqrt( 1.0 - sinCosGamma.x*sinCosGamma.x );
+	sinCosGamma *= 0.99;	// Needed otherwise sometimes the cos(theta) is outside the [-1,1] range and acos gives a NaN!
 
 	// Gather irradiance and average cone direction for that slice
 	sumIrradiance += GatherIrradiance_TEMP( __Position.xy, csDirection, ssDirection, N, sinCosGamma, radiusStepSize_meters, samplesCount, Z, centralRadiance, csBentNormal, AO );
@@ -305,9 +311,15 @@ PS_OUT	PS( float4 __Position : SV_POSITION ) {
 	/////////////////////////////////////////////////////////////////////
 	// Build orthogonal camera-space and screen-space walk directions
 	csDirection = float2( -_csDirection.y, _csDirection.x );
-	ssDirection = normalize( csDirection.x * gcsRight.xy + csDirection.y * gcsUp.xy );
+	gcsDirection = csDirection.x * gcsRight + csDirection.y * gcsUp;
+	ssDirection = normalize( gcsDirection.xy );
 	ssDirection *= radiusStepSize_pixels;
 	ssDirection.y = -ssDirection.y;
+
+	// Build angular correction based on deviation from central camera axis
+	sinCosGamma.x = gcsDirection.z;
+	sinCosGamma.y = sqrt( 1.0 - sinCosGamma.x*sinCosGamma.x );
+	sinCosGamma *= 0.99;	// Needed otherwise sometimes the cos(theta) is outside the [-1,1] range and acos gives a NaN!
 
 	// Gather irradiance and average cone direction for that slice
 	sumIrradiance += GatherIrradiance_TEMP( __Position.xy, csDirection, ssDirection, N, sinCosGamma, radiusStepSize_meters, samplesCount, Z, centralRadiance, csBentNormal, AO );
