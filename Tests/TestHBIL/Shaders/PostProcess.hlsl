@@ -42,7 +42,7 @@ float3	PS( float4 __Position : SV_POSITION ) : SV_TARGET0 {
 
 
 // Render full result
-return _exposure * _tex_FinalRender[__Position.xy].xyz;
+//return _exposure * _tex_FinalRender[__Position.xy].xyz;
 
 
 #if 1	// DEBUG BENT CONE
@@ -100,11 +100,12 @@ return csBentConeDev.xyz;	// Show RAW value
 
 //return 10.0 * _tex_ShadowMap.SampleLevel( LinearClamp, float3( __Position.xy / 512.0, _debugMipIndex ), 0.0 );	// Debug shadow map
 //return _tex_Emissive[__Position.xy].xyz;
+//return _tex_Radiance1[__Position.xy].xyz;
 return _tex_Radiance0[__Position.xy].xyz;
 //return _tex_Albedo[__Position.xy].xyz;
 //return _tex_Normal[__Position.xy].xyz;
-return _tex_Depth.SampleLevel( LinearClamp, __Position.xy / _resolution, _debugMipIndex );
-return _tex_Depth.mips[_debugMipIndex][__Position.xy];
+return 1.0 * _tex_Depth.SampleLevel( LinearClamp, __Position.xy / _resolution, _debugMipIndex );
+//return _tex_Depth.mips[_debugMipIndex][__Position.xy];
 //return 0.5 * (1.0 + _tex_Normal[__Position.xy].xyz);
 return float3( _tex_MotionVectors[__Position.xy], 0 );
 }

@@ -21,8 +21,8 @@
 // We assume there exist such methods declared somewhere where _pixelPosition is the position in screen space
 float	FetchDepth( float2 _pixelPosition, float _mipLevel );							// The return value must be the depth (in meters)
 float3	FetchRadiance( float2 _pixelPosition, float _mipLevel );						// The return value must be the radiance from last frame (DIFFUSE ONLY!)
-float	BilateralFilterDepth( float _centralZ, float _neighborZ, float _radius_m );		// The return value must be a [0,1] weight telling whether or not we accept the sample at the specified radius and depth (in meter)
-float	BilateralFilterRadiance( float _centralZ, float _neighborZ, float _radius_m );	// The return value must be a [0,1] weight telling whether or not we accept the sample at the specified radius and depth (in meter)
+float	BilateralFilter_Depth( float _centralZ, float _neighborZ, float _radius_m );	// The return value must be a [0,1] weight telling whether or not we accept the sample at the specified radius and depth (in meter)
+float	BilateralFilter_Radiance( float _centralZ, float _neighborZ, float _radius_m );	// The return value must be a [0,1] weight telling whether or not we accept the sample at the specified radius and depth (in meter)
 float2	ComputeMipLevel( float2 _radius, float2 _radialStepSizes );
 
 // Integrates the dot product of the normal with a vector interpolated between slice horizon angle theta0 and theta1 (equation 18 from the paper)
@@ -163,7 +163,7 @@ float3	SampleIrradiance( float2 _ssPosition, float _H0, float _radius, float2 _m
 	// Sample new height and update horizon angle
 	float	neighborH = FetchDepth( _ssPosition, _mipLevel.x );
 	float	deltaH = _H0 - neighborH;
-			deltaH *= BilateralFilterDepth(  _H0, neighborH, _radius );
+			deltaH *= BilateralFilter_Depth(  _H0, neighborH, _radius );
 	float	H2 = deltaH * deltaH;
 	float	hyp2 = _radius * _radius + H2;		// Square hypotenuse
 	float	cosHorizon = deltaH / sqrt( hyp2 );	// Cosine to horizon angle
@@ -173,7 +173,7 @@ float3	SampleIrradiance( float2 _ssPosition, float _H0, float _radius, float2 _m
 	#if SAMPLE_NEIGHBOR_RADIANCE
 // NOW USELESS I THINK...
 //		// Sample neighbor's incoming radiance value, only if difference in depth is not too large
-//		float	bilateralWeight = BilateralFilterRadiance( _H0, neighborH, _radius );
+//		float	bilateralWeight = BilateralFilter_Radiance( _H0, neighborH, _radius );
 //		if ( bilateralWeight > 0.0 )
 //			_previousRadiance = lerp( _previousRadiance, FetchRadiance( _ssPosition ), bilateralWeight );	// Accept new height and its radiance value
 

@@ -64,7 +64,6 @@ float	ComputeMipLevel_Radiance( float2 _ssPosition, float _centralZ, float _curr
 //	return _bilateralValues.y * 0.5 * log2( pixelArea );
 }
 
-
 float	BilateralFilterDepth( float _centralZ, float _previousDeltaZ, float _newDeltaZ, float _horizonCosTheta, float _newCosTheta, float _radius_meters ) {
 //Il fout grave la merde!
 
