@@ -3,8 +3,8 @@
 #define BILATERAL_PUSH_PULL
 
 //#define SCENE_LIBRARY
-//#define SCENE_CORNELL
-#define SCENE_HEIGHTFIELD
+#define SCENE_CORNELL
+//#define SCENE_HEIGHTFIELD
 
 //////////////////////////////////////////////////////////////////////////
 // Horizon-Based Indirect Lighting Demo
@@ -32,6 +32,7 @@
 //
 // #TODOS:
 //	• Reconstruct interleaved sampling based on bilateral weight (store it some place? Like alpha somewhere?)
+//
 //	• Try to use spiral sampling pattern in the manner of scalable ambient obscurance (http://research.nvidia.com/sites/default/files/pubs/2012-06_Scalable-Ambient-Obscurance/McGuire12SAO.pdf)
 //		=> At the cost of cache coherence I suppose... :'(
 //	• Write mips for split irradiance
@@ -45,13 +46,6 @@
 //	• Cut if outside screen + blend to 0 when grazing angles
 //
 // BUGS:
-//	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ==> 
-//	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ==> 
-//	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ==> 
-//	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ==> Check pourquoi on a un halo sur le height field vers les bords des pyramides???
-//	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ==> 
-//	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ==> 
-//	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ==> 
 
 //	• Horrible noise in reprojection buffer
 //		==> Due to race condition for 2 pixels wanting to reproject at the same place
@@ -766,7 +760,7 @@ namespace TestHBIL {
 
 			// Downsample depth-stencil
 			m_device.PerfSetMarker( 20 );
-			#if BRUTE_FORCE_HBIL && !RENDER_IN_DEPTH_STENCIL
+			#if BRUTE_FORCE_HBIL || !RENDER_IN_DEPTH_STENCIL
 				if ( m_shader_DownSampleDepth.Use() ) {
 					for ( uint mipLevel=1; mipLevel < m_tex_depthWithMips.MipLevelsCount; mipLevel++ ) {
 						View2D	targetView = m_tex_depthWithMips.GetView( mipLevel, 1, 0, 1 );
@@ -933,7 +927,7 @@ namespace TestHBIL {
 // 					uint	groupsCountY = (m_CB_DownSample.m._sizeY + 7) >> 3;
 // 
 // 					// Split source depth
-// 					m_tex_depthWithMips.SetCS( 0 );
+// 					targetDepthStencil.SetCS( 0 );
 // 					m_tex_splitDepth.SetCSUAV( 0 );
 // 					m_shader_SplitFloat1.Dispatch( groupsCountX, groupsCountY, 1 );
 // 
@@ -963,7 +957,7 @@ namespace TestHBIL {
 					uint	groupsCountY = (m_CB_DownSample.m._sizeY + 7) >> 3;
 
 					// Split source depth
-					m_tex_depthWithMips.SetCS( 0 );
+					targetDepthStencil.SetCS( 0 );
 					m_tex_splitDepth.SetCSUAV( 0 );
 					for ( uint passIndex=0; passIndex < 16; passIndex++ ) {
 						m_CB_DownSample.m._passIndex = passIndex;
@@ -990,6 +984,9 @@ namespace TestHBIL {
 						m_shader_SplitFloat3.Dispatch( groupsCountX, groupsCountY, 1 );
 					}
 
+					targetDepthStencil.RemoveFromLastAssignedSlots();
+					m_tex_normal.RemoveFromLastAssignedSlots();
+					m_tex_sourceRadiance_PULL.RemoveFromLastAssignedSlots();
 					m_tex_splitRadiance.RemoveFromLastAssignedSlotUAV();
 					m_tex_splitNormal.RemoveFromLastAssignedSlotUAV();
 					m_tex_splitDepth.RemoveFromLastAssignedSlotUAV();
@@ -1037,11 +1034,12 @@ namespace TestHBIL {
 				if ( m_shader_Recompose.Use() ) {
 					m_CB_DownSample.m._sizeX = m_tex_splitDepth.Width;
 					m_CB_DownSample.m._sizeY = m_tex_splitDepth.Height;
+					m_CB_DownSample.m._bilateralValues.Set( floatTrackbarControlBilateral0.Value, floatTrackbarControlBilateral1.Value, floatTrackbarControlBilateral2.Value, floatTrackbarControlBilateral3.Value );
 					m_CB_DownSample.UpdateData();
 
 					m_tex_splitIrradiance.SetCS( 0 );
 					m_tex_splitBentCone.SetCS( 1 );
-					m_tex_depthWithMips.SetCS( 2 );
+					targetDepthStencil.SetCS( 2 );
 					m_tex_normal.SetCS( 3 );
 
 					m_tex_radiance0.SetCSUAV( 0 );

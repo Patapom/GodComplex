@@ -3,8 +3,8 @@
 #define BILATERAL_PUSH_PULL
 
 //#define SCENE_LIBRARY
-#define SCENE_CORNELL
-//#define SCENE_HEIGHFIELD
+//#define SCENE_CORNELL
+#define SCENE_HEIGHFIELD
 
 //////////////////////////////////////////////////////////////////////////
 // Horizon-Based Indirect Lighting Demo
@@ -184,7 +184,6 @@ namespace TestHBIL {
 		private Texture2D			m_tex_sourceRadiance_PUSH = null;
 		private Texture2D			m_tex_sourceRadiance_PULL = null;
 		private Texture2D			m_tex_finalRender = null;
-		private uint				m_radianceSourceSliceIndex = 0;
 
 		// Regular textures
 		private Texture2D			m_tex_BlueNoise = null;
@@ -544,7 +543,7 @@ namespace TestHBIL {
 			if ( m_shader_ReprojectRadiance.Use() ) {
 				m_device.Clear( m_tex_sourceRadiance_PUSH, float4.Zero );
 
-				m_tex_radiance.GetView( 0, 1, m_radianceSourceSliceIndex, 1 ).SetCS( 0 );	// Source radiance from last frame
+				m_tex_radiance.GetView( 0, 1, 1, 1 ).SetCS( 0 );	// Source radiance from last frame
 				targetDepthStencil.SetCS( 1 );												// Source depth buffer from last frame
 				m_tex_motionVectors.SetCS( 2 );												// Motion vectors for dynamic objects
 				m_tex_BlueNoise.SetCS( 3 );
@@ -724,9 +723,9 @@ namespace TestHBIL {
 
 			#if BRUTE_FORCE_HBIL
 				if ( m_shader_ComputeHBIL.Use() ) {
-					m_device.SetRenderTargets( new IView[] { m_tex_radiance.GetView( 0, 1, 1-m_radianceSourceSliceIndex, 1 ), m_tex_bentCone.GetView( 0, 1, 0, 1 ) }, null );
+					m_device.SetRenderTargets( new IView[] { m_tex_radiance.GetView( 0, 1, 0, 1 ), m_tex_bentCone.GetView( 0, 1, 0, 1 ) }, null );
 
-//					m_tex_radiance.GetView( 0, 1, m_radianceSourceSliceIndex, 1 ).SetPS( 0 );	// Reprojected source radiance from last frame
+//					m_tex_radiance.GetView( 0, 1, 1, 1 ).SetPS( 0 );	// Reprojected source radiance from last frame
 					m_tex_sourceRadiance_PULL.SetPS( 0 );	// Reprojected source radiance
 					m_tex_normal.SetPS( 1 );
 					targetDepthStencil.SetPS( 2 );
@@ -736,14 +735,12 @@ m_tex_texDebugHeights.SetPS( 32 );
 m_tex_texDebugNormals.SetPS( 33 );
 
 					m_device.RenderFullscreenQuad( m_shader_ComputeHBIL );
-
-					m_radianceSourceSliceIndex = 1-m_radianceSourceSliceIndex;
 	
 					m_tex_radiance.RemoveFromLastAssignedSlots();
 				}
 			#else
 				if ( m_shader_ComputeHBIL.Use() ) {
-					m_device.SetRenderTargets( new IView[] { m_tex_radiance.GetView( 0, 1, 1-m_radianceSourceSliceIndex, 1 ), m_tex_bentCone.GetView( 0, 1, 0, 1 ) }, null );
+					m_device.SetRenderTargets( new IView[] { m_tex_radiance.GetView( 0, 1, 0, 1 ), m_tex_bentCone.GetView( 0, 1, 0, 1 ) }, null );
 
 					m_CB_HBIL.m._gatherSphereMaxRadius_m = floatTrackbarControlGatherSphereRadius.Value;
 					m_CB_HBIL.m._bilateralValues.Set( floatTrackbarControlBilateral0.Value, floatTrackbarControlBilateral1.Value, floatTrackbarControlBilateral2.Value, floatTrackbarControlBilateral3.Value );
@@ -756,8 +753,6 @@ m_tex_texDebugNormals.SetPS( 33 );
 
 					m_device.RenderFullscreenQuad( m_shader_ComputeHBIL );
 
-					m_radianceSourceSliceIndex = 1-m_radianceSourceSliceIndex;
-
 					m_tex_radiance.RemoveFromLastAssignedSlots();
 				}
 			#endif
@@ -769,7 +764,7 @@ m_tex_texDebugNormals.SetPS( 33 );
 			m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
 
 			if ( m_shader_ComputeLighting.Use() ) {
-				m_device.SetRenderTargets( new IView[] { m_tex_radiance.GetView( 0, 1, 1-m_radianceSourceSliceIndex, 1 ), m_tex_finalRender.GetView( 0, 1, 0, 1 ) }, null );
+				m_device.SetRenderTargets( new IView[] { m_tex_radiance.GetView( 0, 1, 1, 1 ), m_tex_finalRender.GetView( 0, 1, 0, 1 ) }, null );
 
 				m_tex_albedo.SetPS( 0 );
 				m_tex_normal.SetPS( 1 );
@@ -778,12 +773,10 @@ m_tex_texDebugNormals.SetPS( 33 );
 
 				m_tex_shadow.SetPS( 6 );
 
-				m_tex_radiance.GetView( 0, 1, m_radianceSourceSliceIndex, 1 ).SetPS( 8 );
+				m_tex_radiance.GetView( 0, 1, 0, 1 ).SetPS( 8 );
 				m_tex_bentCone.SetPS( 9 );
 
 				m_device.RenderFullscreenQuad( m_shader_ComputeLighting );
-
-				m_radianceSourceSliceIndex = 1-m_radianceSourceSliceIndex;
 
 				m_tex_radiance.RemoveFromLastAssignedSlots();
 			}

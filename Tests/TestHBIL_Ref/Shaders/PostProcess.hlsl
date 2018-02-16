@@ -29,10 +29,10 @@ float3	PS( float4 __Position : SV_POSITION ) : SV_TARGET0 {
 	float3	wsView = mul( float4( csView, 0 ), _Camera2World ).xyz;
 	float3	wsPos = _Camera2World[3].xyz + Z2Distance * Z_FAR * _tex_Depth[__Position.xy] * wsView;
 
-return _exposure * _tex_FinalRender[__Position.xy].xyz;
+//return _exposure * _tex_FinalRender[__Position.xy].xyz;
 
 
-#if 0	// DEBUG BENT CONE
+#if 1	// DEBUG BENT CONE
 
 	// Face-cam
 	float3	wsRight = normalize( cross( wsView, _Camera2World[1].xyz ) );

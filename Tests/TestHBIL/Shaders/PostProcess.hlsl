@@ -42,7 +42,7 @@ float3	PS( float4 __Position : SV_POSITION ) : SV_TARGET0 {
 
 
 // Render full result
-//return _exposure * _tex_FinalRender[__Position.xy].xyz;
+return _exposure * _tex_FinalRender[__Position.xy].xyz;
 
 
 #if 1	// DEBUG BENT CONE
@@ -64,6 +64,9 @@ cosConeAngle *= cosConeAngle;	// Now stored as sqrt!
 
 	float3	wsBentCone = csBentCone.x * wsRight + csBentCone.y * wsUp + csBentCone.z * wsAt;
 
+
+//return csBentConeDev.xyz;
+
 return 1-cosConeAngle;	// a.k.a. the ambient occlusion
 //return coneAngle * 2.0 / PI;
 //return stdDeviationAO;
@@ -83,17 +86,20 @@ return csBentConeDev.xyz;	// Show RAW value
 #endif
 
 #if 0	// DEBUG SPLIT BUFFERS
+	// Clean source buffers
 //	float	splitZ = _tex_splitDepth.SampleLevel( LinearClamp, float3( __Position.xy / _resolution, _debugMipIndex ), 0.0 );
 //	return 1.0 * splitZ;
 //	float3	splitN = _tex_splitNormal.SampleLevel( LinearClamp, float3( __Position.xy / _resolution, _debugMipIndex ), 0.0 ).xyz;
 //	return 0.5 * (1.0 + splitN);
 //	float3	splitL = _tex_splitRadiance.SampleLevel( LinearClamp, float3( __Position.xy / _resolution, _debugMipIndex ), 0.0 ).xyz;
 //	return splitL;
+
+	// Ugly resulting split buffers
 //	float3	splitE = _tex_splitIrradiance.SampleLevel( LinearClamp, float3( __Position.xy / _resolution, _debugMipIndex ), 0.0 ).xyz;
 //	return splitE;
 	float4	splitBentNormal = _tex_splitBentCone.SampleLevel( LinearClamp, float3( __Position.xy / _resolution, _debugMipIndex ), 0.0 );
-	return 0.5 * splitBentNormal.w;	// AO
-//	return 0.5 * (1.0 + splitBentNormal.xyz);	// Bent normal
+	return splitBentNormal.w;	// AO
+	return 0.5 * (1.0 + splitBentNormal.xyz);	// Bent normal
 #endif
 
 
@@ -101,7 +107,7 @@ return csBentConeDev.xyz;	// Show RAW value
 //return 10.0 * _tex_ShadowMap.SampleLevel( LinearClamp, float3( __Position.xy / 512.0, _debugMipIndex ), 0.0 );	// Debug shadow map
 //return _tex_Emissive[__Position.xy].xyz;
 //return _tex_Radiance1[__Position.xy].xyz;
-return _tex_Radiance0[__Position.xy].xyz;
+//return _tex_Radiance0[__Position.xy].xyz;
 //return _tex_Albedo[__Position.xy].xyz;
 //return _tex_Normal[__Position.xy].xyz;
 return 1.0 * _tex_Depth.SampleLevel( LinearClamp, __Position.xy / _resolution, _debugMipIndex );
