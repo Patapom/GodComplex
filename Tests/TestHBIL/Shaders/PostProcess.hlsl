@@ -45,7 +45,7 @@ float3	PS( float4 __Position : SV_POSITION ) : SV_TARGET0 {
 return _exposure * _tex_FinalRender[__Position.xy].xyz;
 
 
-#if 1	// DEBUG BENT CONE
+#if 0	// DEBUG BENT CONE
 
 	// Face-cam
 	float3	wsRight = normalize( cross( wsView, _Camera2World[1].xyz ) );
@@ -107,7 +107,7 @@ return csBentConeDev.xyz;	// Show RAW value
 //return 10.0 * _tex_ShadowMap.SampleLevel( LinearClamp, float3( __Position.xy / 512.0, _debugMipIndex ), 0.0 );	// Debug shadow map
 //return _tex_Emissive[__Position.xy].xyz;
 //return _tex_Radiance1[__Position.xy].xyz;
-//return _tex_Radiance0[__Position.xy].xyz;
+return _tex_Radiance0[__Position.xy].xyz;
 //return _tex_Albedo[__Position.xy].xyz;
 //return _tex_Normal[__Position.xy].xyz;
 return 1.0 * _tex_Depth.SampleLevel( LinearClamp, __Position.xy / _resolution, _debugMipIndex );

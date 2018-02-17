@@ -1,4 +1,4 @@
-﻿//#define BRUTE_FORCE_HBIL			// 25ms at 1280x720... :D
+﻿//#define BRUTE_FORCE_HBIL			// 29ms at 1280x720... :D
 //#define RENDER_IN_DEPTH_STENCIL	// If defined, use the depth-stencil (single mip level) to render, instead of multi-mip RT (this RT allows larger sample footprints when gathering radiance and accelerates the HBIL pass)
 #define BILATERAL_PUSH_PULL
 
@@ -1012,7 +1012,8 @@ namespace TestHBIL {
 							m_device.SetRenderTargets( new IView[] { m_tex_splitIrradiance.GetView( 0, 1, passIndex, 1 ), m_tex_splitBentCone.GetView( 0, 1, passIndex, 1 ) }, null );
 
 //							float	phi = B4( X, Y ) * 0.5f * Mathf.PI / 16.0f;	// Use Bayer for maximum discrepancy between pixels
-							float	phi = (B4( X, Y ) + (m_framesCount & 0x1F) / 32.0f) * 0.5f * Mathf.PI / 16.0f;	// Use Bayer for maximum discrepancy between pixels
+//							float	phi = (B4( X, Y ) + (m_framesCount & 0x1F) / 32.0f) * 0.5f * Mathf.PI / 16.0f;	// Use Bayer for maximum discrepancy between pixels
+							float	phi = B4( X, Y ) * 0.5f * Mathf.PI / 16.0f;	// Use Bayer for maximum discrepancy between pixels
 
 							m_CB_HBIL.m._renderPassIndexX = X;
 							m_CB_HBIL.m._renderPassIndexY = Y;
@@ -1180,19 +1181,29 @@ namespace TestHBIL {
 			double	timePushPull = m_device.PerfGetMilliSeconds( 30 );
 			double	timeShadow = m_device.PerfGetMilliSeconds( 40 );
 			double	timeHBIL = m_device.PerfGetMilliSeconds( 50, 60 );
+			#if BRUTE_FORCE_HBIL
+				double	timeHBIL_split = 0;
+				double	timeHBIL_render = timeHBIL;
+				double	timeHBIL_recompose = 0;
+			#else
+				double	timeHBIL_split = m_device.PerfGetMilliSeconds( 50, 51 );
+				double	timeHBIL_render = m_device.PerfGetMilliSeconds( 51, 52 );
+				double	timeHBIL_recompose = m_device.PerfGetMilliSeconds( 52 );
+			#endif
 			double	timeComputeLighting = m_device.PerfGetMilliSeconds( 60 );
 			double	timePostProcess = m_device.PerfGetMilliSeconds( 70 );
 
 			float	totalTime = m_currentTime - m_startTime;
 			textBoxInfo.Text = "" //"Total Time = " + totalTime + " seconds\r\n"
-							 + "Average frame time = " + (1000.0f * totalTime / m_framesCount).ToString( "G6" ) + " ms\r\n"
-							 + "\r\n"
+//							 + "Average frame time = " + (1000.0f * totalTime / m_framesCount).ToString( "G6" ) + " ms\r\n"
+//							 + "\r\n"
 							 + "Reprojection: " + timeReprojection.ToString( "G4" ) + " ms\r\n"
 							 + "Push-Pull: " + timePushPull.ToString( "G4" ) + " ms\r\n"
 							 + "G-Buffer Rendering: " + timeRenderGBuffer.ToString( "G4" ) + " ms\r\n"
 							 + "Shadow Map: " + timeShadow.ToString( "G4" ) + " ms\r\n"
 							 + "DownSample Depth: " + timeDownSampleDepth.ToString( "G4" ) + " ms\r\n"
 							 + "HBIL: " + timeHBIL.ToString( "G4" ) + " ms (" + (1.729f * timeHBIL).ToString( "G4" ) + " ms XB1)\r\n"
+							 + " ► Split: " + timeHBIL_split.ToString( "G4" ) + " ms - Render: " + timeHBIL_render.ToString( "G4" ) + " ms - Recompose: " + timeHBIL_recompose.ToString( "G4" ) + "ms\r\n"
 							 + "Lighting: " + timeComputeLighting.ToString( "G4" ) + " ms\r\n"
 							 + "Post-Processing: " + timePostProcess.ToString( "G4" ) + " ms\r\n"
 							 + "Total frame time = " + totalFrameTime.ToString( "G6" ) + " ms\r\n"
