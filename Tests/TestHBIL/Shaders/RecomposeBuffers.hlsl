@@ -90,7 +90,7 @@ void	CS( uint3 _groupID : SV_groupID, uint3 _groupThreadID : SV_groupThreadID, u
 	float4	targetBentCone[4*4];
 	#if 0
 
-Use delta vector for measure of "frontness": 2 normals facing each other get accepted
+//Use delta vector for measure of "frontness": 2 normals facing each other get accepted
 
 		for ( uint index0=0; index0 < 4*4; index0++ ) {
 			float4	radiance0 = sourceRadiance[index0];
@@ -132,19 +132,15 @@ Use delta vector for measure of "frontness": 2 normals facing each other get acc
 		//
 		for ( uint index0=0; index0 < 4*4; index0++ ) {
 			float4	normalDepth0 = normalDepth[index0];
-			float2	targetUV0 = float2(targetPixelIndex + uint2( index0 & 3, index0 >> 2 )) / _resolution;
-//			float2	targetUV = (targetPixelIndex + 2.0 - float2( index0 & 3, index0 >> 2 )) / _resolution;
+			int2	XY0 = int2( index0 & 3, index0 >> 2 );
 
 			float4	sumRadiance = 0.0;
 			float4	sumBentCone = 0.0;
 			for ( uint index1=0; index1 < 4*4; index1++ ) {
 				float4	normalDepth1 = normalDepth[index1];
-				float2	targetUV1 = float2(targetPixelIndex + uint2( index1 & 3, index1 >> 2 )) / _resolution;
+				int2	XY1 = int2( index1 & 3, index1 >> 2 );
 
-//C'est en fait un mix entre X0 / X1 => du point de vue de X1, où se trouve X0 en UV space??
-//float2	targetUV = (targetPixelIndex + 2.0 - float2( index0 & 3, index0 >> 2 )) / _resolution;
-float2	targetUV = targetUV0;
-
+				float2	targetUV = float2(targetPixelIndex + XY0 - XY1) / _resolution;
 
 				float3	radiance = _tex_splitIrradiance.SampleLevel( LinearClamp, float3( targetUV, index1 ), 0.0 ).xyz;
 				float4	bentCone = _tex_splitBentCone.SampleLevel( LinearClamp, float3( targetUV, index1 ), 0.0 );

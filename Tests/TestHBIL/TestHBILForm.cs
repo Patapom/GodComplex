@@ -2,8 +2,8 @@
 //#define RENDER_IN_DEPTH_STENCIL	// If defined, use the depth-stencil (single mip level) to render, instead of multi-mip RT (this RT allows larger sample footprints when gathering radiance and accelerates the HBIL pass)
 #define BILATERAL_PUSH_PULL
 
-//#define SCENE_LIBRARY
-#define SCENE_CORNELL
+#define SCENE_LIBRARY
+//#define SCENE_CORNELL
 //#define SCENE_HEIGHTFIELD
 
 //////////////////////////////////////////////////////////////////////////

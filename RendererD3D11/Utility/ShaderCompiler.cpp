@@ -59,10 +59,14 @@ ID3DBlob*   ShaderCompiler::CompileShader( IFileServer& _fileServer, const BStri
 //Flags1 |= _bComputeShader ? D3DCOMPILE_OPTIMIZATION_LEVEL1 : D3DCOMPILE_OPTIMIZATION_LEVEL3;
 
 	#else
-		if ( _isComputeShader )
+		if ( _isComputeShader ) {
 			Flags1 |= D3DCOMPILE_OPTIMIZATION_LEVEL1;	// Seems to "optimize" (i.e. strip) the important condition line that checks for threadID before writing to concurrent targets => This leads to "race condition" errors
-		else
+
+//Flags1 |= D3DCOMPILE_OPTIMIZATION_LEVEL0;	// Seems to "optimize" (i.e. strip) the important condition line that checks for threadID before writing to concurrent targets => This leads to "race condition" errors
+
+		} else {
 			Flags1 |= D3DCOMPILE_OPTIMIZATION_LEVEL3;
+		}
 	#endif
 //		Flags1 |= D3DCOMPILE_ENABLE_STRICTNESS;
 //		Flags1 |= D3DCOMPILE_IEEE_STRICTNESS;		// D3D9 compatibility, clamps precision to usual float32 but may prevent internal optimizations by the video card. Better leave it disabled!
