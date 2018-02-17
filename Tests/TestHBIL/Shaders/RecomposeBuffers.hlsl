@@ -29,12 +29,34 @@ float	BilateralWeight( float4 _normalDepth0, float4 _normalDepth1 ) {
 //	float	filterZ = deltaZ < 1e-4 ? 1 : 0;// smoothstep( 0.001, 0.0, deltaZ );
 //	float	filterZ = smoothstep( _bilateralValues.x, _bilateralValues.y, deltaZ );
 	float	filterZ = smoothstep( 0.001, 0.0, deltaZ );
-//float	filterZ = smoothstep( 0.001, 0.0, deltaZ );
+//return filterZ;
+//return lerp( 0.01, 1.0, filterZ );
+
 	float	dotN = dot( _normalDepth0.xyz, _normalDepth1.xyz );
 //	float	filterN = smoothstep( _bilateralValues.z, _bilateralValues.w, dotN );
 	float	filterN = smoothstep( 0.75, 1.0, dotN );
-//	return lerp( 0.01, 1.0, filterZ );
-//	return lerp( 0.01, 1.0, filterN );
+//return filterN;
+//return lerp( 0.01, 1.0, filterN );
+
+	return lerp( 0.01, 1.0, filterN * filterZ );
+//	return lerp( 0.01, 1.0, filterN ) * lerp( 0.01, 1.0, filterZ );
+	return 1.0;	// Average all
+}
+
+float	BilateralWeight2( float4 _normalDepth0, float4 _normalDepth1 ) {
+	float	deltaZ = abs( _normalDepth0.w - _normalDepth1.w );
+//	float	filterZ = deltaZ < 1e-4 ? 1 : 0;// smoothstep( 0.001, 0.0, deltaZ );
+//	float	filterZ = smoothstep( _bilateralValues.x, _bilateralValues.y, deltaZ );
+	float	filterZ = smoothstep( 0.001, 0.0, deltaZ );
+//return filterZ;
+//return lerp( 0.01, 1.0, filterZ );
+
+	float	dotN = dot( _normalDepth0.xyz, _normalDepth1.xyz );
+//	float	filterN = smoothstep( _bilateralValues.z, _bilateralValues.w, dotN );
+	float	filterN = smoothstep( 0.75, 1.0, dotN );
+//return filterN;
+//return lerp( 0.01, 1.0, filterN );
+
 	return lerp( 0.01, 1.0, filterN * filterZ );
 //	return lerp( 0.01, 1.0, filterN ) * lerp( 0.01, 1.0, filterZ );
 	return 1.0;	// Average all
@@ -60,13 +82,14 @@ void	CS( uint3 _groupID : SV_groupID, uint3 _groupThreadID : SV_groupThreadID, u
 				sourceBentCone[sourcePixelIndex.z] = _tex_splitBentCone[sourcePixelIndex];
 
 				// Sample full-res normal and depth for bilateral filtering
-				float2	fullResUV = (targetPixelIndex + uint2( X, Y )) / _resolution;
+				float2	fullResUV = (targetPixelIndex + 0.5 + float2( X, Y )) / _resolution;
 //				normalDepth[sourcePixelIndex.z].xyz = _tex_sourceNormal[targetPixelIndex + uint2( X, Y )];
-				normalDepth[sourcePixelIndex.z].xyz = _tex_sourceNormal.SampleLevel( LinearClamp, fullResUV, 0 );
+				normalDepth[sourcePixelIndex.z].xyz = _tex_sourceNormal.SampleLevel( PointClamp, fullResUV, 0 );
+//				normalDepth[sourcePixelIndex.z].xyz = normalize( _tex_sourceNormal.SampleLevel( PointClamp, fullResUV, 0 ) );
 
 //				float	Z = _tex_sourceDepth[targetPixelIndex + uint2( X, Y )];
 //				float	Z = _tex_sourceDepth.Load( uint3( targetPixelIndex + uint2( X, Y ), 0 ) );
-				float	Z = _tex_sourceDepth.SampleLevel( LinearClamp, fullResUV, 0 );
+				float	Z = _tex_sourceDepth.SampleLevel( PointClamp, fullResUV, 0 );
 
 				normalDepth[sourcePixelIndex.z].w = Z;
 				averageZ += Z;
@@ -140,12 +163,13 @@ void	CS( uint3 _groupID : SV_groupID, uint3 _groupThreadID : SV_groupThreadID, u
 				float4	normalDepth1 = normalDepth[index1];
 				int2	XY1 = int2( index1 & 3, index1 >> 2 );
 
-				float2	targetUV = float2(targetPixelIndex + XY0 - XY1) / _resolution;
+				float2	targetUV = float2( targetPixelIndex + XY0 - XY1 + 0.5 ) / _resolution;
 
 				float3	radiance = _tex_splitIrradiance.SampleLevel( LinearClamp, float3( targetUV, index1 ), 0.0 ).xyz;
 				float4	bentCone = _tex_splitBentCone.SampleLevel( LinearClamp, float3( targetUV, index1 ), 0.0 );
 
-				float	weight = 1;//BilateralWeight( normalDepth0, normalDepth1 );
+//				float	weight = index0 != index1 ? BilateralWeight( normalDepth0, normalDepth1 ) : 1.0;
+				float	weight = BilateralWeight( normalDepth0, normalDepth1 );
 				sumRadiance += weight * float4( radiance, 1.0 );
 				sumBentCone += weight * bentCone;
 			}
