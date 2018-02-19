@@ -463,6 +463,7 @@ namespace TestHBIL {
 							for ( int X=0; X < I.Width; X++ ) {
 								Wr.Write( (sbyte) Mathf.Clamp( 256.0f * scanline[X].x - 128.0f, -128, 127 ) );
 								Wr.Write( (sbyte) Mathf.Clamp( 256.0f * scanline[X].y - 128.0f, -128, 127 ) );
+//								Wr.Write( (sbyte) Mathf.Clamp( 128.0f - 256.0f * scanline[X].y, -128, 127 ) );	// It looked like Y was inverted but after all it's... not?
 								Wr.Write( (sbyte) Mathf.Clamp( 256.0f * scanline[X].z - 128.0f, -128, 127 ) );
 								Wr.Write( (byte) 255 );
 							}
@@ -995,6 +996,7 @@ m_CB_HBIL.m._temporalAttenuationFactor = Mathf.Pow( temporalAttenuation, deltaTi
 					m_tex_splitBentCone.SetCS( 1 );
 					m_tex_depthWithMips.SetCS( 2 );
 					m_tex_normal.SetCS( 3 );
+					m_tex_sourceRadiance_PULL.SetCS( 4 );
 
 					m_tex_radiance0.SetCSUAV( 0 );
 					m_tex_bentCone.SetCSUAV( 1 );

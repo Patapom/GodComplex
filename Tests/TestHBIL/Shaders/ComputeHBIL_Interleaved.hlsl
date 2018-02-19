@@ -332,6 +332,8 @@ PS_OUT	PS( float4 __Position : SV_POSITION ) {
 	sumAO *= 0.25;												// / 2 (slice interval in [0,2]) / 2 (directions)
 
 	float3	radiance = max( 0.0, 0.5 * PI * sumIrradiance );	// * PI / 2 (directions)
+
+	// Temporal accumulation
 //	radiance = lerp( radiance, centralRadiance, _temporalAttenuationFactor );
 //	radiance = lerp( centralRadiance, radiance, 0.5 );
 
