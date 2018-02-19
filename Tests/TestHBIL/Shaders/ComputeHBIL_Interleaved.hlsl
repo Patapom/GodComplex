@@ -328,14 +328,23 @@ PS_OUT	PS( float4 __Position : SV_POSITION ) {
 	sumAO += AO;
 
 	/////////////////////////////////////////////////////////////////////
+	// Accumulate temporal radiance
+//	float	temporalExtinction = _bilateralValues.x;	// How much of last frame's value remains after 1 second?
+//	float	temporalMaxWeight =  _bilateralValues.y;	// Importance of temporal weight over spatial weight
+	float	temporalExtinction = 1.0;					// How much of last frame's value remains after 1 second? (empirical: 5%)
+	float	temporalMaxWeight = 0.5;					// Importance of temporal weight over spatial weight (empirical: 2)
+
+	float	temporalWeight = temporalMaxWeight * exp( log( max( 1e-4, temporalExtinction ) ) * _deltaTime );	// How much of last frame's value remains for this frame?
+	sumIrradiance += temporalWeight * centralRadiance;
+
+
+	/////////////////////////////////////////////////////////////////////
 	// Write result
 	sumAO *= 0.25;												// / 2 (slice interval in [0,2]) / 2 (directions)
 
-	float3	radiance = max( 0.0, 0.5 * PI * sumIrradiance );	// * PI / 2 (directions)
+//	float3	radiance = max( 0.0, 0.5 * PI * sumIrradiance );	// * PI / 2 (directions)
+	float3	radiance = max( 0.0, PI * sumIrradiance / (2+temporalWeight) );	// * PI / 2 (directions)
 
-	// Temporal accumulation
-//	radiance = lerp( radiance, centralRadiance, _temporalAttenuationFactor );
-//	radiance = lerp( centralRadiance, radiance, 0.5 );
 
 	PS_OUT	Out;
 	Out.irradiance = float4( radiance, 0 );

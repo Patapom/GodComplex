@@ -166,16 +166,16 @@ void	CS( uint3 _groupID : SV_groupID, uint3 _groupThreadID : SV_groupThreadID, u
 			#endif
 		}
 
-		// Accumulate temporal radiance
+/*		// Accumulate temporal radiance
 //		float	temporalExtinction = _bilateralValues.x;		// How much of last frame's value remains after 1 second?
-		float	temporalExtinction = 0.05;						// How much of last frame's value remains after 1 second? (empirical: 5%)
 //		float	temporalMaxWeight = 16.0 * _bilateralValues.y;	// Importance of temporal weight over spatial weight
+		float	temporalExtinction = 0.05;						// How much of last frame's value remains after 1 second? (empirical: 5%)
 		float	temporalMaxWeight = 2.0;						// Importance of temporal weight over spatial weight (empirical: 2)
 
 		float3	previousRadiance = _tex_sourceRadiance.SampleLevel( LinearClamp, float2( targetPixelIndex + 0.5 ) / _resolution, 0.0 );
 		float	temporalWeight = temporalMaxWeight * exp( log( max( 1e-4, temporalExtinction ) ) * _deltaTime );	// How much of last frame's value remains for this frame?
 		sumRadiance += temporalWeight * float4( previousRadiance, 1.0 );
-
+*/
 		// Normalize
 		float	invWeight = 1.0 / sumRadiance.w;
 		sumRadiance.xyz *= invWeight;
