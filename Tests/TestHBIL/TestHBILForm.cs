@@ -1,9 +1,7 @@
 ﻿//#define BRUTE_FORCE_HBIL			// 29ms at 1280x720... :D
-//#define RENDER_IN_DEPTH_STENCIL	// If defined, use the depth-stencil (single mip level) to render, instead of multi-mip RT (this RT allows larger sample footprints when gathering radiance and accelerates the HBIL pass)
-#define BILATERAL_PUSH_PULL
 
-#define SCENE_LIBRARY
-//#define SCENE_CORNELL
+//#define SCENE_LIBRARY
+#define SCENE_CORNELL
 //#define SCENE_HEIGHTFIELD
 
 //////////////////////////////////////////////////////////////////////////
@@ -151,6 +149,7 @@ namespace TestHBIL {
 			internal struct	CB_HBIL {
 				public float4	_bilateralValues;
 				public float	_gatherSphereMaxRadius_m;	// Maximum radius (in meters) of the IL gather sphere
+				public float	_temporalAttenuationFactor;
 			}
 		#else
 			[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
@@ -162,11 +161,12 @@ namespace TestHBIL {
 				public uint		_renderPassIndexX;
 				public uint		_renderPassIndexY;
 				public uint		_renderPassIndexCount;
-				public float	_gatherSphereMaxRadius_m;	// Maximum radius (in meters) of the IL gather sphere
+				public float	_gatherSphereMaxRadius_m;		// Maximum radius (in meters) of the IL gather sphere
 
 				public float4	_bilateralValues;
 
 				public float	_gatherSphereMaxRadius_pixels;	// Maximum radius (in pixels) of the IL gather sphere
+				public float	_temporalAttenuationFactor;
 			}
 		#endif
 
@@ -198,10 +198,6 @@ namespace TestHBIL {
 
 		private ComputeShader		m_shader_Push = null;
 		private ComputeShader		m_shader_Pull = null;
-		#if !BILATERAL_PUSH_PULL
-			private ComputeShader		m_shader_Push_FirstPass = null;
-			private ComputeShader		m_shader_Pull_LastPass = null;
-		#endif
 		private Shader				m_shader_RenderScene_DepthGBufferPass = null;
 		private ComputeShader		m_shader_DownSampleDepth = null;
 		private ComputeShader		m_shader_SplitFloat1 = null;
@@ -313,16 +309,9 @@ namespace TestHBIL {
  				m_shader_ReprojectRadiance = new ComputeShader( m_device, new System.IO.FileInfo( "Shaders/ComputeReprojection.hlsl" ), "CS_Reproject", null );
  				m_shader_Push = new ComputeShader( m_device, new System.IO.FileInfo( "Shaders/ComputeReprojection.hlsl" ), "CS_Push", null );
 				m_shader_Pull = new ComputeShader( m_device, new System.IO.FileInfo( "Shaders/ComputeReprojection.hlsl" ), "CS_Pull", null );
-				#if !BILATERAL_PUSH_PULL
- 					m_shader_Push_FirstPass = new ComputeShader( m_device, new System.IO.FileInfo( "Shaders/ComputeReprojection.hlsl" ), "CS_Push", new ShaderMacro[] { new ShaderMacro( "FIRST_PASS", "1" ) } );
- 					m_shader_Pull_LastPass = new ComputeShader( m_device, new System.IO.FileInfo( "Shaders/ComputeReprojection.hlsl" ), "CS_Pull", new ShaderMacro[] { new ShaderMacro( "LAST_PASS", "1" ) } );
-				#endif
 
 				// Scene rendering & lighting
 				List< ShaderMacro >	macros = new List<ShaderMacro>();
-				#if RENDER_IN_DEPTH_STENCIL
-					macros.Add( new ShaderMacro( "USE_DEPTH_STENCIL", "1" ) );
-				#endif
 				#if SCENE_LIBRARY
 					macros.Add( new ShaderMacro( "SCENE_TYPE", "0" ) );
 				#elif SCENE_CORNELL
@@ -594,10 +583,6 @@ namespace TestHBIL {
 			m_shader_RenderScene_DepthGBufferPass.Dispose();
 			m_shader_Pull.Dispose();
 			m_shader_Push.Dispose();
-			#if !BILATERAL_PUSH_PULL
-				m_shader_Pull_LastPass.Dispose();
-				m_shader_Push_FirstPass.Dispose();
-			#endif
 			m_shader_ReprojectRadiance.Dispose();
 
 			m_CB_DebugCone.Dispose();
@@ -686,12 +671,6 @@ namespace TestHBIL {
 
 			m_previousFrameCamera2World = m_CB_Camera.m._Camera2World;
 
-			#if RENDER_IN_DEPTH_STENCIL
-				Texture2D	targetDepthStencil = m_device.DefaultDepthStencil;
-			#else
-				Texture2D	targetDepthStencil = m_tex_depthWithMips;
-			#endif
-
 			//////////////////////////////////////////////////////////////////////////
 			// =========== Reproject Last Frame Radiance ===========
 			//
@@ -709,7 +688,7 @@ namespace TestHBIL {
 
 
 				m_tex_radiance1.SetCS( 0 );		// Source radiance from last frame
-				targetDepthStencil.SetCS( 1 );	// Source depth buffer from last frame
+				m_tex_depthWithMips.SetCS( 1 );	// Source depth buffer from last frame
 				m_tex_motionVectors.SetCS( 2 );	// Motion vectors for dynamic objects
 				m_tex_BlueNoise.SetCS( 3 );
 				m_tex_sourceRadiance_PUSH.SetCSUAV( 0 );
@@ -721,7 +700,7 @@ namespace TestHBIL {
 				m_tex_sourceRadiance_PUSH.RemoveFromLastAssignedSlotUAV();
 				m_tex_motionVectors.RemoveFromLastAssignedSlots();
 				m_tex_radiance1.RemoveFromLastAssignedSlots();
-				targetDepthStencil.RemoveFromLastAssignedSlots();
+				m_tex_depthWithMips.RemoveFromLastAssignedSlots();
 			}
 
 			//////////////////////////////////////////////////////////////////////////
@@ -729,18 +708,10 @@ namespace TestHBIL {
 			// We're actually doing all in one here...
 			//
 			m_device.PerfSetMarker( 10 );
-			#if RENDER_IN_DEPTH_STENCIL
-				m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.WRITE_ALWAYS, BLEND_STATE.DISABLED );
-			#else
-				m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
-			#endif
+			m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
 
 			if ( m_shader_RenderScene_DepthGBufferPass.Use() ) {
-				#if RENDER_IN_DEPTH_STENCIL
-					m_device.SetRenderTargets( new IView[] { m_tex_albedo.GetView( 0, 1, 0, 1 ), m_tex_normal.GetView( 0, 1, 0, 1 ), m_tex_emissive.GetView( 0, 1, 0, 1 ), m_tex_motionVectors.GetView( 0, 1, 0, 1 ) }, targetDepthStencil );
-				#else
-					m_device.SetRenderTargets( new IView[] { m_tex_albedo.GetView( 0, 1, 0, 1 ), m_tex_normal.GetView( 0, 1, 0, 1 ), m_tex_emissive.GetView( 0, 1, 0, 1 ), m_tex_motionVectors.GetView( 0, 1, 0, 1 ), targetDepthStencil.GetView( 0, 1, 0, 1 ) }, null );
-				#endif
+				m_device.SetRenderTargets( new IView[] { m_tex_albedo.GetView( 0, 1, 0, 1 ), m_tex_normal.GetView( 0, 1, 0, 1 ), m_tex_emissive.GetView( 0, 1, 0, 1 ), m_tex_motionVectors.GetView( 0, 1, 0, 1 ), m_tex_depthWithMips.GetView( 0, 1, 0, 1 ) }, null );
 
 				#if SCENE_HEIGHTFIELD
 					m_tex_texDebugHeights.SetPS( 32 );
@@ -760,24 +731,22 @@ namespace TestHBIL {
 
 			// Downsample depth-stencil
 			m_device.PerfSetMarker( 20 );
-			#if BRUTE_FORCE_HBIL || !RENDER_IN_DEPTH_STENCIL
-				if ( m_shader_DownSampleDepth.Use() ) {
-					for ( uint mipLevel=1; mipLevel < m_tex_depthWithMips.MipLevelsCount; mipLevel++ ) {
-						View2D	targetView = m_tex_depthWithMips.GetView( mipLevel, 1, 0, 1 );
-						targetView.SetCSUAV( 0 );
-						m_tex_depthWithMips.GetView( mipLevel-1, 1, 0, 1 ).SetCS( 0 );
+			if ( m_shader_DownSampleDepth.Use() ) {
+				for ( uint mipLevel=1; mipLevel < m_tex_depthWithMips.MipLevelsCount; mipLevel++ ) {
+					View2D	targetView = m_tex_depthWithMips.GetView( mipLevel, 1, 0, 1 );
+					targetView.SetCSUAV( 0 );
+					m_tex_depthWithMips.GetView( mipLevel-1, 1, 0, 1 ).SetCS( 0 );
 
-						m_CB_DownSample.m._sizeX = targetView.Width;
-						m_CB_DownSample.m._sizeY = targetView.Height;
-						m_CB_DownSample.UpdateData();
+					m_CB_DownSample.m._sizeX = targetView.Width;
+					m_CB_DownSample.m._sizeY = targetView.Height;
+					m_CB_DownSample.UpdateData();
 
-						m_shader_DownSampleDepth.Dispatch( (m_CB_DownSample.m._sizeX+15) >> 4, (m_CB_DownSample.m._sizeY+15) >> 4, 1 );
-					}
-
-					m_tex_depthWithMips.RemoveFromLastAssignedSlots();
-					m_tex_depthWithMips.RemoveFromLastAssignedSlotUAV();
+					m_shader_DownSampleDepth.Dispatch( (m_CB_DownSample.m._sizeX+15) >> 4, (m_CB_DownSample.m._sizeY+15) >> 4, 1 );
 				}
-			#endif
+
+				m_tex_depthWithMips.RemoveFromLastAssignedSlots();
+				m_tex_depthWithMips.RemoveFromLastAssignedSlotUAV();
+			}
 
 			//////////////////////////////////////////////////////////////////////////
 			// =========== Add Emissive Map to Reprojected Radiance ===========
@@ -808,12 +777,7 @@ namespace TestHBIL {
 				m_CB_PushPull.m._bilateralDepths.y *= m_CB_PushPull.m._bilateralDepths.y;
 				m_CB_PushPull.m._preferedDepth = floatTrackbarControlHarmonicPreferedDepth.Value;
 
-				#if !BILATERAL_PUSH_PULL
-					ComputeShader	currentCS = m_shader_Push_FirstPass;
-				#else
-					ComputeShader	currentCS = m_shader_Push;
-				#endif
-				if ( currentCS.Use() ) {
+				if ( m_shader_Push.Use() ) {
 					for ( uint mipLevel=1; mipLevel < maxMip; mipLevel++ ) {
 						View2D	targetView = null;
 						if ( mipLevel == maxMip-1 )
@@ -827,21 +791,12 @@ namespace TestHBIL {
 						m_CB_PushPull.m._sizeY = targetView.Height;
 						m_CB_PushPull.UpdateData();
 
-						currentCS.Dispatch( (m_CB_PushPull.m._sizeX+15) >> 4, (m_CB_PushPull.m._sizeY+15) >> 4, 1 );
-
-						#if !BILATERAL_PUSH_PULL
-							if ( currentCS == m_shader_Push_FirstPass ) {
-								// Use regular push shader for other passes
-								currentCS = m_shader_Push;
-								currentCS.Use();
-							}
-						#endif
+						m_shader_Push.Dispatch( (m_CB_PushPull.m._sizeX+15) >> 4, (m_CB_PushPull.m._sizeY+15) >> 4, 1 );
 					}
 				}
 
 				// Start pulling phase
-				currentCS = m_shader_Pull;
- 				if ( currentCS.Use() ) {
+				if ( m_shader_Pull.Use() ) {
 					for ( uint mipLevel=maxMip-1; mipLevel > 0; mipLevel-- ) {
 						View2D	targetView = m_tex_sourceRadiance_PULL.GetView( mipLevel-1, 1, 0, 1 );	// Write to current mip of PULL texture
 						targetView.SetCSUAV( 0 );
@@ -852,15 +807,7 @@ namespace TestHBIL {
 						m_CB_PushPull.m._sizeY = targetView.Height;
 						m_CB_PushPull.UpdateData();
 
-						currentCS.Dispatch( (m_CB_PushPull.m._sizeX+15) >> 4, (m_CB_PushPull.m._sizeY+15) >> 4, 1 );
-
-						#if !BILATERAL_PUSH_PULL
-							if ( mipLevel == 2 ) {
-								// Use last pass shader
-								currentCS = m_shader_Pull_LastPass;
-								currentCS.Use();
-							}
-						#endif
+						m_shader_Pull.Dispatch( (m_CB_PushPull.m._sizeX+15) >> 4, (m_CB_PushPull.m._sizeY+15) >> 4, 1 );
 					}
 
 					m_tex_sourceRadiance_PUSH.RemoveFromLastAssignedSlots();
@@ -902,9 +849,10 @@ namespace TestHBIL {
 
 					m_CB_HBIL.m._gatherSphereMaxRadius_m = floatTrackbarControlGatherSphereRadius_meters.Value;
 					m_CB_HBIL.m._bilateralValues.Set( floatTrackbarControlBilateral0.Value, floatTrackbarControlBilateral1.Value, floatTrackbarControlBilateral2.Value, floatTrackbarControlBilateral3.Value );
+m_CB_HBIL.m._temporalAttenuationFactor = Mathf.Pow( temporalAttenuation, deltaTime );
 					m_CB_HBIL.UpdateData();
 
-					targetDepthStencil.SetPS( 0 );
+					m_tex_depthWithMips.SetPS( 0 );
 					m_tex_normal.SetPS( 1 );
 					m_tex_sourceRadiance_PULL.SetPS( 2 );	// Reprojected + reconstructed source radiance from last frame with all mips
 					m_tex_BlueNoise.SetPS( 3 );
@@ -927,7 +875,7 @@ namespace TestHBIL {
 // 					uint	groupsCountY = (m_CB_DownSample.m._sizeY + 7) >> 3;
 // 
 // 					// Split source depth
-// 					targetDepthStencil.SetCS( 0 );
+// 					m_tex_depthWithMips.SetCS( 0 );
 // 					m_tex_splitDepth.SetCSUAV( 0 );
 // 					m_shader_SplitFloat1.Dispatch( groupsCountX, groupsCountY, 1 );
 // 
@@ -957,7 +905,7 @@ namespace TestHBIL {
 					uint	groupsCountY = (m_CB_DownSample.m._sizeY + 7) >> 3;
 
 					// Split source depth
-					targetDepthStencil.SetCS( 0 );
+					m_tex_depthWithMips.SetCS( 0 );
 					m_tex_splitDepth.SetCSUAV( 0 );
 					for ( uint passIndex=0; passIndex < 16; passIndex++ ) {
 						m_CB_DownSample.m._passIndex = passIndex;
@@ -984,7 +932,7 @@ namespace TestHBIL {
 						m_shader_SplitFloat3.Dispatch( groupsCountX, groupsCountY, 1 );
 					}
 
-					targetDepthStencil.RemoveFromLastAssignedSlots();
+					m_tex_depthWithMips.RemoveFromLastAssignedSlots();
 					m_tex_normal.RemoveFromLastAssignedSlots();
 					m_tex_sourceRadiance_PULL.RemoveFromLastAssignedSlots();
 					m_tex_splitRadiance.RemoveFromLastAssignedSlotUAV();
@@ -1001,6 +949,11 @@ namespace TestHBIL {
 					m_CB_HBIL.m._bilateralValues.Set( floatTrackbarControlBilateral0.Value, floatTrackbarControlBilateral1.Value, floatTrackbarControlBilateral2.Value, floatTrackbarControlBilateral3.Value );
 					m_CB_HBIL.m._gatherSphereMaxRadius_pixels = floatTrackbarControlGatherSphereRadius_pixels.Value / 4.0f;
 
+// 					float	temporalAttenuation = 0.01f;	// 1% of the original value after 1 second
+					float	temporalAttenuation = floatTrackbarControlBilateral0.Value;
+//					m_CB_HBIL.m._temporalAttenuationFactor = Mathf.Pow( temporalAttenuation, deltaTime );
+					m_CB_HBIL.m._temporalAttenuationFactor = Mathf.Exp( Mathf.Log( temporalAttenuation ) * deltaTime );
+
 					m_tex_splitDepth.SetPS( 0 );
 					m_tex_splitNormal.SetPS( 1 );
 					m_tex_splitRadiance.SetPS( 2 );
@@ -1012,8 +965,8 @@ namespace TestHBIL {
 							m_device.SetRenderTargets( new IView[] { m_tex_splitIrradiance.GetView( 0, 1, passIndex, 1 ), m_tex_splitBentCone.GetView( 0, 1, passIndex, 1 ) }, null );
 
 //							float	phi = B4( X, Y ) * 0.5f * Mathf.PI / 16.0f;	// Use Bayer for maximum discrepancy between pixels
-//							float	phi = (B4( X, Y ) + (m_framesCount & 0x1F) / 32.0f) * 0.5f * Mathf.PI / 16.0f;	// Use Bayer for maximum discrepancy between pixels
-							float	phi = B4( X, Y ) * 0.5f * Mathf.PI / 16.0f;	// Use Bayer for maximum discrepancy between pixels
+//							float	phi = B4( X, Y ) * 0.5f * Mathf.PI / 16.0f;	// Use Bayer for maximum discrepancy between pixels
+							float	phi = (B4( X, Y ) + Bayer1D_16( m_framesCount ) / 16.0f) * 0.5f * Mathf.PI / 16.0f;	// Use Bayer for maximum discrepancy between pixels
 
 							m_CB_HBIL.m._renderPassIndexX = X;
 							m_CB_HBIL.m._renderPassIndexY = Y;
@@ -1040,7 +993,7 @@ namespace TestHBIL {
 
 					m_tex_splitIrradiance.SetCS( 0 );
 					m_tex_splitBentCone.SetCS( 1 );
-					targetDepthStencil.SetCS( 2 );
+					m_tex_depthWithMips.SetCS( 2 );
 					m_tex_normal.SetCS( 3 );
 
 					m_tex_radiance0.SetCSUAV( 0 );
@@ -1074,7 +1027,7 @@ namespace TestHBIL {
 				m_tex_albedo.SetPS( 0 );
 				m_tex_normal.SetPS( 1 );
 				m_tex_emissive.SetPS( 2 );
-				targetDepthStencil.SetPS( 3 );
+				m_tex_depthWithMips.SetPS( 3 );
 
 				m_tex_shadow.SetPS( 6 );
 
@@ -1114,7 +1067,7 @@ namespace TestHBIL {
 
 				m_device.RenderFullscreenQuad( m_shader_PostProcess );
 
-				targetDepthStencil.RemoveFromLastAssignedSlots();
+				m_tex_depthWithMips.RemoveFromLastAssignedSlots();
 				m_tex_emissive.RemoveFromLastAssignedSlots();
 				m_tex_motionVectors.RemoveFromLastAssignedSlots();
 				m_tex_normal.RemoveFromLastAssignedSlots();
@@ -1241,6 +1194,19 @@ namespace TestHBIL {
 		uint B4( uint _X, uint _Y ) {
 			return (B2( _X & 1, _Y & 1 ) << 2)
 				  + B2( (_X >> 1) & 1, (_Y >> 1) & 1);
+		}
+
+		uint	Bayer1D_1( uint _time ) {	// [0,2[
+			return 1 - (_time & 1);
+		}
+		uint	Bayer1D_4( uint _time ) {	// [0,4[
+			return Bayer1D_1( _time >> 1 ) + (Bayer1D_1( _time ) << 1);
+		}
+		uint	Bayer1D_16( uint _time ) {	// [0,16[
+			return Bayer1D_4( _time >> 2 ) + (Bayer1D_4( _time & 3 ) << 2);
+		}
+		uint	Bayer1D_64( uint _time ) {	// [0,63[
+			return Bayer1D_16( _time >> 3 ) + (Bayer1D_16( _time & 7 ) << 3);
 		}
 
 		#endregion

@@ -24,6 +24,7 @@ cbuffer CB_HBIL : register( b3 ) {
 	float4	_bilateralValues;
 
 	float	_gatherSphereMaxRadius_p;		// Radius of the sphere that will gather our irradiance samples (in pixels)
+	float	_temporalAttenuationFactor;		// Attenuation factor of radiance from previous frame
 };
 
 float4	VS( float4 __Position : SV_POSITION ) : SV_POSITION { return __Position; }
@@ -328,11 +329,14 @@ PS_OUT	PS( float4 __Position : SV_POSITION ) {
 
 	/////////////////////////////////////////////////////////////////////
 	// Write result
-	sumIrradiance = max( 0.0, 0.5 * PI * sumIrradiance );	// * PI / 2 (directions)
-	sumAO *= 0.25;											// / 2 (slice interval in [0,2]) / 2 (directions)
+	sumAO *= 0.25;												// / 2 (slice interval in [0,2]) / 2 (directions)
+
+	float3	radiance = max( 0.0, 0.5 * PI * sumIrradiance );	// * PI / 2 (directions)
+//	radiance = lerp( radiance, centralRadiance, _temporalAttenuationFactor );
+//	radiance = lerp( centralRadiance, radiance, 0.5 );
 
 	PS_OUT	Out;
-	Out.irradiance = float4( sumIrradiance, 0 );
+	Out.irradiance = float4( radiance, 0 );
 	Out.bentCone = float4( csAverageBentNormal, sumAO );
 
 	return Out;

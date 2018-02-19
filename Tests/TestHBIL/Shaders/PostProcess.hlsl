@@ -85,7 +85,7 @@ return csBentConeDev.xyz;	// Show RAW value
 	return V.xyz;
 #endif
 
-#if 0	// DEBUG SPLIT BUFFERS
+#if 1	// DEBUG SPLIT BUFFERS
 	// Clean source buffers
 //	float	splitZ = _tex_splitDepth.SampleLevel( LinearClamp, float3( __Position.xy / _resolution, _debugMipIndex ), 0.0 );
 //	return 1.0 * splitZ;
@@ -95,8 +95,8 @@ return csBentConeDev.xyz;	// Show RAW value
 //	return splitL;
 
 	// Ugly resulting split buffers
-//	float3	splitE = _tex_splitIrradiance.SampleLevel( LinearClamp, float3( __Position.xy / _resolution, _debugMipIndex ), 0.0 ).xyz;
-//	return splitE;
+	float3	splitE = _tex_splitIrradiance.SampleLevel( LinearClamp, float3( __Position.xy / _resolution, _debugMipIndex ), 0.0 ).xyz;
+	return splitE;
 	float4	splitBentNormal = _tex_splitBentCone.SampleLevel( LinearClamp, float3( __Position.xy / _resolution, _debugMipIndex ), 0.0 );
 	return splitBentNormal.w;	// AO
 	return 0.5 * (1.0 + splitBentNormal.xyz);	// Bent normal
