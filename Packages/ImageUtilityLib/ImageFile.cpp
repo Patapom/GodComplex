@@ -662,9 +662,9 @@ FREE_IMAGE_TYPE	ImageFile::PixelFormat2FIT( PIXEL_FORMAT _pixelFormat ) {
 		// 8-bits
 		case PIXEL_FORMAT::R8:		return FIT_BITMAP;
 		case PIXEL_FORMAT::RG8:		return FIT_BITMAP;	// Here we unfortunately have to use a larger format to accommodate for our 2 components, otherwise FreeImage thinks it's R5G6B5! :(
-case PIXEL_FORMAT::RGB8:	return FIT_BITMAP;	// This is NOT the internal representation of a FreeImage bitmap: use BGR8 instead:
+case PIXEL_FORMAT::RGB8:	return FIT_BITMAP;	// This is NOT the internal representation of a FreeImage bitmap: use BGR8 instead!
 		case PIXEL_FORMAT::BGR8:	return FIT_BITMAP;
-case PIXEL_FORMAT::RGBA8:	return FIT_BITMAP;	// This is NOT the internal representation of a FreeImage bitmap: use BGRA8 instead:
+case PIXEL_FORMAT::RGBA8:	return FIT_BITMAP;	// This is NOT the internal representation of a FreeImage bitmap: use BGRA8 instead!
 		case PIXEL_FORMAT::BGRA8:	return FIT_BITMAP;
 		// 16-bits
 		case PIXEL_FORMAT::R16:		return FIT_UINT16;

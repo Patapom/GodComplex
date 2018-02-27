@@ -13,13 +13,13 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MathAdvanced", "Packages\Sh
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Generators and Converters", "Generators and Converters", "{A7A3F95C-0AAF-4737-BFA3-0211799C0B36}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ImageUtilityManaged", "Packages\ImageUtilityManaged\ImageUtilityManaged.vcxproj", "{6C974BA3-ECBA-4436-85CB-218EEBB33D53}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ImageUtility", "Packages\ImageUtilityManaged\ImageUtilityManaged.vcxproj", "{6C974BA3-ECBA-4436-85CB-218EEBB33D53}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Utility", "Packages\Cirrus.Utility\Utility.csproj", "{9A67863F-D886-41A5-A8D1-04BA1379B097}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SphericalHarmonicsLibrary", "Packages\SphericalHarmonicsLibrary\SphericalHarmonicsLibrary.csproj", "{E96E2072-C7EF-46BB-A3F1-8CF6B26BF019}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RendererManaged", "Packages\RendererManaged\RendererManaged.vcxproj", "{F96CDFD3-8954-4F4F-AFB0-2855D98F051B}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Renderer", "Packages\RendererManaged\RendererManaged.vcxproj", "{F96CDFD3-8954-4F4F-AFB0-2855D98F051B}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RendererLib", "RendererD3D11\RendererLib.vcxproj", "{7523DEED-A096-4B6E-B1D9-EDDA85EE6AA6}"
 EndProject
@@ -703,7 +703,6 @@ Global
 		{2BEBFD43-4EC8-4B31-B6F5-D4A9E5F5FB70}.Debug|Win32.ActiveCfg = Debug|x86
 		{2BEBFD43-4EC8-4B31-B6F5-D4A9E5F5FB70}.Debug|Win32.Build.0 = Debug|x86
 		{2BEBFD43-4EC8-4B31-B6F5-D4A9E5F5FB70}.Debug|x64.ActiveCfg = Debug|x64
-		{2BEBFD43-4EC8-4B31-B6F5-D4A9E5F5FB70}.Debug|x64.Build.0 = Debug|x64
 		{2BEBFD43-4EC8-4B31-B6F5-D4A9E5F5FB70}.Debug|x86.ActiveCfg = Debug|x86
 		{2BEBFD43-4EC8-4B31-B6F5-D4A9E5F5FB70}.Debug|x86.Build.0 = Debug|x86
 		{2BEBFD43-4EC8-4B31-B6F5-D4A9E5F5FB70}.Profile|Any CPU.ActiveCfg = Release|x86

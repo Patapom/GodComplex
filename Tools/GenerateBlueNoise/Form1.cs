@@ -798,7 +798,8 @@ noiseValue = SimpleRNG.GetUniform() < 0.5 ? 0.5 * Math.Sqrt( 1.0 - noiseValue ) 
 
 			if ( m_blueNoiseVoidAndCluster != null )
 				m_blueNoiseVoidAndCluster.Dispose();
-			m_blueNoiseVoidAndCluster = new ImageFile( textureSize, textureSize, PIXEL_FORMAT.R8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
+//			m_blueNoiseVoidAndCluster = new ImageFile( textureSize, textureSize, PIXEL_FORMAT.R8, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
+			m_blueNoiseVoidAndCluster = new ImageFile( textureSize, textureSize, PIXEL_FORMAT.R16, new ColorProfile( ColorProfile.STANDARD_PROFILE.LINEAR ) );
 
 			float4[]	scanline = new float4[textureSize];
 

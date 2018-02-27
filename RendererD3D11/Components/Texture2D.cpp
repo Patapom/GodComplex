@@ -570,7 +570,8 @@ void	Texture2D::ReadAsImagesMatrix( ImageUtilityLib::ImagesMatrix& _images ) con
 			for ( U32 Y=0; Y < targetMip.Height(); Y++ ) {
 				const U8*	sourceScanline = sourceData + mappedSourceMip.RowPitch * Y;
 				U8*			targetScanline = targetData + targetPitch * Y;
-				memcpy_s( targetScanline, targetPitch, sourceScanline, mappedSourceMip.RowPitch );
+//				memcpy_s( targetScanline, targetPitch, sourceScanline, mappedSourceMip.RowPitch );	// Source pitch may be aligned to 128 bytes so we need to use target pitch for copy
+				memcpy_s( targetScanline, targetPitch, sourceScanline, targetPitch );
 			}
 			UnMap( mipLevelIndex, arrayIndex );
 		}

@@ -182,7 +182,7 @@ namespace SharpMath {
 		// Builds up the 2 remaining vectors to form an orthonormal basis, assuming this vector is the "right" direction
 		// Expected "this" to be normalized!
 		// This code doesn't involve any square root!
-		void	OrthogonalBasis( float3% _left, float3% _up ) {
+		void	OrthogonalBasis( [System::Runtime::InteropServices::Out] float3% _left, [System::Runtime::InteropServices::Out] float3% _up ) {
 			if ( z < -0.9999999f ) {
 				// Handle the singularity
 				_left.Set( 0.0f, -1.0f, 0.0f );
