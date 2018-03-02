@@ -425,6 +425,11 @@ namespace ImageUtility {
 			m_ownedObject = true;
 			m_nativeObject = new ImageUtilityLib::ImageFile( *_other->m_nativeObject );
 		}
+		ImageFile( ImageFile^ _other, PIXEL_FORMAT _targetFormat ) {
+			m_ownedObject = true;
+			m_nativeObject = new ImageUtilityLib::ImageFile();
+			ConvertFrom( _other, _targetFormat );
+		}
 
 		// Creates a bitmap from a System::Drawing.Bitmap and a color profile
 		ImageFile( System::Drawing::Bitmap^ _bitmap, ImageUtility::ColorProfile^ _colorProfile );

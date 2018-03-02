@@ -207,7 +207,7 @@ copy Source\FreeImage.h Dist\x64\$(Configuration)
 
 
 REM Copy to GodComplex
-copy $(OutDir)$(TargetName).dll $(SolutionDir)\..\..\build\$(Configuration)
+copy $(OutDir)$(TargetName).dll $(ProjectDir)\..\..\build\$(Configuration)
 
 </Command>
     </PostBuildEvent>
@@ -309,7 +309,7 @@ copy $(OutDir)$(TargetName).lib Dist\x64\$(Configuration)
 copy Source\FreeImage.h Dist\x64\$(Configuration)
 
 REM Copy to GodComplex
-copy $(OutDir)$(TargetName).dll $(SolutionDir)\..\..\build\$(Configuration)
+copy $(OutDir)$(TargetName).dll $(ProjectDir)\..\..\build\$(Configuration)
 
 </Command>
     </PostBuildEvent>

@@ -1093,6 +1093,7 @@ float	quality = _RAW ? 3.0f : 3.0f;
 						break;
 					case LOADING_TESTS.PNG_RGBA8:
 						m_imageFile.Load( new System.IO.FileInfo( @"..\..\Images\In\PNG\RGBA8.png" ) );
+//m_imageFile.Load( new System.IO.FileInfo( @"D:\Workspaces\Arkane\GodComplex\Tests\TestHBIL\Textures\tomettes_basecolor.png" ) );
 //						m_imageFile.Load( new System.IO.FileInfo( @"..\..\Images\In\PNG\RGBA8_SaveforWeb.png" ) );
 						panelLoad.Bitmap = m_imageFile.AsBitmap;
 						break;
@@ -1148,7 +1149,8 @@ float	quality = _RAW ? 3.0f : 3.0f;
 
 					// DDS 8 bits with mips
 					case LOADING_TESTS.DDS_2D_RGBA8_MIPS: {
-						ImagesMatrix	images = ImageFile.DDSLoadFile( new System.IO.FileInfo( @"..\..\Images\In\DDS\AreaLightSAT.dds" ) );
+						ImagesMatrix	images = new ImagesMatrix();
+						images.DDSLoadFile( new System.IO.FileInfo( @"..\..\Images\In\DDS\AreaLightSAT.dds" ) );
 						m_imageFile = images[0][0][0];
 						images[0][0][0] = null;	// Remove it from the matrix so it doesn't get destroyed!
 						panelLoad.Bitmap = m_imageFile.AsBitmap;
@@ -1159,9 +1161,10 @@ float	quality = _RAW ? 3.0f : 3.0f;
 						break;
 					}
 					case LOADING_TESTS.DDS_2D_RGBA32_CUBE: {
-//						ImagesMatrix	images = ImageFile.DDSLoadFile( new System.IO.FileInfo( @"..\..\Images\In\DDS\caustics2.dds" ) );		// BC4_UNORM
-						ImagesMatrix	images = ImageFile.DDSLoadFile( new System.IO.FileInfo( @"..\..\Images\In\DDS\garage4_hd.dds" ) );
-//						ImagesMatrix	images = ImageFile.DDSLoadFile( new System.IO.FileInfo( @"..\..\Images\In\DDS\kitchen_cross.dds" ) );
+						ImagesMatrix	images = new ImagesMatrix();
+//						images.DDSLoadFile( new System.IO.FileInfo( @"..\..\Images\In\DDS\caustics2.dds" ) );		// BC4_UNORM
+						images.DDSLoadFile( new System.IO.FileInfo( @"..\..\Images\In\DDS\garage4_hd.dds" ) );
+//						images.DDSLoadFile( new System.IO.FileInfo( @"..\..\Images\In\DDS\kitchen_cross.dds" ) );
 						m_imageFile = images[0][0][0];
 						images[0][0][0] = null;	// Remove it from the matrix so it doesn't get destroyed!
 						panelLoad.Bitmap = m_imageFile.AsCustomBitmap( ( ref float4 _color ) => {
