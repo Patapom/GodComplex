@@ -239,76 +239,79 @@ void	ImageFile::ConvertFrom( const ImageFile& _source, PIXEL_FORMAT _targetForma
 
 	// Ensure we're not dealing with unsupported types!
 	if (	(U32(_source.m_pixelFormat) & U32(PIXEL_FORMAT::NO_FREEIMAGE_SUPPORT))
-		 || (U32(_targetFormat) & U32(PIXEL_FORMAT::NO_FREEIMAGE_SUPPORT)) )
-		throw "Unsupported source or target type!";
-
-	// Convert source
-	FREE_IMAGE_TYPE	sourceType = PixelFormat2FIT( _source.m_pixelFormat );
-	FREE_IMAGE_TYPE	targetType = PixelFormat2FIT( _targetFormat );
-	if ( targetType == FIT_BITMAP ) {
-		// Check the source is not a HDR format
-		if ( sourceType == FIT_RGBF || sourceType == FIT_RGBAF )
-			throw "You need to use the ToneMap() function to convert HDR formats into a LDR format!";
-
-		// Convert to temporary bitmap first
-		// If the source is already a standard type bitmap then it is cloned
-		FIBITMAP*	temp = FreeImage_ConvertToType( _source.m_bitmap, FIT_BITMAP );
-		if ( temp == nullptr )
-			throw "FreeImage failed to convert to standard bitmap type!";
-
-		// Now check bits per pixel
-		U32		sourceBPP = FreeImage_GetBPP( temp );
-		U32		targetBPP = PixelFormat2BPP( _targetFormat );
-		if ( sourceBPP == targetBPP ) {
-			// Okay so the source and target BPP are the same, just use our freshly converted bitmap then
-			m_bitmap = temp;
-			temp = nullptr;
-		} else {
-			switch ( sourceBPP ) {
-			case 8:
-				switch ( targetBPP ) {
-				case 16: throw "8 -> 16 bits per pixel is not a supported conversion!";
-				case 24: m_bitmap = FreeImage_ConvertTo24Bits( temp ); break;
-				case 32: m_bitmap = FreeImage_ConvertTo32Bits( temp ); break;
-				}
-				break;
-
-			case 16:
-				switch ( targetBPP ) {
-				case 8: m_bitmap = FreeImage_ConvertTo8Bits( temp ); break;
-				case 24: m_bitmap = FreeImage_ConvertTo24Bits( temp ); break;
-				case 32: m_bitmap = FreeImage_ConvertTo32Bits( temp ); break;
-				}
-				break;
-
-			case 24:
-				switch ( targetBPP ) {
-				case 8: m_bitmap = FreeImage_ConvertTo8Bits( temp ); break;
-				case 16: throw "24 -> 16 bits per pixel is not a supported conversion!";
-				case 32: m_bitmap = FreeImage_ConvertTo32Bits( temp ); break;
-				}
-				break;
-
-			case 32:
-				switch ( targetBPP ) {
-				case 8: m_bitmap = FreeImage_ConvertTo8Bits( temp ); break;
-				case 16: throw "32 -> 16 bits per pixel is not a supported conversion!";
-				case 24: m_bitmap = FreeImage_ConvertTo24Bits( temp ); break;
-				}
-				break;
-			}
-		}
-
-		if ( temp != nullptr ) {
-			FreeImage_Unload( temp );
-		}
+		 || (U32(_targetFormat) & U32(PIXEL_FORMAT::NO_FREEIMAGE_SUPPORT)) ) {
+//		throw "Unsupported source or target type!";
+		ConvertFrom_NoSupport( _source, _targetFormat );
 	} else {
-		// Not a simple bitmap type
-		m_bitmap = FreeImage_ConvertToType( _source.m_bitmap, targetType );
+		// Convert source
+		FREE_IMAGE_TYPE	sourceType = PixelFormat2FIT( _source.m_pixelFormat );
+		FREE_IMAGE_TYPE	targetType = PixelFormat2FIT( _targetFormat );
+		if ( targetType == FIT_BITMAP ) {
+			// Check the source is not a HDR format
+			if ( sourceType == FIT_RGBF || sourceType == FIT_RGBAF )
+				throw "You need to use the ToneMap() function to convert HDR formats into a LDR format!";
+
+			// Convert to temporary bitmap first
+			// If the source is already a standard type bitmap then it is cloned
+			FIBITMAP*	temp = FreeImage_ConvertToType( _source.m_bitmap, FIT_BITMAP );
+			if ( temp == nullptr )
+				throw "FreeImage failed to convert to standard bitmap type!";
+
+			// Now check bits per pixel
+			U32		sourceBPP = FreeImage_GetBPP( temp );
+			U32		targetBPP = PixelFormat2BPP( _targetFormat );
+			if ( sourceBPP == targetBPP ) {
+				// Okay so the source and target BPP are the same, just use our freshly converted bitmap then
+				m_bitmap = temp;
+				temp = nullptr;
+			} else {
+				switch ( sourceBPP ) {
+				case 8:
+					switch ( targetBPP ) {
+					case 16: throw "8 -> 16 bits per pixel is not a supported conversion!";
+					case 24: m_bitmap = FreeImage_ConvertTo24Bits( temp ); break;
+					case 32: m_bitmap = FreeImage_ConvertTo32Bits( temp ); break;
+					}
+					break;
+
+				case 16:
+					switch ( targetBPP ) {
+					case 8: m_bitmap = FreeImage_ConvertTo8Bits( temp ); break;
+					case 24: m_bitmap = FreeImage_ConvertTo24Bits( temp ); break;
+					case 32: m_bitmap = FreeImage_ConvertTo32Bits( temp ); break;
+					}
+					break;
+
+				case 24:
+					switch ( targetBPP ) {
+					case 8: m_bitmap = FreeImage_ConvertTo8Bits( temp ); break;
+					case 16: throw "24 -> 16 bits per pixel is not a supported conversion!";
+					case 32: m_bitmap = FreeImage_ConvertTo32Bits( temp ); break;
+					}
+					break;
+
+				case 32:
+					switch ( targetBPP ) {
+					case 8: m_bitmap = FreeImage_ConvertTo8Bits( temp ); break;
+					case 16: throw "32 -> 16 bits per pixel is not a supported conversion!";
+					case 24: m_bitmap = FreeImage_ConvertTo24Bits( temp ); break;
+					}
+					break;
+				}
+			}
+
+			if ( temp != nullptr ) {
+				FreeImage_Unload( temp );
+			}
+		} else {
+			// Not a simple bitmap type
+			m_bitmap = FreeImage_ConvertToType( _source.m_bitmap, targetType );
+		}
+
+		// Get pixel format from bitmap
+		m_pixelFormat = Bitmap2PixelFormat( *m_bitmap );
 	}
 
-	// Get pixel format from bitmap
-	m_pixelFormat = Bitmap2PixelFormat( *m_bitmap );
 	m_pixelAccessor = &PixelFormat2PixelAccessor( m_pixelFormat );
 
 	// Copy metadata
@@ -318,22 +321,54 @@ void	ImageFile::ConvertFrom( const ImageFile& _source, PIXEL_FORMAT _targetForma
 	m_fileFormat = _source.m_fileFormat;
 }
 
+void	ImageFile::ConvertFrom_NoSupport( const ImageFile& _source, PIXEL_FORMAT _targetFormat ) {
+	m_pixelFormat = _targetFormat;
+
+	U32	W = _source.Width();
+	U32	H = _source.Height();
+
+	// Create target bitmap
+	FREE_IMAGE_TYPE	bitmapType = PixelFormat2FIT( m_pixelFormat );
+	int				BPP = int( PixelFormat2BPP( m_pixelFormat ) );
+	m_bitmap = FreeImage_AllocateT( bitmapType, W, H, BPP );
+
+	const IPixelAccessor&	sourceAccessor = PixelFormat2PixelAccessor( _source.m_pixelFormat );
+	const IPixelAccessor&	targetAccessor = PixelFormat2PixelAccessor( m_pixelFormat );
+
+	const U8*	sourceBits = _source.GetBits();
+	U8*			targetBits = GetBits();
+	U32			sourcePixelSize = sourceAccessor.Size();
+	U32			sourcePitch = _source.Pitch();
+	U32			targetPixelSize = targetAccessor.Size();
+	U32			targetPitch = Pitch();
+
+	bfloat4	temp;
+	for ( U32 Y=0; Y < H; Y++ ) {
+		const U8*	scanlineSource = sourceBits + Y * sourcePitch;
+		U8*			scanlineTarget = targetBits + Y * targetPitch;
+		for ( U32 X=0; X < W; X++, scanlineSource += sourcePixelSize, scanlineTarget += targetPixelSize ) {
+			sourceAccessor.RGBA( scanlineSource, temp );
+			targetAccessor.Write( scanlineTarget, temp );
+		}
+	}
+}
+
 void	ImageFile::ToneMapFrom( const ImageFile& _source, toneMapper_t _toneMapper ) {
 	Exit();
 
 	// Check the source is a HDR format
 	switch ( _source.m_pixelFormat ) {
-	case PIXEL_FORMAT::R16F:
-	case PIXEL_FORMAT::RG16F:
-	case PIXEL_FORMAT::RGB16F:
-	case PIXEL_FORMAT::RGBA16F:
-	case PIXEL_FORMAT::R32F:
-	case PIXEL_FORMAT::RG32F:
-	case PIXEL_FORMAT::RGB32F:
-	case PIXEL_FORMAT::RGBA32F:
-		break;	// Okay!
-	default:
-		throw "You must provide a HDR format to use the ToneMap() function!";
+		case PIXEL_FORMAT::R16F:
+		case PIXEL_FORMAT::RG16F:
+		case PIXEL_FORMAT::RGB16F:
+		case PIXEL_FORMAT::RGBA16F:
+		case PIXEL_FORMAT::R32F:
+		case PIXEL_FORMAT::RG32F:
+		case PIXEL_FORMAT::RGB32F:
+		case PIXEL_FORMAT::RGBA32F:
+			break;	// Okay!
+		default:
+			throw "You must provide a HDR format to use the ToneMap() function!";
 	}
 
 	U32	W = _source.Width();
@@ -486,12 +521,258 @@ void	ImageFile::ToneMapFrom( const ImageFile& _source, toneMapper_t _toneMapper 
 	m_fileFormat = _source.m_fileFormat;
 }
 
+void	U8toS8( U8*& _scanline ) {
+	S16	signedValue = S16( *_scanline );
+	S8	temp = S8( signedValue - 128 );
+	*_scanline++ = temp;
+}
+void	U16toS16( U8*& _scanline ) {
+	S16*	scanline = (S16*) _scanline;
+	S32		signedValue = S32( *((U16*) scanline) );
+	S16		temp = S16( signedValue - 32768 );
+	*scanline++ = temp;
+	_scanline = (U8*) scanline;
+}
+void	U32toS32( U8*& _scanline ) {
+	S32*	scanline = (S32*) _scanline;
+	S64		signedValue = S64( *((U32*) scanline) );
+	S32		temp = S32( signedValue - 2147483648 );
+	*scanline++ = temp;
+	_scanline = (U8*) scanline;
+}
+
+void	ImageFile::MakeSigned() {
+	U32	W = Width();
+	U32	H = Height();
+	U32	pixelSize = m_pixelAccessor->Size();
+
+	U32	pitch  = FreeImage_GetPitch( m_bitmap );
+	U8*	bits = (BYTE*) FreeImage_GetBits( m_bitmap );
+
+	for ( U32 Y=0; Y < H; Y++ ) {
+		U8*	scanline = bits + Y * pitch;
+		switch ( m_pixelFormat ) {
+			// 8-Bits Formats
+			case PIXEL_FORMAT::R8:
+				for ( U32 X=0; X < W; X++ ) {
+					U8toS8( scanline );
+				}
+				break;
+			case PIXEL_FORMAT::RG8:
+				for ( U32 X=0; X < W; X++ ) {
+					U8toS8( scanline );
+					U8toS8( scanline );
+				}
+				break;
+			case PIXEL_FORMAT::RGB8:
+			case PIXEL_FORMAT::BGR8:
+				for ( U32 X=0; X < W; X++ ) {
+					U8toS8( scanline );
+					U8toS8( scanline );
+					U8toS8( scanline );
+				}
+				break;
+			case PIXEL_FORMAT::RGBA8:
+			case PIXEL_FORMAT::BGRA8:
+				for ( U32 X=0; X < W; X++ ) {
+					U8toS8( scanline );
+					U8toS8( scanline );
+					U8toS8( scanline );
+					scanline++;
+				}
+				break;
+
+			// 16-Bits Formats
+			case PIXEL_FORMAT::R16:
+				for ( U32 X=0; X < W; X++ ) {
+					U16toS16( scanline );
+				}
+				break;
+			case PIXEL_FORMAT::RG16:
+				for ( U32 X=0; X < W; X++ ) {
+					U16toS16( scanline );
+					U16toS16( scanline );
+				}
+				break;
+			case PIXEL_FORMAT::RGB16:
+				for ( U32 X=0; X < W; X++ ) {
+					U16toS16( scanline );
+					U16toS16( scanline );
+					U16toS16( scanline );
+				}
+				break;
+			case PIXEL_FORMAT::RGBA16:
+				for ( U32 X=0; X < W; X++ ) {
+					U16toS16( scanline );
+					U16toS16( scanline );
+					U16toS16( scanline );
+					scanline+=2;
+				}
+				break;
+
+			// 32-Bits Formats
+			case PIXEL_FORMAT::R32:
+				for ( U32 X=0; X < W; X++ ) {
+					U32toS32( scanline );
+				}
+				break;
+			case PIXEL_FORMAT::RG32:
+				for ( U32 X=0; X < W; X++ ) {
+					U32toS32( scanline );
+					U32toS32( scanline );
+				}
+				break;
+			case PIXEL_FORMAT::RGB32:
+				for ( U32 X=0; X < W; X++ ) {
+					U32toS32( scanline );
+					U32toS32( scanline );
+					U32toS32( scanline );
+				}
+				break;
+			case PIXEL_FORMAT::RGBA32:
+				for ( U32 X=0; X < W; X++ ) {
+					U32toS32( scanline );
+					U32toS32( scanline );
+					U32toS32( scanline );
+					scanline+=4;
+				}
+				break;
+
+		default:
+			throw "Not supported!";
+		}
+	}
+}
+
+void	S8toU8( U8*& _scanline ) {
+	S16	signedValue = S16( *((S8*) _scanline) );
+	U8	temp = U8( signedValue + 128 );
+	*_scanline++ = temp;
+}
+void	S16toU16( U8*& _scanline ) {
+	U16*	scanline = (U16*) _scanline;
+	S32		signedValue = S32( *((S16*) _scanline) );
+	U16		temp = U16( signedValue + 32768 );
+	*scanline++ = temp;
+	_scanline = (U8*) scanline;
+}
+void	S32toU32( U8*& _scanline ) {
+	U32*	scanline = (U32*) _scanline;
+	S64		signedValue = S64( *((S32*) _scanline) );
+	S32		temp = S32( signedValue + 2147483648 );
+	*scanline++ = temp;
+	_scanline = (U8*) scanline;
+}
+
+void	ImageFile::MakeUnSigned() {
+	U32	W = Width();
+	U32	H = Height();
+	U32	pixelSize = m_pixelAccessor->Size();
+
+	U32	pitch  = FreeImage_GetPitch( m_bitmap );
+	U8*	bits = (BYTE*) FreeImage_GetBits( m_bitmap );
+
+	for ( U32 Y=0; Y < H; Y++ ) {
+		U8*	scanline = bits + Y * pitch;
+		switch ( m_pixelFormat ) {
+			// 8-Bits Formats
+			case PIXEL_FORMAT::R8:
+				for ( U32 X=0; X < W; X++ ) {
+					S8toU8( scanline );
+				}
+				break;
+			case PIXEL_FORMAT::RG8:
+				for ( U32 X=0; X < W; X++ ) {
+					S8toU8( scanline );
+					S8toU8( scanline );
+				}
+				break;
+			case PIXEL_FORMAT::RGB8:
+			case PIXEL_FORMAT::BGR8:
+				for ( U32 X=0; X < W; X++ ) {
+					S8toU8( scanline );
+					S8toU8( scanline );
+					S8toU8( scanline );
+				}
+				break;
+			case PIXEL_FORMAT::RGBA8:
+			case PIXEL_FORMAT::BGRA8:
+				for ( U32 X=0; X < W; X++ ) {
+					S8toU8( scanline );
+					S8toU8( scanline );
+					S8toU8( scanline );
+					scanline++;
+				}
+				break;
+
+			// 16-Bits Formats
+			case PIXEL_FORMAT::R16:
+				for ( U32 X=0; X < W; X++ ) {
+					S16toU16( scanline );
+				}
+				break;
+			case PIXEL_FORMAT::RG16:
+				for ( U32 X=0; X < W; X++ ) {
+					S16toU16( scanline );
+					S16toU16( scanline );
+				}
+				break;
+			case PIXEL_FORMAT::RGB16:
+				for ( U32 X=0; X < W; X++ ) {
+					S16toU16( scanline );
+					S16toU16( scanline );
+					S16toU16( scanline );
+				}
+				break;
+			case PIXEL_FORMAT::RGBA16:
+				for ( U32 X=0; X < W; X++ ) {
+					S16toU16( scanline );
+					S16toU16( scanline );
+					S16toU16( scanline );
+					scanline+=2;
+				}
+				break;
+
+			// 32-Bits Formats
+			case PIXEL_FORMAT::R32:
+				for ( U32 X=0; X < W; X++ ) {
+					S32toU32( scanline );
+				}
+				break;
+			case PIXEL_FORMAT::RG32:
+				for ( U32 X=0; X < W; X++ ) {
+					S32toU32( scanline );
+					S32toU32( scanline );
+				}
+				break;
+			case PIXEL_FORMAT::RGB32:
+				for ( U32 X=0; X < W; X++ ) {
+					S32toU32( scanline );
+					S32toU32( scanline );
+					S32toU32( scanline );
+				}
+				break;
+			case PIXEL_FORMAT::RGBA32:
+				for ( U32 X=0; X < W; X++ ) {
+					S32toU32( scanline );
+					S32toU32( scanline );
+					S32toU32( scanline );
+					scanline+=4;
+				}
+				break;
+
+		default:
+			throw "Not supported!";
+		}
+	}
+}
+
 void	ImageFile::ReadScanline( U32 _Y, bfloat4* _color, U32 _startX, U32 _count ) const {
 	U32	W = Width();
 	U32	pixelSize = m_pixelAccessor->Size();
 
-	const unsigned	pitch  = FreeImage_GetPitch( m_bitmap );
-	const U8*		bits = (BYTE*) FreeImage_GetBits( m_bitmap );
+	const U32	pitch  = FreeImage_GetPitch( m_bitmap );
+	const U8*	bits = (BYTE*) FreeImage_GetBits( m_bitmap );
 	bits += pitch * _Y + _startX * pixelSize;
 
 	_count = MIN( _count, W-_startX );
@@ -503,8 +784,8 @@ void	ImageFile::WriteScanline( U32 _Y, const bfloat4* _color, U32 _startX, U32 _
 	U32	W = Width();
 	U32	pixelSize = m_pixelAccessor->Size();
 
-	const unsigned	pitch  = FreeImage_GetPitch( m_bitmap );
-	U8*				bits = (BYTE*) FreeImage_GetBits( m_bitmap );
+	U32	pitch  = FreeImage_GetPitch( m_bitmap );
+	U8*	bits = (BYTE*) FreeImage_GetBits( m_bitmap );
 	bits += pitch * _Y + _startX * pixelSize;
 
 	_count = MIN( _count, W-_startX );
@@ -1184,335 +1465,6 @@ void	ImageFile::ImageCoordinates2RangedCoordinates( const bfloat2& _rangeX, cons
 
 	_rangedCoordinates.x = _rangeX.x + (_imageCoordinates.x - X0) * (_rangeX.y - _rangeX.x) / (X1 - X0);
 	_rangedCoordinates.y = _rangeY.x + (_imageCoordinates.y - Y0) * (_rangeY.y - _rangeY.x) / (Y1 - Y0);
-}
-
-#pragma endregion
-
-#pragma region DDS-Related Helpers
-
-//////////////////////////////////////////////////////////////////////////
-// DDS-Related Helpers
-//
-static void		Copy( const DirectX::Image& _source, ImageFile& _target ) {
-	if (	_source.width != _target.Width()
-		||	_source.height != _target.Height() ) {
-			throw "Source and target image sizes mismatch!";
-	}
-
-	U32		targetSize = _target.Pitch();
-	U32		sourceSize = U32(_source.rowPitch);
-	for ( U32 Y=0; Y < _source.height; Y++ ) {
-		const U8*	scanlineSource = _source.pixels + Y * sourceSize;
-		U8*			scanlineTarget = _target.GetBits() + Y * targetSize;
-		memcpy_s( scanlineTarget, targetSize, scanlineSource, targetSize );
-	}
-}
-
-static void		Copy( const ImageFile& _source, const DirectX::Image& _target ) {
-	if (	_source.Width() != _target.width
-		||	_source.Height() != _target.height ) {
-			throw "Source and target image sizes mismatch!";
-	}
-
-	U32		targetSize = U32(_target.rowPitch);
-	U32		sourceSize = _source.Pitch();
-	for ( U32 Y=0; Y < _target.height; Y++ ) {
-		const U8*	scanlineSource = _source.GetBits() + Y * sourceSize;
-		U8*			scanlineTarget = _target.pixels + Y * targetSize;
-		memcpy_s( scanlineTarget, targetSize, scanlineSource, targetSize );
-	}
-}
-
-void	ImageFile::DDSLoadFile( const wchar_t* _fileName, ImagesMatrix& _images ) {
-	// Load the image
-	DirectX::ScratchImage*	DXT = new DirectX::ScratchImage();
-	DirectX::TexMetadata	meta;
-	DWORD	flags = DirectX::DDS_FLAGS_NONE;
-	HRESULT	hResult = DirectX::LoadFromDDSFile( _fileName, flags, &meta, *DXT );
-	if ( hResult != S_OK ) {
-		throw "An error occurred while loading the DDS file!";
-	}
-
-	// Convert into an image matrix
-	DDSLoad( DXT, &meta, _images );
-
-	delete DXT;
-}
-void	ImageFile::DDSLoadMemory( U64 _fileSize, void* _fileContent, ImagesMatrix& _images ) {
-	// Load the image
-	DirectX::ScratchImage*	DXT = new DirectX::ScratchImage();
-	DirectX::TexMetadata	meta;
-	DWORD	flags = DirectX::DDS_FLAGS_NONE;
-	HRESULT	hResult = DirectX::LoadFromDDSMemory( _fileContent, _fileSize, flags, &meta, *DXT );
-	if ( hResult != S_OK ) {
-		throw "An error occurred while loading the DDS file!";
-	}
-
-	// Convert into an image matrix
-	DDSLoad( DXT, &meta, _images );
-
-	delete DXT;
-}
-void	ImageFile::DDSLoad( const void* _blindPointerImage, const void* _blindPointerMetaData, ImagesMatrix& _images ) {
-	const DirectX::ScratchImage&	image = *reinterpret_cast<const DirectX::ScratchImage*>( _blindPointerImage );
-	const DirectX::TexMetadata&		meta = *reinterpret_cast<const DirectX::TexMetadata*>( _blindPointerMetaData );
-
-	// Retrieve supported format
-	U32					pixelSize = 0;
-	COMPONENT_FORMAT	componentFormat;
-	PIXEL_FORMAT		format = DXGIFormat2PixelFormat( meta.format, componentFormat, pixelSize );
-	if ( format == PIXEL_FORMAT::UNKNOWN )
-		throw "Unsupported format! Cannot find appropriate target image format to support source DXGI format...";
-
-	ColorProfile	profile( componentFormat == COMPONENT_FORMAT::UNORM_sRGB ? ColorProfile::STANDARD_PROFILE::sRGB : ColorProfile::STANDARD_PROFILE::LINEAR );
-
-	// Build content slices
-	U32	mipLevelsCount = U32(meta.mipLevels);
-	if ( meta.depth == 1 ) {
-		// We are dealing with a 2D texture format
-		if ( image.GetImageCount() != meta.arraySize * meta.mipLevels )
-			throw "Unexpected amount of images!";
-
-		U32	arraySize = U32(meta.arraySize);
-
-		if ( meta.IsCubemap() ) {
-			// We are dealing with a texture cube array
-			if ( meta.width != meta.height )
-				throw "Image width & height mismatch!";
-			if ( (meta.arraySize % 6) != 0 )
-				throw "Array size is not an integer multiple of 6!";
-
-			U32	cubeMapsCount = arraySize / 6;
-			_images.InitCubeTextureArray( U32(meta.width), cubeMapsCount, mipLevelsCount );
-		} else {
-			// We are dealing with a regular texture 2D array
-			_images.InitTexture2DArray( U32(meta.width), U32(meta.height), arraySize, mipLevelsCount );
-		}
-
-		if ( (U32(format) & U32(PIXEL_FORMAT::RAW_BUFFER)) == 0 ) {
-			// Allocate actual images
-			_images.AllocateImageFiles( format, profile );
-
-			// Fill up the content
-			for ( U32 arrayIndex=0; arrayIndex < arraySize; arrayIndex++ ) {
-				for ( U32 mipIndex=0; mipIndex < mipLevelsCount; mipIndex++ ) {
-				 	const DirectX::Image*	sourceImage = image.GetImage( mipIndex, arrayIndex, 0U );
-					ImageFile&				targetImage = *_images[arrayIndex][mipIndex][0];
-					targetImage.m_fileFormat = FILE_FORMAT::DDS;
-					Copy( *sourceImage, targetImage );
-				}
-			}
-		} else {
-			// Copy raw data without any processing
-			class	getSliceSize_t : public ImagesMatrix::GetRawBufferSizeFunctor {
-			public:
-				const DirectX::ScratchImage&	m_image;
-				getSliceSize_t( const DirectX::ScratchImage& _image ) : m_image( _image ) {}
-				const U8*	operator()( U32 _arraySliceIndex, U32 _mipLevelIndex, U32& _rowPitch, U32& _slicePitch ) const override {
-					const DirectX::Image* mipImage = m_image.GetImage( _mipLevelIndex, _arraySliceIndex, 0U );
-					_rowPitch = U32(mipImage->rowPitch);
-					_slicePitch = U32(mipImage->slicePitch);
-
-					return mipImage->pixels;
-				}
-			} getSliceSize( image );
-			_images.AllocateRawBuffers( format, getSliceSize );
-		}
-
-	} else {
-		// We are dealing with a 3D texture format
-		_images.InitTexture3D( U32(meta.width), U32(meta.height), U32(meta.depth), U32(meta.mipLevels) );
-
-		if ( (U32(format) & U32(PIXEL_FORMAT::RAW_BUFFER)) == 0 ) {
-			// Allocate actual images
-			_images.AllocateImageFiles( format, profile );
-
-			// Fill up the content
-			for ( U32 mipIndex=0; mipIndex < mipLevelsCount; mipIndex++ ) {
-				ImagesMatrix::Mips::Mip&	mip = _images[0][mipIndex];
-
-				for ( U32 sliceIndex=0; sliceIndex < mip.Depth(); sliceIndex++ ) {
-					const DirectX::Image*	sourceImage = image.GetImage( mipIndex, 0U, sliceIndex );
-					ImageFile&				targetImage = *mip[sliceIndex];
-					targetImage.m_fileFormat = FILE_FORMAT::DDS;
-					Copy( *sourceImage, targetImage );
-				}
-			}
-		} else {
-			// Copy raw data without any processing
-			class	getMipSize_t : public ImagesMatrix::GetRawBufferSizeFunctor {
-			public:
-				const DirectX::ScratchImage&	m_image;
-				getMipSize_t( const DirectX::ScratchImage& _image ) : m_image( _image ) {}
-				const U8*	operator()( U32 _arraySliceIndex, U32 _mipLevelIndex, U32& _rowPitch, U32& _slicePitch ) const override {
-					const DirectX::Image* mipImage = m_image.GetImage( _mipLevelIndex, 0U, 0U );
-
-					_rowPitch = U32(mipImage->rowPitch);
-					_slicePitch = U32(mipImage->slicePitch);
-
-					return mipImage->pixels;	// DirectXTex stores the pixels into a contiguous buffer so it's okay to only give the first slice's pointer here
-				}
-			} getMipSize( image );
-			_images.AllocateRawBuffers( format, getMipSize );
-		}
-	}
-}
-
-void	ImageFile::DDSSaveFile( const ImagesMatrix& _images, const wchar_t* _fileName, COMPONENT_FORMAT _componentFormat ) {
-
-	// Create and fill the image
-	DirectX::ScratchImage*	DXT = NULL;
-	DDSSave( _images, (void**) &DXT, _componentFormat );
-
-	// Save to disk
-	DWORD	flags = DirectX::DDS_FLAGS_FORCE_RGB | DirectX::DDS_FLAGS_NO_16BPP | DirectX::DDS_FLAGS_EXPAND_LUMINANCE | DirectX::DDS_FLAGS_FORCE_DX10_EXT;
-	HRESULT	hResult = DirectX::SaveToDDSFile( DXT->GetImages(), DXT->GetImageCount(), DXT->GetMetadata(), flags, _fileName );
-	if ( hResult != S_OK ) {
-		throw "An error occurred while saving the DDS file!";
-	}
-
-	// Release the image
-	delete DXT;
-}
-void	ImageFile::DDSSaveMemory( const ImagesMatrix& _images, U64& _fileSize, void*& _fileContent, COMPONENT_FORMAT _componentFormat ) {
-
-	// Create and fill the image
-	DirectX::ScratchImage*	DXT = NULL;
-	DDSSave( _images, (void**) &DXT, _componentFormat );
-
-	// Transfer into a memory blob
-	DirectX::Blob	blob;
-	DWORD			flags = DirectX::DDS_FLAGS_FORCE_RGB | DirectX::DDS_FLAGS_NO_16BPP | DirectX::DDS_FLAGS_EXPAND_LUMINANCE | DirectX::DDS_FLAGS_FORCE_DX10_EXT;
-	HRESULT			hResult = DirectX::SaveToDDSMemory( DXT->GetImages(), DXT->GetImageCount(), DXT->GetMetadata(), flags, blob );
-	if ( hResult != S_OK ) {
-		throw "An error occurred while saving the DDS file into memory!";
-	}
-
-	// Release the image
-	delete DXT;
-
-	// Copy blob content
-	_fileSize = blob.GetBufferSize();
-	 U8*	targetBuffer = new U8[_fileSize];
-	_fileContent = targetBuffer;
-	memcpy_s( targetBuffer, _fileSize, blob.GetBufferPointer(), blob.GetBufferSize() );
-}
-
-void	ImageFile::DDSSave( const ImagesMatrix& _images, void** _blindPointerImage, COMPONENT_FORMAT _componentFormat ) {
-	DirectX::ScratchImage*&	image = *reinterpret_cast<DirectX::ScratchImage**>( _blindPointerImage );
-
-	DXGI_FORMAT	DXFormat = PixelFormat2DXGIFormat( _images.GetFormat(), _componentFormat );
-	if ( DXFormat == DXGI_FORMAT_UNKNOWN )
-		throw "Unsupported image format! Cannot find appropriate target DXGI format to support source image format...";
-
-	// Build DTex scratch image
-	image = new DirectX::ScratchImage();
-
-	U32	arraySize = _images.GetArraySize();
-	if ( arraySize == 0 )
-		throw "Invalid array size!";
-	U32	mipLevelsCount = _images[0].GetMipLevelsCount();
-	if ( mipLevelsCount == 0 )
-		throw "Invalid mip levels count!";
-
-	U32	W = _images[0][0].Width();
-	U32	H = _images[0][0].Height();
-	U32	D = _images[0][0].Depth();
-	if ( W == 0 || H == 0 || D == 0 )
-		throw "Invalid dimensions!";
-
-	switch ( _images.GetType() ) {
-		case ImagesMatrix::TYPE::GENERIC:
-		case ImagesMatrix::TYPE::TEXTURE2D:
-		case ImagesMatrix::TYPE::TEXTURECUBE: {
-			// Assume 2D texture
-			if ( D != 1 )
-				throw "Invalid depth! Must be 1 for a 2D texture";
-
-			HRESULT	hr = S_FALSE;
-			if ( _images.GetType() == ImagesMatrix::TYPE::TEXTURECUBE ) {
-				if ( W != H )
-					throw "Cube texture width and height mismatch!";
-				if ( (arraySize % 6) != 0 )
-					throw "Array size is not an integer multiple of 6!";
-
-				hr = image->InitializeCube( DXFormat, W, H, arraySize / 6, mipLevelsCount );
-			} else {
-				hr = image->Initialize2D( DXFormat, W, H, arraySize, mipLevelsCount );
-			}
-			if ( hr != S_OK )
-				throw "Failed to initialize 2D texture!";
-
-// Why can't we just do it ourselves???
-// 			if ( _images.GetType() == ImagesMatrix::TYPE::TEXTURECUBE ) {
-// 				image->GetMetadata().miscFlags |= DirectX::TEX_MISC_TEXTURECUBE;
-// 			}
-
-			// Copy to scratch image
-			if ( (U32(_images.GetFormat()) & U32(PIXEL_FORMAT::RAW_BUFFER)) == 0 ) {
-				for ( U32 arrayIndex=0; arrayIndex < arraySize; arrayIndex++ ) {
-					const ImagesMatrix::Mips&	sourceMips = _images[arrayIndex];
-					for ( U32 mipLevelIndex=0; mipLevelIndex < mipLevelsCount; mipLevelIndex++ ) {
-						const ImagesMatrix::Mips::Mip&	sourceMip = sourceMips[mipLevelIndex];
-						const ImageFile*				sourceImage = sourceMip[0];
-						if ( sourceImage == NULL )
-							throw "Invalid source image! The images matrix is not initialized!";
-
-						const DirectX::Image*	targetImage = image->GetImage( mipLevelIndex, arrayIndex, 0 );
-						Copy( *sourceImage, *targetImage );
-					}
-				}
-			} else {
-				for ( U32 arrayIndex=0; arrayIndex < arraySize; arrayIndex++ ) {
-					const ImagesMatrix::Mips&	sourceMips = _images[arrayIndex];
-					for ( U32 mipLevelIndex=0; mipLevelIndex < mipLevelsCount; mipLevelIndex++ ) {
-						const ImagesMatrix::Mips::Mip&	sourceMip = sourceMips[mipLevelIndex];
-						U32								sourceSlicePitch = sourceMip.SlicePitch();
-						const U8*						sourceRawBuffer = sourceMip.GetRawBuffer();
-						const DirectX::Image*			targetImage = image->GetImage( mipLevelIndex, arrayIndex, 0 );
-						memcpy_s( targetImage->pixels, targetImage->slicePitch, sourceRawBuffer, sourceSlicePitch );
-					}
-				}
-			}
-			break;
-		}
-
-		case ImagesMatrix::TYPE::TEXTURE3D: {
-			// Assume 3D texture
-			if ( arraySize != 1 )
-				throw "Invalid array size! Must be 1 for a 3D texture!";	// At least for the moment, DirectX doesn't support arrays of 3D textures (but we do! :D)
-
-			HRESULT	hr = image->Initialize3D( DXFormat, W, H, D, mipLevelsCount );
-			if ( hr != S_OK )
-				throw "Failed to initialize 3D texture!";
-
-			// Copy to scratch image
-			if ( (U32(_images.GetFormat()) & U32(PIXEL_FORMAT::RAW_BUFFER)) == 0 ) {
-				for ( U32 mipLevelIndex=0; mipLevelIndex < mipLevelsCount; mipLevelIndex++ ) {
-					for ( U32 sliceIndex=0; sliceIndex < D; sliceIndex++ ) {
-						const ImageFile*	sourceImage = _images[0][mipLevelIndex][sliceIndex];
-						if ( sourceImage == NULL )
-							throw "Invalid source image! The images matrix is not initialized!";
-						const DirectX::Image*	targetImage = image->GetImage( mipLevelIndex, 0, sliceIndex );
-						Copy( *sourceImage, *targetImage );
-					}
-				}
-			} else {
-				const ImagesMatrix::Mips&	sourceMips = _images[0];
-				for ( U32 mipLevelIndex=0; mipLevelIndex < mipLevelsCount; mipLevelIndex++ ) {
-					const ImagesMatrix::Mips::Mip&	sourceMip = sourceMips[mipLevelIndex];
-					U32								sourceSlicePitch = sourceMip.SlicePitch();
-					const U8*						sourceRawBuffer = sourceMip.GetRawBuffer();
-
-					for ( U32 sliceIndex=0; sliceIndex < sourceMip.Depth(); sliceIndex++ ) {
-						const DirectX::Image*	targetImage = image->GetImage( mipLevelIndex, 0, sliceIndex );
-						memcpy_s( targetImage->pixels, targetImage->slicePitch, sourceRawBuffer + sliceIndex * sourceSlicePitch, sourceMip.SlicePitch() );
-					}
-				}
-			}
-			break;
-		}
-	}
 }
 
 #pragma endregion

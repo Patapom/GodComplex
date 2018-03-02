@@ -462,6 +462,11 @@ namespace ImageUtility {
 		// Tone maps a HDR image into a LDR RGBA8 format
 		void				ToneMapFrom( ImageFile^ _source, ToneMapper^ _toneMapper );
 
+		// Makes the image signed/unsigned
+		// WARNING: Works only for integer formats: throws if called on floating-point formats!
+		void				MakeSigned()	{ m_nativeObject->MakeSigned(); }
+		void				MakeUnSigned()	{ m_nativeObject->MakeUnSigned(); }
+
 		// Generic color getter/setter
 		void				ReadScanline( UInt32 _Y, cli::array< float4 >^ _color ) { ReadScanline( _Y, _color, 0 ); }
 		void				ReadScanline( UInt32 _Y, cli::array< float4 >^ _color, UInt32 _startX );
@@ -545,13 +550,5 @@ namespace ImageUtility {
 		// Helpers to perform bilinear interpolation on a fixed size array
 		static void			BilerpClamp( cli::array<float4,2>^ _pixels, float _x, float _y, SharpMath::float4% _color );
 		static void			BilerpWrap( cli::array<float4,2>^ _pixels, float _x, float _y, SharpMath::float4% _color );
-
-	public:
-		//////////////////////////////////////////////////////////////////////////
-		// DDS-related methods
-		static ImagesMatrix^	DDSLoadFile( System::IO::FileInfo^ _fileName );
-		static ImagesMatrix^	DDSLoadMemory( NativeByteArray^ _imageContent );
-		static void				DDSSaveFile( ImagesMatrix^ _images, System::IO::FileInfo^ _fileName, COMPONENT_FORMAT _componentFormat );
-		static NativeByteArray^	DDSSaveMemory( ImagesMatrix^ _images, COMPONENT_FORMAT _componentFormat );
 	};
 }

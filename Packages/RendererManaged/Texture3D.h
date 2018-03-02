@@ -14,7 +14,7 @@ namespace Renderer {
 	ref class View3D;
 
 	// Wraps a 3D texture
-	[System::Diagnostics::DebuggerDisplayAttribute( "{Width,d}x{Height,d}x{Depth,d}x{MipLevelsCount,d} {Tag}" )]
+	[System::Diagnostics::DebuggerDisplayAttribute( "{Width,d}x{Height,d}x{Depth,d}x{MipLevelsCount,d} {m_pixelFormat} {m_componentFormat} {Tag}" )]
 	public ref class Texture3D {
 	public:
 

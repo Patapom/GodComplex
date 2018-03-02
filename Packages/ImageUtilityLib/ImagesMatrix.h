@@ -15,6 +15,13 @@ namespace ImageUtilityLib {
 	//
 	class	ImagesMatrix {
 	public:
+		// Image type used for mips generation
+		enum IMAGE_TYPE {
+			LINEAR,		// Default
+			sRGB,		// sRGB-packed colors
+			NORMAL_MAP,	// 0.5-offseted vectors
+		};
+
 		// The Mips class contains a collection of "Mip" elements, as many mips as necessary to represent a texture
 		//
 		class	Mips {
@@ -60,6 +67,12 @@ namespace ImageUtilityLib {
 				void			AllocateRawBuffer( U32 _rowPitch, U32 _slicePitch, const U8* _sourceBuffer=NULL );
 				void			ReleasePointers();	// Release image and raw buffer pointers
 				void			ClearPointers();	// Clears pointers but don't release
+
+				void			MakeSigned();
+				void			MakeUnSigned();
+
+				// Build the mips from mip 0
+				void			BuildMip3D( const Mip& _sourceMip, IMAGE_TYPE _imageType );
 			};
 
 		private:
@@ -82,6 +95,14 @@ namespace ImageUtilityLib {
 			void			AllocateImageFiles( PIXEL_FORMAT _format, const ColorProfile& _colorProfile );
 			void			ReleasePointers();	// Release image and raw buffer pointers
 			void			ClearPointers();	// Clears pointers but don't release
+
+			void			MakeSigned();
+			void			MakeUnSigned();
+
+			// Build the mips from mip 0
+			void			BuildMips2D( IMAGE_TYPE _imageType );
+			void			BuildMips3D( IMAGE_TYPE _imageType );
+			static void		BuildMip2D( const ImageFile& _sourceMip, ImageFile& _targetMip, IMAGE_TYPE _imageType );
 		};
 
 		// The type of texture the matrix is a container for
@@ -145,6 +166,18 @@ namespace ImageUtilityLib {
 		// Converts from a source matrix into a target matrix
 		void			ConvertFrom( const ImagesMatrix& _source, PIXEL_FORMAT _targetFormat, const ColorProfile& _colorProfile );
 
+		// Makes the images signed/unsigned
+		// WARNING: Works only for integer formats: throws if called on floating-point formats!
+		void			MakeSigned();
+		void			MakeUnSigned();
+
+		//////////////////////////////////////////////////////////////////////////
+		// DDS Loading / Saving / Compression
+		void			DDSLoadFile( const wchar_t* _fileName, COMPONENT_FORMAT& _componentFormat );
+		void			DDSLoadMemory( U64 _fileSize, void* _fileContent, COMPONENT_FORMAT& _componentFormat );
+		void			DDSSaveFile( const wchar_t* _fileName, COMPONENT_FORMAT _componentFormat=COMPONENT_FORMAT::AUTO ) const;
+		void			DDSSaveMemory( U64& _fileSize, void*& _fileContent, COMPONENT_FORMAT _componentFormat=COMPONENT_FORMAT::AUTO ) const;	// NOTE: The caller MUST delete[] the returned buffer!
+
 		// DDS-Compression
 		enum class COMPRESSION_TYPE {
 			BC4,
@@ -156,10 +189,19 @@ namespace ImageUtilityLib {
 
 		static DXGI_FORMAT	CompressionType2DXGIFormat( COMPRESSION_TYPE _compressionType, COMPONENT_FORMAT _componentFormat );
 
+		//////////////////////////////////////////////////////////////////////////
+		// Mips Building methods
+		void			BuildMips( IMAGE_TYPE _imageType );
+
 		// Computes the next mip size
 		static void		NextMipSize( U32& _size );
 		static void		NextMipSize( U32& _width, U32& _height );
 		static void		NextMipSize( U32& _width, U32& _height, U32& _depth );
 		static U32		ComputeMipsCount( U32 _size );
+
+	private:
+
+		void			DDSLoad( const void* _blindPointerImage, const void* _blindPointerMetaData, COMPONENT_FORMAT& _componentFormat );
+		void			DDSSave( void** _blindPointerImage, COMPONENT_FORMAT _componentFormat ) const;
 	};
 }

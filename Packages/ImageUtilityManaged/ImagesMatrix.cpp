@@ -7,62 +7,39 @@
 namespace ImageUtility {
 
 	//////////////////////////////////////////////////////////////////////////
-	// Mips Class
-// 	void	ImagesMatrix::Mips::BuildMips( ImageUtility::ImageFile^ _mip0 ) {
-// 		m_images[0] = _mip0;
-// 		if ( m_images->Length == 1 )
-// 			return;	// Nothing to build...
-// 
-// 		UInt32					mipLevelsCount = m_images->Length;
-// 		UInt32					W = _mip0->Width;
-// 		UInt32					H = _mip0->Height;
-// 		ImageFile::PIXEL_FORMAT	format = _mip0->PixelFormat;
-// 		ImageFile^				currentMip = _mip0;
-// 		ColorProfile^			profile = _mip0->ColorProfile;
-// 
-// 		UInt32	W2 = (W+1) & ~1U;	// Ensure an even number of pixels
-// 		array< float4 >^	scanline0 = gcnew array<float4>( W2 );
-// 		array< float4 >^	scanline1 = gcnew array<float4>( W2 );
-// 		array< float4 >^	scanlineMip = gcnew array<float4>( W2 );
-// 		float4	V00, V01, V10, V11, V;
-// 
-// 		for ( UInt32 mipLevelIndex=1; mipLevelIndex < mipLevelsCount; mipLevelIndex++ ) {
-// 			UInt32	prevW = W;
-// 			UInt32	prevH = H;
-// 			NextMipSize( W, H );
-// 
-// 			ImageFile^	prevMip = currentMip;
-// 			currentMip = gcnew ImageFile( W, H, format, profile );
-// 
-// 			for ( UInt32 Y=0; Y < H; Y++ ) {
-// 				prevMip->ReadScanline( 2*Y+0, scanline0 );
-// 				prevMip->ReadScanline( MIN( prevH-1, 2*Y+1 ), scanline1 );	// Duplicate end scanline if odd height
-// 				if ( prevW & 1 ) {
-// 					// Duplicate end pixels if odd width
-// 					scanline0[prevW] = scanline0[prevW-1];
-// 					scanline1[prevW] = scanline1[prevW-1];
-// 				}
-// 
-// 				UInt32	prevX = 0;
-// 				for ( UInt32 X=0; X < W; X++ ) {
-// 					// Read 4 pixel values in linear space
-// 					profile->GammaRGB2LinearRGB( scanline0[prevX], V00 );
-// 					profile->GammaRGB2LinearRGB( scanline1[prevX], V10 );
-// 					prevX++;
-// 					profile->GammaRGB2LinearRGB( scanline0[prevX], V01 );
-// 					profile->GammaRGB2LinearRGB( scanline1[prevX], V11 );
-// 
-// 					// Average and convert back to gamma space
-// 					V = 0.25f * (V00 + V01 + V10 + V11);
-// 					profile->LinearRGB2GammaRGB( scanlineMip[X], V );
-// 				}
-// 
-// 				currentMip->WriteScanline( Y, scanlineMip );
-// 			}
-// 		}
-// 
-// 		delete scanlineMip;
-// 		delete scanline1;
-// 		delete scanline0;
-// 	}
+	// DDS-related methods
+	//
+	COMPONENT_FORMAT	ImagesMatrix::DDSLoadFile( System::IO::FileInfo^ _fileName ) {
+		if ( !_fileName->Exists )
+			throw gcnew System::IO::FileNotFoundException( "File not found!", _fileName->FullName );
+
+		pin_ptr< const wchar_t >	nativeFileName = PtrToStringChars( _fileName->FullName );
+
+		ImageUtilityLib::COMPONENT_FORMAT	loadedFormat;
+		m_nativeObject->DDSLoadFile( nativeFileName, loadedFormat );
+
+		return (ImageUtility::COMPONENT_FORMAT) loadedFormat;
+	}
+	COMPONENT_FORMAT	ImagesMatrix::DDSLoadMemory( NativeByteArray^ _imageContent ) {
+		ImageUtilityLib::COMPONENT_FORMAT	loadedFormat;
+		m_nativeObject->DDSLoadMemory( _imageContent->Length, _imageContent->AsBytePointer.ToPointer(), loadedFormat );
+
+		return (ImageUtility::COMPONENT_FORMAT) loadedFormat;
+	}
+	void	ImagesMatrix::DDSSaveFile( System::IO::FileInfo^ _fileName, COMPONENT_FORMAT _componentFormat ) {
+		pin_ptr< const wchar_t >	nativeFileName = PtrToStringChars( _fileName->FullName );
+
+		m_nativeObject->DDSSaveFile( nativeFileName, BaseLib::COMPONENT_FORMAT( _componentFormat ) );
+	}
+	NativeByteArray^	ImagesMatrix::DDSSaveMemory( COMPONENT_FORMAT _componentFormat ) {
+		// Generate native byte array
+		U64		fileSize = 0;
+		void*	fileContent = NULL;
+		m_nativeObject->DDSSaveMemory( fileSize, fileContent, BaseLib::COMPONENT_FORMAT( _componentFormat ) );
+
+		NativeByteArray^	result = gcnew NativeByteArray( int(fileSize), fileContent );
+		return result;
+	}
+
 }
+

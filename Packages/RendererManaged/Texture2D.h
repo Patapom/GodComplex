@@ -14,7 +14,7 @@ namespace Renderer {
 	ref class View2D;
 
 	// Wraps a 2D texture (2D, 2DArray, CubeMap, CubeMapArray, RenderTarget, DepthStencilBuffer)
-	[System::Diagnostics::DebuggerDisplayAttribute( "{Width,d}x{Height,d}x{ArraySize,d}x{MipLevelsCount,d} {Tag}" )]
+	[System::Diagnostics::DebuggerDisplayAttribute( "{Width,d}x{Height,d}x{ArraySize,d}x{MipLevelsCount,d} {m_pixelFormat} {m_componentFormat} {Tag}" )]
 	public ref class Texture2D {
 	internal:
 

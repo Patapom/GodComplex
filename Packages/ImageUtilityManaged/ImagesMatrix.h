@@ -24,6 +24,13 @@ namespace ImageUtility {
 // 		}
 
 	public:
+		// Image type used for mips generation
+		enum class IMAGE_TYPE {
+			LINEAR,		// Default
+			sRGB,		// sRGB-packed colors
+			NORMAL_MAP,	// 0.5-offseted vectors
+		};
+
 		ref class	Mips {
 		internal:
 			ImageUtilityLib::ImagesMatrix::Mips*	m_nativeObject;
@@ -112,6 +119,17 @@ namespace ImageUtility {
 			AllocateImageFiles( referenceImage.PixelFormat, referenceImage.ColorProfile );
 		}
 
+		// Builds a full mip-chain from a single image
+		ImagesMatrix( ImageFile^ _image, IMAGE_TYPE _imageType ) {
+			m_ownedObject = true;
+			m_nativeObject = new ImageUtilityLib::ImagesMatrix();
+
+			InitTexture2DArray( _image->Width, _image->Height, 1, 0 );
+			this[0][0][0] = _image;
+			AllocateImageFiles( _image->PixelFormat, _image->ColorProfile );
+			BuildMips( _imageType );
+		}
+
 		// Allocates a texture array
 		void			InitTexture2DArray( U32 _width, U32 _height, U32 _arraySize, U32 _mipLevelsCount ) {
 			m_nativeObject->InitTexture2DArray( _width, _height, _arraySize, _mipLevelsCount );
@@ -151,6 +169,19 @@ namespace ImageUtility {
 			m_nativeObject->ConvertFrom( *_source->m_nativeObject, BaseLib::PIXEL_FORMAT( _targetFormat ), *_colorProfile->m_nativeObject );
 		}
 
+		// Makes the images signed/unsigned
+		// WARNING: Works only for integer formats: throws if called on floating-point formats!
+		void			MakeSigned()	{ m_nativeObject->MakeSigned(); }
+		void			MakeUnSigned()	{ m_nativeObject->MakeUnSigned(); }
+
+	public:
+		//////////////////////////////////////////////////////////////////////////
+		// DDS-related methods
+		COMPONENT_FORMAT	DDSLoadFile( System::IO::FileInfo^ _fileName );
+		COMPONENT_FORMAT	DDSLoadMemory( NativeByteArray^ _imageContent );
+		void				DDSSaveFile( System::IO::FileInfo^ _fileName, COMPONENT_FORMAT _componentFormat );
+		NativeByteArray^	DDSSaveMemory( COMPONENT_FORMAT _componentFormat );
+
 		// DDS-Compression
  		// NOTE: Use the RendererLib::Device version to compress using the GPU
 		enum class COMPRESSION_TYPE {
@@ -164,6 +195,11 @@ namespace ImageUtility {
 			m_nativeObject->DDSCompress( *reinterpret_cast< ImageUtilityLib::ImagesMatrix* >( _sourceImage->NativeObject.ToPointer() ), ImageUtilityLib::ImagesMatrix::COMPRESSION_TYPE( _compressionType ), BaseLib::COMPONENT_FORMAT( _componentFormat ) );
 			return result;
 		}
+
+	public:
+		//////////////////////////////////////////////////////////////////////////
+		// Mips generation methods
+		void			BuildMips( IMAGE_TYPE _imageType )	{ m_nativeObject->BuildMips( (ImageUtilityLib::ImagesMatrix::IMAGE_TYPE) _imageType ); }
 
 		// Computes the next mip size
 		static void		NextMipSize( UInt32% _size ) { U32 size; ImageUtilityLib::ImagesMatrix::NextMipSize( size ); _size = size; }

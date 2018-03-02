@@ -210,7 +210,8 @@ namespace AreaLightTest {
 		public Texture2D	Image2Texture( System.IO.FileInfo _fileName, ImageUtility.COMPONENT_FORMAT _componentFormat ) {
 			ImageUtility.ImagesMatrix	images = null;
 			if ( _fileName.Extension.ToLower() == ".dds" ) {
-				images = ImageUtility.ImageFile.DDSLoadFile( _fileName );
+				images = new ImageUtility.ImagesMatrix();
+				images.DDSLoadFile( _fileName );
 			} else {
 				ImageUtility.ImageFile	image = new ImageUtility.ImageFile( _fileName );
 				if ( image.PixelFormat != ImageUtility.PIXEL_FORMAT.BGRA8 ) {
@@ -224,9 +225,9 @@ namespace AreaLightTest {
 			return new Texture2D( m_Device, images, _componentFormat );
 		}
 
-		public void	ComputeSAT( System.IO.FileInfo _FileName, System.IO.FileInfo _TargetFileName ) {
+		public void	ComputeSAT( System.IO.FileInfo _fileName, System.IO.FileInfo _targetFileName ) {
 
-			ImageUtility.ImageFile	mip0_unknownFormat = new ImageUtility.ImageFile( _FileName );
+			ImageUtility.ImageFile	mip0_unknownFormat = new ImageUtility.ImageFile( _fileName );
 			uint		W = mip0_unknownFormat.Width;
 			uint		H = mip0_unknownFormat.Height;
 
@@ -304,7 +305,7 @@ namespace AreaLightTest {
 
 			//////////////////////////////////////////////////////////////////////////
 			// Write as DDS
-			ImageUtility.ImageFile.DDSSaveFile( matrix, _TargetFileName, ImageUtility.COMPONENT_FORMAT.UNORM_sRGB );
+			matrix.DDSSaveFile( _targetFileName, ImageUtility.COMPONENT_FORMAT.UNORM_sRGB );
 		}
 
 		float4	BilinearSample( float4[,] _Source, float _X, float _Y ) {
@@ -332,8 +333,8 @@ namespace AreaLightTest {
 
 		#region Image Helpers (OLD)
 /*
-// 		public Texture2D	Image2Texture( System.IO.FileInfo _FileName ) {
-// 			using ( System.IO.FileStream S = _FileName.OpenRead() )
+// 		public Texture2D	Image2Texture( System.IO.FileInfo _fileName ) {
+// 			using ( System.IO.FileStream S = _fileName.OpenRead() )
 // 				return Image2Texture( S );
 // 		}
 // 		public unsafe Texture2D	Image2Texture( System.IO.Stream _Stream ) {
@@ -368,8 +369,8 @@ namespace AreaLightTest {
 // 			}
 // 		}
 
-// 		public Texture2D	Pipi2Texture( System.IO.FileInfo _FileName ) {
-// 			using ( System.IO.FileStream S = _FileName.OpenRead() )
+// 		public Texture2D	Pipi2Texture( System.IO.FileInfo _fileName ) {
+// 			using ( System.IO.FileStream S = _fileName.OpenRead() )
 // 				using ( System.IO.BinaryReader R = new System.IO.BinaryReader( S ) ) {
 // 
 // 					int				MipLevels = R.ReadInt32();
@@ -409,8 +410,8 @@ namespace AreaLightTest {
 // 				}
 // 		}
 // 
-// 		public Texture3D	Pipu2Texture( System.IO.FileInfo _FileName ) {
-// 			using ( System.IO.FileStream S = _FileName.OpenRead() )
+// 		public Texture3D	Pipu2Texture( System.IO.FileInfo _fileName ) {
+// 			using ( System.IO.FileStream S = _fileName.OpenRead() )
 // 				using ( System.IO.BinaryReader R = new System.IO.BinaryReader( S ) ) {
 // 
 // 					int		SlicesCount = R.ReadInt32();
@@ -441,8 +442,8 @@ namespace AreaLightTest {
 // 				}
 // 		}
 // 
-// 		public Texture2D	PipoImage2Texture( System.IO.FileInfo _FileName ) {
-// 			using ( System.IO.FileStream S = _FileName.OpenRead() )
+// 		public Texture2D	PipoImage2Texture( System.IO.FileInfo _fileName ) {
+// 			using ( System.IO.FileStream S = _fileName.OpenRead() )
 // 				using ( System.IO.BinaryReader R = new System.IO.BinaryReader( S ) ) {
 // 
 // 					int	W, H;
@@ -484,11 +485,11 @@ namespace AreaLightTest {
 		/// <summary>
 		/// Builds the SAT
 		/// </summary>
-		/// <param name="_FileName"></param>
-		public unsafe void	ComputeSAT( System.IO.FileInfo _FileName, System.IO.FileInfo _TargetFileName ) {
+		/// <param name="_fileName"></param>
+		public unsafe void	ComputeSAT( System.IO.FileInfo _fileName, System.IO.FileInfo _TargetFileName ) {
 			int		W, H;
 			byte[]	Content = null;
-			using ( System.IO.FileStream S = _FileName.OpenRead() )
+			using ( System.IO.FileStream S = _fileName.OpenRead() )
 				using ( Bitmap B = Bitmap.FromStream( S ) as Bitmap )
 				{
 					W = B.Width;
@@ -849,14 +850,14 @@ throw new Exception( "Deprecated!" );
 			CS.Dispose();
 
  
-			Texture2D		TexTableStaging = new Texture2D( m_Device, _TableSize, _TableSize, 1, 1, ImageUtility.PIXEL_FORMAT.RG32F, ImageUtility.COMPONENT_FORMAT.AUTO, true, false, null );
-			TexTableStaging.CopyFrom( TexTable );
+			Texture2D		texTableStaging = new Texture2D( m_Device, _TableSize, _TableSize, 1, 1, ImageUtility.PIXEL_FORMAT.RG32F, ImageUtility.COMPONENT_FORMAT.AUTO, true, false, null );
+			texTableStaging.CopyFrom( TexTable );
 			TexTable.Dispose();
 
 			// Save it to disk as a DDS file
 			string	DDSFileName = System.IO.Path.GetFileNameWithoutExtension( _TableFileName.FullName ) + ".dds";
-			using ( ImageUtility.ImagesMatrix M = TexTableStaging.AsImagesMatrix )
-				ImageUtility.ImageFile.DDSSaveFile( M, new System.IO.FileInfo( DDSFileName ), ImageUtility.COMPONENT_FORMAT.AUTO );
+			using ( ImageUtility.ImagesMatrix M = texTableStaging.AsImagesMatrix )
+				M.DDSSaveFile( new System.IO.FileInfo( DDSFileName ), texTableStaging.ComponentFormat );
 
 			// Write tables
 			float2	Temp = new float2();
@@ -873,7 +874,7 @@ throw new Exception( "Deprecated!" );
 
 			float2[]	Integral_SpecularReflectance = new float2[_TableSize];
 
-			PixelsBuffer Buff = TexTableStaging.MapRead( 0, 0 );
+			PixelsBuffer Buff = texTableStaging.MapRead( 0, 0 );
 			using ( System.IO.BinaryReader R = Buff.OpenStreamRead() )
 				using ( System.IO.FileStream S = _TableFileName.Create() )
 					using ( System.IO.BinaryWriter W = new System.IO.BinaryWriter( S ) )
@@ -917,7 +918,7 @@ throw new Exception( "Deprecated!" );
 
 							Integral_SpecularReflectance[Y] = SumSpecularlyReflected;
 						}
-			TexTableStaging.UnMap( Buff );
+			texTableStaging.UnMap( Buff );
 
 			avgAbsoluteError_F0 /= _TableSize*_TableSize;
 			avgRelativeError_F0 /= _TableSize*_TableSize;

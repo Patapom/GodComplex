@@ -59,6 +59,7 @@ namespace ImageUtilityLib {
 	class	ImageFile {
 		friend class Bitmap;
 		friend class MetaData;
+		friend class ImagesMatrix;
 	public:
 		#pragma region NESTED TYPES
 
@@ -304,6 +305,11 @@ namespace ImageUtilityLib {
 		// Tone maps a HDR image into a LDR RGBA8 format
 		void				ToneMapFrom( const ImageFile& _source, toneMapper_t _toneMapper );
 
+		// Makes the image signed/unsigned
+		// WARNING: Works only for integer formats: throws if called on floating-point formats!
+		void				MakeSigned();
+		void				MakeUnSigned();
+
 		// Generic color getter/setter
 		void				ReadScanline( U32 _Y, bfloat4* _color, U32 _startX=0, U32 _count=~0U ) const;
 		void				WriteScanline( U32 _Y, const bfloat4* _color, U32 _startX=0, U32 _count=~0U );
@@ -359,20 +365,6 @@ namespace ImageUtilityLib {
 		// Converts (X,Y) pixel coordinates into "ranged coordinates"
 		void				ImageCoordinates2RangedCoordinates( const bfloat2& _rangeX, const bfloat2& _rangeY, const bfloat2& _imageCoordinates, bfloat2& _rangedCoordinates );
 
-
-	public:
-		//////////////////////////////////////////////////////////////////////////
-		// DDS-related methods
-		static void			DDSLoadFile( const wchar_t* _fileName, ImagesMatrix& _images );
-		static void			DDSLoadMemory( U64 _fileSize, void* _fileContent, ImagesMatrix& _images );
-		static void			DDSSaveFile( const ImagesMatrix& _images, const wchar_t* _fileName, COMPONENT_FORMAT _componentFormat=COMPONENT_FORMAT::AUTO );
-		static void			DDSSaveMemory( const ImagesMatrix& _images, U64& _fileSize, void*& _fileContent, COMPONENT_FORMAT _componentFormat=COMPONENT_FORMAT::AUTO );	// NOTE: The caller MUST delete[] the returned buffer!
-
-	private:
-
-		static void			DDSLoad( const void* _blindPointerImage, const void* _blindPointerMetaData, ImagesMatrix& _images );
-		static void			DDSSave( const ImagesMatrix& _images, void** _blindPointerImage, COMPONENT_FORMAT _componentFormat );
-
 	private:
 		static U32						PixelFormat2BPP( PIXEL_FORMAT _pixelFormat );
 
@@ -381,6 +373,8 @@ namespace ImageUtilityLib {
 
 		static FILE_FORMAT				FIF2FileFormat( FREE_IMAGE_FORMAT _format )	{ return FILE_FORMAT( _format ); }
 		static FREE_IMAGE_FORMAT		FileFormat2FIF( FILE_FORMAT _format )		{ return FREE_IMAGE_FORMAT( _format ); }
+
+		void				ConvertFrom_NoSupport( const ImageFile& _source, PIXEL_FORMAT _targetFormat );
 
 	private:	// Ref-counting for free image lib init/release
 		static U32		ms_freeImageUsageRefCount;

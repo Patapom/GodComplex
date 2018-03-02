@@ -648,7 +648,10 @@ m_Tex_TallHistogram.RemoveFromLastAssignedSlots();
 			string	Ext = _fileName.Extension.ToLower();
 			switch ( Ext ) {
 				case ".dds":
-					return new Texture2D( m_Device, ImageUtility.ImageFile.DDSLoadFile( _fileName ), ImageUtility.COMPONENT_FORMAT.AUTO );
+					using ( ImageUtility.ImagesMatrix I = new ImageUtility.ImagesMatrix() ) {
+						I.DDSLoadFile( _fileName );
+						return new Texture2D( m_Device, I, ImageUtility.COMPONENT_FORMAT.AUTO );
+					}
 
 				case ".bimage": {
 					BImage I = new BImage( _fileName );
