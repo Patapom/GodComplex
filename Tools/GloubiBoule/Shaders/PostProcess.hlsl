@@ -1,6 +1,7 @@
 #include "Includes/global.hlsl"
 
-#define TEST_MSBRDF	1
+//#define TEST_MSBRDF	1	// My overcomplicated diffuse lobe fitting
+#define TEST_MSBRDF	2		// The elegant energy compensation term
 
 cbuffer CB_PostProcess : register(b2) {
 };
@@ -30,7 +31,7 @@ float3	Extinction = _TexScattering.Sample( LinearWrap, float3( UV, 1.0 ) ).xyz;
 	return BackgroundColor * Extinction + Scattering;
 }
 
-#else
+#elif TEST_MSBRDF == 1
 
 // 2018-03-21 Rescucitating dead code!!
 
@@ -264,6 +265,199 @@ float3	PS( VS_IN _In ) : SV_TARGET0 {
 	}
 
 	return AMBIENT + diffuseTerm;
+}
+
+#elif TEST_MSBRDF == 2
+
+
+cbuffer CB_RayMarch : register(b3) {
+	float	_Sigma_t;
+	float	_Sigma_s;
+	float	_Phase_g;
+};
+
+float	RayTraceSphere( float3 _wsPos, float3 _wsDir, float3 _wsCenter, float _radius, out float3 _wsClosestPosition ) {
+	float3	D = _wsPos - _wsCenter;
+	_wsClosestPosition = _wsPos - dot( D, _wsDir ) * _wsDir;
+
+	float	b = dot( D, _wsDir );
+	float	c = dot( D, D ) - _radius*_radius;
+	float	delta = b*b - c;
+	if ( delta < 0.0 )
+		return INFINITY;
+
+	return -b - sqrt( delta );
+}
+
+float	RayTracePlane( float3 _wsPos, float3 _wsDir ) {
+	float	t = -_wsPos.z / _wsDir.z;
+	return t > 0.0 ? t : INFINITY;
+}
+
+static const float3	SPHERE_CENTER = float3( 0, 0, 1 );
+static const float	SPHERE_RADIUS = 1;
+
+float2	RayTraceScene( float3 _wsPos, float3 _wsDir, out float3 _wsNormal, out float3 _wsClosestPosition ) {
+	_wsNormal = float3( 0, 0, 1 );
+
+	float	t = RayTraceSphere( _wsPos, _wsDir, SPHERE_CENTER, SPHERE_RADIUS, _wsClosestPosition );
+	if ( t < 1e4 ) {
+		_wsNormal = normalize( _wsPos + t.x * _wsDir - SPHERE_CENTER );
+		return float2( t, 0 );
+	}
+
+	t = RayTracePlane( _wsPos, _wsDir );
+	if ( t < 1e4 )
+		return float2( t, 1 );
+
+	return float2( INFINITY, -1 );
+}
+
+float	ComputeShadow( float3 _wsPos, float3 _wsLight ) {
+	float3	wsClosestPosition;
+	float	t = RayTraceSphere( _wsPos, _wsLight, SPHERE_CENTER, SPHERE_RADIUS, wsClosestPosition );
+	if ( t < 1e4 )
+		return 0;
+
+	float	r = length( wsClosestPosition - SPHERE_CENTER ) / SPHERE_RADIUS;
+	return smoothstep( 1.0, 2, r );
+}
+
+
+//////////////////////////////////////////////////////////////////////////////
+// New multiple-scattering term computed from energy compensation
+
+Texture2D< float >	_tex_IrradianceComplement : register( t2 );
+Texture2D< float >	_tex_IrradianceAverage : register( t3 );
+
+float	GGX_NDF( float _HdotN, float _alpha2 ) {
+	float	den = PI * pow2( pow2( _HdotN ) * (_alpha2 - 1) + 1 );
+	return _alpha2 * rcp( den );
+}
+
+float	GGX_Smith( float _NdotL, float _NdotV, float _alpha2 ) {
+	float	denL = _NdotL + sqrt( pow2( _NdotL ) * (1-_alpha2) + _alpha2 );
+	float	denV = _NdotV + sqrt( pow2( _NdotV ) * (1-_alpha2) + _alpha2 );
+	return rcp( denL * denV );
+}
+
+float3	BRDF_GGX( float3 _wsNormal, float3 _wsView, float3 _wsLight, float _alpha, float3 _F0 ) {
+	float	a2 = _alpha * _alpha;
+	float3	h = normalize( _wsView + _wsLight );
+	float	HdotN = saturate( dot( h, _wsNormal ) );
+
+//_F0 = _alpha;
+
+	float3	IOR = Fresnel_IORFromF0( _F0 );
+
+	float	NDF = GGX_NDF( HdotN, a2 );
+	float	G = GGX_Smith( saturate( dot( _wsView, _wsNormal ) ), saturate( dot( _wsLight, _wsNormal ) ), a2 );
+	float3	F = FresnelAccurate( IOR, HdotN );
+//	float3	F = FresnelSchlick( _F0, HdotN );
+
+//return 0.5*G;
+//return 0.5*NDF;
+	return F * G * NDF;
+}
+
+float3	ComputeLightingSS( float3 _albedo, float _roughness, float3 _F0, float3 _wsNormal, float3 _wsView, float3 _wsLight, float3 _lightColor ) {
+
+	float3	rho = _albedo / PI;
+
+	float3	specular = BRDF_GGX( _wsNormal, _wsView, _wsLight, _roughness, _F0 );
+//return specular;
+return _lightColor * specular;
+
+	float	LdotN = saturate( dot( _wsLight, _wsNormal ) );
+	return (_albedo / PI) * saturate( LdotN ) * _lightColor;
+}
+
+float3	ComputeLightingMS( float3 _albedo, float _roughness, float3 _F0, float3 _wsNormal, float3 _wsView, float3 _wsLight, float3 _lightColor ) {
+
+	float3	rho = _albedo / PI;
+
+	float	a = _roughness;
+
+	float	mu_o = saturate( dot( _wsView, _wsNormal ) );
+	float	mu_i = saturate( dot( _wsLight, _wsNormal ) );
+
+	float	E_o = _tex_IrradianceComplement.SampleLevel( LinearClamp, float2( mu_o, a ), 0.0 );	// 1 - E_o
+	float	E_i = _tex_IrradianceComplement.SampleLevel( LinearClamp, float2( mu_i, a ), 0.0 );	// 1 - E_i
+	float	E_avg = _tex_IrradianceAverage.SampleLevel( LinearClamp, float2( a, 0.5 ), 0.0 );	// E_avg
+
+	float3	BRDF_GGX_ms = E_o * E_i / (PI - E_avg);
+
+//return 0.5 * E_i;
+//return 0.5 * (PI - E_avg) / PI;
+return BRDF_GGX_ms;
+
+	float3	specular = BRDF_GGX_ms;
+return 0*_lightColor * specular;
+
+//	float	LdotN = saturate( dot( _wsLight, _wsNormal ) );
+//	return (_albedo / PI) * saturate( LdotN ) * _lightColor;
+	return 0.0;
+}
+
+
+float3	PS( VS_IN _In ) : SV_TARGET0 {
+
+	float2	UV = float2( _ScreenSize.x / _ScreenSize.y * (2.0 * _In.__Position.x / _ScreenSize.x - 1.0), 1.0 - 2.0 * _In.__Position.y / _ScreenSize.y );
+
+//return 1-_tex_IrradianceComplement.SampleLevel( LinearClamp, _In.__Position.xy / _ScreenSize.xy, 0.0 );
+//return _tex_IrradianceAverage.SampleLevel( LinearClamp, _In.__Position.xy / _ScreenSize.xy, 0.0 ) / PI;
+
+	const float3	CAMERA_POS = float3( 0, 1.5, 2 );
+	const float3	CAMERA_TARGET = float3( -0.4, 0, 0.4 );
+	const float3	LIGHT_COLOR = 1.0;
+	const float3	ALBEDO = float3( 0.9, 0.5, 0.1 );	// Nicely saturated yellow
+	const float3	F0 = 1.0;
+	const float3	AMBIENT = 0* 0.02 * float3( 0.5, 0.8, 0.9 );
+
+	const float		theta = _Phase_g * PI / 2;
+	const float3	wsLight = normalize( float3( sin(theta), 0, cos(theta) ) );
+
+	const float3	albedo = _Sigma_s * ALBEDO;
+	const float		roughness = max( 0.01, _Sigma_t );
+
+	float3	csView = normalize( float3( UV, 1 ) );
+	float3	wsAt = normalize( CAMERA_TARGET - CAMERA_POS );
+	float3	wsRight = normalize( cross( wsAt, float3( 0, 0, 1 ) ) );
+	float3	wsUp = cross( wsRight, wsAt );
+	float3	wsView = csView.x * wsRight + csView.y * wsUp + csView.z * wsAt;
+
+	float3	wsClosestPosition;
+	float3	wsNormal;
+	float2	hit = RayTraceScene( CAMERA_POS, wsView, wsNormal, wsClosestPosition );
+
+	if ( hit.x > 1e4 )
+		return 0.0;	// No hit
+
+	float3	wsPosition = CAMERA_POS + hit.x * wsView;
+
+	// Compute simple lighting
+	float	LdotN = dot( wsLight, wsNormal );
+	float	shadow = hit.y != 0 ? ComputeShadow( wsPosition, wsLight ) : 1;
+
+	float3	color = ComputeLightingSS( ALBEDO, roughness, F0, wsNormal, -wsView, wsLight, shadow * LIGHT_COLOR );
+
+	// Add magic?
+	if ( roughness > 0 ) {
+		float	shadow2 = lerp( 1.0, shadow, saturate( 10.0 * (LdotN-0.2) ) );	// This removes shadowing on back faces
+				shadow2 = 1.0 - pow( saturate( 1.0 - shadow2 ), 16.0 );
+//				shadow2 *= saturate( 0.2 + 0.8 * dot( light, _normal ) );	// Larger L.N, eating into the backfaces
+				shadow2 *= LdotN;
+
+//shadow2 = shadow;
+
+color *= 0;
+
+		color += ComputeLightingMS( ALBEDO, roughness, F0, wsNormal, -wsView, wsLight, shadow * LIGHT_COLOR );
+
+//diffuseTerm = shadow * LdotN;
+	}
+
+	return AMBIENT + color;
 }
 
 #endif

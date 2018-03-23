@@ -1,4 +1,6 @@
-﻿using System;
+﻿//#define PRECOMPUTE_BRDF	// Define this to precompute the BRDF, comment to only load it
+
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -107,6 +109,9 @@ namespace GloubiBoule
 		Texture3D							m_Tex_Noise;
 		Texture3D							m_Tex_Noise4D;
 
+		Texture2D							m_tex_IrradianceComplement;
+		Texture2D							m_tex_IrradianceAverage;
+
 		ComputeShader						m_Shader_UpdateHeightMap;
 		ComputeShader						m_shader_GenerateDensity;
 		ComputeShader						m_Shader_ClearAccumulator;
@@ -149,8 +154,6 @@ namespace GloubiBoule
 		{
 			InitializeComponent();
 
-BuildMSBRDF( new DirectoryInfo( @"D:\Workspaces\Patapom.com\Web\blog\patapom\docs\BRDF" ) );
-
 // 			// Build 8 random rotation matrices
 // 			string[]	randomRotations = new string[8];
 // 			Random	RNG = new Random( 1 );
@@ -163,8 +166,7 @@ BuildMSBRDF( new DirectoryInfo( @"D:\Workspaces\Patapom.com\Web\blog\patapom\doc
 			Application.Idle += new EventHandler( Application_Idle );
 		}
 
-		protected override void OnLoad( EventArgs e )
-		{
+		protected override void OnLoad( EventArgs e ) {
 			base.OnLoad( e );
 
 			try {
@@ -212,6 +214,8 @@ BuildMSBRDF( new DirectoryInfo( @"D:\Workspaces\Patapom.com\Web\blog\patapom\doc
 			m_Tex_AccumPhotonCube = new Texture2D( m_Device, 256, 256, -6, 1, ImageUtility.PIXEL_FORMAT.RGBA16F, ImageUtility.COMPONENT_FORMAT.AUTO, false, true, null );
 			m_Tex_AccumPhoton3D = new Texture3D( m_Device, VOLUME_SIZE, VOLUME_SIZE, VOLUME_SIZE, 1, ImageUtility.PIXEL_FORMAT.R32, ImageUtility.COMPONENT_FORMAT.UINT, false, true, null );
 			BuildNoiseTextures();
+
+BuildMSBRDF( new DirectoryInfo( @"D:\Workspaces\Patapom.com\Web\blog\patapom\docs\BRDF" ) );
 
 			// Structured buffer
 			m_SB_PhotonInfos = new StructuredBuffer< SB_PhotonInfo_t >( m_Device, PHOTONS_COUNT, false );
@@ -437,18 +441,26 @@ BuildMSBRDF( new DirectoryInfo( @"D:\Workspaces\Patapom.com\Web\blog\patapom\doc
 			const uint		COS_THETA_SUBDIVS_COUNT = 32;
 			const uint		ROUGHNESS_SUBDIVS_COUNT = 32;
 
+			FileInfo	MSBRDFFileName = new FileInfo( Path.Combine( _targetDirectory.FullName, "MSBRDF_E" + COS_THETA_SUBDIVS_COUNT + "x" + ROUGHNESS_SUBDIVS_COUNT + ".float" ) );
+			FileInfo	MSBRDFFileName2 = new FileInfo( Path.Combine( _targetDirectory.FullName, "MSBRDF_Eavg" + ROUGHNESS_SUBDIVS_COUNT + ".float" ) );
+
+			#if PRECOMPUTE_BRDF
+
 			const uint		PHI_SUBDIVS_COUNT = 2*512;
 			const uint		THETA_SUBDIVS_COUNT = 64;
 
 			const float		dPhi = Mathf.TWOPI / PHI_SUBDIVS_COUNT;
 			const float		dTheta = Mathf.HALFPI / THETA_SUBDIVS_COUNT;
+			const float		dMu = 1.0f / THETA_SUBDIVS_COUNT;
 
 			float[,]		result = new float[COS_THETA_SUBDIVS_COUNT,ROUGHNESS_SUBDIVS_COUNT];
 
 			string	dumpMathematica = "{";
 			for ( uint Y=0; Y < ROUGHNESS_SUBDIVS_COUNT; Y++ ) {
 				float	m = (float) Y / (ROUGHNESS_SUBDIVS_COUNT-1);
-				float	m2 = Math.Max( 0.001f, m*m );
+				float	m2 = Math.Max( 0.01f, m*m );
+// 				float	m2 = Math.Max( 0.01f, (float) Y / (ROUGHNESS_SUBDIVS_COUNT-1) );
+// 				float	m = Mathf.Sqrt( m2 );
 
 //				dumpMathematica += "{ ";	// Start a new roughness line
 				for ( uint X=0; X < COS_THETA_SUBDIVS_COUNT; X++ ) {
@@ -458,11 +470,16 @@ BuildMSBRDF( new DirectoryInfo( @"D:\Workspaces\Patapom.com\Web\blog\patapom\doc
 					float	NdotV = cosThetaO;
 
 					float	integral = 0.0f;
-					float	integralNDF = 0.0f;
+//					float	integralNDF = 0.0f;
 					for ( uint THETA=0; THETA < THETA_SUBDIVS_COUNT; THETA++ ) {
-						float	thetaI = Mathf.HALFPI * (0.5f+THETA) / THETA_SUBDIVS_COUNT;
-						float	cosThetaI = Mathf.Cos( thetaI );
-						float	sinThetaI = Mathf.Sin( thetaI );
+// 						float	thetaI = Mathf.HALFPI * (0.5f+THETA) / THETA_SUBDIVS_COUNT;
+// 						float	cosThetaI = Mathf.Cos( thetaI );
+// 						float	sinThetaI = Mathf.Sin( thetaI );
+
+						// Use cosine-weighted sampling
+						float	sqCosThetaI = (0.5f+THETA) / THETA_SUBDIVS_COUNT;
+						float	cosThetaI = Mathf.Sqrt( sqCosThetaI );
+						float	sinThetaI = Mathf.Sqrt( 1 - sqCosThetaI );
 
 						float	NdotL = cosThetaI;
 
@@ -471,27 +488,33 @@ BuildMSBRDF( new DirectoryInfo( @"D:\Workspaces\Patapom.com\Web\blog\patapom\doc
 
 							// Compute cos(theta_h) = Omega_h.N where Omega_h = (Omega_i + Omega_o) / ||Omega_i + Omega_o|| is the half vector and N the surface normal
 							float	cosThetaH = (cosThetaI + cosThetaO) / Mathf.Sqrt( 2 * (1 + cosThetaO * cosThetaI + sinThetaO * sinThetaI * Mathf.Sin( phi )) );
+// 							float3	omega_i = new float3( sinThetaI * Mathf.Cos( phi ), sinThetaI * Mathf.Sin( phi ), cosThetaI );
+// 							float3	omega_o = new float3( sinThetaO, 0, cosThetaO );
+// 							float3	omega_h = (omega_i + omega_o).Normalized;
+// 							float	cosThetaH = omega_h.z;
 
 							// Compute GGX NDF
-							float	den = cosThetaH*cosThetaH * (m2 - 1) + 1;
+							float	den = 1 - cosThetaH*cosThetaH * (1 - m2);
 							float	NDF = m2 / (Mathf.PI * den*den);
 
 							// Compute Smith shadowing/masking
-							float	Smith_i = 1.0f / (NdotL + Mathf.Sqrt( m2 + (1-m2) * NdotL*NdotL ));
-							float	Smith_o = 1.0f / (NdotV + Mathf.Sqrt( m2 + (1-m2) * NdotV*NdotV ));
+							float	Smith_i_den = NdotL + Mathf.Sqrt( m2 + (1-m2) * NdotL*NdotL );
+							float	Smith_o_den = NdotV + Mathf.Sqrt( m2 + (1-m2) * NdotV*NdotV );
 
 							// Full BRDF is thus...
-							float	GGX = NDF * Smith_i * Smith_o;
+							float	GGX = NDF / (Smith_i_den * Smith_o_den);
 
-							integral += GGX * cosThetaI * sinThetaI;
+//							integral += GGX * cosThetaI * sinThetaI;
+							integral += GGX;
 						}
 
-						integralNDF += Mathf.TWOPI * m2 * cosThetaI * sinThetaI / (Mathf.PI * Mathf.Pow( cosThetaI*cosThetaI * (m2 - 1) + 1, 2.0f ));
+//						integralNDF += Mathf.TWOPI * m2 * cosThetaI * sinThetaI / (Mathf.PI * Mathf.Pow( cosThetaI*cosThetaI * (m2 - 1) + 1, 2.0f ));
 					}
 
 					// Finalize
-					integral *= dTheta * dPhi;
-					integralNDF *= dTheta;
+//					integral *= dTheta * dPhi;
+					integral *= 0.5f * dMu * dPhi;	// Cosine-weighted sampling has a 0.5 factor!
+//					integralNDF *= dTheta;
 
 					result[X,Y] = integral;
 					dumpMathematica += "{ " + cosThetaO + ", " + m + ", "  + integral + "}, ";
@@ -502,14 +525,77 @@ BuildMSBRDF( new DirectoryInfo( @"D:\Workspaces\Patapom.com\Web\blog\patapom\doc
 			dumpMathematica += " };";
 
 			// Dump as binary
-			FileInfo	MSBRDFFileName = new FileInfo( Path.Combine( _targetDirectory.FullName, "MSBRDF_E" + COS_THETA_SUBDIVS_COUNT + "x" + ROUGHNESS_SUBDIVS_COUNT + ".float" ) );
 			using ( FileStream S = MSBRDFFileName.Create() )
 				using ( BinaryWriter W = new BinaryWriter( S ) ) {
 					for ( uint Y=0; Y < ROUGHNESS_SUBDIVS_COUNT; Y++ )
 						for ( uint X=0; X < COS_THETA_SUBDIVS_COUNT; X++ )
 							W.Write( result[X,Y] );
 				}
-		}
+
+			//////////////////////////////////////////////////////////////////////////
+			// Compute average irradiance based on roughness, re-using the computed results
+			const uint		THETA_SUBDIVS_COUNT2 = 512;
+
+			float	dTheta2 = Mathf.HALFPI / THETA_SUBDIVS_COUNT2;
+
+			float[]	resultAvg = new float[ROUGHNESS_SUBDIVS_COUNT];
+			for ( uint X=0; X < ROUGHNESS_SUBDIVS_COUNT; X++ ) {
+
+				float	integral = 0.0f;
+				for ( uint THETA=0; THETA < THETA_SUBDIVS_COUNT2; THETA++ ) {
+					float	thetaO = Mathf.HALFPI * (0.5f+THETA) / THETA_SUBDIVS_COUNT2;
+					float	cosThetaO = Mathf.Cos( thetaO );
+					float	sinThetaO = Mathf.Sin( thetaO );
+
+					// Sample previously computed table
+					float	i = cosThetaO * COS_THETA_SUBDIVS_COUNT;
+					uint	i0 = Math.Min( COS_THETA_SUBDIVS_COUNT-1, (uint) Mathf.Floor( i ) );
+					uint	i1 = Math.Min( COS_THETA_SUBDIVS_COUNT-1, i0 + 1 );
+					float	E = (1-i) * result[i0,X] + i * result[i1,X];
+
+					integral += E * cosThetaO * sinThetaO;
+				}
+
+				// Finalize
+				integral *= Mathf.TWOPI * dTheta2;
+
+				resultAvg[X] = integral;
+			}
+
+			// Dump as binary
+			using ( FileStream S = MSBRDFFileName2.Create() )
+				using ( BinaryWriter W = new BinaryWriter( S ) ) {
+					for ( uint X=0; X < ROUGHNESS_SUBDIVS_COUNT; X++ )
+						W.Write( resultAvg[X] );
+				}
+
+			#endif
+
+			// Build irradiance complement texture
+			using ( PixelsBuffer content = new PixelsBuffer( COS_THETA_SUBDIVS_COUNT * ROUGHNESS_SUBDIVS_COUNT * 4 ) ) {
+				using ( FileStream S = MSBRDFFileName.OpenRead() )
+					using ( BinaryReader R = new BinaryReader( S ) )
+						using ( BinaryWriter W = content.OpenStreamWrite() ) {
+							for ( uint Y=0; Y < ROUGHNESS_SUBDIVS_COUNT; Y++ )
+								for ( uint X=0; X < COS_THETA_SUBDIVS_COUNT; X++ )
+									W.Write( R.ReadSingle() );
+						}
+
+				m_tex_IrradianceComplement = new Texture2D( m_Device, COS_THETA_SUBDIVS_COUNT, ROUGHNESS_SUBDIVS_COUNT, 1, 1, ImageUtility.PIXEL_FORMAT.R32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, false, new PixelsBuffer[] { content } );
+			}
+
+			// Build average irradiance texture
+			using ( PixelsBuffer content = new PixelsBuffer( ROUGHNESS_SUBDIVS_COUNT * 4 ) ) {
+				using ( FileStream S = MSBRDFFileName2.OpenRead() )
+					using ( BinaryReader R = new BinaryReader( S ) )
+						using ( BinaryWriter W = content.OpenStreamWrite() ) {
+							for ( uint X=0; X < ROUGHNESS_SUBDIVS_COUNT; X++ )
+									W.Write( R.ReadSingle() );
+						}
+
+				m_tex_IrradianceAverage = new Texture2D( m_Device, ROUGHNESS_SUBDIVS_COUNT, 1, 1, 1, ImageUtility.PIXEL_FORMAT.R32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, false, new PixelsBuffer[] { content } );
+			}
+		 }
 		
 		#endregion
 
@@ -685,6 +771,11 @@ BuildMSBRDF( new DirectoryInfo( @"D:\Workspaces\Patapom.com\Web\blog\patapom\doc
 				m_Device.SetRenderTarget( m_Device.DefaultTarget, null );
 
 				m_CB_PostProcess.UpdateData();
+
+
+m_tex_IrradianceComplement.SetPS( 2 );
+m_tex_IrradianceAverage.SetPS( 3 );
+
 
 m_CB_RayMarch.m._Sigma_t = floatTrackbarControlExtinction.Value;
 m_CB_RayMarch.m._Sigma_s = floatTrackbarControlAlbedo.Value;
