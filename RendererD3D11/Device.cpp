@@ -82,6 +82,7 @@ bool	Device::Init( U32 _width, U32 _height, HWND _handle, bool _fullscreen, bool
 		DoubleBufferedQuery::MAX_FRAMES = 8;	// CAUTION!!! Up to 8 frames latency to query results with DEBUG layer active!
 	#else
 		UINT	debugFlags = 0;
+		DoubleBufferedQuery::MAX_FRAMES = 8;	// CAUTION!!! Up to 8 frames latency to query results with DEBUG layer active!
 	#endif
 
  	if ( !Check(

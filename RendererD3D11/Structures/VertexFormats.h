@@ -38,22 +38,21 @@ public:	 // PROPERTIES
 	}
 
 	// Checks if this format is a compatible subset to the other provided format
-	bool	IsSubset( const IVertexFormatDescriptor& _Super ) const
-	{
+	bool	IsSubset( const IVertexFormatDescriptor& _super ) const {
 #ifdef _DEBUG
-		if ( Size() > _Super.Size() )
+		if ( &_super == this )
+			return true;	// Obvious case!
+		if ( Size() > _super.Size() )
 			return false;
-		if ( GetInputElementsCount() > _Super.GetInputElementsCount() )
+		if ( GetInputElementsCount() > _super.GetInputElementsCount() )
 			return false;
 
 		const D3D11_INPUT_ELEMENT_DESC*	pDescs0 = GetInputElements();
-		const D3D11_INPUT_ELEMENT_DESC*	pDescs1 = _Super.GetInputElements();
-		for ( int i=0; i < GetInputElementsCount(); i++ )
-		{
-			bool	Found = false;
+		const D3D11_INPUT_ELEMENT_DESC*	pDescs1 = _super.GetInputElements();
+		for ( int i=0; i < GetInputElementsCount(); i++ ) {
+			bool	found = false;
 			const D3D11_INPUT_ELEMENT_DESC&	Desc0 = pDescs0[i];
-			for ( int j=0; j < _Super.GetInputElementsCount(); j++ )
-			{
+			for ( int j=0; j < _super.GetInputElementsCount(); j++ ) {
 				const D3D11_INPUT_ELEMENT_DESC&	Desc1 = pDescs1[j];
 				if ( strcmp( Desc0.SemanticName, Desc1.SemanticName ) )
 					continue;
@@ -67,10 +66,10 @@ public:	 // PROPERTIES
 					continue;
 
 				// Found the exact match in super's format
-				Found = true;
+				found = true;
 				break;
 			}
-			if ( !Found )
+			if ( !found )
 				return false;	// That input was not found
 		}
 #endif

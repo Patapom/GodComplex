@@ -695,7 +695,7 @@ namespace TestMSBSDF
 		/// 
 		/// The surface is assigned a beam of photons, one for each texel of the heightfield texture
 		/// At each iteration, the whole beam is offset a little using a Hammersley sequence that guarantees
-		///  we end up ray-tracing the entire surface finely (hopefully, the full surface can be traced using enough terationsi)
+		///  we end up ray-tracing the entire surface finely (hopefully, the full surface can be traced using enough iterations)
 		/// </summary>
 		/// <param name="_roughness">Surface roughness</param>
 		/// <param name="_albedo">Surface albedo for diffuse or F0 for dielectrics</param>

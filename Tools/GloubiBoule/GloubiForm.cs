@@ -8,7 +8,8 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-using RendererManaged;
+using SharpMath;
+using Renderer;
 using System.IO;
 using Nuaj.Cirrus.Utility;
 
@@ -148,6 +149,8 @@ namespace GloubiBoule
 		{
 			InitializeComponent();
 
+BuildMSBRDF( new DirectoryInfo( @"D:\Workspaces\Patapom.com\Web\blog\patapom\docs\BRDF" ) );
+
 // 			// Build 8 random rotation matrices
 // 			string[]	randomRotations = new string[8];
 // 			Random	RNG = new Random( 1 );
@@ -173,25 +176,25 @@ namespace GloubiBoule
 			}
 
 			try {
-				m_Shader_UpdateHeightMap = new ComputeShader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/UpdateHeightMap.hlsl" ) ), "CS", null );
-				m_shader_GenerateDensity = new ComputeShader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/GenerateDensity.hlsl" ) ), "CS", null );
-				m_Shader_ClearAccumulator = new ComputeShader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/TracePhotons.hlsl" ) ), "CS_ClearAccumulator", null );
-				m_Shader_InitPhotons = new ComputeShader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/TracePhotons.hlsl" ) ), "CS_InitPhotons", null );
-				m_Shader_TracePhotons = new ComputeShader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/TracePhotons.hlsl" ) ), "CS_TracePhotons", null );
+				m_Shader_UpdateHeightMap = new ComputeShader( m_Device, new System.IO.FileInfo( "Shaders/UpdateHeightMap.hlsl" ), "CS", null );
+				m_shader_GenerateDensity = new ComputeShader( m_Device, new System.IO.FileInfo( "Shaders/GenerateDensity.hlsl" ), "CS", null );
+				m_Shader_ClearAccumulator = new ComputeShader( m_Device, new System.IO.FileInfo( "Shaders/TracePhotons.hlsl" ), "CS_ClearAccumulator", null );
+				m_Shader_InitPhotons = new ComputeShader( m_Device, new System.IO.FileInfo( "Shaders/TracePhotons.hlsl" ), "CS_InitPhotons", null );
+				m_Shader_TracePhotons = new ComputeShader( m_Device, new System.IO.FileInfo( "Shaders/TracePhotons.hlsl" ), "CS_TracePhotons", null );
 
-				m_Shader_RenderRoom = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/RenderRoom.hlsl" ) ), VERTEX_FORMAT.P3N3G3T2, "VS", null, "PS", null );
-				m_Shader_RenderSphere = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/RenderSphere.hlsl" ) ), VERTEX_FORMAT.P3N3G3T2, "VS", null, "PS", null );
-				m_Shader_RayMarcher = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/RayMarch.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
-				m_Shader_PostProcess = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/PostProcess.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+				m_Shader_RenderRoom = new Shader( m_Device, new System.IO.FileInfo( "Shaders/RenderRoom.hlsl" ), VERTEX_FORMAT.P3N3G3T2, "VS", null, "PS", null );
+				m_Shader_RenderSphere = new Shader( m_Device, new System.IO.FileInfo( "Shaders/RenderSphere.hlsl" ), VERTEX_FORMAT.P3N3G3T2, "VS", null, "PS", null );
+				m_Shader_RayMarcher = new Shader( m_Device, new System.IO.FileInfo( "Shaders/RayMarch.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+				m_Shader_PostProcess = new Shader( m_Device, new System.IO.FileInfo( "Shaders/PostProcess.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 
-//				m_ShaderDownsample = new Shader( m_Device, new ShaderFile( new System.IO.FileInfo( "Shaders/Downsample.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+//				m_ShaderDownsample = new Shader( m_Device, new System.IO.FileInfo( "Shaders/Downsample.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 			}
 			catch ( Exception _e ) {
 				MessageBox.Show( "Shader failed to compile!\n\n" + _e.Message, "ShaderToy", MessageBoxButtons.OK, MessageBoxIcon.Error );
 			}
 
-			int	W = panelOutput.Width;
-			int	H = panelOutput.Height;
+			uint	W = (uint) panelOutput.Width;
+			uint	H = (uint) panelOutput.Height;
 
 			m_CB_Global = new ConstantBuffer<CB_Global>( m_Device, 0 );
 			m_CB_Camera = new ConstantBuffer<CB_Camera>( m_Device, 1 );
@@ -200,14 +203,14 @@ namespace GloubiBoule
 			m_CB_RenderRoom = new ConstantBuffer<CB_RenderRoom>( m_Device, 2 );
 			m_CB_RenderSphere = new ConstantBuffer<CB_RenderSphere>( m_Device, 2 );
 			m_CB_PostProcess = new ConstantBuffer<CB_PostProcess>( m_Device, 2 );
-			m_CB_RayMarch = new ConstantBuffer<CB_RayMarch>( m_Device, 2 );
+			m_CB_RayMarch = new ConstantBuffer<CB_RayMarch>( m_Device, 3 );
 
-			m_Tex_TempBackBuffer = new Texture2D( m_Device, W, H, 1, 1, PIXEL_FORMAT.RGBA16_FLOAT, false, false, null );
-			m_Tex_HeightMap = new Texture2D( m_Device, HEIGHTMAP_SIZE, HEIGHTMAP_SIZE, 1, 1,  PIXEL_FORMAT.RG16_FLOAT, false, true, null );
-			m_Tex_Scattering = new Texture2D( m_Device, panelOutput.Width, panelOutput.Height, 2, 1, PIXEL_FORMAT.RGBA16_FLOAT, false, false, null );
-			m_Tex_VolumeDensity = new Texture3D( m_Device, VOLUME_SIZE, VOLUME_SIZE, VOLUME_SIZE, 1, PIXEL_FORMAT.R8_UNORM, false, true, null );;
-			m_Tex_AccumPhotonCube = new Texture2D( m_Device, 256, 256, -6, 1, PIXEL_FORMAT.RGBA16_FLOAT, false, true, null );;
-			m_Tex_AccumPhoton3D = new Texture3D( m_Device, VOLUME_SIZE, VOLUME_SIZE, VOLUME_SIZE, 1, PIXEL_FORMAT.R32_UINT, false, true, null );;
+			m_Tex_TempBackBuffer = new Texture2D( m_Device, W, H, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA16F, ImageUtility.COMPONENT_FORMAT.AUTO, false, false, null );
+			m_Tex_HeightMap = new Texture2D( m_Device, HEIGHTMAP_SIZE, HEIGHTMAP_SIZE, 1, 1, ImageUtility.PIXEL_FORMAT.RG16F, ImageUtility.COMPONENT_FORMAT.AUTO, false, true, null );
+			m_Tex_Scattering = new Texture2D( m_Device, (uint) panelOutput.Width, (uint) panelOutput.Height, 2, 1, ImageUtility.PIXEL_FORMAT.RGBA16F, ImageUtility.COMPONENT_FORMAT.AUTO, false, false, null );
+			m_Tex_VolumeDensity = new Texture3D( m_Device, VOLUME_SIZE, VOLUME_SIZE, VOLUME_SIZE, 1, ImageUtility.PIXEL_FORMAT.R8, ImageUtility.COMPONENT_FORMAT.UNORM, false, true, null );
+			m_Tex_AccumPhotonCube = new Texture2D( m_Device, 256, 256, -6, 1, ImageUtility.PIXEL_FORMAT.RGBA16F, ImageUtility.COMPONENT_FORMAT.AUTO, false, true, null );
+			m_Tex_AccumPhoton3D = new Texture3D( m_Device, VOLUME_SIZE, VOLUME_SIZE, VOLUME_SIZE, 1, ImageUtility.PIXEL_FORMAT.R32, ImageUtility.COMPONENT_FORMAT.UINT, false, true, null );
 			BuildNoiseTextures();
 
 			// Structured buffer
@@ -321,7 +324,7 @@ namespace GloubiBoule
 					}
 				}
 
-				m_Prim_Sphere = new Primitive( m_Device, Vertices.Count, VertexP3N3G3T2.FromArray( Vertices.ToArray() ), Indices.ToArray(), Primitive.TOPOLOGY.TRIANGLE_STRIP, VERTEX_FORMAT.P3N3G3T2 );
+				m_Prim_Sphere = new Primitive( m_Device, (uint) Vertices.Count, VertexP3N3G3T2.FromArray( Vertices.ToArray() ), Indices.ToArray(), Primitive.TOPOLOGY.TRIANGLE_STRIP, VERTEX_FORMAT.P3N3G3T2 );
 			}
 
 			{	// Build the cube
@@ -390,7 +393,7 @@ namespace GloubiBoule
 
 				ByteBuffer	VerticesBuffer = VertexP3N3G3T2.FromArray( Vertices );
 
-				m_Prim_Cube = new Primitive( m_Device, Vertices.Length, VerticesBuffer, Indices, Primitive.TOPOLOGY.TRIANGLE_LIST, VERTEX_FORMAT.P3N3G3T2 );
+				m_Prim_Cube = new Primitive( m_Device, (uint) Vertices.Length, VerticesBuffer, Indices, Primitive.TOPOLOGY.TRIANGLE_LIST, VERTEX_FORMAT.P3N3G3T2 );
 			}
 		}
 
@@ -403,7 +406,7 @@ namespace GloubiBoule
 			PixelsBuffer	Content = new PixelsBuffer( NOISE_SIZE*NOISE_SIZE*NOISE_SIZE*4 );
 			PixelsBuffer	Content4D = new PixelsBuffer( NOISE_SIZE*NOISE_SIZE*NOISE_SIZE*16 );
 
-			WMath.SimpleRNG.SetSeed( 521288629, 362436069 );
+			SimpleRNG.SetSeed( 521288629, 362436069 );
 
 			float4	V = float4.Zero;
 			using ( BinaryWriter W = Content.OpenStreamWrite() ) {
@@ -411,7 +414,7 @@ namespace GloubiBoule
 					for ( int Z=0; Z < NOISE_SIZE; Z++ )
 						for ( int Y=0; Y < NOISE_SIZE; Y++ )
 							for ( int X=0; X < NOISE_SIZE; X++ ) {
-								V.Set( (float) WMath.SimpleRNG.GetUniform(), (float) WMath.SimpleRNG.GetUniform(), (float) WMath.SimpleRNG.GetUniform(), (float) WMath.SimpleRNG.GetUniform() );
+								V.Set( (float) SimpleRNG.GetUniform(), (float) SimpleRNG.GetUniform(), (float) SimpleRNG.GetUniform(), (float) SimpleRNG.GetUniform() );
 								W.Write( V.x );
 								W2.Write( V.x );
 								W2.Write( V.y );
@@ -421,10 +424,93 @@ namespace GloubiBoule
 				}
 			}
 
-			m_Tex_Noise = new Texture3D( m_Device, NOISE_SIZE, NOISE_SIZE, NOISE_SIZE, 1, PIXEL_FORMAT.R8_UNORM, false, false, new PixelsBuffer[] { Content } );
-			m_Tex_Noise4D = new Texture3D( m_Device, NOISE_SIZE, NOISE_SIZE, NOISE_SIZE, 1, PIXEL_FORMAT.RGBA8_UNORM, false, false, new PixelsBuffer[] { Content4D } );
+			m_Tex_Noise = new Texture3D( m_Device, NOISE_SIZE, NOISE_SIZE, NOISE_SIZE, 1, ImageUtility.PIXEL_FORMAT.R8, ImageUtility.COMPONENT_FORMAT.UNORM, false, false, new PixelsBuffer[] { Content } );
+			m_Tex_Noise4D = new Texture3D( m_Device, NOISE_SIZE, NOISE_SIZE, NOISE_SIZE, 1, ImageUtility.PIXEL_FORMAT.RGBA8, ImageUtility.COMPONENT_FORMAT.UNORM, false, false, new PixelsBuffer[] { Content4D } );
 		}
 
+		#endregion
+
+		#region Multiple-Scattering BRDF
+		
+		void	BuildMSBRDF( DirectoryInfo _targetDirectory ) {
+
+			const uint		COS_THETA_SUBDIVS_COUNT = 32;
+			const uint		ROUGHNESS_SUBDIVS_COUNT = 32;
+
+			const uint		PHI_SUBDIVS_COUNT = 2*512;
+			const uint		THETA_SUBDIVS_COUNT = 64;
+
+			const float		dPhi = Mathf.TWOPI / PHI_SUBDIVS_COUNT;
+			const float		dTheta = Mathf.HALFPI / THETA_SUBDIVS_COUNT;
+
+			float[,]		result = new float[COS_THETA_SUBDIVS_COUNT,ROUGHNESS_SUBDIVS_COUNT];
+
+			string	dumpMathematica = "{";
+			for ( uint Y=0; Y < ROUGHNESS_SUBDIVS_COUNT; Y++ ) {
+				float	m = (float) Y / (ROUGHNESS_SUBDIVS_COUNT-1);
+				float	m2 = Math.Max( 0.001f, m*m );
+
+//				dumpMathematica += "{ ";	// Start a new roughness line
+				for ( uint X=0; X < COS_THETA_SUBDIVS_COUNT; X++ ) {
+					float	cosThetaO = (float) X / (COS_THETA_SUBDIVS_COUNT-1);
+					float	sinThetaO = Mathf.Sqrt( 1 - cosThetaO*cosThetaO );
+
+					float	NdotV = cosThetaO;
+
+					float	integral = 0.0f;
+					float	integralNDF = 0.0f;
+					for ( uint THETA=0; THETA < THETA_SUBDIVS_COUNT; THETA++ ) {
+						float	thetaI = Mathf.HALFPI * (0.5f+THETA) / THETA_SUBDIVS_COUNT;
+						float	cosThetaI = Mathf.Cos( thetaI );
+						float	sinThetaI = Mathf.Sin( thetaI );
+
+						float	NdotL = cosThetaI;
+
+						for ( uint PHI=0; PHI < PHI_SUBDIVS_COUNT; PHI++ ) {
+							float	phi = Mathf.TWOPI * PHI / PHI_SUBDIVS_COUNT;
+
+							// Compute cos(theta_h) = Omega_h.N where Omega_h = (Omega_i + Omega_o) / ||Omega_i + Omega_o|| is the half vector and N the surface normal
+							float	cosThetaH = (cosThetaI + cosThetaO) / Mathf.Sqrt( 2 * (1 + cosThetaO * cosThetaI + sinThetaO * sinThetaI * Mathf.Sin( phi )) );
+
+							// Compute GGX NDF
+							float	den = cosThetaH*cosThetaH * (m2 - 1) + 1;
+							float	NDF = m2 / (Mathf.PI * den*den);
+
+							// Compute Smith shadowing/masking
+							float	Smith_i = 1.0f / (NdotL + Mathf.Sqrt( m2 + (1-m2) * NdotL*NdotL ));
+							float	Smith_o = 1.0f / (NdotV + Mathf.Sqrt( m2 + (1-m2) * NdotV*NdotV ));
+
+							// Full BRDF is thus...
+							float	GGX = NDF * Smith_i * Smith_o;
+
+							integral += GGX * cosThetaI * sinThetaI;
+						}
+
+						integralNDF += Mathf.TWOPI * m2 * cosThetaI * sinThetaI / (Mathf.PI * Mathf.Pow( cosThetaI*cosThetaI * (m2 - 1) + 1, 2.0f ));
+					}
+
+					// Finalize
+					integral *= dTheta * dPhi;
+					integralNDF *= dTheta;
+
+					result[X,Y] = integral;
+					dumpMathematica += "{ " + cosThetaO + ", " + m + ", "  + integral + "}, ";
+				}
+			}
+
+			dumpMathematica = dumpMathematica.Remove( dumpMathematica.Length-2 );	// Remove last comma
+			dumpMathematica += " };";
+
+			// Dump as binary
+			FileInfo	MSBRDFFileName = new FileInfo( Path.Combine( _targetDirectory.FullName, "MSBRDF_E" + COS_THETA_SUBDIVS_COUNT + "x" + ROUGHNESS_SUBDIVS_COUNT + ".float" ) );
+			using ( FileStream S = MSBRDFFileName.Create() )
+				using ( BinaryWriter W = new BinaryWriter( S ) ) {
+					for ( uint Y=0; Y < ROUGHNESS_SUBDIVS_COUNT; Y++ )
+						for ( uint X=0; X < COS_THETA_SUBDIVS_COUNT; X++ )
+							W.Write( result[X,Y] );
+				}
+		}
+		
 		#endregion
 
 		void Camera_CameraTransformChanged( object sender, EventArgs e ) {
@@ -455,8 +541,8 @@ namespace GloubiBoule
 			if ( m_Device == null )
 				return;
 
-			int	W = panelOutput.Width;
-			int	H = panelOutput.Height;
+			uint	W = (uint) panelOutput.Width;
+			uint	H = (uint) panelOutput.Height;
 
 			// Timer
 			float	lastGameTime = m_CurrentGameTime;
@@ -502,7 +588,7 @@ namespace GloubiBoule
 			//////////////////////////////////////////////////////////////////////////
 			// Render volume density
 			if ( m_shader_GenerateDensity.Use() ) {
-				int	GroupsCount = VOLUME_SIZE >> 3;
+				uint	GroupsCount = VOLUME_SIZE >> 3;
 
 				m_CB_GenerateDensity.m._wsOffset.Set( 0.5f * m_CurrentGameTime, 0, 0 );
 				m_CB_GenerateDensity.UpdateData();
@@ -518,7 +604,7 @@ namespace GloubiBoule
 			//////////////////////////////////////////////////////////////////////////
 			// Splat photons
 			{
-				int	GroupsCount = PHOTONS_COUNT >> 8;	// 256 threads per group
+				uint	GroupsCount = PHOTONS_COUNT >> 8;	// 256 threads per group
 
 				m_Tex_AccumPhoton3D.RemoveFromLastAssignedSlots();
 				m_Tex_AccumPhoton3D.SetCSUAV( 2 );
@@ -580,7 +666,7 @@ namespace GloubiBoule
 			// Ray-March volume
 			if ( m_Shader_RayMarcher.Use() ) {
 				m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
-				m_Device.SetRenderTargets( W, H, new IView[] { m_Tex_Scattering.GetView( 0, 1, 0, 1 ), m_Tex_Scattering.GetView( 0, 1, 1, 1 ) }, null );
+				m_Device.SetRenderTargets( new IView[] { m_Tex_Scattering.GetView( 0, 1, 0, 1 ), m_Tex_Scattering.GetView( 0, 1, 1, 1 ) }, null );
 
 				m_Tex_AccumPhoton3D.Set( 1 );
 
@@ -599,6 +685,11 @@ namespace GloubiBoule
 				m_Device.SetRenderTarget( m_Device.DefaultTarget, null );
 
 				m_CB_PostProcess.UpdateData();
+
+m_CB_RayMarch.m._Sigma_t = floatTrackbarControlExtinction.Value;
+m_CB_RayMarch.m._Sigma_s = floatTrackbarControlAlbedo.Value;
+m_CB_RayMarch.m._Phase_g = floatTrackbarControlPhaseAnisotropy.Value;
+m_CB_RayMarch.UpdateData();
 
 				m_Tex_TempBackBuffer.SetPS( 0 );
  				m_Tex_Scattering.SetPS( 1 );

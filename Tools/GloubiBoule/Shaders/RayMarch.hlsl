@@ -5,7 +5,7 @@
 
 static const uint	STEPS_COUNT = 128;
 
-cbuffer CB_RayMarch : register(b2) {
+cbuffer CB_RayMarch : register(b3) {
 	float	_Sigma_t;
 	float	_Sigma_s;
 	float	_Phase_g;
