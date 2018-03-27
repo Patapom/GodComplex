@@ -592,6 +592,9 @@ BuildMSBRDF( new DirectoryInfo( @"D:\Workspaces\Patapom.com\Web\blog\patapom\doc
 							for ( uint X=0; X < ROUGHNESS_SUBDIVS_COUNT; X++ )
 									W.Write( R.ReadSingle() );
 						}
+show table + access for download on site + plot of the Eavg values depending on roughness
+verify BRDF + BRDFms integration = 1
+cube map + integration
 
 				m_tex_IrradianceAverage = new Texture2D( m_Device, ROUGHNESS_SUBDIVS_COUNT, 1, 1, 1, ImageUtility.PIXEL_FORMAT.R32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, false, new PixelsBuffer[] { content } );
 			}

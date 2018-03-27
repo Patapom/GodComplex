@@ -381,9 +381,9 @@ float3	ComputeLightingMS( float3 _albedo, float _roughness, float3 _F0, float3 _
 	float	mu_o = saturate( dot( _wsView, _wsNormal ) );
 	float	mu_i = saturate( dot( _wsLight, _wsNormal ) );
 
-	float	E_o = _tex_IrradianceComplement.SampleLevel( LinearClamp, float2( mu_o, a ), 0.0 );	// 1 - E_o
-	float	E_i = _tex_IrradianceComplement.SampleLevel( LinearClamp, float2( mu_i, a ), 0.0 );	// 1 - E_i
-	float	E_avg = _tex_IrradianceAverage.SampleLevel( LinearClamp, float2( a, 0.5 ), 0.0 );	// E_avg
+	float	E_o = 1.0 - _tex_IrradianceComplement.SampleLevel( LinearClamp, float2( mu_o, a ), 0.0 );	// 1 - E_o
+	float	E_i = 1.0 - _tex_IrradianceComplement.SampleLevel( LinearClamp, float2( mu_i, a ), 0.0 );	// 1 - E_i
+	float	E_avg = _tex_IrradianceAverage.SampleLevel( LinearClamp, float2( a, 0.5 ), 0.0 );			// E_avg
 
 	float3	BRDF_GGX_ms = E_o * E_i / (PI - E_avg);
 
