@@ -653,3 +653,6 @@ Publish
 /Tests/TestHBIL_Ref
 /Tests/TestHBIL
 *.fxbin
+/Tests/TestMSBRDF/obj
+/Tests/TestMSBRDF/TestMSBRDF.csproj.user
+/Tests/TestMSBRDF/bin
