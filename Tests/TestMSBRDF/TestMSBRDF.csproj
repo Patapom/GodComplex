@@ -123,7 +123,10 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Shaders\PostProcess.hlsl" />
+    <None Include="Shaders\Render.hlsl" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Shaders\Global.hlsl" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

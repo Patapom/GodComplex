@@ -1,11 +1,13 @@
-#include "Includes/global.hlsl"
+#include "global.hlsl"
 
 //#define TEST_MSBRDF	1	// My overcomplicated diffuse lobe fitting
 #define TEST_MSBRDF	2		// The elegant energy compensation term
 
-cbuffer CB_PostProcess : register(b2) {
+cbuffer CB_Render : register(b2) {
+	float	_roughness;
+	float	_albedo;
+	float	_lightElevation;
 };
-
 
 struct VS_IN {
 	float4	__Position : SV_POSITION;
@@ -160,12 +162,6 @@ _wsOutgoingDirection = float3( _wsOutgoingDirection.x, -_wsOutgoingDirection.z, 
 	return  L * intensity * _albedo*_albedo * (sigma2 + _albedo*sigma3);
 }
 
-cbuffer CB_RayMarch : register(b3) {
-	float	_Sigma_t;
-	float	_Sigma_s;
-	float	_Phase_g;
-};
-
 float	RayTraceSphere( float3 _wsPos, float3 _wsDir, float3 _wsCenter, float _radius, out float3 _wsClosestPosition ) {
 	float3	D = _wsPos - _wsCenter;
 	_wsClosestPosition = _wsPos - dot( D, _wsDir ) * _wsDir;
@@ -223,11 +219,11 @@ float3	PS( VS_IN _In ) : SV_TARGET0 {
 	const float3	ALBEDO = float3( 0.9, 0.5, 0.1 );	// Nicely saturated yellow
 	const float3	AMBIENT = 0.02 * float3( 0.5, 0.8, 0.9 );
 
-	const float		theta = _Phase_g * PI / 2;
+	const float		theta = _lightElevation;
 	const float3	wsLight = normalize( float3( sin(theta), 0, cos(theta) ) );
 
-	const float3	albedo = _Sigma_s * ALBEDO;
-	const float		roughness = _Sigma_t;
+	const float3	albedo = _albedo * ALBEDO;
+	const float		roughness = _roughness;
 
 	float3	csView = normalize( float3( UV, 1 ) );
 	float3	wsAt = normalize( CAMERA_TARGET - CAMERA_POS );
@@ -268,13 +264,6 @@ float3	PS( VS_IN _In ) : SV_TARGET0 {
 }
 
 #elif TEST_MSBRDF == 2
-
-
-cbuffer CB_RayMarch : register(b3) {
-	float	_Sigma_t;
-	float	_Sigma_s;
-	float	_Phase_g;
-};
 
 float	RayTraceSphere( float3 _wsPos, float3 _wsDir, float3 _wsCenter, float _radius, out float3 _wsClosestPosition ) {
 	float3	D = _wsPos - _wsCenter;
@@ -414,11 +403,11 @@ float3	PS( VS_IN _In ) : SV_TARGET0 {
 	const float3	F0 = 1.0;
 	const float3	AMBIENT = 0* 0.02 * float3( 0.5, 0.8, 0.9 );
 
-	const float		theta = _Phase_g * PI / 2;
+	const float		theta = _lightElevation;
 	const float3	wsLight = normalize( float3( sin(theta), 0, cos(theta) ) );
 
-	const float3	albedo = _Sigma_s * ALBEDO;
-	const float		roughness = max( 0.01, _Sigma_t );
+	const float3	albedo = _albedo * ALBEDO;
+	const float		roughness = max( 0.01, _roughness );
 
 	float3	csView = normalize( float3( UV, 1 ) );
 	float3	wsAt = normalize( CAMERA_TARGET - CAMERA_POS );

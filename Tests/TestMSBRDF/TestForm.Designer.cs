@@ -1,6 +1,6 @@
 ﻿namespace TestMSBRDF
 {
-	partial class GloubiForm
+	partial class TestForm
 	{
 		/// <summary>
 		/// Required designer variable.
@@ -29,28 +29,28 @@
 		private void InitializeComponent()
 		{
 			this.components = new System.ComponentModel.Container();
-			this.floatTrackbarControlExtinction = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlRoughness = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.panelOutput = new Nuaj.Cirrus.Utility.PanelOutput(this.components);
 			this.floatTrackbarControlAlbedo = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.buttonReload = new System.Windows.Forms.Button();
 			this.label1 = new System.Windows.Forms.Label();
 			this.label2 = new System.Windows.Forms.Label();
-			this.floatTrackbarControlPhaseAnisotropy = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlLightElevation = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label3 = new System.Windows.Forms.Label();
 			this.timer1 = new System.Windows.Forms.Timer(this.components);
 			this.SuspendLayout();
 			// 
 			// floatTrackbarControlExtinction
 			// 
-			this.floatTrackbarControlExtinction.Location = new System.Drawing.Point(1390, 12);
-			this.floatTrackbarControlExtinction.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.floatTrackbarControlExtinction.MinimumSize = new System.Drawing.Size(70, 20);
-			this.floatTrackbarControlExtinction.Name = "floatTrackbarControlExtinction";
-			this.floatTrackbarControlExtinction.RangeMin = 0F;
-			this.floatTrackbarControlExtinction.Size = new System.Drawing.Size(200, 20);
-			this.floatTrackbarControlExtinction.TabIndex = 0;
-			this.floatTrackbarControlExtinction.Value = 0F;
-			this.floatTrackbarControlExtinction.VisibleRangeMax = 1F;
+			this.floatTrackbarControlRoughness.Location = new System.Drawing.Point(1390, 12);
+			this.floatTrackbarControlRoughness.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlRoughness.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlRoughness.Name = "floatTrackbarControlRoughness";
+			this.floatTrackbarControlRoughness.RangeMin = 0F;
+			this.floatTrackbarControlRoughness.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlRoughness.TabIndex = 0;
+			this.floatTrackbarControlRoughness.Value = 0F;
+			this.floatTrackbarControlRoughness.VisibleRangeMax = 1F;
 			// 
 			// panelOutput
 			// 
@@ -90,7 +90,7 @@
 			this.label1.Name = "label1";
 			this.label1.Size = new System.Drawing.Size(53, 13);
 			this.label1.TabIndex = 3;
-			this.label1.Text = "Extinction";
+			this.label1.Text = "Roughness";
 			// 
 			// label2
 			// 
@@ -103,16 +103,16 @@
 			// 
 			// floatTrackbarControlPhaseAnisotropy
 			// 
-			this.floatTrackbarControlPhaseAnisotropy.Location = new System.Drawing.Point(1390, 64);
-			this.floatTrackbarControlPhaseAnisotropy.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.floatTrackbarControlPhaseAnisotropy.MinimumSize = new System.Drawing.Size(70, 20);
-			this.floatTrackbarControlPhaseAnisotropy.Name = "floatTrackbarControlPhaseAnisotropy";
-			this.floatTrackbarControlPhaseAnisotropy.RangeMax = 1F;
-			this.floatTrackbarControlPhaseAnisotropy.RangeMin = -1F;
-			this.floatTrackbarControlPhaseAnisotropy.Size = new System.Drawing.Size(200, 20);
-			this.floatTrackbarControlPhaseAnisotropy.TabIndex = 0;
-			this.floatTrackbarControlPhaseAnisotropy.Value = 0.6F;
-			this.floatTrackbarControlPhaseAnisotropy.VisibleRangeMax = 1F;
+			this.floatTrackbarControlLightElevation.Location = new System.Drawing.Point(1390, 64);
+			this.floatTrackbarControlLightElevation.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlLightElevation.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlLightElevation.Name = "floatTrackbarControlLightElevation";
+			this.floatTrackbarControlLightElevation.RangeMax = 1F;
+			this.floatTrackbarControlLightElevation.RangeMin = -1F;
+			this.floatTrackbarControlLightElevation.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlLightElevation.TabIndex = 0;
+			this.floatTrackbarControlLightElevation.Value = 0.6F;
+			this.floatTrackbarControlLightElevation.VisibleRangeMax = 1F;
 			// 
 			// label3
 			// 
@@ -121,7 +121,7 @@
 			this.label3.Name = "label3";
 			this.label3.Size = new System.Drawing.Size(66, 13);
 			this.label3.TabIndex = 3;
-			this.label3.Text = "Phase Aniso";
+			this.label3.Text = "Light Theta";
 			// 
 			// timer1
 			// 
@@ -138,12 +138,12 @@
 			this.Controls.Add(this.label1);
 			this.Controls.Add(this.buttonReload);
 			this.Controls.Add(this.panelOutput);
-			this.Controls.Add(this.floatTrackbarControlPhaseAnisotropy);
+			this.Controls.Add(this.floatTrackbarControlLightElevation);
 			this.Controls.Add(this.floatTrackbarControlAlbedo);
-			this.Controls.Add(this.floatTrackbarControlExtinction);
-			this.Name = "GloubiForm";
+			this.Controls.Add(this.floatTrackbarControlRoughness);
+			this.Name = "MSBRDFTestForm";
 			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-			this.Text = "Form1";
+			this.Text = "MSBRDF Test Form";
 			this.ResumeLayout(false);
 			this.PerformLayout();
 
@@ -151,13 +151,13 @@
 
 		#endregion
 
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlExtinction;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlRoughness;
 		private Nuaj.Cirrus.Utility.PanelOutput panelOutput;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlAlbedo;
 		private System.Windows.Forms.Button buttonReload;
 		private System.Windows.Forms.Label label1;
 		private System.Windows.Forms.Label label2;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlPhaseAnisotropy;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlLightElevation;
 		private System.Windows.Forms.Label label3;
 		private System.Windows.Forms.Timer timer1;
 	}
