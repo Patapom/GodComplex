@@ -128,6 +128,12 @@
   <ItemGroup>
     <None Include="Shaders\Global.hlsl" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Shaders\RenderComplete.hlsl" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Shaders\Scene.hlsl" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

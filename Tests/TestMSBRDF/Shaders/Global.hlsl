@@ -1,5 +1,6 @@
-
-
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//
 static const float	ASPECT_RATIO = 16.0 / 9.0;
 
 static const float	PI = 3.1415926535897932384626433832795;
@@ -32,6 +33,14 @@ SamplerState PointWrap		: register( s3 );
 SamplerState LinearMirror	: register( s4 );
 SamplerState PointMirror	: register( s5 );
 SamplerState LinearBorder	: register( s6 );	// Black border
+
+struct VS_IN {
+	float4	__Position : SV_POSITION;
+};
+
+VS_IN	VS( VS_IN _In ) {
+	return _In;
+}
 
 
 float	pow2( float x ) { return x * x; }
@@ -117,7 +126,7 @@ float3	FresnelAccurate( float3 _IOR, float _CosTheta, float _FresnelStrength=1.0
 
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
-// Importance Sampling + RNG
+// Importance Sampling + RNG + Geometry
 
 // Code from http://forum.unity3d.com/threads/bitwise-operation-hammersley-point-sampling-is-there-an-alternate-method.200000/
 float ReverseBits( uint bits ) {
@@ -134,6 +143,16 @@ float rand( float n ) { return frac(sin(n) * 43758.5453123); }
 float rand( float2 _seed ) {
 	return frac( sin( dot( _seed, float2( 12.9898, 78.233 ) ) ) * 43758.5453 );
 //= frac( sin(_pixelPosition.x*i)*sin(1767.0654+_pixelPosition.y*i)*43758.5453123 );
+}
+
+// From Nathan Reed (http://reedbeta.com/blog/quick-and-easy-gpu-random-numbers-in-d3d11/)
+uint wang_hash(uint seed) {
+    seed = (seed ^ 61) ^ (seed >> 16);
+    seed *= 9;
+    seed = seed ^ (seed >> 4);
+    seed *= 0x27d4eb2d;
+    seed = seed ^ (seed >> 15);
+    return seed;
 }
 
 // Build orthonormal basis from a 3D Unit Vector Without normalization [Frisvad2012])
@@ -166,6 +185,35 @@ float erf( float x ) {
     return sign*y;
 }
 
+// iQ's analytical sphere AO (http://iquilezles.org/www/articles/sphereao/sphereao.htm)
+// Code from https://www.shadertoy.com/view/4djSDy)
+//
+float	ComputeSphereAO( float3 _position, float3 _normal, float3 _center, float _radius ) {
+	float3	di = _center - _position;
+	float	l  = length( di );
+			di /= l;
+	float	nl = dot( _normal, di );
+	float	h  = l / _radius;
+	float	h2 = h*h;
+	float	k2 = 1.0 - h2*nl*nl;
+
+	// above/below horizon: Quilez - 
+	float	res = max( 0.0, nl ) / h2;
+//	if ( k2 > 0.0 )  {
+//		// Intersecting horizon: Lagarde/de Rousiers - http://www.frostbite.com/wp-content/uploads/2014/11/course_notes_moving_frostbite_to_pbr.pdf
+//		#if 1
+//			res = nl*acos(-nl*sqrt( (h2-1.0)/(1.0-nl*nl) )) - sqrt(k2*(h2-1.0));
+//			res = res/h2 + atan( sqrt(k2/(h2-1.0)));
+//			res /= PI;
+//		#else
+//			// cheap approximation: Quilez
+//			res = pow( clamp(0.5*(nl*h+1.0)/h2,0.0,1.0), 1.5 );
+//		#endif
+//	}
+
+	return res;
+}
+
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 // Phase functions
 float	PhaseFunctionRayleigh( float _CosPhaseAngle ) {
@@ -176,3 +224,36 @@ float	PhaseFunctionMie( float _CosPhaseAngle, float g ) {
 	return 1.5 * 1.0 / (4.0 * PI) * (1.0 - g*g) * pow( max( 0.0, 1.0 + (g*g) - 2.0*g*_CosPhaseAngle ), -1.5 ) * (1.0 + _CosPhaseAngle * _CosPhaseAngle) / (2.0 + g*g);
 }
 
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+// GGX
+
+float	GGX_NDF( float _HdotN, float _alpha2 ) {
+	float	den = PI * pow2( pow2( _HdotN ) * (_alpha2 - 1) + 1 );
+	return _alpha2 * rcp( den );
+}
+
+float	GGX_Smith( float _NdotL, float _NdotV, float _alpha2 ) {
+	float	denL = _NdotL + sqrt( pow2( _NdotL ) * (1-_alpha2) + _alpha2 );
+	float	denV = _NdotV + sqrt( pow2( _NdotV ) * (1-_alpha2) + _alpha2 );
+	return rcp( denL * denV );
+}
+
+float3	BRDF_GGX( float3 _wsNormal, float3 _wsView, float3 _wsLight, float _alpha, float3 _F0 ) {
+	float	a2 = _alpha * _alpha;
+	float3	h = normalize( _wsView + _wsLight );
+	float	HdotN = saturate( dot( h, _wsNormal ) );
+
+//_F0 = _alpha;
+
+	float3	IOR = Fresnel_IORFromF0( _F0 );
+
+	float	NDF = GGX_NDF( HdotN, a2 );
+	float	G = GGX_Smith( saturate( dot( _wsView, _wsNormal ) ), saturate( dot( _wsLight, _wsNormal ) ), a2 );
+	float3	F = FresnelAccurate( IOR, HdotN );
+//	float3	F = FresnelSchlick( _F0, HdotN );
+
+//return 0.5*G;
+//return 0.5*NDF;
+	return F * G * NDF;
+}
