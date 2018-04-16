@@ -34,7 +34,14 @@ ID3DBlob*   ShaderCompiler::CompileShader( IFileServer& _fileServer, const BStri
 	// Pre-process
 	ID3DBlob*   codeTextBlob = NULL;
 	ID3DBlob*   errorsBlob = NULL;
-	D3DPreprocess( shaderCode, shaderCodeSize, NULL, _macros, &_fileServer, &codeTextBlob, &errorsBlob );
+	HRESULT		preProcessError = D3DPreprocess( shaderCode, shaderCodeSize, NULL, _macros, &_fileServer, &codeTextBlob, &errorsBlob );
+	if ( preProcessError != S_OK ) {
+		#if defined(_DEBUG) || defined(DEBUG_SHADER)
+			MessageBoxA( NULL, "Failed to pre-process shader source file!", "Shader PreProcessing Error!", MB_OK | MB_ICONERROR );
+			ASSERT( false, "Shader pre-processing error!" );
+		#endif
+		return NULL;
+	}
 
 	// Free source code
 	_fileServer.Close( shaderCode );

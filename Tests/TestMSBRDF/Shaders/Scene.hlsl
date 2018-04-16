@@ -25,16 +25,16 @@ float2	RayTraceScene( float3 _wsPos, float3 _wsDir, out float3 _wsNormal, out fl
 	_wsNormal = float3( 0, 1, 0 );
 
 	float	t = RayTraceSphere( _wsPos, _wsDir, SPHERE_CENTER, SPHERE_RADIUS, _wsClosestPosition );
-	if ( t < 1e4 ) {
+	if ( t > 0.0 && t < 1e4 ) {
 		_wsNormal = normalize( _wsPos + t.x * _wsDir - SPHERE_CENTER );
-		return float2( t, 0 );
+		return float2( t, 0 );		// Sphere hit
 	}
 
 	t = RayTracePlane( _wsPos, _wsDir );
 	if ( t < 1e4 )
-		return float2( t, 1 );
+		return float2( t, 1 );		// Plane hit
 
-	return float2( INFINITY, -1 );
+	return float2( INFINITY, -1 );	// No hit...
 }
 
 float	ComputeShadow( float3 _wsPos, float3 _wsLight ) {

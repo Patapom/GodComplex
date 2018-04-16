@@ -243,6 +243,7 @@ float3	BRDF_GGX( float3 _wsNormal, float3 _wsView, float3 _wsLight, float _alpha
 	float	a2 = _alpha * _alpha;
 	float3	h = normalize( _wsView + _wsLight );
 	float	HdotN = saturate( dot( h, _wsNormal ) );
+	float	HdotL = saturate( dot( h, _wsLight ) );
 
 //_F0 = _alpha;
 
@@ -250,10 +251,51 @@ float3	BRDF_GGX( float3 _wsNormal, float3 _wsView, float3 _wsLight, float _alpha
 
 	float	NDF = GGX_NDF( HdotN, a2 );
 	float	G = GGX_Smith( saturate( dot( _wsView, _wsNormal ) ), saturate( dot( _wsLight, _wsNormal ) ), a2 );
-	float3	F = FresnelAccurate( IOR, HdotN );
-//	float3	F = FresnelSchlick( _F0, HdotN );
+	float3	F = FresnelAccurate( IOR, HdotL );
 
 //return 0.5*G;
 //return 0.5*NDF;
 	return F * G * NDF;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// Simple OrenNayar implementation
+//  _normal, unit surface normal
+//  _light, unit vector pointing toward the light
+//  _view, unit vector pointing toward the view
+//  _roughness, Oren-Nayar roughness parameter in [0,PI/2]
+//
+float   BRDF_OrenNayar( in float3 _normal, in float3 _view, in float3 _light, in float _roughness ) {
+    float3  n = _normal;
+    float3  l = _light;
+    float3  v = _view;
+
+    float   LdotN = dot( l, n );
+    float   VdotN = dot( v, n );
+
+    // I realize that this doesn't give cosine phi, we need to divide by sqrt( 1-VdotN*VdotN ) * sqrt( 1-LdotN*LdotN )
+    //  but I couldn't distinguish any difference from the actual formula so I just left that as it is...
+    float   gamma = dot(
+                        v - n * VdotN,
+                        l - n * LdotN 
+                    ) / (sqrt( saturate( 1.0 - VdotN*VdotN ) ) * sqrt( saturate( 1.0 - LdotN*LdotN ) ));
+
+    float rough_sq = _roughness * _roughness;
+    float A = 1.0 - 0.5 * (rough_sq / (rough_sq + 0.33));   // You can replace 0.33 by 0.57 to simulate the missing inter-reflection term, as specified in footnote of page 22 of the 1992 paper
+    float B = 0.45 * (rough_sq / (rough_sq + 0.09));
+
+    // Original formulation
+    //  float angle_vn = acos( VdotN );
+    //  float angle_ln = acos( LdotN );
+    //  float alpha = max( angle_vn, angle_ln );
+    //  float beta  = min( angle_vn, angle_ln );
+    //  float C = sin(alpha) * tan(beta);
+
+    // Optimized formulation (without tangents, arccos or sines)
+    float2  cos_alpha_beta = VdotN < LdotN ? float2( VdotN, LdotN ) : float2( LdotN, VdotN );   // Here we reverse the min/max since cos() is a monotonically decreasing function
+    float2  sin_alpha_beta = sqrt( saturate( 1.0 - cos_alpha_beta*cos_alpha_beta ) );           // Saturate to avoid NaN if ever cos_alpha > 1 (it happens with floating-point precision)
+    float   C = sin_alpha_beta.x * sin_alpha_beta.y / (1e-6 + cos_alpha_beta.y);
+
+    return A + B * max( 0.0, gamma ) * C;
 }

@@ -48,7 +48,8 @@ namespace TestMSBRDF
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
 		private struct CB_Render {
-			public float		_roughness;
+			public float		_roughnessSpecular;
+			public float		_roughnessDiffuse;
 			public float		_albedo;
 			public float		_lightElevation;
 		}
@@ -582,7 +583,8 @@ for ( uint Y=0; Y < ROUGHNESS_SUBDIVS_COUNT; Y++ ) {
 				m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
 				m_device.SetRenderTarget( m_device.DefaultTarget, null );
 
-				m_CB_Render.m._roughness = floatTrackbarControlRoughness.Value;
+				m_CB_Render.m._roughnessSpecular = floatTrackbarControlRoughnessSpec.Value;
+				m_CB_Render.m._roughnessDiffuse = floatTrackbarControlRoughnessDiffuse.Value;
 				m_CB_Render.m._albedo = floatTrackbarControlAlbedo.Value;
 				m_CB_Render.m._lightElevation = floatTrackbarControlLightElevation.Value * Mathf.HALFPI;
 				m_CB_Render.UpdateData();

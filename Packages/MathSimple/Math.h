@@ -52,6 +52,7 @@ namespace SharpMath {
 		static float			Max( float a, float b )								{ return Math::Max( a, b ); }
 		static long				Max( long a, long b )								{ return Math::Max( a, b ); }
 		static int				Max( int a, int b )									{ return Math::Max( a, b ); }
+		static UInt32			Max( UInt32 a, UInt32 b )							{ return Math::Max( a, b ); }
 		static short			Max( short a, short b )								{ return Math::Max( a, b ); }
 		static SByte			Max( SByte a, SByte b )								{ return Math::Max( a, b ); }
 		static Decimal			Min( Decimal a, Decimal b )							{ return Math::Min( a, b ); }
@@ -59,6 +60,7 @@ namespace SharpMath {
 		static float			Min( float a, float b )								{ return Math::Min( a, b ); }
 		static long				Min( long a, long b )								{ return Math::Min( a, b ); }
 		static int				Min( int a, int b )									{ return Math::Min( a, b ); }
+		static UInt32			Min( UInt32 a, UInt32 b )							{ return Math::Min( a, b ); }
 		static short			Min( short a, short b )								{ return Math::Min( a, b ); }
 		static SByte			Min( SByte a, SByte b )								{ return Math::Min( a, b ); }
 		static float			Pow( float a, float b )								{ return (float) Math::Pow( a, b ); }

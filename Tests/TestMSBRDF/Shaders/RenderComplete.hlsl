@@ -8,7 +8,8 @@ static const float3	F0 = 1.0;
 static const float3	AMBIENT = 0* 0.02 * float3( 0.5, 0.8, 0.9 );
 
 cbuffer CB_Render : register(b2) {
-	float	_roughness;
+	float	_roughnessSpecular;
+	float	_roughnessDiffuse;
 	float	_albedo;
 	float	_lightElevation;
 };
@@ -66,11 +67,11 @@ float3	SampleSky( float3 _wsDirection, float _mipLevel ) {
 
 	float2	scRot;
 	sincos( _lightElevation, scRot.x, scRot.y );
-	_wsDirection.xz = float2( _wsDirection.x * scRot.y + _wsDirection.y * scRot.x,
+	_wsDirection.xy = float2( _wsDirection.x * scRot.y + _wsDirection.y * scRot.x,
 							-_wsDirection.x * scRot.x + _wsDirection.y * scRot.y );
 
-return 50;
-	return 50.0 * _tex_CubeMap.SampleLevel( LinearWrap, _wsDirection, _mipLevel );
+//return 50;
+	return 20.0 * _tex_CubeMap.SampleLevel( LinearWrap, _wsDirection, _mipLevel );
 }
 
 float3	PS( VS_IN _In ) : SV_TARGET0 {
@@ -94,26 +95,30 @@ float3	PS( VS_IN _In ) : SV_TARGET0 {
 	float3	wsClosestPosition;
 	float3	wsNormal;
 	float2	hit = RayTraceScene( wsPosition, wsView, wsNormal, wsClosestPosition );
-
 	if ( hit.x > 1e4 )
 		return 0.0;	// No hit
 
 	wsPosition += hit.x * wsView;
+	wsPosition += 1e-3 * wsNormal;	// Offset from surface
 
-#if 1
-	wsPosition += 1e-2 * wsNormal;	// Offset from surface
+hit.y = 0;
+//return wsView;
 
 	float3	wsTangent, wsBiTangent;
 	BuildOrthonormalBasis( wsNormal, wsTangent, wsBiTangent );
 
-	const float	roughness = max( 0.01, _roughness );
+//return 0.01 * SampleSky( wsNormal, 0.0 );
+
+	const float	roughness = hit.y == 0
+										? max( 0.01, _roughnessSpecular )
+										: _roughnessDiffuse;
+
+	const uint	SAMPLES_COUNT = 128;
 
 	float3	Lo = 0.0;
-
-	const uint	SAMPLES_COUNT = 64;
 	[loop]
 	for ( uint i=0; i < SAMPLES_COUNT; i++ ) {
-		float	X0 = float(i) / SAMPLES_COUNT;
+		float	X0 = float(0.5+i) / SAMPLES_COUNT;
 		float	X1 = ReverseBits( i );
 
 		float	phiH = TWOPI * (noise+X0);
@@ -121,17 +126,22 @@ float3	PS( VS_IN _In ) : SV_TARGET0 {
 		sincos( phiH, sinPhiH, cosPhiH );
 
 //		float	thetaH = atan( -roughness * roughness * log( 1.0 - X1 ) );		// Ward importance sampling
-		float	thetaH = atan( -roughness * sqrt( X1 ) / sqrt( 1.0 - X1 ) );	// GGX importance sampling
+		float	thetaH = hit.y == 0 ? atan( -roughness * sqrt( X1 ) / sqrt( 1.0 - X1 ) )	// GGX importance sampling
+									: acos( X1 );											// Lambert diffuse
+
 		float	sinThetaH, cosThetaH;
 		sincos( thetaH, sinThetaH, cosThetaH );
 
-		float3	lsHalf = float3(	sinThetaH * sinPhiH,
-									cosThetaH,
-									sinThetaH * cosPhiH
+		float3	lsHalf = float3(	sinThetaH * cosPhiH,
+									sinThetaH * sinPhiH,
+									cosThetaH
 								);
+
+//lsHalf = float3( 0, 0, 1 );
+
 		float3	wsHalf = lsHalf.x * wsTangent + lsHalf.y * wsBiTangent + lsHalf.z * wsNormal;
 
- 		float3	wsLight = 2.0 * dot( wsView, wsHalf ) * wsHalf - wsView;	// Light is on the other size of the half vector...
+ 		float3	wsLight = wsView - 2.0 * dot( wsView, wsHalf ) * wsHalf;	// Light is on the other size of the half vector...
 		float	LdotN = dot( wsLight, wsNormal );
 		if ( LdotN <= 0.0 )
 			continue;	// Goes below the surface...
@@ -153,14 +163,18 @@ float3	PS( VS_IN _In ) : SV_TARGET0 {
 				// Plane was hit, sample diffuse 
 				Li = SampleSky( wsNormalLight, 8 );			// Incoming "diffuse" lighting
 //				Li *= ComputeShadow( wsPosition + hit2.x * wsLight, wsLight );			// * plane shadowing <== CAN'T! No clear direction! Should be coming from indirect samples instead of 1 unique diffuse sample. Or use AO but we don't have it...
-//				Li *= ComputeSphereAO( wsPosition + hit2.x * wsLight, wsNormalLight );	// * Sphere AO
+				Li *= ComputeSphereAO( wsPosition + hit2.x * wsLight, wsNormalLight );	// * Sphere AO
 				Li *= saturate( -dot( wsNormalLight, wsLight ) );						// * cos( theta )
 				Li *= ALBEDO_PLANE / PI;												// * diffuse reflectance
 			}
 		}
 
 		// Apply BRDF
-		Lo += Li * BRDF_GGX( wsNormal, wsView, wsLight, roughness, F0 ) * LdotN;
+		float3	BRDF = hit.y == 0 ? BRDF_GGX( wsNormal, -wsView, wsLight, roughness, F0 )
+								  : BRDF_OrenNayar( wsNormal, -wsView, wsLight, roughness );
+//		float3	BRDF = BRDF_GGX( wsNormal, -wsView, wsLight, roughness, F0 );
+//		float	BRDF = BRDF_OrenNayar( wsNormal, -wsView, wsLight, roughness );
+		Lo += Li * BRDF * LdotN;
 	}
 
 	Lo /= SAMPLES_COUNT;
@@ -168,36 +182,6 @@ float3	PS( VS_IN _In ) : SV_TARGET0 {
 	float3	color = Lo;
 
 //color = 10;
-
-#else
-	// Compute simple lighting
-	const float		theta = _lightElevation;
-	const float3	wsLight = float3( sin(theta), cos(theta), 0 );
-
-	const float3	albedo = _albedo * ALBEDO;
-	const float		roughness = max( 0.01, _roughness );
-
-	float	LdotN = dot( wsLight, wsNormal );
-	float	shadow = hit.y != 0 ? ComputeShadow( wsPosition, wsLight ) : 1;
-
-	float3	color = ComputeLightingSS( ALBEDO, roughness, F0, wsNormal, -wsView, wsLight, shadow * LIGHT_COLOR );
-
-	// Add magic?
-	if ( roughness > 0 ) {
-		float	shadow2 = lerp( 1.0, shadow, saturate( 10.0 * (LdotN-0.2) ) );	// This removes shadowing on back faces
-				shadow2 = 1.0 - pow( saturate( 1.0 - shadow2 ), 16.0 );
-//				shadow2 *= saturate( 0.2 + 0.8 * dot( light, _normal ) );	// Larger L.N, eating into the backfaces
-				shadow2 *= LdotN;
-
-//shadow2 = shadow;
-
-//color *= 0;
-
-		color += ComputeLightingMS( ALBEDO, roughness, F0, wsNormal, -wsView, wsLight, shadow * LIGHT_COLOR );
-
-//diffuseTerm = shadow * LdotN;
-	}
-#endif
 
 	return AMBIENT + color;
 }
