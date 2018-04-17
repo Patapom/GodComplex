@@ -227,7 +227,6 @@ float	PhaseFunctionMie( float _CosPhaseAngle, float g ) {
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 // GGX
-
 float	GGX_NDF( float _HdotN, float _alpha2 ) {
 	float	den = PI * pow2( pow2( _HdotN ) * (_alpha2 - 1) + 1 );
 	return _alpha2 * rcp( den );
@@ -240,6 +239,11 @@ float	GGX_Smith( float _NdotL, float _NdotV, float _alpha2 ) {
 }
 
 float3	BRDF_GGX( float3 _wsNormal, float3 _wsView, float3 _wsLight, float _alpha, float3 _F0 ) {
+	float	NdotL = dot( _wsNormal, _wsLight );
+	float	NdotV = dot( _wsNormal, _wsView );
+	if ( NdotL < 0.0 || NdotV < 0.0 )
+		return 0.0;
+
 	float	a2 = _alpha * _alpha;
 	float3	h = normalize( _wsView + _wsLight );
 	float	HdotN = saturate( dot( h, _wsNormal ) );
@@ -250,7 +254,7 @@ float3	BRDF_GGX( float3 _wsNormal, float3 _wsView, float3 _wsLight, float _alpha
 	float3	IOR = Fresnel_IORFromF0( _F0 );
 
 	float	NDF = GGX_NDF( HdotN, a2 );
-	float	G = GGX_Smith( saturate( dot( _wsView, _wsNormal ) ), saturate( dot( _wsLight, _wsNormal ) ), a2 );
+	float	G = GGX_Smith( NdotL, NdotV, a2 );
 	float3	F = FresnelAccurate( IOR, HdotL );
 
 //return 0.5*G;

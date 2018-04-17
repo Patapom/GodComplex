@@ -23,18 +23,6 @@ Texture2D< float >		_tex_IrradianceAverage : register( t3 );
 //////////////////////////////////////////////////////////////////////////////
 // New multiple-scattering term computed from energy compensation
 
-float3	ComputeLightingSS( float3 _albedo, float _roughness, float3 _F0, float3 _wsNormal, float3 _wsView, float3 _wsLight, float3 _lightColor ) {
-
-	float3	rho = _albedo / PI;
-
-	float3	specular = BRDF_GGX( _wsNormal, _wsView, _wsLight, _roughness, _F0 );
-//return specular;
-return _lightColor * specular;
-
-	float	LdotN = saturate( dot( _wsLight, _wsNormal ) );
-	return (_albedo / PI) * saturate( LdotN ) * _lightColor;
-}
-
 float3	ComputeLightingMS( float3 _albedo, float _roughness, float3 _F0, float3 _wsNormal, float3 _wsView, float3 _wsLight, float3 _lightColor ) {
 
 	float3	rho = _albedo / PI;
@@ -63,6 +51,71 @@ return 0*_lightColor * specular;
 }
 
 
+// Converts a 2D UV into an upper hemisphere direction (tangent space) + solid angle
+// The direction is weighted by the surface cosine lobe
+vec3	UV2Direction( vec2 _UV, out float _SolidAngleCosine ) {
+	_UV.y += 1e-5;	// 0 is completely useless..
+
+	float	Radius = sqrt(_UV.y);	// Also = sin(Theta)
+	float	Phi = _UV.x * TWOPI;
+	float	CosPhi = cos( Phi );
+	float	SinPhi = sin( Phi );
+
+	vec3	Dir;
+	Dir.x = Radius * SinPhi;
+	Dir.y = Radius * CosPhi;
+	Dir.z = sqrt( 1.0 - _UV.y );
+
+	// Solid angle
+	_SolidAngleCosine = PI;
+
+	return Dir;
+}
+
+	// Retrieve light direction + solid angle
+	float	dw;
+	_LightDirectionTS = UV2Direction( _RandomUV, dw );
+
+	// Use CIE sky model
+	vec3	LightDirection = _LightDirectionTS.x * _Tangent + _LightDirectionTS.y * _BiTangent + _LightDirectionTS.z * _Normal;
+	vec3	LightRadiance = SampleEnvMap( LightDirection );
+
+	// Li * (L.N) . dw
+	_LightRadiance = LightRadiance * dw;
+
+// INTEGRATE
+	// Retrieve Li * (L.N) * dw
+	vec3	LightRadiance, LightTS;
+	GetLightRadiance( _RandomUV, _Position, _Tangent, _BiTangent, _Normal, LightRadiance, LightTS );
+
+	// Test!
+	Anisotropize( LightTS, _Anisotropy );
+//	Anisotropize( _ViewTS, vec3( _Anisotropy.x, -_Anisotropy.z, _Anisotropy.y ) );
+
+//LightTS = vec3( 0, 0, 1 );	// Normal to the surface
+
+	// Get reflectance in that direction
+	vec3	Reflectance = BRDF( LightTS, _ViewTS, _ShowLogLuma );
+//return _LightIntensity * Reflectance;
+
+	// Lo = BRDF * Li * (L.N) . dw
+	return Reflectance * LightRadiance;
+
+
+// Accumulate
+	vec3	ViewTS = vec3( dot( _View, _Tangent ), dot( _View, _BiTangent ), dot( _View, _Normal ) );
+
+	for each sample
+
+		vec2	UV = Random( _Random0 + i, _Random1 ).xy;
+
+		// Choose a sample from the environment map
+		Result += SampleEnvLight( UV, _ViewTS, _Position, _Tangent, _BiTangent, _Normal );
+
+    const float	fNormalizer = 1.0 / float(MC_SAMPLES_COUNT);
+	return fNormalizer * Result;
+
+
 float3	SampleSky( float3 _wsDirection, float _mipLevel ) {
 
 	float2	scRot;
@@ -70,8 +123,7 @@ float3	SampleSky( float3 _wsDirection, float _mipLevel ) {
 	_wsDirection.xy = float2( _wsDirection.x * scRot.y + _wsDirection.y * scRot.x,
 							-_wsDirection.x * scRot.x + _wsDirection.y * scRot.y );
 
-//return 50;
-	return 20.0 * _tex_CubeMap.SampleLevel( LinearWrap, _wsDirection, _mipLevel );
+	return 2.0 * _tex_CubeMap.SampleLevel( LinearWrap, _wsDirection, _mipLevel );
 }
 
 float3	PS( VS_IN _In ) : SV_TARGET0 {
@@ -96,7 +148,7 @@ float3	PS( VS_IN _In ) : SV_TARGET0 {
 	float3	wsNormal;
 	float2	hit = RayTraceScene( wsPosition, wsView, wsNormal, wsClosestPosition );
 	if ( hit.x > 1e4 )
-		return 0.0;	// No hit
+		return SampleSky( wsView, 0.0 );	// No hit
 
 	wsPosition += hit.x * wsView;
 	wsPosition += 1e-3 * wsNormal;	// Offset from surface
@@ -107,13 +159,12 @@ hit.y = 0;
 	float3	wsTangent, wsBiTangent;
 	BuildOrthonormalBasis( wsNormal, wsTangent, wsBiTangent );
 
-//return 0.01 * SampleSky( wsNormal, 0.0 );
+//return SampleSky( wsNormal, 0.0 );
 
-	const float	roughness = hit.y == 0
-										? max( 0.01, _roughnessSpecular )
+	const float	roughness = hit.y == 0  ? max( 0.01, _roughnessSpecular )
 										: _roughnessDiffuse;
 
-	const uint	SAMPLES_COUNT = 128;
+	const uint	SAMPLES_COUNT = 16;
 
 	float3	Lo = 0.0;
 	[loop]
@@ -126,8 +177,10 @@ hit.y = 0;
 		sincos( phiH, sinPhiH, cosPhiH );
 
 //		float	thetaH = atan( -roughness * roughness * log( 1.0 - X1 ) );		// Ward importance sampling
-		float	thetaH = hit.y == 0 ? atan( -roughness * sqrt( X1 ) / sqrt( 1.0 - X1 ) )	// GGX importance sampling
-									: acos( X1 );											// Lambert diffuse
+//		float	thetaH = hit.y == 0 ? atan( -roughness * sqrt( X1 ) / sqrt( 1.0 - X1 ) )	// GGX importance sampling
+//									: acos( X1 );											// Lambert diffuse
+
+		float	thetaH = acos( X1 );
 
 		float	sinThetaH, cosThetaH;
 		sincos( thetaH, sinThetaH, cosThetaH );
@@ -169,12 +222,14 @@ hit.y = 0;
 			}
 		}
 
+		float	solidAngle = sqrt( 1.0 - LdotN*LdotN );
+
 		// Apply BRDF
 		float3	BRDF = hit.y == 0 ? BRDF_GGX( wsNormal, -wsView, wsLight, roughness, F0 )
 								  : BRDF_OrenNayar( wsNormal, -wsView, wsLight, roughness );
 //		float3	BRDF = BRDF_GGX( wsNormal, -wsView, wsLight, roughness, F0 );
 //		float	BRDF = BRDF_OrenNayar( wsNormal, -wsView, wsLight, roughness );
-		Lo += Li * BRDF * LdotN;
+		Lo += Li * BRDF * LdotN * solidAngle;
 	}
 
 	Lo /= SAMPLES_COUNT;
