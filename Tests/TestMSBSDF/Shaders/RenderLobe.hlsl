@@ -15,8 +15,8 @@ cbuffer CB_Render : register(b10) {
 	float	_MaskingImportance;	// Importance of the masking function
 }
 
-Texture2DArray< float >		_Tex_directionsHistogram_Reflected : register( t3 );
-Texture2DArray< float >		_Tex_directionsHistogram_Transmitted : register( t4 );
+Texture2DArray< float >		_Tex_directionsHistogram_Reflected : register( t4 );
+Texture2DArray< float >		_Tex_directionsHistogram_Transmitted : register( t5 );
 
 struct VS_IN {
 	float3	Position : POSITION;

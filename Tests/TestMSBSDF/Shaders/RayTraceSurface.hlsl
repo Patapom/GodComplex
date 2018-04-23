@@ -2,9 +2,6 @@
 // This shader performs a ray-tracing of the surface accounting for multiple scattering
 //////////////////////////////////////////////////////////////////////////
 //
-// @TODO:
-//	• Find why we have an energy leak!
-//
 #include "Global.hlsl"
 
 static const float	MAX_HEIGHT = 8.0;					// Arbitrary top height above which the ray is deemed to escape the surface
@@ -21,8 +18,9 @@ cbuffer CB_Raytrace : register(b10) {
 	float	_IOR;				// Surface IOR
 };
 
-Texture2D< float4 >			_Tex_HeightField : register( t0 );
-Texture2DArray< float4 >	_Tex_Random : register( t1 );
+Texture2D< float >			_Tex_HeightField_Height : register( t0 );
+Texture2D< float4 >			_Tex_HeightField_Normal : register( t1 );
+Texture2DArray< float4 >	_Tex_Random : register( t2 );
 RWTexture2DArray< float4 >	_Tex_OutgoingDirections_Reflected : register( u0 );
 RWTexture2DArray< float4 >	_Tex_OutgoingDirections_Transmitted : register( u1 );
 
@@ -49,13 +47,13 @@ float4	JitterRandom( float4 _initialRandom, float2 _pixelOffset ) {
 //	return newRandom;
 }
 
+// Expects _pos in texels
+float	SampleHeight( float2 _pos ) {
+	return _Tex_HeightField_Height.SampleLevel( LinearWrap, INV_HEIGHTFIELD_SIZE * _pos, 0.0 );
+}
 float4	SampleNormalHeight( float2 _pos ) {
-	float4	NH = _Tex_HeightField.SampleLevel( LinearWrap, INV_HEIGHTFIELD_SIZE * _pos, 0.0 );
-
-// Poor attempt at compensating for size factor...
-//	NH.w *= 0.5;
-//	NH.xyz = normalize( float3( NH.xy, 2.0 * NH.z ) );
-
+	float4	NH = _Tex_HeightField_Normal.SampleLevel( LinearWrap, INV_HEIGHTFIELD_SIZE * _pos, 0.0 );
+			NH.xyz = normalize( NH.xyz );
 	return NH;
 }
 
@@ -64,6 +62,7 @@ float4	SampleNormalHeight( float2 _pos ) {
 // Ray-traces the height field
 //	_position, _direction, the ray to trace through the height field
 //	_normal, the normal at intersection
+//	_aboveSurface, true if offset should be upward
 // returns the hit position (xyz) and hit distance (w) from original position (or INFINITY when no hit)
 float4	RayTrace( float3 _position, float3 _direction, out float3 _normal, bool _aboveSurface ) {
 
@@ -111,28 +110,124 @@ float4	RayTrace( float3 _position, float3 _direction, out float3 _normal, bool _
 			return pos;
 		}
 
-		#if 1
-			// Fix any error
-			if ( _aboveSurface && pos.z < NH.w ) {
-				pos.z = NH.w + 1e-2;
-			} else if ( !_aboveSurface && pos.z > NH.w ) {
-				pos.z = NH.w - 1e-2;
-			}	
-		#else
-/*			// Report the error as a visible peak
-			if ( _aboveSurface && pos.z < NH.w ) {
-				_normal = float3( 0, 0, 1 );
-				return float4( pos.xy, MAX_HEIGHT, 0.0 );	// Escape upward
-			} else if ( !_aboveSurface && pos.z > NH.w ) {
-				_normal = float3( 0, 0, -1 );
-				return float4( pos.xy, -MAX_HEIGHT, 0.0 );	// Escape downward
-			}
-//*/
-		#endif
+//		#if 1
+//			// Fix any error
+//			if ( _aboveSurface && pos.z < NH.w ) {
+//				pos.z = NH.w + 1e-2;
+//			} else if ( !_aboveSurface && pos.z > NH.w ) {
+//				pos.z = NH.w - 1e-2;
+//			}	
+//		#else
+///*			// Report the error as a visible peak
+//			if ( _aboveSurface && pos.z < NH.w ) {
+//				_normal = float3( 0, 0, 1 );
+//				return float4( pos.xy, MAX_HEIGHT, 0.0 );	// Escape upward
+//			} else if ( !_aboveSurface && pos.z > NH.w ) {
+//				_normal = float3( 0, 0, -1 );
+//				return float4( pos.xy, -MAX_HEIGHT, 0.0 );	// Escape downward
+//			}
+////*/
+//		#endif
 	}
 
 	return float4( pos.xyz, INFINITY );	// No hit!
 }
+
+float4	RayTrace_TEMP( float3 _position, float3 _direction, bool _aboveSurface ) {
+
+	// Compute maximum ray distance
+	float	maxDistance = 2.0 * MAX_HEIGHT / abs( _direction.z );	// How many steps does it take, using the ray direction, to move from -MAX_HEIGHT to +MAX_HEIGHT?
+			maxDistance = min( HEIGHTFIELD_SIZE, maxDistance );		// Anyway, can't ray-trace more than the entire heightfield (if we cross it entirely horizontally without a hit, 
+																	//	chances are there is no hit at all because of a very flat surface and it's no use tracing the heightfield again...)
+
+	// Build initial direction and position as extended vectors
+	float4	dir = float4( _direction, 1.0 );
+	float4	pos = float4( _position, 0.0 );
+
+	// Scale direction to obtain a unit horizontal step (so we march only a single texel in the heightfield)
+	float	horizontalStepSize = max( abs( dir.x ), abs( dir.y ) );				// Dividing by the maximum horizontal component guarantees a horizontal step size of 1
+
+			horizontalStepSize = max( horizontalStepSize, 1.0 / maxDistance );	// For nearly vertical rays though, the horizontal step size is mostly 0.
+																				// Using the inverse maximum distance will guarantee the step spans the full height of the heightfield 
+																				//  and thus the intersection must occur since the Z component of "dir" will necessarily intersect the
+																				//  heightfield at some point... (e.g. for a fully vertical ray, horizontalStepSize will be 2*MAX_HEIGHT)
+	dir /= horizontalStepSize;
+
+	float2	dXdY = float2( dir.x >= 0.0 ? 1 : -1, dir.y >= 0.0 ? 1 : -1 );
+
+	// Main loop
+	[loop]
+	[fastopt]
+	while ( abs(pos.z) < MAX_HEIGHT && pos.w < maxDistance ) {	// The ray stops if it either escapes the surface (above or below) or runs for too long without any intersection
+
+		// Sample the 4 heights surrounding our position
+		float2	P = fmod( HEIGHTFIELD_SIZE + floor( pos.xy ) + 0.5, HEIGHTFIELD_SIZE );
+		float	H00 = SampleHeight( P );	P.x += dXdY.x;
+		float	H01 = SampleHeight( P );	P.y += dXdY.y;
+		float	H11 = SampleHeight( P );	P.x -= dXdY.x;
+		float	H10 = SampleHeight( P );
+
+		// Compute the possible intersection between our ray and a bilinear surface
+		// The equation of the bilinear surface is given by:
+		//	H(x,y) = A + B.x + C.y + D.x.y
+		// With:
+		//	• A = H00
+		//	• B = H01 - H00
+		//	• C = H10 - H00
+		//	• D = H11 + H00 - H10 - H01
+		//
+		// The equation of our ray is given by:
+		//	pos(t) = pos + dir.t
+		//		Px(t) = Px + Dx.t
+		//		Py(t) = Px + Dy.t
+		//		Pz(t) = Pz + Dz.t
+		//
+		// So H(t) is given by:
+		//	H(t) = A + B.Px(t) + C.Py(t) + D.Px(t).Py(t)
+		//		 = A + B.Px + B.Dx.t + C.Py + C.Dy.t + D.[Px.Py + Px.Dy.t + Py.Dx.t + Dx.Dy.t²]
+		//
+		// And if we search for the intersection then H(t) = Pz(t) so we simply need to find the roots of the polynomial:
+		//	a.t² + b.t + c = 0
+		//
+		// With:
+		//	• a = D.Dx.Dy
+		//	• b = [B.Dx + C.Dy + D.Px.Dy + D.Py.Dx] - Dz
+		//	• c = [A + B.Px + C.Py + D.Px.Py] - Pz
+		//
+		float	A = H00;
+		float	B = H01 - H00;
+		float	C = H10 - H00;
+		float	D = H11 + H00 - H01 - H10;
+		float	a = D * dir.x * dir.y;
+		float	b = (B * dir.x + C * dir.y + D*(pos.x*dir.y + pos.y*dir.x)) - dir.z;
+		float	c = (A + B*pos.x + C*pos.y + D*pos.x*pos.y) - pos.z;
+
+		float	delta = b*b - 4*a*c;
+		if ( delta >= 0.0 ) {
+			// Maybe we get a hit?
+			delta = sqrt( delta );
+			float	t0 = (-b - delta) / (2.0 * a);
+			float	t1 = (-b + delta) / (2.0 * a);
+			float	t = INFINITY;
+			if ( t0 >= 0.0 && t0 < t )
+				t = t0;	// t0 is closer
+			if ( t1 >= 0.0 && t1 < t )
+				t = t1;	// t1 is closer
+
+			if ( t < 1e3 ) {
+				return pos + t * dir;	// Found a hit!
+			}
+		}
+
+return pos;
+
+		// March one step
+		pos += dir;
+	}
+
+	return float4( pos.xyz, INFINITY );	// No hit!
+}
+
 
 // Computes the new position so that we're at least off the surface by the given distance
 //	_position is assumed to be on the surface (i.e. hit position)
@@ -156,59 +251,105 @@ void	CS_Conductor( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPT
 	uint2	pixelPosition = _DispatchThreadID.xy;
 
 	float3	targetPosition = float3( pixelPosition + _offset, 0.0 );					// The target point of our ray is the heightfield's texel
+
+//targetPosition = float3( 3.5, 0, 0 );
+//targetPosition.xy = clamp( targetPosition.xy, 0.0, 5.0 );
+//targetPosition.x = clamp( targetPosition.x, 4.0, 5.0 );
+//targetPosition.x = 4.5;
+//targetPosition.y = 0.0;
+
+//targetPosition = 0;
+
+float4	NH0 = float4( 0.486027956, -0.207504988, 0.8489514, -1.04155791 );
+float4	NH1 = float4( -0.280534029, -0.28463, 0.9166714, -1.0612607 );
+
 	float3	position = targetPosition + (INITIAL_HEIGHT / _direction.z) * _direction;	// So start from there and go back along the ray direction to reach the start height
 	float3	direction = _direction;														// Points TOWARD the surface (i.e. down)!
 	float	weight = 1.0;
 
 	uint	scatteringIndex = 0;	// No scattering yet
 	float4	hitPosition = float4( position, 0 );
-	float3	normal;
 
 	float4	random = _Tex_Random[uint3(pixelPosition,0)];
 			random = JitterRandom( random, _offset );
 
 	float	IOR = _IOR;
+	float	F0 = Fresnel_F0FromIOR( IOR );
+	float	F90 = 1.0;		// TODO!!
+	bool	error = false;
 
 	[loop]
 	[fastopt]
-	for ( ; scatteringIndex <= MAX_SCATTERING_ORDER; scatteringIndex++ ) {
-		hitPosition = RayTrace( position, direction, normal, true );
+//	for ( ; scatteringIndex <= MAX_SCATTERING_ORDER; scatteringIndex++ ) {
+	for ( ; scatteringIndex < 2; scatteringIndex++ ) {
+		float3	normal;
+//		hitPosition = RayTrace( position, direction, normal, true );
+		hitPosition = RayTrace_TEMP( position, direction, true );
 		if ( hitPosition.w > 1e3 )
 			break;	// The ray escaped the surface!
 
 		// Walk to hit
 		position = hitPosition.xyz;
 
-		float	cosTheta = -dot( direction, normal );	// Minus sign because direction is down
+		// Sample normal and height
+		float4	NH = SampleNormalHeight( position.xy );	// New height field's normal + height
+
+
+//NH = lerp( NH0, NH1, 0.5 );
+//if ( scatteringIndex == 1 ) {
+////	NH.xyz = float3( 0.111414455, -0.266825169, 0.9572832 );
+//	NH.xyz = float3( 0, 0, 1 );
+////NH.w = 0;
+//}
+
+
+		normal = normalize( NH.xyz );
+
+// No normal are oriented toward the bottom (actually, no Z < 0.4 exist)
+//if ( normal.z < 0.0 ) {
+//	error = true;
+//	break;
+//}
+
+position.z = NH.w + 1e-3;
+
+		float	cosTheta = -dot( direction, normal );	// Minus sign because direction is opposite to normal direction
+		if ( cosTheta < -0.95 ) {
+			error = true;
+			break;
+		}
 
 		// Bounce off the surface
-		#if 1
-			direction = reflect( direction, normal );	// Perfect mirror
-		#else
-			direction = GenerateDirection( normal, _roughness, random );
-		#endif
+		direction = reflect( direction, normal );	// Perfect mirror
+//direction = normalize( direction + float3( 0, 0, 0.1 ) );
+//direction.z = max( direction.z, 0.001 );
+//direction = normalize( direction );
 
-		#if 1
-			// Use dielectric Fresnel to weigh reflection
-			float	F = FresnelAccurate( IOR, saturate( cosTheta ) );
-			weight *= F;
-		#else
-			// Each bump into the surface decreases the weight by the albedo
-			// 2 bumps we have albedo², 3 bumps we have albedo^3, etc. That explains the saturation of colors!
-			weight *= _albedo;
-		#endif
+//		#if 1
+//			// Use dielectric Fresnel to weigh reflection
+//			float	F = FresnelAccurate( IOR, saturate( cosTheta ) );
+//			weight *= F;
+//		#elif 1
+//			// Use metal Fersnel to weigh reflection
+//			float	F = FresnelMetal( F0, F90, saturate( cosTheta ) ).x;
+//			weight *= F;
+//		#else
+//			// Each bump into the surface decreases the weight by the albedo
+//			// 2 bumps we have albedo², 3 bumps we have albedo^3, etc. That explains the saturation of colors!
+//			weight *= _albedo;
+//		#endif
 
-		// Now, walk a little to avoid hitting the surface again
-		position = GetOffSurface( position, direction, normal, OFF_SURFACE_DISTANCE );
-
-		#if 1
-			float4	NH = SampleNormalHeight( position.xy );	// Normal + Height
-			if ( position.z < NH.w - 1e-2 ) {
-				position.z = NH.w + 1e-2;			// Ensure we're always ABOVE the surface!
-//				direction = float3( 0, 0, -1 );
-//				break;
-			}
-		#endif
+//		// Now, walk a little to avoid hitting the surface again
+//		position = GetOffSurface( position, direction, normal, OFF_SURFACE_DISTANCE );
+//
+//		#if 1
+//			float4	NH = SampleNormalHeight( position.xy );	// Normal + Height
+//			if ( position.z < NH.w - 1e-2 ) {
+//				position.z = NH.w + 1e-2;			// Ensure we're always ABOVE the surface!
+////				direction = float3( 0, 0, -1 );
+////				break;
+//			}
+//		#endif
 
 		// Update random seed
 		random.xy = random.zw;
@@ -216,8 +357,14 @@ void	CS_Conductor( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPT
 		random.w = rand( random.w );
 	}
 
+
 	if ( scatteringIndex == 0 )
 		return;	// CAN'T HAPPEN! The heightfield is continuous and covers the entire
+
+if ( error ) {
+	_Tex_OutgoingDirections_Reflected[uint3( pixelPosition, scatteringIndex-1 )] = float4( float3( normalize( float2( -1, 0 ) ), 1 ), 10000 );
+	return;
+}
 
 //hitPosition = RayTrace( position, direction, normal );
 //normal = normalize( float3( 1, 0, 10 ) );

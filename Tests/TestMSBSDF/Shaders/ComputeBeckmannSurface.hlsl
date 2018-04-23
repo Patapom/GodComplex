@@ -17,7 +17,8 @@ struct SB_Beckmann {
 	float2		m_frequency;
 };
 StructuredBuffer<SB_Beckmann>	_SB_Beckmann : register( t0 );
-RWTexture2D< float4 >			_Tex_HeightField : register( u0 );
+RWTexture2D< float >			_Tex_HeightField_Height : register( u0 );
+RWTexture2D< float4 >			_Tex_HeightField_Normal : register( u1 );
 
 [numthreads( 16, 16, 1 )]
 void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, uint3 _DispatchThreadID : SV_DISPATCHTHREADID ) {
@@ -35,7 +36,7 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 		float2	scOffsetPhase;
 		sincos( offsetPhase, scOffsetPhase.x, scOffsetPhase.y );
 
-		slope -= scOffsetPhase.x * sample.m_frequency;
+		slope -= scOffsetPhase.x * sample.m_frequency;	// Derivative of cos() is -sin()
 		height += scOffsetPhase.y;
 	}
 	float	scale = sqrt( 2.0 / _SamplesCount );
@@ -45,6 +46,7 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 //	_Tex_HeightField[pixelPosition] = float4( normalize( float3( -slope, 1.0 ) ), height );
 
 // Poor attempt at compensating for size factor...
-	float	s = _HeightFieldResolution.x / _size.x;
-	_Tex_HeightField[pixelPosition] = float4( normalize( float3( -s * slope, 1.0 ) ), s * height );
+	float	s = 1;//_HeightFieldResolution.x / _size.x;
+	_Tex_HeightField_Height[pixelPosition] = s * height;
+	_Tex_HeightField_Normal[pixelPosition] = float4( normalize( float3( -s * slope, 1.0 ) ), s * height );
 }

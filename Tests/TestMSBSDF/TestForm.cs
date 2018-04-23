@@ -137,7 +137,8 @@ namespace TestMSBSDF
 		private Shader				m_Shader_RenderCylinder = null;
 
 		private Texture2D			m_Tex_Random = null;
-		private Texture2D			m_Tex_Heightfield = null;
+		private Texture2D			m_Tex_Heightfield_Normal = null;
+		private Texture2D			m_Tex_Heightfield_Height = null;
 		private Texture2D			m_Tex_OutgoingDirections_Reflected = null;
 		private Texture2D			m_Tex_OutgoingDirections_Transmitted = null;
 		private Texture2D			m_Tex_LobeHistogram_Reflected_Decimal = null;
@@ -189,6 +190,22 @@ namespace TestMSBSDF
 
 			integerTrackbarControlScatteringOrder.RangeMax = MAX_SCATTERING_ORDER+1;
 			integerTrackbarControlScatteringOrder.VisibleRangeMax = MAX_SCATTERING_ORDER+1;
+
+
+
+m_internalChange = true;
+integerTrackbarControlScatteringOrder.Value = 0;
+integerTrackbarControlIterationsCount.Value = 100;
+floatTrackbarControlBeckmannRoughness.Value = 1.0f;
+floatTrackbarControlTheta.Value = 0.0f;
+checkBoxShowLobe.Checked = false;
+checkBoxShowAnalyticalLobe.Checked = false;
+checkBoxShowReflectedDirectionsHistogram.Checked = true;
+floatTrackbarControlLobeIntensity.Value = 0.2f;
+m_internalChange = false;
+
+
+
 
 			try {
 				m_Device.Init( panelOutput.Handle, false, true );
@@ -246,15 +263,6 @@ namespace TestMSBSDF
 			m_Manipulator.InitializeCamera( new float3( 0, 3, 6 ), new float3( 0, 2, 0 ), float3.UnitY );
 
 
-
-
-integerTrackbarControlIterationsCount.Value = 100;
-floatTrackbarControlBeckmannRoughness.Value = 1.0f;
-floatTrackbarControlTheta.Value = 0.0f;
-checkBoxShowAnalyticalLobe.Checked = false;
-
-
-
 			// Perform a simple initial trace
 			try {
 				buttonRayTrace_Click( buttonRayTrace, EventArgs.Empty );
@@ -291,7 +299,8 @@ checkBoxShowAnalyticalLobe.Checked = false;
 			m_Tex_LobeHistogram_Reflected_Integer.Dispose();
 			m_Tex_OutgoingDirections_Transmitted.Dispose();
 			m_Tex_OutgoingDirections_Reflected.Dispose();
-			m_Tex_Heightfield.Dispose();
+			m_Tex_Heightfield_Normal.Dispose();
+			m_Tex_Heightfield_Height.Dispose();
 			m_Tex_Random.Dispose();
 
 			m_Prim_Lobe.Dispose();
@@ -518,15 +527,23 @@ checkBoxShowAnalyticalLobe.Checked = false;
 			}
 
 			m_SB_Beckmann.Write();
-			m_SB_Beckmann.SetInput( 0 );
 
 			#if true
-				if ( m_Tex_Heightfield == null )
-					m_Tex_Heightfield = new Texture2D( m_Device, HEIGHTFIELD_SIZE, HEIGHTFIELD_SIZE, 1, 1, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.AUTO, false, true, null );
+				if ( m_Tex_Heightfield_Height == null ) {
+					m_Tex_Heightfield_Height = new Texture2D( m_Device, HEIGHTFIELD_SIZE, HEIGHTFIELD_SIZE, 1, 1, PIXEL_FORMAT.R32F, COMPONENT_FORMAT.AUTO, false, true, null );
+					m_Tex_Heightfield_Normal = new Texture2D( m_Device, HEIGHTFIELD_SIZE, HEIGHTFIELD_SIZE, 1, 1, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.AUTO, false, true, null );
+				}
 
 				// Run the CS
 				if ( m_Shader_ComputeBeckmannSurface.Use() ) {
-					m_Tex_Heightfield.SetCSUAV( 0 );
+
+					m_Tex_Heightfield_Height.RemoveFromLastAssignedSlots();
+					m_Tex_Heightfield_Normal.RemoveFromLastAssignedSlots();
+
+					m_SB_Beckmann.SetInput( 0 );
+					m_Tex_Heightfield_Height.SetCSUAV( 0 );
+					m_Tex_Heightfield_Normal.SetCSUAV( 1 );
+
 					float	size = floatTrackbarControlBeckmannSizeFactor.Value * HEIGHTFIELD_SIZE;
 //					m_CB_ComputeBeckmann.m._Position_Size.Set( -128.0f, -128.0f, 256.0f, 256.0f );
 					m_CB_ComputeBeckmann.m._Position_Size.Set( -0.5f * size, -0.5f * size, size, size );
@@ -536,7 +553,8 @@ checkBoxShowAnalyticalLobe.Checked = false;
 
 					m_Shader_ComputeBeckmannSurface.Dispatch( HEIGHTFIELD_SIZE >> 4, HEIGHTFIELD_SIZE >> 4, 1 );
 
-					m_Tex_Heightfield.RemoveFromLastAssignedSlotUAV();
+					m_Tex_Heightfield_Normal.RemoveFromLastAssignedSlotUAV();
+					m_Tex_Heightfield_Height.RemoveFromLastAssignedSlotUAV();
 				}
 			#else	// CPU version
 				PixelsBuffer	Content = new PixelsBuffer( HEIGHTFIELD_SIZE*HEIGHTFIELD_SIZE*System.Runtime.InteropServices.Marshal.SizeOf(typeof(float)) );
@@ -576,6 +594,24 @@ checkBoxShowAnalyticalLobe.Checked = false;
 				m_Tex_Heightfield = new Texture2D( m_Device, HEIGHTFIELD_SIZE, HEIGHTFIELD_SIZE, 1, 1, PIXEL_FORMAT.R32_FLOAT, false, false, new PixelsBuffer[] { Content } );
 			#endif
 
+			#if false
+				Texture2D	Tex_Heightfield_CPU = new Texture2D( m_Device, HEIGHTFIELD_SIZE, HEIGHTFIELD_SIZE, 1, 1, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.AUTO, true, false, null );
+				Tex_Heightfield_CPU.CopyFrom( m_Tex_Heightfield );
+				float4[,]	normalHeight = new float4[HEIGHTFIELD_SIZE,HEIGHTFIELD_SIZE];
+				float		minHeight = float.MaxValue, maxHeight = -float.MaxValue;
+				Tex_Heightfield_CPU.ReadPixels( 0, 0, ( uint X, uint Y, BinaryReader R ) => {
+					normalHeight[X,Y].x = R.ReadSingle();
+					normalHeight[X,Y].y = R.ReadSingle();
+					normalHeight[X,Y].z = R.ReadSingle();
+
+					float	H = R.ReadSingle();
+					normalHeight[X,Y].w = H;
+					minHeight = Mathf.Min( minHeight, H );
+					maxHeight = Mathf.Max( maxHeight, H );
+				} );
+				Tex_Heightfield_CPU.Dispose();
+			#endif
+
 			m_internalChange = false;
 		}
 
@@ -586,8 +622,10 @@ checkBoxShowAnalyticalLobe.Checked = false;
 		/// <param name="_pixelSize">Size of a pixel, assuming the maximum height is 1</param>
 		public unsafe void	BuildSurfaceFromTexture( string _textureFileName, float _pixelSize ) {
 
-			if ( m_Tex_Heightfield != null )
-				m_Tex_Heightfield.Dispose();	// We will create a new one so dispose of the old one...
+			if ( m_Tex_Heightfield_Height != null ) {
+				m_Tex_Heightfield_Height.Dispose();	// We will create a new one so dispose of the old one...
+				m_Tex_Heightfield_Normal.Dispose();
+			}
 
 			// Read the bitmap
 			int			W, H;
@@ -663,8 +701,17 @@ checkBoxShowAnalyticalLobe.Checked = false;
 			}
 
 			// Build the texture from the array
-			PixelsBuffer	Buf = new PixelsBuffer( (uint) (W*H*16) );
-			using ( BinaryWriter Writer = Buf.OpenStreamWrite() )
+			PixelsBuffer	BufHeight = new PixelsBuffer( (uint) (W*H*4) );
+			using ( BinaryWriter Writer = BufHeight.OpenStreamWrite() )
+				for ( int Y=0; Y < H; Y++ )
+					for ( int X=0; X < W; X++ ) {
+						float4	pixel = Content[X,Y];
+						Writer.Write( pixel.w );
+					}
+			BufHeight.CloseStream();
+
+			PixelsBuffer	BufNormal = new PixelsBuffer( (uint) (W*H*16) );
+			using ( BinaryWriter Writer = BufNormal.OpenStreamWrite() )
 				for ( int Y=0; Y < H; Y++ )
 					for ( int X=0; X < W; X++ ) {
 						float4	pixel = Content[X,Y];
@@ -673,9 +720,10 @@ checkBoxShowAnalyticalLobe.Checked = false;
 						Writer.Write( pixel.z );
 						Writer.Write( pixel.w );
 					}
-			Buf.CloseStream();
+			BufNormal.CloseStream();
 
-			m_Tex_Heightfield = new Texture2D( m_Device, (uint) W, (uint) H, 1, 1, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.AUTO, false, false, new PixelsBuffer[] { Buf } );
+			m_Tex_Heightfield_Height = new Texture2D( m_Device, (uint) W, (uint) H, 1, 1, PIXEL_FORMAT.R32F, COMPONENT_FORMAT.AUTO, false, false, new PixelsBuffer[] { BufHeight } );
+			m_Tex_Heightfield_Normal = new Texture2D( m_Device, (uint) W, (uint) H, 1, 1, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.AUTO, false, false, new PixelsBuffer[] { BufNormal } );
 		}
 
 		#endregion
@@ -759,8 +807,9 @@ checkBoxShowAnalyticalLobe.Checked = false;
 
 							m_Device.Clear( m_Tex_OutgoingDirections_Reflected, float4.Zero );	// Clear target directions and weights
 
-							m_Tex_Heightfield.SetCS( 0 );
-							m_Tex_Random.SetCS( 1 );
+							m_Tex_Heightfield_Height.SetCS( 0 );
+							m_Tex_Heightfield_Normal.SetCS( 1 );
+							m_Tex_Random.SetCS( 2 );
 							m_Tex_OutgoingDirections_Reflected.SetCSUAV( 0 );	// New target buffer where to accumulate
 
 							m_Shader_RayTraceSurface_Conductor.Dispatch( HEIGHTFIELD_SIZE >> 4, HEIGHTFIELD_SIZE >> 4, 1 );
@@ -791,8 +840,9 @@ checkBoxShowAnalyticalLobe.Checked = false;
 							m_Device.Clear( m_Tex_OutgoingDirections_Reflected, float4.Zero );		// Clear target directions and weights
 							m_Device.Clear( m_Tex_OutgoingDirections_Transmitted, float4.Zero );	// Clear target directions and weights
 
-							m_Tex_Heightfield.SetCS( 0 );
-							m_Tex_Random.SetCS( 1 );
+							m_Tex_Heightfield_Height.SetCS( 0 );
+							m_Tex_Heightfield_Normal.SetCS( 1 );
+							m_Tex_Random.SetCS( 2 );
 							m_Tex_OutgoingDirections_Reflected.SetCSUAV( 0 );	// New target buffer where to accumulate
 							m_Tex_OutgoingDirections_Transmitted.SetCSUAV( 1 );	// New target buffer where to accumulate
 
@@ -836,8 +886,9 @@ checkBoxShowAnalyticalLobe.Checked = false;
 
 							m_Device.Clear( m_Tex_OutgoingDirections_Reflected, float4.Zero );	// Clear target directions and weights
 
-							m_Tex_Heightfield.SetCS( 0 );
-							m_Tex_Random.SetCS( 1 );
+							m_Tex_Heightfield_Height.SetCS( 0 );
+							m_Tex_Heightfield_Normal.SetCS( 1 );
+							m_Tex_Random.SetCS( 2 );
 							m_Tex_OutgoingDirections_Reflected.SetCSUAV( 0 );	// New target buffer where to accumulate
 
 							m_Shader_RayTraceSurface_Diffuse.Dispatch( HEIGHTFIELD_SIZE >> 4, HEIGHTFIELD_SIZE >> 4, 1 );
@@ -1020,23 +1071,24 @@ checkBoxShowAnalyticalLobe.Checked = false;
 			// Setup global data
 			m_CB_Main.UpdateData();
 
-			m_Tex_Heightfield.Set( 0 );
-			m_Tex_OutgoingDirections_Reflected.Set( 1 );
-			m_Tex_OutgoingDirections_Transmitted.Set( 2 );
-			m_Tex_LobeHistogram_Reflected.Set( 3 );
-			m_Tex_LobeHistogram_Transmitted.Set( 4 );
+			m_Tex_Heightfield_Height.Set( 0 );
+			m_Tex_Heightfield_Normal.Set( 1 );
+			m_Tex_OutgoingDirections_Reflected.Set( 2 );
+			m_Tex_OutgoingDirections_Transmitted.Set( 3 );
+			m_Tex_LobeHistogram_Reflected.Set( 4 );
+			m_Tex_LobeHistogram_Transmitted.Set( 5 );
 
 			// =========== Render scene ===========
 			m_Device.SetRenderTarget( m_Device.DefaultTarget, m_Device.DefaultDepthStencil );
 			m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.READ_WRITE_DEPTH_LESS, BLEND_STATE.DISABLED );
 
-			m_Device.Clear( m_Device.DefaultTarget, float4.Zero );
+			m_Device.Clear( m_Device.DefaultTarget, new float4( 0.02f, 0.03f, 0.04f, 0 ) );
 			m_Device.ClearDepthStencil( m_Device.DefaultDepthStencil, 1.0f, 0, true, false );
 
 			//////////////////////////////////////////////////////////////////////////
 			// Render heightfield
 			if ( !radioButtonHideSurface.Checked && m_Shader_RenderHeightField.Use() ) {
-				m_CB_Render.m._Flags = (checkBoxShowNormals.Checked ? 1U : 0U)
+				m_CB_Render.m._Flags = (checkBoxShowNormals.Checked ? 0x1U : 0U)
 //									 | (checkBoxShowOutgoingDirections.Checked ? 2U : 0U)
 									 | (checkBoxShowReflectedDirectionsHistogram.Checked ? 0x4U : 0U)
 									 | (checkBoxShowTransmittedDirectionsHistogram.Checked ? 0x8U : 0U)
