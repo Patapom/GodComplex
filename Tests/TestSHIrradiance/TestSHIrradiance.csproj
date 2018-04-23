@@ -130,7 +130,7 @@
     </ProjectReference>
     <ProjectReference Include="..\..\Packages\ImageUtilityManaged\ImageUtilityManaged.vcxproj">
       <Project>{6c974ba3-ecba-4436-85cb-218eebb33d53}</Project>
-      <Name>ImageUtilityManaged</Name>
+      <Name>ImageUtility</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\Packages\MathSimple\MathSimple.vcxproj">
       <Project>{cec07704-2a19-4bf1-b46d-8fcf9c5965ee}</Project>
@@ -138,7 +138,7 @@
     </ProjectReference>
     <ProjectReference Include="..\..\Packages\RendererManaged\RendererManaged.vcxproj">
       <Project>{f96cdfd3-8954-4f4f-afb0-2855d98f051b}</Project>
-      <Name>RendererManaged</Name>
+      <Name>Renderer</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\Packages\SharpMath\MathAdvanced.csproj">
       <Project>{dd026a89-c5fe-4150-bc85-a660e427826a}</Project>

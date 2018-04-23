@@ -4,6 +4,8 @@
 #define SQRTPI		1.7724538509055160272981674833411
 #define INFINITY	1e6
 
+static const uint	MAX_SCATTERING_ORDER = 6;
+
 // Dimensions of the height field (must match C# declaration)
 static const uint	HEIGHTFIELD_SIZE = 512;
 static const float	INV_HEIGHTFIELD_SIZE = 1.0 / HEIGHTFIELD_SIZE;

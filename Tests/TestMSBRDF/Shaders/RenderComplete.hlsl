@@ -53,67 +53,21 @@ return 0*_lightColor * specular;
 
 // Converts a 2D UV into an upper hemisphere direction (tangent space) + solid angle
 // The direction is weighted by the surface cosine lobe
-vec3	UV2Direction( vec2 _UV, out float _SolidAngleCosine ) {
+float3	UV2Direction( float2 _UV, out float _solidAngleCosine ) {
 	_UV.y += 1e-5;	// 0 is completely useless..
 
-	float	Radius = sqrt(_UV.y);	// Also = sin(Theta)
-	float	Phi = _UV.x * TWOPI;
-	float	CosPhi = cos( Phi );
-	float	SinPhi = sin( Phi );
-
-	vec3	Dir;
-	Dir.x = Radius * SinPhi;
-	Dir.y = Radius * CosPhi;
-	Dir.z = sqrt( 1.0 - _UV.y );
-
 	// Solid angle
-	_SolidAngleCosine = PI;
+	_solidAngleCosine = PI;
 
-	return Dir;
+	float	sqSinTheta = _UV.y;
+	float	sinTheta = sqrt( sqSinTheta );
+	float	cosTheta = sqrt( 1.0 - sqSinTheta );
+	float	phi = _UV.x * TWOPI;
+	float2	scPhi;
+	sincos( phi, scPhi.x, scPhi.y );
+
+	return float3( sinTheta * scPhi, cosTheta );
 }
-
-	// Retrieve light direction + solid angle
-	float	dw;
-	_LightDirectionTS = UV2Direction( _RandomUV, dw );
-
-	// Use CIE sky model
-	vec3	LightDirection = _LightDirectionTS.x * _Tangent + _LightDirectionTS.y * _BiTangent + _LightDirectionTS.z * _Normal;
-	vec3	LightRadiance = SampleEnvMap( LightDirection );
-
-	// Li * (L.N) . dw
-	_LightRadiance = LightRadiance * dw;
-
-// INTEGRATE
-	// Retrieve Li * (L.N) * dw
-	vec3	LightRadiance, LightTS;
-	GetLightRadiance( _RandomUV, _Position, _Tangent, _BiTangent, _Normal, LightRadiance, LightTS );
-
-	// Test!
-	Anisotropize( LightTS, _Anisotropy );
-//	Anisotropize( _ViewTS, vec3( _Anisotropy.x, -_Anisotropy.z, _Anisotropy.y ) );
-
-//LightTS = vec3( 0, 0, 1 );	// Normal to the surface
-
-	// Get reflectance in that direction
-	vec3	Reflectance = BRDF( LightTS, _ViewTS, _ShowLogLuma );
-//return _LightIntensity * Reflectance;
-
-	// Lo = BRDF * Li * (L.N) . dw
-	return Reflectance * LightRadiance;
-
-
-// Accumulate
-	vec3	ViewTS = vec3( dot( _View, _Tangent ), dot( _View, _BiTangent ), dot( _View, _Normal ) );
-
-	for each sample
-
-		vec2	UV = Random( _Random0 + i, _Random1 ).xy;
-
-		// Choose a sample from the environment map
-		Result += SampleEnvLight( UV, _ViewTS, _Position, _Tangent, _BiTangent, _Normal );
-
-    const float	fNormalizer = 1.0 / float(MC_SAMPLES_COUNT);
-	return fNormalizer * Result;
 
 
 float3	SampleSky( float3 _wsDirection, float _mipLevel ) {
@@ -129,17 +83,20 @@ float3	SampleSky( float3 _wsDirection, float _mipLevel ) {
 float3	PS( VS_IN _In ) : SV_TARGET0 {
 
 	float2	UV = float2( _ScreenSize.x / _ScreenSize.y * (2.0 * _In.__Position.x / _ScreenSize.x - 1.0), 1.0 - 2.0 * _In.__Position.y / _ScreenSize.y );
+	uint	seed1 = wang_hash( _ScreenSize.x * _In.__Position.y + _In.__Position.x );
+    uint	seed2 = hash( seed1, 1000u );
+//	float	noise = seed1 * 2.3283064365386963e-10;
 	float	noise = _tex_BlueNoise[uint2(_In.__Position.xy) & 0x3F];
 
 	float3	csView = normalize( float3( UV, 1 ) );
-//	float3	wsAt = normalize( CAMERA_TARGET - CAMERA_POS );
-//	float3	wsRight = normalize( cross( wsAt, float3( 0, 0, 1 ) ) );
-//	float3	wsUp = cross( wsRight, wsAt );
 	float3	wsRight = _Camera2World[0].xyz;
 	float3	wsUp = _Camera2World[1].xyz;
 	float3	wsAt = _Camera2World[2].xyz;
 	float3	wsView = csView.x * wsRight + csView.y * wsUp + csView.z * wsAt;
 	float3	wsPosition = _Camera2World[3].xyz;
+
+//return  0.9 * ReverseBits( _In.__Position.x, seed2 );
+
 
 //return 1-_tex_IrradianceComplement.SampleLevel( LinearClamp, _In.__Position.xy / _ScreenSize.xy, 0.0 );
 //return _tex_IrradianceAverage.SampleLevel( LinearClamp, _In.__Position.xy / _ScreenSize.xy, 0.0 ) / PI;
@@ -161,18 +118,67 @@ hit.y = 0;
 
 //return SampleSky( wsNormal, 0.0 );
 
+	float3	tsView = -float3( dot( wsView, wsTangent ), dot( wsView, wsBiTangent ), dot( wsView, wsNormal ) );
+	if ( tsView.z <= 0.0 )
+		return 0;
+
+//return wsBiTangent;
+//return tsView;
+
 	const float	roughness = hit.y == 0  ? max( 0.01, _roughnessSpecular )
 										: _roughnessDiffuse;
 
-	const uint	SAMPLES_COUNT = 16;
+	const uint	SAMPLES_COUNT = 128;
 
 	float3	Lo = 0.0;
 	[loop]
 	for ( uint i=0; i < SAMPLES_COUNT; i++ ) {
-		float	X0 = float(0.5+i) / SAMPLES_COUNT;
-		float	X1 = ReverseBits( i );
+		float	X0 = float( noise + i ) / SAMPLES_COUNT;
+		float	X1 = noise;//frac( ReverseBits( i, seed2 ) );
+//		float	X1 = ReverseBits( 1+i, seed2 );
 
-		float	phiH = TWOPI * (noise+X0);
+		#if 1
+			// Importance sample half vector direction
+			float2	scPhi;
+			sincos( TWOPI * X0, scPhi.x, scPhi.y );
+			float	thetaH = atan( roughness * sqrt( X1 ) / sqrt( 1.00001 - X1 ) );	// GGX importance sampling
+			float2	scThetaH;
+			sincos( thetaH, scThetaH.x, scThetaH.y );
+			float3	tsHalf = float3( scThetaH.x * scPhi, scThetaH.y );
+
+			// Generate light vector by mirroring view against half vector
+			float	VdotH = dot( tsView, tsHalf );
+			float3	tsLight = 2.0 * VdotH * tsHalf - tsView;
+
+//			float	dw = 0.25 * PI * sinThetaH * VdotH;
+			float	LdotN = tsLight.z;
+			float	LdotH = VdotH;//dot( tsLight, tsHalf );
+			float	HdotN = tsHalf.z;
+			float	BRDF = LdotH * GGX_Smith( LdotH, VdotH, pow2( roughness ) )
+						 / ( LdotN * HdotN );
+//			float	BRDF = LdotH * GGX_Smith( LdotH, VdotH, pow2( roughness ) );
+		#else
+			// Retrieve light direction + solid angle
+			float	dw;
+			float3	tsLight = UV2Direction( float2( X0, X1 ), dw );
+
+			// Get reflectance in that direction
+//			float3	BRDF = BRDF_GGX( float3( 0, 0, 1 ), tsView, tsLight, roughness, F0 );
+			float3	BRDF = BRDF_GGX( float3( 0, 0, 1 ), tsView, tsLight, roughness, F0 );
+
+			BRDF *= tsLight.z * dw;
+
+		#endif
+
+		float3	wsLight = tsLight.x * wsTangent + tsLight.y * wsBiTangent + tsLight.z * wsNormal;
+
+		// Sample incoming radiance
+		float3	Li = SampleSky( wsLight, 0.0 );
+
+		// Lo = Li * BRDF * (L.N) * dw
+		Lo += Li * BRDF;
+
+/*		float	phiH = TWOPI * (noise+X0);
 		float	sinPhiH, cosPhiH;
 		sincos( phiH, sinPhiH, cosPhiH );
 
@@ -230,6 +236,7 @@ hit.y = 0;
 //		float3	BRDF = BRDF_GGX( wsNormal, -wsView, wsLight, roughness, F0 );
 //		float	BRDF = BRDF_OrenNayar( wsNormal, -wsView, wsLight, roughness );
 		Lo += Li * BRDF * LdotN * solidAngle;
+*/
 	}
 
 	Lo /= SAMPLES_COUNT;

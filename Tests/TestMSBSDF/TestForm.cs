@@ -21,7 +21,7 @@ namespace TestMSBSDF
 		#region CONSTANTS
 
 		public const int				HEIGHTFIELD_SIZE = 512;						//  (must match HLSL declaration)
-		public const int				MAX_SCATTERING_ORDER = 4;
+		public const int				MAX_SCATTERING_ORDER = 6;
 		public const int				LOBES_COUNT_THETA = 128;					// (must match HLSL declaration)
 		public const int				LOBES_COUNT_PHI = 2 * LOBES_COUNT_THETA;
 
@@ -63,7 +63,7 @@ namespace TestMSBSDF
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
 		private struct CB_Finalize {
-			public uint			_IterationsCount;
+			public uint			_iterationsCount;
 		}
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
@@ -76,8 +76,9 @@ namespace TestMSBSDF
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
 		private struct CB_Render {
 			public uint			_Flags;
-			public uint			_ScatteringOrder;
-			public uint			_IterationsCount;
+			public uint			_scatteringOrder;
+			public uint			_iterationsCount;
+			public float		_lobeIntensity;
 		}
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
@@ -85,13 +86,13 @@ namespace TestMSBSDF
 			public float3		_Direction;
 			public float		_LobeIntensity;
 			public float3		_ReflectedDirection;
-			public uint			_ScatteringOrder;
+			public uint			_scatteringOrder;
 			public uint			_Flags;
 			public float		_Roughness;
 			public float		_ScaleR;
 			public float		_ScaleT;
 			public float		_ScaleB;
-			public float		_MaskingImportance;
+			public float		_maskingImportance;
 		}
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
@@ -183,9 +184,11 @@ namespace TestMSBSDF
 
 		#region Open/Close
 
-		protected override void OnLoad( EventArgs e )
-		{
+		protected override void OnLoad( EventArgs e ) {
 			base.OnLoad( e );
+
+			integerTrackbarControlScatteringOrder.RangeMax = MAX_SCATTERING_ORDER+1;
+			integerTrackbarControlScatteringOrder.VisibleRangeMax = MAX_SCATTERING_ORDER+1;
 
 			try {
 				m_Device.Init( panelOutput.Handle, false, true );
@@ -227,20 +230,30 @@ namespace TestMSBSDF
 			BuildRandomTexture();
 			BuildBeckmannSurfaceTexture( floatTrackbarControlBeckmannRoughness.Value );
 			
-			m_Tex_OutgoingDirections_Reflected = new Texture2D( m_Device, HEIGHTFIELD_SIZE, HEIGHTFIELD_SIZE, MAX_SCATTERING_ORDER, 1, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.AUTO,  false, true, null );
-			m_Tex_OutgoingDirections_Transmitted = new Texture2D( m_Device, HEIGHTFIELD_SIZE, HEIGHTFIELD_SIZE, MAX_SCATTERING_ORDER, 1, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.AUTO, false, true, null );
-			m_Tex_LobeHistogram_Reflected_Decimal = new Texture2D( m_Device, LOBES_COUNT_PHI, LOBES_COUNT_THETA, MAX_SCATTERING_ORDER, 1, PIXEL_FORMAT.R32, COMPONENT_FORMAT.UINT, false, true, null );
-			m_Tex_LobeHistogram_Reflected_Integer = new Texture2D( m_Device, LOBES_COUNT_PHI, LOBES_COUNT_THETA, MAX_SCATTERING_ORDER, 1, PIXEL_FORMAT.R32, COMPONENT_FORMAT.UINT, false, true, null );
-			m_Tex_LobeHistogram_Transmitted_Decimal = new Texture2D( m_Device, LOBES_COUNT_PHI, LOBES_COUNT_THETA, MAX_SCATTERING_ORDER, 1, PIXEL_FORMAT.R32, COMPONENT_FORMAT.UINT, false, true, null );
-			m_Tex_LobeHistogram_Transmitted_Integer = new Texture2D( m_Device, LOBES_COUNT_PHI, LOBES_COUNT_THETA, MAX_SCATTERING_ORDER, 1, PIXEL_FORMAT.R32, COMPONENT_FORMAT.UINT, false, true, null );
-			m_Tex_LobeHistogram_Reflected = new Texture2D( m_Device, LOBES_COUNT_PHI, LOBES_COUNT_THETA, MAX_SCATTERING_ORDER, 1, PIXEL_FORMAT.R32F, COMPONENT_FORMAT.AUTO, false, true, null );
-			m_Tex_LobeHistogram_Transmitted = new Texture2D( m_Device, LOBES_COUNT_PHI, LOBES_COUNT_THETA, MAX_SCATTERING_ORDER, 1, PIXEL_FORMAT.R32F, COMPONENT_FORMAT.AUTO, false, true, null );
-			m_Tex_LobeHistogram_CPU = new Texture2D( m_Device, LOBES_COUNT_PHI, LOBES_COUNT_THETA, MAX_SCATTERING_ORDER, 1, PIXEL_FORMAT.R32F, COMPONENT_FORMAT.AUTO, true, false, null );
+			m_Tex_OutgoingDirections_Reflected = new Texture2D( m_Device, HEIGHTFIELD_SIZE, HEIGHTFIELD_SIZE, MAX_SCATTERING_ORDER+1, 1, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.AUTO,  false, true, null );
+			m_Tex_OutgoingDirections_Transmitted = new Texture2D( m_Device, HEIGHTFIELD_SIZE, HEIGHTFIELD_SIZE, MAX_SCATTERING_ORDER+1, 1, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.AUTO, false, true, null );
+			m_Tex_LobeHistogram_Reflected_Decimal = new Texture2D( m_Device, LOBES_COUNT_PHI, LOBES_COUNT_THETA, MAX_SCATTERING_ORDER+1, 1, PIXEL_FORMAT.R32, COMPONENT_FORMAT.UINT, false, true, null );
+			m_Tex_LobeHistogram_Reflected_Integer = new Texture2D( m_Device, LOBES_COUNT_PHI, LOBES_COUNT_THETA, MAX_SCATTERING_ORDER+1, 1, PIXEL_FORMAT.R32, COMPONENT_FORMAT.UINT, false, true, null );
+			m_Tex_LobeHistogram_Transmitted_Decimal = new Texture2D( m_Device, LOBES_COUNT_PHI, LOBES_COUNT_THETA, MAX_SCATTERING_ORDER+1, 1, PIXEL_FORMAT.R32, COMPONENT_FORMAT.UINT, false, true, null );
+			m_Tex_LobeHistogram_Transmitted_Integer = new Texture2D( m_Device, LOBES_COUNT_PHI, LOBES_COUNT_THETA, MAX_SCATTERING_ORDER+1, 1, PIXEL_FORMAT.R32, COMPONENT_FORMAT.UINT, false, true, null );
+			m_Tex_LobeHistogram_Reflected = new Texture2D( m_Device, LOBES_COUNT_PHI, LOBES_COUNT_THETA, MAX_SCATTERING_ORDER+1, 1, PIXEL_FORMAT.R32F, COMPONENT_FORMAT.AUTO, false, true, null );
+			m_Tex_LobeHistogram_Transmitted = new Texture2D( m_Device, LOBES_COUNT_PHI, LOBES_COUNT_THETA, MAX_SCATTERING_ORDER+1, 1, PIXEL_FORMAT.R32F, COMPONENT_FORMAT.AUTO, false, true, null );
+			m_Tex_LobeHistogram_CPU = new Texture2D( m_Device, LOBES_COUNT_PHI, LOBES_COUNT_THETA, MAX_SCATTERING_ORDER+1, 1, PIXEL_FORMAT.R32F, COMPONENT_FORMAT.AUTO, true, false, null );
 
 			// Setup camera
 			m_Camera.CreatePerspectiveCamera( (float) (60.0 * Math.PI / 180.0), (float) panelOutput.Width / panelOutput.Height, 0.01f, 100.0f );
 			m_Manipulator.Attach( panelOutput, m_Camera );
 			m_Manipulator.InitializeCamera( new float3( 0, 3, 6 ), new float3( 0, 2, 0 ), float3.UnitY );
+
+
+
+
+integerTrackbarControlIterationsCount.Value = 100;
+floatTrackbarControlBeckmannRoughness.Value = 1.0f;
+floatTrackbarControlTheta.Value = 0.0f;
+checkBoxShowAnalyticalLobe.Checked = false;
+
+
 
 			// Perform a simple initial trace
 			try {
@@ -716,7 +729,6 @@ namespace TestMSBSDF
 			m_lastComputedIOR = Fresnel_IORFromF0( _albedoF0 );
 			m_lastComputedSurfaceType = _surfaceType;
 
-
 			m_lastComputedHistogramIterationsCount = _iterationsCount;
 
 			m_CB_RayTrace.m._Direction = m_lastComputedDirection;
@@ -762,7 +774,7 @@ namespace TestMSBSDF
 							m_Tex_LobeHistogram_Reflected_Decimal.SetCSUAV( 0 );
 							m_Tex_LobeHistogram_Reflected_Integer.SetCSUAV( 1 );
 
-							m_Shader_AccumulateOutgoingDirections.Dispatch( HEIGHTFIELD_SIZE >> 4, HEIGHTFIELD_SIZE >> 4, MAX_SCATTERING_ORDER );
+							m_Shader_AccumulateOutgoingDirections.Dispatch( HEIGHTFIELD_SIZE >> 4, HEIGHTFIELD_SIZE >> 4, MAX_SCATTERING_ORDER+1 );
 
  							m_Tex_LobeHistogram_Reflected_Decimal.RemoveFromLastAssignedSlotUAV();
  							m_Tex_LobeHistogram_Reflected_Integer.RemoveFromLastAssignedSlotUAV();
@@ -797,7 +809,7 @@ namespace TestMSBSDF
 							m_Tex_LobeHistogram_Reflected_Decimal.SetCSUAV( 0 );
 							m_Tex_LobeHistogram_Reflected_Integer.SetCSUAV( 1 );
 
-							m_Shader_AccumulateOutgoingDirections.Dispatch( HEIGHTFIELD_SIZE >> 4, HEIGHTFIELD_SIZE >> 4, MAX_SCATTERING_ORDER );
+							m_Shader_AccumulateOutgoingDirections.Dispatch( HEIGHTFIELD_SIZE >> 4, HEIGHTFIELD_SIZE >> 4, MAX_SCATTERING_ORDER+1 );
 
  							m_Tex_LobeHistogram_Reflected_Decimal.RemoveFromLastAssignedSlotUAV();
  							m_Tex_LobeHistogram_Reflected_Integer.RemoveFromLastAssignedSlotUAV();
@@ -808,7 +820,7 @@ namespace TestMSBSDF
 							m_Tex_LobeHistogram_Transmitted_Decimal.SetCSUAV( 0 );
 							m_Tex_LobeHistogram_Transmitted_Integer.SetCSUAV( 1 );
 
-							m_Shader_AccumulateOutgoingDirections.Dispatch( HEIGHTFIELD_SIZE >> 4, HEIGHTFIELD_SIZE >> 4, MAX_SCATTERING_ORDER );
+							m_Shader_AccumulateOutgoingDirections.Dispatch( HEIGHTFIELD_SIZE >> 4, HEIGHTFIELD_SIZE >> 4, MAX_SCATTERING_ORDER+1 );
 
  							m_Tex_LobeHistogram_Transmitted_Decimal.RemoveFromLastAssignedSlotUAV();
  							m_Tex_LobeHistogram_Transmitted_Integer.RemoveFromLastAssignedSlotUAV();
@@ -839,7 +851,7 @@ namespace TestMSBSDF
 							m_Tex_LobeHistogram_Reflected_Decimal.SetCSUAV( 0 );
 							m_Tex_LobeHistogram_Reflected_Integer.SetCSUAV( 1 );
 
-							m_Shader_AccumulateOutgoingDirections.Dispatch( HEIGHTFIELD_SIZE >> 4, HEIGHTFIELD_SIZE >> 4, MAX_SCATTERING_ORDER );
+							m_Shader_AccumulateOutgoingDirections.Dispatch( HEIGHTFIELD_SIZE >> 4, HEIGHTFIELD_SIZE >> 4, MAX_SCATTERING_ORDER+1 );
 
  							m_Tex_LobeHistogram_Reflected_Decimal.RemoveFromLastAssignedSlotUAV();
  							m_Tex_LobeHistogram_Reflected_Integer.RemoveFromLastAssignedSlotUAV();
@@ -858,10 +870,10 @@ namespace TestMSBSDF
  				m_Tex_LobeHistogram_Reflected_Integer.SetCSUAV( 1 );
 				m_Tex_LobeHistogram_Reflected.SetCSUAV( 2 );
 
-				m_CB_Finalize.m._IterationsCount = (uint) _iterationsCount;
+				m_CB_Finalize.m._iterationsCount = (uint) _iterationsCount;
 				m_CB_Finalize.UpdateData();
 
-				m_Shader_FinalizeOutgoingDirections.Dispatch( (LOBES_COUNT_PHI + 15) >> 4, (LOBES_COUNT_THETA + 15) >> 4, MAX_SCATTERING_ORDER );
+				m_Shader_FinalizeOutgoingDirections.Dispatch( (LOBES_COUNT_PHI + 15) >> 4, (LOBES_COUNT_THETA + 15) >> 4, MAX_SCATTERING_ORDER+1 );
 
  				m_Tex_LobeHistogram_Reflected_Decimal.RemoveFromLastAssignedSlotUAV();
  				m_Tex_LobeHistogram_Reflected_Integer.RemoveFromLastAssignedSlotUAV();
@@ -873,7 +885,7 @@ namespace TestMSBSDF
  					m_Tex_LobeHistogram_Transmitted_Integer.SetCSUAV( 1 );
 					m_Tex_LobeHistogram_Transmitted.SetCSUAV( 2 );
 
-					m_Shader_FinalizeOutgoingDirections.Dispatch( (LOBES_COUNT_PHI + 15) >> 4, (LOBES_COUNT_THETA + 15) >> 4, MAX_SCATTERING_ORDER );
+					m_Shader_FinalizeOutgoingDirections.Dispatch( (LOBES_COUNT_PHI + 15) >> 4, (LOBES_COUNT_THETA + 15) >> 4, MAX_SCATTERING_ORDER+1 );
 
  					m_Tex_LobeHistogram_Transmitted_Decimal.RemoveFromLastAssignedSlotUAV();
  					m_Tex_LobeHistogram_Transmitted_Integer.RemoveFromLastAssignedSlotUAV();
@@ -884,9 +896,38 @@ namespace TestMSBSDF
 			}
 		}
 
-		public Texture2D	GetSimulationHistogram( bool _reflectedLobe ) {
+		/// <summary>
+		/// Reads back a lobe texture histogram into an array
+		/// </summary>
+		/// <param name="_reflectedLobe"></param>
+		/// <param name="_scatteringOrder"></param>
+		/// <returns></returns>
+		public double[,]	GetSimulationHistogram( bool _reflectedLobe, uint _scatteringOrder ) {
+			uint	scattMin = _scatteringOrder-1;		// Because scattering order 1 is actually stored in first slice of the texture array
+			uint	scattMax = scattMin+1;				// To simulate a single scattering order
+//			uint	scattMax = MAX_SCATTERING_ORDER;	// To simulate all scattering orders accumulated
+
 			m_Tex_LobeHistogram_CPU.CopyFrom( _reflectedLobe ? m_Tex_LobeHistogram_Reflected : m_Tex_LobeHistogram_Transmitted );
-			return m_Tex_LobeHistogram_CPU;
+
+			uint		W = m_Tex_LobeHistogram_CPU.Width;
+			uint		H = m_Tex_LobeHistogram_CPU.Height;
+			double[,]	histogramData = new double[W,H];
+
+			for ( uint scatteringOrder=scattMin; scatteringOrder < scattMax; scatteringOrder++ ) {
+// 				PixelsBuffer	Content = _texHistogram_CPU.MapRead( 0, scatteringOrder );
+// 				using ( BinaryReader R = Content.OpenStreamRead() )
+// 					for ( int Y=0; Y < H; Y++ )
+// 						for ( int X=0; X < W; X++ )
+// 							histogramData[X,Y] += W * H * R.ReadSingle();
+// 				Content.CloseStream();
+// 				_texHistogram_CPU.UnMap( Content );
+
+				m_Tex_LobeHistogram_CPU.ReadPixels( 0, scatteringOrder, ( uint X, uint Y, BinaryReader R ) => {
+					histogramData[X,Y] += R.ReadSingle();
+				} );
+			}
+
+			return histogramData;
 		}
 
 		#endregion
@@ -963,6 +1004,8 @@ namespace TestMSBSDF
 			}
 		}
 
+		#region Rendering
+
 		public void	UpdateApplication() {
 			panelOutput.Refresh();
 			Application_Idle( null, EventArgs.Empty );
@@ -995,10 +1038,12 @@ namespace TestMSBSDF
 			if ( !radioButtonHideSurface.Checked && m_Shader_RenderHeightField.Use() ) {
 				m_CB_Render.m._Flags = (checkBoxShowNormals.Checked ? 1U : 0U)
 //									 | (checkBoxShowOutgoingDirections.Checked ? 2U : 0U)
-									 | (checkBoxShowReflectedDirectionsHistogram.Checked ? 4U : 0U)
-									 | (checkBoxShowTransmittedDirectionsHistogram.Checked ? 8U : 0U);
-				m_CB_Render.m._ScatteringOrder = (uint) integerTrackbarControlScatteringOrder.Value - 1;
-				m_CB_Render.m._IterationsCount = (uint) m_lastComputedHistogramIterationsCount;
+									 | (checkBoxShowReflectedDirectionsHistogram.Checked ? 0x4U : 0U)
+									 | (checkBoxShowTransmittedDirectionsHistogram.Checked ? 0x8U : 0U)
+									 | (checkBoxCompensateScatteringFactor.Checked ? 0x10U : 0U);
+				m_CB_Render.m._scatteringOrder = (uint) integerTrackbarControlScatteringOrder.Value - 1;
+				m_CB_Render.m._iterationsCount = (uint) m_lastComputedHistogramIterationsCount;
+				m_CB_Render.m._lobeIntensity = floatTrackbarControlLobeIntensity.Value;
 				m_CB_Render.UpdateData();
 
 				m_Prim_Heightfield.Render( m_Shader_RenderHeightField );
@@ -1039,7 +1084,7 @@ namespace TestMSBSDF
 
 
 				m_CB_RenderLobe.m._LobeIntensity = floatTrackbarControlLobeIntensity.Value;
-				m_CB_RenderLobe.m._ScatteringOrder = (uint) integerTrackbarControlScatteringOrder.Value - 1;
+				m_CB_RenderLobe.m._scatteringOrder = (uint) integerTrackbarControlScatteringOrder.Value - 1;
 
 				// Flags for analytical lobe rendering
 				uint	flags = 0U;
@@ -1065,7 +1110,7 @@ namespace TestMSBSDF
 					m_CB_RenderLobe.m._ScaleR = floatTrackbarControlLobeScaleR.Value;
 					m_CB_RenderLobe.m._ScaleT = floatTrackbarControlLobeScaleT.Value;
 					m_CB_RenderLobe.m._ScaleB = floatTrackbarControlLobeScaleB.Value;
-					m_CB_RenderLobe.m._MaskingImportance = floatTrackbarControlLobeMaskingImportance.Value;
+					m_CB_RenderLobe.m._maskingImportance = floatTrackbarControlLobeMaskingImportance.Value;
 					m_CB_RenderLobe.UpdateData();
 
 					m_Prim_Lobe.Render( m_Shader_RenderLobe );
@@ -1078,7 +1123,7 @@ namespace TestMSBSDF
 						m_CB_RenderLobe.m._ScaleR = floatTrackbarControlLobeScaleR_T.Value;
 						m_CB_RenderLobe.m._ScaleT = floatTrackbarControlLobeScaleT_T.Value;
 						m_CB_RenderLobe.m._ScaleB = floatTrackbarControlLobeScaleB_T.Value;
-						m_CB_RenderLobe.m._MaskingImportance = floatTrackbarControlLobeMaskingImportance_T.Value;
+						m_CB_RenderLobe.m._maskingImportance = floatTrackbarControlLobeMaskingImportance_T.Value;
 						m_CB_RenderLobe.UpdateData();
 
 						m_Prim_Lobe.Render( m_Shader_RenderLobe );
@@ -1094,7 +1139,7 @@ namespace TestMSBSDF
 						m_CB_RenderLobe.m._ScaleR = floatTrackbarControlSurfaceAlbedo.Value;
 						m_CB_RenderLobe.m._ScaleT = 1.0f;
 						m_CB_RenderLobe.m._ScaleB = 0.0f;
-						m_CB_RenderLobe.m._MaskingImportance = floatTrackbarControlLobeMaskingImportance_T.Value;
+						m_CB_RenderLobe.m._maskingImportance = floatTrackbarControlLobeMaskingImportance_T.Value;
 						m_CB_RenderLobe.UpdateData();
 
 						m_Prim_Lobe.Render( m_Shader_RenderLobe );
@@ -1138,7 +1183,7 @@ namespace TestMSBSDF
 						m_CB_RenderLobe.m._ScaleR = floatTrackbarControlLobeScaleR.Value;
 						m_CB_RenderLobe.m._ScaleT = floatTrackbarControlLobeScaleT.Value;
 						m_CB_RenderLobe.m._ScaleB = floatTrackbarControlLobeScaleB.Value;
-						m_CB_RenderLobe.m._MaskingImportance = floatTrackbarControlLobeMaskingImportance.Value;
+						m_CB_RenderLobe.m._maskingImportance = floatTrackbarControlLobeMaskingImportance.Value;
 						m_CB_RenderLobe.UpdateData();
 
 						m_Prim_Lobe.Render( m_Shader_RenderLobe );
@@ -1151,7 +1196,7 @@ namespace TestMSBSDF
 							m_CB_RenderLobe.m._ScaleR = floatTrackbarControlLobeScaleR_T.Value;
 							m_CB_RenderLobe.m._ScaleT = floatTrackbarControlLobeScaleT_T.Value;
 							m_CB_RenderLobe.m._ScaleB = floatTrackbarControlLobeScaleB_T.Value;
-							m_CB_RenderLobe.m._MaskingImportance = floatTrackbarControlLobeMaskingImportance_T.Value;
+							m_CB_RenderLobe.m._maskingImportance = floatTrackbarControlLobeMaskingImportance_T.Value;
 							m_CB_RenderLobe.UpdateData();
 
 							m_Prim_Lobe.Render( m_Shader_RenderLobe );
@@ -1165,7 +1210,7 @@ namespace TestMSBSDF
 							m_CB_RenderLobe.m._ScaleR = floatTrackbarControlSurfaceAlbedo.Value;
 							m_CB_RenderLobe.m._ScaleT = 1.0f;
 							m_CB_RenderLobe.m._ScaleB = 0.0f;
-							m_CB_RenderLobe.m._MaskingImportance = floatTrackbarControlLobeMaskingImportance_T.Value;
+							m_CB_RenderLobe.m._maskingImportance = floatTrackbarControlLobeMaskingImportance_T.Value;
 							m_CB_RenderLobe.UpdateData();
 
 							m_Prim_Lobe.Render( m_Shader_RenderLobe );
@@ -1222,6 +1267,56 @@ namespace TestMSBSDF
 			m_Device.Present( false );
 		}
 
+		#endregion
+
+		#region Lobe Fitting
+
+		LobeModel	m_lobeModel = null;
+		BFGS		m_Fitter = new BFGS();
+
+		void	PerformLobeFitting( float3 _incomingDirection, float _theta, bool _computeInitialThetaUsingCenterOfMass, float _roughness, float _IOR, float _scale, float _flatteningFactor, float _maskingImportance, float _OversizeFactor, int _scatteringOrder, bool _reflected ) {
+
+			checkBoxShowAnalyticalLobe.Checked = true;
+
+			// Read back histogram to CPU for fitting
+			double[,]	histogramData = GetSimulationHistogram( _reflected, (uint) _scatteringOrder );
+
+			// Initialize lobe model
+			m_lobeModel = new LobeModel();
+			m_lobeModel.ParametersChanged += ( double[] _parameters ) => {
+				UpdateLobeParameters( _parameters, _reflected );
+			};
+			m_lobeModel.InitTargetData( histogramData );
+
+			LobeModel.LOBE_TYPE	lobeType =	radioButtonAnalyticalPhong.Checked ? LobeModel.LOBE_TYPE.MODIFIED_PHONG :
+											(radioButtonAnalyticalPhongAnisotropic.Checked ? LobeModel.LOBE_TYPE.MODIFIED_PHONG_ANISOTROPIC :
+											(radioButtonAnalyticalBeckmann.Checked ? LobeModel.LOBE_TYPE.BECKMANN : LobeModel.LOBE_TYPE.GGX));
+
+			if ( _computeInitialThetaUsingCenterOfMass ) {
+				// Optionally override theta to use the direction of the center of mass
+				// (quite intuitive to start by aligning our lobe along the main simulated lobe direction!)
+				float3	towardCenterOfMass = m_lobeModel.CenterOfMass.Normalized;
+				_theta = (float) Math.Acos( towardCenterOfMass.z );
+//				_scale = 2.0 * m_centerOfMass.Length;				// Also assume we should match the simulated lobe's length
+				_flatteningFactor = lobeType == LobeModel.LOBE_TYPE.MODIFIED_PHONG ? 0.5f : 1.0f;	// Start from a semi-flattened shape so it can choose either direction...
+				_scale = 0.01f * m_lobeModel.CenterOfMass.Length;	// In fact, I realized the algorithm converged much faster starting from a very small lobe!! (~20 iterations compared to 200 otherwise, because the gradient leads the algorithm in the wrong direction too fast and it takes hell of a time to get back on tracks afterwards if we start from too large a lobe!)
+			}
+
+			m_lobeModel.InitLobeData( lobeType, _incomingDirection, _theta, _roughness, _scale, _flatteningFactor, _maskingImportance, _OversizeFactor, checkBoxUseCenterOfMassForBetterFitting.Checked );
+
+// 			if ( !checkBoxUseCenterOfMassForBetterFitting.Checked ) {
+// 				m_Fitter.SuccessTolerance = 1e-4;
+// 				m_Fitter.GradientSuccessTolerance = 1e-4;
+// 			}
+
+			// Peform fitting
+			m_Fitter.Minimize( m_lobeModel );
+
+			panelOutput.Invalidate();
+		}
+
+		#endregion
+
 		#region EVENT HANDLERS
 
 		void Camera_CameraTransformChanged( object sender, EventArgs e ) {
@@ -1268,6 +1363,35 @@ namespace TestMSBSDF
 					surfaceType = SURFACE_TYPE.DIFFUSE;
 
 				RayTraceSurface( floatTrackbarControlBeckmannRoughness.Value, floatTrackbarControlSurfaceAlbedo.Value, surfaceType, (float) Math.PI * floatTrackbarControlTheta.Value / 180.0f, (float) Math.PI * floatTrackbarControlPhi.Value / 180.0f, integerTrackbarControlIterationsCount.Value );
+
+				// Display some results
+				try {
+					string	decimalPlaces = "G5";
+					string	lines = "";
+					for ( int i=0; i < (surfaceType == SURFACE_TYPE.DIELECTRIC ? 2 : 1); i++ ) {
+						bool	reflectedLobe = i == 0;
+						double	totalSum = 0.0;
+
+						// Compute sum for each order
+						for ( int scatteringOrder=0; scatteringOrder <= MAX_SCATTERING_ORDER; scatteringOrder++ ) {
+							double[,]	histogram = GetSimulationHistogram( reflectedLobe, (uint) (1+scatteringOrder) );
+							double		sum = 0.0;
+							for ( int Y=0; Y < LOBES_COUNT_THETA; Y++ )
+								for ( int X=0; X < LOBES_COUNT_PHI; X++ )
+									sum += histogram[X,Y];
+
+							totalSum += sum;
+							lines += (scatteringOrder > 0 ? " - " : "") + (scatteringOrder < MAX_SCATTERING_ORDER ? "Order " + (1+scatteringOrder) : "Other " ) + " = " + sum.ToString( decimalPlaces );
+						}
+						lines += " - Total = " + totalSum.ToString( decimalPlaces ) + "\r\n";
+					}
+
+					textBoxResults.Text = lines;
+					
+				} catch ( Exception ) {
+					
+				}
+
 				m_pauseRendering = false;
 			} catch ( Exception _e ) {
 				MessageBox( "An error occurred while ray-tracing the surface using " + integerTrackbarControlIterationsCount.Value + " iterations:\r\n" + _e.Message + "\r\n\r\nDisabling device..." );
@@ -1275,58 +1399,6 @@ namespace TestMSBSDF
 				m_Device = null;
 			}
 		}
-
-		#endregion
-
-		#region Lobe Fitting
-
-		LobeModel	m_lobeModel = null;
-		BFGS		m_Fitter = new BFGS();
-
-		void	PerformLobeFitting( float3 _incomingDirection, float _theta, bool _computeInitialThetaUsingCenterOfMass, float _roughness, float _IOR, float _scale, float _flatteningFactor, float _MaskingImportance, float _OversizeFactor, int _scatteringOrder, bool _reflected ) {
-
-			checkBoxShowAnalyticalLobe.Checked = true;
-
-			// Read back histogram to CPU for fitting
-			m_Tex_LobeHistogram_CPU.CopyFrom( _reflected ? m_Tex_LobeHistogram_Reflected : m_Tex_LobeHistogram_Transmitted );
-
-			// Initialize lobe model
-			m_lobeModel = new LobeModel();
-			m_lobeModel.ParametersChanged += ( double[] _parameters ) => {
-				UpdateLobeParameters( _parameters, _reflected );
-			};
-
-			double[,]	histogramData = LobeModel.HistogramTexture2Array( m_Tex_LobeHistogram_CPU, (uint) _scatteringOrder );
-			m_lobeModel.InitTargetData( histogramData );
-
-			LobeModel.LOBE_TYPE	lobeType =	radioButtonAnalyticalPhong.Checked ? LobeModel.LOBE_TYPE.MODIFIED_PHONG :
-											(radioButtonAnalyticalPhongAnisotropic.Checked ? LobeModel.LOBE_TYPE.MODIFIED_PHONG_ANISOTROPIC :
-											(radioButtonAnalyticalBeckmann.Checked ? LobeModel.LOBE_TYPE.BECKMANN : LobeModel.LOBE_TYPE.GGX));
-
-			if ( _computeInitialThetaUsingCenterOfMass ) {
-				// Optionally override theta to use the direction of the center of mass
-				// (quite intuitive to start by aligning our lobe along the main simulated lobe direction!)
-				float3	towardCenterOfMass = m_lobeModel.CenterOfMass.Normalized;
-				_theta = (float) Math.Acos( towardCenterOfMass.z );
-//				_scale = 2.0 * m_centerOfMass.Length;				// Also assume we should match the simulated lobe's length
-				_flatteningFactor = lobeType == LobeModel.LOBE_TYPE.MODIFIED_PHONG ? 0.5f : 1.0f;	// Start from a semi-flattened shape so it can choose either direction...
-				_scale = 0.01f * m_lobeModel.CenterOfMass.Length;	// In fact, I realized the algorithm converged much faster starting from a very small lobe!! (~20 iterations compared to 200 otherwise, because the gradient leads the algorithm in the wrong direction too fast and it takes hell of a time to get back on tracks afterwards if we start from too large a lobe!)
-			}
-
-			m_lobeModel.InitLobeData( lobeType, _incomingDirection, _theta, _roughness, _scale, _flatteningFactor, _MaskingImportance, _OversizeFactor, checkBoxUseCenterOfMassForBetterFitting.Checked );
-
-// 			if ( !checkBoxUseCenterOfMassForBetterFitting.Checked ) {
-// 				m_Fitter.SuccessTolerance = 1e-4;
-// 				m_Fitter.GradientSuccessTolerance = 1e-4;
-// 			}
-
-			// Peform fitting
-			m_Fitter.Minimize( m_lobeModel );
-
-			panelOutput.Invalidate();
-		}
-
-		#endregion
 
 		private void buttonFit_Click( object sender, EventArgs e ) {
 			if ( m_fitting )
@@ -1386,9 +1458,10 @@ namespace TestMSBSDF
 				m_automation.Visible = false;
 		}
 
-		private void buttonTestImage_Click( object sender, EventArgs e )
-		{
+		private void buttonTestImage_Click( object sender, EventArgs e ) {
 			BuildSurfaceFromTexture( "TestSurface.png", 1.0f );
 		}
+
+		#endregion
 	}
 }

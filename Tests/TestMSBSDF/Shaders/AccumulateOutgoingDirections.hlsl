@@ -23,8 +23,9 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 
 	directionWeight.xyz = normalize( directionWeight.xyz );
 
-	float	phi = fmod( 2.0 * PI + atan2( directionWeight.y, directionWeight.x ), 2.0 * PI );
-	uint	iPhi = uint( floor( LOBES_COUNT_PHI * phi / (2.0 * PI) ) );
+//	float	phi = fmod( 2.0 * PI + atan2( directionWeight.y, directionWeight.x ), 2.0 * PI );
+//	uint	iPhi = uint( floor( LOBES_COUNT_PHI * phi / (2.0 * PI) ) );
+	uint	iPhi = uint( floor( fmod( LOBES_COUNT_PHI * (1.0 + atan2( directionWeight.y, directionWeight.x ) / (2.0 * PI)), LOBES_COUNT_PHI ) ) );
 
 // Formerly, I used the wrong discretization for histogram bins based on cosine-lobe weighted theta = 2*asin( sqrt( i / (2*N) ))
 //	float	theta = acos( clamp( directionWeight.z, -1.0, 1.0 ) );
@@ -35,13 +36,20 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 	uint	iTheta = uint( floor( LOBES_COUNT_THETA * (1.0 - directionWeight.z) ) );
 
 
+iTheta = min( LOBES_COUNT_THETA-1, iTheta );
+
+
 //iPhi = pixelPosition.x * LOBES_COUNT_PHI / HEIGHTFIELD_SIZE;
 //iTheta = pixelPosition.y * LOBES_COUNT_THETA / HEIGHTFIELD_SIZE;
 //directionWeight.w = abs( sin( 2.0 * PI * pixelPosition.x / HEIGHTFIELD_SIZE ) );
 //directionWeight.w *= abs( sin( 2.0 * PI * pixelPosition.y / HEIGHTFIELD_SIZE ) );
 
+	// Here, the factor applied to the weight is chosen such as factor * HEIGHTFIELD_SIZE * HEIGHTFIELD_SIZE = 2^32
+	// It is chosen so even if all rays contributed exactly to the same histogram slot, a single iteration of HEIGHTFIELD_SIZE*HEIGHTFIELD_SIZE rays
+	//	would add up to 1*(2^32) + 0 in our 2 32-bits counters and so we could still use 2^32 total iterations to exhaust the MSW...
+	//
+	uint	value = uint( floor( 16384.0 * directionWeight.w ) );
 
-	uint	value = uint( floor( 256.0 * directionWeight.w ) );
 	uint	oldValue;
 	if ( iTheta < LOBES_COUNT_THETA ) {
 		uint3	UVW = uint3( iPhi, iTheta, scatteringOrder );
@@ -69,9 +77,10 @@ void	CS_Finalize( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTH
 	uint	counter_decimal = _Tex_DirectionsHistogram_Decimal[UVW];	// LSW part of the counter
 	uint	counter_integer = _Tex_DirectionsHistogram_Integer[UVW];	// MSW part of the counter
 
-	float	integerFactor = _iterationsCount > 256 ? (256.0 * HEIGHTFIELD_SIZE * HEIGHTFIELD_SIZE) / ((_iterationsCount & 0xFF00U) * HEIGHTFIELD_SIZE * HEIGHTFIELD_SIZE) : 1.0;
-	float	decimalFactor = 1.0 / (256.0 * min( 256.0, _iterationsCount ) * HEIGHTFIELD_SIZE * HEIGHTFIELD_SIZE);	// At most 2^-32 when iterations count exceed 256
-	float	finalCounter = integerFactor * (counter_integer + decimalFactor * counter_decimal);
+//counter_decimal = 0xFFFFFFFFU;
+//counter_integer = 0;
+
+	float	finalCounter = (counter_integer + (float(counter_decimal) / 4294967296.0)) / _iterationsCount;
 
 	_Tex_DirectionsHistogram_Final[UVW] = finalCounter;
 }

@@ -228,7 +228,7 @@ namespace TestMSBSDF
 					m_incomingAngle = new Parameter( this, 0, 90.0f, 20 );
 					m_roughness = new Parameter( this, 0, 1.0f, 10 );
 					m_albedoF0 = new Parameter( this, 0, 1.0f, 4 );
-					m_scatteringOrders = new Parameter( this, 1, 4, 1 );
+					m_scatteringOrders = new Parameter( this, 1, TestForm.MAX_SCATTERING_ORDER + 1, 1 );
 					m_scatteringOrders.ValueChanged += m_scatteringOrders_ValueChanged;
 
 					m_roughness.Min = 1.0f;
@@ -346,6 +346,7 @@ namespace TestMSBSDF
 				}
 
 				// Fitter parameters
+				public bool						m_performFitting = true;		// Patapom (18/04/20) You can now skip fitting and only compute total reflectance 
 				public int						m_maxIterations = 200;
 				public float					m_logTolerance_Minimum = -6.0f;
 				public float					m_logTolerance_Gradient = -6.0f;
@@ -389,6 +390,7 @@ namespace TestMSBSDF
 					XmlElement	ElemFitterParms = AppendChild( _parent, "FitterParameters" );
 					_parent.AppendChild( ElemFitterParms );
 
+					Attrib( ElemFitterParms, "PerformFitting", m_performFitting );
 					Attrib( ElemFitterParms, "MaxIterations", m_maxIterations );
 					Attrib( ElemFitterParms, "logToleranceMinimum", m_logTolerance_Minimum );
 					Attrib( ElemFitterParms, "logToleranceGradient", m_logTolerance_Gradient );
@@ -430,6 +432,7 @@ namespace TestMSBSDF
 					// Fitter parameters
 					XmlElement	ElemFitterParms = _parent["FitterParameters"];
 
+					Attrib( ElemFitterParms, "PerformFitting", ref m_performFitting );
 					Attrib( ElemFitterParms, "MaxIterations", ref m_maxIterations );
 					Attrib( ElemFitterParms, "logToleranceMinimum", ref m_logTolerance_Minimum );
 					Attrib( ElemFitterParms, "logToleranceGradient", ref m_logTolerance_Gradient );
@@ -482,6 +485,8 @@ namespace TestMSBSDF
 					public double	m_scale = 0.1;
 					public double	m_flatten = 0.5;
 					public double	m_masking = 1.0;
+
+					public double	m_totalReflectance = 0.0;	// Patapom (18/04/18) Summation of the total reflectance from the histogram
 
 					/// <summary>
 					/// Tells if the parameters are valid
@@ -698,6 +703,7 @@ namespace TestMSBSDF
 						Attrib( _parent, "scale", m_scale );
 						Attrib( _parent, "flatten", m_flatten );
 						Attrib( _parent, "masking", m_masking );
+						Attrib( _parent, "totalReflectance", m_totalReflectance );
 					}
 
 					public void		Load( XmlElement _parent, int _version ) {
@@ -706,6 +712,7 @@ namespace TestMSBSDF
 						Attrib( _parent, "scale", ref m_scale );
 						Attrib( _parent, "flatten", ref m_flatten );
 						Attrib( _parent, "masking", ref m_masking );
+						Attrib( _parent, "totalReflectance", ref m_totalReflectance );
 					}
 
 					#region Analytical Expressions
@@ -1319,7 +1326,6 @@ namespace TestMSBSDF
 			/// <summary>
 			/// Starts the lobe fitting
 			/// </summary>
-			/// <param name="_fitRefractedLobe"></param>
 			public void	Start( int _maxIterations, double _goalTolerance, double _gradientTolerance, bool _startThread ) {
 				m_maxIterations = _maxIterations;
 				m_goalTolerance = _goalTolerance;
@@ -1380,17 +1386,9 @@ namespace TestMSBSDF
 			/// Initializes the target data we need to fit from the CPU-readable histogram texture
 			/// </summary>
 			public void	InitializeLobeTargetData() {
-
 				// Read back histogram to CPU for fitting
-				Texture2D	Tex_SimulatedLobeHistogram = m_owner.m_owner.GetSimulationHistogram( true );
-				m_histogramReflected = LobeModel.HistogramTexture2Array( Tex_SimulatedLobeHistogram, (uint) m_result.ScatteringOrder );
-
-				if ( m_fitBothLobes ) {
-					// Also read back transmitted lobe
-					Tex_SimulatedLobeHistogram = m_owner.m_owner.GetSimulationHistogram( false );
-					m_histogramTransmitted = LobeModel.HistogramTexture2Array( Tex_SimulatedLobeHistogram, (uint) m_result.ScatteringOrder );
-				} else
-					m_histogramTransmitted = null;
+				m_histogramReflected = m_owner.m_owner.GetSimulationHistogram( true, (uint) m_result.ScatteringOrder );
+				m_histogramTransmitted = m_fitBothLobes ? m_owner.m_owner.GetSimulationHistogram( false, (uint) m_result.ScatteringOrder ) : null;	// Also read back transmitted lobe
 			}
 
 			/// <summary>
@@ -1409,7 +1407,19 @@ namespace TestMSBSDF
 				m_fitter.GradientSuccessTolerance = gradientTolerance;
 
 				// Initialize lobe data & compute center of mass
-				m_lobeModel.InitTargetData( m_isReflectedLobe ? m_histogramReflected : m_histogramTransmitted );
+				double[,]	targetHistogram = m_isReflectedLobe ? m_histogramReflected : m_histogramTransmitted;
+				m_lobeModel.InitTargetData( targetHistogram );
+
+				// BEGIN: Patapom (18/04/18) Compute total reflectance
+				m_parameters.m_totalReflectance = 0.0;
+				int	W = targetHistogram.GetLength( 0 );
+				int	H = targetHistogram.GetLength( 1 );
+				for ( int Y=0; Y < H; Y++ ) {
+					for ( int X=0; X < W; X++ ) {
+						m_parameters.m_totalReflectance += targetHistogram[X,Y];
+					}
+				}
+				// END: Patapom (18/04/18)
 			}
 
 			/// <summary>
@@ -1418,6 +1428,8 @@ namespace TestMSBSDF
 			/// <param name="_result"></param>
 			/// <param name="_reflected"></param>
 			public void	PerformLobeFitting() {
+				if ( m_maxIterations == 0 )
+					return;
 
 				// Initialize preliminary lobe results
 				float3				incomingDirection = m_result.IncomingDirection;
@@ -1661,11 +1673,16 @@ namespace TestMSBSDF
 			integerTrackbarControlViewAlbedoSlice.RangeMax = m_document.m_surface.m_albedoF0.StepsCount - 1;
 			integerTrackbarControlViewAlbedoSlice.VisibleRangeMax = integerTrackbarControlViewAlbedoSlice.RangeMax;
 
+			integerTrackbarControlScatteringOrder_Min.RangeMin = m_document.m_surface.ScatteringOrderMin;
+			integerTrackbarControlScatteringOrder_Min.VisibleRangeMin = m_document.m_surface.ScatteringOrderMin;
 			integerTrackbarControlScatteringOrder_Min.RangeMax = m_document.m_surface.ScatteringOrderMax;	// Min scattering can't go higher than this
 			integerTrackbarControlScatteringOrder_Min.VisibleRangeMax = m_document.m_surface.ScatteringOrderMax;
 			integerTrackbarControlScatteringOrder_Min.Value = m_document.m_surface.ScatteringOrderMin;
+
 			integerTrackbarControlScatteringOrder_Max.RangeMin = m_document.m_surface.ScatteringOrderMin;	// Max scattering can't go lower than this
 			integerTrackbarControlScatteringOrder_Max.VisibleRangeMin = m_document.m_surface.ScatteringOrderMin;
+			integerTrackbarControlScatteringOrder_Max.RangeMax = m_document.m_surface.ScatteringOrderMax;
+			integerTrackbarControlScatteringOrder_Max.VisibleRangeMax = m_document.m_surface.ScatteringOrderMax;
 			integerTrackbarControlScatteringOrder_Max.Value = m_document.m_surface.ScatteringOrderMax;
 
 			integerTrackbarControlViewScatteringOrder.RangeMin = m_document.m_surface.ScatteringOrderMin;
@@ -1746,6 +1763,7 @@ namespace TestMSBSDF
 		/// Mirrors the document's lobe settings to the UI
 		/// </summary>
 		void	DocumentLobeSettings2UI() {
+			checkBoxSkipSimulation.Checked = !m_document.m_settings.m_performFitting;
 			integerTrackbarControlMaxIterations.Value = m_document.m_settings.m_maxIterations;
 			floatTrackbarControlGoalTolerance.Value = m_document.m_settings.m_logTolerance_Minimum;
 			floatTrackbarControlGradientTolerance.Value = m_document.m_settings.m_logTolerance_Gradient;
@@ -2092,7 +2110,7 @@ namespace TestMSBSDF
 								T.Result = R;
 								T.FitBothLobes = m_document.m_surface.m_type == TestForm.SURFACE_TYPE.DIELECTRIC;
 								T.InitializeLobeTargetData();
-								T.Start( m_document.m_settings.m_maxIterations, functionMinimumTolerance, gradientTolerance, true );
+								T.Start( checkBoxSkipSimulation.Checked ? 0 : m_document.m_settings.m_maxIterations, functionMinimumTolerance, gradientTolerance, true );
 
 								// Auto-save
 								runCounter++;
@@ -2172,7 +2190,7 @@ namespace TestMSBSDF
 				T.Result = SelectedResult;
 				T.FitBothLobes = m_document.m_surface.m_type == TestForm.SURFACE_TYPE.DIELECTRIC;
 				T.InitializeLobeTargetData();
-				T.Start( m_document.m_settings.m_maxIterations, functionMinimumTolerance, gradientTolerance, false );	// Start on the main thread here...
+				T.Start( checkBoxSkipSimulation.Checked ? 0 : m_document.m_settings.m_maxIterations, functionMinimumTolerance, gradientTolerance, false );	// Start on the main thread here...
 
 			} catch ( CanceledException ) {
 				LogLine( "Canceled!" );
@@ -2413,6 +2431,69 @@ namespace TestMSBSDF
 
 			} catch ( Exception _e ) {
 				MessageBox( "An error occurred while importing results:\r\n" + _e );
+			}
+		}
+
+		private void exportTotalReflectanceToolStripMenuItem_Click( object sender, EventArgs e ) {
+			string	fileName = m_AppKey.GetValue( "LastTotalReflectanceExportFileName", new System.IO.FileInfo( "TotalReflectance.bin" ).FullName ) as string;
+			saveFileDialogExport.FileName = Path.GetFileName( fileName );
+			saveFileDialogExport.InitialDirectory = Path.GetDirectoryName( fileName );
+			if ( saveFileDialogExport.ShowDialog( this ) != DialogResult.OK )
+				return;
+
+			try {
+
+				fileName = saveFileDialogExport.FileName;
+				string	directory = Path.GetDirectoryName( fileName );
+				string	fileNameNoExt = Path.GetFileNameWithoutExtension( fileName );
+				string	extension = Path.GetExtension( fileName );
+
+				//@TODO: Support extended export formats
+				for ( int order=0; order < m_document.m_results.Length; order++ ) {
+					Document.Result[,,]	results = m_document.m_results[order];
+
+					string	orderFileName = Path.Combine( directory, fileNameNoExt + "_order" + (m_document.m_surface.ScatteringOrderMin + order) + extension );
+
+					int	W = results.GetLength( 0 );
+					int	H = results.GetLength( 1 );
+					int	slicesCount = results.GetLength( 2 );
+
+					// Write results for reflected lobe
+					using ( FileStream S = new FileInfo( orderFileName ).Create() ) {
+						using ( BinaryWriter Writer = new BinaryWriter( S ) ) {
+							for ( int sliceIndex=0; sliceIndex < slicesCount; sliceIndex++ ) {
+								for ( int Y=0; Y < H; Y++ )
+									for ( int X=0; X < W; X++ ) {
+										Document.Result	R = results[X,Y,sliceIndex];
+										Writer.Write( R.m_reflected.m_totalReflectance );
+									}
+							}
+						}
+					}
+
+					if ( m_document.m_surface.m_type == TestForm.SURFACE_TYPE.DIELECTRIC ) {
+						// Write results for refracted lobe
+						orderFileName = Path.Combine( directory, fileNameNoExt + "_order" + (m_document.m_surface.ScatteringOrderMin + order) + "_slice_refracted" + extension );
+						using ( FileStream S = new FileInfo( orderFileName ).Create() ) {
+							using ( BinaryWriter Writer = new BinaryWriter( S ) ) {
+								for ( int sliceIndex=0; sliceIndex < slicesCount; sliceIndex++ ) {
+									for ( int Y=0; Y < H; Y++ )
+										for ( int X=0; X < W; X++ ) {
+											Document.Result	R = results[X,Y,sliceIndex];
+											Writer.Write( R.m_refracted.m_totalReflectance );
+										}
+								}
+							}
+						}
+					}
+				}
+
+				m_AppKey.SetValue( "LastTotalReflectanceExportFileName", saveFileDialogExport.FileName );
+
+				MessageBox( "Success!", MessageBoxButtons.OK, MessageBoxIcon.Information );
+
+			} catch ( Exception _e ) {
+				MessageBox( "An error occurred while exporting results:\r\n" + _e );
 			}
 		}
 
@@ -2831,28 +2912,27 @@ namespace TestMSBSDF
 
 		#region Lobe Fitter
 
-		private void integerTrackbarControlMaxIterations_ValueChanged( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue )
-		{
+		private void checkBoxSkipSimulation_CheckedChanged( object sender, EventArgs e ) {
+			m_document.m_settings.m_performFitting = !checkBoxSkipSimulation.Checked;
+		}
+
+		private void integerTrackbarControlMaxIterations_ValueChanged( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue ) {
 			m_document.m_settings.m_maxIterations = integerTrackbarControlMaxIterations.Value;
 		}
 
-		private void floatTrackbarControlGoalTolerance_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
-		{
+		private void floatTrackbarControlGoalTolerance_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue ) {
 			m_document.m_settings.m_logTolerance_Minimum = floatTrackbarControlGoalTolerance.Value;
 		}
 
-		private void floatTrackbarControlGradientTolerance_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
-		{
+		private void floatTrackbarControlGradientTolerance_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue ) {
 			m_document.m_settings.m_logTolerance_Gradient = floatTrackbarControlGradientTolerance.Value;
 		}
 
-		private void integerTrackbarControlRetries_ValueChanged( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue )
-		{
+		private void integerTrackbarControlRetries_ValueChanged( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue ) {
 			m_document.m_settings.m_maxRetries = integerTrackbarControlRetries.Value;
 		}
 
-		private void floatTrackbarControlFitOversize_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
-		{
+		private void floatTrackbarControlFitOversize_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue ) {
 			m_document.m_settings.m_oversizeFactor = floatTrackbarControlFitOversize.Value;
 		}
 

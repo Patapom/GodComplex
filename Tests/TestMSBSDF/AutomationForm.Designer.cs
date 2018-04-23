@@ -74,6 +74,7 @@
 			this.label11 = new System.Windows.Forms.Label();
 			this.label21 = new System.Windows.Forms.Label();
 			this.panelParameters = new System.Windows.Forms.Panel();
+			this.checkBoxSkipSimulation = new System.Windows.Forms.CheckBox();
 			this.textBoxLog = new Nuaj.Cirrus.Utility.LogTextBox(this.components);
 			this.integerTrackbarControlViewAlbedoSlice = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
 			this.groupBoxLobeFitterConfig = new System.Windows.Forms.GroupBox();
@@ -167,6 +168,7 @@
 			this.recentToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.resultsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.exportToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.importToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.buttonCompute = new System.Windows.Forms.Button();
 			this.buttonClearResults = new System.Windows.Forms.Button();
 			this.openFileDialogResults = new System.Windows.Forms.OpenFileDialog();
@@ -174,9 +176,10 @@
 			this.saveFileDialogExport = new System.Windows.Forms.SaveFileDialog();
 			this.integerTrackbarControlThreadsCount = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
 			this.label31 = new System.Windows.Forms.Label();
-			this.importToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.openFileDialogExport = new System.Windows.Forms.OpenFileDialog();
 			this.completionArrayControl = new TestMSBSDF.CompletionArrayControl();
+			this.toolStripMenuItem1 = new System.Windows.Forms.ToolStripSeparator();
+			this.exportTotalReflectanceToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.groupBoxSimulationParameters.SuspendLayout();
 			this.panel6.SuspendLayout();
 			this.panel5.SuspendLayout();
@@ -758,6 +761,7 @@
 			this.panelParameters.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
+			this.panelParameters.Controls.Add(this.checkBoxSkipSimulation);
 			this.panelParameters.Controls.Add(this.textBoxLog);
 			this.panelParameters.Controls.Add(this.integerTrackbarControlViewAlbedoSlice);
 			this.panelParameters.Controls.Add(this.groupBoxLobeFitterConfig);
@@ -769,6 +773,17 @@
 			this.panelParameters.Name = "panelParameters";
 			this.panelParameters.Size = new System.Drawing.Size(1033, 756);
 			this.panelParameters.TabIndex = 1;
+			// 
+			// checkBoxSkipSimulation
+			// 
+			this.checkBoxSkipSimulation.AutoSize = true;
+			this.checkBoxSkipSimulation.Location = new System.Drawing.Point(751, 600);
+			this.checkBoxSkipSimulation.Name = "checkBoxSkipSimulation";
+			this.checkBoxSkipSimulation.Size = new System.Drawing.Size(244, 17);
+			this.checkBoxSkipSimulation.TabIndex = 8;
+			this.checkBoxSkipSimulation.Text = "Skip Simulation (only collect total reflectances)";
+			this.checkBoxSkipSimulation.UseVisualStyleBackColor = true;
+			this.checkBoxSkipSimulation.CheckedChanged += new System.EventHandler(this.checkBoxSkipSimulation_CheckedChanged);
 			// 
 			// textBoxLog
 			// 
@@ -1814,7 +1829,9 @@
 			// 
 			this.resultsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.exportToolStripMenuItem,
-            this.importToolStripMenuItem});
+            this.importToolStripMenuItem,
+            this.toolStripMenuItem1,
+            this.exportTotalReflectanceToolStripMenuItem});
 			this.resultsToolStripMenuItem.Name = "resultsToolStripMenuItem";
 			this.resultsToolStripMenuItem.Size = new System.Drawing.Size(56, 20);
 			this.resultsToolStripMenuItem.Text = "&Results";
@@ -1825,6 +1842,13 @@
 			this.exportToolStripMenuItem.Size = new System.Drawing.Size(110, 22);
 			this.exportToolStripMenuItem.Text = "E&xport";
 			this.exportToolStripMenuItem.Click += new System.EventHandler(this.exportToolStripMenuItem_Click);
+			// 
+			// importToolStripMenuItem
+			// 
+			this.importToolStripMenuItem.Name = "importToolStripMenuItem";
+			this.importToolStripMenuItem.Size = new System.Drawing.Size(110, 22);
+			this.importToolStripMenuItem.Text = "&Import";
+			this.importToolStripMenuItem.Click += new System.EventHandler(this.importToolStripMenuItem_Click);
 			// 
 			// buttonCompute
 			// 
@@ -1893,13 +1917,6 @@
 			this.label31.TabIndex = 1;
 			this.label31.Text = "Threads Count";
 			// 
-			// importToolStripMenuItem
-			// 
-			this.importToolStripMenuItem.Name = "importToolStripMenuItem";
-			this.importToolStripMenuItem.Size = new System.Drawing.Size(110, 22);
-			this.importToolStripMenuItem.Text = "&Import";
-			this.importToolStripMenuItem.Click += new System.EventHandler(this.importToolStripMenuItem_Click);
-			// 
 			// openFileDialogExport
 			// 
 			this.openFileDialogExport.CheckFileExists = false;
@@ -1925,6 +1942,18 @@
 			this.completionArrayControl.TabIndex = 3;
 			this.completionArrayControl.SelectionChanged += new TestMSBSDF.CompletionArrayControl.SelectionChangedEventHandler(this.completionArrayControl_SelectionChanged);
 			this.completionArrayControl.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.completionArrayControl_MouseDoubleClick);
+			// 
+			// toolStripMenuItem1
+			// 
+			this.toolStripMenuItem1.Name = "toolStripMenuItem1";
+			this.toolStripMenuItem1.Size = new System.Drawing.Size(198, 6);
+			// 
+			// exportTotalReflectanceToolStripMenuItem
+			// 
+			this.exportTotalReflectanceToolStripMenuItem.Name = "exportTotalReflectanceToolStripMenuItem";
+			this.exportTotalReflectanceToolStripMenuItem.Size = new System.Drawing.Size(201, 22);
+			this.exportTotalReflectanceToolStripMenuItem.Text = "Export Total Reflectance";
+			this.exportTotalReflectanceToolStripMenuItem.Click += new System.EventHandler(this.exportTotalReflectanceToolStripMenuItem_Click);
 			// 
 			// AutomationForm
 			// 
@@ -2130,5 +2159,8 @@
 		private System.Windows.Forms.RadioButton radioButtonLobe_ModifiedPhongAniso;
 		private System.Windows.Forms.ToolStripMenuItem importToolStripMenuItem;
 		private System.Windows.Forms.OpenFileDialog openFileDialogExport;
+		private System.Windows.Forms.CheckBox checkBoxSkipSimulation;
+		private System.Windows.Forms.ToolStripSeparator toolStripMenuItem1;
+		private System.Windows.Forms.ToolStripMenuItem exportTotalReflectanceToolStripMenuItem;
 	}
 }

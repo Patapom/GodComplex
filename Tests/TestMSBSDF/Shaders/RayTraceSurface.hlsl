@@ -69,14 +69,13 @@ float4	RayTrace( float3 _position, float3 _direction, out float3 _normal, bool _
 
 	// Compute maximum ray distance
 	float	maxDistance = min(	0.2 * HEIGHTFIELD_SIZE,					// Anyway, can't ray-trace more than this size
-								2.0 * MAX_HEIGHT / abs( _direction.z )	// How long does it take, using the current ray direction, to move from -MAX_HEIGHT to +MAX_HEIGHT ?
+								2.0 * MAX_HEIGHT / abs( _direction.z )	// How long does it take, using the current ray direction, to move from -MAX_HEIGHT to +MAX_HEIGHT?
 							);
 
 //	float	maxDistance = 2.0 * MAX_HEIGHT / abs( _direction.z );	// How many steps does it take, using the ray direction, to move from -MAX_HEIGHT to +MAX_HEIGHT ?
 
 	// Build initial direction and position as extended vectors
 	float4	dir = float4( _direction, 1.0 );
-
 	float4	pos = float4( _position, 0.0 );
 	float4	ppos;
 
@@ -148,7 +147,7 @@ float3	GetOffSurface( float3 _position, float3 _direction, float3 _normal, float
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Conductor Ray-Tracing
-// We only account for albedo
+// We only account for albedo, the weight is decreased by the albedo each time (although we should use a complex Fresnel term here!!!!)
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 [numthreads( 16, 16, 1 )]
@@ -158,7 +157,7 @@ void	CS_Conductor( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPT
 
 	float3	targetPosition = float3( pixelPosition + _offset, 0.0 );					// The target point of our ray is the heightfield's texel
 	float3	position = targetPosition + (INITIAL_HEIGHT / _direction.z) * _direction;	// So start from there and go back along the ray direction to reach the start height
-	float3	direction = _direction;
+	float3	direction = _direction;														// Points TOWARD the surface (i.e. down)!
 	float	weight = 1.0;
 
 	uint	scatteringIndex = 0;	// No scattering yet
@@ -166,12 +165,13 @@ void	CS_Conductor( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPT
 	float3	normal;
 
 	float4	random = _Tex_Random[uint3(pixelPosition,0)];
+			random = JitterRandom( random, _offset );
 
-	random = JitterRandom( random, _offset );
+	float	IOR = _IOR;
 
 	[loop]
 	[fastopt]
-	for ( ; scatteringIndex < 5; scatteringIndex++ ) {
+	for ( ; scatteringIndex <= MAX_SCATTERING_ORDER; scatteringIndex++ ) {
 		hitPosition = RayTrace( position, direction, normal, true );
 		if ( hitPosition.w > 1e3 )
 			break;	// The ray escaped the surface!
@@ -179,28 +179,35 @@ void	CS_Conductor( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPT
 		// Walk to hit
 		position = hitPosition.xyz;
 
+		float	cosTheta = -dot( direction, normal );	// Minus sign because direction is down
+
 		// Bounce off the surface
 		#if 1
-			direction = reflect( direction, normal );
+			direction = reflect( direction, normal );	// Perfect mirror
 		#else
 			direction = GenerateDirection( normal, _roughness, random );
 		#endif
 
-		// Each bump into the surface decreases the weight by the albedo
-		// 2 bumps we have albedo², 3 bumps we have albedo^3, etc. That explains the saturation of colors!
-		weight *= _albedo;
+		#if 1
+			// Use dielectric Fresnel to weigh reflection
+			float	F = FresnelAccurate( IOR, saturate( cosTheta ) );
+			weight *= F;
+		#else
+			// Each bump into the surface decreases the weight by the albedo
+			// 2 bumps we have albedo², 3 bumps we have albedo^3, etc. That explains the saturation of colors!
+			weight *= _albedo;
+		#endif
 
 		// Now, walk a little to avoid hitting the surface again
 		position = GetOffSurface( position, direction, normal, OFF_SURFACE_DISTANCE );
 
 		#if 1
 			float4	NH = SampleNormalHeight( position.xy );	// Normal + Height
-			if ( position.z < NH.w-1e-2 ) {
-				position.z = NH.w+1e-2;				// Ensure we're always ABOVE the surface!
+			if ( position.z < NH.w - 1e-2 ) {
+				position.z = NH.w + 1e-2;			// Ensure we're always ABOVE the surface!
 //				direction = float3( 0, 0, -1 );
 //				break;
 			}
-
 		#endif
 
 		// Update random seed
@@ -208,6 +215,9 @@ void	CS_Conductor( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPT
 		random.z = rand( random.z );
 		random.w = rand( random.w );
 	}
+
+	if ( scatteringIndex == 0 )
+		return;	// CAN'T HAPPEN! The heightfield is continuous and covers the entire
 
 //hitPosition = RayTrace( position, direction, normal );
 //normal = normalize( float3( 1, 0, 10 ) );
@@ -220,8 +230,13 @@ void	CS_Conductor( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPT
 //direction = normal;
 //direction = hitPosition.xyz;
 
-	if ( scatteringIndex <= 4 )
-		_Tex_OutgoingDirections_Reflected[uint3( pixelPosition, scatteringIndex-1 )] = float4( direction, weight );	// Don't accumulate! This is done by the histogram generation!
+
+//scatteringIndex = 1;
+//direction = normalize( float3( 0, 0, 1 ) );
+//weight = 1.0;
+
+	uint	targetScatteringIndex = scatteringIndex <= MAX_SCATTERING_ORDER ? scatteringIndex-1 : MAX_SCATTERING_ORDER;
+	_Tex_OutgoingDirections_Reflected[uint3( pixelPosition, targetScatteringIndex )] = float4( direction, weight );		// Don't accumulate! This is done by the histogram generation!
 }
 
 
@@ -282,11 +297,12 @@ void	CS_Dielectric( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUP
 		position = hitPosition.xyz;
 
 		float3	orientedNormal = weight * normal;							// Either standard normal, or reversed if we're standing below the surface...
-		float	cosTheta = abs( dot( direction, orientedNormal ) );	// cos( incidence angle with the surface's normal )
+		float	cosTheta = abs( dot( direction, orientedNormal ) );			// cos( incidence angle with the surface's normal )
 
 		float	F = FresnelAccurate( IOR, cosTheta );						// 1 for grazing angles or very large IOR, like metals
 
 		// Randomly reflect or refract depending on Fresnel
+		// We do that because we can't split the ray and trace the 2 resulting rays...
 		if ( random.x < F ) {
 			// Reflect off the surface
 			direction = reflect( direction, orientedNormal );
@@ -315,18 +331,17 @@ void	CS_Dielectric( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUP
 									// For example, we could have a downward direction in the upper lobe, or an upward direction in the lower lobe...
 
 	// Don't accumulate! This is done by the histogram generation!
-	if ( scatteringIndex <= 4 ) {
-		if ( weight >= 0.0 )
-			_Tex_OutgoingDirections_Reflected[uint3( pixelPosition, scatteringIndex-1 )] = float4( direction, weight );
-		else
-			_Tex_OutgoingDirections_Transmitted[uint3( pixelPosition, scatteringIndex-1 )] = float4( direction.xy, -direction.z, -weight );
-	}
+	uint	targetScatteringIndex = scatteringIndex <= MAX_SCATTERING_ORDER ? scatteringIndex-1 : MAX_SCATTERING_ORDER;
+	if ( weight >= 0.0 )
+		_Tex_OutgoingDirections_Reflected[uint3( pixelPosition, targetScatteringIndex )] = float4( direction, weight );
+	else
+		_Tex_OutgoingDirections_Transmitted[uint3( pixelPosition, targetScatteringIndex )] = float4( direction.xy, -direction.z, -weight );
 }
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Diffuse Ray-Tracing
-// We only account for albedo
+// We only account for albedo, the weight is decreased by the albedo after each bump and a cosine-weighted random reflected direction is chosen
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 [numthreads( 16, 16, 1 )]
@@ -399,6 +414,7 @@ void	CS_Diffuse( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHR
 		random2 = float4( random2.zw, rand( random2.z ), rand( random2.w ) );
 	}
 
-	if ( scatteringIndex <= 4 )
-		_Tex_OutgoingDirections_Reflected[uint3( pixelPosition, scatteringIndex-1 )] = float4( direction, weight );	// Don't accumulate! This is done by the histogram generation!
+	uint	targetScatteringIndex = scatteringIndex <= MAX_SCATTERING_ORDER ? scatteringIndex-1 : MAX_SCATTERING_ORDER;
+	_Tex_OutgoingDirections_Reflected[uint3( pixelPosition, targetScatteringIndex )] = float4( direction, weight );	// Don't accumulate! This is done by the histogram generation!
 }
+

@@ -129,12 +129,13 @@ float3	FresnelAccurate( float3 _IOR, float _CosTheta, float _FresnelStrength=1.0
 // Importance Sampling + RNG + Geometry
 
 // Code from http://forum.unity3d.com/threads/bitwise-operation-hammersley-point-sampling-is-there-an-alternate-method.200000/
-float ReverseBits( uint bits ) {
+float ReverseBits( uint bits, uint seed ) {
 	bits = (bits << 16u) | (bits >> 16u);
 	bits = ((bits & 0x55555555u) << 1u) | ((bits & 0xAAAAAAAAu) >> 1u);
 	bits = ((bits & 0x33333333u) << 2u) | ((bits & 0xCCCCCCCCu) >> 2u);
 	bits = ((bits & 0x0F0F0F0Fu) << 4u) | ((bits & 0xF0F0F0F0u) >> 4u);
 	bits = ((bits & 0x00FF00FFu) << 8u) | ((bits & 0xFF00FF00u) >> 8u);
+	bits ^= seed;
 	return float(bits) * 2.3283064365386963e-10; // / 0x100000000
 }
 
@@ -154,6 +155,18 @@ uint wang_hash(uint seed) {
     seed = seed ^ (seed >> 15);
     return seed;
 }
+
+uint hash(uint x, uint y) {
+    const uint M = 1664525u, C = 1013904223u;
+    uint seed = (x * M + y + C) * M;
+    // tempering (from Matsumoto)
+    seed ^= (seed >> 11u);
+    seed ^= (seed << 7u) & 0x9d2c5680u;
+    seed ^= (seed << 15u) & 0xefc60000u;
+    seed ^= (seed >> 18u);
+    return seed;
+}
+
 
 // Build orthonormal basis from a 3D Unit Vector Without normalization [Frisvad2012])
 void BuildOrthonormalBasis( float3 _normal, out float3 _tangent, out float3 _bitangent ) {
