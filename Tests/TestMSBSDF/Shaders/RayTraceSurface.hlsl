@@ -155,17 +155,34 @@ float4	RayTrace_TEMP( float3 _position, float3 _direction, bool _aboveSurface ) 
 
 	float2	dXdY = float2( dir.x >= 0.0 ? 1 : -1, dir.y >= 0.0 ? 1 : -1 );
 
+
+//dir = float4( 1e-12, 1e-12, -16, 16 );
+
+	const float	eps = 0.001;
+
 	// Main loop
 	[loop]
 	[fastopt]
 	while ( abs(pos.z) < MAX_HEIGHT && pos.w < maxDistance ) {	// The ray stops if it either escapes the surface (above or below) or runs for too long without any intersection
 
 		// Sample the 4 heights surrounding our position
-		float2	P = fmod( HEIGHTFIELD_SIZE + floor( pos.xy ) + 0.5, HEIGHTFIELD_SIZE );
-		float	H00 = SampleHeight( P );	P.x += dXdY.x;
-		float	H01 = SampleHeight( P );	P.y += dXdY.y;
-		float	H11 = SampleHeight( P );	P.x -= dXdY.x;
-		float	H10 = SampleHeight( P );
+		float2	P = floor( pos.xy - 0.5 );
+		float2	p = pos.xy - 0.5 - P;
+
+		#if 1
+			P = fmod( HEIGHTFIELD_SIZE + P, HEIGHTFIELD_SIZE );
+			int2	nP = int2( P );
+			float	H00 = _Tex_HeightField_Height[nP];	nP.x += dXdY.x;
+			float	H01 = _Tex_HeightField_Height[nP];	nP.y += dXdY.y;
+			float	H11 = _Tex_HeightField_Height[nP];	nP.x -= dXdY.x;
+			float	H10 = _Tex_HeightField_Height[nP];
+		#else
+			P = fmod( HEIGHTFIELD_SIZE + P + 0.5, HEIGHTFIELD_SIZE );
+			float	H00 = SampleHeight( P );	P.x += dXdY.x;
+			float	H01 = SampleHeight( P );	P.y += dXdY.y;
+			float	H11 = SampleHeight( P );	P.x -= dXdY.x;
+			float	H10 = SampleHeight( P );
+		#endif
 
 		// Compute the possible intersection between our ray and a bilinear surface
 		// The equation of the bilinear surface is given by:
@@ -199,33 +216,46 @@ float4	RayTrace_TEMP( float3 _position, float3 _direction, bool _aboveSurface ) 
 		float	C = H10 - H00;
 		float	D = H11 + H00 - H01 - H10;
 		float	a = D * dir.x * dir.y;
-		float	b = (B * dir.x + C * dir.y + D*(pos.x*dir.y + pos.y*dir.x)) - dir.z;
-		float	c = (A + B*pos.x + C*pos.y + D*pos.x*pos.y) - pos.z;
+		float	b = (B * dir.x + C * dir.y + D*(p.x*dir.y + p.y*dir.x)) - dir.z;
+		float	c = (A + B*p.x + C*p.y + D*p.x*p.y) - pos.z;
 
-		float	delta = b*b - 4*a*c;
-		if ( delta >= 0.0 ) {
-			// Maybe we get a hit?
-			delta = sqrt( delta );
-			float	t0 = (-b - delta) / (2.0 * a);
-			float	t1 = (-b + delta) / (2.0 * a);
-			float	t = INFINITY;
-			if ( t0 >= 0.0 && t0 < t )
-				t = t0;	// t0 is closer
-			if ( t1 >= 0.0 && t1 < t )
-				t = t1;	// t1 is closer
+		if ( true ) {//abs(a) < 1e-6 ) {
+			// Special case where the quadratic part doesn't play any role (i.e. vertical or axis-aligned cases)
+			// We only need to solve b.t + c = 0 so t = -c / b
+			float	t = abs(b) > 1e-6 ? -c / b : INFINITY;
+			if ( t >= -eps && t <= 1.0+eps ) {
+				return pos + saturate(t) * dir;	// Found a hit!
+			}
 
-			if ( t < 1e3 ) {
-				return pos + t * dir;	// Found a hit!
+		} else {
+			// General, quadratic equation
+			float	delta = b*b - 4*a*c;
+			if ( delta >= 0.0 ) {
+				// Maybe we get a hit?
+				delta = sqrt( delta );
+				float	t0 = (-b - delta) / (2.0 * a);
+				float	t1 = (-b + delta) / (2.0 * a);
+				float	t = INFINITY;
+				if ( t0 >= -eps )// && t0 < t )
+					t = t0;	// t0 is closer
+				if ( t1 >= -eps && t1 < t )
+					t = t1;	// t1 is closer
+
+				if ( t < 1.0+eps ) {
+					return pos + saturate(t) * dir;	// Found a hit!
+				}
 			}
 		}
 
-return pos;
+//return pos;
 
 		// March one step
 		pos += dir;
 	}
 
-	return float4( pos.xyz, INFINITY );	// No hit!
+	// No hit!
+	pos.w = INFINITY;
+	return pos;
 }
 
 

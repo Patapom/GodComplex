@@ -594,26 +594,237 @@ m_internalChange = false;
 				m_Tex_Heightfield = new Texture2D( m_Device, HEIGHTFIELD_SIZE, HEIGHTFIELD_SIZE, 1, 1, PIXEL_FORMAT.R32_FLOAT, false, false, new PixelsBuffer[] { Content } );
 			#endif
 
-			#if false
+			#if true
 				Texture2D	Tex_Heightfield_CPU = new Texture2D( m_Device, HEIGHTFIELD_SIZE, HEIGHTFIELD_SIZE, 1, 1, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.AUTO, true, false, null );
-				Tex_Heightfield_CPU.CopyFrom( m_Tex_Heightfield );
-				float4[,]	normalHeight = new float4[HEIGHTFIELD_SIZE,HEIGHTFIELD_SIZE];
+				Tex_Heightfield_CPU.CopyFrom( m_Tex_Heightfield_Normal );
+				float[,]	heights = new float[HEIGHTFIELD_SIZE,HEIGHTFIELD_SIZE];
+				float4[,]	normalHeights = new float4[HEIGHTFIELD_SIZE,HEIGHTFIELD_SIZE];
 				float		minHeight = float.MaxValue, maxHeight = -float.MaxValue;
 				Tex_Heightfield_CPU.ReadPixels( 0, 0, ( uint X, uint Y, BinaryReader R ) => {
-					normalHeight[X,Y].x = R.ReadSingle();
-					normalHeight[X,Y].y = R.ReadSingle();
-					normalHeight[X,Y].z = R.ReadSingle();
+					normalHeights[X,Y].x = R.ReadSingle();
+					normalHeights[X,Y].y = R.ReadSingle();
+					normalHeights[X,Y].z = R.ReadSingle();
 
 					float	H = R.ReadSingle();
-					normalHeight[X,Y].w = H;
+					heights[X,Y] = H;
+					normalHeights[X,Y].w = H;
 					minHeight = Mathf.Min( minHeight, H );
 					maxHeight = Mathf.Max( maxHeight, H );
 				} );
 				Tex_Heightfield_CPU.Dispose();
+
+TestHeightFieldTracing( heights );
+
 			#endif
 
 			m_internalChange = false;
 		}
+
+		#region Ray-Tracing Test
+
+		void	TestHeightFieldTracing( float[,] _heights ) {
+			float3	P = float3.Zero;
+			float3	D = new float3( 1, 0.2f, -1 ).Normalized;
+			float4	hit;
+
+			float2	offset = new float2( 0.25f, 0.01f );
+
+			float	maxDiff = 1e-4f;
+			int		count = 0;
+			float	avgDiff = 0;
+			for ( uint Y=0; Y < HEIGHTFIELD_SIZE; Y++ ) {
+				for ( uint X=0; X < HEIGHTFIELD_SIZE; X++ ) {
+					P.x = X + offset.x;
+					P.y = Y + offset.y;
+					float	H = SampleHeight( P.x, P.y, _heights );
+					P.z = 
+					P += ((7.9f - P.z) / D.z) * D;
+
+					hit = RayTrace( P, D, _heights );
+					if ( hit.w > 1e3f )
+						throw new Exception( "No hit!" );
+
+					float	hitH = SampleHeight( hit.x, hit.y, _heights );
+					float	diff = Mathf.Abs( hit.z - hitH );
+// 					if ( diff > 1e-3f )
+// 						throw new Exception( "Incorrect hit!" );
+					if ( diff > maxDiff ) {
+//						maxDiff = diff;
+						count++;
+						avgDiff += diff;
+					}
+				}
+			}
+			avgDiff /= count;
+		}
+
+		float	SampleHeight( float _Px, float _Py, float[,] _heights ) {
+			int		X0 = (int) Mathf.Floor( _Px );
+			int		Y0 = (int) Mathf.Floor( _Py );
+			float	x = _Px - X0;
+			float	y = _Py - Y0;
+			int		X1 = (X0 + HEIGHTFIELD_SIZE+1) % HEIGHTFIELD_SIZE;
+			int		Y1 = (Y0 + HEIGHTFIELD_SIZE+1) % HEIGHTFIELD_SIZE;
+					X0 = (X0 + HEIGHTFIELD_SIZE) % HEIGHTFIELD_SIZE;
+					Y0 = (Y0 + HEIGHTFIELD_SIZE) % HEIGHTFIELD_SIZE;
+
+			float	H00 = _heights[X0,Y0];
+			float	H01 = _heights[X1,Y0];
+			float	H10 = _heights[X0,Y1];
+			float	H11 = _heights[X1,Y1];
+			float	H0 = (1-x)*H00 + x * H01;
+			float	H1 = (1-x)*H10 + x * H11;
+			float	H = (1-y)*H0 + y * H1;
+			return H;
+		}
+
+/// <summary>
+/// Almost direct translation from HLSL
+/// </summary>
+/// <param name="_position"></param>
+/// <param name="_direction"></param>
+/// <returns></returns>
+float4	RayTrace( float3 _position, float3 _direction, float[,] _heightField ) {
+
+	const float	INFINITY = 1e6f;
+	const float	MAX_HEIGHT = 8.0f;
+	const int	HEIGHTFIELD_SIZE = 512;
+	const float	eps = 0.001f;
+
+	// Compute maximum ray distance
+	float	maxDistance = 2.0f * MAX_HEIGHT / Mathf.Abs( _direction.z );	// How many steps does it take, using the ray direction, to move from -MAX_HEIGHT to +MAX_HEIGHT?
+			maxDistance = Math.Min( HEIGHTFIELD_SIZE, maxDistance );		// Anyway, can't ray-trace more than the entire heightfield (if we cross it entirely horizontally without a hit, 
+																	//	chances are there is no hit at all because of a very flat surface and it's no use tracing the heightfield again...)
+
+	// Build initial direction and position as extended vectors
+	float4	dir = new float4( _direction, 1.0f );
+	float4	pos = new float4( _position, 0.0f );
+
+	int		Px = (int) Mathf.Floor( pos.x );	// Integer texel position
+	int		Py = (int) Mathf.Floor( pos.y );
+ 	int		Ix = dir.x >= 0.0f ? 1 : -1;		// Integer increment
+ 	int		Iy = dir.y >= 0.0f ? 1 : -1;
+	float	x = pos.x - Px;						// Sub-texel position, always in [0,1]
+	float	y = pos.y - Py;
+	float	Rx = dir.x >= 0.0f ? 1 - x : x;		// Remaining distance to texel border
+	float	Ry = dir.y >= 0.0f ? 1 - y : y;
+	float	Dx = Mathf.Abs( dir.x );			// Horizontal slope
+	float	Dy = Mathf.Abs( dir.y );
+
+	// Main loop
+	while ( Math.Abs(pos.z) < MAX_HEIGHT && pos.w < maxDistance ) {	// The ray stops if it either escapes the surface (above or below) or runs for too long without any intersection
+
+		// Compute intersection to the next border of the texel
+		float	tx = Dx > 0.0f ? Rx / Dx : INFINITY;	// Intercept distance to horizontal border
+		float	ty = Dy > 0.0f ? Ry / Dy : INFINITY;	// Intercept distance to vertical border
+		float	t = Mathf.Min( tx, ty );
+
+		// Sample the 4 heights surrounding our position
+		float	H00 = _heightField[(Px+0)&(HEIGHTFIELD_SIZE-1), (Py+0)&(HEIGHTFIELD_SIZE-1)];
+		float	H01 = _heightField[(Px+1)&(HEIGHTFIELD_SIZE-1), (Py+0)&(HEIGHTFIELD_SIZE-1)];
+		float	H10 = _heightField[(Px+0)&(HEIGHTFIELD_SIZE-1), (Py+1)&(HEIGHTFIELD_SIZE-1)];
+		float	H11 = _heightField[(Px+1)&(HEIGHTFIELD_SIZE-1), (Py+1)&(HEIGHTFIELD_SIZE-1)];
+
+		// Compute the possible intersection between our ray and a bilinear surface
+		// The equation of the bilinear surface is given by:
+		//	H(x,y) = A + B.x + C.y + D.x.y
+		// With:
+		//	• A = H00
+		//	• B = H01 - H00
+		//	• C = H10 - H00
+		//	• D = H11 + H00 - H10 - H01
+		//
+		// The equation of our ray is given by:
+		//	pos(t) = pos + dir.t
+		//		Px(t) = Px + Dx.t
+		//		Py(t) = Py + Dy.t
+		//		Pz(t) = Pz + Dz.t
+		//
+		// So H(t) is given by:
+		//	H(t) = A + B.Px(t) + C.Py(t) + D.Px(t).Py(t)
+		//		 = A + B.Px + B.Dx.t + C.Py + C.Dy.t + D.[Px.Py + Px.Dy.t + Py.Dx.t + Dx.Dy.t²]
+		//
+		// And if we search for the intersection then H(t) = Pz(t) so we simply need to find the roots of the polynomial:
+		//	a.t² + b.t + c = 0
+		//
+		// With:
+		//	• a = D.Dx.Dy
+		//	• b = [B.Dx + C.Dy + D.Px.Dy + D.Py.Dx] - Dz
+		//	• c = [A + B.Px + C.Py + D.Px.Py] - Pz
+		//
+		float	A = H00;
+		float	B = H01 - H00;
+		float	C = H10 - H00;
+		float	D = H11 + H00 - H01 - H10;
+		float	a = D * dir.x * dir.y;
+		float	b = (B * dir.x + C * dir.y + D*(x*dir.y + y*dir.x)) - dir.z;
+		float	c = (A + B*x + C*y + D*x*y) - pos.z;
+
+		if ( Mathf.Abs(a) < 1e-6f ) {
+			// Special case where the quadratic part doesn't play any role (i.e. vertical or axis-aligned cases)
+			// We only need to solve b.t + c = 0 so t = -c / b
+//			if ( Math.Abs(b) < 1e-6 ) throw new Exception( "FUCK!" );
+			float	tz = Math.Abs(b) > 1e-6 ? -c / b : INFINITY;
+			if ( tz >= -eps && tz <= t+eps ) {
+				pos += tz * dir;	// Found a hit!
+
+x += tz * dir.x;
+y += tz * dir.y;
+float	z = A + B*x + C*y + D*x*y;
+
+				return pos;
+			}
+
+		} else {
+			// General, quadratic equation
+			float	delta = b*b - 4*a*c;
+			if ( delta >= 0.0f ) {
+				// Maybe we get a hit?
+				delta = Mathf.Sqrt( delta );
+				float	t0 = (-b - delta) / (2.0f * a);
+				float	t1 = (-b + delta) / (2.0f * a);
+				float	tz = INFINITY;
+				if ( t0 >= -eps )
+					tz = t0;	// t0 is closer
+				if ( t1 >= -eps && t1 <= tz )
+					tz = t1;	// t1 is closer
+
+				if ( tz <= t+eps ) {
+					pos += tz * dir;	// Found a hit!
+
+x += tz * dir.x;
+y += tz * dir.y;
+float	z = A + B*x + C*y + D*x*y;
+
+					return pos;
+				}
+			}
+		}
+
+		// March to the next texel
+		if ( tx <= ty ) {
+			// March horizontally
+			pos += tx * dir;
+			Px += Ix;				// Next horizontal integer texel
+			x = dir.x >= 0 ? 0 : 1;	// We're on left or right texel border depending on direction
+			Rx = 1.0f;				// A full horizontal texel left
+			Ry -= tx * Dy;			// A little less vertical texel left
+		} else {
+			// March vertically
+			pos += ty * dir;
+			Py += Iy;				// Next vertical integer texel
+			y = dir.y >= 0 ? 0 : 1;	// We're on top or bottom texel border depending on direction
+			Ry = 1.0f;				// A full vertical texel left
+			Rx -= ty * Dx;			// A little less horizontal texel left
+		}
+	}
+
+	// No hit!
+	pos.w = INFINITY;
+	return pos;
+}
+
+		#endregion
 
 		/// <summary>
 		/// Builds the surface texture from an actual image file
