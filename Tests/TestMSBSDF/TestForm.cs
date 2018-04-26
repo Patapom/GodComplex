@@ -514,16 +514,16 @@ m_internalChange = false;
 			// Precompute stuff that resemble a lot to the Box-Muller algorithm to generate normal distribution random values
 			SimpleRNG.SetSeed( 521288629, 362436069 );
 			for ( int i=0; i < m_SB_Beckmann.m.Length; i++ ) {
-				double	U0 = SimpleRNG.GetUniform();
-				double	U1 = SimpleRNG.GetUniform();
-				double	U2 = SimpleRNG.GetUniform();
+				float	U0 = (float) SimpleRNG.GetUniform();
+				float	U1 = (float) SimpleRNG.GetUniform();
+				float	U2 = (float) SimpleRNG.GetUniform();
 
-				m_SB_Beckmann.m[i].m_phase = (float) (2.0 * Math.PI * U0);	// Phase
+				m_SB_Beckmann.m[i].m_phase = 2.0f * Mathf.PI * U0;	// Phase
 
-				double	theta = 2.0 * Math.PI * U1;
-				double	radius = Math.Sqrt( -Math.Log( U2 ) );
-				m_SB_Beckmann.m[i].m_frequencyX = (float) (radius * Math.Cos( theta ) * _roughness);	// Frequency in X direction
-				m_SB_Beckmann.m[i].m_frequencyY = (float) (radius * Math.Sin( theta ) * _roughness);	// Frequency in Y direction
+				float	theta = 2.0f * Mathf.PI * U1;
+				float	radius = Mathf.Sqrt( -Mathf.Log( U2 ) );
+				m_SB_Beckmann.m[i].m_frequencyX = radius * Mathf.Cos( theta ) * _roughness;	// Frequency in X direction
+				m_SB_Beckmann.m[i].m_frequencyY = radius * Mathf.Sin( theta ) * _roughness;	// Frequency in Y direction
 			}
 
 			m_SB_Beckmann.Write();
@@ -613,7 +613,7 @@ m_internalChange = false;
 				} );
 				Tex_Heightfield_CPU.Dispose();
 
-TestHeightFieldTracing( heights );
+TestHeightFieldTracing( heights, normalHeights );
 
 			#endif
 
@@ -622,40 +622,160 @@ TestHeightFieldTracing( heights );
 
 		#region Ray-Tracing Test
 
-		void	TestHeightFieldTracing( float[,] _heights ) {
+		void	TestHeightFieldTracing( float[,] _heights, float4[,] _normals ) {
 			float3	P = float3.Zero;
-			float3	D = new float3( 1, 0.2f, -1 ).Normalized;
+
 			float4	hit;
 
 			float2	offset = new float2( 0.25f, 0.01f );
 
-			float	maxDiff = 1e-4f;
+			const float	minTraceDistance = 1e-3f;
+
+			//////////////////////////////////////////////////////////////////////////
+			// Generate normals from heights for comparison
+			const float	eps = 0.001f;
+			float4[,]	generatedNormals = new float4[HEIGHTFIELD_SIZE,HEIGHTFIELD_SIZE];
+			for ( uint Y=0; Y < HEIGHTFIELD_SIZE; Y++ ) {
+				uint	Py = (Y+HEIGHTFIELD_SIZE-1) & (HEIGHTFIELD_SIZE-1);
+				uint	Ny = (Y+1) & (HEIGHTFIELD_SIZE-1);
+				for ( uint X=0; X < HEIGHTFIELD_SIZE; X++ ) {
+					uint	Px = (X+HEIGHTFIELD_SIZE-1) & (HEIGHTFIELD_SIZE-1);
+					uint	Nx = (X+1) & (HEIGHTFIELD_SIZE-1);
+					float4	refN = _normals[X,Y];
+					float	H = _heights[X,Y];
+					float3	N = new float3( _heights[Px,Y] - _heights[Nx,Y], _heights[X,Py] - _heights[X,Ny], 2 );
+					N.Normalize();
+					float3	N2 = new float3( SampleHeight( X-eps, Y, _heights ) - SampleHeight( X+eps, Y, _heights ), SampleHeight( X, Y-eps, _heights ) - SampleHeight( X, Y+eps, _heights ), 2*eps );
+					N2.Normalize();
+					generatedNormals[X,Y].Set( N2, H );
+				}
+			}
+_normals = generatedNormals;
+
+
+// float3	Test = SampleNormal( 0.3f, 0.6f, _normals ).xyz.Normalized;
+// float3	Test2 = ComputeNormal( 0.3f, 0.6f, _heights );
+
+			float	maxDiff = 0;
 			int		count = 0;
 			float	avgDiff = 0;
+			int		noHitsCount = 0;
+			int		noHitsCount2 = 0;
+			int		noHitsCount3 = 0;
+			float	maxDiffDot = 0;
+			float	avgDiffDot = 0;
+			int		invalidDotsCount = 0;
 			for ( uint Y=0; Y < HEIGHTFIELD_SIZE; Y++ ) {
-				for ( uint X=0; X < HEIGHTFIELD_SIZE; X++ ) {
+				for ( uint X=14; X < HEIGHTFIELD_SIZE; X++ ) {
+
+					float3	D = new float3( 1, -0.2f, -1 ).Normalized;	// General ray
+//					float3	D = new float3( -1, 0, -1 ).Normalized;		// Axis-aligned ray
+//					float3	D = new float3( 1, -0.2f, 0 ).Normalized;	// Horizontal ray
+//					float3	D = new float3( 0, 0, -1 ).Normalized;		// Vertical ray
+
 					P.x = X + offset.x;
 					P.y = Y + offset.y;
-					float	H = SampleHeight( P.x, P.y, _heights );
-					P.z = 
-					P += ((7.9f - P.z) / D.z) * D;
+					P.z = SampleHeight( P.x, P.y, _heights );
+					if ( Mathf.Abs( D.z ) > 0.0f )
+						P += ((7.9f - P.z) / D.z) * D;
 
-					hit = RayTrace( P, D, _heights );
-					if ( hit.w > 1e3f )
-						throw new Exception( "No hit!" );
+					//////////////////////////////////////////////////////////////////////////
+					// First hit
+					hit = RayTrace( P, D, minTraceDistance, _heights );
+					if ( hit.w > 1e3f ) {
+						noHitsCount++;
+						continue;
+					}
 
+					// Check height discrepancy
 					float	hitH = SampleHeight( hit.x, hit.y, _heights );
 					float	diff = Mathf.Abs( hit.z - hitH );
 // 					if ( diff > 1e-3f )
 // 						throw new Exception( "Incorrect hit!" );
-					if ( diff > maxDiff ) {
-//						maxDiff = diff;
+					if ( diff > 1e-4f ) {
+						maxDiff = Math.Max( maxDiff, diff );
 						count++;
 						avgDiff += diff;
 					}
+
+					//////////////////////////////////////////////////////////////////////////
+					// Try another bounce
+					P = hit.xyz;
+// 					float3	hitNormal = SampleNormal( P.x, P.y, _normals ).xyz;
+// 					hitNormal.Normalize();
+
+					float3	hitNormal = ComputeNormal( P.x, P.y, _heights );
+
+					float	d = D.Dot( hitNormal );	// Negative since direction points down and normal up
+					D -= 2.0f * d * hitNormal;
+
+d = D.Dot( hitNormal );	// Now positive! (hopefully!)
+if ( d < -1e-3f ) {
+//	throw new Exception( "CROTTE!" );
+	maxDiffDot = Mathf.Min( maxDiffDot, d );
+	avgDiffDot += d;
+	invalidDotsCount++;
+}
+
+					hit = RayTrace( P, D, minTraceDistance, _heights );
+					if ( hit.w > 1e3f ) {
+						noHitsCount2++;
+						continue;
+					}
+
+					// Check height discrepancy
+					hitH = SampleHeight( hit.x, hit.y, _heights );
+					diff = Mathf.Abs( hit.z - hitH );
+// 					if ( diff > 1e-3f )
+// 						throw new Exception( "Incorrect hit!" );
+					if ( diff > 1e-4f ) {
+						maxDiff = Math.Max( maxDiff, diff );
+						count++;
+						avgDiff += diff;
+					}
+
+					//////////////////////////////////////////////////////////////////////////
+					// Try another bounce
+					P = hit.xyz;
+// 					hitNormal = SampleNormal( P.x, P.y, _normals ).xyz;
+// 					hitNormal.Normalize();
+
+					hitNormal = ComputeNormal( P.x, P.y, _heights );
+
+					d = D.Dot( hitNormal );	// Negative since direction points down and normal up
+					D -= 2.0f * d * hitNormal;
+
+d = D.Dot( hitNormal );	// Now positive! (hopefully!)
+if ( d < -1e-3f ) {
+//	throw new Exception( "CROTTE!" );
+	maxDiffDot = Mathf.Min( maxDiffDot, d );
+	avgDiffDot += d;
+	invalidDotsCount++;
+}
+
+					hit = RayTrace( P, D, minTraceDistance, _heights );
+					if ( hit.w > 1e3f ) {
+						noHitsCount3++;
+						continue;
+					}
+
+					// Check height discrepancy
+					hitH = SampleHeight( hit.x, hit.y, _heights );
+					diff = Mathf.Abs( hit.z - hitH );
+// 					if ( diff > 1e-3f )
+// 						throw new Exception( "Incorrect hit!" );
+					if ( diff > 1e-4f ) {
+						maxDiff = Math.Max( maxDiff, diff );
+						count++;
+						avgDiff += diff;
+					}
+
 				}
 			}
 			avgDiff /= count;
+			avgDiffDot /= invalidDotsCount;
+			if ( noHitsCount > 0 )
+				throw new Exception( "No hit!" );
 		}
 
 		float	SampleHeight( float _Px, float _Py, float[,] _heights ) {
@@ -678,13 +798,44 @@ TestHeightFieldTracing( heights );
 			return H;
 		}
 
+// 		float4	SampleNormal( float _Px, float _Py, float4[,] _heightNormals ) {
+// 			int		X0 = (int) Mathf.Floor( _Px );
+// 			int		Y0 = (int) Mathf.Floor( _Py );
+// 			float	x = _Px - X0;
+// 			float	y = _Py - Y0;
+// 			int		X1 = (X0 + HEIGHTFIELD_SIZE+1) % HEIGHTFIELD_SIZE;
+// 			int		Y1 = (Y0 + HEIGHTFIELD_SIZE+1) % HEIGHTFIELD_SIZE;
+// 					X0 = (X0 + HEIGHTFIELD_SIZE) % HEIGHTFIELD_SIZE;
+// 					Y0 = (Y0 + HEIGHTFIELD_SIZE) % HEIGHTFIELD_SIZE;
+// 
+// 			float4	H00 = _heightNormals[X0,Y0];
+// 			float4	H01 = _heightNormals[X1,Y0];
+// 			float4	H10 = _heightNormals[X0,Y1];
+// 			float4	H11 = _heightNormals[X1,Y1];
+// 			float4	H0 = (1-x)*H00 + x * H01;
+// 			float4	H1 = (1-x)*H10 + x * H11;
+// 			float4	H = (1-y)*H0 + y * H1;
+// 			return H;
+// 		}
+
+		float3	ComputeNormal( float _Px, float _Py, float[,] _heights ) {
+			const float eps = 0.001f;
+			float	HXn = SampleHeight( _Px-eps, _Py, _heights );
+			float	HXp = SampleHeight( _Px+eps, _Py, _heights );
+			float	HYn = SampleHeight( _Px, _Py-eps, _heights );
+			float	HYp = SampleHeight( _Px, _Py+eps, _heights );
+			float3	N = new float3( HXn - HXp, HYn - HYp, 2.0f * eps );
+			N.Normalize();
+			return N;
+		}
+
 /// <summary>
 /// Almost direct translation from HLSL
 /// </summary>
 /// <param name="_position"></param>
 /// <param name="_direction"></param>
 /// <returns></returns>
-float4	RayTrace( float3 _position, float3 _direction, float[,] _heightField ) {
+float4	RayTrace( float3 _position, float3 _direction, float _minTraceDistance, float[,] _heightField ) {
 
 	const float	INFINITY = 1e6f;
 	const float	MAX_HEIGHT = 8.0f;
@@ -704,19 +855,20 @@ float4	RayTrace( float3 _position, float3 _direction, float[,] _heightField ) {
 	int		Py = (int) Mathf.Floor( pos.y );
  	int		Ix = dir.x >= 0.0f ? 1 : -1;		// Integer increment
  	int		Iy = dir.y >= 0.0f ? 1 : -1;
-	float	x = pos.x - Px;						// Sub-texel position, always in [0,1]
-	float	y = pos.y - Py;
-	float	Rx = dir.x >= 0.0f ? 1 - x : x;		// Remaining distance to texel border
-	float	Ry = dir.y >= 0.0f ? 1 - y : y;
-	float	Dx = Mathf.Abs( dir.x );			// Horizontal slope
-	float	Dy = Mathf.Abs( dir.y );
+	float	rDx = dir.x != 0.0f ? 1.0f / Mathf.Abs( dir.x ) : INFINITY;		// Horizontal slope
+	float	rDy = dir.y != 0.0f ? 1.0f / Mathf.Abs( dir.y ) : INFINITY;
 
 	// Main loop
 	while ( Math.Abs(pos.z) < MAX_HEIGHT && pos.w < maxDistance ) {	// The ray stops if it either escapes the surface (above or below) or runs for too long without any intersection
 
+		float	x = pos.x - Px;						// Sub-texel position, always in [0,1]
+		float	y = pos.y - Py;
+		float	Rx = dir.x >= 0.0f ? 1 - x : x;		// Remaining distance to texel border
+		float	Ry = dir.y >= 0.0f ? 1 - y : y;
+
 		// Compute intersection to the next border of the texel
-		float	tx = Dx > 0.0f ? Rx / Dx : INFINITY;	// Intercept distance to horizontal border
-		float	ty = Dy > 0.0f ? Ry / Dy : INFINITY;	// Intercept distance to vertical border
+		float	tx = Rx * rDx;	// Intercept distance to horizontal border
+		float	ty = Ry * rDy;	// Intercept distance to vertical border
 		float	t = Mathf.Min( tx, ty );
 
 		// Sample the 4 heights surrounding our position
@@ -765,12 +917,12 @@ float4	RayTrace( float3 _position, float3 _direction, float[,] _heightField ) {
 			// We only need to solve b.t + c = 0 so t = -c / b
 //			if ( Math.Abs(b) < 1e-6 ) throw new Exception( "FUCK!" );
 			float	tz = Math.Abs(b) > 1e-6 ? -c / b : INFINITY;
-			if ( tz >= -eps && tz <= t+eps ) {
+			if ( tz >= -eps && tz <= t+eps && pos.w+tz > _minTraceDistance ) {
 				pos += tz * dir;	// Found a hit!
 
-x += tz * dir.x;
-y += tz * dir.y;
-float	z = A + B*x + C*y + D*x*y;
+// x += tz * dir.x;
+// y += tz * dir.y;
+// float	z = A + B*x + C*y + D*x*y;
 
 				return pos;
 			}
@@ -789,12 +941,12 @@ float	z = A + B*x + C*y + D*x*y;
 				if ( t1 >= -eps && t1 <= tz )
 					tz = t1;	// t1 is closer
 
-				if ( tz <= t+eps ) {
+				if ( tz <= t+eps && pos.w+tz > _minTraceDistance ) {
 					pos += tz * dir;	// Found a hit!
 
-x += tz * dir.x;
-y += tz * dir.y;
-float	z = A + B*x + C*y + D*x*y;
+// x += tz * dir.x;
+// y += tz * dir.y;
+// float	z = A + B*x + C*y + D*x*y;
 
 					return pos;
 				}
@@ -806,16 +958,16 @@ float	z = A + B*x + C*y + D*x*y;
 			// March horizontally
 			pos += tx * dir;
 			Px += Ix;				// Next horizontal integer texel
-			x = dir.x >= 0 ? 0 : 1;	// We're on left or right texel border depending on direction
-			Rx = 1.0f;				// A full horizontal texel left
-			Ry -= tx * Dy;			// A little less vertical texel left
+//			x = dir.x >= 0 ? 0 : 1;	// We're on left or right texel border depending on direction
+//			Rx = 1.0f;				// A full horizontal texel left
+//			Ry -= tx * Dy;			// A little less vertical texel left
 		} else {
 			// March vertically
 			pos += ty * dir;
 			Py += Iy;				// Next vertical integer texel
-			y = dir.y >= 0 ? 0 : 1;	// We're on top or bottom texel border depending on direction
-			Ry = 1.0f;				// A full vertical texel left
-			Rx -= ty * Dx;			// A little less horizontal texel left
+//			y = dir.y >= 0 ? 0 : 1;	// We're on top or bottom texel border depending on direction
+//			Ry = 1.0f;				// A full vertical texel left
+//			Rx -= ty * Dx;			// A little less horizontal texel left
 		}
 	}
 
