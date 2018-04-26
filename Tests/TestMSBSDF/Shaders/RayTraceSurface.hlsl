@@ -6,9 +6,12 @@
 
 static const float	MAX_HEIGHT = 8.0;					// Arbitrary top height above which the ray is deemed to escape the surface
 static const float	INITIAL_HEIGHT = MAX_HEIGHT - 0.1;	// So we're almost sure to start above the heightfield but below the escape height
-static const float	STEP_SIZE = 1.0;					// Ray-tracing step size
-
-static const float	OFF_SURFACE_DISTANCE = 1e-3;
+static const float	CRITICAL_DOT = -0.1;				// Any dot( normal, ray direction ) below this critical value will discard the ray
+														//	This occurs for very grazing rays that get really close to the surface (e.g. 0.001 units)
+														//	and an intersection is found. Unfortunately, the ray direction is in the same direction
+														//	as the normal in this case, and reflecting away from the surface makes the ray go below
+														//	the surface... I spent a lot of time chasing these cases but as they occur for roughly
+														//	~0.026% of the rays, I decided to discard them entirely instead!
 
 cbuffer CB_Raytrace : register(b10) {
 	float3	_direction;			// Incoming ray direction
@@ -228,24 +231,23 @@ void	CS_Conductor( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPT
 
 		// Walk to hit
 		position = hitPosition.xyz;
+		position.z = SampleHeight( position.xy );	// Make double sure the position is standing on the heightfield!
 
 		// Compute normal at position
 		float3	normal = ComputeNormal( position.xy );
 
 // No normal are oriented toward the bottom (actually, no Z < 0.4 exist)
-if ( normal.z < 0.0 ) {
-	error = true;
-	break;
-}
-
-		float	cosTheta = -dot( direction, normal );	// Minus sign because direction is opposite to normal direction
-if ( cosTheta < -0.95 ) {
-	error = true;
-	break;
-}
+//if ( normal.z < 0.0 ) {
+//	error = true;
+//	break;
+//}
 
 		// Bounce off the surface
 		direction = reflect( direction, normal );	// Perfect mirror
+		float	cosTheta = dot( direction, normal );
+		if ( cosTheta < CRITICAL_DOT ) {
+			return;	// Critical error! This happens for very grazing angles (0.026% of rays appear to be concerned, I spent too much time finding a cure but decided to discard them instead)
+		}
 
 		#if 1
 			// Use dielectric Fresnel to weigh reflection
@@ -334,6 +336,7 @@ void	CS_Dielectric( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUP
 
 		// Walk to hit
 		position = hitPosition.xyz;
+		position.z = SampleHeight( position.xy );	// Make double sure the position is standing on the heightfield!
 
 		// Compute normal at position
 		float3	normal = ComputeNormal( position.xy );
@@ -401,9 +404,13 @@ void	CS_Diffuse( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHR
 
 		// Walk to hit
 		position = hitPosition.xyz;
+		position.z = SampleHeight( position.xy );	// Make double sure the position is standing on the heightfield!
 
 		// Compute normal at position
 		float3	normal = ComputeNormal( position.xy );
+		if ( -dot( normal, direction ) < CRITICAL_DOT ) {
+			return;	// Critical error! This happens for very grazing angles (0.026% of rays appear to be concerned, I spent too much time finding a cure but decided to discard them instead)
+		}
 
 		// Bounce off the surface using random direction
 		float3	tangent, biTangent;

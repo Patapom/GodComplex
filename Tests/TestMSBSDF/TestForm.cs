@@ -594,7 +594,7 @@ m_internalChange = false;
 				m_Tex_Heightfield = new Texture2D( m_Device, HEIGHTFIELD_SIZE, HEIGHTFIELD_SIZE, 1, 1, PIXEL_FORMAT.R32_FLOAT, false, false, new PixelsBuffer[] { Content } );
 			#endif
 
-			#if true
+			#if false
 				Texture2D	Tex_Heightfield_CPU = new Texture2D( m_Device, HEIGHTFIELD_SIZE, HEIGHTFIELD_SIZE, 1, 1, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.AUTO, true, false, null );
 				Tex_Heightfield_CPU.CopyFrom( m_Tex_Heightfield_Normal );
 				float[,]	heights = new float[HEIGHTFIELD_SIZE,HEIGHTFIELD_SIZE];
@@ -665,8 +665,10 @@ _normals = generatedNormals;
 			float	maxDiffDot = 0;
 			float	avgDiffDot = 0;
 			int		invalidDotsCount = 0;
+			const float	criticalDotLimit = -0.1f;
+			int		criticalDotsCount = 0;
 			for ( uint Y=0; Y < HEIGHTFIELD_SIZE; Y++ ) {
-				for ( uint X=14; X < HEIGHTFIELD_SIZE; X++ ) {
+				for ( uint X=0; X < HEIGHTFIELD_SIZE; X++ ) {
 
 					float3	D = new float3( 1, -0.2f, -1 ).Normalized;	// General ray
 //					float3	D = new float3( -1, 0, -1 ).Normalized;		// Axis-aligned ray
@@ -704,6 +706,8 @@ _normals = generatedNormals;
 // 					float3	hitNormal = SampleNormal( P.x, P.y, _normals ).xyz;
 // 					hitNormal.Normalize();
 
+P.z = hitH;
+
 					float3	hitNormal = ComputeNormal( P.x, P.y, _heights );
 
 					float	d = D.Dot( hitNormal );	// Negative since direction points down and normal up
@@ -715,6 +719,8 @@ if ( d < -1e-3f ) {
 	maxDiffDot = Mathf.Min( maxDiffDot, d );
 	avgDiffDot += d;
 	invalidDotsCount++;
+	if ( d < criticalDotLimit )
+		criticalDotsCount++;
 }
 
 					hit = RayTrace( P, D, minTraceDistance, _heights );
@@ -740,6 +746,8 @@ if ( d < -1e-3f ) {
 // 					hitNormal = SampleNormal( P.x, P.y, _normals ).xyz;
 // 					hitNormal.Normalize();
 
+P.z = hitH;
+
 					hitNormal = ComputeNormal( P.x, P.y, _heights );
 
 					d = D.Dot( hitNormal );	// Negative since direction points down and normal up
@@ -751,6 +759,8 @@ if ( d < -1e-3f ) {
 	maxDiffDot = Mathf.Min( maxDiffDot, d );
 	avgDiffDot += d;
 	invalidDotsCount++;
+	if ( d < criticalDotLimit )
+		criticalDotsCount++;
 }
 
 					hit = RayTrace( P, D, minTraceDistance, _heights );
