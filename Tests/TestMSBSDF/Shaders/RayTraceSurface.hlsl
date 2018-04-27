@@ -283,12 +283,15 @@ position.z = H;
 		float	d = dot( direction, normal );
 		direction -= 2.0 * d * normal;
 		float	cosTheta = -d;
-//		if ( cosTheta < -0.1 ) {
-//@TODO => Continue trace for grazing rays, decrease scattering order
+		if ( cosTheta < CRITICAL_DOT ) {
+			// Assume grazing ray, ignore "hit", don't increase scattering order and simply continue...
+			scatteringIndex--;
+			continue;
+
 //			error = true;
 //			break;
-////			return;	// Critical error! This happens for very grazing angles (0.026% of rays appear to be concerned, I spent too much time finding a cure but decided to discard them instead)
-//		}
+//			return;	// Critical error! This happens for very grazing angles (0.026% of rays appear to be concerned, I spent too much time finding a cure but decided to discard them instead)
+		}
 
 		#if 1
 			// Use dielectric Fresnel to weigh reflection
@@ -304,9 +307,7 @@ position.z = H;
 //		random = JitterRandom( random, targetPosition.xy, 4+scatteringIndex );
 	}
 
-
 	if ( scatteringIndex == 0 )
-//		scatteringIndex = 1;
 		return;	// CAN'T HAPPEN! The heightfield is continuous and covers the entire plane
 
 //if ( error ) {
