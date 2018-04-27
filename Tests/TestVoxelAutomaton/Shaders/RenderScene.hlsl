@@ -106,7 +106,7 @@ float3	PS( VS_IN _In ) : SV_TARGET0 {
 
 		// Compute Fresnel
 		const float	F0 = 0.04;	// Dielectric
-		float	F = FresnelSchlick( F0, cosTheta );
+		float	F = FresnelDielectricSchlick( F0, cosTheta );
 
 		// Compute masking
 //		float	Gl = GSmith( wsNormal, wsLight, sqrAlpha );

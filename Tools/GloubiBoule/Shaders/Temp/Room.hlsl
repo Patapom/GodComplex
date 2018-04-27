@@ -64,7 +64,7 @@ float3	Fresnel_IORFromF0( float3 _F0 )
 
 // Full accurate Fresnel computation (from Walter's paper §5.1 => http://www.cs.cornell.edu/~srm/publications/EGSR07-btdf.pdf)
 // For dielectrics only but who cares!?
-float3	FresnelAccurate( float3 _IOR, float _CosTheta )
+float3	FresnelDielectric( float3 _IOR, float _CosTheta )
 {
 	float	c = _CosTheta;
 	float3	g_squared = max( 0.0, _IOR*_IOR - 1.0 + c*c );
@@ -220,7 +220,7 @@ float3	Shader( float2 _UV ) {
 	float3	Lighting1 = ComputeLighting( secondHitPosition.xyz, N2, -wsReflect, IOR );
 			Lighting1 *= AO( secondHitPosition.xyz, N2, 20.0, 0.1 );
 
-	float3	Fresnel = FresnelAccurate( IOR, saturate( dot( -wsView, N ) ) );
+	float3	Fresnel = FresnelDielectric( IOR, saturate( dot( -wsView, N ) ) );
 	float3	Lighting = lerp( Lighting0, Lighting1, Fresnel );
 
 color = Lighting;

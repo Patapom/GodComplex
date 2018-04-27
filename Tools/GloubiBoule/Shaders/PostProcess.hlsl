@@ -352,8 +352,8 @@ float3	BRDF_GGX( float3 _wsNormal, float3 _wsView, float3 _wsLight, float _alpha
 
 	float	NDF = GGX_NDF( HdotN, a2 );
 	float	G = GGX_Smith( saturate( dot( _wsView, _wsNormal ) ), saturate( dot( _wsLight, _wsNormal ) ), a2 );
-	float3	F = FresnelAccurate( IOR, HdotN );
-//	float3	F = FresnelSchlick( _F0, HdotN );
+	float3	F = FresnelDielectric( IOR, HdotN );
+//	float3	F = FresnelDielectricSchlick( _F0, HdotN );
 
 //return 0.5*G;
 //return 0.5*NDF;

@@ -271,7 +271,7 @@ void	CS_Conductor( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPT
 
 		#if 1
 			// Use dielectric Fresnel to weigh reflection
-			float	F = FresnelAccurate( IOR, saturate( cosTheta ) );
+			float	F = FresnelDielectric( IOR, saturate( cosTheta ) );
 			weight *= F;
 		#else
 			// Use metal Fersnel to weigh reflection
@@ -332,17 +332,24 @@ void	CS_Dielectric( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUP
 
 	uint	scatteringIndex = 0;	// No scattering yet
 
-	float	wang = wang_hash( asuint(_offset.x) ^ asuint(_offset.y) );
-	float4	random = JitterRandom( 0, targetPosition.xy, 0 );
-			random = frac( random + wang );
-//	float4	random2 = JitterRandom( 0, targetPosition.xy, 1 );
-//			random2 = frac( random + wang );
+//	float	wang = wang_hash( asuint(_offset.x) ^ asuint(_offset.y) );
+//	float4	random = JitterRandom( 0, targetPosition.xy, 0 );
+//			random = frac( random + wang );
+////	float4	random2 = JitterRandom( 0, targetPosition.xy, 1 );
+////			random2 = frac( random + wang );
+
+	float4	random = _Tex_Random[uint3( pixelPosition, 0 )];
+	uint	wangIteration = ReverseBitsInt( wang_hash( asuint(_offset.x) ) ^ wang_hash( asuint(_offset.y) ) );
+	random.x = wang_hash( asuint(random.x) ^ wangIteration ) * 2.3283064365386963e-10;
+	random.y = wang_hash( asuint(random.y) ^ wangIteration ) * 2.3283064365386963e-10;
+	random.z = wang_hash( asuint(random.z) ^ wangIteration ) * 2.3283064365386963e-10;
+	random.w = wang_hash( asuint(random.w) ^ wangIteration ) * 2.3283064365386963e-10;
 
 	float	IOR = _IOR;
 
 	[loop]
 	[fastopt]
-	for ( ; scatteringIndex < 5; scatteringIndex++ ) {
+	for ( ; scatteringIndex <= MAX_SCATTERING_ORDER; scatteringIndex++ ) {
 		float4	hitPosition = RayTrace( position, direction );
 		if ( hitPosition.w > 1e3 )
 			break;	// The ray escaped the surface!
@@ -357,7 +364,7 @@ void	CS_Dielectric( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUP
 		float3	orientedNormal = weight * normal;							// Either standard normal, or reversed if we're standing below the surface...
 		float	cosTheta = abs( dot( direction, orientedNormal ) );			// cos( incidence angle with the surface's normal )
 
-		float	F = FresnelAccurate( IOR, cosTheta );						// 1 for grazing angles or very large IOR, like metals
+		float	F = FresnelDielectric( IOR, cosTheta );						// 1 for grazing angles or very large IOR, like metals
 
 		// Randomly reflect or refract depending on Fresnel
 		// We do that because we can't split the ray and trace the 2 resulting rays...
@@ -402,13 +409,30 @@ void	CS_Diffuse( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHR
 
 	uint	scatteringIndex = 0;	// No scattering yet
 
-	float	wang = wang_hash( asuint(_offset.x) ^ asuint(_offset.y) );
-	float4	random = JitterRandom( 0, targetPosition.xy, 0 );
-			random = frac( random + wang );
+//	float4	random = JitterRandom( 0, targetPosition.xy, 0 );
+//			random = frac( random + wang_hash( asuint(_offset.x) ^ asuint(_offset.y) ) );
+
+	// Discoverd that bilinear sampling of a uniformly distributed noise is NOT a uniform distribution anymore!
+	// When dealing with so many rays, we need to be careful with these distribution biases
+	//
+//	float4	random = _Tex_Random.SampleLevel( LinearWrap, float3( targetPosition.xy * INV_HEIGHTFIELD_SIZE, 0 ), 0.0 );
+	float4	random = _Tex_Random[uint3( pixelPosition, 0 )];
+
+	// Also, to re-introduce a lot of variation from one iteration to another, we need to apply strong kung-fu here!
+	//
+//			random = frac( random + wang_hash( asuint(_offset.x) ^ asuint(_offset.y) ) );
+//	float4	random = float( wang_hash( asuint(targetPosition.x) ) ^ wang_hash( asuint(targetPosition.y) ) ) * 2.3283064365386963e-10;
+//			random = frac( random + float( wang_hash( asuint(3791.1987*targetPosition.x) ) ^ wang_hash( asuint(3791.1987*targetPosition.y) ) ) * 2.3283064365386963e-10 );
+
+	uint	wangIteration = ReverseBitsInt( wang_hash( asuint(_offset.x) ) ^ wang_hash( asuint(_offset.y) ) );
+	random.x = wang_hash( asuint(random.x) ^ wangIteration ) * 2.3283064365386963e-10;
+	random.y = wang_hash( asuint(random.y) ^ wangIteration ) * 2.3283064365386963e-10;
+	random.z = wang_hash( asuint(random.z) ^ wangIteration ) * 2.3283064365386963e-10;
+	random.w = wang_hash( asuint(random.w) ^ wangIteration ) * 2.3283064365386963e-10;
 
 	[loop]
 	[fastopt]
-	for ( ; scatteringIndex < 5; scatteringIndex++ ) {
+	for ( ; scatteringIndex <= MAX_SCATTERING_ORDER; scatteringIndex++ ) {
 		float4	hitPosition = RayTrace( position, direction );
 		if ( hitPosition.w > 1e3 )
 			break;	// The ray escaped the surface!
@@ -421,6 +445,10 @@ void	CS_Diffuse( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHR
 		float3	normal = ComputeNormal( position.xy );
 		if ( -dot( normal, direction ) < CRITICAL_DOT ) {
 			return;	// Critical error! This happens for very grazing angles (0.026% of rays appear to be concerned, I spent too much time finding a cure but decided to discard them instead)
+// WARNING: Crashes the driver!
+//			// Assume grazing ray, ignore "hit", don't increase scattering order and simply continue...
+//			scatteringIndex--;
+//			continue;
 		}
 
 		// Bounce off the surface using random direction
@@ -432,16 +460,26 @@ void	CS_Diffuse( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHR
 		float2	scPhi;
 		sincos( 2.0 * PI * random.y, scPhi.x, scPhi.y );
 
-		float3	lsDirection = float3( sinTheta * scPhi.y, sinTheta * scPhi.x, cosTheta );
+		float3	lsDirection = float3( sinTheta * scPhi.x, sinTheta * scPhi.y, cosTheta );
 		direction = lsDirection.x * tangent + lsDirection.y * biTangent + lsDirection.z * normal;
+		direction = normalize( direction );
 
 		// Each bump into the surface decreases the weight by the albedo
 		// 2 bounces we have albedo², 3 bounces we have albedo^3, etc. That explains the saturation of colors!
 		weight *= _albedo;
 
 		// Update random seed
-		random = JitterRandom( random, targetPosition.xy, 4+scatteringIndex );
+//		random = JitterRandom( random, targetPosition.xy, 4+scatteringIndex );
+		random = JitterRandom( random, pixelPosition + 0.5, 4+scatteringIndex );
 	}
+
+//if ( scatteringIndex == 0 ) {
+//	_Tex_OutgoingDirections_Reflected[uint3( pixelPosition, 0 )] = float4( direction, weight );	// Don't accumulate! This is done by the histogram generation!
+//	return;
+//}
+//return;
+
+//direction = normalize( float3( direction.xy, max( 0.001, direction.z ) ) );
 
 	uint	targetScatteringIndex = scatteringIndex <= MAX_SCATTERING_ORDER ? scatteringIndex-1 : MAX_SCATTERING_ORDER;
 	_Tex_OutgoingDirections_Reflected[uint3( pixelPosition, targetScatteringIndex )] = float4( direction, weight );	// Don't accumulate! This is done by the histogram generation!

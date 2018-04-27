@@ -649,7 +649,7 @@ void	ComputeAreaLightLighting( inout ComputeLightingResult _Result, in SurfaceCo
 	float	HdotN = saturate( dot( H, wsNormal ) );
 
 	// 1] ----- Compute Fresnel -----
-	float3	FresnelSpecular = FresnelAccurate( _Surface.IOR, HdotN, _Surface.fresnelStrength );
+	float3	FresnelSpecular = FresnelDielectric( _Surface.IOR, HdotN, _Surface.fresnelStrength );
 	float3	FresnelDiffuse = 1.0 - FresnelSpecular;	// Simplify a lot! Don't use Disney's Fresnel as it needs a light direction and we can't provide one here...
 
 	// 2] ----- Diffuse term -----

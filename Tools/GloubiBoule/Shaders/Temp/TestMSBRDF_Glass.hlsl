@@ -119,10 +119,10 @@ float3	ComputeGlassColor( float3 _wsPosition, float3 _wsNormalFront, float3 _wsV
 
 	// Compute Fresnel reflectances
 	// We need to compute 2 distinct reflectances here:
-// 	float	Fresnel_transmitted_back = 1.0 - FresnelAccurate( _IOR, dot( refractedView, wsNormalBack ) );					//	1) What has NOT been reflected by the back of the surface
-// 	float	Fresnel_transmitted_front = 1.0 - FresnelAccurate( 1.0 / _IOR, -dot( refractedView_inside, _wsNormalFront ) );	//	2) What has NOT been reflected by the inside of the front of the surface and transmitted through to the front where it can be viewed by the camera
-	float	Fresnel_transmitted_back = 1.0 - FresnelAccurate( _IOR, saturate( dot( refractedView, wsNormalBack ) ) );					//	1) What has NOT been reflected by the back of the surface
-	float	Fresnel_transmitted_front = 1.0 - FresnelAccurate( 1.0 / _IOR, saturate( -dot( refractedView_inside, _wsNormalFront ) ) );	//	2) What has NOT been reflected by the inside of the front of the surface and transmitted through to the front where it can be viewed by the camera
+// 	float	Fresnel_transmitted_back = 1.0 - FresnelDielectric( _IOR, dot( refractedView, wsNormalBack ) );					//	1) What has NOT been reflected by the back of the surface
+// 	float	Fresnel_transmitted_front = 1.0 - FresnelDielectric( 1.0 / _IOR, -dot( refractedView_inside, _wsNormalFront ) );	//	2) What has NOT been reflected by the inside of the front of the surface and transmitted through to the front where it can be viewed by the camera
+	float	Fresnel_transmitted_back = 1.0 - FresnelDielectric( _IOR, saturate( dot( refractedView, wsNormalBack ) ) );					//	1) What has NOT been reflected by the back of the surface
+	float	Fresnel_transmitted_front = 1.0 - FresnelDielectric( 1.0 / _IOR, saturate( -dot( refractedView_inside, _wsNormalFront ) ) );	//	2) What has NOT been reflected by the inside of the front of the surface and transmitted through to the front where it can be viewed by the camera
 
 	// Compute absorption factor based on refraction indices (eq. 21 in Walter 2007)
 	float3	Ht = normalize( -_wsView - _IOR * refractedView_inside );	// Transmitted half vector
@@ -262,7 +262,7 @@ roughness *= roughness;	// More linear feel
 	// Compute Fresnel reflectance
 	float3	H = normalize( wsLight + wsView );
 	float	HdotN = saturate( dot( H, wsNormal ) );
-	float	Fresnel_specular = FresnelAccurate( IOR, HdotN );
+	float	Fresnel_specular = FresnelDielectric( IOR, HdotN );
 	float	Fresnel_diffuse = 1.0 - Fresnel_specular;	// What is not specularly reflected
 
 	// Compute specular reflectance
