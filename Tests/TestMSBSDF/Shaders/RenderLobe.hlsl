@@ -315,7 +315,6 @@ PS_IN	VS( VS_IN _In ) {
 //		float	theta = acos( clamp( cosTheta_M, -1.0, 1.0 ) );
 //		float	thetaBinIndex = 2.0 * LOBES_COUNT_THETA * pow2( sin( 0.5 * theta ) );	// Inverse of theta = 2*asin( sqrt( i / (2 * N) ) )
 		float	thetaBinIndex = LOBES_COUNT_THETA * (1.0 - cosTheta_M);					// Inverse of theta = acos( 1 - i / N )
-
 		float2	UV = float2( phi / (2.0 * PI), thetaBinIndex / LOBES_COUNT_THETA );
 
 		lobeIntensity = (_flags & 4U) ? _Tex_directionsHistogram_Transmitted.SampleLevel( LinearClamp, float3( UV, _scatteringOrder ), 0.0 )

@@ -113,7 +113,7 @@ namespace TestMSBSDF
 
 		#region FIELDS
 
-		private Device			m_Device = new Device();
+		private Device			m_device = new Device();
 
 		private ConstantBuffer<CB_Main>				m_CB_Main = null;
 		private ConstantBuffer<CB_Camera>			m_CB_Camera = null;
@@ -193,47 +193,47 @@ namespace TestMSBSDF
 
 
 
-m_internalChange = true;
-integerTrackbarControlScatteringOrder.Value = 0;
-integerTrackbarControlIterationsCount.Value = 100;
-floatTrackbarControlBeckmannRoughness.Value = 1.0f;
-floatTrackbarControlTheta.Value = 0.0f;
-checkBoxShowLobe.Checked = false;
-checkBoxShowAnalyticalLobe.Checked = false;
-checkBoxShowReflectedDirectionsHistogram.Checked = true;
-floatTrackbarControlLobeIntensity.Value = 0.2f;
-m_internalChange = false;
+// m_internalChange = true;
+// integerTrackbarControlScatteringOrder.Value = 0;
+// integerTrackbarControlIterationsCount.Value = 100;
+// floatTrackbarControlBeckmannRoughness.Value = 1.0f;
+// floatTrackbarControlTheta.Value = 0.0f;
+// //checkBoxShowLobe.Checked = false;
+// checkBoxShowAnalyticalLobe.Checked = false;
+// checkBoxShowReflectedDirectionsHistogram.Checked = true;
+// //floatTrackbarControlLobeIntensity.Value = 0.2f;
+// m_internalChange = false;
 
 
 
 
 			try {
-				m_Device.Init( panelOutput.Handle, false, true );
+				m_device.Init( panelOutput.Handle, false, true );
 			} catch ( Exception _e ) {
-				m_Device = null;
+				m_device = null;
 				MessageBox( "Failed to initialize DX device!\n\n" + _e.Message );
 				return;
 			}
 
-			m_CB_Main = new ConstantBuffer<CB_Main>( m_Device, 0 );
-			m_CB_Camera = new ConstantBuffer<CB_Camera>( m_Device, 1 );
-			m_CB_ComputeBeckmann = new ConstantBuffer<CB_ComputeBeckmann>( m_Device, 10 );
-			m_CB_RayTrace = new ConstantBuffer<CB_RayTrace>( m_Device, 10 );
-			m_CB_Finalize = new ConstantBuffer<CB_Finalize>( m_Device, 10 );
-			m_CB_Render = new ConstantBuffer<CB_Render>( m_Device, 10 );
-			m_CB_RenderLobe = new ConstantBuffer<CB_RenderLobe>( m_Device, 10 );
-			m_CB_RenderCylinder = new ConstantBuffer<CB_RenderCylinder>( m_Device, 10 );
+			m_CB_Main = new ConstantBuffer<CB_Main>( m_device, 0 );
+			m_CB_Camera = new ConstantBuffer<CB_Camera>( m_device, 1 );
+			m_CB_ComputeBeckmann = new ConstantBuffer<CB_ComputeBeckmann>( m_device, 10 );
+			m_CB_RayTrace = new ConstantBuffer<CB_RayTrace>( m_device, 10 );
+			m_CB_Finalize = new ConstantBuffer<CB_Finalize>( m_device, 10 );
+			m_CB_Render = new ConstantBuffer<CB_Render>( m_device, 10 );
+			m_CB_RenderLobe = new ConstantBuffer<CB_RenderLobe>( m_device, 10 );
+			m_CB_RenderCylinder = new ConstantBuffer<CB_RenderCylinder>( m_device, 10 );
 
 			try {
-				m_Shader_ComputeBeckmannSurface = new ComputeShader( m_Device, new FileInfo( "Shaders/ComputeBeckmannSurface.hlsl" ), "CS", null );
-				m_Shader_RayTraceSurface_Conductor = new ComputeShader( m_Device, new FileInfo( "Shaders/RayTraceSurface.hlsl" ), "CS_Conductor", null );
-				m_Shader_RayTraceSurface_Dielectric = new ComputeShader( m_Device, new FileInfo( "Shaders/RayTraceSurface.hlsl" ), "CS_Dielectric", null );
-				m_Shader_RayTraceSurface_Diffuse = new ComputeShader( m_Device, new FileInfo( "Shaders/RayTraceSurface.hlsl" ), "CS_Diffuse", null );
-				m_Shader_AccumulateOutgoingDirections = new ComputeShader( m_Device, new FileInfo( "Shaders/AccumulateOutgoingDirections.hlsl" ), "CS", null );
-				m_Shader_FinalizeOutgoingDirections = new ComputeShader( m_Device, new FileInfo( "Shaders/AccumulateOutgoingDirections.hlsl" ), "CS_Finalize", null );
-				m_Shader_RenderHeightField = new Shader( m_Device, new FileInfo( "Shaders/RenderHeightField.hlsl" ), VERTEX_FORMAT.P3, "VS", null, "PS", null );
-				m_Shader_RenderLobe = new Shader( m_Device, new FileInfo( "Shaders/RenderLobe.hlsl" ), VERTEX_FORMAT.P3, "VS", null, "PS", null );
-				m_Shader_RenderCylinder = new Shader( m_Device, new FileInfo( "Shaders/RenderCylinder.hlsl" ), VERTEX_FORMAT.P3, "VS", null, "PS", null );
+				m_Shader_ComputeBeckmannSurface = new ComputeShader( m_device, new FileInfo( "Shaders/ComputeBeckmannSurface.hlsl" ), "CS", null );
+				m_Shader_RayTraceSurface_Conductor = new ComputeShader( m_device, new FileInfo( "Shaders/RayTraceSurface.hlsl" ), "CS_Conductor", null );
+				m_Shader_RayTraceSurface_Dielectric = new ComputeShader( m_device, new FileInfo( "Shaders/RayTraceSurface.hlsl" ), "CS_Dielectric", null );
+				m_Shader_RayTraceSurface_Diffuse = new ComputeShader( m_device, new FileInfo( "Shaders/RayTraceSurface.hlsl" ), "CS_Diffuse", null );
+				m_Shader_AccumulateOutgoingDirections = new ComputeShader( m_device, new FileInfo( "Shaders/AccumulateOutgoingDirections.hlsl" ), "CS", null );
+				m_Shader_FinalizeOutgoingDirections = new ComputeShader( m_device, new FileInfo( "Shaders/AccumulateOutgoingDirections.hlsl" ), "CS_Finalize", null );
+				m_Shader_RenderHeightField = new Shader( m_device, new FileInfo( "Shaders/RenderHeightField.hlsl" ), VERTEX_FORMAT.P3, "VS", null, "PS", null );
+				m_Shader_RenderLobe = new Shader( m_device, new FileInfo( "Shaders/RenderLobe.hlsl" ), VERTEX_FORMAT.P3, "VS", null, "PS", null );
+				m_Shader_RenderCylinder = new Shader( m_device, new FileInfo( "Shaders/RenderCylinder.hlsl" ), VERTEX_FORMAT.P3, "VS", null, "PS", null );
 			} catch ( Exception _e ) {
 				MessageBox( "Shader \"RenderHeightField\" failed to compile!\n\n" + _e.Message );
 			}
@@ -242,20 +242,20 @@ m_internalChange = false;
 			BuildPrimLobe();
 			BuildPrimCylinder();
 
-			m_SB_Beckmann = new StructuredBuffer<SB_Beckmann>( m_Device, 1024, true, false );
+			m_SB_Beckmann = new StructuredBuffer<SB_Beckmann>( m_device, 1024, true, false );
 
 			BuildRandomTexture();
 			BuildBeckmannSurfaceTexture( floatTrackbarControlBeckmannRoughness.Value );
 			
-			m_Tex_OutgoingDirections_Reflected = new Texture2D( m_Device, HEIGHTFIELD_SIZE, HEIGHTFIELD_SIZE, MAX_SCATTERING_ORDER+1, 1, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.AUTO,  false, true, null );
-			m_Tex_OutgoingDirections_Transmitted = new Texture2D( m_Device, HEIGHTFIELD_SIZE, HEIGHTFIELD_SIZE, MAX_SCATTERING_ORDER+1, 1, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.AUTO, false, true, null );
-			m_Tex_LobeHistogram_Reflected_Decimal = new Texture2D( m_Device, LOBES_COUNT_PHI, LOBES_COUNT_THETA, MAX_SCATTERING_ORDER+1, 1, PIXEL_FORMAT.R32, COMPONENT_FORMAT.UINT, false, true, null );
-			m_Tex_LobeHistogram_Reflected_Integer = new Texture2D( m_Device, LOBES_COUNT_PHI, LOBES_COUNT_THETA, MAX_SCATTERING_ORDER+1, 1, PIXEL_FORMAT.R32, COMPONENT_FORMAT.UINT, false, true, null );
-			m_Tex_LobeHistogram_Transmitted_Decimal = new Texture2D( m_Device, LOBES_COUNT_PHI, LOBES_COUNT_THETA, MAX_SCATTERING_ORDER+1, 1, PIXEL_FORMAT.R32, COMPONENT_FORMAT.UINT, false, true, null );
-			m_Tex_LobeHistogram_Transmitted_Integer = new Texture2D( m_Device, LOBES_COUNT_PHI, LOBES_COUNT_THETA, MAX_SCATTERING_ORDER+1, 1, PIXEL_FORMAT.R32, COMPONENT_FORMAT.UINT, false, true, null );
-			m_Tex_LobeHistogram_Reflected = new Texture2D( m_Device, LOBES_COUNT_PHI, LOBES_COUNT_THETA, MAX_SCATTERING_ORDER+1, 1, PIXEL_FORMAT.R32F, COMPONENT_FORMAT.AUTO, false, true, null );
-			m_Tex_LobeHistogram_Transmitted = new Texture2D( m_Device, LOBES_COUNT_PHI, LOBES_COUNT_THETA, MAX_SCATTERING_ORDER+1, 1, PIXEL_FORMAT.R32F, COMPONENT_FORMAT.AUTO, false, true, null );
-			m_Tex_LobeHistogram_CPU = new Texture2D( m_Device, LOBES_COUNT_PHI, LOBES_COUNT_THETA, MAX_SCATTERING_ORDER+1, 1, PIXEL_FORMAT.R32F, COMPONENT_FORMAT.AUTO, true, false, null );
+			m_Tex_OutgoingDirections_Reflected = new Texture2D( m_device, HEIGHTFIELD_SIZE, HEIGHTFIELD_SIZE, MAX_SCATTERING_ORDER+1, 1, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.AUTO,  false, true, null );
+			m_Tex_OutgoingDirections_Transmitted = new Texture2D( m_device, HEIGHTFIELD_SIZE, HEIGHTFIELD_SIZE, MAX_SCATTERING_ORDER+1, 1, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.AUTO, false, true, null );
+			m_Tex_LobeHistogram_Reflected_Decimal = new Texture2D( m_device, LOBES_COUNT_PHI, LOBES_COUNT_THETA, MAX_SCATTERING_ORDER+1, 1, PIXEL_FORMAT.R32, COMPONENT_FORMAT.UINT, false, true, null );
+			m_Tex_LobeHistogram_Reflected_Integer = new Texture2D( m_device, LOBES_COUNT_PHI, LOBES_COUNT_THETA, MAX_SCATTERING_ORDER+1, 1, PIXEL_FORMAT.R32, COMPONENT_FORMAT.UINT, false, true, null );
+			m_Tex_LobeHistogram_Transmitted_Decimal = new Texture2D( m_device, LOBES_COUNT_PHI, LOBES_COUNT_THETA, MAX_SCATTERING_ORDER+1, 1, PIXEL_FORMAT.R32, COMPONENT_FORMAT.UINT, false, true, null );
+			m_Tex_LobeHistogram_Transmitted_Integer = new Texture2D( m_device, LOBES_COUNT_PHI, LOBES_COUNT_THETA, MAX_SCATTERING_ORDER+1, 1, PIXEL_FORMAT.R32, COMPONENT_FORMAT.UINT, false, true, null );
+			m_Tex_LobeHistogram_Reflected = new Texture2D( m_device, LOBES_COUNT_PHI, LOBES_COUNT_THETA, MAX_SCATTERING_ORDER+1, 1, PIXEL_FORMAT.R32F, COMPONENT_FORMAT.AUTO, false, true, null );
+			m_Tex_LobeHistogram_Transmitted = new Texture2D( m_device, LOBES_COUNT_PHI, LOBES_COUNT_THETA, MAX_SCATTERING_ORDER+1, 1, PIXEL_FORMAT.R32F, COMPONENT_FORMAT.AUTO, false, true, null );
+			m_Tex_LobeHistogram_CPU = new Texture2D( m_device, LOBES_COUNT_PHI, LOBES_COUNT_THETA, MAX_SCATTERING_ORDER+1, 1, PIXEL_FORMAT.R32F, COMPONENT_FORMAT.AUTO, true, false, null );
 
 			// Setup camera
 			m_Camera.CreatePerspectiveCamera( (float) (60.0 * Math.PI / 180.0), (float) panelOutput.Width / panelOutput.Height, 0.01f, 100.0f );
@@ -267,7 +267,7 @@ m_internalChange = false;
 			try {
 				buttonRayTrace_Click( buttonRayTrace, EventArgs.Empty );
 			} catch ( Exception ) {
-				m_Device = null;
+				m_device = null;
 			}
 		}
 
@@ -277,7 +277,7 @@ m_internalChange = false;
 		}
 
 		protected override void OnFormClosed( FormClosedEventArgs e ) {
-			if ( m_Device == null )
+			if ( m_device == null )
 				return;
 
 			m_Shader_RenderCylinder.Dispose();
@@ -317,7 +317,7 @@ m_internalChange = false;
 			m_CB_Camera.Dispose();
 			m_CB_Main.Dispose();
 
-			m_Device.Exit();
+			m_device.Exit();
 
 			base.OnFormClosed( e );
 		}
@@ -358,7 +358,7 @@ m_internalChange = false;
 			}
 
 
-			m_Prim_Heightfield = new Primitive( m_Device, HEIGHTFIELD_SIZE*HEIGHTFIELD_SIZE, VertexP3.FromArray( Vertices ), Indices.ToArray(), Primitive.TOPOLOGY.TRIANGLE_STRIP, VERTEX_FORMAT.P3 );
+			m_Prim_Heightfield = new Primitive( m_device, HEIGHTFIELD_SIZE*HEIGHTFIELD_SIZE, VertexP3.FromArray( Vertices ), Indices.ToArray(), Primitive.TOPOLOGY.TRIANGLE_STRIP, VERTEX_FORMAT.P3 );
 		}
 
 		void	BuildPrimLobe() {
@@ -391,7 +391,7 @@ m_internalChange = false;
 						Indices.Add( IndexStart0 );				// Double next band's first index (second degenerate triangle => start new band)
 					}
 				}
-				m_Prim_Lobe = new Primitive( m_Device, RESOLUTION_PHI*2*RESOLUTION_THETA, VertexP3.FromArray( Vertices ), Indices.ToArray(), Primitive.TOPOLOGY.TRIANGLE_STRIP, VERTEX_FORMAT.P3 );
+				m_Prim_Lobe = new Primitive( m_device, RESOLUTION_PHI*2*RESOLUTION_THETA, VertexP3.FromArray( Vertices ), Indices.ToArray(), Primitive.TOPOLOGY.TRIANGLE_STRIP, VERTEX_FORMAT.P3 );
 			#else	// HEMISPHERE
 				VertexP3[]	Vertices = new VertexP3[RESOLUTION_PHI*RESOLUTION_THETA];
 				for ( uint Y=0; Y < RESOLUTION_THETA; Y++ ) {
@@ -419,7 +419,7 @@ m_internalChange = false;
 						Indices.Add( IndexStart0 );				// Double next band's first index (second degenerate triangle => start new band)
 					}
 				}
-				m_Prim_Lobe = new Primitive( m_Device, RESOLUTION_PHI*RESOLUTION_THETA, VertexP3.FromArray( Vertices ), Indices.ToArray(), Primitive.TOPOLOGY.TRIANGLE_STRIP, VERTEX_FORMAT.P3 );
+				m_Prim_Lobe = new Primitive( m_device, RESOLUTION_PHI*RESOLUTION_THETA, VertexP3.FromArray( Vertices ), Indices.ToArray(), Primitive.TOPOLOGY.TRIANGLE_STRIP, VERTEX_FORMAT.P3 );
 			#endif
 		}
 
@@ -459,7 +459,7 @@ m_internalChange = false;
 				Indices.Add( COUNT+X );
 			}
 
-			m_Prim_Cylinder = new Primitive( m_Device, 2*COUNT, VertexP3.FromArray( Vertices ), Indices.ToArray(), Primitive.TOPOLOGY.TRIANGLE_LIST, VERTEX_FORMAT.P3 );
+			m_Prim_Cylinder = new Primitive( m_device, 2*COUNT, VertexP3.FromArray( Vertices ), Indices.ToArray(), Primitive.TOPOLOGY.TRIANGLE_LIST, VERTEX_FORMAT.P3 );
 		}
 
 		#endregion
@@ -477,11 +477,11 @@ m_internalChange = false;
 		/// Builds many random values into a texture
 		/// </summary>
 		void	BuildRandomTexture() {
-			PixelsBuffer[]	Content = new PixelsBuffer[4];
+			PixelsBuffer[]	Content = new PixelsBuffer[3+MAX_SCATTERING_ORDER];
 
 			SimpleRNG.SetSeed( 561321987, 132194982 );
-			for ( int arrayIndex=0; arrayIndex < 4; arrayIndex++ ) {
-				Content[arrayIndex] = new PixelsBuffer( (uint) (HEIGHTFIELD_SIZE*HEIGHTFIELD_SIZE*4*System.Runtime.InteropServices.Marshal.SizeOf(typeof(float4))) );
+			for ( int arrayIndex=0; arrayIndex < 3+MAX_SCATTERING_ORDER; arrayIndex++ ) {
+				Content[arrayIndex] = new PixelsBuffer( (uint) (HEIGHTFIELD_SIZE*HEIGHTFIELD_SIZE*16) );
 				using ( BinaryWriter W = Content[arrayIndex].OpenStreamWrite() )
 					for ( int Y=0; Y < HEIGHTFIELD_SIZE; Y++ ) {
 						for ( int X=0; X < HEIGHTFIELD_SIZE; X++ ) {
@@ -494,7 +494,7 @@ m_internalChange = false;
 				Content[arrayIndex].CloseStream();
 			}
 
-			m_Tex_Random = new Texture2D( m_Device, HEIGHTFIELD_SIZE, HEIGHTFIELD_SIZE, 4, 1, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.AUTO, false, false, Content );
+			m_Tex_Random = new Texture2D( m_device, HEIGHTFIELD_SIZE, HEIGHTFIELD_SIZE, 3+MAX_SCATTERING_ORDER, 1, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.AUTO, false, false, Content );
 		}
 
 		/// <summary>
@@ -530,8 +530,8 @@ m_internalChange = false;
 
 			#if true
 				if ( m_Tex_Heightfield_Height == null ) {
-					m_Tex_Heightfield_Height = new Texture2D( m_Device, HEIGHTFIELD_SIZE, HEIGHTFIELD_SIZE, 1, 1, PIXEL_FORMAT.R32F, COMPONENT_FORMAT.AUTO, false, true, null );
-					m_Tex_Heightfield_Normal = new Texture2D( m_Device, HEIGHTFIELD_SIZE, HEIGHTFIELD_SIZE, 1, 1, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.AUTO, false, true, null );
+					m_Tex_Heightfield_Height = new Texture2D( m_device, HEIGHTFIELD_SIZE, HEIGHTFIELD_SIZE, 1, 1, PIXEL_FORMAT.R32F, COMPONENT_FORMAT.AUTO, false, true, null );
+					m_Tex_Heightfield_Normal = new Texture2D( m_device, HEIGHTFIELD_SIZE, HEIGHTFIELD_SIZE, 1, 1, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.AUTO, false, true, null );
 				}
 
 				// Run the CS
@@ -591,11 +591,11 @@ m_internalChange = false;
 				}
 				Content.CloseStream();
 
-				m_Tex_Heightfield = new Texture2D( m_Device, HEIGHTFIELD_SIZE, HEIGHTFIELD_SIZE, 1, 1, PIXEL_FORMAT.R32_FLOAT, false, false, new PixelsBuffer[] { Content } );
+				m_Tex_Heightfield = new Texture2D( m_device, HEIGHTFIELD_SIZE, HEIGHTFIELD_SIZE, 1, 1, PIXEL_FORMAT.R32_FLOAT, false, false, new PixelsBuffer[] { Content } );
 			#endif
 
 			#if false
-				Texture2D	Tex_Heightfield_CPU = new Texture2D( m_Device, HEIGHTFIELD_SIZE, HEIGHTFIELD_SIZE, 1, 1, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.AUTO, true, false, null );
+				Texture2D	Tex_Heightfield_CPU = new Texture2D( m_device, HEIGHTFIELD_SIZE, HEIGHTFIELD_SIZE, 1, 1, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.AUTO, true, false, null );
 				Tex_Heightfield_CPU.CopyFrom( m_Tex_Heightfield_Normal );
 				float[,]	heights = new float[HEIGHTFIELD_SIZE,HEIGHTFIELD_SIZE];
 				float4[,]	normalHeights = new float4[HEIGHTFIELD_SIZE,HEIGHTFIELD_SIZE];
@@ -622,12 +622,19 @@ TestHeightFieldTracing( heights, normalHeights );
 
 		#region Ray-Tracing Test
 
+		float4[,]	m_testResults = null;
+
 		void	TestHeightFieldTracing( float[,] _heights, float4[,] _normals ) {
 			float3	P = float3.Zero;
 
 			float4	hit;
 
 			float2	offset = new float2( 0.25f, 0.01f );
+
+			// Use the same offset as the actual GPU sequence
+			Hammersley	pRNG = new Hammersley();
+			double[,]	sequence = pRNG.BuildSequence( integerTrackbarControlIterationsCount.Value, 2 );
+			offset.Set( (float) sequence[0,0], (float) sequence[0,1] );
 
 			const float	minTraceDistance = 1e-3f;
 
@@ -656,6 +663,10 @@ _normals = generatedNormals;
 // float3	Test = SampleNormal( 0.3f, 0.6f, _normals ).xyz.Normalized;
 // float3	Test2 = ComputeNormal( 0.3f, 0.6f, _heights );
 
+			//////////////////////////////////////////////////////////////////////////
+			// Test CPU tracing
+			m_testResults = new float4[HEIGHTFIELD_SIZE,HEIGHTFIELD_SIZE];
+
 			float	maxDiff = 0;
 			int		count = 0;
 			float	avgDiff = 0;
@@ -670,14 +681,17 @@ _normals = generatedNormals;
 			for ( uint Y=0; Y < HEIGHTFIELD_SIZE; Y++ ) {
 				for ( uint X=0; X < HEIGHTFIELD_SIZE; X++ ) {
 
-					float3	D = new float3( 1, -0.2f, -1 ).Normalized;	// General ray
+//					float3	D = new float3( 1, -0.2f, -1 ).Normalized;	// General ray
 //					float3	D = new float3( -1, 0, -1 ).Normalized;		// Axis-aligned ray
 //					float3	D = new float3( 1, -0.2f, 0 ).Normalized;	// Horizontal ray
-//					float3	D = new float3( 0, 0, -1 ).Normalized;		// Vertical ray
+					float3	D = new float3( 0, 0, -1 ).Normalized;		// Vertical ray
 
 					P.x = X + offset.x;
 					P.y = Y + offset.y;
 					P.z = SampleHeight( P.x, P.y, _heights );
+
+//m_testResults[X,Y] = new float4( P, 0 );
+
 					if ( Mathf.Abs( D.z ) > 0.0f )
 						P += ((7.9f - P.z) / D.z) * D;
 
@@ -709,6 +723,8 @@ _normals = generatedNormals;
 P.z = hitH;
 
 					float3	hitNormal = ComputeNormal( P.x, P.y, _heights );
+
+m_testResults[X,Y] = new float4( hitNormal, 0 );
 
 					float	d = D.Dot( hitNormal );	// Negative since direction points down and normal up
 					D -= 2.0f * d * hitNormal;
@@ -808,6 +824,7 @@ if ( d < -1e-3f ) {
 			return H;
 		}
 
+// This doesn't work! It yields incorrect normals!
 // 		float4	SampleNormal( float _Px, float _Py, float4[,] _heightNormals ) {
 // 			int		X0 = (int) Mathf.Floor( _Px );
 // 			int		Y0 = (int) Mathf.Floor( _Py );
@@ -828,6 +845,7 @@ if ( d < -1e-3f ) {
 // 			return H;
 // 		}
 
+		// This is expensive but works fine!
 		float3	ComputeNormal( float _Px, float _Py, float[,] _heights ) {
 			const float eps = 0.001f;
 			float	HXn = SampleHeight( _Px-eps, _Py, _heights );
@@ -968,16 +986,10 @@ float4	RayTrace( float3 _position, float3 _direction, float _minTraceDistance, f
 			// March horizontally
 			pos += tx * dir;
 			Px += Ix;				// Next horizontal integer texel
-//			x = dir.x >= 0 ? 0 : 1;	// We're on left or right texel border depending on direction
-//			Rx = 1.0f;				// A full horizontal texel left
-//			Ry -= tx * Dy;			// A little less vertical texel left
 		} else {
 			// March vertically
 			pos += ty * dir;
 			Py += Iy;				// Next vertical integer texel
-//			y = dir.y >= 0 ? 0 : 1;	// We're on top or bottom texel border depending on direction
-//			Ry = 1.0f;				// A full vertical texel left
-//			Rx -= ty * Dx;			// A little less horizontal texel left
 		}
 	}
 
@@ -985,6 +997,41 @@ float4	RayTrace( float3 _position, float3 _direction, float _minTraceDistance, f
 	pos.w = INFINITY;
 	return pos;
 }
+
+		void	CompareResultsToCPU( Texture2D _tex_OutgoingDirections ) {
+			if ( m_testResults == null )
+				return;
+
+			Texture2D	texTemp_CPU = new Texture2D( m_device, (uint) HEIGHTFIELD_SIZE, (uint) HEIGHTFIELD_SIZE, (int) _tex_OutgoingDirections.ArraySize, 1, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.AUTO, true, false, null );
+			texTemp_CPU.CopyFrom( _tex_OutgoingDirections );
+			float4[,]	GPUResults = new float4[HEIGHTFIELD_SIZE,HEIGHTFIELD_SIZE];
+			texTemp_CPU.ReadPixels( 0, 0, ( uint _X, uint _Y, BinaryReader _R ) => {
+				GPUResults[_X,_Y].Set( _R.ReadSingle(), _R.ReadSingle(), _R.ReadSingle(), _R.ReadSingle() );
+			} );
+			texTemp_CPU.Dispose();
+			texTemp_CPU = null;
+
+			float4	GPUResult, CPUResult;
+			int		count = 0;
+			float	maxSqDiff = 0;
+			float	avgSqDiff = 0;
+			for ( uint Y=0; Y < HEIGHTFIELD_SIZE; Y++ ) {
+				for ( uint X=0; X < HEIGHTFIELD_SIZE; X++ ) {
+					GPUResult = GPUResults[X,Y];
+					CPUResult = m_testResults[X,Y];
+//					if ( !GPUResult.Almost( CPUResult, 1e-3f ) )
+//						throw new Exception( "ARGH!" );
+
+					float	sqDiff = (GPUResult - CPUResult).LengthSquared;
+					if ( sqDiff > maxSqDiff ) {
+						maxSqDiff += sqDiff;
+						avgSqDiff += sqDiff;
+						count++;
+					}
+				}
+			}
+			avgSqDiff /= count++;
+		}
 
 		#endregion
 
@@ -1095,8 +1142,8 @@ float4	RayTrace( float3 _position, float3 _direction, float _minTraceDistance, f
 					}
 			BufNormal.CloseStream();
 
-			m_Tex_Heightfield_Height = new Texture2D( m_Device, (uint) W, (uint) H, 1, 1, PIXEL_FORMAT.R32F, COMPONENT_FORMAT.AUTO, false, false, new PixelsBuffer[] { BufHeight } );
-			m_Tex_Heightfield_Normal = new Texture2D( m_Device, (uint) W, (uint) H, 1, 1, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.AUTO, false, false, new PixelsBuffer[] { BufNormal } );
+			m_Tex_Heightfield_Height = new Texture2D( m_device, (uint) W, (uint) H, 1, 1, PIXEL_FORMAT.R32F, COMPONENT_FORMAT.AUTO, false, false, new PixelsBuffer[] { BufHeight } );
+			m_Tex_Heightfield_Normal = new Texture2D( m_device, (uint) W, (uint) H, 1, 1, PIXEL_FORMAT.RGBA32F, COMPONENT_FORMAT.AUTO, false, false, new PixelsBuffer[] { BufNormal } );
 		}
 
 		#endregion
@@ -1162,10 +1209,10 @@ float4	RayTrace( float3 _position, float3 _direction, float _minTraceDistance, f
 			m_Tex_LobeHistogram_Reflected.RemoveFromLastAssignedSlots();
 			m_Tex_LobeHistogram_Transmitted.RemoveFromLastAssignedSlots();
 
-			m_Device.Clear( m_Tex_LobeHistogram_Reflected_Decimal, float4.Zero );	// Clear counters
-			m_Device.Clear( m_Tex_LobeHistogram_Reflected_Integer, float4.Zero );
-			m_Device.Clear( m_Tex_LobeHistogram_Transmitted_Decimal, float4.Zero );	// Clear counters
-			m_Device.Clear( m_Tex_LobeHistogram_Transmitted_Integer, float4.Zero );
+			m_device.Clear( m_Tex_LobeHistogram_Reflected_Decimal, float4.Zero );	// Clear counters
+			m_device.Clear( m_Tex_LobeHistogram_Reflected_Integer, float4.Zero );
+			m_device.Clear( m_Tex_LobeHistogram_Transmitted_Decimal, float4.Zero );	// Clear counters
+			m_device.Clear( m_Tex_LobeHistogram_Transmitted_Integer, float4.Zero );
 
 			Hammersley	pRNG = new Hammersley();
 			double[,]	sequence = pRNG.BuildSequence( _iterationsCount, 2 );
@@ -1178,7 +1225,7 @@ float4	RayTrace( float3 _position, float3 _direction, float _minTraceDistance, f
 							m_CB_RayTrace.m._Offset.Set( (float) sequence[iterationIndex,0], (float) sequence[iterationIndex,1] );
 							m_CB_RayTrace.UpdateData();
 
-							m_Device.Clear( m_Tex_OutgoingDirections_Reflected, float4.Zero );	// Clear target directions and weights
+							m_device.Clear( m_Tex_OutgoingDirections_Reflected, float4.Zero );	// Clear target directions and weights
 
 							m_Tex_Heightfield_Height.SetCS( 0 );
 							m_Tex_Heightfield_Normal.SetCS( 1 );
@@ -1186,6 +1233,9 @@ float4	RayTrace( float3 _position, float3 _direction, float _minTraceDistance, f
 							m_Tex_OutgoingDirections_Reflected.SetCSUAV( 0 );	// New target buffer where to accumulate
 
 							m_Shader_RayTraceSurface_Conductor.Dispatch( HEIGHTFIELD_SIZE >> 4, HEIGHTFIELD_SIZE >> 4, 1 );
+
+if ( iterationIndex == 0 )
+ CompareResultsToCPU( m_Tex_OutgoingDirections_Reflected );
 
 							m_Tex_OutgoingDirections_Reflected.RemoveFromLastAssignedSlotUAV();
 						}
@@ -1210,8 +1260,8 @@ float4	RayTrace( float3 _position, float3 _direction, float _minTraceDistance, f
 							m_CB_RayTrace.m._Offset.Set( (float) sequence[iterationIndex,0], (float) sequence[iterationIndex,1] );
 							m_CB_RayTrace.UpdateData();
 
-							m_Device.Clear( m_Tex_OutgoingDirections_Reflected, float4.Zero );		// Clear target directions and weights
-							m_Device.Clear( m_Tex_OutgoingDirections_Transmitted, float4.Zero );	// Clear target directions and weights
+							m_device.Clear( m_Tex_OutgoingDirections_Reflected, float4.Zero );		// Clear target directions and weights
+							m_device.Clear( m_Tex_OutgoingDirections_Transmitted, float4.Zero );	// Clear target directions and weights
 
 							m_Tex_Heightfield_Height.SetCS( 0 );
 							m_Tex_Heightfield_Normal.SetCS( 1 );
@@ -1257,7 +1307,7 @@ float4	RayTrace( float3 _position, float3 _direction, float _minTraceDistance, f
 							m_CB_RayTrace.m._Offset.Set( (float) sequence[iterationIndex,0], (float) sequence[iterationIndex,1] );
 							m_CB_RayTrace.UpdateData();
 
-							m_Device.Clear( m_Tex_OutgoingDirections_Reflected, float4.Zero );	// Clear target directions and weights
+							m_device.Clear( m_Tex_OutgoingDirections_Reflected, float4.Zero );	// Clear target directions and weights
 
 							m_Tex_Heightfield_Height.SetCS( 0 );
 							m_Tex_Heightfield_Normal.SetCS( 1 );
@@ -1315,7 +1365,7 @@ float4	RayTrace( float3 _position, float3 _direction, float _minTraceDistance, f
  					m_Tex_LobeHistogram_Transmitted_Integer.RemoveFromLastAssignedSlotUAV();
 					m_Tex_LobeHistogram_Transmitted.RemoveFromLastAssignedSlotUAV();
 				} else {
-					m_Device.Clear( m_Tex_LobeHistogram_Transmitted, float4.Zero );
+					m_device.Clear( m_Tex_LobeHistogram_Transmitted, float4.Zero );
 				}
 			}
 		}
@@ -1438,7 +1488,7 @@ float4	RayTrace( float3 _position, float3 _direction, float _minTraceDistance, f
 
 		bool	m_pauseRendering = false;
 		void	Application_Idle( object sender, EventArgs e ) {
-			if ( m_Device == null || m_pauseRendering )
+			if ( m_device == null || m_pauseRendering )
 				return;
 
 			// Setup global data
@@ -1452,11 +1502,11 @@ float4	RayTrace( float3 _position, float3 _direction, float _minTraceDistance, f
 			m_Tex_LobeHistogram_Transmitted.Set( 5 );
 
 			// =========== Render scene ===========
-			m_Device.SetRenderTarget( m_Device.DefaultTarget, m_Device.DefaultDepthStencil );
-			m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.READ_WRITE_DEPTH_LESS, BLEND_STATE.DISABLED );
+			m_device.SetRenderTarget( m_device.DefaultTarget, m_device.DefaultDepthStencil );
+			m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.READ_WRITE_DEPTH_LESS, BLEND_STATE.DISABLED );
 
-			m_Device.Clear( m_Device.DefaultTarget, new float4( 0.02f, 0.03f, 0.04f, 0 ) );
-			m_Device.ClearDepthStencil( m_Device.DefaultDepthStencil, 1.0f, 0, true, false );
+			m_device.Clear( m_device.DefaultTarget, new float4( 0.02f, 0.03f, 0.04f, 0 ) );
+			m_device.ClearDepthStencil( m_device.DefaultDepthStencil, 1.0f, 0, true, false );
 
 			//////////////////////////////////////////////////////////////////////////
 			// Render heightfield
@@ -1527,7 +1577,7 @@ float4	RayTrace( float3 _position, float3 _direction, float _minTraceDistance, f
 
 				// Render analytical lobes
 				if ( checkBoxShowAnalyticalLobe.Checked ) {
-					m_Device.SetRenderStates( RASTERIZER_STATE.NOCHANGE, DEPTHSTENCIL_STATE.READ_WRITE_DEPTH_LESS, BLEND_STATE.DISABLED );
+					m_device.SetRenderStates( RASTERIZER_STATE.NOCHANGE, DEPTHSTENCIL_STATE.READ_WRITE_DEPTH_LESS, BLEND_STATE.DISABLED );
 					m_CB_RenderLobe.m._Flags = 2U | generalDisplayFlags | flags;
 					m_CB_RenderLobe.m._Direction = currentDirection;
 					m_CB_RenderLobe.m._ReflectedDirection = analyticalReflectedDirection;
@@ -1556,7 +1606,7 @@ float4	RayTrace( float3 _position, float3 _direction, float _minTraceDistance, f
 
 					if ( checkBoxShowDiffuseModel.Checked ) {
 						// Show analytical diffuse model lobe
-						m_Device.SetRenderStates( RASTERIZER_STATE.NOCHANGE, DEPTHSTENCIL_STATE.NOCHANGE, checkBoxShowXRay.Checked ? BLEND_STATE.ALPHA_BLEND : BLEND_STATE.DISABLED );
+						m_device.SetRenderStates( RASTERIZER_STATE.NOCHANGE, DEPTHSTENCIL_STATE.NOCHANGE, checkBoxShowXRay.Checked ? BLEND_STATE.ALPHA_BLEND : BLEND_STATE.DISABLED );
 
 						m_CB_RenderLobe.m._Flags = 2U | generalDisplayFlags | (4U << 4);
 						m_CB_RenderLobe.m._ReflectedDirection = analyticalReflectedDirection;
@@ -1574,7 +1624,7 @@ float4	RayTrace( float3 _position, float3 _direction, float _minTraceDistance, f
 				// Render simulated lobes
 				if ( checkBoxShowLobe.Checked ) {
 					if ( m_fitting || checkBoxShowXRay.Checked )
-						m_Device.SetRenderStates( RASTERIZER_STATE.NOCHANGE, DEPTHSTENCIL_STATE.READ_DEPTH_LESS_EQUAL, BLEND_STATE.ALPHA_BLEND );	// Show as transparent during fitting...
+						m_device.SetRenderStates( RASTERIZER_STATE.NOCHANGE, DEPTHSTENCIL_STATE.READ_DEPTH_LESS_EQUAL, BLEND_STATE.ALPHA_BLEND );	// Show as transparent during fitting...
 
 					m_CB_RenderLobe.m._Flags = generalDisplayFlags | 0U;
 					m_CB_RenderLobe.m._Direction = m_lastComputedDirection;
@@ -1597,7 +1647,7 @@ float4	RayTrace( float3 _position, float3 _direction, float _minTraceDistance, f
 				// Render again, in wireframe this time
 				//
 				if ( !m_fitting && checkBoxShowWireframe.Checked ) {
-					m_Device.SetRenderStates( RASTERIZER_STATE.WIREFRAME, DEPTHSTENCIL_STATE.READ_DEPTH_LESS_EQUAL, checkBoxShowXRay.Checked ? BLEND_STATE.ALPHA_BLEND : BLEND_STATE.DISABLED );
+					m_device.SetRenderStates( RASTERIZER_STATE.WIREFRAME, DEPTHSTENCIL_STATE.READ_DEPTH_LESS_EQUAL, checkBoxShowXRay.Checked ? BLEND_STATE.ALPHA_BLEND : BLEND_STATE.DISABLED );
 
 					// Render analytical lobes
 					if ( checkBoxShowAnalyticalLobe.Checked ) {
@@ -1666,7 +1716,7 @@ float4	RayTrace( float3 _position, float3 _direction, float _minTraceDistance, f
 				//////////////////////////////////////////////////////////////////////////
 				// Render cylinder
 				if ( m_Shader_RenderCylinder.Use() ) {
-					m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.READ_WRITE_DEPTH_LESS, BLEND_STATE.DISABLED );
+					m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.READ_WRITE_DEPTH_LESS, BLEND_STATE.DISABLED );
 
 					m_CB_RenderCylinder.m._Direction = -m_lastComputedDirection;	// We want the incoming direction point AWAY from the surface
 					m_CB_RenderCylinder.m._Length = 10.0f;
@@ -1689,7 +1739,7 @@ float4	RayTrace( float3 _position, float3 _direction, float _minTraceDistance, f
 			}
 
 			// Show!
-			m_Device.Present( false );
+			m_device.Present( false );
 		}
 
 		#endregion
@@ -1760,7 +1810,7 @@ float4	RayTrace( float3 _position, float3 _direction, float _minTraceDistance, f
 		}
 
 		private void buttonReload_Click( object sender, EventArgs e ) {
-			m_Device.ReloadModifiedShaders();
+			m_device.ReloadModifiedShaders();
 		}
 
 		bool	m_internalChange = false;
@@ -1820,8 +1870,8 @@ float4	RayTrace( float3 _position, float3 _direction, float _minTraceDistance, f
 				m_pauseRendering = false;
 			} catch ( Exception _e ) {
 				MessageBox( "An error occurred while ray-tracing the surface using " + integerTrackbarControlIterationsCount.Value + " iterations:\r\n" + _e.Message + "\r\n\r\nDisabling device..." );
-				m_Device.Exit();
-				m_Device = null;
+				m_device.Exit();
+				m_device = null;
 			}
 		}
 

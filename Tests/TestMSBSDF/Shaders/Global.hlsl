@@ -181,6 +181,16 @@ float rand( float2 _seed ) {
 //= frac( sin(_pixelPosition.x*i)*sin(1767.0654+_pixelPosition.y*i)*43758.5453123 );
 }
 
+// From Nathan Reed (http://reedbeta.com/blog/quick-and-easy-gpu-random-numbers-in-d3d11/)
+uint wang_hash(uint seed) {
+    seed = (seed ^ 61) ^ (seed >> 16);
+    seed *= 9;
+    seed = seed ^ (seed >> 4);
+    seed *= 0x27d4eb2d;
+    seed = seed ^ (seed >> 15);
+    return seed;
+}
+
 // Build orthonormal basis from a 3D Unit Vector Without normalization [Frisvad2012])
 void BuildOrthonormalBasis( float3 _normal, out float3 _tangent, out float3 _bitangent ) {
 	float a = _normal.z > -0.9999999 ? 1.0 / (1.0 + _normal.z) : 0.0;

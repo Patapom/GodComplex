@@ -20,24 +20,22 @@ void	CS( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHREADID, u
 	uint	scatteringOrder = _DispatchThreadID.z;
 
 	float4	directionWeight = _Tex_OutgoingDirections[uint3( pixelPosition, scatteringOrder )];
+			directionWeight.xyz = normalize( directionWeight.xyz );
 
-	directionWeight.xyz = normalize( directionWeight.xyz );
-
-//	float	phi = fmod( 2.0 * PI + atan2( directionWeight.y, directionWeight.x ), 2.0 * PI );
-//	uint	iPhi = uint( floor( LOBES_COUNT_PHI * phi / (2.0 * PI) ) );
 	uint	iPhi = uint( floor( fmod( LOBES_COUNT_PHI * (1.0 + atan2( directionWeight.y, directionWeight.x ) / (2.0 * PI)), LOBES_COUNT_PHI ) ) );
 
 // Formerly, I used the wrong discretization for histogram bins based on cosine-lobe weighted theta = 2*asin( sqrt( i / (2*N) ))
 //	float	theta = acos( clamp( directionWeight.z, -1.0, 1.0 ) );
 //	uint	iTheta = uint( floor( 2.0 * LOBES_COUNT_THETA * pow2( sin( 0.5 * theta ) ) ) );	// Inverse of 2*asin( sqrt( i / (2 * N) ) )
 
+//if ( directionWeight.z > 0.0 )
+//	return;
+//directionWeight.z = abs( directionWeight.z );
+
 	// Now we're using simply theta = acos( 1 - i / N )
 	// And so, to retrieve the bin index from theta we have i = N * (1 - cos( theta ))
 	uint	iTheta = uint( floor( LOBES_COUNT_THETA * (1.0 - directionWeight.z) ) );
-
-
-iTheta = min( LOBES_COUNT_THETA-1, iTheta );
-
+//			iTheta = min( LOBES_COUNT_THETA-1, iTheta );
 
 //iPhi = pixelPosition.x * LOBES_COUNT_PHI / HEIGHTFIELD_SIZE;
 //iTheta = pixelPosition.y * LOBES_COUNT_THETA / HEIGHTFIELD_SIZE;
