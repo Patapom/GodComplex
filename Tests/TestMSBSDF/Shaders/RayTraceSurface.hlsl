@@ -228,9 +228,6 @@ void	CS_Conductor( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPT
 
 	uint	scatteringIndex = 0;	// No scattering yet
 
-//	float4	random = JitterRandom( 0, targetPosition.xy, 0 );
-//			random = frac( random + wang_hash( asuint(_offset.x) ^ asuint(_offset.y) ) );
-
 	float	IOR = _IOR;
 	float	F0 = Fresnel_F0FromIOR( IOR );
 	float	F90 = 1.0;		// TODO!!
@@ -250,25 +247,7 @@ void	CS_Conductor( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPT
 		// Compute normal at position
 		float3	normal = ComputeNormal( position.xy );
 
-// No normal are oriented toward the bottom (actually, no Z < 0.4 exist)
-//if ( normal.z < 0.0 ) {
-//	error = true;
-//	break;
-//}
-
-/*
-int2	P = floor( position.xy );
-float2	p = position.xy - P;
-		P = (P + HEIGHTFIELD_SIZE) & (HEIGHTFIELD_SIZE-1);
-float	H00 = _Tex_HeightField_Height[P];
-float	H01 = _Tex_HeightField_Height[P+int2(1,0)];
-float	H10 = _Tex_HeightField_Height[P+int2(0,1)];
-float	H11 = _Tex_HeightField_Height[P+int2(1,1)];
-float2	H0 = lerp( float2( H00, H10 ), float2( H01, H11 ), p.x );
-float	H = lerp( H0.x, H0.y, p.y );
-position.z = H;
-//*/
-
+// Debug results
 //direction = position;
 //direction = normal;
 //weight = 0;
@@ -276,13 +255,10 @@ position.z = H;
 //break;
 
 		// Bounce off the surface
-//		direction = reflect( direction, normal );	// Perfect mirror
-//		float	cosTheta = dot( direction, normal );
-//		if ( cosTheta < CRITICAL_DOT ) {
-
-		float	d = dot( direction, normal );
-		direction -= 2.0 * d * normal;
-		float	cosTheta = -d;
+		direction = reflect( direction, normal );	// Perfect mirror
+		float	cosTheta = dot( direction, normal );
+//		float	cosTheta = -dot( direction, normal );
+//		direction += 2.0 * cosTheta * normal;
 		if ( cosTheta < CRITICAL_DOT ) {
 			// Assume grazing ray, ignore "hit", don't increase scattering order and simply continue...
 			scatteringIndex--;
@@ -302,9 +278,6 @@ position.z = H;
 			float	F = FresnelMetal( F0, F90, saturate( cosTheta ) ).x;
 			weight *= F;
 		#endif
-
-//		// Update random seed
-//		random = JitterRandom( random, targetPosition.xy, 4+scatteringIndex );
 	}
 
 	if ( scatteringIndex == 0 )
