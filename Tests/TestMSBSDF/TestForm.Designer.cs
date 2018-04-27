@@ -49,6 +49,7 @@
 			this.buttonFit = new System.Windows.Forms.Button();
 			this.panel2 = new System.Windows.Forms.Panel();
 			this.radioButtonAnalyticalPhong = new System.Windows.Forms.RadioButton();
+			this.radioButtonAnalyticalPhongAnisotropic = new System.Windows.Forms.RadioButton();
 			this.radioButtonAnalyticalGGX = new System.Windows.Forms.RadioButton();
 			this.radioButtonAnalyticalBeckmann = new System.Windows.Forms.RadioButton();
 			this.checkBoxShowAnalyticalLobe = new System.Windows.Forms.CheckBox();
@@ -107,7 +108,7 @@
 			this.checkBoxCompensateScatteringFactor = new System.Windows.Forms.CheckBox();
 			this.checkBoxShowXRay = new System.Windows.Forms.CheckBox();
 			this.buttonAutomation = new System.Windows.Forms.Button();
-			this.radioButtonAnalyticalPhongAnisotropic = new System.Windows.Forms.RadioButton();
+			this.textBoxResults = new System.Windows.Forms.TextBox();
 			this.panelOutput = new TestMSBSDF.PanelOutput3D(this.components);
 			this.groupBoxDisplay.SuspendLayout();
 			this.panel2.SuspendLayout();
@@ -290,6 +291,16 @@
 			this.radioButtonAnalyticalPhong.TabStop = true;
 			this.radioButtonAnalyticalPhong.Text = "Phong";
 			this.radioButtonAnalyticalPhong.UseVisualStyleBackColor = true;
+			// 
+			// radioButtonAnalyticalPhongAnisotropic
+			// 
+			this.radioButtonAnalyticalPhongAnisotropic.AutoSize = true;
+			this.radioButtonAnalyticalPhongAnisotropic.Location = new System.Drawing.Point(202, 2);
+			this.radioButtonAnalyticalPhongAnisotropic.Name = "radioButtonAnalyticalPhongAnisotropic";
+			this.radioButtonAnalyticalPhongAnisotropic.Size = new System.Drawing.Size(85, 17);
+			this.radioButtonAnalyticalPhongAnisotropic.TabIndex = 0;
+			this.radioButtonAnalyticalPhongAnisotropic.Text = "Phong Aniso";
+			this.radioButtonAnalyticalPhongAnisotropic.UseVisualStyleBackColor = true;
 			// 
 			// radioButtonAnalyticalGGX
 			// 
@@ -1007,15 +1018,16 @@
 			this.buttonAutomation.UseVisualStyleBackColor = true;
 			this.buttonAutomation.Click += new System.EventHandler(this.buttonAutomation_Click);
 			// 
-			// radioButtonAnalyticalPhongAnisotropic
+			// textBoxResults
 			// 
-			this.radioButtonAnalyticalPhongAnisotropic.AutoSize = true;
-			this.radioButtonAnalyticalPhongAnisotropic.Location = new System.Drawing.Point(202, 2);
-			this.radioButtonAnalyticalPhongAnisotropic.Name = "radioButtonAnalyticalPhongAnisotropic";
-			this.radioButtonAnalyticalPhongAnisotropic.Size = new System.Drawing.Size(85, 17);
-			this.radioButtonAnalyticalPhongAnisotropic.TabIndex = 0;
-			this.radioButtonAnalyticalPhongAnisotropic.Text = "Phong Aniso";
-			this.radioButtonAnalyticalPhongAnisotropic.UseVisualStyleBackColor = true;
+			this.textBoxResults.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+			this.textBoxResults.Location = new System.Drawing.Point(15, 848);
+			this.textBoxResults.Multiline = true;
+			this.textBoxResults.Name = "textBoxResults";
+			this.textBoxResults.ReadOnly = true;
+			this.textBoxResults.Size = new System.Drawing.Size(737, 35);
+			this.textBoxResults.TabIndex = 15;
 			// 
 			// panelOutput
 			// 
@@ -1032,6 +1044,7 @@
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1287, 884);
+			this.Controls.Add(this.textBoxResults);
 			this.Controls.Add(this.buttonAutomation);
 			this.Controls.Add(this.groupBoxAnalyticalLobe);
 			this.Controls.Add(this.groupBox1);
@@ -1062,6 +1075,7 @@
 			this.groupBox1.ResumeLayout(false);
 			this.groupBox1.PerformLayout();
 			this.ResumeLayout(false);
+			this.PerformLayout();
 
 		}
 
@@ -1144,6 +1158,7 @@
 		private System.Windows.Forms.Button buttonTestImage;
 		private System.Windows.Forms.CheckBox checkBoxShowDiffuseModel;
 		private System.Windows.Forms.RadioButton radioButtonAnalyticalPhongAnisotropic;
+		private System.Windows.Forms.TextBox textBoxResults;
 	}
 }
 

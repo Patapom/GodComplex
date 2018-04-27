@@ -93,6 +93,9 @@ namespace SharpMath {
 			return Math::Abs( _Op0->x - _Op1->x ) > float::Epsilon || Math::Abs( _Op0->y - _Op1->y ) > float::Epsilon;
 		}
 
+		bool	Almost( float2 b )					{ return Almost( b, Mathf::ALMOST_EPSILON ); }
+		bool	Almost( float2 b, float _epsilon )	{ return Mathf::Almost( x, b.x, _epsilon ) && Mathf::Almost( y, b.y, _epsilon ); }
+
 		static property float2	Zero	{ float2 get() { return float2( 0, 0 ); } }
 		static property float2	UnitX	{ float2 get() { return float2( 1, 0 ); } }
 		static property float2	UnitY	{ float2 get() { return float2( 0, 1 ); } }
@@ -211,6 +214,9 @@ namespace SharpMath {
 			return Math::Abs( _Op0->x - _Op1->x ) > float::Epsilon || Math::Abs( _Op0->y - _Op1->y ) > float::Epsilon || Math::Abs( _Op0->z - _Op1->z ) > float::Epsilon;
 		}
 
+		bool	Almost( float3 b )					{ return Almost( b, Mathf::ALMOST_EPSILON ); }
+		bool	Almost( float3 b, float _epsilon )	{ return Mathf::Almost( x, b.x, _epsilon ) && Mathf::Almost( y, b.y, _epsilon ) && Mathf::Almost( z, b.z, _epsilon ); }
+
 		static property float3	Zero	{ float3 get() { return float3( 0, 0, 0 ); } }
 		static property float3	UnitX	{ float3 get() { return float3( 1, 0, 0 ); } }
 		static property float3	UnitY	{ float3 get() { return float3( 0, 1, 0 ); } }
@@ -318,6 +324,9 @@ namespace SharpMath {
 				return true;
 			return Math::Abs( _Op0->x - _Op1->x ) > float::Epsilon || Math::Abs( _Op0->y - _Op1->y ) > float::Epsilon || Math::Abs( _Op0->z - _Op1->z ) > float::Epsilon || Math::Abs( _Op0->w - _Op1->w ) > float::Epsilon;
 		}
+
+		bool	Almost( float4 b )					{ return Almost( b, Mathf::ALMOST_EPSILON ); }
+		bool	Almost( float4 b, float _epsilon )	{ return Mathf::Almost( x, b.x, _epsilon ) && Mathf::Almost( y, b.y, _epsilon ) && Mathf::Almost( z, b.z, _epsilon ) && Mathf::Almost( w, b.w, _epsilon ); }
 
 		static property float4	Zero	{ float4 get() { return float4( 0, 0, 0, 0 ); } }
 		static property float4	UnitX	{ float4 get() { return float4( 1, 0, 0, 0 ); } }

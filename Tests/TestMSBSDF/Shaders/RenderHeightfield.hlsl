@@ -4,13 +4,15 @@ cbuffer CB_Render : register(b10) {
 	uint	_flags;
 	uint	_scatteringOrder;
 	uint	_iterationsCount;
+	float	_intensity;
 }
 
-Texture2D< float4 >			_Tex_HeightField : register( t0 );
-Texture2DArray< float4 >	_Tex_OutgoingDirections_Reflected : register( t1 );
-Texture2DArray< float4 >	_Tex_OutgoingDirections_Transmitted : register( t2 );
-Texture2DArray< float >		_Tex_DirectionsHistogram_Reflected : register( t3 );
-Texture2DArray< float >		_Tex_DirectionsHistogram_Transmitted : register( t4 );
+Texture2D< float >			_Tex_HeightField_Height : register( t0 );
+Texture2D< float4 >			_Tex_HeightField_Normal : register( t1 );
+Texture2DArray< float4 >	_Tex_OutgoingDirections_Reflected : register( t2 );
+Texture2DArray< float4 >	_Tex_OutgoingDirections_Transmitted : register( t3 );
+Texture2DArray< float >		_Tex_DirectionsHistogram_Reflected : register( t4 );
+Texture2DArray< float >		_Tex_DirectionsHistogram_Transmitted : register( t5 );
 
 struct VS_IN {
 	float3	Position : POSITION;
@@ -29,7 +31,7 @@ PS_IN	VS( VS_IN _In ) {
 	PS_IN	Out;
 	Out.UV = float2( 0.5 * (1.0 + lsPosition.x), 0.5 * (1.0 - lsPosition.y) );
 
-	float	H0 = (_flags < 2U ? 0.01 : 0.0) * _Tex_HeightField.SampleLevel( LinearWrap, Out.UV, 0.0 ).w;
+	float	H0 = ((_flags & 0xF) < 2U ? 0.01 : 0.0) * _Tex_HeightField_Height.SampleLevel( LinearWrap, Out.UV, 0.0 );
 
 	Out.__Position = mul( float4( lsPosition.x, H0, -lsPosition.y, 1.0 ), _World2Proj );
 	Out.Normal = float3( 0.0, H0, 0.0 );
@@ -42,9 +44,13 @@ float3	PS( PS_IN _In ) : SV_TARGET0 {
 //	return 0.5 * (1.0 + _In.Normal.y );
 
 	if ( _flags & 1 ) {
-//		return _Tex_HeightField.SampleLevel( LinearClamp, _In.UV, 0.0 ).xyz;
-		return 0.5 * (1.0 + _Tex_HeightField.SampleLevel( LinearClamp, _In.UV, 0.0 ).xyz);
+		/////////////////////////////////////////////////////////////////////////////////////////////
+		// Show normals
+//		return _Tex_HeightField_Normal.SampleLevel( LinearClamp, _In.UV, 0.0 ).xyz;
+		return 0.5 * (1.0 + _Tex_HeightField_Normal.SampleLevel( LinearClamp, _In.UV, 0.0 ).xyz);
+
 	} else if ( _flags & 2 ) {
+		/////////////////////////////////////////////////////////////////////////////////////////////
 		// Show outgoing directions
 //		return 0.01 * length( _Tex_OutgoingDirections_Reflected.SampleLevel( LinearClamp, float3( _In.UV, _scatteringOrder ), 0.0 ).xyz - float3( HEIGHTFIELD_SIZE * _In.UV, 0.0 ) );	// Show distance from exit ray to entry point
 //		return 1.0 * length( _Tex_OutgoingDirections_Reflected.SampleLevel( LinearClamp, float3( _In.UV, _scatteringOrder ), 0.0 ).xy / HEIGHTFIELD_SIZE - _In.UV );	// Show HORIZONTAL distance from exit ray to entry point
@@ -55,10 +61,13 @@ float3	PS( PS_IN _In ) : SV_TARGET0 {
 		Height_Weight /= max( 1.0, Height_Weight.w );
 		return Height_Weight.xyz;				// Show direction
 		return 0.5 * (1.0 + Height_Weight.xyz);	// Show direction
+
 	} else if ( _flags & 4 ) {
-		// Show histogram of outgoing directions
-		float	factor = 0.1 * pow( 4.0, _scatteringOrder );
-		return factor * LOBES_COUNT_PHI*LOBES_COUNT_THETA * _Tex_DirectionsHistogram_Reflected.SampleLevel( LinearClamp, float3( _In.UV, _scatteringOrder ), 0.0 );
+		/////////////////////////////////////////////////////////////////////////////////////////////
+		// Show histogram of outgoing REFLECTED directions
+//		float	factor = 0.1 * pow( 4.0, _scatteringOrder );
+		float	intensityMultiplier = _intensity;// * (_flags & 0x10U ? pow( 3.0, _scatteringOrder ) : 1.0);
+		return intensityMultiplier * LOBES_COUNT_PHI*LOBES_COUNT_THETA * _Tex_DirectionsHistogram_Reflected.SampleLevel( LinearClamp, float3( _In.UV, _scatteringOrder ), 0.0 );
 		//uint	phi = _In.UV.x * LOBES_COUNT_PHI;
 		//uint	theta = _In.UV.y * LOBES_COUNT_THETA;
 		//uint	counter_decimal = _Tex_DirectionsHistogram_Reflected_Decimal[uint3( phi, theta, _scatteringOrder )];
@@ -68,12 +77,16 @@ float3	PS( PS_IN _In ) : SV_TARGET0 {
 		//float	decimalFactor = 1.0 / (256.0 * min( 256.0, _iterationsCount) * HEIGHTFIELD_SIZE * HEIGHTFIELD_SIZE);
 		//float	counter = integerFactor * (counter_integer + decimalFactor * counter_decimal);
 		//return 1000.0 * counter;
+
 	} else if ( _flags & 8 ) {
-		// Show histogram of outgoing directions
-		float	factor = 0.1 * pow( 4.0, _scatteringOrder );
-		return factor * LOBES_COUNT_PHI*LOBES_COUNT_THETA * _Tex_DirectionsHistogram_Transmitted.SampleLevel( LinearClamp, float3( _In.UV, _scatteringOrder ), 0.0 );
+		/////////////////////////////////////////////////////////////////////////////////////////////
+		// Show histogram of outgoing REFRACTED directions
+//		float	factor = 0.1 * pow( 4.0, _scatteringOrder );
+		float	intensityMultiplier = _intensity;// * (_flags & 0x10U ? pow( 3.0, _scatteringOrder ) : 1.0);
+		return intensityMultiplier * LOBES_COUNT_PHI*LOBES_COUNT_THETA * _Tex_DirectionsHistogram_Transmitted.SampleLevel( LinearClamp, float3( _In.UV, _scatteringOrder ), 0.0 );
 	}
 
+	/////////////////////////////////////////////////////////////////////////////////////////////
 	// Default height visualization
-	return (3.0+_Tex_HeightField.SampleLevel( LinearWrap, _In.UV, 0.0 ).w) / 6.0;
+	return (3.0+_Tex_HeightField_Height.SampleLevel( LinearWrap, _In.UV, 0.0 )) / 6.0;
 }

@@ -1,11 +1,11 @@
 #include "Global.hlsl"
 
 cbuffer CB_Render : register(b10) {
-	float3	_Direction;
-	float	_Intensity;
-	float3	_ReflectedDirection;
-	uint	_ScatteringOrder;
-	uint	_Flags;
+	float3	_direction;
+	float	_intensity;
+	float3	_reflectedDirection;
+	uint	_scatteringOrder;
+	uint	_flags;
 
 	// Analytical Beckmann lobe
 	float	_Roughness;
@@ -15,8 +15,8 @@ cbuffer CB_Render : register(b10) {
 	float	_MaskingImportance;	// Importance of the masking function
 }
 
-Texture2DArray< float >		_Tex_DirectionsHistogram_Reflected : register( t3 );
-Texture2DArray< float >		_Tex_DirectionsHistogram_Transmitted : register( t4 );
+Texture2DArray< float >		_Tex_directionsHistogram_Reflected : register( t4 );
+Texture2DArray< float >		_Tex_directionsHistogram_Transmitted : register( t5 );
 
 struct VS_IN {
 	float3	Position : POSITION;
@@ -160,8 +160,8 @@ float3	ComputeDiffuseModel( float3 _wsIncomingDirection, float3 _wsOutgoingDirec
 			sigma3 *= _albedo*_albedo*_albedo;	// Dependence on albedo^3
 
 
-sigma2 *= _ScatteringOrder == 1 ? 1 : 0;
-sigma3 *= _ScatteringOrder == 2 ? 1 : 0;
+sigma2 *= _scatteringOrder == 1 ? 1 : 0;
+sigma3 *= _scatteringOrder == 2 ? 1 : 0;
 
 
 	// Compute lobe exponent
@@ -197,8 +197,8 @@ sigma3 *= _ScatteringOrder == 2 ? 1 : 0;
 	float3	sigma3 = _roughness * (0.25262765805538445 + _roughness * (0.3902065605355212 - _roughness * 0.3820487315212411));
 			sigma3 *= _albedo*_albedo*_albedo;	// Dependence on albedo^3
 
-sigma2 *= _ScatteringOrder == 1 ? 1 : 0;
-sigma3 *= _ScatteringOrder == 2 ? 1 : 0;
+sigma2 *= _scatteringOrder == 1 ? 1 : 0;
+sigma3 *= _scatteringOrder == 2 ? 1 : 0;
 
 	// Compute lobe exponent
 	float	eta = 0.7782894918463 + 0.1683172467667511 * _roughness;
@@ -220,8 +220,8 @@ sigma3 *= _ScatteringOrder == 2 ? 1 : 0;
 
 PS_IN	VS( VS_IN _In ) {
 
-	float3	wsIncomingDirection = -_Direction;			// Actual INCOMING ray direction pointing AWAY from the surface (hence the - sign)
-	float3	wsReflectedDirection = _ReflectedDirection;	// Actual REFLECTED ray direction (or REFRACTED when rendering bottom lobes)
+	float3	wsIncomingDirection = -_direction;			// Actual INCOMING ray direction pointing AWAY from the surface (hence the - sign)
+	float3	wsReflectedDirection = _reflectedDirection;	// Actual REFLECTED ray direction (or REFRACTED when rendering bottom lobes)
 	float3	wsTangent, wsBiTangent;
 //	BuildOrthonormalBasis( wsReflectedDirection, wsTangent, wsBiTangent );
 	wsTangent = normalize( float3( 1e-10 + wsReflectedDirection.y, -wsReflectedDirection.x, 0 ) );	// Always lying in the X^Y plane
@@ -229,19 +229,19 @@ PS_IN	VS( VS_IN _In ) {
 
 	float3	lsPosition = float3( _In.Position.x, -_In.Position.z, _In.Position.y );	// Vertex position in Z-up, in local "reflected direction space"
 
-	float	lobeSign = _Flags & 4U ? -1.0 : 1.0;	// -1 for transmitted lobe, +1 for reflected lobe
+	float	lobeSign = _flags & 4U ? -1.0 : 1.0;	// -1 for transmitted lobe, +1 for reflected lobe
 
-	float	intensityMultiplier = _Intensity * (_Flags & 8U ? pow( 3.0, _ScatteringOrder ) : 1.0);
+	float	intensityMultiplier = _intensity * (_flags & 8U ? pow( 3.0, _scatteringOrder ) : 1.0);
 
 	float	lobeIntensity;
 	float3	wsPosition;
-	if ( _Flags & 2 ) {
+	if ( _flags & 2 ) {
 		// Show analytical lobe
 		float	scaleT = 1.0;
 		float	scaleB = 1.0;
 		float	scaleR = _Flattening;	// Isotropic with flattening along normal
 
-		uint	lobeModel = _Flags >> 4;
+		uint	lobeModel = _flags >> 4;
 		if ( lobeModel == 3U ) {
 			// Anisotropic lobe model
 			float	s = exp2( 4.0 * (_Flattening - 1.0) );	// From 2e-4 to 2e4
@@ -315,11 +315,10 @@ PS_IN	VS( VS_IN _In ) {
 //		float	theta = acos( clamp( cosTheta_M, -1.0, 1.0 ) );
 //		float	thetaBinIndex = 2.0 * LOBES_COUNT_THETA * pow2( sin( 0.5 * theta ) );	// Inverse of theta = 2*asin( sqrt( i / (2 * N) ) )
 		float	thetaBinIndex = LOBES_COUNT_THETA * (1.0 - cosTheta_M);					// Inverse of theta = acos( 1 - i / N )
-
 		float2	UV = float2( phi / (2.0 * PI), thetaBinIndex / LOBES_COUNT_THETA );
 
-		lobeIntensity = (_Flags & 4U) ? _Tex_DirectionsHistogram_Transmitted.SampleLevel( LinearClamp, float3( UV, _ScatteringOrder ), 0.0 )
-									  : _Tex_DirectionsHistogram_Reflected.SampleLevel( LinearClamp, float3( UV, _ScatteringOrder ), 0.0 );
+		lobeIntensity = (_flags & 4U) ? _Tex_directionsHistogram_Transmitted.SampleLevel( LinearClamp, float3( UV, _scatteringOrder ), 0.0 )
+									  : _Tex_directionsHistogram_Reflected.SampleLevel( LinearClamp, float3( UV, _scatteringOrder ), 0.0 );
 
 		lobeIntensity *= LOBES_COUNT_THETA * LOBES_COUNT_PHI;			// Re-scale due to lobe's discretization
 
@@ -341,9 +340,9 @@ PS_IN	VS( VS_IN _In ) {
 float4	PS( PS_IN _In ) : SV_TARGET0 {
 	float	solidAlpha = 0.5;
 	float	wireframeAlpha = 0.1;
-	bool	isWireframe = _Flags & 1U;
-	bool	isAnalytical = _Flags & 2U;
-	bool	isTransmittedLobe = _Flags & 4U;
+	bool	isWireframe = _flags & 1U;
+	bool	isAnalytical = _flags & 2U;
+	bool	isTransmittedLobe = _flags & 4U;
 
 	float4	simulatedLobeColor = float4( _In.Color, solidAlpha );
 	float4	analyticalLobeColor = isTransmittedLobe ? float4( _In.Color * float3( 1.0, 0.5, 1.0 ), solidAlpha )
@@ -353,7 +352,7 @@ float4	PS( PS_IN _In ) : SV_TARGET0 {
 	float4	analyticalLobeWireColor = isTransmittedLobe	? float4( 0.05, 0, 0.1, wireframeAlpha )
 														: float4( 0, 0.1, 0, wireframeAlpha );
 
-	bool	isDiffuseModel = (_Flags >> 4) == 4U;
+	bool	isDiffuseModel = (_flags >> 4) == 4U;
 	if ( isDiffuseModel ) {
 		analyticalLobeColor = float4( _In.Color * float3( 1.0, 1.0, 0.5 ), 0.9 );
 		analyticalLobeWireColor = float4( 0.1, 0.1, 0, wireframeAlpha );

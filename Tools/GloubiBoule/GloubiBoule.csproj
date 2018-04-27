@@ -141,7 +141,7 @@
     </ProjectReference>
     <ProjectReference Include="..\..\Packages\SharpMath\MathAdvanced.csproj">
       <Project>{dd026a89-c5fe-4150-bc85-a660e427826a}</Project>
-      <Name>SharpMath</Name>
+      <Name>MathAdvanced</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
