@@ -243,7 +243,7 @@ float3	PS( PS_IN _In ) : SV_TARGET0 {
 	const float3	RhoD = float3( 0.05, 0.2, 0.6 );
 	const float		roughness = 0.15;
 
-	float3	F = FresnelAccurate( Fresnel_IORFromF0( F0 ), NdotH );
+	float3	F = FresnelDielectric( Fresnel_IORFromF0( F0 ), NdotH );
 	float	G = SmithG( NdotL, roughness ) * SmithG( NdotV, roughness );
 	float	D = NDF_GGX( NdotH, roughness );
 

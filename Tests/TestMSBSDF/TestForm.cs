@@ -479,16 +479,31 @@ namespace TestMSBSDF
 		void	BuildRandomTexture() {
 			PixelsBuffer[]	Content = new PixelsBuffer[3+MAX_SCATTERING_ORDER];
 
+// 			float	R0, R1, R2, R3;
+// 			float	min = float.MaxValue, max = -float.MaxValue;
+
 			SimpleRNG.SetSeed( 561321987, 132194982 );
 			for ( int arrayIndex=0; arrayIndex < 3+MAX_SCATTERING_ORDER; arrayIndex++ ) {
 				Content[arrayIndex] = new PixelsBuffer( (uint) (HEIGHTFIELD_SIZE*HEIGHTFIELD_SIZE*16) );
 				using ( BinaryWriter W = Content[arrayIndex].OpenStreamWrite() )
 					for ( int Y=0; Y < HEIGHTFIELD_SIZE; Y++ ) {
 						for ( int X=0; X < HEIGHTFIELD_SIZE; X++ ) {
-							W.Write( (float) SimpleRNG.GetUniform() );
-							W.Write( (float) SimpleRNG.GetUniform() );
-							W.Write( (float) SimpleRNG.GetUniform() );
-							W.Write( (float) SimpleRNG.GetUniform() );
+ 							W.Write( (float) SimpleRNG.GetUniform() );
+ 							W.Write( (float) SimpleRNG.GetUniform() );
+ 							W.Write( (float) SimpleRNG.GetUniform() );
+ 							W.Write( (float) SimpleRNG.GetUniform() );
+//							W.Write( R0 = (float) SimpleRNG.GetUniform() );
+//							W.Write( R1 = (float) SimpleRNG.GetUniform() );
+//							W.Write( R2 = (float) SimpleRNG.GetUniform() );
+//							W.Write( R3 = (float) SimpleRNG.GetUniform() );
+//							min = Mathf.Min( min, R0 );
+//							min = Mathf.Min( min, R1 );
+//							min = Mathf.Min( min, R2 );
+//							min = Mathf.Min( min, R3 );
+//							max = Mathf.Max( max, R0 );
+//							max = Mathf.Max( max, R1 );
+//							max = Mathf.Max( max, R2 );
+//							max = Mathf.Max( max, R3 );
 						}
 					}
 				Content[arrayIndex].CloseStream();

@@ -544,7 +544,7 @@ void	ComputeAreaLightLighting( in SurfaceContext _Surface, uint _SliceIndex, flo
 
 		// 5.1] ----- Compute Fresnel -----
 	float	VdotN = saturate( dot( wsView, wsNormal ) );
-	float3	FresnelSpecular = FresnelAccurate( _Surface.IOR, VdotN, _Surface.fresnelStrength );
+	float3	FresnelSpecular = FresnelDielectric( _Surface.IOR, VdotN, _Surface.fresnelStrength );
 	float3	FresnelDiffuse = 1.0 - FresnelSpecular;	// Simplify a lot! Don't use Disney's Fresnel as it needs a light direction and we can't provide one here...
 
 // _RadianceDiffuse = FresnelDiffuse;

@@ -88,14 +88,14 @@ vec3	Fresnel_F0FromIOR( vec3 _IOR ) {
 }
 
 // Schlick's approximation to Fresnel reflection (http://en.wikipedia.org/wiki/Schlick's_approximation)
-float	FresnelSchlick( float _F0, float _CosTheta ) {
+float	FresnelDielectricSchlick( float _F0, float _CosTheta ) {
 	float	t = 1.0 - saturate( _CosTheta );
 	float	t2 = t * t;
 	float	t4 = t2 * t2;
 	return lerp( _F0, 1.0, t4 * t );
 }
 
-vec3	FresnelSchlick( vec3 _F0, float _CosTheta ) {
+vec3	FresnelDielectricSchlick( vec3 _F0, float _CosTheta ) {
 	float	t = 1.0 - saturate( _CosTheta );
 	float	t2 = t * t;
 	float	t4 = t2 * t2;
@@ -104,7 +104,7 @@ vec3	FresnelSchlick( vec3 _F0, float _CosTheta ) {
 
 // Full accurate Fresnel computation (from Walter's paper §5.1 => http://www.cs.cornell.edu/~srm/publications/EGSR07-btdf.pdf)
 // For dielectrics only but who cares!?
-float	FresnelAccurate( float _IOR, float _CosTheta ) {
+float	FresnelDielectric( float _IOR, float _CosTheta ) {
 	float	c = _CosTheta;
 	float	g_squared = max( 0.0, _IOR*_IOR - 1.0 + c*c );
 // 	if ( g_squared < 0.0 )
@@ -304,9 +304,9 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
 		vec3	sceneEmissive = 10.0 * MapColor( wsSceneHitPos, wsSceneNormal, wsSpherePosition, d.y );
 
 		// Compute Fresnel
-		float	F = FresnelSchlick( F0, cosTheta );	// Light => Micro-facet normal
+		float	F = FresnelDielectricSchlick( F0, cosTheta );	// Light => Micro-facet normal
 	    float	sceneF0 = lerp( F0_WALLS, F0_SPHERE, d.y );
-            	F *= 1.0 - FresnelSchlick( sceneF0, saturate( -dot( wsSceneNormal, wsLight ) ) );	// Light => Scene normal
+            	F *= 1.0 - FresnelDielectricSchlick( sceneF0, saturate( -dot( wsSceneNormal, wsLight ) ) );	// Light => Scene normal
 
 		// Compute shadowing/masking
 //		float	Gl = GSmith( wsNormal, wsLight, sqrAlpha );
@@ -315,7 +315,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
 		specular += sceneEmissive * (F * Gl) * dot( wsLight, wsNormal );
 	}
 	specular *= Gv / float(SAMPLES_COUNT);
-	color += emissive * (1.0 - FresnelSchlick( F0, saturate( -dot( wsView, wsNormal ) ) )) + specular;
+	color += emissive * (1.0 - FresnelDielectricSchlick( F0, saturate( -dot( wsView, wsNormal ) ) )) + specular;
         
 //fragColor = vec4( noise );
 //fragColor = vec4( 0.2 * distance );
@@ -323,7 +323,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
 //fragColor = texture( iChannel0, UV, 0.0 );
 //fragColor = vec4( wsNormal, 1.0 );
 //fragColor = vec4( saturate( -dot( wsView, wsNormal ) ) );
-//fragColor = vec4( 1.0 - FresnelSchlick( F0, saturate( -dot( wsView, wsNormal ) ) ) );
+//fragColor = vec4( 1.0 - FresnelDielectricSchlick( F0, saturate( -dot( wsView, wsNormal ) ) ) );
 //fragColor = vec4( saturate( iMouse.z ) );
 //return;
 	}

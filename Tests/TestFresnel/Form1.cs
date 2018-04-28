@@ -3,7 +3,7 @@
 // This is an experiment about Fresnel reflection and complex IOR
 //	• It uses Schlick's approximation or the exact formulation from Walter 2007 for dielectrics
 //	• I tried fiddling with metals and complex IORs but I don't remember arriving at anything good
-//		=> Instead, I implemented the "edge tint" specular color from the paper "Artist Friendly Metallic Fresnel" (2014) by Ole Gulbrandsen.
+//		=> Instead, I implemented the "edge tint" specular color from the paper "Artist Friendly Metallic Fresnel" (2014) by Ole Gulbrandsen (http://jcgt.org/published/0003/04/03/paper.pdf).
 //		http://jcgt.org/published/0003/04/03/paper.pdf 
 //
 // In the bottom panel:

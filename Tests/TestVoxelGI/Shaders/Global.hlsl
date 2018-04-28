@@ -83,14 +83,14 @@ float3	Fresnel_F0FromIOR( float3 _IOR ) {
 }
 
 // Schlick's approximation to Fresnel reflection (http://en.wikipedia.org/wiki/Schlick's_approximation)
-float	FresnelSchlick( float _F0, float _CosTheta, float _FresnelStrength=1.0 ) {
+float	FresnelDielectricSchlick( float _F0, float _CosTheta, float _FresnelStrength=1.0 ) {
 	float	t = 1.0 - saturate( _CosTheta );
 	float	t2 = t * t;
 	float	t4 = t2 * t2;
 	return lerp( _F0, 1.0, _FresnelStrength * t4 * t );
 }
 
-float3	FresnelSchlick( float3 _F0, float _CosTheta, float _FresnelStrength=1.0 ) {
+float3	FresnelDielectricSchlick( float3 _F0, float _CosTheta, float _FresnelStrength=1.0 ) {
 	float	t = 1.0 - saturate( _CosTheta );
 	float	t2 = t * t;
 	float	t4 = t2 * t2;
@@ -99,7 +99,7 @@ float3	FresnelSchlick( float3 _F0, float _CosTheta, float _FresnelStrength=1.0 )
 
 // Full accurate Fresnel computation (from Walter's paper §5.1 => http://www.cs.cornell.edu/~srm/publications/EGSR07-btdf.pdf)
 // For dielectrics only but who cares!?
-float	FresnelAccurate( float _IOR, float _CosTheta, float _FresnelStrength=1.0 ) {
+float	FresnelDielectric( float _IOR, float _CosTheta, float _FresnelStrength=1.0 ) {
 	float	c = lerp( 1.0, _CosTheta, _FresnelStrength );
 	float	g_squared = max( 0.0, _IOR*_IOR - 1.0 + c*c );
 // 	if ( g_squared < 0.0 )
@@ -115,7 +115,7 @@ float	FresnelAccurate( float _IOR, float _CosTheta, float _FresnelStrength=1.0 )
 	return 0.5 * a * b;
 }
 
-float3	FresnelAccurate( float3 _IOR, float _CosTheta, float _FresnelStrength=1.0 ) {
+float3	FresnelDielectric( float3 _IOR, float _CosTheta, float _FresnelStrength=1.0 ) {
 	float	c = lerp( 1.0, _CosTheta, _FresnelStrength );
 	float3	g_squared = max( 0.0, _IOR*_IOR - 1.0 + c*c );
 // 	if ( g_squared < 0.0 )

@@ -49,6 +49,12 @@ float4	pow3( float4 x ) { return x * x * x; }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 // FRESNEL
+// NOTE:	• When F0 < 0.2, you should ALWAYS use the dielectric Fresnel (metallic Fresnel strongly diverges)
+//			• When F0 > 0.2
+//				• If F90 = 1, you can continue to use the dielectric Fresnel
+//				• If F90 != 1, you should use the metallic Fresnel
+//
+// Overall, if F90 is not important, you can use the dielectric Fresnel for any F0 (i.e. for dielectrics or metals alike)
 
 // Assuming n1=1 (air) we get:
 //	F0 = ((n2 - n1) / (n2 + n1))²
@@ -76,24 +82,24 @@ float3	Fresnel_F0FromIOR( float3 _IOR ) {
 	return ratio * ratio;
 }
 
-// Schlick's approximation to Fresnel reflection (http://en.wikipedia.org/wiki/Schlick's_approximation)
-float	FresnelSchlick( float _F0, float _cosTheta, float _FresnelStrength=1.0 ) {
+// Schlick's approximation to dielectric Fresnel reflection (http://en.wikipedia.org/wiki/Schlick's_approximation)
+float	FresnelDielectricSchlick( float _F0, float _cosTheta, float _FresnelStrength=1.0 ) {
 	float	t = 1.0 - saturate( _cosTheta );
 	float	t2 = t * t;
 	float	t4 = t2 * t2;
 	return lerp( _F0, 1.0, _FresnelStrength * t4 * t );
 }
 
-float3	FresnelSchlick( float3 _F0, float _cosTheta, float _FresnelStrength=1.0 ) {
+float3	FresnelDielectricSchlick( float3 _F0, float _cosTheta, float _FresnelStrength=1.0 ) {
 	float	t = 1.0 - saturate( _cosTheta );
 	float	t2 = t * t;
 	float	t4 = t2 * t2;
 	return lerp( _F0, 1.0, _FresnelStrength * t4 * t );
 }
 
-// Full accurate Fresnel computation (from Walter's paper §5.1 => http://www.cs.cornell.edu/~srm/publications/EGSR07-btdf.pdf)
-// For dielectrics only but who cares!?
-float	FresnelAccurate( float _IOR, float _cosTheta, float _FresnelStrength=1.0 ) {
+// Full accurate dielectric Fresnel computation (from Walter's paper §5.1 => http://www.cs.cornell.edu/~srm/publications/EGSR07-btdf.pdf)
+// NOTE: When F0 > 0.2, the dielectic and metallic fresnel start diverging
+float	FresnelDielectric( float _IOR, float _cosTheta, float _FresnelStrength=1.0 ) {
 	float	c = lerp( 1.0, _cosTheta, _FresnelStrength );
 	float	g_squared = max( 0.0, _IOR*_IOR - 1.0 + c*c );
 // 	if ( g_squared < 0.0 )
@@ -109,7 +115,7 @@ float	FresnelAccurate( float _IOR, float _cosTheta, float _FresnelStrength=1.0 )
 	return 0.5 * a * b;
 }
 
-float3	FresnelAccurate( float3 _IOR, float _cosTheta, float _FresnelStrength=1.0 ) {
+float3	FresnelDielectric( float3 _IOR, float _cosTheta, float _FresnelStrength=1.0 ) {
 	float	c = lerp( 1.0, _cosTheta, _FresnelStrength );
 	float3	g_squared = max( 0.0, _IOR*_IOR - 1.0 + c*c );
 // 	if ( g_squared < 0.0 )
@@ -125,7 +131,8 @@ float3	FresnelAccurate( float3 _IOR, float _cosTheta, float _FresnelStrength=1.0
 	return 0.5 * a * b;
 }
 
-// From Ole Gulbrandsen "Artist Friendly Metallic Fresnel"
+// From Ole Gulbrandsen "Artist Friendly Metallic Fresnel" (http://jcgt.org/published/0003/04/03/paper.pdf)
+// NOTE: When F0 > 0.2, the dielectic and metallic fresnel start diverging
 //	_F0, metal color at normal incidence (i.e. theta=0°)
 //	_F90, metal color at grazing incidence (i.e. theta=90°)
 //	_cosTheta, cos(theta) of the light/view angle (should be the angle between the view/light vector and half vector in a standard micro-facet model)
@@ -141,7 +148,7 @@ float3	FresnelMetal( float3 _F0, float3 _F90, float _cosTheta ) {
 	float3	sqrtR = sqrt( r );
 	float3	n_min = (1-r) / (1+r);
 	float3	n_max = (1+sqrtR) / (1-sqrtR);
-	float3	n = lerp( n_min, n_max, r );
+	float3	n = lerp( n_min, n_max, g );
 	float3	n2 = pow2(n);
 
 	float3	nr = pow2(n+1) * r - pow2(n-1);
@@ -172,6 +179,14 @@ float ReverseBits( uint bits ) {
 	bits = ((bits & 0x0F0F0F0Fu) << 4u) | ((bits & 0xF0F0F0F0u) >> 4u);
 	bits = ((bits & 0x00FF00FFu) << 8u) | ((bits & 0xFF00FF00u) >> 8u);
 	return float(bits) * 2.3283064365386963e-10; // / 0x100000000
+}
+uint ReverseBitsInt( uint bits ) {
+	bits = (bits << 16u) | (bits >> 16u);
+	bits = ((bits & 0x55555555u) << 1u) | ((bits & 0xAAAAAAAAu) >> 1u);
+	bits = ((bits & 0x33333333u) << 2u) | ((bits & 0xCCCCCCCCu) >> 2u);
+	bits = ((bits & 0x0F0F0F0Fu) << 4u) | ((bits & 0xF0F0F0F0u) >> 4u);
+	bits = ((bits & 0x00FF00FFu) << 8u) | ((bits & 0xFF00FF00u) >> 8u);
+	return bits;
 }
 
 float rand( float n ) { return frac(sin(n) * 43758.5453123); }

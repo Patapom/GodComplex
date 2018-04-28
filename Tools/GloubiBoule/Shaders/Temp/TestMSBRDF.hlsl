@@ -64,7 +64,7 @@ float3	Fresnel_IORFromF0( float3 _F0 ) {
 
 // Full accurate Fresnel computation (from Walter's paper §5.1 => http://www.cs.cornell.edu/~srm/publications/EGSR07-btdf.pdf)
 // For dielectrics only but who cares!?
-float3	FresnelAccurate( float3 _IOR, float _CosTheta )
+float3	FresnelDielectric( float3 _IOR, float _CosTheta )
 {
 	float	c = _CosTheta;
 	float3	g_squared = max( 0.0, _IOR*_IOR - 1.0 + c*c );
@@ -438,7 +438,7 @@ float3	ComputeLighting( float3 _pos, float3 _normal, float3 _view, out float3 _f
 
 	// Compute IOR
 	float3	IOR = Fresnel_IORFromF0( F0 );
-	_fresnel = FresnelAccurate( IOR, HdotN );
+	_fresnel = FresnelDielectric( IOR, HdotN );
 
 	// Compute specular term (GGX + Smith shadowing)
 	float	alpha2 = pow2( roughness );
@@ -481,7 +481,7 @@ if ( _DebugFlags & 8 ) {
 	}
 
 //return HdotN;
-//return 1-FresnelAccurate( IOR, HdotN );
+//return 1-FresnelDielectric( IOR, HdotN );
 //return dot( H, _normal );
 //return _view;
 
