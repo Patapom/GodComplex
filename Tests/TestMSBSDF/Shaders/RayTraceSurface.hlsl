@@ -455,8 +455,8 @@ void	CS_Diffuse( uint3 _GroupID : SV_GROUPID, uint3 _GroupThreadID : SV_GROUPTHR
 		float3	tangent, biTangent;
 		BuildOrthonormalBasis( normal, tangent, biTangent );
 
-		float	cosTheta = random.x;	// Cosine-weighted distribution on theta
-		float	sinTheta = sqrt( 1.0 - cosTheta*cosTheta );
+		float	cosTheta = sqrt( random.x );	// Cosine-weighted distribution on theta
+		float	sinTheta = sqrt( 1.0 - random.x );
 		float2	scPhi;
 		sincos( 2.0 * PI * random.y, scPhi.x, scPhi.y );
 
