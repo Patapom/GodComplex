@@ -598,6 +598,7 @@ BuildMSBRDF( new DirectoryInfo( @"D:\Workspaces\www.patapom.com\Web\blog\patapom
 //////////////////////////////////////////////////////////////////////////
 // Check single-scattering and multiple-scattering BRDFs are actual complements
 //
+/*
 for ( uint Y=0; Y < ROUGHNESS_SUBDIVS_COUNT; Y++ ) {
 	float	m = (float) Y / (ROUGHNESS_SUBDIVS_COUNT-1);
 	float	m2 = Math.Max( 0.01f, m*m );
@@ -647,7 +648,7 @@ for ( uint Y=0; Y < ROUGHNESS_SUBDIVS_COUNT; Y++ ) {
 		}
 	}
 }
-//
+//*/
 //////////////////////////////////////////////////////////////////////////
 
 
