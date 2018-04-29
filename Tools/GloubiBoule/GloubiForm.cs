@@ -215,7 +215,8 @@ namespace GloubiBoule
 			m_Tex_AccumPhoton3D = new Texture3D( m_Device, VOLUME_SIZE, VOLUME_SIZE, VOLUME_SIZE, 1, ImageUtility.PIXEL_FORMAT.R32, ImageUtility.COMPONENT_FORMAT.UINT, false, true, null );
 			BuildNoiseTextures();
 
-BuildMSBRDF( new DirectoryInfo( @"D:\Workspaces\Patapom.com\Web\blog\patapom\docs\BRDF" ) );
+//BuildMSBRDF( new DirectoryInfo( @"D:\Workspaces\Patapom.com\Web\blog\patapom\docs\BRDF" ) );
+BuildMSBRDF( new DirectoryInfo( @"D:\Workspaces\www.patapom.com\Web\blog\patapom\docs\BRDF" ) );
 
 			// Structured buffer
 			m_SB_PhotonInfos = new StructuredBuffer< SB_PhotonInfo_t >( m_Device, PHOTONS_COUNT, false );
@@ -592,9 +593,67 @@ BuildMSBRDF( new DirectoryInfo( @"D:\Workspaces\Patapom.com\Web\blog\patapom\doc
 							for ( uint X=0; X < ROUGHNESS_SUBDIVS_COUNT; X++ )
 									W.Write( R.ReadSingle() );
 						}
-//show table + access for download on site + plot of the Eavg values depending on roughness
-//verify BRDF + BRDFms integration = 1
-//cube map + integration
+
+
+//////////////////////////////////////////////////////////////////////////
+// Check single-scattering and multiple-scattering BRDFs are actual complements
+//
+/*
+for ( uint Y=0; Y < ROUGHNESS_SUBDIVS_COUNT; Y++ ) {
+	float	m = (float) Y / (ROUGHNESS_SUBDIVS_COUNT-1);
+	float	m2 = Math.Max( 0.01f, m*m );
+
+	for ( uint X=0; X < COS_THETA_SUBDIVS_COUNT; X++ ) {
+		float	cosThetaO = (float) X / (COS_THETA_SUBDIVS_COUNT-1);
+		float	sinThetaO = Mathf.Sqrt( 1 - cosThetaO*cosThetaO );
+
+		const uint		THETA_SUBDIVS_COUNT = 512;
+		const uint		PHI_SUBDIVS_COUNT = 2*512;
+
+		float	integral = 0.0f;
+		for ( uint THETA=0; THETA < THETA_SUBDIVS_COUNT; THETA++ ) {
+
+			// Use cosine-weighted sampling
+			float	sqCosThetaI = (0.5f+THETA) / THETA_SUBDIVS_COUNT;
+			float	cosThetaI = Mathf.Sqrt( sqCosThetaI );
+			float	sinThetaI = Mathf.Sqrt( 1 - sqCosThetaI );
+
+// 			float	NdotL = cosThetaI;
+
+			for ( uint PHI=0; PHI < PHI_SUBDIVS_COUNT; PHI++ ) {
+				float	phi = Mathf.TWOPI * PHI / PHI_SUBDIVS_COUNT;
+
+				// Compute cos(theta_h) = Omega_h.N where Omega_h = (Omega_i + Omega_o) / ||Omega_i + Omega_o|| is the half vector and N the surface normal
+				float	cosThetaH = (cosThetaI + cosThetaO) / Mathf.Sqrt( 2 * (1 + cosThetaO * cosThetaI + sinThetaO * sinThetaI * Mathf.Sin( phi )) );
+// 				float3	omega_i = new float3( sinThetaI * Mathf.Cos( phi ), sinThetaI * Mathf.Sin( phi ), cosThetaI );
+// 				float3	omega_o = new float3( sinThetaO, 0, cosThetaO );
+// 				float3	omega_h = (omega_i + omega_o).Normalized;
+// 				float	cosThetaH = omega_h.z;
+
+				// Compute GGX NDF
+				float	den = 1 - cosThetaH*cosThetaH * (1 - m2);
+				float	NDF = m2 / (Mathf.PI * den*den);
+
+				// Compute Smith shadowing/masking
+				float	Smith_i_den = NdotL + Mathf.Sqrt( m2 + (1-m2) * NdotL*NdotL );
+				float	Smith_o_den = NdotV + Mathf.Sqrt( m2 + (1-m2) * NdotV*NdotV );
+
+				// Full BRDF is thus...
+				float	GGX = NDF / (Smith_i_den * Smith_o_den);
+
+//				integral += GGX * cosThetaI * sinThetaI;
+				integral += GGX;
+
+			}
+		}
+	}
+}
+//*/
+//////////////////////////////////////////////////////////////////////////
+
+
+// verify BRDF + BRDFms integration = 1
+// cube map + integration
 
 				m_tex_IrradianceAverage = new Texture2D( m_Device, ROUGHNESS_SUBDIVS_COUNT, 1, 1, 1, ImageUtility.PIXEL_FORMAT.R32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, false, new PixelsBuffer[] { content } );
 			}
