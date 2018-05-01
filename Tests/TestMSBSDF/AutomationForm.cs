@@ -2461,9 +2461,9 @@ namespace TestMSBSDF
 					// Write results for reflected lobe
 					using ( FileStream S = new FileInfo( orderFileName ).Create() ) {
 						using ( BinaryWriter Writer = new BinaryWriter( S ) ) {
-							for ( int sliceIndex=0; sliceIndex < slicesCount; sliceIndex++ ) {
-								for ( int Y=0; Y < H; Y++ )
-									for ( int X=0; X < W; X++ ) {
+							for ( int sliceIndex=0; sliceIndex < slicesCount; sliceIndex++ ) {	// Albedo/F0 third
+								for ( int Y=0; Y < H; Y++ )	// Roughness second
+									for ( int X=0; X < W; X++ ) {	// Angle first
 										Document.Result	R = results[X,Y,sliceIndex];
 										Writer.Write( R.m_reflected.m_totalReflectance );
 									}
