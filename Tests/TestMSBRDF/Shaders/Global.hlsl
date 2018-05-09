@@ -13,8 +13,8 @@ static const float	SQRT2 = 1.4142135623730950488016887242097;
 static const float3	LUMINANCE = float3( 0.2126, 0.7152, 0.0722 );	// D65 Illuminant and 2° observer (cf. http://wiki.nuaj.net/index.php?title=Colorimetry)
 
 cbuffer CB_Global : register(b0) {
-	float4		_ScreenSize;	// viewport resolution (in pixels)
-	float		_Time;
+	float4		_screenSize;	// viewport resolution (in pixels)
+	float		_time;
 };
 
 cbuffer CB_Camera : register(b1) {
@@ -35,16 +35,21 @@ SamplerState PointMirror	: register( s5 );
 SamplerState LinearBorder	: register( s6 );	// Black border
 
 struct VS_IN {
-	float4	__Position : SV_POSITION;
+	float4	__position : SV_POSITION;
 };
 
 VS_IN	VS( VS_IN _In ) {
 	return _In;
 }
 
-
 float	pow2( float x ) { return x * x; }
+float2	pow2( float2 x ) { return x * x; }
+float3	pow2( float3 x ) { return x * x; }
+float4	pow2( float4 x ) { return x * x; }
 float	pow3( float x ) { return x * x * x; }
+float2	pow3( float2 x ) { return x * x * x; }
+float3	pow3( float3 x ) { return x * x * x; }
+float4	pow3( float4 x ) { return x * x * x; }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 // FRESNEL
@@ -76,24 +81,24 @@ float3	Fresnel_F0FromIOR( float3 _IOR ) {
 }
 
 // Schlick's approximation to Fresnel reflection (http://en.wikipedia.org/wiki/Schlick's_approximation)
-float	FresnelDielectricSchlick( float _F0, float _CosTheta, float _FresnelStrength=1.0 ) {
-	float	t = 1.0 - saturate( _CosTheta );
+float	FresnelDielectricSchlick( float _F0, float _cosTheta, float _fresnelStrength=1.0 ) {
+	float	t = 1.0 - saturate( _cosTheta );
 	float	t2 = t * t;
 	float	t4 = t2 * t2;
-	return lerp( _F0, 1.0, _FresnelStrength * t4 * t );
+	return lerp( _F0, 1.0, _fresnelStrength * t4 * t );
 }
 
-float3	FresnelDielectricSchlick( float3 _F0, float _CosTheta, float _FresnelStrength=1.0 ) {
-	float	t = 1.0 - saturate( _CosTheta );
+float3	FresnelDielectricSchlick( float3 _F0, float _cosTheta, float _fresnelStrength=1.0 ) {
+	float	t = 1.0 - saturate( _cosTheta );
 	float	t2 = t * t;
 	float	t4 = t2 * t2;
-	return lerp( _F0, 1.0, _FresnelStrength * t4 * t );
+	return lerp( _F0, 1.0, _fresnelStrength * t4 * t );
 }
 
 // Full accurate Fresnel computation (from Walter's paper §5.1 => http://www.cs.cornell.edu/~srm/publications/EGSR07-btdf.pdf)
 // For dielectrics only but who cares!?
-float	FresnelDielectric( float _IOR, float _CosTheta, float _FresnelStrength=1.0 ) {
-	float	c = lerp( 1.0, _CosTheta, _FresnelStrength );
+float	FresnelDielectric( float _IOR, float _cosTheta, float _fresnelStrength=1.0 ) {
+	float	c = lerp( 1.0, _cosTheta, _fresnelStrength );
 	float	g_squared = max( 0.0, _IOR*_IOR - 1.0 + c*c );
 // 	if ( g_squared < 0.0 )
 // 		return 1.0;	// Total internal reflection
@@ -108,8 +113,8 @@ float	FresnelDielectric( float _IOR, float _CosTheta, float _FresnelStrength=1.0
 	return 0.5 * a * b;
 }
 
-float3	FresnelDielectric( float3 _IOR, float _CosTheta, float _FresnelStrength=1.0 ) {
-	float	c = lerp( 1.0, _CosTheta, _FresnelStrength );
+float3	FresnelDielectric( float3 _IOR, float _cosTheta, float _fresnelStrength=1.0 ) {
+	float	c = lerp( 1.0, _cosTheta, _fresnelStrength );
 	float3	g_squared = max( 0.0, _IOR*_IOR - 1.0 + c*c );
 // 	if ( g_squared < 0.0 )
 // 		return 1.0;	// Total internal reflection
@@ -164,14 +169,13 @@ float3	FresnelMetal( float3 _F0, float3 _F90, float _cosTheta ) {
 // Importance Sampling + RNG + Geometry
 
 // Code from http://forum.unity3d.com/threads/bitwise-operation-hammersley-point-sampling-is-there-an-alternate-method.200000/
-float ReverseBits( uint bits, uint seed ) {
+uint ReverseBits( uint bits ) {
 	bits = (bits << 16u) | (bits >> 16u);
 	bits = ((bits & 0x55555555u) << 1u) | ((bits & 0xAAAAAAAAu) >> 1u);
 	bits = ((bits & 0x33333333u) << 2u) | ((bits & 0xCCCCCCCCu) >> 2u);
 	bits = ((bits & 0x0F0F0F0Fu) << 4u) | ((bits & 0xF0F0F0F0u) >> 4u);
 	bits = ((bits & 0x00FF00FFu) << 8u) | ((bits & 0xFF00FF00u) >> 8u);
-	bits ^= seed;
-	return float(bits) * 2.3283064365386963e-10; // / 0x100000000
+	return bits;
 }
 
 float rand( float n ) { return frac(sin(n) * 43758.5453123); }
@@ -274,9 +278,11 @@ float	PhaseFunctionMie( float _CosPhaseAngle, float g ) {
 
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
-// GGX
-float	GGX_NDF( float _HdotN, float _alpha2 ) {
-	float	den = PI * pow2( pow2( _HdotN ) * (_alpha2 - 1) + 1 );
+// BRDFs
+
+// ====== GGX ======
+float	GGX_NDF( float _NdotH, float _alpha2 ) {
+	float	den = PI * pow2( pow2( _NdotH ) * (_alpha2 - 1) + 1 );
 	return _alpha2 * rcp( den );
 }
 
@@ -286,33 +292,26 @@ float	GGX_Smith( float _NdotL, float _NdotV, float _alpha2 ) {
 	return rcp( denL * denV );
 }
 
-float3	BRDF_GGX( float3 _wsNormal, float3 _wsView, float3 _wsLight, float _alpha, float3 _F0 ) {
-	float	NdotL = dot( _wsNormal, _wsLight );
-	float	NdotV = dot( _wsNormal, _wsView );
+float3	BRDF_GGX( float3 _tsNormal, float3 _tsView, float3 _tsLight, float _alpha, float3 _IOR ) {
+	float	NdotL = dot( _tsNormal, _tsLight );
+	float	NdotV = dot( _tsNormal, _tsView );
 	if ( NdotL < 0.0 || NdotV < 0.0 )
 		return 0.0;
 
-	float	a2 = _alpha * _alpha;
-	float3	h = normalize( _wsView + _wsLight );
-	float	HdotN = saturate( dot( h, _wsNormal ) );
-	float	HdotL = saturate( dot( h, _wsLight ) );
+	float	a2 = pow2( _alpha );
+	float3	H = normalize( _tsView + _tsLight );
+	float	NdotH = saturate( dot( H, _tsNormal ) );
+	float	HdotL = saturate( dot( H, _tsLight ) );
 
-//_F0 = _alpha;
-
-	float3	IOR = Fresnel_IORFromF0( _F0 );
-
-	float	NDF = GGX_NDF( HdotN, a2 );
+	float	D = GGX_NDF( NdotH, a2 );
 	float	G = GGX_Smith( NdotL, NdotV, a2 );
-	float3	F = FresnelDielectric( IOR, HdotL );
+	float3	F = FresnelDielectric( _IOR, HdotL );
 
-//return 0.5*G;
-//return 0.5*NDF;
-	return F * G * NDF;
+	float	den = max( 1e-3, 4.0 * NdotL * NdotV );
+	return max( 0.0, F * G * D / den );
 }
 
-/////////////////////////////////////////////////////////////////////////////////////////////////////
-//
-// Simple OrenNayar implementation
+// ====== Simple Oren-Nayar implementation ======
 //  _normal, unit surface normal
 //  _light, unit vector pointing toward the light
 //  _view, unit vector pointing toward the view
@@ -328,10 +327,8 @@ float   BRDF_OrenNayar( in float3 _normal, in float3 _view, in float3 _light, in
 
     // I realize that this doesn't give cosine phi, we need to divide by sqrt( 1-VdotN*VdotN ) * sqrt( 1-LdotN*LdotN )
     //  but I couldn't distinguish any difference from the actual formula so I just left that as it is...
-    float   gamma = dot(
-                        v - n * VdotN,
-                        l - n * LdotN 
-                    ) / (sqrt( saturate( 1.0 - VdotN*VdotN ) ) * sqrt( saturate( 1.0 - LdotN*LdotN ) ));
+    float   gamma = dot( v - n * VdotN, l - n * LdotN )
+					/ (sqrt( saturate( 1.0 - VdotN*VdotN ) ) * sqrt( saturate( 1.0 - LdotN*LdotN ) ));
 
     float rough_sq = _roughness * _roughness;
     float A = 1.0 - 0.5 * (rough_sq / (rough_sq + 0.33));   // You can replace 0.33 by 0.57 to simulate the missing inter-reflection term, as specified in footnote of page 22 of the 1992 paper
@@ -349,5 +346,20 @@ float   BRDF_OrenNayar( in float3 _normal, in float3 _view, in float3 _light, in
     float2  sin_alpha_beta = sqrt( saturate( 1.0 - cos_alpha_beta*cos_alpha_beta ) );           // Saturate to avoid NaN if ever cos_alpha > 1 (it happens with floating-point precision)
     float   C = sin_alpha_beta.x * sin_alpha_beta.y / (1e-6 + cos_alpha_beta.y);
 
-    return A + B * max( 0.0, gamma ) * C;
+    return INVPI * (A + B * max( 0.0, gamma ) * C);
+}
+
+// ====== Multiple-scattering BRDF computed from energy compensation ======
+//
+float	MSBRDF( float _roughness, float3 _tsNormal, float3 _tsView, float3 _tsLight, Texture2D<float> _Eo, Texture2D<float> _Eavg ) {
+
+	float	mu_o = saturate( dot( _tsView, _tsNormal ) );
+	float	mu_i = saturate( dot( _tsLight, _tsNormal ) );
+	float	a = _roughness;
+
+	float	E_o = 1.0 - _Eo.SampleLevel( LinearClamp, float2( mu_o, a ), 0.0 );	// 1 - E_o
+	float	E_i = 1.0 - _Eo.SampleLevel( LinearClamp, float2( mu_i, a ), 0.0 );	// 1 - E_i
+	float	E_avg = _Eavg.SampleLevel( LinearClamp, float2( a, 0.5 ), 0.0 );	// E_avg
+
+	return E_o * E_i / (PI - E_avg);
 }

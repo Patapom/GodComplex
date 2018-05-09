@@ -15,16 +15,18 @@ using Renderer;
 using System.IO;
 using Nuaj.Cirrus.Utility;
 
-namespace TestMSBRDF
-{
-	public partial class TestForm : Form
-	{
+namespace TestMSBRDF {
+
+	public partial class TestForm : Form {
+
 		#region CONSTANTS
 
 		const int	VOLUME_SIZE = 128;
 		const int	HEIGHTMAP_SIZE = 128;
 		const int	NOISE_SIZE = 64;
 		const int	PHOTONS_COUNT = 128 * 1024;
+
+		const uint	GROUPS_COUNT = 271;
 
 		#endregion
 
@@ -52,6 +54,9 @@ namespace TestMSBRDF
 			public float		_roughnessDiffuse;
 			public float		_albedo;
 			public float		_lightElevation;
+
+			public uint			_groupsCount;
+			public uint			_groupIndex;
 		}
 
 		#endregion
@@ -64,12 +69,21 @@ namespace TestMSBRDF
 		Texture3D							m_tex_Noise;
 		Texture3D							m_tex_Noise4D;
 
-		Texture2D							m_tex_IrradianceComplement;
-		Texture2D							m_tex_IrradianceAverage;
+		Texture2D							m_tex_MSBRDF_GGX_E;
+		Texture2D							m_tex_MSBRDF_GGX_Eavg;
+		Texture2D							m_tex_MSBRDF_OrenNayar_E;
+		Texture2D							m_tex_MSBRDF_OrenNayar_Eavg;
 
 		Texture2D							m_tex_CubeMap;
 
-		Shader								m_shader_Render;
+		Texture2D							m_tex_Accumulator;
+
+//		Shader								m_shader_Render;
+		Shader								m_shader_Accumulate;
+		Shader								m_shader_Finalize;
+
+		uint								m_groupCounter;
+		uint[]								m_groupShuffle = new uint[GROUPS_COUNT];
 
 		Camera								m_camera = new Camera();
 		CameraManipulator					m_manipulator = new CameraManipulator();
@@ -119,7 +133,8 @@ namespace TestMSBRDF
 
 			try {
 //				m_shader_Render = new Shader( m_device, new System.IO.FileInfo( "Shaders/Render.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
-				m_shader_Render = new Shader( m_device, new System.IO.FileInfo( "Shaders/RenderComplete.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+				m_shader_Accumulate = new Shader( m_device, new System.IO.FileInfo( "Shaders/RenderComplete.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+				m_shader_Finalize = new Shader( m_device, new System.IO.FileInfo( "Shaders/RenderComplete.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS_Finalize", null );
 			} catch ( Exception _e ) {
 				MessageBox.Show( "Shader failed to compile!\n\n" + _e.Message, "MSBRDF Test", MessageBoxButtons.OK, MessageBoxIcon.Error );
 			}
@@ -133,7 +148,22 @@ namespace TestMSBRDF
 
 			BuildNoiseTextures();
 
-BuildMSBRDF( new DirectoryInfo( @".\Tables\" ) );
+			// Shuffle group indices
+			for ( uint groupIndex=0; groupIndex < GROUPS_COUNT; groupIndex++ )
+				m_groupShuffle[groupIndex] = groupIndex;
+			for ( uint shuffleIndex=100*GROUPS_COUNT; shuffleIndex > 0; shuffleIndex-- ) {
+				for ( uint groupIndex=0; groupIndex < GROUPS_COUNT; groupIndex++ ) {
+					uint	i0 = SimpleRNG.GetUint()  % GROUPS_COUNT;
+					uint	i1 = SimpleRNG.GetUint()  % GROUPS_COUNT;
+					uint	temp = m_groupShuffle[i0];
+					m_groupShuffle[i0] = m_groupShuffle[i1];
+					m_groupShuffle[i1] = temp;
+				}
+			}
+
+//BuildMSBRDF( new DirectoryInfo( @".\Tables\" ) );
+			LoadMSBRDF( 128, new FileInfo( "./Tables/MSBRDF_GGX_E128x128.float" ), new FileInfo( "./Tables/MSBRDF_GGX_Eavg128.float" ), out m_tex_MSBRDF_GGX_E, out m_tex_MSBRDF_GGX_Eavg );
+			LoadMSBRDF( 32, new FileInfo( "./Tables/MSBRDF_OrenNayar_E32x32.float" ), new FileInfo( "./Tables/MSBRDF_OrenNayar_Eavg32.float" ), out m_tex_MSBRDF_OrenNayar_E, out m_tex_MSBRDF_OrenNayar_Eavg );
 
 			// Load cube map
 			using ( ImageUtility.ImagesMatrix I = new ImageUtility.ImagesMatrix() ) {
@@ -141,16 +171,100 @@ BuildMSBRDF( new DirectoryInfo( @".\Tables\" ) );
 				m_tex_CubeMap = new Texture2D( m_device, I, ImageUtility.COMPONENT_FORMAT.AUTO );
 			}
 
+			m_tex_Accumulator = new Texture2D( m_device, m_device.DefaultTarget.Width, m_device.DefaultTarget.Height, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, true, null );
 
 			// Setup camera
 			m_camera.CreatePerspectiveCamera( (float) (60.0 * Math.PI / 180.0), (float) panelOutput.Width / panelOutput.Height, 0.01f, 100.0f );
 			m_manipulator.Attach( panelOutput, m_camera );
 			m_manipulator.InitializeCamera( new float3( 0, 1.5f, 2.0f ), new float3( -0.4f, 0, 0.4f ), float3.UnitY );
+			m_camera.CameraTransformChanged += Camera_CameraTransformChanged;
+			Camera_CameraTransformChanged( null, EventArgs.Empty );
 
 			// Start game time
 			m_Ticks2Seconds = 1.0 / System.Diagnostics.Stopwatch.Frequency;
 			m_StopWatch.Start();
 			m_StartGameTime = GetGameTime();
+		}
+
+		void Application_Idle( object sender, EventArgs e ) {
+			if ( m_device == null )
+				return;
+
+			uint	W = (uint) panelOutput.Width;
+			uint	H = (uint) panelOutput.Height;
+
+			// Timer
+			float	lastGameTime = m_CurrentGameTime;
+			m_CurrentGameTime = GetGameTime();
+			
+			if ( m_CurrentGameTime - m_StartFPSTime > 1.0f ) {
+				m_AverageFrameTime = (m_CurrentGameTime - m_StartFPSTime) / Math.Max( 1, m_SumFrames );
+				m_SumFrames = 0;
+				m_StartFPSTime = m_CurrentGameTime;
+			}
+			m_SumFrames++;
+
+			m_CB_Global.m._ScreenSize.Set( W, H, 1.0f / W, 1.0f / H );
+			m_CB_Global.m._Time = m_CurrentGameTime;
+			m_CB_Global.UpdateData();
+
+			m_device.ClearDepthStencil( m_device.DefaultDepthStencil, 1.0f, 0, true, false );
+
+			m_tex_Noise.Set( 8 );
+			m_tex_Noise4D.Set( 9 );
+
+
+			//////////////////////////////////////////////////////////////////////////
+			// Fullscreen rendering
+			if ( m_groupCounter < GROUPS_COUNT && m_shader_Accumulate.Use() ) {
+				if ( m_groupCounter == 0 ) {
+					m_device.Clear( m_tex_Accumulator, float4.Zero );		// Clear accumulation buffer
+				}
+
+				m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.ADDITIVE );
+				m_device.SetRenderTarget( m_tex_Accumulator, null );
+
+				m_CB_Render.m._roughnessSpecular = floatTrackbarControlRoughnessSpec.Value;
+				m_CB_Render.m._roughnessDiffuse = floatTrackbarControlRoughnessDiffuse.Value;
+				m_CB_Render.m._albedo = floatTrackbarControlAlbedo.Value;
+				m_CB_Render.m._lightElevation = floatTrackbarControlLightElevation.Value * Mathf.HALFPI;
+
+				m_CB_Render.m._groupIndex = m_groupShuffle[m_groupCounter];
+				m_CB_Render.m._groupsCount = GROUPS_COUNT;
+
+				m_CB_Render.UpdateData();
+
+				m_tex_CubeMap.SetPS( 0 );
+				m_tex_BlueNoise.SetPS( 1 );
+
+				m_tex_MSBRDF_GGX_E.SetPS( 2 );
+				m_tex_MSBRDF_GGX_Eavg.SetPS( 3 );
+				m_tex_MSBRDF_OrenNayar_E.SetPS( 4 );
+				m_tex_MSBRDF_OrenNayar_Eavg.SetPS( 5 );
+
+				m_device.RenderFullscreenQuad( m_shader_Accumulate );
+
+				m_groupCounter++;
+			}
+
+			//////////////////////////////////////////////////////////////////////////
+			// Finalize accumulation buffer
+			if ( m_shader_Finalize.Use() ) {
+				m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
+				m_device.SetRenderTarget( m_device.DefaultTarget, null );
+
+				m_tex_Accumulator.SetPS( 6 );
+
+				m_device.RenderFullscreenQuad( m_shader_Finalize );
+
+				m_tex_Accumulator.RemoveFromLastAssignedSlots();
+			}
+
+			// Show!
+			m_device.Present( false );
+
+			// Update window text
+			Text = "MSBRDF Test - Avg. Frame Time " + (1000.0f * m_AverageFrameTime).ToString( "G5" ) + " ms (" + (1.0f / m_AverageFrameTime).ToString( "G5" ) + " FPS)";
 		}
 
 		protected override void OnFormClosed( FormClosedEventArgs e ) {
@@ -161,13 +275,21 @@ BuildMSBRDF( new DirectoryInfo( @".\Tables\" ) );
 			m_tex_Noise.Dispose();
 			m_tex_BlueNoise.Dispose();
 
+			m_tex_MSBRDF_OrenNayar_Eavg.Dispose();
+			m_tex_MSBRDF_OrenNayar_E.Dispose();
+			m_tex_MSBRDF_GGX_Eavg.Dispose();
+			m_tex_MSBRDF_GGX_E.Dispose();
+
 			m_tex_CubeMap.Dispose();
+
+			m_tex_Accumulator.Dispose();
 
 			m_CB_Render.Dispose();
 			m_CB_Camera.Dispose();
 			m_CB_Global.Dispose();
 
-			m_shader_Render.Dispose();
+			m_shader_Accumulate.Dispose();
+			m_shader_Finalize.Dispose();
 
 			m_device.Exit();
 
@@ -216,8 +338,8 @@ BuildMSBRDF( new DirectoryInfo( @".\Tables\" ) );
 		const uint		COS_THETA_SUBDIVS_COUNT = 128;
 		const uint		ROUGHNESS_SUBDIVS_COUNT = 128;
 
-		float[,]	m_E = new float[COS_THETA_SUBDIVS_COUNT,ROUGHNESS_SUBDIVS_COUNT];
-		float[]		m_Eavg = new float[ROUGHNESS_SUBDIVS_COUNT];
+		float[,]	m_GGX_E = new float[COS_THETA_SUBDIVS_COUNT,ROUGHNESS_SUBDIVS_COUNT];
+		float[]		m_GGX_Eavg = new float[ROUGHNESS_SUBDIVS_COUNT];
 		
 		void	BuildMSBRDF( DirectoryInfo _targetDirectory ) {
 
@@ -303,7 +425,7 @@ BuildMSBRDF( new DirectoryInfo( @".\Tables\" ) );
 					integral *= 0.5f * dMu * dPhi;	// Cosine-weighted sampling has a 0.5 factor!
 //					integralNDF *= dTheta;
 
-					m_E[X,Y] = integral;
+					m_GGX_E[X,Y] = integral;
 					dumpMathematica += "{ " + cosThetaO + ", " + m + ", "  + integral + "}, ";
 				}
 			}
@@ -316,7 +438,7 @@ BuildMSBRDF( new DirectoryInfo( @".\Tables\" ) );
 				using ( BinaryWriter W = new BinaryWriter( S ) ) {
 					for ( uint Y=0; Y < ROUGHNESS_SUBDIVS_COUNT; Y++ )
 						for ( uint X=0; X < COS_THETA_SUBDIVS_COUNT; X++ )
-							W.Write( m_E[X,Y] );
+							W.Write( m_GGX_E[X,Y] );
 				}
 
 			//////////////////////////////////////////////////////////////////////////
@@ -337,7 +459,7 @@ BuildMSBRDF( new DirectoryInfo( @".\Tables\" ) );
 					float	i = cosThetaO * COS_THETA_SUBDIVS_COUNT;
 					uint	i0 = Math.Min( COS_THETA_SUBDIVS_COUNT-1, (uint) Mathf.Floor( i ) );
 					uint	i1 = Math.Min( COS_THETA_SUBDIVS_COUNT-1, i0 + 1 );
-					float	E = (1-i) * m_E[i0,X] + i * m_E[i1,X];
+					float	E = (1-i) * m_GGX_E[i0,X] + i * m_GGX_E[i1,X];
 
 					integral += E * cosThetaO * sinThetaO;
 				}
@@ -345,50 +467,50 @@ BuildMSBRDF( new DirectoryInfo( @".\Tables\" ) );
 				// Finalize
 				integral *= Mathf.TWOPI * dTheta2;
 
-				m_Eavg[X] = integral;
+				m_GGX_Eavg[X] = integral;
 			}
 
 			// Dump as binary
 			using ( FileStream S = MSBRDFFileName2.Create() )
 				using ( BinaryWriter W = new BinaryWriter( S ) ) {
 					for ( uint X=0; X < ROUGHNESS_SUBDIVS_COUNT; X++ )
-						W.Write( m_Eavg[X] );
+						W.Write( m_GGX_Eavg[X] );
 				}
 }
 
 			#endif
 
-			// Build irradiance complement texture
-			using ( PixelsBuffer content = new PixelsBuffer( COS_THETA_SUBDIVS_COUNT * ROUGHNESS_SUBDIVS_COUNT * 4 ) ) {
-				using ( FileStream S = MSBRDFFileName.OpenRead() )
-					using ( BinaryReader R = new BinaryReader( S ) )
-						using ( BinaryWriter W = content.OpenStreamWrite() ) {
-							for ( uint Y=0; Y < ROUGHNESS_SUBDIVS_COUNT; Y++ ) {
-								for ( uint X=0; X < COS_THETA_SUBDIVS_COUNT; X++ ) {
-									float	V = R.ReadSingle();
-									m_E[X,Y] = V;
-									W.Write( V );
-								}
-							}
-						}
-
-				m_tex_IrradianceComplement = new Texture2D( m_device, COS_THETA_SUBDIVS_COUNT, ROUGHNESS_SUBDIVS_COUNT, 1, 1, ImageUtility.PIXEL_FORMAT.R32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, false, new PixelsBuffer[] { content } );
-			}
-
-			// Build average irradiance texture
-			using ( PixelsBuffer content = new PixelsBuffer( ROUGHNESS_SUBDIVS_COUNT * 4 ) ) {
-				using ( FileStream S = MSBRDFFileName2.OpenRead() )
-					using ( BinaryReader R = new BinaryReader( S ) )
-						using ( BinaryWriter W = content.OpenStreamWrite() ) {
-							for ( uint X=0; X < ROUGHNESS_SUBDIVS_COUNT; X++ ) {
-								float	V = R.ReadSingle();
-								m_Eavg[X] = V;
-								W.Write( V );
-							}
-						}
-
-				m_tex_IrradianceAverage = new Texture2D( m_device, ROUGHNESS_SUBDIVS_COUNT, 1, 1, 1, ImageUtility.PIXEL_FORMAT.R32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, false, new PixelsBuffer[] { content } );
-			}
+// 			// Build irradiance complement texture
+// 			using ( PixelsBuffer content = new PixelsBuffer( COS_THETA_SUBDIVS_COUNT * ROUGHNESS_SUBDIVS_COUNT * 4 ) ) {
+// 				using ( FileStream S = MSBRDFFileName.OpenRead() )
+// 					using ( BinaryReader R = new BinaryReader( S ) )
+// 						using ( BinaryWriter W = content.OpenStreamWrite() ) {
+// 							for ( uint Y=0; Y < ROUGHNESS_SUBDIVS_COUNT; Y++ ) {
+// 								for ( uint X=0; X < COS_THETA_SUBDIVS_COUNT; X++ ) {
+// 									float	V = R.ReadSingle();
+// 									m_GGX_E[X,Y] = V;
+// 									W.Write( V );
+// 								}
+// 							}
+// 						}
+// 
+// 				m_tex_IrradianceComplement = new Texture2D( m_device, COS_THETA_SUBDIVS_COUNT, ROUGHNESS_SUBDIVS_COUNT, 1, 1, ImageUtility.PIXEL_FORMAT.R32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, false, new PixelsBuffer[] { content } );
+// 			}
+// 
+// 			// Build average irradiance texture
+// 			using ( PixelsBuffer content = new PixelsBuffer( ROUGHNESS_SUBDIVS_COUNT * 4 ) ) {
+// 				using ( FileStream S = MSBRDFFileName2.OpenRead() )
+// 					using ( BinaryReader R = new BinaryReader( S ) )
+// 						using ( BinaryWriter W = content.OpenStreamWrite() ) {
+// 							for ( uint X=0; X < ROUGHNESS_SUBDIVS_COUNT; X++ ) {
+// 								float	V = R.ReadSingle();
+// 								m_GGX_Eavg[X] = V;
+// 								W.Write( V );
+// 							}
+// 						}
+// 
+// 				m_tex_IrradianceAverage = new Texture2D( m_device, ROUGHNESS_SUBDIVS_COUNT, 1, 1, 1, ImageUtility.PIXEL_FORMAT.R32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, false, new PixelsBuffer[] { content } );
+// 			}
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -498,10 +620,10 @@ for ( uint Y=0; Y < ROUGHNESS_SUBDIVS_COUNT; Y++ ) {
 			uint	Y0 = Mathf.Min( ROUGHNESS_SUBDIVS_COUNT-1, (uint) Y );
 			uint	Y1 = Mathf.Min( ROUGHNESS_SUBDIVS_COUNT-1, Y0+1 );
 
-			float	V00 = m_E[X0,Y0];
-			float	V10 = m_E[X1,Y0];
-			float	V01 = m_E[X0,Y1];
-			float	V11 = m_E[X1,Y1];
+			float	V00 = m_GGX_E[X0,Y0];
+			float	V10 = m_GGX_E[X1,Y0];
+			float	V01 = m_GGX_E[X0,Y1];
+			float	V11 = m_GGX_E[X1,Y1];
 
 			float	V0 = (1.0f - x) * V00 + x * V10;
 			float	V1 = (1.0f - x) * V01 + x * V11;
@@ -515,10 +637,47 @@ for ( uint Y=0; Y < ROUGHNESS_SUBDIVS_COUNT; Y++ ) {
 			uint	X0 = Mathf.Min( ROUGHNESS_SUBDIVS_COUNT-1, (uint) X );
 			uint	X1 = Mathf.Min( ROUGHNESS_SUBDIVS_COUNT-1, X0+1 );
 
-			float	V0 = m_Eavg[X0];
-			float	V1 = m_Eavg[X1];
+			float	V0 = m_GGX_Eavg[X0];
+			float	V1 = m_GGX_Eavg[X1];
 			float	V = (1.0f - x) * V0 + x * V1;
 			return V;
+		}
+
+		void	LoadMSBRDF( int _size, FileInfo _irradianceTableName, FileInfo _whiteFurnaceTableName, out Texture2D _irradianceTexture, out Texture2D _whiteFurnaceTexture ) {
+
+			// Read irradiance tables
+			float[,]		irradianceTable = new float[_size,_size];
+			PixelsBuffer	contentIrradiance = new PixelsBuffer( (uint) (_size*_size*4) );
+			using ( FileStream S = _irradianceTableName.OpenRead() )
+				using ( BinaryReader R = new BinaryReader( S ) ) {
+					using ( BinaryWriter W = contentIrradiance.OpenStreamWrite() ) {
+						for ( int Y=0; Y < _size; Y++ ) {
+							for ( int X=0; X < _size; X++ ) {
+								float	V = R.ReadSingle();
+								irradianceTable[X,Y] = V;
+								W.Write( V );
+							}
+						}
+					}
+				}
+
+			// Read white furnace table
+			float[]			whiteFurnaceTable = new float[_size];
+			PixelsBuffer	contentWhiteFurnace = new PixelsBuffer( (uint) (_size*4) );
+			using ( FileStream S = _whiteFurnaceTableName.OpenRead() )
+				using ( BinaryReader R = new BinaryReader( S ) ) {
+					using ( BinaryWriter W = contentWhiteFurnace.OpenStreamWrite() ) {
+						for ( int Y=0; Y < _size; Y++ ) {
+							float	V = R.ReadSingle();
+							whiteFurnaceTable[Y] = V;
+							W.Write( V );
+						}
+					}
+				}
+
+			// Create textures
+			_irradianceTexture = new Texture2D( m_device, (uint) _size, (uint) _size, 1, 1, ImageUtility.PIXEL_FORMAT.R32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, true, new PixelsBuffer[] { contentIrradiance } );
+			_whiteFurnaceTexture = new Texture2D( m_device, (uint) _size, 1, 1, 1, ImageUtility.PIXEL_FORMAT.R32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, true, new PixelsBuffer[] { contentWhiteFurnace } );
 		}
 
 		#endregion
@@ -535,6 +694,8 @@ for ( uint Y=0; Y < ROUGHNESS_SUBDIVS_COUNT; Y++ ) {
 			m_CB_Camera.m._Proj2World = m_CB_Camera.m._Proj2Camera * m_CB_Camera.m._Camera2World;
 
 			m_CB_Camera.UpdateData();
+
+			m_groupCounter = 0;	// Clear buffer
 		}
 
 		/// <summary>
@@ -547,68 +708,26 @@ for ( uint Y=0; Y < ROUGHNESS_SUBDIVS_COUNT; Y++ ) {
 			return Time;
 		}
 
-		void Application_Idle( object sender, EventArgs e ) {
-			if ( m_device == null )
-				return;
+		private void buttonReload_Click( object sender, EventArgs e ) {
+			m_device.ReloadModifiedShaders();
 
-			uint	W = (uint) panelOutput.Width;
-			uint	H = (uint) panelOutput.Height;
-
-			// Timer
-			float	lastGameTime = m_CurrentGameTime;
-			m_CurrentGameTime = GetGameTime();
-			
-			if ( m_CurrentGameTime - m_StartFPSTime > 1.0f ) {
-				m_AverageFrameTime = (m_CurrentGameTime - m_StartFPSTime) / Math.Max( 1, m_SumFrames );
-				m_SumFrames = 0;
-				m_StartFPSTime = m_CurrentGameTime;
-			}
-			m_SumFrames++;
-
-			m_CB_Global.m._ScreenSize.Set( W, H, 1.0f / W, 1.0f / H );
-			m_CB_Global.m._Time = m_CurrentGameTime;
-			m_CB_Global.UpdateData();
-
-			Camera_CameraTransformChanged( m_camera, EventArgs.Empty );
-
-			m_device.ClearDepthStencil( m_device.DefaultDepthStencil, 1.0f, 0, true, false );
-
-			m_tex_Noise.Set( 8 );
-			m_tex_Noise4D.Set( 9 );
-
-
-			//////////////////////////////////////////////////////////////////////////
-			// Fullscreen rendering
-			if ( m_shader_Render.Use() ) {
-				m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
-				m_device.SetRenderTarget( m_device.DefaultTarget, null );
-
-				m_CB_Render.m._roughnessSpecular = floatTrackbarControlRoughnessSpec.Value;
-				m_CB_Render.m._roughnessDiffuse = floatTrackbarControlRoughnessDiffuse.Value;
-				m_CB_Render.m._albedo = floatTrackbarControlAlbedo.Value;
-				m_CB_Render.m._lightElevation = floatTrackbarControlLightElevation.Value * Mathf.HALFPI;
-				m_CB_Render.UpdateData();
-
-				m_tex_CubeMap.SetPS( 0 );
-				m_tex_BlueNoise.SetPS( 1 );
-
-				m_tex_IrradianceComplement.SetPS( 2 );
-				m_tex_IrradianceAverage.SetPS( 3 );
-
-
-				m_device.RenderFullscreenQuad( m_shader_Render );
-			}
-
-			// Show!
-			m_device.Present( false );
-
-			// Update window text
-			Text = "GloubiBoule - Avg. Frame Time " + (1000.0f * m_AverageFrameTime).ToString( "G5" ) + " ms (" + (1.0f / m_AverageFrameTime).ToString( "G5" ) + " FPS)";
+			m_groupCounter = 0;	// Clear buffer
 		}
 
-		private void buttonReload_Click( object sender, EventArgs e )
-		{
-			m_device.ReloadModifiedShaders();
+		private void floatTrackbarControlRoughnessSpec_ValueChanged( FloatTrackbarControl _Sender, float _fFormerValue ) {
+			m_groupCounter = 0;	// Clear buffer
+		}
+
+		private void floatTrackbarControlRoughnessDiffuse_ValueChanged( FloatTrackbarControl _Sender, float _fFormerValue ) {
+			m_groupCounter = 0;	// Clear buffer
+		}
+
+		private void floatTrackbarControlAlbedo_ValueChanged( FloatTrackbarControl _Sender, float _fFormerValue ) {
+			m_groupCounter = 0;	// Clear buffer
+		}
+
+		private void floatTrackbarControlLightElevation_ValueChanged( FloatTrackbarControl _Sender, float _fFormerValue ) {
+			m_groupCounter = 0;	// Clear buffer
 		}
 	}
 }

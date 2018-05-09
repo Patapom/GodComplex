@@ -1,7 +1,10 @@
 #include "Global.hlsl"
 #include "Scene.hlsl"
 
-static const float3	LIGHT_COLOR = 1.0;
+static const uint	SAMPLES_COUNT = 128;
+
+static const float3	IBL_INTENSITY = 2.0;
+
 static const float3	ALBEDO_SPHERE = float3( 0.9, 0.5, 0.1 );	// Nicely saturated yellow
 static const float3	ALBEDO_PLANE = float3( 0.9, 0.5, 0.1 );		// Nicely saturated yellow
 static const float3	F0 = 1.0;
@@ -12,44 +15,20 @@ cbuffer CB_Render : register(b2) {
 	float	_roughnessDiffuse;
 	float	_albedo;
 	float	_lightElevation;
+
+	uint	_groupsCount;
+	uint	_groupIndex;
 };
 
 TextureCube< float3 >	_tex_CubeMap : register( t0 );
 Texture2D< float >		_tex_BlueNoise : register( t1 );
 
-Texture2D< float >		_tex_IrradianceComplement : register( t2 );
-Texture2D< float >		_tex_IrradianceAverage : register( t3 );
+Texture2D< float >		_tex_GGX_Eo : register( t2 );
+Texture2D< float >		_tex_GGX_Eavg : register( t3 );
+Texture2D< float >		_tex_OrenNayar_Eo : register( t4 );
+Texture2D< float >		_tex_OrenNayar_Eavg : register( t5 );
 
-//////////////////////////////////////////////////////////////////////////////
-// New multiple-scattering term computed from energy compensation
-
-float3	ComputeLightingMS( float3 _albedo, float _roughness, float3 _F0, float3 _wsNormal, float3 _wsView, float3 _wsLight, float3 _lightColor ) {
-
-	float3	rho = _albedo / PI;
-
-	float	a = _roughness;
-
-	float	mu_o = saturate( dot( _wsView, _wsNormal ) );
-	float	mu_i = saturate( dot( _wsLight, _wsNormal ) );
-
-	float	E_o = 1.0 - _tex_IrradianceComplement.SampleLevel( LinearClamp, float2( mu_o, a ), 0.0 );	// 1 - E_o
-	float	E_i = 1.0 - _tex_IrradianceComplement.SampleLevel( LinearClamp, float2( mu_i, a ), 0.0 );	// 1 - E_i
-	float	E_avg = _tex_IrradianceAverage.SampleLevel( LinearClamp, float2( a, 0.5 ), 0.0 );			// E_avg
-
-	float3	BRDF_GGX_ms = E_o * E_i / (PI - E_avg);
-
-//return 0.5 * E_i;
-//return 0.5 * (PI - E_avg) / PI;
-return BRDF_GGX_ms;
-
-	float3	specular = BRDF_GGX_ms;
-return 0*_lightColor * specular;
-
-//	float	LdotN = saturate( dot( _wsLight, _wsNormal ) );
-//	return (_albedo / PI) * saturate( LdotN ) * _lightColor;
-	return 0.0;
-}
-
+/////////////////////////////////////////////////////////////////////////////////////////////
 
 // Converts a 2D UV into an upper hemisphere direction (tangent space) + solid angle
 // The direction is weighted by the surface cosine lobe
@@ -59,16 +38,21 @@ float3	UV2Direction( float2 _UV, out float _solidAngleCosine ) {
 	// Solid angle
 	_solidAngleCosine = PI;
 
-	float	sqSinTheta = _UV.y;
-	float	sinTheta = sqrt( sqSinTheta );
-	float	cosTheta = sqrt( 1.0 - sqSinTheta );
+	#if 0
+		float	sqSinTheta = saturate( _UV.y );
+		float	sinTheta = sqrt( sqSinTheta );
+		float	cosTheta = sqrt( 1.0 - sqSinTheta );
+	#else
+		float	sinTheta = saturate( _UV.y );
+		float	cosTheta = sqrt( 1.0 - sinTheta*sinTheta );
+	#endif
+
 	float	phi = _UV.x * TWOPI;
 	float2	scPhi;
 	sincos( phi, scPhi.x, scPhi.y );
 
 	return float3( sinTheta * scPhi, cosTheta );
 }
-
 
 float3	SampleSky( float3 _wsDirection, float _mipLevel ) {
 
@@ -77,17 +61,71 @@ float3	SampleSky( float3 _wsDirection, float _mipLevel ) {
 	_wsDirection.xy = float2( _wsDirection.x * scRot.y + _wsDirection.y * scRot.x,
 							-_wsDirection.x * scRot.x + _wsDirection.y * scRot.y );
 
-	return 2.0 * _tex_CubeMap.SampleLevel( LinearWrap, _wsDirection, _mipLevel );
+	return IBL_INTENSITY * _tex_CubeMap.SampleLevel( LinearWrap, _wsDirection, _mipLevel );
 }
 
-float3	PS( VS_IN _In ) : SV_TARGET0 {
 
-	float2	UV = float2( _ScreenSize.x / _ScreenSize.y * (2.0 * _In.__Position.x / _ScreenSize.x - 1.0), 1.0 - 2.0 * _In.__Position.y / _ScreenSize.y );
-	uint	seed1 = wang_hash( _ScreenSize.x * _In.__Position.y + _In.__Position.x );
+float	GGX_NDF2( float _NdotH, float _alpha2 ) {
+	float	den = PI * pow2( pow2( _NdotH ) * (_alpha2 - 1) + 1 );
+	return _alpha2 * rcp( den );
+}
+
+float	GGX_Smith2( float _NdotL, float _NdotV, float _alpha2 ) {
+	float	denL = _NdotL + sqrt( pow2( _NdotL ) * (1-_alpha2) + _alpha2 );
+	float	denV = _NdotV + sqrt( pow2( _NdotV ) * (1-_alpha2) + _alpha2 );
+	return rcp( denL * denV );
+}
+
+float3	BRDF_GGX2( float3 _tsNormal, float3 _tsView, float3 _tsLight, float _alpha, float3 _IOR ) {
+	float	NdotL = dot( _tsNormal, _tsLight );
+	float	NdotV = dot( _tsNormal, _tsView );
+	if ( NdotL < 0.0 || NdotV < 0.0 )
+		return 0.0;
+
+	float	a2 = pow2( _alpha );
+	float3	H = normalize( _tsView + _tsLight );
+	float	NdotH = saturate( dot( H, _tsNormal ) );
+	float	HdotL = saturate( dot( H, _tsLight ) );
+
+	float	D = GGX_NDF2( NdotH, a2 );
+	float	G = GGX_Smith2( NdotL, NdotV, a2 );
+	float3	F = FresnelDielectric( _IOR, HdotL );
+
+//return 0.1 * NdotL;
+//return 0.1 * NdotV;
+//return 0.1 * HdotL;
+//return 0.1 * NdotH;
+
+//D = 1;
+//F = 1;
+//G = 0.1;
+
+	float	den = max( 1e-3, 4.0 * NdotL * NdotV );
+	return max( 0.0, F * G * D / den );
+}
+
+
+float4	PS( VS_IN _In ) : SV_TARGET0 {
+
+//return float4( (1 - _tex_GGX_Eo.SampleLevel( LinearClamp, _In.__position.xy / _screenSize.xy, 0.0 )).xxx, 1 );
+//return float4( (_tex_GGX_Eavg.SampleLevel( LinearClamp, _In.__position.xy / _screenSize.xy, 0.0 ) / PI).xxx, 1 );
+//return float4( (1 - _tex_OrenNayar_Eo.SampleLevel( LinearClamp, _In.__position.xy / _screenSize.xy, 0.0 )).xxx, 1 );
+//return float4( (_tex_OrenNayar_Eavg.SampleLevel( LinearClamp, _In.__position.xy / _screenSize.xy, 0.0 ) / PI).xxx, 1 );
+
+	float	noise = 0*_tex_BlueNoise[uint2(_In.__position.xy + uint2( _groupIndex, 0 )) & 0x3F];
+
+	float2	UV = float2( _screenSize.x / _screenSize.y * (2.0 * (_In.__position.x+noise) / _screenSize.x - 1.0), 1.0 - 2.0 * _In.__position.y / _screenSize.y );
+
+//	uint	seed1 = wang_hash( _screenSize.x * _In.__position.y + _In.__position.x );
+	uint	seed1 = wang_hash( asuint(_In.__position.x+_groupIndex) ) ^ wang_hash( asuint(_In.__position.y)-_groupIndex );
     uint	seed2 = hash( seed1, 1000u );
 //	float	noise = seed1 * 2.3283064365386963e-10;
-	float	noise = _tex_BlueNoise[uint2(_In.__Position.xy) & 0x3F];
 
+	uint	totalGroupsCount = _groupsCount * SAMPLES_COUNT;
+
+//return float4( seed1.xxx * 2.3283064365386963e-10, 1 );
+
+	// Build camera ray
 	float3	csView = normalize( float3( UV, 1 ) );
 	float3	wsRight = _Camera2World[0].xyz;
 	float3	wsUp = _Camera2World[1].xyz;
@@ -95,88 +133,74 @@ float3	PS( VS_IN _In ) : SV_TARGET0 {
 	float3	wsView = csView.x * wsRight + csView.y * wsUp + csView.z * wsAt;
 	float3	wsPosition = _Camera2World[3].xyz;
 
-//return  0.9 * ReverseBits( _In.__Position.x, seed2 );
-
-
-//return 1-_tex_IrradianceComplement.SampleLevel( LinearClamp, _In.__Position.xy / _ScreenSize.xy, 0.0 );
-//return _tex_IrradianceAverage.SampleLevel( LinearClamp, _In.__Position.xy / _ScreenSize.xy, 0.0 ) / PI;
-
 	float3	wsClosestPosition;
 	float3	wsNormal;
 	float2	hit = RayTraceScene( wsPosition, wsView, wsNormal, wsClosestPosition );
 	if ( hit.x > 1e4 )
-		return SampleSky( wsView, 0.0 );	// No hit
+		return float4( SampleSky( wsView, 0.0 ), 1 );	// No hit
 
 	wsPosition += hit.x * wsView;
 	wsPosition += 1e-3 * wsNormal;	// Offset from surface
 
-hit.y = 0;
-//return wsView;
-
+	// Build tangent space
 	float3	wsTangent, wsBiTangent;
 	BuildOrthonormalBasis( wsNormal, wsTangent, wsBiTangent );
 
-//return SampleSky( wsNormal, 0.0 );
-
 	float3	tsView = -float3( dot( wsView, wsTangent ), dot( wsView, wsBiTangent ), dot( wsView, wsNormal ) );
 	if ( tsView.z <= 0.0 )
-		return 0;
+		return float4( 0, 0, 0, 1 );
 
-//return wsBiTangent;
-//return tsView;
+//return float4( SampleSky( wsNormal, 0.0 ), 1 );
+//return wsNormal;
+//return float4( tsView, 1 );
 
-	const float	roughness = hit.y == 0  ? max( 0.01, _roughnessSpecular )
-										: _roughnessDiffuse;
+	float	roughness = hit.y == 0  ? max( 0.01, pow2( _roughnessSpecular ) )
+									: max( 0.01, pow2( _roughnessDiffuse ) );
 
-	const uint	SAMPLES_COUNT = 128;
+//roughness = pow2( roughness );
+
+	float	u = seed1 * 2.3283064365386963e-10;
+
+	float3	IOR = Fresnel_IORFromF0( F0 );
 
 	float3	Lo = 0.0;
+	uint	groupIndex = _groupIndex;
+
+
+//return float4( 1.0*fmod( (ReverseBits( groupIndex ) ^ seed2) * 2.3283064365386963e-10, 1.0 ).xxx, 1 );
+//return float4( 1.0*frac((ReverseBits( groupIndex ) ^ seed2) * 2.3283064365386963e-10).xxx, 1 );
+//return float4( 1.0*((ReverseBits( groupIndex ) ^ seed2) * 2.3283064365386963e-10).xxx, 1 );
+//return float4( 10*frac( u + float(groupIndex) / totalGroupsCount ).xxx, 1 );
+
+
 	[loop]
 	for ( uint i=0; i < SAMPLES_COUNT; i++ ) {
-		float	X0 = float( noise + i ) / SAMPLES_COUNT;
-		float	X1 = noise;//frac( ReverseBits( i, seed2 ) );
-//		float	X1 = ReverseBits( 1+i, seed2 );
+        float	X0 = frac( u + float(groupIndex) / totalGroupsCount );
+        float	X1 = (ReverseBits( groupIndex ) ^ seed2) * 2.3283064365386963e-10; // / 0x100000000
+		groupIndex += _groupsCount;	// Giant leaps give us large changes
 
-		#if 1
-			// Importance sample half vector direction
-			float2	scPhi;
-			sincos( TWOPI * X0, scPhi.x, scPhi.y );
-			float	thetaH = atan( roughness * sqrt( X1 ) / sqrt( 1.00001 - X1 ) );	// GGX importance sampling
-			float2	scThetaH;
-			sincos( thetaH, scThetaH.x, scThetaH.y );
-			float3	tsHalf = float3( scThetaH.x * scPhi, scThetaH.y );
+		// Retrieve light direction + solid angle
+		float	dw;
+		float3	tsLight = UV2Direction( float2( X0, X1 ), dw );
 
-			// Generate light vector by mirroring view against half vector
-			float	VdotH = dot( tsView, tsHalf );
-			float3	tsLight = 2.0 * VdotH * tsHalf - tsView;
+		float	LdotN = tsLight.z;
 
-//			float	dw = 0.25 * PI * sinThetaH * VdotH;
-			float	LdotN = tsLight.z;
-			float	LdotH = VdotH;//dot( tsLight, tsHalf );
-			float	HdotN = tsHalf.z;
-			float	BRDF = LdotH * GGX_Smith( LdotH, VdotH, pow2( roughness ) )
-						 / ( LdotN * HdotN );
-//			float	BRDF = LdotH * GGX_Smith( LdotH, VdotH, pow2( roughness ) );
-		#else
-			// Retrieve light direction + solid angle
-			float	dw;
-			float3	tsLight = UV2Direction( float2( X0, X1 ), dw );
-
-			// Get reflectance in that direction
-//			float3	BRDF = BRDF_GGX( float3( 0, 0, 1 ), tsView, tsLight, roughness, F0 );
-			float3	BRDF = BRDF_GGX( float3( 0, 0, 1 ), tsView, tsLight, roughness, F0 );
-
-			BRDF *= tsLight.z * dw;
-
-		#endif
-
-		float3	wsLight = tsLight.x * wsTangent + tsLight.y * wsBiTangent + tsLight.z * wsNormal;
+		// Get reflectance in that direction
+		float3	BRDF = BRDF_GGX2( float3( 0, 0, 1 ), tsView, tsLight, roughness, IOR );
 
 		// Sample incoming radiance
+		float3	wsLight = tsLight.x * wsTangent + tsLight.y * wsBiTangent + tsLight.z * wsNormal;
 		float3	Li = SampleSky( wsLight, 0.0 );
 
-		// Lo = Li * BRDF * (L.N) * dw
-		Lo += Li * BRDF;
+//Li = 2;
+//LdotN = 1;
+//dw = 1;
+//BRDF = 1;
+
+		Lo += Li * BRDF * LdotN * dw;
+
+//Lo += LdotN;
+//Lo += X0 / SAMPLES_COUNT;
 
 /*		float	phiH = TWOPI * (noise+X0);
 		float	sinPhiH, cosPhiH;
@@ -237,13 +261,28 @@ hit.y = 0;
 //		float	BRDF = BRDF_OrenNayar( wsNormal, -wsView, wsLight, roughness );
 		Lo += Li * BRDF * LdotN * solidAngle;
 */
-	}
+    }
 
-	Lo /= SAMPLES_COUNT;
+//	Lo += AMBIENT;
 
-	float3	color = Lo;
+	return float4( Lo, SAMPLES_COUNT );
+}
 
-//color = 10;
+/////////////////////////////////////////////////////////////////////////////////////////////
+// Finalize rendering
+//
+Texture2D< float4 >		_tex_Accumulator : register( t6 );
 
-	return AMBIENT + color;
+float3	PS_Finalize( VS_IN _In ) : SV_TARGET0 {
+	float4	V = _tex_Accumulator[_In.__position.xy];
+
+//return 0.5*V.w / 271.0;
+//return 0.001 * V.w;
+//return 0.5 * V.xyz;
+
+			V *= V.w > 0.0 ? 1.0 / V.w : 1.0;
+
+//V *= 0.5;
+
+	return V.xyz;
 }

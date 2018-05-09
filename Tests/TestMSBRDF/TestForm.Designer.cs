@@ -53,6 +53,7 @@
 			this.floatTrackbarControlRoughnessSpec.TabIndex = 0;
 			this.floatTrackbarControlRoughnessSpec.Value = 0F;
 			this.floatTrackbarControlRoughnessSpec.VisibleRangeMax = 1F;
+			this.floatTrackbarControlRoughnessSpec.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlRoughnessSpec_ValueChanged);
 			// 
 			// panelOutput
 			// 
@@ -73,6 +74,7 @@
 			this.floatTrackbarControlAlbedo.TabIndex = 0;
 			this.floatTrackbarControlAlbedo.Value = 0.75F;
 			this.floatTrackbarControlAlbedo.VisibleRangeMax = 1F;
+			this.floatTrackbarControlAlbedo.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlAlbedo_ValueChanged);
 			// 
 			// buttonReload
 			// 
@@ -115,6 +117,7 @@
 			this.floatTrackbarControlLightElevation.TabIndex = 0;
 			this.floatTrackbarControlLightElevation.Value = 0F;
 			this.floatTrackbarControlLightElevation.VisibleRangeMax = 1F;
+			this.floatTrackbarControlLightElevation.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlLightElevation_ValueChanged);
 			// 
 			// label3
 			// 
@@ -130,17 +133,18 @@
 			this.timer1.Enabled = true;
 			this.timer1.Interval = 10;
 			// 
-			// floatTrackbarControlDiffuse
+			// floatTrackbarControlRoughnessDiffuse
 			// 
 			this.floatTrackbarControlRoughnessDiffuse.Location = new System.Drawing.Point(1390, 38);
 			this.floatTrackbarControlRoughnessDiffuse.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlRoughnessDiffuse.MinimumSize = new System.Drawing.Size(70, 20);
-			this.floatTrackbarControlRoughnessDiffuse.Name = "floatTrackbarControlDiffuse";
+			this.floatTrackbarControlRoughnessDiffuse.Name = "floatTrackbarControlRoughnessDiffuse";
 			this.floatTrackbarControlRoughnessDiffuse.RangeMin = 0F;
 			this.floatTrackbarControlRoughnessDiffuse.Size = new System.Drawing.Size(200, 20);
 			this.floatTrackbarControlRoughnessDiffuse.TabIndex = 0;
 			this.floatTrackbarControlRoughnessDiffuse.Value = 0F;
 			this.floatTrackbarControlRoughnessDiffuse.VisibleRangeMax = 1F;
+			this.floatTrackbarControlRoughnessDiffuse.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlRoughnessDiffuse_ValueChanged);
 			// 
 			// label4
 			// 
