@@ -1,6 +1,8 @@
 #include "Global.hlsl"
 #include "Scene.hlsl"
 
+//#define	BRDF_SPECULAR	1
+
 static const uint	SAMPLES_COUNT = 128;
 
 static const float3	IBL_INTENSITY = 2.0;
@@ -16,6 +18,7 @@ cbuffer CB_Render : register(b2) {
 	float	_albedo;
 	float	_lightElevation;
 
+	uint	_flags;
 	uint	_groupsCount;
 	uint	_groupIndex;
 };
@@ -104,6 +107,35 @@ float3	BRDF_GGX2( float3 _tsNormal, float3 _tsView, float3 _tsLight, float _alph
 	return max( 0.0, F * G * D / den );
 }
 
+#if BRDF_SPECULAR	// Specular
+
+float3	ComputeBRDF( float3 _tsNormal, float3 _tsView, float3 _tsLight, float _roughness, float3 _IOR ) {
+	float3	BRDF = BRDF_GGX2( _tsNormal, _tsView, _tsLight, _roughness, _IOR );
+	if ( _flags & 1 ) {
+		BRDF += MSFactor * MSBRDF( _roughness, _tsNormal, _tsView, _tsLight, _tex_GGX_Eo, _tex_GGX_Eavg );
+	}
+
+	return BRDF;
+}
+
+#else	// Diffuse
+
+float3	ComputeBRDF( float3 _tsNormal, float3 _tsView, float3 _tsLight, float _roughness, float3 _albedo ) {
+	float3	BRDF = _albedo * BRDF_OrenNayar( _tsNormal, _tsView, _tsLight, _roughness );
+	if ( _flags & 1 ) {
+
+		const float	tau = 0.28430405702379613;
+		const float	A1 = (1.0 - tau) / pow2( tau );
+		float3	rho = tau * _albedo;
+		float3	MSFactor = A1 * pow2( rho ) / (1.0 - rho);
+
+		BRDF += MSFactor * MSBRDF( _roughness, _tsNormal, _tsView, _tsLight, _tex_OrenNayar_Eo, _tex_OrenNayar_Eavg );
+	}
+
+	return BRDF;
+}
+#endif
+
 
 float4	PS( VS_IN _In ) : SV_TARGET0 {
 
@@ -154,14 +186,23 @@ float4	PS( VS_IN _In ) : SV_TARGET0 {
 //return wsNormal;
 //return float4( tsView, 1 );
 
-	float	roughness = hit.y == 0  ? max( 0.01, pow2( _roughnessSpecular ) )
-									: max( 0.01, pow2( _roughnessDiffuse ) );
+//	float	roughness = hit.y == 0  ? _roughnessSpecular
+//									: _roughnessDiffuse;
+
+	float	roughness = _roughnessSpecular;
+
+	roughness = max( 0.01, roughness );
 
 //roughness = pow2( roughness );
 
 	float	u = seed1 * 2.3283064365386963e-10;
 
-	float3	IOR = Fresnel_IORFromF0( F0 );
+	#if BRDF_SPECULAR
+		float3	IOR = Fresnel_IORFromF0( F0 );
+	#else
+		float3	albedo = hit.y == 0 ? ALBEDO_SPHERE
+									: ALBEDO_PLANE;
+	#endif
 
 	float3	Lo = 0.0;
 	uint	groupIndex = _groupIndex;
@@ -186,7 +227,11 @@ float4	PS( VS_IN _In ) : SV_TARGET0 {
 		float	LdotN = tsLight.z;
 
 		// Get reflectance in that direction
-		float3	BRDF = BRDF_GGX2( float3( 0, 0, 1 ), tsView, tsLight, roughness, IOR );
+		#if BRDF_SPECULAR
+			float3	BRDF = ComputeBRDF( float3( 0, 0, 1 ), tsView, tsLight, roughness, IOR );
+		#else
+			float3	BRDF = ComputeBRDF( float3( 0, 0, 1 ), tsView, tsLight, roughness, albedo );
+		#endif
 
 		// Sample incoming radiance
 		float3	wsLight = tsLight.x * wsTangent + tsLight.y * wsBiTangent + tsLight.z * wsNormal;

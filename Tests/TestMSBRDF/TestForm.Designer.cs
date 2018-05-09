@@ -40,6 +40,7 @@
 			this.timer1 = new System.Windows.Forms.Timer(this.components);
 			this.floatTrackbarControlRoughnessDiffuse = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label4 = new System.Windows.Forms.Label();
+			this.checkBoxEnableMSBRDF = new System.Windows.Forms.CheckBox();
 			this.SuspendLayout();
 			// 
 			// floatTrackbarControlRoughnessSpec
@@ -155,11 +156,23 @@
 			this.label4.TabIndex = 3;
 			this.label4.Text = "Roughness Diffuse";
 			// 
+			// checkBoxEnableMSBRDF
+			// 
+			this.checkBoxEnableMSBRDF.AutoSize = true;
+			this.checkBoxEnableMSBRDF.Location = new System.Drawing.Point(1301, 141);
+			this.checkBoxEnableMSBRDF.Name = "checkBoxEnableMSBRDF";
+			this.checkBoxEnableMSBRDF.Size = new System.Drawing.Size(146, 17);
+			this.checkBoxEnableMSBRDF.TabIndex = 4;
+			this.checkBoxEnableMSBRDF.Text = "Enable multiple scattering";
+			this.checkBoxEnableMSBRDF.UseVisualStyleBackColor = true;
+			this.checkBoxEnableMSBRDF.CheckedChanged += new System.EventHandler(this.checkBoxEnableMSBRDF_CheckedChanged);
+			// 
 			// TestForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1602, 741);
+			this.Controls.Add(this.checkBoxEnableMSBRDF);
 			this.Controls.Add(this.floatTrackbarControlRoughnessDiffuse);
 			this.Controls.Add(this.label3);
 			this.Controls.Add(this.label2);
@@ -191,6 +204,7 @@
 		private System.Windows.Forms.Timer timer1;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlRoughnessDiffuse;
 		private System.Windows.Forms.Label label4;
+		private System.Windows.Forms.CheckBox checkBoxEnableMSBRDF;
 	}
 }
 

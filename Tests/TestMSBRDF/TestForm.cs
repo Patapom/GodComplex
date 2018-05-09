@@ -55,6 +55,7 @@ namespace TestMSBRDF {
 			public float		_albedo;
 			public float		_lightElevation;
 
+			public uint			_flags;
 			public uint			_groupsCount;
 			public uint			_groupIndex;
 		}
@@ -229,8 +230,10 @@ namespace TestMSBRDF {
 				m_CB_Render.m._albedo = floatTrackbarControlAlbedo.Value;
 				m_CB_Render.m._lightElevation = floatTrackbarControlLightElevation.Value * Mathf.HALFPI;
 
-				m_CB_Render.m._groupIndex = m_groupShuffle[m_groupCounter];
+				m_CB_Render.m._flags = 0;
+				m_CB_Render.m._flags |= checkBoxEnableMSBRDF.Checked ? 1U : 0;
 				m_CB_Render.m._groupsCount = GROUPS_COUNT;
+				m_CB_Render.m._groupIndex = m_groupShuffle[m_groupCounter];
 
 				m_CB_Render.UpdateData();
 
@@ -727,6 +730,10 @@ for ( uint Y=0; Y < ROUGHNESS_SUBDIVS_COUNT; Y++ ) {
 		}
 
 		private void floatTrackbarControlLightElevation_ValueChanged( FloatTrackbarControl _Sender, float _fFormerValue ) {
+			m_groupCounter = 0;	// Clear buffer
+		}
+
+		private void checkBoxEnableMSBRDF_CheckedChanged( object sender, EventArgs e ) {
 			m_groupCounter = 0;	// Clear buffer
 		}
 	}
