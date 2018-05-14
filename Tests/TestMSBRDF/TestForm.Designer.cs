@@ -42,6 +42,8 @@
 			this.label4 = new System.Windows.Forms.Label();
 			this.checkBoxEnableMSBRDF = new System.Windows.Forms.CheckBox();
 			this.checkBoxKeepSampling = new System.Windows.Forms.CheckBox();
+			this.floatTrackbarControlF0 = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.label5 = new System.Windows.Forms.Label();
 			this.SuspendLayout();
 			// 
 			// floatTrackbarControlRoughnessSpec
@@ -101,15 +103,15 @@
 			// label2
 			// 
 			this.label2.AutoSize = true;
-			this.label2.Location = new System.Drawing.Point(1298, 77);
+			this.label2.Location = new System.Drawing.Point(1298, 76);
 			this.label2.Name = "label2";
-			this.label2.Size = new System.Drawing.Size(40, 13);
+			this.label2.Size = new System.Drawing.Size(78, 13);
 			this.label2.TabIndex = 3;
-			this.label2.Text = "Albedo";
+			this.label2.Text = "Ground Albedo";
 			// 
 			// floatTrackbarControlLightElevation
 			// 
-			this.floatTrackbarControlLightElevation.Location = new System.Drawing.Point(1390, 98);
+			this.floatTrackbarControlLightElevation.Location = new System.Drawing.Point(1390, 131);
 			this.floatTrackbarControlLightElevation.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlLightElevation.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlLightElevation.Name = "floatTrackbarControlLightElevation";
@@ -124,7 +126,7 @@
 			// label3
 			// 
 			this.label3.AutoSize = true;
-			this.label3.Location = new System.Drawing.Point(1298, 103);
+			this.label3.Location = new System.Drawing.Point(1298, 136);
 			this.label3.Name = "label3";
 			this.label3.Size = new System.Drawing.Size(61, 13);
 			this.label3.TabIndex = 3;
@@ -160,7 +162,7 @@
 			// checkBoxEnableMSBRDF
 			// 
 			this.checkBoxEnableMSBRDF.AutoSize = true;
-			this.checkBoxEnableMSBRDF.Location = new System.Drawing.Point(1301, 141);
+			this.checkBoxEnableMSBRDF.Location = new System.Drawing.Point(1301, 174);
 			this.checkBoxEnableMSBRDF.Name = "checkBoxEnableMSBRDF";
 			this.checkBoxEnableMSBRDF.Size = new System.Drawing.Size(146, 17);
 			this.checkBoxEnableMSBRDF.TabIndex = 4;
@@ -173,12 +175,35 @@
 			this.checkBoxKeepSampling.AutoSize = true;
 			this.checkBoxKeepSampling.Checked = true;
 			this.checkBoxKeepSampling.CheckState = System.Windows.Forms.CheckState.Checked;
-			this.checkBoxKeepSampling.Location = new System.Drawing.Point(1301, 164);
+			this.checkBoxKeepSampling.Location = new System.Drawing.Point(1301, 197);
 			this.checkBoxKeepSampling.Name = "checkBoxKeepSampling";
 			this.checkBoxKeepSampling.Size = new System.Drawing.Size(97, 17);
 			this.checkBoxKeepSampling.TabIndex = 4;
 			this.checkBoxKeepSampling.Text = "Keep Sampling";
 			this.checkBoxKeepSampling.UseVisualStyleBackColor = true;
+			// 
+			// floatTrackbarControlF0
+			// 
+			this.floatTrackbarControlF0.Location = new System.Drawing.Point(1390, 98);
+			this.floatTrackbarControlF0.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlF0.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlF0.Name = "floatTrackbarControlF0";
+			this.floatTrackbarControlF0.RangeMax = 1F;
+			this.floatTrackbarControlF0.RangeMin = 0F;
+			this.floatTrackbarControlF0.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlF0.TabIndex = 0;
+			this.floatTrackbarControlF0.Value = 1F;
+			this.floatTrackbarControlF0.VisibleRangeMax = 1F;
+			this.floatTrackbarControlF0.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlAlbedo_ValueChanged);
+			// 
+			// label5
+			// 
+			this.label5.AutoSize = true;
+			this.label5.Location = new System.Drawing.Point(1298, 102);
+			this.label5.Name = "label5";
+			this.label5.Size = new System.Drawing.Size(56, 13);
+			this.label5.TabIndex = 3;
+			this.label5.Text = "Sphere F0";
 			// 
 			// TestForm
 			// 
@@ -189,12 +214,14 @@
 			this.Controls.Add(this.checkBoxEnableMSBRDF);
 			this.Controls.Add(this.floatTrackbarControlRoughnessDiffuse);
 			this.Controls.Add(this.label3);
+			this.Controls.Add(this.label5);
 			this.Controls.Add(this.label2);
 			this.Controls.Add(this.label4);
 			this.Controls.Add(this.label1);
 			this.Controls.Add(this.buttonReload);
 			this.Controls.Add(this.panelOutput);
 			this.Controls.Add(this.floatTrackbarControlLightElevation);
+			this.Controls.Add(this.floatTrackbarControlF0);
 			this.Controls.Add(this.floatTrackbarControlAlbedo);
 			this.Controls.Add(this.floatTrackbarControlRoughnessSpec);
 			this.Name = "TestForm";
@@ -220,6 +247,8 @@
 		private System.Windows.Forms.Label label4;
 		private System.Windows.Forms.CheckBox checkBoxEnableMSBRDF;
 		private System.Windows.Forms.CheckBox checkBoxKeepSampling;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlF0;
+		private System.Windows.Forms.Label label5;
 	}
 }
 

@@ -286,6 +286,7 @@ float	GGX_NDF( float _NdotH, float _alpha2 ) {
 	return _alpha2 * rcp( den );
 }
 
+// Warning: 1 / (4 * NdotL * NdotV) is already accounted for!
 float	GGX_Smith( float _NdotL, float _NdotV, float _alpha2 ) {
 	float	denL = _NdotL + sqrt( pow2( _NdotL ) * (1-_alpha2) + _alpha2 );
 	float	denV = _NdotV + sqrt( pow2( _NdotV ) * (1-_alpha2) + _alpha2 );
@@ -307,8 +308,7 @@ float3	BRDF_GGX( float3 _tsNormal, float3 _tsView, float3 _tsLight, float _alpha
 	float	G = GGX_Smith( NdotL, NdotV, a2 );
 	float3	F = FresnelDielectric( _IOR, HdotL );
 
-	float	den = max( 1e-3, 4.0 * NdotL * NdotV );
-	return max( 0.0, F * G * D / den );
+	return max( 0.0, F * G * D );
 }
 
 // ====== Simple Oren-Nayar implementation ======

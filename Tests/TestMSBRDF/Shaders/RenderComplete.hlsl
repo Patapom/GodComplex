@@ -1,7 +1,11 @@
 #include "Global.hlsl"
 #include "Scene.hlsl"
 
-#define	BRDF_SPECULAR	1
+#define FULL_SCENE		1	// Define this to render the full scene (diffuse plane + specular sphere)
+#define	BRDF_SPECULAR	1	// When not in full scene mode, this will override BRDFs
+
+//#define	WHITE_FURNACE_TEST	1
+
 
 static const uint	SAMPLES_COUNT = 32;
 
@@ -9,18 +13,22 @@ static const float3	IBL_INTENSITY = 2.0;
 
 static const float3	ALBEDO_SPHERE = float3( 0.9, 0.5, 0.1 );	// Nicely saturated yellow
 static const float3	ALBEDO_PLANE = float3( 0.9, 0.5, 0.1 );		// Nicely saturated yellow
-static const float3	F0 = 1.0;
+//static const float3	F0_TINT_SPHERE = 1.0 * float3( 0.85, 0.95, 1 );
+static const float3	F0_TINT_SPHERE = 1.0;
+static const float3	F0_TINT_PLANE = 1.0;
+
 static const float3	AMBIENT = 0* 0.02 * float3( 0.5, 0.8, 0.9 );
 
 cbuffer CB_Render : register(b2) {
-	float	_roughnessSpecular;
-	float	_roughnessDiffuse;
-	float	_albedo;
-	float	_lightElevation;
-
 	uint	_flags;
 	uint	_groupsCount;
 	uint	_groupIndex;
+	float	_lightElevation;
+
+	float	_roughnessSpecular;
+	float	_roughnessDiffuse;
+	float	_albedo;
+	float	_F0;
 };
 
 TextureCube< float3 >	_tex_CubeMap : register( t0 );
@@ -58,52 +66,21 @@ float3	SampleSky( float3 _wsDirection, float _mipLevel ) {
 	_wsDirection.xy = float2( _wsDirection.x * scRot.y + _wsDirection.y * scRot.x,
 							-_wsDirection.x * scRot.x + _wsDirection.y * scRot.y );
 
-//return 1;
+#if WHITE_FURNACE_TEST
+return 1;	// White furnace
+#endif
 
 	return IBL_INTENSITY * _tex_CubeMap.SampleLevel( LinearWrap, _wsDirection, _mipLevel );
 }
 
-
-#if BRDF_SPECULAR	// Specular
-
-float	GGX_NDF2( float _NdotH, float _alpha2 ) {
-	float	den = PI * pow2( pow2( _NdotH ) * (_alpha2 - 1) + 1 );
-	return _alpha2 * rcp( den );
-}
-
-// Warning: 1 / (4 * NdotL * NdotV) is already accounted for!
-float	GGX_Smith2( float _NdotL, float _NdotV, float _alpha2 ) {
-	float	denL = _NdotL + sqrt( pow2( _NdotL ) * (1-_alpha2) + _alpha2 );
-	float	denV = _NdotV + sqrt( pow2( _NdotV ) * (1-_alpha2) + _alpha2 );
-	return rcp( denL * denV );
-}
-
-float3	BRDF_GGX2( float3 _tsNormal, float3 _tsView, float3 _tsLight, float _alpha, float3 _IOR ) {
-	float	NdotL = dot( _tsNormal, _tsLight );
-	float	NdotV = dot( _tsNormal, _tsView );
-	if ( NdotL < 0.0 || NdotV < 0.0 )
-		return 0.0;
-
-	float	a2 = pow2( _alpha );
-	float3	H = normalize( _tsView + _tsLight );
-	float	NdotH = dot( H, _tsNormal );
-	float	HdotL = dot( H, _tsLight );
-
-	float	D = GGX_NDF2( NdotH, a2 );
-	float	G = GGX_Smith2( NdotL, NdotV, a2 );
-	float3	F = FresnelDielectric( _IOR, HdotL );
-
-	return max( 0.0, F * G * D );
-}
-
-float3	ComputeBRDF( float3 _tsNormal, float3 _tsView, float3 _tsLight, float _roughness, float3 _IOR ) {
-	float3	BRDF = BRDF_GGX2( _tsNormal, _tsView, _tsLight, _roughness, _IOR );
+////////////////////////////////////////////////////////////////////////////////////////////////
+//
+float3	ComputeBRDF_GGX( float3 _tsNormal, float3 _tsView, float3 _tsLight, float _roughness, float3 _IOR ) {
+	float3	BRDF = BRDF_GGX( _tsNormal, _tsView, _tsLight, _roughness, _IOR );
 	if ( _flags & 1 ) {
 		// From http://patapom.com/blog/BRDF/MSBRDFEnergyCompensation/#varying-the-fresnel-reflectance-f_0f_0
 		float3		F0 = Fresnel_F0FromIOR( _IOR );
-		const float	tau = 0.45549984771950014;
-		float3		reducedF0 = tau * F0;
-		float3		MSFactor = reducedF0 * (0.04 + reducedF0 * (0.66 + reducedF0 * 0.3));
+		float3		MSFactor = F0 * (0.04 + F0 * (0.66 + F0 * 0.3));
 
 		BRDF += MSFactor * MSBRDF( _roughness, _tsNormal, _tsView, _tsLight, _tex_GGX_Eo, _tex_GGX_Eavg );
 	}
@@ -111,9 +88,7 @@ float3	ComputeBRDF( float3 _tsNormal, float3 _tsView, float3 _tsLight, float _ro
 	return BRDF;
 }
 
-#else	// Diffuse
-
-float3	ComputeBRDF( float3 _tsNormal, float3 _tsView, float3 _tsLight, float _roughness, float3 _albedo ) {
+float3	ComputeBRDF_Oren( float3 _tsNormal, float3 _tsView, float3 _tsLight, float _roughness, float3 _albedo ) {
 	float3	BRDF = _albedo * BRDF_OrenNayar( _tsNormal, _tsView, _tsLight, _roughness );
 	if ( _flags & 1 ) {
 		// From http://patapom.com/blog/BRDF/MSBRDFEnergyCompensation/#varying-diffuse-reflectance-rhorho
@@ -127,7 +102,111 @@ float3	ComputeBRDF( float3 _tsNormal, float3 _tsView, float3 _tsLight, float _ro
 
 	return BRDF;
 }
-#endif
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+// Full scene estimate
+//
+float3	SampleSecondaryLight( float3 _wsPosition, float3 _wsNormal, float3 _wsView, uint _objectIndex, uint2 _seeds ) {
+
+	// Prepare surface characteristics
+	float3	F0 = _objectIndex == 0 ? F0_TINT_SPHERE : F0_TINT_PLANE;
+			F0 *= _F0;
+	float3	IOR = Fresnel_IORFromF0( F0 );
+
+	float3	rho = _objectIndex == 0 ? ALBEDO_SPHERE : ALBEDO_PLANE;
+			rho *= _albedo;
+
+	float	alphaS = max( 0.01, _roughnessSpecular );
+	float	alphaD = max( 0.01, _roughnessDiffuse );
+
+	if ( _objectIndex == 1 ) {
+		// Plane was hit, sample diffuse sky
+
+		// Sample incoming radiance
+		float3	Li = SampleSky( _wsNormal, 8 );						// Incoming "diffuse" lighting
+//				Li *= ComputeShadow( _wsPosition, wsLight );		// * plane shadowing <== CAN'T! No clear direction! Should be coming from indirect samples instead of 1 unique diffuse sample. Or use AO but we don't have it...
+				Li *= ComputeSphereAO( _wsPosition, _wsNormal );	// * Sphere AO
+
+		// Compute reflected radiance
+		float3	Lr = Li * (_albedo * ALBEDO_PLANE / PI);			// Diffuse reflectance
+
+		float	LdotN = saturate( -dot( _wsNormal, _wsView ) );		// cos( theta )
+
+		const float dw = PI;
+		return Lr * LdotN * dw;
+	}
+
+	////////////////////////////////////////////////////////////
+	// Sphere was hit, use many samples but don't cast rays anymore (we approximate scene intersection depending on ray's upward direction)
+
+	// Build tangent space
+	float3	wsTangent, wsBiTangent;
+	BuildOrthonormalBasis( _wsNormal, wsTangent, wsBiTangent );
+
+	float3	tsView = -float3( dot( _wsView, wsTangent ), dot( _wsView, wsBiTangent ), dot( _wsView, _wsNormal ) );
+
+	float	u = _seeds.x * 2.3283064365386963e-10;
+
+	uint	totalGroupsCount = _groupsCount * SAMPLES_COUNT;
+
+	float3	Lo = 0.0;
+	uint	groupIndex = _groupIndex;
+//	uint	validSamplesCount = 0;
+
+	[loop]
+	for ( uint i=0; i < SAMPLES_COUNT; i++ ) {
+		float	X0 = frac( u + float(groupIndex) / totalGroupsCount );
+		float	X1 = (ReverseBits( groupIndex ) ^ _seeds.y) * 2.3283064365386963e-10; // / 0x100000000
+		groupIndex += _groupsCount;	// Giant leaps give us large changes
+
+		// Retrieve light direction + solid angle
+		float	dw;
+		float3	tsLight = UV2Direction( float2( X0, X1 ), dw );
+		float3	wsLight = tsLight.x * wsTangent + tsLight.y * wsBiTangent + tsLight.z * _wsNormal;
+
+		float	LdotN = tsLight.z;
+
+		// Compute BRDF
+		float3	BRDF = 0.0;
+		if ( _objectIndex == 0 )
+			BRDF = ComputeBRDF_GGX( float3( 0, 0, 1 ), tsView, tsLight, alphaS, IOR );
+		else
+			BRDF = ComputeBRDF_Oren( float3( 0, 0, 1 ), tsView, tsLight, alphaD, rho );
+
+		// Sample incoming radiance
+		float3	Li = wsLight.y > 0.0 ? SampleSky( wsLight, 3.0 )											// Assume sky hit when sampling upward
+									 : ((_albedo * ALBEDO_PLANE) / PI) * SampleSky( float3( 0, 1, 0 ), 8 );	// Assume ground hit when sampling downward (apply plane reflectance * diffuse IBL intensity)
+
+		// Compute reflected radiance
+		float3	Lr = Li * BRDF;
+
+		// Accumulate
+		Lo += Lr * LdotN * dw;
+	}
+
+	Lo /= SAMPLES_COUNT;
+
+	return Lo;
+}
+
+float3	ComputeIncomingRadiance( float3 _wsPosition, float3 _wsView, uint2 _seeds ) {
+
+	// Compute secondary hit with scene
+	float3	wsClosestPosition = 0;
+	float3	wsNormal = float3( 0, 1, 0 );
+	float2	hit = RayTraceScene( _wsPosition, _wsView, wsNormal, wsClosestPosition );
+
+	// Sample incoming radiance
+	float3	Li = 0.0;
+	if ( hit.x > 1e4 )
+		return SampleSky( _wsView, 0.0 );	// Sample sky
+
+	// Sample reflection from secondary hit
+	_wsPosition += hit.x * _wsView;	// Go to hit
+	_wsPosition += 1e-3 * wsNormal;	// Offset from surface
+
+	return SampleSecondaryLight( _wsPosition, wsNormal, _wsView, hit.y, _seeds );
+}
 
 
 float4	PS( VS_IN _In ) : SV_TARGET0 {
@@ -141,14 +220,13 @@ float4	PS( VS_IN _In ) : SV_TARGET0 {
 
 	float2	UV = float2( _screenSize.x / _screenSize.y * (2.0 * (_In.__position.x+noise) / _screenSize.x - 1.0), 1.0 - 2.0 * _In.__position.y / _screenSize.y );
 
-//	uint	seed1 = wang_hash( _screenSize.x * _In.__position.y + _In.__position.x );
-	uint	seed1 = wang_hash( asuint(_In.__position.x + _time) + _groupIndex ) ^ wang_hash( asuint(_In.__position.y - _time*_groupIndex) );
-    uint	seed2 = hash( seed1, 1000u );
-//	float	noise = seed1 * 2.3283064365386963e-10;
+	uint2	seeds;
+	seeds.x = wang_hash( asuint(_In.__position.x + _time) + _groupIndex ) ^ wang_hash( asuint(_In.__position.y - _time*_groupIndex) );
+	seeds.y = hash( seeds.x, 1000u );
 
 	uint	totalGroupsCount = _groupsCount * SAMPLES_COUNT;
 
-//return float4( seed1.xxx * 2.3283064365386963e-10, 1 );
+//return float4( seeds.xxx * 2.3283064365386963e-10, 1 );
 
 	// Build camera ray
 	float3	csView = normalize( float3( UV, 1 ) );
@@ -172,46 +250,48 @@ float4	PS( VS_IN _In ) : SV_TARGET0 {
 	BuildOrthonormalBasis( wsNormal, wsTangent, wsBiTangent );
 
 	float3	tsView = -float3( dot( wsView, wsTangent ), dot( wsView, wsBiTangent ), dot( wsView, wsNormal ) );
-//	if ( tsView.z <= 0.0 )
-//		return float4( 0, 0, 0, 0 );
 
 //return float4( SampleSky( wsNormal, 0.0 ), 1 );
 //return wsNormal;
 //return float4( tsView, 1 );
 
-//	float	roughness = hit.y == 0  ? _roughnessSpecular
-//									: _roughnessDiffuse;
+	// Prepare surface characteristics
+	float3	F0 = hit.y == 0 ? F0_TINT_SPHERE : F0_TINT_PLANE;
+			F0 *= _F0;
+	float3	IOR = Fresnel_IORFromF0( F0 );
 
-	float	roughness = _roughnessSpecular;
+	float3	rho = hit.y == 0 ? ALBEDO_SPHERE : ALBEDO_PLANE;
+			rho *= _albedo;
 
-	roughness = max( 0.01, roughness );
+	float	alphaS = max( 0.01, _roughnessSpecular );
+	float	alphaD = max( 0.01, _roughnessDiffuse );
 
-//roughness = pow2( roughness );
+	float	u = seeds.x * 2.3283064365386963e-10;
 
-	float	u = seed1 * 2.3283064365386963e-10;
-
-	#if BRDF_SPECULAR
+	#if !FULL_SCENE
+		float3	F0 = _F0 * F0_TINT_SPHERE;
 		float3	IOR = Fresnel_IORFromF0( F0 );
-	#else
-//		float3	albedo = hit.y == 0 ? ALBEDO_SPHERE
-//									: ALBEDO_PLANE;
-		float3	albedo = _albedo;
+
+		float3	albedo = hit.y == 0 ? _albedo * ALBEDO_SPHERE
+									: _albedo * ALBEDO_PLANE;
+
+		#if BRDF_SPECULAR
+			float	roughness = _roughnessSpecular;
+		#else
+			float	roughness = _roughnessDiffuse;
+		#endif
+
+		roughness = max( 0.01, roughness );
 	#endif
 
 	float3	Lo = 0.0;
 	uint	groupIndex = _groupIndex;
 	uint	validSamplesCount = 0;
 
-//return float4( 1.0*fmod( (ReverseBits( groupIndex ) ^ seed2) * 2.3283064365386963e-10, 1.0 ).xxx, 1 );
-//return float4( 1.0*frac((ReverseBits( groupIndex ) ^ seed2) * 2.3283064365386963e-10).xxx, 1 );
-//return float4( 1.0*((ReverseBits( groupIndex ) ^ seed2) * 2.3283064365386963e-10).xxx, 1 );
-//return float4( 10*frac( u + float(groupIndex) / totalGroupsCount ).xxx, 1 );
-
-
 	[loop]
 	for ( uint i=0; i < SAMPLES_COUNT; i++ ) {
         float	X0 = frac( u + float(groupIndex) / totalGroupsCount );
-        float	X1 = (ReverseBits( groupIndex ) ^ seed2) * 2.3283064365386963e-10; // / 0x100000000
+        float	X1 = (ReverseBits( groupIndex ) ^ seeds.y) * 2.3283064365386963e-10; // / 0x100000000
 		groupIndex += _groupsCount;	// Giant leaps give us large changes
 
 		// Retrieve light direction + solid angle
@@ -277,88 +357,51 @@ float4	PS( VS_IN _In ) : SV_TARGET0 {
 			float	LdotN = tsLight.z;
 		#endif
 
-		// Get reflectance in that direction
-		#if BRDF_SPECULAR
-			float3	BRDF = ComputeBRDF( float3( 0, 0, 1 ), tsView, tsLight, roughness, IOR );
+		#if FULL_SCENE
+			// Compute BRDF
+			float3	BRDF = 0.0;
+			if ( hit.y == 0 )
+				BRDF = ComputeBRDF_GGX( float3( 0, 0, 1 ), tsView, tsLight, alphaS, IOR );
+			else
+				BRDF = ComputeBRDF_Oren( float3( 0, 0, 1 ), tsView, tsLight, alphaD, rho );
+
+			// Sample incoming radiance
+			float3	Li = ComputeIncomingRadiance( wsPosition, wsLight, seeds );
+
+			// Compute reflected radiance
+			float3	Lr = Li * BRDF;
+
 		#else
-			float3	BRDF = ComputeBRDF( float3( 0, 0, 1 ), tsView, tsLight, roughness, albedo );
+
+			// Get reflectance in that direction
+			#if BRDF_SPECULAR
+				float3	BRDF = ComputeBRDF_GGX( float3( 0, 0, 1 ), tsView, tsLight, roughness, IOR );
+			#else
+				float3	BRDF = ComputeBRDF_Oren( float3( 0, 0, 1 ), tsView, tsLight, roughness, albedo );
+			#endif
+
+			// Sample incoming radiance
+			float3	Li = SampleSky( wsLight, 0.0 );
+
+			// Compute reflected radiance
+			float3	Lr = Li * BRDF;
+
 		#endif
 
-		// Sample incoming radiance
-		float3	Li = SampleSky( wsLight, 0.0 );
 
-		Lo += Li * BRDF * LdotN * dw;
+#if WHITE_FURNACE_TEST
+Lr *= hit.y == 0 ? 0.95 : 1.0;
+#endif
 
+		// Accumulate
+		Lo += Lr * LdotN * dw;
 		validSamplesCount++;
-
-//Lo += LdotN;
-//Lo += X0 / SAMPLES_COUNT;
-
-/*		float	phiH = TWOPI * (noise+X0);
-		float	sinPhiH, cosPhiH;
-		sincos( phiH, sinPhiH, cosPhiH );
-
-//		float	thetaH = atan( -roughness * roughness * log( 1.0 - X1 ) );		// Ward importance sampling
-//		float	thetaH = hit.y == 0 ? atan( -roughness * sqrt( X1 ) / sqrt( 1.0 - X1 ) )	// GGX importance sampling
-//									: acos( X1 );											// Lambert diffuse
-
-		float	thetaH = acos( X1 );
-
-		float	sinThetaH, cosThetaH;
-		sincos( thetaH, sinThetaH, cosThetaH );
-
-		float3	lsHalf = float3(	sinThetaH * cosPhiH,
-									sinThetaH * sinPhiH,
-									cosThetaH
-								);
-
-//lsHalf = float3( 0, 0, 1 );
-
-		float3	wsHalf = lsHalf.x * wsTangent + lsHalf.y * wsBiTangent + lsHalf.z * wsNormal;
-
- 		float3	wsLight = wsView - 2.0 * dot( wsView, wsHalf ) * wsHalf;	// Light is on the other size of the half vector...
-		float	LdotN = dot( wsLight, wsNormal );
-		if ( LdotN <= 0.0 )
-			continue;	// Goes below the surface...
-
-		// Sample lighting
-		float3	wsClosestPositionLight;
-		float3	wsNormalLight;
-		float2	hit2 = RayTraceScene( wsPosition, wsLight, wsNormalLight, wsClosestPositionLight );
-		float3	Li = 0.0;
-		if ( hit2.x > 1e4 ) {
-			// Sample sky
-			Li = SampleSky( wsLight, 0.0 );
-		} else {
-			// Sample scene
-			if ( hit2.y == 0 ) {
-				// Sphere was hit, assume 0
-				Li = 0.0;
-			} else {
-				// Plane was hit, sample diffuse 
-				Li = SampleSky( wsNormalLight, 8 );			// Incoming "diffuse" lighting
-//				Li *= ComputeShadow( wsPosition + hit2.x * wsLight, wsLight );			// * plane shadowing <== CAN'T! No clear direction! Should be coming from indirect samples instead of 1 unique diffuse sample. Or use AO but we don't have it...
-				Li *= ComputeSphereAO( wsPosition + hit2.x * wsLight, wsNormalLight );	// * Sphere AO
-				Li *= saturate( -dot( wsNormalLight, wsLight ) );						// * cos( theta )
-				Li *= ALBEDO_PLANE / PI;												// * diffuse reflectance
-			}
-		}
-
-		float	solidAngle = sqrt( 1.0 - LdotN*LdotN );
-
-		// Apply BRDF
-		float3	BRDF = hit.y == 0 ? BRDF_GGX( wsNormal, -wsView, wsLight, roughness, F0 )
-								  : BRDF_OrenNayar( wsNormal, -wsView, wsLight, roughness );
-//		float3	BRDF = BRDF_GGX( wsNormal, -wsView, wsLight, roughness, F0 );
-//		float	BRDF = BRDF_OrenNayar( wsNormal, -wsView, wsLight, roughness );
-		Lo += Li * BRDF * LdotN * solidAngle;
-*/
     }
 
 //	Lo += AMBIENT;
 
-	return float4( Lo, SAMPLES_COUNT);
-//	return float4( Lo, validSamplesCount );
+//	return float4( Lo, SAMPLES_COUNT);
+	return float4( Lo, validSamplesCount );
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////

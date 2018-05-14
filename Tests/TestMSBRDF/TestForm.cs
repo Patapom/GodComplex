@@ -50,14 +50,15 @@ namespace TestMSBRDF {
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
 		private struct CB_Render {
-			public float		_roughnessSpecular;
-			public float		_roughnessDiffuse;
-			public float		_albedo;
-			public float		_lightElevation;
-
 			public uint			_flags;
 			public uint			_groupsCount;
 			public uint			_groupIndex;
+			public float		_lightElevation;
+
+			public float		_roughnessSpecular;
+			public float		_roughnessDiffuse;
+			public float		_albedo;
+			public float		_F0;
 		}
 
 		#endregion
@@ -177,7 +178,8 @@ namespace TestMSBRDF {
 			// Setup camera
 			m_camera.CreatePerspectiveCamera( (float) (60.0 * Math.PI / 180.0), (float) panelOutput.Width / panelOutput.Height, 0.01f, 100.0f );
 			m_manipulator.Attach( panelOutput, m_camera );
-			m_manipulator.InitializeCamera( new float3( 0, 1.5f, 2.0f ), new float3( -0.4f, 0, 0.4f ), float3.UnitY );
+//			m_manipulator.InitializeCamera( new float3( 0, 1.5f, 2.0f ), new float3( -0.4f, 0, 0.4f ), float3.UnitY );
+			m_manipulator.InitializeCamera( new float3( -2, 1.0f, 0 ), new float3( 0, 1, 0 ), float3.UnitY );
 			m_camera.CameraTransformChanged += Camera_CameraTransformChanged;
 			Camera_CameraTransformChanged( null, EventArgs.Empty );
 
@@ -225,15 +227,21 @@ namespace TestMSBRDF {
 				m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.ADDITIVE );
 				m_device.SetRenderTarget( m_tex_Accumulator, null );
 
-				m_CB_Render.m._roughnessSpecular = floatTrackbarControlRoughnessSpec.Value;
-				m_CB_Render.m._roughnessDiffuse = floatTrackbarControlRoughnessDiffuse.Value;
-				m_CB_Render.m._albedo = floatTrackbarControlAlbedo.Value;
-				m_CB_Render.m._lightElevation = floatTrackbarControlLightElevation.Value * Mathf.HALFPI;
-
 				m_CB_Render.m._flags = 0;
 				m_CB_Render.m._flags |= checkBoxEnableMSBRDF.Checked ? 1U : 0;
 				m_CB_Render.m._groupsCount = GROUPS_COUNT;
 				m_CB_Render.m._groupIndex = m_groupShuffle[m_groupCounter % GROUPS_COUNT];
+				m_CB_Render.m._lightElevation = floatTrackbarControlLightElevation.Value * Mathf.HALFPI;
+				
+				m_CB_Render.m._roughnessSpecular = floatTrackbarControlRoughnessSpec.Value;
+				m_CB_Render.m._roughnessDiffuse = floatTrackbarControlRoughnessDiffuse.Value;
+
+// More linear feel when squaring roughnesses!
+m_CB_Render.m._roughnessSpecular *= m_CB_Render.m._roughnessSpecular;
+m_CB_Render.m._roughnessDiffuse *= m_CB_Render.m._roughnessDiffuse;
+
+				m_CB_Render.m._albedo = floatTrackbarControlAlbedo.Value;
+				m_CB_Render.m._F0 = floatTrackbarControlF0.Value;
 
 				m_CB_Render.UpdateData();
 
