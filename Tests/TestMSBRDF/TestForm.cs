@@ -119,6 +119,8 @@ namespace TestMSBRDF {
 // 				randomRotations[i] = rot.ToString();
 // 			}
 
+//ConvertCrossToCubeMap( new FileInfo( "beach_cross.hdr" ), new FileInfo( "beach.dds" ) );
+
 			Application.Idle += new EventHandler( Application_Idle );
 		}
 
@@ -169,7 +171,8 @@ namespace TestMSBRDF {
 
 			// Load cube map
 			using ( ImageUtility.ImagesMatrix I = new ImageUtility.ImagesMatrix() ) {
-				I.DDSLoadFile( new FileInfo( "garage4_hd.dds" ) );
+//				I.DDSLoadFile( new FileInfo( "garage4_hd.dds" ) );
+				I.DDSLoadFile( new FileInfo( "beach.dds" ) );
 				m_tex_CubeMap = new Texture2D( m_device, I, ImageUtility.COMPONENT_FORMAT.AUTO );
 			}
 
@@ -179,7 +182,7 @@ namespace TestMSBRDF {
 			m_camera.CreatePerspectiveCamera( (float) (60.0 * Math.PI / 180.0), (float) panelOutput.Width / panelOutput.Height, 0.01f, 100.0f );
 			m_manipulator.Attach( panelOutput, m_camera );
 //			m_manipulator.InitializeCamera( new float3( 0, 1.5f, 2.0f ), new float3( -0.4f, 0, 0.4f ), float3.UnitY );
-			m_manipulator.InitializeCamera( new float3( -2, 1.0f, 0 ), new float3( 0, 1, 0 ), float3.UnitY );
+			m_manipulator.InitializeCamera( new float3( 0, 1.0f, 2 ), new float3( 0, 1, 0 ), float3.UnitY );
 			m_camera.CameraTransformChanged += Camera_CameraTransformChanged;
 			Camera_CameraTransformChanged( null, EventArgs.Empty );
 
@@ -190,7 +193,7 @@ namespace TestMSBRDF {
 		}
 
 		void Application_Idle( object sender, EventArgs e ) {
-			if ( m_device == null )
+			if ( m_device == null || checkBoxPause.Checked )
 				return;
 
 			uint	W = (uint) panelOutput.Width;
@@ -689,6 +692,78 @@ for ( uint Y=0; Y < ROUGHNESS_SUBDIVS_COUNT; Y++ ) {
 			// Create textures
 			_irradianceTexture = new Texture2D( m_device, (uint) _size, (uint) _size, 1, 1, ImageUtility.PIXEL_FORMAT.R32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, true, new PixelsBuffer[] { contentIrradiance } );
 			_whiteFurnaceTexture = new Texture2D( m_device, (uint) _size, 1, 1, 1, ImageUtility.PIXEL_FORMAT.R32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, true, new PixelsBuffer[] { contentWhiteFurnace } );
+		}
+
+		#endregion
+
+		#region Cross -> Cube Map Conversion
+
+		void	ConvertCrossToCubeMap( FileInfo _crossMapFile, FileInfo _cubeMapFile ) {
+			float4[,]	tempCross;
+			ImageUtility.PIXEL_FORMAT	format;
+			using ( ImageUtility.ImageFile I = new ImageUtility.ImageFile( _crossMapFile ) ) {
+				tempCross = new float4[I.Width,I.Height];
+				format = I.PixelFormat;
+				I.ReadPixels( ( uint _X, uint _Y, ref float4 _color ) => {
+					tempCross[_X,_Y] = _color;
+				} );
+			}
+
+format = ImageUtility.PIXEL_FORMAT.RGBA32F;	// Force RGBA32F
+
+			// Isolate individual faces
+			// We assume the center of the cross is always +Z
+			uint						cubeSize = 0;
+			uint						mipsCount = 0;
+			ImageUtility.ImageFile[]	cubeFaces = new ImageUtility.ImageFile[6];
+			if ( tempCross.GetLength(0) < tempCross.GetLength(1) ) {
+				// Vertical cross
+				cubeSize = (uint) tempCross.GetLength(1) >> 2;
+				float	fMipsCount = Mathf.Log2( cubeSize );
+				mipsCount = 1 + (uint) Mathf.Floor( fMipsCount );
+
+				cubeFaces[0] = GrabFace( tempCross, cubeSize, format, 2, 1, +1, +1 );	// +X
+				cubeFaces[1] = GrabFace( tempCross, cubeSize, format, 0, 1, +1, +1 );	// -X
+				cubeFaces[2] = GrabFace( tempCross, cubeSize, format, 1, 0, +1, +1 );	// +Y
+				cubeFaces[3] = GrabFace( tempCross, cubeSize, format, 1, 2, +1, +1 );	// -Y
+				cubeFaces[4] = GrabFace( tempCross, cubeSize, format, 1, 1, +1, +1 );	// +Z
+				cubeFaces[5] = GrabFace( tempCross, cubeSize, format, 1, 3, -1, -1 );	// -Z
+
+			} else {
+				// Horizontal cross
+				cubeSize = (uint) tempCross.GetLength(0) >> 2;
+				float	fMipsCount = Mathf.Log2( cubeSize );
+				mipsCount = 1 + (uint) Mathf.Floor( fMipsCount );
+
+			}
+
+			// Save as cube map
+			using ( ImageUtility.ImagesMatrix matrix = new ImageUtility.ImagesMatrix() ) {
+				matrix.InitCubeTextureArray( cubeSize, 1, mipsCount );
+				for ( uint cubeFaceIndex=0; cubeFaceIndex < 6; cubeFaceIndex++ )
+					matrix[cubeFaceIndex][0][0] = cubeFaces[cubeFaceIndex];							// Set mip 0 images
+				matrix.AllocateImageFiles( cubeFaces[0].PixelFormat, cubeFaces[0].ColorProfile );	// Allocate remaining mips
+				matrix.BuildMips( ImageUtility.ImagesMatrix.IMAGE_TYPE.LINEAR );					// Build them
+
+
+// Compress
+//ImageUtility.ImagesMatrix	compressedMatrix = m_device.DDSCompress( matrix, ImageUtility.ImagesMatrix.COMPRESSION_TYPE.BC6H, ImageUtility.COMPONENT_FORMAT.AUTO );
+
+
+				matrix.DDSSaveFile( _cubeMapFile, ImageUtility.COMPONENT_FORMAT.AUTO );
+			}
+		}
+
+		ImageUtility.ImageFile	GrabFace( float4[,] _cross, uint _cubeSize, ImageUtility.PIXEL_FORMAT _format, uint _X, uint _Y, int _dirX, int _dirY ) {
+			ImageUtility.ImageFile	result = new ImageUtility.ImageFile( _cubeSize, _cubeSize, _format, new ImageUtility.ColorProfile( ImageUtility.ColorProfile.STANDARD_PROFILE.LINEAR ) );
+
+			result.WritePixels( ( uint X, uint Y, ref float4 _color ) => {
+				uint	sourceX = _X * _cubeSize + (_dirX > 0 ? X : _cubeSize-1-X);
+				uint	sourceY = _Y * _cubeSize + (_dirY > 0 ? Y : _cubeSize-1-Y);
+				_color = _cross[sourceX,sourceY];
+			} );
+
+			return result;
 		}
 
 		#endregion

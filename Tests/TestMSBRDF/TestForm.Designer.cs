@@ -44,6 +44,7 @@
 			this.checkBoxKeepSampling = new System.Windows.Forms.CheckBox();
 			this.floatTrackbarControlF0 = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label5 = new System.Windows.Forms.Label();
+			this.checkBoxPause = new System.Windows.Forms.CheckBox();
 			this.SuspendLayout();
 			// 
 			// floatTrackbarControlRoughnessSpec
@@ -205,12 +206,23 @@
 			this.label5.TabIndex = 3;
 			this.label5.Text = "Sphere F0";
 			// 
+			// checkBoxPause
+			// 
+			this.checkBoxPause.AutoSize = true;
+			this.checkBoxPause.Location = new System.Drawing.Point(1301, 713);
+			this.checkBoxPause.Name = "checkBoxPause";
+			this.checkBoxPause.Size = new System.Drawing.Size(108, 17);
+			this.checkBoxPause.TabIndex = 4;
+			this.checkBoxPause.Text = "Pause Rendering";
+			this.checkBoxPause.UseVisualStyleBackColor = true;
+			// 
 			// TestForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1602, 741);
 			this.Controls.Add(this.checkBoxKeepSampling);
+			this.Controls.Add(this.checkBoxPause);
 			this.Controls.Add(this.checkBoxEnableMSBRDF);
 			this.Controls.Add(this.floatTrackbarControlRoughnessDiffuse);
 			this.Controls.Add(this.label3);
@@ -249,6 +261,7 @@
 		private System.Windows.Forms.CheckBox checkBoxKeepSampling;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlF0;
 		private System.Windows.Forms.Label label5;
+		private System.Windows.Forms.CheckBox checkBoxPause;
 	}
 }
 

@@ -190,10 +190,9 @@ namespace ImageUtility {
 			BC6H,
 			BC7,
 		};
-		ImagesMatrix^	DDSCompress( ImagesMatrix^ _sourceImage, COMPRESSION_TYPE _compressionType, COMPONENT_FORMAT _componentFormat ) {
-			ImagesMatrix^	result = gcnew ImagesMatrix();
+		// NOTE: If you want to use GPU compression, use Device.DDSCompress() instead!
+		void	DDSCompress( ImagesMatrix^ _sourceImage, COMPRESSION_TYPE _compressionType, COMPONENT_FORMAT _componentFormat ) {
 			m_nativeObject->DDSCompress( *reinterpret_cast< ImageUtilityLib::ImagesMatrix* >( _sourceImage->NativeObject.ToPointer() ), ImageUtilityLib::ImagesMatrix::COMPRESSION_TYPE( _compressionType ), BaseLib::COMPONENT_FORMAT( _componentFormat ) );
-			return result;
 		}
 
 	public:
