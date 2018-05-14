@@ -38,19 +38,11 @@ Texture2D< float >		_tex_OrenNayar_Eavg : register( t5 );
 float3	UV2Direction( float2 _UV, out float _solidAngleCosine ) {
 	_UV.y += 1e-5;	// 0 is completely useless..
 
-	// Solid angle
-	_solidAngleCosine = PI;
+	// Uniform hemispherical solid angle
+	_solidAngleCosine = 2*PI;
 
-	#if 0
-		float	sqSinTheta = saturate( _UV.y );
-		float	sinTheta = sqrt( sqSinTheta );
-		float	cosTheta = sqrt( 1.0 - sqSinTheta );
-
-//_solidAngleCosine *= sinTheta;
-	#else
-		float	cosTheta = saturate( sqrt( _UV.y ) );
-		float	sinTheta = sqrt( 1.0 - cosTheta*cosTheta );
-	#endif
+	float	cosTheta = saturate( _UV.y );
+	float	sinTheta = sqrt( 1.0 - cosTheta*cosTheta );
 
 	float	phi = _UV.x * TWOPI;
 	float2	scPhi;
@@ -100,18 +92,6 @@ float3	BRDF_GGX2( float3 _tsNormal, float3 _tsView, float3 _tsLight, float _alph
 	float	D = GGX_NDF2( NdotH, a2 );
 	float	G = GGX_Smith2( NdotL, NdotV, a2 );
 	float3	F = FresnelDielectric( _IOR, HdotL );
-
-//return 0.1 * NdotL;
-//return 0.1 * NdotV;
-//return 0.1 * HdotL;
-//return 0.1 * NdotH;
-
-//D = 1;
-//F = 1;
-//G = 0.1;
-
-//return F;
-//return 4.0 * NdotL * NdotV * G;
 
 	return max( 0.0, F * G * D );
 }
@@ -235,29 +215,32 @@ float4	PS( VS_IN _In ) : SV_TARGET0 {
 		groupIndex += _groupsCount;	// Giant leaps give us large changes
 
 		// Retrieve light direction + solid angle
-		#if 0
-//			float	dw;
-//			float3	tsLight = UV2Direction( float2( X0, X1 ), dw );
-//			float3	wsLight = tsLight.x * wsTangent + tsLight.y * wsBiTangent + tsLight.z * wsNormal;
-
-// Uniform sphere sampling from SH gritty details
-float	theta = 2.0 * acos( sqrt( X1 ) );
-float	phi = 2.0 * PI * X0;
-float2	scTheta, scPhi;
-sincos( theta, scTheta.x, scTheta.y );
-sincos( phi, scPhi.x, scPhi.y );
-
-float3	wsLight = float3( scPhi.yx * scTheta.x, scTheta.y );
-float3	tsLight = float3( dot( wsLight, wsTangent ), dot( wsLight, wsBiTangent ), dot( wsLight, wsNormal ) );
-if ( tsLight.z <= 0.0 )
-	continue;	// Below the surface
-
-float	dw = 4.0 * PI;	// Uniform sampling
-
+		#if 1
+			// Generate a ray in tangent space
+			float	dw;
+			float3	tsLight = UV2Direction( float2( X0, X1 ), dw );
+			float3	wsLight = tsLight.x * wsTangent + tsLight.y * wsBiTangent + tsLight.z * wsNormal;
 
 			float	LdotN = tsLight.z;
 
-LdotN = 1.0;// * sqrt( 1.0 - tsLight.z*tsLight.z );
+		#elif 1
+			// Generate a ray in world space
+
+			// Uniform sphere sampling from SH gritty details
+			float	theta = 2.0 * acos( sqrt( X1 ) );
+			float	phi = 2.0 * PI * X0;
+			float2	scTheta, scPhi;
+			sincos( theta, scTheta.x, scTheta.y );
+			sincos( phi, scPhi.x, scPhi.y );
+
+			float3	wsLight = float3( scPhi.yx * scTheta.x, scTheta.y );
+			float3	tsLight = float3( dot( wsLight, wsTangent ), dot( wsLight, wsBiTangent ), dot( wsLight, wsNormal ) );
+			if ( tsLight.z <= 0.0 )
+				continue;	// Below the surface
+
+			float	dw = 4.0 * PI;	// Uniform sampling
+
+			float	LdotN = tsLight.z;
 
 		#else
 			// Disney people generate wsLight first then transform into tangent space
@@ -292,10 +275,6 @@ LdotN = 1.0;// * sqrt( 1.0 - tsLight.z*tsLight.z );
 //			wsLight = normalize( wsLight );
 
 			float	LdotN = tsLight.z;
-
-//LdotN = 0.25 * sqrt( 1.0 - tsLight.z*tsLight.z );
-//LdotN *= 0.25 * sqrt( 1.0 - tsLight.z*tsLight.z );
-
 		#endif
 
 		// Get reflectance in that direction
@@ -308,21 +287,7 @@ LdotN = 1.0;// * sqrt( 1.0 - tsLight.z*tsLight.z );
 		// Sample incoming radiance
 		float3	Li = SampleSky( wsLight, 0.0 );
 
-//Li = 2;
-//LdotN = 1;
-//dw = 1;
-//BRDF = 1;
-
-
-//float	a2 = pow2( roughness );
-//float	NdotH = normalize( tsView + tsLight ).z;
-//BRDF = a2 / (PI * pow2(NdotH*NdotH*(a2-1) + 1));
-
-//IOR = Fresnel_IORFromF0( _albedo );
-//BRDF = BRDF_GGX2( float3( 0, 0, 1 ), tsView, tsLight, roughness, IOR );
-
 		Lo += Li * BRDF * LdotN * dw;
-//Lo += BRDF * dw / (4 * PI);
 
 		validSamplesCount++;
 
