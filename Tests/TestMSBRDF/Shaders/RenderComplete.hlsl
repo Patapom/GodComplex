@@ -2,6 +2,8 @@
 #include "Scene.hlsl"
 
 #define FULL_SCENE		1	// Define this to render the full scene (diffuse plane + specular sphere)
+#define	FORCE_SPECULAR	1	// Define this to force all surfaces as specular
+
 #define	BRDF_SPECULAR	1	// When not in full scene mode, this will override BRDFs
 
 //#define	WHITE_FURNACE_TEST	1
@@ -125,12 +127,12 @@ float3	SampleSecondaryLight( float3 _wsPosition, float3 _wsNormal, float3 _wsVie
 		// Sample incoming radiance
 		float3	Li = SampleSky( _wsNormal, 8 );						// Incoming "diffuse" lighting
 //				Li *= ComputeShadow( _wsPosition, wsLight );		// * plane shadowing <== CAN'T! No clear direction! Should be coming from indirect samples instead of 1 unique diffuse sample. Or use AO but we don't have it...
-				Li *= ComputeSphereAO( _wsPosition, _wsNormal );	// * Sphere AO
+				Li *= 1-ComputeSphereAO( _wsPosition, _wsNormal );	// * Sphere AO
 
 		// Compute reflected radiance
 		float3	Lr = Li * (_albedo * ALBEDO_PLANE / PI);			// Diffuse reflectance
 
-		float	LdotN = saturate( -dot( _wsNormal, _wsView ) );		// cos( theta )
+		float	LdotN = 1;//saturate( -dot( _wsNormal, _wsView ) );		// cos( theta )
 
 		const float dw = PI;
 		return Lr * LdotN * dw;
@@ -370,6 +372,10 @@ float4	PS( VS_IN _In ) : SV_TARGET0 {
 
 			// Compute reflected radiance
 			float3	Lr = Li * BRDF;
+
+
+//Lr = ComputeSphereAO( wsPosition, wsNormal );	// * Sphere AO
+
 
 		#else
 
