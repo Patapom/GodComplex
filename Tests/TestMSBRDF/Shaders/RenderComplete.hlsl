@@ -1,9 +1,9 @@
 #include "Global.hlsl"
 #include "Scene.hlsl"
 
-//#define	BRDF_SPECULAR	1
+#define	BRDF_SPECULAR	1
 
-static const uint	SAMPLES_COUNT = 128;
+static const uint	SAMPLES_COUNT = 32;
 
 static const float3	IBL_INTENSITY = 2.0;
 
@@ -45,9 +45,11 @@ float3	UV2Direction( float2 _UV, out float _solidAngleCosine ) {
 		float	sqSinTheta = saturate( _UV.y );
 		float	sinTheta = sqrt( sqSinTheta );
 		float	cosTheta = sqrt( 1.0 - sqSinTheta );
+
+//_solidAngleCosine *= sinTheta;
 	#else
-		float	sinTheta = saturate( _UV.y );
-		float	cosTheta = sqrt( 1.0 - sinTheta*sinTheta );
+		float	cosTheta = saturate( sqrt( _UV.y ) );
+		float	sinTheta = sqrt( 1.0 - cosTheta*cosTheta );
 	#endif
 
 	float	phi = _UV.x * TWOPI;
@@ -64,15 +66,20 @@ float3	SampleSky( float3 _wsDirection, float _mipLevel ) {
 	_wsDirection.xy = float2( _wsDirection.x * scRot.y + _wsDirection.y * scRot.x,
 							-_wsDirection.x * scRot.x + _wsDirection.y * scRot.y );
 
+//return 1;
+
 	return IBL_INTENSITY * _tex_CubeMap.SampleLevel( LinearWrap, _wsDirection, _mipLevel );
 }
 
+
+#if BRDF_SPECULAR	// Specular
 
 float	GGX_NDF2( float _NdotH, float _alpha2 ) {
 	float	den = PI * pow2( pow2( _NdotH ) * (_alpha2 - 1) + 1 );
 	return _alpha2 * rcp( den );
 }
 
+// Warning: 1 / (4 * NdotL * NdotV) is already accounted for!
 float	GGX_Smith2( float _NdotL, float _NdotV, float _alpha2 ) {
 	float	denL = _NdotL + sqrt( pow2( _NdotL ) * (1-_alpha2) + _alpha2 );
 	float	denV = _NdotV + sqrt( pow2( _NdotV ) * (1-_alpha2) + _alpha2 );
@@ -87,8 +94,8 @@ float3	BRDF_GGX2( float3 _tsNormal, float3 _tsView, float3 _tsLight, float _alph
 
 	float	a2 = pow2( _alpha );
 	float3	H = normalize( _tsView + _tsLight );
-	float	NdotH = saturate( dot( H, _tsNormal ) );
-	float	HdotL = saturate( dot( H, _tsLight ) );
+	float	NdotH = dot( H, _tsNormal );
+	float	HdotL = dot( H, _tsLight );
 
 	float	D = GGX_NDF2( NdotH, a2 );
 	float	G = GGX_Smith2( NdotL, NdotV, a2 );
@@ -103,15 +110,21 @@ float3	BRDF_GGX2( float3 _tsNormal, float3 _tsView, float3 _tsLight, float _alph
 //F = 1;
 //G = 0.1;
 
-	float	den = max( 1e-3, 4.0 * NdotL * NdotV );
-	return max( 0.0, F * G * D / den );
-}
+//return F;
+//return 4.0 * NdotL * NdotV * G;
 
-#if BRDF_SPECULAR	// Specular
+	return max( 0.0, F * G * D );
+}
 
 float3	ComputeBRDF( float3 _tsNormal, float3 _tsView, float3 _tsLight, float _roughness, float3 _IOR ) {
 	float3	BRDF = BRDF_GGX2( _tsNormal, _tsView, _tsLight, _roughness, _IOR );
 	if ( _flags & 1 ) {
+		// From http://patapom.com/blog/BRDF/MSBRDFEnergyCompensation/#varying-the-fresnel-reflectance-f_0f_0
+		float3		F0 = Fresnel_F0FromIOR( _IOR );
+		const float	tau = 0.45549984771950014;
+		float3		reducedF0 = tau * F0;
+		float3		MSFactor = reducedF0 * (0.04 + reducedF0 * (0.66 + reducedF0 * 0.3));
+
 		BRDF += MSFactor * MSBRDF( _roughness, _tsNormal, _tsView, _tsLight, _tex_GGX_Eo, _tex_GGX_Eavg );
 	}
 
@@ -123,11 +136,11 @@ float3	ComputeBRDF( float3 _tsNormal, float3 _tsView, float3 _tsLight, float _ro
 float3	ComputeBRDF( float3 _tsNormal, float3 _tsView, float3 _tsLight, float _roughness, float3 _albedo ) {
 	float3	BRDF = _albedo * BRDF_OrenNayar( _tsNormal, _tsView, _tsLight, _roughness );
 	if ( _flags & 1 ) {
-
+		// From http://patapom.com/blog/BRDF/MSBRDFEnergyCompensation/#varying-diffuse-reflectance-rhorho
 		const float	tau = 0.28430405702379613;
 		const float	A1 = (1.0 - tau) / pow2( tau );
-		float3	rho = tau * _albedo;
-		float3	MSFactor = A1 * pow2( rho ) / (1.0 - rho);
+		float3		rho = tau * _albedo;
+		float3		MSFactor = A1 * pow2( rho ) / (1.0 - rho);
 
 		BRDF += MSFactor * MSBRDF( _roughness, _tsNormal, _tsView, _tsLight, _tex_OrenNayar_Eo, _tex_OrenNayar_Eavg );
 	}
@@ -149,7 +162,7 @@ float4	PS( VS_IN _In ) : SV_TARGET0 {
 	float2	UV = float2( _screenSize.x / _screenSize.y * (2.0 * (_In.__position.x+noise) / _screenSize.x - 1.0), 1.0 - 2.0 * _In.__position.y / _screenSize.y );
 
 //	uint	seed1 = wang_hash( _screenSize.x * _In.__position.y + _In.__position.x );
-	uint	seed1 = wang_hash( asuint(_In.__position.x+_groupIndex) ) ^ wang_hash( asuint(_In.__position.y)-_groupIndex );
+	uint	seed1 = wang_hash( asuint(_In.__position.x + _time) + _groupIndex ) ^ wang_hash( asuint(_In.__position.y - _time*_groupIndex) );
     uint	seed2 = hash( seed1, 1000u );
 //	float	noise = seed1 * 2.3283064365386963e-10;
 
@@ -179,8 +192,8 @@ float4	PS( VS_IN _In ) : SV_TARGET0 {
 	BuildOrthonormalBasis( wsNormal, wsTangent, wsBiTangent );
 
 	float3	tsView = -float3( dot( wsView, wsTangent ), dot( wsView, wsBiTangent ), dot( wsView, wsNormal ) );
-	if ( tsView.z <= 0.0 )
-		return float4( 0, 0, 0, 1 );
+//	if ( tsView.z <= 0.0 )
+//		return float4( 0, 0, 0, 0 );
 
 //return float4( SampleSky( wsNormal, 0.0 ), 1 );
 //return wsNormal;
@@ -200,13 +213,14 @@ float4	PS( VS_IN _In ) : SV_TARGET0 {
 	#if BRDF_SPECULAR
 		float3	IOR = Fresnel_IORFromF0( F0 );
 	#else
-		float3	albedo = hit.y == 0 ? ALBEDO_SPHERE
-									: ALBEDO_PLANE;
+//		float3	albedo = hit.y == 0 ? ALBEDO_SPHERE
+//									: ALBEDO_PLANE;
+		float3	albedo = _albedo;
 	#endif
 
 	float3	Lo = 0.0;
 	uint	groupIndex = _groupIndex;
-
+	uint	validSamplesCount = 0;
 
 //return float4( 1.0*fmod( (ReverseBits( groupIndex ) ^ seed2) * 2.3283064365386963e-10, 1.0 ).xxx, 1 );
 //return float4( 1.0*frac((ReverseBits( groupIndex ) ^ seed2) * 2.3283064365386963e-10).xxx, 1 );
@@ -221,10 +235,68 @@ float4	PS( VS_IN _In ) : SV_TARGET0 {
 		groupIndex += _groupsCount;	// Giant leaps give us large changes
 
 		// Retrieve light direction + solid angle
-		float	dw;
-		float3	tsLight = UV2Direction( float2( X0, X1 ), dw );
+		#if 0
+//			float	dw;
+//			float3	tsLight = UV2Direction( float2( X0, X1 ), dw );
+//			float3	wsLight = tsLight.x * wsTangent + tsLight.y * wsBiTangent + tsLight.z * wsNormal;
 
-		float	LdotN = tsLight.z;
+// Uniform sphere sampling from SH gritty details
+float	theta = 2.0 * acos( sqrt( X1 ) );
+float	phi = 2.0 * PI * X0;
+float2	scTheta, scPhi;
+sincos( theta, scTheta.x, scTheta.y );
+sincos( phi, scPhi.x, scPhi.y );
+
+float3	wsLight = float3( scPhi.yx * scTheta.x, scTheta.y );
+float3	tsLight = float3( dot( wsLight, wsTangent ), dot( wsLight, wsBiTangent ), dot( wsLight, wsNormal ) );
+if ( tsLight.z <= 0.0 )
+	continue;	// Below the surface
+
+float	dw = 4.0 * PI;	// Uniform sampling
+
+
+			float	LdotN = tsLight.z;
+
+LdotN = 1.0;// * sqrt( 1.0 - tsLight.z*tsLight.z );
+
+		#else
+			// Disney people generate wsLight first then transform into tangent space
+			X0 *= 6.0;
+			uint	faceIndex = floor( X0 );
+			X0 -= faceIndex;
+			float2	faceUV = 2.0 * float2( X0, X1 ) - 1.0;
+			float3	wsLight;
+			if ( faceIndex < 2 ) {
+				float	s = faceIndex == 0 ? -1 : +1;
+				wsLight = float3( s, faceUV.y, -s*faceUV.x );
+			} else if ( faceIndex < 4 ) {
+				float	s = faceIndex == 2 ? -1 : +1;
+				wsLight = float3( faceUV.x, s, -s*faceUV.y );
+			} else {
+				float	s = faceIndex == 4 ? -1 : +1;
+				wsLight = float3( s*faceUV.x, faceUV.y, s );
+			}
+
+			float3	tsLight = float3( dot( wsLight, wsTangent ), dot( wsLight, wsBiTangent ), dot( wsLight, wsNormal ) );
+			if ( tsLight.z <= 0.0 )
+				continue;	// Below the surface
+
+			// Normalize
+			float	tsLightLength = length( tsLight );
+			tsLight /= tsLightLength;
+
+			// dA (area of cube) = (6*2*2)/N  (Note: divide by N happens later)
+			// dw = dA / r^3 = 24 * pow(x*x + y*y + z*z, -1.5) (see pbrt v2 p 947).
+			float dw = 24 / (tsLightLength * tsLightLength * tsLightLength);
+
+//			wsLight = normalize( wsLight );
+
+			float	LdotN = tsLight.z;
+
+//LdotN = 0.25 * sqrt( 1.0 - tsLight.z*tsLight.z );
+//LdotN *= 0.25 * sqrt( 1.0 - tsLight.z*tsLight.z );
+
+		#endif
 
 		// Get reflectance in that direction
 		#if BRDF_SPECULAR
@@ -234,7 +306,6 @@ float4	PS( VS_IN _In ) : SV_TARGET0 {
 		#endif
 
 		// Sample incoming radiance
-		float3	wsLight = tsLight.x * wsTangent + tsLight.y * wsBiTangent + tsLight.z * wsNormal;
 		float3	Li = SampleSky( wsLight, 0.0 );
 
 //Li = 2;
@@ -242,7 +313,18 @@ float4	PS( VS_IN _In ) : SV_TARGET0 {
 //dw = 1;
 //BRDF = 1;
 
+
+//float	a2 = pow2( roughness );
+//float	NdotH = normalize( tsView + tsLight ).z;
+//BRDF = a2 / (PI * pow2(NdotH*NdotH*(a2-1) + 1));
+
+//IOR = Fresnel_IORFromF0( _albedo );
+//BRDF = BRDF_GGX2( float3( 0, 0, 1 ), tsView, tsLight, roughness, IOR );
+
 		Lo += Li * BRDF * LdotN * dw;
+//Lo += BRDF * dw / (4 * PI);
+
+		validSamplesCount++;
 
 //Lo += LdotN;
 //Lo += X0 / SAMPLES_COUNT;
@@ -310,7 +392,8 @@ float4	PS( VS_IN _In ) : SV_TARGET0 {
 
 //	Lo += AMBIENT;
 
-	return float4( Lo, SAMPLES_COUNT );
+	return float4( Lo, SAMPLES_COUNT);
+//	return float4( Lo, validSamplesCount );
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////

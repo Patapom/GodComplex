@@ -217,7 +217,7 @@ namespace TestMSBRDF {
 
 			//////////////////////////////////////////////////////////////////////////
 			// Fullscreen rendering
-			if ( m_groupCounter < GROUPS_COUNT && m_shader_Accumulate.Use() ) {
+			if ( (m_groupCounter < GROUPS_COUNT || checkBoxKeepSampling.Checked) && m_shader_Accumulate.Use() ) {
 				if ( m_groupCounter == 0 ) {
 					m_device.Clear( m_tex_Accumulator, float4.Zero );		// Clear accumulation buffer
 				}
@@ -233,7 +233,7 @@ namespace TestMSBRDF {
 				m_CB_Render.m._flags = 0;
 				m_CB_Render.m._flags |= checkBoxEnableMSBRDF.Checked ? 1U : 0;
 				m_CB_Render.m._groupsCount = GROUPS_COUNT;
-				m_CB_Render.m._groupIndex = m_groupShuffle[m_groupCounter];
+				m_CB_Render.m._groupIndex = m_groupShuffle[m_groupCounter % GROUPS_COUNT];
 
 				m_CB_Render.UpdateData();
 

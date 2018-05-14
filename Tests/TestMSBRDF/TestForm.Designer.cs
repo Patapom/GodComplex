@@ -41,6 +41,7 @@
 			this.floatTrackbarControlRoughnessDiffuse = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label4 = new System.Windows.Forms.Label();
 			this.checkBoxEnableMSBRDF = new System.Windows.Forms.CheckBox();
+			this.checkBoxKeepSampling = new System.Windows.Forms.CheckBox();
 			this.SuspendLayout();
 			// 
 			// floatTrackbarControlRoughnessSpec
@@ -52,7 +53,7 @@
 			this.floatTrackbarControlRoughnessSpec.RangeMin = 0F;
 			this.floatTrackbarControlRoughnessSpec.Size = new System.Drawing.Size(200, 20);
 			this.floatTrackbarControlRoughnessSpec.TabIndex = 0;
-			this.floatTrackbarControlRoughnessSpec.Value = 0F;
+			this.floatTrackbarControlRoughnessSpec.Value = 0.1F;
 			this.floatTrackbarControlRoughnessSpec.VisibleRangeMax = 1F;
 			this.floatTrackbarControlRoughnessSpec.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlRoughnessSpec_ValueChanged);
 			// 
@@ -167,11 +168,24 @@
 			this.checkBoxEnableMSBRDF.UseVisualStyleBackColor = true;
 			this.checkBoxEnableMSBRDF.CheckedChanged += new System.EventHandler(this.checkBoxEnableMSBRDF_CheckedChanged);
 			// 
+			// checkBoxKeepSampling
+			// 
+			this.checkBoxKeepSampling.AutoSize = true;
+			this.checkBoxKeepSampling.Checked = true;
+			this.checkBoxKeepSampling.CheckState = System.Windows.Forms.CheckState.Checked;
+			this.checkBoxKeepSampling.Location = new System.Drawing.Point(1301, 164);
+			this.checkBoxKeepSampling.Name = "checkBoxKeepSampling";
+			this.checkBoxKeepSampling.Size = new System.Drawing.Size(97, 17);
+			this.checkBoxKeepSampling.TabIndex = 4;
+			this.checkBoxKeepSampling.Text = "Keep Sampling";
+			this.checkBoxKeepSampling.UseVisualStyleBackColor = true;
+			// 
 			// TestForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1602, 741);
+			this.Controls.Add(this.checkBoxKeepSampling);
 			this.Controls.Add(this.checkBoxEnableMSBRDF);
 			this.Controls.Add(this.floatTrackbarControlRoughnessDiffuse);
 			this.Controls.Add(this.label3);
@@ -205,6 +219,7 @@
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlRoughnessDiffuse;
 		private System.Windows.Forms.Label label4;
 		private System.Windows.Forms.CheckBox checkBoxEnableMSBRDF;
+		private System.Windows.Forms.CheckBox checkBoxKeepSampling;
 	}
 }
 
