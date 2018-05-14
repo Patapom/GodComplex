@@ -55,10 +55,12 @@ namespace TestMSBRDF {
 			public uint			_groupIndex;
 			public float		_lightElevation;
 
-			public float		_roughnessSpecular;
-			public float		_roughnessDiffuse;
-			public float		_albedo;
-			public float		_F0;
+			public float		_roughnessSphere;
+			public float		_reflectanceSphere;
+			public float		_roughnessGround;
+			public float		_reflectanceGround;
+
+			public float		_lightIntensity;
 		}
 
 		#endregion
@@ -236,15 +238,17 @@ namespace TestMSBRDF {
 				m_CB_Render.m._groupIndex = m_groupShuffle[m_groupCounter % GROUPS_COUNT];
 				m_CB_Render.m._lightElevation = floatTrackbarControlLightElevation.Value * Mathf.HALFPI;
 				
-				m_CB_Render.m._roughnessSpecular = floatTrackbarControlRoughnessSpec.Value;
-				m_CB_Render.m._roughnessDiffuse = floatTrackbarControlRoughnessDiffuse.Value;
+				m_CB_Render.m._roughnessSphere = floatTrackbarControlRoughnessSphere.Value;
+				m_CB_Render.m._roughnessGround = floatTrackbarControlRoughnessGround.Value;
 
 // More linear feel when squaring roughnesses!
-m_CB_Render.m._roughnessSpecular *= m_CB_Render.m._roughnessSpecular;
-m_CB_Render.m._roughnessDiffuse *= m_CB_Render.m._roughnessDiffuse;
+m_CB_Render.m._roughnessSphere *= m_CB_Render.m._roughnessSphere;
+m_CB_Render.m._roughnessGround *= m_CB_Render.m._roughnessGround;
 
-				m_CB_Render.m._albedo = floatTrackbarControlAlbedo.Value;
-				m_CB_Render.m._F0 = floatTrackbarControlF0.Value;
+				m_CB_Render.m._reflectanceGround = floatTrackbarControlReflectanceGround.Value;
+				m_CB_Render.m._reflectanceSphere = floatTrackbarControlReflectanceSphere.Value;
+
+				m_CB_Render.m._lightIntensity = floatTrackbarControlCubeMapIntensity.Value;
 
 				m_CB_Render.UpdateData();
 
@@ -818,6 +822,11 @@ format = ImageUtility.PIXEL_FORMAT.RGBA32F;	// Force RGBA32F
 
 		private void checkBoxEnableMSBRDF_CheckedChanged( object sender, EventArgs e ) {
 			m_groupCounter = 0;	// Clear buffer
+		}
+
+		private void TestForm_KeyDown( object sender, KeyEventArgs e ) {
+			if ( e.KeyCode == Keys.Return || e.KeyCode == Keys.Space )
+				checkBoxEnableMSBRDF.Checked ^= true;
 		}
 	}
 }

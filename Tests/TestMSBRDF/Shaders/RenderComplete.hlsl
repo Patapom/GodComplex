@@ -2,22 +2,26 @@
 #include "Scene.hlsl"
 
 #define FULL_SCENE		1	// Define this to render the full scene (diffuse plane + specular sphere)
-#define	FORCE_SPECULAR	1	// Define this to force all surfaces as specular
-
-#define	BRDF_SPECULAR	1	// When not in full scene mode, this will override BRDFs
+//#define	FORCE_BRDF		0	// Define this to force all surfaces as specular (1), diffuse (2)
 
 //#define	WHITE_FURNACE_TEST	1
 
 
 static const uint	SAMPLES_COUNT = 32;
 
-static const float3	IBL_INTENSITY = 2.0;
-
-static const float3	ALBEDO_SPHERE = float3( 0.9, 0.5, 0.1 );	// Nicely saturated yellow
-static const float3	ALBEDO_PLANE = float3( 0.9, 0.5, 0.1 );		// Nicely saturated yellow
-//static const float3	F0_TINT_SPHERE = 1.0 * float3( 0.85, 0.95, 1 );
-static const float3	F0_TINT_SPHERE = 1.0;
-static const float3	F0_TINT_PLANE = 1.0;
+#if WHITE_FURNACE_TEST
+	// All white!
+	static const float3	ALBEDO_SPHERE = 1;
+	static const float3	ALBEDO_PLANE = 1;
+	static const float3	F0_TINT_SPHERE = 1;
+	static const float3	F0_TINT_PLANE = 1;
+#else
+	static const float3	ALBEDO_SPHERE = float3( 0.9, 0.5, 0.1 );	// Nicely saturated yellow
+	static const float3	ALBEDO_PLANE = float3( 0.9, 0.5, 0.1 );		// Nicely saturated yellow
+	//static const float3	F0_TINT_SPHERE = 1.0 * float3( 0.85, 0.95, 1 );
+	static const float3	F0_TINT_SPHERE = 1.0;
+	static const float3	F0_TINT_PLANE = 1.0;
+#endif
 
 static const float3	AMBIENT = 0* 0.02 * float3( 0.5, 0.8, 0.9 );
 
@@ -27,10 +31,12 @@ cbuffer CB_Render : register(b2) {
 	uint	_groupIndex;
 	float	_lightElevation;
 
-	float	_roughnessSpecular;
-	float	_roughnessDiffuse;
-	float	_albedo;
-	float	_F0;
+	float	_roughnessSphere;
+	float	_reflectanceSphere;
+	float	_roughnessGround;
+	float	_reflectanceGround;
+
+	float	_lightIntensity;
 };
 
 TextureCube< float3 >	_tex_CubeMap : register( t0 );
@@ -72,7 +78,14 @@ float3	SampleSky( float3 _wsDirection, float _mipLevel ) {
 return 1;	// White furnace
 #endif
 
-	return IBL_INTENSITY * _tex_CubeMap.SampleLevel( LinearWrap, _wsDirection, _mipLevel );
+	return _lightIntensity * _tex_CubeMap.SampleLevel( LinearWrap, _wsDirection, _mipLevel );
+}
+
+// Retrieves object information from its index
+void	GetObjectInfo( uint _objectIndex, out float3 _rho, out float3 _objectF0, out float _roughness ) {
+	_objectF0 = _objectIndex == 0 ? _reflectanceSphere * F0_TINT_SPHERE : _reflectanceGround * F0_TINT_PLANE;
+	_rho = _objectIndex == 0 ? _reflectanceSphere * ALBEDO_SPHERE : _reflectanceGround * ALBEDO_PLANE;
+	_roughness = max( 0.01, _objectIndex == 0 ? _roughnessSphere : _roughnessGround );
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -111,32 +124,29 @@ float3	ComputeBRDF_Oren( float3 _tsNormal, float3 _tsView, float3 _tsLight, floa
 float3	SampleSecondaryLight( float3 _wsPosition, float3 _wsNormal, float3 _wsView, uint _objectIndex, uint2 _seeds ) {
 
 	// Prepare surface characteristics
-	float3	F0 = _objectIndex == 0 ? F0_TINT_SPHERE : F0_TINT_PLANE;
-			F0 *= _F0;
+	float3	rho, F0;
+	float	alpha;
+	GetObjectInfo( _objectIndex, rho, F0, alpha );
 	float3	IOR = Fresnel_IORFromF0( F0 );
 
-	float3	rho = _objectIndex == 0 ? ALBEDO_SPHERE : ALBEDO_PLANE;
-			rho *= _albedo;
+	#if FORCE_BRDF != 1
+		if ( _objectIndex == 1 ) {
+			// Plane was hit, sample diffuse sky
 
-	float	alphaS = max( 0.01, _roughnessSpecular );
-	float	alphaD = max( 0.01, _roughnessDiffuse );
+			// Sample incoming radiance
+			float3	Li = SampleSky( _wsNormal, 8 );						// Incoming "diffuse" lighting
+//					Li *= ComputeShadow( _wsPosition, wsLight );		// * plane shadowing <== CAN'T! No clear direction! Should be coming from indirect samples instead of 1 unique diffuse sample. Or use AO but we don't have it...
+					Li *= 1-ComputeSphereAO( _wsPosition, _wsNormal );	// * Sphere AO
 
-	if ( _objectIndex == 1 ) {
-		// Plane was hit, sample diffuse sky
+			// Compute reflected radiance
+			float3	Lr = Li * (rho / PI);								// Diffuse reflectance
 
-		// Sample incoming radiance
-		float3	Li = SampleSky( _wsNormal, 8 );						// Incoming "diffuse" lighting
-//				Li *= ComputeShadow( _wsPosition, wsLight );		// * plane shadowing <== CAN'T! No clear direction! Should be coming from indirect samples instead of 1 unique diffuse sample. Or use AO but we don't have it...
-				Li *= 1-ComputeSphereAO( _wsPosition, _wsNormal );	// * Sphere AO
+			float	LdotN = 1;//saturate( -dot( _wsNormal, _wsView ) );		// cos( theta )
 
-		// Compute reflected radiance
-		float3	Lr = Li * (_albedo * ALBEDO_PLANE / PI);			// Diffuse reflectance
-
-		float	LdotN = 1;//saturate( -dot( _wsNormal, _wsView ) );		// cos( theta )
-
-		const float dw = PI;
-		return Lr * LdotN * dw;
-	}
+			const float dw = PI;
+			return Lr * LdotN * dw;
+		}
+	#endif
 
 	////////////////////////////////////////////////////////////
 	// Sphere was hit, use many samples but don't cast rays anymore (we approximate scene intersection depending on ray's upward direction)
@@ -147,9 +157,10 @@ float3	SampleSecondaryLight( float3 _wsPosition, float3 _wsNormal, float3 _wsVie
 
 	float3	tsView = -float3( dot( _wsView, wsTangent ), dot( _wsView, wsBiTangent ), dot( _wsView, _wsNormal ) );
 
-	float	u = _seeds.x * 2.3283064365386963e-10;
+	float	u = 1.0 - _seeds.x * 2.3283064365386963e-10;
 
-	uint	totalGroupsCount = _groupsCount * SAMPLES_COUNT;
+//	uint	totalGroupsCount = _groupsCount * SAMPLES_COUNT;
+	uint	totalGroupsCount = SAMPLES_COUNT;
 
 	float3	Lo = 0.0;
 	uint	groupIndex = _groupIndex;
@@ -170,14 +181,25 @@ float3	SampleSecondaryLight( float3 _wsPosition, float3 _wsNormal, float3 _wsVie
 
 		// Compute BRDF
 		float3	BRDF = 0.0;
-		if ( _objectIndex == 0 )
-			BRDF = ComputeBRDF_GGX( float3( 0, 0, 1 ), tsView, tsLight, alphaS, IOR );
-		else
-			BRDF = ComputeBRDF_Oren( float3( 0, 0, 1 ), tsView, tsLight, alphaD, rho );
+		#if FORCE_BRDF == 1
+			BRDF = ComputeBRDF_GGX( float3( 0, 0, 1 ), tsView, tsLight, alpha, IOR );
+		#elif FORCE_BRDF == 2
+			BRDF = ComputeBRDF_Oren( float3( 0, 0, 1 ), tsView, tsLight, alpha, rho );
+		#else
+			if ( _objectIndex == 0 )
+				BRDF = ComputeBRDF_GGX( float3( 0, 0, 1 ), tsView, tsLight, alpha, IOR );
+			else
+				BRDF = ComputeBRDF_Oren( float3( 0, 0, 1 ), tsView, tsLight, alpha, rho );
+		#endif
 
 		// Sample incoming radiance
-		float3	Li = wsLight.y > 0.0 ? SampleSky( wsLight, 3.0 )											// Assume sky hit when sampling upward
-									 : ((_albedo * ALBEDO_PLANE) / PI) * SampleSky( float3( 0, 1, 0 ), 8 );	// Assume ground hit when sampling downward (apply plane reflectance * diffuse IBL intensity)
+		#if FORCE_BRDF == 1
+			float3	Li = wsLight.y > 0.0 ? SampleSky( wsLight, 3.0 )											// Assume sky hit when sampling upward
+										 : 0.0;																	// Assume black otherwise
+		#else
+			float3	Li = wsLight.y > 0.0 ? SampleSky( wsLight, 3.0 )											// Assume sky hit when sampling upward
+										 : ((_reflectanceGround * ALBEDO_PLANE) / PI) * SampleSky( float3( 0, 1, 0 ), 8 );	// Assume ground hit when sampling downward (apply plane reflectance * diffuse IBL intensity)
+		#endif
 
 		// Compute reflected radiance
 		float3	Lr = Li * BRDF;
@@ -192,22 +214,27 @@ float3	SampleSecondaryLight( float3 _wsPosition, float3 _wsNormal, float3 _wsVie
 }
 
 float3	ComputeIncomingRadiance( float3 _wsPosition, float3 _wsView, uint2 _seeds ) {
+	#if FULL_SCENE
+		// Compute secondary hit with scene
+		float3	wsClosestPosition = 0;
+		float3	wsNormal = float3( 0, 1, 0 );
+		float2	hit = RayTraceScene( _wsPosition, _wsView, wsNormal, wsClosestPosition );
 
-	// Compute secondary hit with scene
-	float3	wsClosestPosition = 0;
-	float3	wsNormal = float3( 0, 1, 0 );
-	float2	hit = RayTraceScene( _wsPosition, _wsView, wsNormal, wsClosestPosition );
+		// Sample incoming radiance
+		float3	Li = 0.0;
+		if ( hit.x > 1e4 )
+			return SampleSky( _wsView, 0.0 );	// Sample sky
 
-	// Sample incoming radiance
-	float3	Li = 0.0;
-	if ( hit.x > 1e4 )
-		return SampleSky( _wsView, 0.0 );	// Sample sky
+		// Sample reflection from secondary hit
+		_wsPosition += hit.x * _wsView;	// Go to hit
+		_wsPosition += 1e-3 * wsNormal;	// Offset from surface
 
-	// Sample reflection from secondary hit
-	_wsPosition += hit.x * _wsView;	// Go to hit
-	_wsPosition += 1e-3 * wsNormal;	// Offset from surface
+		return SampleSecondaryLight( _wsPosition, wsNormal, _wsView, hit.y, _seeds );
 
-	return SampleSecondaryLight( _wsPosition, wsNormal, _wsView, hit.y, _seeds );
+	#else
+		// Sample sky incoming radiance (ignore interreflections with scene)
+		return SampleSky( wsLight, 0.0 );
+	#endif
 }
 
 
@@ -258,33 +285,12 @@ float4	PS( VS_IN _In ) : SV_TARGET0 {
 //return float4( tsView, 1 );
 
 	// Prepare surface characteristics
-	float3	F0 = hit.y == 0 ? F0_TINT_SPHERE : F0_TINT_PLANE;
-			F0 *= _F0;
+	float3	rho, F0;
+	float	alpha;
+	GetObjectInfo( hit.y, rho, F0, alpha );
 	float3	IOR = Fresnel_IORFromF0( F0 );
 
-	float3	rho = hit.y == 0 ? ALBEDO_SPHERE : ALBEDO_PLANE;
-			rho *= _albedo;
-
-	float	alphaS = max( 0.01, _roughnessSpecular );
-	float	alphaD = max( 0.01, _roughnessDiffuse );
-
 	float	u = seeds.x * 2.3283064365386963e-10;
-
-	#if !FULL_SCENE
-		float3	F0 = _F0 * F0_TINT_SPHERE;
-		float3	IOR = Fresnel_IORFromF0( F0 );
-
-		float3	albedo = hit.y == 0 ? _albedo * ALBEDO_SPHERE
-									: _albedo * ALBEDO_PLANE;
-
-		#if BRDF_SPECULAR
-			float	roughness = _roughnessSpecular;
-		#else
-			float	roughness = _roughnessDiffuse;
-		#endif
-
-		roughness = max( 0.01, roughness );
-	#endif
 
 	float3	Lo = 0.0;
 	uint	groupIndex = _groupIndex;
@@ -306,7 +312,7 @@ float4	PS( VS_IN _In ) : SV_TARGET0 {
 			float	LdotN = tsLight.z;
 
 		#elif 1
-			// Generate a ray in world space
+			// Generate a ray in world space + discard if not in correct hemisphere (what a waste!=
 
 			// Uniform sphere sampling from SH gritty details
 			float	theta = 2.0 * acos( sqrt( X1 ) );
@@ -359,44 +365,28 @@ float4	PS( VS_IN _In ) : SV_TARGET0 {
 			float	LdotN = tsLight.z;
 		#endif
 
-		#if FULL_SCENE
-			// Compute BRDF
-			float3	BRDF = 0.0;
-			if ( hit.y == 0 )
-				BRDF = ComputeBRDF_GGX( float3( 0, 0, 1 ), tsView, tsLight, alphaS, IOR );
-			else
-				BRDF = ComputeBRDF_Oren( float3( 0, 0, 1 ), tsView, tsLight, alphaD, rho );
-
-			// Sample incoming radiance
-			float3	Li = ComputeIncomingRadiance( wsPosition, wsLight, seeds );
-
-			// Compute reflected radiance
-			float3	Lr = Li * BRDF;
-
-
-//Lr = ComputeSphereAO( wsPosition, wsNormal );	// * Sphere AO
-
-
+		// Compute BRDF
+		float3	BRDF = 0.0;
+		#if FORCE_BRDF == 1
+			BRDF = ComputeBRDF_GGX( float3( 0, 0, 1 ), tsView, tsLight, alpha, IOR );
+		#elif FORCE_BRDF == 2
+			BRDF = ComputeBRDF_Oren( float3( 0, 0, 1 ), tsView, tsLight, alpha, rho );
 		#else
-
-			// Get reflectance in that direction
-			#if BRDF_SPECULAR
-				float3	BRDF = ComputeBRDF_GGX( float3( 0, 0, 1 ), tsView, tsLight, roughness, IOR );
-			#else
-				float3	BRDF = ComputeBRDF_Oren( float3( 0, 0, 1 ), tsView, tsLight, roughness, albedo );
-			#endif
-
-			// Sample incoming radiance
-			float3	Li = SampleSky( wsLight, 0.0 );
-
-			// Compute reflected radiance
-			float3	Lr = Li * BRDF;
-
+			if ( hit.y == 0 )
+				BRDF = ComputeBRDF_GGX( float3( 0, 0, 1 ), tsView, tsLight, alpha, IOR );
+			else
+				BRDF = ComputeBRDF_Oren( float3( 0, 0, 1 ), tsView, tsLight, alpha, rho );
 		#endif
+
+		// Sample incoming radiance
+		float3	Li = ComputeIncomingRadiance( wsPosition, wsLight, seeds );
+
+		// Compute reflected radiance
+		float3	Lr = Li * BRDF;
 
 
 #if WHITE_FURNACE_TEST
-Lr *= hit.y == 0 ? 0.95 : 1.0;
+Lr *= 0.9;	// Attenuate a bit to see in front of white sky...
 #endif
 
 		// Accumulate
