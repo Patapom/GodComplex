@@ -55,11 +55,13 @@ namespace TestMSBRDF {
 			public uint			_groupIndex;
 			public float		_lightElevation;
 
-			public float		_roughnessSphere;
-			public float		_reflectanceSphere;
+			public float		_roughnessSphereSpecular;
+			public float		_reflectanceSphereSpecular;
+			public float		_roughnessSphereDiffuse;
+			public float		_reflectanceSphereDiffuse;
+
 			public float		_roughnessGround;
 			public float		_reflectanceGround;
-
 			public float		_lightIntensity;
 		}
 
@@ -183,8 +185,9 @@ namespace TestMSBRDF {
 			// Setup camera
 			m_camera.CreatePerspectiveCamera( (float) (60.0 * Math.PI / 180.0), (float) panelOutput.Width / panelOutput.Height, 0.01f, 100.0f );
 			m_manipulator.Attach( panelOutput, m_camera );
-//			m_manipulator.InitializeCamera( new float3( 0, 1.5f, 2.0f ), new float3( -0.4f, 0, 0.4f ), float3.UnitY );
-			m_manipulator.InitializeCamera( new float3( 0, 1.0f, 2 ), new float3( 0, 1, 0 ), float3.UnitY );
+//			m_manipulator.InitializeCamera( new float3( 0, 1.5f, 2.0f ), new float3( -0.4f, 0, 0.4f ), float3.UnitY );						// Garage probe
+			m_manipulator.InitializeCamera( new float3( 1.46070266f, 1.10467184f, -1.36212754f ), new float3( 0, 1, 0 ), float3.UnitY );	// Beach probe
+
 			m_camera.CameraTransformChanged += Camera_CameraTransformChanged;
 			Camera_CameraTransformChanged( null, EventArgs.Empty );
 
@@ -234,19 +237,23 @@ namespace TestMSBRDF {
 
 				m_CB_Render.m._flags = 0;
 				m_CB_Render.m._flags |= checkBoxEnableMSBRDF.Checked ? 1U : 0;
+				m_CB_Render.m._flags |= checkBoxEnableMSFactor.Checked ? 2U : 0;
 				m_CB_Render.m._groupsCount = GROUPS_COUNT;
 				m_CB_Render.m._groupIndex = m_groupShuffle[m_groupCounter % GROUPS_COUNT];
 				m_CB_Render.m._lightElevation = floatTrackbarControlLightElevation.Value * Mathf.HALFPI;
 				
-				m_CB_Render.m._roughnessSphere = floatTrackbarControlRoughnessSphere.Value;
+				m_CB_Render.m._roughnessSphereSpecular = floatTrackbarControlRoughnessSphere.Value;
+				m_CB_Render.m._roughnessSphereDiffuse = floatTrackbarControlRoughnessSphere2.Value;
 				m_CB_Render.m._roughnessGround = floatTrackbarControlRoughnessGround.Value;
 
 // More linear feel when squaring roughnesses!
-m_CB_Render.m._roughnessSphere *= m_CB_Render.m._roughnessSphere;
+m_CB_Render.m._roughnessSphereSpecular *= m_CB_Render.m._roughnessSphereSpecular;
+m_CB_Render.m._roughnessSphereDiffuse *= m_CB_Render.m._roughnessSphereDiffuse;
 m_CB_Render.m._roughnessGround *= m_CB_Render.m._roughnessGround;
 
+				m_CB_Render.m._reflectanceSphereSpecular = floatTrackbarControlReflectanceSphere.Value;
+				m_CB_Render.m._reflectanceSphereDiffuse = floatTrackbarControlReflectanceSphere2.Value;
 				m_CB_Render.m._reflectanceGround = floatTrackbarControlReflectanceGround.Value;
-				m_CB_Render.m._reflectanceSphere = floatTrackbarControlReflectanceSphere.Value;
 
 				m_CB_Render.m._lightIntensity = floatTrackbarControlCubeMapIntensity.Value;
 
@@ -825,7 +832,7 @@ format = ImageUtility.PIXEL_FORMAT.RGBA32F;	// Force RGBA32F
 		}
 
 		private void TestForm_KeyDown( object sender, KeyEventArgs e ) {
-			if ( e.KeyCode == Keys.Return || e.KeyCode == Keys.Space )
+			if ( e.KeyCode == Keys.Space )
 				checkBoxEnableMSBRDF.Checked ^= true;
 		}
 	}

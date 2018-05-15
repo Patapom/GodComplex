@@ -164,6 +164,13 @@ float3	FresnelMetal( float3 _F0, float3 _F90, float _cosTheta ) {
 	return 0.5 * (Pe + Pa);
 }
 
+// Returns the "average Fresnel" term for dielectrics, as given by Kulla & Conty, slide 18 (http://blog.selfshadow.com/publications/s2017-shading-course/imageworks/s2017_pbs_imageworks_slides.pdf)
+//	Favg = Integral[Omega+]{ F(µi) µi dwi }
+//
+// _IOR, from 1 to 400
+float3	FresnelAverage( float3 _IOR ) {
+	return (_IOR - 1.0) / (4.08567 + 1.00071 * _IOR);
+}
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 // Importance Sampling + RNG + Geometry
@@ -318,35 +325,33 @@ float3	BRDF_GGX( float3 _tsNormal, float3 _tsView, float3 _tsLight, float _alpha
 //  _roughness, Oren-Nayar roughness parameter in [0,PI/2]
 //
 float   BRDF_OrenNayar( in float3 _normal, in float3 _view, in float3 _light, in float _roughness ) {
-    float3  n = _normal;
-    float3  l = _light;
-    float3  v = _view;
+	float3  n = _normal;
+	float3  l = _light;
+	float3  v = _view;
 
-    float   LdotN = dot( l, n );
-    float   VdotN = dot( v, n );
+	float   LdotN = dot( l, n );
+	float   VdotN = dot( v, n );
 
-    // I realize that this doesn't give cosine phi, we need to divide by sqrt( 1-VdotN*VdotN ) * sqrt( 1-LdotN*LdotN )
-    //  but I couldn't distinguish any difference from the actual formula so I just left that as it is...
-    float   gamma = dot( v - n * VdotN, l - n * LdotN )
-					/ (sqrt( saturate( 1.0 - VdotN*VdotN ) ) * sqrt( saturate( 1.0 - LdotN*LdotN ) ));
+	float   gamma = dot( v - n * VdotN, l - n * LdotN )
+				  / (sqrt( saturate( 1.0 - VdotN*VdotN ) ) * sqrt( saturate( 1.0 - LdotN*LdotN ) ));
 
-    float rough_sq = _roughness * _roughness;
-    float A = 1.0 - 0.5 * (rough_sq / (rough_sq + 0.33));   // You can replace 0.33 by 0.57 to simulate the missing inter-reflection term, as specified in footnote of page 22 of the 1992 paper
-    float B = 0.45 * (rough_sq / (rough_sq + 0.09));
+	float rough_sq = _roughness * _roughness;
+	float A = 1.0 - 0.5 * (rough_sq / (rough_sq + 0.33));   // You can replace 0.33 by 0.57 to simulate the missing inter-reflection term, as specified in footnote of page 22 of the 1992 paper
+	float B = 0.45 * (rough_sq / (rough_sq + 0.09));
 
-    // Original formulation
-    //  float angle_vn = acos( VdotN );
-    //  float angle_ln = acos( LdotN );
-    //  float alpha = max( angle_vn, angle_ln );
-    //  float beta  = min( angle_vn, angle_ln );
-    //  float C = sin(alpha) * tan(beta);
+	// Original formulation
+	//  float angle_vn = acos( VdotN );
+	//  float angle_ln = acos( LdotN );
+	//  float alpha = max( angle_vn, angle_ln );
+	//  float beta  = min( angle_vn, angle_ln );
+	//  float C = sin(alpha) * tan(beta);
 
-    // Optimized formulation (without tangents, arccos or sines)
-    float2  cos_alpha_beta = VdotN < LdotN ? float2( VdotN, LdotN ) : float2( LdotN, VdotN );   // Here we reverse the min/max since cos() is a monotonically decreasing function
-    float2  sin_alpha_beta = sqrt( saturate( 1.0 - cos_alpha_beta*cos_alpha_beta ) );           // Saturate to avoid NaN if ever cos_alpha > 1 (it happens with floating-point precision)
-    float   C = sin_alpha_beta.x * sin_alpha_beta.y / (1e-6 + cos_alpha_beta.y);
+	// Optimized formulation (without tangents, arccos or sines)
+	float2  cos_alpha_beta = VdotN < LdotN ? float2( VdotN, LdotN ) : float2( LdotN, VdotN );   // Here we reverse the min/max since cos() is a monotonically decreasing function
+	float2  sin_alpha_beta = sqrt( saturate( 1.0 - cos_alpha_beta*cos_alpha_beta ) );           // Saturate to avoid NaN if ever cos_alpha > 1 (it happens with floating-point precision)
+	float   C = sin_alpha_beta.x * sin_alpha_beta.y / (1e-6 + cos_alpha_beta.y);
 
-    return INVPI * (A + B * max( 0.0, gamma ) * C);
+	return INVPI * (A + B * max( 0.0, gamma ) * C);
 }
 
 // ====== Multiple-scattering BRDF computed from energy compensation ======
@@ -361,5 +366,5 @@ float	MSBRDF( float _roughness, float3 _tsNormal, float3 _tsView, float3 _tsLigh
 	float	E_i = 1.0 - _Eo.SampleLevel( LinearClamp, float2( mu_i, a ), 0.0 );	// 1 - E_i
 	float	E_avg = _Eavg.SampleLevel( LinearClamp, float2( a, 0.5 ), 0.0 );	// E_avg
 
-	return E_o * E_i / (PI - E_avg);
+	return E_o * E_i / max( 0.001, PI - E_avg );
 }

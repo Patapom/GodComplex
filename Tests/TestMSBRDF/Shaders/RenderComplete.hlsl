@@ -2,7 +2,9 @@
 #include "Scene.hlsl"
 
 #define FULL_SCENE		1	// Define this to render the full scene (diffuse plane + specular sphere)
-//#define	FORCE_BRDF		0	// Define this to force all surfaces as specular (1), diffuse (2)
+//#define	FORCE_BRDF		2	// Define this to force all surfaces as specular (1), diffuse (2)
+
+#define	DIELECTRIC_SPHERE	1	// Define this to use the full dielectric sphere model
 
 //#define	WHITE_FURNACE_TEST	1
 
@@ -11,16 +13,23 @@ static const uint	SAMPLES_COUNT = 32;
 
 #if WHITE_FURNACE_TEST
 	// All white!
-	static const float3	ALBEDO_SPHERE = 1;
-	static const float3	ALBEDO_PLANE = 1;
-	static const float3	F0_TINT_SPHERE = 1;
-	static const float3	F0_TINT_PLANE = 1;
+	#define	ALBEDO_SPHERE	1
+	#define	ALBEDO_PLANE	1
+	#define	F0_TINT_SPHERE	1
+	#define	F0_TINT_PLANE	1
 #else
-	static const float3	ALBEDO_SPHERE = float3( 0.9, 0.5, 0.1 );	// Nicely saturated yellow
-	static const float3	ALBEDO_PLANE = float3( 0.9, 0.5, 0.1 );		// Nicely saturated yellow
-	//static const float3	F0_TINT_SPHERE = 1.0 * float3( 0.85, 0.95, 1 );
-	static const float3	F0_TINT_SPHERE = 1.0;
-	static const float3	F0_TINT_PLANE = 1.0;
+// Only for blog post with Rho=100%
+//#define	ALBEDO_SPHERE	(_reflectanceSphereSpecular * float3( 1, 1, 1 ))
+//#define	ALBEDO_PLANE	(_reflectanceGround * float3( 1, 1, 1 ))
+
+	#define	ALBEDO_SPHERE	(_reflectanceSphereDiffuse * float3( 0.1, 0.5, 0.9 ))	// Nicely saturated blue
+//	#define	ALBEDO_SPHERE	(_reflectanceSphereDiffuse * float3( 0.9, 0.5, 0.1 ))	// Nicely saturated yellow
+	#define	ALBEDO_PLANE	(_reflectanceGround * float3( 0.9, 0.5, 0.1 ))			// Nicely saturated yellow
+
+//	#define	F0_TINT_SPHERE	(_reflectanceSphereSpecular * float3( 1, 0.765557, 0.336057 ))	// Gold (from https://seblagarde.wordpress.com/2011/08/17/feeding-a-physical-based-lighting-mode/)
+//	#define	F0_TINT_SPHERE	(_reflectanceSphereSpecular * float3( 0.336057, 0.765557, 1 ))
+	#define	F0_TINT_SPHERE	(_reflectanceSphereSpecular * 1.0)
+	#define	F0_TINT_PLANE	(_reflectanceGround * 1.0)
 #endif
 
 static const float3	AMBIENT = 0* 0.02 * float3( 0.5, 0.8, 0.9 );
@@ -31,11 +40,13 @@ cbuffer CB_Render : register(b2) {
 	uint	_groupIndex;
 	float	_lightElevation;
 
-	float	_roughnessSphere;
-	float	_reflectanceSphere;
+	float	_roughnessSphereSpecular;
+	float	_reflectanceSphereSpecular;
+	float	_roughnessSphereDiffuse;
+	float	_reflectanceSphereDiffuse;
+
 	float	_roughnessGround;
 	float	_reflectanceGround;
-
 	float	_lightIntensity;
 };
 
@@ -82,10 +93,12 @@ return 1;	// White furnace
 }
 
 // Retrieves object information from its index
-void	GetObjectInfo( uint _objectIndex, out float3 _rho, out float3 _objectF0, out float _roughness ) {
-	_objectF0 = _objectIndex == 0 ? _reflectanceSphere * F0_TINT_SPHERE : _reflectanceGround * F0_TINT_PLANE;
-	_rho = _objectIndex == 0 ? _reflectanceSphere * ALBEDO_SPHERE : _reflectanceGround * ALBEDO_PLANE;
-	_roughness = max( 0.01, _objectIndex == 0 ? _roughnessSphere : _roughnessGround );
+void	GetObjectInfo( uint _objectIndex, out float _roughnessSpecular, out float3 _objectF0, out float _roughnessDiffuse, out float3 _rho ) {
+	_roughnessSpecular = max( 0.01, _objectIndex == 0 ? _roughnessSphereSpecular : _roughnessGround );
+	_objectF0 = _objectIndex == 0 ? F0_TINT_SPHERE : F0_TINT_PLANE;
+
+	_roughnessDiffuse = max( 0.01, _objectIndex == 0 ? _roughnessSphereDiffuse : _roughnessGround );
+	_rho = _objectIndex == 0 ? ALBEDO_SPHERE : ALBEDO_PLANE;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -95,7 +108,7 @@ float3	ComputeBRDF_GGX( float3 _tsNormal, float3 _tsView, float3 _tsLight, float
 	if ( _flags & 1 ) {
 		// From http://patapom.com/blog/BRDF/MSBRDFEnergyCompensation/#varying-the-fresnel-reflectance-f_0f_0
 		float3		F0 = Fresnel_F0FromIOR( _IOR );
-		float3		MSFactor = F0 * (0.04 + F0 * (0.66 + F0 * 0.3));
+		float3		MSFactor = (_flags & 2) ? F0 * (0.04 + F0 * (0.66 + F0 * 0.3)) : F0;
 
 		BRDF += MSFactor * MSBRDF( _roughness, _tsNormal, _tsView, _tsLight, _tex_GGX_Eo, _tex_GGX_Eavg );
 	}
@@ -110,13 +123,50 @@ float3	ComputeBRDF_Oren( float3 _tsNormal, float3 _tsView, float3 _tsLight, floa
 		const float	tau = 0.28430405702379613;
 		const float	A1 = (1.0 - tau) / pow2( tau );
 		float3		rho = tau * _albedo;
-		float3		MSFactor = A1 * pow2( rho ) / (1.0 - rho);
+		float3		MSFactor = (_flags & 2) ? A1 * pow2( rho ) / (1.0 - rho) : rho;
 
 		BRDF += MSFactor * MSBRDF( _roughness, _tsNormal, _tsView, _tsLight, _tex_OrenNayar_Eo, _tex_OrenNayar_Eavg );
 	}
 
 	return BRDF;
 }
+
+// Computes the full dielectric BRDF model as described in http://patapom.com/blog/BRDF/MSBRDFEnergyCompensation/#complete-approximate-model
+//
+float3	ComputeBRDF_Full(  float3 _tsNormal, float3 _tsView, float3 _tsLight, float _roughnessSpecular, float3 _IOR, float _roughnessDiffuse, float3 _albedo ) {
+	// Compute specular BRDF
+	float3	F0 = Fresnel_F0FromIOR( _IOR );
+	float3	MSFactor_spec = (_flags & 2) ? F0 * (0.04 + F0 * (0.66 + F0 * 0.3)) : F0;	// From http://patapom.com/blog/BRDF/MSBRDFEnergyCompensation/#varying-the-fresnel-reflectance-f_0f_0
+	float3	Favg = FresnelAverage( _IOR );
+
+	float3	BRDF_spec = BRDF_GGX( _tsNormal, _tsView, _tsLight, _roughnessSpecular, _IOR );
+	if ( _flags & 1 ) {
+		BRDF_spec += MSFactor_spec * MSBRDF( _roughnessSpecular, _tsNormal, _tsView, _tsLight, _tex_GGX_Eo, _tex_GGX_Eavg );
+	}
+
+	// Compute diffuse contribution
+	float3	BRDF_diff = _albedo * BRDF_OrenNayar( _tsNormal, _tsView, _tsLight, _roughnessDiffuse );
+	if ( _flags & 1 ) {
+		const float	tau = 0.28430405702379613;
+		const float	A1 = (1.0 - tau) / pow2( tau );
+		float3		rho = tau * _albedo;
+		float3		MSFactor_diff = (_flags & 2) ? A1 * pow2( rho ) / (1.0 - rho) : rho;	// From http://patapom.com/blog/BRDF/MSBRDFEnergyCompensation/#varying-diffuse-reflectance-rhorho
+
+		BRDF_diff += MSFactor_diff * MSBRDF( _roughnessDiffuse, _tsNormal, _tsView, _tsLight, _tex_OrenNayar_Eo, _tex_OrenNayar_Eavg );
+	}
+
+	// Attenuate diffuse contribution
+	float	mu_o = saturate( dot( _tsView, _tsNormal ) );
+	float	a = _roughnessSpecular;
+	float	E_o = _tex_GGX_Eo.SampleLevel( LinearClamp, float2( mu_o, a ), 0.0 );	// Already sampled by MSBRDF earlier, optimize!
+
+	float3	kappa = 1 - (Favg * E_o + MSFactor_spec * (1.0 - E_o));
+
+//kappa = 0;
+
+	return BRDF_spec + kappa * BRDF_diff;
+}
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // Full scene estimate
@@ -125,8 +175,8 @@ float3	SampleSecondaryLight( float3 _wsPosition, float3 _wsNormal, float3 _wsVie
 
 	// Prepare surface characteristics
 	float3	rho, F0;
-	float	alpha;
-	GetObjectInfo( _objectIndex, rho, F0, alpha );
+	float	alphaS, alphaD;
+	GetObjectInfo( _objectIndex, alphaS, F0, alphaD, rho );
 	float3	IOR = Fresnel_IORFromF0( F0 );
 
 	#if FORCE_BRDF != 1
@@ -157,7 +207,7 @@ float3	SampleSecondaryLight( float3 _wsPosition, float3 _wsNormal, float3 _wsVie
 
 	float3	tsView = -float3( dot( _wsView, wsTangent ), dot( _wsView, wsBiTangent ), dot( _wsView, _wsNormal ) );
 
-	float	u = 1.0 - _seeds.x * 2.3283064365386963e-10;
+	float	u = frac( _time + _seeds.x * 2.3283064365386963e-10 );
 
 //	uint	totalGroupsCount = _groupsCount * SAMPLES_COUNT;
 	uint	totalGroupsCount = SAMPLES_COUNT;
@@ -182,23 +232,28 @@ float3	SampleSecondaryLight( float3 _wsPosition, float3 _wsNormal, float3 _wsVie
 		// Compute BRDF
 		float3	BRDF = 0.0;
 		#if FORCE_BRDF == 1
-			BRDF = ComputeBRDF_GGX( float3( 0, 0, 1 ), tsView, tsLight, alpha, IOR );
+			BRDF = ComputeBRDF_GGX( float3( 0, 0, 1 ), tsView, tsLight, alphaS, IOR );
 		#elif FORCE_BRDF == 2
-			BRDF = ComputeBRDF_Oren( float3( 0, 0, 1 ), tsView, tsLight, alpha, rho );
+			BRDF = ComputeBRDF_Oren( float3( 0, 0, 1 ), tsView, tsLight, alphaD, rho );
 		#else
-			if ( _objectIndex == 0 )
-				BRDF = ComputeBRDF_GGX( float3( 0, 0, 1 ), tsView, tsLight, alpha, IOR );
-			else
-				BRDF = ComputeBRDF_Oren( float3( 0, 0, 1 ), tsView, tsLight, alpha, rho );
+			if ( _objectIndex == 0 ) {
+				#if DIELECTRIC_SPHERE
+					BRDF = ComputeBRDF_Full( float3( 0, 0, 1 ), tsView, tsLight, alphaS, IOR, alphaD, rho );
+				#else
+					BRDF = ComputeBRDF_GGX( float3( 0, 0, 1 ), tsView, tsLight, alphaS, IOR );
+				#endif
+			} else {
+				BRDF = ComputeBRDF_Oren( float3( 0, 0, 1 ), tsView, tsLight, alphaD, rho );
+			}
 		#endif
 
 		// Sample incoming radiance
 		#if FORCE_BRDF == 1
-			float3	Li = wsLight.y > 0.0 ? SampleSky( wsLight, 3.0 )											// Assume sky hit when sampling upward
-										 : 0.0;																	// Assume black otherwise
+			float3	Li = wsLight.y > 0.0 ? SampleSky( wsLight, 3.0 )								// Assume sky hit when sampling upward
+										 : 0.0;														// Assume black otherwise
 		#else
-			float3	Li = wsLight.y > 0.0 ? SampleSky( wsLight, 3.0 )											// Assume sky hit when sampling upward
-										 : ((_reflectanceGround * ALBEDO_PLANE) / PI) * SampleSky( float3( 0, 1, 0 ), 8 );	// Assume ground hit when sampling downward (apply plane reflectance * diffuse IBL intensity)
+			float3	Li = wsLight.y > 0.0 ? SampleSky( wsLight, 3.0 )								// Assume sky hit when sampling upward
+										 : (ALBEDO_PLANE / PI) * SampleSky( float3( 0, 1, 0 ), 8 );	// Assume ground hit when sampling downward (apply plane reflectance * diffuse IBL intensity)
 		#endif
 
 		// Compute reflected radiance
@@ -219,9 +274,6 @@ float3	ComputeIncomingRadiance( float3 _wsPosition, float3 _wsView, uint2 _seeds
 		float3	wsClosestPosition = 0;
 		float3	wsNormal = float3( 0, 1, 0 );
 		float2	hit = RayTraceScene( _wsPosition, _wsView, wsNormal, wsClosestPosition );
-
-		// Sample incoming radiance
-		float3	Li = 0.0;
 		if ( hit.x > 1e4 )
 			return SampleSky( _wsView, 0.0 );	// Sample sky
 
@@ -233,7 +285,7 @@ float3	ComputeIncomingRadiance( float3 _wsPosition, float3 _wsView, uint2 _seeds
 
 	#else
 		// Sample sky incoming radiance (ignore interreflections with scene)
-		return SampleSky( wsLight, 0.0 );
+		return SampleSky( _wsView, 0.0 );
 	#endif
 }
 
@@ -243,7 +295,8 @@ float4	PS( VS_IN _In ) : SV_TARGET0 {
 //return float4( (1 - _tex_GGX_Eo.SampleLevel( LinearClamp, _In.__position.xy / _screenSize.xy, 0.0 )).xxx, 1 );
 //return float4( (_tex_GGX_Eavg.SampleLevel( LinearClamp, _In.__position.xy / _screenSize.xy, 0.0 ) / PI).xxx, 1 );
 //return float4( (1 - _tex_OrenNayar_Eo.SampleLevel( LinearClamp, _In.__position.xy / _screenSize.xy, 0.0 )).xxx, 1 );
-//return float4( (_tex_OrenNayar_Eavg.SampleLevel( LinearClamp, _In.__position.xy / _screenSize.xy, 0.0 ) / PI).xxx, 1 );
+//float	Eavg = _tex_OrenNayar_Eavg.SampleLevel( LinearClamp, _In.__position.xy / _screenSize.xy, 0.0 );
+//return float4( Eavg <= PI ? (Eavg / PI).xxx : float3( 1, 0, 0 ), 1 );
 
 	float	noise = 0*_tex_BlueNoise[uint2(_In.__position.xy + uint2( _groupIndex, 0 )) & 0x3F];
 
@@ -286,8 +339,9 @@ float4	PS( VS_IN _In ) : SV_TARGET0 {
 
 	// Prepare surface characteristics
 	float3	rho, F0;
-	float	alpha;
-	GetObjectInfo( hit.y, rho, F0, alpha );
+	float	alphaS, alphaD;
+	GetObjectInfo( hit.y, alphaS, F0, alphaD, rho );
+
 	float3	IOR = Fresnel_IORFromF0( F0 );
 
 	float	u = seeds.x * 2.3283064365386963e-10;
@@ -368,14 +422,19 @@ float4	PS( VS_IN _In ) : SV_TARGET0 {
 		// Compute BRDF
 		float3	BRDF = 0.0;
 		#if FORCE_BRDF == 1
-			BRDF = ComputeBRDF_GGX( float3( 0, 0, 1 ), tsView, tsLight, alpha, IOR );
+			BRDF = ComputeBRDF_GGX( float3( 0, 0, 1 ), tsView, tsLight, alphaS, IOR );
 		#elif FORCE_BRDF == 2
-			BRDF = ComputeBRDF_Oren( float3( 0, 0, 1 ), tsView, tsLight, alpha, rho );
+			BRDF = ComputeBRDF_Oren( float3( 0, 0, 1 ), tsView, tsLight, alphaD, rho );
 		#else
-			if ( hit.y == 0 )
-				BRDF = ComputeBRDF_GGX( float3( 0, 0, 1 ), tsView, tsLight, alpha, IOR );
-			else
-				BRDF = ComputeBRDF_Oren( float3( 0, 0, 1 ), tsView, tsLight, alpha, rho );
+			if ( hit.y == 0 ) {
+				#if DIELECTRIC_SPHERE
+					BRDF = ComputeBRDF_Full( float3( 0, 0, 1 ), tsView, tsLight, alphaS, IOR, alphaD, rho );
+				#else
+					BRDF = ComputeBRDF_GGX( float3( 0, 0, 1 ), tsView, tsLight, alphaS, IOR );
+				#endif
+			} else {
+				BRDF = ComputeBRDF_Oren( float3( 0, 0, 1 ), tsView, tsLight, alphaD, rho );
+			}
 		#endif
 
 		// Sample incoming radiance

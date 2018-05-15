@@ -50,6 +50,11 @@
 			this.groupBox3 = new System.Windows.Forms.GroupBox();
 			this.floatTrackbarControlCubeMapIntensity = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label6 = new System.Windows.Forms.Label();
+			this.checkBoxEnableMSFactor = new System.Windows.Forms.CheckBox();
+			this.label7 = new System.Windows.Forms.Label();
+			this.floatTrackbarControlReflectanceSphere2 = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlRoughnessSphere2 = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.label8 = new System.Windows.Forms.Label();
 			this.groupBox1.SuspendLayout();
 			this.groupBox2.SuspendLayout();
 			this.groupBox3.SuspendLayout();
@@ -105,9 +110,9 @@
 			this.label1.AutoSize = true;
 			this.label1.Location = new System.Drawing.Point(6, 21);
 			this.label1.Name = "label1";
-			this.label1.Size = new System.Drawing.Size(61, 13);
+			this.label1.Size = new System.Drawing.Size(89, 13);
 			this.label1.TabIndex = 3;
-			this.label1.Text = "Roughness";
+			this.label1.Text = "Roughness Spec";
 			// 
 			// label2
 			// 
@@ -171,8 +176,10 @@
 			// checkBoxEnableMSBRDF
 			// 
 			this.checkBoxEnableMSBRDF.AutoSize = true;
+			this.checkBoxEnableMSBRDF.Checked = true;
+			this.checkBoxEnableMSBRDF.CheckState = System.Windows.Forms.CheckState.Checked;
 			this.checkBoxEnableMSBRDF.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-			this.checkBoxEnableMSBRDF.Location = new System.Drawing.Point(1332, 343);
+			this.checkBoxEnableMSBRDF.Location = new System.Drawing.Point(1332, 416);
 			this.checkBoxEnableMSBRDF.Name = "checkBoxEnableMSBRDF";
 			this.checkBoxEnableMSBRDF.Size = new System.Drawing.Size(244, 28);
 			this.checkBoxEnableMSBRDF.TabIndex = 4;
@@ -211,9 +218,9 @@
 			this.label5.AutoSize = true;
 			this.label5.Location = new System.Drawing.Point(6, 48);
 			this.label5.Name = "label5";
-			this.label5.Size = new System.Drawing.Size(65, 13);
+			this.label5.Size = new System.Drawing.Size(93, 13);
 			this.label5.TabIndex = 3;
-			this.label5.Text = "Reflectance";
+			this.label5.Text = "Reflectance Spec";
 			// 
 			// checkBoxPause
 			// 
@@ -227,13 +234,17 @@
 			// 
 			// groupBox1
 			// 
-			this.groupBox1.Controls.Add(this.label1);
+			this.groupBox1.Controls.Add(this.label8);
+			this.groupBox1.Controls.Add(this.floatTrackbarControlRoughnessSphere2);
+			this.groupBox1.Controls.Add(this.floatTrackbarControlReflectanceSphere2);
 			this.groupBox1.Controls.Add(this.floatTrackbarControlRoughnessSphere);
+			this.groupBox1.Controls.Add(this.label7);
 			this.groupBox1.Controls.Add(this.floatTrackbarControlReflectanceSphere);
 			this.groupBox1.Controls.Add(this.label5);
+			this.groupBox1.Controls.Add(this.label1);
 			this.groupBox1.Location = new System.Drawing.Point(1298, 12);
 			this.groupBox1.Name = "groupBox1";
-			this.groupBox1.Size = new System.Drawing.Size(300, 82);
+			this.groupBox1.Size = new System.Drawing.Size(300, 145);
 			this.groupBox1.TabIndex = 5;
 			this.groupBox1.TabStop = false;
 			this.groupBox1.Text = "Sphere";
@@ -244,7 +255,7 @@
 			this.groupBox2.Controls.Add(this.label2);
 			this.groupBox2.Controls.Add(this.floatTrackbarControlReflectanceGround);
 			this.groupBox2.Controls.Add(this.label4);
-			this.groupBox2.Location = new System.Drawing.Point(1298, 100);
+			this.groupBox2.Location = new System.Drawing.Point(1298, 173);
 			this.groupBox2.Name = "groupBox2";
 			this.groupBox2.Size = new System.Drawing.Size(300, 83);
 			this.groupBox2.TabIndex = 6;
@@ -257,7 +268,7 @@
 			this.groupBox3.Controls.Add(this.label6);
 			this.groupBox3.Controls.Add(this.floatTrackbarControlLightElevation);
 			this.groupBox3.Controls.Add(this.label3);
-			this.groupBox3.Location = new System.Drawing.Point(1298, 199);
+			this.groupBox3.Location = new System.Drawing.Point(1298, 272);
 			this.groupBox3.Name = "groupBox3";
 			this.groupBox3.Size = new System.Drawing.Size(300, 99);
 			this.groupBox3.TabIndex = 7;
@@ -274,7 +285,7 @@
 			this.floatTrackbarControlCubeMapIntensity.RangeMin = 0F;
 			this.floatTrackbarControlCubeMapIntensity.Size = new System.Drawing.Size(200, 20);
 			this.floatTrackbarControlCubeMapIntensity.TabIndex = 0;
-			this.floatTrackbarControlCubeMapIntensity.Value = 2F;
+			this.floatTrackbarControlCubeMapIntensity.Value = 1F;
 			this.floatTrackbarControlCubeMapIntensity.VisibleRangeMax = 4F;
 			this.floatTrackbarControlCubeMapIntensity.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlLightElevation_ValueChanged);
 			// 
@@ -287,6 +298,65 @@
 			this.label6.TabIndex = 3;
 			this.label6.Text = "Intensity";
 			// 
+			// checkBoxEnableMSFactor
+			// 
+			this.checkBoxEnableMSFactor.AutoSize = true;
+			this.checkBoxEnableMSFactor.Checked = true;
+			this.checkBoxEnableMSFactor.CheckState = System.Windows.Forms.CheckState.Checked;
+			this.checkBoxEnableMSFactor.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+			this.checkBoxEnableMSFactor.Location = new System.Drawing.Point(1332, 450);
+			this.checkBoxEnableMSFactor.Name = "checkBoxEnableMSFactor";
+			this.checkBoxEnableMSFactor.Size = new System.Drawing.Size(210, 28);
+			this.checkBoxEnableMSFactor.TabIndex = 4;
+			this.checkBoxEnableMSFactor.Text = "Enable MS Saturation";
+			this.checkBoxEnableMSFactor.UseVisualStyleBackColor = true;
+			this.checkBoxEnableMSFactor.CheckedChanged += new System.EventHandler(this.checkBoxEnableMSBRDF_CheckedChanged);
+			// 
+			// label7
+			// 
+			this.label7.AutoSize = true;
+			this.label7.Location = new System.Drawing.Point(6, 115);
+			this.label7.Name = "label7";
+			this.label7.Size = new System.Drawing.Size(84, 13);
+			this.label7.TabIndex = 3;
+			this.label7.Text = "Reflectance Diff";
+			// 
+			// floatTrackbarControlReflectanceSphere2
+			// 
+			this.floatTrackbarControlReflectanceSphere2.Location = new System.Drawing.Point(92, 112);
+			this.floatTrackbarControlReflectanceSphere2.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlReflectanceSphere2.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlReflectanceSphere2.Name = "floatTrackbarControlReflectanceSphere2";
+			this.floatTrackbarControlReflectanceSphere2.RangeMax = 1F;
+			this.floatTrackbarControlReflectanceSphere2.RangeMin = 0F;
+			this.floatTrackbarControlReflectanceSphere2.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlReflectanceSphere2.TabIndex = 0;
+			this.floatTrackbarControlReflectanceSphere2.Value = 1F;
+			this.floatTrackbarControlReflectanceSphere2.VisibleRangeMax = 1F;
+			this.floatTrackbarControlReflectanceSphere2.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlAlbedo_ValueChanged);
+			// 
+			// floatTrackbarControlRoughnessSphere2
+			// 
+			this.floatTrackbarControlRoughnessSphere2.Location = new System.Drawing.Point(92, 86);
+			this.floatTrackbarControlRoughnessSphere2.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlRoughnessSphere2.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlRoughnessSphere2.Name = "floatTrackbarControlRoughnessSphere2";
+			this.floatTrackbarControlRoughnessSphere2.RangeMin = 0F;
+			this.floatTrackbarControlRoughnessSphere2.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlRoughnessSphere2.TabIndex = 0;
+			this.floatTrackbarControlRoughnessSphere2.Value = 0.1F;
+			this.floatTrackbarControlRoughnessSphere2.VisibleRangeMax = 1F;
+			this.floatTrackbarControlRoughnessSphere2.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlRoughnessSpec_ValueChanged);
+			// 
+			// label8
+			// 
+			this.label8.AutoSize = true;
+			this.label8.Location = new System.Drawing.Point(6, 88);
+			this.label8.Name = "label8";
+			this.label8.Size = new System.Drawing.Size(80, 13);
+			this.label8.TabIndex = 3;
+			this.label8.Text = "Roughness Diff";
+			// 
 			// TestForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -297,6 +367,7 @@
 			this.Controls.Add(this.groupBox1);
 			this.Controls.Add(this.checkBoxKeepSampling);
 			this.Controls.Add(this.checkBoxPause);
+			this.Controls.Add(this.checkBoxEnableMSFactor);
 			this.Controls.Add(this.checkBoxEnableMSBRDF);
 			this.Controls.Add(this.buttonReload);
 			this.Controls.Add(this.panelOutput);
@@ -340,6 +411,11 @@
 		private System.Windows.Forms.GroupBox groupBox3;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlCubeMapIntensity;
 		private System.Windows.Forms.Label label6;
+		private System.Windows.Forms.CheckBox checkBoxEnableMSFactor;
+		private System.Windows.Forms.Label label8;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlRoughnessSphere2;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlReflectanceSphere2;
+		private System.Windows.Forms.Label label7;
 	}
 }
 
