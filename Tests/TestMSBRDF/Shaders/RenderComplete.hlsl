@@ -2,7 +2,7 @@
 #include "Scene.hlsl"
 
 #define FULL_SCENE		1	// Define this to render the full scene (diffuse plane + specular sphere)
-//#define	FORCE_BRDF		2	// Define this to force all surfaces as specular (1), diffuse (2)
+//#define FORCE_BRDF		2	// Define this to force all surfaces as specular (1), diffuse (2)
 
 #define	DIELECTRIC_SPHERE	1	// Define this to use the full dielectric sphere model
 
@@ -161,8 +161,6 @@ float3	ComputeBRDF_Full(  float3 _tsNormal, float3 _tsView, float3 _tsLight, flo
 	float	E_o = _tex_GGX_Eo.SampleLevel( LinearClamp, float2( mu_o, a ), 0.0 );	// Already sampled by MSBRDF earlier, optimize!
 
 	float3	kappa = 1 - (Favg * E_o + MSFactor_spec * (1.0 - E_o));
-
-//kappa = 0;
 
 	return BRDF_spec + kappa * BRDF_diff;
 }
