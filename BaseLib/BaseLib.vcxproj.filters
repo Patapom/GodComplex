@@ -42,6 +42,9 @@
     <ClInclude Include="Containers\SpatialHashing.h">
       <Filter>Containers</Filter>
     </ClInclude>
+    <ClInclude Include="Utility\Stream.h">
+      <Filter>Utility</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Containers\Hashtable.cpp">
@@ -63,6 +66,9 @@
       <Filter>Utility</Filter>
     </ClCompile>
     <ClCompile Include="BString.cpp" />
+    <ClCompile Include="Utility\Stream.cpp">
+      <Filter>Utility</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Containers\Hashtable.inl">

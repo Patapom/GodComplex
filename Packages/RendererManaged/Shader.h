@@ -41,6 +41,10 @@ namespace Renderer {
 
 	public:
 
+		void*	GetNativeShader() { return (void*) m_pShader; }
+
+	public:
+
 		Shader( Device^ _device, System::IO::FileInfo^ _shaderFileName, VERTEX_FORMAT _format, String^ _entryPointVS, String^ _entryPointGS, String^ _entryPointPS, cli::array<ShaderMacro^>^ _macros ) {
 			Init( _device, _shaderFileName, _format, _entryPointVS, _entryPointGS, _entryPointPS, _macros, nullptr );
 		}

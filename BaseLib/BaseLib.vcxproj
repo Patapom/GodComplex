@@ -29,6 +29,7 @@
     <ClInclude Include="PixelFormats\PixelFormats.h" />
     <ClInclude Include="BString.h" />
     <ClInclude Include="Types.h" />
+    <ClInclude Include="Utility\Stream.h" />
     <ClInclude Include="Utility\tweakval.h" />
   </ItemGroup>
   <ItemGroup>
@@ -38,6 +39,7 @@
     <ClCompile Include="Math\SH.cpp" />
     <ClCompile Include="PixelFormats\PixelFormats.cpp" />
     <ClCompile Include="BString.cpp" />
+    <ClCompile Include="Utility\Stream.cpp" />
     <ClCompile Include="Utility\tweakval.cpp" />
   </ItemGroup>
   <ItemGroup>
