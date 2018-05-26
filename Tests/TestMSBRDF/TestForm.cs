@@ -65,6 +65,19 @@ namespace TestMSBRDF {
 			public float		_lightIntensity;
 		}
 
+		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
+		private struct CB_SH {
+			public float4		_SH0;
+			public float4		_SH1;
+			public float4		_SH2;
+			public float4		_SH3;
+			public float4		_SH4;
+			public float4		_SH5;
+			public float4		_SH6;
+			public float4		_SH7;
+			public float4		_SH8;
+		}
+
 		#endregion
 
 		#region FIELDS
@@ -97,6 +110,7 @@ namespace TestMSBRDF {
 		ConstantBuffer<CB_Global>			m_CB_Global;
 		ConstantBuffer<CB_Camera>			m_CB_Camera;
 		ConstantBuffer<CB_Render>			m_CB_Render;
+		ConstantBuffer<CB_SH>				m_CB_SH;
 
 
 		//////////////////////////////////////////////////////////////////////////
@@ -141,7 +155,8 @@ namespace TestMSBRDF {
 
 			try {
 //				m_shader_Render = new Shader( m_device, new System.IO.FileInfo( "Shaders/Render.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
-				m_shader_Accumulate = new Shader( m_device, new System.IO.FileInfo( "Shaders/RenderComplete.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+//				m_shader_Accumulate = new Shader( m_device, new System.IO.FileInfo( "Shaders/RenderComplete.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+				m_shader_Accumulate = new Shader( m_device, new System.IO.FileInfo( "Shaders/RenderCompareSH.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 				m_shader_Finalize = new Shader( m_device, new System.IO.FileInfo( "Shaders/RenderComplete.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS_Finalize", null );
 			} catch ( Exception _e ) {
 				MessageBox.Show( "Shader failed to compile!\n\n" + _e.Message, "MSBRDF Test", MessageBoxButtons.OK, MessageBoxIcon.Error );
@@ -153,6 +168,7 @@ namespace TestMSBRDF {
 			m_CB_Global = new ConstantBuffer<CB_Global>( m_device, 0 );
 			m_CB_Camera = new ConstantBuffer<CB_Camera>( m_device, 1 );
 			m_CB_Render = new ConstantBuffer<CB_Render>( m_device, 2 );
+			m_CB_SH = new ConstantBuffer<CB_SH>( m_device, 3 );
 
 			BuildNoiseTextures();
 
@@ -177,6 +193,7 @@ namespace TestMSBRDF {
 			using ( ImageUtility.ImagesMatrix I = new ImageUtility.ImagesMatrix() ) {
 //				I.DDSLoadFile( new FileInfo( "garage4_hd.dds" ) );
 				I.DDSLoadFile( new FileInfo( "beach.dds" ) );
+				EncodeCubeMapIntoSH( I );
 				m_tex_CubeMap = new Texture2D( m_device, I, ImageUtility.COMPONENT_FORMAT.AUTO );
 			}
 
@@ -186,7 +203,8 @@ namespace TestMSBRDF {
 			m_camera.CreatePerspectiveCamera( (float) (60.0 * Math.PI / 180.0), (float) panelOutput.Width / panelOutput.Height, 0.01f, 100.0f );
 			m_manipulator.Attach( panelOutput, m_camera );
 //			m_manipulator.InitializeCamera( new float3( 0, 1.5f, 2.0f ), new float3( -0.4f, 0, 0.4f ), float3.UnitY );						// Garage probe
-			m_manipulator.InitializeCamera( new float3( 1.46070266f, 1.10467184f, -1.36212754f ), new float3( 0, 1, 0 ), float3.UnitY );	// Beach probe
+//			m_manipulator.InitializeCamera( new float3( 1.46070266f, 1.10467184f, -1.36212754f ), new float3( 0, 1, 0 ), float3.UnitY );	// Beach probe
+m_manipulator.InitializeCamera( new float3( 0, 1.10467184f, -2 ), new float3( 0, 1, 0 ), float3.UnitY );	// Beach probe
 
 			m_camera.CameraTransformChanged += Camera_CameraTransformChanged;
 			Camera_CameraTransformChanged( null, EventArgs.Empty );
@@ -309,6 +327,7 @@ m_CB_Render.m._roughnessGround *= m_CB_Render.m._roughnessGround;
 
 			m_tex_Accumulator.Dispose();
 
+			m_CB_SH.Dispose();
 			m_CB_Render.Dispose();
 			m_CB_Camera.Dispose();
 			m_CB_Global.Dispose();
@@ -775,6 +794,37 @@ format = ImageUtility.PIXEL_FORMAT.RGBA32F;	// Force RGBA32F
 			} );
 
 			return result;
+		}
+
+		#endregion
+
+		#region 
+
+		void		EncodeCubeMapIntoSH( ImageUtility.ImagesMatrix _cubemap ) {
+
+
+_cubemap[0][0][0].WritePixels( ( uint X, uint Y, ref float4 _color ) => { _color.Set( 0.004f * X, 0.004f * Y, 0, 1 ); } );
+_cubemap[1][0][0].WritePixels( ( uint X, uint Y, ref float4 _color ) => { _color.Set( 0, 0, 0, 1 ); } );
+_cubemap[2][0][0].WritePixels( ( uint X, uint Y, ref float4 _color ) => { _color.Set( 0, 0, 0, 1 ); } );
+_cubemap[3][0][0].WritePixels( ( uint X, uint Y, ref float4 _color ) => { _color.Set( 0, 0, 0, 1 ); } );
+_cubemap[4][0][0].WritePixels( ( uint X, uint Y, ref float4 _color ) => { _color.Set( 0, 0, 0, 1 ); } );
+_cubemap[5][0][0].WritePixels( ( uint X, uint Y, ref float4 _color ) => { _color.Set( 0, 0, 0, 1 ); } );
+
+
+			float3[]	envSH = _cubemap.EncodeSHOrder2();
+
+			SphericalHarmonics.SHFunctions.FilterHanning( envSH, 2.8f );
+
+			m_CB_SH.m._SH0.Set( envSH[0], 0 );
+			m_CB_SH.m._SH1.Set( envSH[1], 0 );
+			m_CB_SH.m._SH2.Set( envSH[2], 0 );
+			m_CB_SH.m._SH3.Set( envSH[3], 0 );
+			m_CB_SH.m._SH4.Set( envSH[4], 0 );
+			m_CB_SH.m._SH5.Set( envSH[5], 0 );
+			m_CB_SH.m._SH6.Set( envSH[6], 0 );
+			m_CB_SH.m._SH7.Set( envSH[7], 0 );
+			m_CB_SH.m._SH8.Set( envSH[8], 0 );
+			m_CB_SH.UpdateData();
 		}
 
 		#endregion

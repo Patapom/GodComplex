@@ -210,7 +210,7 @@ namespace SphericalHarmonics
 		/// </summary>
 		/// <param name="_direction"></param>
 		/// <param name="_SH"></param>
-		static void	Ylm( float3 _direction, double[] _SH ) {
+		public static void	Ylm( float3 _direction, double[] _SH ) {
 			const double	c0 = 0.28209479177387814347403972578039;	// 1/2 sqrt(1/pi)
 			const double	c1 = 0.48860251190291992158638462283835;	// 1/2 sqrt(3/pi)
 			const double	c2 = 1.09254843059207907054338570580270;	// 1/2 sqrt(15/pi)

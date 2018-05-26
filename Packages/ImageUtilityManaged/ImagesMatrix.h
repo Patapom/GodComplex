@@ -204,5 +204,17 @@ namespace ImageUtility {
 		static void		NextMipSize( UInt32% _size ) { U32 size; ImageUtilityLib::ImagesMatrix::NextMipSize( size ); _size = size; }
 		static void		NextMipSize( UInt32% _width, UInt32% _height ) { U32 width, height; ImageUtilityLib::ImagesMatrix::NextMipSize( width, height ); _width = width; _height = height; }
 		static void		NextMipSize( UInt32% _width, UInt32% _height, UInt32% _depth ) { U32 width, height, depth; ImageUtilityLib::ImagesMatrix::NextMipSize( width, height, depth ); _width = width; _height = height; _depth = depth; }
+
+	public:
+		//////////////////////////////////////////////////////////////////////////
+		// Helpers
+
+		// Converts a vertical or horizontal cross HDR environment map into a cube map (cf. http://www.pauldebevec.com/Probes/)
+		//	_crossMap, the source cross env map image to convert
+		//	_buildMips, true to build the mip maps of each cube map face
+		void		ConvertCrossToCubeMap( ImageFile^ _crossMap, bool _buildMips );
+
+		// Assuming this matrix contains the representation for a cube map, this helper encodes the cube map into SH coefficients
+		cli::array<float3>^	EncodeSHOrder2();
 	};
 }
