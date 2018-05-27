@@ -63,6 +63,10 @@ Texture2D< float >		_tex_GGX_Eavg : register( t3 );
 Texture2D< float >		_tex_OrenNayar_Eo : register( t4 );
 Texture2D< float >		_tex_OrenNayar_Eavg : register( t5 );
 
+
+//Texture2D< float3 >		_tex_SH : register( t30 );
+
+
 /////////////////////////////////////////////////////////////////////////////////////////////
 
 // Converts a 2D UV into an upper hemisphere direction (tangent space) + solid angle
@@ -343,6 +347,14 @@ float4	PS( VS_IN _In ) : SV_TARGET0 {
 	// Build environment SH as an array
 	float3	envSH[9] = { _SH[0].xyz, _SH[1].xyz, _SH[2].xyz, _SH[3].xyz, _SH[4].xyz, _SH[5].xyz, _SH[6].xyz, _SH[7].xyz, _SH[8].xyz };
 
+
+// Check SH coefficients
+//if ( hit.y != 0 )
+//	return float4( SampleSky( wsView, 0.0 ), 1 );	// No hit
+////return float4( EvaluateSHRadiance( wsNormal, envSH ), 1 );				// Order 2 (9 coefficients)
+//return float4( EvaluateSHRadiance( wsNormal, 9, _tex_SH, 8.7 ), 1 );	// Order 9 (100 coefficients)
+
+
 	// Prepare surface characteristics
 	float3	rho, F0;
 	float	alphaS, alphaD;
@@ -388,8 +400,9 @@ float4	PS( VS_IN _In ) : SV_TARGET0 {
 		#endif
 
 		// Sample incoming radiance
-//		float3	Li = ComputeIncomingRadiance( wsPosition, wsLight, seeds );
-		float3	Li = EvaluateSHRadiance( wsLight, envSH );
+		float3	Li = ComputeIncomingRadiance( wsPosition, wsLight, seeds );
+//		float3	Li = EvaluateSHRadiance( wsLight, envSH );		// Order 2 (9 coefficients)
+//		float3	Li = EvaluateSHRadiance( wsLight, 9, _tex_SH );	// Order 9 (100 coefficients)
 
 		// Compute reflected radiance
 		float3	Lr = Li * BRDF;

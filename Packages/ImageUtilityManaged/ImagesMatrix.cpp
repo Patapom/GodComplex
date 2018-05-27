@@ -46,8 +46,20 @@ namespace ImageUtility {
 	// Helpers
 	//////////////////////////////////////////////////////////////////////////
 	//
-	ImageFile^	GrabFace( cli::array<cli::array<float4>^>^ _cross, UInt32 _cubeSize, PIXEL_FORMAT _format, UInt32 _X, UInt32 _Y, int _dirX, int _dirY ) {
+
+	// Creates an image from a Size*Size square of pixels copied from a given offset in a larger image, optionally inverting X and Y direction to swap the image
+	ImageFile^	GrabFace( UInt32 _faceIndex, cli::array<cli::array<float4>^>^ _cross, UInt32 _cubeSize, PIXEL_FORMAT _format, UInt32 _X, UInt32 _Y, int _dirX, int _dirY ) {
 		ImageFile^	result = gcnew ImageFile( _cubeSize, _cubeSize, _format, gcnew ColorProfile( ColorProfile::STANDARD_PROFILE::LINEAR ) );
+
+// float4	color;
+// switch ( _faceIndex ) {
+// case 0: color.Set( +1, 0, 0, 1 ); break;
+// case 1: color.Set( -1, 0, 0, 1 ); break;
+// case 2: color.Set( 0, +1, 0, 1 ); break;
+// case 3: color.Set( 0, -1, 0, 1 ); break;
+// case 4: color.Set( 0, 0, +1, 1 ); break;
+// case 5: color.Set( 0, 0, -1, 1 ); break;
+// }
 
 		cli::array<float4>^	scanline = gcnew cli::array<float4>( _cubeSize );
 		UInt32	sourceY = _Y * _cubeSize + (_dirY > 0 ? 0 : _cubeSize-1);
@@ -55,6 +67,18 @@ namespace ImageUtility {
 			UInt32	sourceX = _X * _cubeSize + (_dirX > 0 ? 0 : _cubeSize-1);
 			for ( UInt32 X=0; X < _cubeSize; X++ ) {
 				scanline[X] = _cross[sourceY][sourceX];
+
+
+// Verify orientation
+// Single color
+//scanline[X] = color;
+// Color encodes world direction
+// float3	lsDir( 2.0f * X / _cubeSize - 1.0f, 1.0f - 2.0f * Y / _cubeSize, 1.0f );
+// float3	wsDir = lsDir * ImagesMatrix::ms_faces2World[_faceIndex];
+// wsDir.Normalize();
+// scanline[X].Set( wsDir, 1 );
+
+
 				sourceX += _dirX;
 			}
 			result->WriteScanline( Y, scanline );
@@ -80,18 +104,18 @@ namespace ImageUtility {
 		UInt32					cubeSize = 0;
 		UInt32					mipsCount = 0;
 		cli::array<ImageFile^>^	cubeFaces = gcnew cli::array<ImageFile ^>( 6 );
-		if ( tempCross->GetLength(0) < tempCross->GetLength(1) ) {
+		if ( _crossMap->Width < _crossMap->Height ) {
 			// Vertical cross
 			cubeSize = _crossMap->Height >> 2;
 			float	fMipsCount = Mathf::Log2( (float) cubeSize );
 			mipsCount = 1 + (UInt32) Mathf::Floor( fMipsCount );
 
-			cubeFaces[0] = GrabFace( tempCross, cubeSize, format, 2, 1, +1, +1 );	// +X
-			cubeFaces[1] = GrabFace( tempCross, cubeSize, format, 0, 1, +1, +1 );	// -X
-			cubeFaces[2] = GrabFace( tempCross, cubeSize, format, 1, 0, +1, +1 );	// +Y
-			cubeFaces[3] = GrabFace( tempCross, cubeSize, format, 1, 2, +1, +1 );	// -Y
-			cubeFaces[4] = GrabFace( tempCross, cubeSize, format, 1, 1, +1, +1 );	// +Z
-			cubeFaces[5] = GrabFace( tempCross, cubeSize, format, 1, 3, -1, -1 );	// -Z
+			cubeFaces[0] = GrabFace( 0, tempCross, cubeSize, format, 2, 1, +1, +1 );	// +X
+			cubeFaces[1] = GrabFace( 1, tempCross, cubeSize, format, 0, 1, +1, +1 );	// -X
+			cubeFaces[2] = GrabFace( 2, tempCross, cubeSize, format, 1, 0, +1, +1 );	// +Y
+			cubeFaces[3] = GrabFace( 3, tempCross, cubeSize, format, 1, 2, +1, +1 );	// -Y
+			cubeFaces[4] = GrabFace( 4, tempCross, cubeSize, format, 1, 1, +1, +1 );	// +Z
+			cubeFaces[5] = GrabFace( 5, tempCross, cubeSize, format, 1, 3, -1, -1 );	// -Z
 
 		} else {
 			// Horizontal cross
@@ -110,11 +134,13 @@ throw gcnew Exception( "TODO! Support horizontal cross!" );
 		AllocateImageFiles( format, cubeFaces[0]->ColorProfile );		// Allocate remaining mips
 
 		if ( _buildMips )
-			BuildMips( IMAGE_TYPE::LINEAR );	// Build them
-
-// Compress
-//ImagesMatrix	compressedMatrix = m_device.DDSCompress( matrix, ImageUtility.ImagesMatrix.COMPRESSION_TYPE.BC6H, ImageUtility.COMPONENT_FORMAT.AUTO );
+			BuildMips( IMAGE_TYPE::LINEAR );
 	}
+
+	//////////////////////////////////////////////////////////////////////////
+	// SH Encoding Helpers
+	//////////////////////////////////////////////////////////////////////////
+	//
 
 	// We're assuming each cube map face to be 2x2 square units in area since the cube has faces spanning the [-1,+1] domain along each axis
 	// We're looking for the solid angle dw spanned by a single pixel which is basically the area of a pixel dA = (2 / cubeResolution)² as
@@ -135,33 +161,6 @@ throw gcnew Exception( "TODO! Support horizontal cross!" );
 		float3	lsDir, wsDir, radiance;
 		lsDir.z = 1.0f;		// Cube face is always 1 unit away in front of camera
 
-		// Setup cube face orientations
-		cli::array<SharpMath::float3x3>^	faces2World = gcnew cli::array<SharpMath::float3x3>( 6 );
-		faces2World[0] = SharpMath::float3x3( gcnew cli::array<float>( 9 )
-		{	 0,  0, +1,
-			 0, +1,  0,
-			+1,  0,  0 } );	// +X
-		faces2World[1] = SharpMath::float3x3( gcnew cli::array<float>( 9 )
-		{	 0,  0, -1,
-			 0, +1,  0,
-			-1,  0,  0 } );	// -X
-		faces2World[2] = SharpMath::float3x3( gcnew cli::array<float>( 9 )
-		{	+1,  0,  0,
-			 0,  0, +1,
-			 0, +1,  0 } );	// +Y
-		faces2World[3] = SharpMath::float3x3( gcnew cli::array<float>( 9 )
-		{	+1,  0,  0,
-			 0,  0, -1,
-			 0, -1,  0 } );	// -Y
-		faces2World[4] = SharpMath::float3x3( gcnew cli::array<float>( 9 )
-		{	+1,  0,  0,
-			 0, +1,  0,
-			 0,  0, -1 } );	// +Z
-		faces2World[5] = SharpMath::float3x3( gcnew cli::array<float>( 9 )
-		{	-1,  0,  0,
-			 0, +1,  0,
-			 0,  0, +1 } );	// -Z
-
 		cli::array<float4>^	scanline = gcnew cli::array<float4>( C );
 
 		cli::array<double>^	directionalSH = gcnew cli::array<double>( 9 );
@@ -170,7 +169,7 @@ throw gcnew Exception( "TODO! Support horizontal cross!" );
 		// Process each face
 		for ( UInt32 faceIndex=0; faceIndex < 6; faceIndex++ ) {
 			ImageFile^			cubeFace = (*this)[faceIndex][0][0];
-			SharpMath::float3x3	face2World = faces2World[faceIndex];
+			SharpMath::float3x3	face2World = ms_faces2World[faceIndex];
 
 			for ( UInt32 Y=0; Y < C; Y++ ) {
 				lsDir.y = 1.0f - 2.0f * (Y+0.5f) / C;
@@ -190,6 +189,7 @@ throw gcnew Exception( "TODO! Support horizontal cross!" );
 					wsDir = lsDir * face2World;
 					wsDir /= r;	// Normalize
 
+// NOTE: Not necessary if decoding is not doing it either!
 // 					// Now transform into SH basis (Z-up)
 // 					wsDir.Set( wsDir.z, wsDir.x, wsDir.y );
 
@@ -204,5 +204,94 @@ throw gcnew Exception( "TODO! Support horizontal cross!" );
 
 		return sumSH;
 	}
+
+	cli::array<float3>^	ImagesMatrix::EncodeSH( UInt32 _order ) {
+		UInt32	C = (*this)[0][0][0]->Width;	// Cube map face dimensions
+
+		float	dA = 2.0f / C;
+				dA *= dA;	// Area of a single pixel
+		float	r, dw;
+		float3	lsDir, wsDir, radiance;
+		lsDir.z = 1.0f;		// Cube face is always 1 unit away in front of camera
+
+		// Setup cube face orientations
+		cli::array<float4>^	scanline = gcnew cli::array<float4>( C );
+
+		cli::array<float3>^	sumSH = gcnew cli::array<float3>( (_order+1)*(_order+1) );
+
+		// Process each face
+		for ( UInt32 faceIndex=0; faceIndex < 6; faceIndex++ ) {
+			ImageFile^			cubeFace = (*this)[faceIndex][0][0];
+			SharpMath::float3x3	face2World = ms_faces2World[faceIndex];
+
+			for ( UInt32 Y=0; Y < C; Y++ ) {
+				lsDir.y = 1.0f - 2.0f * (Y+0.5f) / C;
+
+				cubeFace->ReadScanline( Y, scanline );
+
+				for ( UInt32 X=0; X < C; X++ ) {
+					lsDir.x = 2.0f * (X+0.5f) / C - 1.0f;
+					r = lsDir.Length;
+					dw = dA / (r*r*r);
+
+					radiance.x = scanline[X].x;
+					radiance.y = scanline[X].y;
+					radiance.z = scanline[X].z;
+
+					// Transform from cube face space to world space
+					wsDir = lsDir * face2World;
+					wsDir /= r;	// Normalize
+
+
+//radiance = wsDir.Saturate();	// Encode direction as radiance
+
+
+// NOTE: Not necessary if decoding is not doing it either!
+// 					// Now transform into SH basis (Z-up)
+// 					wsDir.Set( wsDir.z, wsDir.x, wsDir.y );
+
+					// Compute SH coefficients for that direction and accumulate
+					for ( int l=0; l <= int(_order); l++ ) {
+						for ( int m=-l; m <= l; m++ ) {
+							float	coeff = (float) SphericalHarmonics::SHFunctions::Ylm( l, m, wsDir );
+							sumSH[l*(l+1)+m] += dw * coeff * radiance;
+						}
+					}
+				}
+			}
+		}
+
+		return sumSH;
+	}
+
+	cli::array<SharpMath::float3x3>^	ImagesMatrix::ms_faces2WorldInit() {
+		cli::array<SharpMath::float3x3>^	R = gcnew cli::array<SharpMath::float3x3>( 6 );
+		R[0] = SharpMath::float3x3( gcnew cli::array<float>( 9 ) {
+			 0,  0, -1,
+			 0, +1,  0,
+			+1,  0,  0 } );	// +X
+		R[1] = SharpMath::float3x3( gcnew cli::array<float>( 9 ) {
+			 0,  0, +1,
+			 0, +1,  0,
+			-1,  0,  0 } );	// -X
+		R[2] = SharpMath::float3x3( gcnew cli::array<float>( 9 ) {
+			+1,  0,  0,
+			 0,  0, -1,
+			 0, +1,  0 } );	// +Y
+		R[3] = SharpMath::float3x3( gcnew cli::array<float>( 9 ) {
+			+1,  0,  0,
+			 0,  0, +1,
+			 0, -1,  0 } );	// -Y
+		R[4] = SharpMath::float3x3( gcnew cli::array<float>( 9 ) {
+			+1,  0,  0,
+			 0, +1,  0,
+			 0,  0, +1 } );	// +Z
+		R[5] = SharpMath::float3x3( gcnew cli::array<float>( 9 ) {
+			-1,  0,  0,
+			 0, +1,  0,
+			 0,  0, -1 } );	// -Z
+
+		return R;
+	};
 }
 

@@ -128,15 +128,6 @@ namespace TestMSBRDF {
 		public TestForm() {
 			InitializeComponent();
 
-// 			// Build 8 random rotation matrices
-// 			string[]	randomRotations = new string[8];
-// 			Random	RNG = new Random( 1 );
-// 			for ( int i=0; i < 8; i++ ) {
-// 				WMath.Matrix3x3	rot = new WMath.Matrix3x3();
-// 				rot.FromEuler( new WMath.Vector( (float) RNG.NextDouble(), (float) RNG.NextDouble(), (float) RNG.NextDouble() ) );
-// 				randomRotations[i] = rot.ToString();
-// 			}
-
 //ConvertCrossToCubeMap( new FileInfo( "beach_cross.hdr" ), new FileInfo( "beach.dds" ) );
 
 			Application.Idle += new EventHandler( Application_Idle );
@@ -202,9 +193,8 @@ namespace TestMSBRDF {
 			// Setup camera
 			m_camera.CreatePerspectiveCamera( (float) (60.0 * Math.PI / 180.0), (float) panelOutput.Width / panelOutput.Height, 0.01f, 100.0f );
 			m_manipulator.Attach( panelOutput, m_camera );
-//			m_manipulator.InitializeCamera( new float3( 0, 1.5f, 2.0f ), new float3( -0.4f, 0, 0.4f ), float3.UnitY );						// Garage probe
-//			m_manipulator.InitializeCamera( new float3( 1.46070266f, 1.10467184f, -1.36212754f ), new float3( 0, 1, 0 ), float3.UnitY );	// Beach probe
-m_manipulator.InitializeCamera( new float3( 0, 1.10467184f, -2 ), new float3( 0, 1, 0 ), float3.UnitY );	// Beach probe
+//			m_manipulator.InitializeCamera( new float3( 0, 1.5f, 2.0f ), new float3( -0.4f, 0, 0.4f ), float3.UnitY );					// Garage probe
+			m_manipulator.InitializeCamera( new float3( 1.46070266f, 1.10467184f, 1.36212754f ), new float3( 0, 1, 0 ), float3.UnitY );	// Beach probe
 
 			m_camera.CameraTransformChanged += Camera_CameraTransformChanged;
 			Camera_CameraTransformChanged( null, EventArgs.Empty );
@@ -729,6 +719,18 @@ for ( uint Y=0; Y < ROUGHNESS_SUBDIVS_COUNT; Y++ ) {
 		#region Cross -> Cube Map Conversion
 
 		void	ConvertCrossToCubeMap( FileInfo _crossMapFile, FileInfo _cubeMapFile ) {
+			using ( ImageUtility.ImageFile crossMap = new ImageUtility.ImageFile( _crossMapFile ) ) {
+				using ( ImageUtility.ImagesMatrix	cubeMap = new ImageUtility.ImagesMatrix() ) {
+					cubeMap.ConvertCrossToCubeMap( crossMap, true );
+// BC6H Compress
+//ImageUtility.ImagesMatrix	compressedCubeMap = m_device.DDSCompress( cubeMap, ImageUtility.ImagesMatrix.COMPRESSION_TYPE.BC6H, ImageUtility.COMPONENT_FORMAT.AUTO );
+
+					cubeMap.DDSSaveFile( _cubeMapFile, ImageUtility.COMPONENT_FORMAT.AUTO );
+				}
+			}
+		}
+
+		void	ConvertCrossToCubeMap_OLD( FileInfo _crossMapFile, FileInfo _cubeMapFile ) {
 			float4[,]	tempCross;
 			ImageUtility.PIXEL_FORMAT	format;
 			using ( ImageUtility.ImageFile I = new ImageUtility.ImageFile( _crossMapFile ) ) {
@@ -801,16 +803,6 @@ format = ImageUtility.PIXEL_FORMAT.RGBA32F;	// Force RGBA32F
 		#region 
 
 		void		EncodeCubeMapIntoSH( ImageUtility.ImagesMatrix _cubemap ) {
-
-
-_cubemap[0][0][0].WritePixels( ( uint X, uint Y, ref float4 _color ) => { _color.Set( 0.004f * X, 0.004f * Y, 0, 1 ); } );
-_cubemap[1][0][0].WritePixels( ( uint X, uint Y, ref float4 _color ) => { _color.Set( 0, 0, 0, 1 ); } );
-_cubemap[2][0][0].WritePixels( ( uint X, uint Y, ref float4 _color ) => { _color.Set( 0, 0, 0, 1 ); } );
-_cubemap[3][0][0].WritePixels( ( uint X, uint Y, ref float4 _color ) => { _color.Set( 0, 0, 0, 1 ); } );
-_cubemap[4][0][0].WritePixels( ( uint X, uint Y, ref float4 _color ) => { _color.Set( 0, 0, 0, 1 ); } );
-_cubemap[5][0][0].WritePixels( ( uint X, uint Y, ref float4 _color ) => { _color.Set( 0, 0, 0, 1 ); } );
-
-
 			float3[]	envSH = _cubemap.EncodeSHOrder2();
 
 			SphericalHarmonics.SHFunctions.FilterHanning( envSH, 2.8f );
@@ -825,6 +817,22 @@ _cubemap[5][0][0].WritePixels( ( uint X, uint Y, ref float4 _color ) => { _color
 			m_CB_SH.m._SH7.Set( envSH[7], 0 );
 			m_CB_SH.m._SH8.Set( envSH[8], 0 );
 			m_CB_SH.UpdateData();
+
+
+// // Encode as order-9 (100 coefficients)
+// float3[]	envSH2 = _cubemap.EncodeSH( 9 );
+// 
+// PixelsBuffer	content = new PixelsBuffer( 100 * 16 );
+// using ( BinaryWriter W = content.OpenStreamWrite() )
+// 	for ( uint i=0; i < 100; i++ ) {
+// 		W.Write( envSH2[i].x );
+// 		W.Write( envSH2[i].y );
+// 		W.Write( envSH2[i].z );
+// 		W.Write( 0.0f );
+// 	}
+// 
+// Texture2D	texSH = new Texture2D( m_device, 100, 1, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, false, new PixelsBuffer[] { content } );
+// 			texSH.Set( 30 );
 		}
 
 		#endregion

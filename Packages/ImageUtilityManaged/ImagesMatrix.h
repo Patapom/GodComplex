@@ -216,5 +216,11 @@ namespace ImageUtility {
 
 		// Assuming this matrix contains the representation for a cube map, this helper encodes the cube map into SH coefficients
 		cli::array<float3>^	EncodeSHOrder2();
+		cli::array<float3>^	EncodeSH( UInt32 _order );
+
+	private:
+		public:
+		static cli::array<SharpMath::float3x3>^	ms_faces2World = ms_faces2WorldInit();
+		static cli::array<SharpMath::float3x3>^	ms_faces2WorldInit();
 	};
 }

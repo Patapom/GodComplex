@@ -257,16 +257,13 @@ namespace SphericalHarmonics
 				return Math.Pow( -1, m ) * SQRT2 * K( l, -m ) * Math.Sin( -m * _ϕ ) * P( l, -m, Math.Cos( _θ ) );
 		}
 
-		// Here, we choose the convention that the vertical axis defining THETA is the Y axis
-		//  and the axes defining PHI are X and Z where PHI = 0 when the vector is aligned to the positive Z axis
-		//
 		// NOTE ==> The '_Direction' vector must be normalized!!
 		//
-		public static double	Ylm( int l, int m, float3 _Direction ) {
+		public static double	Ylm( int l, int m, float3 _direction ) {
 			// Convert from cartesian to polar coords
 			double	θ = 0.0;
 			double	ϕ = 0.0f;
-			CartesianToSpherical( _Direction, out θ, out ϕ );
+			CartesianToSpherical( _direction, out θ, out ϕ );
 
 			return	Ylm( l, m, θ, ϕ );
 		}

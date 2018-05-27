@@ -32,14 +32,6 @@ static const float3	EnvironmentSH[9] = {
 					float3( 6.07079134655854, 6.05819330192308, 6.50325529149908 ), 
 };
 
-// 400 SH coefficients representing the surrounding environment
-//cbuffer _CB_Coeffs : register( b1 ) {
-//	float4	_environmentSH[400];
-////	float	_environmentSH_R[400];
-////	float	_environmentSH_G[400];
-////	float	_environmentSH_B[400];
-//};
-
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 // Generic SH coefficients (works up to order 17, after that I believe it's lacking precision)
@@ -173,10 +165,39 @@ void	Ylm( float3 _direction, out float _SH[9] ) {
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-// Generic radiance estimate up to order 20
+// Generic radiance estimate up to order 19
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 //
+
+float3	EvaluateSHRadiance( float3 _direction, uint _maxOrder, Texture2D< float3 > _texSH, float _filterWindowSize=1000.0 ) {
+
+//	_direction = float3( _direction.z, _direction.x, _direction.y );	// Transform direction from Y-up to Z-up
+
+	_maxOrder++;
+	uint	coeffsCount = _maxOrder * _maxOrder;
+	float	rcpWindow = 1.0 / _filterWindowSize;
+
+	float	cosTheta = _direction.z;
+//	float	phi = atan2( _direction.y, _direction.x );	// Produces NaNs if atan2( 0, 0 )!!
+	float	phi = abs(_direction.x) > 1e-6 ? atan2( _direction.y, _direction.x ) : 0.0;
+
+	// Use generic Ylm for all orders
+	float3	radiance = 0.0;
+	[loop]
+	for ( uint i=0; i < coeffsCount; i++ ) {
+		int	l = int( floor( sqrt( i ) ) );
+		int	m = i - l*(l+1);
+
+		float	filter = 0.5 * (1.0 + cos( l * PI * rcpWindow ));
+
+		float	Ylm = filter * General_Ylm( l, m, cosTheta, phi );
+		radiance += Ylm * _texSH[uint2(i,0)];
+	}
+
+	return radiance;
+}
+
 /*float3	General_EvaluateSHRadiance( float3 _direction, int _maxOrder, float _filterWindowSize, float _A[20] ) {
 	float	cosTheta = _direction.z;
 //	float	phi = atan2( _direction.y, _direction.x );	// Produces NaNs if atan2( 0, 0 )!!
@@ -367,34 +388,6 @@ float3	EvaluateSHIrradiance( float3 _direction, float _cosThetaAO, float3 _SH[9]
 		);
 }
 
-/* THIS IS WRONG: It doesn't preoperly account for cone bending in any direction...
-
-// Evaluates the irradiance perceived in the provided direction, also accounting for Ambient Occlusion cone and normal bending
-// Details can be found at http://wiki.nuaj.net/index.php?title=SphericalHarmonicsPortal
-// Here, _cosThetaAO = cos( PI/2 * AO ) and represents the cosine of the cone half-angle that drives the amount of light a surface is perceiving
-//	and _coneBendAngle is the angle from which the cone's direction bends from the normal
-//
-float3	EvaluateSHIrradiance( float3 _direction, float _cosThetaAO, float _coneBendAngle, float3 _SH[9] ) {
-	float3		A = EstimateLambertReflectanceFactors( _cosThetaAO, _coneBendAngle );
-	float		c0 = A.x;		// [sqrt(1/(4PI)] * [sqrt(4PI/1) * A0] = A0
-	float		c1 = A.y;		// [sqrt(3/(4PI)] * [sqrt(4PI/3) * A1] = A1
-	float		c2 = 0.5 * A.z;	// [sqrt(5/(16PI)] * [sqrt(4PI/5) * A2] = 1/2 * A2
-	const float	sqrt3 = 1.7320508075688772935274463415059;
-
-	float		x = _direction.x;
-	float		y = _direction.y;
-	float		z = _direction.z;
-
-	return	max( 0.0, c0 * _SH[0]										// c0.L00
-			+ c1 * (_SH[1]*y + _SH[2]*z + _SH[3]*x)						// c1.(L1-1.y + L10.z + L11.x)
-			+ c2 * (_SH[6]*(3.0*z*z - 1.0)								// c2.L20.(3z²-1)
-				+ sqrt3 * (_SH[8]*(x*x - y*y)							// sqrt(3).c2.L22.(x²-y²)
-					+ 2.0 * (_SH[4]*x*y + _SH[5]*y*z + _SH[7]*z*x)))	// 2sqrt(3).c2.(L2-2.xy + L2-1.yz + L21.zx)
-		);
-}
-*/
-
-
 // Rotate ZH cosine lobe into specific direction
 // WARNING! _A coefficients MUST already be multiplied by sqrt( 4PI / (2l+1) ) before entering this function!
 void	RotateZH( float3 _A, float3 _wsDirection, out float _SH[9] ) {
@@ -439,6 +432,7 @@ void	ClampedCone( float3 _direction, float _cosConeAngle, out float _SH[9] ) {
 						t * A1 );
 	RotateZH( A, _direction, _SH );
 }
+
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
