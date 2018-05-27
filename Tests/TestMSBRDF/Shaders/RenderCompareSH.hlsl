@@ -3,7 +3,7 @@
 
 //#define	WHITE_FURNACE_TEST	1
 
-#define	ONLY_MS	1
+//#define	MS_ONLY	1	// Show only multiple scattering contribution
 
 static const uint	SAMPLES_COUNT = 32;
 
@@ -14,7 +14,7 @@ static const uint	SAMPLES_COUNT = 32;
 	// All white!
 	#define	ALBEDO_SPHERE	1
 	#define	ALBEDO_PLANE	1
-	#define	F0_TINT_SPHERE	1
+	#define	F0_TINT_SPHERE	(_reflectanceSphereSpecular)		// So we can see below the specular layer!
 	#define	F0_TINT_PLANE	1
 #else
 // Only for blog post with Rho=100%
@@ -25,9 +25,9 @@ static const uint	SAMPLES_COUNT = 32;
 //	#define	ALBEDO_SPHERE	(_reflectanceSphereDiffuse * float3( 0.9, 0.5, 0.1 ))	// Nicely saturated yellow
 	#define	ALBEDO_PLANE	(_reflectanceGround * float3( 0.9, 0.5, 0.1 ))			// Nicely saturated yellow
 
-//	#define	F0_TINT_SPHERE	(_reflectanceSphereSpecular * float3( 1, 0.765557, 0.336057 ))	// Gold (from https://seblagarde.wordpress.com/2011/08/17/feeding-a-physical-based-lighting-mode/)
+	#define	F0_TINT_SPHERE	(_reflectanceSphereSpecular * float3( 1, 0.765557, 0.336057 ))	// Gold (from https://seblagarde.wordpress.com/2011/08/17/feeding-a-physical-based-lighting-mode/)
 //	#define	F0_TINT_SPHERE	(_reflectanceSphereSpecular * float3( 0.336057, 0.765557, 1 ))
-	#define	F0_TINT_SPHERE	(_reflectanceSphereSpecular * 1.0)
+//	#define	F0_TINT_SPHERE	(_reflectanceSphereSpecular * 1.0)
 	#define	F0_TINT_PLANE	(_reflectanceGround * 1.0)
 #endif
 
@@ -171,19 +171,20 @@ float3	EstimateMSIrradiance_SH_OrenNayar( float _roughness, float3 _wsNormal, fl
 	return result;
 }
 
-float3	EstimateMSIrradiance_SH( float3 _wsNormal, float _mu_o, float _roughnessSpecular, float3 _IOR, float _roughnessDiffuse, float3 _albedo, float3 _SH[9] ) {
+float3	EstimateMSIrradiance_SH( float3 _wsNormal, float3 _wsReflected, float _mu_o, float _roughnessSpecular, float3 _IOR, float _roughnessDiffuse, float3 _albedo, float3 _environmentSH[9] ) {
 
+	// Estimate specular irradiance
 	float3	F0 = Fresnel_F0FromIOR( _IOR );
 	float3	MSFactor_spec = (_flags & 2) ? F0 * (0.04 + F0 * (0.66 + F0 * 0.3)) : F0;	// From http://patapom.com/blog/BRDF/MSBRDFEnergyCompensation/#varying-the-fresnel-reflectance-f_0f_0
 	float3	Favg = FresnelAverage( _IOR );
 
 //MSFactor_spec = 1.0;
 
-	float3	E_spec = MSFactor_spec * EstimateMSIrradiance_SH_GGX( _roughnessSpecular, _wsNormal, _mu_o, _SH, _tex_GGX_Eo, _tex_GGX_Eavg );
+	float3	E_spec = MSFactor_spec * EstimateMSIrradiance_SH_GGX( _roughnessSpecular, _wsReflected, _mu_o, _environmentSH, _tex_GGX_Eo, _tex_GGX_Eavg );
 
 //return E_spec;
 
-	// Diffuse
+	// Estimate diffuse irradiance
 	const float	tau = 0.28430405702379613;
 	const float	A1 = (1.0 - tau) / pow2( tau );
 	float3		rho = tau * _albedo;
@@ -191,7 +192,7 @@ float3	EstimateMSIrradiance_SH( float3 _wsNormal, float _mu_o, float _roughnessS
 
 //MSFactor_diff = 1;
 
-	float3	E_diff = MSFactor_diff * EstimateMSIrradiance_SH_OrenNayar( _roughnessDiffuse, _wsNormal, _mu_o, _SH, _tex_OrenNayar_Eo, _tex_OrenNayar_Eavg );
+	float3	E_diff = MSFactor_diff * EstimateMSIrradiance_SH_OrenNayar( _roughnessDiffuse, _wsNormal, _mu_o, _environmentSH, _tex_OrenNayar_Eo, _tex_OrenNayar_Eavg );
 
 //return E_diff;
 
@@ -242,7 +243,7 @@ float3	ComputeBRDF_Full(  float3 _tsNormal, float3 _tsView, float3 _tsLight, flo
 	float3	MSFactor_spec = (_flags & 2) ? F0 * (0.04 + F0 * (0.66 + F0 * 0.3)) : F0;	// From http://patapom.com/blog/BRDF/MSBRDFEnergyCompensation/#varying-the-fresnel-reflectance-f_0f_0
 	float3	Favg = FresnelAverage( _IOR );
 
-	#if ONLY_MS
+	#if MS_ONLY
 		float3	BRDF_spec = 0.0;
 	#else
 		float3	BRDF_spec = BRDF_GGX( _tsNormal, _tsView, _tsLight, _roughnessSpecular, _IOR );
@@ -252,7 +253,7 @@ float3	ComputeBRDF_Full(  float3 _tsNormal, float3 _tsView, float3 _tsLight, flo
 	}
 
 	// Compute diffuse contribution
-	#if ONLY_MS
+	#if MS_ONLY
 		float3	BRDF_diff = 0.0;
 	#else
 		float3	BRDF_diff = _albedo * BRDF_OrenNayar( _tsNormal, _tsView, _tsLight, _roughnessDiffuse );
@@ -373,11 +374,12 @@ Lr *= 0.9;	// Attenuate a bit to see in front of white sky...
 	///////////////////////////////////////////////////////////////////////////////////////
 	// Real-time Approximation
 	if ( (_flags & 1) && (_flags & 0x100) ) {
-//#if ONLY_MS
-//		Lo = validSamplesCount * EstimateMSIrradiance_SH( wsNormal, saturate( tsView.z ), alphaS, IOR, alphaD, rho, envSH );
-//#else
-		Lo += validSamplesCount * EstimateMSIrradiance_SH( wsNormal, saturate( tsView.z ), alphaS, IOR, alphaD, rho, envSH );
-//#endif
+		float3	wsReflectedView = reflect( wsView, wsNormal );
+		float3	wsReflected = normalize( lerp( wsReflectedView, wsNormal, alphaS ) );	// Go more toward prefectly reflected direction when roughness drops to 0
+
+wsReflected = wsNormal;
+
+		Lo += validSamplesCount * EstimateMSIrradiance_SH( wsNormal, wsReflected, saturate( tsView.z ), alphaS, IOR, alphaD, rho, envSH );
 	}
 
 //	return float4( Lo, SAMPLES_COUNT);

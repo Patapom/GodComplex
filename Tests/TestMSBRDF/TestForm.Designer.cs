@@ -45,20 +45,20 @@
 			this.floatTrackbarControlReflectanceSphere = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label5 = new System.Windows.Forms.Label();
 			this.checkBoxPause = new System.Windows.Forms.CheckBox();
-			this.groupBox1 = new System.Windows.Forms.GroupBox();
+			this.groupBoxSphere = new System.Windows.Forms.GroupBox();
 			this.label8 = new System.Windows.Forms.Label();
 			this.floatTrackbarControlRoughnessSphere2 = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.floatTrackbarControlReflectanceSphere2 = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label7 = new System.Windows.Forms.Label();
-			this.groupBox2 = new System.Windows.Forms.GroupBox();
-			this.groupBox3 = new System.Windows.Forms.GroupBox();
+			this.groupBoxPlane = new System.Windows.Forms.GroupBox();
+			this.groupBoxEnvironment = new System.Windows.Forms.GroupBox();
 			this.floatTrackbarControlCubeMapIntensity = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label6 = new System.Windows.Forms.Label();
 			this.checkBoxEnableMSFactor = new System.Windows.Forms.CheckBox();
 			this.checkBoxUseRealTimeApprox = new System.Windows.Forms.CheckBox();
-			this.groupBox1.SuspendLayout();
-			this.groupBox2.SuspendLayout();
-			this.groupBox3.SuspendLayout();
+			this.groupBoxSphere.SuspendLayout();
+			this.groupBoxPlane.SuspendLayout();
+			this.groupBoxEnvironment.SuspendLayout();
 			this.SuspendLayout();
 			// 
 			// floatTrackbarControlRoughnessSphere
@@ -235,20 +235,20 @@
 			// 
 			// groupBox1
 			// 
-			this.groupBox1.Controls.Add(this.label8);
-			this.groupBox1.Controls.Add(this.floatTrackbarControlRoughnessSphere2);
-			this.groupBox1.Controls.Add(this.floatTrackbarControlReflectanceSphere2);
-			this.groupBox1.Controls.Add(this.floatTrackbarControlRoughnessSphere);
-			this.groupBox1.Controls.Add(this.label7);
-			this.groupBox1.Controls.Add(this.floatTrackbarControlReflectanceSphere);
-			this.groupBox1.Controls.Add(this.label5);
-			this.groupBox1.Controls.Add(this.label1);
-			this.groupBox1.Location = new System.Drawing.Point(1298, 12);
-			this.groupBox1.Name = "groupBox1";
-			this.groupBox1.Size = new System.Drawing.Size(300, 145);
-			this.groupBox1.TabIndex = 5;
-			this.groupBox1.TabStop = false;
-			this.groupBox1.Text = "Sphere";
+			this.groupBoxSphere.Controls.Add(this.label8);
+			this.groupBoxSphere.Controls.Add(this.floatTrackbarControlRoughnessSphere2);
+			this.groupBoxSphere.Controls.Add(this.floatTrackbarControlReflectanceSphere2);
+			this.groupBoxSphere.Controls.Add(this.floatTrackbarControlRoughnessSphere);
+			this.groupBoxSphere.Controls.Add(this.label7);
+			this.groupBoxSphere.Controls.Add(this.floatTrackbarControlReflectanceSphere);
+			this.groupBoxSphere.Controls.Add(this.label5);
+			this.groupBoxSphere.Controls.Add(this.label1);
+			this.groupBoxSphere.Location = new System.Drawing.Point(1298, 12);
+			this.groupBoxSphere.Name = "groupBox1";
+			this.groupBoxSphere.Size = new System.Drawing.Size(300, 145);
+			this.groupBoxSphere.TabIndex = 5;
+			this.groupBoxSphere.TabStop = false;
+			this.groupBoxSphere.Text = "Sphere";
 			// 
 			// label8
 			// 
@@ -297,29 +297,29 @@
 			// 
 			// groupBox2
 			// 
-			this.groupBox2.Controls.Add(this.floatTrackbarControlRoughnessGround);
-			this.groupBox2.Controls.Add(this.label2);
-			this.groupBox2.Controls.Add(this.floatTrackbarControlReflectanceGround);
-			this.groupBox2.Controls.Add(this.label4);
-			this.groupBox2.Location = new System.Drawing.Point(1298, 173);
-			this.groupBox2.Name = "groupBox2";
-			this.groupBox2.Size = new System.Drawing.Size(300, 83);
-			this.groupBox2.TabIndex = 6;
-			this.groupBox2.TabStop = false;
-			this.groupBox2.Text = "Ground Plane";
+			this.groupBoxPlane.Controls.Add(this.floatTrackbarControlRoughnessGround);
+			this.groupBoxPlane.Controls.Add(this.label2);
+			this.groupBoxPlane.Controls.Add(this.floatTrackbarControlReflectanceGround);
+			this.groupBoxPlane.Controls.Add(this.label4);
+			this.groupBoxPlane.Location = new System.Drawing.Point(1298, 173);
+			this.groupBoxPlane.Name = "groupBox2";
+			this.groupBoxPlane.Size = new System.Drawing.Size(300, 83);
+			this.groupBoxPlane.TabIndex = 6;
+			this.groupBoxPlane.TabStop = false;
+			this.groupBoxPlane.Text = "Ground Plane";
 			// 
 			// groupBox3
 			// 
-			this.groupBox3.Controls.Add(this.floatTrackbarControlCubeMapIntensity);
-			this.groupBox3.Controls.Add(this.label6);
-			this.groupBox3.Controls.Add(this.floatTrackbarControlLightElevation);
-			this.groupBox3.Controls.Add(this.label3);
-			this.groupBox3.Location = new System.Drawing.Point(1298, 272);
-			this.groupBox3.Name = "groupBox3";
-			this.groupBox3.Size = new System.Drawing.Size(300, 99);
-			this.groupBox3.TabIndex = 7;
-			this.groupBox3.TabStop = false;
-			this.groupBox3.Text = "Environment Cube Map";
+			this.groupBoxEnvironment.Controls.Add(this.floatTrackbarControlCubeMapIntensity);
+			this.groupBoxEnvironment.Controls.Add(this.label6);
+			this.groupBoxEnvironment.Controls.Add(this.floatTrackbarControlLightElevation);
+			this.groupBoxEnvironment.Controls.Add(this.label3);
+			this.groupBoxEnvironment.Location = new System.Drawing.Point(1298, 272);
+			this.groupBoxEnvironment.Name = "groupBox3";
+			this.groupBoxEnvironment.Size = new System.Drawing.Size(300, 99);
+			this.groupBoxEnvironment.TabIndex = 7;
+			this.groupBoxEnvironment.TabStop = false;
+			this.groupBoxEnvironment.Text = "Environment Cube Map";
 			// 
 			// floatTrackbarControlCubeMapIntensity
 			// 
@@ -366,6 +366,7 @@
 			this.checkBoxUseRealTimeApprox.Name = "checkBoxUseRealTimeApprox";
 			this.checkBoxUseRealTimeApprox.Size = new System.Drawing.Size(281, 28);
 			this.checkBoxUseRealTimeApprox.TabIndex = 4;
+			this.checkBoxUseRealTimeApprox.Visible = false;
 			this.checkBoxUseRealTimeApprox.Text = "Use Real-Time Approximation";
 			this.checkBoxUseRealTimeApprox.UseVisualStyleBackColor = true;
 			this.checkBoxUseRealTimeApprox.CheckedChanged += new System.EventHandler(this.checkBoxEnableMSBRDF_CheckedChanged);
@@ -375,9 +376,9 @@
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1602, 741);
-			this.Controls.Add(this.groupBox3);
-			this.Controls.Add(this.groupBox2);
-			this.Controls.Add(this.groupBox1);
+			this.Controls.Add(this.groupBoxEnvironment);
+			this.Controls.Add(this.groupBoxPlane);
+			this.Controls.Add(this.groupBoxSphere);
 			this.Controls.Add(this.checkBoxKeepSampling);
 			this.Controls.Add(this.checkBoxPause);
 			this.Controls.Add(this.checkBoxUseRealTimeApprox);
@@ -391,12 +392,12 @@
 			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
 			this.Text = "MSBRDF Test Form";
 			this.KeyDown += new System.Windows.Forms.KeyEventHandler(this.TestForm_KeyDown);
-			this.groupBox1.ResumeLayout(false);
-			this.groupBox1.PerformLayout();
-			this.groupBox2.ResumeLayout(false);
-			this.groupBox2.PerformLayout();
-			this.groupBox3.ResumeLayout(false);
-			this.groupBox3.PerformLayout();
+			this.groupBoxSphere.ResumeLayout(false);
+			this.groupBoxSphere.PerformLayout();
+			this.groupBoxPlane.ResumeLayout(false);
+			this.groupBoxPlane.PerformLayout();
+			this.groupBoxEnvironment.ResumeLayout(false);
+			this.groupBoxEnvironment.PerformLayout();
 			this.ResumeLayout(false);
 			this.PerformLayout();
 
@@ -420,9 +421,9 @@
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlReflectanceSphere;
 		private System.Windows.Forms.Label label5;
 		private System.Windows.Forms.CheckBox checkBoxPause;
-		private System.Windows.Forms.GroupBox groupBox1;
-		private System.Windows.Forms.GroupBox groupBox2;
-		private System.Windows.Forms.GroupBox groupBox3;
+		private System.Windows.Forms.GroupBox groupBoxSphere;
+		private System.Windows.Forms.GroupBox groupBoxPlane;
+		private System.Windows.Forms.GroupBox groupBoxEnvironment;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlCubeMapIntensity;
 		private System.Windows.Forms.Label label6;
 		private System.Windows.Forms.CheckBox checkBoxEnableMSFactor;
