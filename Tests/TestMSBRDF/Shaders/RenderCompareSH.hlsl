@@ -1,6 +1,5 @@
 #include "Global.hlsl"
 #include "Scene.hlsl"
-#include "SphericalHarmonics.hlsl"
 
 #define FULL_SCENE		1	// Define this to render the full scene (diffuse plane + specular sphere)
 //#define FORCE_BRDF		2	// Define this to force all surfaces as specular (1), diffuse (2)
@@ -9,8 +8,10 @@
 
 //#define	WHITE_FURNACE_TEST	1
 
-
 static const uint	SAMPLES_COUNT = 32;
+
+// AMAZING! Including this BEFORE the definitions of SAMPLES_COUNT and the plane changes color!
+#include "SphericalHarmonics.hlsl"
 
 #if WHITE_FURNACE_TEST
 	// All white!
@@ -51,9 +52,9 @@ cbuffer CB_Render : register(b2) {
 	float	_lightIntensity;
 };
 
-cbuffer CB_SH : register(b3) {
-	float3	_SH[9];
-};
+//cbuffer CB_SH : register(b3) {
+//	float3	_SH[9];
+//};
 
 TextureCube< float3 >	_tex_CubeMap : register( t0 );
 Texture2D< float >		_tex_BlueNoise : register( t1 );
@@ -344,8 +345,8 @@ float4	PS( VS_IN _In ) : SV_TARGET0 {
 //return wsNormal;
 //return float4( tsView, 1 );
 
-	// Build environment SH as an array
-	float3	envSH[9] = { _SH[0].xyz, _SH[1].xyz, _SH[2].xyz, _SH[3].xyz, _SH[4].xyz, _SH[5].xyz, _SH[6].xyz, _SH[7].xyz, _SH[8].xyz };
+//	// Build environment SH as an array
+//	float3	envSH[9] = { _SH[0].xyz, _SH[1].xyz, _SH[2].xyz, _SH[3].xyz, _SH[4].xyz, _SH[5].xyz, _SH[6].xyz, _SH[7].xyz, _SH[8].xyz };
 
 
 // Check SH coefficients
@@ -370,8 +371,8 @@ float4	PS( VS_IN _In ) : SV_TARGET0 {
 
 	[loop]
 	for ( uint i=0; i < SAMPLES_COUNT; i++ ) {
-        float	X0 = frac( u + float(groupIndex) / totalGroupsCount );
-        float	X1 = (ReverseBits( groupIndex ) ^ seeds.y) * 2.3283064365386963e-10; // / 0x100000000
+		float	X0 = frac( u + float(groupIndex) / totalGroupsCount );
+		float	X1 = (ReverseBits( groupIndex ) ^ seeds.y) * 2.3283064365386963e-10; // / 0x100000000
 		groupIndex += _groupsCount;	// Giant leaps give us large changes
 
 		// Retrieve light direction + solid angle

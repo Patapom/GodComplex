@@ -146,9 +146,10 @@ namespace TestMSBRDF {
 
 			try {
 //				m_shader_Render = new Shader( m_device, new System.IO.FileInfo( "Shaders/Render.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
-//				m_shader_Accumulate = new Shader( m_device, new System.IO.FileInfo( "Shaders/RenderComplete.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+// 				m_shader_Accumulate = new Shader( m_device, new System.IO.FileInfo( "Shaders/RenderComplete.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+// 				m_shader_Finalize = new Shader( m_device, new System.IO.FileInfo( "Shaders/RenderComplete.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS_Finalize", null );
 				m_shader_Accumulate = new Shader( m_device, new System.IO.FileInfo( "Shaders/RenderCompareSH.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
-				m_shader_Finalize = new Shader( m_device, new System.IO.FileInfo( "Shaders/RenderComplete.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS_Finalize", null );
+				m_shader_Finalize = new Shader( m_device, new System.IO.FileInfo( "Shaders/RenderCompareSH.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS_Finalize", null );
 			} catch ( Exception _e ) {
 				MessageBox.Show( "Shader failed to compile!\n\n" + _e.Message, "MSBRDF Test", MessageBoxButtons.OK, MessageBoxIcon.Error );
 			}
@@ -728,74 +729,6 @@ for ( uint Y=0; Y < ROUGHNESS_SUBDIVS_COUNT; Y++ ) {
 					cubeMap.DDSSaveFile( _cubeMapFile, ImageUtility.COMPONENT_FORMAT.AUTO );
 				}
 			}
-		}
-
-		void	ConvertCrossToCubeMap_OLD( FileInfo _crossMapFile, FileInfo _cubeMapFile ) {
-			float4[,]	tempCross;
-			ImageUtility.PIXEL_FORMAT	format;
-			using ( ImageUtility.ImageFile I = new ImageUtility.ImageFile( _crossMapFile ) ) {
-				tempCross = new float4[I.Width,I.Height];
-				format = I.PixelFormat;
-				I.ReadPixels( ( uint _X, uint _Y, ref float4 _color ) => {
-					tempCross[_X,_Y] = _color;
-				} );
-			}
-
-format = ImageUtility.PIXEL_FORMAT.RGBA32F;	// Force RGBA32F
-
-			// Isolate individual faces
-			// We assume the center of the cross is always +Z
-			uint						cubeSize = 0;
-			uint						mipsCount = 0;
-			ImageUtility.ImageFile[]	cubeFaces = new ImageUtility.ImageFile[6];
-			if ( tempCross.GetLength(0) < tempCross.GetLength(1) ) {
-				// Vertical cross
-				cubeSize = (uint) tempCross.GetLength(1) >> 2;
-				float	fMipsCount = Mathf.Log2( cubeSize );
-				mipsCount = 1 + (uint) Mathf.Floor( fMipsCount );
-
-				cubeFaces[0] = GrabFace( tempCross, cubeSize, format, 2, 1, +1, +1 );	// +X
-				cubeFaces[1] = GrabFace( tempCross, cubeSize, format, 0, 1, +1, +1 );	// -X
-				cubeFaces[2] = GrabFace( tempCross, cubeSize, format, 1, 0, +1, +1 );	// +Y
-				cubeFaces[3] = GrabFace( tempCross, cubeSize, format, 1, 2, +1, +1 );	// -Y
-				cubeFaces[4] = GrabFace( tempCross, cubeSize, format, 1, 1, +1, +1 );	// +Z
-				cubeFaces[5] = GrabFace( tempCross, cubeSize, format, 1, 3, -1, -1 );	// -Z
-
-			} else {
-				// Horizontal cross
-				cubeSize = (uint) tempCross.GetLength(0) >> 2;
-				float	fMipsCount = Mathf.Log2( cubeSize );
-				mipsCount = 1 + (uint) Mathf.Floor( fMipsCount );
-
-			}
-
-			// Save as cube map
-			using ( ImageUtility.ImagesMatrix matrix = new ImageUtility.ImagesMatrix() ) {
-				matrix.InitCubeTextureArray( cubeSize, 1, mipsCount );
-				for ( uint cubeFaceIndex=0; cubeFaceIndex < 6; cubeFaceIndex++ )
-					matrix[cubeFaceIndex][0][0] = cubeFaces[cubeFaceIndex];							// Set mip 0 images
-				matrix.AllocateImageFiles( cubeFaces[0].PixelFormat, cubeFaces[0].ColorProfile );	// Allocate remaining mips
-				matrix.BuildMips( ImageUtility.ImagesMatrix.IMAGE_TYPE.LINEAR );					// Build them
-
-
-// Compress
-//ImageUtility.ImagesMatrix	compressedMatrix = m_device.DDSCompress( matrix, ImageUtility.ImagesMatrix.COMPRESSION_TYPE.BC6H, ImageUtility.COMPONENT_FORMAT.AUTO );
-
-
-				matrix.DDSSaveFile( _cubeMapFile, ImageUtility.COMPONENT_FORMAT.AUTO );
-			}
-		}
-
-		ImageUtility.ImageFile	GrabFace( float4[,] _cross, uint _cubeSize, ImageUtility.PIXEL_FORMAT _format, uint _X, uint _Y, int _dirX, int _dirY ) {
-			ImageUtility.ImageFile	result = new ImageUtility.ImageFile( _cubeSize, _cubeSize, _format, new ImageUtility.ColorProfile( ImageUtility.ColorProfile.STANDARD_PROFILE.LINEAR ) );
-
-			result.WritePixels( ( uint X, uint Y, ref float4 _color ) => {
-				uint	sourceX = _X * _cubeSize + (_dirX > 0 ? X : _cubeSize-1-X);
-				uint	sourceY = _Y * _cubeSize + (_dirY > 0 ? Y : _cubeSize-1-Y);
-				_color = _cross[sourceX,sourceY];
-			} );
-
-			return result;
 		}
 
 		#endregion
