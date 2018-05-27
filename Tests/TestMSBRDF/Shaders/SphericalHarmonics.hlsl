@@ -81,6 +81,9 @@ static const float	FACT[41] = {	1.0,							//  0!	Order 0
 									815915283247897734345611269596115894272000000000.0,		// 40!	Order 20
 };
 
+// Factors to multiply ZH coefficients by, as described by eq. 26 in "On the relationship between radiance and irradiance" by Ramamoorthi
+static const float3	ZH_FACTORS = float3( 3.5449077018110320545963349666823, 2.0466534158929769769591032497785, 1.5853309190424044053380115060481 );	// sqrt( 4 * PI / (2*l+1) ) for the first 3 bands
+
 // Renormalisation constant for SH functions
 //           .------------------------
 // K(l,m) =  |   (2*l+1)*(l-|m|)!
@@ -265,46 +268,6 @@ float3	EvaluateSHRadiance( float3 _direction, uint _maxOrder, Texture2D< float3 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-// Estimates A0, A1 and A2 integrals based on the angle of the AO cone from the normal and cos(PI/2 * AO) defining the AO cone's half-angle aperture
-// Fitting was done with mathematica:
-//
-//	A0 = a + b*x + d*x*y + e*x^2 + f*y^2 + g*x^2*y + i*x^2*y^2;
-//	With {a -> 0.86342, b -> 0.127258, c -> 4.9738*10^-14, d -> -0.903477, e -> -0.967484, f -> -0.411706, g -> 0.885699, h -> 0., i -> 0.407098}
-//
-//	A1 = a + b*x + c*y + d*x*y + e*x^2 + f*y^2 + g*x^2*y + h*x*y^2;
-//	With {a -> 0.95672, b -> 0.790566, c -> 0.298642, d -> -2.63968, e -> -1.65043, f -> -0.720222, g -> 2.14987, h -> 0.788641 }
-//
-//	A2 = a + b*x + c*y + d*x*y + e*x^2 + f*y^2 + g*x^2*y + h*x*y^2 + i*x^2*y^2 + j*x^3 + k*y^3 + l*x^3*y + m*x*y^3 + p*x^3*y^3;
-//	With {a -> 0.523407, b -> -0.6694, c -> -0.128209, d -> 5.26746, e -> 3.40837, f -> 0.905606, g -> -12.8261, h -> -10.5428, i -> 9.40113, j -> -3.18758, k -> -1.08565, l -> 7.57317, m -> 5.45239, p -> -4.06299}
-//
-float3	EstimateLambertReflectanceFactors( float _cosThetaAO, float _coneBendAngle ) {
-	float	x = _cosThetaAO;
-	float	y = _coneBendAngle * 2.0 * INVPI;
-
-	float	x2 = x*x;
-	float	x3 = x*x2;
-	float	y2 = y*y;
-	float	y3 = y*y2;
-
-	const float3	a = float3( 0.86342, 0.95672, 0.523407 );
-	const float3	b = float3( 0.127258, 0.790566, -0.6694 );
-	const float3	c = float3( 0.0, 0.298642, -0.128209 );
-	const float3	d = float3( -0.903477, -2.63968, 5.26746 );
-	const float3	e = float3( -0.967484, -1.65043, 3.40837 );
-	const float3	f = float3( -0.411706, -0.720222, 0.905606 );
-	const float3	g = float3( 0.885699, 2.14987, -12.8261 );
-	const float3	h = float3( 0.0, 0.788641, -10.5428 );
-	const float3	i = float3( 0.407098, 0.0, 9.40113 );
-	const float		j = -3.18758, k = -1.08565, l = 7.57317, m = 5.45239, p = -4.06299;
-
-	float	A0 = a.x + x * (b.x + y * d.x + x * (e.x + y * (g.x + y * i.x))) + f.x * y2;
-	float	A1 = a.y + x * (b.y + y * (d.y + h.y * y) + x * (e.y + y * g.y)) + y * (c.y + y * f.y);
-	float	A2 = a.z + x * (b.z + y * d.z + x * (e.z + y * (g.z + y * i.z) + x * (j + y * (l + y2 * p))))
-					 + y * (c.z + y * (f.z + x * h.z + (y * (k + x * m))));
-
-	return float3( A0, saturate( A1 ), A2 );
-}
-
 // Evaluates the SH coefficients in the requested direction
 // Analytic method from https://cseweb.ucsd.edu/~ravir/papers/envmap/envmap.pdf eq. 3
 //
@@ -390,6 +353,7 @@ float3	EvaluateSHIrradiance( float3 _direction, float _cosThetaAO, float3 _SH[9]
 
 // Rotate ZH cosine lobe into specific direction
 // WARNING! _A coefficients MUST already be multiplied by sqrt( 4PI / (2l+1) ) before entering this function!
+// You can use _A *= ZH_FACTORS if needed
 void	RotateZH( float3 _A, float3 _wsDirection, out float _SH[9] ) {
 	Ylm( _wsDirection, _SH );
 	_SH[0] *= _A.x;

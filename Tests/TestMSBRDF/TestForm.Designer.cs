@@ -46,15 +46,16 @@
 			this.label5 = new System.Windows.Forms.Label();
 			this.checkBoxPause = new System.Windows.Forms.CheckBox();
 			this.groupBox1 = new System.Windows.Forms.GroupBox();
+			this.label8 = new System.Windows.Forms.Label();
+			this.floatTrackbarControlRoughnessSphere2 = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlReflectanceSphere2 = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.label7 = new System.Windows.Forms.Label();
 			this.groupBox2 = new System.Windows.Forms.GroupBox();
 			this.groupBox3 = new System.Windows.Forms.GroupBox();
 			this.floatTrackbarControlCubeMapIntensity = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label6 = new System.Windows.Forms.Label();
 			this.checkBoxEnableMSFactor = new System.Windows.Forms.CheckBox();
-			this.label7 = new System.Windows.Forms.Label();
-			this.floatTrackbarControlReflectanceSphere2 = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.floatTrackbarControlRoughnessSphere2 = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.label8 = new System.Windows.Forms.Label();
+			this.checkBoxUseRealTimeApprox = new System.Windows.Forms.CheckBox();
 			this.groupBox1.SuspendLayout();
 			this.groupBox2.SuspendLayout();
 			this.groupBox3.SuspendLayout();
@@ -249,6 +250,51 @@
 			this.groupBox1.TabStop = false;
 			this.groupBox1.Text = "Sphere";
 			// 
+			// label8
+			// 
+			this.label8.AutoSize = true;
+			this.label8.Location = new System.Drawing.Point(6, 88);
+			this.label8.Name = "label8";
+			this.label8.Size = new System.Drawing.Size(80, 13);
+			this.label8.TabIndex = 3;
+			this.label8.Text = "Roughness Diff";
+			// 
+			// floatTrackbarControlRoughnessSphere2
+			// 
+			this.floatTrackbarControlRoughnessSphere2.Location = new System.Drawing.Point(92, 86);
+			this.floatTrackbarControlRoughnessSphere2.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlRoughnessSphere2.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlRoughnessSphere2.Name = "floatTrackbarControlRoughnessSphere2";
+			this.floatTrackbarControlRoughnessSphere2.RangeMin = 0F;
+			this.floatTrackbarControlRoughnessSphere2.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlRoughnessSphere2.TabIndex = 0;
+			this.floatTrackbarControlRoughnessSphere2.Value = 0.1F;
+			this.floatTrackbarControlRoughnessSphere2.VisibleRangeMax = 1F;
+			this.floatTrackbarControlRoughnessSphere2.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlRoughnessSpec_ValueChanged);
+			// 
+			// floatTrackbarControlReflectanceSphere2
+			// 
+			this.floatTrackbarControlReflectanceSphere2.Location = new System.Drawing.Point(92, 112);
+			this.floatTrackbarControlReflectanceSphere2.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlReflectanceSphere2.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlReflectanceSphere2.Name = "floatTrackbarControlReflectanceSphere2";
+			this.floatTrackbarControlReflectanceSphere2.RangeMax = 1F;
+			this.floatTrackbarControlReflectanceSphere2.RangeMin = 0F;
+			this.floatTrackbarControlReflectanceSphere2.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlReflectanceSphere2.TabIndex = 0;
+			this.floatTrackbarControlReflectanceSphere2.Value = 1F;
+			this.floatTrackbarControlReflectanceSphere2.VisibleRangeMax = 1F;
+			this.floatTrackbarControlReflectanceSphere2.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlAlbedo_ValueChanged);
+			// 
+			// label7
+			// 
+			this.label7.AutoSize = true;
+			this.label7.Location = new System.Drawing.Point(6, 115);
+			this.label7.Name = "label7";
+			this.label7.Size = new System.Drawing.Size(84, 13);
+			this.label7.TabIndex = 3;
+			this.label7.Text = "Reflectance Diff";
+			// 
 			// groupBox2
 			// 
 			this.groupBox2.Controls.Add(this.floatTrackbarControlRoughnessGround);
@@ -312,50 +358,17 @@
 			this.checkBoxEnableMSFactor.UseVisualStyleBackColor = true;
 			this.checkBoxEnableMSFactor.CheckedChanged += new System.EventHandler(this.checkBoxEnableMSBRDF_CheckedChanged);
 			// 
-			// label7
+			// checkBoxUseRealTimeApprox
 			// 
-			this.label7.AutoSize = true;
-			this.label7.Location = new System.Drawing.Point(6, 115);
-			this.label7.Name = "label7";
-			this.label7.Size = new System.Drawing.Size(84, 13);
-			this.label7.TabIndex = 3;
-			this.label7.Text = "Reflectance Diff";
-			// 
-			// floatTrackbarControlReflectanceSphere2
-			// 
-			this.floatTrackbarControlReflectanceSphere2.Location = new System.Drawing.Point(92, 112);
-			this.floatTrackbarControlReflectanceSphere2.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.floatTrackbarControlReflectanceSphere2.MinimumSize = new System.Drawing.Size(70, 20);
-			this.floatTrackbarControlReflectanceSphere2.Name = "floatTrackbarControlReflectanceSphere2";
-			this.floatTrackbarControlReflectanceSphere2.RangeMax = 1F;
-			this.floatTrackbarControlReflectanceSphere2.RangeMin = 0F;
-			this.floatTrackbarControlReflectanceSphere2.Size = new System.Drawing.Size(200, 20);
-			this.floatTrackbarControlReflectanceSphere2.TabIndex = 0;
-			this.floatTrackbarControlReflectanceSphere2.Value = 1F;
-			this.floatTrackbarControlReflectanceSphere2.VisibleRangeMax = 1F;
-			this.floatTrackbarControlReflectanceSphere2.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlAlbedo_ValueChanged);
-			// 
-			// floatTrackbarControlRoughnessSphere2
-			// 
-			this.floatTrackbarControlRoughnessSphere2.Location = new System.Drawing.Point(92, 86);
-			this.floatTrackbarControlRoughnessSphere2.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.floatTrackbarControlRoughnessSphere2.MinimumSize = new System.Drawing.Size(70, 20);
-			this.floatTrackbarControlRoughnessSphere2.Name = "floatTrackbarControlRoughnessSphere2";
-			this.floatTrackbarControlRoughnessSphere2.RangeMin = 0F;
-			this.floatTrackbarControlRoughnessSphere2.Size = new System.Drawing.Size(200, 20);
-			this.floatTrackbarControlRoughnessSphere2.TabIndex = 0;
-			this.floatTrackbarControlRoughnessSphere2.Value = 0.1F;
-			this.floatTrackbarControlRoughnessSphere2.VisibleRangeMax = 1F;
-			this.floatTrackbarControlRoughnessSphere2.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlRoughnessSpec_ValueChanged);
-			// 
-			// label8
-			// 
-			this.label8.AutoSize = true;
-			this.label8.Location = new System.Drawing.Point(6, 88);
-			this.label8.Name = "label8";
-			this.label8.Size = new System.Drawing.Size(80, 13);
-			this.label8.TabIndex = 3;
-			this.label8.Text = "Roughness Diff";
+			this.checkBoxUseRealTimeApprox.AutoSize = true;
+			this.checkBoxUseRealTimeApprox.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+			this.checkBoxUseRealTimeApprox.Location = new System.Drawing.Point(1332, 484);
+			this.checkBoxUseRealTimeApprox.Name = "checkBoxUseRealTimeApprox";
+			this.checkBoxUseRealTimeApprox.Size = new System.Drawing.Size(281, 28);
+			this.checkBoxUseRealTimeApprox.TabIndex = 4;
+			this.checkBoxUseRealTimeApprox.Text = "Use Real-Time Approximation";
+			this.checkBoxUseRealTimeApprox.UseVisualStyleBackColor = true;
+			this.checkBoxUseRealTimeApprox.CheckedChanged += new System.EventHandler(this.checkBoxEnableMSBRDF_CheckedChanged);
 			// 
 			// TestForm
 			// 
@@ -367,6 +380,7 @@
 			this.Controls.Add(this.groupBox1);
 			this.Controls.Add(this.checkBoxKeepSampling);
 			this.Controls.Add(this.checkBoxPause);
+			this.Controls.Add(this.checkBoxUseRealTimeApprox);
 			this.Controls.Add(this.checkBoxEnableMSFactor);
 			this.Controls.Add(this.checkBoxEnableMSBRDF);
 			this.Controls.Add(this.buttonReload);
@@ -416,6 +430,7 @@
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlRoughnessSphere2;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlReflectanceSphere2;
 		private System.Windows.Forms.Label label7;
+		private System.Windows.Forms.CheckBox checkBoxUseRealTimeApprox;
 	}
 }
 

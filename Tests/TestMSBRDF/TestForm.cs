@@ -146,10 +146,9 @@ namespace TestMSBRDF {
 
 			try {
 //				m_shader_Render = new Shader( m_device, new System.IO.FileInfo( "Shaders/Render.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+ 				m_shader_Finalize = new Shader( m_device, new System.IO.FileInfo( "Shaders/RenderComplete.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS_Finalize", null );
 // 				m_shader_Accumulate = new Shader( m_device, new System.IO.FileInfo( "Shaders/RenderComplete.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
-// 				m_shader_Finalize = new Shader( m_device, new System.IO.FileInfo( "Shaders/RenderComplete.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS_Finalize", null );
 				m_shader_Accumulate = new Shader( m_device, new System.IO.FileInfo( "Shaders/RenderCompareSH.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
-				m_shader_Finalize = new Shader( m_device, new System.IO.FileInfo( "Shaders/RenderCompareSH.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS_Finalize", null );
 			} catch ( Exception _e ) {
 				MessageBox.Show( "Shader failed to compile!\n\n" + _e.Message, "MSBRDF Test", MessageBoxButtons.OK, MessageBoxIcon.Error );
 			}
@@ -247,6 +246,7 @@ namespace TestMSBRDF {
 				m_CB_Render.m._flags = 0;
 				m_CB_Render.m._flags |= checkBoxEnableMSBRDF.Checked ? 1U : 0;
 				m_CB_Render.m._flags |= checkBoxEnableMSFactor.Checked ? 2U : 0;
+				m_CB_Render.m._flags |= checkBoxUseRealTimeApprox.Checked ? 0x100U : 0;
 				m_CB_Render.m._groupsCount = GROUPS_COUNT;
 				m_CB_Render.m._groupIndex = m_groupShuffle[m_groupCounter % GROUPS_COUNT];
 				m_CB_Render.m._lightElevation = floatTrackbarControlLightElevation.Value * Mathf.HALFPI;
