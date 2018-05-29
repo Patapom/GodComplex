@@ -481,6 +481,8 @@ namespace ImageUtility {
 		void				WriteScanline( UInt32 _Y, cli::array< float4 >^ _color, UInt32 _startX );
 		void				WritePixels( PixelReadWrite^ _writer ) { WritePixels( _writer, 0, 0, Width, Height ); }
 		void				WritePixels( PixelReadWrite^ _writer, UInt32 _startX, UInt32 _startY, UInt32 _width, UInt32 _height );
+		void				ReadWritePixels( PixelReadWrite^ _writer ) { ReadWritePixels( _writer, 0, 0, Width, Height ); }				// Same as WritePixels() but the color provided to the delegate is the actual current color of the pixel
+		void				ReadWritePixels( PixelReadWrite^ _writer, UInt32 _startX, UInt32 _startY, UInt32 _width, UInt32 _height );	// Same as WritePixels() but the color provided to the delegate is the actual current color of the pixel
 
 		// Retrieves the image file type based on the image file name
 		// WARNING: The image file MUST exist on disk as FreeImage inspects the content!

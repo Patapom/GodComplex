@@ -315,6 +315,7 @@ namespace ImageUtilityLib {
 		void				WriteScanline( U32 _Y, const bfloat4* _color, U32 _startX=0, U32 _count=~0U );
 		void				ReadPixels( pixelReaderWriter_t _reader, U32 _startX=0, U32 _startY=0, U32 _width=~0U, U32 _height=~0U ) const;
 		void				WritePixels( pixelReaderWriter_t _writer, U32 _startX=0, U32 _startY=0, U32 _width=~0U, U32 _height=~0U );
+		void				ReadWritePixels( pixelReaderWriter_t _writer, U32 _startX=0, U32 _startY=0, U32 _width=~0U, U32 _height=~0U );	// Same as WritePixels() but the color provided to the delegate is the actual current color of the pixel
 
 		// Retrieves the image file type based on the image file name
 		// WARNING: The image file MUST exist on disk as FreeImage inspects the content!
