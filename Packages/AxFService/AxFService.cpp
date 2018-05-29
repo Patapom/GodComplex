@@ -27,13 +27,6 @@ AxFFile::Material^	AxFFile::default::get( UInt32 _materialIndex ) {
 	return result;
 }
 
-String^	GetTypeKey( AXF_REPRESENTATION_HANDLE _handle ) {
-	char	charPtr[AXF_MAX_KEY_SIZE];
-	axfGetRepresentationTypeKey( _handle, charPtr, AXF_MAX_KEY_SIZE );
-	String^	key = gcnew String( charPtr );
-	return key;
-}
-
 AxFFile::Material::Material( AxFFile^ _owner, UInt32 _materialIndex ) : m_owner( _owner ) {
 	m_hMaterial = axfGetMaterial( m_owner->m_hFile, _materialIndex );
 
@@ -44,14 +37,15 @@ AxFFile::Material::Material( AxFFile^ _owner, UInt32 _materialIndex ) : m_owner(
 	// Get material representation
 	m_hMaterialRepresentation = axfGetPreferredRepresentation( m_hMaterial );
 
-	char	repClassCharPtr[AXF_MAX_KEY_SIZE];
-	axfGetRepresentationClass( m_hMaterialRepresentation, repClassCharPtr, AXF_MAX_KEY_SIZE );
-	String^	repClass = gcnew String( repClassCharPtr );
+	char	tempCharPtr[AXF_MAX_KEY_SIZE];
+	axfGetRepresentationClass( m_hMaterialRepresentation, tempCharPtr, AXF_MAX_KEY_SIZE );
+	String^	repClass = gcnew String( tempCharPtr );
 	if ( repClass == "SVBRDF" ) {
 		// Read back the diffuse & specular types
 		m_type = TYPE::SVBRDF;
 		AXF_REPRESENTATION_HANDLE	hDiff = axfGetSvbrdfDiffuseModelRepresentation( m_hMaterialRepresentation );
-		String^	diffuseKey = GetTypeKey( hDiff );
+		axfGetRepresentationTypeKey( hDiff, tempCharPtr, AXF_MAX_KEY_SIZE );
+		String^	diffuseKey = gcnew String( tempCharPtr );
 		if ( diffuseKey == "com.xrite.LambertDiffuseModel" ) {
 			m_diffuseType = SVBRDF_DIFFUSE_TYPE::LAMBERT;
 		} else if (diffuseKey == "com.xrite.OrenNayarDiffuseModel" ) {
@@ -61,7 +55,8 @@ AxFFile::Material::Material( AxFFile^ _owner, UInt32 _materialIndex ) : m_owner(
 		}
 
 		AXF_REPRESENTATION_HANDLE	hSpec = axfGetSvbrdfSpecularModelRepresentation( m_hMaterialRepresentation );
-		String^	specularKey = GetTypeKey( hSpec );
+		axfGetRepresentationTypeKey( hSpec, tempCharPtr, AXF_MAX_KEY_SIZE );
+		String^	specularKey = gcnew String( tempCharPtr );
 		if ( specularKey == "com.xrite.WardSpecularModel" ) {
 			m_specularType = SVBRDF_SPECULAR_TYPE::WARD;
 		} else if ( specularKey == "com.xrite.BlinnPhongSpecularModel" ) {
@@ -75,6 +70,32 @@ AxFFile::Material::Material( AxFFile^ _owner, UInt32 _materialIndex ) : m_owner(
 		} else {
 			throw gcnew Exception( "Unsupported specular type!" );
 		}
+
+		// Read back precise specular variants
+		bool	hasFresnel = false;
+		bool	isAnisotropic = false;
+		axfGetSvbrdfSpecularModelVariant( hSpec, tempCharPtr, AXF_MAX_KEY_SIZE, isAnisotropic, hasFresnel );
+		m_isAnisotropic = isAnisotropic;
+		String^	specularVariant = gcnew String( tempCharPtr );
+		if ( specularVariant == "GeislerMoroder2010" ) {
+			m_specularVariant = SVBRDF_SPECULAR_VARIANT::GEISLERMORODER;
+		} else {
+			throw gcnew Exception( "Unsupported specular variant!" );
+		}
+
+		m_fresnelVariant = SVBRDF_FRESNEL_VARIANT::NO_FRESNEL;
+		if ( hasFresnel ) {
+			axfGetSvbrdfSpecularFresnelVariant( hSpec, tempCharPtr, AXF_MAX_KEY_SIZE );
+			String^	fresnelVariant = gcnew String( tempCharPtr );
+			if ( fresnelVariant == "Schlick1994" ) {
+				m_fresnelVariant = SVBRDF_FRESNEL_VARIANT::SCHLICK;
+			} else if ( fresnelVariant == "Schlick1994" ) {
+				m_fresnelVariant = SVBRDF_FRESNEL_VARIANT::FRESNEL;
+			} else {
+				throw gcnew Exception( "Unsupported fresnel type!" );
+			}
+		}
+
 	} else if ( repClass == "CarPaint" || repClass == "CarPaint2" ) {
 		m_type = TYPE::CARPAINT;
 		throw gcnew Exception( "HANDLE THIS!" );

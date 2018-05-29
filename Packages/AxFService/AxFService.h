@@ -31,6 +31,25 @@ namespace AxFService {
 				PHONG,
 			};
 
+			enum class	SVBRDF_SPECULAR_VARIANT {
+				// Ward variants
+				GEISLERMORODER,		// 2010 (albedo-conservative, should always be prefered!)
+				DUER,				// 2006
+				WARD,				// 1992 (original paper)
+
+				// Blinn-Phong variants
+				ASHIKHMIN_SHIRLEY,	// 2000
+				BLINN,				// 1977 (original paper)
+				VRAY,
+				LEWIS,				// 1993
+			};
+
+			enum class	SVBRDF_FRESNEL_VARIANT {
+				NO_FRESNEL,			// No fresnel
+				FRESNEL,			// Full fresnel (1818)
+				SCHLICK,			// Schlick's Approximation (1994)
+			};
+
 		private:
 
 			AxFFile^	m_owner;
@@ -41,13 +60,18 @@ namespace AxFService {
 			TYPE					m_type;
 			SVBRDF_DIFFUSE_TYPE		m_diffuseType;
 			SVBRDF_SPECULAR_TYPE	m_specularType;
+			SVBRDF_SPECULAR_VARIANT	m_specularVariant;
+			SVBRDF_FRESNEL_VARIANT	m_fresnelVariant;
+			bool					m_isAnisotropic;
 
 		public:
 
-			property String^				Name { String^ get() { return m_name; } }
-			property TYPE					Type { TYPE get() { return m_type; } }
-			property SVBRDF_DIFFUSE_TYPE	DiffuseType { SVBRDF_DIFFUSE_TYPE get() { return m_diffuseType; } }
-			property SVBRDF_SPECULAR_TYPE	SpecularType { SVBRDF_SPECULAR_TYPE get() { return m_specularType; } }
+			property String^					Name { String^ get() { return m_name; } }
+			property TYPE						Type { TYPE get() { return m_type; } }
+			property SVBRDF_DIFFUSE_TYPE		DiffuseType { SVBRDF_DIFFUSE_TYPE get() { return m_diffuseType; } }
+			property SVBRDF_SPECULAR_TYPE		SpecularType { SVBRDF_SPECULAR_TYPE get() { return m_specularType; } }
+			property SVBRDF_SPECULAR_VARIANT	SpecularVariant { SVBRDF_SPECULAR_VARIANT get() { return m_specularVariant; } }
+			property SVBRDF_FRESNEL_VARIANT		FresnelVariant { SVBRDF_FRESNEL_VARIANT get() { return m_fresnelVariant; } }
 
 		public:
 			Material( AxFFile^ _owner, UInt32 _materialIndex );
