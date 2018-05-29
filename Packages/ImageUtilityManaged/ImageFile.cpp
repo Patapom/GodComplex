@@ -268,10 +268,16 @@ void	ImageFile::WriteScanline( UInt32 _Y, array< float4 >^ _color, UInt32 _start
 	pin_ptr<float4>	color = &_color[0];
 	m_nativeObject->WriteScanline( _Y, (bfloat4*) color, _startX, _color->Length );
 }
-void	ImageFile::WritePixels( PixelReadWrite^ _reader, UInt32 _startX, UInt32 _startY, UInt32 _width, UInt32 _height ) {
-	System::Runtime::InteropServices::GCHandle	gch = System::Runtime::InteropServices::GCHandle::Alloc( _reader );
-	IntPtr		ip = System::Runtime::InteropServices::Marshal::GetFunctionPointerForDelegate( _reader );
+void	ImageFile::WritePixels( PixelReadWrite^ _writer, UInt32 _startX, UInt32 _startY, UInt32 _width, UInt32 _height ) {
+	System::Runtime::InteropServices::GCHandle	gch = System::Runtime::InteropServices::GCHandle::Alloc( _writer );
+	IntPtr		ip = System::Runtime::InteropServices::Marshal::GetFunctionPointerForDelegate( _writer );
 	m_nativeObject->WritePixels( static_cast< ImageUtilityLib::ImageFile::pixelReaderWriter_t >( ip.ToPointer() ), _startX, _startY, _width, _height );
+	gch.Free();  
+}
+void	ImageFile::ReadWritePixels( PixelReadWrite^ _writer, UInt32 _startX, UInt32 _startY, UInt32 _width, UInt32 _height ) {
+	System::Runtime::InteropServices::GCHandle	gch = System::Runtime::InteropServices::GCHandle::Alloc( _writer );
+	IntPtr		ip = System::Runtime::InteropServices::Marshal::GetFunctionPointerForDelegate( _writer );
+	m_nativeObject->ReadWritePixels( static_cast< ImageUtilityLib::ImageFile::pixelReaderWriter_t >( ip.ToPointer() ), _startX, _startY, _width, _height );
 	gch.Free();  
 }
 

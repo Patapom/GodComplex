@@ -306,6 +306,10 @@ void	ImageFile::ConvertFrom( const ImageFile& _source, PIXEL_FORMAT _targetForma
 		} else {
 			// Not a simple bitmap type
 			m_bitmap = FreeImage_ConvertToType( _source.m_bitmap, targetType );
+			if ( m_bitmap == NULL ) {
+//				throw "Failed to convert!";
+				ConvertFrom_NoSupport( _source, _targetFormat );
+			}
 		}
 
 		// Get pixel format from bitmap
@@ -818,6 +822,23 @@ void	ImageFile::WritePixels( pixelReaderWriter_t _writer, U32 _startX, U32 _star
 
 	bfloat4*	tempScanline = new bfloat4[_width];
 	for ( U32 Y=0; Y < _height; Y++ ) {
+		for ( U32 X=0; X < _width; X++ ) {
+			(*_writer)( _startX+X, _startY+Y, tempScanline[X] );
+		}
+		WriteScanline( _startY+Y, tempScanline, _startX, _width );
+	}
+	delete[] tempScanline;
+}
+
+void	ImageFile::ReadWritePixels( pixelReaderWriter_t _writer, U32 _startX, U32 _startY, U32 _width, U32 _height ) {
+	if ( _width == ~0U )
+		_width = Width();
+	if ( _height == ~0U )
+		_height = Height();
+
+	bfloat4*	tempScanline = new bfloat4[_width];
+	for ( U32 Y=0; Y < _height; Y++ ) {
+		ReadScanline( _startY+Y, tempScanline, _startX, _width );
 		for ( U32 X=0; X < _width; X++ ) {
 			(*_writer)( _startX+X, _startY+Y, tempScanline[X] );
 		}
