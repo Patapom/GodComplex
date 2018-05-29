@@ -22,6 +22,11 @@ bool	BString::IsEmpty() const {
 	return m_str == nullptr || *m_str == '\0';
 }
 
+void	BString::Allocate( U32 _length ) {
+	SAFE_DELETE_ARRAY( m_str );
+	m_str = new char[_length+1];
+}
+
 U32		BString::Length() const {
 	if ( m_str == nullptr )
 		return 0;

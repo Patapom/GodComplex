@@ -95,7 +95,7 @@ namespace SharpMath {
 		static bool				Almost( double a, double b )						{ return Almost( a, b, double(ALMOST_EPSILON) ); }
 		static bool				Almost( double a, double b, double _epsilon )		{ return Abs( a - b ) < _epsilon; }
 
-		static float			Log2( float v )										{ return 0.69314718055994530941723212145818f * Log( v ); }	// Ln(x)/Ln(2)
+		static float			Log2( float v )										{ return 1.4426950408889634073599246810019f * Log( v ); }	// Ln(x)/Ln(2)
 		static float			Step( float a, float b )							{ return a < b ? 1.0f : 0.0f; }
 		static float			Smoothstep( float a, float b, float x )				{ float t = (x - a) / (b - a); return 3*t*t - 2*t*t*t; }
 

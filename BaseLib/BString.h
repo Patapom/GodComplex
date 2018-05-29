@@ -20,6 +20,7 @@ public:
 	bool			IsEmpty() const;
 	U32				Length() const;
 
+	void			Allocate( U32 _length );											// Allocates a string of _length+1 characters
 	void			Format( const char* _format, ... );
 	void			Format( const char* _format, va_list _args );
 

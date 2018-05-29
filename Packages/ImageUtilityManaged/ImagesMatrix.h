@@ -190,10 +190,9 @@ namespace ImageUtility {
 			BC6H,
 			BC7,
 		};
-		ImagesMatrix^	DDSCompress( ImagesMatrix^ _sourceImage, COMPRESSION_TYPE _compressionType, COMPONENT_FORMAT _componentFormat ) {
-			ImagesMatrix^	result = gcnew ImagesMatrix();
+		// NOTE: If you want to use GPU compression, use Device.DDSCompress() instead!
+		void	DDSCompress( ImagesMatrix^ _sourceImage, COMPRESSION_TYPE _compressionType, COMPONENT_FORMAT _componentFormat ) {
 			m_nativeObject->DDSCompress( *reinterpret_cast< ImageUtilityLib::ImagesMatrix* >( _sourceImage->NativeObject.ToPointer() ), ImageUtilityLib::ImagesMatrix::COMPRESSION_TYPE( _compressionType ), BaseLib::COMPONENT_FORMAT( _componentFormat ) );
-			return result;
 		}
 
 	public:
@@ -205,5 +204,23 @@ namespace ImageUtility {
 		static void		NextMipSize( UInt32% _size ) { U32 size; ImageUtilityLib::ImagesMatrix::NextMipSize( size ); _size = size; }
 		static void		NextMipSize( UInt32% _width, UInt32% _height ) { U32 width, height; ImageUtilityLib::ImagesMatrix::NextMipSize( width, height ); _width = width; _height = height; }
 		static void		NextMipSize( UInt32% _width, UInt32% _height, UInt32% _depth ) { U32 width, height, depth; ImageUtilityLib::ImagesMatrix::NextMipSize( width, height, depth ); _width = width; _height = height; _depth = depth; }
+
+	public:
+		//////////////////////////////////////////////////////////////////////////
+		// Helpers
+
+		// Converts a vertical or horizontal cross HDR environment map into a cube map (cf. http://www.pauldebevec.com/Probes/)
+		//	_crossMap, the source cross env map image to convert
+		//	_buildMips, true to build the mip maps of each cube map face
+		void		ConvertCrossToCubeMap( ImageFile^ _crossMap, bool _buildMips );
+
+		// Assuming this matrix contains the representation for a cube map, this helper encodes the cube map into SH coefficients
+		cli::array<float3>^	EncodeSHOrder2();
+		cli::array<float3>^	EncodeSH( UInt32 _order );
+
+	private:
+		public:
+		static cli::array<SharpMath::float3x3>^	ms_faces2World = ms_faces2WorldInit();
+		static cli::array<SharpMath::float3x3>^	ms_faces2WorldInit();
 	};
 }

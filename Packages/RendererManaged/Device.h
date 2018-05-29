@@ -39,6 +39,10 @@ namespace Renderer {
 
 	public:
 
+		property void*			NativeDevice {
+			void*		get() { return reinterpret_cast<void*>( m_pDevice ); }
+		}
+
 		property Texture2D^		DefaultTarget {
 			Texture2D^	get() { return m_defaultTarget; }
 		}

@@ -659,3 +659,5 @@ Publish
 /Tests/TestCrossProduct/bin
 /Tests/TestCrossProduct/obj
 *.cache
+/Tools/AxFExtractor/bin
+/Tools/AxFExtractor/obj

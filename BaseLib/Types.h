@@ -85,3 +85,4 @@ template<typename T> void	Swap( T& a, T& b ) { T temp = a; a = b; b = temp; }
 #include "Math/SH.h"
 #include "PixelFormats/PixelFormats.h"
 #include "Utility/tweakval.h"
+#include "Utility/Stream.h"

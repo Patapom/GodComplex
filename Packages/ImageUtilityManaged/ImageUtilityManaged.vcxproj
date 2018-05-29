@@ -187,6 +187,9 @@
     <ProjectReference Include="..\MathSimple\MathSimple.vcxproj">
       <Project>{cec07704-2a19-4bf1-b46d-8fcf9c5965ee}</Project>
     </ProjectReference>
+    <ProjectReference Include="..\SphericalHarmonicsLibrary\SphericalHarmonicsLibrary.csproj">
+      <Project>{e96e2072-c7ef-46bb-a3f1-8cf6b26bf019}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

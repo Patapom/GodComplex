@@ -29,30 +29,50 @@
 		private void InitializeComponent()
 		{
 			this.components = new System.ComponentModel.Container();
-			this.floatTrackbarControlRoughnessSpec = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlRoughnessSphere = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.panelOutput = new Nuaj.Cirrus.Utility.PanelOutput(this.components);
-			this.floatTrackbarControlAlbedo = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlReflectanceGround = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.buttonReload = new System.Windows.Forms.Button();
 			this.label1 = new System.Windows.Forms.Label();
 			this.label2 = new System.Windows.Forms.Label();
 			this.floatTrackbarControlLightElevation = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label3 = new System.Windows.Forms.Label();
 			this.timer1 = new System.Windows.Forms.Timer(this.components);
-			this.floatTrackbarControlRoughnessDiffuse = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlRoughnessGround = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label4 = new System.Windows.Forms.Label();
+			this.checkBoxEnableMSBRDF = new System.Windows.Forms.CheckBox();
+			this.checkBoxKeepSampling = new System.Windows.Forms.CheckBox();
+			this.floatTrackbarControlReflectanceSphere = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.label5 = new System.Windows.Forms.Label();
+			this.checkBoxPause = new System.Windows.Forms.CheckBox();
+			this.groupBoxSphere = new System.Windows.Forms.GroupBox();
+			this.label8 = new System.Windows.Forms.Label();
+			this.floatTrackbarControlRoughnessSphere2 = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlReflectanceSphere2 = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.label7 = new System.Windows.Forms.Label();
+			this.groupBoxPlane = new System.Windows.Forms.GroupBox();
+			this.groupBoxEnvironment = new System.Windows.Forms.GroupBox();
+			this.floatTrackbarControlCubeMapIntensity = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.label6 = new System.Windows.Forms.Label();
+			this.checkBoxEnableMSFactor = new System.Windows.Forms.CheckBox();
+			this.checkBoxUseRealTimeApprox = new System.Windows.Forms.CheckBox();
+			this.groupBoxSphere.SuspendLayout();
+			this.groupBoxPlane.SuspendLayout();
+			this.groupBoxEnvironment.SuspendLayout();
 			this.SuspendLayout();
 			// 
-			// floatTrackbarControlRoughnessSpec
+			// floatTrackbarControlRoughnessSphere
 			// 
-			this.floatTrackbarControlRoughnessSpec.Location = new System.Drawing.Point(1390, 12);
-			this.floatTrackbarControlRoughnessSpec.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.floatTrackbarControlRoughnessSpec.MinimumSize = new System.Drawing.Size(70, 20);
-			this.floatTrackbarControlRoughnessSpec.Name = "floatTrackbarControlRoughnessSpec";
-			this.floatTrackbarControlRoughnessSpec.RangeMin = 0F;
-			this.floatTrackbarControlRoughnessSpec.Size = new System.Drawing.Size(200, 20);
-			this.floatTrackbarControlRoughnessSpec.TabIndex = 0;
-			this.floatTrackbarControlRoughnessSpec.Value = 0F;
-			this.floatTrackbarControlRoughnessSpec.VisibleRangeMax = 1F;
+			this.floatTrackbarControlRoughnessSphere.Location = new System.Drawing.Point(92, 19);
+			this.floatTrackbarControlRoughnessSphere.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlRoughnessSphere.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlRoughnessSphere.Name = "floatTrackbarControlRoughnessSphere";
+			this.floatTrackbarControlRoughnessSphere.RangeMin = 0F;
+			this.floatTrackbarControlRoughnessSphere.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlRoughnessSphere.TabIndex = 0;
+			this.floatTrackbarControlRoughnessSphere.Value = 0.1F;
+			this.floatTrackbarControlRoughnessSphere.VisibleRangeMax = 1F;
+			this.floatTrackbarControlRoughnessSphere.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlRoughnessSpec_ValueChanged);
 			// 
 			// panelOutput
 			// 
@@ -61,18 +81,19 @@
 			this.panelOutput.Size = new System.Drawing.Size(1280, 720);
 			this.panelOutput.TabIndex = 1;
 			// 
-			// floatTrackbarControlAlbedo
+			// floatTrackbarControlReflectanceGround
 			// 
-			this.floatTrackbarControlAlbedo.Location = new System.Drawing.Point(1390, 72);
-			this.floatTrackbarControlAlbedo.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.floatTrackbarControlAlbedo.MinimumSize = new System.Drawing.Size(70, 20);
-			this.floatTrackbarControlAlbedo.Name = "floatTrackbarControlAlbedo";
-			this.floatTrackbarControlAlbedo.RangeMax = 1F;
-			this.floatTrackbarControlAlbedo.RangeMin = 0F;
-			this.floatTrackbarControlAlbedo.Size = new System.Drawing.Size(200, 20);
-			this.floatTrackbarControlAlbedo.TabIndex = 0;
-			this.floatTrackbarControlAlbedo.Value = 0.75F;
-			this.floatTrackbarControlAlbedo.VisibleRangeMax = 1F;
+			this.floatTrackbarControlReflectanceGround.Location = new System.Drawing.Point(94, 45);
+			this.floatTrackbarControlReflectanceGround.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlReflectanceGround.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlReflectanceGround.Name = "floatTrackbarControlReflectanceGround";
+			this.floatTrackbarControlReflectanceGround.RangeMax = 1F;
+			this.floatTrackbarControlReflectanceGround.RangeMin = 0F;
+			this.floatTrackbarControlReflectanceGround.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlReflectanceGround.TabIndex = 0;
+			this.floatTrackbarControlReflectanceGround.Value = 0.75F;
+			this.floatTrackbarControlReflectanceGround.VisibleRangeMax = 1F;
+			this.floatTrackbarControlReflectanceGround.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlAlbedo_ValueChanged);
 			// 
 			// buttonReload
 			// 
@@ -88,24 +109,24 @@
 			// label1
 			// 
 			this.label1.AutoSize = true;
-			this.label1.Location = new System.Drawing.Point(1298, 15);
+			this.label1.Location = new System.Drawing.Point(6, 21);
 			this.label1.Name = "label1";
-			this.label1.Size = new System.Drawing.Size(92, 13);
+			this.label1.Size = new System.Drawing.Size(89, 13);
 			this.label1.TabIndex = 3;
-			this.label1.Text = "Roughness Spec.";
+			this.label1.Text = "Roughness Spec";
 			// 
 			// label2
 			// 
 			this.label2.AutoSize = true;
-			this.label2.Location = new System.Drawing.Point(1298, 77);
+			this.label2.Location = new System.Drawing.Point(6, 49);
 			this.label2.Name = "label2";
-			this.label2.Size = new System.Drawing.Size(40, 13);
+			this.label2.Size = new System.Drawing.Size(65, 13);
 			this.label2.TabIndex = 3;
-			this.label2.Text = "Albedo";
+			this.label2.Text = "Reflectance";
 			// 
 			// floatTrackbarControlLightElevation
 			// 
-			this.floatTrackbarControlLightElevation.Location = new System.Drawing.Point(1390, 98);
+			this.floatTrackbarControlLightElevation.Location = new System.Drawing.Point(92, 19);
 			this.floatTrackbarControlLightElevation.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlLightElevation.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlLightElevation.Name = "floatTrackbarControlLightElevation";
@@ -115,60 +136,268 @@
 			this.floatTrackbarControlLightElevation.TabIndex = 0;
 			this.floatTrackbarControlLightElevation.Value = 0F;
 			this.floatTrackbarControlLightElevation.VisibleRangeMax = 1F;
+			this.floatTrackbarControlLightElevation.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlLightElevation_ValueChanged);
 			// 
 			// label3
 			// 
 			this.label3.AutoSize = true;
-			this.label3.Location = new System.Drawing.Point(1298, 103);
+			this.label3.Location = new System.Drawing.Point(6, 23);
 			this.label3.Name = "label3";
-			this.label3.Size = new System.Drawing.Size(61, 13);
+			this.label3.Size = new System.Drawing.Size(47, 13);
 			this.label3.TabIndex = 3;
-			this.label3.Text = "Light Theta";
+			this.label3.Text = "Rotation";
 			// 
 			// timer1
 			// 
 			this.timer1.Enabled = true;
 			this.timer1.Interval = 10;
 			// 
-			// floatTrackbarControlDiffuse
+			// floatTrackbarControlRoughnessGround
 			// 
-			this.floatTrackbarControlRoughnessDiffuse.Location = new System.Drawing.Point(1390, 38);
-			this.floatTrackbarControlRoughnessDiffuse.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.floatTrackbarControlRoughnessDiffuse.MinimumSize = new System.Drawing.Size(70, 20);
-			this.floatTrackbarControlRoughnessDiffuse.Name = "floatTrackbarControlDiffuse";
-			this.floatTrackbarControlRoughnessDiffuse.RangeMin = 0F;
-			this.floatTrackbarControlRoughnessDiffuse.Size = new System.Drawing.Size(200, 20);
-			this.floatTrackbarControlRoughnessDiffuse.TabIndex = 0;
-			this.floatTrackbarControlRoughnessDiffuse.Value = 0F;
-			this.floatTrackbarControlRoughnessDiffuse.VisibleRangeMax = 1F;
+			this.floatTrackbarControlRoughnessGround.Location = new System.Drawing.Point(92, 19);
+			this.floatTrackbarControlRoughnessGround.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlRoughnessGround.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlRoughnessGround.Name = "floatTrackbarControlRoughnessGround";
+			this.floatTrackbarControlRoughnessGround.RangeMin = 0F;
+			this.floatTrackbarControlRoughnessGround.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlRoughnessGround.TabIndex = 0;
+			this.floatTrackbarControlRoughnessGround.Value = 0F;
+			this.floatTrackbarControlRoughnessGround.VisibleRangeMax = 1F;
+			this.floatTrackbarControlRoughnessGround.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlRoughnessDiffuse_ValueChanged);
 			// 
 			// label4
 			// 
 			this.label4.AutoSize = true;
-			this.label4.Location = new System.Drawing.Point(1298, 41);
+			this.label4.Location = new System.Drawing.Point(6, 23);
 			this.label4.Name = "label4";
-			this.label4.Size = new System.Drawing.Size(97, 13);
+			this.label4.Size = new System.Drawing.Size(64, 13);
 			this.label4.TabIndex = 3;
-			this.label4.Text = "Roughness Diffuse";
+			this.label4.Text = "Roughness ";
+			// 
+			// checkBoxEnableMSBRDF
+			// 
+			this.checkBoxEnableMSBRDF.AutoSize = true;
+			this.checkBoxEnableMSBRDF.Checked = true;
+			this.checkBoxEnableMSBRDF.CheckState = System.Windows.Forms.CheckState.Checked;
+			this.checkBoxEnableMSBRDF.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+			this.checkBoxEnableMSBRDF.Location = new System.Drawing.Point(1332, 416);
+			this.checkBoxEnableMSBRDF.Name = "checkBoxEnableMSBRDF";
+			this.checkBoxEnableMSBRDF.Size = new System.Drawing.Size(244, 28);
+			this.checkBoxEnableMSBRDF.TabIndex = 4;
+			this.checkBoxEnableMSBRDF.Text = "Enable multiple scattering";
+			this.checkBoxEnableMSBRDF.UseVisualStyleBackColor = true;
+			this.checkBoxEnableMSBRDF.CheckedChanged += new System.EventHandler(this.checkBoxEnableMSBRDF_CheckedChanged);
+			// 
+			// checkBoxKeepSampling
+			// 
+			this.checkBoxKeepSampling.AutoSize = true;
+			this.checkBoxKeepSampling.Checked = true;
+			this.checkBoxKeepSampling.CheckState = System.Windows.Forms.CheckState.Checked;
+			this.checkBoxKeepSampling.Location = new System.Drawing.Point(1301, 690);
+			this.checkBoxKeepSampling.Name = "checkBoxKeepSampling";
+			this.checkBoxKeepSampling.Size = new System.Drawing.Size(97, 17);
+			this.checkBoxKeepSampling.TabIndex = 4;
+			this.checkBoxKeepSampling.Text = "Keep Sampling";
+			this.checkBoxKeepSampling.UseVisualStyleBackColor = true;
+			// 
+			// floatTrackbarControlReflectanceSphere
+			// 
+			this.floatTrackbarControlReflectanceSphere.Location = new System.Drawing.Point(92, 45);
+			this.floatTrackbarControlReflectanceSphere.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlReflectanceSphere.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlReflectanceSphere.Name = "floatTrackbarControlReflectanceSphere";
+			this.floatTrackbarControlReflectanceSphere.RangeMax = 1F;
+			this.floatTrackbarControlReflectanceSphere.RangeMin = 0F;
+			this.floatTrackbarControlReflectanceSphere.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlReflectanceSphere.TabIndex = 0;
+			this.floatTrackbarControlReflectanceSphere.Value = 1F;
+			this.floatTrackbarControlReflectanceSphere.VisibleRangeMax = 1F;
+			this.floatTrackbarControlReflectanceSphere.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlAlbedo_ValueChanged);
+			// 
+			// label5
+			// 
+			this.label5.AutoSize = true;
+			this.label5.Location = new System.Drawing.Point(6, 48);
+			this.label5.Name = "label5";
+			this.label5.Size = new System.Drawing.Size(93, 13);
+			this.label5.TabIndex = 3;
+			this.label5.Text = "Reflectance Spec";
+			// 
+			// checkBoxPause
+			// 
+			this.checkBoxPause.AutoSize = true;
+			this.checkBoxPause.Location = new System.Drawing.Point(1301, 713);
+			this.checkBoxPause.Name = "checkBoxPause";
+			this.checkBoxPause.Size = new System.Drawing.Size(108, 17);
+			this.checkBoxPause.TabIndex = 4;
+			this.checkBoxPause.Text = "Pause Rendering";
+			this.checkBoxPause.UseVisualStyleBackColor = true;
+			// 
+			// groupBox1
+			// 
+			this.groupBoxSphere.Controls.Add(this.label8);
+			this.groupBoxSphere.Controls.Add(this.floatTrackbarControlRoughnessSphere2);
+			this.groupBoxSphere.Controls.Add(this.floatTrackbarControlReflectanceSphere2);
+			this.groupBoxSphere.Controls.Add(this.floatTrackbarControlRoughnessSphere);
+			this.groupBoxSphere.Controls.Add(this.label7);
+			this.groupBoxSphere.Controls.Add(this.floatTrackbarControlReflectanceSphere);
+			this.groupBoxSphere.Controls.Add(this.label5);
+			this.groupBoxSphere.Controls.Add(this.label1);
+			this.groupBoxSphere.Location = new System.Drawing.Point(1298, 12);
+			this.groupBoxSphere.Name = "groupBox1";
+			this.groupBoxSphere.Size = new System.Drawing.Size(300, 145);
+			this.groupBoxSphere.TabIndex = 5;
+			this.groupBoxSphere.TabStop = false;
+			this.groupBoxSphere.Text = "Sphere";
+			// 
+			// label8
+			// 
+			this.label8.AutoSize = true;
+			this.label8.Location = new System.Drawing.Point(6, 88);
+			this.label8.Name = "label8";
+			this.label8.Size = new System.Drawing.Size(80, 13);
+			this.label8.TabIndex = 3;
+			this.label8.Text = "Roughness Diff";
+			// 
+			// floatTrackbarControlRoughnessSphere2
+			// 
+			this.floatTrackbarControlRoughnessSphere2.Location = new System.Drawing.Point(92, 86);
+			this.floatTrackbarControlRoughnessSphere2.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlRoughnessSphere2.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlRoughnessSphere2.Name = "floatTrackbarControlRoughnessSphere2";
+			this.floatTrackbarControlRoughnessSphere2.RangeMin = 0F;
+			this.floatTrackbarControlRoughnessSphere2.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlRoughnessSphere2.TabIndex = 0;
+			this.floatTrackbarControlRoughnessSphere2.Value = 0.1F;
+			this.floatTrackbarControlRoughnessSphere2.VisibleRangeMax = 1F;
+			this.floatTrackbarControlRoughnessSphere2.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlRoughnessSpec_ValueChanged);
+			// 
+			// floatTrackbarControlReflectanceSphere2
+			// 
+			this.floatTrackbarControlReflectanceSphere2.Location = new System.Drawing.Point(92, 112);
+			this.floatTrackbarControlReflectanceSphere2.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlReflectanceSphere2.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlReflectanceSphere2.Name = "floatTrackbarControlReflectanceSphere2";
+			this.floatTrackbarControlReflectanceSphere2.RangeMax = 1F;
+			this.floatTrackbarControlReflectanceSphere2.RangeMin = 0F;
+			this.floatTrackbarControlReflectanceSphere2.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlReflectanceSphere2.TabIndex = 0;
+			this.floatTrackbarControlReflectanceSphere2.Value = 1F;
+			this.floatTrackbarControlReflectanceSphere2.VisibleRangeMax = 1F;
+			this.floatTrackbarControlReflectanceSphere2.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlAlbedo_ValueChanged);
+			// 
+			// label7
+			// 
+			this.label7.AutoSize = true;
+			this.label7.Location = new System.Drawing.Point(6, 115);
+			this.label7.Name = "label7";
+			this.label7.Size = new System.Drawing.Size(84, 13);
+			this.label7.TabIndex = 3;
+			this.label7.Text = "Reflectance Diff";
+			// 
+			// groupBox2
+			// 
+			this.groupBoxPlane.Controls.Add(this.floatTrackbarControlRoughnessGround);
+			this.groupBoxPlane.Controls.Add(this.label2);
+			this.groupBoxPlane.Controls.Add(this.floatTrackbarControlReflectanceGround);
+			this.groupBoxPlane.Controls.Add(this.label4);
+			this.groupBoxPlane.Location = new System.Drawing.Point(1298, 173);
+			this.groupBoxPlane.Name = "groupBox2";
+			this.groupBoxPlane.Size = new System.Drawing.Size(300, 83);
+			this.groupBoxPlane.TabIndex = 6;
+			this.groupBoxPlane.TabStop = false;
+			this.groupBoxPlane.Text = "Ground Plane";
+			// 
+			// groupBox3
+			// 
+			this.groupBoxEnvironment.Controls.Add(this.floatTrackbarControlCubeMapIntensity);
+			this.groupBoxEnvironment.Controls.Add(this.label6);
+			this.groupBoxEnvironment.Controls.Add(this.floatTrackbarControlLightElevation);
+			this.groupBoxEnvironment.Controls.Add(this.label3);
+			this.groupBoxEnvironment.Location = new System.Drawing.Point(1298, 272);
+			this.groupBoxEnvironment.Name = "groupBox3";
+			this.groupBoxEnvironment.Size = new System.Drawing.Size(300, 99);
+			this.groupBoxEnvironment.TabIndex = 7;
+			this.groupBoxEnvironment.TabStop = false;
+			this.groupBoxEnvironment.Text = "Environment Cube Map";
+			// 
+			// floatTrackbarControlCubeMapIntensity
+			// 
+			this.floatTrackbarControlCubeMapIntensity.Location = new System.Drawing.Point(92, 45);
+			this.floatTrackbarControlCubeMapIntensity.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlCubeMapIntensity.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlCubeMapIntensity.Name = "floatTrackbarControlCubeMapIntensity";
+			this.floatTrackbarControlCubeMapIntensity.RangeMax = 1000F;
+			this.floatTrackbarControlCubeMapIntensity.RangeMin = 0F;
+			this.floatTrackbarControlCubeMapIntensity.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlCubeMapIntensity.TabIndex = 0;
+			this.floatTrackbarControlCubeMapIntensity.Value = 1F;
+			this.floatTrackbarControlCubeMapIntensity.VisibleRangeMax = 4F;
+			this.floatTrackbarControlCubeMapIntensity.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlLightElevation_ValueChanged);
+			// 
+			// label6
+			// 
+			this.label6.AutoSize = true;
+			this.label6.Location = new System.Drawing.Point(6, 49);
+			this.label6.Name = "label6";
+			this.label6.Size = new System.Drawing.Size(46, 13);
+			this.label6.TabIndex = 3;
+			this.label6.Text = "Intensity";
+			// 
+			// checkBoxEnableMSFactor
+			// 
+			this.checkBoxEnableMSFactor.AutoSize = true;
+			this.checkBoxEnableMSFactor.Checked = true;
+			this.checkBoxEnableMSFactor.CheckState = System.Windows.Forms.CheckState.Checked;
+			this.checkBoxEnableMSFactor.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+			this.checkBoxEnableMSFactor.Location = new System.Drawing.Point(1332, 450);
+			this.checkBoxEnableMSFactor.Name = "checkBoxEnableMSFactor";
+			this.checkBoxEnableMSFactor.Size = new System.Drawing.Size(210, 28);
+			this.checkBoxEnableMSFactor.TabIndex = 4;
+			this.checkBoxEnableMSFactor.Text = "Enable MS Saturation";
+			this.checkBoxEnableMSFactor.UseVisualStyleBackColor = true;
+			this.checkBoxEnableMSFactor.CheckedChanged += new System.EventHandler(this.checkBoxEnableMSBRDF_CheckedChanged);
+			// 
+			// checkBoxUseRealTimeApprox
+			// 
+			this.checkBoxUseRealTimeApprox.AutoSize = true;
+			this.checkBoxUseRealTimeApprox.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+			this.checkBoxUseRealTimeApprox.Location = new System.Drawing.Point(1332, 484);
+			this.checkBoxUseRealTimeApprox.Name = "checkBoxUseRealTimeApprox";
+			this.checkBoxUseRealTimeApprox.Size = new System.Drawing.Size(281, 28);
+			this.checkBoxUseRealTimeApprox.TabIndex = 4;
+			this.checkBoxUseRealTimeApprox.Visible = false;
+			this.checkBoxUseRealTimeApprox.Text = "Use Real-Time Approximation";
+			this.checkBoxUseRealTimeApprox.UseVisualStyleBackColor = true;
+			this.checkBoxUseRealTimeApprox.CheckedChanged += new System.EventHandler(this.checkBoxEnableMSBRDF_CheckedChanged);
 			// 
 			// TestForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1602, 741);
-			this.Controls.Add(this.floatTrackbarControlRoughnessDiffuse);
-			this.Controls.Add(this.label3);
-			this.Controls.Add(this.label2);
-			this.Controls.Add(this.label4);
-			this.Controls.Add(this.label1);
+			this.Controls.Add(this.groupBoxEnvironment);
+			this.Controls.Add(this.groupBoxPlane);
+			this.Controls.Add(this.groupBoxSphere);
+			this.Controls.Add(this.checkBoxKeepSampling);
+			this.Controls.Add(this.checkBoxPause);
+			this.Controls.Add(this.checkBoxUseRealTimeApprox);
+			this.Controls.Add(this.checkBoxEnableMSFactor);
+			this.Controls.Add(this.checkBoxEnableMSBRDF);
 			this.Controls.Add(this.buttonReload);
 			this.Controls.Add(this.panelOutput);
-			this.Controls.Add(this.floatTrackbarControlLightElevation);
-			this.Controls.Add(this.floatTrackbarControlAlbedo);
-			this.Controls.Add(this.floatTrackbarControlRoughnessSpec);
+			this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
+			this.KeyPreview = true;
 			this.Name = "TestForm";
 			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
 			this.Text = "MSBRDF Test Form";
+			this.KeyDown += new System.Windows.Forms.KeyEventHandler(this.TestForm_KeyDown);
+			this.groupBoxSphere.ResumeLayout(false);
+			this.groupBoxSphere.PerformLayout();
+			this.groupBoxPlane.ResumeLayout(false);
+			this.groupBoxPlane.PerformLayout();
+			this.groupBoxEnvironment.ResumeLayout(false);
+			this.groupBoxEnvironment.PerformLayout();
 			this.ResumeLayout(false);
 			this.PerformLayout();
 
@@ -176,17 +405,33 @@
 
 		#endregion
 
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlRoughnessSpec;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlRoughnessSphere;
 		private Nuaj.Cirrus.Utility.PanelOutput panelOutput;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlAlbedo;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlReflectanceGround;
 		private System.Windows.Forms.Button buttonReload;
 		private System.Windows.Forms.Label label1;
 		private System.Windows.Forms.Label label2;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlLightElevation;
 		private System.Windows.Forms.Label label3;
 		private System.Windows.Forms.Timer timer1;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlRoughnessDiffuse;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlRoughnessGround;
 		private System.Windows.Forms.Label label4;
+		private System.Windows.Forms.CheckBox checkBoxEnableMSBRDF;
+		private System.Windows.Forms.CheckBox checkBoxKeepSampling;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlReflectanceSphere;
+		private System.Windows.Forms.Label label5;
+		private System.Windows.Forms.CheckBox checkBoxPause;
+		private System.Windows.Forms.GroupBox groupBoxSphere;
+		private System.Windows.Forms.GroupBox groupBoxPlane;
+		private System.Windows.Forms.GroupBox groupBoxEnvironment;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlCubeMapIntensity;
+		private System.Windows.Forms.Label label6;
+		private System.Windows.Forms.CheckBox checkBoxEnableMSFactor;
+		private System.Windows.Forms.Label label8;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlRoughnessSphere2;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlReflectanceSphere2;
+		private System.Windows.Forms.Label label7;
+		private System.Windows.Forms.CheckBox checkBoxUseRealTimeApprox;
 	}
 }
 

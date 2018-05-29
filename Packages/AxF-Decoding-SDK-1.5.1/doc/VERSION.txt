@@ -1,0 +1,135 @@
+Changelog for AxF Decoding SDK
+==============================
+
+2018-04-18, 1.5.1
+   * Support preview images with alpha channel
+   * Updated and improved SDK documentation and AxF white paper; added a FAQ
+   * New AxF Integration and Validation Package (will be made available separately)
+
+2017-12-21, 1.5.0 (PANTORA 1.3.0 release)
+   * Added support for AxF 1.5 representation (GGX model [Walter et al.])
+   * The exported SDK functions are now in a versioned namespace to allow scenarios where the client application wants to link against multiple different AxF SDK versions.
+     Since the added version namespace is (de facto) an inline namespace, this change is transparent for the user (provided that each C++ source files includes a single AxF SDK version only).
+
+2017-02-16, 1.4.0
+   * Official support for AxF 1.4 (alpha- and displacement-mapping resources)
+      -TextureDecoder SVBRDF representation returns 'Alpha' and 'Height' textures
+      -CPUDecoder for SVBRDF representation evaluates alpha channel
+      -SVBRDF compatibility profile version 2 requires support for alpha and height 
+   * Two new interfaces to access AxF materials 
+      -using handles (analogue to the other AxF entities)
+      -based on *MaterialID* strings (analogue to the old by-name interface)
+   * Accessing AxF materials by name is deprecated but still supported for backwards compatibility of existing code
+   * Support of unicode strings for material names and metadata properties
+        - added new function axfGetMaterialDisplayName() to retrieve the material name in UTF-16/UTF-32 encoding (depending on compiler) used for display
+        - added new PropertyType TYPE_UTF_STRING denoting an array of wchar_t characters in UTF-16/UTF-32 encoding (depending on compiler) 	
+   * Added new enum for texture data types to distinguish them from property data types (backwards compatible with previous constants)
+   * TextureDecoder interface does not return the following auxiliary CarPaint2 properties anymore (ID_DEFAULT):
+        - "hue_rot"
+        - "clearcoat_scale"
+        - "brdf_scale"
+        - "flake_scale"
+        - "btf_flake_boost"
+        - "flakes_uv_scale"
+        - "cc_uv_scale"
+        - "btf_lightsigma_sqr"
+     References to these properties should be removed, they are not necessary for the evaluation of the CarPaint2 representation. 
+   * Updated and improved SDK documentation and AxF white paper
+
+2016-07-15, 1.3.0 
+   * Added support for AxF 1.3 representation (clear coat with 'NoRefraction' attribute)
+   * Added details on coated materials to SDK documentation and white paper
+   * Introduced more fine grained compatibility profiles for each of the main representation classes
+   * Interface change: The new function axfGetPreferredRepresentation() replaces the former axfGetRepresentationWithHighestSupportedVersion() (see documentation for details)
+   * Bug fix: CPA2 flake texture always returns a valid size
+   * Bug fix: Proper support of Unicode filenames on Windows via axfOpenFileW()
+   * Mac OS X binary: Removed the dynamic dependencies to the Accelerate and zlib libraries of the OS X SDK (for more consistency to the Windows and Linux builds of the AxF SDK)
+
+2016-04-22, 1.2.3
+   * Improved SDK documentation and AxF white paper
+   * Bug fixes
+
+2016-02-03, 1.2.2 (restricted beta)
+   * Completed support for AxF 1.2 representations
+   * Added basic C-style interface for accessing AxF material metadata
+   * Added basic C-style interface for accessing AxF representation resources
+   * Additionally incorporates all features from SDK version 1.1.2
+
+2015-11-17, 1.2.1 (restricted beta)
+   * Preliminary support for AxF 1.2 representations (such as CarPaint 2)
+   * Support for AxF 1.1 representations and builds for Windows, Linux, and Mac are available for this version as well,
+     but otherwise this version misses some of the features of SDK version 1.1.2 (see below) due to the earlier release date.
+
+2016-01-18, 1.1.2
+   * New SDK name and versioning scheme (major.minor.revision), where major.minor corresponds to the highest supported AxF version
+   * First release with support for AxF 1.1 representations (such as SVBRDFs with clearcoat)
+   * Builds for Windows, Linux, and Mac available; all external dependencies removed (except for system libraries necessarily available on the supported systems, see README.txt)
+     [This includes dependency to the MSVC runtime library on Windows. Thus there is no need anymore for different MSVC build variants.]
+   * Improved the documentation
+   * The namespace was changed to axf::decoding
+   * Added new function axfGetRepresentationClass() for indentifying the representation category (note that axfGetRepresentationType() may not be used anymore for that purpose)
+   * Added new functions for checking which representations are supported by the given SDK version, including the convenience function axfGetRepresentationWithHighestSupportedVersion()
+     for easy access to the material representation with the highest support representation version; removed the deprecated convenience function axfGetVeryFirstRepresentation() instead
+   * Added new functions for enabling/disabling logging
+   * CPUDecoder and TextureDecoder: Full support for color space conversion to the user-defined target color space (for any supported representation)
+   * Several minor interface extensions and fixes
+
+
+-- The versions below refer to "PANTORA-AXF SDK (read-only)", the predecessor of the AxF Decoding SDK --
+
+2015-03-26, 1.11 beta
+   * added *_s.dll and *_s.lib files for msvc10,11,12 with static runtime linkage
+
+2015-03-16, 1.10 beta
+   * Removed openmp dependency
+   * added getter functions for constructor parameters to TextureDecoder
+
+2015-02-25, 1.09 beta
+   * Fix CoVariance to Rotation anisotropy
+
+2015-02-20, 1.08 beta
+   * Internal AxF file version is now 1.0
+
+2015-02-03, 1.07 beta
+   * Fixed access to axf preview images by adding source- and target color space parameters
+   * Added test for preview image access to PaDecode example
+   * Fixed #define string typos
+
+2015-02-02, 1.06 beta
+   * Added parameter iTextureOrientation and removed axfGetRepresentationHandedness()
+   * Added methods to basic axf io interface:
+    -axfCheckRepresentationCompatibilityProfile()
+    -axfGetRepresentationVersion()
+    -axfGetRepresentationVariant()
+    -axfGetSpectralizationTrafo()
+   * Removed axfGetLinearColorTrafo()
+   * Added parameters sTargetColorSpace and iTextureOrigin to creation methods of CPU- and TextureDecoder
+   * Added list of #defines for several AxF string keys like TypeKeys, Variants and Texture Names
+   * Partly updated documentation
+
+2015-01-22, 1.05 beta
+   * Added methods to basic axf io interface:
+       -axfGetRepresentationHandedness() - retrieve orientation (preliminary)
+       -axfGetSvbrdfSpecularFresnelVariant() - retrieve fresnel variant used
+   * Modified basic axf io interface:
+       -axfGetSvbrdfSpecularModelVariant()  returns flags bIsAnisotropic and bHasFresnel
+
+2014-12-22, 1.04 beta
+   * Extended axf basic io interface
+   * Change of anisotropy behaviour
+
+2014-11-17, 1.03 beta
+   * Added internal #define PANTORA_QUIET_MODE (no logging)
+   * Fix: wrong svbrdf texture names
+
+2014-10-24, 1.02 beta
+   Minor bug-fixes
+
+2014-09-25, 1.01 beta
+   Update to internal AxF file version 0.6
+
+PANTORA-AXF SDK (read-only) 1.0 beta
+   Initial release
+   see documentation in ./doc/html for further usage and license information
+
+

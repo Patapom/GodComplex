@@ -210,7 +210,7 @@ namespace SphericalHarmonics
 		/// </summary>
 		/// <param name="_direction"></param>
 		/// <param name="_SH"></param>
-		static void	Ylm( float3 _direction, double[] _SH ) {
+		public static void	Ylm( float3 _direction, double[] _SH ) {
 			const double	c0 = 0.28209479177387814347403972578039;	// 1/2 sqrt(1/pi)
 			const double	c1 = 0.48860251190291992158638462283835;	// 1/2 sqrt(3/pi)
 			const double	c2 = 1.09254843059207907054338570580270;	// 1/2 sqrt(15/pi)
@@ -257,16 +257,13 @@ namespace SphericalHarmonics
 				return Math.Pow( -1, m ) * SQRT2 * K( l, -m ) * Math.Sin( -m * _ϕ ) * P( l, -m, Math.Cos( _θ ) );
 		}
 
-		// Here, we choose the convention that the vertical axis defining THETA is the Y axis
-		//  and the axes defining PHI are X and Z where PHI = 0 when the vector is aligned to the positive Z axis
-		//
 		// NOTE ==> The '_Direction' vector must be normalized!!
 		//
-		public static double	Ylm( int l, int m, float3 _Direction ) {
+		public static double	Ylm( int l, int m, float3 _direction ) {
 			// Convert from cartesian to polar coords
 			double	θ = 0.0;
 			double	ϕ = 0.0f;
-			CartesianToSpherical( _Direction, out θ, out ϕ );
+			CartesianToSpherical( _direction, out θ, out ϕ );
 
 			return	Ylm( l, m, θ, ϕ );
 		}

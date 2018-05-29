@@ -121,6 +121,10 @@
       <Project>{dd026a89-c5fe-4150-bc85-a660e427826a}</Project>
       <Name>MathAdvanced</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\Packages\SphericalHarmonicsLibrary\SphericalHarmonicsLibrary.csproj">
+      <Project>{e96e2072-c7ef-46bb-a3f1-8cf6b26bf019}</Project>
+      <Name>SphericalHarmonicsLibrary</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\Render.hlsl" />
@@ -133,6 +137,12 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\Scene.hlsl" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Shaders\RenderCompareSH.hlsl" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Shaders\SphericalHarmonics.hlsl" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

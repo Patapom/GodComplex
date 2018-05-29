@@ -1,3 +1,14 @@
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// Old routine that tested my ill-fitted MS cosine-lobe data... Not sure that's really interesting now.
+//
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//
 #include "global.hlsl"
 
 //#define TEST_MSBRDF	1	// My overcomplicated diffuse lobe fitting
@@ -10,7 +21,7 @@ cbuffer CB_Render : register(b2) {
 };
 
 struct VS_IN {
-	float4	__Position : SV_POSITION;
+	float4	__position : SV_POSITION;
 };
 
 VS_IN	VS( VS_IN _In ) {
@@ -23,10 +34,10 @@ Texture2D<float4>		_TexBackground : register(t0);
 Texture2DArray<float4>	_TexScattering : register(t1);
 
 float3	PS( VS_IN _In ) : SV_TARGET0 {
-	float2	UV = _In.__Position.xy * _ScreenSize.zw;
+	float2	UV = _In.__position.xy * _screenSize.zw;
 
 //float3	BackgroundColor = float3( UV, 0 );
-float3	BackgroundColor = _TexBackground[_In.__Position.xy].xyz;
+float3	BackgroundColor = _TexBackground[_In.__position.xy].xyz;
 float3	Scattering = _TexScattering.Sample( LinearWrap, float3( UV, 0.0 ) ).xyz;
 float3	Extinction = _TexScattering.Sample( LinearWrap, float3( UV, 1.0 ) ).xyz;
 
@@ -211,7 +222,7 @@ float	ComputeShadow( float3 _wsPos, float3 _wsLight ) {
 
 float3	PS( VS_IN _In ) : SV_TARGET0 {
 
-	float2	UV = float2( _ScreenSize.x / _ScreenSize.y * (2.0 * _In.__Position.x / _ScreenSize.x - 1.0), 1.0 - 2.0 * _In.__Position.y / _ScreenSize.y );
+	float2	UV = float2( _screenSize.x / _screenSize.y * (2.0 * _In.__position.x / _screenSize.x - 1.0), 1.0 - 2.0 * _In.__position.y / _screenSize.y );
 
 	const float3	CAMERA_POS = float3( 0, 1.5, 2 );
 	const float3	CAMERA_TARGET = float3( -0.4, 0, 0.4 );
@@ -391,10 +402,10 @@ return 0*_lightColor * specular;
 
 float3	PS( VS_IN _In ) : SV_TARGET0 {
 
-	float2	UV = float2( _ScreenSize.x / _ScreenSize.y * (2.0 * _In.__Position.x / _ScreenSize.x - 1.0), 1.0 - 2.0 * _In.__Position.y / _ScreenSize.y );
+	float2	UV = float2( _screenSize.x / _screenSize.y * (2.0 * _In.__position.x / _screenSize.x - 1.0), 1.0 - 2.0 * _In.__position.y / _screenSize.y );
 
-//return 1-_tex_IrradianceComplement.SampleLevel( LinearClamp, _In.__Position.xy / _ScreenSize.xy, 0.0 );
-//return _tex_IrradianceAverage.SampleLevel( LinearClamp, _In.__Position.xy / _ScreenSize.xy, 0.0 ) / PI;
+//return 1-_tex_IrradianceComplement.SampleLevel( LinearClamp, _In.__position.xy / _screenSize.xy, 0.0 );
+//return _tex_IrradianceAverage.SampleLevel( LinearClamp, _In.__position.xy / _screenSize.xy, 0.0 ) / PI;
 
 	const float3	CAMERA_POS = float3( 0, 1.5, 2 );
 	const float3	CAMERA_TARGET = float3( -0.4, 0, 0.4 );
