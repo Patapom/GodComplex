@@ -50,6 +50,30 @@ namespace AxFService {
 				SCHLICK,			// Schlick's Approximation (1994)
 			};
 
+			ref class Texture {
+			private:
+
+				String^							m_name;
+				ImageUtility::COMPONENT_FORMAT	m_componentFormat;
+				ImageUtility::ImagesMatrix^		m_images;
+
+			public:
+
+				property String^		Name {
+					String^	get() { return m_name; }
+				}
+				property ImageUtility::COMPONENT_FORMAT	ComponentFormat {
+					ImageUtility::COMPONENT_FORMAT	get() { return m_componentFormat; }
+				}
+				property ImageUtility::ImagesMatrix^	Images {
+					ImageUtility::ImagesMatrix^	get() { return m_images; }
+				}
+
+			public:
+				Texture( ::axf::decoding::TextureDecoder* _decoder, UInt32 _textureIndex );
+				~Texture();
+			};
+
 		private:
 
 			AxFFile^	m_owner;
@@ -64,6 +88,8 @@ namespace AxFService {
 			SVBRDF_FRESNEL_VARIANT	m_fresnelVariant;
 			bool					m_isAnisotropic;
 
+			cli::array< Texture^ >^	m_textures;
+
 		public:
 
 			property String^					Name { String^ get() { return m_name; } }
@@ -73,8 +99,13 @@ namespace AxFService {
 			property SVBRDF_SPECULAR_VARIANT	SpecularVariant { SVBRDF_SPECULAR_VARIANT get() { return m_specularVariant; } }
 			property SVBRDF_FRESNEL_VARIANT		FresnelVariant { SVBRDF_FRESNEL_VARIANT get() { return m_fresnelVariant; } }
 
+			property cli::array< Texture^ >^	Textures { cli::array< Texture^ >^ get(); }
+
 		public:
 			Material( AxFFile^ _owner, UInt32 _materialIndex );
+
+		private:
+			void	ReadTextures();
 		};
 		
 	private:
@@ -90,6 +121,5 @@ namespace AxFService {
 
 		AxFFile( System::IO::FileInfo^ _fileName );
 		~AxFFile();
-
 	};
 }

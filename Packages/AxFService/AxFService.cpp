@@ -6,6 +6,7 @@
 
 using namespace AxFService;
 using namespace axf::decoding;
+using namespace ImageUtility;
 
 AxFFile::AxFFile( System::IO::FileInfo^ _fileName ) {
 	if ( !_fileName->Exists )
@@ -107,4 +108,162 @@ AxFFile::Material::Material( AxFFile^ _owner, UInt32 _materialIndex ) : m_owner(
 	} else {
 		throw gcnew Exception( "Unsupported material class type!" );
 	}
+}
+
+cli::array< AxFFile::Material::Texture^ >^	AxFFile::Material::Textures::get() {
+	if ( m_textures == nullptr ) {
+		ReadTextures();
+	}
+	return m_textures;
+}
+
+void	AxFFile::Material::ReadTextures() {
+
+	CPUDecoder*		pcl_decoder = CPUDecoder::create( m_hMaterialRepresentation, "sRGB,E", ORIGIN_TOPLEFT );
+	TextureDecoder* pcl_tex_decoder = TextureDecoder::create( m_hMaterialRepresentation, pcl_decoder, ID_DEFAULT );
+
+	m_textures = gcnew cli::array<Texture ^>( pcl_tex_decoder->getNumTextures() );
+	if ( m_textures->Length > 0 ) {
+		for ( UInt32 textureIndex=0; textureIndex < UInt32(m_textures->Length); textureIndex++ ) {
+			Texture^	tex = gcnew Texture( pcl_tex_decoder, textureIndex );
+			m_textures[textureIndex] = tex;
+		}
+	}
+
+	pcl_tex_decoder->destroy();
+	pcl_decoder->destroy();
+}
+
+AxFFile::Material::Texture::Texture( TextureDecoder* _decoder, UInt32 _textureIndex ) {
+
+	char	tempCharPtr[255];
+	_decoder->getTextureName( _textureIndex, tempCharPtr, 255 );
+	m_name = gcnew String( tempCharPtr );
+
+	// Retrieve mip 0 information
+	int			width, height, depth, channelsCount, datatype_src;
+	_decoder->getTextureSize( _textureIndex, 0, width, height, depth, channelsCount, datatype_src );
+	UInt32		mipsCount = _decoder->getTextureNumMipLevels( _textureIndex );
+
+	if ( depth > 1 )
+		throw gcnew Exception( "Handle 3D textures or texture arrays!" );
+	if ( channelsCount > 4 )
+		throw gcnew Exception( "Handle textures with more than 4 channels! (or not)" );
+
+	TextureType			textureDataFormat = TextureType(datatype_src);
+	PIXEL_FORMAT		targetFormat;
+	UInt32				componentSize;
+	switch ( textureDataFormat ) {
+		case TEXTURE_TYPE_BYTE:
+			componentSize = 1;
+			switch ( channelsCount ) {
+				case 1:
+					targetFormat = PIXEL_FORMAT::R8;
+					m_componentFormat = COMPONENT_FORMAT::UNORM;
+					break;
+				case 2:
+					targetFormat = PIXEL_FORMAT::RG8;
+					m_componentFormat = COMPONENT_FORMAT::UNORM;
+					break;
+				case 3:
+				case 4:
+					targetFormat = PIXEL_FORMAT::RGBA8;
+					m_componentFormat = COMPONENT_FORMAT::UNORM_sRGB;
+					break;
+			}
+			break;
+		case TEXTURE_TYPE_HALF:
+			componentSize = 2;
+			switch ( channelsCount ) {
+				case 1:
+					targetFormat = PIXEL_FORMAT::R16F;
+					m_componentFormat = COMPONENT_FORMAT::AUTO;
+					break;
+				case 2:
+					targetFormat = PIXEL_FORMAT::RG16F;
+					m_componentFormat = COMPONENT_FORMAT::AUTO;
+					break;
+				case 3:
+				case 4:
+					targetFormat = PIXEL_FORMAT::RGBA16F;
+					m_componentFormat = COMPONENT_FORMAT::AUTO;
+					break;
+			}
+			break;
+		case TEXTURE_TYPE_FLOAT:
+			componentSize = 4;
+			switch ( channelsCount ) {
+				case 1:
+					targetFormat = PIXEL_FORMAT::R32F;
+					m_componentFormat = COMPONENT_FORMAT::AUTO;
+					break;
+				case 2:
+					targetFormat = PIXEL_FORMAT::RG32F;
+					m_componentFormat = COMPONENT_FORMAT::AUTO;
+					break;
+				case 3:
+				case 4:
+					targetFormat = PIXEL_FORMAT::RGBA32F;
+					m_componentFormat = COMPONENT_FORMAT::AUTO;
+					break;
+			}
+			break;
+
+// 		default:
+// 			throw gcnew Exception( "Unsupported pixel format!" );
+	}
+
+	// Allocate images
+	m_images = gcnew ImagesMatrix();
+	m_images->InitTexture2DArray( UInt32(width), UInt32(height), 1, mipsCount );
+	m_images->AllocateImageFiles( targetFormat, gcnew ImageUtility::ColorProfile( ColorProfile::STANDARD_PROFILE::sRGB ) );
+
+	UInt32	sourcePixelSize = channelsCount * componentSize;
+	UInt32	targetPixelSize = channelsCount != 3 ? sourcePixelSize : 4 * componentSize;	// Force 4 channels
+
+	Byte*	tempPixelsBuffer = new Byte[width*height*sourcePixelSize];
+
+	// Readback all mip levels
+	for ( UInt32 mipIndex=0; mipIndex < mipsCount; mipIndex++ ) {
+		_decoder->getTextureSize( _textureIndex, mipIndex, width, height, depth, channelsCount, datatype_src );
+		_decoder->getTextureData( _textureIndex, mipIndex, textureDataFormat, tempPixelsBuffer );
+
+		UInt32	sourcePitch = width * sourcePixelSize;
+
+		// Write to our target image
+		ImageFile^	targetMip = m_images[0][mipIndex][0];
+		if ( targetMip->Height != height )
+			throw gcnew Exception( "Target mip level isn't the same resolution as source mip level!" );
+
+		UInt32	targetPitch = targetMip->Pitch;
+		Byte*	sourcePtr = tempPixelsBuffer;
+		Byte*	targetPtr = (Byte*) (void*) targetMip->Bits;
+		for ( UInt32 Y=0; Y < UInt32(height); Y++, sourcePtr+=sourcePitch, targetPtr+=targetPitch ) {
+			if ( channelsCount != 3 ) {
+				memcpy_s( targetPtr, targetPitch, sourcePtr, sourcePitch );
+				continue;
+			}
+
+			// We need to copy RGB and create our own alpha
+			for ( UInt32 X=0; X < UInt32(width); X++ ) {
+				memcpy_s( targetPtr + targetPixelSize*X, targetPixelSize, sourcePtr + sourcePixelSize*X, sourcePixelSize );
+
+//((float*) (targetPtr + targetPixelSize*X))[0] = 1;
+//((float*) (targetPtr + targetPixelSize*X))[1] = 0;
+//((float*) (targetPtr + targetPixelSize*X))[2] = 0;
+
+				// Fill opaque alpha
+				switch ( targetFormat ) {
+					case PIXEL_FORMAT::RGBA8: ((Byte*)(targetPtr + targetPixelSize*X))[3] = 0xFF; break;
+					case PIXEL_FORMAT::RGBA16F: ((UInt16*)(targetPtr + targetPixelSize*X))[3] = 0x3C00; break;	// Representation for 1
+					case PIXEL_FORMAT::RGBA32F: ((float*)(targetPtr + targetPixelSize*X))[3] = 1.0f; break;
+				}
+			}
+		}
+	}
+
+	delete[] tempPixelsBuffer;
+}
+AxFFile::Material::Texture::~Texture() {
+	delete m_images;
 }

@@ -8,6 +8,8 @@
 
 #pragma unmanaged
 
+#include <memory.h>
+
 #include "../AxF-Decoding-SDK-1.5.1/include/AxF/decoding/api_def.h"
 #include "../AxF-Decoding-SDK-1.5.1/include/AxF/decoding/AxF_basic_io.h"
 #include "../AxF-Decoding-SDK-1.5.1/include/AxF/decoding/CPUDecoder.h"
