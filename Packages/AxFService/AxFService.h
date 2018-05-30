@@ -31,6 +31,8 @@ namespace AxFService {
 				PHONG,
 			};
 
+dump diffuse en srgb
+
 			enum class	SVBRDF_SPECULAR_VARIANT {
 				// Ward variants
 				GEISLERMORODER,		// 2010 (albedo-conservative, should always be prefered!)

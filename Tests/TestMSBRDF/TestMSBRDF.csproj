@@ -64,6 +64,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="LTC\BRDF.cs" />
+    <Compile Include="LTC\NelderMead.cs" />
+    <Compile Include="LTC\LTCFitter.cs" />
     <Compile Include="TestForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -142,6 +145,7 @@
     <None Include="Shaders\RenderCompareSH.hlsl" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Shaders\RenderCompareLTC.hlsl" />
     <Content Include="Shaders\SphericalHarmonics.hlsl" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

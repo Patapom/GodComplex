@@ -398,6 +398,14 @@ namespace SharpMath {
 			return R;
 		}
 
+		static float3	operator*( float3x3^ a, float3 b ) {
+			float3	R;
+			R.x = a->r0.x * b.x + a->r0.y * b.y + a->r0.z * b.z;
+			R.y = a->r1.x * b.x + a->r1.y * b.y + a->r1.z * b.z;
+			R.z = a->r2.x * b.x + a->r2.y * b.y + a->r2.z * b.z;
+			return R;
+		}
+
 		property float3	default[int] {
 			float3		get( int _rowIndex ) {
 				switch ( _rowIndex % 3 ) {
@@ -429,28 +437,29 @@ namespace SharpMath {
 
 		property float	Determinant {
 			float	get() {
-				return (r0[0]*r1[1]*r2[2] + r0[1]*r1[2]*r2[0] + r0[2]*r1[0]*r2[1]) - (r2[0]*r1[1]*r0[2] + r2[1]*r1[2]*r0[0] + r2[2]*r1[0]*r0[1]);
+				return (r0[0]*r1[1]*r2[2] + r0[1]*r1[2]*r2[0] + r0[2]*r1[0]*r2[1])
+					 - (r2[0]*r1[1]*r0[2] + r2[1]*r1[2]*r0[0] + r2[2]*r1[0]*r0[1]);
 			}
 		}
 
 		property float3x3	Inverse {
 			float3x3	get() {
-				float	fDet = Determinant;
-				if ( Math::Abs(fDet) < float::Epsilon )
+				float	det = Determinant;
+				if ( Math::Abs(det) < float::Epsilon )
 					throw gcnew Exception( "Matrix is not invertible!" );		// The matrix is not invertible! Singular case!
 
-				float	fIDet = 1.0f / fDet;
+				float	invDet = 1.0f / det;
 
 				float3x3	R;
-				R.r0[0] = +(r1[1] * r2[2] - r2[1] * r1[2]) * fIDet;
-				R.r1[0] = -(r1[0] * r2[2] - r2[0] * r1[2]) * fIDet;
-				R.r2[0] = +(r1[0] * r2[1] - r2[0] * r1[1]) * fIDet;
-				R.r0[1] = -(r0[1] * r2[2] - r2[1] * r0[2]) * fIDet;
-				R.r1[1] = +(r0[0] * r2[2] - r2[0] * r0[2]) * fIDet;
-				R.r2[1] = -(r0[0] * r2[1] - r2[0] * r0[1]) * fIDet;
-				R.r0[2] = +(r0[1] * r1[2] - r1[1] * r0[2]) * fIDet;
-				R.r1[2] = -(r0[0] * r1[2] - r1[0] * r0[2]) * fIDet;
-				R.r2[2] = +(r0[0] * r1[1] - r1[0] * r0[1]) * fIDet;
+				R.r0[0] = +(r1[1] * r2[2] - r2[1] * r1[2]) * invDet;
+				R.r1[0] = -(r1[0] * r2[2] - r2[0] * r1[2]) * invDet;
+				R.r2[0] = +(r1[0] * r2[1] - r2[0] * r1[1]) * invDet;
+				R.r0[1] = -(r0[1] * r2[2] - r2[1] * r0[2]) * invDet;
+				R.r1[1] = +(r0[0] * r2[2] - r2[0] * r0[2]) * invDet;
+				R.r2[1] = -(r0[0] * r2[1] - r2[0] * r0[1]) * invDet;
+				R.r0[2] = +(r0[1] * r1[2] - r1[1] * r0[2]) * invDet;
+				R.r1[2] = -(r0[0] * r1[2] - r1[0] * r0[2]) * invDet;
+				R.r2[2] = +(r0[0] * r1[1] - r1[0] * r0[1]) * invDet;
 
 				return	R;
 			}

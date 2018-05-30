@@ -76,19 +76,9 @@ namespace AreaLightTest {
 		private ConstantBuffer<CB_Main>			m_CB_Main = null;
 		private ConstantBuffer<CB_Camera>		m_CB_Camera = null;
 		private ConstantBuffer<CB_Light>		m_CB_Light = null;
-		private ConstantBuffer<CB_ShadowMap>	m_CB_ShadowMap = null;
+// 		private ConstantBuffer<CB_ShadowMap>	m_CB_ShadowMap = null;
 		private ConstantBuffer<CB_Object>		m_CB_Object = null;
 
-		private Shader		m_Shader_RenderShadowMap = null;
-
-#if FILTER_EXP_SHADOW_MAP
-		private Shader		m_Shader_FilterShadowMapH = null;
-		private Shader		m_Shader_FilterShadowMapV = null;
-#else
-		private Shader		m_Shader_BuildSmoothie = null;
-		private Shader		m_Shader_BuildSmoothieDistanceFieldH = null;
-		private Shader		m_Shader_BuildSmoothieDistanceFieldV = null;
-#endif
 		private Shader		m_Shader_RenderAreaLight = null;
 		private Shader		m_Shader_RenderScene = null;
 
@@ -100,14 +90,6 @@ namespace AreaLightTest {
 
 // 		private Texture2D	m_Tex_GlossMap = null;
 // 		private Texture2D	m_Tex_Normal = null;
-
-		private Texture2D	m_Tex_ShadowMap = null;
-#if FILTER_EXP_SHADOW_MAP
-		private Texture2D[]	m_Tex_ShadowMapFiltered = new Texture2D[2];
-#else
-		private Texture2D	m_Tex_ShadowSmoothie = null;
-		private Texture2D[]	m_Tex_ShadowSmoothiePou = new Texture2D[2];
-#endif
 
 		private Texture2D	m_Tex_BRDFIntegral = null;
 
@@ -134,76 +116,6 @@ namespace AreaLightTest {
 //			TestBisou();
 		}
 
-
-		#region Test Bisou
-
-		// Conversions sRGB RGB <=> CIE XYZ using D65 illuminant (sRGB white point)
-		float3    RGB2XYZ( float3 _RGB ) {
-			return new float3(  _RGB.Dot( new float3( 0.4124f, 0.3576f, 0.1805f ) ),
-								_RGB.Dot( new float3( 0.2126f, 0.7152f, 0.0722f ) ),                                // <= Y component is the LUMINANCE defined above
-								_RGB.Dot( new float3( 0.0193f, 0.1192f, 0.9505f ) ) );
-
-		}
-
-		float3    XYZ2RGB( float3 _XYZ ) {
-			return new float3(  _XYZ.Dot( new float3(  3.2406f, -1.5372f, -0.4986f ) ),
-								_XYZ.Dot( new float3( -0.9689f,  1.8758f,  0.0415f ) ),
-								_XYZ.Dot( new float3(  0.0557f, -0.2040f,  1.0570f ) ) );
-		}
-
-		// Conversions CIE XYZ <=> CIE xyY (xy = chromaticities, Y = luminance)
-		// Y = Y
-		// x = X / ( X + Y + Z )
-		// y = Y / ( X + Y + Z )
-		float3    XYZ2xyY( float3 _XYZ ) {
-			float3    xyY;
-			xyY.z  = _XYZ.y;
-			xyY.x = _XYZ.x / (_XYZ.x + _XYZ.y + _XYZ.z);
-			xyY.y = _XYZ.y / (_XYZ.x + _XYZ.y + _XYZ.z);
-			return xyY;
-		}
-
-		// X = x * ( Y / y )
-		// Y = Y
-		// Z = ( 1 - x - y ) * ( Y / y )
-		float3    xyY2XYZ( float3 _xyY ) {
-			float       Y_over_y = _xyY.z / _xyY.y;
-			float3    XYZ;
-			XYZ.x = _xyY.x * Y_over_y;
-			XYZ.y = _xyY.z;
-			XYZ.z = (1.0f - _xyY.x - _xyY.y) * Y_over_y; 
-			return XYZ;
-		}
-
-		// Conversions sRGB RGB <=> CIE xyY
-		// Simply re-using the above
-		float3    RGB2xyY( float3 _RGB ) {
-			return XYZ2xyY( RGB2XYZ( _RGB ) );
-		}
-
-		float3    xyY2RGB( float3 _xyY ) {
-			return XYZ2RGB( xyY2XYZ( _xyY ) );
-		}
-
-		void		TestBisou() {
-			Random	RNG = new Random( 1 );
-
-			for ( int i=0; i < 1000; i++ ) {
-				float3	color = new float3( (float) RNG.NextDouble(), (float) RNG.NextDouble(), (float) RNG.NextDouble() );
-				float	amount = (float) RNG.NextDouble();
-				float3	ciexyY = RGB2xyY( color );
-//ciexyY.z = Math.Min( 1.0f, ciexyY.z * (1.0f + amount) );
-						ciexyY.z = ciexyY.z * (1.0f + amount);
-				float3	brightenedColor_xyY = xyY2RGB( ciexyY );
-				float3	brightenedColor = (1.0f + amount) * color;
-				bool	different = (brightenedColor - brightenedColor_xyY).Length > 1e-3f;
-				Console.WriteLine( "color ({0}, {1}, {2}) => brightned_xyY ({3}, {4}, {5}), brightened ({6}, {7}, {8})" + (different ? " ####DIFFERENT####" : ""), color.x, color.y, color.z, brightenedColor_xyY.x, brightenedColor_xyY.y, brightenedColor_xyY.z, brightenedColor.x, brightenedColor.y, brightenedColor.z );
-	
-			}
-
-		}
-
-		#endregion
 
 		#region Image Helpers
 
@@ -329,467 +241,6 @@ namespace AreaLightTest {
 			return Result;
 		}
 
-		#endregion
-
-		#region Image Helpers (OLD)
-/*
-// 		public Texture2D	Image2Texture( System.IO.FileInfo _fileName ) {
-// 			using ( System.IO.FileStream S = _fileName.OpenRead() )
-// 				return Image2Texture( S );
-// 		}
-// 		public unsafe Texture2D	Image2Texture( System.IO.Stream _Stream ) {
-// 			int		W, H;
-// 			byte[]	Content = null;
-// 			using ( Bitmap B = Bitmap.FromStream( _Stream ) as Bitmap ) {
-// 				W = B.Width;
-// 				H = B.Height;
-// 				Content = new byte[W*H*4];
-// 
-// 				BitmapData	LockedBitmap = B.LockBits( new Rectangle( 0, 0, W, H ), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb );
-// 				for ( int Y=0; Y < H; Y++ ) {
-// 					byte*	pScanline = (byte*) LockedBitmap.Scan0 + Y * LockedBitmap.Stride;
-// 					int		Offset = 4*W*Y;
-// 					for ( int X=0; X < W; X++, Offset+=4 ) {
-// 						Content[Offset+2] = *pScanline++;	// B
-// 						Content[Offset+1] = *pScanline++;	// G
-// 						Content[Offset+0] = *pScanline++;	// R
-// 						Content[Offset+3] = *pScanline++;	// A
-// 					}
-// 				}
-// 				B.UnlockBits( LockedBitmap );
-// 			}
-// 			return Image2Texture( (uint) W, (uint) H, Content );
-// 		}
-// 		public Texture2D	Image2Texture( uint _Width, uint _Height, byte[] _Content ) {
-// 			using ( PixelsBuffer Buff = new PixelsBuffer( (uint) _Content.Length ) ) {
-// 				using ( System.IO.BinaryWriter W = Buff.OpenStreamWrite() )
-// 					W.Write( _Content );
-// 
-// 				return Image2Texture( _Width, _Height, PIXEL_FORMAT.RGBA8_UNORM_sRGB, Buff );
-// 			}
-// 		}
-
-// 		public Texture2D	Pipi2Texture( System.IO.FileInfo _fileName ) {
-// 			using ( System.IO.FileStream S = _fileName.OpenRead() )
-// 				using ( System.IO.BinaryReader R = new System.IO.BinaryReader( S ) ) {
-// 
-// 					int				MipLevels = R.ReadInt32();
-// 					PixelsBuffer[]	Mips = new PixelsBuffer[MipLevels];
-// 					int				ImageWidth = 0, ImageHeight = 0;
-// 					for ( int MipLevel=0; MipLevel < MipLevels; MipLevel++ ) {
-// 						int	W, H;
-// 						W = R.ReadInt32();
-// 						H = R.ReadInt32();
-// 						if ( MipLevel == 0 ) {
-// 							ImageWidth = W;
-// 							ImageHeight = H;
-// 						}
-// 
-// 						PixelsBuffer	Buff = new PixelsBuffer( (uint) (4 * W * H * 4) );
-// 						Mips[MipLevel] = Buff;
-// 						using ( System.IO.BinaryWriter Wr = Buff.OpenStreamWrite() )
-// 						{
-// 							float4	C = new float4();
-// 							for ( int Y=0; Y < H; Y++ ) {
-// 								for ( int X=0; X < W; X++ ) {
-// 									C.x = R.ReadSingle();
-// 									C.y = R.ReadSingle();
-// 									C.z = R.ReadSingle();
-// 									C.w = R.ReadSingle();
-// 
-// 									Wr.Write( C.x );
-// 									Wr.Write( C.y );
-// 									Wr.Write( C.z );
-// 									Wr.Write( C.w );
-// 								}
-// 							}
-// 						}
-// 					}
-// 
-// 					return Image2Texture( (uint) ImageWidth, (uint) ImageHeight, PIXEL_FORMAT.RGBA32_FLOAT, Mips );
-// 				}
-// 		}
-// 
-// 		public Texture3D	Pipu2Texture( System.IO.FileInfo _fileName ) {
-// 			using ( System.IO.FileStream S = _fileName.OpenRead() )
-// 				using ( System.IO.BinaryReader R = new System.IO.BinaryReader( S ) ) {
-// 
-// 					int		SlicesCount = R.ReadInt32();
-// 					int		W = R.ReadInt32();
-// 					int		H = R.ReadInt32();
-// 
-// 					PixelsBuffer	Slices = new PixelsBuffer( (uint) (4 * W * H * SlicesCount * 4) );
-// 					using ( System.IO.BinaryWriter Wr = Slices.OpenStreamWrite() ) {
-// 						for ( int SliceIndex=0; SliceIndex < SlicesCount; SliceIndex++ ) {
-// 							float4	C = new float4();
-// 							for ( int Y=0; Y < H; Y++ ) {
-// 								for ( int X=0; X < W; X++ ) {
-// 									C.x = R.ReadSingle();
-// 									C.y = R.ReadSingle();
-// 									C.z = R.ReadSingle();
-// 									C.w = R.ReadSingle();
-// 
-// 									Wr.Write( C.x );
-// 									Wr.Write( C.y );
-// 									Wr.Write( C.z );
-// 									Wr.Write( C.w );
-// 								}
-// 							}
-// 						}
-// 					}
-// 
-// 					return Image2Texture3D( (uint) W, (uint) H, (uint) SlicesCount, PIXEL_FORMAT.RGBA32_FLOAT, new PixelsBuffer[] { Slices } );
-// 				}
-// 		}
-// 
-// 		public Texture2D	PipoImage2Texture( System.IO.FileInfo _fileName ) {
-// 			using ( System.IO.FileStream S = _fileName.OpenRead() )
-// 				using ( System.IO.BinaryReader R = new System.IO.BinaryReader( S ) ) {
-// 
-// 					int	W, H;
-// 					W = R.ReadInt32();
-// 					H = R.ReadInt32();
-// 
-// 					PixelsBuffer	Buff = new PixelsBuffer( (uint) (4 * W * H * 4) );
-// 					using ( System.IO.BinaryWriter Wr = Buff.OpenStreamWrite() )
-// 					{
-// 						float4	C = new float4();
-// 						for ( int Y=0; Y < H; Y++ ) {
-// 							for ( int X=0; X < W; X++ ) {
-// 								C.x = R.ReadSingle();
-// 								C.y = R.ReadSingle();
-// 								C.z = R.ReadSingle();
-// 								C.w = R.ReadSingle();
-// 
-// 								Wr.Write( C.x );
-// 								Wr.Write( C.y );
-// 								Wr.Write( C.z );
-// 								Wr.Write( C.w );
-// 							}
-// 						}
-// 					}
-// 
-// 					return Image2Texture( (uint) W, (uint) H, PIXEL_FORMAT.RGBA32_FLOAT, Buff );
-// 				}
-// 		}
-		public Texture2D	Image2Texture( uint _Width, uint _Height, PIXEL_FORMAT _Format, PixelsBuffer _Content ) {
-			return Image2Texture( _Width, _Height, _Format, new PixelsBuffer[] { _Content } );
-		}
-		public Texture2D	Image2Texture( uint _Width, uint _Height, PIXEL_FORMAT _Format, PixelsBuffer[] _MipsContent ) {
-			return new Texture2D( m_Device, _Width, _Height, 1, (uint) _MipsContent.Length, _Format, false, false, _MipsContent );
-		}
-		public Texture3D	Image2Texture3D( uint _Width, uint _Height, uint _Depth, PIXEL_FORMAT _Format, PixelsBuffer[] _SlicesContent ) {
-			return new Texture3D( m_Device, _Width, _Height, _Depth, 1, _Format, false, false, _SlicesContent );
-		}
-
-		/// <summary>
-		/// Builds the SAT
-		/// </summary>
-		/// <param name="_fileName"></param>
-		public unsafe void	ComputeSAT( System.IO.FileInfo _fileName, System.IO.FileInfo _TargetFileName ) {
-			int		W, H;
-			byte[]	Content = null;
-			using ( System.IO.FileStream S = _fileName.OpenRead() )
-				using ( Bitmap B = Bitmap.FromStream( S ) as Bitmap )
-				{
-					W = B.Width;
-					H = B.Height;
-					Content = new byte[W*H*4];
-
-					BitmapData	LockedBitmap = B.LockBits( new Rectangle( 0, 0, W, H ), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb );
-					for ( int Y=0; Y < H; Y++ )
-					{
-						byte*	pScanline = (byte*) LockedBitmap.Scan0 + Y * LockedBitmap.Stride;
-						int		Offset = 4*W*Y;
-						for ( int X=0; X < W; X++, Offset+=4 )
-						{
-							Content[Offset+2] = *pScanline++;	// B
-							Content[Offset+1] = *pScanline++;	// G
-							Content[Offset+0] = *pScanline++;	// R
-							Content[Offset+3] = *pScanline++;	// A
-						}
-					}
-					B.UnlockBits( LockedBitmap );
-				}
-
-			// Build the float4 image
-			float4[,]	Image = new float4[W,H];
-			for ( int Y=0; Y < H; Y++ ) {
-				for ( int X=0; X < W; X++ ) {
-					Image[X,Y] = new float4( Content[4*(W*Y+X)+0] / 255.0f, Content[4*(W*Y+X)+1] / 255.0f, Content[4*(W*Y+X)+2] / 255.0f, 0.0f );
-
-					// Linearize from gamma space
-					Image[X,Y].x = (float) Math.Pow( Image[X,Y].x, 2.2 );
-					Image[X,Y].y = (float) Math.Pow( Image[X,Y].y, 2.2 );
-					Image[X,Y].z = (float) Math.Pow( Image[X,Y].z, 2.2 );
-				}
-			}
-
-			//////////////////////////////////////////////////////////////////////////
-			// Build mips and save as a simple format
-			{
-				int	MaxSize = Math.Max( W, H );
-				int	MipsCount = (int) (Math.Ceiling( Math.Log( MaxSize+1 ) / Math.Log( 2 ) ));
-				float4[][,]	Mips = new float4[MipsCount][,];
-				Mips[0] = Image;
-
-				int	TargetWidth = W;
-				int	TargetHeight = H;
-				for ( int MipLevel=1; MipLevel < Mips.Length; MipLevel++ ) {
-					TargetWidth = Math.Max( 1, TargetWidth >> 1 );
-					TargetHeight = Math.Max( 1, TargetHeight >> 1 );
-
-					float	MipPixelSizeX = W / TargetWidth;	// Size of a mip pixel; in amount of original image pixels (i.e. mip #0)
-					float	MipPixelSizeY = H / TargetHeight;	// Size of a mip pixel; in amount of original image pixels (i.e. mip #0)
-					int		KernelSize = 2 * (int) Math.Pow( 2, MipLevel );
-					float	Sigma = (float) Math.Sqrt( -KernelSize*KernelSize / (2.0 * Math.Log( 0.01 )) );	// So we have a weight of 0.01 at a Kernel Size distance
-					float[]	KernelFactors = new float[1+KernelSize];
-					float	SumWeights = 0.0f;
-					for ( int i=0; i <= KernelSize; i++ ) {
-						KernelFactors[i] = (float) (Math.Exp( -i*i / (2.0 * Sigma * Sigma)) / Math.Sqrt( 2 * Math.PI * Sigma * Sigma ) );
-						SumWeights += KernelFactors[i];
-					}
-
-					// Perform a horizontal blur first
-					float4[,]	Source = Image;
-					float4[,]	Target = new float4[TargetWidth,H];
-					for ( int Y=0; Y < H; Y++ ) {
-						for ( int X=0; X < TargetWidth; X++ ) {
-							float	CenterX = X * MipPixelSizeX + 0.5f * (MipPixelSizeX-1);
-							float4	Sum = KernelFactors[0] * BilinearSample( Source, CenterX, Y );
-							for ( int i=1; i <= KernelSize; i++ ) {
-								Sum += KernelFactors[i] * BilinearSample( Image, CenterX - i, Y );
-								Sum += KernelFactors[i] * BilinearSample( Image, CenterX + i, Y );
-							}
-							Target[X,Y] = Sum;
-						}
-					}
-
-					// Perform vertical blur
-					Source = Target;
-					Mips[MipLevel] = new float4[TargetWidth,TargetHeight];
-					Target = Mips[MipLevel];
-					for ( int X=0; X < TargetWidth; X++ ) {
-						for ( int Y=0; Y < TargetHeight; Y++ ) {
-							float	CenterY = Y * MipPixelSizeY + 0.5f * (MipPixelSizeY-1);
-							float4	Sum = KernelFactors[0] * BilinearSample( Source, X, CenterY );
-							for ( int i=1; i <= KernelSize; i++ ) {
-								Sum += KernelFactors[i] * BilinearSample( Source, X, CenterY - i );
-								Sum += KernelFactors[i] * BilinearSample( Source, X, CenterY + i );
-							}
-							Target[X,Y] = Sum;
-						}
-					}
-				}
-
-				string	Pipi = _TargetFileName.FullName;
-				Pipi = System.IO.Path.GetFileNameWithoutExtension( Pipi ) + ".pipi";
-				System.IO.FileInfo	SimpleTargetFileName2 = new System.IO.FileInfo(  Pipi );
-				using ( System.IO.FileStream S = SimpleTargetFileName2.OpenWrite() )
-					using ( System.IO.BinaryWriter Wr = new System.IO.BinaryWriter( S ) ) {
-						Wr.Write( Mips.Length );
-						for ( int MipLevel=0; MipLevel < Mips.Length; MipLevel++ ) {
-							float4[,]	Mip = Mips[MipLevel];
-
-							int	MipWidth = Mip.GetLength( 0 );
-							int	MipHeight = Mip.GetLength( 1 );
-							Wr.Write( MipWidth );
-							Wr.Write( MipHeight );
-
-							for ( int Y=0; Y < MipHeight; Y++ ) {
-								for ( int X=0; X < MipWidth; X++ ) {
-									Wr.Write( Mip[X,Y].x );
-									Wr.Write( Mip[X,Y].y );
-									Wr.Write( Mip[X,Y].z );
-									Wr.Write( Mip[X,Y].w );
-								}
-							}
-						}
-					}
-			}
-
-
-// 			//////////////////////////////////////////////////////////////////////////
-// 			// Build "3D mips" and save as a simple format
-// 			{
-// 				int	MaxSize = Math.Max( W, H );
-// 				int	MipsCount = (int) (Math.Ceiling( Math.Log( MaxSize+1 ) / Math.Log( 2 ) ));
-// 
-// 				// 1] Build vertical mips
-// 				float4[][,]	VerticalMips = new float4[MipsCount][,];
-// 				VerticalMips[0] = Image;
-// 
-// 				int	TargetHeight = H;
-// 				for ( int MipLevel=1; MipLevel < MipsCount; MipLevel++ ) {
-// 					int	SourceHeight = TargetHeight;
-// 
-// 					int	BorderSize = (int) Math.Pow( 2, MipLevel-1 );
-// 					TargetHeight = Math.Max( 1, H - 2*BorderSize );
-// 
-// 					float4[,]	SourceMip = VerticalMips[MipLevel-1];
-// 					float4[,]	TargetMip = new float4[W,TargetHeight];
-// 					VerticalMips[MipLevel] = TargetMip;
-// 					for ( int Y=0; Y < TargetHeight; Y++ ) {
-// 						float	fY = (float) (Y+0.5f) * SourceHeight / TargetHeight;
-// 						for ( int X=0; X < W; X++ ) {
-// 							TargetMip[X,Y] = BilinearSample( SourceMip, X, fY );
-// 						}
-// 					}
-// 				}
-// 
-// 
-// //MipsCount = 6;
-// 
-// 				// 2] Build smoothed slices
-// 				float4[][,]	Slices = new float4[MipsCount][,];
-// 				Slices[0] = Image;
-// 
-// 				for ( int MipLevel=1; MipLevel < Slices.Length; MipLevel++ ) {
-// 
-// 					int		BorderSize = (int) Math.Pow( 2, MipLevel-1 );		// Each new "mip" has a border twice the size of the previous level
-// 
-// 					int		InsetWidth = Math.Max( 1, W - 2 * BorderSize );		// The inset image is now reduced to account for borders
-// 					int		InsetHeight = Math.Max( 1, H - 2 * BorderSize );
-// 
-// 					int		WidthWithBorders = W + 2 * BorderSize;				// The larger image with borders that will be stored in the specific mip
-// 					int		HeightWithBorders = H + 2 * BorderSize;
-// 
-// 					int		Y0 = BorderSize;
-// 					int		Y1 = H - BorderSize;
-// 
-// 					// Build gaussian weights
-// 					int		KernelSize = 2 * (int) BorderSize;
-// 					float	Sigma = (float) Math.Sqrt( -KernelSize*KernelSize / (2.0 * Math.Log( 0.01 )) );	// So we have a weight of 0.01 at a Kernel Size distance
-// 					float[]	KernelFactors = new float[1+KernelSize];
-// 					float	SumWeights = 0.0f;
-// 					for ( int i=0; i <= KernelSize; i++ ) {
-// 						KernelFactors[i] = (float) (Math.Exp( -i*i / (2.0 * Sigma * Sigma)) / Math.Sqrt( 2 * Math.PI * Sigma * Sigma ) );
-// 						SumWeights += KernelFactors[i];
-// 					}
-// 
-// 					// Perform a horizontal blur first
-// 					float4[,]	Source = VerticalMips[MipLevel];
-// 					float4[,]	Target = new float4[W,H];
-// 					for ( int Y=0; Y < H; Y++ ) {
-// 						if ( Y < Y0 || Y >= Y1 ) {
-// 							// In the borderlands
-// 							for ( int X=0; X < W; X++ ) {
-// 								Target[X,Y] = float4.Zero;
-// 							}
-// 							continue;
-// 						}
-// 
-// 						float	fY = (float) (Y - Y0) * H / InsetHeight;
-// 						for ( int X=0; X < W; X++ ) {
-// 							float			CenterX = 0.5f * W + ((float) (X+0.5f) / W - 0.5f) * WidthWithBorders;
-// 							float4	Sum = KernelFactors[0] * BilinearSample( Source, CenterX, fY );
-// 							for ( int i=1; i <= KernelSize; i++ ) {
-// 								Sum += KernelFactors[i] * BilinearSample( Image, CenterX - i, fY );
-// 								Sum += KernelFactors[i] * BilinearSample( Image, CenterX + i, fY );
-// 							}
-// 							Target[X,Y] = Sum;
-// 						}
-// 					}
-// 
-// 					// Perform vertical blur
-// 					Source = Target;
-// 					Slices[MipLevel] = new float4[W,H];
-// 					Target = Slices[MipLevel];
-// 					for ( int X=0; X < W; X++ ) {
-// 						for ( int Y=0; Y < H; Y++ ) {
-// 							float			CenterY = 0.5f * H + ((float) (Y+0.5f) / H - 0.5f) * HeightWithBorders;
-// 							float4	Sum = KernelFactors[0] * BilinearSample( Source, X, CenterY );
-// 							for ( int i=1; i <= KernelSize; i++ ) {
-// 								Sum += KernelFactors[i] * BilinearSample( Source, X, CenterY - i );
-// 								Sum += KernelFactors[i] * BilinearSample( Source, X, CenterY + i );
-// 							}
-// 							Target[X,Y] = Sum;
-// 						}
-// 					}
-// 				}
-// 
-// 
-// 				string	Pipu = _TargetFileName.FullName;
-// 				Pipu = System.IO.Path.GetFileNameWithoutExtension( Pipu ) + ".pipu";
-// 				System.IO.FileInfo	SimpleTargetFileName2 = new System.IO.FileInfo(  Pipu );
-// 				using ( System.IO.FileStream S = SimpleTargetFileName2.OpenWrite() )
-// 					using ( System.IO.BinaryWriter Wr = new System.IO.BinaryWriter( S ) ) {
-// 						Wr.Write( Slices.Length );
-// 						Wr.Write( W );
-// 						Wr.Write( H );
-// 
-// 						for ( int MipLevel=0; MipLevel < Slices.Length; MipLevel++ ) {
-// 							float4[,]	Mip = Slices[MipLevel];
-// 							for ( int Y=0; Y < H; Y++ ) {
-// 								for ( int X=0; X < W; X++ ) {
-// 									Wr.Write( Mip[X,Y].x );
-// 									Wr.Write( Mip[X,Y].y );
-// 									Wr.Write( Mip[X,Y].z );
-// 									Wr.Write( Mip[X,Y].w );
-// 								}
-// 							}
-// 						}
-// 					}
-// 			}
-
-			//////////////////////////////////////////////////////////////////////////
-			// Build the SAT
-			for ( int Y=0; Y < H; Y++ ) {
-				for ( int X=1; X < W; X++ ) {
-					Image[X,Y] += Image[X-1,Y];	// Accumulate along X
-				}
-			}
-
-			for ( int X=0; X < W; X++ ) {
-				for ( int Y=1; Y < H; Y++ ) {
-					Image[X,Y] += Image[X,Y-1];	// Accumulate along Y
-				}
-			}
-
-//			DirectXTexManaged.TextureCreator.CreateRGBA16FFile( _TargetFileName.FullName, Image );
-throw new Exception( "Deprecated!" );
-
-			// Save as a simple format
-			string	Pipo = _TargetFileName.FullName;
-			Pipo = System.IO.Path.GetFileNameWithoutExtension( Pipo ) + ".pipo";
-			System.IO.FileInfo	SimpleTargetFileName = new System.IO.FileInfo(  Pipo );
-			using ( System.IO.FileStream S = SimpleTargetFileName.OpenWrite() )
-				using ( System.IO.BinaryWriter Wr = new System.IO.BinaryWriter( S ) ) {
-
-					Wr.Write( W );
-					Wr.Write( H );
-					for ( int Y=0; Y < H; Y++ ) {
-						for ( int X=0; X < W; X++ ) {
-							Wr.Write( Image[X,Y].x );
-							Wr.Write( Image[X,Y].y );
-							Wr.Write( Image[X,Y].z );
-							Wr.Write( Image[X,Y].w );
-						}
-					}
-				}
-		} 
-
-		float4	BilinearSample( float4[,] _Source, float _X, float _Y ) {
-			int		X = (int) Math.Floor( _X );
-			float	x = _X - X;
-			int		Y = (int) Math.Floor( _Y );
-			float	y = _Y - Y;
-			int		W = _Source.GetLength( 0 );
-			int		H = _Source.GetLength( 1 );
-			float4	V00 = X >= 0 && Y >= 0 && X < W && Y < H ? _Source[X,Y] : float4.Zero;
-			X++;
-			float4	V01 = X >= 0 && Y >= 0 && X < W && Y < H ? _Source[X,Y] : float4.Zero;
-			Y++;
-			float4	V11 = X >= 0 && Y >= 0 && X < W && Y < H ? _Source[X,Y] : float4.Zero;
-			X--;
-			float4	V10 = X >= 0 && Y >= 0 && X < W && Y < H ? _Source[X,Y] : float4.Zero;
-
-			float4	V0 = (1.0f - x) * V00 + x * V01;
-			float4	V1 = (1.0f - x) * V10 + x * V11;
-			float4	Result = (1.0f - y) * V0 + y * V1;
-			return Result;
-		}
-//*/
 		#endregion
 
 		#region BRDF Integration
@@ -1664,8 +1115,7 @@ renderProg PostFX/Debug/WardBRDFAlbedo {
 
 		#region Primitives
 
-		private void	BuildPrimitives()
-		{
+		private void	BuildPrimitives() {
 			{
 				VertexPt4[]	Vertices = new VertexPt4[4];
 				Vertices[0] = new VertexPt4() { Pt = new float4( -1, +1, 0, 1 ) };	// Top-Left
@@ -1821,25 +1271,14 @@ renderProg PostFX/Debug/WardBRDFAlbedo {
 				return;
 			}
 
-// Build SATs
-// ComputeSAT( new System.IO.FileInfo( "Dummy.png" ), new System.IO.FileInfo( "DummySAT.dds" ) );
-// ComputeSAT( new System.IO.FileInfo( "StainedGlass.png" ), new System.IO.FileInfo( "AreaLightSAT.dds" ) );
-// ComputeSAT( new System.IO.FileInfo( "StainedGlass2.jpg" ), new System.IO.FileInfo( "AreaLightSAT2.dds" ) );
-// ComputeSAT( new System.IO.FileInfo( "StainedGlass3.png" ), new System.IO.FileInfo( "AreaLightSAT3.dds" ) );
-// ComputeSAT( new System.IO.FileInfo( "StainedGlass2Fade.png" ), new System.IO.FileInfo( "AreaLightSAT2Fade.dds" ) );
-
 			buttonRebuildBRDF_Click( null, EventArgs.Empty );
 
-
 			BuildPrimitives();
-//			m_Tex_AreaLight = Pipi2Texture( new System.IO.FileInfo( "AreaLight.pipi" ) );
-//			m_Tex_AreaLightSAT = PipoImage2Texture( new System.IO.FileInfo( "AreaLightSAT.pipo" ) );
 
 			m_Tex_AreaLight = Image2Texture( new System.IO.FileInfo( "AreaLightSAT2.dds" ), ImageUtility.COMPONENT_FORMAT.UNORM_sRGB );
 //			m_Tex_AreaLight3D = Pipu2Texture( new System.IO.FileInfo( "AreaLightSAT2.pipu" ) );
 // 			m_Tex_AreaLightSAT = PipoImage2Texture( new System.IO.FileInfo( "AreaLightSAT2.pipo" ) );
 // 			m_Tex_AreaLightSATFade = PipoImage2Texture( new System.IO.FileInfo( "AreaLightSAT2Fade.pipo" ) );
-
 //			m_Tex_AreaLight = Pipi2Texture( new System.IO.FileInfo( "AreaLightSAT3.pipi" ) );
 //			m_Tex_AreaLightSAT = PipoImage2Texture( new System.IO.FileInfo( "AreaLightSAT3.pipo" ) );
 
@@ -1848,24 +1287,11 @@ renderProg PostFX/Debug/WardBRDFAlbedo {
 // 			m_Tex_GlossMap = Image2Texture( new System.IO.FileInfo( "wooden_dirty_floor_01_g.png" ) );
 // 			m_Tex_Normal = Image2Texture( new System.IO.FileInfo( "wooden_dirty_floor_01_n.png" ) );
 
-			uint	SHADOW_MAP_SIZE = 512;
-			m_Tex_ShadowMap = new Texture2D( m_Device, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 1, 1, DEPTH_STENCIL_FORMAT.D32 );
-#if FILTER_EXP_SHADOW_MAP
-			m_Tex_ShadowMapFiltered[0] = new Texture2D( m_Device, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 1, 1, ImageUtility.PIXEL_FORMAT.R16, ImageUtility.COMPONENT_FORMAT.UNORM, false, false, null );
-			m_Tex_ShadowMapFiltered[1] = new Texture2D( m_Device, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 1, 1, ImageUtility.PIXEL_FORMAT.R16, ImageUtility.COMPONENT_FORMAT.UNORM, false, false, null );
-// 			m_Tex_ShadowMapFiltered[0] = new Texture2D( m_Device, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 1, 1, ImageUtility.PIXEL_FORMAT.R32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, false, null );
-// 			m_Tex_ShadowMapFiltered[1] = new Texture2D( m_Device, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 1, 1, ImageUtility.PIXEL_FORMAT.R32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, false, null );
-#else
-			m_Tex_ShadowSmoothie = new Texture2D( m_Device, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 1, 1, PIXEL_FORMAT.RG16_FLOAT, false, false, null );
-			m_Tex_ShadowSmoothiePou[0] = new Texture2D( m_Device, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 1, 1, PIXEL_FORMAT.RG16_FLOAT, false, false, null );
-			m_Tex_ShadowSmoothiePou[1] = new Texture2D( m_Device, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 1, 1, PIXEL_FORMAT.RG16_FLOAT, false, false, null );
-#endif
-
 
 			m_CB_Main = new ConstantBuffer<CB_Main>( m_Device, 0 );
 			m_CB_Camera = new ConstantBuffer<CB_Camera>( m_Device, 1 );
 			m_CB_Light = new ConstantBuffer<CB_Light>( m_Device, 2 );
-			m_CB_ShadowMap = new ConstantBuffer<CB_ShadowMap>( m_Device, 3 );
+//			m_CB_ShadowMap = new ConstantBuffer<CB_ShadowMap>( m_Device, 3 );
 			m_CB_Object = new ConstantBuffer<CB_Object>( m_Device, 4 );
 
 			try {
@@ -1874,38 +1300,6 @@ renderProg PostFX/Debug/WardBRDFAlbedo {
 				MessageBox.Show( "Shader \"RenderAreaLight\" failed to compile!\n\n" + _e.Message, "Area Light Test", MessageBoxButtons.OK, MessageBoxIcon.Error );
 				m_Shader_RenderAreaLight = null;
 			}
-
-			try {
-				m_Shader_RenderShadowMap = new Shader( m_Device, new System.IO.FileInfo( "Shaders/RenderShadowMap.hlsl" ), VERTEX_FORMAT.P3N3G3B3T2, "VS", null, "PS", null );;
-			} catch ( Exception _e ) {
-				MessageBox.Show( "Shader \"RenderShadow\" failed to compile!\n\n" + _e.Message, "Area Light Test", MessageBoxButtons.OK, MessageBoxIcon.Error );
-				m_Shader_RenderShadowMap = null;
-			}
-
-#if FILTER_EXP_SHADOW_MAP
-			try {
-				m_Shader_FilterShadowMapH = new Shader( m_Device, new System.IO.FileInfo( "Shaders/FilterShadowMap.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS_FilterH", null );;
-				m_Shader_FilterShadowMapV = new Shader( m_Device, new System.IO.FileInfo( "Shaders/FilterShadowMap.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS_FilterV", null );;
-			} catch ( Exception _e ) {
-				MessageBox.Show( "Shader \"BuildSmoothie\" failed to compile!\n\n" + _e.Message, "Area Light Test", MessageBoxButtons.OK, MessageBoxIcon.Error );
-				m_Shader_FilterShadowMapH = null;
-				m_Shader_FilterShadowMapV = null;
-			}
-#else
-			try
-			{
-				m_Shader_BuildSmoothie = new Shader( m_Device, new System.IO.FileInfo( "Shaders/BuildSmoothie.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS_Edge", null );;
-				m_Shader_BuildSmoothieDistanceFieldH = new Shader( m_Device, new System.IO.FileInfo( "Shaders/BuildSmoothie.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS_DistanceFieldH", null );;
-				m_Shader_BuildSmoothieDistanceFieldV = new Shader( m_Device, new System.IO.FileInfo( "Shaders/BuildSmoothie.hlsl" ) ), VERTEX_FORMAT.Pt4, "VS", null, "PS_DistanceFieldV", null );;
-			}
-			catch ( Exception _e )
-			{
-				MessageBox.Show( "Shader \"BuildSmoothie\" failed to compile!\n\n" + _e.Message, "Area Light Test", MessageBoxButtons.OK, MessageBoxIcon.Error );
-				m_Shader_BuildSmoothie = null;
-				m_Shader_BuildSmoothieDistanceFieldH = null;
-				m_Shader_BuildSmoothieDistanceFieldV = null;
-			}
-#endif
 
 			try {
 				m_Shader_RenderScene = new Shader( m_Device, new System.IO.FileInfo( "Shaders/RenderScene.hlsl" ), VERTEX_FORMAT.P3N3G3B3T2, "VS", null, "PS", null );;
@@ -1934,21 +1328,6 @@ renderProg PostFX/Debug/WardBRDFAlbedo {
 			if ( m_Device == null )
 				return;
 
-			if ( m_Shader_RenderShadowMap != null ) {
-				m_Shader_RenderShadowMap.Dispose();
-			}
-#if FILTER_EXP_SHADOW_MAP
-			if ( m_Shader_FilterShadowMapH != null ) {
-				m_Shader_FilterShadowMapH.Dispose();
-				m_Shader_FilterShadowMapV.Dispose();
-			}
-#else
-			if ( m_Shader_BuildSmoothie != null ) {
-				m_Shader_BuildSmoothie.Dispose();
-				m_Shader_BuildSmoothieDistanceFieldH.Dispose();
-				m_Shader_BuildSmoothieDistanceFieldV.Dispose();
-			}
-#endif
 			if ( m_Shader_RenderAreaLight != null ) {
 				m_Shader_RenderAreaLight.Dispose();
 			}
@@ -1959,7 +1338,7 @@ renderProg PostFX/Debug/WardBRDFAlbedo {
 			m_CB_Main.Dispose();
 			m_CB_Camera.Dispose();
 			m_CB_Light.Dispose();
-			m_CB_ShadowMap.Dispose();
+//			m_CB_ShadowMap.Dispose();
 			m_CB_Object.Dispose();
 
 			m_Prim_Quad.Dispose();
@@ -1969,15 +1348,6 @@ renderProg PostFX/Debug/WardBRDFAlbedo {
 
 			m_Tex_BRDFIntegral.Dispose();
 
-			m_Tex_ShadowMap.Dispose();
-#if FILTER_EXP_SHADOW_MAP
-			m_Tex_ShadowMapFiltered[0].Dispose();
-			m_Tex_ShadowMapFiltered[1].Dispose();
-#else
-			m_Tex_ShadowSmoothie.Dispose();
-			m_Tex_ShadowSmoothiePou[0].Dispose();
-			m_Tex_ShadowSmoothiePou[1].Dispose();
-#endif
 			m_Tex_AreaLight.Dispose();
 //			m_Tex_AreaLight3D.Dispose();
 // 			m_Tex_AreaLightSAT.Dispose();
@@ -2123,91 +1493,6 @@ renderProg PostFX/Debug/WardBRDFAlbedo {
 			m_CB_Light.m._ProjectionDirectionDiff = LocalDirection_Diffuse;
 			m_CB_Light.UpdateData();
 
-
-			// =========== Render shadow map ===========
-//			float	KernelSize = 16.0f * floatTrackbarControlProjectionDiffusion.Value;
-			float	KernelSize = floatTrackbarControlKernelSize.Value;
-
-//			float	ShadowZFar = (float) Math.Sqrt( 2.0 ) * m_Camera.Far;
-			float	ShadowZFar = 10.0f;
-			m_CB_ShadowMap.m._ShadowOffsetXY = (float2) Direction;
-			m_CB_ShadowMap.m._ShadowZFar = new float2( ShadowZFar, 1.0f / ShadowZFar );
-			m_CB_ShadowMap.m._KernelSize = KernelSize;
-			m_CB_ShadowMap.m._InvShadowMapSize = 1.0f / m_Tex_ShadowMap.Width;
-			m_CB_ShadowMap.m._HardeningFactor = new float2( floatTrackbarControlHardeningFactor.Value, floatTrackbarControlHardeningFactor2.Value );
-			m_CB_ShadowMap.UpdateData();
-
-			if ( m_Shader_RenderShadowMap != null && m_Shader_RenderShadowMap.Use() ) {
-				m_Tex_ShadowMap.RemoveFromLastAssignedSlots();
-
-				m_Device.SetRenderTargets( null, m_Tex_ShadowMap.GetView() );
-#if FILTER_EXP_SHADOW_MAP
-// 				m_Device.ClearDepthStencil( m_Tex_ShadowMap, 0.0f, 0, true, false );
-// 				m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.READ_WRITE_DEPTH_GREATER, BLEND_STATE.DISABLED );	// For exp shadow map, the Z order is reversed
-				m_Device.ClearDepthStencil( m_Tex_ShadowMap, 1.0f, 0, true, false );
-				m_Device.SetRenderStates( checkBoxCullFront.Checked ? RASTERIZER_STATE.CULL_BACK : RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.READ_WRITE_DEPTH_LESS, BLEND_STATE.DISABLED );	// For exp shadow map, the Z order is reversed
-#else
-				m_Device.ClearDepthStencil( m_Tex_ShadowMap, 1.0f, 0, true, false );
-				m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.READ_WRITE_DEPTH_LESS, BLEND_STATE.DISABLED );
-#endif
-				RenderScene( m_Shader_RenderShadowMap );
-
-				m_Device.RemoveRenderTargets();
-				m_Tex_ShadowMap.SetPS( 2 );
-			}
-
-#if FILTER_EXP_SHADOW_MAP
-			if ( m_Shader_FilterShadowMapH != null ) {
-//				m_Tex_ShadowMapFiltered[1].RemoveFromLastAssignedSlots();
-
-				m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
-
-				// Filter horizontally
-				m_Device.SetRenderTarget( m_Tex_ShadowMapFiltered[0], null );
-				m_Shader_FilterShadowMapH.Use();
-				m_Prim_Quad.Render( m_Shader_FilterShadowMapH );
-
-				// Filter vertically
-				m_Device.SetRenderTarget( m_Tex_ShadowMapFiltered[1], null );
-				m_Tex_ShadowMapFiltered[0].SetPS( 2 );
-
-				m_Shader_FilterShadowMapV.Use();
-				m_Prim_Quad.Render( m_Shader_FilterShadowMapV );
-
-				m_Device.RemoveRenderTargets();
-				m_Tex_ShadowMapFiltered[1].SetPS( 2 );
-			}
-#else
-			if ( m_Shader_BuildSmoothie != null && m_Shader_BuildSmoothie.Use() ) {
-				m_Tex_ShadowSmoothie.RemoveFromLastAssignedSlots();
-
-				m_Device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
-
-				// Render the (silhouette + Z) RG16 buffer
-				m_Device.SetRenderTarget( m_Tex_ShadowSmoothie, null );
-
-				m_Prim_Quad.Render( m_Shader_BuildSmoothie );
-
-				m_Device.RemoveRenderTargets();
-				m_Tex_ShadowSmoothie.SetPS( 3 );
-
-				// Build distance field
-				m_Device.SetRenderTarget( m_Tex_ShadowSmoothiePou[0], null );
-				m_Shader_BuildSmoothieDistanceFieldH.Use();
-				m_Prim_Quad.Render( m_Shader_BuildSmoothieDistanceFieldH );
-
-// m_Device.RemoveRenderTargets();
-// m_Tex_ShadowSmoothiePou[0].SetPS( 3 );
-
-				m_Device.SetRenderTarget( m_Tex_ShadowSmoothiePou[1], null );
-				m_Tex_ShadowSmoothiePou[0].SetPS( 0 );
-				m_Shader_BuildSmoothieDistanceFieldV.Use();
-				m_Prim_Quad.Render( m_Shader_BuildSmoothieDistanceFieldV );
-
-				m_Device.RemoveRenderTargets();
-				m_Tex_ShadowSmoothiePou[1].SetPS( 3 );
-			}
-#endif
 
 			// =========== Render scene ===========
 			m_Device.SetRenderTarget( m_Device.DefaultTarget, m_Device.DefaultDepthStencil );
