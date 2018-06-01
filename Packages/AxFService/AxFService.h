@@ -31,11 +31,9 @@ namespace AxFService {
 				PHONG,
 			};
 
-dump diffuse en srgb
-
 			enum class	SVBRDF_SPECULAR_VARIANT {
 				// Ward variants
-				GEISLERMORODER,		// 2010 (albedo-conservative, should always be prefered!)
+				GEISLERMORODER,		// 2010 (albedo-conservative, should always be preferred!)
 				DUER,				// 2006
 				WARD,				// 1992 (original paper)
 
@@ -50,6 +48,12 @@ dump diffuse en srgb
 				NO_FRESNEL,			// No fresnel
 				FRESNEL,			// Full fresnel (1818)
 				SCHLICK,			// Schlick's Approximation (1994)
+			};
+
+			ref class Property {
+			public:
+				String^							m_name;
+				Object^							m_value;
 			};
 
 			ref class Texture {
@@ -78,19 +82,20 @@ dump diffuse en srgb
 
 		private:
 
-			AxFFile^	m_owner;
+			AxFFile^					m_owner;
 			::axf::decoding::AXF_MATERIAL_HANDLE		m_hMaterial;
 			::axf::decoding::AXF_REPRESENTATION_HANDLE	m_hMaterialRepresentation;
-			String^		m_name;
+			String^						m_name;
 
-			TYPE					m_type;
-			SVBRDF_DIFFUSE_TYPE		m_diffuseType;
-			SVBRDF_SPECULAR_TYPE	m_specularType;
-			SVBRDF_SPECULAR_VARIANT	m_specularVariant;
-			SVBRDF_FRESNEL_VARIANT	m_fresnelVariant;
-			bool					m_isAnisotropic;
+			TYPE						m_type;
+			SVBRDF_DIFFUSE_TYPE			m_diffuseType;
+			SVBRDF_SPECULAR_TYPE		m_specularType;
+			SVBRDF_SPECULAR_VARIANT		m_specularVariant;
+			SVBRDF_FRESNEL_VARIANT		m_fresnelVariant;
+			bool						m_isAnisotropic;
 
-			cli::array< Texture^ >^	m_textures;
+			cli::array< Texture^ >^		m_textures;
+			cli::array< Property^ >^	m_properties;
 
 		public:
 
@@ -100,13 +105,18 @@ dump diffuse en srgb
 			property SVBRDF_SPECULAR_TYPE		SpecularType { SVBRDF_SPECULAR_TYPE get() { return m_specularType; } }
 			property SVBRDF_SPECULAR_VARIANT	SpecularVariant { SVBRDF_SPECULAR_VARIANT get() { return m_specularVariant; } }
 			property SVBRDF_FRESNEL_VARIANT		FresnelVariant { SVBRDF_FRESNEL_VARIANT get() { return m_fresnelVariant; } }
+			property bool						IsAnisotropic { bool get() { return m_isAnisotropic; } }
 
+			property cli::array< Property^ >^	Properties { cli::array< Property^ >^ get(); }
 			property cli::array< Texture^ >^	Textures { cli::array< Texture^ >^ get(); }
 
 		public:
 			Material( AxFFile^ _owner, UInt32 _materialIndex );
 
+			System::String^	ToString() override { return Name; }
+
 		private:
+			void	ReadProperties();
 			void	ReadTextures();
 		};
 		
@@ -117,6 +127,7 @@ dump diffuse en srgb
 	public:
 
 		property UInt32		MaterialsCount { UInt32	get(); }
+		property cli::array<Material^>^	Materials { cli::array<Material^>^	get(); }
 		property Material^	default[UInt32] { Material^ get( UInt32 ); }
 
 	public:

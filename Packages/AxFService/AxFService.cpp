@@ -7,6 +7,7 @@
 using namespace AxFService;
 using namespace axf::decoding;
 using namespace ImageUtility;
+using namespace System::Collections::Generic;
 
 AxFFile::AxFFile( System::IO::FileInfo^ _fileName ) {
 	if ( !_fileName->Exists )
@@ -21,6 +22,14 @@ AxFFile::~AxFFile() {
 
 UInt32	AxFFile::MaterialsCount::get() {
 	return axfGetNumberOfMaterials( m_hFile );
+}
+
+cli::array<AxFFile::Material^>^	AxFFile::Materials::get() {
+	cli::array<Material^>^	result = gcnew cli::array<Material ^>( MaterialsCount );
+	for ( UInt32 matIndex=0; matIndex < UInt32(result->Length); matIndex++ ) {
+		result[matIndex] = gcnew Material( this, matIndex );
+	}
+	return result;
 }
 
 AxFFile::Material^	AxFFile::default::get( UInt32 _materialIndex ) {
@@ -108,6 +117,50 @@ AxFFile::Material::Material( AxFFile^ _owner, UInt32 _materialIndex ) : m_owner(
 	} else {
 		throw gcnew Exception( "Unsupported material class type!" );
 	}
+}
+
+cli::array< AxFFile::Material::Property^ >^	AxFFile::Material::Properties::get() {
+	if ( m_properties == nullptr ) {
+		ReadProperties();
+	}
+	return m_properties;
+}
+
+void	AxFFile::Material::ReadProperties() {
+
+	List< Property ^ >^	properties = gcnew List<Property ^>();
+	char	tempCharPtr[255];
+	Byte	tempProp[255];
+	int	metaDataDocsCount = axfGetNumberOfMetadataDocuments( m_hMaterial );
+	for ( int docIndex=0; docIndex < metaDataDocsCount; docIndex++ ) {
+		AXF_METADATA_DOCUMENT_HANDLE	hDoc = axfGetMetadataDocument( m_hMaterial, docIndex );
+		axfGetMetadataDocumentName( hDoc, tempCharPtr, 255 );
+		int	propertiesCount = axfGetNumberOfMetadataProperties( hDoc );
+		for ( int propIndex=0; propIndex < propertiesCount; propIndex++ ) {
+			Property^	prop = gcnew Property();
+			properties->Add( prop );
+			axfGetMetadataPropertyName( hDoc, propIndex, tempCharPtr, 255 );
+			prop->m_name = gcnew String( tempCharPtr );
+
+			PropertyType	propType = (PropertyType) axfGetMetadataPropertyType( hDoc, propIndex );
+			switch ( propType ) {
+			case TYPE_BOOLEAN:
+				axfGetMetadataPropertyValue( hDoc, propIndex, propType, tempProp, 1 );
+				prop->m_value = tempProp[0];
+				break;
+			case TYPE_INT:
+				axfGetMetadataPropertyValue( hDoc, propIndex, propType, tempProp, sizeof(int) );
+				prop->m_value = *((int*) tempProp);
+				break;
+			case TYPE_FLOAT:
+				axfGetMetadataPropertyValue( hDoc, propIndex, propType, tempProp, sizeof(float) );
+				prop->m_value = *((float*) tempProp);
+				break;
+			}
+		}
+	}
+
+	m_properties = properties->ToArray();
 }
 
 cli::array< AxFFile::Material::Texture^ >^	AxFFile::Material::Textures::get() {
