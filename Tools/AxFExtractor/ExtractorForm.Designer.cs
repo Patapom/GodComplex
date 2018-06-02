@@ -36,6 +36,8 @@
 			this.labelMaterialsCount = new System.Windows.Forms.Label();
 			this.buttonDumpMaterial = new System.Windows.Forms.Button();
 			this.buttonDumpAllMaterials = new System.Windows.Forms.Button();
+			this.checkBoxGenerateMeta = new System.Windows.Forms.CheckBox();
+			this.checkBoxGenerateMat = new System.Windows.Forms.CheckBox();
 			this.SuspendLayout();
 			// 
 			// openFileDialog1
@@ -71,7 +73,7 @@
 			this.buttonLoad.Location = new System.Drawing.Point(12, 12);
 			this.buttonLoad.Name = "buttonLoad";
 			this.buttonLoad.Size = new System.Drawing.Size(95, 23);
-			this.buttonLoad.TabIndex = 2;
+			this.buttonLoad.TabIndex = 0;
 			this.buttonLoad.Text = "Open AxF File";
 			this.buttonLoad.UseVisualStyleBackColor = true;
 			this.buttonLoad.Click += new System.EventHandler(this.buttonLoad_Click);
@@ -103,16 +105,43 @@
 			this.buttonDumpAllMaterials.Location = new System.Drawing.Point(113, 12);
 			this.buttonDumpAllMaterials.Name = "buttonDumpAllMaterials";
 			this.buttonDumpAllMaterials.Size = new System.Drawing.Size(120, 23);
-			this.buttonDumpAllMaterials.TabIndex = 4;
+			this.buttonDumpAllMaterials.TabIndex = 1;
 			this.buttonDumpAllMaterials.Text = "Dump All Materials";
 			this.buttonDumpAllMaterials.UseVisualStyleBackColor = true;
 			this.buttonDumpAllMaterials.Click += new System.EventHandler(this.buttonDumpAllMaterials_Click);
+			// 
+			// checkBoxGenerateMeta
+			// 
+			this.checkBoxGenerateMeta.AutoSize = true;
+			this.checkBoxGenerateMeta.Checked = true;
+			this.checkBoxGenerateMeta.CheckState = System.Windows.Forms.CheckState.Checked;
+			this.checkBoxGenerateMeta.Location = new System.Drawing.Point(257, 16);
+			this.checkBoxGenerateMeta.Name = "checkBoxGenerateMeta";
+			this.checkBoxGenerateMeta.Size = new System.Drawing.Size(266, 17);
+			this.checkBoxGenerateMeta.TabIndex = 5;
+			this.checkBoxGenerateMeta.Text = "Generate Unity Meta files for each exported texture";
+			this.checkBoxGenerateMeta.UseVisualStyleBackColor = true;
+			this.checkBoxGenerateMeta.CheckedChanged += new System.EventHandler(this.checkBoxGenerateMeta_CheckedChanged);
+			// 
+			// checkBoxGenerateMat
+			// 
+			this.checkBoxGenerateMat.AutoSize = true;
+			this.checkBoxGenerateMat.Checked = true;
+			this.checkBoxGenerateMat.CheckState = System.Windows.Forms.CheckState.Checked;
+			this.checkBoxGenerateMat.Location = new System.Drawing.Point(257, 39);
+			this.checkBoxGenerateMat.Name = "checkBoxGenerateMat";
+			this.checkBoxGenerateMat.Size = new System.Drawing.Size(280, 17);
+			this.checkBoxGenerateMat.TabIndex = 5;
+			this.checkBoxGenerateMat.Text = "Generate Unity Material files for each dumped material";
+			this.checkBoxGenerateMat.UseVisualStyleBackColor = true;
 			// 
 			// AxFDumpForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(600, 461);
+			this.Controls.Add(this.checkBoxGenerateMat);
+			this.Controls.Add(this.checkBoxGenerateMeta);
 			this.Controls.Add(this.buttonDumpAllMaterials);
 			this.Controls.Add(this.buttonDumpMaterial);
 			this.Controls.Add(this.labelMaterialsCount);
@@ -138,6 +167,8 @@
 		private System.Windows.Forms.Label labelMaterialsCount;
 		private System.Windows.Forms.Button buttonDumpMaterial;
 		private System.Windows.Forms.Button buttonDumpAllMaterials;
+		private System.Windows.Forms.CheckBox checkBoxGenerateMeta;
+		private System.Windows.Forms.CheckBox checkBoxGenerateMat;
 	}
 }
 
