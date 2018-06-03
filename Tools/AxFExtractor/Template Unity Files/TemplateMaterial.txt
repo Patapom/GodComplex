@@ -26,8 +26,7 @@ Material:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
-<TEXTURES ARRAY>
-    m_Floats:
+<TEXTURES ARRAY>    m_Floats:
     - _AlphaCutoff: 0.5
     - _CullMode: 2
     - _CullModeForward: 2
@@ -46,16 +45,7 @@ Material:
     - _ZTestModeDistortion: 8
     - _ZWrite: 1
     - _BlendMode: 0
-<UNIFORMS ARRAY>
-    - _AxF_BRDFType: 0
-    - _BRDFType: 0
-    - _SVBRDF_BRDFType: 0
-    - _SVBRDF_BRDFVariants: 2
-    - _SVBRDF_flags: 0
-    - _SVBRDF_heightMapMax_mm: 0
-    - _materialSizeU_mm: 0
-    - _materialSizeV_mm: 0
-    m_Colors:
+<UNIFORMS ARRAY>    m_Colors:
     - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _DoubleSidedConstants: {r: 1, g: 1, b: -1, a: 0}

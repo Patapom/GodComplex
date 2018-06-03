@@ -115,6 +115,11 @@ namespace AxFService {
 
 			System::String^	ToString() override { return Name; }
 
+			bool		GetPropertyBool( String^ _propertyName, bool _defaultValue );
+			int			GetPropertyInt( String^ _propertyName, int _defaultValue );
+			float		GetPropertyFloat( String^ _propertyName, float _defaultValue );
+			String^		GetPropertyString( String^ _propertyName, String^ _defaultValue );
+
 		private:
 			void	ReadProperties();
 			void	ReadTextures();

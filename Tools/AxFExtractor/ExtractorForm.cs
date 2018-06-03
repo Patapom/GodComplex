@@ -57,6 +57,7 @@ namespace AxFExtractor
 				}
 
 				buttonDumpMaterial.Enabled = true;
+				buttonDumpMaterial.Focus();
 			}
 		}
 
@@ -157,7 +158,7 @@ namespace AxFExtractor
 					case "normal":			textureType = TEXTURE_TYPE.NORMAL; break;
 					case "fresnel":			textureType = TEXTURE_TYPE.FRESNEL; break;
 					case "specularlobe":	textureType = TEXTURE_TYPE.SPECULAR_LOBE; break;
-					case "anisotropyangle":	textureType = TEXTURE_TYPE.ANISOTROPY_ANGLE; break;
+					case "anisorotation":	textureType = TEXTURE_TYPE.ANISOTROPY_ANGLE; break;
 					case "height":			textureType = TEXTURE_TYPE.HEIGHT; break;
 					case "opacity":			textureType = TEXTURE_TYPE.OPACITY; break;
 					case "clearcoatcolor":	textureType = TEXTURE_TYPE.CLEARCOAT_COLOR; break;
@@ -208,6 +209,13 @@ namespace AxFExtractor
 				if ( isIOR ) {
 					// Transform into F0
 					source.ReadWritePixels( ( uint _X, uint _Y, ref float4 _color ) => {
+						if ( float.IsNaN( _color.x ) )
+							_color.x = 1.2f;
+						if ( float.IsNaN( _color.y ) )
+							_color.y = 1.2f;
+						if ( float.IsNaN( _color.z ) )
+							_color.z = 1.2f;
+
 						_color.x = (_color.x - 1.0f) / (_color.x + 1.0f);	// We apply the square below, during the sRGB conversion
 						_color.y = (_color.y - 1.0f) / (_color.y + 1.0f);
 						_color.z = (_color.z - 1.0f) / (_color.z + 1.0f);
@@ -277,27 +285,31 @@ namespace AxFExtractor
 			return stringGUID;
 		}
 		void	GenerateMaterial( AxFService.AxFFile.Material _material, System.IO.DirectoryInfo _targetDirectory, TEXTURE_TYPE[] _textureTypes, string[] _textureGUIDs ) {
-			string	templateTexture =	"    - <TEX_VARIABLE_NAME>:\r\n" +
-										"        m_Texture: {fileID: 2800000, guid: <GUID>, type: 3}\r\n" +
-										"        m_Scale: {x: 1, y: 1}\r\n" +
-										"        m_Offset: {x: 0, y: 0}\r\n";
+			string	templateTexture =	"    - <TEX_VARIABLE_NAME>:\n" +
+										"        m_Texture: {fileID: <FILE ID>, guid: <GUID>, type: 3}\n" +
+										"        m_Scale: {x: 1, y: 1}\n" +
+										"        m_Offset: {x: 0, y: 0}\n";
 
 			string	materialContent = Properties.Resources.TemplateMaterial;
 
 			//////////////////////////////////////////////////////////////////////////
 			// Generate textures array
+			bool	hasClearCoat = false;
+			bool	hasHeightMap = false;
 			string	texturesArray = "";
 			for ( int textureIndex=0; textureIndex < _textureTypes.Length; textureIndex++ ) {
+//				int		fileID = 2800000 + textureIndex;
+				int		fileID = 2800000;
 				string	GUID = _textureGUIDs[textureIndex];
 				string	variableName = null;
 				switch ( _textureTypes[textureIndex] ) {
 					case TEXTURE_TYPE.ANISOTROPY_ANGLE:		variableName = "_SVBRDF_AnisotropicRotationAngleMap"; break;
-					case TEXTURE_TYPE.CLEARCOAT_COLOR:		variableName = "_SVBRDF_ClearCoatColorMap_sRGB"; break;
-					case TEXTURE_TYPE.CLEARCOAT_IOR:		variableName = "_SVBRDF_ClearCoatIORMap_sRGB"; break;
-					case TEXTURE_TYPE.CLEARCOAT_NORMAL:		variableName = "_SVBRDF_ClearCoatNormalMap"; break;
+					case TEXTURE_TYPE.CLEARCOAT_COLOR:		variableName = "_SVBRDF_ClearCoatColorMap_sRGB"; hasClearCoat = true; break;
+					case TEXTURE_TYPE.CLEARCOAT_IOR:		variableName = "_SVBRDF_ClearCoatIORMap_sRGB"; hasClearCoat = true; break;
+					case TEXTURE_TYPE.CLEARCOAT_NORMAL:		variableName = "_SVBRDF_ClearCoatNormalMap"; hasClearCoat = true; break;
 					case TEXTURE_TYPE.DIFFUSE_COLOR:		variableName = "_SVBRDF_DiffuseColorMap_sRGB"; break;
 					case TEXTURE_TYPE.FRESNEL:				variableName = "_SVBRDF_FresnelMap_sRGB"; break;
-					case TEXTURE_TYPE.HEIGHT:				variableName = "_SVBRDF_HeightMap"; break;
+					case TEXTURE_TYPE.HEIGHT:				variableName = "_SVBRDF_HeightMap"; hasHeightMap = true; break;
 					case TEXTURE_TYPE.NORMAL:				variableName = "_SVBRDF_NormalMap"; break;
 					case TEXTURE_TYPE.OPACITY:				variableName = "_SVBRDF_OpacityMap"; break;
 					case TEXTURE_TYPE.SPECULAR_COLOR:		variableName = "_SVBRDF_SpecularColorMap_sRGB"; break;
@@ -305,7 +317,8 @@ namespace AxFExtractor
 					default:
 						throw new Exception( "Unsupported texture type! Can't match to variable name..." );
 				}
-				string	textureEntry = templateTexture.Replace( "<GUID>", GUID );
+				string	textureEntry = templateTexture.Replace( "<FILE ID>", fileID.ToString() );
+						textureEntry = textureEntry.Replace( "<GUID>", GUID );
 						textureEntry = textureEntry.Replace( "<TEX_VARIABLE_NAME>", variableName );
 				texturesArray += textureEntry;
 			}
@@ -315,17 +328,13 @@ namespace AxFExtractor
 			// Generate uniforms array
 			string	uniformsArray = "";
 
-			uniformsArray += "    - _materialSizeU_mm: 0\r\n";
-			uniformsArray += "    - _materialSizeV_mm: 0\r\n";
+			uniformsArray += "    - _materialSizeU_mm: 0\n";
+			uniformsArray += "    - _materialSizeV_mm: 0\n";
 
 			switch ( _material.Type ) {
-				case AxFService.AxFFile.Material.TYPE.SVBRDF:	uniformsArray += "    - _AxF_BRDFType: 0\r\n"; break;
-				case AxFService.AxFFile.Material.TYPE.CARPAINT:	uniformsArray += "    - _AxF_BRDFType: 1\r\n"; break;
-				case AxFService.AxFFile.Material.TYPE.BTF:		uniformsArray += "    - _AxF_BRDFType: 2\r\n"; break;
-			}
-
-			switch ( _material.SpecularType ) {
-
+				case AxFService.AxFFile.Material.TYPE.SVBRDF:	uniformsArray += "    - _AxF_BRDFType: 0\n"; break;
+				case AxFService.AxFFile.Material.TYPE.CARPAINT:	uniformsArray += "    - _AxF_BRDFType: 1\n"; break;
+				case AxFService.AxFFile.Material.TYPE.BTF:		uniformsArray += "    - _AxF_BRDFType: 2\n"; break;
 			}
 
 			switch ( _material.Type ) {
@@ -333,16 +342,36 @@ namespace AxFExtractor
 					// Setup flags
 					uint	flags = 0;
 							flags |= _material.IsAnisotropic ? 1U : 0;
-							flags |= _material.
+							flags |= hasClearCoat ? 2U : 0;
+							flags |= _material.GetPropertyBool( "cc_no_refraction", false ) ? 0 : 4U;	// Explicitly use no refraction
+							flags |= hasHeightMap ? 8U : 0;
 
-					uniformsArray += "    - _SVBRDF_flags: " + flags + "\r\n";
+					uniformsArray += "    - _SVBRDF_flags: " + flags + "\n";
 
-					// Setup SVBRDF
+					// Setup SVBRDF diffuse & specular types
 					uint	BRDFType = 0;
-					uniformsArray += "    - _SVBRDF_BRDFType:" + BRDFType + "\r\n";
+							BRDFType |= (uint) _material.DiffuseType;
+							BRDFType |= ((uint) _material.SpecularType) << 1;
 
+					uniformsArray += "    - _SVBRDF_BRDFType: " + BRDFType + "\n";
+
+					// Setup SVBRDF fresnel and specular variants
 					uint	BRDFVariants = 0;
-					uniformsArray += "    - _SVBRDF_BRDFVariants:" + BRDFVariants + "\r\n";
+							BRDFVariants |= ((uint) _material.FresnelVariant & 3);
+					switch ( _material.SpecularVariant ) {
+						// Ward variants
+						case AxFService.AxFFile.Material.SVBRDF_SPECULAR_VARIANT.GEISLERMORODER:	BRDFVariants |= 0U << 2; break;
+						case AxFService.AxFFile.Material.SVBRDF_SPECULAR_VARIANT.DUER:				BRDFVariants |= 1U << 2; break;
+						case AxFService.AxFFile.Material.SVBRDF_SPECULAR_VARIANT.WARD:				BRDFVariants |= 2U << 2; break;
+
+						// Blinn variants
+						case AxFService.AxFFile.Material.SVBRDF_SPECULAR_VARIANT.ASHIKHMIN_SHIRLEY:	BRDFVariants |= 0U << 4; break;
+						case AxFService.AxFFile.Material.SVBRDF_SPECULAR_VARIANT.BLINN:				BRDFVariants |= 1U << 4; break;
+						case AxFService.AxFFile.Material.SVBRDF_SPECULAR_VARIANT.VRAY:				BRDFVariants |= 2U << 4; break;
+						case AxFService.AxFFile.Material.SVBRDF_SPECULAR_VARIANT.LEWIS:				BRDFVariants |= 3U << 4; break;
+					}
+
+					uniformsArray += "    - _SVBRDF_BRDFVariants: " + BRDFVariants + "\n";
 					break;
 				}
 
@@ -350,13 +379,13 @@ namespace AxFExtractor
 					throw new Exception( "TODO! Support feeding variables to other BRDF types!" );
 			}
 
-			float	heightMapSize_mm = 0.0f;
-			uniformsArray += "    - _SVBRDF_heightMapMax_mm:" + heightMapSize_mm + "\r\n";
+			float	heightMapSize_mm = 0.0f;	// @TODO!
+			uniformsArray += "    - _SVBRDF_heightMapMax_mm: " + heightMapSize_mm + "\n";
 
 			materialContent = materialContent.Replace( "<UNIFORMS ARRAY>", uniformsArray );
 
 			// Write target file
-			System.IO.FileInfo materialFileName = new System.IO.FileInfo( System.IO.Path.Combine( _targetDirectory.FullName, "material.mat" ) );
+			System.IO.FileInfo materialFileName = new System.IO.FileInfo( System.IO.Path.Combine( _targetDirectory.FullName, _material.Name, "material.mat" ) );
 			using ( System.IO.StreamWriter S = materialFileName.CreateText() )
 				S.Write( materialContent );
 		}
@@ -410,6 +439,7 @@ namespace AxFExtractor
 
 			try {
 				DumpMaterial( SelectedMaterial, new System.IO.DirectoryInfo( folderBrowserDialog1.SelectedPath ) );
+				MessageBox( "Success!", MessageBoxButtons.OK, MessageBoxIcon.Information );
 			} catch ( Exception _e ) {
 				MessageBox( "An error occurred while dumping material:", _e );
 			}
@@ -429,6 +459,7 @@ namespace AxFExtractor
 				foreach ( AxFService.AxFFile.Material material in m_file.Materials ) {
 					DumpMaterial( material, targetFolder );
 				}
+				MessageBox( "Success!", MessageBoxButtons.OK, MessageBoxIcon.Information );
 			} catch ( Exception _e ) {
 				MessageBox( "An error occurred while dumping material:", _e );
 			}

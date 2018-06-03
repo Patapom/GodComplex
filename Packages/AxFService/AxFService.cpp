@@ -119,6 +119,67 @@ AxFFile::Material::Material( AxFFile^ _owner, UInt32 _materialIndex ) : m_owner(
 	}
 }
 
+bool	AxFFile::Material::GetPropertyBool( String^ _propertyName, bool _defaultValue ) {
+	cli::array< AxFFile::Material::Property^ >^	props = Properties;
+	for ( int i=0; i < props->Length; i++ ) {
+		AxFFile::Material::Property^	prop = props[i];
+		if ( prop->m_name != _propertyName )
+			continue;
+
+		if ( prop->m_value->GetType() != bool::typeid )
+			throw gcnew Exception( "Property type is not boolean!" );
+
+		return (bool) prop->m_value;
+	}
+
+	return _defaultValue;
+}
+int		AxFFile::Material::GetPropertyInt( String^ _propertyName, int _defaultValue ) {
+	cli::array< AxFFile::Material::Property^ >^	props = Properties;
+	for ( int i=0; i < props->Length; i++ ) {
+		AxFFile::Material::Property^	prop = props[i];
+		if ( prop->m_name != _propertyName )
+			continue;
+
+		if ( prop->m_value->GetType() != int::typeid )
+			throw gcnew Exception( "Property type is not an integer!" );
+
+		return (int) prop->m_value;
+	}
+
+	return _defaultValue;
+}
+float	AxFFile::Material::GetPropertyFloat( String^ _propertyName, float _defaultValue ) {
+	cli::array< AxFFile::Material::Property^ >^	props = Properties;
+	for ( int i=0; i < props->Length; i++ ) {
+		AxFFile::Material::Property^	prop = props[i];
+		if ( prop->m_name != _propertyName )
+			continue;
+
+		if ( prop->m_value->GetType() != float::typeid )
+			throw gcnew Exception( "Property type is not a float!" );
+
+		return (float) prop->m_value;
+	}
+
+	return _defaultValue;
+}
+String^	AxFFile::Material::GetPropertyString( String^ _propertyName, String^ _defaultValue ) {
+	cli::array< AxFFile::Material::Property^ >^	props = Properties;
+	for ( int i=0; i < props->Length; i++ ) {
+		AxFFile::Material::Property^	prop = props[i];
+		if ( prop->m_name != _propertyName )
+			continue;
+
+		if ( prop->m_value->GetType() != String::typeid )
+			throw gcnew Exception( "Property type is not a string!" );
+
+		return (String^) prop->m_value;
+	}
+
+	return _defaultValue;
+}
+
 cli::array< AxFFile::Material::Property^ >^	AxFFile::Material::Properties::get() {
 	if ( m_properties == nullptr ) {
 		ReadProperties();
