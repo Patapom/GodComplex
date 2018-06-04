@@ -118,9 +118,10 @@ namespace AxFExtractor
 
 		enum TEXTURE_TYPE {
 			UNKNOWN = -1,
-			FLAG_sRGB = 0x10000,
-			FLAG_NORMAL = 0x20000,
-			FLAG_IOR = 0x40000,
+			FLAG_sRGB = 0x10000,		// sRGB values
+			FLAG_NORMAL = 0x20000,		// Vectors
+			FLAG_IOR = 0x40000,			// [1,infinity] IOR
+			FLAG_ANGLE = 0x80000,		// [-PI,PI] angles
 
 			// SVBRDF
 			DIFFUSE_COLOR		= 0 | FLAG_sRGB,
@@ -128,7 +129,7 @@ namespace AxFExtractor
 			NORMAL				= 2 | FLAG_NORMAL,
 			FRESNEL				= 3 | FLAG_sRGB,
 			SPECULAR_LOBE		= 4,
-			ANISOTROPY_ANGLE	= 5,
+			ANISOTROPY_ANGLE	= 5 | FLAG_ANGLE,
 			HEIGHT				= 6,
 			OPACITY				= 7 | FLAG_sRGB,
 			CLEARCOAT_COLOR		= 8 | FLAG_sRGB,
@@ -174,6 +175,7 @@ namespace AxFExtractor
 				bool	sRGB = ((int) textureType & (int) TEXTURE_TYPE.FLAG_sRGB) != 0;
 				bool	isNormalMap = ((int) textureType & (int) TEXTURE_TYPE.FLAG_NORMAL) != 0;
 				bool	isIOR = ((int) textureType & (int) TEXTURE_TYPE.FLAG_IOR) != 0;
+				bool	isAngle = ((int) textureType & (int) TEXTURE_TYPE.FLAG_ANGLE) != 0;
 
 //				// Dump as DDS
 //				texture.Images.DDSSaveFile( new System.IO.FileInfo( @"D:\Workspaces\Unity Labs\AxF\AxF Shader\Assets\AxF Materials\X-Rite_14-LTH_Red_GoatLeather_4405_2479\" + texture.Name + ".dds" ), texture.ComponentFormat );
@@ -190,12 +192,11 @@ namespace AxFExtractor
 
 				if ( sRGB ) {
 					source.ReadWritePixels( ( uint _X, uint _Y, ref float4 _color ) => {
-						_color.x = Mathf.Pow( _color.x, 1.0f / 2.2f );
-						_color.y = Mathf.Pow( _color.y, 1.0f / 2.2f );
-						_color.z = Mathf.Pow( _color.z, 1.0f / 2.2f );
+						_color.x = Mathf.Pow( Math.Max( 0.0f, _color.x ), 1.0f / 2.2f );
+						_color.y = Mathf.Pow( Math.Max( 0.0f, _color.y ), 1.0f / 2.2f );
+						_color.z = Mathf.Pow( Math.Max( 0.0f, _color.z ), 1.0f / 2.2f );
 //						_color.w = 1.0f;
 					} );
-					sRGB = true;
 				}
 
 				if ( isNormalMap ) {
@@ -219,11 +220,20 @@ namespace AxFExtractor
 						_color.x = (_color.x - 1.0f) / (_color.x + 1.0f);	// We apply the square below, during the sRGB conversion
 						_color.y = (_color.y - 1.0f) / (_color.y + 1.0f);
 						_color.z = (_color.z - 1.0f) / (_color.z + 1.0f);
-						_color.x = Mathf.Pow( _color.x, 2.0f / 2.2f );		// <= Notice the 2/2.2 here!
-						_color.y = Mathf.Pow( _color.y, 2.0f / 2.2f );
-						_color.z = Mathf.Pow( _color.z, 2.0f / 2.2f );
+						_color.x = Mathf.Pow( Mathf.Max( 0.0f, _color.x ), 2.0f / 2.2f );		// <= Notice the 2/2.2 here!
+						_color.y = Mathf.Pow( Mathf.Max( 0.0f, _color.y ), 2.0f / 2.2f );
+						_color.z = Mathf.Pow( Mathf.Max( 0.0f, _color.z ), 2.0f / 2.2f );
 					} );
 					sRGB = true;	// Also encoded as sRGB now
+				}
+
+				if ( isAngle ) {
+					// Renormalize
+					source.ReadWritePixels( ( uint _X, uint _Y, ref float4 _color ) => {
+						_color.x = 0.5f * (1.0f + _color.x * Mathf.INVPI);
+						_color.y = 0.5f * (1.0f + _color.y * Mathf.INVPI);
+						_color.z = 0.5f * (1.0f + _color.z * Mathf.INVPI);
+					} );
 				}
 
 				ImageUtility.ImageFile	temp = new ImageUtility.ImageFile();
@@ -255,11 +265,12 @@ namespace AxFExtractor
 			System.IO.FileInfo	metaFileName = new System.IO.FileInfo( _textureFileName.FullName + ".meta" );
 			string	metaContent = null;
 			string	stringGUID = null;
-			if ( metaFileName.Exists ) {
+			if ( metaFileName.Exists && !checkBoxOverwriteExistingMeta.Checked ) {
 				// Read back existing file
 				using ( System.IO.StreamReader S = metaFileName.OpenText() )
 					 metaContent = S.ReadToEnd();
 			} else if ( _createMeta ) {
+				// Create new file
 				Guid	GUID = Guid.NewGuid();
 				stringGUID = GUID.ToString( "N" );
 

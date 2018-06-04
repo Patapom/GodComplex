@@ -38,6 +38,7 @@
 			this.buttonDumpAllMaterials = new System.Windows.Forms.Button();
 			this.checkBoxGenerateMeta = new System.Windows.Forms.CheckBox();
 			this.checkBoxGenerateMat = new System.Windows.Forms.CheckBox();
+			this.checkBoxOverwriteExistingMeta = new System.Windows.Forms.CheckBox();
 			this.SuspendLayout();
 			// 
 			// openFileDialog1
@@ -128,18 +129,31 @@
 			this.checkBoxGenerateMat.AutoSize = true;
 			this.checkBoxGenerateMat.Checked = true;
 			this.checkBoxGenerateMat.CheckState = System.Windows.Forms.CheckState.Checked;
-			this.checkBoxGenerateMat.Location = new System.Drawing.Point(257, 39);
+			this.checkBoxGenerateMat.Location = new System.Drawing.Point(257, 50);
 			this.checkBoxGenerateMat.Name = "checkBoxGenerateMat";
 			this.checkBoxGenerateMat.Size = new System.Drawing.Size(280, 17);
 			this.checkBoxGenerateMat.TabIndex = 5;
 			this.checkBoxGenerateMat.Text = "Generate Unity Material files for each dumped material";
 			this.checkBoxGenerateMat.UseVisualStyleBackColor = true;
 			// 
+			// checkBoxOverwriteExistingMeta
+			// 
+			this.checkBoxOverwriteExistingMeta.AutoSize = true;
+			this.checkBoxOverwriteExistingMeta.Checked = true;
+			this.checkBoxOverwriteExistingMeta.CheckState = System.Windows.Forms.CheckState.Checked;
+			this.checkBoxOverwriteExistingMeta.Location = new System.Drawing.Point(278, 33);
+			this.checkBoxOverwriteExistingMeta.Name = "checkBoxOverwriteExistingMeta";
+			this.checkBoxOverwriteExistingMeta.Size = new System.Drawing.Size(157, 17);
+			this.checkBoxOverwriteExistingMeta.TabIndex = 6;
+			this.checkBoxOverwriteExistingMeta.Text = "Overwrite existing Meta files";
+			this.checkBoxOverwriteExistingMeta.UseVisualStyleBackColor = true;
+			// 
 			// AxFDumpForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(600, 461);
+			this.Controls.Add(this.checkBoxOverwriteExistingMeta);
 			this.Controls.Add(this.checkBoxGenerateMat);
 			this.Controls.Add(this.checkBoxGenerateMeta);
 			this.Controls.Add(this.buttonDumpAllMaterials);
@@ -169,6 +183,7 @@
 		private System.Windows.Forms.Button buttonDumpAllMaterials;
 		private System.Windows.Forms.CheckBox checkBoxGenerateMeta;
 		private System.Windows.Forms.CheckBox checkBoxGenerateMat;
+		private System.Windows.Forms.CheckBox checkBoxOverwriteExistingMeta;
 	}
 }
 
