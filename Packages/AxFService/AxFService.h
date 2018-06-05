@@ -8,6 +8,7 @@ namespace AxFService {
 	public ref class AxFFile {
 	public:
 
+		[System::Diagnostics::DebuggerDisplayAttribute( "Name={Name} Type={Type} {Textures.Count,d} textures {Properties.Count,d} properties" )]
 		ref class	Material {
 		public:
 
@@ -50,16 +51,24 @@ namespace AxFService {
 				SCHLICK,			// Schlick's Approximation (1994)
 			};
 
+			[System::Diagnostics::DebuggerDisplayAttribute( "{m_name} = {m_value}" )]
 			ref class Property {
 			public:
 				String^							m_name;
 				Object^							m_value;
 			};
 
+			[System::Diagnostics::DebuggerDisplayAttribute( "Name={Name} {Width_mm} x {Height_mm} mm²" )]
 			ref class Texture {
 			private:
 
 				String^							m_name;
+				float							m_width_mm;
+				float							m_height_mm;
+				int								m_sliceWidth;
+				int								m_sliceHeight;
+				int								m_slicesCountX;
+				int								m_slicesCountY;
 				ImageUtility::COMPONENT_FORMAT	m_componentFormat;
 				ImageUtility::ImagesMatrix^		m_images;
 
@@ -67,6 +76,24 @@ namespace AxFService {
 
 				property String^		Name {
 					String^	get() { return m_name; }
+				}
+				property float			Width_mm {
+					float	get() { return m_width_mm; }
+				}
+				property float			Height_mm {
+					float	get() { return m_height_mm; }
+				}
+				property int			SliceWidth {
+					int		get() { return m_sliceWidth; }
+				}
+				property int			SliceHeight {
+					int		get() { return m_sliceHeight; }
+				}
+				property int			SlicesCountX {
+					int		get() { return m_slicesCountX; }
+				}
+				property int			SlicesCountY {
+					int		get() { return m_slicesCountY; }
 				}
 				property ImageUtility::COMPONENT_FORMAT	ComponentFormat {
 					ImageUtility::COMPONENT_FORMAT	get() { return m_componentFormat; }
@@ -76,7 +103,7 @@ namespace AxFService {
 				}
 
 			public:
-				Texture( ::axf::decoding::TextureDecoder* _decoder, UInt32 _textureIndex );
+				Texture( ::axf::decoding::TextureDecoder& _decoder, UInt32 _textureIndex );
 				~Texture();
 			};
 
@@ -119,6 +146,7 @@ namespace AxFService {
 			int			GetPropertyInt( String^ _propertyName, int _defaultValue );
 			float		GetPropertyFloat( String^ _propertyName, float _defaultValue );
 			String^		GetPropertyString( String^ _propertyName, String^ _defaultValue );
+			Object^		GetPropertyRaw( String^ _propertyName );
 
 		private:
 			void	ReadProperties();

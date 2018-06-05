@@ -4,6 +4,7 @@
 
 #include "AxFService.h"
 
+using namespace SharpMath;
 using namespace AxFService;
 using namespace axf::decoding;
 using namespace ImageUtility;
@@ -108,12 +109,12 @@ AxFFile::Material::Material( AxFFile^ _owner, UInt32 _materialIndex ) : m_owner(
 
 	} else if ( repClass == "CarPaint" || repClass == "CarPaint2" ) {
 		m_type = TYPE::CARPAINT;
-		throw gcnew Exception( "HANDLE THIS!" );
+//		throw gcnew Exception( "HANDLE CAR PAINT!" );
 	} else if ( repClass == "FactorizedBTF" ) {
 		m_type = TYPE::BTF;
-		throw gcnew Exception( "HANDLE THIS!" );
+		throw gcnew Exception( "HANDLE BTF!" );
 	} else if ( repClass == "Layered" ) {
-		throw gcnew Exception( "HANDLE THIS!" );
+		throw gcnew Exception( "HANDLE LAYERED!" );
 	} else {
 		throw gcnew Exception( "Unsupported material class type!" );
 	}
@@ -179,6 +180,16 @@ String^	AxFFile::Material::GetPropertyString( String^ _propertyName, String^ _de
 
 	return _defaultValue;
 }
+Object^	AxFFile::Material::GetPropertyRaw( String^ _propertyName ) {
+	cli::array< AxFFile::Material::Property^ >^	props = Properties;
+	for ( int i=0; i < props->Length; i++ ) {
+		AxFFile::Material::Property^	prop = props[i];
+		if ( prop->m_name == _propertyName )
+			return prop->m_value;
+	}
+
+	return nullptr;
+}
 
 cli::array< AxFFile::Material::Property^ >^	AxFFile::Material::Properties::get() {
 	if ( m_properties == nullptr ) {
@@ -190,6 +201,8 @@ cli::array< AxFFile::Material::Property^ >^	AxFFile::Material::Properties::get()
 void	AxFFile::Material::ReadProperties() {
 
 	List< Property ^ >^	properties = gcnew List<Property ^>();
+
+	// Read meta properties
 	char	tempCharPtr[255];
 	Byte	tempProp[255];
 	int	metaDataDocsCount = axfGetNumberOfMetadataDocuments( m_hMaterial );
@@ -217,10 +230,71 @@ void	AxFFile::Material::ReadProperties() {
 				axfGetMetadataPropertyValue( hDoc, propIndex, propType, tempProp, sizeof(float) );
 				prop->m_value = *((float*) tempProp);
 				break;
+			case TYPE_STRING:
+				axfGetMetadataPropertyValue( hDoc, propIndex, propType, tempProp, 255 );
+				prop->m_value = gcnew String( (char*) tempProp );
+				break;
 			}
 		}
 	}
 
+	// Read decoder properties
+	CPUDecoder*		pcl_decoder = CPUDecoder::create( m_hMaterialRepresentation, "sRGB,E", ORIGIN_TOPLEFT );
+	TextureDecoder* pcl_tex_decoder = TextureDecoder::create( m_hMaterialRepresentation, pcl_decoder, ID_DEFAULT );
+
+	for ( int propIndex=0; propIndex < pcl_tex_decoder->getNumProperties(); propIndex++ ) {
+		Property^	prop = gcnew Property();
+		properties->Add( prop );
+
+		pcl_tex_decoder->getPropertyName( propIndex, tempCharPtr, 255 );
+		prop->m_name = gcnew String( tempCharPtr );
+
+		PropertyType	propType = (PropertyType) pcl_tex_decoder->getPropertyType( propIndex );
+		switch ( propType ) {
+		case TYPE_BOOLEAN:
+			pcl_tex_decoder->getProperty( propIndex, tempProp, propType, 1 );
+			prop->m_value = tempProp[0];
+			break;
+		case TYPE_INT:
+			pcl_tex_decoder->getProperty( propIndex, tempProp, propType, sizeof(int) );
+			prop->m_value = *((int*) tempProp);
+			break;
+		case TYPE_FLOAT:
+			pcl_tex_decoder->getProperty( propIndex, tempProp, propType, sizeof(float) );
+			prop->m_value = *((float*) tempProp);
+			break;
+		case TYPE_STRING:
+			pcl_tex_decoder->getProperty( propIndex, tempProp, propType, 255 );
+			prop->m_value = gcnew String( (char*) tempProp );
+			break;
+
+		case TYPE_FLOAT_ARRAY: {
+			int	propSize = pcl_tex_decoder->getPropertySize( propIndex );
+			int	itemsCount = propSize >> 2;
+			pcl_tex_decoder->getProperty( propIndex, tempProp, propType, 255 );
+			cli::array<float>^	values = gcnew cli::array<float>( itemsCount );
+			prop->m_value = values;
+			for ( int i=0; i < itemsCount; i++ )
+				values[i] = ((float*) tempProp)[i];
+			break;
+		}
+		case TYPE_INT_ARRAY: {
+			int	propSize = pcl_tex_decoder->getPropertySize( propIndex );
+			int	itemsCount = propSize >> 2;
+			pcl_tex_decoder->getProperty( propIndex, tempProp, propType, 255 );
+			cli::array<int>^	values = gcnew cli::array<int>( itemsCount );
+			prop->m_value = values;
+			for ( int i=0; i < itemsCount; i++ )
+				values[i] = ((int*) tempProp)[i];
+			break;
+		}
+		}
+	}
+
+	pcl_tex_decoder->destroy();
+	pcl_decoder->destroy();
+
+	// Finalize array
 	m_properties = properties->ToArray();
 }
 
@@ -239,7 +313,7 @@ void	AxFFile::Material::ReadTextures() {
 	m_textures = gcnew cli::array<Texture ^>( pcl_tex_decoder->getNumTextures() );
 	if ( m_textures->Length > 0 ) {
 		for ( UInt32 textureIndex=0; textureIndex < UInt32(m_textures->Length); textureIndex++ ) {
-			Texture^	tex = gcnew Texture( pcl_tex_decoder, textureIndex );
+			Texture^	tex = gcnew Texture( *pcl_tex_decoder, textureIndex );
 			m_textures[textureIndex] = tex;
 		}
 	}
@@ -248,19 +322,32 @@ void	AxFFile::Material::ReadTextures() {
 	pcl_decoder->destroy();
 }
 
-AxFFile::Material::Texture::Texture( TextureDecoder* _decoder, UInt32 _textureIndex ) {
+AxFFile::Material::Texture::Texture( TextureDecoder& _decoder, UInt32 _textureIndex ) {
 
 	char	tempCharPtr[255];
-	_decoder->getTextureName( _textureIndex, tempCharPtr, 255 );
+	_decoder.getTextureName( _textureIndex, tempCharPtr, 255 );
 	m_name = gcnew String( tempCharPtr );
+
+	// Retrieve size in millimeters
+	m_width_mm = _decoder.getWidthMM();
+	m_height_mm = _decoder.getHeightMM();
 
 	// Retrieve mip 0 information
 	int			width, height, depth, channelsCount, datatype_src;
-	_decoder->getTextureSize( _textureIndex, 0, width, height, depth, channelsCount, datatype_src );
-	UInt32		mipsCount = _decoder->getTextureNumMipLevels( _textureIndex );
+	_decoder.getTextureSize( _textureIndex, 0, width, height, depth, channelsCount, datatype_src );
+	UInt32		mipsCount = _decoder.getTextureNumMipLevels( _textureIndex );
 
-	if ( depth > 1 )
-		throw gcnew Exception( "Handle 3D textures or texture arrays!" );
+	// Prepare for the possibility of collapsing a 3D texture into multiple slices
+	m_sliceWidth = width;
+	m_sliceHeight = height;
+	m_slicesCountX = 1;
+	m_slicesCountY = 1;
+	if ( depth > 1 ) {
+		m_slicesCountX = (int) Mathf::Ceiling( Mathf::Sqrt( (float) depth ) );
+		m_slicesCountY = (int) Mathf::Ceiling( (float) depth / m_slicesCountX );
+//		throw gcnew Exception( "Handle 3D textures or texture arrays!" );
+
+	}
 	if ( channelsCount > 4 )
 		throw gcnew Exception( "Handle textures with more than 4 channels! (or not)" );
 
@@ -329,48 +416,59 @@ AxFFile::Material::Texture::Texture( TextureDecoder* _decoder, UInt32 _textureIn
 
 	// Allocate images
 	m_images = gcnew ImagesMatrix();
-	m_images->InitTexture2DArray( UInt32(width), UInt32(height), 1, mipsCount );
+	m_images->InitTexture2DArray( UInt32(m_slicesCountX * width), UInt32(m_slicesCountY * height), 1, mipsCount );
 	m_images->AllocateImageFiles( targetFormat, gcnew ImageUtility::ColorProfile( ColorProfile::STANDARD_PROFILE::sRGB ) );
 
 	UInt32	sourcePixelSize = channelsCount * componentSize;
 	UInt32	targetPixelSize = channelsCount != 3 ? sourcePixelSize : 4 * componentSize;	// Force 4 channels
 
-	Byte*	tempPixelsBuffer = new Byte[width*height*sourcePixelSize];
+	Byte*	tempPixelsBuffer = new Byte[width*height*depth*sourcePixelSize];
 
 	// Readback all mip levels
 	for ( UInt32 mipIndex=0; mipIndex < mipsCount; mipIndex++ ) {
-		_decoder->getTextureSize( _textureIndex, mipIndex, width, height, depth, channelsCount, datatype_src );
-		_decoder->getTextureData( _textureIndex, mipIndex, textureDataFormat, tempPixelsBuffer );
+		_decoder.getTextureSize( _textureIndex, mipIndex, width, height, depth, channelsCount, datatype_src );
+		_decoder.getTextureData( _textureIndex, mipIndex, textureDataFormat, tempPixelsBuffer );
 
 		UInt32	sourcePitch = width * sourcePixelSize;
+		UInt32	slicePitch = height * sourcePitch;
 
 		// Write to our target image
 		ImageFile^	targetMip = m_images[0][mipIndex][0];
-		if ( targetMip->Height != height )
+		int	mipHeight = targetMip->Height;
+		if ( mipHeight < height * m_slicesCountY )
 			throw gcnew Exception( "Target mip level isn't the same resolution as source mip level!" );
 
 		UInt32	targetPitch = targetMip->Pitch;
-		Byte*	sourcePtr = tempPixelsBuffer;
-		Byte*	targetPtr = (Byte*) (void*) targetMip->Bits;
-		for ( UInt32 Y=0; Y < UInt32(height); Y++, sourcePtr+=sourcePitch, targetPtr+=targetPitch ) {
-			if ( channelsCount != 3 ) {
-				memcpy_s( targetPtr, targetPitch, sourcePtr, sourcePitch );
-				continue;
-			}
+		for ( int sliceIndex=0; sliceIndex < depth; sliceIndex++ ) {
+			Byte*	sourcePtr = tempPixelsBuffer
+							  + slicePitch * sliceIndex;	// Properly fetch from a specific slice
 
-			// We need to copy RGB and create our own alpha
-			for ( UInt32 X=0; X < UInt32(width); X++ ) {
-				memcpy_s( targetPtr + targetPixelSize*X, targetPixelSize, sourcePtr + sourcePixelSize*X, sourcePixelSize );
+			// Properly paste into a specific tile within the huge 2D texture
+			Byte*	targetPtr = (Byte*) (void*) targetMip->Bits;
+			int	sliceX = sliceIndex % m_slicesCountX;
+			int	sliceY = sliceIndex / m_slicesCountX;
+			targetPtr += sliceY * height * targetPitch + sliceX * width * targetPixelSize;
+
+			for ( UInt32 Y=0; Y < UInt32(height); Y++, sourcePtr+=sourcePitch, targetPtr+=targetPitch ) {
+				if ( channelsCount != 3 ) {
+					memcpy_s( targetPtr, sourcePitch, sourcePtr, sourcePitch );
+					continue;
+				}
+
+				// We need to copy RGB and create our own alpha
+				for ( UInt32 X=0; X < UInt32(width); X++ ) {
+					memcpy_s( targetPtr + targetPixelSize*X, targetPixelSize, sourcePtr + sourcePixelSize*X, sourcePixelSize );
 
 //((float*) (targetPtr + targetPixelSize*X))[0] = 1;
 //((float*) (targetPtr + targetPixelSize*X))[1] = 0;
 //((float*) (targetPtr + targetPixelSize*X))[2] = 0;
 
-				// Fill opaque alpha
-				switch ( targetFormat ) {
-					case PIXEL_FORMAT::RGBA8: ((Byte*)(targetPtr + targetPixelSize*X))[3] = 0xFF; break;
-					case PIXEL_FORMAT::RGBA16F: ((UInt16*)(targetPtr + targetPixelSize*X))[3] = 0x3C00; break;	// Representation for 1
-					case PIXEL_FORMAT::RGBA32F: ((float*)(targetPtr + targetPixelSize*X))[3] = 1.0f; break;
+					// Fill opaque alpha
+					switch ( targetFormat ) {
+						case PIXEL_FORMAT::RGBA8: ((Byte*)(targetPtr + targetPixelSize*X))[3] = 0xFF; break;
+						case PIXEL_FORMAT::RGBA16F: ((UInt16*)(targetPtr + targetPixelSize*X))[3] = 0x3C00; break;	// Representation for 1
+						case PIXEL_FORMAT::RGBA32F: ((float*)(targetPtr + targetPixelSize*X))[3] = 1.0f; break;
+					}
 				}
 			}
 		}

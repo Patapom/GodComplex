@@ -132,7 +132,7 @@ namespace ImageUtility {
 
 	ref class ImagesMatrix;
 
-	[System::Diagnostics::DebuggerDisplayAttribute( "{Width}x{Height} {PixelFormat} {FileFormat}" )]
+	[System::Diagnostics::DebuggerDisplayAttribute( "{Width,d}x{Height,d} {PixelFormat} {FileFormat}" )]
 	public ref class ImageFile {
 	public:
 		#pragma region NESTED TYPES

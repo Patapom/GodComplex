@@ -46,7 +46,10 @@ namespace AxFExtractor
 				AxFService.AxFFile.Material.Texture[]	textures = m_selectedMaterial.Textures;
 				textBoxMatInfo.Text += "► Textures Count: " + textures.Length + "\r\n";
 				foreach ( AxFService.AxFFile.Material.Texture texture in textures ) {
-					textBoxMatInfo.Text += "	Texture: " + texture.Name + "\r\n";
+					if ( texture.SlicesCountX > 1 || texture.SlicesCountY > 1 )
+						textBoxMatInfo.Text += "	◄3D► Texture: " + texture.Name + " (" + texture.SlicesCountX + "x" + texture.SlicesCountY + " slices) (" + texture.Width_mm.ToString( "G4" ) + " x " + texture.Height_mm.ToString( "G4" ) + " mm²)\r\n";
+					else
+						textBoxMatInfo.Text += "	Texture: " + texture.Name + " (" + texture.Width_mm.ToString( "G4" ) + " x " + texture.Height_mm.ToString( "G4" ) + " mm²)\r\n";
 				}
 
 				textBoxMatInfo.Text += "\r\n";
@@ -122,6 +125,7 @@ namespace AxFExtractor
 			FLAG_NORMAL = 0x20000,		// Vectors
 			FLAG_IOR = 0x40000,			// [1,infinity] IOR
 			FLAG_ANGLE = 0x80000,		// [-PI,PI] angles
+			FLAG_2DARRAY = 0x100000,	// Texture 2D Array
 
 			// SVBRDF
 			DIFFUSE_COLOR		= 0 | FLAG_sRGB,
@@ -135,6 +139,11 @@ namespace AxFExtractor
 			CLEARCOAT_COLOR		= 8 | FLAG_sRGB,
 			CLEARCOAT_NORMAL	= 9 | FLAG_NORMAL,
 			CLEARCOAT_IOR		= 10 | FLAG_IOR,
+
+			// Car Paint
+			BRDF_COLORS			= 100 | FLAG_sRGB,
+			BTF_FLAKES			= 101 | FLAG_sRGB | FLAG_2DARRAY,
+
 		}
 
 		void	DumpMaterial( AxFService.AxFFile.Material _material, System.IO.DirectoryInfo _targetDirectory ) {
@@ -166,6 +175,10 @@ namespace AxFExtractor
 					case "clearcoatnormal":	textureType = TEXTURE_TYPE.CLEARCOAT_NORMAL; break;
 					case "clearcoatior":	textureType = TEXTURE_TYPE.CLEARCOAT_IOR; break;
 
+						// Car Paint
+					case "brdfcolors":		textureType = TEXTURE_TYPE.BRDF_COLORS; break;
+					case "btfflakes":		textureType = TEXTURE_TYPE.BTF_FLAKES; break;
+
 					default:
 						throw new Exception( "Unsupported texture type \"" + texture.Name + "\"!" );
 				}
@@ -176,6 +189,10 @@ namespace AxFExtractor
 				bool	isNormalMap = ((int) textureType & (int) TEXTURE_TYPE.FLAG_NORMAL) != 0;
 				bool	isIOR = ((int) textureType & (int) TEXTURE_TYPE.FLAG_IOR) != 0;
 				bool	isAngle = ((int) textureType & (int) TEXTURE_TYPE.FLAG_ANGLE) != 0;
+
+				System.IO.FileInfo	targetTextureFileName = new System.IO.FileInfo( System.IO.Path.Combine( fullTargetDirectory.FullName, texture.Name + ".png" ) );
+
+/*
 
 //				// Dump as DDS
 //				texture.Images.DDSSaveFile( new System.IO.FileInfo( @"D:\Workspaces\Unity Labs\AxF\AxF Shader\Assets\AxF Materials\X-Rite_14-LTH_Red_GoatLeather_4405_2479\" + texture.Name + ".dds" ), texture.ComponentFormat );
@@ -242,13 +259,15 @@ namespace AxFExtractor
 //				else
 					temp.ConvertFrom( source, ImageUtility.PIXEL_FORMAT.RGBA16 );
 
-				System.IO.FileInfo	targetTextureFileName = new System.IO.FileInfo( System.IO.Path.Combine( fullTargetDirectory.FullName, texture.Name + ".png" ) );
 				temp.Save( targetTextureFileName, ImageUtility.ImageFile.FILE_FORMAT.PNG );
 // 				System.IO.FileInfo	targetTextureFileName = new System.IO.FileInfo( System.IO.Path.Combine( fullTargetDirectory.FullName, texture.Name + ".tif" ) );
 // 				temp.Save( targetTextureFileName, ImageUtility.ImageFile.FILE_FORMAT.TIFF );
 
+
+//*/
+
 				// Generate or read meta file
-				string	GUID = GenerateMeta( targetTextureFileName, checkBoxGenerateMeta.Checked, sRGB, isNormalMap, isIOR );
+				string	GUID = GenerateMeta( targetTextureFileName, checkBoxGenerateMeta.Checked, checkBoxOverwriteExistingMeta.Checked, sRGB, isNormalMap, isIOR );
 				GUIDs[textureIndex] = GUID;
 				allGUIDsValid &= GUID != null;
 			}
@@ -261,11 +280,11 @@ namespace AxFExtractor
 			GenerateMaterial( _material, _targetDirectory, textureTypes, GUIDs );
 		}
 
-		string	GenerateMeta( System.IO.FileInfo _textureFileName, bool _createMeta, bool _sRGB, bool _isNormal, bool _isIOR ) {
+		string	GenerateMeta( System.IO.FileInfo _textureFileName, bool _createMeta, bool _overrideMeta, bool _sRGB, bool _isNormal, bool _isIOR ) {
 			System.IO.FileInfo	metaFileName = new System.IO.FileInfo( _textureFileName.FullName + ".meta" );
 			string	metaContent = null;
 			string	stringGUID = null;
-			if ( metaFileName.Exists && !checkBoxOverwriteExistingMeta.Checked ) {
+			if ( metaFileName.Exists && !_overrideMeta ) {
 				// Read back existing file
 				using ( System.IO.StreamReader S = metaFileName.OpenText() )
 					 metaContent = S.ReadToEnd();
@@ -325,6 +344,11 @@ namespace AxFExtractor
 					case TEXTURE_TYPE.OPACITY:				variableName = "_SVBRDF_OpacityMap"; break;
 					case TEXTURE_TYPE.SPECULAR_COLOR:		variableName = "_SVBRDF_SpecularColorMap_sRGB"; break;
 					case TEXTURE_TYPE.SPECULAR_LOBE:		variableName = "_SVBRDF_SpecularLobeMap"; break;
+
+					// Car Paint
+					case TEXTURE_TYPE.BRDF_COLORS:			variableName = "_CarPaint_BRDFColorsMap_sRGB"; break;
+					case TEXTURE_TYPE.BTF_FLAKES:			variableName = "_CarPaint_BTFFlakesMap_sRGB"; break;
+
 					default:
 						throw new Exception( "Unsupported texture type! Can't match to variable name..." );
 				}
@@ -333,14 +357,15 @@ namespace AxFExtractor
 						textureEntry = textureEntry.Replace( "<TEX_VARIABLE_NAME>", variableName );
 				texturesArray += textureEntry;
 			}
-			materialContent = materialContent.Replace( "<TEXTURES ARRAY>", texturesArray );
+
 
 			//////////////////////////////////////////////////////////////////////////
 			// Generate uniforms array
 			string	uniformsArray = "";
+			string	colorsArray = "";
 
-			uniformsArray += "    - _materialSizeU_mm: 0\n";
-			uniformsArray += "    - _materialSizeV_mm: 0\n";
+			uniformsArray += "    - _materialSizeU_mm: 10\n";
+			uniformsArray += "    - _materialSizeV_mm: 10\n";
 
 			switch ( _material.Type ) {
 				case AxFService.AxFFile.Material.TYPE.SVBRDF:	uniformsArray += "    - _AxF_BRDFType: 0\n"; break;
@@ -354,7 +379,7 @@ namespace AxFExtractor
 					uint	flags = 0;
 							flags |= _material.IsAnisotropic ? 1U : 0;
 							flags |= hasClearCoat ? 2U : 0;
-							flags |= _material.GetPropertyBool( "cc_no_refraction", false ) ? 0 : 4U;	// Explicitly use no refraction
+							flags |= _material.GetPropertyInt( "cc_no_refraction", 0 ) == 1 ? 0 : 4U;	// Explicitly use no refraction
 							flags |= hasHeightMap ? 8U : 0;
 
 					uniformsArray += "    - _SVBRDF_flags: " + flags + "\n";
@@ -383,6 +408,78 @@ namespace AxFExtractor
 					}
 
 					uniformsArray += "    - _SVBRDF_BRDFVariants: " + BRDFVariants + "\n";
+
+					float	heightMapSize_mm = 0.0f;	// @TODO!
+					uniformsArray += "    - _SVBRDF_heightMapMax_mm: " + heightMapSize_mm + "\n";
+
+					break;
+				}
+
+				case AxFService.AxFFile.Material.TYPE.CARPAINT: {
+					// Setup flags
+					uint	flags = 0;
+							flags |= _material.IsAnisotropic ? 1U : 0;
+							flags |= hasClearCoat ? 2U : 0;
+							flags |= _material.GetPropertyInt( "cc_no_refraction", 0 ) == 1 ? 0 : 4U;	// Explicitly use no refraction
+//							flags |= hasHeightMap ? 8U : 0;
+
+					uniformsArray += "    - _CarPaint_flags: " + flags + "\n";
+
+					uniformsArray += "    - _CarPaint_CT_diffuse: " + _material.GetPropertyFloat( "CT_diffuse", 0 ) + "\n";
+					uniformsArray += "    - _CarPaint_IOR: " + _material.GetPropertyFloat( "IOR", 1 ) + "\n";
+					uniformsArray += "    - _CarPaint_maxThetaI: " + _material.GetPropertyInt( "max_thetaI", 0 ) + "\n";
+					uniformsArray += "    - _CarPaint_numThetaF: " + _material.GetPropertyInt( "num_thetaF", 0 ) + "\n";
+					uniformsArray += "    - _CarPaint_numThetaI: " + _material.GetPropertyInt( "num_thetaI", 0 ) + "\n";
+
+					// =========================================================================================
+					// Setup simple arrays as colors
+					float[]	CT_F0s = _material.GetPropertyRaw( "CT_F0s" ) as float[];
+					if ( CT_F0s == null || CT_F0s.Length != 3 )
+						throw new Exception( "Expected 3 float values for F0!" );
+
+					float[]	CT_coeffs = _material.GetPropertyRaw( "CT_coeffs" ) as float[];
+					if ( CT_coeffs == null || CT_coeffs.Length != 3 )
+						throw new Exception( "Expected 3 float values for coefficients!" );
+
+					float[]	CT_spreads = _material.GetPropertyRaw( "CT_spreads" ) as float[];
+					if ( CT_spreads == null || CT_spreads.Length != 3 )
+						throw new Exception( "Expected 3 float values for spreads!" );
+
+					colorsArray += "    - _CarPaint_CT_F0s: {r: " + CT_F0s[0] + ", g: " + CT_F0s[1] + ", b: " + CT_F0s[2] + ", a: 1}\n";
+					colorsArray += "    - _CarPaint_CT_coeffs: {r: " + CT_coeffs[0] + ", g: " + CT_coeffs[1] + ", b: " + CT_coeffs[2] + ", a: 1}\n";
+					colorsArray += "    - _CarPaint_CT_spreads: {r: " + CT_spreads[0] + ", g: " + CT_spreads[1] + ", b: " + CT_spreads[2] + ", a: 1}\n";
+
+					// =========================================================================================
+					// Create a custom texture for sliceLUT
+					int[]	thetaFI_sliceLUT = _material.GetPropertyRaw( "thetaFI_sliceLUT" ) as int[];
+					if ( thetaFI_sliceLUT == null )
+						throw new Exception( "Slice LUT not found!" );
+
+					ImageUtility.ImageFile	texSliceLUT = new ImageUtility.ImageFile( (uint) thetaFI_sliceLUT.Length, 1, ImageUtility.PIXEL_FORMAT.R8, new ImageUtility.ColorProfile( ImageUtility.ColorProfile.STANDARD_PROFILE.LINEAR ) );
+					texSliceLUT.WritePixels( ( uint _X, uint _Y, ref float4 _color ) => {
+						_color.x = thetaFI_sliceLUT[_X] / 255.0f;
+					} );
+
+					System.IO.FileInfo	targetTextureFileName = new System.IO.FileInfo( System.IO.Path.Combine( _targetDirectory.FullName, _material.Name, "sliceLUT.png" ) );
+					texSliceLUT.Save( targetTextureFileName, ImageUtility.ImageFile.FILE_FORMAT.PNG );
+					string	GUID = GenerateMeta( targetTextureFileName, checkBoxGenerateMeta.Checked, checkBoxOverwriteExistingMeta.Checked, false, false, false );
+
+					string	textureEntry = templateTexture.Replace( "<FILE ID>", 2800000.ToString() );
+							textureEntry = textureEntry.Replace( "<GUID>", GUID );
+							textureEntry = textureEntry.Replace( "<TEX_VARIABLE_NAME>", "_CarPaint_thetaFI_sliceLUTMap" );
+					texturesArray += textureEntry;
+
+// CT_F0s = System.Single[]
+// CT_coeffs = System.Single[]
+// CT_diffuse = 0.08615763
+// CT_spreads = System.Single[]
+// IOR = 1.5
+// cc_no_refraction = 0
+// max_thetaI = 12
+// num_thetaF = 24
+// num_thetaI = 24
+// thetaFI_sliceLUT = System.Int32[]
+
 					break;
 				}
 
@@ -390,10 +487,13 @@ namespace AxFExtractor
 					throw new Exception( "TODO! Support feeding variables to other BRDF types!" );
 			}
 
-			float	heightMapSize_mm = 0.0f;	// @TODO!
-			uniformsArray += "    - _SVBRDF_heightMapMax_mm: " + heightMapSize_mm + "\n";
 
+			//////////////////////////////////////////////////////////////////////////
+			// Replace placeholders in template
+			materialContent = materialContent.Replace( "<TEXTURES ARRAY>", texturesArray );
 			materialContent = materialContent.Replace( "<UNIFORMS ARRAY>", uniformsArray );
+			materialContent = materialContent.Replace( "<COLORS ARRAY>", colorsArray );
+			
 
 			// Write target file
 			System.IO.FileInfo materialFileName = new System.IO.FileInfo( System.IO.Path.Combine( _targetDirectory.FullName, _material.Name, "material.mat" ) );
