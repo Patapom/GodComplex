@@ -109,7 +109,6 @@ AxFFile::Material::Material( AxFFile^ _owner, UInt32 _materialIndex ) : m_owner(
 
 	} else if ( repClass == "CarPaint" || repClass == "CarPaint2" ) {
 		m_type = TYPE::CARPAINT;
-//		throw gcnew Exception( "HANDLE CAR PAINT!" );
 	} else if ( repClass == "FactorizedBTF" ) {
 		m_type = TYPE::BTF;
 		throw gcnew Exception( "HANDLE BTF!" );

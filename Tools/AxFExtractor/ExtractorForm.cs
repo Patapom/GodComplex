@@ -189,10 +189,11 @@ namespace AxFExtractor
 				bool	isNormalMap = ((int) textureType & (int) TEXTURE_TYPE.FLAG_NORMAL) != 0;
 				bool	isIOR = ((int) textureType & (int) TEXTURE_TYPE.FLAG_IOR) != 0;
 				bool	isAngle = ((int) textureType & (int) TEXTURE_TYPE.FLAG_ANGLE) != 0;
+				bool	isArray = ((int) textureType & (int) TEXTURE_TYPE.FLAG_2DARRAY) != 0;
 
 				System.IO.FileInfo	targetTextureFileName = new System.IO.FileInfo( System.IO.Path.Combine( fullTargetDirectory.FullName, texture.Name + ".png" ) );
 
-/*
+//*
 
 //				// Dump as DDS
 //				texture.Images.DDSSaveFile( new System.IO.FileInfo( @"D:\Workspaces\Unity Labs\AxF\AxF Shader\Assets\AxF Materials\X-Rite_14-LTH_Red_GoatLeather_4405_2479\" + texture.Name + ".dds" ), texture.ComponentFormat );
@@ -267,7 +268,7 @@ namespace AxFExtractor
 //*/
 
 				// Generate or read meta file
-				string	GUID = GenerateMeta( targetTextureFileName, checkBoxGenerateMeta.Checked, checkBoxOverwriteExistingMeta.Checked, sRGB, isNormalMap, isIOR );
+				string	GUID = GenerateMeta( targetTextureFileName, checkBoxGenerateMeta.Checked, checkBoxOverwriteExistingMeta.Checked, sRGB, isNormalMap, isIOR, isArray );
 				GUIDs[textureIndex] = GUID;
 				allGUIDsValid &= GUID != null;
 			}
@@ -280,7 +281,7 @@ namespace AxFExtractor
 			GenerateMaterial( _material, _targetDirectory, textureTypes, GUIDs );
 		}
 
-		string	GenerateMeta( System.IO.FileInfo _textureFileName, bool _createMeta, bool _overrideMeta, bool _sRGB, bool _isNormal, bool _isIOR ) {
+		string	GenerateMeta( System.IO.FileInfo _textureFileName, bool _createMeta, bool _overrideMeta, bool _sRGB, bool _isNormal, bool _isIOR, bool _isArray ) {
 			System.IO.FileInfo	metaFileName = new System.IO.FileInfo( _textureFileName.FullName + ".meta" );
 			string	metaContent = null;
 			string	stringGUID = null;
@@ -296,6 +297,7 @@ namespace AxFExtractor
 				metaContent = Properties.Resources.TemplateMeta;
 				metaContent = metaContent.Replace( "<GUID>", stringGUID );
 				metaContent = metaContent.Replace( "<sRGB>", _sRGB ? "1" : "0" );
+				metaContent = metaContent.Replace( "<READABLE>", _isArray ? "1" : "0" );	// If texture is a 3D texture or a texture 2D array then we need to call a Unity script to import it and it must be tagged "readable" for the script to run
 
 				using ( System.IO.StreamWriter S = metaFileName.CreateText() )
 					S.Write( metaContent );
@@ -462,23 +464,12 @@ namespace AxFExtractor
 
 					System.IO.FileInfo	targetTextureFileName = new System.IO.FileInfo( System.IO.Path.Combine( _targetDirectory.FullName, _material.Name, "sliceLUT.png" ) );
 					texSliceLUT.Save( targetTextureFileName, ImageUtility.ImageFile.FILE_FORMAT.PNG );
-					string	GUID = GenerateMeta( targetTextureFileName, checkBoxGenerateMeta.Checked, checkBoxOverwriteExistingMeta.Checked, false, false, false );
+					string	GUID = GenerateMeta( targetTextureFileName, checkBoxGenerateMeta.Checked, checkBoxOverwriteExistingMeta.Checked, false, false, false, false );
 
 					string	textureEntry = templateTexture.Replace( "<FILE ID>", 2800000.ToString() );
 							textureEntry = textureEntry.Replace( "<GUID>", GUID );
 							textureEntry = textureEntry.Replace( "<TEX_VARIABLE_NAME>", "_CarPaint_thetaFI_sliceLUTMap" );
 					texturesArray += textureEntry;
-
-// CT_F0s = System.Single[]
-// CT_coeffs = System.Single[]
-// CT_diffuse = 0.08615763
-// CT_spreads = System.Single[]
-// IOR = 1.5
-// cc_no_refraction = 0
-// max_thetaI = 12
-// num_thetaF = 24
-// num_thetaI = 24
-// thetaFI_sliceLUT = System.Int32[]
 
 					break;
 				}
