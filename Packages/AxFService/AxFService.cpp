@@ -424,6 +424,8 @@ AxFFile::Material::Texture::Texture( TextureDecoder& _decoder, UInt32 _textureIn
 	Byte*	tempPixelsBuffer = new Byte[width*height*depth*sourcePixelSize];
 
 	// Readback all mip levels
+	m_maxValue = 0.0f;
+
 	for ( UInt32 mipIndex=0; mipIndex < mipsCount; mipIndex++ ) {
 		_decoder.getTextureSize( _textureIndex, mipIndex, width, height, depth, channelsCount, datatype_src );
 		_decoder.getTextureData( _textureIndex, mipIndex, textureDataFormat, tempPixelsBuffer );
@@ -436,8 +438,6 @@ AxFFile::Material::Texture::Texture( TextureDecoder& _decoder, UInt32 _textureIn
 		int	mipHeight = targetMip->Height;
 		if ( mipHeight < height * m_slicesCountY )
 			throw gcnew Exception( "Target mip level isn't the same resolution as source mip level!" );
-
-		m_maxValue = 0.0f;
 
 		UInt32	targetPitch = targetMip->Pitch;
 		for ( int sliceIndex=0; sliceIndex < depth; sliceIndex++ ) {

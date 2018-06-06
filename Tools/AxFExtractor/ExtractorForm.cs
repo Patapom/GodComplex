@@ -143,8 +143,8 @@ namespace AxFExtractor
 			CLEARCOAT_IOR		= 10 | FLAG_IOR,
 
 			// Car Paint
-			BRDF_COLORS			= 100 | FLAG_sRGB | FLAG_SCALE_BY_MAX,
-			BTF_FLAKES			= 101 | FLAG_sRGB | FLAG_2DARRAY,
+			BRDF_COLOR			= 100 | FLAG_sRGB | FLAG_SCALE_BY_MAX,
+			BTF_FLAKES			= 101 | FLAG_sRGB | FLAG_2DARRAY | FLAG_SCALE_BY_MAX,
 		}
 
 		void	DumpMaterial( AxFService.AxFFile.Material _material, System.IO.DirectoryInfo _targetDirectory ) {
@@ -177,7 +177,7 @@ namespace AxFExtractor
 					case "clearcoatior":	textureType = TEXTURE_TYPE.CLEARCOAT_IOR; break;
 
 						// Car Paint
-					case "brdfcolors":		textureType = TEXTURE_TYPE.BRDF_COLORS; break;
+					case "brdfcolors":		textureType = TEXTURE_TYPE.BRDF_COLOR; break;
 					case "btfflakes":		textureType = TEXTURE_TYPE.BTF_FLAKES; break;
 
 					default:
@@ -337,6 +337,7 @@ namespace AxFExtractor
 			bool	hasHeightMap = false;
 			string	texturesArray = "";
 			float	BRDFColorScaleFactor = 1.0f;
+			float	BTFFlakeScaleFactor = 1.0f;
 			for ( int textureIndex=0; textureIndex < _textureTypes.Length; textureIndex++ ) {
 				AxFService.AxFFile.Material.Texture	texture = _material.Textures[textureIndex];
 //				int		fileID = 2800000 + textureIndex;
@@ -357,8 +358,8 @@ namespace AxFExtractor
 					case TEXTURE_TYPE.SPECULAR_LOBE:		variableName = "_SVBRDF_SpecularLobeMap"; break;
 
 					// Car Paint
-					case TEXTURE_TYPE.BRDF_COLORS:			variableName = "_CarPaint_BRDFColorsMap_sRGB"; BRDFColorScaleFactor = texture.MaxValue; break;
-					case TEXTURE_TYPE.BTF_FLAKES:			variableName = "_CarPaint_BTFFlakesMap_sRGB"; break;
+					case TEXTURE_TYPE.BRDF_COLOR:			variableName = "_CarPaint_BRDFColorMap_sRGB"; BRDFColorScaleFactor = texture.MaxValue; break;
+					case TEXTURE_TYPE.BTF_FLAKES:			variableName = "_CarPaint_BTFFlakesMap_sRGB"; BTFFlakeScaleFactor = texture.MaxValue; break;
 
 					default:
 						throw new Exception( "Unsupported texture type! Can't match to variable name..." );
@@ -393,7 +394,7 @@ namespace AxFExtractor
 							flags |= _material.GetPropertyInt( "cc_no_refraction", 0 ) == 1 ? 0 : 4U;	// Explicitly use no refraction
 							flags |= hasHeightMap ? 8U : 0;
 
-					uniformsArray += "    - _SVBRDF_flags: " + flags + "\n";
+					uniformsArray += "    - _flags: " + flags + "\n";
 
 					// Setup SVBRDF diffuse & specular types
 					uint	BRDFType = 0;
@@ -434,7 +435,7 @@ namespace AxFExtractor
 							flags |= _material.GetPropertyInt( "cc_no_refraction", 0 ) == 1 ? 0 : 4U;	// Explicitly use no refraction
 //							flags |= hasHeightMap ? 8U : 0;
 
-					uniformsArray += "    - _CarPaint_flags: " + flags + "\n";
+					uniformsArray += "    - _flags: " + flags + "\n";
 
 					uniformsArray += "    - _CarPaint_CT_diffuse: " + _material.GetPropertyFloat( "CT_diffuse", 0 ) + "\n";
 					uniformsArray += "    - _CarPaint_IOR: " + _material.GetPropertyFloat( "IOR", 1 ) + "\n";
@@ -443,7 +444,8 @@ namespace AxFExtractor
 					uniformsArray += "    - _CarPaint_numThetaI: " + _material.GetPropertyInt( "num_thetaI", 0 ) + "\n";
 
 					// Write scale factor for BRDF color
-					uniformsArray += "    - _CarPaint_BRDFColorsMap_Scale: " + BRDFColorScaleFactor + "\n";
+					uniformsArray += "    - _CarPaint_BRDFColorMap_Scale: " + BRDFColorScaleFactor + "\n";
+					uniformsArray += "    - _CarPaint_BTFFlakesMap_Scale: " + BTFFlakeScaleFactor + "\n";
 
 					// =========================================================================================
 					// Setup simple arrays as colors
