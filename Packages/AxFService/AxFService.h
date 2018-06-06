@@ -71,6 +71,7 @@ namespace AxFService {
 				int								m_slicesCountY;
 				ImageUtility::COMPONENT_FORMAT	m_componentFormat;
 				ImageUtility::ImagesMatrix^		m_images;
+				float							m_maxValue;
 
 			public:
 
@@ -100,6 +101,9 @@ namespace AxFService {
 				}
 				property ImageUtility::ImagesMatrix^	Images {
 					ImageUtility::ImagesMatrix^	get() { return m_images; }
+				}
+				property float			MaxValue {
+					float	get() { return m_maxValue; }
 				}
 
 			public:

@@ -47,9 +47,10 @@ namespace AxFExtractor
 				textBoxMatInfo.Text += "► Textures Count: " + textures.Length + "\r\n";
 				foreach ( AxFService.AxFFile.Material.Texture texture in textures ) {
 					if ( texture.SlicesCountX > 1 || texture.SlicesCountY > 1 )
-						textBoxMatInfo.Text += "	◄3D► Texture: " + texture.Name + " (" + texture.SlicesCountX + "x" + texture.SlicesCountY + " slices) (" + texture.Width_mm.ToString( "G4" ) + " x " + texture.Height_mm.ToString( "G4" ) + " mm²)\r\n";
+						textBoxMatInfo.Text += "	◄ARRAY► Texture: " + texture.Name + " (" + texture.SlicesCountX + "x" + texture.SlicesCountY + " slices of size " + texture.SliceWidth + "x" + texture.SliceHeight + ") ("
+												+ texture.Width_mm.ToString( "G4" ) + " x " + texture.Height_mm.ToString( "G4" ) + " mm²) MAX=" + texture.MaxValue.ToString( "G4" ) + "\r\n";
 					else
-						textBoxMatInfo.Text += "	Texture: " + texture.Name + " (" + texture.Width_mm.ToString( "G4" ) + " x " + texture.Height_mm.ToString( "G4" ) + " mm²)\r\n";
+						textBoxMatInfo.Text += "	Texture: " + texture.Name + " (" + texture.Width_mm.ToString( "G4" ) + " x " + texture.Height_mm.ToString( "G4" ) + " mm²) MAX=" + texture.MaxValue.ToString( "G4" ) + "\r\n";
 				}
 
 				textBoxMatInfo.Text += "\r\n";
@@ -126,6 +127,7 @@ namespace AxFExtractor
 			FLAG_IOR = 0x40000,			// [1,infinity] IOR
 			FLAG_ANGLE = 0x80000,		// [-PI,PI] angles
 			FLAG_2DARRAY = 0x100000,	// Texture 2D Array
+			FLAG_SCALE_BY_MAX = 0x200000,// Needs to be scaled by max value
 
 			// SVBRDF
 			DIFFUSE_COLOR		= 0 | FLAG_sRGB,
@@ -141,9 +143,8 @@ namespace AxFExtractor
 			CLEARCOAT_IOR		= 10 | FLAG_IOR,
 
 			// Car Paint
-			BRDF_COLORS			= 100 | FLAG_sRGB,
+			BRDF_COLORS			= 100 | FLAG_sRGB | FLAG_SCALE_BY_MAX,
 			BTF_FLAKES			= 101 | FLAG_sRGB | FLAG_2DARRAY,
-
 		}
 
 		void	DumpMaterial( AxFService.AxFFile.Material _material, System.IO.DirectoryInfo _targetDirectory ) {
@@ -190,6 +191,7 @@ namespace AxFExtractor
 				bool	isIOR = ((int) textureType & (int) TEXTURE_TYPE.FLAG_IOR) != 0;
 				bool	isAngle = ((int) textureType & (int) TEXTURE_TYPE.FLAG_ANGLE) != 0;
 				bool	isArray = ((int) textureType & (int) TEXTURE_TYPE.FLAG_2DARRAY) != 0;
+				bool	scale =	((int) textureType & (int) TEXTURE_TYPE.FLAG_SCALE_BY_MAX) != 0;
 
 				System.IO.FileInfo	targetTextureFileName = new System.IO.FileInfo( System.IO.Path.Combine( fullTargetDirectory.FullName, texture.Name + ".png" ) );
 
@@ -208,11 +210,16 @@ namespace AxFExtractor
 				// Individual dump as RGBA16 files
 				ImageUtility.ImageFile	source = texture.Images[0][0][0];
 
+				float	factor = 1.0f;
+				if ( scale ) {
+					factor = 1.0f / texture.MaxValue;	// Apply scale
+				}
+
 				if ( sRGB ) {
 					source.ReadWritePixels( ( uint _X, uint _Y, ref float4 _color ) => {
-						_color.x = Mathf.Pow( Math.Max( 0.0f, _color.x ), 1.0f / 2.2f );
-						_color.y = Mathf.Pow( Math.Max( 0.0f, _color.y ), 1.0f / 2.2f );
-						_color.z = Mathf.Pow( Math.Max( 0.0f, _color.z ), 1.0f / 2.2f );
+						_color.x = Mathf.Pow( Math.Max( 0.0f, factor * _color.x ), 1.0f / 2.2f );
+						_color.y = Mathf.Pow( Math.Max( 0.0f, factor * _color.y ), 1.0f / 2.2f );
+						_color.z = Mathf.Pow( Math.Max( 0.0f, factor * _color.z ), 1.0f / 2.2f );
 //						_color.w = 1.0f;
 					} );
 				}
@@ -329,7 +336,9 @@ namespace AxFExtractor
 			bool	hasClearCoat = false;
 			bool	hasHeightMap = false;
 			string	texturesArray = "";
+			float	BRDFColorScaleFactor = 1.0f;
 			for ( int textureIndex=0; textureIndex < _textureTypes.Length; textureIndex++ ) {
+				AxFService.AxFFile.Material.Texture	texture = _material.Textures[textureIndex];
 //				int		fileID = 2800000 + textureIndex;
 				int		fileID = 2800000;
 				string	GUID = _textureGUIDs[textureIndex];
@@ -348,7 +357,7 @@ namespace AxFExtractor
 					case TEXTURE_TYPE.SPECULAR_LOBE:		variableName = "_SVBRDF_SpecularLobeMap"; break;
 
 					// Car Paint
-					case TEXTURE_TYPE.BRDF_COLORS:			variableName = "_CarPaint_BRDFColorsMap_sRGB"; break;
+					case TEXTURE_TYPE.BRDF_COLORS:			variableName = "_CarPaint_BRDFColorsMap_sRGB"; BRDFColorScaleFactor = texture.MaxValue; break;
 					case TEXTURE_TYPE.BTF_FLAKES:			variableName = "_CarPaint_BTFFlakesMap_sRGB"; break;
 
 					default:
@@ -433,6 +442,9 @@ namespace AxFExtractor
 					uniformsArray += "    - _CarPaint_numThetaF: " + _material.GetPropertyInt( "num_thetaF", 0 ) + "\n";
 					uniformsArray += "    - _CarPaint_numThetaI: " + _material.GetPropertyInt( "num_thetaI", 0 ) + "\n";
 
+					// Write scale factor for BRDF color
+					uniformsArray += "    - _CarPaint_BRDFColorsMap_Scale: " + BRDFColorScaleFactor + "\n";
+
 					// =========================================================================================
 					// Setup simple arrays as colors
 					float[]	CT_F0s = _material.GetPropertyRaw( "CT_F0s" ) as float[];
@@ -446,6 +458,8 @@ namespace AxFExtractor
 					float[]	CT_spreads = _material.GetPropertyRaw( "CT_spreads" ) as float[];
 					if ( CT_spreads == null || CT_spreads.Length != 3 )
 						throw new Exception( "Expected 3 float values for spreads!" );
+
+					uniformsArray += "    - _CarPaint_lobesCount: " + CT_F0s.Length + "\n";
 
 					colorsArray += "    - _CarPaint_CT_F0s: {r: " + CT_F0s[0] + ", g: " + CT_F0s[1] + ", b: " + CT_F0s[2] + ", a: 1}\n";
 					colorsArray += "    - _CarPaint_CT_coeffs: {r: " + CT_coeffs[0] + ", g: " + CT_coeffs[1] + ", b: " + CT_coeffs[2] + ", a: 1}\n";

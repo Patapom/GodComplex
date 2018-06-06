@@ -203,7 +203,7 @@ void	AxFFile::Material::ReadProperties() {
 
 	// Read meta properties
 	char	tempCharPtr[255];
-	Byte	tempProp[255];
+	Byte	tempProp[1024];
 	int	metaDataDocsCount = axfGetNumberOfMetadataDocuments( m_hMaterial );
 	for ( int docIndex=0; docIndex < metaDataDocsCount; docIndex++ ) {
 		AXF_METADATA_DOCUMENT_HANDLE	hDoc = axfGetMetadataDocument( m_hMaterial, docIndex );
@@ -230,7 +230,7 @@ void	AxFFile::Material::ReadProperties() {
 				prop->m_value = *((float*) tempProp);
 				break;
 			case TYPE_STRING:
-				axfGetMetadataPropertyValue( hDoc, propIndex, propType, tempProp, 255 );
+				axfGetMetadataPropertyValue( hDoc, propIndex, propType, tempProp, 1024 );
 				prop->m_value = gcnew String( (char*) tempProp );
 				break;
 			}
@@ -263,14 +263,14 @@ void	AxFFile::Material::ReadProperties() {
 			prop->m_value = *((float*) tempProp);
 			break;
 		case TYPE_STRING:
-			pcl_tex_decoder->getProperty( propIndex, tempProp, propType, 255 );
+			pcl_tex_decoder->getProperty( propIndex, tempProp, propType, 1024 );
 			prop->m_value = gcnew String( (char*) tempProp );
 			break;
 
 		case TYPE_FLOAT_ARRAY: {
 			int	propSize = pcl_tex_decoder->getPropertySize( propIndex );
 			int	itemsCount = propSize >> 2;
-			pcl_tex_decoder->getProperty( propIndex, tempProp, propType, 255 );
+			pcl_tex_decoder->getProperty( propIndex, tempProp, propType, 1024 );
 			cli::array<float>^	values = gcnew cli::array<float>( itemsCount );
 			prop->m_value = values;
 			for ( int i=0; i < itemsCount; i++ )
@@ -280,7 +280,7 @@ void	AxFFile::Material::ReadProperties() {
 		case TYPE_INT_ARRAY: {
 			int	propSize = pcl_tex_decoder->getPropertySize( propIndex );
 			int	itemsCount = propSize >> 2;
-			pcl_tex_decoder->getProperty( propIndex, tempProp, propType, 255 );
+			pcl_tex_decoder->getProperty( propIndex, tempProp, propType, 1024 );
 			cli::array<int>^	values = gcnew cli::array<int>( itemsCount );
 			prop->m_value = values;
 			for ( int i=0; i < itemsCount; i++ )
@@ -437,6 +437,8 @@ AxFFile::Material::Texture::Texture( TextureDecoder& _decoder, UInt32 _textureIn
 		if ( mipHeight < height * m_slicesCountY )
 			throw gcnew Exception( "Target mip level isn't the same resolution as source mip level!" );
 
+		m_maxValue = 0.0f;
+
 		UInt32	targetPitch = targetMip->Pitch;
 		for ( int sliceIndex=0; sliceIndex < depth; sliceIndex++ ) {
 			Byte*	sourcePtr = tempPixelsBuffer
@@ -467,6 +469,33 @@ AxFFile::Material::Texture::Texture( TextureDecoder& _decoder, UInt32 _textureIn
 						case PIXEL_FORMAT::RGBA8: ((Byte*)(targetPtr + targetPixelSize*X))[3] = 0xFF; break;
 						case PIXEL_FORMAT::RGBA16F: ((UInt16*)(targetPtr + targetPixelSize*X))[3] = 0x3C00; break;	// Representation for 1
 						case PIXEL_FORMAT::RGBA32F: ((float*)(targetPtr + targetPixelSize*X))[3] = 1.0f; break;
+					}
+				}
+
+				// Compute max value
+				switch ( targetFormat ) {
+					case PIXEL_FORMAT::RGBA8:
+						m_maxValue = 1.0f;
+						break;
+
+					case PIXEL_FORMAT::RGBA16F: {
+						half*	temp = (half*) targetPtr;
+						for ( int X=0; X < width; X++, temp+=4 ) {
+							m_maxValue = Mathf::Max( m_maxValue, temp[0] );
+							m_maxValue = Mathf::Max( m_maxValue, temp[1] );
+							m_maxValue = Mathf::Max( m_maxValue, temp[2] );
+						}
+						break;
+					}
+
+					case PIXEL_FORMAT::RGBA32F: {
+						float*	temp = (float*) targetPtr;
+						for ( int X=0; X < width; X++, temp+=4 ) {
+							m_maxValue = Mathf::Max( m_maxValue, temp[0] );
+							m_maxValue = Mathf::Max( m_maxValue, temp[1] );
+							m_maxValue = Mathf::Max( m_maxValue, temp[2] );
+						}
+						break;
 					}
 				}
 			}
