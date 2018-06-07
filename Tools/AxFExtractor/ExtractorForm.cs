@@ -207,77 +207,83 @@ namespace AxFExtractor
 // 				temp.ToneMapFrom( source, ( float3 _HDR, ref float3 _LDR ) => { _LDR =_HDR; } );
 // 				temp.Save( new System.IO.FileInfo( @"D:\Workspaces\Unity Labs\AxF\AxF Shader\Assets\AxF Materials\X-Rite_14-LTH_Red_GoatLeather_4405_2479\" + texture.Name + ".png" ), ImageUtility.ImageFile.FILE_FORMAT.PNG );
 
-				// Individual dump as RGBA16 files
-				ImageUtility.ImageFile	source = texture.Images[0][0][0];
+				uint	mipsCount = texture.Images[0].MipLevelsCount;
+				for ( uint mipIndex=0; mipIndex < mipsCount; mipIndex++ ) {
+					// Individual dump as RGBA16 files
+					ImageUtility.ImageFile	source = texture.Images[0][mipIndex][0];
 
-				float	factor = 1.0f;
-				if ( scale ) {
-					factor = 1.0f / texture.MaxValue;	// Apply scale
+					float	factor = 1.0f;
+					if ( scale ) {
+						factor = 1.0f / texture.MaxValue;	// Apply scale
+					}
+
+					if ( sRGB ) {
+						source.ReadWritePixels( ( uint _X, uint _Y, ref float4 _color ) => {
+							_color.x = Mathf.Pow( Math.Max( 0.0f, factor * _color.x ), 1.0f / 2.2f );
+							_color.y = Mathf.Pow( Math.Max( 0.0f, factor * _color.y ), 1.0f / 2.2f );
+							_color.z = Mathf.Pow( Math.Max( 0.0f, factor * _color.z ), 1.0f / 2.2f );
+	//						_color.w = 1.0f;
+						} );
+					}
+
+					if ( isNormalMap ) {
+						source.ReadWritePixels( ( uint _X, uint _Y, ref float4 _color ) => {
+							_color.x = 0.5f * (1.0f + _color.x);
+							_color.y = 0.5f * (1.0f + _color.y);
+							_color.z = 0.5f * (1.0f + _color.z);
+						} );
+					}
+
+					if ( isIOR ) {
+						// Transform into F0
+						source.ReadWritePixels( ( uint _X, uint _Y, ref float4 _color ) => {
+							if ( float.IsNaN( _color.x ) )
+								_color.x = 1.2f;
+							if ( float.IsNaN( _color.y ) )
+								_color.y = 1.2f;
+							if ( float.IsNaN( _color.z ) )
+								_color.z = 1.2f;
+
+							_color.x = (_color.x - 1.0f) / (_color.x + 1.0f);	// We apply the square below, during the sRGB conversion
+							_color.y = (_color.y - 1.0f) / (_color.y + 1.0f);
+							_color.z = (_color.z - 1.0f) / (_color.z + 1.0f);
+							_color.x = Mathf.Pow( Mathf.Max( 0.0f, _color.x ), 2.0f / 2.2f );		// <= Notice the 2/2.2 here!
+							_color.y = Mathf.Pow( Mathf.Max( 0.0f, _color.y ), 2.0f / 2.2f );
+							_color.z = Mathf.Pow( Mathf.Max( 0.0f, _color.z ), 2.0f / 2.2f );
+						} );
+						sRGB = true;	// Also encoded as sRGB now
+					}
+
+					if ( isAngle ) {
+						// Renormalize
+						source.ReadWritePixels( ( uint _X, uint _Y, ref float4 _color ) => {
+							_color.x = 0.5f * (1.0f + _color.x * Mathf.INVPI);
+							_color.y = 0.5f * (1.0f + _color.y * Mathf.INVPI);
+							_color.z = 0.5f * (1.0f + _color.z * Mathf.INVPI);
+						} );
+					}
+
+					ImageUtility.ImageFile	temp = new ImageUtility.ImageFile();
+//					if ( texture.Name.ToLower() == "diffusecolor" )
+//						temp.ToneMapFrom( source, ( float3 _HDR, ref float3 _LDR ) => { _LDR =_HDR; } );	// 8-bits for diffuse otherwise unity doesn't like it... :'(
+//					else
+						temp.ConvertFrom( source, ImageUtility.PIXEL_FORMAT.RGBA16 );
+
+					System.IO.FileInfo	targetMipTextureFileName = mipIndex > 0 ? new System.IO.FileInfo( System.IO.Path.Combine( fullTargetDirectory.FullName, texture.Name + "_mip" + mipIndex + ".png" ) )
+																				: targetTextureFileName;
+
+					temp.Save( targetMipTextureFileName, ImageUtility.ImageFile.FILE_FORMAT.PNG );
+// 					System.IO.FileInfo	targetMipTextureFileName = new System.IO.FileInfo( System.IO.Path.Combine( fullTargetDirectory.FullName, texture.Name + ".tif" ) );
+// 					temp.Save( targetMipTextureFileName, ImageUtility.ImageFile.FILE_FORMAT.TIFF );
+
+					// Generate or read meta file
+					string	GUID = GenerateMeta( targetMipTextureFileName, checkBoxGenerateMeta.Checked, checkBoxOverwriteExistingMeta.Checked, sRGB, isNormalMap, isIOR, isArray );
+					if ( mipIndex == 0 ) {
+						GUIDs[textureIndex] = GUID;
+						allGUIDsValid &= GUID != null;
+					}
 				}
-
-				if ( sRGB ) {
-					source.ReadWritePixels( ( uint _X, uint _Y, ref float4 _color ) => {
-						_color.x = Mathf.Pow( Math.Max( 0.0f, factor * _color.x ), 1.0f / 2.2f );
-						_color.y = Mathf.Pow( Math.Max( 0.0f, factor * _color.y ), 1.0f / 2.2f );
-						_color.z = Mathf.Pow( Math.Max( 0.0f, factor * _color.z ), 1.0f / 2.2f );
-//						_color.w = 1.0f;
-					} );
-				}
-
-				if ( isNormalMap ) {
-					source.ReadWritePixels( ( uint _X, uint _Y, ref float4 _color ) => {
-						_color.x = 0.5f * (1.0f + _color.x);
-						_color.y = 0.5f * (1.0f + _color.y);
-						_color.z = 0.5f * (1.0f + _color.z);
-					} );
-				}
-
-				if ( isIOR ) {
-					// Transform into F0
-					source.ReadWritePixels( ( uint _X, uint _Y, ref float4 _color ) => {
-						if ( float.IsNaN( _color.x ) )
-							_color.x = 1.2f;
-						if ( float.IsNaN( _color.y ) )
-							_color.y = 1.2f;
-						if ( float.IsNaN( _color.z ) )
-							_color.z = 1.2f;
-
-						_color.x = (_color.x - 1.0f) / (_color.x + 1.0f);	// We apply the square below, during the sRGB conversion
-						_color.y = (_color.y - 1.0f) / (_color.y + 1.0f);
-						_color.z = (_color.z - 1.0f) / (_color.z + 1.0f);
-						_color.x = Mathf.Pow( Mathf.Max( 0.0f, _color.x ), 2.0f / 2.2f );		// <= Notice the 2/2.2 here!
-						_color.y = Mathf.Pow( Mathf.Max( 0.0f, _color.y ), 2.0f / 2.2f );
-						_color.z = Mathf.Pow( Mathf.Max( 0.0f, _color.z ), 2.0f / 2.2f );
-					} );
-					sRGB = true;	// Also encoded as sRGB now
-				}
-
-				if ( isAngle ) {
-					// Renormalize
-					source.ReadWritePixels( ( uint _X, uint _Y, ref float4 _color ) => {
-						_color.x = 0.5f * (1.0f + _color.x * Mathf.INVPI);
-						_color.y = 0.5f * (1.0f + _color.y * Mathf.INVPI);
-						_color.z = 0.5f * (1.0f + _color.z * Mathf.INVPI);
-					} );
-				}
-
-				ImageUtility.ImageFile	temp = new ImageUtility.ImageFile();
-//				if ( texture.Name.ToLower() == "diffusecolor" )
-//					temp.ToneMapFrom( source, ( float3 _HDR, ref float3 _LDR ) => { _LDR =_HDR; } );	// 8-bits for diffuse otherwise unity doesn't like it... :'(
-//				else
-					temp.ConvertFrom( source, ImageUtility.PIXEL_FORMAT.RGBA16 );
-
-				temp.Save( targetTextureFileName, ImageUtility.ImageFile.FILE_FORMAT.PNG );
-// 				System.IO.FileInfo	targetTextureFileName = new System.IO.FileInfo( System.IO.Path.Combine( fullTargetDirectory.FullName, texture.Name + ".tif" ) );
-// 				temp.Save( targetTextureFileName, ImageUtility.ImageFile.FILE_FORMAT.TIFF );
-
-
 //*/
-
-				// Generate or read meta file
-				string	GUID = GenerateMeta( targetTextureFileName, checkBoxGenerateMeta.Checked, checkBoxOverwriteExistingMeta.Checked, sRGB, isNormalMap, isIOR, isArray );
-				GUIDs[textureIndex] = GUID;
-				allGUIDsValid &= GUID != null;
 			}
 
 			if ( !checkBoxGenerateMat.Checked )
