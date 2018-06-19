@@ -191,7 +191,7 @@ namespace AxFExtractor
 				bool	isIOR = ((int) textureType & (int) TEXTURE_TYPE.FLAG_IOR) != 0;
 				bool	isAngle = ((int) textureType & (int) TEXTURE_TYPE.FLAG_ANGLE) != 0;
 				bool	isArray = ((int) textureType & (int) TEXTURE_TYPE.FLAG_2DARRAY) != 0;
-				bool	scale =	((int) textureType & (int) TEXTURE_TYPE.FLAG_SCALE_BY_MAX) != 0;
+				bool	scale =	((int) textureType & (int) TEXTURE_TYPE.FLAG_SCALE_BY_MAX) != 0 && texture.MaxValue > 1;
 
 				System.IO.FileInfo	targetTextureFileName = new System.IO.FileInfo( System.IO.Path.Combine( fullTargetDirectory.FullName, texture.Name + ".png" ) );
 
@@ -342,6 +342,7 @@ namespace AxFExtractor
 			bool	hasClearCoat = false;
 			bool	hasHeightMap = false;
 			string	texturesArray = "";
+			float	specularLobeScaleFactor = 1.0f;
 			float	BRDFColorScaleFactor = 1.0f;
 			float	BTFFlakeScaleFactor = 1.0f;
 			for ( int textureIndex=0; textureIndex < _textureTypes.Length; textureIndex++ ) {
@@ -361,11 +362,11 @@ namespace AxFExtractor
 					case TEXTURE_TYPE.NORMAL:				variableName = "_SVBRDF_NormalMap"; break;
 					case TEXTURE_TYPE.OPACITY:				variableName = "_SVBRDF_OpacityMap"; break;
 					case TEXTURE_TYPE.SPECULAR_COLOR:		variableName = "_SVBRDF_SpecularColorMap_sRGB"; break;
-					case TEXTURE_TYPE.SPECULAR_LOBE:		variableName = "_SVBRDF_SpecularLobeMap"; break;
+					case TEXTURE_TYPE.SPECULAR_LOBE:		variableName = "_SVBRDF_SpecularLobeMap"; specularLobeScaleFactor = Mathf.Max( 1, texture.MaxValue ); break;
 
 					// Car Paint
-					case TEXTURE_TYPE.BRDF_COLOR:			variableName = "_CarPaint_BRDFColorMap_sRGB"; BRDFColorScaleFactor = texture.MaxValue; break;
-					case TEXTURE_TYPE.BTF_FLAKES:			variableName = "_CarPaint_BTFFlakesMap_sRGB"; BTFFlakeScaleFactor = texture.MaxValue; break;
+					case TEXTURE_TYPE.BRDF_COLOR:			variableName = "_CarPaint_BRDFColorMap_sRGB"; BRDFColorScaleFactor = Mathf.Max( 1, texture.MaxValue ); break;
+					case TEXTURE_TYPE.BTF_FLAKES:			variableName = "_CarPaint_BTFFlakesMap_sRGB"; BTFFlakeScaleFactor = Mathf.Max( 1, texture.MaxValue ); break;
 
 					default:
 						throw new Exception( "Unsupported texture type! Can't match to variable name..." );
@@ -427,6 +428,9 @@ namespace AxFExtractor
 
 					uniformsArray += "    - _SVBRDF_BRDFVariants: " + BRDFVariants + "\n";
 
+					// Write scale factor for specular lobe
+					uniformsArray += "    - _SVBRDF_SpecularLobeMap_Scale: " + specularLobeScaleFactor + "\n";
+
 					float	heightMapSize_mm = 0.0f;	// @TODO!
 					uniformsArray += "    - _SVBRDF_heightMapMax_mm: " + heightMapSize_mm + "\n";
 
@@ -469,9 +473,9 @@ namespace AxFExtractor
 
 					uniformsArray += "    - _CarPaint_lobesCount: " + CT_F0s.Length + "\n";
 
-					colorsArray += "    - _CarPaint_CT_F0s: {r: " + CT_F0s[0] + ", g: " + CT_F0s[1] + ", b: " + CT_F0s[2] + ", a: 1}\n";
-					colorsArray += "    - _CarPaint_CT_coeffs: {r: " + CT_coeffs[0] + ", g: " + CT_coeffs[1] + ", b: " + CT_coeffs[2] + ", a: 1}\n";
-					colorsArray += "    - _CarPaint_CT_spreads: {r: " + CT_spreads[0] + ", g: " + CT_spreads[1] + ", b: " + CT_spreads[2] + ", a: 1}\n";
+					colorsArray += "    - _CarPaint_CT_F0s: {r: " + CT_F0s[0] + ", g: " + CT_F0s[1] + ", b: " + CT_F0s[2] + ", a: " + CT_F0s[3] + "}\n";
+					colorsArray += "    - _CarPaint_CT_coeffs: {r: " + CT_coeffs[0] + ", g: " + CT_coeffs[1] + ", b: " + CT_coeffs[2] + ", a: " + CT_coeffs[3] + "}\n";
+					colorsArray += "    - _CarPaint_CT_spreads: {r: " + CT_spreads[0] + ", g: " + CT_spreads[1] + ", b: " + CT_spreads[2] + ", a: " + CT_spreads[3] + "}\n";
 
 					// =========================================================================================
 					// Create a custom texture for sliceLUT
