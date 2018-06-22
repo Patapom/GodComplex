@@ -1,27 +1,7 @@
-using System;
-using System.ComponentModel;
-using System.Collections;
-using System.Diagnostics;
-using System.Text;
-using System.Windows.Forms;
-using System.Drawing;
-
-namespace TestMSBRDF
+namespace ShaderToy
 {
-	public class PanelOutput : Panel
+	partial class PanelOutput
 	{
-		public PanelOutput()
-		{
-			InitializeComponent();
-		}
-
-		public PanelOutput( IContainer container )
-		{
-			container.Add( this );
-
-			InitializeComponent();
-		}
-
 		/// <summary>
 		/// Required designer variable.
 		/// </summary>
@@ -52,16 +32,5 @@ namespace TestMSBRDF
 		}
 
 		#endregion
-
-		protected override void OnResize( EventArgs eventargs )
-		{
-			base.OnResize( eventargs );
-			Invalidate();
-		}
-
-		protected override void OnPaintBackground( PaintEventArgs e )
-		{
-//			base.OnPaintBackground( e );	// Don't!
-		}
 	}
 }

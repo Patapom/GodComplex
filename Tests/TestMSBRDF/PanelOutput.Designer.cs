@@ -1,4 +1,4 @@
-namespace ShaderToy
+namespace TestMSBRDF
 {
 	partial class PanelOutput
 	{

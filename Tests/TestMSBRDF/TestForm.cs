@@ -740,11 +740,11 @@ for ( uint Y=0; Y < ROUGHNESS_SUBDIVS_COUNT; Y++ ) {
 
 		#endregion
 
-		#region LTC ARea LIghts
+		#region LTC Area Lights
 
 		void	FitLTC( DirectoryInfo _targetDirectory ) {
 			LTC.BRDF_GGX	GGX = new LTC.BRDF_GGX();
-			LTC.LTCFitter	fitter = new LTC.LTCFitter();
+			LTC.LTCFitter	fitter = new LTC.LTCFitter( this );
 			fitter.Fit( GGX, 64 );
 		}
 

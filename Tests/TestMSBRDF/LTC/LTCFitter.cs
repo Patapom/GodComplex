@@ -21,6 +21,7 @@ namespace TestMSBRDF.LTC
 		const float		TOLERANCE = 1e-5f;
 		const float		MIN_ALPHA = 0.0001f;		// minimal roughness (avoid singularities)
 
+		[System.Diagnostics.DebuggerDisplay( "m11 {m11}, m22 {m22}, m13 {m13}, m23 {m23} - Amplitude = {amplitude}" )]
 		public class LTC {
 
 			// lobe amplitude
@@ -119,9 +120,16 @@ namespace TestMSBRDF.LTC
 // 				cout << "LTC normalization test: " << sum << endl;
 // 				cout << "LTC normalization expected: " << amplitude << endl;
 			}
-		};
+		}
 
-		public LTCFitter() {
+		FitterForm	m_debugForm = null;
+
+		public LTCFitter( Form _ownerForm ) {
+			if ( _ownerForm == null )
+				return;	// No debug...
+
+			m_debugForm = new FitterForm( this );
+			m_debugForm.Show( _ownerForm );
 		}
 
 		public LTC[,]	Fit( IBRDF _brdf, int _tableSize ) {
@@ -134,6 +142,7 @@ namespace TestMSBRDF.LTC
 			LTC[,]		result = new LTC[_tableSize,_tableSize];
 
 			// loop over theta and alpha
+			int	count = 0;
 			for ( int a = _tableSize-1; a >= 0; --a ) {
 				for ( int t=0; t <= _tableSize-1; ++t ) {
 					float	theta = t * Mathf.HALFPI / (_tableSize-1);
@@ -208,6 +217,11 @@ namespace TestMSBRDF.LTC
 					ltc.m23 = resultFit[3];
 					ltc.Update();
 					ltc.CleanMatrixAndNormalize();
+
+					// Show debug form
+					if ( m_debugForm != null ) {
+						m_debugForm.ShowBRDF( (float) (++count) / (_tableSize*_tableSize), theta, roughness, _brdf, ltc );
+					}
 				}
 			}
 

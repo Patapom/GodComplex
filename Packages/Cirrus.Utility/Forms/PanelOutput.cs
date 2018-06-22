@@ -12,8 +12,20 @@ namespace Nuaj.Cirrus.Utility
 	public class PanelOutput : Panel
 	{
 		private Bitmap	m_bitmap = null;
+		private bool	m_internalBitmap = true;
 
 		public delegate void	UpdateBitmapDelegate( int W, int H, Graphics G );
+
+		public Bitmap	PanelBitmap {
+			get { return m_bitmap; }
+			set {
+				if ( value == m_bitmap )
+					return;
+
+				m_bitmap = value;
+				m_internalBitmap = m_bitmap != null;
+			}
+		}
 
 		public event UpdateBitmapDelegate	BitmapUpdating;
 
@@ -72,11 +84,13 @@ namespace Nuaj.Cirrus.Utility
 				m_bitmap = new Bitmap( Width, Height, System.Drawing.Imaging.PixelFormat.Format32bppArgb );
 			}
 
-			using ( Graphics G = Graphics.FromImage( m_bitmap ) )
-				if ( BitmapUpdating != null )
-					BitmapUpdating( Width, Height, G );
-				else
-					G.FillRectangle( Brushes.White, 0, 0, Width, Height );
+			if ( m_internalBitmap ) {
+				using ( Graphics G = Graphics.FromImage( m_bitmap ) )
+					if ( BitmapUpdating != null )
+						BitmapUpdating( Width, Height, G );
+					else
+						G.FillRectangle( Brushes.White, 0, 0, Width, Height );
+			}
 
 			Invalidate();
 		}
