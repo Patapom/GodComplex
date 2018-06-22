@@ -49,13 +49,13 @@ namespace TestMSBRDF.LTC
 		float3			m_tsView;
 		float3			m_tsLight;
 
-		public void	ShowBRDF( float _progress, float _theta, float _roughness, IBRDF _BRDF, LTCFitter.LTC _LTC ) {
+		public void	ShowBRDF( float _progress, float _error, float _theta, float _roughness, IBRDF _BRDF, LTCFitter.LTC _LTC ) {
 			m_theta = _theta;
 			m_roughness = _roughness;
 			m_BRDF = _BRDF;
 			m_LTC = _LTC;
 
-			this.Text = "Fitter Debugger - Theta = " + Mathf.ToDeg(_theta).ToString( "G3" ) + "° - Roughness = " + _roughness.ToString( "G3" ) + " - Progress = " + (100.0f * _progress).ToString( "G3" ) + "%";
+			this.Text = "Fitter Debugger - Theta = " + Mathf.ToDeg(_theta).ToString( "G3" ) + "° - Roughness = " + _roughness.ToString( "G3" ) + " - Error = " + _error.ToString( "G4" ) + " - Progress = " + (100.0f * _progress).ToString( "G3" ) + "%";
 
 			// Build fixed view vector
 			m_tsView.x = Mathf.Sin( m_theta );
@@ -77,6 +77,9 @@ namespace TestMSBRDF.LTC
 			panelOutputTargetBRDF.Refresh();
 			panelOutputDifference.Refresh();
 			Refresh();
+
+			// Let windows get updated
+			Application.DoEvents();
 		}
 
 		delegate float	RadialAmplitudeDelegate( ref float3 _tsView, ref float3 _tsLight );

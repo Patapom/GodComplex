@@ -21,7 +21,7 @@ namespace TestMSBRDF.LTC
 		const float		TOLERANCE = 1e-5f;
 		const float		MIN_ALPHA = 0.0001f;		// minimal roughness (avoid singularities)
 
-		[System.Diagnostics.DebuggerDisplay( "m11 {m11}, m22 {m22}, m13 {m13}, m23 {m23} - Amplitude = {amplitude}" )]
+		[System.Diagnostics.DebuggerDisplay( "m11={m11}, m22={m22}, m13={m13}, m23={m23} - Amplitude = {amplitude}" )]
 		public class LTC {
 
 			// lobe amplitude
@@ -39,6 +39,10 @@ namespace TestMSBRDF.LTC
 			public float		detM;
 
 			public LTC() {
+				Update();
+			}
+			public LTC( System.IO.BinaryReader R ) {
+				Read( R );
 				Update();
 			}
 
@@ -120,6 +124,42 @@ namespace TestMSBRDF.LTC
 // 				cout << "LTC normalization test: " << sum << endl;
 // 				cout << "LTC normalization expected: " << amplitude << endl;
 			}
+
+			public void	Read( System.IO.BinaryReader R ) {
+				m11 = R.ReadSingle();
+				m22 = R.ReadSingle();
+				m13 = R.ReadSingle();
+				m23 = R.ReadSingle();
+				amplitude = R.ReadSingle();
+
+				X.x = R.ReadSingle();
+				X.y = R.ReadSingle();
+				X.z = R.ReadSingle();
+				Y.x = R.ReadSingle();
+				Y.y = R.ReadSingle();
+				Y.z = R.ReadSingle();
+				Z.x = R.ReadSingle();
+				Z.y = R.ReadSingle();
+				Z.z = R.ReadSingle();
+			}
+
+			public void	Write( System.IO.BinaryWriter W ) {
+				W.Write( m11 );
+				W.Write( m22 );
+				W.Write( m13 );
+				W.Write( m23 );
+				W.Write( amplitude );
+
+				W.Write( X.x );
+				W.Write( X.y );
+				W.Write( X.z );
+				W.Write( Y.x );
+				W.Write( Y.y );
+				W.Write( Y.z );
+				W.Write( Z.x );
+				W.Write( Z.y );
+				W.Write( Z.z );
+			}
 		}
 
 		FitterForm	m_debugForm = null;
@@ -132,7 +172,7 @@ namespace TestMSBRDF.LTC
 			m_debugForm.Show( _ownerForm );
 		}
 
-		public LTC[,]	Fit( IBRDF _brdf, int _tableSize ) {
+		public LTC[,]	Fit( IBRDF _brdf, int _tableSize, System.IO.FileInfo _tableFileName ) {
 
 			NelderMead	NMFitter = new NelderMead( 4 );
 
@@ -141,10 +181,16 @@ namespace TestMSBRDF.LTC
 
 			LTC[,]		result = new LTC[_tableSize,_tableSize];
 
+			if ( _tableFileName.Exists )
+				result = Load( _tableFileName );
+
 			// loop over theta and alpha
 			int	count = 0;
 			for ( int a = _tableSize-1; a >= 0; --a ) {
 				for ( int t=0; t <= _tableSize-1; ++t ) {
+					if ( result[a,t] != null )
+						continue;	// Already computed!
+
 					float	theta = t * Mathf.HALFPI / (_tableSize-1);
 					float3	V = new float3( Mathf.Sin(theta), 0 , Mathf.Cos(theta) );
 
@@ -219,13 +265,53 @@ namespace TestMSBRDF.LTC
 					ltc.CleanMatrixAndNormalize();
 
 					// Show debug form
+					++count;
+//					if ( m_debugForm != null && (count & 0xF) == 1 ) {
 					if ( m_debugForm != null ) {
-						m_debugForm.ShowBRDF( (float) (++count) / (_tableSize*_tableSize), theta, roughness, _brdf, ltc );
+						m_debugForm.ShowBRDF( (float) count / (_tableSize*_tableSize), error, theta, roughness, _brdf, ltc );
 					}
 				}
+
+				Save( _tableFileName, result );
 			}
 
 			return result;
+		}
+
+		LTC[,]	Load( System.IO.FileInfo _tableFileName ) {
+			LTC[,]	result = null;
+			using ( System.IO.FileStream S = _tableFileName.OpenRead() )
+				using ( System.IO.BinaryReader R = new System.IO.BinaryReader( S ) ) {
+					result = new LTC[R.ReadUInt32(), R.ReadUInt32()];
+					for ( uint Y=0; Y < result.GetLength( 1 ); Y++ ) {
+						for ( uint X=0; X < result.GetLength( 0 ); X++ ) {
+							if ( R.ReadBoolean() ) {
+								result[X,Y] = new LTC( R );
+							}
+						}
+					}
+				}
+
+			return result;
+		}
+
+		void	Save( System.IO.FileInfo _tableFileName, LTC[,] _table ) {
+			using ( System.IO.FileStream S = _tableFileName.Create() )
+				using ( System.IO.BinaryWriter W = new System.IO.BinaryWriter( S ) ) {
+					W.Write( _table.GetLength( 0 ) );
+					W.Write( _table.GetLength( 1 ) );
+					for ( uint Y=0; Y < _table.GetLength( 1 ); Y++ )
+						for ( uint X=0; X < _table.GetLength( 0 ); X++ ) {
+							LTC	ltc = _table[X,Y];
+							if ( ltc == null ) {
+								W.Write( false );
+								continue;
+							}
+
+							W.Write( true );
+							ltc.Write( W );
+						}
+				}
 		}
 
 		#region Objective Function
