@@ -22,28 +22,28 @@ namespace TestMSBRDF.LTC
 	public class NelderMead {
 
 		// standard coefficients from Nelder-Mead
-		const float reflect  = 1.0f;
-		const float expand   = 2.0f;
-		const float contract = 0.5f;
-		const float shrink   = 0.5f;
+		const double reflect  = 1.0;
+		const double expand   = 2.0;
+		const double contract = 0.5;
+		const double shrink   = 0.5;
 
 		int			DIM;
 		int			NB_POINTS;
-		float[][]	s;
-		float[]		f;
+		double[][]	s;
+		double[]	f;
 
-		public delegate float	ObjectiveFunctionDelegate( float[] _parameters );
+		public delegate double	ObjectiveFunctionDelegate( double[] _parameters );
 
 		public NelderMead( int _dimensions ) {
 			DIM = _dimensions;
 			NB_POINTS = _dimensions+1;
-			s = new float[NB_POINTS][];
+			s = new double[NB_POINTS][];
 			for ( int i=0; i < NB_POINTS; i++  )
-				s[i] = new float[_dimensions];
-			f = new float[NB_POINTS];
+				s[i] = new double[_dimensions];
+			f = new double[NB_POINTS];
 		}
 
-		public float	FindFit( float[] _pmin, float[] _start, float _delta, float _tolerance, int _maxIterations, ObjectiveFunctionDelegate _objectiveFn ) {
+		public double	FindFit( double[] _pmin, double[] _start, double _delta, double _tolerance, int _maxIterations, ObjectiveFunctionDelegate _objectiveFn ) {
 
 			// initialise simplex
 			Mov( s[0], _start );
@@ -56,10 +56,10 @@ namespace TestMSBRDF.LTC
 			for ( int i = 0; i < NB_POINTS; i++ )
 				f[i] = _objectiveFn( s[i] );
 
-			float[]	o = new float[DIM];	// Centroid
-			float[]	r = new float[DIM];	// Reflection
-			float[]	c = new float[DIM];	// Contraction
-			float[]	e = new float[DIM];	// Expansion
+			double[]	o = new double[DIM];	// Centroid
+			double[]	r = new double[DIM];	// Reflection
+			double[]	c = new double[DIM];	// Contraction
+			double[]	e = new double[DIM];	// Expansion
 
 			int lo = 0, hi, nh;
 			for ( int j = 0; j < _maxIterations; j++ ) {
@@ -76,13 +76,13 @@ namespace TestMSBRDF.LTC
 				}
 
 				// stop if we've reached the required tolerance level
-				float a = Mathf.Abs(f[lo]);
-				float b = Mathf.Abs(f[hi]);
-				if (2.0f*Mathf.Abs(a - b) < (a + b)*_tolerance)
+				double a = Mathf.Abs(f[lo]);
+				double b = Mathf.Abs(f[hi]);
+				if ( 2.0*Mathf.Abs(a - b) < (a + b)*_tolerance )
 					break;
 
 				// compute centroid (excluding the worst point)
-				Set( o, 0.0f );
+				Set( o, 0.0 );
 				for ( int i = 0; i < NB_POINTS; i++) {
 					if ( i == hi )
 						continue;
@@ -96,14 +96,14 @@ namespace TestMSBRDF.LTC
 				for (int i = 0; i < DIM; i++)
 					r[i] = o[i] + reflect*(o[i] - s[hi][i]);
 
-				float fr = _objectiveFn(r);
+				double fr = _objectiveFn(r);
 				if (fr < f[nh]) {
 					if (fr < f[lo]) {
 						// expansion
 						for (int i = 0; i < DIM; i++)
 							e[i] = o[i] + expand*(o[i] - s[hi][i]);
 
-						float fe = _objectiveFn(e);
+						double fe = _objectiveFn(e);
 						if (fe < fr) {
 							Mov( s[hi], e );
 							f[hi] = fe;
@@ -120,7 +120,7 @@ namespace TestMSBRDF.LTC
 				for (int i = 0; i < DIM; i++)
 					c[i] = o[i] - contract*(o[i] - s[hi][i]);
 
-				float fc = _objectiveFn(c);
+				double fc = _objectiveFn(c);
 				if (fc < f[hi]) {
 					Mov( s[hi], c );
 					f[hi] = fc;
@@ -142,20 +142,19 @@ namespace TestMSBRDF.LTC
 			return f[lo];
 		}
 
-		void Mov( float[] r, float[] v ) {//, int dim ) {
+		void Mov( double[] r, double[] v ) {
 			for (int i = 0; i < DIM; ++i)
 				r[i] = v[i];
 		}
 
-		void Set( float[] r, float v ) {
+		void Set( double[] r, double v ) {
 			for (int i = 0; i < DIM; ++i)
 				r[i] = v;
 		}
 
-		void Add( float[] r, float[] v ) {
+		void Add( double[] r, double[] v ) {
 			for (int i = 0; i < DIM; ++i)
 				r[i] += v[i];
 		}
-
 	}
 }

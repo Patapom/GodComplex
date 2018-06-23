@@ -2,6 +2,7 @@
 // Fitter class for Linearly-Transformed Cosines
 // From "Real-Time Polygonal-Light Shading with Linearly Transformed Cosines" (https://eheitzresearch.wordpress.com/415-2/)
 // This is a C# re-implementation of the code provided by Heitz et al.
+// UPDATE: Using code from Stephen Hill's github repo instead (https://github.com/selfshadow/ltc_code/tree/master/fit)
 //////////////////////////////////////////////////////////////////////////
 //
 using System;
@@ -16,16 +17,25 @@ namespace TestMSBRDF.LTC
 {
 	public class LTCFitter {
 
-		const int		MAX_ITERATIONS = 100;
+		#region CONSTANTS
+
+		const int		MAX_ITERATIONS = 1000;
 		const float		FIT_EXPLORE_DELTA = 0.05f;
 		const float		TOLERANCE = 1e-5f;
 		const float		MIN_ALPHA = 0.0001f;		// minimal roughness (avoid singularities)
+
+		#endregion
+
+		#region NESTED TYPES
 
 		[System.Diagnostics.DebuggerDisplay( "m11={m11}, m22={m22}, m13={m13}, m23={m23} - Amplitude = {amplitude}" )]
 		public class LTC {
 
 			// lobe amplitude
 			public float		amplitude = 1;
+
+			// Average Schlick Fresnel term
+			public float		fresnel = 1;
 
 			// parametric representation
 			public float		m11 = 1, m22 = 1, m13 = 0, m23 = 0;
@@ -46,11 +56,12 @@ namespace TestMSBRDF.LTC
 				Update();
 			}
 
-			public void	Set( float[] _parameters, bool _isotropic ) {
-				float	tempM11 = Mathf.Max( _parameters[0], MIN_ALPHA );
-				float	tempM22 = Mathf.Max( _parameters[1], MIN_ALPHA );
-				float	tempM13 = _parameters[2];
-				float	tempM23 = _parameters[3];
+			public void	Set( double[] _parameters, bool _isotropic ) {
+				float	tempM11 = (float) Math.Max( _parameters[0], 1e-7 );
+				float	tempM22 = (float) Math.Max( _parameters[1], 1e-7 );
+				float	tempM13 = (float) _parameters[2];
+//				float	tempM23 = (float) _parameters[3];
+float	tempM23 = 0;
 
 				if ( _isotropic ) {
 					m11 = tempM11;
@@ -103,7 +114,7 @@ namespace TestMSBRDF.LTC
 			}
 
 			public void	GetSamplingDirection( float _U1, float _U2, ref float3 _direction ) {
-				float	theta = Mathf.Acos(Mathf.Sqrt(_U1));
+				float	theta = Mathf.Asin( Mathf.Sqrt( _U1 ) );
 				float	phi = Mathf.TWOPI * _U2;
 				_direction = M * new float3( Mathf.Sin(theta)*Mathf.Cos(phi), Mathf.Sin(theta)*Mathf.Sin(phi), Mathf.Cos(theta) );
 				_direction.Normalize();
@@ -131,6 +142,7 @@ namespace TestMSBRDF.LTC
 				m13 = R.ReadSingle();
 				m23 = R.ReadSingle();
 				amplitude = R.ReadSingle();
+				fresnel = R.ReadSingle();
 
 				X.x = R.ReadSingle();
 				X.y = R.ReadSingle();
@@ -149,6 +161,7 @@ namespace TestMSBRDF.LTC
 				W.Write( m13 );
 				W.Write( m23 );
 				W.Write( amplitude );
+				W.Write( fresnel );
 
 				W.Write( X.x );
 				W.Write( X.y );
@@ -162,6 +175,8 @@ namespace TestMSBRDF.LTC
 			}
 		}
 
+		#endregion
+
 		FitterForm	m_debugForm = null;
 
 		public LTCFitter( Form _ownerForm ) {
@@ -174,10 +189,12 @@ namespace TestMSBRDF.LTC
 
 		public LTC[,]	Fit( IBRDF _brdf, int _tableSize, System.IO.FileInfo _tableFileName ) {
 
-			NelderMead	NMFitter = new NelderMead( 4 );
+			NelderMead	NMFitter = new NelderMead( 3 );
 
-			float[]		startFit = new float[4];
-			float[]		resultFit = new float[4];
+// 			double[]	startFit = new double[4];
+// 			double[]	resultFit = new double[4];
+			double[]	startFit = new double[3];
+			double[]	resultFit = new double[3];
 
 			LTC[,]		result = new LTC[_tableSize,_tableSize];
 
@@ -186,43 +203,53 @@ namespace TestMSBRDF.LTC
 
 			// loop over theta and alpha
 			int	count = 0;
-			for ( int a = _tableSize-1; a >= 0; --a ) {
-				for ( int t=0; t <= _tableSize-1; ++t ) {
-					if ( result[a,t] != null )
+			for ( int roughnessIndex=_tableSize-1; roughnessIndex >= 0; --roughnessIndex ) {
+
+roughnessIndex = 1;
+
+				for ( int thetaIndex=0; thetaIndex <= _tableSize-1; ++thetaIndex ) {
+					if ( result[roughnessIndex,thetaIndex] != null )
 						continue;	// Already computed!
 
-					float	theta = t * Mathf.HALFPI / (_tableSize-1);
-					float3	V = new float3( Mathf.Sin(theta), 0 , Mathf.Cos(theta) );
+// 					float	theta = t * Mathf.HALFPI / (_tableSize-1);
+// 					float3	V = new float3( Mathf.Sin(theta), 0 , Mathf.Cos(theta) );
 
-					// alpha = roughness^2
-					float roughness = (float) a / (_tableSize-1);
-					float alpha = Mathf.Max( MIN_ALPHA, roughness*roughness );
+					// parameterised by sqrt(1 - cos(theta))
+					float	x = (float) thetaIndex / (_tableSize - 1);
+					float	cosTheta = 1.0f - x*x;
+							cosTheta = Mathf.Max( 3.7540224885647058065387021283285e-4f, cosTheta );	// Clamp to cos(1.57)
+					float3	V = new float3( Mathf.Sqrt( 1 - cosTheta*cosTheta ), 0, cosTheta );
+
+					// alpha = perceptualRoughness^2  (perceptualRoughness = "sRGB" representation of roughness, as painted by artists)
+					float perceptualRoughness = (float) roughnessIndex / (_tableSize-1);
+					float alpha = Mathf.Max( MIN_ALPHA, perceptualRoughness * perceptualRoughness );
 
 					LTC	ltc = new LTC();
-					result[a,t] = ltc;
+					result[roughnessIndex,thetaIndex] = ltc;
 
-					ltc.amplitude = ComputeNorm( _brdf, ref V, alpha ); 
-					float3	averageDir = ComputeAverageDir( _brdf, ref V, alpha );		
-					bool	isotropic;
+					float3	averageDir;
+					ComputeAverageTerms( _brdf, ref V, alpha, out ltc.amplitude, out ltc.fresnel, out averageDir );		
 
 					// 1. first guess for the fit
 					// init the hemisphere in which the distribution is fitted
 					// if theta == 0 the lobe is rotationally symmetric and aligned with Z = (0 0 1)
-					if ( t == 0 ) {
+					bool	isotropic;
+					if ( thetaIndex == 0 ) {
 						ltc.X = float3.UnitX;
 						ltc.Y = float3.UnitY;
 						ltc.Z = float3.UnitZ;
 
-						if ( a == _tableSize-1 ) {
+//						if ( roughnessIndex == _tableSize-1 ) {
+if ( true ) {
 							// roughness = 1
 							ltc.m11 = 1.0f;
 							ltc.m22 = 1.0f;
 						} else {
 							// init with roughness of previous fit
-							ltc.m11 = Mathf.Max( result[a+1,t].m11, MIN_ALPHA );
-							ltc.m22 = Mathf.Max( result[a+1,t].m22, MIN_ALPHA );
+							ltc.m11 = Mathf.Max( result[roughnessIndex+1,thetaIndex].m11, MIN_ALPHA );
+							ltc.m22 = Mathf.Max( result[roughnessIndex+1,thetaIndex].m22, MIN_ALPHA );
 						}
-			
+
 						ltc.m13 = 0;
 						ltc.m23 = 0;
 						ltc.Update();
@@ -230,12 +257,16 @@ namespace TestMSBRDF.LTC
 						isotropic = true;
 					} else {
 						// otherwise use previous configuration as first guess
-						float3	L = averageDir.Normalized;
-						float3	T1 = new float3( L.z, 0, -L.x );
-						float3	T2 = new float3( 0, 1, 0);
-						ltc.X = T1;
-						ltc.Y = T2;
-						ltc.Z = L;
+						ltc.X.Set( averageDir.z, 0, -averageDir.x );
+						ltc.Y = float3.UnitY;
+						ltc.Z = averageDir;
+
+						// Copy previous result
+						LTC	previousLTC = result[roughnessIndex,thetaIndex-1];
+						ltc.m11 = previousLTC.m11;
+						ltc.m22 = previousLTC.m22;
+						ltc.m13 = previousLTC.m13;
+						ltc.m23 = previousLTC.m23;
 
 						ltc.Update();
 
@@ -246,29 +277,25 @@ namespace TestMSBRDF.LTC
 					startFit[0] = ltc.m11;
 					startFit[1] = ltc.m22;
 					startFit[2] = ltc.m13;
-					startFit[3] = ltc.m23;
+//					startFit[3] = ltc.m23;
 
 					// Find best-fit LTC lobe (scale, alphax, alphay)
-					float	error = NMFitter.FindFit( resultFit, startFit, FIT_EXPLORE_DELTA, TOLERANCE, MAX_ITERATIONS, ( float[] _parameters ) => {
+					double	error = NMFitter.FindFit( resultFit, startFit, FIT_EXPLORE_DELTA, TOLERANCE, MAX_ITERATIONS, ( double[] _parameters ) => {
 						ltc.Set( _parameters, isotropic );
 
-						float	currentError = ComputeError( ltc, _brdf, ref V, alpha );
+						double	currentError = ComputeError( ltc, _brdf, ref V, alpha );
 						return currentError;
 					} );
 
 					// Update LTC with best fitting values
-					ltc.m11 = resultFit[0];
-					ltc.m22 = resultFit[1];
-					ltc.m13 = resultFit[2];
-					ltc.m23 = resultFit[3];
-					ltc.Update();
+					ltc.Set( resultFit, isotropic );
 					ltc.CleanMatrixAndNormalize();
 
 					// Show debug form
 					++count;
 //					if ( m_debugForm != null && (count & 0xF) == 1 ) {
 					if ( m_debugForm != null ) {
-						m_debugForm.ShowBRDF( (float) count / (_tableSize*_tableSize), error, theta, roughness, _brdf, ltc );
+						m_debugForm.ShowBRDF( (float) count / (_tableSize*_tableSize), (float) error, Mathf.Acos( cosTheta ), alpha, _brdf, ltc );
 					}
 				}
 
@@ -316,37 +343,17 @@ namespace TestMSBRDF.LTC
 
 		#region Objective Function
 
-		const int		SAMPLES_COUNT = 50;			// number of samples used to compute the error during fitting
-
-		// compute the norm (albedo) of the BRDF
-		float	ComputeNorm( IBRDF brdf, ref float3 V, float alpha ) {
-			float3	L = float3.Zero;
-			float	norm = 0.0f;
-			for ( int j = 0 ; j < SAMPLES_COUNT ; ++j ) {
-				for ( int i = 0 ; i < SAMPLES_COUNT ; ++i ) {
-					float U1 = (i+0.5f) / SAMPLES_COUNT;
-					float U2 = (j+0.5f) / SAMPLES_COUNT;
-
-					// sample
-					brdf.GetSamplingDirection( ref V, alpha, U1, U2, ref L );
-
-					// eval
-					float	pdf;
-					float	eval = brdf.Eval( ref V, ref L, alpha, out pdf );
-
-					// accumulate
-					norm += pdf > 0 ? eval / pdf : 0.0f;
-				}
-			}
-
-			norm /= SAMPLES_COUNT*SAMPLES_COUNT;
-			return norm;
-		}
+		const int	SAMPLES_COUNT = 50;			// number of samples used to compute the error during fitting
 
 		// compute the average direction of the BRDF
-		float3	ComputeAverageDir( IBRDF brdf, ref float3 V, float alpha ) {
+		void	ComputeAverageTerms( IBRDF brdf, ref float3 V, float alpha, out float _norm, out float _fresnel, out float3 _averageDir ) {
+			_norm = 0.0f;
+			_fresnel = 0.0f;
+			_averageDir = float3.Zero;
+
+			float	weight, pdf, eval;
 			float3	L = float3.Zero;
-			float3	averageDir = float3.Zero;
+			float3	H = float3.Zero;
 			for ( int j = 0 ; j < SAMPLES_COUNT ; ++j ) {
 				for ( int i = 0 ; i < SAMPLES_COUNT ; ++i ) {
 					float U1 = (i+0.5f) / SAMPLES_COUNT;
@@ -356,42 +363,52 @@ namespace TestMSBRDF.LTC
 					brdf.GetSamplingDirection( ref V, alpha, U1, U2, ref L );
 
 					// eval
-					float	pdf;
-					float	eval = brdf.Eval( ref V, ref L, alpha, out pdf );
+					eval = brdf.Eval( ref V, ref L, alpha, out pdf );
+					if ( pdf == 0.0f )
+						continue;
+
+					H = (V + L).Normalized;
 
 					// accumulate
-					averageDir += pdf > 0 ? eval / pdf * L : float3.Zero;
+					weight = eval / pdf;
+
+					_norm += weight;
+					_fresnel += weight * Mathf.Pow( 1 - V.Dot( H ), 5.0f );
+					_averageDir += weight * L;
 				}
 			}
+			_norm /= SAMPLES_COUNT*SAMPLES_COUNT;
+			_fresnel /= SAMPLES_COUNT*SAMPLES_COUNT;
 
 			// clear y component, which should be zero with isotropic BRDFs
-			averageDir.y = 0.0f;
-
-			averageDir.Normalize();
-			return averageDir;
+			_averageDir.y = 0.0f;
+			_averageDir.Normalize();
 		}
 
 		// compute the error between the BRDF and the LTC
 		// using Multiple Importance Sampling
-		float	ComputeError( LTC ltc, IBRDF brdf, ref float3 V, float alpha ) {
-			float3	L = float3.Zero;
+		double	ComputeError( LTC _ltc, IBRDF _BRDF, ref float3 _tsView, float _alpha ) {
+			float3	tsLight = float3.Zero;
+
+			float	pdf_brdf, eval_brdf;
+			float	pdf_ltc, eval_ltc;
+
 			double	error = 0.0;
 			for ( int j = 0 ; j < SAMPLES_COUNT ; ++j ) {
 				for ( int i = 0 ; i < SAMPLES_COUNT ; ++i ) {
-					float U1 = (i+0.5f) / SAMPLES_COUNT;
-					float U2 = (j+0.5f) / SAMPLES_COUNT;
+					float	U1 = (i+0.5f) / SAMPLES_COUNT;
+					float	U2 = (j+0.5f) / SAMPLES_COUNT;
 
 					// importance sample LTC
 					{
 						// sample
-						ltc.GetSamplingDirection( U1, U2, ref L );
+						_ltc.GetSamplingDirection( U1, U2, ref tsLight );
 				
 						// error with MIS weight
-						float	pdf_brdf;
-						float	eval_brdf = brdf.Eval( ref V, ref L, alpha, out pdf_brdf );
-						float	eval_ltc = ltc.Eval( ref L );
-						float	pdf_ltc = eval_ltc / ltc.amplitude;
-						double	error_ = Mathf.Abs( eval_brdf - eval_ltc );
+						eval_brdf = _BRDF.Eval( ref _tsView, ref tsLight, _alpha, out pdf_brdf );
+						eval_ltc = _ltc.Eval( ref tsLight );
+						pdf_ltc = eval_ltc / _ltc.amplitude;
+						double	error_ = Math.Abs( eval_brdf - eval_ltc );
 								error_ = error_*error_*error_;
 						error += error_ / (pdf_ltc + pdf_brdf);
 					}
@@ -399,21 +416,21 @@ namespace TestMSBRDF.LTC
 					// importance sample BRDF
 					{
 						// sample
-						brdf.GetSamplingDirection( ref V, alpha, U1, U2, ref L );
+						_BRDF.GetSamplingDirection( ref _tsView, _alpha, U1, U2, ref tsLight );
 
 						// error with MIS weight
-						float	pdf_brdf;
-						float	eval_brdf = brdf.Eval( ref V, ref L, alpha, out pdf_brdf );			
-						float	eval_ltc = ltc.Eval( ref L );
-						float	pdf_ltc = eval_ltc / ltc.amplitude;
-						double	error_ = Mathf.Abs( eval_brdf - eval_ltc );
+						eval_brdf = _BRDF.Eval( ref _tsView, ref tsLight, _alpha, out pdf_brdf );			
+						eval_ltc = _ltc.Eval( ref tsLight );
+						pdf_ltc = eval_ltc / _ltc.amplitude;
+						double	error_ = Math.Abs( eval_brdf - eval_ltc );
 								error_ = error_*error_*error_;
 						error += error_ / (pdf_ltc + pdf_brdf);
 					}
 				}
 			}
 
-			return (float) (error / (SAMPLES_COUNT*SAMPLES_COUNT));
+			error /= SAMPLES_COUNT * SAMPLES_COUNT;
+			return error;
 		}
 
 		#endregion

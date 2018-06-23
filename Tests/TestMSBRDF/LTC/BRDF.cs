@@ -34,18 +34,16 @@ namespace TestMSBRDF.LTC
 				return 0;
 			}
 
+			_alpha = Mathf.Max( 0.01f, _alpha );
+
 			// masking
-			float	a_V = 1.0f / _alpha / Mathf.Tan(Mathf.Acos(_tsView.z));
-			float	lambdaV = _tsView. z < 1.0f ? 0.5f * (-1.0f + Mathf.Sqrt(1.0f + 1.0f / (a_V*a_V))) : 0.0f;
+			float	lambdaV = Lambda( _tsView.z, _alpha );
 			float	G1 = 1.0f / (1.0f + lambdaV);
 
 			// shadowing
-			float	G2;
-			if ( _tsLight.z <= 0.0f ) {
-				G2 = 0;
-			} else {
-				float	a_L = 1.0f / _alpha / Mathf.Tan(Mathf.Acos(_tsLight.z));
-				float	lambdaL = _tsLight.z < 1.0f ? 0.5f * (-1.0f + Mathf.Sqrt(1.0f + 1.0f/a_L/a_L)) : 0.0f;
+			float	G2 = 0;
+			if ( _tsLight.z > 0.0f ) {
+				float	lambdaL = Lambda( _tsLight.z, _alpha );
 				G2 = 1.0f / (1.0f + lambdaV + lambdaL);
 			}
 
@@ -53,11 +51,11 @@ namespace TestMSBRDF.LTC
 			float3	H = (_tsView + _tsLight).Normalized;
 			float	slopex = H.x / H.z;
 			float	slopey = H.y / H.z;
-			float	D = 1.0f / (1.0f + (slopex*slopex+slopey*slopey) / (_alpha*_alpha));
+			float	D = 1.0f / (1.0f + (slopex*slopex + slopey*slopey) / (_alpha*_alpha));
 			D = D*D;
 			D = D / (Mathf.PI * _alpha * _alpha * H.z*H.z*H.z*H.z);
 
-			_pdf = Mathf.Abs( D * H.z / 4.0f / _tsView.Dot(H) );
+			_pdf = Mathf.Abs( D * H.z / (4.0f * _tsView.Dot(H)) );
 			float	res = D * G2 / (4.0f * _tsView.z);
 
 			return res;
@@ -66,8 +64,14 @@ namespace TestMSBRDF.LTC
 		public void	GetSamplingDirection( ref float3 _tsView, float _alpha, float _U1, float _U2, ref float3 _direction ) {
 			float	phi = Mathf.TWOPI * _U1;
 			float	r = _alpha * Mathf.Sqrt( _U2 / (1.0f - _U2) );
-			float3	N = new float3( r*Mathf.Cos(phi), r*Mathf.Sin(phi), 1.0f ).Normalized;
-			_direction = -_tsView + 2.0f * N * N.Dot(_tsView);
+			float3	H = new float3( r*Mathf.Cos(phi), r*Mathf.Sin(phi), 1.0f ).Normalized;
+			_direction = -_tsView + 2.0f * H * H.Dot(_tsView);
+		}
+
+		float	Lambda( float _cosTheta, float _alpha ) {
+			float	a = 1.0f / (_alpha * Mathf.Tan( Mathf.Acos( _cosTheta ) ));
+			float	lambda = _cosTheta < 1.0f ? 0.5f * (-1.0f + Mathf.Sqrt(1.0f + 1.0f / (a*a))) : 0.0f;
+			return lambda;
 		}
 	}
 
