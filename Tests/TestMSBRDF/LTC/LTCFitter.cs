@@ -56,6 +56,11 @@ namespace TestMSBRDF.LTC
 				Update();
 			}
 
+			/// <summary>
+			/// Sets the coefficients for the M matrix (warning! NOT the inverse matrix used at runtime!)
+			/// </summary>
+			/// <param name="_parameters"></param>
+			/// <param name="_isotropic"></param>
 			public void	Set( double[] _parameters, bool _isotropic ) {
 				float	tempM11 = (float) Math.Max( _parameters[0], 1e-7 );
 				float	tempM22 = (float) Math.Max( _parameters[1], 1e-7 );
@@ -74,30 +79,53 @@ float	tempM23 = 0;
 					m13 = tempM13;
 					m23 = tempM23;
 				}
+				// Update the matrix
 				Update();
 			}
-
-			// Update matrix from parameters
-			public void	Update() {
+			public void		Update() {
 				M = new float3x3( X, Y, Z );
-				float3x3	temp = new float3x3(	m11,	0,		0,
-													0,		m22,	0,
-													m13,	m23,	1 );
+				float3x3	temp = new float3x3(	m11,	0,		m13,
+													0,		m22,	m23,
+													0,		0,		1 );
 				M *= temp;
-				Update2();
-			}
-			void Update2() {
 				invM = M.Inverse;
 				detM = M.Determinant;
 			}
 
-			public void	CleanMatrixAndNormalize() {
-// 				// kill useless coefs in matrix and normalize
-// 				tab[a+t*_tableSize][0][1] = 0;
-// 				tab[a+t*_tableSize][1][0] = 0;
-// 				tab[a+t*_tableSize][2][1] = 0;
-// 				tab[a+t*_tableSize][1][2] = 0;
-// 				tab[a+t*_tableSize] = 1.0f / tab[a+t*_tableSize][2][2] * tab[a+t*_tableSize];
+			/// <summary>
+			/// Sets the coefficients for the invese M matrix (warning! NOT the matrix used at fitting time!)
+			/// </summary>
+			/// <param name="_parameters"></param>
+			/// <param name="_isotropic"></param>
+			public void	SetInverse( double[] _parameters, bool _isotropic ) {
+				float	tempM11 = (float) Math.Max( _parameters[0], 1e-7 );
+				float	tempM22 = (float) Math.Max( _parameters[1], 1e-7 );
+				float	tempM13 = (float) _parameters[2];
+//				float	tempM23 = (float) _parameters[3];
+float	tempM23 = 0;
+
+				if ( _isotropic ) {
+					m11 = tempM11;
+					m22 = tempM11;
+					m13 = 0.0f;
+					m23 = 0.0f;
+				} else {
+					m11 = tempM11;
+					m22 = tempM22;
+					m13 = tempM13;
+					m23 = tempM23;
+				}
+				// Update the inverse matrix
+				UpdateInverse();
+			}
+			public void		UpdateInverse() {
+				invM = new float3x3( X, Y, Z );
+				float3x3	temp = new float3x3(	m11,	0,		0,
+													0,		m22,	0,
+													m13,	m23,	1 );
+				invM *= temp;
+				M = invM.Inverse;
+				detM = M.Determinant;
 			}
 
 			public float Eval( ref float3 _tsLight ) {
@@ -191,10 +219,17 @@ float	tempM23 = 0;
 
 			NelderMead	NMFitter = new NelderMead( 3 );
 
-// 			double[]	startFit = new double[4];
-// 			double[]	resultFit = new double[4];
-			double[]	startFit = new double[3];
-			double[]	resultFit = new double[3];
+ 			double[]	startFit = new double[4];
+ 			double[]	resultFit = new double[4];
+			double[]	runtimeCoefficients = new double[4];
+
+// float3x3	invM = new float3x3( new float[] { 499.999756f, 0, 0, 0, 499.999756f, 0, 0, 0, 1 } );
+// float3x3	M = invM.Inverse;
+// float3x3	test = M * invM;
+// float3x3	invM2 = new float3x3( new float[] { 500.003906f, 0, -0.074939f, 0, 502.811340f, 0, 37.469978f, 0, 1} );
+// float3x3	M2 = invM2.Inverse;
+// float3x3	test2 = M2 * invM2;
+
 
 			LTC[,]		result = new LTC[_tableSize,_tableSize];
 
@@ -203,9 +238,8 @@ float	tempM23 = 0;
 
 			// loop over theta and alpha
 			int	count = 0;
-			for ( int roughnessIndex=_tableSize-1; roughnessIndex >= 0; --roughnessIndex ) {
-
-roughnessIndex = 1;
+//			for ( int roughnessIndex=_tableSize-1; roughnessIndex >= 0; --roughnessIndex ) {
+for ( int roughnessIndex=20; roughnessIndex >= 0; --roughnessIndex ) {
 
 				for ( int thetaIndex=0; thetaIndex <= _tableSize-1; ++thetaIndex ) {
 					if ( result[roughnessIndex,thetaIndex] != null )
@@ -257,9 +291,12 @@ if ( true ) {
 						isotropic = true;
 					} else {
 						// otherwise use previous configuration as first guess
-						ltc.X.Set( averageDir.z, 0, -averageDir.x );
-						ltc.Y = float3.UnitY;
-						ltc.Z = averageDir;
+ 						ltc.X.Set( averageDir.z, 0, -averageDir.x );
+ 						ltc.Y = float3.UnitY;
+ 						ltc.Z = averageDir;
+// 						ltc.X = float3.UnitX;
+// 						ltc.Y = float3.UnitY;
+// 						ltc.Z = float3.UnitZ;
 
 						// Copy previous result
 						LTC	previousLTC = result[roughnessIndex,thetaIndex-1];
@@ -277,9 +314,10 @@ if ( true ) {
 					startFit[0] = ltc.m11;
 					startFit[1] = ltc.m22;
 					startFit[2] = ltc.m13;
-//					startFit[3] = ltc.m23;
+					startFit[3] = ltc.m23;
 
 					// Find best-fit LTC lobe (scale, alphax, alphay)
+//					double	error = 0;
 					double	error = NMFitter.FindFit( resultFit, startFit, FIT_EXPLORE_DELTA, TOLERANCE, MAX_ITERATIONS, ( double[] _parameters ) => {
 						ltc.Set( _parameters, isotropic );
 
@@ -289,8 +327,31 @@ if ( true ) {
 
 					// Update LTC with best fitting values
 					ltc.Set( resultFit, isotropic );
-					ltc.CleanMatrixAndNormalize();
 
+/*					// Now, at runtime, we need the inverse matrix
+// 					ltc.X = float3.UnitX;
+// 					ltc.Y = float3.UnitY;
+// 					ltc.Z = float3.UnitZ;
+
+					ltc.M.r0.y = 0;
+					ltc.M.r1.x = 0;
+					ltc.M.r1.z = 0;
+					ltc.M.r2.y = 0;
+					ltc.invM = ltc.M.Inverse;
+
+					runtimeCoefficients[0] = ltc.invM.r0.x;
+					runtimeCoefficients[1] = ltc.invM.r1.y;
+					runtimeCoefficients[2] = ltc.invM.r2.x;
+					runtimeCoefficients[3] = ltc.invM.r2.y;
+
+// 				        // normalize by the middle element
+// 					runtimeCoefficients[0] /= runtimeCoefficients[1];
+// 					runtimeCoefficients[2] /= runtimeCoefficients[1];
+// 					runtimeCoefficients[3] /= runtimeCoefficients[1];
+// 					runtimeCoefficients[1] = 1.0;
+
+					ltc.SetInverse( runtimeCoefficients, isotropic );
+//*/
 					// Show debug form
 					++count;
 //					if ( m_debugForm != null && (count & 0xF) == 1 ) {
@@ -304,6 +365,8 @@ if ( true ) {
 
 			return result;
 		}
+
+		#region I/O
 
 		LTC[,]	Load( System.IO.FileInfo _tableFileName ) {
 			LTC[,]	result = null;
@@ -340,6 +403,8 @@ if ( true ) {
 						}
 				}
 		}
+
+		#endregion
 
 		#region Objective Function
 
