@@ -49,15 +49,31 @@ namespace TestMSBRDF.LTC
 		float3			m_tsView;
 		float3			m_tsLight;
 
-		public bool		Paused { get { return checkBoxPause.Checked; } }
+		int				m_statsCounter;
+		double			m_lastError;
+		double			m_lastNormalization;
+		double			m_statsSumError;
+		double			m_statsSumErrorWithoutHighValues;
+		double			m_statsSumNormalization;
 
-		public void	ShowBRDF( float _progress, float _error, float _theta, float _roughness, IBRDF _BRDF, LTCFitter.LTC _LTC ) {
+		public bool		Paused { get { return checkBoxPause.Checked; } set { checkBoxPause.Checked = value; } }
+
+		public void	AccumulateStatistics( LTCFitter.LTC _LTC ) {
+			m_lastError = _LTC.error;
+			m_lastNormalization = _LTC.TestNormalization();
+			m_statsSumError += m_lastError;
+			m_statsSumErrorWithoutHighValues += Math.Min( 1, m_lastError );
+			m_statsSumNormalization += m_lastNormalization;
+			m_statsCounter++;
+		}
+
+		public void	ShowBRDF( float _progress, float _theta, float _roughness, IBRDF _BRDF, LTCFitter.LTC _LTC ) {
 			m_theta = _theta;
 			m_roughness = _roughness;
 			m_BRDF = _BRDF;
 			m_LTC = _LTC;
 
-			this.Text = "Fitter Debugger - Theta = " + Mathf.ToDeg(_theta).ToString( "G3" ) + "° - Roughness = " + _roughness.ToString( "G3" ) + " - Error = " + _error.ToString( "G4" ) + " - Progress = " + (100.0f * _progress).ToString( "G3" ) + "%";
+			this.Text = "Fitter Debugger - Theta = " + Mathf.ToDeg(_theta).ToString( "G3" ) + "° - Roughness = " + _roughness.ToString( "G3" ) + " - Error = " + _LTC.error.ToString( "G4" ) + " - Progress = " + (100.0f * _progress).ToString( "G3" ) + "%";
 
 			// Build fixed view vector
 			m_tsView.x = Mathf.Sin( m_theta );
@@ -75,20 +91,28 @@ namespace TestMSBRDF.LTC
 			panelOutputDifference.PanelBitmap = m_imageDifference.AsBitmap;
 
 			// Update text
-			textBoxFitting.Text = "m11 = " + _LTC.m11 + "\r\n"
-								+ "m22 = " + _LTC.m22 + "\r\n"
-								+ "m13 = " + _LTC.m13 + "\r\n"
-								+ "m31 = " + _LTC.m31 + "\r\n"
+			float[]		runtimeParms = _LTC.RuntimeParameters;
+
+			textBoxFitting.Text = "m11 = " + runtimeParms[0] + "\r\n"
+								+ "m22 = " + runtimeParms[1] + "\r\n"
+								+ "m13 = " + runtimeParms[2] + "\r\n"
+								+ "m31 = " + runtimeParms[3] + "\r\n"
 								+ "\r\n"
-								+ "Amplitude = " + _LTC.amplitude + "\r\n"
-								+ "Fresnel = " + _LTC.fresnel + "\r\n"
+								+ "Amplitude = " + runtimeParms[4] + "\r\n"
+								+ "Fresnel = " + runtimeParms[5] + "\r\n"
 								+ "\r\n"
 								+ "invM = \r\n"
 								+ "r0 = " + _LTC.invM.r0 + "\r\n"
 								+ "r1 = " + _LTC.invM.r1 + "\r\n"
 								+ "r2 = " + _LTC.invM.r2 + "\r\n"
-								+ "\r\n";
-//								+ "Normallization = " + _LTC.TestNormalization() + "\r\n";
+								+ "\r\n"
+								+ "► Error:\r\n"
+								+ "Avg. = " + (m_statsSumError / m_statsCounter).ToString( "G4" ) + "\r\n"
+								+ "Avg. (Clipped) = " + (m_statsSumErrorWithoutHighValues / m_statsCounter).ToString( "G4" ) + "\r\n"
+								+ "\r\n"
+								+ "► Normalization:\r\n"
+								+ "Value = " + m_lastNormalization.ToString( "G4" ) + "\r\n"
+								+ "Avg. = " + (m_statsSumNormalization / m_statsCounter).ToString( "G4" ) + "\r\n";
 
 			// Redraw
 			panelOutputSourceBRDF.Refresh();
