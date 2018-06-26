@@ -1,5 +1,4 @@
-﻿//#define FIT_4_PARAMETERS
-//#define FIT_INV_M
+﻿//#define FIT_INV_M
 
 //////////////////////////////////////////////////////////////////////////
 // Fitter class for Linearly-Transformed Cosines
@@ -19,7 +18,7 @@
 //				| m11'   0   m13' |
 //				|  0    m22'  0   |
 //				| m31'   0    1   |
-//			►►► WARNING: Notice the prime! They are NOT THE SAME as the m11, m22, etc. parameters of the M matrix.
+//			►►► WARNING: Notice the prime! They are NOT THE SAME as the m11, m22, etc. fitting parameters of the M matrix.
 //			If you want to be sure, just use the "RuntimeParameters" property that contains the 4 matrix parameters in order + scale & fresnel!
 //
 //		Method 2) is mine and starts from the target runtime inverse M matrix:
@@ -28,7 +27,8 @@
 //				| m31   0   1  |
 //			This time, only the required parameters are fitted
 //
-//
+//		Overall, method 2) somewhat has a smaller error but sometimes (especially at grazing angles) we end up with strange lobes
+//			that I'm afraid may look strange (like a secondary lobe rising at the antipodes of the first lobe near 90° values)
 //
 //////////////////////////////////////////////////////////////////////////
 //
@@ -307,13 +307,15 @@ namespace TestMSBRDF.LTC
 		#endregion
 
 		FitterForm	m_debugForm = null;
+		bool		m_quickDebug;
 
-		public LTCFitter( Form _ownerForm ) {
+		public LTCFitter( Form _ownerForm, bool _quickDebug ) {
 			if ( _ownerForm == null )
 				return;	// No debug...
 
 			m_debugForm = new FitterForm( this );
 			m_debugForm.Show( _ownerForm );
+			m_quickDebug = _quickDebug;
 		}
 
 		public LTC[,]	Fit( IBRDF _brdf, int _tableSize, System.IO.FileInfo _tableFileName ) {
@@ -336,7 +338,7 @@ namespace TestMSBRDF.LTC
 			// loop over theta and alpha
 			int	count = 0;
 			for ( int roughnessIndex=_tableSize-1; roughnessIndex >= 0; --roughnessIndex ) {
-//for ( int roughnessIndex=8; roughnessIndex >= 0; --roughnessIndex ) {
+//for ( int roughnessIndex=10; roughnessIndex >= 0; --roughnessIndex ) {
 
 				for ( int thetaIndex=0; thetaIndex <= _tableSize-1; ++thetaIndex ) {
 
@@ -345,12 +347,10 @@ namespace TestMSBRDF.LTC
 
 					if ( result[roughnessIndex,thetaIndex] != null ) {
 						++count;
-						m_debugForm.AccumulateStatistics( result[roughnessIndex,thetaIndex] );
+						if ( m_debugForm != null )
+							m_debugForm.AccumulateStatistics( result[roughnessIndex,thetaIndex] );
 						continue;	// Already computed!
 					}
-
-// 					float	theta = t * Mathf.HALFPI / (_tableSize-1);
-// 					float3	V = new float3( Mathf.Sin(theta), 0 , Mathf.Cos(theta) );
 
 					// parameterised by sqrt(1 - cos(theta))
 					float	x = (float) thetaIndex / (_tableSize - 1);
@@ -422,10 +422,10 @@ namespace TestMSBRDF.LTC
 
 					// Show debug form
 					++count;
-//					if ( m_debugForm != null && (count & 0xF) == 1 ) {
 					if ( m_debugForm != null ) {
 						m_debugForm.AccumulateStatistics( ltc );
-						m_debugForm.ShowBRDF( (float) count / (_tableSize*_tableSize), Mathf.Acos( cosTheta ), alpha, _brdf, ltc );
+						bool	fullRefresh = !m_quickDebug || (count % 10) == 1;
+						m_debugForm.ShowBRDF( (float) count / (_tableSize*_tableSize), Mathf.Acos( cosTheta ), alpha, _brdf, ltc, fullRefresh );
 					}
 				}
 
@@ -439,15 +439,14 @@ namespace TestMSBRDF.LTC
 
 		const int	SAMPLES_COUNT = 50;			// number of samples used to compute the error during fitting
 
-		// compute the error between the BRDF and the LTC
-		// using Multiple Importance Sampling
+		// Compute the error between the BRDF and the LTC using Multiple Importance Sampling
 		double	ComputeError( LTC _ltc, IBRDF _BRDF, ref float3 _tsView, float _alpha ) {
 			float3	tsLight = float3.Zero;
 
 			float	pdf_brdf, eval_brdf;
 			float	pdf_ltc, eval_ltc;
 
-			double	error = 0.0;
+			double	sumError = 0.0;
 			for ( int j = 0 ; j < SAMPLES_COUNT ; ++j ) {
 				for ( int i = 0 ; i < SAMPLES_COUNT ; ++i ) {
 					float	U1 = (i+0.5f) / SAMPLES_COUNT;
@@ -462,9 +461,10 @@ namespace TestMSBRDF.LTC
 						eval_brdf = _BRDF.Eval( ref _tsView, ref tsLight, _alpha, out pdf_brdf );
 						eval_ltc = _ltc.Eval( ref tsLight );
 						pdf_ltc = eval_ltc / _ltc.amplitude;
-						double	error_ = Math.Abs( eval_brdf - eval_ltc );
-								error_ = error_*error_*error_;
-						error += error_ / (pdf_ltc + pdf_brdf);
+						double	error = Math.Abs( eval_brdf - eval_ltc );
+								error = error*error*error;		// Use L3 norm to favor large values over smaller ones
+
+						sumError += error / (pdf_ltc + pdf_brdf);
 					}
 
 					// importance sample BRDF
@@ -476,15 +476,16 @@ namespace TestMSBRDF.LTC
 						eval_brdf = _BRDF.Eval( ref _tsView, ref tsLight, _alpha, out pdf_brdf );			
 						eval_ltc = _ltc.Eval( ref tsLight );
 						pdf_ltc = eval_ltc / _ltc.amplitude;
-						double	error_ = Math.Abs( eval_brdf - eval_ltc );
-								error_ = error_*error_*error_;
-						error += error_ / (pdf_ltc + pdf_brdf);
+						double	error = Math.Abs( eval_brdf - eval_ltc );
+								error = error*error*error;		// Use L3 norm to favor large values over smaller ones
+
+						sumError += error / (pdf_ltc + pdf_brdf);
 					}
 				}
 			}
 
-			error /= SAMPLES_COUNT * SAMPLES_COUNT;
-			return error;
+			sumError /= SAMPLES_COUNT * SAMPLES_COUNT;
+			return sumError;
 		}
 
 		#endregion

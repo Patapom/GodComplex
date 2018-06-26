@@ -56,7 +56,7 @@ namespace TestMSBRDF.LTC
 			D = D / (Mathf.PI * _alpha * _alpha * H.z*H.z*H.z*H.z);
 
 			_pdf = Mathf.Abs( D * H.z / (4.0f * _tsView.Dot(H)) );
-			float	res = D * G2 / (4.0f * _tsView.z);
+			float	res = D * G2 / (4.0f * _tsView.z);		// Full specular mico-facet model is F * D * G / (4 * NdotL * NdotV) but since we're fitting with the NdotL included, it gets nicely canceled out!
 
 			return res;
 		}
@@ -74,5 +74,4 @@ namespace TestMSBRDF.LTC
 			return lambda;
 		}
 	}
-
 }

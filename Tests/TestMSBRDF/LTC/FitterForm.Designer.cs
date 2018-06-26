@@ -93,9 +93,9 @@
 			this.label3.AutoSize = true;
 			this.label3.Location = new System.Drawing.Point(701, 355);
 			this.label3.Name = "label3";
-			this.label3.Size = new System.Drawing.Size(56, 13);
+			this.label3.Size = new System.Drawing.Size(71, 13);
 			this.label3.TabIndex = 1;
-			this.label3.Text = "Difference";
+			this.label3.Text = "Relative Error";
 			// 
 			// panel1
 			// 
@@ -127,7 +127,7 @@
 			// label6
 			// 
 			this.label6.AutoSize = true;
-			this.label6.Location = new System.Drawing.Point(760, 371);
+			this.label6.Location = new System.Drawing.Point(780, 371);
 			this.label6.Name = "label6";
 			this.label6.Size = new System.Drawing.Size(28, 13);
 			this.label6.TabIndex = 1;
@@ -136,17 +136,17 @@
 			// label7
 			// 
 			this.label7.AutoSize = true;
-			this.label7.Location = new System.Drawing.Point(996, 371);
+			this.label7.Location = new System.Drawing.Point(1016, 371);
 			this.label7.Name = "label7";
 			this.label7.Size = new System.Drawing.Size(31, 13);
 			this.label7.TabIndex = 1;
-			this.label7.Text = "1e+0";
+			this.label7.Text = "1e+4";
 			// 
 			// panel2
 			// 
 			this.panel2.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("panel2.BackgroundImage")));
 			this.panel2.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
-			this.panel2.Location = new System.Drawing.Point(763, 355);
+			this.panel2.Location = new System.Drawing.Point(783, 355);
 			this.panel2.Name = "panel2";
 			this.panel2.Size = new System.Drawing.Size(261, 13);
 			this.panel2.TabIndex = 2;
@@ -193,7 +193,7 @@
 			this.Controls.Add(this.panelOutputSourceBRDF);
 			this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedToolWindow;
 			this.Name = "FitterForm";
-			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
+			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
 			this.Text = "Fitter Debugger";
 			this.ResumeLayout(false);
 			this.PerformLayout();

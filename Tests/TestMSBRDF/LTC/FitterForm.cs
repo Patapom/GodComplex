@@ -1,4 +1,6 @@
-﻿using System;
+﻿//#define RELATIVE_ERROR
+
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -40,6 +42,14 @@ namespace TestMSBRDF.LTC
 			ImageFile	I = new ImageFile( Properties.Resources.FalseColorsSpectrum, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
 			m_falseSpectrum = new float4[I.Width];
 			I.ReadScanline( 0, m_falseSpectrum );
+
+			#if RELATIVE_ERROR
+				label7.Text = "1e4";
+				label3.Text = "Relative Error";
+			#else
+				label7.Text = "1e0";
+				label3.Text = "Absolute Error";
+			#endif
 		}
 
 		float			m_theta;
@@ -60,14 +70,14 @@ namespace TestMSBRDF.LTC
 
 		public void	AccumulateStatistics( LTCFitter.LTC _LTC ) {
 			m_lastError = _LTC.error;
-			m_lastNormalization = _LTC.TestNormalization();
+//			m_lastNormalization = _LTC.TestNormalization();
 			m_statsSumError += m_lastError;
 			m_statsSumErrorWithoutHighValues += Math.Min( 1, m_lastError );
 			m_statsSumNormalization += m_lastNormalization;
 			m_statsCounter++;
 		}
 
-		public void	ShowBRDF( float _progress, float _theta, float _roughness, IBRDF _BRDF, LTCFitter.LTC _LTC ) {
+		public void	ShowBRDF( float _progress, float _theta, float _roughness, IBRDF _BRDF, LTCFitter.LTC _LTC, bool _fullRefresh ) {
 			m_theta = _theta;
 			m_roughness = _roughness;
 			m_BRDF = _BRDF;
@@ -81,22 +91,39 @@ namespace TestMSBRDF.LTC
 			m_tsView.z = Mathf.Cos( m_theta );
 
 			// Recompute images
-			m_imageSource.WritePixels( ( uint _X, uint _Y, ref float4 _color ) => { RenderSphere( _X, _Y, -4, +4, ref _color, ( ref float3 _tsView, ref float3 _tsLight ) => { return EstimateBRDF( ref _tsView, ref _tsLight ); } ); } );
-			m_imageTarget.WritePixels( ( uint _X, uint _Y, ref float4 _color ) => { RenderSphere( _X, _Y, -4, +4, ref _color, ( ref float3 _tsView, ref float3 _tsLight ) => { return EstimateLTC( ref _tsView, ref _tsLight ); } ); } );
-			m_imageDifference.WritePixels( ( uint _X, uint _Y, ref float4 _color ) => { RenderSphere( _X, _Y, -4, 0, ref _color, ( ref float3 _tsView, ref float3 _tsLight ) => { return Mathf.Abs( EstimateBRDF( ref _tsView, ref _tsLight ) - EstimateLTC( ref _tsView, ref _tsLight ) ); } ); } );
+			if ( _fullRefresh ) {
+				m_imageSource.WritePixels( ( uint _X, uint _Y, ref float4 _color ) => { RenderSphere( _X, _Y, -4, +4, ref _color, ( ref float3 _tsView, ref float3 _tsLight ) => { return EstimateBRDF( ref _tsView, ref _tsLight ); } ); } );
+				m_imageTarget.WritePixels( ( uint _X, uint _Y, ref float4 _color ) => { RenderSphere( _X, _Y, -4, +4, ref _color, ( ref float3 _tsView, ref float3 _tsLight ) => { return EstimateLTC( ref _tsView, ref _tsLight ); } ); } );
 
-			// Assign bitmaps
-			panelOutputSourceBRDF.PanelBitmap = m_imageSource.AsBitmap;
-			panelOutputTargetBRDF.PanelBitmap = m_imageTarget.AsBitmap;
-			panelOutputDifference.PanelBitmap = m_imageDifference.AsBitmap;
+				#if RELATIVE_ERROR
+					m_imageDifference.WritePixels( ( uint _X, uint _Y, ref float4 _color ) => { RenderSphere( _X, _Y, -4, 4, ref _color, ( ref float3 _tsView, ref float3 _tsLight ) => {
+						float	V0 = EstimateBRDF( ref _tsView, ref _tsLight );
+						float	V1 = EstimateLTC( ref _tsView, ref _tsLight );
+						return (V0 > V1 ? V0 / Math.Max( 1e-6f, V1 ) : V1 / Math.Max( 1e-6f, V0 )) - 1.0f;
+					} ); } );
+				#else
+					m_imageDifference.WritePixels( ( uint _X, uint _Y, ref float4 _color ) => { RenderSphere( _X, _Y, -4, 0, ref _color, ( ref float3 _tsView, ref float3 _tsLight ) => {
+						return Mathf.Abs( EstimateBRDF( ref _tsView, ref _tsLight ) - EstimateLTC( ref _tsView, ref _tsLight ) );
+					} ); } );
+				#endif
+
+				// Assign bitmaps
+				panelOutputSourceBRDF.PanelBitmap = m_imageSource.AsBitmap;
+				panelOutputTargetBRDF.PanelBitmap = m_imageTarget.AsBitmap;
+				panelOutputDifference.PanelBitmap = m_imageDifference.AsBitmap;
+
+				panelOutputSourceBRDF.Refresh();
+				panelOutputTargetBRDF.Refresh();
+				panelOutputDifference.Refresh();
+			}
 
 			// Update text
 			float[]		runtimeParms = _LTC.RuntimeParameters;
 
-			textBoxFitting.Text = "m11 = " + runtimeParms[0] + "\r\n"
-								+ "m22 = " + runtimeParms[1] + "\r\n"
-								+ "m13 = " + runtimeParms[2] + "\r\n"
-								+ "m31 = " + runtimeParms[3] + "\r\n"
+			textBoxFitting.Text = "m11 = " + _LTC.m11 + "\r\n"
+								+ "m22 = " + _LTC.m22 + "\r\n"
+								+ "m13 = " + _LTC.m13 + "\r\n"
+								+ "m31 = " + _LTC.m31 + "\r\n"
 								+ "\r\n"
 								+ "Amplitude = " + runtimeParms[4] + "\r\n"
 								+ "Fresnel = " + runtimeParms[5] + "\r\n"
@@ -115,9 +142,6 @@ namespace TestMSBRDF.LTC
 								+ "Avg. = " + (m_statsSumNormalization / m_statsCounter).ToString( "G4" ) + "\r\n";
 
 			// Redraw
-			panelOutputSourceBRDF.Refresh();
-			panelOutputTargetBRDF.Refresh();
-			panelOutputDifference.Refresh();
 			textBoxFitting.Refresh();
 			Refresh();
 

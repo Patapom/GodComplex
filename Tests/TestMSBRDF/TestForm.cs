@@ -744,7 +744,7 @@ for ( uint Y=0; Y < ROUGHNESS_SUBDIVS_COUNT; Y++ ) {
 
 		void	FitLTC( DirectoryInfo _targetDirectory ) {
 			LTC.BRDF_GGX	GGX = new LTC.BRDF_GGX();
-			LTC.LTCFitter	fitter = new LTC.LTCFitter( this );
+			LTC.LTCFitter	fitter = new LTC.LTCFitter( this, true );
 			fitter.Fit( GGX, 64, new FileInfo( "GGX.ltc" ) );
 		}
 
