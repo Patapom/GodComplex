@@ -78,7 +78,7 @@ namespace TestMSBRDF.LTC
 			textBoxFitting.Text = "m11 = " + _LTC.m11 + "\r\n"
 								+ "m22 = " + _LTC.m22 + "\r\n"
 								+ "m13 = " + _LTC.m13 + "\r\n"
-								+ "m23 = " + _LTC.m23 + "\r\n"
+								+ "m31 = " + _LTC.m31 + "\r\n"
 								+ "\r\n"
 								+ "Amplitude = " + _LTC.amplitude + "\r\n"
 								+ "Fresnel = " + _LTC.fresnel + "\r\n"
@@ -87,8 +87,8 @@ namespace TestMSBRDF.LTC
 								+ "r0 = " + _LTC.invM.r0 + "\r\n"
 								+ "r1 = " + _LTC.invM.r1 + "\r\n"
 								+ "r2 = " + _LTC.invM.r2 + "\r\n"
-								+ "\r\n"
-								+ "Normallization = " + _LTC.TestNormalization() + "\r\n";
+								+ "\r\n";
+//								+ "Normallization = " + _LTC.TestNormalization() + "\r\n";
 
 			// Redraw
 			panelOutputSourceBRDF.Refresh();

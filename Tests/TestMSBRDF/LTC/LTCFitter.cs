@@ -38,16 +38,13 @@ namespace TestMSBRDF.LTC
 			public float		fresnel = 1;
 
 			// parametric representation
-			public float		m11 = 1, m22 = 1, m13 = 0, m23 = 0;
-			public float3		X = float3.UnitX;
-			public float3		Y = float3.UnitY;
-			public float3		Z = float3.UnitZ;
+			public float		m11 = 1, m22 = 1, m13 = 0, m31 = 0;
 
 			// Matrix representation
-			public float3x3		M;
 			public float3x3		invM;
-			public float		detM;
-//			public float		detInvM;	// Simply 1/det(M)
+			public float		detInvM;
+
+			public float3x3		M;	// Only used for importance sampling the BRDF
 
 			public LTC() {
 				Update();
@@ -65,78 +62,39 @@ namespace TestMSBRDF.LTC
 			public void	Set( double[] _parameters, bool _isotropic ) {
 				float	tempM11 = (float) Math.Max( _parameters[0], 1e-7 );
 				float	tempM22 = (float) Math.Max( _parameters[1], 1e-7 );
-				float	tempM13 = (float) _parameters[2];
-				float	tempM23 = _parameters.Length > 3 ? (float) _parameters[3] : 0;
+
+				// When composing from the left (V' = V * invM), the important 3rd parameter is m31
+ 				float	tempM31 = (float) _parameters[2];
+ 				float	tempM13 = _parameters.Length > 3 ? (float) _parameters[3] : 0;
 
 				if ( _isotropic ) {
 					m11 = tempM11;
 					m22 = tempM11;
 					m13 = 0.0f;
-					m23 = 0.0f;
+					m31 = 0.0f;
 				} else {
 					m11 = tempM11;
 					m22 = tempM22;
 					m13 = tempM13;
-					m23 = tempM23;
+					m31 = tempM31;
 				}
-				// Update the matrix
-				Update();
-			}
-			public void		Update() {
-				M = new float3x3( X, Y, Z );
-				float3x3	temp = new float3x3(	m11,	0,		m13,
-													0,		m22,	0,
-													m23,	0,		1 );
-				M *= temp;
-				invM = M.Inverse;
-				detM = M.Determinant;
-// 				detInvM = invM.Determinant;
-// 				if ( Math.Abs( detInvM * detM - 1.0f ) > 1e-4f )
-// 					throw new Exception( "KOIN!" );
+
+				Update();		// Update the matrix
 			}
 
-// 			/// <summary>
-// 			/// Sets the coefficients for the invese M matrix (warning! NOT the matrix used at fitting time!)
-// 			/// </summary>
-// 			/// <param name="_parameters"></param>
-// 			/// <param name="_isotropic"></param>
-// 			public void	SetInverse( double[] _parameters, bool _isotropic ) {
-// 				float	tempM11 = (float) Math.Max( _parameters[0], 1e-7 );
-// 				float	tempM22 = (float) Math.Max( _parameters[1], 1e-7 );
-// 				float	tempM13 = (float) _parameters[2];
-// //				float	tempM31 = (float) _parameters[3];
-// float	tempM31 = 0;
-// 
-// 				if ( _isotropic ) {
-// 					m11 = tempM11;
-// 					m22 = tempM11;
-// 					m13 = 0.0f;
-// 					m23 = 0.0f;
-// 				} else {
-// 					m11 = tempM11;
-// 					m22 = tempM22;
-// 					m13 = tempM13;
-// 					m23 = tempM31;
-// 				}
-// 				// Update the inverse matrix
-// 				UpdateInverse();
-// 			}
-// 			public void		UpdateInverse() {
-// 				invM = new float3x3( X, Y, Z );
-// 				float3x3	temp = new float3x3(	m11,	0,		0,
-// 													0,		m22,	0,
-// 													m13,	m23,	1 );
-// 				invM *= temp;
-// 				M = invM.Inverse;
-// 				detM = M.Determinant;
-// // 				detInvM = invM.Determinant;
-// // 				if ( Math.Abs( detInvM * detM - 1.0f ) > 1e-4f )
-// // 					throw new Exception( "KOIN!" );
-// 			}
+			public void		Update() {
+				invM.r0.Set( m11,	0,		m13	);
+				invM.r1.Set( 0,		m22,	0	);
+				invM.r2.Set( m31,	0,		1	);
+
+				detInvM = invM.Determinant;
+
+				M = invM.Inverse;
+			}
 
 			public float Eval( ref float3 _tsLight ) {
 				// Transform into original distribution space
-				float3	Loriginal = invM * _tsLight;
+				float3	Loriginal = _tsLight * invM;	// Compose from the left, as in the shader code!
 				float	l = Loriginal.Length;
 						Loriginal /= l;
 
@@ -144,7 +102,6 @@ namespace TestMSBRDF.LTC
 				float	D = Mathf.INVPI * Math.Max( 0.0f, Loriginal.z ); 
 
 				// Compute the Jacobian, roundDwo / roundDw
-				float	detInvM  = 1.0f / detM;
 				float	jacobian = detInvM / (l*l*l);
 
 				// Scale distribution
@@ -159,6 +116,10 @@ namespace TestMSBRDF.LTC
 				_direction.Normalize();
 			}
 
+			/// <summary>
+			/// Should always return something close to 1
+			/// </summary>
+			/// <returns></returns>
 			public double	TestNormalization() {
 				double	sum = 0;
 				float	dtheta = 0.005f;
@@ -174,43 +135,27 @@ namespace TestMSBRDF.LTC
 				return sum;
 			}
 
+			#region I/O
+
 			public void	Read( System.IO.BinaryReader R ) {
 				m11 = R.ReadSingle();
 				m22 = R.ReadSingle();
 				m13 = R.ReadSingle();
-				m23 = R.ReadSingle();
+				m31 = R.ReadSingle();
 				amplitude = R.ReadSingle();
 				fresnel = R.ReadSingle();
-
-				X.x = R.ReadSingle();
-				X.y = R.ReadSingle();
-				X.z = R.ReadSingle();
-				Y.x = R.ReadSingle();
-				Y.y = R.ReadSingle();
-				Y.z = R.ReadSingle();
-				Z.x = R.ReadSingle();
-				Z.y = R.ReadSingle();
-				Z.z = R.ReadSingle();
 			}
 
 			public void	Write( System.IO.BinaryWriter W ) {
 				W.Write( m11 );
 				W.Write( m22 );
 				W.Write( m13 );
-				W.Write( m23 );
+				W.Write( m31 );
 				W.Write( amplitude );
 				W.Write( fresnel );
-
-				W.Write( X.x );
-				W.Write( X.y );
-				W.Write( X.z );
-				W.Write( Y.x );
-				W.Write( Y.y );
-				W.Write( Y.z );
-				W.Write( Z.x );
-				W.Write( Z.y );
-				W.Write( Z.z );
 			}
+
+			#endregion
 		}
 
 		#endregion
@@ -227,19 +172,11 @@ namespace TestMSBRDF.LTC
 
 		public LTC[,]	Fit( IBRDF _brdf, int _tableSize, System.IO.FileInfo _tableFileName ) {
 
-			NelderMead	NMFitter = new NelderMead( 4 );
+			NelderMead	NMFitter = new NelderMead( 3 );
 
  			double[]	startFit = new double[4];
  			double[]	resultFit = new double[4];
 			double[]	runtimeCoefficients = new double[4];
-
-// float3x3	invM = new float3x3( new float[] { 499.999756f, 0, 0, 0, 499.999756f, 0, 0, 0, 1 } );
-// float3x3	M = invM.Inverse;
-// float3x3	test = M * invM;
-// float3x3	invM2 = new float3x3( new float[] { 500.003906f, 0, -0.074939f, 0, 502.811340f, 0, 37.469978f, 0, 1} );
-// float3x3	M2 = invM2.Inverse;
-// float3x3	test2 = M2 * invM2;
-
 
 			LTC[,]		result = new LTC[_tableSize,_tableSize];
 
@@ -248,12 +185,14 @@ namespace TestMSBRDF.LTC
 
 			// loop over theta and alpha
 			int	count = 0;
-//			for ( int roughnessIndex=_tableSize-1; roughnessIndex >= 0; --roughnessIndex ) {
-for ( int roughnessIndex=20; roughnessIndex >= 0; --roughnessIndex ) {
+			for ( int roughnessIndex=_tableSize-1; roughnessIndex >= 0; --roughnessIndex ) {
+//for ( int roughnessIndex=20; roughnessIndex >= 0; --roughnessIndex ) {
 
 				for ( int thetaIndex=0; thetaIndex <= _tableSize-1; ++thetaIndex ) {
-					if ( result[roughnessIndex,thetaIndex] != null )
+					if ( result[roughnessIndex,thetaIndex] != null ) {
+						++count;
 						continue;	// Already computed!
+					}
 
 // 					float	theta = t * Mathf.HALFPI / (_tableSize-1);
 // 					float3	V = new float3( Mathf.Sin(theta), 0 , Mathf.Cos(theta) );
@@ -279,10 +218,6 @@ for ( int roughnessIndex=20; roughnessIndex >= 0; --roughnessIndex ) {
 					// if theta == 0 the lobe is rotationally symmetric and aligned with Z = (0 0 1)
 					bool	isotropic;
 					if ( thetaIndex == 0 ) {
-						ltc.X = float3.UnitX;
-						ltc.Y = float3.UnitY;
-						ltc.Z = float3.UnitZ;
-
 						if ( roughnessIndex == _tableSize-1 || result[roughnessIndex+1,thetaIndex] == null ) {
 							// roughness = 1 or no available result
 							ltc.m11 = 1.0f;
@@ -294,26 +229,18 @@ for ( int roughnessIndex=20; roughnessIndex >= 0; --roughnessIndex ) {
 						}
 
 						ltc.m13 = 0;
-						ltc.m23 = 0;
+						ltc.m31 = 0;
 						ltc.Update();
 
 						isotropic = true;
 					} else {
 						// otherwise use previous configuration as first guess
-//						ltc.X.Set( averageDir.z, 0, -averageDir.x );
-//						ltc.Y = float3.UnitY;
-//						ltc.Z = averageDir;
-						ltc.X = float3.UnitX;
-						ltc.Y = float3.UnitY;
-						ltc.Z = float3.UnitZ;
-
-						// Copy previous result
 						LTC	previousLTC = result[roughnessIndex,thetaIndex-1];
+
 						ltc.m11 = previousLTC.m11;
 						ltc.m22 = previousLTC.m22;
 						ltc.m13 = previousLTC.m13;
-						ltc.m23 = previousLTC.m23;
-
+						ltc.m31 = previousLTC.m31;
 						ltc.Update();
 
 						isotropic = false;
@@ -322,11 +249,10 @@ for ( int roughnessIndex=20; roughnessIndex >= 0; --roughnessIndex ) {
 					// 2. fit (explore parameter space and refine first guess)
 					startFit[0] = ltc.m11;
 					startFit[1] = ltc.m22;
-					startFit[2] = ltc.m13;
-					startFit[3] = ltc.m23;
+					startFit[2] = ltc.m31;
+					startFit[3] = ltc.m13;
 
 					// Find best-fit LTC lobe (scale, alphax, alphay)
-//					double	error = 0;
 					double	error = NMFitter.FindFit( resultFit, startFit, FIT_EXPLORE_DELTA, TOLERANCE, MAX_ITERATIONS, ( double[] _parameters ) => {
 						ltc.Set( _parameters, isotropic );
 
@@ -337,32 +263,6 @@ for ( int roughnessIndex=20; roughnessIndex >= 0; --roughnessIndex ) {
 					// Update LTC with best fitting values
 					ltc.Set( resultFit, isotropic );
 
-//					ltc.TestNormalization();
-
-/*					// Now, at runtime, we need the inverse matrix
-// 					ltc.X = float3.UnitX;
-// 					ltc.Y = float3.UnitY;
-// 					ltc.Z = float3.UnitZ;
-
-					ltc.M.r0.y = 0;
-					ltc.M.r1.x = 0;
-					ltc.M.r1.z = 0;
-					ltc.M.r2.y = 0;
-					ltc.invM = ltc.M.Inverse;
-
-					runtimeCoefficients[0] = ltc.invM.r0.x;
-					runtimeCoefficients[1] = ltc.invM.r1.y;
-					runtimeCoefficients[2] = ltc.invM.r2.x;
-					runtimeCoefficients[3] = ltc.invM.r2.y;
-
-// 				        // normalize by the middle element
-// 					runtimeCoefficients[0] /= runtimeCoefficients[1];
-// 					runtimeCoefficients[2] /= runtimeCoefficients[1];
-// 					runtimeCoefficients[3] /= runtimeCoefficients[1];
-// 					runtimeCoefficients[1] = 1.0;
-
-					ltc.SetInverse( runtimeCoefficients, isotropic );
-//*/
 					// Show debug form
 					++count;
 //					if ( m_debugForm != null && (count & 0xF) == 1 ) {
