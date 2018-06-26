@@ -18,8 +18,8 @@
 //				| m11'   0   m13' |
 //				|  0    m22'  0   |
 //				| m31'   0    1   |
-//			►►► WARNING: Notice the prime! They are NOT THE SAME as the m11, m22, etc. fitting parameters of the M matrix.
-//			If you want to be sure, just use the "RuntimeParameters" property that contains the 4 matrix parameters in order + scale & fresnel!
+//			►►► WARNING: Notice the prime! They are NOT THE SAME as the m11, m22, etc. fitting parameters of the M matrix!
+//			If you want to be sure, just use the "RuntimeParameters" property that contains the 4 runtime matrix parameters in order + scale & fresnel!
 //
 //		Method 2) is mine and starts from the target runtime inverse M matrix:
 //				| m11   0  m13 |
