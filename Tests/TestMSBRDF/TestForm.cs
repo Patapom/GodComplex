@@ -743,9 +743,13 @@ for ( uint Y=0; Y < ROUGHNESS_SUBDIVS_COUNT; Y++ ) {
 		#region LTC Area Lights
 
 		void	FitLTC( DirectoryInfo _targetDirectory ) {
-			LTC.BRDF_GGX	GGX = new LTC.BRDF_GGX();
 			LTC.LTCFitter	fitter = new LTC.LTCFitter( this, true );
+
+			LTC.BRDF_GGX	GGX = new LTC.BRDF_GGX();
 			fitter.Fit( GGX, 64, new FileInfo( "GGX.ltc" ) );
+
+// 			LTC.BRDF_GGX_NoView	GGX = new LTC.BRDF_GGX_NoView();
+// 			fitter.Fit( GGX, 64, new FileInfo( "GGX_NoView.ltc" ) );
 		}
 
 		#endregion

@@ -1,4 +1,5 @@
-﻿//#define FIT_INV_M
+﻿#define PERFORM_FITTING	// Comment this to avoid fitting (e.g. if you're only comparing 2 BRDFs models, for example)
+//#define FIT_INV_M
 
 //////////////////////////////////////////////////////////////////////////
 // Fitter class for Linearly-Transformed Cosines
@@ -332,13 +333,15 @@ namespace TestMSBRDF.LTC
 
 			LTC[,]		result = new LTC[_tableSize,_tableSize];
 
+			if ( _tableFileName == null )
+				_tableFileName = new System.IO.FileInfo( "DefaultTable_" + DateTime.Now.ToLongTimeString().Replace( ":", "-" ) + ".ltc" );
 			if ( _tableFileName.Exists )
 				result = Load( _tableFileName );
 
 			// loop over theta and alpha
 			int	count = 0;
 			for ( int roughnessIndex=_tableSize-1; roughnessIndex >= 0; --roughnessIndex ) {
-//for ( int roughnessIndex=10; roughnessIndex >= 0; --roughnessIndex ) {
+//for ( int roughnessIndex=_tableSize-1; roughnessIndex >= 0; roughnessIndex -= 16 ) {
 
 				for ( int thetaIndex=0; thetaIndex <= _tableSize-1; ++thetaIndex ) {
 
@@ -410,12 +413,14 @@ namespace TestMSBRDF.LTC
 					startFit[3] = ltc.m13;
 
 					// Find best-fit LTC lobe (scale, alphax, alphay)
-					ltc.error = NMFitter.FindFit( resultFit, startFit, FIT_EXPLORE_DELTA, TOLERANCE, MAX_ITERATIONS, ( double[] _parameters ) => {
-						ltc.Set( _parameters, isotropic );
+					#if PERFORM_FITTING
+						ltc.error = NMFitter.FindFit( resultFit, startFit, FIT_EXPLORE_DELTA, TOLERANCE, MAX_ITERATIONS, ( double[] _parameters ) => {
+							ltc.Set( _parameters, isotropic );
 
-						double	currentError = ComputeError( ltc, _brdf, ref V, alpha );
-						return currentError;
-					} );
+							double	currentError = ComputeError( ltc, _brdf, ref V, alpha );
+							return currentError;
+						} );
+					#endif
 
 					// Update LTC with final best fitting values
 					ltc.Set( resultFit, isotropic );

@@ -183,7 +183,11 @@ namespace TestMSBRDF.LTC
 			return V;
 		}
 
+//		BRDF_GGX_NoView	COMPARE = new BRDF_GGX_NoView();
 		float	EstimateLTC( ref float3 _tsView, ref float3 _tsLight ) {
+// float	pdf;
+// return COMPARE.Eval( ref _tsView, ref _tsLight, m_roughness, out pdf ) * 1 / (1 + COMPARE.Lambda( _tsView.z, m_roughness )) / (4 * _tsView.z);	// Apply view-dependent part later
+
 			float	V = m_LTC.Eval( ref _tsLight );
 			return V;
 		}
