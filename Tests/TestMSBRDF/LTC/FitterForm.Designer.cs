@@ -42,12 +42,15 @@
 			this.label6 = new System.Windows.Forms.Label();
 			this.label7 = new System.Windows.Forms.Label();
 			this.panel2 = new System.Windows.Forms.Panel();
+			this.textBoxFitting = new System.Windows.Forms.TextBox();
+			this.checkBoxPause = new System.Windows.Forms.CheckBox();
 			this.SuspendLayout();
 			// 
 			// panelOutputSourceBRDF
 			// 
 			this.panelOutputSourceBRDF.Location = new System.Drawing.Point(12, 12);
 			this.panelOutputSourceBRDF.Name = "panelOutputSourceBRDF";
+			this.panelOutputSourceBRDF.PanelBitmap = ((System.Drawing.Bitmap)(resources.GetObject("panelOutputSourceBRDF.PanelBitmap")));
 			this.panelOutputSourceBRDF.Size = new System.Drawing.Size(340, 340);
 			this.panelOutputSourceBRDF.TabIndex = 0;
 			// 
@@ -64,6 +67,7 @@
 			// 
 			this.panelOutputTargetBRDF.Location = new System.Drawing.Point(358, 12);
 			this.panelOutputTargetBRDF.Name = "panelOutputTargetBRDF";
+			this.panelOutputTargetBRDF.PanelBitmap = ((System.Drawing.Bitmap)(resources.GetObject("panelOutputTargetBRDF.PanelBitmap")));
 			this.panelOutputTargetBRDF.Size = new System.Drawing.Size(340, 340);
 			this.panelOutputTargetBRDF.TabIndex = 0;
 			// 
@@ -71,6 +75,7 @@
 			// 
 			this.panelOutputDifference.Location = new System.Drawing.Point(704, 12);
 			this.panelOutputDifference.Name = "panelOutputDifference";
+			this.panelOutputDifference.PanelBitmap = ((System.Drawing.Bitmap)(resources.GetObject("panelOutputDifference.PanelBitmap")));
 			this.panelOutputDifference.Size = new System.Drawing.Size(340, 340);
 			this.panelOutputDifference.TabIndex = 0;
 			// 
@@ -146,11 +151,34 @@
 			this.panel2.Size = new System.Drawing.Size(261, 13);
 			this.panel2.TabIndex = 2;
 			// 
+			// textBoxFitting
+			// 
+			this.textBoxFitting.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+			this.textBoxFitting.Location = new System.Drawing.Point(1050, 12);
+			this.textBoxFitting.Multiline = true;
+			this.textBoxFitting.Name = "textBoxFitting";
+			this.textBoxFitting.ReadOnly = true;
+			this.textBoxFitting.Size = new System.Drawing.Size(177, 340);
+			this.textBoxFitting.TabIndex = 3;
+			// 
+			// checkBoxPause
+			// 
+			this.checkBoxPause.Appearance = System.Windows.Forms.Appearance.Button;
+			this.checkBoxPause.AutoSize = true;
+			this.checkBoxPause.Location = new System.Drawing.Point(1113, 358);
+			this.checkBoxPause.Name = "checkBoxPause";
+			this.checkBoxPause.Size = new System.Drawing.Size(53, 23);
+			this.checkBoxPause.TabIndex = 4;
+			this.checkBoxPause.Text = "PAUSE";
+			this.checkBoxPause.UseVisualStyleBackColor = true;
+			// 
 			// FitterForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-			this.ClientSize = new System.Drawing.Size(1057, 396);
+			this.ClientSize = new System.Drawing.Size(1239, 394);
+			this.Controls.Add(this.checkBoxPause);
+			this.Controls.Add(this.textBoxFitting);
 			this.Controls.Add(this.panel2);
 			this.Controls.Add(this.panel1);
 			this.Controls.Add(this.label3);
@@ -186,5 +214,7 @@
 		private System.Windows.Forms.Label label6;
 		private System.Windows.Forms.Label label7;
 		private System.Windows.Forms.Panel panel2;
+		private System.Windows.Forms.TextBox textBoxFitting;
+		private System.Windows.Forms.CheckBox checkBoxPause;
 	}
 }

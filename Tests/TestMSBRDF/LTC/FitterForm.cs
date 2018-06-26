@@ -49,6 +49,8 @@ namespace TestMSBRDF.LTC
 		float3			m_tsView;
 		float3			m_tsLight;
 
+		public bool		Paused { get { return checkBoxPause.Checked; } }
+
 		public void	ShowBRDF( float _progress, float _error, float _theta, float _roughness, IBRDF _BRDF, LTCFitter.LTC _LTC ) {
 			m_theta = _theta;
 			m_roughness = _roughness;
@@ -72,14 +74,34 @@ namespace TestMSBRDF.LTC
 			panelOutputTargetBRDF.PanelBitmap = m_imageTarget.AsBitmap;
 			panelOutputDifference.PanelBitmap = m_imageDifference.AsBitmap;
 
+			// Update text
+			textBoxFitting.Text = "m11 = " + _LTC.m11 + "\r\n"
+								+ "m22 = " + _LTC.m22 + "\r\n"
+								+ "m13 = " + _LTC.m13 + "\r\n"
+								+ "m23 = " + _LTC.m23 + "\r\n"
+								+ "\r\n"
+								+ "Amplitude = " + _LTC.amplitude + "\r\n"
+								+ "Fresnel = " + _LTC.fresnel + "\r\n"
+								+ "\r\n"
+								+ "invM = \r\n"
+								+ "r0 = " + _LTC.invM.r0 + "\r\n"
+								+ "r1 = " + _LTC.invM.r1 + "\r\n"
+								+ "r2 = " + _LTC.invM.r2 + "\r\n"
+								+ "\r\n"
+								+ "Normallization = " + _LTC.TestNormalization() + "\r\n";
+
 			// Redraw
 			panelOutputSourceBRDF.Refresh();
 			panelOutputTargetBRDF.Refresh();
 			panelOutputDifference.Refresh();
+			textBoxFitting.Refresh();
 			Refresh();
 
 			// Let windows get updated
 			Application.DoEvents();
+
+			while ( Paused )
+				Application.DoEvents();
 		}
 
 		delegate float	RadialAmplitudeDelegate( ref float3 _tsView, ref float3 _tsLight );
