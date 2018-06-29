@@ -44,11 +44,17 @@
 			this.panel2 = new System.Windows.Forms.Panel();
 			this.textBoxFitting = new System.Windows.Forms.TextBox();
 			this.checkBoxPause = new System.Windows.Forms.CheckBox();
+			this.integerTrackbarControlRoughnessIndex = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
+			this.label8 = new System.Windows.Forms.Label();
+			this.integerTrackbarControlThetaIndex = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
+			this.label9 = new System.Windows.Forms.Label();
+			this.checkBoxAutoRun = new System.Windows.Forms.CheckBox();
+			this.checkBoxDoFitting = new System.Windows.Forms.CheckBox();
 			this.SuspendLayout();
 			// 
 			// panelOutputSourceBRDF
 			// 
-			this.panelOutputSourceBRDF.Location = new System.Drawing.Point(12, 12);
+			this.panelOutputSourceBRDF.Location = new System.Drawing.Point(12, 35);
 			this.panelOutputSourceBRDF.Name = "panelOutputSourceBRDF";
 			this.panelOutputSourceBRDF.PanelBitmap = ((System.Drawing.Bitmap)(resources.GetObject("panelOutputSourceBRDF.PanelBitmap")));
 			this.panelOutputSourceBRDF.Size = new System.Drawing.Size(340, 340);
@@ -57,7 +63,7 @@
 			// label1
 			// 
 			this.label1.AutoSize = true;
-			this.label1.Location = new System.Drawing.Point(12, 355);
+			this.label1.Location = new System.Drawing.Point(12, 378);
 			this.label1.Name = "label1";
 			this.label1.Size = new System.Drawing.Size(73, 13);
 			this.label1.TabIndex = 1;
@@ -65,7 +71,7 @@
 			// 
 			// panelOutputTargetBRDF
 			// 
-			this.panelOutputTargetBRDF.Location = new System.Drawing.Point(358, 12);
+			this.panelOutputTargetBRDF.Location = new System.Drawing.Point(358, 35);
 			this.panelOutputTargetBRDF.Name = "panelOutputTargetBRDF";
 			this.panelOutputTargetBRDF.PanelBitmap = ((System.Drawing.Bitmap)(resources.GetObject("panelOutputTargetBRDF.PanelBitmap")));
 			this.panelOutputTargetBRDF.Size = new System.Drawing.Size(340, 340);
@@ -73,7 +79,7 @@
 			// 
 			// panelOutputDifference
 			// 
-			this.panelOutputDifference.Location = new System.Drawing.Point(704, 12);
+			this.panelOutputDifference.Location = new System.Drawing.Point(704, 35);
 			this.panelOutputDifference.Name = "panelOutputDifference";
 			this.panelOutputDifference.PanelBitmap = ((System.Drawing.Bitmap)(resources.GetObject("panelOutputDifference.PanelBitmap")));
 			this.panelOutputDifference.Size = new System.Drawing.Size(340, 340);
@@ -82,7 +88,7 @@
 			// label2
 			// 
 			this.label2.AutoSize = true;
-			this.label2.Location = new System.Drawing.Point(355, 355);
+			this.label2.Location = new System.Drawing.Point(355, 378);
 			this.label2.Name = "label2";
 			this.label2.Size = new System.Drawing.Size(78, 13);
 			this.label2.TabIndex = 1;
@@ -91,7 +97,7 @@
 			// label3
 			// 
 			this.label3.AutoSize = true;
-			this.label3.Location = new System.Drawing.Point(701, 355);
+			this.label3.Location = new System.Drawing.Point(701, 378);
 			this.label3.Name = "label3";
 			this.label3.Size = new System.Drawing.Size(71, 13);
 			this.label3.TabIndex = 1;
@@ -101,7 +107,7 @@
 			// 
 			this.panel1.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("panel1.BackgroundImage")));
 			this.panel1.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
-			this.panel1.Location = new System.Drawing.Point(91, 355);
+			this.panel1.Location = new System.Drawing.Point(91, 378);
 			this.panel1.Name = "panel1";
 			this.panel1.Size = new System.Drawing.Size(261, 13);
 			this.panel1.TabIndex = 2;
@@ -109,7 +115,7 @@
 			// label4
 			// 
 			this.label4.AutoSize = true;
-			this.label4.Location = new System.Drawing.Point(88, 371);
+			this.label4.Location = new System.Drawing.Point(88, 394);
 			this.label4.Name = "label4";
 			this.label4.Size = new System.Drawing.Size(28, 13);
 			this.label4.TabIndex = 1;
@@ -118,7 +124,7 @@
 			// label5
 			// 
 			this.label5.AutoSize = true;
-			this.label5.Location = new System.Drawing.Point(324, 371);
+			this.label5.Location = new System.Drawing.Point(324, 394);
 			this.label5.Name = "label5";
 			this.label5.Size = new System.Drawing.Size(31, 13);
 			this.label5.TabIndex = 1;
@@ -127,7 +133,7 @@
 			// label6
 			// 
 			this.label6.AutoSize = true;
-			this.label6.Location = new System.Drawing.Point(780, 371);
+			this.label6.Location = new System.Drawing.Point(780, 394);
 			this.label6.Name = "label6";
 			this.label6.Size = new System.Drawing.Size(28, 13);
 			this.label6.TabIndex = 1;
@@ -136,7 +142,7 @@
 			// label7
 			// 
 			this.label7.AutoSize = true;
-			this.label7.Location = new System.Drawing.Point(1016, 371);
+			this.label7.Location = new System.Drawing.Point(1016, 394);
 			this.label7.Name = "label7";
 			this.label7.Size = new System.Drawing.Size(31, 13);
 			this.label7.TabIndex = 1;
@@ -146,7 +152,7 @@
 			// 
 			this.panel2.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("panel2.BackgroundImage")));
 			this.panel2.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
-			this.panel2.Location = new System.Drawing.Point(783, 355);
+			this.panel2.Location = new System.Drawing.Point(783, 378);
 			this.panel2.Name = "panel2";
 			this.panel2.Size = new System.Drawing.Size(261, 13);
 			this.panel2.TabIndex = 2;
@@ -154,7 +160,7 @@
 			// textBoxFitting
 			// 
 			this.textBoxFitting.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-			this.textBoxFitting.Location = new System.Drawing.Point(1050, 12);
+			this.textBoxFitting.Location = new System.Drawing.Point(1050, 35);
 			this.textBoxFitting.Multiline = true;
 			this.textBoxFitting.Name = "textBoxFitting";
 			this.textBoxFitting.ReadOnly = true;
@@ -165,18 +171,97 @@
 			// 
 			this.checkBoxPause.Appearance = System.Windows.Forms.Appearance.Button;
 			this.checkBoxPause.AutoSize = true;
-			this.checkBoxPause.Location = new System.Drawing.Point(1113, 358);
+			this.checkBoxPause.Location = new System.Drawing.Point(604, 6);
 			this.checkBoxPause.Name = "checkBoxPause";
 			this.checkBoxPause.Size = new System.Drawing.Size(53, 23);
 			this.checkBoxPause.TabIndex = 4;
 			this.checkBoxPause.Text = "PAUSE";
 			this.checkBoxPause.UseVisualStyleBackColor = true;
+			this.checkBoxPause.CheckedChanged += new System.EventHandler(this.checkBoxPause_CheckedChanged);
+			// 
+			// integerTrackbarControlRoughnessIndex
+			// 
+			this.integerTrackbarControlRoughnessIndex.Enabled = false;
+			this.integerTrackbarControlRoughnessIndex.Location = new System.Drawing.Point(95, 9);
+			this.integerTrackbarControlRoughnessIndex.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.integerTrackbarControlRoughnessIndex.MinimumSize = new System.Drawing.Size(70, 20);
+			this.integerTrackbarControlRoughnessIndex.Name = "integerTrackbarControlRoughnessIndex";
+			this.integerTrackbarControlRoughnessIndex.RangeMax = 63;
+			this.integerTrackbarControlRoughnessIndex.RangeMin = 0;
+			this.integerTrackbarControlRoughnessIndex.Size = new System.Drawing.Size(200, 20);
+			this.integerTrackbarControlRoughnessIndex.TabIndex = 5;
+			this.integerTrackbarControlRoughnessIndex.Value = 63;
+			this.integerTrackbarControlRoughnessIndex.VisibleRangeMax = 63;
+			this.integerTrackbarControlRoughnessIndex.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlRoughnessIndex_ValueChanged);
+			// 
+			// label8
+			// 
+			this.label8.AutoSize = true;
+			this.label8.Location = new System.Drawing.Point(12, 11);
+			this.label8.Name = "label8";
+			this.label8.Size = new System.Drawing.Size(77, 13);
+			this.label8.TabIndex = 6;
+			this.label8.Text = "Roughness (Y)";
+			// 
+			// integerTrackbarControlThetaIndex
+			// 
+			this.integerTrackbarControlThetaIndex.Enabled = false;
+			this.integerTrackbarControlThetaIndex.Location = new System.Drawing.Point(386, 9);
+			this.integerTrackbarControlThetaIndex.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.integerTrackbarControlThetaIndex.MinimumSize = new System.Drawing.Size(70, 20);
+			this.integerTrackbarControlThetaIndex.Name = "integerTrackbarControlThetaIndex";
+			this.integerTrackbarControlThetaIndex.RangeMax = 63;
+			this.integerTrackbarControlThetaIndex.RangeMin = 0;
+			this.integerTrackbarControlThetaIndex.Size = new System.Drawing.Size(200, 20);
+			this.integerTrackbarControlThetaIndex.TabIndex = 5;
+			this.integerTrackbarControlThetaIndex.Value = 0;
+			this.integerTrackbarControlThetaIndex.VisibleRangeMax = 63;
+			this.integerTrackbarControlThetaIndex.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlThetaIndex_ValueChanged);
+			// 
+			// label9
+			// 
+			this.label9.AutoSize = true;
+			this.label9.Location = new System.Drawing.Point(303, 11);
+			this.label9.Name = "label9";
+			this.label9.Size = new System.Drawing.Size(81, 13);
+			this.label9.TabIndex = 6;
+			this.label9.Text = "cos(ThetaV) (X)";
+			// 
+			// checkBoxAutoRun
+			// 
+			this.checkBoxAutoRun.AutoSize = true;
+			this.checkBoxAutoRun.Checked = true;
+			this.checkBoxAutoRun.CheckState = System.Windows.Forms.CheckState.Checked;
+			this.checkBoxAutoRun.Location = new System.Drawing.Point(663, 10);
+			this.checkBoxAutoRun.Name = "checkBoxAutoRun";
+			this.checkBoxAutoRun.Size = new System.Drawing.Size(71, 17);
+			this.checkBoxAutoRun.TabIndex = 7;
+			this.checkBoxAutoRun.Text = "Auto-Run";
+			this.checkBoxAutoRun.UseVisualStyleBackColor = true;
+			// 
+			// checkBoxDoFitting
+			// 
+			this.checkBoxDoFitting.AutoSize = true;
+			this.checkBoxDoFitting.Checked = true;
+			this.checkBoxDoFitting.CheckState = System.Windows.Forms.CheckState.Checked;
+			this.checkBoxDoFitting.Location = new System.Drawing.Point(737, 10);
+			this.checkBoxDoFitting.Name = "checkBoxDoFitting";
+			this.checkBoxDoFitting.Size = new System.Drawing.Size(71, 17);
+			this.checkBoxDoFitting.TabIndex = 7;
+			this.checkBoxDoFitting.Text = "Do Fitting";
+			this.checkBoxDoFitting.UseVisualStyleBackColor = true;
 			// 
 			// FitterForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-			this.ClientSize = new System.Drawing.Size(1239, 394);
+			this.ClientSize = new System.Drawing.Size(1239, 423);
+			this.Controls.Add(this.checkBoxDoFitting);
+			this.Controls.Add(this.checkBoxAutoRun);
+			this.Controls.Add(this.label9);
+			this.Controls.Add(this.label8);
+			this.Controls.Add(this.integerTrackbarControlThetaIndex);
+			this.Controls.Add(this.integerTrackbarControlRoughnessIndex);
 			this.Controls.Add(this.checkBoxPause);
 			this.Controls.Add(this.textBoxFitting);
 			this.Controls.Add(this.panel2);
@@ -216,5 +301,11 @@
 		private System.Windows.Forms.Panel panel2;
 		private System.Windows.Forms.TextBox textBoxFitting;
 		private System.Windows.Forms.CheckBox checkBoxPause;
+		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlRoughnessIndex;
+		private System.Windows.Forms.Label label8;
+		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlThetaIndex;
+		private System.Windows.Forms.Label label9;
+		private System.Windows.Forms.CheckBox checkBoxAutoRun;
+		private System.Windows.Forms.CheckBox checkBoxDoFitting;
 	}
 }

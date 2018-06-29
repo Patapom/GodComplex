@@ -1,5 +1,4 @@
-﻿#define PERFORM_FITTING	// Comment this to avoid fitting (e.g. if you're only comparing 2 BRDFs models, for example)
-#define FIT_WITH_BFGS
+﻿#define FIT_WITH_BFGS
 //#define FIT_INV_M
 //#define COMPUTE_ERROR_NO_MIS
 
@@ -431,6 +430,10 @@ namespace TestMSBRDF.LTC
 		FitterForm	m_debugForm = null;
 		bool		m_quickDebug;
 
+// 		IBRDF		m_BRDF = null;
+// 		int			m_tableSize;
+
+
 		public LTCFitter( Form _ownerForm, bool _quickDebug ) {
 			if ( _ownerForm == null )
 				return;	// No debug...
@@ -458,24 +461,55 @@ namespace TestMSBRDF.LTC
  			double[]	resultFit = new double[5];
 
 			LTC[,]		result = new LTC[_tableSize,_tableSize];
+			int			validResultsCount = 0;
 
 			if ( _tableFileName == null )
 				_tableFileName = new System.IO.FileInfo( "DefaultTable_" + DateTime.Now.ToLongTimeString().Replace( ":", "-" ) + ".ltc" );
 			if ( _tableFileName.Exists )
-				result = Load( _tableFileName );
+				result = Load( _tableFileName, out validResultsCount );
+
+			int	roughnessIndex = _tableSize-1;
+			int	thetaIndex = 0;
+			if ( m_debugForm != null ) {
+				roughnessIndex = m_debugForm.RoughnessIndex;
+				thetaIndex = m_debugForm.ThetaIndex;
+			}
+
+			// Handle manual scrolling in results
+			m_debugForm.TrackbarValueChanged += () => {
+				if ( !m_debugForm.Paused )
+					return;	// Let auto
+
+				thetaIndex = m_debugForm.ThetaIndex;
+				float	x = (float) thetaIndex / (_tableSize - 1);
+				float	cosTheta = 1.0f - x*x;
+						cosTheta = Mathf.Max( 3.7540224885647058065387021283285e-4f, cosTheta );	// Clamp to cos(1.57)
+
+				// alpha = perceptualRoughness^2  (perceptualRoughness = "sRGB" representation of roughness, as painted by artists)
+				roughnessIndex = m_debugForm.RoughnessIndex;
+				float perceptualRoughness = (float) roughnessIndex / (_tableSize-1);
+				float alpha = Mathf.Max( MIN_ALPHA, perceptualRoughness * perceptualRoughness );
+
+ 				m_debugForm.ShowBRDF( (float) validResultsCount / (_tableSize*_tableSize), Mathf.Acos( cosTheta ), alpha, _BRDF, result[m_debugForm.RoughnessIndex,m_debugForm.ThetaIndex], true );
+
+				// This to ensure the next thetaIndex++ gets canceled!
+				thetaIndex--;
+			};
 
 			// loop over theta and alpha
-			int	count = 0;
-//			for ( int roughnessIndex=_tableSize-1; roughnessIndex >= 0; --roughnessIndex ) {
-for ( int roughnessIndex=_tableSize-1; roughnessIndex >= 0; roughnessIndex -= 15 ) {
-//for ( int roughnessIndex=8; roughnessIndex >= 0; roughnessIndex-- ) {
+			for ( ; roughnessIndex >= 0; --roughnessIndex ) {
+				if ( m_debugForm != null )
+					m_debugForm.RoughnessIndex = roughnessIndex;
 
-				for ( int thetaIndex=0; thetaIndex <= _tableSize-1; ++thetaIndex ) {
+				for ( ; thetaIndex <= _tableSize-1; ++thetaIndex ) {
 //thetaIndex = _tableSize - 3;
 //m_debugForm.Paused = true;
 
+					if ( m_debugForm != null )
+						m_debugForm.ThetaIndex = thetaIndex;
+
 					if ( result[roughnessIndex,thetaIndex] != null ) {
-						++count;
+						validResultsCount++;
 						if ( m_debugForm != null )
 							m_debugForm.AccumulateStatistics( result[roughnessIndex,thetaIndex], false );
 						continue;	// Already computed!
@@ -544,7 +578,7 @@ for ( int roughnessIndex=_tableSize-1; roughnessIndex >= 0; roughnessIndex -= 15
 					#endif
 
 					// Find best-fit LTC lobe (scale, alphax, alphay)
-					#if PERFORM_FITTING
+					if ( m_debugForm == null || m_debugForm.DoFitting ) {
 						#if FIT_WITH_BFGS
 							fitModel.m_LTC = ltc;
 							fitModel.m_BRDF = _BRDF;
@@ -567,16 +601,22 @@ for ( int roughnessIndex=_tableSize-1; roughnessIndex >= 0; roughnessIndex -= 15
 							// Update LTC with final best fitting values
 							ltc.Set( resultFit, isotropic );
 						#endif
-					#endif
+					}
 
 					// Show debug form
-					++count;
+					validResultsCount++;
 					if ( m_debugForm != null ) {
-						bool	fullRefresh = !m_quickDebug || (count % 10) == 1;
+						bool	fullRefresh = !m_quickDebug || !m_debugForm.AutoRun || (validResultsCount % 10) == 1;
 						m_debugForm.AccumulateStatistics( ltc, fullRefresh );
-						m_debugForm.ShowBRDF( (float) count / (_tableSize*_tableSize), Mathf.Acos( cosTheta ), alpha, _BRDF, ltc, fullRefresh );
+						m_debugForm.ShowBRDF( (float) validResultsCount / (_tableSize*_tableSize), Mathf.Acos( cosTheta ), alpha, _BRDF, ltc, fullRefresh );
+
+						// Check if we should continue computing
+						if ( !m_debugForm.AutoRun )
+							m_debugForm.Paused = true;	// Pause after computation
 					}
 				}
+
+				thetaIndex = 0;	// Clear after first line
 
 				Save( _tableFileName, result );
 			}
@@ -714,8 +754,9 @@ eval_LTC *= recMaxValue;
 
 		#region I/O
 
-		LTC[,]	Load( System.IO.FileInfo _tableFileName ) {
+		LTC[,]	Load( System.IO.FileInfo _tableFileName, out int _validResultsCount ) {
 			LTC[,]	result = null;
+			_validResultsCount = 0;
 			using ( System.IO.FileStream S = _tableFileName.OpenRead() )
 				using ( System.IO.BinaryReader R = new System.IO.BinaryReader( S ) ) {
 					result = new LTC[R.ReadUInt32(), R.ReadUInt32()];
@@ -723,6 +764,7 @@ eval_LTC *= recMaxValue;
 						for ( uint X=0; X < result.GetLength( 0 ); X++ ) {
 							if ( R.ReadBoolean() ) {
 								result[X,Y] = new LTC( R );
+								_validResultsCount++;
 							}
 						}
 					}

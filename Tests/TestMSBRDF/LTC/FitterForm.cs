@@ -17,14 +17,51 @@ namespace TestMSBRDF.LTC
 {
 	public partial class FitterForm : Form
 	{
-		LTCFitter	m_owner = null;
+		LTCFitter		m_owner = null;
 
-		uint		m_width;
-		float4[]	m_falseSpectrum;
+		uint			m_width;
+		float4[]		m_falseSpectrum;
 
-		ImageFile	m_imageSource;
-		ImageFile	m_imageTarget;
-		ImageFile	m_imageDifference;
+		ImageFile		m_imageSource;
+		ImageFile		m_imageTarget;
+		ImageFile		m_imageDifference;
+
+		float			m_theta;
+		float			m_roughness;
+		IBRDF			m_BRDF;
+		LTCFitter.LTC	m_LTC;
+		float3			m_tsView;
+		float3			m_tsLight;
+
+		int				m_statsCounter;
+		int				m_statsNormalizationCounter;
+		double			m_lastError;
+		int				m_lastIterationsCount;
+		double			m_lastNormalization;
+
+		double			m_statsSumError;
+		double			m_statsSumErrorWithoutHighValues;
+		double			m_statsSumNormalization;
+		int				m_statsSumIterations;
+
+		public bool		Paused {
+			get { return checkBoxPause.Checked; }
+			set {
+				checkBoxPause.Checked = value;
+				checkBoxPause.Text = checkBoxPause.Checked ? "PLAY" : "PAUSE";
+				integerTrackbarControlRoughnessIndex.Enabled = checkBoxPause.Checked;
+				integerTrackbarControlThetaIndex.Enabled = checkBoxPause.Checked;
+			}
+		}
+
+		public bool		AutoRun { get { return checkBoxAutoRun.Checked; } set { checkBoxAutoRun.Checked = value; } }
+		public bool		DoFitting { get { return checkBoxDoFitting.Checked; } set { checkBoxDoFitting.Checked = value; } }
+
+		public int		RoughnessIndex { get { return integerTrackbarControlRoughnessIndex.Value; } set { integerTrackbarControlRoughnessIndex.Value = value; } }
+		public int		ThetaIndex { get { return integerTrackbarControlThetaIndex.Value; } set { integerTrackbarControlThetaIndex.Value = value; } }
+
+		public delegate void	TrackbarChangedDelegate();
+		public event TrackbarChangedDelegate	TrackbarValueChanged;
 
 		public FitterForm( LTCFitter _owner ) {
 			InitializeComponent();
@@ -52,26 +89,6 @@ namespace TestMSBRDF.LTC
 			#endif
 		}
 
-		float			m_theta;
-		float			m_roughness;
-		IBRDF			m_BRDF;
-		LTCFitter.LTC	m_LTC;
-		float3			m_tsView;
-		float3			m_tsLight;
-
-		int				m_statsCounter;
-		int				m_statsNormalizationCounter;
-		double			m_lastError;
-		int				m_lastIterationsCount;
-		double			m_lastNormalization;
-
-		double			m_statsSumError;
-		double			m_statsSumErrorWithoutHighValues;
-		double			m_statsSumNormalization;
-		int				m_statsSumIterations;
-
-		public bool		Paused { get { return checkBoxPause.Checked; } set { checkBoxPause.Checked = value; } }
-
 		public void	AccumulateStatistics( LTCFitter.LTC _LTC, bool _fullRefresh ) {
 			m_lastError = _LTC.error;
 			m_lastIterationsCount = _LTC.iterationsCount;
@@ -92,7 +109,7 @@ namespace TestMSBRDF.LTC
 			m_BRDF = _BRDF;
 			m_LTC = _LTC;
 
-			this.Text = "Fitter Debugger - Theta = " + Mathf.ToDeg(_theta).ToString( "G3" ) + "° - Roughness = " + _roughness.ToString( "G3" ) + " - Error = " + _LTC.error.ToString( "G4" ) + " - Progress = " + (100.0f * _progress).ToString( "G3" ) + "%";
+			this.Text = "Fitter Debugger - Theta = " + Mathf.ToDeg(_theta).ToString( "G3" ) + "° - Roughness = " + _roughness.ToString( "G3" ) + " - Error = " + (_LTC != null ? _LTC.error.ToString( "G4" ) : "not computed") + " - Progress = " + (100.0f * _progress).ToString( "G3" ) + "%";
 
 			// Build fixed view vector
 			m_tsView.x = Mathf.Sin( m_theta );
@@ -102,20 +119,29 @@ namespace TestMSBRDF.LTC
 			// Recompute images
 			if ( _fullRefresh ) {
 				m_imageSource.WritePixels( ( uint _X, uint _Y, ref float4 _color ) => { RenderSphere( _X, _Y, -4, +4, ref _color, ( ref float3 _tsView, ref float3 _tsLight ) => { return EstimateBRDF( ref _tsView, ref _tsLight ); } ); } );
-				m_imageTarget.WritePixels( ( uint _X, uint _Y, ref float4 _color ) => { RenderSphere( _X, _Y, -4, +4, ref _color, ( ref float3 _tsView, ref float3 _tsLight ) => { return EstimateLTC( ref _tsView, ref _tsLight ); } ); } );
 
-				#if RELATIVE_ERROR
-					m_imageDifference.WritePixels( ( uint _X, uint _Y, ref float4 _color ) => { RenderSphere( _X, _Y, -4, 4, ref _color, ( ref float3 _tsView, ref float3 _tsLight ) => {
-						float	V0 = EstimateBRDF( ref _tsView, ref _tsLight );
-						float	V1 = EstimateLTC( ref _tsView, ref _tsLight );
-						return (V0 > V1 ? V0 / Math.Max( 1e-6f, V1 ) : V1 / Math.Max( 1e-6f, V0 )) - 1.0f;
-					} ); } );
-				#else
-					m_imageDifference.WritePixels( ( uint _X, uint _Y, ref float4 _color ) => { RenderSphere( _X, _Y, -4, 0, ref _color, ( ref float3 _tsView, ref float3 _tsLight ) => {
-//						utiliser error!
-						return Mathf.Abs( EstimateBRDF( ref _tsView, ref _tsLight ) - EstimateLTC( ref _tsView, ref _tsLight ) );
-					} ); } );
-				#endif
+				if ( m_LTC != null ) {
+					m_imageTarget.WritePixels( ( uint _X, uint _Y, ref float4 _color ) => { RenderSphere( _X, _Y, -4, +4, ref _color, ( ref float3 _tsView, ref float3 _tsLight ) => { return EstimateLTC( ref _tsView, ref _tsLight ); } ); } );
+				} else {
+					m_imageTarget.WritePixels( ( uint _X, uint _Y, ref float4 _color ) => { _color = (((_X >> 2) ^ (_Y >> 2)) & 1) == 0 ? new float4( 1, 0, 0, 1 ) : float4.UnitW; } );
+				}
+
+				if ( m_LTC != null ) {
+					#if RELATIVE_ERROR
+						m_imageDifference.WritePixels( ( uint _X, uint _Y, ref float4 _color ) => { RenderSphere( _X, _Y, -4, 4, ref _color, ( ref float3 _tsView, ref float3 _tsLight ) => {
+							float	V0 = EstimateBRDF( ref _tsView, ref _tsLight );
+							float	V1 = EstimateLTC( ref _tsView, ref _tsLight );
+							return (V0 > V1 ? V0 / Math.Max( 1e-6f, V1 ) : V1 / Math.Max( 1e-6f, V0 )) - 1.0f;
+						} ); } );
+					#else
+						m_imageDifference.WritePixels( ( uint _X, uint _Y, ref float4 _color ) => { RenderSphere( _X, _Y, -4, 0, ref _color, ( ref float3 _tsView, ref float3 _tsLight ) => {
+//							utiliser error!
+							return Mathf.Abs( EstimateBRDF( ref _tsView, ref _tsLight ) - EstimateLTC( ref _tsView, ref _tsLight ) );
+						} ); } );
+					#endif
+				} else {
+					m_imageDifference.WritePixels( ( uint _X, uint _Y, ref float4 _color ) => { _color = (((_X >> 2) ^ (_Y >> 2)) & 1) == 0 ? new float4( 1, 0, 0, 1 ) : float4.UnitW; } );
+				}
 
 				// Assign bitmaps
 				panelOutputSourceBRDF.PanelBitmap = m_imageSource.AsBitmap;
@@ -128,6 +154,11 @@ namespace TestMSBRDF.LTC
 			}
 
 			// Update text
+			if ( m_LTC == null ) {
+				textBoxFitting.Text = "<NOT COMPUTED>";
+				return;
+			}
+
 			double[]	runtimeParms = _LTC.RuntimeParameters;
 
 			textBoxFitting.Text = "m11 = " + _LTC.m11 + "\r\n"
@@ -208,6 +239,18 @@ namespace TestMSBRDF.LTC
 
 			float	V = (float) m_LTC.Eval( ref _tsLight );
 			return V;
+		}
+
+		private void checkBoxPause_CheckedChanged( object sender, EventArgs e ) {
+			Paused = checkBoxPause.Checked;
+		}
+
+		private void integerTrackbarControlRoughnessIndex_ValueChanged( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue ) {
+			TrackbarValueChanged();
+		}
+
+		private void integerTrackbarControlThetaIndex_ValueChanged( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue ) {
+			TrackbarValueChanged();
 		}
 	}
 }
