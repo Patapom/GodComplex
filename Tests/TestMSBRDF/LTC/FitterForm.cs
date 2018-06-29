@@ -105,7 +105,7 @@ namespace TestMSBRDF.LTC
 			m_statsCounter++;
 		}
 
-		public void	ShowBRDF( float _progress, float _theta, float _roughness, IBRDF _BRDF, LTCFitter.LTC _LTC, bool _fullRefresh ) {
+		public void	ShowBRDF( float _progress, float _theta, float _roughness, IBRDF _BRDF, LTCFitter.LTC _LTC, bool _runMessageLoopOnPause ) {
 			m_theta = _theta;
 			m_roughness = _roughness;
 			m_BRDF = _BRDF;
@@ -119,7 +119,7 @@ namespace TestMSBRDF.LTC
 			m_tsView.z = Mathf.Cos( m_theta );
 
 			// Recompute images
-			if ( _fullRefresh ) {
+			if ( true ) {
 				m_imageSource.WritePixels( ( uint _X, uint _Y, ref float4 _color ) => { RenderSphere( _X, _Y, -4, +4, ref _color, ( ref float3 _tsView, ref float3 _tsLight ) => { return EstimateBRDF( ref _tsView, ref _tsLight ); } ); } );
 
 				if ( m_LTC != null ) {
@@ -195,7 +195,7 @@ namespace TestMSBRDF.LTC
 			// Let windows get updated
 			Application.DoEvents();
 
-			while ( Paused )
+			while ( _runMessageLoopOnPause && Paused )
 				Application.DoEvents();
 		}
 

@@ -484,7 +484,7 @@ namespace TestMSBRDF.LTC
 				float perceptualRoughness = (float) roughnessIndex / (_tableSize-1);
 				float alpha = Mathf.Max( MIN_ALPHA, perceptualRoughness * perceptualRoughness );
 
- 				m_debugForm.ShowBRDF( (float) validResultsCount / (_tableSize*_tableSize), Mathf.Acos( cosTheta ), alpha, _BRDF, result[m_debugForm.RoughnessIndex,m_debugForm.ThetaIndex], true );
+ 				m_debugForm.ShowBRDF( (float) validResultsCount / (_tableSize*_tableSize), Mathf.Acos( cosTheta ), alpha, _BRDF, result[m_debugForm.RoughnessIndex,m_debugForm.ThetaIndex], false );
 
 				// This to ensure the next thetaIndex++ gets canceled!
 				thetaIndex--;
@@ -673,10 +673,9 @@ tsReflection = _LTC.Z;	// Use preferred direction
 				double	pdf_BRDF, eval_BRDF;
 				double	pdf_LTC, eval_LTC;
 
-				double	maxBRDF = _BRDF.MaxValue( ref _tsView, _alpha );
-				double	maxLTC = _LTC.MaxValue;
+// 				double	maxBRDF = _BRDF.MaxValue( ref _tsView, _alpha );
+// 				double	maxLTC = _LTC.MaxValue;
 //				double	recMaxValue = 1.0 / Math.Max( maxBRDF, maxLTC );
-				double	recMaxValue = 1.0;
 
 				double	sumError = 0.0;
 				for ( int j = 0 ; j < SAMPLES_COUNT ; ++j ) {
