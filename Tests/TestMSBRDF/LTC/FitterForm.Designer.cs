@@ -50,6 +50,10 @@
 			this.label9 = new System.Windows.Forms.Label();
 			this.checkBoxAutoRun = new System.Windows.Forms.CheckBox();
 			this.checkBoxDoFitting = new System.Windows.Forms.CheckBox();
+			this.integerTrackbarControlStepX = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
+			this.label10 = new System.Windows.Forms.Label();
+			this.label11 = new System.Windows.Forms.Label();
+			this.integerTrackbarControlStepY = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
 			this.SuspendLayout();
 			// 
 			// panelOutputSourceBRDF
@@ -251,13 +255,63 @@
 			this.checkBoxDoFitting.Text = "Do Fitting";
 			this.checkBoxDoFitting.UseVisualStyleBackColor = true;
 			// 
+			// integerTrackbarControlStepX
+			// 
+			this.integerTrackbarControlStepX.Location = new System.Drawing.Point(873, 9);
+			this.integerTrackbarControlStepX.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.integerTrackbarControlStepX.MinimumSize = new System.Drawing.Size(70, 20);
+			this.integerTrackbarControlStepX.Name = "integerTrackbarControlStepX";
+			this.integerTrackbarControlStepX.RangeMax = 64;
+			this.integerTrackbarControlStepX.RangeMin = 1;
+			this.integerTrackbarControlStepX.Size = new System.Drawing.Size(117, 20);
+			this.integerTrackbarControlStepX.TabIndex = 8;
+			this.integerTrackbarControlStepX.Value = 1;
+			this.integerTrackbarControlStepX.VisibleRangeMax = 64;
+			this.integerTrackbarControlStepX.VisibleRangeMin = 1;
+			// 
+			// label10
+			// 
+			this.label10.AutoSize = true;
+			this.label10.Location = new System.Drawing.Point(831, 11);
+			this.label10.Name = "label10";
+			this.label10.Size = new System.Drawing.Size(36, 13);
+			this.label10.TabIndex = 6;
+			this.label10.Text = "StepX";
+			// 
+			// label11
+			// 
+			this.label11.AutoSize = true;
+			this.label11.Location = new System.Drawing.Point(999, 11);
+			this.label11.Name = "label11";
+			this.label11.Size = new System.Drawing.Size(36, 13);
+			this.label11.TabIndex = 6;
+			this.label11.Text = "StepY";
+			// 
+			// integerTrackbarControlStepY
+			// 
+			this.integerTrackbarControlStepY.Location = new System.Drawing.Point(1041, 9);
+			this.integerTrackbarControlStepY.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.integerTrackbarControlStepY.MinimumSize = new System.Drawing.Size(70, 20);
+			this.integerTrackbarControlStepY.Name = "integerTrackbarControlStepY";
+			this.integerTrackbarControlStepY.RangeMax = 64;
+			this.integerTrackbarControlStepY.RangeMin = 1;
+			this.integerTrackbarControlStepY.Size = new System.Drawing.Size(117, 20);
+			this.integerTrackbarControlStepY.TabIndex = 8;
+			this.integerTrackbarControlStepY.Value = 1;
+			this.integerTrackbarControlStepY.VisibleRangeMax = 64;
+			this.integerTrackbarControlStepY.VisibleRangeMin = 1;
+			// 
 			// FitterForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1239, 423);
+			this.Controls.Add(this.integerTrackbarControlStepY);
+			this.Controls.Add(this.integerTrackbarControlStepX);
 			this.Controls.Add(this.checkBoxDoFitting);
+			this.Controls.Add(this.label11);
 			this.Controls.Add(this.checkBoxAutoRun);
+			this.Controls.Add(this.label10);
 			this.Controls.Add(this.label9);
 			this.Controls.Add(this.label8);
 			this.Controls.Add(this.integerTrackbarControlThetaIndex);
@@ -307,5 +361,9 @@
 		private System.Windows.Forms.Label label9;
 		private System.Windows.Forms.CheckBox checkBoxAutoRun;
 		private System.Windows.Forms.CheckBox checkBoxDoFitting;
+		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlStepX;
+		private System.Windows.Forms.Label label10;
+		private System.Windows.Forms.Label label11;
+		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlStepY;
 	}
 }

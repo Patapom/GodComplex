@@ -59,6 +59,8 @@ namespace TestMSBRDF.LTC
 
 		public int		RoughnessIndex { get { return integerTrackbarControlRoughnessIndex.Value; } set { integerTrackbarControlRoughnessIndex.Value = value; } }
 		public int		ThetaIndex { get { return integerTrackbarControlThetaIndex.Value; } set { integerTrackbarControlThetaIndex.Value = value; } }
+		public int		StepX { get { return integerTrackbarControlStepX.Value; } }
+		public int		StepY { get { return integerTrackbarControlStepY.Value; } }
 
 		public delegate void	TrackbarChangedDelegate();
 		public event TrackbarChangedDelegate	TrackbarValueChanged;

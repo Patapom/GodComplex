@@ -428,19 +428,13 @@ namespace TestMSBRDF.LTC
 		#endregion
 
 		FitterForm	m_debugForm = null;
-		bool		m_quickDebug;
 
-// 		IBRDF		m_BRDF = null;
-// 		int			m_tableSize;
-
-
-		public LTCFitter( Form _ownerForm, bool _quickDebug ) {
+		public LTCFitter( Form _ownerForm ) {
 			if ( _ownerForm == null )
 				return;	// No debug...
 
 			m_debugForm = new FitterForm( this );
 			m_debugForm.Show( _ownerForm );
-			m_quickDebug = _quickDebug;
 		}
 
 		public LTC[,]	Fit( IBRDF _BRDF, int _tableSize, System.IO.FileInfo _tableFileName ) {
@@ -497,11 +491,11 @@ namespace TestMSBRDF.LTC
 			};
 
 			// loop over theta and alpha
-			for ( ; roughnessIndex >= 0; --roughnessIndex ) {
+			for ( ; roughnessIndex >= 0; roughnessIndex -= (m_debugForm!=null ? m_debugForm.StepY : 1) ) {
 				if ( m_debugForm != null )
 					m_debugForm.RoughnessIndex = roughnessIndex;
 
-				for ( ; thetaIndex <= _tableSize-1; ++thetaIndex ) {
+				for ( ; thetaIndex <= _tableSize-1; thetaIndex += (m_debugForm != null ? m_debugForm.StepX : 1) ) {
 //thetaIndex = _tableSize - 3;
 //m_debugForm.Paused = true;
 
@@ -606,9 +600,8 @@ namespace TestMSBRDF.LTC
 					// Show debug form
 					validResultsCount++;
 					if ( m_debugForm != null ) {
-						bool	fullRefresh = !m_quickDebug || !m_debugForm.AutoRun || (validResultsCount % 10) == 1;
-						m_debugForm.AccumulateStatistics( ltc, fullRefresh );
-						m_debugForm.ShowBRDF( (float) validResultsCount / (_tableSize*_tableSize), Mathf.Acos( cosTheta ), alpha, _BRDF, ltc, fullRefresh );
+						m_debugForm.AccumulateStatistics( ltc, true );
+						m_debugForm.ShowBRDF( (float) validResultsCount / (_tableSize*_tableSize), Mathf.Acos( cosTheta ), alpha, _BRDF, ltc, true );
 
 						// Check if we should continue computing
 						if ( !m_debugForm.AutoRun )
@@ -700,8 +693,8 @@ tsReflection = _LTC.Z;	// Use preferred direction
 							eval_BRDF = _BRDF.Eval( ref _tsView, ref tsLight, _alpha, out pdf_BRDF );
 							eval_LTC = _LTC.Eval( ref tsLight );
 
-eval_BRDF *= recMaxValue;
-eval_LTC *= recMaxValue;
+// eval_BRDF *= recMaxValue;
+// eval_LTC *= recMaxValue;
 
 							pdf_LTC = eval_LTC / _LTC.amplitude;
 							double	error = Math.Abs( eval_BRDF - eval_LTC );
@@ -711,7 +704,8 @@ eval_LTC *= recMaxValue;
 	// 							throw new Exception( "NaN!" );
 	// 						sumError += error / (pdf_LTC + pdf_BRDF);
 
-							error /= pdf_LTC + pdf_BRDF;
+							if ( error != 0.0 )
+								error /= pdf_LTC + pdf_BRDF;
 							if ( double.IsNaN( error ) )
 								throw new Exception( "NaN!" );
 							sumError += error;
@@ -726,8 +720,8 @@ eval_LTC *= recMaxValue;
 							eval_BRDF = _BRDF.Eval( ref _tsView, ref tsLight, _alpha, out pdf_BRDF );			
 							eval_LTC = _LTC.Eval( ref tsLight );
 
-eval_BRDF *= recMaxValue;
-eval_LTC *= recMaxValue;
+// eval_BRDF *= recMaxValue;
+// eval_LTC *= recMaxValue;
 
 							pdf_LTC = eval_LTC / _LTC.amplitude;
 							double	error = Math.Abs( eval_BRDF - eval_LTC );
@@ -737,7 +731,8 @@ eval_LTC *= recMaxValue;
 	// 							throw new Exception( "NaN!" );
 	// 						sumError += error / (pdf_LTC + pdf_BRDF);
 
-							error /= pdf_LTC + pdf_BRDF;
+							if ( error != 0.0 )
+								error /= pdf_LTC + pdf_BRDF;
 							if ( double.IsNaN( error ) )
 								throw new Exception( "NaN!" );
 							sumError += error;
