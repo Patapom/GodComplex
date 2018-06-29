@@ -112,7 +112,8 @@ namespace TestMSBRDF.LTC
 	class BRDF_CookTorrance : IBRDF {
 
 		public double	MaxValue( ref float3 _tsView, float _alpha ) {
-			double	D =  Math.Exp( 1.0 / (_alpha * _alpha) );
+			double	a2 = Math.Max( 1e-4, _alpha * _alpha );
+			double	D =  1.0 / (Math.PI * a2);
 			double	G = 1.0;
 			return D * G / (4.0 * _tsView.z);
 		}

@@ -1,7 +1,7 @@
 ﻿#define PERFORM_FITTING	// Comment this to avoid fitting (e.g. if you're only comparing 2 BRDFs models, for example)
 //#define FIT_WITH_BFGS
-#define FIT_INV_M
-//#define COMPUTE_ERROR_NO_MIS
+//#define FIT_INV_M
+#define COMPUTE_ERROR_NO_MIS
 
 //1) tenter BFGS sur GGX
 //2) Fit InvM + amplitude coeff!
@@ -112,9 +112,16 @@ namespace TestMSBRDF.LTC
 
 				// When composing from the left (V' = V * invM), the important 3rd parameter is m31
  				double	tempM31 = _parameters[2];
- 				double	tempM13 = _parameters.Length > 3 ? _parameters[3] : 0;
-				if ( _parameters.Length > 4 )
-					amplitude = _parameters[4];
+
+				#if FIT_INV_M
+ 					double	tempM13 = _parameters.Length > 3 ? _parameters[3] : 0;
+					if ( _parameters.Length > 4 )
+						amplitude = Math.Max( _parameters[4], 1e-4 );
+				#else
+					double	tempM13 = 0;
+					if ( _parameters.Length > 3 )
+						amplitude = Math.Max( _parameters[3], 1e-4 );
+				#endif
 
 				if ( _isotropic ) {
 					m11 = tempM11;
@@ -434,7 +441,7 @@ namespace TestMSBRDF.LTC
 				#if FIT_INV_M	// FIT_4_PARAMETERS
 					NelderMead	fitter = new NelderMead( 5 );
 				#else
-					NelderMead	fitter = new NelderMead( 3 );
+					NelderMead	fitter = new NelderMead( 4 );
 				#endif
 			#endif
 
@@ -450,9 +457,9 @@ namespace TestMSBRDF.LTC
 
 			// loop over theta and alpha
 			int	count = 0;
-			for ( int roughnessIndex=_tableSize-1; roughnessIndex >= 0; --roughnessIndex ) {
-//for ( int roughnessIndex=_tableSize-1; roughnessIndex >= 0; roughnessIndex -= 16 ) {
-//for ( int roughnessIndex=16; roughnessIndex >= 0; roughnessIndex-- ) {
+//			for ( int roughnessIndex=_tableSize-1; roughnessIndex >= 0; --roughnessIndex ) {
+for ( int roughnessIndex=_tableSize-1; roughnessIndex >= 0; roughnessIndex -= 15 ) {
+//for ( int roughnessIndex=5; roughnessIndex >= 0; roughnessIndex-- ) {
 
 				for ( int thetaIndex=0; thetaIndex <= _tableSize-1; ++thetaIndex ) {
 //thetaIndex = _tableSize - 3;
@@ -485,8 +492,8 @@ namespace TestMSBRDF.LTC
 					// if theta == 0 the lobe is rotationally symmetric and aligned with Z = (0 0 1)
 					bool	isotropic;
 					if ( thetaIndex == 0 ) {
-//						if ( roughnessIndex == _tableSize-1 || result[roughnessIndex+1,thetaIndex] == null ) {
-if ( true ) {
+						if ( roughnessIndex == _tableSize-1 || result[roughnessIndex+1,thetaIndex] == null ) {
+//if ( true ) {
 							// roughness = 1 or no available result
 							ltc.m11 = 1.0f;
 							ltc.m22 = 1.0f;
@@ -521,8 +528,12 @@ if ( true ) {
 					startFit[0] = ltc.m11;
 					startFit[1] = ltc.m22;
 					startFit[2] = ltc.m31;
-					startFit[3] = ltc.m13;
-					startFit[4] = ltc.amplitude;
+					#if FIT_INV_M
+						startFit[3] = ltc.m13;
+						startFit[4] = ltc.amplitude;
+					#else
+						startFit[3] = ltc.amplitude;
+					#endif
 
 					// Find best-fit LTC lobe (scale, alphax, alphay)
 					#if PERFORM_FITTING
@@ -573,26 +584,39 @@ if ( true ) {
 			const int	HEMISPHERE_RADIUS = 32;
 			const int	HEMISPHERE_DIAMETER = 1+2*HEMISPHERE_RADIUS;
 			static double	ComputeError( LTC _LTC, IBRDF _BRDF, ref float3 _tsView, float _alpha ) {
+				float3	L = float3.Zero;
 				float3	tsLight = float3.Zero;
 
 				double	pdf_BRDF, eval_BRDF, eval_LTC;
 
+				float3	tsReflection = 2.0f * _tsView.z * float3.UnitZ - _tsView;	// Expected reflection direction will be used as new hemisphere pole
+				float3	T = new float3( tsReflection.z, 0, -tsReflection.x );
+				float3	B = tsReflection.Cross( T );
+
+				float	scalePower = Mathf.Pow( 10.0f, Mathf.Lerp( 2, 0, _alpha ) );	// Group samples closer to reflection direction based on roughness
+
 				double	sumError = 0.0;
 				for ( int Y=0; Y < HEMISPHERE_DIAMETER; Y++ ) {
-					tsLight.y = (float) (HEMISPHERE_RADIUS - Y) / (HEMISPHERE_RADIUS+1);
+					L.y = (float) (HEMISPHERE_RADIUS - Y) / (HEMISPHERE_RADIUS+1);
+					L.y = Mathf.Sign(L.y) * Mathf.Pow( Math.Abs(L.y), scalePower );
 					for ( int X=0; X < HEMISPHERE_DIAMETER; X++ ) {
-						tsLight.x = (float) (X - HEMISPHERE_RADIUS) / (HEMISPHERE_RADIUS+1);
-						tsLight.z = 1.0f - tsLight.x*tsLight.x - tsLight.y*tsLight.y;
-						if ( tsLight.z <= 0.0f )
+						L.x = (float) (X - HEMISPHERE_RADIUS) / (HEMISPHERE_RADIUS+1);
+						L.x = Mathf.Sign(L.x) * Mathf.Pow( Math.Abs(L.x), scalePower );
+						L.z = 1.0f - L.x*L.x - L.y*L.y;
+						if ( L.z <= 0.0f )
 							continue;	// Outside hemisphere area
 
-						tsLight.z = Mathf.Sqrt( tsLight.z );
+						L.z = Mathf.Sqrt( L.z );
 
+						// Transform into tangent space
+						tsLight = L.x * T + L.y * B + L.z * tsReflection;
+
+						// Estimate BRDF
 						eval_BRDF = _BRDF.Eval( ref _tsView, ref tsLight, _alpha, out pdf_BRDF );
 						eval_LTC = _LTC.Eval( ref tsLight );
 
 						double	error = Math.Abs( eval_BRDF - eval_LTC );
-								error = error*error*error;		// Use L3 norm to favor large values over smaller ones
+//								error = error*error*error;		// Use L3 norm to favor large values over smaller ones
 
 						sumError += error;
 					}
