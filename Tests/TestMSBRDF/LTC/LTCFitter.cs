@@ -467,28 +467,28 @@ namespace TestMSBRDF.LTC
 			if ( m_debugForm != null ) {
 				roughnessIndex = m_debugForm.RoughnessIndex;
 				thetaIndex = m_debugForm.ThetaIndex;
+
+				// Handle manual scrolling in results
+				m_debugForm.TrackbarValueChanged += () => {
+					if ( !m_debugForm.Paused )
+						return;	// Let auto
+
+					thetaIndex = m_debugForm.ThetaIndex;
+					float	x = (float) thetaIndex / (_tableSize - 1);
+					float	cosTheta = 1.0f - x*x;
+							cosTheta = Mathf.Max( 3.7540224885647058065387021283285e-4f, cosTheta );	// Clamp to cos(1.57)
+
+					// alpha = perceptualRoughness^2  (perceptualRoughness = "sRGB" representation of roughness, as painted by artists)
+					roughnessIndex = m_debugForm.RoughnessIndex;
+					float perceptualRoughness = (float) roughnessIndex / (_tableSize-1);
+					float alpha = Mathf.Max( MIN_ALPHA, perceptualRoughness * perceptualRoughness );
+
+ 					m_debugForm.ShowBRDF( (float) validResultsCount / (_tableSize*_tableSize), Mathf.Acos( cosTheta ), alpha, _BRDF, result[m_debugForm.RoughnessIndex,m_debugForm.ThetaIndex], false );
+
+					// This to ensure the next thetaIndex++ gets canceled!
+					thetaIndex--;
+				};
 			}
-
-			// Handle manual scrolling in results
-			m_debugForm.TrackbarValueChanged += () => {
-				if ( !m_debugForm.Paused )
-					return;	// Let auto
-
-				thetaIndex = m_debugForm.ThetaIndex;
-				float	x = (float) thetaIndex / (_tableSize - 1);
-				float	cosTheta = 1.0f - x*x;
-						cosTheta = Mathf.Max( 3.7540224885647058065387021283285e-4f, cosTheta );	// Clamp to cos(1.57)
-
-				// alpha = perceptualRoughness^2  (perceptualRoughness = "sRGB" representation of roughness, as painted by artists)
-				roughnessIndex = m_debugForm.RoughnessIndex;
-				float perceptualRoughness = (float) roughnessIndex / (_tableSize-1);
-				float alpha = Mathf.Max( MIN_ALPHA, perceptualRoughness * perceptualRoughness );
-
- 				m_debugForm.ShowBRDF( (float) validResultsCount / (_tableSize*_tableSize), Mathf.Acos( cosTheta ), alpha, _BRDF, result[m_debugForm.RoughnessIndex,m_debugForm.ThetaIndex], false );
-
-				// This to ensure the next thetaIndex++ gets canceled!
-				thetaIndex--;
-			};
 
 			// loop over theta and alpha
 			for ( ; roughnessIndex >= 0; roughnessIndex -= (m_debugForm!=null ? m_debugForm.StepY : 1) ) {
@@ -496,9 +496,6 @@ namespace TestMSBRDF.LTC
 					m_debugForm.RoughnessIndex = roughnessIndex;
 
 				for ( ; thetaIndex <= _tableSize-1; thetaIndex += (m_debugForm != null ? m_debugForm.StepX : 1) ) {
-//thetaIndex = _tableSize - 3;
-//m_debugForm.Paused = true;
-
 					if ( m_debugForm != null )
 						m_debugForm.ThetaIndex = thetaIndex;
 

@@ -743,15 +743,18 @@ for ( uint Y=0; Y < ROUGHNESS_SUBDIVS_COUNT; Y++ ) {
 		#region LTC Area Lights
 
 		void	FitLTC( DirectoryInfo _targetDirectory ) {
+//			Form	debug = this;
+			Form	debug = null;	// Faster!
+
 			{
-// 				LTC.LTCFitter	fitter = new LTC.LTCFitter( this );
-// 				LTC.BRDF_GGX	GGX = new LTC.BRDF_GGX();
-// 				fitter.Fit( GGX, 64, new FileInfo( "GGX.ltc" ) );
+				LTC.LTCFitter	fitter = new LTC.LTCFitter( debug );
+				LTC.BRDF_GGX	GGX = new LTC.BRDF_GGX();
+				fitter.Fit( GGX, 64, new FileInfo( "GGX.ltc" ) );
 //				fitter.Fit( GGX, 64, null );
 			}
 
  			{
-				LTC.LTCFitter	fitter = new LTC.LTCFitter( this );
+				LTC.LTCFitter	fitter = new LTC.LTCFitter( debug );
 				LTC.BRDF_CookTorrance	cookTorrance = new LTC.BRDF_CookTorrance();
 				fitter.Fit( cookTorrance, 64, new FileInfo( "CookTorrance.ltc" ) );
 //				fitter.Fit( cookTorrance, 64, null );
