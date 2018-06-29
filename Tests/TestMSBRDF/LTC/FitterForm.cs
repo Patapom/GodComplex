@@ -60,20 +60,29 @@ namespace TestMSBRDF.LTC
 		float3			m_tsLight;
 
 		int				m_statsCounter;
+		int				m_statsNormalizationCounter;
 		double			m_lastError;
+		int				m_lastIterationsCount;
 		double			m_lastNormalization;
+
 		double			m_statsSumError;
 		double			m_statsSumErrorWithoutHighValues;
 		double			m_statsSumNormalization;
+		int				m_statsSumIterations;
 
 		public bool		Paused { get { return checkBoxPause.Checked; } set { checkBoxPause.Checked = value; } }
 
-		public void	AccumulateStatistics( LTCFitter.LTC _LTC ) {
+		public void	AccumulateStatistics( LTCFitter.LTC _LTC, bool _fullRefresh ) {
 			m_lastError = _LTC.error;
-//			m_lastNormalization = _LTC.TestNormalization();
+			m_lastIterationsCount = _LTC.iterationsCount;
+			if ( _fullRefresh ) {
+				m_lastNormalization = _LTC.TestNormalization();
+				m_statsSumNormalization += m_lastNormalization;
+				m_statsNormalizationCounter++;
+			}
 			m_statsSumError += m_lastError;
 			m_statsSumErrorWithoutHighValues += Math.Min( 1, m_lastError );
-			m_statsSumNormalization += m_lastNormalization;
+			m_statsSumIterations += m_lastIterationsCount;
 			m_statsCounter++;
 		}
 
@@ -103,6 +112,7 @@ namespace TestMSBRDF.LTC
 					} ); } );
 				#else
 					m_imageDifference.WritePixels( ( uint _X, uint _Y, ref float4 _color ) => { RenderSphere( _X, _Y, -4, 0, ref _color, ( ref float3 _tsView, ref float3 _tsLight ) => {
+//						utiliser error!
 						return Mathf.Abs( EstimateBRDF( ref _tsView, ref _tsLight ) - EstimateLTC( ref _tsView, ref _tsLight ) );
 					} ); } );
 				#endif
@@ -118,7 +128,7 @@ namespace TestMSBRDF.LTC
 			}
 
 			// Update text
-			float[]		runtimeParms = _LTC.RuntimeParameters;
+			double[]	runtimeParms = _LTC.RuntimeParameters;
 
 			textBoxFitting.Text = "m11 = " + _LTC.m11 + "\r\n"
 								+ "m22 = " + _LTC.m22 + "\r\n"
@@ -129,9 +139,9 @@ namespace TestMSBRDF.LTC
 								+ "Fresnel = " + runtimeParms[5] + "\r\n"
 								+ "\r\n"
 								+ "invM = \r\n"
-								+ "r0 = " + _LTC.invM.r0 + "\r\n"
-								+ "r1 = " + _LTC.invM.r1 + "\r\n"
-								+ "r2 = " + _LTC.invM.r2 + "\r\n"
+								+ "r0 = " + WriteRow( 0, _LTC.invM ) + "\r\n"
+								+ "r1 = " + WriteRow( 1, _LTC.invM ) + "\r\n"
+								+ "r2 = " + WriteRow( 2, _LTC.invM ) + "\r\n"
 								+ "\r\n"
 								+ "► Error:\r\n"
 								+ "Avg. = " + (m_statsSumError / m_statsCounter).ToString( "G4" ) + "\r\n"
@@ -139,7 +149,11 @@ namespace TestMSBRDF.LTC
 								+ "\r\n"
 								+ "► Normalization:\r\n"
 								+ "Value = " + m_lastNormalization.ToString( "G4" ) + "\r\n"
-								+ "Avg. = " + (m_statsSumNormalization / m_statsCounter).ToString( "G4" ) + "\r\n";
+								+ "Avg. = " + (m_statsSumNormalization / m_statsNormalizationCounter).ToString( "G4" ) + "\r\n"
+								+ "\r\n"
+								+ "► Iterations:\r\n"
+								+ "Value = " + m_lastIterationsCount + "\r\n"
+								+ "Avg. = " + (m_statsSumIterations / m_statsCounter).ToString( "G4" ) + "\r\n";
 
 			// Redraw
 			textBoxFitting.Refresh();
@@ -150,6 +164,10 @@ namespace TestMSBRDF.LTC
 
 			while ( Paused )
 				Application.DoEvents();
+		}
+
+		string		WriteRow( int _rowIndex, double[,] _M ) {
+			return _M[_rowIndex,0].ToString( "G4" ) + ", " + _M[_rowIndex,1].ToString( "G4" ) + ", " + _M[_rowIndex,2].ToString( "G4" );
 		}
 
 		delegate float	RadialAmplitudeDelegate( ref float3 _tsView, ref float3 _tsLight );
@@ -178,8 +196,8 @@ namespace TestMSBRDF.LTC
 		}
 
 		float	EstimateBRDF( ref float3 _tsView, ref float3 _tsLight ) {
-			float	pdf;
-			float	V = m_BRDF.Eval( ref _tsView, ref _tsLight, m_roughness, out pdf );
+			double	pdf;
+			float	V = (float) m_BRDF.Eval( ref _tsView, ref _tsLight, m_roughness, out pdf );
 			return V;
 		}
 
@@ -188,7 +206,7 @@ namespace TestMSBRDF.LTC
 // float	pdf;
 // return COMPARE.Eval( ref _tsView, ref _tsLight, m_roughness, out pdf ) * 1 / (1 + COMPARE.Lambda( _tsView.z, m_roughness )) / (4 * _tsView.z);	// Apply view-dependent part later
 
-			float	V = m_LTC.Eval( ref _tsLight );
+			float	V = (float) m_LTC.Eval( ref _tsLight );
 			return V;
 		}
 	}

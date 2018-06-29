@@ -32,6 +32,8 @@ namespace TestMSBRDF.LTC
 		double[][]	s;
 		double[]	f;
 
+		public int	m_lastIterationsCount;
+
 		public delegate double	ObjectiveFunctionDelegate( double[] _parameters );
 
 		public NelderMead( int _dimensions ) {
@@ -62,7 +64,7 @@ namespace TestMSBRDF.LTC
 			double[]	e = new double[DIM];	// Expansion
 
 			int lo = 0, hi, nh;
-			for ( int j = 0; j < _maxIterations; j++ ) {
+			for ( m_lastIterationsCount = 0; m_lastIterationsCount < _maxIterations; m_lastIterationsCount++ ) {
 				// find lowest, highest and next highest
 				lo = hi = nh = 0;
 				for ( int i = 1; i < NB_POINTS; i++ ) {
@@ -78,7 +80,7 @@ namespace TestMSBRDF.LTC
 				// stop if we've reached the required tolerance level
 				double a = Mathf.Abs(f[lo]);
 				double b = Mathf.Abs(f[hi]);
-				if ( 2.0*Mathf.Abs(a - b) < (a + b)*_tolerance )
+				if ( 2.0*Mathf.Abs(a - b) < (a + b)*_tolerance || a + b == 0.0 )
 					break;
 
 				// compute centroid (excluding the worst point)

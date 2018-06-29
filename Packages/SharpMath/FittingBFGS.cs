@@ -10,7 +10,9 @@ namespace SharpMath
 	/// </summary>
 	public class BFGS {
 
-		public interface Model {
+		public double	GRADIENT_EPS = 1e-6;
+
+		public interface IModel {
 			/// <summary>
 			/// Gets or sets the free parameters used by the model
 			/// </summary>
@@ -32,7 +34,7 @@ namespace SharpMath
 		public delegate float	ProgressCallback( float _progress );
 
 		int			m_coefficientsCount;
-		Model		m_model;
+		IModel		m_model;
 
 		int			m_maxIterations = 200;
 		double		m_tolX = 1.0e-8;
@@ -88,7 +90,7 @@ namespace SharpMath
 		/// Performs minimization
 		/// </summary>
 		/// <param name="_model"></param>
-		public void	Minimize( Model _model ) {
+		public void	Minimize( IModel _model ) {
 			m_model = _model;
 			m_coefficientsCount = m_model.Parameters.Length;
 
@@ -235,25 +237,24 @@ namespace SharpMath
 		// ===========================================
 		// Compute the gradient using finite differences
 		void	EvalGradient( double[] _Params, double[] _Gradient ) {
-			double	EPS = 1e-6;
 			double	CentralValue = m_functionMinimum;
 
 			for ( int i=0; i < m_coefficientsCount; i++ ) {
-				double	OldCoeff = _Params[i];
+				double	oldCoeff = _Params[i];
 
-				_Params[i] -= EPS;
+				_Params[i] -= GRADIENT_EPS;
 				m_model.Constrain( _Params );		// Pom: constrain!
 				double	parmMin = _Params[i];
 
 				double	OffsetValueNeg = m_model.Eval( _Params );
 
-				_Params[i] = OldCoeff + EPS;
+				_Params[i] = oldCoeff + GRADIENT_EPS;
 				m_model.Constrain( _Params );		// Pom: constrain!
 				double	parmMax = _Params[i];
 
 				double	OffsetValuePos = m_model.Eval( _Params );
 
-				_Params[i] = OldCoeff;
+				_Params[i] = oldCoeff;
 
 //				double	derivative = (OffsetValue - CentralValue) / EPS;
 //				double	derivative = (OffsetValuePos - OffsetValueNeg) / (2.0*EPS);
