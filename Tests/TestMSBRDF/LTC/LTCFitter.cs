@@ -1,10 +1,7 @@
 ﻿#define PERFORM_FITTING	// Comment this to avoid fitting (e.g. if you're only comparing 2 BRDFs models, for example)
-//#define FIT_WITH_BFGS
+#define FIT_WITH_BFGS
 //#define FIT_INV_M
-#define COMPUTE_ERROR_NO_MIS
-
-//1) tenter BFGS sur GGX
-//2) Fit InvM + amplitude coeff!
+//#define COMPUTE_ERROR_NO_MIS
 
 //////////////////////////////////////////////////////////////////////////
 // Fitter class for Linearly-Transformed Cosines
@@ -119,8 +116,8 @@ namespace TestMSBRDF.LTC
 						amplitude = Math.Max( _parameters[4], 1e-4 );
 				#else
 					double	tempM13 = 0;
-					if ( _parameters.Length > 3 )
-						amplitude = Math.Max( _parameters[3], 1e-4 );
+// 					if ( _parameters.Length > 3 )
+// 						amplitude = Math.Max( _parameters[3], 1e-4 );
 				#endif
 
 				if ( _isotropic ) {
@@ -388,17 +385,29 @@ namespace TestMSBRDF.LTC
 			public float	m_alpha;
 			public bool		m_isotropic = false;
 
-			#if FIT_INV_M	// FIT_4_PARAMETERS
-				double[]	m_parameters = new double[4];
-			#else
-				double[]	m_parameters = new double[3];
-			#endif
-
 			#region IModel Members
 
 			public double[] Parameters {
-				get { return m_parameters; }
-				set { m_parameters = value; }
+				get {
+					#if FIT_INV_M
+						double[]	tempParams = new double[4] {
+							m_LTC.m11,
+							m_LTC.m22,
+							m_LTC.m31,
+							m_LTC.m13
+						};
+					#else
+						double[]	tempParams = new double[3] {
+							m_LTC.m11,
+							m_LTC.m22,
+							m_LTC.m31
+						};
+					#endif
+					return tempParams;
+				}
+				set {
+					m_LTC.Set( value, m_isotropic );
+				}
 			}
 
 			public double Eval( double[] _newParameters ) {
@@ -408,8 +417,8 @@ namespace TestMSBRDF.LTC
 			}
 
 			public void Constrain( double[] _parameters ) {
-//  				_parameters[0] = Math.Max( 0.002, _parameters[0] );
-//  				_parameters[1] = Math.Max( 0.002, _parameters[1] );
+//				_parameters[0] = Math.Max( 0.002, _parameters[0] );
+//				_parameters[1] = Math.Max( 0.002, _parameters[1] );
 			}
 
 			#endregion
@@ -441,7 +450,7 @@ namespace TestMSBRDF.LTC
 				#if FIT_INV_M	// FIT_4_PARAMETERS
 					NelderMead	fitter = new NelderMead( 5 );
 				#else
-					NelderMead	fitter = new NelderMead( 4 );
+					NelderMead	fitter = new NelderMead( 3 );
 				#endif
 			#endif
 
@@ -459,7 +468,7 @@ namespace TestMSBRDF.LTC
 			int	count = 0;
 //			for ( int roughnessIndex=_tableSize-1; roughnessIndex >= 0; --roughnessIndex ) {
 for ( int roughnessIndex=_tableSize-1; roughnessIndex >= 0; roughnessIndex -= 15 ) {
-//for ( int roughnessIndex=5; roughnessIndex >= 0; roughnessIndex-- ) {
+//for ( int roughnessIndex=8; roughnessIndex >= 0; roughnessIndex-- ) {
 
 				for ( int thetaIndex=0; thetaIndex <= _tableSize-1; ++thetaIndex ) {
 //thetaIndex = _tableSize - 3;
@@ -493,7 +502,6 @@ for ( int roughnessIndex=_tableSize-1; roughnessIndex >= 0; roughnessIndex -= 15
 					bool	isotropic;
 					if ( thetaIndex == 0 ) {
 						if ( roughnessIndex == _tableSize-1 || result[roughnessIndex+1,thetaIndex] == null ) {
-//if ( true ) {
 							// roughness = 1 or no available result
 							ltc.m11 = 1.0f;
 							ltc.m22 = 1.0f;
@@ -544,8 +552,6 @@ for ( int roughnessIndex=_tableSize-1; roughnessIndex >= 0; roughnessIndex -= 15
 							fitModel.m_tsView = tsView;
 							fitModel.m_isotropic = isotropic;
 
-							fitModel.Parameters = startFit;
-
 							fitter.Minimize( fitModel );
 							ltc.error = fitter.FunctionMinimum;
 							ltc.iterationsCount = fitter.IterationsCount;
@@ -557,11 +563,11 @@ for ( int roughnessIndex=_tableSize-1; roughnessIndex >= 0; roughnessIndex -= 15
 								return currentError;
 							} );
 							ltc.iterationsCount = fitter.m_lastIterationsCount;
+
+							// Update LTC with final best fitting values
+							ltc.Set( resultFit, isotropic );
 						#endif
 					#endif
-
-					// Update LTC with final best fitting values
-					ltc.Set( resultFit, isotropic );
 
 					// Show debug form
 					++count;
@@ -590,6 +596,7 @@ for ( int roughnessIndex=_tableSize-1; roughnessIndex >= 0; roughnessIndex -= 15
 				double	pdf_BRDF, eval_BRDF, eval_LTC;
 
 				float3	tsReflection = 2.0f * _tsView.z * float3.UnitZ - _tsView;	// Expected reflection direction will be used as new hemisphere pole
+tsReflection = _LTC.Z;	// Use preferred direction
 				float3	T = new float3( tsReflection.z, 0, -tsReflection.x );
 				float3	B = tsReflection.Cross( T );
 

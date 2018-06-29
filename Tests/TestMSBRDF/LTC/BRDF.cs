@@ -59,7 +59,7 @@ namespace TestMSBRDF.LTC
 				return 0;
 			}
 
-//			_alpha = Mathf.Max( 0.01f, _alpha );
+			_alpha = Mathf.Max( 0.002f, _alpha );
 
 			// masking
 			double	lambdaV = Lambda( _tsView.z, _alpha );
@@ -124,7 +124,7 @@ namespace TestMSBRDF.LTC
 				return 0;
 			}
 
-//			_alpha = Mathf.Max( 0.01f, _alpha );
+			_alpha = Mathf.Max( 0.002f, _alpha );
 
 			float3	H = (_tsView + _tsLight).Normalized;
 			double	NdotL = _tsLight.z;
