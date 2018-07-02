@@ -59,15 +59,5 @@ namespace TestMSBRDF.Properties {
                 resourceCulture = value;
             }
         }
-        
-        /// <summary>
-        ///   Looks up a localized resource of type System.Drawing.Bitmap.
-        /// </summary>
-        internal static System.Drawing.Bitmap FalseColorsSpectrum {
-            get {
-                object obj = ResourceManager.GetObject("FalseColorsSpectrum", resourceCulture);
-                return ((System.Drawing.Bitmap)(obj));
-            }
-        }
     }
 }

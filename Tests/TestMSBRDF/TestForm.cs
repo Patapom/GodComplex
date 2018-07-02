@@ -195,7 +195,7 @@ namespace TestMSBRDF {
 
 			#if TEST_LTC_AREA_LIGHT
 				// Area light
-FitLTC( new DirectoryInfo( @".\Tables\" ) );
+LoadTC( new DirectoryInfo( @".\Tables\" ) );
 			#endif
 
 			// Load cube map
@@ -742,42 +742,8 @@ for ( uint Y=0; Y < ROUGHNESS_SUBDIVS_COUNT; Y++ ) {
 
 		#region LTC Area Lights
 
-		void	FitLTC( DirectoryInfo _targetDirectory ) {
-			Form	debug = this;
-//			Form	debug = null;	// Faster!
-
-// 			{	// Fit GGX
-// 				LTC.LTCFitter	fitter = new LTC.LTCFitter( debug );
-// 				LTC.BRDF_GGX	BRDF = new LTC.BRDF_GGX();
-// 
-// fitter.CheckBRDFNormalization( BRDF );
-// 
-// 				fitter.Fit( BRDF, 64, new FileInfo( "GGX.ltc" ) );
-// //				fitter.Fit( BRDF, 64, null );
-// 			}
-
-// 			{	// Fit Cook-Torrance
-// 				LTC.LTCFitter	fitter = new LTC.LTCFitter( debug );
-// 				LTC.BRDF_CookTorrance	BRDF = new LTC.BRDF_CookTorrance();
-// 
-// fitter.CheckBRDFNormalization( BRDF );
-// 
-// 				fitter.Fit( BRDF, 64, new FileInfo( "CookTorrance.ltc" ) );
-// //				fitter.Fit( BRDF, 64, null );
-// 			}
-
- 			{	// Fit Charlie Sheen
-				LTC.LTCFitter		fitter = new LTC.LTCFitter( debug );
-				LTC.BRDF_Charlie	BRDF = new LTC.BRDF_Charlie();
-
-fitter.CheckBRDFNormalization( BRDF );
-
-//				fitter.Fit( BRDF, 64, new FileInfo( "CharlieSheen.ltc" ) );
-				fitter.Fit( BRDF, 64, null );
-			}
-
-// 			LTC.BRDF_GGX_NoView	GGX = new LTC.BRDF_GGX_NoView();
-// 			fitter.Fit( GGX, 64, new FileInfo( "GGX_NoView.ltc" ) );
+		void	LoadTC( DirectoryInfo _targetDirectory ) {
+			// TODO!
 		}
 
 		#endregion
