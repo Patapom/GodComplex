@@ -743,21 +743,28 @@ for ( uint Y=0; Y < ROUGHNESS_SUBDIVS_COUNT; Y++ ) {
 		#region LTC Area Lights
 
 		void	FitLTC( DirectoryInfo _targetDirectory ) {
-//			Form	debug = this;
-			Form	debug = null;	// Faster!
+			Form	debug = this;
+//			Form	debug = null;	// Faster!
 
-			{
-				LTC.LTCFitter	fitter = new LTC.LTCFitter( debug );
-				LTC.BRDF_GGX	GGX = new LTC.BRDF_GGX();
-				fitter.Fit( GGX, 64, new FileInfo( "GGX.ltc" ) );
-//				fitter.Fit( GGX, 64, null );
-			}
+// 			{	// Fit GGX
+// 				LTC.LTCFitter	fitter = new LTC.LTCFitter( debug );
+// 				LTC.BRDF_GGX	BRDF = new LTC.BRDF_GGX();
+// 				fitter.Fit( BRDF, 64, new FileInfo( "GGX.ltc" ) );
+// //				fitter.Fit( BRDF, 64, null );
+// 			}
+// 
+//  			{	// Fit Cook-Torrance
+// 				LTC.LTCFitter	fitter = new LTC.LTCFitter( debug );
+// 				LTC.BRDF_CookTorrance	BRDF = new LTC.BRDF_CookTorrance();
+// 				fitter.Fit( BRDF, 64, new FileInfo( "CookTorrance.ltc" ) );
+// //				fitter.Fit( BRDF, 64, null );
+// 			}
 
- 			{
-				LTC.LTCFitter	fitter = new LTC.LTCFitter( debug );
-				LTC.BRDF_CookTorrance	cookTorrance = new LTC.BRDF_CookTorrance();
-				fitter.Fit( cookTorrance, 64, new FileInfo( "CookTorrance.ltc" ) );
-//				fitter.Fit( cookTorrance, 64, null );
+ 			{	// Fit Charlie Sheen
+				LTC.LTCFitter		fitter = new LTC.LTCFitter( debug );
+				LTC.BRDF_Charlie	BRDF = new LTC.BRDF_Charlie();
+//				fitter.Fit( BRDF, 64, new FileInfo( "CharlieSheen.ltc" ) );
+				fitter.Fit( BRDF, 64, null );
 			}
 
 // 			LTC.BRDF_GGX_NoView	GGX = new LTC.BRDF_GGX_NoView();

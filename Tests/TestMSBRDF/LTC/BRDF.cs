@@ -159,6 +159,72 @@ namespace TestMSBRDF.LTC
 		}
 	}
 
+	/// <summary>
+	/// "Charlie" Sheen Implementation
+	/// Source from Sony Pictures Imageworks by Estevez and Kulla, "Production Friendly Microfacet Sheen BRDF" (http://blog.selfshadow.com/publications/s2017-shading-course/imageworks/s2017_pbs_imageworks_sheen.pdf)
+	/// Details: https://knarkowicz.wordpress.com/2018/01/04/cloth-shading/
+	/// </summary>
+	class BRDF_Charlie : IBRDF {
+
+		public double	MaxValue( ref float3 _tsView, float _alpha ) {
+			double	maxD = (2.0 + 1.0 / _alpha) / (2.0 * Math.PI);
+			double	NdotV = Math.Max( 0.0, _tsView.z );
+			double	maxG = 1.0 / (4.0 * NdotV);
+			return maxD * maxG;
+		}
+
+		public double	Eval( ref float3 _tsView, ref float3 _tsLight, float _alpha, out double _pdf ) {
+			if ( _tsView.z <= 0 ) {
+				_pdf = 0;
+				return 0;
+			}
+
+			_alpha = Mathf.Max( 0.002f, _alpha );
+
+			float3	H = (_tsView + _tsLight).Normalized;
+			double	NdotL = _tsLight.z;
+			double	NdotV = _tsView.z;
+			double	NdotH = H.z;
+			double	LdotH = _tsLight.Dot( H );
+
+			// D
+			double	D = CharlieD( _alpha, NdotH );
+
+			// Ashikmin masking/shadowing
+			double	G = AshikhminV( NdotV, NdotL );
+
+			// fr = F(H) * G(V, L) * D(H)
+			// Note that the usual 1 / (4 * (N.L) * (N.V)) part of the Cook-Torrance micro-facet model is actually contained in the G visibility term in our case (as reported by Ashkmin in "Distribution-based BRDFs" eq. 2)
+			double	res = D * G * NdotL;	// We also include the (N.L) term here
+
+			// pdf = D(H) * (N.H) / (4 * (L.H))
+			_pdf = Math.Abs( D * NdotH / (4.0 * LdotH) );
+
+			return res;
+		}
+
+		// Paper recommend plain uniform sampling of upper hemisphere instead of importance sampling for Charlie
+		public void	GetSamplingDirection( ref float3 _tsView, float _alpha, float _U1, float _U2, ref float3 _direction ) {
+			float	phi = Mathf.TWOPI * _U1;
+			float	cosTheta = 1.0f - _U2;
+			float	sinTheta = Mathf.Sqrt( 1 - cosTheta*cosTheta );
+			_direction = new float3( sinTheta*Mathf.Cos(phi), sinTheta*Mathf.Sin(phi), cosTheta );
+		}
+
+		double	CharlieD( float _roughness, double _NdotH ) {
+			double	invR = 1.0 / _roughness;
+			double	cos2h = _NdotH * _NdotH;
+			double	sin2h = 1.0f - cos2h;
+			return (2.0 + invR) * Math.Pow( sin2h, invR * 0.5 ) / (2.0 * Math.PI);
+		}
+ 
+		double AshikhminV( double _NdotV, double _NdotL ) {
+			return 1.0 / (4.0 * (_NdotL + _NdotV - _NdotL * _NdotV));
+		}
+ 
+//		vec3 specular = lightColor * f * d * v * PI * ndotl;
+	}
+
 /*	/// <summary>
 	/// GGX implementation of the BRDF interface
 	/// This implementation is pulling the view-dependent terms out of the BRDF

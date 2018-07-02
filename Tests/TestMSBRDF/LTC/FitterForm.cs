@@ -91,7 +91,7 @@ namespace TestMSBRDF.LTC
 			#endif
 		}
 
-		public void	AccumulateStatistics( LTCFitter.LTC _LTC, bool _fullRefresh ) {
+		void	AccumulateStatistics( LTCFitter.LTC _LTC, bool _fullRefresh ) {
 			m_lastError = _LTC.error;
 			m_lastIterationsCount = _LTC.iterationsCount;
 			if ( _fullRefresh ) {
@@ -112,6 +112,9 @@ namespace TestMSBRDF.LTC
 			m_LTC = _LTC;
 
 			this.Text = "Fitter Debugger - Theta = " + Mathf.ToDeg(_theta).ToString( "G3" ) + "° - Roughness = " + _roughness.ToString( "G3" ) + " - Error = " + (_LTC != null ? _LTC.error.ToString( "G4" ) : "not computed") + " - Progress = " + (100.0f * _progress).ToString( "G3" ) + "%";
+
+			// Build up stats
+			AccumulateStatistics( _LTC, _runMessageLoopOnPause );
 
 			// Build fixed view vector
 			m_tsView.x = Mathf.Sin( m_theta );

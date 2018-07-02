@@ -428,6 +428,7 @@ namespace TestMSBRDF.LTC
 		#endregion
 
 		FitterForm	m_debugForm = null;
+		bool		m_readOnly = false;
 
 		public LTCFitter( Form _ownerForm ) {
 			if ( _ownerForm == null )
@@ -435,6 +436,12 @@ namespace TestMSBRDF.LTC
 
 			m_debugForm = new FitterForm( this );
 			m_debugForm.Show( _ownerForm );
+
+// Just enter view mode
+//m_debugForm.Paused = true;
+//m_debugForm.DoFitting = false;
+//m_readOnly = true;
+
 		}
 
 		public LTC[,]	Fit( IBRDF _BRDF, int _tableSize, System.IO.FileInfo _tableFileName ) {
@@ -471,7 +478,7 @@ namespace TestMSBRDF.LTC
 				// Handle manual scrolling in results
 				m_debugForm.TrackbarValueChanged += () => {
 					if ( !m_debugForm.Paused )
-						return;	// Let auto
+						return;	// Let auto-run deal with displaying stuff!
 
 					thetaIndex = m_debugForm.ThetaIndex;
 					float	x = (float) thetaIndex / (_tableSize - 1);
@@ -484,9 +491,6 @@ namespace TestMSBRDF.LTC
 					float alpha = Mathf.Max( MIN_ALPHA, perceptualRoughness * perceptualRoughness );
 
  					m_debugForm.ShowBRDF( (float) validResultsCount / (_tableSize*_tableSize), Mathf.Acos( cosTheta ), alpha, _BRDF, result[m_debugForm.RoughnessIndex,m_debugForm.ThetaIndex], false );
-
-					// This to ensure the next thetaIndex++ gets canceled!
-					thetaIndex--;
 				};
 			}
 
@@ -495,16 +499,13 @@ namespace TestMSBRDF.LTC
 				if ( m_debugForm != null )
 					m_debugForm.RoughnessIndex = roughnessIndex;
 
+				// alpha = perceptualRoughness^2  (perceptualRoughness = "sRGB" representation of roughness, as painted by artists)
+				float perceptualRoughness = (float) roughnessIndex / (_tableSize-1);
+				float alpha = Mathf.Max( MIN_ALPHA, perceptualRoughness * perceptualRoughness );
+
 				for ( ; thetaIndex <= _tableSize-1; thetaIndex += (m_debugForm != null ? m_debugForm.StepX : 1) ) {
 					if ( m_debugForm != null )
 						m_debugForm.ThetaIndex = thetaIndex;
-
-					if ( result[roughnessIndex,thetaIndex] != null ) {
-						validResultsCount++;
-						if ( m_debugForm != null )
-							m_debugForm.AccumulateStatistics( result[roughnessIndex,thetaIndex], false );
-						continue;	// Already computed!
-					}
 
 					// parameterised by sqrt(1 - cos(theta))
 					float	x = (float) thetaIndex / (_tableSize - 1);
@@ -512,92 +513,91 @@ namespace TestMSBRDF.LTC
 							cosTheta = Mathf.Max( 3.7540224885647058065387021283285e-4f, cosTheta );	// Clamp to cos(1.57)
 					float3	tsView = new float3( Mathf.Sqrt( 1 - cosTheta*cosTheta ), 0, cosTheta );
 
-					// alpha = perceptualRoughness^2  (perceptualRoughness = "sRGB" representation of roughness, as painted by artists)
-					float perceptualRoughness = (float) roughnessIndex / (_tableSize-1);
-					float alpha = Mathf.Max( MIN_ALPHA, perceptualRoughness * perceptualRoughness );
+					LTC	ltc = result[roughnessIndex,thetaIndex];
+					if ( ltc == null ) {
+						// ============= Do a new fitting! ============= 
+						ltc = new LTC();
+						result[roughnessIndex,thetaIndex] = ltc;
 
-					LTC	ltc = new LTC();
-					result[roughnessIndex,thetaIndex] = ltc;
+						ltc.ComputeAverageTerms( _BRDF, ref tsView, alpha );
 
-					ltc.ComputeAverageTerms( _BRDF, ref tsView, alpha );
+						// 1. first guess for the fit
+						// init the hemisphere in which the distribution is fitted
+						// if theta == 0 the lobe is rotationally symmetric and aligned with Z = (0 0 1)
+						bool	isotropic;
+						if ( thetaIndex == 0 ) {
+							if ( roughnessIndex == _tableSize-1 || result[roughnessIndex+1,thetaIndex] == null ) {
+								// roughness = 1 or no available result
+								ltc.m11 = 1.0f;
+								ltc.m22 = 1.0f;
+							} else {
+								// init with roughness of previous fit
+								ltc.m11 = Mathf.Max( result[roughnessIndex+1,thetaIndex].m11, MIN_ALPHA );
+								ltc.m22 = Mathf.Max( result[roughnessIndex+1,thetaIndex].m22, MIN_ALPHA );
+							}
 
-					// 1. first guess for the fit
-					// init the hemisphere in which the distribution is fitted
-					// if theta == 0 the lobe is rotationally symmetric and aligned with Z = (0 0 1)
-					bool	isotropic;
-					if ( thetaIndex == 0 ) {
-						if ( roughnessIndex == _tableSize-1 || result[roughnessIndex+1,thetaIndex] == null ) {
-							// roughness = 1 or no available result
-							ltc.m11 = 1.0f;
-							ltc.m22 = 1.0f;
-						} else {
-							// init with roughness of previous fit
-							ltc.m11 = Mathf.Max( result[roughnessIndex+1,thetaIndex].m11, MIN_ALPHA );
-							ltc.m22 = Mathf.Max( result[roughnessIndex+1,thetaIndex].m22, MIN_ALPHA );
-						}
-
-						ltc.m13 = 0;
-						ltc.m31 = 0;
-						ltc.Update();
-
-						isotropic = true;
-					} else {
-						// Otherwise use average direction as Z vector
-
-						// And use previous configuration as first guess
-						LTC	previousLTC = result[roughnessIndex,thetaIndex-1];
-						if ( previousLTC != null ) {
-							ltc.m11 = previousLTC.m11;
-							ltc.m22 = previousLTC.m22;
-							ltc.m13 = previousLTC.m13;
-							ltc.m31 = previousLTC.m31;
+							ltc.m13 = 0;
+							ltc.m31 = 0;
 							ltc.Update();
+
+							isotropic = true;
+						} else {
+							// Otherwise use average direction as Z vector
+
+							// And use previous configuration as first guess
+							LTC	previousLTC = result[roughnessIndex,thetaIndex-1];
+							if ( previousLTC != null ) {
+								ltc.m11 = previousLTC.m11;
+								ltc.m22 = previousLTC.m22;
+								ltc.m13 = previousLTC.m13;
+								ltc.m31 = previousLTC.m31;
+								ltc.Update();
+							}
+
+							isotropic = false;
 						}
 
-						isotropic = false;
-					}
-
-					// 2. fit (explore parameter space and refine first guess)
-					startFit[0] = ltc.m11;
-					startFit[1] = ltc.m22;
-					startFit[2] = ltc.m31;
-					#if FIT_INV_M
-						startFit[3] = ltc.m13;
-						startFit[4] = ltc.amplitude;
-					#else
-						startFit[3] = ltc.amplitude;
-					#endif
-
-					// Find best-fit LTC lobe (scale, alphax, alphay)
-					if ( m_debugForm == null || m_debugForm.DoFitting ) {
-						#if FIT_WITH_BFGS
-							fitModel.m_LTC = ltc;
-							fitModel.m_BRDF = _BRDF;
-							fitModel.m_alpha = alpha;
-							fitModel.m_tsView = tsView;
-							fitModel.m_isotropic = isotropic;
-
-							fitter.Minimize( fitModel );
-							ltc.error = fitter.FunctionMinimum;
-							ltc.iterationsCount = fitter.IterationsCount;
+						// 2. fit (explore parameter space and refine first guess)
+						startFit[0] = ltc.m11;
+						startFit[1] = ltc.m22;
+						startFit[2] = ltc.m31;
+						#if FIT_INV_M
+							startFit[3] = ltc.m13;
+							startFit[4] = ltc.amplitude;
 						#else
-							ltc.error = fitter.FindFit( resultFit, startFit, FIT_EXPLORE_DELTA, TOLERANCE, MAX_ITERATIONS, ( double[] _parameters ) => {
-								ltc.Set( _parameters, isotropic );
-
-								double	currentError = ComputeError( ltc, _BRDF, ref tsView, alpha );
-								return currentError;
-							} );
-							ltc.iterationsCount = fitter.m_lastIterationsCount;
-
-							// Update LTC with final best fitting values
-							ltc.Set( resultFit, isotropic );
+							startFit[3] = ltc.amplitude;
 						#endif
+
+						// Find best-fit LTC lobe (scale, alphax, alphay)
+						if ( m_debugForm == null || m_debugForm.DoFitting ) {
+							#if FIT_WITH_BFGS
+								fitModel.m_LTC = ltc;
+								fitModel.m_BRDF = _BRDF;
+								fitModel.m_alpha = alpha;
+								fitModel.m_tsView = tsView;
+								fitModel.m_isotropic = isotropic;
+
+								fitter.Minimize( fitModel );
+								ltc.error = fitter.FunctionMinimum;
+								ltc.iterationsCount = fitter.IterationsCount;
+							#else
+								ltc.error = fitter.FindFit( resultFit, startFit, FIT_EXPLORE_DELTA, TOLERANCE, MAX_ITERATIONS, ( double[] _parameters ) => {
+									ltc.Set( _parameters, isotropic );
+
+									double	currentError = ComputeError( ltc, _BRDF, ref tsView, alpha );
+									return currentError;
+								} );
+								ltc.iterationsCount = fitter.m_lastIterationsCount;
+
+								// Update LTC with final best fitting values
+								ltc.Set( resultFit, isotropic );
+							#endif
+						}
 					}
 
 					// Show debug form
 					validResultsCount++;
 					if ( m_debugForm != null ) {
-						m_debugForm.AccumulateStatistics( ltc, true );
 						m_debugForm.ShowBRDF( (float) validResultsCount / (_tableSize*_tableSize), Mathf.Acos( cosTheta ), alpha, _BRDF, ltc, true );
 
 						// Check if we should continue computing
@@ -608,7 +608,8 @@ namespace TestMSBRDF.LTC
 
 				thetaIndex = 0;	// Clear after first line
 
-				Save( _tableFileName, result );
+				if ( !m_readOnly )
+					Save( _tableFileName, result );
 			}
 
 			return result;
