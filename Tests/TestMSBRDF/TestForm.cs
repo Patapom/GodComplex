@@ -749,13 +749,19 @@ for ( uint Y=0; Y < ROUGHNESS_SUBDIVS_COUNT; Y++ ) {
 // 			{	// Fit GGX
 // 				LTC.LTCFitter	fitter = new LTC.LTCFitter( debug );
 // 				LTC.BRDF_GGX	BRDF = new LTC.BRDF_GGX();
+// 
+// fitter.CheckBRDFNormalization( BRDF );
+// 
 // 				fitter.Fit( BRDF, 64, new FileInfo( "GGX.ltc" ) );
 // //				fitter.Fit( BRDF, 64, null );
 // 			}
-// 
-//  			{	// Fit Cook-Torrance
+
+// 			{	// Fit Cook-Torrance
 // 				LTC.LTCFitter	fitter = new LTC.LTCFitter( debug );
 // 				LTC.BRDF_CookTorrance	BRDF = new LTC.BRDF_CookTorrance();
+// 
+// fitter.CheckBRDFNormalization( BRDF );
+// 
 // 				fitter.Fit( BRDF, 64, new FileInfo( "CookTorrance.ltc" ) );
 // //				fitter.Fit( BRDF, 64, null );
 // 			}
@@ -763,6 +769,9 @@ for ( uint Y=0; Y < ROUGHNESS_SUBDIVS_COUNT; Y++ ) {
  			{	// Fit Charlie Sheen
 				LTC.LTCFitter		fitter = new LTC.LTCFitter( debug );
 				LTC.BRDF_Charlie	BRDF = new LTC.BRDF_Charlie();
+
+fitter.CheckBRDFNormalization( BRDF );
+
 //				fitter.Fit( BRDF, 64, new FileInfo( "CharlieSheen.ltc" ) );
 				fitter.Fit( BRDF, 64, null );
 			}

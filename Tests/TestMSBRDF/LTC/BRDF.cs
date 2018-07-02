@@ -185,20 +185,24 @@ namespace TestMSBRDF.LTC
 			double	NdotL = _tsLight.z;
 			double	NdotV = _tsView.z;
 			double	NdotH = H.z;
-			double	LdotH = _tsLight.Dot( H );
+//			double	LdotH = _tsLight.Dot( H );
 
 			// D
 			double	D = CharlieD( _alpha, NdotH );
 
 			// Ashikmin masking/shadowing
-			double	G = AshikhminV( NdotV, NdotL );
+//			double	G = V_Ashikhmin( NdotV, NdotL );
+			double	G = V_Charlie( NdotV, NdotL, _alpha );
 
 			// fr = F(H) * G(V, L) * D(H)
 			// Note that the usual 1 / (4 * (N.L) * (N.V)) part of the Cook-Torrance micro-facet model is actually contained in the G visibility term in our case (as reported by Ashkmin in "Distribution-based BRDFs" eq. 2)
 			double	res = D * G * NdotL;	// We also include the (N.L) term here
+// 			if ( res < 0 )
+// 				throw new Exception( "GAH!" );
 
 			// pdf = D(H) * (N.H) / (4 * (L.H))
-			_pdf = Math.Abs( D * NdotH / (4.0 * LdotH) );
+//			_pdf = Math.Abs( D * NdotH / (4.0 * LdotH) );	// We're not using something similar to the normals distribution
+			_pdf = 0.5 / Math.PI;							// We're using uniform distribution, as advised by the paper...
 
 			return res;
 		}
@@ -215,14 +219,34 @@ namespace TestMSBRDF.LTC
 			double	invR = 1.0 / _roughness;
 			double	cos2h = _NdotH * _NdotH;
 			double	sin2h = 1.0f - cos2h;
-			return (2.0 + invR) * Math.Pow( sin2h, invR * 0.5 ) / (2.0 * Math.PI);
+			double	res = (2.0 + invR) * Math.Pow( sin2h, invR * 0.5 ) / (2.0 * Math.PI);
+			return res;
 		}
  
-		double AshikhminV( double _NdotV, double _NdotL ) {
+		double V_Ashikhmin( double _NdotV, double _NdotL ) {
 			return 1.0 / (4.0 * (_NdotL + _NdotV - _NdotL * _NdotV));
 		}
  
-//		vec3 specular = lightColor * f * d * v * PI * ndotl;
+		// Note: This version don't include the softening of the paper: Production Friendly Microfacet Sheen BRDF
+		double	V_Charlie( double _NdotV, double _NdotL, double _roughness ) {
+			double	lambdaV = _NdotV < 0.5 ? Math.Exp( CharlieL(_NdotV, _roughness) ) : Math.Exp( 2.0 * CharlieL(0.5, _roughness) - CharlieL(1.0 - _NdotV, _roughness) );
+			double	lambdaL = _NdotL < 0.5 ? Math.Exp( CharlieL(_NdotL, _roughness) ) : Math.Exp( 2.0 * CharlieL(0.5, _roughness) - CharlieL(1.0 - _NdotL, _roughness) );
+
+			return 1.0 / ((1.0 + lambdaV + lambdaL) * (4.0 * _NdotV * _NdotL));
+		}
+		double	CharlieL( double x, double _roughness ) {
+			float	r = Mathf.Saturate( (float) _roughness );
+					r = 1.0f - r * r;
+
+			float	a = Mathf.Lerp( 25.3245f, 21.5473f, r );
+			float	b = Mathf.Lerp( 3.32435f, 3.82987f, r );
+			float	c = Mathf.Lerp( 0.16801f, 0.19823f, r );
+			float	d = Mathf.Lerp( -1.27393f, -1.97760f, r );
+			float	e = Mathf.Lerp( -4.85967f, -4.32054f, r );
+
+			double	res = a / (1.0 + b * Math.Pow( Math.Max( 0, x ), c )) + d * x + e;
+			return res;
+		}
 	}
 
 /*	/// <summary>

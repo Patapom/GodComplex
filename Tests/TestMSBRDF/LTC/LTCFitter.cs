@@ -495,6 +495,8 @@ namespace TestMSBRDF.LTC
 			}
 
 			// loop over theta and alpha
+			int		errorsCount = 0;
+			string	errors = null;
 			for ( ; roughnessIndex >= 0; roughnessIndex -= (m_debugForm!=null ? m_debugForm.StepY : 1) ) {
 				if ( m_debugForm != null )
 					m_debugForm.RoughnessIndex = roughnessIndex;
@@ -569,29 +571,38 @@ namespace TestMSBRDF.LTC
 						#endif
 
 						// Find best-fit LTC lobe (scale, alphax, alphay)
-						if ( m_debugForm == null || m_debugForm.DoFitting ) {
-							#if FIT_WITH_BFGS
-								fitModel.m_LTC = ltc;
-								fitModel.m_BRDF = _BRDF;
-								fitModel.m_alpha = alpha;
-								fitModel.m_tsView = tsView;
-								fitModel.m_isotropic = isotropic;
+						try {
+							if ( m_debugForm == null || m_debugForm.DoFitting ) {
+								#if FIT_WITH_BFGS
+									fitModel.m_LTC = ltc;
+									fitModel.m_BRDF = _BRDF;
+									fitModel.m_alpha = alpha;
+									fitModel.m_tsView = tsView;
+									fitModel.m_isotropic = isotropic;
 
-								fitter.Minimize( fitModel );
-								ltc.error = fitter.FunctionMinimum;
-								ltc.iterationsCount = fitter.IterationsCount;
-							#else
-								ltc.error = fitter.FindFit( resultFit, startFit, FIT_EXPLORE_DELTA, TOLERANCE, MAX_ITERATIONS, ( double[] _parameters ) => {
-									ltc.Set( _parameters, isotropic );
+									fitter.Minimize( fitModel );
+									ltc.error = fitter.FunctionMinimum;
+									ltc.iterationsCount = fitter.IterationsCount;
+								#else
+									ltc.error = fitter.FindFit( resultFit, startFit, FIT_EXPLORE_DELTA, TOLERANCE, MAX_ITERATIONS, ( double[] _parameters ) => {
+										ltc.Set( _parameters, isotropic );
 
-									double	currentError = ComputeError( ltc, _BRDF, ref tsView, alpha );
-									return currentError;
-								} );
-								ltc.iterationsCount = fitter.m_lastIterationsCount;
+										double	currentError = ComputeError( ltc, _BRDF, ref tsView, alpha );
+										return currentError;
+									} );
+									ltc.iterationsCount = fitter.m_lastIterationsCount;
 
-								// Update LTC with final best fitting values
-								ltc.Set( resultFit, isotropic );
-							#endif
+									// Update LTC with final best fitting values
+									ltc.Set( resultFit, isotropic );
+								#endif
+							}
+						} catch ( Exception _e ) {
+							// Clear LTC!
+							ltc = null;
+							result[roughnessIndex,thetaIndex] = ltc;
+
+							errorsCount++;
+							errors += "An error occurred at [" + roughnessIndex + ", " + thetaIndex + "]: " + _e.Message + "\r\n";
 						}
 					}
 
@@ -609,10 +620,65 @@ namespace TestMSBRDF.LTC
 				thetaIndex = 0;	// Clear after first line
 
 				if ( !m_readOnly )
-					Save( _tableFileName, result );
+					Save( _tableFileName, result, errors );
 			}
 
 			return result;
+		}
+
+		/// <summary>
+		/// Ensures the provided BRDF is normalized for various values of view and roughness
+		/// </summary>
+		/// <param name="_BRDF"></param>
+		public void	CheckBRDFNormalization( IBRDF _BRDF ) {
+
+			const int	THETA_VIEW_VALUES_COUNT = 8;
+			const int	ROUGHNESS_VALUES_COUNT = 32;
+
+			double	pdf;
+			float	dtheta = 0.005f;
+			float	dphi = 0.025f;
+			float3	tsView = new float3();
+			float3	tsLight = new float3();
+
+			double[,]	sums = new double[ROUGHNESS_VALUES_COUNT,THETA_VIEW_VALUES_COUNT];
+			for ( int roughnessIndex=0; roughnessIndex < ROUGHNESS_VALUES_COUNT; roughnessIndex++ ) {
+				float	perceptualRoughness = (float) roughnessIndex / (ROUGHNESS_VALUES_COUNT-1);
+				float	alpha = Mathf.Max( MIN_ALPHA, perceptualRoughness * perceptualRoughness );
+
+				for ( int thetaIndex=0; thetaIndex < THETA_VIEW_VALUES_COUNT; thetaIndex++ ) {
+					float	x = (float) thetaIndex * Mathf.HALFPI / Math.Max( 1, THETA_VIEW_VALUES_COUNT-1 );
+					float	cosTheta = 1.0f - x*x;
+							cosTheta = Mathf.Max( 3.7540224885647058065387021283285e-4f, cosTheta );	// Clamp to cos(1.57)
+					tsView.Set( Mathf.Sqrt( 1 - cosTheta*cosTheta ), 0, cosTheta );
+
+					double	sum = 0;
+
+					// Uniform sampling
+// 					for( float theta = 0.0f; theta < Mathf.HALFPI; theta+=dtheta ) {
+// 						for( float phi = 0.0f; phi <= Mathf.PI; phi+=dphi ) {
+// 							tsLight.Set( Mathf.Sin(theta)*Mathf.Cos(phi), Mathf.Sin(theta)*Mathf.Sin(phi), Mathf.Cos(theta) );
+// 							sum += Mathf.Sin(theta) * _BRDF.Eval( ref tsView, ref tsLight, alpha, out pdf );
+// 						}
+// 					}
+// 					sum *= dtheta * 2*dphi;
+
+					// Importance sampling
+					int	samplesCount = 0;
+					for( float u=0; u <= 1; u+=0.02f ) {
+						for( float v=0; v < 1; v+=0.02f ) {
+							_BRDF.GetSamplingDirection( ref tsView, alpha, u, v, ref tsLight );
+							double	V = _BRDF.Eval( ref tsView, ref tsLight, alpha, out pdf );
+							if ( pdf > 0.0 )
+								sum += V / pdf;
+							samplesCount++;
+						}
+					}
+					sum /= samplesCount;
+
+					sums[roughnessIndex,thetaIndex] = sum;
+				}
+			}
 		}
 
 		#region Objective Function
@@ -765,7 +831,7 @@ tsReflection = _LTC.Z;	// Use preferred direction
 			return result;
 		}
 
-		void	Save( System.IO.FileInfo _tableFileName, LTC[,] _table ) {
+		void	Save( System.IO.FileInfo _tableFileName, LTC[,] _table, string _errors ) {
 			using ( System.IO.FileStream S = _tableFileName.Create() )
 				using ( System.IO.BinaryWriter W = new System.IO.BinaryWriter( S ) ) {
 					W.Write( _table.GetLength( 0 ) );
@@ -782,6 +848,17 @@ tsReflection = _LTC.Z;	// Use preferred direction
 							ltc.Write( W );
 						}
 				}
+
+			if ( _errors == null )
+				return;	// Nothing to report!
+
+			try {
+				System.IO.FileInfo	logFileName = new System.IO.FileInfo( _tableFileName.FullName + ".errorLog" );
+				using ( System.IO.TextWriter W = logFileName.CreateText() )
+					W.Write( _errors );
+			} catch ( Exception ) {
+				// Silently fail logging errors... :/
+			}
 		}
 
 		#endregion
