@@ -4,11 +4,11 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{2F47AA1E-B235-4A27-BE87-33E45A645F6A}</ProjectGuid>
+    <ProjectGuid>{65AC0B6B-B1B0-4E96-8AB5-1DE447F73E52}</ProjectGuid>
     <OutputType>WinExe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>TestMSBRDF</RootNamespace>
-    <AssemblyName>TestMSBRDF</AssemblyName>
+    <RootNamespace>LTCTableGenerator</RootNamespace>
+    <AssemblyName>LTCTableGenerator</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
@@ -40,7 +40,6 @@
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <Prefer32Bit>true</Prefer32Bit>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
     <OutputPath>..\..\build\Release\</OutputPath>
@@ -51,7 +50,6 @@
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <Prefer32Bit>true</Prefer32Bit>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -66,30 +64,33 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Properties\Resources.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>Resources.resx</DependentUpon>
-    </Compile>
-    <Compile Include="TestForm.cs">
+    <Compile Include="BRDF.cs" />
+    <Compile Include="FitterForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="TestForm.Designer.cs">
-      <DependentUpon>TestForm.cs</DependentUpon>
+    <Compile Include="FitterForm.Designer.cs">
+      <DependentUpon>FitterForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="LTCFitter.cs" />
+    <Compile Include="NelderMead.cs" />
     <Compile Include="PanelOutput.cs">
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <EmbeddedResource Include="TestForm.resx">
-      <DependentUpon>TestForm.cs</DependentUpon>
+    <EmbeddedResource Include="FitterForm.resx">
+      <DependentUpon>FitterForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
-      <SubType>Designer</SubType>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
     </EmbeddedResource>
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+    </Compile>
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
@@ -104,6 +105,9 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="FalseColorsSpectrum2.png" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\..\Packages\Cirrus.Utility\Utility.csproj">
       <Project>{9a67863f-d886-41a5-a8d1-04ba1379b097}</Project>
       <Name>Utility</Name>
@@ -116,40 +120,10 @@
       <Project>{cec07704-2a19-4bf1-b46d-8fcf9c5965ee}</Project>
       <Name>MathSimple</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\Packages\RendererManaged\RendererManaged.vcxproj">
-      <Project>{f96cdfd3-8954-4f4f-afb0-2855d98f051b}</Project>
-      <Name>Renderer</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\Packages\SharpMath\MathAdvanced.csproj">
       <Project>{dd026a89-c5fe-4150-bc85-a660e427826a}</Project>
       <Name>MathAdvanced</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\Packages\SphericalHarmonicsLibrary\SphericalHarmonicsLibrary.csproj">
-      <Project>{e96e2072-c7ef-46bb-a3f1-8cf6b26bf019}</Project>
-      <Name>SphericalHarmonicsLibrary</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Shaders\Render.hlsl" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Shaders\Global.hlsl" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Shaders\RenderComplete.hlsl" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Shaders\Scene.hlsl" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Shaders\RenderCompareSH.hlsl" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Shaders\RenderCompareLTC.hlsl" />
-    <Content Include="Shaders\SphericalHarmonics.hlsl" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="LTC\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

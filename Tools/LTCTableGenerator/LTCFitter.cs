@@ -42,7 +42,7 @@ using System.Windows.Forms;
 
 using SharpMath;
 
-namespace TestMSBRDF.LTC
+namespace LTCTableGenerator
 {
 	public class LTCFitter {
 
@@ -428,20 +428,11 @@ namespace TestMSBRDF.LTC
 		#endregion
 
 		FitterForm	m_debugForm = null;
-		bool		m_readOnly = false;
 
-		public LTCFitter( Form _ownerForm ) {
-			if ( _ownerForm == null )
-				return;	// No debug...
-
-			m_debugForm = new FitterForm( this );
-			m_debugForm.Show( _ownerForm );
-
-// Just enter view mode
-//m_debugForm.Paused = true;
-//m_debugForm.DoFitting = false;
-//m_readOnly = true;
-
+		public LTCFitter( FitterForm _debugForm ) {
+			m_debugForm = _debugForm;
+			if ( m_debugForm != null )
+				m_debugForm.Show();
 		}
 
 		public LTC[,]	Fit( IBRDF _BRDF, int _tableSize, System.IO.FileInfo _tableFileName ) {
@@ -619,7 +610,7 @@ namespace TestMSBRDF.LTC
 
 				thetaIndex = 0;	// Clear after first line
 
-				if ( !m_readOnly )
+				if ( m_debugForm == null || !m_debugForm.ReadOnly )
 					Save( _tableFileName, result, errors );
 			}
 
@@ -636,8 +627,6 @@ namespace TestMSBRDF.LTC
 			const int	ROUGHNESS_VALUES_COUNT = 32;
 
 			double	pdf;
-			float	dtheta = 0.005f;
-			float	dphi = 0.025f;
 			float3	tsView = new float3();
 			float3	tsLight = new float3();
 
@@ -655,6 +644,8 @@ namespace TestMSBRDF.LTC
 					double	sum = 0;
 
 					// Uniform sampling
+// 					const float	dtheta = 0.005f;
+// 					const float	dphi = 0.025f;
 // 					for( float theta = 0.0f; theta < Mathf.HALFPI; theta+=dtheta ) {
 // 						for( float phi = 0.0f; phi <= Mathf.PI; phi+=dphi ) {
 // 							tsLight.Set( Mathf.Sin(theta)*Mathf.Cos(phi), Mathf.Sin(theta)*Mathf.Sin(phi), Mathf.Cos(theta) );

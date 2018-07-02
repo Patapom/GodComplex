@@ -661,3 +661,7 @@ Publish
 *.cache
 /Tools/AxFExtractor/bin
 /Tools/AxFExtractor/obj
+/Tests/TestAreaLightLTC/obj
+/Tools/LTCTableGenerator/bin
+/Tools/LTCTableGenerator/obj
+/Tools/LTCTableGenerator/*.user

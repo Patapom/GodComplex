@@ -12,7 +12,7 @@ using System.Windows.Forms;
 
 using SharpMath;
 
-namespace TestMSBRDF.LTC
+namespace LTCTableGenerator
 {
 	public interface	IBRDF {
 		/// <summary>

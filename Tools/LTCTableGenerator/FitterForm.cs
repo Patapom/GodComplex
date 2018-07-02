@@ -13,11 +13,9 @@ using System.Windows.Forms;
 using SharpMath;
 using ImageUtility;
 
-namespace TestMSBRDF.LTC
+namespace LTCTableGenerator
 {
-	public partial class FitterForm : Form
-	{
-		LTCFitter		m_owner = null;
+	public partial class FitterForm : Form {
 
 		uint			m_width;
 		float4[]		m_falseSpectrum;
@@ -57,6 +55,9 @@ namespace TestMSBRDF.LTC
 		public bool		AutoRun { get { return checkBoxAutoRun.Checked; } set { checkBoxAutoRun.Checked = value; } }
 		public bool		DoFitting { get { return checkBoxDoFitting.Checked; } set { checkBoxDoFitting.Checked = value; } }
 
+		bool			m_readOnly = false;
+		public bool		ReadOnly { get { return m_readOnly; } set { m_readOnly = value; } }
+
 		public int		RoughnessIndex { get { return integerTrackbarControlRoughnessIndex.Value; } set { integerTrackbarControlRoughnessIndex.Value = value; } }
 		public int		ThetaIndex { get { return integerTrackbarControlThetaIndex.Value; } set { integerTrackbarControlThetaIndex.Value = value; } }
 		public int		StepX { get { return integerTrackbarControlStepX.Value; } }
@@ -65,10 +66,9 @@ namespace TestMSBRDF.LTC
 		public delegate void	TrackbarChangedDelegate();
 		public event TrackbarChangedDelegate	TrackbarValueChanged;
 
-		public FitterForm( LTCFitter _owner ) {
+		public FitterForm() {
 			InitializeComponent();
 
-			m_owner = _owner;
 			m_width = (uint) panelOutputSourceBRDF.Width;
 
 			ColorProfile	profile = new ColorProfile( ColorProfile.STANDARD_PROFILE.LINEAR );
@@ -78,7 +78,7 @@ namespace TestMSBRDF.LTC
 			m_imageDifference = new ImageFile( (uint) panelOutputDifference.Width, (uint) panelOutputDifference.Height, PIXEL_FORMAT.BGRA8, profile );
 
 			// Read false spectrum colors
-			ImageFile	I = new ImageFile( Properties.Resources.FalseColorsSpectrum, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
+			ImageFile	I = new ImageFile( Properties.Resources.FalseColorsSpectrum2, new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB ) );
 			m_falseSpectrum = new float4[I.Width];
 			I.ReadScanline( 0, m_falseSpectrum );
 
@@ -114,7 +114,8 @@ namespace TestMSBRDF.LTC
 			this.Text = "Fitter Debugger - Theta = " + Mathf.ToDeg(_theta).ToString( "G3" ) + "° - Roughness = " + _roughness.ToString( "G3" ) + " - Error = " + (_LTC != null ? _LTC.error.ToString( "G4" ) : "not computed") + " - Progress = " + (100.0f * _progress).ToString( "G3" ) + "%";
 
 			// Build up stats
-			AccumulateStatistics( _LTC, _runMessageLoopOnPause );
+			if ( _LTC != null )
+				AccumulateStatistics( _LTC, _runMessageLoopOnPause );
 
 			// Build fixed view vector
 			m_tsView.x = Mathf.Sin( m_theta );

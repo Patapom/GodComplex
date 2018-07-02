@@ -12,7 +12,7 @@ using System.Windows.Forms;
 
 using SharpMath;
 
-namespace TestMSBRDF.LTC
+namespace LTCTableGenerator
 {
 	/// <summary>
 	/// Downhill simplex solver:

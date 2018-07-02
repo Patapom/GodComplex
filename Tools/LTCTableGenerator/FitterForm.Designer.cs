@@ -1,4 +1,4 @@
-﻿namespace TestMSBRDF.LTC
+﻿namespace LTCTableGenerator
 {
 	partial class FitterForm
 	{
