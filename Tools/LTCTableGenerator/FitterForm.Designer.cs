@@ -55,6 +55,16 @@
 			this.label11 = new System.Windows.Forms.Label();
 			this.integerTrackbarControlStepY = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
 			this.buttonClear = new System.Windows.Forms.Button();
+			this.floatTrackbarControl_m11 = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.label12 = new System.Windows.Forms.Label();
+			this.label13 = new System.Windows.Forms.Label();
+			this.floatTrackbarControl_m31 = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.label14 = new System.Windows.Forms.Label();
+			this.floatTrackbarControl_m13 = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.label15 = new System.Windows.Forms.Label();
+			this.floatTrackbarControl_m22 = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.labelError = new System.Windows.Forms.Label();
+			this.buttonClearFromHere = new System.Windows.Forms.Button();
 			this.SuspendLayout();
 			// 
 			// panelOutputSourceBRDF
@@ -305,7 +315,7 @@
 			// buttonClear
 			// 
 			this.buttonClear.Enabled = false;
-			this.buttonClear.Location = new System.Drawing.Point(1152, 388);
+			this.buttonClear.Location = new System.Drawing.Point(1152, 381);
 			this.buttonClear.Name = "buttonClear";
 			this.buttonClear.Size = new System.Drawing.Size(75, 23);
 			this.buttonClear.TabIndex = 9;
@@ -313,11 +323,118 @@
 			this.buttonClear.UseVisualStyleBackColor = true;
 			this.buttonClear.Click += new System.EventHandler(this.buttonClear_Click);
 			// 
+			// floatTrackbarControl_m11
+			// 
+			this.floatTrackbarControl_m11.Location = new System.Drawing.Point(416, 394);
+			this.floatTrackbarControl_m11.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControl_m11.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControl_m11.Name = "floatTrackbarControl_m11";
+			this.floatTrackbarControl_m11.Size = new System.Drawing.Size(117, 20);
+			this.floatTrackbarControl_m11.TabIndex = 10;
+			this.floatTrackbarControl_m11.Value = 0F;
+			this.floatTrackbarControl_m11.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControl_m31_ValueChanged);
+			// 
+			// label12
+			// 
+			this.label12.AutoSize = true;
+			this.label12.Location = new System.Drawing.Point(383, 398);
+			this.label12.Name = "label12";
+			this.label12.Size = new System.Drawing.Size(27, 13);
+			this.label12.TabIndex = 1;
+			this.label12.Text = "m11";
+			// 
+			// label13
+			// 
+			this.label13.AutoSize = true;
+			this.label13.Location = new System.Drawing.Point(383, 424);
+			this.label13.Name = "label13";
+			this.label13.Size = new System.Drawing.Size(27, 13);
+			this.label13.TabIndex = 1;
+			this.label13.Text = "m31";
+			// 
+			// floatTrackbarControl_m31
+			// 
+			this.floatTrackbarControl_m31.Location = new System.Drawing.Point(416, 420);
+			this.floatTrackbarControl_m31.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControl_m31.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControl_m31.Name = "floatTrackbarControl_m31";
+			this.floatTrackbarControl_m31.Size = new System.Drawing.Size(117, 20);
+			this.floatTrackbarControl_m31.TabIndex = 10;
+			this.floatTrackbarControl_m31.Value = 0F;
+			this.floatTrackbarControl_m31.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControl_m31_ValueChanged);
+			// 
+			// label14
+			// 
+			this.label14.AutoSize = true;
+			this.label14.Location = new System.Drawing.Point(539, 398);
+			this.label14.Name = "label14";
+			this.label14.Size = new System.Drawing.Size(27, 13);
+			this.label14.TabIndex = 1;
+			this.label14.Text = "m13";
+			// 
+			// floatTrackbarControl_m13
+			// 
+			this.floatTrackbarControl_m13.Location = new System.Drawing.Point(572, 394);
+			this.floatTrackbarControl_m13.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControl_m13.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControl_m13.Name = "floatTrackbarControl_m13";
+			this.floatTrackbarControl_m13.Size = new System.Drawing.Size(117, 20);
+			this.floatTrackbarControl_m13.TabIndex = 10;
+			this.floatTrackbarControl_m13.Value = 0F;
+			this.floatTrackbarControl_m13.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControl_m31_ValueChanged);
+			// 
+			// label15
+			// 
+			this.label15.AutoSize = true;
+			this.label15.Location = new System.Drawing.Point(539, 424);
+			this.label15.Name = "label15";
+			this.label15.Size = new System.Drawing.Size(27, 13);
+			this.label15.TabIndex = 1;
+			this.label15.Text = "m22";
+			// 
+			// floatTrackbarControl_m22
+			// 
+			this.floatTrackbarControl_m22.Location = new System.Drawing.Point(572, 420);
+			this.floatTrackbarControl_m22.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControl_m22.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControl_m22.Name = "floatTrackbarControl_m22";
+			this.floatTrackbarControl_m22.Size = new System.Drawing.Size(117, 20);
+			this.floatTrackbarControl_m22.TabIndex = 10;
+			this.floatTrackbarControl_m22.Value = 0F;
+			this.floatTrackbarControl_m22.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControl_m31_ValueChanged);
+			// 
+			// labelError
+			// 
+			this.labelError.AutoSize = true;
+			this.labelError.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+			this.labelError.Location = new System.Drawing.Point(695, 420);
+			this.labelError.Name = "labelError";
+			this.labelError.Size = new System.Drawing.Size(43, 15);
+			this.labelError.TabIndex = 1;
+			this.labelError.Text = "Error: 1";
+			// 
+			// buttonClearFromHere
+			// 
+			this.buttonClearFromHere.BackColor = System.Drawing.Color.IndianRed;
+			this.buttonClearFromHere.Enabled = false;
+			this.buttonClearFromHere.Location = new System.Drawing.Point(1127, 410);
+			this.buttonClearFromHere.Name = "buttonClearFromHere";
+			this.buttonClearFromHere.Size = new System.Drawing.Size(100, 23);
+			this.buttonClearFromHere.TabIndex = 9;
+			this.buttonClearFromHere.Text = "Clear From Here";
+			this.buttonClearFromHere.UseVisualStyleBackColor = false;
+			this.buttonClearFromHere.Click += new System.EventHandler(this.buttonClearFromHere_Click);
+			// 
 			// FitterForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-			this.ClientSize = new System.Drawing.Size(1239, 423);
+			this.ClientSize = new System.Drawing.Size(1239, 444);
+			this.Controls.Add(this.floatTrackbarControl_m22);
+			this.Controls.Add(this.floatTrackbarControl_m13);
+			this.Controls.Add(this.floatTrackbarControl_m31);
+			this.Controls.Add(this.floatTrackbarControl_m11);
+			this.Controls.Add(this.buttonClearFromHere);
 			this.Controls.Add(this.buttonClear);
 			this.Controls.Add(this.integerTrackbarControlStepY);
 			this.Controls.Add(this.integerTrackbarControlStepX);
@@ -334,9 +451,14 @@
 			this.Controls.Add(this.panel2);
 			this.Controls.Add(this.panel1);
 			this.Controls.Add(this.label3);
+			this.Controls.Add(this.label15);
 			this.Controls.Add(this.label7);
+			this.Controls.Add(this.label14);
 			this.Controls.Add(this.label2);
+			this.Controls.Add(this.labelError);
+			this.Controls.Add(this.label13);
 			this.Controls.Add(this.label6);
+			this.Controls.Add(this.label12);
 			this.Controls.Add(this.label5);
 			this.Controls.Add(this.label4);
 			this.Controls.Add(this.label1);
@@ -379,5 +501,15 @@
 		private System.Windows.Forms.Label label11;
 		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlStepY;
 		private System.Windows.Forms.Button buttonClear;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControl_m11;
+		private System.Windows.Forms.Label label12;
+		private System.Windows.Forms.Label label13;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControl_m31;
+		private System.Windows.Forms.Label label14;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControl_m13;
+		private System.Windows.Forms.Label label15;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControl_m22;
+		private System.Windows.Forms.Label labelError;
+		private System.Windows.Forms.Button buttonClearFromHere;
 	}
 }

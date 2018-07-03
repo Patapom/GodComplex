@@ -181,9 +181,15 @@ namespace LTCTableGenerator
 			get { return checkBoxPause.Checked; }
 			set {
 				checkBoxPause.Checked = value;
-				checkBoxPause.Text = checkBoxPause.Checked ? "PLAY" : "PAUSE";
-				integerTrackbarControlRoughnessIndex.Enabled = checkBoxPause.Checked;
-				integerTrackbarControlThetaIndex.Enabled = checkBoxPause.Checked;
+				checkBoxPause.Text = Paused ? "PLAY" : "PAUSE";
+
+				integerTrackbarControlRoughnessIndex.Enabled = Paused;
+				integerTrackbarControlThetaIndex.Enabled = Paused;
+
+				floatTrackbarControl_m11.Enabled = Paused;
+				floatTrackbarControl_m22.Enabled = Paused;
+				floatTrackbarControl_m13.Enabled = Paused;
+				floatTrackbarControl_m31.Enabled = Paused;
 			}
 		}
 
@@ -315,8 +321,8 @@ namespace LTCTableGenerator
 					// Otherwise use average direction as Z vector
 					// And use previous configuration as first guess
 					LTC	previousLTC = null;
-					if ( RoughnessIndex > 0 )
-						previousLTC = m_results[RoughnessIndex-1,ThetaIndex];
+					if ( RoughnessIndex < m_tableSize-1 )
+						previousLTC = m_results[RoughnessIndex+1,ThetaIndex];	// Prefer using same angle, but previous roughness!
 					else
 						previousLTC = m_results[RoughnessIndex,ThetaIndex-1];
 
@@ -608,7 +614,7 @@ tsReflection = _LTC.Z;	// Use preferred direction
 
 		#region I/O
 
-		LTC[,]	LoadTable( System.IO.FileInfo _tableFileName, out int _validResultsCount ) {
+		public static LTC[,]	LoadTable( System.IO.FileInfo _tableFileName, out int _validResultsCount ) {
 			LTC[,]	result = null;
 			_validResultsCount = 0;
 			using ( System.IO.FileStream S = _tableFileName.OpenRead() )
@@ -627,7 +633,7 @@ tsReflection = _LTC.Z;	// Use preferred direction
 			return result;
 		}
 
-		void	SaveTable( System.IO.FileInfo _tableFileName, LTC[,] _table, string _errors ) {
+		public static void	SaveTable( System.IO.FileInfo _tableFileName, LTC[,] _table, string _errors ) {
 			using ( System.IO.FileStream S = _tableFileName.Create() )
 				using ( System.IO.BinaryWriter W = new System.IO.BinaryWriter( S ) ) {
 					W.Write( _table.GetLength( 0 ) );
@@ -669,7 +675,13 @@ tsReflection = _LTC.Z;	// Use preferred direction
 		float3			m_tsView;
 		float3			m_tsLight;
 
+		bool	m_renderingBRDF = false;
 		public void	ShowBRDF( float _progress, float _theta, float _roughness, IBRDF _BRDF, LTC _LTC ) {
+			if ( m_renderingBRDF )
+				return;
+
+			m_renderingBRDF = true;
+
 			m_theta = _theta;
 			m_roughness = _roughness;
 			m_BRDF = _BRDF;
@@ -726,6 +738,7 @@ tsReflection = _LTC.Z;	// Use preferred direction
 			// Update text
 			if ( m_LTC == null ) {
 				textBoxFitting.Text = "<NOT COMPUTED>";
+				m_renderingBRDF = false;
 				return;
 			}
 
@@ -755,6 +768,14 @@ tsReflection = _LTC.Z;	// Use preferred direction
 								+ "► Iterations:\r\n"
 								+ "Value = " + m_lastIterationsCount + "\r\n"
 								+ "Avg. = " + (m_statsSumIterations / m_statsCounter).ToString( "G4" ) + "\r\n";
+
+			// Update coefficients
+			floatTrackbarControl_m11.Value = (float) _LTC.m11;
+			floatTrackbarControl_m22.Value = (float) _LTC.m22;
+			floatTrackbarControl_m13.Value = (float) _LTC.m13;
+			floatTrackbarControl_m31.Value = (float) _LTC.m31;
+
+			m_renderingBRDF = false;
 		}
 
 		string		WriteRow( int _rowIndex, double[,] _M ) {
@@ -835,6 +856,7 @@ tsReflection = _LTC.Z;	// Use preferred direction
 
 		void	UpdateView() {
 			buttonClear.Enabled = false;
+			buttonClearFromHere.Enabled = false;
 			if ( m_internalChange || !Paused )
 				return;	// Currently fitting...
 
@@ -846,10 +868,53 @@ tsReflection = _LTC.Z;	// Use preferred direction
 			ShowBRDF( (float) m_validResultsCount / (m_tableSize*m_tableSize), Mathf.Acos( cosTheta ), alpha, m_BRDF, ltc );
 
 			buttonClear.Enabled = ltc != null;
+			buttonClearFromHere.Enabled = ltc != null;
 		}
 
 		private void buttonClear_Click( object sender, EventArgs e ) {
 			m_results[RoughnessIndex,ThetaIndex] = null;
+			m_validResultsCount--;
+			UpdateView();
+		}
+
+		private void buttonClearFromHere_Click( object sender, EventArgs e ) {
+			if ( MessageBox.Show( this, "Are you sure you want to clear the table from this position, down to roughness=0?", "Confirm Clear", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2 ) != DialogResult.Yes )
+				return;	// Cancel, malheureux!
+
+			int	roughnessIndex = RoughnessIndex;
+			int	thetaIndex = ThetaIndex;
+			for ( ; roughnessIndex >= 0; roughnessIndex-- ) {
+				for ( ; thetaIndex < m_tableSize; thetaIndex++ ) {
+					m_results[roughnessIndex,thetaIndex] = null;
+					m_validResultsCount--;
+				}
+				thetaIndex = 0;
+			}
+			UpdateView();
+		}
+
+		private void floatTrackbarControl_m31_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue ) {
+			if ( m_internalChange || m_renderingBRDF )
+				return;
+
+			LTC		ltc = m_results[RoughnessIndex,ThetaIndex];
+			if ( ltc != null ) {
+				ltc.m11 = floatTrackbarControl_m11.Value;
+				ltc.m22 = floatTrackbarControl_m22.Value;
+				ltc.m13 = floatTrackbarControl_m13.Value;
+				ltc.m31 = floatTrackbarControl_m31.Value;
+				ltc.Update();
+
+				// Show error
+				float	alpha, cosTheta;
+				GetRoughnessAndAngle( RoughnessIndex, ThetaIndex, out alpha, out cosTheta );
+
+				float3	tsView = new float3( Mathf.Sqrt( 1 - cosTheta*cosTheta ), 0, cosTheta );
+
+				double	error = ComputeError( ltc, m_BRDF, ref tsView, alpha );
+				labelError.Text = "Error: " + error;
+			}
+
 			UpdateView();
 		}
 

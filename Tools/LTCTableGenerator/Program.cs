@@ -1,9 +1,13 @@
-﻿using System;
+﻿#define FIT_TABLES
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.IO;
+
+using SharpMath;
 
 namespace LTCTableGenerator
 {
@@ -18,9 +22,17 @@ namespace LTCTableGenerator
 			Application.EnableVisualStyles();
 			Application.SetCompatibleTextRenderingDefault( false );
 
-// 			RunForm( new BRDF_GGX(), new FileInfo( "GGX.ltc" ) );					// Fit GGX
-// 			RunForm( new BRDF_CookTorrance(), new FileInfo( "CookTorrance.ltc" ) );	// Fit Cook-Torrance
-			RunForm( new BRDF_Charlie(), new FileInfo( "CharlieSheen.ltc" ) );		// Fit Charlie Sheen
+			#if FIT_TABLES
+				// Fit
+// 				RunForm( new BRDF_GGX(), new FileInfo( "GGX.ltc" ) );					// Fit GGX
+// 				RunForm( new BRDF_CookTorrance(), new FileInfo( "CookTorrance.ltc" ) );	// Fit Cook-Torrance
+				RunForm( new BRDF_Charlie(), new FileInfo( "CharlieSheen.ltc" ) );		// Fit Charlie Sheen
+			#else
+				// Export
+				Export( new FileInfo( "GGX.ltc" ), "GGX" );
+				Export( new FileInfo( "CookTorrance.ltc" ), "CookTorrance" );
+				Export( new FileInfo( "CharlieSheen.ltc" ), "Charlie" );
+			#endif
 		}
 
 		static void	RunForm( IBRDF _BRDF, FileInfo _tableFileName ) {
@@ -31,10 +43,82 @@ form.RenderBRDF = true;	// Change this to perform fitting without rendering each
 // Just enter view mode to visualize fitting
 //form.DoFitting = false;
 form.Paused = true;
-form.ReadOnly = true;
+//form.ReadOnly = true;
 
 			form.SetupBRDF( _BRDF, 64, _tableFileName );
 			Application.Run( form );
+		}
+
+		static void		Export( FileInfo _tableFileName, string _BRDFName ) {
+			int		validResultsCount;
+			LTC[,]	table = FitterForm.LoadTable( _tableFileName, out validResultsCount );
+
+// 			double[,][]	matrices = new double[3,2][] {
+// 				{ new double[] { 0 }, new double[] { 1 }, },
+// 				{ new double[] { 2 }, new double[] { 3 }, },
+// 				{ new double[] { 4 }, new double[] { 5 }, },
+// 			};
+
+			string	sourceCode = "";
+
+			string	className = "LTCAreaLight_" + _BRDFName;
+
+			// Export LTC matrices
+			int	tableSize = table.GetLength(0);
+			sourceCode += "namespace LTCAreaLight\r\n"
+						+ "{\r\n"
+						+ "    public partial class " + className + "\r\n"
+						+ "    {\r\n"
+						+ "        \r\n"
+						+ "        // Table contains M^-1 3x3 matrix coefficients for " + _BRDFName + " BRDF\r\n"
+						+ "        // Accessed via " + className + ".ms_table[<roughnessIndex>, <thetaIndex>]\r\n"
+						+ "        //    • roughness = ( <roughnessIndex> / " + (tableSize-1) + " )^2\r\n"
+						+ "        //    • cosTheta = 1 - ( <thetaIndex> / " + (tableSize-1) + " )^2\r\n"
+						+ "        //\r\n"
+						+ "        public static double[,]	s_matrixData = new double[" + tableSize + " * " + tableSize +", 3 * 3] {\r\n";
+
+			LTC	defaultLTC = new LTC();
+				defaultLTC.amplitude = 0.0;
+			for ( int roughnessIndex=0; roughnessIndex < tableSize; roughnessIndex++ ) {
+//				string	matrixRowString = "            { ";
+				string	matrixRowString = "            ";
+				for ( int thetaIndex=0; thetaIndex < tableSize; thetaIndex++ ) {
+					LTC		ltc = table[roughnessIndex,thetaIndex];
+					if ( ltc == null ) {
+						ltc = defaultLTC;
+					}
+
+					string	matrixString  = ltc.invM[0,0] + ", " + ltc.invM[0,1] + ", " + ltc.invM[0,2] + ", ";
+							matrixString += ltc.invM[1,0] + ", " + ltc.invM[1,1] + ", " + ltc.invM[1,2] + ", ";
+							matrixString += ltc.invM[2,0] + ", " + ltc.invM[2,1] + ", " + ltc.invM[2,2];
+//					matrixRowString += (thetaIndex == 0 ? "{ " : ", { ") + matrixString + " }";
+					matrixRowString += "{ " + matrixString + " }, ";
+				}
+
+				// Compute roughness
+				float	perceptualRoughness = (float) roughnessIndex / (tableSize-1);
+				float	alpha = perceptualRoughness * perceptualRoughness;
+
+//				matrixRowString += " },\r\n";
+				matrixRowString += "   // Roughness = " + alpha + "\r\n";
+				sourceCode += matrixRowString;
+			}
+
+			sourceCode += "        };\r\n";
+
+			// Export LTC amplitude and fresnel
+			//
+//        public static float[] s_LtcGGXMagnitudeData = new float[k_LtcLUTResolution * k_LtcLUTResolution]
+//        public static float[] s_LtcGGXFresnelData = new float[k_LtcLUTResolution * k_LtcLUTResolution]
+
+			// Close class and namespace
+			sourceCode += "    }\r\n";
+			sourceCode += "}\r\n";
+
+			// Write content
+			FileInfo	targetFileName = new FileInfo( Path.Combine( Path.GetDirectoryName( _tableFileName.FullName ), Path.GetFileNameWithoutExtension( _tableFileName.FullName ) + ".cs" ) );
+			using ( StreamWriter W = targetFileName.CreateText() )
+				W.Write( sourceCode );
 		}
 	}
 }
