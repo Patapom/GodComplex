@@ -18,46 +18,23 @@ namespace LTCTableGenerator
 			Application.EnableVisualStyles();
 			Application.SetCompatibleTextRenderingDefault( false );
 
-//			FitterForm	debug = null;				// Blind fitting
-			FitterForm	debug = new FitterForm();	// Visual fitting
+// 			RunForm( new BRDF_GGX(), new FileInfo( "GGX.ltc" ) );					// Fit GGX
+// 			RunForm( new BRDF_CookTorrance(), new FileInfo( "CookTorrance.ltc" ) );	// Fit Cook-Torrance
+			RunForm( new BRDF_Charlie(), new FileInfo( "CharlieSheen.ltc" ) );		// Fit Charlie Sheen
+		}
 
+		static void	RunForm( IBRDF _BRDF, FileInfo _tableFileName ) {
+			FitterForm	form = new FitterForm();
+
+form.RenderBRDF = true;	// Change this to perform fitting without rendering each result (faster)
 
 // Just enter view mode to visualize fitting
-//debug.Paused = true;
-//debug.DoFitting = false;
-//debug.ReadOnly = true;
+//form.DoFitting = false;
+form.Paused = true;
+form.ReadOnly = true;
 
-
-
-// 			{	// Fit GGX
-// 				LTCFitter	fitter = new LTCFitter( debug );
-// 				BRDF_GGX	BRDF = new BRDF_GGX();
-// 
-// fitter.CheckBRDFNormalization( BRDF );
-// 
-// 				fitter.Fit( BRDF, 64, new FileInfo( "GGX.ltc" ) );
-// //				fitter.Fit( BRDF, 64, null );
-// 			}
-
-// 			{	// Fit Cook-Torrance
-// 				LTCFitter	fitter = new LTCFitter( debug );
-// 				BRDF_CookTorrance	BRDF = new BRDF_CookTorrance();
-// 
-// fitter.CheckBRDFNormalization( BRDF );
-// 
-// 				fitter.Fit( BRDF, 64, new FileInfo( "CookTorrance.ltc" ) );
-// //				fitter.Fit( BRDF, 64, null );
-// 			}
-
- 			{	// Fit Charlie Sheen
-				LTCFitter		fitter = new LTCFitter( debug );
-				BRDF_Charlie	BRDF = new BRDF_Charlie();
-
-fitter.CheckBRDFNormalization( BRDF );
-
-				fitter.Fit( BRDF, 64, new FileInfo( "CharlieSheen.ltc" ) );
-//				fitter.Fit( BRDF, 64, null );
-			}
+			form.SetupBRDF( _BRDF, 64, _tableFileName );
+			Application.Run( form );
 		}
 	}
 }

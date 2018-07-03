@@ -54,6 +54,7 @@
 			this.label10 = new System.Windows.Forms.Label();
 			this.label11 = new System.Windows.Forms.Label();
 			this.integerTrackbarControlStepY = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
+			this.buttonClear = new System.Windows.Forms.Button();
 			this.SuspendLayout();
 			// 
 			// panelOutputSourceBRDF
@@ -301,11 +302,23 @@
 			this.integerTrackbarControlStepY.VisibleRangeMax = 64;
 			this.integerTrackbarControlStepY.VisibleRangeMin = 1;
 			// 
+			// buttonClear
+			// 
+			this.buttonClear.Enabled = false;
+			this.buttonClear.Location = new System.Drawing.Point(1152, 388);
+			this.buttonClear.Name = "buttonClear";
+			this.buttonClear.Size = new System.Drawing.Size(75, 23);
+			this.buttonClear.TabIndex = 9;
+			this.buttonClear.Text = "Clear";
+			this.buttonClear.UseVisualStyleBackColor = true;
+			this.buttonClear.Click += new System.EventHandler(this.buttonClear_Click);
+			// 
 			// FitterForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1239, 423);
+			this.Controls.Add(this.buttonClear);
 			this.Controls.Add(this.integerTrackbarControlStepY);
 			this.Controls.Add(this.integerTrackbarControlStepX);
 			this.Controls.Add(this.checkBoxDoFitting);
@@ -365,5 +378,6 @@
 		private System.Windows.Forms.Label label10;
 		private System.Windows.Forms.Label label11;
 		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlStepY;
+		private System.Windows.Forms.Button buttonClear;
 	}
 }
