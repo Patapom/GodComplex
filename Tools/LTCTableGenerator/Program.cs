@@ -53,15 +53,9 @@ form.Paused = true;
 			int		validResultsCount;
 			LTC[,]	table = FitterForm.LoadTable( _tableFileName, out validResultsCount );
 
-// 			double[,][]	matrices = new double[3,2][] {
-// 				{ new double[] { 0 }, new double[] { 1 }, },
-// 				{ new double[] { 2 }, new double[] { 3 }, },
-// 				{ new double[] { 4 }, new double[] { 5 }, },
-// 			};
+			string	className = "LTCAreaLight_" + _BRDFName;
 
 			string	sourceCode = "";
-
-			string	className = "LTCAreaLight_" + _BRDFName;
 
 			// Export LTC matrices
 			int	tableSize = table.GetLength(0);
@@ -69,13 +63,14 @@ form.Paused = true;
 						+ "{\r\n"
 						+ "    public partial class " + className + "\r\n"
 						+ "    {\r\n"
-						+ "        \r\n"
-						+ "        // Table contains M^-1 3x3 matrix coefficients for " + _BRDFName + " BRDF\r\n"
-						+ "        // Accessed via " + className + ".ms_table[<roughnessIndex>, <thetaIndex>]\r\n"
+						+ "        // Table contains 3x3 matrix coefficients of M^-1 for the fitting of the " + _BRDFName + " BRDF using the LTC technique\r\n"
+						+ "        // From \"Real-Time Polygonal-Light Shading with Linearly Transformed Cosines\" 2016 (https://eheitzresearch.wordpress.com/415-2/)\r\n"
+						+ "        //\r\n"
+						+ "        // The table is accessed via " + className + ".ms_invM[<roughnessIndex>, <thetaIndex>]\r\n"
 						+ "        //    • roughness = ( <roughnessIndex> / " + (tableSize-1) + " )^2\r\n"
 						+ "        //    • cosTheta = 1 - ( <thetaIndex> / " + (tableSize-1) + " )^2\r\n"
 						+ "        //\r\n"
-						+ "        public static double[,]	s_matrixData = new double[" + tableSize + " * " + tableSize +", 3 * 3] {\r\n";
+						+ "        public static double[,]	ms_invM = new double[" + tableSize + " * " + tableSize +", 3 * 3] {\r\n";
 
 			LTC	defaultLTC = new LTC();
 				defaultLTC.amplitude = 0.0;
@@ -110,6 +105,11 @@ form.Paused = true;
 			//
 //        public static float[] s_LtcGGXMagnitudeData = new float[k_LtcLUTResolution * k_LtcLUTResolution]
 //        public static float[] s_LtcGGXFresnelData = new float[k_LtcLUTResolution * k_LtcLUTResolution]
+
+			sourceCode += "\r\n";
+			sourceCode += "        // NOTE: Formerly, we needed to also export and create a table for the BRDF's amplitude factor + fresnel coefficient\r\n";
+			sourceCode += "        //    but it turns out these 2 factors are actually already precomputed and available in the FGD table corresponding\r\n";
+			sourceCode += "        //    to the " + _BRDFName + " BRDF, therefore they are no longer exported...\r\n";
 
 			// Close class and namespace
 			sourceCode += "    }\r\n";

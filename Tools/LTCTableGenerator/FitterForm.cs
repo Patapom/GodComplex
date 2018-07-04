@@ -321,10 +321,10 @@ namespace LTCTableGenerator
 					// Otherwise use average direction as Z vector
 					// And use previous configuration as first guess
 					LTC	previousLTC = null;
-					if ( RoughnessIndex < m_tableSize-1 )
-						previousLTC = m_results[RoughnessIndex+1,ThetaIndex];	// Prefer using same angle, but previous roughness!
+					if ( RoughnessIndex < m_tableSize/2 )
+						previousLTC = m_results[RoughnessIndex+1,ThetaIndex];	// At low roughness, prefer using same angle, but previous roughness!
 					else
-						previousLTC = m_results[RoughnessIndex,ThetaIndex-1];
+						previousLTC = m_results[RoughnessIndex,ThetaIndex-1];	// At high roughness, prefer using same roughness but previous angle!
 
 					if ( previousLTC != null ) {
 						ltc.m11 = previousLTC.m11;
@@ -361,6 +361,11 @@ namespace LTCTableGenerator
 							m_fitter.Minimize( m_fitModel );
 							ltc.error = m_fitter.FunctionMinimum;
 							ltc.iterationsCount = m_fitter.IterationsCount;
+
+							double[]	resultParms = ltc.RuntimeParameters;
+							if ( double.IsNaN(resultParms[0]) || double.IsNaN(resultParms[1]) || double.IsNaN(resultParms[2]) || double.IsNaN(resultParms[3]) )
+								throw new Exception( "NaN in solution" );
+
 						#else
 							ltc.error = fitter.FindFit( resultFit, startFit, FIT_EXPLORE_DELTA, TOLERANCE, MAX_ITERATIONS, ( double[] _parameters ) => {
 								ltc.Set( _parameters, isotropic );

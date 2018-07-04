@@ -226,20 +226,24 @@ namespace LTCTableGenerator
 
 			// Finish building the average TBN orthogonal basis
 			Z.y = 0.0f;		// clear y component, which should be zero with isotropic BRDFs
-			Z.Normalize();
+			float	length = Z.Length;
+			if ( length > 0.0f )
+				Z /= length;
+			else
+				Z = float3.UnitZ;
 			X.Set( Z.z, 0, -Z.x );
 			Y = float3.UnitY;
 
-// 				#if FIT_INV_M
-// 					// Compute intial inverse M coefficients to match average direction best
-// 					M = new float3x3( X, Y, Z );
-// 					invM = M.Inverse;
+// 			#if FIT_INV_M
+// 				// Compute intial inverse M coefficients to match average direction best
+// 				M = new float3x3( X, Y, Z );
+// 				invM = M.Inverse;
 // 
-// 					m11 = invM.r0.x;
-// 					m22 = invM.r1.y;
-// 					m13 = invM.r0.z;
-// 					m31 = invM.r2.x;
-// 				#endif
+// 				m11 = invM.r0.x;
+// 				m22 = invM.r1.y;
+// 				m13 = invM.r0.z;
+// 				m31 = invM.r2.x;
+// 			#endif
 		}
 
 		#endregion

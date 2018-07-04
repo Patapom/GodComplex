@@ -15,14 +15,9 @@ using SharpMath;
 namespace LTCTableGenerator
 {
 	public interface	IBRDF {
-		/// <summary>
-		/// Gets the BRDF's maximum amplitude value
-		/// </summary>
-		double	MaxValue( ref float3 _tsView, float _alpha );
-
 		// 
 		/// <summary>
-		/// Evaluation of the cosine-weighted BRDF
+		/// Evaluation of the ***cosine-weighted*** BRDF
 		/// </summary>
 		/// <param name="_tsView"></param>
 		/// <param name="_tsLight"></param>
@@ -40,18 +35,18 @@ namespace LTCTableGenerator
 		/// <param name="_U2"></param>
 		/// <param name="_direction"></param>
 		void	GetSamplingDirection( ref float3 _tsView, float _alpha, float _U1, float _U2, ref float3 _direction );
+
+// Not used anymore...
+// 		/// <summary>
+// 		/// Gets the BRDF's maximum amplitude value
+// 		/// </summary>
+// 		double	MaxValue( ref float3 _tsView, float _alpha );
 	};
 
 	/// <summary>
 	/// GGX implementation of the BRDF interface
 	/// </summary>
 	class BRDF_GGX : IBRDF {
-
-		public double	MaxValue( ref float3 _tsView, float _alpha ) {
-			double	D = 1.0 / (Math.PI * _alpha * _alpha);
-			double	G = 1.0 / (1.0 + Lambda( _tsView.z, _alpha ));
-			return D * G / (4.0 * _tsView.z);
-		}
 
 		public double	Eval( ref float3 _tsView, ref float3 _tsLight, float _alpha, out double _pdf ) {
 			if ( _tsView.z <= 0 ) {
@@ -99,6 +94,12 @@ namespace LTCTableGenerator
 			_direction = -_tsView + 2.0f * H * H.Dot(_tsView);
 		}
 
+		public double	MaxValue( ref float3 _tsView, float _alpha ) {
+			double	D = 1.0 / (Math.PI * _alpha * _alpha);
+			double	G = 1.0 / (1.0 + Lambda( _tsView.z, _alpha ));
+			return D * G / (4.0 * _tsView.z);
+		}
+
 		double	Lambda( float _cosTheta, float _alpha ) {
 			double	a = 1.0f / (_alpha * Math.Tan( Math.Acos( _cosTheta ) ));
 			double	lambda = _cosTheta < 1.0 ? 0.5 * (-1.0 + Math.Sqrt(1.0 + 1.0 / (a*a))) : 0.0;
@@ -110,13 +111,6 @@ namespace LTCTableGenerator
 	/// Cook-Torrance implementation of the BRDF interface
 	/// </summary>
 	class BRDF_CookTorrance : IBRDF {
-
-		public double	MaxValue( ref float3 _tsView, float _alpha ) {
-			double	a2 = Math.Max( 1e-4, _alpha * _alpha );
-			double	D =  1.0 / (Math.PI * a2);
-			double	G = 1.0;
-			return D * G / (4.0 * _tsView.z);
-		}
 
 		public double	Eval( ref float3 _tsView, ref float3 _tsLight, float _alpha, out double _pdf ) {
 			if ( _tsView.z <= 0 ) {
@@ -157,6 +151,13 @@ namespace LTCTableGenerator
 			float3	H = new float3( sinTheta*Mathf.Cos(phi), sinTheta*Mathf.Sin(phi), cosTheta );
 			_direction = 2.0f * H.Dot(_tsView) * H - _tsView;	// Mirror view direction
 		}
+
+		public double	MaxValue( ref float3 _tsView, float _alpha ) {
+			double	a2 = Math.Max( 1e-4, _alpha * _alpha );
+			double	D =  1.0 / (Math.PI * a2);
+			double	G = 1.0;
+			return D * G / (4.0 * _tsView.z);
+		}
 	}
 
 	/// <summary>
@@ -165,13 +166,6 @@ namespace LTCTableGenerator
 	/// Details: https://knarkowicz.wordpress.com/2018/01/04/cloth-shading/
 	/// </summary>
 	class BRDF_Charlie : IBRDF {
-
-		public double	MaxValue( ref float3 _tsView, float _alpha ) {
-			double	maxD = (2.0 + 1.0 / _alpha) / (2.0 * Math.PI);
-			double	NdotV = Math.Max( 0.0, _tsView.z );
-			double	maxG = 1.0 / (4.0 * NdotV);
-			return maxD * maxG;
-		}
 
 		public double	Eval( ref float3 _tsView, ref float3 _tsLight, float _alpha, out double _pdf ) {
 			if ( _tsView.z <= 0 ) {
@@ -213,6 +207,13 @@ namespace LTCTableGenerator
 			float	cosTheta = 1.0f - _U2;
 			float	sinTheta = Mathf.Sqrt( 1 - cosTheta*cosTheta );
 			_direction = new float3( sinTheta*Mathf.Cos(phi), sinTheta*Mathf.Sin(phi), cosTheta );
+		}
+
+		public double	MaxValue( ref float3 _tsView, float _alpha ) {
+			double	maxD = (2.0 + 1.0 / _alpha) / (2.0 * Math.PI);
+			double	NdotV = Math.Max( 0.0, _tsView.z );
+			double	maxG = 1.0 / (4.0 * NdotV);
+			return maxD * maxG;
 		}
 
 		double	CharlieD( float _roughness, double _NdotH ) {
