@@ -321,7 +321,7 @@ namespace LTCTableGenerator
 					// Otherwise use average direction as Z vector
 					// And use previous configuration as first guess
 					LTC	previousLTC = null;
-					if ( RoughnessIndex < m_tableSize/2 )
+					if ( RoughnessIndex < m_tableSize-1 && checkBoxUsePreviousRoughness.Checked )
 						previousLTC = m_results[RoughnessIndex+1,ThetaIndex];	// At low roughness, prefer using same angle, but previous roughness!
 					else
 						previousLTC = m_results[RoughnessIndex,ThetaIndex-1];	// At high roughness, prefer using same roughness but previous angle!
@@ -743,6 +743,8 @@ tsReflection = _LTC.Z;	// Use preferred direction
 			// Update text
 			if ( m_LTC == null ) {
 				textBoxFitting.Text = "<NOT COMPUTED>";
+				labelError.Text = "<NOT COMPUTED>";
+
 				m_renderingBRDF = false;
 				return;
 			}
@@ -779,6 +781,7 @@ tsReflection = _LTC.Z;	// Use preferred direction
 			floatTrackbarControl_m22.Value = (float) _LTC.m22;
 			floatTrackbarControl_m13.Value = (float) _LTC.m13;
 			floatTrackbarControl_m31.Value = (float) _LTC.m31;
+			labelError.Text = "Error: " + _LTC.error;
 
 			m_renderingBRDF = false;
 		}
@@ -861,7 +864,8 @@ tsReflection = _LTC.Z;	// Use preferred direction
 
 		void	UpdateView() {
 			buttonClear.Enabled = false;
-			buttonClearFromHere.Enabled = false;
+			buttonClearRowsFromHere.Enabled = false;
+			buttonClearColumnsFromHere.Enabled = false;
 			if ( m_internalChange || !Paused )
 				return;	// Currently fitting...
 
@@ -873,7 +877,8 @@ tsReflection = _LTC.Z;	// Use preferred direction
 			ShowBRDF( (float) m_validResultsCount / (m_tableSize*m_tableSize), Mathf.Acos( cosTheta ), alpha, m_BRDF, ltc );
 
 			buttonClear.Enabled = ltc != null;
-			buttonClearFromHere.Enabled = ltc != null;
+			buttonClearRowsFromHere.Enabled = ltc != null;
+			buttonClearColumnsFromHere.Enabled = ltc != null;
 		}
 
 		private void buttonClear_Click( object sender, EventArgs e ) {
@@ -882,8 +887,8 @@ tsReflection = _LTC.Z;	// Use preferred direction
 			UpdateView();
 		}
 
-		private void buttonClearFromHere_Click( object sender, EventArgs e ) {
-			if ( MessageBox.Show( this, "Are you sure you want to clear the table from this position, down to roughness=0?", "Confirm Clear", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2 ) != DialogResult.Yes )
+		private void buttonClearRowsFromHere_Click( object sender, EventArgs e ) {
+			if ( MessageBox.Show( this, "Are you sure you want to clear the table ROWS from this position, down to roughness=0?", "Confirm Clear", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2 ) != DialogResult.Yes )
 				return;	// Cancel, malheureux!
 
 			int	roughnessIndex = RoughnessIndex;
@@ -894,6 +899,22 @@ tsReflection = _LTC.Z;	// Use preferred direction
 					m_validResultsCount--;
 				}
 				thetaIndex = 0;
+			}
+			UpdateView();
+		}
+
+		private void buttonClearColumnsFromHere_Click( object sender, EventArgs e ) {
+			if ( MessageBox.Show( this, "Are you sure you want to clear the table COLUMNS from this position, up to cosTheta=PI/2?", "Confirm Clear", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2 ) != DialogResult.Yes )
+				return;	// Cancel, malheureux!
+
+			int	roughnessIndex = RoughnessIndex;
+			int	thetaIndex = ThetaIndex;
+			for ( ; thetaIndex < m_tableSize; thetaIndex++ ) {
+				for ( ; roughnessIndex >= 0; roughnessIndex-- ) {
+					m_results[roughnessIndex,thetaIndex] = null;
+					m_validResultsCount--;
+				}
+				roughnessIndex = m_tableSize-1;
 			}
 			UpdateView();
 		}

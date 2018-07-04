@@ -64,7 +64,9 @@
 			this.label15 = new System.Windows.Forms.Label();
 			this.floatTrackbarControl_m22 = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.labelError = new System.Windows.Forms.Label();
-			this.buttonClearFromHere = new System.Windows.Forms.Button();
+			this.buttonClearRowsFromHere = new System.Windows.Forms.Button();
+			this.checkBoxUsePreviousRoughness = new System.Windows.Forms.CheckBox();
+			this.buttonClearColumnsFromHere = new System.Windows.Forms.Button();
 			this.SuspendLayout();
 			// 
 			// panelOutputSourceBRDF
@@ -247,7 +249,7 @@
 			this.checkBoxAutoRun.AutoSize = true;
 			this.checkBoxAutoRun.Checked = true;
 			this.checkBoxAutoRun.CheckState = System.Windows.Forms.CheckState.Checked;
-			this.checkBoxAutoRun.Location = new System.Drawing.Point(663, 10);
+			this.checkBoxAutoRun.Location = new System.Drawing.Point(663, 2);
 			this.checkBoxAutoRun.Name = "checkBoxAutoRun";
 			this.checkBoxAutoRun.Size = new System.Drawing.Size(71, 17);
 			this.checkBoxAutoRun.TabIndex = 7;
@@ -259,7 +261,7 @@
 			this.checkBoxDoFitting.AutoSize = true;
 			this.checkBoxDoFitting.Checked = true;
 			this.checkBoxDoFitting.CheckState = System.Windows.Forms.CheckState.Checked;
-			this.checkBoxDoFitting.Location = new System.Drawing.Point(737, 10);
+			this.checkBoxDoFitting.Location = new System.Drawing.Point(737, 2);
 			this.checkBoxDoFitting.Name = "checkBoxDoFitting";
 			this.checkBoxDoFitting.Size = new System.Drawing.Size(71, 17);
 			this.checkBoxDoFitting.TabIndex = 7;
@@ -268,7 +270,7 @@
 			// 
 			// integerTrackbarControlStepX
 			// 
-			this.integerTrackbarControlStepX.Location = new System.Drawing.Point(873, 9);
+			this.integerTrackbarControlStepX.Location = new System.Drawing.Point(942, 9);
 			this.integerTrackbarControlStepX.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.integerTrackbarControlStepX.MinimumSize = new System.Drawing.Size(70, 20);
 			this.integerTrackbarControlStepX.Name = "integerTrackbarControlStepX";
@@ -283,7 +285,7 @@
 			// label10
 			// 
 			this.label10.AutoSize = true;
-			this.label10.Location = new System.Drawing.Point(831, 11);
+			this.label10.Location = new System.Drawing.Point(900, 11);
 			this.label10.Name = "label10";
 			this.label10.Size = new System.Drawing.Size(36, 13);
 			this.label10.TabIndex = 6;
@@ -292,7 +294,7 @@
 			// label11
 			// 
 			this.label11.AutoSize = true;
-			this.label11.Location = new System.Drawing.Point(999, 11);
+			this.label11.Location = new System.Drawing.Point(1068, 11);
 			this.label11.Name = "label11";
 			this.label11.Size = new System.Drawing.Size(36, 13);
 			this.label11.TabIndex = 6;
@@ -300,7 +302,7 @@
 			// 
 			// integerTrackbarControlStepY
 			// 
-			this.integerTrackbarControlStepY.Location = new System.Drawing.Point(1041, 9);
+			this.integerTrackbarControlStepY.Location = new System.Drawing.Point(1110, 9);
 			this.integerTrackbarControlStepY.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.integerTrackbarControlStepY.MinimumSize = new System.Drawing.Size(70, 20);
 			this.integerTrackbarControlStepY.Name = "integerTrackbarControlStepY";
@@ -413,17 +415,41 @@
 			this.labelError.TabIndex = 1;
 			this.labelError.Text = "Error: 1";
 			// 
-			// buttonClearFromHere
+			// buttonClearRowsFromHere
 			// 
-			this.buttonClearFromHere.BackColor = System.Drawing.Color.IndianRed;
-			this.buttonClearFromHere.Enabled = false;
-			this.buttonClearFromHere.Location = new System.Drawing.Point(1127, 410);
-			this.buttonClearFromHere.Name = "buttonClearFromHere";
-			this.buttonClearFromHere.Size = new System.Drawing.Size(100, 23);
-			this.buttonClearFromHere.TabIndex = 9;
-			this.buttonClearFromHere.Text = "Clear From Here";
-			this.buttonClearFromHere.UseVisualStyleBackColor = false;
-			this.buttonClearFromHere.Click += new System.EventHandler(this.buttonClearFromHere_Click);
+			this.buttonClearRowsFromHere.BackColor = System.Drawing.Color.IndianRed;
+			this.buttonClearRowsFromHere.Enabled = false;
+			this.buttonClearRowsFromHere.Location = new System.Drawing.Point(954, 412);
+			this.buttonClearRowsFromHere.Name = "buttonClearRowsFromHere";
+			this.buttonClearRowsFromHere.Size = new System.Drawing.Size(126, 23);
+			this.buttonClearRowsFromHere.TabIndex = 9;
+			this.buttonClearRowsFromHere.Text = "Clear Rows From Here";
+			this.buttonClearRowsFromHere.UseVisualStyleBackColor = false;
+			this.buttonClearRowsFromHere.Click += new System.EventHandler(this.buttonClearRowsFromHere_Click);
+			// 
+			// checkBoxUsePreviousRoughness
+			// 
+			this.checkBoxUsePreviousRoughness.AutoSize = true;
+			this.checkBoxUsePreviousRoughness.Checked = true;
+			this.checkBoxUsePreviousRoughness.CheckState = System.Windows.Forms.CheckState.Checked;
+			this.checkBoxUsePreviousRoughness.Location = new System.Drawing.Point(737, 18);
+			this.checkBoxUsePreviousRoughness.Name = "checkBoxUsePreviousRoughness";
+			this.checkBoxUsePreviousRoughness.Size = new System.Drawing.Size(130, 17);
+			this.checkBoxUsePreviousRoughness.TabIndex = 7;
+			this.checkBoxUsePreviousRoughness.Text = "Use Prev. Roughness";
+			this.checkBoxUsePreviousRoughness.UseVisualStyleBackColor = true;
+			// 
+			// buttonClearColumns
+			// 
+			this.buttonClearColumnsFromHere.BackColor = System.Drawing.Color.IndianRed;
+			this.buttonClearColumnsFromHere.Enabled = false;
+			this.buttonClearColumnsFromHere.Location = new System.Drawing.Point(1086, 412);
+			this.buttonClearColumnsFromHere.Name = "buttonClearColumns";
+			this.buttonClearColumnsFromHere.Size = new System.Drawing.Size(141, 23);
+			this.buttonClearColumnsFromHere.TabIndex = 9;
+			this.buttonClearColumnsFromHere.Text = "Clear Columns  From Here";
+			this.buttonClearColumnsFromHere.UseVisualStyleBackColor = false;
+			this.buttonClearColumnsFromHere.Click += new System.EventHandler(this.buttonClearColumnsFromHere_Click);
 			// 
 			// FitterForm
 			// 
@@ -434,10 +460,12 @@
 			this.Controls.Add(this.floatTrackbarControl_m13);
 			this.Controls.Add(this.floatTrackbarControl_m31);
 			this.Controls.Add(this.floatTrackbarControl_m11);
-			this.Controls.Add(this.buttonClearFromHere);
+			this.Controls.Add(this.buttonClearColumnsFromHere);
+			this.Controls.Add(this.buttonClearRowsFromHere);
 			this.Controls.Add(this.buttonClear);
 			this.Controls.Add(this.integerTrackbarControlStepY);
 			this.Controls.Add(this.integerTrackbarControlStepX);
+			this.Controls.Add(this.checkBoxUsePreviousRoughness);
 			this.Controls.Add(this.checkBoxDoFitting);
 			this.Controls.Add(this.label11);
 			this.Controls.Add(this.checkBoxAutoRun);
@@ -510,6 +538,8 @@
 		private System.Windows.Forms.Label label15;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControl_m22;
 		private System.Windows.Forms.Label labelError;
-		private System.Windows.Forms.Button buttonClearFromHere;
+		private System.Windows.Forms.Button buttonClearRowsFromHere;
+		private System.Windows.Forms.CheckBox checkBoxUsePreviousRoughness;
+		private System.Windows.Forms.Button buttonClearColumnsFromHere;
 	}
 }

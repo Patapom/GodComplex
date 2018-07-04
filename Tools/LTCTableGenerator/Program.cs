@@ -25,8 +25,8 @@ namespace LTCTableGenerator
 			#if FIT_TABLES
 				// Fit
 // 				RunForm( new BRDF_GGX(), new FileInfo( "GGX.ltc" ) );					// Fit GGX
-// 				RunForm( new BRDF_CookTorrance(), new FileInfo( "CookTorrance.ltc" ) );	// Fit Cook-Torrance
-				RunForm( new BRDF_Charlie(), new FileInfo( "CharlieSheen.ltc" ) );		// Fit Charlie Sheen
+ 				RunForm( new BRDF_CookTorrance(), new FileInfo( "CookTorrance.ltc" ) );	// Fit Cook-Torrance
+//				RunForm( new BRDF_Charlie(), new FileInfo( "CharlieSheen.ltc" ) );		// Fit Charlie Sheen
 			#else
 				// Export
 				Export( new FileInfo( "GGX.ltc" ), "GGX" );
