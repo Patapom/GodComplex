@@ -1,4 +1,5 @@
-﻿#define FIT_TABLES
+﻿ #define FIT_TABLES
+#define EXPORT_FOR_UNITY
 
 using System;
 using System.Collections.Generic;
@@ -23,58 +24,81 @@ namespace LTCTableGenerator
 			Application.SetCompatibleTextRenderingDefault( false );
 
 			#if FIT_TABLES
-				// Fit
-// 				RunForm( new BRDF_GGX(), new FileInfo( "GGX.ltc" ) );					// Fit GGX
- 				RunForm( new BRDF_CookTorrance(), new FileInfo( "CookTorrance.ltc" ) );	// Fit Cook-Torrance
-//				RunForm( new BRDF_Charlie(), new FileInfo( "CharlieSheen.ltc" ) );		// Fit Charlie Sheen
+				// Fit specular
+// 				RunForm( new BRDF_GGX(), new FileInfo( "GGX.ltc" ), true );						// Fit GGX
+// 				RunForm( new BRDF_CookTorrance(), new FileInfo( "CookTorrance.ltc" ), false );	// Fit Cook-Torrance
+// 				RunForm( new BRDF_Ward(), new FileInfo( "Ward.ltc" ), true );					// Fit Ward
+
+				// Fit diffuse
+//				RunForm( new BRDF_Charlie(), new FileInfo( "CharlieSheen.ltc" ), true );		// Fit Charlie Sheen
+ 				RunForm( new BRDF_Disney(), new FileInfo( "Disney.ltc" ), true );				// Fit Disney diffuse
+//				RunForm( new BRDF_OrenNayar(), new FileInfo( "OrenNayar.ltc" ), true );			// Fit Oren-Nayar diffuse
 			#else
 				// Export
-				Export( new FileInfo( "GGX.ltc" ), "GGX" );
-				Export( new FileInfo( "CookTorrance.ltc" ), "CookTorrance" );
-				Export( new FileInfo( "CharlieSheen.ltc" ), "Charlie" );
+				#if EXPORT_FOR_UNITY
+					Export( new FileInfo( "GGX.ltc" ), new FileInfo( @"D:\Workspaces\Unity Labs\AxF Unity Project\SRP\com.unity.render-pipelines.high-definition\HDRP\Material\LTCAreaLight\LtcData.GGX2.cs" ), "GGX" );
+					Export( new FileInfo( "CookTorrance.ltc" ), new FileInfo( @"D:\Workspaces\Unity Labs\AxF Unity Project\SRP\com.unity.render-pipelines.high-definition\HDRP\Material\LTCAreaLight\LtcData.CookTorrance.cs" ), "CookTorrance" );
+					Export( new FileInfo( "CharlieSheen.ltc" ), new FileInfo( @"D:\Workspaces\Unity Labs\AxF Unity Project\SRP\com.unity.render-pipelines.high-definition\HDRP\Material\LTCAreaLight\LtcData.CharlieSheen.cs" ), "Charlie" );
+				#else
+					Export( new FileInfo( "GGX.ltc" ), new FileInfo( "GGX.cs" ), "GGX" );
+					Export( new FileInfo( "CookTorrance.ltc" ), new FileInfo( "CookTorrance.cs" ), "CookTorrance" );
+					Export( new FileInfo( "CharlieSheen.ltc" ), new FileInfo( "CharlieSheen.cs" ), "Charlie" );
+				#endif
 			#endif
 		}
 
-		static void	RunForm( IBRDF _BRDF, FileInfo _tableFileName ) {
+		static void	RunForm( IBRDF _BRDF, FileInfo _tableFileName, bool _usePreviousRoughnessForFitting ) {
 			FitterForm	form = new FitterForm();
 
 form.RenderBRDF = true;	// Change this to perform fitting without rendering each result (faster)
 
 // Just enter view mode to visualize fitting
+form.UsePreviousRoughness = _usePreviousRoughnessForFitting;
 //form.DoFitting = false;
 form.Paused = true;
 //form.ReadOnly = true;
+
+form.UseAdaptiveFit = true;
+
 
 			form.SetupBRDF( _BRDF, 64, _tableFileName );
 			Application.Run( form );
 		}
 
-		static void		Export( FileInfo _tableFileName, string _BRDFName ) {
+		static void		Export( FileInfo _tableFileName, FileInfo _targetFileName, string _BRDFName ) {
 			int		validResultsCount;
 			LTC[,]	table = FitterForm.LoadTable( _tableFileName, out validResultsCount );
 
-			string	className = "LTCAreaLight_" + _BRDFName;
+			string	tableName = "s_LtcMatrixData_" + _BRDFName;
 
 			string	sourceCode = "";
 
 			// Export LTC matrices
 			int	tableSize = table.GetLength(0);
-			sourceCode += "namespace LTCAreaLight\r\n"
+			sourceCode += "using UnityEngine;\r\n"
+						+ "using System;\r\n"
+						+ "\r\n"
+						+ "namespace UnityEngine.Experimental.Rendering.HDPipeline\r\n"
 						+ "{\r\n"
-						+ "    public partial class " + className + "\r\n"
+						+ "    public partial class LTCAreaLight\r\n"
 						+ "    {\r\n"
 						+ "        // Table contains 3x3 matrix coefficients of M^-1 for the fitting of the " + _BRDFName + " BRDF using the LTC technique\r\n"
 						+ "        // From \"Real-Time Polygonal-Light Shading with Linearly Transformed Cosines\" 2016 (https://eheitzresearch.wordpress.com/415-2/)\r\n"
 						+ "        //\r\n"
-						+ "        // The table is accessed via " + className + ".ms_invM[<roughnessIndex>, <thetaIndex>]\r\n"
+						+ "        // The table is accessed via LTCAreaLight." + tableName + "[64 * <roughnessIndex> + <thetaIndex>]\r\n"
 						+ "        //    • roughness = ( <roughnessIndex> / " + (tableSize-1) + " )^2\r\n"
 						+ "        //    • cosTheta = 1 - ( <thetaIndex> / " + (tableSize-1) + " )^2\r\n"
 						+ "        //\r\n"
-						+ "        public static double[,]	ms_invM = new double[" + tableSize + " * " + tableSize +", 3 * 3] {\r\n";
+						+ "        public static double[,]	" + tableName + " = new double[" + tableSize + " * " + tableSize +", 3 * 3] {\r\n";
 
 			LTC	defaultLTC = new LTC();
 				defaultLTC.amplitude = 0.0;
-			for ( int roughnessIndex=0; roughnessIndex < tableSize; roughnessIndex++ ) {
+
+		#if EXPORT_FOR_UNITY
+			for ( int roughnessIndex=tableSize-1; roughnessIndex >= 0; roughnessIndex-- ) {		// Export for Unity with its OpenGL reversed V textures! :'(
+		#else
+			for ( int roughnessIndex=0; roughnessIndex < tableSize; roughnessIndex++ ) {		// Export for DirectX regular V textures...
+		#endif
 //				string	matrixRowString = "            { ";
 				string	matrixRowString = "            ";
 				for ( int thetaIndex=0; thetaIndex < tableSize; thetaIndex++ ) {
@@ -116,8 +140,8 @@ form.Paused = true;
 			sourceCode += "}\r\n";
 
 			// Write content
-			FileInfo	targetFileName = new FileInfo( Path.Combine( Path.GetDirectoryName( _tableFileName.FullName ), Path.GetFileNameWithoutExtension( _tableFileName.FullName ) + ".cs" ) );
-			using ( StreamWriter W = targetFileName.CreateText() )
+//			FileInfo	targetFileName = new FileInfo( Path.Combine( Path.GetDirectoryName( _tableFileName.FullName ), Path.GetFileNameWithoutExtension( _tableFileName.FullName ) + ".cs" ) );
+			using ( StreamWriter W = _targetFileName.CreateText() )
 				W.Write( sourceCode );
 		}
 	}

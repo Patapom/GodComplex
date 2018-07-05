@@ -43,6 +43,14 @@ namespace LTCTableGenerator
 // 		double	MaxValue( ref float3 _tsView, float _alpha );
 	};
 
+
+	//////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////
+	// Specular BRDFs
+	//////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////
+	//
+
 	/// <summary>
 	/// GGX implementation of the BRDF interface
 	/// </summary>
@@ -161,6 +169,62 @@ namespace LTCTableGenerator
 	}
 
 	/// <summary>
+	/// Ward implementation of the BRDF interface
+	/// Geisler-Moroder Version from 2010 from the paper https://www.radiance-online.org//community/workshops/2010-freiburg/PDF/geisler-moroder_duer_thetmeyer_RW2010.pdf
+	/// </summary>
+	class BRDF_Ward : IBRDF {
+
+		public double	Eval( ref float3 _tsView, ref float3 _tsLight, float _alpha, out double _pdf ) {
+			if ( _tsView.z <= 0 ) {
+				_pdf = 0;
+				return 0;
+			}
+
+			_alpha = Mathf.Max( 0.002f, _alpha );
+
+			float3	H = (_tsView + _tsLight).Normalized;
+			double	NdotL = _tsLight.z;
+			double	NdotV = _tsView.z;
+			double	NdotH = H.z;
+			double	LdotH = _tsLight.Dot( H );
+
+			// D
+			double	cosb2 = NdotH * NdotH;
+			double	m2 = _alpha * _alpha;
+			double	D = Math.Exp( (cosb2 - 1.0) / (cosb2*m2) )	// exp( -tan(a)² / m² ) 
+					  / (Math.PI * m2 * cosb2*cosb2);			// / (PI * m² * cos(a)^4)
+
+			// masking/shadowing
+			double	G = Math.Max( 0, Math.Min( 1, 2.0 * NdotH * Math.Min( NdotV, NdotL ) / LdotH ) );
+
+			// fr = F(H) * G(V, L) * D(H) / (4 * (N.L) * (N.V))
+			double	res = D * G / (4.0 * NdotV);		// Full specular mico-facet model is F * D * G / (4 * NdotL * NdotV) but since we're fitting with the NdotL included, it gets nicely canceled out!
+
+			// pdf = D(H) * (N.H) / (4 * (L.H))
+			_pdf = Math.Abs( D * NdotH / (4.0 * LdotH) );
+
+			return res;
+		}
+
+		public void	GetSamplingDirection( ref float3 _tsView, float _alpha, float _U1, float _U2, ref float3 _direction ) {
+			float	phi = Mathf.TWOPI * _U1;
+			float	cosTheta = 1.0f / Mathf.Sqrt( 1 - _alpha*_alpha * Mathf.Log( Mathf.Max( 1e-6f, _U2 ) ) );
+			float	sinTheta = Mathf.Sqrt( 1 - cosTheta*cosTheta );
+			float3	H = new float3( sinTheta*Mathf.Cos(phi), sinTheta*Mathf.Sin(phi), cosTheta );
+			_direction = 2.0f * H.Dot(_tsView) * H - _tsView;	// Mirror view direction
+		}
+	}
+
+
+	//////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////
+	// Diffuse BRDFs
+	//////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////
+	//
+
+
+	/// <summary>
 	/// "Charlie" Sheen Implementation
 	/// Source from Sony Pictures Imageworks by Estevez and Kulla, "Production Friendly Microfacet Sheen BRDF" (http://blog.selfshadow.com/publications/s2017-shading-course/imageworks/s2017_pbs_imageworks_sheen.pdf)
 	/// Details: https://knarkowicz.wordpress.com/2018/01/04/cloth-shading/
@@ -249,6 +313,85 @@ namespace LTCTableGenerator
 			return res;
 		}
 	}
+
+
+	/// <summary>
+	/// Disney Diffuse Implementation
+	/// Source from 
+	/// </summary>
+	class BRDF_Disney : IBRDF {
+
+		public double	Eval( ref float3 _tsView, ref float3 _tsLight, float _alpha, out double _pdf ) {
+			if ( _tsView.z <= 0 ) {
+				_pdf = 0;
+				return 0;
+			}
+
+			_alpha = Mathf.Max( 0.002f, _alpha );
+
+//			float3	H = (_tsView + _tsLight).Normalized;
+ 			double	NdotL = Math.Max( 0, _tsLight.z );
+ 			double	NdotV = Math.Max( 0, _tsView.z );
+// 			double	NdotH = H.z;
+//			double	LdotH = _tsLight.Dot( H );
+			double	LdotV = Math.Max( 0, _tsLight.Dot( _tsView ) );
+
+			double	perceptualRoughness = Math.Sqrt( _alpha );
+
+			// (2 * LdotH * LdotH) = 1 + LdotV
+			// real fd90 = 0.5 + 2 * LdotH * LdotH * perceptualRoughness;
+			double	fd90 = 0.5 + (perceptualRoughness + perceptualRoughness * LdotV);
+
+			// Two schlick fresnel term
+			double	lightScatter = F_Schlick( 1.0, fd90, NdotL );
+			double	viewScatter = F_Schlick( 1.0, fd90, NdotV );
+
+			// Normalize the BRDF for polar view angles of up to (Pi/4).
+			// We use the worst case of (roughness = albedo = 1), and, for each view angle,
+			// integrate (brdf * cos(theta_light)) over all light directions.
+			// The resulting value is for (theta_view = 0), which is actually a little bit larger
+			// than the value of the integral for (theta_view = Pi/4).
+			// Hopefully, the compiler folds the constant together with (1/Pi).
+			double	res = lightScatter * viewScatter / Math.PI;
+					res /= 1.03571;
+
+			// Remember we must include the N.L term!
+			res *= NdotL;
+
+
+//res = NdotL / Math.PI;	// Lambert
+
+
+			// Cosine-wieghted hemisphere sampling
+			_pdf = NdotL / Math.PI;
+
+			return res;
+		}
+
+		public void	GetSamplingDirection( ref float3 _tsView, float _alpha, float _U1, float _U2, ref float3 _direction ) {
+
+			// Performs uniform sampling of the unit disk.
+			// Ref: PBRT v3, p. 777.
+			float	r = Mathf.Sqrt( _U1 );
+			float	phi = Mathf.TWOPI * _U2;
+
+			// Performs cosine-weighted sampling of the hemisphere.
+			// Ref: PBRT v3, p. 780.
+			_direction.x = r * Mathf.Cos( phi );
+			_direction.y = r * Mathf.Sin( phi );
+
+//			_direction.z = Mathf.Sqrt( 1 - r*r );	// Project the point from the disk onto the hemisphere.
+			_direction.z = Mathf.Sqrt( 1 - _U1 );	// Project the point from the disk onto the hemisphere.
+		}
+
+		double	F_Schlick( double _F0, double _F90, double _cosTheta ) {
+			double	x = 1.0 - _cosTheta;
+			double	x2 = x * x;
+			double	x5 = x * x2 * x2;
+			return (_F90 - _F0) * x5 + _F0;                // sub mul mul mul sub mad
+		}
+	}
+
 
 /*	/// <summary>
 	/// GGX implementation of the BRDF interface

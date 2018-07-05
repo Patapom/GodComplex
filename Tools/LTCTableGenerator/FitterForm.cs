@@ -104,6 +104,8 @@ namespace LTCTableGenerator
 			public double Eval( double[] _newParameters ) {
 				m_LTC.Set( _newParameters, m_isotropic );
 				double	error = ComputeError( m_LTC, m_BRDF, ref m_tsView, m_alpha );
+				if ( error < 0.0 )
+					throw new Exception( "Negative error!" );
 				return error;
 			}
 
@@ -136,10 +138,6 @@ namespace LTCTableGenerator
 				NelderMead	m_fitter = new NelderMead( 3 );
 			#endif
 		#endif
-
- 		double[]			m_startFit = new double[5];
- 		double[]			m_resultFit = new double[5];
-
 
 		// Results
 		LTC[,]				m_results;
@@ -193,8 +191,10 @@ namespace LTCTableGenerator
 			}
 		}
 
+		// Options
 		public bool		AutoRun { get { return checkBoxAutoRun.Checked; } set { checkBoxAutoRun.Checked = value; } }
 		public bool		DoFitting { get { return checkBoxDoFitting.Checked; } set { checkBoxDoFitting.Checked = value; } }
+		public bool		UsePreviousRoughness { get { return checkBoxUsePreviousRoughness.Checked; } set { checkBoxUsePreviousRoughness.Checked = value; } }
 
 		bool			m_readOnly = false;
 		public bool		ReadOnly { get { return m_readOnly; } set { m_readOnly = value; } }
@@ -202,6 +202,14 @@ namespace LTCTableGenerator
 		bool			m_renderBRDF = false;
 		public bool		RenderBRDF { get { return m_renderBRDF; } set { m_renderBRDF = value; } }
 
+		bool			m_useAdaptiveFit = false;
+		public bool		UseAdaptiveFit { get { return m_useAdaptiveFit; } set { m_useAdaptiveFit = value; } }
+
+		bool			m_retryFitOnLargeError = true;
+		public bool		RetryFitOnLargeError { get { return m_retryFitOnLargeError; } set { m_retryFitOnLargeError = value; } }
+
+
+		// Info
 		public int		RoughnessIndex { get { return integerTrackbarControlRoughnessIndex.Value; } set { integerTrackbarControlRoughnessIndex.Value = value; } }
 		public int		ThetaIndex { get { return integerTrackbarControlThetaIndex.Value; } set { integerTrackbarControlThetaIndex.Value = value; } }
 		public int		StepX { get { return integerTrackbarControlStepX.Value; } }
@@ -300,6 +308,7 @@ namespace LTCTableGenerator
 				// 1. first guess for the fit
 				// init the hemisphere in which the distribution is fitted
 				// if theta == 0 the lobe is rotationally symmetric and aligned with Z = (0 0 1)
+				LTC		previousLTC = null;
 				bool	isotropic;
 				if ( ThetaIndex == 0 ) {
 					if ( RoughnessIndex == m_tableSize-1 || m_results[RoughnessIndex+1,ThetaIndex] == null ) {
@@ -308,8 +317,9 @@ namespace LTCTableGenerator
 						ltc.m22 = 1.0f;
 					} else {
 						// init with roughness of previous fit
-						ltc.m11 = Mathf.Max( m_results[RoughnessIndex+1,ThetaIndex].m11, MIN_ALPHA );
-						ltc.m22 = Mathf.Max( m_results[RoughnessIndex+1,ThetaIndex].m22, MIN_ALPHA );
+						previousLTC = m_results[RoughnessIndex+1,ThetaIndex];
+						ltc.m11 = Mathf.Max( previousLTC.m11, MIN_ALPHA );
+						ltc.m22 = Mathf.Max( previousLTC.m22, MIN_ALPHA );
 					}
 
 					ltc.m13 = 0;
@@ -320,11 +330,19 @@ namespace LTCTableGenerator
 				} else {
 					// Otherwise use average direction as Z vector
 					// And use previous configuration as first guess
-					LTC	previousLTC = null;
-					if ( RoughnessIndex < m_tableSize-1 && checkBoxUsePreviousRoughness.Checked )
-						previousLTC = m_results[RoughnessIndex+1,ThetaIndex];	// At low roughness, prefer using same angle, but previous roughness!
-					else
-						previousLTC = m_results[RoughnessIndex,ThetaIndex-1];	// At high roughness, prefer using same roughness but previous angle!
+					if ( m_useAdaptiveFit ) {
+						const int	CRITICAL_THETA_INDEX = 56;	// Above this index, start
+						if ( RoughnessIndex < m_tableSize-1 && ThetaIndex < CRITICAL_THETA_INDEX )
+							previousLTC = m_results[RoughnessIndex+1,ThetaIndex];	// Always use previous roughness if above critical angle
+						else
+							previousLTC = m_results[RoughnessIndex,ThetaIndex-1];	// Above critical angle, just use previous angle
+
+					} else {
+						if ( RoughnessIndex < m_tableSize-1 && checkBoxUsePreviousRoughness.Checked )
+							previousLTC = m_results[RoughnessIndex+1,ThetaIndex];	// At low roughness, prefer using same angle, but previous roughness!
+						else
+							previousLTC = m_results[RoughnessIndex,ThetaIndex-1];	// At high roughness, prefer using same roughness but previous angle!
+					}
 
 					if ( previousLTC != null ) {
 						ltc.m11 = previousLTC.m11;
@@ -336,17 +354,6 @@ namespace LTCTableGenerator
 
 					isotropic = false;
 				}
-
-				// 2. fit (explore parameter space and refine first guess)
-				m_startFit[0] = ltc.m11;
-				m_startFit[1] = ltc.m22;
-				m_startFit[2] = ltc.m31;
-				#if FIT_INV_M
-					m_startFit[3] = ltc.m13;
-					m_startFit[4] = ltc.amplitude;
-				#else
-					m_startFit[3] = ltc.amplitude;
-				#endif
 
 				// Find best-fit LTC lobe (scale, alphax, alphay)
 				try {
@@ -362,6 +369,57 @@ namespace LTCTableGenerator
 							ltc.error = m_fitter.FunctionMinimum;
 							ltc.iterationsCount = m_fitter.IterationsCount;
 
+							// Now check if the error is too large compared to previous result
+							if ( m_retryFitOnLargeError && previousLTC != null ) {
+								const double	CRITICAL_ERROR_RATIO = 3.0;
+
+								LTC	ltcPrevRoughness = RoughnessIndex < m_tableSize-1 ? m_results[RoughnessIndex+1,ThetaIndex] : null;
+								LTC	ltcPrevTheta = ThetaIndex > 0 ? m_results[RoughnessIndex,ThetaIndex-1] : null;
+
+								LTC	retryLTC = null;
+								if ( previousLTC == ltcPrevRoughness ) {
+									// Check error ratio
+									double	errorRatio = ltc.error / ltcPrevRoughness.error;
+									if ( errorRatio > CRITICAL_ERROR_RATIO )
+										retryLTC = ltcPrevTheta;		// Retry with previous theta instead
+								} else if ( previousLTC == ltcPrevTheta ) {
+									// Check error ratio
+									double	errorRatio = ltc.error / ltcPrevTheta.error;
+									if ( errorRatio > CRITICAL_ERROR_RATIO )
+										retryLTC = ltcPrevRoughness;	// Retry with previous roughness instead
+								}
+
+								if ( retryLTC != null ) {
+									// Retry with new primer!
+									double	errorM11 = ltc.m11;
+									double	errorM22 = ltc.m22;
+									double	errorM13 = ltc.m13;
+									double	errorM31 = ltc.m31;
+
+									ltc.m11 = retryLTC.m11;
+									ltc.m22 = retryLTC.m22;
+									ltc.m13 = retryLTC.m13;
+									ltc.m31 = retryLTC.m31;
+									ltc.Update();
+
+									m_fitter.Minimize( m_fitModel );
+
+									if ( m_fitter.FunctionMinimum < ltc.error ) {
+										// New error is lower! => Accept new result
+										ltc.error = m_fitter.FunctionMinimum;
+										ltc.iterationsCount = m_fitter.IterationsCount;
+									} else {
+										// New error is higher! => Restore previous results
+										ltc.m11 = errorM11;
+										ltc.m22 = errorM22;
+										ltc.m13 = errorM13;
+										ltc.m31 = errorM31;
+										ltc.Update();
+									}
+								}
+							}
+
+							// Check final params
 							double[]	resultParms = ltc.RuntimeParameters;
 							if ( double.IsNaN(resultParms[0]) || double.IsNaN(resultParms[1]) || double.IsNaN(resultParms[2]) || double.IsNaN(resultParms[3]) )
 								throw new Exception( "NaN in solution" );
@@ -570,9 +628,10 @@ tsReflection = _LTC.Z;	// Use preferred direction
 							double	error = Math.Abs( eval_BRDF - eval_LTC );
 //									error = error*error*error;		// Use L3 norm to favor large values over smaller ones
 
-	// 						if ( pdf_LTC + pdf_BRDF < 1e-12 )
-	// 							throw new Exception( "NaN!" );
-	// 						sumError += error / (pdf_LTC + pdf_BRDF);
+							#if DEBUG
+								if ( pdf_LTC + pdf_BRDF < 0.0 )
+									throw new Exception( "Negative PDF!" );
+							#endif
 
 							if ( error != 0.0 )
 								error /= pdf_LTC + pdf_BRDF;
@@ -597,9 +656,10 @@ tsReflection = _LTC.Z;	// Use preferred direction
 							double	error = Math.Abs( eval_BRDF - eval_LTC );
 //									error = error*error*error;		// Use L3 norm to favor large values over smaller ones
 
-	// 						if ( pdf_LTC + pdf_BRDF < 1e-12 )
-	// 							throw new Exception( "NaN!" );
-	// 						sumError += error / (pdf_LTC + pdf_BRDF);
+							#if DEBUG
+								if ( pdf_LTC + pdf_BRDF < 0.0 )
+									throw new Exception( "Negative PDF!" );
+							#endif
 
 							if ( error != 0.0 )
 								error /= pdf_LTC + pdf_BRDF;
@@ -895,8 +955,10 @@ tsReflection = _LTC.Z;	// Use preferred direction
 			int	thetaIndex = ThetaIndex;
 			for ( ; roughnessIndex >= 0; roughnessIndex-- ) {
 				for ( ; thetaIndex < m_tableSize; thetaIndex++ ) {
-					m_results[roughnessIndex,thetaIndex] = null;
-					m_validResultsCount--;
+					if ( m_results[roughnessIndex,thetaIndex] != null ) {
+						m_results[roughnessIndex,thetaIndex] = null;
+						m_validResultsCount--;
+					}
 				}
 				thetaIndex = 0;
 			}
@@ -911,8 +973,10 @@ tsReflection = _LTC.Z;	// Use preferred direction
 			int	thetaIndex = ThetaIndex;
 			for ( ; thetaIndex < m_tableSize; thetaIndex++ ) {
 				for ( ; roughnessIndex >= 0; roughnessIndex-- ) {
-					m_results[roughnessIndex,thetaIndex] = null;
-					m_validResultsCount--;
+					if ( m_results[roughnessIndex,thetaIndex] != null ) {
+						m_results[roughnessIndex,thetaIndex] = null;
+						m_validResultsCount--;
+					}
 				}
 				roughnessIndex = m_tableSize-1;
 			}
