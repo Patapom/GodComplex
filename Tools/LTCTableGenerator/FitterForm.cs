@@ -1,5 +1,4 @@
 ﻿#define FIT_WITH_BFGS				// Use BFGS instead of Nelder-Mead
-//#define FIT_INV_M					// Fit M^-1 directly instead of M+inversion
 //#define COMPUTE_ERROR_NO_MIS		// Compute error from hemisphere sampling, don't use multiple importance sampling
 
 //#define SHOW_RELATIVE_ERROR
@@ -79,30 +78,12 @@ namespace LTCTableGenerator
 			#region IModel Members
 
 			public double[] Parameters {
-				get {
-					#if FIT_INV_M
-						double[]	tempParams = new double[4] {
-							m_LTC.m11,
-							m_LTC.m22,
-							m_LTC.m31,
-							m_LTC.m13
-						};
-					#else
-						double[]	tempParams = new double[3] {
-							m_LTC.m11,
-							m_LTC.m22,
-							m_LTC.m31
-						};
-					#endif
-					return tempParams;
-				}
-				set {
-					m_LTC.Set( value, m_isotropic );
-				}
+				get { return m_LTC.GetFittingParms(); }
+				set { m_LTC.SetFittingParms( value, m_isotropic ); }
 			}
 
 			public double Eval( double[] _newParameters ) {
-				m_LTC.Set( _newParameters, m_isotropic );
+				m_LTC.SetFittingParms( _newParameters, m_isotropic );
 				double	error = ComputeError( m_LTC, m_BRDF, ref m_tsView, m_alpha );
 				if ( error < 0.0 )
 					throw new Exception( "Negative error!" );
@@ -132,11 +113,7 @@ namespace LTCTableGenerator
 			BFGS			m_fitter = new BFGS();
 			FitModel		m_fitModel = new FitModel();
 		#else
-			#if FIT_INV_M	// FIT_4_PARAMETERS
-				NelderMead	m_fitter = new NelderMead( 5 );
-			#else
-				NelderMead	m_fitter = new NelderMead( 3 );
-			#endif
+			NelderMead		m_fitter = new NelderMead( new LTC().GetFittingParms().Length );
 		#endif
 
 		// Results
@@ -244,9 +221,9 @@ namespace LTCTableGenerator
 			#endif
 
 			// Prevent high gradients
-			#if FIT_WITH_BFGS
-				m_fitter.GRADIENT_EPS = 0.005;
-			#endif
+// 			#if FIT_WITH_BFGS
+// 				m_fitter.GRADIENT_EPS = 0.005;
+// 			#endif
 
 			Application.Idle += Application_Idle;
 		}
@@ -629,7 +606,9 @@ tsReflection = _LTC.Z;	// Use preferred direction
 
 							pdf_LTC = eval_LTC / _LTC.amplitude;
 							double	error = Math.Abs( eval_BRDF - eval_LTC );
-//									error = error*error*error;		// Use L3 norm to favor large values over smaller ones
+							#if !FIT_WITH_BFGS
+ 								error = error*error*error;		// Use L3 norm to favor large values over smaller ones
+							#endif
 
 							#if DEBUG
 								if ( pdf_LTC + pdf_BRDF < 0.0 )
@@ -657,7 +636,9 @@ tsReflection = _LTC.Z;	// Use preferred direction
 
 							pdf_LTC = eval_LTC / _LTC.amplitude;
 							double	error = Math.Abs( eval_BRDF - eval_LTC );
-//									error = error*error*error;		// Use L3 norm to favor large values over smaller ones
+							#if !FIT_WITH_BFGS
+ 								error = error*error*error;		// Use L3 norm to favor large values over smaller ones
+							#endif
 
 							#if DEBUG
 								if ( pdf_LTC + pdf_BRDF < 0.0 )
@@ -676,6 +657,7 @@ tsReflection = _LTC.Z;	// Use preferred direction
 				sumError /= SAMPLES_COUNT * SAMPLES_COUNT;
 				return sumError;
 			}
+
 		#endif
 
 		#endregion

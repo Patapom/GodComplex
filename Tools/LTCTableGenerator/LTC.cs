@@ -1,4 +1,7 @@
-﻿//////////////////////////////////////////////////////////////////////////
+﻿//#define FIT_TRANSPOSED				// Fit transposed matrix
+//#define FIT_INV_M					// Fit M^-1 directly instead of M+inversion
+
+//////////////////////////////////////////////////////////////////////////
 // LTC Class containing both M and M^-1 matrice + fitting values (e.g. coefficients, error, stats, etc.)
 //////////////////////////////////////////////////////////////////////////
 //
@@ -54,25 +57,65 @@ namespace LTCTableGenerator
 		}
 
 		/// <summary>
+		/// Gets the parameters used for fitting
+		/// </summary>
+		/// <returns></returns>
+		public double[]	GetFittingParms() {
+			#if FIT_INV_M
+				double[]	tempParams = new double[4] {
+					m11,
+					m22,
+					m31,
+					m13
+				};
+			#else
+				double[]	tempParams = new double[3] {
+					m11,
+					m22,
+					#if FIT_TRANSPOSED
+						m31
+					#else
+						m13
+					#endif
+				};
+			#endif
+			return tempParams;
+		}
+
+		/// <summary>
 		/// Sets the coefficients for the M matrix (warning! NOT the inverse matrix used at runtime!)
 		/// </summary>
 		/// <param name="_parameters"></param>
 		/// <param name="_isotropic"></param>
-		public void	Set( double[] _parameters, bool _isotropic ) {
+		public void	SetFittingParms( double[] _parameters, bool _isotropic ) {
  			double	tempM11 = Math.Max( _parameters[0], 0.002f );
  			double	tempM22 = Math.Max( _parameters[1], 0.002f );
 
 			// When composing from the left (V' = V * invM), the important 3rd parameter is m31
- 			double	tempM31 = _parameters[2];
+			#if FIT_TRANSPOSED
+ 				double	tempM31 = _parameters[2];
 
-			#if FIT_INV_M
- 				double	tempM13 = _parameters.Length > 3 ? _parameters[3] : 0;
-				if ( _parameters.Length > 4 )
-					amplitude = Math.Max( _parameters[4], 1e-4 );
+				#if FIT_INV_M
+ 					double	tempM13 = _parameters.Length > 3 ? _parameters[3] : 0;
+					if ( _parameters.Length > 4 )
+						amplitude = Math.Max( _parameters[4], 1e-4 );
+				#else
+					double	tempM13 = 0;
+//					if ( _parameters.Length > 3 )
+//						amplitude = Math.Max( _parameters[3], 1e-4 );
+				#endif
 			#else
-				double	tempM13 = 0;
-// 					if ( _parameters.Length > 3 )
-// 						amplitude = Math.Max( _parameters[3], 1e-4 );
+ 				double	tempM13 = _parameters[2];
+
+				#if FIT_INV_M
+ 					double	tempM31 = _parameters.Length > 3 ? _parameters[3] : 0;
+					if ( _parameters.Length > 4 )
+						amplitude = Math.Max( _parameters[4], 1e-4 );
+				#else
+					double	tempM31 = 0;
+//					if ( _parameters.Length > 3 )
+//						amplitude = Math.Max( _parameters[3], 1e-4 );
+				#endif
 			#endif
 
 			if ( _isotropic ) {
@@ -143,7 +186,11 @@ namespace LTCTableGenerator
 		public double	Eval( ref float3 _tsLight ) {
 			// Transform into original distribution space
 			float3	Loriginal = float3.Zero;
-			Transform( _tsLight, invM, ref Loriginal );	// Compose from the left, as in the shader code!
+			#if FIT_TRANSPOSED
+				Transform( _tsLight, invM, ref Loriginal );	// Compose from the left, as in the shader code!
+			#else
+				Transform( invM, _tsLight, ref Loriginal );	// Compose from the right, as in the paper!
+			#endif
 			float	l = Loriginal.Length;
 					Loriginal /= l;
 
@@ -162,6 +209,7 @@ namespace LTCTableGenerator
 			float	theta = Mathf.Asin( Mathf.Sqrt( _U1 ) );
 			float	phi = Mathf.TWOPI * _U2;
 			Transform( new float3( Mathf.Sin(theta)*Mathf.Cos(phi), Mathf.Sin(theta)*Mathf.Sin(phi), Mathf.Cos(theta) ), M, ref _direction );
+//			Transform( M, new float3( Mathf.Sin(theta)*Mathf.Cos(phi), Mathf.Sin(theta)*Mathf.Sin(phi), Mathf.Cos(theta) ), ref _direction );
 			_direction.Normalize();
 		}
 
@@ -283,6 +331,11 @@ namespace LTCTableGenerator
 			c.x = (float) (a.x * b[0,0] + a.y * b[1,0] + a.z * b[2,0]);
 			c.y = (float) (a.x * b[0,1] + a.y * b[1,1] + a.z * b[2,1]);
 			c.z = (float) (a.x * b[0,2] + a.y * b[1,2] + a.z * b[2,2]);
+		}
+		void			Transform( double[,] a, float3 b, ref float3 c ) {
+			c.x = (float) (b.x * a[0,0] + b.y * a[0,1] + b.z * a[0,2]);
+			c.y = (float) (b.x * a[1,0] + b.y * a[1,1] + b.z * a[1,2]);
+			c.z = (float) (b.x * a[2,0] + b.y * a[2,1] + b.z * a[2,2]);
 		}
 
 		#endregion
