@@ -26,12 +26,12 @@ namespace LTCTableGenerator
 			#if FIT_TABLES
 				// Fit specular
 // 				RunForm( new BRDF_GGX(), new FileInfo( "GGX.ltc" ), true );						// Fit GGX
-// 				RunForm( new BRDF_CookTorrance(), new FileInfo( "CookTorrance.ltc" ), false );	// Fit Cook-Torrance
+ 				RunForm( new BRDF_CookTorrance(), new FileInfo( "CookTorrance.ltc" ), true );	// Fit Cook-Torrance
 // 				RunForm( new BRDF_Ward(), new FileInfo( "Ward.ltc" ), true );					// Fit Ward
 
 				// Fit diffuse
 //				RunForm( new BRDF_Charlie(), new FileInfo( "CharlieSheen.ltc" ), true );		// Fit Charlie Sheen
- 				RunForm( new BRDF_Disney(), new FileInfo( "Disney.ltc" ), true );				// Fit Disney diffuse
+// 				RunForm( new BRDF_Disney(), new FileInfo( "Disney.ltc" ), true );				// Fit Disney diffuse
 //				RunForm( new BRDF_OrenNayar(), new FileInfo( "OrenNayar.ltc" ), true );			// Fit Oren-Nayar diffuse
 			#else
 				// Export
@@ -55,15 +55,25 @@ form.RenderBRDF = true;	// Change this to perform fitting without rendering each
 // Just enter view mode to visualize fitting
 form.UsePreviousRoughness = _usePreviousRoughnessForFitting;
 //form.DoFitting = false;
-form.Paused = true;
+//form.Paused = true;
 //form.ReadOnly = true;
 
 form.UseAdaptiveFit = true;
 
 
 			form.SetupBRDF( _BRDF, 64, _tableFileName );
+
 			Application.Run( form );
+
+// 			ApplicationContext	ctxt = new ApplicationContext( form );
+// 			ctxt.ThreadExit += ctxt_ThreadExit;
+// 			Application.Run( ctxt );
+//			ctxt.Dispose();
 		}
+
+// 		static void ctxt_ThreadExit( object sender, EventArgs e ) {
+// 
+// 		}
 
 		static void		Export( FileInfo _tableFileName, FileInfo _targetFileName, string _BRDFName ) {
 			int		validResultsCount;
@@ -85,7 +95,7 @@ form.UseAdaptiveFit = true;
 						+ "        // Table contains 3x3 matrix coefficients of M^-1 for the fitting of the " + _BRDFName + " BRDF using the LTC technique\r\n"
 						+ "        // From \"Real-Time Polygonal-Light Shading with Linearly Transformed Cosines\" 2016 (https://eheitzresearch.wordpress.com/415-2/)\r\n"
 						+ "        //\r\n"
-						+ "        // The table is accessed via LTCAreaLight." + tableName + "[64 * <roughnessIndex> + <thetaIndex>]\r\n"
+						+ "        // The table is accessed via LTCAreaLight." + tableName + "[<roughnessIndex> + 64 * <thetaIndex>]    // Theta values are on Y, Roughness values are on X axis\r\n"
 						+ "        //    • roughness = ( <roughnessIndex> / " + (tableSize-1) + " )^2\r\n"
 						+ "        //    • cosTheta = 1 - ( <thetaIndex> / " + (tableSize-1) + " )^2\r\n"
 						+ "        //\r\n"
@@ -95,13 +105,13 @@ form.UseAdaptiveFit = true;
 				defaultLTC.amplitude = 0.0;
 
 		#if EXPORT_FOR_UNITY
-			for ( int roughnessIndex=tableSize-1; roughnessIndex >= 0; roughnessIndex-- ) {		// Export for Unity with its OpenGL reversed V textures! :'(
+			for ( int thetaIndex=tableSize-1; thetaIndex >= 0; thetaIndex-- ) {		// Export for Unity with its OpenGL reversed V textures! :'(
 		#else
-			for ( int roughnessIndex=0; roughnessIndex < tableSize; roughnessIndex++ ) {		// Export for DirectX regular V textures...
+			for ( int thetaIndex=0; thetaIndex < tableSize; thetaIndex++ ) {		// Export for DirectX regular V textures...
 		#endif
 //				string	matrixRowString = "            { ";
 				string	matrixRowString = "            ";
-				for ( int thetaIndex=0; thetaIndex < tableSize; thetaIndex++ ) {
+				for ( int roughnessIndex=0; roughnessIndex < tableSize; roughnessIndex++ ) {
 					LTC		ltc = table[roughnessIndex,thetaIndex];
 					if ( ltc == null ) {
 						ltc = defaultLTC;
@@ -114,13 +124,16 @@ form.UseAdaptiveFit = true;
 					matrixRowString += "{ " + matrixString + " }, ";
 				}
 
-				// Compute roughness
-				float	perceptualRoughness = (float) roughnessIndex / (tableSize-1);
-				float	alpha = perceptualRoughness * perceptualRoughness;
+// 				// Compute roughness
+// 				float	perceptualRoughness = (float) roughnessIndex / (tableSize-1);
+// 				float	alpha = perceptualRoughness * perceptualRoughness;
+// 
+// //				matrixRowString += " },\r\n";
+// 				matrixRowString += "   // Roughness = " + alpha + "\r\n";
 
-//				matrixRowString += " },\r\n";
-				matrixRowString += "   // Roughness = " + alpha + "\r\n";
-				sourceCode += matrixRowString;
+throw new Exception( "Ta mère!" );
+ 				sourceCode += matrixRowString;
+
 			}
 
 			sourceCode += "        };\r\n";

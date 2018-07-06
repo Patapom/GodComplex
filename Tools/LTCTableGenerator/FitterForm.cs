@@ -467,8 +467,11 @@ namespace LTCTableGenerator
 				} else {
 					// Terminate...
 					Paused = true;
-					if ( DoFitting && !ReadOnly )
+					if ( DoFitting && !ReadOnly ) {
+//						Application.Exit();
+						Application.Idle -= new EventHandler( Application_Idle );
 						Close();
+					}
 				}
 			}
 			if ( !AutoRun )
@@ -765,7 +768,14 @@ tsReflection = _LTC.Z;	// Use preferred direction
 
 			// Recompute images
 			if ( true ) {
-				m_imageSource.WritePixels( ( uint _X, uint _Y, ref float4 _color ) => { RenderSphere( _X, _Y, -4, +4, ref _color, ( ref float3 _tsView, ref float3 _tsLight ) => { return EstimateBRDF( ref _tsView, ref _tsLight ); } ); } );
+
+				#if DEBUG
+					// Render BRDF and compute integral as well...
+					float	sum = 0;
+					m_imageSource.WritePixels( ( uint _X, uint _Y, ref float4 _color ) => { sum += RenderSphereCalc( _X, _Y, -4, +4, ref _color, ( ref float3 _tsView, ref float3 _tsLight ) => { return EstimateBRDF( ref _tsView, ref _tsLight ); } ); } );
+				#else
+					m_imageSource.WritePixels( ( uint _X, uint _Y, ref float4 _color ) => { RenderSphere( _X, _Y, -4, +4, ref _color, ( ref float3 _tsView, ref float3 _tsLight ) => { return EstimateBRDF( ref _tsView, ref _tsLight ); } ); } );
+				#endif
 
 				if ( m_LTC != null ) {
 					m_imageTarget.WritePixels( ( uint _X, uint _Y, ref float4 _color ) => { RenderSphere( _X, _Y, -4, +4, ref _color, ( ref float3 _tsView, ref float3 _tsLight ) => { return EstimateLTC( ref _tsView, ref _tsLight ); } ); } );
@@ -869,12 +879,96 @@ tsReflection = _LTC.Z;	// Use preferred direction
 			// Transform into false spectrum color
 			float	logV = Mathf.Clamp( Mathf.Log10( Mathf.Max( 1e-8f, V ) ), _log10Min, _log10Max );
 			float	t = (logV - _log10Min) / (_log10Max - _log10Min);
-//t = (float) _X / m_width;
 			int		it = Mathf.Clamp( (int) (t * m_falseSpectrum.Length), 0, m_falseSpectrum.Length-1 );
 			_color = m_falseSpectrum[it];
-//_color = new float4( 1, 1, 0, 1 );
 		}
 
+		// Same as RenderSphere() but integrates values on the sphere as well
+		float	RenderSphereCalc( uint _X, uint _Y, float _log10Min, float _log10Max, ref float4 _color, RadialAmplitudeDelegate _radialAmplitude ) {
+			m_tsLight.x = 2.0f * _X / m_width - 1.0f;
+			m_tsLight.y = 1.0f - 2.0f * _Y / m_width;
+			m_tsLight.z = 1 - m_tsLight.x*m_tsLight.x - m_tsLight.y*m_tsLight.y;
+			if ( m_tsLight.z <= 0.0f ) {
+				_color.Set( 0, 0, 0, 1 );
+				return 0;
+			}
+
+			m_tsLight.z = Mathf.Sqrt( m_tsLight.z );
+
+			// Estimate radial amplitude
+			float	V = _radialAmplitude( ref m_tsView, ref m_tsLight );
+
+			// Transform into false spectrum color
+			float	logV = Mathf.Clamp( Mathf.Log10( Mathf.Max( 1e-8f, V ) ), _log10Min, _log10Max );
+			float	t = (logV - _log10Min) / (_log10Max - _log10Min);
+			int		it = Mathf.Clamp( (int) (t * m_falseSpectrum.Length), 0, m_falseSpectrum.Length-1 );
+			_color = m_falseSpectrum[it];
+
+			// Compute solid angle (from http://patapom.com/blog/Math/OrthoSolidAngle/)
+			float	solidAngle = (float) ComputeSolidAngle( _X, _Y, m_width, m_width );
+			V *= solidAngle;
+
+			return V;
+		}
+
+// 		float	ComputePixelSolidAngle( float x, float y, float dx, float dy ) {
+// 			float	A00 = ComputePixelSolidAngle( x, y );	x += dx;
+// 			float	A10 = ComputePixelSolidAngle( x, y );	y += dy;
+// 			float	A11 = ComputePixelSolidAngle( x, y );	x -= dx;
+// 			float	A01 = ComputePixelSolidAngle( x, y );
+// 			if ( float.IsNaN( A10 ) || float.IsNaN( A11 ) || float.IsNaN( A01 ) )
+// 				return 0.0f;
+// 
+// 			float	A = A11 + A00 - A10 - A01;
+// 			return Mathf.Abs( A );
+// 		}
+// 		float	ComputePixelSolidAngle( float x, float y ) {
+// 			float	z = Mathf.Sqrt( 1 - x*x - y*y );
+// 			float	solidAngle  = y * Mathf.Atan( x / z ) + x * Mathf.Atan( y / z )
+// 								+ (Mathf.Atan( (1 - x - y*y) / (y*z) ) - Mathf.Atan( (1 + x - y*y) / (y*z) )) / 2;
+// 
+// 			return solidAngle;
+// 		}
+
+		double  ComputeSolidAngle( uint _X, uint _Y, uint _width, uint _height ) {
+			double  x0 = 2.0 * _X / _width - 1.0;
+			double  y0 = 2.0 * _Y / _height - 1.0;
+			double  x1 = 2.0 * (_X+1) / _width - 1.0;
+			double  y1 = 2.0 * (_Y+1) / _height - 1.0;
+
+			double  A0, A1, A2, A3;
+			if ( !ComputeArea( x0, y0, out A0 ) )
+				return 0.0;
+			if ( !ComputeArea( x1, y0, out A1 ) )
+				return 0.0;
+			if ( !ComputeArea( x0, y1, out A2 ) )
+				return 0.0;
+			if ( !ComputeArea( x1, y1, out A3 ) )
+				return 0.0;
+
+			double  dA = A3 - A1 - A2 + A0;
+			return Math.Max( 0.0, dA );
+		}
+
+		// y ArcTan[x/Sqrt[1 - x^2 - y^2]] + x ArcTan[y/Sqrt[1 - x^2 - y^2]] + 1/2 (ArcTan[(1 - x - y^2)/(y Sqrt[1 - x^2 - y^2])] - ArcTan[(1 + x - y^2)/(y Sqrt[1 - x^2 - y^2])])
+		bool    ComputeArea( double x, double y, out double _area ) {
+			double  sqRadius = x*x  + y*y;
+			if ( sqRadius > 1.0 ) {
+				// Outside unit circle
+				_area = 0.0;
+				return false;
+			}
+
+			double  rcpCosTheta = 1.0 / Math.Sqrt( 1.0 - sqRadius );
+			if ( double.IsInfinity( rcpCosTheta ) ) {
+				if ( x == 0.0 ) x = 1e-12;
+				if ( y == 0.0 ) y = 1e-12;
+			}
+			_area = y * Math.Atan( x * rcpCosTheta ) + x * Math.Atan( y * rcpCosTheta )
+				+ 0.5 * (Math.Atan( (1 - x - y*y) * rcpCosTheta / y ) - Math.Atan( (1 + x - y*y) * rcpCosTheta / y ));
+
+			return true;
+		}
 		float	EstimateBRDF( ref float3 _tsView, ref float3 _tsLight ) {
 			double	pdf;
 			float	V = (float) m_BRDF.Eval( ref _tsView, ref _tsLight, m_roughness, out pdf );

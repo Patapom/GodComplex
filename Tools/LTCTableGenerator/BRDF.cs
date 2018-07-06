@@ -129,10 +129,10 @@ namespace LTCTableGenerator
 			_alpha = Mathf.Max( 0.002f, _alpha );
 
 			float3	H = (_tsView + _tsLight).Normalized;
-			double	NdotL = _tsLight.z;
-			double	NdotV = _tsView.z;
+			double	NdotL = Math.Max( 1e-8, _tsLight.z );
+			double	NdotV = Math.Max( 1e-8, _tsView.z );
 			double	NdotH = H.z;
-			double	LdotH = _tsLight.Dot( H );
+			double	LdotH = Math.Max( 1e-8, _tsLight.Dot( H ) );
 
 			// D
 			double	cosb2 = NdotH * NdotH;
@@ -141,7 +141,7 @@ namespace LTCTableGenerator
 					  / (Math.PI * m2 * cosb2*cosb2);			// / (PI * m² * cos(a)^4)
 
 			// masking/shadowing
-			double	G = Math.Max( 0, Math.Min( 1, 2.0 * NdotH * Math.Min( NdotV, NdotL ) / LdotH ) );
+			double	G = Math.Min( 1, 2.0 * NdotH * Math.Min( NdotV, NdotL ) / LdotH );
 
 			// fr = F(H) * G(V, L) * D(H) / (4 * (N.L) * (N.V))
 			double	res = D * G / (4.0 * NdotV);		// Full specular mico-facet model is F * D * G / (4 * NdotL * NdotV) but since we're fitting with the NdotL included, it gets nicely canceled out!
@@ -169,8 +169,8 @@ namespace LTCTableGenerator
 	}
 
 	/// <summary>
-	/// Ward implementation of the BRDF interface
-	/// Geisler-Moroder Version from 2010 from the paper https://www.radiance-online.org//community/workshops/2010-freiburg/PDF/geisler-moroder_duer_thetmeyer_RW2010.pdf
+    // Formulas come from -> Walter, B. 2005 "Notes on the Ward BRDF" (https://pdfs.semanticscholar.org/330e/59117d7da6c794750730a15f9a178391b9fe.pdf)
+    // The BRDF though, is the one most proeminently used by the AxF materials and is based on the Geisler-Moroder variation of Ward (http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.169.9908&rep=rep1&type=pdf)
 	/// </summary>
 	class BRDF_Ward : IBRDF {
 
@@ -183,32 +183,39 @@ namespace LTCTableGenerator
 			_alpha = Mathf.Max( 0.002f, _alpha );
 
 			float3	H = (_tsView + _tsLight).Normalized;
-			double	NdotL = _tsLight.z;
+			double	NdotL = Math.Max( 1e-8, _tsLight.z );
 			double	NdotV = _tsView.z;
-			double	NdotH = H.z;
-			double	LdotH = _tsLight.Dot( H );
+			double	NdotH = Math.Max( 1e-8, H.z );
+			double	LdotH = Math.Max( 1e-8, _tsLight.Dot( H ) );
 
-			// D
-			double	cosb2 = NdotH * NdotH;
+			// D (basically a Beckmann distribution + an additional divider for albedo bounding)
 			double	m2 = _alpha * _alpha;
-			double	D = Math.Exp( (cosb2 - 1.0) / (cosb2*m2) )	// exp( -tan(a)² / m² ) 
+			double	cosb2 = NdotH * NdotH;
+			double	D = Math.Exp( -(1 - cosb2) / (m2 * cosb2) )	// exp( -tan(a)² / m² ) 
 					  / (Math.PI * m2 * cosb2*cosb2);			// / (PI * m² * cos(a)^4)
+					D /= 4.0 * LdotH*LdotH;						// Moroder
 
-			// masking/shadowing
-			double	G = Math.Max( 0, Math.Min( 1, 2.0 * NdotH * Math.Min( NdotV, NdotL ) / LdotH ) );
+			// fr = F(H) * D(H)
+			double	res = D;
 
-			// fr = F(H) * G(V, L) * D(H) / (4 * (N.L) * (N.V))
-			double	res = D * G / (4.0 * NdotV);		// Full specular mico-facet model is F * D * G / (4 * NdotL * NdotV) but since we're fitting with the NdotL included, it gets nicely canceled out!
+			// Remember we must include the N.L term!
+			res *= NdotL;
 
-			// pdf = D(H) * (N.H) / (4 * (L.H))
-			_pdf = Math.Abs( D * NdotH / (4.0 * LdotH) );
+			// From Walter, eq. 24 we know that pdf(H) = D(H) * (N.H)
+			_pdf = Math.Abs( D * NdotH );
+// 			double	weight = 2 * NdotL / (NdotL + NdotV);	// Eq. 21 from Moroder paper
+// 			_pdf = D / weight;
 
 			return res;
 		}
 
 		public void	GetSamplingDirection( ref float3 _tsView, float _alpha, float _U1, float _U2, ref float3 _direction ) {
-			float	phi = Mathf.TWOPI * _U1;
-			float	cosTheta = 1.0f / Mathf.Sqrt( 1 - _alpha*_alpha * Mathf.Log( Mathf.Max( 1e-6f, _U2 ) ) );
+
+			// Ward NDF sampling (eqs. 6 & 7 from above paper)
+			float	tanTheta = _alpha * Mathf.Sqrt( -Mathf.Log( Mathf.Max( 1e-6f, _U1 ) ) );
+			float	phi = _U2 * Mathf.TWOPI;
+
+			float	cosTheta = 1.0f / Mathf.Sqrt( 1 + tanTheta*tanTheta );
 			float	sinTheta = Mathf.Sqrt( 1 - cosTheta*cosTheta );
 			float3	H = new float3( sinTheta*Mathf.Cos(phi), sinTheta*Mathf.Sin(phi), cosTheta );
 			_direction = 2.0f * H.Dot(_tsView) * H - _tsView;	// Mirror view direction
@@ -329,11 +336,8 @@ namespace LTCTableGenerator
 
 			_alpha = Mathf.Max( 0.002f, _alpha );
 
-//			float3	H = (_tsView + _tsLight).Normalized;
  			double	NdotL = Math.Max( 0, _tsLight.z );
  			double	NdotV = Math.Max( 0, _tsView.z );
-// 			double	NdotH = H.z;
-//			double	LdotH = _tsLight.Dot( H );
 			double	LdotV = Math.Max( 0, _tsLight.Dot( _tsView ) );
 
 			double	perceptualRoughness = Math.Sqrt( _alpha );
@@ -359,7 +363,7 @@ namespace LTCTableGenerator
 			res *= NdotL;
 
 
-//res = NdotL / Math.PI;	// Lambert
+//res = NdotL / Math.PI;	// Lambert test
 
 
 			// Cosine-wieghted hemisphere sampling

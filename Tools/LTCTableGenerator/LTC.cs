@@ -215,6 +215,8 @@ namespace LTCTableGenerator
 
 					// accumulate
 					weight = eval / pdf;
+					if ( double.IsNaN( weight ) )
+						throw new Exception( "NaN!" );
 
 					amplitude += weight;
 					fresnel += weight * Math.Pow( 1 - _tsView.Dot( H ), 5.0 );
