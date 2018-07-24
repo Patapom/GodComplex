@@ -1,4 +1,4 @@
-﻿#define FIT_WITH_BFGS				// Use BFGS instead of Nelder-Mead
+﻿//#define FIT_WITH_BFGS				// Use BFGS instead of Nelder-Mead
 //#define COMPUTE_ERROR_NO_MIS		// Compute error from hemisphere sampling, don't use multiple importance sampling
 
 //#define SHOW_RELATIVE_ERROR
@@ -402,16 +402,19 @@ namespace LTCTableGenerator
 								throw new Exception( "NaN in solution" );
 
 						#else
-							ltc.error = fitter.FindFit( resultFit, startFit, FIT_EXPLORE_DELTA, TOLERANCE, MAX_ITERATIONS, ( double[] _parameters ) => {
-								ltc.Set( _parameters, isotropic );
+							double[]	startFit = ltc.GetFittingParms();
+							double[]	resultFit = new double[startFit.Length];
 
-								double	currentError = ComputeError( ltc, _BRDF, ref tsView, alpha );
+							ltc.error = m_fitter.FindFit( resultFit, startFit, FIT_EXPLORE_DELTA, TOLERANCE, MAX_ITERATIONS, ( double[] _parameters ) => {
+								ltc.SetFittingParms( _parameters, isotropic );
+
+								double	currentError = ComputeError( ltc, m_BRDF, ref tsView, alpha );
 								return currentError;
 							} );
-							ltc.iterationsCount = fitter.m_lastIterationsCount;
+							ltc.iterationsCount = m_fitter.m_lastIterationsCount;
 
 							// Update LTC with final best fitting values
-							ltc.Set( resultFit, isotropic );
+							ltc.SetFittingParms( resultFit, isotropic );
 						#endif
 					}
 				} catch ( Exception _e ) {
@@ -606,9 +609,9 @@ tsReflection = _LTC.Z;	// Use preferred direction
 
 							pdf_LTC = eval_LTC / _LTC.amplitude;
 							double	error = Math.Abs( eval_BRDF - eval_LTC );
-							#if !FIT_WITH_BFGS
- 								error = error*error*error;		// Use L3 norm to favor large values over smaller ones
-							#endif
+//							#if !FIT_WITH_BFGS
+//								error = error*error*error;		// Use L3 norm to favor large values over smaller ones
+//							#endif
 
 							#if DEBUG
 								if ( pdf_LTC + pdf_BRDF < 0.0 )
@@ -618,7 +621,9 @@ tsReflection = _LTC.Z;	// Use preferred direction
 							if ( error != 0.0 )
 								error /= pdf_LTC + pdf_BRDF;
 
- 								error = error*error*error;		// Use L3 norm to favor large values over smaller ones
+//							#if FIT_WITH_BFGS
+//								error = error*error*error;		// Use L3 norm to favor large values over smaller ones
+//							#endif
 
 							if ( double.IsNaN( error ) )
 								throw new Exception( "NaN!" );
@@ -639,9 +644,9 @@ tsReflection = _LTC.Z;	// Use preferred direction
 
 							pdf_LTC = eval_LTC / _LTC.amplitude;
 							double	error = Math.Abs( eval_BRDF - eval_LTC );
-							#if !FIT_WITH_BFGS
- 								error = error*error*error;		// Use L3 norm to favor large values over smaller ones
-							#endif
+//							#if !FIT_WITH_BFGS
+//								error = error*error*error;		// Use L3 norm to favor large values over smaller ones
+//							#endif
 
 							#if DEBUG
 								if ( pdf_LTC + pdf_BRDF < 0.0 )
@@ -651,7 +656,9 @@ tsReflection = _LTC.Z;	// Use preferred direction
 							if ( error != 0.0 )
 								error /= pdf_LTC + pdf_BRDF;
 
- 								error = error*error*error;		// Use L3 norm to favor large values over smaller ones
+//							#if FIT_WITH_BFGS
+//								error = error*error*error;		// Use L3 norm to favor large values over smaller ones
+//							#endif
 
 							if ( double.IsNaN( error ) )
 								throw new Exception( "NaN!" );

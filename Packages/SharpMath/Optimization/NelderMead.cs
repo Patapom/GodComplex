@@ -1,18 +1,7 @@
-﻿//////////////////////////////////////////////////////////////////////////
-// Fitter class for Linearly-Transformed Cosines
-// From "Real-Time Polygonal-Light Shading with Linearly Transformed Cosines" (https://eheitzresearch.wordpress.com/415-2/)
-// This is a C# re-implementation of the code provided by Heitz et al.
-//////////////////////////////////////////////////////////////////////////
-//
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using System.Windows.Forms;
 
-using SharpMath;
-
-namespace LTCTableGenerator
+namespace SharpMath
 {
 	/// <summary>
 	/// Downhill simplex solver:
@@ -57,6 +46,11 @@ namespace LTCTableGenerator
 			// evaluate function at each point on simplex
 			for ( int i = 0; i < NB_POINTS; i++ )
 				f[i] = _objectiveFn( s[i] );
+			if ( f[0] < _tolerance ) {
+				// Already at a minimum!
+				Mov( _pmin, _start );
+				return f[0];
+			}
 
 			double[]	o = new double[DIM];	// Centroid
 			double[]	r = new double[DIM];	// Reflection
