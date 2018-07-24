@@ -72,7 +72,6 @@
     <Compile Include="FitterForm.Designer.cs">
       <DependentUpon>FitterForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="NelderMead.cs" />
     <Compile Include="PanelOutput.cs">
       <SubType>Component</SubType>
     </Compile>

@@ -9,9 +9,9 @@ namespace SharpMath
 	/// </summary>
 	public class PSO {
 
-		static const double	W = 0.715;
-		static const double	C1 = 1.7;
-		static const double	C2 = 1.7;
+		const double	W = 0.715;
+		const double	C1 = 1.7;
+		const double	C2 = 1.7;
 
 		/// <summary>
 		/// Delegate used to evaluate the model
@@ -104,4 +104,3 @@ namespace SharpMath
 
 	}
 }
-
