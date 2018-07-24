@@ -116,6 +116,9 @@ namespace SharpMath
 
 			// Perform initial evaluation
 			m_functionMinimum = m_model.Eval( m_previousX );	// Initial error
+			if ( m_functionMinimum < m_tolX )
+				return;	// Already at minimum!
+
 			EvalGradient( m_previousX, PreviousGradient );		// Initial gradient
 			m_evalCallsCount++;
 

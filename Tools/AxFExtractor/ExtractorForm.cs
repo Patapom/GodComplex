@@ -217,6 +217,21 @@ namespace AxFExtractor
 						factor = 1.0f / texture.MaxValue;	// Apply scale
 					}
 
+// 					if ( textureType == TEXTURE_TYPE.BRDF_COLOR ) {
+// 						Random	R = new Random();
+// 						source.ReadWritePixels( ( uint _X, uint _Y, ref float4 _color ) => {
+// 							_color.x = (0.5f+_X) / 63.0f;
+// 							_color.y = (0.5f+_X) / 63.0f;
+// 							_color.z = (0.5f+_X) / 63.0f;
+// 							_color.w = (float) R.NextDouble();
+// 
+// 							// Apply sRGB
+// 							_color.x = Mathf.Pow( Math.Max( 0.0f, _color.x ), 1.0f / 2.2f );
+// 							_color.y = Mathf.Pow( Math.Max( 0.0f, _color.y ), 1.0f / 2.2f );
+// 							_color.z = Mathf.Pow( Math.Max( 0.0f, _color.z ), 1.0f / 2.2f );
+// 
+// 						} );
+// 					} else
 					if ( sRGB ) {
 						source.ReadWritePixels( ( uint _X, uint _Y, ref float4 _color ) => {
 							_color.x = Mathf.Pow( Math.Max( 0.0f, factor * _color.x ), 1.0f / 2.2f );
@@ -473,9 +488,9 @@ namespace AxFExtractor
 
 					uniformsArray += "    - _CarPaint_lobesCount: " + CT_F0s.Length + "\n";
 
-					colorsArray += "    - _CarPaint_CT_F0s: {r: " + CT_F0s[0] + ", g: " + CT_F0s[1] + ", b: " + CT_F0s[2] + ", a: " + CT_F0s[3] + "}\n";
-					colorsArray += "    - _CarPaint_CT_coeffs: {r: " + CT_coeffs[0] + ", g: " + CT_coeffs[1] + ", b: " + CT_coeffs[2] + ", a: " + CT_coeffs[3] + "}\n";
-					colorsArray += "    - _CarPaint_CT_spreads: {r: " + CT_spreads[0] + ", g: " + CT_spreads[1] + ", b: " + CT_spreads[2] + ", a: " + CT_spreads[3] + "}\n";
+					colorsArray += "    - _CarPaint_CT_F0s: {r: " + CT_F0s[0] + ", g: " + CT_F0s[1] + ", b: " + CT_F0s[2] + ", a: 0 }\n";
+					colorsArray += "    - _CarPaint_CT_coeffs: {r: " + CT_coeffs[0] + ", g: " + CT_coeffs[1] + ", b: " + CT_coeffs[2] + ", a: 0 }\n";
+					colorsArray += "    - _CarPaint_CT_spreads: {r: " + CT_spreads[0] + ", g: " + CT_spreads[1] + ", b: " + CT_spreads[2] + ", a: 0 }\n";
 
 					// =========================================================================================
 					// Create a custom texture for sliceLUT

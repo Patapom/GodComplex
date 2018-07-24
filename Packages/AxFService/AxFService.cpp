@@ -239,6 +239,7 @@ void	AxFFile::Material::ReadProperties() {
 
 	// Read decoder properties
 	CPUDecoder*		pcl_decoder = CPUDecoder::create( m_hMaterialRepresentation, "sRGB,E", ORIGIN_TOPLEFT );
+//	CPUDecoder*		pcl_decoder = CPUDecoder::create( m_hMaterialRepresentation, "sRGB,E", ORIGIN_BOTTOMLEFT );	// Doesn't change anything!
 	TextureDecoder* pcl_tex_decoder = TextureDecoder::create( m_hMaterialRepresentation, pcl_decoder, ID_DEFAULT );
 
 	for ( int propIndex=0; propIndex < pcl_tex_decoder->getNumProperties(); propIndex++ ) {
@@ -307,6 +308,7 @@ cli::array< AxFFile::Material::Texture^ >^	AxFFile::Material::Textures::get() {
 void	AxFFile::Material::ReadTextures() {
 
 	CPUDecoder*		pcl_decoder = CPUDecoder::create( m_hMaterialRepresentation, "sRGB,E", ORIGIN_TOPLEFT );
+//	CPUDecoder*		pcl_decoder = CPUDecoder::create( m_hMaterialRepresentation, "sRGB,E", ORIGIN_BOTTOMLEFT );	// Doesn't change anything!
 	TextureDecoder* pcl_tex_decoder = TextureDecoder::create( m_hMaterialRepresentation, pcl_decoder, ID_DEFAULT );
 
 	m_textures = gcnew cli::array<Texture ^>( pcl_tex_decoder->getNumTextures() );

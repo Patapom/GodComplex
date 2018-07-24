@@ -208,8 +208,11 @@ namespace LTCTableGenerator
 		public void	GetSamplingDirection( float _U1, float _U2, ref float3 _direction ) {
 			float	theta = Mathf.Asin( Mathf.Sqrt( _U1 ) );
 			float	phi = Mathf.TWOPI * _U2;
-			Transform( new float3( Mathf.Sin(theta)*Mathf.Cos(phi), Mathf.Sin(theta)*Mathf.Sin(phi), Mathf.Cos(theta) ), M, ref _direction );
-//			Transform( M, new float3( Mathf.Sin(theta)*Mathf.Cos(phi), Mathf.Sin(theta)*Mathf.Sin(phi), Mathf.Cos(theta) ), ref _direction );
+			#if FIT_TRANSPOSED
+				Transform( new float3( Mathf.Sin(theta)*Mathf.Cos(phi), Mathf.Sin(theta)*Mathf.Sin(phi), Mathf.Cos(theta) ), M, ref _direction );
+			#else
+				Transform( M, new float3( Mathf.Sin(theta)*Mathf.Cos(phi), Mathf.Sin(theta)*Mathf.Sin(phi), Mathf.Cos(theta) ), ref _direction );
+			#endif
 			_direction.Normalize();
 		}
 

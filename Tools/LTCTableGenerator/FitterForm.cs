@@ -617,6 +617,9 @@ tsReflection = _LTC.Z;	// Use preferred direction
 
 							if ( error != 0.0 )
 								error /= pdf_LTC + pdf_BRDF;
+
+ 								error = error*error*error;		// Use L3 norm to favor large values over smaller ones
+
 							if ( double.IsNaN( error ) )
 								throw new Exception( "NaN!" );
 							sumError += error;
@@ -647,6 +650,9 @@ tsReflection = _LTC.Z;	// Use preferred direction
 
 							if ( error != 0.0 )
 								error /= pdf_LTC + pdf_BRDF;
+
+ 								error = error*error*error;		// Use L3 norm to favor large values over smaller ones
+
 							if ( double.IsNaN( error ) )
 								throw new Exception( "NaN!" );
 							sumError += error;
