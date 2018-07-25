@@ -38,6 +38,7 @@ namespace LTCTableGenerator
 		// Runtime matrix representation
 		public double[,]	invM = new double[3,3];
 		public double		detInvM;
+		public double		detM;
 
 		/// <summary>
 		/// Gets the runtime parameters to use for LTC estimate
@@ -47,6 +48,10 @@ namespace LTCTableGenerator
 										amplitude, fresnel };							// BRDF scale and Fresnel coefficients
 			}
 		}
+
+// 		public double	MaxValue {
+// 			get { return amplitude * detInvM / Mathf.PI; }
+// 		}
 
 		public LTC() {
 			Update();
@@ -69,14 +74,11 @@ namespace LTCTableGenerator
 					m13
 				};
 			#else
-				double[]	tempParams = new double[3] {
+				double[]	tempParams = new double[4] {
 					m11,
 					m22,
-					#if FIT_TRANSPOSED
-						m31
-					#else
-						m13
-					#endif
+					m13,
+					m31,
 				};
 			#endif
 			return tempParams;
@@ -92,19 +94,19 @@ namespace LTCTableGenerator
  			double	tempM22 = Math.Max( _parameters[1], 0.002f );
 
 			// When composing from the left (V' = V * invM), the important 3rd parameter is m31
-			#if FIT_TRANSPOSED
- 				double	tempM31 = _parameters[2];
-
-				#if FIT_INV_M
- 					double	tempM13 = _parameters.Length > 3 ? _parameters[3] : 0;
-					if ( _parameters.Length > 4 )
-						amplitude = Math.Max( _parameters[4], 1e-4 );
-				#else
-					double	tempM13 = 0;
-//					if ( _parameters.Length > 3 )
-//						amplitude = Math.Max( _parameters[3], 1e-4 );
-				#endif
-			#else
+// 			#if FIT_TRANSPOSED
+//  				double	tempM31 = _parameters[2];
+// 
+// 				#if FIT_INV_M
+//  					double	tempM13 = _parameters.Length > 3 ? _parameters[3] : 0;
+// 					if ( _parameters.Length > 4 )
+// 						amplitude = Math.Max( _parameters[4], 1e-4 );
+// 				#else
+// 					double	tempM13 = 0;
+// //					if ( _parameters.Length > 3 )
+// //						amplitude = Math.Max( _parameters[3], 1e-4 );
+// 				#endif
+// 			#else
  				double	tempM13 = _parameters[2];
 
 				#if FIT_INV_M
@@ -112,11 +114,9 @@ namespace LTCTableGenerator
 					if ( _parameters.Length > 4 )
 						amplitude = Math.Max( _parameters[4], 1e-4 );
 				#else
-					double	tempM31 = 0;
-//					if ( _parameters.Length > 3 )
-//						amplitude = Math.Max( _parameters[3], 1e-4 );
+					double	tempM31 = _parameters.Length > 3 ? _parameters[3] : 0;
 				#endif
-			#endif
+// 			#endif
 
 			if ( _isotropic ) {
 				m11 = tempM11;
@@ -150,55 +150,143 @@ namespace LTCTableGenerator
 			#else
 				// Heitz & Hill Method => Fit M, inverse to obtain target matrix
 				// Build the source matrix M for which we're exploring the parameter space
-// 					float3x3	temp = new float3x3(	(float) m11,	0,				(float) m13,
-// 														0,				(float) m22,	0,
-// 														(float) m31,	0,				1	);
-// 					M = temp * new float3x3( X, Y, Z );
 
-				M[0,0] = m11*X.x +			 + m13*Z.x;
-				M[0,1] = m11*X.y +			 + m13*Z.y;
-				M[0,2] = m11*X.z +			 + m13*Z.z;
+// 				#if FIT_TRANSPOSED
+// // Code from Heitz et al., assuming they wrote it transposed
+// // 					float3x3	temp = new float3x3(	(float) m11,	0,				(float) m13,
+// // 														0,				(float) m22,	0,
+// // 														(float) m31,	0,				1	);
+// // 					M = temp * new float3x3( X, Y, Z );
+// 
+// 					M[0,0] = m11*X.x +			 + m13*Z.x;
+// 					M[0,1] = m11*X.y +			 + m13*Z.y;
+// 					M[0,2] = m11*X.z +			 + m13*Z.z;
+// 
+// 					M[1,0] =			m22*Y.x;
+// 					M[1,1] =			m22*Y.y;
+// 					M[1,2] =			m22*Y.z;
+// 
+// 					M[2,0] = m31*X.x			 +     Z.x;
+// 					M[2,1] = m31*X.y			 +     Z.y;
+// 					M[2,2] = m31*X.z			 +     Z.z;
+// 				#else
+// Code from Heitz et al., as given by the example code
+// 					M = mat3(X, Y, Z) *
+// 						mat3(m11, 0, 0,
+// 							0, m22, 0,
+// 							m13, 0, 1);
+// 					invM = inverse(M);
+// 					detM = abs(glm::determinant(M));
 
-				M[1,0] =			m22*Y.x;
-				M[1,1] =			m22*Y.y;
-				M[1,2] =			m22*Y.z;
+// Annoying GLM library details:
+// 	struct mat3 {
+// 		vec3	value[3];	// COLUMNS!!!!!
+// 	}
+// // 	mat3( T x0, T y0, T z0,
+// 		  T x1, T y1, T z1,
+// 		  T x2, T y2, T z2 ) {
+// 			this->value[0] = col_type(x0, y0, z0);
+// 			this->value[1] = col_type(x1, y1, z1);
+// 			this->value[2] = col_type(x2, y2, z2);
+// 	}
+//
+// 	mat3(col_type const& v0, col_type const& v1, col_type const& v2) {
+// 			this->value[0] = col_type(v0);
+// 			this->value[1] = col_type(v1);
+// 			this->value[2] = col_type(v2);
+// 	}
+//
+//	operator*( m1, m2 ) {
+// 		mat<3, 3, T, Q> Result;
+// 		Result[0][0] = m1[0][0] * m2[0][0] + m1[1][0] * m2[0][1] + m1[2][0] * m2[0][2];
+// 		Result[0][1] = m1[0][1] * m2[0][0] + m1[1][1] * m2[0][1] + m1[2][1] * m2[0][2];
+// 		Result[0][2] = m1[0][2] * m2[0][0] + m1[1][2] * m2[0][1] + m1[2][2] * m2[0][2];
+// 		Result[1][0] = m1[0][0] * m2[1][0] + m1[1][0] * m2[1][1] + m1[2][0] * m2[1][2];
+// 		Result[1][1] = m1[0][1] * m2[1][0] + m1[1][1] * m2[1][1] + m1[2][1] * m2[1][2];
+// 		Result[1][2] = m1[0][2] * m2[1][0] + m1[1][2] * m2[1][1] + m1[2][2] * m2[1][2];
+// 		Result[2][0] = m1[0][0] * m2[2][0] + m1[1][0] * m2[2][1] + m1[2][0] * m2[2][2];
+// 		Result[2][1] = m1[0][1] * m2[2][0] + m1[1][1] * m2[2][1] + m1[2][1] * m2[2][2];
+// 		Result[2][2] = m1[0][2] * m2[2][0] + m1[1][2] * m2[2][1] + m1[2][2] * m2[2][2];
+// 		return Result;
+// 	}
+//
+// So, knowing the convoluted constructors and operator* we see that:
+//					| Xx Yx Zx |
+//	mat3(X, Y, Z) = | Xy Yy Zy |
+//					| Xz Yz Zz |
+//
+//	mat3( m11, 0, 0,	| m11  0  m13 |
+// 		  0, m22, 0, =	|  0  m22  0  |
+// 		  m13, 0, 1)	|  0   0   1  |
+//
+// And so:
+//
+//	| Xx Yx Zx |   | m11  0  m13 |   | Xx*m11  Yx*m22  Xx*m13+Zx |
+//	| Xy Yy Zy | * |  0  m22  0  | = | Xy*m11  Yy*m22  Xy*m13+Zy |  (thank God, they didn't change the math!)
+//	| Xz Yz Zz |   |  0   0   1  |	 | Xz*m11  Yz*m22  Xz*m13+Zz |
+//
+//	| Xx Yx Zx |   | m11  0  m13 |   | Xx*m11+m31*Zx  Yx*m22  Xx*m13+Zx |
+//	| Xy Yy Zy | * |  0  m22  0  | = | Xy*m11+m31*Zy  Yy*m22  Xy*m13+Zy |  (thank God, they didn't change the math!)
+//	| Xz Yz Zz |   | m31  0   1  |	 | Xz*m11+m31*Zz  Yz*m22  Xz*m13+Zz |
+//
+					M[0,0] = m11*X.x + m31*Z.x;
+					M[0,1] = m22*Y.x;
+					M[0,2] = m13*X.x + Z.x;
 
-				M[2,0] = m31*X.x			 +     Z.x;
-				M[2,1] = m31*X.y			 +     Z.y;
-				M[2,2] = m31*X.z			 +     Z.z;
+					M[1,0] = m11*X.y + m31*Z.y;
+					M[1,1] = m22*Y.y;
+					M[1,2] = m13*X.y + Z.y;
+
+					M[2,0] = m11*X.z + m31*Z.z;
+					M[2,1] = m22*Y.z;
+					M[2,2] = m13*X.z + Z.z;
+
+				#endif
 
 				// Build the final matrix required at runtime for LTC evaluation
 				detInvM = 1.0 / Invert( M, invM );
 
-				// Clear it up so it's always in the required final form
-				invM[0,1] = 0;
-				invM[1,0] = 0;
-				invM[1,2] = 0;
-				invM[2,1] = 0;
-				invM[2,2] = 1;
-			#endif
-		}
+detM =	(M[0,0]*M[1,1]*M[2,2] + M[0,1]*M[1,2]*M[2,0] + M[0,2]*M[1,0]*M[2,1])
+	-   (M[2,0]*M[1,1]*M[0,2] + M[2,1]*M[1,2]*M[0,0] + M[2,2]*M[1,0]*M[0,1]);
+if ( Math.Abs( detM - 1.0/detInvM ) > 1e-6 )
+	throw new Exception( "Determinant discrepancy!" );
 
-		public double	MaxValue {
-			get { return amplitude * detInvM / Mathf.PI; }
+
+// 				// Clear it up so it's always in the required final form
+// 				invM[0,1] = 0;
+// 				invM[1,0] = 0;
+// 				invM[1,2] = 0;
+// 				invM[2,1] = 0;
+// 				invM[2,2] = 1;
+
+// 			#endif
 		}
 
 		public double	Eval( ref float3 _tsLight ) {
 			// Transform into original distribution space
 			float3	Loriginal = float3.Zero;
-			#if FIT_TRANSPOSED
-				Transform( _tsLight, invM, ref Loriginal );	// Compose from the left, as in the shader code!
-			#else
+// 			#if FIT_TRANSPOSED
+// 				Transform( _tsLight, invM, ref Loriginal );	// Compose from the left, as in the shader code!
+// 			#else
 				Transform( invM, _tsLight, ref Loriginal );	// Compose from the right, as in the paper!
-			#endif
+// 			#endif
 			float	l = Loriginal.Length;
 					Loriginal /= l;
 
 			// Estimate original distribution (a clamped cosine lobe)
-			float	D = Mathf.INVPI * Math.Max( 0.0f, Loriginal.z ); 
+			double	D = Math.Max( 0.0, Loriginal.z ) / Math.PI; 
 
-			// Compute the Jacobian, roundDwo / roundDw
-			double	jacobian = detInvM / (l*l*l);
+// 			// Compute the Jacobian, roundDwo / roundDw
+// 			double	jacobian = 1.0 / (detInvM * l*l*l);
+
+// Ensure we get the same thing as Hill's code, without the 2nd transform
+float3	L_ = float3.Zero;
+Transform( M, Loriginal, ref L_ );	// Compose from the right, as in the paper!
+double	l2 = L_.Length;
+double	jacobian2 = detM / (l2*l2*l2);
+//if ( Mathf.Abs( jacobian - jacobian2 ) > 1e-1 )
+//	throw new Exception( "Different jacobians!" );
+double	jacobian = jacobian2;
 
 			// Scale distribution
 			double	res = amplitude * D * jacobian;
@@ -206,13 +294,13 @@ namespace LTCTableGenerator
 		}
 
 		public void	GetSamplingDirection( float _U1, float _U2, ref float3 _direction ) {
-			float	theta = Mathf.Asin( Mathf.Sqrt( _U1 ) );
+			float	theta = Mathf.Acos( Mathf.Sqrt( _U1 ) );
 			float	phi = Mathf.TWOPI * _U2;
-			#if FIT_TRANSPOSED
-				Transform( new float3( Mathf.Sin(theta)*Mathf.Cos(phi), Mathf.Sin(theta)*Mathf.Sin(phi), Mathf.Cos(theta) ), M, ref _direction );
-			#else
+// 			#if FIT_TRANSPOSED
+// 				Transform( new float3( Mathf.Sin(theta)*Mathf.Cos(phi), Mathf.Sin(theta)*Mathf.Sin(phi), Mathf.Cos(theta) ), M, ref _direction );
+// 			#else
 				Transform( M, new float3( Mathf.Sin(theta)*Mathf.Cos(phi), Mathf.Sin(theta)*Mathf.Sin(phi), Mathf.Cos(theta) ), ref _direction );
-			#endif
+// 			#endif
 			_direction.Normalize();
 		}
 
@@ -330,12 +418,20 @@ namespace LTCTableGenerator
 			return det;
 		}
 
-		void			Transform( float3 a, double[,] b, ref float3 c ) {
-			c.x = (float) (a.x * b[0,0] + a.y * b[1,0] + a.z * b[2,0]);
-			c.y = (float) (a.x * b[0,1] + a.y * b[1,1] + a.z * b[2,1]);
-			c.z = (float) (a.x * b[0,2] + a.y * b[1,2] + a.z * b[2,2]);
-		}
+// 		void			Transform( float3 a, double[,] b, ref float3 c ) {
+// 			c.x = (float) (a.x * b[0,0] + a.y * b[1,0] + a.z * b[2,0]);
+// 			c.y = (float) (a.x * b[0,1] + a.y * b[1,1] + a.z * b[2,1]);
+// 			c.z = (float) (a.x * b[0,2] + a.y * b[1,2] + a.z * b[2,2]);
+// 		}
 		void			Transform( double[,] a, float3 b, ref float3 c ) {
+
+// Annoying GLM library details:
+// return vec3(
+// 	m[0][0] * v.x + m[1][0] * v.y + m[2][0] * v.z,
+// 	m[0][1] * v.x + m[1][1] * v.y + m[2][1] * v.z,	  (thank God, they didn't change the math!)
+// 	m[0][2] * v.x + m[1][2] * v.y + m[2][2] * v.z);
+
+
 			c.x = (float) (b.x * a[0,0] + b.y * a[0,1] + b.z * a[0,2]);
 			c.y = (float) (b.x * a[1,0] + b.y * a[1,1] + b.z * a[1,2]);
 			c.z = (float) (b.x * a[2,0] + b.y * a[2,1] + b.z * a[2,2]);

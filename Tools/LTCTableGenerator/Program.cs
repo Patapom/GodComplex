@@ -25,12 +25,12 @@ namespace LTCTableGenerator
 
 			#if FIT_TABLES
 				// Fit specular
-// 				RunForm( new BRDF_GGX(), new FileInfo( "GGXT.ltc" ), true );						// Fit GGX
+ 				RunForm( new BRDF_GGX(), new FileInfo( "GGXT.ltc" ), true );						// Fit GGX
 // 				RunForm( new BRDF_CookTorrance(), new FileInfo( "CookTorrance.ltc" ), true );	// Fit Cook-Torrance
 // 				RunForm( new BRDF_Ward(), new FileInfo( "Ward.ltc" ), true );					// Fit Ward
 
 				// Fit diffuse
- 				RunForm( new BRDF_OrenNayar(), new FileInfo( "OrenNayar.ltc" ), true );			// Fit Oren-Nayar diffuse
+// 				RunForm( new BRDF_OrenNayar(), new FileInfo( "OrenNayar.ltc" ), true );			// Fit Oren-Nayar diffuse
 //				RunForm( new BRDF_Charlie(), new FileInfo( "CharlieSheen.ltc" ), true );		// Fit Charlie Sheen diffuse
 // 				RunForm( new BRDF_Disney(), new FileInfo( "DisneyT.ltc" ), true );				// Fit Disney diffuse (TRANSPOSED!)
 //				RunForm( new BRDF_OrenNayar(), new FileInfo( "OrenNayar.ltc" ), true );			// Fit Oren-Nayar diffuse

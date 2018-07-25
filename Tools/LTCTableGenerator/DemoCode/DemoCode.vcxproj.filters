@@ -1,0 +1,97 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Original Code">
+      <UniqueIdentifier>{2f2ff9fc-2830-4a26-809f-3d410642c7e6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Original Code\GLM">
+      <UniqueIdentifier>{7a0083d4-e201-441c-bf59-88c10260d3a0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Original Code\GLM\Fucking Lib">
+      <UniqueIdentifier>{f61f731b-b03b-4e97-a5c8-34c43b672355}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="stdafx.h">
+      <Filter>Resource Files</Filter>
+    </ClInclude>
+    <ClInclude Include="targetver.h">
+      <Filter>Resource Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Original Code\brdf.h">
+      <Filter>Original Code</Filter>
+    </ClInclude>
+    <ClInclude Include="Original Code\brdf_beckmann.h">
+      <Filter>Original Code</Filter>
+    </ClInclude>
+    <ClInclude Include="Original Code\brdf_disneyDiffuse.h">
+      <Filter>Original Code</Filter>
+    </ClInclude>
+    <ClInclude Include="Original Code\brdf_ggx.h">
+      <Filter>Original Code</Filter>
+    </ClInclude>
+    <ClInclude Include="Original Code\dds.h">
+      <Filter>Original Code</Filter>
+    </ClInclude>
+    <ClInclude Include="Original Code\export.h">
+      <Filter>Original Code</Filter>
+    </ClInclude>
+    <ClInclude Include="Original Code\LTC.h">
+      <Filter>Original Code</Filter>
+    </ClInclude>
+    <ClInclude Include="Original Code\nelder_mead.h">
+      <Filter>Original Code</Filter>
+    </ClInclude>
+    <ClInclude Include="Original Code\plot.h">
+      <Filter>Original Code</Filter>
+    </ClInclude>
+    <ClInclude Include="Original Code\glm\glm.hpp">
+      <Filter>Original Code\GLM</Filter>
+    </ClInclude>
+    <ClInclude Include="Original Code\glm\ShitLib\glm.hpp">
+      <Filter>Original Code\GLM\Fucking Lib</Filter>
+    </ClInclude>
+    <ClInclude Include="Original Code\glm\ShitLib\mat3x3.hpp">
+      <Filter>Original Code\GLM\Fucking Lib</Filter>
+    </ClInclude>
+    <ClInclude Include="Original Code\glm\ShitLib\matrix.hpp">
+      <Filter>Original Code\GLM\Fucking Lib</Filter>
+    </ClInclude>
+    <ClInclude Include="Original Code\glm\ShitLib\type_mat3x3.hpp">
+      <Filter>Original Code\GLM\Fucking Lib</Filter>
+    </ClInclude>
+    <ClInclude Include="Original Code\glm\ShitLib\type_vec3.hpp">
+      <Filter>Original Code\GLM\Fucking Lib</Filter>
+    </ClInclude>
+    <ClInclude Include="Original Code\glm\ShitLib\vec3.hpp">
+      <Filter>Original Code\GLM\Fucking Lib</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="DemoCode.cpp" />
+    <ClCompile Include="stdafx.cpp">
+      <Filter>Resource Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Original Code\dds.cpp">
+      <Filter>Original Code</Filter>
+    </ClCompile>
+    <ClCompile Include="Original Code\fitLTC.cpp">
+      <Filter>Original Code</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Original Code\glm\ShitLib\func_matrix.inl">
+      <Filter>Original Code\GLM\Fucking Lib</Filter>
+    </None>
+    <None Include="Original Code\glm\ShitLib\type_mat3x3.inl">
+      <Filter>Original Code\GLM\Fucking Lib</Filter>
+    </None>
+    <None Include="Original Code\glm\ShitLib\type_vec3.inl">
+      <Filter>Original Code\GLM\Fucking Lib</Filter>
+    </None>
+  </ItemGroup>
+</Project>
