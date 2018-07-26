@@ -18,22 +18,43 @@ namespace LTCTableGenerator
 		/// The main entry point for the application.
 		/// </summary>
 		[STAThread]
-		static void Main()
+		static void Main( string[] _args )
 		{
 			Application.EnableVisualStyles();
 			Application.SetCompatibleTextRenderingDefault( false );
 
-			#if FIT_TABLES
-				// Fit specular
- 				RunForm( new BRDF_GGX(), new FileInfo( "GGXT.ltc" ), true );						// Fit GGX
-// 				RunForm( new BRDF_CookTorrance(), new FileInfo( "CookTorrance.ltc" ), true );	// Fit Cook-Torrance
-// 				RunForm( new BRDF_Ward(), new FileInfo( "Ward.ltc" ), true );					// Fit Ward
+			int	BRDFIndex = 0;
+			if ( _args.Length > 0 )
+				BRDFIndex = int.Parse( _args[0] );
 
-				// Fit diffuse
-// 				RunForm( new BRDF_OrenNayar(), new FileInfo( "OrenNayar.ltc" ), true );			// Fit Oren-Nayar diffuse
-//				RunForm( new BRDF_Charlie(), new FileInfo( "CharlieSheen.ltc" ), true );		// Fit Charlie Sheen diffuse
-// 				RunForm( new BRDF_Disney(), new FileInfo( "DisneyT.ltc" ), true );				// Fit Disney diffuse (TRANSPOSED!)
-//				RunForm( new BRDF_OrenNayar(), new FileInfo( "OrenNayar.ltc" ), true );			// Fit Oren-Nayar diffuse
+			#if FIT_TABLES
+				switch ( BRDFIndex ) {
+					// Fit specular
+					case 0:
+						RunForm( new BRDF_GGX(), new FileInfo( "GGX.ltc" ), true );						// Fit GGX
+						break;
+					case 1:
+						RunForm( new BRDF_CookTorrance(), new FileInfo( "CookTorrance.ltc" ), true );	// Fit Cook-Torrance
+						break;
+					case 2:
+						RunForm( new BRDF_Ward(), new FileInfo( "Ward.ltc" ), true );					// Fit Ward
+						break;
+
+					// Fit diffuse
+					case 10:
+						RunForm( new BRDF_OrenNayar(), new FileInfo( "OrenNayar.ltc" ), true );			// Fit Oren-Nayar diffuse
+						break;
+					case 11:
+						RunForm( new BRDF_Charlie(), new FileInfo( "CharlieSheen.ltc" ), true );		// Fit Charlie Sheen diffuse
+						break;
+					case 12:
+						RunForm( new BRDF_Disney(), new FileInfo( "Disney.ltc" ), true );				// Fit Disney diffuse
+						break;
+
+					default:
+						MessageBox.Show( "Unsupported BRDF index: " + BRDFIndex, "Invalid Argument!", MessageBoxButtons.OK, MessageBoxIcon.Error );
+						return;
+				}
 			#else
 				// Export
 				#if EXPORT_FOR_UNITY

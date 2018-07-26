@@ -64,8 +64,8 @@ struct LTC {
 
 	vec3 sample(const float U1, const float U2) const
 	{
-//		const float theta = asinf(sqrtf(U1));
-		const float theta = acosf(sqrtf(U1));
+		const float theta = asinf(sqrtf(U1));
+//		const float theta = acosf(sqrtf(U1));
 		const float phi = 2.0f*3.14159f * U2;
 		const vec3 L = normalize(M * vec3(sinf(theta)*cosf(phi), sinf(theta)*sinf(phi), cosf(theta)));
 		return L;

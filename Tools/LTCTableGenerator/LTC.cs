@@ -37,7 +37,7 @@ namespace LTCTableGenerator
 
 		// Runtime matrix representation
 		public double[,]	invM = new double[3,3];
-		public double		detInvM;
+//		public double		detInvM;
 		public double		detM;
 
 		/// <summary>
@@ -248,10 +248,10 @@ namespace LTCTableGenerator
 				if ( detM < 0.0 )
 					throw new Exception( "Negative determinant!" );
 
-detInvM =	(invM[0,0]*invM[1,1]*invM[2,2] + invM[0,1]*invM[1,2]*invM[2,0] + invM[0,2]*invM[1,0]*invM[2,1])
-		-   (invM[2,0]*invM[1,1]*invM[0,2] + invM[2,1]*invM[1,2]*invM[0,0] + invM[2,2]*invM[1,0]*invM[0,1]);
-if ( Math.Abs( detM - 1.0/detInvM ) > 1e-6 )
-	throw new Exception( "Determinant discrepancy!" );
+// detInvM =	(invM[0,0]*invM[1,1]*invM[2,2] + invM[0,1]*invM[1,2]*invM[2,0] + invM[0,2]*invM[1,0]*invM[2,1])
+// 		-   (invM[2,0]*invM[1,1]*invM[0,2] + invM[2,1]*invM[1,2]*invM[0,0] + invM[2,2]*invM[1,0]*invM[0,1]);
+// if ( Math.Abs( detM - 1.0/detInvM ) > 1e-6 )
+// 	throw new Exception( "Determinant discrepancy!" );
 
 
 // 				// Clear it up so it's always in the required final form
@@ -285,10 +285,10 @@ if ( Math.Abs( detM - 1.0/detInvM ) > 1e-6 )
 float3	L_ = float3.Zero;
 Transform( M, Loriginal, ref L_ );	// Compose from the right, as in the paper!
 double	l2 = L_.Length;
-double	jacobian2 = detM / (l2*l2*l2);
+double	jacobian = detM / (l2*l2*l2);
 //if ( Mathf.Abs( jacobian - jacobian2 ) > 1e-1 )
 //	throw new Exception( "Different jacobians!" );
-double	jacobian = jacobian2;
+//double	jacobian = jacobian2;
 
 			// Scale distribution
 			double	res = amplitude * D / jacobian;
@@ -296,8 +296,8 @@ double	jacobian = jacobian2;
 		}
 
 		public void	GetSamplingDirection( float _U1, float _U2, ref float3 _direction ) {
-//			float	theta = Mathf.Asin( Mathf.Sqrt( _U1 ) );
-			float	theta = Mathf.Acos( Mathf.Sqrt( _U1 ) );
+			float	theta = Mathf.Asin( Mathf.Sqrt( _U1 ) );
+//			float	theta = Mathf.Acos( Mathf.Sqrt( _U1 ) );
 			float	phi = Mathf.TWOPI * _U2;
 // 			#if FIT_TRANSPOSED
 // 				Transform( new float3( Mathf.Sin(theta)*Mathf.Cos(phi), Mathf.Sin(theta)*Mathf.Sin(phi), Mathf.Cos(theta) ), M, ref _direction );
