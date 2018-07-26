@@ -52,7 +52,8 @@ float NelderMead(
 
     int lo = 0, hi, nh;
 
-    for (int j = 0; j < maxIters; j++)
+	int	iterationsCount = 0;
+    for (; iterationsCount < maxIters; iterationsCount++)
     {
         // find lowest, highest and next highest
         lo = hi = nh = 0;

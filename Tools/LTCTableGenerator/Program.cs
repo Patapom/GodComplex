@@ -63,6 +63,10 @@ form.UsePreviousRoughness = _usePreviousRoughnessForFitting;
 //form.Paused = true;
 //form.ReadOnly = true;
 
+// Debug a specific case
+//form.RoughnessIndex = 19;
+//form.ThetaIndex = 40;
+
 form.UseAdaptiveFit = true;
 
 

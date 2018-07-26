@@ -160,7 +160,7 @@
     </ProjectReference>
     <ProjectReference Include="..\..\Packages\SharpMath\MathAdvanced.csproj">
       <Project>{DD026A89-C5FE-4150-BC85-A660E427826A}</Project>
-      <Name>SharpMath</Name>
+      <Name>MathAdvanced</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

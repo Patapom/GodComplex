@@ -245,11 +245,11 @@ namespace LTCTableGenerator
 			m_internalChange = true;
 			integerTrackbarControlRoughnessIndex.RangeMax = m_tableSize-1;
 			integerTrackbarControlRoughnessIndex.VisibleRangeMax = m_tableSize-1;
-			integerTrackbarControlRoughnessIndex.Value = m_tableSize-1;
+//			integerTrackbarControlRoughnessIndex.Value = m_tableSize-1;
 
 			integerTrackbarControlThetaIndex.RangeMax = m_tableSize-1;
 			integerTrackbarControlThetaIndex.VisibleRangeMax = m_tableSize-1;
-			integerTrackbarControlThetaIndex.Value = 0;
+//			integerTrackbarControlThetaIndex.Value = 0;
 			m_internalChange = false;
 
 			if ( RenderBRDF )
@@ -301,7 +301,6 @@ namespace LTCTableGenerator
 
 					ltc.m13 = 0;
 					ltc.m31 = 0;
-					ltc.Update();
 
 					isotropic = true;
 				} else {
@@ -326,11 +325,11 @@ namespace LTCTableGenerator
 						ltc.m22 = previousLTC.m22;
 						ltc.m13 = previousLTC.m13;
 						ltc.m31 = previousLTC.m31;
-						ltc.Update();
 					}
 
 					isotropic = false;
 				}
+				ltc.Update();
 
 				// Find best-fit LTC lobe (scale, alphax, alphay)
 				try {
@@ -576,7 +575,7 @@ tsReflection = _LTC.Z;	// Use preferred direction
 				return sumError;
 			}
 		#else
-			const int	SAMPLES_COUNT = 50;			// number of samples used to compute the error during fitting
+			const int	SAMPLES_COUNT = 32;			// number of samples used to compute the error during fitting
 
 			// Compute the error between the BRDF and the LTC using Multiple Importance Sampling
 			static double	ComputeError( LTC _LTC, IBRDF _BRDF, ref float3 _tsView, float _alpha ) {
@@ -609,9 +608,9 @@ tsReflection = _LTC.Z;	// Use preferred direction
 
 							pdf_LTC = eval_LTC / _LTC.amplitude;
 							double	error = Math.Abs( eval_BRDF - eval_LTC );
-//							#if !FIT_WITH_BFGS
-//								error = error*error*error;		// Use L3 norm to favor large values over smaller ones
-//							#endif
+							#if !FIT_WITH_BFGS
+								error = error*error*error;		// Use L3 norm to favor large values over smaller ones
+							#endif
 
 							#if DEBUG
 								if ( pdf_LTC + pdf_BRDF < 0.0 )
@@ -644,9 +643,9 @@ tsReflection = _LTC.Z;	// Use preferred direction
 
 							pdf_LTC = eval_LTC / _LTC.amplitude;
 							double	error = Math.Abs( eval_BRDF - eval_LTC );
-//							#if !FIT_WITH_BFGS
-//								error = error*error*error;		// Use L3 norm to favor large values over smaller ones
-//							#endif
+							#if !FIT_WITH_BFGS
+								error = error*error*error;		// Use L3 norm to favor large values over smaller ones
+							#endif
 
 							#if DEBUG
 								if ( pdf_LTC + pdf_BRDF < 0.0 )

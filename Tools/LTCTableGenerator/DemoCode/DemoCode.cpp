@@ -104,7 +104,8 @@ float computeError(const LTC& ltc, const Brdf& brdf, const vec3& V, const float 
             // error with MIS weight
             double error_ = fabsf(eval_brdf - eval_ltc);
             error_ = error_*error_*error_;
-            error += error_/(pdf_ltc + pdf_brdf);
+			error_ /= pdf_ltc + pdf_brdf;
+            error += error_;
         }
 
         // importance sample BRDF
@@ -120,11 +121,13 @@ float computeError(const LTC& ltc, const Brdf& brdf, const vec3& V, const float 
             // error with MIS weight
             double error_ = fabsf(eval_brdf - eval_ltc);
             error_ = error_*error_*error_;
-            error += error_/(pdf_ltc + pdf_brdf);
+			error_ /= pdf_ltc + pdf_brdf;
+            error += error_;
         }
     }
 
-    return (float)error / (float)(Nsample*Nsample);
+    error /= Nsample*Nsample;
+	return (float) error;
 }
 
 struct FitLTC
@@ -158,7 +161,8 @@ struct FitLTC
     float operator()(const float* params)
     {
         update(params);
-        return computeError(ltc, brdf, V, alpha);
+        double	error = computeError(ltc, brdf, V, alpha);
+		return error;
     }
 
     const Brdf& brdf;
@@ -191,8 +195,12 @@ void fitTab(mat3* tab, vec3* tabMagFresnel, const int N, const Brdf& brdf)
     LTC ltc;
 
     // loop over theta and alpha
-    for (int a = N - 1; a >=     0; --a)
-    for (int t =     0; t <= N - 1; ++t)
+     for (int a = N - 1; a >=     0; --a)
+     for (int t =     0; t <= N - 1; ++t)
+
+//	int	a = 19;
+//	int	t = 40;
+
     {
         // parameterised by sqrt(1 - cos(theta))
         float x = t/float(N - 1);

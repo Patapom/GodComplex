@@ -67,18 +67,18 @@ namespace LTCTableGenerator
 		/// <returns></returns>
 		public double[]	GetFittingParms() {
 			#if FIT_INV_M
-				double[]	tempParams = new double[4] {
+				double[]	tempParams = new double[] {
 					m11,
 					m22,
 					m31,
-					m13
+//					m13
 				};
 			#else
-				double[]	tempParams = new double[4] {
+				double[]	tempParams = new double[] {
 					m11,
 					m22,
 					m13,
-					m31,
+//					m31,
 				};
 			#endif
 			return tempParams;
@@ -244,10 +244,12 @@ namespace LTCTableGenerator
 				#endif
 
 				// Build the final matrix required at runtime for LTC evaluation
-				detInvM = 1.0 / Invert( M, invM );
+				detM = Invert( M, invM );
+				if ( detM < 0.0 )
+					throw new Exception( "Negative determinant!" );
 
-detM =	(M[0,0]*M[1,1]*M[2,2] + M[0,1]*M[1,2]*M[2,0] + M[0,2]*M[1,0]*M[2,1])
-	-   (M[2,0]*M[1,1]*M[0,2] + M[2,1]*M[1,2]*M[0,0] + M[2,2]*M[1,0]*M[0,1]);
+detInvM =	(invM[0,0]*invM[1,1]*invM[2,2] + invM[0,1]*invM[1,2]*invM[2,0] + invM[0,2]*invM[1,0]*invM[2,1])
+		-   (invM[2,0]*invM[1,1]*invM[0,2] + invM[2,1]*invM[1,2]*invM[0,0] + invM[2,2]*invM[1,0]*invM[0,1]);
 if ( Math.Abs( detM - 1.0/detInvM ) > 1e-6 )
 	throw new Exception( "Determinant discrepancy!" );
 
@@ -289,11 +291,12 @@ double	jacobian2 = detM / (l2*l2*l2);
 double	jacobian = jacobian2;
 
 			// Scale distribution
-			double	res = amplitude * D * jacobian;
+			double	res = amplitude * D / jacobian;
 			return res;
 		}
 
 		public void	GetSamplingDirection( float _U1, float _U2, ref float3 _direction ) {
+//			float	theta = Mathf.Asin( Mathf.Sqrt( _U1 ) );
 			float	theta = Mathf.Acos( Mathf.Sqrt( _U1 ) );
 			float	phi = Mathf.TWOPI * _U2;
 // 			#if FIT_TRANSPOSED
