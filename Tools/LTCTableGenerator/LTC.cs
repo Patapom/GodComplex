@@ -90,8 +90,8 @@ namespace LTCTableGenerator
 		/// <param name="_parameters"></param>
 		/// <param name="_isotropic"></param>
 		public void	SetFittingParms( double[] _parameters, bool _isotropic ) {
- 			double	tempM11 = Math.Max( _parameters[0], 0.002f );
- 			double	tempM22 = Math.Max( _parameters[1], 0.002f );
+ 			double	tempM11 = Math.Max( _parameters[0], 0.001f );
+ 			double	tempM22 = Math.Max( _parameters[1], 0.001f );
 
 			// When composing from the left (V' = V * invM), the important 3rd parameter is m31
 // 			#if FIT_TRANSPOSED

@@ -1,5 +1,5 @@
-﻿#define FIT_TABLES
-#define EXPORT_FOR_UNITY
+﻿//#define FIT_TABLES
+//#define EXPORT_FOR_UNITY
 
 using System;
 using System.Collections.Generic;
@@ -62,13 +62,22 @@ namespace LTCTableGenerator
 					Export( new FileInfo( "CookTorrance.ltc" ), new FileInfo( @"D:\Workspaces\Unity Labs\AxF Unity Project\SRP\com.unity.render-pipelines.high-definition\HDRP\Material\LTCAreaLight\LtcData.CookTorrance.cs" ), "CookTorrance" );
 					Export( new FileInfo( "Ward.ltc" ), new FileInfo( @"D:\Workspaces\Unity Labs\AxF Unity Project\SRP\com.unity.render-pipelines.high-definition\HDRP\Material\LTCAreaLight\LtcData.Ward.cs" ), "Ward" );
 
+					Export( new FileInfo( "OrenNayar.ltc" ), new FileInfo( @"D:\Workspaces\Unity Labs\AxF Unity Project\SRP\com.unity.render-pipelines.high-definition\HDRP\Material\LTCAreaLight\LtcData.OrenNayar.cs" ), "OrenNayar" );
 					Export( new FileInfo( "CharlieSheen.ltc" ), new FileInfo( @"D:\Workspaces\Unity Labs\AxF Unity Project\SRP\com.unity.render-pipelines.high-definition\HDRP\Material\LTCAreaLight\LtcData.CharlieSheen.cs" ), "Charlie" );
 					Export( new FileInfo( "Disney.ltc" ), new FileInfo( @"D:\Workspaces\Unity Labs\AxF Unity Project\SRP\com.unity.render-pipelines.high-definition\HDRP\Material\LTCAreaLight\LtcData.DisneyDiffuse2.cs" ), "Disney" );
-					Export( new FileInfo( "DisneyT.ltc" ), new FileInfo( @"D:\Workspaces\Unity Labs\AxF Unity Project\SRP\com.unity.render-pipelines.high-definition\HDRP\Material\LTCAreaLight\LtcData.DisneyDiffuse3.cs" ), "DisneyT" );
 				#else
-					Export( new FileInfo( "GGX.ltc" ), new FileInfo( "GGX.cs" ), "GGX" );
-					Export( new FileInfo( "CookTorrance.ltc" ), new FileInfo( "CookTorrance.cs" ), "CookTorrance" );
-					Export( new FileInfo( "CharlieSheen.ltc" ), new FileInfo( "CharlieSheen.cs" ), "Charlie" );
+// 					Export( new FileInfo( "GGX.ltc" ), new FileInfo( "GGX.cs" ), "GGX" );
+// 					Export( new FileInfo( "CookTorrance.ltc" ), new FileInfo( "CookTorrance.cs" ), "CookTorrance" );
+// 					Export( new FileInfo( "CharlieSheen.ltc" ), new FileInfo( "CharlieSheen.cs" ), "Charlie" );
+
+					ExportTexture( new FileInfo[] {
+							new FileInfo( "GGX.ltc" ), new FileInfo( "CookTorrance.ltc" ), new FileInfo( "Ward.ltc" ),
+							new FileInfo( "OrenNayar.ltc" ), new FileInfo( "CharlieSheen.ltc" ), new FileInfo( "Disney.ltc" ),
+						}, 
+						new FileInfo( "LTC.dds" ),
+						ImageUtility.PIXEL_FORMAT.RGBA32F
+						);
+
 				#endif
 			#endif
 		}
@@ -101,11 +110,7 @@ form.UseAdaptiveFit = true;
 //			ctxt.Dispose();
 		}
 
-// 		static void ctxt_ThreadExit( object sender, EventArgs e ) {
-// 
-// 		}
-
-		static void		Export( FileInfo _tableFileName, FileInfo _targetFileName, string _BRDFName ) {
+		static void	Export( FileInfo _tableFileName, FileInfo _targetFileName, string _BRDFName ) {
 			int		validResultsCount;
 			LTC[,]	table = FitterForm.LoadTable( _tableFileName, out validResultsCount );
 
@@ -169,7 +174,7 @@ form.UseAdaptiveFit = true;
 						+ "        // Table contains 3x3 matrix coefficients of M^-1 for the fitting of the " + _BRDFName + " BRDF using the LTC technique\r\n"
 						+ "        // From \"Real-Time Polygonal-Light Shading with Linearly Transformed Cosines\" 2016 (https://eheitzresearch.wordpress.com/415-2/)\r\n"
 						+ "        //\r\n"
-						+ "        // The table is accessed via LTCAreaLight." + tableName + "[64 * <roughnessIndex> + <thetaIndex>]    // Theta values are on X axis, Roughness values are on Y axis\r\n"
+						+ "        // The table is accessed via LTCAreaLight." + className + "[64 * <roughnessIndex> + <thetaIndex>]    // Theta values are on X axis, Roughness values are on Y axis\r\n"
 						+ "        //    • roughness = ( <roughnessIndex> / " + (tableSize-1) + " )^2\r\n"
 						+ "        //    • cosTheta = 1 - ( <thetaIndex> / " + (tableSize-1) + " )^2\r\n"
 						+ "        //\r\n"
@@ -224,6 +229,50 @@ throw new Exception( "Ta mère!" );
 //			FileInfo	targetFileName = new FileInfo( Path.Combine( Path.GetDirectoryName( _tableFileName.FullName ), Path.GetFileNameWithoutExtension( _tableFileName.FullName ) + ".cs" ) );
 			using ( StreamWriter W = _targetFileName.CreateText() )
 				W.Write( sourceCode );
+		}
+
+		/// <summary>
+		/// Concatenates multiple tables into one single texture 2D array
+		/// </summary>
+		/// <param name="_tablesFileNames"></param>
+		/// <param name="_targetFileName"></param>
+		/// <param name="_foramt"></param>
+		static void ExportTexture( FileInfo[] _tablesFileNames, FileInfo _targetFileName, ImageUtility.PIXEL_FORMAT _format ) {
+			// Load tables
+			LTC[][,]	tables = new LTC[_tablesFileNames.Length][,];
+			for ( int i=0; i < _tablesFileNames.Length; i++ ) {
+				int		validResultsCount;
+				LTC[,]	table = FitterForm.LoadTable( _tablesFileNames[i], out validResultsCount );
+				if ( validResultsCount != table.Length )
+					throw new Exception( "Not all table results are valid!" );
+
+				tables[i] = table;
+				if ( i != 0 && (table.GetLength(0) != tables[0].GetLength(0) || table.GetLength(1) != tables[0].GetLength(1)) )
+					throw new Exception( "Table dimensions mismatch!" );
+			}
+
+			// Create the Texture2DArray
+			uint	W = (uint) tables[0].GetLength(0);
+			uint	H = (uint) tables[0].GetLength(1);
+
+			ImageUtility.ImagesMatrix	M = new ImageUtility.ImagesMatrix();
+			M.InitTexture2DArray( W, H, (uint) tables.Length, 1 );
+			M.AllocateImageFiles( _format, new ImageUtility.ColorProfile( ImageUtility.ColorProfile.STANDARD_PROFILE.LINEAR ) );
+
+			for ( int i=0; i < tables.Length; i++ ) {
+				LTC[,]	table = tables[i];
+// 				ImageUtility.ImageFile	I = new ImageUtility.ImageFile( W, H, _format, profile );
+// 				M[(uint) i][0][0] = I;
+				ImageUtility.ImageFile	I = M[(uint) i][0][0];
+				I.WritePixels( ( uint _X, uint _Y, ref float4 _color ) => {
+					LTC	ltc = table[_X,_Y];
+					_color.x = (float) ltc.invM[0,0];
+					_color.y = (float) ltc.invM[0,2];
+					_color.z = (float) ltc.invM[1,1];
+					_color.w = (float) ltc.invM[2,0];
+				} );
+			}
+			M.DDSSaveFile( _targetFileName, ImageUtility.COMPONENT_FORMAT.AUTO );
 		}
 	}
 }
