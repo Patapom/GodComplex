@@ -7,9 +7,6 @@
 
 static const uint	SAMPLES_COUNT = 32;
 
-// AMAZING! Including this BEFORE the definitions of SAMPLES_COUNT and the plane changes color!
-#include "SphericalHarmonics.hlsl"
-
 #if WHITE_FURNACE_TEST
 	// All white!
 	#define	ALBEDO_SPHERE	1
@@ -62,9 +59,6 @@ Texture2D< float >		_tex_OrenNayar_Eo : register( t4 );
 Texture2D< float >		_tex_OrenNayar_Eavg : register( t5 );
 
 
-//Texture2D< float3 >		_tex_SH : register( t30 );
-
-
 /////////////////////////////////////////////////////////////////////////////////////////////
 
 // Converts a 2D UV into an upper hemisphere direction (tangent space) + solid angle
@@ -109,102 +103,6 @@ void	GetObjectInfo( uint _objectIndex, out float _roughnessSpecular, out float3 
 }
 
 
-/////////////////////////////////////////////////////////////////////////////////////////////
-// SH Environment Approximation for the MSBRDF
-float3	EstimateMSIrradiance_SH_GGX( float _roughness, float3 _wsNormal, float _mu_o, float3 _environmentSH[9], Texture2D<float> _Eo, Texture2D<float> _Eavg ) {
-
-	// Estimate the MSBRDF response in the normal direction
-	const float3x3	fit = float3x3( -0.01792303243636725, 1.0561278339405598, -0.4865495717038784,
-									-0.06127443169094851, 1.3380225947779523, -0.6195823982255909,
-									-0.10732852337149004, 0.8686198207608287, -0.3980009298364805 );
-	float3	roughness = sqrt( _roughness ) * float3( 1, _roughness, _roughness*_roughness );
-	float3	ZH = saturate( mul( fit, roughness ) );
-			ZH *= ZH_FACTORS;
-
-	float	SH[9];
-	RotateZH( ZH, _wsNormal, SH );
-
-	// Estimate MSBRDF irradiance
-	float3	result = 0.0;
-	[unroll]
-	for ( uint i=0; i < 9; i++ )
-		result += SH[i] * _environmentSH[i];
-
-	result = max( 0.0, result );
-
-	// Finish by estimating the view-dependent part
-	float	E_o = _Eo.SampleLevel( LinearClamp, float2( _mu_o, _roughness ), 0.0 );
-	float	E_avg = _Eavg.SampleLevel( LinearClamp, float2( _roughness, 0.5 ), 0.0 );	// E_avg
-
-	result *= (1.0 - E_o) / max( 0.001, PI - E_avg );
-
-	return result;
-}
-
-float3	EstimateMSIrradiance_SH_OrenNayar( float _roughness, float3 _wsNormal, float _mu_o, float3 _environmentSH[9], Texture2D<float> _Eo, Texture2D<float> _Eavg ) {
-
-	// Estimate the MSBRDF response in the normal direction
-	const float3x4	fit = float3x4( -0.0919559140506979, 1.467037714315657, -1.673544888379740, 0.607800523815945,
-									-0.1136684128860008, 1.901273744271233, -2.322322430339633, 0.909815621695672,
-									-0.0412482175221291, 1.093354950053632, -1.417191923789875, 0.581084435989362 );
-	float4	roughness = sqrt( _roughness ) * float4( 1, _roughness, _roughness*_roughness, _roughness*_roughness*_roughness );
-	float3	ZH = saturate( mul( fit, roughness ) );
-			ZH *= ZH_FACTORS;
-
-	float	SH[9];
-	RotateZH( ZH, _wsNormal, SH );
-
-	// Estimate MSBRDF irradiance
-	float3	result = 0.0;
-	[unroll]
-	for ( uint i=0; i < 9; i++ )
-		result += SH[i] * _environmentSH[i];
-
-	result = max( 0.0, result );
-
-	// Finish by estimating the view-dependent part
-	float	E_o = _Eo.SampleLevel( LinearClamp, float2( _mu_o, _roughness ), 0.0 );
-	float	E_avg = _Eavg.SampleLevel( LinearClamp, float2( _roughness, 0.5 ), 0.0 );	// E_avg
-
-	result *= (1.0 - E_o) / max( 0.001, PI - E_avg );
-
-	return result;
-}
-
-float3	EstimateMSIrradiance_SH( float3 _wsNormal, float3 _wsReflected, float _mu_o, float _roughnessSpecular, float3 _IOR, float _roughnessDiffuse, float3 _albedo, float3 _environmentSH[9] ) {
-
-	// Estimate specular irradiance
-	float3	F0 = Fresnel_F0FromIOR( _IOR );
-	float3	MSFactor_spec = (_flags & 2) ? F0 * (0.04 + F0 * (0.66 + F0 * 0.3)) : F0;	// From http://patapom.com/blog/BRDF/MSBRDFEnergyCompensation/#varying-the-fresnel-reflectance-f_0f_0
-	float3	Favg = FresnelAverage( _IOR );
-
-//MSFactor_spec = 1.0;
-
-	float3	E_spec = MSFactor_spec * EstimateMSIrradiance_SH_GGX( _roughnessSpecular, _wsReflected, _mu_o, _environmentSH, _tex_GGX_Eo, _tex_GGX_Eavg );
-
-//return E_spec;
-
-	// Estimate diffuse irradiance
-	const float	tau = 0.28430405702379613;
-	const float	A1 = (1.0 - tau) / pow2( tau );
-	float3		rho = tau * _albedo;
-	float3		MSFactor_diff = (_flags & 2) ? A1 * pow2( rho ) / (1.0 - rho) : rho;	// From http://patapom.com/blog/BRDF/MSBRDFEnergyCompensation/#varying-diffuse-reflectance-rhorho
-
-//MSFactor_diff = 1;
-
-	float3	E_diff = MSFactor_diff * EstimateMSIrradiance_SH_OrenNayar( _roughnessDiffuse, _wsNormal, _mu_o, _environmentSH, _tex_OrenNayar_Eo, _tex_OrenNayar_Eavg );
-
-//return E_diff;
-
-	// Attenuate diffuse contribution
-	float	a = _roughnessSpecular;
-	float	E_o = _tex_GGX_Eo.SampleLevel( LinearClamp, float2( _mu_o, a ), 0.0 );	// Already sampled by MSBRDF earlier, optimize!
-
-	float3	kappa = 1 - (Favg * E_o + MSFactor_spec * (1.0 - E_o));
-
-	return E_spec + kappa * E_diff;
-}
-
 ////////////////////////////////////////////////////////////////////////////////////////////////
 //
 //float3	ComputeBRDF_GGX( float3 _tsNormal, float3 _tsView, float3 _tsLight, float _roughness, float3 _IOR ) {
@@ -219,21 +117,21 @@ float3	EstimateMSIrradiance_SH( float3 _wsNormal, float3 _wsReflected, float _mu
 //
 //	return BRDF;
 //}
-//
-//float3	ComputeBRDF_Oren( float3 _tsNormal, float3 _tsView, float3 _tsLight, float _roughness, float3 _albedo ) {
-//	float3	BRDF = _albedo * BRDF_OrenNayar( _tsNormal, _tsView, _tsLight, _roughness );
-//	if ( (_flags & 1) && !(_flags & 0x100) ) {
-//		// From http://patapom.com/blog/BRDF/MSBRDFEnergyCompensation/#varying-diffuse-reflectance-rhorho
-//		const float	tau = 0.28430405702379613;
-//		const float	A1 = (1.0 - tau) / pow2( tau );
-//		float3		rho = tau * _albedo;
-//		float3		MSFactor = (_flags & 2) ? A1 * pow2( rho ) / (1.0 - rho) : rho;
-//
-//		BRDF += MSFactor * MSBRDF( _roughness, _tsNormal, _tsView, _tsLight, _tex_OrenNayar_Eo, _tex_OrenNayar_Eavg );
-//	}
-//
-//	return BRDF;
-//}
+
+float3	ComputeBRDF_Oren( float3 _tsNormal, float3 _tsView, float3 _tsLight, float _roughness, float3 _albedo ) {
+	float3	BRDF = _albedo * BRDF_OrenNayar( _tsNormal, _tsView, _tsLight, _roughness );
+	if ( (_flags & 1) && !(_flags & 0x100) ) {
+		// From http://patapom.com/blog/BRDF/MSBRDFEnergyCompensation/#varying-diffuse-reflectance-rhorho
+		const float	tau = 0.28430405702379613;
+		const float	A1 = (1.0 - tau) / pow2( tau );
+		float3		rho = tau * _albedo;
+		float3		MSFactor = (_flags & 2) ? A1 * pow2( rho ) / (1.0 - rho) : rho;
+
+		BRDF += MSFactor * MSBRDF( _roughness, _tsNormal, _tsView, _tsLight, _tex_OrenNayar_Eo, _tex_OrenNayar_Eavg );
+	}
+
+	return BRDF;
+}
 
 // Computes the full dielectric BRDF model as described in http://patapom.com/blog/BRDF/MSBRDFEnergyCompensation/#complete-approximate-model
 //
@@ -303,7 +201,7 @@ float4	PS( VS_IN _In ) : SV_TARGET0 {
 	float3	wsClosestPosition;
 	float3	wsNormal;
 	float2	hit = RayTraceScene( wsPosition, wsView, wsNormal, wsClosestPosition );
-	if ( hit.x > 1e4 || hit.y != 0 )
+	if ( hit.x > 1e4 )
 		return float4( SampleSky( wsView, 0.0 ), 1 );	// No hit or plane hit (we only render the sphere here)
 
 	wsPosition += hit.x * wsView;
@@ -314,15 +212,6 @@ float4	PS( VS_IN _In ) : SV_TARGET0 {
 	BuildOrthonormalBasis( wsNormal, wsTangent, wsBiTangent );
 
 	float3	tsView = -float3( dot( wsView, wsTangent ), dot( wsView, wsBiTangent ), dot( wsView, wsNormal ) );
-
-	// Build environment SH as an array
-	float3	envSH[9] = { _SH[0].xyz, _SH[1].xyz, _SH[2].xyz, _SH[3].xyz, _SH[4].xyz, _SH[5].xyz, _SH[6].xyz, _SH[7].xyz, _SH[8].xyz };
-
-// Check SH coefficients
-//if ( hit.y != 0 )
-//	return float4( SampleSky( wsView, 0.0 ), 1 );	// No hit
-//return float4( EvaluateSHRadiance( wsNormal, envSH ), 1 );				// Order 2 (9 coefficients)
-////return float4( EvaluateSHRadiance( wsNormal, 9, _tex_SH, 8.7 ), 1 );	// Order 9 (100 coefficients)
 
 	// Prepare surface characteristics
 	float3	rho, F0;
@@ -351,12 +240,15 @@ float4	PS( VS_IN _In ) : SV_TARGET0 {
 		float	LdotN = tsLight.z;
 
 		// Compute BRDF
-		float3	BRDF = ComputeBRDF_Full( float3( 0, 0, 1 ), tsView, tsLight, alphaS, IOR, alphaD, rho );
+		float3	BRDF = 0.0;
+		if ( hit.y == 0 ) {
+			BRDF = ComputeBRDF_Full( float3( 0, 0, 1 ), tsView, tsLight, alphaS, IOR, alphaD, rho );
+		} else {
+			BRDF = ComputeBRDF_Oren( float3( 0, 0, 1 ), tsView, tsLight, alphaD, rho );
+		}
 
 		// Sample incoming radiance
 		float3	Li = SampleSky( wsLight, 0.0 );
-//		float3	Li = EvaluateSHRadiance( wsLight, envSH );		// Order 2 (9 coefficients)
-//		float3	Li = EvaluateSHRadiance( wsLight, 9, _tex_SH );	// Order 9 (100 coefficients)
 
 		// Compute reflected radiance
 		float3	Lr = Li * BRDF;
@@ -371,16 +263,16 @@ Lr *= 0.9;	// Attenuate a bit to see in front of white sky...
 		validSamplesCount++;
     }
 
-	///////////////////////////////////////////////////////////////////////////////////////
-	// Real-time Approximation
-	if ( (_flags & 1) && (_flags & 0x100) ) {
-		float3	wsReflectedView = reflect( wsView, wsNormal );
-		float3	wsReflected = normalize( lerp( wsReflectedView, wsNormal, alphaS ) );	// Go more toward prefectly reflected direction when roughness drops to 0
-
-wsReflected = wsNormal;
-
-		Lo += validSamplesCount * EstimateMSIrradiance_SH( wsNormal, wsReflected, saturate( tsView.z ), alphaS, IOR, alphaD, rho, envSH );
-	}
+//	///////////////////////////////////////////////////////////////////////////////////////
+//	// Real-time Approximation
+//	if ( (_flags & 1) && (_flags & 0x100) ) {
+//		float3	wsReflectedView = reflect( wsView, wsNormal );
+//		float3	wsReflected = normalize( lerp( wsReflectedView, wsNormal, alphaS ) );	// Go more toward prefectly reflected direction when roughness drops to 0
+//
+//wsReflected = wsNormal;
+//
+//		Lo += validSamplesCount * EstimateMSIrradiance_SH( wsNormal, wsReflected, saturate( tsView.z ), alphaS, IOR, alphaD, rho, envSH );
+//	}
 
 //	return float4( Lo, SAMPLES_COUNT);
 	return float4( Lo, validSamplesCount );

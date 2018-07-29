@@ -148,9 +148,7 @@
     <None Include="Shaders\RenderCompareLTC.hlsl" />
     <Content Include="Shaders\SphericalHarmonics.hlsl" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="LTC\" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
