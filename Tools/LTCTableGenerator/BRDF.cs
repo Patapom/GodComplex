@@ -66,7 +66,7 @@ namespace LTCTableGenerator
 
 			// masking
 			double	lambdaV = Lambda( _tsView.z, _alpha );
-			double	G1 = 1.0 / (1.0 + lambdaV);
+//			double	G1 = 1.0 / (1.0 + lambdaV);
 
 			// shadowing
 			double	G2 = 0;
@@ -102,17 +102,17 @@ namespace LTCTableGenerator
 			_direction = -_tsView + 2.0f * H * H.Dot(_tsView);
 		}
 
-		public double	MaxValue( ref float3 _tsView, float _alpha ) {
-			double	D = 1.0 / (Math.PI * _alpha * _alpha);
-			double	G = 1.0 / (1.0 + Lambda( _tsView.z, _alpha ));
-			return D * G / (4.0 * _tsView.z);
-		}
-
 		double	Lambda( float _cosTheta, float _alpha ) {
 			double	a = 1.0f / (_alpha * Math.Tan( Math.Acos( _cosTheta ) ));
 			double	lambda = _cosTheta < 1.0 ? 0.5 * (-1.0 + Math.Sqrt(1.0 + 1.0 / (a*a))) : 0.0;
 			return lambda;
 		}
+
+// 		public double	MaxValue( ref float3 _tsView, float _alpha ) {
+// 			double	D = 1.0 / (Math.PI * _alpha * _alpha);
+// 			double	G = 1.0 / (1.0 + Lambda( _tsView.z, _alpha ));
+// 			return D * G / (4.0 * _tsView.z);
+// 		}
 	}
 
 	/// <summary>
