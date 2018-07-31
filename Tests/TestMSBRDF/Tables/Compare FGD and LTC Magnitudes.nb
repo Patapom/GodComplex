@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[   1342953,      22687]
-NotebookOptionsPosition[   1340881,      22617]
-NotebookOutlinePosition[   1341222,      22632]
-CellTagsIndexPosition[   1341179,      22629]
+NotebookDataLength[   1345330,      22755]
+NotebookOptionsPosition[   1342978,      22676]
+NotebookOutlinePosition[   1343319,      22691]
+CellTagsIndexPosition[   1343276,      22688]
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -1894,9 +1894,10 @@ Cell[BoxData[{
       RowBox[{"countY", "-", "1"}]}], "}"}]}], "]"}]}], "\[IndentingNewLine]", 
  RowBox[{"Export", "[", 
   RowBox[{
-  "\"\<MSBRDF_GGX_G2_Eavg.csv\>\"", ",", "resultEavg", ",", "\"\<CSV\>\""}], 
-  "]"}]}], "Input",
- CellChangeTimes->{{3.742047717261717*^9, 3.742047759758148*^9}}],
+  "\"\<MSBRDF_GGX_G2_Eavg128.csv\>\"", ",", "resultEavg", ",", 
+   "\"\<CSV\>\""}], "]"}]}], "Input",
+ CellChangeTimes->{{3.742047717261717*^9, 3.742047759758148*^9}, {
+  3.742048239860608*^9, 3.742048240189627*^9}}],
 
 Cell[BoxData[
  TagBox[
@@ -2088,7 +2089,7 @@ q5SZmRFAL++xNeOlE0Dwt3AR
   Editable->False,
   SelectWithContents->True,
   Selectable->False]], "Output",
- CellChangeTimes->{3.742047764980447*^9}],
+ CellChangeTimes->{3.742047764980447*^9, 3.742048242197742*^9}],
 
 Cell[BoxData[
  RowBox[{"{", 
@@ -2349,10 +2350,10 @@ Cell[BoxData[
     RowBox[{"0.9921259842519685`", ",", "1.296188943668537`"}], "}"}], ",", 
    RowBox[{"{", 
     RowBox[{"1.`", ",", "1.2853420436580174`"}], "}"}]}], "}"}]], "Output",
- CellChangeTimes->{3.7420477936070843`*^9}],
+ CellChangeTimes->{3.742047764980447*^9, 3.7420482703403516`*^9}],
 
-Cell[BoxData["\<\"MSBRDF_GGX_G2_Eavg.csv\"\>"], "Output",
- CellChangeTimes->{3.742047793609084*^9}]
+Cell[BoxData["\<\"MSBRDF_GGX_G2_Eavg128.csv\"\>"], "Output",
+ CellChangeTimes->{3.742047764980447*^9, 3.742048270346352*^9}]
 }, Open  ]],
 
 Cell[CellGroupData[{
@@ -2424,6 +2425,64 @@ Oj6yDwtq0g+9vqoE3ec+aLZUT/XYpwS1fbgPirRLlycuVYLutwLhvIicTe8p
      Scaled[0.05]}},
   Ticks->{Automatic, Automatic}]], "Output",
  CellChangeTimes->{{3.7420478067098336`*^9, 3.7420478177904673`*^9}}]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Re-export Tables as float", "Subchapter",
+ CellChangeTimes->{{3.742048508109951*^9, 3.742048514334307*^9}}],
+
+Cell["Export as binary float arays for C#:", "Text",
+ CellChangeTimes->{{3.73245737353129*^9, 3.7324573801486683`*^9}}],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"t", "=", 
+   RowBox[{"Table", "[", 
+    RowBox[{
+     RowBox[{
+      RowBox[{"resultEo", "[", 
+       RowBox[{"[", "i", "]"}], "]"}], "[", 
+      RowBox[{"[", "3", "]"}], "]"}], ",", 
+     RowBox[{"{", 
+      RowBox[{"i", ",", "1", ",", 
+       RowBox[{"countX", "*", "countY"}]}], "}"}]}], "]"}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{"Export", "[", 
+  RowBox[{
+   RowBox[{"\"\<MSBRDF_GGX_G2_E\>\"", "<>", 
+    RowBox[{"ToString", "[", "countX", "]"}], "<>", "\"\<x\>\"", "<>", 
+    RowBox[{"ToString", "[", "countY", "]"}], "<>", "\"\<.float\>\""}], ",", 
+   "t", ",", "\"\<Real32\>\""}], "]"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"t", "=", 
+   RowBox[{"Table", "[", 
+    RowBox[{
+     RowBox[{
+      RowBox[{"resultEavg", "[", 
+       RowBox[{"[", "i", "]"}], "]"}], "[", 
+      RowBox[{"[", "2", "]"}], "]"}], ",", 
+     RowBox[{"{", 
+      RowBox[{"i", ",", "1", ",", "countY"}], "}"}]}], "]"}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{"Export", "[", 
+  RowBox[{
+   RowBox[{"\"\<MSBRDF_GGX_G2_Eavg\>\"", "<>", 
+    RowBox[{"ToString", "[", "countY", "]"}], "<>", "\"\<.float\>\""}], ",", 
+   "t", ",", "\"\<Real32\>\""}], "]"}]}], "Input",
+ CellChangeTimes->{{3.732457399880797*^9, 3.732457493102129*^9}, {
+   3.732457582951268*^9, 3.7324575839253235`*^9}, {3.734782331179175*^9, 
+   3.7347823952908416`*^9}, 3.7347831845989876`*^9, {3.7420485219697437`*^9, 
+   3.742048527161041*^9}}],
+
+Cell[BoxData["\<\"MSBRDF_GGX_G2_E128x128.float\"\>"], "Output",
+ CellChangeTimes->{3.7420485357575326`*^9}],
+
+Cell[BoxData["\<\"MSBRDF_GGX_G2_Eavg128.float\"\>"], "Output",
+ CellChangeTimes->{3.7420485357755337`*^9}]
 }, Open  ]],
 
 Cell[CellGroupData[{
@@ -22658,33 +22717,42 @@ Cell[96537, 1821, 253, 4, 31, "Output"]
 Cell[CellGroupData[{
 Cell[96839, 1831, 221, 7, 69, "Subchapter"],
 Cell[CellGroupData[{
-Cell[97085, 1842, 1813, 56, 108, "Input"],
-Cell[98901, 1900, 9218, 190, 75, "Output"],
-Cell[108122, 2092, 12196, 259, 272, "Output"],
-Cell[120321, 2353, 99, 1, 31, "Output"]
+Cell[97085, 1842, 1866, 57, 108, "Input"],
+Cell[98954, 1901, 9240, 190, 75, "Output"],
+Cell[108197, 2093, 12218, 259, 272, "Output"],
+Cell[120418, 2354, 124, 1, 31, "Output"]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[120457, 2359, 140, 2, 31, "Input"],
-Cell[120600, 2363, 3152, 62, 243, "Output"]
+Cell[120579, 2360, 140, 2, 31, "Input"],
+Cell[120722, 2364, 3152, 62, 243, "Output"]
+}, Open  ]]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[123789, 2430, 103, 1, 70, "Section"],
-Cell[123895, 2433, 962, 16, 68, "Text"],
-Cell[124860, 2451, 8521, 183, 729, "Input"],
-Cell[133384, 2636, 1086, 27, 52, "Input"],
+Cell[123923, 2432, 113, 1, 67, "Subchapter"],
+Cell[124039, 2435, 119, 1, 30, "Text"],
 Cell[CellGroupData[{
-Cell[134495, 2667, 1865, 47, 69, "Input"],
-Cell[136363, 2716, 502565, 8290, 748, "Output"]
+Cell[124183, 2440, 1447, 38, 92, "Input"],
+Cell[125633, 2480, 107, 1, 31, "Output"],
+Cell[125743, 2483, 106, 1, 88, "Output"]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[638965, 11011, 93, 1, 49, "Subsection"],
+Cell[125886, 2489, 103, 1, 70, "Section"],
+Cell[125992, 2492, 962, 16, 68, "Text"],
+Cell[126957, 2510, 8521, 183, 729, "Input"],
+Cell[135481, 2695, 1086, 27, 52, "Input"],
 Cell[CellGroupData[{
-Cell[639083, 11016, 4877, 118, 212, "Input"],
-Cell[643963, 11136, 97631, 1598, 245, "Output"]
+Cell[136592, 2726, 1865, 47, 69, "Input"],
+Cell[138460, 2775, 502565, 8290, 748, "Output"]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[741631, 12739, 1020, 26, 112, "Input"],
-Cell[742654, 12767, 598175, 9844, 554, "Output"]
+Cell[641062, 11070, 93, 1, 49, "Subsection"],
+Cell[CellGroupData[{
+Cell[641180, 11075, 4877, 118, 212, "Input"],
+Cell[646060, 11195, 97631, 1598, 245, "Output"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[743728, 12798, 1020, 26, 112, "Input"],
+Cell[744751, 12826, 598175, 9844, 554, "Output"]
 }, Open  ]]
 }, Open  ]]
 }, Open  ]]
