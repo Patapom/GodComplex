@@ -101,16 +101,18 @@ float3	ComputeBRDF_Oren( float3 _tsNormal, float3 _tsView, float3 _tsLight, floa
 
 // Computes the full dielectric BRDF model as described in http://patapom.com/blog/BRDF/MSBRDFEnergyCompensation/#complete-approximate-model
 //
-float3	ComputeBRDF_Full(  float3 _tsNormal, float3 _tsView, float3 _tsLight, float _roughnessSpecular, float3 _IOR, float _roughnessDiffuse, float3 _albedo ) {
+float3	ComputeBRDF_Full(  float3 _tsNormal, float3 _tsView, float3 _tsLight, float _roughnessSpecular, float3 _F0, float _roughnessDiffuse, float3 _albedo ) {
 	// Compute specular BRDF
-	float3	F0 = Fresnel_F0FromIOR( _IOR );
-	float3	MSFactor_spec = (_flags & 2) ? F0 * (0.04 + F0 * (0.66 + F0 * 0.3)) : F0;	// From http://patapom.com/blog/BRDF/MSBRDFEnergyCompensation/#varying-the-fresnel-reflectance-f_0f_0
-	float3	Favg = FresnelAverage( _IOR );
+//	float3	F0 = Fresnel_F0FromIOR( _IOR );
+	float3	IOR = Fresnel_IORFromF0( _F0 );
+
+	float3	MSFactor_spec = (_flags & 2) ? _F0 * (0.04 + _F0 * (0.66 + _F0 * 0.3)) : _F0;	// From http://patapom.com/blog/BRDF/MSBRDFEnergyCompensation/#varying-the-fresnel-reflectance-f_0f_0
+	float3	Favg = FresnelAverage( IOR );
 
 	#if MS_ONLY
 		float3	BRDF_spec = 0.0;
 	#else
-		float3	BRDF_spec = BRDF_GGX( _tsNormal, _tsView, _tsLight, _roughnessSpecular, _IOR );
+		float3	BRDF_spec = BRDF_GGX( _tsNormal, _tsView, _tsLight, _roughnessSpecular, IOR );
 	#endif
 	if ( (_flags & 1) && !(_flags & 0x100) ) {
 		BRDF_spec += MSFactor_spec * MSBRDF( _roughnessSpecular, _tsNormal, _tsView, _tsLight, _tex_GGX_Eo, _tex_GGX_Eavg );
@@ -309,7 +311,7 @@ float4	PS( VS_IN _In ) : SV_TARGET0 {
 	float	alphaS, alphaD;
 	GetObjectInfo( hit.y, alphaS, F0, alphaD, rho );
 
-	float3	IOR = Fresnel_IORFromF0( F0 );
+//	float3	IOR = Fresnel_IORFromF0( F0 );
 
 	float	u = seeds.x * 2.3283064365386963e-10;
 
@@ -336,7 +338,7 @@ float4	PS( VS_IN _In ) : SV_TARGET0 {
 										+ (2.0 * X1 - 1.0) * AREA_LIGHT_HALF_SIZE.y * AREA_LIGHT_UP;
 
 			float3	wsLight = wsAreaLightPosition - wsPosition;
-			float	r2 = dot( wsLight, wsLight );
+			float	r2 = max( 1e-6, dot( wsLight, wsLight ) );
 					wsLight /= sqrt(r2);
 
 			float3	tsLight = float3( dot( wsLight, wsTangent ), dot( wsLight, wsBiTangent ), dot( wsLight, wsNormal ) );
@@ -354,7 +356,7 @@ float4	PS( VS_IN _In ) : SV_TARGET0 {
 			// Compute BRDF
 			float3	BRDF = 0.0;
 			if ( hit.y == 0 ) {
-				BRDF = ComputeBRDF_Full( float3( 0, 0, 1 ), tsView, tsLight, alphaS, IOR, alphaD, rho );
+				BRDF = ComputeBRDF_Full( float3( 0, 0, 1 ), tsView, tsLight, alphaS, F0, alphaD, rho );
 			} else {
 				BRDF = ComputeBRDF_Oren( float3( 0, 0, 1 ), tsView, tsLight, alphaD, rho );
 			}
