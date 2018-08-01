@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[   1376292,      23301]
-NotebookOptionsPosition[   1373813,      23218]
-NotebookOutlinePosition[   1374154,      23233]
-CellTagsIndexPosition[   1374111,      23230]
+NotebookDataLength[   1383927,      23499]
+NotebookOptionsPosition[   1381200,      23408]
+NotebookOutlinePosition[   1381541,      23423]
+CellTagsIndexPosition[   1381498,      23420]
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -23214,6 +23214,196 @@ UTEu6EgeDSA2FbcUXiPOhZiaTa8/cZOM4iG7FVxcNHEU+mctxb9F0Su58L18
 }, Open  ]]
 }, Open  ]]
 }, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Comparison of height-correlated Smith term", "Title",
+ CellChangeTimes->{{3.7421148327305026`*^9, 3.742114841474003*^9}}],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"lambda", "[", 
+   RowBox[{"\[Theta]_", ",", "\[Alpha]_"}], "]"}], ":=", 
+  RowBox[{
+   FractionBox["1", "2"], 
+   RowBox[{"(", 
+    RowBox[{
+     SqrtBox[
+      RowBox[{"1", "+", 
+       SuperscriptBox[
+        RowBox[{"(", 
+         RowBox[{"\[Alpha]", "*", 
+          RowBox[{"Tan", "[", "\[Theta]", "]"}]}], ")"}], "2"]}]], "-", "1"}],
+     ")"}]}]}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"smith", "[", 
+   RowBox[{"\[Theta]_", ",", "\[Alpha]_"}], "]"}], ":=", 
+  FractionBox[
+   RowBox[{"2", "*", 
+    RowBox[{"Cos", "[", "\[Theta]", "]"}]}], 
+   RowBox[{
+    RowBox[{"Cos", "[", "\[Theta]", "]"}], "+", 
+    SqrtBox[
+     RowBox[{
+      SuperscriptBox["\[Alpha]", "2"], "+", 
+      RowBox[{
+       RowBox[{"(", 
+        RowBox[{"1", "-", 
+         SuperscriptBox["\[Alpha]", "2"]}], ")"}], "*", 
+       SuperscriptBox[
+        RowBox[{"Cos", "[", "\[Theta]", "]"}], 
+        "2"]}]}]]}]]}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"smith1", "[", 
+   RowBox[{"\[Theta]l_", ",", "\[Theta]v_", ",", "\[Alpha]_"}], "]"}], ":=", 
+  FractionBox["1", 
+   RowBox[{"1", "+", 
+    RowBox[{"lambda", "[", 
+     RowBox[{"\[Theta]l", ",", "\[Alpha]"}], "]"}], "+", 
+    RowBox[{"lambda", "[", 
+     RowBox[{"\[Theta]v", ",", "\[Alpha]"}], 
+     "]"}]}]]}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"smith2", "[", 
+   RowBox[{"\[Theta]l_", ",", "\[Theta]v_", ",", "\[Alpha]_"}], "]"}], ":=", 
+  FractionBox[
+   RowBox[{"4", "*", 
+    RowBox[{"Cos", "[", "\[Theta]l", "]"}], "*", 
+    RowBox[{"Cos", "[", "\[Theta]v", "]"}]}], 
+   RowBox[{
+    RowBox[{"2", "*", 
+     RowBox[{"Cos", "[", "\[Theta]l", "]"}], "*", 
+     SqrtBox[
+      RowBox[{
+       SuperscriptBox[
+        RowBox[{"Cos", "[", "\[Theta]v", "]"}], "2"], "+", 
+       RowBox[{
+        SuperscriptBox["\[Alpha]", "2"], "*", 
+        SuperscriptBox[
+         RowBox[{"Sin", "[", "\[Theta]v", "]"}], "2"]}]}]]}], "+", 
+    RowBox[{"2", "*", 
+     RowBox[{"Cos", "[", "\[Theta]v", "]"}], "*", 
+     SqrtBox[
+      RowBox[{
+       SuperscriptBox[
+        RowBox[{"Cos", "[", "\[Theta]l", "]"}], "2"], "+", 
+       RowBox[{
+        SuperscriptBox["\[Alpha]", "2"], "*", 
+        SuperscriptBox[
+         RowBox[{"Sin", "[", "\[Theta]l", "]"}], 
+         "2"]}]}]]}]}]]}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"smith3", "[", 
+   RowBox[{"\[Theta]l_", ",", "\[Theta]v_", ",", "\[Alpha]_"}], "]"}], ":=", 
+  RowBox[{
+   RowBox[{"smith", "[", 
+    RowBox[{"\[Theta]v", ",", "\[Alpha]"}], "]"}], " ", "*", " ", 
+   RowBox[{"smith", "[", 
+    RowBox[{"\[Theta]l", ",", "\[Alpha]"}], 
+    "]"}]}]}], "\[IndentingNewLine]"}], "Input",
+ CellChangeTimes->{{3.7421148526466417`*^9, 3.7421148669274583`*^9}, {
+   3.7421150189011507`*^9, 3.742115020438239*^9}, 3.742115532005499*^9, {
+   3.7421155742489147`*^9, 3.7421155786851687`*^9}}],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"Manipulate", "[", 
+  RowBox[{
+   RowBox[{"Show", "[", 
+    RowBox[{
+     RowBox[{"Plot", "[", 
+      RowBox[{
+       RowBox[{"smith1", "[", 
+        RowBox[{"\[Theta]l", ",", "\[Theta]v", ",", "\[Alpha]"}], "]"}], ",", 
+       RowBox[{"{", 
+        RowBox[{"\[Theta]l", ",", "0", ",", 
+         FractionBox["\[Pi]", "2"]}], "}"}], ",", 
+       RowBox[{"PlotRange", "\[Rule]", 
+        RowBox[{"{", 
+         RowBox[{"0", ",", "1"}], "}"}]}], ",", 
+       RowBox[{"PlotStyle", "\[Rule]", "Black"}]}], "]"}], ",", " ", 
+     RowBox[{"Plot", "[", 
+      RowBox[{
+       RowBox[{"smith2", "[", 
+        RowBox[{"\[Theta]l", ",", "\[Theta]v", ",", "\[Alpha]"}], "]"}], ",", 
+       RowBox[{"{", 
+        RowBox[{"\[Theta]l", ",", "0", ",", 
+         FractionBox["\[Pi]", "2"]}], "}"}], ",", 
+       RowBox[{"PlotStyle", "\[Rule]", "Red"}], ",", 
+       RowBox[{"PlotRange", "\[Rule]", "Full"}]}], "]"}], ",", " ", 
+     RowBox[{"Plot", "[", 
+      RowBox[{
+       RowBox[{"smith3", "[", 
+        RowBox[{"\[Theta]l", ",", "\[Theta]v", ",", "\[Alpha]"}], "]"}], ",", 
+       RowBox[{"{", 
+        RowBox[{"\[Theta]l", ",", "0", ",", 
+         FractionBox["\[Pi]", "2"]}], "}"}], ",", 
+       RowBox[{"PlotStyle", "\[Rule]", "Blue"}], ",", 
+       RowBox[{"PlotRange", "\[Rule]", "Full"}]}], "]"}]}], "]"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"\[Theta]v", ",", "0", ",", 
+     FractionBox["\[Pi]", "2"]}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"\[Alpha]", ",", "0", ",", "1"}], "}"}]}], "]"}]], "Input",
+ CellChangeTimes->{{3.742114873675844*^9, 3.7421149613878613`*^9}, {
+  3.7421149922546268`*^9, 3.7421149958848343`*^9}, {3.7421150358931227`*^9, 
+  3.742115052053047*^9}, {3.7421151222420616`*^9, 3.7421151251402273`*^9}}],
+
+Cell[BoxData[
+ TagBox[
+  StyleBox[
+   DynamicModuleBox[{$CellContext`\[Alpha]$$ = 
+    0.92, $CellContext`\[Theta]v$$ = 0.7225663103256524, Typeset`show$$ = 
+    True, Typeset`bookmarkList$$ = {}, Typeset`bookmarkMode$$ = "Menu", 
+    Typeset`animator$$, Typeset`animvar$$ = 1, Typeset`name$$ = 
+    "\"untitled\"", Typeset`specs$$ = {{
+      Hold[$CellContext`\[Theta]v$$], 0, Rational[1, 2] Pi}, {
+      Hold[$CellContext`\[Alpha]$$], 0, 1}}, Typeset`size$$ = {
+    360., {117., 121.}}, Typeset`update$$ = 0, Typeset`initDone$$, 
+    Typeset`skipInitDone$$ = True, $CellContext`\[Theta]v$3876933$$ = 
+    0, $CellContext`\[Alpha]$3876934$$ = 0}, 
+    DynamicBox[Manipulate`ManipulateBoxes[
+     1, StandardForm, 
+      "Variables" :> {$CellContext`\[Alpha]$$ = 0, $CellContext`\[Theta]v$$ = 
+        0}, "ControllerVariables" :> {
+        Hold[$CellContext`\[Theta]v$$, $CellContext`\[Theta]v$3876933$$, 0], 
+        Hold[$CellContext`\[Alpha]$$, $CellContext`\[Alpha]$3876934$$, 0]}, 
+      "OtherVariables" :> {
+       Typeset`show$$, Typeset`bookmarkList$$, Typeset`bookmarkMode$$, 
+        Typeset`animator$$, Typeset`animvar$$, Typeset`name$$, 
+        Typeset`specs$$, Typeset`size$$, Typeset`update$$, Typeset`initDone$$,
+         Typeset`skipInitDone$$}, "Body" :> Show[
+        Plot[
+         $CellContext`smith1[$CellContext`\[Theta]l, \
+$CellContext`\[Theta]v$$, $CellContext`\[Alpha]$$], {$CellContext`\[Theta]l, 
+          0, Pi/2}, PlotRange -> {0, 1}, PlotStyle -> Black], 
+        Plot[
+         $CellContext`smith2[$CellContext`\[Theta]l, \
+$CellContext`\[Theta]v$$, $CellContext`\[Alpha]$$], {$CellContext`\[Theta]l, 
+          0, Pi/2}, PlotStyle -> Red, PlotRange -> Full], 
+        Plot[
+         $CellContext`smith3[$CellContext`\[Theta]l, \
+$CellContext`\[Theta]v$$, $CellContext`\[Alpha]$$], {$CellContext`\[Theta]l, 
+          0, Pi/2}, PlotStyle -> Blue, PlotRange -> Full]], 
+      "Specifications" :> {{$CellContext`\[Theta]v$$, 0, Rational[1, 2] 
+         Pi}, {$CellContext`\[Alpha]$$, 0, 1}}, "Options" :> {}, 
+      "DefaultOptions" :> {}],
+     ImageSizeCache->{411., {176., 183.}},
+     SingleEvaluation->True],
+    Deinitialization:>None,
+    DynamicModuleValues:>{},
+    SynchronousInitialization->True,
+    UnsavedVariables:>{Typeset`initDone$$},
+    UntrackedVariables:>{Typeset`size$$}], "Manipulate",
+   Deployed->True,
+   StripOnInput->False],
+  Manipulate`InterpretManipulate[1]]], "Output",
+ CellChangeTimes->{
+  3.742114961899891*^9, 3.742114996182852*^9, {3.7421150442986035`*^9, 
+   3.7421150523670654`*^9}, 3.7421151255612516`*^9, 3.7421155812333145`*^9}]
+}, Open  ]]
 }, Open  ]]
 },
 WindowSize->{1920, 992},
@@ -23298,9 +23488,17 @@ Cell[744751, 12826, 598175, 9844, 554, "Output"]
 }, Open  ]],
 Cell[CellGroupData[{
 Cell[1342963, 22675, 2075, 49, 77, "Input"],
-Cell[1345041, 22726, 28720, 486, 286, "Output"]
+Cell[1345041, 22726, 28720, 486, 253, "Output"]
 }, Open  ]]
 }, Open  ]]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[1373834, 23220, 127, 1, 101, "Title"],
+Cell[1373964, 23223, 2830, 83, 231, "Input"],
+Cell[CellGroupData[{
+Cell[1376819, 23310, 1746, 41, 77, "Input"],
+Cell[1378568, 23353, 2604, 51, 409, "Output"]
 }, Open  ]]
 }, Open  ]]
 }

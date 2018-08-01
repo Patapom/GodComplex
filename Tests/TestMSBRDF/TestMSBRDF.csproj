@@ -147,6 +147,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\RenderCompareLTC.hlsl" />
+    <None Include="Shaders\LTC.hlsl" />
     <Content Include="Shaders\SphericalHarmonics.hlsl" />
   </ItemGroup>
   <ItemGroup />

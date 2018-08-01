@@ -197,7 +197,7 @@ namespace TestMSBRDF {
 
 // Tables are "built" with Mathematica now
 //			BuildMSBRDF( new DirectoryInfo( @".\Tables\" ) );
-			LoadMSBRDF( 128, new FileInfo( "./Tables/MSBRDF_GGX_E128x128.float" ), new FileInfo( "./Tables/MSBRDF_GGX_Eavg128.float" ), out m_tex_MSBRDF_GGX_E, out m_tex_MSBRDF_GGX_Eavg );
+			LoadMSBRDF( 128, new FileInfo( "./Tables/MSBRDF_GGX_G2_E128x128.float" ), new FileInfo( "./Tables/MSBRDF_GGX_G2_Eavg128.float" ), out m_tex_MSBRDF_GGX_E, out m_tex_MSBRDF_GGX_Eavg );
 			LoadMSBRDF( 32, new FileInfo( "./Tables/MSBRDF_OrenNayar_E32x32.float" ), new FileInfo( "./Tables/MSBRDF_OrenNayar_Eavg32.float" ), out m_tex_MSBRDF_OrenNayar_E, out m_tex_MSBRDF_OrenNayar_Eavg );
 
 			#if TEST_LTC_AREA_LIGHT
@@ -301,6 +301,9 @@ m_CB_Render.m._roughnessGround *= m_CB_Render.m._roughnessGround;
 				m_tex_MSBRDF_GGX_Eavg.SetPS( 3 );
 				m_tex_MSBRDF_OrenNayar_E.SetPS( 4 );
 				m_tex_MSBRDF_OrenNayar_Eavg.SetPS( 5 );
+
+				m_tex_LTC.SetPS( 6 );
+				m_tex_LTC_Unity.SetPS( 7 );
 
 				m_device.RenderFullscreenQuad( m_shader_Accumulate );
 

@@ -293,12 +293,23 @@ float	GGX_NDF( float _NdotH, float _alpha2 ) {
 	return _alpha2 * rcp( den );
 }
 
-// Warning: 1 / (4 * NdotL * NdotV) is already accounted for!
-float	GGX_Smith( float _NdotL, float _NdotV, float _alpha2 ) {
-	float	denL = _NdotL + sqrt( pow2( _NdotL ) * (1-_alpha2) + _alpha2 );
-	float	denV = _NdotV + sqrt( pow2( _NdotV ) * (1-_alpha2) + _alpha2 );
-	return rcp( denL * denV );
-}
+#if 1
+	// Height-correlated shadowing/masking: G2 = 1 / (1 + Lambda(light) + Lambda(view))
+	// Warning: 1 / (4 * NdotL * NdotV) is already accounted for!
+	float	GGX_Smith( float _NdotL, float _NdotV, float _alpha2 ) {
+		float	denL = _NdotV * sqrt( pow2( _NdotL ) * (1-_alpha2) + _alpha2 );
+		float	denV = _NdotL * sqrt( pow2( _NdotV ) * (1-_alpha2) + _alpha2 );
+		return rcp( 2.0 * (denL + denV) );
+	}
+#else
+	// Uncorrelated shadowing/masking: G2 = G1(light) * G1(view)
+	// Warning: 1 / (4 * NdotL * NdotV) is already accounted for!
+	float	GGX_Smith( float _NdotL, float _NdotV, float _alpha2 ) {
+		float	denL = _NdotL + sqrt( pow2( _NdotL ) * (1-_alpha2) + _alpha2 );
+		float	denV = _NdotV + sqrt( pow2( _NdotV ) * (1-_alpha2) + _alpha2 );
+		return rcp( denL * denV );
+	}
+#endif
 
 float3	BRDF_GGX( float3 _tsNormal, float3 _tsView, float3 _tsLight, float _alpha, float3 _IOR ) {
 	float	NdotL = dot( _tsNormal, _tsLight );

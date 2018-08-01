@@ -1,5 +1,6 @@
 #include "Global.hlsl"
 #include "Scene.hlsl"
+#include "LTC.hlsl"
 
 //#define	WHITE_FURNACE_TEST	1
 
@@ -105,19 +106,6 @@ void	GetObjectInfo( uint _objectIndex, out float _roughnessSpecular, out float3 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 //
-//float3	ComputeBRDF_GGX( float3 _tsNormal, float3 _tsView, float3 _tsLight, float _roughness, float3 _IOR ) {
-//	float3	BRDF = BRDF_GGX( _tsNormal, _tsView, _tsLight, _roughness, _IOR );
-//	if ( (_flags & 1) && !(_flags & 0x100) ) {
-//		// From http://patapom.com/blog/BRDF/MSBRDFEnergyCompensation/#varying-the-fresnel-reflectance-f_0f_0
-//		float3		F0 = Fresnel_F0FromIOR( _IOR );
-//		float3		MSFactor = (_flags & 2) ? F0 * (0.04 + F0 * (0.66 + F0 * 0.3)) : F0;
-//
-//		BRDF += MSFactor * MSBRDF( _roughness, _tsNormal, _tsView, _tsLight, _tex_GGX_Eo, _tex_GGX_Eavg );
-//	}
-//
-//	return BRDF;
-//}
-
 float3	ComputeBRDF_Oren( float3 _tsNormal, float3 _tsView, float3 _tsLight, float _roughness, float3 _albedo ) {
 	float3	BRDF = _albedo * BRDF_OrenNayar( _tsNormal, _tsView, _tsLight, _roughness );
 	if ( (_flags & 1) && !(_flags & 0x100) ) {
@@ -174,6 +162,91 @@ float3	ComputeBRDF_Full(  float3 _tsNormal, float3 _tsView, float3 _tsLight, flo
 
 	return BRDF_spec + kappa * BRDF_diff;
 }
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+#if 0
+
+
+//-----------------------------------------------------------------------------
+// EvaluateBSDF_Area - Reference
+//-----------------------------------------------------------------------------
+
+void IntegrateBSDF_AreaRef(float3 V, float3 positionWS,
+                           PreLightData preLightData, LightData lightData, BSDFData bsdfData,
+                           out float3 diffuseLighting, out float3 specularLighting,
+                           uint sampleCount = 512)
+{
+    // Add some jittering on Hammersley2d
+    float2 randNum = InitRandom(V.xy * 0.5 + 0.5);
+
+    diffuseLighting = float3(0.0, 0.0, 0.0);
+    specularLighting = float3(0.0, 0.0, 0.0);
+
+    for (uint i = 0; i < sampleCount; ++i)
+    {
+        float3 P = float3(0.0, 0.0, 0.0);   // Sample light point. Random point on the light shape in local space.
+        float3 Ns = float3(0.0, 0.0, 0.0);  // Unit surface normal at P
+        float lightPdf = 0.0;               // Pdf of the light sample
+
+        float2 u = Hammersley2d(i, sampleCount);
+        u = frac(u + randNum);
+
+        // Lights in Unity point backward.
+        float4x4 localToWorld = float4x4(float4(lightData.right, 0.0), float4(lightData.up, 0.0), float4(-lightData.forward, 0.0), float4(lightData.positionRWS, 1.0));
+
+        switch (lightData.lightType)
+        {
+            //case GPULIGHTTYPE_SPHERE:
+            //    SampleSphere(u, localToWorld, lightData.size.x, lightPdf, P, Ns);
+            //    break;
+            //case GPULIGHTTYPE_HEMISPHERE:
+            //    SampleHemisphere(u, localToWorld, lightData.size.x, lightPdf, P, Ns);
+            //    break;
+            //case GPULIGHTTYPE_CYLINDER:
+            //    SampleCylinder(u, localToWorld, lightData.size.x, lightData.size.y, lightPdf, P, Ns);
+            //    break;
+            case GPULIGHTTYPE_RECTANGLE:
+                SampleRectangle(u, localToWorld, lightData.size.x, lightData.size.y, lightPdf, P, Ns);
+                break;
+            //case GPULIGHTTYPE_DISK:
+            //    SampleDisk(u, localToWorld, lightData.size.x, lightPdf, P, Ns);
+            //   break;
+            // case GPULIGHTTYPE_LINE: handled by a separate function.
+        }
+
+        // Get distance
+        float3 unL = P - positionWS;
+        float sqrDist = dot(unL, unL);
+        float3 L = normalize(unL);
+
+        // Cosine of the angle between the light direction and the normal of the light's surface.
+        float cosLNs = saturate(dot(-L, Ns));
+
+        // We calculate area reference light with the area integral rather than the solid angle one.
+        float NdotL = saturate(dot(bsdfData.normalWS, L));
+        float illuminance = cosLNs * NdotL / (sqrDist * lightPdf);
+
+        float3 localDiffuseLighting = float3(0.0, 0.0, 0.0);
+        float3 localSpecularLighting = float3(0.0, 0.0, 0.0);
+
+        if (illuminance > 0.0)
+        {
+            BSDF(V, L, NdotL, positionWS, preLightData, bsdfData, localDiffuseLighting, localSpecularLighting);
+            localDiffuseLighting *= lightData.color * illuminance * lightData.diffuseScale;
+            localSpecularLighting *= lightData.color * illuminance * lightData.specularScale;
+        }
+
+        diffuseLighting += localDiffuseLighting;
+        specularLighting += localSpecularLighting;
+    }
+
+    diffuseLighting /= float(sampleCount);
+    specularLighting /= float(sampleCount);
+}
+
+#endif
 
 
 float4	PS( VS_IN _In ) : SV_TARGET0 {
