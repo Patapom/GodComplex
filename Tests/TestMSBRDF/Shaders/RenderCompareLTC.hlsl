@@ -61,38 +61,16 @@ Texture2D< float >		_tex_OrenNayar_Eavg : register( t5 );
 
 
 /////////////////////////////////////////////////////////////////////////////////////////////
+// Area Light Positionning
 
-// Converts a 2D UV into an upper hemisphere direction (tangent space) + solid angle
-// The direction is weighted by the surface cosine lobe
-float3	UV2Direction( float2 _UV, out float _solidAngleCosine ) {
-	_UV.y += 1e-5;	// 0 is completely useless..
+static const float3	AREA_LIGHT_POSITION = float3( -4, 2, 0 );
+static const float3	AREA_LIGHT_RIGHT = float3( 0, 0, -1 );
+static const float3	AREA_LIGHT_UP = float3( 0, 1, 0 );
+static const float3	AREA_LIGHT_NORMAL = float3( 1, 0, 0 );
+static const float2	AREA_LIGHT_HALF_SIZE = float2( 1, 2 );
 
-	// Uniform hemispherical solid angle
-	_solidAngleCosine = 2*PI;
+static const float3	AREA_LIGHT_POWER = 20 * float3( 1, 1, 1 );	// Lumens
 
-	float	cosTheta = saturate( _UV.y );
-	float	sinTheta = sqrt( 1.0 - cosTheta*cosTheta );
-
-	float	phi = _UV.x * TWOPI;
-	float2	scPhi;
-	sincos( phi, scPhi.x, scPhi.y );
-
-	return float3( sinTheta * scPhi, cosTheta );
-}
-
-float3	SampleSky( float3 _wsDirection, float _mipLevel ) {
-
-	float2	scRot;
-	sincos( _lightElevation, scRot.x, scRot.y );
-	_wsDirection.xy = float2( _wsDirection.x * scRot.y + _wsDirection.y * scRot.x,
-							-_wsDirection.x * scRot.x + _wsDirection.y * scRot.y );
-
-#if WHITE_FURNACE_TEST
-return 1;	// White furnace
-#endif
-
-	return _lightIntensity * _tex_CubeMap.SampleLevel( LinearWrap, _wsDirection, _mipLevel );
-}
 
 // Retrieves object information from its index
 void	GetObjectInfo( uint _objectIndex, out float _roughnessSpecular, out float3 _objectF0, out float _roughnessDiffuse, out float3 _rho ) {
@@ -173,6 +151,26 @@ float3	ComputeBRDF_Full(  float3 _tsNormal, float3 _tsView, float3 _tsLight, flo
 // EvaluateBSDF_Area - Reference
 //-----------------------------------------------------------------------------
 
+void SampleRectangle(real2   u,
+                     real4x4 localToWorld,
+                     real    width,
+                     real    height,
+                 out real    lightPdf,
+                 out real3   P,
+                 out real3   Ns)
+{
+    // Random point at rectangle surface
+    P = real3((u.x - 0.5) * width, (u.y - 0.5) * height, 0);
+    Ns = real3(0, 0, -1); // Light down (-Z)
+
+    // Transform to world space
+    P = mul(real4(P, 1.0), localToWorld).xyz;
+    Ns = mul(Ns, (real3x3)(localToWorld));
+
+    // pdf is inverse of area
+    lightPdf = 1.0 / (width * height);
+}
+
 void IntegrateBSDF_AreaRef(float3 V, float3 positionWS,
                            PreLightData preLightData, LightData lightData, BSDFData bsdfData,
                            out float3 diffuseLighting, out float3 specularLighting,
@@ -225,15 +223,15 @@ void IntegrateBSDF_AreaRef(float3 V, float3 positionWS,
         float cosLNs = saturate(dot(-L, Ns));
 
         // We calculate area reference light with the area integral rather than the solid angle one.
-        float NdotL = saturate(dot(bsdfData.normalWS, L));
-        float illuminance = cosLNs * NdotL / (sqrDist * lightPdf);
+        float LdotN = saturate(dot(bsdfData.normalWS, L));
+        float illuminance = cosLNs * LdotN / (sqrDist * lightPdf);
 
         float3 localDiffuseLighting = float3(0.0, 0.0, 0.0);
         float3 localSpecularLighting = float3(0.0, 0.0, 0.0);
 
         if (illuminance > 0.0)
         {
-            BSDF(V, L, NdotL, positionWS, preLightData, bsdfData, localDiffuseLighting, localSpecularLighting);
+            BSDF(V, L, LdotN, positionWS, preLightData, bsdfData, localDiffuseLighting, localSpecularLighting);
             localDiffuseLighting *= lightData.color * illuminance * lightData.diffuseScale;
             localSpecularLighting *= lightData.color * illuminance * lightData.specularScale;
         }
@@ -248,6 +246,23 @@ void IntegrateBSDF_AreaRef(float3 V, float3 positionWS,
 
 #endif
 
+float2	RayTraceScene2( float3 _wsPos, float3 _wsDir, out float3 _wsNormal, out float3 _wsClosestPosition ) {
+	float2	hit = RayTraceScene( _wsPos, _wsDir, _wsNormal, _wsClosestPosition );
+
+	// Check hit against area rectangle
+	_wsPos -= AREA_LIGHT_POSITION;
+	float	t = -dot( _wsPos, AREA_LIGHT_NORMAL ) / dot( _wsDir, AREA_LIGHT_NORMAL );
+	if ( t > 0.0 && t < hit.x ) {
+		// Investigate hit
+		_wsPos += t * _wsDir;
+		float2	lsHitDistance = float2( dot( _wsPos, AREA_LIGHT_RIGHT ), dot( _wsPos, AREA_LIGHT_UP ) );
+		if ( all( abs( lsHitDistance ) < AREA_LIGHT_HALF_SIZE ) ) {
+			hit = float2( t, 10 );	// New hit: the area light rectangle!
+		}
+	}
+
+	return hit;	// No hit...
+}
 
 float4	PS( VS_IN _In ) : SV_TARGET0 {
 
@@ -273,9 +288,12 @@ float4	PS( VS_IN _In ) : SV_TARGET0 {
 
 	float3	wsClosestPosition;
 	float3	wsNormal;
-	float2	hit = RayTraceScene( wsPosition, wsView, wsNormal, wsClosestPosition );
+	float2	hit = RayTraceScene2( wsPosition, wsView, wsNormal, wsClosestPosition );
 	if ( hit.x > 1e4 )
-		return float4( SampleSky( wsView, 0.0 ), 1 );	// No hit or plane hit (we only render the sphere here)
+		return float4( 0, 0, 0, 1 );
+//		return float4( SampleSky( wsView, 0.0 ), 1 );	// No hit or plane hit (we only render the sphere here)
+	if ( hit.y == 10 )
+		return float4( AREA_LIGHT_POWER / (4.0 * AREA_LIGHT_HALF_SIZE.x * AREA_LIGHT_HALF_SIZE.y), 1 );
 
 	wsPosition += hit.x * wsView;
 	wsPosition += 1e-3 * wsNormal;	// Offset from surface
@@ -296,45 +314,64 @@ float4	PS( VS_IN _In ) : SV_TARGET0 {
 	float	u = seeds.x * 2.3283064365386963e-10;
 
 	float3	Lo = 0.0;
-	uint	groupIndex = _groupIndex;
 	uint	validSamplesCount = 0;
 
-	[loop]
-	for ( uint i=0; i < SAMPLES_COUNT; i++ ) {
-		float	X0 = frac( u + float(groupIndex) / totalGroupsCount );
-		float	X1 = (ReverseBits( groupIndex ) ^ seeds.y) * 2.3283064365386963e-10; // / 0x100000000
-		groupIndex += _groupsCount;	// Giant leaps give us large changes
+//	if ( (_flags & 1) && !(_flags & 0x100) ) {
+	if ( 1 ) {
+		uint	groupIndex = _groupIndex;
 
-		// Retrieve light direction + solid angle
-		float	dw;
-		float3	tsLight = UV2Direction( float2( X0, X1 ), dw );	// Generate ray in tangent space
-		float3	wsLight = tsLight.x * wsTangent + tsLight.y * wsBiTangent + tsLight.z * wsNormal;
+		float	lightPDF = 1.0 / (4.0 * AREA_LIGHT_HALF_SIZE.x * AREA_LIGHT_HALF_SIZE.y);
 
-		float	LdotN = tsLight.z;
+//return float4( wsAreaLightNormal, 1 );
 
-		// Compute BRDF
-		float3	BRDF = 0.0;
-		if ( hit.y == 0 ) {
-			BRDF = ComputeBRDF_Full( float3( 0, 0, 1 ), tsView, tsLight, alphaS, IOR, alphaD, rho );
-		} else {
-			BRDF = ComputeBRDF_Oren( float3( 0, 0, 1 ), tsView, tsLight, alphaD, rho );
-		}
+		[loop]
+		for ( uint i=0; i < SAMPLES_COUNT; i++ ) {
+			float	X0 = frac( u + float(groupIndex) / totalGroupsCount );
+			float	X1 = (ReverseBits( groupIndex ) ^ seeds.y) * 2.3283064365386963e-10; // / 0x100000000
+			groupIndex += _groupsCount;	// Giant leaps give us large changes
 
-		// Sample incoming radiance
-		float3	Li = SampleSky( wsLight, 0.0 );
+			// Retrieve light direction + solid angle
+			float3	wsAreaLightPosition = AREA_LIGHT_POSITION
+										+ (2.0 * X0 - 1.0) * AREA_LIGHT_HALF_SIZE.x * AREA_LIGHT_RIGHT
+										+ (2.0 * X1 - 1.0) * AREA_LIGHT_HALF_SIZE.y * AREA_LIGHT_UP;
 
-		// Compute reflected radiance
-		float3	Lr = Li * BRDF;
+			float3	wsLight = wsAreaLightPosition - wsPosition;
+			float	r2 = dot( wsLight, wsLight );
+					wsLight /= sqrt(r2);
+
+			float3	tsLight = float3( dot( wsLight, wsTangent ), dot( wsLight, wsBiTangent ), dot( wsLight, wsNormal ) );
+			float	LdotN = tsLight.z;
+			if ( LdotN <= 0.0 )
+				continue;
+
+			float	cosLNs = saturate( -dot( wsLight, AREA_LIGHT_NORMAL ) );	// Cosine of the angle between the light direction and the normal of the light's surface.
+
+			// We calculate area reference light with the area integral rather than the solid angle one.
+			float3	Li = AREA_LIGHT_POWER * cosLNs / (r2 * lightPDF);
+
+//Li = AREA_LIGHT_POWER * saturate( -dot( wsLight, wsAreaLightNormal ) ) / (r2 * lightPDF);
+
+			// Compute BRDF
+			float3	BRDF = 0.0;
+			if ( hit.y == 0 ) {
+				BRDF = ComputeBRDF_Full( float3( 0, 0, 1 ), tsView, tsLight, alphaS, IOR, alphaD, rho );
+			} else {
+				BRDF = ComputeBRDF_Oren( float3( 0, 0, 1 ), tsView, tsLight, alphaD, rho );
+			}
+
+			// Compute reflected radiance
+			float3	Lr = Li * BRDF;
 
 
 #if WHITE_FURNACE_TEST
 Lr *= 0.9;	// Attenuate a bit to see in front of white sky...
 #endif
 
-		// Accumulate
-		Lo += Lr * LdotN * dw;
-		validSamplesCount++;
-    }
+			// Accumulate
+			Lo += Lr * LdotN;
+			validSamplesCount++;
+		}
+	}
 
 //	///////////////////////////////////////////////////////////////////////////////////////
 //	// Real-time Approximation

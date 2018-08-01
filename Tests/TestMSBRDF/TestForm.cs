@@ -225,6 +225,19 @@ namespace TestMSBRDF {
 			m_camera.CameraTransformChanged += Camera_CameraTransformChanged;
 			Camera_CameraTransformChanged( null, EventArgs.Empty );
 
+
+			#if TEST_LTC_AREA_LIGHT
+				floatTrackbarControlRoughnessSphere.Value = 0.16f;
+				floatTrackbarControlReflectanceSphere.Value = 0.75f;
+				floatTrackbarControlRoughnessSphere2.Value = 0.80f;
+				floatTrackbarControlReflectanceSphere2.Value = 0.7f;
+
+				floatTrackbarControlRoughnessGround.Value = 0.8f;
+				floatTrackbarControlReflectanceGround.Value = 0.8f;
+			
+				checkBoxUseRealTimeApprox.Checked = false;
+			#endif
+
 			// Start game time
 			m_Ticks2Seconds = 1.0 / System.Diagnostics.Stopwatch.Frequency;
 			m_StopWatch.Start();
