@@ -61,6 +61,14 @@ namespace TestMSBRDF {
 			public float		_roughnessGround;
 			public float		_reflectanceGround;
 			public float		_lightIntensity;
+			float				__PAD;
+
+#if TEST_LTC_AREA_LIGHT
+			public float4		_areaLightX;	// X axis + size
+			public float4		_areaLightY;	// Y axis + size
+			public float4		_areaLightZ;	// Z axis (normal)
+			public float4		_areaLightP;	// Position
+#endif
 		}
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
@@ -162,9 +170,21 @@ namespace TestMSBRDF {
 				#elif TEST_LTC_AREA_LIGHT
 					m_shader_Accumulate = new Shader( m_device, new System.IO.FileInfo( "Shaders/RenderCompareLTC.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );			// Use this to show a rendering with LTC area light
 					checkBoxUseRealTimeApprox.Visible = true;
-					checkBoxUseRealTimeApprox.Checked = true;
-					floatTrackbarControlRoughnessSphere.Value = 1;		// Show full roughness
-					floatTrackbarControlReflectanceSphere2.Value = 0;	// Disturbing if diffuse is showing!
+//					checkBoxUseRealTimeApprox.Checked = true;
+					checkBoxUseRealTimeApprox.Checked = false;
+// 					floatTrackbarControlRoughnessSphere.Value = 1;		// Show full roughness
+// 					floatTrackbarControlReflectanceSphere2.Value = 0;	// Disturbing if diffuse is showing!
+
+					checkBoxUseLTC.Visible = true;
+
+					floatTrackbarControlRoughnessSphere.Value = 0.25f;
+					floatTrackbarControlReflectanceSphere.Value = 0.04f;
+					floatTrackbarControlRoughnessSphere2.Value = 0.80f;
+					floatTrackbarControlReflectanceSphere2.Value = 0.5f;
+
+					floatTrackbarControlRoughnessGround.Value = 0.85f;
+					floatTrackbarControlReflectanceGround.Value = 0.35f;
+
 				#else
  					m_shader_Accumulate = new Shader( m_device, new System.IO.FileInfo( "Shaders/RenderComplete.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );			// Use this for a full render
 				#endif
@@ -225,19 +245,6 @@ namespace TestMSBRDF {
 			m_camera.CameraTransformChanged += Camera_CameraTransformChanged;
 			Camera_CameraTransformChanged( null, EventArgs.Empty );
 
-
-			#if TEST_LTC_AREA_LIGHT
-				floatTrackbarControlRoughnessSphere.Value = 0.16f;
-				floatTrackbarControlReflectanceSphere.Value = 0.75f;
-				floatTrackbarControlRoughnessSphere2.Value = 0.80f;
-				floatTrackbarControlReflectanceSphere2.Value = 0.7f;
-
-				floatTrackbarControlRoughnessGround.Value = 0.8f;
-				floatTrackbarControlReflectanceGround.Value = 0.8f;
-			
-				checkBoxUseRealTimeApprox.Checked = false;
-			#endif
-
 			// Start game time
 			m_Ticks2Seconds = 1.0 / System.Diagnostics.Stopwatch.Frequency;
 			m_StopWatch.Start();
@@ -286,6 +293,7 @@ namespace TestMSBRDF {
 				m_CB_Render.m._flags |= checkBoxEnableMSBRDF.Checked ? 1U : 0;
 				m_CB_Render.m._flags |= checkBoxEnableMSFactor.Checked ? 2U : 0;
 				m_CB_Render.m._flags |= checkBoxUseRealTimeApprox.Checked ? 0x100U : 0;
+				m_CB_Render.m._flags |= checkBoxUseLTC.Checked ? 0x200U : 0;
 				m_CB_Render.m._groupsCount = GROUPS_COUNT;
 				m_CB_Render.m._groupIndex = m_groupShuffle[m_groupCounter % GROUPS_COUNT];
 				m_CB_Render.m._lightElevation = floatTrackbarControlLightElevation.Value * Mathf.HALFPI;
@@ -304,6 +312,15 @@ m_CB_Render.m._roughnessGround *= m_CB_Render.m._roughnessGround;
 				m_CB_Render.m._reflectanceGround = floatTrackbarControlReflectanceGround.Value;
 
 				m_CB_Render.m._lightIntensity = floatTrackbarControlCubeMapIntensity.Value;
+
+				#if TEST_LTC_AREA_LIGHT
+					float	lightAngle = m_CB_Render.m._lightElevation;
+					float2	areaLightHalfSize = new float2( 1, 2 );
+					m_CB_Render.m._areaLightX = new float4( -float3.UnitZ, areaLightHalfSize.x );
+					m_CB_Render.m._areaLightY = new float4( new float3( Mathf.Sin( lightAngle ), Mathf.Cos( lightAngle ), 0 ), areaLightHalfSize.y );
+					m_CB_Render.m._areaLightZ = new float4( m_CB_Render.m._areaLightX.xyz.Cross( m_CB_Render.m._areaLightY.xyz ), 4.0f * areaLightHalfSize.x * areaLightHalfSize.y );
+					m_CB_Render.m._areaLightP = new float4( -4, 2, 0, 1 );
+				#endif
 
 				m_CB_Render.UpdateData();
 

@@ -49,6 +49,10 @@ float3x3	LoadLTCMatrix( float2 _UV, uint _BRDFIndex, Texture2DArray< float4 > _t
 	return invM;
 }
 
+float3x3	LoadLTCMatrix( float _NdotV, float _perceptualRoughness, uint _BRDFIndex, Texture2DArray< float4 > _tex_LTC ) {
+	return LoadLTCMatrix( LTCGetSamplingUV( _NdotV, _perceptualRoughness ), _BRDFIndex, _tex_LTC );
+}
+
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 // LTC Estimators
 
