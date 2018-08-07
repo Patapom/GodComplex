@@ -249,7 +249,7 @@ namespace LTCTableGenerator
 					throw new Exception( "Negative determinant!" );
 
 // detInvM =	(invM[0,0]*invM[1,1]*invM[2,2] + invM[0,1]*invM[1,2]*invM[2,0] + invM[0,2]*invM[1,0]*invM[2,1])
-// 		-   (invM[2,0]*invM[1,1]*invM[0,2] + invM[2,1]*invM[1,2]*invM[0,0] + invM[2,2]*invM[1,0]*invM[0,1]);
+// 			-   (invM[2,0]*invM[1,1]*invM[0,2] + invM[2,1]*invM[1,2]*invM[0,0] + invM[2,2]*invM[1,0]*invM[0,1]);
 // if ( Math.Abs( detM - 1.0/detInvM ) > 1e-6 )
 // 	throw new Exception( "Determinant discrepancy!" );
 

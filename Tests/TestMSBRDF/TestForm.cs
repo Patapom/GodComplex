@@ -185,6 +185,8 @@ namespace TestMSBRDF {
 					floatTrackbarControlRoughnessGround.Value = 0.85f;
 					floatTrackbarControlReflectanceGround.Value = 0.35f;
 
+					floatTrackbarControlLightElevation.Value = 0.5f;
+
 				#else
  					m_shader_Accumulate = new Shader( m_device, new System.IO.FileInfo( "Shaders/RenderComplete.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );			// Use this for a full render
 				#endif
@@ -316,10 +318,20 @@ m_CB_Render.m._roughnessGround *= m_CB_Render.m._roughnessGround;
 				#if TEST_LTC_AREA_LIGHT
 					float	lightAngle = m_CB_Render.m._lightElevation;
 					float2	areaLightHalfSize = new float2( 1, 2 );
-					m_CB_Render.m._areaLightX = new float4( -float3.UnitZ, areaLightHalfSize.x );
-					m_CB_Render.m._areaLightY = new float4( new float3( Mathf.Sin( lightAngle ), Mathf.Cos( lightAngle ), 0 ), areaLightHalfSize.y );
+// 					m_CB_Render.m._areaLightX = new float4( -float3.UnitZ, areaLightHalfSize.x );
+// 					m_CB_Render.m._areaLightY = new float4( new float3( Mathf.Sin( lightAngle ), Mathf.Cos( lightAngle ), 0 ), areaLightHalfSize.y );
+// 					m_CB_Render.m._areaLightZ = new float4( m_CB_Render.m._areaLightX.xyz.Cross( m_CB_Render.m._areaLightY.xyz ), 4.0f * areaLightHalfSize.x * areaLightHalfSize.y );
+// 					m_CB_Render.m._areaLightP = new float4( -4, 2, 0, 1 );
+
+// 					m_CB_Render.m._areaLightX = new float4( float3.UnitX, areaLightHalfSize.x );
+// 					m_CB_Render.m._areaLightY = new float4( new float3( 0, Mathf.Cos( lightAngle ), Mathf.Sin( lightAngle ) ), areaLightHalfSize.y );
+// 					m_CB_Render.m._areaLightZ = new float4( m_CB_Render.m._areaLightX.xyz.Cross( m_CB_Render.m._areaLightY.xyz ), 4.0f * areaLightHalfSize.x * areaLightHalfSize.y );
+// 					m_CB_Render.m._areaLightP = new float4( 0, 2, -4, 1 );
+
+					m_CB_Render.m._areaLightX = new float4( float3.UnitX, areaLightHalfSize.x );
+					m_CB_Render.m._areaLightY = new float4( new float3( 0, Mathf.Cos( lightAngle ), Mathf.Sin( lightAngle ) ), areaLightHalfSize.y );
 					m_CB_Render.m._areaLightZ = new float4( m_CB_Render.m._areaLightX.xyz.Cross( m_CB_Render.m._areaLightY.xyz ), 4.0f * areaLightHalfSize.x * areaLightHalfSize.y );
-					m_CB_Render.m._areaLightP = new float4( -4, 2, 0, 1 );
+					m_CB_Render.m._areaLightP = new float4( new float3( 0, 2, 0 ) + 2.0f * new float3( 0, Mathf.Sin( lightAngle ), -Mathf.Cos( lightAngle ) ), 1 );
 				#endif
 
 				m_CB_Render.UpdateData();

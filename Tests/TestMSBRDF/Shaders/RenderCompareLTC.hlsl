@@ -146,7 +146,9 @@ float3	ComputeBRDF_Full(  float3 _tsNormal, float3 _tsView, float3 _tsLight, flo
 
 	float3	kappa = 1 - (Favg * E_o + MSFactor_spec * (1.0 - E_o));
 
-	return 0*BRDF_spec + kappa * BRDF_diff;
+//	return BRDF_spec + kappa * BRDF_diff;
+//	return BRDF_diff;
+	return BRDF_spec;
 }
 
 
@@ -283,6 +285,28 @@ float4	PS( VS_IN _In ) : SV_TARGET0 {
 
 	uint	totalGroupsCount = _groupsCount * SAMPLES_COUNT;
 
+//	bool	useNewTables = ((uint(_In.__position.x) >> 2) ^ (uint(_In.__position.y) >> 2)) & 1;
+	bool	useNewTables = _flags & 2;
+
+uint2	pixelPos = uint2(_In.__position.xy) >> 2;
+uint2	sliceIndexXY = pixelPos >> 6;
+uint2	slicePos = pixelPos & 0x3FU;
+uint	sliceIndex = sliceIndexXY.x + 5 * sliceIndexXY.y;
+
+float4	V = 0;
+if ( sliceIndex == 0 )
+	V = _tex_LTC_Unity[uint3( slicePos, 0 )];
+else
+	V = _tex_LTC[uint3( slicePos, sliceIndex-1 )];
+
+return float4( 0.01 * abs(V.xxx), 1 );
+return float4( 0.01 * abs(V.yyy), 1 );
+return float4( 0.01 * abs(V.zzz), 1 );
+return float4( 0.01 * abs(V.www), 1 );
+return float4( 0.01 * abs(V.yzw), 1 );
+return float4( 0.01 * abs(V.xyz), 1 );
+
+
 //return float4( seeds.xxx * 2.3283064365386963e-10, 1 );
 
 	// Build camera ray
@@ -313,6 +337,8 @@ float4	PS( VS_IN _In ) : SV_TARGET0 {
 	float3x3	world2TangentSpace = transpose( float3x3( wsTangent, wsBiTangent, wsNormal ) );
 //	float3		tsView = -float3( dot( wsView, wsTangent ), dot( wsView, wsBiTangent ), dot( wsView, wsNormal ) );	// Pointing AWAY from the surface
 	float3		tsView = -mul( wsView, world2TangentSpace );	// Pointing AWAY from the surface
+
+//return float4( tsView, 1 );
 
 	// Prepare surface characteristics
 	float3	rho, F0;
@@ -347,7 +373,8 @@ float4	PS( VS_IN _In ) : SV_TARGET0 {
 			float	r2 = max( 1e-6, dot( wsLight, wsLight ) );
 					wsLight /= sqrt(r2);
 
-			float3	tsLight = float3( dot( wsLight, wsTangent ), dot( wsLight, wsBiTangent ), dot( wsLight, wsNormal ) );
+//			float3	tsLight = float3( dot( wsLight, wsTangent ), dot( wsLight, wsBiTangent ), dot( wsLight, wsNormal ) );
+			float3	tsLight = mul( wsLight, world2TangentSpace );
 			float	LdotN = tsLight.z;
 			if ( LdotN <= 0.0 )
 				continue;
@@ -359,15 +386,19 @@ float4	PS( VS_IN _In ) : SV_TARGET0 {
 
 			// Compute BRDF
 			float3	BRDF = 0.0;
-			if ( hit.y == 0 ) {
+//			if ( hit.y == 0 ) {
 				BRDF = ComputeBRDF_Full( float3( 0, 0, 1 ), tsView, tsLight, alphaS, F0, alphaD, rho );
-			} else {
-				BRDF = ComputeBRDF_Oren( float3( 0, 0, 1 ), tsView, tsLight, alphaD, rho );
-			}
+//			} else {
+//				BRDF = ComputeBRDF_Oren( float3( 0, 0, 1 ), tsView, tsLight, alphaD, rho );
+//			}
 
 			// Compute reflected radiance
 			float3	Lr = Li * BRDF;
 
+//Lr = tsLight.z;
+//Lr = tsView.z;
+//Lr = dot( -wsView, wsNormal );
+//Lr = wsNormal;
 
 #if WHITE_FURNACE_TEST
 Lr *= 0.9;	// Attenuate a bit to see in front of white sky...
@@ -375,11 +406,14 @@ Lr *= 0.9;	// Attenuate a bit to see in front of white sky...
 
 			// Accumulate
 			Lo += Lr * LdotN;
+//Lo += saturate( dot( -wsView, wsNormal ) );
 			validSamplesCount++;
 		}
+
 	} else {	// (_flags & 0x200U) == Use LTC
 
-		float		VdotN = saturate( dot( wsView, wsNormal ) );
+//		float		VdotN = saturate( -dot( wsView, wsNormal ) );
+		float		VdotN = saturate( tsView.z );
 		float		perceptualAlphaD = sqrt( alphaD );
 		float		perceptualAlphaS = sqrt( alphaS );
 
@@ -390,16 +424,34 @@ Lr *= 0.9;	// Attenuate a bit to see in front of white sky...
 		if ( hit.y == 0 ) {
 			// Sphere has GGX specular + Oren-Nayar diffuse
 			magnitude_specular = _tex_GGX_Eo.SampleLevel( LinearClamp, float2( VdotN, alphaS ), 0.0 );
-			LTC_specular = LoadLTCMatrix( VdotN, perceptualAlphaS, LTC_BRDF_INDEX_GGX, _tex_LTC_Unity );
+//			LTC_specular = LoadLTCMatrix( VdotN, perceptualAlphaS, LTC_BRDF_INDEX_GGX, _tex_LTC_Unity );
+
+
+magnitude_specular = 1;
+if ( useNewTables )
+	LTC_specular = LoadLTCMatrix_New( VdotN, perceptualAlphaS, LTC_BRDF_INDEX_GGX, _tex_LTC );
+else
+	LTC_specular = LoadLTCMatrix_Old( VdotN, perceptualAlphaS, LTC_BRDF_INDEX_GGX, _tex_LTC_Unity );
+
 			magnitude_diffuse = _tex_OrenNayar_Eo.SampleLevel( LinearClamp, float2( VdotN, alphaD ), 0.0 );
-			LTC_diffuse = LoadLTCMatrix( VdotN, perceptualAlphaD, LTC_BRDF_INDEX_OREN_NAYAR, _tex_LTC );
+			LTC_diffuse = LoadLTCMatrix_New( VdotN, perceptualAlphaD, LTC_BRDF_INDEX_OREN_NAYAR, _tex_LTC );
 		} else {
 			// Ground has no specular and Oren-Nayar diffuse
 			magnitude_specular = 0;
 			LTC_specular = 0;
+
+
+magnitude_specular = 1;// _tex_GGX_Eo.SampleLevel( LinearClamp, float2( VdotN, alphaS ), 0.0 );
+if ( useNewTables )
+	LTC_specular = LoadLTCMatrix_New( VdotN, perceptualAlphaS, LTC_BRDF_INDEX_GGX, _tex_LTC );
+else
+	LTC_specular = LoadLTCMatrix_Old( VdotN, perceptualAlphaS, LTC_BRDF_INDEX_GGX, _tex_LTC_Unity );
+//LTC_specular = LoadLTCMatrix( VdotN, perceptualAlphaS, LTC_BRDF_INDEX_GGX, _tex_LTC_Unity );
+
 			magnitude_diffuse = _tex_OrenNayar_Eo.SampleLevel( LinearClamp, float2( VdotN, alphaD ), 0.0 );;
-			LTC_diffuse = LoadLTCMatrix( VdotN, perceptualAlphaD, LTC_BRDF_INDEX_OREN_NAYAR, _tex_LTC );
+			LTC_diffuse = LoadLTCMatrix_New( VdotN, perceptualAlphaD, LTC_BRDF_INDEX_OREN_NAYAR, _tex_LTC );
 		}
+
 
 		// Build rectangular area light corners
 		float3		lsAreaLightPosition = _areaLightTransform[3].xyz - wsPosition;
@@ -414,9 +466,15 @@ Lr *= 0.9;	// Attenuate a bit to see in front of white sky...
 		float3		Li = GetAreaLightRadiance();
 
 #if 1
-//LTC_diffuse = float3x3( 1, 0, 0, 0, 1, 0, 0, 0, 1 );
+
 //magnitude_diffuse = 1.0;
 Lo = Li * rho * magnitude_diffuse * PolygonIrradiance( mul( tsLightCorners, LTC_diffuse ) );
+//Lo = Li * rho * magnitude_diffuse * PolygonIrradiance( mul( tsLightCorners, transpose(LTC_diffuse) ) );
+
+//Lo = Li * magnitude_specular * PolygonIrradiance( mul( tsLightCorners, LTC_specular ) );
+Lo = Li * magnitude_specular * PolygonIrradiance( mul( tsLightCorners, transpose(LTC_specular) ) );
+
+//Lo = VdotN;
 
 #else
 		// Compute specular contribution
@@ -440,6 +498,7 @@ Lo = Li * rho * magnitude_diffuse * PolygonIrradiance( mul( tsLightCorners, LTC_
 
 		validSamplesCount = 1;
 	}
+
 
 //	///////////////////////////////////////////////////////////////////////////////////////
 //	// Real-time Approximation

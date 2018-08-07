@@ -410,7 +410,7 @@ namespace LTCTableGenerator
 				return 0;
 			}
 
-			_alpha = Mathf.Max( 0.002f, _alpha );
+			float	sigma = Mathf.Max( 0.002f, Mathf.HALFPI * _alpha );	// Standard deviation is a [0,PI/2] angle
 
  			double	NdotL = Math.Max( 0, _tsLight.z );
  			double	NdotV = Math.Max( 0, _tsView.z );
@@ -418,7 +418,7 @@ namespace LTCTableGenerator
 			double	gamma = _tsView.xy.Dot( _tsLight.xy )
 						  / Math.Max( 1e-20, Math.Sqrt( 1.0 - NdotV*NdotV ) * Math.Sqrt( 1.0 - NdotL*NdotL ) );
 
-			double	rough_sq = _alpha * _alpha;
+			double	rough_sq = sigma * sigma;
 			double	A = 1.0 - 0.5 * (rough_sq / (rough_sq + 0.57));   // You can replace 0.33 by 0.57 to simulate the missing inter-reflection term, as specified in footnote of page 22 of the 1992 paper
 			double	B = 0.45 * (rough_sq / (rough_sq + 0.09));
 

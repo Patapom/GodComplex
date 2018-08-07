@@ -1,5 +1,5 @@
-﻿#define FIT_TABLES
-//#define EXPORT_FOR_UNITY
+﻿//#define FIT_TABLES
+#define EXPORT_FOR_UNITY
 
 using System;
 using System.Collections.Generic;
@@ -58,13 +58,16 @@ namespace LTCTableGenerator
 			#else
 				// Export
 				#if EXPORT_FOR_UNITY
-					Export( new FileInfo( "GGX.ltc" ), new FileInfo( @"D:\Workspaces\Unity Labs\AxF Unity Project\SRP\com.unity.render-pipelines.high-definition\HDRP\Material\LTCAreaLight\LtcData.GGX2.cs" ), "GGX" );
-					Export( new FileInfo( "CookTorrance.ltc" ), new FileInfo( @"D:\Workspaces\Unity Labs\AxF Unity Project\SRP\com.unity.render-pipelines.high-definition\HDRP\Material\LTCAreaLight\LtcData.CookTorrance.cs" ), "CookTorrance" );
-					Export( new FileInfo( "Ward.ltc" ), new FileInfo( @"D:\Workspaces\Unity Labs\AxF Unity Project\SRP\com.unity.render-pipelines.high-definition\HDRP\Material\LTCAreaLight\LtcData.Ward.cs" ), "Ward" );
+//					string	targetDir = @"D:\Workspaces\Unity Labs\AxF Unity Project\SRP\com.unity.render-pipelines.high-definition\HDRP\Material\LTCAreaLight\";
+					string	targetDir = @"D:\Workspaces\Unity Labs\SRP-AreaLights\com.unity.render-pipelines.high-definition\HDRP\Material\LTCAreaLight\";
 
-					Export( new FileInfo( "OrenNayar.ltc" ), new FileInfo( @"D:\Workspaces\Unity Labs\AxF Unity Project\SRP\com.unity.render-pipelines.high-definition\HDRP\Material\LTCAreaLight\LtcData.OrenNayar.cs" ), "OrenNayar" );
-					Export( new FileInfo( "CharlieSheen.ltc" ), new FileInfo( @"D:\Workspaces\Unity Labs\AxF Unity Project\SRP\com.unity.render-pipelines.high-definition\HDRP\Material\LTCAreaLight\LtcData.CharlieSheen.cs" ), "Charlie" );
-					Export( new FileInfo( "Disney.ltc" ), new FileInfo( @"D:\Workspaces\Unity Labs\AxF Unity Project\SRP\com.unity.render-pipelines.high-definition\HDRP\Material\LTCAreaLight\LtcData.DisneyDiffuse2.cs" ), "Disney" );
+					Export( new FileInfo( "GGX.ltc" ), new FileInfo( targetDir + "LtcData.GGX2.cs" ), "GGX" );
+					Export( new FileInfo( "CookTorrance.ltc" ), new FileInfo( targetDir + "LtcData.CookTorrance.cs" ), "CookTorrance" );
+					Export( new FileInfo( "Ward.ltc" ), new FileInfo( targetDir + "LtcData.Ward.cs" ), "Ward" );
+
+					Export( new FileInfo( "OrenNayar.ltc" ), new FileInfo( targetDir + "LtcData.OrenNayar.cs" ), "OrenNayar" );
+					Export( new FileInfo( "CharlieSheen.ltc" ), new FileInfo( targetDir + "LtcData.CharlieSheen.cs" ), "Charlie" );
+					Export( new FileInfo( "Disney.ltc" ), new FileInfo( targetDir + "LtcData.DisneyDiffuse2.cs" ), "Disney" );
 				#else
 // 					Export( new FileInfo( "GGX.ltc" ), new FileInfo( "GGX.cs" ), "GGX" );
 // 					Export( new FileInfo( "CookTorrance.ltc" ), new FileInfo( "CookTorrance.cs" ), "CookTorrance" );
@@ -151,6 +154,11 @@ form.UseAdaptiveFit = true;
 					string	matrixString  = ltc.invM[0,0] + ", " + ltc.invM[0,1] + ", " + ltc.invM[0,2] + ", ";
 							matrixString += ltc.invM[1,0] + ", " + ltc.invM[1,1] + ", " + ltc.invM[1,2] + ", ";
 							matrixString += ltc.invM[2,0] + ", " + ltc.invM[2,1] + ", " + ltc.invM[2,2];
+
+// 					string	matrixString  = ltc.M[0,0] + ", " + ltc.M[0,1] + ", " + ltc.M[0,2] + ", ";
+// 							matrixString += ltc.M[1,0] + ", " + ltc.M[1,1] + ", " + ltc.M[1,2] + ", ";
+// 							matrixString += ltc.M[2,0] + ", " + ltc.M[2,1] + ", " + ltc.M[2,2];
+
 					matrixRowString += "{ " + matrixString + " }, ";
 				}
 

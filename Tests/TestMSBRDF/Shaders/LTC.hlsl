@@ -24,19 +24,17 @@ Texture2DArray< float4 >	_tex_LTC_Unity : register(t7);
 //	_NdotV, cosing of the view angle (expected clamped in [0,1])
 //	_perceptualRoughness, the roughness value presented to the user. Usually, the roughness value alpha = _perceptualRoughness * _perceptualRoughness and alpha is then used in the BRDF equations.
 //
-float2  LTCGetSamplingUV( float _NdotV, float _perceptualRoughness ) {
-	float2  xy;
-	#if 1
-		xy.x = _perceptualRoughness;
-		xy.y = acos(_NdotV) * 2.0*INVPI;	// Originally, texture was accessed via theta so we had to take the acos(N.V)
-	#else
-		xy.x = _perceptualRoughness;
-		xy.y = sqrt( 1 - _NdotV );			// Now, we use V = sqrt( 1 - cos(theta) ) which is kind of linear and only requires a single sqrt() instead of an expensive acos()
-	#endif
-
-	xy *= (LTC_LUT_SIZE-1);		// 0 is pixel 0, 1 = last pixel in the table
-	xy += 0.5;					// Perfect pixel sampling starts at the center
-	return xy / LTC_LUT_SIZE;	// Finally, return UVs in [0,1]
+float2  LTCGetSamplingUV_Old( float _NdotV, float _perceptualRoughness ) {
+	float2  xy = float2(  _perceptualRoughness, acos(_NdotV) * 2.0*INVPI );
+			xy *= (LTC_LUT_SIZE-1);		// 0 is pixel 0, 1 = last pixel in the table
+			xy += 0.5;					// Perfect pixel sampling starts at the center
+	return xy / LTC_LUT_SIZE;			// Finally, return UVs in [0,1]
+}
+float2  LTCGetSamplingUV_New( float _NdotV, float _perceptualRoughness ) {
+	float2  xy = float2(  _perceptualRoughness, sqrt( 1 - _NdotV ) );	// Now, we use V = sqrt( 1 - cos(theta) ) which is kind of linear and only requires a single sqrt() instead of an expensive acos()
+			xy *= (LTC_LUT_SIZE-1);		// 0 is pixel 0, 1 = last pixel in the table
+			xy += 0.5;					// Perfect pixel sampling starts at the center
+	return xy / LTC_LUT_SIZE;			// Finally, return UVs in [0,1]
 }
 
 // Fetches the transposed M^-1 matrix needed for runtime LTC estimate
@@ -49,9 +47,14 @@ float3x3	LoadLTCMatrix( float2 _UV, uint _BRDFIndex, Texture2DArray< float4 > _t
 	return invM;
 }
 
-float3x3	LoadLTCMatrix( float _NdotV, float _perceptualRoughness, uint _BRDFIndex, Texture2DArray< float4 > _tex_LTC ) {
-	return LoadLTCMatrix( LTCGetSamplingUV( _NdotV, _perceptualRoughness ), _BRDFIndex, _tex_LTC );
+float3x3	LoadLTCMatrix_Old( float _NdotV, float _perceptualRoughness, uint _BRDFIndex, Texture2DArray< float4 > _tex_LTC ) {
+//	return LoadLTCMatrix( LTCGetSamplingUV_Old( _NdotV, _perceptualRoughness ), _BRDFIndex, _tex_LTC );
+return transpose( LoadLTCMatrix( LTCGetSamplingUV_Old( _NdotV, _perceptualRoughness ), _BRDFIndex, _tex_LTC ) );
 }
+float3x3	LoadLTCMatrix_New( float _NdotV, float _perceptualRoughness, uint _BRDFIndex, Texture2DArray< float4 > _tex_LTC ) {
+	return LoadLTCMatrix( LTCGetSamplingUV_New( _NdotV, _perceptualRoughness ), _BRDFIndex, _tex_LTC );
+}
+
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 // LTC Estimators
