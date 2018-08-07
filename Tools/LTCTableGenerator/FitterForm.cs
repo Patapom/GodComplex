@@ -1,7 +1,7 @@
 ﻿//#define FIT_WITH_BFGS				// Use BFGS instead of Nelder-Mead
 //#define COMPUTE_ERROR_NO_MIS		// Compute error from hemisphere sampling, don't use multiple importance sampling
 
-//#define SHOW_RELATIVE_ERROR
+#define SHOW_RELATIVE_ERROR
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -295,8 +295,10 @@ namespace LTCTableGenerator
 					} else {
 						// init with roughness of previous fit
 						previousLTC = m_results[RoughnessIndex+1,ThetaIndex];
-						ltc.m11 = Mathf.Max( previousLTC.m11, MIN_ALPHA );
-						ltc.m22 = Mathf.Max( previousLTC.m22, MIN_ALPHA );
+// 						ltc.m11 = Mathf.Max( previousLTC.m11, MIN_ALPHA );
+// 						ltc.m22 = Mathf.Max( previousLTC.m22, MIN_ALPHA );
+						ltc.m11 = previousLTC.m11;
+						ltc.m22 = previousLTC.m22;
 					}
 
 					ltc.m13 = 0;
@@ -307,7 +309,7 @@ namespace LTCTableGenerator
 					// Otherwise use average direction as Z vector
 					// And use previous configuration as first guess
 					if ( m_useAdaptiveFit ) {
-						const int	CRITICAL_THETA_INDEX = 56;	// Above this index, start
+						const int	CRITICAL_THETA_INDEX = 56;	// Above this index, start using previous angle
 						if ( RoughnessIndex < m_tableSize-1 && ThetaIndex < CRITICAL_THETA_INDEX )
 							previousLTC = m_results[RoughnessIndex+1,ThetaIndex];	// Always use previous roughness if above critical angle
 						else
@@ -333,7 +335,7 @@ namespace LTCTableGenerator
 
 				// Find best-fit LTC lobe (scale, alphax, alphay)
 				try {
-					if ( ltc.amplitude > 1e-6 ) {
+					if ( ltc.magnitude > 1e-6 ) {
 						#if FIT_WITH_BFGS
 							m_fitModel.m_LTC = ltc;
 							m_fitModel.m_BRDF = m_BRDF;
@@ -463,7 +465,8 @@ namespace LTCTableGenerator
 
 			// alpha = perceptualRoughness^2  (perceptualRoughness = "sRGB" representation of roughness, as painted by artists)
 			float perceptualRoughness = (float) _roughnessIndex / (m_tableSize-1);
-			_alpha = Mathf.Max( MIN_ALPHA, perceptualRoughness * perceptualRoughness );
+//			_alpha = Mathf.Max( MIN_ALPHA, perceptualRoughness * perceptualRoughness );
+			_alpha = perceptualRoughness * perceptualRoughness;
 
 			// parameterised by sqrt(1 - cos(theta))
 			float	x = (float) _thetaIndex / (m_tableSize - 1);
@@ -487,7 +490,8 @@ namespace LTCTableGenerator
 			double[,]	sums = new double[ROUGHNESS_VALUES_COUNT,THETA_VIEW_VALUES_COUNT];
 			for ( int roughnessIndex=0; roughnessIndex < ROUGHNESS_VALUES_COUNT; roughnessIndex++ ) {
 				float	perceptualRoughness = (float) roughnessIndex / (ROUGHNESS_VALUES_COUNT-1);
-				float	alpha = Mathf.Max( MIN_ALPHA, perceptualRoughness * perceptualRoughness );
+//				float	alpha = Mathf.Max( MIN_ALPHA, perceptualRoughness * perceptualRoughness );
+				float	alpha = perceptualRoughness * perceptualRoughness;
 
 				for ( int thetaIndex=0; thetaIndex < THETA_VIEW_VALUES_COUNT; thetaIndex++ ) {
 					float	x = (float) thetaIndex * Mathf.HALFPI / Math.Max( 1, THETA_VIEW_VALUES_COUNT-1 );
@@ -584,10 +588,6 @@ tsReflection = _LTC.Z;	// Use preferred direction
 				double	pdf_BRDF, eval_BRDF;
 				double	pdf_LTC, eval_LTC;
 
-// 				double	maxBRDF = _BRDF.MaxValue( ref _tsView, _alpha );
-// 				double	maxLTC = _LTC.MaxValue;
-//				double	recMaxValue = 1.0 / Math.Max( maxBRDF, maxLTC );
-
 				double	sumError = 0.0;
 				for ( int j = 0 ; j < SAMPLES_COUNT ; ++j ) {
 					for ( int i = 0 ; i < SAMPLES_COUNT ; ++i ) {
@@ -602,11 +602,7 @@ tsReflection = _LTC.Z;	// Use preferred direction
 							// error with MIS weight
 							eval_BRDF = _BRDF.Eval( ref _tsView, ref tsLight, _alpha, out pdf_BRDF );
 							eval_LTC = _LTC.Eval( ref tsLight );
-
-// eval_BRDF *= recMaxValue;
-// eval_LTC *= recMaxValue;
-
-							pdf_LTC = eval_LTC / _LTC.amplitude;
+							pdf_LTC = eval_LTC / _LTC.magnitude;
 							double	error = Math.Abs( eval_BRDF - eval_LTC );
 							#if !FIT_WITH_BFGS
 								error = error*error*error;		// Use L3 norm to favor large values over smaller ones
@@ -637,11 +633,7 @@ tsReflection = _LTC.Z;	// Use preferred direction
 							// error with MIS weight
 							eval_BRDF = _BRDF.Eval( ref _tsView, ref tsLight, _alpha, out pdf_BRDF );			
 							eval_LTC = _LTC.Eval( ref tsLight );
-
-// eval_BRDF *= recMaxValue;
-// eval_LTC *= recMaxValue;
-
-							pdf_LTC = eval_LTC / _LTC.amplitude;
+							pdf_LTC = eval_LTC / _LTC.magnitude;
 							double	error = Math.Abs( eval_BRDF - eval_LTC );
 							#if !FIT_WITH_BFGS
 								error = error*error*error;		// Use L3 norm to favor large values over smaller ones

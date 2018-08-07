@@ -20,7 +20,7 @@ namespace LTCTableGenerator
 	public class LTC {
 
 		// lobe amplitude
-		public double		amplitude = 1;
+		public double		magnitude = 1;
 
 		// Average Schlick Fresnel term
 		public double		fresnel = 1;
@@ -45,7 +45,7 @@ namespace LTCTableGenerator
 		/// </summary>
 		public double[]		RuntimeParameters {
 			get { return new double[] {	invM[0,0], invM[1,1], invM[0,2], invM[2,0],		// invM matrix coefficients
-										amplitude, fresnel };							// BRDF scale and Fresnel coefficients
+										magnitude, fresnel };							// BRDF scale and Fresnel coefficients
 			}
 		}
 
@@ -90,8 +90,8 @@ namespace LTCTableGenerator
 		/// <param name="_parameters"></param>
 		/// <param name="_isotropic"></param>
 		public void	SetFittingParms( double[] _parameters, bool _isotropic ) {
- 			double	tempM11 = Math.Max( _parameters[0], 0.001f );
- 			double	tempM22 = Math.Max( _parameters[1], 0.001f );
+ 			double	tempM11 = Math.Max( _parameters[0], 1e-7 );
+ 			double	tempM22 = Math.Max( _parameters[1], 1e-7 );
 
 			// When composing from the left (V' = V * invM), the important 3rd parameter is m31
 // 			#if FIT_TRANSPOSED
@@ -112,7 +112,8 @@ namespace LTCTableGenerator
 				#if FIT_INV_M
  					double	tempM31 = _parameters.Length > 3 ? _parameters[3] : 0;
 					if ( _parameters.Length > 4 )
-						amplitude = Math.Max( _parameters[4], 1e-4 );
+//						magnitude = Math.Max( _parameters[4], 1e-4 );
+						magnitude = _parameters[4];
 				#else
 					double	tempM31 = _parameters.Length > 3 ? _parameters[3] : 0;
 				#endif
@@ -267,37 +268,32 @@ namespace LTCTableGenerator
 		public double	Eval( ref float3 _tsLight ) {
 			// Transform into original distribution space
 			float3	Loriginal = float3.Zero;
-// 			#if FIT_TRANSPOSED
-// 				Transform( _tsLight, invM, ref Loriginal );	// Compose from the left, as in the shader code!
-// 			#else
-				Transform( invM, _tsLight, ref Loriginal );	// Compose from the right, as in the paper!
-// 			#endif
+			Transform( invM, _tsLight, ref Loriginal );	// Compose from the right, as in the paper!
 			float	l = Loriginal.Length;
 					Loriginal /= l;
 
 			// Estimate original distribution (a clamped cosine lobe)
 			double	D = Math.Max( 0.0, Loriginal.z ) / Math.PI; 
 
-// 			// Compute the Jacobian, roundDwo / roundDw
-// 			double	jacobian = 1.0 / (detInvM * l*l*l);
+ 			// Compute the Jacobian, roundDwo / roundDw
+ 			double	jacobian = 1.0 / (detM * l*l*l);
 
 // Ensure we get the same thing as Hill's code, without the 2nd transform
-float3	L_ = float3.Zero;
-Transform( M, Loriginal, ref L_ );	// Compose from the right, as in the paper!
-double	l2 = L_.Length;
-double	jacobian = detM / (l2*l2*l2);
-//if ( Mathf.Abs( jacobian - jacobian2 ) > 1e-1 )
-//	throw new Exception( "Different jacobians!" );
-//double	jacobian = jacobian2;
+// float3	L_ = float3.Zero;
+// Transform( M, Loriginal, ref L_ );	// Compose from the right, as in the paper!
+// double	l2 = L_.Length;
+// double	jacobian2 = detM / (l2*l2*l2);
+// if ( Mathf.Abs( jacobian - 1.0 / jacobian2 ) > 1e-4 )
+// 	throw new Exception( "Different jacobians!" );
 
 			// Scale distribution
-			double	res = amplitude * D / jacobian;
+			double	res = magnitude * D * jacobian;
 			return res;
 		}
 
 		public void	GetSamplingDirection( float _U1, float _U2, ref float3 _direction ) {
-			float	theta = Mathf.Asin( Mathf.Sqrt( _U1 ) );
-//			float	theta = Mathf.Acos( Mathf.Sqrt( _U1 ) );
+//			float	theta = Mathf.Asin( Mathf.Sqrt( _U1 ) );
+			float	theta = Mathf.Acos( Mathf.Sqrt( _U1 ) );
 			float	phi = Mathf.TWOPI * _U2;
 // 			#if FIT_TRANSPOSED
 // 				Transform( new float3( Mathf.Sin(theta)*Mathf.Cos(phi), Mathf.Sin(theta)*Mathf.Sin(phi), Mathf.Cos(theta) ), M, ref _direction );
@@ -332,7 +328,7 @@ double	jacobian = detM / (l2*l2*l2);
 
 		// compute the average direction of the BRDF
 		public void	ComputeAverageTerms( IBRDF _BRDF, ref float3 _tsView, float _alpha ) {
-			amplitude = 0.0;
+			magnitude = 0.0;
 			fresnel = 0.0;
 			Z = float3.Zero;
 			error = 0.0;
@@ -360,12 +356,12 @@ double	jacobian = detM / (l2*l2*l2);
 					if ( double.IsNaN( weight ) )
 						throw new Exception( "NaN!" );
 
-					amplitude += weight;
+					magnitude += weight;
 					fresnel += weight * Math.Pow( 1 - _tsView.Dot( H ), 5.0 );
 					Z += (float) weight * tsLight;
 				}
 			}
-			amplitude /= SAMPLES_COUNT*SAMPLES_COUNT;
+			magnitude /= SAMPLES_COUNT*SAMPLES_COUNT;
 			fresnel /= SAMPLES_COUNT*SAMPLES_COUNT;
 
 			// Finish building the average TBN orthogonal basis
@@ -449,7 +445,7 @@ double	jacobian = detM / (l2*l2*l2);
 			m22 = R.ReadDouble();
 			m13 = R.ReadDouble();
 			m31 = R.ReadDouble();
-			amplitude = R.ReadDouble();
+			magnitude = R.ReadDouble();
 			fresnel = R.ReadDouble();
 
 			X.x = R.ReadSingle();
@@ -472,7 +468,7 @@ double	jacobian = detM / (l2*l2*l2);
 			W.Write( m22 );
 			W.Write( m13 );
 			W.Write( m31 );
-			W.Write( amplitude );
+			W.Write( magnitude );
 			W.Write( fresnel );
 
 			W.Write( X.x );

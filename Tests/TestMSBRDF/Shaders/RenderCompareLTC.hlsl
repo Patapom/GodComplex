@@ -146,9 +146,9 @@ float3	ComputeBRDF_Full(  float3 _tsNormal, float3 _tsView, float3 _tsLight, flo
 
 	float3	kappa = 1 - (Favg * E_o + MSFactor_spec * (1.0 - E_o));
 
-//	return BRDF_spec + kappa * BRDF_diff;
+	return BRDF_spec + kappa * BRDF_diff;
 //	return BRDF_diff;
-	return BRDF_spec;
+//	return BRDF_spec;
 }
 
 
@@ -283,31 +283,34 @@ float4	PS( VS_IN _In ) : SV_TARGET0 {
 	seeds.x = wang_hash( asuint(_In.__position.x + _time) + _groupIndex ) ^ wang_hash( asuint(_In.__position.y - _time*_groupIndex) );
 	seeds.y = hash( seeds.x, 1000u );
 
+//return float4( seeds.xxx * 2.3283064365386963e-10, 1 );
+
 	uint	totalGroupsCount = _groupsCount * SAMPLES_COUNT;
 
 //	bool	useNewTables = ((uint(_In.__position.x) >> 2) ^ (uint(_In.__position.y) >> 2)) & 1;
 	bool	useNewTables = _flags & 2;
 
-uint2	pixelPos = uint2(_In.__position.xy) >> 2;
-uint2	sliceIndexXY = pixelPos >> 6;
-uint2	slicePos = pixelPos & 0x3FU;
+#if 0
+float2	pixelPos = 0.25 * (_In.__position.xy - 0.5);
+float2	slicePos = fmod( pixelPos, 64.0 );
+uint2	sliceIndexXY = uint2( floor( pixelPos ) ) >> 6;
 uint	sliceIndex = sliceIndexXY.x + 5 * sliceIndexXY.y;
 
 float4	V = 0;
 if ( sliceIndex == 0 )
-	V = _tex_LTC_Unity[uint3( slicePos, 0 )];
+//	V = _tex_LTC_Unity[uint3( slicePos, 0 )];
+	V = _tex_LTC_Unity.SampleLevel( LinearClamp, float3( LTCGetSamplingUV_Old( (0.5+slicePos.y) / 64.0, (0.5+slicePos.x) / 64.0 ), 0 ), 0 );
 else
-	V = _tex_LTC[uint3( slicePos, sliceIndex-1 )];
+//	V = _tex_LTC[uint3( slicePos, sliceIndex-1 )];
+	V = _tex_LTC.SampleLevel( LinearClamp, float3( LTCGetSamplingUV_New( (0.5+slicePos.y) / 64.0, (0.5+slicePos.x) / 64.0 ), sliceIndex-1 ), 0 );
 
-return float4( 0.01 * abs(V.xxx), 1 );
-return float4( 0.01 * abs(V.yyy), 1 );
+//return float4( 0.01 * abs(V.xxx), 1 );
+//return float4( 0.01 * abs(V.yyy), 1 );
 return float4( 0.01 * abs(V.zzz), 1 );
-return float4( 0.01 * abs(V.www), 1 );
+//return float4( 0.01 * abs(V.www), 1 );
+//return float4( 0.01 * abs(V.xyz), 1 );
 return float4( 0.01 * abs(V.yzw), 1 );
-return float4( 0.01 * abs(V.xyz), 1 );
-
-
-//return float4( seeds.xxx * 2.3283064365386963e-10, 1 );
+#endif
 
 	// Build camera ray
 	float3	csView = normalize( float3( UV, 1 ) );
@@ -332,7 +335,13 @@ return float4( 0.01 * abs(V.xyz), 1 );
 
 	// Build tangent space
 	float3	wsTangent, wsBiTangent;
-	BuildOrthonormalBasis( wsNormal, wsTangent, wsBiTangent );
+//	BuildOrthonormalBasis( wsNormal, wsTangent, wsBiTangent );
+
+    // Construct a right-handed view-dependent orthogonal basis around the normal
+    wsTangent = normalize( wsView - wsNormal * dot( wsView, wsNormal ) );	// Do not clamp NdotV here
+    wsBiTangent = cross( wsNormal, wsTangent );
+
+
 
 	float3x3	world2TangentSpace = transpose( float3x3( wsTangent, wsBiTangent, wsNormal ) );
 //	float3		tsView = -float3( dot( wsView, wsTangent ), dot( wsView, wsBiTangent ), dot( wsView, wsNormal ) );	// Pointing AWAY from the surface
@@ -386,11 +395,11 @@ return float4( 0.01 * abs(V.xyz), 1 );
 
 			// Compute BRDF
 			float3	BRDF = 0.0;
-//			if ( hit.y == 0 ) {
+			if ( hit.y == 0 ) {
 				BRDF = ComputeBRDF_Full( float3( 0, 0, 1 ), tsView, tsLight, alphaS, F0, alphaD, rho );
-//			} else {
-//				BRDF = ComputeBRDF_Oren( float3( 0, 0, 1 ), tsView, tsLight, alphaD, rho );
-//			}
+			} else {
+				BRDF = ComputeBRDF_Oren( float3( 0, 0, 1 ), tsView, tsLight, alphaD, rho );
+			}
 
 			// Compute reflected radiance
 			float3	Lr = Li * BRDF;
@@ -414,6 +423,8 @@ Lr *= 0.9;	// Attenuate a bit to see in front of white sky...
 
 //		float		VdotN = saturate( -dot( wsView, wsNormal ) );
 		float		VdotN = saturate( tsView.z );
+
+
 		float		perceptualAlphaD = sqrt( alphaD );
 		float		perceptualAlphaS = sqrt( alphaS );
 
@@ -427,7 +438,7 @@ Lr *= 0.9;	// Attenuate a bit to see in front of white sky...
 //			LTC_specular = LoadLTCMatrix( VdotN, perceptualAlphaS, LTC_BRDF_INDEX_GGX, _tex_LTC_Unity );
 
 
-magnitude_specular = 1;
+//magnitude_specular = 1;
 if ( useNewTables )
 	LTC_specular = LoadLTCMatrix_New( VdotN, perceptualAlphaS, LTC_BRDF_INDEX_GGX, _tex_LTC );
 else
@@ -441,20 +452,22 @@ else
 			LTC_specular = 0;
 
 
-magnitude_specular = 1;// _tex_GGX_Eo.SampleLevel( LinearClamp, float2( VdotN, alphaS ), 0.0 );
-if ( useNewTables )
-	LTC_specular = LoadLTCMatrix_New( VdotN, perceptualAlphaS, LTC_BRDF_INDEX_GGX, _tex_LTC );
-else
-	LTC_specular = LoadLTCMatrix_Old( VdotN, perceptualAlphaS, LTC_BRDF_INDEX_GGX, _tex_LTC_Unity );
+//magnitude_specular = _tex_GGX_Eo.SampleLevel( LinearClamp, float2( VdotN, alphaS ), 0.0 );
+////magnitude_specular = 1;// _tex_GGX_Eo.SampleLevel( LinearClamp, float2( VdotN, alphaS ), 0.0 );
+//if ( useNewTables )
+//	LTC_specular = LoadLTCMatrix_New( VdotN, perceptualAlphaS, LTC_BRDF_INDEX_GGX, _tex_LTC );
+//else
+//	LTC_specular = LoadLTCMatrix_Old( VdotN, perceptualAlphaS, LTC_BRDF_INDEX_GGX, _tex_LTC_Unity );
+
 //LTC_specular = LoadLTCMatrix( VdotN, perceptualAlphaS, LTC_BRDF_INDEX_GGX, _tex_LTC_Unity );
 
 			magnitude_diffuse = _tex_OrenNayar_Eo.SampleLevel( LinearClamp, float2( VdotN, alphaD ), 0.0 );;
 			LTC_diffuse = LoadLTCMatrix_New( VdotN, perceptualAlphaD, LTC_BRDF_INDEX_OREN_NAYAR, _tex_LTC );
 		}
 
-
 		// Build rectangular area light corners
 		float3		lsAreaLightPosition = _areaLightTransform[3].xyz - wsPosition;
+//return float4( 0.1 * lsAreaLightPosition, 1 );
 		float4x3    wsLightCorners;
 		wsLightCorners[0] = lsAreaLightPosition + _areaLightTransform[0].w * _areaLightTransform[0].xyz + _areaLightTransform[1].w * _areaLightTransform[1].xyz;
 		wsLightCorners[1] = lsAreaLightPosition + _areaLightTransform[0].w * _areaLightTransform[0].xyz - _areaLightTransform[1].w * _areaLightTransform[1].xyz;
@@ -463,16 +476,24 @@ else
 
 		float4x3    tsLightCorners = mul( wsLightCorners, world2TangentSpace );		// Transform them into tangent-space
 
+//tsLightCorners[0] = mul( wsLightCorners[0], world2TangentSpace );
+//tsLightCorners[1] = mul( wsLightCorners[1], world2TangentSpace );
+//tsLightCorners[2] = mul( wsLightCorners[2], world2TangentSpace );
+//tsLightCorners[3] = mul( wsLightCorners[3], world2TangentSpace );
+//return float4( 0.1 * wsLightCorners[3], 1 );
+
 		float3		Li = GetAreaLightRadiance();
 
-#if 1
+#if 0
 
 //magnitude_diffuse = 1.0;
 Lo = Li * rho * magnitude_diffuse * PolygonIrradiance( mul( tsLightCorners, LTC_diffuse ) );
 //Lo = Li * rho * magnitude_diffuse * PolygonIrradiance( mul( tsLightCorners, transpose(LTC_diffuse) ) );
 
+//LTC_specular = float3x3( 1, 0, 0, 0, 1, 0, 0, 0, 1 );
+//LTC_specular = transpose( LTC_specular );
 //Lo = Li * magnitude_specular * PolygonIrradiance( mul( tsLightCorners, LTC_specular ) );
-Lo = Li * magnitude_specular * PolygonIrradiance( mul( tsLightCorners, transpose(LTC_specular) ) );
+Lo = Li * magnitude_specular * PolygonIrradiance( mul( tsLightCorners, LTC_specular ) );
 
 //Lo = VdotN;
 

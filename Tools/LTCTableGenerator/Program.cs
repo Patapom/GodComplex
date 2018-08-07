@@ -1,5 +1,5 @@
 ﻿//#define FIT_TABLES
-#define EXPORT_FOR_UNITY
+//#define EXPORT_FOR_UNITY
 
 using System;
 using System.Collections.Generic;
@@ -28,27 +28,29 @@ namespace LTCTableGenerator
 				BRDFIndex = int.Parse( _args[0] );
 
 			#if FIT_TABLES
+				bool	usePreviousRoughness = false;
+
 				switch ( BRDFIndex ) {
 					// Fit specular
 					case 0:
-						RunForm( new BRDF_GGX(), new FileInfo( "GGX.ltc" ), true );						// Fit GGX
+						RunForm( new BRDF_GGX(), new FileInfo( "GGX.ltc" ), usePreviousRoughness );						// Fit GGX
 						break;
 					case 1:
-						RunForm( new BRDF_CookTorrance(), new FileInfo( "CookTorrance.ltc" ), true );	// Fit Cook-Torrance
+						RunForm( new BRDF_CookTorrance(), new FileInfo( "CookTorrance.ltc" ), usePreviousRoughness );	// Fit Cook-Torrance
 						break;
 					case 2:
-						RunForm( new BRDF_Ward(), new FileInfo( "Ward.ltc" ), true );					// Fit Ward
+						RunForm( new BRDF_Ward(), new FileInfo( "Ward.ltc" ), usePreviousRoughness );					// Fit Ward
 						break;
 
 					// Fit diffuse
 					case 10:
-						RunForm( new BRDF_OrenNayar(), new FileInfo( "OrenNayar.ltc" ), true );			// Fit Oren-Nayar diffuse
+						RunForm( new BRDF_OrenNayar(), new FileInfo( "OrenNayar.ltc" ), usePreviousRoughness );			// Fit Oren-Nayar diffuse
 						break;
 					case 11:
-						RunForm( new BRDF_Charlie(), new FileInfo( "CharlieSheen.ltc" ), true );		// Fit Charlie Sheen diffuse
+						RunForm( new BRDF_Charlie(), new FileInfo( "CharlieSheen.ltc" ), usePreviousRoughness );		// Fit Charlie Sheen diffuse
 						break;
 					case 12:
-						RunForm( new BRDF_Disney(), new FileInfo( "Disney.ltc" ), true );				// Fit Disney diffuse
+						RunForm( new BRDF_Disney(), new FileInfo( "Disney.ltc" ), usePreviousRoughness );				// Fit Disney diffuse
 						break;
 
 					default:
@@ -100,7 +102,7 @@ form.UsePreviousRoughness = _usePreviousRoughnessForFitting;
 //form.RoughnessIndex = 19;
 //form.ThetaIndex = 40;
 
-form.UseAdaptiveFit = true;
+form.UseAdaptiveFit = false;
 
 
 			form.SetupBRDF( _BRDF, 64, _tableFileName );
@@ -122,7 +124,7 @@ form.UseAdaptiveFit = true;
 			// Export LTC matrices
 			int	tableSize = table.GetLength(0);
 			LTC	defaultLTC = new LTC();
-				defaultLTC.amplitude = 0.0;
+				defaultLTC.magnitude = 0.0;
 
 		#if EXPORT_FOR_UNITY
 			string	tableName = "s_LtcMatrixData_" + _BRDFName;
@@ -271,13 +273,25 @@ throw new Exception( "Ta mère!" );
 				LTC[,]	table = tables[i];
 // 				ImageUtility.ImageFile	I = new ImageUtility.ImageFile( W, H, _format, profile );
 // 				M[(uint) i][0][0] = I;
+
+				double	largest = 0;
 				ImageUtility.ImageFile	I = M[(uint) i][0][0];
 				I.WritePixels( ( uint _X, uint _Y, ref float4 _color ) => {
 					LTC	ltc = table[_X,_Y];
-					_color.x = (float) ltc.invM[0,0];
-					_color.y = (float) ltc.invM[0,2];
-					_color.z = (float) ltc.invM[1,1];
-					_color.w = (float) ltc.invM[2,0];
+
+					const double	tol = 1e-6;
+// 					if ( Mathf.Abs( ltc.invM[2,2] - 1 ) > tol )
+// 						throw new Exception( "Not one!" );
+					if ( Mathf.Abs( ltc.invM[0,1] ) > tol || Mathf.Abs( ltc.invM[1,0] ) > tol || Mathf.Abs( ltc.invM[1,2] ) > tol || Mathf.Abs( ltc.invM[2,1] ) > tol )
+						throw new Exception( "Not zero!" );
+
+					largest = Math.Max( largest, Math.Abs( ltc.invM[2,2] - 1 ) );
+					double	factor = 1.0 / ltc.invM[2,2];
+
+					_color.x = (float) (factor * ltc.invM[0,0]);
+					_color.y = (float) (factor * ltc.invM[0,2]);
+					_color.z = (float) (factor * ltc.invM[1,1]);
+					_color.w = (float) (factor * ltc.invM[2,0]);
 				} );
 			}
 			M.DDSSaveFile( _targetFileName, ImageUtility.COMPONENT_FORMAT.AUTO );
