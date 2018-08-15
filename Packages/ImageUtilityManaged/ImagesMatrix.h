@@ -12,6 +12,10 @@ namespace ImageUtility {
 	ref class ImageFile;
 
 	// This class is used to build an array of images and their mips and is used as an argument for the static texture creation methods
+	// The images matrix class contains a collection of "Mips"
+	// • For Texture2DArrays and TextureCubes, the collection of mips is of the size of the array (or 6 times the amount of cube maps)
+	// • For Texture3D, the collection contains only a single "Mips" element but its Mip contain an array of slices
+	//
 	[System::Diagnostics::DebuggerDisplayAttribute( "{ArraySize} Slices {Type} {Format}" )]
 	public ref class	ImagesMatrix {
 	internal:
@@ -31,6 +35,8 @@ namespace ImageUtility {
 			NORMAL_MAP,	// 0.5-offseted vectors
 		};
 
+		// The Mips class contains a collection of "Mip" elements, as many mips as necessary to represent a texture
+		//
 		ref class	Mips {
 		internal:
 			ImageUtilityLib::ImagesMatrix::Mips*	m_nativeObject;

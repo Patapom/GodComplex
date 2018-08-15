@@ -6,7 +6,7 @@ using System.Text;
 using System.Windows.Forms;
 using System.Drawing;
 
-namespace ShaderToy
+namespace TestMSBRDF
 {
 	public class PanelOutput : Panel
 	{

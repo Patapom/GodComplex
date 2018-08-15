@@ -29,6 +29,7 @@
 		private void InitializeComponent()
 		{
 			this.components = new System.ComponentModel.Container();
+			System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(TestForm));
 			this.floatTrackbarControlRoughnessSphere = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.panelOutput = new Nuaj.Cirrus.Utility.PanelOutput(this.components);
 			this.floatTrackbarControlReflectanceGround = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
@@ -56,6 +57,7 @@
 			this.label6 = new System.Windows.Forms.Label();
 			this.checkBoxEnableMSFactor = new System.Windows.Forms.CheckBox();
 			this.checkBoxUseRealTimeApprox = new System.Windows.Forms.CheckBox();
+			this.checkBoxUseLTC = new System.Windows.Forms.CheckBox();
 			this.groupBoxSphere.SuspendLayout();
 			this.groupBoxPlane.SuspendLayout();
 			this.groupBoxEnvironment.SuspendLayout();
@@ -78,6 +80,7 @@
 			// 
 			this.panelOutput.Location = new System.Drawing.Point(12, 12);
 			this.panelOutput.Name = "panelOutput";
+			this.panelOutput.PanelBitmap = ((System.Drawing.Bitmap)(resources.GetObject("panelOutput.PanelBitmap")));
 			this.panelOutput.Size = new System.Drawing.Size(1280, 720);
 			this.panelOutput.TabIndex = 1;
 			// 
@@ -180,7 +183,7 @@
 			this.checkBoxEnableMSBRDF.Checked = true;
 			this.checkBoxEnableMSBRDF.CheckState = System.Windows.Forms.CheckState.Checked;
 			this.checkBoxEnableMSBRDF.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-			this.checkBoxEnableMSBRDF.Location = new System.Drawing.Point(1332, 416);
+			this.checkBoxEnableMSBRDF.Location = new System.Drawing.Point(1307, 416);
 			this.checkBoxEnableMSBRDF.Name = "checkBoxEnableMSBRDF";
 			this.checkBoxEnableMSBRDF.Size = new System.Drawing.Size(244, 28);
 			this.checkBoxEnableMSBRDF.TabIndex = 4;
@@ -233,7 +236,7 @@
 			this.checkBoxPause.Text = "Pause Rendering";
 			this.checkBoxPause.UseVisualStyleBackColor = true;
 			// 
-			// groupBox1
+			// groupBoxSphere
 			// 
 			this.groupBoxSphere.Controls.Add(this.label8);
 			this.groupBoxSphere.Controls.Add(this.floatTrackbarControlRoughnessSphere2);
@@ -244,7 +247,7 @@
 			this.groupBoxSphere.Controls.Add(this.label5);
 			this.groupBoxSphere.Controls.Add(this.label1);
 			this.groupBoxSphere.Location = new System.Drawing.Point(1298, 12);
-			this.groupBoxSphere.Name = "groupBox1";
+			this.groupBoxSphere.Name = "groupBoxSphere";
 			this.groupBoxSphere.Size = new System.Drawing.Size(300, 145);
 			this.groupBoxSphere.TabIndex = 5;
 			this.groupBoxSphere.TabStop = false;
@@ -295,27 +298,27 @@
 			this.label7.TabIndex = 3;
 			this.label7.Text = "Reflectance Diff";
 			// 
-			// groupBox2
+			// groupBoxPlane
 			// 
 			this.groupBoxPlane.Controls.Add(this.floatTrackbarControlRoughnessGround);
 			this.groupBoxPlane.Controls.Add(this.label2);
 			this.groupBoxPlane.Controls.Add(this.floatTrackbarControlReflectanceGround);
 			this.groupBoxPlane.Controls.Add(this.label4);
 			this.groupBoxPlane.Location = new System.Drawing.Point(1298, 173);
-			this.groupBoxPlane.Name = "groupBox2";
+			this.groupBoxPlane.Name = "groupBoxPlane";
 			this.groupBoxPlane.Size = new System.Drawing.Size(300, 83);
 			this.groupBoxPlane.TabIndex = 6;
 			this.groupBoxPlane.TabStop = false;
 			this.groupBoxPlane.Text = "Ground Plane";
 			// 
-			// groupBox3
+			// groupBoxEnvironment
 			// 
 			this.groupBoxEnvironment.Controls.Add(this.floatTrackbarControlCubeMapIntensity);
 			this.groupBoxEnvironment.Controls.Add(this.label6);
 			this.groupBoxEnvironment.Controls.Add(this.floatTrackbarControlLightElevation);
 			this.groupBoxEnvironment.Controls.Add(this.label3);
 			this.groupBoxEnvironment.Location = new System.Drawing.Point(1298, 272);
-			this.groupBoxEnvironment.Name = "groupBox3";
+			this.groupBoxEnvironment.Name = "groupBoxEnvironment";
 			this.groupBoxEnvironment.Size = new System.Drawing.Size(300, 99);
 			this.groupBoxEnvironment.TabIndex = 7;
 			this.groupBoxEnvironment.TabStop = false;
@@ -350,7 +353,7 @@
 			this.checkBoxEnableMSFactor.Checked = true;
 			this.checkBoxEnableMSFactor.CheckState = System.Windows.Forms.CheckState.Checked;
 			this.checkBoxEnableMSFactor.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-			this.checkBoxEnableMSFactor.Location = new System.Drawing.Point(1332, 450);
+			this.checkBoxEnableMSFactor.Location = new System.Drawing.Point(1307, 450);
 			this.checkBoxEnableMSFactor.Name = "checkBoxEnableMSFactor";
 			this.checkBoxEnableMSFactor.Size = new System.Drawing.Size(210, 28);
 			this.checkBoxEnableMSFactor.TabIndex = 4;
@@ -362,14 +365,27 @@
 			// 
 			this.checkBoxUseRealTimeApprox.AutoSize = true;
 			this.checkBoxUseRealTimeApprox.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-			this.checkBoxUseRealTimeApprox.Location = new System.Drawing.Point(1332, 484);
+			this.checkBoxUseRealTimeApprox.Location = new System.Drawing.Point(1307, 484);
 			this.checkBoxUseRealTimeApprox.Name = "checkBoxUseRealTimeApprox";
 			this.checkBoxUseRealTimeApprox.Size = new System.Drawing.Size(281, 28);
 			this.checkBoxUseRealTimeApprox.TabIndex = 4;
-			this.checkBoxUseRealTimeApprox.Visible = false;
 			this.checkBoxUseRealTimeApprox.Text = "Use Real-Time Approximation";
 			this.checkBoxUseRealTimeApprox.UseVisualStyleBackColor = true;
+			this.checkBoxUseRealTimeApprox.Visible = false;
 			this.checkBoxUseRealTimeApprox.CheckedChanged += new System.EventHandler(this.checkBoxEnableMSBRDF_CheckedChanged);
+			// 
+			// checkBoxUseLTC
+			// 
+			this.checkBoxUseLTC.AutoSize = true;
+			this.checkBoxUseLTC.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+			this.checkBoxUseLTC.Location = new System.Drawing.Point(1335, 518);
+			this.checkBoxUseLTC.Name = "checkBoxUseLTC";
+			this.checkBoxUseLTC.Size = new System.Drawing.Size(102, 28);
+			this.checkBoxUseLTC.TabIndex = 4;
+			this.checkBoxUseLTC.Text = "Use LTC";
+			this.checkBoxUseLTC.UseVisualStyleBackColor = true;
+			this.checkBoxUseLTC.Visible = false;
+			this.checkBoxUseLTC.CheckedChanged += new System.EventHandler(this.checkBoxEnableMSBRDF_CheckedChanged);
 			// 
 			// TestForm
 			// 
@@ -381,6 +397,7 @@
 			this.Controls.Add(this.groupBoxSphere);
 			this.Controls.Add(this.checkBoxKeepSampling);
 			this.Controls.Add(this.checkBoxPause);
+			this.Controls.Add(this.checkBoxUseLTC);
 			this.Controls.Add(this.checkBoxUseRealTimeApprox);
 			this.Controls.Add(this.checkBoxEnableMSFactor);
 			this.Controls.Add(this.checkBoxEnableMSBRDF);
@@ -432,6 +449,7 @@
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlReflectanceSphere2;
 		private System.Windows.Forms.Label label7;
 		private System.Windows.Forms.CheckBox checkBoxUseRealTimeApprox;
+		private System.Windows.Forms.CheckBox checkBoxUseLTC;
 	}
 }
 

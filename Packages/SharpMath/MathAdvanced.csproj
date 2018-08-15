@@ -209,7 +209,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="BoundingSphere.cs" />
-    <Compile Include="FittingBFGS.cs" />
+    <Compile Include="Optimization\NelderMead.cs" />
+    <Compile Include="Optimization\PSO.cs" />
+    <Compile Include="Optimization\FittingBFGS.cs" />
     <Compile Include="Functions.cs" />
     <Compile Include="QuasiRandom.cs" />
     <Compile Include="Random.cs" />

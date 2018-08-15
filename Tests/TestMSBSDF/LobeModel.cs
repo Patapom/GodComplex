@@ -9,7 +9,7 @@ using Renderer;
 
 namespace TestMSBSDF
 {
-	public class	LobeModel : BFGS.Model {
+	public class	LobeModel : BFGS.IModel {
 
 		#region NESTED TYPES
 

@@ -36,11 +36,11 @@ ImageFile::ImageFile( System::Drawing::Bitmap^ _bitmap, ImageUtility::ColorProfi
 	// Copy bitmap content
 	U8*		target = (U8*) m_nativeObject->GetBits();
 	int		sourceIndex = 0;
-	for ( int i=width*height; i > 0; i-- ) {
-		*target++ = bitmapContent[sourceIndex++];
-		*target++ = bitmapContent[sourceIndex++];
-		*target++ = bitmapContent[sourceIndex++];
-		*target++ = bitmapContent[sourceIndex++];
+	for ( int i=width*height; i > 0; i--, target+=4 ) {
+		target[2] = bitmapContent[sourceIndex++];	// B
+		target[1] = bitmapContent[sourceIndex++];	// G
+		target[0] = bitmapContent[sourceIndex++];	// R
+		target[3] = bitmapContent[sourceIndex++];	// A
 	}
 }
 ImageFile::~ImageFile() {

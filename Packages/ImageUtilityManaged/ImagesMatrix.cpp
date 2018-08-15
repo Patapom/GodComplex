@@ -264,6 +264,9 @@ throw gcnew Exception( "TODO! Support horizontal cross!" );
 		return sumSH;
 	}
 
+	// Cube map face transforms from which we can transform a local cube map face vector into a world-space vector
+	// Orientations were (painfully) devised from the famous DirectX 9 documentation page about cube map orientations: https://docs.microsoft.com/en-us/windows/desktop/direct3d9/cubic-environment-mapping
+	//
 	cli::array<SharpMath::float3x3>^	ImagesMatrix::ms_faces2WorldInit() {
 		cli::array<SharpMath::float3x3>^	R = gcnew cli::array<SharpMath::float3x3>( 6 );
 		R[0] = SharpMath::float3x3( gcnew cli::array<float>( 9 ) {

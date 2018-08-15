@@ -662,3 +662,9 @@ Publish
 /Tools/AxFExtractor/bin
 /Tools/AxFExtractor/obj
 /Tests/TestAreaLightLTC/obj
+/Tools/LTCTableGenerator/bin
+/Tools/LTCTableGenerator/obj
+/Tools/LTCTableGenerator/*.user
+/Tools/LTCTableGenerator/DemoCode/Release
+/Tools/LTCTableGenerator/DemoCode/Debug
+/Tools/LTCTableGenerator/DemoCode/Original Code/glm/ShitLib

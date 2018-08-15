@@ -293,12 +293,23 @@ float	GGX_NDF( float _NdotH, float _alpha2 ) {
 	return _alpha2 * rcp( den );
 }
 
-// Warning: 1 / (4 * NdotL * NdotV) is already accounted for!
-float	GGX_Smith( float _NdotL, float _NdotV, float _alpha2 ) {
-	float	denL = _NdotL + sqrt( pow2( _NdotL ) * (1-_alpha2) + _alpha2 );
-	float	denV = _NdotV + sqrt( pow2( _NdotV ) * (1-_alpha2) + _alpha2 );
-	return rcp( denL * denV );
-}
+#if 1
+	// Height-correlated shadowing/masking: G2 = 1 / (1 + Lambda(light) + Lambda(view))
+	// Warning: 1 / (4 * NdotL * NdotV) is already accounted for!
+	float	GGX_Smith( float _NdotL, float _NdotV, float _alpha2 ) {
+		float	denL = _NdotV * sqrt( pow2( _NdotL ) * (1-_alpha2) + _alpha2 );
+		float	denV = _NdotL * sqrt( pow2( _NdotV ) * (1-_alpha2) + _alpha2 );
+		return rcp( 2.0 * (denL + denV) );
+	}
+#else
+	// Uncorrelated shadowing/masking: G2 = G1(light) * G1(view)
+	// Warning: 1 / (4 * NdotL * NdotV) is already accounted for!
+	float	GGX_Smith( float _NdotL, float _NdotV, float _alpha2 ) {
+		float	denL = _NdotL + sqrt( pow2( _NdotL ) * (1-_alpha2) + _alpha2 );
+		float	denV = _NdotV + sqrt( pow2( _NdotV ) * (1-_alpha2) + _alpha2 );
+		return rcp( denL * denV );
+	}
+#endif
 
 float3	BRDF_GGX( float3 _tsNormal, float3 _tsView, float3 _tsLight, float _alpha, float3 _IOR ) {
 	float	NdotL = dot( _tsNormal, _tsLight );
@@ -332,8 +343,9 @@ float   BRDF_OrenNayar( in float3 _normal, in float3 _view, in float3 _light, in
 	float   LdotN = dot( l, n );
 	float   VdotN = dot( v, n );
 
-	float   gamma = dot( v - n * VdotN, l - n * LdotN )
-				  / (sqrt( saturate( 1.0 - VdotN*VdotN ) ) * sqrt( saturate( 1.0 - LdotN*LdotN ) ));
+	float   gamma = dot( normalize( v - n * VdotN ), normalize( l - n * LdotN ) );
+//	float   gamma = dot( v - n * VdotN, l - n * LdotN )
+//				  / (sqrt( saturate( 1.0 - VdotN*VdotN ) ) * sqrt( saturate( 1.0 - LdotN*LdotN ) ));	// This yields NaN when LdotN is exactly 1. Can be fixed using sqrt( saturate( 1.000001 - LdotN*LdotN ) ) instead, or a max...
 
 	float rough_sq = _roughness * _roughness;
 	float A = 1.0 - 0.5 * (rough_sq / (rough_sq + 0.33));   // You can replace 0.33 by 0.57 to simulate the missing inter-reflection term, as specified in footnote of page 22 of the 1992 paper

@@ -61,6 +61,14 @@ namespace TestMSBRDF {
 			public float		_roughnessGround;
 			public float		_reflectanceGround;
 			public float		_lightIntensity;
+			float				__PAD;
+
+#if TEST_LTC_AREA_LIGHT
+			public float4		_areaLightX;	// X axis + size
+			public float4		_areaLightY;	// Y axis + size
+			public float4		_areaLightZ;	// Z axis (normal)
+			public float4		_areaLightP;	// Position
+#endif
 		}
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
@@ -86,10 +94,17 @@ namespace TestMSBRDF {
 		Texture3D							m_tex_Noise;
 		Texture3D							m_tex_Noise4D;
 
+			// MSBRDF pre-integration textures
 		Texture2D							m_tex_MSBRDF_GGX_E;
 		Texture2D							m_tex_MSBRDF_GGX_Eavg;
 		Texture2D							m_tex_MSBRDF_OrenNayar_E;
 		Texture2D							m_tex_MSBRDF_OrenNayar_Eavg;
+
+			// LTC texture
+		#if TEST_LTC_AREA_LIGHT
+			Texture2D						m_tex_LTC;
+			Texture2D						m_tex_LTC_Unity;
+		#endif
 
 		Texture2D							m_tex_CubeMap;
 
@@ -125,7 +140,7 @@ namespace TestMSBRDF {
 		public TestForm() {
 			InitializeComponent();
 
-// Use this to convert any cross HDR representation into a cube map
+// Use this to convert any cross HDR representation into a regular cube map
 //ConvertCrossToCubeMap( new FileInfo( "beach_cross.hdr" ), new FileInfo( "beach.dds" ) );
 
 			Application.Idle += new EventHandler( Application_Idle );
@@ -155,13 +170,26 @@ namespace TestMSBRDF {
 				#elif TEST_LTC_AREA_LIGHT
 					m_shader_Accumulate = new Shader( m_device, new System.IO.FileInfo( "Shaders/RenderCompareLTC.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );			// Use this to show a rendering with LTC area light
 					checkBoxUseRealTimeApprox.Visible = true;
-					checkBoxUseRealTimeApprox.Checked = true;
-					floatTrackbarControlRoughnessSphere.Value = 1;		// Show full roughness
-					floatTrackbarControlReflectanceSphere2.Value = 0;	// Disturbing if diffuse is showing!
+//					checkBoxUseRealTimeApprox.Checked = true;
+					checkBoxUseRealTimeApprox.Checked = false;
+// 					floatTrackbarControlRoughnessSphere.Value = 1;		// Show full roughness
+// 					floatTrackbarControlReflectanceSphere2.Value = 0;	// Disturbing if diffuse is showing!
+
+					checkBoxUseLTC.Visible = true;
+
+					floatTrackbarControlRoughnessSphere.Value = 0.25f;
+					floatTrackbarControlReflectanceSphere.Value = 0.04f;
+					floatTrackbarControlRoughnessSphere2.Value = 0.80f;
+					floatTrackbarControlReflectanceSphere2.Value = 0.5f;
+
+					floatTrackbarControlRoughnessGround.Value = 0.85f;
+					floatTrackbarControlReflectanceGround.Value = 0.35f;
+
+					floatTrackbarControlLightElevation.Value = 0.5f;
+
 				#else
  					m_shader_Accumulate = new Shader( m_device, new System.IO.FileInfo( "Shaders/RenderComplete.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );			// Use this for a full render
 				#endif
-//				m_shader_Accumulate = new Shader( m_device, new System.IO.FileInfo( "Shaders/RenderCompareLCT.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );			// Use this to show a rendering with LCT area lights (TODO!!)
 			} catch ( Exception _e ) {
 				MessageBox.Show( "Shader failed to compile!\n\n" + _e.Message, "MSBRDF Test", MessageBoxButtons.OK, MessageBoxIcon.Error );
 			}
@@ -189,13 +217,15 @@ namespace TestMSBRDF {
 				}
 			}
 
-//BuildMSBRDF( new DirectoryInfo( @".\Tables\" ) );
-			LoadMSBRDF( 128, new FileInfo( "./Tables/MSBRDF_GGX_E128x128.float" ), new FileInfo( "./Tables/MSBRDF_GGX_Eavg128.float" ), out m_tex_MSBRDF_GGX_E, out m_tex_MSBRDF_GGX_Eavg );
+// Tables are "built" with Mathematica now
+//			BuildMSBRDF( new DirectoryInfo( @".\Tables\" ) );
+			LoadMSBRDF( 128, new FileInfo( "./Tables/MSBRDF_GGX_G2_E128x128.float" ), new FileInfo( "./Tables/MSBRDF_GGX_G2_Eavg128.float" ), out m_tex_MSBRDF_GGX_E, out m_tex_MSBRDF_GGX_Eavg );
 			LoadMSBRDF( 32, new FileInfo( "./Tables/MSBRDF_OrenNayar_E32x32.float" ), new FileInfo( "./Tables/MSBRDF_OrenNayar_Eavg32.float" ), out m_tex_MSBRDF_OrenNayar_E, out m_tex_MSBRDF_OrenNayar_Eavg );
 
 			#if TEST_LTC_AREA_LIGHT
 				// Area light
-FitLTC( new DirectoryInfo( @".\Tables\" ) );
+				m_tex_LTC = LoadLTC( new FileInfo( @".\Tables\LTC.dds" ) );
+				m_tex_LTC_Unity = LoadUnityLTC();
 			#endif
 
 			// Load cube map
@@ -265,6 +295,7 @@ FitLTC( new DirectoryInfo( @".\Tables\" ) );
 				m_CB_Render.m._flags |= checkBoxEnableMSBRDF.Checked ? 1U : 0;
 				m_CB_Render.m._flags |= checkBoxEnableMSFactor.Checked ? 2U : 0;
 				m_CB_Render.m._flags |= checkBoxUseRealTimeApprox.Checked ? 0x100U : 0;
+				m_CB_Render.m._flags |= checkBoxUseLTC.Checked ? 0x200U : 0;
 				m_CB_Render.m._groupsCount = GROUPS_COUNT;
 				m_CB_Render.m._groupIndex = m_groupShuffle[m_groupCounter % GROUPS_COUNT];
 				m_CB_Render.m._lightElevation = floatTrackbarControlLightElevation.Value * Mathf.HALFPI;
@@ -284,6 +315,25 @@ m_CB_Render.m._roughnessGround *= m_CB_Render.m._roughnessGround;
 
 				m_CB_Render.m._lightIntensity = floatTrackbarControlCubeMapIntensity.Value;
 
+				#if TEST_LTC_AREA_LIGHT
+					float	lightAngle = m_CB_Render.m._lightElevation;
+					float2	areaLightHalfSize = new float2( 1, 2 );
+// 					m_CB_Render.m._areaLightX = new float4( -float3.UnitZ, areaLightHalfSize.x );
+// 					m_CB_Render.m._areaLightY = new float4( new float3( Mathf.Sin( lightAngle ), Mathf.Cos( lightAngle ), 0 ), areaLightHalfSize.y );
+// 					m_CB_Render.m._areaLightZ = new float4( m_CB_Render.m._areaLightX.xyz.Cross( m_CB_Render.m._areaLightY.xyz ), 4.0f * areaLightHalfSize.x * areaLightHalfSize.y );
+// 					m_CB_Render.m._areaLightP = new float4( -4, 2, 0, 1 );
+
+// 					m_CB_Render.m._areaLightX = new float4( float3.UnitX, areaLightHalfSize.x );
+// 					m_CB_Render.m._areaLightY = new float4( new float3( 0, Mathf.Cos( lightAngle ), Mathf.Sin( lightAngle ) ), areaLightHalfSize.y );
+// 					m_CB_Render.m._areaLightZ = new float4( m_CB_Render.m._areaLightX.xyz.Cross( m_CB_Render.m._areaLightY.xyz ), 4.0f * areaLightHalfSize.x * areaLightHalfSize.y );
+// 					m_CB_Render.m._areaLightP = new float4( 0, 2, -4, 1 );
+
+					m_CB_Render.m._areaLightX = new float4( float3.UnitX, areaLightHalfSize.x );
+					m_CB_Render.m._areaLightY = new float4( new float3( 0, Mathf.Cos( lightAngle ), Mathf.Sin( lightAngle ) ), areaLightHalfSize.y );
+					m_CB_Render.m._areaLightZ = new float4( m_CB_Render.m._areaLightX.xyz.Cross( m_CB_Render.m._areaLightY.xyz ), 4.0f * areaLightHalfSize.x * areaLightHalfSize.y );
+					m_CB_Render.m._areaLightP = new float4( new float3( 0, 2, 0 ) + 2.0f * new float3( 0, Mathf.Sin( lightAngle ), -Mathf.Cos( lightAngle ) ), 1 );
+				#endif
+
 				m_CB_Render.UpdateData();
 
 				m_tex_CubeMap.SetPS( 0 );
@@ -293,6 +343,9 @@ m_CB_Render.m._roughnessGround *= m_CB_Render.m._roughnessGround;
 				m_tex_MSBRDF_GGX_Eavg.SetPS( 3 );
 				m_tex_MSBRDF_OrenNayar_E.SetPS( 4 );
 				m_tex_MSBRDF_OrenNayar_Eavg.SetPS( 5 );
+
+				m_tex_LTC.SetPS( 6 );
+				m_tex_LTC_Unity.SetPS( 7 );
 
 				m_device.RenderFullscreenQuad( m_shader_Accumulate );
 
@@ -326,6 +379,11 @@ m_CB_Render.m._roughnessGround *= m_CB_Render.m._roughnessGround;
 			m_tex_Noise4D.Dispose();
 			m_tex_Noise.Dispose();
 			m_tex_BlueNoise.Dispose();
+
+			#if TEST_LTC_AREA_LIGHT
+				m_tex_LTC_Unity.Dispose();
+				m_tex_LTC.Dispose();
+			#endif
 
 			m_tex_MSBRDF_OrenNayar_Eavg.Dispose();
 			m_tex_MSBRDF_OrenNayar_E.Dispose();
@@ -389,321 +447,321 @@ m_CB_Render.m._roughnessGround *= m_CB_Render.m._roughnessGround;
 		#region Multiple-Scattering BRDF
 
 // ACTUALLY, THESE ARE GENERATED IN MATHEMATICA NOW!!
-
-		const uint		COS_THETA_SUBDIVS_COUNT = 128;
-		const uint		ROUGHNESS_SUBDIVS_COUNT = 128;
-
-		float[,]	m_GGX_E = new float[COS_THETA_SUBDIVS_COUNT,ROUGHNESS_SUBDIVS_COUNT];
-		float[]		m_GGX_Eavg = new float[ROUGHNESS_SUBDIVS_COUNT];
-		
-		void	BuildMSBRDF( DirectoryInfo _targetDirectory ) {
-
-			FileInfo	MSBRDFFileName = new FileInfo( Path.Combine( _targetDirectory.FullName, "MSBRDF_E" + COS_THETA_SUBDIVS_COUNT + "x" + ROUGHNESS_SUBDIVS_COUNT + ".float" ) );
-			FileInfo	MSBRDFFileName2 = new FileInfo( Path.Combine( _targetDirectory.FullName, "MSBRDF_Eavg" + ROUGHNESS_SUBDIVS_COUNT + ".float" ) );
-
-			#if PRECOMPUTE_BRDF
-
-ACTUALLY, THESE ARE GENERATED IN MATHEMATICA NOW!!
-Don't expect this code to work!
-
-{
-			const uint		PHI_SUBDIVS_COUNT = 2*512;
-			const uint		THETA_SUBDIVS_COUNT = 64;
-
-			const float		dPhi = Mathf.TWOPI / PHI_SUBDIVS_COUNT;
-			const float		dTheta = Mathf.HALFPI / THETA_SUBDIVS_COUNT;
-			const float		dMu = 1.0f / THETA_SUBDIVS_COUNT;
-
-			string	dumpMathematica = "{";
-			for ( uint Y=0; Y < ROUGHNESS_SUBDIVS_COUNT; Y++ ) {
-
-//Y = 5;
-
-				float	m = (float) Y / (ROUGHNESS_SUBDIVS_COUNT-1);
-				float	m2 = Math.Max( 0.01f, m*m );
-// 				float	m2 = Math.Max( 0.01f, (float) Y / (ROUGHNESS_SUBDIVS_COUNT-1) );
-// 				float	m = Mathf.Sqrt( m2 );
-
-//				dumpMathematica += "{ ";	// Start a new roughness line
-				for ( uint X=0; X < COS_THETA_SUBDIVS_COUNT; X++ ) {
-
-//X = 17;
-
-					float	cosThetaO = (float) X / (COS_THETA_SUBDIVS_COUNT-1);
-					float	sinThetaO = Mathf.Sqrt( 1 - cosThetaO*cosThetaO );
-
-					float	NdotV = cosThetaO;
-
-					float	integral = 0.0f;
-//					float	integralNDF = 0.0f;
-					for ( uint THETA=0; THETA < THETA_SUBDIVS_COUNT; THETA++ ) {
-// 						float	thetaI = Mathf.HALFPI * (0.5f+THETA) / THETA_SUBDIVS_COUNT;
-// 						float	cosThetaI = Mathf.Cos( thetaI );
-// 						float	sinThetaI = Mathf.Sin( thetaI );
-
-						// Use cosine-weighted sampling
-						float	sqCosThetaI = (0.5f+THETA) / THETA_SUBDIVS_COUNT;
-						float	cosThetaI = Mathf.Sqrt( sqCosThetaI );
-						float	sinThetaI = Mathf.Sqrt( 1 - sqCosThetaI );
-
-						float	NdotL = cosThetaI;
-
-						for ( uint PHI=0; PHI < PHI_SUBDIVS_COUNT; PHI++ ) {
-							float	phi = Mathf.TWOPI * PHI / PHI_SUBDIVS_COUNT;
-
-							// Compute cos(theta_h) = Omega_h.N where Omega_h = (Omega_i + Omega_o) / ||Omega_i + Omega_o|| is the half vector and N the surface normal
-							float	cosThetaH = (cosThetaI + cosThetaO) / Mathf.Sqrt( 2 * (1 + cosThetaO * cosThetaI + sinThetaO * sinThetaI * Mathf.Cos( phi )) );
-// 							float3	omega_i = new float3( sinThetaI * Mathf.Cos( phi ), sinThetaI * Mathf.Sin( phi ), cosThetaI );
-// 							float3	omega_o = new float3( sinThetaO, 0, cosThetaO );
-// 							float3	omega_h = (omega_i + omega_o).Normalized;
-// 							float	cosThetaH = omega_h.z;
-
-							// Compute GGX NDF
-							float	den = 1 - cosThetaH*cosThetaH * (1 - m2);
-							float	NDF = m2 / (Mathf.PI * den*den);
-
-							// Compute Smith shadowing/masking
-							float	Smith_i_den = NdotL + Mathf.Sqrt( m2 + (1-m2) * NdotL*NdotL );
-
-							// Full BRDF is thus...
-							float	GGX = NDF / Smith_i_den;
-
-//							integral += GGX * cosThetaI * sinThetaI;
-							integral += GGX;
-						}
-
-//						integralNDF += Mathf.TWOPI * m2 * cosThetaI * sinThetaI / (Mathf.PI * Mathf.Pow( cosThetaI*cosThetaI * (m2 - 1) + 1, 2.0f ));
-					}
-
-					// Finalize
-					float	Smith_o_den = NdotV + Mathf.Sqrt( m2 + (1-m2) * NdotV*NdotV );
-					integral /= Smith_o_den;
-
-//					integral *= dTheta * dPhi;
-					integral *= 0.5f * dMu * dPhi;	// Cosine-weighted sampling has a 0.5 factor!
-//					integralNDF *= dTheta;
-
-					m_GGX_E[X,Y] = integral;
-					dumpMathematica += "{ " + cosThetaO + ", " + m + ", "  + integral + "}, ";
-				}
-			}
-
-			dumpMathematica = dumpMathematica.Remove( dumpMathematica.Length-2 );	// Remove last comma
-			dumpMathematica += " };";
-
-			// Dump as binary
-			using ( FileStream S = MSBRDFFileName.Create() )
-				using ( BinaryWriter W = new BinaryWriter( S ) ) {
-					for ( uint Y=0; Y < ROUGHNESS_SUBDIVS_COUNT; Y++ )
-						for ( uint X=0; X < COS_THETA_SUBDIVS_COUNT; X++ )
-							W.Write( m_GGX_E[X,Y] );
-				}
-
-			//////////////////////////////////////////////////////////////////////////
-			// Compute average irradiance based on roughness, re-using the previously computed results
-			const uint		THETA_SUBDIVS_COUNT2 = 512;
-
-			float	dTheta2 = Mathf.HALFPI / THETA_SUBDIVS_COUNT2;
-
-			for ( uint X=0; X < ROUGHNESS_SUBDIVS_COUNT; X++ ) {
-
-				float	integral = 0.0f;
-				for ( uint THETA=0; THETA < THETA_SUBDIVS_COUNT2; THETA++ ) {
-					float	thetaO = Mathf.HALFPI * (0.5f+THETA) / THETA_SUBDIVS_COUNT2;
-					float	cosThetaO = Mathf.Cos( thetaO );
-					float	sinThetaO = Mathf.Sin( thetaO );
-
-					// Sample previously computed table
-					float	i = cosThetaO * COS_THETA_SUBDIVS_COUNT;
-					uint	i0 = Math.Min( COS_THETA_SUBDIVS_COUNT-1, (uint) Mathf.Floor( i ) );
-					uint	i1 = Math.Min( COS_THETA_SUBDIVS_COUNT-1, i0 + 1 );
-					float	E = (1-i) * m_GGX_E[i0,X] + i * m_GGX_E[i1,X];
-
-					integral += E * cosThetaO * sinThetaO;
-				}
-
-				// Finalize
-				integral *= Mathf.TWOPI * dTheta2;
-
-				m_GGX_Eavg[X] = integral;
-			}
-
-			// Dump as binary
-			using ( FileStream S = MSBRDFFileName2.Create() )
-				using ( BinaryWriter W = new BinaryWriter( S ) ) {
-					for ( uint X=0; X < ROUGHNESS_SUBDIVS_COUNT; X++ )
-						W.Write( m_GGX_Eavg[X] );
-				}
-}
-
-			#endif
-
-// 			// Build irradiance complement texture
-// 			using ( PixelsBuffer content = new PixelsBuffer( COS_THETA_SUBDIVS_COUNT * ROUGHNESS_SUBDIVS_COUNT * 4 ) ) {
-// 				using ( FileStream S = MSBRDFFileName.OpenRead() )
-// 					using ( BinaryReader R = new BinaryReader( S ) )
-// 						using ( BinaryWriter W = content.OpenStreamWrite() ) {
-// 							for ( uint Y=0; Y < ROUGHNESS_SUBDIVS_COUNT; Y++ ) {
-// 								for ( uint X=0; X < COS_THETA_SUBDIVS_COUNT; X++ ) {
-// 									float	V = R.ReadSingle();
-// 									m_GGX_E[X,Y] = V;
-// 									W.Write( V );
-// 								}
-// 							}
-// 						}
-// 
-// 				m_tex_IrradianceComplement = new Texture2D( m_device, COS_THETA_SUBDIVS_COUNT, ROUGHNESS_SUBDIVS_COUNT, 1, 1, ImageUtility.PIXEL_FORMAT.R32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, false, new PixelsBuffer[] { content } );
-// 			}
-// 
-// 			// Build average irradiance texture
-// 			using ( PixelsBuffer content = new PixelsBuffer( ROUGHNESS_SUBDIVS_COUNT * 4 ) ) {
-// 				using ( FileStream S = MSBRDFFileName2.OpenRead() )
-// 					using ( BinaryReader R = new BinaryReader( S ) )
-// 						using ( BinaryWriter W = content.OpenStreamWrite() ) {
-// 							for ( uint X=0; X < ROUGHNESS_SUBDIVS_COUNT; X++ ) {
-// 								float	V = R.ReadSingle();
-// 								m_GGX_Eavg[X] = V;
-// 								W.Write( V );
-// 							}
-// 						}
-// 
-// 				m_tex_IrradianceAverage = new Texture2D( m_device, ROUGHNESS_SUBDIVS_COUNT, 1, 1, 1, ImageUtility.PIXEL_FORMAT.R32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, false, new PixelsBuffer[] { content } );
-// 			}
-
-
-//////////////////////////////////////////////////////////////////////////
-// Check single-scattering and multiple-scattering BRDFs are actual complements
 //
-/*
-float3[,]	integralChecks = new float3[COS_THETA_SUBDIVS_COUNT,ROUGHNESS_SUBDIVS_COUNT];
-for ( uint Y=0; Y < ROUGHNESS_SUBDIVS_COUNT; Y++ ) {
-	float	m = (float) Y / (ROUGHNESS_SUBDIVS_COUNT-1);
-	float	m2 = Math.Max( 0.01f, m*m );
-
-	float	Eavg = SampleEavg( m );
-
-	for ( uint X=0; X < COS_THETA_SUBDIVS_COUNT; X++ ) {
-		float	cosThetaO = (float) X / (COS_THETA_SUBDIVS_COUNT-1);
-		float	sinThetaO = Mathf.Sqrt( 1 - cosThetaO*cosThetaO );
-
-		float	NdotV = cosThetaO;
-
-		float	Eo = SampleE( cosThetaO, m );
-
-		const uint		CHECK_THETA_SUBDIVS_COUNT = 128;
-		const uint		CHECK_PHI_SUBDIVS_COUNT = 2*128;
-
-		const float		dPhi = Mathf.TWOPI / CHECK_PHI_SUBDIVS_COUNT;
-		const float		dTheta = Mathf.HALFPI / CHECK_THETA_SUBDIVS_COUNT;
-
-		float	integralSS = 0.0f;
-		float	integralMS = 0.0f;
-		for ( uint THETA=0; THETA < CHECK_THETA_SUBDIVS_COUNT; THETA++ ) {
-
-			// Use regular sampling
-			float	thetaI = Mathf.HALFPI * (0.5f+THETA) / CHECK_THETA_SUBDIVS_COUNT;
-			float	cosThetaI = Mathf.Cos( thetaI );
-			float	sinThetaI = Mathf.Sin( thetaI );
-
-// 			// Use cosine-weighted sampling
-// 			float	sqCosThetaI = (0.5f+THETA) / CHECK_THETA_SUBDIVS_COUNT;
-// 			float	cosThetaI = Mathf.Sqrt( sqCosThetaI );
-// 			float	sinThetaI = Mathf.Sqrt( 1 - sqCosThetaI );
-
- 			float	NdotL = cosThetaI;
-
-			for ( uint PHI=0; PHI < CHECK_PHI_SUBDIVS_COUNT; PHI++ ) {
-				float	phi = Mathf.TWOPI * PHI / CHECK_PHI_SUBDIVS_COUNT;
-
-				//////////////////////////////////////////////////////////////////////////
-				// Single-scattering part
-
-				// Compute cos(theta_h) = Omega_h.N where Omega_h = (Omega_i + Omega_o) / ||Omega_i + Omega_o|| is the half vector and N the surface normal
-				float	cosThetaH = (cosThetaI + cosThetaO) / Mathf.Sqrt( 2 * (1 + cosThetaO * cosThetaI + sinThetaO * sinThetaI * Mathf.Sin( phi )) );
-// 				float3	omega_i = new float3( sinThetaI * Mathf.Cos( phi ), sinThetaI * Mathf.Sin( phi ), cosThetaI );
-// 				float3	omega_o = new float3( sinThetaO, 0, cosThetaO );
-// 				float3	omega_h = (omega_i + omega_o).Normalized;
-// 				float	cosThetaH = omega_h.z;
-
-				// Compute GGX NDF
-				float	den = 1 - cosThetaH*cosThetaH * (1 - m2);
-				float	NDF = m2 / (Mathf.PI * den*den);
-
-				// Compute Smith shadowing/masking
-				float	Smith_i_den = NdotL + Mathf.Sqrt( m2 + (1-m2) * NdotL*NdotL );
-				float	Smith_o_den = NdotV + Mathf.Sqrt( m2 + (1-m2) * NdotV*NdotV );
-
-				// Full BRDF is thus...
-				float	GGX = NDF / (Smith_i_den * Smith_o_den);
-
-				integralSS += GGX * cosThetaI * sinThetaI;
-//				integralSS += GGX;
-
-				//////////////////////////////////////////////////////////////////////////
-				// Multiple-scattering part
-				float	Ei = SampleE( cosThetaI, m );
-
-				float	GGX_ms = Eo * Ei / Eavg;
-
-				integralMS += GGX_ms * cosThetaI * sinThetaI;
-			}
-		}
-
-		// Finalize
-		integralSS *= dTheta * dPhi;
-		integralMS *= dTheta * dPhi;
-
-		integralChecks[X,Y] = new float3( integralSS, integralMS, integralSS + integralMS );
-	}
-}
-//*/
-//////////////////////////////////////////////////////////////////////////
-
-
-// verify BRDF + BRDFms integration = 1
-//cube map + integration
-		}
-
-		float	SampleE( float _cosTheta, float _roughness ) {
-			_cosTheta *= COS_THETA_SUBDIVS_COUNT;
-			_roughness *= ROUGHNESS_SUBDIVS_COUNT;
-
-			float	X = Mathf.Floor( _cosTheta );
-			float	x = _cosTheta - X;
-			uint	X0 = Mathf.Min( COS_THETA_SUBDIVS_COUNT-1, (uint) X );
-			uint	X1 = Mathf.Min( COS_THETA_SUBDIVS_COUNT-1, X0+1 );
-
-			float	Y = Mathf.Floor( _roughness );
-			float	y = _roughness - Y;
-			uint	Y0 = Mathf.Min( ROUGHNESS_SUBDIVS_COUNT-1, (uint) Y );
-			uint	Y1 = Mathf.Min( ROUGHNESS_SUBDIVS_COUNT-1, Y0+1 );
-
-			float	V00 = m_GGX_E[X0,Y0];
-			float	V10 = m_GGX_E[X1,Y0];
-			float	V01 = m_GGX_E[X0,Y1];
-			float	V11 = m_GGX_E[X1,Y1];
-
-			float	V0 = (1.0f - x) * V00 + x * V10;
-			float	V1 = (1.0f - x) * V01 + x * V11;
-			float	V = (1.0f - y) * V0 + y * V1;
-			return V;
-		}
-		float	SampleEavg( float _roughness ) {
-			_roughness *= ROUGHNESS_SUBDIVS_COUNT;
-			float	X = Mathf.Floor( _roughness );
-			float	x = _roughness - X;
-			uint	X0 = Mathf.Min( ROUGHNESS_SUBDIVS_COUNT-1, (uint) X );
-			uint	X1 = Mathf.Min( ROUGHNESS_SUBDIVS_COUNT-1, X0+1 );
-
-			float	V0 = m_GGX_Eavg[X0];
-			float	V1 = m_GGX_Eavg[X1];
-			float	V = (1.0f - x) * V0 + x * V1;
-			return V;
-		}
+// 		const uint		COS_THETA_SUBDIVS_COUNT = 128;
+// 		const uint		ROUGHNESS_SUBDIVS_COUNT = 128;
+// 
+// 		float[,]	m_GGX_E = new float[COS_THETA_SUBDIVS_COUNT,ROUGHNESS_SUBDIVS_COUNT];
+// 		float[]		m_GGX_Eavg = new float[ROUGHNESS_SUBDIVS_COUNT];
+// 		
+// 		void	BuildMSBRDF( DirectoryInfo _targetDirectory ) {
+// 
+// 			FileInfo	MSBRDFFileName = new FileInfo( Path.Combine( _targetDirectory.FullName, "MSBRDF_E" + COS_THETA_SUBDIVS_COUNT + "x" + ROUGHNESS_SUBDIVS_COUNT + ".float" ) );
+// 			FileInfo	MSBRDFFileName2 = new FileInfo( Path.Combine( _targetDirectory.FullName, "MSBRDF_Eavg" + ROUGHNESS_SUBDIVS_COUNT + ".float" ) );
+// 
+// 			#if PRECOMPUTE_BRDF
+// 
+// ACTUALLY, THESE ARE GENERATED IN MATHEMATICA NOW!!
+// Don't expect this code to work!
+// 
+// {
+// 			const uint		PHI_SUBDIVS_COUNT = 2*512;
+// 			const uint		THETA_SUBDIVS_COUNT = 64;
+// 
+// 			const float		dPhi = Mathf.TWOPI / PHI_SUBDIVS_COUNT;
+// 			const float		dTheta = Mathf.HALFPI / THETA_SUBDIVS_COUNT;
+// 			const float		dMu = 1.0f / THETA_SUBDIVS_COUNT;
+// 
+// 			string	dumpMathematica = "{";
+// 			for ( uint Y=0; Y < ROUGHNESS_SUBDIVS_COUNT; Y++ ) {
+// 
+// //Y = 5;
+// 
+// 				float	m = (float) Y / (ROUGHNESS_SUBDIVS_COUNT-1);
+// 				float	m2 = Math.Max( 0.01f, m*m );
+// // 				float	m2 = Math.Max( 0.01f, (float) Y / (ROUGHNESS_SUBDIVS_COUNT-1) );
+// // 				float	m = Mathf.Sqrt( m2 );
+// 
+// //				dumpMathematica += "{ ";	// Start a new roughness line
+// 				for ( uint X=0; X < COS_THETA_SUBDIVS_COUNT; X++ ) {
+// 
+// //X = 17;
+// 
+// 					float	cosThetaO = (float) X / (COS_THETA_SUBDIVS_COUNT-1);
+// 					float	sinThetaO = Mathf.Sqrt( 1 - cosThetaO*cosThetaO );
+// 
+// 					float	NdotV = cosThetaO;
+// 
+// 					float	integral = 0.0f;
+// //					float	integralNDF = 0.0f;
+// 					for ( uint THETA=0; THETA < THETA_SUBDIVS_COUNT; THETA++ ) {
+// // 						float	thetaI = Mathf.HALFPI * (0.5f+THETA) / THETA_SUBDIVS_COUNT;
+// // 						float	cosThetaI = Mathf.Cos( thetaI );
+// // 						float	sinThetaI = Mathf.Sin( thetaI );
+// 
+// 						// Use cosine-weighted sampling
+// 						float	sqCosThetaI = (0.5f+THETA) / THETA_SUBDIVS_COUNT;
+// 						float	cosThetaI = Mathf.Sqrt( sqCosThetaI );
+// 						float	sinThetaI = Mathf.Sqrt( 1 - sqCosThetaI );
+// 
+// 						float	NdotL = cosThetaI;
+// 
+// 						for ( uint PHI=0; PHI < PHI_SUBDIVS_COUNT; PHI++ ) {
+// 							float	phi = Mathf.TWOPI * PHI / PHI_SUBDIVS_COUNT;
+// 
+// 							// Compute cos(theta_h) = Omega_h.N where Omega_h = (Omega_i + Omega_o) / ||Omega_i + Omega_o|| is the half vector and N the surface normal
+// 							float	cosThetaH = (cosThetaI + cosThetaO) / Mathf.Sqrt( 2 * (1 + cosThetaO * cosThetaI + sinThetaO * sinThetaI * Mathf.Cos( phi )) );
+// // 							float3	omega_i = new float3( sinThetaI * Mathf.Cos( phi ), sinThetaI * Mathf.Sin( phi ), cosThetaI );
+// // 							float3	omega_o = new float3( sinThetaO, 0, cosThetaO );
+// // 							float3	omega_h = (omega_i + omega_o).Normalized;
+// // 							float	cosThetaH = omega_h.z;
+// 
+// 							// Compute GGX NDF
+// 							float	den = 1 - cosThetaH*cosThetaH * (1 - m2);
+// 							float	NDF = m2 / (Mathf.PI * den*den);
+// 
+// 							// Compute Smith shadowing/masking
+// 							float	Smith_i_den = NdotL + Mathf.Sqrt( m2 + (1-m2) * NdotL*NdotL );
+// 
+// 							// Full BRDF is thus...
+// 							float	GGX = NDF / Smith_i_den;
+// 
+// //							integral += GGX * cosThetaI * sinThetaI;
+// 							integral += GGX;
+// 						}
+// 
+// //						integralNDF += Mathf.TWOPI * m2 * cosThetaI * sinThetaI / (Mathf.PI * Mathf.Pow( cosThetaI*cosThetaI * (m2 - 1) + 1, 2.0f ));
+// 					}
+// 
+// 					// Finalize
+// 					float	Smith_o_den = NdotV + Mathf.Sqrt( m2 + (1-m2) * NdotV*NdotV );
+// 					integral /= Smith_o_den;
+// 
+// //					integral *= dTheta * dPhi;
+// 					integral *= 0.5f * dMu * dPhi;	// Cosine-weighted sampling has a 0.5 factor!
+// //					integralNDF *= dTheta;
+// 
+// 					m_GGX_E[X,Y] = integral;
+// 					dumpMathematica += "{ " + cosThetaO + ", " + m + ", "  + integral + "}, ";
+// 				}
+// 			}
+// 
+// 			dumpMathematica = dumpMathematica.Remove( dumpMathematica.Length-2 );	// Remove last comma
+// 			dumpMathematica += " };";
+// 
+// 			// Dump as binary
+// 			using ( FileStream S = MSBRDFFileName.Create() )
+// 				using ( BinaryWriter W = new BinaryWriter( S ) ) {
+// 					for ( uint Y=0; Y < ROUGHNESS_SUBDIVS_COUNT; Y++ )
+// 						for ( uint X=0; X < COS_THETA_SUBDIVS_COUNT; X++ )
+// 							W.Write( m_GGX_E[X,Y] );
+// 				}
+// 
+// 			//////////////////////////////////////////////////////////////////////////
+// 			// Compute average irradiance based on roughness, re-using the previously computed results
+// 			const uint		THETA_SUBDIVS_COUNT2 = 512;
+// 
+// 			float	dTheta2 = Mathf.HALFPI / THETA_SUBDIVS_COUNT2;
+// 
+// 			for ( uint X=0; X < ROUGHNESS_SUBDIVS_COUNT; X++ ) {
+// 
+// 				float	integral = 0.0f;
+// 				for ( uint THETA=0; THETA < THETA_SUBDIVS_COUNT2; THETA++ ) {
+// 					float	thetaO = Mathf.HALFPI * (0.5f+THETA) / THETA_SUBDIVS_COUNT2;
+// 					float	cosThetaO = Mathf.Cos( thetaO );
+// 					float	sinThetaO = Mathf.Sin( thetaO );
+// 
+// 					// Sample previously computed table
+// 					float	i = cosThetaO * COS_THETA_SUBDIVS_COUNT;
+// 					uint	i0 = Math.Min( COS_THETA_SUBDIVS_COUNT-1, (uint) Mathf.Floor( i ) );
+// 					uint	i1 = Math.Min( COS_THETA_SUBDIVS_COUNT-1, i0 + 1 );
+// 					float	E = (1-i) * m_GGX_E[i0,X] + i * m_GGX_E[i1,X];
+// 
+// 					integral += E * cosThetaO * sinThetaO;
+// 				}
+// 
+// 				// Finalize
+// 				integral *= Mathf.TWOPI * dTheta2;
+// 
+// 				m_GGX_Eavg[X] = integral;
+// 			}
+// 
+// 			// Dump as binary
+// 			using ( FileStream S = MSBRDFFileName2.Create() )
+// 				using ( BinaryWriter W = new BinaryWriter( S ) ) {
+// 					for ( uint X=0; X < ROUGHNESS_SUBDIVS_COUNT; X++ )
+// 						W.Write( m_GGX_Eavg[X] );
+// 				}
+// }
+// 
+// 			#endif
+// 
+// // 			// Build irradiance complement texture
+// // 			using ( PixelsBuffer content = new PixelsBuffer( COS_THETA_SUBDIVS_COUNT * ROUGHNESS_SUBDIVS_COUNT * 4 ) ) {
+// // 				using ( FileStream S = MSBRDFFileName.OpenRead() )
+// // 					using ( BinaryReader R = new BinaryReader( S ) )
+// // 						using ( BinaryWriter W = content.OpenStreamWrite() ) {
+// // 							for ( uint Y=0; Y < ROUGHNESS_SUBDIVS_COUNT; Y++ ) {
+// // 								for ( uint X=0; X < COS_THETA_SUBDIVS_COUNT; X++ ) {
+// // 									float	V = R.ReadSingle();
+// // 									m_GGX_E[X,Y] = V;
+// // 									W.Write( V );
+// // 								}
+// // 							}
+// // 						}
+// // 
+// // 				m_tex_IrradianceComplement = new Texture2D( m_device, COS_THETA_SUBDIVS_COUNT, ROUGHNESS_SUBDIVS_COUNT, 1, 1, ImageUtility.PIXEL_FORMAT.R32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, false, new PixelsBuffer[] { content } );
+// // 			}
+// // 
+// // 			// Build average irradiance texture
+// // 			using ( PixelsBuffer content = new PixelsBuffer( ROUGHNESS_SUBDIVS_COUNT * 4 ) ) {
+// // 				using ( FileStream S = MSBRDFFileName2.OpenRead() )
+// // 					using ( BinaryReader R = new BinaryReader( S ) )
+// // 						using ( BinaryWriter W = content.OpenStreamWrite() ) {
+// // 							for ( uint X=0; X < ROUGHNESS_SUBDIVS_COUNT; X++ ) {
+// // 								float	V = R.ReadSingle();
+// // 								m_GGX_Eavg[X] = V;
+// // 								W.Write( V );
+// // 							}
+// // 						}
+// // 
+// // 				m_tex_IrradianceAverage = new Texture2D( m_device, ROUGHNESS_SUBDIVS_COUNT, 1, 1, 1, ImageUtility.PIXEL_FORMAT.R32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, false, new PixelsBuffer[] { content } );
+// // 			}
+// 
+// 
+// //////////////////////////////////////////////////////////////////////////
+// // Check single-scattering and multiple-scattering BRDFs are actual complements
+// //
+// /*
+// float3[,]	integralChecks = new float3[COS_THETA_SUBDIVS_COUNT,ROUGHNESS_SUBDIVS_COUNT];
+// for ( uint Y=0; Y < ROUGHNESS_SUBDIVS_COUNT; Y++ ) {
+// 	float	m = (float) Y / (ROUGHNESS_SUBDIVS_COUNT-1);
+// 	float	m2 = Math.Max( 0.01f, m*m );
+// 
+// 	float	Eavg = SampleEavg( m );
+// 
+// 	for ( uint X=0; X < COS_THETA_SUBDIVS_COUNT; X++ ) {
+// 		float	cosThetaO = (float) X / (COS_THETA_SUBDIVS_COUNT-1);
+// 		float	sinThetaO = Mathf.Sqrt( 1 - cosThetaO*cosThetaO );
+// 
+// 		float	NdotV = cosThetaO;
+// 
+// 		float	Eo = SampleE( cosThetaO, m );
+// 
+// 		const uint		CHECK_THETA_SUBDIVS_COUNT = 128;
+// 		const uint		CHECK_PHI_SUBDIVS_COUNT = 2*128;
+// 
+// 		const float		dPhi = Mathf.TWOPI / CHECK_PHI_SUBDIVS_COUNT;
+// 		const float		dTheta = Mathf.HALFPI / CHECK_THETA_SUBDIVS_COUNT;
+// 
+// 		float	integralSS = 0.0f;
+// 		float	integralMS = 0.0f;
+// 		for ( uint THETA=0; THETA < CHECK_THETA_SUBDIVS_COUNT; THETA++ ) {
+// 
+// 			// Use regular sampling
+// 			float	thetaI = Mathf.HALFPI * (0.5f+THETA) / CHECK_THETA_SUBDIVS_COUNT;
+// 			float	cosThetaI = Mathf.Cos( thetaI );
+// 			float	sinThetaI = Mathf.Sin( thetaI );
+// 
+// // 			// Use cosine-weighted sampling
+// // 			float	sqCosThetaI = (0.5f+THETA) / CHECK_THETA_SUBDIVS_COUNT;
+// // 			float	cosThetaI = Mathf.Sqrt( sqCosThetaI );
+// // 			float	sinThetaI = Mathf.Sqrt( 1 - sqCosThetaI );
+// 
+//  			float	NdotL = cosThetaI;
+// 
+// 			for ( uint PHI=0; PHI < CHECK_PHI_SUBDIVS_COUNT; PHI++ ) {
+// 				float	phi = Mathf.TWOPI * PHI / CHECK_PHI_SUBDIVS_COUNT;
+// 
+// 				//////////////////////////////////////////////////////////////////////////
+// 				// Single-scattering part
+// 
+// 				// Compute cos(theta_h) = Omega_h.N where Omega_h = (Omega_i + Omega_o) / ||Omega_i + Omega_o|| is the half vector and N the surface normal
+// 				float	cosThetaH = (cosThetaI + cosThetaO) / Mathf.Sqrt( 2 * (1 + cosThetaO * cosThetaI + sinThetaO * sinThetaI * Mathf.Sin( phi )) );
+// // 				float3	omega_i = new float3( sinThetaI * Mathf.Cos( phi ), sinThetaI * Mathf.Sin( phi ), cosThetaI );
+// // 				float3	omega_o = new float3( sinThetaO, 0, cosThetaO );
+// // 				float3	omega_h = (omega_i + omega_o).Normalized;
+// // 				float	cosThetaH = omega_h.z;
+// 
+// 				// Compute GGX NDF
+// 				float	den = 1 - cosThetaH*cosThetaH * (1 - m2);
+// 				float	NDF = m2 / (Mathf.PI * den*den);
+// 
+// 				// Compute Smith shadowing/masking
+// 				float	Smith_i_den = NdotL + Mathf.Sqrt( m2 + (1-m2) * NdotL*NdotL );
+// 				float	Smith_o_den = NdotV + Mathf.Sqrt( m2 + (1-m2) * NdotV*NdotV );
+// 
+// 				// Full BRDF is thus...
+// 				float	GGX = NDF / (Smith_i_den * Smith_o_den);
+// 
+// 				integralSS += GGX * cosThetaI * sinThetaI;
+// //				integralSS += GGX;
+// 
+// 				//////////////////////////////////////////////////////////////////////////
+// 				// Multiple-scattering part
+// 				float	Ei = SampleE( cosThetaI, m );
+// 
+// 				float	GGX_ms = Eo * Ei / Eavg;
+// 
+// 				integralMS += GGX_ms * cosThetaI * sinThetaI;
+// 			}
+// 		}
+// 
+// 		// Finalize
+// 		integralSS *= dTheta * dPhi;
+// 		integralMS *= dTheta * dPhi;
+// 
+// 		integralChecks[X,Y] = new float3( integralSS, integralMS, integralSS + integralMS );
+// 	}
+// }
+// //*/
+// //////////////////////////////////////////////////////////////////////////
+// 
+// 
+// // verify BRDF + BRDFms integration = 1
+// //cube map + integration
+// 		}
+// 
+// 		float	SampleE( float _cosTheta, float _roughness ) {
+// 			_cosTheta *= COS_THETA_SUBDIVS_COUNT;
+// 			_roughness *= ROUGHNESS_SUBDIVS_COUNT;
+// 
+// 			float	X = Mathf.Floor( _cosTheta );
+// 			float	x = _cosTheta - X;
+// 			uint	X0 = Mathf.Min( COS_THETA_SUBDIVS_COUNT-1, (uint) X );
+// 			uint	X1 = Mathf.Min( COS_THETA_SUBDIVS_COUNT-1, X0+1 );
+// 
+// 			float	Y = Mathf.Floor( _roughness );
+// 			float	y = _roughness - Y;
+// 			uint	Y0 = Mathf.Min( ROUGHNESS_SUBDIVS_COUNT-1, (uint) Y );
+// 			uint	Y1 = Mathf.Min( ROUGHNESS_SUBDIVS_COUNT-1, Y0+1 );
+// 
+// 			float	V00 = m_GGX_E[X0,Y0];
+// 			float	V10 = m_GGX_E[X1,Y0];
+// 			float	V01 = m_GGX_E[X0,Y1];
+// 			float	V11 = m_GGX_E[X1,Y1];
+// 
+// 			float	V0 = (1.0f - x) * V00 + x * V10;
+// 			float	V1 = (1.0f - x) * V01 + x * V11;
+// 			float	V = (1.0f - y) * V0 + y * V1;
+// 			return V;
+// 		}
+// 		float	SampleEavg( float _roughness ) {
+// 			_roughness *= ROUGHNESS_SUBDIVS_COUNT;
+// 			float	X = Mathf.Floor( _roughness );
+// 			float	x = _roughness - X;
+// 			uint	X0 = Mathf.Min( ROUGHNESS_SUBDIVS_COUNT-1, (uint) X );
+// 			uint	X1 = Mathf.Min( ROUGHNESS_SUBDIVS_COUNT-1, X0+1 );
+// 
+// 			float	V0 = m_GGX_Eavg[X0];
+// 			float	V1 = m_GGX_Eavg[X1];
+// 			float	V = (1.0f - x) * V0 + x * V1;
+// 			return V;
+// 		}
 
 		void	LoadMSBRDF( int _size, FileInfo _irradianceTableName, FileInfo _whiteFurnaceTableName, out Texture2D _irradianceTexture, out Texture2D _whiteFurnaceTexture ) {
 
-			// Read irradiance tables
+			// Read irradiance table
 			float[,]		irradianceTable = new float[_size,_size];
 			PixelsBuffer	contentIrradiance = new PixelsBuffer( (uint) (_size*_size*4) );
 			using ( FileStream S = _irradianceTableName.OpenRead() )
@@ -740,17 +798,46 @@ for ( uint Y=0; Y < ROUGHNESS_SUBDIVS_COUNT; Y++ ) {
 
 		#endregion
 
-		#region LTC ARea LIghts
+		#region LTC Area Lights
 
-		void	FitLTC( DirectoryInfo _targetDirectory ) {
-			LTC.BRDF_GGX	GGX = new LTC.BRDF_GGX();
-			LTC.LTCFitter	fitter = new LTC.LTCFitter();
-			fitter.Fit( GGX, 64 );
+		Texture2D	LoadLTC( FileInfo _LTCFileName ) {
+			using ( ImageUtility.ImagesMatrix M = new ImageUtility.ImagesMatrix() ) {
+				M.DDSLoadFile( _LTCFileName );
+				Texture2D	T = new Texture2D( m_device, M, ImageUtility.COMPONENT_FORMAT.AUTO );
+				return T;
+			}
+		}
+
+		/// <summary>
+		/// Loads the LTC table used in Unity
+		/// </summary>
+		/// <returns></returns>
+		Texture2D	LoadUnityLTC() {
+			uint			S = (uint) UnityEngine.Experimental.Rendering.HDPipeline.LTCAreaLight.k_LtcLUTResolution;
+			PixelsBuffer	content = new PixelsBuffer( S*S*16 );
+			using ( BinaryWriter W = content.OpenStreamWrite() ) {
+				for ( uint Y=0; Y < S; Y++ ) {
+					for ( uint X=0; X < S; X++ ) {
+						uint	i = S * Y + X;
+						float	m11 = (float) UnityEngine.Experimental.Rendering.HDPipeline.LTCAreaLight.s_LtcGGXMatrixData[i,0];
+						float	m13 = (float) UnityEngine.Experimental.Rendering.HDPipeline.LTCAreaLight.s_LtcGGXMatrixData[i,2];
+						float	m22 = (float) UnityEngine.Experimental.Rendering.HDPipeline.LTCAreaLight.s_LtcGGXMatrixData[i,4];
+						float	m31 = (float) UnityEngine.Experimental.Rendering.HDPipeline.LTCAreaLight.s_LtcGGXMatrixData[i,6];
+						W.Write( m11 );
+						W.Write( m13 );
+						W.Write( m22 );
+						W.Write( m31 );
+					}
+				}
+			}
+				
+			Texture2D	T = new Texture2D( m_device, S, S, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, false, new PixelsBuffer[] { content } );
+			return T;
 		}
 
 		#endregion
 
-		#region Cross -> Cube Map Conversion
+		#region Cube Map Helpers
 
 		void	ConvertCrossToCubeMap( FileInfo _crossMapFile, FileInfo _cubeMapFile ) {
 			using ( ImageUtility.ImageFile crossMap = new ImageUtility.ImageFile( _crossMapFile ) ) {
@@ -764,10 +851,6 @@ for ( uint Y=0; Y < ROUGHNESS_SUBDIVS_COUNT; Y++ ) {
 				}
 			}
 		}
-
-		#endregion
-
-		#region 
 
 		void		EncodeCubeMapIntoSH( ImageUtility.ImagesMatrix _cubemap ) {
 			float3[]	envSH = _cubemap.EncodeSHOrder2();
