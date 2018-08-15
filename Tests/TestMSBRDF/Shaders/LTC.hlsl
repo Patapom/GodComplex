@@ -28,19 +28,21 @@ float2  LTCGetSamplingUV_Old( float _VdotN, float _perceptualRoughness ) {
 	float2  xy = float2(  _perceptualRoughness, acos(_VdotN) * 2.0*INVPI );
 			xy *= LTC_LUT_SIZE-1;		// 0 is pixel 0, 1 = last pixel in the table
 			xy += 0.5;					// Perfect pixel sampling starts at the center
+			xy /= LTC_LUT_SIZE;			// Finally, return UVs in [0,1]
 
-xy.y = 1.0 - xy.y;
+//xy.y = 1.0 - xy.y;
 
-	return xy / LTC_LUT_SIZE;			// Finally, return UVs in [0,1]
+	return xy;
 }
 float2  LTCGetSamplingUV_New( float _VdotN, float _perceptualRoughness ) {
 	float2  xy = float2(  _perceptualRoughness, sqrt( 1 - _VdotN ) );	// Now, we use V = sqrt( 1 - cos(theta) ) which is kind of linear and only requires a single sqrt() instead of an expensive acos()
 			xy *= LTC_LUT_SIZE-1;		// 0 is pixel 0, 1 = last pixel in the table
 			xy += 0.5;					// Perfect pixel sampling starts at the center
+			xy /= LTC_LUT_SIZE;			// Finally, return UVs in [0,1]
 
-xy.y = 1.0 - xy.y;
+//xy.y = 1.0 - xy.y;
 
-	return xy / LTC_LUT_SIZE;			// Finally, return UVs in [0,1]
+	return xy;
 }
 
 // Fetches the transposed M^-1 matrix needed for runtime LTC estimate
@@ -49,6 +51,7 @@ float3x3	LoadLTCMatrix( float2 _UV, uint _BRDFIndex, Texture2DArray< float4 > _t
 	float3x3    invM = 0.0;
 				invM._m22 = 1.0;
 				invM._m00_m02_m11_m20 = _tex_LTC.SampleLevel( LinearClamp, float3( _UV, _BRDFIndex ), 0 );
+//				invM._m00_m20_m11_m02 = _tex_LTC.SampleLevel( LinearClamp, float3( _UV, _BRDFIndex ), 0 );
 
 	return invM;
 }

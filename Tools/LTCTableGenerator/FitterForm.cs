@@ -774,7 +774,9 @@ tsReflection = _LTC.Z;	// Use preferred direction
 						m_imageDifference.WritePixels( ( uint _X, uint _Y, ref float4 _color ) => { RenderSphere( _X, _Y, -4, 4, ref _color, ( ref float3 _tsView, ref float3 _tsLight ) => {
 							float	V0 = EstimateBRDF( ref _tsView, ref _tsLight );
 							float	V1 = EstimateLTC( ref _tsView, ref _tsLight );
-							return (V0 > V1 ? V0 / Math.Max( 1e-6f, V1 ) : V1 / Math.Max( 1e-6f, V0 )) - 1.0f;
+							float	relativeError = (V0 > V1 ? V0 / Math.Max( 1e-6f, V1 ) : V1 / Math.Max( 1e-6f, V0 )) - 1.0f;
+									relativeError *= Math.Min( Math.Abs( V0 ), Math.Abs( V1 ) );	// Weigh by the value itself to give very low importance to small values after all
+							return relativeError;
 						} ); } );
 					#else
 						m_imageDifference.WritePixels( ( uint _X, uint _Y, ref float4 _color ) => { RenderSphere( _X, _Y, -4, 0, ref _color, ( ref float3 _tsView, ref float3 _tsLight ) => {
