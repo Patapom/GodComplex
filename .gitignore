@@ -661,3 +661,4 @@ Publish
 *.cache
 /Tools/AxFExtractor/bin
 /Tools/AxFExtractor/obj
+/Tests/TestAreaLightLTC/obj
