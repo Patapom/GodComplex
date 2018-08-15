@@ -414,7 +414,6 @@ Lr *= 0.9;	// Attenuate a bit to see in front of white sky...
 
 			// Accumulate
 			Lo += Lr * LdotN;
-//Lo += saturate( dot( -wsView, wsNormal ) );
 			validSamplesCount++;
 		}
 
