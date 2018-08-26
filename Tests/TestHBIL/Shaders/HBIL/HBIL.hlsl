@@ -21,12 +21,47 @@
 //#define USE_NORMAL_INFLUENCE_FOR_BENT_NORMAL	1	// Define this to compute the bent normal by accounting for visibility + cos(angle with the normal), instead of visibility only for the regular case
 // !!NOT AS PHYSICALLY CORRECT
 
+// This is an interesting line as it will prevent radiance from being sampled again once too many invalid samples are encountered
+//	(i.e. the bilateral filtering keeps on accumulating, making new samples less and less susceptible to be accepted once they started to get rejected)
+//	but it also dims the lighting quite quickly so not sure if we need to use it or not... IMHO it should be enabled otherwise we get some visual artefacts...
+#define	RUNNING_WEIGHT_DIM	1
+
+// !!VERY NICE IDEA TO EXPLORE FURTHER
+// This idea consists in changing the step size to start slow then go faster, instead of using a constant step size
+// This is important for AO gathering where many details (i.e. fast horizon jumps) are often very close from the central position
+// Unfortunately, enabling this seems to break the large-range indirect lighting gathering that suffers greatly.
+// It seems to be a delicate balance between very nice AO or very nice IL. Ideally, obviously, we would like just "more steps", but it'd too expensive... :'(
+#define	STEP_SIZE_FACTORS	1									// Constant steps give great IL but poorly detailed AO :/
+//#define	STEP_SIZE_FACTORS	float4( 0.125, 0.25, 0.5, 1 );	// This gives greatly detailed AO but poor IL :/
+// !!VERY NICE IDEA TO EXPLORE FURTHER
+
+
 #define USE_NORMAL_INFLUENCE_FOR_AO	1	// Define this to compute AO as a ratio of visibility only + cos(angle with the normal), which is what we expect in our calculations since AO is supposed to be used for far-field computation and should be the complement of the near field lighting given by HBIL
 
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+// Pre-Declarations
+
 // We assume there exist such methods declared somewhere where _pixelPosition is the position in screen space
-float	FetchDepth( float2 _pixelPosition, float _mipLevel );							// The return value must be the depth (in meters)
-float3	FetchRadiance( float2 _pixelPosition, float _mipLevel );						// The return value must be the radiance from last frame (DIFFUSE ONLY!)
-float	BilateralFilterDepth( float _centralZ, float _previousDeltaZ, float _newDeltaZ, float _horizonCosTheta, float _newCosTheta, float _radius_meters );	// The return value must be a [0,1] weight telling whether or not we accept the sample at the specified radius and depth (in meter)
+float	FetchDepth( float2 _pixelPosition, float _mipLevel );		// The return value must be the depth (in meters)
+float3	FetchNormal( float2 _pixelPosition, float _mipLevel );		// The return value must be the normal vector in local camera space (i.e. no negative Z component)
+float3	FetchRadiance( float2 _pixelPosition, float _mipLevel );	// The return value must be the radiance from last frame (DIFFUSE ONLY!)
+
+// Expensive bilateral filtering
+//	_ssCentralPosition, the screen-space position of the central point we're computing the lighting for
+//	_centralZ, the depth (from FetchDepth()) of the central point we're computing the lighting for
+//	_lcsCentralNormal, the normal (from FetchNormal()) of the central point we're computing the lighting for
+//	_ssCurrentPosition, the screen-space position of the point we're computing the filtering values for
+//	_currentZ, the depth (from FetchDepth()) of the point we're computing the filtering values for
+//	_lcsCurrentNormal, the normal (from FetchNormal()) of the point we're computing the filtering values for
+//	_radius_meters, distance (in meters) between current and central positions
+//	_horizonCosTheta, cosine of the current angle to the horizon
+//	_newCosTheta, cosine of the angle to the new candidate horizon
+//
+// The X return value must be a [0,1] weight telling whether or not we accept the DEPTH sample
+// The Y return value must be a [0,1] weight telling whether or not we accept the IRRADIANCE sample
+float2	BilateralFilter( float2 _ssCentralPosition, float _centralZ, float3 _lcsCentralNormal, float2 _ssCurrentPosition, float _currentZ, float3 _lcsCurrentNormal, float _radius_meters, float _horizonCosTheta, float _newCosTheta );
+
 
 // Integrates the dot product of the normal with a vector interpolated between slice horizon angle theta0 and theta1 (equation 18 from the paper)
 // We're looking to obtain the irradiance reflected from a tiny slice of terrain:
@@ -162,29 +197,51 @@ cosAlpha = 1.0;	// No influence after all!!
 //	_integralFactors, some pre-computed factors to feed the radiance integral
 //	_maxCosTheta, the floating maximum cos(theta) that indicates the angle of the perceived horizon
 //
-float3	SampleIrradiance( float2 _ssPosition, float2 _ssStep, float _radius_meters, float2 _sinCosGamma, float _centralZ, float _mipLevelDepth, float2 _integralFactors, inout float3 _previousRadiance, inout float _maxCosTheta ) {
+float4	SampleIrradiance( float2 _ssCentralPosition, float2 _ssPosition, float2 _ssStep, float _radius_meters, float2 _sinCosGamma, float _centralZ, float3 _csCentralNormal, float _mipLevelDepth, float2 _integralFactors, inout float _radianceSamplingWeight, inout float3 _previousRadiance, inout float _maxCosTheta ) {
 
 	// Read new Z and compute new horizon angle candidate
-	float	Z = _centralZ - FetchDepth( _ssPosition, _mipLevelDepth );						// Z difference, in meters
-	float	recHypo = rsqrt( _radius_meters*_radius_meters + Z*Z );							// 1 / sqrt( z� + r� )
-	float	cosTheta = (_sinCosGamma.x * _radius_meters + _sinCosGamma.y * Z) * recHypo;	// cos(theta) = [sin(gamma)*r + cos(gamma)*z] / sqrt( z� + r� )
+	float	Z = FetchDepth( _ssPosition, _mipLevelDepth );
+	float	deltaZ = _centralZ - Z;																// Z difference, in meters
+	float	recHypo = rsqrt( _radius_meters*_radius_meters + deltaZ*deltaZ );					// 1 / sqrt( z� + r� )
+	float	cosTheta = (_sinCosGamma.x * _radius_meters + _sinCosGamma.y * deltaZ) * recHypo;	// cos(theta) = [sin(gamma)*r + cos(gamma)*z] / sqrt( z� + r� )
 
-	// Filter outlier horizon values
-float	previousZ = 0.0;	// NEEDED?
-	float	bilateralWeight = BilateralFilterDepth( _centralZ, previousZ, Z, _maxCosTheta, cosTheta, _radius_meters );
-	cosTheta = lerp( -1.0, cosTheta, bilateralWeight );	// Flatten if rejected
+	float3	lcsCurrentNormal = FetchNormal( _ssPosition, 0.0 );
+
+// Move bilateral filtering back there if we ever need to filter cosTheta again!
+//	float2	bilateralWeights = BilateralFilter( _ssCentralPosition, _centralZ, _csCentralNormal, _ssPosition, Z, lcsCurrentNormal, _radius_meters, _maxCosTheta, cosTheta );
+//	cosTheta = lerp( -1.0, cosTheta, bilateralWeights.x );	// Flatten if rejected
+
 
 	// Update any rising horizon
 	if ( cosTheta <= _maxCosTheta )
 		return 0.0;	// Below the horizon... No visible contribution.
 
+	// Filter outlier horizon values
+	float2	bilateralWeights = BilateralFilter( _ssCentralPosition, _centralZ, _csCentralNormal, _ssPosition, Z, lcsCurrentNormal, _radius_meters, _maxCosTheta, cosTheta );
+
+	#if RUNNING_WEIGHT_DIM
+		_radianceSamplingWeight *= bilateralWeights.x;	// Cumulate fades so we can never sample radiance again after too many invalid samples are encountered
+	#endif
+
 	#if SAMPLE_NEIGHBOR_RADIANCE
-		_previousRadiance = FetchRadiance( _ssPosition, 0.0 );
-//		_previousRadiance = FetchRadiance( _ssPosition - _bilateralValues.x * _ssStep, 0.0 );	// Backtrack a little! Works very well for wrong pixels, a little less for right pixels (once again, we need a good filtering!)
+
+		#if RUNNING_WEIGHT_DIM
+			if ( _radianceSamplingWeight > 0.0 ) {
+				float3	newRadiance = bilateralWeights.y * FetchRadiance( _ssPosition, 0.0 );
+				_previousRadiance = lerp( _previousRadiance, newRadiance, _radianceSamplingWeight );	// Accept new radiance depending on accumulated sampling weight...
+			}
+		#else
+			if ( bilateralWeights.y ) {
+				float3	newRadiance = bilateralWeights.y * FetchRadiance( _ssPosition, 0.0 );
+				_previousRadiance = lerp( _previousRadiance, newRadiance, _radianceSamplingWeight );	// Accept new radiance depending on accumulated sampling weight...
+			}
+		#endif
+
 	#endif
 
 	// Integrate over horizon difference (always from smallest to largest angle otherwise we get negative results!)
-	float3	incomingRadiance = _previousRadiance * IntegrateSolidAngle( _integralFactors, cosTheta, _maxCosTheta );
+	float	radianceIntegral = IntegrateSolidAngle( _integralFactors, cosTheta, _maxCosTheta );
+	float4	incomingRadiance = float4( radianceIntegral * _previousRadiance, radianceIntegral );
 
 // #TODO: Integrate with linear interpolation of irradiance as well??
 // #TODO: Integrate with Fresnel F0!
@@ -198,26 +255,26 @@ float	previousZ = 0.0;	// NEEDED?
 ////////////////////////////////////////////////////////////////////////////////
 // Gathers the irradiance around the central position
 //	_ssPosition, the central screen-space position (in pixel) where to gather from
-//	_csDirection, the camera-space direction of the disc slice we're sampling
 //	_ssStep, the screen-space direction of the disc slice we're sampling
-//	_ssMaxPosition, the screen-space position of the bottom right corner
+//	_ssMaxPosition, the screen-space position of the bottom right corner (for clipping)
+//	_csDirection, the camera-space direction of the disc slice we're sampling
 //	_csNormal, camera-space normal
 //	_sinCosGamma, the sin/cos of the camera deviation angle used for local camera-space reprojection of the horizon
 //	_stepSize_meters, size (in meters) of a radial step to jump from one sample to another
-//	_stepsCount, amount of steps to take (front & back so actual samples count will always be twice that value!)
-//	_centralZ, the central depth value (WARNING: Always offset it toward the camera by a little epsilon to avoid horizon acnea)
+//	_maxStepsCount, amount of steps to take (front & back so actual samples count will always be twice that value!)
+//	_centralZ, the central depth value (WARNING: Always offset it toward the camera by a little epsilon before entering this function, to avoid horizon acnea)
 //	_centralRadiance, last frame's radiance at central position that we can always use as a safe backup for irradiance integration (in case bilateral filter rejects neighbor height as too different)
+//	_noise, noise value in [0,1]
 //
-// Returns:
-//	[OUT] _csBentNormal, the average bent normal for the slice (Warning: NOT NORMALIZED, and must be accumulated unnormalized otherwise result will get biased!)
+//	[OUT] _csBentNormal, the average camera-space bent normal for the slice (Warning: NOT NORMALIZED, and must be accumulated unnormalized otherwise result will get biased! Only normalize at the end of the loop.)
 //	[OUT] _AO, the collected ambient occlusion for the slice (in [0,2] since we collected for the front and back direction!)
-//	The irradiance gathered along the sampling
+//	Returns the irradiance gathered along the sampling
 //
-float3	GatherIrradiance( float2 _ssPosition, float2 _ssStep, float2 _ssMaxPosition, float2 _csDirection, float3 _csNormal, float2 _sinCosGamma, float _stepSize_meters, uint _stepsCount, float _centralZ, float3 _centralRadiance, out float3 _csBentNormal, out float _AO ) {
+float3	GatherIrradiance( float2 _ssPosition, float2 _ssStep, float2 _ssMaxPosition, float2 _csDirection, float3 _csNormal, float2 _sinCosGamma, float _stepSize_meters, uint _maxStepsCount, float _centralZ, float3 _centralRadiance, float _noise,
+						  out float3 _csBentNormal, out float _AO ) {
 
 	// Pre-compute factors for the integrals
 	float2	integralFactors_Front = ComputeIntegralFactors( _csDirection, _csNormal );
-//	float2	integralFactors_Back = ComputeIntegralFactors( -_csDirection, _csNormal );
 	float2	integralFactors_Back = float2( -integralFactors_Front.x, integralFactors_Front.y );
 
 	// Compute initial cos(angle) for front & back horizons
@@ -234,39 +291,104 @@ float3	GatherIrradiance( float2 _ssPosition, float2 _ssStep, float2 _ssMaxPositi
 	float	planeCosTheta_Front = hitDistance_Front / sqrt( hitDistance_Front*hitDistance_Front + 1.0 );	// Assuming length(_csDirection) == 1
 	float	planeCosTheta_Back = -planeCosTheta_Front;	// Back cosine is simply the mirror value
 
-// Show horizon effect ON/OFF
+// DEBUG: Show the effect of horizon initialization ON/OFF by uncommenting those lines
 //planeCosTheta_Front = -1.0;
 //planeCosTheta_Back = -1.0;
 
+	/////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Gather irradiance from front & back directions while updating the horizon angles at the same time
 	float3	sumRadiance = 0.0;
-	float3	previousRadiance_Front = _centralRadiance;
-	float3	previousRadianceBack = _centralRadiance;
 
-	float	radius_meters = 0.0;
-	float2	ssPosition_Front = _ssPosition;
-	float2	ssPosition_Back = _ssPosition;
-	float	maxCosTheta_Front = planeCosTheta_Front;
-	float	maxCosTheta_Back = planeCosTheta_Back;
-	float2	backSinCosGamma = float2( -_sinCosGamma.x, _sinCosGamma.y );
+	#if 1
+		/////////////////////////////////////////////////////////////////////////////////////////////////////
+		// [18-02-27] Separated front & back steps
+		// Less expensive for long paths, could easily span the entire screen without any penalty!
+		// We can clip each front/back path independently if we reach the screen borders.
+		//
 
-	[loop]
-	for ( uint stepIndex=0; stepIndex < _stepsCount; stepIndex++ ) {
-		radius_meters += _stepSize_meters;
-		ssPosition_Front += _ssStep;
-		ssPosition_Back -= _ssStep;
+		// Compute border intersection
+		float4	deltaBorderXY = float4( _ssMaxPosition.x - _ssPosition.x, _ssMaxPosition.y - _ssPosition.y, _ssPosition.x, _ssPosition.y );					// XY = distance to border for positive step, ZW = distance to border for negative step
+		float4	deltaBorder = float4( _ssStep.x > 0.0 ? deltaBorderXY.xz : deltaBorderXY.zx, _ssStep.y > 0.0 ? deltaBorderXY.yw : deltaBorderXY.wy ).xzyw;	// XY = distance to border for front march, ZW = distance to border for back march
+		float4	distance2Border = deltaBorder / max( 1e-3, abs( _ssStep ).xyxy );
+		uint	stepsCount_Front = min( _maxStepsCount, uint( floor( min( distance2Border.x, distance2Border.y ) ) ) );
+		uint	stepsCount_Back = min( _maxStepsCount, uint( floor( min( distance2Border.z, distance2Border.w ) ) ) );
 
 		float	mipLevel = 0.0;
-		if ( all( ssPosition_Front > 0.0 && ssPosition_Front < _ssMaxPosition ) )
-			sumRadiance += SampleIrradiance( ssPosition_Front, _ssStep, radius_meters, _sinCosGamma, _centralZ, mipLevel, integralFactors_Front, previousRadiance_Front, maxCosTheta_Front );
-		if ( all( ssPosition_Back > 0.0 && ssPosition_Back < _ssMaxPosition ) )
-			sumRadiance += SampleIrradiance( ssPosition_Back, -_ssStep, radius_meters, backSinCosGamma, _centralZ, mipLevel, integralFactors_Back, previousRadianceBack, maxCosTheta_Back );
-	}
 
+		// March forward
+		float4	stepSizeFactor = STEP_SIZE_FACTORS;
+
+		float	radius_meters_front = 0.0;
+		float2	ssPosition_Front = _ssPosition - _noise * stepSizeFactor.x * _ssStep;
+		float	maxCosTheta_Front = planeCosTheta_Front;
+		float3	previousRadiance_Front = _centralRadiance;
+		float	radianceSamplingWeight_Front = 1.0;
+
+		[loop]
+		for ( uint stepIndex=0; stepIndex < stepsCount_Front; stepIndex++ ) {
+			radius_meters_front += stepSizeFactor.x * _stepSize_meters;
+			ssPosition_Front += stepSizeFactor.x * _ssStep;
+			float4	irradiance = SampleIrradiance( _ssPosition, ssPosition_Front, stepSizeFactor.x * _ssStep, radius_meters_front, _sinCosGamma, _centralZ, _csNormal, mipLevel, integralFactors_Front, radianceSamplingWeight_Front, previousRadiance_Front, maxCosTheta_Front );
+			sumRadiance += irradiance.xyz;
+			stepSizeFactor.xyz = stepSizeFactor.yzw;	// Shift step sizes
+		}
+
+		// March backward
+		stepSizeFactor = STEP_SIZE_FACTORS;	// Reset size factors
+
+		float	radius_meters_back = 0.0;
+		float2	ssPosition_Back = _ssPosition + _noise * stepSizeFactor.x * _ssStep;
+		float	maxCosTheta_Back = planeCosTheta_Back;
+		float2	sinCosGamma_Back = float2( -_sinCosGamma.x, _sinCosGamma.y );
+		float3	previousRadianceBack = _centralRadiance;
+		float	radianceSamplingWeight_Back = 1.0;
+
+		[loop]
+		for ( uint stepIndex2=0; stepIndex2 < stepsCount_Back; stepIndex2++ ) {
+			radius_meters_back += stepSizeFactor.x * _stepSize_meters;
+			ssPosition_Back -= stepSizeFactor.x * _ssStep;
+			float4	irradiance = SampleIrradiance( _ssPosition, ssPosition_Back, -stepSizeFactor.x * _ssStep, radius_meters_back, sinCosGamma_Back, _centralZ, _csNormal, mipLevel, integralFactors_Back, radianceSamplingWeight_Back, previousRadianceBack, maxCosTheta_Back );
+			sumRadiance += irradiance.xyz;
+			stepSizeFactor.xyz = stepSizeFactor.yzw;	// Shift step sizes
+		}
+
+	#else
+		/////////////////////////////////////////////////////////////////////////////////////////////////////
+		// All in one loop + conditions
+		// Less expensive for short paths apparently
+		// But we can't early exit any path and we have to keep a condition inside the loop...
+		//
+		float	radius_meters = 0.0;
+		float2	ssPosition_Front = _ssPosition + _noise * _ssStep;
+		float2	ssPosition_Back = _ssPosition - _noise * _ssStep;
+		float	maxCosTheta_Front = planeCosTheta_Front;
+		float	maxCosTheta_Back = planeCosTheta_Back;
+		float2	sinCosGamma_Back = float2( -_sinCosGamma.x, _sinCosGamma.y );
+		float3	previousRadiance_Front = _centralRadiance;
+		float3	previousRadianceBack = _centralRadiance;
+		float	radianceSamplingWeight_Front = 1.0;
+		float	radianceSamplingWeight_Back = 1.0;
+
+		[loop]
+		for ( uint stepIndex=0; stepIndex < _maxStepsCount; stepIndex++ ) {
+			radius_meters += _stepSize_meters;
+			ssPosition_Front += _ssStep;
+			ssPosition_Back -= _ssStep;
+
+			float	mipLevel = 0.0;
+			if ( all( ssPosition_Front > 0.0 && ssPosition_Front < _ssMaxPosition ) )
+				sumRadiance += SampleIrradiance( _ssPosition, ssPosition_Front, _ssStep, radius_meters, _sinCosGamma, _centralZ, _csNormal, mipLevel, integralFactors_Front, radianceSamplingWeight_Front, previousRadiance_Front, maxCosTheta_Front ).xyz;
+			if ( all( ssPosition_Back > 0.0 && ssPosition_Back < _ssMaxPosition ) )
+				sumRadiance += SampleIrradiance( _ssPosition, ssPosition_Back, -_ssStep, radius_meters, sinCosGamma_Back, _centralZ, _csNormal, mipLevel, integralFactors_Back, radianceSamplingWeight_Back, previousRadianceBack, maxCosTheta_Back ).xyz;
+		}
+
+	#endif
+
+	/////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Accumulate bent normal direction by rebuilding and averaging the front & back horizon vectors
 	_csBentNormal = IntegrateNormal( _csDirection, _csNormal, maxCosTheta_Back, maxCosTheta_Front );
 
-	// DON'T NORMALIZE THE RESULT NOW OR WE GET BIAS!
+// DON'T NORMALIZE THE RESULT NOW OR WE GET BIAS!
 //	_csBentNormal = normalize( _csBentNormal );
 
 	#if USE_NORMAL_INFLUENCE_FOR_AO
@@ -285,16 +407,19 @@ float3	GatherIrradiance( float2 _ssPosition, float2 _ssStep, float2 _ssMaxPositi
 	return sumRadiance;
 }
 
+
 ////////////////////////////////////////////////////////////////////////////////
 // Helper to sample the HBIL data either from a recomposed buffer or directly from split buffers
 ////////////////////////////////////////////////////////////////////////////////
 //
 #if USE_RECOMPOSED_BUFFER
+	// When buffers have been previously recomposed, only a single fetch at fullscreen resolution is enough
 	void	SampleHBILData( uint2 _pixelPosition, Texture2D<float4> _tex_RecomposedRadiance, Texture2D<float4> _tex_RecomposedBentCone, out float3 _radiance, out float4 _csBentCone ) {
 		_radiance = _tex_RecomposedRadiance[_pixelPosition].xyz;
 		_csBentCone = _tex_RecomposedBentCone[_pixelPosition];
 	}
 #else
+	// If buffers are split, then we need to identify which buffer to fetch from given our fullscreen resolution
 	void	SampleHBILData( uint2 _pixelPosition, Texture2DArray<float4> _tex_SplitRadiance, Texture2DArray<float4> _tex_SplitBentCone, out float3 _radiance, out float4 _csBentCone ) {
 		uint2	subPixelIndex = _pixelPosition & 3;
 		uint	sliceIndex = (subPixelIndex.y << 2) + subPixelIndex.x;
