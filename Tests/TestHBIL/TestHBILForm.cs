@@ -85,7 +85,7 @@
 // Distance field scenes
 // These are all procedural scene that don't require actual meshes, but some of them use the textures stored in the "./Textures" folder
 //
-//#define SCENE_LIBRARY					// From @leondenise. Lit only by a single set of SH coefficients (useful to test AO from bent cones)
+#define SCENE_LIBRARY					// From @leondenise. Lit only by a single set of SH coefficients (useful to test AO from bent cones)
 //#define SCENE_INFINITE_ROOMS			// From @leondenise. Lit by both ambient SH and a strong directional Sun.
 //#define SCENE_CORNELL					// Simple Cornell box. Lit by a single point light on the ceiling and a weak environment light. (textures from Geoffrey Rosin) (can you find the hidden emissive quad? :D)
 //#define SCENE_CORNELL_USE_ASBESTOS	// Same but with different floor texture
@@ -95,7 +95,7 @@
 // These are OBJ scenes that are NOT stored on github. You need to download and install them from the appropriate sources.
 // Read the README files in the "./Scenes/" directory for more information...
 //
-#define SCENE_SPONZA					// Crytek Sponza scene with a super strong Sun. Downloaded from https://casual-effects.com/data/ and installed in the "./Scenes/" folder
+//#define SCENE_SPONZA					// Crytek Sponza scene with a super strong Sun. Downloaded from https://casual-effects.com/data/ and installed in the "./Scenes/" folder
 //#define SCENE_SPONZA_POINT_LIGHT		// Same but with a strong moving point light and a weak Sun. (check "Animate" to make the point light move about)
 //#define SCENE_SIBENIK					// Sibenik cathedral with a strong point light. Downloaded from https://casual-effects.com/data/ and installed in the "./Scenes/" folder
 //#define SCENE_SCHAEFFER				// Corridor scene by Austin Shaeffer. Not provided. You should contact @SchaefferAustin to use it (textures are quite big too so couldn't upload them).
