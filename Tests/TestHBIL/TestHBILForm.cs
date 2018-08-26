@@ -1,27 +1,4 @@
-﻿//#define BRUTE_FORCE_HBIL		// 30ms at 1280x720... :D
-//#define RECOMPOSE				// Define this to recompose the split buffers into a full-res buffer (uses 2ms whereas we can totally sample directly from split buffers at lighting time)!
-//#define SINGLE_DIRECTION		// Define to use a single direction instead of 2 when computing interleaved HBIL values
-
-// Distance field scenes
-// These don't require actual meshes but use the textures stored in the "./Textures" folder
-//
-#define SCENE_LIBRARY
-//#define SCENE_INFINITE_ROOMS
-//#define SCENE_CORNELL
-//#define SCENE_CORNELL_USE_ASBESTOS
-//#define SCENE_HEIGHTFIELD
-
-// 3D scenes
-// These are OBJ scenes that are NOT stored on github. You need to download and install them from the appropriate sources.
-// Read the README files in the "./Scenes/" directory for more information...
-//
-//#define SCENE_SPONZA
-//#define SPONZA_POINT_LIGHT
-//#define SCENE_SIBENIK
-//#define SCENE_SCHAEFFER	// Scene by Austin Shaeffer. Not provided. You should contact @SchaefferAustin to use it (textures are quite big too so couldn't upload them).
-
-
-//////////////////////////////////////////////////////////////////////////
+﻿//////////////////////////////////////////////////////////////////////////
 // Horizon-Based Indirect Lighting Demo
 //////////////////////////////////////////////////////////////////////////
 //
@@ -86,6 +63,7 @@
 //	• Try and make the "STEP_SIZE_FACTORS" work! They give a goddamned good AO result, but such a poor HBIL result... What a shame! :'(
 //	• Try to use spiral sampling pattern in the manner of scalable ambient obscurance (http://research.nvidia.com/sites/default/files/pubs/2012-06_Scalable-Ambient-Obscurance/McGuire12SAO.pdf)
 //		=> At the cost of cache coherence I suppose... :'(
+//	• Try all this in quarter res + upsampling!
 //
 // IDEAS:
 //	• Keep failed reprojected pixels into some "surrounding buffer", some sort of paraboloid-projected buffer containing off-screen values???
@@ -100,7 +78,33 @@
 //		==> Due to race condition for 2 pixels wanting to reproject at the same place
 //		==> Tried to use a poor man's ZBuffer as uint + interlockedMin(), reduced the noise a little but not completely for some reason I can't explain... :/
 //
+//////////////////////////////////////////////////////////////////////////
 //
+
+
+// Distance field scenes
+// These are all procedural scene that don't require actual meshes, but some of them use the textures stored in the "./Textures" folder
+//
+#define SCENE_LIBRARY					// From @leondenise. Lit only by a single set of SH coefficients (useful to test AO from bent cones)
+//#define SCENE_INFINITE_ROOMS			// From @leondenise. Lit by both ambient SH and a strong directional Sun.
+//#define SCENE_CORNELL					// Simple Cornell box. Lit by a single point light on the ceiling and a weak environment light. (textures from Geoffrey Rosin) (can you find the hidden emissive quad? :D)
+//#define SCENE_CORNELL_USE_ASBESTOS	// Same but with different texture
+//#define SCENE_HEIGHTFIELD				// Simple height field. Lit by a super strong Sun. (stolen from Shadertoy version of iQ's "Elevated")
+
+// 3D scenes
+// These are OBJ scenes that are NOT stored on github. You need to download and install them from the appropriate sources.
+// Read the README files in the "./Scenes/" directory for more information...
+//
+//#define SCENE_SPONZA					// Crytek Sponza scene with a super strong Sun. Downloaded from https://casual-effects.com/data/ and installed in the "./Scenes/" folder
+//#define SCENE_SPONZA_POINT_LIGHT		// Same but with a strong moving point light and a weak Sun. (check "Animate" to make the point light move about)
+//#define SCENE_SIBENIK					// Sibenik cathedral with a strong point light. Downloaded from https://casual-effects.com/data/ and installed in the "./Scenes/" folder
+//#define SCENE_SCHAEFFER				// Corridor scene by Austin Shaeffer. Not provided. You should contact @SchaefferAustin to use it (textures are quite big too so couldn't upload them).
+
+
+//#define BRUTE_FORCE_HBIL		// Nice but 30ms at 1280x720... Serves as "ground-truth" :D
+//#define RECOMPOSE				// Define this to recompose the split buffers into a full-res buffer (uses 2ms whereas we can totally sample directly from split buffers at lighting time)!
+//#define SINGLE_DIRECTION		// Define to use a single direction instead of 2 when computing interleaved HBIL values
+
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -342,10 +346,12 @@ namespace TestHBIL {
 
 
 			// Dummy textures with pre-computed heights and normals used to debug the computation
-		private Texture2D			m_tex_texDebugHeights = null;
-		private Texture2D			m_tex_texDebugNormals = null;
+		#if SCENE_HEIGHTFIELD
+			private Texture2D			m_tex_texDebugHeights = null;
+			private Texture2D			m_tex_texDebugNormals = null;
+		#endif
 
-		#if SCENE_CORNELL	
+		#if SCENE_CORNELL || SCENE_CORNELL_USE_ASBESTOS
 			private Texture2D			m_tex_tomettesAlbedo = null;
 			private Texture2D			m_tex_tomettesNormal = null;
 			private Texture2D			m_tex_tomettesRoughness = null;
@@ -354,7 +360,7 @@ namespace TestHBIL {
 			private Texture2D			m_tex_concreteRoughness = null;
 		#endif
 
-		#if SCENE_SPONZA || SCENE_SIBENIK || SCENE_SCHAEFFER
+		#if SCENE_SPONZA || SCENE_SPONZA_POINT_LIGHT || SCENE_SIBENIK || SCENE_SCHAEFFER
 			private ObjSceneUtility.SceneObj	m_sceneOBJ = null;
 		#endif
 
@@ -365,7 +371,7 @@ namespace TestHBIL {
 		private CameraManipulator	m_manipulator = new CameraManipulator();
 
 		// DEBUG
-		private ComputeHBIL			m_softwareHBILComputer = null;	// For DEBUG purposes
+		private ComputeHBIL_SoftwareDebug			m_softwareHBILComputer = null;	// For DEBUG purposes
 		private Primitive			m_primCylinder;
 		private Shader				m_shader_RenderDebugCone = null;
 
@@ -422,14 +428,14 @@ namespace TestHBIL {
 					macrosList.Add( new ShaderMacro( "SCENE_TYPE", "0" ) );
 				#elif SCENE_INFINITE_ROOMS
 					macrosList.Add( new ShaderMacro( "SCENE_TYPE", "1" ) );
-				#elif SCENE_CORNELL
+				#elif SCENE_CORNELL || SCENE_CORNELL_USE_ASBESTOS
 					#if SCENE_CORNELL_USE_ASBESTOS
 						macrosList.Add( new ShaderMacro( "USE_ASBESTOS", "1" ) );
 					#endif
 					macrosList.Add( new ShaderMacro( "SCENE_TYPE", "2" ) );
 				#elif SCENE_HEIGHTFIELD
 					macrosList.Add( new ShaderMacro( "SCENE_TYPE", "3" ) );
-				#elif SCENE_SPONZA
+				#elif SCENE_SPONZA|| SCENE_SPONZA_POINT_LIGHT
 					macrosList.Add( new ShaderMacro( "SCENE_TYPE", "4" ) );
 				#elif SCENE_SIBENIK
 					macrosList.Add( new ShaderMacro( "SCENE_TYPE", "5" ) );
@@ -437,7 +443,7 @@ namespace TestHBIL {
 					macrosList.Add( new ShaderMacro( "SCENE_TYPE", "7" ) );
 				#endif
 
-				#if SPONZA_POINT_LIGHT
+				#if SCENE_SPONZA_POINT_LIGHT
 					macrosList.Add( new ShaderMacro( "SPONZA_POINT_LIGHT", "1" ) );
 				#endif
 
@@ -456,7 +462,7 @@ namespace TestHBIL {
 				m_shader_Pull = new ComputeShader( m_device, new System.IO.FileInfo( "Shaders/ComputeReprojection.hlsl" ), "CS_Pull", macros );
 
 				// Scene rendering & lighting
-				#if !SCENE_SPONZA && !SCENE_SIBENIK && !SCENE_SCHAEFFER
+				#if !SCENE_SPONZA && !SCENE_SPONZA_POINT_LIGHT && !SCENE_SIBENIK && !SCENE_SCHAEFFER
 					// Ray-traced / Ray-marched scenes
 					m_shader_RenderScene_DepthGBufferPass = new Shader( m_device, new System.IO.FileInfo( "Shaders/Scene/RenderScene.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS_RenderGBuffer", macros );
 					m_shader_RenderScene_ShadowPoint = new Shader( m_device, new System.IO.FileInfo( "Shaders/Scene/RenderScene.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS_ShadowPoint", macros );
@@ -480,7 +486,7 @@ namespace TestHBIL {
 				// TAA
 				m_shader_TAA = new ComputeShader( m_device, new System.IO.FileInfo( "Shaders/TAA/TemporalAA.hlsl" ), "CS", macros );
 
-				// Stuff
+				// General Stuff
 				m_shader_AddEmissive = new Shader( m_device, new System.IO.FileInfo( "Shaders/AddEmissive.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", macros );
 				m_shader_DownSampleDepth = new ComputeShader( m_device, new System.IO.FileInfo( "Shaders/DownSampleDepth.hlsl" ), "CS", macros );
 				m_shader_CopyDepthStencil = new ComputeShader( m_device, new System.IO.FileInfo( "Shaders/DownSampleDepth.hlsl" ), "CS_Copy", macros );
@@ -553,7 +559,7 @@ namespace TestHBIL {
 
 			//////////////////////////////////////////////////////////////////////////
 			// Create scene
-			#if SCENE_SPONZA
+			#if SCENE_SPONZA|| SCENE_SPONZA_POINT_LIGHT
 				m_sceneOBJ = new ObjSceneUtility.SceneObj();
 				m_sceneOBJ.LoadOBJFile( new System.IO.FileInfo( "./Scenes/Casual-Effects.com/sponza_crytek/sponza.obj" ), true );
 //ObjSceneUtility.SceneObj.Material.ms_diffuseIssRGB = false;		// Don't treat diffuse textures as sRGB
@@ -562,7 +568,7 @@ namespace TestHBIL {
 //ObjSceneUtility.SceneObj.Material.ms_saveTexturesAsDDS = false;		// Don't cache DDS
 
 				float	S = 0.01f;	// Scale factor
-// 				float4x4	local2World = new float4x4(
+// 				float4x4	local2World = new float4x4(		// Rotate by 90° about X
 // 					new float4( S, 0, 0, 0 ),
 // 					new float4( 0, 0, -S, 0 ),
 // 					new float4( 0, S, 0, 0 ),
@@ -585,7 +591,7 @@ namespace TestHBIL {
 //ObjSceneUtility.SceneObj.Material.ms_saveTexturesAsDDS = false;		// Don't cache DDS
 
 				float	S = 1.0f;	// Scale factor
-// 				float4x4	local2World = new float4x4(
+// 				float4x4	local2World = new float4x4(		// Rotate by 90° about X
 // 					new float4( S, 0, 0, 0 ),
 // 					new float4( 0, 0, -S, 0 ),
 // 					new float4( 0, S, 0, 0 ),
@@ -608,7 +614,7 @@ namespace TestHBIL {
 //ObjSceneUtility.SceneObj.Material.ms_saveTexturesAsDDS = false;		// Don't cache DDS
 
 				float	S = 1.0f;	// Scale factor
-// 				float4x4	local2World = new float4x4(
+// 				float4x4	local2World = new float4x4(		// Rotate by 90° about X
 // 					new float4( S, 0, 0, 0 ),
 // 					new float4( 0, 0, -S, 0 ),
 // 					new float4( 0, S, 0, 0 ),
@@ -636,7 +642,7 @@ namespace TestHBIL {
 					m_tex_blueNoise_CPU = new float[Imono.Width,Imono.Height];
 					Imono.ReadPixels( ( uint _X, uint _Y, ref float4 _color ) => { m_tex_blueNoise_CPU[_X,_Y] = _color.x; } );
 
-// 					// Generate blue noise sampling pattern for shadows
+// 					// Generate a blue noise sampling pattern for shadows
 // 					uint		SAMPLES_COUNT = 64;
 // 					float2[]	samplingPositions = new float2[SAMPLES_COUNT+1];
 // 					float		factor = Imono.Width * Imono.Height - 1;	// A value of 1 will yield the total amount pixels - 1
@@ -695,35 +701,37 @@ namespace TestHBIL {
 					}
 				}
 
-			using ( ImageFile I = new ImageFile( new System.IO.FileInfo( "Textures/heights.png" ) ) )
-//			using ( ImageFile I = new ImageFile( new System.IO.FileInfo( "Textures/SponzaDepth.png" ) ) )
-				using ( ImageFile Imono = new ImageFile() ) {
-					Imono.ConvertFrom( I, PIXEL_FORMAT.R8 );
-					m_tex_texDebugHeights = new Texture2D( m_device, new ImagesMatrix( new ImageFile[,] {{ Imono }} ), COMPONENT_FORMAT.UNORM );
-				}
-
-			using ( ImageFile I = new ImageFile( new System.IO.FileInfo( "Textures/normals.png" ) ) ) {
-//			using ( ImageFile I = new ImageFile( new System.IO.FileInfo( "Textures/SponzaNormal.png" ) ) ) {
-				float4[]				scanline = new float4[W];
-				Renderer.PixelsBuffer	sourceNormalMap = new  Renderer.PixelsBuffer( W*H*4*4 );
-				using ( System.IO.BinaryWriter Wr = sourceNormalMap.OpenStreamWrite() )
-					for ( int Y=0; Y < I.Height; Y++ ) {
-						I.ReadScanline( (uint) Y, scanline );
-						for ( int X=0; X < I.Width; X++ ) {
-							float	Nx = 2.0f * scanline[X].x - 1.0f;
-							float	Ny = 2.0f * scanline[X].y - 1.0f;
-							float	Nz = 2.0f * scanline[X].z - 1.0f;
-							Wr.Write( Nx );
-							Wr.Write( Ny );
-							Wr.Write( Nz );
-							Wr.Write( 1.0f );
-						}
+			#if SCENE_HEIGHTFIELD
+				// Load height map for heightfield
+				using ( ImageFile I = new ImageFile( new System.IO.FileInfo( "Textures/heights.png" ) ) )
+					using ( ImageFile Imono = new ImageFile() ) {
+						Imono.ConvertFrom( I, PIXEL_FORMAT.R8 );
+						m_tex_texDebugHeights = new Texture2D( m_device, new ImagesMatrix( new ImageFile[,] {{ Imono }} ), COMPONENT_FORMAT.UNORM );
 					}
 
-				m_tex_texDebugNormals = new Renderer.Texture2D( m_device, I.Width, I.Height, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, false, new Renderer.PixelsBuffer[] { sourceNormalMap } );
-			}
+				using ( ImageFile I = new ImageFile( new System.IO.FileInfo( "Textures/normals.png" ) ) ) {
+//				using ( ImageFile I = new ImageFile( new System.IO.FileInfo( "Textures/SponzaNormal.png" ) ) ) {
+					float4[]				scanline = new float4[W];
+					Renderer.PixelsBuffer	sourceNormalMap = new  Renderer.PixelsBuffer( W*H*4*4 );
+					using ( System.IO.BinaryWriter Wr = sourceNormalMap.OpenStreamWrite() )
+						for ( int Y=0; Y < I.Height; Y++ ) {
+							I.ReadScanline( (uint) Y, scanline );
+							for ( int X=0; X < I.Width; X++ ) {
+								float	Nx = 2.0f * scanline[X].x - 1.0f;
+								float	Ny = 2.0f * scanline[X].y - 1.0f;
+								float	Nz = 2.0f * scanline[X].z - 1.0f;
+								Wr.Write( Nx );
+								Wr.Write( Ny );
+								Wr.Write( Nz );
+								Wr.Write( 1.0f );
+							}
+						}
 
-			#if SCENE_CORNELL
+					m_tex_texDebugNormals = new Renderer.Texture2D( m_device, I.Width, I.Height, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, false, new Renderer.PixelsBuffer[] { sourceNormalMap } );
+				}
+			#endif
+
+			#if SCENE_CORNELL || SCENE_CORNELL_USE_ASBESTOS
 				// Tomettes Floor
 				#if !SCENE_CORNELL_USE_ASBESTOS
 					string[]	floorTextureNames = new string[] {
@@ -779,9 +787,9 @@ namespace TestHBIL {
 
 			// Setup camera
 			m_camera.CreatePerspectiveCamera( 2.0f * Mathf.Atan( TAN_HALF_FOV ), (float) panelOutput.Width / panelOutput.Height, Z_NEAR, Z_FAR );
-
 			m_manipulator.Attach( panelOutput, m_camera );
-//			m_manipulator.InitializeCamera( new float3( 0, 1, 4 ), new float3( 0, 1, 0 ), float3.UnitY );
+			m_manipulator.EnableMouseAction += m_manipulator_EnableMouseAction;
+
 			#if SCENE_LIBRARY
 				m_manipulator.InitializeCamera( new float3( 0, 5.0f, -4.5f ), new float3( 0, 0, 0 ), float3.UnitY );	// Library
 				checkBoxForceAlbedo.Checked = true;
@@ -792,7 +800,7 @@ namespace TestHBIL {
 				m_manipulator.InitializeCamera( P, P + D, float3.UnitY );	// Library
 				floatTrackbarControlEnvironmentIntensity.Value = 0.4f;
 				floatTrackbarControlSunIntensity.Value = 5.0f;
-			#elif SCENE_CORNELL
+			#elif SCENE_CORNELL || SCENE_CORNELL_USE_ASBESTOS
 				m_manipulator.InitializeCamera( new float3( 0, -0.7f, -6.0f ), new float3( 0, -0.7f, 0 ), float3.UnitY );
 				floatTrackbarControlEnvironmentIntensity.Value = 0.1f;
 				floatTrackbarControlSunIntensity.Value = 2.0f;
@@ -805,14 +813,22 @@ namespace TestHBIL {
 				checkBoxMonochrome.Checked = true;
 				floatTrackbarControlAlbedo.Value = 0.66f;
 				floatTrackbarControlEnvironmentIntensity.Value = 0.04f;
-			#elif SCENE_SPONZA
+			#elif SCENE_SPONZA || SCENE_SPONZA_POINT_LIGHT
 // 				float3	P = new float3( 12.5715694f, 0.9832124f, -3.20435619f );	// Near lion head's location
 // 				float3	D = new float3( -0.5008525f, 0.207912222f, 0.84019f );
-				float3	P = new float3( 9.7771854400634766f, 1.400185227394104f, -0.33648306131362915f );
+				#if SCENE_SPONZA_POINT_LIGHT
+					float3	P = new float3( -3.7771854400634766f, 1.400185227394104f, 3.33648306131362915f );	// In the corner where the light is starting
+				#else
+					float3	P = new float3( 9.7771854400634766f, 1.400185227394104f, -0.33648306131362915f );	// Viewing the main alley
+				#endif
 				float3	D = new float3( -1, 0, 0 );
 				m_manipulator.InitializeCamera( P, P + D, float3.UnitY );
 				floatTrackbarControlEnvironmentIntensity.Value = 0.01f;
-				floatTrackbarControlSunIntensity.Value = 100.0f;
+				#if SCENE_SPONZA_POINT_LIGHT
+					floatTrackbarControlSunIntensity.Value = 1.0f;	// Weak Sun, let the point light show
+				#else
+					floatTrackbarControlSunIntensity.Value = 100.0f;
+				#endif
 				floatTrackbarControlExposure.Value = 0.41f;
 			#elif SCENE_SIBENIK
 				float3	P = new float3( 17.0f, -7.0f, 0.0f );
@@ -831,7 +847,6 @@ namespace TestHBIL {
 				floatTrackbarControlSunIntensity.Value = 150.0f;
 				floatTrackbarControlExposure.Value = 0.5f;
 			#endif
-			m_manipulator.EnableMouseAction += m_manipulator_EnableMouseAction;
 
 			// Setup environment SH coefficients
 			InitEnvironmentSH();
@@ -839,7 +854,7 @@ namespace TestHBIL {
 			UpdateSH();
 
 			// Create software computer for debugging purposes
-			m_softwareHBILComputer = new ComputeHBIL( m_device );
+			m_softwareHBILComputer = new ComputeHBIL_SoftwareDebug( m_device );
 			{
 				VertexP3[]	vertices = new VertexP3[2*100];
 				uint[]		indices = new uint[2*3*100];
@@ -861,7 +876,6 @@ namespace TestHBIL {
 			// Start game time
 			m_ticks2Seconds = 1.0 / System.Diagnostics.Stopwatch.Frequency;
 			m_stopWatch.Start();
-//			m_startTime = GetGameTime();
 			m_lastDisplayTime = GetGameTime();
 
 			m_camera.CameraTransformChanged += new EventHandler( Camera_CameraTransformChanged );
@@ -898,12 +912,12 @@ namespace TestHBIL {
 			m_tex_radiance0.Dispose();
 			m_tex_bentCone.Dispose();
 
-			#if SCENE_SPONZA || SCENE_SIBENIK || SCENE_SCHAEFFER
+			#if SCENE_SPONZA || SCENE_SPONZA_POINT_LIGHT || SCENE_SIBENIK || SCENE_SCHAEFFER
 				m_sceneOBJ.Dispose();
 			#endif
 
 
-			#if SCENE_CORNELL
+			#if SCENE_CORNELL || SCENE_CORNELL_USE_ASBESTOS
 				m_tex_tomettesRoughness.Dispose();
 				m_tex_tomettesNormal.Dispose();
 				m_tex_tomettesAlbedo.Dispose();
@@ -913,8 +927,11 @@ namespace TestHBIL {
 				m_tex_concreteRoughness.Dispose();
 			#endif
 
-			m_tex_texDebugNormals.Dispose();
-			m_tex_texDebugHeights.Dispose();
+			#if SCENE_HEIGHTFIELD
+				m_tex_texDebugNormals.Dispose();
+				m_tex_texDebugHeights.Dispose();
+			#endif
+
 			m_tex_blueNoise.Dispose();
 			m_tex_shadowDirectional.Dispose();
 			m_tex_shadowPoint.Dispose();
@@ -981,7 +998,7 @@ namespace TestHBIL {
 				m_CB_Main.m._deltaTime = deltaTime;
 				m_CB_Main.m._time = newCurrentTime;
 			} else {
-//				m_CB_Main.m._deltaTime = 0.016f;	// You wish! :D
+//				m_CB_Main.m._deltaTime = 0.016f;	// You wish we run @60FPS dude! :D
 			}
 
 			m_CB_Main.m._debugValues.Set( floatTrackbarControlBilateral0.Value, floatTrackbarControlBilateral1.Value, floatTrackbarControlBilateral2.Value, floatTrackbarControlBilateral3.Value );
@@ -1041,14 +1058,8 @@ namespace TestHBIL {
 				m_device.Clear( m_tex_sourceRadiance_PUSH, float4.Zero );
 				m_device.Clear( m_tex_reprojectedDepthBuffer, 4294967000.0f * float4.One );	// Clear to Z Far
 
-//Texture2D	pipo = new Texture2D( m_device, m_tex_reprojectedDepthBuffer.Width, m_tex_reprojectedDepthBuffer.Height, 1, 0, PIXEL_FORMAT.R32, COMPONENT_FORMAT.UINT, true, false, null );
-//pipo.CopyFrom( m_tex_reprojectedDepthBuffer );
-//uint[,]	p = new uint[m_tex_reprojectedDepthBuffer.Width,m_tex_reprojectedDepthBuffer.Height];
-//pipo.ReadPixels( 0, 0, ( uint X, uint Y, System.IO.BinaryReader _R ) => { p[X,Y] = _R.ReadUInt32(); } );
-
-
-				m_tex_radiance0.SetCS( 0 );		// Source radiance from last frame
-				m_tex_depthWithMips.SetCS( 1 );	// Source depth buffer from last frame
+				m_tex_radiance0.SetCS( 0 );				// Source radiance from last frame
+				m_tex_depthWithMips.SetCS( 1 );			// Source depth buffer from last frame
 //				m_tex_motionVectors_Scatter.SetCS( 2 );	// Motion vectors for dynamic objects
 				m_tex_blueNoise.SetCS( 3 );
 				m_tex_sourceRadiance_PUSH.SetCSUAV( 0 );
@@ -1069,7 +1080,7 @@ namespace TestHBIL {
 			//
 			m_device.PerfSetMarker( 10 );
 
-			#if !SCENE_SPONZA && !SCENE_SIBENIK && !SCENE_SCHAEFFER
+			#if !SCENE_SPONZA && !SCENE_SPONZA_POINT_LIGHT && !SCENE_SIBENIK && !SCENE_SCHAEFFER
 				// Ray-traced / Ray-marched Scenes
 				m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
 
@@ -1079,7 +1090,7 @@ namespace TestHBIL {
 					#if SCENE_HEIGHTFIELD
 						m_tex_texDebugHeights.SetPS( 32 );
 						m_tex_texDebugNormals.SetPS( 33 );
-					#elif SCENE_CORNELL
+					#elif SCENE_CORNELL || SCENE_CORNELL_USE_ASBESTOS
 						m_tex_tomettesAlbedo.SetPS( 32 );
 						m_tex_tomettesNormal.SetPS( 33 );
 						m_tex_tomettesRoughness.SetPS( 34 );
@@ -1094,9 +1105,9 @@ namespace TestHBIL {
 			#else
 				// Actual 3D scenes
 				m_device.SetRenderStates( RASTERIZER_STATE.CULL_BACK, DEPTHSTENCIL_STATE.READ_WRITE_DEPTH_LESS, BLEND_STATE.DISABLED );
-//m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.READ_WRITE_DEPTH_LESS, BLEND_STATE.DISABLED );
 
 				if ( m_shader_RenderScene_DepthGBufferPass.Use() ) {
+// Optional
 // 					m_device.Clear( m_tex_splitIrradiance, float4.Zero );
 // 					m_device.Clear( m_tex_splitBentCone, float4.Zero );
 
@@ -1114,18 +1125,12 @@ namespace TestHBIL {
 					uint	facesCount = 0;
 
 					m_sceneOBJ.Render( m_shader_RenderScene_DepthGBufferPass, ( ObjSceneUtility.SceneObj.Mesh.Surface _surface ) => {
-// if ( _surface.m_faces.Length < 20 )
-// 	return false;
 
 						// Meshes in OBJ scenes are always (??) centered on the origin
 						m_CB_Object.m._object2World = _surface.m_owner.m_local2World;
 						m_CB_Object.m._previousObject2World = _surface.m_owner.m_previousFrameLocal2World;
 						m_CB_Object.m._F0 = 0.04f;	// Full dielectric
-//m_CB_Object.m._F0 = meshCounter < 100 ? 0.95f : 0.04f;	// Some will be metal
 						m_CB_Object.UpdateData();
-
-// if ( surfacesCount > 0 )
-// 	return;
 						
 						// Setup textures
 						_surface.m_material.m_textureDiffuse.Set( 32 );
@@ -1139,20 +1144,6 @@ namespace TestHBIL {
 
 						return true;
 					} );
-
-					// Render only a few meshes
-// 						ObjSceneUtility.SceneObj.Mesh[]	meshes = m_sceneOBJ.Meshes;
-// 						for ( int i=0; i < 10; i++ ) {
-// 							ObjSceneUtility.SceneObj.Mesh	M = meshes[i];
-// 							M.m_material.m_textureDiffuse.SetPS( 32 );
-// 							M.m_material.m_textureNormal.SetPS( 33 );
-// 							M.m_material.m_textureSpecular.SetPS( 34 );
-// 							M.m_material.m_textureEmissive.SetPS( 35 );
-// 							m_CB_Object.m._object2World = M.m_local2World;
-//							m_CB_Object.m._previousObject2World = M.m_previousFrameLocal2World;
-// 							m_CB_Object.UpdateData();
-// 							M.m_primitive.Render( m_shader_RenderScene_DepthGBufferPass );
-// 						}
 
 					m_device.RemoveRenderTargets();
 				}
@@ -1200,6 +1191,11 @@ namespace TestHBIL {
 				m_device.RemoveRenderTargets();	// We need the mip 0 available as SRV right afterward
 			}
 
+// This part is quite optional, actually reprojection from last frame is not compulsory:
+//	• If you don't do it then you will simply get a single indirect bounce
+//	• You could totally re-use the history buffer from the TAA, the face that it contains both specular and diffuse pixels instead of just diffuse is quite not noticeable when you integrate radiance
+//		Although it's not perfect and requires a little fiddling with some kind of "magic coefficient", it's totally doable and very nice to see some sort of "infinite bounce" as it adds a lot the the resulting image...
+//
 //*			//////////////////////////////////////////////////////////////////////////
 			// =========== Apply Push-Pull to Reconstruct Missing Pixels ===========
 			//
@@ -1261,7 +1257,7 @@ namespace TestHBIL {
 			//////////////////////////////////////////////////////////////////////////
 			// =========== Compute Shadow Map ===========
 			m_device.PerfSetMarker( 40 );
-			#if SCENE_SPONZA || SCENE_SIBENIK || SCENE_SCHAEFFER
+			#if SCENE_SPONZA || SCENE_SPONZA_POINT_LIGHT || SCENE_SIBENIK || SCENE_SCHAEFFER
 				if ( m_shader_RenderScene_ShadowDirectional.Use() && m_directionalShadowDirty ) {
 					m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.READ_WRITE_DEPTH_LESS, BLEND_STATE.DISABLED );
 					m_device.ClearDepthStencil( m_tex_shadowDirectional, 1, 0, true, false );
@@ -1284,7 +1280,7 @@ namespace TestHBIL {
 				}
 
 				// Compute point light shadow
-				#if SPONZA_POINT_LIGHT
+				#if SCENE_SPONZA_POINT_LIGHT
 					if ( m_shader_RenderScene_ShadowPoint.Use() ) {
 						m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.READ_WRITE_DEPTH_LESS, BLEND_STATE.DISABLED );
 						m_device.ClearDepthStencil( m_tex_shadowPoint, 1, 0, true, false );
@@ -1308,7 +1304,7 @@ namespace TestHBIL {
 							l + L,
 							l + L + l,
 							l + L + l + L,
-	//						l + L + l + L + l,
+//							l + L + l + L + l,
 						};
  
 						float	LIGHT_VELOCITY = 1.0f;
@@ -1353,9 +1349,6 @@ namespace TestHBIL {
 							m_CB_Shadow.m._faceIndex = faceIndex;
 							m_CB_Shadow.UpdateData();
 
-// m_CB_Object.m._object2World = float4x4.Identity;
-// m_CB_Object.UpdateData();
-
 							m_sceneOBJ.Render( m_shader_RenderScene_ShadowPoint, ( ObjSceneUtility.SceneObj.Mesh.Surface _surface ) => {
 								// Meshes in OBJ scenes are always (??) centered on the origin
 								m_CB_Object.m._object2World = _surface.m_owner.m_local2World;
@@ -1381,7 +1374,7 @@ namespace TestHBIL {
 
 					m_directionalShadowDirty = false;	// Cached!
 				}
-			#elif SCENE_CORNELL || SCENE_LIBRARY
+			#elif SCENE_CORNELL || SCENE_CORNELL_USE_ASBESTOS || SCENE_LIBRARY
 				if ( m_shader_RenderScene_ShadowPoint.Use() ) {
 					m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.WRITE_ALWAYS, BLEND_STATE.DISABLED );
 
@@ -1435,7 +1428,7 @@ namespace TestHBIL {
 			#else
 				// 1] Split buffers into 4x4 tiny quarter res buffers
 
-// This motherfucker compiler doesn't work with compute shaders taking 16 samples and dispatching them to 16 slices!
+// This motherfucker compiler doesn't work with compute shaders taking 16 samples and dispatching them to 16 slices! We need to do 16 unique dispatches instead! :'(
 // 				if ( m_shader_SplitDepth.Use() ) {
 // 					m_CB_DownSample.m._sizeX = m_tex_splitDepth.Width;
 // 					m_CB_DownSample.m._sizeY = m_tex_splitDepth.Height;
@@ -1598,6 +1591,18 @@ namespace TestHBIL {
 						for ( uint X=0; X < 4; X++, passIndex++ ) {
 							m_device.SetRenderTargets( new IView[] { m_tex_splitIrradiance.GetView( 0, 1, passIndex, 1 ), m_tex_splitBentCone.GetView( 0, 1, passIndex, 1 ) }, null );
 
+							//////////////////////////////////////////////////////////////////////////
+							// Here, the goal of this big mess of a code is to find a pattern for phi, the rotation angle for our 2 orthogonal sampling directions
+							//	• Phi must cover the entire PI/2/(4*4) angles in the most disorderly fashion possible from one pass to the next (a pass targets an interleaved rendered buffer)
+							//		=> For this I'm using a 4x4 Bayer pattern (B4) although I'm really not sure it's the best solution
+							//	• The sub-offset angle for Phi in the PI/2/(4*4) from one frame to the next must also be chosen in the most disorderly fashion possible
+							//		and at the same time loop fast enough to account for the few frames of TAA history (here I'm using 9 frames IIRC)
+							//		and at the same time be sufficiently irrational as to cover all the possible angle and leave no holes (i.e. biased distribution)
+							//
+							// Overall, the code you see below, uncommented, has been selected as "good enough" after enough experimentation and you can find the same code in the shader
+							//	so basically we don't really need to pass the direction vector in the constant buffer anymore... =)
+							//
+
 							// This changes pattern quite fast but needs to be faster to cycle entirely before TAA itself cycles
 // 							uint	dX = m_framesCount & 3;
 // 							uint	dY = m_framesCount >> 2;
@@ -1619,6 +1624,8 @@ namespace TestHBIL {
 //							uint	noiseY = checkBoxEnableTAA.Checked ? (Y + 3*m_framesCount) : Y;
 //							float	phi = m_tex_BlueNoise_CPU[noiseX & 0x3F, noiseY & 0x3F] * 0.5f * Mathf.PI / 16.0f;
 
+							//////////////////////////////////////////////////////////////////////////
+
 							m_CB_HBIL.m._renderPassIndexX = X;
 							m_CB_HBIL.m._renderPassIndexY = Y;
 							m_CB_HBIL.m._renderPassIndexCount = passIndex;
@@ -1629,12 +1636,14 @@ namespace TestHBIL {
 						}
 					}
 
-//					m_tex_splitIrradiance.RemoveFromLastAssignedSlotUAV();
-//					m_tex_splitBentCone.RemoveFromLastAssignedSlotUAV();
 					m_device.RemoveRenderTargets();
 				}
 
 				// 3] Recompose results
+				// Optional, preferable but costs a lot of bandwidth for not much more quality in the end.
+				// The idea would be to take the 4x4 samples from each interleaved sampling split-buffer and re-assemble them a bit in the manner of bilateral filtering,
+				//	i.e. choosing and weighting the individual samples depending on their coherence with the central pixel...
+				//
 				m_device.PerfSetMarker( 52 );
 
 				#if RECOMPOSE
@@ -1660,15 +1669,7 @@ namespace TestHBIL {
 					}
 				#endif
 
-			#endif	// #if BRUTE_FORCE_HBIL
-		
-// DEBUG RGB10A2 and R11G11B10_FLOAT formats
-// Texture2D	pipoCPU = new Texture2D( m_device, m_tex_radiance0.Width, m_tex_radiance0.Height, 1, 1, PIXEL_FORMAT.R11G11B10, COMPONENT_FORMAT.AUTO, true, false, null );
-// pipoCPU.CopyFrom( m_tex_radiance0 );
-// uint[,]	pixels = new uint[m_tex_radiance0.Width,m_tex_radiance0.Height];
-// pipoCPU.ReadPixels( 0, 0, ( uint _X, uint _Y, System.IO.BinaryReader _R ) => {
-// 	pixels[_X,_Y] = _R.ReadUInt32();
-// } );
+			#endif	// #if !BRUTE_FORCE_HBIL
 
 			//////////////////////////////////////////////////////////////////////////
 			// =========== Compute lighting & finalize radiance  ===========
@@ -1688,6 +1689,7 @@ namespace TestHBIL {
 				m_tex_shadowPoint.SetPS( 6 );
 				m_tex_shadowDirectional.SetPS( 7 );
 
+				// Provide our dearly computed HBIL buffers to the lighting pass
 				#if RECOMPOSE || BRUTE_FORCE_HBIL
 					m_tex_radiance0.SetPS( 8 );
 					m_tex_bentCone.SetPS( 9 );
@@ -2296,7 +2298,7 @@ namespace TestHBIL {
 		}
 
 //		Quat			m_lightQuat = new Quat( new AngleAxis( 0.0f, float3.UnitZ ) );
-		#if SCENE_SPONZA || SCENE_SIBENIK
+		#if SCENE_SPONZA || SCENE_SPONZA_POINT_LIGHT || SCENE_SIBENIK
 //			Quat			m_lightQuat = new Quat( new AngleAxis( -0.45f * Mathf.PI, float3.UnitX ) );
 			Quat			m_lightQuat = new Quat( 0.5310309f, -0.612917f, -0.3831305f, -0.4422101f );
 		#elif SCENE_SCHAEFFER
@@ -2365,7 +2367,7 @@ namespace TestHBIL {
 			float3	wsLightRight, wsLightUp;
 			wsLightDirection.OrthogonalBasis( out wsLightRight, out wsLightUp );
 
-			#if SCENE_SPONZA || SCENE_SIBENIK
+			#if SCENE_SPONZA || SCENE_SPONZA_POINT_LIGHT || SCENE_SIBENIK
 				const float	WIDTH = 50.0f;
 				const float	HEIGHT = 50.0f;
 				const float	Z_FAR = 80.0f;

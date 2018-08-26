@@ -65,8 +65,6 @@ void	CS_Reproject( uint3 _groupID : SV_groupID, uint3 _groupThreadID : SV_groupT
 	float2	newUV = 0.5 * (1.0 + float2( csNewPosition.x / (TAN_HALF_FOV * _resolution.x / _resolution.y), csNewPosition.y / -TAN_HALF_FOV ));
 	int2	newPixelPosition = floor( newUV * _resolution );
 
-//newPixelPosition = pixelPosition;
-
 	if ( any( newPixelPosition < 0 ) || any( newPixelPosition >= _resolution ) )
 		return;	// Off screen..
 				// #TODO: Maybe collect into a paraboloid-projected map representing the offscreen environment so we can still benefit from off-screen reflections??
@@ -148,9 +146,6 @@ void	CS_Push( uint3 _groupID : SV_groupID, uint3 _groupThreadID : SV_groupThread
 
 	sumWeights = w00 + w10 + w01 + w11;
 	C *= sumWeights > 0.0 ? saturate( sumWeights ) / sumWeights : 0.0;	// Store un-premultiplied color
-
-//if ( sumWeights < 1e-3 && avgZ > 1e-3 )
-//	C = float3( 1, 0, 1 );	// Can it happen that we nullified all colors because of invalid weights although we have valid colors in the lot???
 
 	_tex_reprojectedRadiance[targetPixelIndex] = float4( C, avgZ );
 }

@@ -27,12 +27,6 @@ cbuffer CB_TAA : register(b3) {
 #define TAA_DITHER					0.3	// 0-1
 #define TAA_CLAMPING_FACTOR			1.0	// larger values produces less clamping, but introduces ghosting
 #define TAA_MIN_LUMA				0.1
-		
-//#if defined( DURANGO )
-//	#define __XBOX_CONTROL_NONIEEE 0
-//	#define __XBOX_PRESERVE_MAD_LEGACY  1
-//	#define __XBOX_DISABLE_NONIEEE_OPTIMIZATION_MASK0 7
-//#endif
 
 groupshared float4	gs_colorsAndLengths[BUFFER_Y][BUFFER_X];
 groupshared float2	gs_motionVectors[BUFFER_Y][BUFFER_X];
@@ -72,7 +66,7 @@ void Bicubic2DCatmullRom( in float2 _UV, in float2 _invSize, out float2 _pos[3],
 	_pos[2] *= _invSize;
 }
 
-//#if !$taaR11G11B10
+//#if !R11G11B10
 //	// IMPORTANT: YCoCg very rarely produces strange gray outlines for some luma-chroma combinations...
 //	// it doesn't look incorrect, but you can feel that something goes wrong...
 //	#define COLOR_TO(c)						RGB2YCoCg(c)
@@ -113,7 +107,6 @@ float rand24b( float2 _seed ) {
 void	CS( uint _groupIndex : SV_groupIndex, uint3 _groupThreadID : SV_groupThreadID, uint3 _dispatchThreadID : SV_dispatchThreadID ) {
 	int2	localID = int2(_groupThreadID.xy);
 	int2	globalID = int2(_dispatchThreadID.xy);
-//	uint	threadID = _groupIndex;
 		
 	// Rename the 16x16 group into a 18x14 group + 4 idle threads in the end
 	float	linearID = localID.y * GROUP_X + localID.x;

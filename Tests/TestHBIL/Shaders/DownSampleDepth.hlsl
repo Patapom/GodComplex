@@ -30,7 +30,7 @@ void	CS( uint3 _groupID : SV_groupID, uint3 _groupThreadID : SV_groupThreadID, u
 //		_tex_targetDepth[targetPixelIndex] = min( min( min( V.x, V.y ), V.z ), V.w );
 
 	#else
-		// What the hell is this fucking bug??? Is the operator[] still bugged after all these years???
+		// What the hell is this fucking bug??? Is the Texture2D.operator[] still bugged after all these years???
 		// It still doesn't work if you're creating views to read and write from the same texture but different mip level FFS!
 		uint2	sourcePixelIndex = targetPixelIndex << 1;
 		float	V00 = _tex_sourceDepth[sourcePixelIndex];	sourcePixelIndex.x++;
@@ -38,13 +38,12 @@ void	CS( uint3 _groupID : SV_groupID, uint3 _groupThreadID : SV_groupThreadID, u
 		float	V11 = _tex_sourceDepth[sourcePixelIndex];	sourcePixelIndex.x--;
 		float	V01 = _tex_sourceDepth[sourcePixelIndex];	sourcePixelIndex.y--;
 
-//		_tex_targetDepth[targetPixelIndex] = 0.25 * (V00 + V10 + V01 + V11);
-		_tex_targetDepth[targetPixelIndex] = V00 + V10 + V01 + V11;
+		_tex_targetDepth[targetPixelIndex] = 0.25 * (V00 + V10 + V01 + V11);
 	#endif
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// Copies depth stencil into
+// Linearizes depth stencil into a UNORM low-precision target
 [numthreads( THREADS_X, THREADS_Y, 1 )]
 void	CS_Copy( uint3 _groupID : SV_groupID, uint3 _groupThreadID : SV_groupThreadID, uint3 _dispatchThreadID : SV_dispatchThreadID ) {
 

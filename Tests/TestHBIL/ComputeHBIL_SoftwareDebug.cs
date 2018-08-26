@@ -18,7 +18,7 @@ using SharpMath;
 
 namespace TestHBIL
 {
-	public class ComputeHBIL : IDisposable {
+	public class ComputeHBIL_SoftwareDebug : IDisposable {
 
 		#region CONSTANTS
 
@@ -87,7 +87,7 @@ namespace TestHBIL
 
 		#region METHODS
 
-		public ComputeHBIL( Device _device ) {
+		public ComputeHBIL_SoftwareDebug( Device _device ) {
 			m_device = _device;
 		}
 

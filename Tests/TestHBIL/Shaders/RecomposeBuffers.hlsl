@@ -1,5 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Recomposes 4x4 quarter res textures into a full-res texture
+// This code contains various recomposition experiments more or less interesting and expensive
+// Eventually, I just forgot recomposition and let TAA take care of the noise... =)
 ////////////////////////////////////////////////////////////////////////////////
 //
 #include "Global.hlsl"
@@ -291,3 +293,4 @@ void	CS( uint3 _groupID : SV_groupID, uint3 _groupThreadID : SV_groupThreadID, u
 	_tex_targetRadiance[targetPixelIndex] = targetRadiance[4*3+0];
 	_tex_targetBentCone[targetPixelIndex] = targetBentCone[4*3+0];
 }
+

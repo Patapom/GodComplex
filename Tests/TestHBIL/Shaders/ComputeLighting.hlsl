@@ -33,25 +33,6 @@ struct PS_OUT_FINAL {
 
 float4	VS( float4 __position : SV_POSITION ) : SV_POSITION { return __position; }
 
-/*
-void	SampleHBILData_TEMP( uint2 _pixelPosition, Texture2DArray<float4> _tex_SplitRadiance, Texture2DArray<float4> _tex_SplitBentCone, out float3 _radiance, out float4 _csBentCone ) {
-	float3	R00, R01, R10, R11;
-	float4	C00, C01, C10, C11;
-
-	SampleHBILData( _pixelPosition, _tex_SplitRadiance, _tex_SplitBentCone, R00, C00 );
-	SampleHBILData( _pixelPosition + uint2( 1, 0 ), _tex_SplitRadiance, _tex_SplitBentCone, R10, C10 );
-	SampleHBILData( _pixelPosition + uint2( 0, 1 ), _tex_SplitRadiance, _tex_SplitBentCone, R01, C01 );
-	SampleHBILData( _pixelPosition + uint2( 1, 1 ), _tex_SplitRadiance, _tex_SplitBentCone, R11, C11 );
-
-	_radiance = 0.25 * (R00 + R10 + R01 + R11);
-	_csBentCone = 0.25 * (C00 + C10 + C01 + C11);
-
-//_radiance = R00;
-//_csBentCone = C00;
-}
-*/
-
-
 PS_OUT_FINAL	PS( float4 __position : SV_POSITION ) {
 	uint2	pixelPosition = uint2( floor( __position.xy ) );
 	float2	UV = __position.xy / _resolution;
@@ -68,14 +49,12 @@ PS_OUT_FINAL	PS( float4 __position : SV_POSITION ) {
 	// Read back depth and rebuild world space position
 	float	Z = Z_FAR * _tex_Depth[pixelPosition];
 	wsPos += Z * Z2Distance * wsView;
-//	float	cameraZ = dot( wsPos - _camera2World[3].xyz, _camera2World[2].xyz );
 	float	pixelSize_m = Z * TAN_HALF_FOV / _resolution.y;
 
 	// Read back bent cone and radiance from HBIL buffers
 	float3	HBILIrradiance;
 	float4	csBentCone;
 	SampleHBILData( pixelPosition, _tex_Radiance, _tex_BentCone, HBILIrradiance, csBentCone );
-//	SampleHBILData_TEMP( pixelPosition, _tex_Radiance, _tex_BentCone, HBILIrradiance, csBentCone );
 
 	if ( _flags & 0x200 ) {
 		// Debug AO
@@ -150,16 +129,11 @@ PS_OUT_FINAL	PS( float4 __position : SV_POSITION ) {
 
 	// Read back albedo, roughness, F0
 	float4	albedo_F0 = _tex_Albedo[pixelPosition];
-//albedo_F0.w = _debugValues.z;
 	float	metal = saturate( albedo_F0.w - 0.04 ) / (1.0 - 0.04);
-//	float3	albedo = lerp( albedo_F0.xyz, 0, metal );				// The more F0->1, the more the diffuse albedo tends to 0
 	float3	albedo = (1.0-metal) * albedo_F0.xyz;					// The more F0->1, the more the diffuse albedo tends to 0
 	float3	F0 = albedo_F0.w * lerp( 1.0, albedo_F0.xyz, metal );	// The more F0->1, the more the albedo is used as a specular color
 	float3	IOR = Fresnel_IORFromF0( F0 );
 	float	roughness = csNormal_Roughness.w;
-
-//roughness = pow2( roughness );	// Nope!
-//roughness = _debugValues.z;
 
 
 	////////////////////////////////////////////////////////////////////////////////
@@ -172,7 +146,7 @@ PS_OUT_FINAL	PS( float4 __position : SV_POSITION ) {
 	// Compute this frame's distant environment coming from some SH probe
 	float3	SH[9] = { _SH[0].xyz, _SH[1].xyz, _SH[2].xyz, _SH[3].xyz, _SH[4].xyz, _SH[5].xyz, _SH[6].xyz, _SH[7].xyz, _SH[8].xyz };
 	#if USE_CONE_ANGLE
-		// Use bent-normal direction + cone angle for reduced SH estimate (I think it's better)
+		// Use bent-normal direction + cone angle for reduced SH estimate (I like it better)
 		float3	distantEnvironmentIrradiance = _environmentIntensity * EvaluateSHIrradiance( wsNormalIndirect, cosSamplingConeAngle, SH );
 	#else
 		// Use bent-normal direction at full aperture and attenuate by AO
@@ -190,10 +164,6 @@ PS_OUT_FINAL	PS( float4 __position : SV_POSITION ) {
 	// Compute direct lighting
 	LightingResult	lighting = LightScene( wsPos, wsNormalDirect, -wsView, roughness, IOR, pixelSize_m, wsBentNormalDirect, cosConeAnglesMinMax, noise );
 
-
-//lighting.specular = 0.0;
-
-
 	float3	emissive = _tex_Emissive[pixelPosition];
 
 	PS_OUT_FINAL	Out;
@@ -201,13 +171,11 @@ PS_OUT_FINAL	PS( float4 __position : SV_POSITION ) {
 	Out.finalColor = _exposure * float4( emissive + (albedo / PI) * (lighting.diffuse + indirectIrradiance) + lighting.specular, 0 );
 
 	if ( _flags & 0x400 ) {
-//		Out.finalColor = float4( _exposure * indirectIrradiance * (0.5 / PI), 0 );
-//		Out.finalColor = float4( _exposure * HBILIrradiance * (0.5 / PI), 0 );
 //		Out.finalColor = float4( _exposure * indirectIrradiance * (1.0 / PI), 0 );
 		Out.finalColor = float4( _exposure * HBILIrradiance * (1.0 / PI), 0 );
 	}
 
-
+// Various debug values to experiment with
 //Out.finalColor = 0.1 * sqDistance2Light;
 //Out.finalColor.xyz = 0.1 * wsPos;
 //Out.finalColor.xyz = 0.1 * Z;
