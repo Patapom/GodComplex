@@ -668,3 +668,6 @@ Publish
 /Tools/LTCTableGenerator/DemoCode/Release
 /Tools/LTCTableGenerator/DemoCode/Debug
 /Tools/LTCTableGenerator/DemoCode/Original Code/glm/ShitLib
+/Packages/ObjSceneUtility/bin
+/Packages/ObjSceneUtility/obj
+/Packages/ObjSceneUtility/ObjSceneUtility.csproj.user
