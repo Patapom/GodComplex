@@ -88,7 +88,7 @@
 #define SCENE_LIBRARY					// From @leondenise. Lit only by a single set of SH coefficients (useful to test AO from bent cones)
 //#define SCENE_INFINITE_ROOMS			// From @leondenise. Lit by both ambient SH and a strong directional Sun.
 //#define SCENE_CORNELL					// Simple Cornell box. Lit by a single point light on the ceiling and a weak environment light. (textures from Geoffrey Rosin) (can you find the hidden emissive quad? :D)
-//#define SCENE_CORNELL_USE_ASBESTOS	// Same but with different texture
+//#define SCENE_CORNELL_USE_ASBESTOS	// Same but with different floor texture
 //#define SCENE_HEIGHTFIELD				// Simple height field. Lit by a super strong Sun. (stolen from Shadertoy version of iQ's "Elevated")
 
 // 3D scenes
@@ -101,9 +101,9 @@
 //#define SCENE_SCHAEFFER				// Corridor scene by Austin Shaeffer. Not provided. You should contact @SchaefferAustin to use it (textures are quite big too so couldn't upload them).
 
 
-//#define BRUTE_FORCE_HBIL		// Nice but 30ms at 1280x720... Serves as "ground-truth" :D
+//#define BRUTE_FORCE_HBIL		// Nice but at least 50ms at 1280x720 on easy scenes... Serves as "ground-truth" :D
 //#define RECOMPOSE				// Define this to recompose the split buffers into a full-res buffer (uses 2ms whereas we can totally sample directly from split buffers at lighting time)!
-//#define SINGLE_DIRECTION		// Define to use a single direction instead of 2 when computing interleaved HBIL values
+//#define SINGLE_DIRECTION		// Define to use a single direction instead of 2 when computing interleaved HBIL values (obviously faster, but also a lot uglier =))
 
 using System;
 using System.Collections.Generic;
@@ -478,7 +478,7 @@ namespace TestHBIL {
 
 				// HBIL
 				#if BRUTE_FORCE_HBIL
- 					m_shader_ComputeHBIL = new Shader( m_device, new System.IO.FileInfo( "Shaders/HBIL/ComputeHBIL.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", macros );
+ 					m_shader_ComputeHBIL = new Shader( m_device, new System.IO.FileInfo( "Shaders/HBIL/ComputeHBIL_BruteForce.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", macros );
 				#else
  					m_shader_ComputeHBIL = new Shader( m_device, new System.IO.FileInfo( "Shaders/HBIL/ComputeHBIL_Interleaved.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", macros );
 				#endif

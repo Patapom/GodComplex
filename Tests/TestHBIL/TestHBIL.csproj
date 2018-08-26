@@ -112,7 +112,7 @@
     <None Include="Shaders\SplitBuffers.hlsl" />
     <None Include="Shaders\RecomposeBuffers.hlsl" />
     <None Include="Shaders\FastMath.hlsl" />
-    <Content Include="Shaders\HBIL\ComputeHBIL.hlsl" />
+    <Content Include="Shaders\HBIL\ComputeHBIL_BruteForce.hlsl" />
     <Content Include="Shaders\HBIL\ComputeHBIL_Interleaved.hlsl" />
     <Content Include="Shaders\HBIL\HBIL.hlsl" />
     <Content Include="Shaders\RenderDebugCone.hlsl" />
