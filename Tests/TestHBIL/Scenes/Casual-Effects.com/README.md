@@ -1,4 +1,4 @@
-To get the scenes for this directory, go to https://casual-effects.com/data/ and download the following files:
+To get the scenes for this directory, go to https://casual-effects.com/data/ and download some of the following files:
 	• https://casual-effects.com/g3d/data10/common/model/crytek_sponza/sponza.zip
 	• https://casual-effects.com/g3d/data10/research/model/dabrovic_sponza/sponza.zip
 	• https://casual-effects.com/g3d/data10/research/model/fireplace_room/fireplace_room.zip
