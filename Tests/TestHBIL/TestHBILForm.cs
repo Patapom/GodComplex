@@ -69,6 +69,7 @@
 //	• Keep failed reprojected pixels into some "surrounding buffer", some sort of paraboloid-projected buffer containing off-screen values???
 //		=> Exponential decay of off-screen values with decay rate depending on camera's linear velocity?? (fun idea!)
 //	• Even better: render the remaining 5 sides of a cube map around the camera (each frame?!) and integrate the off-screen radiance from it!
+//		Or default to the nearest IL environment probe to estimate far-field, as explained in the paper... :/
 //	• Cut if outside screen + blend to 0 at grazing angles
 //	• Linearly interpolate Ld in the integral? (use previous / current normal to estimate a bicubic shape)
 //	• Re-use Dishonored's pre-computed BRDF weight that depends on roughness for irradiance estimate?
