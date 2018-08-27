@@ -66,7 +66,7 @@ When DirectX Debug layer is disabled, the technique runs at ~2.5ms @ 1280x720 on
 There's also plenty of room for optimization, especially in the inner loop where I uselessly recompute the reprojection of normals and other direction vectors whereas it should be stored somewhere once and for all...
 
 The reprojection steps can also be bypassed altogether: using the current frame's lighting only will give you a single bounce instead of theoretically an infinity of bounces, or you could attempt to re-use your
- temporal radiance history buffer as a source of radiance values. Although it's not completely correct to re-use a mix of diffuse+specular radiance, it doesn't really hampers the final integration of irradiance.
+ temporal radiance history buffer as a source of radiance values. Although it's not completely correct to re-use a mix of diffuse+specular radiance, it doesn't really hamper the final integration of irradiance.
 
 
 # Issues
