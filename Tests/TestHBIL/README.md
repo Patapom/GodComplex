@@ -43,8 +43,8 @@ Otherwise:
 * LAlt pushed (Light control):
 
 	* Left button = Rotate light direction (in scenes with ambient only, rotates the SH environment. In scenes with directional light, rotates the directional)
-	* Middle button = <NOTHING>
-	* Right button = <NOTHING>
+	* Middle button = NOTHING
+	* Right button = NOTHING
 
 * LControl pushed (Debug):
 
