@@ -5,22 +5,22 @@
 // If you're familiar with the Maya or Unity camera then my camera manipulator works the same
 // Otherwise:
 //
-//	No key pushed:
+//	No key pressed:
 //		• Left button = Orbit about target
 //		• Middle button = Pan both camera and target
 //		• Right button = Zoom in/out on target
 //
-//	LShift pushed (first person view):
+//	LShift pressed (first person view):
 //		• Left button = Forward/backward + look left/right
 //		• Middle button = Pan both camera and target
 //		• Right button = Look around
 //
-//	LAlt pushed (Light control):
+//	LAlt pressed (Light control):
 //		• Left button = Rotate light direction (in scenes with ambient only, rotates the SH environment. In scenes with directional light, rotates the directional)
 //		• Middle button = <NOTHING>
 //		• Right button = <NOTHING>
 //
-//	LControl pushed (Debug):
+//	LControl pressed (Debug):
 //		• Any button = Attempts to read back buffers for debugging purpose. Crashes at the moment since it's been ages since I've used this tool.
 //
 //

@@ -6,6 +6,8 @@ This near-field technique is an exact complement to the far-field indirect light
 
 You can read the details about the mathematical theory in the accompanying PDF paper: [2018 Mayaux - Horizon-Based Indirect Lighting (HBIL).pdf](2018%20Mayaux%20-%20Horizon-Based%20Indirect%20Lighting%20(HBIL).pdf).
 
+Below you can see what the technique can bring to the table, the little insets show what the direct lighting-only image should be instead:
+
 ![Head Poster](HeadPoster.jpg)
 
 
@@ -17,36 +19,35 @@ You pretty much need the entire [GodComplex](../../) repository because the proj
 * Choose the "Debug/Release" configuration and the "x64" platform
 * Edit the project properties for all configurations/platforms and select the project's directory as runtime directory:
   ![DebugDirConfig.png](DebugDirConfig.png)
-* Select the scene type in TestHBILForm.cs (e.g. #define SCENE_LIBRARY), by default it's set to the "Library" scene
-	Note that some scenes are 3D scenes that need to be downloaded and unpacked from various websites, refer to [this example](./Scenes/Casual-Effects.com/) for more info.
+* Select the scene type in TestHBILForm.cs (e.g. #define SCENE_LIBRARY), by default it's set to the "Library" scene.
+	 Note that some scenes are 3D scenes that need to be downloaded and unpacked from various websites, refer to [this example](./Scenes/Casual-Effects.com/) for more info.
 * Build (F5 key)
 * Run
 
 
 # Controls
 
-If you're familiar with the Maya or Unity camera then my camera manipulator works the same
-Otherwise:
+If you're familiar with Maya or Unity cameras then my camera manipulator works the same way. Otherwise:
 
-* No key pushed:
+* No key pressed:
 
 	* Left button = Orbit about target
 	* Middle button = Pan both camera and target
 	* Right button = Zoom in/out on target
 
-* LShift pushed (first person view):
+* LShift pressed (first person view):
 
 	* Left button = Forward/backward + look left/right
 	* Middle button = Pan both camera and target
 	* Right button = Look around
 
-* LAlt pushed (Light control):
+* LAlt pressed (Light control):
 
 	* Left button = Rotate light direction (in scenes with ambient only, rotates the SH environment. In scenes with directional light, rotates the directional)
 	* Middle button = NOTHING
 	* Right button = NOTHING
 
-* LControl pushed (Debug):
+* LControl pressed (Debug):
 
 	* Any button = Attempts to read back buffers for debugging purpose. Crashes at the moment since it's been ages since I've used this tool.
 
