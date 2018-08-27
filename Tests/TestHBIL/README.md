@@ -47,27 +47,27 @@ If you're familiar with the Maya or Unity camera then my camera manipulator work
 Otherwise:
 
 * No key pushed:
-	• Left button = Orbit about target
-	• Middle button = Pan both camera and target
-	• Right button = Zoom in/out on target
+** Left button = Orbit about target
+** Middle button = Pan both camera and target
+** Right button = Zoom in/out on target
 
 * LShift pushed (first person view):
-	• Left button = Forward/backward + look left/right
-	• Middle button = Pan both camera and target
-	• Right button = Look around
+** Left button = Forward/backward + look left/right
+** Middle button = Pan both camera and target
+** Right button = Look around
 
 * LAlt pushed (Light control):
-	• Left button = Rotate light direction (in scenes with ambient only, rotates the SH environment. In scenes with directional light, rotates the directional)
-	• Middle button = <NOTHING>
-	• Right button = <NOTHING>
+** Left button = Rotate light direction (in scenes with ambient only, rotates the SH environment. In scenes with directional light, rotates the directional)
+** Middle button = <NOTHING>
+** Right button = <NOTHING>
 
 * LControl pushed (Debug):
-	• Any button = Attempts to read back buffers for debugging purpose. Crashes at the moment since it's been ages since I've used this tool.
+** Any button = Attempts to read back buffers for debugging purpose. Crashes at the moment since it's been ages since I've used this tool.
 
 
 Shortcut keys:
 
-* <SPACE> = Toggles HBIL
+* SPACE = Toggles HBIL
 * R = Reloads modified shaders
 * A = Toggles reprojection matrix copy ON/OFF (used for debugging scene reprojection, otherwise it's quite useless)
 
