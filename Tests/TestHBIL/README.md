@@ -32,7 +32,8 @@ The reprojection steps can also be bypassed altogether: using the current frame'
 
 You pretty much need the entire [GodComplex](../../) repository because the project relies on various image, rendering, math and tool libraries present in the framework.
 
-* Open the [Tests.sln](../../Tests.sln) solution file, ideally with Visual Studio 2012, choose "Debug/Release" configuration and the "x64" platform
+* Open the [Tests.sln](../../Tests.sln) solution file, preferably with **Visual Studio 2012** (I know I should have updated to something more recent like Visual 2017 but I haven't found the time yet)
+* Choose the "Debug/Release" configuration and the "x64" platform
 * Edit the project properties for all configurations/platforms and select the project's directory as runtime directory:
   ![DebugDirConfig.png](DebugDirConfig.png)
 * Select the scene type in TestHBILForm.cs (e.g. #define SCENE_LIBRARY), by default it's set to the "Library" scene
@@ -47,21 +48,25 @@ If you're familiar with the Maya or Unity camera then my camera manipulator work
 Otherwise:
 
 * No key pushed:
+
 ** Left button = Orbit about target
 ** Middle button = Pan both camera and target
 ** Right button = Zoom in/out on target
 
 * LShift pushed (first person view):
+
 ** Left button = Forward/backward + look left/right
 ** Middle button = Pan both camera and target
 ** Right button = Look around
 
 * LAlt pushed (Light control):
+
 ** Left button = Rotate light direction (in scenes with ambient only, rotates the SH environment. In scenes with directional light, rotates the directional)
 ** Middle button = <NOTHING>
 ** Right button = <NOTHING>
 
 * LControl pushed (Debug):
+
 ** Any button = Attempts to read back buffers for debugging purpose. Crashes at the moment since it's been ages since I've used this tool.
 
 
