@@ -76,3 +76,8 @@ The reprojection steps can also be bypassed altogether: using the current frame'
  Unfortunately, if we reduce step sizes then indirect lighting gets much poorer. We definitely need *more samples* here, but that's the core parameter driving the speed of the technique.
 * No off-screen reflection. Obviously, since it's a screen-space technique. But that's where the far-field irradiance solution should intervene and compensate for this issue...
  HBIL alone is not a definitive solution to all indirect lighting problems.
+
+
+# Comments?
+
+Contact me on Twitter (@Patapom2)[https://twitter.com/Patapom2] for any suggestion, comment or bug report.
