@@ -80,4 +80,4 @@ The reprojection steps can also be bypassed altogether: using the current frame'
 
 # Comments?
 
-Contact me on Twitter (@Patapom2)[https://twitter.com/Patapom2] for any suggestion, comment or bug report.
+Contact me on (Twitter)[https://twitter.com/Patapom2] for any suggestion, comment or bug report.
