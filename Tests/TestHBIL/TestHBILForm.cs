@@ -1194,7 +1194,7 @@ namespace TestHBIL {
 
 // This part is quite optional, actually reprojection from last frame is not compulsory:
 //	• If you don't do it then you will simply get a single indirect bounce
-//	• You could totally re-use the history buffer from the TAA, the face that it contains both specular and diffuse pixels instead of just diffuse is quite not noticeable when you integrate radiance
+//	• You could totally re-use the history buffer from the TAA, the fact that it contains both specular and diffuse pixels instead of just diffuse is quite not noticeable when you integrate radiance
 //		Although it's not perfect and requires a little fiddling with some kind of "magic coefficient", it's totally doable and very nice to see some sort of "infinite bounce" as it adds a lot the the resulting image...
 //
 //*			//////////////////////////////////////////////////////////////////////////

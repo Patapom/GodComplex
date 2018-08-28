@@ -17,7 +17,7 @@ You pretty much need the entire [GodComplex](../../) repository because the proj
 
 * Open the [Tests.sln](../../Tests.sln) solution file, preferably with **Visual Studio 2012** (I know I should have updated to something more recent like Visual 2017 but I haven't found the time yet)
 * Choose the "Debug/Release" configuration and the "x64" platform
-* Edit the project properties for all configurations/platforms and select the project's directory as runtime directory:
+* Edit the project properties for all configurations/platforms and select the **project's directory** (*i.e.* the directory where this README.md file is standing) as runtime directory:
   ![DebugDirConfig.png](DebugDirConfig.png)
 * Select the scene type in TestHBILForm.cs (e.g. #define SCENE_LIBRARY), by default it's set to the "Library" scene.
 	 Note that some scenes are 3D scenes that need to be downloaded and unpacked from various websites, refer to [this example](./Scenes/Casual-Effects.com/) for more info.
