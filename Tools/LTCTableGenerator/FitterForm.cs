@@ -969,6 +969,8 @@ tsReflection = _LTC.Z;	// Use preferred direction
 			buttonClear.Enabled = false;
 			buttonClearRowsFromHere.Enabled = false;
 			buttonClearColumnsFromHere.Enabled = false;
+			if ( m_results == null )
+				return;	// Not loaded yet
 			if ( m_internalChange || !Paused )
 				return;	// Currently fitting...
 

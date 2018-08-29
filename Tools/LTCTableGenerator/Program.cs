@@ -1,5 +1,6 @@
 ﻿#define FIT_TABLES
 //#define EXPORT_FOR_UNITY
+//#define EXPORT_TEXTURE
 
 using System;
 using System.Collections.Generic;
@@ -65,13 +66,15 @@ namespace LTCTableGenerator
 				string	targetDir = @"D:\Workspaces\Unity Labs\SRP-AreaLights\com.unity.render-pipelines.high-definition\HDRP\Material\LTCAreaLight\";
 
 				Export( new FileInfo( "GGX.ltc" ), new FileInfo( targetDir + "LtcData.GGX2.cs" ), "GGX" );
-// 				Export( new FileInfo( "CookTorrance.ltc" ), new FileInfo( targetDir + "LtcData.CookTorrance.cs" ), "CookTorrance" );
-// 				Export( new FileInfo( "Ward.ltc" ), new FileInfo( targetDir + "LtcData.Ward.cs" ), "Ward" );
-// 
-// 				Export( new FileInfo( "OrenNayar.ltc" ), new FileInfo( targetDir + "LtcData.OrenNayar.cs" ), "OrenNayar" );
-// 				Export( new FileInfo( "CharlieSheen.ltc" ), new FileInfo( targetDir + "LtcData.CharlieSheen.cs" ), "Charlie" );
-// 				Export( new FileInfo( "Disney.ltc" ), new FileInfo( targetDir + "LtcData.DisneyDiffuse2.cs" ), "Disney" );
-			#else
+ 				Export( new FileInfo( "CookTorrance.ltc" ), new FileInfo( targetDir + "LtcData.CookTorrance.cs" ), "CookTorrance" );
+ 				Export( new FileInfo( "Ward.ltc" ), new FileInfo( targetDir + "LtcData.Ward.cs" ), "Ward" );
+ 
+ 				Export( new FileInfo( "OrenNayar.ltc" ), new FileInfo( targetDir + "LtcData.OrenNayar.cs" ), "OrenNayar" );
+ 				Export( new FileInfo( "CharlieSheen.ltc" ), new FileInfo( targetDir + "LtcData.CharlieSheen.cs" ), "Charlie" );
+ 				Export( new FileInfo( "Disney.ltc" ), new FileInfo( targetDir + "LtcData.DisneyDiffuse2.cs" ), "Disney" );
+			#endif
+
+			#if EXPORT_TEXTURE
 // 				Export( new FileInfo( "GGX.ltc" ), new FileInfo( "GGX.cs" ), "GGX" );
 // 				Export( new FileInfo( "CookTorrance.ltc" ), new FileInfo( "CookTorrance.cs" ), "CookTorrance" );
 // 				Export( new FileInfo( "CharlieSheen.ltc" ), new FileInfo( "CharlieSheen.cs" ), "Charlie" );
@@ -106,8 +109,8 @@ form.UsePreviousRoughness = _usePreviousRoughnessForFitting;
 //form.ReadOnly = true;
 
 // Debug a specific case
-//form.RoughnessIndex = 19;
-//form.ThetaIndex = 40;
+//form.RoughnessIndex = 23;
+//form.ThetaIndex = 57;
 
 form.UseAdaptiveFit = false;
 

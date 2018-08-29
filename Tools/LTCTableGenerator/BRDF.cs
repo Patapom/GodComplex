@@ -137,8 +137,8 @@ namespace LTCTableGenerator
 			// D
 			double	cosb2 = NdotH * NdotH;
 			double	m2 = _alpha * _alpha;
-			double	D = Math.Exp( (cosb2 - 1.0) / (cosb2*m2) )	// exp( -tan(a)² / m² ) 
-					  / (Math.PI * m2 * cosb2*cosb2);			// / (PI * m² * cos(a)^4)
+			double	D = Math.Exp( (cosb2 - 1.0) / (cosb2*m2) )			// exp( -tan(a)² / m² ) 
+					  / Math.Max( 1e-12, Math.PI * m2 * cosb2*cosb2 );	// / (PI * m² * cos(a)^4)
 
 			// masking/shadowing
 			double	G = Math.Min( 1, 2.0 * NdotH * Math.Min( NdotV, NdotL ) / LdotH );
