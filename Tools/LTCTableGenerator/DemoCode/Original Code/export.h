@@ -26,15 +26,15 @@ void writeTabC(mat3 * tab, vec2 * tabMagFresnel, int N)
     file << "};" << endl << endl;
 
     file << "static const mat33 tabMinv[size*size] = {" << endl;
-    for (int t = 0; t < N; ++t)
-    for (int a = 0; a < N; ++a)
+    for (int t = 0; t < N; ++t)	// Theta
+    for (int a = 0; a < N; ++a)	// Alpha
     {
         mat3 Minv = glm::inverse(tab[a + t*N]);
 
         file << "{";
-        file << Minv[0][0] << ", " << Minv[0][1] << ", " << Minv[0][2] << ", ";
-        file << Minv[1][0] << ", " << Minv[1][1] << ", " << Minv[1][2] << ", ";
-        file << Minv[2][0] << ", " << Minv[2][1] << ", " << Minv[2][2] << "}";
+        file << Minv[0][0] << ", " << Minv[0][1] << ", " << Minv[0][2] << ", ";	// Export column 0
+        file << Minv[1][0] << ", " << Minv[1][1] << ", " << Minv[1][2] << ", ";	// Export column 1
+        file << Minv[2][0] << ", " << Minv[2][1] << ", " << Minv[2][2] << "}";	// Export column 2
         if (a != N - 1 || t != N - 1)
             file << ", ";
         file << endl;

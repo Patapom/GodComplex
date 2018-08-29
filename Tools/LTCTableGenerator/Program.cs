@@ -57,33 +57,40 @@ namespace LTCTableGenerator
 						MessageBox.Show( "Unsupported BRDF index: " + BRDFIndex, "Invalid Argument!", MessageBoxButtons.OK, MessageBoxIcon.Error );
 						return;
 				}
+			#endif
+
+			// Export
+			#if EXPORT_FOR_UNITY
+//				string	targetDir = @"D:\Workspaces\Unity Labs\AxF Unity Project\SRP\com.unity.render-pipelines.high-definition\HDRP\Material\LTCAreaLight\";
+				string	targetDir = @"D:\Workspaces\Unity Labs\SRP-AreaLights\com.unity.render-pipelines.high-definition\HDRP\Material\LTCAreaLight\";
+
+				Export( new FileInfo( "GGX.ltc" ), new FileInfo( targetDir + "LtcData.GGX2.cs" ), "GGX" );
+// 				Export( new FileInfo( "CookTorrance.ltc" ), new FileInfo( targetDir + "LtcData.CookTorrance.cs" ), "CookTorrance" );
+// 				Export( new FileInfo( "Ward.ltc" ), new FileInfo( targetDir + "LtcData.Ward.cs" ), "Ward" );
+// 
+// 				Export( new FileInfo( "OrenNayar.ltc" ), new FileInfo( targetDir + "LtcData.OrenNayar.cs" ), "OrenNayar" );
+// 				Export( new FileInfo( "CharlieSheen.ltc" ), new FileInfo( targetDir + "LtcData.CharlieSheen.cs" ), "Charlie" );
+// 				Export( new FileInfo( "Disney.ltc" ), new FileInfo( targetDir + "LtcData.DisneyDiffuse2.cs" ), "Disney" );
 			#else
-				// Export
-				#if EXPORT_FOR_UNITY
-//					string	targetDir = @"D:\Workspaces\Unity Labs\AxF Unity Project\SRP\com.unity.render-pipelines.high-definition\HDRP\Material\LTCAreaLight\";
-					string	targetDir = @"D:\Workspaces\Unity Labs\SRP-AreaLights\com.unity.render-pipelines.high-definition\HDRP\Material\LTCAreaLight\";
+// 				Export( new FileInfo( "GGX.ltc" ), new FileInfo( "GGX.cs" ), "GGX" );
+// 				Export( new FileInfo( "CookTorrance.ltc" ), new FileInfo( "CookTorrance.cs" ), "CookTorrance" );
+// 				Export( new FileInfo( "CharlieSheen.ltc" ), new FileInfo( "CharlieSheen.cs" ), "Charlie" );
 
-					Export( new FileInfo( "GGX.ltc" ), new FileInfo( targetDir + "LtcData.GGX2.cs" ), "GGX" );
-					Export( new FileInfo( "CookTorrance.ltc" ), new FileInfo( targetDir + "LtcData.CookTorrance.cs" ), "CookTorrance" );
-					Export( new FileInfo( "Ward.ltc" ), new FileInfo( targetDir + "LtcData.Ward.cs" ), "Ward" );
+				ExportTexture( new FileInfo[] {
+									// Specular
+									new FileInfo( "GGX.ltc" ),
+									new FileInfo( "CookTorrance.ltc" ),
+									new FileInfo( "Ward.ltc" ),
 
-					Export( new FileInfo( "OrenNayar.ltc" ), new FileInfo( targetDir + "LtcData.OrenNayar.cs" ), "OrenNayar" );
-					Export( new FileInfo( "CharlieSheen.ltc" ), new FileInfo( targetDir + "LtcData.CharlieSheen.cs" ), "Charlie" );
-					Export( new FileInfo( "Disney.ltc" ), new FileInfo( targetDir + "LtcData.DisneyDiffuse2.cs" ), "Disney" );
-				#else
-// 					Export( new FileInfo( "GGX.ltc" ), new FileInfo( "GGX.cs" ), "GGX" );
-// 					Export( new FileInfo( "CookTorrance.ltc" ), new FileInfo( "CookTorrance.cs" ), "CookTorrance" );
-// 					Export( new FileInfo( "CharlieSheen.ltc" ), new FileInfo( "CharlieSheen.cs" ), "Charlie" );
+									// Diffuse
+									new FileInfo( "OrenNayar.ltc" ),
+									new FileInfo( "CharlieSheen.ltc" ),
+									new FileInfo( "Disney.ltc" ),
+								}, 
+					new FileInfo( "LTC.dds" ),
+					ImageUtility.PIXEL_FORMAT.RGBA32F
+				);
 
-					ExportTexture( new FileInfo[] {
-							new FileInfo( "GGX.ltc" ), new FileInfo( "CookTorrance.ltc" ), new FileInfo( "Ward.ltc" ),
-							new FileInfo( "OrenNayar.ltc" ), new FileInfo( "CharlieSheen.ltc" ), new FileInfo( "Disney.ltc" ),
-						}, 
-						new FileInfo( "LTC.dds" ),
-						ImageUtility.PIXEL_FORMAT.RGBA32F
-						);
-
-				#endif
 			#endif
 		}
 
@@ -108,11 +115,6 @@ form.UseAdaptiveFit = false;
 			form.SetupBRDF( _BRDF, 64, _tableFileName );
 
 			Application.Run( form );
-
-// 			ApplicationContext	ctxt = new ApplicationContext( form );
-// 			ctxt.ThreadExit += ctxt_ThreadExit;
-// 			Application.Run( ctxt );
-//			ctxt.Dispose();
 		}
 
 		static void	Export( FileInfo _tableFileName, FileInfo _targetFileName, string _BRDFName ) {
@@ -129,48 +131,75 @@ form.UseAdaptiveFit = false;
 		#if EXPORT_FOR_UNITY
 			string	tableName = "s_LtcMatrixData_" + _BRDFName;
 
-			sourceCode += "using UnityEngine;\r\n"
-						+ "using System;\r\n"
-						+ "\r\n"
-						+ "namespace UnityEngine.Experimental.Rendering.HDPipeline\r\n"
-						+ "{\r\n"
-						+ "    public partial class LTCAreaLight\r\n"
-						+ "    {\r\n"
-						+ "        // Table contains 3x3 matrix coefficients of M^-1 for the fitting of the " + _BRDFName + " BRDF using the LTC technique\r\n"
-						+ "        // From \"Real-Time Polygonal-Light Shading with Linearly Transformed Cosines\" 2016 (https://eheitzresearch.wordpress.com/415-2/)\r\n"
-						+ "        //\r\n"
-						+ "        // The table is accessed via LTCAreaLight." + tableName + "[<roughnessIndex> + 64 * <thetaIndex>]    // Theta values are along the Y axis, Roughness values are along the X axis\r\n"
-						+ "        //    • roughness = ( <roughnessIndex> / " + (tableSize-1) + " )^2\r\n"
-						+ "        //    • cosTheta = 1 - ( <thetaIndex> / " + (tableSize-1) + " )^2\r\n"
-						+ "        //\r\n"
-						+ "        public static double[,]	" + tableName + " = new double[k_LtcLUTResolution * k_LtcLUTResolution, k_LtcLUTMatrixDim * k_LtcLUTMatrixDim] {\r\n";
+			sourceCode += "using UnityEngine;\n"
+						+ "using System;\n"
+						+ "\n"
+						+ "namespace UnityEngine.Experimental.Rendering.HDPipeline\n"
+						+ "{\n"
+						+ "    public partial class LTCAreaLight\n"
+						+ "    {\n"
+						+ "        // Table contains 3x3 matrix coefficients of M^-1 for the fitting of the " + _BRDFName + " BRDF using the LTC technique\n"
+						+ "        // From \"Real-Time Polygonal-Light Shading with Linearly Transformed Cosines\" 2016 (https://eheitzresearch.wordpress.com/415-2/)\n"
+						+ "        //\n"
+						+ "        // The table is accessed via LTCAreaLight." + tableName + "[<roughnessIndex> + 64 * <thetaIndex>]    // Theta values are along the Y axis, Roughness values are along the X axis\n"
+						+ "        //    • roughness = ( <roughnessIndex> / " + (tableSize-1) + " )^2  (the table is indexed by perceptual roughness)\n"
+						+ "        //    • cosTheta = 1 - ( <thetaIndex> / " + (tableSize-1) + " )^2\n"
+						+ "        //\n"
+						+ "        public static double[,]	" + tableName + " = new double[k_LtcLUTResolution * k_LtcLUTResolution, k_LtcLUTMatrixDim * k_LtcLUTMatrixDim] {";
 
+			string	lotsOfSpaces = "                                                                                                                            ";
+
+			float	alpha, cosTheta;
 			for ( int thetaIndex=0; thetaIndex < tableSize; thetaIndex++ ) {
-				string	matrixRowString = "            ";
-				for ( int roughnessIndex=0; roughnessIndex < tableSize; roughnessIndex++ ) {
-					LTC		ltc = table[roughnessIndex,thetaIndex];
-					if ( ltc == null ) {
-						ltc = defaultLTC;
+				#if true
+					FitterForm.GetRoughnessAndAngle( 0, thetaIndex, tableSize, tableSize, out alpha, out cosTheta );
+	 				sourceCode += "\n";
+	 				sourceCode += "            // Cos(theta) = " + cosTheta + "\n";
+
+					for ( int roughnessIndex=0; roughnessIndex < tableSize; roughnessIndex++ ) {
+						LTC		ltc = table[roughnessIndex,thetaIndex];
+						if ( ltc == null ) {
+							ltc = defaultLTC;
+						}
+						FitterForm.GetRoughnessAndAngle( roughnessIndex, thetaIndex, tableSize, tableSize, out alpha, out cosTheta );
+
+						// Export the matrix as a list of 3x3 doubles, columns first
+//						double	factor = 1.0 / ltc.invM[2,2];
+						double	factor = 1.0 / ltc.invM[1,1];
+
+						string	matrixString  = (factor * ltc.invM[0,0]) + ", " + (factor * ltc.invM[1,0]) + ", " + (factor * ltc.invM[2,0]) + ", ";
+								matrixString += (factor * ltc.invM[0,1]) + ", " + (factor * ltc.invM[1,1]) + ", " + (factor * ltc.invM[2,1]) + ", ";
+								matrixString += (factor * ltc.invM[0,2]) + ", " + (factor * ltc.invM[1,2]) + ", " + (factor * ltc.invM[2,2]);
+
+						string	line = "            { " + matrixString + " },";
+	 					sourceCode += line;
+						if ( line.Length < 132 )
+							sourceCode += lotsOfSpaces.Substring( lotsOfSpaces.Length - (132 - line.Length) );	// Pad with spaces
+						sourceCode += "// alpha = " + alpha + "\n";
+					}
+				#else
+					string	matrixRowString = "            ";
+					for ( int roughnessIndex=0; roughnessIndex < tableSize; roughnessIndex++ ) {
+						LTC		ltc = table[roughnessIndex,thetaIndex];
+						if ( ltc == null ) {
+							ltc = defaultLTC;
+						}
+
+						// Export the matrix as a list of 3x3 doubles, columns first
+						string	matrixString  = ltc.invM[0,0] + ", " + ltc.invM[1,0] + ", " + ltc.invM[2,0] + ", ";
+								matrixString += ltc.invM[0,1] + ", " + ltc.invM[1,1] + ", " + ltc.invM[2,1] + ", ";
+								matrixString += ltc.invM[0,2] + ", " + ltc.invM[1,2] + ", " + ltc.invM[2,2];
+
+						matrixRowString += "{ " + matrixString + " }, ";
 					}
 
-					string	matrixString  = ltc.invM[0,0] + ", " + ltc.invM[0,1] + ", " + ltc.invM[0,2] + ", ";
-							matrixString += ltc.invM[1,0] + ", " + ltc.invM[1,1] + ", " + ltc.invM[1,2] + ", ";
-							matrixString += ltc.invM[2,0] + ", " + ltc.invM[2,1] + ", " + ltc.invM[2,2];
+					// Compute theta
+					float	alpha, cosTheta;
+					FitterForm.GetRoughnessAndAngle( 0, thetaIndex, tableSize, tableSize, out alpha, out cosTheta );
 
-// 					string	matrixString  = ltc.M[0,0] + ", " + ltc.M[0,1] + ", " + ltc.M[0,2] + ", ";
-// 							matrixString += ltc.M[1,0] + ", " + ltc.M[1,1] + ", " + ltc.M[1,2] + ", ";
-// 							matrixString += ltc.M[2,0] + ", " + ltc.M[2,1] + ", " + ltc.M[2,2];
-
-					matrixRowString += "{ " + matrixString + " }, ";
-				}
-
-				// Compute theta
-				float	y = (float) thetaIndex / (tableSize-1);
-				float	cosTheta = 1 - y * y;
-
-				matrixRowString += "   // Cos(theta) = " + cosTheta + "\r\n";
-
- 				sourceCode += matrixRowString;
+					matrixRowString += "   // Cos(theta) = " + cosTheta + "\n";
+ 					sourceCode += matrixRowString;
+				#endif
 			}
 		#else
 			string	className = "LTCData_" + _BRDFName;
@@ -219,21 +248,21 @@ throw new Exception( "Ta mère!" );
 			}
 		#endif
 
-			sourceCode += "        };\r\n";
+			sourceCode += "        };\n";
 
 			// Export LTC amplitude and fresnel
 			//
 //        public static float[] s_LtcGGXMagnitudeData = new float[k_LtcLUTResolution * k_LtcLUTResolution]
 //        public static float[] s_LtcGGXFresnelData = new float[k_LtcLUTResolution * k_LtcLUTResolution]
 
-			sourceCode += "\r\n";
-			sourceCode += "        // NOTE: Formerly, we needed to also export and create a table for the BRDF's amplitude factor + fresnel coefficient\r\n";
-			sourceCode += "        //    but it turns out these 2 factors are actually already precomputed and available in the FGD table corresponding\r\n";
-			sourceCode += "        //    to the " + _BRDFName + " BRDF, therefore they are no longer exported...\r\n";
+			sourceCode += "\n";
+			sourceCode += "        // NOTE: Formerly, we needed to also export and create a table for the BRDF's amplitude factor + fresnel coefficient\n";
+			sourceCode += "        //    but it turns out these 2 factors are actually already precomputed and available in the FGD table corresponding\n";
+			sourceCode += "        //    to the " + _BRDFName + " BRDF, therefore they are no longer exported...\n";
 
 			// Close class and namespace
-			sourceCode += "    }\r\n";
-			sourceCode += "}\r\n";
+			sourceCode += "    }\n";
+			sourceCode += "}\n";
 
 			// Write content
 //			FileInfo	targetFileName = new FileInfo( Path.Combine( Path.GetDirectoryName( _tableFileName.FullName ), Path.GetFileNameWithoutExtension( _tableFileName.FullName ) + ".cs" ) );
@@ -274,7 +303,7 @@ throw new Exception( "Ta mère!" );
 // 				ImageUtility.ImageFile	I = new ImageUtility.ImageFile( W, H, _format, profile );
 // 				M[(uint) i][0][0] = I;
 
-				double	largest = 0;
+				double	largest = 0;	// Keep track of largest error from 1
 				ImageUtility.ImageFile	I = M[(uint) i][0][0];
 				I.WritePixels( ( uint _X, uint _Y, ref float4 _color ) => {
 					LTC	ltc = table[_X,_Y];
@@ -285,13 +314,23 @@ throw new Exception( "Ta mère!" );
 					if ( Mathf.Abs( ltc.invM[0,1] ) > tol || Mathf.Abs( ltc.invM[1,0] ) > tol || Mathf.Abs( ltc.invM[1,2] ) > tol || Mathf.Abs( ltc.invM[2,1] ) > tol )
 						throw new Exception( "Not zero!" );
 
-					largest = Math.Max( largest, Math.Abs( ltc.invM[2,2] - 1 ) );
-					double	factor = 1.0 / ltc.invM[2,2];
+					// Former code used to normalize by m22 term but according to Hill, this leads to poorly interpolatble tables (cf.  page 81 of https://blog.selfshadow.com/publications/s2016-advances/s2016_ltc_rnd.pdf)
+// 					largest = Math.Max( largest, Math.Abs( ltc.invM[2,2] - 1 ) );
+// 					double	factor = 1.0 / ltc.invM[2,2];
+// 
+// 					_color.x = (float) (factor * ltc.invM[0,0]);
+// 					_color.y = (float) (factor * ltc.invM[0,2]);
+// 					_color.z = (float) (factor * ltc.invM[1,1]);
+// 					_color.w = (float) (factor * ltc.invM[2,0]);
+
+					// Instead, normalize by m11!
+ 					largest = Math.Max( largest, Math.Abs( ltc.invM[1,1] - 1 ) );
+					double	factor = 1.0 / ltc.invM[1,1];
 
 					_color.x = (float) (factor * ltc.invM[0,0]);
 					_color.y = (float) (factor * ltc.invM[0,2]);
-					_color.z = (float) (factor * ltc.invM[1,1]);
-					_color.w = (float) (factor * ltc.invM[2,0]);
+					_color.z = (float) (factor * ltc.invM[2,0]);
+					_color.w = (float) (factor * ltc.invM[2,2]);
 				} );
 			}
 			M.DDSSaveFile( _targetFileName, ImageUtility.COMPONENT_FORMAT.AUTO );

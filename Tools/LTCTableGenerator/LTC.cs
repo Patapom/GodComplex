@@ -1,7 +1,4 @@
-﻿//#define FIT_TRANSPOSED				// Fit transposed matrix
-//#define FIT_INV_M					// Fit M^-1 directly instead of M+inversion
-
-//////////////////////////////////////////////////////////////////////////
+﻿//////////////////////////////////////////////////////////////////////////
 // LTC Class containing both M and M^-1 matrice + fitting values (e.g. coefficients, error, stats, etc.)
 //////////////////////////////////////////////////////////////////////////
 //
@@ -16,10 +13,10 @@ using SharpMath;
 namespace LTCTableGenerator
 {
 
-	[System.Diagnostics.DebuggerDisplay( "m11={m11}, m22={m22}, m13={m13}, m31={m31} - Amplitude = {amplitude}" )]
+	[System.Diagnostics.DebuggerDisplay( "m11={m11}, m22={m22}, m13={m13} - Amplitude = {amplitude} - Fresnel = {fresnel}" )]
 	public class LTC {
 
-		// lobe amplitude
+		// Lobe amplitude
 		public double		magnitude = 1;
 
 		// Average Schlick Fresnel term
@@ -29,7 +26,7 @@ namespace LTCTableGenerator
 		public float3		X = float3.UnitX;
 		public float3		Y = float3.UnitY;
 		public float3		Z = float3.UnitZ;
-		public double		m11 = 1, m22 = 1, m13 = 0, m31 = 0;	// WARNING: These are NOT final parameters to use at runtime. Use the "RuntimeParameters" properties instead
+		public double		m11 = 1, m22 = 1, m13 = 0;
 		public double[,]	M = new double[3,3];
 
 		public double		error;				// Last fitting error
@@ -37,21 +34,7 @@ namespace LTCTableGenerator
 
 		// Runtime matrix representation
 		public double[,]	invM = new double[3,3];
-//		public double		detInvM;
 		public double		detM;
-
-		/// <summary>
-		/// Gets the runtime parameters to use for LTC estimate
-		/// </summary>
-		public double[]		RuntimeParameters {
-			get { return new double[] {	invM[0,0], invM[1,1], invM[0,2], invM[2,0],		// invM matrix coefficients
-										magnitude, fresnel };							// BRDF scale and Fresnel coefficients
-			}
-		}
-
-// 		public double	MaxValue {
-// 			get { return amplitude * detInvM / Mathf.PI; }
-// 		}
 
 		public LTC() {
 			Update();
@@ -66,21 +49,11 @@ namespace LTCTableGenerator
 		/// </summary>
 		/// <returns></returns>
 		public double[]	GetFittingParms() {
-			#if FIT_INV_M
-				double[]	tempParams = new double[] {
-					m11,
-					m22,
-					m31,
-//					m13
-				};
-			#else
-				double[]	tempParams = new double[] {
-					m11,
-					m22,
-					m13,
-//					m31,
-				};
-			#endif
+			double[]	tempParams = new double[] {
+				m11,
+				m22,
+				m13,
+			};
 			return tempParams;
 		}
 
@@ -92,90 +65,29 @@ namespace LTCTableGenerator
 		public void	SetFittingParms( double[] _parameters, bool _isotropic ) {
  			double	tempM11 = Math.Max( _parameters[0], 1e-7 );
  			double	tempM22 = Math.Max( _parameters[1], 1e-7 );
-
-			// When composing from the left (V' = V * invM), the important 3rd parameter is m31
-// 			#if FIT_TRANSPOSED
-//  				double	tempM31 = _parameters[2];
-// 
-// 				#if FIT_INV_M
-//  					double	tempM13 = _parameters.Length > 3 ? _parameters[3] : 0;
-// 					if ( _parameters.Length > 4 )
-// 						amplitude = Math.Max( _parameters[4], 1e-4 );
-// 				#else
-// 					double	tempM13 = 0;
-// //					if ( _parameters.Length > 3 )
-// //						amplitude = Math.Max( _parameters[3], 1e-4 );
-// 				#endif
-// 			#else
- 				double	tempM13 = _parameters[2];
-
-				#if FIT_INV_M
- 					double	tempM31 = _parameters.Length > 3 ? _parameters[3] : 0;
-					if ( _parameters.Length > 4 )
-//						magnitude = Math.Max( _parameters[4], 1e-4 );
-						magnitude = _parameters[4];
-				#else
-					double	tempM31 = _parameters.Length > 3 ? _parameters[3] : 0;
-				#endif
-// 			#endif
+ 			double	tempM13 = _parameters[2];
 
 			if ( _isotropic ) {
 				m11 = tempM11;
 				m22 = tempM11;
 				m13 = 0.0;
-				m31 = 0.0;
 			} else {
 				m11 = tempM11;
 				m22 = tempM22;
 				m13 = tempM13;
-				m31 = tempM31;
 			}
 
-			Update();		// Update the matrix
+			Update();	// Update the matrices
 		}
 
+		// Heitz & Hill Method => Fit M, inverse to obtain target matrix
 		public void		Update() {
-			#if FIT_INV_M
-				// My method => Directly fit target inverse matrix + amplitude
-				invM[0,0] = m11;
-				invM[0,1] = 0;
-				invM[0,2] = m13;
-				invM[1,0] = 0;
-				invM[1,1] = m22;
-				invM[1,2] = 0;
-				invM[2,0] = m31;
-				invM[2,1] = 0;
-				invM[2,2] = 1;
 
-				detInvM = Invert( invM, M );
-			#else
-				// Heitz & Hill Method => Fit M, inverse to obtain target matrix
-				// Build the source matrix M for which we're exploring the parameter space
-
-// 				#if FIT_TRANSPOSED
-// // Code from Heitz et al., assuming they wrote it transposed
-// // 					float3x3	temp = new float3x3(	(float) m11,	0,				(float) m13,
-// // 														0,				(float) m22,	0,
-// // 														(float) m31,	0,				1	);
-// // 					M = temp * new float3x3( X, Y, Z );
-// 
-// 					M[0,0] = m11*X.x +			 + m13*Z.x;
-// 					M[0,1] = m11*X.y +			 + m13*Z.y;
-// 					M[0,2] = m11*X.z +			 + m13*Z.z;
-// 
-// 					M[1,0] =			m22*Y.x;
-// 					M[1,1] =			m22*Y.y;
-// 					M[1,2] =			m22*Y.z;
-// 
-// 					M[2,0] = m31*X.x			 +     Z.x;
-// 					M[2,1] = m31*X.y			 +     Z.y;
-// 					M[2,2] = m31*X.z			 +     Z.z;
-// 				#else
 // Code from Heitz et al., as given by the example code
 // 					M = mat3(X, Y, Z) *
-// 						mat3(m11, 0, 0,
-// 							0, m22, 0,
-// 							m13, 0, 1);
+// 						mat3(m11, 0, 0,	// column 0
+// 							0, m22, 0,	// column 1
+// 							m13, 0, 1);	// column 2
 // 					invM = inverse(M);
 // 					detM = abs(glm::determinant(M));
 
@@ -183,18 +95,19 @@ namespace LTCTableGenerator
 // 	struct mat3 {
 // 		vec3	value[3];	// COLUMNS!!!!!
 // 	}
-// // 	mat3( T x0, T y0, T z0,
+// 
+// 	mat3( T x0, T y0, T z0,
 // 		  T x1, T y1, T z1,
 // 		  T x2, T y2, T z2 ) {
-// 			this->value[0] = col_type(x0, y0, z0);
-// 			this->value[1] = col_type(x1, y1, z1);
-// 			this->value[2] = col_type(x2, y2, z2);
+// 			this->value[0] = vec3(x0, y0, z0);
+// 			this->value[1] = vec3(x1, y1, z1);
+// 			this->value[2] = vec3(x2, y2, z2);
 // 	}
 //
-// 	mat3(col_type const& v0, col_type const& v1, col_type const& v2) {
-// 			this->value[0] = col_type(v0);
-// 			this->value[1] = col_type(v1);
-// 			this->value[2] = col_type(v2);
+// 	mat3(vec3 const& v0, vec3 const& v1, vec3 const& v2) {
+// 			this->value[0] = v0;
+// 			this->value[1] = v1;
+// 			this->value[2] = v2;
 // 	}
 //
 //	operator*( m1, m2 ) {
@@ -226,49 +139,41 @@ namespace LTCTableGenerator
 //	| Xy Yy Zy | * |  0  m22  0  | = | Xy*m11  Yy*m22  Xy*m13+Zy |  (thank God, they didn't change the math!)
 //	| Xz Yz Zz |   |  0   0   1  |	 | Xz*m11  Yz*m22  Xz*m13+Zz |
 //
-//	| Xx Yx Zx |   | m11  0  m13 |   | Xx*m11+m31*Zx  Yx*m22  Xx*m13+Zx |
-//	| Xy Yy Zy | * |  0  m22  0  | = | Xy*m11+m31*Zy  Yy*m22  Xy*m13+Zy |  (thank God, they didn't change the math!)
-//	| Xz Yz Zz |   | m31  0   1  |	 | Xz*m11+m31*Zz  Yz*m22  Xz*m13+Zz |
-//
-					M[0,0] = m11*X.x + m31*Z.x;
-					M[0,1] = m22*Y.x;
-					M[0,2] = m13*X.x + Z.x;
+			// Build the source matrix M for which we're exploring the parameter space
+			M[0,0] = m11*X.x;
+			M[0,1] = m22*Y.x;
+			M[0,2] = m13*X.x + Z.x;
 
-					M[1,0] = m11*X.y + m31*Z.y;
-					M[1,1] = m22*Y.y;
-					M[1,2] = m13*X.y + Z.y;
+			M[1,0] = m11*X.y;
+			M[1,1] = m22*Y.y;
+			M[1,2] = m13*X.y + Z.y;
 
-					M[2,0] = m11*X.z + m31*Z.z;
-					M[2,1] = m22*Y.z;
-					M[2,2] = m13*X.z + Z.z;
+			M[2,0] = m11*X.z;
+			M[2,1] = m22*Y.z;
+			M[2,2] = m13*X.z + Z.z;
 
-				#endif
+			// Build the final matrix required at runtime for LTC evaluation
+			detM = Invert( M, invM );
+			if ( detM < 0.0 )
+				throw new Exception( "Negative determinant!" );
 
-				// Build the final matrix required at runtime for LTC evaluation
-				detM = Invert( M, invM );
-				if ( detM < 0.0 )
-					throw new Exception( "Negative determinant!" );
-
+// DEBUG: Check determinant of M^-1 = reciprocal of determine of M
 // detInvM =	(invM[0,0]*invM[1,1]*invM[2,2] + invM[0,1]*invM[1,2]*invM[2,0] + invM[0,2]*invM[1,0]*invM[2,1])
 // 			-   (invM[2,0]*invM[1,1]*invM[0,2] + invM[2,1]*invM[1,2]*invM[0,0] + invM[2,2]*invM[1,0]*invM[0,1]);
 // if ( Math.Abs( detM - 1.0/detInvM ) > 1e-6 )
 // 	throw new Exception( "Determinant discrepancy!" );
 
-
-// 				// Clear it up so it's always in the required final form
-// 				invM[0,1] = 0;
-// 				invM[1,0] = 0;
-// 				invM[1,2] = 0;
-// 				invM[2,1] = 0;
-// 				invM[2,2] = 1;
-
-// 			#endif
+			// Kill useless coefs in matrix
+			invM[0,1] = 0;	// Row 0 - Col 1
+			invM[1,0] = 0;	// Row 1 - Col 0
+			invM[1,2] = 0;	// Row 1 - Col 2
+			invM[2,1] = 0;	// Row 2 - Col 1
 		}
 
 		public double	Eval( ref float3 _tsLight ) {
 			// Transform into original distribution space
 			float3	Loriginal = float3.Zero;
-			Transform( invM, _tsLight, ref Loriginal );	// Compose from the right, as in the paper!
+			Transform( invM, _tsLight, ref Loriginal );
 			float	l = Loriginal.Length;
 					Loriginal /= l;
 
@@ -278,9 +183,9 @@ namespace LTCTableGenerator
  			// Compute the Jacobian, roundDwo / roundDw
  			double	jacobian = 1.0 / (detM * l*l*l);
 
-// Ensure we get the same thing as Hill's code, without the 2nd transform
+// DEBUG: Ensure we get the same thing as Hill's code, without the 2nd transform
 // float3	L_ = float3.Zero;
-// Transform( M, Loriginal, ref L_ );	// Compose from the right, as in the paper!
+// Transform( M, Loriginal, ref L_ );
 // double	l2 = L_.Length;
 // double	jacobian2 = detM / (l2*l2*l2);
 // if ( Mathf.Abs( jacobian - 1.0 / jacobian2 ) > 1e-4 )
@@ -292,14 +197,13 @@ namespace LTCTableGenerator
 		}
 
 		public void	GetSamplingDirection( float _U1, float _U2, ref float3 _direction ) {
-//			float	theta = Mathf.Asin( Mathf.Sqrt( _U1 ) );
-			float	theta = Mathf.Acos( Mathf.Sqrt( _U1 ) );
+			float	theta = Mathf.Asin( Mathf.Sqrt( _U1 ) );
+//			float	theta = Mathf.Acos( Mathf.Sqrt( _U1 ) );
 			float	phi = Mathf.TWOPI * _U2;
-// 			#if FIT_TRANSPOSED
-// 				Transform( new float3( Mathf.Sin(theta)*Mathf.Cos(phi), Mathf.Sin(theta)*Mathf.Sin(phi), Mathf.Cos(theta) ), M, ref _direction );
-// 			#else
-				Transform( M, new float3( Mathf.Sin(theta)*Mathf.Cos(phi), Mathf.Sin(theta)*Mathf.Sin(phi), Mathf.Cos(theta) ), ref _direction );
-// 			#endif
+			float3	D = new float3( Mathf.Sin(theta)*Mathf.Cos(phi), Mathf.Sin(theta)*Mathf.Sin(phi), Mathf.Cos(theta) );
+
+			Transform( M, D, ref _direction );
+
 			_direction.Normalize();
 		}
 
@@ -373,17 +277,6 @@ namespace LTCTableGenerator
 				Z = float3.UnitZ;
 			X.Set( Z.z, 0, -Z.x );
 			Y = float3.UnitY;
-
-// 			#if FIT_INV_M
-// 				// Compute intial inverse M coefficients to match average direction best
-// 				M = new float3x3( X, Y, Z );
-// 				invM = M.Inverse;
-// 
-// 				m11 = invM.r0.x;
-// 				m22 = invM.r1.y;
-// 				m13 = invM.r0.z;
-// 				m31 = invM.r2.x;
-// 			#endif
 		}
 
 		#endregion
@@ -417,6 +310,7 @@ namespace LTCTableGenerator
 			return det;
 		}
 
+// Not used: we always multiply by the right
 // 		void			Transform( float3 a, double[,] b, ref float3 c ) {
 // 			c.x = (float) (a.x * b[0,0] + a.y * b[1,0] + a.z * b[2,0]);
 // 			c.y = (float) (a.x * b[0,1] + a.y * b[1,1] + a.z * b[2,1]);
@@ -444,7 +338,7 @@ namespace LTCTableGenerator
 			m11 = R.ReadDouble();
 			m22 = R.ReadDouble();
 			m13 = R.ReadDouble();
-			m31 = R.ReadDouble();
+// 			m31 = R.ReadDouble();
 			magnitude = R.ReadDouble();
 			fresnel = R.ReadDouble();
 
@@ -467,7 +361,7 @@ namespace LTCTableGenerator
 			W.Write( m11 );
 			W.Write( m22 );
 			W.Write( m13 );
-			W.Write( m31 );
+// 			W.Write( m31 );
 			W.Write( magnitude );
 			W.Write( fresnel );
 

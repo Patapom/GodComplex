@@ -13,27 +13,21 @@
 // Some notes:
 //	• The fitter probably uses L3 norm error because it's more important to have strong fitting on large values (i.e. the BRDF peak values)
 //		than on the mostly 0 values at low roughness
-//	  Anyway, this L3 metric is detrimental when fitting with BFGS instead of Nelder-Mead so I simply removed it
 //
-//	• I implemented 2 kinds of fitting:
-//		Method 1) is the one used by Heitz & Hill
-//			They work on M: they initialize it with appropriate directions and amplitude fitting the BRDF's
-//			Then the m11, m22, etc. parameters are the ones composing the matrix M and they're the ones that are fit
-//			At each step, the inverse M matrix is computed and forced into its runtime form:
-//				| m11'   0   m13' |
-//				|  0    m22'  0   |
-//				| m31'   0    1   |
-//			►►► WARNING: Notice the prime! They are NOT THE SAME as the m11, m22, etc. fitting parameters of the M matrix!
-//			If you want to be sure, just use the "RuntimeParameters" property that contains the 4 runtime matrix parameters in order + scale & fresnel!
+//	• The fitter works on matrix M: they initialize it with appropriate directions and amplitude fitting the BRDF's
+//		Then the m11, m22, m13 parameters are the ones composing the matrix M and they're the ones that are fit
+//		At each step, the inverse M matrix is computed and forced into its runtime form:
+//			| m11'   0   m13' |
+//	 M^-1 =	|  0    m22'  0   |
+//			| m31'   0   m33' |
 //
-//		Method 2) is mine and starts from the target runtime inverse M matrix:
-//				| m11   0  m13 |
-//				|  0   m22  0  |
-//				| m31   0   1  |
-//			This time, only the required parameters are fitted
+//		►►► WARNING: Notice the prime! They are NOT THE SAME as the m11, m22, m13 fitting parameters of the M matrix!
 //
-//		Overall, method 2) somewhat has a smaller error but sometimes (especially at grazing angles) we end up with strange lobes
-//			that I'm afraid may look strange (like a secondary lobe rising at the antipodes of the first lobe near 90° values)
+//	• The runtime matrix M^-1 is renormalized by m11', which is apparently more stable and easier to interpolate according to hill
+//		We thus obtain the following runtime matrix with the 4 coefficients that need to be stored into a texture:
+//			|  1     0   m13" |
+//	 M^-1 =	|  0    m22"  0   |
+//			| m31"   0   m33" |
 //
 //////////////////////////////////////////////////////////////////////////
 //
@@ -59,7 +53,7 @@ namespace LTCTableGenerator
 		const int		MAX_ITERATIONS = 200;
 		const float		FIT_EXPLORE_DELTA = 0.05f;
 		const float		TOLERANCE = 1e-5f;
-		const float		MIN_ALPHA = 0.0001f;		// minimal roughness (avoid singularities)
+		const float		MIN_ALPHA = 0.00001f;		// minimal roughness (avoid singularities)
 
 		#endregion
 
@@ -160,11 +154,7 @@ namespace LTCTableGenerator
 
 				integerTrackbarControlRoughnessIndex.Enabled = Paused;
 				integerTrackbarControlThetaIndex.Enabled = Paused;
-
-				floatTrackbarControl_m11.Enabled = Paused;
-				floatTrackbarControl_m22.Enabled = Paused;
-				floatTrackbarControl_m13.Enabled = Paused;
-				floatTrackbarControl_m31.Enabled = Paused;
+				panelMatrixCoefficients.Enabled = Paused;
 			}
 		}
 
@@ -270,7 +260,7 @@ namespace LTCTableGenerator
 			m_internalChange = true;
 
 			float	alpha, cosTheta;
-			GetRoughnessAndAngle( RoughnessIndex, ThetaIndex, out alpha, out cosTheta );
+			GetRoughnessAndAngle( RoughnessIndex, ThetaIndex, m_tableSize, m_tableSize, out alpha, out cosTheta );
 
 			float3	tsView = new float3( Mathf.Sqrt( 1 - cosTheta*cosTheta ), 0, cosTheta );
 
@@ -295,14 +285,11 @@ namespace LTCTableGenerator
 					} else {
 						// init with roughness of previous fit
 						previousLTC = m_results[RoughnessIndex+1,ThetaIndex];
-// 						ltc.m11 = Mathf.Max( previousLTC.m11, MIN_ALPHA );
-// 						ltc.m22 = Mathf.Max( previousLTC.m22, MIN_ALPHA );
 						ltc.m11 = previousLTC.m11;
 						ltc.m22 = previousLTC.m22;
 					}
 
 					ltc.m13 = 0;
-					ltc.m31 = 0;
 
 					isotropic = true;
 				} else {
@@ -326,7 +313,6 @@ namespace LTCTableGenerator
 						ltc.m11 = previousLTC.m11;
 						ltc.m22 = previousLTC.m22;
 						ltc.m13 = previousLTC.m13;
-						ltc.m31 = previousLTC.m31;
 					}
 
 					isotropic = false;
@@ -461,15 +447,14 @@ namespace LTCTableGenerator
 			m_internalChange = false;
 		}
 
-		void	GetRoughnessAndAngle( int _roughnessIndex, int _thetaIndex, out float _alpha, out float _cosTheta ) {
+		public static void	GetRoughnessAndAngle( int _roughnessIndex, int _thetaIndex, int _tableSizeRoughness, int _tableSizeTheta, out float _alpha, out float _cosTheta ) {
 
 			// alpha = perceptualRoughness^2  (perceptualRoughness = "sRGB" representation of roughness, as painted by artists)
-			float perceptualRoughness = (float) _roughnessIndex / (m_tableSize-1);
-//			_alpha = Mathf.Max( MIN_ALPHA, perceptualRoughness * perceptualRoughness );
-			_alpha = perceptualRoughness * perceptualRoughness;
+			float perceptualRoughness = (float) _roughnessIndex / (_tableSizeRoughness-1);
+			_alpha = Mathf.Max( MIN_ALPHA, perceptualRoughness * perceptualRoughness );
 
 			// parameterised by sqrt(1 - cos(theta))
-			float	x = (float) _thetaIndex / (m_tableSize - 1);
+			float	x = (float) _thetaIndex / (_tableSizeTheta - 1);
 			_cosTheta = 1.0f - x*x;
 			_cosTheta = Mathf.Max( 3.7540224885647058065387021283285e-4f, _cosTheta );	// Clamp to cos(1.57)
 		}
@@ -490,8 +475,7 @@ namespace LTCTableGenerator
 			double[,]	sums = new double[ROUGHNESS_VALUES_COUNT,THETA_VIEW_VALUES_COUNT];
 			for ( int roughnessIndex=0; roughnessIndex < ROUGHNESS_VALUES_COUNT; roughnessIndex++ ) {
 				float	perceptualRoughness = (float) roughnessIndex / (ROUGHNESS_VALUES_COUNT-1);
-//				float	alpha = Mathf.Max( MIN_ALPHA, perceptualRoughness * perceptualRoughness );
-				float	alpha = perceptualRoughness * perceptualRoughness;
+				float	alpha = Mathf.Max( MIN_ALPHA, perceptualRoughness * perceptualRoughness );
 
 				for ( int thetaIndex=0; thetaIndex < THETA_VIEW_VALUES_COUNT; thetaIndex++ ) {
 					float	x = (float) thetaIndex * Mathf.HALFPI / Math.Max( 1, THETA_VIEW_VALUES_COUNT-1 );
@@ -723,11 +707,11 @@ tsReflection = _LTC.Z;	// Use preferred direction
 
 		#region BRDF Rendering
 
-		float			m_theta;
-		float			m_roughness;
-		LTC				m_LTC;
-		float3			m_tsView;
-		float3			m_tsLight;
+		float	m_theta;
+		float	m_roughness;
+		LTC		m_LTC;
+		float3	m_tsView;
+		float3	m_tsLight;
 
 		bool	m_renderingBRDF = false;
 		public void	ShowBRDF( float _progress, float _theta, float _roughness, IBRDF _BRDF, LTC _LTC ) {
@@ -807,20 +791,17 @@ tsReflection = _LTC.Z;	// Use preferred direction
 				return;
 			}
 
-			double[]	runtimeParms = _LTC.RuntimeParameters;
-
 			textBoxFitting.Text = "m11 = " + _LTC.m11 + "\r\n"
 								+ "m22 = " + _LTC.m22 + "\r\n"
 								+ "m13 = " + _LTC.m13 + "\r\n"
-								+ "m31 = " + _LTC.m31 + "\r\n"
 								+ "\r\n"
-								+ "Amplitude = " + runtimeParms[4] + "\r\n"
-								+ "Fresnel = " + runtimeParms[5] + "\r\n"
+								+ "Magnitude = " + _LTC.magnitude + "\r\n"
+								+ "Fresnel = " + _LTC.fresnel + "\r\n"
 								+ "\r\n"
 								+ "invM = \r\n"
-								+ "r0 = " + WriteRow( 0, _LTC.invM ) + "\r\n"
-								+ "r1 = " + WriteRow( 1, _LTC.invM ) + "\r\n"
-								+ "r2 = " + WriteRow( 2, _LTC.invM ) + "\r\n"
+								+ " r0 = " + WriteRow( 0, _LTC.invM ) + "\r\n"
+								+ " r1 = " + WriteRow( 1, _LTC.invM ) + "\r\n"
+								+ " r2 = " + WriteRow( 2, _LTC.invM ) + "\r\n"
 								+ "\r\n"
 								+ "► Error:\r\n"
 								+ "Avg. = " + (m_statsSumError / m_statsCounter).ToString( "G4" ) + "\r\n"
@@ -838,7 +819,6 @@ tsReflection = _LTC.Z;	// Use preferred direction
 			floatTrackbarControl_m11.Value = (float) _LTC.m11;
 			floatTrackbarControl_m22.Value = (float) _LTC.m22;
 			floatTrackbarControl_m13.Value = (float) _LTC.m13;
-			floatTrackbarControl_m31.Value = (float) _LTC.m31;
 			labelError.Text = "Error: " + _LTC.error;
 
 			m_renderingBRDF = false;
@@ -898,25 +878,6 @@ tsReflection = _LTC.Z;	// Use preferred direction
 
 			return V;
 		}
-
-// 		float	ComputePixelSolidAngle( float x, float y, float dx, float dy ) {
-// 			float	A00 = ComputePixelSolidAngle( x, y );	x += dx;
-// 			float	A10 = ComputePixelSolidAngle( x, y );	y += dy;
-// 			float	A11 = ComputePixelSolidAngle( x, y );	x -= dx;
-// 			float	A01 = ComputePixelSolidAngle( x, y );
-// 			if ( float.IsNaN( A10 ) || float.IsNaN( A11 ) || float.IsNaN( A01 ) )
-// 				return 0.0f;
-// 
-// 			float	A = A11 + A00 - A10 - A01;
-// 			return Mathf.Abs( A );
-// 		}
-// 		float	ComputePixelSolidAngle( float x, float y ) {
-// 			float	z = Mathf.Sqrt( 1 - x*x - y*y );
-// 			float	solidAngle  = y * Mathf.Atan( x / z ) + x * Mathf.Atan( y / z )
-// 								+ (Mathf.Atan( (1 - x - y*y) / (y*z) ) - Mathf.Atan( (1 + x - y*y) / (y*z) )) / 2;
-// 
-// 			return solidAngle;
-// 		}
 
 		double  ComputeSolidAngle( uint _X, uint _Y, uint _width, uint _height ) {
 			double  x0 = 2.0 * _X / _width - 1.0;
@@ -1012,7 +973,7 @@ tsReflection = _LTC.Z;	// Use preferred direction
 				return;	// Currently fitting...
 
 			float	alpha, cosTheta;
-			GetRoughnessAndAngle( RoughnessIndex, ThetaIndex, out alpha, out cosTheta );
+			GetRoughnessAndAngle( RoughnessIndex, ThetaIndex, m_tableSize, m_tableSize, out alpha, out cosTheta );
 
 			LTC		ltc = m_results[RoughnessIndex,ThetaIndex];
 
@@ -1065,7 +1026,7 @@ tsReflection = _LTC.Z;	// Use preferred direction
 			UpdateView();
 		}
 
-		private void floatTrackbarControl_m31_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue ) {
+		private void floatTrackbarControl_matrix_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue ) {
 			if ( m_internalChange || m_renderingBRDF )
 				return;
 
@@ -1074,12 +1035,11 @@ tsReflection = _LTC.Z;	// Use preferred direction
 				ltc.m11 = floatTrackbarControl_m11.Value;
 				ltc.m22 = floatTrackbarControl_m22.Value;
 				ltc.m13 = floatTrackbarControl_m13.Value;
-				ltc.m31 = floatTrackbarControl_m31.Value;
 				ltc.Update();
 
 				// Show error
 				float	alpha, cosTheta;
-				GetRoughnessAndAngle( RoughnessIndex, ThetaIndex, out alpha, out cosTheta );
+				GetRoughnessAndAngle( RoughnessIndex, ThetaIndex, m_tableSize, m_tableSize, out alpha, out cosTheta );
 
 				float3	tsView = new float3( Mathf.Sqrt( 1 - cosTheta*cosTheta ), 0, cosTheta );
 
