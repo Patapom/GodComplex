@@ -11,27 +11,27 @@ namespace SharpMath
 	public class NelderMead {
 
 		// standard coefficients from Nelder-Mead
-		const float reflect  = 1.0f;
-		const float expand   = 2.0f;
-		const float contract = 0.5f;
-		const float shrink   = 0.5f;
+		const double reflect  = 1.0f;
+		const double expand   = 2.0f;
+		const double contract = 0.5f;
+		const double shrink   = 0.5f;
 
 		int			DIM;
 		int			NB_POINTS;
-		float[][]	s;
-		float[]	f;
+		double[][]	s;
+		double[]	f;
 
 		public int	m_lastIterationsCount;
 
-		public delegate float	ObjectiveFunctionDelegate( float[] _parameters );
+		public delegate double	ObjectiveFunctionDelegate( double[] _parameters );
 
 		public NelderMead( int _dimensions ) {
 			DIM = _dimensions;
 			NB_POINTS = _dimensions+1;
-			s = new float[NB_POINTS][];
+			s = new double[NB_POINTS][];
 			for ( int i=0; i < NB_POINTS; i++  )
-				s[i] = new float[_dimensions];
-			f = new float[NB_POINTS];
+				s[i] = new double[_dimensions];
+			f = new double[NB_POINTS];
 
 		}
 
@@ -39,7 +39,7 @@ namespace SharpMath
 //public System.IO.StreamWriter	log = new System.IO.FileInfo( "log.txt" ).CreateText();
 
 
-		public float	FindFit( float[] _pmin, float[] _start, float _delta, float _tolerance, int _maxIterations, ObjectiveFunctionDelegate _objectiveFn ) {
+		public double	FindFit( double[] _pmin, double[] _start, double _delta, double _tolerance, int _maxIterations, ObjectiveFunctionDelegate _objectiveFn ) {
 
 			// initialise simplex
 			Mov( s[0], _start );
@@ -60,10 +60,10 @@ namespace SharpMath
 //				return f[0];
 //			}
 
-			float[]	o = new float[DIM];	// Centroid
-			float[]	r = new float[DIM];	// Reflection
-			float[]	c = new float[DIM];	// Contraction
-			float[]	e = new float[DIM];	// Expansion
+			double[]	o = new double[DIM];	// Centroid
+			double[]	r = new double[DIM];	// Reflection
+			double[]	c = new double[DIM];	// Contraction
+			double[]	e = new double[DIM];	// Expansion
 
 			int lo = 0, hi, nh;
 			for ( m_lastIterationsCount = 0; m_lastIterationsCount < _maxIterations; m_lastIterationsCount++ ) {
@@ -86,8 +86,8 @@ namespace SharpMath
 				}
 
 				// stop if we've reached the required tolerance level
-				float a = Mathf.Abs(f[lo]);
-				float b = Mathf.Abs(f[hi]);
+				double a = Mathf.Abs(f[lo]);
+				double b = Mathf.Abs(f[hi]);
 				if ( 2.0*Mathf.Abs(a - b) < (a + b)*_tolerance )// || a + b == 0.0 )
 					break;
 
@@ -108,7 +108,7 @@ namespace SharpMath
 				for (int i = 0; i < DIM; i++)
 					r[i] = o[i] + reflect*(o[i] - s[hi][i]);
 
-				float fr = _objectiveFn(r);
+				double fr = _objectiveFn(r);
 
 //log.WriteLine( "reflection = {{ {0}, {1}, {2} }}", r[0], r[1], r[2] );
 //log.WriteLine( "reflection error = " + fr );
@@ -119,7 +119,7 @@ namespace SharpMath
 						for (int i = 0; i < DIM; i++)
 							e[i] = o[i] + expand*(o[i] - s[hi][i]);
 
-						float fe = _objectiveFn(e);
+						double fe = _objectiveFn(e);
 
 //log.WriteLine( "expansion = {{ {0}, {1}, {2} }}", e[0], e[1], e[2] );
 //log.WriteLine( "expansion error = " + fe );
@@ -142,7 +142,7 @@ namespace SharpMath
 				for (int i = 0; i < DIM; i++)
 					c[i] = o[i] - contract*(o[i] - s[hi][i]);
 
-				float fc = _objectiveFn(c);
+				double fc = _objectiveFn(c);
 
 //log.WriteLine( "contraction = {{ {0}, {1}, {2} }}", c[0], c[1], c[2] );
 //log.WriteLine( "contraction error = " + fc );
@@ -177,17 +177,17 @@ namespace SharpMath
 			return f[lo];
 		}
 
-		void Mov( float[] r, float[] v ) {
+		void Mov( double[] r, double[] v ) {
 			for (int i = 0; i < DIM; ++i)
 				r[i] = v[i];
 		}
 
-		void Set( float[] r, float v ) {
+		void Set( double[] r, double v ) {
 			for (int i = 0; i < DIM; ++i)
 				r[i] = v;
 		}
 
-		void Add( float[] r, float[] v ) {
+		void Add( double[] r, double[] v ) {
 			for (int i = 0; i < DIM; ++i)
 				r[i] += v[i];
 		}

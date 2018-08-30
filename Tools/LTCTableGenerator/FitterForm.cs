@@ -405,14 +405,14 @@ namespace LTCTableGenerator
 //m_fitter.log.WriteLine();
 
 
-							float[]	startFit = ltc.GetFittingParms();
-							float[]	resultFit = new float[startFit.Length];
+							double[]	startFit = ltc.GetFittingParms();
+							double[]	resultFit = new double[startFit.Length];
 
-							ltc.error = m_fitter.FindFit( resultFit, startFit, FIT_EXPLORE_DELTA, TOLERANCE, MAX_ITERATIONS, ( float[] _parameters ) => {
+							ltc.error = m_fitter.FindFit( resultFit, startFit, FIT_EXPLORE_DELTA, TOLERANCE, MAX_ITERATIONS, ( double[] _parameters ) => {
 								ltc.SetFittingParms( _parameters, isotropic );
 
 								double	currentError = ComputeError( ltc, m_BRDF, ref tsView, alpha );
-								return (float) currentError;
+								return currentError;
 							} );
 							ltc.iterationsCount = m_fitter.m_lastIterationsCount;
 
