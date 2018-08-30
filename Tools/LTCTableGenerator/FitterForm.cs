@@ -394,10 +394,10 @@ namespace LTCTableGenerator
 								throw new Exception( "NaN in solution" );
 
 						#else
-ltc.m11 = 1;
-ltc.m22 = 1;
-ltc.m13 = 0;
-ltc.Update();
+// ltc.m11 = 1;
+// ltc.m22 = 1;
+// ltc.m13 = 0;
+// ltc.Update();
 
 //m_fitter.log.WriteLine( "LTC m11 = {0}, m22 = {1}, m13 = {2}", ltc.m11, ltc.m22, ltc.m13 );
 //m_fitter.log.WriteLine( "LTC Z = {{ {0}, {1}, {2} }}", ltc.Z.x, ltc.Z.y, ltc.Z.z );
