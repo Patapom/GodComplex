@@ -725,7 +725,7 @@ tsReflection = _LTC.Z;	// Use preferred direction
 			m_BRDF = _BRDF;
 			m_LTC = _LTC;
 
-			this.Text = "Fitter Debugger - Theta = " + Mathf.ToDeg(_theta).ToString( "G3" ) + "° - Roughness = " + _roughness.ToString( "G3" ) + " - Error = " + (_LTC != null ? _LTC.error.ToString( "G4" ) : "not computed") + " - Progress = " + (100.0f * _progress).ToString( "G3" ) + "%";
+			this.Text = "Fitter Debugger " + m_BRDF.GetType().Name + " - Theta = " + Mathf.ToDeg(_theta).ToString( "G3" ) + "° - Roughness = " + _roughness.ToString( "G3" ) + " - Error = " + (_LTC != null ? _LTC.error.ToString( "G4" ) : "not computed") + " - Progress = " + (100.0f * _progress).ToString( "G3" ) + "%";
 
 			// Build up stats
 			if ( _LTC != null )
@@ -1050,6 +1050,16 @@ tsReflection = _LTC.Z;	// Use preferred direction
 			}
 
 			UpdateView();
+		}
+
+		private void buttonDebugLine_Click( object sender, EventArgs e )
+		{
+			DebugForm	F = new DebugForm();
+			F.Results = m_results;
+			float	alpha, cosTheta;
+			GetRoughnessAndAngle( RoughnessIndex, 0, m_tableSize, m_tableSize, out alpha, out cosTheta );
+			F.DebugRoughness( RoughnessIndex, " - Roughness = " + alpha );
+			F.ShowDialog( this );
 		}
 
 		#endregion

@@ -6,7 +6,7 @@ using System.Text;
 using System.Windows.Forms;
 using System.Drawing;
 
-namespace ShaderToy
+namespace LTCTableGenerator
 {
 	public class PanelOutput : Panel
 	{
@@ -21,6 +21,8 @@ namespace ShaderToy
 
 			InitializeComponent();
 		}
+
+		public Bitmap	m_bitmap = null;
 
 		/// <summary>
 		/// Required designer variable.
@@ -62,6 +64,15 @@ namespace ShaderToy
 		protected override void OnPaintBackground( PaintEventArgs e )
 		{
 //			base.OnPaintBackground( e );	// Don't!
+		}
+
+		protected override void OnPaint( PaintEventArgs e )
+		{
+			base.OnPaint( e );
+			if ( m_bitmap == null )
+				return;
+
+			e.Graphics.DrawImage( m_bitmap, 0, 0, new Rectangle( 0, 0, m_bitmap.Width, m_bitmap.Height ), GraphicsUnit.Pixel );
 		}
 	}
 }

@@ -66,6 +66,7 @@
 			this.checkBoxUsePreviousRoughness = new System.Windows.Forms.CheckBox();
 			this.buttonClearColumnsFromHere = new System.Windows.Forms.Button();
 			this.panelMatrixCoefficients = new System.Windows.Forms.Panel();
+			this.buttonDebugLine = new System.Windows.Forms.Button();
 			this.panelMatrixCoefficients.SuspendLayout();
 			this.SuspendLayout();
 			// 
@@ -431,7 +432,7 @@
 			this.buttonClearColumnsFromHere.UseVisualStyleBackColor = false;
 			this.buttonClearColumnsFromHere.Click += new System.EventHandler(this.buttonClearColumnsFromHere_Click);
 			// 
-			// panel3
+			// panelMatrixCoefficients
 			// 
 			this.panelMatrixCoefficients.Controls.Add(this.label12);
 			this.panelMatrixCoefficients.Controls.Add(this.floatTrackbarControl_m22);
@@ -440,17 +441,28 @@
 			this.panelMatrixCoefficients.Controls.Add(this.label14);
 			this.panelMatrixCoefficients.Controls.Add(this.floatTrackbarControl_m11);
 			this.panelMatrixCoefficients.Controls.Add(this.label15);
-			this.panelMatrixCoefficients.Location = new System.Drawing.Point(12, 407);
-			this.panelMatrixCoefficients.Name = "panel3";
 			this.panelMatrixCoefficients.Enabled = false;
+			this.panelMatrixCoefficients.Location = new System.Drawing.Point(12, 407);
+			this.panelMatrixCoefficients.Name = "panelMatrixCoefficients";
 			this.panelMatrixCoefficients.Size = new System.Drawing.Size(674, 28);
 			this.panelMatrixCoefficients.TabIndex = 11;
+			// 
+			// buttonDebugLine
+			// 
+			this.buttonDebugLine.Location = new System.Drawing.Point(792, 412);
+			this.buttonDebugLine.Name = "buttonDebugLine";
+			this.buttonDebugLine.Size = new System.Drawing.Size(75, 23);
+			this.buttonDebugLine.TabIndex = 12;
+			this.buttonDebugLine.Text = "Debug Line";
+			this.buttonDebugLine.UseVisualStyleBackColor = true;
+			this.buttonDebugLine.Click += new System.EventHandler(this.buttonDebugLine_Click);
 			// 
 			// FitterForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1239, 444);
+			this.Controls.Add(this.buttonDebugLine);
 			this.Controls.Add(this.panelMatrixCoefficients);
 			this.Controls.Add(this.buttonClearColumnsFromHere);
 			this.Controls.Add(this.buttonClearRowsFromHere);
@@ -529,5 +541,6 @@
 		private System.Windows.Forms.CheckBox checkBoxUsePreviousRoughness;
 		private System.Windows.Forms.Button buttonClearColumnsFromHere;
 		private System.Windows.Forms.Panel panelMatrixCoefficients;
+		private System.Windows.Forms.Button buttonDebugLine;
 	}
 }
