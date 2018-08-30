@@ -50,7 +50,7 @@ namespace LTCTableGenerator
 
 		#region CONSTANTS
 
-		const int		MAX_ITERATIONS = 200;
+		const int		MAX_ITERATIONS = 100;
 		const float		FIT_EXPLORE_DELTA = 0.05f;
 		const float		TOLERANCE = 1e-5f;
 		const float		MIN_ALPHA = 0.00001f;		// minimal roughness (avoid singularities)
@@ -278,6 +278,10 @@ namespace LTCTableGenerator
 				LTC		previousLTC = null;
 				bool	isotropic;
 				if ( ThetaIndex == 0 ) {
+					ltc.X = float3.UnitX;
+					ltc.Y = float3.UnitY;
+					ltc.Z = float3.UnitZ;
+
 					if ( RoughnessIndex == m_tableSize-1 || m_results[RoughnessIndex+1,ThetaIndex] == null ) {
 						// roughness = 1 or no available result
 						ltc.m11 = 1.0f;
@@ -295,20 +299,21 @@ namespace LTCTableGenerator
 				} else {
 					// Otherwise use average direction as Z vector
 					// And use previous configuration as first guess
-					if ( m_useAdaptiveFit ) {
-						const int	CRITICAL_THETA_INDEX = 56;	// Above this index, start using previous angle
-						if ( RoughnessIndex < m_tableSize-1 && ThetaIndex < CRITICAL_THETA_INDEX )
-							previousLTC = m_results[RoughnessIndex+1,ThetaIndex];	// Always use previous roughness if above critical angle
-						else
-							previousLTC = m_results[RoughnessIndex,ThetaIndex-1];	// Above critical angle, just use previous angle
+// 					if ( m_useAdaptiveFit ) {
+// 						const int	CRITICAL_THETA_INDEX = 56;	// Above this index, start using previous angle
+// 						if ( RoughnessIndex < m_tableSize-1 && ThetaIndex < CRITICAL_THETA_INDEX )
+// 							previousLTC = m_results[RoughnessIndex+1,ThetaIndex];	// Always use previous roughness if above critical angle
+// 						else
+// 							previousLTC = m_results[RoughnessIndex,ThetaIndex-1];	// Above critical angle, just use previous angle
+// 
+// 					} else {
+// 						if ( RoughnessIndex < m_tableSize-1 && checkBoxUsePreviousRoughness.Checked )
+// 							previousLTC = m_results[RoughnessIndex+1,ThetaIndex];	// At low roughness, prefer using same angle, but previous roughness!
+// 						else
+// 							previousLTC = m_results[RoughnessIndex,ThetaIndex-1];	// At high roughness, prefer using same roughness but previous angle!
+// 					}
 
-					} else {
-						if ( RoughnessIndex < m_tableSize-1 && checkBoxUsePreviousRoughness.Checked )
-							previousLTC = m_results[RoughnessIndex+1,ThetaIndex];	// At low roughness, prefer using same angle, but previous roughness!
-						else
-							previousLTC = m_results[RoughnessIndex,ThetaIndex-1];	// At high roughness, prefer using same roughness but previous angle!
-					}
-
+					previousLTC = m_results[RoughnessIndex,ThetaIndex-1];
 					if ( previousLTC != null ) {
 						ltc.m11 = previousLTC.m11;
 						ltc.m22 = previousLTC.m22;
@@ -996,9 +1001,10 @@ tsReflection = _LTC.Z;	// Use preferred direction
 			if ( MessageBox.Show( this, "Are you sure you want to clear the table ROWS from this position, down to roughness=0?", "Confirm Clear", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2 ) != DialogResult.Yes )
 				return;	// Cancel, malheureux!
 
-			int	roughnessIndex = RoughnessIndex;
-			int	thetaIndex = ThetaIndex;
-			for ( ; roughnessIndex >= 0; roughnessIndex-- ) {
+			int	startRoughnessIndex = checkBoxClearPrev.Checked ? m_tableSize-1 : RoughnessIndex;
+			int	endRoughnessIndex = checkBoxClearNext.Checked ? 0 : RoughnessIndex;
+			int	thetaIndex = checkBoxClearPrev.Checked ? 0 : ThetaIndex;
+			for ( int roughnessIndex=startRoughnessIndex; roughnessIndex >= endRoughnessIndex; roughnessIndex-- ) {
 				for ( ; thetaIndex < m_tableSize; thetaIndex++ ) {
 					if ( m_results[roughnessIndex,thetaIndex] != null ) {
 						m_results[roughnessIndex,thetaIndex] = null;
@@ -1014,9 +1020,10 @@ tsReflection = _LTC.Z;	// Use preferred direction
 			if ( MessageBox.Show( this, "Are you sure you want to clear the table COLUMNS from this position, up to cosTheta=PI/2?", "Confirm Clear", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2 ) != DialogResult.Yes )
 				return;	// Cancel, malheureux!
 
-			int	roughnessIndex = RoughnessIndex;
-			int	thetaIndex = ThetaIndex;
-			for ( ; thetaIndex < m_tableSize; thetaIndex++ ) {
+			int	roughnessIndex = checkBoxClearPrev.Checked ? m_tableSize-1 : RoughnessIndex;
+			int	startThetaIndex = checkBoxClearPrev.Checked ? 0 : ThetaIndex;
+			int	endThetaIndex = checkBoxClearNext.Checked ? m_tableSize : ThetaIndex+1;
+			for ( int thetaIndex=startThetaIndex; thetaIndex < endThetaIndex; thetaIndex++ ) {
 				for ( ; roughnessIndex >= 0; roughnessIndex-- ) {
 					if ( m_results[roughnessIndex,thetaIndex] != null ) {
 						m_results[roughnessIndex,thetaIndex] = null;

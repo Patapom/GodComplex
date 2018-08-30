@@ -62,11 +62,8 @@ namespace LTCTableGenerator
 				return 0;
 			}
 
-//			_alpha = Mathf.Max( 0.002f, _alpha );
-
 			// masking
 			double	lambdaV = Lambda( _tsView.z, _alpha );
-//			double	G1 = 1.0 / (1.0 + lambdaV);
 
 			// shadowing
 			double	G2 = 0;
@@ -77,15 +74,12 @@ namespace LTCTableGenerator
 
 			// D
 			float3	H = (_tsView + _tsLight).Normalized;
-//			H.z = Mathf.Max( 1e-8f, H.z );
-// 			if ( Mathf.Almost( H.z, 0, 1e-8f ) )
-// 				H.z = 1e-8f;
 
 			double	slopex = H.x / H.z;
 			double	slopey = H.y / H.z;
 			double	D = 1.0 / (1.0 + (slopex*slopex + slopey*slopey) / _alpha / _alpha);
-			D = D*D;
-			D = D / (Math.PI * _alpha * _alpha * H.z*H.z*H.z*H.z);
+					D = D*D;
+					D = D / (Math.PI * _alpha * _alpha * H.z*H.z*H.z*H.z);
 
 			double	res = D * G2 / 4.0 / _tsView.z;		// Full specular mico-facet model is F * D * G / (4 * NdotL * NdotV) but since we're fitting with the NdotL included, it gets nicely canceled out!
 

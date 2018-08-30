@@ -67,6 +67,8 @@
 			this.buttonClearColumnsFromHere = new System.Windows.Forms.Button();
 			this.panelMatrixCoefficients = new System.Windows.Forms.Panel();
 			this.buttonDebugLine = new System.Windows.Forms.Button();
+			this.checkBoxClearPrev = new System.Windows.Forms.CheckBox();
+			this.checkBoxClearNext = new System.Windows.Forms.CheckBox();
 			this.panelMatrixCoefficients.SuspendLayout();
 			this.SuspendLayout();
 			// 
@@ -318,7 +320,7 @@
 			// buttonClear
 			// 
 			this.buttonClear.Enabled = false;
-			this.buttonClear.Location = new System.Drawing.Point(1152, 381);
+			this.buttonClear.Location = new System.Drawing.Point(984, 412);
 			this.buttonClear.Name = "buttonClear";
 			this.buttonClear.Size = new System.Drawing.Size(75, 23);
 			this.buttonClear.TabIndex = 9;
@@ -400,11 +402,11 @@
 			// 
 			this.buttonClearRowsFromHere.BackColor = System.Drawing.Color.IndianRed;
 			this.buttonClearRowsFromHere.Enabled = false;
-			this.buttonClearRowsFromHere.Location = new System.Drawing.Point(954, 412);
+			this.buttonClearRowsFromHere.Location = new System.Drawing.Point(1065, 389);
 			this.buttonClearRowsFromHere.Name = "buttonClearRowsFromHere";
-			this.buttonClearRowsFromHere.Size = new System.Drawing.Size(126, 23);
+			this.buttonClearRowsFromHere.Size = new System.Drawing.Size(85, 23);
 			this.buttonClearRowsFromHere.TabIndex = 9;
-			this.buttonClearRowsFromHere.Text = "Clear Rows From Here";
+			this.buttonClearRowsFromHere.Text = "Clear Rows";
 			this.buttonClearRowsFromHere.UseVisualStyleBackColor = false;
 			this.buttonClearRowsFromHere.Click += new System.EventHandler(this.buttonClearRowsFromHere_Click);
 			// 
@@ -424,11 +426,11 @@
 			// 
 			this.buttonClearColumnsFromHere.BackColor = System.Drawing.Color.IndianRed;
 			this.buttonClearColumnsFromHere.Enabled = false;
-			this.buttonClearColumnsFromHere.Location = new System.Drawing.Point(1086, 412);
+			this.buttonClearColumnsFromHere.Location = new System.Drawing.Point(1065, 412);
 			this.buttonClearColumnsFromHere.Name = "buttonClearColumnsFromHere";
-			this.buttonClearColumnsFromHere.Size = new System.Drawing.Size(141, 23);
+			this.buttonClearColumnsFromHere.Size = new System.Drawing.Size(85, 23);
 			this.buttonClearColumnsFromHere.TabIndex = 9;
-			this.buttonClearColumnsFromHere.Text = "Clear Columns  From Here";
+			this.buttonClearColumnsFromHere.Text = "Clear Columns";
 			this.buttonClearColumnsFromHere.UseVisualStyleBackColor = false;
 			this.buttonClearColumnsFromHere.Click += new System.EventHandler(this.buttonClearColumnsFromHere_Click);
 			// 
@@ -449,7 +451,7 @@
 			// 
 			// buttonDebugLine
 			// 
-			this.buttonDebugLine.Location = new System.Drawing.Point(792, 412);
+			this.buttonDebugLine.Location = new System.Drawing.Point(713, 412);
 			this.buttonDebugLine.Name = "buttonDebugLine";
 			this.buttonDebugLine.Size = new System.Drawing.Size(75, 23);
 			this.buttonDebugLine.TabIndex = 12;
@@ -457,11 +459,33 @@
 			this.buttonDebugLine.UseVisualStyleBackColor = true;
 			this.buttonDebugLine.Click += new System.EventHandler(this.buttonDebugLine_Click);
 			// 
+			// checkBoxClearPrev
+			// 
+			this.checkBoxClearPrev.AutoSize = true;
+			this.checkBoxClearPrev.Location = new System.Drawing.Point(1156, 393);
+			this.checkBoxClearPrev.Name = "checkBoxClearPrev";
+			this.checkBoxClearPrev.Size = new System.Drawing.Size(73, 17);
+			this.checkBoxClearPrev.TabIndex = 13;
+			this.checkBoxClearPrev.Text = "And Prev.";
+			this.checkBoxClearPrev.UseVisualStyleBackColor = true;
+			// 
+			// checkBoxClearNext
+			// 
+			this.checkBoxClearNext.AutoSize = true;
+			this.checkBoxClearNext.Location = new System.Drawing.Point(1156, 416);
+			this.checkBoxClearNext.Name = "checkBoxClearNext";
+			this.checkBoxClearNext.Size = new System.Drawing.Size(70, 17);
+			this.checkBoxClearNext.TabIndex = 13;
+			this.checkBoxClearNext.Text = "And Next";
+			this.checkBoxClearNext.UseVisualStyleBackColor = true;
+			// 
 			// FitterForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1239, 444);
+			this.Controls.Add(this.checkBoxClearNext);
+			this.Controls.Add(this.checkBoxClearPrev);
 			this.Controls.Add(this.buttonDebugLine);
 			this.Controls.Add(this.panelMatrixCoefficients);
 			this.Controls.Add(this.buttonClearColumnsFromHere);
@@ -542,5 +566,7 @@
 		private System.Windows.Forms.Button buttonClearColumnsFromHere;
 		private System.Windows.Forms.Panel panelMatrixCoefficients;
 		private System.Windows.Forms.Button buttonDebugLine;
+		private System.Windows.Forms.CheckBox checkBoxClearPrev;
+		private System.Windows.Forms.CheckBox checkBoxClearNext;
 	}
 }

@@ -261,7 +261,7 @@ namespace LTCTableGenerator
 						throw new Exception( "NaN!" );
 
 					magnitude += weight;
-					fresnel += weight * Math.Pow( 1 - _tsView.Dot( H ), 5.0 );
+					fresnel += weight * Math.Pow( 1 - Math.Max( 0.0f, _tsView.Dot( H ) ), 5.0 );
 					Z += (float) weight * tsLight;
 				}
 			}
@@ -269,12 +269,13 @@ namespace LTCTableGenerator
 			fresnel /= SAMPLES_COUNT*SAMPLES_COUNT;
 
 			// Finish building the average TBN orthogonal basis
-			Z.y = 0.0f;		// clear y component, which should be zero with isotropic BRDFs
-			float	length = Z.Length;
-			if ( length > 0.0f )
-				Z /= length;
-			else
-				Z = float3.UnitZ;
+// 			Z.y = 0.0f;		// clear y component, which should be zero with isotropic BRDFs
+// 			float	length = Z.Length;
+// 			if ( length > 0.0f )
+// 				Z /= length;
+// 			else
+// 				Z = float3.UnitZ;
+			Z.Normalize();
 			X.Set( Z.z, 0, -Z.x );
 			Y = float3.UnitY;
 		}

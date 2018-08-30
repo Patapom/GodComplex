@@ -1,6 +1,7 @@
-﻿//#define FIT_TABLES
+﻿#define FIT_TABLES
+
 //#define EXPORT_FOR_UNITY
-#define EXPORT_TEXTURE
+//#define EXPORT_TEXTURE
 //#define EXPORT_FOR_CSHARP	// Not working at the moment
 #define EXPORT_RAW
 
@@ -128,6 +129,7 @@ form.UseAdaptiveFit = false;
 		}
 
 		#if EXPORT_FOR_UNITY
+
 			static void	Export( FileInfo _tableFileName, FileInfo _targetFileName, string _BRDFName ) {
 				int		validResultsCount;
 				LTC[,]	table = FitterForm.LoadTable( _tableFileName, out validResultsCount );
