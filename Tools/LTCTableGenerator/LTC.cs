@@ -13,7 +13,7 @@ using SharpMath;
 namespace LTCTableGenerator
 {
 
-	[System.Diagnostics.DebuggerDisplay( "m11={m11}, m22={m22}, m13={m13} - Amplitude = {amplitude} - Fresnel = {fresnel}" )]
+	[System.Diagnostics.DebuggerDisplay( "m11={m11}, m22={m22}, m13={m13} - Magnitude = {magnitude} - Fresnel = {fresnel}" )]
 	public class LTC {
 
 		// Lobe amplitude
@@ -48,11 +48,11 @@ namespace LTCTableGenerator
 		/// Gets the parameters used for fitting
 		/// </summary>
 		/// <returns></returns>
-		public double[]	GetFittingParms() {
-			double[]	tempParams = new double[] {
-				m11,
-				m22,
-				m13,
+		public float[]	GetFittingParms() {
+			float[]	tempParams = new float[] {
+				(float) m11,
+				(float) m22,
+				(float) m13,
 			};
 			return tempParams;
 		}
@@ -62,7 +62,7 @@ namespace LTCTableGenerator
 		/// </summary>
 		/// <param name="_parameters"></param>
 		/// <param name="_isotropic"></param>
-		public void	SetFittingParms( double[] _parameters, bool _isotropic ) {
+		public void	SetFittingParms( float[] _parameters, bool _isotropic ) {
  			double	tempM11 = Math.Max( _parameters[0], 1e-7 );
  			double	tempM22 = Math.Max( _parameters[1], 1e-7 );
  			double	tempM13 = _parameters[2];

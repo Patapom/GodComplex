@@ -1,4 +1,4 @@
-﻿//#define FIT_TABLES
+﻿#define FIT_TABLES
 
 //#define EXPORT_FOR_UNITY
 //#define EXPORT_TEXTURE
@@ -113,12 +113,12 @@ form.RenderBRDF = true;	// Change this to perform fitting without rendering each
 // Just enter view mode to visualize fitting
 form.UsePreviousRoughness = _usePreviousRoughnessForFitting;
 //form.DoFitting = false;
-form.Paused = true;
+//form.Paused = true;
 //form.ReadOnly = true;
 
 // Debug a specific case
-//form.RoughnessIndex = 23;
-//form.ThetaIndex = 57;
+//form.RoughnessIndex = 24;
+//form.ThetaIndex = 56;
 
 form.UseAdaptiveFit = false;
 

@@ -195,11 +195,11 @@ void fitTab(mat3* tab, vec3* tabMagFresnel, const int N, const Brdf& brdf)
     LTC ltc;
 
     // loop over theta and alpha
-     for (int a = N - 1; a >=     0; --a)
-     for (int t =     0; t <= N - 1; ++t)
+//     for (int a = N - 1; a >=     0; --a)
+//     for (int t =     0; t <= N - 1; ++t)
 
-//	int	a = 19;
-//	int	t = 40;
+int	a = 24;
+int	t = 56;
 
     {
         // parameterised by sqrt(1 - cos(theta))
@@ -260,6 +260,12 @@ void fitTab(mat3* tab, vec3* tabMagFresnel, const int N, const Brdf& brdf)
 
             isotropic = false;
         }
+
+
+logFile << "LTC m11 = " << ltc.m11 << ", m22 = " << ltc.m22  << ", m13 = " << ltc.m13 << endl;
+logFile << "LTC Z = { " << averageDir.x << ", " << averageDir.y << ", " << averageDir.z << " }" << endl;
+logFile << "LTC mag = " << ltc.magnitude << ", fresnel = " << ltc.fresnel << endl;
+logFile << endl;
 
         // 2. fit (explore parameter space and refine first guess)
         float epsilon = 0.05f;

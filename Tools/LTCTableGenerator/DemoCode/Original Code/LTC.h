@@ -67,8 +67,15 @@ struct LTC {
 		const float theta = asinf(sqrtf(U1));
 //		const float theta = acosf(sqrtf(U1));
 		const float phi = 2.0f*3.14159f * U2;
+#if 1
 		const vec3 L = normalize(M * vec3(sinf(theta)*cosf(phi), sinf(theta)*sinf(phi), cosf(theta)));
 		return L;
+#else
+		const vec3 L = vec3(sinf(theta)*cosf(phi), sinf(theta)*sinf(phi), cosf(theta));
+		vec3	direction = M * L;
+		direction = normalize(direction);
+		return direction;
+#endif
 	}
 };
 

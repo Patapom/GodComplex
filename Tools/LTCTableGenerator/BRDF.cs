@@ -63,25 +63,25 @@ namespace LTCTableGenerator
 			}
 
 			// masking
-			double	lambdaV = Lambda( _tsView.z, _alpha );
+			float	lambdaV = Lambda( _tsView.z, _alpha );
 
 			// shadowing
-			double	G2 = 0;
+			float	G2 = 0;
 			if ( _tsLight.z > 0.0f ) {
-				double	lambdaL = Lambda( _tsLight.z, _alpha );
-				G2 = 1.0 / (1.0 + lambdaV + lambdaL);
+				float	lambdaL = Lambda( _tsLight.z, _alpha );
+				G2 = 1.0f / (1.0f + lambdaV + lambdaL);
 			}
 
 			// D
 			float3	H = (_tsView + _tsLight).Normalized;
 
-			double	slopex = H.x / H.z;
-			double	slopey = H.y / H.z;
-			double	D = 1.0 / (1.0 + (slopex*slopex + slopey*slopey) / _alpha / _alpha);
+			float	slopex = H.x / H.z;
+			float	slopey = H.y / H.z;
+			float	D = 1.0f / (1.0f + (slopex*slopex + slopey*slopey) / _alpha / _alpha);
 					D = D*D;
-					D = D / (Math.PI * _alpha * _alpha * H.z*H.z*H.z*H.z);
+					D = D / (Mathf.PI * _alpha * _alpha * H.z*H.z*H.z*H.z);
 
-			double	res = D * G2 / 4.0 / _tsView.z;		// Full specular mico-facet model is F * D * G / (4 * NdotL * NdotV) but since we're fitting with the NdotL included, it gets nicely canceled out!
+			float	res = D * G2 / 4.0f / _tsView.z;		// Full specular mico-facet model is F * D * G / (4 * NdotL * NdotV) but since we're fitting with the NdotL included, it gets nicely canceled out!
 
 			// pdf = D(H) * (N.H) / (4 * (L.H))
 			_pdf = Math.Abs( D * H.z / 4.0 / _tsView.Dot(H) );
@@ -96,9 +96,9 @@ namespace LTCTableGenerator
 			_direction = -_tsView + 2.0f * H * H.Dot(_tsView);
 		}
 
-		double	Lambda( float _cosTheta, float _alpha ) {
-			double	a = 1.0f / _alpha / Math.Tan( Math.Acos( _cosTheta ) );
-			double	lambda = _cosTheta < 1.0 ? 0.5 * (-1.0 + Math.Sqrt(1.0 + 1.0 / (a*a))) : 0.0;
+		float	Lambda( float _cosTheta, float _alpha ) {
+			float	a = 1.0f / _alpha / Mathf.Tan( Mathf.Acos( _cosTheta ) );
+			float	lambda = _cosTheta < 1.0f ? 0.5f * (-1.0f + Mathf.Sqrt(1.0f + 1.0f / (a*a))) : 0.0f;
 			return lambda;
 		}
 

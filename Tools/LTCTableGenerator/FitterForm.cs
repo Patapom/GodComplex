@@ -394,14 +394,25 @@ namespace LTCTableGenerator
 								throw new Exception( "NaN in solution" );
 
 						#else
-							double[]	startFit = ltc.GetFittingParms();
-							double[]	resultFit = new double[startFit.Length];
+ltc.m11 = 1;
+ltc.m22 = 1;
+ltc.m13 = 0;
+ltc.Update();
 
-							ltc.error = m_fitter.FindFit( resultFit, startFit, FIT_EXPLORE_DELTA, TOLERANCE, MAX_ITERATIONS, ( double[] _parameters ) => {
+//m_fitter.log.WriteLine( "LTC m11 = {0}, m22 = {1}, m13 = {2}", ltc.m11, ltc.m22, ltc.m13 );
+//m_fitter.log.WriteLine( "LTC Z = {{ {0}, {1}, {2} }}", ltc.Z.x, ltc.Z.y, ltc.Z.z );
+//m_fitter.log.WriteLine( "LTC mag = {0}, fresnel = {1}", ltc.magnitude, ltc.fresnel );
+//m_fitter.log.WriteLine();
+
+
+							float[]	startFit = ltc.GetFittingParms();
+							float[]	resultFit = new float[startFit.Length];
+
+							ltc.error = m_fitter.FindFit( resultFit, startFit, FIT_EXPLORE_DELTA, TOLERANCE, MAX_ITERATIONS, ( float[] _parameters ) => {
 								ltc.SetFittingParms( _parameters, isotropic );
 
 								double	currentError = ComputeError( ltc, m_BRDF, ref tsView, alpha );
-								return currentError;
+								return (float) currentError;
 							} );
 							ltc.iterationsCount = m_fitter.m_lastIterationsCount;
 
