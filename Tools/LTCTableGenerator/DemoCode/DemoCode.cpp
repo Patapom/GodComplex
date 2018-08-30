@@ -162,7 +162,7 @@ struct FitLTC
     {
         update(params);
         double	error = computeError(ltc, brdf, V, alpha);
-		return error;
+		return (float) error;
     }
 
     const Brdf& brdf;
@@ -378,6 +378,59 @@ void genSphereTab(float* tabSphere, int N)
 //     }
 // }
 
+// export data to C
+void writeTabC( mat3* tab, vec3* tabMagFresnel, int N ) {
+    ofstream file( "ltc.inc" );
+
+    file << std::fixed;
+    file << std::setprecision(6);
+
+    file << "static const int size = " << N  << ";" << endl << endl;
+
+    file << "static const mat33 tabM[size*size] = {" << endl;
+    for (int t = 0; t < N; ++t)
+    for (int a = 0; a < N; ++a)
+    {
+        file << "{";
+        file << tab[a + t*N][0][0] << ", " << tab[a + t*N][0][1] << ", " << tab[a + t*N][0][2] << ", ";
+        file << tab[a + t*N][1][0] << ", " << tab[a + t*N][1][1] << ", " << tab[a + t*N][1][2] << ", ";
+        file << tab[a + t*N][2][0] << ", " << tab[a + t*N][2][1] << ", " << tab[a + t*N][2][2] << "}";
+        if (a != N - 1 || t != N - 1)
+            file << ", ";
+        file << endl;
+    }
+    file << "};" << endl << endl;
+
+    file << "static const mat33 tabMinv[size*size] = {" << endl;
+    for (int t = 0; t < N; ++t)	// Theta
+    for (int a = 0; a < N; ++a)	// Alpha
+    {
+        mat3 Minv = glm::inverse(tab[a + t*N]);
+
+        file << "{";
+        file << Minv[0][0] << ", " << Minv[0][1] << ", " << Minv[0][2] << ", ";	// Export column 0
+        file << Minv[1][0] << ", " << Minv[1][1] << ", " << Minv[1][2] << ", ";	// Export column 1
+        file << Minv[2][0] << ", " << Minv[2][1] << ", " << Minv[2][2] << "}";	// Export column 2
+        if (a != N - 1 || t != N - 1)
+            file << ", ";
+        file << endl;
+    }
+    file << "};" << endl << endl;
+
+//     file << "static const float tabMagnitude[size*size] = {" << endl;
+//     for (int t = 0; t < N; ++t)
+//     for (int a = 0; a < N; ++a)
+//     {
+//         file << tabMagFresnel[a + t*N][0] << "f";
+//         if (a != N - 1 || t != N - 1)
+//             file << ", ";
+//         file << endl;
+//     }
+//     file << "};" << endl;
+
+    file.close();
+}
+
 
 int _tmain(int argc, _TCHAR* argv[]) {
 	// BRDF to fit
@@ -403,7 +456,7 @@ int _tmain(int argc, _TCHAR* argv[]) {
 // 
 // 	// export to C, MATLAB and DDS
 // 	writeTabMatlab(tab, tabMagFresnel, N);
-// 	writeTabC(tab, tabMagFresnel, N);
+ 	writeTabC( tab, tabMagFresnel, N );
 // 	writeDDS(tex1, tex2, N);
 // 	writeJS(tex1, tex2, N);
 
@@ -416,8 +469,6 @@ int _tmain(int argc, _TCHAR* argv[]) {
 	delete[] tabSphere;
 // 	delete[] tex1;
 // 	delete[] tex2;
-
-	return 0;
 
 	return 0;
 }
