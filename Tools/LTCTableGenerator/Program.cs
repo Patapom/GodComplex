@@ -1,9 +1,9 @@
 ﻿#define FIT_TABLES
 
 //#define EXPORT_FOR_UNITY
-//#define EXPORT_TEXTURE
+#define EXPORT_TEXTURE
 //#define EXPORT_FOR_CSHARP	// Not working at the moment
-#define EXPORT_RAW
+//#define EXPORT_RAW
 
 using System;
 using System.Collections.Generic;
@@ -102,6 +102,12 @@ namespace LTCTableGenerator
 
 			#if EXPORT_RAW
 				Export( new FileInfo( "GGX.ltc" ), new FileInfo( "GGX.double" ) );
+				Export( new FileInfo( "CookTorrance.ltc" ), new FileInfo( "CookTorrance.double" ) );
+				Export( new FileInfo( "Ward.ltc" ), new FileInfo( "Ward.double" ) );
+
+				Export( new FileInfo( "OrenNayar.ltc" ), new FileInfo( "OrenNayar.double" ) );
+				Export( new FileInfo( "CharlieSheen.ltc" ), new FileInfo( "CharlieSheen.double" ) );
+				Export( new FileInfo( "Disney.ltc" ), new FileInfo( "Disney.double" ) );
 			#endif
 		}
 

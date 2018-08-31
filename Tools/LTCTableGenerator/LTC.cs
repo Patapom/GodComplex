@@ -269,13 +269,12 @@ namespace LTCTableGenerator
 			fresnel /= SAMPLES_COUNT*SAMPLES_COUNT;
 
 			// Finish building the average TBN orthogonal basis
-// 			Z.y = 0.0f;		// clear y component, which should be zero with isotropic BRDFs
-// 			float	length = Z.Length;
-// 			if ( length > 0.0f )
-// 				Z /= length;
-// 			else
-// 				Z = float3.UnitZ;
-			Z.Normalize();
+ 			Z.y = 0.0f;		// clear y component, which should be zero with isotropic BRDFs
+ 			float	length = Z.Length;
+ 			if ( length > 0.0f )
+ 				Z /= length;
+ 			else
+ 				Z = float3.UnitZ;
 			X.Set( Z.z, 0, -Z.x );
 			Y = float3.UnitY;
 		}
