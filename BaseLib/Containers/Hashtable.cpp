@@ -10,14 +10,15 @@ using namespace BaseLib;
 int	DictionaryU32::ms_MaxCollisionsCount = 0;
 #endif
 
-DictionaryU32::DictionaryU32( int _Size ) {
-	m_Size = _Size;
-	m_ppTable = new Node*[m_Size];
-	memset( m_ppTable, 0, m_Size*sizeof(Node*) );
+DictionaryU32::DictionaryU32( int _PowerOfTwoSize ) {
+	m_POT = _PowerOfTwoSize;
+	m_SizePOT = 1 << m_POT;
+	m_ppTable = new Node*[m_SizePOT];
+	memset( m_ppTable, 0, m_SizePOT*sizeof(Node*) );
 }
 DictionaryU32::~DictionaryU32()
 {
-	for ( int i=0; i < m_Size; i++ )
+	for ( int i=0; i < m_SizePOT; i++ )
 	{
 		Node*	pNode = m_ppTable[i];
 		while ( pNode != NULL )
@@ -34,7 +35,8 @@ DictionaryU32::~DictionaryU32()
 
 void*	DictionaryU32::Get( U32 _Key ) const
 {
-	U32		idx = _Key % m_Size;
+//	U32		idx = _Key & (m_SizePOT-1);
+	U32		idx = Fibonacci( _Key );
 	Node*	pNode = m_ppTable[idx];
 
 #ifdef _DEBUG
@@ -66,7 +68,8 @@ void*	DictionaryU32::Get( U32 _Key ) const
 
 void	DictionaryU32::Add( U32 _Key, void* _pValue )
 {
-	U32		idx = _Key % m_Size;
+//	U32		idx = _Key & (m_SizePOT-1);
+	U32		idx = Fibonacci( _Key );
  
 	Node*	pNode = new Node();
 	pNode->Key = _Key;
@@ -78,7 +81,8 @@ void	DictionaryU32::Add( U32 _Key, void* _pValue )
 
 void	DictionaryU32::Remove( U32 _Key )
 {
-	U32		idx = _Key % m_Size;
+//	U32		idx = _Key & (m_SizePOT-1);
+	U32		idx = Fibonacci( _Key );
  
 	Node*	pPrevious = NULL;
 	Node*	pCurrent = m_ppTable[idx];
@@ -103,7 +107,7 @@ void	DictionaryU32::Remove( U32 _Key )
 void	DictionaryU32::ForEach( VisitorDelegate _pDelegate, void* _pUserData )
 {
 	int	EntryIndex = 0;
-	for ( int i=0; i < m_Size; i++ )
+	for ( int i=0; i < m_SizePOT; i++ )
 	{
 		Node*	pNode = m_ppTable[i];
 		while ( pNode != NULL )

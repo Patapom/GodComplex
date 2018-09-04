@@ -2,14 +2,15 @@
 
 //////////////////////////////////////////////////////////////////////////
 // String version
-template<typename T> DictionaryString<T>::DictionaryString( int _Size ) : m_EntriesCount( 0 )
+template<typename T> DictionaryString<T>::DictionaryString( int _PowerOfTwoSize ) : m_EntriesCount( 0 )
 {
-	m_Size = _Size;
-	m_ppTable = new Node*[m_Size];
-	memset( m_ppTable, 0, m_Size*sizeof(Node*) );
+	m_POT = _PowerOfTwoSize;
+	m_SizePOT = 1 << m_POT;
+	m_ppTable = new Node*[m_SizePOT];
+	memset( m_ppTable, 0, m_SizePOT*sizeof(Node*) );
 }
 template<typename T> DictionaryString<T>::~DictionaryString() {
-	for ( int i=0; i < m_Size; i++ ) {
+	for ( int i=0; i < m_SizePOT; i++ ) {
 		Node*	pNode = m_ppTable[i];
 		while ( pNode != NULL ) {
 			Node*	pOld = pNode;
@@ -25,7 +26,9 @@ template<typename T> T*	DictionaryString<T>::Get( const BString& _key ) const {
 	if ( !m_EntriesCount )
 		return NULL;
 
-	U32		idx = _key.Hash() % m_Size;
+//	U32		idx = _key.Hash() & (m_SizePOT-1);
+	U32		idx = Fibonacci( _key.Hash() );
+
 	Node*	pNode = m_ppTable[idx];
 	while ( pNode != NULL ) {
 		if ( !BString::Compare( _key, pNode->key, HT_MAX_KEYLEN ) )
@@ -38,7 +41,9 @@ template<typename T> T*	DictionaryString<T>::Get( const BString& _key ) const {
 }
 
 template<typename T> T&	DictionaryString<T>::Add( const BString& _key ) {
-	U32		idx = _key.Hash() % m_Size;
+//	U32		idx = _key.Hash() & (m_SizePOT-1);
+	U32		idx = Fibonacci( _key.Hash() );
+
  	Node*	pNode = new Node();
 
 	int		keyLength = int( MIN( _key.Length(), HT_MAX_KEYLEN ) + 1 );
@@ -70,7 +75,8 @@ template<typename T> void	DictionaryString<T>::AddUnique( const BString& _key, c
 }
 
 template<typename T> void	DictionaryString<T>::Remove( const BString& _key ) {
-	U32		idx = _key.Hash() % m_Size;
+//	U32		idx = _key.Hash() & (m_SizePOT-1);
+	U32		idx = Fibonacci( _key.Hash() );
  
 	Node*	pPrevious = NULL;
 	Node*	pCurrent = m_ppTable[idx];
@@ -119,7 +125,7 @@ template<typename T> U32	DictionaryString<T>::Hash( U32 _Key )
 
 template<typename T> void	DictionaryString<T>::ForEach( VisitorDelegate _pDelegate, void* _pUserData ) {
 	int	EntryIndex = 0;
-	for ( int i=0; i < m_Size; i++ ) {
+	for ( int i=0; i < m_SizePOT; i++ ) {
 		Node*	pNode = m_ppTable[i];
 		while ( pNode != NULL ) {
 			if ( !(*_pDelegate)( EntryIndex++, pNode->key, pNode->value, _pUserData ) )
@@ -138,13 +144,14 @@ template<typename T> void	DictionaryString<T>::ForEach( VisitorDelegate _pDelega
 template<typename T> int	Dictionary<T>::ms_MaxCollisionsCount = 0;
 #endif
 
-template<typename T> Dictionary<T>::Dictionary( int _Size ) : m_EntriesCount( 0 ) {
-	m_Size = _Size;
-	m_ppTable = new Node*[m_Size];
-	memset( m_ppTable, 0, m_Size*sizeof(Node*) );
+template<typename T> Dictionary<T>::Dictionary( int _PowerOfTwoSize ) : m_EntriesCount( 0 ) {
+	m_POT = _PowerOfTwoSize;
+	m_SizePOT = 1 << m_POT;
+	m_ppTable = new Node*[m_SizePOT];
+	memset( m_ppTable, 0, m_SizePOT*sizeof(Node*) );
 }
 template<typename T> Dictionary<T>::~Dictionary() {
-	for ( int i=0; i < m_Size; i++ ) {
+	for ( int i=0; i < m_SizePOT; i++ ) {
 		Node*	pNode = m_ppTable[i];
 		while ( pNode != NULL ) {
 			Node*	pOld = pNode;
@@ -161,7 +168,8 @@ template<typename T> T*	Dictionary<T>::Get( U32 _Key ) const {
 	if ( !m_EntriesCount )
 		return NULL;
 
-	U32		idx = _Key % m_Size;
+//	U32		idx = _Key & (m_SizePOT-1);
+	U32		idx = Fibonacci( _Key );
 	Node*	pNode = m_ppTable[idx];
 
 #ifdef _DEBUG
@@ -189,7 +197,8 @@ template<typename T> T*	Dictionary<T>::Get( U32 _Key ) const {
 }
 
 template<typename T> T&	Dictionary<T>::Add( U32 _Key ) {
-	U32		idx = _Key % m_Size;
+//	U32		idx = _Key & (m_SizePOT-1);
+	U32		idx = Fibonacci( _Key );
  
 	Node*	pNode = new Node();
 	pNode->key = _Key;
@@ -210,7 +219,8 @@ template<typename T> T&	Dictionary<T>::Add( U32 _Key, const T& _Value ) {
 
 template<typename T> void	Dictionary<T>::Remove( U32 _Key )
 {
-	U32		idx = _Key % m_Size;
+//	U32		idx = _Key & (m_SizePOT-1);
+	U32		idx = Fibonacci( _Key );
  
 	Node*	pPrevious = NULL;
 	Node*	pCurrent = m_ppTable[idx];
@@ -249,7 +259,7 @@ template<typename T> void	Dictionary<T>::Clear() {
 
 template<typename T> void	Dictionary<T>::ForEach( VisitorDelegate _pDelegate, void* _pUserData ) {
 	int	EntryIndex = 0;
-	for ( int i=0; i < m_Size; i++ ) {
+	for ( int i=0; i < m_SizePOT; i++ ) {
 		Node*	pNode = m_ppTable[i];
 		while ( pNode != NULL ) {
 			(*_pDelegate)( EntryIndex++, pNode->value, _pUserData );
@@ -267,16 +277,17 @@ int	DictionaryGeneric<K,T>::ms_MaxCollisionsCount = 0;
 #endif
 
 template<typename K, typename T>
-DictionaryGeneric<K,T>::DictionaryGeneric( int _Size ) : m_EntriesCount( 0 )
+DictionaryGeneric<K,T>::DictionaryGeneric( int _PowerOfTwoSize ) : m_EntriesCount( 0 )
 {
-	m_Size = _Size;
-	m_ppTable = new Node*[m_Size];
-	memset( m_ppTable, 0, m_Size*sizeof(Node*) );
+	m_POT = _PowerOfTwoSize;
+	m_SizePOT = 1 << m_POT;
+	m_ppTable = new Node*[m_SizePOT];
+	memset( m_ppTable, 0, m_SizePOT*sizeof(Node*) );
 }
 template<typename K, typename T>
 DictionaryGeneric<K,T>::~DictionaryGeneric()
 {
-	for ( int i=0; i < m_Size; i++ )
+	for ( int i=0; i < m_SizePOT; i++ )
 	{
 		Node*	pNode = m_ppTable[i];
 		while ( pNode != NULL )
@@ -296,7 +307,8 @@ T*	DictionaryGeneric<K,T>::Get( const K& _Key ) const {
 	if ( !m_EntriesCount )
 		return NULL;
 
-	U32		idx = GetHash( _Key ) % m_Size;
+//	U32		idx = GetHash( _Key ) & (m_SizePOT-1);
+	U32		idx = Fibonacci( GetHash( _Key ) );
 	Node*	pNode = m_ppTable[idx];
 
 	#ifdef _DEBUG
@@ -324,7 +336,8 @@ T*	DictionaryGeneric<K,T>::Get( const K& _Key ) const {
 
 template<typename K, typename T>
 T&	DictionaryGeneric<K,T>::Add( const K& _key ) {
-	U32		idx = GetHash( _key ) % m_Size;
+//	U32		idx = GetHash( _key ) & (m_SizePOT-1);
+	U32		idx = Fibonacci( GetHash( _key ) );
  
 	Node*	pNode = new Node();
 	pNode->key = _key;
@@ -346,7 +359,8 @@ T&	DictionaryGeneric<K,T>::Add( const K& _key, const T& _value ) {
 
 template<typename K, typename T>
 void	DictionaryGeneric<K,T>::Remove( const K& _key ) {
-	U32		idx = GetHash( _key ) % m_Size;
+//	U32		idx = GetHash( _key ) & (m_SizePOT-1);
+	U32		idx = Fibonacci( GetHash( _key ) );
  
 	Node*	pPrevious = NULL;
 	Node*	pCurrent = m_ppTable[idx];
@@ -387,7 +401,7 @@ void	DictionaryGeneric<K,T>::Clear() {
 template<typename K, typename T>
 void	DictionaryGeneric<K,T>::ForEach( VisitorDelegate _pDelegate, void* _pUserData ) {
 	int	EntryIndex = 0;
-	for ( int i=0; i < m_Size; i++ ) {
+	for ( int i=0; i < m_SizePOT; i++ ) {
 		Node*	pNode = m_ppTable[i];
 		while ( pNode != NULL ) {
 			if ( !(*_pDelegate)( EntryIndex++, pNode->key, pNode->value, _pUserData ) )

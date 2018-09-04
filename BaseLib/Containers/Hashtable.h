@@ -6,6 +6,14 @@
 
 namespace BaseLib {
 
+// From https://probablydance.com/2018/06/16/fibonacci-hashing-the-optimization-that-the-world-forgot-or-a-better-alternative-to-integer-modulo/
+// The idea is to use the golden ratio Phi = (1+sqrt(5))/2 to subdivide the 32-bits interval with the most discrepancy possible
+//	and shift the resulting scrambled number so it falls back to the table's range
+static U32	Fibonacci32( U32 _key, U32 _POT ) {
+	_key ^= _key >> (32-_POT);
+	return (_key * 2654435769U) >> (32-_POT);	// 2654435769 = 2^32 / Phi
+}
+
 // Source: http://blog.2of1.org/2011/07/11/simple-c-hashtable-code/
 //
 // simple hashtable
@@ -22,7 +30,7 @@ namespace BaseLib {
 // 
 // the hashtable uses basic linked-lists for handling collisions
 // 
-#define HT_DEFAULT_SIZE	8192U//(1 << 13)	// Default size if 8Kb
+#define HT_DEFAULT_SIZE_POT	13U	// Default size if 8Kb
 #define HT_MAX_KEYLEN	1024U
 
 #if defined(_DEBUG) || !defined(GODCOMPLEX)
@@ -44,12 +52,13 @@ public:
 protected:	// FIELDS
 
 	Node**	m_ppTable;
-	int		m_Size;
+	int		m_POT;
+	int		m_SizePOT;
 	int		m_EntriesCount;
 
 public:		// METHODS
 
-	DictionaryString( int _Size=HT_DEFAULT_SIZE );
+	DictionaryString( int _PowerOfTwoSize=HT_DEFAULT_SIZE_POT );
 	~DictionaryString();
 
 	T*		Get( const BString& _key ) const;					// retrieve entry
@@ -64,6 +73,11 @@ public:
 
 //	static U32	Hash( const String& _key );
 	static U32	Hash( U32 _Key );
+
+private:
+	U32 Fibonacci( U32 _key ) const {
+		return Fibonacci32( _key, m_POT );
+	}
 };
 
 #endif
@@ -87,7 +101,8 @@ public:
 protected:	// FIELDS
 
 	Node**	m_ppTable;
-	int		m_Size;
+	int		m_POT;
+	int		m_SizePOT;
 	int		m_EntriesCount;
 
 #ifdef _DEBUG
@@ -97,7 +112,7 @@ public:
 
 public:		// METHODS
 
-	Dictionary( int _Size=HT_DEFAULT_SIZE );
+	Dictionary( int _PowerOfTwoSize=HT_DEFAULT_SIZE_POT );
 	~Dictionary();
 
 	int		GetEntriesCount() const		{ return m_EntriesCount; }	// Amount of entries in the dictionary
@@ -108,6 +123,11 @@ public:		// METHODS
 	void	Remove( U32 _Key );					// remove entry
 	void	Clear();
 	void	ForEach( VisitorDelegate _pDelegate, void* _pUserData );
+
+private:
+	U32 Fibonacci( U32 _key ) const {
+		return Fibonacci32( _key, m_POT );
+	}
 };
 
 // General dictionary storing blind values
@@ -127,7 +147,8 @@ public:
 protected:	// FIELDS
 
 	Node**	m_ppTable;
-	int		m_Size;
+	int		m_POT;
+	int		m_SizePOT;
 
 #ifdef _DEBUG
 public:
@@ -136,13 +157,18 @@ public:
 
 public:		// METHODS
 
-	DictionaryU32( int _Size=HT_DEFAULT_SIZE );
+	DictionaryU32( int _PowerOfTwoSize=HT_DEFAULT_SIZE_POT );
 	~DictionaryU32();
 
 	void*	Get( U32 _Key ) const;			// retrieve entry
 	void	Add( U32 _Key, void* _pValue );	// store entry
 	void	Remove( U32 _Key );				// remove entry
 	void	ForEach( VisitorDelegate _pDelegate, void* _pUserData );
+
+private:
+	U32	Fibonacci( U32 _key ) const {
+		return Fibonacci32( _key, m_POT );
+	}
 };
 
 //////////////////////////////////////////////////////////////////////////
@@ -165,7 +191,8 @@ public:
 protected:	// FIELDS
 
 	Node**	m_ppTable;
-	int		m_Size;
+	int		m_POT;
+	int		m_SizePOT;
 	int		m_EntriesCount;
 
 #ifdef _DEBUG
@@ -175,7 +202,7 @@ public:
 
 public:		// METHODS
 
-	DictionaryGeneric( int _Size=HT_DEFAULT_SIZE );
+	DictionaryGeneric( int _PowerOfTwoSize=HT_DEFAULT_SIZE_POT );
 	~DictionaryGeneric();
 
 	int		GetEntriesCount() const		{ return m_EntriesCount; }	// Amount of entries in the dictionary
@@ -186,6 +213,11 @@ public:		// METHODS
 	void	Remove( const K& _Key );				// remove entry
 	void	Clear();
 	void	ForEach( VisitorDelegate _pDelegate, void* _pUserData );
+
+private:
+	U32 Fibonacci( U32 _key ) const {
+		return Fibonacci32( _key, m_POT );
+	}
 };
 
 

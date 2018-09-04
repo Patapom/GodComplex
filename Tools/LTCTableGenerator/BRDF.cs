@@ -73,7 +73,12 @@ namespace LTCTableGenerator
 			}
 
 			// D
-			float3	H = (_tsView + _tsLight).Normalized;
+			float3	H = _tsView + _tsLight;
+			float	lengthH = H.Length;
+			if ( lengthH > 1e-8f )
+				H = H / lengthH;
+			else
+				H = float3.UnitZ;
 
 			double	slopex = H.x / H.z;
 			double	slopey = H.y / H.z;
