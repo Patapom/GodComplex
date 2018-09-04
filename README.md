@@ -5,10 +5,12 @@
   Code ► Patapom
 
 -------------------------------
-After some time, it became a bit more than a 64K intro framework actually.
-It's now much much more. It's become the core framework for all my experiments...
+Originaly designed to create 64KB intros for the [demoscene](https://en.wikipedia.org/wiki/Demoscene).
 
-NOTE: *ALL* the parts described below have been tested in real use condition!
+After some time, it became a bit more than a 64K intro framework and really became the core framework for all my experiments...
+
+NOTE: *ALL* the parts described below have been thoroughly tested in real use condition!
+That means the code should be robust enough and you shouldn't encounter bugs very often (hopefully)...
 
 
 What you will find in this framework:
@@ -46,7 +48,7 @@ What you will find in this framework:
     - Area Light implementation, as used in the Dishonored 2 title + LTC technique
     - Filmic Curve + Histogram Auto-Exposure, as used in the Dishonored 2 title
     - Fresnel Tests, showing the various fresnel equations (Schlick, exact, and more recently the 2-terms approximation for metals described by http://jcgt.org/published/0003/04/03/paper.pdf)
-    - SH Irradiance encoding/decoding experiments, as described in my article about SH available at http://wiki.nuaj.net/index.php?title=SphericalHarmonicsPortal
+    - Spherical harmonics Irradiance encoding/decoding experiments, as described in my [blog post about SH](http://www.patapom.com/blog/SHPortal/).
 	- [HBIL](./Tests/TestHBIL) Technique demo
     - Many others coming up as they still need to be converted from 32 to 64 bits...
 
