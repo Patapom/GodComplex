@@ -287,10 +287,6 @@ float4	PS( VS_IN _In ) : SV_TARGET0 {
 
 	uint	totalGroupsCount = _groupsCount * SAMPLES_COUNT;
 
-//	bool	useNewTables = ((uint(_In.__position.x) >> 2) ^ (uint(_In.__position.y) >> 2)) & 1;
-//	bool	useNewTables = _flags & 2;
-	bool	useNewTables = true;
-
 #if 0
 float2	pixelPos = 0.25 * (_In.__position.xy - 0.5);
 float2	slicePos = fmod( pixelPos, 64.0 );
@@ -338,12 +334,11 @@ return float4( 0.01 * abs(V.yzw), 1 );
 	// Build tangent space
 	float3	wsTangent, wsBiTangent;
 //	BuildOrthonormalBasis( wsNormal, wsTangent, wsBiTangent );
-    // Construct a right-handed view-dependent orthogonal basis around the normal
-    wsTangent = normalize( wsView - wsNormal * dot( wsView, wsNormal ) );
-    wsBiTangent = cross( wsNormal, wsTangent );
+	// Construct a right-handed view-dependent orthogonal basis around the normal
+	wsTangent = normalize( -wsView + wsNormal * dot( wsView, wsNormal ) );
+	wsBiTangent = cross( wsNormal, wsTangent );
 
 	float3x3	world2TangentSpace = transpose( float3x3( wsTangent, wsBiTangent, wsNormal ) );
-//	float3		tsView = -float3( dot( wsView, wsTangent ), dot( wsView, wsBiTangent ), dot( wsView, wsNormal ) );	// Pointing AWAY from the surface
 	float3		tsView = -mul( wsView, world2TangentSpace );	// Pointing AWAY from the surface
 
 //return float4( tsView, 1 );
@@ -432,17 +427,11 @@ Lr *= 0.9;	// Attenuate a bit to see in front of white sky...
 		if ( hit.y == 0 ) {
 			// Sphere has GGX specular + Oren-Nayar diffuse
 			magnitude_specular = _tex_GGX_Eo.SampleLevel( LinearClamp, float2( VdotN, alphaS ), 0.0 );
-//			LTC_specular = LoadLTCMatrix( VdotN, perceptualAlphaS, LTC_BRDF_INDEX_GGX, _tex_LTC_Unity );
-
-
 //magnitude_specular = 1;
-if ( useNewTables )
-	LTC_specular = LoadLTCMatrix_New( VdotN, perceptualAlphaS, LTC_BRDF_INDEX_GGX, _tex_LTC );
-else
-	LTC_specular = LoadLTCMatrix_Old( VdotN, perceptualAlphaS, LTC_BRDF_INDEX_GGX, _tex_LTC_Unity );
+			LTC_specular = LTCSampleMatrix( VdotN, perceptualAlphaS, LTC_BRDF_INDEX_GGX );
 
 			magnitude_diffuse = _tex_OrenNayar_Eo.SampleLevel( LinearClamp, float2( VdotN, alphaD ), 0.0 );
-			LTC_diffuse = LoadLTCMatrix_New( VdotN, perceptualAlphaD, LTC_BRDF_INDEX_OREN_NAYAR, _tex_LTC );
+			LTC_diffuse = LTCSampleMatrix( VdotN, perceptualAlphaD, LTC_BRDF_INDEX_OREN_NAYAR );
 		} else {
 			// Ground has no specular, and an Oren-Nayar diffuse
 			magnitude_specular = 0;
@@ -451,15 +440,12 @@ else
 
 //magnitude_specular = _tex_GGX_Eo.SampleLevel( LinearClamp, float2( VdotN, alphaS ), 0.0 );
 ////magnitude_specular = 1;// _tex_GGX_Eo.SampleLevel( LinearClamp, float2( VdotN, alphaS ), 0.0 );
-//if ( useNewTables )
-//	LTC_specular = LoadLTCMatrix_New( VdotN, perceptualAlphaS, LTC_BRDF_INDEX_GGX, _tex_LTC );
-//else
-//	LTC_specular = LoadLTCMatrix_Old( VdotN, perceptualAlphaS, LTC_BRDF_INDEX_GGX, _tex_LTC_Unity );
+//	LTC_specular = LTCSampleMatrix( VdotN, perceptualAlphaS, LTC_BRDF_INDEX_GGX );
 
-//LTC_specular = LoadLTCMatrix( VdotN, perceptualAlphaS, LTC_BRDF_INDEX_GGX, _tex_LTC_Unity );
+//LTC_specular = LTCSampleMatrix( VdotN, perceptualAlphaS, LTC_BRDF_INDEX_GGX, _tex_LTC_Unity );
 
-			magnitude_diffuse = _tex_OrenNayar_Eo.SampleLevel( LinearClamp, float2( VdotN, alphaD ), 0.0 );;
-			LTC_diffuse = LoadLTCMatrix_New( VdotN, perceptualAlphaD, LTC_BRDF_INDEX_OREN_NAYAR, _tex_LTC );
+			magnitude_diffuse = _tex_OrenNayar_Eo.SampleLevel( LinearClamp, float2( VdotN, alphaD ), 0.0 );
+			LTC_diffuse = LTCSampleMatrix( VdotN, perceptualAlphaD, LTC_BRDF_INDEX_OREN_NAYAR );
 		}
 
 		// Build rectangular area light corners
@@ -491,12 +477,10 @@ Lo = Li * magnitude_specular * PolygonIrradiance( mul( tsLightCorners, LTC_specu
 
 		// Compute specular contribution
 		float3	Li_specular = Li * magnitude_specular * PolygonIrradiance( mul( tsLightCorners, LTC_specular ) );
-//		float3	Li_specular = Li * magnitude_specular * PolygonIrradiance( mul( tsLightCorners, transpose(LTC_specular) ) );
 		Lo += Li_specular;
 
 		// Compute diffuse contribution
 		float3	Li_diffuse = Li * (rho / PI) * magnitude_diffuse * PolygonIrradiance( mul( tsLightCorners, LTC_diffuse ) );
-//		float3	Li_diffuse = Li * (rho / PI) * magnitude_diffuse * PolygonIrradiance( mul( tsLightCorners, transpose(LTC_diffuse) ) );
 
 			// Attenuate diffuse contribution
 		float	E_o = magnitude_specular;

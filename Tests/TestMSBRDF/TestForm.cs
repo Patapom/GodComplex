@@ -103,7 +103,6 @@ namespace TestMSBRDF {
 			// LTC texture
 		#if TEST_LTC_AREA_LIGHT
 			Texture2D						m_tex_LTC;
-			Texture2D						m_tex_LTC_Unity;
 		#endif
 
 		Texture2D							m_tex_CubeMap;
@@ -225,7 +224,6 @@ namespace TestMSBRDF {
 			#if TEST_LTC_AREA_LIGHT
 				// Area light
 				m_tex_LTC = LoadLTC( new FileInfo( @".\Tables\LTC.dds" ) );
-				m_tex_LTC_Unity = LoadUnityLTC();
 			#endif
 
 			// Load cube map
@@ -345,7 +343,6 @@ m_CB_Render.m._roughnessGround *= m_CB_Render.m._roughnessGround;
 				m_tex_MSBRDF_OrenNayar_Eavg.SetPS( 5 );
 
 				m_tex_LTC.SetPS( 6 );
-				m_tex_LTC_Unity.SetPS( 7 );
 
 				m_device.RenderFullscreenQuad( m_shader_Accumulate );
 
@@ -381,7 +378,6 @@ m_CB_Render.m._roughnessGround *= m_CB_Render.m._roughnessGround;
 			m_tex_BlueNoise.Dispose();
 
 			#if TEST_LTC_AREA_LIGHT
-				m_tex_LTC_Unity.Dispose();
 				m_tex_LTC.Dispose();
 			#endif
 
@@ -806,33 +802,6 @@ m_CB_Render.m._roughnessGround *= m_CB_Render.m._roughnessGround;
 				Texture2D	T = new Texture2D( m_device, M, ImageUtility.COMPONENT_FORMAT.AUTO );
 				return T;
 			}
-		}
-
-		/// <summary>
-		/// Loads the LTC table used in Unity
-		/// </summary>
-		/// <returns></returns>
-		Texture2D	LoadUnityLTC() {
-			uint			S = (uint) UnityEngine.Experimental.Rendering.HDPipeline.LTCAreaLight.k_LtcLUTResolution;
-			PixelsBuffer	content = new PixelsBuffer( S*S*16 );
-			using ( BinaryWriter W = content.OpenStreamWrite() ) {
-				for ( uint Y=0; Y < S; Y++ ) {
-					for ( uint X=0; X < S; X++ ) {
-						uint	i = S * Y + X;
-						float	m11 = (float) UnityEngine.Experimental.Rendering.HDPipeline.LTCAreaLight.s_LtcGGXMatrixData[i,0];
-						float	m13 = (float) UnityEngine.Experimental.Rendering.HDPipeline.LTCAreaLight.s_LtcGGXMatrixData[i,2];
-						float	m22 = (float) UnityEngine.Experimental.Rendering.HDPipeline.LTCAreaLight.s_LtcGGXMatrixData[i,4];
-						float	m31 = (float) UnityEngine.Experimental.Rendering.HDPipeline.LTCAreaLight.s_LtcGGXMatrixData[i,6];
-						W.Write( m11 );
-						W.Write( m13 );
-						W.Write( m22 );
-						W.Write( m31 );
-					}
-				}
-			}
-				
-			Texture2D	T = new Texture2D( m_device, S, S, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, false, new PixelsBuffer[] { content } );
-			return T;
 		}
 
 		#endregion

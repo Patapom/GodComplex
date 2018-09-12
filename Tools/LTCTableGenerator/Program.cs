@@ -1,4 +1,4 @@
-﻿#define FIT_TABLES
+﻿//#define FIT_TABLES
 
 //#define EXPORT_FOR_UNITY
 #define EXPORT_TEXTURE
