@@ -71,7 +71,7 @@ Texture2D< float >		_tex_OrenNayar_Eavg : register( t5 );
 //static const float3	AREA_LIGHT_NORMAL = float3( 1, 0, 0 );
 //static const float2	AREA_LIGHT_HALF_SIZE = float2( 1, 2 );
 
-static const float3	AREA_LIGHT_INTENSITY = 100 * float3( 1, 1, 1 );	// Lumens/sr
+static const float3	AREA_LIGHT_INTENSITY = 40 * float3( 1, 1, 1 );	// Lumens/sr
 
 float3	GetAreaLightRadiance() {
 	return _lightIntensity * AREA_LIGHT_INTENSITY / _areaLightTransform._m23;	// AreaLightAxisZ.w contains the area light's surface in m^2
@@ -80,10 +80,10 @@ float3	GetAreaLightRadiance() {
 
 // Retrieves object information from its index
 void	GetObjectInfo( uint _objectIndex, out float _roughnessSpecular, out float3 _objectF0, out float _roughnessDiffuse, out float3 _rho ) {
-	_roughnessSpecular = max( 0.01, _objectIndex == 0 ? _roughnessSphereSpecular : _roughnessGround );
+	_roughnessSpecular = max( 0.001, _objectIndex == 0 ? _roughnessSphereSpecular : _roughnessGround );
 	_objectF0 = _objectIndex == 0 ? F0_TINT_SPHERE : F0_TINT_PLANE;
 
-	_roughnessDiffuse = max( 0.01, _objectIndex == 0 ? _roughnessSphereDiffuse : _roughnessGround );
+	_roughnessDiffuse = max( 0.001, _objectIndex == 0 ? _roughnessSphereDiffuse : _roughnessGround );
 	_rho = _objectIndex == 0 ? ALBEDO_SPHERE : ALBEDO_PLANE;
 }
 
@@ -255,6 +255,29 @@ void IntegrateBSDF_AreaRef(float3 V, float3 positionWS,
 
 #endif
 
+
+//// For image based lighting, a part of the BSDF is pre-integrated.
+//// This is done both for specular GGX height-correlated and DisneyDiffuse
+//// reflectivity is  Integral{(BSDF_GGX / F) - use for multiscattering
+//void GetPreIntegratedFGDGGXAndDisneyDiffuse(float NdotV, float perceptualRoughness, float3 fresnel0, out float3 GGXSpecularFGD, out float disneyDiffuseFGD, out float reflectivity)
+//{
+//    float3 preFGD = SAMPLE_TEXTURE2D_LOD(_PreIntegratedFGD_GGXDisneyDiffuse, s_linear_clamp_sampler, float2(NdotV, perceptualRoughness), 0).xyz;
+//
+//    // Pre-integrate GGX FGD
+//    // Integral{BSDF * <N,L> dw} =
+//    // Integral{(F0 + (1 - F0) * (1 - <V,H>)^5) * (BSDF / F) * <N,L> dw} =
+//    // (1 - F0) * Integral{(1 - <V,H>)^5 * (BSDF / F) * <N,L> dw} + F0 * Integral{(BSDF / F) * <N,L> dw}=
+//    // (1 - F0) * x + F0 * y = lerp(x, y, F0)
+//    GGXSpecularFGD = lerp(preFGD.xxx, preFGD.yyy, fresnel0);
+//
+//    // Pre integrate DisneyDiffuse FGD:
+//    // z = DisneyDiffuse
+//    // Remap from the [0, 1] to the [0.5, 1.5] range.
+//    disneyDiffuseFGD = preFGD.z + 0.5;
+//
+//    reflectivity = preFGD.y;
+//}
+
 float2	RayTraceScene2( float3 _wsPos, float3 _wsDir, out float3 _wsNormal, out float3 _wsClosestPosition ) {
 	float2	hit = RayTraceScene( _wsPos, _wsDir, _wsNormal, _wsClosestPosition );
 
@@ -288,6 +311,7 @@ float4	PS( VS_IN _In ) : SV_TARGET0 {
 	uint	totalGroupsCount = _groupsCount * SAMPLES_COUNT;
 
 #if 0
+// DEBUG LTC TABLES
 float2	pixelPos = 0.25 * (_In.__position.xy - 0.5);
 float2	slicePos = fmod( pixelPos, 64.0 );
 uint2	sliceIndexXY = uint2( floor( pixelPos ) ) >> 6;
@@ -341,25 +365,27 @@ return float4( 0.01 * abs(V.yzw), 1 );
 	float3x3	world2TangentSpace = transpose( float3x3( wsTangent, wsBiTangent, wsNormal ) );
 	float3		tsView = -mul( wsView, world2TangentSpace );	// Pointing AWAY from the surface
 
-//return float4( tsView, 1 );
-
 	// Prepare surface characteristics
 	float3	rho, F0;
 	float	alphaS, alphaD;
 	GetObjectInfo( hit.y, alphaS, F0, alphaD, rho );
 
-	float	u = seeds.x * 2.3283064365386963e-10;
-
 	float3	Lo = 0.0;
 	uint	validSamplesCount = 0;
 
+	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	// Stochastic Sampling
+	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	//
 //	if ( (_flags & 1) && !(_flags & 0x100) ) {
 	if ( !(_flags & 0x200) ) {
 		uint	groupIndex = _groupIndex;
 
 //		float3	IOR = Fresnel_IORFromF0( F0 );
 
-		float	lightPDF = 1.0 / _areaLightTransform._m23;
+		float	lightPDF = 1.0 / _areaLightTransform._m23;	// AreaLightAxisZ.w contains the area light's surface in m^2
+
+		float	u = seeds.x * 2.3283064365386963e-10;
 
 		[loop]
 		for ( uint i=0; i < SAMPLES_COUNT; i++ ) {
@@ -382,10 +408,13 @@ return float4( 0.01 * abs(V.yzw), 1 );
 			if ( LdotN <= 0.0 )
 				continue;
 
-			float	cosLNs = saturate( -dot( wsLight, _areaLightTransform[2].xyz ) );	// Cosine of the angle between the light direction and the normal of the light's surface.
+			float	cosLNs = -dot( wsLight, _areaLightTransform[2].xyz );	// Cosine of the angle between the light direction and the normal of the light's surface.
+//			if ( cosLNs < 0.0 )
+//				continue;
 
 			// We calculate area reference light with the area integral rather than the solid angle one.
-			float3	Li = GetAreaLightRadiance() * cosLNs / (r2 * lightPDF);
+//			float3	Li = GetAreaLightRadiance() * saturate( cosLNs ) / (r2 * lightPDF);
+			float3	Li = GetAreaLightRadiance() * saturate( cosLNs ) / r2;
 
 			// Compute BRDF
 			float3	BRDF = 0.0;
@@ -398,11 +427,6 @@ return float4( 0.01 * abs(V.yzw), 1 );
 			// Compute reflected radiance
 			float3	Lr = Li * BRDF;
 
-//Lr = tsLight.z;
-//Lr = tsView.z;
-//Lr = dot( -wsView, wsNormal );
-//Lr = wsNormal;
-
 #if WHITE_FURNACE_TEST
 Lr *= 0.9;	// Attenuate a bit to see in front of white sky...
 #endif
@@ -412,6 +436,10 @@ Lr *= 0.9;	// Attenuate a bit to see in front of white sky...
 			validSamplesCount++;
 		}
 
+	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	// LTC Approximation
+	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	//
 	} else {	// (_flags & 0x200U) == Use LTC
 
 //		float		VdotN = saturate( -dot( wsView, wsNormal ) );
@@ -423,11 +451,12 @@ Lr *= 0.9;	// Attenuate a bit to see in front of white sky...
 		float3x3	LTC_diffuse;
 		float		magnitude_diffuse = 0;
 		float3x3	LTC_specular;
-		float		magnitude_specular = 0;
+		float3		magnitude_specular = 0;
 		if ( hit.y == 0 ) {
 			// Sphere has GGX specular + Oren-Nayar diffuse
 			magnitude_specular = _tex_GGX_Eo.SampleLevel( LinearClamp, float2( VdotN, alphaS ), 0.0 );
-//magnitude_specular = 1;
+			magnitude_specular *= F0;	// We're missing the (1-F0) * (1-N.V)^5 here but we don't really care...
+
 			LTC_specular = LTCSampleMatrix( VdotN, perceptualAlphaS, LTC_BRDF_INDEX_GGX );
 
 			magnitude_diffuse = _tex_OrenNayar_Eo.SampleLevel( LinearClamp, float2( VdotN, alphaD ), 0.0 );
@@ -439,10 +468,7 @@ Lr *= 0.9;	// Attenuate a bit to see in front of white sky...
 
 
 //magnitude_specular = _tex_GGX_Eo.SampleLevel( LinearClamp, float2( VdotN, alphaS ), 0.0 );
-////magnitude_specular = 1;// _tex_GGX_Eo.SampleLevel( LinearClamp, float2( VdotN, alphaS ), 0.0 );
-//	LTC_specular = LTCSampleMatrix( VdotN, perceptualAlphaS, LTC_BRDF_INDEX_GGX );
-
-//LTC_specular = LTCSampleMatrix( VdotN, perceptualAlphaS, LTC_BRDF_INDEX_GGX, _tex_LTC_Unity );
+//LTC_specular = LTCSampleMatrix( VdotN, perceptualAlphaS, LTC_BRDF_INDEX_GGX );
 
 			magnitude_diffuse = _tex_OrenNayar_Eo.SampleLevel( LinearClamp, float2( VdotN, alphaD ), 0.0 );
 			LTC_diffuse = LTCSampleMatrix( VdotN, perceptualAlphaD, LTC_BRDF_INDEX_OREN_NAYAR );
@@ -475,20 +501,25 @@ Lo = Li * magnitude_specular * PolygonIrradiance( mul( tsLightCorners, LTC_specu
 
 #else
 
+//Li = 1.0;
+
 		// Compute specular contribution
 		float3	Li_specular = Li * magnitude_specular * PolygonIrradiance( mul( tsLightCorners, LTC_specular ) );
 		Lo += Li_specular;
 
+#if 1	// SKIP DIFFUSE
 		// Compute diffuse contribution
 		float3	Li_diffuse = Li * (rho / PI) * magnitude_diffuse * PolygonIrradiance( mul( tsLightCorners, LTC_diffuse ) );
 
 			// Attenuate diffuse contribution
-		float	E_o = magnitude_specular;
+		float3	E_o = magnitude_specular;
 		float3	IOR = Fresnel_IORFromF0( F0 );
 		float3	MSFactor_spec = (_flags & 2) ? F0 * (0.04 + F0 * (0.66 + F0 * 0.3)) : F0;	// From http://patapom.com/blog/BRDF/MSBRDFEnergyCompensation/#varying-the-fresnel-reflectance-f_0f_0
 		float3	Favg = FresnelAverage( IOR );
 		float3	kappa = 1 - (Favg * E_o + MSFactor_spec * (1.0 - E_o));
 		Lo += kappa * Li_diffuse;
+#endif
+
 #endif
 
 		validSamplesCount = 1;
