@@ -179,8 +179,8 @@ namespace LTCTableGenerator
 		// Info
 		public int		RoughnessIndex { get { return integerTrackbarControlRoughnessIndex.Value; } set { integerTrackbarControlRoughnessIndex.Value = value; } }
 		public int		ThetaIndex { get { return integerTrackbarControlThetaIndex.Value; } set { integerTrackbarControlThetaIndex.Value = value; } }
-		public int		StepX { get { return integerTrackbarControlStepX.Value; } }
-		public int		StepY { get { return integerTrackbarControlStepY.Value; } }
+		public int		StepX { get { return integerTrackbarControlStepX.Value; } set { integerTrackbarControlStepX.Value = value; } }
+		public int		StepY { get { return integerTrackbarControlStepY.Value; } set { integerTrackbarControlStepY.Value = value; } }
 
 		#endregion
 
@@ -436,18 +436,14 @@ namespace LTCTableGenerator
 				ShowBRDF( (float) m_validResultsCount / (m_tableSize*m_tableSize), Mathf.Acos( cosTheta ), alpha, m_BRDF, ltc );
 
 			// Iterate...
-			if ( ThetaIndex < m_tableSize-1 ) {
-				ThetaIndex++;
-			} else {
+			if ( ThetaIndex + StepX >= m_tableSize ) {
 				// Next line!
 				if ( DoFitting && !ReadOnly ) {
 					SaveTable( m_tableFileName, m_results, m_errors );
 				}
 
 				ThetaIndex = 0;
-				if ( RoughnessIndex > 0 ) {
-					RoughnessIndex--;
-				} else {
+				if ( RoughnessIndex - StepY < 0 ) {
 					// Terminate...
 					Paused = true;
 					if ( DoFitting && !ReadOnly ) {
@@ -456,6 +452,9 @@ namespace LTCTableGenerator
 						Close();
 					}
 				}
+				RoughnessIndex -= StepY;
+			} else {
+				ThetaIndex += StepX;
 			}
 			if ( !AutoRun )
 				Paused = true;
