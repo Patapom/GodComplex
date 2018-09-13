@@ -1,7 +1,8 @@
-﻿#define FIT_TABLES
+﻿//#define FIT_TABLES
 
 //#define EXPORT_FOR_UNITY
 //#define EXPORT_TEXTURE
+#define EXPORT_MS_TEXTURE
 //#define EXPORT_FOR_CSHARP	// Not working at the moment
 //#define EXPORT_RAW
 
@@ -115,6 +116,22 @@ namespace LTCTableGenerator
 								}, 
 					new FileInfo( "LTC.dds" ),
 					ImageUtility.PIXEL_FORMAT.RGBA32F
+				);
+			#endif
+
+			#if EXPORT_MS_TEXTURE
+				ExportMSTexture( new FileInfo[] {
+									// Specular
+									new FileInfo( "MS_GGX.ltc" ),
+// 									new FileInfo( "CookTorrance.ltc" ),
+// 									new FileInfo( "Ward.ltc" ),
+
+									// Diffuse
+									new FileInfo( "MS_OrenNayar.ltc" ),
+// 									new FileInfo( "CharlieSheen.ltc" ),
+// 									new FileInfo( "Disney.ltc" ),
+								}, 
+					new FileInfo( "MS_LTC.dds" )
 				);
 			#endif
 
@@ -444,6 +461,62 @@ throw new Exception( "Ta mère!" );
 					} );
 				}
 				M.DDSSaveFile( _targetFileName, ImageUtility.COMPONENT_FORMAT.AUTO );
+			}
+
+		#endif
+
+		#if EXPORT_MS_TEXTURE
+
+			/// <summary>
+			/// Concatenates multiple tables into one single texture 2D array
+			/// </summary>
+			/// <param name="_tablesFileNames"></param>
+			/// <param name="_targetFileName"></param>
+			/// <param name="_foramt"></param>
+			static void ExportMSTexture( FileInfo[] _tablesFileNames, FileInfo _targetFileName ) {
+				// Load tables
+				LTC[][,]	tables = new LTC[_tablesFileNames.Length][,];
+				for ( int i=0; i < _tablesFileNames.Length; i++ ) {
+					int		validResultsCount;
+					LTC[,]	table = FitterForm.LoadTable( _tablesFileNames[i], out validResultsCount );
+					tables[i] = table;
+					if ( i != 0 && (table.GetLength(0) != tables[0].GetLength(0) || table.GetLength(1) != tables[0].GetLength(1)) )
+						throw new Exception( "Table dimensions mismatch!" );
+				}
+
+				// Create the Texture2D
+				uint	W = (uint) tables[0].GetLength(0);
+
+				float4[][]	contents = new float4[tables.Length][];
+				for ( int tableIndex=0; tableIndex < tables.Length; tableIndex++ ) {
+					LTC[,]		table = tables[tableIndex];
+					float4[]	content = new float4[W];
+					contents[tableIndex] = content;
+
+					for ( uint X=0; X < W; X++ ) {
+						LTC	ltc = table[X,0];
+
+						double	factor = 1.0 / ltc.invM[1,1];
+
+// 						content[X] = new float4( (float) (factor * ltc.invM[0,0]),
+// 												 (float) (factor * ltc.invM[0,2]),
+// 												 (float) (factor * ltc.invM[2,0]),
+// 												 (float) (factor * ltc.invM[2,2]) );
+
+						// As expected, off-diagonal anisotropic terms are 0 and m00=1 so we only need to export a single term! Yay! Even cheaper!
+						content[X] = new float4( (float) (factor * ltc.invM[2,2]), 0, 0, 0 );
+					}
+				}
+
+				ImageUtility.ImageFile	image = new ImageUtility.ImageFile( W, (uint) tables.Length, ImageUtility.PIXEL_FORMAT.R32F, new ImageUtility.ColorProfile( ImageUtility.ColorProfile.STANDARD_PROFILE.LINEAR ) );
+
+				image.WritePixels( ( uint _X, uint _Y, ref float4 _color ) => {
+//					LTC	ltc = tables[_Y][_X,0];
+					_color = contents[_Y][_X];
+				} );
+
+				ImageUtility.ImagesMatrix	images = new ImageUtility.ImagesMatrix( image, ImageUtility.ImagesMatrix.IMAGE_TYPE.LINEAR );
+				images.DDSSaveFile( _targetFileName, ImageUtility.COMPONENT_FORMAT.AUTO );
 			}
 
 		#endif
