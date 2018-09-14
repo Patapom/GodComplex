@@ -32,7 +32,11 @@ static const uint	SAMPLES_COUNT = 32;
 static const float3	AMBIENT = 0* 0.02 * float3( 0.5, 0.8, 0.9 );
 
 cbuffer CB_Render : register(b2) {
-	uint		_flags;
+	uint		_flags;		// 0x1 = Enable MSBRDF
+							// 0x2 = Enable MS Factor
+							// 0x100 = Use realtime approximation
+							// 0x200 = Use LTC
+
 	uint		_groupsCount;
 	uint		_groupIndex;
 	float		_lightElevation;
@@ -63,13 +67,6 @@ Texture2D< float >		_tex_OrenNayar_Eavg : register( t5 );
 
 
 /////////////////////////////////////////////////////////////////////////////////////////////
-// Area Light Positionning
-
-//static const float3	AREA_LIGHT_POSITION = float3( -4, 2, 0 );
-//static const float3	AREA_LIGHT_RIGHT = float3( 0, 0, -1 );
-//static const float3	AREA_LIGHT_UP = float3( 0, 1, 0 );
-//static const float3	AREA_LIGHT_NORMAL = float3( 1, 0, 0 );
-//static const float2	AREA_LIGHT_HALF_SIZE = float2( 1, 2 );
 
 static const float3	AREA_LIGHT_INTENSITY = 40 * float3( 1, 1, 1 );	// Lumens/sr
 
@@ -107,7 +104,7 @@ float3	ComputeBRDF_Oren( float3 _tsNormal, float3 _tsView, float3 _tsLight, floa
 
 // Computes the full dielectric BRDF model as described in http://patapom.com/blog/BRDF/MSBRDFEnergyCompensation/#complete-approximate-model
 //
-float3	ComputeBRDF_Full(  float3 _tsNormal, float3 _tsView, float3 _tsLight, float _roughnessSpecular, float3 _F0, float _roughnessDiffuse, float3 _albedo ) {
+float3	ComputeBRDF_Full( float3 _tsNormal, float3 _tsView, float3 _tsLight, float _roughnessSpecular, float3 _F0, float _roughnessDiffuse, float3 _albedo ) {
 	// Compute specular BRDF
 //	float3	F0 = Fresnel_F0FromIOR( _IOR );
 	float3	IOR = Fresnel_IORFromF0( _F0 );

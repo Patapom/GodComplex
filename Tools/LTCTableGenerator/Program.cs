@@ -503,12 +503,12 @@ throw new Exception( "Ta mère!" );
 // 												 (float) (factor * ltc.invM[2,0]),
 // 												 (float) (factor * ltc.invM[2,2]) );
 
-						// As expected, off-diagonal anisotropic terms are 0 and m00=1 so we only need to export a single term! Yay! Even cheaper!
-						content[X] = new float4( (float) (factor * ltc.invM[2,2]), 0, 0, 0 );
+						// As expected, off-diagonal anisotropic terms are 0 and m00=1 so we only need to export a single term + the magnitude! Yay! Even cheaper!
+						content[X] = new float4( (float) (factor * ltc.invM[2,2]), (float) ltc.magnitude, 0, 0 );
 					}
 				}
 
-				ImageUtility.ImageFile	image = new ImageUtility.ImageFile( W, (uint) tables.Length, ImageUtility.PIXEL_FORMAT.R32F, new ImageUtility.ColorProfile( ImageUtility.ColorProfile.STANDARD_PROFILE.LINEAR ) );
+				ImageUtility.ImageFile	image = new ImageUtility.ImageFile( W, (uint) tables.Length, ImageUtility.PIXEL_FORMAT.RG32F, new ImageUtility.ColorProfile( ImageUtility.ColorProfile.STANDARD_PROFILE.LINEAR ) );
 
 				image.WritePixels( ( uint _X, uint _Y, ref float4 _color ) => {
 //					LTC	ltc = tables[_Y][_X,0];

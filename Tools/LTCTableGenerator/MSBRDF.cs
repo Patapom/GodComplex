@@ -43,6 +43,7 @@ namespace LTCTableGenerator
 
 			float	Eo = SampleEo( NdotL, _alpha );
 			float	res = (1.0f - Eo) * NdotL;
+
 			return res;
 		}
 

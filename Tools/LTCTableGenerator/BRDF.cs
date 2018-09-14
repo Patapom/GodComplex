@@ -349,10 +349,8 @@ namespace LTCTableGenerator
 			double	viewScatter = F_Schlick( 1.0, fd90, NdotV );
 
 			// Normalize the BRDF for polar view angles of up to (Pi/4).
-			// We use the worst case of (roughness = albedo = 1), and, for each view angle,
-			// integrate (brdf * cos(theta_light)) over all light directions.
-			// The resulting value is for (theta_view = 0), which is actually a little bit larger
-			// than the value of the integral for (theta_view = Pi/4).
+			// We use the worst case of (roughness = albedo = 1), and, for each view angle, integrate (brdf * cos(theta_light)) over all light directions.
+			// The resulting value is for (theta_view = 0), which is actually a little bit larger than the value of the integral for (theta_view = Pi/4).
 			// Hopefully, the compiler folds the constant together with (1/Pi).
 			double	res = lightScatter * viewScatter / Math.PI;
 					res /= 1.03571;
