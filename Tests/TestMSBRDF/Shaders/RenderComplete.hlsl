@@ -1,4 +1,6 @@
 #include "Global.hlsl"
+#include "FDG.hlsl"
+#include "BRDF.hlsl"
 #include "Scene.hlsl"
 
 #define FULL_SCENE		1	// Define this to render the full scene (diffuse plane + specular sphere)
@@ -53,10 +55,10 @@ cbuffer CB_Render : register(b2) {
 TextureCube< float3 >	_tex_CubeMap : register( t0 );
 Texture2D< float >		_tex_BlueNoise : register( t1 );
 
-Texture2D< float >		_tex_GGX_Eo : register( t2 );
-Texture2D< float >		_tex_GGX_Eavg : register( t3 );
-Texture2D< float >		_tex_OrenNayar_Eo : register( t4 );
-Texture2D< float >		_tex_OrenNayar_Eavg : register( t5 );
+//Texture2D< float >		_tex_GGX_Eo : register( t2 );
+//Texture2D< float >		_tex_GGX_Eavg : register( t3 );
+//Texture2D< float >		_tex_OrenNayar_Eo : register( t4 );
+//Texture2D< float >		_tex_OrenNayar_Eavg : register( t5 );
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -110,7 +112,7 @@ float3	ComputeBRDF_GGX( float3 _tsNormal, float3 _tsView, float3 _tsLight, float
 		float3		F0 = Fresnel_F0FromIOR( _IOR );
 		float3		MSFactor = (_flags & 2) ? F0 * (0.04 + F0 * (0.66 + F0 * 0.3)) : F0;
 
-		BRDF += MSFactor * MSBRDF( _roughness, _tsNormal, _tsView, _tsLight, _tex_GGX_Eo, _tex_GGX_Eavg );
+		BRDF += MSFactor * MSBRDF( _roughness, _tsNormal, _tsView, _tsLight, FDG_BRDF_INDEX_GGX );
 	}
 
 	return BRDF;
@@ -125,7 +127,7 @@ float3	ComputeBRDF_Oren( float3 _tsNormal, float3 _tsView, float3 _tsLight, floa
 		float3		rho = tau * _albedo;
 		float3		MSFactor = (_flags & 2) ? A1 * pow2( rho ) / (1.0 - rho) : rho;
 
-		BRDF += MSFactor * MSBRDF( _roughness, _tsNormal, _tsView, _tsLight, _tex_OrenNayar_Eo, _tex_OrenNayar_Eavg );
+		BRDF += MSFactor * MSBRDF( _roughness, _tsNormal, _tsView, _tsLight, FDG_BRDF_INDEX_OREN_NAYAR );
 	}
 
 	return BRDF;
@@ -141,7 +143,7 @@ float3	ComputeBRDF_Full(  float3 _tsNormal, float3 _tsView, float3 _tsLight, flo
 
 	float3	BRDF_spec = BRDF_GGX( _tsNormal, _tsView, _tsLight, _roughnessSpecular, _IOR );
 	if ( _flags & 1 ) {
-		BRDF_spec += MSFactor_spec * MSBRDF( _roughnessSpecular, _tsNormal, _tsView, _tsLight, _tex_GGX_Eo, _tex_GGX_Eavg );
+		BRDF_spec += MSFactor_spec * MSBRDF( _roughnessSpecular, _tsNormal, _tsView, _tsLight, FDG_BRDF_INDEX_GGX );
 	}
 
 	// Compute diffuse contribution
@@ -152,13 +154,13 @@ float3	ComputeBRDF_Full(  float3 _tsNormal, float3 _tsView, float3 _tsLight, flo
 		float3		rho = tau * _albedo;
 		float3		MSFactor_diff = (_flags & 2) ? A1 * pow2( rho ) / (1.0 - rho) : rho;	// From http://patapom.com/blog/BRDF/MSBRDFEnergyCompensation/#varying-diffuse-reflectance-rhorho
 
-		BRDF_diff += MSFactor_diff * MSBRDF( _roughnessDiffuse, _tsNormal, _tsView, _tsLight, _tex_OrenNayar_Eo, _tex_OrenNayar_Eavg );
+		BRDF_diff += MSFactor_diff * MSBRDF( _roughnessDiffuse, _tsNormal, _tsView, _tsLight, FDG_BRDF_INDEX_OREN_NAYAR );
 	}
 
 	// Attenuate diffuse contribution
 	float	mu_o = saturate( dot( _tsView, _tsNormal ) );
 	float	a = _roughnessSpecular;
-	float	E_o = _tex_GGX_Eo.SampleLevel( LinearClamp, float2( mu_o, a ), 0.0 );	// Already sampled by MSBRDF earlier, optimize!
+	float	E_o = SampleIrradiance( mu_o, a, FDG_BRDF_INDEX_GGX );	// Already sampled by MSBRDF earlier, optimize!
 
 	float3	kappa = 1 - (Favg * E_o + MSFactor_spec * (1.0 - E_o));
 

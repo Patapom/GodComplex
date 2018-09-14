@@ -123,13 +123,13 @@ namespace LTCTableGenerator
 				ExportMSTexture( new FileInfo[] {
 									// Specular
 									new FileInfo( "MS_GGX.ltc" ),
-// 									new FileInfo( "CookTorrance.ltc" ),
-// 									new FileInfo( "Ward.ltc" ),
+									new FileInfo( "MS_GGX.ltc" ),
+									new FileInfo( "MS_GGX.ltc" ),
 
 									// Diffuse
 									new FileInfo( "MS_OrenNayar.ltc" ),
-// 									new FileInfo( "CharlieSheen.ltc" ),
-// 									new FileInfo( "Disney.ltc" ),
+									new FileInfo( "MS_OrenNayar.ltc" ),
+									new FileInfo( "MS_OrenNayar.ltc" ),
 								}, 
 					new FileInfo( "MS_LTC.dds" )
 				);

@@ -1,4 +1,6 @@
 #include "Global.hlsl"
+#include "FDG.hlsl"
+#include "BRDF.hlsl"
 #include "Scene.hlsl"
 
 //#define	WHITE_FURNACE_TEST	1
@@ -56,10 +58,10 @@ cbuffer CB_SH : register(b3) {
 TextureCube< float3 >	_tex_CubeMap : register( t0 );
 Texture2D< float >		_tex_BlueNoise : register( t1 );
 
-Texture2D< float >		_tex_GGX_Eo : register( t2 );
-Texture2D< float >		_tex_GGX_Eavg : register( t3 );
-Texture2D< float >		_tex_OrenNayar_Eo : register( t4 );
-Texture2D< float >		_tex_OrenNayar_Eavg : register( t5 );
+//Texture2D< float >		_tex_GGX_Eo : register( t2 );
+//Texture2D< float >		_tex_GGX_Eavg : register( t3 );
+//Texture2D< float >		_tex_OrenNayar_Eo : register( t4 );
+//Texture2D< float >		_tex_OrenNayar_Eavg : register( t5 );
 
 
 //Texture2D< float3 >		_tex_SH : register( t30 );
@@ -111,7 +113,29 @@ void	GetObjectInfo( uint _objectIndex, out float _roughnessSpecular, out float3 
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 // SH Environment Approximation for the MSBRDF
-float3	EstimateMSIrradiance_SH_GGX( float _roughness, float3 _wsNormal, float _mu_o, float3 _environmentSH[9], Texture2D<float> _Eo, Texture2D<float> _Eavg ) {
+float3	EstimateMSIrradiance_SH( float _roughness, float3 _wsNormal, float _mu_o, float3 _ZH, uint _BRDFIndex, float3 _environmentSH[9] ) {
+	float	SH[9];
+	RotateZH( _ZH, _wsNormal, SH );
+
+	// Estimate MSBRDF irradiance
+	float3	result = 0.0;
+	[unroll]
+	for ( uint i=0; i < 9; i++ )
+		result += SH[i] * _environmentSH[i];
+
+	result = max( 0.0, result );
+
+	// Finish by estimating the view-dependent part
+//	float	E_o = _Eo.SampleLevel( LinearClamp, float2( _mu_o, _roughness ), 0.0 );
+//	float	E_avg = _Eavg.SampleLevel( LinearClamp, float2( _roughness, 0.5 ), 0.0 );	// E_avg
+//
+//	result *= (1.0 - E_o) / max( 0.001, PI - E_avg );
+	result *= MSBRDF_View( _mu_o, _roughness, _BRDFIndex );
+
+	return result;
+}
+
+float3	EstimateMSIrradiance_SH_GGX( float _roughness, float3 _wsNormal, float _mu_o, float3 _environmentSH[9] ) {
 
 	// Estimate the MSBRDF response in the normal direction
 	const float3x3	fit = float3x3( -0.01792303243636725, 1.0561278339405598, -0.4865495717038784,
@@ -121,27 +145,10 @@ float3	EstimateMSIrradiance_SH_GGX( float _roughness, float3 _wsNormal, float _m
 	float3	ZH = saturate( mul( fit, roughness ) );
 			ZH *= ZH_FACTORS;
 
-	float	SH[9];
-	RotateZH( ZH, _wsNormal, SH );
-
-	// Estimate MSBRDF irradiance
-	float3	result = 0.0;
-	[unroll]
-	for ( uint i=0; i < 9; i++ )
-		result += SH[i] * _environmentSH[i];
-
-	result = max( 0.0, result );
-
-	// Finish by estimating the view-dependent part
-	float	E_o = _Eo.SampleLevel( LinearClamp, float2( _mu_o, _roughness ), 0.0 );
-	float	E_avg = _Eavg.SampleLevel( LinearClamp, float2( _roughness, 0.5 ), 0.0 );	// E_avg
-
-	result *= (1.0 - E_o) / max( 0.001, PI - E_avg );
-
-	return result;
+	return EstimateMSIrradiance_SH( _roughness, _wsNormal, _mu_o, ZH, FDG_BRDF_INDEX_GGX, _environmentSH );
 }
 
-float3	EstimateMSIrradiance_SH_OrenNayar( float _roughness, float3 _wsNormal, float _mu_o, float3 _environmentSH[9], Texture2D<float> _Eo, Texture2D<float> _Eavg ) {
+float3	EstimateMSIrradiance_SH_OrenNayar( float _roughness, float3 _wsNormal, float _mu_o, float3 _environmentSH[9] ) {
 
 	// Estimate the MSBRDF response in the normal direction
 	const float3x4	fit = float3x4( -0.0919559140506979, 1.467037714315657, -1.673544888379740, 0.607800523815945,
@@ -151,24 +158,7 @@ float3	EstimateMSIrradiance_SH_OrenNayar( float _roughness, float3 _wsNormal, fl
 	float3	ZH = saturate( mul( fit, roughness ) );
 			ZH *= ZH_FACTORS;
 
-	float	SH[9];
-	RotateZH( ZH, _wsNormal, SH );
-
-	// Estimate MSBRDF irradiance
-	float3	result = 0.0;
-	[unroll]
-	for ( uint i=0; i < 9; i++ )
-		result += SH[i] * _environmentSH[i];
-
-	result = max( 0.0, result );
-
-	// Finish by estimating the view-dependent part
-	float	E_o = _Eo.SampleLevel( LinearClamp, float2( _mu_o, _roughness ), 0.0 );
-	float	E_avg = _Eavg.SampleLevel( LinearClamp, float2( _roughness, 0.5 ), 0.0 );	// E_avg
-
-	result *= (1.0 - E_o) / max( 0.001, PI - E_avg );
-
-	return result;
+	return EstimateMSIrradiance_SH( _roughness, _wsNormal, _mu_o, ZH, FDG_BRDF_INDEX_OREN_NAYAR, _environmentSH );
 }
 
 float3	EstimateMSIrradiance_SH( float3 _wsNormal, float3 _wsReflected, float _mu_o, float _roughnessSpecular, float3 _IOR, float _roughnessDiffuse, float3 _albedo, float3 _environmentSH[9] ) {
@@ -180,7 +170,7 @@ float3	EstimateMSIrradiance_SH( float3 _wsNormal, float3 _wsReflected, float _mu
 
 //MSFactor_spec = 1.0;
 
-	float3	E_spec = MSFactor_spec * EstimateMSIrradiance_SH_GGX( _roughnessSpecular, _wsReflected, _mu_o, _environmentSH, _tex_GGX_Eo, _tex_GGX_Eavg );
+	float3	E_spec = MSFactor_spec * EstimateMSIrradiance_SH_GGX( _roughnessSpecular, _wsReflected, _mu_o, _environmentSH );
 
 //return E_spec;
 
@@ -198,7 +188,7 @@ float3	EstimateMSIrradiance_SH( float3 _wsNormal, float3 _wsReflected, float _mu
 
 	// Attenuate diffuse contribution
 	float	a = _roughnessSpecular;
-	float	E_o = _tex_GGX_Eo.SampleLevel( LinearClamp, float2( _mu_o, a ), 0.0 );	// Already sampled by MSBRDF earlier, optimize!
+	float	E_o = SampleIrradiance( _mu_o, a, FDG_BRDF_INDEX_GGX );	// Already sampled by MSBRDF earlier, optimize!
 
 	float3	kappa = 1 - (Favg * E_o + MSFactor_spec * (1.0 - E_o));
 
@@ -270,7 +260,7 @@ float3	ComputeBRDF_Full(  float3 _tsNormal, float3 _tsView, float3 _tsLight, flo
 	// Attenuate diffuse contribution
 	float	mu_o = saturate( dot( _tsView, _tsNormal ) );
 	float	a = _roughnessSpecular;
-	float	E_o = _tex_GGX_Eo.SampleLevel( LinearClamp, float2( mu_o, a ), 0.0 );	// Already sampled by MSBRDF earlier, optimize!
+	float	E_o = SampleIrradiance( mu_o, a, FDG_BRDF_INDEX_GGX );	// Already sampled by MSBRDF earlier, optimize!
 
 	float3	kappa = 1 - (Favg * E_o + MSFactor_spec * (1.0 - E_o));
 

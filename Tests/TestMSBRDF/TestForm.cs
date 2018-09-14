@@ -94,11 +94,9 @@ namespace TestMSBRDF {
 		Texture3D							m_tex_Noise;
 		Texture3D							m_tex_Noise4D;
 
-			// MSBRDF pre-integration textures
-		Texture2D							m_tex_MSBRDF_GGX_E;
-		Texture2D							m_tex_MSBRDF_GGX_Eavg;
-		Texture2D							m_tex_MSBRDF_OrenNayar_E;
-		Texture2D							m_tex_MSBRDF_OrenNayar_Eavg;
+		// Pre-integrated BRDF textures
+		Texture2D							m_tex_MSBRDF_E;
+		Texture2D							m_tex_MSBRDF_Eavg;
 
 			// LTC texture
 		#if TEST_LTC_AREA_LIGHT
@@ -218,8 +216,30 @@ namespace TestMSBRDF {
 
 // Tables are "built" with Mathematica now
 //			BuildMSBRDF( new DirectoryInfo( @".\Tables\" ) );
-			LoadMSBRDF( 128, new FileInfo( "./Tables/MSBRDF_GGX_G2_E128x128.float" ), new FileInfo( "./Tables/MSBRDF_GGX_G2_Eavg128.float" ), out m_tex_MSBRDF_GGX_E, out m_tex_MSBRDF_GGX_Eavg );
-			LoadMSBRDF( 32, new FileInfo( "./Tables/MSBRDF_OrenNayar_E32x32.float" ), new FileInfo( "./Tables/MSBRDF_OrenNayar_Eavg32.float" ), out m_tex_MSBRDF_OrenNayar_E, out m_tex_MSBRDF_OrenNayar_Eavg );
+//			LoadMSBRDF( 128, new FileInfo( "./Tables/MSBRDF_GGX_G2_E128x128.float" ), new FileInfo( "./Tables/MSBRDF_GGX_G2_Eavg128.float" ), out m_tex_MSBRDF_GGX_E, out m_tex_MSBRDF_GGX_Eavg );
+//			LoadMSBRDF( 32, new FileInfo( "./Tables/MSBRDF_OrenNayar_E32x32.float" ), new FileInfo( "./Tables/MSBRDF_OrenNayar_Eavg32.float" ), out m_tex_MSBRDF_OrenNayar_E, out m_tex_MSBRDF_OrenNayar_Eavg );
+
+			LoadMSBRDF( new uint[] { 128, 128, 128, 32, 32, 32 },
+						new FileInfo[] {
+							new FileInfo( "./Tables/MSBRDF_GGX_G2_E128x128.float" ),
+							new FileInfo( "./Tables/MSBRDF_GGX_G2_E128x128.float" ),
+							new FileInfo( "./Tables/MSBRDF_GGX_G2_E128x128.float" ),
+
+							new FileInfo( "./Tables/MSBRDF_OrenNayar_Eavg32.float" ),
+							new FileInfo( "./Tables/MSBRDF_OrenNayar_Eavg32.float" ),
+							new FileInfo( "./Tables/MSBRDF_OrenNayar_Eavg32.float" ),
+						},
+						new FileInfo[] {
+							new FileInfo( "./Tables/MSBRDF_GGX_G2_Eavg128.float" ),
+							new FileInfo( "./Tables/MSBRDF_GGX_G2_Eavg128.float" ),
+							new FileInfo( "./Tables/MSBRDF_GGX_G2_Eavg128.float" ),
+
+							new FileInfo( "./Tables/MSBRDF_OrenNayar_Eavg32.float" ),
+							new FileInfo( "./Tables/MSBRDF_OrenNayar_Eavg32.float" ),
+							new FileInfo( "./Tables/MSBRDF_OrenNayar_Eavg32.float" ),
+						},
+						out m_tex_MSBRDF_E, out m_tex_MSBRDF_Eavg
+			);
 
 			#if TEST_LTC_AREA_LIGHT
 				// Area light
@@ -337,10 +357,8 @@ m_CB_Render.m._roughnessGround *= m_CB_Render.m._roughnessGround;
 				m_tex_CubeMap.SetPS( 0 );
 				m_tex_BlueNoise.SetPS( 1 );
 
-				m_tex_MSBRDF_GGX_E.SetPS( 2 );
-				m_tex_MSBRDF_GGX_Eavg.SetPS( 3 );
-				m_tex_MSBRDF_OrenNayar_E.SetPS( 4 );
-				m_tex_MSBRDF_OrenNayar_Eavg.SetPS( 5 );
+				m_tex_MSBRDF_E.SetPS( 2 );
+				m_tex_MSBRDF_Eavg.SetPS( 3 );
 
 				m_tex_LTC.SetPS( 6 );
 
@@ -381,10 +399,8 @@ m_CB_Render.m._roughnessGround *= m_CB_Render.m._roughnessGround;
 				m_tex_LTC.Dispose();
 			#endif
 
-			m_tex_MSBRDF_OrenNayar_Eavg.Dispose();
-			m_tex_MSBRDF_OrenNayar_E.Dispose();
-			m_tex_MSBRDF_GGX_Eavg.Dispose();
-			m_tex_MSBRDF_GGX_E.Dispose();
+			m_tex_MSBRDF_Eavg.Dispose();
+			m_tex_MSBRDF_E.Dispose();
 
 			m_tex_CubeMap.Dispose();
 
@@ -790,6 +806,75 @@ m_CB_Render.m._roughnessGround *= m_CB_Render.m._roughnessGround;
 			// Create textures
 			_irradianceTexture = new Texture2D( m_device, (uint) _size, (uint) _size, 1, 1, ImageUtility.PIXEL_FORMAT.R32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, true, new PixelsBuffer[] { contentIrradiance } );
 			_whiteFurnaceTexture = new Texture2D( m_device, (uint) _size, 1, 1, 1, ImageUtility.PIXEL_FORMAT.R32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, true, new PixelsBuffer[] { contentWhiteFurnace } );
+		}
+
+		void	LoadMSBRDF( uint[] _sizes, FileInfo[]  _irradianceTablesNames, FileInfo[]  _albedoTablesNames, out Texture2D _irradianceTexture, out Texture2D _albedoTexture ) {
+
+			uint	BRDFSCount = (uint) _sizes.Length;
+			if ( _irradianceTablesNames.Length != BRDFSCount || _albedoTablesNames.Length != BRDFSCount )
+				throw new Exception( "Irradiance and albedo textures count must match the amount of BRDFs computed from the size of the _sizes array!" );
+
+			// Determine max texture size
+			uint	textureSize = 0;
+			foreach ( uint size in _sizes )
+				textureSize = Math.Max( textureSize, size );
+
+			// Create placeholders
+			ImageUtility.ImagesMatrix	texE = new ImageUtility.ImagesMatrix();
+			texE.InitTexture2DArray( textureSize, textureSize, BRDFSCount, 1 );
+			texE.AllocateImageFiles( ImageUtility.PIXEL_FORMAT.R32F, new ImageUtility.ColorProfile( ImageUtility.ColorProfile.STANDARD_PROFILE.LINEAR ) );
+
+			ImageUtility.ImagesMatrix	texEavg = new ImageUtility.ImagesMatrix();
+			texE.InitTexture2DArray( textureSize, BRDFSCount, 1, 1 );
+			texE.AllocateImageFiles( ImageUtility.PIXEL_FORMAT.R32F, new ImageUtility.ColorProfile( ImageUtility.ColorProfile.STANDARD_PROFILE.LINEAR ) );
+
+			for ( uint BRDFIndex=0; BRDFIndex < BRDFSCount; BRDFIndex++ ) {
+				uint	size = _sizes[BRDFIndex];
+
+				// Read irradiance table
+				float[,]	irradianceTable = new float[size,size];
+				using ( FileStream S = _irradianceTablesNames[BRDFIndex].OpenRead() )
+					using ( BinaryReader R = new BinaryReader( S ) ) {
+						for ( int Y=0; Y < size; Y++ ) {
+							for ( int X=0; X < size; X++ ) {
+								irradianceTable[X,Y] = R.ReadSingle();
+							}
+						}
+					}
+
+				// Read albedo table
+				float[]			albedoTable = new float[size];
+				using ( FileStream S = _albedoTablesNames[BRDFIndex].OpenRead() )
+					using ( BinaryReader R = new BinaryReader( S ) ) {
+						for ( int Y=0; Y < size; Y++ ) {
+							albedoTable[Y] = R.ReadSingle();
+						}
+					}
+
+				// Write content
+				if ( size == textureSize ) {
+					// One-one correspondance
+					texE[BRDFIndex][0][0].WritePixels( ( uint _X, uint _Y, ref float4 _color ) => {
+						_color.x = irradianceTable[_X,_Y];
+					} );
+					texE[BRDFIndex][0][0].WritePixels( ( uint _X, uint _Y, ref float4 _color ) => {
+						_color.x = albedoTable[_X];
+					} );
+				} else {
+					// Needs scaling
+					texE[BRDFIndex][0][0].WritePixels( ( uint _X, uint _Y, ref float4 _color ) => {
+						_color.x = Mathf.BiLerp( irradianceTable, (float) _X / textureSize, (float) _Y / textureSize );
+					} );
+					texEavg[BRDFIndex][0][0].WritePixels( ( uint _X, uint _Y, ref float4 _color ) => {
+						_color.x = Mathf.Lerp( albedoTable, (float) _X / textureSize );
+					} );
+				}
+			}
+
+
+			// Create textures
+			_irradianceTexture = new Texture2D( m_device, texE, ImageUtility.COMPONENT_FORMAT.AUTO );
+			_albedoTexture = new Texture2D( m_device, texEavg, ImageUtility.COMPONENT_FORMAT.AUTO );
 		}
 
 		#endregion

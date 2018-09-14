@@ -63,26 +63,27 @@ namespace LTCTableGenerator
 		}
 
 		float	SampleEo( float _cosTheta, float _alpha ) {
-			float	X = Mathf.Saturate( _cosTheta ) * W;
-			int		X0 = (int) Mathf.Floor( X );
-			float	x = X - X0;
-					X0 = Math.Min( W-1, X0 );
-			int		X1 = Math.Min( W-1, X0 + 1 );
-
-			float	Y = Mathf.Saturate( _alpha ) * H;
-			int		Y0 = (int) Mathf.Floor( Y );
-			float	y = Y - Y0;
-					Y0 = Math.Min( H-1, Y0 );
-			int		Y1 = Math.Min( H-1, Y0 + 1 );
-
-			float	V00 = m_Eo[X0,Y0];
-			float	V10 = m_Eo[X1,Y0];
-			float	V01 = m_Eo[X0,Y1];
-			float	V11 = m_Eo[X1,Y1];
-			float	V0 = (1-x) * V00 + x * V10;
-			float	V1 = (1-x) * V01 + x * V11;
-			float	V = (1-y) * V0 + y * V1;
-			return V;
+			return Mathf.BiLerp( m_Eo, _cosTheta, _alpha ) ;
+// 			float	X = Mathf.Saturate( _cosTheta ) * W;
+// 			int		X0 = (int) Mathf.Floor( X );
+// 			float	x = X - X0;
+// 					X0 = Math.Min( W-1, X0 );
+// 			int		X1 = Math.Min( W-1, X0 + 1 );
+// 
+// 			float	Y = Mathf.Saturate( _alpha ) * H;
+// 			int		Y0 = (int) Mathf.Floor( Y );
+// 			float	y = Y - Y0;
+// 					Y0 = Math.Min( H-1, Y0 );
+// 			int		Y1 = Math.Min( H-1, Y0 + 1 );
+// 
+// 			float	V00 = m_Eo[X0,Y0];
+// 			float	V10 = m_Eo[X1,Y0];
+// 			float	V01 = m_Eo[X0,Y1];
+// 			float	V11 = m_Eo[X1,Y1];
+// 			float	V0 = (1-x) * V00 + x * V10;
+// 			float	V1 = (1-x) * V01 + x * V11;
+// 			float	V = (1-y) * V0 + y * V1;
+// 			return V;
 		}
 	}
 }

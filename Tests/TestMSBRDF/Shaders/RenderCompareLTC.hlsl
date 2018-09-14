@@ -1,6 +1,8 @@
 #include "Global.hlsl"
-#include "Scene.hlsl"
+#include "FDG.hlsl"
 #include "LTC.hlsl"
+#include "BRDF.hlsl"
+#include "Scene.hlsl"
 
 //#define	WHITE_FURNACE_TEST	1
 
@@ -60,10 +62,10 @@ cbuffer CB_SH : register(b3) {
 TextureCube< float3 >	_tex_CubeMap : register( t0 );
 Texture2D< float >		_tex_BlueNoise : register( t1 );
 
-Texture2D< float >		_tex_GGX_Eo : register( t2 );
-Texture2D< float >		_tex_GGX_Eavg : register( t3 );
-Texture2D< float >		_tex_OrenNayar_Eo : register( t4 );
-Texture2D< float >		_tex_OrenNayar_Eavg : register( t5 );
+//Texture2D< float >		_tex_GGX_Eo : register( t2 );
+//Texture2D< float >		_tex_GGX_Eavg : register( t3 );
+//Texture2D< float >		_tex_OrenNayar_Eo : register( t4 );
+//Texture2D< float >		_tex_OrenNayar_Eavg : register( t5 );
 
 
 /////////////////////////////////////////////////////////////////////////////////////////////
@@ -96,7 +98,7 @@ float3	ComputeBRDF_Oren( float3 _tsNormal, float3 _tsView, float3 _tsLight, floa
 		float3		rho = tau * _albedo;
 		float3		MSFactor = (_flags & 2) ? A1 * pow2( rho ) / (1.0 - rho) : rho;
 
-		BRDF += MSFactor * MSBRDF( _roughness, _tsNormal, _tsView, _tsLight, _tex_OrenNayar_Eo, _tex_OrenNayar_Eavg );
+		BRDF += MSFactor * MSBRDF( _roughness, _tsNormal, _tsView, _tsLight, FDG_BRDF_INDEX_OREN_NAYAR );
 	}
 
 	return BRDF;
@@ -118,7 +120,7 @@ float3	ComputeBRDF_Full( float3 _tsNormal, float3 _tsView, float3 _tsLight, floa
 		float3	BRDF_spec = BRDF_GGX( _tsNormal, _tsView, _tsLight, _roughnessSpecular, IOR );
 	#endif
 	if ( (_flags & 1) && !(_flags & 0x100) ) {
-		BRDF_spec += MSFactor_spec * MSBRDF( _roughnessSpecular, _tsNormal, _tsView, _tsLight, _tex_GGX_Eo, _tex_GGX_Eavg );
+		BRDF_spec += MSFactor_spec * MSBRDF( _roughnessSpecular, _tsNormal, _tsView, _tsLight, FDG_BRDF_INDEX_GGX );
 	}
 
 	// Compute diffuse contribution
@@ -133,13 +135,13 @@ float3	ComputeBRDF_Full( float3 _tsNormal, float3 _tsView, float3 _tsLight, floa
 		float3		rho = tau * _albedo;
 		float3		MSFactor_diff = (_flags & 2) ? A1 * pow2( rho ) / (1.0 - rho) : rho;	// From http://patapom.com/blog/BRDF/MSBRDFEnergyCompensation/#varying-diffuse-reflectance-rhorho
 
-		BRDF_diff += MSFactor_diff * MSBRDF( _roughnessDiffuse, _tsNormal, _tsView, _tsLight, _tex_OrenNayar_Eo, _tex_OrenNayar_Eavg );
+		BRDF_diff += MSFactor_diff * MSBRDF( _roughnessDiffuse, _tsNormal, _tsView, _tsLight, FDG_BRDF_INDEX_OREN_NAYAR );
 	}
 
 	// Attenuate diffuse contribution
 	float	mu_o = saturate( dot( _tsView, _tsNormal ) );
 	float	a = _roughnessSpecular;
-	float	E_o = _tex_GGX_Eo.SampleLevel( LinearClamp, float2( mu_o, a ), 0.0 );	// Already sampled by MSBRDF earlier, optimize!
+	float	E_o = SampleIrradiance( mu_o, a, FDG_BRDF_INDEX_GGX );	// Already sampled by MSBRDF earlier, optimize!
 
 	float3	kappa = 1 - (Favg * E_o + MSFactor_spec * (1.0 - E_o));
 
@@ -148,6 +150,56 @@ float3	ComputeBRDF_Full( float3 _tsNormal, float3 _tsView, float3 _tsLight, floa
 //	return BRDF_spec;
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////
+//
+float3	EstimateMSIrradiance_LTC( float4x3 _tsLightCorners, float _mu_o, float _alpha, uint _BRDFIndex ) {
+	float		perceptualAlpha = sqrt( _alpha );
+
+	float		magnitude;
+#if 1
+	float3x3	ltc = MSLTCSampleMatrix( perceptualAlpha, _BRDFIndex, magnitude );
+	float4x3	ltcLightCorners = mul( _tsLightCorners, ltc );
+#else
+	float3		ltc = MSLTCSampleMatrixDiagonal( perceptualAlpha, _BRDFIndex, magnitude );
+	float4x3	ltcLightCorners = float4x3(	ltc * _tsLightCorners[0],
+											ltc * _tsLightCorners[1],
+											ltc * _tsLightCorners[2],
+											ltc * _tsLightCorners[3] );
+#endif
+
+	float		Li = magnitude * PolygonIrradiance( ltcLightCorners );
+
+	// Apply view-dependence
+	return Li * MSBRDF_View( _mu_o, _alpha, _BRDFIndex );
+}
+
+float3	EstimateMSIrradiance_LTC( float4x3 _tsLightCorners, float _mu_o, float _roughnessSpecular, float3 _F0, float _roughnessDiffuse, float3 _albedo ) {
+
+	float3	IOR = Fresnel_IORFromF0( _F0 );
+
+    // Estimate specular irradiance
+    float3  MSFactor_spec = _F0 * (0.04 + _F0 * (0.66 + _F0 * 0.3));	// From http://patapom.com/blog/BRDF/MSBRDFEnergyCompensation/#varying-the-fresnel-reflectance-f_0f_0
+    float3  Favg = FresnelAverage( IOR );
+
+    float3  E_spec = MSFactor_spec * EstimateMSIrradiance_LTC( _tsLightCorners, _mu_o, _roughnessSpecular, LTC_BRDF_INDEX_GGX );
+
+
+    // Estimate diffuse irradiance
+    const float tau = 0.28430405702379613;
+    const float A1 = (1.0 - tau) / pow2( tau );
+    float3      rho = tau * _albedo;
+    float3      MSFactor_diff = A1 * pow2( rho ) / (1.0 - rho);     // From http://patapom.com/blog/BRDF/MSBRDFEnergyCompensation/#varying-diffuse-reflectance-rhorho
+
+    float3  E_diff = MSFactor_diff * EstimateMSIrradiance_LTC( _tsLightCorners, _mu_o, _roughnessDiffuse, LTC_BRDF_INDEX_OREN_NAYAR );
+
+    // Attenuate diffuse contribution
+    float   a = _roughnessSpecular;
+	float	E_o = SampleIrradiance( _mu_o, a, FDG_BRDF_INDEX_GGX );	// Already sampled by MSBRDF earlier, optimize!
+
+    float3  kappa = 1 - (Favg * E_o + MSFactor_spec * (1.0 - E_o));
+
+    return E_spec + kappa * E_diff;
+}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -374,7 +426,6 @@ return float4( 0.01 * abs(V.yzw), 1 );
 	// Stochastic Sampling
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	//
-//	if ( (_flags & 1) && !(_flags & 0x100) ) {
 	if ( !(_flags & 0x200) ) {
 		uint	groupIndex = _groupIndex;
 
@@ -451,12 +502,12 @@ Lr *= 0.9;	// Attenuate a bit to see in front of white sky...
 		float3		magnitude_specular = 0;
 		if ( hit.y == 0 ) {
 			// Sphere has GGX specular + Oren-Nayar diffuse
-			magnitude_specular = _tex_GGX_Eo.SampleLevel( LinearClamp, float2( VdotN, alphaS ), 0.0 );
+			magnitude_specular = SampleIrradiance( VdotN, alphaS, FDG_BRDF_INDEX_GGX );
 			magnitude_specular *= F0;	// We're missing the (1-F0) * (1-N.V)^5 here but we don't really care...
 
 			LTC_specular = LTCSampleMatrix( VdotN, perceptualAlphaS, LTC_BRDF_INDEX_GGX );
 
-			magnitude_diffuse = _tex_OrenNayar_Eo.SampleLevel( LinearClamp, float2( VdotN, alphaD ), 0.0 );
+			magnitude_diffuse = SampleIrradiance( VdotN, alphaD, FDG_BRDF_INDEX_OREN_NAYAR );
 			LTC_diffuse = LTCSampleMatrix( VdotN, perceptualAlphaD, LTC_BRDF_INDEX_OREN_NAYAR );
 		} else {
 			// Ground has no specular, and an Oren-Nayar diffuse
@@ -467,7 +518,7 @@ Lr *= 0.9;	// Attenuate a bit to see in front of white sky...
 //magnitude_specular = _tex_GGX_Eo.SampleLevel( LinearClamp, float2( VdotN, alphaS ), 0.0 );
 //LTC_specular = LTCSampleMatrix( VdotN, perceptualAlphaS, LTC_BRDF_INDEX_GGX );
 
-			magnitude_diffuse = _tex_OrenNayar_Eo.SampleLevel( LinearClamp, float2( VdotN, alphaD ), 0.0 );
+			magnitude_diffuse = SampleIrradiance( VdotN, alphaD, FDG_BRDF_INDEX_OREN_NAYAR );
 			LTC_diffuse = LTCSampleMatrix( VdotN, perceptualAlphaD, LTC_BRDF_INDEX_OREN_NAYAR );
 		}
 
@@ -504,9 +555,9 @@ Lo = Li * magnitude_specular * PolygonIrradiance( mul( tsLightCorners, LTC_specu
 		float3	Li_specular = Li * magnitude_specular * PolygonIrradiance( mul( tsLightCorners, LTC_specular ) );
 		Lo += Li_specular;
 
-#if 1	// SKIP DIFFUSE
+#if 1
 		// Compute diffuse contribution
-		float3	Li_diffuse = Li * (rho / PI) * magnitude_diffuse * PolygonIrradiance( mul( tsLightCorners, LTC_diffuse ) );
+		float3	Li_diffuse = Li * rho * magnitude_diffuse * PolygonIrradiance( mul( tsLightCorners, LTC_diffuse ) );	// Diffuse LTC is already multiplied by 1/PI
 
 			// Attenuate diffuse contribution
 		float3	E_o = magnitude_specular;
@@ -523,16 +574,30 @@ Lo = Li * magnitude_specular * PolygonIrradiance( mul( tsLightCorners, LTC_specu
 	}
 
 
-//	///////////////////////////////////////////////////////////////////////////////////////
-//	// Real-time Approximation
-//	if ( (_flags & 1) && (_flags & 0x100) ) {
+	///////////////////////////////////////////////////////////////////////////////////////
+	// Real-time Approximation
+	// We show that a single call to the LTC MSBRDF is equivalent to many calls to the MSBRDF stochastic estimator
+	//
+	if ( (_flags & 1) && (_flags & 0x100) ) {
+
 //		float3	wsReflectedView = reflect( wsView, wsNormal );
 //		float3	wsReflected = normalize( lerp( wsReflectedView, wsNormal, alphaS ) );	// Go more toward prefectly reflected direction when roughness drops to 0
-//
 //wsReflected = wsNormal;
-//
-//		Lo += validSamplesCount * EstimateMSIrradiance_SH( wsNormal, wsReflected, saturate( tsView.z ), alphaS, IOR, alphaD, rho, envSH );
-//	}
+
+		// Build rectangular area light corners
+		float3		lsAreaLightPosition = _areaLightTransform[3].xyz - wsPosition;
+		float4x3    wsLightCorners;
+		wsLightCorners[0] = lsAreaLightPosition + _areaLightTransform[0].w * _areaLightTransform[0].xyz + _areaLightTransform[1].w * _areaLightTransform[1].xyz;
+		wsLightCorners[1] = lsAreaLightPosition + _areaLightTransform[0].w * _areaLightTransform[0].xyz - _areaLightTransform[1].w * _areaLightTransform[1].xyz;
+		wsLightCorners[2] = lsAreaLightPosition - _areaLightTransform[0].w * _areaLightTransform[0].xyz - _areaLightTransform[1].w * _areaLightTransform[1].xyz;
+		wsLightCorners[3] = lsAreaLightPosition - _areaLightTransform[0].w * _areaLightTransform[0].xyz + _areaLightTransform[1].w * _areaLightTransform[1].xyz;
+
+		float4x3    tsLightCorners = mul( wsLightCorners, world2TangentSpace );		// Transform them into tangent-space
+
+		float3		Li = GetAreaLightRadiance();
+
+		Lo += validSamplesCount * Li * EstimateMSIrradiance_LTC( tsLightCorners, saturate( tsView.z ), alphaS, F0, alphaD, rho );
+	}
 
 	return float4( Lo, validSamplesCount );
 }

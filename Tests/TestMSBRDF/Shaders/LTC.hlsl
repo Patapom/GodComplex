@@ -2,8 +2,10 @@
 // LTC Area Light Support
 //
 Texture2DArray< float4 >	_tex_LTC : register(t6);
+Texture2D< float2 >			_tex_MS_LTC : register(t7);
 
 #define LTC_LUT_SIZE	64	// LTC LUTs are 64x64
+#define LTC_BRDFS_COUNT	6	// Only 6 BRDF types are supported at the moment
 
 // Specular BRDFs
 #define LTC_BRDF_INDEX_GGX				0
@@ -49,6 +51,28 @@ float3x3	LTCSampleMatrix( float2 _UV, uint _BRDFIndex ) {
 
 float3x3	LTCSampleMatrix( float _NdotV, float _perceptualRoughness, uint _BRDFIndex ) {
 	return LTCSampleMatrix( LTCGetSamplingUV( _NdotV, _perceptualRoughness ), _BRDFIndex );
+}
+
+// Multiple-Scattering
+float3x3	MSLTCSampleMatrix( float _perceptualRoughness, uint _BRDFIndex, out float _magnitude ) {
+	float2		UV = float2( _perceptualRoughness, (0.5 + _BRDFIndex) / LTC_BRDFS_COUNT );
+	float2		coeffs = _tex_MS_LTC.SampleLevel( LinearClamp, UV, 0.0 );
+	_magnitude = coeffs.y;
+
+	float3x3	invM = 0.0;
+				invM._m00_m11 = 1.0;
+				invM._m22 = coeffs.x;
+
+	return invM;
+}
+
+// Only returns the diagonal since it's the only factors that matter
+float3	MSLTCSampleMatrixDiagonal( float _perceptualRoughness, uint _BRDFIndex, out float _magnitude ) {
+	float2		UV = float2( _perceptualRoughness, (0.5 + _BRDFIndex) / LTC_BRDFS_COUNT );
+	float2		coeffs = _tex_MS_LTC.SampleLevel( LinearClamp, UV, 0.0 );
+	_magnitude = coeffs.y;
+
+	return float3( 1, 1, coeffs.x );
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
