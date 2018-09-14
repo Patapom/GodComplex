@@ -16,7 +16,7 @@ namespace ImageUtility {
 	// • For Texture2DArrays and TextureCubes, the collection of mips is of the size of the array (or 6 times the amount of cube maps)
 	// • For Texture3D, the collection contains only a single "Mips" element but its Mip contain an array of slices
 	//
-	[System::Diagnostics::DebuggerDisplayAttribute( "{ArraySize} Slices {Type} {Format}" )]
+	[System::Diagnostics::DebuggerDisplayAttribute( "{ArraySize,d} Slices {Type} {Format}" )]
 	public ref class	ImagesMatrix {
 	internal:
 		bool							m_ownedObject;

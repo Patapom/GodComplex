@@ -101,6 +101,7 @@ namespace TestMSBRDF {
 			// LTC texture
 		#if TEST_LTC_AREA_LIGHT
 			Texture2D						m_tex_LTC;
+			Texture2D						m_tex_MS_LTC;
 		#endif
 
 		Texture2D							m_tex_CubeMap;
@@ -225,9 +226,9 @@ namespace TestMSBRDF {
 							new FileInfo( "./Tables/MSBRDF_GGX_G2_E128x128.float" ),
 							new FileInfo( "./Tables/MSBRDF_GGX_G2_E128x128.float" ),
 
-							new FileInfo( "./Tables/MSBRDF_OrenNayar_Eavg32.float" ),
-							new FileInfo( "./Tables/MSBRDF_OrenNayar_Eavg32.float" ),
-							new FileInfo( "./Tables/MSBRDF_OrenNayar_Eavg32.float" ),
+							new FileInfo( "./Tables/MSBRDF_OrenNayar_E32x32.float" ),
+							new FileInfo( "./Tables/MSBRDF_OrenNayar_E32x32.float" ),
+							new FileInfo( "./Tables/MSBRDF_OrenNayar_E32x32.float" ),
 						},
 						new FileInfo[] {
 							new FileInfo( "./Tables/MSBRDF_GGX_G2_Eavg128.float" ),
@@ -244,6 +245,7 @@ namespace TestMSBRDF {
 			#if TEST_LTC_AREA_LIGHT
 				// Area light
 				m_tex_LTC = LoadLTC( new FileInfo( @".\Tables\LTC.dds" ) );
+				m_tex_MS_LTC = LoadMSLTC( new FileInfo( @".\Tables\MS_LTC.dds" ) );
 			#endif
 
 			// Load cube map
@@ -361,6 +363,7 @@ m_CB_Render.m._roughnessGround *= m_CB_Render.m._roughnessGround;
 				m_tex_MSBRDF_Eavg.SetPS( 3 );
 
 				m_tex_LTC.SetPS( 6 );
+				m_tex_MS_LTC.SetPS( 7 );
 
 				m_device.RenderFullscreenQuad( m_shader_Accumulate );
 
@@ -396,6 +399,7 @@ m_CB_Render.m._roughnessGround *= m_CB_Render.m._roughnessGround;
 			m_tex_BlueNoise.Dispose();
 
 			#if TEST_LTC_AREA_LIGHT
+				m_tex_MS_LTC.Dispose();
 				m_tex_LTC.Dispose();
 			#endif
 
@@ -825,9 +829,10 @@ m_CB_Render.m._roughnessGround *= m_CB_Render.m._roughnessGround;
 			texE.AllocateImageFiles( ImageUtility.PIXEL_FORMAT.R32F, new ImageUtility.ColorProfile( ImageUtility.ColorProfile.STANDARD_PROFILE.LINEAR ) );
 
 			ImageUtility.ImagesMatrix	texEavg = new ImageUtility.ImagesMatrix();
-			texE.InitTexture2DArray( textureSize, BRDFSCount, 1, 1 );
-			texE.AllocateImageFiles( ImageUtility.PIXEL_FORMAT.R32F, new ImageUtility.ColorProfile( ImageUtility.ColorProfile.STANDARD_PROFILE.LINEAR ) );
+			texEavg.InitTexture2DArray( textureSize, BRDFSCount, 1, 1 );
+			texEavg.AllocateImageFiles( ImageUtility.PIXEL_FORMAT.R32F, new ImageUtility.ColorProfile( ImageUtility.ColorProfile.STANDARD_PROFILE.LINEAR ) );
 
+			float[][]	albedoTables = new float[BRDFSCount][];
 			for ( uint BRDFIndex=0; BRDFIndex < BRDFSCount; BRDFIndex++ ) {
 				uint	size = _sizes[BRDFIndex];
 
@@ -842,34 +847,34 @@ m_CB_Render.m._roughnessGround *= m_CB_Render.m._roughnessGround;
 						}
 					}
 
-				// Read albedo table
-				float[]			albedoTable = new float[size];
-				using ( FileStream S = _albedoTablesNames[BRDFIndex].OpenRead() )
-					using ( BinaryReader R = new BinaryReader( S ) ) {
-						for ( int Y=0; Y < size; Y++ ) {
-							albedoTable[Y] = R.ReadSingle();
-						}
-					}
-
 				// Write content
 				if ( size == textureSize ) {
 					// One-one correspondance
 					texE[BRDFIndex][0][0].WritePixels( ( uint _X, uint _Y, ref float4 _color ) => {
 						_color.x = irradianceTable[_X,_Y];
 					} );
-					texE[BRDFIndex][0][0].WritePixels( ( uint _X, uint _Y, ref float4 _color ) => {
-						_color.x = albedoTable[_X];
-					} );
 				} else {
 					// Needs scaling
 					texE[BRDFIndex][0][0].WritePixels( ( uint _X, uint _Y, ref float4 _color ) => {
 						_color.x = Mathf.BiLerp( irradianceTable, (float) _X / textureSize, (float) _Y / textureSize );
 					} );
-					texEavg[BRDFIndex][0][0].WritePixels( ( uint _X, uint _Y, ref float4 _color ) => {
-						_color.x = Mathf.Lerp( albedoTable, (float) _X / textureSize );
-					} );
 				}
+
+				// Read albedo table
+				float[]	albedoTable = new float[size];
+				albedoTables[BRDFIndex] = albedoTable;
+				using ( FileStream S = _albedoTablesNames[BRDFIndex].OpenRead() )
+					using ( BinaryReader R = new BinaryReader( S ) ) {
+						for ( int Y=0; Y < size; Y++ ) {
+							albedoTable[Y] = R.ReadSingle();
+						}
+					}
 			}
+
+			// Build the entire albedo tables
+			texEavg[0][0][0].WritePixels( ( uint _X, uint _Y, ref float4 _color ) => {
+				_color.x = Mathf.Lerp( albedoTables[_Y], (float) _X / textureSize );
+			} );
 
 
 			// Create textures
@@ -884,6 +889,14 @@ m_CB_Render.m._roughnessGround *= m_CB_Render.m._roughnessGround;
 		Texture2D	LoadLTC( FileInfo _LTCFileName ) {
 			using ( ImageUtility.ImagesMatrix M = new ImageUtility.ImagesMatrix() ) {
 				M.DDSLoadFile( _LTCFileName );
+				Texture2D	T = new Texture2D( m_device, M, ImageUtility.COMPONENT_FORMAT.AUTO );
+				return T;
+			}
+		}
+
+		Texture2D	LoadMSLTC( FileInfo _MSLTCFileName ) {
+			using ( ImageUtility.ImagesMatrix M = new ImageUtility.ImagesMatrix() ) {
+				M.DDSLoadFile( _MSLTCFileName );
 				Texture2D	T = new Texture2D( m_device, M, ImageUtility.COMPONENT_FORMAT.AUTO );
 				return T;
 			}

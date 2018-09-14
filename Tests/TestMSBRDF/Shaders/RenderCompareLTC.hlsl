@@ -578,7 +578,7 @@ Lo = Li * magnitude_specular * PolygonIrradiance( mul( tsLightCorners, LTC_specu
 	// Real-time Approximation
 	// We show that a single call to the LTC MSBRDF is equivalent to many calls to the MSBRDF stochastic estimator
 	//
-	if ( (_flags & 1) && (_flags & 0x100) ) {
+	if ( (_flags & 1) && ((_flags & 0x100) | (_flags & 0x200U)) ) {
 
 //		float3	wsReflectedView = reflect( wsView, wsNormal );
 //		float3	wsReflected = normalize( lerp( wsReflectedView, wsNormal, alphaS ) );	// Go more toward prefectly reflected direction when roughness drops to 0
