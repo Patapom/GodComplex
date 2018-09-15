@@ -152,6 +152,8 @@ float3	ComputeBRDF_Full( float3 _tsNormal, float3 _tsView, float3 _tsLight, floa
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 //
+
+// Computes the general LTC MS term for any BRDF
 float3	EstimateMSIrradiance_LTC( float4x3 _tsLightCorners, float _mu_o, float _alpha, uint _BRDFIndex ) {
 	float		perceptualAlpha = sqrt( _alpha );
 
@@ -173,13 +175,13 @@ float3	EstimateMSIrradiance_LTC( float4x3 _tsLightCorners, float _mu_o, float _a
 	return Li * MSBRDF_View( _mu_o, _alpha, _BRDFIndex );
 }
 
+// Computes the LTC MS term for both diffuse and specular BRDFs
 float3	EstimateMSIrradiance_LTC( float4x3 _tsLightCorners, float _mu_o, float _roughnessSpecular, float3 _F0, float _roughnessDiffuse, float3 _albedo ) {
 
 	float3	IOR = Fresnel_IORFromF0( _F0 );
 
     // Estimate specular irradiance
-    float3  MSFactor_spec = _F0 * (0.04 + _F0 * (0.66 + _F0 * 0.3));	// From http://patapom.com/blog/BRDF/MSBRDFEnergyCompensation/#varying-the-fresnel-reflectance-f_0f_0
-    float3  Favg = FresnelAverage( IOR );
+	float3	MSFactor_spec = (_flags & 2) ? _F0 * (0.04 + _F0 * (0.66 + _F0 * 0.3)) : _F0;	// From http://patapom.com/blog/BRDF/MSBRDFEnergyCompensation/#varying-the-fresnel-reflectance-f_0f_0
 
     float3  E_spec = MSFactor_spec * EstimateMSIrradiance_LTC( _tsLightCorners, _mu_o, _roughnessSpecular, LTC_BRDF_INDEX_GGX );
 
@@ -188,15 +190,16 @@ float3	EstimateMSIrradiance_LTC( float4x3 _tsLightCorners, float _mu_o, float _r
     const float tau = 0.28430405702379613;
     const float A1 = (1.0 - tau) / pow2( tau );
     float3      rho = tau * _albedo;
-    float3      MSFactor_diff = A1 * pow2( rho ) / (1.0 - rho);     // From http://patapom.com/blog/BRDF/MSBRDFEnergyCompensation/#varying-diffuse-reflectance-rhorho
+	float3		MSFactor_diff = (_flags & 2) ? A1 * pow2( rho ) / (1.0 - rho) : rho;	// From http://patapom.com/blog/BRDF/MSBRDFEnergyCompensation/#varying-diffuse-reflectance-rhorho
 
     float3  E_diff = MSFactor_diff * EstimateMSIrradiance_LTC( _tsLightCorners, _mu_o, _roughnessDiffuse, LTC_BRDF_INDEX_OREN_NAYAR );
 
     // Attenuate diffuse contribution
     float   a = _roughnessSpecular;
 	float	E_o = SampleIrradiance( _mu_o, a, FDG_BRDF_INDEX_GGX );	// Already sampled by MSBRDF earlier, optimize!
+    float3  Favg = FresnelAverage( IOR );
 
-    float3  kappa = 1 - (Favg * E_o + MSFactor_spec * (1.0 - E_o));
+    float3  kappa = 1 - (Favg * E_o + MSFactor_spec * (1.0 - E_o));	// From http://patapom.com/blog/BRDF/MSBRDFEnergyCompensation/#complete-approximate-model
 
     return E_spec + kappa * E_diff;
 }

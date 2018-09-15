@@ -36,7 +36,11 @@ static const uint	SAMPLES_COUNT = 32;
 static const float3	AMBIENT = 0* 0.02 * float3( 0.5, 0.8, 0.9 );
 
 cbuffer CB_Render : register(b2) {
-	uint	_flags;
+	uint		_flags;		// 0x1 = Enable MSBRDF
+							// 0x2 = Enable MS Factor
+							// 0x100 = Use realtime approximation
+							// 0x200 = Use LTC
+
 	uint	_groupsCount;
 	uint	_groupIndex;
 	float	_lightElevation;
@@ -182,7 +186,7 @@ float3	EstimateMSIrradiance_SH( float3 _wsNormal, float3 _wsReflected, float _mu
 
 //MSFactor_diff = 1;
 
-	float3	E_diff = MSFactor_diff * EstimateMSIrradiance_SH_OrenNayar( _roughnessDiffuse, _wsNormal, _mu_o, _environmentSH, _tex_OrenNayar_Eo, _tex_OrenNayar_Eavg );
+	float3	E_diff = MSFactor_diff * EstimateMSIrradiance_SH_OrenNayar( _roughnessDiffuse, _wsNormal, _mu_o, _environmentSH );
 
 //return E_diff;
 
@@ -239,7 +243,7 @@ float3	ComputeBRDF_Full(  float3 _tsNormal, float3 _tsView, float3 _tsLight, flo
 		float3	BRDF_spec = BRDF_GGX( _tsNormal, _tsView, _tsLight, _roughnessSpecular, _IOR );
 	#endif
 	if ( (_flags & 1) && !(_flags & 0x100) ) {
-		BRDF_spec += MSFactor_spec * MSBRDF( _roughnessSpecular, _tsNormal, _tsView, _tsLight, _tex_GGX_Eo, _tex_GGX_Eavg );
+		BRDF_spec += MSFactor_spec * MSBRDF( _roughnessSpecular, _tsNormal, _tsView, _tsLight, FDG_BRDF_INDEX_GGX );
 	}
 
 	// Compute diffuse contribution
@@ -254,7 +258,7 @@ float3	ComputeBRDF_Full(  float3 _tsNormal, float3 _tsView, float3 _tsLight, flo
 		float3		rho = tau * _albedo;
 		float3		MSFactor_diff = (_flags & 2) ? A1 * pow2( rho ) / (1.0 - rho) : rho;	// From http://patapom.com/blog/BRDF/MSBRDFEnergyCompensation/#varying-diffuse-reflectance-rhorho
 
-		BRDF_diff += MSFactor_diff * MSBRDF( _roughnessDiffuse, _tsNormal, _tsView, _tsLight, _tex_OrenNayar_Eo, _tex_OrenNayar_Eavg );
+		BRDF_diff += MSFactor_diff * MSBRDF( _roughnessDiffuse, _tsNormal, _tsView, _tsLight, FDG_BRDF_INDEX_OREN_NAYAR );
 	}
 
 	// Attenuate diffuse contribution
