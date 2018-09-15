@@ -3,7 +3,7 @@
 #include "BRDF.hlsl"
 #include "Scene.hlsl"
 
-#define FULL_SCENE		1	// Define this to render the full scene (diffuse plane + specular sphere)
+//#define FULL_SCENE		1	// Define this to render the full scene (diffuse plane + specular sphere)
 //#define FORCE_BRDF		2	// Define this to force all surfaces as specular (1), diffuse (2)
 
 #define	DIELECTRIC_SPHERE	1	// Define this to use the full dielectric sphere model
@@ -269,7 +269,7 @@ float3	SampleSecondaryLight( float3 _wsPosition, float3 _wsNormal, float3 _wsVie
 }
 
 float3	ComputeIncomingRadiance( float3 _wsPosition, float3 _wsView, uint2 _seeds ) {
-	#if FULL_SCENE
+	#ifdef FULL_SCENE
 		// Compute secondary hit with scene
 		float3	wsClosestPosition = 0;
 		float3	wsNormal = float3( 0, 1, 0 );
