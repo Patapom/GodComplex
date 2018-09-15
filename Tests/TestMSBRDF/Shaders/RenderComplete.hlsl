@@ -1,5 +1,5 @@
 #include "Global.hlsl"
-#include "FDG.hlsl"
+#include "FGD.hlsl"
 #include "BRDF.hlsl"
 
 //#define FULL_SCENE		1	// Define this to render the full scene (diffuse plane + specular sphere)
@@ -56,11 +56,6 @@ cbuffer CB_Render : register(b2) {
 
 TextureCube< float3 >	_tex_CubeMap : register( t0 );
 Texture2D< float >		_tex_BlueNoise : register( t1 );
-
-//Texture2D< float >		_tex_GGX_Eo : register( t2 );
-//Texture2D< float >		_tex_GGX_Eavg : register( t3 );
-//Texture2D< float >		_tex_OrenNayar_Eo : register( t4 );
-//Texture2D< float >		_tex_OrenNayar_Eavg : register( t5 );
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -234,12 +229,6 @@ float3	ComputeIncomingRadiance( float3 _wsPosition, float3 _wsView, uint2 _seeds
 
 
 float4	PS( VS_IN _In ) : SV_TARGET0 {
-
-//return float4( (1 - _tex_GGX_Eo.SampleLevel( LinearClamp, _In.__position.xy / _screenSize.xy, 0.0 )).xxx, 1 );
-//return float4( (_tex_GGX_Eavg.SampleLevel( LinearClamp, _In.__position.xy / _screenSize.xy, 0.0 ) / PI).xxx, 1 );
-//return float4( (1 - _tex_OrenNayar_Eo.SampleLevel( LinearClamp, _In.__position.xy / _screenSize.xy, 0.0 )).xxx, 1 );
-//float	Eavg = _tex_OrenNayar_Eavg.SampleLevel( LinearClamp, _In.__position.xy / _screenSize.xy, 0.0 );
-//return float4( Eavg <= PI ? (Eavg / PI).xxx : float3( 1, 0, 0 ), 1 );
 
 	float	noise = 0*_tex_BlueNoise[uint2(_In.__position.xy + uint2( _groupIndex, 0 )) & 0x3F];
 

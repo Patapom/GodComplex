@@ -4,7 +4,7 @@
 /////////////////////////////////////////////////////////////////////////////////////////////
 //
 #include "Global.hlsl"
-#include "FDG.hlsl"
+#include "FGD.hlsl"
 #include "BRDF.hlsl"
 
 #define FULL_SCENE		1	// Define this to render the full scene (diffuse plane + specular sphere)

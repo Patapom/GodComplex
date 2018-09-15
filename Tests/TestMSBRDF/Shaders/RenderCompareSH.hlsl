@@ -1,5 +1,5 @@
 #include "Global.hlsl"
-#include "FDG.hlsl"
+#include "FGD.hlsl"
 #include "BRDF.hlsl"
 #include "Scene.hlsl"
 
@@ -33,13 +33,12 @@ static const uint	SAMPLES_COUNT = 32;
 	#define	F0_TINT_PLANE	(_reflectanceGround * 1.0)
 #endif
 
-static const float3	AMBIENT = 0* 0.02 * float3( 0.5, 0.8, 0.9 );
 
 cbuffer CB_Render : register(b2) {
-	uint		_flags;		// 0x1 = Enable MSBRDF
-							// 0x2 = Enable MS Factor
-							// 0x100 = Use realtime approximation
-							// 0x200 = Use LTC
+	uint	_flags;		// 0x1 = Enable MSBRDF
+						// 0x2 = Enable MS Factor
+						// 0x100 = Use realtime approximation
+						// 0x200 = Use LTC
 
 	uint	_groupsCount;
 	uint	_groupIndex;
@@ -62,13 +61,7 @@ cbuffer CB_SH : register(b3) {
 TextureCube< float3 >	_tex_CubeMap : register( t0 );
 Texture2D< float >		_tex_BlueNoise : register( t1 );
 
-//Texture2D< float >		_tex_GGX_Eo : register( t2 );
-//Texture2D< float >		_tex_GGX_Eavg : register( t3 );
-//Texture2D< float >		_tex_OrenNayar_Eo : register( t4 );
-//Texture2D< float >		_tex_OrenNayar_Eavg : register( t5 );
-
-
-//Texture2D< float3 >		_tex_SH : register( t30 );
+//Texture2D< float3 >	_tex_SH : register( t30 );
 
 
 /////////////////////////////////////////////////////////////////////////////////////////////
@@ -148,7 +141,7 @@ float3	EstimateMSIrradiance_SH_GGX( float _roughness, float3 _wsNormal, float _m
 	float3	roughness = sqrt( _roughness ) * float3( 1, _roughness, _roughness*_roughness );
 	float3	ZH = saturate( mul( fit, roughness ) );
 
-	return EstimateMSIrradiance_SH( _roughness, _wsNormal, _mu_o, ZH, _environmentSH, FDG_BRDF_INDEX_GGX );
+	return EstimateMSIrradiance_SH( _roughness, _wsNormal, _mu_o, ZH, _environmentSH, FGD_BRDF_INDEX_GGX );
 }
 
 float3	EstimateMSIrradiance_SH_OrenNayar( float _roughness, float3 _wsNormal, float _mu_o, float3 _environmentSH[9] ) {
@@ -160,35 +153,27 @@ float3	EstimateMSIrradiance_SH_OrenNayar( float _roughness, float3 _wsNormal, fl
 	float4	roughness = sqrt( _roughness ) * float4( 1, _roughness, _roughness*_roughness, _roughness*_roughness*_roughness );
 	float3	ZH = saturate( mul( fit, roughness ) );
 
-	return EstimateMSIrradiance_SH( _roughness, _wsNormal, _mu_o, ZH, _environmentSH, FDG_BRDF_INDEX_OREN_NAYAR );
+	return EstimateMSIrradiance_SH( _roughness, _wsNormal, _mu_o, ZH, _environmentSH, FGD_BRDF_INDEX_OREN_NAYAR );
 }
 
-float3	EstimateMSIrradiance_SH( float3 _wsNormal, float3 _wsReflected, float _mu_o, float _roughnessSpecular, float3 _F0, float _roughnessDiffuse, float3 _albedo, float3 _environmentSH[9] ) {
+float3	EstimateMSIrradiance_SH( float3 _wsNormal, float3 _wsReflected, float _mu_o, float _roughnessSpecular, float3 _F0, float _roughnessDiffuse, float3 _albedo, float3 _environmentSH[9], const bool _enableSaturation ) {
 
 	// Estimate specular irradiance
-	float3	MSFactor_spec = (_flags & 2) ? _F0 * (0.04 + _F0 * (0.66 + _F0 * 0.3)) : _F0;	// From http://patapom.com/blog/BRDF/MSBRDFEnergyCompensation/#varying-the-fresnel-reflectance-f_0f_0
-
-//MSFactor_spec = 1.0;
+	float3	MSFactor_spec = _enableSaturation ? _F0 * (0.04 + _F0 * (0.66 + _F0 * 0.3)) : _F0;	// From http://patapom.com/blog/BRDF/MSBRDFEnergyCompensation/#varying-the-fresnel-reflectance-f_0f_0
 
 	float3	E_spec = MSFactor_spec * EstimateMSIrradiance_SH_GGX( _roughnessSpecular, _wsReflected, _mu_o, _environmentSH );
-
-//return E_spec;
 
 	// Estimate diffuse irradiance
 	const float	tau = 0.28430405702379613;
 	const float	A1 = (1.0 - tau) / pow2( tau );
 	float3		rho = tau * _albedo;
-	float3		MSFactor_diff = (_flags & 2) ? A1 * pow2( rho ) / (1.0 - rho) : rho;	// From http://patapom.com/blog/BRDF/MSBRDFEnergyCompensation/#varying-diffuse-reflectance-rhorho
-
-//MSFactor_diff = 1;
+	float3		MSFactor_diff = _enableSaturation ? A1 * pow2( rho ) / (1.0 - rho) : rho;	// From http://patapom.com/blog/BRDF/MSBRDFEnergyCompensation/#varying-diffuse-reflectance-rhorho
 
 	float3	E_diff = MSFactor_diff * EstimateMSIrradiance_SH_OrenNayar( _roughnessDiffuse, _wsNormal, _mu_o, _environmentSH );
 
-//return E_diff;
-
 	// Attenuate diffuse contribution
 	float	a = _roughnessSpecular;
-	float	E_o = SampleIrradiance( _mu_o, a, FDG_BRDF_INDEX_GGX );	// Already sampled by MSBRDF earlier, optimize!
+	float	E_o = SampleIrradiance( _mu_o, a, FGD_BRDF_INDEX_GGX );	// Already sampled by MSBRDF earlier, optimize!
 
 	float3	IOR = Fresnel_IORFromF0( _F0 );
 	float3	Favg = FresnelAverage( IOR );
@@ -299,7 +284,7 @@ Lr *= 0.9;	// Attenuate a bit to see in front of white sky...
 
 wsReflected = wsNormal;
 
-		Lo += validSamplesCount * EstimateMSIrradiance_SH( wsNormal, wsReflected, saturate( tsView.z ), alphaS, F0, alphaD, rho, envSH );
+		Lo += validSamplesCount * EstimateMSIrradiance_SH( wsNormal, wsReflected, saturate( tsView.z ), alphaS, F0, alphaD, rho, envSH, enableMSSaturation );
 	}
 
 //	return float4( Lo, SAMPLES_COUNT);

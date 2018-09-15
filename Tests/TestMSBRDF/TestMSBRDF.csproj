@@ -148,10 +148,10 @@
   <ItemGroup>
     <None Include="Shaders\RenderCompareLTC.hlsl" />
     <None Include="Shaders\LTC.hlsl" />
-    <None Include="Shaders\FDG.hlsl" />
     <None Include="Shaders\BRDF.hlsl" />
     <None Include="Shaders\RenderDirectional.hlsl" />
     <None Include="Shaders\Finalize.hlsl" />
+    <Content Include="Shaders\FGD.hlsl" />
     <Content Include="Shaders\SphericalHarmonics.hlsl" />
   </ItemGroup>
   <ItemGroup />

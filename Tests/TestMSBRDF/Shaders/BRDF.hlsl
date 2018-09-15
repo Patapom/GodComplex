@@ -132,7 +132,7 @@ float3	ComputeBRDF_GGX( float3 _tsNormal, float3 _tsView, float3 _tsLight, float
 		// From http://patapom.com/blog/BRDF/MSBRDFEnergyCompensation/#varying-the-fresnel-reflectance-f_0f_0
 		float3		MSFactor = _enableSaturation ? _F0 * (0.04 + _F0 * (0.66 + _F0 * 0.3)) : _F0;
 
-		BRDF += MSFactor * MSBRDF( _roughness, _tsNormal, _tsView, _tsLight, FDG_BRDF_INDEX_GGX );
+		BRDF += MSFactor * MSBRDF( _roughness, _tsNormal, _tsView, _tsLight, FGD_BRDF_INDEX_GGX );
 	}
 
 	return BRDF;
@@ -151,7 +151,7 @@ float3	ComputeBRDF_OrenNayar( float3 _tsNormal, float3 _tsView, float3 _tsLight,
 		float3		rho = tau * _rho;
 		float3		MSFactor = _enableSaturation ? A1 * pow2( rho ) / (1.0 - rho) : rho;
 
-		BRDF += MSFactor * MSBRDF( _roughness, _tsNormal, _tsView, _tsLight, FDG_BRDF_INDEX_OREN_NAYAR );
+		BRDF += MSFactor * MSBRDF( _roughness, _tsNormal, _tsView, _tsLight, FGD_BRDF_INDEX_OREN_NAYAR );
 	}
 
 	return BRDF;
@@ -169,7 +169,7 @@ float3	ComputeBRDF_Full( float3 _tsNormal, float3 _tsView, float3 _tsLight, floa
 
 	float3	MSFactor_spec = _enableSaturation ? _F0 * (0.04 + _F0 * (0.66 + _F0 * 0.3)) : _F0;	// From http://patapom.com/blog/BRDF/MSBRDFEnergyCompensation/#varying-the-fresnel-reflectance-f_0f_0
 	if ( _enableMS ) {
-		BRDF_spec += MSFactor_spec * MSBRDF( _roughnessSpecular, _tsNormal, _tsView, _tsLight, FDG_BRDF_INDEX_GGX );
+		BRDF_spec += MSFactor_spec * MSBRDF( _roughnessSpecular, _tsNormal, _tsView, _tsLight, FGD_BRDF_INDEX_GGX );
 	}
 
 	// Compute diffuse contribution
@@ -184,13 +184,13 @@ float3	ComputeBRDF_Full( float3 _tsNormal, float3 _tsView, float3 _tsLight, floa
 		float3		rho = tau * _rho;
 		float3		MSFactor_diff = _enableSaturation ? A1 * pow2( rho ) / (1.0 - rho) : rho;	// From http://patapom.com/blog/BRDF/MSBRDFEnergyCompensation/#varying-diffuse-reflectance-rhorho
 
-		BRDF_diff += MSFactor_diff * MSBRDF( _roughnessDiffuse, _tsNormal, _tsView, _tsLight, FDG_BRDF_INDEX_OREN_NAYAR );
+		BRDF_diff += MSFactor_diff * MSBRDF( _roughnessDiffuse, _tsNormal, _tsView, _tsLight, FGD_BRDF_INDEX_OREN_NAYAR );
 	}
 
 	// Attenuate diffuse contribution
 	float	mu_o = saturate( dot( _tsView, _tsNormal ) );
 	float	a = _roughnessSpecular;
-	float	E_o = SampleIrradiance( mu_o, a, FDG_BRDF_INDEX_GGX );	// Already sampled by MSBRDF earlier, optimize!
+	float	E_o = SampleIrradiance( mu_o, a, FGD_BRDF_INDEX_GGX );	// Already sampled by MSBRDF earlier, optimize!
 
 	float3	IOR = Fresnel_IORFromF0( _F0 );
 	float3	Favg = FresnelAverage( IOR );

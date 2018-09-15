@@ -25,9 +25,6 @@ Texture2D< float2 >			_tex_MS_LTC : register(t7);
 // U = Perceptual roughness
 // V = sqrt( 1 - N.V )      <== Cheaper
 //
-// Texture contains XYZW = { m00, m20, m02, m22 } coefficients of the M^-1 matrix. All other coefficients except m11=1 are assumed to be 0
-// Note we load the matrix transposed (to avoid having to transpose it in shader) (so use it as mul( point, invM )
-//
 float2	LTCGetSamplingUV( float _NdotV, float _perceptualRoughness )
 {
 	float2  xy;
@@ -40,20 +37,23 @@ float2	LTCGetSamplingUV( float _NdotV, float _perceptualRoughness )
 }
 
 // Fetches the transposed M^-1 matrix need for runtime LTC estimate
-// Note we load the matrix transposed (to avoid having to transpose it in shader)
+// Texture contains XYZW = { m00, m20, m02, m22 } coefficients of the M^-1 matrix. All other coefficients except m11=1 are assumed to be 0
+// Note we load the matrix transposed (to avoid having to transpose it in shader) (so use it as mul( point, invM )
+//
 float3x3	LTCSampleMatrix( float2 _UV, uint _BRDFIndex ) {
-	float3x3	invM = 0.0;
-				invM._m11 = 1.0;
-				invM._m00_m20_m02_m22 = _tex_LTC.SampleLevel( LinearClamp, float3( _UV, _BRDFIndex ), 0 );
+	float3x3	invM_transposed = 0.0;
+				invM_transposed._m11 = 1.0;
+				invM_transposed._m00_m20_m02_m22 = _tex_LTC.SampleLevel( LinearClamp, float3( _UV, _BRDFIndex ), 0 );
 
-	return invM;
+	return invM_transposed;
 }
 
 float3x3	LTCSampleMatrix( float _NdotV, float _perceptualRoughness, uint _BRDFIndex ) {
 	return LTCSampleMatrix( LTCGetSamplingUV( _NdotV, _perceptualRoughness ), _BRDFIndex );
 }
 
-// Multiple-Scattering
+// Multiple-Scattering Table Fetch
+// Texture contains XY = { m22, magnitude }, a single coefficient of the isotropic M^-1 matrix + the BRDF's magnitude
 float3x3	MSLTCSampleMatrix( float _perceptualRoughness, uint _BRDFIndex, out float _magnitude ) {
 	float2		UV = float2( _perceptualRoughness, (0.5 + _BRDFIndex) / LTC_BRDFS_COUNT );
 	float2		coeffs = _tex_MS_LTC.SampleLevel( LinearClamp, UV, 0.0 );
@@ -75,8 +75,10 @@ float3	MSLTCSampleMatrixDiagonal( float _perceptualRoughness, uint _BRDFIndex, o
 	return float3( 1, 1, coeffs.x );
 }
 
+
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 // LTC Estimators
+// Code from Unity's Scriptable HD Render Pipeline
 
 // Not normalized by the factor of 1/TWO_PI.
 float3	ComputeEdgeFactor( float3 V1, float3 V2 ) {
@@ -105,6 +107,12 @@ float IntegrateEdge( float3 V1, float3 V2 ) {
 
 // Expects non-normalized vertex positions.
 float PolygonIrradiance( float4x3 L ) {
+
+	/////////////////////////////////////////////////////////////////////////////////////////////////////
+	// Super expensive clipping
+	// Unity doesn't do that: they replace the rectangular area light's form factor by the one from an equivalent sphere
+	//	and then clip the sphere instead (there are some exact computations for a plane/sphere clipping=
+	//
 	// 1. ClipQuadToHorizon
 
 	// detect clipping config
@@ -218,6 +226,7 @@ float PolygonIrradiance( float4x3 L ) {
 	if ( n == 0 )
 		return 0;
 
+	/////////////////////////////////////////////////////////////////////////////////////////////////////
 	// 2. Project onto sphere
 	L[0] = normalize(L[0]);
 	L[1] = normalize(L[1]);
@@ -237,6 +246,7 @@ float PolygonIrradiance( float4x3 L ) {
 			break;
 	}
 
+	/////////////////////////////////////////////////////////////////////////////////////////////////////
 	// 3. Integrate
 	float sum = 0;
 	sum += IntegrateEdge(L[0], L[1]);
