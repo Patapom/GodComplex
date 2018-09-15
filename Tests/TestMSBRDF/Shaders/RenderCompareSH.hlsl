@@ -156,7 +156,7 @@ float3	EstimateMSIrradiance_SH_OrenNayar( float _roughness, float3 _wsNormal, fl
 	return EstimateMSIrradiance_SH( _roughness, _wsNormal, _mu_o, ZH, _environmentSH, FGD_BRDF_INDEX_OREN_NAYAR );
 }
 
-float3	EstimateMSIrradiance_SH( float3 _wsNormal, float3 _wsReflected, float _mu_o, float _roughnessSpecular, float3 _F0, float _roughnessDiffuse, float3 _albedo, float3 _environmentSH[9], const bool _enableSaturation ) {
+float3	EstimateMSIrradiance_SH( float3 _wsNormal, float3 _wsReflected, float _mu_o, float _roughnessSpecular, float3 _F0, float _roughnessDiffuse, float3 _rho, float3 _environmentSH[9], const bool _enableSaturation ) {
 
 	// Estimate specular irradiance
 	float3	MSFactor_spec = _enableSaturation ? _F0 * (0.04 + _F0 * (0.66 + _F0 * 0.3)) : _F0;	// From http://patapom.com/blog/BRDF/MSBRDFEnergyCompensation/#varying-the-fresnel-reflectance-f_0f_0
@@ -166,7 +166,7 @@ float3	EstimateMSIrradiance_SH( float3 _wsNormal, float3 _wsReflected, float _mu
 	// Estimate diffuse irradiance
 	const float	tau = 0.28430405702379613;
 	const float	A1 = (1.0 - tau) / pow2( tau );
-	float3		rho = tau * _albedo;
+	float3		rho = tau * _rho;
 	float3		MSFactor_diff = _enableSaturation ? A1 * pow2( rho ) / (1.0 - rho) : rho;	// From http://patapom.com/blog/BRDF/MSBRDFEnergyCompensation/#varying-diffuse-reflectance-rhorho
 
 	float3	E_diff = MSFactor_diff * EstimateMSIrradiance_SH_OrenNayar( _roughnessDiffuse, _wsNormal, _mu_o, _environmentSH );

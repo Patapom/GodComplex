@@ -2,6 +2,8 @@
 #include "FGD.hlsl"
 #include "LTC.hlsl"
 #include "BRDF.hlsl"
+
+#define FULL_SCENE 1
 #include "Scene.hlsl"
 
 //#define	WHITE_FURNACE_TEST	1
@@ -28,7 +30,7 @@ static const uint	SAMPLES_COUNT = 32;
 	#define	F0_TINT_SPHERE	(_reflectanceSphereSpecular * float3( 1, 0.765557, 0.336057 ))	// Gold (from https://seblagarde.wordpress.com/2011/08/17/feeding-a-physical-based-lighting-mode/)
 //	#define	F0_TINT_SPHERE	(_reflectanceSphereSpecular * float3( 0.336057, 0.765557, 1 ))
 //	#define	F0_TINT_SPHERE	(_reflectanceSphereSpecular * 1.0)
-	#define	F0_TINT_PLANE	(_reflectanceGround * 1.0)
+	#define	F0_TINT_PLANE	(_reflectanceGround * 0.0)
 #endif
 
 
@@ -123,7 +125,7 @@ float3	EstimateMSIrradiance_LTC( float4x3 _tsLightCorners, float _mu_o, float _a
 }
 
 // Computes the LTC MS term for both diffuse and specular BRDFs
-float3	EstimateMSIrradiance_LTC( float4x3 _tsLightCorners, float _mu_o, float _roughnessSpecular, float3 _F0, float _roughnessDiffuse, float3 _albedo, const bool _enableSaturation ) {
+float3	EstimateMSIrradiance_LTC( float4x3 _tsLightCorners, float _mu_o, float _roughnessSpecular, float3 _F0, float _roughnessDiffuse, float3 _rho, const bool _enableSaturation ) {
 
     // Estimate specular irradiance
 	float3	MSFactor_spec = _enableSaturation ? _F0 * (0.04 + _F0 * (0.66 + _F0 * 0.3)) : _F0;	// From http://patapom.com/blog/BRDF/MSBRDFEnergyCompensation/#varying-the-fresnel-reflectance-f_0f_0
@@ -133,7 +135,7 @@ float3	EstimateMSIrradiance_LTC( float4x3 _tsLightCorners, float _mu_o, float _r
     // Estimate diffuse irradiance
     const float tau = 0.28430405702379613;
     const float A1 = (1.0 - tau) / pow2( tau );
-    float3      rho = tau * _albedo;
+    float3      rho = tau * _rho;
 	float3		MSFactor_diff = _enableSaturation ? A1 * pow2( rho ) / (1.0 - rho) : rho;	// From http://patapom.com/blog/BRDF/MSBRDFEnergyCompensation/#varying-diffuse-reflectance-rhorho
 
     float3  E_diff = MSFactor_diff * EstimateMSIrradiance_LTC( _tsLightCorners, _mu_o, _roughnessDiffuse, LTC_BRDF_INDEX_OREN_NAYAR );
