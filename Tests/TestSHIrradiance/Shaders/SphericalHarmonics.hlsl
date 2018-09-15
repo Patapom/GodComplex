@@ -89,6 +89,9 @@ static const float	FACT[41] = {	1.0,							//  0!	Order 0
 									815915283247897734345611269596115894272000000000.0,		// 40!	Order 20
 };
 
+// Factors to multiply ZH coefficients by, as described by eq. 26 in "On the relationship between radiance and irradiance" by Ramamoorthi
+static const float3	ZH_FACTORS = float3( 3.5449077018110320545963349666823, 2.0466534158929769769591032497785, 1.5853309190424044053380115060481 );	// sqrt( 4 * PI / (2*l+1) ) for the first 3 bands
+
 // Renormalisation constant for SH functions
 //           .------------------------
 // K(l,m) =  |   (2*l+1)*(l-|m|)!
@@ -394,8 +397,9 @@ float3	EvaluateSHIrradiance( float3 _direction, float _cosThetaAO, float _coneBe
 
 
 // Rotate ZH cosine lobe into specific direction
-// WARNING! _A coefficients MUST already be multiplied by sqrt( 4PI / (2l+1) ) before entering this function!
 void	RotateZH( float3 _A, float3 _wsDirection, out float _SH[9] ) {
+	_A *= ZH_FACTORS;	// Multiply by sqrt( 4 PI / (2l+1) ) as by eq. 26 in "On the relationship between radiance and irradiance" by Ramamoorthi
+
 	Ylm( _wsDirection, _SH );
 	_SH[0] *= _A.x;
 	_SH[1] *= _A.y;

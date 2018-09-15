@@ -53,7 +53,7 @@ float3	BRDF_GGX( float3 _tsNormal, float3 _tsView, float3 _tsLight, float _alpha
 //  _view, unit vector pointing toward the view
 //  _roughness, Oren-Nayar roughness parameter in [0,PI/2]
 //
-float   BRDF_OrenNayar( in float3 _normal, in float3 _view, in float3 _light, in float _roughness ) {
+float3	BRDF_OrenNayar( in float3 _normal, in float3 _view, in float3 _light, float _roughness, float3 _rho ) {
 	float3  n = _normal;
 	float3  l = _light;
 	float3  v = _view;
@@ -81,7 +81,7 @@ float   BRDF_OrenNayar( in float3 _normal, in float3 _view, in float3 _light, in
 	float2  sin_alpha_beta = sqrt( saturate( 1.0 - cos_alpha_beta*cos_alpha_beta ) );           // Saturate to avoid NaN if ever cos_alpha > 1 (it happens with floating-point precision)
 	float   C = sin_alpha_beta.x * sin_alpha_beta.y / (1e-6 + cos_alpha_beta.y);
 
-	return INVPI * (A + B * max( 0.0, gamma ) * C);
+	return _rho * INVPI * (A + B * max( 0.0, gamma ) * C);
 }
 
 
@@ -142,7 +142,7 @@ float3	ComputeBRDF_OrenNayar( float3 _tsNormal, float3 _tsView, float3 _tsLight,
 	#if MS_ONLY
 		float3	BRDF = 0.0;
 	#else
-		float3	BRDF = _rho * BRDF_OrenNayar( _tsNormal, _tsView, _tsLight, _roughness );
+		float3	BRDF = BRDF_OrenNayar( _tsNormal, _tsView, _tsLight, _roughness, _rho );
 	#endif
 	if ( _enableMS ) {
 		// From http://patapom.com/blog/BRDF/MSBRDFEnergyCompensation/#varying-diffuse-reflectance-rhorho
@@ -159,7 +159,7 @@ float3	ComputeBRDF_OrenNayar( float3 _tsNormal, float3 _tsView, float3 _tsLight,
 
 // Computes the full dielectric BRDF model as described in http://patapom.com/blog/BRDF/MSBRDFEnergyCompensation/#complete-approximate-model
 //
-float3	ComputeBRDF_Full(  float3 _tsNormal, float3 _tsView, float3 _tsLight, float _roughnessSpecular, float3 _F0, float _roughnessDiffuse, float3 _rho, const bool _enableMS, const bool _enableSaturation ) {
+float3	ComputeBRDF_Full( float3 _tsNormal, float3 _tsView, float3 _tsLight, float _roughnessSpecular, float3 _F0, float _roughnessDiffuse, float3 _rho, const bool _enableMS, const bool _enableSaturation ) {
 	// Compute specular BRDF
 	#if MS_ONLY
 		float3	BRDF_spec = 0.0;
@@ -176,7 +176,7 @@ float3	ComputeBRDF_Full(  float3 _tsNormal, float3 _tsView, float3 _tsLight, flo
 	#if MS_ONLY
 		float3	BRDF_diff = 0.0;
 	#else
-		float3	BRDF_diff = _rho * BRDF_OrenNayar( _tsNormal, _tsView, _tsLight, _roughnessDiffuse );
+		float3	BRDF_diff = BRDF_OrenNayar( _tsNormal, _tsView, _tsLight, _roughnessDiffuse, _rho );
 	#endif
 	if ( _enableMS ) {
 		const float	tau = 0.28430405702379613;

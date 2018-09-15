@@ -352,9 +352,9 @@ float3	EvaluateSHIrradiance( float3 _direction, float _cosThetaAO, float3 _SH[9]
 }
 
 // Rotate ZH cosine lobe into specific direction
-// WARNING! _A coefficients MUST already be multiplied by sqrt( 4PI / (2l+1) ) before entering this function!
-// You can use _A *= ZH_FACTORS if needed
 void	RotateZH( float3 _A, float3 _wsDirection, out float _SH[9] ) {
+	_A *= ZH_FACTORS;	// Multiply by sqrt( 4 PI / (2l+1) ) as by eq. 26 in "On the relationship between radiance and irradiance" by Ramamoorthi
+
 	Ylm( _wsDirection, _SH );
 	_SH[0] *= _A.x;
 	_SH[1] *= _A.y;

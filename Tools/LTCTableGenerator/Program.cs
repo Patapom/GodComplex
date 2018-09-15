@@ -2,9 +2,10 @@
 
 //#define EXPORT_FOR_UNITY
 //#define EXPORT_TEXTURE
-#define EXPORT_MS_TEXTURE
+//#define EXPORT_MS_TEXTURE
 //#define EXPORT_FOR_CSHARP	// Not working at the moment
 //#define EXPORT_RAW
+#define EXPORT_MS_RAW
 
 using System;
 using System.Collections.Generic;
@@ -143,6 +144,16 @@ namespace LTCTableGenerator
 				Export( new FileInfo( "OrenNayar.ltc" ), new FileInfo( "OrenNayar.double" ) );
 				Export( new FileInfo( "CharlieSheen.ltc" ), new FileInfo( "CharlieSheen.double" ) );
 				Export( new FileInfo( "Disney.ltc" ), new FileInfo( "Disney.double" ) );
+			#endif
+
+			#if EXPORT_MS_RAW
+				Export( new FileInfo( "MS_GGX.ltc" ), new FileInfo( "MS_GGX.double" ) );
+// 				Export( new FileInfo( "MS_CookTorrance.ltc" ), new FileInfo( "MS_CookTorrance.double" ) );
+// 				Export( new FileInfo( "MS_Ward.ltc" ), new FileInfo( "MS_Ward.double" ) );
+
+				Export( new FileInfo( "MS_OrenNayar.ltc" ), new FileInfo( "MS_OrenNayar.double" ) );
+// 				Export( new FileInfo( "MS_CharlieSheen.ltc" ), new FileInfo( "MS_CharlieSheen.double" ) );
+// 				Export( new FileInfo( "MS_Disney.ltc" ), new FileInfo( "MS_Disney.double" ) );
 			#endif
 		}
 
@@ -554,6 +565,38 @@ throw new Exception( "Ta mère!" );
 									W.Write( factor * ltc.invM[2,2] );
 								#endif
 							}
+						}
+					}
+			}
+
+		#endif
+
+		#if EXPORT_MS_RAW
+
+			static void	Export( FileInfo _tableFileName, FileInfo _targetFileName ) {
+				int		validResultsCount;
+				LTC[,]	table = FitterForm.LoadTable( _tableFileName, out validResultsCount );
+
+				int		tableSize = table.GetLength(0);
+
+				using ( FileStream S = _targetFileName.Create() )
+					using ( BinaryWriter W = new BinaryWriter( S ) ) {
+						W.Write( (uint) tableSize );
+
+						for ( int roughnessIndex=0; roughnessIndex < tableSize; roughnessIndex++ ) {
+							LTC	ltc = table[roughnessIndex,0];
+
+							float	alpha, cosTheta;
+							FitterForm.GetRoughnessAndAngle( roughnessIndex, 0, tableSize, tableSize, out alpha, out cosTheta );
+
+							W.Write( (double) alpha );
+							W.Write( ltc.magnitude );
+
+							double		factor = 1.0 / ltc.invM[1,1];
+							W.Write( factor * ltc.invM[0,0] );
+							W.Write( factor * ltc.invM[2,0] );
+							W.Write( factor * ltc.invM[0,2] );
+							W.Write( factor * ltc.invM[2,2] );
 						}
 					}
 			}

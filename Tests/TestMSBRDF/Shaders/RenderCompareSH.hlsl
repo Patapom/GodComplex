@@ -117,7 +117,7 @@ void	GetObjectInfo( uint _objectIndex, out float _roughnessSpecular, out float3 
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 // SH Environment Approximation for the MSBRDF
-float3	EstimateMSIrradiance_SH( float _roughness, float3 _wsNormal, float _mu_o, float3 _ZH, uint _BRDFIndex, float3 _environmentSH[9] ) {
+float3	EstimateMSIrradiance_SH( float _roughness, float3 _wsNormal, float _mu_o, float3 _ZH, float3 _environmentSH[9], uint _BRDFIndex ) {
 	float	SH[9];
 	RotateZH( _ZH, _wsNormal, SH );
 
@@ -147,9 +147,8 @@ float3	EstimateMSIrradiance_SH_GGX( float _roughness, float3 _wsNormal, float _m
 									-0.10732852337149004, 0.8686198207608287, -0.3980009298364805 );
 	float3	roughness = sqrt( _roughness ) * float3( 1, _roughness, _roughness*_roughness );
 	float3	ZH = saturate( mul( fit, roughness ) );
-			ZH *= ZH_FACTORS;
 
-	return EstimateMSIrradiance_SH( _roughness, _wsNormal, _mu_o, ZH, FDG_BRDF_INDEX_GGX, _environmentSH );
+	return EstimateMSIrradiance_SH( _roughness, _wsNormal, _mu_o, ZH, _environmentSH, FDG_BRDF_INDEX_GGX );
 }
 
 float3	EstimateMSIrradiance_SH_OrenNayar( float _roughness, float3 _wsNormal, float _mu_o, float3 _environmentSH[9] ) {
@@ -160,9 +159,8 @@ float3	EstimateMSIrradiance_SH_OrenNayar( float _roughness, float3 _wsNormal, fl
 									-0.0412482175221291, 1.093354950053632, -1.417191923789875, 0.581084435989362 );
 	float4	roughness = sqrt( _roughness ) * float4( 1, _roughness, _roughness*_roughness, _roughness*_roughness*_roughness );
 	float3	ZH = saturate( mul( fit, roughness ) );
-			ZH *= ZH_FACTORS;
 
-	return EstimateMSIrradiance_SH( _roughness, _wsNormal, _mu_o, ZH, FDG_BRDF_INDEX_OREN_NAYAR, _environmentSH );
+	return EstimateMSIrradiance_SH( _roughness, _wsNormal, _mu_o, ZH, _environmentSH, FDG_BRDF_INDEX_OREN_NAYAR );
 }
 
 float3	EstimateMSIrradiance_SH( float3 _wsNormal, float3 _wsReflected, float _mu_o, float _roughnessSpecular, float3 _F0, float _roughnessDiffuse, float3 _albedo, float3 _environmentSH[9] ) {
