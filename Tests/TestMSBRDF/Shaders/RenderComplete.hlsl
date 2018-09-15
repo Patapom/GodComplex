@@ -287,6 +287,9 @@ float4	PS( VS_IN _In ) : SV_TARGET0 {
 
 	float	u = seeds.x * 2.3283064365386963e-10;
 
+	bool	enableMS = _flags & 0x1U;
+	bool	enableMSSaturation = _flags & 0x2U;
+
 	float3	Lo = 0.0;
 	uint	groupIndex = _groupIndex;
 	uint	validSamplesCount = 0;

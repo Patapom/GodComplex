@@ -209,8 +209,6 @@ float4	PS( VS_IN _In ) : SV_TARGET0 {
 
 	uint	totalGroupsCount = _groupsCount * SAMPLES_COUNT;
 
-//return float4( seeds.xxx * 2.3283064365386963e-10, 1 );
-
 	// Build camera ray
 	float3	csView = normalize( float3( UV, 1 ) );
 	float3	wsRight = _Camera2World[0].xyz;
@@ -250,6 +248,9 @@ float4	PS( VS_IN _In ) : SV_TARGET0 {
 
 	float	u = seeds.x * 2.3283064365386963e-10;
 
+	bool	enableMS = (_flags & 0x1U) && (_flags & 0x100U) == 0;
+	bool	enableMSSaturation = _flags & 0x2U;
+
 	float3	Lo = 0.0;
 	uint	groupIndex = _groupIndex;
 	uint	validSamplesCount = 0;
@@ -268,7 +269,7 @@ float4	PS( VS_IN _In ) : SV_TARGET0 {
 		float	LdotN = tsLight.z;
 
 		// Compute BRDF
-		float3	BRDF = ComputeBRDF_Full( float3( 0, 0, 1 ), tsView, tsLight, alphaS, F0, alphaD, rho );
+		float3	BRDF = ComputeBRDF_Full( float3( 0, 0, 1 ), tsView, tsLight, alphaS, F0, alphaD, rho, enableMS, enableMSSaturation );
 
 		// Sample incoming projected irradiance
 		float3	Ei = SampleSkyRadiance( wsLight, 0.0 );
@@ -292,7 +293,7 @@ Lr *= 0.9;	// Attenuate a bit to see in front of white sky...
 
 	///////////////////////////////////////////////////////////////////////////////////////
 	// Real-time Approximation
-	if ( (_flags & 1) && (_flags & 0x100) ) {
+	if ( (_flags & 0x1U) && (_flags & 0x100U) ) {
 		float3	wsReflectedView = reflect( wsView, wsNormal );
 		float3	wsReflected = normalize( lerp( wsReflectedView, wsNormal, alphaS ) );	// Go more toward prefectly reflected direction when roughness drops to 0
 

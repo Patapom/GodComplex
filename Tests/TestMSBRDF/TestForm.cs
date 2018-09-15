@@ -3,8 +3,8 @@
 //#define TEST_COMPLETE_SCENE_SPHERE_ONLY	// Define this to test MSBRDF lighting on the sphere
 //#define TEST_COMPLETE_SCENE	// Define this to test MSBRDF lighting on the full scene
 
-#define TEST_DIRECTIONAL_LIGHT	// Define this to test MSBRDF lighting by a directional light (to show the effect is quite negligible)
-//#define TEST_SH_ENVIRONMENT	// Define this to test MSBRDF lighting by an SH-encoded environment
+//#define TEST_DIRECTIONAL_LIGHT	// Define this to test MSBRDF lighting by a directional light (to show the effect is quite negligible)
+#define TEST_SH_ENVIRONMENT	// Define this to test MSBRDF lighting by an SH-encoded environment
 //#define TEST_LTC_AREA_LIGHT	// Define this to test MSBRDF lighting by an LTC area light
 
 using System;
