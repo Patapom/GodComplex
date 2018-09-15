@@ -27,11 +27,13 @@ float	GGX_NDF( float _NdotH, float _alpha2 ) {
 	}
 #endif
 
-float3	BRDF_GGX( float3 _tsNormal, float3 _tsView, float3 _tsLight, float _alpha, float3 _IOR ) {
+float3	BRDF_GGX( float3 _tsNormal, float3 _tsView, float3 _tsLight, float _alpha, float3 _F0 ) {
 	float	NdotL = dot( _tsNormal, _tsLight );
 	float	NdotV = dot( _tsNormal, _tsView );
 	if ( NdotL < 0.0 || NdotV < 0.0 )
 		return 0.0;
+
+	float3	IOR = Fresnel_IORFromF0( _F0 );
 
 	float	a2 = pow2( _alpha );
 	float3	H = normalize( _tsView + _tsLight );
@@ -40,7 +42,7 @@ float3	BRDF_GGX( float3 _tsNormal, float3 _tsView, float3 _tsLight, float _alpha
 
 	float	D = GGX_NDF( NdotH, a2 );
 	float	G = GGX_Smith( NdotL, NdotV, a2 );
-	float3	F = FresnelDielectric( _IOR, HdotL );
+	float3	F = FresnelDielectric( IOR, HdotL );
 
 	return max( 0.0, F * G * D );
 }
@@ -113,4 +115,86 @@ float	MSBRDF( float _roughness, float3 _tsNormal, float3 _tsView, float3 _tsLigh
 	float	E_i = 1.0 - SampleIrradiance( mu_i, a, _BRDFIndex );	// 1 - E_i
 	return E_i * MSBRDF_View( mu_o, a, _BRDFIndex );
 #endif
+}
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+// Computes the full Single-Scattering + Multiple-Scattering BRDF model
+////////////////////////////////////////////////////////////////////////////////////////////////
+//
+float3	ComputeBRDF_GGX( float3 _tsNormal, float3 _tsView, float3 _tsLight, float _roughness, float3 _F0, const bool _enableMS, const bool _enableSaturation ) {
+	#if MS_ONLY
+		float3	BRDF = 0.0;
+	#else
+		float3	BRDF = BRDF_GGX( _tsNormal, _tsView, _tsLight, _roughness, _F0 );
+	#endif
+	if ( _enableMS ) {
+		// From http://patapom.com/blog/BRDF/MSBRDFEnergyCompensation/#varying-the-fresnel-reflectance-f_0f_0
+		float3		MSFactor = _enableSaturation ? _F0 * (0.04 + _F0 * (0.66 + _F0 * 0.3)) : _F0;
+
+		BRDF += MSFactor * MSBRDF( _roughness, _tsNormal, _tsView, _tsLight, FDG_BRDF_INDEX_GGX );
+	}
+
+	return BRDF;
+}
+
+float3	ComputeBRDF_OrenNayar( float3 _tsNormal, float3 _tsView, float3 _tsLight, float _roughness, float3 _rho, const bool _enableMS, const bool _enableSaturation ) {
+	#if MS_ONLY
+		float3	BRDF = 0.0;
+	#else
+		float3	BRDF = _rho * BRDF_OrenNayar( _tsNormal, _tsView, _tsLight, _roughness );
+	#endif
+	if ( _enableMS ) {
+		// From http://patapom.com/blog/BRDF/MSBRDFEnergyCompensation/#varying-diffuse-reflectance-rhorho
+		const float	tau = 0.28430405702379613;
+		const float	A1 = (1.0 - tau) / pow2( tau );
+		float3		rho = tau * _rho;
+		float3		MSFactor = _enableSaturation ? A1 * pow2( rho ) / (1.0 - rho) : rho;
+
+		BRDF += MSFactor * MSBRDF( _roughness, _tsNormal, _tsView, _tsLight, FDG_BRDF_INDEX_OREN_NAYAR );
+	}
+
+	return BRDF;
+}
+
+// Computes the full dielectric BRDF model as described in http://patapom.com/blog/BRDF/MSBRDFEnergyCompensation/#complete-approximate-model
+//
+float3	ComputeBRDF_Full(  float3 _tsNormal, float3 _tsView, float3 _tsLight, float _roughnessSpecular, float3 _F0, float _roughnessDiffuse, float3 _rho, const bool _enableMS, const bool _enableSaturation ) {
+	// Compute specular BRDF
+	#if MS_ONLY
+		float3	BRDF_spec = 0.0;
+	#else
+		float3	BRDF_spec = BRDF_GGX( _tsNormal, _tsView, _tsLight, _roughnessSpecular, _F0 );
+	#endif
+
+	float3	MSFactor_spec = _enableSaturation ? _F0 * (0.04 + _F0 * (0.66 + _F0 * 0.3)) : _F0;	// From http://patapom.com/blog/BRDF/MSBRDFEnergyCompensation/#varying-the-fresnel-reflectance-f_0f_0
+	if ( _enableMS ) {
+		BRDF_spec += MSFactor_spec * MSBRDF( _roughnessSpecular, _tsNormal, _tsView, _tsLight, FDG_BRDF_INDEX_GGX );
+	}
+
+	// Compute diffuse contribution
+	#if MS_ONLY
+		float3	BRDF_diff = 0.0;
+	#else
+		float3	BRDF_diff = _rho * BRDF_OrenNayar( _tsNormal, _tsView, _tsLight, _roughnessDiffuse );
+	#endif
+	if ( _enableMS ) {
+		const float	tau = 0.28430405702379613;
+		const float	A1 = (1.0 - tau) / pow2( tau );
+		float3		rho = tau * _rho;
+		float3		MSFactor_diff = _enableSaturation ? A1 * pow2( rho ) / (1.0 - rho) : rho;	// From http://patapom.com/blog/BRDF/MSBRDFEnergyCompensation/#varying-diffuse-reflectance-rhorho
+
+		BRDF_diff += MSFactor_diff * MSBRDF( _roughnessDiffuse, _tsNormal, _tsView, _tsLight, FDG_BRDF_INDEX_OREN_NAYAR );
+	}
+
+	// Attenuate diffuse contribution
+	float	mu_o = saturate( dot( _tsView, _tsNormal ) );
+	float	a = _roughnessSpecular;
+	float	E_o = SampleIrradiance( mu_o, a, FDG_BRDF_INDEX_GGX );	// Already sampled by MSBRDF earlier, optimize!
+
+	float3	IOR = Fresnel_IORFromF0( _F0 );
+	float3	Favg = FresnelAverage( IOR );
+	float3	kappa = 1 - (Favg * E_o + MSFactor_spec * (1.0 - E_o));
+
+	return BRDF_spec + kappa * BRDF_diff;
 }

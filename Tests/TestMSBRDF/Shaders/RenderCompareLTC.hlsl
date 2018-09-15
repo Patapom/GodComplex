@@ -86,70 +86,6 @@ void	GetObjectInfo( uint _objectIndex, out float _roughnessSpecular, out float3 
 	_rho = _objectIndex == 0 ? ALBEDO_SPHERE : ALBEDO_PLANE;
 }
 
-
-////////////////////////////////////////////////////////////////////////////////////////////////
-//
-float3	ComputeBRDF_Oren( float3 _tsNormal, float3 _tsView, float3 _tsLight, float _roughness, float3 _albedo ) {
-	float3	BRDF = _albedo * BRDF_OrenNayar( _tsNormal, _tsView, _tsLight, _roughness );
-	if ( (_flags & 1) && !(_flags & 0x100) ) {
-		// From http://patapom.com/blog/BRDF/MSBRDFEnergyCompensation/#varying-diffuse-reflectance-rhorho
-		const float	tau = 0.28430405702379613;
-		const float	A1 = (1.0 - tau) / pow2( tau );
-		float3		rho = tau * _albedo;
-		float3		MSFactor = (_flags & 2) ? A1 * pow2( rho ) / (1.0 - rho) : rho;
-
-		BRDF += MSFactor * MSBRDF( _roughness, _tsNormal, _tsView, _tsLight, FDG_BRDF_INDEX_OREN_NAYAR );
-	}
-
-	return BRDF;
-}
-
-// Computes the full dielectric BRDF model as described in http://patapom.com/blog/BRDF/MSBRDFEnergyCompensation/#complete-approximate-model
-//
-float3	ComputeBRDF_Full( float3 _tsNormal, float3 _tsView, float3 _tsLight, float _roughnessSpecular, float3 _F0, float _roughnessDiffuse, float3 _albedo ) {
-	// Compute specular BRDF
-//	float3	F0 = Fresnel_F0FromIOR( _IOR );
-	float3	IOR = Fresnel_IORFromF0( _F0 );
-
-	float3	MSFactor_spec = (_flags & 2) ? _F0 * (0.04 + _F0 * (0.66 + _F0 * 0.3)) : _F0;	// From http://patapom.com/blog/BRDF/MSBRDFEnergyCompensation/#varying-the-fresnel-reflectance-f_0f_0
-	float3	Favg = FresnelAverage( IOR );
-
-	#if MS_ONLY
-		float3	BRDF_spec = 0.0;
-	#else
-		float3	BRDF_spec = BRDF_GGX( _tsNormal, _tsView, _tsLight, _roughnessSpecular, IOR );
-	#endif
-	if ( (_flags & 1) && !(_flags & 0x100) ) {
-		BRDF_spec += MSFactor_spec * MSBRDF( _roughnessSpecular, _tsNormal, _tsView, _tsLight, FDG_BRDF_INDEX_GGX );
-	}
-
-	// Compute diffuse contribution
-	#if MS_ONLY
-		float3	BRDF_diff = 0.0;
-	#else
-		float3	BRDF_diff = _albedo * BRDF_OrenNayar( _tsNormal, _tsView, _tsLight, _roughnessDiffuse );
-	#endif
-	if ( (_flags & 1) && !(_flags & 0x100) ) {
-		const float	tau = 0.28430405702379613;
-		const float	A1 = (1.0 - tau) / pow2( tau );
-		float3		rho = tau * _albedo;
-		float3		MSFactor_diff = (_flags & 2) ? A1 * pow2( rho ) / (1.0 - rho) : rho;	// From http://patapom.com/blog/BRDF/MSBRDFEnergyCompensation/#varying-diffuse-reflectance-rhorho
-
-		BRDF_diff += MSFactor_diff * MSBRDF( _roughnessDiffuse, _tsNormal, _tsView, _tsLight, FDG_BRDF_INDEX_OREN_NAYAR );
-	}
-
-	// Attenuate diffuse contribution
-	float	mu_o = saturate( dot( _tsView, _tsNormal ) );
-	float	a = _roughnessSpecular;
-	float	E_o = SampleIrradiance( mu_o, a, FDG_BRDF_INDEX_GGX );	// Already sampled by MSBRDF earlier, optimize!
-
-	float3	kappa = 1 - (Favg * E_o + MSFactor_spec * (1.0 - E_o));
-
-	return BRDF_spec + kappa * BRDF_diff;
-//	return BRDF_diff;
-//	return BRDF_spec;
-}
-
 ////////////////////////////////////////////////////////////////////////////////////////////////
 //
 
@@ -176,12 +112,12 @@ float3	EstimateMSIrradiance_LTC( float4x3 _tsLightCorners, float _mu_o, float _a
 }
 
 // Computes the LTC MS term for both diffuse and specular BRDFs
-float3	EstimateMSIrradiance_LTC( float4x3 _tsLightCorners, float _mu_o, float _roughnessSpecular, float3 _F0, float _roughnessDiffuse, float3 _albedo ) {
+float3	EstimateMSIrradiance_LTC( float4x3 _tsLightCorners, float _mu_o, float _roughnessSpecular, float3 _F0, float _roughnessDiffuse, float3 _albedo, const bool _enableSaturation ) {
 
 	float3	IOR = Fresnel_IORFromF0( _F0 );
 
     // Estimate specular irradiance
-	float3	MSFactor_spec = (_flags & 2) ? _F0 * (0.04 + _F0 * (0.66 + _F0 * 0.3)) : _F0;	// From http://patapom.com/blog/BRDF/MSBRDFEnergyCompensation/#varying-the-fresnel-reflectance-f_0f_0
+	float3	MSFactor_spec = _enableSaturation ? _F0 * (0.04 + _F0 * (0.66 + _F0 * 0.3)) : _F0;	// From http://patapom.com/blog/BRDF/MSBRDFEnergyCompensation/#varying-the-fresnel-reflectance-f_0f_0
 
     float3  E_spec = MSFactor_spec * EstimateMSIrradiance_LTC( _tsLightCorners, _mu_o, _roughnessSpecular, LTC_BRDF_INDEX_GGX );
 
@@ -190,7 +126,7 @@ float3	EstimateMSIrradiance_LTC( float4x3 _tsLightCorners, float _mu_o, float _r
     const float tau = 0.28430405702379613;
     const float A1 = (1.0 - tau) / pow2( tau );
     float3      rho = tau * _albedo;
-	float3		MSFactor_diff = (_flags & 2) ? A1 * pow2( rho ) / (1.0 - rho) : rho;	// From http://patapom.com/blog/BRDF/MSBRDFEnergyCompensation/#varying-diffuse-reflectance-rhorho
+	float3		MSFactor_diff = _enableSaturation ? A1 * pow2( rho ) / (1.0 - rho) : rho;	// From http://patapom.com/blog/BRDF/MSBRDFEnergyCompensation/#varying-diffuse-reflectance-rhorho
 
     float3  E_diff = MSFactor_diff * EstimateMSIrradiance_LTC( _tsLightCorners, _mu_o, _roughnessDiffuse, LTC_BRDF_INDEX_OREN_NAYAR );
 
@@ -422,6 +358,9 @@ return float4( 0.01 * abs(V.yzw), 1 );
 	float	alphaS, alphaD;
 	GetObjectInfo( hit.y, alphaS, F0, alphaD, rho );
 
+	bool	enableMS = (_flags & 1) && !(_flags & 0x100);
+	bool	enableMSSaturation = _flags & 2;
+
 	float3	Lo = 0.0;
 	uint	validSamplesCount = 0;
 
@@ -470,9 +409,9 @@ return float4( 0.01 * abs(V.yzw), 1 );
 			// Compute BRDF
 			float3	BRDF = 0.0;
 			if ( hit.y == 0 ) {
-				BRDF = ComputeBRDF_Full( float3( 0, 0, 1 ), tsView, tsLight, alphaS, F0, alphaD, rho );
+				BRDF = ComputeBRDF_Full( float3( 0, 0, 1 ), tsView, tsLight, alphaS, F0, alphaD, rho, enableMS, enableMSSaturation );
 			} else {
-				BRDF = ComputeBRDF_Oren( float3( 0, 0, 1 ), tsView, tsLight, alphaD, rho );
+				BRDF = ComputeBRDF_OrenNayar( float3( 0, 0, 1 ), tsView, tsLight, alphaD, rho, enableMS, enableMSSaturation );
 			}
 
 			// Compute reflected radiance
@@ -581,11 +520,7 @@ Lo = Li * magnitude_specular * PolygonIrradiance( mul( tsLightCorners, LTC_specu
 	// Real-time Approximation
 	// We show that a single call to the LTC MSBRDF is equivalent to many calls to the MSBRDF stochastic estimator
 	//
-	if ( (_flags & 1) && ((_flags & 0x100) | (_flags & 0x200U)) ) {
-
-//		float3	wsReflectedView = reflect( wsView, wsNormal );
-//		float3	wsReflected = normalize( lerp( wsReflectedView, wsNormal, alphaS ) );	// Go more toward prefectly reflected direction when roughness drops to 0
-//wsReflected = wsNormal;
+	if ( enableMS && ((_flags & 0x100) | (_flags & 0x200U)) ) {
 
 		// Build rectangular area light corners
 		float3		lsAreaLightPosition = _areaLightTransform[3].xyz - wsPosition;
@@ -599,7 +534,7 @@ Lo = Li * magnitude_specular * PolygonIrradiance( mul( tsLightCorners, LTC_specu
 
 		float3		Li = GetAreaLightRadiance();
 
-		Lo += validSamplesCount * Li * EstimateMSIrradiance_LTC( tsLightCorners, saturate( tsView.z ), alphaS, F0, alphaD, rho );
+		Lo += validSamplesCount * Li * EstimateMSIrradiance_LTC( tsLightCorners, saturate( tsView.z ), alphaS, F0, alphaD, rho, enableMSSaturation );
 	}
 
 	return float4( Lo, validSamplesCount );
