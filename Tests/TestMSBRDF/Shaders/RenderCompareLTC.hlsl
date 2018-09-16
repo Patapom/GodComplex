@@ -103,6 +103,10 @@ void	GetObjectInfo( uint _objectIndex, out float _roughnessSpecular, out float3 
 //
 
 // Computes the general LTC MS term for any BRDF
+//	_tsLightCorners, the 4 corners of the area-light in tangent-space, each corner's position must be relative to the currently lit position
+//	_mu_o, cosine of the view vector with the normal (i.e. N.V)
+//	_alpha, surface roughness
+//	_BRDFIndex, index of the BRDF in the LTC table
 float3	EstimateMSIrradiance_LTC( float4x3 _tsLightCorners, float _mu_o, float _alpha, uint _BRDFIndex ) {
 	float	perceptualAlpha = sqrt( _alpha );
 
