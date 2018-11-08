@@ -88,6 +88,8 @@ namespace SharpMath {
 		static int				Clamp( int x, int min, int max )					{ return x < min ? min : (x > max ? max : x); }
 		static UInt32			Clamp( UInt32 x, UInt32 min, UInt32 max )			{ return x < min ? min : (x > max ? max : x); }
 		static float			Lerp( float a, float b, float t )					{ return a * (1.0f - t) + b * t; }
+		static float			Lerp( cli::array<float>^ a, float t );
+		static float			BiLerp( cli::array<float,2>^ a, float u, float v );	// Returns the bilinear interpolation within the provided array
 		static float			Saturate( float x )									{ return x < 0.0f ? 0.0f : (x > 1.0f ? 1.0f : x); }
 		static float			Square( float a )									{ return a * a;  }
 		static bool				Almost( float a, float b )							{ return Almost( a, b, ALMOST_EPSILON ); }

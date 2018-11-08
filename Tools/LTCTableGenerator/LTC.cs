@@ -12,7 +12,6 @@ using SharpMath;
 
 namespace LTCTableGenerator
 {
-
 	[System.Diagnostics.DebuggerDisplay( "m11={m11}, m22={m22}, m13={m13} - Magnitude = {magnitude} - Fresnel = {fresnel}" )]
 	public class LTC {
 
@@ -157,13 +156,13 @@ namespace LTCTableGenerator
 			if ( detM < 0.0 )
 				throw new Exception( "Negative determinant!" );
 
-// DEBUG: Check determinant of M^-1 = reciprocal of determine of M
+// DEBUG: Check determinant of M^-1 = reciprocal of determinant of M
 // detInvM =	(invM[0,0]*invM[1,1]*invM[2,2] + invM[0,1]*invM[1,2]*invM[2,0] + invM[0,2]*invM[1,0]*invM[2,1])
 // 			-   (invM[2,0]*invM[1,1]*invM[0,2] + invM[2,1]*invM[1,2]*invM[0,0] + invM[2,2]*invM[1,0]*invM[0,1]);
 // if ( Math.Abs( detM - 1.0/detInvM ) > 1e-6 )
 // 	throw new Exception( "Determinant discrepancy!" );
 
-			// Kill useless coefs in matrix
+			// Kill useless coeffs in matrix
 			invM[0,1] = 0;	// Row 0 - Col 1
 			invM[1,0] = 0;	// Row 1 - Col 0
 			invM[1,2] = 0;	// Row 1 - Col 2
@@ -228,7 +227,7 @@ namespace LTCTableGenerator
 
 		#region Initialization Function
 
-		const int	SAMPLES_COUNT = 50;			// number of samples used to compute the error during fitting
+		const int	SAMPLES_COUNT = 50;			// Number of samples used to compute the average terms
 
 		// compute the average direction of the BRDF
 		public void	ComputeAverageTerms( IBRDF _BRDF, ref float3 _tsView, float _alpha ) {
@@ -281,7 +280,7 @@ namespace LTCTableGenerator
 
 		#endregion
 
-		#region Math Functions
+		#region Matrix Functions
 
 		/// <summary>
 		/// Computes B = A^-1, returns determinant of _A
@@ -290,8 +289,8 @@ namespace LTCTableGenerator
 		/// <param name="_B"></param>
 		/// <returns></returns>
 		double			Invert( double[,] _A, double[,] _B ) {
-			double	det =	(_A[0,0]*_A[1,1]*_A[2,2] + _A[0,1]*_A[1,2]*_A[2,0] + _A[0,2]*_A[1,0]*_A[2,1])
-						-   (_A[2,0]*_A[1,1]*_A[0,2] + _A[2,1]*_A[1,2]*_A[0,0] + _A[2,2]*_A[1,0]*_A[0,1]);
+			double	det = (_A[0,0]*_A[1,1]*_A[2,2] + _A[0,1]*_A[1,2]*_A[2,0] + _A[0,2]*_A[1,0]*_A[2,1])
+						- (_A[2,0]*_A[1,1]*_A[0,2] + _A[2,1]*_A[1,2]*_A[0,0] + _A[2,2]*_A[1,0]*_A[0,1]);
 			if ( Math.Abs(det) < float.Epsilon )
 				throw new Exception( "Matrix is not invertible!" );		// The matrix is not invertible! Singular case!
 
@@ -310,7 +309,7 @@ namespace LTCTableGenerator
 			return det;
 		}
 
-// Not used: we always multiply by the right
+// Not used: we always multiply from the right
 // 		void			Transform( float3 a, double[,] b, ref float3 c ) {
 // 			c.x = (float) (a.x * b[0,0] + a.y * b[1,0] + a.z * b[2,0]);
 // 			c.y = (float) (a.x * b[0,1] + a.y * b[1,1] + a.z * b[2,1]);

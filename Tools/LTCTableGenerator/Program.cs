@@ -1,9 +1,11 @@
 ﻿#define FIT_TABLES
 
 //#define EXPORT_FOR_UNITY
-#define EXPORT_TEXTURE
+//#define EXPORT_TEXTURE
+//#define EXPORT_MS_TEXTURE
 //#define EXPORT_FOR_CSHARP	// Not working at the moment
 //#define EXPORT_RAW
+//#define EXPORT_MS_RAW
 
 using System;
 using System.Collections.Generic;
@@ -27,39 +29,57 @@ namespace LTCTableGenerator
 			Application.EnableVisualStyles();
 			Application.SetCompatibleTextRenderingDefault( false );
 
-			int	BRDFIndex = 0;
+			int		BRDFIndex = 0;
+			bool	fitMSBRDF = false;
 			if ( _args.Length > 0 )
 				BRDFIndex = int.Parse( _args[0] );
+			if ( _args.Length > 1 )
+				bool.TryParse( _args[1], out fitMSBRDF );
 
 			#if FIT_TABLES
-				bool	usePreviousRoughness = false;
+				try {
+					bool		usePreviousRoughness = false;
 
-				switch ( BRDFIndex ) {
-					// Fit specular
-					case 0:
-						RunForm( new BRDF_GGX(), new FileInfo( "GGX.ltc" ), usePreviousRoughness );						// Fit GGX
-						break;
-					case 1:
-						RunForm( new BRDF_CookTorrance(), new FileInfo( "CookTorrance.ltc" ), usePreviousRoughness );	// Fit Cook-Torrance
-						break;
-					case 2:
-						RunForm( new BRDF_Ward(), new FileInfo( "Ward.ltc" ), usePreviousRoughness );					// Fit Ward
-						break;
+					IBRDF		BRDF = null;
+					FileInfo	targetFileName = null;
+					switch ( BRDFIndex ) {
+						// Fit specular
+						case 0:
+							BRDF = fitMSBRDF ? LoadMSBRDF( new FileInfo( "./Tables/MSBRDF_GGX_E128x128.float" ), 128 ) : new BRDF_GGX();
+							targetFileName = fitMSBRDF ? new FileInfo( "MS_GGX.ltc" ) : new FileInfo( "GGX.ltc" );
+							break;
+						case 1:
+							BRDF = fitMSBRDF ? LoadMSBRDF( new FileInfo( "" ), 128 ) : new BRDF_CookTorrance();
+							targetFileName = fitMSBRDF ? new FileInfo( "MS_CookTorrance.ltc" ) : new FileInfo( "CookTorrance.ltc" );
+							break;
+						case 2:
+							BRDF = fitMSBRDF ? LoadMSBRDF( new FileInfo( "" ), 128 ) : new BRDF_Ward();
+							targetFileName = fitMSBRDF ? new FileInfo( "MS_Ward.ltc" ) : new FileInfo( "Ward.ltc" );
+							break;
 
-					// Fit diffuse
-					case 10:
-						RunForm( new BRDF_OrenNayar(), new FileInfo( "OrenNayar.ltc" ), usePreviousRoughness );			// Fit Oren-Nayar diffuse
-						break;
-					case 11:
-						RunForm( new BRDF_Charlie(), new FileInfo( "CharlieSheen.ltc" ), usePreviousRoughness );		// Fit Charlie Sheen diffuse
-						break;
-					case 12:
-						RunForm( new BRDF_Disney(), new FileInfo( "Disney.ltc" ), usePreviousRoughness );				// Fit Disney diffuse
-						break;
+						// Fit diffuse
+						case 10:
+							BRDF = fitMSBRDF ? LoadMSBRDF( new FileInfo( "./Tables/MSBRDF_OrenNayar_E32x32.float" ), 32 ) : new BRDF_OrenNayar();
+							targetFileName = fitMSBRDF ? new FileInfo( "MS_OrenNayar.ltc" ) : new FileInfo( "OrenNayar.ltc" );
+							break;
+						case 11:
+							BRDF = fitMSBRDF ? LoadMSBRDF( new FileInfo( "" ), 128 ) : new BRDF_Charlie();
+							targetFileName = fitMSBRDF ? new FileInfo( "MS_CharlieSheen.ltc" ) : new FileInfo( "CharlieSheen.ltc" );
+							break;
+						case 12:
+							BRDF = fitMSBRDF ? LoadMSBRDF( new FileInfo( "" ), 128 ) : new BRDF_Disney();
+							targetFileName = fitMSBRDF ? new FileInfo( "MS_Disney.ltc" ) : new FileInfo( "Disney.ltc" );
+							break;
 
-					default:
-						MessageBox.Show( "Unsupported BRDF index: " + BRDFIndex, "Invalid Argument!", MessageBoxButtons.OK, MessageBoxIcon.Error );
-						return;
+						default:
+							MessageBox.Show( "Unsupported BRDF index: " + BRDFIndex, "Invalid Argument!", MessageBoxButtons.OK, MessageBoxIcon.Error );
+							return;
+					}
+
+					RunForm( BRDF, targetFileName, usePreviousRoughness, fitMSBRDF );
+
+				} catch ( Exception _e ) {
+					MessageBox.Show( "An error occurred during fitting:\r\n" + _e.Message, "LTC Table Generator", MessageBoxButtons.OK, MessageBoxIcon.Error );
 				}
 			#endif
 
@@ -100,6 +120,22 @@ namespace LTCTableGenerator
 				);
 			#endif
 
+			#if EXPORT_MS_TEXTURE
+				ExportMSTexture( new FileInfo[] {
+									// Specular
+									new FileInfo( "MS_GGX.ltc" ),
+									new FileInfo( "MS_GGX.ltc" ),
+									new FileInfo( "MS_GGX.ltc" ),
+
+									// Diffuse
+									new FileInfo( "MS_OrenNayar.ltc" ),
+									new FileInfo( "MS_OrenNayar.ltc" ),
+									new FileInfo( "MS_OrenNayar.ltc" ),
+								}, 
+					new FileInfo( "MS_LTC.dds" )
+				);
+			#endif
+
 			#if EXPORT_RAW
 				Export( new FileInfo( "GGX.ltc" ), new FileInfo( "GGX.double" ) );
 				Export( new FileInfo( "CookTorrance.ltc" ), new FileInfo( "CookTorrance.double" ) );
@@ -109,10 +145,28 @@ namespace LTCTableGenerator
 				Export( new FileInfo( "CharlieSheen.ltc" ), new FileInfo( "CharlieSheen.double" ) );
 				Export( new FileInfo( "Disney.ltc" ), new FileInfo( "Disney.double" ) );
 			#endif
+
+			#if EXPORT_MS_RAW
+				Export( new FileInfo( "MS_GGX.ltc" ), new FileInfo( "MS_GGX.double" ) );
+// 				Export( new FileInfo( "MS_CookTorrance.ltc" ), new FileInfo( "MS_CookTorrance.double" ) );
+// 				Export( new FileInfo( "MS_Ward.ltc" ), new FileInfo( "MS_Ward.double" ) );
+
+				Export( new FileInfo( "MS_OrenNayar.ltc" ), new FileInfo( "MS_OrenNayar.double" ) );
+// 				Export( new FileInfo( "MS_CharlieSheen.ltc" ), new FileInfo( "MS_CharlieSheen.double" ) );
+// 				Export( new FileInfo( "MS_Disney.ltc" ), new FileInfo( "MS_Disney.double" ) );
+			#endif
 		}
 
-		static void	RunForm( IBRDF _BRDF, FileInfo _tableFileName, bool _usePreviousRoughnessForFitting ) {
+		#if FIT_TABLES
+
+		static void	RunForm( IBRDF _BRDF, FileInfo _tableFileName, bool _usePreviousRoughnessForFitting, bool _fitMSBRDF ) {
 			FitterForm	form = new FitterForm();
+
+			if ( _fitMSBRDF )
+				form.StepX = 64;
+			else
+				form.StepX = 1;
+
 
 form.RenderBRDF = true;	// Change this to perform fitting without rendering each result (faster)
 
@@ -133,6 +187,31 @@ form.UseAdaptiveFit = false;
 
 			Application.Run( form );
 		}
+
+		/// <summary>
+		/// Loads an irradiance table and returns the MSBRDF using it
+		/// </summary>
+		/// <param name="_irradianceTableFileName"></param>
+		/// <param name="_size"></param>
+		/// <returns></returns>
+		static IBRDF	LoadMSBRDF( FileInfo _irradianceTableFileName, int _size ) {
+
+			// Read irradiance table
+			float[,]	irradianceTable = new float[_size,_size];
+			using ( FileStream S = _irradianceTableFileName.OpenRead() )
+				using ( BinaryReader R = new BinaryReader( S ) ) {
+					for ( int Y=0; Y < _size; Y++ ) {
+						for ( int X=0; X < _size; X++ ) {
+							float	V = R.ReadSingle();
+							irradianceTable[X,Y] = V;
+						}
+					}
+				}
+
+			return new MSBRDF( irradianceTable );
+		}
+
+		#endif
 
 		#if EXPORT_FOR_UNITY
 
@@ -359,8 +438,8 @@ throw new Exception( "Ta mère!" );
 
 				for ( int i=0; i < tables.Length; i++ ) {
 					LTC[,]	table = tables[i];
-	// 				ImageUtility.ImageFile	I = new ImageUtility.ImageFile( W, H, _format, profile );
-	// 				M[(uint) i][0][0] = I;
+//					ImageUtility.ImageFile	I = new ImageUtility.ImageFile( W, H, _format, profile );
+//					M[(uint) i][0][0] = I;
 
 					double	largest = 0;	// Keep track of largest error from 1
 					ImageUtility.ImageFile	I = M[(uint) i][0][0];
@@ -368,19 +447,19 @@ throw new Exception( "Ta mère!" );
 						LTC	ltc = table[_X,_Y];
 
 						const double	tol = 1e-6;
-	// 					if ( Mathf.Abs( ltc.invM[2,2] - 1 ) > tol )
-	// 						throw new Exception( "Not one!" );
+//						if ( Mathf.Abs( ltc.invM[2,2] - 1 ) > tol )
+//							throw new Exception( "Not one!" );
 						if ( Mathf.Abs( ltc.invM[0,1] ) > tol || Mathf.Abs( ltc.invM[1,0] ) > tol || Mathf.Abs( ltc.invM[1,2] ) > tol || Mathf.Abs( ltc.invM[2,1] ) > tol )
 							throw new Exception( "Not zero!" );
 
-						// Former code used to normalize by m22 term but according to Hill, this leads to poorly interpolatble tables (cf.  page 81 of https://blog.selfshadow.com/publications/s2016-advances/s2016_ltc_rnd.pdf)
-	// 					largest = Math.Max( largest, Math.Abs( ltc.invM[2,2] - 1 ) );
-	// 					double	factor = 1.0 / ltc.invM[2,2];
-	// 
-	// 					_color.x = (float) (factor * ltc.invM[0,0]);
-	// 					_color.y = (float) (factor * ltc.invM[0,2]);
-	// 					_color.z = (float) (factor * ltc.invM[1,1]);
-	// 					_color.w = (float) (factor * ltc.invM[2,0]);
+						// Former code used to normalize by m22 term but according to Hill, this leads to poorly interpolatble tables (cf. page 81 of https://blog.selfshadow.com/publications/s2016-advances/s2016_ltc_rnd.pdf)
+//						largest = Math.Max( largest, Math.Abs( ltc.invM[2,2] - 1 ) );
+//						double	factor = 1.0 / ltc.invM[2,2];
+//	
+//						_color.x = (float) (factor * ltc.invM[0,0]);
+//						_color.y = (float) (factor * ltc.invM[0,2]);
+//						_color.z = (float) (factor * ltc.invM[1,1]);
+//						_color.w = (float) (factor * ltc.invM[2,0]);
 
 						// Instead, normalize by m11!
  						largest = Math.Max( largest, Math.Abs( ltc.invM[1,1] - 1 ) );
@@ -393,6 +472,62 @@ throw new Exception( "Ta mère!" );
 					} );
 				}
 				M.DDSSaveFile( _targetFileName, ImageUtility.COMPONENT_FORMAT.AUTO );
+			}
+
+		#endif
+
+		#if EXPORT_MS_TEXTURE
+
+			/// <summary>
+			/// Concatenates multiple tables into one single texture 2D array
+			/// </summary>
+			/// <param name="_tablesFileNames"></param>
+			/// <param name="_targetFileName"></param>
+			/// <param name="_foramt"></param>
+			static void ExportMSTexture( FileInfo[] _tablesFileNames, FileInfo _targetFileName ) {
+				// Load tables
+				LTC[][,]	tables = new LTC[_tablesFileNames.Length][,];
+				for ( int i=0; i < _tablesFileNames.Length; i++ ) {
+					int		validResultsCount;
+					LTC[,]	table = FitterForm.LoadTable( _tablesFileNames[i], out validResultsCount );
+					tables[i] = table;
+					if ( i != 0 && (table.GetLength(0) != tables[0].GetLength(0) || table.GetLength(1) != tables[0].GetLength(1)) )
+						throw new Exception( "Table dimensions mismatch!" );
+				}
+
+				// Create the Texture2D
+				uint	W = (uint) tables[0].GetLength(0);
+
+				float4[][]	contents = new float4[tables.Length][];
+				for ( int tableIndex=0; tableIndex < tables.Length; tableIndex++ ) {
+					LTC[,]		table = tables[tableIndex];
+					float4[]	content = new float4[W];
+					contents[tableIndex] = content;
+
+					for ( uint X=0; X < W; X++ ) {
+						LTC	ltc = table[X,0];
+
+						double	factor = 1.0 / ltc.invM[1,1];
+
+// 						content[X] = new float4( (float) (factor * ltc.invM[0,0]),
+// 												 (float) (factor * ltc.invM[0,2]),
+// 												 (float) (factor * ltc.invM[2,0]),
+// 												 (float) (factor * ltc.invM[2,2]) );
+
+						// As expected, off-diagonal anisotropic terms are 0 and m00=1 so we only need to export a single term + the magnitude! Yay! Even cheaper!
+						content[X] = new float4( (float) (factor * ltc.invM[2,2]), (float) ltc.magnitude, 0, 0 );
+					}
+				}
+
+				ImageUtility.ImageFile	image = new ImageUtility.ImageFile( W, (uint) tables.Length, ImageUtility.PIXEL_FORMAT.RG32F, new ImageUtility.ColorProfile( ImageUtility.ColorProfile.STANDARD_PROFILE.LINEAR ) );
+
+				image.WritePixels( ( uint _X, uint _Y, ref float4 _color ) => {
+//					LTC	ltc = tables[_Y][_X,0];
+					_color = contents[_Y][_X];
+				} );
+
+				ImageUtility.ImagesMatrix	images = new ImageUtility.ImagesMatrix( image, ImageUtility.ImagesMatrix.IMAGE_TYPE.LINEAR );
+				images.DDSSaveFile( _targetFileName, ImageUtility.COMPONENT_FORMAT.AUTO );
 			}
 
 		#endif
@@ -430,6 +565,38 @@ throw new Exception( "Ta mère!" );
 									W.Write( factor * ltc.invM[2,2] );
 								#endif
 							}
+						}
+					}
+			}
+
+		#endif
+
+		#if EXPORT_MS_RAW
+
+			static void	Export( FileInfo _tableFileName, FileInfo _targetFileName ) {
+				int		validResultsCount;
+				LTC[,]	table = FitterForm.LoadTable( _tableFileName, out validResultsCount );
+
+				int		tableSize = table.GetLength(0);
+
+				using ( FileStream S = _targetFileName.Create() )
+					using ( BinaryWriter W = new BinaryWriter( S ) ) {
+						W.Write( (uint) tableSize );
+
+						for ( int roughnessIndex=0; roughnessIndex < tableSize; roughnessIndex++ ) {
+							LTC	ltc = table[roughnessIndex,0];
+
+							float	alpha, cosTheta;
+							FitterForm.GetRoughnessAndAngle( roughnessIndex, 0, tableSize, tableSize, out alpha, out cosTheta );
+
+							W.Write( (double) alpha );
+							W.Write( ltc.magnitude );
+
+							double		factor = 1.0 / ltc.invM[1,1];
+							W.Write( factor * ltc.invM[0,0] );
+							W.Write( factor * ltc.invM[2,0] );
+							W.Write( factor * ltc.invM[0,2] );
+							W.Write( factor * ltc.invM[2,2] );
 						}
 					}
 			}

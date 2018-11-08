@@ -172,7 +172,8 @@ namespace SharpMath
 // log.WriteLine();
 // log.WriteLine( "===================================" );
 // log.WriteLine( "Exiting after " + m_lastIterationsCount + " iterations" );
-// log.WriteLine( "Result = {{ {0}, {1}, {2} }}", _pmin[0], _pmin[1], _pmin[2] );// log.WriteLine( "Error = " + f[lo] );
+// log.WriteLine( "Result = {{ {0}, {1}, {2} }}", _pmin[0], _pmin[1], _pmin[2] );
+// log.WriteLine( "Error = " + f[lo] );
 
 			return f[lo];
 		}

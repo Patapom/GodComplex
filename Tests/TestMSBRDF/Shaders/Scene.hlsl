@@ -30,9 +30,11 @@ float2	RayTraceScene( float3 _wsPos, float3 _wsDir, out float3 _wsNormal, out fl
 		return float2( t, 0 );		// Sphere hit
 	}
 
-	t = RayTracePlane( _wsPos, _wsDir );
-	if ( t < 1e4 )
-		return float2( t, 1 );		// Plane hit
+	#ifdef FULL_SCENE
+		t = RayTracePlane( _wsPos, _wsDir );
+		if ( t < 1e4 )
+			return float2( t, 1 );		// Plane hit
+	#endif
 
 	return float2( INFINITY, -1 );	// No hit...
 }
