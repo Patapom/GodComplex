@@ -138,8 +138,16 @@ namespace SharpMath {
 
 		property float3	Normalized	{
 			float3	get() {
-				float	InvLength = 1.0f / Length;
-				return float3( InvLength * x, InvLength * y, InvLength * z );
+				float	invLength = 1.0f / Length;
+				return float3( invLength * x, invLength * y, invLength * z );
+			}
+		}
+
+		property float3	NormalizedSafe	{
+			float3	get() {
+				float	L2 = LengthSquared;
+				float	invLength = L2 > 1e-8 ? 1.0f / Mathf::Sqrt( L2 ) : 0.0f;
+				return float3( invLength * x, invLength * y, invLength * z );
 			}
 		}
 
@@ -174,6 +182,11 @@ namespace SharpMath {
 
 		float	Dot( float3 b )	{ return x*b.x + y*b.y + z*b.z; }
 		void	Normalize()		{ float recLength = 1.0f / Length; x *= recLength; y *= recLength; z *= recLength; }
+		void	NormalizeSafe()	{
+			float	L2 = LengthSquared;
+			float	recLength = L2 > 1e-8 ? 1.0f / Mathf::Sqrt( L2 ) : 0.0f;
+			x *= recLength; y *= recLength; z *= recLength;
+		}
 
 		float3	Cross( float3 b ) {
 			return float3(	y * b.z - z * b.y,

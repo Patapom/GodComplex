@@ -47,6 +47,10 @@
 			this.label17 = new System.Windows.Forms.Label();
 			this.floatTrackbarControlLightScaleY = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label2 = new System.Windows.Forms.Label();
+			this.radioButtonFreeTarget = new System.Windows.Forms.RadioButton();
+			this.radioButtonHorizontalTarget = new System.Windows.Forms.RadioButton();
+			this.radioButtonNegativeFreeTarget = new System.Windows.Forms.RadioButton();
+			this.textBoxResults = new System.Windows.Forms.TextBox();
 			this.SuspendLayout();
 			// 
 			// floatTrackbarControlIlluminance
@@ -233,11 +237,58 @@
 			this.label2.TabIndex = 3;
 			this.label2.Text = "Light Scale Y";
 			// 
+			// radioButtonFreeTarget
+			// 
+			this.radioButtonFreeTarget.AutoSize = true;
+			this.radioButtonFreeTarget.Checked = true;
+			this.radioButtonFreeTarget.Location = new System.Drawing.Point(1062, 279);
+			this.radioButtonFreeTarget.Name = "radioButtonFreeTarget";
+			this.radioButtonFreeTarget.Size = new System.Drawing.Size(80, 17);
+			this.radioButtonFreeTarget.TabIndex = 4;
+			this.radioButtonFreeTarget.TabStop = true;
+			this.radioButtonFreeTarget.Text = "Free Target";
+			this.radioButtonFreeTarget.UseVisualStyleBackColor = true;
+			// 
+			// radioButtonHorizontalTarget
+			// 
+			this.radioButtonHorizontalTarget.AutoSize = true;
+			this.radioButtonHorizontalTarget.Location = new System.Drawing.Point(1148, 279);
+			this.radioButtonHorizontalTarget.Name = "radioButtonHorizontalTarget";
+			this.radioButtonHorizontalTarget.Size = new System.Drawing.Size(72, 17);
+			this.radioButtonHorizontalTarget.TabIndex = 4;
+			this.radioButtonHorizontalTarget.TabStop = true;
+			this.radioButtonHorizontalTarget.Text = "Horizontal";
+			this.radioButtonHorizontalTarget.UseVisualStyleBackColor = true;
+			// 
+			// radioButtonNegativeFreeTarget
+			// 
+			this.radioButtonNegativeFreeTarget.AutoSize = true;
+			this.radioButtonNegativeFreeTarget.Location = new System.Drawing.Point(1226, 279);
+			this.radioButtonNegativeFreeTarget.Name = "radioButtonNegativeFreeTarget";
+			this.radioButtonNegativeFreeTarget.Size = new System.Drawing.Size(102, 17);
+			this.radioButtonNegativeFreeTarget.TabIndex = 4;
+			this.radioButtonNegativeFreeTarget.TabStop = true;
+			this.radioButtonNegativeFreeTarget.Text = "Negative Target";
+			this.radioButtonNegativeFreeTarget.UseVisualStyleBackColor = true;
+			// 
+			// textBoxResults
+			// 
+			this.textBoxResults.Location = new System.Drawing.Point(1062, 364);
+			this.textBoxResults.Multiline = true;
+			this.textBoxResults.Name = "textBoxResults";
+			this.textBoxResults.ReadOnly = true;
+			this.textBoxResults.Size = new System.Drawing.Size(318, 221);
+			this.textBoxResults.TabIndex = 5;
+			// 
 			// AreaLightForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1392, 665);
+			this.Controls.Add(this.textBoxResults);
+			this.Controls.Add(this.radioButtonNegativeFreeTarget);
+			this.Controls.Add(this.radioButtonHorizontalTarget);
+			this.Controls.Add(this.radioButtonFreeTarget);
 			this.Controls.Add(this.label9);
 			this.Controls.Add(this.label8);
 			this.Controls.Add(this.label13);
@@ -282,6 +333,10 @@
 		private System.Windows.Forms.Label label17;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlLightScaleY;
 		private System.Windows.Forms.Label label2;
+		private System.Windows.Forms.RadioButton radioButtonFreeTarget;
+		private System.Windows.Forms.RadioButton radioButtonHorizontalTarget;
+		private System.Windows.Forms.RadioButton radioButtonNegativeFreeTarget;
+		private System.Windows.Forms.TextBox textBoxResults;
 	}
 }
 

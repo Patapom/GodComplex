@@ -64,6 +64,10 @@ namespace SharpMath {
 		static short			Min( short a, short b )								{ return Math::Min( a, b ); }
 		static SByte			Min( SByte a, SByte b )								{ return Math::Min( a, b ); }
 		static float			Pow( float a, float b )								{ return (float) Math::Pow( a, b ); }
+		static float			Pow2( float a )										{ return a * a; }
+		static float			Pow3( float a )										{ return a * a * a; }
+		static float			Pow4( float a )										{ float b = a*a; return b * b; }
+		static float			Pow5( float a )										{ float b = a*a; return b * b * a; }
 		static float			Round( float a, int _digits, System::MidpointRounding _mode )	{ return (float) Math::Round( a, _digits, _mode ); }
 		static float			Round( float a, System::MidpointRounding _mode )	{ return (float) Math::Round( a, _mode ); }
 		static float			Round( float a, int _digits )						{ return (float) Math::Round( a, _digits ); }

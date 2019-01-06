@@ -56,7 +56,10 @@ namespace AreaLightTest {
 		private ConstantBuffer<CB_Camera>		m_CB_Camera = null;
 		private ConstantBuffer<CB_Light>		m_CB_Light = null;
 
+		private Shader				m_shader_RenderLight = null;
 		private Shader				m_shader_RenderScene = null;
+
+		private Primitive			m_prim_disk = null;
 
 //		private Texture2D			m_tex_FalseColors = null;
 
@@ -69,10 +72,10 @@ namespace AreaLightTest {
 		//////////////////////////////////////////////////////////////////////////
 		// Timing
 		public System.Diagnostics.Stopwatch	m_stopWatch = new System.Diagnostics.Stopwatch();
-		private double						m_ticks2Seconds;
-		public float						m_startTime = 0;
-		public float						m_CurrentTime = 0;
-		public float						m_DeltaTime = 0;		// Delta time used for the current frame
+		private double				m_ticks2Seconds;
+		public float				m_startTime = 0;
+		public float				m_CurrentTime = 0;
+		public float				m_DeltaTime = 0;		// Delta time used for the current frame
 
 		#endregion
 
@@ -96,8 +99,6 @@ namespace AreaLightTest {
 				return;
 			}
 
-			buttonRebuildBRDF_Click( null, EventArgs.Empty );
-
 //			m_tex_FalseColors = Image2Texture( new System.IO.FileInfo( "FalseColorsSpectrum.png" ), ImageUtility.COMPONENT_FORMAT.UNORM_sRGB );
 
 			m_CB_Main = new ConstantBuffer<CB_Main>( m_device, 0 );
@@ -105,11 +106,14 @@ namespace AreaLightTest {
 			m_CB_Light = new ConstantBuffer<CB_Light>( m_device, 2 );
 
 			try {
+				m_shader_RenderLight = new Shader( m_device, new System.IO.FileInfo( "Shaders/RenderLight.hlsl" ), VERTEX_FORMAT.P3N3, "VS", null, "PS", null );;
 				m_shader_RenderScene = new Shader( m_device, new System.IO.FileInfo( "Shaders/RenderScene.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );;
 			} catch ( Exception _e ) {
 				MessageBox.Show( "Shader failed to compile!\n\n" + _e.Message, "Area Light Test", MessageBoxButtons.OK, MessageBoxIcon.Error );
 				return;
 			}
+
+			BuildPrimitives();
 
 			// Setup camera
 			m_camera.CreatePerspectiveCamera( (float) (60.0 * Math.PI / 180.0), (float) panelOutput.Width / panelOutput.Height, 0.01f, 100.0f );
@@ -132,19 +136,42 @@ namespace AreaLightTest {
 			if ( m_device == null )
 				return;
 
-			if ( m_shader_RenderScene != null ) {
-				m_shader_RenderScene.Dispose();
-			}
+			m_shader_RenderLight.Dispose();
+			m_shader_RenderScene.Dispose();
 
 			m_CB_Main.Dispose();
 			m_CB_Camera.Dispose();
 			m_CB_Light.Dispose();
+
+			m_prim_disk.Dispose();
 
 //			m_tex_FalseColors.Dispose();
 
 			m_device.Exit();
 
 			base.OnFormClosed( e );
+		}
+
+		const int		VERTICES_COUNT = 1024;
+
+		void		BuildPrimitives() {
+			VertexP3N3[]	vertices = new VertexP3N3[2*VERTICES_COUNT];
+			uint[]			indices = new uint[3*VERTICES_COUNT];
+			for ( int i=0; i < VERTICES_COUNT; i++ ) {
+				float	a = Mathf.TWOPI * i / VERTICES_COUNT;
+				float3	P = new float3( Mathf.Cos( a ), Mathf.Sin( a ), 0 );
+
+				vertices[2*i+0].P = P;
+				vertices[2*i+0].N = new float3( (float) i / VERTICES_COUNT, 0, 0 );
+				vertices[2*i+1].P = P;
+				vertices[2*i+1].N = new float3( (float) i / VERTICES_COUNT, 1, 0 );
+
+				indices[3*i+0] = (uint) (2*i+0);
+				indices[3*i+1] = (uint) (2*i+1);
+				indices[3*i+2] = (uint) (2*((i+1) % VERTICES_COUNT) + 1);
+			}
+
+			m_prim_disk = new Primitive( m_device, 2*VERTICES_COUNT, VertexP3N3.FromArray( vertices ), indices, Primitive.TOPOLOGY.TRIANGLE_LIST, VERTEX_FORMAT.P3N3 );
 		}
 
 		#endregion
@@ -174,14 +201,39 @@ namespace AreaLightTest {
 			m_CB_Camera.UpdateData();
 		}
 
+		float3	ComputeCameraRay( PointF _clienPosition ) {
+			float3	pos;
+			float	f;
+			return ComputeCameraRay( _clienPosition, out pos, out f );
+		}
+		float3	ComputeCameraRay( PointF _clienPosition, out float3 _csView, out float _Z2Length ) {
+			_csView = new float3( (2.0f * new float2( _clienPosition.X, _clienPosition.Y ) / m_CB_Main.m.iResolution.xy - float2.One), 1.0f );
+			_csView.x *= m_CB_Main.m.iResolution.x / m_CB_Main.m.iResolution.y;
+			_csView.y = -_csView.y;
+			
+			_Z2Length = _csView.Length;
+			_csView /= _Z2Length;
+
+			float3	wsView =  (new float4( _csView, 0 ) * m_CB_Camera.m._camera2World ).xyz;
+			return wsView;
+		}
+
 		private bool m_manipulator_EnableMouseAction( MouseEventArgs _e ) {
-			return (Control.ModifierKeys & Keys.LControlKey) == Keys.None;
+			return (Control.ModifierKeys & Keys.Control) == Keys.None;
 		}
 
 		bool	m_manipulatingLight = false;
 		Point	m_buttonDownPosition;
 		private void panelOutput_MouseDown( object sender, MouseEventArgs _e ) {
-			if ( (Control.ModifierKeys & Keys.LControlKey) == Keys.None )
+			if ( _e.Button == MouseButtons.Right ) {
+				float3	wsCamPos = m_CB_Camera.m._camera2World.r3.xyz;
+				float3	wsView = ComputeCameraRay( _e.Location );
+				float	t = -wsCamPos.y / wsView.y;
+				if ( t > 0.0f )
+					ComputeResult( wsCamPos + t * wsView );
+			}
+
+			if ( (Control.ModifierKeys & Keys.Control) == Keys.None )
 				return;
 
 //			if ( (_e.Button & MouseButtons.Left) == MouseButtons.Left )
@@ -191,7 +243,7 @@ namespace AreaLightTest {
 		}
 
 		private void panelOutput_MouseUp( object sender, MouseEventArgs _e ) {
-			if ( (_e.Button & MouseButtons.Left) == 0 ) {
+			if ( (_e.Button & MouseButtons.Left) != 0 ) {
 				m_manipulatingLight = false;
 				m_buttonDownPosition = _e.Location;
 			}
@@ -201,15 +253,8 @@ namespace AreaLightTest {
 			if ( !m_manipulatingLight )
 				return;
 
-			float3	csView = new float3( 2.0f * new float2( _e.X, _e.Y ) / m_CB_Main.m.iResolution.y - float2.One, 1.0f );
-					csView.y = -csView.y;
-			
-			float	Z2Length = csView.Length;
-					csView /= Z2Length;
-
-			float3	wsView =  (new float4( csView, 0 ) * m_CB_Camera.m._camera2World ).xyz;
 			float3	wsCamPos = m_CB_Camera.m._camera2World.r3.xyz;
-
+			float3	wsView = ComputeCameraRay( _e.Location );
 			float	t = -wsCamPos.y / wsView.y;
 			if ( t <= 0.0f )
 				return;	// No intersection with the plane...
@@ -231,6 +276,13 @@ namespace AreaLightTest {
 			// Setup light data
 			float3	wsLightPosition = new float3( floatTrackbarControlLightPosX.Value, floatTrackbarControlLightPosY.Value, floatTrackbarControlLightPosZ.Value );
 			float3	at = (m_wsLightTargetPosition - wsLightPosition).Normalized;
+			if ( radioButtonNegativeFreeTarget.Checked )
+				at = -at;
+			else if ( radioButtonHorizontalTarget.Checked ) {
+				at.y = 0;
+				at.Normalize();
+			}
+
 			float	roll = Mathf.ToRad( floatTrackbarControlLightRoll.Value );
 			float3	left, up;
 			at.OrthogonalBasis( out left, out up );
@@ -249,18 +301,22 @@ namespace AreaLightTest {
 			m_CB_Light.UpdateData();
 
 
+ 			m_device.Clear( m_device.DefaultTarget, float4.Zero );
+ 			m_device.ClearDepthStencil( m_device.DefaultDepthStencil, 1.0f, 0, true, false );
+
 			// =========== Render scene ===========
 			m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
 			m_device.SetRenderTarget( m_device.DefaultTarget, m_device.DefaultDepthStencil );
 
-// 			m_device.Clear( m_device.DefaultTarget, float4.Zero );
-// 			m_device.ClearDepthStencil( m_device.DefaultDepthStencil, 1.0f, 0, true, false );
-
-			if ( m_shader_RenderScene != null && m_shader_RenderScene.Use() ) {
-
+			if ( m_shader_RenderScene.Use() ) {
 				m_device.RenderFullscreenQuad( m_shader_RenderScene );
-			} else {
-				m_device.Clear( new float4( 1, 0, 0, 0 ) );
+			}
+
+			// =========== Render Disk ===========
+			m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
+
+			if ( m_shader_RenderLight.Use() ) {
+				m_prim_disk.Render( m_shader_RenderLight );
 			}
 
 			// Show!
@@ -268,6 +324,79 @@ namespace AreaLightTest {
 
 			// Update window text
 //			Text = "Zombizous Prototype - " + m_Game.m_CurrentGameTime.ToString( "G5" ) + "s";
+		}
+
+		/// <summary>
+		/// Computes the solid angle covered by the light as seen by provided position
+		/// </summary>
+		/// <param name="_wsPosition"></param>
+		void	ComputeResult( float3 _wsPosition ) {
+			
+			float3	lsLightPos = m_CB_Light.m._wsLight2World[3].xyz - _wsPosition;
+			float3	lsLightX = m_CB_Light.m._wsLight2World[0].w * m_CB_Light.m._wsLight2World[0].xyz;
+			float3	lsLightY = m_CB_Light.m._wsLight2World[1].w * m_CB_Light.m._wsLight2World[1].xyz;
+
+			float3	n = float3.UnitY;	// Plane normal is straight up
+
+			float	dA = Mathf.TWOPI / 1024.0f;
+
+			float	c0, s0, c1, s1;
+			float	FdotN, dot;
+
+			double	dTheta;
+			float3	v0, v1, u0, u1, cross, dF;
+
+			double	sum0 = 0;
+			double	sum1 = 0;
+			float3	sumF0 = float3.Zero;
+			float3	sumF1 = float3.Zero;
+			for ( int i=0; i < 1024; i++ ) {
+				c0 = Mathf.Cos( i * dA );
+				s0 = Mathf.Sin( i * dA );
+				c1 = Mathf.Cos( i * dA + dA );
+				s1 = Mathf.Sin( i * dA + dA );
+
+				v0 = lsLightPos + c0 * lsLightX + s0 * lsLightY;
+				v1 = lsLightPos + c1 * lsLightX + s1 * lsLightY;
+
+				u0 = v0.NormalizedSafe;
+				u1 = v1.NormalizedSafe;
+				dot = u0.Dot( u1 );
+				dTheta = Math.Acos( Mathf.Clamp( dot, -1, 1 ) );
+
+				//////////////////////////////////////////////////////////////////////////
+				// Regular way
+				cross = v0.Cross( v1 );
+				cross.NormalizeSafe();
+
+				// Directly accumulate F
+				dF = (float) dTheta * cross;
+				sumF0 += dF;
+
+				// Accumulate F.n each step of the way
+//				FdotN = dF.Dot( n );
+				FdotN = dF.y;
+				sum0 += FdotN;
+
+
+				//////////////////////////////////////////////////////////////////////////
+				// Bent way
+//				FdotN = Mathf.Sqrt( 1 - Mathf.Pow2( u0.Dot( n ) ) );	// sin( alpha )
+				FdotN = Mathf.Sqrt( 1 - Mathf.Pow2( u0.y ) );			// sin( alpha )
+				dF = (float) dTheta * FdotN * u0;
+				sumF1 += dF;
+				sum1 += (float) dTheta * FdotN;
+			}
+
+			textBoxResults.Text = "Target = " + _wsPosition + "\r\n"
+								+ "\r\n"
+								+ "Regular F = " + sumF0 + "\r\n"
+								+ "Regular sum = " + sum0 + "\r\n"
+								+ "Regular F.N = " + sumF0.Dot( n ) + "\r\n"
+								+ "\r\n"
+								+ "Ortho F = " + sumF1 + "\r\n"
+								+ "Ortho sum = " + sum1 + "\r\n"
+								+ "Ortho |F| = " + sumF1.Length + "  <== \r\n";
 		}
 
 		private void buttonReload_Click( object sender, EventArgs e ) {

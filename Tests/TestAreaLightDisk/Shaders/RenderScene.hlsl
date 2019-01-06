@@ -1,8 +1,14 @@
 #include "Global.hlsl"
 
+struct VS_IN {
+	float4	__Position : SV_POSITION;
+};
+
+VS_IN	VS( VS_IN _in ) { return _in; }
 
 float3	PS( VS_IN _In ) : SV_TARGET0 {
-	float3	csView = float3( 2.0 * _In.__Position.xy / iResolution.y - 1.0, 1.0 );
+	float3	csView = float3( 2.0 * _In.__Position.xy / iResolution.xy - 1.0, 1.0 );
+			csView.x *= iResolution.x / iResolution.y;
 			csView.y = -csView.y;
 			
 	float	Z2Length = length( csView );
