@@ -4,25 +4,30 @@ struct VS_IN {
 	float4	__Position : SV_POSITION;
 };
 
+struct PS_OUT {
+	float3	color : SV_TARGET0;
+	float	depth : SV_DEPTH;
+};
+
 VS_IN	VS( VS_IN _in ) { return _in; }
 
-float3	PS( VS_IN _In ) : SV_TARGET0 {
-	float3	csView = float3( 2.0 * _In.__Position.xy / iResolution.xy - 1.0, 1.0 );
-			csView.x *= iResolution.x / iResolution.y;
-			csView.y = -csView.y;
-			
-	float	Z2Length = length( csView );
-			csView /= Z2Length;
-
+PS_OUT	PS( VS_IN _In ) {
+	float3	csView = GenerateCameraRay( _In.__Position.xy );
 	float3	wsView = mul( float4( csView, 0 ), _camera2World ).xyz;
 	float3	wsCamPos = _camera2World[3].xyz;
 
-
 	float	t = -wsCamPos.y / wsView.y;
-	if ( t < 0.0 )
-		return 0;
+	clip( t );
+//	if ( t < 0.0 ) {
+//		discard;
+//	}
 
 	float3	wsPos = wsCamPos + t * wsView;
+	float4	ndcPos = mul( float4( wsPos, 1 ), _world2Proj );
 
-	return 0.1 * wsPos;
+	PS_OUT	result;
+	result.color = 0.1 * wsPos;
+	result.depth = ndcPos.z / ndcPos.w;
+
+	return result;
 }

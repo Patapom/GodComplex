@@ -18,6 +18,7 @@ namespace AreaLightTest {
 
 		#region CONSTANTS
 
+		const float			FOV_DEGREES = 60.0f;
 		readonly float3		PLANE_NORMAL = float3.UnitY;
 
 		#endregion
@@ -26,7 +27,8 @@ namespace AreaLightTest {
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
 		private struct CB_Main {
-			public float3		iResolution;
+			public float2		iResolution;
+			public float		tanHalfFOV;
 			public float		iGlobalTime;
 		}
 
@@ -43,7 +45,7 @@ namespace AreaLightTest {
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
 		private struct CB_Light {
 			public float4x4		_wsLight2World;
-			public float		_illuminance;
+			public float		_luminance;
 		}
 
 		#endregion
@@ -58,6 +60,7 @@ namespace AreaLightTest {
 
 		private Shader				m_shader_RenderLight = null;
 		private Shader				m_shader_RenderScene = null;
+		private Shader				m_shader_RenderScene_Reference = null;
 
 		private Primitive			m_prim_disk = null;
 
@@ -108,6 +111,7 @@ namespace AreaLightTest {
 			try {
 				m_shader_RenderLight = new Shader( m_device, new System.IO.FileInfo( "Shaders/RenderLight.hlsl" ), VERTEX_FORMAT.P3N3, "VS", null, "PS", null );;
 				m_shader_RenderScene = new Shader( m_device, new System.IO.FileInfo( "Shaders/RenderScene.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );;
+				m_shader_RenderScene_Reference = new Shader( m_device, new System.IO.FileInfo( "Shaders/RenderScene_Reference.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );;
 			} catch ( Exception _e ) {
 				MessageBox.Show( "Shader failed to compile!\n\n" + _e.Message, "Area Light Test", MessageBoxButtons.OK, MessageBoxIcon.Error );
 				return;
@@ -116,7 +120,7 @@ namespace AreaLightTest {
 			BuildPrimitives();
 
 			// Setup camera
-			m_camera.CreatePerspectiveCamera( (float) (60.0 * Math.PI / 180.0), (float) panelOutput.Width / panelOutput.Height, 0.01f, 100.0f );
+			m_camera.CreatePerspectiveCamera( (float) (FOV_DEGREES * Math.PI / 180.0), (float) panelOutput.Width / panelOutput.Height, 0.01f, 100.0f );
 			m_manipulator.Attach( panelOutput, m_camera );
 			m_manipulator.InitializeCamera( new float3( 0, 1, 4 ), new float3( 0, 1, 0 ), float3.UnitY );
 			m_manipulator.EnableMouseAction += m_manipulator_EnableMouseAction;
@@ -138,6 +142,7 @@ namespace AreaLightTest {
 
 			m_shader_RenderLight.Dispose();
 			m_shader_RenderScene.Dispose();
+			m_shader_RenderScene_Reference.Dispose();
 
 			m_CB_Main.Dispose();
 			m_CB_Camera.Dispose();
@@ -207,7 +212,7 @@ namespace AreaLightTest {
 			return ComputeCameraRay( _clienPosition, out pos, out f );
 		}
 		float3	ComputeCameraRay( PointF _clienPosition, out float3 _csView, out float _Z2Length ) {
-			_csView = new float3( (2.0f * new float2( _clienPosition.X, _clienPosition.Y ) / m_CB_Main.m.iResolution.xy - float2.One), 1.0f );
+			_csView = new float3( m_CB_Main.m.tanHalfFOV * (2.0f * new float2( _clienPosition.X, _clienPosition.Y ) / m_CB_Main.m.iResolution - float2.One), 1.0f );
 			_csView.x *= m_CB_Main.m.iResolution.x / m_CB_Main.m.iResolution.y;
 			_csView.y = -_csView.y;
 			
@@ -269,7 +274,8 @@ namespace AreaLightTest {
 				return;
 
 			// Setup global data
-			m_CB_Main.m.iResolution = new float3( panelOutput.Width, panelOutput.Height, 0 );
+			m_CB_Main.m.iResolution = new float2( panelOutput.Width, panelOutput.Height );
+			m_CB_Main.m.tanHalfFOV = Mathf.Tan( 0.5f * Mathf.ToRad( FOV_DEGREES ) );
 			m_CB_Main.m.iGlobalTime = GetGameTime() - m_startTime;
 			m_CB_Main.UpdateData();
 
@@ -293,7 +299,7 @@ namespace AreaLightTest {
 			float	radiusX = floatTrackbarControlLightScaleX.Value;
 			float	radiusY = floatTrackbarControlLightScaleY.Value;
 
-			m_CB_Light.m._illuminance = floatTrackbarControlIlluminance.Value;
+			m_CB_Light.m._luminance = floatTrackbarControlLuminance.Value;
 			m_CB_Light.m._wsLight2World.r0.Set( axisX, radiusX );
 			m_CB_Light.m._wsLight2World.r1.Set( axisY, radiusY );
 			m_CB_Light.m._wsLight2World.r2.Set( at, Mathf.PI * radiusX * radiusY );	// Disk area in W
@@ -305,15 +311,22 @@ namespace AreaLightTest {
  			m_device.ClearDepthStencil( m_device.DefaultDepthStencil, 1.0f, 0, true, false );
 
 			// =========== Render scene ===========
-			m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
+			m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.READ_WRITE_DEPTH_LESS, BLEND_STATE.DISABLED );
 			m_device.SetRenderTarget( m_device.DefaultTarget, m_device.DefaultDepthStencil );
 
-			if ( m_shader_RenderScene.Use() ) {
-				m_device.RenderFullscreenQuad( m_shader_RenderScene );
+			if ( checkBoxShowReference.Checked ) {
+				// Use expensive reference
+				if ( m_shader_RenderScene_Reference.Use() ) {
+					m_device.RenderFullscreenQuad( m_shader_RenderScene_Reference );
+				}
+			} else {
+				if ( m_shader_RenderScene.Use() ) {
+					m_device.RenderFullscreenQuad( m_shader_RenderScene );
+				}
 			}
 
 			// =========== Render Disk ===========
-			m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
+			m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.READ_WRITE_DEPTH_LESS, BLEND_STATE.DISABLED );
 
 			if ( m_shader_RenderLight.Use() ) {
 				m_prim_disk.Render( m_shader_RenderLight );
@@ -321,9 +334,6 @@ namespace AreaLightTest {
 
 			// Show!
 			m_device.Present( false );
-
-			// Update window text
-//			Text = "Zombizous Prototype - " + m_Game.m_CurrentGameTime.ToString( "G5" ) + "s";
 		}
 
 		/// <summary>
@@ -402,12 +412,6 @@ namespace AreaLightTest {
 		private void buttonReload_Click( object sender, EventArgs e ) {
 			if ( m_device != null )
 				m_device.ReloadModifiedShaders();
-		}
-
-		private void buttonRebuildBRDF_Click( object sender, EventArgs e ) {
-		}
-
-		private void checkBoxUseTexture_CheckedChanged( object sender, EventArgs e ) {
 		}
 
 		#endregion

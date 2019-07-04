@@ -30,7 +30,7 @@
 		private void InitializeComponent()
 		{
 			this.components = new System.ComponentModel.Container();
-			this.floatTrackbarControlIlluminance = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlLuminance = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.buttonReload = new System.Windows.Forms.Button();
 			this.timer = new System.Windows.Forms.Timer(this.components);
 			this.label1 = new System.Windows.Forms.Label();
@@ -51,20 +51,21 @@
 			this.radioButtonHorizontalTarget = new System.Windows.Forms.RadioButton();
 			this.radioButtonNegativeFreeTarget = new System.Windows.Forms.RadioButton();
 			this.textBoxResults = new System.Windows.Forms.TextBox();
+			this.checkBoxShowReference = new System.Windows.Forms.CheckBox();
 			this.SuspendLayout();
 			// 
 			// floatTrackbarControlIlluminance
 			// 
-			this.floatTrackbarControlIlluminance.Location = new System.Drawing.Point(1180, 12);
-			this.floatTrackbarControlIlluminance.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.floatTrackbarControlIlluminance.MinimumSize = new System.Drawing.Size(70, 20);
-			this.floatTrackbarControlIlluminance.Name = "floatTrackbarControlIlluminance";
-			this.floatTrackbarControlIlluminance.RangeMax = 1F;
-			this.floatTrackbarControlIlluminance.RangeMin = 0F;
-			this.floatTrackbarControlIlluminance.Size = new System.Drawing.Size(200, 20);
-			this.floatTrackbarControlIlluminance.TabIndex = 1;
-			this.floatTrackbarControlIlluminance.Value = 1F;
-			this.floatTrackbarControlIlluminance.VisibleRangeMax = 1F;
+			this.floatTrackbarControlLuminance.Location = new System.Drawing.Point(1180, 12);
+			this.floatTrackbarControlLuminance.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlLuminance.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlLuminance.Name = "floatTrackbarControlIlluminance";
+			this.floatTrackbarControlLuminance.RangeMax = 10000F;
+			this.floatTrackbarControlLuminance.RangeMin = 0F;
+			this.floatTrackbarControlLuminance.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlLuminance.TabIndex = 1;
+			this.floatTrackbarControlLuminance.Value = 1F;
+			this.floatTrackbarControlLuminance.VisibleRangeMax = 1F;
 			// 
 			// buttonReload
 			// 
@@ -86,9 +87,9 @@
 			this.label1.AutoSize = true;
 			this.label1.Location = new System.Drawing.Point(1059, 17);
 			this.label1.Name = "label1";
-			this.label1.Size = new System.Drawing.Size(60, 13);
+			this.label1.Size = new System.Drawing.Size(59, 13);
 			this.label1.TabIndex = 3;
-			this.label1.Text = "Illuminance";
+			this.label1.Text = "Luminance";
 			// 
 			// floatTrackbarControlLightPosX
 			// 
@@ -280,11 +281,22 @@
 			this.textBoxResults.Size = new System.Drawing.Size(318, 221);
 			this.textBoxResults.TabIndex = 5;
 			// 
+			// checkBoxShowReference
+			// 
+			this.checkBoxShowReference.AutoSize = true;
+			this.checkBoxShowReference.Location = new System.Drawing.Point(1062, 318);
+			this.checkBoxShowReference.Name = "checkBoxShowReference";
+			this.checkBoxShowReference.Size = new System.Drawing.Size(178, 17);
+			this.checkBoxShowReference.TabIndex = 6;
+			this.checkBoxShowReference.Text = "Show Reference (Ground Truth)";
+			this.checkBoxShowReference.UseVisualStyleBackColor = true;
+			// 
 			// AreaLightForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1392, 665);
+			this.Controls.Add(this.checkBoxShowReference);
 			this.Controls.Add(this.textBoxResults);
 			this.Controls.Add(this.radioButtonNegativeFreeTarget);
 			this.Controls.Add(this.radioButtonHorizontalTarget);
@@ -303,7 +315,7 @@
 			this.Controls.Add(this.floatTrackbarControlLightScaleY);
 			this.Controls.Add(this.floatTrackbarControlLightScaleX);
 			this.Controls.Add(this.floatTrackbarControlLightPosX);
-			this.Controls.Add(this.floatTrackbarControlIlluminance);
+			this.Controls.Add(this.floatTrackbarControlLuminance);
 			this.Controls.Add(this.panelOutput);
 			this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedToolWindow;
 			this.Name = "AreaLightForm";
@@ -317,7 +329,7 @@
 		#endregion
 
 		private PanelOutput panelOutput;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlIlluminance;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlLuminance;
 		private System.Windows.Forms.Button buttonReload;
 		private System.Windows.Forms.Timer timer;
 		private System.Windows.Forms.Label label1;
@@ -337,6 +349,7 @@
 		private System.Windows.Forms.RadioButton radioButtonHorizontalTarget;
 		private System.Windows.Forms.RadioButton radioButtonNegativeFreeTarget;
 		private System.Windows.Forms.TextBox textBoxResults;
+		private System.Windows.Forms.CheckBox checkBoxShowReference;
 	}
 }
 

@@ -3,7 +3,8 @@
 #define INVPI	0.31830988618379067153776752674503
 
 cbuffer CB_Main : register(b0) {
-	float3	iResolution;	// viewport resolution (in pixels)
+	float2	iResolution;	// viewport resolution (in pixels)
+	float	tanHalfFOV;		// tan( Vertical FOV / 2 )
 	float	iGlobalTime;	// shader playback time (in seconds)
 };
 
@@ -17,8 +18,11 @@ cbuffer CB_Camera : register(b1) {
 };
 
 cbuffer CB_AreaLight : register(b2) {
-	float4x4	_wsLight2World;
-	float		_diskIlluminance;
+	float4x4	_wsLight2World;			// Row 0 [XYZ] = Axis X	[W] = Radius X
+										// Row 1 [XYZ] = Axis Y	[W] = Radius Y
+										// Row 2 [XYZ] = At		[W] = Disk area = PI * radius X * radius Y
+										// Row 3 [XYZ] = wsPos	[W] = 1
+	float		_diskLuminance;			// In lm/cd/m² (cd/m²)
 };
 
 SamplerState LinearClamp	: register( s0 );
@@ -32,6 +36,18 @@ SamplerState LinearBorder	: register( s6 );	// Black border
 
 static const float3	LUMINANCE = float3( 0.2126, 0.7152, 0.0722 );	// D65 Illuminant and 2° observer (cf. http://wiki.nuaj.net/index.php?title=Colorimetry)
 
+
+// Generates a normalized ray in camera space given a screen pixel position
+float3	GenerateCameraRay( float2 _pixelPosition ) {
+	float3	csView = float3( tanHalfFOV * (2.0 * _pixelPosition / iResolution - 1.0), 1.0 );
+			csView.x *= iResolution.x / iResolution.y;
+			csView.y = -csView.y;
+			
+	float	Z2Length = length( csView );
+			csView /= Z2Length;
+
+	return csView;
+}
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 // FRESNEL
@@ -98,4 +114,14 @@ float3	FresnelDielectric( float3 _IOR, float _CosTheta, float _FresnelStrength=1
 float SmoothMin( float a, float b, float k ) {
     float res = exp( -k*a ) + exp( -k*b );
     return -log( res ) / k;
+}
+
+// Code from http://forum.unity3d.com/threads/bitwise-operation-hammersley-point-sampling-is-there-an-alternate-method.200000/
+float ReverseBits( uint bits ) {
+	bits = (bits << 16u) | (bits >> 16u);
+	bits = ((bits & 0x55555555u) << 1u) | ((bits & 0xAAAAAAAAu) >> 1u);
+	bits = ((bits & 0x33333333u) << 2u) | ((bits & 0xCCCCCCCCu) >> 2u);
+	bits = ((bits & 0x0F0F0F0Fu) << 4u) | ((bits & 0xF0F0F0F0u) >> 4u);
+	bits = ((bits & 0x00FF00FFu) << 8u) | ((bits & 0xFF00FF00u) >> 8u);
+	return float(bits) * 2.3283064365386963e-10; // / 0x100000000
 }

@@ -9,7 +9,7 @@
     <EnableUnmanagedDebugging>true</EnableUnmanagedDebugging>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
-    <StartWorkingDirectory>V:\Pom\Workspaces\GodComplex\Tools\VoronoiVisualizer\</StartWorkingDirectory>
+    <StartWorkingDirectory>D:\Workspaces\GodComplex\Tools\VoronoiVisualizer\</StartWorkingDirectory>
     <EnableUnmanagedDebugging>true</EnableUnmanagedDebugging>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
