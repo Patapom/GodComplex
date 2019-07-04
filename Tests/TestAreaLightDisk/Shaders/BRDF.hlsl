@@ -156,7 +156,7 @@ float3	ComputeBRDF_OrenNayar( float3 _tsNormal, float3 _tsView, float3 _tsLight,
 
 	return BRDF;
 }
-
+/*
 // Computes the full dielectric BRDF model as described in http://patapom.com/blog/BRDF/MSBRDFEnergyCompensation/#complete-approximate-model
 //
 float3	ComputeBRDF_Full( float3 _tsNormal, float3 _tsView, float3 _tsLight, float _roughnessSpecular, float3 _F0, float _roughnessDiffuse, float3 _rho, const bool _enableMS, const bool _enableSaturation ) {
@@ -198,3 +198,4 @@ float3	ComputeBRDF_Full( float3 _tsNormal, float3 _tsView, float3 _tsLight, floa
 
 	return BRDF_spec + kappa * BRDF_diff;
 }
+*/

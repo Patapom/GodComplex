@@ -535,8 +535,8 @@ namespace TestHBIL {
 				m_tex_reprojectedDepthBuffer = new Texture2D( m_device, W, H, 1, 0, PIXEL_FORMAT.R32, COMPONENT_FORMAT.UINT, false, true, null );
 
 				// Create HBIL quarter-res buffers
-				uint	qW = W >> 2; if ( 4*qW != W ) throw new Exception( "Must be integer 4!" );
-				uint	qH = H >> 2; if ( 4*qH != H ) throw new Exception( "Must be integer 4!" );
+				uint	qW = W >> 2; if ( 4*qW != W ) throw new Exception( "Must be integer multiple of 4!" );
+				uint	qH = H >> 2; if ( 4*qH != H ) throw new Exception( "Must be integer multiple of 4!" );
 				m_tex_splitDepth = new Texture2D( m_device, qW, qH, 16, 1, PIXEL_FORMAT.R16F, COMPONENT_FORMAT.AUTO, false, true, null );
 //m_tex_splitDepth = new Texture2D( m_device, qW, qH, 16, 1, PIXEL_FORMAT.R32F, COMPONENT_FORMAT.AUTO, false, true, null );
 				m_tex_splitNormal = new Texture2D( m_device, qW, qH, 16, 1, PIXEL_FORMAT.RG8, COMPONENT_FORMAT.SNORM, false, true, null );
@@ -1194,7 +1194,7 @@ namespace TestHBIL {
 
 // This part is quite optional, actually reprojection from last frame is not compulsory:
 //	• If you don't do it then you will simply get a single indirect bounce
-//	• You could totally re-use the history buffer from the TAA, the fact that it contains both specular and diffuse pixels instead of just diffuse is quite not noticeable when you integrate radiance
+//	• You could totally re-use the history buffer from the TAA, the fact that it contains both specular and diffuse pixels instead of just diffuse is quite unnoticeable when you integrate radiance
 //		Although it's not perfect and requires a little fiddling with some kind of "magic coefficient", it's totally doable and very nice to see some sort of "infinite bounce" as it adds a lot the the resulting image...
 //
 //*			//////////////////////////////////////////////////////////////////////////

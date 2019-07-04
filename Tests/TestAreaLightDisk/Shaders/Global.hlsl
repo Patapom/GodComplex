@@ -37,6 +37,15 @@ SamplerState LinearBorder	: register( s6 );	// Black border
 static const float3	LUMINANCE = float3( 0.2126, 0.7152, 0.0722 );	// D65 Illuminant and 2° observer (cf. http://wiki.nuaj.net/index.php?title=Colorimetry)
 
 
+float	pow2( float a ) { return a*a; }
+float2	pow2( float2 a ) { return a*a; }
+float3	pow2( float3 a ) { return a*a; }
+float4	pow2( float4 a ) { return a*a; }
+float	pow3( float a ) { return a*a*a; }
+float2	pow3( float2 a ) { return a*a*a; }
+float3	pow3( float3 a ) { return a*a*a; }
+float4	pow3( float4 a ) { return a*a*a; }
+
 // Generates a normalized ray in camera space given a screen pixel position
 float3	GenerateCameraRay( float2 _pixelPosition ) {
 	float3	csView = float3( tanHalfFOV * (2.0 * _pixelPosition / iResolution - 1.0), 1.0 );

@@ -16,16 +16,23 @@ VS_IN	VS( VS_IN _in ) { return _in; }
 
 // Computes the diffuse and specular luminance of the area light that is reflected from the surface
 void	ComputeLTCAreaLightLuminance( float3 _wsPosition, float3 _wsNormal, float3 _wsView, float _alphaD, float _alphaS, out float3 _diffuse, out float3 _specular ) {
+	// Build tangent space
+	// Construct a right-handed view-dependent orthogonal basis around the normal
+	float3	wsTangent = normalize( _wsView - _wsNormal * dot( _wsView, _wsNormal ) );
+	float3	wsBiTangent = cross( _wsNormal, wsTangent );
+
+	float3x3	world2TangentSpace = transpose( float3x3( wsTangent, wsBiTangent, _wsNormal ) );
+//	float3		tsView = mul( _wsView, world2TangentSpace );
+
 	float		VdotN = saturate( dot( _wsView, _wsNormal ) );
 
 	float		perceptualAlphaD = sqrt( _alphaD );
 	float		perceptualAlphaS = sqrt( _alphaS );
 
 	float3x3	LTC_diffuse = LTCSampleMatrix( VdotN, perceptualAlphaD, LTC_BRDF_INDEX_OREN_NAYAR );
-	float		magnitude_diffuse = SampleIrradiance( VdotN, _alphaD, FGD_BRDF_INDEX_OREN_NAYAR );
-
-	float3		magnitude_specular = SampleIrradiance( VdotN, _alphaS, FGD_BRDF_INDEX_GGX );
 	float3x3	LTC_specular = LTCSampleMatrix( VdotN, perceptualAlphaS, LTC_BRDF_INDEX_GGX );
+	float		magnitude_diffuse = SampleIrradiance( VdotN, _alphaD, FGD_BRDF_INDEX_OREN_NAYAR );
+	float3		magnitude_specular = SampleIrradiance( VdotN, _alphaS, FGD_BRDF_INDEX_GGX );
 
 	// Build rectangular area light corners in local space
 	float3		lsAreaLightPosition = _wsLight2World[3].xyz - _wsPosition;
@@ -35,7 +42,7 @@ void	ComputeLTCAreaLightLuminance( float3 _wsPosition, float3 _wsNormal, float3 
 				lsLightCorners[2] = lsAreaLightPosition - _wsLight2World[0].w * _wsLight2World[0].xyz - _wsLight2World[1].w * _wsLight2World[1].xyz;
 				lsLightCorners[3] = lsAreaLightPosition - _wsLight2World[0].w * _wsLight2World[0].xyz + _wsLight2World[1].w * _wsLight2World[1].xyz;
 
-	float4x3    tsLightCorners = mul( wsLightCorners, world2TangentSpace );		// Transform them into tangent-space
+	float4x3    tsLightCorners = mul( lsLightCorners, world2TangentSpace );		// Transform them into tangent-space
 
 	float3		Li = _diskLuminance;
 
@@ -67,7 +74,7 @@ PS_OUT	PS( VS_IN _In ) {
 	float4	ndcPos = mul( float4( wsPos, 1 ), _world2Proj );
 
 	PS_OUT	result;
-	result.color = 0.1 * wsPos;
+	result.color = diffuse;
 	result.depth = ndcPos.z / ndcPos.w;
 
 	return result;

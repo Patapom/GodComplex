@@ -5,13 +5,17 @@ Texture2DArray< float4 >	_tex_LTC : register(t4);
 Texture2D< float2 >			_tex_MS_LTC : register(t5);
 
 #define LTC_LUT_SIZE	64	// LTC LUTs are 64x64
-#define LTC_BRDFS_COUNT	2	// Only 2 BRDF types are supported at the moment
+#define LTC_BRDFS_COUNT	6	// Only 6 BRDF types are supported at the moment
 
 // Specular BRDFs
 #define LTC_BRDF_INDEX_GGX				0
+#define LTC_BRDF_INDEX_COOK_TORRANCE	1
+#define LTC_BRDF_INDEX_WARD				2
 
 // Diffuse BRDFs
-#define LTC_BRDF_INDEX_OREN_NAYAR		2
+#define LTC_BRDF_INDEX_OREN_NAYAR		3
+#define LTC_BRDF_INDEX_CHARLIE			4
+#define LTC_BRDF_INDEX_DISNEY			5
 
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
