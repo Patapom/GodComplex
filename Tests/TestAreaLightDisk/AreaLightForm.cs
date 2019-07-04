@@ -66,6 +66,13 @@ namespace AreaLightTest {
 
 //		private Texture2D			m_tex_FalseColors = null;
 
+		// Pre-integrated BRDF textures
+		Texture2D					m_tex_MSBRDF_E;
+		Texture2D					m_tex_MSBRDF_Eavg;
+
+			// LTC texture
+		Texture2D					m_tex_LTC;
+		Texture2D					m_tex_MS_LTC;
 
 		private Camera				m_camera = new Camera();
 		private CameraManipulator	m_manipulator = new CameraManipulator();
@@ -125,6 +132,24 @@ namespace AreaLightTest {
 			m_manipulator.InitializeCamera( new float3( 0, 1, 4 ), new float3( 0, 1, 0 ), float3.UnitY );
 			m_manipulator.EnableMouseAction += m_manipulator_EnableMouseAction;
 
+			// Pre-integrated BRDF tables
+			LoadMSBRDF( new uint[] { 128, 32 },
+						new System.IO.FileInfo[] {
+							new System.IO.FileInfo( "./Tables/MSBRDF_GGX_G2_E128x128.float" ),
+							new System.IO.FileInfo( "./Tables/MSBRDF_OrenNayar_E32x32.float" ),
+						},
+						new System.IO.FileInfo[] {
+							new System.IO.FileInfo( "./Tables/MSBRDF_GGX_G2_Eavg128.float" ),
+							new System.IO.FileInfo( "./Tables/MSBRDF_OrenNayar_Eavg32.float" ),
+						},
+						out m_tex_MSBRDF_E, out m_tex_MSBRDF_Eavg
+			);
+
+			// LTC Tables
+			m_tex_LTC = LoadLTC( new System.IO.FileInfo( @".\Tables\LTC.dds" ) );
+			m_tex_MS_LTC = LoadMSLTC( new System.IO.FileInfo( @".\Tables\MS_LTC.dds" ) );
+
+
 			// Start game time
 			m_ticks2Seconds = 1.0 / System.Diagnostics.Stopwatch.Frequency;
 			m_stopWatch.Start();
@@ -139,6 +164,12 @@ namespace AreaLightTest {
 		protected override void OnFormClosed( FormClosedEventArgs e ) {
 			if ( m_device == null )
 				return;
+
+			m_tex_MS_LTC.Dispose();
+			m_tex_LTC.Dispose();
+
+			m_tex_MSBRDF_Eavg.Dispose();
+			m_tex_MSBRDF_E.Dispose();
 
 			m_shader_RenderLight.Dispose();
 			m_shader_RenderScene.Dispose();
@@ -178,6 +209,100 @@ namespace AreaLightTest {
 
 			m_prim_disk = new Primitive( m_device, 2*VERTICES_COUNT, VertexP3N3.FromArray( vertices ), indices, Primitive.TOPOLOGY.TRIANGLE_LIST, VERTEX_FORMAT.P3N3 );
 		}
+
+		#region LTC Area Lights
+
+		Texture2D	LoadLTC( System.IO.FileInfo _LTCFileName ) {
+			using ( ImageUtility.ImagesMatrix M = new ImageUtility.ImagesMatrix() ) {
+				M.DDSLoadFile( _LTCFileName );
+				Texture2D	T = new Texture2D( m_device, M, ImageUtility.COMPONENT_FORMAT.AUTO );
+				return T;
+			}
+		}
+
+		Texture2D	LoadMSLTC( System.IO.FileInfo _MSLTCFileName ) {
+			using ( ImageUtility.ImagesMatrix M = new ImageUtility.ImagesMatrix() ) {
+				M.DDSLoadFile( _MSLTCFileName );
+				Texture2D	T = new Texture2D( m_device, M, ImageUtility.COMPONENT_FORMAT.AUTO );
+				return T;
+			}
+		}
+
+		#endregion
+
+		#region Pre-Integrated BRDF Tables
+
+		void	LoadMSBRDF( uint[] _sizes, System.IO.FileInfo[] _irradianceTablesNames, System.IO.FileInfo[] _albedoTablesNames, out Texture2D _irradianceTexture, out Texture2D _albedoTexture ) {
+
+			uint	BRDFSCount = (uint) _sizes.Length;
+			if ( _irradianceTablesNames.Length != BRDFSCount || _albedoTablesNames.Length != BRDFSCount )
+				throw new Exception( "Irradiance and albedo textures count must match the amount of BRDFs computed from the size of the _sizes array!" );
+
+			// Determine max texture size
+			uint	textureSize = 0;
+			foreach ( uint size in _sizes )
+				textureSize = Math.Max( textureSize, size );
+
+			// Create placeholders
+			ImageUtility.ImagesMatrix	texE = new ImageUtility.ImagesMatrix();
+			texE.InitTexture2DArray( textureSize, textureSize, BRDFSCount, 1 );
+			texE.AllocateImageFiles( ImageUtility.PIXEL_FORMAT.R32F, new ImageUtility.ColorProfile( ImageUtility.ColorProfile.STANDARD_PROFILE.LINEAR ) );
+
+			ImageUtility.ImagesMatrix	texEavg = new ImageUtility.ImagesMatrix();
+			texEavg.InitTexture2DArray( textureSize, BRDFSCount, 1, 1 );
+			texEavg.AllocateImageFiles( ImageUtility.PIXEL_FORMAT.R32F, new ImageUtility.ColorProfile( ImageUtility.ColorProfile.STANDARD_PROFILE.LINEAR ) );
+
+			float[][]	albedoTables = new float[BRDFSCount][];
+			for ( uint BRDFIndex=0; BRDFIndex < BRDFSCount; BRDFIndex++ ) {
+				uint	size = _sizes[BRDFIndex];
+
+				// Read irradiance table
+				float[,]	irradianceTable = new float[size,size];
+				using ( System.IO.FileStream S = _irradianceTablesNames[BRDFIndex].OpenRead() )
+					using ( System.IO.BinaryReader R = new System.IO.BinaryReader( S ) ) {
+						for ( int Y=0; Y < size; Y++ ) {
+							for ( int X=0; X < size; X++ ) {
+								irradianceTable[X,Y] = R.ReadSingle();
+							}
+						}
+					}
+
+				// Write content
+				if ( size == textureSize ) {
+					// One-one correspondance
+					texE[BRDFIndex][0][0].WritePixels( ( uint _X, uint _Y, ref float4 _color ) => {
+						_color.x = irradianceTable[_X,_Y];
+					} );
+				} else {
+					// Needs scaling
+					texE[BRDFIndex][0][0].WritePixels( ( uint _X, uint _Y, ref float4 _color ) => {
+						_color.x = Mathf.BiLerp( irradianceTable, (float) _X / textureSize, (float) _Y / textureSize );
+					} );
+				}
+
+				// Read albedo table
+				float[]	albedoTable = new float[size];
+				albedoTables[BRDFIndex] = albedoTable;
+				using ( System.IO.FileStream S = _albedoTablesNames[BRDFIndex].OpenRead() )
+					using ( System.IO.BinaryReader R = new System.IO.BinaryReader( S ) ) {
+						for ( int Y=0; Y < size; Y++ ) {
+							albedoTable[Y] = R.ReadSingle();
+						}
+					}
+			}
+
+			// Build the entire albedo tables
+			texEavg[0][0][0].WritePixels( ( uint _X, uint _Y, ref float4 _color ) => {
+				_color.x = Mathf.Lerp( albedoTables[_Y], (float) _X / textureSize );
+			} );
+
+
+			// Create textures
+			_irradianceTexture = new Texture2D( m_device, texE, ImageUtility.COMPONENT_FORMAT.AUTO );
+			_albedoTexture = new Texture2D( m_device, texEavg, ImageUtility.COMPONENT_FORMAT.AUTO );
+		}
+
+		#endregion
 
 		#endregion
 
@@ -321,6 +446,13 @@ namespace AreaLightTest {
 				}
 			} else {
 				if ( m_shader_RenderScene.Use() ) {
+
+					// Upload FGD & LTC tables
+					m_tex_MSBRDF_E.SetPS( 2 );
+					m_tex_MSBRDF_Eavg.SetPS( 3 );
+					m_tex_LTC.SetPS( 4 );
+					m_tex_MS_LTC.SetPS( 5 );
+
 					m_device.RenderFullscreenQuad( m_shader_RenderScene );
 				}
 			}

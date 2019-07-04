@@ -95,6 +95,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="LtcData.GGX.cs" />
     <Compile Include="PanelOutput.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -163,6 +164,13 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\RenderScene_Reference.hlsl" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Shaders\LTC.hlsl" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Shaders\BRDF.hlsl" />
+    <Content Include="Shaders\FGD.hlsl" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

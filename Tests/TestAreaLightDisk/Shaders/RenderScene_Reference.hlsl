@@ -24,7 +24,7 @@ float	EllipticalDiskArea( float _Rx, float _Ry, float _phi0, float _phi1, float 
 	return _Rx * _Ry * (_phi1 - _phi0) * (_r1*_r1 - _r0*_r0) / 2.0;
 }
 
-float3	ComputeRadiance_DiffuseLambert( float3 _wsPosition, float3 _wsNormal, uint2 _seed ) {
+float3	ComputeLuminance_DiffuseLambert( float3 _wsPosition, float3 _wsNormal, uint2 _seed ) {
 
 	const uint	SAMPLES_PHI_COUNT = 64;
 	const uint	SAMPLES_RHO_COUNT = 32;
@@ -76,7 +76,7 @@ float3	ComputeRadiance_DiffuseLambert( float3 _wsPosition, float3 _wsNormal, uin
 	return sumLuminance;
 }
 
-//float3	ComputeRadiance_SpecularGGX( float3 _wsPosition, float3 _wsNormal, float _sqRoughness, uint2 _seed ) {
+//float3	ComputeLuminance_SpecularGGX( float3 _wsPosition, float3 _wsNormal, float _sqRoughness, uint2 _seed ) {
 //}
 
 PS_OUT	PS( VS_IN _In ) {
@@ -90,11 +90,11 @@ PS_OUT	PS( VS_IN _In ) {
 	float3	wsPos = wsCamPos + t * wsView;
 
 	float3	wsNormal = float3( 0, 1, 0 );	// Simple plane
-	float3	surfaceAlbedo = 0.5;			// Assume a regular 50% diffuse reflectance
+	float3	diffuseAlbedo = 0.5;			// Assume a regular 50% diffuse reflectance
 
 	// Compute reference diffuse lighting
-	float3	diffuse = ComputeRadiance_DiffuseLambert( wsPos, wsNormal, uint2( _In.__Position.xy ) );
-			diffuse *= surfaceAlbedo;
+	float3	diffuse = ComputeLuminance_DiffuseLambert( wsPos, wsNormal, uint2( _In.__Position.xy ) );
+			diffuse *= diffuseAlbedo;
 
 	float4	ndcPos = mul( float4( wsPos, 1 ), _world2Proj );
 
