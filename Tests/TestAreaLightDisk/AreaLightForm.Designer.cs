@@ -30,6 +30,7 @@
 		private void InitializeComponent()
 		{
 			this.components = new System.ComponentModel.Container();
+			System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(AreaLightForm));
 			this.floatTrackbarControlLuminance = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.buttonReload = new System.Windows.Forms.Button();
 			this.timer = new System.Windows.Forms.Timer(this.components);
@@ -53,13 +54,17 @@
 			this.checkBoxShowReference = new System.Windows.Forms.CheckBox();
 			this.checkBoxDebugMatrix = new System.Windows.Forms.CheckBox();
 			this.panelVisualizeLTCTransform = new System.Windows.Forms.Panel();
-			this.radioButtonOrenNayar = new System.Windows.Forms.RadioButton();
 			this.radioButtonGGX = new System.Windows.Forms.RadioButton();
-			this.floatTrackbarControlRoughness = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.radioButtonOrenNayar = new System.Windows.Forms.RadioButton();
 			this.floatTrackbarControlViewAngle = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.label3 = new System.Windows.Forms.Label();
+			this.floatTrackbarControlRoughness = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label4 = new System.Windows.Forms.Label();
+			this.label3 = new System.Windows.Forms.Label();
 			this.panelOutput = new AreaLightTest.PanelOutput(this.components);
+			this.checkBoxShowDiff = new System.Windows.Forms.CheckBox();
+			this.panel1 = new System.Windows.Forms.Panel();
+			this.label5 = new System.Windows.Forms.Label();
+			this.label6 = new System.Windows.Forms.Label();
 			this.panelVisualizeLTCTransform.SuspendLayout();
 			this.SuspendLayout();
 			// 
@@ -283,7 +288,7 @@
 			// checkBoxShowReference
 			// 
 			this.checkBoxShowReference.AutoSize = true;
-			this.checkBoxShowReference.Location = new System.Drawing.Point(1062, 318);
+			this.checkBoxShowReference.Location = new System.Drawing.Point(1062, 302);
 			this.checkBoxShowReference.Name = "checkBoxShowReference";
 			this.checkBoxShowReference.Size = new System.Drawing.Size(178, 17);
 			this.checkBoxShowReference.TabIndex = 6;
@@ -315,6 +320,16 @@
 			this.panelVisualizeLTCTransform.Size = new System.Drawing.Size(318, 78);
 			this.panelVisualizeLTCTransform.TabIndex = 8;
 			// 
+			// radioButtonGGX
+			// 
+			this.radioButtonGGX.AutoSize = true;
+			this.radioButtonGGX.Location = new System.Drawing.Point(86, 3);
+			this.radioButtonGGX.Name = "radioButtonGGX";
+			this.radioButtonGGX.Size = new System.Drawing.Size(48, 17);
+			this.radioButtonGGX.TabIndex = 0;
+			this.radioButtonGGX.Text = "GGX";
+			this.radioButtonGGX.UseVisualStyleBackColor = true;
+			// 
 			// radioButtonOrenNayar
 			// 
 			this.radioButtonOrenNayar.AutoSize = true;
@@ -326,29 +341,6 @@
 			this.radioButtonOrenNayar.TabStop = true;
 			this.radioButtonOrenNayar.Text = "Oren-Nayar";
 			this.radioButtonOrenNayar.UseVisualStyleBackColor = true;
-			// 
-			// radioButtonGGX
-			// 
-			this.radioButtonGGX.AutoSize = true;
-			this.radioButtonGGX.Location = new System.Drawing.Point(86, 3);
-			this.radioButtonGGX.Name = "radioButtonGGX";
-			this.radioButtonGGX.Size = new System.Drawing.Size(48, 17);
-			this.radioButtonGGX.TabIndex = 0;
-			this.radioButtonGGX.Text = "GGX";
-			this.radioButtonGGX.UseVisualStyleBackColor = true;
-			// 
-			// floatTrackbarControlRoughness
-			// 
-			this.floatTrackbarControlRoughness.Location = new System.Drawing.Point(118, 26);
-			this.floatTrackbarControlRoughness.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.floatTrackbarControlRoughness.MinimumSize = new System.Drawing.Size(70, 20);
-			this.floatTrackbarControlRoughness.Name = "floatTrackbarControlRoughness";
-			this.floatTrackbarControlRoughness.RangeMax = 1F;
-			this.floatTrackbarControlRoughness.RangeMin = 0F;
-			this.floatTrackbarControlRoughness.Size = new System.Drawing.Size(200, 20);
-			this.floatTrackbarControlRoughness.TabIndex = 1;
-			this.floatTrackbarControlRoughness.Value = 0F;
-			this.floatTrackbarControlRoughness.VisibleRangeMax = 1F;
 			// 
 			// floatTrackbarControlViewAngle
 			// 
@@ -363,14 +355,18 @@
 			this.floatTrackbarControlViewAngle.Value = 0F;
 			this.floatTrackbarControlViewAngle.VisibleRangeMax = 90F;
 			// 
-			// label3
+			// floatTrackbarControlRoughness
 			// 
-			this.label3.AutoSize = true;
-			this.label3.Location = new System.Drawing.Point(6, 30);
-			this.label3.Name = "label3";
-			this.label3.Size = new System.Drawing.Size(101, 13);
-			this.label3.TabIndex = 3;
-			this.label3.Text = "Surface Roughness";
+			this.floatTrackbarControlRoughness.Location = new System.Drawing.Point(118, 26);
+			this.floatTrackbarControlRoughness.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlRoughness.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlRoughness.Name = "floatTrackbarControlRoughness";
+			this.floatTrackbarControlRoughness.RangeMax = 1F;
+			this.floatTrackbarControlRoughness.RangeMin = 0F;
+			this.floatTrackbarControlRoughness.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlRoughness.TabIndex = 1;
+			this.floatTrackbarControlRoughness.Value = 0F;
+			this.floatTrackbarControlRoughness.VisibleRangeMax = 1F;
 			// 
 			// label4
 			// 
@@ -380,6 +376,15 @@
 			this.label4.Size = new System.Drawing.Size(60, 13);
 			this.label4.TabIndex = 3;
 			this.label4.Text = "View Angle";
+			// 
+			// label3
+			// 
+			this.label3.AutoSize = true;
+			this.label3.Location = new System.Drawing.Point(6, 30);
+			this.label3.Name = "label3";
+			this.label3.Size = new System.Drawing.Size(101, 13);
+			this.label3.TabIndex = 3;
+			this.label3.Text = "Surface Roughness";
 			// 
 			// panelOutput
 			// 
@@ -391,13 +396,55 @@
 			this.panelOutput.MouseMove += new System.Windows.Forms.MouseEventHandler(this.panelOutput_MouseMove);
 			this.panelOutput.MouseUp += new System.Windows.Forms.MouseEventHandler(this.panelOutput_MouseUp);
 			// 
+			// checkBoxShowDiff
+			// 
+			this.checkBoxShowDiff.AutoSize = true;
+			this.checkBoxShowDiff.Location = new System.Drawing.Point(1246, 302);
+			this.checkBoxShowDiff.Name = "checkBoxShowDiff";
+			this.checkBoxShowDiff.Size = new System.Drawing.Size(138, 17);
+			this.checkBoxShowDiff.TabIndex = 6;
+			this.checkBoxShowDiff.Text = "Show Log10 Difference";
+			this.checkBoxShowDiff.UseVisualStyleBackColor = true;
+			// 
+			// panel1
+			// 
+			this.panel1.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("panel1.BackgroundImage")));
+			this.panel1.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
+			this.panel1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+			this.panel1.Location = new System.Drawing.Point(1180, 324);
+			this.panel1.Name = "panel1";
+			this.panel1.Size = new System.Drawing.Size(186, 12);
+			this.panel1.TabIndex = 9;
+			// 
+			// label5
+			// 
+			this.label5.AutoSize = true;
+			this.label5.Location = new System.Drawing.Point(1139, 322);
+			this.label5.Name = "label5";
+			this.label5.Size = new System.Drawing.Size(34, 13);
+			this.label5.TabIndex = 10;
+			this.label5.Text = "1e-10";
+			// 
+			// label6
+			// 
+			this.label6.AutoSize = true;
+			this.label6.Location = new System.Drawing.Point(1372, 323);
+			this.label6.Name = "label6";
+			this.label6.Size = new System.Drawing.Size(13, 13);
+			this.label6.TabIndex = 10;
+			this.label6.Text = "1";
+			// 
 			// AreaLightForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1392, 665);
+			this.Controls.Add(this.label6);
+			this.Controls.Add(this.label5);
+			this.Controls.Add(this.panel1);
 			this.Controls.Add(this.panelVisualizeLTCTransform);
 			this.Controls.Add(this.checkBoxDebugMatrix);
+			this.Controls.Add(this.checkBoxShowDiff);
 			this.Controls.Add(this.checkBoxShowReference);
 			this.Controls.Add(this.textBoxResults);
 			this.Controls.Add(this.radioButtonNegativeFreeTarget);
@@ -462,6 +509,10 @@
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlRoughness;
 		private System.Windows.Forms.Label label4;
 		private System.Windows.Forms.Label label3;
+		private System.Windows.Forms.CheckBox checkBoxShowDiff;
+		private System.Windows.Forms.Panel panel1;
+		private System.Windows.Forms.Label label5;
+		private System.Windows.Forms.Label label6;
 	}
 }
 

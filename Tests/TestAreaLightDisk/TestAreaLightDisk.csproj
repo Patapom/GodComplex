@@ -170,6 +170,7 @@
     <None Include="Shaders\LTC.hlsl" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Shaders\RenderDiff.hlsl" />
     <None Include="Shaders\RenderTestQuad.hlsl" />
     <None Include="Shaders\BRDF.hlsl" />
     <Content Include="Shaders\FGD.hlsl" />

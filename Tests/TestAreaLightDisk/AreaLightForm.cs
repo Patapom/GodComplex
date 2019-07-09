@@ -71,10 +71,13 @@ namespace AreaLightTest {
 		private Shader				m_shader_RenderScene = null;
 		private Shader				m_shader_RenderScene_Reference = null;
 		private Shader				m_shader_RenderTestQuad = null;
+		private Shader				m_shader_RenderDiff = null;
 
 		private Primitive			m_prim_disk = null;
 
-//		private Texture2D			m_tex_FalseColors = null;
+		private Texture2D			m_RT_temp0 = null;
+		private Texture2D			m_RT_temp1 = null;
+		private Texture2D			m_tex_FalseColors = null;
 
 		// Pre-integrated BRDF textures
 		Texture2D					m_tex_MSBRDF_E;
@@ -121,8 +124,6 @@ namespace AreaLightTest {
 				return;
 			}
 
-//			m_tex_FalseColors = Image2Texture( new System.IO.FileInfo( "FalseColorsSpectrum.png" ), ImageUtility.COMPONENT_FORMAT.UNORM_sRGB );
-
 			m_CB_Main = new ConstantBuffer<CB_Main>( m_device, 0 );
 			m_CB_Camera = new ConstantBuffer<CB_Camera>( m_device, 1 );
 			m_CB_Light = new ConstantBuffer<CB_Light>( m_device, 2 );
@@ -132,6 +133,7 @@ namespace AreaLightTest {
 				m_shader_RenderLight = new Shader( m_device, new System.IO.FileInfo( "Shaders/RenderLight.hlsl" ), VERTEX_FORMAT.P3N3, "VS", null, "PS", null );;
 				m_shader_RenderScene = new Shader( m_device, new System.IO.FileInfo( "Shaders/RenderScene.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );;
 				m_shader_RenderScene_Reference = new Shader( m_device, new System.IO.FileInfo( "Shaders/RenderScene_Reference.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );;
+				m_shader_RenderDiff = new Shader( m_device, new System.IO.FileInfo( "Shaders/RenderDiff.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );;
 				m_shader_RenderTestQuad = new Shader( m_device, new System.IO.FileInfo( "Shaders/RenderTestQuad.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );;
 			} catch ( Exception _e ) {
 				MessageBox.Show( "Shader failed to compile!\n\n" + _e.Message, "Area Light Test", MessageBoxButtons.OK, MessageBoxIcon.Error );
@@ -139,6 +141,11 @@ namespace AreaLightTest {
 			}
 
 			BuildPrimitives();
+
+			// Allocate temp targets & false colors spectrum
+			m_RT_temp0 = new Texture2D( m_device, m_device.DefaultTarget.Width, m_device.DefaultTarget.Height, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, false, null );
+			m_RT_temp1 = new Texture2D( m_device, m_device.DefaultTarget.Width, m_device.DefaultTarget.Height, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, false, null );
+			m_tex_FalseColors = Image2Texture( new System.IO.FileInfo( "FalseColorsSpectrum.png" ), ImageUtility.COMPONENT_FORMAT.UNORM_sRGB );
 
 			// Setup camera
 			m_camera.CreatePerspectiveCamera( (float) (FOV_DEGREES * Math.PI / 180.0), (float) panelOutput.Width / panelOutput.Height, 0.01f, 100.0f );
@@ -185,9 +192,14 @@ namespace AreaLightTest {
 			m_tex_MSBRDF_Eavg.Dispose();
 			m_tex_MSBRDF_E.Dispose();
 
+			m_RT_temp0.Dispose();
+			m_RT_temp1.Dispose();
+			m_tex_FalseColors.Dispose();
+
 			m_shader_RenderLight.Dispose();
 			m_shader_RenderScene.Dispose();
 			m_shader_RenderScene_Reference.Dispose();
+			m_shader_RenderDiff.Dispose();
 			m_shader_RenderTestQuad.Dispose();
 
 			m_CB_Main.Dispose();
@@ -196,8 +208,6 @@ namespace AreaLightTest {
 			m_CB_TestQuad.Dispose();
 
 			m_prim_disk.Dispose();
-
-//			m_tex_FalseColors.Dispose();
 
 			m_device.Exit();
 
@@ -316,6 +326,28 @@ namespace AreaLightTest {
 			// Create textures
 			_irradianceTexture = new Texture2D( m_device, texE, ImageUtility.COMPONENT_FORMAT.AUTO );
 			_albedoTexture = new Texture2D( m_device, texEavg, ImageUtility.COMPONENT_FORMAT.AUTO );
+		}
+
+		#endregion
+
+		#region Image Helpers
+
+		public Texture2D	Image2Texture( System.IO.FileInfo _fileName, ImageUtility.COMPONENT_FORMAT _componentFormat ) {
+			ImageUtility.ImagesMatrix	images = null;
+			if ( _fileName.Extension.ToLower() == ".dds" ) {
+				images = new ImageUtility.ImagesMatrix();
+				images.DDSLoadFile( _fileName );
+			} else {
+				ImageUtility.ImageFile	image = new ImageUtility.ImageFile( _fileName );
+				if ( image.PixelFormat != ImageUtility.PIXEL_FORMAT.BGRA8 ) {
+					ImageUtility.ImageFile	badImage = image;
+					image = new ImageUtility.ImageFile();
+					image.ConvertFrom( badImage, ImageUtility.PIXEL_FORMAT.BGRA8 );
+					badImage.Dispose();
+				}
+				images = new ImageUtility.ImagesMatrix( new ImageUtility.ImageFile[1,1] { { image } } );
+			}
+			return new Texture2D( m_device, images, _componentFormat );
 		}
 
 		#endregion
@@ -447,29 +479,55 @@ namespace AreaLightTest {
 			m_CB_Light.m._wsLight2World.r3.Set( wsLightPosition, 1 );
 			m_CB_Light.UpdateData();
 
-
- 			m_device.Clear( m_device.DefaultTarget, float4.Zero );
- 			m_device.ClearDepthStencil( m_device.DefaultDepthStencil, 1.0f, 0, true, false );
+			// Upload FGD & LTC tables
+			m_tex_MSBRDF_E.SetPS( 2 );
+			m_tex_MSBRDF_Eavg.SetPS( 3 );
+			m_tex_LTC.SetPS( 4 );
+			m_tex_MS_LTC.SetPS( 5 );
 
 			// =========== Render scene ===========
 			m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.READ_WRITE_DEPTH_LESS, BLEND_STATE.DISABLED );
-			m_device.SetRenderTarget( m_device.DefaultTarget, m_device.DefaultDepthStencil );
 
-			if ( checkBoxShowReference.Checked ) {
-				// Use expensive reference
+			if ( !checkBoxShowDiff.Checked ) {
+				m_device.SetRenderTarget( m_device.DefaultTarget, m_device.DefaultDepthStencil );
+ 				m_device.Clear( m_device.DefaultTarget, float4.Zero );
+ 				m_device.ClearDepthStencil( m_device.DefaultDepthStencil, 1.0f, 0, true, false );
+
+				if ( checkBoxShowReference.Checked ) {
+					// Use expensive reference
+					if ( m_shader_RenderScene_Reference.Use() ) {
+						m_device.RenderFullscreenQuad( m_shader_RenderScene_Reference );
+					}
+				} else {
+					if ( m_shader_RenderScene.Use() ) {
+						m_device.RenderFullscreenQuad( m_shader_RenderScene );
+					}
+				}
+			} else {
+				// Render reference in RT0
+				m_device.SetRenderTarget( m_RT_temp0, m_device.DefaultDepthStencil );
+ 				m_device.ClearDepthStencil( m_device.DefaultDepthStencil, 1.0f, 0, true, false );
 				if ( m_shader_RenderScene_Reference.Use() ) {
 					m_device.RenderFullscreenQuad( m_shader_RenderScene_Reference );
 				}
-			} else {
+
+				// Render LTC in RT1
+				m_device.SetRenderTarget( m_RT_temp1, m_device.DefaultDepthStencil );
+	 			m_device.ClearDepthStencil( m_device.DefaultDepthStencil, 1.0f, 0, true, false );
 				if ( m_shader_RenderScene.Use() ) {
-
-					// Upload FGD & LTC tables
-					m_tex_MSBRDF_E.SetPS( 2 );
-					m_tex_MSBRDF_Eavg.SetPS( 3 );
-					m_tex_LTC.SetPS( 4 );
-					m_tex_MS_LTC.SetPS( 5 );
-
 					m_device.RenderFullscreenQuad( m_shader_RenderScene );
+				}
+
+				// Render difference
+				m_device.SetRenderStates( RASTERIZER_STATE.NOCHANGE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
+				m_device.SetRenderTarget( m_device.DefaultTarget, null );
+				if ( m_shader_RenderDiff.Use() ) {
+
+					m_RT_temp0.SetPS( 0 );
+					m_RT_temp1.SetPS( 1 );
+					m_tex_FalseColors.SetPS( 2 );
+
+					m_device.RenderFullscreenQuad( m_shader_RenderDiff );
 				}
 			}
 
