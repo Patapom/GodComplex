@@ -95,7 +95,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="LtcData.GGX.cs" />
+    <Compile Include="Tables\LtcData.GGX2.cs" />
+    <Compile Include="Tables\LtcData.OrenNayar.cs" />
     <Compile Include="PanelOutput.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -169,6 +170,7 @@
     <None Include="Shaders\LTC.hlsl" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Shaders\RenderTestQuad.hlsl" />
     <None Include="Shaders\BRDF.hlsl" />
     <Content Include="Shaders\FGD.hlsl" />
   </ItemGroup>

@@ -38,7 +38,7 @@ float2	LTCGetSamplingUV( float _NdotV, float _perceptualRoughness )
 
 // Fetches the transposed M^-1 matrix need for runtime LTC estimate
 // Texture contains XYZW = { m00, m20, m02, m22 } coefficients of the M^-1 matrix. All other coefficients except m11=1 are assumed to be 0
-// Note we load the matrix transposed (to avoid having to transpose it in shader) (so use it as mul( point, invM )
+// Note we load the matrix transposed (to avoid having to transpose it in shader) so we must use it as mul( point, invM )
 //
 float3x3	LTCSampleMatrix( float2 _UV, uint _BRDFIndex ) {
 	float3x3	invM_transposed = 0.0;

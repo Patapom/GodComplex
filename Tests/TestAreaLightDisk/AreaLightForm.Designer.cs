@@ -42,7 +42,6 @@
 			this.label9 = new System.Windows.Forms.Label();
 			this.floatTrackbarControlLightRoll = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label13 = new System.Windows.Forms.Label();
-			this.panelOutput = new AreaLightTest.PanelOutput(this.components);
 			this.floatTrackbarControlLightScaleX = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label17 = new System.Windows.Forms.Label();
 			this.floatTrackbarControlLightScaleY = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
@@ -52,14 +51,24 @@
 			this.radioButtonNegativeFreeTarget = new System.Windows.Forms.RadioButton();
 			this.textBoxResults = new System.Windows.Forms.TextBox();
 			this.checkBoxShowReference = new System.Windows.Forms.CheckBox();
+			this.checkBoxDebugMatrix = new System.Windows.Forms.CheckBox();
+			this.panelVisualizeLTCTransform = new System.Windows.Forms.Panel();
+			this.radioButtonOrenNayar = new System.Windows.Forms.RadioButton();
+			this.radioButtonGGX = new System.Windows.Forms.RadioButton();
+			this.floatTrackbarControlRoughness = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlViewAngle = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.label3 = new System.Windows.Forms.Label();
+			this.label4 = new System.Windows.Forms.Label();
+			this.panelOutput = new AreaLightTest.PanelOutput(this.components);
+			this.panelVisualizeLTCTransform.SuspendLayout();
 			this.SuspendLayout();
 			// 
-			// floatTrackbarControlIlluminance
+			// floatTrackbarControlLuminance
 			// 
 			this.floatTrackbarControlLuminance.Location = new System.Drawing.Point(1180, 12);
 			this.floatTrackbarControlLuminance.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlLuminance.MinimumSize = new System.Drawing.Size(70, 20);
-			this.floatTrackbarControlLuminance.Name = "floatTrackbarControlIlluminance";
+			this.floatTrackbarControlLuminance.Name = "floatTrackbarControlLuminance";
 			this.floatTrackbarControlLuminance.RangeMax = 10000F;
 			this.floatTrackbarControlLuminance.RangeMin = 0F;
 			this.floatTrackbarControlLuminance.Size = new System.Drawing.Size(200, 20);
@@ -182,16 +191,6 @@
 			this.label13.TabIndex = 3;
 			this.label13.Text = "Light Roll";
 			// 
-			// panelOutput
-			// 
-			this.panelOutput.Location = new System.Drawing.Point(12, 12);
-			this.panelOutput.Name = "panelOutput";
-			this.panelOutput.Size = new System.Drawing.Size(1024, 640);
-			this.panelOutput.TabIndex = 0;
-			this.panelOutput.MouseDown += new System.Windows.Forms.MouseEventHandler(this.panelOutput_MouseDown);
-			this.panelOutput.MouseMove += new System.Windows.Forms.MouseEventHandler(this.panelOutput_MouseMove);
-			this.panelOutput.MouseUp += new System.Windows.Forms.MouseEventHandler(this.panelOutput_MouseUp);
-			// 
 			// floatTrackbarControlLightScaleX
 			// 
 			this.floatTrackbarControlLightScaleX.Location = new System.Drawing.Point(1180, 172);
@@ -274,11 +273,11 @@
 			// 
 			// textBoxResults
 			// 
-			this.textBoxResults.Location = new System.Drawing.Point(1062, 364);
+			this.textBoxResults.Location = new System.Drawing.Point(1062, 450);
 			this.textBoxResults.Multiline = true;
 			this.textBoxResults.Name = "textBoxResults";
 			this.textBoxResults.ReadOnly = true;
-			this.textBoxResults.Size = new System.Drawing.Size(318, 221);
+			this.textBoxResults.Size = new System.Drawing.Size(318, 173);
 			this.textBoxResults.TabIndex = 5;
 			// 
 			// checkBoxShowReference
@@ -291,11 +290,114 @@
 			this.checkBoxShowReference.Text = "Show Reference (Ground Truth)";
 			this.checkBoxShowReference.UseVisualStyleBackColor = true;
 			// 
+			// checkBoxDebugMatrix
+			// 
+			this.checkBoxDebugMatrix.AutoSize = true;
+			this.checkBoxDebugMatrix.Location = new System.Drawing.Point(1062, 342);
+			this.checkBoxDebugMatrix.Name = "checkBoxDebugMatrix";
+			this.checkBoxDebugMatrix.Size = new System.Drawing.Size(140, 17);
+			this.checkBoxDebugMatrix.TabIndex = 7;
+			this.checkBoxDebugMatrix.Text = "Visualize LTC Transform";
+			this.checkBoxDebugMatrix.UseVisualStyleBackColor = true;
+			this.checkBoxDebugMatrix.CheckedChanged += new System.EventHandler(this.checkBoxDebugMatrix_CheckedChanged);
+			// 
+			// panelVisualizeLTCTransform
+			// 
+			this.panelVisualizeLTCTransform.Controls.Add(this.radioButtonGGX);
+			this.panelVisualizeLTCTransform.Controls.Add(this.radioButtonOrenNayar);
+			this.panelVisualizeLTCTransform.Controls.Add(this.floatTrackbarControlViewAngle);
+			this.panelVisualizeLTCTransform.Controls.Add(this.floatTrackbarControlRoughness);
+			this.panelVisualizeLTCTransform.Controls.Add(this.label4);
+			this.panelVisualizeLTCTransform.Controls.Add(this.label3);
+			this.panelVisualizeLTCTransform.Enabled = false;
+			this.panelVisualizeLTCTransform.Location = new System.Drawing.Point(1062, 366);
+			this.panelVisualizeLTCTransform.Name = "panelVisualizeLTCTransform";
+			this.panelVisualizeLTCTransform.Size = new System.Drawing.Size(318, 78);
+			this.panelVisualizeLTCTransform.TabIndex = 8;
+			// 
+			// radioButtonOrenNayar
+			// 
+			this.radioButtonOrenNayar.AutoSize = true;
+			this.radioButtonOrenNayar.Checked = true;
+			this.radioButtonOrenNayar.Location = new System.Drawing.Point(3, 3);
+			this.radioButtonOrenNayar.Name = "radioButtonOrenNayar";
+			this.radioButtonOrenNayar.Size = new System.Drawing.Size(79, 17);
+			this.radioButtonOrenNayar.TabIndex = 0;
+			this.radioButtonOrenNayar.TabStop = true;
+			this.radioButtonOrenNayar.Text = "Oren-Nayar";
+			this.radioButtonOrenNayar.UseVisualStyleBackColor = true;
+			// 
+			// radioButtonGGX
+			// 
+			this.radioButtonGGX.AutoSize = true;
+			this.radioButtonGGX.Location = new System.Drawing.Point(86, 3);
+			this.radioButtonGGX.Name = "radioButtonGGX";
+			this.radioButtonGGX.Size = new System.Drawing.Size(48, 17);
+			this.radioButtonGGX.TabIndex = 0;
+			this.radioButtonGGX.Text = "GGX";
+			this.radioButtonGGX.UseVisualStyleBackColor = true;
+			// 
+			// floatTrackbarControlRoughness
+			// 
+			this.floatTrackbarControlRoughness.Location = new System.Drawing.Point(118, 26);
+			this.floatTrackbarControlRoughness.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlRoughness.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlRoughness.Name = "floatTrackbarControlRoughness";
+			this.floatTrackbarControlRoughness.RangeMax = 1F;
+			this.floatTrackbarControlRoughness.RangeMin = 0F;
+			this.floatTrackbarControlRoughness.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlRoughness.TabIndex = 1;
+			this.floatTrackbarControlRoughness.Value = 0F;
+			this.floatTrackbarControlRoughness.VisibleRangeMax = 1F;
+			// 
+			// floatTrackbarControlViewAngle
+			// 
+			this.floatTrackbarControlViewAngle.Location = new System.Drawing.Point(118, 52);
+			this.floatTrackbarControlViewAngle.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlViewAngle.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlViewAngle.Name = "floatTrackbarControlViewAngle";
+			this.floatTrackbarControlViewAngle.RangeMax = 90F;
+			this.floatTrackbarControlViewAngle.RangeMin = 0F;
+			this.floatTrackbarControlViewAngle.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlViewAngle.TabIndex = 1;
+			this.floatTrackbarControlViewAngle.Value = 0F;
+			this.floatTrackbarControlViewAngle.VisibleRangeMax = 90F;
+			// 
+			// label3
+			// 
+			this.label3.AutoSize = true;
+			this.label3.Location = new System.Drawing.Point(6, 30);
+			this.label3.Name = "label3";
+			this.label3.Size = new System.Drawing.Size(101, 13);
+			this.label3.TabIndex = 3;
+			this.label3.Text = "Surface Roughness";
+			// 
+			// label4
+			// 
+			this.label4.AutoSize = true;
+			this.label4.Location = new System.Drawing.Point(6, 56);
+			this.label4.Name = "label4";
+			this.label4.Size = new System.Drawing.Size(60, 13);
+			this.label4.TabIndex = 3;
+			this.label4.Text = "View Angle";
+			// 
+			// panelOutput
+			// 
+			this.panelOutput.Location = new System.Drawing.Point(12, 12);
+			this.panelOutput.Name = "panelOutput";
+			this.panelOutput.Size = new System.Drawing.Size(1024, 640);
+			this.panelOutput.TabIndex = 0;
+			this.panelOutput.MouseDown += new System.Windows.Forms.MouseEventHandler(this.panelOutput_MouseDown);
+			this.panelOutput.MouseMove += new System.Windows.Forms.MouseEventHandler(this.panelOutput_MouseMove);
+			this.panelOutput.MouseUp += new System.Windows.Forms.MouseEventHandler(this.panelOutput_MouseUp);
+			// 
 			// AreaLightForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1392, 665);
+			this.Controls.Add(this.panelVisualizeLTCTransform);
+			this.Controls.Add(this.checkBoxDebugMatrix);
 			this.Controls.Add(this.checkBoxShowReference);
 			this.Controls.Add(this.textBoxResults);
 			this.Controls.Add(this.radioButtonNegativeFreeTarget);
@@ -321,6 +423,8 @@
 			this.Name = "AreaLightForm";
 			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
 			this.Text = "Area Light Test";
+			this.panelVisualizeLTCTransform.ResumeLayout(false);
+			this.panelVisualizeLTCTransform.PerformLayout();
 			this.ResumeLayout(false);
 			this.PerformLayout();
 
@@ -350,6 +454,14 @@
 		private System.Windows.Forms.RadioButton radioButtonNegativeFreeTarget;
 		private System.Windows.Forms.TextBox textBoxResults;
 		private System.Windows.Forms.CheckBox checkBoxShowReference;
+		private System.Windows.Forms.CheckBox checkBoxDebugMatrix;
+		private System.Windows.Forms.Panel panelVisualizeLTCTransform;
+		private System.Windows.Forms.RadioButton radioButtonGGX;
+		private System.Windows.Forms.RadioButton radioButtonOrenNayar;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlViewAngle;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlRoughness;
+		private System.Windows.Forms.Label label4;
+		private System.Windows.Forms.Label label3;
 	}
 }
 

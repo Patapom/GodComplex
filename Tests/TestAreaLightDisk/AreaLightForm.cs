@@ -48,6 +48,14 @@ namespace AreaLightTest {
 			public float		_luminance;
 		}
 
+		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
+		private struct CB_TestQuad {
+			public float4x4		_wsLight2World;
+			public float4		_invM_transposed_r0;
+			public float4		_invM_transposed_r1;
+			public float4		_invM_transposed_r2;
+		}
+
 		#endregion
 
 		#region FIELDS
@@ -57,10 +65,12 @@ namespace AreaLightTest {
 		private ConstantBuffer<CB_Main>			m_CB_Main = null;
 		private ConstantBuffer<CB_Camera>		m_CB_Camera = null;
 		private ConstantBuffer<CB_Light>		m_CB_Light = null;
+		private ConstantBuffer<CB_TestQuad>		m_CB_TestQuad = null;
 
 		private Shader				m_shader_RenderLight = null;
 		private Shader				m_shader_RenderScene = null;
 		private Shader				m_shader_RenderScene_Reference = null;
+		private Shader				m_shader_RenderTestQuad = null;
 
 		private Primitive			m_prim_disk = null;
 
@@ -93,6 +103,8 @@ namespace AreaLightTest {
 
 		public AreaLightForm() {
 			InitializeComponent();
+
+			CheckMatrix();
 		}
 
 		#region Open/Close
@@ -114,11 +126,13 @@ namespace AreaLightTest {
 			m_CB_Main = new ConstantBuffer<CB_Main>( m_device, 0 );
 			m_CB_Camera = new ConstantBuffer<CB_Camera>( m_device, 1 );
 			m_CB_Light = new ConstantBuffer<CB_Light>( m_device, 2 );
+			m_CB_TestQuad = new ConstantBuffer<CB_TestQuad>( m_device, 3 );
 
 			try {
 				m_shader_RenderLight = new Shader( m_device, new System.IO.FileInfo( "Shaders/RenderLight.hlsl" ), VERTEX_FORMAT.P3N3, "VS", null, "PS", null );;
 				m_shader_RenderScene = new Shader( m_device, new System.IO.FileInfo( "Shaders/RenderScene.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );;
 				m_shader_RenderScene_Reference = new Shader( m_device, new System.IO.FileInfo( "Shaders/RenderScene_Reference.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );;
+				m_shader_RenderTestQuad = new Shader( m_device, new System.IO.FileInfo( "Shaders/RenderTestQuad.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );;
 			} catch ( Exception _e ) {
 				MessageBox.Show( "Shader failed to compile!\n\n" + _e.Message, "Area Light Test", MessageBoxButtons.OK, MessageBoxIcon.Error );
 				return;
@@ -174,10 +188,12 @@ namespace AreaLightTest {
 			m_shader_RenderLight.Dispose();
 			m_shader_RenderScene.Dispose();
 			m_shader_RenderScene_Reference.Dispose();
+			m_shader_RenderTestQuad.Dispose();
 
 			m_CB_Main.Dispose();
 			m_CB_Camera.Dispose();
 			m_CB_Light.Dispose();
+			m_CB_TestQuad.Dispose();
 
 			m_prim_disk.Dispose();
 
@@ -457,11 +473,38 @@ namespace AreaLightTest {
 				}
 			}
 
-			// =========== Render Disk ===========
-			m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.READ_WRITE_DEPTH_LESS, BLEND_STATE.DISABLED );
+			if ( !checkBoxDebugMatrix.Checked ) {
+				// =========== Render Disk ===========
+				m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.READ_WRITE_DEPTH_LESS, BLEND_STATE.DISABLED );
 
-			if ( m_shader_RenderLight.Use() ) {
-				m_prim_disk.Render( m_shader_RenderLight );
+				if ( m_shader_RenderLight.Use() ) {
+					m_prim_disk.Render( m_shader_RenderLight );
+				}
+			} else {
+				if ( m_shader_RenderTestQuad.Use() ) {
+					m_CB_TestQuad.m._wsLight2World.r0.Set( radiusX * axisX, 0 );
+					m_CB_TestQuad.m._wsLight2World.r1.Set( radiusY * axisY, 0 );
+					m_CB_TestQuad.m._wsLight2World.r2.Set( at, 0 );
+					m_CB_TestQuad.m._wsLight2World.r3.Set( wsLightPosition, 1 );
+
+					// Upload the full matrix, although we only really need the 4 non trivial coefficients at indices m11, m13, m31 and m33...
+					int			roughnessIndex = (int) Mathf.Floor( 63.99f * Mathf.Sqrt( floatTrackbarControlRoughness.Value ) );
+					int			thetaIndex = (int) Mathf.Floor( 63.99f * Mathf.Sqrt( 1.0f - Mathf.Cos( Mathf.ToRad( floatTrackbarControlViewAngle.Value ) ) ) );
+					int			matrixIndex = roughnessIndex + 64 * thetaIndex;
+
+					double[,]	LTC = radioButtonGGX.Checked ? LTCAreaLight.s_LtcMatrixData_GGX : LTCAreaLight.s_LtcMatrixData_OrenNayar;
+
+					// NOTE: The LTC inverse matrices stored in the tables are transposed: columns are stored first
+					// So in order to use them in the shaders, we need to compute P * M^-1^T instead of the paper's formulation M^-1 * P
+					//
+					m_CB_TestQuad.m._invM_transposed_r0.Set( (float) LTC[matrixIndex,0], (float) LTC[matrixIndex,1], (float) LTC[matrixIndex,2], 0 );
+					m_CB_TestQuad.m._invM_transposed_r1.Set( (float) LTC[matrixIndex,3], (float) LTC[matrixIndex,4], (float) LTC[matrixIndex,5], 0 );
+					m_CB_TestQuad.m._invM_transposed_r2.Set( (float) LTC[matrixIndex,6], (float) LTC[matrixIndex,7], (float) LTC[matrixIndex,8], 0 );
+
+					m_CB_TestQuad.UpdateData();
+
+					m_device.RenderFullscreenQuad( m_shader_RenderTestQuad );
+				}
 			}
 
 			// Show!
@@ -544,6 +587,142 @@ namespace AreaLightTest {
 		private void buttonReload_Click( object sender, EventArgs e ) {
 			if ( m_device != null )
 				m_device.ReloadModifiedShaders();
+		}
+
+		#region Frustum Matrix Transform Checks
+
+		/// <summary>
+		/// This code tests the determinant of the transform matrices that rectify a 
+		/// </summary>
+		void	CheckMatrix() {
+
+			const int	COUNT_RADIUS = 10;
+			const int	COUNT_X = 10;
+			const int	COUNT_Y = 10;
+			const int	COUNT_Z = 10;
+
+			const float	Xmax = 10.0f;
+			const float	Ymax = 10.0f;
+			const float	Zmax = 4.0f;
+			const float	Rb = 2.0f;
+
+			float3	P0 = float3.Zero;
+			float3	T = new float3( 1, 0, 0 );
+			float3	B = new float3( 0, 1, 0 );
+			float3	N = new float3( 0, 0, 1 );
+
+//			float3	Nt, Nb, Tn, Bn, Dtn, Dbn;
+
+//			float4		P  = float4.UnitW, Pt;
+//			float4x4	M = new float4x4();
+
+			float3		P, Pt;
+			float3x3	M = new float3x3();
+
+			float	det;
+//			float	depth;
+
+			List<float[,,]>	determinantss = new List<float[, , ]>( COUNT_RADIUS);
+
+//			for ( int radiusIndex=0; radiusIndex < COUNT_RADIUS; radiusIndex++ )
+int	radiusIndex = 10;
+			{
+				float[,,]	determinants = new float[COUNT_Z,1+2*COUNT_Y,1+2*COUNT_X];
+				determinantss.Add( determinants );
+
+				float	radiusFactor = Mathf.Max( 0.01f, 2.0f * radiusIndex / 100 );
+				float	Rt = radiusFactor * Rb;
+
+				T.Set( Rt, 0, 0 );
+				B.Set( 0, Rb, 0 );
+
+				for ( int Z=COUNT_Z; Z > 0; Z-- ) {
+					P0.z = Zmax * Z / COUNT_Z;
+					for ( int Y=-COUNT_Y; Y <= COUNT_Y; Y++ ) {
+						P0.y = Ymax * Y / COUNT_Y;
+						for ( int X=-COUNT_X; X <= COUNT_X; X++ ) {
+							P0.x = Xmax * X / COUNT_X;
+
+#if true
+							// Matrix is a simple slanted parallelogram
+							M.r0 = (T - (P0.Dot(T) / P0.Dot(N)) * N) / (Rt * Rt);
+							M.r1 = (B - (P0.Dot(B) / P0.Dot(N)) * N) / (Rb * Rb);
+							M.r2 = N / P0.Dot(N);
+
+							det = M.Determinant;
+
+							// Test matrix is working
+							P = P0;
+							Pt = M * P;
+							P = T;
+							Pt = M * P;
+							P = -T;
+							Pt = M * P;
+							P = B;
+							Pt = M * P;
+							P = -B;
+							Pt = M * P;
+							P = float3.Lerp( 0.5f * T - 0.25f * B, 0.5f * T - 0.25f * B + P0, 0.666f );
+							Pt = M * P;
+#else
+// Stupid version where I still thought we needed a perspective projection matrix!
+							depth = P0.Dot(N);	// Altitude from plane
+							Nt = P0.Dot(T) * N;
+							Nb = P0.Dot(B) * N;
+							Tn = P0.Dot(N) * T;	// = depth * T
+							Bn = P0.Dot(N) * B;	// = depth * B
+
+#if true
+							M.r0.Set( (Tn - Nt) / Rt, 0 );
+							M.r1.Set( (Bn - Nb) / Rb, 0 );
+							M.r2.Set( 0, 0, 1, 0 );
+							M.r3.Set( -N, depth );
+#else
+							Dtn = (Nt - Tn) / Rt;
+							Dbn = (Nb - Bn) / Rb;
+
+							M.r0.Set( Dtn, -P0.Dot( Dtn ) );
+							M.r1.Set( Dbn, -P0.Dot( Dbn ) );
+							M.r2.Set( N / depth, 0.0f );		// Will normalize Z to 1 if P is at same altitude as P0
+							M.r3.Set( N, -P0.Dot( N ) );		// Here, use "depth"
+#endif
+							det = M.Determinant;
+
+							determinants[Z-1,COUNT_Y+Y,COUNT_X+X] = det;
+
+							// Test matrix is working
+							P.Set( P0, 1 );
+							Pt = M * P;
+//							Pt /= Pt.w;	// This will NaN because W=0 in this particular case
+							P.Set( Rt * T, 1 );
+							Pt = M * P;
+							Pt /= Pt.w;
+							P.Set( -Rt * T, 1 );
+							Pt = M * P;
+							Pt /= Pt.w;
+							P.Set( Rb * B, 1 );
+							Pt = M * P;
+							Pt /= Pt.w;
+							P.Set( -Rb * B, 1 );
+							Pt = M * P;
+							Pt /= Pt.w;
+							P.Set( float3.Lerp( 0.5f * Rt * T - 0.25f * Rb * B, P0, 0.666f ), 1 );
+							Pt = M * P;
+							Pt /= Pt.w;
+#endif
+						}
+					}
+				}
+
+
+			}
+
+		}
+
+		#endregion
+
+		private void checkBoxDebugMatrix_CheckedChanged( object sender, EventArgs e ) {
+			panelVisualizeLTCTransform.Enabled = checkBoxDebugMatrix.Checked;
 		}
 
 		#endregion

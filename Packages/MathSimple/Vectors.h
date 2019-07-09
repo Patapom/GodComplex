@@ -227,6 +227,10 @@ namespace SharpMath {
 			return Math::Abs( _Op0->x - _Op1->x ) > float::Epsilon || Math::Abs( _Op0->y - _Op1->y ) > float::Epsilon || Math::Abs( _Op0->z - _Op1->z ) > float::Epsilon;
 		}
 
+		static float3		Lerp( float3^ a, float3^b, float t ) {
+			return float3( Mathf::Lerp( a->x, b->x, t ), Mathf::Lerp( a->y, b->y, t ), Mathf::Lerp( a->z, b->z, t ) );
+		}
+
 		bool	Almost( float3 b )					{ return Almost( b, Mathf::ALMOST_EPSILON ); }
 		bool	Almost( float3 b, float _epsilon )	{ return Mathf::Almost( x, b.x, _epsilon ) && Mathf::Almost( y, b.y, _epsilon ) && Mathf::Almost( z, b.z, _epsilon ); }
 
@@ -634,6 +638,16 @@ namespace SharpMath {
 			R.y = a.x*b->r0.y + a.y*b->r1.y + a.z*b->r2.y + a.w*b->r3.y;
 			R.z = a.x*b->r0.z + a.y*b->r1.z + a.z*b->r2.z + a.w*b->r3.z;
 			R.w = a.x*b->r0.w + a.y*b->r1.w + a.z*b->r2.w + a.w*b->r3.w;
+
+			return R;
+		}
+
+		static float4	operator*( float4x4^ a, float4 b ) {
+			float4	R;
+			R.x = b.x*a->r0.x + b.y*a->r0.y + b.z*a->r0.z + b.w*a->r0.w;
+			R.y = b.x*a->r1.x + b.y*a->r1.y + b.z*a->r1.z + b.w*a->r1.w;
+			R.z = b.x*a->r2.x + b.y*a->r2.y + b.z*a->r2.z + b.w*a->r2.w;
+			R.w = b.x*a->r3.x + b.y*a->r3.y + b.z*a->r3.z + b.w*a->r3.w;
 
 			return R;
 		}

@@ -1,6 +1,6 @@
 ﻿#define FIT_TABLES
 
-//#define EXPORT_FOR_UNITY
+#define EXPORT_FOR_UNITY
 //#define EXPORT_TEXTURE
 //#define EXPORT_MS_TEXTURE
 //#define EXPORT_FOR_CSHARP	// Not working at the moment
