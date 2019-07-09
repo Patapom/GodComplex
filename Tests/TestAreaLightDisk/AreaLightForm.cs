@@ -531,8 +531,9 @@ namespace AreaLightTest {
 				}
 			}
 
+			// =========== Render Light Disk ===========
+			m_device.SetRenderTarget( m_device.DefaultTarget, m_device.DefaultDepthStencil );
 			if ( !checkBoxDebugMatrix.Checked ) {
-				// =========== Render Disk ===========
 				m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.READ_WRITE_DEPTH_LESS, BLEND_STATE.DISABLED );
 
 				if ( m_shader_RenderLight.Use() ) {
@@ -676,8 +677,11 @@ namespace AreaLightTest {
 
 			float3		P, Pt;
 			float3x3	M = new float3x3();
+			float3x3	M2 = new float3x3();
+			float3x3	invM = new float3x3();
+			float3x3	invM2 = new float3x3();
 
-			float	det;
+			float	det, illuminance;
 //			float	depth;
 
 			List<float[,,]>	determinantss = new List<float[, , ]>( COUNT_RADIUS);
@@ -707,7 +711,16 @@ int	radiusIndex = 10;
 							M.r1 = (B - (P0.Dot(B) / P0.Dot(N)) * N) / (Rb * Rb);
 							M.r2 = N / P0.Dot(N);
 
+							invM = M.Inverse;
+
 							det = M.Determinant;
+
+							// Construct inverse directly
+							invM2.r0.Set( T.x, B.x, P0.x );
+							invM2.r1.Set( T.y, B.y, P0.y );
+							invM2.r2.Set( T.z, B.z, P0.z );
+
+							M2 = invM2.Inverse;
 
 							// Test matrix is working
 							P = P0;
@@ -722,6 +735,31 @@ int	radiusIndex = 10;
 							Pt = M * P;
 							P = float3.Lerp( 0.5f * T - 0.25f * B, 0.5f * T - 0.25f * B + P0, 0.666f );
 							Pt = M * P;
+
+// 							invM *= M;
+// 							invM2 *= M2;
+
+							// Test lighting computation
+
+							// Build rectangular area light corners in local space
+							float3		lsAreaLightPosition = P0;
+							float3[]	lsLightCorners = new float3[4];
+										lsLightCorners[0] = lsAreaLightPosition + T + B;
+										lsLightCorners[1] = lsAreaLightPosition + T - B;
+										lsLightCorners[2] = lsAreaLightPosition - T - B;
+										lsLightCorners[3] = lsAreaLightPosition - T + B;
+
+							float3x3	world2TangentSpace = float3x3.Identity;	// Assume we're already in tangent space
+
+							// Transform them into tangent-space
+							float3[]	tsLightCorners = new float3[4];
+							tsLightCorners[0] = lsLightCorners[0] * world2TangentSpace;
+							tsLightCorners[1] = lsLightCorners[1] * world2TangentSpace;
+							tsLightCorners[2] = lsLightCorners[2] * world2TangentSpace;
+							tsLightCorners[3] = lsLightCorners[3] * world2TangentSpace;
+
+							// Compute diffuse disk
+							illuminance = DiskIrradiance( tsLightCorners );
 #else
 // Stupid version where I still thought we needed a perspective projection matrix!
 							depth = P0.Dot(N);	// Altitude from plane
@@ -776,6 +814,74 @@ int	radiusIndex = 10;
 			}
 
 		}
+
+
+		//
+		float	DiskIrradiance( float3[] _tsQuadVertices ) {
+
+			// 1) Extract center position, tangent and bi-tangent axes
+			float3	T = 0.5f * (_tsQuadVertices[1] - _tsQuadVertices[2]);
+			float3	B = -0.5f * (_tsQuadVertices[3] - _tsQuadVertices[2]);
+			float3	P0 = 0.5f * (_tsQuadVertices[0] + _tsQuadVertices[2]);		// Half-way through the diagonal
+
+			float	sqRt = T.Dot( T );
+			float	sqRb = B.Dot( B );
+
+			float3	N = T.Cross( B ).Normalized;	// @TODO: Optimize! Do we need to normalize anyway?
+
+			// 2) Build frustum matrices
+				// M transform P' = M * P into canonical frustum space
+			float3x3	M;
+			float		invDepth = 1.0f / P0.Dot(N);
+			M.r0 = (T - P0.Dot(T) * invDepth * N) / sqRt;
+			M.r1 = (B - P0.Dot(B) * invDepth * N) / sqRb;
+			M.r2 = N * invDepth;
+
+				// M^-1 transforms P = M^-1 * P' back into original space
+			float3x3	invM = new float3x3();
+			invM.r0.Set( T.x, B.x, P0.x );
+			invM.r1.Set( T.y, B.y, P0.y );
+			invM.r2.Set( T.z, B.z, P0.z );
+
+				// Compute the determinant of M^-1 that will help us scale the resulting vector
+			float	det = invM.Determinant;
+					det = Mathf.Sqrt( sqRt * sqRb ) * P0.Dot( N );
+
+			// 3) Compute the exact integral in the canonical space
+			// We know the expression of the orthogonal vector at any point on the unit circle as:
+			//
+			//							| cos(theta)
+			//	Tau(theta) = 1/sqrt(2)  | sin(theta)
+			//							| 1
+			//
+			// We move the orientation so we always compute 2 symetrical integrals on a half circle
+			//	then we only need to compute the X component integral as the Y components have opposite
+			//	sign and simply cancel each other
+			//
+			// The integral we need to compute is thus:
+			//
+			//	X = Integral[-maxTheta,maxTheta]{ cos(theta) dtheta }
+			//	X = 2 * sin(maxTheta)
+			//
+			// The Z component is straightforward Z = Integral[-maxTheta,maxTheta]{ dtheta } = 2 maxTheta
+			//
+			float	cosMaxTheta = -1.0f;	// No clipping at the moment
+			float	maxTheta = Mathf.Acos( Mathf.Clamp( cosMaxTheta, -1, 1 ) );	// @TODO: Optimize! Use fast acos or something...
+
+			float3	F = new float3( 2 * Mathf.Sqrt( 1 - cosMaxTheta*cosMaxTheta ), 0, 2 * maxTheta ) / (Mathf.Sqrt( 2 ) * Mathf.TWOPI);
+
+			float3	F2 = F / -det;
+			return F2.Length;
+
+//			// 4) Transform back into LTC space using M^-1
+//			float3	F2 = invM * F;	// @TODO: Optimize => simply return length(F2) = determinant of M^-1
+//
+//			// 5) Estimate scalar irradiance
+////			return -1.0f / det;
+////			return Mathf.Abs(F2.z);
+//			return F2.Length;
+		}
+
 
 		#endregion
 
