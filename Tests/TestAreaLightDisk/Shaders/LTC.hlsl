@@ -111,7 +111,7 @@ float PolygonIrradiance( float4x3 L ) {
 	/////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Super expensive clipping
 	// Unity doesn't do that: they replace the rectangular area light's form factor by the one from an equivalent sphere
-	//	and then clip the sphere instead (there are some exact computations for a plane/sphere clipping=
+	//	and then clip the sphere instead (there are some exact computations for a plane/sphere clipping)
 	//
 	// 1. ClipQuadToHorizon
 

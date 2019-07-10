@@ -77,14 +77,14 @@ float	DiskIrradiance( float4x3 _tsQuadVertices ) {
 
 	float3	F = (1.0 / (2.0 * PI * sqrt(2))) * float3( 2 * sqrt( 1 - cosMaxTheta*cosMaxTheta ), 0, 2 * maxTheta );
 
-	return length(F) * det;
+//	return length(F) * det;
 
-//	// 4) Transform back into LTC space using M^-1
-//	float3	F2 = mul( invM, F );	// @TODO: Optimize => simply return length(F2) = determinant of M^-1
-//
-//	// 5) Estimate scalar irradiance
+	// 4) Transform back into LTC space using M^-1
+	float3	F2 = mul( invM, F );	// @TODO: Optimize => simply return length(F2) = determinant of M^-1
+
+	// 5) Estimate scalar irradiance
 ////	return -1.0 / det;
-////	return abs(F2.z);
+	return F2.z;
 //	return length( F2 );
 }
 

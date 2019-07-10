@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[      4651,        182]
-NotebookOptionsPosition[      3760,        145]
-NotebookOutlinePosition[      4103,        160]
-CellTagsIndexPosition[      4060,        157]
+NotebookDataLength[      7346,        261]
+NotebookOptionsPosition[      6341,        220]
+NotebookOutlinePosition[      6684,        235]
+CellTagsIndexPosition[      6641,        232]
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -141,6 +141,81 @@ Cell[BoxData[
   SuperscriptBox[
    RowBox[{"Cos", "[", "x", "]"}], "2"]}]], "Output",
  CellChangeTimes->{3.7712587683488507`*^9}]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"Integrate", "[", 
+  RowBox[{
+   FractionBox[
+    RowBox[{"Cos", "[", "x", "]"}], 
+    SqrtBox[
+     RowBox[{
+      RowBox[{"a", "*", 
+       SuperscriptBox[
+        RowBox[{"Cos", "[", "x", "]"}], "2"]}], "+", 
+      RowBox[{"b", "*", 
+       SuperscriptBox[
+        RowBox[{"Sin", "[", "x", "]"}], "2"]}], "+", "c", "+", 
+      RowBox[{"d", "*", 
+       RowBox[{"Cos", "[", "x", "]"}], "*", 
+       RowBox[{"Sin", "[", "x", "]"}]}], "+", 
+      RowBox[{"e", "*", 
+       RowBox[{"Cos", "[", "x", "]"}]}], "+", 
+      RowBox[{"f", "*", 
+       RowBox[{"Sin", "[", "x", "]"}]}]}]]], ",", 
+   RowBox[{"{", 
+    RowBox[{"x", ",", "0", ",", 
+     FractionBox["\[Pi]", "4"]}], "}"}], ",", 
+   RowBox[{"Assumptions", "\[Rule]", 
+    RowBox[{"{", 
+     RowBox[{
+      RowBox[{"x", "\[Element]", "Reals"}], ",", 
+      RowBox[{"a", "\[Element]", "Reals"}], ",", 
+      RowBox[{"b", "\[Element]", "Reals"}], ",", 
+      RowBox[{"c", "\[Element]", "Reals"}], ",", 
+      RowBox[{"d", "\[Element]", "Reals"}], ",", 
+      RowBox[{"e", "\[Element]", "Reals"}], ",", 
+      RowBox[{"f", "\[Element]", "Reals"}]}], "}"}]}]}], "]"}]], "Input",
+ CellChangeTimes->{{3.7717645846002636`*^9, 3.7717646568293943`*^9}, 
+   3.771764830147308*^9, {3.771764986916274*^9, 3.771765017904047*^9}, {
+   3.771765486451846*^9, 3.7717654924691906`*^9}}],
+
+Cell[BoxData[
+ RowBox[{"Integrate", "[", 
+  RowBox[{
+   FractionBox[
+    RowBox[{"Cos", "[", "x", "]"}], 
+    SqrtBox[
+     RowBox[{"c", "+", 
+      RowBox[{"e", " ", 
+       RowBox[{"Cos", "[", "x", "]"}]}], "+", 
+      RowBox[{"a", " ", 
+       SuperscriptBox[
+        RowBox[{"Cos", "[", "x", "]"}], "2"]}], "+", 
+      RowBox[{"f", " ", 
+       RowBox[{"Sin", "[", "x", "]"}]}], "+", 
+      RowBox[{"d", " ", 
+       RowBox[{"Cos", "[", "x", "]"}], " ", 
+       RowBox[{"Sin", "[", "x", "]"}]}], "+", 
+      RowBox[{"b", " ", 
+       SuperscriptBox[
+        RowBox[{"Sin", "[", "x", "]"}], "2"]}]}]]], ",", 
+   RowBox[{"{", 
+    RowBox[{"x", ",", "0", ",", 
+     FractionBox["\[Pi]", "4"]}], "}"}], ",", 
+   RowBox[{"Assumptions", "\[Rule]", 
+    RowBox[{"{", 
+     RowBox[{
+      RowBox[{"x", "\[Element]", "Reals"}], ",", 
+      RowBox[{"a", "\[Element]", "Reals"}], ",", 
+      RowBox[{"b", "\[Element]", "Reals"}], ",", 
+      RowBox[{"c", "\[Element]", "Reals"}], ",", 
+      RowBox[{"d", "\[Element]", "Reals"}], ",", 
+      RowBox[{"e", "\[Element]", "Reals"}], ",", 
+      RowBox[{"f", "\[Element]", "Reals"}]}], "}"}]}]}], "]"}]], "Output",
+ CellChangeTimes->{3.771765630811103*^9}]
 }, Open  ]]
 },
 WindowSize->{1920, 1008},
@@ -183,6 +258,10 @@ Cell[3061, 116, 216, 7, 46, "Output"]
 Cell[CellGroupData[{
 Cell[3314, 128, 238, 6, 31, "Input"],
 Cell[3555, 136, 189, 6, 46, "Output"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[3781, 147, 1346, 35, 59, "Input"],
+Cell[5130, 184, 1195, 33, 58, "Output"]
 }, Open  ]]
 }
 ]
