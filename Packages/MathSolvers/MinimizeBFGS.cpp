@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "MinimizeBFGS.h"
 
-using namespace MathSolvers;
+using namespace MathSolversLib;
 
 BFGS::BFGS()
 	: m_coefficientsCount( 0 )
@@ -292,7 +292,9 @@ double	BFGS::LinearSearch( double _functionMinimum, VectorD& _gradient, VectorD&
 // 	memset( m, 0, _rows*_columns*sizeof(double) );
 // 
 // 	double**	rows = (double**) (raw + 2 * sizeof(int));
-// 	for ( int i=0; i < _rows; i++ )// 		rows[i] = &m[_columns*i];// 
+// 	for ( int i=0; i < _rows; i++ )
+// 		rows[i] = &m[_columns*i];
+// 
 // 	return rows;
 // }
 // 

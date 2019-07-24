@@ -520,9 +520,9 @@ pixelValue = SATURATE( float(1+pixelIndex) / sequence.Count() * powf( 2.0f, -flo
 	U32	unknownsCount	= responseCurveSize		// g(Z) = curve solution
 						+ pixelsCountPerImage;	// log(E) for each pixel
 
-	MathSolvers::SVD			SVD( equationsCount, unknownsCount );
-	MathSolvers::VectorF		b( equationsCount );
-	MathSolvers::VectorF		x( unknownsCount );
+	MathSolversLib::SVD			SVD( equationsCount, unknownsCount );
+	MathSolversLib::VectorF		b( equationsCount );
+	MathSolversLib::VectorF		x( unknownsCount );
 
 	U32*		pixelPtr = pixels;
 	for ( U32 componentIndex=0; componentIndex < componentsCount; componentIndex++ ) {	// Because R, G, B
@@ -533,7 +533,7 @@ pixelValue = SATURATE( float(1+pixelIndex) / sequence.Count() * powf( 2.0f, -flo
 		b.Clear();
 
 		// 2.1.1) Fill the first part of the equations containing our data
-		MathSolvers::VectorF*	A1 = &SVD.A[0];	// A1 starts at A
+		MathSolversLib::VectorF*	A1 = &SVD.A[0];	// A1 starts at A
 		for ( U32 imageIndex=0; imageIndex < _imagesCount; imageIndex++ ) {
 
 			// Compute image EV = log2(shutterSpeed)
@@ -567,7 +567,7 @@ imageEV = -float(imageIndex);
 
 		// 2.1.2) Fill the second part of the equations containing weighted smoothing coefficients
 		// This part will ensure the g() curve's smoothness
-		MathSolvers::VectorF*	A2 = &SVD.A[totalPixelsCount];	// A2 starts at the end of A's first part, A1
+		MathSolversLib::VectorF*	A2 = &SVD.A[totalPixelsCount];	// A2 starts at the end of A's first part, A1
 
 		A2[0][0] = lambda * ComputeWeight( 0, responseCurveSize );	// First element can't reach neighbors
 		U32		Z = 1;
@@ -580,7 +580,7 @@ imageEV = -float(imageIndex);
 		A2[Z][Z] = lambda * ComputeWeight( Z, responseCurveSize );	// Last element can't reach neighbors either
 
 		// 2.1.3) Fill the last equation used to ensure the Zmid value transforms into g(Zmid) = 0
-		MathSolvers::VectorF*	A3 = &SVD.A[totalPixelsCount+responseCurveSize];	// A3 starts at the end of A's second part and should actually be the last row of A
+		MathSolversLib::VectorF*	A3 = &SVD.A[totalPixelsCount+responseCurveSize];	// A3 starts at the end of A's second part and should actually be the last row of A
 
 		A3[0][responseCurveSize>>1] = 1;	// Make sure g(Zmid) maps to 0
 
@@ -668,12 +668,12 @@ A[2][2] = 0;
 // 	float*	x = new float[unknownsCount];	// Our result vector
 // 	float*	tempX = new float[unknownsCount];
 
-	MathSolvers::MatrixF	A_( equationsCount, unknownsCount );
-	MathSolvers::MatrixF	V_( unknownsCount, unknownsCount );
-	MathSolvers::VectorF	w( unknownsCount );
-	MathSolvers::VectorF	b_( equationsCount );
-	MathSolvers::VectorF	tempX( unknownsCount );
-	MathSolvers::VectorF	x( unknownsCount );
+	MathSolversLib::MatrixF	A_( equationsCount, unknownsCount );
+	MathSolversLib::MatrixF	V_( unknownsCount, unknownsCount );
+	MathSolversLib::VectorF	w( unknownsCount );
+	MathSolversLib::VectorF	b_( equationsCount );
+	MathSolversLib::VectorF	tempX( unknownsCount );
+	MathSolversLib::VectorF	x( unknownsCount );
 
 
 	float**	Arows = new float*[equationsCount];
@@ -695,7 +695,7 @@ A[2][2] = 0;
 
 		// 2.1.1) Fill the first part of the equations containing our data
 		float**		A1 = &A[0];	// A1 starts at A
-		MathSolvers::VectorF*	A1_ = &A_[0];	// A1 starts at A
+		MathSolversLib::VectorF*	A1_ = &A_[0];	// A1 starts at A
 		for ( U32 imageIndex=0; imageIndex < _imagesCount; imageIndex++ ) {
 
 			// Compute image EV = log2(shutterSpeed)
@@ -734,7 +734,7 @@ imageEV = -float(imageIndex);
 		// 2.1.2) Fill the second part of the equations containing weighted smoothing coefficients
 		// This part will ensure the g() curve's smoothness
 		float**	A2 = &A[totalPixelsCount];	// A2 starts at the end of A's first part, A1
-		MathSolvers::VectorF*	A2_ = &A_[totalPixelsCount];	// A2 starts at the end of A's first part, A1
+		MathSolversLib::VectorF*	A2_ = &A_[totalPixelsCount];	// A2 starts at the end of A's first part, A1
 
 		A2[0][0] = lambda * ComputeWeight( 0, responseCurveSize );	// First element can't reach neighbors
 		A2_[0][0] = lambda * ComputeWeight( 0, responseCurveSize );	// First element can't reach neighbors
@@ -753,7 +753,7 @@ imageEV = -float(imageIndex);
 
 		// 2.1.3) Fill the last equation used to ensure the Zmid value transforms into g(Zmid) = 0
 		float**	A3 = &A[totalPixelsCount+responseCurveSize];	// A3 starts at the end of A's second part and should actually be the last row of A
-		MathSolvers::VectorF*	A3_ = &A_[totalPixelsCount+responseCurveSize];	// A3 starts at the end of A's second part and should actually be the last row of A
+		MathSolversLib::VectorF*	A3_ = &A_[totalPixelsCount+responseCurveSize];	// A3 starts at the end of A's second part and should actually be the last row of A
 
 		A3[0][responseCurveSize>>1] = 1;	// Make sure g(Zmid) maps to 0
 		A3_[0][responseCurveSize>>1] = 1;	// Make sure g(Zmid) maps to 0
@@ -1054,7 +1054,7 @@ delete[] Abackup;
 
 #pragma region BFGS Minimization
 
-using namespace MathSolvers;
+using namespace MathSolversLib;
 
 // This model attempts to fit a 3rd order polynomial to the curve
 class BFGSModel_polynomial : public BFGS::IModel {
@@ -1258,7 +1258,16 @@ void	Bitmap::FilterCameraResponseCurve( const BaseLib::List< bfloat3 >& _rawResp
 
 #pragma region SVD Decomposition
 
-float pythag(float a, float b);
+// Computes (a2 + b2)^1/2 without destructive underflow or overflow.
+static float pythag(float a, float b) {
+	float	absa = fabs(a);
+	float	absb = fabs(b);
+	if ( absa > absb )
+		return absa*sqrt( 1.0f + SQR(absb/absa) );
+	else
+		return absb == 0.0f ? 0.0f : absb*sqrt( 1.0f + SQR(absa/absb) );
+}
+
 template<class T>
 inline T SIGN(const T &a, const T &b) { return b >= 0 ? (a >= 0 ? a : -a) : (a >= 0 ? -a : a); }
 
@@ -1726,16 +1735,6 @@ void svdcmp_ORIGINAL(int m, int n, float **a, float w[], float **v) {
 	}
 
 	delete[] rv1;
-}
-
-// Computes (a2 + b2)^1/2 without destructive underflow or overflow.
-float pythag(float a, float b) {
-	float	absa = fabs(a);
-	float	absb = fabs(b);
-	if ( absa > absb )
-		return absa*sqrt( 1.0f + SQR(absb/absa) );
-	else
-		return absb == 0.0f ? 0.0f : absb*sqrt( 1.0f + SQR(absa/absb) );
 }
 
 #pragma endregion

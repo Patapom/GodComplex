@@ -3,7 +3,7 @@
 //
 #pragma once
 
-namespace MathSolvers {
+namespace MathSolversLib {
 
 	template< typename T > class Vector {
 	public:

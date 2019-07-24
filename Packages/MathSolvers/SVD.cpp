@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "SVD.h"
 
-using namespace MathSolvers;
+using namespace MathSolversLib;
 
 void	SVD::Init( U32 _rows, U32 _columns ) {
 	A.Init( _rows, _columns );
@@ -59,7 +59,17 @@ void	SVD::Solve( const VectorF& b, VectorF& x ) {
 
 //////////////////////////////////////////////////////////////////////////
 // Performs the actual Singular Value Decomposition
-float pythag(float a, float b);
+
+// Computes (a2 + b2)^1/2 without destructive underflow or overflow.
+static float pythag(float a, float b) {
+	float	absa = fabs(a);
+	float	absb = fabs(b);
+	if ( absa > absb )
+		return absa*sqrt( 1.0f + SQR(absb/absa) );
+	else
+		return absb == 0.0f ? 0.0f : absb*sqrt( 1.0f + SQR(absa/absb) );
+}
+
 template<class T>
 inline T SIGN(const T &a, const T &b) { return b >= 0 ? (a >= 0 ? a : -a) : (a >= 0 ? -a : a); }
 

@@ -54,7 +54,7 @@
 
 #include "Matrix.h"
 
-namespace MathSolvers {
+namespace MathSolversLib {
 
 	class SVD {
 	public:		// FIELDS

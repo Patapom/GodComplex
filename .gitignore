@@ -672,3 +672,6 @@ Publish
 /Packages/ObjSceneUtility/obj
 /Packages/ObjSceneUtility/ObjSceneUtility.csproj.user
 obj
+/Packages/MathSolversManaged/x64
+/Tests/TestGraphHeatEquation/bin
+/Tests/TestGraphHeatEquation/obj

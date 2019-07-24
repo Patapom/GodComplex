@@ -6,7 +6,7 @@
 
 #include "Matrix.h"
 
-namespace MathSolvers {
+namespace MathSolversLib {
 
 	class BFGS {
 	public:
