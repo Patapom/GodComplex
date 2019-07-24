@@ -203,7 +203,7 @@ namespace TestGraphHeatEquation
 			const int		MAX_NEIGHBORS_COUNT = 6;
 
 			const float		HEAT_DIFFUSION = 0.8f;
-			const float		TIME_STEP = 0.01f;
+			const float		TIME_STEP = 0.1f;
 			const int		ITERATIONS_COUNT = 100;
 
 			//////////////////////////////////////////////////////////////////////////
@@ -227,6 +227,8 @@ namespace TestGraphHeatEquation
 
 			// Retrieve the amount of connections
 			int	edgesCount = 0;
+			int	minConnections = int.MaxValue;
+			int	maxConnections = -int.MaxValue;
 			for ( int nodeIndex=0; nodeIndex < NODES_COUNT; nodeIndex++ ) {
 				int	degree = 0;
 				for ( int columnIndex=0; columnIndex < nodeIndex; columnIndex++ )
@@ -237,6 +239,8 @@ namespace TestGraphHeatEquation
 				laplacian[(uint) nodeIndex, (uint) nodeIndex] = degree;
 
 				edgesCount += degree;
+				minConnections = Math.Min( minConnections, degree );
+				maxConnections = Math.Max( maxConnections, degree );
 			}
 			edgesCount >>= 1;	// All edges are accounted twice...
 
@@ -318,12 +322,12 @@ namespace TestGraphHeatEquation
 
 			heats[0][0] = 1;
 
-			// 3.1) Transform heat vector into eigen-space: Phi' = V * Phi
+			// 3.1) Transform heat vector into eigen-space: Phi' = trans(V) * Phi
 			for ( int i=0; i < NODES_COUNT; i++ ) {
 				float	sum = 0.0f;
 				for ( int j=0; j < NODES_COUNT; j++ )
-					sum += eigenVectors[i,j] *  heats[0][i];
-//					sum += eigenVectors[j,i] *  heats[0][i];
+//					sum += eigenVectors[i,j] *  heats[0][i];
+					sum += eigenVectors[j,i] *  heats[0][j];
 				heats[1][i] = sum;
 			}
 
@@ -337,12 +341,15 @@ namespace TestGraphHeatEquation
 				heats[0][i] = phi_t;
 			}
 
-			// 3.1) Transform eigen-heat vector back into graph-space: Phi = Phi' * V
+			// 3.1) Transform eigen-heat vector back into graph-space: Phi = V * Phi'
+			float	totalHeat = 0.0f;	// This should equal to initial heat, no loss!
 			for ( int i=0; i < NODES_COUNT; i++ ) {
 				float	sum = 0.0f;
 				for ( int j=0; j < NODES_COUNT; j++ )
-					sum += heats[0][i] * eigenVectors[j,i];
+//					sum += eigenVectors[j,i] * heats[0][j];
+					sum += eigenVectors[i,j] * heats[0][j];
 				heats[1][i] = sum;
+				totalHeat += sum;
 			}
 
 			float[]	result_full = new float[NODES_COUNT];
