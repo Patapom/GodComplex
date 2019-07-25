@@ -113,6 +113,8 @@ namespace TestGraphHeatEquation
 		void Application_Idle( object sender, EventArgs e ) {
 			if ( m_device == null )
 				return;
+			if ( !Focused )
+				return;
 
 			Point	clientPos = panelOutput.PointToClient( Control.MousePosition );
 			m_CB_Main.m.mousePosition.Set( GRAPH_SIZE * (float) clientPos.X / panelOutput.Width, GRAPH_SIZE * (float) clientPos.Y / panelOutput.Height );

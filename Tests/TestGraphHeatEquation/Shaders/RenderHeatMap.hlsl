@@ -14,7 +14,7 @@ float3	PS( VS_IN _In ) : SV_TARGET0 {
 	float2	UV = _In.__Position.xy / 512.0;
 //return float3( UV, 0 );
 	float	heat = _texHeatMap.SampleLevel( PointClamp, UV, 0.0 ).x;
-	float4	obstacles = _texObstacles.SampleLevel( PointClamp, UV, 0.0 );
+	float4	obstacles = _texObstacles[1 + GRAPH_SIZE * (_In.__Position.xy-0.5) / 512.0];
 	if ( obstacles.x == 0 )
 		return _texFalseColors.SampleLevel( LinearClamp, float2( heat, 0.5 ), 0.0 );
 	else

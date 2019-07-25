@@ -24,36 +24,43 @@ float4	PS( VS_IN _In ) : SV_TARGET0 {
 	float4	laplacian = 0.0;
 	uint	neighborsCount = 0;
 
-	if ( _texObstacles[uint2( Po.x-1, Po.y-1 )].x == 0 ) {
-		laplacian += _texHeatMap[uint2( P.x-1, P.y-1 )];
+	uint3	O0 = uint3( !_texObstacles[uint2( Po.x-1, Po.y-1 )].x, !_texObstacles[uint2( Po.x+0, Po.y-1 )].x, !_texObstacles[uint2( Po.x+1, Po.y-1 )].x );
+	uint3	O1 = uint3( !_texObstacles[uint2( Po.x-1, Po.y+0 )].x, !obstacles.x,							  !_texObstacles[uint2( Po.x+1, Po.y+0 )].x );
+	uint3	O2 = uint3( !_texObstacles[uint2( Po.x-1, Po.y+1 )].x, !_texObstacles[uint2( Po.x+0, Po.y+1 )].x, !_texObstacles[uint2( Po.x+1, Po.y+1 )].x );
+
+	// Check easy cardinal directions
+	if ( O1.x ) {
+		laplacian += _texHeatMap[uint2( P.x-1, P.y+0 )];
 		neighborsCount++;
 	}
-	if ( _texObstacles[uint2( Po.x+0, Po.y-1 )].x == 0 ) {
-		laplacian += _texHeatMap[uint2( P.x+0, P.y-1 )];
-		neighborsCount++;
-	}
-	if ( _texObstacles[uint2( Po.x+1, Po.y-1 )].x == 0 ) {
-		laplacian += _texHeatMap[uint2( P.x+1, P.y-1 )];
-		neighborsCount++;
-	}
-	if ( _texObstacles[uint2( Po.x+1, Po.y+0 )].x == 0 ) {
+	if ( O1.z ) {
 		laplacian += _texHeatMap[uint2( P.x+1, P.y+0 )];
 		neighborsCount++;
 	}
-	if ( _texObstacles[uint2( Po.x+1, Po.y+1 )].x == 0 ) {
-		laplacian += _texHeatMap[uint2( P.x+1, P.y+1 )];
+	if ( O0.y ) {
+		laplacian += _texHeatMap[uint2( P.x+0, P.y-1 )];
 		neighborsCount++;
 	}
-	if ( _texObstacles[uint2( Po.x+0, Po.y+1 )].x == 0 ) {
+	if ( O2.y) {
 		laplacian += _texHeatMap[uint2( P.x+0, P.y+1 )];
 		neighborsCount++;
 	}
-	if ( _texObstacles[uint2( Po.x-1, Po.y+1 )].x == 0 ) {
-		laplacian += _texHeatMap[uint2( P.x-1, P.y+1 )];
+
+	// Check diagonal directions with extra care that we don't cross a boundary
+	if ( O0.x && (O0.y || O1.x) ) {
+		laplacian += _texHeatMap[uint2( P.x-1, P.y-1 )];
 		neighborsCount++;
 	}
-	if ( _texObstacles[uint2( Po.x-1, Po.y+0 )].x == 0 ) {
-		laplacian += _texHeatMap[uint2( P.x-1, P.y+0 )];
+	if ( O0.z && (O0.y || O1.z) ) {
+		laplacian += _texHeatMap[uint2( P.x+1, P.y-1 )];
+		neighborsCount++;
+	}
+	if ( O2.z && (O1.z || O2.y) ) {
+		laplacian += _texHeatMap[uint2( P.x+1, P.y+1 )];
+		neighborsCount++;
+	}
+	if ( O2.x && (O1.x || O2.y) ) {
+		laplacian += _texHeatMap[uint2( P.x-1, P.y+1 )];
 		neighborsCount++;
 	}
 
