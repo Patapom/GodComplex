@@ -1,11 +1,14 @@
 
+static const uint	GRAPH_SIZE = 128;
+
 #define PI		3.1415926535897932384626433832795
 #define INVPI	0.31830988618379067153776752674503
 
 cbuffer CB_Main : register(b0) {
-	float2	iResolution;	// viewport resolution (in pixels)
-	float	tanHalfFOV;		// tan( Vertical FOV / 2 )
-	float	iGlobalTime;	// shader playback time (in seconds)
+	float2	mousePosition;	// Mouse position in texels
+	uint	mouseButtons;	// Mouse button states (0=left button, 1=middle, 2=right)
+	float	deltaTime;		// Time step
+	float	diffusionCoefficient;
 };
 
 SamplerState LinearClamp	: register( s0 );

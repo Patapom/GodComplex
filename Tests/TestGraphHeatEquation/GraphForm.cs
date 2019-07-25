@@ -19,7 +19,7 @@ namespace TestGraphHeatEquation
 	{
 		#region CONSTANTS
 
-		const int	GRAPH_SIZE = 64;
+		const int	GRAPH_SIZE = 128;
 
 		#endregion
 
@@ -27,9 +27,10 @@ namespace TestGraphHeatEquation
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
 		private struct CB_Main {
-			public float2		iResolution;
-			public float		tanHalfFOV;
-			public float		iGlobalTime;
+			public float2		mousePosition;	// Mouse position in texels
+			public uint			mouseButtons;	// Mouse button states (0=left button, 1=middle, 2=right)
+			public float		deltaTime;		// Time step
+			public float		diffusionCoefficient;
 		}
 
 		#endregion
@@ -40,8 +41,17 @@ namespace TestGraphHeatEquation
 
 		private ConstantBuffer<CB_Main>	m_CB_Main = null;
 		private Shader					m_shader_RenderHeatMap = null;
-		private Texture2D				m_tex_HeatMap_Staging = null;
-		private Texture2D				m_tex_HeatMap = null;
+		private Shader					m_shader_HeatDiffusion = null;
+		private Shader					m_shader_DrawObstacles = null;
+//		private Texture2D				m_tex_HeatMap_Staging = null;
+		private Texture2D				m_tex_HeatMap0 = null;
+		private Texture2D				m_tex_HeatMap1 = null;
+		private Texture2D				m_tex_Obstacles0 = null;
+		private Texture2D				m_tex_Obstacles1 = null;
+
+		private Texture2D				m_tex_Obstacles_Staging = null;
+
+		private Texture2D				m_tex_FalseColors = null;
 
 		#endregion
 
@@ -51,7 +61,7 @@ namespace TestGraphHeatEquation
 		{
 			InitializeComponent();
 
-			GraphSeparabilityTest();
+//			GraphSeparabilityTest();
 		}
 
 		protected override void OnLoad( EventArgs e ) {
@@ -68,12 +78,34 @@ namespace TestGraphHeatEquation
 
 			m_CB_Main = new ConstantBuffer<CB_Main>( m_device, 0 );
 
+			m_shader_HeatDiffusion = new Shader( m_device, new System.IO.FileInfo( "./Shaders/HeatDiffusion.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 			m_shader_RenderHeatMap = new Shader( m_device, new System.IO.FileInfo( "./Shaders/RenderHeatMap.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+			m_shader_DrawObstacles = new Shader( m_device, new System.IO.FileInfo( "./Shaders/DrawObstacles.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 
-			m_tex_HeatMap_Staging = new Texture2D( m_device, (uint) GRAPH_SIZE, (uint) GRAPH_SIZE, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA8, ImageUtility.COMPONENT_FORMAT.UNORM_sRGB, true, false, null );
-			m_tex_HeatMap = new Texture2D( m_device, (uint) GRAPH_SIZE, (uint) GRAPH_SIZE, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA8, ImageUtility.COMPONENT_FORMAT.UNORM_sRGB, false, false, null );
+//			m_tex_HeatMap_Staging = new Texture2D( m_device, (uint) GRAPH_SIZE, (uint) GRAPH_SIZE, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA8, ImageUtility.COMPONENT_FORMAT.UNORM_sRGB, true, false, null );
+			m_tex_HeatMap0 = new Texture2D( m_device, (uint) GRAPH_SIZE, (uint) GRAPH_SIZE, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, false, null );
+			m_tex_HeatMap1 = new Texture2D( m_device, (uint) GRAPH_SIZE, (uint) GRAPH_SIZE, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, false, null );
+			m_tex_Obstacles0 = new Texture2D( m_device, (uint) GRAPH_SIZE + 2, (uint) GRAPH_SIZE + 2, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA8, ImageUtility.COMPONENT_FORMAT.UNORM, false, false, null );
+			m_tex_Obstacles1 = new Texture2D( m_device, (uint) GRAPH_SIZE + 2, (uint) GRAPH_SIZE + 2, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA8, ImageUtility.COMPONENT_FORMAT.UNORM, false, false, null );
+			m_tex_Obstacles_Staging = new Texture2D( m_device, (uint) GRAPH_SIZE + 2, (uint) GRAPH_SIZE + 2, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA8, ImageUtility.COMPONENT_FORMAT.UNORM, true, false, null );
+			m_tex_Obstacles_Staging.WritePixels( 0, 0, ( uint _X, uint _Y, System.IO.BinaryWriter W ) => {
+				bool	obstacle = _X == 0 || _Y == 0 || _X == GRAPH_SIZE-1 || _Y == GRAPH_SIZE-1;
+				if ( obstacle )
+					W.Write( 0xFF000000U );
+				else
+					W.Write( 0x00000000U );
+			} );
+			buttonResetObstacles_Click( null, EventArgs.Empty );
 
-			BuildGraph();
+			// Load false colors
+			using ( ImageUtility.ImageFile sourceImage = new ImageUtility.ImageFile( new System.IO.FileInfo( "../../Images/Gradients/Magma.png" ), ImageUtility.ImageFile.FILE_FORMAT.PNG ) ) {
+				ImageUtility.ImageFile convertedImage = new ImageUtility.ImageFile();
+				convertedImage.ConvertFrom( sourceImage, ImageUtility.PIXEL_FORMAT.BGRA8 );
+				using ( ImageUtility.ImagesMatrix image = new ImageUtility.ImagesMatrix( convertedImage, ImageUtility.ImagesMatrix.IMAGE_TYPE.sRGB ) )
+					m_tex_FalseColors = new Texture2D( m_device, image, ImageUtility.COMPONENT_FORMAT.UNORM_sRGB );
+			}
+
+//			BuildGraph();
 
 			Application.Idle += Application_Idle;
 		}
@@ -82,17 +114,61 @@ namespace TestGraphHeatEquation
 			if ( m_device == null )
 				return;
 
-			if ( !m_shader_RenderHeatMap.Use() )
-				return;
+			Point	clientPos = panelOutput.PointToClient( Control.MousePosition );
+			m_CB_Main.m.mousePosition.Set( GRAPH_SIZE * (float) clientPos.X / panelOutput.Width, GRAPH_SIZE * (float) clientPos.Y / panelOutput.Height );
+			m_CB_Main.m.mouseButtons = (uint) ((((Control.MouseButtons & MouseButtons.Left) != 0) ? 1 : 0)
+											| (((Control.MouseButtons & MouseButtons.Middle) != 0) ? 2 : 0)
+											| (((Control.MouseButtons & MouseButtons.Right) != 0) ? 4 : 0)
+											| (Control.ModifierKeys == Keys.Shift ? 8 : 0));
+			m_CB_Main.m.deltaTime = floatTrackbarControlDeltaTime.Value;
+			m_CB_Main.m.diffusionCoefficient = floatTrackbarControlDiffusionCoefficient.Value;
+			m_CB_Main.UpdateData();
 
-			m_device.SetRenderTarget( m_device.DefaultTarget, null );
+
 			m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
 
-			m_tex_HeatMap.SetPS( 0 );
+			//////////////////////////////////////////////////////////////////////////
+			// Draw Obstacles
+			if ( m_shader_DrawObstacles.Use() ) {
+				m_device.SetRenderTarget( m_tex_Obstacles1, null );
+				m_tex_Obstacles0.SetPS( 0 );
+				m_device.RenderFullscreenQuad( m_shader_DrawObstacles );
+			}
 
-			m_device.RenderFullscreenQuad( m_shader_RenderHeatMap );
+			//////////////////////////////////////////////////////////////////////////
+			// Perform heat diffusion test
+			if ( m_shader_HeatDiffusion.Use() ) {
+				m_device.SetRenderTarget( m_tex_HeatMap1, null );
+
+				m_tex_HeatMap0.SetPS( 0 );
+				m_tex_Obstacles1.SetPS( 1 );
+
+				m_device.RenderFullscreenQuad( m_shader_HeatDiffusion );
+			}
+
+			//////////////////////////////////////////////////////////////////////////
+			// Render
+			if ( m_shader_RenderHeatMap.Use() ) {
+				m_device.SetRenderTarget( m_device.DefaultTarget, null );
+
+				m_tex_HeatMap1.SetPS( 0 );
+				m_tex_Obstacles1.SetPS( 1 );
+				m_tex_FalseColors.SetPS( 2 );
+
+				m_device.RenderFullscreenQuad( m_shader_RenderHeatMap );
+			}
 
 			m_device.Present( false );
+
+
+			// Swap
+			Texture2D	temp = m_tex_HeatMap0;
+			m_tex_HeatMap0 = m_tex_HeatMap1;
+			m_tex_HeatMap1 = temp;
+
+			temp = m_tex_Obstacles0;
+			m_tex_Obstacles0 = m_tex_Obstacles1;
+			m_tex_Obstacles1 = temp;
 		}
 
 		#region Graph Building
@@ -500,8 +576,16 @@ namespace TestGraphHeatEquation
 			{
 				components.Dispose();
 
-				m_tex_HeatMap.Dispose();
-				m_tex_HeatMap_Staging.Dispose();
+				m_tex_FalseColors.Dispose();
+
+				m_tex_Obstacles_Staging.Dispose();
+				m_tex_Obstacles1.Dispose();
+				m_tex_Obstacles0.Dispose();
+				m_tex_HeatMap1.Dispose();
+				m_tex_HeatMap0.Dispose();
+//				m_tex_HeatMap_Staging.Dispose();
+				m_shader_DrawObstacles.Dispose();
+				m_shader_HeatDiffusion.Dispose();
 				m_shader_RenderHeatMap.Dispose();
 				m_CB_Main.Dispose();
 
@@ -516,19 +600,20 @@ namespace TestGraphHeatEquation
 
 		#region EVENT HANDLERS
 
-		private void button1_Click( object sender, EventArgs e )
-		{
-
+		private void button1_Click( object sender, EventArgs e ) {
+			m_device.Clear( m_tex_HeatMap0, float4.Zero );
 		}
 
-		private void checkBox1_CheckedChanged( object sender, EventArgs e )
-		{
-
+		private void buttonResetObstacles_Click( object sender, EventArgs e ) {
+			m_tex_Obstacles0.CopyFrom( m_tex_Obstacles_Staging );
 		}
 
-		private void floatTrackbarControl1_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
-		{
+		private void checkBox1_CheckedChanged( object sender, EventArgs e ) {
+			timer1.Enabled = checkBoxRun.Checked;
+		}
 
+		private void buttonReload_Click( object sender, EventArgs e ) {
+			m_device.ReloadModifiedShaders();
 		}
 
 		#endregion
