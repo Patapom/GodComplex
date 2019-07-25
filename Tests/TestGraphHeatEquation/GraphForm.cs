@@ -198,7 +198,6 @@ namespace TestGraphHeatEquation
 		//	• We apply heat diffusion interatively node by node and we compare the results
 		//
 		void		GraphSeparabilityTest() {
-
 			const int		NODES_COUNT = 100;
 			const int		MAX_NEIGHBORS_COUNT = 6;
 
@@ -245,9 +244,20 @@ namespace TestGraphHeatEquation
 			edgesCount >>= 1;	// All edges are accounted twice...
 
 			//////////////////////////////////////////////////////////////////////////
-			// 2] Compute eigen vectors using singular value decomposition
+			// 2] Compute full heat diffusion
+			float[]	results_full = ComputeHeatDiffusionFull( laplacian, HEAT_DIFFUSION, ITERATIONS_COUNT * TIME_STEP );
+
+			//////////////////////////////////////////////////////////////////////////
+			// 3] Compute iterative diffusion
+			float[]	results_iterative = ComputeHeatDiffusionIterative( laplacian, HEAT_DIFFUSION, TIME_STEP, ITERATIONS_COUNT );
+		}
+
+		float[]	ComputeHeatDiffusionFull( MathSolvers.MatrixF _laplacian, float _diffusionCoefficient, float _simulationTime ) {
+			uint	nodesCount = _laplacian.ColumnsCount;
+
+			// 1] Compute eigen vectors using singular value decomposition
 			//
-			MathSolvers.SVD		SVD = new MathSolvers.SVD( laplacian );
+			MathSolvers.SVD		SVD = new MathSolvers.SVD( _laplacian );
 			SVD.Decompose();
 
 			float[,]	eigenVectors = SVD.U.AsArray;
@@ -312,48 +322,142 @@ namespace TestGraphHeatEquation
 // 			}
 
 
-			//////////////////////////////////////////////////////////////////////////
-			// 3] Apply heat to node 0 and compute diffusion
+			// 2] Apply heat to node 0 and compute diffusion
 			//
 			float[][]	heats = new float[2][] {
-				new float[NODES_COUNT],
-				new float[NODES_COUNT]
+				new float[nodesCount],
+				new float[nodesCount]
 			};
 
 			heats[0][0] = 1;
 
 			// 3.1) Transform heat vector into eigen-space: Phi' = trans(V) * Phi
-			for ( int i=0; i < NODES_COUNT; i++ ) {
+			for ( int i=0; i < nodesCount; i++ ) {
 				float	sum = 0.0f;
-				for ( int j=0; j < NODES_COUNT; j++ )
+				for ( int j=0; j < nodesCount; j++ )
 //					sum += eigenVectors[i,j] *  heats[0][i];
 					sum += eigenVectors[j,i] *  heats[0][j];
 				heats[1][i] = sum;
 			}
 
-			// 3.2) Apply diffusion over total diffusion time t = ITERATIONS_COUNT * TIME_STEP
-			float	totalTime = ITERATIONS_COUNT * TIME_STEP;
-			for ( int i=0; i < NODES_COUNT; i++ ) {
+			// 3.2) Apply diffusion over total diffusion time
+			for ( int i=0; i < nodesCount; i++ ) {
 				float	lambda = eigenValues[i];
 //				float	lambda = eigenValues[i] > 0.0 ? 1.0f / eigenValues[i] : 0.0f;
 				float	phi_0 = heats[1][i];
-				float	phi_t = phi_0 * Mathf.Exp( -HEAT_DIFFUSION * lambda * totalTime );
+				float	phi_t = phi_0 * Mathf.Exp( -_diffusionCoefficient * lambda * _simulationTime );
 				heats[0][i] = phi_t;
 			}
 
 			// 3.1) Transform eigen-heat vector back into graph-space: Phi = V * Phi'
 			float	totalHeat = 0.0f;	// This should equal to initial heat, no loss!
-			for ( int i=0; i < NODES_COUNT; i++ ) {
+			for ( int i=0; i < nodesCount; i++ ) {
 				float	sum = 0.0f;
-				for ( int j=0; j < NODES_COUNT; j++ )
+				for ( int j=0; j < nodesCount; j++ )
 //					sum += eigenVectors[j,i] * heats[0][j];
 					sum += eigenVectors[i,j] * heats[0][j];
 				heats[1][i] = sum;
 				totalHeat += sum;
 			}
 
-			float[]	result_full = new float[NODES_COUNT];
-			heats[1].CopyTo( result_full, 0 );
+			return heats[1];
+		}
+
+		float[]	ComputeHeatDiffusionIterative( MathSolvers.MatrixF _laplacian, float _diffusionCoefficient, float _timeStep, uint _iterationsCount ) {
+			uint	nodesCount = _laplacian.ColumnsCount;
+
+// 			// 1] Pre-compute many little laplacian matrices for each node
+// 			MathSolvers.MatrixF[]	laplacians = new MathSolvers.MatrixF[nodesCount];
+// 			MathSolvers.MatrixF[]	eigenVectorss = new MathSolvers.MatrixF[nodesCount];
+// 			MathSolvers.VectorF[]	eigenValuess = new MathSolvers.VectorF[nodesCount];
+// 			for ( uint nodeIndex=0; nodeIndex < nodesCount; nodeIndex++ ) {
+// 
+// 				// 1.1) Count the amount of neighbors
+// 				uint	j = 0;
+// 				uint	neighborsCount = 0;
+// 				for ( ; j < nodeIndex; j++ )
+// 					if ( _laplacian[nodeIndex,j] != 0.0f )
+// 						neighborsCount++;
+// 				for ( j++; j < nodesCount; j++ )
+// 					if ( _laplacian[nodeIndex,j] != 0.0f )
+// 						neighborsCount++;
+// 
+// 				// 1.2) Create a tiny matrix for the current node and its neighbors only
+// 				MathSolvers.MatrixF	laplacian = new MathSolvers.MatrixF( 1+neighborsCount, 1+neighborsCount );
+// 				laplacians[nodeIndex] = laplacian;
+// 				laplacian[0,0] = neighborsCount;	// Write degree for central node
+// 				for ( j=0; j < neighborsCount; j++ ) {
+// 					laplacian[j,j] = 1;				// Connected to central node only
+// 					laplacian[0,j] = -1;
+// 					laplacian[j,0] = -1;
+// 				}
+// 
+// 				// 1.3) Compute eigen vectors for the tiny matrix
+// 				MathSolvers.SVD	SVD = new MathSolvers.SVD( laplacian );
+// 				SVD.Decompose();
+// 				eigenVectorss[nodeIndex] = SVD.U;
+// 				eigenValuess[nodeIndex] = SVD.w;
+// 			}
+
+			// 1] Precompute neighbor indices for each node
+			List<uint>	tempNeighborIndices = new List<uint>( (int) nodesCount );
+			uint[][]	neighborIndicess = new uint[nodesCount][];
+			for ( uint nodeIndex=0; nodeIndex < nodesCount; nodeIndex++ ) {
+
+				tempNeighborIndices.Clear();
+
+				// Collect neighbor indices
+				uint	j = 0;
+				uint	neighborsCount = 0;
+				for ( ; j < nodeIndex; j++ )
+					if ( _laplacian[nodeIndex,j] != 0.0f )
+						tempNeighborIndices.Add( j );
+				for ( j++; j < nodesCount; j++ )
+					if ( _laplacian[nodeIndex,j] != 0.0f )
+						tempNeighborIndices.Add( j );
+
+				neighborIndicess[nodeIndex] = tempNeighborIndices.ToArray();
+			}
+
+			// 2] Apply diffusion iteratively using Euler method
+			float[][]	heats = new float[2][] {
+				new float[nodesCount],
+				new float[nodesCount]
+			};
+			heats[0][0] = 1.0f;
+
+			float	diffusionCoefficient = _diffusionCoefficient * _timeStep;
+
+			float[]	tempVector = new float[nodesCount];
+			for ( uint iterationIndex=0; iterationIndex < _iterationsCount; iterationIndex++ ) {
+
+				float[]	sourceHeats = heats[0];
+				float[]	targetHeats = heats[1];
+
+				for ( uint nodeIndex=0; nodeIndex < nodesCount; nodeIndex++ ) {
+					uint[]	neighborNodeIndices = neighborIndicess[nodeIndex];
+					uint	neighborsCount = (uint) neighborNodeIndices.Length;
+
+					float	sourceHeat = sourceHeats[nodeIndex];
+
+					// Compute laplacian for this node
+					float	laplacian = -neighborsCount * sourceHeat;
+					for ( uint neighborIndex=0; neighborIndex < neighborsCount; neighborIndex++ ) {
+						uint	neighborNodeIndex = neighborNodeIndices[neighborIndex];
+						laplacian += sourceHeats[neighborNodeIndex];
+					}
+
+					// Apply small heat diffusion
+					targetHeats[nodeIndex] = sourceHeat + diffusionCoefficient * laplacian;
+				}
+
+				// Swap heat buffers
+				float[]	temp = heats[0];
+				heats[0] = heats[1];
+				heats[1] = temp;
+			}
+
+			return heats[0];
 		}
 
 		#endregion
@@ -362,8 +466,7 @@ namespace TestGraphHeatEquation
 		/// Clean up any resources being used.
 		/// </summary>
 		/// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
-		protected override void Dispose( bool disposing )
-		{
+		protected override void Dispose( bool disposing ) {
 			if ( disposing && (components != null) )
 			{
 				components.Dispose();
