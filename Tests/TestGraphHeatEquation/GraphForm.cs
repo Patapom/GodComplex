@@ -245,14 +245,30 @@ namespace TestGraphHeatEquation
 
 			//////////////////////////////////////////////////////////////////////////
 			// 2] Compute full heat diffusion
-			float[]	results_full = ComputeHeatDiffusionFull( laplacian, HEAT_DIFFUSION, ITERATIONS_COUNT * TIME_STEP );
+			float[][]	results_full = ComputeHeatDiffusionFull( laplacian, HEAT_DIFFUSION, TIME_STEP, ITERATIONS_COUNT );
 
 			//////////////////////////////////////////////////////////////////////////
 			// 3] Compute iterative diffusion
-			float[]	results_iterative = ComputeHeatDiffusionIterative( laplacian, HEAT_DIFFUSION, TIME_STEP, ITERATIONS_COUNT );
+			float[][]	results_Euler = ComputeHeatDiffusionEuler( laplacian, HEAT_DIFFUSION, TIME_STEP, ITERATIONS_COUNT );
+
+			//////////////////////////////////////////////////////////////////////////
+			// 4] Compare errors between methods
+			float[]		errors = new float[ITERATIONS_COUNT];
+			float		delta;
+			for ( uint iterationIndex=0; iterationIndex < ITERATIONS_COUNT; iterationIndex++ ) {
+				float[]	temps0 = results_full[iterationIndex];
+				float[]	temps1 = results_Euler[iterationIndex];
+
+				float	sqError = 0.0f;
+				for ( uint nodeIndex=0; nodeIndex < NODES_COUNT; nodeIndex++ ) {
+					delta = temps0[nodeIndex] - temps1[nodeIndex];
+					sqError += delta * delta;
+				}
+				errors[iterationIndex] = Mathf.Sqrt( sqError );
+			}
 		}
 
-		float[]	ComputeHeatDiffusionFull( MathSolvers.MatrixF _laplacian, float _diffusionCoefficient, float _simulationTime ) {
+		float[][]	ComputeHeatDiffusionFull( MathSolvers.MatrixF _laplacian, float _diffusionCoefficient, float _timeStep, uint _iterationsCount ) {
 			uint	nodesCount = _laplacian.ColumnsCount;
 
 			// 1] Compute eigen vectors using singular value decomposition
@@ -324,46 +340,53 @@ namespace TestGraphHeatEquation
 
 			// 2] Apply heat to node 0 and compute diffusion
 			//
-			float[][]	heats = new float[2][] {
-				new float[nodesCount],
-				new float[nodesCount]
-			};
+			float[][]	results = new float[_iterationsCount][];
 
-			heats[0][0] = 1;
+			float[]		heatsSource = new float[nodesCount];
+			float[]		eigenHeatsSource = new float[nodesCount];
+			float[]		eigenHeatsTarget = new float[nodesCount];
+
+			heatsSource[0] = 1;
 
 			// 3.1) Transform heat vector into eigen-space: Phi' = trans(V) * Phi
 			for ( int i=0; i < nodesCount; i++ ) {
 				float	sum = 0.0f;
 				for ( int j=0; j < nodesCount; j++ )
-//					sum += eigenVectors[i,j] *  heats[0][i];
-					sum += eigenVectors[j,i] *  heats[0][j];
-				heats[1][i] = sum;
+					sum += eigenVectors[j,i] *  heatsSource[j];
+				eigenHeatsSource[i] = sum;
 			}
 
-			// 3.2) Apply diffusion over total diffusion time
-			for ( int i=0; i < nodesCount; i++ ) {
-				float	lambda = eigenValues[i];
-//				float	lambda = eigenValues[i] > 0.0 ? 1.0f / eigenValues[i] : 0.0f;
-				float	phi_0 = heats[1][i];
-				float	phi_t = phi_0 * Mathf.Exp( -_diffusionCoefficient * lambda * _simulationTime );
-				heats[0][i] = phi_t;
+			// 3.2) Apply diffusion iteratively (note that we could obviously reach the desired time immediately,
+			//		there's no use for iterative computation here but it's only there to compare against Euler integration)
+			//
+			for ( uint iterationIndex=0; iterationIndex < _iterationsCount; iterationIndex++ ) {
+				float	time = _timeStep * (iterationIndex+1);
+				for ( int i=0; i < nodesCount; i++ ) {
+					float	lambda = eigenValues[i];
+					float	phi_0 = eigenHeatsSource[i];
+					float	phi_t = phi_0 * Mathf.Exp( -_diffusionCoefficient * lambda * time );
+					eigenHeatsTarget[i] = phi_t;
+				}
+
+				// Transform eigen-heat vector back into graph-space: Phi = V * Phi'
+				float[]	heatsTarget = new float[nodesCount];
+				float	totalHeat = 0.0f;	// This should equal to initial heat, no loss!
+				for ( int i=0; i < nodesCount; i++ ) {
+					float	sum = 0.0f;
+					for ( int j=0; j < nodesCount; j++ )
+						sum += eigenVectors[i,j] * eigenHeatsTarget[j];
+					heatsTarget[i] = sum;
+					totalHeat += sum;
+				}
+
+				// Copy each iteration
+				results[iterationIndex] = heatsTarget;
 			}
 
-			// 3.1) Transform eigen-heat vector back into graph-space: Phi = V * Phi'
-			float	totalHeat = 0.0f;	// This should equal to initial heat, no loss!
-			for ( int i=0; i < nodesCount; i++ ) {
-				float	sum = 0.0f;
-				for ( int j=0; j < nodesCount; j++ )
-//					sum += eigenVectors[j,i] * heats[0][j];
-					sum += eigenVectors[i,j] * heats[0][j];
-				heats[1][i] = sum;
-				totalHeat += sum;
-			}
-
-			return heats[1];
+			return results;
 		}
 
-		float[]	ComputeHeatDiffusionIterative( MathSolvers.MatrixF _laplacian, float _diffusionCoefficient, float _timeStep, uint _iterationsCount ) {
+		float[][]	ComputeHeatDiffusionEuler( MathSolvers.MatrixF _laplacian, float _diffusionCoefficient, float _timeStep, uint _iterationsCount ) {
 			uint	nodesCount = _laplacian.ColumnsCount;
 
 // 			// 1] Pre-compute many little laplacian matrices for each node
@@ -408,7 +431,6 @@ namespace TestGraphHeatEquation
 
 				// Collect neighbor indices
 				uint	j = 0;
-				uint	neighborsCount = 0;
 				for ( ; j < nodeIndex; j++ )
 					if ( _laplacian[nodeIndex,j] != 0.0f )
 						tempNeighborIndices.Add( j );
@@ -420,6 +442,8 @@ namespace TestGraphHeatEquation
 			}
 
 			// 2] Apply diffusion iteratively using Euler method
+			float[][]	results = new float[_iterationsCount][];
+
 			float[][]	heats = new float[2][] {
 				new float[nodesCount],
 				new float[nodesCount]
@@ -455,9 +479,14 @@ namespace TestGraphHeatEquation
 				float[]	temp = heats[0];
 				heats[0] = heats[1];
 				heats[1] = temp;
+
+				// Copy each iteration
+				float[]	result = new float[nodesCount];
+				Array.Copy( heats[0], result, nodesCount );
+				results[iterationIndex] = result;
 			}
 
-			return heats[0];
+			return results;
 		}
 
 		#endregion
