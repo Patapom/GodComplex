@@ -55,7 +55,8 @@ namespace TestGraphHeatEquation
 		private Texture2D				m_tex_Search = null;
 		private Texture2D				m_tex_Search_Staging = null;
 
-		private Texture2D				m_tex_FalseColors = null;
+		private Texture2D				m_tex_FalseColors0 = null;
+		private Texture2D				m_tex_FalseColors1 = null;
 
 		#endregion
 
@@ -109,7 +110,13 @@ namespace TestGraphHeatEquation
 				ImageUtility.ImageFile convertedImage = new ImageUtility.ImageFile();
 				convertedImage.ConvertFrom( sourceImage, ImageUtility.PIXEL_FORMAT.BGRA8 );
 				using ( ImageUtility.ImagesMatrix image = new ImageUtility.ImagesMatrix( convertedImage, ImageUtility.ImagesMatrix.IMAGE_TYPE.sRGB ) )
-					m_tex_FalseColors = new Texture2D( m_device, image, ImageUtility.COMPONENT_FORMAT.UNORM_sRGB );
+					m_tex_FalseColors0 = new Texture2D( m_device, image, ImageUtility.COMPONENT_FORMAT.UNORM_sRGB );
+			}
+			using ( ImageUtility.ImageFile sourceImage = new ImageUtility.ImageFile( new FileInfo( "../../Images/Gradients/Viridis.png" ), ImageUtility.ImageFile.FILE_FORMAT.PNG ) ) {
+				ImageUtility.ImageFile convertedImage = new ImageUtility.ImageFile();
+				convertedImage.ConvertFrom( sourceImage, ImageUtility.PIXEL_FORMAT.BGRA8 );
+				using ( ImageUtility.ImagesMatrix image = new ImageUtility.ImagesMatrix( convertedImage, ImageUtility.ImagesMatrix.IMAGE_TYPE.sRGB ) )
+					m_tex_FalseColors1 = new Texture2D( m_device, image, ImageUtility.COMPONENT_FORMAT.UNORM_sRGB );
 			}
 
 //			BuildGraph();
@@ -129,7 +136,10 @@ namespace TestGraphHeatEquation
 											| (Control.ModifierKeys == Keys.Shift ? 8 : 0));
 			m_CB_Main.m.deltaTime = floatTrackbarControlDeltaTime.Value;
 			m_CB_Main.m.diffusionCoefficient = floatTrackbarControlDiffusionCoefficient.Value;
-			m_CB_Main.m.flags = (uint) (checkBoxShowSearch.Checked ? 1 : 0);
+			m_CB_Main.m.flags = (uint) (
+									  (checkBoxShowSearch.Checked ? 1 : 0)
+									| (checkBoxShowLog.Checked ? 2 : 0)
+								);
 			m_CB_Main.UpdateData();
 
 
@@ -171,7 +181,10 @@ namespace TestGraphHeatEquation
 
 				m_tex_HeatMap0.SetPS( 0 );
 				m_tex_Obstacles0.SetPS( 1 );
-				m_tex_FalseColors.SetPS( 2 );
+				if ( checkBoxShowLog.Checked )
+					m_tex_FalseColors1.SetPS( 2 );
+				else
+					m_tex_FalseColors0.SetPS( 2 );
 				m_tex_Search.SetPS( 3 );
 
 				m_device.RenderFullscreenQuad( m_shader_RenderHeatMap );
@@ -585,7 +598,8 @@ namespace TestGraphHeatEquation
 			{
 				components.Dispose();
 
-				m_tex_FalseColors.Dispose();
+				m_tex_FalseColors1.Dispose();
+				m_tex_FalseColors0.Dispose();
 
 				m_tex_Search_Staging.Dispose();
 				m_tex_Search.Dispose();
@@ -633,11 +647,16 @@ namespace TestGraphHeatEquation
 
 		List< Point >	m_simulationHotSpots = new List<Point>();
 		int				m_simulationIteration = -1;
+
+		// Algo 0
+		int				m_simulationX, m_simulationY;
+		bool[,]			m_visited = new bool[GRAPH_SIZE,GRAPH_SIZE];
+
+		// Algo 1
 		float			m_simulationRadius = 0.0f;
 
-// 		PixelsBuffer	m_bufferHeat = null;
-// 		BinaryReader	m_bufferHeatReader = null;
 		float4[,]		m_bufferHeat = new float4[GRAPH_SIZE,GRAPH_SIZE];
+		uint[,]			m_bufferSearchResults = new uint[GRAPH_SIZE,GRAPH_SIZE];
 
 		void	ReadBackHeat() {
 			m_tex_HeatMap_Staging.CopyFrom( m_tex_HeatMap0 );
@@ -646,16 +665,11 @@ namespace TestGraphHeatEquation
 			m_tex_HeatMap_Staging.ReadPixels( 0, 0, ( uint _X, uint _Y, BinaryReader R ) => { m_bufferHeat[_X,_Y].Set( R.ReadSingle(), R.ReadSingle(), R.ReadSingle(), R.ReadSingle() ); } );
 		}
 
-		private void panelOutput_MouseDown( object sender, MouseEventArgs e ) {
-			if ( e.Button == MouseButtons.Middle ) {
-				// Add a new hotspot
-				Point	hotSpotLocation = new Point( e.X * GRAPH_SIZE / panelOutput.Width, e.Y * GRAPH_SIZE / panelOutput.Height );
-				m_simulationHotSpots.Add( hotSpotLocation );
-
-				integerTrackbarControlStartPosition.RangeMax = m_simulationHotSpots.Count - 1;
-				integerTrackbarControlStartPosition.Value = 0;
-				integerTrackbarControlStartPosition.Enabled = true;
-			}
+		void	UpdateSearchResults() {
+			m_tex_Search_Staging.WritePixels( 0, 0, ( uint _X, uint _Y, BinaryWriter W ) => {
+				W.Write( m_bufferSearchResults[_X,_Y] );
+			} );
+			m_tex_Search.CopyFrom( m_tex_Search_Staging );
 		}
 
 		private void integerTrackbarControlStartPosition_EnabledChanged( object sender, EventArgs e ) {
@@ -667,66 +681,134 @@ namespace TestGraphHeatEquation
 
 		private void buttonResetSimulation_Click( object sender, EventArgs e ) {
 			m_simulationIteration = 0;
-			m_simulationRadius = 0.0f;
 			ReadBackHeat();
 
+			m_simulationRadius = 0.0f;
+			if ( m_simulationHotSpots.Count > 0 ) {
+				m_simulationX = m_simulationHotSpots[integerTrackbarControlStartPosition.Value].X;
+				m_simulationY = m_simulationHotSpots[integerTrackbarControlStartPosition.Value].Y;
+			}
+			Array.Clear( m_visited, 0, GRAPH_SIZE*GRAPH_SIZE );
+
 			// Reset search result
-			m_tex_Search_Staging.WritePixels( 0, 0, ( uint _X, uint _Y, BinaryWriter W ) => {
-				W.Write( 0U );
-			} );
-			m_tex_Search.CopyFrom( m_tex_Search_Staging );
+			Array.Clear( m_bufferSearchResults, 0, GRAPH_SIZE*GRAPH_SIZE );
+			UpdateSearchResults();
 		}
 
 		private void buttonRunSimulation_Click( object sender, EventArgs e ) {
-			while ( m_simulationIteration < ((int) Mathf.Sqrt(2) * GRAPH_SIZE) )
+			int	iterationsCount = ((int) Mathf.Sqrt(2) * GRAPH_SIZE);
+			for ( int i=0; i < iterationsCount; i++ )
 				buttonStepSimulation_Click( null, e );
 
-			m_tex_Search.CopyFrom( m_tex_Search_Staging );
+			UpdateSearchResults();
 		}
+
+		int[][]	dXY = new int[8][] {
+			new int[] { -1, -1 },
+			new int[] {  0, -1 },
+			new int[] { +1, -1 },
+			new int[] { -1,  0 },
+//			new int[] {  0, -1 },
+			new int[] { +1,  0 },
+			new int[] { -1, +1 },
+			new int[] {  0, +1 },
+			new int[] { +1, +1 },
+		};
 
 		private void buttonStepSimulation_Click( object sender, EventArgs e ) {
 			if ( m_simulationIteration < 0 ) {
 				buttonResetSimulation_Click( sender, e );
 			}
 
-			m_simulationRadius += 1.0f;
 			m_simulationIteration++;
 
-			Point	center = m_simulationHotSpots[integerTrackbarControlStartPosition.Value];
+			if ( radioButtonAlgo0.Checked ) {
+				//////////////////////////////////////////////////////////////////////////
+				// Local search: Select second highest value from last search position
+				float	largestValue = 0.0f;
+				float	secondLargestValue = 0.0f;
+				int		sX = m_simulationX, sY = m_simulationY;
+				int		X = m_simulationX, Y = m_simulationY;
 
-			// Walk the circle and find the largest value
-			float	largestValue = 0.0f;
-			int		X = 0, Y = 0;
-			uint	pixelsCount = (uint) Mathf.Ceiling( Mathf.TWOPI * m_simulationRadius );
-			for ( uint pixelIndex=0; pixelIndex < pixelsCount; pixelIndex++ ) {
-				float	angle = pixelIndex * Mathf.TWOPI / pixelsCount;
-				int		tempX = center.X + (int) Mathf.Floor( m_simulationRadius * Mathf.Cos( angle ) );
-				int		tempY = center.Y + (int) Mathf.Floor( m_simulationRadius * Mathf.Sin( angle ) );
-				if ( tempX < 0 || tempX >= GRAPH_SIZE )
-					continue;
-				if ( tempY < 0 || tempY >= GRAPH_SIZE )
-					continue;
+				for ( int i=0; i < 8; i++ ) {
+					int	tempX = m_simulationX + dXY[i][0];
+					int	tempY = m_simulationY + dXY[i][1];
+					if ( tempX < 0 || tempX >= GRAPH_SIZE )
+						continue;
+					if ( tempY < 0 || tempY >= GRAPH_SIZE )
+						continue;
+					if ( m_visited[tempX,tempY] )
+						continue;	// Already visited
 
-				float	heat = m_bufferHeat[tempX,tempY].x;
-				if ( heat <= largestValue )
-					continue;
+					float	value = m_bufferHeat[tempX,tempY].x;
+					if ( value <= largestValue )
+						continue;
 
-				largestValue = heat;
-				X = tempX;
-				Y = tempY;
+					sX = X; sY = Y;
+					secondLargestValue = largestValue;
+					X = tempX; Y = tempY;
+					largestValue = value;
+				}
+
+//sX = X; sY = Y;
+
+				// Write a single pixel
+				m_bufferSearchResults[sX,sY] = 0x000000FFU;
+				m_visited[sX,sY] = true;
+m_visited[X,Y] = true;	// Also mark maximum as visited to avoid getting trapped
+
+				m_simulationX = sX;
+				m_simulationY = sY;
+
+			} else if ( radioButtonAlgo1.Checked ) {
+				//////////////////////////////////////////////////////////////////////////
+				// Global search: the search radius is increased and we examine all pixels within the radius and select the one with the highest value
+				m_simulationRadius += 1.0f;
+
+				Point	center = m_simulationHotSpots[integerTrackbarControlStartPosition.Value];
+
+				// Walk the circle and find the largest value
+				float	largestValue = 0.0f;
+				int		X = 0, Y = 0;
+				uint	pixelsCount = (uint) Mathf.Ceiling( Mathf.TWOPI * m_simulationRadius );
+				for ( uint pixelIndex=0; pixelIndex < pixelsCount; pixelIndex++ ) {
+					float	angle = pixelIndex * Mathf.TWOPI / pixelsCount;
+					int		tempX = center.X + (int) Mathf.Floor( m_simulationRadius * Mathf.Cos( angle ) );
+					int		tempY = center.Y + (int) Mathf.Floor( m_simulationRadius * Mathf.Sin( angle ) );
+					if ( tempX < 0 || tempX >= GRAPH_SIZE )
+						continue;
+					if ( tempY < 0 || tempY >= GRAPH_SIZE )
+						continue;
+
+					float	heat = m_bufferHeat[tempX,tempY].x;
+					if ( heat <= largestValue )
+						continue;
+
+					largestValue = heat;
+					X = tempX;
+					Y = tempY;
+				}
+
+				// Write a single pixel
+				m_bufferSearchResults[X,Y] = 0x000000FFU;
 			}
-
-			// Write a single pixel
-			PixelsBuffer	buffer = m_tex_Search_Staging.MapWrite( 0, 0 );
-			BinaryWriter	W = buffer.OpenStreamWrite();
-			buffer.JumpToScanline( W, (uint) Y );
-			W.Seek( 4 * (int) X, SeekOrigin.Current );
-			W.Write( 0x000000FFU );
-			m_tex_Search_Staging.UnMap( buffer );
 
 			// Update search results texture
 			if ( sender != null ) {
-				m_tex_Search.CopyFrom( m_tex_Search_Staging );
+				UpdateSearchResults();
+			}
+		}
+
+		private void panelOutput_MouseDown( object sender, MouseEventArgs e ) {
+			if ( e.Button == MouseButtons.Middle ) {
+				// Add a new hotspot
+				Point	hotSpotLocation = new Point( e.X * GRAPH_SIZE / panelOutput.Width, e.Y * GRAPH_SIZE / panelOutput.Height );
+				m_simulationHotSpots.Add( hotSpotLocation );
+
+				integerTrackbarControlStartPosition.RangeMax = m_simulationHotSpots.Count - 1;
+				integerTrackbarControlStartPosition.VisibleRangeMax = integerTrackbarControlStartPosition.RangeMax;
+				integerTrackbarControlStartPosition.Value = 0;
+				integerTrackbarControlStartPosition.Enabled = true;
 			}
 		}
 

@@ -33,6 +33,9 @@
 			this.buttonStepSimulation = new System.Windows.Forms.Button();
 			this.buttonRunSimulation = new System.Windows.Forms.Button();
 			this.checkBoxShowSearch = new System.Windows.Forms.CheckBox();
+			this.radioButtonAlgo0 = new System.Windows.Forms.RadioButton();
+			this.radioButtonAlgo1 = new System.Windows.Forms.RadioButton();
+			this.checkBoxShowLog = new System.Windows.Forms.CheckBox();
 			this.SuspendLayout();
 			// 
 			// checkBoxRun
@@ -127,7 +130,7 @@
 			// 
 			// buttonResetObstacles
 			// 
-			this.buttonResetObstacles.Location = new System.Drawing.Point(533, 126);
+			this.buttonResetObstacles.Location = new System.Drawing.Point(533, 101);
 			this.buttonResetObstacles.Name = "buttonResetObstacles";
 			this.buttonResetObstacles.Size = new System.Drawing.Size(178, 23);
 			this.buttonResetObstacles.TabIndex = 3;
@@ -149,11 +152,11 @@
 			// 
 			// textBox
 			// 
-			this.textBox.Location = new System.Drawing.Point(530, 296);
+			this.textBox.Location = new System.Drawing.Point(530, 321);
 			this.textBox.Multiline = true;
 			this.textBox.Name = "textBox";
 			this.textBox.ReadOnly = true;
-			this.textBox.Size = new System.Drawing.Size(315, 206);
+			this.textBox.Size = new System.Drawing.Size(315, 181);
 			this.textBox.TabIndex = 7;
 			// 
 			// label3
@@ -210,11 +213,47 @@
 			this.checkBoxShowSearch.Text = "Show Search Result";
 			this.checkBoxShowSearch.UseVisualStyleBackColor = true;
 			// 
+			// radioButtonAlgo0
+			// 
+			this.radioButtonAlgo0.AutoSize = true;
+			this.radioButtonAlgo0.Checked = true;
+			this.radioButtonAlgo0.Location = new System.Drawing.Point(533, 290);
+			this.radioButtonAlgo0.Name = "radioButtonAlgo0";
+			this.radioButtonAlgo0.Size = new System.Drawing.Size(75, 17);
+			this.radioButtonAlgo0.TabIndex = 10;
+			this.radioButtonAlgo0.TabStop = true;
+			this.radioButtonAlgo0.Text = "Algo Local";
+			this.radioButtonAlgo0.UseVisualStyleBackColor = true;
+			// 
+			// radioButtonAlgo1
+			// 
+			this.radioButtonAlgo1.AutoSize = true;
+			this.radioButtonAlgo1.Location = new System.Drawing.Point(618, 290);
+			this.radioButtonAlgo1.Name = "radioButtonAlgo1";
+			this.radioButtonAlgo1.Size = new System.Drawing.Size(79, 17);
+			this.radioButtonAlgo1.TabIndex = 10;
+			this.radioButtonAlgo1.TabStop = true;
+			this.radioButtonAlgo1.Text = "Algo Global";
+			this.radioButtonAlgo1.UseVisualStyleBackColor = true;
+			// 
+			// checkBoxShowLog
+			// 
+			this.checkBoxShowLog.AutoSize = true;
+			this.checkBoxShowLog.Location = new System.Drawing.Point(533, 155);
+			this.checkBoxShowLog.Name = "checkBoxShowLog";
+			this.checkBoxShowLog.Size = new System.Drawing.Size(101, 17);
+			this.checkBoxShowLog.TabIndex = 11;
+			this.checkBoxShowLog.Text = "Show Log(heat)";
+			this.checkBoxShowLog.UseVisualStyleBackColor = true;
+			// 
 			// GraphForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(857, 543);
+			this.Controls.Add(this.checkBoxShowLog);
+			this.Controls.Add(this.radioButtonAlgo1);
+			this.Controls.Add(this.radioButtonAlgo0);
 			this.Controls.Add(this.checkBoxShowSearch);
 			this.Controls.Add(this.buttonRunSimulation);
 			this.Controls.Add(this.buttonStepSimulation);
@@ -259,5 +298,8 @@
 		private System.Windows.Forms.Button buttonStepSimulation;
 		private System.Windows.Forms.Button buttonRunSimulation;
 		private System.Windows.Forms.CheckBox checkBoxShowSearch;
+		private System.Windows.Forms.RadioButton radioButtonAlgo0;
+		private System.Windows.Forms.RadioButton radioButtonAlgo1;
+		private System.Windows.Forms.CheckBox checkBoxShowLog;
 	}
 }

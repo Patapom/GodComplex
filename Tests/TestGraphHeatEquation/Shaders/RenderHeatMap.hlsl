@@ -18,16 +18,21 @@ float3	PS( VS_IN _In ) : SV_TARGET0 {
 	float4	obstacles = _texObstacles[1 + GRAPH_SIZE * (_In.__Position.xy-0.5) / 512.0];
 
 	float3	color = 0;
-	if ( obstacles.x == 0 )
-		color = _texFalseColors.SampleLevel( LinearClamp, float2( heat, 0.5 ), 0.0 );
-	else
+	if ( obstacles.x == 0 ) {
+		if ( flags & 2 ) {
+			float	logHeat = 0.43429448190325182765112891891661 * log( max( 1e-6, heat ) );	// Log10( heat )
+			float	normalizedLogHeat = (6.0 + logHeat) / 6.0;
+			color = _texFalseColors.SampleLevel( LinearClamp, float2( normalizedLogHeat, 0.5 ), 0.0 );
+		} else
+			color = _texFalseColors.SampleLevel( LinearClamp, float2( heat, 0.5 ), 0.0 );
+	} else
 		color = float3( 1, 1, 0 );
 
 	if ( flags & 1 ) {
 		// Show search path
 		float	search = _texSearch.SampleLevel( PointClamp, UV, 0.0 ).x;
 		if ( search > 0.0 )
-			color = float3( 0, 0.5, 0 );
+			color = float3( 1, 0, 1 );
 	}
 
 	return color;
