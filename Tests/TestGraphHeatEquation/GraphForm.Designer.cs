@@ -26,6 +26,13 @@
 			this.label2 = new System.Windows.Forms.Label();
 			this.timer1 = new System.Windows.Forms.Timer(this.components);
 			this.buttonResetObstacles = new System.Windows.Forms.Button();
+			this.integerTrackbarControlStartPosition = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
+			this.textBox = new System.Windows.Forms.TextBox();
+			this.label3 = new System.Windows.Forms.Label();
+			this.buttonResetSimulation = new System.Windows.Forms.Button();
+			this.buttonStepSimulation = new System.Windows.Forms.Button();
+			this.buttonRunSimulation = new System.Windows.Forms.Button();
+			this.checkBoxShowSearch = new System.Windows.Forms.CheckBox();
 			this.SuspendLayout();
 			// 
 			// checkBoxRun
@@ -70,6 +77,7 @@
 			this.panelOutput.Name = "panelOutput";
 			this.panelOutput.Size = new System.Drawing.Size(512, 512);
 			this.panelOutput.TabIndex = 0;
+			this.panelOutput.MouseDown += new System.Windows.Forms.MouseEventHandler(this.panelOutput_MouseDown);
 			// 
 			// buttonReload
 			// 
@@ -91,7 +99,7 @@
 			this.floatTrackbarControlDeltaTime.RangeMin = 0F;
 			this.floatTrackbarControlDeltaTime.Size = new System.Drawing.Size(200, 20);
 			this.floatTrackbarControlDeltaTime.TabIndex = 1;
-			this.floatTrackbarControlDeltaTime.Value = 1.0F;
+			this.floatTrackbarControlDeltaTime.Value = 1F;
 			this.floatTrackbarControlDeltaTime.VisibleRangeMax = 1F;
 			// 
 			// label1
@@ -127,12 +135,94 @@
 			this.buttonResetObstacles.UseVisualStyleBackColor = true;
 			this.buttonResetObstacles.Click += new System.EventHandler(this.buttonResetObstacles_Click);
 			// 
+			// integerTrackbarControlStartPosition
+			// 
+			this.integerTrackbarControlStartPosition.Enabled = false;
+			this.integerTrackbarControlStartPosition.Location = new System.Drawing.Point(645, 204);
+			this.integerTrackbarControlStartPosition.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.integerTrackbarControlStartPosition.MinimumSize = new System.Drawing.Size(70, 20);
+			this.integerTrackbarControlStartPosition.Name = "integerTrackbarControlStartPosition";
+			this.integerTrackbarControlStartPosition.Size = new System.Drawing.Size(200, 20);
+			this.integerTrackbarControlStartPosition.TabIndex = 6;
+			this.integerTrackbarControlStartPosition.Value = 0;
+			this.integerTrackbarControlStartPosition.EnabledChanged += new System.EventHandler(this.integerTrackbarControlStartPosition_EnabledChanged);
+			// 
+			// textBox
+			// 
+			this.textBox.Location = new System.Drawing.Point(530, 296);
+			this.textBox.Multiline = true;
+			this.textBox.Name = "textBox";
+			this.textBox.ReadOnly = true;
+			this.textBox.Size = new System.Drawing.Size(315, 206);
+			this.textBox.TabIndex = 7;
+			// 
+			// label3
+			// 
+			this.label3.AutoSize = true;
+			this.label3.Location = new System.Drawing.Point(530, 209);
+			this.label3.Name = "label3";
+			this.label3.Size = new System.Drawing.Size(69, 13);
+			this.label3.TabIndex = 5;
+			this.label3.Text = "Start Position";
+			// 
+			// buttonResetSimulation
+			// 
+			this.buttonResetSimulation.Enabled = false;
+			this.buttonResetSimulation.Location = new System.Drawing.Point(533, 238);
+			this.buttonResetSimulation.Name = "buttonResetSimulation";
+			this.buttonResetSimulation.Size = new System.Drawing.Size(75, 23);
+			this.buttonResetSimulation.TabIndex = 8;
+			this.buttonResetSimulation.Text = "Reset";
+			this.buttonResetSimulation.UseVisualStyleBackColor = true;
+			this.buttonResetSimulation.Click += new System.EventHandler(this.buttonResetSimulation_Click);
+			// 
+			// buttonStepSimulation
+			// 
+			this.buttonStepSimulation.Enabled = false;
+			this.buttonStepSimulation.Location = new System.Drawing.Point(614, 238);
+			this.buttonStepSimulation.Name = "buttonStepSimulation";
+			this.buttonStepSimulation.Size = new System.Drawing.Size(75, 23);
+			this.buttonStepSimulation.TabIndex = 8;
+			this.buttonStepSimulation.Text = "Step";
+			this.buttonStepSimulation.UseVisualStyleBackColor = true;
+			this.buttonStepSimulation.Click += new System.EventHandler(this.buttonStepSimulation_Click);
+			// 
+			// buttonRunSimulation
+			// 
+			this.buttonRunSimulation.Enabled = false;
+			this.buttonRunSimulation.Location = new System.Drawing.Point(695, 238);
+			this.buttonRunSimulation.Name = "buttonRunSimulation";
+			this.buttonRunSimulation.Size = new System.Drawing.Size(75, 23);
+			this.buttonRunSimulation.TabIndex = 8;
+			this.buttonRunSimulation.Text = "Run";
+			this.buttonRunSimulation.UseVisualStyleBackColor = true;
+			this.buttonRunSimulation.Click += new System.EventHandler(this.buttonRunSimulation_Click);
+			// 
+			// checkBoxShowSearch
+			// 
+			this.checkBoxShowSearch.AutoSize = true;
+			this.checkBoxShowSearch.Checked = true;
+			this.checkBoxShowSearch.CheckState = System.Windows.Forms.CheckState.Checked;
+			this.checkBoxShowSearch.Location = new System.Drawing.Point(533, 267);
+			this.checkBoxShowSearch.Name = "checkBoxShowSearch";
+			this.checkBoxShowSearch.Size = new System.Drawing.Size(123, 17);
+			this.checkBoxShowSearch.TabIndex = 9;
+			this.checkBoxShowSearch.Text = "Show Search Result";
+			this.checkBoxShowSearch.UseVisualStyleBackColor = true;
+			// 
 			// GraphForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(857, 543);
+			this.Controls.Add(this.checkBoxShowSearch);
+			this.Controls.Add(this.buttonRunSimulation);
+			this.Controls.Add(this.buttonStepSimulation);
+			this.Controls.Add(this.buttonResetSimulation);
+			this.Controls.Add(this.textBox);
+			this.Controls.Add(this.integerTrackbarControlStartPosition);
 			this.Controls.Add(this.label2);
+			this.Controls.Add(this.label3);
 			this.Controls.Add(this.label1);
 			this.Controls.Add(this.buttonReload);
 			this.Controls.Add(this.buttonResetObstacles);
@@ -162,5 +252,12 @@
 		private System.Windows.Forms.Label label2;
 		private System.Windows.Forms.Timer timer1;
 		private System.Windows.Forms.Button buttonResetObstacles;
+		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlStartPosition;
+		private System.Windows.Forms.TextBox textBox;
+		private System.Windows.Forms.Label label3;
+		private System.Windows.Forms.Button buttonResetSimulation;
+		private System.Windows.Forms.Button buttonStepSimulation;
+		private System.Windows.Forms.Button buttonRunSimulation;
+		private System.Windows.Forms.CheckBox checkBoxShowSearch;
 	}
 }

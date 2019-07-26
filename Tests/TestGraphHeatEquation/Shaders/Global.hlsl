@@ -9,6 +9,7 @@ cbuffer CB_Main : register(b0) {
 	uint	mouseButtons;	// Mouse button states (0=left button, 1=middle, 2=right)
 	float	deltaTime;		// Time step
 	float	diffusionCoefficient;
+	uint	flags;
 };
 
 SamplerState LinearClamp	: register( s0 );

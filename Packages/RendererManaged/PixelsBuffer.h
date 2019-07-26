@@ -38,8 +38,8 @@ namespace Renderer {
 		void	JumpToScanline( System::IO::BinaryReader^ _reader, UInt32 _Y ) {
 			_reader->BaseStream->Position = _Y * m_rowPitch;
 		}
-		void	JumpToScanline( System::IO::BinaryWriter^ _reader, UInt32 _Y ) {
-			_reader->BaseStream->Position = _Y * m_rowPitch;
+		void	JumpToScanline( System::IO::BinaryWriter^ _writer, UInt32 _Y ) {
+			_writer->BaseStream->Position = _Y * m_rowPitch;
 		}
 
 	internal:

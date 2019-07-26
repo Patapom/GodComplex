@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.IO;
 
 using Renderer;
 using SharpMath;
@@ -31,6 +32,7 @@ namespace TestGraphHeatEquation
 			public uint			mouseButtons;	// Mouse button states (0=left button, 1=middle, 2=right)
 			public float		deltaTime;		// Time step
 			public float		diffusionCoefficient;
+			public uint			flags;
 		}
 
 		#endregion
@@ -43,13 +45,15 @@ namespace TestGraphHeatEquation
 		private Shader					m_shader_RenderHeatMap = null;
 		private Shader					m_shader_HeatDiffusion = null;
 		private Shader					m_shader_DrawObstacles = null;
-//		private Texture2D				m_tex_HeatMap_Staging = null;
+		private Texture2D				m_tex_HeatMap_Staging = null;
 		private Texture2D				m_tex_HeatMap0 = null;
 		private Texture2D				m_tex_HeatMap1 = null;
 		private Texture2D				m_tex_Obstacles0 = null;
 		private Texture2D				m_tex_Obstacles1 = null;
-
 		private Texture2D				m_tex_Obstacles_Staging = null;
+
+		private Texture2D				m_tex_Search = null;
+		private Texture2D				m_tex_Search_Staging = null;
 
 		private Texture2D				m_tex_FalseColors = null;
 
@@ -78,17 +82,17 @@ namespace TestGraphHeatEquation
 
 			m_CB_Main = new ConstantBuffer<CB_Main>( m_device, 0 );
 
-			m_shader_HeatDiffusion = new Shader( m_device, new System.IO.FileInfo( "./Shaders/HeatDiffusion.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
-			m_shader_RenderHeatMap = new Shader( m_device, new System.IO.FileInfo( "./Shaders/RenderHeatMap.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
-			m_shader_DrawObstacles = new Shader( m_device, new System.IO.FileInfo( "./Shaders/DrawObstacles.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+			m_shader_HeatDiffusion = new Shader( m_device, new FileInfo( "./Shaders/HeatDiffusion.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+			m_shader_RenderHeatMap = new Shader( m_device, new FileInfo( "./Shaders/RenderHeatMap.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+			m_shader_DrawObstacles = new Shader( m_device, new FileInfo( "./Shaders/DrawObstacles.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 
-//			m_tex_HeatMap_Staging = new Texture2D( m_device, (uint) GRAPH_SIZE, (uint) GRAPH_SIZE, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA8, ImageUtility.COMPONENT_FORMAT.UNORM_sRGB, true, false, null );
+			m_tex_HeatMap_Staging = new Texture2D( m_device, (uint) GRAPH_SIZE, (uint) GRAPH_SIZE, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA32F, ImageUtility.COMPONENT_FORMAT.AUTO, true, false, null );
 			m_tex_HeatMap0 = new Texture2D( m_device, (uint) GRAPH_SIZE, (uint) GRAPH_SIZE, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, false, null );
 			m_tex_HeatMap1 = new Texture2D( m_device, (uint) GRAPH_SIZE, (uint) GRAPH_SIZE, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, false, null );
 			m_tex_Obstacles0 = new Texture2D( m_device, (uint) GRAPH_SIZE + 2, (uint) GRAPH_SIZE + 2, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA8, ImageUtility.COMPONENT_FORMAT.UNORM, false, false, null );
 			m_tex_Obstacles1 = new Texture2D( m_device, (uint) GRAPH_SIZE + 2, (uint) GRAPH_SIZE + 2, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA8, ImageUtility.COMPONENT_FORMAT.UNORM, false, false, null );
 			m_tex_Obstacles_Staging = new Texture2D( m_device, (uint) GRAPH_SIZE + 2, (uint) GRAPH_SIZE + 2, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA8, ImageUtility.COMPONENT_FORMAT.UNORM, true, false, null );
-			m_tex_Obstacles_Staging.WritePixels( 0, 0, ( uint _X, uint _Y, System.IO.BinaryWriter W ) => {
+			m_tex_Obstacles_Staging.WritePixels( 0, 0, ( uint _X, uint _Y, BinaryWriter W ) => {
 				bool	obstacle = _X == 0 || _Y == 0 || _X == GRAPH_SIZE+1 || _Y == GRAPH_SIZE+1;
 				if ( obstacle )
 					W.Write( 0x000000FFU );
@@ -97,8 +101,11 @@ namespace TestGraphHeatEquation
 			} );
 			buttonResetObstacles_Click( null, EventArgs.Empty );
 
+			m_tex_Search = new Texture2D( m_device, (uint) GRAPH_SIZE, (uint) GRAPH_SIZE, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA8, ImageUtility.COMPONENT_FORMAT.UNORM, false, false, null );
+			m_tex_Search_Staging = new Texture2D( m_device, (uint) GRAPH_SIZE, (uint) GRAPH_SIZE, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA8, ImageUtility.COMPONENT_FORMAT.UNORM, true, false, null );
+
 			// Load false colors
-			using ( ImageUtility.ImageFile sourceImage = new ImageUtility.ImageFile( new System.IO.FileInfo( "../../Images/Gradients/Magma.png" ), ImageUtility.ImageFile.FILE_FORMAT.PNG ) ) {
+			using ( ImageUtility.ImageFile sourceImage = new ImageUtility.ImageFile( new FileInfo( "../../Images/Gradients/Magma.png" ), ImageUtility.ImageFile.FILE_FORMAT.PNG ) ) {
 				ImageUtility.ImageFile convertedImage = new ImageUtility.ImageFile();
 				convertedImage.ConvertFrom( sourceImage, ImageUtility.PIXEL_FORMAT.BGRA8 );
 				using ( ImageUtility.ImagesMatrix image = new ImageUtility.ImagesMatrix( convertedImage, ImageUtility.ImagesMatrix.IMAGE_TYPE.sRGB ) )
@@ -122,6 +129,7 @@ namespace TestGraphHeatEquation
 											| (Control.ModifierKeys == Keys.Shift ? 8 : 0));
 			m_CB_Main.m.deltaTime = floatTrackbarControlDeltaTime.Value;
 			m_CB_Main.m.diffusionCoefficient = floatTrackbarControlDiffusionCoefficient.Value;
+			m_CB_Main.m.flags = (uint) (checkBoxShowSearch.Checked ? 1 : 0);
 			m_CB_Main.UpdateData();
 
 
@@ -133,17 +141,27 @@ namespace TestGraphHeatEquation
 				m_device.SetRenderTarget( m_tex_Obstacles1, null );
 				m_tex_Obstacles0.SetPS( 0 );
 				m_device.RenderFullscreenQuad( m_shader_DrawObstacles );
+
+				// Swap
+				Texture2D	temp = m_tex_Obstacles0;
+				m_tex_Obstacles0 = m_tex_Obstacles1;
+				m_tex_Obstacles1 = temp;
 			}
 
 			//////////////////////////////////////////////////////////////////////////
 			// Perform heat diffusion test
-			if ( m_shader_HeatDiffusion.Use() ) {
+			if ( checkBoxRun.Checked && m_shader_HeatDiffusion.Use() ) {
 				m_device.SetRenderTarget( m_tex_HeatMap1, null );
 
 				m_tex_HeatMap0.SetPS( 0 );
-				m_tex_Obstacles1.SetPS( 1 );
+				m_tex_Obstacles0.SetPS( 1 );
 
 				m_device.RenderFullscreenQuad( m_shader_HeatDiffusion );
+
+				// Swap
+				Texture2D	temp = m_tex_HeatMap0;
+				m_tex_HeatMap0 = m_tex_HeatMap1;
+				m_tex_HeatMap1 = temp;
 			}
 
 			//////////////////////////////////////////////////////////////////////////
@@ -151,24 +169,15 @@ namespace TestGraphHeatEquation
 			if ( m_shader_RenderHeatMap.Use() ) {
 				m_device.SetRenderTarget( m_device.DefaultTarget, null );
 
-				m_tex_HeatMap1.SetPS( 0 );
-				m_tex_Obstacles1.SetPS( 1 );
+				m_tex_HeatMap0.SetPS( 0 );
+				m_tex_Obstacles0.SetPS( 1 );
 				m_tex_FalseColors.SetPS( 2 );
+				m_tex_Search.SetPS( 3 );
 
 				m_device.RenderFullscreenQuad( m_shader_RenderHeatMap );
 			}
 
 			m_device.Present( false );
-
-
-			// Swap
-			Texture2D	temp = m_tex_HeatMap0;
-			m_tex_HeatMap0 = m_tex_HeatMap1;
-			m_tex_HeatMap1 = temp;
-
-			temp = m_tex_Obstacles0;
-			m_tex_Obstacles0 = m_tex_Obstacles1;
-			m_tex_Obstacles1 = temp;
 		}
 
 		#region Graph Building
@@ -578,12 +587,14 @@ namespace TestGraphHeatEquation
 
 				m_tex_FalseColors.Dispose();
 
+				m_tex_Search_Staging.Dispose();
+				m_tex_Search.Dispose();
 				m_tex_Obstacles_Staging.Dispose();
 				m_tex_Obstacles1.Dispose();
 				m_tex_Obstacles0.Dispose();
 				m_tex_HeatMap1.Dispose();
 				m_tex_HeatMap0.Dispose();
-//				m_tex_HeatMap_Staging.Dispose();
+				m_tex_HeatMap_Staging.Dispose();
 				m_shader_DrawObstacles.Dispose();
 				m_shader_HeatDiffusion.Dispose();
 				m_shader_RenderHeatMap.Dispose();
@@ -606,15 +617,120 @@ namespace TestGraphHeatEquation
 
 		private void buttonResetObstacles_Click( object sender, EventArgs e ) {
 			m_tex_Obstacles0.CopyFrom( m_tex_Obstacles_Staging );
+			m_simulationHotSpots.Clear();
+			integerTrackbarControlStartPosition.Enabled = false;
 		}
 
 		private void checkBox1_CheckedChanged( object sender, EventArgs e ) {
-			timer1.Enabled = checkBoxRun.Checked;
+//			timer1.Enabled = checkBoxRun.Checked;
 		}
 
 		private void buttonReload_Click( object sender, EventArgs e ) {
 			m_device.ReloadModifiedShaders();
 		}
+
+		#region Simulation
+
+		List< Point >	m_simulationHotSpots = new List<Point>();
+		int				m_simulationIteration = -1;
+		float			m_simulationRadius = 0.0f;
+
+// 		PixelsBuffer	m_bufferHeat = null;
+// 		BinaryReader	m_bufferHeatReader = null;
+		float4[,]		m_bufferHeat = new float4[GRAPH_SIZE,GRAPH_SIZE];
+
+		void	ReadBackHeat() {
+			m_tex_HeatMap_Staging.CopyFrom( m_tex_HeatMap0 );
+// 			m_bufferHeat = m_tex_HeatMap_Staging.MapRead( 0, 0 );
+// 			m_bufferHeatReader = m_bufferHeat.OpenStreamRead();
+			m_tex_HeatMap_Staging.ReadPixels( 0, 0, ( uint _X, uint _Y, BinaryReader R ) => { m_bufferHeat[_X,_Y].Set( R.ReadSingle(), R.ReadSingle(), R.ReadSingle(), R.ReadSingle() ); } );
+		}
+
+		private void panelOutput_MouseDown( object sender, MouseEventArgs e ) {
+			if ( e.Button == MouseButtons.Middle ) {
+				// Add a new hotspot
+				Point	hotSpotLocation = new Point( e.X * GRAPH_SIZE / panelOutput.Width, e.Y * GRAPH_SIZE / panelOutput.Height );
+				m_simulationHotSpots.Add( hotSpotLocation );
+
+				integerTrackbarControlStartPosition.RangeMax = m_simulationHotSpots.Count - 1;
+				integerTrackbarControlStartPosition.Value = 0;
+				integerTrackbarControlStartPosition.Enabled = true;
+			}
+		}
+
+		private void integerTrackbarControlStartPosition_EnabledChanged( object sender, EventArgs e ) {
+			bool	enabled = integerTrackbarControlStartPosition.Enabled;
+			buttonResetSimulation.Enabled = enabled;
+			buttonStepSimulation.Enabled = enabled;
+			buttonRunSimulation.Enabled = enabled;
+		}
+
+		private void buttonResetSimulation_Click( object sender, EventArgs e ) {
+			m_simulationIteration = 0;
+			m_simulationRadius = 0.0f;
+			ReadBackHeat();
+
+			// Reset search result
+			m_tex_Search_Staging.WritePixels( 0, 0, ( uint _X, uint _Y, BinaryWriter W ) => {
+				W.Write( 0U );
+			} );
+			m_tex_Search.CopyFrom( m_tex_Search_Staging );
+		}
+
+		private void buttonRunSimulation_Click( object sender, EventArgs e ) {
+			while ( m_simulationIteration < ((int) Mathf.Sqrt(2) * GRAPH_SIZE) )
+				buttonStepSimulation_Click( null, e );
+
+			m_tex_Search.CopyFrom( m_tex_Search_Staging );
+		}
+
+		private void buttonStepSimulation_Click( object sender, EventArgs e ) {
+			if ( m_simulationIteration < 0 ) {
+				buttonResetSimulation_Click( sender, e );
+			}
+
+			m_simulationRadius += 1.0f;
+			m_simulationIteration++;
+
+			Point	center = m_simulationHotSpots[integerTrackbarControlStartPosition.Value];
+
+			// Walk the circle and find the largest value
+			float	largestValue = 0.0f;
+			int		X = 0, Y = 0;
+			uint	pixelsCount = (uint) Mathf.Ceiling( Mathf.TWOPI * m_simulationRadius );
+			for ( uint pixelIndex=0; pixelIndex < pixelsCount; pixelIndex++ ) {
+				float	angle = pixelIndex * Mathf.TWOPI / pixelsCount;
+				int		tempX = center.X + (int) Mathf.Floor( m_simulationRadius * Mathf.Cos( angle ) );
+				int		tempY = center.Y + (int) Mathf.Floor( m_simulationRadius * Mathf.Sin( angle ) );
+				if ( tempX < 0 || tempX >= GRAPH_SIZE )
+					continue;
+				if ( tempY < 0 || tempY >= GRAPH_SIZE )
+					continue;
+
+				float	heat = m_bufferHeat[tempX,tempY].x;
+				if ( heat <= largestValue )
+					continue;
+
+				largestValue = heat;
+				X = tempX;
+				Y = tempY;
+			}
+
+			// Write a single pixel
+			PixelsBuffer	buffer = m_tex_Search_Staging.MapWrite( 0, 0 );
+			BinaryWriter	W = buffer.OpenStreamWrite();
+			buffer.JumpToScanline( W, (uint) Y );
+			W.Seek( 4 * (int) X, SeekOrigin.Current );
+			W.Write( 0x000000FFU );
+			m_tex_Search_Staging.UnMap( buffer );
+
+			// Update search results texture
+			if ( sender != null ) {
+				m_tex_Search.CopyFrom( m_tex_Search_Staging );
+			}
+		}
+
+		#endregion
 
 		#endregion
 	}
