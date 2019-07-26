@@ -91,7 +91,7 @@
 			this.floatTrackbarControlDeltaTime.RangeMin = 0F;
 			this.floatTrackbarControlDeltaTime.Size = new System.Drawing.Size(200, 20);
 			this.floatTrackbarControlDeltaTime.TabIndex = 1;
-			this.floatTrackbarControlDeltaTime.Value = 0.1F;
+			this.floatTrackbarControlDeltaTime.Value = 1.0F;
 			this.floatTrackbarControlDeltaTime.VisibleRangeMax = 1F;
 			// 
 			// label1

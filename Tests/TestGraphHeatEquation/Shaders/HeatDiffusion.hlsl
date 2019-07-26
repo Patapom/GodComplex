@@ -16,7 +16,7 @@ float4	PS( VS_IN _In ) : SV_TARGET0 {
 	float4	obstacles = _texObstacles[Po];
 	if ( obstacles.x )
 		return 0.0;	// Don't compute anything for obstacles
-	if ( obstacles.y )
+	if ( obstacles.y || obstacles.z )
 		return 10.0;	// We're a source
 
 	///////////////////////////////////////////////////////////////////
@@ -66,6 +66,9 @@ float4	PS( VS_IN _In ) : SV_TARGET0 {
 
 	float4	sourceHeat = _texHeatMap[uint2( P.x, P.y )];
 	laplacian -= neighborsCount * sourceHeat;
+
+	// Normalize?
+	laplacian *= neighborsCount > 0 ? 1.0 / neighborsCount : 0;
 
 	///////////////////////////////////////////////////////////////////
 	// Apply diffusion

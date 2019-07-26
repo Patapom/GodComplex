@@ -14,12 +14,20 @@ float3	PS( VS_IN _In ) : SV_TARGET0 {
 
 	obstacle.y = 0.0;	// Always clear sources
 
-	if ( all(uint2(mousePosition) == P) ) {
+	uint2	pos = uint2(mousePosition)+1;
+
+	if ( all(pos == P) ) {
 		// Use right mouse button to set or clear obstacles
 		if ( mouseButtons & 4 )
 			obstacle.x = 1;	// Right = set
 		if ( (mouseButtons & 12) == 12 )
 			obstacle.x = 0;	// Right + Shift = clear
+
+		// Use middle mouse button to set or clear permanent sources
+		if ( mouseButtons & 2 )
+			obstacle.z = 1;
+		else if ( (mouseButtons & 10) == 10 )
+			obstacle.z = 0;
 
 		// Use left mouse button to set source
 		if ( mouseButtons & 1 )

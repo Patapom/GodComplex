@@ -89,9 +89,9 @@ namespace TestGraphHeatEquation
 			m_tex_Obstacles1 = new Texture2D( m_device, (uint) GRAPH_SIZE + 2, (uint) GRAPH_SIZE + 2, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA8, ImageUtility.COMPONENT_FORMAT.UNORM, false, false, null );
 			m_tex_Obstacles_Staging = new Texture2D( m_device, (uint) GRAPH_SIZE + 2, (uint) GRAPH_SIZE + 2, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA8, ImageUtility.COMPONENT_FORMAT.UNORM, true, false, null );
 			m_tex_Obstacles_Staging.WritePixels( 0, 0, ( uint _X, uint _Y, System.IO.BinaryWriter W ) => {
-				bool	obstacle = _X == 0 || _Y == 0 || _X == GRAPH_SIZE-1 || _Y == GRAPH_SIZE-1;
+				bool	obstacle = _X == 0 || _Y == 0 || _X == GRAPH_SIZE+1 || _Y == GRAPH_SIZE+1;
 				if ( obstacle )
-					W.Write( 0xFF000000U );
+					W.Write( 0x000000FFU );
 				else
 					W.Write( 0x00000000U );
 			} );
@@ -112,8 +112,6 @@ namespace TestGraphHeatEquation
 
 		void Application_Idle( object sender, EventArgs e ) {
 			if ( m_device == null )
-				return;
-			if ( !Focused )
 				return;
 
 			Point	clientPos = panelOutput.PointToClient( Control.MousePosition );
