@@ -36,6 +36,16 @@
 			this.radioButtonAlgo0 = new System.Windows.Forms.RadioButton();
 			this.radioButtonAlgo1 = new System.Windows.Forms.RadioButton();
 			this.checkBoxShowLog = new System.Windows.Forms.CheckBox();
+			this.checkBoxShowVoronoi = new System.Windows.Forms.CheckBox();
+			this.checkBoxShowLaplacian = new System.Windows.Forms.CheckBox();
+			this.panel1 = new System.Windows.Forms.Panel();
+			this.radioButtonDiffusionAlgo0 = new System.Windows.Forms.RadioButton();
+			this.radioButtonDiffusionAlgo1 = new System.Windows.Forms.RadioButton();
+			this.panel2 = new System.Windows.Forms.Panel();
+			this.radioButtonShowField1 = new System.Windows.Forms.RadioButton();
+			this.radioButtonShowField0 = new System.Windows.Forms.RadioButton();
+			this.panel1.SuspendLayout();
+			this.panel2.SuspendLayout();
 			this.SuspendLayout();
 			// 
 			// checkBoxRun
@@ -232,13 +242,14 @@
 			this.radioButtonAlgo1.Name = "radioButtonAlgo1";
 			this.radioButtonAlgo1.Size = new System.Drawing.Size(79, 17);
 			this.radioButtonAlgo1.TabIndex = 10;
-			this.radioButtonAlgo1.TabStop = true;
 			this.radioButtonAlgo1.Text = "Algo Global";
 			this.radioButtonAlgo1.UseVisualStyleBackColor = true;
 			// 
 			// checkBoxShowLog
 			// 
 			this.checkBoxShowLog.AutoSize = true;
+			this.checkBoxShowLog.Checked = true;
+			this.checkBoxShowLog.CheckState = System.Windows.Forms.CheckState.Checked;
 			this.checkBoxShowLog.Location = new System.Drawing.Point(533, 155);
 			this.checkBoxShowLog.Name = "checkBoxShowLog";
 			this.checkBoxShowLog.Size = new System.Drawing.Size(101, 17);
@@ -246,11 +257,98 @@
 			this.checkBoxShowLog.Text = "Show Log(heat)";
 			this.checkBoxShowLog.UseVisualStyleBackColor = true;
 			// 
+			// checkBoxShowVoronoi
+			// 
+			this.checkBoxShowVoronoi.AutoSize = true;
+			this.checkBoxShowVoronoi.Location = new System.Drawing.Point(645, 155);
+			this.checkBoxShowVoronoi.Name = "checkBoxShowVoronoi";
+			this.checkBoxShowVoronoi.Size = new System.Drawing.Size(92, 17);
+			this.checkBoxShowVoronoi.TabIndex = 11;
+			this.checkBoxShowVoronoi.Text = "Show Voronoi";
+			this.checkBoxShowVoronoi.UseVisualStyleBackColor = true;
+			// 
+			// checkBoxShowLaplacian
+			// 
+			this.checkBoxShowLaplacian.AutoSize = true;
+			this.checkBoxShowLaplacian.Location = new System.Drawing.Point(743, 155);
+			this.checkBoxShowLaplacian.Name = "checkBoxShowLaplacian";
+			this.checkBoxShowLaplacian.Size = new System.Drawing.Size(102, 17);
+			this.checkBoxShowLaplacian.TabIndex = 11;
+			this.checkBoxShowLaplacian.Text = "Show Laplacian";
+			this.checkBoxShowLaplacian.UseVisualStyleBackColor = true;
+			// 
+			// panel1
+			// 
+			this.panel1.Controls.Add(this.radioButtonDiffusionAlgo0);
+			this.panel1.Controls.Add(this.radioButtonDiffusionAlgo1);
+			this.panel1.Location = new System.Drawing.Point(666, 72);
+			this.panel1.Name = "panel1";
+			this.panel1.Size = new System.Drawing.Size(179, 23);
+			this.panel1.TabIndex = 12;
+			// 
+			// radioButtonDiffusionAlgo0
+			// 
+			this.radioButtonDiffusionAlgo0.AutoSize = true;
+			this.radioButtonDiffusionAlgo0.Location = new System.Drawing.Point(3, 3);
+			this.radioButtonDiffusionAlgo0.Name = "radioButtonDiffusionAlgo0";
+			this.radioButtonDiffusionAlgo0.Size = new System.Drawing.Size(55, 17);
+			this.radioButtonDiffusionAlgo0.TabIndex = 10;
+			this.radioButtonDiffusionAlgo0.Text = "Algo 0";
+			this.radioButtonDiffusionAlgo0.UseVisualStyleBackColor = true;
+			// 
+			// radioButtonDiffusionAlgo1
+			// 
+			this.radioButtonDiffusionAlgo1.AutoSize = true;
+			this.radioButtonDiffusionAlgo1.Checked = true;
+			this.radioButtonDiffusionAlgo1.Location = new System.Drawing.Point(64, 3);
+			this.radioButtonDiffusionAlgo1.Name = "radioButtonDiffusionAlgo1";
+			this.radioButtonDiffusionAlgo1.Size = new System.Drawing.Size(55, 17);
+			this.radioButtonDiffusionAlgo1.TabIndex = 10;
+			this.radioButtonDiffusionAlgo1.TabStop = true;
+			this.radioButtonDiffusionAlgo1.Text = "Algo 1";
+			this.radioButtonDiffusionAlgo1.UseVisualStyleBackColor = true;
+			// 
+			// panel2
+			// 
+			this.panel2.Controls.Add(this.radioButtonShowField1);
+			this.panel2.Controls.Add(this.radioButtonShowField0);
+			this.panel2.Location = new System.Drawing.Point(533, 126);
+			this.panel2.Name = "panel2";
+			this.panel2.Size = new System.Drawing.Size(289, 23);
+			this.panel2.TabIndex = 13;
+			// 
+			// radioButtonShowField1
+			// 
+			this.radioButtonShowField1.AutoSize = true;
+			this.radioButtonShowField1.Location = new System.Drawing.Point(95, 4);
+			this.radioButtonShowField1.Name = "radioButtonShowField1";
+			this.radioButtonShowField1.Size = new System.Drawing.Size(86, 17);
+			this.radioButtonShowField1.TabIndex = 0;
+			this.radioButtonShowField1.TabStop = true;
+			this.radioButtonShowField1.Text = "Show Field 1";
+			this.radioButtonShowField1.UseVisualStyleBackColor = true;
+			// 
+			// radioButtonShowField0
+			// 
+			this.radioButtonShowField0.AutoSize = true;
+			this.radioButtonShowField0.Checked = true;
+			this.radioButtonShowField0.Location = new System.Drawing.Point(3, 4);
+			this.radioButtonShowField0.Name = "radioButtonShowField0";
+			this.radioButtonShowField0.Size = new System.Drawing.Size(86, 17);
+			this.radioButtonShowField0.TabIndex = 0;
+			this.radioButtonShowField0.TabStop = true;
+			this.radioButtonShowField0.Text = "Show Field 0";
+			this.radioButtonShowField0.UseVisualStyleBackColor = true;
+			// 
 			// GraphForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(857, 543);
+			this.Controls.Add(this.panel2);
+			this.Controls.Add(this.panel1);
+			this.Controls.Add(this.checkBoxShowLaplacian);
+			this.Controls.Add(this.checkBoxShowVoronoi);
 			this.Controls.Add(this.checkBoxShowLog);
 			this.Controls.Add(this.radioButtonAlgo1);
 			this.Controls.Add(this.radioButtonAlgo0);
@@ -274,6 +372,10 @@
 			this.Name = "GraphForm";
 			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
 			this.Text = "Heat Wave Test";
+			this.panel1.ResumeLayout(false);
+			this.panel1.PerformLayout();
+			this.panel2.ResumeLayout(false);
+			this.panel2.PerformLayout();
 			this.ResumeLayout(false);
 			this.PerformLayout();
 
@@ -301,5 +403,13 @@
 		private System.Windows.Forms.RadioButton radioButtonAlgo0;
 		private System.Windows.Forms.RadioButton radioButtonAlgo1;
 		private System.Windows.Forms.CheckBox checkBoxShowLog;
+		private System.Windows.Forms.CheckBox checkBoxShowVoronoi;
+		private System.Windows.Forms.CheckBox checkBoxShowLaplacian;
+		private System.Windows.Forms.Panel panel1;
+		private System.Windows.Forms.RadioButton radioButtonDiffusionAlgo0;
+		private System.Windows.Forms.RadioButton radioButtonDiffusionAlgo1;
+		private System.Windows.Forms.Panel panel2;
+		private System.Windows.Forms.RadioButton radioButtonShowField1;
+		private System.Windows.Forms.RadioButton radioButtonShowField0;
 	}
 }

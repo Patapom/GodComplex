@@ -10,6 +10,7 @@ cbuffer CB_Main : register(b0) {
 	float	deltaTime;		// Time step
 	float	diffusionCoefficient;
 	uint	flags;
+	uint	sourceIndex;
 };
 
 SamplerState LinearClamp	: register( s0 );

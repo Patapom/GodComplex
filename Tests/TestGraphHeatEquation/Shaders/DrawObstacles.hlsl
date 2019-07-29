@@ -8,7 +8,7 @@ struct VS_IN {
 
 VS_IN	VS( VS_IN _In ) { return _In; }
 
-float3	PS( VS_IN _In ) : SV_TARGET0 {
+float4	PS( VS_IN _In ) : SV_TARGET0 {
 	uint2	P = _In.__Position.xy - 0.5;
 	float4	obstacle = _texObstacles[P];
 
@@ -24,10 +24,12 @@ float3	PS( VS_IN _In ) : SV_TARGET0 {
 			obstacle.x = 0;	// Right + Shift = clear
 
 		// Use middle mouse button to set or clear permanent sources
-		if ( mouseButtons & 2 )
+		if ( mouseButtons & 2 ) {
 			obstacle.z = 1;
-		else if ( (mouseButtons & 10) == 10 )
+			obstacle.w = sourceIndex / 255.0;	// Remember that the CPU offsets source IDs by 1 so sourceIndex >= 1
+		} else if ( (mouseButtons & 10) == 10 ) {
 			obstacle.z = 0;
+		}
 
 		// Use left mouse button to set source
 		if ( mouseButtons & 1 )

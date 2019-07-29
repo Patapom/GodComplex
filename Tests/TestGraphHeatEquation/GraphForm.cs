@@ -33,6 +33,7 @@ namespace TestGraphHeatEquation
 			public float		deltaTime;		// Time step
 			public float		diffusionCoefficient;
 			public uint			flags;
+			public uint			sourceIndex;
 		}
 
 		#endregion
@@ -43,7 +44,8 @@ namespace TestGraphHeatEquation
 
 		private ConstantBuffer<CB_Main>	m_CB_Main = null;
 		private Shader					m_shader_RenderHeatMap = null;
-		private Shader					m_shader_HeatDiffusion = null;
+		private Shader					m_shader_HeatDiffusion0 = null;
+		private Shader					m_shader_HeatDiffusion1 = null;
 		private Shader					m_shader_DrawObstacles = null;
 		private Texture2D				m_tex_HeatMap_Staging = null;
 		private Texture2D				m_tex_HeatMap0 = null;
@@ -83,7 +85,8 @@ namespace TestGraphHeatEquation
 
 			m_CB_Main = new ConstantBuffer<CB_Main>( m_device, 0 );
 
-			m_shader_HeatDiffusion = new Shader( m_device, new FileInfo( "./Shaders/HeatDiffusion.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+			m_shader_HeatDiffusion0 = new Shader( m_device, new FileInfo( "./Shaders/HeatDiffusion.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+			m_shader_HeatDiffusion1 = new Shader( m_device, new FileInfo( "./Shaders/HeatDiffusion2.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 			m_shader_RenderHeatMap = new Shader( m_device, new FileInfo( "./Shaders/RenderHeatMap.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 			m_shader_DrawObstacles = new Shader( m_device, new FileInfo( "./Shaders/DrawObstacles.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 
@@ -131,7 +134,8 @@ namespace TestGraphHeatEquation
 			Point	clientPos = panelOutput.PointToClient( Control.MousePosition );
 			m_CB_Main.m.mousePosition.Set( GRAPH_SIZE * (float) clientPos.X / panelOutput.Width, GRAPH_SIZE * (float) clientPos.Y / panelOutput.Height );
 			m_CB_Main.m.mouseButtons = (uint) ((((Control.MouseButtons & MouseButtons.Left) != 0) ? 1 : 0)
-											| (((Control.MouseButtons & MouseButtons.Middle) != 0) ? 2 : 0)
+//											| (((Control.MouseButtons & MouseButtons.Middle) != 0) ? 2 : 0)
+											| (m_plotSource ? 2 : 0)
 											| (((Control.MouseButtons & MouseButtons.Right) != 0) ? 4 : 0)
 											| (Control.ModifierKeys == Keys.Shift ? 8 : 0));
 			m_CB_Main.m.deltaTime = floatTrackbarControlDeltaTime.Value;
@@ -139,9 +143,14 @@ namespace TestGraphHeatEquation
 			m_CB_Main.m.flags = (uint) (
 									  (checkBoxShowSearch.Checked ? 1 : 0)
 									| (checkBoxShowLog.Checked ? 2 : 0)
+									| (checkBoxShowVoronoi.Checked ? 4 : 0)
+									| (checkBoxShowLaplacian.Checked ? 8 : 0)
+									| (radioButtonShowField1.Checked ? 16 : 0)
 								);
+			m_CB_Main.m.sourceIndex = (uint) m_simulationHotSpots.Count;	// Always offset by 1 so first source ID=1
 			m_CB_Main.UpdateData();
 
+			m_plotSource = false;
 
 			m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
 
@@ -160,13 +169,14 @@ namespace TestGraphHeatEquation
 
 			//////////////////////////////////////////////////////////////////////////
 			// Perform heat diffusion test
-			if ( checkBoxRun.Checked && m_shader_HeatDiffusion.Use() ) {
+			Shader	S = radioButtonDiffusionAlgo0.Checked ? m_shader_HeatDiffusion0 : m_shader_HeatDiffusion1;
+			if ( checkBoxRun.Checked && S.Use() ) {
 				m_device.SetRenderTarget( m_tex_HeatMap1, null );
 
 				m_tex_HeatMap0.SetPS( 0 );
 				m_tex_Obstacles0.SetPS( 1 );
 
-				m_device.RenderFullscreenQuad( m_shader_HeatDiffusion );
+				m_device.RenderFullscreenQuad( S );
 
 				// Swap
 				Texture2D	temp = m_tex_HeatMap0;
@@ -610,7 +620,8 @@ namespace TestGraphHeatEquation
 				m_tex_HeatMap0.Dispose();
 				m_tex_HeatMap_Staging.Dispose();
 				m_shader_DrawObstacles.Dispose();
-				m_shader_HeatDiffusion.Dispose();
+				m_shader_HeatDiffusion1.Dispose();
+				m_shader_HeatDiffusion0.Dispose();
 				m_shader_RenderHeatMap.Dispose();
 				m_CB_Main.Dispose();
 
@@ -708,7 +719,7 @@ namespace TestGraphHeatEquation
 			new int[] {  0, -1 },
 			new int[] { +1, -1 },
 			new int[] { -1,  0 },
-//			new int[] {  0, -1 },
+//			new int[] {  0,  0 },
 			new int[] { +1,  0 },
 			new int[] { -1, +1 },
 			new int[] {  0, +1 },
@@ -799,6 +810,7 @@ m_visited[X,Y] = true;	// Also mark maximum as visited to avoid getting trapped
 			}
 		}
 
+		bool	m_plotSource = false;
 		private void panelOutput_MouseDown( object sender, MouseEventArgs e ) {
 			if ( e.Button == MouseButtons.Middle ) {
 				// Add a new hotspot
@@ -809,6 +821,9 @@ m_visited[X,Y] = true;	// Also mark maximum as visited to avoid getting trapped
 				integerTrackbarControlStartPosition.VisibleRangeMax = integerTrackbarControlStartPosition.RangeMax;
 				integerTrackbarControlStartPosition.Value = 0;
 				integerTrackbarControlStartPosition.Enabled = true;
+
+				// Authorize source plotting ONLY when we successfully registered a new point
+				m_plotSource = true;
 			}
 		}
 
