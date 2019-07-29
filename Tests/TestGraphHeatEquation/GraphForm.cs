@@ -142,10 +142,10 @@ namespace TestGraphHeatEquation
 			m_CB_Main.m.diffusionCoefficient = floatTrackbarControlDiffusionCoefficient.Value;
 			m_CB_Main.m.flags = (uint) (
 									  (checkBoxShowSearch.Checked ? 1 : 0)
-									| (checkBoxShowLog.Checked ? 2 : 0)
-									| (checkBoxShowVoronoi.Checked ? 4 : 0)
-									| (checkBoxShowLaplacian.Checked ? 8 : 0)
-									| (radioButtonShowField1.Checked ? 16 : 0)
+									| (radioButtonShowLogHeat.Checked ? 2 : 0)
+									| (radioButtonShowVoronoi.Checked ? 4 : 0)
+									| (radioButtonShowLaplacian.Checked ? 6 : 0)
+									| (radioButtonShowField1.Checked ? 8 : 0)
 								);
 			m_CB_Main.m.sourceIndex = (uint) m_simulationHotSpots.Count;	// Always offset by 1 so first source ID=1
 			m_CB_Main.UpdateData();
@@ -191,7 +191,7 @@ namespace TestGraphHeatEquation
 
 				m_tex_HeatMap0.SetPS( 0 );
 				m_tex_Obstacles0.SetPS( 1 );
-				if ( checkBoxShowLog.Checked )
+				if ( radioButtonShowLogHeat.Checked )
 					m_tex_FalseColors1.SetPS( 2 );
 				else
 					m_tex_FalseColors0.SetPS( 2 );

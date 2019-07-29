@@ -20,7 +20,6 @@ float3	PS( VS_IN _In ) : SV_TARGET0 {
 
 	float3	color = 0;
 
-//	float4	heat = _texHeatMap.SampleLevel( PointClamp, UV, 0.0 );
 	float4	V00 = _texHeatMap.SampleLevel( PointClamp, UV, 0.0, int2( -1, -1 ) );
 	float4	V10 = _texHeatMap.SampleLevel( PointClamp, UV, 0.0, int2(  0, -1 ) );
 	float4	V20 = _texHeatMap.SampleLevel( PointClamp, UV, 0.0, int2( +1, -1 ) );
@@ -31,7 +30,7 @@ float3	PS( VS_IN _In ) : SV_TARGET0 {
 	float4	V12 = _texHeatMap.SampleLevel( PointClamp, UV, 0.0, int2(  0, +1 ) );
 	float4	V22 = _texHeatMap.SampleLevel( PointClamp, UV, 0.0, int2( +1, +1 ) );
 
-	if ( flags & 16 ) {
+	if ( flags & 8 ) {
 		// Show field 1
 		V00.xy = V00.zw;
 		V10.xy = V10.zw;
@@ -44,44 +43,50 @@ float3	PS( VS_IN _In ) : SV_TARGET0 {
 		V22.xy = V22.zw;
 	}
 
-	if ( flags & 8 ) {
-		// Render laplacian
-		float	laplacian = 8 * V11.x
-							- V00.x - V10.x - V20.x 
-							- V01.x         - V21.x 
-							- V02.x - V12.x - V22.x ;
-				laplacian /= 8.0;
-
-		color = 100.0 * abs( laplacian );
-
-	} else if ( flags & 4 ) {
-		// Render Voronoi cell index
-		float3	cellColors[8] = {
-			float3( 1, 0, 0 ),
-			float3( 1, 1, 0 ),
-			float3( 0, 1, 0 ),
-			float3( 0, 1, 1 ),
-			float3( 0, 0, 1 ),
-			float3( 1, 0, 1 ),
-			float3( 1, 1, 1 ),
-			float3( 1, 0.5, 0.25 ),
-		};
-
-		uint	cellIndex = uint( V11.y );
-		color = cellIndex == 0 ? 0.0 : cellColors[(cellIndex-1) & 0x7];
-
-	} else {
-		// Render heat
-		if ( flags & 2 ) {
-			float	logHeat = 0.43429448190325182765112891891661 * log( max( 1e-6, V11.x ) );	// Log10( heat )
-			float	normalizedLogHeat = (6.0 + logHeat) / 6.0;
-			color = _texFalseColors.SampleLevel( LinearClamp, float2( normalizedLogHeat, 0.5 ), 0.0 );
-		} else {
+	uint	displayMode = (flags >> 1) & 0x3U;
+	switch ( displayMode ) {
+		case 0:
+			// Render plain temperature
 			color = _texFalseColors.SampleLevel( LinearClamp, float2( V11.x, 0.5 ), 0.0 );
-		}
+			break;
+
+		case 1: {
+			// Render Log(Temp)
+			float	logTemp = 0.43429448190325182765112891891661 * log( max( 1e-6, V11.x ) );	// Log10( temp )
+			float	normalizedLogHeat = (6.0 + logTemp) / 6.0;
+			color = _texFalseColors.SampleLevel( LinearClamp, float2( normalizedLogHeat, 0.5 ), 0.0 );
+		} break;
+
+		case 2: {
+			// Render Voronoi cell index
+			float3	cellColors[8] = {
+				float3( 1, 0, 0 ),
+				float3( 1, 1, 0 ),
+				float3( 0, 1, 0 ),
+				float3( 0, 1, 1 ),
+				float3( 0, 0, 1 ),
+				float3( 1, 0, 1 ),
+				float3( 1, 1, 1 ),
+				float3( 1, 0.5, 0.25 ),
+			};
+
+			uint	cellIndex = uint( V11.y );
+			color = cellIndex == 0 ? 0.0 : cellColors[(cellIndex-1) & 0x7];
+		} break;
+
+		case 3: {
+			// Render laplacian
+			float	laplacian = 8 * V11.x
+								- V00.x - V10.x - V20.x 
+								- V01.x         - V21.x 
+								- V02.x - V12.x - V22.x ;
+					laplacian /= -8.0;
+
+			color = 1000.0 * (laplacian < 0.0 ? float3( 0, 0, -laplacian ) : float3( laplacian, 0, 0 ));
+		} break;
 	}
 
-	// Show search path
+	// Show search path as an overlay
 	if ( flags & 1 ) {
 		float	search = _texSearch.SampleLevel( PointClamp, UV, 0.0 ).x;
 		if ( search > 0.0 )
