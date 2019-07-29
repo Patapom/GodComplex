@@ -33,8 +33,8 @@
 			this.buttonStepSimulation = new System.Windows.Forms.Button();
 			this.buttonRunSimulation = new System.Windows.Forms.Button();
 			this.checkBoxShowSearch = new System.Windows.Forms.CheckBox();
-			this.radioButtonAlgo0 = new System.Windows.Forms.RadioButton();
-			this.radioButtonAlgo1 = new System.Windows.Forms.RadioButton();
+			this.radioButtonSearchAlgo0 = new System.Windows.Forms.RadioButton();
+			this.radioButtonSearchAlgo1 = new System.Windows.Forms.RadioButton();
 			this.panel1 = new System.Windows.Forms.Panel();
 			this.radioButtonDiffusionAlgo0 = new System.Windows.Forms.RadioButton();
 			this.radioButtonDiffusionAlgo1 = new System.Windows.Forms.RadioButton();
@@ -228,25 +228,25 @@
 			// 
 			// radioButtonAlgo0
 			// 
-			this.radioButtonAlgo0.AutoSize = true;
-			this.radioButtonAlgo0.Checked = true;
-			this.radioButtonAlgo0.Location = new System.Drawing.Point(533, 290);
-			this.radioButtonAlgo0.Name = "radioButtonAlgo0";
-			this.radioButtonAlgo0.Size = new System.Drawing.Size(75, 17);
-			this.radioButtonAlgo0.TabIndex = 10;
-			this.radioButtonAlgo0.TabStop = true;
-			this.radioButtonAlgo0.Text = "Algo Local";
-			this.radioButtonAlgo0.UseVisualStyleBackColor = true;
+			this.radioButtonSearchAlgo0.AutoSize = true;
+			this.radioButtonSearchAlgo0.Checked = true;
+			this.radioButtonSearchAlgo0.Location = new System.Drawing.Point(533, 290);
+			this.radioButtonSearchAlgo0.Name = "radioButtonAlgo0";
+			this.radioButtonSearchAlgo0.Size = new System.Drawing.Size(75, 17);
+			this.radioButtonSearchAlgo0.TabIndex = 10;
+			this.radioButtonSearchAlgo0.TabStop = true;
+			this.radioButtonSearchAlgo0.Text = "Algo Local";
+			this.radioButtonSearchAlgo0.UseVisualStyleBackColor = true;
 			// 
 			// radioButtonAlgo1
 			// 
-			this.radioButtonAlgo1.AutoSize = true;
-			this.radioButtonAlgo1.Location = new System.Drawing.Point(618, 290);
-			this.radioButtonAlgo1.Name = "radioButtonAlgo1";
-			this.radioButtonAlgo1.Size = new System.Drawing.Size(79, 17);
-			this.radioButtonAlgo1.TabIndex = 10;
-			this.radioButtonAlgo1.Text = "Algo Global";
-			this.radioButtonAlgo1.UseVisualStyleBackColor = true;
+			this.radioButtonSearchAlgo1.AutoSize = true;
+			this.radioButtonSearchAlgo1.Location = new System.Drawing.Point(618, 290);
+			this.radioButtonSearchAlgo1.Name = "radioButtonAlgo1";
+			this.radioButtonSearchAlgo1.Size = new System.Drawing.Size(79, 17);
+			this.radioButtonSearchAlgo1.TabIndex = 10;
+			this.radioButtonSearchAlgo1.Text = "Algo Global";
+			this.radioButtonSearchAlgo1.UseVisualStyleBackColor = true;
 			// 
 			// panel1
 			// 
@@ -260,6 +260,7 @@
 			// radioButtonDiffusionAlgo0
 			// 
 			this.radioButtonDiffusionAlgo0.AutoSize = true;
+			this.radioButtonDiffusionAlgo0.Checked = true;
 			this.radioButtonDiffusionAlgo0.Location = new System.Drawing.Point(3, 3);
 			this.radioButtonDiffusionAlgo0.Name = "radioButtonDiffusionAlgo0";
 			this.radioButtonDiffusionAlgo0.Size = new System.Drawing.Size(55, 17);
@@ -270,7 +271,6 @@
 			// radioButtonDiffusionAlgo1
 			// 
 			this.radioButtonDiffusionAlgo1.AutoSize = true;
-			this.radioButtonDiffusionAlgo1.Checked = true;
 			this.radioButtonDiffusionAlgo1.Location = new System.Drawing.Point(64, 3);
 			this.radioButtonDiffusionAlgo1.Name = "radioButtonDiffusionAlgo1";
 			this.radioButtonDiffusionAlgo1.Size = new System.Drawing.Size(55, 17);
@@ -372,8 +372,8 @@
 			this.Controls.Add(this.panel3);
 			this.Controls.Add(this.panel2);
 			this.Controls.Add(this.panel1);
-			this.Controls.Add(this.radioButtonAlgo1);
-			this.Controls.Add(this.radioButtonAlgo0);
+			this.Controls.Add(this.radioButtonSearchAlgo1);
+			this.Controls.Add(this.radioButtonSearchAlgo0);
 			this.Controls.Add(this.checkBoxShowSearch);
 			this.Controls.Add(this.buttonRunSimulation);
 			this.Controls.Add(this.buttonStepSimulation);
@@ -424,8 +424,8 @@
 		private System.Windows.Forms.Button buttonStepSimulation;
 		private System.Windows.Forms.Button buttonRunSimulation;
 		private System.Windows.Forms.CheckBox checkBoxShowSearch;
-		private System.Windows.Forms.RadioButton radioButtonAlgo0;
-		private System.Windows.Forms.RadioButton radioButtonAlgo1;
+		private System.Windows.Forms.RadioButton radioButtonSearchAlgo0;
+		private System.Windows.Forms.RadioButton radioButtonSearchAlgo1;
 		private System.Windows.Forms.Panel panel1;
 		private System.Windows.Forms.RadioButton radioButtonDiffusionAlgo0;
 		private System.Windows.Forms.RadioButton radioButtonDiffusionAlgo1;

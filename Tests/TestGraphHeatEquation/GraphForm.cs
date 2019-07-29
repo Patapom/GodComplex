@@ -733,7 +733,7 @@ namespace TestGraphHeatEquation
 
 			m_simulationIteration++;
 
-			if ( radioButtonAlgo0.Checked ) {
+			if ( radioButtonSearchAlgo0.Checked ) {
 				//////////////////////////////////////////////////////////////////////////
 				// Local search: Select second highest value from last search position
 				float	largestValue = 0.0f;
@@ -771,7 +771,7 @@ m_visited[X,Y] = true;	// Also mark maximum as visited to avoid getting trapped
 				m_simulationX = sX;
 				m_simulationY = sY;
 
-			} else if ( radioButtonAlgo1.Checked ) {
+			} else if ( radioButtonSearchAlgo1.Checked ) {
 				//////////////////////////////////////////////////////////////////////////
 				// Global search: the search radius is increased and we examine all pixels within the radius and select the one with the highest value
 				m_simulationRadius += 1.0f;

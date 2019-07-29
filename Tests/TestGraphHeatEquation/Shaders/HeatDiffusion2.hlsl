@@ -107,15 +107,25 @@ float4	PS( VS_IN _In ) : SV_TARGET0 {
 		//
 //		newHeat.x = sourceHeat.x + deltaTime * diffusionCoefficient * laplacian.x;	// Regular radiation into field #0
 //		newHeat.y = largestNeighborSource.y;										// Except now source #1 is preponderant
-		newHeat.z = sourceHeat.x;													// Formerly field 0 is now radiating into field 1
+
+		// Formerly field 0 is now radiating into field 1
+		newHeat.z = sourceHeat.x;	// Keep strength
+//		newHeat.z = 1.0;			// Renew strength
 		newHeat.w = largestNeighborSource.y;													// Source 0 is now becoming a lesser heat source in field 1
+
 	} else {
 		// Heat from field 0 is still preponderant, just propagate both fields
 //		newHeat.x = sourceHeat.x + deltaTime * diffusionCoefficient * laplacian.x;
 //		newHeat.y = largestNeighborSource.y;
 		newHeat.z = sourceHeat.z + deltaTime * diffusionCoefficient * laplacian.y;
-//		newHeat.w = sourceHeat.w;
-		newHeat.w = largestNeighborSource.w;
+
+		#if 1
+			// This keeps the original IDs
+			newHeat.w = sourceHeat.w == 0 ? largestNeighborSource.w : sourceHeat.w;
+		#else
+			// This propagates the strongest IDs but it can lead to difficult moving fronts and hard to control "run length" for the algorithm
+			newHeat.w = largestNeighborSource.w;
+		#endif
 	}
 #else
 	float4	newHeat = 0.0;
