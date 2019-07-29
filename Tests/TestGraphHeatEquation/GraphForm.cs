@@ -96,13 +96,7 @@ namespace TestGraphHeatEquation
 			m_tex_Obstacles0 = new Texture2D( m_device, (uint) GRAPH_SIZE + 2, (uint) GRAPH_SIZE + 2, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA8, ImageUtility.COMPONENT_FORMAT.UNORM, false, false, null );
 			m_tex_Obstacles1 = new Texture2D( m_device, (uint) GRAPH_SIZE + 2, (uint) GRAPH_SIZE + 2, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA8, ImageUtility.COMPONENT_FORMAT.UNORM, false, false, null );
 			m_tex_Obstacles_Staging = new Texture2D( m_device, (uint) GRAPH_SIZE + 2, (uint) GRAPH_SIZE + 2, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA8, ImageUtility.COMPONENT_FORMAT.UNORM, true, false, null );
-			m_tex_Obstacles_Staging.WritePixels( 0, 0, ( uint _X, uint _Y, BinaryWriter W ) => {
-				bool	obstacle = _X == 0 || _Y == 0 || _X == GRAPH_SIZE+1 || _Y == GRAPH_SIZE+1;
-				if ( obstacle )
-					W.Write( 0x000000FFU );
-				else
-					W.Write( 0x00000000U );
-			} );
+			ClearObstacles();
 			buttonResetObstacles_Click( null, EventArgs.Empty );
 
 			m_tex_Search = new Texture2D( m_device, (uint) GRAPH_SIZE, (uint) GRAPH_SIZE, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA8, ImageUtility.COMPONENT_FORMAT.UNORM, false, false, null );
@@ -632,6 +626,16 @@ namespace TestGraphHeatEquation
 			base.Dispose( disposing );
 		}
 
+		void	ClearObstacles() {
+			m_tex_Obstacles_Staging.WritePixels( 0, 0, ( uint _X, uint _Y, BinaryWriter W ) => {
+				bool	obstacle = _X == 0 || _Y == 0 || _X == GRAPH_SIZE+1 || _Y == GRAPH_SIZE+1;
+				if ( obstacle )
+					W.Write( 0x000000FFU );
+				else
+					W.Write( 0x00000000U );
+			} );
+		}
+
 		#endregion
 
 		#region EVENT HANDLERS
@@ -643,7 +647,7 @@ namespace TestGraphHeatEquation
 		private void buttonResetObstacles_Click( object sender, EventArgs e ) {
 			m_tex_Obstacles0.CopyFrom( m_tex_Obstacles_Staging );
 			m_simulationHotSpots.Clear();
-			integerTrackbarControlStartPosition.Enabled = false;
+			groupBoxSearch.Enabled = false;
 		}
 
 		private void checkBox1_CheckedChanged( object sender, EventArgs e ) {
@@ -683,11 +687,16 @@ namespace TestGraphHeatEquation
 			m_tex_Search.CopyFrom( m_tex_Search_Staging );
 		}
 
-		private void integerTrackbarControlStartPosition_EnabledChanged( object sender, EventArgs e ) {
-			bool	enabled = integerTrackbarControlStartPosition.Enabled;
-			buttonResetSimulation.Enabled = enabled;
-			buttonStepSimulation.Enabled = enabled;
-			buttonRunSimulation.Enabled = enabled;
+		private void integerTrackbarControlStartPosition_ValueChanged( IntegerTrackbarControl _Sender, int _FormerValue ) {
+			bool	simulable = integerTrackbarControlStartPosition.Value != integerTrackbarControlTargetPosition.Value;
+			buttonStepSimulation.Enabled = simulable;
+			buttonRunSimulation.Enabled = simulable;
+		}
+
+		private void integerTrackbarControlTargetPosition_ValueChanged( IntegerTrackbarControl _Sender, int _FormerValue ) {
+			bool	simulable = integerTrackbarControlStartPosition.Value != integerTrackbarControlTargetPosition.Value;
+			buttonStepSimulation.Enabled = simulable;
+			buttonRunSimulation.Enabled = simulable;
 		}
 
 		private void buttonResetSimulation_Click( object sender, EventArgs e ) {
@@ -817,10 +826,15 @@ m_visited[X,Y] = true;	// Also mark maximum as visited to avoid getting trapped
 				Point	hotSpotLocation = new Point( e.X * GRAPH_SIZE / panelOutput.Width, e.Y * GRAPH_SIZE / panelOutput.Height );
 				m_simulationHotSpots.Add( hotSpotLocation );
 
+				groupBoxSearch.Enabled = m_simulationHotSpots.Count > 1;
+
 				integerTrackbarControlStartPosition.RangeMax = m_simulationHotSpots.Count - 1;
 				integerTrackbarControlStartPosition.VisibleRangeMax = integerTrackbarControlStartPosition.RangeMax;
 				integerTrackbarControlStartPosition.Value = 0;
-				integerTrackbarControlStartPosition.Enabled = true;
+
+				integerTrackbarControlTargetPosition.RangeMax = m_simulationHotSpots.Count - 1;
+				integerTrackbarControlTargetPosition.VisibleRangeMax = integerTrackbarControlTargetPosition.RangeMax;
+				integerTrackbarControlTargetPosition.Value = 1;
 
 				// Authorize source plotting ONLY when we successfully registered a new point
 				m_plotSource = true;
@@ -828,6 +842,45 @@ m_visited[X,Y] = true;	// Also mark maximum as visited to avoid getting trapped
 		}
 
 		#endregion
+
+		private void buttonLoad_Click( object sender, EventArgs e ) {
+//			openFileDialog1.InitialDirectory = Path.GetDirectoryName( Application.ExecutablePath );
+			if ( openFileDialog1.ShowDialog( this ) != DialogResult.OK )
+				return;
+
+			byte[]	obstacles = new byte[(GRAPH_SIZE+2)*(GRAPH_SIZE+2)];
+			FileInfo	file = new FileInfo( openFileDialog1.FileName );
+			using ( FileStream S = file.OpenRead() )
+				using ( BinaryReader R = new BinaryReader( S ) )
+					R.Read( obstacles, 0, obstacles.Length );
+
+			m_tex_Obstacles_Staging.WritePixels( 0, 0, ( uint _X, uint _Y, BinaryWriter W ) => {
+				W.Write( (uint) obstacles[(GRAPH_SIZE+2)*_Y+_X] );
+			} );
+			m_tex_Obstacles0.CopyFrom( m_tex_Obstacles_Staging );
+
+			ClearObstacles();
+		}
+
+		private void buttonSave_Click( object sender, EventArgs e ) {
+//			saveFileDialog1.InitialDirectory = Path.GetDirectoryName( Application.ExecutablePath );
+			if ( saveFileDialog1.ShowDialog( this ) != DialogResult.OK )
+				return;
+
+			byte[]	obstacles = new byte[(GRAPH_SIZE+2)*(GRAPH_SIZE+2)];
+			m_tex_Obstacles_Staging.CopyFrom( m_tex_Obstacles0 );
+			m_tex_Obstacles_Staging.ReadPixels( 0, 0, ( uint _X, uint _Y, BinaryReader R ) => {
+				uint	obstacle = R.ReadUInt32();
+				obstacles[(GRAPH_SIZE+2)*_Y+_X] = (byte) (obstacle & 0xFF);
+			} );
+
+			FileInfo	file = new FileInfo( saveFileDialog1.FileName );
+			using ( FileStream S = file.OpenWrite() )
+				using ( BinaryWriter W = new BinaryWriter( S ) )
+					W.Write( obstacles );
+
+			ClearObstacles();
+		}
 
 		#endregion
 	}

@@ -18,15 +18,11 @@
 			this.components = new System.ComponentModel.Container();
 			this.checkBoxRun = new System.Windows.Forms.CheckBox();
 			this.buttonReset = new System.Windows.Forms.Button();
-			this.floatTrackbarControlDiffusionCoefficient = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.panelOutput = new TestGraphHeatEquation.PanelOutput(this.components);
 			this.buttonReload = new System.Windows.Forms.Button();
-			this.floatTrackbarControlDeltaTime = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label1 = new System.Windows.Forms.Label();
 			this.label2 = new System.Windows.Forms.Label();
 			this.timer1 = new System.Windows.Forms.Timer(this.components);
 			this.buttonResetObstacles = new System.Windows.Forms.Button();
-			this.integerTrackbarControlStartPosition = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
 			this.textBox = new System.Windows.Forms.TextBox();
 			this.label3 = new System.Windows.Forms.Label();
 			this.buttonResetSimulation = new System.Windows.Forms.Button();
@@ -42,13 +38,26 @@
 			this.radioButtonShowField1 = new System.Windows.Forms.RadioButton();
 			this.radioButtonShowField0 = new System.Windows.Forms.RadioButton();
 			this.panel3 = new System.Windows.Forms.Panel();
-			this.radioButtonShowHeat = new System.Windows.Forms.RadioButton();
-			this.radioButtonShowLogHeat = new System.Windows.Forms.RadioButton();
-			this.radioButtonShowVoronoi = new System.Windows.Forms.RadioButton();
 			this.radioButtonShowLaplacian = new System.Windows.Forms.RadioButton();
+			this.radioButtonShowVoronoi = new System.Windows.Forms.RadioButton();
+			this.radioButtonShowLogHeat = new System.Windows.Forms.RadioButton();
+			this.radioButtonShowHeat = new System.Windows.Forms.RadioButton();
+			this.saveFileDialog1 = new System.Windows.Forms.SaveFileDialog();
+			this.openFileDialog1 = new System.Windows.Forms.OpenFileDialog();
+			this.buttonLoad = new System.Windows.Forms.Button();
+			this.buttonSave = new System.Windows.Forms.Button();
+			this.panelOutput = new TestGraphHeatEquation.PanelOutput(this.components);
+			this.integerTrackbarControlStartPosition = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
+			this.label4 = new System.Windows.Forms.Label();
+			this.integerTrackbarControlTargetPosition = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
+			this.floatTrackbarControlDiffusionCoefficient = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlDeltaTime = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.groupBoxSearch = new System.Windows.Forms.GroupBox();
+			this.label5 = new System.Windows.Forms.Label();
 			this.panel1.SuspendLayout();
 			this.panel2.SuspendLayout();
 			this.panel3.SuspendLayout();
+			this.groupBoxSearch.SuspendLayout();
 			this.SuspendLayout();
 			// 
 			// checkBoxRun
@@ -74,27 +83,6 @@
 			this.buttonReset.UseVisualStyleBackColor = true;
 			this.buttonReset.Click += new System.EventHandler(this.button1_Click);
 			// 
-			// floatTrackbarControlDiffusionCoefficient
-			// 
-			this.floatTrackbarControlDiffusionCoefficient.Location = new System.Drawing.Point(645, 40);
-			this.floatTrackbarControlDiffusionCoefficient.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.floatTrackbarControlDiffusionCoefficient.MinimumSize = new System.Drawing.Size(70, 20);
-			this.floatTrackbarControlDiffusionCoefficient.Name = "floatTrackbarControlDiffusionCoefficient";
-			this.floatTrackbarControlDiffusionCoefficient.RangeMax = 1F;
-			this.floatTrackbarControlDiffusionCoefficient.RangeMin = 0F;
-			this.floatTrackbarControlDiffusionCoefficient.Size = new System.Drawing.Size(200, 20);
-			this.floatTrackbarControlDiffusionCoefficient.TabIndex = 1;
-			this.floatTrackbarControlDiffusionCoefficient.Value = 0.95F;
-			this.floatTrackbarControlDiffusionCoefficient.VisibleRangeMax = 1F;
-			// 
-			// panelOutput
-			// 
-			this.panelOutput.Location = new System.Drawing.Point(12, 12);
-			this.panelOutput.Name = "panelOutput";
-			this.panelOutput.Size = new System.Drawing.Size(512, 512);
-			this.panelOutput.TabIndex = 0;
-			this.panelOutput.MouseDown += new System.Windows.Forms.MouseEventHandler(this.panelOutput_MouseDown);
-			// 
 			// buttonReload
 			// 
 			this.buttonReload.Location = new System.Drawing.Point(770, 508);
@@ -104,19 +92,6 @@
 			this.buttonReload.Text = "Reload";
 			this.buttonReload.UseVisualStyleBackColor = true;
 			this.buttonReload.Click += new System.EventHandler(this.buttonReload_Click);
-			// 
-			// floatTrackbarControlDeltaTime
-			// 
-			this.floatTrackbarControlDeltaTime.Location = new System.Drawing.Point(645, 14);
-			this.floatTrackbarControlDeltaTime.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.floatTrackbarControlDeltaTime.MinimumSize = new System.Drawing.Size(70, 20);
-			this.floatTrackbarControlDeltaTime.Name = "floatTrackbarControlDeltaTime";
-			this.floatTrackbarControlDeltaTime.RangeMax = 100000F;
-			this.floatTrackbarControlDeltaTime.RangeMin = 0F;
-			this.floatTrackbarControlDeltaTime.Size = new System.Drawing.Size(200, 20);
-			this.floatTrackbarControlDeltaTime.TabIndex = 1;
-			this.floatTrackbarControlDeltaTime.Value = 1F;
-			this.floatTrackbarControlDeltaTime.VisibleRangeMax = 1F;
 			// 
 			// label1
 			// 
@@ -151,31 +126,19 @@
 			this.buttonResetObstacles.UseVisualStyleBackColor = true;
 			this.buttonResetObstacles.Click += new System.EventHandler(this.buttonResetObstacles_Click);
 			// 
-			// integerTrackbarControlStartPosition
-			// 
-			this.integerTrackbarControlStartPosition.Enabled = false;
-			this.integerTrackbarControlStartPosition.Location = new System.Drawing.Point(645, 204);
-			this.integerTrackbarControlStartPosition.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.integerTrackbarControlStartPosition.MinimumSize = new System.Drawing.Size(70, 20);
-			this.integerTrackbarControlStartPosition.Name = "integerTrackbarControlStartPosition";
-			this.integerTrackbarControlStartPosition.Size = new System.Drawing.Size(200, 20);
-			this.integerTrackbarControlStartPosition.TabIndex = 6;
-			this.integerTrackbarControlStartPosition.Value = 0;
-			this.integerTrackbarControlStartPosition.EnabledChanged += new System.EventHandler(this.integerTrackbarControlStartPosition_EnabledChanged);
-			// 
 			// textBox
 			// 
-			this.textBox.Location = new System.Drawing.Point(530, 321);
+			this.textBox.Location = new System.Drawing.Point(9, 141);
 			this.textBox.Multiline = true;
 			this.textBox.Name = "textBox";
 			this.textBox.ReadOnly = true;
-			this.textBox.Size = new System.Drawing.Size(315, 181);
+			this.textBox.Size = new System.Drawing.Size(297, 120);
 			this.textBox.TabIndex = 7;
 			// 
 			// label3
 			// 
 			this.label3.AutoSize = true;
-			this.label3.Location = new System.Drawing.Point(530, 209);
+			this.label3.Location = new System.Drawing.Point(6, 22);
 			this.label3.Name = "label3";
 			this.label3.Size = new System.Drawing.Size(69, 13);
 			this.label3.TabIndex = 5;
@@ -183,8 +146,7 @@
 			// 
 			// buttonResetSimulation
 			// 
-			this.buttonResetSimulation.Enabled = false;
-			this.buttonResetSimulation.Location = new System.Drawing.Point(533, 238);
+			this.buttonResetSimulation.Location = new System.Drawing.Point(9, 68);
 			this.buttonResetSimulation.Name = "buttonResetSimulation";
 			this.buttonResetSimulation.Size = new System.Drawing.Size(75, 23);
 			this.buttonResetSimulation.TabIndex = 8;
@@ -194,8 +156,7 @@
 			// 
 			// buttonStepSimulation
 			// 
-			this.buttonStepSimulation.Enabled = false;
-			this.buttonStepSimulation.Location = new System.Drawing.Point(614, 238);
+			this.buttonStepSimulation.Location = new System.Drawing.Point(90, 68);
 			this.buttonStepSimulation.Name = "buttonStepSimulation";
 			this.buttonStepSimulation.Size = new System.Drawing.Size(75, 23);
 			this.buttonStepSimulation.TabIndex = 8;
@@ -205,8 +166,7 @@
 			// 
 			// buttonRunSimulation
 			// 
-			this.buttonRunSimulation.Enabled = false;
-			this.buttonRunSimulation.Location = new System.Drawing.Point(695, 238);
+			this.buttonRunSimulation.Location = new System.Drawing.Point(171, 68);
 			this.buttonRunSimulation.Name = "buttonRunSimulation";
 			this.buttonRunSimulation.Size = new System.Drawing.Size(75, 23);
 			this.buttonRunSimulation.TabIndex = 8;
@@ -219,30 +179,30 @@
 			this.checkBoxShowSearch.AutoSize = true;
 			this.checkBoxShowSearch.Checked = true;
 			this.checkBoxShowSearch.CheckState = System.Windows.Forms.CheckState.Checked;
-			this.checkBoxShowSearch.Location = new System.Drawing.Point(533, 267);
+			this.checkBoxShowSearch.Location = new System.Drawing.Point(9, 97);
 			this.checkBoxShowSearch.Name = "checkBoxShowSearch";
 			this.checkBoxShowSearch.Size = new System.Drawing.Size(123, 17);
 			this.checkBoxShowSearch.TabIndex = 9;
 			this.checkBoxShowSearch.Text = "Show Search Result";
 			this.checkBoxShowSearch.UseVisualStyleBackColor = true;
 			// 
-			// radioButtonAlgo0
+			// radioButtonSearchAlgo0
 			// 
 			this.radioButtonSearchAlgo0.AutoSize = true;
 			this.radioButtonSearchAlgo0.Checked = true;
-			this.radioButtonSearchAlgo0.Location = new System.Drawing.Point(533, 290);
-			this.radioButtonSearchAlgo0.Name = "radioButtonAlgo0";
+			this.radioButtonSearchAlgo0.Location = new System.Drawing.Point(9, 120);
+			this.radioButtonSearchAlgo0.Name = "radioButtonSearchAlgo0";
 			this.radioButtonSearchAlgo0.Size = new System.Drawing.Size(75, 17);
 			this.radioButtonSearchAlgo0.TabIndex = 10;
 			this.radioButtonSearchAlgo0.TabStop = true;
 			this.radioButtonSearchAlgo0.Text = "Algo Local";
 			this.radioButtonSearchAlgo0.UseVisualStyleBackColor = true;
 			// 
-			// radioButtonAlgo1
+			// radioButtonSearchAlgo1
 			// 
 			this.radioButtonSearchAlgo1.AutoSize = true;
-			this.radioButtonSearchAlgo1.Location = new System.Drawing.Point(618, 290);
-			this.radioButtonSearchAlgo1.Name = "radioButtonAlgo1";
+			this.radioButtonSearchAlgo1.Location = new System.Drawing.Point(94, 120);
+			this.radioButtonSearchAlgo1.Name = "radioButtonSearchAlgo1";
 			this.radioButtonSearchAlgo1.Size = new System.Drawing.Size(79, 17);
 			this.radioButtonSearchAlgo1.TabIndex = 10;
 			this.radioButtonSearchAlgo1.Text = "Algo Global";
@@ -265,6 +225,7 @@
 			this.radioButtonDiffusionAlgo0.Name = "radioButtonDiffusionAlgo0";
 			this.radioButtonDiffusionAlgo0.Size = new System.Drawing.Size(55, 17);
 			this.radioButtonDiffusionAlgo0.TabIndex = 10;
+			this.radioButtonDiffusionAlgo0.TabStop = true;
 			this.radioButtonDiffusionAlgo0.Text = "Algo 0";
 			this.radioButtonDiffusionAlgo0.UseVisualStyleBackColor = true;
 			// 
@@ -322,15 +283,25 @@
 			this.panel3.Size = new System.Drawing.Size(312, 27);
 			this.panel3.TabIndex = 14;
 			// 
-			// radioButtonShowHeat
+			// radioButtonShowLaplacian
 			// 
-			this.radioButtonShowHeat.AutoSize = true;
-			this.radioButtonShowHeat.Location = new System.Drawing.Point(1, 0);
-			this.radioButtonShowHeat.Name = "radioButtonShowHeat";
-			this.radioButtonShowHeat.Size = new System.Drawing.Size(48, 17);
-			this.radioButtonShowHeat.TabIndex = 0;
-			this.radioButtonShowHeat.Text = "Heat";
-			this.radioButtonShowHeat.UseVisualStyleBackColor = true;
+			this.radioButtonShowLaplacian.AutoSize = true;
+			this.radioButtonShowLaplacian.Location = new System.Drawing.Point(165, 0);
+			this.radioButtonShowLaplacian.Name = "radioButtonShowLaplacian";
+			this.radioButtonShowLaplacian.Size = new System.Drawing.Size(71, 17);
+			this.radioButtonShowLaplacian.TabIndex = 0;
+			this.radioButtonShowLaplacian.Text = "Laplacian";
+			this.radioButtonShowLaplacian.UseVisualStyleBackColor = true;
+			// 
+			// radioButtonShowVoronoi
+			// 
+			this.radioButtonShowVoronoi.AutoSize = true;
+			this.radioButtonShowVoronoi.Location = new System.Drawing.Point(131, 0);
+			this.radioButtonShowVoronoi.Name = "radioButtonShowVoronoi";
+			this.radioButtonShowVoronoi.Size = new System.Drawing.Size(36, 17);
+			this.radioButtonShowVoronoi.TabIndex = 0;
+			this.radioButtonShowVoronoi.Text = "ID";
+			this.radioButtonShowVoronoi.UseVisualStyleBackColor = true;
 			// 
 			// radioButtonShowLogHeat
 			// 
@@ -344,52 +315,165 @@
 			this.radioButtonShowLogHeat.Text = "Log(Heat)";
 			this.radioButtonShowLogHeat.UseVisualStyleBackColor = true;
 			// 
-			// radioButtonShowVoronoi
+			// radioButtonShowHeat
 			// 
-			this.radioButtonShowVoronoi.AutoSize = true;
-			this.radioButtonShowVoronoi.Location = new System.Drawing.Point(131, 0);
-			this.radioButtonShowVoronoi.Name = "radioButtonShowVoronoi";
-			this.radioButtonShowVoronoi.Size = new System.Drawing.Size(36, 17);
-			this.radioButtonShowVoronoi.TabIndex = 0;
-			this.radioButtonShowVoronoi.Text = "ID";
-			this.radioButtonShowVoronoi.UseVisualStyleBackColor = true;
+			this.radioButtonShowHeat.AutoSize = true;
+			this.radioButtonShowHeat.Location = new System.Drawing.Point(1, 0);
+			this.radioButtonShowHeat.Name = "radioButtonShowHeat";
+			this.radioButtonShowHeat.Size = new System.Drawing.Size(48, 17);
+			this.radioButtonShowHeat.TabIndex = 0;
+			this.radioButtonShowHeat.Text = "Heat";
+			this.radioButtonShowHeat.UseVisualStyleBackColor = true;
 			// 
-			// radioButtonShowLaplacian
+			// saveFileDialog1
 			// 
-			this.radioButtonShowLaplacian.AutoSize = true;
-			this.radioButtonShowLaplacian.Location = new System.Drawing.Point(165, 0);
-			this.radioButtonShowLaplacian.Name = "radioButtonShowLaplacian";
-			this.radioButtonShowLaplacian.Size = new System.Drawing.Size(71, 17);
-			this.radioButtonShowLaplacian.TabIndex = 0;
-			this.radioButtonShowLaplacian.Text = "Laplacian";
-			this.radioButtonShowLaplacian.UseVisualStyleBackColor = true;
+			this.saveFileDialog1.DefaultExt = "*.obs";
+			this.saveFileDialog1.Filter = "Obstacles Files (*.obs)|*.obs";
+			this.saveFileDialog1.RestoreDirectory = true;
+			// 
+			// openFileDialog1
+			// 
+			this.openFileDialog1.DefaultExt = "*.obs";
+			this.openFileDialog1.FileName = "TestObstacles.obs";
+			this.openFileDialog1.Filter = "Obstacles Files (*.obs)|*.obs";
+			this.openFileDialog1.RestoreDirectory = true;
+			// 
+			// buttonLoad
+			// 
+			this.buttonLoad.Location = new System.Drawing.Point(555, 508);
+			this.buttonLoad.Name = "buttonLoad";
+			this.buttonLoad.Size = new System.Drawing.Size(75, 23);
+			this.buttonLoad.TabIndex = 15;
+			this.buttonLoad.Text = "Load";
+			this.buttonLoad.UseVisualStyleBackColor = true;
+			this.buttonLoad.Click += new System.EventHandler(this.buttonLoad_Click);
+			// 
+			// buttonSave
+			// 
+			this.buttonSave.Location = new System.Drawing.Point(639, 508);
+			this.buttonSave.Name = "buttonSave";
+			this.buttonSave.Size = new System.Drawing.Size(75, 23);
+			this.buttonSave.TabIndex = 15;
+			this.buttonSave.Text = "Save";
+			this.buttonSave.UseVisualStyleBackColor = true;
+			this.buttonSave.Click += new System.EventHandler(this.buttonSave_Click);
+			// 
+			// panelOutput
+			// 
+			this.panelOutput.Location = new System.Drawing.Point(12, 12);
+			this.panelOutput.Name = "panelOutput";
+			this.panelOutput.Size = new System.Drawing.Size(512, 512);
+			this.panelOutput.TabIndex = 0;
+			this.panelOutput.MouseDown += new System.Windows.Forms.MouseEventHandler(this.panelOutput_MouseDown);
+			// 
+			// integerTrackbarControlStartPosition
+			// 
+			this.integerTrackbarControlStartPosition.Location = new System.Drawing.Point(90, 18);
+			this.integerTrackbarControlStartPosition.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.integerTrackbarControlStartPosition.MinimumSize = new System.Drawing.Size(70, 20);
+			this.integerTrackbarControlStartPosition.Name = "integerTrackbarControlStartPosition";
+			this.integerTrackbarControlStartPosition.Size = new System.Drawing.Size(200, 20);
+			this.integerTrackbarControlStartPosition.TabIndex = 16;
+			this.integerTrackbarControlStartPosition.Value = 0;
+			this.integerTrackbarControlStartPosition.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlStartPosition_ValueChanged);
+			// 
+			// label4
+			// 
+			this.label4.AutoSize = true;
+			this.label4.Location = new System.Drawing.Point(6, 46);
+			this.label4.Name = "label4";
+			this.label4.Size = new System.Drawing.Size(78, 13);
+			this.label4.TabIndex = 5;
+			this.label4.Text = "Target Position";
+			// 
+			// integerTrackbarControlTargetPosition
+			// 
+			this.integerTrackbarControlTargetPosition.Location = new System.Drawing.Point(90, 42);
+			this.integerTrackbarControlTargetPosition.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.integerTrackbarControlTargetPosition.MinimumSize = new System.Drawing.Size(70, 20);
+			this.integerTrackbarControlTargetPosition.Name = "integerTrackbarControlTargetPosition";
+			this.integerTrackbarControlTargetPosition.Size = new System.Drawing.Size(200, 20);
+			this.integerTrackbarControlTargetPosition.TabIndex = 16;
+			this.integerTrackbarControlTargetPosition.Value = 0;
+			this.integerTrackbarControlTargetPosition.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlTargetPosition_ValueChanged);
+			// 
+			// floatTrackbarControlDiffusionCoefficient
+			// 
+			this.floatTrackbarControlDiffusionCoefficient.Location = new System.Drawing.Point(639, 38);
+			this.floatTrackbarControlDiffusionCoefficient.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlDiffusionCoefficient.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlDiffusionCoefficient.Name = "floatTrackbarControlDiffusionCoefficient";
+			this.floatTrackbarControlDiffusionCoefficient.RangeMax = 1000F;
+			this.floatTrackbarControlDiffusionCoefficient.RangeMin = 0F;
+			this.floatTrackbarControlDiffusionCoefficient.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlDiffusionCoefficient.TabIndex = 17;
+			this.floatTrackbarControlDiffusionCoefficient.Value = 1F;
+			this.floatTrackbarControlDiffusionCoefficient.VisibleRangeMax = 1F;
+			// 
+			// floatTrackbarControlDeltaTime
+			// 
+			this.floatTrackbarControlDeltaTime.Location = new System.Drawing.Point(639, 12);
+			this.floatTrackbarControlDeltaTime.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlDeltaTime.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlDeltaTime.Name = "floatTrackbarControlDeltaTime";
+			this.floatTrackbarControlDeltaTime.RangeMax = 1F;
+			this.floatTrackbarControlDeltaTime.RangeMin = 0F;
+			this.floatTrackbarControlDeltaTime.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlDeltaTime.TabIndex = 17;
+			this.floatTrackbarControlDeltaTime.Value = 1F;
+			this.floatTrackbarControlDeltaTime.VisibleRangeMax = 1F;
+			// 
+			// groupBoxSearch
+			// 
+			this.groupBoxSearch.Controls.Add(this.label3);
+			this.groupBoxSearch.Controls.Add(this.label4);
+			this.groupBoxSearch.Controls.Add(this.buttonResetSimulation);
+			this.groupBoxSearch.Controls.Add(this.integerTrackbarControlTargetPosition);
+			this.groupBoxSearch.Controls.Add(this.buttonStepSimulation);
+			this.groupBoxSearch.Controls.Add(this.integerTrackbarControlStartPosition);
+			this.groupBoxSearch.Controls.Add(this.buttonRunSimulation);
+			this.groupBoxSearch.Controls.Add(this.checkBoxShowSearch);
+			this.groupBoxSearch.Controls.Add(this.textBox);
+			this.groupBoxSearch.Controls.Add(this.radioButtonSearchAlgo0);
+			this.groupBoxSearch.Controls.Add(this.radioButtonSearchAlgo1);
+			this.groupBoxSearch.Enabled = false;
+			this.groupBoxSearch.Location = new System.Drawing.Point(533, 235);
+			this.groupBoxSearch.Name = "groupBoxSearch";
+			this.groupBoxSearch.Size = new System.Drawing.Size(312, 267);
+			this.groupBoxSearch.TabIndex = 18;
+			this.groupBoxSearch.TabStop = false;
+			this.groupBoxSearch.Text = "Search";
+			// 
+			// label5
+			// 
+			this.label5.Location = new System.Drawing.Point(530, 206);
+			this.label5.Name = "label5";
+			this.label5.Size = new System.Drawing.Size(312, 29);
+			this.label5.TabIndex = 19;
+			this.label5.Text = "*NOTE* Search gets enabled once you have more than a single constant heat source " +
+    "(middle mouse button)";
 			// 
 			// GraphForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(857, 543);
+			this.Controls.Add(this.groupBoxSearch);
+			this.Controls.Add(this.floatTrackbarControlDeltaTime);
+			this.Controls.Add(this.floatTrackbarControlDiffusionCoefficient);
+			this.Controls.Add(this.buttonSave);
+			this.Controls.Add(this.buttonLoad);
 			this.Controls.Add(this.panel3);
 			this.Controls.Add(this.panel2);
 			this.Controls.Add(this.panel1);
-			this.Controls.Add(this.radioButtonSearchAlgo1);
-			this.Controls.Add(this.radioButtonSearchAlgo0);
-			this.Controls.Add(this.checkBoxShowSearch);
-			this.Controls.Add(this.buttonRunSimulation);
-			this.Controls.Add(this.buttonStepSimulation);
-			this.Controls.Add(this.buttonResetSimulation);
-			this.Controls.Add(this.textBox);
-			this.Controls.Add(this.integerTrackbarControlStartPosition);
 			this.Controls.Add(this.label2);
-			this.Controls.Add(this.label3);
 			this.Controls.Add(this.label1);
 			this.Controls.Add(this.buttonReload);
 			this.Controls.Add(this.buttonResetObstacles);
 			this.Controls.Add(this.buttonReset);
 			this.Controls.Add(this.checkBoxRun);
-			this.Controls.Add(this.floatTrackbarControlDeltaTime);
-			this.Controls.Add(this.floatTrackbarControlDiffusionCoefficient);
 			this.Controls.Add(this.panelOutput);
+			this.Controls.Add(this.label5);
 			this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedToolWindow;
 			this.Name = "GraphForm";
 			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
@@ -400,6 +484,8 @@
 			this.panel2.PerformLayout();
 			this.panel3.ResumeLayout(false);
 			this.panel3.PerformLayout();
+			this.groupBoxSearch.ResumeLayout(false);
+			this.groupBoxSearch.PerformLayout();
 			this.ResumeLayout(false);
 			this.PerformLayout();
 
@@ -408,16 +494,13 @@
 		#endregion
 
 		private PanelOutput panelOutput;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlDiffusionCoefficient;
 		private System.Windows.Forms.CheckBox checkBoxRun;
 		private System.Windows.Forms.Button buttonReset;
 		private System.Windows.Forms.Button buttonReload;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlDeltaTime;
 		private System.Windows.Forms.Label label1;
 		private System.Windows.Forms.Label label2;
 		private System.Windows.Forms.Timer timer1;
 		private System.Windows.Forms.Button buttonResetObstacles;
-		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlStartPosition;
 		private System.Windows.Forms.TextBox textBox;
 		private System.Windows.Forms.Label label3;
 		private System.Windows.Forms.Button buttonResetSimulation;
@@ -437,5 +520,16 @@
 		private System.Windows.Forms.RadioButton radioButtonShowVoronoi;
 		private System.Windows.Forms.RadioButton radioButtonShowLogHeat;
 		private System.Windows.Forms.RadioButton radioButtonShowHeat;
+		private System.Windows.Forms.SaveFileDialog saveFileDialog1;
+		private System.Windows.Forms.OpenFileDialog openFileDialog1;
+		private System.Windows.Forms.Button buttonLoad;
+		private System.Windows.Forms.Button buttonSave;
+		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlStartPosition;
+		private System.Windows.Forms.Label label4;
+		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlTargetPosition;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlDiffusionCoefficient;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlDeltaTime;
+		private System.Windows.Forms.GroupBox groupBoxSearch;
+		private System.Windows.Forms.Label label5;
 	}
 }
