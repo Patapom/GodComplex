@@ -9,10 +9,10 @@ struct VS_IN {
 
 VS_IN	VS( VS_IN _In ) { return _In; }
 
-void	Compare( float4 _value, float _centralID, inout float4 _largest ) {
-	if ( _value.x > _largest.x && _value.y != _centralID )
+void	Compare( float4 _value, float2 _centralID, inout float4 _largest ) {
+	if ( _value.x > _largest.x && _value.y != _centralID.x )
 		_largest.xy = _value.xy;
-	if ( _value.z > _largest.z && _value.w != _centralID )
+	if ( _value.z > _largest.z && _value.w != _centralID.y )
 		_largest.zw = _value.zw;
 }
 
@@ -52,9 +52,9 @@ float4	PS( VS_IN _In ) : SV_TARGET0 {
 
 
 	///////////////////////////////////////////////////////////////////
-	// Find largest neighbor
-	float4	largestNeighborSource = 0;
-	float	centralID = sourceHeat.y;
+	// Find largest neighbors for both fields
+	float4	largestNeighborSource = 0;	// We must start with empty ID values
+	float2	centralID = sourceHeat.yy;
 	Compare( V[3*0+0], centralID, largestNeighborSource );
 	Compare( V[3*0+1], centralID, largestNeighborSource );
 	Compare( V[3*0+2], centralID, largestNeighborSource );
@@ -83,8 +83,18 @@ float4	PS( VS_IN _In ) : SV_TARGET0 {
 	// Apply diffusion
 #if 0
 	float4	newHeat = sourceHeat;
-	if ( largestNeighborSource.x >= sourceHeat.x && largestNeighborSource.y != sourceHeat.y && largestNeighborSource.y * sourceHeat.y > 0.0 ) {
-		newHeat.z = 1.0;
+	newHeat.xz = sourceHeat.xz + deltaTime * diffusionCoefficient * laplacian.xy;	// Regular radiation into field #0 & field #1
+	newHeat.yw = largestNeighborSource.yw;
+
+	if ( largestNeighborSource.x > sourceHeat.x && largestNeighborSource.y != sourceHeat.y && largestNeighborSource.y * sourceHeat.y > 0.0 ) {
+//	if ( laplacian.x < 1e-3 && largestNeighborSource.y != sourceHeat.y && largestNeighborSource.y * sourceHeat.y > 0.0 ) {
+		// Heat from neighbors is becoming preponderant and neighbors don't have the same source ID
+		// This means we're at a Voronoi cell boundary (i.e. on the medial axis)
+		// We must start to radiate into field #1 since we can't go any further into field 0
+		// (i.e. the medial axis becomes a heat source for field #1)
+		//
+		newHeat.z = sourceHeat.x;				// Formerly field 0 is now radiating into field 1
+		newHeat.w = largestNeighborSource.y;	// Source 0 is now becoming a lesser heat source in field 1
 	}
 #elif 1
 	float4	newHeat = sourceHeat;

@@ -16,7 +16,7 @@ float3	PS( VS_IN _In ) : SV_TARGET0 {
 //return float3( UV, 0 );
 	float4	obstacles = _texObstacles[1 + GRAPH_SIZE * (_In.__Position.xy-0.5) / 512.0];
 	if ( obstacles.x )
-		return float3( 1, 1, 0 );
+		return float3( 0.9, 0.8, 0 );
 
 	float3	color = 0;
 
