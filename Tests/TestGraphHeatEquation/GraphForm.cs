@@ -139,7 +139,9 @@ namespace TestGraphHeatEquation
 									| (radioButtonShowLogHeat.Checked ? 2 : 0)
 									| (radioButtonShowVoronoi.Checked ? 4 : 0)
 									| (radioButtonShowLaplacian.Checked ? 6 : 0)
+
 									| (radioButtonShowField1.Checked ? 8 : 0)
+									| (radioButtonShowSumFields.Checked ? 16 : 0)
 								);
 			m_CB_Main.m.sourceIndex = (uint) m_simulationHotSpots.Count;	// Always offset by 1 so first source ID=1
 			m_CB_Main.UpdateData();
@@ -663,65 +665,8 @@ namespace TestGraphHeatEquation
 		List< Point >	m_simulationHotSpots = new List<Point>();
 		int				m_simulationIteration = -1;
 
-		// Algo 0
-		int				m_simulationX, m_simulationY;
-		bool[,]			m_visited = new bool[GRAPH_SIZE,GRAPH_SIZE];
-
-		// Algo 1
-		float			m_simulationRadius = 0.0f;
-
 		float4[,]		m_bufferHeat = new float4[GRAPH_SIZE,GRAPH_SIZE];
 		uint[,]			m_bufferSearchResults = new uint[GRAPH_SIZE,GRAPH_SIZE];
-
-		void	ReadBackHeat() {
-			m_tex_HeatMap_Staging.CopyFrom( m_tex_HeatMap0 );
-// 			m_bufferHeat = m_tex_HeatMap_Staging.MapRead( 0, 0 );
-// 			m_bufferHeatReader = m_bufferHeat.OpenStreamRead();
-			m_tex_HeatMap_Staging.ReadPixels( 0, 0, ( uint _X, uint _Y, BinaryReader R ) => { m_bufferHeat[_X,_Y].Set( R.ReadSingle(), R.ReadSingle(), R.ReadSingle(), R.ReadSingle() ); } );
-		}
-
-		void	UpdateSearchResults() {
-			m_tex_Search_Staging.WritePixels( 0, 0, ( uint _X, uint _Y, BinaryWriter W ) => {
-				W.Write( m_bufferSearchResults[_X,_Y] );
-			} );
-			m_tex_Search.CopyFrom( m_tex_Search_Staging );
-		}
-
-		private void integerTrackbarControlStartPosition_ValueChanged( IntegerTrackbarControl _Sender, int _FormerValue ) {
-			bool	simulable = integerTrackbarControlStartPosition.Value != integerTrackbarControlTargetPosition.Value;
-			buttonStepSimulation.Enabled = simulable;
-			buttonRunSimulation.Enabled = simulable;
-		}
-
-		private void integerTrackbarControlTargetPosition_ValueChanged( IntegerTrackbarControl _Sender, int _FormerValue ) {
-			bool	simulable = integerTrackbarControlStartPosition.Value != integerTrackbarControlTargetPosition.Value;
-			buttonStepSimulation.Enabled = simulable;
-			buttonRunSimulation.Enabled = simulable;
-		}
-
-		private void buttonResetSimulation_Click( object sender, EventArgs e ) {
-			m_simulationIteration = 0;
-			ReadBackHeat();
-
-			m_simulationRadius = 0.0f;
-			if ( m_simulationHotSpots.Count > 0 ) {
-				m_simulationX = m_simulationHotSpots[integerTrackbarControlStartPosition.Value].X;
-				m_simulationY = m_simulationHotSpots[integerTrackbarControlStartPosition.Value].Y;
-			}
-			Array.Clear( m_visited, 0, GRAPH_SIZE*GRAPH_SIZE );
-
-			// Reset search result
-			Array.Clear( m_bufferSearchResults, 0, GRAPH_SIZE*GRAPH_SIZE );
-			UpdateSearchResults();
-		}
-
-		private void buttonRunSimulation_Click( object sender, EventArgs e ) {
-			int	iterationsCount = ((int) Mathf.Sqrt(2) * GRAPH_SIZE);
-			for ( int i=0; i < iterationsCount; i++ )
-				buttonStepSimulation_Click( null, e );
-
-			UpdateSearchResults();
-		}
 
 		int[][]	dXY = new int[8][] {
 			new int[] { -1, -1 },
@@ -735,6 +680,151 @@ namespace TestGraphHeatEquation
 			new int[] { +1, +1 },
 		};
 
+		// Simulation data
+		enum SEARCH_PHASE {
+			TARGET_ID_SEARCH,
+			TARGET_ASCENT,
+			SOURCE_DESCENT,
+			FINISHED
+		}
+
+		SEARCH_PHASE	m_searchPhase;
+		int				m_simulationX, m_simulationY;
+		float			m_simulationRadius = 0.0f;
+		bool[,]			m_visited = new bool[GRAPH_SIZE,GRAPH_SIZE];
+
+#if true
+		uint			m_targetID;
+		float			m_currentGradient;
+
+		private void buttonStepSimulation_Click( object sender, EventArgs e ) {
+			if ( m_simulationIteration < 0 ) {
+				buttonResetSimulation_Click( sender, e );
+			}
+
+			m_simulationIteration++;
+
+			//////////////////////////////////////////////////////////////////////////
+			// Local search: We start by finding the target ID nearby our start location and ascend the gradient, all the while descending the source gradient
+			float4	current = m_bufferHeat[m_simulationX,m_simulationY];
+
+			switch ( m_searchPhase ) {
+				case SEARCH_PHASE.TARGET_ID_SEARCH: {
+					// At the moment, assume we're standing on a node with the target ID
+					m_targetID = (uint) current.w - 1;	// Keep current secondary ID as target ID
+					m_currentGradient = current.x + current.z;
+
+					for ( uint neighborIndex=0; neighborIndex < 8; neighborIndex++ ) {
+						int	tempX = m_simulationX + dXY[neighborIndex][0];
+						if ( tempX < 0 || tempX >= GRAPH_SIZE )
+							continue;
+						int	tempY = m_simulationY + dXY[neighborIndex][1];
+						if ( tempY < 0 || tempY >= GRAPH_SIZE )
+							continue;
+
+						float4	neighborValue = m_bufferHeat[tempX,tempY];
+						uint	neighborID = (uint) neighborValue.w - 1;
+						if ( neighborID != integerTrackbarControlTargetPosition.Value && m_targetID != 0 )
+							continue;	// Not our target ID
+
+						m_simulationX = tempX;
+						m_simulationY = tempY;
+					}
+
+					m_searchPhase = SEARCH_PHASE.TARGET_ASCENT;
+
+				} break;
+
+				case SEARCH_PHASE.TARGET_ASCENT: {
+					// We're descending the source gradient (in field #0) and ascending the target gradient (in field #1)
+					float	bestGradient = -1;
+					int		bestX = m_simulationX, bestY = m_simulationY;
+					for ( uint neighborIndex=0; neighborIndex < 8; neighborIndex++ ) {
+						int	tempX = m_simulationX + dXY[neighborIndex][0];
+						if ( tempX < 0 || tempX >= GRAPH_SIZE )
+							continue;
+						int	tempY = m_simulationY + dXY[neighborIndex][1];
+						if ( tempY < 0 || tempY >= GRAPH_SIZE )
+							continue;
+
+						if ( m_visited[tempX,tempY] )
+							continue;	// Don't bother
+
+						float4	neighborValue = m_bufferHeat[tempX,tempY];
+						float	gradient = 0*neighborValue.x + neighborValue.z;
+						if ( gradient < bestGradient )
+							continue;	// Not the ridge!
+
+						bestGradient = gradient;
+						bestX = tempX;
+						bestY = tempY;
+					}
+
+					m_simulationX = bestX;
+					m_simulationY = bestY;
+
+					// Write a single pixel
+					m_bufferSearchResults[m_simulationX,m_simulationY] = 0x000000FFU;
+					m_visited[m_simulationX,m_simulationY] = true;
+
+					// Check we're still following the target ID
+					float4	newValue = m_bufferHeat[m_simulationX,m_simulationY];
+					uint	newID = (uint) newValue.w - 1;
+					if ( newID != m_targetID ) {
+						m_targetID = newID;
+						m_searchPhase = SEARCH_PHASE.SOURCE_DESCENT;	// New phase!
+					}
+
+				} break;
+
+				case SEARCH_PHASE.SOURCE_DESCENT: {
+					// We're descending the source gradient (in field #1) and ascending the target gradient (in field #0)
+					float	bestGradient = -1;
+					int		bestX = m_simulationX, bestY = m_simulationY;
+					for ( uint neighborIndex=0; neighborIndex < 8; neighborIndex++ ) {
+						int	tempX = m_simulationX + dXY[neighborIndex][0];
+						if ( tempX < 0 || tempX >= GRAPH_SIZE )
+							continue;
+						int	tempY = m_simulationY + dXY[neighborIndex][1];
+						if ( tempY < 0 || tempY >= GRAPH_SIZE )
+							continue;
+
+						if ( m_visited[tempX,tempY] )
+							continue;	// Don't bother
+
+						float4	neighborValue = m_bufferHeat[tempX,tempY];
+						float	gradient = neighborValue.x + 0*neighborValue.z;
+						if ( gradient < bestGradient )
+							continue;	// Not the ridge!
+
+						bestGradient = gradient;
+						bestX = tempX;
+						bestY = tempY;
+					}
+
+					m_simulationX = bestX;
+					m_simulationY = bestY;
+
+					// Write a single pixel
+					m_bufferSearchResults[m_simulationX,m_simulationY] = 0x000000FFU;
+					m_visited[m_simulationX,m_simulationY] = true;
+
+					// Check we're still following the target ID
+					float4	newValue = m_bufferHeat[m_simulationX,m_simulationY];
+					uint	newID = (uint) newValue.w - 1;
+					if ( newID != m_targetID )
+						m_searchPhase = SEARCH_PHASE.FINISHED;	// We're done!
+
+				} break;
+			}
+
+			// Update search results texture
+			if ( sender != null ) {
+				UpdateSearchResults();
+			}
+		}
+
+#else
 		private void buttonStepSimulation_Click( object sender, EventArgs e ) {
 			if ( m_simulationIteration < 0 ) {
 				buttonResetSimulation_Click( sender, e );
@@ -818,47 +908,125 @@ m_visited[X,Y] = true;	// Also mark maximum as visited to avoid getting trapped
 				UpdateSearchResults();
 			}
 		}
+#endif
+
+		void	ReadBackHeat() {
+			m_tex_HeatMap_Staging.CopyFrom( m_tex_HeatMap0 );
+// 			m_bufferHeat = m_tex_HeatMap_Staging.MapRead( 0, 0 );
+// 			m_bufferHeatReader = m_bufferHeat.OpenStreamRead();
+			m_tex_HeatMap_Staging.ReadPixels( 0, 0, ( uint _X, uint _Y, BinaryReader R ) => { m_bufferHeat[_X,_Y].Set( R.ReadSingle(), R.ReadSingle(), R.ReadSingle(), R.ReadSingle() ); } );
+		}
+
+		void	UpdateSearchResults() {
+			m_tex_Search_Staging.WritePixels( 0, 0, ( uint _X, uint _Y, BinaryWriter W ) => {
+				W.Write( m_bufferSearchResults[_X,_Y] );
+			} );
+			m_tex_Search.CopyFrom( m_tex_Search_Staging );
+		}
+
+		private void integerTrackbarControlStartPosition_ValueChanged( IntegerTrackbarControl _Sender, int _FormerValue ) {
+			bool	simulable = integerTrackbarControlStartPosition.Value != integerTrackbarControlTargetPosition.Value;
+			buttonStepSimulation.Enabled = simulable;
+			buttonRunSimulation.Enabled = simulable;
+		}
+
+		private void integerTrackbarControlTargetPosition_ValueChanged( IntegerTrackbarControl _Sender, int _FormerValue ) {
+			bool	simulable = integerTrackbarControlStartPosition.Value != integerTrackbarControlTargetPosition.Value;
+			buttonStepSimulation.Enabled = simulable;
+			buttonRunSimulation.Enabled = simulable;
+		}
+
+		private void buttonResetSimulation_Click( object sender, EventArgs e ) {
+			m_simulationIteration = 0;
+			ReadBackHeat();
+
+			m_searchPhase = SEARCH_PHASE.TARGET_ID_SEARCH;
+			m_simulationRadius = 0.0f;
+			if ( m_simulationHotSpots.Count > 0 ) {
+				m_simulationX = m_simulationHotSpots[integerTrackbarControlStartPosition.Value].X;
+				m_simulationY = m_simulationHotSpots[integerTrackbarControlStartPosition.Value].Y;
+			}
+			Array.Clear( m_visited, 0, GRAPH_SIZE*GRAPH_SIZE );
+
+			// Reset search result
+			Array.Clear( m_bufferSearchResults, 0, GRAPH_SIZE*GRAPH_SIZE );
+			UpdateSearchResults();
+		}
+
+		private void buttonRunSimulation_Click( object sender, EventArgs e ) {
+			int	iterationsCount = ((int) Mathf.Sqrt(2) * GRAPH_SIZE);
+			for ( int i=0; i < iterationsCount; i++ )
+				buttonStepSimulation_Click( null, e );
+
+			UpdateSearchResults();
+		}
 
 		bool	m_plotSource = false;
 		private void panelOutput_MouseDown( object sender, MouseEventArgs e ) {
 			if ( e.Button == MouseButtons.Middle ) {
 				// Add a new hotspot
-				Point	hotSpotLocation = new Point( e.X * GRAPH_SIZE / panelOutput.Width, e.Y * GRAPH_SIZE / panelOutput.Height );
-				m_simulationHotSpots.Add( hotSpotLocation );
-
-				groupBoxSearch.Enabled = m_simulationHotSpots.Count > 1;
-
-				integerTrackbarControlStartPosition.RangeMax = m_simulationHotSpots.Count - 1;
-				integerTrackbarControlStartPosition.VisibleRangeMax = integerTrackbarControlStartPosition.RangeMax;
-				integerTrackbarControlStartPosition.Value = 0;
-
-				integerTrackbarControlTargetPosition.RangeMax = m_simulationHotSpots.Count - 1;
-				integerTrackbarControlTargetPosition.VisibleRangeMax = integerTrackbarControlTargetPosition.RangeMax;
-				integerTrackbarControlTargetPosition.Value = 1;
+				AddHotSpot( new Point( e.X * GRAPH_SIZE / panelOutput.Width, e.Y * GRAPH_SIZE / panelOutput.Height ) );
 
 				// Authorize source plotting ONLY when we successfully registered a new point
 				m_plotSource = true;
 			}
 		}
 
+		void	AddHotSpot( Point _hotSpotLocation ) {
+			m_simulationHotSpots.Add( _hotSpotLocation );
+
+			groupBoxSearch.Enabled = m_simulationHotSpots.Count > 1;
+
+			integerTrackbarControlStartPosition.RangeMax = m_simulationHotSpots.Count - 1;
+			integerTrackbarControlStartPosition.VisibleRangeMax = integerTrackbarControlStartPosition.RangeMax;
+			integerTrackbarControlStartPosition.Value = 0;
+
+			integerTrackbarControlTargetPosition.RangeMax = m_simulationHotSpots.Count - 1;
+			integerTrackbarControlTargetPosition.VisibleRangeMax = integerTrackbarControlTargetPosition.RangeMax;
+			integerTrackbarControlTargetPosition.Value = 1;
+		}
+
 		#endregion
+
+		#region I/O
 
 		private void buttonLoad_Click( object sender, EventArgs e ) {
 //			openFileDialog1.InitialDirectory = Path.GetDirectoryName( Application.ExecutablePath );
 			if ( openFileDialog1.ShowDialog( this ) != DialogResult.OK )
 				return;
 
-			byte[]	obstacles = new byte[(GRAPH_SIZE+2)*(GRAPH_SIZE+2)];
+			buttonResetObstacles_Click( null, e );
+
+			uint[]		obstacles = new uint[(GRAPH_SIZE+2)*(GRAPH_SIZE+2)];
+			float4[,]	simulatedValues = new float4[GRAPH_SIZE,GRAPH_SIZE];
+
 			FileInfo	file = new FileInfo( openFileDialog1.FileName );
 			using ( FileStream S = file.OpenRead() )
-				using ( BinaryReader R = new BinaryReader( S ) )
-					R.Read( obstacles, 0, obstacles.Length );
+				using ( BinaryReader R = new BinaryReader( S ) ) {
+					for ( uint i=0; i < obstacles.Length; i++ ) {
+						obstacles[i] = R.ReadUInt32();
+						if ( (obstacles[i] & 0x00FF0000) != 0 )
+							AddHotSpot( new Point( (int) i % (GRAPH_SIZE+2), (int) i / (GRAPH_SIZE+2) ) );
+					}
+					for ( uint Y=0; Y < GRAPH_SIZE; Y++ )
+						for ( uint X=0; X < GRAPH_SIZE; X++ )
+							simulatedValues[X,Y].Set( R.ReadSingle(), R.ReadSingle(), R.ReadSingle(), R.ReadSingle() );
+				}
 
 			m_tex_Obstacles_Staging.WritePixels( 0, 0, ( uint _X, uint _Y, BinaryWriter W ) => {
-				W.Write( (uint) obstacles[(GRAPH_SIZE+2)*_Y+_X] );
+				W.Write( obstacles[(GRAPH_SIZE+2)*_Y+_X] );
 			} );
 			m_tex_Obstacles0.CopyFrom( m_tex_Obstacles_Staging );
 
+			m_tex_HeatMap_Staging.WritePixels( 0, 0, ( uint _X, uint _Y, BinaryWriter W ) => {
+				W.Write( simulatedValues[_X,_Y].x );
+				W.Write( simulatedValues[_X,_Y].y );
+				W.Write( simulatedValues[_X,_Y].z );
+				W.Write( simulatedValues[_X,_Y].w );
+			} );
+			m_tex_HeatMap0.CopyFrom( m_tex_HeatMap_Staging );
+
+			checkBoxRun.Checked = false;	// Avoid running the freshly-loaded simulation!
 			ClearObstacles();
 		}
 
@@ -867,20 +1035,36 @@ m_visited[X,Y] = true;	// Also mark maximum as visited to avoid getting trapped
 			if ( saveFileDialog1.ShowDialog( this ) != DialogResult.OK )
 				return;
 
-			byte[]	obstacles = new byte[(GRAPH_SIZE+2)*(GRAPH_SIZE+2)];
+			uint[]	obstacles = new uint[(GRAPH_SIZE+2)*(GRAPH_SIZE+2)];
 			m_tex_Obstacles_Staging.CopyFrom( m_tex_Obstacles0 );
 			m_tex_Obstacles_Staging.ReadPixels( 0, 0, ( uint _X, uint _Y, BinaryReader R ) => {
-				uint	obstacle = R.ReadUInt32();
-				obstacles[(GRAPH_SIZE+2)*_Y+_X] = (byte) (obstacle & 0xFF);
+				obstacles[(GRAPH_SIZE+2)*_Y+_X] = R.ReadUInt32();
+			} );
+
+			float4[,]	simulatedValues = new float4[GRAPH_SIZE,GRAPH_SIZE];
+			m_tex_HeatMap_Staging.CopyFrom( m_tex_HeatMap0 );
+			m_tex_HeatMap_Staging.ReadPixels( 0, 0, ( uint _X, uint _Y, BinaryReader R ) => {
+				simulatedValues[_X,_Y].Set( R.ReadSingle(), R.ReadSingle(), R.ReadSingle(), R.ReadSingle() );
 			} );
 
 			FileInfo	file = new FileInfo( saveFileDialog1.FileName );
 			using ( FileStream S = file.OpenWrite() )
-				using ( BinaryWriter W = new BinaryWriter( S ) )
-					W.Write( obstacles );
+				using ( BinaryWriter W = new BinaryWriter( S ) ) {
+					for ( uint i=0; i < obstacles.Length; i++ )
+						W.Write( obstacles[i] );
+					for ( uint Y=0; Y < GRAPH_SIZE; Y++ )
+						for ( uint X=0; X < GRAPH_SIZE; X++ ) {
+							W.Write( simulatedValues[X,Y].x );
+							W.Write( simulatedValues[X,Y].y );
+							W.Write( simulatedValues[X,Y].z );
+							W.Write( simulatedValues[X,Y].w );
+						}
+				}
 
 			ClearObstacles();
 		}
+
+		#endregion
 
 		#endregion
 	}

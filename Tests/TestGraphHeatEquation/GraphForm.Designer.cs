@@ -35,6 +35,7 @@
 			this.radioButtonDiffusionAlgo0 = new System.Windows.Forms.RadioButton();
 			this.radioButtonDiffusionAlgo1 = new System.Windows.Forms.RadioButton();
 			this.panel2 = new System.Windows.Forms.Panel();
+			this.radioButtonShowSumFields = new System.Windows.Forms.RadioButton();
 			this.radioButtonShowField1 = new System.Windows.Forms.RadioButton();
 			this.radioButtonShowField0 = new System.Windows.Forms.RadioButton();
 			this.panel3 = new System.Windows.Forms.Panel();
@@ -242,6 +243,7 @@
 			// 
 			// panel2
 			// 
+			this.panel2.Controls.Add(this.radioButtonShowSumFields);
 			this.panel2.Controls.Add(this.radioButtonShowField1);
 			this.panel2.Controls.Add(this.radioButtonShowField0);
 			this.panel2.Location = new System.Drawing.Point(533, 126);
@@ -249,15 +251,26 @@
 			this.panel2.Size = new System.Drawing.Size(289, 23);
 			this.panel2.TabIndex = 13;
 			// 
+			// radioButtonShowSumFields
+			// 
+			this.radioButtonShowSumFields.AutoSize = true;
+			this.radioButtonShowSumFields.Location = new System.Drawing.Point(127, 4);
+			this.radioButtonShowSumFields.Name = "radioButtonShowSumFields";
+			this.radioButtonShowSumFields.Size = new System.Drawing.Size(99, 17);
+			this.radioButtonShowSumFields.TabIndex = 0;
+			this.radioButtonShowSumFields.TabStop = true;
+			this.radioButtonShowSumFields.Text = "Field 0 + Field 1";
+			this.radioButtonShowSumFields.UseVisualStyleBackColor = true;
+			// 
 			// radioButtonShowField1
 			// 
 			this.radioButtonShowField1.AutoSize = true;
-			this.radioButtonShowField1.Location = new System.Drawing.Point(95, 4);
+			this.radioButtonShowField1.Location = new System.Drawing.Point(65, 4);
 			this.radioButtonShowField1.Name = "radioButtonShowField1";
-			this.radioButtonShowField1.Size = new System.Drawing.Size(86, 17);
+			this.radioButtonShowField1.Size = new System.Drawing.Size(56, 17);
 			this.radioButtonShowField1.TabIndex = 0;
 			this.radioButtonShowField1.TabStop = true;
-			this.radioButtonShowField1.Text = "Show Field 1";
+			this.radioButtonShowField1.Text = "Field 1";
 			this.radioButtonShowField1.UseVisualStyleBackColor = true;
 			// 
 			// radioButtonShowField0
@@ -266,10 +279,10 @@
 			this.radioButtonShowField0.Checked = true;
 			this.radioButtonShowField0.Location = new System.Drawing.Point(3, 4);
 			this.radioButtonShowField0.Name = "radioButtonShowField0";
-			this.radioButtonShowField0.Size = new System.Drawing.Size(86, 17);
+			this.radioButtonShowField0.Size = new System.Drawing.Size(56, 17);
 			this.radioButtonShowField0.TabIndex = 0;
 			this.radioButtonShowField0.TabStop = true;
-			this.radioButtonShowField0.Text = "Show Field 0";
+			this.radioButtonShowField0.Text = "Field 0";
 			this.radioButtonShowField0.UseVisualStyleBackColor = true;
 			// 
 			// panel3
@@ -327,15 +340,15 @@
 			// 
 			// saveFileDialog1
 			// 
-			this.saveFileDialog1.DefaultExt = "*.obs";
-			this.saveFileDialog1.Filter = "Obstacles Files (*.obs)|*.obs";
+			this.saveFileDialog1.DefaultExt = "*.sim";
+			this.saveFileDialog1.Filter = "Simulation Files (*.sim)|*.sim";
 			this.saveFileDialog1.RestoreDirectory = true;
 			// 
 			// openFileDialog1
 			// 
-			this.openFileDialog1.DefaultExt = "*.obs";
+			this.openFileDialog1.DefaultExt = "*.sim";
 			this.openFileDialog1.FileName = "TestObstacles.obs";
-			this.openFileDialog1.Filter = "Obstacles Files (*.obs)|*.obs";
+			this.openFileDialog1.Filter = "Simulation Files (*.sim)|*.sim";
 			this.openFileDialog1.RestoreDirectory = true;
 			// 
 			// buttonLoad
@@ -531,5 +544,6 @@
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlDeltaTime;
 		private System.Windows.Forms.GroupBox groupBoxSearch;
 		private System.Windows.Forms.Label label5;
+		private System.Windows.Forms.RadioButton radioButtonShowSumFields;
 	}
 }

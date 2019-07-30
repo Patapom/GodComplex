@@ -30,7 +30,8 @@ float3	PS( VS_IN _In ) : SV_TARGET0 {
 	float4	V12 = _texHeatMap.SampleLevel( PointClamp, UV, 0.0, int2(  0, +1 ) );
 	float4	V22 = _texHeatMap.SampleLevel( PointClamp, UV, 0.0, int2( +1, +1 ) );
 
-	if ( flags & 8 ) {
+	uint	fieldsMode = (flags >> 3) & 0x3U;
+	if ( fieldsMode == 1 ) {
 		// Show field 1
 		V00.xy = V00.zw;
 		V10.xy = V10.zw;
@@ -41,6 +42,17 @@ float3	PS( VS_IN _In ) : SV_TARGET0 {
 		V02.xy = V02.zw;
 		V12.xy = V12.zw;
 		V22.xy = V22.zw;
+	} else if ( fieldsMode == 2 ) {
+		// Show sum of both fields
+		V00.xy += V00.zw;
+		V10.xy += V10.zw;
+		V20.xy += V20.zw;
+		V01.xy += V01.zw;
+		V11.xy += V11.zw;
+		V21.xy += V21.zw;
+		V02.xy += V02.zw;
+		V12.xy += V12.zw;
+		V22.xy += V22.zw;
 	}
 
 	uint	displayMode = (flags >> 1) & 0x3U;
