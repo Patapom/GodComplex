@@ -28,8 +28,7 @@ float4	PS( VS_IN _In ) : SV_TARGET0 {
 	if ( all(pos == P) ) {
 		// Use middle mouse button to set or clear permanent sources
 		if ( mouseButtons & 2 ) {
-			obstacle.z = 1;
-			obstacle.w = sourceIndex / 255.0;	// Remember that the CPU offsets source IDs by 1 so sourceIndex >= 1
+			obstacle.z = (1+sourceIndex) / 255.0;
 		} else if ( (mouseButtons & 10) == 10 ) {
 			obstacle.z = 0;
 		}

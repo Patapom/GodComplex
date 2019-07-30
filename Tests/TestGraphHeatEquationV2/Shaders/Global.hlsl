@@ -7,7 +7,6 @@ static const uint	GRAPH_SIZE = 128;
 cbuffer CB_Main : register(b0) {
 	float2	mousePosition;	// Mouse position in texels
 	uint	mouseButtons;	// Mouse button states (0=left button, 1=middle, 2=right)
-	float	deltaTime;		// Time step
 	float	diffusionCoefficient;
 	uint	flags;
 	uint	sourceIndex;

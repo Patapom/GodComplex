@@ -82,7 +82,9 @@ float3	PS( VS_IN _In ) : SV_TARGET0 {
 				float3( 1, 0.5, 0.25 ),
 			};
 
-			uint	cellIndex = uint( V11.y );
+			uint	sourceBit = asuint( V11.y );
+			uint	cellIndex = sourceBit != 0  ? 1+((sourceBit & 1) ? 0 : ((sourceBit & 2) ? 1 : ((sourceBit & 4) ? 2 : ((sourceBit & 8) ? 3 : ((sourceBit & 16) ? 4 : ((sourceBit & 32) ? 5 : 6))))))
+												: 0;
 			color = cellIndex == 0 ? 0.0 : cellColors[(cellIndex-1) & 0x7];
 		} break;
 

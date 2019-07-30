@@ -19,7 +19,6 @@
 			this.checkBoxRun = new System.Windows.Forms.CheckBox();
 			this.buttonReset = new System.Windows.Forms.Button();
 			this.buttonReload = new System.Windows.Forms.Button();
-			this.label1 = new System.Windows.Forms.Label();
 			this.label2 = new System.Windows.Forms.Label();
 			this.timer1 = new System.Windows.Forms.Timer(this.components);
 			this.buttonResetObstacles = new System.Windows.Forms.Button();
@@ -52,7 +51,6 @@
 			this.label4 = new System.Windows.Forms.Label();
 			this.integerTrackbarControlTargetPosition = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
 			this.floatTrackbarControlDiffusionCoefficient = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.floatTrackbarControlDeltaTime = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.groupBoxSearch = new System.Windows.Forms.GroupBox();
 			this.label5 = new System.Windows.Forms.Label();
 			this.panel1.SuspendLayout();
@@ -66,7 +64,7 @@
 			this.checkBoxRun.AutoSize = true;
 			this.checkBoxRun.Checked = true;
 			this.checkBoxRun.CheckState = System.Windows.Forms.CheckState.Checked;
-			this.checkBoxRun.Location = new System.Drawing.Point(533, 76);
+			this.checkBoxRun.Location = new System.Drawing.Point(533, 50);
 			this.checkBoxRun.Name = "checkBoxRun";
 			this.checkBoxRun.Size = new System.Drawing.Size(46, 17);
 			this.checkBoxRun.TabIndex = 2;
@@ -76,7 +74,7 @@
 			// 
 			// buttonReset
 			// 
-			this.buttonReset.Location = new System.Drawing.Point(585, 72);
+			this.buttonReset.Location = new System.Drawing.Point(585, 46);
 			this.buttonReset.Name = "buttonReset";
 			this.buttonReset.Size = new System.Drawing.Size(75, 23);
 			this.buttonReset.TabIndex = 3;
@@ -94,19 +92,10 @@
 			this.buttonReload.UseVisualStyleBackColor = true;
 			this.buttonReload.Click += new System.EventHandler(this.buttonReload_Click);
 			// 
-			// label1
-			// 
-			this.label1.AutoSize = true;
-			this.label1.Location = new System.Drawing.Point(530, 19);
-			this.label1.Name = "label1";
-			this.label1.Size = new System.Drawing.Size(58, 13);
-			this.label1.TabIndex = 5;
-			this.label1.Text = "Delta Time";
-			// 
 			// label2
 			// 
 			this.label2.AutoSize = true;
-			this.label2.Location = new System.Drawing.Point(530, 45);
+			this.label2.Location = new System.Drawing.Point(530, 17);
 			this.label2.Name = "label2";
 			this.label2.Size = new System.Drawing.Size(101, 13);
 			this.label2.TabIndex = 5;
@@ -119,7 +108,7 @@
 			// 
 			// buttonResetObstacles
 			// 
-			this.buttonResetObstacles.Location = new System.Drawing.Point(533, 101);
+			this.buttonResetObstacles.Location = new System.Drawing.Point(533, 75);
 			this.buttonResetObstacles.Name = "buttonResetObstacles";
 			this.buttonResetObstacles.Size = new System.Drawing.Size(178, 23);
 			this.buttonResetObstacles.TabIndex = 3;
@@ -213,7 +202,7 @@
 			// 
 			this.panel1.Controls.Add(this.radioButtonDiffusionAlgo0);
 			this.panel1.Controls.Add(this.radioButtonDiffusionAlgo1);
-			this.panel1.Location = new System.Drawing.Point(666, 72);
+			this.panel1.Location = new System.Drawing.Point(666, 46);
 			this.panel1.Name = "panel1";
 			this.panel1.Size = new System.Drawing.Size(179, 23);
 			this.panel1.TabIndex = 12;
@@ -246,7 +235,7 @@
 			this.panel2.Controls.Add(this.radioButtonShowSumFields);
 			this.panel2.Controls.Add(this.radioButtonShowField1);
 			this.panel2.Controls.Add(this.radioButtonShowField0);
-			this.panel2.Location = new System.Drawing.Point(533, 126);
+			this.panel2.Location = new System.Drawing.Point(533, 100);
 			this.panel2.Name = "panel2";
 			this.panel2.Size = new System.Drawing.Size(289, 23);
 			this.panel2.TabIndex = 13;
@@ -291,7 +280,7 @@
 			this.panel3.Controls.Add(this.radioButtonShowVoronoi);
 			this.panel3.Controls.Add(this.radioButtonShowLogHeat);
 			this.panel3.Controls.Add(this.radioButtonShowHeat);
-			this.panel3.Location = new System.Drawing.Point(530, 155);
+			this.panel3.Location = new System.Drawing.Point(530, 129);
 			this.panel3.Name = "panel3";
 			this.panel3.Size = new System.Drawing.Size(312, 27);
 			this.panel3.TabIndex = 14;
@@ -412,7 +401,7 @@
 			// 
 			// floatTrackbarControlDiffusionCoefficient
 			// 
-			this.floatTrackbarControlDiffusionCoefficient.Location = new System.Drawing.Point(639, 38);
+			this.floatTrackbarControlDiffusionCoefficient.Location = new System.Drawing.Point(639, 13);
 			this.floatTrackbarControlDiffusionCoefficient.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlDiffusionCoefficient.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlDiffusionCoefficient.Name = "floatTrackbarControlDiffusionCoefficient";
@@ -422,19 +411,6 @@
 			this.floatTrackbarControlDiffusionCoefficient.TabIndex = 17;
 			this.floatTrackbarControlDiffusionCoefficient.Value = 1F;
 			this.floatTrackbarControlDiffusionCoefficient.VisibleRangeMax = 1F;
-			// 
-			// floatTrackbarControlDeltaTime
-			// 
-			this.floatTrackbarControlDeltaTime.Location = new System.Drawing.Point(639, 12);
-			this.floatTrackbarControlDeltaTime.MaximumSize = new System.Drawing.Size(10000, 20);
-			this.floatTrackbarControlDeltaTime.MinimumSize = new System.Drawing.Size(70, 20);
-			this.floatTrackbarControlDeltaTime.Name = "floatTrackbarControlDeltaTime";
-			this.floatTrackbarControlDeltaTime.RangeMax = 1F;
-			this.floatTrackbarControlDeltaTime.RangeMin = 0F;
-			this.floatTrackbarControlDeltaTime.Size = new System.Drawing.Size(200, 20);
-			this.floatTrackbarControlDeltaTime.TabIndex = 17;
-			this.floatTrackbarControlDeltaTime.Value = 1F;
-			this.floatTrackbarControlDeltaTime.VisibleRangeMax = 1F;
 			// 
 			// groupBoxSearch
 			// 
@@ -472,7 +448,6 @@
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(857, 543);
 			this.Controls.Add(this.groupBoxSearch);
-			this.Controls.Add(this.floatTrackbarControlDeltaTime);
 			this.Controls.Add(this.floatTrackbarControlDiffusionCoefficient);
 			this.Controls.Add(this.buttonSave);
 			this.Controls.Add(this.buttonLoad);
@@ -480,7 +455,6 @@
 			this.Controls.Add(this.panel2);
 			this.Controls.Add(this.panel1);
 			this.Controls.Add(this.label2);
-			this.Controls.Add(this.label1);
 			this.Controls.Add(this.buttonReload);
 			this.Controls.Add(this.buttonResetObstacles);
 			this.Controls.Add(this.buttonReset);
@@ -510,7 +484,6 @@
 		private System.Windows.Forms.CheckBox checkBoxRun;
 		private System.Windows.Forms.Button buttonReset;
 		private System.Windows.Forms.Button buttonReload;
-		private System.Windows.Forms.Label label1;
 		private System.Windows.Forms.Label label2;
 		private System.Windows.Forms.Timer timer1;
 		private System.Windows.Forms.Button buttonResetObstacles;
@@ -541,7 +514,6 @@
 		private System.Windows.Forms.Label label4;
 		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlTargetPosition;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlDiffusionCoefficient;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlDeltaTime;
 		private System.Windows.Forms.GroupBox groupBoxSearch;
 		private System.Windows.Forms.Label label5;
 		private System.Windows.Forms.RadioButton radioButtonShowSumFields;

@@ -30,7 +30,6 @@ namespace TestGraphHeatEquation
 		private struct CB_Main {
 			public float2		mousePosition;	// Mouse position in texels
 			public uint			mouseButtons;	// Mouse button states (0=left button, 1=middle, 2=right)
-			public float		deltaTime;		// Time step
 			public float		diffusionCoefficient;
 			public uint			flags;
 			public uint			sourceIndex;
@@ -132,7 +131,6 @@ namespace TestGraphHeatEquation
 											| (m_plotSource ? 2 : 0)
 											| (((Control.MouseButtons & MouseButtons.Right) != 0) ? 4 : 0)
 											| (Control.ModifierKeys == Keys.Shift ? 8 : 0));
-			m_CB_Main.m.deltaTime = floatTrackbarControlDeltaTime.Value;
 			m_CB_Main.m.diffusionCoefficient = floatTrackbarControlDiffusionCoefficient.Value;
 			m_CB_Main.m.flags = (uint) (
 									  (checkBoxShowSearch.Checked ? 1 : 0)
@@ -143,7 +141,7 @@ namespace TestGraphHeatEquation
 									| (radioButtonShowField1.Checked ? 8 : 0)
 									| (radioButtonShowSumFields.Checked ? 16 : 0)
 								);
-			m_CB_Main.m.sourceIndex = (uint) m_simulationHotSpots.Count;	// Always offset by 1 so first source ID=1
+			m_CB_Main.m.sourceIndex = (uint) m_simulationHotSpots.Count - 1;
 			m_CB_Main.UpdateData();
 
 			m_plotSource = false;

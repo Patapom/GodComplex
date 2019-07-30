@@ -83,7 +83,7 @@ float4	PS( VS_IN _In ) : SV_TARGET0 {
 	// Apply diffusion
 #if 0
 	float4	newHeat = sourceHeat;
-	newHeat.xz = sourceHeat.xz + deltaTime * diffusionCoefficient * laplacian.xy;	// Regular radiation into field #0 & field #1
+	newHeat.xz = sourceHeat.xz + diffusionCoefficient * laplacian.xy;	// Regular radiation into field #0 & field #1
 	newHeat.yw = largestNeighborSource.yw;
 
 	if ( largestNeighborSource.x > sourceHeat.x && largestNeighborSource.y != sourceHeat.y && largestNeighborSource.y * sourceHeat.y > 0.0 ) {
@@ -105,7 +105,7 @@ float4	PS( VS_IN _In ) : SV_TARGET0 {
 		// We must start to radiate into field #1 since we can't go any further into field 0
 		// (i.e. the medial axis becomes a heat source for field #1)
 		//
-//		newHeat.x = sourceHeat.x + deltaTime * diffusionCoefficient * laplacian.x;	// Regular radiation into field #0
+//		newHeat.x = sourceHeat.x + diffusionCoefficient * laplacian.x;	// Regular radiation into field #0
 //		newHeat.y = largestNeighborSource.y;										// Except now source #1 is preponderant
 
 		// Formerly field 0 is now radiating into field 1
@@ -116,9 +116,9 @@ float4	PS( VS_IN _In ) : SV_TARGET0 {
 
 	} else {
 		// Heat from field 0 is still preponderant, just propagate both fields
-//		newHeat.x = sourceHeat.x + deltaTime * diffusionCoefficient * laplacian.x;
+//		newHeat.x = sourceHeat.x + diffusionCoefficient * laplacian.x;
 //		newHeat.y = largestNeighborSource.y;
-		newHeat.z = sourceHeat.z + deltaTime * diffusionCoefficient * laplacian.y;
+		newHeat.z = sourceHeat.z + diffusionCoefficient * laplacian.y;
 
 		#if 1
 			// This keeps the original IDs
@@ -137,15 +137,15 @@ float4	PS( VS_IN _In ) : SV_TARGET0 {
 		// We must start to radiate into field #1 since we can't go any further into field 0
 		// (i.e. the medial axis becomes a heat source for field #1)
 		//
-		newHeat.x = sourceHeat.x + deltaTime * diffusionCoefficient * laplacian.x;	// Regular radiation into field #0
+		newHeat.x = sourceHeat.x + diffusionCoefficient * laplacian.x;	// Regular radiation into field #0
 		newHeat.y = largestNeighborSource.y;										// Except now source #1 is preponderant
 		newHeat.z = sourceHeat.x;													// Formerly field 0 is now radiating into field 1
 		newHeat.w = sourceHeat.y;													// Source 0 is now becoming a lesser heat source in field 1
 	} else {
 		// Heat from field 0 is still preponderant, just propagate both fields
-		newHeat.x = sourceHeat.x + deltaTime * diffusionCoefficient * laplacian.x;
+		newHeat.x = sourceHeat.x + diffusionCoefficient * laplacian.x;
 		newHeat.y = largestNeighborSource.y;
-		newHeat.z = sourceHeat.z + deltaTime * diffusionCoefficient * laplacian.y;
+		newHeat.z = sourceHeat.z + diffusionCoefficient * laplacian.y;
 		newHeat.w = sourceHeat.w;
 	}
 #endif
