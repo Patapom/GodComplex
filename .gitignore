@@ -675,3 +675,5 @@ obj
 /Packages/MathSolversManaged/x64
 /Tests/TestGraphHeatEquation/bin
 /Tests/TestGraphHeatEquation/obj
+/Tests/TestGraphHeatEquationV2/bin
+/Tests/TestGraphHeatEquationV3/bin
