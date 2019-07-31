@@ -134,12 +134,13 @@ namespace TestGraphHeatEquation
 			m_CB_Main.m.diffusionCoefficient = floatTrackbarControlDiffusionCoefficient.Value;
 			m_CB_Main.m.flags = (uint) (
 									  (checkBoxShowSearch.Checked ? 1 : 0)
-									| (radioButtonShowLogHeat.Checked ? 2 : 0)
-									| (radioButtonShowVoronoi.Checked ? 4 : 0)
-									| (radioButtonShowLaplacian.Checked ? 6 : 0)
 
-									| (radioButtonShowField1.Checked ? 8 : 0)
-									| (radioButtonShowSumFields.Checked ? 16 : 0)
+									  // 2 bits to select 4 display modes
+									| (radioButtonShowLaplacian.Checked ? 2 : 0)
+									| (radioButtonShowSourceBit.Checked ? 4 : 0)
+									| (radioButtonShowBitField.Checked ? 6 : 0)
+
+									| (checkBoxShowLog.Checked ? 8 : 0)
 								);
 			m_CB_Main.m.sourceIndex = (uint) m_simulationHotSpots.Count - 1;
 			m_CB_Main.UpdateData();
@@ -185,7 +186,7 @@ namespace TestGraphHeatEquation
 
 				m_tex_HeatMap0.SetPS( 0 );
 				m_tex_Obstacles0.SetPS( 1 );
-				if ( radioButtonShowLogHeat.Checked )
+				if ( checkBoxShowLog.Checked )
 					m_tex_FalseColors1.SetPS( 2 );
 				else
 					m_tex_FalseColors0.SetPS( 2 );
@@ -650,12 +651,121 @@ namespace TestGraphHeatEquation
 			groupBoxSearch.Enabled = false;
 		}
 
-		private void checkBox1_CheckedChanged( object sender, EventArgs e ) {
-//			timer1.Enabled = checkBoxRun.Checked;
-		}
-
 		private void buttonReload_Click( object sender, EventArgs e ) {
 			m_device.ReloadModifiedShaders();
+		}
+
+		/// <summary>
+		/// Once the heat waves have collided and formed Voronoi cells, we analyze the boundary regions where 2 IDs collide to keep the pixels where the heat is at its maximum.
+		/// This indicates an inflection point that is in the middle of the Voronoi edge, which is also the shortest point from one source to the other and will constitute a
+		///  perfect spot from which to climb the gradient in the neighbor cell and go back to the adjacent source... (which is what Algo 1 is doing)
+		/// </summary>
+		/// <param name="sender"></param>
+		/// <param name="e"></param>
+		private unsafe void buttonAnalyze_Click( object sender, EventArgs e ) {
+			// 1] Read back simulation
+			float4[,]	heatMap = new float4[GRAPH_SIZE,GRAPH_SIZE];
+			m_tex_HeatMap_Staging.CopyFrom( m_tex_HeatMap0 );
+			m_tex_HeatMap_Staging.ReadPixels( 0, 0, ( uint X, uint Y, BinaryReader R ) => {
+				heatMap[X,Y].Set( R.ReadSingle(), R.ReadSingle(), R.ReadSingle(), R.ReadSingle() );
+			} );
+
+			// 2] Collect the maximum heat position of each pair of boundary pixels
+			float[,]	maxHeatPairs = new float[32,32];	// 32 bits, 32 sources
+			Point[,]	maxHeatPairsPositions = new Point[32,32];
+			Point[]		neighborKernelPos = new Point[8] {
+				new Point( -1, -1 ), new Point(  0, -1 ), new Point( +1, -1 ),
+				new Point( -1,  0 ),					  new Point( +1,  0 ),
+				new Point( -1, +1 ), new Point(  0, +1 ), new Point( +1, +1 ),
+			};
+
+			float4[,]	kernel = new float4[3,3];
+			for ( uint Y=1; Y < GRAPH_SIZE-1; Y++ ) {
+				for ( uint X=1; X < GRAPH_SIZE-1; X++ ) {
+
+					// Read neighborhood
+					for ( int dY=-1; dY <= 1; dY++ ) {
+						for ( int dX=-1; dX <= 1; dX++ ) {
+							kernel[1+dX,1+dY] = heatMap[X+dX,Y+dY];
+						}
+					}
+
+					// Compare neighbor IDs to center ID
+					uint	centerID = AsUint( kernel[1,1].y );
+					if ( centerID == 0 )
+						continue;
+					centerID = ToIndex( centerID );
+					float	centerHeat = kernel[1,1].x;
+
+					for ( uint i=0; i < 8; i++ ) {
+						float4	neighbor = kernel[1+neighborKernelPos[i].X, 1+neighborKernelPos[i].Y];
+						uint	neighborID = AsUint( neighbor.y );
+						if ( neighborID == 0 )
+							continue;
+						neighborID = ToIndex( neighborID );
+
+						if ( centerID == neighborID )
+							continue;	// Same source
+						if ( centerHeat <= maxHeatPairs[centerID,neighborID] )
+							continue;	// Not a maximum
+
+						// Found a new higher spot
+						maxHeatPairs[centerID,neighborID] = centerHeat;
+						maxHeatPairsPositions[centerID,neighborID].X = (int) X;
+						maxHeatPairsPositions[centerID,neighborID].Y = (int) Y;
+					}
+				}
+			}
+
+			// 3] Assign the bitfield for valid pairs
+			for ( uint sourceIndex = 0; sourceIndex < 32; sourceIndex++ ) {
+				for ( uint targetIndex = 0; targetIndex < 32; targetIndex++ ) {
+					if ( maxHeatPairs[sourceIndex,targetIndex] <= 0.0f )
+						continue;	// Invalid pair
+
+					// At this position, we are at a cell boundary and the source voronoi cell is at its maximum
+					// So we assign the target source's index in the bitfield...
+					Point	maxHeatPosition = maxHeatPairsPositions[sourceIndex,targetIndex];
+					heatMap[maxHeatPosition.X,maxHeatPosition.Y].z = AsFloat( ToBit( targetIndex ) );
+				}
+			}
+
+			// 4] Write back updated simulation
+			m_tex_HeatMap_Staging.WritePixels( 0, 0, ( uint X, uint Y, BinaryWriter W ) => {
+				W.Write( heatMap[X,Y].x );
+				W.Write( heatMap[X,Y].y );
+				W.Write( heatMap[X,Y].z );
+				W.Write( heatMap[X,Y].w );
+			} );
+			m_tex_HeatMap0.CopyFrom( m_tex_HeatMap_Staging );
+		}
+
+		unsafe uint	AsUint( float v ) {
+			uint*	pUInt = (uint*) &v;
+			return *pUInt;
+		}
+		unsafe float	AsFloat( uint v ) {
+			float*	pFloat = (float*) &v;
+			return *pFloat;
+		}
+
+		/// <summary>
+		/// Converts the first set bit index into its index
+		/// </summary>
+		/// <param name="_bit"></param>
+		/// <returns></returns>
+		uint	ToIndex( uint _bit ) {
+			uint	index = 0;
+			while ( (_bit & 1) == 0 ) {
+				_bit >>= 1;
+				index++;
+			}
+
+			return index;
+		}
+
+		uint	ToBit( uint _index ) {
+			return 1U << (int) _index;
 		}
 
 		#region Simulation

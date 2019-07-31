@@ -33,14 +33,11 @@
 			this.panel1 = new System.Windows.Forms.Panel();
 			this.radioButtonDiffusionAlgo0 = new System.Windows.Forms.RadioButton();
 			this.radioButtonDiffusionAlgo1 = new System.Windows.Forms.RadioButton();
-			this.panel2 = new System.Windows.Forms.Panel();
-			this.radioButtonShowSumFields = new System.Windows.Forms.RadioButton();
-			this.radioButtonShowField1 = new System.Windows.Forms.RadioButton();
-			this.radioButtonShowField0 = new System.Windows.Forms.RadioButton();
 			this.panel3 = new System.Windows.Forms.Panel();
+			this.checkBoxShowLog = new System.Windows.Forms.CheckBox();
 			this.radioButtonShowLaplacian = new System.Windows.Forms.RadioButton();
-			this.radioButtonShowVoronoi = new System.Windows.Forms.RadioButton();
-			this.radioButtonShowLogHeat = new System.Windows.Forms.RadioButton();
+			this.radioButtonShowBitField = new System.Windows.Forms.RadioButton();
+			this.radioButtonShowSourceBit = new System.Windows.Forms.RadioButton();
 			this.radioButtonShowHeat = new System.Windows.Forms.RadioButton();
 			this.saveFileDialog1 = new System.Windows.Forms.SaveFileDialog();
 			this.openFileDialog1 = new System.Windows.Forms.OpenFileDialog();
@@ -53,8 +50,8 @@
 			this.floatTrackbarControlDiffusionCoefficient = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.groupBoxSearch = new System.Windows.Forms.GroupBox();
 			this.label5 = new System.Windows.Forms.Label();
+			this.buttonAnalyze = new System.Windows.Forms.Button();
 			this.panel1.SuspendLayout();
-			this.panel2.SuspendLayout();
 			this.panel3.SuspendLayout();
 			this.groupBoxSearch.SuspendLayout();
 			this.SuspendLayout();
@@ -70,7 +67,6 @@
 			this.checkBoxRun.TabIndex = 2;
 			this.checkBoxRun.Text = "Run";
 			this.checkBoxRun.UseVisualStyleBackColor = true;
-			this.checkBoxRun.CheckedChanged += new System.EventHandler(this.checkBox1_CheckedChanged);
 			// 
 			// buttonReset
 			// 
@@ -200,6 +196,7 @@
 			// 
 			// panel1
 			// 
+			this.panel1.Controls.Add(this.buttonAnalyze);
 			this.panel1.Controls.Add(this.radioButtonDiffusionAlgo0);
 			this.panel1.Controls.Add(this.radioButtonDiffusionAlgo1);
 			this.panel1.Location = new System.Drawing.Point(666, 46);
@@ -222,7 +219,7 @@
 			// radioButtonDiffusionAlgo1
 			// 
 			this.radioButtonDiffusionAlgo1.AutoSize = true;
-			this.radioButtonDiffusionAlgo1.Location = new System.Drawing.Point(64, 3);
+			this.radioButtonDiffusionAlgo1.Location = new System.Drawing.Point(121, 3);
 			this.radioButtonDiffusionAlgo1.Name = "radioButtonDiffusionAlgo1";
 			this.radioButtonDiffusionAlgo1.Size = new System.Drawing.Size(55, 17);
 			this.radioButtonDiffusionAlgo1.TabIndex = 10;
@@ -230,100 +227,69 @@
 			this.radioButtonDiffusionAlgo1.Text = "Algo 1";
 			this.radioButtonDiffusionAlgo1.UseVisualStyleBackColor = true;
 			// 
-			// panel2
-			// 
-			this.panel2.Controls.Add(this.radioButtonShowSumFields);
-			this.panel2.Controls.Add(this.radioButtonShowField1);
-			this.panel2.Controls.Add(this.radioButtonShowField0);
-			this.panel2.Location = new System.Drawing.Point(533, 100);
-			this.panel2.Name = "panel2";
-			this.panel2.Size = new System.Drawing.Size(289, 23);
-			this.panel2.TabIndex = 13;
-			// 
-			// radioButtonShowSumFields
-			// 
-			this.radioButtonShowSumFields.AutoSize = true;
-			this.radioButtonShowSumFields.Location = new System.Drawing.Point(127, 4);
-			this.radioButtonShowSumFields.Name = "radioButtonShowSumFields";
-			this.radioButtonShowSumFields.Size = new System.Drawing.Size(99, 17);
-			this.radioButtonShowSumFields.TabIndex = 0;
-			this.radioButtonShowSumFields.TabStop = true;
-			this.radioButtonShowSumFields.Text = "Field 0 + Field 1";
-			this.radioButtonShowSumFields.UseVisualStyleBackColor = true;
-			// 
-			// radioButtonShowField1
-			// 
-			this.radioButtonShowField1.AutoSize = true;
-			this.radioButtonShowField1.Location = new System.Drawing.Point(65, 4);
-			this.radioButtonShowField1.Name = "radioButtonShowField1";
-			this.radioButtonShowField1.Size = new System.Drawing.Size(56, 17);
-			this.radioButtonShowField1.TabIndex = 0;
-			this.radioButtonShowField1.TabStop = true;
-			this.radioButtonShowField1.Text = "Field 1";
-			this.radioButtonShowField1.UseVisualStyleBackColor = true;
-			// 
-			// radioButtonShowField0
-			// 
-			this.radioButtonShowField0.AutoSize = true;
-			this.radioButtonShowField0.Checked = true;
-			this.radioButtonShowField0.Location = new System.Drawing.Point(3, 4);
-			this.radioButtonShowField0.Name = "radioButtonShowField0";
-			this.radioButtonShowField0.Size = new System.Drawing.Size(56, 17);
-			this.radioButtonShowField0.TabIndex = 0;
-			this.radioButtonShowField0.TabStop = true;
-			this.radioButtonShowField0.Text = "Field 0";
-			this.radioButtonShowField0.UseVisualStyleBackColor = true;
-			// 
 			// panel3
 			// 
+			this.panel3.Controls.Add(this.checkBoxShowLog);
 			this.panel3.Controls.Add(this.radioButtonShowLaplacian);
-			this.panel3.Controls.Add(this.radioButtonShowVoronoi);
-			this.panel3.Controls.Add(this.radioButtonShowLogHeat);
+			this.panel3.Controls.Add(this.radioButtonShowBitField);
+			this.panel3.Controls.Add(this.radioButtonShowSourceBit);
 			this.panel3.Controls.Add(this.radioButtonShowHeat);
-			this.panel3.Location = new System.Drawing.Point(530, 129);
+			this.panel3.Location = new System.Drawing.Point(530, 104);
 			this.panel3.Name = "panel3";
-			this.panel3.Size = new System.Drawing.Size(312, 27);
+			this.panel3.Size = new System.Drawing.Size(312, 43);
 			this.panel3.TabIndex = 14;
+			// 
+			// checkBoxShowLog
+			// 
+			this.checkBoxShowLog.AutoSize = true;
+			this.checkBoxShowLog.Checked = true;
+			this.checkBoxShowLog.CheckState = System.Windows.Forms.CheckState.Checked;
+			this.checkBoxShowLog.Location = new System.Drawing.Point(3, 23);
+			this.checkBoxShowLog.Name = "checkBoxShowLog";
+			this.checkBoxShowLog.Size = new System.Drawing.Size(44, 17);
+			this.checkBoxShowLog.TabIndex = 1;
+			this.checkBoxShowLog.Text = "Log";
+			this.checkBoxShowLog.UseVisualStyleBackColor = true;
 			// 
 			// radioButtonShowLaplacian
 			// 
 			this.radioButtonShowLaplacian.AutoSize = true;
-			this.radioButtonShowLaplacian.Location = new System.Drawing.Point(165, 0);
+			this.radioButtonShowLaplacian.Location = new System.Drawing.Point(64, 0);
 			this.radioButtonShowLaplacian.Name = "radioButtonShowLaplacian";
 			this.radioButtonShowLaplacian.Size = new System.Drawing.Size(71, 17);
 			this.radioButtonShowLaplacian.TabIndex = 0;
 			this.radioButtonShowLaplacian.Text = "Laplacian";
 			this.radioButtonShowLaplacian.UseVisualStyleBackColor = true;
 			// 
-			// radioButtonShowVoronoi
+			// radioButtonShowBitField
 			// 
-			this.radioButtonShowVoronoi.AutoSize = true;
-			this.radioButtonShowVoronoi.Location = new System.Drawing.Point(131, 0);
-			this.radioButtonShowVoronoi.Name = "radioButtonShowVoronoi";
-			this.radioButtonShowVoronoi.Size = new System.Drawing.Size(36, 17);
-			this.radioButtonShowVoronoi.TabIndex = 0;
-			this.radioButtonShowVoronoi.Text = "ID";
-			this.radioButtonShowVoronoi.UseVisualStyleBackColor = true;
+			this.radioButtonShowBitField.AutoSize = true;
+			this.radioButtonShowBitField.Location = new System.Drawing.Point(216, 0);
+			this.radioButtonShowBitField.Name = "radioButtonShowBitField";
+			this.radioButtonShowBitField.Size = new System.Drawing.Size(62, 17);
+			this.radioButtonShowBitField.TabIndex = 0;
+			this.radioButtonShowBitField.Text = "Bit Field";
+			this.radioButtonShowBitField.UseVisualStyleBackColor = true;
 			// 
-			// radioButtonShowLogHeat
+			// radioButtonShowSourceBit
 			// 
-			this.radioButtonShowLogHeat.AutoSize = true;
-			this.radioButtonShowLogHeat.Checked = true;
-			this.radioButtonShowLogHeat.Location = new System.Drawing.Point(53, 0);
-			this.radioButtonShowLogHeat.Name = "radioButtonShowLogHeat";
-			this.radioButtonShowLogHeat.Size = new System.Drawing.Size(72, 17);
-			this.radioButtonShowLogHeat.TabIndex = 0;
-			this.radioButtonShowLogHeat.TabStop = true;
-			this.radioButtonShowLogHeat.Text = "Log(Heat)";
-			this.radioButtonShowLogHeat.UseVisualStyleBackColor = true;
+			this.radioButtonShowSourceBit.AutoSize = true;
+			this.radioButtonShowSourceBit.Location = new System.Drawing.Point(136, 0);
+			this.radioButtonShowSourceBit.Name = "radioButtonShowSourceBit";
+			this.radioButtonShowSourceBit.Size = new System.Drawing.Size(74, 17);
+			this.radioButtonShowSourceBit.TabIndex = 0;
+			this.radioButtonShowSourceBit.Text = "Source Bit";
+			this.radioButtonShowSourceBit.UseVisualStyleBackColor = true;
 			// 
 			// radioButtonShowHeat
 			// 
 			this.radioButtonShowHeat.AutoSize = true;
+			this.radioButtonShowHeat.Checked = true;
 			this.radioButtonShowHeat.Location = new System.Drawing.Point(1, 0);
 			this.radioButtonShowHeat.Name = "radioButtonShowHeat";
 			this.radioButtonShowHeat.Size = new System.Drawing.Size(48, 17);
 			this.radioButtonShowHeat.TabIndex = 0;
+			this.radioButtonShowHeat.TabStop = true;
 			this.radioButtonShowHeat.Text = "Heat";
 			this.radioButtonShowHeat.UseVisualStyleBackColor = true;
 			// 
@@ -442,6 +408,16 @@
 			this.label5.Text = "*NOTE* Search gets enabled once you have more than a single constant heat source " +
     "(middle mouse button)";
 			// 
+			// buttonAnalyze
+			// 
+			this.buttonAnalyze.Location = new System.Drawing.Point(64, 0);
+			this.buttonAnalyze.Name = "buttonAnalyze";
+			this.buttonAnalyze.Size = new System.Drawing.Size(51, 23);
+			this.buttonAnalyze.TabIndex = 11;
+			this.buttonAnalyze.Text = "Scan";
+			this.buttonAnalyze.UseVisualStyleBackColor = true;
+			this.buttonAnalyze.Click += new System.EventHandler(this.buttonAnalyze_Click);
+			// 
 			// GraphForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -452,7 +428,6 @@
 			this.Controls.Add(this.buttonSave);
 			this.Controls.Add(this.buttonLoad);
 			this.Controls.Add(this.panel3);
-			this.Controls.Add(this.panel2);
 			this.Controls.Add(this.panel1);
 			this.Controls.Add(this.label2);
 			this.Controls.Add(this.buttonReload);
@@ -467,8 +442,6 @@
 			this.Text = "Heat Wave Test";
 			this.panel1.ResumeLayout(false);
 			this.panel1.PerformLayout();
-			this.panel2.ResumeLayout(false);
-			this.panel2.PerformLayout();
 			this.panel3.ResumeLayout(false);
 			this.panel3.PerformLayout();
 			this.groupBoxSearch.ResumeLayout(false);
@@ -498,13 +471,9 @@
 		private System.Windows.Forms.Panel panel1;
 		private System.Windows.Forms.RadioButton radioButtonDiffusionAlgo0;
 		private System.Windows.Forms.RadioButton radioButtonDiffusionAlgo1;
-		private System.Windows.Forms.Panel panel2;
-		private System.Windows.Forms.RadioButton radioButtonShowField1;
-		private System.Windows.Forms.RadioButton radioButtonShowField0;
 		private System.Windows.Forms.Panel panel3;
 		private System.Windows.Forms.RadioButton radioButtonShowLaplacian;
-		private System.Windows.Forms.RadioButton radioButtonShowVoronoi;
-		private System.Windows.Forms.RadioButton radioButtonShowLogHeat;
+		private System.Windows.Forms.RadioButton radioButtonShowSourceBit;
 		private System.Windows.Forms.RadioButton radioButtonShowHeat;
 		private System.Windows.Forms.SaveFileDialog saveFileDialog1;
 		private System.Windows.Forms.OpenFileDialog openFileDialog1;
@@ -516,6 +485,8 @@
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlDiffusionCoefficient;
 		private System.Windows.Forms.GroupBox groupBoxSearch;
 		private System.Windows.Forms.Label label5;
-		private System.Windows.Forms.RadioButton radioButtonShowSumFields;
+		private System.Windows.Forms.RadioButton radioButtonShowBitField;
+		private System.Windows.Forms.CheckBox checkBoxShowLog;
+		private System.Windows.Forms.Button buttonAnalyze;
 	}
 }
