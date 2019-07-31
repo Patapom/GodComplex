@@ -12,14 +12,30 @@ VS_IN	VS( VS_IN _In ) { return _In; }
 void	UpdateGradient( float2 _centralValue, float4 _neighborValue, inout float2 _largestGradient ) {
 	uint	centralBit = asuint(_centralValue.y);
 	uint	neighborBit = asuint(_neighborValue.y);
+	uint	neighborBitField = asuint(_neighborValue.z);
 	if ( neighborBit == centralBit ) {
 		// Same cell, gradient computation is possible
 		float	gradient = _centralValue.x - _neighborValue.x;
-		if ( gradient > _largestGradient.x ) {
+		if ( gradient >= _largestGradient.x ) {
 			_largestGradient.x = gradient;
 			_largestGradient.y = _neighborValue.z;	// Use neighbor's bitfield
 		}
 	}
+}
+
+void	AggregateGradient( float2 _centralValue, float4 _neighborValue, inout uint _bitField ) {
+	uint	centralBit = asuint(_centralValue.y);
+	uint	neighborBit = asuint(_neighborValue.y);
+	if ( neighborBit != centralBit )
+		return;	// Different cell...
+
+	float	gradient = _centralValue.x - _neighborValue.x;
+	if ( gradient < 0.0 )
+		return;	// Central value is lower than neighbor, don't propagate...
+
+	// Aggregate bit field
+	uint	neighborBitField = asuint(_neighborValue.z);
+	_bitField |= neighborBitField;
 }
 
 float4	PS( VS_IN _In ) : SV_TARGET0 {
@@ -49,7 +65,7 @@ float4	PS( VS_IN _In ) : SV_TARGET0 {
 	V[3*0+2] = _texHeatMap[uint2( P.x+1, P.y-1 )];
 
 	V[3*1+0] = _texHeatMap[uint2( P.x-1, P.y+0 )];
-//	V[3*1+1] = sourceHeat
+//	V[3*1+1] = sourceHeat;
 	V[3*1+2] = _texHeatMap[uint2( P.x+1, P.y+0 )];
 
 	V[3*2+0] = _texHeatMap[uint2( P.x-1, P.y+1 )];
@@ -68,9 +84,28 @@ float4	PS( VS_IN _In ) : SV_TARGET0 {
 	V[3*2+1].x *= O2.y;
 	V[3*2+2].x *= O2.z;
 
+#if 1
+	///////////////////////////////////////////////////////////////////
+	// Aggregate bitfields in the direction of the gradient
+	uint	currentBitField = asuint(sourceHeat.z);
+	AggregateGradient( sourceHeat, V[3*0+0], currentBitField );
+	AggregateGradient( sourceHeat, V[3*0+1], currentBitField );
+	AggregateGradient( sourceHeat, V[3*0+2], currentBitField );
+
+	AggregateGradient( sourceHeat, V[3*1+0], currentBitField );
+//	AggregateGradient( sourceHeat, V[3*1+1], currentBitField );
+	AggregateGradient( sourceHeat, V[3*1+2], currentBitField );
+
+	AggregateGradient( sourceHeat, V[3*2+0], currentBitField );
+	AggregateGradient( sourceHeat, V[3*2+1], currentBitField );
+	AggregateGradient( sourceHeat, V[3*2+2], currentBitField );
+
+	sourceHeat.z = asfloat( currentBitField );
+
+#else
 	///////////////////////////////////////////////////////////////////
 	// Propagate neighbor bitfields by following the largest gradient
-	float2	largestGradient = 0;
+	float2	largestGradient = 0;//float2( 0, sourceHeat.y );
 	UpdateGradient( sourceHeat.xy, V[3*0+0], largestGradient );
 	UpdateGradient( sourceHeat.xy, V[3*0+1], largestGradient );
 	UpdateGradient( sourceHeat.xy, V[3*0+2], largestGradient );
@@ -88,6 +123,7 @@ float4	PS( VS_IN _In ) : SV_TARGET0 {
 			centralBitField |= neighborBitField;
 
 	sourceHeat.z = asfloat( centralBitField );
+#endif
 
 	return sourceHeat;
 }

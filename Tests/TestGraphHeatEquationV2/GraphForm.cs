@@ -655,6 +655,8 @@ namespace TestGraphHeatEquation
 			m_device.ReloadModifiedShaders();
 		}
 
+		#region Maximum Heat Boundaries Scanning
+
 		/// <summary>
 		/// Once the heat waves have collided and formed Voronoi cells, we analyze the boundary regions where 2 IDs collide to keep the pixels where the heat is at its maximum.
 		/// This indicates an inflection point that is in the middle of the Voronoi edge, which is also the shortest point from one source to the other and will constitute a
@@ -727,6 +729,8 @@ namespace TestGraphHeatEquation
 					// So we assign the target source's index in the bitfield...
 					Point	maxHeatPosition = maxHeatPairsPositions[sourceIndex,targetIndex];
 					heatMap[maxHeatPosition.X,maxHeatPosition.Y].z = AsFloat( ToBit( targetIndex ) );
+
+					FollowTrail( heatMap, maxHeatPosition, ToBit( targetIndex ) );
 				}
 			}
 
@@ -738,6 +742,52 @@ namespace TestGraphHeatEquation
 				W.Write( heatMap[X,Y].w );
 			} );
 			m_tex_HeatMap0.CopyFrom( m_tex_HeatMap_Staging );
+		}
+
+		void	FollowTrail( float4[,] _heatMap, Point _trailPosition, uint _trailBit ) {
+			float4	centralValue = _heatMap[_trailPosition.X,_trailPosition.Y];
+			uint	cellBit = AsUint( centralValue.y );		// The Voronoi cell we must stand in
+//			uint	sourceBit = AsUint( centralValue.y );	// 
+
+			while ( true ) {
+				// Find largest gradient
+				bool	foundTrail = false;
+				float	maxHeat = centralValue.x;
+				int		bestX = _trailPosition.X, bestY = _trailPosition.Y;
+				for ( uint neighborIndex=0; neighborIndex < 8; neighborIndex++ ) {
+					int	tempX = _trailPosition.X + dXY[neighborIndex][0];
+					if ( tempX < 0 || tempX >= GRAPH_SIZE )
+						continue;
+					int	tempY = _trailPosition.Y + dXY[neighborIndex][1];
+					if ( tempY < 0 || tempY >= GRAPH_SIZE )
+						continue;
+					
+					float4	neighborValue = _heatMap[tempX,tempY];
+					uint	neighborBit = AsUint( neighborValue.y );
+					if ( neighborBit != cellBit )
+						continue;	// Not the same cell...
+					if ( neighborValue.x <= maxHeat )
+						continue;	// Lower heat, wrong direction...
+
+					maxHeat = neighborValue.x;
+					bestX = tempX;
+					bestY = tempY;
+
+					foundTrail = true;
+				}
+
+				if ( !foundTrail )
+					break;	// We've reached a maximum
+
+				// Update trail head's bitfield
+				_trailPosition.X = bestX;
+				_trailPosition.Y = bestY;
+
+				centralValue = _heatMap[_trailPosition.X,_trailPosition.Y];
+				uint	bitField = AsUint( centralValue.z );
+						bitField |= _trailBit;
+				_heatMap[bestX,bestY].z = AsFloat( bitField );
+			}
 		}
 
 		unsafe uint	AsUint( float v ) {
@@ -768,7 +818,9 @@ namespace TestGraphHeatEquation
 			return 1U << (int) _index;
 		}
 
-		#region Simulation
+		#endregion
+
+		#region Search Simulation
 
 		List< Point >	m_simulationHotSpots = new List<Point>();
 		int				m_simulationIteration = -1;
@@ -791,19 +843,14 @@ namespace TestGraphHeatEquation
 		// Simulation data
 		enum SEARCH_PHASE {
 			TARGET_ID_SEARCH,
-			TARGET_ASCENT,
 			SOURCE_DESCENT,
+			TARGET_ASCENT,
 			FINISHED
 		}
 
 		SEARCH_PHASE	m_searchPhase;
 		int				m_simulationX, m_simulationY;
-		float			m_simulationRadius = 0.0f;
 		bool[,]			m_visited = new bool[GRAPH_SIZE,GRAPH_SIZE];
-
-#if true
-		uint			m_targetID;
-		float			m_currentGradient;
 
 		private void buttonStepSimulation_Click( object sender, EventArgs e ) {
 			if ( m_simulationIteration < 0 ) {
@@ -812,82 +859,40 @@ namespace TestGraphHeatEquation
 
 			m_simulationIteration++;
 
-			//////////////////////////////////////////////////////////////////////////
-			// Local search: We start by finding the target ID nearby our start location and ascend the gradient, all the while descending the source gradient
-			float4	current = m_bufferHeat[m_simulationX,m_simulationY];
+			uint	sourceBit = ToBit( (uint) integerTrackbarControlStartPosition.Value );
+			uint	targetBit = ToBit( (uint) integerTrackbarControlTargetPosition.Value );
+
+			float4	currentValue = m_bufferHeat[m_simulationX,m_simulationY];
 
 			switch ( m_searchPhase ) {
 				case SEARCH_PHASE.TARGET_ID_SEARCH: {
-					// At the moment, assume we're standing on a node with the target ID
-					m_targetID = (uint) current.w - 1;	// Keep current secondary ID as target ID
-					m_currentGradient = current.x + current.z;
+					// At the moment, assume we're standing on a node with the target ID in its bitfield
+					uint	currentBitField = AsUint( currentValue.z );
+					if ( (currentBitField & targetBit) != 0 ) {
+						m_visited[m_simulationX,m_simulationY] = true;
+						m_searchPhase = SEARCH_PHASE.SOURCE_DESCENT;	// Found the target trail!
+					} else {
+						for ( uint neighborIndex=0; neighborIndex < 8; neighborIndex++ ) {
+							int	tempX = m_simulationX + dXY[neighborIndex][0];
+							if ( tempX < 0 || tempX >= GRAPH_SIZE )
+								continue;
+							int	tempY = m_simulationY + dXY[neighborIndex][1];
+							if ( tempY < 0 || tempY >= GRAPH_SIZE )
+								continue;
 
-					for ( uint neighborIndex=0; neighborIndex < 8; neighborIndex++ ) {
-						int	tempX = m_simulationX + dXY[neighborIndex][0];
-						if ( tempX < 0 || tempX >= GRAPH_SIZE )
-							continue;
-						int	tempY = m_simulationY + dXY[neighborIndex][1];
-						if ( tempY < 0 || tempY >= GRAPH_SIZE )
-							continue;
-
-						float4	neighborValue = m_bufferHeat[tempX,tempY];
-						uint	neighborID = (uint) neighborValue.w - 1;
-						if ( neighborID != integerTrackbarControlTargetPosition.Value && m_targetID != 0 )
-							continue;	// Not our target ID
-
-						m_simulationX = tempX;
-						m_simulationY = tempY;
+							float4	neighborValue = m_bufferHeat[tempX,tempY];
+							uint	neighborBitField = AsUint( neighborValue.z );
+							if ( (neighborBitField & targetBit) != 0 ) {
+								m_searchPhase = SEARCH_PHASE.SOURCE_DESCENT;
+								break;
+							}
+						}
 					}
-
-					m_searchPhase = SEARCH_PHASE.TARGET_ASCENT;
-
-				} break;
-
-				case SEARCH_PHASE.TARGET_ASCENT: {
-					// We're descending the source gradient (in field #0) and ascending the target gradient (in field #1)
-					float	bestGradient = -1;
-					int		bestX = m_simulationX, bestY = m_simulationY;
-					for ( uint neighborIndex=0; neighborIndex < 8; neighborIndex++ ) {
-						int	tempX = m_simulationX + dXY[neighborIndex][0];
-						if ( tempX < 0 || tempX >= GRAPH_SIZE )
-							continue;
-						int	tempY = m_simulationY + dXY[neighborIndex][1];
-						if ( tempY < 0 || tempY >= GRAPH_SIZE )
-							continue;
-
-						if ( m_visited[tempX,tempY] )
-							continue;	// Don't bother
-
-						float4	neighborValue = m_bufferHeat[tempX,tempY];
-						float	gradient = 0*neighborValue.x + neighborValue.z;
-						if ( gradient < bestGradient )
-							continue;	// Not the ridge!
-
-						bestGradient = gradient;
-						bestX = tempX;
-						bestY = tempY;
-					}
-
-					m_simulationX = bestX;
-					m_simulationY = bestY;
-
-					// Write a single pixel
-					m_bufferSearchResults[m_simulationX,m_simulationY] = 0x000000FFU;
-					m_visited[m_simulationX,m_simulationY] = true;
-
-					// Check we're still following the target ID
-					float4	newValue = m_bufferHeat[m_simulationX,m_simulationY];
-					uint	newID = (uint) newValue.w - 1;
-					if ( newID != m_targetID ) {
-						m_targetID = newID;
-						m_searchPhase = SEARCH_PHASE.SOURCE_DESCENT;	// New phase!
-					}
-
-				} break;
+					break;
+				}
 
 				case SEARCH_PHASE.SOURCE_DESCENT: {
-					// We're descending the source gradient (in field #1) and ascending the target gradient (in field #0)
-					float	bestGradient = -1;
+					// We're descending the source gradient following the target trail
 					int		bestX = m_simulationX, bestY = m_simulationY;
 					for ( uint neighborIndex=0; neighborIndex < 8; neighborIndex++ ) {
 						int	tempX = m_simulationX + dXY[neighborIndex][0];
@@ -901,11 +906,18 @@ namespace TestGraphHeatEquation
 							continue;	// Don't bother
 
 						float4	neighborValue = m_bufferHeat[tempX,tempY];
-						float	gradient = neighborValue.x + 0*neighborValue.z;
-						if ( gradient < bestGradient )
-							continue;	// Not the ridge!
+						uint	cellBit = AsUint( neighborValue.y );
+						if ( cellBit == targetBit ) {
+							// We reached the target cell!
+							bestX = tempX;
+							bestY = tempY;
+							m_searchPhase = SEARCH_PHASE.TARGET_ASCENT;
+							break;
+						}
+						uint	neighborBitField = AsUint( neighborValue.z );
+						if ( (neighborBitField & targetBit) == 0 )
+							continue;	// Not on the trail...
 
-						bestGradient = gradient;
 						bestX = tempX;
 						bestY = tempY;
 					}
@@ -917,13 +929,54 @@ namespace TestGraphHeatEquation
 					m_bufferSearchResults[m_simulationX,m_simulationY] = 0x000000FFU;
 					m_visited[m_simulationX,m_simulationY] = true;
 
-					// Check we're still following the target ID
-					float4	newValue = m_bufferHeat[m_simulationX,m_simulationY];
-					uint	newID = (uint) newValue.w - 1;
-					if ( newID != m_targetID )
+// 					// Check we're still following the target ID
+// 					float4	trailValue = m_bufferHeat[m_simulationX,m_simulationY];
+
+					break;
+				}
+
+				case SEARCH_PHASE.TARGET_ASCENT: {
+					// We're now ascending the target gradient
+					float	bestGradient = 0;
+					int		bestX = m_simulationX, bestY = m_simulationY;
+					for ( uint neighborIndex=0; neighborIndex < 8; neighborIndex++ ) {
+						int	tempX = m_simulationX + dXY[neighborIndex][0];
+						if ( tempX < 0 || tempX >= GRAPH_SIZE )
+							continue;
+						int	tempY = m_simulationY + dXY[neighborIndex][1];
+						if ( tempY < 0 || tempY >= GRAPH_SIZE )
+							continue;
+
+						if ( m_visited[tempX,tempY] )
+							continue;	// Don't bother
+
+						float4	neighborValue = m_bufferHeat[tempX,tempY];
+						uint	neighborBit = AsUint( neighborValue.y );
+						if ( neighborBit != targetBit )
+							continue;	// Not in the target cell...
+
+						float	gradient = neighborValue.x - currentValue.x;
+						if ( gradient < bestGradient )
+							continue;	// Not on the ridge!
+
+						bestGradient = gradient;
+						bestX = tempX;
+						bestY = tempY;
+					}
+
+					if ( bestGradient > 0 ) {
+						m_simulationX = bestX;
+						m_simulationY = bestY;
+
+						// Write a single pixel
+						m_bufferSearchResults[m_simulationX,m_simulationY] = 0x000000FFU;
+						m_visited[m_simulationX,m_simulationY] = true;
+					} else {
 						m_searchPhase = SEARCH_PHASE.FINISHED;	// We're done!
+					}
 
-				} break;
+					break;
+				}
 			}
 
 			// Update search results texture
@@ -931,92 +984,6 @@ namespace TestGraphHeatEquation
 				UpdateSearchResults();
 			}
 		}
-
-#else
-		private void buttonStepSimulation_Click( object sender, EventArgs e ) {
-			if ( m_simulationIteration < 0 ) {
-				buttonResetSimulation_Click( sender, e );
-			}
-
-			m_simulationIteration++;
-
-			if ( radioButtonSearchAlgo0.Checked ) {
-				//////////////////////////////////////////////////////////////////////////
-				// Local search: Select second highest value from last search position
-				float	largestValue = 0.0f;
-				float	secondLargestValue = 0.0f;
-				int		sX = m_simulationX, sY = m_simulationY;
-				int		X = m_simulationX, Y = m_simulationY;
-
-				for ( int i=0; i < 8; i++ ) {
-					int	tempX = m_simulationX + dXY[i][0];
-					int	tempY = m_simulationY + dXY[i][1];
-					if ( tempX < 0 || tempX >= GRAPH_SIZE )
-						continue;
-					if ( tempY < 0 || tempY >= GRAPH_SIZE )
-						continue;
-					if ( m_visited[tempX,tempY] )
-						continue;	// Already visited
-
-					float	value = m_bufferHeat[tempX,tempY].x;
-					if ( value <= largestValue )
-						continue;
-
-					sX = X; sY = Y;
-					secondLargestValue = largestValue;
-					X = tempX; Y = tempY;
-					largestValue = value;
-				}
-
-//sX = X; sY = Y;
-
-				// Write a single pixel
-				m_bufferSearchResults[sX,sY] = 0x000000FFU;
-				m_visited[sX,sY] = true;
-m_visited[X,Y] = true;	// Also mark maximum as visited to avoid getting trapped
-
-				m_simulationX = sX;
-				m_simulationY = sY;
-
-			} else if ( radioButtonSearchAlgo1.Checked ) {
-				//////////////////////////////////////////////////////////////////////////
-				// Global search: the search radius is increased and we examine all pixels within the radius and select the one with the highest value
-				m_simulationRadius += 1.0f;
-
-				Point	center = m_simulationHotSpots[integerTrackbarControlStartPosition.Value];
-
-				// Walk the circle and find the largest value
-				float	largestValue = 0.0f;
-				int		X = 0, Y = 0;
-				uint	pixelsCount = (uint) Mathf.Ceiling( Mathf.TWOPI * m_simulationRadius );
-				for ( uint pixelIndex=0; pixelIndex < pixelsCount; pixelIndex++ ) {
-					float	angle = pixelIndex * Mathf.TWOPI / pixelsCount;
-					int		tempX = center.X + (int) Mathf.Floor( m_simulationRadius * Mathf.Cos( angle ) );
-					int		tempY = center.Y + (int) Mathf.Floor( m_simulationRadius * Mathf.Sin( angle ) );
-					if ( tempX < 0 || tempX >= GRAPH_SIZE )
-						continue;
-					if ( tempY < 0 || tempY >= GRAPH_SIZE )
-						continue;
-
-					float	heat = m_bufferHeat[tempX,tempY].x;
-					if ( heat <= largestValue )
-						continue;
-
-					largestValue = heat;
-					X = tempX;
-					Y = tempY;
-				}
-
-				// Write a single pixel
-				m_bufferSearchResults[X,Y] = 0x000000FFU;
-			}
-
-			// Update search results texture
-			if ( sender != null ) {
-				UpdateSearchResults();
-			}
-		}
-#endif
 
 		void	ReadBackHeat() {
 			m_tex_HeatMap_Staging.CopyFrom( m_tex_HeatMap0 );
@@ -1049,7 +1016,6 @@ m_visited[X,Y] = true;	// Also mark maximum as visited to avoid getting trapped
 			ReadBackHeat();
 
 			m_searchPhase = SEARCH_PHASE.TARGET_ID_SEARCH;
-			m_simulationRadius = 0.0f;
 			if ( m_simulationHotSpots.Count > 0 ) {
 				m_simulationX = m_simulationHotSpots[integerTrackbarControlStartPosition.Value].X;
 				m_simulationY = m_simulationHotSpots[integerTrackbarControlStartPosition.Value].Y;
