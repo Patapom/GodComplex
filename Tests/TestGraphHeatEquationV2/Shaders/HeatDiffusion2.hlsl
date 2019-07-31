@@ -9,13 +9,17 @@ struct VS_IN {
 
 VS_IN	VS( VS_IN _In ) { return _In; }
 
-void	Compare( float4 _value, uint _centralBit, inout float4 _largest ) {
-	uint	neighborBit = asuint(_value.y);
-//	if ( _value.x > _largest.x && neighborBit != _centralBit )
-	if ( neighborBit != _centralBit )
-		_largest.xy = _value.xy;		// Only check for different neighbor is enough
-	else if ( _value.x > _largest.z )
-		_largest.zw = _value.xy;		// If neighbors have the same source, keep the largest
+void	UpdateGradient( float2 _centralValue, float4 _neighborValue, inout float2 _largestGradient ) {
+	uint	centralBit = asuint(_centralValue.y);
+	uint	neighborBit = asuint(_neighborValue.y);
+	if ( neighborBit == centralBit ) {
+		// Same cell, gradient computation is possible
+		float	gradient = _centralValue.x - _neighborValue.x;
+		if ( gradient > _largestGradient.x ) {
+			_largestGradient.x = gradient;
+			_largestGradient.y = _neighborValue.z;	// Use neighbor's bitfield
+		}
+	}
 }
 
 float4	PS( VS_IN _In ) : SV_TARGET0 {
@@ -31,7 +35,7 @@ float4	PS( VS_IN _In ) : SV_TARGET0 {
 //	}
 
 	///////////////////////////////////////////////////////////////////
-	// Compute heat laplacian
+	// Read neighbors
 	uint3	O0 = uint3( !_texObstacles[uint2( Po.x-1, Po.y-1 )].x, !_texObstacles[uint2( Po.x+0, Po.y-1 )].x, !_texObstacles[uint2( Po.x+1, Po.y-1 )].x );
 	uint3	O1 = uint3( !_texObstacles[uint2( Po.x-1, Po.y+0 )].x, !obstacles.x,							  !_texObstacles[uint2( Po.x+1, Po.y+0 )].x );
 	uint3	O2 = uint3( !_texObstacles[uint2( Po.x-1, Po.y+1 )].x, !_texObstacles[uint2( Po.x+0, Po.y+1 )].x, !_texObstacles[uint2( Po.x+1, Po.y+1 )].x );
@@ -64,43 +68,26 @@ float4	PS( VS_IN _In ) : SV_TARGET0 {
 	V[3*2+1].x *= O2.y;
 	V[3*2+2].x *= O2.z;
 
-	float	laplacian = V[3*0+0].x + V[3*0+1].x + V[3*0+2].x
-					  + V[3*1+0].x			    + V[3*1+2].x
-					  + V[3*2+0].x + V[3*2+1].x + V[3*2+2].x
-					  - neighborsCount * sourceHeat.x;
-
-	// Normalize
-	laplacian *= neighborsCount > 0 ? 1.0 / neighborsCount : 0;
-
-
 	///////////////////////////////////////////////////////////////////
-	// Find largest neighbors for both fields
-	float4	largestNeighborSource = float4( sourceHeat.xy, 0, 0 );
-	uint	centralBit = asuint(sourceHeat.y);
-	Compare( V[3*0+0], centralBit, largestNeighborSource );
-	Compare( V[3*0+1], centralBit, largestNeighborSource );
-	Compare( V[3*0+2], centralBit, largestNeighborSource );
+	// Propagate neighbor bitfields by following the largest gradient
+	float2	largestGradient = 0;
+	UpdateGradient( sourceHeat.xy, V[3*0+0], largestGradient );
+	UpdateGradient( sourceHeat.xy, V[3*0+1], largestGradient );
+	UpdateGradient( sourceHeat.xy, V[3*0+2], largestGradient );
 
-	Compare( V[3*1+0], centralBit, largestNeighborSource );
-//	Compare( V[3*1+1], centralBit, largestNeighborSource );
-	Compare( V[3*1+2], centralBit, largestNeighborSource );
+	UpdateGradient( sourceHeat.xy, V[3*1+0], largestGradient );
+//	UpdateGradient( sourceHeat.xy, V[3*1+1], largestGradient );
+	UpdateGradient( sourceHeat.xy, V[3*1+2], largestGradient );
 
-	Compare( V[3*2+0], centralBit, largestNeighborSource );
-	Compare( V[3*2+1], centralBit, largestNeighborSource );
-	Compare( V[3*2+2], centralBit, largestNeighborSource );
+	UpdateGradient( sourceHeat.xy, V[3*2+0], largestGradient );
+	UpdateGradient( sourceHeat.xy, V[3*2+1], largestGradient );
+	UpdateGradient( sourceHeat.xy, V[3*2+2], largestGradient );
 
+	uint	centralBitField = asuint( sourceHeat.z );
+	uint	neighborBitField = asuint( largestGradient.y );
+			centralBitField |= neighborBitField;
 
-	///////////////////////////////////////////////////////////////////
-	// Assign bitfields at Voronoi cell boundary (null laplacian) and at saddle points (center of cell boundary edge)
-	float4	newHeat = sourceHeat;
-//	if ( laplacian.x < 1e-6 ) {
-//	if ( largestNeighborSource.y != sourceHeat.y && largestNeighborSource.y != 0 ) {
-	if ( asuint(largestNeighborSource.y) != asuint(sourceHeat.y) ) {
+	sourceHeat.z = asfloat( centralBitField );
 
-		// Check if none of our neighbors is higher than us, this means we're at the inflection point of the heat front
-		if ( largestNeighborSource.z < sourceHeat.x )
-			newHeat.z = largestNeighborSource.y;
-	}
-
-	return newHeat;
+	return sourceHeat;
 }
