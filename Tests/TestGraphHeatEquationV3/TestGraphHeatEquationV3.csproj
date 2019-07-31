@@ -106,6 +106,10 @@
       <Project>{f96cdfd3-8954-4f4f-afb0-2855d98f051b}</Project>
       <Name>Renderer</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\Packages\SharpMath\MathAdvanced.csproj">
+      <Project>{dd026a89-c5fe-4150-bc85-a660e427826a}</Project>
+      <Name>MathAdvanced</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="GraphForm.resx">
@@ -126,9 +130,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\DrawObstacles.hlsl" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Shaders\HeatDiffusion2.hlsl" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

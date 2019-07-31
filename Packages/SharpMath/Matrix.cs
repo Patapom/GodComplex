@@ -77,32 +77,38 @@ namespace SharpMath
 			return R;
 		}
 
-		static public double[]		operator*( double[] _V, Matrix _A )
-		{
-			if ( _V.Length != _A.N )
-				throw new Exception( "A and V dimensions mismatch !" );
-
-			int N = _A.N;
+		static public double[]		operator*( double[] _V, Matrix _A ) {
 			double[]	R = new double[_V.Length];
-			for ( int j=0; j < N; j++ )		// Column
-				for ( int i=0; i < N; i++ )	// Row
-					R[j] += _V[i] * _A.m[i,j];
-
+			Mul( _V, _A, R );
 			return R;
 		}
 
-		static public double[]		operator*( Matrix _A, double[] _V )
-		{
+		static public double[]		operator*( Matrix _A, double[] _V ) {
+			double[]	R = new double[_V.Length];
+			Mul( _A, _V, R );
+			return R;
+		}
+
+		static public void		Mul( double[] _V, Matrix _A, double[] _result ) {
 			if ( _V.Length != _A.N )
 				throw new Exception( "A and V dimensions mismatch !" );
 
 			int N = _A.N;
-			double[]	R = new double[_V.Length];
+			Array.Clear( _result, 0, N );
+			for ( int j=0; j < N; j++ )		// Column
+				for ( int i=0; i < N; i++ )	// Row
+					_result[j] += _V[i] * _A.m[i,j];
+		}
+
+		static public void		Mul( Matrix _A, double[] _V, double[] _result ) {
+			if ( _V.Length != _A.N )
+				throw new Exception( "A and V dimensions mismatch !" );
+
+			int N = _A.N;
+			Array.Clear( _result, 0, N );
 			for ( int i=0; i < N; i++ )		// Row
 				for ( int j=0; j < N; j++ )	// Column
-					R[i] += _V[j] * _A.m[i,j];
-
-			return R;
+					_result[i] += _V[j] * _A.m[i,j];
 		}
 
 		// Addition

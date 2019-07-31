@@ -14,7 +14,7 @@ using SharpMath;
 using Nuaj.Cirrus.Utility;
 using Nuaj.Cirrus;
 
-namespace TestGraphHeatEquation
+namespace TestGraphHeatEquationV3
 {
 	public partial class GraphForm : Form
 	{
@@ -43,15 +43,16 @@ namespace TestGraphHeatEquation
 
 		private ConstantBuffer<CB_Main>	m_CB_Main = null;
 		private Shader					m_shader_RenderHeatMap = null;
-		private Shader					m_shader_HeatDiffusion0 = null;
-		private Shader					m_shader_HeatDiffusion1 = null;
+		private Shader					m_shader_HeatDiffusion = null;
 		private Shader					m_shader_DrawObstacles = null;
 		private Texture2D				m_tex_HeatMap_Staging = null;
 		private Texture2D				m_tex_HeatMap0 = null;
 		private Texture2D				m_tex_HeatMap1 = null;
+		private Texture2D				m_tex_Obstacles_Staging = null;
 		private Texture2D				m_tex_Obstacles0 = null;
 		private Texture2D				m_tex_Obstacles1 = null;
-		private Texture2D				m_tex_Obstacles_Staging = null;
+		private Texture2D				m_tex_NormalizedHeatMap_Staging = null;
+		private Texture2D				m_tex_NormalizedHeatMap = null;
 
 		private Texture2D				m_tex_Search = null;
 		private Texture2D				m_tex_Search_Staging = null;
@@ -63,8 +64,7 @@ namespace TestGraphHeatEquation
 
 		#region METHODS
 
-		public GraphForm()
-		{
+		public GraphForm() {
 			InitializeComponent();
 
 //			GraphSeparabilityTest();
@@ -84,18 +84,17 @@ namespace TestGraphHeatEquation
 
 			m_CB_Main = new ConstantBuffer<CB_Main>( m_device, 0 );
 
-			m_shader_HeatDiffusion0 = new Shader( m_device, new FileInfo( "./Shaders/HeatDiffusion.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
-			m_shader_HeatDiffusion1 = new Shader( m_device, new FileInfo( "./Shaders/HeatDiffusion2.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+			m_shader_HeatDiffusion = new Shader( m_device, new FileInfo( "./Shaders/HeatDiffusion.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 			m_shader_RenderHeatMap = new Shader( m_device, new FileInfo( "./Shaders/RenderHeatMap.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 			m_shader_DrawObstacles = new Shader( m_device, new FileInfo( "./Shaders/DrawObstacles.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 
 			m_tex_HeatMap_Staging = new Texture2D( m_device, (uint) GRAPH_SIZE, (uint) GRAPH_SIZE, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA32F, ImageUtility.COMPONENT_FORMAT.AUTO, true, false, null );
 			m_tex_HeatMap0 = new Texture2D( m_device, (uint) GRAPH_SIZE, (uint) GRAPH_SIZE, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, false, null );
 			m_tex_HeatMap1 = new Texture2D( m_device, (uint) GRAPH_SIZE, (uint) GRAPH_SIZE, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, false, null );
+			m_tex_Obstacles_Staging = new Texture2D( m_device, (uint) GRAPH_SIZE + 2, (uint) GRAPH_SIZE + 2, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA8, ImageUtility.COMPONENT_FORMAT.UNORM, true, false, null );
 			m_tex_Obstacles0 = new Texture2D( m_device, (uint) GRAPH_SIZE + 2, (uint) GRAPH_SIZE + 2, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA8, ImageUtility.COMPONENT_FORMAT.UNORM, false, false, null );
 			m_tex_Obstacles1 = new Texture2D( m_device, (uint) GRAPH_SIZE + 2, (uint) GRAPH_SIZE + 2, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA8, ImageUtility.COMPONENT_FORMAT.UNORM, false, false, null );
-			m_tex_Obstacles_Staging = new Texture2D( m_device, (uint) GRAPH_SIZE + 2, (uint) GRAPH_SIZE + 2, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA8, ImageUtility.COMPONENT_FORMAT.UNORM, true, false, null );
-			ClearObstacles();
+			ResetDefaultObstaclesTexture();
 			buttonResetObstacles_Click( null, EventArgs.Empty );
 
 			m_tex_Search = new Texture2D( m_device, (uint) GRAPH_SIZE, (uint) GRAPH_SIZE, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA8, ImageUtility.COMPONENT_FORMAT.UNORM, false, false, null );
@@ -136,13 +135,11 @@ namespace TestGraphHeatEquation
 									  (checkBoxShowSearch.Checked ? 1 : 0)
 
 									  // 2 bits to select 4 display modes
-									| (radioButtonShowLaplacian.Checked ? 2 : 0)
-									| (radioButtonShowSourceBit.Checked ? 4 : 0)
-									| (radioButtonShowBitField.Checked ? 6 : 0)
+									| (radioButtonShowNormalizedSpace.Checked ? 2 : 0)
 
 									| (checkBoxShowLog.Checked ? 8 : 0)
 								);
-			m_CB_Main.m.sourceIndex = (uint) m_simulationHotSpots.Count - 1;
+			m_CB_Main.m.sourceIndex = (uint) integerTrackbarControlSimulationSourceIndex.Value;
 			m_CB_Main.UpdateData();
 
 			m_plotSource = false;
@@ -164,14 +161,13 @@ namespace TestGraphHeatEquation
 
 			//////////////////////////////////////////////////////////////////////////
 			// Perform heat diffusion test
-			Shader	S = radioButtonDiffusionAlgo0.Checked ? m_shader_HeatDiffusion0 : m_shader_HeatDiffusion1;
-			if ( checkBoxRun.Checked && S.Use() ) {
+			if ( checkBoxRun.Checked && m_shader_HeatDiffusion.Use() ) {
 				m_device.SetRenderTarget( m_tex_HeatMap1, null );
 
 				m_tex_HeatMap0.SetPS( 0 );
 				m_tex_Obstacles0.SetPS( 1 );
 
-				m_device.RenderFullscreenQuad( S );
+				m_device.RenderFullscreenQuad( m_shader_HeatDiffusion );
 
 				// Swap
 				Texture2D	temp = m_tex_HeatMap0;
@@ -196,6 +192,24 @@ namespace TestGraphHeatEquation
 			}
 
 			m_device.Present( false );
+
+			// Auto-simulation across all sources
+			if ( checkBoxAutoSimulate.Checked ) {
+				m_simulationIterationIndex++;
+				if ( m_simulationIterationIndex == integerTrackbarControlIterationsCount.Value ) {
+					m_simulationIterationIndex = 0;
+
+					if ( integerTrackbarControlSimulationSourceIndex.Value == m_simulationHotSpots.Count-1 ) {
+						// We've reach the end of the simulation
+						DownloadHeatMap( integerTrackbarControlSimulationSourceIndex.Value );
+						checkBoxAutoSimulate.Checked = false;
+						checkBoxRun.Checked = false;
+					} else {
+						// Go to next source
+						integerTrackbarControlSimulationSourceIndex.Value++;
+					}
+				}
+			}
 		}
 
 		#region Graph Building
@@ -608,15 +622,14 @@ namespace TestGraphHeatEquation
 
 				m_tex_Search_Staging.Dispose();
 				m_tex_Search.Dispose();
-				m_tex_Obstacles_Staging.Dispose();
 				m_tex_Obstacles1.Dispose();
 				m_tex_Obstacles0.Dispose();
+				m_tex_Obstacles_Staging.Dispose();
 				m_tex_HeatMap1.Dispose();
 				m_tex_HeatMap0.Dispose();
 				m_tex_HeatMap_Staging.Dispose();
 				m_shader_DrawObstacles.Dispose();
-				m_shader_HeatDiffusion1.Dispose();
-				m_shader_HeatDiffusion0.Dispose();
+				m_shader_HeatDiffusion.Dispose();
 				m_shader_RenderHeatMap.Dispose();
 				m_CB_Main.Dispose();
 
@@ -627,7 +640,7 @@ namespace TestGraphHeatEquation
 			base.Dispose( disposing );
 		}
 
-		void	ClearObstacles() {
+		void	ResetDefaultObstaclesTexture() {
 			m_tex_Obstacles_Staging.WritePixels( 0, 0, ( uint _X, uint _Y, BinaryWriter W ) => {
 				bool	obstacle = _X == 0 || _Y == 0 || _X == GRAPH_SIZE+1 || _Y == GRAPH_SIZE+1;
 				if ( obstacle )
@@ -641,13 +654,23 @@ namespace TestGraphHeatEquation
 
 		#region EVENT HANDLERS
 
-		private void button1_Click( object sender, EventArgs e ) {
-			m_device.Clear( m_tex_HeatMap0, float4.Zero );
+		private void buttonReset_Click( object sender, EventArgs e ) {
+			m_simulationHeatMap[integerTrackbarControlSimulationSourceIndex.Value] = new float4[GRAPH_SIZE,GRAPH_SIZE];
+			integerTrackbarControlSimulationSourceIndex_ValueChanged( null, -1 );
+		}
+
+		private void buttonResetAll_Click( object sender, EventArgs e ) {
+			for ( int i=0; i < m_simulationHeatMap.Count; i++ )
+				m_simulationHeatMap[i] = new float4[GRAPH_SIZE,GRAPH_SIZE];
+			integerTrackbarControlSimulationSourceIndex_ValueChanged( null, -1 );
 		}
 
 		private void buttonResetObstacles_Click( object sender, EventArgs e ) {
 			m_tex_Obstacles0.CopyFrom( m_tex_Obstacles_Staging );
 			m_simulationHotSpots.Clear();
+			m_simulationHeatMap.Clear();
+			checkBoxAutoSimulate.Enabled = false;
+			integerTrackbarControlSimulationSourceIndex.Enabled = false;
 			groupBoxSearch.Enabled = false;
 		}
 
@@ -655,384 +678,11 @@ namespace TestGraphHeatEquation
 			m_device.ReloadModifiedShaders();
 		}
 
-		#region Maximum Heat Boundaries Scanning
+		private void checkBoxRun_CheckedChanged( object sender, EventArgs e ) {
+			if ( !checkBoxRun.Checked )
+				DownloadHeatMap( integerTrackbarControlSimulationSourceIndex.Value );	// Download results
 
-		/// <summary>
-		/// Once the heat waves have collided and formed Voronoi cells, we analyze the boundary regions where 2 IDs collide to keep the pixels where the heat is at its maximum.
-		/// This indicates an inflection point that is in the middle of the Voronoi edge, which is also the shortest point from one source to the other and will constitute a
-		///  perfect spot from which to climb the gradient in the neighbor cell and go back to the adjacent source... (which is what Algo 1 is doing)
-		/// </summary>
-		/// <param name="sender"></param>
-		/// <param name="e"></param>
-		private unsafe void buttonAnalyze_Click( object sender, EventArgs e ) {
-			// 1] Read back simulation
-			float4[,]	heatMap = new float4[GRAPH_SIZE,GRAPH_SIZE];
-			m_tex_HeatMap_Staging.CopyFrom( m_tex_HeatMap0 );
-			m_tex_HeatMap_Staging.ReadPixels( 0, 0, ( uint X, uint Y, BinaryReader R ) => {
-				heatMap[X,Y].Set( R.ReadSingle(), R.ReadSingle(), R.ReadSingle(), R.ReadSingle() );
-			} );
-
-			// 2] Collect the maximum heat position of each pair of boundary pixels
-			float[,]	maxHeatPairs = new float[32,32];	// 32 bits, 32 sources
-			Point[,]	maxHeatPairsPositions = new Point[32,32];
-			Point[]		neighborKernelPos = new Point[8] {
-				new Point( -1, -1 ), new Point(  0, -1 ), new Point( +1, -1 ),
-				new Point( -1,  0 ),					  new Point( +1,  0 ),
-				new Point( -1, +1 ), new Point(  0, +1 ), new Point( +1, +1 ),
-			};
-
-			float4[,]	kernel = new float4[3,3];
-			for ( uint Y=1; Y < GRAPH_SIZE-1; Y++ ) {
-				for ( uint X=1; X < GRAPH_SIZE-1; X++ ) {
-
-					// Read neighborhood
-					for ( int dY=-1; dY <= 1; dY++ ) {
-						for ( int dX=-1; dX <= 1; dX++ ) {
-							kernel[1+dX,1+dY] = heatMap[X+dX,Y+dY];
-						}
-					}
-
-					// Compare neighbor IDs to center ID
-					uint	centerID = AsUint( kernel[1,1].y );
-					if ( centerID == 0 )
-						continue;
-					centerID = ToIndex( centerID );
-					float	centerHeat = kernel[1,1].x;
-
-					for ( uint i=0; i < 8; i++ ) {
-						float4	neighbor = kernel[1+neighborKernelPos[i].X, 1+neighborKernelPos[i].Y];
-						uint	neighborID = AsUint( neighbor.y );
-						if ( neighborID == 0 )
-							continue;
-						neighborID = ToIndex( neighborID );
-
-						if ( centerID == neighborID )
-							continue;	// Same source
-						if ( centerHeat <= maxHeatPairs[centerID,neighborID] )
-							continue;	// Not a maximum
-
-						// Found a new higher spot
-						maxHeatPairs[centerID,neighborID] = centerHeat;
-						maxHeatPairsPositions[centerID,neighborID].X = (int) X;
-						maxHeatPairsPositions[centerID,neighborID].Y = (int) Y;
-					}
-				}
-			}
-
-			// 3] Assign the bitfield for valid pairs
-			for ( uint sourceIndex = 0; sourceIndex < 32; sourceIndex++ ) {
-				for ( uint targetIndex = 0; targetIndex < 32; targetIndex++ ) {
-					if ( maxHeatPairs[sourceIndex,targetIndex] <= 0.0f )
-						continue;	// Invalid pair
-
-					// At this position, we are at a cell boundary and the source voronoi cell is at its maximum
-					// So we assign the target source's index in the bitfield...
-					Point	maxHeatPosition = maxHeatPairsPositions[sourceIndex,targetIndex];
-					heatMap[maxHeatPosition.X,maxHeatPosition.Y].z = AsFloat( ToBit( targetIndex ) );
-
-					FollowTrail( heatMap, maxHeatPosition, ToBit( targetIndex ) );
-				}
-			}
-
-			// 4] Write back updated simulation
-			m_tex_HeatMap_Staging.WritePixels( 0, 0, ( uint X, uint Y, BinaryWriter W ) => {
-				W.Write( heatMap[X,Y].x );
-				W.Write( heatMap[X,Y].y );
-				W.Write( heatMap[X,Y].z );
-				W.Write( heatMap[X,Y].w );
-			} );
-			m_tex_HeatMap0.CopyFrom( m_tex_HeatMap_Staging );
-		}
-
-		void	FollowTrail( float4[,] _heatMap, Point _trailPosition, uint _trailBit ) {
-			float4	centralValue = _heatMap[_trailPosition.X,_trailPosition.Y];
-			uint	cellBit = AsUint( centralValue.y );		// The Voronoi cell we must stand in
-//			uint	sourceBit = AsUint( centralValue.y );	// 
-
-			while ( true ) {
-				// Find largest gradient
-				bool	foundTrail = false;
-				float	maxHeat = centralValue.x;
-				int		bestX = _trailPosition.X, bestY = _trailPosition.Y;
-				for ( uint neighborIndex=0; neighborIndex < 8; neighborIndex++ ) {
-					int	tempX = _trailPosition.X + dXY[neighborIndex][0];
-					if ( tempX < 0 || tempX >= GRAPH_SIZE )
-						continue;
-					int	tempY = _trailPosition.Y + dXY[neighborIndex][1];
-					if ( tempY < 0 || tempY >= GRAPH_SIZE )
-						continue;
-					
-					float4	neighborValue = _heatMap[tempX,tempY];
-					uint	neighborBit = AsUint( neighborValue.y );
-					if ( neighborBit != cellBit )
-						continue;	// Not the same cell...
-					if ( neighborValue.x <= maxHeat )
-						continue;	// Lower heat, wrong direction...
-
-					maxHeat = neighborValue.x;
-					bestX = tempX;
-					bestY = tempY;
-
-					foundTrail = true;
-				}
-
-				if ( !foundTrail )
-					break;	// We've reached a maximum
-
-				// Update trail head's bitfield
-				_trailPosition.X = bestX;
-				_trailPosition.Y = bestY;
-
-				centralValue = _heatMap[_trailPosition.X,_trailPosition.Y];
-				uint	bitField = AsUint( centralValue.z );
-						bitField |= _trailBit;
-				_heatMap[bestX,bestY].z = AsFloat( bitField );
-			}
-		}
-
-		unsafe uint	AsUint( float v ) {
-			uint*	pUInt = (uint*) &v;
-			return *pUInt;
-		}
-		unsafe float	AsFloat( uint v ) {
-			float*	pFloat = (float*) &v;
-			return *pFloat;
-		}
-
-		/// <summary>
-		/// Converts the first set bit index into its index
-		/// </summary>
-		/// <param name="_bit"></param>
-		/// <returns></returns>
-		uint	ToIndex( uint _bit ) {
-			uint	index = 0;
-			while ( (_bit & 1) == 0 ) {
-				_bit >>= 1;
-				index++;
-			}
-
-			return index;
-		}
-
-		uint	ToBit( uint _index ) {
-			return 1U << (int) _index;
-		}
-
-		#endregion
-
-		#region Search Simulation
-
-		List< Point >	m_simulationHotSpots = new List<Point>();
-		int				m_simulationIteration = -1;
-
-		float4[,]		m_bufferHeat = new float4[GRAPH_SIZE,GRAPH_SIZE];
-		uint[,]			m_bufferSearchResults = new uint[GRAPH_SIZE,GRAPH_SIZE];
-
-		int[][]	dXY = new int[8][] {
-			new int[] { -1, -1 },
-			new int[] {  0, -1 },
-			new int[] { +1, -1 },
-			new int[] { -1,  0 },
-//			new int[] {  0,  0 },
-			new int[] { +1,  0 },
-			new int[] { -1, +1 },
-			new int[] {  0, +1 },
-			new int[] { +1, +1 },
-		};
-
-		// Simulation data
-		enum SEARCH_PHASE {
-			TARGET_ID_SEARCH,
-			SOURCE_DESCENT,
-			TARGET_ASCENT,
-			FINISHED
-		}
-
-		SEARCH_PHASE	m_searchPhase;
-		int				m_simulationX, m_simulationY;
-		bool[,]			m_visited = new bool[GRAPH_SIZE,GRAPH_SIZE];
-
-		private void buttonStepSimulation_Click( object sender, EventArgs e ) {
-			if ( m_simulationIteration < 0 ) {
-				buttonResetSimulation_Click( sender, e );
-			}
-
-			m_simulationIteration++;
-
-			uint	sourceBit = ToBit( (uint) integerTrackbarControlStartPosition.Value );
-			uint	targetBit = ToBit( (uint) integerTrackbarControlTargetPosition.Value );
-
-			float4	currentValue = m_bufferHeat[m_simulationX,m_simulationY];
-
-			switch ( m_searchPhase ) {
-				case SEARCH_PHASE.TARGET_ID_SEARCH: {
-					// At the moment, assume we're standing on a node with the target ID in its bitfield
-					uint	currentBitField = AsUint( currentValue.z );
-					if ( (currentBitField & targetBit) != 0 ) {
-						m_visited[m_simulationX,m_simulationY] = true;
-						m_searchPhase = SEARCH_PHASE.SOURCE_DESCENT;	// Found the target trail!
-					} else {
-						for ( uint neighborIndex=0; neighborIndex < 8; neighborIndex++ ) {
-							int	tempX = m_simulationX + dXY[neighborIndex][0];
-							if ( tempX < 0 || tempX >= GRAPH_SIZE )
-								continue;
-							int	tempY = m_simulationY + dXY[neighborIndex][1];
-							if ( tempY < 0 || tempY >= GRAPH_SIZE )
-								continue;
-
-							float4	neighborValue = m_bufferHeat[tempX,tempY];
-							uint	neighborBitField = AsUint( neighborValue.z );
-							if ( (neighborBitField & targetBit) != 0 ) {
-								m_searchPhase = SEARCH_PHASE.SOURCE_DESCENT;
-								break;
-							}
-						}
-					}
-					break;
-				}
-
-				case SEARCH_PHASE.SOURCE_DESCENT: {
-					// We're descending the source gradient following the target trail
-					int		bestX = m_simulationX, bestY = m_simulationY;
-					for ( uint neighborIndex=0; neighborIndex < 8; neighborIndex++ ) {
-						int	tempX = m_simulationX + dXY[neighborIndex][0];
-						if ( tempX < 0 || tempX >= GRAPH_SIZE )
-							continue;
-						int	tempY = m_simulationY + dXY[neighborIndex][1];
-						if ( tempY < 0 || tempY >= GRAPH_SIZE )
-							continue;
-
-						if ( m_visited[tempX,tempY] )
-							continue;	// Don't bother
-
-						float4	neighborValue = m_bufferHeat[tempX,tempY];
-						uint	cellBit = AsUint( neighborValue.y );
-						if ( cellBit == targetBit ) {
-							// We reached the target cell!
-							bestX = tempX;
-							bestY = tempY;
-							m_searchPhase = SEARCH_PHASE.TARGET_ASCENT;
-							break;
-						}
-						uint	neighborBitField = AsUint( neighborValue.z );
-						if ( (neighborBitField & targetBit) == 0 )
-							continue;	// Not on the trail...
-
-						bestX = tempX;
-						bestY = tempY;
-					}
-
-					m_simulationX = bestX;
-					m_simulationY = bestY;
-
-					// Write a single pixel
-					m_bufferSearchResults[m_simulationX,m_simulationY] = 0x000000FFU;
-					m_visited[m_simulationX,m_simulationY] = true;
-
-// 					// Check we're still following the target ID
-// 					float4	trailValue = m_bufferHeat[m_simulationX,m_simulationY];
-
-					break;
-				}
-
-				case SEARCH_PHASE.TARGET_ASCENT: {
-					// We're now ascending the target gradient
-					float	bestGradient = 0;
-					int		bestX = m_simulationX, bestY = m_simulationY;
-					for ( uint neighborIndex=0; neighborIndex < 8; neighborIndex++ ) {
-						int	tempX = m_simulationX + dXY[neighborIndex][0];
-						if ( tempX < 0 || tempX >= GRAPH_SIZE )
-							continue;
-						int	tempY = m_simulationY + dXY[neighborIndex][1];
-						if ( tempY < 0 || tempY >= GRAPH_SIZE )
-							continue;
-
-						if ( m_visited[tempX,tempY] )
-							continue;	// Don't bother
-
-						float4	neighborValue = m_bufferHeat[tempX,tempY];
-						uint	neighborBit = AsUint( neighborValue.y );
-						if ( neighborBit != targetBit )
-							continue;	// Not in the target cell...
-
-						float	gradient = neighborValue.x - currentValue.x;
-						if ( gradient < bestGradient )
-							continue;	// Not on the ridge!
-
-						bestGradient = gradient;
-						bestX = tempX;
-						bestY = tempY;
-					}
-
-					if ( bestGradient > 0 ) {
-						m_simulationX = bestX;
-						m_simulationY = bestY;
-
-						// Write a single pixel
-						m_bufferSearchResults[m_simulationX,m_simulationY] = 0x000000FFU;
-						m_visited[m_simulationX,m_simulationY] = true;
-					} else {
-						m_searchPhase = SEARCH_PHASE.FINISHED;	// We're done!
-					}
-
-					break;
-				}
-			}
-
-			// Update search results texture
-			if ( sender != null ) {
-				UpdateSearchResults();
-			}
-		}
-
-		void	ReadBackHeat() {
-			m_tex_HeatMap_Staging.CopyFrom( m_tex_HeatMap0 );
-// 			m_bufferHeat = m_tex_HeatMap_Staging.MapRead( 0, 0 );
-// 			m_bufferHeatReader = m_bufferHeat.OpenStreamRead();
-			m_tex_HeatMap_Staging.ReadPixels( 0, 0, ( uint _X, uint _Y, BinaryReader R ) => { m_bufferHeat[_X,_Y].Set( R.ReadSingle(), R.ReadSingle(), R.ReadSingle(), R.ReadSingle() ); } );
-		}
-
-		void	UpdateSearchResults() {
-			m_tex_Search_Staging.WritePixels( 0, 0, ( uint _X, uint _Y, BinaryWriter W ) => {
-				W.Write( m_bufferSearchResults[_X,_Y] );
-			} );
-			m_tex_Search.CopyFrom( m_tex_Search_Staging );
-		}
-
-		private void integerTrackbarControlStartPosition_ValueChanged( IntegerTrackbarControl _Sender, int _FormerValue ) {
-			bool	simulable = integerTrackbarControlStartPosition.Value != integerTrackbarControlTargetPosition.Value;
-			buttonStepSimulation.Enabled = simulable;
-			buttonRunSimulation.Enabled = simulable;
-		}
-
-		private void integerTrackbarControlTargetPosition_ValueChanged( IntegerTrackbarControl _Sender, int _FormerValue ) {
-			bool	simulable = integerTrackbarControlStartPosition.Value != integerTrackbarControlTargetPosition.Value;
-			buttonStepSimulation.Enabled = simulable;
-			buttonRunSimulation.Enabled = simulable;
-		}
-
-		private void buttonResetSimulation_Click( object sender, EventArgs e ) {
-			m_simulationIteration = 0;
-			ReadBackHeat();
-
-			m_searchPhase = SEARCH_PHASE.TARGET_ID_SEARCH;
-			if ( m_simulationHotSpots.Count > 0 ) {
-				m_simulationX = m_simulationHotSpots[integerTrackbarControlStartPosition.Value].X;
-				m_simulationY = m_simulationHotSpots[integerTrackbarControlStartPosition.Value].Y;
-			}
-			Array.Clear( m_visited, 0, GRAPH_SIZE*GRAPH_SIZE );
-
-			// Reset search result
-			Array.Clear( m_bufferSearchResults, 0, GRAPH_SIZE*GRAPH_SIZE );
-			UpdateSearchResults();
-		}
-
-		private void buttonRunSimulation_Click( object sender, EventArgs e ) {
-			int	iterationsCount = ((int) Mathf.Sqrt(2) * GRAPH_SIZE);
-			for ( int i=0; i < iterationsCount; i++ )
-				buttonStepSimulation_Click( null, e );
-
-			UpdateSearchResults();
+			m_normalizedSpaceDirty = true;
 		}
 
 		bool	m_plotSource = false;
@@ -1046,8 +696,19 @@ namespace TestGraphHeatEquation
 			}
 		}
 
+		List< Point >		m_simulationHotSpots = new List<Point>();
+		List< float4[,] >	m_simulationHeatMap = new List<float4[,]>();
+
 		void	AddHotSpot( Point _hotSpotLocation ) {
 			m_simulationHotSpots.Add( _hotSpotLocation );
+			m_simulationHeatMap.Add( new float4[GRAPH_SIZE,GRAPH_SIZE] );
+
+			checkBoxAutoSimulate.Enabled = true;
+
+			integerTrackbarControlSimulationSourceIndex.Enabled = true;
+			integerTrackbarControlSimulationSourceIndex.RangeMax = m_simulationHotSpots.Count - 1;
+			integerTrackbarControlSimulationSourceIndex.VisibleRangeMax = integerTrackbarControlSimulationSourceIndex.RangeMax;
+			integerTrackbarControlSimulationSourceIndex.Value = m_simulationHotSpots.Count - 1;
 
 			groupBoxSearch.Enabled = m_simulationHotSpots.Count > 1;
 
@@ -1060,19 +721,60 @@ namespace TestGraphHeatEquation
 			integerTrackbarControlTargetPosition.Value = 1;
 		}
 
+		private void integerTrackbarControlSimulationSourceIndex_ValueChanged( IntegerTrackbarControl _Sender, int _formerValue ) {
+			if ( _formerValue >= 0 && _formerValue <= integerTrackbarControlSimulationSourceIndex.RangeMax )
+				DownloadHeatMap( _formerValue );	// Download previous results first
+
+			UploadHeatMap( integerTrackbarControlSimulationSourceIndex.Value );
+		}
+
+		#region Auto-Simulation
+
+		void	UploadHeatMap( int _sourceIndex ) {
+			float4[,]	heatMap = m_simulationHeatMap[_sourceIndex];
+			m_tex_HeatMap_Staging.WritePixels( 0, 0, ( uint X, uint Y, BinaryWriter W ) => {
+				W.Write( heatMap[X,Y].x );
+				W.Write( heatMap[X,Y].y );
+				W.Write( heatMap[X,Y].z );
+				W.Write( heatMap[X,Y].w );
+			} );
+			m_tex_HeatMap0.CopyFrom( m_tex_HeatMap_Staging );
+		}
+
+		void	DownloadHeatMap( int _sourceIndex ) {
+			float4[,]	heatMap = m_simulationHeatMap[_sourceIndex];
+			m_tex_HeatMap_Staging.CopyFrom( m_tex_HeatMap0 );
+			m_tex_HeatMap_Staging.ReadPixels( 0, 0, ( uint X, uint Y, BinaryReader R ) => {
+				heatMap[X,Y].x = R.ReadSingle();
+				heatMap[X,Y].y = R.ReadSingle();
+				heatMap[X,Y].z = R.ReadSingle();
+				heatMap[X,Y].w = R.ReadSingle();
+			} );
+		}
+
+		int	m_simulationIterationIndex = 0;
+
+		private void checkBoxAutoSimulate_CheckedChanged(object sender, EventArgs e) {
+			if ( !checkBoxAutoSimulate.Checked )
+				return;
+
+			// Reset to source 0
+			integerTrackbarControlSimulationSourceIndex.Value = 0;
+			m_simulationIterationIndex = 0;
+			checkBoxRun.Checked = true;
+		}
+
 		#endregion
 
 		#region I/O
 
 		private void buttonLoad_Click( object sender, EventArgs e ) {
-//			openFileDialog1.InitialDirectory = Path.GetDirectoryName( Application.ExecutablePath );
 			if ( openFileDialog1.ShowDialog( this ) != DialogResult.OK )
 				return;
 
 			buttonResetObstacles_Click( null, e );
 
 			uint[]		obstacles = new uint[(GRAPH_SIZE+2)*(GRAPH_SIZE+2)];
-			float4[,]	simulatedValues = new float4[GRAPH_SIZE,GRAPH_SIZE];
 
 			FileInfo	file = new FileInfo( openFileDialog1.FileName );
 			using ( FileStream S = file.OpenRead() )
@@ -1080,11 +782,15 @@ namespace TestGraphHeatEquation
 					for ( uint i=0; i < obstacles.Length; i++ ) {
 						obstacles[i] = R.ReadUInt32();
 						if ( (obstacles[i] & 0x00FF0000) != 0 )
-							AddHotSpot( new Point( (int) i % (GRAPH_SIZE+2), (int) i / (GRAPH_SIZE+2) ) );
+							AddHotSpot( new Point( ((int) i % (GRAPH_SIZE+2)) - 1, ((int) i / (GRAPH_SIZE+2)) - 1 ) );
 					}
-					for ( uint Y=0; Y < GRAPH_SIZE; Y++ )
-						for ( uint X=0; X < GRAPH_SIZE; X++ )
-							simulatedValues[X,Y].Set( R.ReadSingle(), R.ReadSingle(), R.ReadSingle(), R.ReadSingle() );
+
+					for ( int sourceIndex=0; sourceIndex < m_simulationHotSpots.Count; sourceIndex++ ) {
+						float4[,]	simulatedValues = m_simulationHeatMap[sourceIndex];
+						for ( uint Y=0; Y < GRAPH_SIZE; Y++ )
+							for ( uint X=0; X < GRAPH_SIZE; X++ )
+								simulatedValues[X,Y].Set( R.ReadSingle(), R.ReadSingle(), R.ReadSingle(), R.ReadSingle() );
+					}
 				}
 
 			m_tex_Obstacles_Staging.WritePixels( 0, 0, ( uint _X, uint _Y, BinaryWriter W ) => {
@@ -1092,20 +798,14 @@ namespace TestGraphHeatEquation
 			} );
 			m_tex_Obstacles0.CopyFrom( m_tex_Obstacles_Staging );
 
-			m_tex_HeatMap_Staging.WritePixels( 0, 0, ( uint _X, uint _Y, BinaryWriter W ) => {
-				W.Write( simulatedValues[_X,_Y].x );
-				W.Write( simulatedValues[_X,_Y].y );
-				W.Write( simulatedValues[_X,_Y].z );
-				W.Write( simulatedValues[_X,_Y].w );
-			} );
-			m_tex_HeatMap0.CopyFrom( m_tex_HeatMap_Staging );
+			integerTrackbarControlSimulationSourceIndex_ValueChanged( integerTrackbarControlSimulationSourceIndex, -1 );
 
+			m_normalizedSpaceDirty = true;
 			checkBoxRun.Checked = false;	// Avoid running the freshly-loaded simulation!
-			ClearObstacles();
+			ResetDefaultObstaclesTexture();
 		}
 
 		private void buttonSave_Click( object sender, EventArgs e ) {
-//			saveFileDialog1.InitialDirectory = Path.GetDirectoryName( Application.ExecutablePath );
 			if ( saveFileDialog1.ShowDialog( this ) != DialogResult.OK )
 				return;
 
@@ -1115,30 +815,84 @@ namespace TestGraphHeatEquation
 				obstacles[(GRAPH_SIZE+2)*_Y+_X] = R.ReadUInt32();
 			} );
 
-			float4[,]	simulatedValues = new float4[GRAPH_SIZE,GRAPH_SIZE];
-			m_tex_HeatMap_Staging.CopyFrom( m_tex_HeatMap0 );
-			m_tex_HeatMap_Staging.ReadPixels( 0, 0, ( uint _X, uint _Y, BinaryReader R ) => {
-				simulatedValues[_X,_Y].Set( R.ReadSingle(), R.ReadSingle(), R.ReadSingle(), R.ReadSingle() );
-			} );
-
 			FileInfo	file = new FileInfo( saveFileDialog1.FileName );
 			using ( FileStream S = file.OpenWrite() )
 				using ( BinaryWriter W = new BinaryWriter( S ) ) {
 					for ( uint i=0; i < obstacles.Length; i++ )
 						W.Write( obstacles[i] );
-					for ( uint Y=0; Y < GRAPH_SIZE; Y++ )
-						for ( uint X=0; X < GRAPH_SIZE; X++ ) {
-							W.Write( simulatedValues[X,Y].x );
-							W.Write( simulatedValues[X,Y].y );
-							W.Write( simulatedValues[X,Y].z );
-							W.Write( simulatedValues[X,Y].w );
-						}
+
+					for ( int sourceIndex=0; sourceIndex < m_simulationHotSpots.Count; sourceIndex++ ) {
+						float4[,]	simulatedValues = m_simulationHeatMap[sourceIndex];
+						for ( uint Y=0; Y < GRAPH_SIZE; Y++ )
+							for ( uint X=0; X < GRAPH_SIZE; X++ ) {
+								W.Write( simulatedValues[X,Y].x );
+								W.Write( simulatedValues[X,Y].y );
+								W.Write( simulatedValues[X,Y].z );
+								W.Write( simulatedValues[X,Y].w );
+							}
+					}
 				}
 
-			ClearObstacles();
+			ResetDefaultObstaclesTexture();
 		}
 
 		#endregion
+
+		float	ComputeLogHeat( float _heat ) {
+//return _heat;
+			return 1 + Mathf.Log( Math.Max( 1e-18f, _heat ) );
+		}
+
+		bool		m_normalizedSpaceDirty = true;
+		private void radioButtonShowNormalizedSpace_CheckedChanged( object sender, EventArgs e ) {
+			if ( !m_normalizedSpaceDirty )
+				return;	// Already up to date
+
+			// Retrieve weights of each source from each other
+			int			sourcesCount = m_simulationHotSpots.Count;
+			Matrix		mutualHeat = new Matrix( sourcesCount );
+//			float[,]	mutualHeat = new float[sourcesCount,sourcesCount];
+			for ( int source0=0; source0 < sourcesCount; source0++ ) {
+				Point		sourcePos0 = m_simulationHotSpots[source0];
+				float4[,]	heatMap0 = m_simulationHeatMap[source0];
+
+				for ( int source1=0; source1 < sourcesCount; source1++ ) {
+					Point	sourcePos1 = m_simulationHotSpots[source1];
+					float	heat = heatMap0[sourcePos1.X,sourcePos1.Y].x;
+					mutualHeat[source0,source1] = ComputeLogHeat( heat );
+				}
+			}
+
+			// Invert so we get the matrix that will help us compute barycentric coordinates
+			Matrix		barycentric = mutualHeat.Invert();
+//Matrix	test = mutualHeat * barycentric;
+
+			// Apply transform to the fields
+			double[]		sourceHeatVector = new double[sourcesCount];
+			double[]		barycentricsVector = new double[sourcesCount];
+			for ( uint Y=0; Y < GRAPH_SIZE; Y++ ) {
+				for ( uint X=0; X < GRAPH_SIZE; X++ ) {
+
+					// Build source vector
+					for ( int sourceIndex=0; sourceIndex < sourcesCount; sourceIndex++ ) {
+						sourceHeatVector[sourceIndex] = ComputeLogHeat( m_simulationHeatMap[sourceIndex][X,Y].x );
+					}
+
+					// Transform into barycentrics
+					Matrix.Mul( sourceHeatVector, barycentric, barycentricsVector );
+
+					// Write back
+					for ( int sourceIndex=0; sourceIndex < sourcesCount; sourceIndex++ ) {
+						m_simulationHeatMap[sourceIndex][X,Y].y = (float) barycentricsVector[sourceIndex];
+					}
+				}
+			}
+
+			// Upload the current field
+			UploadHeatMap( integerTrackbarControlSimulationSourceIndex.Value );
+
+			m_normalizedSpaceDirty = false;
+		}
 
 		#endregion
 	}

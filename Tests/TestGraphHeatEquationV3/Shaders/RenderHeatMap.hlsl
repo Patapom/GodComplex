@@ -59,35 +59,8 @@ float3	PS( VS_IN _In ) : SV_TARGET0 {
 		}
 
 		case 1: {
-			// Render laplacian
-			float	laplacian = V00.x + V10.x + V20.x 
-							  + V01.x         + V21.x 
-							  + V02.x + V12.x + V22.x
-							  - 8 * V11.x;
-					laplacian /= 8.0;
-
-			if ( showLog )
-				color = laplacian < 0.0 ? float3( 0, 0, 1+log(-laplacian)/12 ) : float3( 1+log(laplacian)/12, 0, 0 );
-			else
-				color = 1000.0 * (laplacian < 0.0 ? float3( 0, 0, -laplacian ) : float3( laplacian, 0, 0 ));
-			break;
-		}
-
-		case 2: {
-			// Render Voronoi cell index
-			uint	sourceBit = asuint( V11.y );
-			uint	cellIndex = sourceBit != 0  ? 1+((sourceBit & 1) ? 0 : ((sourceBit & 2) ? 1 : ((sourceBit & 4) ? 2 : ((sourceBit & 8) ? 3 : ((sourceBit & 16) ? 4 : ((sourceBit & 32) ? 5 : 6))))))
-												: 0;
-			color = cellIndex == 0 ? 0.0 : s_cellColors[(cellIndex-1) & 0x7];
-			break;
-		}
-
-		case 3: {
-			// Render secondary Voronoi cell indices
-			uint	sourceBit = asuint( V11.z );
-			uint	cellIndex = sourceBit != 0  ? 1+((sourceBit & 1) ? 0 : ((sourceBit & 2) ? 1 : ((sourceBit & 4) ? 2 : ((sourceBit & 8) ? 3 : ((sourceBit & 16) ? 4 : ((sourceBit & 32) ? 5 : 6))))))
-												: 0;
-			color = cellIndex == 0 ? 0.0 : s_cellColors[(cellIndex-1) & 0x7];
+			// Render normalized heat map
+			color = _texFalseColors.SampleLevel( LinearClamp, float2( V11.y, 0.5 ), 0.0 );
 			break;
 		}
 	}

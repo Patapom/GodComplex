@@ -1,4 +1,4 @@
-namespace TestGraphHeatEquation
+namespace TestGraphHeatEquationV3
 {
 	partial class PanelOutput
 	{

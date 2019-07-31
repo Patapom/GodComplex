@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace TestGraphHeatEquation
+namespace TestGraphHeatEquationV3
 {
 	class Program
 	{

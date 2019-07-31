@@ -6,7 +6,7 @@ using System.Text;
 using System.Windows.Forms;
 using System.Drawing;
 
-namespace TestGraphHeatEquation
+namespace TestGraphHeatEquationV3
 {
 	public class PanelOutput : Panel
 	{

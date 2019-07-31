@@ -642,7 +642,7 @@ namespace TestGraphHeatEquation
 
 		#region EVENT HANDLERS
 
-		private void button1_Click( object sender, EventArgs e ) {
+		private void buttonReset_Click( object sender, EventArgs e ) {
 			m_device.Clear( m_tex_HeatMap0, float4.Zero );
 		}
 
