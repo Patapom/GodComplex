@@ -845,13 +845,22 @@ namespace TestGraphHeatEquationV3
 
 		#endregion
 
+		private void radioButtonShowNormalizedSpace_CheckedChanged( object sender, EventArgs e ) {
+			RecomputeNormalizedSpace();
+		}
+
+		private void radioButtonShowResultsSpace_CheckedChanged( object sender, EventArgs e ) {
+			RecomputeNormalizedSpace();
+		}
+
 		float	ComputeLogHeat( float _heat ) {
 //return _heat;
-			return 1 + Mathf.Log( Math.Max( 1e-18f, _heat ) );
+//			return 1 + Mathf.Log( Math.Max( 1e-18f, _heat ) );
+			return Mathf.Sqrt( -Mathf.Log( Math.Max( 1e-18f, _heat ) ) );	// Following Varadhan
 		}
 
 		bool		m_normalizedSpaceDirty = true;
-		private void radioButtonShowNormalizedSpace_CheckedChanged( object sender, EventArgs e ) {
+		void	RecomputeNormalizedSpace() {
 			if ( !m_normalizedSpaceDirty )
 				return;	// Already up to date
 

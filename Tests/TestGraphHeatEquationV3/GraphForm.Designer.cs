@@ -32,6 +32,7 @@
 			this.radioButtonSearchAlgo1 = new System.Windows.Forms.RadioButton();
 			this.panel3 = new System.Windows.Forms.Panel();
 			this.floatTrackbarControlResultsSpaceConfinement = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.radioButtonShowResultsSpace = new System.Windows.Forms.RadioButton();
 			this.checkBoxShowLog = new System.Windows.Forms.CheckBox();
 			this.radioButtonShowNormalizedSpace = new System.Windows.Forms.RadioButton();
 			this.radioButtonShowHeat = new System.Windows.Forms.RadioButton();
@@ -52,7 +53,6 @@
 			this.label6 = new System.Windows.Forms.Label();
 			this.integerTrackbarControlIterationsCount = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
 			this.checkBoxAutoSimulate = new System.Windows.Forms.CheckBox();
-			this.radioButtonShowResultsSpace = new System.Windows.Forms.RadioButton();
 			this.panel3.SuspendLayout();
 			this.groupBoxSearch.SuspendLayout();
 			this.SuspendLayout();
@@ -215,6 +215,17 @@
 			this.floatTrackbarControlResultsSpaceConfinement.TabIndex = 2;
 			this.floatTrackbarControlResultsSpaceConfinement.Value = 0.1F;
 			this.floatTrackbarControlResultsSpaceConfinement.VisibleRangeMax = 1F;
+			// 
+			// radioButtonShowResultsSpace
+			// 
+			this.radioButtonShowResultsSpace.AutoSize = true;
+			this.radioButtonShowResultsSpace.Location = new System.Drawing.Point(181, 0);
+			this.radioButtonShowResultsSpace.Name = "radioButtonShowResultsSpace";
+			this.radioButtonShowResultsSpace.Size = new System.Drawing.Size(94, 17);
+			this.radioButtonShowResultsSpace.TabIndex = 0;
+			this.radioButtonShowResultsSpace.Text = "Results Space";
+			this.radioButtonShowResultsSpace.UseVisualStyleBackColor = true;
+			this.radioButtonShowResultsSpace.CheckedChanged += new System.EventHandler(this.radioButtonShowResultsSpace_CheckedChanged);
 			// 
 			// checkBoxShowLog
 			// 
@@ -431,16 +442,6 @@
 			this.checkBoxAutoSimulate.Text = "Auto-Simulate";
 			this.checkBoxAutoSimulate.UseVisualStyleBackColor = true;
 			this.checkBoxAutoSimulate.CheckedChanged += new System.EventHandler(this.checkBoxAutoSimulate_CheckedChanged);
-			// 
-			// radioButtonShowResultsSpace
-			// 
-			this.radioButtonShowResultsSpace.AutoSize = true;
-			this.radioButtonShowResultsSpace.Location = new System.Drawing.Point(181, 0);
-			this.radioButtonShowResultsSpace.Name = "radioButtonShowResultsSpace";
-			this.radioButtonShowResultsSpace.Size = new System.Drawing.Size(94, 17);
-			this.radioButtonShowResultsSpace.TabIndex = 0;
-			this.radioButtonShowResultsSpace.Text = "Results Space";
-			this.radioButtonShowResultsSpace.UseVisualStyleBackColor = true;
 			// 
 			// GraphForm
 			// 
