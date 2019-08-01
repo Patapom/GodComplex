@@ -21,6 +21,7 @@ namespace TestGraphHeatEquationV3
 		#region CONSTANTS
 
 		const int	GRAPH_SIZE = 128;
+		const int	MAX_SOURCES = 32;
 
 		#endregion
 
@@ -33,6 +34,8 @@ namespace TestGraphHeatEquationV3
 			public float		diffusionCoefficient;
 			public uint			flags;
 			public uint			sourceIndex;
+			public uint			sourcesCount;
+			public float		resultsConfinementDistance;
 		}
 
 		#endregion
@@ -51,8 +54,6 @@ namespace TestGraphHeatEquationV3
 		private Texture2D				m_tex_Obstacles_Staging = null;
 		private Texture2D				m_tex_Obstacles0 = null;
 		private Texture2D				m_tex_Obstacles1 = null;
-		private Texture2D				m_tex_NormalizedHeatMap_Staging = null;
-		private Texture2D				m_tex_NormalizedHeatMap = null;
 
 		private Texture2D				m_tex_Search = null;
 		private Texture2D				m_tex_Search_Staging = null;
@@ -88,9 +89,10 @@ namespace TestGraphHeatEquationV3
 			m_shader_RenderHeatMap = new Shader( m_device, new FileInfo( "./Shaders/RenderHeatMap.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 			m_shader_DrawObstacles = new Shader( m_device, new FileInfo( "./Shaders/DrawObstacles.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 
-			m_tex_HeatMap_Staging = new Texture2D( m_device, (uint) GRAPH_SIZE, (uint) GRAPH_SIZE, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA32F, ImageUtility.COMPONENT_FORMAT.AUTO, true, false, null );
-			m_tex_HeatMap0 = new Texture2D( m_device, (uint) GRAPH_SIZE, (uint) GRAPH_SIZE, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, false, null );
-			m_tex_HeatMap1 = new Texture2D( m_device, (uint) GRAPH_SIZE, (uint) GRAPH_SIZE, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, false, null );
+			m_tex_HeatMap_Staging = new Texture2D( m_device, (uint) GRAPH_SIZE, (uint) GRAPH_SIZE, MAX_SOURCES, 1, ImageUtility.PIXEL_FORMAT.RGBA32F, ImageUtility.COMPONENT_FORMAT.AUTO, true, false, null );
+			m_tex_HeatMap0 = new Texture2D( m_device, (uint) GRAPH_SIZE, (uint) GRAPH_SIZE, MAX_SOURCES, 1, ImageUtility.PIXEL_FORMAT.RGBA32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, false, null );
+			m_tex_HeatMap1 = new Texture2D( m_device, (uint) GRAPH_SIZE, (uint) GRAPH_SIZE, MAX_SOURCES, 1, ImageUtility.PIXEL_FORMAT.RGBA32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, false, null );
+
 			m_tex_Obstacles_Staging = new Texture2D( m_device, (uint) GRAPH_SIZE + 2, (uint) GRAPH_SIZE + 2, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA8, ImageUtility.COMPONENT_FORMAT.UNORM, true, false, null );
 			m_tex_Obstacles0 = new Texture2D( m_device, (uint) GRAPH_SIZE + 2, (uint) GRAPH_SIZE + 2, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA8, ImageUtility.COMPONENT_FORMAT.UNORM, false, false, null );
 			m_tex_Obstacles1 = new Texture2D( m_device, (uint) GRAPH_SIZE + 2, (uint) GRAPH_SIZE + 2, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA8, ImageUtility.COMPONENT_FORMAT.UNORM, false, false, null );
@@ -136,10 +138,13 @@ namespace TestGraphHeatEquationV3
 
 									  // 2 bits to select 4 display modes
 									| (radioButtonShowNormalizedSpace.Checked ? 2 : 0)
+									| (radioButtonShowResultsSpace.Checked ? 4 : 0)
 
 									| (checkBoxShowLog.Checked ? 8 : 0)
 								);
 			m_CB_Main.m.sourceIndex = (uint) integerTrackbarControlSimulationSourceIndex.Value;
+			m_CB_Main.m.sourcesCount = (uint) m_simulationHotSpots.Count;
+			m_CB_Main.m.resultsConfinementDistance = floatTrackbarControlResultsSpaceConfinement.Value;
 			m_CB_Main.UpdateData();
 
 			m_plotSource = false;
@@ -162,9 +167,11 @@ namespace TestGraphHeatEquationV3
 			//////////////////////////////////////////////////////////////////////////
 			// Perform heat diffusion test
 			if ( checkBoxRun.Checked && m_shader_HeatDiffusion.Use() ) {
-				m_device.SetRenderTarget( m_tex_HeatMap1, null );
+				uint	sliceIndex = m_CB_Main.m.sourceIndex;
 
-				m_tex_HeatMap0.SetPS( 0 );
+				m_device.SetRenderTargets( new IView[] { m_tex_HeatMap1.GetView( 0, 1, sliceIndex, 1 ) }, null );
+
+				m_tex_HeatMap0.GetView( 0, 1, sliceIndex, 1 ).SetPS( 0 );
 				m_tex_Obstacles0.SetPS( 1 );
 
 				m_device.RenderFullscreenQuad( m_shader_HeatDiffusion );
@@ -732,7 +739,7 @@ namespace TestGraphHeatEquationV3
 
 		void	UploadHeatMap( int _sourceIndex ) {
 			float4[,]	heatMap = m_simulationHeatMap[_sourceIndex];
-			m_tex_HeatMap_Staging.WritePixels( 0, 0, ( uint X, uint Y, BinaryWriter W ) => {
+			m_tex_HeatMap_Staging.WritePixels( 0, (uint) _sourceIndex, ( uint X, uint Y, BinaryWriter W ) => {
 				W.Write( heatMap[X,Y].x );
 				W.Write( heatMap[X,Y].y );
 				W.Write( heatMap[X,Y].z );
@@ -744,7 +751,7 @@ namespace TestGraphHeatEquationV3
 		void	DownloadHeatMap( int _sourceIndex ) {
 			float4[,]	heatMap = m_simulationHeatMap[_sourceIndex];
 			m_tex_HeatMap_Staging.CopyFrom( m_tex_HeatMap0 );
-			m_tex_HeatMap_Staging.ReadPixels( 0, 0, ( uint X, uint Y, BinaryReader R ) => {
+			m_tex_HeatMap_Staging.ReadPixels( 0, (uint) _sourceIndex, ( uint X, uint Y, BinaryReader R ) => {
 				heatMap[X,Y].x = R.ReadSingle();
 				heatMap[X,Y].y = R.ReadSingle();
 				heatMap[X,Y].z = R.ReadSingle();
@@ -851,7 +858,6 @@ namespace TestGraphHeatEquationV3
 			// Retrieve weights of each source from each other
 			int			sourcesCount = m_simulationHotSpots.Count;
 			Matrix		mutualHeat = new Matrix( sourcesCount );
-//			float[,]	mutualHeat = new float[sourcesCount,sourcesCount];
 			for ( int source0=0; source0 < sourcesCount; source0++ ) {
 				Point		sourcePos0 = m_simulationHotSpots[source0];
 				float4[,]	heatMap0 = m_simulationHeatMap[source0];
@@ -888,8 +894,10 @@ namespace TestGraphHeatEquationV3
 				}
 			}
 
-			// Upload the current field
-			UploadHeatMap( integerTrackbarControlSimulationSourceIndex.Value );
+			// Upload the updated fields
+			for ( int sourceIndex=0; sourceIndex < sourcesCount; sourceIndex++ ) {
+				UploadHeatMap( sourceIndex );
+			}
 
 			m_normalizedSpaceDirty = false;
 		}

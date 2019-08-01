@@ -31,6 +31,7 @@
 			this.radioButtonSearchAlgo0 = new System.Windows.Forms.RadioButton();
 			this.radioButtonSearchAlgo1 = new System.Windows.Forms.RadioButton();
 			this.panel3 = new System.Windows.Forms.Panel();
+			this.floatTrackbarControlResultsSpaceConfinement = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.checkBoxShowLog = new System.Windows.Forms.CheckBox();
 			this.radioButtonShowNormalizedSpace = new System.Windows.Forms.RadioButton();
 			this.radioButtonShowHeat = new System.Windows.Forms.RadioButton();
@@ -51,6 +52,7 @@
 			this.label6 = new System.Windows.Forms.Label();
 			this.integerTrackbarControlIterationsCount = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
 			this.checkBoxAutoSimulate = new System.Windows.Forms.CheckBox();
+			this.radioButtonShowResultsSpace = new System.Windows.Forms.RadioButton();
 			this.panel3.SuspendLayout();
 			this.groupBoxSearch.SuspendLayout();
 			this.SuspendLayout();
@@ -191,6 +193,8 @@
 			// 
 			// panel3
 			// 
+			this.panel3.Controls.Add(this.floatTrackbarControlResultsSpaceConfinement);
+			this.panel3.Controls.Add(this.radioButtonShowResultsSpace);
 			this.panel3.Controls.Add(this.checkBoxShowLog);
 			this.panel3.Controls.Add(this.radioButtonShowNormalizedSpace);
 			this.panel3.Controls.Add(this.radioButtonShowHeat);
@@ -198,6 +202,19 @@
 			this.panel3.Name = "panel3";
 			this.panel3.Size = new System.Drawing.Size(312, 43);
 			this.panel3.TabIndex = 14;
+			// 
+			// floatTrackbarControlResultsSpaceConfinement
+			// 
+			this.floatTrackbarControlResultsSpaceConfinement.Location = new System.Drawing.Point(181, 20);
+			this.floatTrackbarControlResultsSpaceConfinement.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlResultsSpaceConfinement.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlResultsSpaceConfinement.Name = "floatTrackbarControlResultsSpaceConfinement";
+			this.floatTrackbarControlResultsSpaceConfinement.RangeMax = 1F;
+			this.floatTrackbarControlResultsSpaceConfinement.RangeMin = 0F;
+			this.floatTrackbarControlResultsSpaceConfinement.Size = new System.Drawing.Size(131, 20);
+			this.floatTrackbarControlResultsSpaceConfinement.TabIndex = 2;
+			this.floatTrackbarControlResultsSpaceConfinement.Value = 0.1F;
+			this.floatTrackbarControlResultsSpaceConfinement.VisibleRangeMax = 1F;
 			// 
 			// checkBoxShowLog
 			// 
@@ -415,13 +432,22 @@
 			this.checkBoxAutoSimulate.UseVisualStyleBackColor = true;
 			this.checkBoxAutoSimulate.CheckedChanged += new System.EventHandler(this.checkBoxAutoSimulate_CheckedChanged);
 			// 
+			// radioButtonShowResultsSpace
+			// 
+			this.radioButtonShowResultsSpace.AutoSize = true;
+			this.radioButtonShowResultsSpace.Location = new System.Drawing.Point(181, 0);
+			this.radioButtonShowResultsSpace.Name = "radioButtonShowResultsSpace";
+			this.radioButtonShowResultsSpace.Size = new System.Drawing.Size(94, 17);
+			this.radioButtonShowResultsSpace.TabIndex = 0;
+			this.radioButtonShowResultsSpace.Text = "Results Space";
+			this.radioButtonShowResultsSpace.UseVisualStyleBackColor = true;
+			// 
 			// GraphForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(857, 543);
 			this.Controls.Add(this.checkBoxAutoSimulate);
-			this.Controls.Add(this.integerTrackbarControlIterationsCount);
 			this.Controls.Add(this.buttonResetAll);
 			this.Controls.Add(this.integerTrackbarControlSimulationSourceIndex);
 			this.Controls.Add(this.groupBoxSearch);
@@ -488,5 +514,7 @@
 		private System.Windows.Forms.Label label6;
 		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlIterationsCount;
 		private System.Windows.Forms.CheckBox checkBoxAutoSimulate;
+		private System.Windows.Forms.RadioButton radioButtonShowResultsSpace;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlResultsSpaceConfinement;
 	}
 }

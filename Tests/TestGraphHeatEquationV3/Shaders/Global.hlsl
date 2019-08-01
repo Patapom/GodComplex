@@ -10,6 +10,8 @@ cbuffer CB_Main : register(b0) {
 	float	diffusionCoefficient;
 	uint	flags;
 	uint	sourceIndex;
+	uint	sourcesCount;
+	float	resultsConfinementDistance;
 };
 
 SamplerState LinearClamp	: register( s0 );
