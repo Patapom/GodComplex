@@ -1,76 +1,101 @@
 #include "Global.hlsl"
 
-struct SB_NodeSim {
-	float		m_mass;			// Node mass
-	float2		m_position;
-	float2		m_velocity;
-};
 StructuredBuffer<SB_NodeSim>	_SB_Graph_In : register( t0 );
 RWStructuredBuffer<SB_NodeSim>	_SB_Graph_Out : register( u0 );
-RWStructuredBuffer<float3>		_SB_Graph_Forces : register( u1 );
 
-
-struct SB_NodeInfo {
-	uint		m_linkOffset;	// Start link index in the links array
-	uint		m_linksCount;	// Amount of links in the array
-};
+RWStructuredBuffer<float2>		_SB_Graph_Forces : register( u1 );	// A giant NxN matrix of forces
+																	// Row i contain the forces that a node i applies to each other column node j
 StructuredBuffer<SB_NodeInfo>	_SB_Nodes : register( t1 );
 StructuredBuffer<uint>			_SB_Links : register( t2 );
 
+cbuffer CB_Simulation : register(b1) {
+	float	_deltaTime;
+	float	_springConstant;
+	float	_dampingConstant;
+};
 
+
+////////////////////////////////////////////////////////////////////////////
+// First CS computes the giant matrix of forces that each node provides to each other
+//
+[numthreads( 256, 1, 1 )]
 void	CS( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : SV_GROUPTHREADID, uint3 _dispatchThreadID : SV_DISPATCHTHREADID ) {
 	uint	nodeIndex = _dispatchThreadID.x;
+	if ( nodeIndex >= _nodesCount )
+		return;
 
 	// Retrieve node info
-	SB_NodeInfo	info = _SB_Nodes[nodeIndex];
+	SB_NodeInfo	currentInfo = _SB_Nodes[nodeIndex];
 	SB_NodeSim	current = _SB_Graph_In[nodeIndex];
 
-	float3	position = sourceSim.m_position;
-	float3	force = 0.0;
+	float2	position = current.m_position;
 
 	////////////////////////////////////////////////////////////////////////////
-	// Compute spring force
-	float	k = SPRING_CONSTANT;
-	for ( uint i=0; i < info.m_linksCount; i++ ) {
-		uint		neighborIndex = _SB_Links[info.m_linkOffset + i];
-		SB_NodeSim	neigbor = _SB_Graph_In[neighborIndex];
+	// Compute gravitational influence on neighbors
+	//
+	for ( uint neighborIndex=0; neighborIndex < _nodesCount; neighborIndex++ ) {
+		if ( neighborIndex == nodeIndex )
+			continue;	// Avoid influencing ourselves
 
-		float3	delta = neighbor.m_position - position;
+		SB_NodeInfo	neighborInfo = _SB_Nodes[neighborIndex];
+		SB_NodeSim	neighbor = _SB_Graph_In[neighborIndex];
+
+		float2	delta = position - neighbor.m_position;
 		float	distance = length( delta );
-				delta *= abs(distance) > 1e-6 ? 1.0 / distance : 0.0;
+		float	recDistance = abs(distance) > 1e-6 ? 1.0 / distance : 0.0;
+				delta *= recDistance;
 
-		force += delta * k * neighbor.m_mass;
-		_SB_Graph_Forces[neighborIndex] += -delta * k * current.m_mass;
+		// Gravitational force
+		float2	force = currentInfo.m_mass * neighborInfo.m_mass * pow2( recDistance ) * delta;
+
+		_SB_Graph_Forces[_nodesCount * nodeIndex + neighborIndex] = force;
 	}
 
 	////////////////////////////////////////////////////////////////////////////
+	// Compute spring force that we provide to neigbors
+	//
+	for ( uint linkIndex=0; linkIndex < currentInfo.m_linksCount; linkIndex++ ) {
+		uint		neighborIndex = _SB_Links[currentInfo.m_linkOffset + linkIndex];
+		SB_NodeSim	neighbor = _SB_Graph_In[neighborIndex];
 
+		float2	delta = position - neighbor.m_position;
+//		float	distance = length( delta );
+//				delta *= abs(distance) > 1e-6 ? 1.0 / distance : 0.0;
 
-	obstacle.y = 0.0;	// Always clear sources
+		// Damped harmonic oscillator
+		float2	force = _springConstant * delta
+					  + _dampingConstant * neighbor.m_velocity;
 
-	uint2	pos = uint2(mousePosition)+1;
+		_SB_Graph_Forces[_nodesCount * nodeIndex + neighborIndex] += force;
+	}
+}
 
-//	if ( all(pos == P) ) {
-	if ( abs(pos.x-P.x) < 2 && abs(pos.y-P.y) < 2 ) {
-		// Use right mouse button to set or clear obstacles
-		if ( mouseButtons & 4 )
-			obstacle.x = 1;	// Right = set
-		if ( (mouseButtons & 12) == 12 )
-			obstacle.x = 0;	// Right + Shift = clear
+////////////////////////////////////////////////////////////////////////////
+// Second CS performs the simulation
+//
+[numthreads( 256, 1, 1 )]
+void	CS2( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : SV_GROUPTHREADID, uint3 _dispatchThreadID : SV_DISPATCHTHREADID ) {
+	uint	nodeIndex = _dispatchThreadID.x;
+	if ( nodeIndex >= _nodesCount )
+		return;
+
+	// Retrieve node info
+	SB_NodeInfo	currentInfo = _SB_Nodes[nodeIndex];
+	SB_NodeSim	current = _SB_Graph_In[nodeIndex];
+
+	// Retrieve forces
+	float2	sumForces = 0.0;
+	for ( uint neighborIndex=0; neighborIndex < _nodesCount; neighborIndex++ ) {
+		if ( neighborIndex == nodeIndex )
+			continue;	// Avoid influencing ourselves
+
+		sumForces += _SB_Graph_Forces[_nodesCount * neighborIndex + nodeIndex];
 	}
 
-	if ( all(pos == P) ) {
-		// Use middle mouse button to set or clear permanent sources
-		if ( mouseButtons & 2 ) {
-			obstacle.z = (1+sourceIndex) / 255.0;
-		} else if ( (mouseButtons & 10) == 10 ) {
-			obstacle.z = 0;
-		}
+	// Apply simulation
+	float2	acceleration = sumForces / currentInfo.m_mass;
+	current.m_position += current.m_velocity * _deltaTime;
+	current.m_velocity += acceleration * _deltaTime;
 
-		// Use left mouse button to set source
-		if ( mouseButtons & 1 )
-			obstacle.y = 1.0;
-	}
-
-	return obstacle;
+	_SB_Graph_Out[nodeIndex] = current;
 }

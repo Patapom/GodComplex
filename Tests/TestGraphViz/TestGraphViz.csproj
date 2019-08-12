@@ -126,13 +126,10 @@
     <None Include="Shaders\Global.hlsl" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Shaders\RenderHeatMap.hlsl" />
+    <None Include="Shaders\RenderGraph.hlsl" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Shaders\HeatDiffusion.hlsl" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Shaders\DrawObstacles.hlsl" />
+    <None Include="Shaders\SimulateGraph.hlsl" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

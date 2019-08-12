@@ -52,9 +52,12 @@ namespace ProtoParser
 		private List< Neuron >		m_features = new List<Neuron>();
 		public NeuronValue			m_value = null;
 
-		public int		ParentsCount	{ get { return m_parents.Count; } }
-		public int		ChildrenCount	{ get { return m_children.Count; } }
-		public int		FeaturesCount	{ get { return m_features.Count; } }
+		public int			ParentsCount	{ get { return m_parents.Count; } }
+		public Neuron[]		Parents			{ get {return m_parents.ToArray(); } }
+		public int			ChildrenCount	{ get { return m_children.Count; } }
+		public Neuron[]		Children		{ get {return m_children.ToArray(); } }
+		public int			FeaturesCount	{ get { return m_features.Count; } }
+		public Neuron[]		Features		{ get {return m_features.ToArray(); } }
 
 		internal Neuron() {}
 		public Neuron( string _name ) {

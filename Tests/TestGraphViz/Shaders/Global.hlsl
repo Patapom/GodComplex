@@ -1,17 +1,24 @@
 
 static const float	SPRING_CONSTANT = 1.0;
+static const float	DAMPING_CONSTANT = 0.0;
 
 #define PI		3.1415926535897932384626433832795
 #define INVPI	0.31830988618379067153776752674503
 
 cbuffer CB_Main : register(b0) {
-	float2	mousePosition;	// Mouse position in texels
-	uint	mouseButtons;	// Mouse button states (0=left button, 1=middle, 2=right)
-	float	diffusionCoefficient;
-	uint	flags;
-	uint	sourceIndex;
-	uint	sourcesCount;
-	float	resultsConfinementDistance;
+	uint	_nodesCount;
+	uint2	_resolution;
+};
+
+struct SB_NodeSim {
+	float2		m_position;
+	float2		m_velocity;
+};
+
+struct SB_NodeInfo {
+	float		m_mass;			// Node mass
+	uint		m_linkOffset;	// Start link index in the links array
+	uint		m_linksCount;	// Amount of links in the array
 };
 
 SamplerState LinearClamp	: register( s0 );

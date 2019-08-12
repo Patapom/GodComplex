@@ -36,6 +36,9 @@ namespace ProtoParser
 
 		#region PROPERTIES
 
+		public int			NeuronsCount		{ get { return m_neurons.Count; } }
+		public Neuron[]		Neurons				{ get { return m_neurons.ToArray(); } }
+		public Neuron		this[int _index]	{ get { return m_neurons[_index]; } }
 		public Neuron		this[string _name] {
 			get {
 				if ( !m_name2Neurons.ContainsKey( _name ) )
