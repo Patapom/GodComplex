@@ -1,4 +1,6 @@
-﻿using System;
+﻿#define RENDER_GRAPH_PROPER
+
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -67,19 +69,26 @@ namespace TestGraphViz
 		private ConstantBuffer<CB_Main>			m_CB_Main = null;
 		private ConstantBuffer<CB_Simulation>	m_CB_Simulation = null;
 
-		private ComputeShader			m_shader_ComputeForces = null;
-		private ComputeShader			m_shader_Simulate = null;
-		private Shader					m_shader_RenderGraph = null;
+		private ComputeShader					m_shader_ComputeForces = null;
+		private ComputeShader					m_shader_Simulate = null;
+#if RENDER_GRAPH_PROPER
+		private Shader							m_shader_RenderGraphNode = null;
+		private Shader							m_shader_RenderGraphLink = null;
+#else
+		private Shader							m_shader_RenderGraph = null;
+#endif
 
 		private StructuredBuffer<SB_NodeInfo>	m_SB_Nodes = null;
 		private StructuredBuffer<uint>			m_SB_Links = null;
+		private StructuredBuffer<uint>			m_SB_LinkSources = null;
 		private StructuredBuffer<float2>		m_SB_Forces = null;
 		private StructuredBuffer<SB_NodeSim>[]	m_SB_NodeSims = new StructuredBuffer<SB_NodeSim>[2];
  
- 		private Texture2D				m_tex_FalseColors = null;
+ 		private Texture2D						m_tex_FalseColors = null;
 
-		private ProtoParser.Graph		m_graph = null;
-		private uint					m_nodesCount = 0;
+		private ProtoParser.Graph				m_graph = null;
+		private uint							m_nodesCount = 0;
+		private uint							m_totalLinksCount = 0;
 
 		#endregion
 
@@ -128,13 +137,17 @@ neurons[0].LinkChild( neurons[1] );
 
 			m_shader_ComputeForces = new ComputeShader( m_device, new FileInfo( "./Shaders/SimulateGraph.hlsl" ), "CS", null );
 			m_shader_Simulate = new ComputeShader( m_device, new FileInfo( "./Shaders/SimulateGraph.hlsl" ), "CS2", null );
+#if RENDER_GRAPH_PROPER
+			m_shader_RenderGraphNode = new Shader( m_device, new FileInfo( "./Shaders/RenderGraph2.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+			m_shader_RenderGraphLink = new Shader( m_device, new FileInfo( "./Shaders/RenderGraph2.hlsl" ), VERTEX_FORMAT.Pt4, "VS2", null, "PS2", null );
+#else
 			m_shader_RenderGraph = new Shader( m_device, new FileInfo( "./Shaders/RenderGraph.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
+#endif
 
 			// Build node info
 			m_SB_Nodes = new StructuredBuffer<SB_NodeInfo>( m_device, m_nodesCount, true );
 
 			Dictionary< ProtoParser.Neuron, uint >	neuron2ID = new Dictionary<ProtoParser.Neuron, uint>( neurons.Length );
-			uint	totalLinksCount = 0;
 			float	maxMass = 0.0f;
 			for ( int neuronIndex=0; neuronIndex < m_nodesCount; neuronIndex++ ) {
 				ProtoParser.Neuron	N = neurons[neuronIndex];
@@ -144,28 +157,36 @@ neurons[0].LinkChild( neurons[1] );
 //				m_SB_Nodes.m[neuronIndex].m_mass = (1 + 10.0f * linksCount) / (0.1f + N.Distance2Root);		// Works with S=1e4 D=-1e3
 				m_SB_Nodes.m[neuronIndex].m_mass = (1 + 1.0f * linksCount) / (0.01f + N.Distance2Root);		// Works with S=1e4 D=-1e3
 //				m_SB_Nodes.m[neuronIndex].m_mass = (1 + 0.1f * linksCount) / (0.1f + N.Distance2Root);		// Works with S=10 D=-10
-				m_SB_Nodes.m[neuronIndex].m_linkOffset = totalLinksCount;
+				m_SB_Nodes.m[neuronIndex].m_linkOffset = m_totalLinksCount;
 				m_SB_Nodes.m[neuronIndex].m_linksCount = linksCount;
 
 				maxMass = Mathf.Max( maxMass, m_SB_Nodes.m[neuronIndex].m_mass );
 
-				totalLinksCount += linksCount;
+				m_totalLinksCount += linksCount;
 			}
 			m_SB_Nodes.Write();
 
 			// Build node links
-			m_SB_Links = new StructuredBuffer<uint>( m_device, totalLinksCount, true );
-			totalLinksCount = 0;
+			m_SB_Links = new StructuredBuffer<uint>( m_device, m_totalLinksCount, true );
+			m_SB_LinkSources = new StructuredBuffer<uint>( m_device, m_totalLinksCount, true );
+			m_totalLinksCount = 0;
 			for ( int neuronIndex=0; neuronIndex < m_nodesCount; neuronIndex++ ) {
 				ProtoParser.Neuron	N = neurons[neuronIndex];
-				foreach ( ProtoParser.Neuron O in N.Parents )
-					m_SB_Links.m[totalLinksCount++] = neuron2ID[O];
-				foreach ( ProtoParser.Neuron O in N.Children )
-					m_SB_Links.m[totalLinksCount++] = neuron2ID[O];
-				foreach ( ProtoParser.Neuron O in N.Features )
-					m_SB_Links.m[totalLinksCount++] = neuron2ID[O];
+				foreach ( ProtoParser.Neuron O in N.Parents ) {
+					m_SB_LinkSources.m[m_totalLinksCount] = (uint) neuronIndex;
+					m_SB_Links.m[m_totalLinksCount++] = neuron2ID[O];
+				}
+				foreach ( ProtoParser.Neuron O in N.Children ) {
+					m_SB_LinkSources.m[m_totalLinksCount] = (uint) neuronIndex;
+					m_SB_Links.m[m_totalLinksCount++] = neuron2ID[O];
+				}
+				foreach ( ProtoParser.Neuron O in N.Features ) {
+					m_SB_LinkSources.m[m_totalLinksCount] = (uint) neuronIndex;
+					m_SB_Links.m[m_totalLinksCount++] = neuron2ID[O];
+				}
 			}
 			m_SB_Links.Write();
+			m_SB_LinkSources.Write();
 
 			// Setup initial CB
 			m_CB_Main.m._nodesCount = m_nodesCount;
@@ -279,6 +300,35 @@ neurons[0].LinkChild( neurons[1] );
 
 			//////////////////////////////////////////////////////////////////////////
 			// Render
+#if RENDER_GRAPH_PROPER
+			m_device.Clear( float4.Zero );
+
+			if ( m_shader_RenderGraphLink.Use() ) {
+				m_device.SetRenderTarget( m_device.DefaultTarget, null );
+
+				m_SB_NodeSims[0].SetInput( 0 );
+				m_SB_Nodes.SetInput( 1 );
+				m_SB_Links.SetInput( 2 );
+				m_SB_LinkSources.SetInput( 3 );
+
+				m_tex_FalseColors.SetPS( 4 );
+
+				m_device.ScreenQuad.RenderInstanced( m_shader_RenderGraphLink, m_totalLinksCount );
+			}
+
+			if ( m_shader_RenderGraphNode.Use() ) {
+				m_device.SetRenderTarget( m_device.DefaultTarget, null );
+
+				m_SB_NodeSims[0].SetInput( 0 );
+				m_SB_Nodes.SetInput( 1 );
+				m_SB_Links.SetInput( 2 );
+				m_SB_LinkSources.SetInput( 3 );
+
+				m_tex_FalseColors.SetPS( 4 );
+
+				m_device.ScreenQuad.RenderInstanced( m_shader_RenderGraphNode, m_nodesCount );
+			}
+#else
 			if ( m_shader_RenderGraph.Use() ) {
 				m_device.SetRenderTarget( m_device.DefaultTarget, null );
 
@@ -289,8 +339,10 @@ neurons[0].LinkChild( neurons[1] );
 
 				m_device.RenderFullscreenQuad( m_shader_RenderGraph );
 			}
+#endif
 
 			//////////////////////////////////////////////////////////////////////////
+			// Auto-center camera
 			if ( checkBoxAutoCenter.Checked ) {
 				m_SB_NodeSims[0].Read();
 
@@ -325,7 +377,12 @@ neurons[0].LinkChild( neurons[1] );
 				m_SB_Links.Dispose();
 				m_SB_Nodes.Dispose();
 
+#if RENDER_GRAPH_PROPER
+				m_shader_RenderGraphLink.Dispose();
+				m_shader_RenderGraphNode.Dispose();
+#else
 				m_shader_RenderGraph.Dispose();
+#endif
 				m_shader_Simulate.Dispose();
 				m_shader_ComputeForces.Dispose();
 
