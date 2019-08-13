@@ -46,17 +46,8 @@ currentInfo.m_mass = DEBUG_MASS;
 		float	recDistance = abs(distance) > 1e-6 ? 1.0 / distance : 0.0;
 				delta *= recDistance;
 
-//distance *= 0.1;
-//recDistance *= 10.0;
-
-		// Gravitational force
-//recDistance = max( 10.0, recDistance );
-//recDistance *= 0.0001;
-
 //		float2	force = currentInfo.m_mass * neighborInfo.m_mass * pow2( recDistance ) * delta;
-float2	force = 0;//currentInfo.m_mass * neighborInfo.m_mass * pow2( recDistance ) * delta;
-
-		force += currentInfo.m_mass * neighborInfo.m_mass * log( 1.0 + 0.1 * distance ) * delta;
+float2	force =  currentInfo.m_mass * neighborInfo.m_mass * (log( 1.0 + 0.1 * distance ) - log( 1.5 + 0.01 * distance )) * delta;
 
 //force = 0;
 
