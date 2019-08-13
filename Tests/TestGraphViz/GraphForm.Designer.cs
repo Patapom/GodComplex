@@ -43,12 +43,14 @@
 			this.label6 = new System.Windows.Forms.Label();
 			this.label7 = new System.Windows.Forms.Label();
 			this.checkBoxAutoCenter = new System.Windows.Forms.CheckBox();
+			this.label8 = new System.Windows.Forms.Label();
+			this.floatTrackbarControlRestDistance = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.SuspendLayout();
 			// 
 			// checkBoxRun
 			// 
 			this.checkBoxRun.AutoSize = true;
-			this.checkBoxRun.Location = new System.Drawing.Point(530, 309);
+			this.checkBoxRun.Location = new System.Drawing.Point(530, 330);
 			this.checkBoxRun.Name = "checkBoxRun";
 			this.checkBoxRun.Size = new System.Drawing.Size(46, 17);
 			this.checkBoxRun.TabIndex = 2;
@@ -58,7 +60,7 @@
 			// 
 			// buttonReset
 			// 
-			this.buttonReset.Location = new System.Drawing.Point(582, 305);
+			this.buttonReset.Location = new System.Drawing.Point(582, 326);
 			this.buttonReset.Name = "buttonReset";
 			this.buttonReset.Size = new System.Drawing.Size(46, 23);
 			this.buttonReset.TabIndex = 3;
@@ -92,7 +94,7 @@
 			// 
 			// buttonResetObstacles
 			// 
-			this.buttonResetObstacles.Location = new System.Drawing.Point(741, 305);
+			this.buttonResetObstacles.Location = new System.Drawing.Point(741, 326);
 			this.buttonResetObstacles.Name = "buttonResetObstacles";
 			this.buttonResetObstacles.Size = new System.Drawing.Size(98, 23);
 			this.buttonResetObstacles.TabIndex = 3;
@@ -154,7 +156,7 @@
 			// 
 			// buttonResetAll
 			// 
-			this.buttonResetAll.Location = new System.Drawing.Point(634, 305);
+			this.buttonResetAll.Location = new System.Drawing.Point(634, 326);
 			this.buttonResetAll.Name = "buttonResetAll";
 			this.buttonResetAll.Size = new System.Drawing.Size(75, 23);
 			this.buttonResetAll.TabIndex = 21;
@@ -222,7 +224,7 @@
 			// 
 			// floatTrackbarControlK0
 			// 
-			this.floatTrackbarControlK0.Location = new System.Drawing.Point(639, 124);
+			this.floatTrackbarControlK0.Location = new System.Drawing.Point(639, 145);
 			this.floatTrackbarControlK0.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlK0.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlK0.Name = "floatTrackbarControlK0";
@@ -235,7 +237,7 @@
 			// 
 			// floatTrackbarControlK1
 			// 
-			this.floatTrackbarControlK1.Location = new System.Drawing.Point(639, 150);
+			this.floatTrackbarControlK1.Location = new System.Drawing.Point(639, 171);
 			this.floatTrackbarControlK1.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlK1.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlK1.Name = "floatTrackbarControlK1";
@@ -248,7 +250,7 @@
 			// 
 			// floatTrackbarControlK2
 			// 
-			this.floatTrackbarControlK2.Location = new System.Drawing.Point(639, 197);
+			this.floatTrackbarControlK2.Location = new System.Drawing.Point(639, 218);
 			this.floatTrackbarControlK2.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlK2.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlK2.Name = "floatTrackbarControlK2";
@@ -261,7 +263,7 @@
 			// 
 			// floatTrackbarControlK3
 			// 
-			this.floatTrackbarControlK3.Location = new System.Drawing.Point(639, 223);
+			this.floatTrackbarControlK3.Location = new System.Drawing.Point(639, 244);
 			this.floatTrackbarControlK3.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlK3.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlK3.Name = "floatTrackbarControlK3";
@@ -275,7 +277,7 @@
 			// label4
 			// 
 			this.label4.AutoSize = true;
-			this.label4.Location = new System.Drawing.Point(610, 124);
+			this.label4.Location = new System.Drawing.Point(610, 145);
 			this.label4.Name = "label4";
 			this.label4.Size = new System.Drawing.Size(20, 13);
 			this.label4.TabIndex = 5;
@@ -284,7 +286,7 @@
 			// label5
 			// 
 			this.label5.AutoSize = true;
-			this.label5.Location = new System.Drawing.Point(610, 150);
+			this.label5.Location = new System.Drawing.Point(610, 171);
 			this.label5.Name = "label5";
 			this.label5.Size = new System.Drawing.Size(20, 13);
 			this.label5.TabIndex = 5;
@@ -293,7 +295,7 @@
 			// label6
 			// 
 			this.label6.AutoSize = true;
-			this.label6.Location = new System.Drawing.Point(608, 201);
+			this.label6.Location = new System.Drawing.Point(608, 222);
 			this.label6.Name = "label6";
 			this.label6.Size = new System.Drawing.Size(20, 13);
 			this.label6.TabIndex = 5;
@@ -302,7 +304,7 @@
 			// label7
 			// 
 			this.label7.AutoSize = true;
-			this.label7.Location = new System.Drawing.Point(608, 227);
+			this.label7.Location = new System.Drawing.Point(608, 248);
 			this.label7.Name = "label7";
 			this.label7.Size = new System.Drawing.Size(20, 13);
 			this.label7.TabIndex = 5;
@@ -311,12 +313,34 @@
 			// checkBoxAutoCenter
 			// 
 			this.checkBoxAutoCenter.AutoSize = true;
-			this.checkBoxAutoCenter.Location = new System.Drawing.Point(530, 272);
+			this.checkBoxAutoCenter.Location = new System.Drawing.Point(530, 293);
 			this.checkBoxAutoCenter.Name = "checkBoxAutoCenter";
 			this.checkBoxAutoCenter.Size = new System.Drawing.Size(121, 17);
 			this.checkBoxAutoCenter.TabIndex = 22;
 			this.checkBoxAutoCenter.Text = "Auto-Center Camera";
 			this.checkBoxAutoCenter.UseVisualStyleBackColor = true;
+			// 
+			// label8
+			// 
+			this.label8.AutoSize = true;
+			this.label8.Location = new System.Drawing.Point(530, 95);
+			this.label8.Name = "label8";
+			this.label8.Size = new System.Drawing.Size(74, 13);
+			this.label8.TabIndex = 5;
+			this.label8.Text = "Rest Distance";
+			// 
+			// floatTrackbarControlRestDistance
+			// 
+			this.floatTrackbarControlRestDistance.Location = new System.Drawing.Point(639, 91);
+			this.floatTrackbarControlRestDistance.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlRestDistance.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlRestDistance.Name = "floatTrackbarControlRestDistance";
+			this.floatTrackbarControlRestDistance.RangeMax = 1000000F;
+			this.floatTrackbarControlRestDistance.RangeMin = -1000000F;
+			this.floatTrackbarControlRestDistance.Size = new System.Drawing.Size(200, 20);
+			this.floatTrackbarControlRestDistance.TabIndex = 17;
+			this.floatTrackbarControlRestDistance.Value = 2F;
+			this.floatTrackbarControlRestDistance.VisibleRangeMax = 4F;
 			// 
 			// GraphForm
 			// 
@@ -329,8 +353,10 @@
 			this.Controls.Add(this.floatTrackbarControlK2);
 			this.Controls.Add(this.floatTrackbarControlK1);
 			this.Controls.Add(this.floatTrackbarControlK0);
+			this.Controls.Add(this.floatTrackbarControlRestDistance);
 			this.Controls.Add(this.floatTrackbarControlDampingConstant);
 			this.Controls.Add(this.floatTrackbarControlSpringConstant);
+			this.Controls.Add(this.label8);
 			this.Controls.Add(this.floatTrackbarControlDeltaTime);
 			this.Controls.Add(this.label3);
 			this.Controls.Add(this.buttonSave);
@@ -384,5 +410,7 @@
 		private System.Windows.Forms.Label label6;
 		private System.Windows.Forms.Label label7;
 		private System.Windows.Forms.CheckBox checkBoxAutoCenter;
+		private System.Windows.Forms.Label label8;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlRestDistance;
 	}
 }

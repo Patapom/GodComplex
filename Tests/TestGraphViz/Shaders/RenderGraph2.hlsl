@@ -37,7 +37,8 @@ PS_IN	VS( VS_IN _In ) {
 	SB_NodeSim	node = _SB_Graph_In[nodeIndex];
 	SB_NodeInfo	info = _SB_Nodes[nodeIndex];
 
-	const float	SIZE = 0.1;
+//	const float	SIZE = 0.1;
+	const float	SIZE = 0.01 * dot( 0.5, _cameraSize );
 
 	float2	position = node.m_position + SIZE * _In.__Position.xy;
 
@@ -71,7 +72,8 @@ PS_IN	VS2( VS_IN _In ) {
 	SB_NodeSim	targetNode = _SB_Graph_In[targetIndex];
 	SB_NodeInfo	targetInfo = _SB_Nodes[targetIndex];
 
-	const float	SIZE = 0.02;
+//	const float	SIZE = 0.02;
+	const float	SIZE = 0.002 * dot( 0.5, _cameraSize );
 
 	float2	P0 = sourceNode.m_position;
 	float2	P1 = targetNode.m_position;

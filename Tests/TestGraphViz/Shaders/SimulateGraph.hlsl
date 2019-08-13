@@ -12,6 +12,7 @@ cbuffer CB_Simulation : register(b1) {
 	float	_deltaTime;
 	float	_springConstant;
 	float	_dampingConstant;
+	float	_restDistance;
 	float4	_K;
 };
 
@@ -73,7 +74,7 @@ float2	force =  currentInfo.m_mass * neighborInfo.m_mass * (log( _K.x + _K.y * d
 
 //		float	springConstant = _springConstant * log( distance - 1.0 );
 //		float	springConstant = _springConstant * (distance > 1.0 ? 1.0 : 1.0 + log( 1.0 * distance ));
-		float	springConstant = _springConstant * (distance - 2.0);
+		float	springConstant = _springConstant * (distance - _restDistance);
 
 
 		// Damped harmonic oscillator

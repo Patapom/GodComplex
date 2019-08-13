@@ -1,4 +1,5 @@
 ﻿#define RENDER_GRAPH_PROPER
+//#define BUILD_FONTS
 
 using System;
 using System.Collections.Generic;
@@ -42,7 +43,7 @@ namespace TestGraphViz
 			public float		_deltaTime;
 			public float		_springConstant;
 			public float		_dampingConstant;
-			float				__PAD;
+			public float		_restDistance;
 
 			public float4		_K;
 		}
@@ -85,6 +86,11 @@ namespace TestGraphViz
 		private StructuredBuffer<SB_NodeSim>[]	m_SB_NodeSims = new StructuredBuffer<SB_NodeSim>[2];
  
  		private Texture2D						m_tex_FalseColors = null;
+
+		// Text display
+		private Rectangle[]						m_fontRectangles = null;
+ 		private Texture2D						m_tex_FontAtlas = null;
+ 		private Texture2D						m_tex_FontRectangle = null;
 
 		private ProtoParser.Graph				m_graph = null;
 		private uint							m_nodesCount = 0;
@@ -218,6 +224,9 @@ neurons[0].LinkChild( neurons[1] );
 					m_tex_FalseColors = new Texture2D( m_device, image, ImageUtility.COMPONENT_FORMAT.UNORM_sRGB );
 			}
 
+			// 
+			BuildFont();
+
 			Application.Idle += Application_Idle;
 		}
 
@@ -228,6 +237,7 @@ neurons[0].LinkChild( neurons[1] );
 			m_CB_Simulation.m._deltaTime = floatTrackbarControlDeltaTime.Value;
 			m_CB_Simulation.m._springConstant = floatTrackbarControlSpringConstant.Value;
 			m_CB_Simulation.m._dampingConstant = floatTrackbarControlDampingConstant.Value;
+			m_CB_Simulation.m._restDistance = floatTrackbarControlRestDistance.Value;
 			m_CB_Simulation.m._K.Set( floatTrackbarControlK0.Value, floatTrackbarControlK1.Value, floatTrackbarControlK2.Value, floatTrackbarControlK3.Value );
 			m_CB_Simulation.UpdateData();
 
@@ -372,6 +382,9 @@ neurons[0].LinkChild( neurons[1] );
 			if ( disposing && (components != null) ) {
 				components.Dispose();
 
+				m_tex_FontRectangle.Dispose();
+				m_tex_FontAtlas.Dispose();
+
  				m_tex_FalseColors.Dispose();
 
 				m_SB_Forces.Dispose();
@@ -397,6 +410,101 @@ neurons[0].LinkChild( neurons[1] );
 				temp.Dispose();
 			}
 			base.Dispose( disposing );
+		}
+
+		void	BuildFont() {
+			string	charSet = " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~";
+
+			m_fontRectangles = new Rectangle[charSet.Length];
+
+#if BUILD_FONTS
+			using ( Font F = new Font( this.Font.FontFamily, 36.0f ) ) {
+
+				// Build small bitmap and write each character
+				int	width = 0;
+				int	maxheight = 0;
+				using ( Bitmap B = new Bitmap( 70, 70, System.Drawing.Imaging.PixelFormat.Format32bppArgb ) ) {
+					using ( Graphics G = Graphics.FromImage( B ) ) {
+
+						for ( int i=0; i < charSet.Length; i++ ) {
+							string	s = charSet.Substring( i, 1 );
+// 							G.FillRectangle( Brushes.Black, 0, 0, B.Width, B.Height );
+// 							G.DrawString( s, F, Brushes.White, new PointF( 0, 0 ) );
+
+							SizeF	tempSize = G.MeasureString( s, F );
+							m_fontRectangles[i] = new Rectangle( width, 0, (int) Mathf.Ceiling( tempSize.Width ), (int) Mathf.Ceiling( tempSize.Height ) );
+							if ( m_fontRectangles[i].Width > B.Width || m_fontRectangles[i].Height > B.Height )
+								throw new Exception( "Fonts are too big, expand bitmap size or reduce font size!" );
+
+							width += m_fontRectangles[i].Width;
+							maxheight = Math.Max( maxheight, m_fontRectangles[i].Height );
+						}
+					}
+				}
+
+				// Build the final bitmap
+				using ( Bitmap B = new Bitmap( width, maxheight, System.Drawing.Imaging.PixelFormat.Format32bppArgb ) ) {
+					using ( Graphics G = Graphics.FromImage( B ) ) {
+						G.FillRectangle( Brushes.Black, 0, 0, B.Width, B.Height );
+
+						for ( int i=0; i < charSet.Length; i++ ) {
+							string	s = charSet.Substring( i, 1 );
+							G.DrawString( s, F, Brushes.White, new PointF( m_fontRectangles[i].X, m_fontRectangles[i].Y ) );
+						}
+
+						using ( ImageUtility.ImageFile file = new ImageUtility.ImageFile( B, new ImageUtility.ColorProfile( ImageUtility.ColorProfile.STANDARD_PROFILE.sRGB ) ) ) {
+							file.Save( new FileInfo( "Atlas.png" ), ImageUtility.ImageFile.FILE_FORMAT.PNG );
+						}
+					}
+				}
+			}
+
+			// Write char sizes
+			using ( FileStream S = new FileInfo( "Atlas.rect" ).Create() )
+				using ( BinaryWriter W = new BinaryWriter( S ) ) {
+					for ( int i=0; i < m_fontRectangles.Length; i++ ) {
+						W.Write( m_fontRectangles[i].X );
+						W.Write( m_fontRectangles[i].Y );
+						W.Write( m_fontRectangles[i].Width );
+						W.Write( m_fontRectangles[i].Height );
+					}
+				}
+#endif
+
+			// Load atlas
+			Size	atlasSize = new Size();
+			using ( ImageUtility.ImageFile file = new ImageUtility.ImageFile( new FileInfo( "Atlas.png" ) ) ) {
+				ImageUtility.ImageFile file2 = new ImageUtility.ImageFile( file, ImageUtility.PIXEL_FORMAT.RGBA8 );
+				using ( ImageUtility.ImagesMatrix M = new ImageUtility.ImagesMatrix( file2, ImageUtility.ImagesMatrix.IMAGE_TYPE.sRGB ) ) {
+					m_tex_FontAtlas = new Texture2D( m_device, M, ImageUtility.COMPONENT_FORMAT.UNORM_sRGB );
+					atlasSize.Width = (int) m_tex_FontAtlas.Width;
+					atlasSize.Height = (int) m_tex_FontAtlas.Height;
+				}
+			}
+
+			using ( FileStream S = new FileInfo( "Atlas.rect" ).OpenRead() )
+				using ( BinaryReader R = new BinaryReader( S ) ) {
+
+					// Read both CPU and GPU versions
+					using ( PixelsBuffer content = new PixelsBuffer( (uint) (16 * m_fontRectangles.Length) ) ) {
+						using ( BinaryWriter W = content.OpenStreamWrite() ) {
+							for ( int i=0; i < m_fontRectangles.Length; i++ ) {
+								m_fontRectangles[i].X = R.ReadInt32();
+								m_fontRectangles[i].Y = R.ReadInt32();
+								m_fontRectangles[i].Width = R.ReadInt32();
+								m_fontRectangles[i].Height = R.ReadInt32();
+
+								W.Write( (float) m_fontRectangles[i].X );
+								W.Write( (float) m_fontRectangles[i].Y );
+								W.Write( (float) m_fontRectangles[i].Width );
+								W.Write( (float) m_fontRectangles[i].Height );
+							}
+						}
+
+						m_tex_FontRectangle = new Texture2D( m_device, (uint) m_fontRectangles.Length, 1, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA32F, ImageUtility.COMPONENT_FORMAT.AUTO, false, false, new PixelsBuffer[] { content } );
+					}
+				}
+
 		}
 
 		#endregion
