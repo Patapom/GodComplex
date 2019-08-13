@@ -253,8 +253,6 @@ neurons[0].LinkChild( neurons[1] );
 // 			m_CB_Main.m.sourcesCount = (uint) m_simulationHotSpots.Count;
 // 			m_CB_Main.m.resultsConfinementDistance = floatTrackbarControlResultsSpaceConfinement.Value;
 
-			m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
-
 // 			//////////////////////////////////////////////////////////////////////////
 // 			// Perform simulation
 // 			if ( m_shader_DrawObstacles.Use() ) {
@@ -301,10 +299,12 @@ neurons[0].LinkChild( neurons[1] );
 			//////////////////////////////////////////////////////////////////////////
 			// Render
 #if RENDER_GRAPH_PROPER
-			m_device.Clear( float4.Zero );
-
 			if ( m_shader_RenderGraphLink.Use() ) {
-				m_device.SetRenderTarget( m_device.DefaultTarget, null );
+				m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.READ_WRITE_DEPTH_LESS, BLEND_STATE.DISABLED );
+				m_device.SetRenderTarget( m_device.DefaultTarget, m_device.DefaultDepthStencil );
+
+				m_device.Clear( float4.Zero );
+				m_device.ClearDepthStencil( m_device.DefaultDepthStencil, 1.0f, 0, true, false );
 
 				m_SB_NodeSims[0].SetInput( 0 );
 				m_SB_Nodes.SetInput( 1 );
@@ -317,6 +317,7 @@ neurons[0].LinkChild( neurons[1] );
 			}
 
 			if ( m_shader_RenderGraphNode.Use() ) {
+				m_device.SetRenderStates( RASTERIZER_STATE.NOCHANGE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.NOCHANGE );
 				m_device.SetRenderTarget( m_device.DefaultTarget, null );
 
 				m_SB_NodeSims[0].SetInput( 0 );
@@ -329,6 +330,8 @@ neurons[0].LinkChild( neurons[1] );
 				m_device.ScreenQuad.RenderInstanced( m_shader_RenderGraphNode, m_nodesCount );
 			}
 #else
+			m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
+
 			if ( m_shader_RenderGraph.Use() ) {
 				m_device.SetRenderTarget( m_device.DefaultTarget, null );
 

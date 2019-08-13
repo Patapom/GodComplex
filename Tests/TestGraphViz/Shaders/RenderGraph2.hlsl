@@ -87,6 +87,8 @@ PS_IN	VS2( VS_IN _In ) {
 	Out.UV.xy = _In.__Position.xy;
 	Out.UV.z = lerp( sourceInfo.m_mass, targetInfo.m_mass, U ) / _maxMass;
 
+	Out.__Position.z = 1.0 - Out.UV.z;
+
 	return Out;
 }
 
