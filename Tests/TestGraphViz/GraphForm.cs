@@ -49,6 +49,13 @@ namespace TestGraphViz
 		}
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
+		private struct CB_Text {
+			public float2		_position;
+			public float2		_right;
+			public float2		_up;
+		}
+
+		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
 		private struct SB_NodeSim {
 			public float2		m_position;
 			public float2		m_velocity;
@@ -61,6 +68,13 @@ namespace TestGraphViz
 			public uint			m_linksCount;
 		}
 
+		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
+		private struct SB_Letter {
+			public uint			m_letterIndex;
+			public float		m_offset;
+			public float		m_ratio;
+		}
+
 		#endregion
 
 		#region FIELDS
@@ -69,6 +83,7 @@ namespace TestGraphViz
 
 		private ConstantBuffer<CB_Main>			m_CB_Main = null;
 		private ConstantBuffer<CB_Simulation>	m_CB_Simulation = null;
+		private ConstantBuffer<CB_Text>			m_CB_Text = null;
 
 		private ComputeShader					m_shader_ComputeForces = null;
 		private ComputeShader					m_shader_Simulate = null;
@@ -78,6 +93,7 @@ namespace TestGraphViz
 #else
 		private Shader							m_shader_RenderGraph = null;
 #endif
+		private Shader							m_shader_RenderText = null;
 
 		private StructuredBuffer<SB_NodeInfo>	m_SB_Nodes = null;
 		private StructuredBuffer<uint>			m_SB_Links = null;
@@ -88,10 +104,13 @@ namespace TestGraphViz
  		private Texture2D						m_tex_FalseColors = null;
 
 		// Text display
+		private int[]							m_char2Index = new int[256];
 		private Rectangle[]						m_fontRectangles = null;
  		private Texture2D						m_tex_FontAtlas = null;
  		private Texture2D						m_tex_FontRectangle = null;
+		private StructuredBuffer<SB_Letter>		m_SB_Text = null;
 
+		// Graph
 		private ProtoParser.Graph				m_graph = null;
 		private uint							m_nodesCount = 0;
 		private uint							m_totalLinksCount = 0;
@@ -140,6 +159,7 @@ neurons[0].LinkChild( neurons[1] );
 			//////////////////////////////////////////////////////////////////////////
 			m_CB_Main = new ConstantBuffer<CB_Main>( m_device, 0 );
 			m_CB_Simulation = new ConstantBuffer<CB_Simulation>( m_device, 1 );
+			m_CB_Text = new ConstantBuffer<CB_Text>( m_device, 2 );
 
 			m_shader_ComputeForces = new ComputeShader( m_device, new FileInfo( "./Shaders/SimulateGraph.hlsl" ), "CS", null );
 			m_shader_Simulate = new ComputeShader( m_device, new FileInfo( "./Shaders/SimulateGraph.hlsl" ), "CS2", null );
@@ -149,6 +169,8 @@ neurons[0].LinkChild( neurons[1] );
 #else
 			m_shader_RenderGraph = new Shader( m_device, new FileInfo( "./Shaders/RenderGraph.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 #endif
+
+			m_shader_RenderText = new Shader( m_device, new FileInfo( "./Shaders/RenderText.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 
 			// Build node info
 			m_SB_Nodes = new StructuredBuffer<SB_NodeInfo>( m_device, m_nodesCount, true );
@@ -224,7 +246,8 @@ neurons[0].LinkChild( neurons[1] );
 					m_tex_FalseColors = new Texture2D( m_device, image, ImageUtility.COMPONENT_FORMAT.UNORM_sRGB );
 			}
 
-			// 
+			// Prepare font atlas
+			m_SB_Text = new StructuredBuffer<SB_Letter>( m_device, 1024U, true );
 			BuildFont();
 
 			Application.Idle += Application_Idle;
@@ -262,19 +285,6 @@ neurons[0].LinkChild( neurons[1] );
 // 			m_CB_Main.m.sourceIndex = (uint) integerTrackbarControlSimulationSourceIndex.Value;
 // 			m_CB_Main.m.sourcesCount = (uint) m_simulationHotSpots.Count;
 // 			m_CB_Main.m.resultsConfinementDistance = floatTrackbarControlResultsSpaceConfinement.Value;
-
-// 			//////////////////////////////////////////////////////////////////////////
-// 			// Perform simulation
-// 			if ( m_shader_DrawObstacles.Use() ) {
-// 				m_device.SetRenderTarget( m_tex_Obstacles1, null );
-// 				m_tex_Obstacles0.SetPS( 0 );
-// 				m_device.RenderFullscreenQuad( m_shader_DrawObstacles );
-// 
-// 				// Swap
-// 				Texture2D	temp = m_tex_Obstacles0;
-// 				m_tex_Obstacles0 = m_tex_Obstacles1;
-// 				m_tex_Obstacles1 = temp;
-// 			}
 
 			//////////////////////////////////////////////////////////////////////////
 			// Perform simulation
@@ -355,6 +365,51 @@ neurons[0].LinkChild( neurons[1] );
 #endif
 
 			//////////////////////////////////////////////////////////////////////////
+			// Draw some text
+			if ( m_displayText != null && m_displayText.Length > 0 && m_shader_RenderText.Use() ) {
+				m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.DISABLED );
+				m_device.SetRenderTarget( m_device.DefaultTarget, null );
+
+				m_tex_FontAtlas.SetPS( 0 );
+				m_tex_FontRectangle.SetVS( 1 );
+
+				// Fill text letters
+				int	totalWidth = 0;
+				int	totalHeight = (int) m_tex_FontAtlas.Height;
+				for ( int i=0; i < m_displayText.Length; i++ ) {
+					int			letterIndex = m_char2Index[(int) m_displayText[i]];
+					Rectangle	rect = m_fontRectangles[letterIndex];
+					m_SB_Text.m[i].m_letterIndex = (uint) letterIndex;
+					m_SB_Text.m[i].m_offset = totalWidth;
+					m_SB_Text.m[i].m_ratio = rect.Width;
+					totalWidth += rect.Width;
+				}
+					// Normalize
+				float	norm = 1.0f / totalWidth;
+				for ( int i=0; i < m_displayText.Length; i++ ) {
+					m_SB_Text.m[i].m_offset *= norm;
+					m_SB_Text.m[i].m_ratio *= norm;
+				}
+				m_SB_Text.Write();
+				m_SB_Text.SetInput( 2 );
+
+				// Setup text rectangle
+				const float	textHeight_pixels = 20.0f;	// What we want the text size to be on screen
+				float		textWidth_pixels = totalWidth * textHeight_pixels / totalHeight;
+
+				float2		textSize_proj = new float2( 2.0f * textWidth_pixels / panelOutput.Width, 2.0f * textHeight_pixels / panelOutput.Height );
+
+				float2		selectedNodePosition_proj = new float2(  2.0f * (m_selectedNodePosition.x - m_CB_Main.m._cameraCenter.x) / m_CB_Main.m._cameraSize.x,
+																	-2.0f * (m_selectedNodePosition.y - m_CB_Main.m._cameraCenter.y) / m_CB_Main.m._cameraSize.y );
+				m_CB_Text.m._position.Set( selectedNodePosition_proj.x - 0.5f * textSize_proj.x, selectedNodePosition_proj.y + 1.0f * textSize_proj.y );	// Horizontal centering on node position, vertical offset so it's above
+				m_CB_Text.m._right.Set( textSize_proj.x, 0.0f );
+				m_CB_Text.m._up.Set( 0.0f, textSize_proj.y );
+				m_CB_Text.UpdateData();
+
+				m_device.ScreenQuad.RenderInstanced( m_shader_RenderText, (uint) m_displayText.Length );
+			}
+
+			//////////////////////////////////////////////////////////////////////////
 			// Auto-center camera
 			if ( checkBoxAutoCenter.Checked ) {
 				m_SB_NodeSims[0].Read();
@@ -384,6 +439,7 @@ neurons[0].LinkChild( neurons[1] );
 
 				m_tex_FontRectangle.Dispose();
 				m_tex_FontAtlas.Dispose();
+				m_SB_Text.Dispose();
 
  				m_tex_FalseColors.Dispose();
 
@@ -393,6 +449,7 @@ neurons[0].LinkChild( neurons[1] );
 				m_SB_Links.Dispose();
 				m_SB_Nodes.Dispose();
 
+				m_shader_RenderText.Dispose();
 #if RENDER_GRAPH_PROPER
 				m_shader_RenderGraphLink.Dispose();
 				m_shader_RenderGraphNode.Dispose();
@@ -402,6 +459,7 @@ neurons[0].LinkChild( neurons[1] );
 				m_shader_Simulate.Dispose();
 				m_shader_ComputeForces.Dispose();
 
+				m_CB_Text.Dispose();
 				m_CB_Simulation.Dispose();
 				m_CB_Main.Dispose();
 
@@ -413,9 +471,14 @@ neurons[0].LinkChild( neurons[1] );
 		}
 
 		void	BuildFont() {
-			string	charSet = " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~";
+			string	charSet = " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~éèêëôöàçÔÖÂÊÉ";
 
 			m_fontRectangles = new Rectangle[charSet.Length];
+			for ( int charIndex=0; charIndex < charSet.Length; charIndex++ ) {
+				char	C = charSet[charIndex];
+				int		index = (int) C;
+				m_char2Index[index] = charIndex;
+			}
 
 #if BUILD_FONTS
 			using ( Font F = new Font( this.Font.FontFamily, 36.0f ) ) {
@@ -471,14 +534,11 @@ neurons[0].LinkChild( neurons[1] );
 				}
 #endif
 
-			// Load atlas
-			Size	atlasSize = new Size();
+			// Load atlas & rectangles
 			using ( ImageUtility.ImageFile file = new ImageUtility.ImageFile( new FileInfo( "Atlas.png" ) ) ) {
 				ImageUtility.ImageFile file2 = new ImageUtility.ImageFile( file, ImageUtility.PIXEL_FORMAT.RGBA8 );
 				using ( ImageUtility.ImagesMatrix M = new ImageUtility.ImagesMatrix( file2, ImageUtility.ImagesMatrix.IMAGE_TYPE.sRGB ) ) {
 					m_tex_FontAtlas = new Texture2D( m_device, M, ImageUtility.COMPONENT_FORMAT.UNORM_sRGB );
-					atlasSize.Width = (int) m_tex_FontAtlas.Width;
-					atlasSize.Height = (int) m_tex_FontAtlas.Height;
 				}
 			}
 
@@ -486,6 +546,8 @@ neurons[0].LinkChild( neurons[1] );
 				using ( BinaryReader R = new BinaryReader( S ) ) {
 
 					// Read both CPU and GPU versions
+					float	recW = 1.0f / m_tex_FontAtlas.Width;
+					float	recH = 1.0f / m_tex_FontAtlas.Height;
 					using ( PixelsBuffer content = new PixelsBuffer( (uint) (16 * m_fontRectangles.Length) ) ) {
 						using ( BinaryWriter W = content.OpenStreamWrite() ) {
 							for ( int i=0; i < m_fontRectangles.Length; i++ ) {
@@ -494,10 +556,10 @@ neurons[0].LinkChild( neurons[1] );
 								m_fontRectangles[i].Width = R.ReadInt32();
 								m_fontRectangles[i].Height = R.ReadInt32();
 
-								W.Write( (float) m_fontRectangles[i].X );
-								W.Write( (float) m_fontRectangles[i].Y );
-								W.Write( (float) m_fontRectangles[i].Width );
-								W.Write( (float) m_fontRectangles[i].Height );
+								W.Write( recW * (float) m_fontRectangles[i].X );
+								W.Write( recH * (float) m_fontRectangles[i].Y );
+								W.Write( recW * (float) m_fontRectangles[i].Width );
+								W.Write( recH * (float) m_fontRectangles[i].Height );
 							}
 						}
 
@@ -554,6 +616,41 @@ neurons[0].LinkChild( neurons[1] );
 // 				// Authorize source plotting ONLY when we successfully registered a new point
 // 				m_plotSource = true;
 // 			}
+		}
+
+		float2	Client2Pos( Point _clientPos ) {
+			return new float2(	m_CB_Main.m._cameraCenter.x + ((float) _clientPos.X / panelOutput.Width - 0.5f) * m_CB_Main.m._cameraSize.x,
+								m_CB_Main.m._cameraCenter.y - (0.5f - (float) _clientPos.Y / panelOutput.Height) * m_CB_Main.m._cameraSize.y );
+		}
+
+		string	m_displayText = null;
+		float2	m_selectedNodePosition;
+		private void panelOutput_MouseMove( object sender, MouseEventArgs e ) {
+			// Transform mouse position into node space
+			float2	mousePosition = Client2Pos( e.Location );
+			float	nodeRadius = 0.01f * 0.5f * (m_CB_Main.m._cameraSize.x + m_CB_Main.m._cameraSize.y);	// Radius adapts to camera size
+			float	sqNodeRadius = nodeRadius * nodeRadius;
+
+			// Identify any node under the mouse
+			m_SB_NodeSims[0].Read();
+
+//			int	selectedNodeIndex = -1;
+			m_displayText = null;
+			for ( int nodeIndex=0; nodeIndex < m_nodesCount; nodeIndex++ ) {
+				float2	nodePosition = m_SB_NodeSims[0].m[nodeIndex].m_position;
+				float2	delta = nodePosition - mousePosition;
+				float	sqDistance = delta.Dot( delta );
+				if ( sqDistance > sqNodeRadius )
+					continue;
+
+				// Found it!
+//				selectedNodeIndex = nodeIndex;
+				m_displayText = m_graph[nodeIndex].m_name;
+				m_selectedNodePosition = nodePosition;
+				break;
+			}
+
+//			if ( selectedNodeIndex )
 		}
 
 		#endregion

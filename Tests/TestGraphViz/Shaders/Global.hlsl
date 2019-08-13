@@ -55,3 +55,13 @@ float ReverseBits( uint bits ) {
 	bits = ((bits & 0x00FF00FFu) << 8u) | ((bits & 0xFF00FF00u) >> 8u);
 	return float(bits) * 2.3283064365386963e-10; // / 0x100000000
 }
+
+// Transforms a node-space position into a projection-space position
+float4	TransformPosition( float2 _position ) {
+	float4	result;
+	result.xy = 2.0 * (_position - _cameraCenter) / _cameraSize;
+	result.y = -result.y;
+	result.z = 0;
+	result.w = 1;
+	return result;
+}

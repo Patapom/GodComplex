@@ -18,15 +18,6 @@ struct PS_IN {
 	float3	UV : TEXCOORDS0;
 };
 
-float4	TransformPosition( float2 _position ) {
-	float4	result;
-	result.xy = 2.0 * (_position - _cameraCenter) / _cameraSize;
-	result.y = -result.y;
-	result.z = 0;
-	result.w = 1;
-	return result;
-}
-
 ///////////////////////////////////////////////////////////////////////////////////////
 // NODE DRAWING
 //

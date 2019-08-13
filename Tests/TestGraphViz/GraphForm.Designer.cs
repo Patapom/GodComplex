@@ -140,6 +140,7 @@
 			this.panelOutput.Size = new System.Drawing.Size(512, 512);
 			this.panelOutput.TabIndex = 0;
 			this.panelOutput.MouseDown += new System.Windows.Forms.MouseEventHandler(this.panelOutput_MouseDown);
+			this.panelOutput.MouseMove += new System.Windows.Forms.MouseEventHandler(this.panelOutput_MouseMove);
 			// 
 			// floatTrackbarControlDeltaTime
 			// 
