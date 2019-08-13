@@ -272,7 +272,7 @@
 			this.floatTrackbarControlK3.RangeMin = -1000000F;
 			this.floatTrackbarControlK3.Size = new System.Drawing.Size(200, 20);
 			this.floatTrackbarControlK3.TabIndex = 17;
-			this.floatTrackbarControlK3.Value = 0.01F;
+			this.floatTrackbarControlK3.Value = 0.08F;
 			this.floatTrackbarControlK3.VisibleRangeMax = 0.1F;
 			// 
 			// label4
@@ -340,7 +340,7 @@
 			this.floatTrackbarControlRestDistance.RangeMin = -1000000F;
 			this.floatTrackbarControlRestDistance.Size = new System.Drawing.Size(200, 20);
 			this.floatTrackbarControlRestDistance.TabIndex = 17;
-			this.floatTrackbarControlRestDistance.Value = 2F;
+			this.floatTrackbarControlRestDistance.Value = 4F;
 			this.floatTrackbarControlRestDistance.VisibleRangeMax = 4F;
 			// 
 			// GraphForm
