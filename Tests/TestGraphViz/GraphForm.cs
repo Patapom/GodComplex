@@ -29,6 +29,10 @@ namespace TestGraphViz
 			public uint			_nodesCount;
 			public uint			_resX;
 			public uint			_resY;
+			public float		_maxMass;
+
+			public float2		_cameraCenter;
+			public float2		_cameraSize;
 		}
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
@@ -36,6 +40,9 @@ namespace TestGraphViz
 			public float		_deltaTime;
 			public float		_springConstant;
 			public float		_dampingConstant;
+			float				__PAD;
+
+			public float4		_K;
 		}
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
@@ -68,19 +75,8 @@ namespace TestGraphViz
 		private StructuredBuffer<uint>			m_SB_Links = null;
 		private StructuredBuffer<float2>		m_SB_Forces = null;
 		private StructuredBuffer<SB_NodeSim>[]	m_SB_NodeSims = new StructuredBuffer<SB_NodeSim>[2];
-
-// 		private Texture2D				m_tex_HeatMap_Staging = null;
-// 		private Texture2D				m_tex_HeatMap0 = null;
-// 		private Texture2D				m_tex_HeatMap1 = null;
-// 		private Texture2D				m_tex_Obstacles_Staging = null;
-// 		private Texture2D				m_tex_Obstacles0 = null;
-// 		private Texture2D				m_tex_Obstacles1 = null;
-// 
-// 		private Texture2D				m_tex_Search = null;
-// 		private Texture2D				m_tex_Search_Staging = null;
-// 
-// 		private Texture2D				m_tex_FalseColors0 = null;
-// 		private Texture2D				m_tex_FalseColors1 = null;
+ 
+ 		private Texture2D				m_tex_FalseColors = null;
 
 		private ProtoParser.Graph		m_graph = null;
 		private uint					m_nodesCount = 0;
@@ -130,11 +126,6 @@ neurons[0].LinkChild( neurons[1] );
 			m_CB_Main = new ConstantBuffer<CB_Main>( m_device, 0 );
 			m_CB_Simulation = new ConstantBuffer<CB_Simulation>( m_device, 1 );
 
-			m_CB_Main.m._nodesCount = m_nodesCount;
-			m_CB_Main.m._resX = (uint) panelOutput.Width;
-			m_CB_Main.m._resY = (uint) panelOutput.Height;
-			m_CB_Main.UpdateData();
-
 			m_shader_ComputeForces = new ComputeShader( m_device, new FileInfo( "./Shaders/SimulateGraph.hlsl" ), "CS", null );
 			m_shader_Simulate = new ComputeShader( m_device, new FileInfo( "./Shaders/SimulateGraph.hlsl" ), "CS2", null );
 			m_shader_RenderGraph = new Shader( m_device, new FileInfo( "./Shaders/RenderGraph.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
@@ -144,14 +135,19 @@ neurons[0].LinkChild( neurons[1] );
 
 			Dictionary< ProtoParser.Neuron, uint >	neuron2ID = new Dictionary<ProtoParser.Neuron, uint>( neurons.Length );
 			uint	totalLinksCount = 0;
+			float	maxMass = 0.0f;
 			for ( int neuronIndex=0; neuronIndex < m_nodesCount; neuronIndex++ ) {
 				ProtoParser.Neuron	N = neurons[neuronIndex];
 				neuron2ID[N] = (uint) neuronIndex;
 
 				uint	linksCount = (uint) (N.ParentsCount + N.ChildrenCount + N.FeaturesCount);
-				m_SB_Nodes.m[neuronIndex].m_mass = 1 + linksCount;
+//				m_SB_Nodes.m[neuronIndex].m_mass = (1 + 10.0f * linksCount) / (0.1f + N.Distance2Root);		// Works with S=1e4 D=-1e3
+				m_SB_Nodes.m[neuronIndex].m_mass = (1 + 1.0f * linksCount) / (0.01f + N.Distance2Root);		// Works with S=1e4 D=-1e3
+//				m_SB_Nodes.m[neuronIndex].m_mass = (1 + 0.1f * linksCount) / (0.1f + N.Distance2Root);		// Works with S=10 D=-10
 				m_SB_Nodes.m[neuronIndex].m_linkOffset = totalLinksCount;
 				m_SB_Nodes.m[neuronIndex].m_linksCount = linksCount;
+
+				maxMass = Mathf.Max( maxMass, m_SB_Nodes.m[neuronIndex].m_mass );
 
 				totalLinksCount += linksCount;
 			}
@@ -171,6 +167,15 @@ neurons[0].LinkChild( neurons[1] );
 			}
 			m_SB_Links.Write();
 
+			// Setup initial CB
+			m_CB_Main.m._nodesCount = m_nodesCount;
+			m_CB_Main.m._resX = (uint) panelOutput.Width;
+			m_CB_Main.m._resY = (uint) panelOutput.Height;
+			m_CB_Main.m._maxMass = maxMass;
+			m_CB_Main.m._cameraCenter = float2.Zero;
+			m_CB_Main.m._cameraSize.Set( 10.0f, 10.0f );
+			m_CB_Main.UpdateData();
+
 			// Initialize sim buffers
 			m_SB_Forces = new StructuredBuffer<float2>( m_device, m_nodesCount * m_nodesCount, false );
 			m_SB_NodeSims[0] = new StructuredBuffer<SB_NodeSim>( m_device, m_nodesCount, true );
@@ -183,19 +188,14 @@ neurons[0].LinkChild( neurons[1] );
 // 			m_tex_Search = new Texture2D( m_device, (uint) GRAPH_SIZE, (uint) GRAPH_SIZE, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA8, ImageUtility.COMPONENT_FORMAT.UNORM, false, false, null );
 // 			m_tex_Search_Staging = new Texture2D( m_device, (uint) GRAPH_SIZE, (uint) GRAPH_SIZE, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA8, ImageUtility.COMPONENT_FORMAT.UNORM, true, false, null );
 
-// 			// Load false colors
-// 			using ( ImageUtility.ImageFile sourceImage = new ImageUtility.ImageFile( new FileInfo( "../../Images/Gradients/Magma.png" ), ImageUtility.ImageFile.FILE_FORMAT.PNG ) ) {
-// 				ImageUtility.ImageFile convertedImage = new ImageUtility.ImageFile();
-// 				convertedImage.ConvertFrom( sourceImage, ImageUtility.PIXEL_FORMAT.BGRA8 );
-// 				using ( ImageUtility.ImagesMatrix image = new ImageUtility.ImagesMatrix( convertedImage, ImageUtility.ImagesMatrix.IMAGE_TYPE.sRGB ) )
-// 					m_tex_FalseColors0 = new Texture2D( m_device, image, ImageUtility.COMPONENT_FORMAT.UNORM_sRGB );
-// 			}
-// 			using ( ImageUtility.ImageFile sourceImage = new ImageUtility.ImageFile( new FileInfo( "../../Images/Gradients/Viridis.png" ), ImageUtility.ImageFile.FILE_FORMAT.PNG ) ) {
-// 				ImageUtility.ImageFile convertedImage = new ImageUtility.ImageFile();
-// 				convertedImage.ConvertFrom( sourceImage, ImageUtility.PIXEL_FORMAT.BGRA8 );
-// 				using ( ImageUtility.ImagesMatrix image = new ImageUtility.ImagesMatrix( convertedImage, ImageUtility.ImagesMatrix.IMAGE_TYPE.sRGB ) )
-// 					m_tex_FalseColors1 = new Texture2D( m_device, image, ImageUtility.COMPONENT_FORMAT.UNORM_sRGB );
-// 			}
+			// Load false colors
+//			using ( ImageUtility.ImageFile sourceImage = new ImageUtility.ImageFile( new FileInfo( "../../Images/Gradients/Viridis.png" ), ImageUtility.ImageFile.FILE_FORMAT.PNG ) ) {
+			using ( ImageUtility.ImageFile sourceImage = new ImageUtility.ImageFile( new FileInfo( "../../Images/Gradients/Magma.png" ), ImageUtility.ImageFile.FILE_FORMAT.PNG ) ) {
+				ImageUtility.ImageFile convertedImage = new ImageUtility.ImageFile();
+				convertedImage.ConvertFrom( sourceImage, ImageUtility.PIXEL_FORMAT.BGRA8 );
+				using ( ImageUtility.ImagesMatrix image = new ImageUtility.ImagesMatrix( convertedImage, ImageUtility.ImagesMatrix.IMAGE_TYPE.sRGB ) )
+					m_tex_FalseColors = new Texture2D( m_device, image, ImageUtility.COMPONENT_FORMAT.UNORM_sRGB );
+			}
 
 			Application.Idle += Application_Idle;
 		}
@@ -207,6 +207,7 @@ neurons[0].LinkChild( neurons[1] );
 			m_CB_Simulation.m._deltaTime = floatTrackbarControlDeltaTime.Value;
 			m_CB_Simulation.m._springConstant = floatTrackbarControlSpringConstant.Value;
 			m_CB_Simulation.m._dampingConstant = floatTrackbarControlDampingConstant.Value;
+			m_CB_Simulation.m._K.Set( floatTrackbarControlK0.Value, floatTrackbarControlK1.Value, floatTrackbarControlK2.Value, floatTrackbarControlK3.Value );
 			m_CB_Simulation.UpdateData();
 
 
@@ -282,8 +283,27 @@ neurons[0].LinkChild( neurons[1] );
 				m_device.SetRenderTarget( m_device.DefaultTarget, null );
 
 				m_SB_NodeSims[0].SetInput( 0 );
+				m_SB_Nodes.SetInput( 1 );
+
+				m_tex_FalseColors.SetPS( 4 );
 
 				m_device.RenderFullscreenQuad( m_shader_RenderGraph );
+			}
+
+			//////////////////////////////////////////////////////////////////////////
+			if ( checkBoxAutoCenter.Checked ) {
+				m_SB_NodeSims[0].Read();
+
+				float2	minPos = new float2( float.MaxValue, float.MaxValue );
+				float2	maxPos = new float2( -float.MaxValue, -float.MaxValue );
+				for ( int i=0; i < m_nodesCount; i++ ) {
+					minPos.Min( m_SB_NodeSims[0].m[i].m_position );
+					maxPos.Max( m_SB_NodeSims[0].m[i].m_position );
+				}
+
+				m_CB_Main.m._cameraSize = 1.05f * (maxPos - minPos);
+				m_CB_Main.m._cameraCenter = 0.5f * (minPos + maxPos);
+				m_CB_Main.UpdateData();
 			}
 
 			m_device.Present( false );
@@ -297,8 +317,7 @@ neurons[0].LinkChild( neurons[1] );
 			if ( disposing && (components != null) ) {
 				components.Dispose();
 
-// 				m_tex_FalseColors1.Dispose();
-// 				m_tex_FalseColors0.Dispose();
+ 				m_tex_FalseColors.Dispose();
 
 				m_SB_Forces.Dispose();
 				m_SB_NodeSims[1].Dispose();
@@ -327,7 +346,7 @@ neurons[0].LinkChild( neurons[1] );
 		private void buttonReset_Click( object sender, EventArgs e ) {
 #if true
 			for ( int neuronIndex=0; neuronIndex < m_nodesCount; neuronIndex++ ) {
-				m_SB_NodeSims[0].m[neuronIndex].m_position.Set( 5.0f * (2.0f * (float) SimpleRNG.GetUniform() - 1.0f), 5.0f * (2.0f * (float) SimpleRNG.GetUniform() - 1.0f) );	// In a size 2 square
+				m_SB_NodeSims[0].m[neuronIndex].m_position.Set( 0.5f * m_CB_Main.m._cameraSize.x * (2.0f * (float) SimpleRNG.GetUniform() - 1.0f), 0.5f * m_CB_Main.m._cameraSize.y * (2.0f * (float) SimpleRNG.GetUniform() - 1.0f) );	// In a size 2 square
 //m_SB_NodeSims[0].m[neuronIndex].m_position.Set( 2.0f * neuronIndex - 1.0f, 0.0f );
 				m_SB_NodeSims[0].m[neuronIndex].m_velocity.Set( 0, 0 );
 			}
@@ -340,6 +359,10 @@ neurons[0].LinkChild( neurons[1] );
 			}
 			m_SB_NodeSims[0].Write();
 #endif
+
+			m_CB_Main.m._cameraSize = 10.0f * float2.One;
+			m_CB_Main.m._cameraCenter = float2.Zero;
+			m_CB_Main.UpdateData();
 		}
 
 		private void buttonResetAll_Click( object sender, EventArgs e ) {

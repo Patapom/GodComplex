@@ -8,6 +8,9 @@ static const float	DAMPING_CONSTANT = 0.0;
 cbuffer CB_Main : register(b0) {
 	uint	_nodesCount;
 	uint2	_resolution;
+	float	_maxMass;
+	float2	_cameraCenter;
+	float2	_cameraSize;
 };
 
 struct SB_NodeSim {
