@@ -14,6 +14,8 @@ cbuffer CB_Simulation : register(b1) {
 	float	_dampingConstant;
 };
 
+//#define DEBUG_MASS 10.0
+
 
 ////////////////////////////////////////////////////////////////////////////
 // First CS computes the giant matrix of forces that each node provides to each other
@@ -28,25 +30,35 @@ void	CS( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : SV_GROUPTHREADID, u
 	SB_NodeInfo	currentInfo = _SB_Nodes[nodeIndex];
 	SB_NodeSim	current = _SB_Graph_In[nodeIndex];
 
-	float2	position = current.m_position;
+#ifdef DEBUG_MASS
+currentInfo.m_mass = DEBUG_MASS;
+#endif
 
 	////////////////////////////////////////////////////////////////////////////
 	// Compute gravitational influence on neighbors
 	//
 	for ( uint neighborIndex=0; neighborIndex < _nodesCount; neighborIndex++ ) {
-		if ( neighborIndex == nodeIndex )
-			continue;	// Avoid influencing ourselves
-
 		SB_NodeInfo	neighborInfo = _SB_Nodes[neighborIndex];
 		SB_NodeSim	neighbor = _SB_Graph_In[neighborIndex];
 
-		float2	delta = position - neighbor.m_position;
+		float2	delta = current.m_position - neighbor.m_position;
 		float	distance = length( delta );
 		float	recDistance = abs(distance) > 1e-6 ? 1.0 / distance : 0.0;
 				delta *= recDistance;
 
+//distance *= 0.1;
+//recDistance *= 10.0;
+
 		// Gravitational force
-		float2	force = currentInfo.m_mass * neighborInfo.m_mass * pow2( recDistance ) * delta;
+//recDistance = max( 10.0, recDistance );
+//recDistance *= 0.0001;
+
+//		float2	force = currentInfo.m_mass * neighborInfo.m_mass * pow2( recDistance ) * delta;
+float2	force = 0;//currentInfo.m_mass * neighborInfo.m_mass * pow2( recDistance ) * delta;
+
+		force += currentInfo.m_mass * neighborInfo.m_mass * log( 1.0 + 0.1 * distance ) * delta;
+
+//force = 0;
 
 		_SB_Graph_Forces[_nodesCount * nodeIndex + neighborIndex] = force;
 	}
@@ -54,20 +66,33 @@ void	CS( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : SV_GROUPTHREADID, u
 	////////////////////////////////////////////////////////////////////////////
 	// Compute spring force that we provide to neigbors
 	//
+#if 1
 	for ( uint linkIndex=0; linkIndex < currentInfo.m_linksCount; linkIndex++ ) {
 		uint		neighborIndex = _SB_Links[currentInfo.m_linkOffset + linkIndex];
 		SB_NodeSim	neighbor = _SB_Graph_In[neighborIndex];
 
-		float2	delta = position - neighbor.m_position;
-//		float	distance = length( delta );
+		float2	delta = current.m_position - neighbor.m_position;
+		float	distance = length( delta );
 //				delta *= abs(distance) > 1e-6 ? 1.0 / distance : 0.0;
 
+
+// @TODO: Use a spring rest length based on ???
+
+//		float	springConstant = _springConstant * log( distance - 1.0 );
+//		float	springConstant = _springConstant * (distance > 1.0 ? 1.0 : 1.0 + log( 1.0 * distance ));
+		float	springConstant = _springConstant * (distance - 2.0);
+
+
 		// Damped harmonic oscillator
-		float2	force = _springConstant * delta
+		float2	force = springConstant * delta
 					  + _dampingConstant * neighbor.m_velocity;
 
 		_SB_Graph_Forces[_nodesCount * nodeIndex + neighborIndex] += force;
 	}
+#endif
+
+	// Clear self-influence
+	_SB_Graph_Forces[_nodesCount * nodeIndex + nodeIndex] = 0.0;
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -83,19 +108,21 @@ void	CS2( uint3 _groupID : SV_GROUPID, uint3 _groupThreadID : SV_GROUPTHREADID, 
 	SB_NodeInfo	currentInfo = _SB_Nodes[nodeIndex];
 	SB_NodeSim	current = _SB_Graph_In[nodeIndex];
 
+#ifdef DEBUG_MASS
+currentInfo.m_mass = DEBUG_MASS;
+#endif
+
 	// Retrieve forces
 	float2	sumForces = 0.0;
 	for ( uint neighborIndex=0; neighborIndex < _nodesCount; neighborIndex++ ) {
-		if ( neighborIndex == nodeIndex )
-			continue;	// Avoid influencing ourselves
-
 		sumForces += _SB_Graph_Forces[_nodesCount * neighborIndex + nodeIndex];
 	}
+//	sumForces -= _SB_Graph_Forces[_nodesCount * nodeIndex + nodeIndex];
 
 	// Apply simulation
 	float2	acceleration = sumForces / currentInfo.m_mass;
-	current.m_position += current.m_velocity * _deltaTime;
 	current.m_velocity += acceleration * _deltaTime;
+	current.m_position += current.m_velocity * _deltaTime;
 
 	_SB_Graph_Out[nodeIndex] = current;
 }

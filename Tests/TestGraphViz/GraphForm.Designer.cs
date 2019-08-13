@@ -140,7 +140,7 @@
 			this.floatTrackbarControlDeltaTime.RangeMin = 0F;
 			this.floatTrackbarControlDeltaTime.Size = new System.Drawing.Size(200, 20);
 			this.floatTrackbarControlDeltaTime.TabIndex = 17;
-			this.floatTrackbarControlDeltaTime.Value = 0.001F;
+			this.floatTrackbarControlDeltaTime.Value = 0.01F;
 			this.floatTrackbarControlDeltaTime.VisibleRangeMax = 0.005F;
 			// 
 			// buttonResetAll
@@ -185,7 +185,7 @@
 			this.floatTrackbarControlSpringConstant.RangeMin = -1000000F;
 			this.floatTrackbarControlSpringConstant.Size = new System.Drawing.Size(200, 20);
 			this.floatTrackbarControlSpringConstant.TabIndex = 17;
-			this.floatTrackbarControlSpringConstant.Value = 0F;
+			this.floatTrackbarControlSpringConstant.Value = 10F;
 			this.floatTrackbarControlSpringConstant.VisibleRangeMax = 1F;
 			// 
 			// label3
@@ -207,7 +207,7 @@
 			this.floatTrackbarControlDampingConstant.RangeMin = -1000000F;
 			this.floatTrackbarControlDampingConstant.Size = new System.Drawing.Size(200, 20);
 			this.floatTrackbarControlDampingConstant.TabIndex = 17;
-			this.floatTrackbarControlDampingConstant.Value = 0F;
+			this.floatTrackbarControlDampingConstant.Value = -1F;
 			this.floatTrackbarControlDampingConstant.VisibleRangeMax = 1F;
 			// 
 			// GraphForm

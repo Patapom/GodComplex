@@ -117,6 +117,15 @@ namespace TestGraphViz
 			m_nodesCount = (uint) neurons.Length;
 
 
+/*
+m_nodesCount = 2;
+neurons = new ProtoParser.Neuron[2];
+neurons[0] = new ProtoParser.Neuron();
+neurons[1] = new ProtoParser.Neuron();
+neurons[0].LinkChild( neurons[1] );
+//*/
+
+
 			//////////////////////////////////////////////////////////////////////////
 			m_CB_Main = new ConstantBuffer<CB_Main>( m_device, 0 );
 			m_CB_Simulation = new ConstantBuffer<CB_Simulation>( m_device, 1 );
@@ -318,8 +327,8 @@ namespace TestGraphViz
 		private void buttonReset_Click( object sender, EventArgs e ) {
 #if true
 			for ( int neuronIndex=0; neuronIndex < m_nodesCount; neuronIndex++ ) {
-				float	a = Mathf.TWOPI * neuronIndex / m_nodesCount;
-				m_SB_NodeSims[0].m[neuronIndex].m_position.Set( 2.0f * (float) SimpleRNG.GetUniform() - 1.0f, 2.0f * (float) SimpleRNG.GetUniform() - 1.0f );	// In a size 2 square
+				m_SB_NodeSims[0].m[neuronIndex].m_position.Set( 5.0f * (2.0f * (float) SimpleRNG.GetUniform() - 1.0f), 5.0f * (2.0f * (float) SimpleRNG.GetUniform() - 1.0f) );	// In a size 2 square
+//m_SB_NodeSims[0].m[neuronIndex].m_position.Set( 2.0f * neuronIndex - 1.0f, 0.0f );
 				m_SB_NodeSims[0].m[neuronIndex].m_velocity.Set( 0, 0 );
 			}
 			m_SB_NodeSims[0].Write();
