@@ -49,8 +49,9 @@
 			// 
 			// checkBoxRun
 			// 
+			this.checkBoxRun.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
 			this.checkBoxRun.AutoSize = true;
-			this.checkBoxRun.Location = new System.Drawing.Point(530, 330);
+			this.checkBoxRun.Location = new System.Drawing.Point(791, 330);
 			this.checkBoxRun.Name = "checkBoxRun";
 			this.checkBoxRun.Size = new System.Drawing.Size(46, 17);
 			this.checkBoxRun.TabIndex = 2;
@@ -60,7 +61,8 @@
 			// 
 			// buttonReset
 			// 
-			this.buttonReset.Location = new System.Drawing.Point(582, 326);
+			this.buttonReset.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+			this.buttonReset.Location = new System.Drawing.Point(843, 326);
 			this.buttonReset.Name = "buttonReset";
 			this.buttonReset.Size = new System.Drawing.Size(46, 23);
 			this.buttonReset.TabIndex = 3;
@@ -70,7 +72,8 @@
 			// 
 			// buttonReload
 			// 
-			this.buttonReload.Location = new System.Drawing.Point(770, 508);
+			this.buttonReload.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+			this.buttonReload.Location = new System.Drawing.Point(1031, 508);
 			this.buttonReload.Name = "buttonReload";
 			this.buttonReload.Size = new System.Drawing.Size(75, 23);
 			this.buttonReload.TabIndex = 4;
@@ -80,8 +83,9 @@
 			// 
 			// label2
 			// 
+			this.label2.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
 			this.label2.AutoSize = true;
-			this.label2.Location = new System.Drawing.Point(530, 17);
+			this.label2.Location = new System.Drawing.Point(791, 17);
 			this.label2.Name = "label2";
 			this.label2.Size = new System.Drawing.Size(58, 13);
 			this.label2.TabIndex = 5;
@@ -94,7 +98,8 @@
 			// 
 			// buttonResetObstacles
 			// 
-			this.buttonResetObstacles.Location = new System.Drawing.Point(741, 326);
+			this.buttonResetObstacles.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+			this.buttonResetObstacles.Location = new System.Drawing.Point(1002, 326);
 			this.buttonResetObstacles.Name = "buttonResetObstacles";
 			this.buttonResetObstacles.Size = new System.Drawing.Size(98, 23);
 			this.buttonResetObstacles.TabIndex = 3;
@@ -117,7 +122,8 @@
 			// 
 			// buttonLoad
 			// 
-			this.buttonLoad.Location = new System.Drawing.Point(555, 508);
+			this.buttonLoad.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+			this.buttonLoad.Location = new System.Drawing.Point(816, 508);
 			this.buttonLoad.Name = "buttonLoad";
 			this.buttonLoad.Size = new System.Drawing.Size(75, 23);
 			this.buttonLoad.TabIndex = 15;
@@ -126,7 +132,8 @@
 			// 
 			// buttonSave
 			// 
-			this.buttonSave.Location = new System.Drawing.Point(639, 508);
+			this.buttonSave.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+			this.buttonSave.Location = new System.Drawing.Point(900, 508);
 			this.buttonSave.Name = "buttonSave";
 			this.buttonSave.Size = new System.Drawing.Size(75, 23);
 			this.buttonSave.TabIndex = 15;
@@ -137,14 +144,15 @@
 			// 
 			this.panelOutput.Location = new System.Drawing.Point(12, 12);
 			this.panelOutput.Name = "panelOutput";
-			this.panelOutput.Size = new System.Drawing.Size(512, 512);
+			this.panelOutput.Size = new System.Drawing.Size(768, 768);
 			this.panelOutput.TabIndex = 0;
 			this.panelOutput.MouseDown += new System.Windows.Forms.MouseEventHandler(this.panelOutput_MouseDown);
 			this.panelOutput.MouseMove += new System.Windows.Forms.MouseEventHandler(this.panelOutput_MouseMove);
 			// 
 			// floatTrackbarControlDeltaTime
 			// 
-			this.floatTrackbarControlDeltaTime.Location = new System.Drawing.Point(639, 13);
+			this.floatTrackbarControlDeltaTime.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+			this.floatTrackbarControlDeltaTime.Location = new System.Drawing.Point(900, 13);
 			this.floatTrackbarControlDeltaTime.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlDeltaTime.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlDeltaTime.Name = "floatTrackbarControlDeltaTime";
@@ -157,7 +165,8 @@
 			// 
 			// buttonResetAll
 			// 
-			this.buttonResetAll.Location = new System.Drawing.Point(634, 326);
+			this.buttonResetAll.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+			this.buttonResetAll.Location = new System.Drawing.Point(895, 326);
 			this.buttonResetAll.Name = "buttonResetAll";
 			this.buttonResetAll.Size = new System.Drawing.Size(75, 23);
 			this.buttonResetAll.TabIndex = 21;
@@ -180,8 +189,9 @@
 			// 
 			// label1
 			// 
+			this.label1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
 			this.label1.AutoSize = true;
-			this.label1.Location = new System.Drawing.Point(530, 43);
+			this.label1.Location = new System.Drawing.Point(791, 43);
 			this.label1.Name = "label1";
 			this.label1.Size = new System.Drawing.Size(82, 13);
 			this.label1.TabIndex = 5;
@@ -189,7 +199,8 @@
 			// 
 			// floatTrackbarControlSpringConstant
 			// 
-			this.floatTrackbarControlSpringConstant.Location = new System.Drawing.Point(639, 39);
+			this.floatTrackbarControlSpringConstant.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+			this.floatTrackbarControlSpringConstant.Location = new System.Drawing.Point(900, 39);
 			this.floatTrackbarControlSpringConstant.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlSpringConstant.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlSpringConstant.Name = "floatTrackbarControlSpringConstant";
@@ -202,8 +213,9 @@
 			// 
 			// label3
 			// 
+			this.label3.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
 			this.label3.AutoSize = true;
-			this.label3.Location = new System.Drawing.Point(530, 69);
+			this.label3.Location = new System.Drawing.Point(791, 69);
 			this.label3.Name = "label3";
 			this.label3.Size = new System.Drawing.Size(94, 13);
 			this.label3.TabIndex = 5;
@@ -211,7 +223,8 @@
 			// 
 			// floatTrackbarControlDampingConstant
 			// 
-			this.floatTrackbarControlDampingConstant.Location = new System.Drawing.Point(639, 65);
+			this.floatTrackbarControlDampingConstant.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+			this.floatTrackbarControlDampingConstant.Location = new System.Drawing.Point(900, 65);
 			this.floatTrackbarControlDampingConstant.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlDampingConstant.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlDampingConstant.Name = "floatTrackbarControlDampingConstant";
@@ -225,7 +238,8 @@
 			// 
 			// floatTrackbarControlK0
 			// 
-			this.floatTrackbarControlK0.Location = new System.Drawing.Point(639, 145);
+			this.floatTrackbarControlK0.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+			this.floatTrackbarControlK0.Location = new System.Drawing.Point(900, 145);
 			this.floatTrackbarControlK0.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlK0.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlK0.Name = "floatTrackbarControlK0";
@@ -238,7 +252,8 @@
 			// 
 			// floatTrackbarControlK1
 			// 
-			this.floatTrackbarControlK1.Location = new System.Drawing.Point(639, 171);
+			this.floatTrackbarControlK1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+			this.floatTrackbarControlK1.Location = new System.Drawing.Point(900, 171);
 			this.floatTrackbarControlK1.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlK1.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlK1.Name = "floatTrackbarControlK1";
@@ -251,7 +266,8 @@
 			// 
 			// floatTrackbarControlK2
 			// 
-			this.floatTrackbarControlK2.Location = new System.Drawing.Point(639, 218);
+			this.floatTrackbarControlK2.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+			this.floatTrackbarControlK2.Location = new System.Drawing.Point(900, 218);
 			this.floatTrackbarControlK2.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlK2.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlK2.Name = "floatTrackbarControlK2";
@@ -264,7 +280,8 @@
 			// 
 			// floatTrackbarControlK3
 			// 
-			this.floatTrackbarControlK3.Location = new System.Drawing.Point(639, 244);
+			this.floatTrackbarControlK3.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+			this.floatTrackbarControlK3.Location = new System.Drawing.Point(900, 244);
 			this.floatTrackbarControlK3.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlK3.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlK3.Name = "floatTrackbarControlK3";
@@ -277,8 +294,9 @@
 			// 
 			// label4
 			// 
+			this.label4.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
 			this.label4.AutoSize = true;
-			this.label4.Location = new System.Drawing.Point(610, 145);
+			this.label4.Location = new System.Drawing.Point(871, 145);
 			this.label4.Name = "label4";
 			this.label4.Size = new System.Drawing.Size(20, 13);
 			this.label4.TabIndex = 5;
@@ -286,8 +304,9 @@
 			// 
 			// label5
 			// 
+			this.label5.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
 			this.label5.AutoSize = true;
-			this.label5.Location = new System.Drawing.Point(610, 171);
+			this.label5.Location = new System.Drawing.Point(871, 171);
 			this.label5.Name = "label5";
 			this.label5.Size = new System.Drawing.Size(20, 13);
 			this.label5.TabIndex = 5;
@@ -295,8 +314,9 @@
 			// 
 			// label6
 			// 
+			this.label6.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
 			this.label6.AutoSize = true;
-			this.label6.Location = new System.Drawing.Point(608, 222);
+			this.label6.Location = new System.Drawing.Point(869, 222);
 			this.label6.Name = "label6";
 			this.label6.Size = new System.Drawing.Size(20, 13);
 			this.label6.TabIndex = 5;
@@ -304,8 +324,9 @@
 			// 
 			// label7
 			// 
+			this.label7.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
 			this.label7.AutoSize = true;
-			this.label7.Location = new System.Drawing.Point(608, 248);
+			this.label7.Location = new System.Drawing.Point(869, 248);
 			this.label7.Name = "label7";
 			this.label7.Size = new System.Drawing.Size(20, 13);
 			this.label7.TabIndex = 5;
@@ -313,8 +334,9 @@
 			// 
 			// checkBoxAutoCenter
 			// 
+			this.checkBoxAutoCenter.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
 			this.checkBoxAutoCenter.AutoSize = true;
-			this.checkBoxAutoCenter.Location = new System.Drawing.Point(530, 293);
+			this.checkBoxAutoCenter.Location = new System.Drawing.Point(791, 293);
 			this.checkBoxAutoCenter.Name = "checkBoxAutoCenter";
 			this.checkBoxAutoCenter.Size = new System.Drawing.Size(121, 17);
 			this.checkBoxAutoCenter.TabIndex = 22;
@@ -323,8 +345,9 @@
 			// 
 			// label8
 			// 
+			this.label8.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
 			this.label8.AutoSize = true;
-			this.label8.Location = new System.Drawing.Point(530, 95);
+			this.label8.Location = new System.Drawing.Point(791, 95);
 			this.label8.Name = "label8";
 			this.label8.Size = new System.Drawing.Size(74, 13);
 			this.label8.TabIndex = 5;
@@ -332,7 +355,8 @@
 			// 
 			// floatTrackbarControlRestDistance
 			// 
-			this.floatTrackbarControlRestDistance.Location = new System.Drawing.Point(639, 91);
+			this.floatTrackbarControlRestDistance.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+			this.floatTrackbarControlRestDistance.Location = new System.Drawing.Point(900, 91);
 			this.floatTrackbarControlRestDistance.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlRestDistance.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlRestDistance.Name = "floatTrackbarControlRestDistance";
@@ -347,7 +371,7 @@
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-			this.ClientSize = new System.Drawing.Size(857, 543);
+			this.ClientSize = new System.Drawing.Size(1118, 793);
 			this.Controls.Add(this.checkBoxAutoCenter);
 			this.Controls.Add(this.buttonResetAll);
 			this.Controls.Add(this.floatTrackbarControlK3);
