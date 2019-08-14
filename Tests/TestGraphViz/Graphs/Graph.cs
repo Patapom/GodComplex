@@ -105,6 +105,74 @@ namespace ProtoParser
 		}
 
 		/// <summary>
+		/// Finds a single neuron by its fully-qualified name (e.g. "a.b.c")
+		/// </summary>
+		/// <param name="_fullyQualifiedName"></param>
+		/// <returns></returns>
+		public Neuron	FindNeuron( string _fullyQualifiedName ) {
+			return FindNeuron( _fullyQualifiedName, null );
+		}
+		public Neuron	FindNeuron( string _fullyQualifiedName, Neuron _context ) {
+			if ( _context == null )
+				_context = m_root;
+
+			Parser.Name	fullName = new Parser.Name( _fullyQualifiedName );
+
+			// 1] Find the root anchor of the fully-qualified name
+			//	• Can be an alias
+			//	• Can exist in the current context
+			//	• Can exist in the global context
+			//
+			Neuron	anchor = null;
+			int		nameIndex = 0;
+			string	rootName = fullName[nameIndex++];
+			if ( rootName == "" ) {
+				rootName = fullName[nameIndex++];
+			}
+
+			// Try alias first
+			Neuron[]	alias = FindAlias( rootName );
+			if ( alias != null ) {
+				if ( alias.Length != 1 )
+					throw new Exception( "Alias \"" + rootName + "\" points to multiple neurons and cannot be resolved as a single neuron to follow the qualified name!" );
+
+				anchor = alias[0];
+			} else {
+				// Try context neurons
+				anchor = _context.FindChild( rootName );
+				if ( anchor == null ) {
+					// Try root
+					anchor = _context != m_root ? m_root.FindChild( rootName ) : null;
+					if ( anchor == null ) {
+						// Try everything
+						Neuron[]	children = FindNeurons( rootName );
+						if ( children.Length == 0 )
+							throw new Exception( "Failed to find root name \"" + rootName + "\" of fully-qualified neuron name \"" + fullName + "\" in any context!" );
+						if ( children.Length != 1 )
+							throw new Exception( "Root name \"" + rootName + "\" of fully-qualified neuron name \"" + fullName + "\" is ambiguous in the global context: could be " + string.Join<Neuron>( ",", children ) );
+
+						anchor = children[0];
+					}
+				}
+			}
+
+			// 2] Follow/Create the rest of the hierarchy
+			Neuron	parent = anchor;
+			for ( ; nameIndex < fullName.Length; nameIndex++ ) {
+				string	name = fullName[nameIndex];
+
+				// Find neuron in anchor
+				Neuron	child = parent.FindChild( name );
+				if ( child == null )
+					throw new Exception( "Child name \"" + name + "\" of fully-qualified neuron name \"" + fullName + "\" not found in parent context \"" + parent + "\"!" );
+
+				parent = child;
+			}
+
+			return parent;
+		}
+
+		/// <summary>
 		/// Register an alias to a collection of neurons
 		/// Throws an exception if the alias has the same name as an existing neuron
 		/// </summary>

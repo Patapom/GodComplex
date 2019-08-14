@@ -53,9 +53,9 @@ namespace ProtoParser
 		public NeuronValue			m_value = null;
 
 		public int			ParentsCount	{ get { return m_parents.Count; } }
-		public Neuron[]		Parents			{ get { return m_parents.ToArray(); } }
+		public Neuron[]		Parents			{ get {return m_parents.ToArray(); } }
 		public int			ChildrenCount	{ get { return m_children.Count; } }
-		public Neuron[]		Children		{ get { return m_children.ToArray(); } }
+		public Neuron[]		Children		{ get {return m_children.ToArray(); } }
 		public int			FeaturesCount	{ get { return m_features.Count; } }
 		public Neuron[]		Features		{ get {return m_features.ToArray(); } }
 
@@ -206,27 +206,37 @@ namespace ProtoParser
 		#endregion
 	}
 
-	[System.Diagnostics.DebuggerDisplay( "[{m_value}]" )]
+	[System.Diagnostics.DebuggerDisplay( "[{m_valueMean}]" )]
 	public class NeuronValue {
-		public string		m_value = null;
+		public string		m_valueMean = null;				// The mean value
+		public string		m_valueStdDeviation = null;		// The standard deviation
+		public string		m_units = null;					// The units
 
 		#region I/O
 
-		public void		Write( BinaryWriter _W ) {
-			if ( m_value != null ) {
+		void	WriteString( BinaryWriter _W, string _string ) {
+			if ( _string != null ) {
 				_W.Write( true );
-				_W.Write( m_value );
+				_W.Write( _string );
 			} else {
 				_W.Write( false );
 			}
 		}
 
+		string	ReadString( BinaryReader _R ) {
+			return _R.ReadBoolean() ? _R.ReadString() : null;
+		}
+
+		public void		Write( BinaryWriter _W ) {
+			WriteString( _W, m_valueMean );
+			WriteString( _W, m_valueStdDeviation );
+			WriteString( _W, m_units );
+		}
+
 		public void		Read( BinaryReader _R ) {
-			if ( _R.ReadBoolean() ) {
-				m_value = _R.ReadString();
-			} else {
-				m_value = null;
-			}
+			m_valueMean = ReadString( _R );
+			m_valueStdDeviation = ReadString( _R );
+			m_units = ReadString( _R );
 		}
 
 		#endregion

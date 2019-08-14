@@ -83,6 +83,7 @@
     </Compile>
     <Compile Include="Graphs\Graph.cs" />
     <Compile Include="Graphs\Neuron.cs" />
+    <Compile Include="Graphs\ProtoParser.cs" />
     <Compile Include="PanelOutput.cs">
       <SubType>Component</SubType>
     </Compile>

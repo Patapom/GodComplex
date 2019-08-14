@@ -1,5 +1,5 @@
 ﻿#define RENDER_GRAPH_PROPER
-//#define BUILD_FONTS
+#define BUILD_FONTS
 
 using System;
 using System.Collections.Generic;
@@ -104,7 +104,7 @@ namespace TestGraphViz
  		private Texture2D						m_tex_FalseColors = null;
 
 		// Text display
-		private int[]							m_char2Index = new int[256];
+		private int[]							m_char2Index = new int[512];
 		private Rectangle[]						m_fontRectangles = null;
  		private Texture2D						m_tex_FontAtlas = null;
  		private Texture2D						m_tex_FontRectangle = null;
@@ -139,7 +139,11 @@ namespace TestGraphViz
 			// Load the graph we need to simulate
 			m_graph = new ProtoParser.Graph();
 
-			using ( FileStream S = new FileInfo( "./Graphs/TestGraph.graph" ).OpenRead() )
+			FileInfo	file = new FileInfo( "../../../AI/Projects/Semantic Memory/Tests/Birds Database/Tools/ProtoParser/Concepts.graph" );
+			if ( !file.Exists )
+				file = new FileInfo( "./Graphs/TestGraph.graph" );
+
+			using ( FileStream S = file.OpenRead() )
 				using ( BinaryReader R = new BinaryReader( S ) )
 					m_graph.Read( R );
 
@@ -471,7 +475,7 @@ neurons[0].LinkChild( neurons[1] );
 		}
 
 		void	BuildFont() {
-			string	charSet = " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~éèêëôöàçÔÖÂÊÉ";
+			string	charSet = " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~éèêëôöàçÔÖÂÊÉœ";
 
 			m_fontRectangles = new Rectangle[charSet.Length];
 			for ( int charIndex=0; charIndex < charSet.Length; charIndex++ ) {
@@ -634,7 +638,6 @@ neurons[0].LinkChild( neurons[1] );
 			// Identify any node under the mouse
 			m_SB_NodeSims[0].Read();
 
-//			int	selectedNodeIndex = -1;
 			m_displayText = null;
 			for ( int nodeIndex=0; nodeIndex < m_nodesCount; nodeIndex++ ) {
 				float2	nodePosition = m_SB_NodeSims[0].m[nodeIndex].m_position;
@@ -644,13 +647,11 @@ neurons[0].LinkChild( neurons[1] );
 					continue;
 
 				// Found it!
-//				selectedNodeIndex = nodeIndex;
-				m_displayText = m_graph[nodeIndex].m_name;
+				ProtoParser.Neuron	selectedNeuron = m_graph[nodeIndex];
+				m_displayText = selectedNeuron.m_name != null ? selectedNeuron.m_name : selectedNeuron.Parents[0].m_name + "()";
 				m_selectedNodePosition = nodePosition;
 				break;
 			}
-
-//			if ( selectedNodeIndex )
 		}
 
 		#endregion

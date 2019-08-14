@@ -1,5 +1,8 @@
 #include "Global.hlsl"
 
+static const float	NODE_SIZE = 0.005;
+static const float	LINK_SIZE = 0.001;
+
 StructuredBuffer<SB_NodeSim>	_SB_Graph_In : register( t0 );
 
 StructuredBuffer<SB_NodeInfo>	_SB_Nodes : register( t1 );
@@ -29,7 +32,7 @@ PS_IN	VS( VS_IN _In ) {
 	SB_NodeInfo	info = _SB_Nodes[nodeIndex];
 
 //	const float	SIZE = 0.1;
-	const float	SIZE = 0.01 * dot( 0.5, _cameraSize );
+	const float	SIZE = NODE_SIZE * dot( 0.5, _cameraSize );
 
 	float2	position = node.m_position + SIZE * _In.__Position.xy;
 
@@ -64,7 +67,7 @@ PS_IN	VS2( VS_IN _In ) {
 	SB_NodeInfo	targetInfo = _SB_Nodes[targetIndex];
 
 //	const float	SIZE = 0.02;
-	const float	SIZE = 0.002 * dot( 0.5, _cameraSize );
+	const float	SIZE = LINK_SIZE * dot( 0.5, _cameraSize );
 
 	float2	P0 = sourceNode.m_position;
 	float2	P1 = targetNode.m_position;
