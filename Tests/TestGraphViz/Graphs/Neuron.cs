@@ -60,11 +60,14 @@ namespace ProtoParser
 		public Neuron[]		Features		{ get {return m_features.ToArray(); } }
 
 		public int			Distance2Root	{ get {
+			if ( m_parents.Count == 0 )
+				return 0;
+
 			int	minDistance = int.MaxValue;
 			foreach ( Neuron P in m_parents ) {
 				if ( P == this )
 					return 0;	// We're the root
-				minDistance = Math.Min( minDistance, P.Distance2Root );
+				minDistance = Math.Min( minDistance, 1+P.Distance2Root );
 			}
 
 			return minDistance;
@@ -100,6 +103,10 @@ namespace ProtoParser
 		public void				LinkFeatures( Neuron[] _features ) {
 			foreach ( Neuron feature in _features )
 				LinkFeature( feature );
+		}
+
+		public void				RemoveParent( Neuron _parent ) {
+			m_parents.Remove( _parent );
 		}
 
 		public string	HelpString() {

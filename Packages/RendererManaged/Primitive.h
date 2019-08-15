@@ -49,6 +49,8 @@ namespace Renderer {
 		void	VBSetCS_UAV( U32 _slotIndex )	{ m_pPrimitive->VBSetCS_UAV( _slotIndex ); }	// Sets the vertex buffer as an UAV for a compute shader
 		void	IBSetCS_UAV( U32 _slotIndex )	{ m_pPrimitive->IBSetCS_UAV( _slotIndex ); }	// Sets the index buffer as an UAV for a compute shader
 
+	internal:
+		Primitive( ::Primitive* _pPrimitive );
 	private:
 		void	Build( Device^ _device, UInt32 _verticesCount, ByteBuffer^ _vertices, cli::array<UInt32>^ _indices, TOPOLOGY _topology, VERTEX_FORMAT _vertexFormat, bool _allowSRV, bool _allowUAV, bool _makeStructuredBuffer );
 	};

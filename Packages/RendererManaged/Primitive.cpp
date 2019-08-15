@@ -8,6 +8,10 @@
 
 namespace Renderer {
 
+	Primitive::Primitive( ::Primitive* _pPrimitive ) {
+		m_pPrimitive = _pPrimitive;
+	}
+
 	void	Primitive::Build( Device^ _device, UInt32 _verticesCount, ByteBuffer^ _vertices, cli::array<UInt32>^ _indices, TOPOLOGY _topology, VERTEX_FORMAT _vertexFormat, bool _allowSRV, bool _allowUAV, bool _makeStructuredBuffer ) {
 
 		D3D11_PRIMITIVE_TOPOLOGY	topology = D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED;

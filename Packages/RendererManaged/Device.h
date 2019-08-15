@@ -8,6 +8,7 @@ using namespace System;
 namespace Renderer {
 
 	ref class Shader;
+	ref class Primitive;
 	ref class Texture2D;
 	ref class Texture3D;
 
@@ -32,7 +33,8 @@ namespace Renderer {
  		Texture2D^		m_defaultDepthStencil;
 
 		// We offer the ever useful fullscreen quad
-		::Primitive*	m_pScreenQuad;
+//		::Primitive*	m_pScreenQuad;
+		Primitive^		m_screenQuad;
 
 		// We keep the list of the last 8 assigned RTVs
 		::ID3D11RenderTargetView**	m_ppRenderTargetViews;
@@ -49,6 +51,10 @@ namespace Renderer {
 
 		property Texture2D^		DefaultDepthStencil {
 			Texture2D^	get() { return m_defaultDepthStencil; }
+		}
+
+		property Primitive^		ScreenQuad {
+			Primitive^	get() { return m_screenQuad; }
 		}
 
 		Device() {

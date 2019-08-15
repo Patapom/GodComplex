@@ -1,5 +1,5 @@
 ﻿#define RENDER_GRAPH_PROPER
-#define BUILD_FONTS
+//#define BUILD_FONTS
 
 using System;
 using System.Collections.Generic;
@@ -186,9 +186,9 @@ neurons[0].LinkChild( neurons[1] );
 				neuron2ID[N] = (uint) neuronIndex;
 
 				uint	linksCount = (uint) (N.ParentsCount + N.ChildrenCount + N.FeaturesCount);
-//				m_SB_Nodes.m[neuronIndex].m_mass = (1 + 10.0f * linksCount) / (0.1f + N.Distance2Root);		// Works with S=1e4 D=-1e3
-				m_SB_Nodes.m[neuronIndex].m_mass = (1 + 1.0f * linksCount) / (0.01f + N.Distance2Root);		// Works with S=1e4 D=-1e3
-//				m_SB_Nodes.m[neuronIndex].m_mass = (1 + 0.1f * linksCount) / (0.1f + N.Distance2Root);		// Works with S=10 D=-10
+//				m_SB_Nodes.m[neuronIndex].m_mass = (1 + 10.0f * linksCount) / (0.1f + N.Distance2Root);			// Works with S=1e4 D=-1e3
+				m_SB_Nodes.m[neuronIndex].m_mass = (1 + 1.0f * linksCount) / (0.01f + 0.0f * N.Distance2Root);	// Works with S=1e4 D=-1e3
+//				m_SB_Nodes.m[neuronIndex].m_mass = (1 + 0.1f * linksCount) / (0.1f + N.Distance2Root);			// Works with S=10 D=-10
 				m_SB_Nodes.m[neuronIndex].m_linkOffset = m_totalLinksCount;
 				m_SB_Nodes.m[neuronIndex].m_linksCount = linksCount;
 
@@ -196,6 +196,9 @@ neurons[0].LinkChild( neurons[1] );
 
 				m_totalLinksCount += linksCount;
 			}
+
+			m_SB_Nodes.m[0].m_mass = 1e4f;
+
 			m_SB_Nodes.Write();
 
 			// Build node links
@@ -303,11 +306,12 @@ neurons[0].LinkChild( neurons[1] );
 
 				m_SB_Forces.SetOutput( 1 );			// Simulation forces
 
-				m_shader_ComputeForces.Dispatch( m_nodesCount, 1, 1 );
+				uint	groupsCount = (m_nodesCount + 255) >> 8;
+				m_shader_ComputeForces.Dispatch( groupsCount, 1, 1 );
 
 				// Apply forces
 				m_shader_Simulate.Use();
-				m_shader_Simulate.Dispatch( m_nodesCount, 1, 1 );
+				m_shader_Simulate.Dispatch( groupsCount, 1, 1 );
 
 				m_SB_NodeSims[0].RemoveFromLastAssignedSlots();
 				m_SB_NodeSims[1].RemoveFromLastAssignedSlotUAV();
@@ -421,11 +425,29 @@ neurons[0].LinkChild( neurons[1] );
 				float2	minPos = new float2( float.MaxValue, float.MaxValue );
 				float2	maxPos = new float2( -float.MaxValue, -float.MaxValue );
 				for ( int i=0; i < m_nodesCount; i++ ) {
-					minPos.Min( m_SB_NodeSims[0].m[i].m_position );
-					maxPos.Max( m_SB_NodeSims[0].m[i].m_position );
+					float2	P = m_SB_NodeSims[0].m[i].m_position;
+					if ( float.IsNaN( P.x ) || float.IsNaN( P.y ) )
+						continue;
+
+					minPos.Min( P );
+					maxPos.Max( P );
 				}
 
-				m_CB_Main.m._cameraSize = 1.05f * (maxPos - minPos);
+				if ( minPos.x > maxPos.x || minPos.y > maxPos.y ) {
+					minPos.Set( -10, -10 );
+					maxPos.Set(  10,  10 );
+				}
+
+				float2	size = maxPos - minPos;
+				if ( size.x * panelOutput.Height > size.y * panelOutput.Width ) {
+					// Fit horizontally
+					size.y = size.x * panelOutput.Height / panelOutput.Width;
+				} else {
+					// Fit vertically
+					size.x = size.y * panelOutput.Width / panelOutput.Height;
+				}
+
+				m_CB_Main.m._cameraSize = 1.05f * size;
 				m_CB_Main.m._cameraCenter = 0.5f * (minPos + maxPos);
 				m_CB_Main.UpdateData();
 			}
@@ -578,6 +600,10 @@ neurons[0].LinkChild( neurons[1] );
 		#region EVENT HANDLERS
 
 		private void buttonReset_Click( object sender, EventArgs e ) {
+			m_CB_Main.m._cameraSize = 10.0f * float2.One;
+			m_CB_Main.m._cameraCenter = float2.Zero;
+			m_CB_Main.UpdateData();
+
 #if true
 			for ( int neuronIndex=0; neuronIndex < m_nodesCount; neuronIndex++ ) {
 				m_SB_NodeSims[0].m[neuronIndex].m_position.Set( 0.5f * m_CB_Main.m._cameraSize.x * (2.0f * (float) SimpleRNG.GetUniform() - 1.0f), 0.5f * m_CB_Main.m._cameraSize.y * (2.0f * (float) SimpleRNG.GetUniform() - 1.0f) );	// In a size 2 square
@@ -593,10 +619,6 @@ neurons[0].LinkChild( neurons[1] );
 			}
 			m_SB_NodeSims[0].Write();
 #endif
-
-			m_CB_Main.m._cameraSize = 10.0f * float2.One;
-			m_CB_Main.m._cameraCenter = float2.Zero;
-			m_CB_Main.UpdateData();
 		}
 
 		private void buttonResetAll_Click( object sender, EventArgs e ) {

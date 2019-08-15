@@ -3,6 +3,7 @@
 
 #include "Texture2D.h"
 #include "Texture3D.h"
+#include "Primitive.h"
 #include "Shader.h"
 
 void	Renderer::Device::Init( System::IntPtr _windowHandle, bool _fullScreen, bool _sRGBRenderTarget ) {
@@ -16,13 +17,28 @@ void	Renderer::Device::Init( System::IntPtr _windowHandle, bool _fullScreen, boo
 	m_defaultDepthStencil = gcnew Renderer::Texture2D( m_pDevice->DefaultDepthStencil() );
 
 	// Build the fullscreen quad
-	float	pVertices[4*4] = {
-		-1.0f, 1.0f, 0.0f, 1.0f,
-		-1.0f, -1.0f, 0.0f, 1.0f,
-		1.0f, 1.0f, 0.0f, 1.0f,
-		1.0f, -1.0f, 0.0f, 1.0f,
+// 	float	pVertices[4*4] = {
+// 		-1.0f, 1.0f, 0.0f, 1.0f,
+// 		-1.0f, -1.0f, 0.0f, 1.0f,
+// 		1.0f, 1.0f, 0.0f, 1.0f,
+// 		1.0f, -1.0f, 0.0f, 1.0f,
+// 	};
+//	::Primitive* pScreenQuad = new Primitive( *m_pDevice, 4, pVertices, 0, NULL, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP, VertexFormatPt4::DESCRIPTOR );
+//	m_screenQuad = gcnew Primitive( pScreenQuad );
+
+	cli::array<VertexPt4>^	vertices = gcnew cli::array<VertexPt4>( 4 ) {
+// 		VertexPt4() { Pt.Set(-1, 1, 0, 1 ) },
+// 		VertexPt4() { Pt.Set(-1, 1, 0, 1 ) },
+// 		VertexPt4() { Pt.Set(-1, 1, 0, 1 ) },
+// 		VertexPt4() { Pt.Set(-1, 1, 0, 1 ) },
 	};
-	m_pScreenQuad = new Primitive( *m_pDevice, 4, pVertices, 0, NULL, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP, VertexFormatPt4::DESCRIPTOR );
+	vertices[0].Pt.Set( -1, 1, 0, 1 );
+	vertices[1].Pt.Set( -1, -1, 0, 1 );
+	vertices[2].Pt.Set( 1, 1, 0, 1 );
+	vertices[3].Pt.Set( 1, -1, 0, 1 );
+
+	ByteBuffer^	buffVertices = VertexPt4::FromArray( vertices );
+	m_screenQuad = gcnew Primitive( this, 4, buffVertices, nullptr, Primitive::TOPOLOGY::TRIANGLE_STRIP, VERTEX_FORMAT::Pt4 );
 }
 
 void	Renderer::Device::Clear( float4 _clearColor ) {
@@ -101,7 +117,7 @@ void	Renderer::Device::SetRenderTargets( cli::array<IView^>^ _renderTargetViews,
 
 void	Renderer::Device::RenderFullscreenQuad( Shader^ _shader ) {
 	_shader->m_pShader->Use();
-	m_pScreenQuad->Render( *_shader->m_pShader );
+	m_screenQuad->Render( _shader );
 }
 
 ImageUtility::ImagesMatrix^	Renderer::Device::DDSCompress( ImageUtility::ImagesMatrix^ _sourceImage, ImageUtility::ImagesMatrix::COMPRESSION_TYPE _compressionType, ImageUtility::COMPONENT_FORMAT _componentFormat ) {

@@ -54,8 +54,11 @@ namespace SharpMath
 			return (m_z << 16) + m_w;
 		}
   
-		// Produce a uniform random sample from the open interval (0, 1).
-		// The method will not return either end point.
+		/// <summary>
+		/// Produce a uniform random sample from the open interval (0, 1).
+		/// The method will not return either end point. 
+		/// </summary>
+		/// <returns></returns>
 		public static double GetUniform() {
 			// 0 <= u < 2^32
 			uint u = GetUint();

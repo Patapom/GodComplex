@@ -65,6 +65,7 @@ Texture2D::Texture2D( Device& _device, const ImageUtilityLib::ImagesMatrix& _ima
 
 	// Retrieve texture format
 	m_format = PixelFormat2DXGIFormat( _images.GetFormat(), _componentFormat );
+	ASSERT( m_format != DXGI_FORMAT_UNKNOWN, "Unsupported texture format! If your image is BGR8 then you need to convert it into a valid DirectX format first (e.g. RGBA8) using the ImageUtilityLib::ImageFile::ConvertFrom() method!" );
 
 	// Prepare main descriptor
 	D3D11_TEXTURE2D_DESC	desc;
