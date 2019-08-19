@@ -36,6 +36,8 @@ namespace TestGraphViz
 
 			public float2		_cameraCenter;
 			public float2		_cameraSize;
+
+			public uint			_hoveredNodeIndex;
 		}
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
@@ -64,6 +66,7 @@ namespace TestGraphViz
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
 		private struct SB_NodeInfo {
 			public float		m_mass;
+			public uint			m_flags;
 			public uint			m_linkOffset;
 			public uint			m_linksCount;
 		}
@@ -114,6 +117,7 @@ namespace TestGraphViz
 		private ProtoParser.Graph				m_graph = null;
 		private uint							m_nodesCount = 0;
 		private uint							m_totalLinksCount = 0;
+		private Dictionary< ProtoParser.Neuron, uint >	m_neuron2ID = null;
 
 		#endregion
 
@@ -150,7 +154,6 @@ namespace TestGraphViz
 			ProtoParser.Neuron[]	neurons = m_graph.Neurons;
 			m_nodesCount = (uint) neurons.Length;
 
-
 /*
 m_nodesCount = 2;
 neurons = new ProtoParser.Neuron[2];
@@ -179,11 +182,12 @@ neurons[0].LinkChild( neurons[1] );
 			// Build node info
 			m_SB_Nodes = new StructuredBuffer<SB_NodeInfo>( m_device, m_nodesCount, true );
 
-			Dictionary< ProtoParser.Neuron, uint >	neuron2ID = new Dictionary<ProtoParser.Neuron, uint>( neurons.Length );
+			m_neuron2ID = new Dictionary<ProtoParser.Neuron, uint>( neurons.Length );
+
 			float	maxMass = 0.0f;
 			for ( int neuronIndex=0; neuronIndex < m_nodesCount; neuronIndex++ ) {
 				ProtoParser.Neuron	N = neurons[neuronIndex];
-				neuron2ID[N] = (uint) neuronIndex;
+				m_neuron2ID[N] = (uint) neuronIndex;
 
 				uint	linksCount = (uint) (N.ParentsCount + N.ChildrenCount + N.FeaturesCount);
 //				m_SB_Nodes.m[neuronIndex].m_mass = (1 + 10.0f * linksCount) / (0.1f + N.Distance2Root);			// Works with S=1e4 D=-1e3
@@ -191,6 +195,7 @@ neurons[0].LinkChild( neurons[1] );
 //				m_SB_Nodes.m[neuronIndex].m_mass = (1 + 0.1f * linksCount) / (0.1f + N.Distance2Root);			// Works with S=10 D=-10
 				m_SB_Nodes.m[neuronIndex].m_linkOffset = m_totalLinksCount;
 				m_SB_Nodes.m[neuronIndex].m_linksCount = linksCount;
+				m_SB_Nodes.m[neuronIndex].m_flags = 0U;
 
 				maxMass = Mathf.Max( maxMass, m_SB_Nodes.m[neuronIndex].m_mass );
 
@@ -209,15 +214,15 @@ neurons[0].LinkChild( neurons[1] );
 				ProtoParser.Neuron	N = neurons[neuronIndex];
 				foreach ( ProtoParser.Neuron O in N.Parents ) {
 					m_SB_LinkSources.m[m_totalLinksCount] = (uint) neuronIndex;
-					m_SB_Links.m[m_totalLinksCount++] = neuron2ID[O];
+					m_SB_Links.m[m_totalLinksCount++] = m_neuron2ID[O];
 				}
 				foreach ( ProtoParser.Neuron O in N.Children ) {
 					m_SB_LinkSources.m[m_totalLinksCount] = (uint) neuronIndex;
-					m_SB_Links.m[m_totalLinksCount++] = neuron2ID[O];
+					m_SB_Links.m[m_totalLinksCount++] = m_neuron2ID[O];
 				}
 				foreach ( ProtoParser.Neuron O in N.Features ) {
 					m_SB_LinkSources.m[m_totalLinksCount] = (uint) neuronIndex;
-					m_SB_Links.m[m_totalLinksCount++] = neuron2ID[O];
+					m_SB_Links.m[m_totalLinksCount++] = m_neuron2ID[O];
 				}
 			}
 			m_SB_Links.Write();
@@ -230,6 +235,7 @@ neurons[0].LinkChild( neurons[1] );
 			m_CB_Main.m._maxMass = maxMass;
 			m_CB_Main.m._cameraCenter = float2.Zero;
 			m_CB_Main.m._cameraSize.Set( 10.0f, 10.0f );
+			m_CB_Main.m._hoveredNodeIndex = ~0U;
 			m_CB_Main.UpdateData();
 
 			// Initialize sim buffers
@@ -449,6 +455,7 @@ neurons[0].LinkChild( neurons[1] );
 
 				m_CB_Main.m._cameraSize = 1.05f * size;
 				m_CB_Main.m._cameraCenter = 0.5f * (minPos + maxPos);
+
 				m_CB_Main.UpdateData();
 			}
 
@@ -497,7 +504,7 @@ neurons[0].LinkChild( neurons[1] );
 		}
 
 		void	BuildFont() {
-			string	charSet = " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~éèêëôöàçÔÖÂÊÉœ";
+			string	charSet = " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~éèêëôöàçÔÖÂÊÉœûüù";
 
 			m_fontRectangles = new Rectangle[charSet.Length];
 			for ( int charIndex=0; charIndex < charSet.Length; charIndex++ ) {
@@ -661,6 +668,7 @@ neurons[0].LinkChild( neurons[1] );
 			m_SB_NodeSims[0].Read();
 
 			m_displayText = null;
+			m_CB_Main.m._hoveredNodeIndex = ~0U;
 			for ( int nodeIndex=0; nodeIndex < m_nodesCount; nodeIndex++ ) {
 				float2	nodePosition = m_SB_NodeSims[0].m[nodeIndex].m_position;
 				float2	delta = nodePosition - mousePosition;
@@ -672,10 +680,98 @@ neurons[0].LinkChild( neurons[1] );
 				ProtoParser.Neuron	selectedNeuron = m_graph[nodeIndex];
 				m_displayText = selectedNeuron.m_name != null ? selectedNeuron.m_name : selectedNeuron.Parents[0].m_name + "()";
 				m_selectedNodePosition = nodePosition;
+
+				m_CB_Main.m._hoveredNodeIndex = (uint) nodeIndex;
 				break;
 			}
+
+			m_CB_Main.UpdateData();
 		}
 
 		#endregion
+
+		ProtoParser.Neuron[]	m_selection = new ProtoParser.Neuron[0];
+		ProtoParser.Neuron[]	Selection {
+			get { return m_selection; }
+			set {
+				if ( value == null )
+					value = new ProtoParser.Neuron[0];
+
+				if ( value.Length == m_selection.Length ) {
+					bool	hasChanged = false;
+					foreach ( ProtoParser.Neuron newSelection in value ) {
+						bool	found = false;
+						foreach ( ProtoParser.Neuron currentSelection in m_selection ) {
+							if ( newSelection == currentSelection ) {
+								found = true;
+								break;
+							}
+						}
+						if ( !found ) {
+							hasChanged = true;
+							break;
+						}
+					}
+					if ( !hasChanged )
+						return;	// No change...
+				}
+
+				// Update selection and node flags
+				m_selection = value;
+
+				for ( int i=0; i < m_nodesCount; i++ )
+					m_SB_Nodes.m[i].m_flags = 0U;
+				foreach ( ProtoParser.Neuron selectedNeuron in m_selection )
+					m_SB_Nodes.m[m_neuron2ID[selectedNeuron]].m_flags |= 1U;
+
+				m_SB_Nodes.Write();
+			}
+		}
+
+		void	SelectNeuronsAndHierarchy( ProtoParser.Neuron[] _neurons ) {
+			if ( _neurons == null ) {
+				Selection = null;
+			}
+
+			List<ProtoParser.Neuron>	neurons = new List<ProtoParser.Neuron>( _neurons );
+			foreach ( ProtoParser.Neuron N in _neurons ) {
+				ProtoParser.Neuron parent = N;
+				while ( parent.ParentsCount > 0 ) {
+					parent = parent.Parents[0];
+					neurons.Add( parent );
+				}
+			}
+
+			Selection = neurons.ToArray();
+		}
+
+		private void textBoxSearch_TextChanged( object sender, EventArgs e ) {
+			try {
+				ProtoParser.Neuron[]	results = m_graph.FindNeurons( textBoxSearch.Text );
+
+				if ( results == null || results.Length == 0 ) {
+					ProtoParser.Neuron	single = m_graph.FindNeuron( textBoxSearch.Text );
+					if ( single != null ) {
+						results = new ProtoParser.Neuron[] { single };
+					} else {
+						results = new ProtoParser.Neuron[0];
+					}
+				}
+
+				if ( results.Length > 0 ) {
+					labelSearchResults.Text = results.Length > 1 ? "Multiple results:\n" : "Single result:\n";
+					foreach ( ProtoParser.Neuron result in results )
+						labelSearchResults.Text += "	" + result.FullName + "\n";
+				} else {
+					labelSearchResults.Text = "No result.\n";
+				}
+
+				SelectNeuronsAndHierarchy( results );
+
+			} catch ( Exception _e ) {
+				labelSearchResults.Text = "Error during search: " + _e.Message;
+				SelectNeuronsAndHierarchy( new ProtoParser.Neuron[0] );
+			}
+		}
 	}
 }

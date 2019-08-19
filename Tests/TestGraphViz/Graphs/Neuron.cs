@@ -44,7 +44,7 @@ namespace ProtoParser
 	/// <summary>
 	/// Base neuron class
 	/// </summary>
-	[System.Diagnostics.DebuggerDisplay( "{HelpString()} - P {ParentsCount,d} - C {ChildrenCount,d} - F {FeaturesCount,d}" )]
+	[System.Diagnostics.DebuggerDisplay( "{FullName} - P {ParentsCount,d} - C {ChildrenCount,d} - F {FeaturesCount,d}" )]
 	public class Neuron {
 		public string				m_name = "";
 		private List< Neuron >		m_parents = new List<Neuron>();
@@ -107,23 +107,33 @@ namespace ProtoParser
 
 		public void				RemoveParent( Neuron _parent ) {
 			m_parents.Remove( _parent );
+			_parent.m_children.Remove( this );
+		}
+		public void				RemoveChild( Neuron _child ) {
+			m_children.Remove( _child );
+			_child.m_parents.Remove( this );
+		}
+		public void				RemoveFeature( Neuron _feature ) {
+			m_features.Remove( _feature );
+			_feature.m_parents.Remove( this );
 		}
 
-		public string	HelpString() {
-			Neuron	parent = this;
-			Neuron	child = null;
-			string	result = "";
-			int		count = 0;
-			while ( parent != null && child != parent && count < 8 ) {
-				result = parent + (child != null ? "." + result : "");
-				child = parent;
-				parent = child.m_parents.Count > 0 ? child.m_parents[0] : null;
-				count++;
+		public string	FullName { get {
+				Neuron	parent = this;
+				Neuron	child = null;
+				string	result = "";
+				int		count = 0;
+				while ( parent != null && child != parent && count < 8 ) {
+					result = parent + (child != null ? "." + result : "");
+					child = parent;
+					parent = child.m_parents.Count > 0 ? child.m_parents[0] : null;
+					count++;
+				}
+				if ( count == 8 && parent != null && parent != child ) {
+					result = "..." + result;
+				}
+				return result;
 			}
-			if ( count == 8 && parent != null && parent != child ) {
-				result = "..." + result;
-			}
-			return result;
 		}
 
 		public Neuron			FindParent( string _parentName ) {

@@ -45,6 +45,11 @@
 			this.checkBoxAutoCenter = new System.Windows.Forms.CheckBox();
 			this.label8 = new System.Windows.Forms.Label();
 			this.floatTrackbarControlRestDistance = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.groupBox1 = new System.Windows.Forms.GroupBox();
+			this.textBoxSearch = new System.Windows.Forms.TextBox();
+			this.label9 = new System.Windows.Forms.Label();
+			this.labelSearchResults = new System.Windows.Forms.Label();
+			this.groupBox1.SuspendLayout();
 			this.SuspendLayout();
 			// 
 			// checkBoxRun
@@ -73,7 +78,7 @@
 			// buttonReload
 			// 
 			this.buttonReload.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-			this.buttonReload.Location = new System.Drawing.Point(1031, 508);
+			this.buttonReload.Location = new System.Drawing.Point(1031, 757);
 			this.buttonReload.Name = "buttonReload";
 			this.buttonReload.Size = new System.Drawing.Size(75, 23);
 			this.buttonReload.TabIndex = 4;
@@ -123,7 +128,7 @@
 			// buttonLoad
 			// 
 			this.buttonLoad.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-			this.buttonLoad.Location = new System.Drawing.Point(816, 508);
+			this.buttonLoad.Location = new System.Drawing.Point(816, 757);
 			this.buttonLoad.Name = "buttonLoad";
 			this.buttonLoad.Size = new System.Drawing.Size(75, 23);
 			this.buttonLoad.TabIndex = 15;
@@ -133,7 +138,7 @@
 			// buttonSave
 			// 
 			this.buttonSave.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-			this.buttonSave.Location = new System.Drawing.Point(900, 508);
+			this.buttonSave.Location = new System.Drawing.Point(900, 757);
 			this.buttonSave.Name = "buttonSave";
 			this.buttonSave.Size = new System.Drawing.Size(75, 23);
 			this.buttonSave.TabIndex = 15;
@@ -336,6 +341,8 @@
 			// 
 			this.checkBoxAutoCenter.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
 			this.checkBoxAutoCenter.AutoSize = true;
+			this.checkBoxAutoCenter.Checked = true;
+			this.checkBoxAutoCenter.CheckState = System.Windows.Forms.CheckState.Checked;
 			this.checkBoxAutoCenter.Location = new System.Drawing.Point(791, 293);
 			this.checkBoxAutoCenter.Name = "checkBoxAutoCenter";
 			this.checkBoxAutoCenter.Size = new System.Drawing.Size(121, 17);
@@ -367,11 +374,50 @@
 			this.floatTrackbarControlRestDistance.Value = 4F;
 			this.floatTrackbarControlRestDistance.VisibleRangeMax = 4F;
 			// 
+			// groupBox1
+			// 
+			this.groupBox1.Controls.Add(this.labelSearchResults);
+			this.groupBox1.Controls.Add(this.label9);
+			this.groupBox1.Controls.Add(this.textBoxSearch);
+			this.groupBox1.Location = new System.Drawing.Point(791, 375);
+			this.groupBox1.Name = "groupBox1";
+			this.groupBox1.Size = new System.Drawing.Size(315, 189);
+			this.groupBox1.TabIndex = 23;
+			this.groupBox1.TabStop = false;
+			this.groupBox1.Text = "Search Box";
+			// 
+			// textBoxSearch
+			// 
+			this.textBoxSearch.Location = new System.Drawing.Point(79, 19);
+			this.textBoxSearch.Name = "textBoxSearch";
+			this.textBoxSearch.Size = new System.Drawing.Size(230, 20);
+			this.textBoxSearch.TabIndex = 0;
+			this.textBoxSearch.TextChanged += new System.EventHandler(this.textBoxSearch_TextChanged);
+			// 
+			// label9
+			// 
+			this.label9.AutoSize = true;
+			this.label9.Location = new System.Drawing.Point(11, 22);
+			this.label9.Name = "label9";
+			this.label9.Size = new System.Drawing.Size(62, 13);
+			this.label9.TabIndex = 1;
+			this.label9.Text = "Search for :";
+			// 
+			// label10
+			// 
+			this.labelSearchResults.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+			this.labelSearchResults.Location = new System.Drawing.Point(14, 56);
+			this.labelSearchResults.Name = "label10";
+			this.labelSearchResults.Size = new System.Drawing.Size(295, 130);
+			this.labelSearchResults.TabIndex = 2;
+			this.labelSearchResults.Text = "No result.";
+			// 
 			// GraphForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1118, 793);
+			this.Controls.Add(this.groupBox1);
 			this.Controls.Add(this.checkBoxAutoCenter);
 			this.Controls.Add(this.buttonResetAll);
 			this.Controls.Add(this.floatTrackbarControlK3);
@@ -401,6 +447,8 @@
 			this.Name = "GraphForm";
 			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
 			this.Text = "Graph Viz Test";
+			this.groupBox1.ResumeLayout(false);
+			this.groupBox1.PerformLayout();
 			this.ResumeLayout(false);
 			this.PerformLayout();
 
@@ -437,5 +485,9 @@
 		private System.Windows.Forms.CheckBox checkBoxAutoCenter;
 		private System.Windows.Forms.Label label8;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlRestDistance;
+		private System.Windows.Forms.GroupBox groupBox1;
+		private System.Windows.Forms.Label label9;
+		private System.Windows.Forms.TextBox textBoxSearch;
+		private System.Windows.Forms.Label labelSearchResults;
 	}
 }

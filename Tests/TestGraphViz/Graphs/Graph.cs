@@ -113,6 +113,8 @@ namespace ProtoParser
 			return FindNeuron( _fullyQualifiedName, null );
 		}
 		public Neuron	FindNeuron( string _fullyQualifiedName, Neuron _context ) {
+			if ( _fullyQualifiedName == null || _fullyQualifiedName == "" )
+				return null;
 			if ( _context == null )
 				_context = m_root;
 
@@ -139,13 +141,17 @@ namespace ProtoParser
 				anchor = alias[0];
 			} else {
 				// Try context neurons
-				anchor = _context.FindChild( rootName );
+				if ( _context != null )
+					anchor = _context.FindChild( rootName );
+
 				if ( anchor == null ) {
 					// Try root
 					anchor = _context != m_root ? m_root.FindChild( rootName ) : null;
 					if ( anchor == null ) {
 						// Try everything
 						Neuron[]	children = FindNeurons( rootName );
+						if ( children == null )
+							return null;
 						if ( children.Length == 0 )
 							throw new Exception( "Failed to find root name \"" + rootName + "\" of fully-qualified neuron name \"" + fullName + "\" in any context!" );
 						if ( children.Length != 1 )
@@ -180,7 +186,7 @@ namespace ProtoParser
 		/// <param name="_neurons"></param>
 		internal void	RegisterAlias( string _aliasName, Neuron[] _neurons ) {
 			if ( m_name2Neurons.ContainsKey( _aliasName ) )
-				throw new Exception( "Alias name \"" + _aliasName + "\" cannot be used because it shadows an existing neuron \"" + m_name2Neurons[_aliasName][0].HelpString() + "\" with the same name!" );	// If we allowed that, then we could never create any other homonym neuron
+				throw new Exception( "Alias name \"" + _aliasName + "\" cannot be used because it shadows an existing neuron \"" + m_name2Neurons[_aliasName][0].FullName + "\" with the same name!" );	// If we allowed that, then we could never create any other homonym neuron
 
 			if ( !m_aliasName2Neurons.ContainsKey( _aliasName ) )
 				m_aliasName2Neurons.Add( _aliasName, _neurons );
@@ -214,12 +220,19 @@ namespace ProtoParser
 		public void		Read( BinaryReader _R ) {
 			// Pre-create neurons so we can directly reference them when we read back their IDs
 			m_neurons = new List<Neuron>( _R.ReadInt32() );
+			m_name2Neurons.Clear();
 			for ( int i=0; i < m_neurons.Capacity; i++ ) {
 				m_neurons.Add( new Neuron() );
 			}
 
 			foreach ( Neuron N in m_neurons ) {
 				N.Read( _R, m_neurons );
+
+				if ( N.m_name != null ) {
+					if ( !m_name2Neurons.ContainsKey( N.m_name ) )
+						m_name2Neurons.Add( N.m_name, new List<Neuron>() );
+					m_name2Neurons[N.m_name].Add( N );
+				}
 			}
 		}
 

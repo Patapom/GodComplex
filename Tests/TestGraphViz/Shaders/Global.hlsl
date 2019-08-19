@@ -11,6 +11,7 @@ cbuffer CB_Main : register(b0) {
 	float	_maxMass;
 	float2	_cameraCenter;
 	float2	_cameraSize;
+	uint	_hoveredNodeIndex;
 };
 
 struct SB_NodeSim {
@@ -20,6 +21,7 @@ struct SB_NodeSim {
 
 struct SB_NodeInfo {
 	float		m_mass;			// Node mass
+	uint		m_flags;		// Flags (bit 0 = selected)
 	uint		m_linkOffset;	// Start link index in the links array
 	uint		m_linksCount;	// Amount of links in the array
 };

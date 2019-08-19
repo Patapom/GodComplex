@@ -1,7 +1,7 @@
 #include "Global.hlsl"
 
 static const float	NODE_SIZE = 0.005;
-static const float	LINK_SIZE = 0.001;
+static const float	LINK_SIZE = 0.0015;
 
 StructuredBuffer<SB_NodeSim>	_SB_Graph_In : register( t0 );
 
@@ -41,12 +41,23 @@ PS_IN	VS( VS_IN _In ) {
 	Out.UV.xy = _In.__Position.xy;
 	Out.UV.z = info.m_mass / _maxMass;
 
+	if ( nodeIndex == _hoveredNodeIndex ) {
+		Out.UV.z = -1;	// Hovered
+	} else if ( info.m_flags & 1U ) {
+		Out.UV.z = -2;	// Selected
+	}
+
 	return Out;
 }
 
 float3	PS( PS_IN _In ) : SV_TARGET0 {
 	float	sqDistance = 1.0 - dot( _In.UV.xy, _In.UV.xy );
 	clip( sqDistance );
+
+	if ( _In.UV.z < -1.5 )
+		return float3( 1, 1, 1 );
+	else if ( _In.UV.z < -0.5 )
+		return float3( 1, 1, 0 );
 
 	return sqrt( sqDistance ) * _tex_FalseColors.SampleLevel( LinearClamp, float2( lerp( 0.15, 1.0, _In.UV.z ), 0.5 ), 0.0 );
 }
@@ -66,7 +77,6 @@ PS_IN	VS2( VS_IN _In ) {
 	SB_NodeSim	targetNode = _SB_Graph_In[targetIndex];
 	SB_NodeInfo	targetInfo = _SB_Nodes[targetIndex];
 
-//	const float	SIZE = 0.02;
 	const float	SIZE = LINK_SIZE * dot( 0.5, _cameraSize );
 
 	float2	P0 = sourceNode.m_position;
@@ -81,14 +91,20 @@ PS_IN	VS2( VS_IN _In ) {
 	Out.__Position = TransformPosition( finalPos );
 
 	Out.UV.xy = _In.__Position.xy;
-	Out.UV.z = lerp( sourceInfo.m_mass, targetInfo.m_mass, U ) / _maxMass;
+	Out.UV.z = saturate( lerp( sourceInfo.m_mass, targetInfo.m_mass, U ) / _maxMass );
 
 	Out.__Position.z = 1.0 - Out.UV.z;
+
+	if ( (sourceInfo.m_flags & 1) && (targetInfo.m_flags & 1) )
+		Out.UV.z = -1.0;
 
 	return Out;
 }
 
 float3	PS2( PS_IN _In ) : SV_TARGET0 {
+	if ( _In.UV.z < -0.5 )
+		return 0.9 * float3( 1, 1, 1 );
+
 	return 0.5 * sqrt( 1.0 - pow2( _In.UV.y ) ) * _tex_FalseColors.SampleLevel( LinearClamp, float2( lerp( 0.15, 1.0, _In.UV.z ), 0.5 ), 0.0 );
 }
 
