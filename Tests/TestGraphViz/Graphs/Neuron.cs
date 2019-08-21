@@ -52,6 +52,9 @@ namespace ProtoParser
 		private List< Neuron >		m_features = new List<Neuron>();
 		public NeuronValue			m_value = null;
 
+		private static uint			ms_searchMarker = 0;
+		private uint				m_searchMarker = 0;
+
 		public int			ParentsCount	{ get { return m_parents.Count; } }
 		public Neuron[]		Parents			{ get {return m_parents.ToArray(); } }
 		public int			ChildrenCount	{ get { return m_children.Count; } }
@@ -77,17 +80,35 @@ namespace ProtoParser
 		public Neuron( string _name ) {
 			m_name = _name;
 		}
-		public override string ToString() { return m_name; }
+		public override string ToString() { return FullName; }
 
 		public void				LinkParent( Neuron _parent ) {
+			if ( m_parents.Contains( _parent ) )
+				return;
+
+			if ( _parent == this )
+				throw new Exception( "Can't link self!" );
+
 			m_parents.Add( _parent );
 			_parent.m_children.Add( this );
 		}
 		public void				LinkChild( Neuron _child ) {
+			if ( m_children.Contains( _child ) )
+				return;
+
+			if ( _child == this )
+				throw new Exception( "Can't link self!" );
+
 			m_children.Add( _child );
 			_child.m_parents.Add( this );
 		}
 		public void				LinkFeature( Neuron _feature ) {
+			if ( m_features.Contains( _feature ) )
+				return;
+
+			if ( _feature == this )
+				throw new Exception( "Can't link self!" );
+
 			m_features.Add( _feature );
 			_feature.m_parents.Add( this );
 		}
@@ -118,19 +139,20 @@ namespace ProtoParser
 			_feature.m_parents.Remove( this );
 		}
 
-		public string	FullName { get {
+		public string	FullName {
+			get {
 				Neuron	parent = this;
 				Neuron	child = null;
 				string	result = "";
 				int		count = 0;
 				while ( parent != null && child != parent && count < 8 ) {
-					result = parent + (child != null ? "." + result : "");
+					result = (parent.m_name != null ? (parent.m_name.IndexOf( ' ' ) != -1 ? ("\""+parent.m_name+"\"") : parent.m_name) : "<anon>") + (child != null ? "." + result : "");
 					child = parent;
 					parent = child.m_parents.Count > 0 ? child.m_parents[0] : null;
 					count++;
 				}
 				if ( count == 8 && parent != null && parent != child ) {
-					result = "..." + result;
+					result = "(...)" + result;
 				}
 				return result;
 			}
@@ -156,6 +178,50 @@ namespace ProtoParser
 			foreach ( Neuron feature in m_features )
 				if ( feature.m_name == _featureName )
 					return feature;
+
+			return null;
+		}
+
+		/// <summary>
+		/// Tries and find the provided neuron in the child hierarchy of this neuron
+		/// </summary>
+		/// <param name="_child"></param>
+		/// <returns></returns>
+		public Neuron			RecursiveFindChild( Neuron _child ) {
+			return RecursiveFindChild( _child, ++ms_searchMarker );
+		}
+		Neuron			RecursiveFindChild( Neuron _child, uint _searchMarker ) {
+			if ( m_searchMarker == _searchMarker )
+				return null;	// Already visited
+
+			m_searchMarker = _searchMarker;	// Now visited
+
+			foreach ( Neuron child in m_children )
+				if ( child == _child ) {
+					return this;
+				}
+
+			return null;
+		}
+
+		/// <summary>
+		/// Tries and find the provided neuron name in the parent hierarchy of this neuron
+		/// </summary>
+		/// <param name="_parentName"></param>
+		/// <returns></returns>
+		public Neuron			RecursiveFindParentByName( string _parentName ) {
+			return RecursiveFindParentByName( _parentName, ++ms_searchMarker );
+		}
+		Neuron			RecursiveFindParentByName( string _parentName, uint _searchMarker ) {
+			if ( m_searchMarker == _searchMarker )
+				return null;	// Already visited
+
+			m_searchMarker = _searchMarker;	// Now visited
+
+			foreach ( Neuron parent in m_parents )
+				if ( parent.m_name == _parentName ) {
+					return this;
+				}
 
 			return null;
 		}

@@ -59,7 +59,7 @@ float3	PS( PS_IN _In ) : SV_TARGET0 {
 	else if ( _In.UV.z < -0.5 )
 		return float3( 1, 1, 0 );
 
-	return sqrt( sqDistance ) * _tex_FalseColors.SampleLevel( LinearClamp, float2( lerp( 0.15, 1.0, _In.UV.z ), 0.5 ), 0.0 );
+	return sqrt( sqDistance ) * _tex_FalseColors.SampleLevel( LinearClamp, float2( lerp( 0.2, 1.0, _In.UV.z ), 0.5 ), 0.0 );
 }
 
 
@@ -105,6 +105,6 @@ float3	PS2( PS_IN _In ) : SV_TARGET0 {
 	if ( _In.UV.z < -0.5 )
 		return 0.9 * float3( 1, 1, 1 );
 
-	return 0.5 * sqrt( 1.0 - pow2( _In.UV.y ) ) * _tex_FalseColors.SampleLevel( LinearClamp, float2( lerp( 0.15, 1.0, _In.UV.z ), 0.5 ), 0.0 );
+	return 0.5 * sqrt( 1.0 - pow2( _In.UV.y ) ) * _tex_FalseColors.SampleLevel( LinearClamp, float2( lerp( 0.20, 1.0, _In.UV.z ), 0.5 ), 0.0 );
 }
 
