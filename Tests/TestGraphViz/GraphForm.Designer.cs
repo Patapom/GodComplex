@@ -46,9 +46,10 @@
 			this.label8 = new System.Windows.Forms.Label();
 			this.floatTrackbarControlRestDistance = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.groupBox1 = new System.Windows.Forms.GroupBox();
-			this.textBoxSearch = new System.Windows.Forms.TextBox();
-			this.label9 = new System.Windows.Forms.Label();
 			this.labelSearchResults = new System.Windows.Forms.Label();
+			this.label9 = new System.Windows.Forms.Label();
+			this.textBoxSearch = new System.Windows.Forms.TextBox();
+			this.checkBoxShowChildren = new System.Windows.Forms.CheckBox();
 			this.groupBox1.SuspendLayout();
 			this.SuspendLayout();
 			// 
@@ -376,23 +377,25 @@
 			// 
 			// groupBox1
 			// 
+			this.groupBox1.Controls.Add(this.checkBoxShowChildren);
 			this.groupBox1.Controls.Add(this.labelSearchResults);
 			this.groupBox1.Controls.Add(this.label9);
 			this.groupBox1.Controls.Add(this.textBoxSearch);
 			this.groupBox1.Location = new System.Drawing.Point(791, 375);
 			this.groupBox1.Name = "groupBox1";
-			this.groupBox1.Size = new System.Drawing.Size(315, 189);
+			this.groupBox1.Size = new System.Drawing.Size(315, 211);
 			this.groupBox1.TabIndex = 23;
 			this.groupBox1.TabStop = false;
 			this.groupBox1.Text = "Search Box";
 			// 
-			// textBoxSearch
+			// labelSearchResults
 			// 
-			this.textBoxSearch.Location = new System.Drawing.Point(79, 19);
-			this.textBoxSearch.Name = "textBoxSearch";
-			this.textBoxSearch.Size = new System.Drawing.Size(230, 20);
-			this.textBoxSearch.TabIndex = 0;
-			this.textBoxSearch.TextChanged += new System.EventHandler(this.textBoxSearch_TextChanged);
+			this.labelSearchResults.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+			this.labelSearchResults.Location = new System.Drawing.Point(14, 65);
+			this.labelSearchResults.Name = "labelSearchResults";
+			this.labelSearchResults.Size = new System.Drawing.Size(295, 143);
+			this.labelSearchResults.TabIndex = 2;
+			this.labelSearchResults.Text = "No result.";
 			// 
 			// label9
 			// 
@@ -403,14 +406,24 @@
 			this.label9.TabIndex = 1;
 			this.label9.Text = "Search for :";
 			// 
-			// label10
+			// textBoxSearch
 			// 
-			this.labelSearchResults.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-			this.labelSearchResults.Location = new System.Drawing.Point(14, 56);
-			this.labelSearchResults.Name = "label10";
-			this.labelSearchResults.Size = new System.Drawing.Size(295, 130);
-			this.labelSearchResults.TabIndex = 2;
-			this.labelSearchResults.Text = "No result.";
+			this.textBoxSearch.Location = new System.Drawing.Point(79, 19);
+			this.textBoxSearch.Name = "textBoxSearch";
+			this.textBoxSearch.Size = new System.Drawing.Size(230, 20);
+			this.textBoxSearch.TabIndex = 0;
+			this.textBoxSearch.TextChanged += new System.EventHandler(this.textBoxSearch_TextChanged);
+			// 
+			// checkBoxShowChildren
+			// 
+			this.checkBoxShowChildren.AutoSize = true;
+			this.checkBoxShowChildren.Location = new System.Drawing.Point(14, 45);
+			this.checkBoxShowChildren.Name = "checkBoxShowChildren";
+			this.checkBoxShowChildren.Size = new System.Drawing.Size(94, 17);
+			this.checkBoxShowChildren.TabIndex = 3;
+			this.checkBoxShowChildren.Text = "Show Children";
+			this.checkBoxShowChildren.UseVisualStyleBackColor = true;
+			this.checkBoxShowChildren.CheckedChanged += new System.EventHandler(this.checkBoxShowChildren_CheckedChanged);
 			// 
 			// GraphForm
 			// 
@@ -489,5 +502,6 @@
 		private System.Windows.Forms.Label label9;
 		private System.Windows.Forms.TextBox textBoxSearch;
 		private System.Windows.Forms.Label labelSearchResults;
+		private System.Windows.Forms.CheckBox checkBoxShowChildren;
 	}
 }

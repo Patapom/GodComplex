@@ -25,7 +25,8 @@ namespace CSharpColorExporter
 				colorValues += ", 0x" + valueString;
 //				colorValues.Add( new Tuple<string, string>( colorName.ToString(), valueString ) );
 
-				colorConcepts += ", c." + colorName + "( \"0x" + valueString + "\" )";
+//				colorConcepts += ", c." + colorName + "( \"0x" + valueString + "\" )";
+				colorConcepts += ", " + colorName.ToString().ToLower() + "( \"0x" + valueString + "\" )";
 
 				colorIndex++;
 				if ( (colorIndex % 20) == 0 )
@@ -34,7 +35,7 @@ namespace CSharpColorExporter
 
 			//////////////////////////////////////////////////////////////////////////
 			// Dump wikipedia colors
-			string	wikiConcepts = "\"wikipédia\" => (\n\t";
+			string	wikiConcepts = "\"détaillées\" => (\n\t";
 
 			string[]	wikiColors = Colors.colors.Split( '\n' );
 			for ( int i=0; i < wikiColors.Length; i++ ) {
@@ -87,7 +88,7 @@ namespace CSharpColorExporter
 				general[closestColorIndex,2] += (general[closestColorIndex,2] != "" ? ", " : "") + wikiColorName;
 			}
 
-			string	groupements = "w = \"wikipédia\"\n\n";
+			string	groupements = "w = \"détaillées\"\n\n";
 			for ( int i=0; i < xyY.Length; i++ ) {
 				groupements += general[i,0] + " => ( " + general[i,2] + " )\n";
 			}

@@ -43,7 +43,7 @@ PS_IN	VS( VS_IN _In ) {
 
 	if ( nodeIndex == _hoveredNodeIndex ) {
 		Out.UV.z = -1;	// Hovered
-	} else if ( info.m_flags & 1U ) {
+	} else if ( info.m_flags & 7U ) {
 		Out.UV.z = -2;	// Selected
 	}
 
@@ -95,15 +95,21 @@ PS_IN	VS2( VS_IN _In ) {
 
 	Out.__Position.z = 1.0 - Out.UV.z;
 
-	if ( (sourceInfo.m_flags & 1) && (targetInfo.m_flags & 1) )
-		Out.UV.z = -1.0;
+	if ( (sourceInfo.m_flags & 7U) && (targetInfo.m_flags & 7U) ) {
+		Out.UV.z = (targetInfo.m_flags & 4U) ? -3 : ((targetInfo.m_flags & 2U) ? -2 : -1);
+		Out.__Position.z = 0.0;
+	}
 
 	return Out;
 }
 
 float3	PS2( PS_IN _In ) : SV_TARGET0 {
-	if ( _In.UV.z < -0.5 )
-		return 0.9 * float3( 1, 1, 1 );
+	if ( _In.UV.z < -2.5 )
+		return 0.9 * float3( 0, 1, 1 );		// Child selection
+	if ( _In.UV.z < -1.5 )
+		return 0.4 * float3( 1, 1, 1 );		// Hierarchy selection
+	else if ( _In.UV.z < -0.5 )
+		return 0.9 * float3( 1, 1, 1 );		// Actual selection
 
 	return 0.5 * sqrt( 1.0 - pow2( _In.UV.y ) ) * _tex_FalseColors.SampleLevel( LinearClamp, float2( lerp( 0.20, 1.0, _In.UV.z ), 0.5 ), 0.0 );
 }

@@ -716,34 +716,50 @@ neurons[0].LinkChild( neurons[1] );
 						return;	// No change...
 				}
 
+				// Clear children check box
+				bool	oldCheckBoxStatus = checkBoxShowChildren.Checked;
+				checkBoxShowChildren.Checked = false;
+
 				// Update selection and node flags
 				m_selection = value;
 
 				for ( int i=0; i < m_nodesCount; i++ )
 					m_SB_Nodes.m[i].m_flags = 0U;
-				foreach ( ProtoParser.Neuron selectedNeuron in m_selection )
+				foreach ( ProtoParser.Neuron selectedNeuron in m_selection ) {
+					// Select neuron
 					m_SB_Nodes.m[m_neuron2ID[selectedNeuron]].m_flags |= 1U;
 
-				m_SB_Nodes.Write();
-			}
-		}
-
-		void	SelectNeuronsAndHierarchy( ProtoParser.Neuron[] _neurons ) {
-			if ( _neurons == null ) {
-				Selection = null;
-			}
-
-			List<ProtoParser.Neuron>	neurons = new List<ProtoParser.Neuron>( _neurons );
-			foreach ( ProtoParser.Neuron N in _neurons ) {
-				ProtoParser.Neuron parent = N;
-				while ( parent.ParentsCount > 0 ) {
-					parent = parent.Parents[0];
-					neurons.Add( parent );
+					// Select parents
+					ProtoParser.Neuron parent = selectedNeuron;
+					while ( parent.ParentsCount > 0 ) {
+						parent = parent.Parents[0];
+						m_SB_Nodes.m[m_neuron2ID[parent]].m_flags |= 2U;
+					}
 				}
-			}
 
-			Selection = neurons.ToArray();
+				m_SB_Nodes.Write();
+
+				// Restore check box status
+				checkBoxShowChildren.Checked = oldCheckBoxStatus;
+			}
 		}
+
+// 		void	SelectNeuronsAndHierarchy( ProtoParser.Neuron[] _neurons ) {
+// 			if ( _neurons == null ) {
+// 				Selection = null;
+// 			}
+// 
+// 			List<ProtoParser.Neuron>	neurons = new List<ProtoParser.Neuron>( _neurons );
+// 			foreach ( ProtoParser.Neuron N in _neurons ) {
+// 				ProtoParser.Neuron parent = N;
+// 				while ( parent.ParentsCount > 0 ) {
+// 					parent = parent.Parents[0];
+// 					neurons.Add( parent );
+// 				}
+// 			}
+// 
+// 			Selection = neurons.ToArray();
+// 		}
 
 		private void textBoxSearch_TextChanged( object sender, EventArgs e ) {
 			try {
@@ -766,12 +782,31 @@ neurons[0].LinkChild( neurons[1] );
 					labelSearchResults.Text = "No result.\n";
 				}
 
-				SelectNeuronsAndHierarchy( results );
+//				SelectNeuronsAndHierarchy( results );
+				Selection = results;
 
 			} catch ( Exception _e ) {
 				labelSearchResults.Text = "Error during search: " + _e.Message;
-				SelectNeuronsAndHierarchy( new ProtoParser.Neuron[0] );
+//				SelectNeuronsAndHierarchy( new ProtoParser.Neuron[0] );
+				Selection = new ProtoParser.Neuron[0];
 			}
+		}
+
+		private void checkBoxShowChildren_CheckedChanged( object sender, EventArgs e ) {
+			if ( checkBoxShowChildren.Checked ) {
+				foreach ( ProtoParser.Neuron N in Selection ) {
+					foreach ( ProtoParser.Neuron child in N.Children ) {
+						m_SB_Nodes.m[(int) m_neuron2ID[child]].m_flags |= 0x4U;
+					}
+				}
+			} else {
+				foreach ( ProtoParser.Neuron N in Selection ) {
+					foreach ( ProtoParser.Neuron child in N.Children ) {
+						m_SB_Nodes.m[(int) m_neuron2ID[child]].m_flags &= ~0x4U;
+					}
+				}
+			}
+			m_SB_Nodes.Write();
 		}
 	}
 }
