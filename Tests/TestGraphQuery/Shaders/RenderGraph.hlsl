@@ -9,8 +9,9 @@ StructuredBuffer<uint>			_SB_LinkSources : register( t2 );
 
 // Heat simulation
 StructuredBuffer<float>			_SB_Heat : register( t3 );
+StructuredBuffer<float>			_SB_HeatBarycentrics : register( t4 );
 
-Texture2D<float3>	_tex_FalseColors : register( t4 );
+Texture2D<float3>				_tex_FalseColors : register( t5 );
 
 struct VS_IN {
 	float4	__Position : SV_POSITION;
@@ -22,6 +23,29 @@ struct PS_IN {
 	float3	UV : TEXCOORDS0;
 	float3	color : COLOR;
 };
+
+// Computes the result distance from the isobarycenter
+float	ComputeResult( uint _nodeIndex ) {
+	const float	barycentricCenter = 1.0 / _sourcesCount;	// The ideal center is a vector with all components equal to this value
+
+	float	sqDistance = 0.0;
+	for ( uint sourceIndex=0; sourceIndex < _sourcesCount; sourceIndex++ ) {
+		float	barycentric = _SB_HeatBarycentrics[Local2GlobalIndex( _nodeIndex, sourceIndex )];
+		float	delta = barycentric - barycentricCenter;
+		sqDistance += delta * delta;
+	}
+
+	return sqrt( sqDistance );
+}
+
+float3	ComputeResultColor( uint _nodeIndex ) {
+	float	distance2Iso = ComputeResult( _nodeIndex );
+
+	const float	tol = 0.5;
+
+	return distance2Iso < tol ? float3( tol - distance2Iso, 0, 0 ) : float3( 0, 0, distance2Iso - tol );
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////////////
 // NODE DRAWING
@@ -41,13 +65,22 @@ PS_IN	VS( VS_IN _In ) {
 	Out.UV.xy = _In.__Position.xy;
 	Out.UV.z = 1.0;
 
+	Out.color = 0.0;
 	if ( nodeIndex == _hoveredNodeIndex ) {
-		Out.color  = float3( 1, 1, 0 );	// Hovered
+		Out.color = float3( 1, 1, 0 );	// Hovered
 	} else if ( node.m_flags & 7U ) {
-		Out.color  = float3( 1, 1, 1 );	// Selected
+		Out.color = float3( 1, 1, 1 );	// Selected
 	} else {
-		float	heat = _SB_Heat[Local2GlobalIndex( nodeIndex, _sourceIndex )];
-		Out.color = _tex_FalseColors.SampleLevel( LinearClamp, float2( lerp( 0.2, 1.0, heat ), 0.5 ), 0.0 );
+		if ( _renderFlags != 2U ) {
+			float	heat = 0.0;
+			if ( _renderFlags & 1 )
+				heat = _SB_HeatBarycentrics[Local2GlobalIndex( nodeIndex, _sourceIndex )];
+			else
+				heat = _SB_Heat[Local2GlobalIndex( nodeIndex, _sourceIndex )];
+			Out.color = _tex_FalseColors.SampleLevel( LinearClamp, float2( lerp( 0.2, 1.0, heat ), 0.5 ), 0.0 );
+		} else {
+			Out.color = ComputeResultColor( nodeIndex );
+		}
 	}
 
 	return Out;
@@ -100,11 +133,18 @@ PS_IN	VS2( VS_IN _In ) {
 			Out.color = 0.4 * float3( 1, 1, 1 );		// Hierarchy selection
 		else if ( sourceNode.m_flags & 1U )
 			Out.color = 0.9 * float3( 1, 1, 1 );		// Actual selection
-	} else {
+	} else if ( _renderFlags != 2U ) {
 		// Draw heat gradient
 		uint	nodeIndex = U < 0.5 ? sourceNodeIndex : targetNodeIndex;
-		float	heat = _SB_Heat[Local2GlobalIndex( nodeIndex, _sourceIndex )];
+		float	heat = 0.0;
+		if ( _renderFlags & 1 )
+			heat = _SB_HeatBarycentrics[Local2GlobalIndex( nodeIndex, _sourceIndex )];
+		else
+			heat = _SB_Heat[Local2GlobalIndex( nodeIndex, _sourceIndex )];
 		Out.color =_tex_FalseColors.SampleLevel( LinearClamp, float2( lerp( 0.20, 1.0, heat ), 0.5 ), 0.0 );
+	} else {
+		uint	nodeIndex = U < 0.5 ? sourceNodeIndex : targetNodeIndex;
+		Out.color = ComputeResultColor( nodeIndex );
 	}
 
 	return Out;

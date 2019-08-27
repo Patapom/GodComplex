@@ -36,13 +36,13 @@
 			this.radioButtonShowResults = new System.Windows.Forms.RadioButton();
 			this.radioButtonShowBarycentrics = new System.Windows.Forms.RadioButton();
 			this.radioButtonShowTemperature = new System.Windows.Forms.RadioButton();
-			this.labelSearchResults = new System.Windows.Forms.Label();
 			this.label9 = new System.Windows.Forms.Label();
 			this.textBoxSearch = new System.Windows.Forms.TextBox();
 			this.groupBox2 = new System.Windows.Forms.GroupBox();
 			this.labelProcessedQuery = new System.Windows.Forms.Label();
 			this.groupBox3 = new System.Windows.Forms.GroupBox();
 			this.integerTrackbarControlSignificantResultsCount = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
+			this.textBoxSearchResults = new System.Windows.Forms.TextBox();
 			this.groupBox1.SuspendLayout();
 			this.groupBox2.SuspendLayout();
 			this.groupBox3.SuspendLayout();
@@ -216,12 +216,12 @@
 			// 
 			// integerTrackbarControlShowQuerySourceIndex
 			// 
+			this.integerTrackbarControlShowQuerySourceIndex.Enabled = false;
 			this.integerTrackbarControlShowQuerySourceIndex.Location = new System.Drawing.Point(107, 43);
 			this.integerTrackbarControlShowQuerySourceIndex.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.integerTrackbarControlShowQuerySourceIndex.MinimumSize = new System.Drawing.Size(70, 20);
 			this.integerTrackbarControlShowQuerySourceIndex.Name = "integerTrackbarControlShowQuerySourceIndex";
 			this.integerTrackbarControlShowQuerySourceIndex.RangeMin = 0;
-			this.integerTrackbarControlShowQuerySourceIndex.Enabled = false;
 			this.integerTrackbarControlShowQuerySourceIndex.Size = new System.Drawing.Size(200, 20);
 			this.integerTrackbarControlShowQuerySourceIndex.TabIndex = 22;
 			this.integerTrackbarControlShowQuerySourceIndex.Value = 0;
@@ -258,18 +258,6 @@
 			this.radioButtonShowTemperature.TabStop = true;
 			this.radioButtonShowTemperature.Text = "Temp.";
 			this.radioButtonShowTemperature.UseVisualStyleBackColor = true;
-			// 
-			// labelSearchResults
-			// 
-			this.labelSearchResults.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-			this.labelSearchResults.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-			this.labelSearchResults.Location = new System.Drawing.Point(6, 45);
-			this.labelSearchResults.Name = "labelSearchResults";
-			this.labelSearchResults.Size = new System.Drawing.Size(303, 190);
-			this.labelSearchResults.TabIndex = 2;
-			this.labelSearchResults.Text = "No result.";
 			// 
 			// label9
 			// 
@@ -314,7 +302,7 @@
 			// 
 			// groupBox3
 			// 
-			this.groupBox3.Controls.Add(this.labelSearchResults);
+			this.groupBox3.Controls.Add(this.textBoxSearchResults);
 			this.groupBox3.Controls.Add(this.integerTrackbarControlSignificantResultsCount);
 			this.groupBox3.Controls.Add(this.buttonGrabResults);
 			this.groupBox3.Location = new System.Drawing.Point(794, 513);
@@ -336,6 +324,17 @@
 			this.integerTrackbarControlSignificantResultsCount.Value = 10;
 			this.integerTrackbarControlSignificantResultsCount.VisibleRangeMax = 10;
 			this.integerTrackbarControlSignificantResultsCount.VisibleRangeMin = 1;
+			// 
+			// textBoxSearchResults
+			// 
+			this.textBoxSearchResults.Location = new System.Drawing.Point(6, 48);
+			this.textBoxSearchResults.Multiline = true;
+			this.textBoxSearchResults.Name = "textBoxSearchResults";
+			this.textBoxSearchResults.ReadOnly = true;
+			this.textBoxSearchResults.ScrollBars = System.Windows.Forms.ScrollBars.Both;
+			this.textBoxSearchResults.Size = new System.Drawing.Size(303, 184);
+			this.textBoxSearchResults.TabIndex = 23;
+			this.textBoxSearchResults.WordWrap = false;
 			// 
 			// GraphForm
 			// 
@@ -360,6 +359,7 @@
 			this.groupBox2.ResumeLayout(false);
 			this.groupBox2.PerformLayout();
 			this.groupBox3.ResumeLayout(false);
+			this.groupBox3.PerformLayout();
 			this.ResumeLayout(false);
 			this.PerformLayout();
 
@@ -383,7 +383,6 @@
 		private System.Windows.Forms.GroupBox groupBox1;
 		private System.Windows.Forms.Label label9;
 		private System.Windows.Forms.TextBox textBoxSearch;
-		private System.Windows.Forms.Label labelSearchResults;
 		private System.Windows.Forms.GroupBox groupBox2;
 		private System.Windows.Forms.Label labelProcessedQuery;
 		private System.Windows.Forms.GroupBox groupBox3;
@@ -394,5 +393,6 @@
 		private System.Windows.Forms.RadioButton radioButtonShowResults;
 		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlShowQuerySourceIndex;
 		private System.Windows.Forms.Label label3;
+		private System.Windows.Forms.TextBox textBoxSearchResults;
 	}
 }

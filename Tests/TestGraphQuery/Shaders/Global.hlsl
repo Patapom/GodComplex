@@ -13,6 +13,7 @@ cbuffer CB_Main : register(b0) {
 	float	_diffusionCoefficient;
 	uint	_sourceIndex;
 	uint	_hoveredNodeIndex;
+	uint	_renderFlags;
 };
 
 struct SB_NodeInfo {

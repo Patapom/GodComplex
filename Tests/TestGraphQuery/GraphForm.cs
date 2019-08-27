@@ -39,6 +39,7 @@ namespace TestGraphQuery
 			public float		_diffusionCoefficient;
 			public uint			_sourceIndex;
 			public uint			_hoveredNodeIndex;
+			public uint			_renderFlags;
 		}
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
@@ -88,6 +89,9 @@ namespace TestGraphQuery
 		private StructuredBuffer<float>			m_SB_HeatSource = null;
 		private StructuredBuffer<float>			m_SB_HeatTarget = null;
 
+		private bool							m_barycentricsDirty = true;
+		private StructuredBuffer<float>			m_SB_HeatBarycentrics = null;
+
 		// Text display
 		private int[]							m_char2Index = new int[512];
 		private Rectangle[]						m_fontRectangles = null;
@@ -101,7 +105,8 @@ namespace TestGraphQuery
 		private uint							m_totalLinksCount = 0;
 		private Dictionary< ProtoParser.Neuron, uint >	m_neuron2ID = null;
 
-		private Texture2D						m_tex_FalseColors = null;
+		private Texture2D						m_tex_FalseColors0 = null;
+		private Texture2D						m_tex_FalseColors1 = null;
 
 		#endregion
 
@@ -216,6 +221,8 @@ namespace TestGraphQuery
 			m_SB_HeatSource = new StructuredBuffer<float>( m_device, elementsCount, true );
 			m_SB_HeatTarget = new StructuredBuffer<float>( m_device, elementsCount, true );
 
+			m_SB_HeatBarycentrics = new StructuredBuffer<float>( m_device, elementsCount, true );
+
 			// Setup initial CB
 			m_CB_Main.m._nodesCount = m_nodesCount;
 			m_CB_Main.m._sourcesCount = 0;
@@ -223,16 +230,12 @@ namespace TestGraphQuery
 			m_CB_Main.m._resY = (uint) panelOutput.Height;
 			m_CB_Main.m._diffusionCoefficient = 1.0f;
 			m_CB_Main.m._hoveredNodeIndex = ~0U;
+			m_CB_Main.m._renderFlags = 0U;
 			m_CB_Main.UpdateData();
 
 			// Load false colors
-//			using ( ImageUtility.ImageFile sourceImage = new ImageUtility.ImageFile( new FileInfo( "../../Images/Gradients/Viridis.png" ), ImageUtility.ImageFile.FILE_FORMAT.PNG ) ) {
-			using ( ImageUtility.ImageFile sourceImage = new ImageUtility.ImageFile( new FileInfo( "../../Images/Gradients/Magma.png" ), ImageUtility.ImageFile.FILE_FORMAT.PNG ) ) {
-				ImageUtility.ImageFile convertedImage = new ImageUtility.ImageFile();
-				convertedImage.ConvertFrom( sourceImage, ImageUtility.PIXEL_FORMAT.BGRA8 );
-				using ( ImageUtility.ImagesMatrix image = new ImageUtility.ImagesMatrix( convertedImage, ImageUtility.ImagesMatrix.IMAGE_TYPE.sRGB ) )
-					m_tex_FalseColors = new Texture2D( m_device, image, ImageUtility.COMPONENT_FORMAT.UNORM_sRGB );
-			}
+			m_tex_FalseColors0 = LoadFalseColors( new FileInfo( "../../Images/Gradients/Magma.png" ) );
+			m_tex_FalseColors1 = LoadFalseColors( new FileInfo( "../../Images/Gradients/Viridis.png" ) );
 
 			// Prepare font atlas
 			m_SB_Text = new StructuredBuffer<SB_Letter>( m_device, 1024U, true );
@@ -246,6 +249,9 @@ namespace TestGraphQuery
 				return;
 
 			m_CB_Main.m._sourceIndex = (uint) integerTrackbarControlShowQuerySourceIndex.Value;
+			m_CB_Main.m._renderFlags = 0U;
+			m_CB_Main.m._renderFlags |= radioButtonShowBarycentrics.Checked ? 1U : 0U;
+			m_CB_Main.m._renderFlags |= radioButtonShowResults.Checked ? 2U : 0U;
 			m_CB_Main.UpdateData();
 
 // 			Point	clientPos = panelOutput.PointToClient( Control.MousePosition );
@@ -293,6 +299,8 @@ namespace TestGraphQuery
 				StructuredBuffer<float>	temp = m_SB_HeatTarget;
 				m_SB_HeatTarget = m_SB_HeatSource;
 				m_SB_HeatSource = temp;
+
+				m_barycentricsDirty = true;
 			}
 
 
@@ -304,8 +312,16 @@ namespace TestGraphQuery
 			m_SB_Nodes.SetInput( 0 );
 			m_SB_LinkTargets.SetInput( 1 );
 			m_SB_LinkSources.SetInput( 2 );
+
 			m_SB_HeatSource.SetInput( 3 );
-			m_tex_FalseColors.Set( 4 );
+			if ( radioButtonShowTemperature.Checked ) {
+				m_tex_FalseColors0.Set( 5 );
+			} else if ( radioButtonShowBarycentrics.Checked ) {
+				GetBarycentricsBuffer().SetInput( 4 );
+				m_tex_FalseColors1.Set( 5 );
+			} else if ( radioButtonShowResults.Checked ) {
+				GetBarycentricsBuffer().SetInput( 4 );
+			}
 
 			if ( m_shader_RenderGraphLink.Use() ) {
 				m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.READ_WRITE_DEPTH_LESS, BLEND_STATE.DISABLED );
@@ -370,6 +386,66 @@ namespace TestGraphQuery
 			m_device.Present( false );
 		}
 
+		#region Normalized Results Space Computation
+
+		float	ComputeLogHeat( float _heat ) {
+//return _heat;
+//			return 1 + Mathf.Log( Math.Max( 1e-18f, _heat ) );
+			return Mathf.Sqrt( -Mathf.Log( Math.Max( 1e-18f, _heat ) ) );	// Following Varadhan
+		}
+
+		StructuredBuffer<float>			GetBarycentricsBuffer() {
+			if ( !m_barycentricsDirty || m_queryNodes.Length < 2 )
+				return m_SB_HeatBarycentrics;
+
+			// Read back simulation
+			m_SB_HeatSource.Read();
+
+			// Build a matrix of mutual heat values for each simulation at the position of each source
+			int			sourcesCount = m_queryNodes.Length;
+			Matrix		mutualHeat = new Matrix( sourcesCount );
+			for ( int source0=0; source0 < sourcesCount; source0++ ) {
+				int	sourceHeatOffset0 = (int) m_nodesCount * source0;
+
+				for ( int source1=0; source1 < sourcesCount; source1++ ) {
+					int		sourceNodeIndex = (int) m_neuron2ID[m_queryNodes[source1]];
+					float	heat = m_SB_HeatSource.m[sourceHeatOffset0 + sourceNodeIndex];	// Here we read the temperature of source 1 in the simulation space of source 0
+					mutualHeat[source0,source1] = ComputeLogHeat( heat );
+				}
+			}
+
+			// Invert so we get the matrix that will help us compute barycentric coordinates
+			Matrix		barycentric = mutualHeat.Invert();
+//Matrix	test = mutualHeat * barycentric;
+
+			// Apply transform to the fields
+			double[]	sourceHeatVector = new double[sourcesCount];
+			double[]	barycentricsVector = new double[sourcesCount];
+			for ( int nodeIndex=0; nodeIndex < (int) m_nodesCount; nodeIndex++ ) {
+				// Build source vector
+				for ( int sourceIndex=0; sourceIndex < sourcesCount; sourceIndex++ ) {
+					sourceHeatVector[sourceIndex] = ComputeLogHeat( m_SB_HeatSource.m[(int) m_nodesCount * sourceIndex + nodeIndex] );
+				}
+
+				// Transform into barycentrics
+				Matrix.Mul( sourceHeatVector, barycentric, barycentricsVector );
+
+				// Write back
+				for ( int sourceIndex=0; sourceIndex < sourcesCount; sourceIndex++ ) {
+					m_SB_HeatBarycentrics.m[(int) m_nodesCount * sourceIndex + nodeIndex] = (float) barycentricsVector[sourceIndex];
+				}
+			}
+
+			// Write results
+			m_SB_HeatBarycentrics.Write();
+
+			m_barycentricsDirty = false;
+
+			return m_SB_HeatBarycentrics;
+		}
+
+		#endregion
+
 		#region Junk
 
 		/// <summary>
@@ -384,10 +460,12 @@ namespace TestGraphQuery
 				m_tex_FontAtlas.Dispose();
 				m_SB_Text.Dispose();
 
+				m_SB_HeatBarycentrics.Dispose();
 				m_SB_HeatTarget.Dispose();
 				m_SB_HeatSource.Dispose();
 
-  				m_tex_FalseColors.Dispose();
+				m_tex_FalseColors1.Dispose();
+  				m_tex_FalseColors0.Dispose();
 
 				m_SB_SourceIndices.Dispose();
 
@@ -456,6 +534,15 @@ namespace TestGraphQuery
 
 		}
 
+		Texture2D	LoadFalseColors( FileInfo _fileName ) {
+			using ( ImageUtility.ImageFile sourceImage = new ImageUtility.ImageFile( _fileName, ImageUtility.ImageFile.FILE_FORMAT.PNG ) ) {
+				ImageUtility.ImageFile convertedImage = new ImageUtility.ImageFile();
+				convertedImage.ConvertFrom( sourceImage, ImageUtility.PIXEL_FORMAT.BGRA8 );
+				using ( ImageUtility.ImagesMatrix image = new ImageUtility.ImagesMatrix( convertedImage, ImageUtility.ImagesMatrix.IMAGE_TYPE.sRGB ) )
+					return new Texture2D( m_device, image, ImageUtility.COMPONENT_FORMAT.UNORM_sRGB );
+			}
+		}
+
 		#endregion
 
 		#endregion
@@ -469,10 +556,49 @@ namespace TestGraphQuery
 		private void buttonReset_Click( object sender, EventArgs e ) {
 			Array.Clear( m_SB_HeatSource.m, 0, m_SB_HeatSource.m.Length );
 			m_SB_HeatSource.Write();
+			m_barycentricsDirty = true;
 		}
 
-		private void buttonGrabResults_Click( object sender, EventArgs e ) {
+		float[]	m_resultScores = new float[0];
+		int[]	m_resultNodeIndices = new int[0];
 
+		private void buttonGrabResults_Click( object sender, EventArgs e ) {
+			int	sourcesCount = m_queryNodes.Length;
+			if ( sourcesCount == 0 ) {
+				textBoxSearchResults.Text = "No results.";
+				return;
+			}
+
+			// Compute barycentrics needed for results
+			GetBarycentricsBuffer().Read();
+
+			// Compute node scores
+			float	isoBarycentricCenter = 1.0f / sourcesCount;	// The ideal center is a vector with all components equal to this value
+
+			m_resultScores = new float[m_nodesCount];
+			m_resultNodeIndices = new int[m_nodesCount];
+			for ( int nodeIndex=0; nodeIndex < m_nodesCount; nodeIndex++ ) {
+				float	sqDistance = 0.0f;
+				for ( int sourceIndex=0; sourceIndex < sourcesCount; sourceIndex++ ) {
+					float	barycentric = m_SB_HeatBarycentrics.m[m_nodesCount * sourceIndex + nodeIndex];
+					float	delta = barycentric - isoBarycentricCenter;
+					sqDistance += delta * delta;
+				}
+				m_resultScores[nodeIndex] = Mathf.Sqrt( sqDistance );
+				m_resultNodeIndices[nodeIndex] = nodeIndex;
+			}
+
+			// Sort scores
+			Array.Sort( m_resultScores, m_resultNodeIndices );
+
+			// Dump results
+			string	results = "";
+			for ( int i=0; i < 50; i++ ) {
+				float				score = m_resultScores[i];
+				ProtoParser.Neuron	N = m_graph.Neurons[m_resultNodeIndices[i]];
+				results += N + (N.m_value != null ? N.m_value.ToString() : "") + " - " + score.ToString( "G4" ) + "\r\n";
+			}
+			textBoxSearchResults.Text = results;
 		}
 
 		private void panelOutput_MouseDown( object sender, MouseEventArgs e ) {
@@ -654,7 +780,7 @@ namespace TestGraphQuery
 
 			} catch ( Exception _e ) {
 				QueryNodes = null;
-				labelSearchResults.Text = "Error during search: " + _e.Message;
+				labelProcessedQuery.Text = "Error during search: " + _e.Message;
 			}
 		}
 
