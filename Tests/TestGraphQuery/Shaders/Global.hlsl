@@ -1,7 +1,4 @@
 
-static const float	SPRING_CONSTANT = 1.0;
-static const float	DAMPING_CONSTANT = 0.0;
-
 #define PI		3.1415926535897932384626433832795
 #define INVPI	0.31830988618379067153776752674503
 
@@ -14,13 +11,8 @@ cbuffer CB_Main : register(b0) {
 	uint	_hoveredNodeIndex;
 };
 
-struct SB_NodeSim {
-	float2		m_position;
-	float2		m_velocity;
-};
-
 struct SB_NodeInfo {
-	float		m_mass;			// Node mass
+	float2		m_position;		// Node position
 	uint		m_flags;		// Flags (bit 0 = selected)
 	uint		m_linkOffset;	// Start link index in the links array
 	uint		m_linksCount;	// Amount of links in the array

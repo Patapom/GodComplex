@@ -1,4 +1,4 @@
-﻿namespace TestGraphViz
+﻿namespace TestGraphQuery
 {
 	partial class GraphForm
 	{
@@ -26,7 +26,7 @@
 			this.openFileDialog1 = new System.Windows.Forms.OpenFileDialog();
 			this.buttonLoad = new System.Windows.Forms.Button();
 			this.buttonSave = new System.Windows.Forms.Button();
-			this.panelOutput = new TestGraphViz.PanelOutput(this.components);
+			this.panelOutput = new TestGraphQuery.PanelOutput(this.components);
 			this.floatTrackbarControlDeltaTime = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.buttonResetAll = new System.Windows.Forms.Button();
 			this.integerTrackbarControlIterationsCount = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();

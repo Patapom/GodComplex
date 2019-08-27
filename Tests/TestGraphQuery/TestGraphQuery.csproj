@@ -124,17 +124,10 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Graphs\TestGraph.graph" />
     <None Include="Shaders\Global.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\RenderGraph.hlsl" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Shaders\SimulateGraph.hlsl" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Shaders\RenderGraph2.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\RenderText.hlsl" />

@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace TestGraphViz
+namespace TestGraphQuery
 {
 	class Program
 	{
