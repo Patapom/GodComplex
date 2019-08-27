@@ -679,3 +679,5 @@ obj
 /Tests/TestGraphHeatEquationV3/bin
 /Tests/TestGraphViz/bin
 /Tests/TestGraphViz/obj
+/Tests/TestGraphQuery/bin
+/Tests/TestGraphQuery/obj
