@@ -4,10 +4,14 @@
 
 cbuffer CB_Main : register(b0) {
 	uint	_nodesCount;
+	uint	_sourcesCount;
 	uint2	_resolution;
-	float	_maxMass;
+
 	float2	_cameraCenter;
 	float2	_cameraSize;
+
+	float	_diffusionCoefficient;
+	uint	_sourceIndex;
 	uint	_hoveredNodeIndex;
 };
 
@@ -58,4 +62,8 @@ float4	TransformPosition( float2 _position ) {
 	result.z = 0;
 	result.w = 1;
 	return result;
+}
+
+uint	Local2GlobalIndex( uint _nodeIndex, uint _sourceIndex ) {
+	return _nodesCount * _sourceIndex + _nodeIndex;
 }

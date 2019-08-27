@@ -7,7 +7,10 @@ StructuredBuffer<SB_NodeInfo>	_SB_Nodes : register( t0 );
 StructuredBuffer<uint>			_SB_Links : register( t1 );
 StructuredBuffer<uint>			_SB_LinkSources : register( t2 );
 
-//Texture2D<float3>	_tex_FalseColors : register( t4 );
+// Heat simulation
+StructuredBuffer<float>			_SB_Heat : register( t3 );
+
+Texture2D<float3>	_tex_FalseColors : register( t4 );
 
 struct VS_IN {
 	float4	__Position : SV_POSITION;
@@ -17,6 +20,7 @@ struct VS_IN {
 struct PS_IN {
 	float4	__Position : SV_POSITION;
 	float3	UV : TEXCOORDS0;
+	float3	color : COLOR;
 };
 
 ///////////////////////////////////////////////////////////////////////////////////////
@@ -28,7 +32,6 @@ PS_IN	VS( VS_IN _In ) {
 	uint		nodeIndex = _In.instanceID;
 	SB_NodeInfo	node = _SB_Nodes[nodeIndex];
 
-//	const float	SIZE = 0.1;
 	const float	SIZE = NODE_SIZE * dot( 0.5, _cameraSize );
 
 	float2	position = node.m_position + SIZE * _In.__Position.xy;
@@ -39,9 +42,12 @@ PS_IN	VS( VS_IN _In ) {
 	Out.UV.z = 1.0;
 
 	if ( nodeIndex == _hoveredNodeIndex ) {
-		Out.UV.z = -1;	// Hovered
+		Out.color  = float3( 1, 1, 0 );	// Hovered
 	} else if ( node.m_flags & 7U ) {
-		Out.UV.z = -2;	// Selected
+		Out.color  = float3( 1, 1, 1 );	// Selected
+	} else {
+		float	heat = _SB_Heat[Local2GlobalIndex( nodeIndex, _sourceIndex )];
+		Out.color = _tex_FalseColors.SampleLevel( LinearClamp, float2( lerp( 0.2, 1.0, heat ), 0.5 ), 0.0 );
 	}
 
 	return Out;
@@ -50,14 +56,7 @@ PS_IN	VS( VS_IN _In ) {
 float3	PS( PS_IN _In ) : SV_TARGET0 {
 	float	sqDistance = 1.0 - dot( _In.UV.xy, _In.UV.xy );
 	clip( sqDistance );
-
-	if ( _In.UV.z < -1.5 )
-		return float3( 1, 1, 1 );
-	else if ( _In.UV.z < -0.5 )
-		return float3( 1, 1, 0 );
-
-//	return sqrt( sqDistance ) * _tex_FalseColors.SampleLevel( LinearClamp, float2( lerp( 0.2, 1.0, _In.UV.z ), 0.5 ), 0.0 );
-	return sqrt( sqDistance );
+	return sqrt( sqDistance ) * _In.color;
 }
 
 
@@ -68,10 +67,10 @@ PS_IN	VS2( VS_IN _In ) {
 	PS_IN	Out;
 
 	uint		linkIndex = _In.instanceID;
-	uint		souceIndex = _SB_LinkSources[linkIndex];
-	uint		targetIndex = _SB_Links[linkIndex];
-	SB_NodeInfo	sourceNode = _SB_Nodes[souceIndex];
-	SB_NodeInfo	targetNode = _SB_Nodes[targetIndex];
+	uint		sourceNodeIndex = _SB_LinkSources[linkIndex];
+	uint		targetNodeIndex = _SB_Links[linkIndex];
+	SB_NodeInfo	sourceNode = _SB_Nodes[sourceNodeIndex];
+	SB_NodeInfo	targetNode = _SB_Nodes[targetNodeIndex];
 
 	const float	SIZE = LINK_SIZE * dot( 0.5, _cameraSize );
 
@@ -91,23 +90,27 @@ PS_IN	VS2( VS_IN _In ) {
 
 	Out.__Position.z = 1.0 - Out.UV.z;
 
+	Out.color = 0.0;
 	if ( (sourceNode.m_flags & 7U) && (targetNode.m_flags & 7U) ) {
-		Out.UV.z = (sourceNode.m_flags & 4U) ? -3 : ((targetNode.m_flags & 2U) ? -2 : -1);
-		Out.__Position.z = 0.0;
+		Out.__Position.z = 0.0;	// Draw in front
+
+		if ( sourceNode.m_flags & 4U )
+			Out.color = 0.9 * float3( 0, 1, 1 );		// Child selection
+		else if ( sourceNode.m_flags & 2U )
+			Out.color = 0.4 * float3( 1, 1, 1 );		// Hierarchy selection
+		else if ( sourceNode.m_flags & 1U )
+			Out.color = 0.9 * float3( 1, 1, 1 );		// Actual selection
+	} else {
+		// Draw heat gradient
+		uint	nodeIndex = U < 0.5 ? sourceNodeIndex : targetNodeIndex;
+		float	heat = _SB_Heat[Local2GlobalIndex( nodeIndex, _sourceIndex )];
+		Out.color =_tex_FalseColors.SampleLevel( LinearClamp, float2( lerp( 0.20, 1.0, heat ), 0.5 ), 0.0 );
 	}
 
 	return Out;
 }
 
 float3	PS2( PS_IN _In ) : SV_TARGET0 {
-	if ( _In.UV.z < -2.5 )
-		return 0.9 * float3( 0, 1, 1 );		// Child selection
-	if ( _In.UV.z < -1.5 )
-		return 0.4 * float3( 1, 1, 1 );		// Hierarchy selection
-	else if ( _In.UV.z < -0.5 )
-		return 0.9 * float3( 1, 1, 1 );		// Actual selection
-
-//	return 0.5 * sqrt( 1.0 - pow2( _In.UV.y ) ) * _tex_FalseColors.SampleLevel( LinearClamp, float2( lerp( 0.20, 1.0, _In.UV.z ), 0.5 ), 0.0 );
-	return 0.5 * sqrt( 1.0 - pow2( _In.UV.y ) );
+	return 0.5 * sqrt( 1.0 - pow2( _In.UV.y ) ) * _In.color;
 }
 

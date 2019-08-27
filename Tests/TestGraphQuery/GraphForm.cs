@@ -20,6 +20,8 @@ namespace TestGraphQuery
 	{
 		#region CONSTANTS
 
+		const uint	MAX_QUERY_SOURCES = 64;
+
 		#endregion
 
 		#region NESTED TYPES
@@ -27,13 +29,15 @@ namespace TestGraphQuery
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
 		private struct CB_Main {
 			public uint			_nodesCount;
+			public uint			_sourcesCount;
 			public uint			_resX;
 			public uint			_resY;
-			public float		_maxMass;
 
 			public float2		_cameraCenter;
 			public float2		_cameraSize;
 
+			public float		_diffusionCoefficient;
+			public uint			_sourceIndex;
 			public uint			_hoveredNodeIndex;
 		}
 
@@ -68,6 +72,9 @@ namespace TestGraphQuery
 		private ConstantBuffer<CB_Main>			m_CB_Main = null;
 		private ConstantBuffer<CB_Text>			m_CB_Text = null;
 
+		private ComputeShader					m_compute_HeatDiffusion = null;
+		private ComputeShader					m_compute_SplatHeatSources = null;
+
 		private Shader							m_shader_RenderGraphNode = null;
 		private Shader							m_shader_RenderGraphLink = null;
 		private Shader							m_shader_RenderText = null;
@@ -75,8 +82,11 @@ namespace TestGraphQuery
 		private StructuredBuffer<SB_NodeInfo>	m_SB_Nodes = null;
 		private StructuredBuffer<uint>			m_SB_LinkSources = null;
 		private StructuredBuffer<uint>			m_SB_LinkTargets = null;
- 
-// 		private Texture2D						m_tex_FalseColors = null;
+
+		// Heatwave simulation
+		private StructuredBuffer<uint>			m_SB_SourceIndices = null;
+		private StructuredBuffer<float>			m_SB_HeatSource = null;
+		private StructuredBuffer<float>			m_SB_HeatTarget = null;
 
 		// Text display
 		private int[]							m_char2Index = new int[512];
@@ -90,6 +100,8 @@ namespace TestGraphQuery
 		private uint							m_nodesCount = 0;
 		private uint							m_totalLinksCount = 0;
 		private Dictionary< ProtoParser.Neuron, uint >	m_neuron2ID = null;
+
+		private Texture2D						m_tex_FalseColors = null;
 
 		#endregion
 
@@ -114,6 +126,9 @@ namespace TestGraphQuery
 			//////////////////////////////////////////////////////////////////////////
 			m_CB_Main = new ConstantBuffer<CB_Main>( m_device, 0 );
 			m_CB_Text = new ConstantBuffer<CB_Text>( m_device, 2 );
+
+			m_compute_HeatDiffusion = new ComputeShader( m_device, new FileInfo( "./Shaders/HeatDiffusion.hlsl" ), "CS", null );
+			m_compute_SplatHeatSources = new ComputeShader( m_device, new FileInfo( "./Shaders/HeatDiffusion.hlsl" ), "CS2", null );
 
 			m_shader_RenderGraphNode = new Shader( m_device, new FileInfo( "./Shaders/RenderGraph.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
 			m_shader_RenderGraphLink = new Shader( m_device, new FileInfo( "./Shaders/RenderGraph.hlsl" ), VERTEX_FORMAT.Pt4, "VS2", null, "PS2", null );
@@ -157,7 +172,6 @@ namespace TestGraphQuery
 
 			m_neuron2ID = new Dictionary<ProtoParser.Neuron, uint>( neurons.Length );
 
-			float	maxMass = 0.0f;
 			for ( int neuronIndex=0; neuronIndex < m_nodesCount; neuronIndex++ ) {
 				ProtoParser.Neuron	N = neurons[neuronIndex];
 				m_neuron2ID[N] = (uint) neuronIndex;
@@ -195,27 +209,30 @@ namespace TestGraphQuery
 			m_SB_LinkTargets.Write();
 			m_SB_LinkSources.Write();
 
+
+			// Build heat buffers
+			uint	elementsCount = m_nodesCount * MAX_QUERY_SOURCES;
+			m_SB_SourceIndices = new StructuredBuffer<uint>( m_device, MAX_QUERY_SOURCES, true );
+			m_SB_HeatSource = new StructuredBuffer<float>( m_device, elementsCount, true );
+			m_SB_HeatTarget = new StructuredBuffer<float>( m_device, elementsCount, true );
+
 			// Setup initial CB
 			m_CB_Main.m._nodesCount = m_nodesCount;
+			m_CB_Main.m._sourcesCount = 0;
 			m_CB_Main.m._resX = (uint) panelOutput.Width;
 			m_CB_Main.m._resY = (uint) panelOutput.Height;
-			m_CB_Main.m._maxMass = maxMass;
+			m_CB_Main.m._diffusionCoefficient = 1.0f;
 			m_CB_Main.m._hoveredNodeIndex = ~0U;
 			m_CB_Main.UpdateData();
 
-//			m_shader_HeatDiffusion = new Shader( m_device, new FileInfo( "./Shaders/HeatDiffusion.hlsl" ), VERTEX_FORMAT.Pt4, "VS", null, "PS", null );
-
-// 			m_tex_Search = new Texture2D( m_device, (uint) GRAPH_SIZE, (uint) GRAPH_SIZE, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA8, ImageUtility.COMPONENT_FORMAT.UNORM, false, false, null );
-// 			m_tex_Search_Staging = new Texture2D( m_device, (uint) GRAPH_SIZE, (uint) GRAPH_SIZE, 1, 1, ImageUtility.PIXEL_FORMAT.RGBA8, ImageUtility.COMPONENT_FORMAT.UNORM, true, false, null );
-
-// 			// Load false colors
-// //			using ( ImageUtility.ImageFile sourceImage = new ImageUtility.ImageFile( new FileInfo( "../../Images/Gradients/Viridis.png" ), ImageUtility.ImageFile.FILE_FORMAT.PNG ) ) {
-// 			using ( ImageUtility.ImageFile sourceImage = new ImageUtility.ImageFile( new FileInfo( "../../Images/Gradients/Magma.png" ), ImageUtility.ImageFile.FILE_FORMAT.PNG ) ) {
-// 				ImageUtility.ImageFile convertedImage = new ImageUtility.ImageFile();
-// 				convertedImage.ConvertFrom( sourceImage, ImageUtility.PIXEL_FORMAT.BGRA8 );
-// 				using ( ImageUtility.ImagesMatrix image = new ImageUtility.ImagesMatrix( convertedImage, ImageUtility.ImagesMatrix.IMAGE_TYPE.sRGB ) )
-// 					m_tex_FalseColors = new Texture2D( m_device, image, ImageUtility.COMPONENT_FORMAT.UNORM_sRGB );
-// 			}
+			// Load false colors
+//			using ( ImageUtility.ImageFile sourceImage = new ImageUtility.ImageFile( new FileInfo( "../../Images/Gradients/Viridis.png" ), ImageUtility.ImageFile.FILE_FORMAT.PNG ) ) {
+			using ( ImageUtility.ImageFile sourceImage = new ImageUtility.ImageFile( new FileInfo( "../../Images/Gradients/Magma.png" ), ImageUtility.ImageFile.FILE_FORMAT.PNG ) ) {
+				ImageUtility.ImageFile convertedImage = new ImageUtility.ImageFile();
+				convertedImage.ConvertFrom( sourceImage, ImageUtility.PIXEL_FORMAT.BGRA8 );
+				using ( ImageUtility.ImagesMatrix image = new ImageUtility.ImagesMatrix( convertedImage, ImageUtility.ImagesMatrix.IMAGE_TYPE.sRGB ) )
+					m_tex_FalseColors = new Texture2D( m_device, image, ImageUtility.COMPONENT_FORMAT.UNORM_sRGB );
+			}
 
 			// Prepare font atlas
 			m_SB_Text = new StructuredBuffer<SB_Letter>( m_device, 1024U, true );
@@ -227,6 +244,9 @@ namespace TestGraphQuery
 		void Application_Idle( object sender, EventArgs e ) {
 			if ( m_device == null )
 				return;
+
+			m_CB_Main.m._sourceIndex = (uint) integerTrackbarControlShowQuerySourceIndex.Value;
+			m_CB_Main.UpdateData();
 
 // 			Point	clientPos = panelOutput.PointToClient( Control.MousePosition );
 // 			m_CB_Main.m.mousePosition.Set( GRAPH_SIZE * (float) clientPos.X / panelOutput.Width, GRAPH_SIZE * (float) clientPos.Y / panelOutput.Height );
@@ -251,17 +271,45 @@ namespace TestGraphQuery
 
 
 			//////////////////////////////////////////////////////////////////////////
+			// Simulate heat wave
+			if ( checkBoxRun.Checked && m_queryNodes.Length > 0 && m_compute_HeatDiffusion.Use() ) {
+
+				m_SB_HeatSource.SetInput( 0 );
+				m_SB_HeatTarget.SetOutput( 0 );
+
+				m_SB_Nodes.SetInput( 1 );
+				m_SB_LinkTargets.SetInput( 2 );
+
+				m_SB_SourceIndices.SetInput( 3 );
+
+				// Simulate heat propagation
+				m_compute_HeatDiffusion.Dispatch( (m_nodesCount + 63) >> 6, (uint) m_queryNodes.Length, 1 );
+
+				// Splat heat sources
+				m_compute_SplatHeatSources.Use();
+				m_compute_SplatHeatSources.Dispatch( ((uint) m_queryNodes.Length + 63) >> 6, 1, 1 );
+
+				// Swap source & target
+				StructuredBuffer<float>	temp = m_SB_HeatTarget;
+				m_SB_HeatTarget = m_SB_HeatSource;
+				m_SB_HeatSource = temp;
+			}
+
+
+			//////////////////////////////////////////////////////////////////////////
 			// Render
+			m_device.Clear( float4.Zero );
+			m_device.ClearDepthStencil( m_device.DefaultDepthStencil, 1.0f, 0, true, false );
+
+			m_SB_Nodes.SetInput( 0 );
+			m_SB_LinkTargets.SetInput( 1 );
+			m_SB_LinkSources.SetInput( 2 );
+			m_SB_HeatSource.SetInput( 3 );
+			m_tex_FalseColors.Set( 4 );
+
 			if ( m_shader_RenderGraphLink.Use() ) {
 				m_device.SetRenderStates( RASTERIZER_STATE.CULL_NONE, DEPTHSTENCIL_STATE.READ_WRITE_DEPTH_LESS, BLEND_STATE.DISABLED );
 				m_device.SetRenderTarget( m_device.DefaultTarget, m_device.DefaultDepthStencil );
-
-				m_device.Clear( float4.Zero );
-				m_device.ClearDepthStencil( m_device.DefaultDepthStencil, 1.0f, 0, true, false );
-
-				m_SB_Nodes.SetInput( 0 );
-				m_SB_LinkTargets.SetInput( 1 );
-				m_SB_LinkSources.SetInput( 2 );
 
 				m_device.ScreenQuad.RenderInstanced( m_shader_RenderGraphLink, m_totalLinksCount );
 			}
@@ -269,10 +317,6 @@ namespace TestGraphQuery
 			if ( m_shader_RenderGraphNode.Use() ) {
 				m_device.SetRenderStates( RASTERIZER_STATE.NOCHANGE, DEPTHSTENCIL_STATE.DISABLED, BLEND_STATE.NOCHANGE );
 				m_device.SetRenderTarget( m_device.DefaultTarget, null );
-
-				m_SB_Nodes.SetInput( 0 );
-				m_SB_LinkTargets.SetInput( 1 );
-				m_SB_LinkSources.SetInput( 2 );
 
 				m_device.ScreenQuad.RenderInstanced( m_shader_RenderGraphNode, m_nodesCount );
 			}
@@ -326,6 +370,8 @@ namespace TestGraphQuery
 			m_device.Present( false );
 		}
 
+		#region Junk
+
 		/// <summary>
 		/// Clean up any resources being used.
 		/// </summary>
@@ -338,14 +384,22 @@ namespace TestGraphQuery
 				m_tex_FontAtlas.Dispose();
 				m_SB_Text.Dispose();
 
-//  				m_tex_FalseColors.Dispose();
+				m_SB_HeatTarget.Dispose();
+				m_SB_HeatSource.Dispose();
+
+  				m_tex_FalseColors.Dispose();
+
+				m_SB_SourceIndices.Dispose();
 
 				m_SB_LinkTargets.Dispose();
+				m_SB_LinkSources.Dispose();
 				m_SB_Nodes.Dispose();
 
 				m_shader_RenderText.Dispose();
 				m_shader_RenderGraphLink.Dispose();
 				m_shader_RenderGraphNode.Dispose();
+
+				m_compute_HeatDiffusion.Dispose();
 
 				m_CB_Text.Dispose();
 				m_CB_Main.Dispose();
@@ -404,22 +458,21 @@ namespace TestGraphQuery
 
 		#endregion
 
+		#endregion
+
 		#region EVENT HANDLERS
-
-		private void buttonReset_Click( object sender, EventArgs e ) {
-		}
-
-		private void buttonResetAll_Click( object sender, EventArgs e ) {
-		}
-
-		private void buttonResetObstacles_Click( object sender, EventArgs e ) {
-		}
 
 		private void buttonReload_Click( object sender, EventArgs e ) {
 			m_device.ReloadModifiedShaders();
 		}
 
-		private void checkBoxRun_CheckedChanged( object sender, EventArgs e ) {
+		private void buttonReset_Click( object sender, EventArgs e ) {
+			Array.Clear( m_SB_HeatSource.m, 0, m_SB_HeatSource.m.Length );
+			m_SB_HeatSource.Write();
+		}
+
+		private void buttonGrabResults_Click( object sender, EventArgs e ) {
+
 		}
 
 		private void panelOutput_MouseDown( object sender, MouseEventArgs e ) {
@@ -431,6 +484,8 @@ namespace TestGraphQuery
 // 				m_plotSource = true;
 // 			}
 		}
+
+		#region Hovering
 
 		float2	Client2Pos( Point _clientPos ) {
 			return new float2(	m_CB_Main.m._cameraCenter.x + ((float) _clientPos.X / panelOutput.Width - 0.5f) * m_CB_Main.m._cameraSize.x,
@@ -469,105 +524,148 @@ namespace TestGraphQuery
 			m_CB_Main.UpdateData();
 		}
 
-		ProtoParser.Neuron[]	m_selection = new ProtoParser.Neuron[0];
-		ProtoParser.Neuron[]	Selection {
-			get { return m_selection; }
+// 		ProtoParser.Neuron[]	m_selection = new ProtoParser.Neuron[0];
+// 		ProtoParser.Neuron[]	Selection {
+// 			get { return m_selection; }
+// 			set {
+// 				if ( value == null )
+// 					value = new ProtoParser.Neuron[0];
+// 
+// 				if ( value.Length == m_selection.Length ) {
+// 					bool	hasChanged = false;
+// 					foreach ( ProtoParser.Neuron newSelection in value ) {
+// 						bool	found = false;
+// 						foreach ( ProtoParser.Neuron currentSelection in m_selection ) {
+// 							if ( newSelection == currentSelection ) {
+// 								found = true;
+// 								break;
+// 							}
+// 						}
+// 						if ( !found ) {
+// 							hasChanged = true;
+// 							break;
+// 						}
+// 					}
+// 					if ( !hasChanged )
+// 						return;	// No change...
+// 				}
+// 
+// 				// Clear children check box
+// 				bool	oldCheckBoxStatus = checkBoxShowChildren.Checked;
+// 				checkBoxShowChildren.Checked = false;
+// 
+// 				// Update selection and node flags
+// 				m_selection = value;
+// 
+// 				for ( int i=0; i < m_nodesCount; i++ )
+// 					m_SB_Nodes.m[i].m_flags = 0U;
+// 				foreach ( ProtoParser.Neuron selectedNeuron in m_selection ) {
+// 					// Select neuron
+// 					m_SB_Nodes.m[m_neuron2ID[selectedNeuron]].m_flags |= 1U;
+// 
+// 					// Select parents
+// 					ProtoParser.Neuron parent = selectedNeuron;
+// 					while ( parent.ParentsCount > 0 ) {
+// 						parent = parent.Parents[0];
+// 						m_SB_Nodes.m[m_neuron2ID[parent]].m_flags |= 2U;
+// 					}
+// 				}
+// 
+// 				m_SB_Nodes.Write();
+// 
+// 				// Restore check box status
+// 				checkBoxShowChildren.Checked = oldCheckBoxStatus;
+// 			}
+// 		}
+
+		#endregion
+
+		#region Query Input
+
+		ProtoParser.Neuron[]	m_queryNodes = new ProtoParser.Neuron[0];
+		ProtoParser.Neuron[]	QueryNodes {
+			get { return m_queryNodes; }
 			set {
 				if ( value == null )
 					value = new ProtoParser.Neuron[0];
 
-				if ( value.Length == m_selection.Length ) {
-					bool	hasChanged = false;
-					foreach ( ProtoParser.Neuron newSelection in value ) {
-						bool	found = false;
-						foreach ( ProtoParser.Neuron currentSelection in m_selection ) {
-							if ( newSelection == currentSelection ) {
-								found = true;
-								break;
-							}
-						}
-						if ( !found ) {
-							hasChanged = true;
-							break;
-						}
-					}
-					if ( !hasChanged )
-						return;	// No change...
+				m_queryNodes = value;
+
+				// Update the amount of sources in the main CB
+				m_CB_Main.m._sourcesCount = (uint) m_queryNodes.Length;
+				m_CB_Main.UpdateData();
+
+				// Set the source indices for the splatting shader
+				for ( int i=0; i < m_queryNodes.Length; i++ ) {
+					uint	neuronID = m_neuron2ID[m_queryNodes[i]];
+					m_SB_SourceIndices.m[i] = neuronID;
 				}
+				m_SB_SourceIndices.Write();
 
-				// Clear children check box
-				bool	oldCheckBoxStatus = checkBoxShowChildren.Checked;
-				checkBoxShowChildren.Checked = false;
+				// Reset simulation
+				buttonReset_Click( null, EventArgs.Empty );
 
-				// Update selection and node flags
-				m_selection = value;
-
-				for ( int i=0; i < m_nodesCount; i++ )
-					m_SB_Nodes.m[i].m_flags = 0U;
-				foreach ( ProtoParser.Neuron selectedNeuron in m_selection ) {
-					// Select neuron
-					m_SB_Nodes.m[m_neuron2ID[selectedNeuron]].m_flags |= 1U;
-
-					// Select parents
-					ProtoParser.Neuron parent = selectedNeuron;
-					while ( parent.ParentsCount > 0 ) {
-						parent = parent.Parents[0];
-						m_SB_Nodes.m[m_neuron2ID[parent]].m_flags |= 2U;
-					}
+				// Update UI
+				if ( m_queryNodes.Length > 1 ) {
+					integerTrackbarControlShowQuerySourceIndex.Enabled = true;
+					integerTrackbarControlShowQuerySourceIndex.RangeMax = m_queryNodes.Length - 1;
+					integerTrackbarControlShowQuerySourceIndex.VisibleRangeMax = m_queryNodes.Length - 1;
+					integerTrackbarControlShowQuerySourceIndex.Value = Math.Min( integerTrackbarControlShowQuerySourceIndex.RangeMax-1, integerTrackbarControlShowQuerySourceIndex.Value );
+				} else {
+					integerTrackbarControlShowQuerySourceIndex.Enabled = false;
+					integerTrackbarControlShowQuerySourceIndex.Value = 0;
+					integerTrackbarControlShowQuerySourceIndex.RangeMax = 1;
+					integerTrackbarControlShowQuerySourceIndex.VisibleRangeMax = 1;
 				}
-
-				m_SB_Nodes.Write();
-
-				// Restore check box status
-				checkBoxShowChildren.Checked = oldCheckBoxStatus;
 			}
 		}
 
 		private void textBoxSearch_TextChanged( object sender, EventArgs e ) {
 			try {
-				ProtoParser.Neuron[]	results = m_graph.FindNeurons( textBoxSearch.Text );
+				string[]	queries = textBoxSearch.Text.Split( '\n' );
 
-				if ( results == null || results.Length == 0 ) {
-					ProtoParser.Neuron	single = m_graph.FindNeuron( textBoxSearch.Text );
-					if ( single != null ) {
-						results = new ProtoParser.Neuron[] { single };
-					} else {
-						results = new ProtoParser.Neuron[0];
+				if ( queries.Length > 0 ) {
+					string	message = "";
+
+					List<ProtoParser.Neuron>	queryNodes = new List<ProtoParser.Neuron>();
+					foreach ( string query in queries ) {
+						try {
+							ProtoParser.Neuron	N = ProcessQuery( query );
+							if ( N == null )
+								continue;
+
+							queryNodes.Add( N );
+
+							message += "OK: " + N + "\n";
+						} catch ( Exception _e ) {
+							message += "Error on \"" + query + "\": " + _e.Message + "\n";
+						}
 					}
-				}
 
-				if ( results.Length > 0 ) {
-					labelSearchResults.Text = results.Length > 1 ? "Multiple results:\n" : "Single result:\n";
-					foreach ( ProtoParser.Neuron result in results )
-						labelSearchResults.Text += "	" + result.FullName + "\n";
+					QueryNodes = queryNodes.ToArray();
+
+					message += "Total queries: " + queryNodes.Count + "\n";
+
+					labelProcessedQuery.Text = message;
+
 				} else {
-					labelSearchResults.Text = "No result.\n";
+					labelProcessedQuery.Text = "No query source.";
 				}
-
-				Selection = results;
 
 			} catch ( Exception _e ) {
+				QueryNodes = null;
 				labelSearchResults.Text = "Error during search: " + _e.Message;
-				Selection = new ProtoParser.Neuron[0];
 			}
 		}
 
-		private void checkBoxShowChildren_CheckedChanged( object sender, EventArgs e ) {
-			if ( checkBoxShowChildren.Checked ) {
-				foreach ( ProtoParser.Neuron N in Selection ) {
-					foreach ( ProtoParser.Neuron child in N.Children ) {
-						m_SB_Nodes.m[(int) m_neuron2ID[child]].m_flags |= 0x4U;
-					}
-				}
-			} else {
-				foreach ( ProtoParser.Neuron N in Selection ) {
-					foreach ( ProtoParser.Neuron child in N.Children ) {
-						m_SB_Nodes.m[(int) m_neuron2ID[child]].m_flags &= ~0x4U;
-					}
-				}
-			}
-			m_SB_Nodes.Write();
+		ProtoParser.Neuron	ProcessQuery( string _query ) {
+			_query = _query.Trim();
+
+			ProtoParser.Neuron	single = m_graph.FindNeuron( _query );
+			return single;
 		}
+
+		#endregion
 
 		private void buttonSave_Click( object sender, EventArgs e ) {
 // 			if ( saveFileDialog1.ShowDialog( this ) != DialogResult.OK )
