@@ -30,19 +30,23 @@
 			this.buttonGrabResults = new System.Windows.Forms.Button();
 			this.floatTrackbarControlResultsTolerance = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.groupBox1 = new System.Windows.Forms.GroupBox();
+			this.checkBoxShowLog = new System.Windows.Forms.CheckBox();
 			this.label3 = new System.Windows.Forms.Label();
+			this.label5 = new System.Windows.Forms.Label();
+			this.label4 = new System.Windows.Forms.Label();
 			this.label1 = new System.Windows.Forms.Label();
 			this.integerTrackbarControlShowQuerySourceIndex = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
 			this.radioButtonShowResults = new System.Windows.Forms.RadioButton();
 			this.radioButtonShowBarycentrics = new System.Windows.Forms.RadioButton();
 			this.radioButtonShowTemperature = new System.Windows.Forms.RadioButton();
+			this.floatTrackbarControlBarycentricBias = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
 			this.label9 = new System.Windows.Forms.Label();
 			this.textBoxSearch = new System.Windows.Forms.TextBox();
 			this.groupBox2 = new System.Windows.Forms.GroupBox();
-			this.labelProcessedQuery = new System.Windows.Forms.Label();
 			this.groupBox3 = new System.Windows.Forms.GroupBox();
-			this.integerTrackbarControlSignificantResultsCount = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
 			this.textBoxSearchResults = new System.Windows.Forms.TextBox();
+			this.integerTrackbarControlSignificantResultsCount = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
+			this.textBoxProcessedQuery = new System.Windows.Forms.TextBox();
 			this.groupBox1.SuspendLayout();
 			this.groupBox2.SuspendLayout();
 			this.groupBox3.SuspendLayout();
@@ -167,7 +171,7 @@
 			// floatTrackbarControlResultsTolerance
 			// 
 			this.floatTrackbarControlResultsTolerance.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-			this.floatTrackbarControlResultsTolerance.Location = new System.Drawing.Point(199, 92);
+			this.floatTrackbarControlResultsTolerance.Location = new System.Drawing.Point(199, 89);
 			this.floatTrackbarControlResultsTolerance.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlResultsTolerance.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlResultsTolerance.Name = "floatTrackbarControlResultsTolerance";
@@ -180,7 +184,10 @@
 			// 
 			// groupBox1
 			// 
+			this.groupBox1.Controls.Add(this.checkBoxShowLog);
 			this.groupBox1.Controls.Add(this.label3);
+			this.groupBox1.Controls.Add(this.label5);
+			this.groupBox1.Controls.Add(this.label4);
 			this.groupBox1.Controls.Add(this.label1);
 			this.groupBox1.Controls.Add(this.integerTrackbarControlShowQuerySourceIndex);
 			this.groupBox1.Controls.Add(this.radioButtonShowResults);
@@ -188,13 +195,24 @@
 			this.groupBox1.Controls.Add(this.radioButtonShowTemperature);
 			this.groupBox1.Controls.Add(this.checkBoxRun);
 			this.groupBox1.Controls.Add(this.buttonReset);
+			this.groupBox1.Controls.Add(this.floatTrackbarControlBarycentricBias);
 			this.groupBox1.Controls.Add(this.floatTrackbarControlResultsTolerance);
 			this.groupBox1.Location = new System.Drawing.Point(794, 315);
 			this.groupBox1.Name = "groupBox1";
-			this.groupBox1.Size = new System.Drawing.Size(315, 127);
+			this.groupBox1.Size = new System.Drawing.Size(315, 177);
 			this.groupBox1.TabIndex = 23;
 			this.groupBox1.TabStop = false;
 			this.groupBox1.Text = "Simulation";
+			// 
+			// checkBoxShowLog
+			// 
+			this.checkBoxShowLog.AutoSize = true;
+			this.checkBoxShowLog.Location = new System.Drawing.Point(49, 92);
+			this.checkBoxShowLog.Name = "checkBoxShowLog";
+			this.checkBoxShowLog.Size = new System.Drawing.Size(44, 17);
+			this.checkBoxShowLog.TabIndex = 23;
+			this.checkBoxShowLog.Text = "Log";
+			this.checkBoxShowLog.UseVisualStyleBackColor = true;
 			// 
 			// label3
 			// 
@@ -204,6 +222,24 @@
 			this.label3.Size = new System.Drawing.Size(34, 13);
 			this.label3.TabIndex = 19;
 			this.label3.Text = "Show";
+			// 
+			// label5
+			// 
+			this.label5.AutoSize = true;
+			this.label5.Location = new System.Drawing.Point(168, 117);
+			this.label5.Name = "label5";
+			this.label5.Size = new System.Drawing.Size(27, 13);
+			this.label5.TabIndex = 19;
+			this.label5.Text = "Bias";
+			// 
+			// label4
+			// 
+			this.label4.AutoSize = true;
+			this.label4.Location = new System.Drawing.Point(168, 93);
+			this.label4.Name = "label4";
+			this.label4.Size = new System.Drawing.Size(25, 13);
+			this.label4.TabIndex = 19;
+			this.label4.Text = "Tol.";
 			// 
 			// label1
 			// 
@@ -259,6 +295,20 @@
 			this.radioButtonShowTemperature.Text = "Temp.";
 			this.radioButtonShowTemperature.UseVisualStyleBackColor = true;
 			// 
+			// floatTrackbarControlBarycentricBias
+			// 
+			this.floatTrackbarControlBarycentricBias.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+			this.floatTrackbarControlBarycentricBias.Location = new System.Drawing.Point(199, 113);
+			this.floatTrackbarControlBarycentricBias.MaximumSize = new System.Drawing.Size(10000, 20);
+			this.floatTrackbarControlBarycentricBias.MinimumSize = new System.Drawing.Size(70, 20);
+			this.floatTrackbarControlBarycentricBias.Name = "floatTrackbarControlBarycentricBias";
+			this.floatTrackbarControlBarycentricBias.RangeMax = 1F;
+			this.floatTrackbarControlBarycentricBias.RangeMin = 0F;
+			this.floatTrackbarControlBarycentricBias.Size = new System.Drawing.Size(116, 20);
+			this.floatTrackbarControlBarycentricBias.TabIndex = 17;
+			this.floatTrackbarControlBarycentricBias.Value = 0F;
+			this.floatTrackbarControlBarycentricBias.VisibleRangeMax = 1F;
+			// 
 			// label9
 			// 
 			this.label9.AutoSize = true;
@@ -281,7 +331,7 @@
 			// 
 			// groupBox2
 			// 
-			this.groupBox2.Controls.Add(this.labelProcessedQuery);
+			this.groupBox2.Controls.Add(this.textBoxProcessedQuery);
 			this.groupBox2.Controls.Add(this.textBoxSearch);
 			this.groupBox2.Controls.Add(this.label9);
 			this.groupBox2.Location = new System.Drawing.Point(794, 67);
@@ -290,15 +340,6 @@
 			this.groupBox2.TabIndex = 24;
 			this.groupBox2.TabStop = false;
 			this.groupBox2.Text = "Search Query";
-			// 
-			// labelProcessedQuery
-			// 
-			this.labelProcessedQuery.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-			this.labelProcessedQuery.Location = new System.Drawing.Point(11, 145);
-			this.labelProcessedQuery.Name = "labelProcessedQuery";
-			this.labelProcessedQuery.Size = new System.Drawing.Size(295, 89);
-			this.labelProcessedQuery.TabIndex = 2;
-			this.labelProcessedQuery.Text = "No query source.";
 			// 
 			// groupBox3
 			// 
@@ -311,6 +352,17 @@
 			this.groupBox3.TabIndex = 25;
 			this.groupBox3.TabStop = false;
 			this.groupBox3.Text = "Search Results";
+			// 
+			// textBoxSearchResults
+			// 
+			this.textBoxSearchResults.Location = new System.Drawing.Point(6, 48);
+			this.textBoxSearchResults.Multiline = true;
+			this.textBoxSearchResults.Name = "textBoxSearchResults";
+			this.textBoxSearchResults.ReadOnly = true;
+			this.textBoxSearchResults.ScrollBars = System.Windows.Forms.ScrollBars.Both;
+			this.textBoxSearchResults.Size = new System.Drawing.Size(303, 184);
+			this.textBoxSearchResults.TabIndex = 23;
+			this.textBoxSearchResults.WordWrap = false;
 			// 
 			// integerTrackbarControlSignificantResultsCount
 			// 
@@ -325,16 +377,16 @@
 			this.integerTrackbarControlSignificantResultsCount.VisibleRangeMax = 10;
 			this.integerTrackbarControlSignificantResultsCount.VisibleRangeMin = 1;
 			// 
-			// textBoxSearchResults
+			// textBoxProcessedQuery
 			// 
-			this.textBoxSearchResults.Location = new System.Drawing.Point(6, 48);
-			this.textBoxSearchResults.Multiline = true;
-			this.textBoxSearchResults.Name = "textBoxSearchResults";
-			this.textBoxSearchResults.ReadOnly = true;
-			this.textBoxSearchResults.ScrollBars = System.Windows.Forms.ScrollBars.Both;
-			this.textBoxSearchResults.Size = new System.Drawing.Size(303, 184);
-			this.textBoxSearchResults.TabIndex = 23;
-			this.textBoxSearchResults.WordWrap = false;
+			this.textBoxProcessedQuery.Location = new System.Drawing.Point(9, 138);
+			this.textBoxProcessedQuery.Multiline = true;
+			this.textBoxProcessedQuery.Name = "textBoxProcessedQuery";
+			this.textBoxProcessedQuery.ReadOnly = true;
+			this.textBoxProcessedQuery.ScrollBars = System.Windows.Forms.ScrollBars.Both;
+			this.textBoxProcessedQuery.Size = new System.Drawing.Size(303, 98);
+			this.textBoxProcessedQuery.TabIndex = 23;
+			this.textBoxProcessedQuery.WordWrap = false;
 			// 
 			// GraphForm
 			// 
@@ -384,7 +436,6 @@
 		private System.Windows.Forms.Label label9;
 		private System.Windows.Forms.TextBox textBoxSearch;
 		private System.Windows.Forms.GroupBox groupBox2;
-		private System.Windows.Forms.Label labelProcessedQuery;
 		private System.Windows.Forms.GroupBox groupBox3;
 		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlSignificantResultsCount;
 		private System.Windows.Forms.RadioButton radioButtonShowTemperature;
@@ -394,5 +445,10 @@
 		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlShowQuerySourceIndex;
 		private System.Windows.Forms.Label label3;
 		private System.Windows.Forms.TextBox textBoxSearchResults;
+		private System.Windows.Forms.CheckBox checkBoxShowLog;
+		private System.Windows.Forms.Label label5;
+		private System.Windows.Forms.Label label4;
+		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlBarycentricBias;
+		private System.Windows.Forms.TextBox textBoxProcessedQuery;
 	}
 }

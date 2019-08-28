@@ -40,6 +40,9 @@ namespace TestGraphQuery
 			public uint			_sourceIndex;
 			public uint			_hoveredNodeIndex;
 			public uint			_renderFlags;
+
+			public float		_barycentricDistanceTolerance;
+			public float		_barycentricBias;
 		}
 
 		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
@@ -250,8 +253,11 @@ namespace TestGraphQuery
 
 			m_CB_Main.m._sourceIndex = (uint) integerTrackbarControlShowQuerySourceIndex.Value;
 			m_CB_Main.m._renderFlags = 0U;
-			m_CB_Main.m._renderFlags |= radioButtonShowBarycentrics.Checked ? 1U : 0U;
-			m_CB_Main.m._renderFlags |= radioButtonShowResults.Checked ? 2U : 0U;
+			m_CB_Main.m._renderFlags |= radioButtonShowBarycentrics.Checked ? 0x1U : 0U;
+			m_CB_Main.m._renderFlags |= radioButtonShowResults.Checked ? 0x2U : 0U;
+			m_CB_Main.m._renderFlags |= checkBoxShowLog.Checked ? 0x10U : 0U;
+			m_CB_Main.m._barycentricDistanceTolerance = floatTrackbarControlResultsTolerance.Value;
+			m_CB_Main.m._barycentricBias = floatTrackbarControlBarycentricBias.Value;
 			m_CB_Main.UpdateData();
 
 // 			Point	clientPos = panelOutput.PointToClient( Control.MousePosition );
@@ -573,7 +579,11 @@ namespace TestGraphQuery
 			GetBarycentricsBuffer().Read();
 
 			// Compute node scores
-			float	isoBarycentricCenter = 1.0f / sourcesCount;	// The ideal center is a vector with all components equal to this value
+			float	bias = floatTrackbarControlBarycentricBias.Value;
+			int		biasSourceTarget = integerTrackbarControlShowQuerySourceIndex.Value;
+
+			float	isoBarycentricCenter0 = (1.0f - bias) / (sourcesCount - bias);	// The ideal center is a vector with all components equal to this value
+			float	isoBarycentricCenter1 = Mathf.Lerp( isoBarycentricCenter0, 1.0f, bias );
 
 			m_resultScores = new float[m_nodesCount];
 			m_resultNodeIndices = new int[m_nodesCount];
@@ -581,7 +591,7 @@ namespace TestGraphQuery
 				float	sqDistance = 0.0f;
 				for ( int sourceIndex=0; sourceIndex < sourcesCount; sourceIndex++ ) {
 					float	barycentric = m_SB_HeatBarycentrics.m[m_nodesCount * sourceIndex + nodeIndex];
-					float	delta = barycentric - isoBarycentricCenter;
+					float	delta = barycentric - (sourceIndex == biasSourceTarget ? isoBarycentricCenter1 : isoBarycentricCenter0);
 					sqDistance += delta * delta;
 				}
 				m_resultScores[nodeIndex] = Mathf.Sqrt( sqDistance );
@@ -596,7 +606,7 @@ namespace TestGraphQuery
 			for ( int i=0; i < 50; i++ ) {
 				float				score = m_resultScores[i];
 				ProtoParser.Neuron	N = m_graph.Neurons[m_resultNodeIndices[i]];
-				results += N + (N.m_value != null ? N.m_value.ToString() : "") + " - " + score.ToString( "G4" ) + "\r\n";
+				results += N + (N.m_value != null ? "( " + (N.m_value.m_valueMean != null ? N.m_value.m_valueMean : "<null>") + " )" : "") + " - " + score.ToString( "G4" ) + "\r\n";
 			}
 			textBoxSearchResults.Text = results;
 		}
@@ -640,7 +650,18 @@ namespace TestGraphQuery
 
 				// Found it!
 				ProtoParser.Neuron	selectedNeuron = m_graph[nodeIndex];
-				m_displayText = selectedNeuron.m_name != null ? selectedNeuron.m_name : selectedNeuron.Parents[0].m_name + "()";
+				if ( selectedNeuron.m_name != null )
+					m_displayText = selectedNeuron.m_name;
+				else
+					m_displayText = "*" + selectedNeuron.Parents[0].m_name;
+
+				if ( selectedNeuron.m_value != null ) {
+					// Show value
+					m_displayText += "( ";
+					m_displayText += selectedNeuron.m_value.m_valueMean != null ? selectedNeuron.m_value.m_valueMean : "<null>";
+					m_displayText += " )";
+				}
+
 				m_selectedNodePosition = nodePosition;
 
 				m_CB_Main.m._hoveredNodeIndex = (uint) nodeIndex;
@@ -772,15 +793,15 @@ namespace TestGraphQuery
 
 					message += "Total queries: " + queryNodes.Count + "\n";
 
-					labelProcessedQuery.Text = message;
+					textBoxProcessedQuery.Text = message;
 
 				} else {
-					labelProcessedQuery.Text = "No query source.";
+					textBoxProcessedQuery.Text = "No query source.";
 				}
 
 			} catch ( Exception _e ) {
 				QueryNodes = null;
-				labelProcessedQuery.Text = "Error during search: " + _e.Message;
+				textBoxProcessedQuery.Text = "Error during search: " + _e.Message;
 			}
 		}
 

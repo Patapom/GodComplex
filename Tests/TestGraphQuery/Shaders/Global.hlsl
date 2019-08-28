@@ -14,6 +14,10 @@ cbuffer CB_Main : register(b0) {
 	uint	_sourceIndex;
 	uint	_hoveredNodeIndex;
 	uint	_renderFlags;
+
+	float	_barycentricDistanceTolerance;
+	float	_barycentricBias;
+//	uint	_barycentricBiasTarget;
 };
 
 struct SB_NodeInfo {
