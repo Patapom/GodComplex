@@ -43,18 +43,21 @@
 			this.label9 = new System.Windows.Forms.Label();
 			this.textBoxSearch = new System.Windows.Forms.TextBox();
 			this.groupBox2 = new System.Windows.Forms.GroupBox();
+			this.textBoxProcessedQuery = new System.Windows.Forms.TextBox();
 			this.groupBox3 = new System.Windows.Forms.GroupBox();
 			this.textBoxSearchResults = new System.Windows.Forms.TextBox();
 			this.integerTrackbarControlSignificantResultsCount = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
-			this.textBoxProcessedQuery = new System.Windows.Forms.TextBox();
+			this.groupBoxSelection = new System.Windows.Forms.GroupBox();
+			this.textBoxSelection = new System.Windows.Forms.TextBox();
+			this.textBoxProcessedSelection = new System.Windows.Forms.TextBox();
 			this.groupBox1.SuspendLayout();
 			this.groupBox2.SuspendLayout();
 			this.groupBox3.SuspendLayout();
+			this.groupBoxSelection.SuspendLayout();
 			this.SuspendLayout();
 			// 
 			// checkBoxRun
 			// 
-			this.checkBoxRun.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
 			this.checkBoxRun.AutoSize = true;
 			this.checkBoxRun.Location = new System.Drawing.Point(6, 19);
 			this.checkBoxRun.Name = "checkBoxRun";
@@ -65,7 +68,6 @@
 			// 
 			// buttonReset
 			// 
-			this.buttonReset.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
 			this.buttonReset.Location = new System.Drawing.Point(58, 15);
 			this.buttonReset.Name = "buttonReset";
 			this.buttonReset.Size = new System.Drawing.Size(46, 23);
@@ -77,7 +79,7 @@
 			// buttonReload
 			// 
 			this.buttonReload.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-			this.buttonReload.Location = new System.Drawing.Point(1031, 757);
+			this.buttonReload.Location = new System.Drawing.Point(1297, 757);
 			this.buttonReload.Name = "buttonReload";
 			this.buttonReload.Size = new System.Drawing.Size(75, 23);
 			this.buttonReload.TabIndex = 4;
@@ -87,9 +89,8 @@
 			// 
 			// label2
 			// 
-			this.label2.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
 			this.label2.AutoSize = true;
-			this.label2.Location = new System.Drawing.Point(791, 17);
+			this.label2.Location = new System.Drawing.Point(791, 16);
 			this.label2.Name = "label2";
 			this.label2.Size = new System.Drawing.Size(93, 13);
 			this.label2.TabIndex = 5;
@@ -116,7 +117,7 @@
 			// buttonLoad
 			// 
 			this.buttonLoad.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-			this.buttonLoad.Location = new System.Drawing.Point(816, 757);
+			this.buttonLoad.Location = new System.Drawing.Point(1082, 757);
 			this.buttonLoad.Name = "buttonLoad";
 			this.buttonLoad.Size = new System.Drawing.Size(75, 23);
 			this.buttonLoad.TabIndex = 15;
@@ -126,7 +127,7 @@
 			// buttonSave
 			// 
 			this.buttonSave.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-			this.buttonSave.Location = new System.Drawing.Point(900, 757);
+			this.buttonSave.Location = new System.Drawing.Point(1166, 757);
 			this.buttonSave.Name = "buttonSave";
 			this.buttonSave.Size = new System.Drawing.Size(75, 23);
 			this.buttonSave.TabIndex = 15;
@@ -145,8 +146,7 @@
 			// 
 			// floatTrackbarControlDiffusionConstant
 			// 
-			this.floatTrackbarControlDiffusionConstant.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-			this.floatTrackbarControlDiffusionConstant.Location = new System.Drawing.Point(900, 13);
+			this.floatTrackbarControlDiffusionConstant.Location = new System.Drawing.Point(900, 12);
 			this.floatTrackbarControlDiffusionConstant.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlDiffusionConstant.MinimumSize = new System.Drawing.Size(70, 20);
 			this.floatTrackbarControlDiffusionConstant.Name = "floatTrackbarControlDiffusionConstant";
@@ -159,7 +159,6 @@
 			// 
 			// buttonGrabResults
 			// 
-			this.buttonGrabResults.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
 			this.buttonGrabResults.Location = new System.Drawing.Point(6, 19);
 			this.buttonGrabResults.Name = "buttonGrabResults";
 			this.buttonGrabResults.Size = new System.Drawing.Size(80, 23);
@@ -170,7 +169,6 @@
 			// 
 			// floatTrackbarControlResultsTolerance
 			// 
-			this.floatTrackbarControlResultsTolerance.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
 			this.floatTrackbarControlResultsTolerance.Location = new System.Drawing.Point(199, 89);
 			this.floatTrackbarControlResultsTolerance.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlResultsTolerance.MinimumSize = new System.Drawing.Size(70, 20);
@@ -199,7 +197,7 @@
 			this.groupBox1.Controls.Add(this.floatTrackbarControlResultsTolerance);
 			this.groupBox1.Location = new System.Drawing.Point(794, 315);
 			this.groupBox1.Name = "groupBox1";
-			this.groupBox1.Size = new System.Drawing.Size(315, 177);
+			this.groupBox1.Size = new System.Drawing.Size(324, 177);
 			this.groupBox1.TabIndex = 23;
 			this.groupBox1.TabStop = false;
 			this.groupBox1.Text = "Simulation";
@@ -297,7 +295,6 @@
 			// 
 			// floatTrackbarControlBarycentricBias
 			// 
-			this.floatTrackbarControlBarycentricBias.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
 			this.floatTrackbarControlBarycentricBias.Location = new System.Drawing.Point(199, 113);
 			this.floatTrackbarControlBarycentricBias.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.floatTrackbarControlBarycentricBias.MinimumSize = new System.Drawing.Size(70, 20);
@@ -312,7 +309,7 @@
 			// label9
 			// 
 			this.label9.AutoSize = true;
-			this.label9.Location = new System.Drawing.Point(8, 122);
+			this.label9.Location = new System.Drawing.Point(10, 136);
 			this.label9.Name = "label9";
 			this.label9.Size = new System.Drawing.Size(86, 13);
 			this.label9.TabIndex = 1;
@@ -320,79 +317,129 @@
 			// 
 			// textBoxSearch
 			// 
+			this.textBoxSearch.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
 			this.textBoxSearch.Location = new System.Drawing.Point(11, 19);
 			this.textBoxSearch.Multiline = true;
 			this.textBoxSearch.Name = "textBoxSearch";
 			this.textBoxSearch.ScrollBars = System.Windows.Forms.ScrollBars.Both;
-			this.textBoxSearch.Size = new System.Drawing.Size(295, 96);
+			this.textBoxSearch.Size = new System.Drawing.Size(558, 114);
 			this.textBoxSearch.TabIndex = 0;
 			this.textBoxSearch.WordWrap = false;
 			this.textBoxSearch.TextChanged += new System.EventHandler(this.textBoxSearch_TextChanged);
 			// 
 			// groupBox2
 			// 
+			this.groupBox2.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
 			this.groupBox2.Controls.Add(this.textBoxProcessedQuery);
 			this.groupBox2.Controls.Add(this.textBoxSearch);
 			this.groupBox2.Controls.Add(this.label9);
-			this.groupBox2.Location = new System.Drawing.Point(794, 67);
+			this.groupBox2.Location = new System.Drawing.Point(794, 38);
 			this.groupBox2.Name = "groupBox2";
-			this.groupBox2.Size = new System.Drawing.Size(315, 242);
+			this.groupBox2.Size = new System.Drawing.Size(578, 271);
 			this.groupBox2.TabIndex = 24;
 			this.groupBox2.TabStop = false;
 			this.groupBox2.Text = "Search Query";
 			// 
+			// textBoxProcessedQuery
+			// 
+			this.textBoxProcessedQuery.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+			this.textBoxProcessedQuery.Location = new System.Drawing.Point(11, 152);
+			this.textBoxProcessedQuery.Multiline = true;
+			this.textBoxProcessedQuery.Name = "textBoxProcessedQuery";
+			this.textBoxProcessedQuery.ReadOnly = true;
+			this.textBoxProcessedQuery.ScrollBars = System.Windows.Forms.ScrollBars.Both;
+			this.textBoxProcessedQuery.Size = new System.Drawing.Size(566, 113);
+			this.textBoxProcessedQuery.TabIndex = 23;
+			this.textBoxProcessedQuery.WordWrap = false;
+			// 
 			// groupBox3
 			// 
+			this.groupBox3.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
 			this.groupBox3.Controls.Add(this.textBoxSearchResults);
 			this.groupBox3.Controls.Add(this.integerTrackbarControlSignificantResultsCount);
 			this.groupBox3.Controls.Add(this.buttonGrabResults);
-			this.groupBox3.Location = new System.Drawing.Point(794, 513);
+			this.groupBox3.Location = new System.Drawing.Point(794, 498);
 			this.groupBox3.Name = "groupBox3";
-			this.groupBox3.Size = new System.Drawing.Size(315, 238);
+			this.groupBox3.Size = new System.Drawing.Size(578, 253);
 			this.groupBox3.TabIndex = 25;
 			this.groupBox3.TabStop = false;
 			this.groupBox3.Text = "Search Results";
 			// 
 			// textBoxSearchResults
 			// 
+			this.textBoxSearchResults.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
 			this.textBoxSearchResults.Location = new System.Drawing.Point(6, 48);
 			this.textBoxSearchResults.Multiline = true;
 			this.textBoxSearchResults.Name = "textBoxSearchResults";
 			this.textBoxSearchResults.ReadOnly = true;
 			this.textBoxSearchResults.ScrollBars = System.Windows.Forms.ScrollBars.Both;
-			this.textBoxSearchResults.Size = new System.Drawing.Size(303, 184);
+			this.textBoxSearchResults.Size = new System.Drawing.Size(566, 199);
 			this.textBoxSearchResults.TabIndex = 23;
 			this.textBoxSearchResults.WordWrap = false;
 			// 
 			// integerTrackbarControlSignificantResultsCount
 			// 
-			this.integerTrackbarControlSignificantResultsCount.Location = new System.Drawing.Point(106, 20);
+			this.integerTrackbarControlSignificantResultsCount.Location = new System.Drawing.Point(106, 21);
 			this.integerTrackbarControlSignificantResultsCount.MaximumSize = new System.Drawing.Size(10000, 20);
 			this.integerTrackbarControlSignificantResultsCount.MinimumSize = new System.Drawing.Size(70, 20);
 			this.integerTrackbarControlSignificantResultsCount.Name = "integerTrackbarControlSignificantResultsCount";
 			this.integerTrackbarControlSignificantResultsCount.RangeMin = 1;
 			this.integerTrackbarControlSignificantResultsCount.Size = new System.Drawing.Size(200, 20);
 			this.integerTrackbarControlSignificantResultsCount.TabIndex = 22;
-			this.integerTrackbarControlSignificantResultsCount.Value = 10;
-			this.integerTrackbarControlSignificantResultsCount.VisibleRangeMax = 10;
+			this.integerTrackbarControlSignificantResultsCount.Value = 50;
+			this.integerTrackbarControlSignificantResultsCount.VisibleRangeMax = 100;
 			this.integerTrackbarControlSignificantResultsCount.VisibleRangeMin = 1;
 			// 
-			// textBoxProcessedQuery
+			// groupBoxSelection
 			// 
-			this.textBoxProcessedQuery.Location = new System.Drawing.Point(9, 138);
-			this.textBoxProcessedQuery.Multiline = true;
-			this.textBoxProcessedQuery.Name = "textBoxProcessedQuery";
-			this.textBoxProcessedQuery.ReadOnly = true;
-			this.textBoxProcessedQuery.ScrollBars = System.Windows.Forms.ScrollBars.Both;
-			this.textBoxProcessedQuery.Size = new System.Drawing.Size(303, 98);
-			this.textBoxProcessedQuery.TabIndex = 23;
-			this.textBoxProcessedQuery.WordWrap = false;
+			this.groupBoxSelection.Controls.Add(this.textBoxProcessedSelection);
+			this.groupBoxSelection.Controls.Add(this.textBoxSelection);
+			this.groupBoxSelection.Location = new System.Drawing.Point(1124, 315);
+			this.groupBoxSelection.Name = "groupBoxSelection";
+			this.groupBoxSelection.Size = new System.Drawing.Size(248, 177);
+			this.groupBoxSelection.TabIndex = 26;
+			this.groupBoxSelection.TabStop = false;
+			this.groupBoxSelection.Text = "Selection";
+			// 
+			// textBoxSelection
+			// 
+			this.textBoxSelection.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+			this.textBoxSelection.Location = new System.Drawing.Point(6, 19);
+			this.textBoxSelection.Multiline = true;
+			this.textBoxSelection.Name = "textBoxSelection";
+			this.textBoxSelection.ScrollBars = System.Windows.Forms.ScrollBars.Both;
+			this.textBoxSelection.Size = new System.Drawing.Size(233, 87);
+			this.textBoxSelection.TabIndex = 0;
+			this.textBoxSelection.WordWrap = false;
+			this.textBoxSelection.TextChanged += new System.EventHandler(this.textBoxSelection_TextChanged);
+			// 
+			// textBoxProcessedSelection
+			// 
+			this.textBoxProcessedSelection.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+			this.textBoxProcessedSelection.Location = new System.Drawing.Point(6, 112);
+			this.textBoxProcessedSelection.Multiline = true;
+			this.textBoxProcessedSelection.Name = "textBoxProcessedSelection";
+			this.textBoxProcessedSelection.ReadOnly = true;
+			this.textBoxProcessedSelection.ScrollBars = System.Windows.Forms.ScrollBars.Both;
+			this.textBoxProcessedSelection.Size = new System.Drawing.Size(233, 59);
+			this.textBoxProcessedSelection.TabIndex = 23;
+			this.textBoxProcessedSelection.WordWrap = false;
 			// 
 			// GraphForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-			this.ClientSize = new System.Drawing.Size(1118, 793);
+			this.ClientSize = new System.Drawing.Size(1384, 793);
+			this.Controls.Add(this.groupBoxSelection);
 			this.Controls.Add(this.groupBox3);
 			this.Controls.Add(this.groupBox2);
 			this.Controls.Add(this.groupBox1);
@@ -412,6 +459,8 @@
 			this.groupBox2.PerformLayout();
 			this.groupBox3.ResumeLayout(false);
 			this.groupBox3.PerformLayout();
+			this.groupBoxSelection.ResumeLayout(false);
+			this.groupBoxSelection.PerformLayout();
 			this.ResumeLayout(false);
 			this.PerformLayout();
 
@@ -450,5 +499,8 @@
 		private System.Windows.Forms.Label label4;
 		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlBarycentricBias;
 		private System.Windows.Forms.TextBox textBoxProcessedQuery;
+		private System.Windows.Forms.GroupBox groupBoxSelection;
+		private System.Windows.Forms.TextBox textBoxProcessedSelection;
+		private System.Windows.Forms.TextBox textBoxSelection;
 	}
 }

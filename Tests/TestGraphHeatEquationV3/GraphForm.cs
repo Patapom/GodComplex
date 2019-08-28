@@ -874,7 +874,7 @@ namespace TestGraphHeatEquationV3
 				for ( int source1=0; source1 < sourcesCount; source1++ ) {
 					Point	sourcePos1 = m_simulationHotSpots[source1];
 					float	heat = heatMap0[sourcePos1.X,sourcePos1.Y].x;
-					mutualHeat[source0,source1] = ComputeLogHeat( heat );
+					mutualHeat[source1,source0] = ComputeLogHeat( heat );
 				}
 			}
 

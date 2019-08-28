@@ -47,6 +47,33 @@ float3	ComputeResultColor( uint _nodeIndex ) {
 	return distance2Iso < tol ? float3( tol - distance2Iso, 0, 0 ) : float3( 0, 0, distance2Iso - tol ) / tol;
 }
 
+// Checks for out of bounds barycentrics
+float3	ComputeSumBarycentrics( uint _nodeIndex, inout float _Z ) {
+	float	sumBarycentrics = 0.0;
+	for ( uint sourceIndex=0; sourceIndex < _sourcesCount; sourceIndex++ ) {
+		sumBarycentrics += _SB_HeatBarycentrics[Local2GlobalIndex( _nodeIndex, sourceIndex )];
+	}
+
+	const float	MIN = -0.2;
+	const float	MAX = 1.2;
+
+#if 1
+	if ( sumBarycentrics < MIN ) {
+		return float3( 0, 0, MIN - sumBarycentrics );
+	} else if ( sumBarycentrics > MAX ) {
+		return float3( sumBarycentrics - MAX, 0, 0 );
+	} else {
+		_Z = 0.0;	// Bring front
+		return _tex_FalseColors.SampleLevel( LinearClamp, float2( sumBarycentrics, 0.5 ), 0.0 );
+//		return sumBarycentrics;
+	}
+#else
+	return sumBarycentrics < -0.2 ? float3( 0, 0, -sumBarycentrics )
+			: sumBarycentrics > 1.2 ? float3( sumBarycentrics - 1.0, 0, 0 )
+			:  _tex_FalseColors.SampleLevel( LinearClamp, float2( sumBarycentrics, 0.5 ), 0.0 );
+//			: sumBarycentrics;
+#endif
+}
 
 ///////////////////////////////////////////////////////////////////////////////////////
 // NODE DRAWING
@@ -78,20 +105,26 @@ PS_IN	VS( VS_IN _In ) {
 
 		if ( displayMode != 2U ) {
 			float	heat = 0.0;
-			if ( displayMode & 1 )
-				heat = _SB_HeatBarycentrics[Local2GlobalIndex( nodeIndex, _sourceIndex )];
-			else
+			if ( displayMode & 1 ) {
+				if ( showLog ) {
+					Out.color = ComputeSumBarycentrics( nodeIndex, Out.UV.z );
+				} else {
+					heat = _SB_HeatBarycentrics[Local2GlobalIndex( nodeIndex, _sourceIndex )];
+					Out.color = _tex_FalseColors.SampleLevel( LinearClamp, float2( heat, 0.5 ), 0.0 );
+				}
+			} else {
 				heat = _SB_Heat[Local2GlobalIndex( nodeIndex, _sourceIndex )];
 
-			if ( showLog ) {
-				// Render Log(Temp)
-				float	logTemp = 0.43429448190325182765112891891661 * log( max( 1e-6, heat ) );	// Log10( temp )
-				heat = (6.0 + logTemp) / 6.0;
-			} else {
-				heat = lerp( 0.1, 1.0, heat );
-			}
+				if ( showLog ) {
+					// Render Log(Temp)
+					float	logTemp = 0.43429448190325182765112891891661 * log( max( 1e-6, heat ) );	// Log10( temp )
+					heat = (6.0 + logTemp) / 6.0;
+				} else {
+					heat = lerp( 0.1, 1.0, heat );
+				}
 
-			Out.color = _tex_FalseColors.SampleLevel( LinearClamp, float2( heat, 0.5 ), 0.0 );
+				Out.color = _tex_FalseColors.SampleLevel( LinearClamp, float2( heat, 0.5 ), 0.0 );
+			}
 		} else {
 			Out.color = ComputeResultColor( nodeIndex );
 		}
@@ -133,9 +166,7 @@ PS_IN	VS2( VS_IN _In ) {
 	Out.__Position = TransformPosition( finalPos );
 
 	Out.UV.xy = _In.__Position.xy;
-	Out.UV.z = 1;//saturate( lerp( sourceNode.m_mass, targetNode.m_mass, U ) / _maxMass );
-
-	Out.__Position.z = 1.0 - Out.UV.z;
+	Out.UV.z = 0.99;//saturate( lerp( sourceNode.m_mass, targetNode.m_mass, U ) / _maxMass );
 
 	Out.color = 0.0;
 	if ( (sourceNode.m_flags & 7U) && (targetNode.m_flags & 7U) ) {
@@ -154,24 +185,35 @@ PS_IN	VS2( VS_IN _In ) {
 
 		uint	nodeIndex = U < 0.5 ? sourceNodeIndex : targetNodeIndex;
 		float	heat = 0.0;
-		if ( displayMode & 1 )
-			heat = _SB_HeatBarycentrics[Local2GlobalIndex( nodeIndex, _sourceIndex )];
-		else
+		if ( displayMode & 1 ) {
+			if ( showLog ) {
+				Out.color = ComputeSumBarycentrics( nodeIndex, Out.UV.z );
+			} else {
+				heat = _SB_HeatBarycentrics[Local2GlobalIndex( nodeIndex, _sourceIndex )];
+				heat = lerp( 0.1, 0.9, heat );
+				Out.color =_tex_FalseColors.SampleLevel( LinearClamp, float2( heat, 0.5 ), 0.0 );
+			}
+
+		} else {
 			heat = _SB_Heat[Local2GlobalIndex( nodeIndex, _sourceIndex )];
 
-		if ( showLog ) {
-			// Render Log(Temp)
-			float	logTemp = 0.43429448190325182765112891891661 * log( max( 1e-6, heat ) );	// Log10( temp )
-			heat = (6.0 + logTemp) / 6.0;
-		} else {
-			heat = lerp( 0.1, 0.9, heat );
+			if ( showLog ) {
+				// Render Log(Temp)
+				float	logTemp = 0.43429448190325182765112891891661 * log( max( 1e-6, heat ) );	// Log10( temp )
+				heat = (6.0 + logTemp) / 6.0;
+			} else {
+				heat = lerp( 0.1, 0.9, heat );
+			}
+
+			Out.color =_tex_FalseColors.SampleLevel( LinearClamp, float2( heat, 0.5 ), 0.0 );
 		}
 
-		Out.color =_tex_FalseColors.SampleLevel( LinearClamp, float2( heat, 0.5 ), 0.0 );
 	} else {
 		uint	nodeIndex = U < 0.5 ? sourceNodeIndex : targetNodeIndex;
 		Out.color = ComputeResultColor( nodeIndex );
 	}
+
+	Out.__Position.z = Out.UV.z;
 
 	return Out;
 }

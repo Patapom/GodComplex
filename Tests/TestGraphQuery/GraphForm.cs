@@ -404,8 +404,10 @@ namespace TestGraphQuery
 			if ( !m_barycentricsDirty || m_queryNodes.Length < 2 )
 				return m_SB_HeatBarycentrics;
 
-			// Read back simulation
+			// Read back simulation & transform into computable log heat
 			m_SB_HeatSource.Read();
+			for ( int nodeIndex=0; nodeIndex < m_SB_HeatSource.m.Length; nodeIndex++ )
+				m_SB_HeatSource.m[nodeIndex] = ComputeLogHeat( m_SB_HeatSource.m[nodeIndex] );
 
 			// Build a matrix of mutual heat values for each simulation at the position of each source
 			int			sourcesCount = m_queryNodes.Length;
@@ -416,7 +418,7 @@ namespace TestGraphQuery
 				for ( int source1=0; source1 < sourcesCount; source1++ ) {
 					int		sourceNodeIndex = (int) m_neuron2ID[m_queryNodes[source1]];
 					float	heat = m_SB_HeatSource.m[sourceHeatOffset0 + sourceNodeIndex];	// Here we read the temperature of source 1 in the simulation space of source 0
-					mutualHeat[source0,source1] = ComputeLogHeat( heat );
+					mutualHeat[source1,source0] = heat;
 				}
 			}
 
@@ -430,7 +432,7 @@ namespace TestGraphQuery
 			for ( int nodeIndex=0; nodeIndex < (int) m_nodesCount; nodeIndex++ ) {
 				// Build source vector
 				for ( int sourceIndex=0; sourceIndex < sourcesCount; sourceIndex++ ) {
-					sourceHeatVector[sourceIndex] = ComputeLogHeat( m_SB_HeatSource.m[(int) m_nodesCount * sourceIndex + nodeIndex] );
+					sourceHeatVector[sourceIndex] = m_SB_HeatSource.m[(int) m_nodesCount * sourceIndex + nodeIndex];
 				}
 
 				// Transform into barycentrics
@@ -598,12 +600,24 @@ namespace TestGraphQuery
 				m_resultNodeIndices[nodeIndex] = nodeIndex;
 			}
 
-			// Sort scores
-			Array.Sort( m_resultScores, m_resultNodeIndices );
-
 			// Dump results
 			string	results = "";
-			for ( int i=0; i < 50; i++ ) {
+
+			if ( Selection.Length > 0 ) {
+				// Show selected nodes first
+				results += "Results for selection:\r\n";
+				foreach ( ProtoParser.Neuron selectedNode in Selection ) {
+					float	score = m_resultScores[m_neuron2ID[selectedNode]];
+					results += selectedNode + (selectedNode.m_value != null ? "( " + (selectedNode.m_value.m_valueMean != null ? selectedNode.m_value.m_valueMean : "<null>") + " )" : "") + " - " + score.ToString( "G4" ) + "\r\n";
+				}
+
+				results += "\r\n";
+			}
+
+			// Sort scores & dump the N first
+			Array.Sort( m_resultScores, m_resultNodeIndices );
+
+			for ( int i=0; i < integerTrackbarControlSignificantResultsCount.Value; i++ ) {
 				float				score = m_resultScores[i];
 				ProtoParser.Neuron	N = m_graph.Neurons[m_resultNodeIndices[i]];
 				results += N + (N.m_value != null ? "( " + (N.m_value.m_valueMean != null ? N.m_value.m_valueMean : "<null>") + " )" : "") + " - " + score.ToString( "G4" ) + "\r\n";
@@ -671,63 +685,9 @@ namespace TestGraphQuery
 			m_CB_Main.UpdateData();
 		}
 
-// 		ProtoParser.Neuron[]	m_selection = new ProtoParser.Neuron[0];
-// 		ProtoParser.Neuron[]	Selection {
-// 			get { return m_selection; }
-// 			set {
-// 				if ( value == null )
-// 					value = new ProtoParser.Neuron[0];
-// 
-// 				if ( value.Length == m_selection.Length ) {
-// 					bool	hasChanged = false;
-// 					foreach ( ProtoParser.Neuron newSelection in value ) {
-// 						bool	found = false;
-// 						foreach ( ProtoParser.Neuron currentSelection in m_selection ) {
-// 							if ( newSelection == currentSelection ) {
-// 								found = true;
-// 								break;
-// 							}
-// 						}
-// 						if ( !found ) {
-// 							hasChanged = true;
-// 							break;
-// 						}
-// 					}
-// 					if ( !hasChanged )
-// 						return;	// No change...
-// 				}
-// 
-// 				// Clear children check box
-// 				bool	oldCheckBoxStatus = checkBoxShowChildren.Checked;
-// 				checkBoxShowChildren.Checked = false;
-// 
-// 				// Update selection and node flags
-// 				m_selection = value;
-// 
-// 				for ( int i=0; i < m_nodesCount; i++ )
-// 					m_SB_Nodes.m[i].m_flags = 0U;
-// 				foreach ( ProtoParser.Neuron selectedNeuron in m_selection ) {
-// 					// Select neuron
-// 					m_SB_Nodes.m[m_neuron2ID[selectedNeuron]].m_flags |= 1U;
-// 
-// 					// Select parents
-// 					ProtoParser.Neuron parent = selectedNeuron;
-// 					while ( parent.ParentsCount > 0 ) {
-// 						parent = parent.Parents[0];
-// 						m_SB_Nodes.m[m_neuron2ID[parent]].m_flags |= 2U;
-// 					}
-// 				}
-// 
-// 				m_SB_Nodes.Write();
-// 
-// 				// Restore check box status
-// 				checkBoxShowChildren.Checked = oldCheckBoxStatus;
-// 			}
-// 		}
-
 		#endregion
 
-		#region Query Input
+		#region Query/Selection Input
 
 		ProtoParser.Neuron[]	m_queryNodes = new ProtoParser.Neuron[0];
 		ProtoParser.Neuron[]	QueryNodes {
@@ -783,15 +743,15 @@ namespace TestGraphQuery
 
 							queryNodes.Add( N );
 
-							message += "OK: " + N + "\n";
+							message += "OK: " + N + "\r\n";
 						} catch ( Exception _e ) {
-							message += "Error on \"" + query + "\": " + _e.Message + "\n";
+							message += "Error on \"" + query + "\": " + _e.Message + "\r\n";
 						}
 					}
 
 					QueryNodes = queryNodes.ToArray();
 
-					message += "Total queries: " + queryNodes.Count + "\n";
+					message += "Total queries: " + queryNodes.Count + "\r\n";
 
 					textBoxProcessedQuery.Text = message;
 
@@ -802,6 +762,86 @@ namespace TestGraphQuery
 			} catch ( Exception _e ) {
 				QueryNodes = null;
 				textBoxProcessedQuery.Text = "Error during search: " + _e.Message;
+			}
+		}
+
+		ProtoParser.Neuron[]	m_selection = new ProtoParser.Neuron[0];
+		ProtoParser.Neuron[]	Selection {
+			get { return m_selection; }
+			set {
+				if ( value == null )
+					value = new ProtoParser.Neuron[0];
+
+				m_selection = value;
+
+				// Update selected flags
+				for ( int nodeIndex=0; nodeIndex < (int) m_nodesCount; nodeIndex++ )
+					m_SB_Nodes.m[nodeIndex].m_flags = 0x0U;
+ 
+				for ( int i=0; i < m_nodesCount; i++ )
+					m_SB_Nodes.m[i].m_flags = 0U;
+
+				foreach ( ProtoParser.Neuron selectedNeuron in m_selection ) {
+					// Select neuron
+					m_SB_Nodes.m[m_neuron2ID[selectedNeuron]].m_flags |= 1U;
+
+					// Select parents
+					ProtoParser.Neuron parent = selectedNeuron;
+					while ( parent.ParentsCount > 0 ) {
+						parent = parent.Parents[0];
+						m_SB_Nodes.m[m_neuron2ID[parent]].m_flags |= 2U;
+					}
+				}
+
+				m_SB_Nodes.Write();
+			}
+		}
+
+		private void textBoxSelection_TextChanged( object sender, EventArgs e ) {
+			try {
+				string[]	queries = textBoxSelection.Text.Split( '\n', ',', ' ', ';' );
+
+				if ( queries.Length > 0 ) {
+					string	message = "";
+
+					List<ProtoParser.Neuron>	selectedNodes = new List<ProtoParser.Neuron>();
+					for ( int i=0; i < queries.Length; i++ ) {
+						string	query = queries[i].Trim();
+						if ( query.StartsWith( "\"" ) ) {
+							query = query.Remove( 0, 1 );
+							while ( !query.EndsWith( "\"" ) && i < queries.Length-1 ) {
+								query += " " + queries[++i];
+							}
+							if ( query.Length > 0 )
+								query = query.Remove( query.Length-1, 1 );
+						}
+
+						try {
+							ProtoParser.Neuron	N = ProcessQuery( query );
+							if ( N == null )
+								continue;
+
+							selectedNodes.Add( N );
+
+							message += "OK: " + N + "\r\n";
+						} catch ( Exception _e ) {
+							message += "Error on \"" + query + "\": " + _e.Message + "\r\n";
+						}
+					}
+
+					Selection = selectedNodes.ToArray();
+
+					message += "Total selection: " + selectedNodes.Count + "\r\n";
+
+					textBoxProcessedSelection.Text = message;
+
+				} else {
+					textBoxProcessedSelection.Text = "Empty.";
+				}
+
+			} catch ( Exception _e ) {
+				Selection = null;
+				textBoxProcessedSelection.Text = "Error during selection: " + _e.Message;
 			}
 		}
 
