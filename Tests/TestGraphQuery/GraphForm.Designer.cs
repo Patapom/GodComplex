@@ -177,7 +177,7 @@
 			this.floatTrackbarControlResultsTolerance.RangeMin = 0F;
 			this.floatTrackbarControlResultsTolerance.Size = new System.Drawing.Size(116, 20);
 			this.floatTrackbarControlResultsTolerance.TabIndex = 17;
-			this.floatTrackbarControlResultsTolerance.Value = 0.2F;
+			this.floatTrackbarControlResultsTolerance.Value = 0.5F;
 			this.floatTrackbarControlResultsTolerance.VisibleRangeMax = 1F;
 			// 
 			// groupBox1

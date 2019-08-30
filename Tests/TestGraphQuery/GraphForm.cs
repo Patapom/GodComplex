@@ -608,7 +608,7 @@ namespace TestGraphQuery
 				results += "Results for selection:\r\n";
 				foreach ( ProtoParser.Neuron selectedNode in Selection ) {
 					float	score = m_resultScores[m_neuron2ID[selectedNode]];
-					results += selectedNode + (selectedNode.m_value != null ? "( " + (selectedNode.m_value.m_valueMean != null ? selectedNode.m_value.m_valueMean : "<null>") + " )" : "") + " - " + score.ToString( "G4" ) + "\r\n";
+					results += selectedNode + (selectedNode.m_value is ProtoParser.NeuronValue ? "( " + ((selectedNode.m_value as ProtoParser.NeuronValue).m_valueMean != null ? (selectedNode.m_value as ProtoParser.NeuronValue).m_valueMean : "<null>") + " )" : "") + " - " + score.ToString( "G4" ) + "\r\n";
 				}
 
 				results += "\r\n";
@@ -620,7 +620,7 @@ namespace TestGraphQuery
 			for ( int i=0; i < integerTrackbarControlSignificantResultsCount.Value; i++ ) {
 				float				score = m_resultScores[i];
 				ProtoParser.Neuron	N = m_graph.Neurons[m_resultNodeIndices[i]];
-				results += N + (N.m_value != null ? "( " + (N.m_value.m_valueMean != null ? N.m_value.m_valueMean : "<null>") + " )" : "") + " - " + score.ToString( "G4" ) + "\r\n";
+				results += N + (N.m_value is ProtoParser.NeuronValue ? "( " + ((N.m_value as ProtoParser.NeuronValue).m_valueMean != null ? (N.m_value as ProtoParser.NeuronValue).m_valueMean : "<null>") + " )" : "") + " - " + score.ToString( "G4" ) + "\r\n";
 			}
 			textBoxSearchResults.Text = results;
 		}
@@ -669,10 +669,10 @@ namespace TestGraphQuery
 				else
 					m_displayText = "*" + selectedNeuron.Parents[0].m_name;
 
-				if ( selectedNeuron.m_value != null ) {
+				if ( selectedNeuron.m_value is ProtoParser.NeuronValue ) {
 					// Show value
 					m_displayText += "( ";
-					m_displayText += selectedNeuron.m_value.m_valueMean != null ? selectedNeuron.m_value.m_valueMean : "<null>";
+					m_displayText += (selectedNeuron.m_value as ProtoParser.NeuronValue).m_valueMean != null ? (selectedNeuron.m_value as ProtoParser.NeuronValue).m_valueMean : "<null>";
 					m_displayText += " )";
 				}
 

@@ -50,7 +50,7 @@ namespace ProtoParser
 		private List< Neuron >		m_parents = new List<Neuron>();
 		private List< Neuron >		m_children = new List<Neuron>();
 		private List< Neuron >		m_features = new List<Neuron>();
-		public NeuronValue			m_value = null;
+		public NeuronValueBase		m_value = null;
 
 		private static uint			ms_searchMarker = 0;
 		private uint				m_searchMarker = 0;
@@ -167,17 +167,33 @@ namespace ProtoParser
 		}
 
 		public Neuron			FindChild( string _childName ) {
-			foreach ( Neuron child in m_children )
-				if ( child.m_name == _childName )
-					return child;
+			foreach ( Neuron child in m_children ) {
+				if ( child.m_name != null ) {
+					if ( child.m_name == _childName )
+						return child;
+				} else {
+					// Anonymous node, search named parent
+					Neuron	namedParent = child.FindParent( _childName );
+					if ( namedParent != null )
+						return child;
+				}
+			}
 
 			return null;
 		}
 
 		public Neuron			FindFeature( string _featureName ) {
-			foreach ( Neuron feature in m_features )
-				if ( feature.m_name == _featureName )
-					return feature;
+			foreach ( Neuron feature in m_features ) {
+				if ( feature.m_name != null ) {
+					if ( feature.m_name == _featureName )
+						return feature;
+				} else {
+					// Anonymous node, search named parent
+					Neuron	namedParent = feature.FindParent( _featureName );
+					if ( namedParent != null )
+						return feature;
+				}
+			}
 
 			return null;
 		}
@@ -196,10 +212,48 @@ namespace ProtoParser
 
 			m_searchMarker = _searchMarker;	// Now visited
 
-			foreach ( Neuron child in m_children )
-				if ( child == _child ) {
-					return this;
-				}
+			// Test all children first
+			foreach ( Neuron child in m_children ) {
+				if ( child == _child )
+					return child;
+			}
+
+			// Recurse through children
+			foreach ( Neuron child in m_children ) {
+				Neuron	result = child.RecursiveFindChild( _child, _searchMarker );
+				if ( result != null )
+					return result;
+			}
+
+			return null;
+		}
+
+		/// <summary>
+		/// Tries and find the provided neuron name in the parent hierarchy of this neuron
+		/// </summary>
+		/// <param name="_parent"></param>
+		/// <returns></returns>
+		public Neuron			RecursiveFindParent( Neuron _parent ) {
+			return RecursiveFindParent( _parent, ++ms_searchMarker );
+		}
+		Neuron			RecursiveFindParent( Neuron _parent, uint _searchMarker ) {
+			if ( m_searchMarker == _searchMarker )
+				return null;	// Already visited
+
+			m_searchMarker = _searchMarker;	// Now visited
+
+			// Test all parents first
+			foreach ( Neuron parent in m_parents ) {
+				if ( parent == _parent )
+					return parent;
+			}
+
+			// Recurse through parents
+			foreach ( Neuron parent in m_parents ) {
+				Neuron	result = parent.RecursiveFindParent( _parent, _searchMarker );
+				if ( result != null )
+					return result;
+			}
 
 			return null;
 		}
@@ -218,10 +272,18 @@ namespace ProtoParser
 
 			m_searchMarker = _searchMarker;	// Now visited
 
-			foreach ( Neuron parent in m_parents )
-				if ( parent.m_name == _parentName ) {
-					return this;
-				}
+			// Test all parents first
+			foreach ( Neuron parent in m_parents ) {
+				if ( parent.m_name == _parentName )
+					return parent;
+			}
+
+			// Recurse through parents
+			foreach ( Neuron parent in m_parents ) {
+				Neuron	result = parent.RecursiveFindParentByName( _parentName, _searchMarker );
+				if ( result != null )
+					return result;
+			}
 
 			return null;
 		}
@@ -249,10 +311,16 @@ namespace ProtoParser
 				_W.Write( _neuron2ID[N] );
 
 			if ( m_value != null ) {
-				_W.Write( true );
+				if ( m_value is NeuronValue )
+					_W.Write( 2 );
+				else if ( m_value is NeuronValueBase )
+					_W.Write( 1 );
+				else
+					throw new Exception( "Unsupported value type!" );
+
 				m_value.Write( _W );
 			} else {
-				_W.Write( false );
+				_W.Write( 0 );
 			}
 		}
 
@@ -278,19 +346,34 @@ namespace ProtoParser
 				m_features.Add( _neurons[_R.ReadInt32()] );
 			}
 
-			if ( _R.ReadBoolean() ) {
-				m_value = new NeuronValue();
-				m_value.Read( _R );
-			} else {
-				m_value = null;
+			int	valueType = _R.ReadInt32();
+			switch ( valueType ) {
+				case 0:	m_value = null; break;
+				case 1:	m_value = new NeuronValueBase(); break;
+				case 2:	m_value = new NeuronValue(); break;
+				default: throw new Exception( "Unsupported value type!" );
 			}
+			if ( m_value != null )
+				m_value.Read( _R );
 		}
 
 		#endregion
 	}
 
+	public class NeuronValueBase {
+
+		#region I/O
+
+		public virtual void		Write( BinaryWriter _W ) {
+		}
+
+		public virtual void		Read( BinaryReader _R ) {
+		}
+
+		#endregion
+	}
 	[System.Diagnostics.DebuggerDisplay( "[{m_valueMean}]" )]
-	public class NeuronValue {
+	public class NeuronValue : NeuronValueBase {
 		public string		m_valueMean = null;				// The mean value
 		public string		m_valueStdDeviation = null;		// The standard deviation
 		public string		m_units = null;					// The units
@@ -310,13 +393,13 @@ namespace ProtoParser
 			return _R.ReadBoolean() ? _R.ReadString() : null;
 		}
 
-		public void		Write( BinaryWriter _W ) {
+		public override void		Write( BinaryWriter _W ) {
 			WriteString( _W, m_valueMean );
 			WriteString( _W, m_valueStdDeviation );
 			WriteString( _W, m_units );
 		}
 
-		public void		Read( BinaryReader _R ) {
+		public override void		Read( BinaryReader _R ) {
 			m_valueMean = ReadString( _R );
 			m_valueStdDeviation = ReadString( _R );
 			m_units = ReadString( _R );

@@ -118,7 +118,7 @@ namespace ProtoParser
 			if ( _context == null )
 				_context = m_root;
 
-			Parser.Name	fullName = new Parser.Name( _fullyQualifiedName );
+			Parser.Name	fullName = Parser.Name.Read( _fullyQualifiedName );
 
 			// 1] Find the root anchor of the fully-qualified name
 			//	• Can be an alias
@@ -129,6 +129,8 @@ namespace ProtoParser
 			int		nameIndex = 0;
 			string	rootName = fullName[nameIndex++];
 			if ( rootName == "" ) {
+				if ( nameIndex == fullName.Length )
+					return null;
 				rootName = fullName[nameIndex++];
 			}
 
@@ -155,7 +157,7 @@ namespace ProtoParser
 						if ( children.Length == 0 )
 							throw new Exception( "Failed to find root name \"" + rootName + "\" of fully-qualified neuron name \"" + fullName + "\" in any context!" );
 						if ( children.Length != 1 )
-							throw new Exception( "Root name \"" + rootName + "\" of fully-qualified neuron name \"" + fullName + "\" is ambiguous in the global context: could be " + string.Join<Neuron>( ",", children ) );
+							throw new Exception( "Root name \"" + rootName + "\" of fully-qualified neuron name \"" + fullName + "\" is ambiguous in the global context: could be (" + string.Join<Neuron>( ") or (", children ) + ")" );
 
 						anchor = children[0];
 					}

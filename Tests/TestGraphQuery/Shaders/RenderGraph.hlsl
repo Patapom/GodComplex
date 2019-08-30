@@ -44,7 +44,7 @@ float3	ComputeResultColor( uint _nodeIndex ) {
 
 	const float	tol = _barycentricDistanceTolerance;
 
-	return distance2Iso < tol ? float3( tol - distance2Iso, 0, 0 ) : float3( 0, 0, distance2Iso - tol ) / tol;
+	return distance2Iso < tol ? float3( tol - distance2Iso, 0, 0 ) : 0.5 * float3( 0, 0, 2*tol - distance2Iso ) / tol;
 }
 
 // Checks for out of bounds barycentrics
@@ -54,14 +54,14 @@ float3	ComputeSumBarycentrics( uint _nodeIndex, inout float _Z ) {
 		sumBarycentrics += _SB_HeatBarycentrics[Local2GlobalIndex( _nodeIndex, sourceIndex )];
 	}
 
-	const float	MIN = -0.2;
-	const float	MAX = 1.2;
+	const float	MIN = 0.0;
+	const float	MAX = 1.0;
 
 #if 1
 	if ( sumBarycentrics < MIN ) {
 		return float3( 0, 0, MIN - sumBarycentrics );
 	} else if ( sumBarycentrics > MAX ) {
-		return float3( sumBarycentrics - MAX, 0, 0 );
+		return 0.1 * float3( sumBarycentrics - MAX, 0, 0 );
 	} else {
 		_Z = 0.0;	// Bring front
 		return _tex_FalseColors.SampleLevel( LinearClamp, float2( sumBarycentrics, 0.5 ), 0.0 );

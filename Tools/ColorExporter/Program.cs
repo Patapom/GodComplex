@@ -35,7 +35,7 @@ namespace CSharpColorExporter
 
 			//////////////////////////////////////////////////////////////////////////
 			// Dump wikipedia colors
-			string	wikiConcepts = "\"détaillées\" => (\n\t";
+			string	wikiConcepts = "w = \"détaillées\" => (\n\t";
 
 			string[]	wikiColors = Colors.colors.Split( '\n' );
 			for ( int i=0; i < wikiColors.Length; i++ ) {
@@ -48,15 +48,15 @@ namespace CSharpColorExporter
 			//////////////////////////////////////////////////////////////////////////
 			// Group colors in general categories
 			string[,]	general = new string[,] {
-				{ "beige",			"0xf7e7bd", "" },
-				{ "bleu",			"0x54a4e5", "" },
-				{ "marron",			"0x8d2b24", "" },
-				{ "orange",			"0xff6300", "" },
-				{ "rouge",			"0xff0000", "" },
-				{ "jaune",			"0xffff00", "" },
-				{ "vert",			"0x67d000", "" },
-				{ "rose",			"0xff84ff", "" },
-				{ "turquoise",		"0x00ffff", "" },
+				{ "simples.beige",			"0xf7e7bd", "" },
+				{ "simples.bleu",			"0x54a4e5", "" },
+				{ "simples.marron",			"0x8d2b24", "" },
+				{ "simples.orange",			"0xff6300", "" },
+				{ "simples.rouge",			"0xff0000", "" },
+				{ "simples.jaune",			"0xffff00", "" },
+				{ "simples.vert",			"0x67d000", "" },
+				{ "simples.rose",			"0xff84ff", "" },
+				{ "simples.turquoise",		"0x00ffff", "" },
 			};
 
 			float3[]	xyY = new float3[general.GetLength(0)];
@@ -66,9 +66,14 @@ namespace CSharpColorExporter
 			}
 
 			// Associate all wikipédia colors to their closest general color
+			HashSet<string>	existingColorNames = new HashSet<string>();
 			for ( int i=0; i < wikiColors.Length; i++ ) {
 				string	name, hexRGB;
 				Colors.ReadNameHexRGB( wikiColors[i], out name, out hexRGB );
+
+				if ( existingColorNames.Contains(name) )
+					throw new Exception( "Identical color names!" );
+				existingColorNames.Add( name );
 
 				string	wikiColorName = "w." + name;
 				float3	wikixyY = Colors.HexRGB2xyY( hexRGB );
@@ -88,7 +93,8 @@ namespace CSharpColorExporter
 				general[closestColorIndex,2] += (general[closestColorIndex,2] != "" ? ", " : "") + wikiColorName;
 			}
 
-			string	groupements = "w = \"détaillées\"\n\n";
+//			string	groupements = "w = \"détaillées\"\n\n";
+			string	groupements = "";
 			for ( int i=0; i < xyY.Length; i++ ) {
 				groupements += general[i,0] + " => ( " + general[i,2] + " )\n";
 			}

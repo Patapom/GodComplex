@@ -191,8 +191,9 @@ neurons[0].LinkChild( neurons[1] );
 
 				uint	linksCount = (uint) (N.ParentsCount + N.ChildrenCount + N.FeaturesCount);
 //				m_SB_Nodes.m[neuronIndex].m_mass = (1 + 10.0f * linksCount) / (0.1f + N.Distance2Root);			// Works with S=1e4 D=-1e3
-				m_SB_Nodes.m[neuronIndex].m_mass = (1 + 1.0f * linksCount) / (0.01f + 0.0f * N.Distance2Root);	// Works with S=1e4 D=-1e3
+//				m_SB_Nodes.m[neuronIndex].m_mass = (1 + 1.0f * linksCount) / (0.01f + 0.0f * N.Distance2Root);	// Works with S=1e4 D=-1e3
 //				m_SB_Nodes.m[neuronIndex].m_mass = (1 + 0.1f * linksCount) / (0.1f + N.Distance2Root);			// Works with S=10 D=-10
+				m_SB_Nodes.m[neuronIndex].m_mass = 100.0f * (1 + 1.0f * linksCount);	// Works with S=1e4 D=-1e3
 				m_SB_Nodes.m[neuronIndex].m_linkOffset = m_totalLinksCount;
 				m_SB_Nodes.m[neuronIndex].m_linksCount = linksCount;
 				m_SB_Nodes.m[neuronIndex].m_flags = 0U;

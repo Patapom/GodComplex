@@ -7,8 +7,8 @@
     <ProjectGuid>{411F21BD-4123-4056-80BB-43DF7966119D}</ProjectGuid>
     <OutputType>WinExe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>TestGraphViz</RootNamespace>
-    <AssemblyName>TestGraphViz</AssemblyName>
+    <RootNamespace>TestGraphQuery</RootNamespace>
+    <AssemblyName>TestGraphQuery</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>

@@ -30,6 +30,7 @@ namespace ProtoParser
 		#region CONSTANTS
 
 		const char	CHAR_COMMENT = '#';							// Represents a line comment
+		const char	CHAR_PREPROCESSOR = '!';					// Represents a pre-processor directive
 		const char	CHAR_SPECIAL_STRING_DELIMITER_START = '<';	// e.g. <context>
 		const char	CHAR_SPECIAL_STRING_DELIMITER_END = '>';	// e.g. <root>
 		const char	CHAR_STRING_DELIMITER = '"';				// e.g. "Hello World!"
@@ -68,8 +69,18 @@ namespace ProtoParser
 			public Name( string[] _name ) {
 				m_name = _name;
 			}
-			public Name( string _name ) {
-				m_name = new string[] { _name };
+
+			/// <summary>
+			/// Returns the index of the specified name part or -1 if not found
+			/// </summary>
+			/// <param name="_namePart"></param>
+			/// <returns></returns>
+			public int	IndexOf( string _namePart ) {
+				for ( int i=0; i < m_name.Length; i++ ) {
+					if ( m_name[i] == _namePart )
+						return i;
+				}
+				return -1;
 			}
 
 			public override string ToString() {
@@ -97,7 +108,7 @@ namespace ProtoParser
 				List<string>	results = new List<string>();
 
 				string	result = "";
-				while ( c == CHAR_CHILD_MARKER || c == CHAR_STRING_DELIMITER || c == CHAR_SPECIAL_STRING_DELIMITER_START || c == CHAR_SPECIAL_STRING_DELIMITER_END || IsAlphaNumeric( c ) ) {
+				while ( (c == CHAR_CHILD_MARKER || c == CHAR_STRING_DELIMITER || c == CHAR_SPECIAL_STRING_DELIMITER_START || c == CHAR_SPECIAL_STRING_DELIMITER_END || IsAlphaNumeric( c )) ) {
 					if ( c == CHAR_STRING_DELIMITER ) {
 						// Read a quoted-name like "\"example\""
 						Name	temp = ReadQuotedName( c, S );
@@ -118,6 +129,9 @@ namespace ProtoParser
 					} else {
 						result += c;
 					}
+
+					if ( S.EOT )
+						break;
 					c = S.Pop();
 				}
 				results.Add( result );
@@ -135,16 +149,20 @@ namespace ProtoParser
 				string	result = "";
 
 				// Read until we reach the closing '"'
-				c = S.Pop();
-				while ( c != CHAR_STRING_DELIMITER ) {
-					if ( c == CHAR_CHILD_MARKER ) {
-						// Add a new string
-						results.Add( result );
-						result = "";
-					} else {
-						result += c;
-					}
+				if ( !S.EOT ) {
 					c = S.Pop();
+					while ( c != CHAR_STRING_DELIMITER ) {
+						if ( c == CHAR_CHILD_MARKER ) {
+							// Add a new string
+							results.Add( result );
+							result = "";
+						} else {
+							result += c;
+						}
+						if ( S.EOT )
+							break;
+						c = S.Pop();
+					}
 				}
 
 				results.Add( result );
@@ -162,6 +180,7 @@ namespace ProtoParser
 				CONSTRUCTOR,			// Token is a collection of parameters used to construct the prototype
 				HIERARCHY_MARKER,		// Token is the parent-child hierarchy marker
 				FEATURE_MARKER,			// Token is the parent-child feature marker
+				PREPROCESSOR_DIRECTIVE,	// Token is a pre-processor directive (e.g. include)
 			}
 
 			public int		m_sourceStreamPosition = -1;
@@ -198,16 +217,18 @@ namespace ProtoParser
 
 		#region Parsers
 
-		internal class TextStream {
+		public class TextStream {
 
 			string	m_text = null;
 			int		m_length = 0;
 			int		m_index = 0;	// Character index
 
-			public bool	EOT		{ get { return m_index >= m_length; } }
-			public char	Peek	{ get { return m_text[m_index]; } }
+			public string	SourceText	{ get { return m_text; } }
 
-			public int	Index	{ get { return m_index; } }
+			public bool		EOT			{ get { return m_index >= m_length; } }
+			public char		Peek		{ get { return m_text[m_index]; } }
+
+			public int		Index		{ get { return m_index; } }
 			public string	Context	{ get {
 					int	startIndex = Math.Max( 0, Index - 16 );
 					int	endIndex = Math.Min( m_length, Index + 16 );
@@ -216,18 +237,19 @@ namespace ProtoParser
 			}
 
 			int[]	m_EOLIndices;
-			public Tuple<int,int>	LineColumnIndex { get {
-					int	lastIndex = 0;
-					int	lineIndex = 0;
-					foreach ( int currentIndex in m_EOLIndices ) {
-						if ( m_index >= lastIndex && m_index < currentIndex )
-							break;
-						lastIndex = currentIndex;
-						lineIndex++;
-					}
+			public Tuple<int,int>	LineColumnIndex { get { return ComputeLineColumnIndex( m_index ); } }
 
-					return new Tuple<int, int>( lineIndex, m_index - lastIndex - 1 );
+			public Tuple<int,int>	ComputeLineColumnIndex( int _position ) {
+				int	lastIndex = 0;
+				int	lineIndex = 0;
+				foreach ( int currentIndex in m_EOLIndices ) {
+					if ( _position >= lastIndex && _position < currentIndex )
+						break;
+					lastIndex = currentIndex;
+					lineIndex++;
 				}
+
+				return new Tuple<int, int>( 1+lineIndex, 1 + (_position - lastIndex - 1) );
 			}
 
 			public TextStream( string _text ) {
@@ -265,7 +287,8 @@ namespace ProtoParser
 
 				// Read until we reach EOL
 				while ( c != '\n' ) {
-					result += c;
+					if ( c != '\r' )
+						result += c;
 					c = S.Pop();
 				}
 
@@ -290,6 +313,8 @@ namespace ProtoParser
 
 		#region PROPERTIES
 
+		public TextStream			Stream	{ get { return m_stream; } }
+
 		public TokensCollection		Root { get { return m_root; } }
 
 		#endregion
@@ -297,7 +322,7 @@ namespace ProtoParser
 		#region METHODS
 
 		public Parser( string _text ) {
-			m_stream = new TextStream( _text );
+			m_stream = new TextStream( _text + "\n" );
 
 			Push( STATE.COLLECTION );
 			m_root = PushCollection( null );
@@ -322,6 +347,14 @@ namespace ProtoParser
 					continue;
 				}
 
+				if ( c == CHAR_PREPROCESSOR ) {
+					// Read till the end of line and keep for further parsing...
+					Token T = AddToken( Token.TYPE.PREPROCESSOR_DIRECTIVE, null );
+					T.m_value = CommentParser.Read( m_stream );
+					continue;
+				}
+
+
 				switch ( m_state.Peek() ) {
 					//////////////////////////////////////////////////////////////////////////
 					// In NAME state, we expect:
@@ -337,11 +370,13 @@ namespace ProtoParser
 							Pop();
 							continue;
 
-						} else if ( c == CHAR_ALIAS_ASSIGNMENT ) {
+						} else if ( c == CHAR_ALIAS_ASSIGNMENT || c == '⇒' ) {
 							// Check if it's an assignment or a parent-child definition
-							if ( m_stream.Peek == CHAR_HIERARCHY ) {
+							if ( c == '⇒' || m_stream.Peek == CHAR_HIERARCHY ) {
 								// Parent-Child hierarchy marker
-								c = m_stream.Pop();	// Consume character
+								if ( c != '⇒' )
+									c = m_stream.Pop();	// Consume character
+
 								AddToken( Token.TYPE.HIERARCHY_MARKER, null );
 								Pop();
 								Push( STATE.CHILD );
@@ -580,7 +615,10 @@ namespace ProtoParser
 		/// <param name="T"></param>
 		Token	AddToken( Token.TYPE _type, object _value ) {
 			TokensCollection	tokens = m_tokenCollections.Peek();
-			Token	T = new Token( m_stream.Index, _type, _value );
+			int		streamIndex = m_stream.Index;
+			if ( _type == Token.TYPE.NAME && _value is Name )
+				streamIndex -= (_value as Name).ToString().Length;
+			Token	T = new Token( streamIndex, _type, _value );
 			tokens.Add( T );
 			return T;
 		}
@@ -613,7 +651,7 @@ namespace ProtoParser
 
 			Tuple<int,int>	lineColumnIndex = _stream.LineColumnIndex;
 
-			throw new Exception( _message + " at line " + (1+lineColumnIndex.Item1) + ", column " + lineColumnIndex.Item2 + "\n" + context + "\n               ^" );
+			throw new Exception( _message + " at line " + lineColumnIndex.Item1 + ", column " + lineColumnIndex.Item2 + "\n" + context + "\n               ^" );
 		}
 
 		static bool ReadName( char c, TextStream S, ref Name _name ) {
@@ -648,6 +686,7 @@ namespace ProtoParser
 
 		static bool	IsAlphaNumeric( char c ) {
 			if ( c >= 'a' && c <= 'z' ) return true;
+			if ( c == 'é' || c == 'è' || c == 'à' ) return true;
 			if ( c >= 'A' && c <= 'Z' ) return true;
 			if ( c >= '0' && c <= '9' ) return true;
 			if ( c == '_' ) return true;

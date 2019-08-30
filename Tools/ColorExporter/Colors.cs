@@ -14,7 +14,7 @@ namespace CSharpColorExporter
 		public static string	ParseColor( string _color ) {
 			string	name, hexRGB;
 			ReadNameHexRGB( _color, out name, out hexRGB );
-			return ", c." + name + "( \"" + hexRGB + "\" )";
+			return ", " + name + "( \"" + hexRGB + "\" )";
 		}
 
 		public static void		ReadNameHexRGB( string _color, out string _name, out string _hexRGB ) {
@@ -187,7 +187,7 @@ Gueules (héraldique)	 	#	E2	13	13	226	19	19	0	92	92	11	0	84	48\n\
 Héliotrope	 	#	DF	73	FF	223	115	255	13	55	0	0	286	100	73\n\
 Incarnat	 	#	FF	6F	7D	255	111	125	0	56	51	0	354	100	72\n\
 Indigo	 	#	79	1C	F8	121	28	248	89	51	0	3	265	94	54\n\
-Indigo (teinture)	 	#	2E	00	6C	46	0	108	57	100	0	58	266	100	21\n\
+Indigo2 (teinture)	 	#	2E	00	6C	46	0	108	57	100	0	58	266	100	21\n\
 Isabelle	 	#	78	5E	2F	120	94	47	0	22	61	53	39	44	33\n\
 Jaune canari	 	#	E7	F0	0D	231	240	13	4	0	95	6	62	90	50\n\
 Jaune citron	 	#	F7	FF	3C	247	255	60	3	0	76	0	62	100	62\n\
