@@ -39,12 +39,17 @@ float	ComputeResult( uint _nodeIndex ) {
 	return sqrt( sqDistance );
 }
 
-float3	ComputeResultColor( uint _nodeIndex ) {
+float3	ComputeBarycentricResultColor( uint _nodeIndex ) {
 	float	distance2Iso = ComputeResult( _nodeIndex );
 
 	const float	tol = _barycentricDistanceTolerance;
 
 	return distance2Iso < tol ? float3( tol - distance2Iso, 0, 0 ) : 0.5 * float3( 0, 0, 2*tol - distance2Iso ) / tol;
+}
+
+float3	ComputeSumResultColor( uint _nodeIndex ) {
+	float	sumHeat = _SB_HeatBarycentrics[_nodeIndex];
+	return _tex_FalseColors.SampleLevel( LinearClamp, float2( sumHeat, 0.5 ), 0.0 );
 }
 
 // Checks for out of bounds barycentrics
@@ -100,33 +105,42 @@ PS_IN	VS( VS_IN _In ) {
 		Out.color = float3( 1, 1, 1 );	// Selected
 	} else {
 		// Regular
-		uint	displayMode = _renderFlags & 0x3U;
+		uint	displayMode = _renderFlags & 0x7U;
 		bool	showLog = _renderFlags & 0x10U;
 
-		if ( displayMode != 2U ) {
-			float	heat = 0.0;
-			if ( displayMode & 1 ) {
-				if ( showLog ) {
-					Out.color = ComputeSumBarycentrics( nodeIndex, Out.UV.z );
+		switch ( displayMode ) {
+			case 0U:
+			case 1U:
+				float	heat = 0.0;
+				if ( displayMode & 1 ) {
+					if ( showLog ) {
+						Out.color = ComputeSumBarycentrics( nodeIndex, Out.UV.z );
+					} else {
+						heat = _SB_HeatBarycentrics[Local2GlobalIndex( nodeIndex, _sourceIndex )];
+						Out.color = _tex_FalseColors.SampleLevel( LinearClamp, float2( heat, 0.5 ), 0.0 );
+					}
 				} else {
-					heat = _SB_HeatBarycentrics[Local2GlobalIndex( nodeIndex, _sourceIndex )];
+					heat = _SB_Heat[Local2GlobalIndex( nodeIndex, _sourceIndex )];
+
+					if ( showLog ) {
+						// Render Log(Temp)
+						float	logTemp = 0.43429448190325182765112891891661 * log( max( 1e-6, heat ) );	// Log10( temp )
+						heat = (6.0 + logTemp) / 6.0;
+					} else {
+						heat = lerp( 0.1, 1.0, heat );
+					}
+
 					Out.color = _tex_FalseColors.SampleLevel( LinearClamp, float2( heat, 0.5 ), 0.0 );
 				}
-			} else {
-				heat = _SB_Heat[Local2GlobalIndex( nodeIndex, _sourceIndex )];
+				break;
 
-				if ( showLog ) {
-					// Render Log(Temp)
-					float	logTemp = 0.43429448190325182765112891891661 * log( max( 1e-6, heat ) );	// Log10( temp )
-					heat = (6.0 + logTemp) / 6.0;
-				} else {
-					heat = lerp( 0.1, 1.0, heat );
-				}
+			case 2U:	// Barycentric results
+				Out.color = ComputeBarycentricResultColor( nodeIndex );
+				break;
 
-				Out.color = _tex_FalseColors.SampleLevel( LinearClamp, float2( heat, 0.5 ), 0.0 );
-			}
-		} else {
-			Out.color = ComputeResultColor( nodeIndex );
+			case 4U:	// Sum results
+				Out.color = ComputeSumResultColor( nodeIndex );
+				break;
 		}
 	}
 
@@ -178,39 +192,52 @@ PS_IN	VS2( VS_IN _In ) {
 			Out.color = 0.4 * float3( 1, 1, 1 );		// Hierarchy selection
 		else if ( sourceNode.m_flags & 1U )
 			Out.color = 0.9 * float3( 1, 1, 1 );		// Actual selection
-	} else if ( (_renderFlags & 0x3U) != 2U ) {
-		// Draw heat gradient
-		uint	displayMode = _renderFlags & 0x3U;
-		bool	showLog = _renderFlags & 0x10U;
-
-		uint	nodeIndex = U < 0.5 ? sourceNodeIndex : targetNodeIndex;
-		float	heat = 0.0;
-		if ( displayMode & 1 ) {
-			if ( showLog ) {
-				Out.color = ComputeSumBarycentrics( nodeIndex, Out.UV.z );
-			} else {
-				heat = _SB_HeatBarycentrics[Local2GlobalIndex( nodeIndex, _sourceIndex )];
-				heat = lerp( 0.1, 0.9, heat );
-				Out.color =_tex_FalseColors.SampleLevel( LinearClamp, float2( heat, 0.5 ), 0.0 );
-			}
-
-		} else {
-			heat = _SB_Heat[Local2GlobalIndex( nodeIndex, _sourceIndex )];
-
-			if ( showLog ) {
-				// Render Log(Temp)
-				float	logTemp = 0.43429448190325182765112891891661 * log( max( 1e-6, heat ) );	// Log10( temp )
-				heat = (6.0 + logTemp) / 6.0;
-			} else {
-				heat = lerp( 0.1, 0.9, heat );
-			}
-
-			Out.color =_tex_FalseColors.SampleLevel( LinearClamp, float2( heat, 0.5 ), 0.0 );
-		}
-
 	} else {
-		uint	nodeIndex = U < 0.5 ? sourceNodeIndex : targetNodeIndex;
-		Out.color = ComputeResultColor( nodeIndex );
+		switch ( _renderFlags & 0x7U ) {
+			case 0U:
+			case 1U:
+				// Draw heat gradient
+				uint	displayMode = _renderFlags & 0x3U;
+				bool	showLog = _renderFlags & 0x10U;
+
+				uint	nodeIndex = U < 0.5 ? sourceNodeIndex : targetNodeIndex;
+				float	heat = 0.0;
+				if ( displayMode & 1 ) {
+					if ( showLog ) {
+						Out.color = ComputeSumBarycentrics( nodeIndex, Out.UV.z );
+					} else {
+						heat = _SB_HeatBarycentrics[Local2GlobalIndex( nodeIndex, _sourceIndex )];
+						heat = lerp( 0.1, 0.9, heat );
+						Out.color =_tex_FalseColors.SampleLevel( LinearClamp, float2( heat, 0.5 ), 0.0 );
+					}
+
+				} else {
+					heat = _SB_Heat[Local2GlobalIndex( nodeIndex, _sourceIndex )];
+
+					if ( showLog ) {
+						// Render Log(Temp)
+						float	logTemp = 0.43429448190325182765112891891661 * log( max( 1e-6, heat ) );	// Log10( temp )
+						heat = (6.0 + logTemp) / 6.0;
+					} else {
+						heat = lerp( 0.1, 0.9, heat );
+					}
+
+					Out.color =_tex_FalseColors.SampleLevel( LinearClamp, float2( heat, 0.5 ), 0.0 );
+				}
+				break;
+
+			case 2U: {	// Barycentric results
+				uint	nodeIndex = U < 0.5 ? sourceNodeIndex : targetNodeIndex;
+				Out.color = ComputeBarycentricResultColor( nodeIndex );
+				break;
+			}
+
+			case 4U: {	// Sum results
+				uint	nodeIndex = U < 0.5 ? sourceNodeIndex : targetNodeIndex;
+				Out.color = ComputeSumResultColor( nodeIndex );
+				break;
+			}
+		}
 	}
 
 	Out.__Position.z = Out.UV.z;

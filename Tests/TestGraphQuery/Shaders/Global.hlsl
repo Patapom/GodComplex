@@ -17,7 +17,6 @@ cbuffer CB_Main : register(b0) {
 
 	float	_barycentricDistanceTolerance;
 	float	_barycentricBias;
-//	uint	_barycentricBiasTarget;
 };
 
 struct SB_NodeInfo {

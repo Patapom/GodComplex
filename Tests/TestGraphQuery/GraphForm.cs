@@ -95,6 +95,9 @@ namespace TestGraphQuery
 		private bool							m_barycentricsDirty = true;
 		private StructuredBuffer<float>			m_SB_HeatBarycentrics = null;
 
+		private bool							m_sumDirty = true;
+		private StructuredBuffer<float>			m_SB_HeatSum = null;
+
 		// Text display
 		private int[]							m_char2Index = new int[512];
 		private Rectangle[]						m_fontRectangles = null;
@@ -225,6 +228,7 @@ namespace TestGraphQuery
 			m_SB_HeatTarget = new StructuredBuffer<float>( m_device, elementsCount, true );
 
 			m_SB_HeatBarycentrics = new StructuredBuffer<float>( m_device, elementsCount, true );
+			m_SB_HeatSum = new StructuredBuffer<float>( m_device, m_nodesCount, true );
 
 			// Setup initial CB
 			m_CB_Main.m._nodesCount = m_nodesCount;
@@ -254,32 +258,12 @@ namespace TestGraphQuery
 			m_CB_Main.m._sourceIndex = (uint) integerTrackbarControlShowQuerySourceIndex.Value;
 			m_CB_Main.m._renderFlags = 0U;
 			m_CB_Main.m._renderFlags |= radioButtonShowBarycentrics.Checked ? 0x1U : 0U;
-			m_CB_Main.m._renderFlags |= radioButtonShowResults.Checked ? 0x2U : 0U;
+			m_CB_Main.m._renderFlags |= radioButtonShowResultsBarycentric.Checked ? 0x2U : 0U;
+			m_CB_Main.m._renderFlags |= radioButtonShowResultsSum.Checked ? 0x4U : 0U;
 			m_CB_Main.m._renderFlags |= checkBoxShowLog.Checked ? 0x10U : 0U;
 			m_CB_Main.m._barycentricDistanceTolerance = floatTrackbarControlResultsTolerance.Value;
 			m_CB_Main.m._barycentricBias = floatTrackbarControlBarycentricBias.Value;
 			m_CB_Main.UpdateData();
-
-// 			Point	clientPos = panelOutput.PointToClient( Control.MousePosition );
-// 			m_CB_Main.m.mousePosition.Set( GRAPH_SIZE * (float) clientPos.X / panelOutput.Width, GRAPH_SIZE * (float) clientPos.Y / panelOutput.Height );
-// 			m_CB_Main.m.mouseButtons = (uint) ((((Control.MouseButtons & MouseButtons.Left) != 0) ? 1 : 0)
-// //											| (((Control.MouseButtons & MouseButtons.Middle) != 0) ? 2 : 0)
-// 											| (m_plotSource ? 2 : 0)
-// 											| (((Control.MouseButtons & MouseButtons.Right) != 0) ? 4 : 0)
-// 											| (Control.ModifierKeys == Keys.Shift ? 8 : 0));
-// 			m_CB_Main.m.diffusionCoefficient = floatTrackbarControlDiffusionCoefficient.Value;
-// 			m_CB_Main.m.flags = (uint) (
-// 									  (checkBoxShowSearch.Checked ? 1 : 0)
-// 
-// 									  // 2 bits to select 4 display modes
-// 									| (radioButtonShowNormalizedSpace.Checked ? 2 : 0)
-// 									| (radioButtonShowResultsSpace.Checked ? 4 : 0)
-// 
-// 									| (checkBoxShowLog.Checked ? 8 : 0)
-// 								);
-// 			m_CB_Main.m.sourceIndex = (uint) integerTrackbarControlSimulationSourceIndex.Value;
-// 			m_CB_Main.m.sourcesCount = (uint) m_simulationHotSpots.Count;
-// 			m_CB_Main.m.resultsConfinementDistance = floatTrackbarControlResultsSpaceConfinement.Value;
 
 
 			//////////////////////////////////////////////////////////////////////////
@@ -307,6 +291,7 @@ namespace TestGraphQuery
 				m_SB_HeatSource = temp;
 
 				m_barycentricsDirty = true;
+				m_sumDirty = true;
 			}
 
 
@@ -325,8 +310,11 @@ namespace TestGraphQuery
 			} else if ( radioButtonShowBarycentrics.Checked ) {
 				GetBarycentricsBuffer().SetInput( 4 );
 				m_tex_FalseColors1.Set( 5 );
-			} else if ( radioButtonShowResults.Checked ) {
+			} else if ( radioButtonShowResultsBarycentric.Checked ) {
 				GetBarycentricsBuffer().SetInput( 4 );
+			} else if ( radioButtonShowResultsSum.Checked ) {
+				GetSumBuffer().SetInput( 4 );
+				m_tex_FalseColors0.Set( 5 );
 			}
 
 			if ( m_shader_RenderGraphLink.Use() ) {
@@ -452,6 +440,38 @@ namespace TestGraphQuery
 			return m_SB_HeatBarycentrics;
 		}
 
+		StructuredBuffer<float>			GetSumBuffer() {
+			if ( !m_sumDirty || m_queryNodes.Length < 2 )
+				return m_SB_HeatSum;
+
+			// Read back simulation & accumulate into each node
+			m_SB_HeatSource.Read();
+
+			// Build a matrix of mutual heat values for each simulation at the position of each source
+			int		sourcesCount = m_queryNodes.Length;
+			float	maxHeat = 0.0f;
+			for ( int nodeIndex=0; nodeIndex < m_nodesCount; nodeIndex++ ) {
+				float	sumHeat = 0.0f;
+				for ( int sourceIndex=0; sourceIndex < sourcesCount; sourceIndex++ )
+					sumHeat += m_SB_HeatSource.m[m_nodesCount * sourceIndex + nodeIndex];
+
+				m_SB_HeatSum.m[nodeIndex] = sumHeat;
+				maxHeat = Mathf.Max( maxHeat, sumHeat );
+			}
+
+			// Normalize
+			for ( int nodeIndex=0; nodeIndex < m_nodesCount; nodeIndex++ ) {
+				m_SB_HeatSum.m[nodeIndex] = m_SB_HeatSum.m[nodeIndex] / maxHeat;
+			}
+
+			// Write results
+			m_SB_HeatSum.Write();
+
+			m_sumDirty = false;
+
+			return m_SB_HeatSum;
+		}
+
 		#endregion
 
 		#region Junk
@@ -468,6 +488,7 @@ namespace TestGraphQuery
 				m_tex_FontAtlas.Dispose();
 				m_SB_Text.Dispose();
 
+				m_SB_HeatSum.Dispose();
 				m_SB_HeatBarycentrics.Dispose();
 				m_SB_HeatTarget.Dispose();
 				m_SB_HeatSource.Dispose();
@@ -565,6 +586,7 @@ namespace TestGraphQuery
 			Array.Clear( m_SB_HeatSource.m, 0, m_SB_HeatSource.m.Length );
 			m_SB_HeatSource.Write();
 			m_barycentricsDirty = true;
+			m_sumDirty = true;
 		}
 
 		float[]	m_resultScores = new float[0];
@@ -578,26 +600,38 @@ namespace TestGraphQuery
 			}
 
 			// Compute barycentrics needed for results
-			GetBarycentricsBuffer().Read();
+			if ( radioButtonShowResultsBarycentric.Checked ) {
+				GetBarycentricsBuffer().Read();
 
-			// Compute node scores
-			float	bias = floatTrackbarControlBarycentricBias.Value;
-			int		biasSourceTarget = integerTrackbarControlShowQuerySourceIndex.Value;
+				// Compute node scores
+				float	bias = floatTrackbarControlBarycentricBias.Value;
+				int		biasSourceTarget = integerTrackbarControlShowQuerySourceIndex.Value;
 
-			float	isoBarycentricCenter0 = (1.0f - bias) / (sourcesCount - bias);	// The ideal center is a vector with all components equal to this value
-			float	isoBarycentricCenter1 = Mathf.Lerp( isoBarycentricCenter0, 1.0f, bias );
+				float	isoBarycentricCenter0 = (1.0f - bias) / (sourcesCount - bias);	// The ideal center is a vector with all components equal to this value
+				float	isoBarycentricCenter1 = Mathf.Lerp( isoBarycentricCenter0, 1.0f, bias );
 
-			m_resultScores = new float[m_nodesCount];
-			m_resultNodeIndices = new int[m_nodesCount];
-			for ( int nodeIndex=0; nodeIndex < m_nodesCount; nodeIndex++ ) {
-				float	sqDistance = 0.0f;
-				for ( int sourceIndex=0; sourceIndex < sourcesCount; sourceIndex++ ) {
-					float	barycentric = m_SB_HeatBarycentrics.m[m_nodesCount * sourceIndex + nodeIndex];
-					float	delta = barycentric - (sourceIndex == biasSourceTarget ? isoBarycentricCenter1 : isoBarycentricCenter0);
-					sqDistance += delta * delta;
+				m_resultScores = new float[m_nodesCount];
+				m_resultNodeIndices = new int[m_nodesCount];
+				for ( int nodeIndex=0; nodeIndex < m_nodesCount; nodeIndex++ ) {
+					float	sqDistance = 0.0f;
+					for ( int sourceIndex=0; sourceIndex < sourcesCount; sourceIndex++ ) {
+						float	barycentric = m_SB_HeatBarycentrics.m[m_nodesCount * sourceIndex + nodeIndex];
+						float	delta = barycentric - (sourceIndex == biasSourceTarget ? isoBarycentricCenter1 : isoBarycentricCenter0);
+						sqDistance += delta * delta;
+					}
+					m_resultScores[nodeIndex] = Mathf.Sqrt( sqDistance );
+					m_resultNodeIndices[nodeIndex] = nodeIndex;
 				}
-				m_resultScores[nodeIndex] = Mathf.Sqrt( sqDistance );
-				m_resultNodeIndices[nodeIndex] = nodeIndex;
+			} else {
+				GetSumBuffer().Read();
+
+				// Compute node scores
+				m_resultScores = new float[m_nodesCount];
+				m_resultNodeIndices = new int[m_nodesCount];
+				for ( int nodeIndex=0; nodeIndex < m_nodesCount; nodeIndex++ ) {
+					m_resultScores[nodeIndex] = 1.0f - m_SB_HeatSum.m[nodeIndex];	// Lowest scores are better!
+					m_resultNodeIndices[nodeIndex] = nodeIndex;
+				}
 			}
 
 			// Dump results
@@ -674,6 +708,11 @@ namespace TestGraphQuery
 					m_displayText += "( ";
 					m_displayText += (selectedNeuron.m_value as ProtoParser.NeuronValue).m_valueMean != null ? (selectedNeuron.m_value as ProtoParser.NeuronValue).m_valueMean : "<null>";
 					m_displayText += " )";
+				}
+
+				if ( radioButtonShowResultsSum.Checked ) {
+					float	heatSum = GetSumBuffer().m[m_neuron2ID[selectedNeuron]];
+					m_displayText += " = " + heatSum.ToString( "G4" );
 				}
 
 				m_selectedNodePosition = nodePosition;
@@ -808,12 +847,13 @@ namespace TestGraphQuery
 					for ( int i=0; i < queries.Length; i++ ) {
 						string	query = queries[i].Trim();
 						if ( query.StartsWith( "\"" ) ) {
-							query = query.Remove( 0, 1 );
+//							query = query.Remove( 0, 1 );	// Remove "
 							while ( !query.EndsWith( "\"" ) && i < queries.Length-1 ) {
 								query += " " + queries[++i];
+								query = query.Trim();
 							}
-							if ( query.Length > 0 )
-								query = query.Remove( query.Length-1, 1 );
+// 							if ( query.Length > 0 )
+// 								query = query.Remove( query.Length-1, 1 );	// Remove last "
 						}
 
 						try {

@@ -36,7 +36,7 @@
 			this.label4 = new System.Windows.Forms.Label();
 			this.label1 = new System.Windows.Forms.Label();
 			this.integerTrackbarControlShowQuerySourceIndex = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
-			this.radioButtonShowResults = new System.Windows.Forms.RadioButton();
+			this.radioButtonShowResultsBarycentric = new System.Windows.Forms.RadioButton();
 			this.radioButtonShowBarycentrics = new System.Windows.Forms.RadioButton();
 			this.radioButtonShowTemperature = new System.Windows.Forms.RadioButton();
 			this.floatTrackbarControlBarycentricBias = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
@@ -48,8 +48,9 @@
 			this.textBoxSearchResults = new System.Windows.Forms.TextBox();
 			this.integerTrackbarControlSignificantResultsCount = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
 			this.groupBoxSelection = new System.Windows.Forms.GroupBox();
-			this.textBoxSelection = new System.Windows.Forms.TextBox();
 			this.textBoxProcessedSelection = new System.Windows.Forms.TextBox();
+			this.textBoxSelection = new System.Windows.Forms.TextBox();
+			this.radioButtonShowResultsSum = new System.Windows.Forms.RadioButton();
 			this.groupBox1.SuspendLayout();
 			this.groupBox2.SuspendLayout();
 			this.groupBox3.SuspendLayout();
@@ -188,7 +189,8 @@
 			this.groupBox1.Controls.Add(this.label4);
 			this.groupBox1.Controls.Add(this.label1);
 			this.groupBox1.Controls.Add(this.integerTrackbarControlShowQuerySourceIndex);
-			this.groupBox1.Controls.Add(this.radioButtonShowResults);
+			this.groupBox1.Controls.Add(this.radioButtonShowResultsSum);
+			this.groupBox1.Controls.Add(this.radioButtonShowResultsBarycentric);
 			this.groupBox1.Controls.Add(this.radioButtonShowBarycentrics);
 			this.groupBox1.Controls.Add(this.radioButtonShowTemperature);
 			this.groupBox1.Controls.Add(this.checkBoxRun);
@@ -261,15 +263,15 @@
 			this.integerTrackbarControlShowQuerySourceIndex.Value = 0;
 			this.integerTrackbarControlShowQuerySourceIndex.VisibleRangeMax = 1;
 			// 
-			// radioButtonShowResults
+			// radioButtonShowResultsBarycentric
 			// 
-			this.radioButtonShowResults.AutoSize = true;
-			this.radioButtonShowResults.Location = new System.Drawing.Point(199, 69);
-			this.radioButtonShowResults.Name = "radioButtonShowResults";
-			this.radioButtonShowResults.Size = new System.Drawing.Size(60, 17);
-			this.radioButtonShowResults.TabIndex = 18;
-			this.radioButtonShowResults.Text = "Results";
-			this.radioButtonShowResults.UseVisualStyleBackColor = true;
+			this.radioButtonShowResultsBarycentric.AutoSize = true;
+			this.radioButtonShowResultsBarycentric.Location = new System.Drawing.Point(199, 69);
+			this.radioButtonShowResultsBarycentric.Name = "radioButtonShowResultsBarycentric";
+			this.radioButtonShowResultsBarycentric.Size = new System.Drawing.Size(89, 17);
+			this.radioButtonShowResultsBarycentric.TabIndex = 18;
+			this.radioButtonShowResultsBarycentric.Text = "Results (bary)";
+			this.radioButtonShowResultsBarycentric.UseVisualStyleBackColor = true;
 			// 
 			// radioButtonShowBarycentrics
 			// 
@@ -394,7 +396,6 @@
 			this.integerTrackbarControlSignificantResultsCount.Size = new System.Drawing.Size(200, 20);
 			this.integerTrackbarControlSignificantResultsCount.TabIndex = 22;
 			this.integerTrackbarControlSignificantResultsCount.Value = 50;
-			this.integerTrackbarControlSignificantResultsCount.VisibleRangeMax = 100;
 			this.integerTrackbarControlSignificantResultsCount.VisibleRangeMin = 1;
 			// 
 			// groupBoxSelection
@@ -407,6 +408,19 @@
 			this.groupBoxSelection.TabIndex = 26;
 			this.groupBoxSelection.TabStop = false;
 			this.groupBoxSelection.Text = "Selection";
+			// 
+			// textBoxProcessedSelection
+			// 
+			this.textBoxProcessedSelection.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+			this.textBoxProcessedSelection.Location = new System.Drawing.Point(6, 112);
+			this.textBoxProcessedSelection.Multiline = true;
+			this.textBoxProcessedSelection.Name = "textBoxProcessedSelection";
+			this.textBoxProcessedSelection.ReadOnly = true;
+			this.textBoxProcessedSelection.ScrollBars = System.Windows.Forms.ScrollBars.Both;
+			this.textBoxProcessedSelection.Size = new System.Drawing.Size(233, 59);
+			this.textBoxProcessedSelection.TabIndex = 23;
+			this.textBoxProcessedSelection.WordWrap = false;
 			// 
 			// textBoxSelection
 			// 
@@ -421,18 +435,15 @@
 			this.textBoxSelection.WordWrap = false;
 			this.textBoxSelection.TextChanged += new System.EventHandler(this.textBoxSelection_TextChanged);
 			// 
-			// textBoxProcessedSelection
+			// radioButtonShowResultsSum
 			// 
-			this.textBoxProcessedSelection.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-			this.textBoxProcessedSelection.Location = new System.Drawing.Point(6, 112);
-			this.textBoxProcessedSelection.Multiline = true;
-			this.textBoxProcessedSelection.Name = "textBoxProcessedSelection";
-			this.textBoxProcessedSelection.ReadOnly = true;
-			this.textBoxProcessedSelection.ScrollBars = System.Windows.Forms.ScrollBars.Both;
-			this.textBoxProcessedSelection.Size = new System.Drawing.Size(233, 59);
-			this.textBoxProcessedSelection.TabIndex = 23;
-			this.textBoxProcessedSelection.WordWrap = false;
+			this.radioButtonShowResultsSum.AutoSize = true;
+			this.radioButtonShowResultsSum.Location = new System.Drawing.Point(49, 139);
+			this.radioButtonShowResultsSum.Name = "radioButtonShowResultsSum";
+			this.radioButtonShowResultsSum.Size = new System.Drawing.Size(88, 17);
+			this.radioButtonShowResultsSum.TabIndex = 18;
+			this.radioButtonShowResultsSum.Text = "Results (sum)";
+			this.radioButtonShowResultsSum.UseVisualStyleBackColor = true;
 			// 
 			// GraphForm
 			// 
@@ -452,7 +463,7 @@
 			this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedToolWindow;
 			this.Name = "GraphForm";
 			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-			this.Text = "Graph Viz Test";
+			this.Text = "Graph Query Test";
 			this.groupBox1.ResumeLayout(false);
 			this.groupBox1.PerformLayout();
 			this.groupBox2.ResumeLayout(false);
@@ -490,7 +501,7 @@
 		private System.Windows.Forms.RadioButton radioButtonShowTemperature;
 		private System.Windows.Forms.Label label1;
 		private System.Windows.Forms.RadioButton radioButtonShowBarycentrics;
-		private System.Windows.Forms.RadioButton radioButtonShowResults;
+		private System.Windows.Forms.RadioButton radioButtonShowResultsBarycentric;
 		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlShowQuerySourceIndex;
 		private System.Windows.Forms.Label label3;
 		private System.Windows.Forms.TextBox textBoxSearchResults;
@@ -502,5 +513,6 @@
 		private System.Windows.Forms.GroupBox groupBoxSelection;
 		private System.Windows.Forms.TextBox textBoxProcessedSelection;
 		private System.Windows.Forms.TextBox textBoxSelection;
+		private System.Windows.Forms.RadioButton radioButtonShowResultsSum;
 	}
 }
