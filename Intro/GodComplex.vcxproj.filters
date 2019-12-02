@@ -1,0 +1,637 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Utility">
+      <UniqueIdentifier>{68db7d10-c91a-4bcc-a3c5-ce181262c974}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Intro">
+      <UniqueIdentifier>{7a0d4010-3453-4695-a62d-28dc46bef3a7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RendererD3D11">
+      <UniqueIdentifier>{9721decf-4fb2-417b-9c8f-ae752d0bf0e7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RendererD3D11\Components">
+      <UniqueIdentifier>{387979a7-ddf8-4f82-82cd-6eb14b027d81}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RendererD3D11\Structures">
+      <UniqueIdentifier>{2b646260-af2c-4547-98f4-fceabeac274c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Sound">
+      <UniqueIdentifier>{9d107aef-9380-4f67-86aa-1bbcc0e5831d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resources">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Resources\Shaders">
+      <UniqueIdentifier>{3f888d10-b9f0-4ea0-aece-23707df9271e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resources\Shaders\DEBUG">
+      <UniqueIdentifier>{fdebb790-3c07-4114-8db4-2451b446b9df}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resources\Shaders\DEBUG\Includes">
+      <UniqueIdentifier>{3b094a8f-5111-4c23-96db-882790fa8599}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resources\Shaders\RELEASE %28Minified%29">
+      <UniqueIdentifier>{86af87dc-e57b-4c1f-a261-0322b332bd58}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resources\Shaders\RELEASE %28Minified%29\Includes">
+      <UniqueIdentifier>{8011b303-e883-47d4-b7c9-da0baafa5f93}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Procedural">
+      <UniqueIdentifier>{eeae6a5b-f4c7-4414-ba3c-c26c8ecd6474}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Procedural\2D">
+      <UniqueIdentifier>{facb27c7-6ee9-47ad-991c-25c5b0f79bbf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Procedural\2D\DrawUtils">
+      <UniqueIdentifier>{2061da43-c27f-4242-881f-975864950a0d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Procedural\2D\Filters">
+      <UniqueIdentifier>{039a5b8b-67b2-4767-b12e-d42053849818}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Procedural\2D\Generators">
+      <UniqueIdentifier>{b92acf28-60c0-4b5b-b8fd-a42c0f57b152}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Procedural\3D">
+      <UniqueIdentifier>{487e73e2-1719-4838-bad3-94def321907f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Intro\Effects">
+      <UniqueIdentifier>{821ccdea-1a47-4c1a-9260-631f4e6fde0c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resources\Shaders\DEBUG\EffectTranslucency">
+      <UniqueIdentifier>{ec3741a5-fc8f-4ceb-aed7-932619453652}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resources\Shaders\DEBUG\EffectRoom">
+      <UniqueIdentifier>{3994ffd7-88e3-4ed0-9553-c919a2b06f67}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resources\Shaders\DEBUG\EffectParticles">
+      <UniqueIdentifier>{66bf50ff-cb5b-4b26-ab07-09e9871a9ec0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resources\Shaders\DEBUG\EffectDeferred">
+      <UniqueIdentifier>{dab91c5c-566c-4058-82b5-53ea025b8baa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resources\Shaders\DEBUG\EffectScene">
+      <UniqueIdentifier>{a260f0eb-7b88-4977-82f3-51abec10de2d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Intro\Effects\Scene">
+      <UniqueIdentifier>{01860707-0530-4e35-b653-3844c1e8a4e2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Intro\Effects\Workshop">
+      <UniqueIdentifier>{474e4644-248d-4e55-98c5-e0fe1774da11}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resources\Shaders\DEBUG\EffectVolumetric">
+      <UniqueIdentifier>{b121d7c4-8b68-4d49-b700-72f13635b10d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resources\Scenes">
+      <UniqueIdentifier>{c5f2e7cf-2e26-49b3-856d-9a0695314a4a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Scene">
+      <UniqueIdentifier>{18000ebb-22e1-4262-89f3-dc51809cca32}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resources\Shaders\DEBUG\EffectGlobalIllum">
+      <UniqueIdentifier>{57c485d7-9d7a-4368-bb16-7e6fa4884255}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resources\Shaders\DEBUG\DOF">
+      <UniqueIdentifier>{a26e2882-98ff-4d2e-bd83-119f880aaa7a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Utility\SHProbeEncoder">
+      <UniqueIdentifier>{2cd413f0-9627-41d9-8229-625f406f123f}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Utility\Events.h">
+      <Filter>Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="Intro\Intro.h">
+      <Filter>Intro</Filter>
+    </ClInclude>
+    <ClInclude Include="GodComplex.h" />
+    <ClInclude Include="RendererD3D11\Device.h">
+      <Filter>RendererD3D11</Filter>
+    </ClInclude>
+    <ClInclude Include="RendererD3D11\Renderer.h">
+      <Filter>RendererD3D11</Filter>
+    </ClInclude>
+    <ClInclude Include="RendererD3D11\Components\Component.h">
+      <Filter>RendererD3D11\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="RendererD3D11\Components\ConstantBuffer.h">
+      <Filter>RendererD3D11\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="RendererD3D11\Components\Primitive.h">
+      <Filter>RendererD3D11\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="RendererD3D11\Components\Texture2D.h">
+      <Filter>RendererD3D11\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="RendererD3D11\Components\Texture3D.h">
+      <Filter>RendererD3D11\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="RendererD3D11\Structures\PixelFormats.h">
+      <Filter>RendererD3D11\Structures</Filter>
+    </ClInclude>
+    <ClInclude Include="RendererD3D11\Structures\VertexFormats.h">
+      <Filter>RendererD3D11\Structures</Filter>
+    </ClInclude>
+    <ClInclude Include="Utility\Memory.h">
+      <Filter>Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="Sound\libv2.h">
+      <Filter>Sound</Filter>
+    </ClInclude>
+    <ClInclude Include="Sound\v2mplayer.h">
+      <Filter>Sound</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="Utility\Resources.h">
+      <Filter>Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="RendererD3D11\Structures\DepthStencilFormats.h">
+      <Filter>RendererD3D11\Structures</Filter>
+    </ClInclude>
+    <ClInclude Include="RendererD3D11\Structures\FormatDescriptor.h">
+      <Filter>RendererD3D11\Structures</Filter>
+    </ClInclude>
+    <ClInclude Include="RendererD3D11\Components\States.h">
+      <Filter>RendererD3D11\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Intro\ConstantBuffers.h">
+      <Filter>Intro</Filter>
+    </ClInclude>
+    <ClInclude Include="Procedural\DrawUtils\Draw.h">
+      <Filter>Procedural\2D\DrawUtils</Filter>
+    </ClInclude>
+    <ClInclude Include="Procedural\Generators\Noise.h">
+      <Filter>Procedural\2D\Generators</Filter>
+    </ClInclude>
+    <ClInclude Include="Procedural\Filters\Filters.h">
+      <Filter>Procedural\2D\Filters</Filter>
+    </ClInclude>
+    <ClInclude Include="Procedural\Generators\Generators.h">
+      <Filter>Procedural\2D\Generators</Filter>
+    </ClInclude>
+    <ClInclude Include="Procedural\TextureBuilder.h">
+      <Filter>Procedural\2D</Filter>
+    </ClInclude>
+    <ClInclude Include="Procedural\GeometryBuilder.h">
+      <Filter>Procedural\3D</Filter>
+    </ClInclude>
+    <ClInclude Include="Utility\Camera.h">
+      <Filter>Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="Intro\Effects\EffectTranslucency.h">
+      <Filter>Intro\Effects</Filter>
+    </ClInclude>
+    <ClInclude Include="Procedural\RayTracer.h">
+      <Filter>Procedural\3D</Filter>
+    </ClInclude>
+    <ClInclude Include="Intro\Effects\EffectRoom.h">
+      <Filter>Intro\Effects</Filter>
+    </ClInclude>
+    <ClInclude Include="ErrorCodes.h" />
+    <ClInclude Include="RendererD3D11\Components\ComputeShader.h">
+      <Filter>RendererD3D11\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Procedural\FatPixel.h">
+      <Filter>Procedural\2D</Filter>
+    </ClInclude>
+    <ClInclude Include="Utility\Video.h">
+      <Filter>Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="Intro\Effects\EffectParticles.h">
+      <Filter>Intro\Effects\Workshop</Filter>
+    </ClInclude>
+    <ClInclude Include="Intro\Effects\EffectDeferred.h">
+      <Filter>Intro\Effects\Workshop</Filter>
+    </ClInclude>
+    <ClInclude Include="Intro\Effects\Scene\EffectScene.h">
+      <Filter>Intro\Effects\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Intro\Effects\Scene\Scene.h">
+      <Filter>Intro\Effects\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Intro\Effects\Scene\MaterialBank.h">
+      <Filter>Intro\Effects\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Intro\Effects\EffectVolumetric.h">
+      <Filter>Intro\Effects</Filter>
+    </ClInclude>
+    <ClInclude Include="Utility\MemoryMappedFile.h">
+      <Filter>Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="RendererD3D11\Components\StructuredBuffer.h">
+      <Filter>RendererD3D11\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Utility\Profiling.h">
+      <Filter>Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="Utility\FPSCamera.h">
+      <Filter>Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="Intro\Effects\EffectGlobalIllum.h">
+      <Filter>Intro\Effects</Filter>
+    </ClInclude>
+    <ClInclude Include="Scene\Scene.h">
+      <Filter>Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Utility\TextureFilePOM.h">
+      <Filter>Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="Intro\Effects\EffectGlobalIllum2.h">
+      <Filter>Intro\Effects</Filter>
+    </ClInclude>
+    <ClInclude Include="Intro\Effects\EffectDOF.h">
+      <Filter>Intro\Effects</Filter>
+    </ClInclude>
+    <ClInclude Include="Utility\Octree.h">
+      <Filter>Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="Utility\SHProbeEncoder\SHProbeEncoder.h">
+      <Filter>Utility\SHProbeEncoder</Filter>
+    </ClInclude>
+    <ClInclude Include="Utility\SHProbeEncoder\SHProbeNetwork.h">
+      <Filter>Utility\SHProbeEncoder</Filter>
+    </ClInclude>
+    <ClInclude Include="Utility\SHProbeEncoder\SHProbeEncoderFloodFill.h">
+      <Filter>Utility\SHProbeEncoder</Filter>
+    </ClInclude>
+    <ClInclude Include="Utility\SHProbeEncoder\SHProbe.h">
+      <Filter>Utility\SHProbeEncoder</Filter>
+    </ClInclude>
+    <ClInclude Include="RendererD3D11\Components\Shader.h">
+      <Filter>RendererD3D11\Components</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="GodComplex.cpp" />
+    <ClCompile Include="Intro\Intro.cpp">
+      <Filter>Intro</Filter>
+    </ClCompile>
+    <ClCompile Include="RendererD3D11\Device.cpp">
+      <Filter>RendererD3D11</Filter>
+    </ClCompile>
+    <ClCompile Include="RendererD3D11\Components\Component.cpp">
+      <Filter>RendererD3D11\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="RendererD3D11\Components\ConstantBuffer.cpp">
+      <Filter>RendererD3D11\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="RendererD3D11\Components\Primitive.cpp">
+      <Filter>RendererD3D11\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="RendererD3D11\Components\Texture2D.cpp">
+      <Filter>RendererD3D11\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="RendererD3D11\Components\Texture3D.cpp">
+      <Filter>RendererD3D11\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="RendererD3D11\Structures\PixelFormats.cpp">
+      <Filter>RendererD3D11\Structures</Filter>
+    </ClCompile>
+    <ClCompile Include="RendererD3D11\Structures\VertexFormats.cpp">
+      <Filter>RendererD3D11\Structures</Filter>
+    </ClCompile>
+    <ClCompile Include="Utility\Memory.cpp">
+      <Filter>Utility</Filter>
+    </ClCompile>
+    <ClCompile Include="Sound\v2mplayer.cpp">
+      <Filter>Sound</Filter>
+    </ClCompile>
+    <ClCompile Include="Utility\Resources.cpp">
+      <Filter>Utility</Filter>
+    </ClCompile>
+    <ClCompile Include="RendererD3D11\Structures\DepthStencilFormats.cpp">
+      <Filter>RendererD3D11\Structures</Filter>
+    </ClCompile>
+    <ClCompile Include="RendererD3D11\Components\States.cpp">
+      <Filter>RendererD3D11\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="Procedural\DrawUtils\Draw.cpp">
+      <Filter>Procedural\2D\DrawUtils</Filter>
+    </ClCompile>
+    <ClCompile Include="Procedural\Generators\Noise.cpp">
+      <Filter>Procedural\2D\Generators</Filter>
+    </ClCompile>
+    <ClCompile Include="Procedural\Filters\Filters.cpp">
+      <Filter>Procedural\2D\Filters</Filter>
+    </ClCompile>
+    <ClCompile Include="Procedural\Generators\Generators.cpp">
+      <Filter>Procedural\2D\Generators</Filter>
+    </ClCompile>
+    <ClCompile Include="Procedural\TextureBuilder.cpp">
+      <Filter>Procedural\2D</Filter>
+    </ClCompile>
+    <ClCompile Include="Procedural\GeometryBuilder.cpp">
+      <Filter>Procedural\3D</Filter>
+    </ClCompile>
+    <ClCompile Include="Utility\Camera.cpp">
+      <Filter>Utility</Filter>
+    </ClCompile>
+    <ClCompile Include="Intro\Build2DTextures.cpp">
+      <Filter>Intro</Filter>
+    </ClCompile>
+    <ClCompile Include="Intro\Effects\EffectTranslucency.cpp">
+      <Filter>Intro\Effects</Filter>
+    </ClCompile>
+    <ClCompile Include="Intro\Build3DTextures.cpp">
+      <Filter>Intro</Filter>
+    </ClCompile>
+    <ClCompile Include="Procedural\RayTracer.cpp">
+      <Filter>Procedural\3D</Filter>
+    </ClCompile>
+    <ClCompile Include="Intro\Effects\EffectRoom.cpp">
+      <Filter>Intro\Effects</Filter>
+    </ClCompile>
+    <ClCompile Include="RendererD3D11\Components\ComputeShader.cpp">
+      <Filter>RendererD3D11\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="Utility\Video.cpp">
+      <Filter>Utility</Filter>
+    </ClCompile>
+    <ClCompile Include="Intro\Effects\EffectDeferred.cpp">
+      <Filter>Intro\Effects\Workshop</Filter>
+    </ClCompile>
+    <ClCompile Include="Intro\Effects\EffectParticles.cpp">
+      <Filter>Intro\Effects\Workshop</Filter>
+    </ClCompile>
+    <ClCompile Include="Intro\Effects\Scene\EffectScene.cpp">
+      <Filter>Intro\Effects\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="Intro\Effects\Scene\Scene.cpp">
+      <Filter>Intro\Effects\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="Intro\IntroWorkshop.cpp">
+      <Filter>Intro</Filter>
+    </ClCompile>
+    <ClCompile Include="Intro\Effects\Scene\MaterialBank.cpp">
+      <Filter>Intro\Effects\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="Intro\Effects\EffectVolumetric.cpp">
+      <Filter>Intro\Effects</Filter>
+    </ClCompile>
+    <ClCompile Include="Utility\MemoryMappedFile.cpp">
+      <Filter>Utility</Filter>
+    </ClCompile>
+    <ClCompile Include="RendererD3D11\Components\StructuredBuffer.cpp">
+      <Filter>RendererD3D11\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="Utility\Profiling.cpp">
+      <Filter>Utility</Filter>
+    </ClCompile>
+    <ClCompile Include="Utility\FPSCamera.cpp">
+      <Filter>Utility</Filter>
+    </ClCompile>
+    <ClCompile Include="Intro\Effects\EffectVolumetricComputeSkyTables.cpp">
+      <Filter>Intro\Effects</Filter>
+    </ClCompile>
+    <ClCompile Include="Intro\Effects\EffectVolumetricComputeSkyTablesCS.cpp">
+      <Filter>Intro\Effects</Filter>
+    </ClCompile>
+    <ClCompile Include="Intro\Effects\EffectVolumetricComputeSkyTablesPS.cpp">
+      <Filter>Intro\Effects</Filter>
+    </ClCompile>
+    <ClCompile Include="Intro\Effects\EffectGlobalIllum.cpp">
+      <Filter>Intro\Effects</Filter>
+    </ClCompile>
+    <ClCompile Include="Scene\Scene.cpp">
+      <Filter>Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="Utility\TextureFilePOM.cpp">
+      <Filter>Utility</Filter>
+    </ClCompile>
+    <ClCompile Include="Intro\Effects\EffectGlobalIllum2.cpp">
+      <Filter>Intro\Effects</Filter>
+    </ClCompile>
+    <ClCompile Include="Intro\Effects\EffectDOF.cpp">
+      <Filter>Intro\Effects</Filter>
+    </ClCompile>
+    <ClCompile Include="Utility\SHProbeEncoder\SHProbeEncoder.cpp">
+      <Filter>Utility\SHProbeEncoder</Filter>
+    </ClCompile>
+    <ClCompile Include="Utility\SHProbeEncoder\SHProbeNetwork.cpp">
+      <Filter>Utility\SHProbeEncoder</Filter>
+    </ClCompile>
+    <ClCompile Include="Utility\SHProbeEncoder\SHProbeEncoderFloodFill.cpp">
+      <Filter>Utility\SHProbeEncoder</Filter>
+    </ClCompile>
+    <ClCompile Include="Utility\SHProbeEncoder\SHProbe.cpp">
+      <Filter>Utility\SHProbeEncoder</Filter>
+    </ClCompile>
+    <ClCompile Include="RendererD3D11\Components\Shader.cpp">
+      <Filter>RendererD3D11\Components</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="Sound\libv2.lib">
+      <Filter>Sound</Filter>
+    </Library>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\pzero_new.v2m">
+      <Filter>Resources</Filter>
+    </None>
+    <None Include="Resources\Shaders\PostFinal.hlsl">
+      <Filter>Resources\Shaders\DEBUG</Filter>
+    </None>
+    <None Include="Resources\Shaders\Inc\Global.hlsl">
+      <Filter>Resources\Shaders\DEBUG\Includes</Filter>
+    </None>
+    <None Include="LogExeSizes.txt" />
+    <None Include="Tools\GodComplex.kkm" />
+    <None Include="Resources\Shaders\TranslucencyBuildZBuffer.hlsl">
+      <Filter>Resources\Shaders\DEBUG\EffectTranslucency</Filter>
+    </None>
+    <None Include="Resources\Shaders\TranslucencyDiffusion.hlsl">
+      <Filter>Resources\Shaders\DEBUG\EffectTranslucency</Filter>
+    </None>
+    <None Include="Resources\Shaders\TranslucencyDisplay.hlsl">
+      <Filter>Resources\Shaders\DEBUG\EffectTranslucency</Filter>
+    </None>
+    <None Include="Notes.txt" />
+    <None Include="Resources\Shaders\RoomDisplay.hlsl">
+      <Filter>Resources\Shaders\DEBUG\EffectRoom</Filter>
+    </None>
+    <None Include="Resources\Shaders\RoomTesselation.hlsl">
+      <Filter>Resources\Shaders\DEBUG\EffectRoom</Filter>
+    </None>
+    <None Include="Resources\Shaders\RoomTestCompute.hlsl">
+      <Filter>Resources\Shaders\DEBUG\EffectRoom</Filter>
+    </None>
+    <None Include="Resources\Shaders\RoomBuildLightMap.hlsl">
+      <Filter>Resources\Shaders\DEBUG\EffectRoom</Filter>
+    </None>
+    <None Include="Resources\Shaders\Inc\RayTracing.hlsl">
+      <Filter>Resources\Shaders\DEBUG\Includes</Filter>
+    </None>
+    <None Include="Resources\Shaders\ParticlesCompute.hlsl">
+      <Filter>Resources\Shaders\DEBUG\EffectParticles</Filter>
+    </None>
+    <None Include="Resources\Shaders\ParticlesDisplay.hlsl">
+      <Filter>Resources\Shaders\DEBUG\EffectParticles</Filter>
+    </None>
+    <None Include="Resources\Shaders\DeferredFillGBuffer.hlsl">
+      <Filter>Resources\Shaders\DEBUG\EffectDeferred</Filter>
+    </None>
+    <None Include="Resources\Shaders\SceneFillGBuffer.hlsl">
+      <Filter>Resources\Shaders\DEBUG\EffectScene</Filter>
+    </None>
+    <None Include="Resources\Shaders\SceneDepthPass.hlsl">
+      <Filter>Resources\Shaders\DEBUG\EffectScene</Filter>
+    </None>
+    <None Include="Resources\Shaders\SceneShading.hlsl">
+      <Filter>Resources\Shaders\DEBUG\EffectScene</Filter>
+    </None>
+    <None Include="Resources\Shaders\SceneBuildLinearZ.hlsl">
+      <Filter>Resources\Shaders\DEBUG\EffectScene</Filter>
+    </None>
+    <None Include="Resources\Shaders\Inc\LayeredMaterials.hlsl">
+      <Filter>Resources\Shaders\DEBUG\Includes</Filter>
+    </None>
+    <None Include="Resources\Shaders\SceneIndirectLighting.hlsl">
+      <Filter>Resources\Shaders\DEBUG\EffectScene</Filter>
+    </None>
+    <None Include="Resources\Shaders\SceneShadingStencil.hlsl">
+      <Filter>Resources\Shaders\DEBUG\EffectScene</Filter>
+    </None>
+    <None Include="Resources\Shaders\DeferredDepthPass.hlsl">
+      <Filter>Resources\Shaders\DEBUG\EffectDeferred</Filter>
+    </None>
+    <None Include="Resources\Shaders\DeferredShading.hlsl">
+      <Filter>Resources\Shaders\DEBUG\EffectDeferred</Filter>
+    </None>
+    <None Include="Resources\Shaders\DeferredShadingStencil.hlsl">
+      <Filter>Resources\Shaders\DEBUG\EffectDeferred</Filter>
+    </None>
+    <None Include="Resources\Shaders\SceneDownSample.hlsl">
+      <Filter>Resources\Shaders\DEBUG\EffectScene</Filter>
+    </None>
+    <None Include="Resources\Shaders\VolumetricComputeTransmittance.hlsl">
+      <Filter>Resources\Shaders\DEBUG\EffectVolumetric</Filter>
+    </None>
+    <None Include="Resources\Shaders\VolumetricDisplay.hlsl">
+      <Filter>Resources\Shaders\DEBUG\EffectVolumetric</Filter>
+    </None>
+    <None Include="Resources\Shaders\Inc\Volumetric.hlsl">
+      <Filter>Resources\Shaders\DEBUG\Includes</Filter>
+    </None>
+    <None Include="Resources\Shaders\VolumetricCombine.hlsl">
+      <Filter>Resources\Shaders\DEBUG\EffectVolumetric</Filter>
+    </None>
+    <None Include="Resources\Shaders\VolumetricDepthWrite.hlsl">
+      <Filter>Resources\Shaders\DEBUG\EffectVolumetric</Filter>
+    </None>
+    <None Include="Resources\Shaders\SceneFillGBufferBack.hlsl">
+      <Filter>Resources\Shaders\DEBUG\EffectScene</Filter>
+    </None>
+    <None Include="Resources\Shaders\RoomRenderCubeMap.hlsl">
+      <Filter>Resources\Shaders\DEBUG\EffectRoom</Filter>
+    </None>
+    <None Include="Resources\Shaders\VolumetricPreComputeAtmosphere.hlsl">
+      <Filter>Resources\Shaders\DEBUG\EffectVolumetric</Filter>
+    </None>
+    <None Include="Resources\Shaders\Inc\Atmosphere.hlsl">
+      <Filter>Resources\Shaders\DEBUG\Includes</Filter>
+    </None>
+    <None Include="Resources\Shaders\VolumetricTerrain.hlsl">
+      <Filter>Resources\Shaders\DEBUG\EffectVolumetric</Filter>
+    </None>
+    <None Include="Resources\Shaders\VolumetricPreComputeAtmosphereCS.hlsl">
+      <Filter>Resources\Shaders\DEBUG\EffectVolumetric</Filter>
+    </None>
+    <None Include="Resources\Shaders\SceneBokehSplat.hlsl">
+      <Filter>Resources\Shaders\DEBUG\EffectScene</Filter>
+    </None>
+    <None Include="Resources\Shaders\SceneFinalize.hlsl">
+      <Filter>Resources\Shaders\DEBUG\EffectScene</Filter>
+    </None>
+    <None Include="Resources\Shaders\VolumetricDepthPrePass.hlsl">
+      <Filter>Resources\Shaders\DEBUG\EffectVolumetric</Filter>
+    </None>
+    <None Include="Resources\Shaders\VolumetricDownsampleDepth.hlsl">
+      <Filter>Resources\Shaders\DEBUG\EffectVolumetric</Filter>
+    </None>
+    <None Include="Resources\Shaders\VolumetricDisplay_AtmosphereOnly.hlsl">
+      <Filter>Resources\Shaders\DEBUG\EffectVolumetric</Filter>
+    </None>
+    <None Include="Resources\Shaders\VolumetricPreComputeAtmospherePS.hlsl">
+      <Filter>Resources\Shaders\DEBUG\EffectVolumetric</Filter>
+    </None>
+    <None Include="Resources\Shaders\GIRenderScene.hlsl">
+      <Filter>Resources\Shaders\DEBUG\EffectGlobalIllum</Filter>
+    </None>
+    <None Include="Resources\Shaders\GIRenderCubeMap.hlsl">
+      <Filter>Resources\Shaders\DEBUG\EffectGlobalIllum</Filter>
+    </None>
+    <None Include="Resources\Shaders\GIPostProcess.hlsl">
+      <Filter>Resources\Shaders\DEBUG\EffectGlobalIllum</Filter>
+    </None>
+    <None Include="Resources\Shaders\Inc\SH.hlsl">
+      <Filter>Resources\Shaders\DEBUG\Includes</Filter>
+    </None>
+    <None Include="Resources\Shaders\GIRenderNeighborProbe.hlsl">
+      <Filter>Resources\Shaders\DEBUG\EffectGlobalIllum</Filter>
+    </None>
+    <None Include="Resources\Shaders\GIRenderScene2.hlsl">
+      <Filter>Resources\Shaders\DEBUG\EffectGlobalIllum</Filter>
+    </None>
+    <None Include="Resources\Shaders\GIRenderLights.hlsl">
+      <Filter>Resources\Shaders\DEBUG\EffectGlobalIllum</Filter>
+    </None>
+    <None Include="Resources\Shaders\GIRenderShadowMap.hlsl">
+      <Filter>Resources\Shaders\DEBUG\EffectGlobalIllum</Filter>
+    </None>
+    <None Include="Resources\Shaders\Inc\ShadowMap.hlsl">
+      <Filter>Resources\Shaders\DEBUG\Includes</Filter>
+    </None>
+    <None Include="Resources\Shaders\GIUpdateProbe.hlsl">
+      <Filter>Resources\Shaders\DEBUG\EffectGlobalIllum</Filter>
+    </None>
+    <None Include="Resources\Shaders\Inc\GI.hlsl">
+      <Filter>Resources\Shaders\DEBUG\Includes</Filter>
+    </None>
+    <None Include="Resources\Shaders\DOFRenderScene.hlsl">
+      <Filter>Resources\Shaders\DEBUG\DOF</Filter>
+    </None>
+    <None Include="Resources\Shaders\DOFRenderCube.hlsl">
+      <Filter>Resources\Shaders\DEBUG\DOF</Filter>
+    </None>
+    <None Include="Resources\Shaders\DOFDownsample.hlsl">
+      <Filter>Resources\Shaders\DEBUG\DOF</Filter>
+    </None>
+    <None Include="Resources\Shaders\DOFComputeFuzziness.hlsl">
+      <Filter>Resources\Shaders\DEBUG\DOF</Filter>
+    </None>
+    <None Include="Resources\Shaders\DOFCompute.hlsl">
+      <Filter>Resources\Shaders\DEBUG\DOF</Filter>
+    </None>
+    <None Include="Resources\Shaders\GIRenderDebugProbes.hlsl">
+      <Filter>Resources\Shaders\DEBUG\EffectGlobalIllum</Filter>
+    </None>
+    <None Include="Utility\Octree.inl">
+      <Filter>Utility</Filter>
+    </None>
+    <None Include="Resources\Shaders\GIRenderDynamic.hlsl">
+      <Filter>Resources\Shaders\DEBUG\EffectGlobalIllum</Filter>
+    </None>
+    <None Include="Resources\Shaders\Shadertoy.hlsl">
+      <Filter>Resources\Shaders\DEBUG\DOF</Filter>
+    </None>
+    <None Include="Resources\Shaders\Shadertoy_Clouds.hlsl">
+      <Filter>Resources\Shaders\DEBUG\DOF</Filter>
+    </None>
+    <None Include="Resources\Shaders\Shadertoy_GLSL.hlsl">
+      <Filter>Resources\Shaders\DEBUG\DOF</Filter>
+    </None>
+    <None Include="Resources\Shaders\GIRenderDebugVoronoi.hlsl">
+      <Filter>Resources\Shaders\DEBUG\EffectGlobalIllum</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="GodComplex.rc">
+      <Filter>Resources</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+</Project>

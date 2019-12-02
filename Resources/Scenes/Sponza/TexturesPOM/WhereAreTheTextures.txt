@@ -1,1 +1,0 @@
-You need to convert the PNG textures in ..\TexturesPNG\ into POM textures placed in this directory using the PNG2POM project in the Tools solution.
