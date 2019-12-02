@@ -630,7 +630,7 @@ tsReflection = _LTC.Z;	// Use preferred direction
 							_BRDF.GetSamplingDirection( ref _tsView, _alpha, U1, U2, ref tsLight );
 
 							// error with MIS weight
-							eval_BRDF = _BRDF.Eval( ref _tsView, ref tsLight, _alpha, out pdf_BRDF );			
+							eval_BRDF = _BRDF.Eval( ref _tsView, ref tsLight, _alpha, out pdf_BRDF );
 							eval_LTC = _LTC.Eval( ref tsLight );
 							pdf_LTC = eval_LTC / _LTC.magnitude;
 							double	error = Math.Abs( eval_BRDF - eval_LTC );

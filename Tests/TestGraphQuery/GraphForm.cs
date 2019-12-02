@@ -119,6 +119,8 @@ namespace TestGraphQuery
 		#region METHODS
 
 		public GraphForm() {
+// UnitTestPacking();
+
 			InitializeComponent();
 		}
 
@@ -263,6 +265,7 @@ namespace TestGraphQuery
 			m_CB_Main.m._renderFlags |= checkBoxShowLog.Checked ? 0x10U : 0U;
 			m_CB_Main.m._barycentricDistanceTolerance = floatTrackbarControlResultsTolerance.Value;
 			m_CB_Main.m._barycentricBias = floatTrackbarControlBarycentricBias.Value;
+			m_CB_Main.m._diffusionCoefficient = floatTrackbarControlDiffusionConstant.Value;
 			m_CB_Main.UpdateData();
 
 
@@ -574,6 +577,82 @@ namespace TestGraphQuery
 
 		#endregion
 
+		#region Pack/Unpack unit testing
+
+		void	UnitTestPacking() {
+			for ( ushort i=0; i < 4096; i++ ) {
+				for ( ushort j=i; j < 4096; j++ ) {
+					uint	V = Pack2( i, j );
+					ushort	i2, j2;
+					Unpack2( V, out i2, out j2 );
+					if ( i2 != i || j2 != j )
+						throw new Exception( "Rha mé !" );
+				}
+			}
+
+
+			for ( ushort i=0; i < 4096; i++ ) {
+				for ( ushort j=i; j < 4096; j++ ) {
+					uint	V = Pack( i, j );
+					ushort	i2, j2;
+					Unpack( V, out i2, out j2 );
+					if ( i2 != i || j2 != j )
+						throw new Exception( "Rha mé !" );
+				}
+			}
+		}
+
+uint	BitsCount( ushort _value ) {
+	uint	count = 0;
+	ushort	mask = (ushort) 0x8000U;
+	for ( ; count < 16 && (_value & mask) == 0; count++, mask>>=1 );
+	return 15 - count;
+}
+uint	Pack( ushort _a, ushort _b ) {
+	uint	bitsCount = 1 + BitsCount( _a );
+	uint	result = bitsCount << (32-4);
+	if ( bitsCount > 0 )
+		result |= (uint) (_a << (12 - (int) bitsCount));
+	if ( bitsCount < 12 )
+		result |= (uint) ((_b - _a) & (0x0FFFU >> (int) bitsCount));
+	return result;
+}
+void	Unpack( uint _value, out ushort _a, out ushort _b ) {
+	uint	bitsCount = _value >> (32-4);
+	_a = (ushort) (bitsCount > 0 ? (_value >> (12 - (int) bitsCount)) : 0U);
+	_b = (ushort) (bitsCount < 12 ? (_value & (0x0FFFU >> (int) bitsCount)) : 0);
+	_b += _a;
+}
+
+uint	maxTotalBitsCount = 0;
+ushort	maxA, maxB;
+uint	Pack2( ushort _a, ushort _b ) {
+	_b -= _a;
+	uint	bitsCount0 = 1 + BitsCount( _a );
+	uint	bitsCount1 = 1 + BitsCount( _b );
+//	uint	result = (bitsCount0 << (32-4)) | (bitsCount1 << (32-8));
+	uint	result = bitsCount0 << (32-4);
+			result |= _a;
+			result |= (uint) _b << (int) bitsCount0;
+
+// Check max count
+if ( bitsCount0 + bitsCount1 > maxTotalBitsCount ) {
+	maxTotalBitsCount = bitsCount0 + bitsCount1;
+	maxA = _a;
+	maxB = _b;
+}
+
+	return result;
+}
+void	Unpack2( uint _value, out ushort _a, out ushort _b ) {
+	uint	bitsCount = _value >> (32-4);
+	_a = (ushort) (_value & (0x0FFFU >> (int) (12 - bitsCount)));
+	_b = (ushort) (_value >> (int) bitsCount);
+	_b += _a;
+}
+
+		#endregion
+
 		#endregion
 
 		#region EVENT HANDLERS
@@ -591,6 +670,25 @@ namespace TestGraphQuery
 
 		float[]	m_resultScores = new float[0];
 		int[]	m_resultNodeIndices = new int[0];
+
+		float	ComputeResult( uint _nodeIndex ) {
+			int		sourcesCount = m_queryNodes.Length;
+
+			float	bias = floatTrackbarControlBarycentricBias.Value;
+			int		biasSourceTarget = integerTrackbarControlShowQuerySourceIndex.Value;
+
+			float	isoBarycentricCenter0 = (1.0f - bias) / (sourcesCount - bias);	// The ideal center is a vector with all components equal to this value
+			float	isoBarycentricCenter1 = Mathf.Lerp( isoBarycentricCenter0, 1.0f, bias );
+
+			float	sqDistance = 0.0f;
+			for ( int sourceIndex=0; sourceIndex < sourcesCount; sourceIndex++ ) {
+				float	barycentric = m_SB_HeatBarycentrics.m[m_nodesCount * sourceIndex + _nodeIndex];
+				float	delta = barycentric - (sourceIndex == biasSourceTarget ? isoBarycentricCenter1 : isoBarycentricCenter0);
+				sqDistance += delta * delta;
+			}
+
+			return Mathf.Sqrt( sqDistance );
+		}
 
 		private void buttonGrabResults_Click( object sender, EventArgs e ) {
 			int	sourcesCount = m_queryNodes.Length;
@@ -613,12 +711,14 @@ namespace TestGraphQuery
 				m_resultScores = new float[m_nodesCount];
 				m_resultNodeIndices = new int[m_nodesCount];
 				for ( int nodeIndex=0; nodeIndex < m_nodesCount; nodeIndex++ ) {
+
 					float	sqDistance = 0.0f;
 					for ( int sourceIndex=0; sourceIndex < sourcesCount; sourceIndex++ ) {
 						float	barycentric = m_SB_HeatBarycentrics.m[m_nodesCount * sourceIndex + nodeIndex];
 						float	delta = barycentric - (sourceIndex == biasSourceTarget ? isoBarycentricCenter1 : isoBarycentricCenter0);
 						sqDistance += delta * delta;
 					}
+
 					m_resultScores[nodeIndex] = Mathf.Sqrt( sqDistance );
 					m_resultNodeIndices[nodeIndex] = nodeIndex;
 				}
@@ -633,6 +733,8 @@ namespace TestGraphQuery
 					m_resultNodeIndices[nodeIndex] = nodeIndex;
 				}
 			}
+
+//Il faut aussi isoler les résultats du type qu'on veut !
 
 			// Dump results
 			string	results = "";
@@ -710,7 +812,20 @@ namespace TestGraphQuery
 					m_displayText += " )";
 				}
 
-				if ( radioButtonShowResultsSum.Checked ) {
+				// Show value
+				if ( radioButtonShowTemperature.Checked ) {
+					m_SB_HeatSource.Read();
+					float	heat = m_SB_HeatSource.m[m_nodesCount * integerTrackbarControlShowQuerySourceIndex.Value + m_neuron2ID[selectedNeuron]];
+					m_displayText += " = " + heat.ToString( "G4" );
+				} else if ( radioButtonShowBarycentrics.Checked ) {
+					GetBarycentricsBuffer();
+					float	heat = m_SB_HeatBarycentrics.m[m_nodesCount * integerTrackbarControlShowQuerySourceIndex.Value + m_neuron2ID[selectedNeuron]];
+					m_displayText += " = " + heat.ToString( "G4" );
+				} else if ( radioButtonShowResultsBarycentric.Checked ) {
+					GetBarycentricsBuffer();
+					float	heat = ComputeResult( m_neuron2ID[selectedNeuron] );
+					m_displayText += " = " + heat.ToString( "G4" );
+				} else if ( radioButtonShowResultsSum.Checked ) {
 					float	heatSum = GetSumBuffer().m[m_neuron2ID[selectedNeuron]];
 					m_displayText += " = " + heatSum.ToString( "G4" );
 				}

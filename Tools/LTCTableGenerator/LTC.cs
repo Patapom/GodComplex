@@ -33,6 +33,7 @@ namespace LTCTableGenerator
 
 		// Runtime matrix representation
 		public double[,]	invM = new double[3,3];
+		public double[,]	invM_Normalized = new double[3,3];
 		public double		detM;
 
 		public LTC() {
@@ -159,7 +160,7 @@ namespace LTCTableGenerator
 // DEBUG: Check determinant of M^-1 = reciprocal of determinant of M
 // detInvM =	(invM[0,0]*invM[1,1]*invM[2,2] + invM[0,1]*invM[1,2]*invM[2,0] + invM[0,2]*invM[1,0]*invM[2,1])
 // 			-   (invM[2,0]*invM[1,1]*invM[0,2] + invM[2,1]*invM[1,2]*invM[0,0] + invM[2,2]*invM[1,0]*invM[0,1]);
-// if ( Math.Abs( detM - 1.0/detInvM ) > 1e-6 )
+// if ( Math.Abs( detM * detInvM - 1.0 ) > 1e-6 )
 // 	throw new Exception( "Determinant discrepancy!" );
 
 			// Kill useless coeffs in matrix
@@ -167,6 +168,21 @@ namespace LTCTableGenerator
 			invM[1,0] = 0;	// Row 1 - Col 0
 			invM[1,2] = 0;	// Row 1 - Col 2
 			invM[2,1] = 0;	// Row 2 - Col 1
+
+			//////////////////////////////////////////////////////////////////////////
+			// Normalize the inverse matrix (this is the matrix that gets serialized into runtime tables)
+//			double	factor = 1.0 / invM[2,2];		// Former code used to normalize by m22 term but according to Hill, this leads to poorly interpolatble tables (cf. page 81 of https://blog.selfshadow.com/publications/s2016-advances/s2016_ltc_rnd.pdf)
+			double	factor = 1.0 / invM[1,1];		// Instead, normalize by m11!
+
+			invM_Normalized[0,0] = factor * invM[0,0];
+			invM_Normalized[0,1] = factor * invM[0,1];
+			invM_Normalized[0,2] = factor * invM[0,2];
+			invM_Normalized[1,0] = factor * invM[1,0];
+			invM_Normalized[1,1] = factor * invM[1,1];
+			invM_Normalized[1,2] = factor * invM[1,2];
+			invM_Normalized[2,0] = factor * invM[2,0];
+			invM_Normalized[2,1] = factor * invM[2,1];
+			invM_Normalized[2,2] = factor * invM[2,2];
 		}
 
 		public double	Eval( ref float3 _tsLight ) {

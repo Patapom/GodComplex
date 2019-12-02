@@ -409,8 +409,28 @@ pdf *= Math.Abs( Math.Sin( theta ) );	// Spherical coordinates integrand is sin(
 			}
 		}
 
+		float	Fibonacci1D( int i ) {
+			const float M_GOLDEN_RATIO = 1.61803398875f;
+			return (i + 1.0f) * M_GOLDEN_RATIO;
+		}
+
 		private void panelOutput_BitmapUpdating( int W, int H, Graphics G ) {
 			G.FillRectangle( Brushes.White, 0, 0, W, H );
+
+#if false
+			const uint	HBAO_SAMPLES_COUNT = 64;
+			for ( uint sampleIndex=0; sampleIndex < HBAO_SAMPLES_COUNT; sampleIndex++ ) {
+				float	radius = Mathf.Sqrt( (sampleIndex+0.5f) / HBAO_SAMPLES_COUNT );	// Grow as sqrt so sample areas are all equal (because dA = r² dTheta on a disk)
+//				float	radius = (sampleIndex+0.5f) / HBAO_SAMPLES_COUNT;	// Grow as sqrt so sample areas are all equal (because dA = r² dTheta on a disk)
+				float	angle = 3.54789f * Fibonacci1D( (int) sampleIndex );
+				float	sin = Mathf.Sin( angle );
+				float	cos = Mathf.Cos( angle );
+
+				float	X = 0.5f * panelOutput.Width * (1.0f + radius * cos);
+				float	Y = 0.5f * panelOutput.Height * (1.0f + radius * sin);
+				G.FillEllipse( Brushes.Black, X-2, Y-2, 5, 5 );
+			}
+#else
 
 // Test Bessel functions
 // 			float	s = 0.05f;
@@ -509,6 +529,7 @@ pdf *= Math.Abs( Math.Sin( theta ) );	// Spherical coordinates integrand is sin(
 					}
 				}
 			}
+#endif
 		}
 
 		private void panelOutputNormalDistribution_BitmapUpdating( int W, int H, Graphics G ) {

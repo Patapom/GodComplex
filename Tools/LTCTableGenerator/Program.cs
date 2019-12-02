@@ -1,8 +1,8 @@
-﻿#define FIT_TABLES
+﻿//#define FIT_TABLES
 
-#define EXPORT_FOR_UNITY
-//#define EXPORT_TEXTURE
-//#define EXPORT_MS_TEXTURE
+//#define EXPORT_FOR_UNITY
+#define EXPORT_TEXTURE
+#define EXPORT_MS_TEXTURE
 //#define EXPORT_FOR_CSHARP	// Not working at the moment
 //#define EXPORT_RAW
 //#define EXPORT_MS_RAW
@@ -118,6 +118,16 @@ namespace LTCTableGenerator
 					new FileInfo( "LTC.dds" ),
 					ImageUtility.PIXEL_FORMAT.RGBA32F
 				);
+
+				ExportTexture( new FileInfo[] {
+									// Specular
+									new FileInfo( "GGX.ltc" ),
+									// Diffuse
+									new FileInfo( "OrenNayar.ltc" ),
+								}, 
+					new FileInfo( "LTC_GGX_OrenNayar.dds" ),
+					ImageUtility.PIXEL_FORMAT.RGBA32F
+				);
 			#endif
 
 			#if EXPORT_MS_TEXTURE
@@ -133,6 +143,15 @@ namespace LTCTableGenerator
 									new FileInfo( "MS_OrenNayar.ltc" ),
 								}, 
 					new FileInfo( "MS_LTC.dds" )
+				);
+
+				ExportMSTexture( new FileInfo[] {
+									// Specular
+									new FileInfo( "MS_GGX.ltc" ),
+									// Diffuse
+									new FileInfo( "MS_OrenNayar.ltc" ),
+								}, 
+					new FileInfo( "MS_LTC_GGX_OrenNayar.dds" )
 				);
 			#endif
 
@@ -441,7 +460,9 @@ throw new Exception( "Ta mère!" );
 //					ImageUtility.ImageFile	I = new ImageUtility.ImageFile( W, H, _format, profile );
 //					M[(uint) i][0][0] = I;
 
-					double	largest = 0;	// Keep track of largest error from 1
+// 					double	minValue = double.MaxValue;
+// 					double	maxValue = -double.MaxValue;
+// 					double	avgValue = 0.0;
 					ImageUtility.ImageFile	I = M[(uint) i][0][0];
 					I.WritePixels( ( uint _X, uint _Y, ref float4 _color ) => {
 						LTC	ltc = table[_X,_Y];
@@ -462,14 +483,17 @@ throw new Exception( "Ta mère!" );
 //						_color.w = (float) (factor * ltc.invM[2,0]);
 
 						// Instead, normalize by m11!
- 						largest = Math.Max( largest, Math.Abs( ltc.invM[1,1] - 1 ) );
-						double	factor = 1.0 / ltc.invM[1,1];
+// 						largest = Math.Max( largest, Math.Abs( ltc.invM[1,1] - 1 ) );
+//  						minValue = Math.Min( minValue, Math.Abs( ltc.invM[1,1] ) );
+//  						maxValue = Math.Max( maxValue, Math.Abs( ltc.invM[1,1] ) );
+//  						avgValue += Math.Abs( ltc.invM[1,1] );
 
-						_color.x = (float) (factor * ltc.invM[0,0]);
-						_color.y = (float) (factor * ltc.invM[0,2]);
-						_color.z = (float) (factor * ltc.invM[2,0]);
-						_color.w = (float) (factor * ltc.invM[2,2]);
+						_color.x = (float) ltc.invM_Normalized[0,0];
+						_color.y = (float) ltc.invM_Normalized[0,2];
+						_color.z = (float) ltc.invM_Normalized[2,0];
+						_color.w = (float) ltc.invM_Normalized[2,2];
 					} );
+//					avgValue /= W*H;
 				}
 				M.DDSSaveFile( _targetFileName, ImageUtility.COMPONENT_FORMAT.AUTO );
 			}
@@ -507,15 +531,8 @@ throw new Exception( "Ta mère!" );
 					for ( uint X=0; X < W; X++ ) {
 						LTC	ltc = table[X,0];
 
-						double	factor = 1.0 / ltc.invM[1,1];
-
-// 						content[X] = new float4( (float) (factor * ltc.invM[0,0]),
-// 												 (float) (factor * ltc.invM[0,2]),
-// 												 (float) (factor * ltc.invM[2,0]),
-// 												 (float) (factor * ltc.invM[2,2]) );
-
 						// As expected, off-diagonal anisotropic terms are 0 and m00=1 so we only need to export a single term + the magnitude! Yay! Even cheaper!
-						content[X] = new float4( (float) (factor * ltc.invM[2,2]), (float) ltc.magnitude, 0, 0 );
+						content[X] = new float4( (float) ltc.invM_Normalized[2,2], (float) ltc.magnitude, 0, 0 );
 					}
 				}
 
