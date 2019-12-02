@@ -1,4 +1,4 @@
-#include "../Types.h"
+#include "stdafx.h"
 
 // These values are not magical, just the default values Marsaglia used.
 // Any pair of unsigned integers should be fine.

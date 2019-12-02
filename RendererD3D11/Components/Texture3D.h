@@ -1,13 +1,19 @@
 #pragma once
 
 #include "Component.h"
-#include "../../Utility/TextureFilePOM.h"
 
 class Texture3D : public Component {
 protected:  // CONSTANTS
 
 	static const U32	MAX_TEXTURE_SIZE = 8192;	// Should be enough !
 	static const U32	MAX_TEXTURE_POT = 13;
+	
+public:		// TYPES
+
+	struct	MipDescriptor {
+		int					rowPitch;
+		int					depthPitch;
+	};
 
 private:	// FIELDS
 
@@ -92,6 +98,6 @@ private:
 	// _UAV, true if the texture can also be used as a UAV (Random access read/write from a compute shader)
 	// _pMipDescriptors, if not NULL then the row pitch & depth pitch will be read from this array for each mip level
 	//
-	void		Init( const void* const* _ppContent, bool _staging=false, bool _UAV=false, TextureFilePOM::MipDescriptor* _pMipDescriptors=NULL );
+	void		Init( const void* const* _ppContent, bool _staging=false, bool _UAV=false, MipDescriptor* _pMipDescriptors=NULL );
 };
 

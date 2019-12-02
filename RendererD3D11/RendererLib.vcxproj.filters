@@ -32,9 +32,6 @@
     <ClInclude Include="Structures\VertexFormats.h">
       <Filter>Structures</Filter>
     </ClInclude>
-    <ClInclude Include="..\Utility\TextureFilePOM.h">
-      <Filter>Utility</Filter>
-    </ClInclude>
     <ClInclude Include="Components\Shader.h">
       <Filter>Components</Filter>
     </ClInclude>
@@ -74,9 +71,6 @@
     </ClCompile>
     <ClCompile Include="Structures\VertexFormats.cpp">
       <Filter>Structures</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Utility\TextureFilePOM.cpp">
-      <Filter>Utility</Filter>
     </ClCompile>
     <ClCompile Include="Components\Shader.cpp">
       <Filter>Components</Filter>

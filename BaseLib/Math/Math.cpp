@@ -1,6 +1,4 @@
-#include "../Types.h"
-
-using namespace BaseLib;
+#include "stdafx.h"
 
 const bfloat2	bfloat2::Zero( 0, 0 );
 const bfloat2	bfloat2::One( 1, 1 );

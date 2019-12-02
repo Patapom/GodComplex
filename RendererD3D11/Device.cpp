@@ -412,7 +412,7 @@ void	Device::RemoveRenderTargets() {
 
 void	Device::RemoveUAVs() {
 	static ID3D11UnorderedAccessView*	ppEmpty[8] = { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, };
-	UINT	pInitialCount[8] = { -1 };
+	UINT	pInitialCount[8] = { ~0U };
 	m_deviceContext->OMSetRenderTargetsAndUnorderedAccessViews( D3D11_KEEP_RENDER_TARGETS_AND_DEPTH_STENCIL, NULL, NULL, 0, 8, ppEmpty, pInitialCount );
 	m_deviceContext->CSSetUnorderedAccessViews( 0, 8, ppEmpty, pInitialCount );
 }
@@ -448,8 +448,8 @@ void	Device::SetStatesReferences( const bfloat4& _BlendFactors, U32 _BlendSample
 void	Device::SetScissorRect( const D3D11_RECT* _pScissor ) {
 	D3D11_RECT	Full = {
 		0, 0,
-		DefaultRenderTarget().GetWidth(),
-		DefaultRenderTarget().GetHeight()
+		LONG( DefaultRenderTarget().GetWidth()),
+		LONG( DefaultRenderTarget().GetHeight())
 	};
 	m_deviceContext->RSSetScissorRects( 1, _pScissor != NULL ? _pScissor : &Full );
 }

@@ -2520,9 +2520,9 @@ HRESULT GenerateMipMaps( const Image& baseImage, DWORD filter, size_t levels, Sc
                     if ( _DXGIToWIC( baseImage.format, pfGUID, true ) )
                     {
                         // Case 1: Base image format is supported by Windows Imaging Component
-                        HRESULT hr = (baseImage.height > 1 || !allow1D)
-                                     ? mipChain.Initialize2D( baseImage.format, baseImage.width, baseImage.height, 1, levels )
-                                     : mipChain.Initialize1D( baseImage.format, baseImage.width, 1, levels ); 
+                        hr = (baseImage.height > 1 || !allow1D)
+                             ? mipChain.Initialize2D( baseImage.format, baseImage.width, baseImage.height, 1, levels )
+                             : mipChain.Initialize1D( baseImage.format, baseImage.width, 1, levels ); 
                         if ( FAILED(hr) )
                             return hr;
 
@@ -2533,7 +2533,7 @@ HRESULT GenerateMipMaps( const Image& baseImage, DWORD filter, size_t levels, Sc
                         // Case 2: Base image format is not supported by WIC, so we have to convert, generate, and convert back
                         assert( baseImage.format != DXGI_FORMAT_R32G32B32A32_FLOAT );
                         ScratchImage temp;
-                        HRESULT hr = _ConvertToR32G32B32A32( baseImage, temp );
+                        hr = _ConvertToR32G32B32A32( baseImage, temp );
                         if ( FAILED(hr) )
                             return hr;
 
@@ -2656,7 +2656,7 @@ HRESULT GenerateMipMaps( const Image* srcImages, size_t nimages, const TexMetada
     if ( !_CalculateMipLevels(metadata.width, metadata.height, levels) )
         return E_INVALIDARG;
 
-    std::vector<const Image> baseImages;
+    std::vector<Image> baseImages;
     baseImages.reserve( metadata.arraySize );
     for( size_t item=0; item < metadata.arraySize; ++item )
     {
@@ -2702,7 +2702,7 @@ HRESULT GenerateMipMaps( const Image* srcImages, size_t nimages, const TexMetada
                     // Case 1: Base image format is supported by Windows Imaging Component
                     TexMetadata mdata2 = metadata;
                     mdata2.mipLevels = levels;
-                    HRESULT hr = mipChain.Initialize( mdata2 ); 
+                    hr = mipChain.Initialize( mdata2 ); 
                     if ( FAILED(hr) )
                         return hr;
 
@@ -2727,7 +2727,7 @@ HRESULT GenerateMipMaps( const Image* srcImages, size_t nimages, const TexMetada
                     mdata2.mipLevels = levels;
                     mdata2.format = DXGI_FORMAT_R32G32B32A32_FLOAT;
                     ScratchImage tMipChain;
-                    HRESULT hr = tMipChain.Initialize( mdata2 ); 
+                    hr = tMipChain.Initialize( mdata2 ); 
                     if ( FAILED(hr) )
                         return hr;
 
@@ -2965,7 +2965,7 @@ HRESULT GenerateMipMaps3D( const Image* srcImages, size_t nimages, const TexMeta
     if ( !_CalculateMipLevels3D(metadata.width, metadata.height, metadata.depth, levels) )
         return E_INVALIDARG;
 
-    std::vector<const Image> baseImages;
+    std::vector<Image> baseImages;
     baseImages.reserve( metadata.depth );
     for( size_t slice=0; slice < metadata.depth; ++slice )
     {

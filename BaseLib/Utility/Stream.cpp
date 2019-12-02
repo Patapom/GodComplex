@@ -1,4 +1,4 @@
-#include "../Types.h"
+#include "stdafx.h"
 
 // Read Functions
 U8			BinaryReader::ReadByte() const {

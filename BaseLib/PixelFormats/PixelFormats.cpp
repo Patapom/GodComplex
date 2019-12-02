@@ -1,4 +1,4 @@
-#include "..\Types.h"
+#include "stdafx.h"
 
 using namespace BaseLib;
 

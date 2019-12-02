@@ -117,7 +117,7 @@ Texture3D::~Texture3D() {
 	m_texture = NULL;
 }
 
-void	Texture3D::Init( const void* const* _ppContent, bool _bStaging, bool _bUnOrderedAccess, TextureFilePOM::MipDescriptor* _pMipDescriptors ) {
+void	Texture3D::Init( const void* const* _ppContent, bool _bStaging, bool _bUnOrderedAccess, MipDescriptor* _pMipDescriptors ) {
 	ASSERT( m_width <= MAX_TEXTURE_SIZE, "Texture size out of range !" );
 	ASSERT( m_height <= MAX_TEXTURE_SIZE, "Texture size out of range !" );
 	ASSERT( m_depth <= MAX_TEXTURE_SIZE, "Texture size out of range !" );

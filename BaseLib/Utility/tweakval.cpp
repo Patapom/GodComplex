@@ -1,6 +1,6 @@
-#ifdef _DEBUG
+#include "stdafx.h"
 
-#include "../Types.h"
+#ifdef _DEBUG
 
 using namespace BaseLib;
 

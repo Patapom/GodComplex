@@ -182,7 +182,7 @@ Texture2D::~Texture2D() {
 	m_texture = NULL;
 }
 
-void	Texture2D::Init( const void* const* _ppContent, bool _staging, bool _UAV, TextureFilePOM::MipDescriptor* _pMipDescriptors ) {
+void	Texture2D::Init( const void* const* _ppContent, bool _staging, bool _UAV, MipDescriptor* _pMipDescriptors ) {
 	ASSERT( m_width <= MAX_TEXTURE_SIZE, "Texture size out of range!" );
 	ASSERT( m_height <= MAX_TEXTURE_SIZE, "Texture size out of range!" );
 

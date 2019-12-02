@@ -1,5 +1,4 @@
-#include "Hashtable.h"
-//#include <string.h>
+#include "stdafx.h"
 
 using namespace BaseLib;
 

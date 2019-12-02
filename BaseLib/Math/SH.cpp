@@ -1,4 +1,4 @@
-﻿#include "../Types.h"
+﻿#include "stdafx.h"
 
 double	SH::FACTORIAL[] = {	1.0,
 							1.0,

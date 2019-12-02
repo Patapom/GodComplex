@@ -7,6 +7,8 @@
 //
 #pragma once
 
+#include "../Types.h"
+
 namespace BaseLib {
 
 template < typename _type_ >
@@ -94,14 +96,14 @@ public:
 	// Spatial hashing from http://www.beosil.com/download/CollisionDetectionHashing_VMV03.pdf, section 4.1
 	//
 	static U32	Hash( int X, int Y, int Z ) {
-		const uint64	p1 = 73856093;
-		const uint64	p2 = 19349663;
-		const uint64	p3 = 83492791;
+		const U64	p1 = 73856093;
+		const U64	p2 = 19349663;
+		const U64	p3 = 83492791;
 
-		uint64	HashX = (uint64) X * p1;
-		uint64	HashY = (uint64) Y * p2;
-		uint64	HashZ = (uint64) Z * p3;
-		uint64	Hash = HashX ^ HashY ^ HashZ ;
+		U64	HashX = (U64) X * p1;
+		U64	HashY = (U64) Y * p2;
+		U64	HashZ = (U64) Z * p3;
+		U64	Hash = HashX ^ HashY ^ HashZ ;
 		return U32( Hash );
 	}
 	U32	ComputeHash( int X, int Y, int Z ) const {

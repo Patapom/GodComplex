@@ -93,7 +93,7 @@ namespace ImageUtility.UnitTests
 			panelLoad.Bitmap = m_imageFile.AsBitmap;
 		}
 
-		class BFGSModel : SharpMath.BFGS.Model {
+		class BFGSModel : SharpMath.BFGS.IModel {
 			public float[]	m_curve;
 			public double[]	m_parameters;
 
@@ -335,7 +335,7 @@ namespace ImageUtility.UnitTests
 				// Load the color gamut and try and plot the locii of various white points
 				//
 				case TEST_COLOR_PROFILES.DRAW_WHITE_POINT_LOCI: {
-					m_imageFile.Load( new System.IO.FileInfo( @"..\..\Images\In\xyGamut.png" ) );
+					m_imageFile.Load( new System.IO.FileInfo( @"..\..\..\Data\Images\In\xyGamut.png" ) );
 
 					float2	cornerZero = new float2( 114, 1336 );			// xy=(0.0, 0.0)
 					float2	cornerPoint8Point9 = new float2( 1257, 49 );	// xy=(0.8, 0.9)
@@ -624,125 +624,125 @@ if ( Math.Abs( T - whitePointCCT ) < 10.0f )
 
 		private void buttonLDR3JPG_Click(object sender, EventArgs e) {
 			TestConvertLDR2HDR( new System.IO.FileInfo[] {
-				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0860.jpg" ),
-//				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0861.jpg" ),
-//				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0862.jpg" ),
-//				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0863.jpg" ),
-				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0864.jpg" ),
-//				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0865.jpg" ),
+				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromJPG\IMG_0860.jpg" ),
+//				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromJPG\IMG_0861.jpg" ),
+//				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromJPG\IMG_0862.jpg" ),
+//				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromJPG\IMG_0863.jpg" ),
+				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromJPG\IMG_0864.jpg" ),
+//				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromJPG\IMG_0865.jpg" ),
 //				// Don't use 866 because of bad ISO
-//				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0867.jpg" ),
-//				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0868.jpg" ),
-				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0869.jpg" ),
+//				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromJPG\IMG_0867.jpg" ),
+//				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromJPG\IMG_0868.jpg" ),
+				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromJPG\IMG_0869.jpg" ),
 			}, true, false );
 		}
 
 		private void buttonLDR5JPG_Click(object sender, EventArgs e) {
 			TestConvertLDR2HDR( new System.IO.FileInfo[] {
-				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0860.jpg" ),
-//				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0861.jpg" ),
-				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0862.jpg" ),
-//				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0863.jpg" ),
-				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0864.jpg" ),
-//				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0865.jpg" ),
+				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromJPG\IMG_0860.jpg" ),
+//				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromJPG\IMG_0861.jpg" ),
+				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromJPG\IMG_0862.jpg" ),
+//				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromJPG\IMG_0863.jpg" ),
+				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromJPG\IMG_0864.jpg" ),
+//				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromJPG\IMG_0865.jpg" ),
 //				// Don't use 866 because of bad ISO
-				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0867.jpg" ),
-//				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0868.jpg" ),
-				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0869.jpg" ),
+				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromJPG\IMG_0867.jpg" ),
+//				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromJPG\IMG_0868.jpg" ),
+				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromJPG\IMG_0869.jpg" ),
 			}, true, false );
 		}
 
 		private void buttonLDR9JPG_Click(object sender, EventArgs e) {
 			TestConvertLDR2HDR( new System.IO.FileInfo[] {
-				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0860.jpg" ),
-				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0861.jpg" ),
-				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0862.jpg" ),
-				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0863.jpg" ),
-				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0864.jpg" ),
-				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0865.jpg" ),
+				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromJPG\IMG_0860.jpg" ),
+				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromJPG\IMG_0861.jpg" ),
+				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromJPG\IMG_0862.jpg" ),
+				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromJPG\IMG_0863.jpg" ),
+				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromJPG\IMG_0864.jpg" ),
+				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromJPG\IMG_0865.jpg" ),
 				// Don't use 866 because of bad ISO
-				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0867.jpg" ),
-				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0868.jpg" ),
-				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0869.jpg" ),
+				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromJPG\IMG_0867.jpg" ),
+				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromJPG\IMG_0868.jpg" ),
+				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromJPG\IMG_0869.jpg" ),
 			}, true, false );
 		}
 
 		private void buttonLDR3RAW_Click(object sender, EventArgs e) {
 			TestConvertLDR2HDR( new System.IO.FileInfo[] {
-				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromRAW\CRW_7971.crw" ),
-// 				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromRAW\CRW_7971.crw" ),
-// 				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromRAW\CRW_7972.crw" ),
-// 				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromRAW\CRW_7973.crw" ),
-// 				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromRAW\CRW_7974.crw" ),
-				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromRAW\CRW_7975.crw" ),
-// 				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromRAW\CRW_7976.crw" ),
-// 				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromRAW\CRW_7977.crw" ),
-// 				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromRAW\CRW_7978.crw" ),
-// 				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromRAW\CRW_7979.crw" ),
-				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromRAW\CRW_7980.crw" ),
+				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromRAW\CRW_7971.crw" ),
+// 				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromRAW\CRW_7971.crw" ),
+// 				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromRAW\CRW_7972.crw" ),
+// 				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromRAW\CRW_7973.crw" ),
+// 				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromRAW\CRW_7974.crw" ),
+				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromRAW\CRW_7975.crw" ),
+// 				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromRAW\CRW_7976.crw" ),
+// 				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromRAW\CRW_7977.crw" ),
+// 				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromRAW\CRW_7978.crw" ),
+// 				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromRAW\CRW_7979.crw" ),
+				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromRAW\CRW_7980.crw" ),
 			}, true, true );
 		}
 
 		private void buttonLDR5RAW_Click(object sender, EventArgs e) {
 			TestConvertLDR2HDR( new System.IO.FileInfo[] {
-				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromRAW\CRW_7971.crw" ),
-// 				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromRAW\CRW_7971.crw" ),
- 				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromRAW\CRW_7972.crw" ),
-// 				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromRAW\CRW_7973.crw" ),
-// 				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromRAW\CRW_7974.crw" ),
-				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromRAW\CRW_7975.crw" ),
-// 				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromRAW\CRW_7976.crw" ),
- 				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromRAW\CRW_7977.crw" ),
-// 				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromRAW\CRW_7978.crw" ),
-// 				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromRAW\CRW_7979.crw" ),
-				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromRAW\CRW_7980.crw" ),
+				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromRAW\CRW_7971.crw" ),
+// 				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromRAW\CRW_7971.crw" ),
+ 				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromRAW\CRW_7972.crw" ),
+// 				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromRAW\CRW_7973.crw" ),
+// 				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromRAW\CRW_7974.crw" ),
+				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromRAW\CRW_7975.crw" ),
+// 				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromRAW\CRW_7976.crw" ),
+ 				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromRAW\CRW_7977.crw" ),
+// 				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromRAW\CRW_7978.crw" ),
+// 				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromRAW\CRW_7979.crw" ),
+				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromRAW\CRW_7980.crw" ),
 			}, true, true );
 		}
 
 		private void buttonLDR11RAW_Click(object sender, EventArgs e) {
 			TestConvertLDR2HDR( new System.IO.FileInfo[] {
-				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromRAW\CRW_7971.crw" ),
- 				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromRAW\CRW_7971.crw" ),
- 				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromRAW\CRW_7972.crw" ),
- 				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromRAW\CRW_7973.crw" ),
- 				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromRAW\CRW_7974.crw" ),
-				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromRAW\CRW_7975.crw" ),
- 				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromRAW\CRW_7976.crw" ),
- 				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromRAW\CRW_7977.crw" ),
- 				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromRAW\CRW_7978.crw" ),
- 				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromRAW\CRW_7979.crw" ),
-				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromRAW\CRW_7980.crw" ),
+				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromRAW\CRW_7971.crw" ),
+ 				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromRAW\CRW_7971.crw" ),
+ 				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromRAW\CRW_7972.crw" ),
+ 				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromRAW\CRW_7973.crw" ),
+ 				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromRAW\CRW_7974.crw" ),
+				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromRAW\CRW_7975.crw" ),
+ 				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromRAW\CRW_7976.crw" ),
+ 				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromRAW\CRW_7977.crw" ),
+ 				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromRAW\CRW_7978.crw" ),
+ 				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromRAW\CRW_7979.crw" ),
+				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromRAW\CRW_7980.crw" ),
 			}, true, true );
 		}
 
 		private void buttonLDR2HDRJPG_Click(object sender, EventArgs e) {
 			TestConvertLDR2HDR( new System.IO.FileInfo[] {
-				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0860.jpg" ),
-				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0861.jpg" ),
-				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0862.jpg" ),
-				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0863.jpg" ),
-				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0864.jpg" ),
-				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0865.jpg" ),
+				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromJPG\IMG_0860.jpg" ),
+				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromJPG\IMG_0861.jpg" ),
+				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromJPG\IMG_0862.jpg" ),
+				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromJPG\IMG_0863.jpg" ),
+				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromJPG\IMG_0864.jpg" ),
+				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromJPG\IMG_0865.jpg" ),
 				// Don't use 866 because of bad ISO
-				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0867.jpg" ),
-				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0868.jpg" ),
-				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromJPG\IMG_0869.jpg" ),
+				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromJPG\IMG_0867.jpg" ),
+				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromJPG\IMG_0868.jpg" ),
+				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromJPG\IMG_0869.jpg" ),
 			}, false, false );
 		}
 
 		private void buttonLDR2HDRRAW_Click(object sender, EventArgs e) {
 			TestConvertLDR2HDR( new System.IO.FileInfo[] {
-				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromRAW\CRW_7971.crw" ),
-// 				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromRAW\CRW_7971.crw" ),
- 				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromRAW\CRW_7972.crw" ),
-// 				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromRAW\CRW_7973.crw" ),
-//				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromRAW\CRW_7974.crw" ),
-				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromRAW\CRW_7975.crw" ),
-//				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromRAW\CRW_7976.crw" ),
- 				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromRAW\CRW_7977.crw" ),
-//				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromRAW\CRW_7978.crw" ),
-//				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromRAW\CRW_7979.crw" ),
-				new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromRAW\CRW_7980.crw" ),
+				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromRAW\CRW_7971.crw" ),
+// 				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromRAW\CRW_7971.crw" ),
+ 				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromRAW\CRW_7972.crw" ),
+// 				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromRAW\CRW_7973.crw" ),
+//				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromRAW\CRW_7974.crw" ),
+				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromRAW\CRW_7975.crw" ),
+//				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromRAW\CRW_7976.crw" ),
+ 				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromRAW\CRW_7977.crw" ),
+//				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromRAW\CRW_7978.crw" ),
+//				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromRAW\CRW_7979.crw" ),
+				new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromRAW\CRW_7980.crw" ),
 			}, false, true );
 		}
 
@@ -778,7 +778,7 @@ if ( Math.Abs( T - whitePointCCT ) < 10.0f )
 // Check EXR save is working!
 // ImageFile	pipo = new ImageFile();
 // 			pipo.ConvertFrom( LDRImages[0], PIXEL_FORMAT.RGB32F );
-// pipo.Save( new System.IO.FileInfo( @"..\..\Images\Out\LDR2HDR\FromJPG\Result.exr" ), ImageFile.FILE_FORMAT.EXR, ImageFile.SAVE_FLAGS.SF_EXR_DEFAULT );
+// pipo.Save( new System.IO.FileInfo( @"..\..\..\Data\Images\Out\LDR2HDR\FromJPG\Result.exr" ), ImageFile.FILE_FORMAT.EXR, ImageFile.SAVE_FLAGS.SF_EXR_DEFAULT );
 
 // Check bitmap->tone mapped image file is working
 // {
@@ -916,13 +916,13 @@ float	quality = _RAW ? 3.0f : 3.0f;
 					HDRImage.ToImageFile( tempHDR, new ColorProfile( ColorProfile.STANDARD_PROFILE.LINEAR ) );
 
 					if ( _RAW ) {
-						tempHDR.Save( new System.IO.FileInfo( @"..\..\Images\Out\LDR2HDR\FromRAW\Result.exr" ), ImageFile.FILE_FORMAT.EXR, ImageFile.SAVE_FLAGS.SF_EXR_DEFAULT );
-						tempHDR.Save( new System.IO.FileInfo( @"..\..\Images\Out\LDR2HDR\FromRAW\Result_B44LC.exr" ), ImageFile.FILE_FORMAT.EXR, ImageFile.SAVE_FLAGS.SF_EXR_B44 | ImageFile.SAVE_FLAGS.SF_EXR_LC );
-						tempHDR.Save( new System.IO.FileInfo( @"..\..\Images\Out\LDR2HDR\FromRAW\Result_noLZW.exr" ), ImageFile.FILE_FORMAT.EXR, ImageFile.SAVE_FLAGS.SF_EXR_NONE );
+						tempHDR.Save( new System.IO.FileInfo( @"..\..\..\Data\Images\Out\LDR2HDR\FromRAW\Result.exr" ), ImageFile.FILE_FORMAT.EXR, ImageFile.SAVE_FLAGS.SF_EXR_DEFAULT );
+						tempHDR.Save( new System.IO.FileInfo( @"..\..\..\Data\Images\Out\LDR2HDR\FromRAW\Result_B44LC.exr" ), ImageFile.FILE_FORMAT.EXR, ImageFile.SAVE_FLAGS.SF_EXR_B44 | ImageFile.SAVE_FLAGS.SF_EXR_LC );
+						tempHDR.Save( new System.IO.FileInfo( @"..\..\..\Data\Images\Out\LDR2HDR\FromRAW\Result_noLZW.exr" ), ImageFile.FILE_FORMAT.EXR, ImageFile.SAVE_FLAGS.SF_EXR_NONE );
 					} else {
-						tempHDR.Save( new System.IO.FileInfo( @"..\..\Images\Out\LDR2HDR\FromJPG\Result.exr" ), ImageFile.FILE_FORMAT.EXR, ImageFile.SAVE_FLAGS.SF_EXR_DEFAULT );
-						tempHDR.Save( new System.IO.FileInfo( @"..\..\Images\Out\LDR2HDR\FromJPG\Result_B44LC.exr" ), ImageFile.FILE_FORMAT.EXR, ImageFile.SAVE_FLAGS.SF_EXR_B44 | ImageFile.SAVE_FLAGS.SF_EXR_LC );
-						tempHDR.Save( new System.IO.FileInfo( @"..\..\Images\Out\LDR2HDR\FromJPG\Result_noLZW.exr" ), ImageFile.FILE_FORMAT.EXR, ImageFile.SAVE_FLAGS.SF_EXR_NONE );
+						tempHDR.Save( new System.IO.FileInfo( @"..\..\..\Data\Images\Out\LDR2HDR\FromJPG\Result.exr" ), ImageFile.FILE_FORMAT.EXR, ImageFile.SAVE_FLAGS.SF_EXR_DEFAULT );
+						tempHDR.Save( new System.IO.FileInfo( @"..\..\..\Data\Images\Out\LDR2HDR\FromJPG\Result_B44LC.exr" ), ImageFile.FILE_FORMAT.EXR, ImageFile.SAVE_FLAGS.SF_EXR_B44 | ImageFile.SAVE_FLAGS.SF_EXR_LC );
+						tempHDR.Save( new System.IO.FileInfo( @"..\..\..\Data\Images\Out\LDR2HDR\FromJPG\Result_noLZW.exr" ), ImageFile.FILE_FORMAT.EXR, ImageFile.SAVE_FLAGS.SF_EXR_NONE );
 					}
 
 					ImageFile	tempToneMappedHDR = new ImageFile();
@@ -1055,93 +1055,93 @@ float	quality = _RAW ? 3.0f : 3.0f;
 				switch ( _type ) {
 					// BMP
 					case LOADING_TESTS.BMP_RGB:
-						m_imageFile.Load( new System.IO.FileInfo( @"..\..\Images\In\BMP\RGB8.bmp" ) );
+						m_imageFile.Load( new System.IO.FileInfo( @"..\..\..\Data\Images\In\BMP\RGB8.bmp" ) );
 						panelLoad.Bitmap = m_imageFile.AsBitmap;
 						break;
 					case LOADING_TESTS.BMP_RGBA:
-						m_imageFile.Load( new System.IO.FileInfo( @"..\..\Images\In\BMP\RGBA8.bmp" ) );
+						m_imageFile.Load( new System.IO.FileInfo( @"..\..\..\Data\Images\In\BMP\RGBA8.bmp" ) );
 						panelLoad.Bitmap = m_imageFile.AsBitmap;
 						break;
 
 					// GIF
 					case LOADING_TESTS.GIF_RGB8P:
-						m_imageFile.Load( new System.IO.FileInfo( @"..\..\Images\In\GIF\RGB8P.gif" ) );
+						m_imageFile.Load( new System.IO.FileInfo( @"..\..\..\Data\Images\In\GIF\RGB8P.gif" ) );
 						panelLoad.Bitmap = m_imageFile.AsBitmap;
 						break;
 
 					// JPG
 					case LOADING_TESTS.JPEG_R8:
-						m_imageFile.Load( new System.IO.FileInfo( @"..\..\Images\In\JPG\R8.jpg" ) );
+						m_imageFile.Load( new System.IO.FileInfo( @"..\..\..\Data\Images\In\JPG\R8.jpg" ) );
 						panelLoad.Bitmap = m_imageFile.AsBitmap;
 						break;
 					case LOADING_TESTS.JPEG_RGB8:
-						m_imageFile.Load( new System.IO.FileInfo( @"..\..\Images\In\JPG\RGB8.jpg" ) );
-//						m_imageFile.Load( new System.IO.FileInfo( @"..\..\Images\In\JPG\RGB8_ICC.jpg" ) );
+						m_imageFile.Load( new System.IO.FileInfo( @"..\..\..\Data\Images\In\JPG\RGB8.jpg" ) );
+//						m_imageFile.Load( new System.IO.FileInfo( @"..\..\..\Data\Images\In\JPG\RGB8_ICC.jpg" ) );
 						panelLoad.Bitmap = m_imageFile.AsBitmap;
 						break;
 
 					// PNG
 							// 8-bits
 					case LOADING_TESTS.PNG_R8P:
-						m_imageFile.Load( new System.IO.FileInfo( @"..\..\Images\In\PNG\R8P.png" ) );
+						m_imageFile.Load( new System.IO.FileInfo( @"..\..\..\Data\Images\In\PNG\R8P.png" ) );
 						panelLoad.Bitmap = m_imageFile.AsBitmap;
 						break;
 					case LOADING_TESTS.PNG_RGB8:
-						m_imageFile.Load( new System.IO.FileInfo( @"..\..\Images\In\PNG\RGB8.png" ) );
-//						m_imageFile.Load( new System.IO.FileInfo( @"..\..\Images\In\PNG\RGB8_SaveforWeb.png" ) );
+						m_imageFile.Load( new System.IO.FileInfo( @"..\..\..\Data\Images\In\PNG\RGB8.png" ) );
+//						m_imageFile.Load( new System.IO.FileInfo( @"..\..\..\Data\Images\In\PNG\RGB8_SaveforWeb.png" ) );
 						panelLoad.Bitmap = m_imageFile.AsBitmap;
 						break;
 					case LOADING_TESTS.PNG_RGBA8:
-						m_imageFile.Load( new System.IO.FileInfo( @"..\..\Images\In\PNG\RGBA8.png" ) );
+						m_imageFile.Load( new System.IO.FileInfo( @"..\..\..\Data\Images\In\PNG\RGBA8.png" ) );
 //m_imageFile.Load( new System.IO.FileInfo( @"D:\Workspaces\Arkane\GodComplex\Tests\TestHBIL\Textures\tomettes_basecolor.png" ) );
-//						m_imageFile.Load( new System.IO.FileInfo( @"..\..\Images\In\PNG\RGBA8_SaveforWeb.png" ) );
+//						m_imageFile.Load( new System.IO.FileInfo( @"..\..\..\Data\Images\In\PNG\RGBA8_SaveforWeb.png" ) );
 						panelLoad.Bitmap = m_imageFile.AsBitmap;
 						break;
 							// 16-bits
 					case LOADING_TESTS.PNG_RGB16:
-						m_imageFile.Load( new System.IO.FileInfo( @"..\..\Images\In\PNG\RGB16.png" ) );
+						m_imageFile.Load( new System.IO.FileInfo( @"..\..\..\Data\Images\In\PNG\RGB16.png" ) );
 						panelLoad.Bitmap = m_imageFile.AsBitmap;
 						break;
 
 					// TGA
 					// @TODO => Check why I can't retrieve my custom metas!
 					case LOADING_TESTS.TGA_RGB8:
-						m_imageFile.Load( new System.IO.FileInfo( @"..\..\Images\In\TGA\RGB8.tga" ) );
+						m_imageFile.Load( new System.IO.FileInfo( @"..\..\..\Data\Images\In\TGA\RGB8.tga" ) );
 						panelLoad.Bitmap = m_imageFile.AsBitmap;
 						break;
 					case LOADING_TESTS.TGA_RGBA8:
-						m_imageFile.Load( new System.IO.FileInfo( @"..\..\Images\In\TGA\RGBA8.tga" ) );
+						m_imageFile.Load( new System.IO.FileInfo( @"..\..\..\Data\Images\In\TGA\RGBA8.tga" ) );
 						panelLoad.Bitmap = m_imageFile.AsBitmap;
 						break;
 
 					// TIFF
 							// 8-bits
 					case LOADING_TESTS.TIFF_RGB8:
-						m_imageFile.Load( new System.IO.FileInfo( @"..\..\Images\In\TIFF\RGB8.tif" ) );
-//						m_imageFile.Load( new System.IO.FileInfo( @"..\..\Images\In\TIFF\RGB8_ICC.tif" ) );
+						m_imageFile.Load( new System.IO.FileInfo( @"..\..\..\Data\Images\In\TIFF\RGB8.tif" ) );
+//						m_imageFile.Load( new System.IO.FileInfo( @"..\..\..\Data\Images\In\TIFF\RGB8_ICC.tif" ) );
 						panelLoad.Bitmap = m_imageFile.AsBitmap;
 						break;
 							// 16-bits
 					case LOADING_TESTS.TIFF_RGB16:
-						m_imageFile.Load( new System.IO.FileInfo( @"..\..\Images\In\TIFF\RGB16.tif" ) );
-//						m_imageFile.Load( new System.IO.FileInfo( @"..\..\Images\In\TIFF\RGB16_ICC.tif" ) );
+						m_imageFile.Load( new System.IO.FileInfo( @"..\..\..\Data\Images\In\TIFF\RGB16.tif" ) );
+//						m_imageFile.Load( new System.IO.FileInfo( @"..\..\..\Data\Images\In\TIFF\RGB16_ICC.tif" ) );
 						panelLoad.Bitmap = m_imageFile.AsBitmap;
 						break;
 
 					// RAW
 					case LOADING_TESTS.CRW:
-						m_imageFile.Load( new System.IO.FileInfo( @"..\..\Images\In\CRW\CRW_7967.CRW" ) );
-//						m_imageFile.Load( new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromRAW\CRW_7971.crw" ) );
-// 						m_imageFile.Load( new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromRAW\CRW_7971.crw" ) );
-// 						m_imageFile.Load( new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromRAW\CRW_7972.crw" ) );
-// 						m_imageFile.Load( new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromRAW\CRW_7973.crw" ) );
-// 						m_imageFile.Load( new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromRAW\CRW_7974.crw" ) );
-// 						m_imageFile.Load( new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromRAW\CRW_7975.crw" ) );
-// 						m_imageFile.Load( new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromRAW\CRW_7976.crw" ) );
-// 						m_imageFile.Load( new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromRAW\CRW_7977.crw" ) );
-// 						m_imageFile.Load( new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromRAW\CRW_7978.crw" ) );
-// 						m_imageFile.Load( new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromRAW\CRW_7979.crw" ) );
-// 						m_imageFile.Load( new System.IO.FileInfo( @"..\..\Images\In\LDR2HDR\FromRAW\CRW_7980.crw" ) );
+						m_imageFile.Load( new System.IO.FileInfo( @"..\..\..\Data\Images\In\CRW\CRW_7967.CRW" ) );
+//						m_imageFile.Load( new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromRAW\CRW_7971.crw" ) );
+// 						m_imageFile.Load( new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromRAW\CRW_7971.crw" ) );
+// 						m_imageFile.Load( new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromRAW\CRW_7972.crw" ) );
+// 						m_imageFile.Load( new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromRAW\CRW_7973.crw" ) );
+// 						m_imageFile.Load( new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromRAW\CRW_7974.crw" ) );
+// 						m_imageFile.Load( new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromRAW\CRW_7975.crw" ) );
+// 						m_imageFile.Load( new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromRAW\CRW_7976.crw" ) );
+// 						m_imageFile.Load( new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromRAW\CRW_7977.crw" ) );
+// 						m_imageFile.Load( new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromRAW\CRW_7978.crw" ) );
+// 						m_imageFile.Load( new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromRAW\CRW_7979.crw" ) );
+// 						m_imageFile.Load( new System.IO.FileInfo( @"..\..\..\Data\Images\In\LDR2HDR\FromRAW\CRW_7980.crw" ) );
 
 						panelLoad.Bitmap = m_imageFile.AsBitmap;
 						break;
@@ -1150,7 +1150,7 @@ float	quality = _RAW ? 3.0f : 3.0f;
 					// DDS 8 bits with mips
 					case LOADING_TESTS.DDS_2D_RGBA8_MIPS: {
 						ImagesMatrix	images = new ImagesMatrix();
-						images.DDSLoadFile( new System.IO.FileInfo( @"..\..\Images\In\DDS\AreaLightSAT.dds" ) );
+						images.DDSLoadFile( new System.IO.FileInfo( @"..\..\..\Data\Images\In\DDS\AreaLightSAT.dds" ) );
 						m_imageFile = images[0][0][0];
 						images[0][0][0] = null;	// Remove it from the matrix so it doesn't get destroyed!
 						panelLoad.Bitmap = m_imageFile.AsBitmap;
@@ -1162,9 +1162,9 @@ float	quality = _RAW ? 3.0f : 3.0f;
 					}
 					case LOADING_TESTS.DDS_2D_RGBA32_CUBE: {
 						ImagesMatrix	images = new ImagesMatrix();
-//						images.DDSLoadFile( new System.IO.FileInfo( @"..\..\Images\In\DDS\caustics2.dds" ) );		// BC4_UNORM
-						images.DDSLoadFile( new System.IO.FileInfo( @"..\..\Images\In\DDS\garage4_hd.dds" ) );
-//						images.DDSLoadFile( new System.IO.FileInfo( @"..\..\Images\In\DDS\kitchen_cross.dds" ) );
+//						images.DDSLoadFile( new System.IO.FileInfo( @"..\..\..\Data\Images\In\DDS\caustics2.dds" ) );		// BC4_UNORM
+						images.DDSLoadFile( new System.IO.FileInfo( @"..\..\..\Data\Images\In\DDS\garage4_hd.dds" ) );
+//						images.DDSLoadFile( new System.IO.FileInfo( @"..\..\..\Data\Images\In\DDS\kitchen_cross.dds" ) );
 						m_imageFile = images[0][0][0];
 						images[0][0][0] = null;	// Remove it from the matrix so it doesn't get destroyed!
 						panelLoad.Bitmap = m_imageFile.AsCustomBitmap( ( ref float4 _color ) => {
@@ -1183,26 +1183,26 @@ float	quality = _RAW ? 3.0f : 3.0f;
 						switch ( _type ) {
 								// HDR
 							case LOADING_TESTS.HDR_RGBE:
-								m_imageFile.Load( new System.IO.FileInfo( @"..\..\Images\In\HDR\RGB32F.hdr" ) );
+								m_imageFile.Load( new System.IO.FileInfo( @"..\..\..\Data\Images\In\HDR\RGB32F.hdr" ) );
 								break;
 
 								// EXR
 							case LOADING_TESTS.EXR_RGB32F:
- 								m_imageFile.Load( new System.IO.FileInfo( @"..\..\Images\In\EXR\RGB32F.exr" ) );
+ 								m_imageFile.Load( new System.IO.FileInfo( @"..\..\..\Data\Images\In\EXR\RGB32F.exr" ) );
 								break;
 
 								// TIFF
 							case LOADING_TESTS.TIFF_RGB16F:
 									// 16-bits floating-point
-								m_imageFile.Load( new System.IO.FileInfo( @"..\..\Images\In\TIFF\RGB16F.tif" ) );
-//								m_imageFile.Load( new System.IO.FileInfo( @"..\..\Images\In\TIFF\RGB16F_ICC.tif" ) );
+								m_imageFile.Load( new System.IO.FileInfo( @"..\..\..\Data\Images\In\TIFF\RGB16F.tif" ) );
+//								m_imageFile.Load( new System.IO.FileInfo( @"..\..\..\Data\Images\In\TIFF\RGB16F_ICC.tif" ) );
 								break;
 
 // Pom (2016-11-14) This crashes as FreeImage is not capable of reading 32-bits floating point TIFs but I think I don't care, we have enough formats!
 // 							case LOADING_TESTS.TIFF_RGB32F:
 // 									// 32-bits floating-point
-// 								m_imageFile.Load( new System.IO.FileInfo( @"..\..\Images\In\TIFF\RGB32F.tif" ) );
-// //							m_imageFile.Load( new System.IO.FileInfo( @"..\..\Images\In\TIFF\RGB32F_ICC.tif" ) );
+// 								m_imageFile.Load( new System.IO.FileInfo( @"..\..\..\Data\Images\In\TIFF\RGB32F.tif" ) );
+// //							m_imageFile.Load( new System.IO.FileInfo( @"..\..\..\Data\Images\In\TIFF\RGB32F_ICC.tif" ) );
 // 								break;
 
 							default:

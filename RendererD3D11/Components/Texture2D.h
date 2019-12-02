@@ -1,11 +1,6 @@
 #pragma once
 
 #include "Component.h"
-#include "../../Utility/TextureFilePOM.h"
-
-#include "FreeImage.h"
-#include "../../Packages/ImageUtilityLib/ImageFile.h"
-#include "../../Packages/ImageUtilityLib/ImagesMatrix.h"
 
 class Texture2D : public Component {
 protected:	// CONSTANTS
@@ -14,6 +9,13 @@ protected:	// CONSTANTS
 	static const int	MAX_TEXTURE_POT = 13;
 
 	static const int	HASHTABLE_SIZE = 1 << 13;	// 8Kb per hashtable, 3 hashtable per texture => 24Kb overhead
+
+public:		// TYPES
+
+	struct	MipDescriptor {
+		int					rowPitch;
+		int					depthPitch;
+	};
 
 private:	// FIELDS
 
@@ -118,6 +120,6 @@ private:
 	// _UAV, true if the texture can also be used as a UAV (Random access read/write from a compute shader)
 	// _pMipDescriptors, if not NULL then the row pitch & depth pitch will be read from this array for each mip level
 	//
-	void		Init( const void* const* _ppContent, bool _staging=false, bool _UAV=false, TextureFilePOM::MipDescriptor* _pMipDescriptors=NULL );
+	void		Init( const void* const* _ppContent, bool _staging=false, bool _UAV=false, MipDescriptor* _pMipDescriptors=NULL );
 };
 

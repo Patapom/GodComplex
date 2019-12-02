@@ -1,8 +1,7 @@
-﻿#include "Types.h"
-//*
-#include <stdarg.h>
-#include <stdio.h>
-#include <string.h>
+﻿#include <stdafx.h>
+
+#include "Types.h"
+
 
 BString::BString( const char* _str ) : m_str( NULL ) {
 	Copy( _str );
@@ -139,7 +138,7 @@ void	BString::GetFileDirectory( BString& _fileDirectory ) const {
 		_fileDirectory[indexOfLastSlash] = '\0';
 	}
 
-// 	// Cut at last slash or anti-slash
+// 	// Cut a last slash or anti-slash
 // 	const char*	pLastSlash = strrchr( _fileDirectory, '\\' );
 // 	if ( pLastSlash == NULL )
 // 		pLastSlash = strrchr( _fileDirectory, '/' );
@@ -267,4 +266,3 @@ S32	BString::Compare( const BString& _a, const BString& _b, int _maxLength ) {
 	BString::~BString() {
 	}
 #endif
-//*/

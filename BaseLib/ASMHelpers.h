@@ -10,7 +10,9 @@ namespace BaseLib {
 	// Win64 architecture
 	#include <memory.h>	// include regular memset/memcpy/etc.
 
+#if WINVER < _WIN32_WINNT_WIN10
 	#define log2f( a )			(1.4426950408889634073599246810019f * float(log( a )))
+#endif
 
 #else // !defined(_WIN64)
 

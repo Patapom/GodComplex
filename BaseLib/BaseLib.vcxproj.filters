@@ -45,6 +45,7 @@
     <ClInclude Include="Utility\Stream.h">
       <Filter>Utility</Filter>
     </ClInclude>
+    <ClInclude Include="stdafx.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Containers\Hashtable.cpp">
@@ -69,6 +70,7 @@
     <ClCompile Include="Utility\Stream.cpp">
       <Filter>Utility</Filter>
     </ClCompile>
+    <ClCompile Include="stdafx.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Containers\Hashtable.inl">

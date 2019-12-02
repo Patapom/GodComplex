@@ -1,0 +1,84 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClInclude Include="BString.h" />
+    <ClInclude Include="stdafx.h" />
+    <ClInclude Include="targetver.h" />
+    <ClInclude Include="Types.h" />
+    <ClInclude Include="Containers\Hashtable.h">
+      <Filter>Containers</Filter>
+    </ClInclude>
+    <ClInclude Include="Containers\List.h">
+      <Filter>Containers</Filter>
+    </ClInclude>
+    <ClInclude Include="Containers\SpatialHashing.h">
+      <Filter>Containers</Filter>
+    </ClInclude>
+    <ClInclude Include="Math\Math.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Math\Random.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Math\SH.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Utility\Stream.h">
+      <Filter>Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="Utility\tweakval.h">
+      <Filter>Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="PixelFormats\PixelFormats.h">
+      <Filter>PixelFormats</Filter>
+    </ClInclude>
+    <ClInclude Include="ASMHelpers.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="BString.cpp" />
+    <ClCompile Include="stdafx.cpp" />
+    <ClCompile Include="Containers\Hashtable.cpp">
+      <Filter>Containers</Filter>
+    </ClCompile>
+    <ClCompile Include="Math\Math.cpp">
+      <Filter>Math</Filter>
+    </ClCompile>
+    <ClCompile Include="Math\Random.cpp">
+      <Filter>Math</Filter>
+    </ClCompile>
+    <ClCompile Include="Math\SH.cpp">
+      <Filter>Math</Filter>
+    </ClCompile>
+    <ClCompile Include="Utility\Stream.cpp">
+      <Filter>Utility</Filter>
+    </ClCompile>
+    <ClCompile Include="Utility\tweakval.cpp">
+      <Filter>Utility</Filter>
+    </ClCompile>
+    <ClCompile Include="PixelFormats\PixelFormats.cpp">
+      <Filter>PixelFormats</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Containers">
+      <UniqueIdentifier>{b4c7ced8-7dcc-4509-a08e-1b2aa2d1918a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Math">
+      <UniqueIdentifier>{fd1d0c79-d4ef-4e07-9666-80769c3f8880}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Utility">
+      <UniqueIdentifier>{4e9e8e1f-2deb-4861-a5ed-c1f961e40b69}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="PixelFormats">
+      <UniqueIdentifier>{d39b2281-4379-4bc6-9b60-3467351208bc}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Containers\Hashtable.inl">
+      <Filter>Containers</Filter>
+    </None>
+    <None Include="Containers\List.inl">
+      <Filter>Containers</Filter>
+    </None>
+  </ItemGroup>
+</Project>

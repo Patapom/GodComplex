@@ -8,8 +8,13 @@
 
 #include <memory.h>
 
-// Base lib
+//#include "FreeImage.h"
+// #include "..\DirectXTex\DirectXTex\DirectXTex.h"
+
+// Base libs
 #include "..\..\BaseLib\Types.h"
+//#include "..\..\Packages\ImageUtilityLib\ImageFile.h"
+//#include "..\..\Packages\ImageUtilityLib\ImagesMatrix.h"
 
 // Renderer lib
 #include "../../RendererD3D11/Device.h"

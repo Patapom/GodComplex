@@ -1,0 +1,43 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClInclude Include="..\ImageUtilityLib\Bitmap.h" />
+    <ClInclude Include="..\ImageUtilityLib\ImageFile.h" />
+    <ClInclude Include="stdafx.h" />
+    <ClInclude Include="targetver.h" />
+    <ClInclude Include="..\ImageUtilityLib\ColorProfile.h">
+      <Filter>Structures</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ImageUtilityLib\ImagesMatrix.h">
+      <Filter>Structures</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ImageUtilityLib\MetaData.h">
+      <Filter>Structures</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\ImageUtilityLib\Bitmap.cpp" />
+    <ClCompile Include="..\ImageUtilityLib\ImageFile.cpp" />
+    <ClCompile Include="stdafx.cpp" />
+    <ClCompile Include="..\ImageUtilityLib\ColorMatchingFunctions.cpp">
+      <Filter>Structures</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ImageUtilityLib\ColorProfile.cpp">
+      <Filter>Structures</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ImageUtilityLib\ImagesMatrix.cpp">
+      <Filter>Structures</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ImageUtilityLib\MetaData.cpp">
+      <Filter>Structures</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="..\ImageUtilityLib\NoteAboutGammaCorrection.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Structures">
+      <UniqueIdentifier>{de4f400a-de6f-47eb-bef0-aba826935b67}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

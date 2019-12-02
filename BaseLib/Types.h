@@ -49,26 +49,25 @@ template<typename T> void		SafeDeleteArray__( T*& _pBuffer ) {
 	_pBuffer = NULL;
 }
 
-//#else
-// //For the GodComplex intro, don't use templates! That makes the exe fat!
-// static void		SafeDelete__( void*& _pBuffer )
-// {
-// 	if ( _pBuffer == 0 )
-// 		return;
-// 	delete _pBuffer;
-// 	_pBuffer = 0;
-// }
-// 
-// static void		SafeDeleteArray__( void*& _pBuffer )
-// {
-// 	if ( _pBuffer == 0 )
-// 		return;
-// 	delete[] _pBuffer;
-// 	_pBuffer = 0;
-// }
-// #define delete a )			SafeDelete__( (void*&) (a) );
-// #define delete[] a )	SafeDeleteArray__( (void*&) (a) );
+#else
+//For the GodComplex intro, don't use templates! That makes the exe fat!
+static void		SafeDelete__( void*& _pBuffer )
+{
+	if ( _pBuffer == 0 )
+		return;
+	delete _pBuffer;
+	_pBuffer = 0;
+}
 
+static void		SafeDeleteArray__( void*& _pBuffer )
+{
+	if ( _pBuffer == 0 )
+		return;
+	delete[] _pBuffer;
+	_pBuffer = 0;
+}
+#define delete a )			SafeDelete__( (void*&) (a) );
+#define delete[] a )	SafeDeleteArray__( (void*&) (a) );
 #endif
 
 template<typename T> void	Swap( T& a, T& b ) { T temp = a; a = b; b = temp; }
