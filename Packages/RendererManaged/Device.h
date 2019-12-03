@@ -80,7 +80,7 @@ namespace Renderer {
 		void	Clear( SharpMath::float4 _clearColor );
 		void	Clear( Texture2D^ _renderTarget, SharpMath::float4 _clearColor );
 		void	Clear( Texture3D^ _renderTarget, SharpMath::float4 _clearColor );
-		void	ClearDepthStencil( Texture2D^ _renderTarget, float _Z, byte _Stencil, bool _ClearDepth, bool _ClearStencil );
+		void	ClearDepthStencil( Texture2D^ _renderTarget, float _Z, Byte _Stencil, bool _ClearDepth, bool _ClearStencil );
 
 		void	SetRenderStates( RASTERIZER_STATE _RS, DEPTHSTENCIL_STATE _DS, BLEND_STATE _BS );
 		void	SetRenderTarget( Texture2D^ _renderTarget, Texture2D^ _depthStencilTarget );

@@ -1,7 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClInclude Include="..\RendererManaged\Texture3D.h" />
     <ClInclude Include="..\RendererManaged\ByteBuffer.h">
       <Filter>Buffers</Filter>
     </ClInclude>
@@ -14,17 +13,38 @@
     <ClInclude Include="..\RendererManaged\VertexFormats.h">
       <Filter>Pixel &amp; Vertex Formats</Filter>
     </ClInclude>
-    <ClInclude Include="..\RendererManaged\ComputeShader.h" />
-    <ClInclude Include="..\RendererManaged\ConstantBuffer.h" />
     <ClInclude Include="..\RendererManaged\Device.h" />
-    <ClInclude Include="..\RendererManaged\Primitive.h" />
-    <ClInclude Include="..\RendererManaged\RenderStates.h" />
-    <ClInclude Include="..\RendererManaged\Shader.h" />
-    <ClInclude Include="..\RendererManaged\ShaderMacros.h" />
-    <ClInclude Include="..\RendererManaged\StructuredBuffer.h" />
-    <ClInclude Include="..\RendererManaged\Texture2D.h" />
     <ClInclude Include="..\RendererManaged\Stdafx.h" />
-    <ClInclude Include="FileServer.h" />
+    <ClInclude Include="..\RendererManaged\ConstantBuffer.h">
+      <Filter>Components</Filter>
+    </ClInclude>
+    <ClInclude Include="..\RendererManaged\ComputeShader.h">
+      <Filter>Components</Filter>
+    </ClInclude>
+    <ClInclude Include="..\RendererManaged\Primitive.h">
+      <Filter>Components</Filter>
+    </ClInclude>
+    <ClInclude Include="..\RendererManaged\Texture3D.h">
+      <Filter>Components</Filter>
+    </ClInclude>
+    <ClInclude Include="..\RendererManaged\Texture2D.h">
+      <Filter>Components</Filter>
+    </ClInclude>
+    <ClInclude Include="..\RendererManaged\Shader.h">
+      <Filter>Components</Filter>
+    </ClInclude>
+    <ClInclude Include="..\RendererManaged\RenderStates.h">
+      <Filter>Components</Filter>
+    </ClInclude>
+    <ClInclude Include="..\RendererManaged\StructuredBuffer.h">
+      <Filter>Components</Filter>
+    </ClInclude>
+    <ClInclude Include="..\RendererManaged\ShaderMacros.h">
+      <Filter>Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="FileServer.h">
+      <Filter>Utility</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Buffers">
@@ -33,8 +53,11 @@
     <Filter Include="Pixel &amp; Vertex Formats">
       <UniqueIdentifier>{d6d4f025-bdba-4b3f-adbd-ecf35428e3df}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Sources">
-      <UniqueIdentifier>{e87ec95d-c0b3-4936-ac31-1f0cde83d32b}</UniqueIdentifier>
+    <Filter Include="Components">
+      <UniqueIdentifier>{8e125115-7e2c-4263-a571-c5af0a6eab08}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Utility">
+      <UniqueIdentifier>{05b33e28-d053-4f9f-ab02-11d5220a04e1}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -44,44 +67,35 @@
     <ClCompile Include="..\RendererManaged\PixelsBuffer.cpp">
       <Filter>Buffers</Filter>
     </ClCompile>
-    <ClCompile Include="..\RendererManaged\AssemblyInfo.cpp">
-      <Filter>Sources</Filter>
+    <ClCompile Include="..\RendererManaged\AssemblyInfo.cpp" />
+    <ClCompile Include="..\RendererManaged\Device.cpp" />
+    <ClCompile Include="..\RendererManaged\Stdafx.cpp" />
+    <ClCompile Include="..\RendererManaged\ConstantBuffer.cpp">
+      <Filter>Components</Filter>
     </ClCompile>
     <ClCompile Include="..\RendererManaged\ComputeShader.cpp">
-      <Filter>Sources</Filter>
-    </ClCompile>
-    <ClCompile Include="..\RendererManaged\ConstantBuffer.cpp">
-      <Filter>Sources</Filter>
-    </ClCompile>
-    <ClCompile Include="..\RendererManaged\Device.cpp">
-      <Filter>Sources</Filter>
+      <Filter>Components</Filter>
     </ClCompile>
     <ClCompile Include="..\RendererManaged\Primitive.cpp">
-      <Filter>Sources</Filter>
-    </ClCompile>
-    <ClCompile Include="..\RendererManaged\Shader.cpp">
-      <Filter>Sources</Filter>
-    </ClCompile>
-    <ClCompile Include="..\RendererManaged\ShaderFile.cpp">
-      <Filter>Sources</Filter>
-    </ClCompile>
-    <ClCompile Include="..\RendererManaged\ShaderMacros.cpp">
-      <Filter>Sources</Filter>
-    </ClCompile>
-    <ClCompile Include="..\RendererManaged\Stdafx.cpp">
-      <Filter>Sources</Filter>
-    </ClCompile>
-    <ClCompile Include="..\RendererManaged\StructuredBuffer.cpp">
-      <Filter>Sources</Filter>
+      <Filter>Components</Filter>
     </ClCompile>
     <ClCompile Include="..\RendererManaged\Texture2D.cpp">
-      <Filter>Sources</Filter>
+      <Filter>Components</Filter>
     </ClCompile>
     <ClCompile Include="..\RendererManaged\Texture3D.cpp">
-      <Filter>Sources</Filter>
+      <Filter>Components</Filter>
+    </ClCompile>
+    <ClCompile Include="..\RendererManaged\Shader.cpp">
+      <Filter>Components</Filter>
+    </ClCompile>
+    <ClCompile Include="..\RendererManaged\StructuredBuffer.cpp">
+      <Filter>Components</Filter>
+    </ClCompile>
+    <ClCompile Include="..\RendererManaged\ShaderMacros.cpp">
+      <Filter>Utility</Filter>
     </ClCompile>
     <ClCompile Include="FileServer.cpp">
-      <Filter>Sources</Filter>
+      <Filter>Utility</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

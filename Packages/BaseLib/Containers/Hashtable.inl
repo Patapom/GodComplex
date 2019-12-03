@@ -61,7 +61,7 @@ template<typename T> T&	DictionaryString<T>::AddUnique( const BString& _key ) {
 	if ( pExisting != NULL )
 		return *pExisting;
 
-	return Add( _pKey );
+	return Add( _key );
 }
 
 template<typename T> void	DictionaryString<T>::Add( const BString& _key, const T& _Value ) {
@@ -245,7 +245,7 @@ template<typename T> void	Dictionary<T>::Remove( U32 _Key )
 
 template<typename T> void	Dictionary<T>::Clear() {
 	// Clear all linked lists of nodes from each head
-	for ( int HeadIndex=0; HeadIndex < m_Size; HeadIndex++ ) {
+	for ( int HeadIndex=0; HeadIndex < m_SizePOT; HeadIndex++ ) {
 		Node*	pNode = m_ppTable[HeadIndex];
 		while ( pNode != NULL ) {
 			Node*	pOld = pNode;
@@ -254,7 +254,7 @@ template<typename T> void	Dictionary<T>::Clear() {
 		}
 	}
 	// Clear heads
-	memset( m_ppTable, 0, m_Size*sizeof(Node*) );
+	memset( m_ppTable, 0, m_SizePOT*sizeof(Node*) );
 }
 
 template<typename T> void	Dictionary<T>::ForEach( VisitorDelegate _pDelegate, void* _pUserData ) {
@@ -386,7 +386,7 @@ void	DictionaryGeneric<K,T>::Remove( const K& _key ) {
 template<typename K, typename T>
 void	DictionaryGeneric<K,T>::Clear() {
 	// Clear all linked lists of nodes from each head
-	for ( int HeadIndex=0; HeadIndex < m_Size; HeadIndex++ ) {
+	for ( int HeadIndex=0; HeadIndex < m_SizePOT; HeadIndex++ ) {
 		Node*	pNode = m_ppTable[HeadIndex];
 		while ( pNode != NULL ) {
 			Node*	pOld = pNode;
@@ -395,7 +395,7 @@ void	DictionaryGeneric<K,T>::Clear() {
 		}
 	}
 	// Clear heads
-	memset( m_ppTable, 0, m_Size*sizeof(Node*) );
+	memset( m_ppTable, 0, m_SizePOT*sizeof(Node*) );
 }
 
 template<typename K, typename T>

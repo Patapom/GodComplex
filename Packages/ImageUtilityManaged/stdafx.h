@@ -14,7 +14,7 @@
 #include "FreeImage.h"
 
 // Base lib
-#include "..\..\BaseLib\Types.h"
+#include "..\BaseLib\Types.h"
 
 // Image Utility lib
 #include "..\ImageUtilityLib\Bitmap.h"

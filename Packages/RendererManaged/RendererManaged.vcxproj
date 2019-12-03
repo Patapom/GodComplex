@@ -78,10 +78,10 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <LibraryPath>$(SolutionDir)build\$(Configuration)\;$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)build\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)build\temp\$(ProjectName)\$(Configuration)\</IntDir>
-    <IncludePath>$(SolutionDir)\Packages\FreeImage3170\Dist\x64\$(Configuration);$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)\Packages\FreeImage3170\Dist\x64\$(Configuration)\;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <LibraryPath>$(SolutionDir)build\$(Configuration)\;$(SolutionDir)\Packages\FreeImage3170\Dist\x64\$(Configuration);$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -90,10 +90,10 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <LibraryPath>$(SolutionDir)build\$(Configuration)\;$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)build\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)build\temp\$(ProjectName)\$(Configuration)\</IntDir>
-    <IncludePath>$(SolutionDir)\Packages\FreeImage3170\Dist\x64\$(Configuration);$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)\Packages\FreeImage3170\Dist\x64\$(Configuration)\;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <LibraryPath>$(SolutionDir)build\$(Configuration)\;$(SolutionDir)\Packages\FreeImage3170\Dist\x64\$(Configuration);$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -174,7 +174,6 @@
     <ClCompile Include="..\RendererManaged\PixelsBuffer.cpp" />
     <ClCompile Include="..\RendererManaged\Primitive.cpp" />
     <ClCompile Include="..\RendererManaged\Shader.cpp" />
-    <ClCompile Include="..\RendererManaged\ShaderFile.cpp" />
     <ClCompile Include="..\RendererManaged\ShaderMacros.cpp" />
     <ClCompile Include="..\RendererManaged\Stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
@@ -186,9 +185,6 @@
     <ClCompile Include="FileServer.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\RendererD3D11\RendererLib.vcxproj">
-      <Project>{7523deed-a096-4b6e-b1d9-edda85ee6aa6}</Project>
-    </ProjectReference>
     <ProjectReference Include="..\ImageUtilityManaged\ImageUtilityManaged.vcxproj">
       <Project>{6c974ba3-ecba-4436-85cb-218eebb33d53}</Project>
     </ProjectReference>

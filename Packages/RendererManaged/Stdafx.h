@@ -4,32 +4,38 @@
 
 #pragma once
 
+#include <vcclr.h>
+
 #pragma unmanaged
+
+#include <d3d11.h>
 
 #include <memory.h>
 
-//#include "FreeImage.h"
-// #include "..\DirectXTex\DirectXTex\DirectXTex.h"
+// Free Image lib
+#include "FreeImage.h"
 
 // Base libs
-#include "..\..\BaseLib\Types.h"
-//#include "..\..\Packages\ImageUtilityLib\ImageFile.h"
-//#include "..\..\Packages\ImageUtilityLib\ImagesMatrix.h"
+#include "..\BaseLib\Types.h"
+
+// Image Utility lib
+#include "..\ImageUtilityLib\Bitmap.h"
+#include "..\ImageUtilityLib\ImagesMatrix.h"
 
 // Renderer lib
-#include "../../RendererD3D11/Device.h"
-#include "../../RendererD3D11/Components/Texture2D.h"
-#include "../../RendererD3D11/Components/Texture3D.h"
-#include "../../RendererD3D11/Components/StructuredBuffer.h"
-#include "../../RendererD3D11/Components/Shader.h"
-#include "../../RendererD3D11/Components/ComputeShader.h"
-#include "../../RendererD3D11/Components/ConstantBuffer.h"
-#include "../../RendererD3D11/Components/Primitive.h"
-#include "../../RendererD3D11/Components/States.h"
+#include "../RendererLib/Device.h"
+#include "../RendererLib/Components/Texture2D.h"
+#include "../RendererLib/Components/Texture3D.h"
+#include "../RendererLib/Components/StructuredBuffer.h"
+#include "../RendererLib/Components/Shader.h"
+#include "../RendererLib/Components/ComputeShader.h"
+#include "../RendererLib/Components/ConstantBuffer.h"
+#include "../RendererLib/Components/Primitive.h"
+#include "../RendererLib/Components/States.h"
 
-#include "../../RendererD3D11/Structures/VertexFormats.h"
+#include "../RendererLib/Structures/VertexFormats.h"
 
-#include "../../RendererD3D11/Utility/FileServer.h"
-#include "../../RendererD3D11/Utility/ShaderCompiler.h"
+#include "../RendererLib/Utility/FileServer.h"
+#include "../RendererLib/Utility/ShaderCompiler.h"
 
 #pragma managed

@@ -15,5 +15,5 @@
 
 #include "..\BaseLib\Types.h"
 #include "FreeImage.h"
-#include "..\Packages\ImageUtilityLib\ImagesMatrix.h"
+#include "..\ImageUtilityLib\ImagesMatrix.h"
 

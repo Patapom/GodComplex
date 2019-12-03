@@ -21,10 +21,10 @@ namespace Renderer {
 			if ( _clearValue == 0 )
 				return;
 			UInt32	count = _ContentSize >> 2;
-			byte	A = (_clearValue >> 24) & 0xFF;
-			byte	R = (_clearValue >> 16) & 0xFF;
-			byte	G = (_clearValue >> 8) & 0xFF;
-			byte	B = (_clearValue >> 0) & 0xFF;
+			Byte	A = (_clearValue >> 24) & 0xFF;
+			Byte	R = (_clearValue >> 16) & 0xFF;
+			Byte	G = (_clearValue >> 8) & 0xFF;
+			Byte	B = (_clearValue >> 0) & 0xFF;
 			UInt32	offset = 0;
 			for ( UInt32 i=0; i < count; i++ ) {
 				m_Buffer[offset++] = B;
