@@ -118,7 +118,7 @@
       <Project>{bea875b8-e28a-49c5-8e7e-6512da65f7e1}</Project>
       <Name>FFTWLib</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\ImageUtilityManaged\ImageUtilityManaged.vcxproj">
+    <ProjectReference Include="..\..\ImageUtility\ImageUtility.vcxproj">
       <Project>{6c974ba3-ecba-4436-85cb-218eebb33d53}</Project>
       <Name>ImageUtility</Name>
     </ProjectReference>
@@ -130,7 +130,7 @@
       <Project>{cec07704-2a19-4bf1-b46d-8fcf9c5965ee}</Project>
       <Name>MathSimple</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\RendererManaged\RendererManaged.vcxproj">
+    <ProjectReference Include="..\..\Renderer\Renderer.vcxproj">
       <Project>{f96cdfd3-8954-4f4f-afb0-2855d98f051b}</Project>
       <Name>Renderer</Name>
     </ProjectReference>
