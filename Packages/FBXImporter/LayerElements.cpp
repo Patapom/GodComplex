@@ -154,8 +154,8 @@ Object^	LayerElement::GetElementAt( FbxLayerElement* _pLayerElement, int _Index 
 		GET_ELEMENT( pElementVector4, _Index, Helpers::ToVector4 )
 
 		{
-			WMath::Vector4D^	Temp = dynamic_cast<WMath::Vector4D^>( Result );
-			Result = (WMath::Vector^) Temp;
+			SharpMath::float4^	Temp = dynamic_cast<SharpMath::float4^>( Result );
+			Result = (SharpMath::float3^) Temp;
 		}
 
 // 		switch ( UpAxis )
@@ -165,14 +165,14 @@ Object^	LayerElement::GetElementAt( FbxLayerElement* _pLayerElement, int _Index 
 // 			break;
 // 		case Scene::UP_AXIS::Y:
 // 			{
-// 				WMath::Vector4D^	Temp = dynamic_cast<WMath::Vector4D^>( Result );
-// 				Result = gcnew WMath::Vector( Temp->x, Temp->y, Temp->z );
+// 				SharpMath::float4^	Temp = dynamic_cast<SharpMath::float4^>( Result );
+// 				Result = gcnew SharpMath::float3( Temp->x, Temp->y, Temp->z );
 // 			}
 // 			break;
 // 		case Scene::UP_AXIS::Z:
 // 			{
-// 				WMath::Vector4D^	Temp = dynamic_cast<WMath::Vector4D^>( Result );
-// 				Result = gcnew WMath::Vector( Temp->x, Temp->z, -Temp->y );
+// 				SharpMath::float4^	Temp = dynamic_cast<SharpMath::float4^>( Result );
+// 				Result = gcnew SharpMath::float3( Temp->x, Temp->z, -Temp->y );
 // 			}
 // 			break;
 // 		}
@@ -249,24 +249,24 @@ bool	LayerElement::Compare( LayerElement^ _Other )
 		Object^	Object0 = Array0[ElementIndex];
 		Object^	Object1 = Array1[ElementIndex];
 
-		if ( WMath::Point::typeid->IsAssignableFrom( T ) )
+		if ( SharpMath::float3::typeid->IsAssignableFrom( T ) )
 		{
-			if ( ((WMath::Point^) Object0) != ((WMath::Point^) Object1) )
+			if ( ((SharpMath::float3^) Object0) != ((SharpMath::float3^) Object1) )
 				return	false;	// Different !
 		}
-		else if ( WMath::Vector::typeid->IsAssignableFrom( T ) )
+		else if ( SharpMath::float3::typeid->IsAssignableFrom( T ) )
 		{
-			if ( ((WMath::Vector^) Object0) != ((WMath::Vector^) Object1) )
+			if ( ((SharpMath::float3^) Object0) != ((SharpMath::float3^) Object1) )
 				return	false;	// Different !
 		}
-		else if ( WMath::Vector2D::typeid->IsAssignableFrom( T ) )
+		else if ( SharpMath::float2::typeid->IsAssignableFrom( T ) )
 		{
-			if ( ((WMath::Vector2D^) Object0) != ((WMath::Vector2D^) Object1) )
+			if ( ((SharpMath::float2^) Object0) != ((SharpMath::float2^) Object1) )
 				return	false;	// Different !
 		}
-		else if ( WMath::Vector4D::typeid->IsAssignableFrom( T ) )
+		else if ( SharpMath::float4::typeid->IsAssignableFrom( T ) )
 		{
-			if ( ((WMath::Vector4D^) Object0) != ((WMath::Vector4D^) Object1) )
+			if ( ((SharpMath::float4^) Object0) != ((SharpMath::float4^) Object1) )
 				return	false;	// Different !
 		}
 		else if ( bool::typeid->IsAssignableFrom( T ) )

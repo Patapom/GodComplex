@@ -30,12 +30,12 @@ namespace FBXImporter
 		Node^				m_Parent;			// Parent
 		List<Node^>^		m_Children;			// The list of child nodes
 
-		WMath::Matrix4x4^	m_PreRotation;
-		WMath::Matrix4x4^	m_PostRotation;
+		SharpMath::float4x4	m_PreRotation;
+		SharpMath::float4x4	m_PostRotation;
 
-		WMath::Matrix4x4^	m_LocalTransform;
+		SharpMath::float4x4	m_LocalTransform;
 
-		WMath::Matrix4x4^				m_AnimationSourceMatrix;	// The matrix to use as source for the animation
+		SharpMath::float4x4				m_AnimationSourceMatrix;	// The matrix to use as source for the animation
 		cli::array<AnimationTrack^>^	m_AnimP;					// Position animation track
 		cli::array<AnimationTrack^>^	m_AnimR;					// Rotation animation track
 		cli::array<AnimationTrack^>^	m_AnimS;					// Scale animation track
@@ -66,23 +66,23 @@ namespace FBXImporter
 
 		[DescriptionAttribute( "Gets the pre-rotation matrix to apply to transforms (static or animated)" )]
 		//
-		property WMath::Matrix4x4^	PreRotation
+		property SharpMath::float4x4^	PreRotation
 		{
-			WMath::Matrix4x4^	get()	{ return m_PreRotation; }
+			SharpMath::float4x4^	get()	{ return m_PreRotation; }
 		}
 
 		[DescriptionAttribute( "Gets the post-rotation matrix to apply to transforms (static or animated)" )]
 		//
-		property WMath::Matrix4x4^	PostRotation
+		property SharpMath::float4x4^	PostRotation
 		{
-			WMath::Matrix4x4^	get()	{ return m_PostRotation; }
+			SharpMath::float4x4^	get()	{ return m_PostRotation; }
 		}
 
 		[DescriptionAttribute( "Gets the local transform matrix that transforms the node from LOCAL to WORLD space" )]
 		//
-		property WMath::Matrix4x4^	LocalTransform
+		property SharpMath::float4x4^	LocalTransform
 		{
-			WMath::Matrix4x4^	get()	{ return m_LocalTransform; }
+			SharpMath::float4x4^	get()	{ return m_LocalTransform; }
 		}
 
 		[DescriptionAttribute( "Tells if the node has PRS animation" )]
@@ -101,9 +101,9 @@ namespace FBXImporter
 
 		[DescriptionAttribute( "Gets the matrix to use as source for animation" )]
 		//
-		property WMath::Matrix4x4^	AnimationSourceMatrix
+		property SharpMath::float4x4^	AnimationSourceMatrix
 		{
-			WMath::Matrix4x4^	get()	{ return m_AnimationSourceMatrix; }
+			SharpMath::float4x4^	get()	{ return m_AnimationSourceMatrix; }
 		}
 
 		[DescriptionAttribute( "Gets the 3 animation tracks for position" )]
@@ -186,9 +186,9 @@ namespace FBXImporter
 
 		[DescriptionAttribute( "Gets the color of the node (issued from the modelling package, as seen in the viewport)" )]
 		//
-		property WMath::Vector^	Color
+		property SharpMath::float3^	Color
 		{
-			WMath::Vector^			get()	{ return FindProperty( "Color" )->AsVector3; }
+			SharpMath::float3^			get()	{ return FindProperty( "Color" )->AsVector3; }
 		}
 
 		[DescriptionAttribute( "Gets the list of materials associated to that node" )]
@@ -273,9 +273,9 @@ namespace FBXImporter
 
 		[DescriptionAttribute( "Gets the light color" )]
 		//
-		property WMath::Vector^	Color
+		property SharpMath::float3^	Color
 		{
-			WMath::Vector^	get()	{ return FindProperty( "Color" )->AsVector3; }
+			SharpMath::float3^	get()	{ return FindProperty( "Color" )->AsVector3; }
 		}
 
 		[DescriptionAttribute( "Gets the light intensity" )]
@@ -421,43 +421,37 @@ namespace FBXImporter
 
 		[DescriptionAttribute( "Gets the camera up vector" )]
 		// 
-		property WMath::Vector^		UpVector
-		{
-			WMath::Vector^	get()	{ return FindProperty( "UpVector" )->AsVector3; }
+		property SharpMath::float3		UpVector {
+			SharpMath::float3	get()	{ return FindProperty( "UpVector" )->AsVector3; }
 		}
 
 		[DescriptionAttribute( "Gets the target position" )]
 		// 
-		property WMath::Point^		Target
-		{
-			WMath::Point^	get()	{ return FindProperty( "InterestPosition" )->AsPoint; }
+		property SharpMath::float3		Target {
+			SharpMath::float3	get()	{ return FindProperty( "InterestPosition" )->AsVector3; }
 		}
 
 		[DescriptionAttribute( "Gets the horizontal field of view in radians" )]
 		// 
-		property float				FOVX
-		{
+		property float				FOVX {
 			float			get()	{ return (float) (Math::PI * FindProperty( "FieldOfViewX" )->AsFloat / 180.0f); }
 		}
 
 		[DescriptionAttribute( "Gets the vertical field of view in radians" )]
 		// 
-		property float				FOVY
-		{
+		property float				FOVY {
 			float			get()	{ return (float) (Math::PI * FindProperty( "FieldOfViewY" )->AsFloat / 180.0f); }
 		}
 
 		[DescriptionAttribute( "Gets the aspect ratio" )]
 		// 
-		property float				AspectRatio
-		{
+		property float				AspectRatio {
 			float			get()	{ return FindProperty( "AspectWidth" )->AsFloat / FindProperty( "AspectHeight" )->AsFloat; }
 		}
 
 		[DescriptionAttribute( "Gets the focal length" )]
 		// 
-		property float				FocalLength
-		{
+		property float				FocalLength {
 			float			get()	{ return FindProperty( "FocalLength" )->AsFloat; }
 		}
 

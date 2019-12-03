@@ -19,29 +19,26 @@ Node::Node( Scene^ _ParentScene, Node^ _Parent, FbxNode* _pNode ) : BaseObject( 
 	//////////////////////////////////////////////////////////////////////////
 	// Retrieve the pre & post rotations
  	ObjectProperty^	PreRotProp = FindProperty( "PreRotation" );
- 	WMath::Vector^	PreRotEuler = (float) Math::PI / 180.0f * (PreRotProp != nullptr ? PreRotProp->AsVector3 : gcnew WMath::Vector( 0, 0, 0 ));
-//	WMath::Vector^	PreRotEuler = Helpers::ToVector3( _pNode->PreRotation.Get() );
-//	WMath::Vector^	PreRotEuler = Helpers::ToVector3( _pNode->PreRotation.Get() );
+ 	SharpMath::float3	PreRotEuler = ((float) Math::PI / 180.0f) * (PreRotProp != nullptr ? PreRotProp->AsVector3 : SharpMath::float3::Zero);
+//	SharpMath::float3	PreRotEuler = Helpers::ToVector3( _pNode->PreRotation.Get() );
+//	SharpMath::float3	PreRotEuler = Helpers::ToVector3( _pNode->PreRotation.Get() );
 
-	m_PreRotation = gcnew WMath::Matrix4x4();
-	m_PreRotation->MakePYR( PreRotEuler->x, PreRotEuler->y, PreRotEuler->z );
+	m_PreRotation.BuildRotationEuler( PreRotEuler, SharpMath::float3::Zero );
 
  	ObjectProperty^	PostRotProp = FindProperty( "PreRotation" );
- 	WMath::Vector^	PostRotEuler = (float) Math::PI / 180.0f * (PostRotProp != nullptr ? PostRotProp->AsVector3 : gcnew WMath::Vector( 0, 0, 0 ));
-//	WMath::Vector^	PostRotEuler = Helpers::ToVector3( _pNode->PostRotation.Get() );
+ 	SharpMath::float3	PostRotEuler = ((float) Math::PI / 180.0f) * (PostRotProp != nullptr ? PostRotProp->AsVector3 : SharpMath::float3::Zero);
+//	SharpMath::float3	PostRotEuler = Helpers::ToVector3( _pNode->PostRotation.Get() );
 
-	m_PostRotation = gcnew WMath::Matrix4x4();
-	m_PostRotation->MakePYR( PostRotEuler->x, PostRotEuler->y, PostRotEuler->z );
+	m_PostRotation.BuildRotationEuler( PostRotEuler, SharpMath::float3::Zero );
 
 
 	//////////////////////////////////////////////////////////////////////////
 	// Retrieve the local transform
-	m_LocalTransform = gcnew WMath::Matrix4x4();
-	m_LocalTransform->MakeIdentity();
+	m_LocalTransform = SharpMath::float4x4::Identity;
 
-	WMath::Point^		Position = FindProperty( "Lcl Translation" )->AsPoint;
-	WMath::Vector^		Rotation = (float) Math::PI / 180.0f * FindProperty( "Lcl Rotation" )->AsVector3;
-	WMath::Vector^		Scale    = FindProperty( "Lcl Scaling" )->AsVector3;
+	SharpMath::float3	Position = FindProperty( "Lcl Translation" )->AsVector3;
+	SharpMath::float3	Rotation = (float) Math::PI / 180.0f * FindProperty( "Lcl Rotation" )->AsVector3;
+	SharpMath::float3	Scale    = FindProperty( "Lcl Scaling" )->AsVector3;
 
 
 
@@ -49,9 +46,9 @@ Node::Node( Scene^ _ParentScene, Node^ _Parent, FbxNode* _pNode ) : BaseObject( 
 
 
 
-	WMath::Matrix4x4^	Pitch = WMath::Matrix4x4::ROT_X( Rotation->x );
-	WMath::Matrix4x4^	Yaw = WMath::Matrix4x4::ROT_Y( Rotation->y );
-	WMath::Matrix4x4^	Roll = WMath::Matrix4x4::ROT_Z( Rotation->z );
+	SharpMath::float4x4	Pitch; Pitch.BuildRotationX( Rotation.x );
+	SharpMath::float4x4	Yaw; Yaw.BuildRotationY( Rotation.y );
+	SharpMath::float4x4	Roll; Roll.BuildRotationZ( Rotation.z );
 
 	switch ( FindProperty( "RotationOrder" )->AsInt )
 	{
@@ -91,8 +88,8 @@ Node::Node( Scene^ _ParentScene, Node^ _Parent, FbxNode* _pNode ) : BaseObject( 
 
 	// WORKING CODE
 //	m_LocalTransform->MakePYR( Rotation->x, Rotation->y, Rotation->z );
-	m_LocalTransform->Scale( Scale );
-	m_LocalTransform->SetTrans( Position );
+	m_LocalTransform.Scale( Scale );
+	m_LocalTransform.r3.Set( Position, 1 );
 	// WORKING CODE
 
 	// ADDITIONAL CODE
@@ -118,7 +115,9 @@ Node::Node( Scene^ _ParentScene, Node^ _Parent, FbxNode* _pNode ) : BaseObject( 
 
 	case Scene::UP_AXIS::Z:
 		{
-			m_LocalTransform *= WMath::Matrix4x4::ROT_X( -0.5f * (float) Math::PI );
+			SharpMath::float4x4	rotX;
+			rotX.BuildRotationX( -0.5f * (float) Math::PI );
+			m_LocalTransform *= rotX;
 			break;
 		}
 	}
@@ -227,8 +226,7 @@ Node::Node( Scene^ _ParentScene, Node^ _Parent, FbxNode* _pNode ) : BaseObject( 
 
 	//////////////////////////////////////////////////////////////////////////
 	// Build the source animation matrix
-	m_AnimationSourceMatrix = gcnew WMath::Matrix4x4();
-	m_AnimationSourceMatrix->MakeIdentity();
+	m_AnimationSourceMatrix = SharpMath::float4x4::Identity;
 
 	switch ( UpAxis )
 	{
@@ -241,7 +239,7 @@ Node::Node( Scene^ _ParentScene, Node^ _Parent, FbxNode* _pNode ) : BaseObject( 
 		break;
 
 	case Scene::UP_AXIS::Z:
-		m_AnimationSourceMatrix->MakeRotX( -0.5f * (float) Math::PI );
+		m_AnimationSourceMatrix.BuildRotationX( -0.5f * (float) Math::PI );
 		break;
 	}
 
@@ -355,7 +353,7 @@ Node::Node( Scene^ _ParentScene, Node^ _Parent, FbxNode* _pNode ) : BaseObject( 
 // 	}
 // 
 // 	// Build rotation axes based on scene's Up axis
-// 	m_RotationAxes = gcnew cli::array<WMath::Vector^>( 3 );
+// 	m_RotationAxes = gcnew cli::array<SharpMath::float3^>( 3 );
 // //	switch ( UpAxis )
 // 	switch ( Scene::UP_AXIS::Y )
 // 	{
@@ -364,15 +362,15 @@ Node::Node( Scene^ _ParentScene, Node^ _Parent, FbxNode* _pNode ) : BaseObject( 
 // 		break;
 // 
 // 	case Scene::UP_AXIS::Y:
-// 		m_RotationAxes[0] = gcnew WMath::Vector( 1, 0, 0 );
-// 		m_RotationAxes[1] = gcnew WMath::Vector( 0, 1, 0 );
-// 		m_RotationAxes[2] = gcnew WMath::Vector( 0, 0, 1 );
+// 		m_RotationAxes[0] = gcnew SharpMath::float3( 1, 0, 0 );
+// 		m_RotationAxes[1] = gcnew SharpMath::float3( 0, 1, 0 );
+// 		m_RotationAxes[2] = gcnew SharpMath::float3( 0, 0, 1 );
 // 		break;
 // 
 // 	case Scene::UP_AXIS::Z:
-// 		m_RotationAxes[0] = gcnew WMath::Vector( 1, 0, 0 );
-// 		m_RotationAxes[1] = gcnew WMath::Vector( 0, 0, -1 );	// Rotating CCW on Y means rotating CW on Z (the negative sign is passed through the negative axis below)
-// 		m_RotationAxes[2] = gcnew WMath::Vector( 0, 1, 0 );		// Rotating CCW on Z means rotating CCW on Y
+// 		m_RotationAxes[0] = gcnew SharpMath::float3( 1, 0, 0 );
+// 		m_RotationAxes[1] = gcnew SharpMath::float3( 0, 0, -1 );	// Rotating CCW on Y means rotating CW on Z (the negative sign is passed through the negative axis below)
+// 		m_RotationAxes[2] = gcnew SharpMath::float3( 0, 1, 0 );		// Rotating CCW on Z means rotating CCW on Y
 // 		break;
 // 	}
 }

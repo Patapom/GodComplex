@@ -13,7 +13,7 @@ NodeMesh::NodeMesh( Scene^ _ParentScene, Node^ _Parent, FbxNode* _pNode ) : Node
 
 	pMesh->ComputeBBox();				// Compute the bounding box
 
-	m_BBox = gcnew WMath::BoundingBox( Helpers::ToPoint3( pMesh->BBoxMin.Get() ), Helpers::ToPoint3( pMesh->BBoxMax.Get() ) );
+	m_BBox = gcnew SharpMath::BoundingBox( Helpers::ToPoint3( pMesh->BBoxMin.Get() ), Helpers::ToPoint3( pMesh->BBoxMax.Get() ) );
 	m_PolygonsCount = pMesh->GetPolygonCount();
 
 
@@ -41,7 +41,7 @@ NodeMesh::NodeMesh( Scene^ _ParentScene, Node^ _Parent, FbxNode* _pNode ) : Node
 		throw gcnew Exception( "List of control points for mesh \"" + Name + "\" is not initialized!" );
 
 	int	VerticesCount = pMesh->GetControlPointsCount();
-	m_Vertices = gcnew cli::array<WMath::Point^>( VerticesCount );
+	m_Vertices = gcnew cli::array<SharpMath::float3^>( VerticesCount );
 
 // 	switch ( m_ParentScene->UpAxis )
 // 	{
@@ -51,16 +51,16 @@ NodeMesh::NodeMesh( Scene^ _ParentScene, Node^ _Parent, FbxNode* _pNode ) : Node
 // 
 // 	case Scene::UP_AXIS::Y:
 // 		for ( int VertexIndex=0; VertexIndex < VerticesCount; VertexIndex++ )
-// 			m_Vertices[VertexIndex] = gcnew WMath::Point( (float) pControlPoints[VertexIndex][0], (float) pControlPoints[VertexIndex][1], (float) pControlPoints[VertexIndex][2] );
+// 			m_Vertices[VertexIndex] = gcnew SharpMath::float3( (float) pControlPoints[VertexIndex][0], (float) pControlPoints[VertexIndex][1], (float) pControlPoints[VertexIndex][2] );
 // 		break;
 // 
 // 	case Scene::UP_AXIS::Z:
 // 		for ( int VertexIndex=0; VertexIndex < VerticesCount; VertexIndex++ )
-// 			m_Vertices[VertexIndex] = gcnew WMath::Point( (float) pControlPoints[VertexIndex][0], (float) pControlPoints[VertexIndex][2], -(float) pControlPoints[VertexIndex][1] );
+// 			m_Vertices[VertexIndex] = gcnew SharpMath::float3( (float) pControlPoints[VertexIndex][0], (float) pControlPoints[VertexIndex][2], -(float) pControlPoints[VertexIndex][1] );
 // 		break;
 // 	}
 	for ( int VertexIndex=0; VertexIndex < VerticesCount; VertexIndex++ )
-		m_Vertices[VertexIndex] = gcnew WMath::Point( (float) pControlPoints[VertexIndex][0], (float) pControlPoints[VertexIndex][1], (float) pControlPoints[VertexIndex][2] );
+		m_Vertices[VertexIndex] = gcnew SharpMath::float3( (float) pControlPoints[VertexIndex][0], (float) pControlPoints[VertexIndex][1], (float) pControlPoints[VertexIndex][2] );
 
 
 	//////////////////////////////////////////////////////////////////////////
@@ -130,21 +130,20 @@ NodeMesh::NodeMesh( Scene^ _ParentScene, Node^ _Parent, FbxNode* _pNode ) : Node
 	//////////////////////////////////////////////////////////////////////////
 	// Retrieve the PRS values
 	//
-	ObjectProperty^	PropP = FindProperty( "GeometricTranslation" );
-	WMath::Point^	Trans = PropP != nullptr ? PropP->AsPoint : gcnew WMath::Point( 0.0f, 0.0f, 0.0f );
+	ObjectProperty^		PropP = FindProperty( "GeometricTranslation" );
+	SharpMath::float3	Trans = PropP != nullptr ? PropP->AsVector3 : SharpMath::float3::Zero;
 
-	ObjectProperty^	PropR = FindProperty( "GeometricRotation" );
-	WMath::Vector^	RotXYZ = (float) Math::PI / 180.0f * (PropR != nullptr ? PropR->AsVector3 : gcnew WMath::Vector( 0.0f, 0.0f, 0.0f ));
+	ObjectProperty^		PropR = FindProperty( "GeometricRotation" );
+	SharpMath::float3	RotXYZ = ((float) Math::PI / 180.0f) * (PropR != nullptr ? PropR->AsVector3 : SharpMath::float3::Zero);
 
-	ObjectProperty^	PropS = FindProperty( "GeometricScaling" );
-	WMath::Vector^	Scale = PropS != nullptr ? PropS->AsVector3 : gcnew WMath::Vector( 1.0f, 1.0f, 1.0f );
+	ObjectProperty^		PropS = FindProperty( "GeometricScaling" );
+	SharpMath::float3	Scale = PropS != nullptr ? PropS->AsVector3 : SharpMath::float3::One;
 
 
 	//////////////////////////////////////////////////////////////////////////
 	// Build the pivot matrix
 	//
-	m_Pivot = gcnew WMath::Matrix4x4();
-	m_Pivot->MakeIdentity();
+	m_Pivot = SharpMath::float4x4::Identity;
 
 	switch ( m_ParentScene->UpAxis )
 	{
@@ -154,23 +153,16 @@ NodeMesh::NodeMesh( Scene^ _ParentScene, Node^ _Parent, FbxNode* _pNode ) : Node
 
 		case Scene::UP_AXIS::Y:
 		{
-			WMath::Matrix3x3^	RotPYR = gcnew WMath::Matrix3x3();
-								RotPYR->FromEuler( RotXYZ );
-
-			m_Pivot->SetRotation( RotPYR );
-			m_Pivot->Scale( Scale );
-			m_Pivot->SetTrans( Trans );
+			m_Pivot.BuildRotationEuler( RotXYZ, Trans );
+			m_Pivot.Scale( Scale );
+			m_Pivot.r3.Set( Trans, 1 );
 			break;
 		}
 
 		case Scene::UP_AXIS::Z:
 		{
-			WMath::Matrix3x3^	RotPYR = gcnew WMath::Matrix3x3();
-								RotPYR->FromEuler( gcnew WMath::Vector( RotXYZ->x, RotXYZ->z, -RotXYZ->y ) );
-
-			m_Pivot->SetRotation( RotPYR );
-			m_Pivot->Scale( gcnew WMath::Vector( Scale->x, Scale->z, Scale->y ) );
-			m_Pivot->SetTrans( gcnew WMath::Point( Trans->x, Trans->z, -Trans->y ) );
+			m_Pivot.BuildRotationEuler( SharpMath::float3( RotXYZ.x, RotXYZ.z, -RotXYZ.y ), SharpMath::float3( Trans.x, Trans.z, -Trans.y ) );
+			m_Pivot.Scale( SharpMath::float3( Scale.x, Scale.z, Scale.y ) );
 			break;
 		}
 	}

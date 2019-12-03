@@ -3,6 +3,7 @@
 #pragma managed
 #pragma once
 
+#include "Helpers.h"
 #include "Layers.h"
 #include "Nodes.h"
 
@@ -65,40 +66,36 @@ namespace FBXImporter
 
 	protected:	// FIELDS
 
-		WMath::BoundingBox^			m_BBox;
+		SharpMath::BoundingBox^		m_BBox;
 		int							m_PolygonsCount;
-		WMath::Matrix4x4^			m_Pivot;
+		SharpMath::float4x4			m_Pivot;
 
 		List<Layer^>^				m_Layers;	// The list of layers
 
 		cli::array<Triangle^>^		m_Triangles;
-		cli::array<WMath::Point^>^	m_Vertices;
+		cli::array<SharpMath::float3^>^	m_Vertices;
 		cli::array<int>^			m_PolygonVertexOffsets;
 
 		int							m_PolygonVerticesCount;	// The total amount of polygon vertices
 
 	public:		// PROPERTIES
 
-		property WMath::BoundingBox^		BoundingBox
-		{
-			WMath::BoundingBox^			get()	{ return m_BBox; }
+		property SharpMath::BoundingBox^	LocalBoundingBox {
+			SharpMath::BoundingBox^			get()	{ return m_BBox; }
 		}
 
-		property WMath::BoundingBox^		WorldBoundingBox
-		{
-			WMath::BoundingBox^			get()
-			{
-				WMath::Matrix4x4^	Mesh2World = m_Pivot * m_LocalTransform;
-				WMath::BoundingBox^	WorldBBox = WMath::BoundingBox::Empty;
-									WorldBBox->Grow( m_BBox, Mesh2World );
+		property SharpMath::BoundingBox^	WorldBoundingBox {
+			SharpMath::BoundingBox^		get() {
+				SharpMath::float4x4	Mesh2World = m_Pivot * m_LocalTransform;
+				SharpMath::BoundingBox^		WorldBBox = SharpMath::BoundingBox::Empty;
+										WorldBBox->Grow( m_BBox, Mesh2World );
 
 				return WorldBBox;
 			}
 		}
 
-		property WMath::Matrix4x4^			Pivot
-		{
-			WMath::Matrix4x4^			get()	{ return m_Pivot; }
+		property SharpMath::float4x4	Pivot {
+			SharpMath::float4x4			get()	{ return m_Pivot; }
 		}
 
 		property cli::array<Triangle^>^		Triangles
@@ -111,9 +108,9 @@ namespace FBXImporter
 			int							get()	{ return m_Triangles->Length; }
 		}
 
-		property cli::array<WMath::Point^>^	Vertices
+		property cli::array<SharpMath::float3^>^	Vertices
 		{
-			cli::array<WMath::Point^>^	get()	{ return m_Vertices; }
+			cli::array<SharpMath::float3^>^	get()	{ return m_Vertices; }
 		}
 
 		property int						VerticesCount

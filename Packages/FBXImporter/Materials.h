@@ -23,9 +23,9 @@ namespace FBXImporter
 
 		[DescriptionAttribute( "Gets emissive color" )]
 		//
-		property WMath::Vector^		EmissiveColor
+		property SharpMath::float3^		EmissiveColor
 		{
-			WMath::Vector^		get()	{ return FindProperty( "EmissiveColor" )->AsVector3; }
+			SharpMath::float3^		get()	{ return FindProperty( "EmissiveColor" )->AsVector3; }
 		}
 
 		[DescriptionAttribute( "Gets emissive factor" )]
@@ -37,9 +37,9 @@ namespace FBXImporter
 
 		[DescriptionAttribute( "Gets ambient color" )]
 		//
-		property WMath::Vector^		AmbientColor
+		property SharpMath::float3^		AmbientColor
 		{
-			WMath::Vector^		get()	{ return FindProperty( "AmbientColor" )->AsVector3; }
+			SharpMath::float3^		get()	{ return FindProperty( "AmbientColor" )->AsVector3; }
 		}
 
 		[DescriptionAttribute( "Gets ambient factor" )]
@@ -51,9 +51,9 @@ namespace FBXImporter
 
 		[DescriptionAttribute( "Gets diffuse color" )]
 		//
-		property WMath::Vector^		DiffuseColor
+		property SharpMath::float3^		DiffuseColor
 		{
-			WMath::Vector^		get()	{ return FindProperty( "DiffuseColor" )->AsVector3; }
+			SharpMath::float3^		get()	{ return FindProperty( "DiffuseColor" )->AsVector3; }
 		}
 
 		[DescriptionAttribute( "Gets diffuse factor" )]
@@ -66,9 +66,9 @@ namespace FBXImporter
 
 		[DescriptionAttribute( "Gets specular color" )]
 		//
-		property WMath::Vector^		SpecularColor
+		property SharpMath::float3^		SpecularColor
 		{
-			WMath::Vector^		get()	{ return FindProperty( "SpecularColor" )->AsVector3; }
+			SharpMath::float3^		get()	{ return FindProperty( "SpecularColor" )->AsVector3; }
 		}
 
 		[DescriptionAttribute( "Gets specular factor" )]
@@ -80,9 +80,9 @@ namespace FBXImporter
 
 		[DescriptionAttribute( "Gets reflection color" )]
 		//
-		property WMath::Vector^		ReflectionColor
+		property SharpMath::float3^		ReflectionColor
 		{
-			WMath::Vector^		get()	{ return FindProperty( "ReflectionColor" )->AsVector3; }
+			SharpMath::float3^		get()	{ return FindProperty( "ReflectionColor" )->AsVector3; }
 		}
 
 		[DescriptionAttribute( "Gets reflection factor" )]

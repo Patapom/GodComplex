@@ -67,55 +67,55 @@ namespace FBXImporter
 			return	System::Runtime::InteropServices::Marshal::PtrToStringAnsi( System::IntPtr( (void*) _pString ) );
 		}
 
-		static WMath::Point2D^	ToPoint2( FbxDouble2& _Value )
+		static SharpMath::float2	ToPoint2( FbxDouble2& _Value )
 		{
-			return gcnew WMath::Point2D( (float) _Value[0], (float) _Value[1] );
+			return SharpMath::float2( (float) _Value[0], (float) _Value[1] );
 		}
 
-		static WMath::Vector2D^	ToVector2( FbxDouble2& _Value )
+		static SharpMath::float2	ToVector2( FbxDouble2& _Value )
 		{
-			return gcnew WMath::Vector2D( (float) _Value[0], (float) _Value[1] );
+			return SharpMath::float2( (float) _Value[0], (float) _Value[1] );
 		}
 
-		static WMath::Point^	ToPoint3( FbxDouble3& _Value )
+		static SharpMath::float3	ToPoint3( FbxDouble3& _Value )
 		{
-			return gcnew WMath::Point( (float) _Value[0], (float) _Value[1], (float) _Value[2] );
+			return SharpMath::float3( (float) _Value[0], (float) _Value[1], (float) _Value[2] );
 		}
 
-		static WMath::Vector^	ToVector3( FbxDouble3& _Value )
+		static SharpMath::float3	ToVector3( FbxDouble3& _Value )
 		{
-			return gcnew WMath::Vector( (float) _Value[0], (float) _Value[1], (float) _Value[2] );
+			return SharpMath::float3( (float) _Value[0], (float) _Value[1], (float) _Value[2] );
 		}
 
-		static WMath::Point4D^	ToPoint4( FbxDouble4& _Value )
+		static SharpMath::float4	ToPoint4( FbxDouble4& _Value )
 		{
-			return gcnew WMath::Point4D( (float) _Value[0], (float) _Value[1], (float) _Value[2], (float) _Value[3] );
+			return SharpMath::float4( (float) _Value[0], (float) _Value[1], (float) _Value[2], (float) _Value[3] );
 		}
 
-		static WMath::Vector4D^	ToVector4( FbxDouble4& _Value )
+		static SharpMath::float4	ToVector4( FbxDouble4& _Value )
 		{
-			return gcnew WMath::Vector4D( (float) _Value[0], (float) _Value[1], (float) _Value[2], (float) _Value[3] );
+			return SharpMath::float4( (float) _Value[0], (float) _Value[1], (float) _Value[2], (float) _Value[3] );
 		}
 
-		static WMath::Vector4D^	ToVector4( FbxColor& _Value )
+		static SharpMath::float4	ToVector4( FbxColor& _Value )
 		{
-			return gcnew WMath::Vector4D( (float) _Value.mRed, (float) _Value.mGreen, (float) _Value.mBlue, (float) _Value.mAlpha );
+			return SharpMath::float4( (float) _Value.mRed, (float) _Value.mGreen, (float) _Value.mBlue, (float) _Value.mAlpha );
 		}
 
-		static WMath::Matrix4x4^	ToMatrix( FbxVector4& _P, FbxVector4& _R, FbxVector4& _S )
+		static SharpMath::float4x4	ToMatrix( FbxVector4& _P, FbxVector4& _R, FbxVector4& _S )
 		{
 			return	ToMatrix( FbxMatrix( _P, _R, _S ) );
 		}
 
-		static WMath::Matrix4x4^	ToMatrix( FbxMatrix& _Value )
+		static SharpMath::float4x4	ToMatrix( FbxMatrix& _Value )
 		{
-			WMath::Matrix4x4^	Result = gcnew WMath::Matrix4x4();
-								Result->SetRow0( ToVector4( _Value.GetRow( 0 ) ) );
-								Result->SetRow1( ToVector4( _Value.GetRow( 1 ) ) );
-								Result->SetRow2( ToVector4( _Value.GetRow( 2 ) ) );
-								Result->SetTrans( ToPoint4( _Value.GetRow( 3 ) ) );
+			SharpMath::float4x4	result;
+								result.r0 = ToVector4( _Value.GetRow( 0 ) );
+								result.r1 = ToVector4( _Value.GetRow( 1 ) );
+								result.r2 = ToVector4( _Value.GetRow( 2 ) );
+								result.r3 = ToPoint4( _Value.GetRow( 3 ) );
 
-			return	Result;
+			return	result;
 		}
 
 		static FTimeSpan^		GetTimeSpan( FbxTimeSpan& _TimeSpan )

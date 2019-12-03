@@ -33,3 +33,8 @@
 // #include <fbxfilesdk/kfbxplugins/kfbxscene.h>
 // #include <fbxfilesdk/kfbxio/kfbxiosettings.h>
 // #include <fbxfilesdk/fbxfilesdk_nsuse.h>
+
+#pragma managed
+
+// #include "../MathSimple/Math.h"
+// #include "../MathSimple/Vectors.h"

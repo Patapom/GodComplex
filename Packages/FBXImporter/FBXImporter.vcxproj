@@ -22,7 +22,7 @@
     <ProjectGuid>{B565481B-96F6-4DBB-A6C7-001B3F9D2D14}</ProjectGuid>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <Keyword>ManagedCProj</Keyword>
-    <RootNamespace>FBXImporterManaged2</RootNamespace>
+    <RootNamespace>FBXImporterManaged</RootNamespace>
     <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -191,8 +191,11 @@
     <ClInclude Include="Textures.h" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\SharpMath\SharpMath.csproj">
+    <ProjectReference Include="..\MathAdvanced\MathAdvanced.csproj">
       <Project>{dd026a89-c5fe-4150-bc85-a660e427826a}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\MathSimple\MathSimple.vcxproj">
+      <Project>{cec07704-2a19-4bf1-b46d-8fcf9c5965ee}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -504,6 +504,11 @@ namespace SharpMath {
 			return *this;
 		}
 
+		float3x3	BuildRotationEuler( float3 _eulerXYZ ) {
+			throw gcnew Exception( "TODO!" );
+			return *this;
+		}
+
 		float3x3	BuildRotationX( float _Angle ) {
 			float C = (float) Math::Cos( _Angle );
 			float S = (float) Math::Sin( _Angle );
@@ -760,6 +765,22 @@ namespace SharpMath {
 			r3.Set( 0.0f, 0.0f, -_Near * Q, 0.0f );
 		}
  
+		// (2016-01-06) Builds the remaining 2 orthogonal vectors from a given vector (very fast! no normalization or square root involved!)
+		// Original code from http://orbit.dtu.dk/files/57573287/onb_frisvad_jgt2012.pdf
+		float4x4	BuildRot( float3 _vector, float3 _translation ) {
+			float3x3	temp;
+			temp.BuildRot( _vector );
+			r0.Set( temp.r0, 0 );
+			r1.Set( temp.r1, 0 );
+			r2.Set( temp.r2, 0 );
+			r3.Set( _translation, 1 );
+			return *this;
+		}
+		float4x4	BuildRotationEuler( float3 _eulerXYZ, float3 _translation ) {
+			throw gcnew Exception( "TODO!" );
+			return *this;
+		}
+
 		float4x4	BuildRotationX( float _Angle ) {
 			float C = (float) Math::Cos( _Angle );
 			float S = (float) Math::Sin( _Angle );

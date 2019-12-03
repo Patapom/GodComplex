@@ -103,23 +103,23 @@ namespace FBXImporter
 
 		[DescriptionAttribute( "Gets the texture translation" )]
 		//
-		property WMath::Vector^	Translation
+		property SharpMath::float3^	Translation
 		{
-			WMath::Vector^	get()	{ return m_Properties->Count > 0 ? FindProperty( "Translation" )->AsVector3 : WMath::Vector::Zero; }
+			SharpMath::float3^	get()	{ return m_Properties->Count > 0 ? FindProperty( "Translation" )->AsVector3 : SharpMath::float3::Zero; }
 		}
 
 		[DescriptionAttribute( "Gets the texture rotation" )]
 		//
-		property WMath::Vector^	Rotation
+		property SharpMath::float3^	Rotation
 		{
-			WMath::Vector^	get()	{ return m_Properties->Count > 0 ? FindProperty( "Rotation" )->AsVector3 : WMath::Vector::Zero; }
+			SharpMath::float3^	get()	{ return m_Properties->Count > 0 ? FindProperty( "Rotation" )->AsVector3 : SharpMath::float3::Zero; }
 		}
 
 		[DescriptionAttribute( "Gets the texture scale" )]
 		//
-		property WMath::Vector^	Scale
+		property SharpMath::float3^	Scale
 		{
-			WMath::Vector^	get()	{ return m_Properties->Count > 0 ? FindProperty( "Scaling" )->AsVector3 : WMath::Vector::One; }
+			SharpMath::float3^	get()	{ return m_Properties->Count > 0 ? FindProperty( "Scaling" )->AsVector3 : SharpMath::float3::One; }
 		}
 
 		[DescriptionAttribute( "Tells if the texture should be using mip-mapping" )]
