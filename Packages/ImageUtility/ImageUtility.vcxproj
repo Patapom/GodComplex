@@ -185,10 +185,10 @@
     <ProjectReference Include="..\MathSimple\MathSimple.vcxproj">
       <Project>{cec07704-2a19-4bf1-b46d-8fcf9c5965ee}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\MathSolvers\MathSolversLib.vcxproj">
+    <ProjectReference Include="..\MathSolversLib\MathSolversLib.vcxproj">
       <Project>{4ceff180-c07c-4ad5-b9ca-5f90e30391e5}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\SphericalHarmonicsLibrary\SphericalHarmonicsLibrary.csproj">
+    <ProjectReference Include="..\MathSphericalHarmonics\MathSphericalHarmonics.csproj">
       <Project>{e96e2072-c7ef-46bb-a3f1-8cf6b26bf019}</Project>
     </ProjectReference>
   </ItemGroup>

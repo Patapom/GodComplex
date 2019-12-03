@@ -77,6 +77,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "BaseLib", "Packages\BaseLib
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RendererLib", "Packages\RendererLib\RendererLib.vcxproj", "{7523DEED-A096-4B6E-B1D9-EDDA85EE6AA6}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MathSphericalHarmonics", "Packages\MathSphericalHarmonics\MathSphericalHarmonics.csproj", "{E96E2072-C7EF-46BB-A3F1-8CF6B26BF019}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug DirectX10|Any CPU = Debug DirectX10|Any CPU
@@ -1100,6 +1102,46 @@ Global
 		{7523DEED-A096-4B6E-B1D9-EDDA85EE6AA6}.Release|x64.Build.0 = Release|x64
 		{7523DEED-A096-4B6E-B1D9-EDDA85EE6AA6}.Release|x86.ActiveCfg = Release|Win32
 		{7523DEED-A096-4B6E-B1D9-EDDA85EE6AA6}.Release|x86.Build.0 = Release|Win32
+		{E96E2072-C7EF-46BB-A3F1-8CF6B26BF019}.Debug DirectX10|Any CPU.ActiveCfg = Debug|Any CPU
+		{E96E2072-C7EF-46BB-A3F1-8CF6B26BF019}.Debug DirectX10|Any CPU.Build.0 = Debug|Any CPU
+		{E96E2072-C7EF-46BB-A3F1-8CF6B26BF019}.Debug DirectX10|Mixed Platforms.ActiveCfg = Debug|x86
+		{E96E2072-C7EF-46BB-A3F1-8CF6B26BF019}.Debug DirectX10|Mixed Platforms.Build.0 = Debug|x86
+		{E96E2072-C7EF-46BB-A3F1-8CF6B26BF019}.Debug DirectX10|Win32.ActiveCfg = Debug|x86
+		{E96E2072-C7EF-46BB-A3F1-8CF6B26BF019}.Debug DirectX10|Win32.Build.0 = Debug|x86
+		{E96E2072-C7EF-46BB-A3F1-8CF6B26BF019}.Debug DirectX10|x64.ActiveCfg = Debug|x64
+		{E96E2072-C7EF-46BB-A3F1-8CF6B26BF019}.Debug DirectX10|x64.Build.0 = Debug|x64
+		{E96E2072-C7EF-46BB-A3F1-8CF6B26BF019}.Debug DirectX10|x86.ActiveCfg = Debug|x86
+		{E96E2072-C7EF-46BB-A3F1-8CF6B26BF019}.Debug DirectX10|x86.Build.0 = Debug|x86
+		{E96E2072-C7EF-46BB-A3F1-8CF6B26BF019}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E96E2072-C7EF-46BB-A3F1-8CF6B26BF019}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E96E2072-C7EF-46BB-A3F1-8CF6B26BF019}.Debug|Mixed Platforms.ActiveCfg = Debug|x86
+		{E96E2072-C7EF-46BB-A3F1-8CF6B26BF019}.Debug|Mixed Platforms.Build.0 = Debug|x86
+		{E96E2072-C7EF-46BB-A3F1-8CF6B26BF019}.Debug|Win32.ActiveCfg = Debug|x86
+		{E96E2072-C7EF-46BB-A3F1-8CF6B26BF019}.Debug|Win32.Build.0 = Debug|x86
+		{E96E2072-C7EF-46BB-A3F1-8CF6B26BF019}.Debug|x64.ActiveCfg = Debug|x64
+		{E96E2072-C7EF-46BB-A3F1-8CF6B26BF019}.Debug|x64.Build.0 = Debug|x64
+		{E96E2072-C7EF-46BB-A3F1-8CF6B26BF019}.Debug|x86.ActiveCfg = Debug|x86
+		{E96E2072-C7EF-46BB-A3F1-8CF6B26BF019}.Debug|x86.Build.0 = Debug|x86
+		{E96E2072-C7EF-46BB-A3F1-8CF6B26BF019}.Profile|Any CPU.ActiveCfg = Release|Any CPU
+		{E96E2072-C7EF-46BB-A3F1-8CF6B26BF019}.Profile|Any CPU.Build.0 = Release|Any CPU
+		{E96E2072-C7EF-46BB-A3F1-8CF6B26BF019}.Profile|Mixed Platforms.ActiveCfg = Release|x86
+		{E96E2072-C7EF-46BB-A3F1-8CF6B26BF019}.Profile|Mixed Platforms.Build.0 = Release|x86
+		{E96E2072-C7EF-46BB-A3F1-8CF6B26BF019}.Profile|Win32.ActiveCfg = Release|x86
+		{E96E2072-C7EF-46BB-A3F1-8CF6B26BF019}.Profile|Win32.Build.0 = Release|x86
+		{E96E2072-C7EF-46BB-A3F1-8CF6B26BF019}.Profile|x64.ActiveCfg = Release|x64
+		{E96E2072-C7EF-46BB-A3F1-8CF6B26BF019}.Profile|x64.Build.0 = Release|x64
+		{E96E2072-C7EF-46BB-A3F1-8CF6B26BF019}.Profile|x86.ActiveCfg = Release|x86
+		{E96E2072-C7EF-46BB-A3F1-8CF6B26BF019}.Profile|x86.Build.0 = Release|x86
+		{E96E2072-C7EF-46BB-A3F1-8CF6B26BF019}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E96E2072-C7EF-46BB-A3F1-8CF6B26BF019}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E96E2072-C7EF-46BB-A3F1-8CF6B26BF019}.Release|Mixed Platforms.ActiveCfg = Release|x86
+		{E96E2072-C7EF-46BB-A3F1-8CF6B26BF019}.Release|Mixed Platforms.Build.0 = Release|x86
+		{E96E2072-C7EF-46BB-A3F1-8CF6B26BF019}.Release|Win32.ActiveCfg = Release|x86
+		{E96E2072-C7EF-46BB-A3F1-8CF6B26BF019}.Release|Win32.Build.0 = Release|x86
+		{E96E2072-C7EF-46BB-A3F1-8CF6B26BF019}.Release|x64.ActiveCfg = Release|x64
+		{E96E2072-C7EF-46BB-A3F1-8CF6B26BF019}.Release|x64.Build.0 = Release|x64
+		{E96E2072-C7EF-46BB-A3F1-8CF6B26BF019}.Release|x86.ActiveCfg = Release|x86
+		{E96E2072-C7EF-46BB-A3F1-8CF6B26BF019}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1134,6 +1176,7 @@ Global
 		{E4903ED5-BC9D-4D1E-BD88-C811B140825D} = {57391FD3-4541-48E5-993B-205AA5189E0C}
 		{C0CC204C-E20A-4456-A216-A1C3E4FD3703} = {57391FD3-4541-48E5-993B-205AA5189E0C}
 		{7523DEED-A096-4B6E-B1D9-EDDA85EE6AA6} = {57391FD3-4541-48E5-993B-205AA5189E0C}
+		{E96E2072-C7EF-46BB-A3F1-8CF6B26BF019} = {F1707394-444C-4A53-BB59-2029B1A13C1A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {6D68EDB3-B4F1-47EA-9A2C-813ABFFA47DF}
