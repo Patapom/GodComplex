@@ -5,7 +5,7 @@ using System.Text;
 
 using SharpMath;
 
-namespace Nuaj.Cirrus.Utility
+namespace UIUtility
 {
 	/// <summary>
 	/// The Camera class doesn't wrap any DirectX component per-se but helps a lot to handle

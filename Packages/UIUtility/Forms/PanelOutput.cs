@@ -6,7 +6,7 @@ using System.Text;
 using System.Windows.Forms;
 using System.Drawing;
 
-namespace Nuaj.Cirrus.Utility
+namespace UIUtility
 {
 	[System.ComponentModel.DefaultEvent( "BitmapUpdating" )]
 	public class PanelOutput : Panel

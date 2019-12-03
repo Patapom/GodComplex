@@ -1,4 +1,4 @@
-namespace Nuaj.Cirrus.Utility
+namespace UIUtility
 {
 	partial class FloatTrackbarControl
 	{

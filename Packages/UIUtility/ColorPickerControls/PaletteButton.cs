@@ -8,7 +8,7 @@ using System.Windows.Forms;
 
 using SharpMath;
 
-namespace Nuaj.Cirrus.Utility
+namespace UIUtility
 {
 	public partial class PaletteButton : Panel
 	{

@@ -16,7 +16,7 @@ using System.Drawing;
 using System.Data;
 using System.Windows.Forms;
 
-namespace Nuaj.Cirrus.Utility
+namespace UIUtility
 {
 	/// <summary>
 	/// An horizontal slider control that shows a range for an alpha property and sends an event when the slider is changed.

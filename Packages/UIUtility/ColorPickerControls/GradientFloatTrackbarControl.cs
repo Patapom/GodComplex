@@ -8,7 +8,7 @@ using System.Drawing.Imaging;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
 
-namespace Nuaj.Cirrus.Utility
+namespace UIUtility
 {
 	public partial class GradientFloatTrackbarControl : FloatTrackbarControl
 	{

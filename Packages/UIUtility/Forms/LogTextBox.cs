@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Windows.Forms;
 
-namespace Nuaj.Cirrus.Utility
+namespace UIUtility
 {
 	public partial class LogTextBox : RichTextBox
 	{

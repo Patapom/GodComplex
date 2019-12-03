@@ -18,7 +18,7 @@ using System.Windows.Forms;
 
 using SharpMath;
 
-namespace Nuaj.Cirrus.Utility
+namespace UIUtility
 {
 	/// <summary>
 	/// A vertical slider control that shows a range for a color property (a.k.a. Hue, Saturation, Brightness,

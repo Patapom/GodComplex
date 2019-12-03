@@ -6,7 +6,7 @@ using System.Windows.Forms;
 
 using SharpMath;
 
-namespace Nuaj.Cirrus.Utility
+namespace UIUtility
 {
 	/// <summary>
 	/// This is a little camera manipulator helper that you can bind to a control

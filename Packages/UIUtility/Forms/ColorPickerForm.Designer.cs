@@ -5,7 +5,7 @@ using System.Collections;
 using System.ComponentModel;
 using System.Windows.Forms;
 
-namespace Nuaj.Cirrus.Utility
+namespace UIUtility
 {
 	partial class ColorPickerForm
 	{
@@ -103,55 +103,55 @@ namespace Nuaj.Cirrus.Utility
 			this.radioButtona = new System.Windows.Forms.RadioButton();
 			this.radioButtonb = new System.Windows.Forms.RadioButton();
 			this.label1 = new System.Windows.Forms.Label();
-			this.floatTrackbarControlColorTemperature = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.floatTrackbarControlLuminance = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.floatTrackbarControlSaturation = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.floatTrackbarControlAlpha = new Nuaj.Cirrus.Utility.GradientFloatTrackbarControl();
-			this.gradientFloatTrackbarControlb = new Nuaj.Cirrus.Utility.GradientFloatTrackbarControl();
-			this.floatTrackbarControlBlue = new Nuaj.Cirrus.Utility.GradientFloatTrackbarControl();
-			this.gradientFloatTrackbarControla = new Nuaj.Cirrus.Utility.GradientFloatTrackbarControl();
-			this.floatTrackbarControlGreen = new Nuaj.Cirrus.Utility.GradientFloatTrackbarControl();
-			this.gradientFloatTrackbarControlL = new Nuaj.Cirrus.Utility.GradientFloatTrackbarControl();
-			this.floatTrackbarControlRed = new Nuaj.Cirrus.Utility.GradientFloatTrackbarControl();
-			this.floatTrackbarControlHue = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.radioButtonPalette35 = new Nuaj.Cirrus.Utility.PaletteButton();
-			this.radioButtonPalette23 = new Nuaj.Cirrus.Utility.PaletteButton();
-			this.radioButtonPalette11 = new Nuaj.Cirrus.Utility.PaletteButton();
-			this.radioButtonPalette34 = new Nuaj.Cirrus.Utility.PaletteButton();
-			this.radioButtonPalette22 = new Nuaj.Cirrus.Utility.PaletteButton();
-			this.radioButtonPalette10 = new Nuaj.Cirrus.Utility.PaletteButton();
-			this.radioButtonPalette33 = new Nuaj.Cirrus.Utility.PaletteButton();
-			this.radioButtonPalette21 = new Nuaj.Cirrus.Utility.PaletteButton();
-			this.radioButtonPalette9 = new Nuaj.Cirrus.Utility.PaletteButton();
-			this.radioButtonPalette32 = new Nuaj.Cirrus.Utility.PaletteButton();
-			this.radioButtonPalette20 = new Nuaj.Cirrus.Utility.PaletteButton();
-			this.radioButtonPalette8 = new Nuaj.Cirrus.Utility.PaletteButton();
-			this.radioButtonPalette31 = new Nuaj.Cirrus.Utility.PaletteButton();
-			this.radioButtonPalette19 = new Nuaj.Cirrus.Utility.PaletteButton();
-			this.radioButtonPalette7 = new Nuaj.Cirrus.Utility.PaletteButton();
-			this.radioButtonPalette30 = new Nuaj.Cirrus.Utility.PaletteButton();
-			this.radioButtonPalette18 = new Nuaj.Cirrus.Utility.PaletteButton();
-			this.radioButtonPalette6 = new Nuaj.Cirrus.Utility.PaletteButton();
-			this.radioButtonPalette29 = new Nuaj.Cirrus.Utility.PaletteButton();
-			this.radioButtonPalette17 = new Nuaj.Cirrus.Utility.PaletteButton();
-			this.radioButtonPalette5 = new Nuaj.Cirrus.Utility.PaletteButton();
-			this.radioButtonPalette28 = new Nuaj.Cirrus.Utility.PaletteButton();
-			this.radioButtonPalette16 = new Nuaj.Cirrus.Utility.PaletteButton();
-			this.radioButtonPalette4 = new Nuaj.Cirrus.Utility.PaletteButton();
-			this.radioButtonPalette27 = new Nuaj.Cirrus.Utility.PaletteButton();
-			this.radioButtonPalette15 = new Nuaj.Cirrus.Utility.PaletteButton();
-			this.radioButtonPalette3 = new Nuaj.Cirrus.Utility.PaletteButton();
-			this.radioButtonPalette26 = new Nuaj.Cirrus.Utility.PaletteButton();
-			this.radioButtonPalette14 = new Nuaj.Cirrus.Utility.PaletteButton();
-			this.radioButtonPalette2 = new Nuaj.Cirrus.Utility.PaletteButton();
-			this.radioButtonPalette25 = new Nuaj.Cirrus.Utility.PaletteButton();
-			this.radioButtonPalette13 = new Nuaj.Cirrus.Utility.PaletteButton();
-			this.radioButtonPalette1 = new Nuaj.Cirrus.Utility.PaletteButton();
-			this.radioButtonPalette24 = new Nuaj.Cirrus.Utility.PaletteButton();
-			this.radioButtonPalette12 = new Nuaj.Cirrus.Utility.PaletteButton();
-			this.radioButtonPalette0 = new Nuaj.Cirrus.Utility.PaletteButton();
-			this.colorBoxControl = new Nuaj.Cirrus.Utility.ColorBoxControl();
-			this.sliderControlHSL = new Nuaj.Cirrus.Utility.VerticalColorSliderControl();
+			this.floatTrackbarControlColorTemperature = new UIUtility.FloatTrackbarControl();
+			this.floatTrackbarControlLuminance = new UIUtility.FloatTrackbarControl();
+			this.floatTrackbarControlSaturation = new UIUtility.FloatTrackbarControl();
+			this.floatTrackbarControlAlpha = new UIUtility.GradientFloatTrackbarControl();
+			this.gradientFloatTrackbarControlb = new UIUtility.GradientFloatTrackbarControl();
+			this.floatTrackbarControlBlue = new UIUtility.GradientFloatTrackbarControl();
+			this.gradientFloatTrackbarControla = new UIUtility.GradientFloatTrackbarControl();
+			this.floatTrackbarControlGreen = new UIUtility.GradientFloatTrackbarControl();
+			this.gradientFloatTrackbarControlL = new UIUtility.GradientFloatTrackbarControl();
+			this.floatTrackbarControlRed = new UIUtility.GradientFloatTrackbarControl();
+			this.floatTrackbarControlHue = new UIUtility.FloatTrackbarControl();
+			this.radioButtonPalette35 = new UIUtility.PaletteButton();
+			this.radioButtonPalette23 = new UIUtility.PaletteButton();
+			this.radioButtonPalette11 = new UIUtility.PaletteButton();
+			this.radioButtonPalette34 = new UIUtility.PaletteButton();
+			this.radioButtonPalette22 = new UIUtility.PaletteButton();
+			this.radioButtonPalette10 = new UIUtility.PaletteButton();
+			this.radioButtonPalette33 = new UIUtility.PaletteButton();
+			this.radioButtonPalette21 = new UIUtility.PaletteButton();
+			this.radioButtonPalette9 = new UIUtility.PaletteButton();
+			this.radioButtonPalette32 = new UIUtility.PaletteButton();
+			this.radioButtonPalette20 = new UIUtility.PaletteButton();
+			this.radioButtonPalette8 = new UIUtility.PaletteButton();
+			this.radioButtonPalette31 = new UIUtility.PaletteButton();
+			this.radioButtonPalette19 = new UIUtility.PaletteButton();
+			this.radioButtonPalette7 = new UIUtility.PaletteButton();
+			this.radioButtonPalette30 = new UIUtility.PaletteButton();
+			this.radioButtonPalette18 = new UIUtility.PaletteButton();
+			this.radioButtonPalette6 = new UIUtility.PaletteButton();
+			this.radioButtonPalette29 = new UIUtility.PaletteButton();
+			this.radioButtonPalette17 = new UIUtility.PaletteButton();
+			this.radioButtonPalette5 = new UIUtility.PaletteButton();
+			this.radioButtonPalette28 = new UIUtility.PaletteButton();
+			this.radioButtonPalette16 = new UIUtility.PaletteButton();
+			this.radioButtonPalette4 = new UIUtility.PaletteButton();
+			this.radioButtonPalette27 = new UIUtility.PaletteButton();
+			this.radioButtonPalette15 = new UIUtility.PaletteButton();
+			this.radioButtonPalette3 = new UIUtility.PaletteButton();
+			this.radioButtonPalette26 = new UIUtility.PaletteButton();
+			this.radioButtonPalette14 = new UIUtility.PaletteButton();
+			this.radioButtonPalette2 = new UIUtility.PaletteButton();
+			this.radioButtonPalette25 = new UIUtility.PaletteButton();
+			this.radioButtonPalette13 = new UIUtility.PaletteButton();
+			this.radioButtonPalette1 = new UIUtility.PaletteButton();
+			this.radioButtonPalette24 = new UIUtility.PaletteButton();
+			this.radioButtonPalette12 = new UIUtility.PaletteButton();
+			this.radioButtonPalette0 = new UIUtility.PaletteButton();
+			this.colorBoxControl = new UIUtility.ColorBoxControl();
+			this.sliderControlHSL = new UIUtility.VerticalColorSliderControl();
 			((System.ComponentModel.ISupportInitialize)(this.m_pbx_BlankBox)).BeginInit();
 			this.groupBox1.SuspendLayout();
 			this.SuspendLayout();
@@ -333,7 +333,7 @@ namespace Nuaj.Cirrus.Utility
 			// 
 			// buttonAssignColor
 			// 
-			this.buttonAssignColor.Image = global::Nuaj.Cirrus.Utility.Properties.Resources.eyedropper;
+			this.buttonAssignColor.Image = global::UIUtility.Properties.Resources.eyedropper;
 			this.buttonAssignColor.Location = new System.Drawing.Point(314, 23);
 			this.buttonAssignColor.Name = "buttonAssignColor";
 			this.buttonAssignColor.Size = new System.Drawing.Size(26, 26);
@@ -399,7 +399,7 @@ namespace Nuaj.Cirrus.Utility
 			this.floatTrackbarControlColorTemperature.Value = 5500F;
 			this.floatTrackbarControlColorTemperature.VisibleRangeMax = 10000F;
 			this.floatTrackbarControlColorTemperature.VisibleRangeMin = 4000F;
-			this.floatTrackbarControlColorTemperature.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlColorTemperature_ValueChanged);
+			this.floatTrackbarControlColorTemperature.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlColorTemperature_ValueChanged);
 			// 
 			// floatTrackbarControlLuminance
 			// 
@@ -412,7 +412,7 @@ namespace Nuaj.Cirrus.Utility
 			this.toolTip1.SetToolTip(this.floatTrackbarControlLuminance, "Luminance");
 			this.floatTrackbarControlLuminance.Value = 0F;
 			this.floatTrackbarControlLuminance.VisibleRangeMax = 1F;
-			this.floatTrackbarControlLuminance.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlLuminance_ValueChanged);
+			this.floatTrackbarControlLuminance.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlLuminance_ValueChanged);
 			// 
 			// floatTrackbarControlSaturation
 			// 
@@ -427,7 +427,7 @@ namespace Nuaj.Cirrus.Utility
 			this.toolTip1.SetToolTip(this.floatTrackbarControlSaturation, "Saturation (in [0,1])");
 			this.floatTrackbarControlSaturation.Value = 0F;
 			this.floatTrackbarControlSaturation.VisibleRangeMax = 1F;
-			this.floatTrackbarControlSaturation.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlSaturation_ValueChanged);
+			this.floatTrackbarControlSaturation.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlSaturation_ValueChanged);
 			// 
 			// floatTrackbarControlAlpha
 			// 
@@ -443,7 +443,7 @@ namespace Nuaj.Cirrus.Utility
 			this.toolTip1.SetToolTip(this.floatTrackbarControlAlpha, "Alpha component");
 			this.floatTrackbarControlAlpha.Value = 0F;
 			this.floatTrackbarControlAlpha.VisibleRangeMax = 1F;
-			this.floatTrackbarControlAlpha.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlAlpha_ValueChanged);
+			this.floatTrackbarControlAlpha.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlAlpha_ValueChanged);
 			// 
 			// gradientFloatTrackbarControlb
 			// 
@@ -460,7 +460,7 @@ namespace Nuaj.Cirrus.Utility
 			this.gradientFloatTrackbarControlb.Value = 0F;
 			this.gradientFloatTrackbarControlb.VisibleRangeMax = 128F;
 			this.gradientFloatTrackbarControlb.VisibleRangeMin = -128F;
-			this.gradientFloatTrackbarControlb.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.gradientFloatTrackbarControlb_ValueChanged);
+			this.gradientFloatTrackbarControlb.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.gradientFloatTrackbarControlb_ValueChanged);
 			// 
 			// floatTrackbarControlBlue
 			// 
@@ -476,7 +476,7 @@ namespace Nuaj.Cirrus.Utility
 			this.toolTip1.SetToolTip(this.floatTrackbarControlBlue, "Blue Component");
 			this.floatTrackbarControlBlue.Value = 0F;
 			this.floatTrackbarControlBlue.VisibleRangeMax = 1F;
-			this.floatTrackbarControlBlue.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlBlue_ValueChanged);
+			this.floatTrackbarControlBlue.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlBlue_ValueChanged);
 			// 
 			// gradientFloatTrackbarControla
 			// 
@@ -493,7 +493,7 @@ namespace Nuaj.Cirrus.Utility
 			this.gradientFloatTrackbarControla.Value = 0F;
 			this.gradientFloatTrackbarControla.VisibleRangeMax = 127F;
 			this.gradientFloatTrackbarControla.VisibleRangeMin = -128F;
-			this.gradientFloatTrackbarControla.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.gradientFloatTrackbarControla_ValueChanged);
+			this.gradientFloatTrackbarControla.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.gradientFloatTrackbarControla_ValueChanged);
 			// 
 			// floatTrackbarControlGreen
 			// 
@@ -509,7 +509,7 @@ namespace Nuaj.Cirrus.Utility
 			this.toolTip1.SetToolTip(this.floatTrackbarControlGreen, "Green Component");
 			this.floatTrackbarControlGreen.Value = 0F;
 			this.floatTrackbarControlGreen.VisibleRangeMax = 1F;
-			this.floatTrackbarControlGreen.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlGreen_ValueChanged);
+			this.floatTrackbarControlGreen.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlGreen_ValueChanged);
 			// 
 			// gradientFloatTrackbarControlL
 			// 
@@ -524,7 +524,7 @@ namespace Nuaj.Cirrus.Utility
 			this.gradientFloatTrackbarControlL.TabIndex = 45;
 			this.gradientFloatTrackbarControlL.Value = 100F;
 			this.gradientFloatTrackbarControlL.VisibleRangeMax = 100F;
-			this.gradientFloatTrackbarControlL.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.gradientFloatTrackbarControlL_ValueChanged);
+			this.gradientFloatTrackbarControlL.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.gradientFloatTrackbarControlL_ValueChanged);
 			// 
 			// floatTrackbarControlRed
 			// 
@@ -540,7 +540,7 @@ namespace Nuaj.Cirrus.Utility
 			this.toolTip1.SetToolTip(this.floatTrackbarControlRed, "Red Component");
 			this.floatTrackbarControlRed.Value = 0F;
 			this.floatTrackbarControlRed.VisibleRangeMax = 1F;
-			this.floatTrackbarControlRed.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlRed_ValueChanged);
+			this.floatTrackbarControlRed.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlRed_ValueChanged);
 			// 
 			// floatTrackbarControlHue
 			// 
@@ -555,7 +555,7 @@ namespace Nuaj.Cirrus.Utility
 			this.toolTip1.SetToolTip(this.floatTrackbarControlHue, "Hue (in degress)");
 			this.floatTrackbarControlHue.Value = 0F;
 			this.floatTrackbarControlHue.VisibleRangeMax = 360F;
-			this.floatTrackbarControlHue.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlHue_ValueChanged);
+			this.floatTrackbarControlHue.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlHue_ValueChanged);
 			// 
 			// radioButtonPalette35
 			// 
@@ -920,7 +920,7 @@ namespace Nuaj.Cirrus.Utility
 			// 
 			// colorBoxControl
 			// 
-			this.colorBoxControl.DrawStyle = Nuaj.Cirrus.Utility.ColorPickerForm.DRAW_STYLE.Hue;
+			this.colorBoxControl.DrawStyle = UIUtility.ColorPickerForm.DRAW_STYLE.Hue;
 			this.colorBoxControl.Location = new System.Drawing.Point(12, 133);
 			this.colorBoxControl.Name = "colorBoxControl";
 			this.colorBoxControl.Size = new System.Drawing.Size(260, 260);
@@ -929,7 +929,7 @@ namespace Nuaj.Cirrus.Utility
 			// 
 			// sliderControlHSL
 			// 
-			this.sliderControlHSL.DrawStyle = Nuaj.Cirrus.Utility.ColorPickerForm.DRAW_STYLE.Hue;
+			this.sliderControlHSL.DrawStyle = UIUtility.ColorPickerForm.DRAW_STYLE.Hue;
 			this.sliderControlHSL.Location = new System.Drawing.Point(272, 131);
 			this.sliderControlHSL.Name = "sliderControlHSL";
 			this.sliderControlHSL.Size = new System.Drawing.Size(40, 264);

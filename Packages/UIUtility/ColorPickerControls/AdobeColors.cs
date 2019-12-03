@@ -14,7 +14,7 @@ using System.Drawing;
 
 using SharpMath;
 
-namespace Nuaj.Cirrus.Utility
+namespace UIUtility
 {
 	/// <summary>
 	/// Summary description for AdobeColors

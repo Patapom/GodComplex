@@ -20,7 +20,7 @@ using System.Windows.Forms;
 
 using SharpMath;
 
-namespace Nuaj.Cirrus.Utility
+namespace UIUtility
 {
 	/// <summary>
 	/// Summary description for ColorBoxControl.

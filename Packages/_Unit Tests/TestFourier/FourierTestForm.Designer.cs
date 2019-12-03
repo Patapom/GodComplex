@@ -62,8 +62,8 @@
 			this.checkBoxShowSignalMagnitude = new System.Windows.Forms.CheckBox();
 			this.labelDiff2D = new System.Windows.Forms.Label();
 			this.label4 = new System.Windows.Forms.Label();
-			this.floatTrackbarControlScaleV = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.floatTrackbarControlScaleU = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlScaleV = new UIUtility.FloatTrackbarControl();
+			this.floatTrackbarControlScaleU = new UIUtility.FloatTrackbarControl();
 			this.panelSignalY = new System.Windows.Forms.Panel();
 			this.radioButtonConstantY = new System.Windows.Forms.RadioButton();
 			this.radioButtonRandomY = new System.Windows.Forms.RadioButton();
@@ -90,7 +90,7 @@
 			this.radioButtonFilterCutLarge2D = new System.Windows.Forms.RadioButton();
 			this.radioButtonFilterNone2D = new System.Windows.Forms.RadioButton();
 			this.label6 = new System.Windows.Forms.Label();
-			this.floatTrackbarControlTimeScale = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlTimeScale = new UIUtility.FloatTrackbarControl();
 			this.label7 = new System.Windows.Forms.Label();
 			this.imagePanel = new TestFourier.ImagePanel();
 			this.imagePanel2D = new TestFourier.ImagePanel();
@@ -926,8 +926,8 @@
 		private System.Windows.Forms.RadioButton radioButtonSquareX;
 		private System.Windows.Forms.Label label3;
 		private System.Windows.Forms.Label label4;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlScaleU;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlScaleV;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlScaleU;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlScaleV;
 		private System.Windows.Forms.Label labelDiff2D;
 		private System.Windows.Forms.CheckBox checkBoxShowSignalMagnitude;
 		private System.Windows.Forms.Panel panelSignalY;
@@ -953,7 +953,7 @@
 		private System.Windows.Forms.RadioButton radioButtonFilterNone2D;
 		private System.Windows.Forms.Label label6;
 		private System.Windows.Forms.Label label7;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlTimeScale;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlTimeScale;
 		private System.Windows.Forms.CheckBox checkBoxRadial;
 	}
 }
