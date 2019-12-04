@@ -5,7 +5,7 @@
     <StartWorkingDirectory>D:\Workspaces\GodComplex\Tests\TestAreaLight\</StartWorkingDirectory>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
-    <StartWorkingDirectory>V:\Pom\Workspaces\GodComplex\Tests\TestAreaLight\</StartWorkingDirectory>
+    <StartWorkingDirectory>D:\Workspaces\GodComplex\Tests\TestAreaLight\</StartWorkingDirectory>
     <EnableUnmanagedDebugging>true</EnableUnmanagedDebugging>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
