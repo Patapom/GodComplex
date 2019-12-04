@@ -31,7 +31,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\MathSolvers\MathSolversLib.vcxproj">
+    <ProjectReference Include="..\MathSolversLib\MathSolversLib.vcxproj">
       <Project>{4ceff180-c07c-4ad5-b9ca-5f90e30391e5}</Project>
     </ProjectReference>
   </ItemGroup>
@@ -85,16 +85,16 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(SolutionDir)\Packages\FreeImage3170\Dist\x64\$(Configuration);$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSDK_IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)\Packages\FreeImage3170\Dist\x64\$(Configuration)\;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
     <OutDir>$(SolutionDir)build\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)build\temp\$(ProjectName)\$(Configuration)\</IntDir>
-    <LibraryPath>$(SolutionDir)\build\$(Configuration);$(SolutionDir)\Packages\DirectXTex\DirectXTex\Bin\Desktop_DXSDK\x64\$(Configuration);$(SolutionDir)\Packages\FreeImage3170\Dist\x64\$(Configuration);$(VCInstallDir)lib\amd64;$(VCInstallDir)atlmfc\lib\amd64;$(WindowsSDK_LibraryPath_x64)</LibraryPath>
+    <LibraryPath>$(SolutionDir)\build\$(Configuration);$(SolutionDir)\Packages\DirectXTex\DirectXTex\Bin\Desktop_DXSDK\x64\$(Configuration);$(SolutionDir)\Packages\FreeImage3170\Dist\x64\$(Configuration);$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>$(SolutionDir)\Packages\FreeImage3170\Dist\x64\$(Configuration);$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSDK_IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)\Packages\FreeImage3170\Dist\x64\$(Configuration)\;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
     <OutDir>$(SolutionDir)build\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)build\temp\$(ProjectName)\$(Configuration)\</IntDir>
-    <LibraryPath>$(SolutionDir)\build\$(Configuration);$(SolutionDir)\Packages\DirectXTex\DirectXTex\Bin\Desktop_DXSDK\x64\$(Configuration);$(SolutionDir)\Packages\FreeImage3170\Dist\x64\$(Configuration);$(VCInstallDir)lib\amd64;$(VCInstallDir)atlmfc\lib\amd64;$(WindowsSDK_LibraryPath_x64)</LibraryPath>
+    <LibraryPath>$(SolutionDir)\build\$(Configuration);$(SolutionDir)\Packages\DirectXTex\DirectXTex\Bin\Desktop_DXSDK\x64\$(Configuration);$(SolutionDir)\Packages\FreeImage3170\Dist\x64\$(Configuration);$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <IncludePath>$(SolutionDir)\Packages\FreeImage3170\Dist\x64\$(Configuration);$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSDK_IncludePath)</IncludePath>
