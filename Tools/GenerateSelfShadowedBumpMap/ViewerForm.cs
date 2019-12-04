@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Windows.Forms;
 
-using Nuaj.Cirrus.Utility;
+using UIUtility;
 using Renderer;
 using SharpMath;
 

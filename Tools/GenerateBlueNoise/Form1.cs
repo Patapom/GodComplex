@@ -640,11 +640,11 @@ noiseValue = SimpleRNG.GetUniform() < 0.5 ? 0.5 * Math.Sqrt( 1.0 - noiseValue ) 
 			UpdatePanels();
 		}
 
-		private void floatTrackbarControlScale_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue ) {
+		private void floatTrackbarControlScale_ValueChanged( UIUtility.FloatTrackbarControl _Sender, float _fFormerValue ) {
 			RebuildNoise();
 		}
 
-		private void floatTrackbarControlOffset_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue ) {
+		private void floatTrackbarControlOffset_ValueChanged( UIUtility.FloatTrackbarControl _Sender, float _fFormerValue ) {
 			RebuildNoise();
 		}
 

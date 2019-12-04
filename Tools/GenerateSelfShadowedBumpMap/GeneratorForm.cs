@@ -761,7 +761,7 @@ tabControlGenerators.TabPages.RemoveAt( 1 );
 //			Generate_CPU( integerTrackbarControlRaysCount.Value );
 		}
 
-		private void integerTrackbarControlRaysCount_SliderDragStop( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _StartValue )
+		private void integerTrackbarControlRaysCount_SliderDragStop( UIUtility.IntegerTrackbarControl _Sender, int _StartValue )
 		{
 			GenerateRays( _Sender.Value, m_SB_Rays );
 		}

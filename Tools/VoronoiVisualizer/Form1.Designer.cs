@@ -34,8 +34,8 @@
 			this.label2 = new System.Windows.Forms.Label();
 			this.checkBoxSimulate = new System.Windows.Forms.CheckBox();
 			this.panel1 = new System.Windows.Forms.Panel();
-			this.floatTrackbarControlForce = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.integerTrackbarControlNeighborsCount = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
+			this.floatTrackbarControlForce = new UIUtility.FloatTrackbarControl();
+			this.integerTrackbarControlNeighborsCount = new UIUtility.IntegerTrackbarControl();
 			this.radioButtonHammersley = new System.Windows.Forms.RadioButton();
 			this.radioButtonRandom = new System.Windows.Forms.RadioButton();
 			this.timer1 = new System.Windows.Forms.Timer(this.components);
@@ -126,7 +126,7 @@
 			this.integerTrackbarControlNeighborsCount.Value = 128;
 			this.integerTrackbarControlNeighborsCount.VisibleRangeMax = 128;
 			this.integerTrackbarControlNeighborsCount.VisibleRangeMin = 1;
-			this.integerTrackbarControlNeighborsCount.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlNeighborsCount_ValueChanged);
+			this.integerTrackbarControlNeighborsCount.ValueChanged += new UIUtility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlNeighborsCount_ValueChanged);
 			// 
 			// radioButtonHammersley
 			// 
@@ -247,8 +247,8 @@
 
 		#endregion
 
-		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlNeighborsCount;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlForce;
+		private UIUtility.IntegerTrackbarControl integerTrackbarControlNeighborsCount;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlForce;
 		private System.Windows.Forms.Button buttonReload;
 		private System.Windows.Forms.Label label1;
 		private System.Windows.Forms.Label label2;

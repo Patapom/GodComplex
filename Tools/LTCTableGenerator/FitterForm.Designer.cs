@@ -30,10 +30,10 @@
 		{
 			this.components = new System.ComponentModel.Container();
 			System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FitterForm));
-			this.panelOutputSourceBRDF = new Nuaj.Cirrus.Utility.PanelOutput(this.components);
+			this.panelOutputSourceBRDF = new UIUtility.PanelOutput(this.components);
 			this.label1 = new System.Windows.Forms.Label();
-			this.panelOutputTargetBRDF = new Nuaj.Cirrus.Utility.PanelOutput(this.components);
-			this.panelOutputDifference = new Nuaj.Cirrus.Utility.PanelOutput(this.components);
+			this.panelOutputTargetBRDF = new UIUtility.PanelOutput(this.components);
+			this.panelOutputDifference = new UIUtility.PanelOutput(this.components);
 			this.label2 = new System.Windows.Forms.Label();
 			this.label3 = new System.Windows.Forms.Label();
 			this.panel1 = new System.Windows.Forms.Panel();
@@ -44,23 +44,23 @@
 			this.panel2 = new System.Windows.Forms.Panel();
 			this.textBoxFitting = new System.Windows.Forms.TextBox();
 			this.checkBoxPause = new System.Windows.Forms.CheckBox();
-			this.integerTrackbarControlRoughnessIndex = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
+			this.integerTrackbarControlRoughnessIndex = new UIUtility.IntegerTrackbarControl();
 			this.label8 = new System.Windows.Forms.Label();
-			this.integerTrackbarControlThetaIndex = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
+			this.integerTrackbarControlThetaIndex = new UIUtility.IntegerTrackbarControl();
 			this.label9 = new System.Windows.Forms.Label();
 			this.checkBoxAutoRun = new System.Windows.Forms.CheckBox();
 			this.checkBoxDoFitting = new System.Windows.Forms.CheckBox();
-			this.integerTrackbarControlStepX = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
+			this.integerTrackbarControlStepX = new UIUtility.IntegerTrackbarControl();
 			this.label10 = new System.Windows.Forms.Label();
 			this.label11 = new System.Windows.Forms.Label();
-			this.integerTrackbarControlStepY = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
+			this.integerTrackbarControlStepY = new UIUtility.IntegerTrackbarControl();
 			this.buttonClear = new System.Windows.Forms.Button();
-			this.floatTrackbarControl_m11 = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControl_m11 = new UIUtility.FloatTrackbarControl();
 			this.label12 = new System.Windows.Forms.Label();
 			this.label14 = new System.Windows.Forms.Label();
-			this.floatTrackbarControl_m13 = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControl_m13 = new UIUtility.FloatTrackbarControl();
 			this.label15 = new System.Windows.Forms.Label();
-			this.floatTrackbarControl_m22 = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControl_m22 = new UIUtility.FloatTrackbarControl();
 			this.labelError = new System.Windows.Forms.Label();
 			this.buttonClearRowsFromHere = new System.Windows.Forms.Button();
 			this.checkBoxUsePreviousRoughness = new System.Windows.Forms.CheckBox();
@@ -212,7 +212,7 @@
 			this.integerTrackbarControlRoughnessIndex.TabIndex = 5;
 			this.integerTrackbarControlRoughnessIndex.Value = 63;
 			this.integerTrackbarControlRoughnessIndex.VisibleRangeMax = 63;
-			this.integerTrackbarControlRoughnessIndex.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlRoughnessIndex_ValueChanged);
+			this.integerTrackbarControlRoughnessIndex.ValueChanged += new UIUtility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlRoughnessIndex_ValueChanged);
 			// 
 			// label8
 			// 
@@ -236,7 +236,7 @@
 			this.integerTrackbarControlThetaIndex.TabIndex = 5;
 			this.integerTrackbarControlThetaIndex.Value = 0;
 			this.integerTrackbarControlThetaIndex.VisibleRangeMax = 63;
-			this.integerTrackbarControlThetaIndex.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlThetaIndex_ValueChanged);
+			this.integerTrackbarControlThetaIndex.ValueChanged += new UIUtility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlThetaIndex_ValueChanged);
 			// 
 			// label9
 			// 
@@ -337,7 +337,7 @@
 			this.floatTrackbarControl_m11.Size = new System.Drawing.Size(117, 20);
 			this.floatTrackbarControl_m11.TabIndex = 10;
 			this.floatTrackbarControl_m11.Value = 0F;
-			this.floatTrackbarControl_m11.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControl_matrix_ValueChanged);
+			this.floatTrackbarControl_m11.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControl_matrix_ValueChanged);
 			// 
 			// label12
 			// 
@@ -366,7 +366,7 @@
 			this.floatTrackbarControl_m13.Size = new System.Drawing.Size(117, 20);
 			this.floatTrackbarControl_m13.TabIndex = 10;
 			this.floatTrackbarControl_m13.Value = 0F;
-			this.floatTrackbarControl_m13.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControl_matrix_ValueChanged);
+			this.floatTrackbarControl_m13.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControl_matrix_ValueChanged);
 			// 
 			// label15
 			// 
@@ -386,7 +386,7 @@
 			this.floatTrackbarControl_m22.Size = new System.Drawing.Size(117, 20);
 			this.floatTrackbarControl_m22.TabIndex = 10;
 			this.floatTrackbarControl_m22.Value = 0F;
-			this.floatTrackbarControl_m22.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControl_matrix_ValueChanged);
+			this.floatTrackbarControl_m22.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControl_matrix_ValueChanged);
 			// 
 			// labelError
 			// 
@@ -529,10 +529,10 @@
 
 		#endregion
 
-		private Nuaj.Cirrus.Utility.PanelOutput panelOutputSourceBRDF;
+		private UIUtility.PanelOutput panelOutputSourceBRDF;
 		private System.Windows.Forms.Label label1;
-		private Nuaj.Cirrus.Utility.PanelOutput panelOutputTargetBRDF;
-		private Nuaj.Cirrus.Utility.PanelOutput panelOutputDifference;
+		private UIUtility.PanelOutput panelOutputTargetBRDF;
+		private UIUtility.PanelOutput panelOutputDifference;
 		private System.Windows.Forms.Label label2;
 		private System.Windows.Forms.Label label3;
 		private System.Windows.Forms.Panel panel1;
@@ -543,23 +543,23 @@
 		private System.Windows.Forms.Panel panel2;
 		private System.Windows.Forms.TextBox textBoxFitting;
 		private System.Windows.Forms.CheckBox checkBoxPause;
-		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlRoughnessIndex;
+		private UIUtility.IntegerTrackbarControl integerTrackbarControlRoughnessIndex;
 		private System.Windows.Forms.Label label8;
-		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlThetaIndex;
+		private UIUtility.IntegerTrackbarControl integerTrackbarControlThetaIndex;
 		private System.Windows.Forms.Label label9;
 		private System.Windows.Forms.CheckBox checkBoxAutoRun;
 		private System.Windows.Forms.CheckBox checkBoxDoFitting;
-		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlStepX;
+		private UIUtility.IntegerTrackbarControl integerTrackbarControlStepX;
 		private System.Windows.Forms.Label label10;
 		private System.Windows.Forms.Label label11;
-		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlStepY;
+		private UIUtility.IntegerTrackbarControl integerTrackbarControlStepY;
 		private System.Windows.Forms.Button buttonClear;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControl_m11;
+		private UIUtility.FloatTrackbarControl floatTrackbarControl_m11;
 		private System.Windows.Forms.Label label12;
 		private System.Windows.Forms.Label label14;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControl_m13;
+		private UIUtility.FloatTrackbarControl floatTrackbarControl_m13;
 		private System.Windows.Forms.Label label15;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControl_m22;
+		private UIUtility.FloatTrackbarControl floatTrackbarControl_m22;
 		private System.Windows.Forms.Label labelError;
 		private System.Windows.Forms.Button buttonClearRowsFromHere;
 		private System.Windows.Forms.CheckBox checkBoxUsePreviousRoughness;

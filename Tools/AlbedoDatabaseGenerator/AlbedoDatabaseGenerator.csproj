@@ -154,13 +154,13 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\Packages\MathAdvanced\MathAdvanced.csproj">
+      <Project>{dd026a89-c5fe-4150-bc85-a660e427826a}</Project>
+      <Name>MathAdvanced</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\Packages\MathSimple\MathSimple.vcxproj">
       <Project>{cec07704-2a19-4bf1-b46d-8fcf9c5965ee}</Project>
       <Name>MathSimple</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Packages\SharpMath\MathAdvanced.csproj">
-      <Project>{DD026A89-C5FE-4150-BC85-A660E427826A}</Project>
-      <Name>MathAdvanced</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

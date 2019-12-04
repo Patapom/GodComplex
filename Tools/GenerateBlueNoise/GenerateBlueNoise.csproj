@@ -125,13 +125,18 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Packages\Cirrus.Utility\Utility.csproj">
-      <Project>{9a67863f-d886-41a5-a8d1-04ba1379b097}</Project>
-      <Name>Utility</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Packages\ImageUtilityManaged\ImageUtilityManaged.vcxproj">
+    <Content Include="Shaders\VoidAndCluster.hlsl" />
+    <Content Include="Shaders\Global.hlsl" />
+    <Content Include="Shaders\SimulatedAnnealing.hlsl" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Packages\ImageUtility\ImageUtility.vcxproj">
       <Project>{6c974ba3-ecba-4436-85cb-218eebb33d53}</Project>
       <Name>ImageUtility</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Packages\MathAdvanced\MathAdvanced.csproj">
+      <Project>{dd026a89-c5fe-4150-bc85-a660e427826a}</Project>
+      <Name>MathAdvanced</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\Packages\MathFFT\MathFFT.csproj">
       <Project>{e23a7535-002f-4dd6-93f4-445b123d75b5}</Project>
@@ -141,19 +146,14 @@
       <Project>{cec07704-2a19-4bf1-b46d-8fcf9c5965ee}</Project>
       <Name>MathSimple</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\Packages\RendererManaged\RendererManaged.vcxproj">
+    <ProjectReference Include="..\..\Packages\Renderer\Renderer.vcxproj">
       <Project>{f96cdfd3-8954-4f4f-afb0-2855d98f051b}</Project>
       <Name>Renderer</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\Packages\SharpMath\MathAdvanced.csproj">
-      <Project>{dd026a89-c5fe-4150-bc85-a660e427826a}</Project>
-      <Name>MathAdvanced</Name>
+    <ProjectReference Include="..\..\Packages\UIUtility\UIUtility.csproj">
+      <Project>{9a67863f-d886-41a5-a8d1-04ba1379b097}</Project>
+      <Name>UIUtility</Name>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="Shaders\VoidAndCluster.hlsl" />
-    <Content Include="Shaders\Global.hlsl" />
-    <Content Include="Shaders\SimulatedAnnealing.hlsl" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

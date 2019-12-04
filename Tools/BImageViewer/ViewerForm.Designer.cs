@@ -29,10 +29,10 @@
 		private void InitializeComponent()
 		{
 			this.components = new System.ComponentModel.Container();
-			this.integerTrackbarControlMipLevel = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
+			this.integerTrackbarControlMipLevel = new UIUtility.IntegerTrackbarControl();
 			this.label1 = new System.Windows.Forms.Label();
 			this.labelEV = new System.Windows.Forms.Label();
-			this.floatTrackbarControlEV = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlEV = new UIUtility.FloatTrackbarControl();
 			this.timer1 = new System.Windows.Forms.Timer(this.components);
 			this.SuspendLayout();
 			// 
@@ -119,9 +119,9 @@
 		#endregion
 
 		private System.Windows.Forms.Label label1;
-		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlMipLevel;
+		private UIUtility.IntegerTrackbarControl integerTrackbarControlMipLevel;
 		private System.Windows.Forms.Label labelEV;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlEV;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlEV;
 		private System.Windows.Forms.Timer timer1;
 	}
 }

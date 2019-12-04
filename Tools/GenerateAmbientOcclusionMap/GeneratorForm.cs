@@ -958,11 +958,11 @@ minAngle_Back = Mathf.Min( minAngle_Back, tsAngle );
 			}
 		}
 
-		private void integerTrackbarControlRaysCount_SliderDragStop( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _StartValue ) {
+		private void integerTrackbarControlRaysCount_SliderDragStop( UIUtility.IntegerTrackbarControl _Sender, int _StartValue ) {
 			GenerateRays( _Sender.Value, floatTrackbarControlMaxConeAngle.Value * (float) (Math.PI / 180.0), m_SB_Rays );
 		}
 
-		private void floatTrackbarControlMaxConeAngle_SliderDragStop( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fStartValue ) {
+		private void floatTrackbarControlMaxConeAngle_SliderDragStop( UIUtility.FloatTrackbarControl _Sender, float _fStartValue ) {
 			GenerateRays( integerTrackbarControlRaysCount.Value, floatTrackbarControlMaxConeAngle.Value * (float) (Math.PI / 180.0), m_SB_Rays );
 		}
 
@@ -970,15 +970,15 @@ minAngle_Back = Mathf.Min( minAngle_Back, tsAngle );
 			viewportPanelResult.ViewLinear = !checkBoxViewsRGB.Checked;
 		}
 
-		private void floatTrackbarControlBrightness_SliderDragStop( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fStartValue ) {
+		private void floatTrackbarControlBrightness_SliderDragStop( UIUtility.FloatTrackbarControl _Sender, float _fStartValue ) {
 			viewportPanelResult.Brightness = _Sender.Value;
 		}
 
-		private void floatTrackbarControlContrast_SliderDragStop( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fStartValue ) {
+		private void floatTrackbarControlContrast_SliderDragStop( UIUtility.FloatTrackbarControl _Sender, float _fStartValue ) {
 			viewportPanelResult.Contrast = _Sender.Value;
 		}
 
-		private void floatTrackbarControlGamma_SliderDragStop( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fStartValue ) {
+		private void floatTrackbarControlGamma_SliderDragStop( UIUtility.FloatTrackbarControl _Sender, float _fStartValue ) {
 			viewportPanelResult.Gamma = _Sender.Value;
 		}
 

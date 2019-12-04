@@ -16,8 +16,8 @@
 		private void InitializeComponent()
 		{
 			this.components = new System.ComponentModel.Container();
-			this.floatTrackbarControlHeight = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.integerTrackbarControlRaysCount = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
+			this.floatTrackbarControlHeight = new UIUtility.FloatTrackbarControl();
+			this.integerTrackbarControlRaysCount = new UIUtility.IntegerTrackbarControl();
 			this.checkBoxWrap = new System.Windows.Forms.CheckBox();
 			this.buttonGenerate = new System.Windows.Forms.Button();
 			this.label3 = new System.Windows.Forms.Label();
@@ -26,10 +26,10 @@
 			this.label2 = new System.Windows.Forms.Label();
 			this.label4 = new System.Windows.Forms.Label();
 			this.label1 = new System.Windows.Forms.Label();
-			this.integerTrackbarControlMaxStepsCount = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
-			this.floatTrackbarControlPixelDensity = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.floatTrackbarControlBilateralTolerance = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.floatTrackbarControlBilateralRadius = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.integerTrackbarControlMaxStepsCount = new UIUtility.IntegerTrackbarControl();
+			this.floatTrackbarControlPixelDensity = new UIUtility.FloatTrackbarControl();
+			this.floatTrackbarControlBilateralTolerance = new UIUtility.FloatTrackbarControl();
+			this.floatTrackbarControlBilateralRadius = new UIUtility.FloatTrackbarControl();
 			this.progressBar = new System.Windows.Forms.ProgressBar();
 			this.radioButtonShowDirOccRGB = new System.Windows.Forms.RadioButton();
 			this.radioButtonDirOccR = new System.Windows.Forms.RadioButton();
@@ -80,7 +80,7 @@
 			this.integerTrackbarControlRaysCount.Value = 300;
 			this.integerTrackbarControlRaysCount.VisibleRangeMax = 1024;
 			this.integerTrackbarControlRaysCount.VisibleRangeMin = 1;
-			this.integerTrackbarControlRaysCount.SliderDragStop += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.SliderDragStopEventHandler(this.integerTrackbarControlRaysCount_SliderDragStop);
+			this.integerTrackbarControlRaysCount.SliderDragStop += new UIUtility.IntegerTrackbarControl.SliderDragStopEventHandler(this.integerTrackbarControlRaysCount_SliderDragStop);
 			// 
 			// checkBoxWrap
 			// 
@@ -469,21 +469,21 @@
 		#endregion
 
 		private ImagePanel outputPanelInputHeightMap;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlHeight;
-		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlRaysCount;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlHeight;
+		private UIUtility.IntegerTrackbarControl integerTrackbarControlRaysCount;
 		private System.Windows.Forms.Label label2;
 		private System.Windows.Forms.Label label1;
 		private ImagePanel viewportPanelResult;
 		private System.Windows.Forms.Label label3;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlPixelDensity;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlPixelDensity;
 		private System.Windows.Forms.Button buttonGenerate;
 		private System.Windows.Forms.ProgressBar progressBar;
 		private System.Windows.Forms.Label label4;
-		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlMaxStepsCount;
+		private UIUtility.IntegerTrackbarControl integerTrackbarControlMaxStepsCount;
 		private System.Windows.Forms.Label label6;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlBilateralRadius;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlBilateralRadius;
 		private System.Windows.Forms.Label label7;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlBilateralTolerance;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlBilateralTolerance;
 		private System.Windows.Forms.CheckBox checkBoxWrap;
 		private System.Windows.Forms.RadioButton radioButtonShowDirOccRGB;
 		private System.Windows.Forms.RadioButton radioButtonDirOccR;

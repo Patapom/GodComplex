@@ -32,32 +32,32 @@
 			this.progressBar = new System.Windows.Forms.ProgressBar();
 			this.openFileDialogImage = new System.Windows.Forms.OpenFileDialog();
 			this.saveFileDialogImage = new System.Windows.Forms.SaveFileDialog();
-			this.integerTrackbarControlRaysCount = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
+			this.integerTrackbarControlRaysCount = new UIUtility.IntegerTrackbarControl();
 			this.buttonGenerate = new System.Windows.Forms.Button();
-			this.floatTrackbarControlScatteringCoefficient = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.floatTrackbarControlThickness = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlScatteringCoefficient = new UIUtility.FloatTrackbarControl();
+			this.floatTrackbarControlThickness = new UIUtility.FloatTrackbarControl();
 			this.label8 = new System.Windows.Forms.Label();
-			this.floatTrackbarControlBilateralRadius = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlBilateralRadius = new UIUtility.FloatTrackbarControl();
 			this.label9 = new System.Windows.Forms.Label();
-			this.floatTrackbarControlBilateralTolerance = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlBilateralTolerance = new UIUtility.FloatTrackbarControl();
 			this.label10 = new System.Windows.Forms.Label();
 			this.label14 = new System.Windows.Forms.Label();
-			this.floatTrackbarControlPixelDensity = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlPixelDensity = new UIUtility.FloatTrackbarControl();
 			this.label11 = new System.Windows.Forms.Label();
 			this.label13 = new System.Windows.Forms.Label();
 			this.groupBoxOptions = new System.Windows.Forms.GroupBox();
 			this.label5 = new System.Windows.Forms.Label();
-			this.integerTrackbarControlKernelSize = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
-			this.floatTrackbarControlScatteringAnisotropy = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.floatTrackbarControlRefractionIndex = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.floatTrackbarControlAbsorptionCoefficient = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.integerTrackbarControlKernelSize = new UIUtility.IntegerTrackbarControl();
+			this.floatTrackbarControlScatteringAnisotropy = new UIUtility.FloatTrackbarControl();
+			this.floatTrackbarControlRefractionIndex = new UIUtility.FloatTrackbarControl();
+			this.floatTrackbarControlAbsorptionCoefficient = new UIUtility.FloatTrackbarControl();
 			this.label2 = new System.Windows.Forms.Label();
 			this.label3 = new System.Windows.Forms.Label();
 			this.label1 = new System.Windows.Forms.Label();
 			this.buttonShowViewer = new System.Windows.Forms.Button();
 			this.buttonReload = new System.Windows.Forms.Button();
 			this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
-			this.floatTrackbarControlDominantHue = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlDominantHue = new UIUtility.FloatTrackbarControl();
 			this.label4 = new System.Windows.Forms.Label();
 			this.panelDominantHue = new System.Windows.Forms.Panel();
 			this.imagePanelResult3 = new GenerateTranslucencyMap.ImagePanel(this.components);
@@ -104,7 +104,7 @@
 			this.integerTrackbarControlRaysCount.Value = 1;
 			this.integerTrackbarControlRaysCount.VisibleRangeMax = 128;
 			this.integerTrackbarControlRaysCount.VisibleRangeMin = 1;
-			this.integerTrackbarControlRaysCount.SliderDragStop += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.SliderDragStopEventHandler(this.integerTrackbarControlRaysCount_SliderDragStop);
+			this.integerTrackbarControlRaysCount.SliderDragStop += new UIUtility.IntegerTrackbarControl.SliderDragStopEventHandler(this.integerTrackbarControlRaysCount_SliderDragStop);
 			// 
 			// buttonGenerate
 			// 
@@ -398,8 +398,8 @@
 			this.floatTrackbarControlDominantHue.TabIndex = 22;
 			this.floatTrackbarControlDominantHue.Value = 120F;
 			this.floatTrackbarControlDominantHue.VisibleRangeMax = 360F;
-			this.floatTrackbarControlDominantHue.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlDominantHue_ValueChanged);
-			this.floatTrackbarControlDominantHue.SliderDragStop += new Nuaj.Cirrus.Utility.FloatTrackbarControl.SliderDragStopEventHandler(this.floatTrackbarControlDominantHue_SliderDragStop);
+			this.floatTrackbarControlDominantHue.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlDominantHue_ValueChanged);
+			this.floatTrackbarControlDominantHue.SliderDragStop += new UIUtility.FloatTrackbarControl.SliderDragStopEventHandler(this.floatTrackbarControlDominantHue_SliderDragStop);
 			// 
 			// label4
 			// 
@@ -569,28 +569,28 @@
 		private System.Windows.Forms.ProgressBar progressBar;
 		private System.Windows.Forms.OpenFileDialog openFileDialogImage;
 		private System.Windows.Forms.SaveFileDialog saveFileDialogImage;
-		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlRaysCount;
+		private UIUtility.IntegerTrackbarControl integerTrackbarControlRaysCount;
 		private System.Windows.Forms.Button buttonGenerate;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlScatteringCoefficient;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlThickness;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlScatteringCoefficient;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlThickness;
 		private System.Windows.Forms.Label label8;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlBilateralRadius;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlBilateralRadius;
 		private System.Windows.Forms.Label label9;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlBilateralTolerance;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlBilateralTolerance;
 		private System.Windows.Forms.Label label10;
 		private System.Windows.Forms.Label label14;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlPixelDensity;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlPixelDensity;
 		private System.Windows.Forms.Label label11;
 		private System.Windows.Forms.Label label13;
 		private System.Windows.Forms.GroupBox groupBoxOptions;
 		private ImagePanel imagePanelNormalMap;
 		private ImagePanel imagePanelAlbedoMap;
 		private ImagePanel imagePanelTransmittanceMap;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlAbsorptionCoefficient;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlAbsorptionCoefficient;
 		private System.Windows.Forms.Label label1;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlScatteringAnisotropy;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlScatteringAnisotropy;
 		private System.Windows.Forms.Label label2;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlRefractionIndex;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlRefractionIndex;
 		private System.Windows.Forms.Label label3;
 		private ImagePanel imagePanelResult1;
 		private ImagePanel imagePanelResult2;
@@ -598,11 +598,11 @@
 		private System.Windows.Forms.Button buttonShowViewer;
 		private System.Windows.Forms.Button buttonReload;
 		private System.Windows.Forms.ToolTip toolTip1;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlDominantHue;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlDominantHue;
 		private System.Windows.Forms.Label label4;
 		private System.Windows.Forms.Panel panelDominantHue;
 		private System.Windows.Forms.Label label5;
-		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlKernelSize;
+		private UIUtility.IntegerTrackbarControl integerTrackbarControlKernelSize;
 	}
 }
 

@@ -150,22 +150,22 @@ namespace sRGBLinearConverter
 			Clipboard.SetText( (sender as TextBox).Text );
 		}
 
-		private void floatTrackbarControlNormalized_Linear_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
+		private void floatTrackbarControlNormalized_Linear_ValueChanged( UIUtility.FloatTrackbarControl _Sender, float _fFormerValue )
 		{
 			m_lastChangeIsInteger = false;
 		}
 
-		private void integerTrackbarControl255_Linear_ValueChanged( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue )
+		private void integerTrackbarControl255_Linear_ValueChanged( UIUtility.IntegerTrackbarControl _Sender, int _FormerValue )
 		{
 			m_lastChangeIsInteger = true;
 		}
 
-		private void floatTrackbarControlNormalized_sRGB_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
+		private void floatTrackbarControlNormalized_sRGB_ValueChanged( UIUtility.FloatTrackbarControl _Sender, float _fFormerValue )
 		{
 			m_lastChangeIsInteger = false;
 		}
 
-		private void integerTrackbarControl255_sRGB_ValueChanged( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue )
+		private void integerTrackbarControl255_sRGB_ValueChanged( UIUtility.IntegerTrackbarControl _Sender, int _FormerValue )
 		{
 			m_lastChangeIsInteger = true;
 		}

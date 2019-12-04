@@ -31,8 +31,8 @@
 			this.colorDialog = new System.Windows.Forms.ColorDialog();
 			this.panelColorsRGB = new System.Windows.Forms.Panel();
 			this.groupBoxsRGB = new System.Windows.Forms.GroupBox();
-			this.integerTrackbarControl255_sRGB = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
-			this.floatTrackbarControlNormalized_sRGB = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.integerTrackbarControl255_sRGB = new UIUtility.IntegerTrackbarControl();
+			this.floatTrackbarControlNormalized_sRGB = new UIUtility.FloatTrackbarControl();
 			this.label3 = new System.Windows.Forms.Label();
 			this.textBoxColorWeb_sRGB = new System.Windows.Forms.TextBox();
 			this.label2 = new System.Windows.Forms.Label();
@@ -42,8 +42,8 @@
 			this.label1 = new System.Windows.Forms.Label();
 			this.textBoxColorNormalized_sRGB = new System.Windows.Forms.TextBox();
 			this.groupBoxLinear = new System.Windows.Forms.GroupBox();
-			this.integerTrackbarControl255_Linear = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
-			this.floatTrackbarControlNormalized_Linear = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.integerTrackbarControl255_Linear = new UIUtility.IntegerTrackbarControl();
+			this.floatTrackbarControlNormalized_Linear = new UIUtility.FloatTrackbarControl();
 			this.label6 = new System.Windows.Forms.Label();
 			this.textBoxColorWeb_Linear = new System.Windows.Forms.TextBox();
 			this.label7 = new System.Windows.Forms.Label();
@@ -107,7 +107,7 @@
 			this.integerTrackbarControl255_sRGB.TabIndex = 5;
 			this.integerTrackbarControl255_sRGB.Value = 255;
 			this.integerTrackbarControl255_sRGB.VisibleRangeMax = 255;
-			this.integerTrackbarControl255_sRGB.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControl255_sRGB_ValueChanged);
+			this.integerTrackbarControl255_sRGB.ValueChanged += new UIUtility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControl255_sRGB_ValueChanged);
 			// 
 			// floatTrackbarControlNormalized_sRGB
 			// 
@@ -121,7 +121,7 @@
 			this.floatTrackbarControlNormalized_sRGB.TabIndex = 4;
 			this.floatTrackbarControlNormalized_sRGB.Value = 1F;
 			this.floatTrackbarControlNormalized_sRGB.VisibleRangeMax = 1F;
-			this.floatTrackbarControlNormalized_sRGB.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlNormalized_sRGB_ValueChanged);
+			this.floatTrackbarControlNormalized_sRGB.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlNormalized_sRGB_ValueChanged);
 			// 
 			// label3
 			// 
@@ -227,7 +227,7 @@
 			this.integerTrackbarControl255_Linear.TabIndex = 5;
 			this.integerTrackbarControl255_Linear.Value = 255;
 			this.integerTrackbarControl255_Linear.VisibleRangeMax = 255;
-			this.integerTrackbarControl255_Linear.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControl255_Linear_ValueChanged);
+			this.integerTrackbarControl255_Linear.ValueChanged += new UIUtility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControl255_Linear_ValueChanged);
 			// 
 			// floatTrackbarControlNormalized_Linear
 			// 
@@ -241,7 +241,7 @@
 			this.floatTrackbarControlNormalized_Linear.TabIndex = 4;
 			this.floatTrackbarControlNormalized_Linear.Value = 1F;
 			this.floatTrackbarControlNormalized_Linear.VisibleRangeMax = 1F;
-			this.floatTrackbarControlNormalized_Linear.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlNormalized_Linear_ValueChanged);
+			this.floatTrackbarControlNormalized_Linear.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlNormalized_Linear_ValueChanged);
 			// 
 			// label6
 			// 
@@ -389,13 +389,13 @@
 		private System.Windows.Forms.TextBox textBoxColorWeb_sRGB;
 		private System.Windows.Forms.Label label2;
 		private System.Windows.Forms.TextBox textBoxColor255_sRGB;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlNormalized_sRGB;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlNormalized_sRGB;
 		private System.Windows.Forms.Label label4;
-		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControl255_sRGB;
+		private UIUtility.IntegerTrackbarControl integerTrackbarControl255_sRGB;
 		private System.Windows.Forms.Label label5;
 		private System.Windows.Forms.GroupBox groupBoxLinear;
-		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControl255_Linear;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlNormalized_Linear;
+		private UIUtility.IntegerTrackbarControl integerTrackbarControl255_Linear;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlNormalized_Linear;
 		private System.Windows.Forms.Label label6;
 		private System.Windows.Forms.TextBox textBoxColorWeb_Linear;
 		private System.Windows.Forms.Label label7;

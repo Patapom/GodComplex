@@ -972,11 +972,11 @@ tsReflection = _LTC.Z;	// Use preferred direction
 			Paused = checkBoxPause.Checked;
 		}
 
-		private void integerTrackbarControlRoughnessIndex_ValueChanged( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue ) {
+		private void integerTrackbarControlRoughnessIndex_ValueChanged( UIUtility.IntegerTrackbarControl _Sender, int _FormerValue ) {
 			UpdateView();
 		}
 
-		private void integerTrackbarControlThetaIndex_ValueChanged( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue ) {
+		private void integerTrackbarControlThetaIndex_ValueChanged( UIUtility.IntegerTrackbarControl _Sender, int _FormerValue ) {
 			UpdateView();
 		}
 
@@ -1045,7 +1045,7 @@ tsReflection = _LTC.Z;	// Use preferred direction
 			UpdateView();
 		}
 
-		private void floatTrackbarControl_matrix_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue ) {
+		private void floatTrackbarControl_matrix_ValueChanged( UIUtility.FloatTrackbarControl _Sender, float _fFormerValue ) {
 			if ( m_internalChange || m_renderingBRDF )
 				return;
 

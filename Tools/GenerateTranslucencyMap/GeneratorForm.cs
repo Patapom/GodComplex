@@ -1016,7 +1016,7 @@ namespace GenerateTranslucencyMap
  			Generate();
 		}
 
-		private void integerTrackbarControlRaysCount_SliderDragStop( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _StartValue )
+		private void integerTrackbarControlRaysCount_SliderDragStop( UIUtility.IntegerTrackbarControl _Sender, int _StartValue )
 		{
 			GenerateRays( _Sender.Value );
 		}
@@ -1286,7 +1286,7 @@ namespace GenerateTranslucencyMap
 			m_Device.ReloadModifiedShaders();
 		}
 
-		private void floatTrackbarControlDominantHue_SliderDragStop( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fStartValue )
+		private void floatTrackbarControlDominantHue_SliderDragStop( UIUtility.FloatTrackbarControl _Sender, float _fStartValue )
 		{
 			try {
 				MixResults( MixColor );
@@ -1295,7 +1295,7 @@ namespace GenerateTranslucencyMap
 			}
 		}
 
-		private void floatTrackbarControlDominantHue_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue ) {
+		private void floatTrackbarControlDominantHue_ValueChanged( UIUtility.FloatTrackbarControl _Sender, float _fFormerValue ) {
 			float3	RGB = HSL2RGB( new float3( _Sender.Value / 360.0f, 1.0f, 0.5f ) );
 			panelDominantHue.BackColor = Color.FromArgb( (int) (255 * RGB.x), (int) (255 * RGB.y), (int) (255 * RGB.z) );
 		}

@@ -10,7 +10,7 @@ using System.Windows.Forms;
 using Renderer;
 using ImageUtility;
 using SharpMath;
-using Nuaj.Cirrus.Utility;
+using UIUtility;
 
 namespace VoronoiVisualizer
 {
