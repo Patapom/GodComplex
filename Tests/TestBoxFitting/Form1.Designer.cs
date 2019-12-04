@@ -30,32 +30,32 @@
 		{
 			this.components = new System.ComponentModel.Container();
 			this.textBoxPlanes = new System.Windows.Forms.TextBox();
-			this.integerTrackbarControlRoomPlanesCount = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
+			this.integerTrackbarControlRoomPlanesCount = new UIUtility.IntegerTrackbarControl();
 			this.label1 = new System.Windows.Forms.Label();
-			this.integerTrackbarControlObstacles = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
+			this.integerTrackbarControlObstacles = new UIUtility.IntegerTrackbarControl();
 			this.label2 = new System.Windows.Forms.Label();
-			this.integerTrackbarControlResultPlanesCount = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
+			this.integerTrackbarControlResultPlanesCount = new UIUtility.IntegerTrackbarControl();
 			this.label3 = new System.Windows.Forms.Label();
-			this.integerTrackbarControlRandomSeed = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
+			this.integerTrackbarControlRandomSeed = new UIUtility.IntegerTrackbarControl();
 			this.label4 = new System.Windows.Forms.Label();
-			this.floatTrackbarControlWeightExponent = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlWeightExponent = new UIUtility.FloatTrackbarControl();
 			this.label5 = new System.Windows.Forms.Label();
 			this.radioButtonBest = new System.Windows.Forms.RadioButton();
 			this.radioButtonProbabilities = new System.Windows.Forms.RadioButton();
 			this.radioButtonNormalWeight = new System.Windows.Forms.RadioButton();
 			this.label6 = new System.Windows.Forms.Label();
-			this.floatTrackbarControlDismissFactor = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlDismissFactor = new UIUtility.FloatTrackbarControl();
 			this.panel1 = new System.Windows.Forms.Panel();
 			this.panel2 = new System.Windows.Forms.Panel();
 			this.radioButtonDismissWeight = new System.Windows.Forms.RadioButton();
 			this.radioButtonDismissKappa = new System.Windows.Forms.RadioButton();
 			this.radioButtonUseBest = new System.Windows.Forms.RadioButton();
-			this.integerTrackbarControlKeepBestPlanesCount = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
+			this.integerTrackbarControlKeepBestPlanesCount = new UIUtility.IntegerTrackbarControl();
 			this.label7 = new System.Windows.Forms.Label();
 			this.panelDismissFactor = new System.Windows.Forms.Panel();
 			this.panelKeepBestPlanes = new System.Windows.Forms.Panel();
 			this.label8 = new System.Windows.Forms.Label();
-			this.floatTrackbarControlSimilarPlanes = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlSimilarPlanes = new UIUtility.FloatTrackbarControl();
 			this.checkBoxShowDismissedPlanes = new System.Windows.Forms.CheckBox();
 			this.radioButtonDefaultEMWeight = new System.Windows.Forms.RadioButton();
 			this.panel3 = new System.Windows.Forms.Panel();
@@ -94,8 +94,8 @@
 			this.integerTrackbarControlRoomPlanesCount.Value = 4;
 			this.integerTrackbarControlRoomPlanesCount.VisibleRangeMax = 10;
 			this.integerTrackbarControlRoomPlanesCount.VisibleRangeMin = 1;
-			this.integerTrackbarControlRoomPlanesCount.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlRoomPlanesCount_ValueChanged);
-			this.integerTrackbarControlRoomPlanesCount.SliderDragStop += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.SliderDragStopEventHandler(this.integerTrackbarControlRoomPlanesCount_SliderDragStop);
+			this.integerTrackbarControlRoomPlanesCount.ValueChanged += new UIUtility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlRoomPlanesCount_ValueChanged);
+			this.integerTrackbarControlRoomPlanesCount.SliderDragStop += new UIUtility.IntegerTrackbarControl.SliderDragStopEventHandler(this.integerTrackbarControlRoomPlanesCount_SliderDragStop);
 			// 
 			// label1
 			// 
@@ -118,8 +118,8 @@
 			this.integerTrackbarControlObstacles.TabIndex = 3;
 			this.integerTrackbarControlObstacles.Value = 30;
 			this.integerTrackbarControlObstacles.VisibleRangeMax = 40;
-			this.integerTrackbarControlObstacles.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlObstacles_ValueChanged);
-			this.integerTrackbarControlObstacles.SliderDragStop += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.SliderDragStopEventHandler(this.integerTrackbarControlObstacles_SliderDragStop);
+			this.integerTrackbarControlObstacles.ValueChanged += new UIUtility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlObstacles_ValueChanged);
+			this.integerTrackbarControlObstacles.SliderDragStop += new UIUtility.IntegerTrackbarControl.SliderDragStopEventHandler(this.integerTrackbarControlObstacles_SliderDragStop);
 			// 
 			// label2
 			// 
@@ -143,8 +143,8 @@
 			this.integerTrackbarControlResultPlanesCount.Value = 8;
 			this.integerTrackbarControlResultPlanesCount.VisibleRangeMax = 10;
 			this.integerTrackbarControlResultPlanesCount.VisibleRangeMin = 1;
-			this.integerTrackbarControlResultPlanesCount.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlResultPlanesCount_ValueChanged);
-			this.integerTrackbarControlResultPlanesCount.SliderDragStop += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.SliderDragStopEventHandler(this.integerTrackbarControlResultPlanesCount_SliderDragStop);
+			this.integerTrackbarControlResultPlanesCount.ValueChanged += new UIUtility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlResultPlanesCount_ValueChanged);
+			this.integerTrackbarControlResultPlanesCount.SliderDragStop += new UIUtility.IntegerTrackbarControl.SliderDragStopEventHandler(this.integerTrackbarControlResultPlanesCount_SliderDragStop);
 			// 
 			// label3
 			// 
@@ -168,8 +168,8 @@
 			this.integerTrackbarControlRandomSeed.Value = 1;
 			this.integerTrackbarControlRandomSeed.VisibleRangeMax = 1000;
 			this.integerTrackbarControlRandomSeed.VisibleRangeMin = 1;
-			this.integerTrackbarControlRandomSeed.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlRoomPlanesCount_ValueChanged);
-			this.integerTrackbarControlRandomSeed.SliderDragStop += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.SliderDragStopEventHandler(this.integerTrackbarControlRoomPlanesCount_SliderDragStop);
+			this.integerTrackbarControlRandomSeed.ValueChanged += new UIUtility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlRoomPlanesCount_ValueChanged);
+			this.integerTrackbarControlRandomSeed.SliderDragStop += new UIUtility.IntegerTrackbarControl.SliderDragStopEventHandler(this.integerTrackbarControlRoomPlanesCount_SliderDragStop);
 			// 
 			// label4
 			// 
@@ -191,7 +191,7 @@
 			this.floatTrackbarControlWeightExponent.TabIndex = 5;
 			this.floatTrackbarControlWeightExponent.Value = 20F;
 			this.floatTrackbarControlWeightExponent.VisibleRangeMax = 100F;
-			this.floatTrackbarControlWeightExponent.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlWeightExponent_ValueChanged);
+			this.floatTrackbarControlWeightExponent.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlWeightExponent_ValueChanged);
 			// 
 			// label5
 			// 
@@ -258,7 +258,7 @@
 			this.floatTrackbarControlDismissFactor.TabIndex = 5;
 			this.floatTrackbarControlDismissFactor.Value = 0.5F;
 			this.floatTrackbarControlDismissFactor.VisibleRangeMax = 1F;
-			this.floatTrackbarControlDismissFactor.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlWeightExponent_ValueChanged);
+			this.floatTrackbarControlDismissFactor.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlWeightExponent_ValueChanged);
 			// 
 			// panel1
 			// 
@@ -328,8 +328,8 @@
 			this.integerTrackbarControlKeepBestPlanesCount.Value = 4;
 			this.integerTrackbarControlKeepBestPlanesCount.VisibleRangeMax = 10;
 			this.integerTrackbarControlKeepBestPlanesCount.VisibleRangeMin = 1;
-			this.integerTrackbarControlKeepBestPlanesCount.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlResultPlanesCount_ValueChanged);
-			this.integerTrackbarControlKeepBestPlanesCount.SliderDragStop += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.SliderDragStopEventHandler(this.integerTrackbarControlResultPlanesCount_SliderDragStop);
+			this.integerTrackbarControlKeepBestPlanesCount.ValueChanged += new UIUtility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlResultPlanesCount_ValueChanged);
+			this.integerTrackbarControlKeepBestPlanesCount.SliderDragStop += new UIUtility.IntegerTrackbarControl.SliderDragStopEventHandler(this.integerTrackbarControlResultPlanesCount_SliderDragStop);
 			// 
 			// label7
 			// 
@@ -380,7 +380,7 @@
 			this.floatTrackbarControlSimilarPlanes.TabIndex = 5;
 			this.floatTrackbarControlSimilarPlanes.Value = 0.5F;
 			this.floatTrackbarControlSimilarPlanes.VisibleRangeMax = 1F;
-			this.floatTrackbarControlSimilarPlanes.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlWeightExponent_ValueChanged);
+			this.floatTrackbarControlSimilarPlanes.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlWeightExponent_ValueChanged);
 			// 
 			// checkBoxShowDismissedPlanes
 			// 
@@ -526,32 +526,32 @@
 		private PanelOutput panelOutput;
 		private PanelHistogram panelHistogram;
 		private System.Windows.Forms.TextBox textBoxPlanes;
-		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlRoomPlanesCount;
+		private UIUtility.IntegerTrackbarControl integerTrackbarControlRoomPlanesCount;
 		private System.Windows.Forms.Label label1;
-		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlObstacles;
+		private UIUtility.IntegerTrackbarControl integerTrackbarControlObstacles;
 		private System.Windows.Forms.Label label2;
-		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlResultPlanesCount;
+		private UIUtility.IntegerTrackbarControl integerTrackbarControlResultPlanesCount;
 		private System.Windows.Forms.Label label3;
-		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlRandomSeed;
+		private UIUtility.IntegerTrackbarControl integerTrackbarControlRandomSeed;
 		private System.Windows.Forms.Label label4;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlWeightExponent;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlWeightExponent;
 		private System.Windows.Forms.Label label5;
 		private System.Windows.Forms.RadioButton radioButtonBest;
 		private System.Windows.Forms.RadioButton radioButtonProbabilities;
 		private System.Windows.Forms.RadioButton radioButtonNormalWeight;
 		private System.Windows.Forms.Label label6;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlDismissFactor;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlDismissFactor;
 		private System.Windows.Forms.Panel panel1;
 		private System.Windows.Forms.Panel panel2;
 		private System.Windows.Forms.RadioButton radioButtonUseBest;
 		private System.Windows.Forms.RadioButton radioButtonDismissWeight;
 		private System.Windows.Forms.RadioButton radioButtonDismissKappa;
-		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlKeepBestPlanesCount;
+		private UIUtility.IntegerTrackbarControl integerTrackbarControlKeepBestPlanesCount;
 		private System.Windows.Forms.Label label7;
 		private System.Windows.Forms.Panel panelDismissFactor;
 		private System.Windows.Forms.Panel panelKeepBestPlanes;
 		private System.Windows.Forms.Label label8;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlSimilarPlanes;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlSimilarPlanes;
 		private System.Windows.Forms.CheckBox checkBoxShowDismissedPlanes;
 		private System.Windows.Forms.RadioButton radioButtonDefaultEMWeight;
 		private System.Windows.Forms.Panel panel3;

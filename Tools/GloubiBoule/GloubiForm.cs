@@ -13,7 +13,7 @@ using System.Windows.Forms;
 using SharpMath;
 using Renderer;
 using System.IO;
-using Nuaj.Cirrus.Utility;
+using UIUtility;
 
 namespace GloubiBoule
 {

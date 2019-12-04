@@ -31,7 +31,7 @@
 			this.radioButtonSearchAlgo0 = new System.Windows.Forms.RadioButton();
 			this.radioButtonSearchAlgo1 = new System.Windows.Forms.RadioButton();
 			this.panel3 = new System.Windows.Forms.Panel();
-			this.floatTrackbarControlResultsSpaceConfinement = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlResultsSpaceConfinement = new UIUtility.FloatTrackbarControl();
 			this.radioButtonShowResultsSpace = new System.Windows.Forms.RadioButton();
 			this.checkBoxShowLog = new System.Windows.Forms.CheckBox();
 			this.radioButtonShowNormalizedSpace = new System.Windows.Forms.RadioButton();
@@ -41,17 +41,17 @@
 			this.buttonLoad = new System.Windows.Forms.Button();
 			this.buttonSave = new System.Windows.Forms.Button();
 			this.panelOutput = new TestGraphHeatEquationV3.PanelOutput(this.components);
-			this.integerTrackbarControlStartPosition = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
+			this.integerTrackbarControlStartPosition = new UIUtility.IntegerTrackbarControl();
 			this.label4 = new System.Windows.Forms.Label();
-			this.integerTrackbarControlTargetPosition = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
-			this.floatTrackbarControlDiffusionCoefficient = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.integerTrackbarControlTargetPosition = new UIUtility.IntegerTrackbarControl();
+			this.floatTrackbarControlDiffusionCoefficient = new UIUtility.FloatTrackbarControl();
 			this.groupBoxSearch = new System.Windows.Forms.GroupBox();
 			this.label5 = new System.Windows.Forms.Label();
-			this.integerTrackbarControlSimulationSourceIndex = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
+			this.integerTrackbarControlSimulationSourceIndex = new UIUtility.IntegerTrackbarControl();
 			this.label1 = new System.Windows.Forms.Label();
 			this.buttonResetAll = new System.Windows.Forms.Button();
 			this.label6 = new System.Windows.Forms.Label();
-			this.integerTrackbarControlIterationsCount = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
+			this.integerTrackbarControlIterationsCount = new UIUtility.IntegerTrackbarControl();
 			this.checkBoxAutoSimulate = new System.Windows.Forms.CheckBox();
 			this.panel3.SuspendLayout();
 			this.groupBoxSearch.SuspendLayout();
@@ -387,7 +387,7 @@
 			this.integerTrackbarControlSimulationSourceIndex.Size = new System.Drawing.Size(200, 20);
 			this.integerTrackbarControlSimulationSourceIndex.TabIndex = 20;
 			this.integerTrackbarControlSimulationSourceIndex.Value = 0;
-			this.integerTrackbarControlSimulationSourceIndex.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlSimulationSourceIndex_ValueChanged);
+			this.integerTrackbarControlSimulationSourceIndex.ValueChanged += new UIUtility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlSimulationSourceIndex_ValueChanged);
 			// 
 			// label1
 			// 
@@ -502,20 +502,20 @@
 		private System.Windows.Forms.OpenFileDialog openFileDialog1;
 		private System.Windows.Forms.Button buttonLoad;
 		private System.Windows.Forms.Button buttonSave;
-		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlStartPosition;
+		private UIUtility.IntegerTrackbarControl integerTrackbarControlStartPosition;
 		private System.Windows.Forms.Label label4;
-		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlTargetPosition;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlDiffusionCoefficient;
+		private UIUtility.IntegerTrackbarControl integerTrackbarControlTargetPosition;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlDiffusionCoefficient;
 		private System.Windows.Forms.GroupBox groupBoxSearch;
 		private System.Windows.Forms.Label label5;
 		private System.Windows.Forms.CheckBox checkBoxShowLog;
-		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlSimulationSourceIndex;
+		private UIUtility.IntegerTrackbarControl integerTrackbarControlSimulationSourceIndex;
 		private System.Windows.Forms.Label label1;
 		private System.Windows.Forms.Button buttonResetAll;
 		private System.Windows.Forms.Label label6;
-		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlIterationsCount;
+		private UIUtility.IntegerTrackbarControl integerTrackbarControlIterationsCount;
 		private System.Windows.Forms.CheckBox checkBoxAutoSimulate;
 		private System.Windows.Forms.RadioButton radioButtonShowResultsSpace;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlResultsSpaceConfinement;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlResultsSpaceConfinement;
 	}
 }

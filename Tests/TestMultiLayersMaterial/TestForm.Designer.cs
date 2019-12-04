@@ -29,15 +29,15 @@
 		private void InitializeComponent()
 		{
 			this.components = new System.ComponentModel.Container();
-			this.floatTrackbarControlTangent0 = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlTangent0 = new UIUtility.FloatTrackbarControl();
 			this.label1 = new System.Windows.Forms.Label();
-			this.floatTrackbarControlTangent1 = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlTangent1 = new UIUtility.FloatTrackbarControl();
 			this.label2 = new System.Windows.Forms.Label();
-			this.floatTrackbarControlTangent2 = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlTangent2 = new UIUtility.FloatTrackbarControl();
 			this.label3 = new System.Windows.Forms.Label();
-			this.floatTrackbarControlTangent3 = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlTangent3 = new UIUtility.FloatTrackbarControl();
 			this.label4 = new System.Windows.Forms.Label();
-			this.floatTrackbarControlBrushStrength = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlBrushStrength = new UIUtility.FloatTrackbarControl();
 			this.label5 = new System.Windows.Forms.Label();
 			this.buttonClear = new System.Windows.Forms.Button();
 			this.buttonClearGradient = new System.Windows.Forms.Button();
@@ -45,8 +45,8 @@
 			this.panelOutputLevels = new TestMultiLayersMaterial.PanelOutput(this.components);
 			this.panelOutputMask = new TestMultiLayersMaterial.PanelOutput(this.components);
 			this.buttonResetLevels = new System.Windows.Forms.Button();
-			this.floatTrackbarControlTangent1_Out = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.floatTrackbarControlTangent2_Out = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlTangent1_Out = new UIUtility.FloatTrackbarControl();
+			this.floatTrackbarControlTangent2_Out = new UIUtility.FloatTrackbarControl();
 			this.checkBoxSplit1 = new System.Windows.Forms.CheckBox();
 			this.checkBoxSplit2 = new System.Windows.Forms.CheckBox();
 			this.buttonSaveMask = new System.Windows.Forms.Button();
@@ -72,7 +72,7 @@
 			this.floatTrackbarControlTangent0.Value = 0F;
 			this.floatTrackbarControlTangent0.VisibleRangeMax = 1F;
 			this.floatTrackbarControlTangent0.VisibleRangeMin = -1F;
-			this.floatTrackbarControlTangent0.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlTangent0_ValueChanged_1);
+			this.floatTrackbarControlTangent0.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlTangent0_ValueChanged_1);
 			// 
 			// label1
 			// 
@@ -96,7 +96,7 @@
 			this.floatTrackbarControlTangent1.Value = 0F;
 			this.floatTrackbarControlTangent1.VisibleRangeMax = 1F;
 			this.floatTrackbarControlTangent1.VisibleRangeMin = -1F;
-			this.floatTrackbarControlTangent1.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlTangent0_ValueChanged_1);
+			this.floatTrackbarControlTangent1.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlTangent0_ValueChanged_1);
 			// 
 			// label2
 			// 
@@ -120,7 +120,7 @@
 			this.floatTrackbarControlTangent2.Value = 0F;
 			this.floatTrackbarControlTangent2.VisibleRangeMax = 1F;
 			this.floatTrackbarControlTangent2.VisibleRangeMin = -1F;
-			this.floatTrackbarControlTangent2.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlTangent0_ValueChanged_1);
+			this.floatTrackbarControlTangent2.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlTangent0_ValueChanged_1);
 			// 
 			// label3
 			// 
@@ -145,7 +145,7 @@
 			this.floatTrackbarControlTangent3.Visible = false;
 			this.floatTrackbarControlTangent3.VisibleRangeMax = 1F;
 			this.floatTrackbarControlTangent3.VisibleRangeMin = -1F;
-			this.floatTrackbarControlTangent3.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlTangent0_ValueChanged_1);
+			this.floatTrackbarControlTangent3.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlTangent0_ValueChanged_1);
 			// 
 			// label4
 			// 
@@ -169,7 +169,7 @@
 			this.floatTrackbarControlBrushStrength.TabIndex = 1;
 			this.floatTrackbarControlBrushStrength.Value = 0.1F;
 			this.floatTrackbarControlBrushStrength.VisibleRangeMax = 1F;
-			this.floatTrackbarControlBrushStrength.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlBrushStrength_ValueChanged);
+			this.floatTrackbarControlBrushStrength.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlBrushStrength_ValueChanged);
 			// 
 			// label5
 			// 
@@ -249,7 +249,7 @@
 			this.floatTrackbarControlTangent1_Out.Visible = false;
 			this.floatTrackbarControlTangent1_Out.VisibleRangeMax = 1F;
 			this.floatTrackbarControlTangent1_Out.VisibleRangeMin = -1F;
-			this.floatTrackbarControlTangent1_Out.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlTangent0_ValueChanged_1);
+			this.floatTrackbarControlTangent1_Out.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlTangent0_ValueChanged_1);
 			// 
 			// floatTrackbarControlTangent2_Out
 			// 
@@ -266,7 +266,7 @@
 			this.floatTrackbarControlTangent2_Out.Visible = false;
 			this.floatTrackbarControlTangent2_Out.VisibleRangeMax = 1F;
 			this.floatTrackbarControlTangent2_Out.VisibleRangeMin = -1F;
-			this.floatTrackbarControlTangent2_Out.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlTangent0_ValueChanged_1);
+			this.floatTrackbarControlTangent2_Out.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlTangent0_ValueChanged_1);
 			// 
 			// checkBoxSplit1
 			// 
@@ -405,22 +405,22 @@
 
 		private PanelOutput panelOutputMask;
 		private PanelOutput panelOutputResult;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlTangent0;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlTangent0;
 		private System.Windows.Forms.Label label1;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlTangent1;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlTangent1;
 		private System.Windows.Forms.Label label2;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlTangent2;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlTangent2;
 		private System.Windows.Forms.Label label3;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlTangent3;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlTangent3;
 		private System.Windows.Forms.Label label4;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlBrushStrength;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlBrushStrength;
 		private System.Windows.Forms.Label label5;
 		private System.Windows.Forms.Button buttonClear;
 		private System.Windows.Forms.Button buttonClearGradient;
 		private PanelOutput panelOutputLevels;
 		private System.Windows.Forms.Button buttonResetLevels;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlTangent1_Out;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlTangent2_Out;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlTangent1_Out;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlTangent2_Out;
 		private System.Windows.Forms.CheckBox checkBoxSplit1;
 		private System.Windows.Forms.CheckBox checkBoxSplit2;
 		private System.Windows.Forms.Button buttonSaveMask;

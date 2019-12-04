@@ -11,7 +11,7 @@ using System.Windows.Forms;
 using SharpMath;
 using SphericalHarmonics;
 using Renderer;
-using Nuaj.Cirrus.Utility;
+using UIUtility;
 
 namespace TestSHIrradiance
 {
@@ -861,7 +861,7 @@ avgDiffA2 /= TABLE_SIZE*TABLE_SIZE;
 
 		#endregion
 
-		private void floatTrackbarControlThetaMax_ValueChanged(Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue) {
+		private void floatTrackbarControlThetaMax_ValueChanged(UIUtility.FloatTrackbarControl _Sender, float _fFormerValue) {
 			if ( radioButtonCoeffs.Checked )
 				UpdateGraph();
 		}

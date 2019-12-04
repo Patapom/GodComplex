@@ -45,27 +45,27 @@
 			this.buttonReset = new System.Windows.Forms.Button();
 			this.label11 = new System.Windows.Forms.Label();
 			this.checkBoxDebugLuminanceLevel = new System.Windows.Forms.CheckBox();
-			this.floatTrackbarControlWhitePoint = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.floatTrackbarControlF = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.floatTrackbarControlE = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.floatTrackbarControlD = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.floatTrackbarControlC = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.floatTrackbarControlB = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.floatTrackbarControlScaleY = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.floatTrackbarControlA = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.floatTrackbarControlDebugLuminanceLevel = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.floatTrackbarControlExposure = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.floatTrackbarControlScaleX = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlWhitePoint = new UIUtility.FloatTrackbarControl();
+			this.floatTrackbarControlF = new UIUtility.FloatTrackbarControl();
+			this.floatTrackbarControlE = new UIUtility.FloatTrackbarControl();
+			this.floatTrackbarControlD = new UIUtility.FloatTrackbarControl();
+			this.floatTrackbarControlC = new UIUtility.FloatTrackbarControl();
+			this.floatTrackbarControlB = new UIUtility.FloatTrackbarControl();
+			this.floatTrackbarControlScaleY = new UIUtility.FloatTrackbarControl();
+			this.floatTrackbarControlA = new UIUtility.FloatTrackbarControl();
+			this.floatTrackbarControlDebugLuminanceLevel = new UIUtility.FloatTrackbarControl();
+			this.floatTrackbarControlExposure = new UIUtility.FloatTrackbarControl();
+			this.floatTrackbarControlScaleX = new UIUtility.FloatTrackbarControl();
 			this.checkBoxShowHistogram = new System.Windows.Forms.CheckBox();
 			this.tabControlToneMappingTypes = new System.Windows.Forms.TabControl();
 			this.tabPageCustom = new System.Windows.Forms.TabPage();
-			this.floatTrackbarControlIG_JunctionPoint = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.floatTrackbarControlIG_WhitePoint = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlIG_JunctionPoint = new UIUtility.FloatTrackbarControl();
+			this.floatTrackbarControlIG_WhitePoint = new UIUtility.FloatTrackbarControl();
 			this.checkBoxLuminanceOnly = new System.Windows.Forms.CheckBox();
-			this.floatTrackbarControlIG_ShoulderStrength = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.floatTrackbarControlIG_ToeStrength = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlIG_ShoulderStrength = new UIUtility.FloatTrackbarControl();
+			this.floatTrackbarControlIG_ToeStrength = new UIUtility.FloatTrackbarControl();
 			this.label15 = new System.Windows.Forms.Label();
-			this.floatTrackbarControlIG_BlackPoint = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlIG_BlackPoint = new UIUtility.FloatTrackbarControl();
 			this.label16 = new System.Windows.Forms.Label();
 			this.label14 = new System.Windows.Forms.Label();
 			this.label13 = new System.Windows.Forms.Label();
@@ -253,7 +253,7 @@
 			this.floatTrackbarControlWhitePoint.TabIndex = 1;
 			this.floatTrackbarControlWhitePoint.Value = 10F;
 			this.floatTrackbarControlWhitePoint.VisibleRangeMin = 1F;
-			this.floatTrackbarControlWhitePoint.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlWhitePoint_ValueChanged);
+			this.floatTrackbarControlWhitePoint.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlWhitePoint_ValueChanged);
 			// 
 			// floatTrackbarControlF
 			// 
@@ -265,7 +265,7 @@
 			this.floatTrackbarControlF.TabIndex = 1;
 			this.floatTrackbarControlF.Value = 0.3F;
 			this.floatTrackbarControlF.VisibleRangeMax = 1F;
-			this.floatTrackbarControlF.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlF_ValueChanged);
+			this.floatTrackbarControlF.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlF_ValueChanged);
 			// 
 			// floatTrackbarControlE
 			// 
@@ -277,7 +277,7 @@
 			this.floatTrackbarControlE.TabIndex = 1;
 			this.floatTrackbarControlE.Value = 0.02F;
 			this.floatTrackbarControlE.VisibleRangeMax = 1F;
-			this.floatTrackbarControlE.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlE_ValueChanged);
+			this.floatTrackbarControlE.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlE_ValueChanged);
 			// 
 			// floatTrackbarControlD
 			// 
@@ -289,7 +289,7 @@
 			this.floatTrackbarControlD.TabIndex = 1;
 			this.floatTrackbarControlD.Value = 0.2F;
 			this.floatTrackbarControlD.VisibleRangeMax = 1F;
-			this.floatTrackbarControlD.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlD_ValueChanged);
+			this.floatTrackbarControlD.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlD_ValueChanged);
 			// 
 			// floatTrackbarControlC
 			// 
@@ -301,7 +301,7 @@
 			this.floatTrackbarControlC.TabIndex = 1;
 			this.floatTrackbarControlC.Value = 0.1F;
 			this.floatTrackbarControlC.VisibleRangeMax = 1F;
-			this.floatTrackbarControlC.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlC_ValueChanged);
+			this.floatTrackbarControlC.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlC_ValueChanged);
 			// 
 			// floatTrackbarControlB
 			// 
@@ -313,7 +313,7 @@
 			this.floatTrackbarControlB.TabIndex = 1;
 			this.floatTrackbarControlB.Value = 0.5F;
 			this.floatTrackbarControlB.VisibleRangeMax = 1F;
-			this.floatTrackbarControlB.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlB_ValueChanged);
+			this.floatTrackbarControlB.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlB_ValueChanged);
 			// 
 			// floatTrackbarControlScaleY
 			// 
@@ -328,7 +328,7 @@
 			this.floatTrackbarControlScaleY.TabIndex = 1;
 			this.floatTrackbarControlScaleY.Value = 1F;
 			this.floatTrackbarControlScaleY.VisibleRangeMax = 2F;
-			this.floatTrackbarControlScaleY.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlScaleY_ValueChanged);
+			this.floatTrackbarControlScaleY.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlScaleY_ValueChanged);
 			// 
 			// floatTrackbarControlA
 			// 
@@ -340,7 +340,7 @@
 			this.floatTrackbarControlA.TabIndex = 1;
 			this.floatTrackbarControlA.Value = 0.15F;
 			this.floatTrackbarControlA.VisibleRangeMax = 1F;
-			this.floatTrackbarControlA.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlA_ValueChanged);
+			this.floatTrackbarControlA.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlA_ValueChanged);
 			// 
 			// floatTrackbarControlDebugLuminanceLevel
 			// 
@@ -353,7 +353,7 @@
 			this.floatTrackbarControlDebugLuminanceLevel.Size = new System.Drawing.Size(200, 20);
 			this.floatTrackbarControlDebugLuminanceLevel.TabIndex = 1;
 			this.floatTrackbarControlDebugLuminanceLevel.Value = 1F;
-			this.floatTrackbarControlDebugLuminanceLevel.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlDebugLuminanceLevel_ValueChanged);
+			this.floatTrackbarControlDebugLuminanceLevel.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlDebugLuminanceLevel_ValueChanged);
 			// 
 			// floatTrackbarControlExposure
 			// 
@@ -381,7 +381,7 @@
 			this.floatTrackbarControlScaleX.Size = new System.Drawing.Size(200, 20);
 			this.floatTrackbarControlScaleX.TabIndex = 1;
 			this.floatTrackbarControlScaleX.Value = 10F;
-			this.floatTrackbarControlScaleX.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlScaleX_ValueChanged);
+			this.floatTrackbarControlScaleX.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlScaleX_ValueChanged);
 			// 
 			// checkBoxShowHistogram
 			// 
@@ -440,7 +440,7 @@
 			this.floatTrackbarControlIG_JunctionPoint.TabIndex = 3;
 			this.floatTrackbarControlIG_JunctionPoint.Value = 0.41F;
 			this.floatTrackbarControlIG_JunctionPoint.VisibleRangeMax = 2F;
-			this.floatTrackbarControlIG_JunctionPoint.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlIG_JunctionPoint_ValueChanged);
+			this.floatTrackbarControlIG_JunctionPoint.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlIG_JunctionPoint_ValueChanged);
 			// 
 			// floatTrackbarControlIG_WhitePoint
 			// 
@@ -453,7 +453,7 @@
 			this.floatTrackbarControlIG_WhitePoint.TabIndex = 3;
 			this.floatTrackbarControlIG_WhitePoint.Value = 10F;
 			this.floatTrackbarControlIG_WhitePoint.VisibleRangeMin = 1F;
-			this.floatTrackbarControlIG_WhitePoint.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlIG_WhitePoint_ValueChanged);
+			this.floatTrackbarControlIG_WhitePoint.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlIG_WhitePoint_ValueChanged);
 			// 
 			// checkBoxLuminanceOnly
 			// 
@@ -479,7 +479,7 @@
 			this.floatTrackbarControlIG_ShoulderStrength.TabIndex = 3;
 			this.floatTrackbarControlIG_ShoulderStrength.Value = 0.32F;
 			this.floatTrackbarControlIG_ShoulderStrength.VisibleRangeMax = 1F;
-			this.floatTrackbarControlIG_ShoulderStrength.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlIG_ShoulderStrength_ValueChanged);
+			this.floatTrackbarControlIG_ShoulderStrength.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlIG_ShoulderStrength_ValueChanged);
 			// 
 			// floatTrackbarControlIG_ToeStrength
 			// 
@@ -493,7 +493,7 @@
 			this.floatTrackbarControlIG_ToeStrength.TabIndex = 3;
 			this.floatTrackbarControlIG_ToeStrength.Value = 0.4F;
 			this.floatTrackbarControlIG_ToeStrength.VisibleRangeMax = 1F;
-			this.floatTrackbarControlIG_ToeStrength.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlIG_ToeStrength_ValueChanged);
+			this.floatTrackbarControlIG_ToeStrength.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlIG_ToeStrength_ValueChanged);
 			// 
 			// label15
 			// 
@@ -514,7 +514,7 @@
 			this.floatTrackbarControlIG_BlackPoint.TabIndex = 3;
 			this.floatTrackbarControlIG_BlackPoint.Value = 0F;
 			this.floatTrackbarControlIG_BlackPoint.VisibleRangeMax = 0.1F;
-			this.floatTrackbarControlIG_BlackPoint.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlIG_BlackPoint_ValueChanged);
+			this.floatTrackbarControlIG_BlackPoint.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlIG_BlackPoint_ValueChanged);
 			// 
 			// label16
 			// 
@@ -753,21 +753,21 @@
 		#endregion
 
 		private OutputPanelFilmic_Hable panelGraph_Hable;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlScaleX;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlScaleY;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlWhitePoint;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlA;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlB;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlScaleX;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlScaleY;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlWhitePoint;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlA;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlB;
 		private System.Windows.Forms.Label label1;
 		private System.Windows.Forms.Label label2;
 		private System.Windows.Forms.Label label3;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlC;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlC;
 		private System.Windows.Forms.Label label4;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlD;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlD;
 		private System.Windows.Forms.Label label5;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlE;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlE;
 		private System.Windows.Forms.Label label6;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlF;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlF;
 		private System.Windows.Forms.Label label7;
 		private OutputPanelHammersley outputPanelHammersley1;
 		private System.Windows.Forms.Timer timer;
@@ -775,26 +775,26 @@
 		private System.Windows.Forms.Button buttonReload;
 		private System.Windows.Forms.Label label8;
 		private System.Windows.Forms.Label label9;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlExposure;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlExposure;
 		private System.Windows.Forms.Label label10;
 		private System.Windows.Forms.CheckBox checkBoxEnable;
 		private System.Windows.Forms.Button buttonReset;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlDebugLuminanceLevel;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlDebugLuminanceLevel;
 		private System.Windows.Forms.Label label11;
 		private System.Windows.Forms.CheckBox checkBoxDebugLuminanceLevel;
 		private System.Windows.Forms.CheckBox checkBoxShowHistogram;
 		private System.Windows.Forms.TabControl tabControlToneMappingTypes;
 		private System.Windows.Forms.TabPage tabPageCustom;
 		private System.Windows.Forms.TabPage tabPageToneMappingHabble;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlIG_WhitePoint;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlIG_BlackPoint;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlIG_WhitePoint;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlIG_BlackPoint;
 		private System.Windows.Forms.Label label13;
 		private System.Windows.Forms.Label label12;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlIG_ShoulderStrength;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlIG_ToeStrength;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlIG_ShoulderStrength;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlIG_ToeStrength;
 		private System.Windows.Forms.Label label15;
 		private System.Windows.Forms.Label label14;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlIG_JunctionPoint;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlIG_JunctionPoint;
 		private System.Windows.Forms.Label label16;
 		private OutputPanelFilmic_Insomniac outputPanelFilmic_Insomniac;
 		private System.Windows.Forms.CheckBox checkBoxLuminanceOnly;

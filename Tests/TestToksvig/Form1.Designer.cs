@@ -29,7 +29,7 @@
 		private void InitializeComponent()
 		{
 			this.components = new System.ComponentModel.Container();
-			this.panelOutput = new Nuaj.Cirrus.Utility.PanelOutput(this.components);
+			this.panelOutput = new UIUtility.PanelOutput(this.components);
 			this.SuspendLayout();
 			// 
 			// panelOutput
@@ -38,7 +38,7 @@
 			this.panelOutput.Name = "panelOutput";
 			this.panelOutput.Size = new System.Drawing.Size(976, 643);
 			this.panelOutput.TabIndex = 0;
-			this.panelOutput.BitmapUpdating += new Nuaj.Cirrus.Utility.PanelOutput.UpdateBitmapDelegate(this.panelOutput_BitmapUpdating);
+			this.panelOutput.BitmapUpdating += new UIUtility.PanelOutput.UpdateBitmapDelegate(this.panelOutput_BitmapUpdating);
 			// 
 			// Form1
 			// 
@@ -54,7 +54,7 @@
 
 		#endregion
 
-		private Nuaj.Cirrus.Utility.PanelOutput panelOutput;
+		private UIUtility.PanelOutput panelOutput;
 	}
 }
 

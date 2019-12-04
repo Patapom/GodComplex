@@ -12,7 +12,7 @@ using System.IO;
 using SharpMath;
 using Renderer;
 using ImageUtility;
-using Nuaj.Cirrus.Utility;
+using UIUtility;
 
 namespace TestMSBSDF
 {

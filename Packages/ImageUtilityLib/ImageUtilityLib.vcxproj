@@ -105,7 +105,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <Lib>
-      <AdditionalDependencies>BaseLib.lib;FreeImaged.lib;DirectXTex.lib;MathSolvers.lib</AdditionalDependencies>
+      <AdditionalDependencies>BaseLib.lib;FreeImaged.lib;DirectXTex.lib;MathSolversLib.lib</AdditionalDependencies>
     </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -158,7 +158,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <Lib>
-      <AdditionalDependencies>BaseLib.lib;FreeImage.lib;DirectXTex.lib;MathSolvers.lib</AdditionalDependencies>
+      <AdditionalDependencies>BaseLib.lib;FreeImage.lib;DirectXTex.lib;MathSolversLib.lib</AdditionalDependencies>
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>

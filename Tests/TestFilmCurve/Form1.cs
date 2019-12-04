@@ -12,7 +12,7 @@ using System.Xml;
 
 using SharpMath;
 using Renderer;
-using Nuaj.Cirrus.Utility;
+using UIUtility;
 
 namespace TestFilmicCurve
 {
@@ -444,13 +444,13 @@ m_Tex_TallHistogram.RemoveFromLastAssignedSlots();
 
 		#region EVENT HANDLERS
 
-		private void floatTrackbarControlScaleX_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
+		private void floatTrackbarControlScaleX_ValueChanged( UIUtility.FloatTrackbarControl _Sender, float _fFormerValue )
 		{
 			panelGraph_Hable.ScaleX = _Sender.Value;
 			outputPanelFilmic_Insomniac.ScaleX = _Sender.Value;
 		}
 
-		private void floatTrackbarControlScaleY_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
+		private void floatTrackbarControlScaleY_ValueChanged( UIUtility.FloatTrackbarControl _Sender, float _fFormerValue )
 		{
 			panelGraph_Hable.ScaleY = _Sender.Value;
 			outputPanelFilmic_Insomniac.ScaleY = _Sender.Value;
@@ -470,37 +470,37 @@ m_Tex_TallHistogram.RemoveFromLastAssignedSlots();
 
 		#region Hable
 
-		private void floatTrackbarControlWhitePoint_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
+		private void floatTrackbarControlWhitePoint_ValueChanged( UIUtility.FloatTrackbarControl _Sender, float _fFormerValue )
 		{
 			panelGraph_Hable.WhitePoint = _Sender.Value;
 		}
 
-		private void floatTrackbarControlA_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
+		private void floatTrackbarControlA_ValueChanged( UIUtility.FloatTrackbarControl _Sender, float _fFormerValue )
 		{
 			panelGraph_Hable.A = _Sender.Value;
 		}
 
-		private void floatTrackbarControlB_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
+		private void floatTrackbarControlB_ValueChanged( UIUtility.FloatTrackbarControl _Sender, float _fFormerValue )
 		{
 			panelGraph_Hable.B = _Sender.Value;
 		}
 
-		private void floatTrackbarControlC_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
+		private void floatTrackbarControlC_ValueChanged( UIUtility.FloatTrackbarControl _Sender, float _fFormerValue )
 		{
 			panelGraph_Hable.C = _Sender.Value;
 		}
 
-		private void floatTrackbarControlD_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
+		private void floatTrackbarControlD_ValueChanged( UIUtility.FloatTrackbarControl _Sender, float _fFormerValue )
 		{
 			panelGraph_Hable.D = _Sender.Value;
 		}
 
-		private void floatTrackbarControlE_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
+		private void floatTrackbarControlE_ValueChanged( UIUtility.FloatTrackbarControl _Sender, float _fFormerValue )
 		{
 			panelGraph_Hable.E = _Sender.Value;
 		}
 
-		private void floatTrackbarControlF_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
+		private void floatTrackbarControlF_ValueChanged( UIUtility.FloatTrackbarControl _Sender, float _fFormerValue )
 		{
 			panelGraph_Hable.F = _Sender.Value;
 		}

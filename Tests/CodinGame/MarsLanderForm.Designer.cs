@@ -31,14 +31,14 @@
 			this.components = new System.ComponentModel.Container();
 			this.timer = new System.Windows.Forms.Timer(this.components);
 			this.checkBoxRun = new System.Windows.Forms.CheckBox();
-			this.floatTrackbarControl1 = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControl1 = new UIUtility.FloatTrackbarControl();
 			this.label1 = new System.Windows.Forms.Label();
-			this.floatTrackbarControl2 = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.floatTrackbarControl3 = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.floatTrackbarControl4 = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControl2 = new UIUtility.FloatTrackbarControl();
+			this.floatTrackbarControl3 = new UIUtility.FloatTrackbarControl();
+			this.floatTrackbarControl4 = new UIUtility.FloatTrackbarControl();
 			this.panelOutput = new TestForm.PanelOutput(this.components);
-			this.floatTrackbarControl5 = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.floatTrackbarControl6 = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControl5 = new UIUtility.FloatTrackbarControl();
+			this.floatTrackbarControl6 = new UIUtility.FloatTrackbarControl();
 			this.SuspendLayout();
 			// 
 			// timer
@@ -67,7 +67,7 @@
 			this.floatTrackbarControl1.TabIndex = 2;
 			this.floatTrackbarControl1.Value = -3.676F;
 			this.floatTrackbarControl1.VisibleRangeMin = -7.352F;
-			this.floatTrackbarControl1.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControl1_ValueChanged);
+			this.floatTrackbarControl1.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControl1_ValueChanged);
 			// 
 			// label1
 			// 
@@ -88,7 +88,7 @@
 			this.floatTrackbarControl2.TabIndex = 2;
 			this.floatTrackbarControl2.Value = -15.37F;
 			this.floatTrackbarControl2.VisibleRangeMin = -30.74F;
-			this.floatTrackbarControl2.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControl1_ValueChanged);
+			this.floatTrackbarControl2.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControl1_ValueChanged);
 			// 
 			// floatTrackbarControl3
 			// 
@@ -100,7 +100,7 @@
 			this.floatTrackbarControl3.TabIndex = 2;
 			this.floatTrackbarControl3.Value = -0.3676F;
 			this.floatTrackbarControl3.VisibleRangeMin = -0.7352F;
-			this.floatTrackbarControl3.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControl1_ValueChanged);
+			this.floatTrackbarControl3.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControl1_ValueChanged);
 			// 
 			// floatTrackbarControl4
 			// 
@@ -112,7 +112,7 @@
 			this.floatTrackbarControl4.TabIndex = 2;
 			this.floatTrackbarControl4.Value = -15.15F;
 			this.floatTrackbarControl4.VisibleRangeMin = -30.3F;
-			this.floatTrackbarControl4.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControl1_ValueChanged);
+			this.floatTrackbarControl4.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControl1_ValueChanged);
 			// 
 			// panelOutput
 			// 
@@ -131,7 +131,7 @@
 			this.floatTrackbarControl5.Size = new System.Drawing.Size(200, 20);
 			this.floatTrackbarControl5.TabIndex = 2;
 			this.floatTrackbarControl5.Value = 4.853F;
-			this.floatTrackbarControl5.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControl1_ValueChanged);
+			this.floatTrackbarControl5.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControl1_ValueChanged);
 			// 
 			// floatTrackbarControl6
 			// 
@@ -142,7 +142,7 @@
 			this.floatTrackbarControl6.Size = new System.Drawing.Size(200, 20);
 			this.floatTrackbarControl6.TabIndex = 2;
 			this.floatTrackbarControl6.Value = 1F;
-			this.floatTrackbarControl6.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControl1_ValueChanged);
+			this.floatTrackbarControl6.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControl1_ValueChanged);
 			// 
 			// MarsLanderForm
 			// 
@@ -169,12 +169,12 @@
 		private System.Windows.Forms.Timer timer;
 		private System.Windows.Forms.CheckBox checkBoxRun;
 		private System.Windows.Forms.Label label1;
-		internal Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControl1;
-		internal Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControl2;
-		internal Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControl3;
-		internal Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControl4;
-		internal Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControl5;
-		internal Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControl6;
+		internal UIUtility.FloatTrackbarControl floatTrackbarControl1;
+		internal UIUtility.FloatTrackbarControl floatTrackbarControl2;
+		internal UIUtility.FloatTrackbarControl floatTrackbarControl3;
+		internal UIUtility.FloatTrackbarControl floatTrackbarControl4;
+		internal UIUtility.FloatTrackbarControl floatTrackbarControl5;
+		internal UIUtility.FloatTrackbarControl floatTrackbarControl6;
 	}
 }
 

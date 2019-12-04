@@ -1190,15 +1190,15 @@ m_SB_Rays.SetInput( 4 );
 			Compile();
 		}
 
-		private void integerTrackbarControlRaysCount_SliderDragStop( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _StartValue ) {
+		private void integerTrackbarControlRaysCount_SliderDragStop( UIUtility.IntegerTrackbarControl _Sender, int _StartValue ) {
 			GenerateRays( _Sender.Value, floatTrackbarControlMaxConeAngle.Value * (float) (Math.PI / 180.0), m_SB_Rays );
 		}
 
-		private void floatTrackbarControlMaxConeAngle_SliderDragStop( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fStartValue ) {
+		private void floatTrackbarControlMaxConeAngle_SliderDragStop( UIUtility.FloatTrackbarControl _Sender, float _fStartValue ) {
 			GenerateRays( integerTrackbarControlRaysCount.Value, floatTrackbarControlMaxConeAngle.Value * (float) (Math.PI / 180.0), m_SB_Rays );
 		}
 
-		private void integerTrackbarControlBounceIndex_ValueChanged( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue ) {
+		private void integerTrackbarControlBounceIndex_ValueChanged( UIUtility.IntegerTrackbarControl _Sender, int _FormerValue ) {
 			if ( m_textureFilteredHeightMap == null ) {
 				viewportPanelResult.Bitmap = null;
 				return;

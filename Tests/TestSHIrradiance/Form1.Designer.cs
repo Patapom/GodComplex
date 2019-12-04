@@ -47,21 +47,21 @@
 			this.label5 = new System.Windows.Forms.Label();
 			this.label6 = new System.Windows.Forms.Label();
 			this.panelScene = new System.Windows.Forms.Panel();
-			this.integerTrackbarControlSHCoeffsCount = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
-			this.floatTrackbarControlAOInfluence = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.integerTrackbarControlSHCoeffsCount = new UIUtility.IntegerTrackbarControl();
+			this.floatTrackbarControlAOInfluence = new UIUtility.FloatTrackbarControl();
 			this.checkBoxUseIQAO = new System.Windows.Forms.CheckBox();
 			this.checkBoxUseAOAsAFactor = new System.Windows.Forms.CheckBox();
-			this.floatTrackbarControlBentNormalInfluence = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlBentNormalInfluence = new UIUtility.FloatTrackbarControl();
 			this.label7 = new System.Windows.Forms.Label();
 			this.buttonCameraCopy = new System.Windows.Forms.Button();
 			this.buttonCameraPaste = new System.Windows.Forms.Button();
-			this.floatTrackbarControlFilterWindowSize = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.floatTrackbarControlLuminanceFactor = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.floatTrackbarControlThetaMax = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlFilterWindowSize = new UIUtility.FloatTrackbarControl();
+			this.floatTrackbarControlLuminanceFactor = new UIUtility.FloatTrackbarControl();
+			this.floatTrackbarControlThetaMax = new UIUtility.FloatTrackbarControl();
 			this.graphPanel = new TestSHIrradiance.GraphPanel(this.components);
 			this.panelGraph = new System.Windows.Forms.Panel();
 			this.checkBoxGroundTruth = new System.Windows.Forms.CheckBox();
-			this.integerTrackbarControlm = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
+			this.integerTrackbarControlm = new UIUtility.IntegerTrackbarControl();
 			this.panelScene.SuspendLayout();
 			this.panelGraph.SuspendLayout();
 			this.SuspendLayout();
@@ -269,7 +269,7 @@
 			this.integerTrackbarControlSHCoeffsCount.TabIndex = 8;
 			this.integerTrackbarControlSHCoeffsCount.Value = 10;
 			this.integerTrackbarControlSHCoeffsCount.VisibleRangeMax = 20;
-			this.integerTrackbarControlSHCoeffsCount.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlSHCoeffsCount_ValueChanged);
+			this.integerTrackbarControlSHCoeffsCount.ValueChanged += new UIUtility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlSHCoeffsCount_ValueChanged);
 			// 
 			// floatTrackbarControlAOInfluence
 			// 
@@ -386,7 +386,7 @@
 			this.floatTrackbarControlThetaMax.TabIndex = 0;
 			this.floatTrackbarControlThetaMax.Value = 90F;
 			this.floatTrackbarControlThetaMax.VisibleRangeMax = 90F;
-			this.floatTrackbarControlThetaMax.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlThetaMax_ValueChanged);
+			this.floatTrackbarControlThetaMax.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlThetaMax_ValueChanged);
 			// 
 			// graphPanel
 			// 
@@ -470,7 +470,7 @@
 
 		#endregion
 
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlThetaMax;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlThetaMax;
 		private GraphPanel graphPanel;
 		private System.Windows.Forms.Label label1;
 		private System.Windows.Forms.TextBox textBoxResults;
@@ -485,13 +485,13 @@
 		private System.Windows.Forms.CheckBox checkBoxShowAO;
 		private System.Windows.Forms.CheckBox checkBoxShowBentNormal;
 		private System.Windows.Forms.CheckBox checkBoxEnvironmentSH;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlLuminanceFactor;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlLuminanceFactor;
 		private System.Windows.Forms.Label label3;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlFilterWindowSize;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlFilterWindowSize;
 		private System.Windows.Forms.Label label4;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlAOInfluence;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlAOInfluence;
 		private System.Windows.Forms.Label label5;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlBentNormalInfluence;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlBentNormalInfluence;
 		private System.Windows.Forms.Label label6;
 		private System.Windows.Forms.Panel panelScene;
 		private System.Windows.Forms.CheckBox checkBoxUseAOAsAFactor;
@@ -500,9 +500,9 @@
 		private System.Windows.Forms.CheckBox checkBoxUseIQAO;
 		private System.Windows.Forms.Panel panelGraph;
 		private System.Windows.Forms.CheckBox checkBoxGroundTruth;
-		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlSHCoeffsCount;
+		private UIUtility.IntegerTrackbarControl integerTrackbarControlSHCoeffsCount;
 		private System.Windows.Forms.Label label7;
-		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlm;
+		private UIUtility.IntegerTrackbarControl integerTrackbarControlm;
 	}
 }
 

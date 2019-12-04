@@ -661,37 +661,37 @@ namespace TestBoxFitting
 		#endregion
 
 
-		private void integerTrackbarControlRoomPlanesCount_SliderDragStop( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _StartValue )
+		private void integerTrackbarControlRoomPlanesCount_SliderDragStop( UIUtility.IntegerTrackbarControl _Sender, int _StartValue )
 		{
 //			BuildRoom();
 		}
 
-		private void integerTrackbarControlObstacles_SliderDragStop( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _StartValue )
+		private void integerTrackbarControlObstacles_SliderDragStop( UIUtility.IntegerTrackbarControl _Sender, int _StartValue )
 		{
 //			BuildRoom();
 		}
 
-		private void integerTrackbarControlResultPlanesCount_SliderDragStop( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _StartValue )
+		private void integerTrackbarControlResultPlanesCount_SliderDragStop( UIUtility.IntegerTrackbarControl _Sender, int _StartValue )
 		{
 //			BuildRoom();
 		}
 
-		private void integerTrackbarControlObstacles_ValueChanged( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue )
+		private void integerTrackbarControlObstacles_ValueChanged( UIUtility.IntegerTrackbarControl _Sender, int _FormerValue )
 		{
 			BuildRoom();
 		}
 
-		private void integerTrackbarControlRoomPlanesCount_ValueChanged( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue )
+		private void integerTrackbarControlRoomPlanesCount_ValueChanged( UIUtility.IntegerTrackbarControl _Sender, int _FormerValue )
 		{
 			BuildRoom();
 		}
 
-		private void integerTrackbarControlResultPlanesCount_ValueChanged( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue )
+		private void integerTrackbarControlResultPlanesCount_ValueChanged( UIUtility.IntegerTrackbarControl _Sender, int _FormerValue )
 		{
 			BuildRoom();
 		}
 
-		private void floatTrackbarControlWeightExponent_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
+		private void floatTrackbarControlWeightExponent_ValueChanged( UIUtility.FloatTrackbarControl _Sender, float _fFormerValue )
 		{
 			BuildRoom();
 		}

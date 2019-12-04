@@ -119,8 +119,7 @@ using System.Drawing.Imaging;
 using SharpMath;
 using ImageUtility;
 using Renderer;
-using Nuaj.Cirrus.Utility;
-using Nuaj.Cirrus;
+using UIUtility;
 
 namespace TestHBIL {
 	public partial class TestHBILForm : Form {

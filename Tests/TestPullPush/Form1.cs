@@ -813,11 +813,11 @@ Array.Copy( m_inputPixels[MAX_MIP], m_outputPixels[MAX_MIP], W*H );
 			return V;
 		}
 
-		private void floatTrackbarControlGamma_SliderDragStop(Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fStartValue) {
+		private void floatTrackbarControlGamma_SliderDragStop(UIUtility.FloatTrackbarControl _Sender, float _fStartValue) {
 			ApplyPullPush( floatTrackbarControlGamma.Value );
 		}
 
-		private void integerTrackbarControlMipLevel_ValueChanged(Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue) {
+		private void integerTrackbarControlMipLevel_ValueChanged(UIUtility.IntegerTrackbarControl _Sender, int _FormerValue) {
 			DisplayResult();
 		}
 

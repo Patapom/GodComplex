@@ -29,15 +29,15 @@
 		private void InitializeComponent()
 		{
 			this.components = new System.ComponentModel.Container();
-			this.floatTrackbarControlGlossWall = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.integerTrackbarControl1 = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
+			this.floatTrackbarControlGlossWall = new UIUtility.FloatTrackbarControl();
+			this.integerTrackbarControl1 = new UIUtility.IntegerTrackbarControl();
 			this.timer = new System.Windows.Forms.Timer(this.components);
 			this.buttonReload = new System.Windows.Forms.Button();
 			this.label1 = new System.Windows.Forms.Label();
-			this.floatTrackbarControlGlossSphere = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlGlossSphere = new UIUtility.FloatTrackbarControl();
 			this.label2 = new System.Windows.Forms.Label();
 			this.panelOutput3D = new TestPathTracing.PanelOutput3D(this.components);
-			this.floatTrackbarControlNoise = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlNoise = new UIUtility.FloatTrackbarControl();
 			this.label3 = new System.Windows.Forms.Label();
 			this.SuspendLayout();
 			// 
@@ -165,14 +165,14 @@
 		#endregion
 
 		private PanelOutput3D panelOutput3D;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlGlossWall;
-		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControl1;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlGlossWall;
+		private UIUtility.IntegerTrackbarControl integerTrackbarControl1;
 		private System.Windows.Forms.Timer timer;
 		private System.Windows.Forms.Button buttonReload;
 		private System.Windows.Forms.Label label1;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlGlossSphere;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlGlossSphere;
 		private System.Windows.Forms.Label label2;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlNoise;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlNoise;
 		private System.Windows.Forms.Label label3;
 	}
 }

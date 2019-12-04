@@ -28,14 +28,14 @@
 		/// </summary>
 		private void InitializeComponent()
 		{
-			this.floatTrackbarControlMinLuminance = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlMinLuminance = new UIUtility.FloatTrackbarControl();
 			this.label12 = new System.Windows.Forms.Label();
 			this.label1 = new System.Windows.Forms.Label();
-			this.floatTrackbarControlMaxLuminance = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlMaxLuminance = new UIUtility.FloatTrackbarControl();
 			this.label2 = new System.Windows.Forms.Label();
-			this.floatTrackbarControlAdaptationSpeedBright = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlAdaptationSpeedBright = new UIUtility.FloatTrackbarControl();
 			this.label3 = new System.Windows.Forms.Label();
-			this.floatTrackbarControlAdaptationSpeedDark = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlAdaptationSpeedDark = new UIUtility.FloatTrackbarControl();
 			this.buttonReset = new System.Windows.Forms.Button();
 			this.SuspendLayout();
 			// 
@@ -169,9 +169,9 @@
 		private System.Windows.Forms.Label label2;
 		private System.Windows.Forms.Label label3;
 		private System.Windows.Forms.Button buttonReset;
-		public Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlMinLuminance;
-		public Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlMaxLuminance;
-		public Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlAdaptationSpeedBright;
-		public Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlAdaptationSpeedDark;
+		public UIUtility.FloatTrackbarControl floatTrackbarControlMinLuminance;
+		public UIUtility.FloatTrackbarControl floatTrackbarControlMaxLuminance;
+		public UIUtility.FloatTrackbarControl floatTrackbarControlAdaptationSpeedBright;
+		public UIUtility.FloatTrackbarControl floatTrackbarControlAdaptationSpeedDark;
 	}
 }

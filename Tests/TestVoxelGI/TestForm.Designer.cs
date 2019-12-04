@@ -32,10 +32,10 @@
 			this.panelOutput = new TestVoxelGI.PanelOutput(this.components);
 			this.buttonReload = new System.Windows.Forms.Button();
 			this.label1 = new System.Windows.Forms.Label();
-			this.integerTrackbarControlVoxelMipIndex = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
+			this.integerTrackbarControlVoxelMipIndex = new UIUtility.IntegerTrackbarControl();
 			this.buttonComputeIndirect = new System.Windows.Forms.Button();
 			this.label2 = new System.Windows.Forms.Label();
-			this.integerTrackbarControlBouncesCount = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
+			this.integerTrackbarControlBouncesCount = new UIUtility.IntegerTrackbarControl();
 			this.checkBoxRenderAsVoxels = new System.Windows.Forms.CheckBox();
 			this.checkBoxEnableIndirect = new System.Windows.Forms.CheckBox();
 			this.SuspendLayout();
@@ -163,10 +163,10 @@
 		private TestVoxelGI.PanelOutput panelOutput;
 		private System.Windows.Forms.Button buttonReload;
 		private System.Windows.Forms.Label label1;
-		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlVoxelMipIndex;
+		private UIUtility.IntegerTrackbarControl integerTrackbarControlVoxelMipIndex;
 		private System.Windows.Forms.Button buttonComputeIndirect;
 		private System.Windows.Forms.Label label2;
-		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlBouncesCount;
+		private UIUtility.IntegerTrackbarControl integerTrackbarControlBouncesCount;
 		private System.Windows.Forms.CheckBox checkBoxRenderAsVoxels;
 		private System.Windows.Forms.CheckBox checkBoxEnableIndirect;
 	}

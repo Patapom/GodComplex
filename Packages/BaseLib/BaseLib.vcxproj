@@ -20,7 +20,7 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
-    <ProjectGuid>{C0CC204C-E20A-4456-A216-A1C3E4FD3703}</ProjectGuid>
+    <ProjectGuid>{DF55758A-7F37-452D-A01C-201735BF86F2}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>PipoTest</RootNamespace>
     <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>

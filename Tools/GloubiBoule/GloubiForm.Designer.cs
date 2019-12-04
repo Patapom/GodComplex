@@ -29,13 +29,13 @@
 		private void InitializeComponent()
 		{
 			this.components = new System.ComponentModel.Container();
-			this.floatTrackbarControlExtinction = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.panelOutput = new Nuaj.Cirrus.Utility.PanelOutput(this.components);
-			this.floatTrackbarControlAlbedo = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlExtinction = new UIUtility.FloatTrackbarControl();
+			this.panelOutput = new UIUtility.PanelOutput(this.components);
+			this.floatTrackbarControlAlbedo = new UIUtility.FloatTrackbarControl();
 			this.buttonReload = new System.Windows.Forms.Button();
 			this.label1 = new System.Windows.Forms.Label();
 			this.label2 = new System.Windows.Forms.Label();
-			this.floatTrackbarControlPhaseAnisotropy = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlPhaseAnisotropy = new UIUtility.FloatTrackbarControl();
 			this.label3 = new System.Windows.Forms.Label();
 			this.timer1 = new System.Windows.Forms.Timer(this.components);
 			this.SuspendLayout();
@@ -151,13 +151,13 @@
 
 		#endregion
 
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlExtinction;
-		private Nuaj.Cirrus.Utility.PanelOutput panelOutput;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlAlbedo;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlExtinction;
+		private UIUtility.PanelOutput panelOutput;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlAlbedo;
 		private System.Windows.Forms.Button buttonReload;
 		private System.Windows.Forms.Label label1;
 		private System.Windows.Forms.Label label2;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlPhaseAnisotropy;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlPhaseAnisotropy;
 		private System.Windows.Forms.Label label3;
 		private System.Windows.Forms.Timer timer1;
 	}

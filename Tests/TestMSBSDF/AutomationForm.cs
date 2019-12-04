@@ -2683,47 +2683,47 @@ namespace TestMSBSDF
 			m_document.m_settings.m_inheritMasking_Left = checkBoxInitMasking_InheritLeft.Checked;
 		}
 
-		private void floatTrackbarControlInit_Scale_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
+		private void floatTrackbarControlInit_Scale_ValueChanged( UIUtility.FloatTrackbarControl _Sender, float _fFormerValue )
 		{
 			m_document.m_settings.m_customScale = _Sender.Value;
 		}
 
-		private void floatTrackbarControlInit_Flatten_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
+		private void floatTrackbarControlInit_Flatten_ValueChanged( UIUtility.FloatTrackbarControl _Sender, float _fFormerValue )
 		{
 			m_document.m_settings.m_customFlatten = _Sender.Value;
 		}
 
-		private void floatTrackbarControlInit_CustomRoughness_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
+		private void floatTrackbarControlInit_CustomRoughness_ValueChanged( UIUtility.FloatTrackbarControl _Sender, float _fFormerValue )
 		{
 			m_document.m_settings.m_customRoughness = _Sender.Value;
 		}
 
-		private void floatTrackbarControlInit_MaskingImportance_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
+		private void floatTrackbarControlInit_MaskingImportance_ValueChanged( UIUtility.FloatTrackbarControl _Sender, float _fFormerValue )
 		{
 			m_document.m_settings.m_customMasking = _Sender.Value;
 		}
 
-		private void floatTrackbarControlInit_FixedDirection_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
+		private void floatTrackbarControlInit_FixedDirection_ValueChanged( UIUtility.FloatTrackbarControl _Sender, float _fFormerValue )
 		{
 			m_document.m_settings.m_fixedTheta = (float) (Math.PI * floatTrackbarControlInit_FixedDirection.Value / 180.0);
 		}
 
-		private void floatTrackbarControlInit_FixedRoughness_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
+		private void floatTrackbarControlInit_FixedRoughness_ValueChanged( UIUtility.FloatTrackbarControl _Sender, float _fFormerValue )
 		{
 			m_document.m_settings.m_fixedRoughness = floatTrackbarControlInit_FixedRoughness.Value;
 		}
 
-		private void floatTrackbarControlInit_FixedScale_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
+		private void floatTrackbarControlInit_FixedScale_ValueChanged( UIUtility.FloatTrackbarControl _Sender, float _fFormerValue )
 		{
 			m_document.m_settings.m_fixedScale = floatTrackbarControlInit_FixedScale.Value;
 		}
 
-		private void floatTrackbarControlInit_FixedFlatten_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
+		private void floatTrackbarControlInit_FixedFlatten_ValueChanged( UIUtility.FloatTrackbarControl _Sender, float _fFormerValue )
 		{
 			m_document.m_settings.m_fixedFlatten = floatTrackbarControlInit_FixedFlatten.Value;
 		}
 
-		private void floatTrackbarControlInit_FixedMasking_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
+		private void floatTrackbarControlInit_FixedMasking_ValueChanged( UIUtility.FloatTrackbarControl _Sender, float _fFormerValue )
 		{
 			m_document.m_settings.m_fixedMasking = floatTrackbarControlInit_FixedMasking.Value;
 		}
@@ -2768,19 +2768,19 @@ namespace TestMSBSDF
 			}
 		}
 
-		private void floatTrackbarControlParam0_Min_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
+		private void floatTrackbarControlParam0_Min_ValueChanged( UIUtility.FloatTrackbarControl _Sender, float _fFormerValue )
 		{
 			if ( !m_internalDocumentChange )
 				m_document.m_surface.m_incomingAngle.Min = floatTrackbarControlParam0_Min.Value;
 		}
 
-		private void floatTrackbarControlParam0_Max_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
+		private void floatTrackbarControlParam0_Max_ValueChanged( UIUtility.FloatTrackbarControl _Sender, float _fFormerValue )
 		{
 			if ( !m_internalDocumentChange )
 				m_document.m_surface.m_incomingAngle.Max = floatTrackbarControlParam0_Max.Value;
 		}
 
-		private void integerTrackbarControlParam0_Steps_ValueChanged( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue )
+		private void integerTrackbarControlParam0_Steps_ValueChanged( UIUtility.IntegerTrackbarControl _Sender, int _FormerValue )
 		{
 			if ( !m_internalDocumentChange ) {
 				m_document.m_surface.m_incomingAngle.StepsCount = integerTrackbarControlParam0_Steps.Value;
@@ -2788,19 +2788,19 @@ namespace TestMSBSDF
 			}
 		}
 
-		private void floatTrackbarControlParam1_Min_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
+		private void floatTrackbarControlParam1_Min_ValueChanged( UIUtility.FloatTrackbarControl _Sender, float _fFormerValue )
 		{
 			if ( !m_internalDocumentChange )
 				m_document.m_surface.m_roughness.Min = floatTrackbarControlParam1_Min.Value;
 		}
 
-		private void floatTrackbarControlParam1_Max_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
+		private void floatTrackbarControlParam1_Max_ValueChanged( UIUtility.FloatTrackbarControl _Sender, float _fFormerValue )
 		{
 			if ( !m_internalDocumentChange )
 				m_document.m_surface.m_roughness.Max = floatTrackbarControlParam1_Max.Value;
 		}
 
-		private void integerTrackbarControlParam1_Steps_ValueChanged( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue )
+		private void integerTrackbarControlParam1_Steps_ValueChanged( UIUtility.IntegerTrackbarControl _Sender, int _FormerValue )
 		{
 			if ( !m_internalDocumentChange ) {
 				m_document.m_surface.m_roughness.StepsCount = integerTrackbarControlParam1_Steps.Value;
@@ -2808,19 +2808,19 @@ namespace TestMSBSDF
 			}
 		}
 
-		private void floatTrackbarControlParam2_Min_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
+		private void floatTrackbarControlParam2_Min_ValueChanged( UIUtility.FloatTrackbarControl _Sender, float _fFormerValue )
 		{
 			if ( !m_internalDocumentChange )
 				m_document.m_surface.m_albedoF0.Min = floatTrackbarControlParam2_Min.Value;
 		}
 
-		private void floatTrackbarControlParam2_Max_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue )
+		private void floatTrackbarControlParam2_Max_ValueChanged( UIUtility.FloatTrackbarControl _Sender, float _fFormerValue )
 		{
 			if ( !m_internalDocumentChange )
 				m_document.m_surface.m_albedoF0.Max = floatTrackbarControlParam2_Max.Value;
 		}
 
-		private void integerTrackbarControlParam2_Steps_ValueChanged( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue )
+		private void integerTrackbarControlParam2_Steps_ValueChanged( UIUtility.IntegerTrackbarControl _Sender, int _FormerValue )
 		{
 			if ( !m_internalDocumentChange ) {
 				m_document.m_surface.m_albedoF0.StepsCount = integerTrackbarControlParam2_Steps.Value;
@@ -2831,7 +2831,7 @@ namespace TestMSBSDF
 			}
 		}
 
-		private void integerTrackbarControlScatteringOrder_Min_ValueChanged( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue )
+		private void integerTrackbarControlScatteringOrder_Min_ValueChanged( UIUtility.IntegerTrackbarControl _Sender, int _FormerValue )
 		{
 			if ( !m_internalDocumentChange ) {
 				m_document.m_surface.ScatteringOrderMin = integerTrackbarControlScatteringOrder_Min.Value;
@@ -2843,7 +2843,7 @@ namespace TestMSBSDF
 			}
 		}
 
-		private void integerTrackbarControlScatteringOrder_Max_ValueChanged( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue )
+		private void integerTrackbarControlScatteringOrder_Max_ValueChanged( UIUtility.IntegerTrackbarControl _Sender, int _FormerValue )
 		{
 			if ( !m_internalDocumentChange ) {
 				m_document.m_surface.ScatteringOrderMax = integerTrackbarControlScatteringOrder_Max.Value;
@@ -2855,7 +2855,7 @@ namespace TestMSBSDF
 			}
 		}
 
-		private void integerTrackbarControlRayCastingIterations_ValueChanged( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue )
+		private void integerTrackbarControlRayCastingIterations_ValueChanged( UIUtility.IntegerTrackbarControl _Sender, int _FormerValue )
 		{
 			m_document.m_surface.m_rayTracingIterationsCount = integerTrackbarControlRayCastingIterations.Value;
 
@@ -2916,23 +2916,23 @@ namespace TestMSBSDF
 			m_document.m_settings.m_performFitting = !checkBoxSkipSimulation.Checked;
 		}
 
-		private void integerTrackbarControlMaxIterations_ValueChanged( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue ) {
+		private void integerTrackbarControlMaxIterations_ValueChanged( UIUtility.IntegerTrackbarControl _Sender, int _FormerValue ) {
 			m_document.m_settings.m_maxIterations = integerTrackbarControlMaxIterations.Value;
 		}
 
-		private void floatTrackbarControlGoalTolerance_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue ) {
+		private void floatTrackbarControlGoalTolerance_ValueChanged( UIUtility.FloatTrackbarControl _Sender, float _fFormerValue ) {
 			m_document.m_settings.m_logTolerance_Minimum = floatTrackbarControlGoalTolerance.Value;
 		}
 
-		private void floatTrackbarControlGradientTolerance_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue ) {
+		private void floatTrackbarControlGradientTolerance_ValueChanged( UIUtility.FloatTrackbarControl _Sender, float _fFormerValue ) {
 			m_document.m_settings.m_logTolerance_Gradient = floatTrackbarControlGradientTolerance.Value;
 		}
 
-		private void integerTrackbarControlRetries_ValueChanged( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue ) {
+		private void integerTrackbarControlRetries_ValueChanged( UIUtility.IntegerTrackbarControl _Sender, int _FormerValue ) {
 			m_document.m_settings.m_maxRetries = integerTrackbarControlRetries.Value;
 		}
 
-		private void floatTrackbarControlFitOversize_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue ) {
+		private void floatTrackbarControlFitOversize_ValueChanged( UIUtility.FloatTrackbarControl _Sender, float _fFormerValue ) {
 			m_document.m_settings.m_oversizeFactor = floatTrackbarControlFitOversize.Value;
 		}
 
@@ -2968,7 +2968,7 @@ namespace TestMSBSDF
 			SelectedResult = layerResults[_Sender.SelectedX,_Sender.SelectedY, _Sender.SelectedZ];
 		}
 
-		private void integerTrackbarControlViewScatteringOrder_ValueChanged( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue ) {
+		private void integerTrackbarControlViewScatteringOrder_ValueChanged( UIUtility.IntegerTrackbarControl _Sender, int _FormerValue ) {
 			// Update UI & selection
 			DocumentResults2UI();
 
@@ -2977,7 +2977,7 @@ namespace TestMSBSDF
 			SelectedResult = layerResults[completionArrayControl.SelectedX, completionArrayControl.SelectedY, completionArrayControl.SelectedZ];
 		}
 
-		private void integerTrackbarControlViewAlbedoSlice_ValueChanged( Nuaj.Cirrus.Utility.IntegerTrackbarControl _Sender, int _FormerValue ) {
+		private void integerTrackbarControlViewAlbedoSlice_ValueChanged( UIUtility.IntegerTrackbarControl _Sender, int _FormerValue ) {
 			completionArrayControl.SelectedZ = _Sender.Value;
 		}
 	}

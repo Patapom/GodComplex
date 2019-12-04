@@ -31,14 +31,14 @@
 			this.panelParameters = new System.Windows.Forms.Panel();
 			this.buttonComputeIndirect = new System.Windows.Forms.Button();
 			this.buttonTestBilateral = new System.Windows.Forms.Button();
-			this.floatTrackbarControlMaxConeAngle = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.floatTrackbarControlHeight = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.integerTrackbarControlRaysCount = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
+			this.floatTrackbarControlMaxConeAngle = new UIUtility.FloatTrackbarControl();
+			this.floatTrackbarControlHeight = new UIUtility.FloatTrackbarControl();
+			this.integerTrackbarControlRaysCount = new UIUtility.IntegerTrackbarControl();
 			this.label5 = new System.Windows.Forms.Label();
-			this.integerTrackbarControlMaxStepsCount = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
-			this.floatTrackbarControlBilateralRadius = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.floatTrackbarControlPixelDensity = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.floatTrackbarControlBilateralTolerance = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.integerTrackbarControlMaxStepsCount = new UIUtility.IntegerTrackbarControl();
+			this.floatTrackbarControlBilateralRadius = new UIUtility.FloatTrackbarControl();
+			this.floatTrackbarControlPixelDensity = new UIUtility.FloatTrackbarControl();
+			this.floatTrackbarControlBilateralTolerance = new UIUtility.FloatTrackbarControl();
 			this.label8 = new System.Windows.Forms.Label();
 			this.label9 = new System.Windows.Forms.Label();
 			this.label10 = new System.Windows.Forms.Label();
@@ -47,7 +47,7 @@
 			this.imagePanelNormalMap = new TestGroundTruthAOFitting.ImagePanel();
 			this.contextMenuStripNormal = new System.Windows.Forms.ContextMenuStrip(this.components);
 			this.clearNormalToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-			this.integerTrackbarControlBounceIndex = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
+			this.integerTrackbarControlBounceIndex = new UIUtility.IntegerTrackbarControl();
 			this.buttonDemo = new System.Windows.Forms.Button();
 			this.imagePanelBentCone = new TestGroundTruthAOFitting.ImagePanel();
 			this.panelParameters.SuspendLayout();
@@ -218,7 +218,7 @@
 			this.floatTrackbarControlMaxConeAngle.Value = 179F;
 			this.floatTrackbarControlMaxConeAngle.VisibleRangeMax = 180F;
 			this.floatTrackbarControlMaxConeAngle.VisibleRangeMin = 1F;
-			this.floatTrackbarControlMaxConeAngle.SliderDragStop += new Nuaj.Cirrus.Utility.FloatTrackbarControl.SliderDragStopEventHandler(this.floatTrackbarControlMaxConeAngle_SliderDragStop);
+			this.floatTrackbarControlMaxConeAngle.SliderDragStop += new UIUtility.FloatTrackbarControl.SliderDragStopEventHandler(this.floatTrackbarControlMaxConeAngle_SliderDragStop);
 			// 
 			// floatTrackbarControlHeight
 			// 
@@ -247,7 +247,7 @@
 			this.integerTrackbarControlRaysCount.Value = 1024;
 			this.integerTrackbarControlRaysCount.VisibleRangeMax = 1024;
 			this.integerTrackbarControlRaysCount.VisibleRangeMin = 1;
-			this.integerTrackbarControlRaysCount.SliderDragStop += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.SliderDragStopEventHandler(this.integerTrackbarControlRaysCount_SliderDragStop);
+			this.integerTrackbarControlRaysCount.SliderDragStop += new UIUtility.IntegerTrackbarControl.SliderDragStopEventHandler(this.integerTrackbarControlRaysCount_SliderDragStop);
 			// 
 			// label5
 			// 
@@ -420,7 +420,7 @@
 			this.integerTrackbarControlBounceIndex.TabIndex = 1;
 			this.integerTrackbarControlBounceIndex.Value = 0;
 			this.integerTrackbarControlBounceIndex.VisibleRangeMax = 8;
-			this.integerTrackbarControlBounceIndex.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlBounceIndex_ValueChanged);
+			this.integerTrackbarControlBounceIndex.ValueChanged += new UIUtility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlBounceIndex_ValueChanged);
 			// 
 			// buttonDemo
 			// 
@@ -480,27 +480,27 @@
 		#endregion
 
 		private ImagePanel outputPanelInputHeightMap;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlHeight;
-		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlRaysCount;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlHeight;
+		private UIUtility.IntegerTrackbarControl integerTrackbarControlRaysCount;
 		private System.Windows.Forms.Label label2;
 		private System.Windows.Forms.Label label1;
 		private ImagePanel viewportPanelResult;
 		private System.Windows.Forms.Label label3;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlPixelDensity;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlPixelDensity;
 		private System.Windows.Forms.Button buttonGenerate;
 		private System.Windows.Forms.ProgressBar progressBar;
 		private System.Windows.Forms.Label label4;
-		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlMaxStepsCount;
+		private UIUtility.IntegerTrackbarControl integerTrackbarControlMaxStepsCount;
 		private System.Windows.Forms.Label label6;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlBilateralRadius;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlBilateralRadius;
 		private System.Windows.Forms.Label label7;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlBilateralTolerance;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlBilateralTolerance;
 		private System.Windows.Forms.CheckBox checkBoxWrap;
 		private System.Windows.Forms.OpenFileDialog openFileDialogImage;
 		private System.Windows.Forms.SaveFileDialog saveFileDialogImage;
 		private System.Windows.Forms.Button buttonReload;
 		private System.Windows.Forms.Panel panelParameters;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlMaxConeAngle;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlMaxConeAngle;
 		private System.Windows.Forms.Label label5;
 		private System.Windows.Forms.Button buttonTestBilateral;
 		private System.Windows.Forms.Label label8;
@@ -510,7 +510,7 @@
 		private System.Windows.Forms.ContextMenuStrip contextMenuStripNormal;
 		private System.Windows.Forms.ToolStripMenuItem clearNormalToolStripMenuItem;
 		private System.Windows.Forms.Button buttonComputeIndirect;
-		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlBounceIndex;
+		private UIUtility.IntegerTrackbarControl integerTrackbarControlBounceIndex;
 		private System.Windows.Forms.Button buttonDemo;
 		private ImagePanel imagePanelBentCone;
 	}

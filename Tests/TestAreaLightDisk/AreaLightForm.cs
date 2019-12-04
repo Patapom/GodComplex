@@ -10,8 +10,7 @@ using System.Drawing.Imaging;
 
 using Renderer;
 using SharpMath;
-using Nuaj.Cirrus.Utility;
-using Nuaj.Cirrus;
+using UIUtility;
 
 namespace AreaLightTest {
 	public partial class AreaLightForm : Form {

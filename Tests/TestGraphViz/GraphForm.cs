@@ -14,8 +14,7 @@ using System.IO;
 
 using Renderer;
 using SharpMath;
-using Nuaj.Cirrus.Utility;
-using Nuaj.Cirrus;
+using UIUtility;
 
 namespace TestGraphViz
 {

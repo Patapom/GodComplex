@@ -133,8 +133,8 @@
       <Project>{cec07704-2a19-4bf1-b46d-8fcf9c5965ee}</Project>
       <Name>MathSimple</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\Packages\RendererManaged\RendererManaged.vcxproj">
-      <Project>{F96CDFD3-8954-4F4F-AFB0-2855D98F051B}</Project>
+    <ProjectReference Include="..\..\Packages\Renderer\Renderer.vcxproj">
+      <Project>{f96cdfd3-8954-4f4f-afb0-2855d98f051b}</Project>
       <Name>Renderer</Name>
     </ProjectReference>
   </ItemGroup>

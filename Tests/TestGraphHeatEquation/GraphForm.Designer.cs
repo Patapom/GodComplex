@@ -48,11 +48,11 @@
 			this.buttonLoad = new System.Windows.Forms.Button();
 			this.buttonSave = new System.Windows.Forms.Button();
 			this.panelOutput = new TestGraphHeatEquation.PanelOutput(this.components);
-			this.integerTrackbarControlStartPosition = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
+			this.integerTrackbarControlStartPosition = new UIUtility.IntegerTrackbarControl();
 			this.label4 = new System.Windows.Forms.Label();
-			this.integerTrackbarControlTargetPosition = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
-			this.floatTrackbarControlDiffusionCoefficient = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.floatTrackbarControlDeltaTime = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.integerTrackbarControlTargetPosition = new UIUtility.IntegerTrackbarControl();
+			this.floatTrackbarControlDiffusionCoefficient = new UIUtility.FloatTrackbarControl();
+			this.floatTrackbarControlDeltaTime = new UIUtility.FloatTrackbarControl();
 			this.groupBoxSearch = new System.Windows.Forms.GroupBox();
 			this.label5 = new System.Windows.Forms.Label();
 			this.panel1.SuspendLayout();
@@ -388,7 +388,7 @@
 			this.integerTrackbarControlStartPosition.Size = new System.Drawing.Size(200, 20);
 			this.integerTrackbarControlStartPosition.TabIndex = 16;
 			this.integerTrackbarControlStartPosition.Value = 0;
-			this.integerTrackbarControlStartPosition.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlStartPosition_ValueChanged);
+			this.integerTrackbarControlStartPosition.ValueChanged += new UIUtility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlStartPosition_ValueChanged);
 			// 
 			// label4
 			// 
@@ -408,7 +408,7 @@
 			this.integerTrackbarControlTargetPosition.Size = new System.Drawing.Size(200, 20);
 			this.integerTrackbarControlTargetPosition.TabIndex = 16;
 			this.integerTrackbarControlTargetPosition.Value = 0;
-			this.integerTrackbarControlTargetPosition.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlTargetPosition_ValueChanged);
+			this.integerTrackbarControlTargetPosition.ValueChanged += new UIUtility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlTargetPosition_ValueChanged);
 			// 
 			// floatTrackbarControlDiffusionCoefficient
 			// 
@@ -537,11 +537,11 @@
 		private System.Windows.Forms.OpenFileDialog openFileDialog1;
 		private System.Windows.Forms.Button buttonLoad;
 		private System.Windows.Forms.Button buttonSave;
-		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlStartPosition;
+		private UIUtility.IntegerTrackbarControl integerTrackbarControlStartPosition;
 		private System.Windows.Forms.Label label4;
-		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlTargetPosition;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlDiffusionCoefficient;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlDeltaTime;
+		private UIUtility.IntegerTrackbarControl integerTrackbarControlTargetPosition;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlDiffusionCoefficient;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlDeltaTime;
 		private System.Windows.Forms.GroupBox groupBoxSearch;
 		private System.Windows.Forms.Label label5;
 		private System.Windows.Forms.RadioButton radioButtonShowSumFields;

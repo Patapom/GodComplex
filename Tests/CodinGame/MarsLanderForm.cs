@@ -258,7 +258,7 @@ System.Diagnostics.Debug.WriteLine( value );
 			}
 		}
 
-		private void floatTrackbarControl1_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue ) {
+		private void floatTrackbarControl1_ValueChanged( UIUtility.FloatTrackbarControl _Sender, float _fFormerValue ) {
 			panelOutput.UpdateBitmap();
 		}
 	}

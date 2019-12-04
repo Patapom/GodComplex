@@ -33,33 +33,33 @@
 			this.panel6 = new System.Windows.Forms.Panel();
 			this.checkBoxParam2_InclusiveStart = new System.Windows.Forms.CheckBox();
 			this.checkBoxParam2_InclusiveEnd = new System.Windows.Forms.CheckBox();
-			this.integerTrackbarControlParam2_Steps = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
-			this.floatTrackbarControlParam2_Max = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.integerTrackbarControlParam2_Steps = new UIUtility.IntegerTrackbarControl();
+			this.floatTrackbarControlParam2_Max = new UIUtility.FloatTrackbarControl();
 			this.label15 = new System.Windows.Forms.Label();
-			this.floatTrackbarControlParam2_Min = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlParam2_Min = new UIUtility.FloatTrackbarControl();
 			this.label16 = new System.Windows.Forms.Label();
 			this.label17 = new System.Windows.Forms.Label();
 			this.labelParm2 = new System.Windows.Forms.Label();
 			this.panel5 = new System.Windows.Forms.Panel();
 			this.checkBoxParam1_InclusiveStart = new System.Windows.Forms.CheckBox();
 			this.checkBoxParam1_InclusiveEnd = new System.Windows.Forms.CheckBox();
-			this.integerTrackbarControlParam1_Steps = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
-			this.floatTrackbarControlParam1_Max = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.integerTrackbarControlParam1_Steps = new UIUtility.IntegerTrackbarControl();
+			this.floatTrackbarControlParam1_Max = new UIUtility.FloatTrackbarControl();
 			this.label6 = new System.Windows.Forms.Label();
-			this.floatTrackbarControlParam1_Min = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlParam1_Min = new UIUtility.FloatTrackbarControl();
 			this.label12 = new System.Windows.Forms.Label();
 			this.label13 = new System.Windows.Forms.Label();
 			this.label14 = new System.Windows.Forms.Label();
-			this.integerTrackbarControlScatteringOrder_Max = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
-			this.integerTrackbarControlRayCastingIterations = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
-			this.integerTrackbarControlScatteringOrder_Min = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
+			this.integerTrackbarControlScatteringOrder_Max = new UIUtility.IntegerTrackbarControl();
+			this.integerTrackbarControlRayCastingIterations = new UIUtility.IntegerTrackbarControl();
+			this.integerTrackbarControlScatteringOrder_Min = new UIUtility.IntegerTrackbarControl();
 			this.panelIncidentAngle = new System.Windows.Forms.Panel();
 			this.checkBoxParam0_InclusiveStart = new System.Windows.Forms.CheckBox();
 			this.checkBoxParam0_InclusiveEnd = new System.Windows.Forms.CheckBox();
-			this.integerTrackbarControlParam0_Steps = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
-			this.floatTrackbarControlParam0_Max = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.integerTrackbarControlParam0_Steps = new UIUtility.IntegerTrackbarControl();
+			this.floatTrackbarControlParam0_Max = new UIUtility.FloatTrackbarControl();
 			this.label4 = new System.Windows.Forms.Label();
-			this.floatTrackbarControlParam0_Min = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlParam0_Min = new UIUtility.FloatTrackbarControl();
 			this.label5 = new System.Windows.Forms.Label();
 			this.label3 = new System.Windows.Forms.Label();
 			this.label2 = new System.Windows.Forms.Label();
@@ -75,21 +75,21 @@
 			this.label21 = new System.Windows.Forms.Label();
 			this.panelParameters = new System.Windows.Forms.Panel();
 			this.checkBoxSkipSimulation = new System.Windows.Forms.CheckBox();
-			this.textBoxLog = new Nuaj.Cirrus.Utility.LogTextBox(this.components);
-			this.integerTrackbarControlViewAlbedoSlice = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
+			this.textBoxLog = new UIUtility.LogTextBox(this.components);
+			this.integerTrackbarControlViewAlbedoSlice = new UIUtility.IntegerTrackbarControl();
 			this.groupBoxLobeFitterConfig = new System.Windows.Forms.GroupBox();
-			this.floatTrackbarControlFitOversize = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlFitOversize = new UIUtility.FloatTrackbarControl();
 			this.label26 = new System.Windows.Forms.Label();
 			this.label23 = new System.Windows.Forms.Label();
 			this.label19 = new System.Windows.Forms.Label();
-			this.integerTrackbarControlRetries = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
+			this.integerTrackbarControlRetries = new UIUtility.IntegerTrackbarControl();
 			this.label24 = new System.Windows.Forms.Label();
 			this.label25 = new System.Windows.Forms.Label();
 			this.label18 = new System.Windows.Forms.Label();
-			this.integerTrackbarControlMaxIterations = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
-			this.floatTrackbarControlGradientTolerance = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.floatTrackbarControlGoalTolerance = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.integerTrackbarControlViewScatteringOrder = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
+			this.integerTrackbarControlMaxIterations = new UIUtility.IntegerTrackbarControl();
+			this.floatTrackbarControlGradientTolerance = new UIUtility.FloatTrackbarControl();
+			this.floatTrackbarControlGoalTolerance = new UIUtility.FloatTrackbarControl();
+			this.integerTrackbarControlViewScatteringOrder = new UIUtility.IntegerTrackbarControl();
 			this.groupBoxAnalyticalLobeModel = new System.Windows.Forms.GroupBox();
 			this.groupBoxCustomInitialGuesses = new System.Windows.Forms.GroupBox();
 			this.panel9 = new System.Windows.Forms.Panel();
@@ -97,9 +97,9 @@
 			this.radioButtonInitMasking_Fixed = new System.Windows.Forms.RadioButton();
 			this.radioButtonInitMasking_NoChange = new System.Windows.Forms.RadioButton();
 			this.checkBoxInitMasking_InheritLeft = new System.Windows.Forms.CheckBox();
-			this.floatTrackbarControlInit_FixedMasking = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlInit_FixedMasking = new UIUtility.FloatTrackbarControl();
 			this.checkBoxInitMasking_Inherit = new System.Windows.Forms.CheckBox();
-			this.floatTrackbarControlInit_CustomMaskingImportance = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlInit_CustomMaskingImportance = new UIUtility.FloatTrackbarControl();
 			this.label8 = new System.Windows.Forms.Label();
 			this.panel8 = new System.Windows.Forms.Panel();
 			this.radioButtonInitFlatten_Custom = new System.Windows.Forms.RadioButton();
@@ -107,17 +107,17 @@
 			this.radioButtonInitFlatten_Fixed = new System.Windows.Forms.RadioButton();
 			this.radioButtonInitFlatten_NoChange = new System.Windows.Forms.RadioButton();
 			this.checkBoxInitFlatten_InheritLeft = new System.Windows.Forms.CheckBox();
-			this.floatTrackbarControlInit_FixedFlatten = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlInit_FixedFlatten = new UIUtility.FloatTrackbarControl();
 			this.checkBoxInitFlatten_Inherit = new System.Windows.Forms.CheckBox();
-			this.floatTrackbarControlInit_CustomFlatten = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlInit_CustomFlatten = new UIUtility.FloatTrackbarControl();
 			this.label28 = new System.Windows.Forms.Label();
 			this.panel7 = new System.Windows.Forms.Panel();
 			this.radioButtonInitScale_CoMFactor = new System.Windows.Forms.RadioButton();
 			this.radioButtonInitScale_Analytical = new System.Windows.Forms.RadioButton();
 			this.radioButtonInitScale_Fixed = new System.Windows.Forms.RadioButton();
 			this.radioButtonInitScale_NoChange = new System.Windows.Forms.RadioButton();
-			this.floatTrackbarControlInit_FixedScale = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.floatTrackbarControlInit_Scale = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlInit_FixedScale = new UIUtility.FloatTrackbarControl();
+			this.floatTrackbarControlInit_Scale = new UIUtility.FloatTrackbarControl();
 			this.checkBoxInitScale_InheritLeft = new System.Windows.Forms.CheckBox();
 			this.checkBoxInitScale_Inherit = new System.Windows.Forms.CheckBox();
 			this.label27 = new System.Windows.Forms.Label();
@@ -127,16 +127,16 @@
 			this.radioButtonInitDirection_NoChange = new System.Windows.Forms.RadioButton();
 			this.radioButtonInitDirection_TowardReflected = new System.Windows.Forms.RadioButton();
 			this.checkBoxInitDirection_InheritLeft = new System.Windows.Forms.CheckBox();
-			this.floatTrackbarControlInit_FixedDirection = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlInit_FixedDirection = new UIUtility.FloatTrackbarControl();
 			this.checkBoxInitDirection_Inherit = new System.Windows.Forms.CheckBox();
 			this.label10 = new System.Windows.Forms.Label();
 			this.panel3 = new System.Windows.Forms.Panel();
-			this.floatTrackbarControlInit_CustomRoughness = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlInit_CustomRoughness = new UIUtility.FloatTrackbarControl();
 			this.radioButtonInitRoughness_Analytical = new System.Windows.Forms.RadioButton();
 			this.radioButtonInitRoughness_Fixed = new System.Windows.Forms.RadioButton();
 			this.radioButtonInitRoughness_NoChange = new System.Windows.Forms.RadioButton();
 			this.radioButtonInitRoughness_UseSurface = new System.Windows.Forms.RadioButton();
-			this.floatTrackbarControlInit_FixedRoughness = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlInit_FixedRoughness = new UIUtility.FloatTrackbarControl();
 			this.checkBoxInitRoughness_InheritLeft = new System.Windows.Forms.CheckBox();
 			this.checkBoxInitRoughness_Inherit = new System.Windows.Forms.CheckBox();
 			this.radioButtonInitRoughness_Custom = new System.Windows.Forms.RadioButton();
@@ -174,7 +174,7 @@
 			this.openFileDialogResults = new System.Windows.Forms.OpenFileDialog();
 			this.saveFileDialogResults = new System.Windows.Forms.SaveFileDialog();
 			this.saveFileDialogExport = new System.Windows.Forms.SaveFileDialog();
-			this.integerTrackbarControlThreadsCount = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
+			this.integerTrackbarControlThreadsCount = new UIUtility.IntegerTrackbarControl();
 			this.label31 = new System.Windows.Forms.Label();
 			this.openFileDialogExport = new System.Windows.Forms.OpenFileDialog();
 			this.completionArrayControl = new TestMSBSDF.CompletionArrayControl();
@@ -277,7 +277,7 @@
 			this.integerTrackbarControlParam2_Steps.TabIndex = 3;
 			this.integerTrackbarControlParam2_Steps.Value = 4;
 			this.integerTrackbarControlParam2_Steps.VisibleRangeMax = 20;
-			this.integerTrackbarControlParam2_Steps.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlParam2_Steps_ValueChanged);
+			this.integerTrackbarControlParam2_Steps.ValueChanged += new UIUtility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlParam2_Steps_ValueChanged);
 			// 
 			// floatTrackbarControlParam2_Max
 			// 
@@ -291,7 +291,7 @@
 			this.floatTrackbarControlParam2_Max.TabIndex = 2;
 			this.floatTrackbarControlParam2_Max.Value = 0F;
 			this.floatTrackbarControlParam2_Max.VisibleRangeMax = 1F;
-			this.floatTrackbarControlParam2_Max.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlParam2_Max_ValueChanged);
+			this.floatTrackbarControlParam2_Max.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlParam2_Max_ValueChanged);
 			// 
 			// label15
 			// 
@@ -314,7 +314,7 @@
 			this.floatTrackbarControlParam2_Min.TabIndex = 2;
 			this.floatTrackbarControlParam2_Min.Value = 1F;
 			this.floatTrackbarControlParam2_Min.VisibleRangeMax = 1F;
-			this.floatTrackbarControlParam2_Min.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlParam2_Min_ValueChanged);
+			this.floatTrackbarControlParam2_Min.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlParam2_Min_ValueChanged);
 			// 
 			// label16
 			// 
@@ -405,7 +405,7 @@
 			this.integerTrackbarControlParam1_Steps.TabIndex = 3;
 			this.integerTrackbarControlParam1_Steps.Value = 10;
 			this.integerTrackbarControlParam1_Steps.VisibleRangeMax = 20;
-			this.integerTrackbarControlParam1_Steps.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlParam1_Steps_ValueChanged);
+			this.integerTrackbarControlParam1_Steps.ValueChanged += new UIUtility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlParam1_Steps_ValueChanged);
 			// 
 			// floatTrackbarControlParam1_Max
 			// 
@@ -419,7 +419,7 @@
 			this.floatTrackbarControlParam1_Max.TabIndex = 2;
 			this.floatTrackbarControlParam1_Max.Value = 1F;
 			this.floatTrackbarControlParam1_Max.VisibleRangeMax = 1F;
-			this.floatTrackbarControlParam1_Max.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlParam1_Max_ValueChanged);
+			this.floatTrackbarControlParam1_Max.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlParam1_Max_ValueChanged);
 			// 
 			// label6
 			// 
@@ -442,7 +442,7 @@
 			this.floatTrackbarControlParam1_Min.TabIndex = 2;
 			this.floatTrackbarControlParam1_Min.Value = 0F;
 			this.floatTrackbarControlParam1_Min.VisibleRangeMax = 1F;
-			this.floatTrackbarControlParam1_Min.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlParam1_Min_ValueChanged);
+			this.floatTrackbarControlParam1_Min.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlParam1_Min_ValueChanged);
 			// 
 			// label12
 			// 
@@ -488,7 +488,7 @@
 			this.integerTrackbarControlScatteringOrder_Max.Value = 4;
 			this.integerTrackbarControlScatteringOrder_Max.VisibleRangeMax = 4;
 			this.integerTrackbarControlScatteringOrder_Max.VisibleRangeMin = 1;
-			this.integerTrackbarControlScatteringOrder_Max.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlScatteringOrder_Max_ValueChanged);
+			this.integerTrackbarControlScatteringOrder_Max.ValueChanged += new UIUtility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlScatteringOrder_Max_ValueChanged);
 			// 
 			// integerTrackbarControlRayCastingIterations
 			// 
@@ -504,7 +504,7 @@
 			this.integerTrackbarControlRayCastingIterations.Value = 1;
 			this.integerTrackbarControlRayCastingIterations.VisibleRangeMax = 2048;
 			this.integerTrackbarControlRayCastingIterations.VisibleRangeMin = 1;
-			this.integerTrackbarControlRayCastingIterations.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlRayCastingIterations_ValueChanged);
+			this.integerTrackbarControlRayCastingIterations.ValueChanged += new UIUtility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlRayCastingIterations_ValueChanged);
 			// 
 			// integerTrackbarControlScatteringOrder_Min
 			// 
@@ -520,7 +520,7 @@
 			this.integerTrackbarControlScatteringOrder_Min.Value = 2;
 			this.integerTrackbarControlScatteringOrder_Min.VisibleRangeMax = 4;
 			this.integerTrackbarControlScatteringOrder_Min.VisibleRangeMin = 1;
-			this.integerTrackbarControlScatteringOrder_Min.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlScatteringOrder_Min_ValueChanged);
+			this.integerTrackbarControlScatteringOrder_Min.ValueChanged += new UIUtility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlScatteringOrder_Min_ValueChanged);
 			// 
 			// panelIncidentAngle
 			// 
@@ -578,7 +578,7 @@
 			this.integerTrackbarControlParam0_Steps.Size = new System.Drawing.Size(200, 20);
 			this.integerTrackbarControlParam0_Steps.TabIndex = 3;
 			this.integerTrackbarControlParam0_Steps.Value = 30;
-			this.integerTrackbarControlParam0_Steps.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlParam0_Steps_ValueChanged);
+			this.integerTrackbarControlParam0_Steps.ValueChanged += new UIUtility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlParam0_Steps_ValueChanged);
 			// 
 			// floatTrackbarControlParam0_Max
 			// 
@@ -592,7 +592,7 @@
 			this.floatTrackbarControlParam0_Max.TabIndex = 2;
 			this.floatTrackbarControlParam0_Max.Value = 90F;
 			this.floatTrackbarControlParam0_Max.VisibleRangeMax = 90F;
-			this.floatTrackbarControlParam0_Max.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlParam0_Max_ValueChanged);
+			this.floatTrackbarControlParam0_Max.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlParam0_Max_ValueChanged);
 			// 
 			// label4
 			// 
@@ -615,7 +615,7 @@
 			this.floatTrackbarControlParam0_Min.TabIndex = 2;
 			this.floatTrackbarControlParam0_Min.Value = 0F;
 			this.floatTrackbarControlParam0_Min.VisibleRangeMax = 90F;
-			this.floatTrackbarControlParam0_Min.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlParam0_Min_ValueChanged);
+			this.floatTrackbarControlParam0_Min.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlParam0_Min_ValueChanged);
 			// 
 			// label5
 			// 
@@ -807,7 +807,7 @@
 			this.integerTrackbarControlViewAlbedoSlice.TabIndex = 3;
 			this.integerTrackbarControlViewAlbedoSlice.Value = 0;
 			this.integerTrackbarControlViewAlbedoSlice.VisibleRangeMax = 4;
-			this.integerTrackbarControlViewAlbedoSlice.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlViewAlbedoSlice_ValueChanged);
+			this.integerTrackbarControlViewAlbedoSlice.ValueChanged += new UIUtility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlViewAlbedoSlice_ValueChanged);
 			// 
 			// groupBoxLobeFitterConfig
 			// 
@@ -842,7 +842,7 @@
 			this.floatTrackbarControlFitOversize.Value = 1.02F;
 			this.floatTrackbarControlFitOversize.VisibleRangeMax = 1.1F;
 			this.floatTrackbarControlFitOversize.VisibleRangeMin = 1F;
-			this.floatTrackbarControlFitOversize.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlFitOversize_ValueChanged);
+			this.floatTrackbarControlFitOversize.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlFitOversize_ValueChanged);
 			// 
 			// label26
 			// 
@@ -883,7 +883,7 @@
 			this.integerTrackbarControlRetries.TabIndex = 3;
 			this.integerTrackbarControlRetries.Value = 2;
 			this.integerTrackbarControlRetries.VisibleRangeMax = 4;
-			this.integerTrackbarControlRetries.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlRetries_ValueChanged);
+			this.integerTrackbarControlRetries.ValueChanged += new UIUtility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlRetries_ValueChanged);
 			// 
 			// label24
 			// 
@@ -922,7 +922,7 @@
 			this.integerTrackbarControlMaxIterations.TabIndex = 3;
 			this.integerTrackbarControlMaxIterations.Value = 200;
 			this.integerTrackbarControlMaxIterations.VisibleRangeMax = 200;
-			this.integerTrackbarControlMaxIterations.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlMaxIterations_ValueChanged);
+			this.integerTrackbarControlMaxIterations.ValueChanged += new UIUtility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlMaxIterations_ValueChanged);
 			// 
 			// floatTrackbarControlGradientTolerance
 			// 
@@ -937,7 +937,7 @@
 			this.floatTrackbarControlGradientTolerance.Value = -6F;
 			this.floatTrackbarControlGradientTolerance.VisibleRangeMax = 0F;
 			this.floatTrackbarControlGradientTolerance.VisibleRangeMin = -8F;
-			this.floatTrackbarControlGradientTolerance.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlGradientTolerance_ValueChanged);
+			this.floatTrackbarControlGradientTolerance.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlGradientTolerance_ValueChanged);
 			// 
 			// floatTrackbarControlGoalTolerance
 			// 
@@ -952,7 +952,7 @@
 			this.floatTrackbarControlGoalTolerance.Value = -6F;
 			this.floatTrackbarControlGoalTolerance.VisibleRangeMax = 0F;
 			this.floatTrackbarControlGoalTolerance.VisibleRangeMin = -8F;
-			this.floatTrackbarControlGoalTolerance.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlGoalTolerance_ValueChanged);
+			this.floatTrackbarControlGoalTolerance.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlGoalTolerance_ValueChanged);
 			// 
 			// integerTrackbarControlViewScatteringOrder
 			// 
@@ -967,7 +967,7 @@
 			this.integerTrackbarControlViewScatteringOrder.Value = 1;
 			this.integerTrackbarControlViewScatteringOrder.VisibleRangeMax = 4;
 			this.integerTrackbarControlViewScatteringOrder.VisibleRangeMin = 1;
-			this.integerTrackbarControlViewScatteringOrder.ValueChanged += new Nuaj.Cirrus.Utility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlViewScatteringOrder_ValueChanged);
+			this.integerTrackbarControlViewScatteringOrder.ValueChanged += new UIUtility.IntegerTrackbarControl.ValueChangedEventHandler(this.integerTrackbarControlViewScatteringOrder_ValueChanged);
 			// 
 			// groupBoxAnalyticalLobeModel
 			// 
@@ -1068,7 +1068,7 @@
 			this.floatTrackbarControlInit_FixedMasking.TabIndex = 2;
 			this.floatTrackbarControlInit_FixedMasking.Value = 1F;
 			this.floatTrackbarControlInit_FixedMasking.VisibleRangeMax = 1F;
-			this.floatTrackbarControlInit_FixedMasking.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlInit_FixedMasking_ValueChanged);
+			this.floatTrackbarControlInit_FixedMasking.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlInit_FixedMasking_ValueChanged);
 			// 
 			// checkBoxInitMasking_Inherit
 			// 
@@ -1095,7 +1095,7 @@
 			this.floatTrackbarControlInit_CustomMaskingImportance.TabIndex = 2;
 			this.floatTrackbarControlInit_CustomMaskingImportance.Value = 1F;
 			this.floatTrackbarControlInit_CustomMaskingImportance.VisibleRangeMax = 1F;
-			this.floatTrackbarControlInit_CustomMaskingImportance.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlInit_MaskingImportance_ValueChanged);
+			this.floatTrackbarControlInit_CustomMaskingImportance.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlInit_MaskingImportance_ValueChanged);
 			// 
 			// label8
 			// 
@@ -1192,7 +1192,7 @@
 			this.floatTrackbarControlInit_FixedFlatten.TabIndex = 2;
 			this.floatTrackbarControlInit_FixedFlatten.Value = 1F;
 			this.floatTrackbarControlInit_FixedFlatten.VisibleRangeMax = 2F;
-			this.floatTrackbarControlInit_FixedFlatten.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlInit_FixedFlatten_ValueChanged);
+			this.floatTrackbarControlInit_FixedFlatten.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlInit_FixedFlatten_ValueChanged);
 			// 
 			// checkBoxInitFlatten_Inherit
 			// 
@@ -1220,7 +1220,7 @@
 			this.toolTip1.SetToolTip(this.floatTrackbarControlInit_CustomFlatten, "Specifies the lobe\'s flattening to start with (diffuse lobes tend to be flatter)");
 			this.floatTrackbarControlInit_CustomFlatten.Value = 0.5F;
 			this.floatTrackbarControlInit_CustomFlatten.VisibleRangeMax = 2F;
-			this.floatTrackbarControlInit_CustomFlatten.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlInit_Flatten_ValueChanged);
+			this.floatTrackbarControlInit_CustomFlatten.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlInit_Flatten_ValueChanged);
 			// 
 			// label28
 			// 
@@ -1307,7 +1307,7 @@
 			this.floatTrackbarControlInit_FixedScale.TabIndex = 2;
 			this.floatTrackbarControlInit_FixedScale.Value = 1F;
 			this.floatTrackbarControlInit_FixedScale.VisibleRangeMax = 1F;
-			this.floatTrackbarControlInit_FixedScale.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlInit_FixedScale_ValueChanged);
+			this.floatTrackbarControlInit_FixedScale.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlInit_FixedScale_ValueChanged);
 			// 
 			// floatTrackbarControlInit_Scale
 			// 
@@ -1323,7 +1323,7 @@
         " initial lobes make simulation converge faster)");
 			this.floatTrackbarControlInit_Scale.Value = 0.05F;
 			this.floatTrackbarControlInit_Scale.VisibleRangeMax = 1F;
-			this.floatTrackbarControlInit_Scale.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlInit_Scale_ValueChanged);
+			this.floatTrackbarControlInit_Scale.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlInit_Scale_ValueChanged);
 			// 
 			// checkBoxInitScale_InheritLeft
 			// 
@@ -1447,7 +1447,7 @@
 			this.floatTrackbarControlInit_FixedDirection.TabIndex = 2;
 			this.floatTrackbarControlInit_FixedDirection.Value = 0F;
 			this.floatTrackbarControlInit_FixedDirection.VisibleRangeMax = 90F;
-			this.floatTrackbarControlInit_FixedDirection.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlInit_FixedDirection_ValueChanged);
+			this.floatTrackbarControlInit_FixedDirection.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlInit_FixedDirection_ValueChanged);
 			// 
 			// checkBoxInitDirection_Inherit
 			// 
@@ -1502,7 +1502,7 @@
 			this.floatTrackbarControlInit_CustomRoughness.TabIndex = 2;
 			this.floatTrackbarControlInit_CustomRoughness.Value = 0.5F;
 			this.floatTrackbarControlInit_CustomRoughness.VisibleRangeMax = 1F;
-			this.floatTrackbarControlInit_CustomRoughness.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlInit_CustomRoughness_ValueChanged);
+			this.floatTrackbarControlInit_CustomRoughness.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlInit_CustomRoughness_ValueChanged);
 			// 
 			// radioButtonInitRoughness_Analytical
 			// 
@@ -1563,7 +1563,7 @@
 			this.floatTrackbarControlInit_FixedRoughness.TabIndex = 2;
 			this.floatTrackbarControlInit_FixedRoughness.Value = 1F;
 			this.floatTrackbarControlInit_FixedRoughness.VisibleRangeMax = 1F;
-			this.floatTrackbarControlInit_FixedRoughness.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlInit_FixedRoughness_ValueChanged);
+			this.floatTrackbarControlInit_FixedRoughness.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlInit_FixedRoughness_ValueChanged);
 			// 
 			// checkBoxInitRoughness_InheritLeft
 			// 
@@ -2021,11 +2021,11 @@
 		private System.Windows.Forms.Panel panelIncidentAngle;
 		private System.Windows.Forms.Label label2;
 		private System.Windows.Forms.Label label3;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlParam0_Min;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlParam0_Max;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlParam0_Min;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlParam0_Max;
 		private System.Windows.Forms.Label label4;
 		private System.Windows.Forms.Label label5;
-		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlParam0_Steps;
+		private UIUtility.IntegerTrackbarControl integerTrackbarControlParam0_Steps;
 		private System.Windows.Forms.CheckBox checkBoxParam0_InclusiveEnd;
 		private System.Windows.Forms.ToolTip toolTip1;
 		private System.Windows.Forms.GroupBox groupBoxAnalyticalLobeModel;
@@ -2035,33 +2035,33 @@
 		private System.Windows.Forms.RadioButton radioButtonLobe_Beckmann;
 		private System.Windows.Forms.RadioButton radioButtonLobe_ModifiedPhong;
 		private System.Windows.Forms.GroupBox groupBoxCustomInitialGuesses;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlInit_Scale;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlInit_CustomFlatten;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlInit_Scale;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlInit_CustomFlatten;
 		private System.Windows.Forms.RadioButton radioButtonInitRoughness_UseSurface;
 		private System.Windows.Forms.Label label9;
 		private System.Windows.Forms.RadioButton radioButtonInitRoughness_Custom;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlInit_CustomRoughness;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlInit_CustomRoughness;
 		private System.Windows.Forms.Panel panel4;
 		private System.Windows.Forms.Label label10;
 		private System.Windows.Forms.Panel panel3;
 		private System.Windows.Forms.RadioButton radioButtonInitDirection_TowardCoM;
 		private System.Windows.Forms.RadioButton radioButtonInitDirection_TowardReflected;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlInit_CustomMaskingImportance;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlInit_CustomMaskingImportance;
 		private System.Windows.Forms.Panel panel5;
 		private System.Windows.Forms.CheckBox checkBoxParam1_InclusiveEnd;
-		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlParam1_Steps;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlParam1_Max;
+		private UIUtility.IntegerTrackbarControl integerTrackbarControlParam1_Steps;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlParam1_Max;
 		private System.Windows.Forms.Label label6;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlParam1_Min;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlParam1_Min;
 		private System.Windows.Forms.Label label12;
 		private System.Windows.Forms.Label label13;
 		private System.Windows.Forms.Label label14;
 		private System.Windows.Forms.Panel panel6;
 		private System.Windows.Forms.CheckBox checkBoxParam2_InclusiveEnd;
-		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlParam2_Steps;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlParam2_Max;
+		private UIUtility.IntegerTrackbarControl integerTrackbarControlParam2_Steps;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlParam2_Max;
 		private System.Windows.Forms.Label label15;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlParam2_Min;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlParam2_Min;
 		private System.Windows.Forms.Label label16;
 		private System.Windows.Forms.Label label17;
 		private System.Windows.Forms.Label labelParm2;
@@ -2070,17 +2070,17 @@
 		private System.Windows.Forms.CheckBox checkBoxParam1_InclusiveStart;
 		private System.Windows.Forms.GroupBox groupBoxLobeFitterConfig;
 		private System.Windows.Forms.Label label18;
-		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlMaxIterations;
+		private UIUtility.IntegerTrackbarControl integerTrackbarControlMaxIterations;
 		private System.Windows.Forms.Label label19;
 		private System.Windows.Forms.Label label20;
-		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlScatteringOrder_Min;
+		private UIUtility.IntegerTrackbarControl integerTrackbarControlScatteringOrder_Min;
 		private System.Windows.Forms.Label label21;
-		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlScatteringOrder_Max;
+		private UIUtility.IntegerTrackbarControl integerTrackbarControlScatteringOrder_Max;
 		private System.Windows.Forms.Label label22;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlGoalTolerance;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlGoalTolerance;
 		private System.Windows.Forms.Label label23;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlGradientTolerance;
-		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlRetries;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlGradientTolerance;
+		private UIUtility.IntegerTrackbarControl integerTrackbarControlRetries;
 		private System.Windows.Forms.Label label24;
 		private System.Windows.Forms.Label label25;
 		private System.Windows.Forms.MenuStrip menuStrip1;
@@ -2091,7 +2091,7 @@
 		private System.Windows.Forms.ToolStripMenuItem exportToolStripMenuItem;
 		private System.Windows.Forms.ToolStripSeparator toolStripMenuItem2;
 		private System.Windows.Forms.ToolStripMenuItem recentToolStripMenuItem;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlFitOversize;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlFitOversize;
 		private System.Windows.Forms.Label label26;
 		private CompletionArrayControl completionArrayControl;
 		private System.Windows.Forms.RadioButton radioButtonInitDirection_NoChange;
@@ -2115,25 +2115,25 @@
 		private System.Windows.Forms.OpenFileDialog openFileDialogResults;
 		private System.Windows.Forms.SaveFileDialog saveFileDialogResults;
 		private System.Windows.Forms.Label label11;
-		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlRayCastingIterations;
+		private UIUtility.IntegerTrackbarControl integerTrackbarControlRayCastingIterations;
 		private System.Windows.Forms.Label labelTotalRaysCount;
 		private System.Windows.Forms.ToolStripMenuItem newToolStripMenuItem;
 		private System.Windows.Forms.RadioButton radioButtonInitMasking_NoChange;
 		private System.Windows.Forms.RadioButton radioButtonInitFlatten_NoChange;
 		private System.Windows.Forms.RadioButton radioButtonInitRoughness_NoChange;
-		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlViewScatteringOrder;
+		private UIUtility.IntegerTrackbarControl integerTrackbarControlViewScatteringOrder;
 		private System.Windows.Forms.Label label29;
-		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlViewAlbedoSlice;
+		private UIUtility.IntegerTrackbarControl integerTrackbarControlViewAlbedoSlice;
 		private System.Windows.Forms.Label label30;
 		private System.Windows.Forms.ContextMenuStrip contextMenuStripSelection;
 		private System.Windows.Forms.ToolStripMenuItem computeToolStripMenuItem;
 		private System.Windows.Forms.ToolStripMenuItem startFromHereToolStripMenuItem;
 		private System.Windows.Forms.ToolStripSeparator toolStripMenuItem3;
 		private System.Windows.Forms.ToolStripMenuItem clearToolStripMenuItem;
-		private Nuaj.Cirrus.Utility.LogTextBox textBoxLog;
+		private UIUtility.LogTextBox textBoxLog;
 		private System.Windows.Forms.ToolStripMenuItem saveAsToolStripMenuItem;
 		private System.Windows.Forms.SaveFileDialog saveFileDialogExport;
-		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlThreadsCount;
+		private UIUtility.IntegerTrackbarControl integerTrackbarControlThreadsCount;
 		private System.Windows.Forms.Label label31;
 		private System.Windows.Forms.ToolStripMenuItem clearSliceFromHereToolStripMenuItem;
 		private System.Windows.Forms.ToolStripMenuItem clearColumnToolStripMenuItem;
@@ -2144,15 +2144,15 @@
 		private System.Windows.Forms.CheckBox checkBoxInitDirection_InheritLeft;
 		private System.Windows.Forms.CheckBox checkBoxInitRoughness_InheritLeft;
 		private System.Windows.Forms.RadioButton radioButtonInitScale_Fixed;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlInit_FixedScale;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlInit_FixedScale;
 		private System.Windows.Forms.RadioButton radioButtonInitFlatten_Fixed;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlInit_FixedFlatten;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlInit_FixedFlatten;
 		private System.Windows.Forms.RadioButton radioButtonInitRoughness_Fixed;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlInit_FixedRoughness;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlInit_FixedRoughness;
 		private System.Windows.Forms.RadioButton radioButtonInitMasking_Fixed;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlInit_FixedMasking;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlInit_FixedMasking;
 		private System.Windows.Forms.RadioButton radioButtonInitDirection_Fixed;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlInit_FixedDirection;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlInit_FixedDirection;
 		private System.Windows.Forms.RadioButton radioButtonInitFlatten_Analytical;
 		private System.Windows.Forms.RadioButton radioButtonInitScale_Analytical;
 		private System.Windows.Forms.RadioButton radioButtonInitRoughness_Analytical;

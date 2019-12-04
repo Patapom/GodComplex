@@ -46,7 +46,7 @@ using System.Windows.Forms;
 using SharpMath;
 using ImageUtility;
 using Renderer;
-using Nuaj.Cirrus.Utility;
+using UIUtility;
 
 namespace TriangleCurvature
 {

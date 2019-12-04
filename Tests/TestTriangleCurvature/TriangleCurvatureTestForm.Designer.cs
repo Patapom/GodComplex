@@ -31,18 +31,18 @@
 			this.components = new System.ComponentModel.Container();
 			this.buttonReload = new System.Windows.Forms.Button();
 			this.checkBoxShowNormal = new System.Windows.Forms.CheckBox();
-			this.floatTrackbarControlCurvatureStrength = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlCurvatureStrength = new UIUtility.FloatTrackbarControl();
 			this.label1 = new System.Windows.Forms.Label();
 			this.checkBoxEnableCorrection = new System.Windows.Forms.CheckBox();
 			this.labelResult = new System.Windows.Forms.Label();
-			this.floatTrackbarControlA = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlA = new UIUtility.FloatTrackbarControl();
 			this.label2 = new System.Windows.Forms.Label();
-			this.floatTrackbarControlB = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlB = new UIUtility.FloatTrackbarControl();
 			this.label3 = new System.Windows.Forms.Label();
-			this.floatTrackbarControlC = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlC = new UIUtility.FloatTrackbarControl();
 			this.label4 = new System.Windows.Forms.Label();
 			this.labelMeshInfo = new System.Windows.Forms.Label();
-			this.floatTrackbarControlD = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlD = new UIUtility.FloatTrackbarControl();
 			this.label5 = new System.Windows.Forms.Label();
 			this.panelOutputGraph = new TriangleCurvature.PanelOutput(this.components);
 			this.panelOutput = new TriangleCurvature.PanelOutput3D(this.components);
@@ -125,7 +125,7 @@
 			this.floatTrackbarControlA.Value = -1.154701F;
 			this.floatTrackbarControlA.VisibleRangeMax = 0F;
 			this.floatTrackbarControlA.VisibleRangeMin = -2F;
-			this.floatTrackbarControlA.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlA_ValueChanged);
+			this.floatTrackbarControlA.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlA_ValueChanged);
 			// 
 			// label2
 			// 
@@ -149,7 +149,7 @@
 			this.floatTrackbarControlB.Value = -1.154701F;
 			this.floatTrackbarControlB.VisibleRangeMax = 0F;
 			this.floatTrackbarControlB.VisibleRangeMin = -2F;
-			this.floatTrackbarControlB.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlA_ValueChanged);
+			this.floatTrackbarControlB.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlA_ValueChanged);
 			// 
 			// label3
 			// 
@@ -173,7 +173,7 @@
 			this.floatTrackbarControlC.Value = -1.154701F;
 			this.floatTrackbarControlC.VisibleRangeMax = 0F;
 			this.floatTrackbarControlC.VisibleRangeMin = -2F;
-			this.floatTrackbarControlC.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlA_ValueChanged);
+			this.floatTrackbarControlC.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlA_ValueChanged);
 			// 
 			// label4
 			// 
@@ -207,7 +207,7 @@
 			this.floatTrackbarControlD.Value = -1.154701F;
 			this.floatTrackbarControlD.VisibleRangeMax = 0F;
 			this.floatTrackbarControlD.VisibleRangeMin = -2F;
-			this.floatTrackbarControlD.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlA_ValueChanged);
+			this.floatTrackbarControlD.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlA_ValueChanged);
 			// 
 			// label5
 			// 
@@ -268,19 +268,19 @@
 		private PanelOutput3D panelOutput;
 		private System.Windows.Forms.Button buttonReload;
 		private System.Windows.Forms.CheckBox checkBoxShowNormal;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlCurvatureStrength;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlCurvatureStrength;
 		private System.Windows.Forms.Label label1;
 		private System.Windows.Forms.CheckBox checkBoxEnableCorrection;
 		private PanelOutput panelOutputGraph;
 		private System.Windows.Forms.Label labelResult;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlA;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlA;
 		private System.Windows.Forms.Label label2;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlB;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlB;
 		private System.Windows.Forms.Label label3;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlC;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlC;
 		private System.Windows.Forms.Label label4;
 		private System.Windows.Forms.Label labelMeshInfo;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlD;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlD;
 		private System.Windows.Forms.Label label5;
 	}
 }

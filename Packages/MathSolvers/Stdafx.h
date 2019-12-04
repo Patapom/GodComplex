@@ -9,9 +9,9 @@
 #include <memory.h>
 
 // Base lib
-#include "..\..\BaseLib\Types.h"
+#include "..\BaseLib\Types.h"
 
 // Math Solvers lib
-#include "..\MathSolvers\MathSolvers.h"
+#include "..\MathSolversLib\MathSolvers.h"
 
 #pragma managed

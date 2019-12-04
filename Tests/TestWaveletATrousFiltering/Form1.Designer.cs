@@ -32,16 +32,16 @@
 			this.timer1 = new System.Windows.Forms.Timer(this.components);
 			this.buttonReload = new System.Windows.Forms.Button();
 			this.panelOutput = new TestWaveletATrousFiltering.PanelOutput(this.components);
-			this.floatTrackbarControlLightSize = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.floatTrackbarControlSigmaColor = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlLightSize = new UIUtility.FloatTrackbarControl();
+			this.floatTrackbarControlSigmaColor = new UIUtility.FloatTrackbarControl();
 			this.label1 = new System.Windows.Forms.Label();
-			this.floatTrackbarControlSigmaNormal = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlSigmaNormal = new UIUtility.FloatTrackbarControl();
 			this.label2 = new System.Windows.Forms.Label();
-			this.floatTrackbarControlSigmaPosition = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlSigmaPosition = new UIUtility.FloatTrackbarControl();
 			this.label3 = new System.Windows.Forms.Label();
 			this.label4 = new System.Windows.Forms.Label();
 			this.checkBoxToggleFilter = new System.Windows.Forms.CheckBox();
-			this.integerTrackbarControlFilterLevel = new Nuaj.Cirrus.Utility.IntegerTrackbarControl();
+			this.integerTrackbarControlFilterLevel = new UIUtility.IntegerTrackbarControl();
 			this.SuspendLayout();
 			// 
 			// timer1
@@ -209,16 +209,16 @@
 		private PanelOutput panelOutput;
 		private System.Windows.Forms.Timer timer1;
 		private System.Windows.Forms.Button buttonReload;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlLightSize;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlSigmaColor;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlLightSize;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlSigmaColor;
 		private System.Windows.Forms.Label label1;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlSigmaNormal;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlSigmaNormal;
 		private System.Windows.Forms.Label label2;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlSigmaPosition;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlSigmaPosition;
 		private System.Windows.Forms.Label label3;
 		private System.Windows.Forms.Label label4;
 		private System.Windows.Forms.CheckBox checkBoxToggleFilter;
-		private Nuaj.Cirrus.Utility.IntegerTrackbarControl integerTrackbarControlFilterLevel;
+		private UIUtility.IntegerTrackbarControl integerTrackbarControlFilterLevel;
 	}
 }
 

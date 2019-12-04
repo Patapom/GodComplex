@@ -30,30 +30,30 @@
 		{
 			this.components = new System.ComponentModel.Container();
 			System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(TestForm));
-			this.floatTrackbarControlRoughnessSphere = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.panelOutput = new Nuaj.Cirrus.Utility.PanelOutput(this.components);
-			this.floatTrackbarControlReflectanceGround = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlRoughnessSphere = new UIUtility.FloatTrackbarControl();
+			this.panelOutput = new UIUtility.PanelOutput(this.components);
+			this.floatTrackbarControlReflectanceGround = new UIUtility.FloatTrackbarControl();
 			this.buttonReload = new System.Windows.Forms.Button();
 			this.label1 = new System.Windows.Forms.Label();
 			this.label2 = new System.Windows.Forms.Label();
-			this.floatTrackbarControlLightElevation = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlLightElevation = new UIUtility.FloatTrackbarControl();
 			this.label3 = new System.Windows.Forms.Label();
 			this.timer1 = new System.Windows.Forms.Timer(this.components);
-			this.floatTrackbarControlRoughnessGround = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlRoughnessGround = new UIUtility.FloatTrackbarControl();
 			this.label4 = new System.Windows.Forms.Label();
 			this.checkBoxEnableMSBRDF = new System.Windows.Forms.CheckBox();
 			this.checkBoxKeepSampling = new System.Windows.Forms.CheckBox();
-			this.floatTrackbarControlReflectanceSphere = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlReflectanceSphere = new UIUtility.FloatTrackbarControl();
 			this.label5 = new System.Windows.Forms.Label();
 			this.checkBoxPause = new System.Windows.Forms.CheckBox();
 			this.groupBoxSphere = new System.Windows.Forms.GroupBox();
 			this.label8 = new System.Windows.Forms.Label();
-			this.floatTrackbarControlRoughnessSphere2 = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
-			this.floatTrackbarControlReflectanceSphere2 = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlRoughnessSphere2 = new UIUtility.FloatTrackbarControl();
+			this.floatTrackbarControlReflectanceSphere2 = new UIUtility.FloatTrackbarControl();
 			this.label7 = new System.Windows.Forms.Label();
 			this.groupBoxPlane = new System.Windows.Forms.GroupBox();
 			this.groupBoxEnvironment = new System.Windows.Forms.GroupBox();
-			this.floatTrackbarControlCubeMapIntensity = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlCubeMapIntensity = new UIUtility.FloatTrackbarControl();
 			this.label6 = new System.Windows.Forms.Label();
 			this.checkBoxEnableMSFactor = new System.Windows.Forms.CheckBox();
 			this.checkBoxUseRealTimeApprox = new System.Windows.Forms.CheckBox();
@@ -74,7 +74,7 @@
 			this.floatTrackbarControlRoughnessSphere.TabIndex = 0;
 			this.floatTrackbarControlRoughnessSphere.Value = 0.1F;
 			this.floatTrackbarControlRoughnessSphere.VisibleRangeMax = 1F;
-			this.floatTrackbarControlRoughnessSphere.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlRoughnessSpec_ValueChanged);
+			this.floatTrackbarControlRoughnessSphere.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlRoughnessSpec_ValueChanged);
 			// 
 			// panelOutput
 			// 
@@ -96,7 +96,7 @@
 			this.floatTrackbarControlReflectanceGround.TabIndex = 0;
 			this.floatTrackbarControlReflectanceGround.Value = 0.75F;
 			this.floatTrackbarControlReflectanceGround.VisibleRangeMax = 1F;
-			this.floatTrackbarControlReflectanceGround.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlAlbedo_ValueChanged);
+			this.floatTrackbarControlReflectanceGround.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlAlbedo_ValueChanged);
 			// 
 			// buttonReload
 			// 
@@ -139,7 +139,7 @@
 			this.floatTrackbarControlLightElevation.TabIndex = 0;
 			this.floatTrackbarControlLightElevation.Value = 0F;
 			this.floatTrackbarControlLightElevation.VisibleRangeMax = 1F;
-			this.floatTrackbarControlLightElevation.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlLightElevation_ValueChanged);
+			this.floatTrackbarControlLightElevation.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlLightElevation_ValueChanged);
 			// 
 			// label3
 			// 
@@ -166,7 +166,7 @@
 			this.floatTrackbarControlRoughnessGround.TabIndex = 0;
 			this.floatTrackbarControlRoughnessGround.Value = 0F;
 			this.floatTrackbarControlRoughnessGround.VisibleRangeMax = 1F;
-			this.floatTrackbarControlRoughnessGround.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlRoughnessDiffuse_ValueChanged);
+			this.floatTrackbarControlRoughnessGround.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlRoughnessDiffuse_ValueChanged);
 			// 
 			// label4
 			// 
@@ -215,7 +215,7 @@
 			this.floatTrackbarControlReflectanceSphere.TabIndex = 0;
 			this.floatTrackbarControlReflectanceSphere.Value = 1F;
 			this.floatTrackbarControlReflectanceSphere.VisibleRangeMax = 1F;
-			this.floatTrackbarControlReflectanceSphere.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlAlbedo_ValueChanged);
+			this.floatTrackbarControlReflectanceSphere.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlAlbedo_ValueChanged);
 			// 
 			// label5
 			// 
@@ -273,7 +273,7 @@
 			this.floatTrackbarControlRoughnessSphere2.TabIndex = 0;
 			this.floatTrackbarControlRoughnessSphere2.Value = 0.1F;
 			this.floatTrackbarControlRoughnessSphere2.VisibleRangeMax = 1F;
-			this.floatTrackbarControlRoughnessSphere2.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlRoughnessSpec_ValueChanged);
+			this.floatTrackbarControlRoughnessSphere2.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlRoughnessSpec_ValueChanged);
 			// 
 			// floatTrackbarControlReflectanceSphere2
 			// 
@@ -287,7 +287,7 @@
 			this.floatTrackbarControlReflectanceSphere2.TabIndex = 0;
 			this.floatTrackbarControlReflectanceSphere2.Value = 1F;
 			this.floatTrackbarControlReflectanceSphere2.VisibleRangeMax = 1F;
-			this.floatTrackbarControlReflectanceSphere2.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlAlbedo_ValueChanged);
+			this.floatTrackbarControlReflectanceSphere2.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlAlbedo_ValueChanged);
 			// 
 			// label7
 			// 
@@ -336,7 +336,7 @@
 			this.floatTrackbarControlCubeMapIntensity.TabIndex = 0;
 			this.floatTrackbarControlCubeMapIntensity.Value = 1F;
 			this.floatTrackbarControlCubeMapIntensity.VisibleRangeMax = 4F;
-			this.floatTrackbarControlCubeMapIntensity.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlLightElevation_ValueChanged);
+			this.floatTrackbarControlCubeMapIntensity.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlLightElevation_ValueChanged);
 			// 
 			// label6
 			// 
@@ -422,31 +422,31 @@
 
 		#endregion
 
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlRoughnessSphere;
-		private Nuaj.Cirrus.Utility.PanelOutput panelOutput;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlReflectanceGround;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlRoughnessSphere;
+		private UIUtility.PanelOutput panelOutput;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlReflectanceGround;
 		private System.Windows.Forms.Button buttonReload;
 		private System.Windows.Forms.Label label1;
 		private System.Windows.Forms.Label label2;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlLightElevation;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlLightElevation;
 		private System.Windows.Forms.Label label3;
 		private System.Windows.Forms.Timer timer1;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlRoughnessGround;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlRoughnessGround;
 		private System.Windows.Forms.Label label4;
 		private System.Windows.Forms.CheckBox checkBoxEnableMSBRDF;
 		private System.Windows.Forms.CheckBox checkBoxKeepSampling;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlReflectanceSphere;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlReflectanceSphere;
 		private System.Windows.Forms.Label label5;
 		private System.Windows.Forms.CheckBox checkBoxPause;
 		private System.Windows.Forms.GroupBox groupBoxSphere;
 		private System.Windows.Forms.GroupBox groupBoxPlane;
 		private System.Windows.Forms.GroupBox groupBoxEnvironment;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlCubeMapIntensity;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlCubeMapIntensity;
 		private System.Windows.Forms.Label label6;
 		private System.Windows.Forms.CheckBox checkBoxEnableMSFactor;
 		private System.Windows.Forms.Label label8;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlRoughnessSphere2;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlReflectanceSphere2;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlRoughnessSphere2;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlReflectanceSphere2;
 		private System.Windows.Forms.Label label7;
 		private System.Windows.Forms.CheckBox checkBoxUseRealTimeApprox;
 		private System.Windows.Forms.CheckBox checkBoxUseLTC;

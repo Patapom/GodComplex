@@ -29,8 +29,8 @@
 		private void InitializeComponent()
 		{
 			this.components = new System.ComponentModel.Container();
-			this.panelOutput = new Nuaj.Cirrus.Utility.PanelOutput( this.components );
-			this.panelOutputNormalDistribution = new Nuaj.Cirrus.Utility.PanelOutput( this.components );
+			this.panelOutput = new UIUtility.PanelOutput( this.components );
+			this.panelOutputNormalDistribution = new UIUtility.PanelOutput( this.components );
 			this.SuspendLayout();
 			// 
 			// panelOutput
@@ -39,7 +39,7 @@
 			this.panelOutput.Name = "panelOutput";
 			this.panelOutput.Size = new System.Drawing.Size( 455, 455 );
 			this.panelOutput.TabIndex = 0;
-			this.panelOutput.BitmapUpdating += new Nuaj.Cirrus.Utility.PanelOutput.UpdateBitmapDelegate( this.panelOutput_BitmapUpdating );
+			this.panelOutput.BitmapUpdating += new UIUtility.PanelOutput.UpdateBitmapDelegate( this.panelOutput_BitmapUpdating );
 			// 
 			// panelOutputNormalDistribution
 			// 
@@ -47,7 +47,7 @@
 			this.panelOutputNormalDistribution.Name = "panelOutputNormalDistribution";
 			this.panelOutputNormalDistribution.Size = new System.Drawing.Size( 434, 197 );
 			this.panelOutputNormalDistribution.TabIndex = 0;
-			this.panelOutputNormalDistribution.BitmapUpdating += new Nuaj.Cirrus.Utility.PanelOutput.UpdateBitmapDelegate( this.panelOutputNormalDistribution_BitmapUpdating );
+			this.panelOutputNormalDistribution.BitmapUpdating += new UIUtility.PanelOutput.UpdateBitmapDelegate( this.panelOutputNormalDistribution_BitmapUpdating );
 			// 
 			// FittingForm
 			// 
@@ -65,8 +65,8 @@
 
 		#endregion
 
-		private Nuaj.Cirrus.Utility.PanelOutput panelOutput;
-		private Nuaj.Cirrus.Utility.PanelOutput panelOutputNormalDistribution;
+		private UIUtility.PanelOutput panelOutput;
+		private UIUtility.PanelOutput panelOutputNormalDistribution;
 	}
 }
 

@@ -31,7 +31,7 @@
 			this.components = new System.ComponentModel.Container();
 			this.radioButtonSchlick = new System.Windows.Forms.RadioButton();
 			this.radioButtonPrecise = new System.Windows.Forms.RadioButton();
-			this.floatTrackbarControlIOR = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlIOR = new UIUtility.FloatTrackbarControl();
 			this.panelSpecularTintNormal = new System.Windows.Forms.Panel();
 			this.openFileDialogRefract = new System.Windows.Forms.OpenFileDialog();
 			this.buttonLoadData = new System.Windows.Forms.Button();
@@ -44,13 +44,13 @@
 			this.panelSpecularTintEdge = new System.Windows.Forms.Panel();
 			this.radioButtonIOR = new System.Windows.Forms.RadioButton();
 			this.radioButtonSpecularTint = new System.Windows.Forms.RadioButton();
-			this.floatTrackbarControlVerticalScale = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlVerticalScale = new UIUtility.FloatTrackbarControl();
 			this.label1 = new System.Windows.Forms.Label();
 			this.checkBoxusePreComputedTable = new System.Windows.Forms.CheckBox();
-			this.floatTrackbarControlRoughness = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlRoughness = new UIUtility.FloatTrackbarControl();
 			this.checkBoxPlotAgainstF0 = new System.Windows.Forms.CheckBox();
 			this.label5 = new System.Windows.Forms.Label();
-			this.floatTrackbarControlPeakFactor = new Nuaj.Cirrus.Utility.FloatTrackbarControl();
+			this.floatTrackbarControlPeakFactor = new UIUtility.FloatTrackbarControl();
 			this.label6 = new System.Windows.Forms.Label();
 			this.label7 = new System.Windows.Forms.Label();
 			this.outputPanelDiffuseFresnelReflectance = new TestFresnel.PanelDiffuseFresnelReflectance(this.components);
@@ -99,8 +99,8 @@
 			this.floatTrackbarControlIOR.TabIndex = 2;
 			this.floatTrackbarControlIOR.Value = 1F;
 			this.floatTrackbarControlIOR.VisibleRangeMin = 0.1F;
-			this.floatTrackbarControlIOR.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControl1_ValueChanged);
-			this.floatTrackbarControlIOR.SliderDragStop += new Nuaj.Cirrus.Utility.FloatTrackbarControl.SliderDragStopEventHandler(this.floatTrackbarControlIOR_SliderDragStop);
+			this.floatTrackbarControlIOR.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControl1_ValueChanged);
+			this.floatTrackbarControlIOR.SliderDragStop += new UIUtility.FloatTrackbarControl.SliderDragStopEventHandler(this.floatTrackbarControlIOR_SliderDragStop);
 			// 
 			// panelSpecularTintNormal
 			// 
@@ -241,7 +241,7 @@
 			this.floatTrackbarControlVerticalScale.Value = 1F;
 			this.floatTrackbarControlVerticalScale.VisibleRangeMax = 1F;
 			this.floatTrackbarControlVerticalScale.VisibleRangeMin = 0.0001F;
-			this.floatTrackbarControlVerticalScale.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlVerticalScale_ValueChanged);
+			this.floatTrackbarControlVerticalScale.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlVerticalScale_ValueChanged);
 			// 
 			// label1
 			// 
@@ -277,7 +277,7 @@
 			this.floatTrackbarControlRoughness.Value = 1F;
 			this.floatTrackbarControlRoughness.VisibleRangeMax = 1F;
 			this.floatTrackbarControlRoughness.VisibleRangeMin = 0.0001F;
-			this.floatTrackbarControlRoughness.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlRoughness_ValueChanged);
+			this.floatTrackbarControlRoughness.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlRoughness_ValueChanged);
 			// 
 			// checkBoxPlotAgainstF0
 			// 
@@ -313,7 +313,7 @@
 			this.floatTrackbarControlPeakFactor.Value = 1F;
 			this.floatTrackbarControlPeakFactor.VisibleRangeMax = 1F;
 			this.floatTrackbarControlPeakFactor.VisibleRangeMin = 0.0001F;
-			this.floatTrackbarControlPeakFactor.ValueChanged += new Nuaj.Cirrus.Utility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlPeakFactor_ValueChanged);
+			this.floatTrackbarControlPeakFactor.ValueChanged += new UIUtility.FloatTrackbarControl.ValueChangedEventHandler(this.floatTrackbarControlPeakFactor_ValueChanged);
 			// 
 			// label6
 			// 
@@ -416,7 +416,7 @@
 		private PanelFresnelReflectance outputPanelFresnelGraph;
 		private System.Windows.Forms.RadioButton radioButtonSchlick;
 		private System.Windows.Forms.RadioButton radioButtonPrecise;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlIOR;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlIOR;
 		private System.Windows.Forms.Panel panelSpecularTintNormal;
 		private System.Windows.Forms.OpenFileDialog openFileDialogRefract;
 		private System.Windows.Forms.Button buttonLoadData;
@@ -428,13 +428,13 @@
 		private System.Windows.Forms.Panel panel1;
 		private System.Windows.Forms.RadioButton radioButtonIOR;
 		private System.Windows.Forms.RadioButton radioButtonSpecularTint;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlVerticalScale;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlVerticalScale;
 		private System.Windows.Forms.Label label1;
 		private System.Windows.Forms.CheckBox checkBoxusePreComputedTable;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlRoughness;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlRoughness;
 		private System.Windows.Forms.CheckBox checkBoxPlotAgainstF0;
 		private System.Windows.Forms.Label label5;
-		private Nuaj.Cirrus.Utility.FloatTrackbarControl floatTrackbarControlPeakFactor;
+		private UIUtility.FloatTrackbarControl floatTrackbarControlPeakFactor;
 		private System.Windows.Forms.Label label6;
 		private System.Windows.Forms.Panel panelUseEdgeTint;
 		private System.Windows.Forms.CheckBox checkBoxUseEdgeTint;

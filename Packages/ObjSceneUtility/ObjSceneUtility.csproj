@@ -61,17 +61,17 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\ImageUtilityManaged\ImageUtilityManaged.vcxproj">
+    <ProjectReference Include="..\ImageUtility\ImageUtility.vcxproj">
       <Project>{6c974ba3-ecba-4436-85cb-218eebb33d53}</Project>
-      <Name>ImageUtilityManaged</Name>
+      <Name>ImageUtility</Name>
     </ProjectReference>
     <ProjectReference Include="..\MathSimple\MathSimple.vcxproj">
       <Project>{cec07704-2a19-4bf1-b46d-8fcf9c5965ee}</Project>
       <Name>MathSimple</Name>
     </ProjectReference>
-    <ProjectReference Include="..\RendererManaged\RendererManaged.vcxproj">
+    <ProjectReference Include="..\Renderer\Renderer.vcxproj">
       <Project>{f96cdfd3-8954-4f4f-afb0-2855d98f051b}</Project>
-      <Name>RendererManaged</Name>
+      <Name>Renderer</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

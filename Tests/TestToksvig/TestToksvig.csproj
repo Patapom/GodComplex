@@ -72,9 +72,6 @@
     <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Cirrus.Utility">
-      <HintPath>..\..\Packages\Cirrus.Utility\obj\Debug\Cirrus.Utility.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -121,13 +118,17 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\Packages\MathAdvanced\MathAdvanced.csproj">
+      <Project>{dd026a89-c5fe-4150-bc85-a660e427826a}</Project>
+      <Name>MathAdvanced</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\Packages\MathSimple\MathSimple.vcxproj">
       <Project>{cec07704-2a19-4bf1-b46d-8fcf9c5965ee}</Project>
       <Name>MathSimple</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\Packages\SharpMath\MathAdvanced.csproj">
-      <Project>{dd026a89-c5fe-4150-bc85-a660e427826a}</Project>
-      <Name>MathAdvanced</Name>
+    <ProjectReference Include="..\..\Packages\UIUtility\UIUtility.csproj">
+      <Project>{9a67863f-d886-41a5-a8d1-04ba1379b097}</Project>
+      <Name>UIUtility</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

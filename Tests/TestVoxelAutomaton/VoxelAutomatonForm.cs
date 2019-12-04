@@ -11,7 +11,7 @@ using System.Windows.Forms;
 using SharpMath;
 using Renderer;
 using ImageUtility;
-using Nuaj.Cirrus.Utility;
+using UIUtility;
 
 namespace TestVoxelAutomaton {
 	public partial class VoxelAutomatonForm : Form {

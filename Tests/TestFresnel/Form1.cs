@@ -118,7 +118,7 @@ namespace TestFresnel
 			return result;
 		}
 
-		private void floatTrackbarControl1_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue ) {
+		private void floatTrackbarControl1_ValueChanged( UIUtility.FloatTrackbarControl _Sender, float _fFormerValue ) {
 
 			outputPanelDiffuseFresnelReflectance.MaxIOR = floatTrackbarControlIOR.VisibleRangeMax;	// So we match the visible range
 
@@ -136,12 +136,12 @@ namespace TestFresnel
 
 		private void panelColor_Click( object sender, EventArgs e ) {
 // 			colorDialog1.Color = IOR_to_Color( outputPanelFresnelGraph.IOR_red, outputPanelFresnelGraph.IOR_green, outputPanelFresnelGraph.IOR_blue );
-			Nuaj.Cirrus.Utility.ColorPickerForm	colorPicker = new Nuaj.Cirrus.Utility.ColorPickerForm( panelSpecularTintNormal.BackColor );
+			UIUtility.ColorPickerForm	colorPicker = new UIUtility.ColorPickerForm( panelSpecularTintNormal.BackColor );
 			colorPicker.ColorChanged += colorPicker_ColorChanged;
 			colorPicker.ShowDialog( this );
 		}
 
-		void colorPicker_ColorChanged( Nuaj.Cirrus.Utility.ColorPickerForm _sender ) {
+		void colorPicker_ColorChanged( UIUtility.ColorPickerForm _sender ) {
 			Color	pickedColor = _sender.ColorLDR;
 
 			panelSpecularTintNormal.BackColor = pickedColor;
@@ -168,12 +168,12 @@ namespace TestFresnel
 
 		private void panelEdgeTint_Click( object sender, EventArgs e ) {
 // 			colorDialog1.Color = IOR_to_Color( outputPanelFresnelGraph.IOR_red, outputPanelFresnelGraph.IOR_green, outputPanelFresnelGraph.IOR_blue );
-			Nuaj.Cirrus.Utility.ColorPickerForm	colorPicker = new Nuaj.Cirrus.Utility.ColorPickerForm( panelSpecularTintEdge.BackColor );
+			UIUtility.ColorPickerForm	colorPicker = new UIUtility.ColorPickerForm( panelSpecularTintEdge.BackColor );
 			colorPicker.ColorChanged += colorPicker_ColorChanged_EdgeTint;
 			colorPicker.ShowDialog( this );
 		}
 
-		void colorPicker_ColorChanged_EdgeTint( Nuaj.Cirrus.Utility.ColorPickerForm _sender ) {
+		void colorPicker_ColorChanged_EdgeTint( UIUtility.ColorPickerForm _sender ) {
 			Color	pickedColor = _sender.ColorLDR;
 
 			panelSpecularTintEdge.BackColor = pickedColor;
@@ -259,7 +259,7 @@ namespace TestFresnel
 			}
 		}
 
-		private void floatTrackbarControlVerticalScale_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue ) {
+		private void floatTrackbarControlVerticalScale_ValueChanged( UIUtility.FloatTrackbarControl _Sender, float _fFormerValue ) {
 			outputPanelDiffuseFresnelReflectance.VerticalScale = floatTrackbarControlVerticalScale.Value;
 		}
 
@@ -272,7 +272,7 @@ namespace TestFresnel
 			floatTrackbarControlPeakFactor.Enabled = checkBoxusePreComputedTable.Checked;
 		}
 
-		private void floatTrackbarControlRoughness_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue ) {
+		private void floatTrackbarControlRoughness_ValueChanged( UIUtility.FloatTrackbarControl _Sender, float _fFormerValue ) {
 			outputPanelDiffuseFresnelReflectance.Roughness = floatTrackbarControlRoughness.Value;
 		}
 
@@ -280,11 +280,11 @@ namespace TestFresnel
 			outputPanelDiffuseFresnelReflectance.PlotAgainstF0 = checkBoxPlotAgainstF0.Checked;
 		}
 
-		private void floatTrackbarControlPeakFactor_ValueChanged( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fFormerValue ) {
+		private void floatTrackbarControlPeakFactor_ValueChanged( UIUtility.FloatTrackbarControl _Sender, float _fFormerValue ) {
 			outputPanelDiffuseFresnelReflectance.PeakFactor = floatTrackbarControlPeakFactor.Value;
 		}
 
-		private void floatTrackbarControlIOR_SliderDragStop( Nuaj.Cirrus.Utility.FloatTrackbarControl _Sender, float _fStartValue ) {
+		private void floatTrackbarControlIOR_SliderDragStop( UIUtility.FloatTrackbarControl _Sender, float _fStartValue ) {
 			if ( _Sender.Value < 10.0f )
 				_Sender.VisibleRangeMax = 10.0f;	// Restore visibility range
 		}
