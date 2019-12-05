@@ -42,6 +42,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ImageLaTeX.cs" />
+    <Compile Include="Lib\AtomFactory.cs" />
     <Compile Include="Lib\Atoms.cs" />
     <Compile Include="Lib\AtomsList.cs" />
     <Compile Include="Lib\LaTeXString2AtomsList.cs" />

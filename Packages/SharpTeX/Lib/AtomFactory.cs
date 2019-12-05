@@ -46,15 +46,12 @@ namespace SharpTeX
 
 		#region Atoms <=> LaTeX Correspondance
 
-		public static AtomsList	mathListForCharacters( string chars ) {
+		public static AtomsList	AtomsListForCharacters( string chars ) {
 			if ( chars == null ) throw new Exception( "Invalid characters!" );
-
-// 			char	buff = new char[chars.Length];
-// 			[chars getCharacters:buff range:NSMakeRange(0, len)];
 
 			AtomsList	list = new AtomsList();
 			for ( int i=0; i < chars.Length; i++ ) {
-				Atom	atom = atomForCharacter( chars[i] );
+				Atom	atom = AtomForCharacter( chars[i] );
 				if ( atom != null ) {
 					list.AddAtom( atom );
 				}
@@ -62,10 +59,10 @@ namespace SharpTeX
 			return list;
 		}
 
-		Atom	atomForCharacter( char ch ) {
+		public static Atom	AtomForCharacter( char ch ) {
 			string	chStr = ch.ToString();
 			if ( ch > 0x0410 && ch < 0x044F ){
-				return Atom.CreateAtomWithType( TYPE.kMTMathAtomOrdinary, chStr );	// show basic cyrillic alphabet. Latin Modern Math font is not good for cyrillic symbols
+				return Atom.CreateAtomWithType( Atom.TYPE.kMTMathAtomOrdinary, chStr );	// show basic cyrillic alphabet. Latin Modern Math font is not good for cyrillic symbols
 			} else if ( ch < 0x21 || ch > 0x7E ) {
 				return null;	// skip non ascii characters and spaces
 			} else if ( ch == '$' || ch == '%' || ch == '#' || ch == '&' || ch == '~' || ch == '\'' ) {
@@ -73,115 +70,116 @@ namespace SharpTeX
 			} else if ( ch == '^' || ch == '_' || ch == '{' || ch == '}' || ch == '\\' ) {
 				return null;		// more special characters for Latex.
 			} else if ( ch == '(' || ch == '[' ) {
-				return Atom.CreateAtomWithType( TYPE.kMTMathAtomOpen, chStr );
+				return Atom.CreateAtomWithType( Atom.TYPE.kMTMathAtomOpen, chStr );
 			} else if (ch == ')' || ch == ']' || ch == '!' || ch == '?') {
-				return Atom.CreateAtomWithType( TYPE.kMTMathAtomClose, chStr );
+				return Atom.CreateAtomWithType( Atom.TYPE.kMTMathAtomClose, chStr );
 			} else if (ch == ',' || ch == ';') {
-				return Atom.CreateAtomWithType( TYPE.kMTMathAtomPunctuation, chStr );
+				return Atom.CreateAtomWithType( Atom.TYPE.kMTMathAtomPunctuation, chStr );
 			} else if (ch == '=' || ch == '>' || ch == '<') {
-				return Atom.CreateAtomWithType( TYPE.kMTMathAtomRelation, chStr );
+				return Atom.CreateAtomWithType( Atom.TYPE.kMTMathAtomRelation, chStr );
 			} else if (ch == ':') {
-				return Atom.CreateAtomWithType( TYPE.kMTMathAtomRelation, @"\u2236" );	// Math colon is ratio. Regular colon is \colon
+				return Atom.CreateAtomWithType( Atom.TYPE.kMTMathAtomRelation, @"\u2236" );	// Math colon is ratio. Regular colon is \colon
 			} else if (ch == '-') {
-				return Atom.CreateAtomWithType( TYPE.kMTMathAtomBinaryOperator, @"\u2212" );	// Use the math minus sign
+				return Atom.CreateAtomWithType( Atom.TYPE.kMTMathAtomBinaryOperator, @"\u2212" );	// Use the math minus sign
 			} else if (ch == '+' || ch == '*') {
-				return Atom.CreateAtomWithType( TYPE.kMTMathAtomBinaryOperator, chStr );
+				return Atom.CreateAtomWithType( Atom.TYPE.kMTMathAtomBinaryOperator, chStr );
 			} else if (ch == '.' || (ch >= '0' && ch <= '9')) {
-				return Atom.CreateAtomWithType( TYPE.kMTMathAtomNumber, chStr );
+				return Atom.CreateAtomWithType( Atom.TYPE.kMTMathAtomNumber, chStr );
 			} else if ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z')) {
-				return Atom.CreateAtomWithType( TYPE.kMTMathAtomVariable, chStr );
+				return Atom.CreateAtomWithType( Atom.TYPE.kMTMathAtomVariable, chStr );
 			} else if (ch == '"' || ch == '/' || ch == '@' || ch == '`' || ch == '|') {
-				return Atom.CreateAtomWithType( TYPE.kMTMathAtomOrdinary, chStr );	// just an ordinary character. The following are allowed ordinary chars | / ` @ "
+				return Atom.CreateAtomWithType( Atom.TYPE.kMTMathAtomOrdinary, chStr );	// just an ordinary character. The following are allowed ordinary chars | / ` @ "
 			} else {
 				throw new Exception( @"Unknown ascii character '" + ch + "'. Should have been accounted for." );
 			}
 		}
 
-		Atom	atomForLatexSymbolName( string symbolName ) {
+		public static Atom	AtomForLatexSymbolName( string symbolName ) {
 			if ( symbolName == null ) throw new Exception( "Invalid symbol!" );
 
-			Dictionary	aliases = [MTMathAtomFactory aliases];
 			// First check if this is an alias
-			NSString* canonicalName = aliases[symbolName];
-			if (canonicalName) {
-				// Switch to the canonical name
-				symbolName = canonicalName;
+			Dictionary< string, string >	aliases = Aliases;
+			string							canonicalName = aliases[symbolName];
+			if ( canonicalName != null ) {
+				symbolName = canonicalName;		// Switch to the canonical name
 			}
     
-			NSDictionary* commands = [self supportedLatexSymbols];
-			MTMathAtom* atom = commands[symbolName];
-			if (atom) {
-				// Return a copy of the atom since atoms are mutable.
-				return [atom copy];
-			}
-			return nil;
+			Dictionary< string, Atom >	commands = SupportedLatexSymbols;
+			Atom						atom = commands[symbolName];
+			if ( atom == null )
+				return null;
+
+			// Return a copy of the atom since atoms are mutable.
+			atom = atom.Copy();
+			return atom;
 		}
 
-		+ (nullable NSString*) latexSymbolNameForAtom:(MTMathAtom*) atom
-		{
-			if (atom.nucleus.length == 0) {
-				return nil;
+		public static Atom	LatexSymbolNameForAtom( Atom atom ) {
+			if ( atom.nucleus.Length == 0) {
+				return null;
 			}
-			NSDictionary* dict = [MTMathAtomFactory textToLatexSymbolNames];
-			return dict[atom.nucleus];
+
+			Dictionary< string, Atom >	dict = TextToLatexSymbolNames;
+			return dict.ContainsKey( atom.nucleus ) ? dict[atom.nucleus] : null;
 		}
 
 		#endregion
 
 		#region Font Styles
 
-		public static FontStyle	FontStyleWithName( string _fontName ) {
+		public static Atom.FontStyle	FontStyleWithName( string _fontName ) {
 			if ( !FontStyles.ContainsKey( _fontName ) )
-				return FontStyle.NOT_FOUND;
+				return Atom.FontStyle.NOT_FOUND;
 
 			return FontStyles[_fontName];
 		}
 
-		string	FontNameForStyle( FontStyle fontStyle ) {
-			switch (fontStyle) {
-				case FontStyle.kMTFontStyleDefault:		return @"mathnormal";
-				case FontStyle.kMTFontStyleRoman:		return @"mathrm";
-				case FontStyle.kMTFontStyleBold:		return @"mathbf";
-				case FontStyle.kMTFontStyleFraktur:		return @"mathfrak";
-				case FontStyle.kMTFontStyleCaligraphic:	return @"mathcal";
-				case FontStyle.kMTFontStyleItalic:		return @"mathit";
-				case FontStyle.kMTFontStyleSansSerif:	return @"mathsf";
-				case FontStyle.kMTFontStyleBlackboard:	return @"mathbb";
-				case FontStyle.kMTFontStyleTypewriter:	return @"mathtt";
-				case FontStyle.kMTFontStyleBoldItalic:	return @"bm";
+		public static string	FontNameForStyle( Atom.FontStyle _fontStyle ) {
+			switch ( _fontStyle ) {
+				case Atom.FontStyle.kMTFontStyleDefault:		return @"mathnormal";
+				case Atom.FontStyle.kMTFontStyleRoman:			return @"mathrm";
+				case Atom.FontStyle.kMTFontStyleBold:			return @"mathbf";
+				case Atom.FontStyle.kMTFontStyleFraktur:		return @"mathfrak";
+				case Atom.FontStyle.kMTFontStyleCaligraphic:	return @"mathcal";
+				case Atom.FontStyle.kMTFontStyleItalic:			return @"mathit";
+				case Atom.FontStyle.kMTFontStyleSansSerif:		return @"mathsf";
+				case Atom.FontStyle.kMTFontStyleBlackboard:		return @"mathbb";
+				case Atom.FontStyle.kMTFontStyleTypewriter:		return @"mathtt";
+				case Atom.FontStyle.kMTFontStyleBoldItalic:		return @"bm";
 			}
 			return null;
 		}
 
-		static Dictionary< string, FontStyle >	m_fontStyles = null;
-		static Dictionary< string, FontStyle >	FontStyles {
+		static Dictionary< string, Atom.FontStyle >	m_fontStyles = null;
+		static Dictionary< string, Atom.FontStyle >	FontStyles {
 			get {
-			if ( m_fontStyles == null ) {
-				m_fontStyles = new Dictionary<string, FontStyle>();
-				m_fontStyles.Add( @"mathnormal",	FontStyle.kMTFontStyleDefault );
-				m_fontStyles.Add( @"mathrm",		FontStyle.kMTFontStyleRoman );
-				m_fontStyles.Add( @"textrm",		FontStyle.kMTFontStyleRoman );
-				m_fontStyles.Add( @"rm",			FontStyle.kMTFontStyleTypewriter );
-				m_fontStyles.Add( @"mathbf",		FontStyle.kMTFontStyleBold );
-				m_fontStyles.Add( @"bf",			FontStyle.kMTFontStyleBold );
-				m_fontStyles.Add( @"textbf",		FontStyle.kMTFontStyleBold );
-				m_fontStyles.Add( @"mathcal",		FontStyle.kMTFontStyleCaligraphic );
-				m_fontStyles.Add( @"cal",			FontStyle.kMTFontStyleCaligraphic );
-				m_fontStyles.Add( @"mathtt",		FontStyle.kMTFontStyleTypewriter );
-				m_fontStyles.Add( @"texttt",		FontStyle.kMTFontStyleTypewriter );
-				m_fontStyles.Add( @"mathit",		FontStyle.kMTFontStyleItalic );
-				m_fontStyles.Add( @"textit",		FontStyle.kMTFontStyleItalic );
-				m_fontStyles.Add( @"mit",			FontStyle.kMTFontStyleItalic );
-				m_fontStyles.Add( @"mathsf",		FontStyle.kMTFontStyleSansSerif );
-				m_fontStyles.Add( @"textsf",		FontStyle.kMTFontStyleSansSerif );
-				m_fontStyles.Add( @"mathfrak",		FontStyle.kMTFontStyleFraktur );
-				m_fontStyles.Add( @"frak",			FontStyle.kMTFontStyleFraktur );
-				m_fontStyles.Add( @"mathbb",		FontStyle.kMTFontStyleBlackboard );
-				m_fontStyles.Add( @"mathbfit",		FontStyle.kMTFontStyleBoldItalic );
-				m_fontStyles.Add( @"bm",			FontStyle.kMTFontStyleBoldItalic );
-				m_fontStyles.Add( @"text",			FontStyle.kMTFontStyleRoman );
+				if ( m_fontStyles == null ) {
+					m_fontStyles = new Dictionary<string, FontStyle>();
+					m_fontStyles.Add( @"mathnormal",	Atom.FontStyle.kMTFontStyleDefault );
+					m_fontStyles.Add( @"mathrm",		Atom.FontStyle.kMTFontStyleRoman );
+					m_fontStyles.Add( @"textrm",		Atom.FontStyle.kMTFontStyleRoman );
+					m_fontStyles.Add( @"rm",			Atom.FontStyle.kMTFontStyleTypewriter );
+					m_fontStyles.Add( @"mathbf",		Atom.FontStyle.kMTFontStyleBold );
+					m_fontStyles.Add( @"bf",			Atom.FontStyle.kMTFontStyleBold );
+					m_fontStyles.Add( @"textbf",		Atom.FontStyle.kMTFontStyleBold );
+					m_fontStyles.Add( @"mathcal",		Atom.FontStyle.kMTFontStyleCaligraphic );
+					m_fontStyles.Add( @"cal",			Atom.FontStyle.kMTFontStyleCaligraphic );
+					m_fontStyles.Add( @"mathtt",		Atom.FontStyle.kMTFontStyleTypewriter );
+					m_fontStyles.Add( @"texttt",		Atom.FontStyle.kMTFontStyleTypewriter );
+					m_fontStyles.Add( @"mathit",		Atom.FontStyle.kMTFontStyleItalic );
+					m_fontStyles.Add( @"textit",		Atom.FontStyle.kMTFontStyleItalic );
+					m_fontStyles.Add( @"mit",			Atom.FontStyle.kMTFontStyleItalic );
+					m_fontStyles.Add( @"mathsf",		Atom.FontStyle.kMTFontStyleSansSerif );
+					m_fontStyles.Add( @"textsf",		Atom.FontStyle.kMTFontStyleSansSerif );
+					m_fontStyles.Add( @"mathfrak",		Atom.FontStyle.kMTFontStyleFraktur );
+					m_fontStyles.Add( @"frak",			Atom.FontStyle.kMTFontStyleFraktur );
+					m_fontStyles.Add( @"mathbb",		Atom.FontStyle.kMTFontStyleBlackboard );
+					m_fontStyles.Add( @"mathbfit",		Atom.FontStyle.kMTFontStyleBoldItalic );
+					m_fontStyles.Add( @"bm",			Atom.FontStyle.kMTFontStyleBoldItalic );
+					m_fontStyles.Add( @"text",			Atom.FontStyle.kMTFontStyleRoman );
+				}
+				return m_fontStyles;
 			}
-			return m_fontStyles;
 		}
 
 		#endregion

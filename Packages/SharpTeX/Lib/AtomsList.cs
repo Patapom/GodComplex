@@ -33,17 +33,23 @@ namespace SharpTeX
 
 		#region PROPERTIES
 
-		public string	stringValue {
-			get {
-				return null;
-			}
-		}
+		public Atom	Last { get { return atoms.Count > 0 ? atoms[atoms.Count-1] : null; } }
 
 		#endregion
 
 		#region METHODS
 
 		public AtomsList() {
+		}
+
+		public	AtomsList( params Atom[] _atoms ) {
+			if ( _atoms == null )
+				return;
+
+			foreach ( Atom atom in _atoms ) {
+				if ( atom != null )
+					AddAtom( atom );
+			}
 		}
 
 		/// <summary>
@@ -95,7 +101,7 @@ namespace SharpTeX
 		/// Append the given list to the end of the current list.
 		/// </summary>
 		/// <param name="list">The list to append</param>
-		void	Append( AtomsList list ) {
+		public void	Append( AtomsList list ) {
 			atoms.AddRange( list.atoms );
 		}
 

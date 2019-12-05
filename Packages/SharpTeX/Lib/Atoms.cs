@@ -175,7 +175,7 @@ namespace SharpTeX
 			get { return subScript; }
 			set {
 				if ( value != null && !ScriptsAllowed ) {
-					throw new Exception( @"Subscripts not allowed for atom of type " + TypeToText( type ) );
+					throw new Exception( @"Subscripts not allowed for atom of type " + AtomFactory.TypeToText( type ) );
 				}
 
 				subScript = value;
@@ -186,16 +186,12 @@ namespace SharpTeX
 			get { return superScript; }
 			set {
 				if ( value != null && !ScriptsAllowed ) {
-					throw new Exception( @"Superscripts not allowed for atom of type " + TypeToText( type ) );
+					throw new Exception( @"Superscripts not allowed for atom of type " + AtomFactory.TypeToText( type ) );
 				}
 
 				superScript = value;
 			}
 		}
-
-///// Makes a deep copy of the atom
-//- (id)copyWithZone:(nullable NSZone *)zone;
-//
 
 		/// <summary>
 		/// Returns a Finalized copy of the atom
@@ -321,35 +317,6 @@ namespace SharpTeX
 			return false;
 		}
 
-		public static string	 TypeToText( TYPE _type ) {
-			switch (_type) {
-				case TYPE.kMTMathAtomOrdinary:				return @"Ordinary";
-				case TYPE.kMTMathAtomNumber:				return @"Number";
-				case TYPE.kMTMathAtomVariable:				return @"Variable";
-				case TYPE.kMTMathAtomBinaryOperator:		return @"Binary Operator";
-				case TYPE.kMTMathAtomUnaryOperator:			return @"Unary Operator";
-				case TYPE.kMTMathAtomRelation:				return @"Relation";
-				case TYPE.kMTMathAtomOpen:					return @"Open";
-				case TYPE.kMTMathAtomClose:					return @"Close";
-				case TYPE.kMTMathAtomFraction:				return @"Fraction";
-				case TYPE.kMTMathAtomRadical:				return @"Radical";
-				case TYPE.kMTMathAtomPunctuation:			return @"Punctuation";
-				case TYPE.kMTMathAtomPlaceholder:			return @"Placeholder";
-				case TYPE.kMTMathAtomLargeOperator:			return @"Large Operator";
-				case TYPE.kMTMathAtomInner:					return @"Inner";
-				case TYPE.kMTMathAtomUnderline:				return @"Underline";
-				case TYPE.kMTMathAtomOverline:				return @"Overline";
-				case TYPE.kMTMathAtomAccent:				return @"Accent";
-				case TYPE.kMTMathAtomBoundary:				return @"Boundary";
-				case TYPE.kMTMathAtomSpace:					return @"Space";
-				case TYPE.kMTMathAtomStyle:					return @"Style";
-				case TYPE.kMTMathAtomColor:					return @"Color";
-				case TYPE.kMTMathAtomColorbox:				return @"Colorbox";
-				case TYPE.kMTMathAtomTable:					return @"Table";
-			}
-			return null;
-		}
-
 		protected delegate object	DelegateCopyField( FieldInfo _fieldInfo, object _sourceField );
 		protected Atom		Copy( DelegateCopyField _fieldCopier ) {
 			Atom	result = CreateAtomWithType( type, nucleus );
@@ -362,148 +329,6 @@ namespace SharpTeX
 
 			return result;
 		}
-
-		#region Atoms <=> LaTeX Correspondance
-
-		public static AtomsList	mathListForCharacters( string chars ) {
-			if ( chars == null ) throw new Exception( "Invalid characters!" );
-
-// 			char	buff = new char[chars.Length];
-// 			[chars getCharacters:buff range:NSMakeRange(0, len)];
-
-			AtomsList	list = new AtomsList();
-			for ( int i=0; i < chars.Length; i++ ) {
-				Atom	atom = atomForCharacter( chars[i] );
-				if ( atom != null ) {
-					list.AddAtom( atom );
-				}
-			}
-			return list;
-		}
-
-		Atom	atomForCharacter( char ch ) {
-			string	chStr = ch.ToString();
-			if ( ch > 0x0410 && ch < 0x044F ){
-				return Atom.CreateAtomWithType( TYPE.kMTMathAtomOrdinary, chStr );	// show basic cyrillic alphabet. Latin Modern Math font is not good for cyrillic symbols
-			} else if ( ch < 0x21 || ch > 0x7E ) {
-				return null;	// skip non ascii characters and spaces
-			} else if ( ch == '$' || ch == '%' || ch == '#' || ch == '&' || ch == '~' || ch == '\'' ) {
-				return null;	// These are latex control characters that have special meanings. We don't support them.
-			} else if ( ch == '^' || ch == '_' || ch == '{' || ch == '}' || ch == '\\' ) {
-				return null;		// more special characters for Latex.
-			} else if ( ch == '(' || ch == '[' ) {
-				return Atom.CreateAtomWithType( TYPE.kMTMathAtomOpen, chStr );
-			} else if (ch == ')' || ch == ']' || ch == '!' || ch == '?') {
-				return Atom.CreateAtomWithType( TYPE.kMTMathAtomClose, chStr );
-			} else if (ch == ',' || ch == ';') {
-				return Atom.CreateAtomWithType( TYPE.kMTMathAtomPunctuation, chStr );
-			} else if (ch == '=' || ch == '>' || ch == '<') {
-				return Atom.CreateAtomWithType( TYPE.kMTMathAtomRelation, chStr );
-			} else if (ch == ':') {
-				return Atom.CreateAtomWithType( TYPE.kMTMathAtomRelation, @"\u2236" );	// Math colon is ratio. Regular colon is \colon
-			} else if (ch == '-') {
-				return Atom.CreateAtomWithType( TYPE.kMTMathAtomBinaryOperator, @"\u2212" );	// Use the math minus sign
-			} else if (ch == '+' || ch == '*') {
-				return Atom.CreateAtomWithType( TYPE.kMTMathAtomBinaryOperator, chStr );
-			} else if (ch == '.' || (ch >= '0' && ch <= '9')) {
-				return Atom.CreateAtomWithType( TYPE.kMTMathAtomNumber, chStr );
-			} else if ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z')) {
-				return Atom.CreateAtomWithType( TYPE.kMTMathAtomVariable, chStr );
-			} else if (ch == '"' || ch == '/' || ch == '@' || ch == '`' || ch == '|') {
-				return Atom.CreateAtomWithType( TYPE.kMTMathAtomOrdinary, chStr );	// just an ordinary character. The following are allowed ordinary chars | / ` @ "
-			} else {
-				throw new Exception( @"Unknown ascii character '" + ch + "'. Should have been accounted for." );
-			}
-		}
-
-		Atom	atomForLatexSymbolName( string symbolName ) {
-			if ( symbolName == null ) throw new Exception( "Invalid symbol!" );
-
-			Dictionary	aliases = [MTMathAtomFactory aliases];
-			// First check if this is an alias
-			NSString* canonicalName = aliases[symbolName];
-			if (canonicalName) {
-				// Switch to the canonical name
-				symbolName = canonicalName;
-			}
-    
-			NSDictionary* commands = [self supportedLatexSymbols];
-			MTMathAtom* atom = commands[symbolName];
-			if (atom) {
-				// Return a copy of the atom since atoms are mutable.
-				return [atom copy];
-			}
-			return nil;
-		}
-
-		+ (nullable NSString*) latexSymbolNameForAtom:(MTMathAtom*) atom
-		{
-			if (atom.nucleus.length == 0) {
-				return nil;
-			}
-			NSDictionary* dict = [MTMathAtomFactory textToLatexSymbolNames];
-			return dict[atom.nucleus];
-		}
-
-		#endregion
-
-		#region Font Styles
-
-		public static FontStyle	FontStyleWithName( string _fontName ) {
-			if ( !FontStyles.ContainsKey( _fontName ) )
-				return FontStyle.NOT_FOUND;
-
-			return FontStyles[_fontName];
-		}
-
-		string	FontNameForStyle( FontStyle fontStyle ) {
-			switch (fontStyle) {
-				case FontStyle.kMTFontStyleDefault:		return @"mathnormal";
-				case FontStyle.kMTFontStyleRoman:		return @"mathrm";
-				case FontStyle.kMTFontStyleBold:		return @"mathbf";
-				case FontStyle.kMTFontStyleFraktur:		return @"mathfrak";
-				case FontStyle.kMTFontStyleCaligraphic:	return @"mathcal";
-				case FontStyle.kMTFontStyleItalic:		return @"mathit";
-				case FontStyle.kMTFontStyleSansSerif:	return @"mathsf";
-				case FontStyle.kMTFontStyleBlackboard:	return @"mathbb";
-				case FontStyle.kMTFontStyleTypewriter:	return @"mathtt";
-				case FontStyle.kMTFontStyleBoldItalic:	return @"bm";
-			}
-			return null;
-		}
-
-		static Dictionary< string, FontStyle >	m_fontStyles = null;
-		static Dictionary< string, FontStyle >	FontStyles {
-			get {
-			if ( m_fontStyles == null ) {
-				m_fontStyles = new Dictionary<string, FontStyle>();
-				m_fontStyles.Add( @"mathnormal",	FontStyle.kMTFontStyleDefault );
-				m_fontStyles.Add( @"mathrm",		FontStyle.kMTFontStyleRoman );
-				m_fontStyles.Add( @"textrm",		FontStyle.kMTFontStyleRoman );
-				m_fontStyles.Add( @"rm",			FontStyle.kMTFontStyleTypewriter );
-				m_fontStyles.Add( @"mathbf",		FontStyle.kMTFontStyleBold );
-				m_fontStyles.Add( @"bf",			FontStyle.kMTFontStyleBold );
-				m_fontStyles.Add( @"textbf",		FontStyle.kMTFontStyleBold );
-				m_fontStyles.Add( @"mathcal",		FontStyle.kMTFontStyleCaligraphic );
-				m_fontStyles.Add( @"cal",			FontStyle.kMTFontStyleCaligraphic );
-				m_fontStyles.Add( @"mathtt",		FontStyle.kMTFontStyleTypewriter );
-				m_fontStyles.Add( @"texttt",		FontStyle.kMTFontStyleTypewriter );
-				m_fontStyles.Add( @"mathit",		FontStyle.kMTFontStyleItalic );
-				m_fontStyles.Add( @"textit",		FontStyle.kMTFontStyleItalic );
-				m_fontStyles.Add( @"mit",			FontStyle.kMTFontStyleItalic );
-				m_fontStyles.Add( @"mathsf",		FontStyle.kMTFontStyleSansSerif );
-				m_fontStyles.Add( @"textsf",		FontStyle.kMTFontStyleSansSerif );
-				m_fontStyles.Add( @"mathfrak",		FontStyle.kMTFontStyleFraktur );
-				m_fontStyles.Add( @"frak",			FontStyle.kMTFontStyleFraktur );
-				m_fontStyles.Add( @"mathbb",		FontStyle.kMTFontStyleBlackboard );
-				m_fontStyles.Add( @"mathbfit",		FontStyle.kMTFontStyleBoldItalic );
-				m_fontStyles.Add( @"bm",			FontStyle.kMTFontStyleBoldItalic );
-				m_fontStyles.Add( @"text",			FontStyle.kMTFontStyleRoman );
-			}
-			return m_fontStyles;
-		}
-
-		#endregion
 
 		#endregion
 
@@ -571,9 +396,9 @@ namespace SharpTeX
 	/// </summary>
 	public class AtomRadical : Atom {
 
-		AtomsList	radicand = null;	// Denotes the term under the square root sign
-		AtomsList	degree = null;		// Denotes the degree of the radical, i.e. the value to the top left of the radical sign
-										// This can be null if there is no degree.
+		public AtomsList	radicand = null;	// Denotes the term under the square root sign
+		public AtomsList	degree = null;		// Denotes the degree of the radical, i.e. the value to the top left of the radical sign
+												// This can be null if there is no degree.
 
 		public	AtomRadical() : base( TYPE.kMTMathAtomRadical ) {
 		}
@@ -686,6 +511,9 @@ namespace SharpTeX
 	/// An atom with a line over the contained math list.
 	/// </summary>
 	public class AtomOverLine : Atom {
+
+		public AtomsList	innerList = null;
+
 		public AtomOverLine() : base( TYPE.kMTMathAtomOverline ) {}
 	}
 
@@ -693,6 +521,9 @@ namespace SharpTeX
 	/// An atom with a line under the contained math list.
 	/// </summary>
 	public class AtomUnderLine : Atom {
+
+		public AtomsList	innerList = null;
+
 		public AtomUnderLine() : base( TYPE.kMTMathAtomUnderline ) {}
 	}
 
@@ -700,6 +531,9 @@ namespace SharpTeX
 	/// An atom with an accent.
 	/// </summary>
 	public class AtomAccent : Atom {
+
+		public AtomsList	innerList = null;
+
 		public AtomAccent( string _nucleus ) : base( TYPE.kMTMathAtomAccent, _nucleus ) {}
 		public AtomAccent() : base( TYPE.kMTMathAtomAccent ) {}
 	}
