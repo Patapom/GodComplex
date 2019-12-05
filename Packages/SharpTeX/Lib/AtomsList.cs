@@ -61,9 +61,9 @@ namespace SharpTeX
 		/// <summary>
 		/// Add an atom to the end of the list.
 		/// </summary>
-		/// <param name="_atom">The atom to be inserted. This cannot be `nil` and cannot have the type `kMTMathAtomBoundary`.
+		/// <param name="_atom">The atom to be inserted. This cannot be `null` and cannot have the type `kMTMathAtomBoundary`.
 		/// @throws NSException if the atom is of type `kMTMathAtomBoundary`
-		/// @throws NSInvalidArgumentException if the atom is `nil`
+		/// @throws NSInvalidArgumentException if the atom is `null`
 		/// </param>
 		public void		AddAtom( Atom _atom ) {
 			if ( _atom == null )
@@ -77,9 +77,9 @@ namespace SharpTeX
 		/// <summary>
 		///Inserts an atom at the given index. If index is already occupied, the objects at index and beyond are shifted by adding 1 to their indices to make room.
 		/// </summary>
-		/// <param name="_atom">The atom to be inserted. This cannot be `nil` and cannot have the type `kMTMathAtomBoundary`.
+		/// <param name="_atom">The atom to be inserted. This cannot be `null` and cannot have the type `kMTMathAtomBoundary`.
 		/// @throws NSException if the atom is of type `kMTMathAtomBoundary`
-		/// @throws NSInvalidArgumentException if the atom is `nil`
+		/// @throws NSInvalidArgumentException if the atom is `null`
 		/// </param>
 		/// <param name="_index">The index where the atom is to be inserted. The index should be less than or equal to the number of elements in the math list.</param>
 		public void		InsertAtom( Atom _atom, uint _index ) {
@@ -92,15 +92,74 @@ namespace SharpTeX
 		}
 
 
+		// Create a new math list as a final expression and update atoms by combining like atoms that occur together and converting unary operators to binary operators.
+		// This function does not modify the current list
+		public AtomsList	Finalized {
+			get {
+				AtomsList	result = new AtomsList();
+				NSRange		zeroRange = new NSRange( 0, 0 );
+    
+				Atom		prevNode = null;
+				foreach ( Atom atom in atoms ) {
+					Atom	newNode = atom.Finalized;
+
+					// Each character is given a separate index.
+					if ( atom.indexRange == zeroRange ) {
+						int	index = prevNode == null ? 0 : prevNode.indexRange.location + prevNode.indexRange.length;
+						newNode.indexRange = new NSRange( index, 1 );
+					}
+
+					switch ( newNode.type ) {
+						case Atom.TYPE.kMTMathAtomBinaryOperator: {
+							if ( prevNode == null || prevNode.IsNotBinaryOperator() ) {
+								newNode.type = Atom.TYPE.kMTMathAtomUnaryOperator;
+							}
+							break;
+						}
+						case Atom.TYPE.kMTMathAtomRelation:
+						case Atom.TYPE.kMTMathAtomPunctuation:
+						case Atom.TYPE.kMTMathAtomClose:
+							if ( prevNode != null && prevNode.type == Atom.TYPE.kMTMathAtomBinaryOperator ) {
+								prevNode.type = Atom.TYPE.kMTMathAtomUnaryOperator;
+							}
+							break;
+                
+						case Atom.TYPE.kMTMathAtomNumber:
+							// Combine numbers together
+							if ( prevNode != null && prevNode.type == Atom.TYPE.kMTMathAtomNumber && prevNode.SubScript != null && prevNode.SuperScript != null ) {
+								prevNode.Fuse( newNode );
+								newNode = prevNode;		// skip the current node, we are done here.
+							}
+							break;
+                
+						default:
+							break;
+					}
+
+					if ( newNode != prevNode ) {
+						result.AddAtom( newNode );
+						prevNode = newNode;
+					}
+				}
+
+				if ( prevNode != null && prevNode.type == Atom.TYPE.kMTMathAtomBinaryOperator ) {
+					prevNode.type = Atom.TYPE.kMTMathAtomUnaryOperator;		// it isn't a binary since there is noting after it. Make it a unary
+				}
+
+				return result;
+			}
+		}
+
+
 /*
 
-// /** Create a `MTMathList` given a list of atoms. The list of atoms should be terminated by `nil`.
+// /** Create a `MTMathList` given a list of atoms. The list of atoms should be terminated by `null`.
 + (instancetype)mathListWithAtoms:(MTMathAtom *)firstAtom, ...
 {
     MTMathList* list = [[MTMathList alloc] init];
     va_list args;
     va_start(args, firstAtom);
-    for (MTMathAtom* atom = firstAtom; atom != nil; atom = va_arg(args, MTMathAtom*))
+    for (MTMathAtom* atom = firstAtom; atom != null; atom = va_arg(args, MTMathAtom*))
     {
         [list addAtom:atom];
     }
@@ -133,16 +192,16 @@ namespace SharpTeX
 }
 
 // Add an atom to the end of the list.
-//  @param atom The atom to be inserted. This cannot be `nil` and cannot have the type `kMTMathAtomBoundary`.
+//  @param atom The atom to be inserted. This cannot be `null` and cannot have the type `kMTMathAtomBoundary`.
 //  @throws NSException if the atom is of type `kMTMathAtomBoundary`
-//  @throws NSInvalidArgumentException if the atom is `nil`
+//  @throws NSInvalidArgumentException if the atom is `null`
 - (void)addAtom:(MTMathAtom *)atom
 {
     NSParameterAssert(atom);
     if (![self isAtomAllowed:atom]) {
         @throw [[NSException alloc] initWithName:@"Error"
                                           reason:[NSString stringWithFormat:@"Cannot add atom of type %@ in a mathlist", typeToText(atom.type)]
-                                        userInfo:nil];
+                                        userInfo:null];
     }
     [_atoms addObject:atom];
 }
@@ -150,18 +209,18 @@ namespace SharpTeX
 // Inserts an atom at the given index. If index is already occupied, the objects at index and beyond are 
 //  shifted by adding 1 to their indices to make room.
 //  
-//  @param atom The atom to be inserted. This cannot be `nil` and cannot have the type `kMTMathAtomBoundary`.
+//  @param atom The atom to be inserted. This cannot be `null` and cannot have the type `kMTMathAtomBoundary`.
 //  @param index The index where the atom is to be inserted. The index should be less than or equal to the
 //  number of elements in the math list.
 //  @throws NSException if the atom is of type kMTMathAtomBoundary
-//  @throws NSInvalidArgumentException if the atom is nil
+//  @throws NSInvalidArgumentException if the atom is null
 //  @throws NSRangeException if the index is greater than the number of atoms in the math list.
 - (void)insertAtom:(MTMathAtom *)atom atIndex:(NSUInteger) index
 {
     if (![self isAtomAllowed:atom]) {
         @throw [[NSException alloc] initWithName:@"Error"
                                           reason:[NSString stringWithFormat:@"Cannot add atom of type %@ in a mathlist", typeToText(atom.type)]
-                                        userInfo:nil];
+                                        userInfo:null];
     }
     [_atoms insertObject:atom atIndex:index];
 }
@@ -194,59 +253,6 @@ namespace SharpTeX
     [_atoms removeObjectsInRange:range];
 }
 
-// Create a new math list as a final expression and update atoms
-// by combining like atoms that occur together and converting unary operators to binary operators.
-// This function does not modify the current MTMathList
-- (MTMathList *)finalized
-{
-    MTMathList* finalized = [MTMathList new];
-    NSRange zeroRange = NSMakeRange(0, 0);
-    
-    MTMathAtom* prevNode = nil;
-    for (MTMathAtom* atom in self.atoms) {
-        MTMathAtom* newNode = [atom finalized];
-        // Each character is given a separate index.
-        if (NSEqualRanges(zeroRange, atom.indexRange)) {
-            NSUInteger index = (prevNode == nil) ? 0 : prevNode.indexRange.location + prevNode.indexRange.length;
-            newNode.indexRange = NSMakeRange(index, 1);
-        }
-
-        switch (newNode.type) {
-            case kMTMathAtomBinaryOperator: {
-                if (isNotBinaryOperator(prevNode)) {
-                    newNode.type = kMTMathAtomUnaryOperator;
-                }
-                break;
-            }
-            case kMTMathAtomRelation:
-            case kMTMathAtomPunctuation:
-            case kMTMathAtomClose:
-                if (prevNode && prevNode.type == kMTMathAtomBinaryOperator) {
-                    prevNode.type = kMTMathAtomUnaryOperator;
-                }
-                break;
-                
-            case kMTMathAtomNumber:
-                // combine numbers together
-                if (prevNode && prevNode.type == kMTMathAtomNumber && !prevNode.subScript && !prevNode.superScript) {
-                    [prevNode fuse:newNode];
-                    // skip the current node, we are done here.
-                    continue;
-                }
-                break;
-                
-            default:
-                break;
-        }
-        [finalized addAtom:newNode];
-        prevNode = newNode;
-    }
-    if (prevNode && prevNode.type == kMTMathAtomBinaryOperator) {
-        // it isn't a binary since there is noting after it. Make it a unary
-        prevNode.type = kMTMathAtomUnaryOperator;
-    }
-    return finalized;
-}
 
 #pragma mark NSCopying
 

@@ -6,12 +6,35 @@
 ///
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace SharpTeX
 {
+	public class	NSRange {
+		public int	location = 0, length = 0;
+		public NSRange( int _location, int _length ) {
+			location = _location;
+			length = _length;
+		}
+
+		public static bool	operator==( NSRange a, NSRange b ) {
+			return a.location == b.location && a.length == b.length;
+		}
+		public static bool	operator!=( NSRange a, NSRange b ) {
+			return a.location != b.location || a.length != b.length;
+		}
+		public override bool Equals(object obj) {
+			NSRange	other = obj as NSRange;
+			return other != null && other == this;
+		}
+		public override int GetHashCode() {
+			return location.GetHashCode() ^ length.GetHashCode();
+		}
+	}
+
 	/// <summary>
 	/// An Atom is the basic unit of a math list. Each atom represents a single character or mathematical operator in a list.
 	/// However certain atoms can represent more complex structures such as fractions and radicals.
@@ -129,7 +152,7 @@ namespace SharpTeX
 		public FontStyle	fontStyle;			// The font style to be used for the atom.
 
 		// The index range in the MTMathList this MTMathAtom tracks. This is used by the finalizing and preprocessing steps which fuse MTMathAtoms to track the position of the current MTMathAtom in the original list.
-		Tuple<uint,uint>	indexRange;
+		public NSRange		indexRange;
 
 		// If this atom was formed by fusion of multiple atoms, then this stores the list of atoms that were fused to create this one.
 		// This is used in the finalizing and preprocessing steps.
@@ -142,24 +165,30 @@ namespace SharpTeX
 		/// <summary>
 		/// Returns true if this atom allows scripts (sub or super).
 		/// </summary>
-		public bool		scriptsAllowed { get { return type < TYPE.kMTMathAtomBoundary; } }
+		public bool			ScriptsAllowed { get { return type < TYPE.kMTMathAtomBoundary; } }
 
-		public string	description { get { return ": " + ToString(); } }
+		public string		Description { get { return ": " + ToString(); } }
 
-		public void	SetSubScript( AtomsList _value ) {
-		   if ( _value != null && !scriptsAllowed ) {
-				throw new Exception( @"Subscripts not allowed for atom of type " + typeToText( type ) );
+		public AtomsList	SubScript {
+			get { return subScript; }
+			set {
+				if ( value != null && !ScriptsAllowed ) {
+					throw new Exception( @"Subscripts not allowed for atom of type " + TypeToText( type ) );
+				}
+
+				subScript = value;
 			}
-
-			subScript = _value;
 		}
 
-		public void	SetSuperScript( AtomsList _value ) {
-		   if ( _value != null && !scriptsAllowed ) {
-				throw new Exception( @"Superscripts not allowed for atom of type " + typeToText( type ) );
-			}
+		public AtomsList	SuperScript {
+			get { return superScript; }
+			set {
+				if ( value != null && !ScriptsAllowed ) {
+					throw new Exception( @"Superscripts not allowed for atom of type " + TypeToText( type ) );
+				}
 
-			superScript = _value;
+				superScript = value;
+			}
 		}
 
 ///// Makes a deep copy of the atom
@@ -167,17 +196,30 @@ namespace SharpTeX
 //
 
 		/// <summary>
-		/// Returns a finalized copy of the atom
+		/// Returns a Finalized copy of the atom
 		/// </summary>
-		public virtual Atom	finalized {
+		public virtual Atom	Finalized {
 			get {
-				Atom	newNode = this.Copy();
-				if ( newNode.superScript != null ) {
-					 newNode.superScript = newNode.superScript.finalized;
-				}
-				if ( newNode.subScript != null ) {
-					newNode.subScript = newNode.subScript.finalized;
-				}
+// 				Atom	newNode = Atom.CreateAtomWithType( type, nucleus );
+// 				if ( newNode.superScript != null ) {
+// 					 newNode.superScript = newNode.superScript.Finalized;
+// 				}
+// 				if ( newNode.subScript != null ) {
+// 					newNode.subScript = newNode.subScript.Finalized;
+// 				}
+				Atom	newNode = Copy( ( FieldInfo _fieldInfo, object _fieldValue ) => {
+					if ( _fieldInfo.FieldType == typeof(Atom) ) {
+						Atom	source = _fieldValue as Atom;
+						return source != null ? source.Finalized : null;
+					} else if ( _fieldInfo.FieldType == typeof(AtomsList) ) {
+						AtomsList	source = _fieldValue as AtomsList;
+						return source != null ? source.Finalized : null;
+// 					} else if ( _fieldInfo.FieldType == typeof(string) ) {
+// 						return new string( _fieldValue as string );
+					}
+
+					return _fieldValue;
+				} );
 				return newNode;
 			}
 		}
@@ -220,35 +262,6 @@ namespace SharpTeX
 			}
 		}
 
-		public static string	typeToText( TYPE _type ) {
-			switch ( _type ) {
-				case TYPE.kMTMathAtomOrdinary:			return @"Ordinary";
-				case TYPE.kMTMathAtomNumber:			return @"Number";
-				case TYPE.kMTMathAtomVariable:			return @"Variable";
-				case TYPE.kMTMathAtomBinaryOperator:	return @"Binary Operator";
-				case TYPE.kMTMathAtomUnaryOperator:		return @"Unary Operator";
-				case TYPE.kMTMathAtomRelation:			return @"Relation";
-				case TYPE.kMTMathAtomOpen:				return @"Open";
-				case TYPE.kMTMathAtomClose:				return @"Close";
-				case TYPE.kMTMathAtomFraction:			return @"Fraction";
-				case TYPE.kMTMathAtomRadical:			return @"Radical";
-				case TYPE.kMTMathAtomPunctuation:		return @"Punctuation";
-				case TYPE.kMTMathAtomPlaceholder:		return @"Placeholder";
-				case TYPE.kMTMathAtomLargeOperator:		return @"Large Operator";
-				case TYPE.kMTMathAtomInner:				return @"Inner";
-				case TYPE.kMTMathAtomUnderline:			return @"Underline";
-				case TYPE.kMTMathAtomOverline:			return @"Overline";
-				case TYPE.kMTMathAtomAccent:			return @"Accent";
-				case TYPE.kMTMathAtomBoundary:			return @"Boundary";
-				case TYPE.kMTMathAtomSpace:				return @"Space";
-				case TYPE.kMTMathAtomStyle:				return @"Style";
-				case TYPE.kMTMathAtomColor:				return @"Color";
-				case TYPE.kMTMathAtomColorbox:			return @"Colorbox";
-				case TYPE.kMTMathAtomTable:				return @"Table";
-			}
-			return null;
-		}
-
 		/// <summary>
 		/// This is used everywhere to add super/subscripts to the ToString() representation
 		/// </summary>
@@ -268,7 +281,7 @@ namespace SharpTeX
 		/// Fuse the given atom with this one by combining their nucleii.
 		/// </summary>
 		/// <param name="atom"></param>
-		void	fuse( Atom atom ) {
+		public void	Fuse( Atom atom ) {
 			if ( subScript != null ) throw new Exception( @"Cannot fuse into an atom which has a subscript: " + this );
 			if ( superScript != null ) throw new Exception( @"Cannot fuse into an atom which has a superscript: " + this );
 			if ( atom.type != type ) throw new Exception( @"Only atoms of the same type can be fused. " + this + ", " + atom );
@@ -283,13 +296,13 @@ namespace SharpTeX
 			} else {
 				_fusedAtoms.Add( atom );
 			}    
-    
+
 			// Update the nucleus
 			nucleus += atom.nucleus;
-    
+
 			// Update the range
-			indexRange = new Tuple<uint, uint>( indexRange.Item1, indexRange.Item2 + atom.indexRange.Item2 );
-    
+			indexRange = new NSRange( indexRange.location, indexRange.length + atom.indexRange.length );
+
 			// Update super/sub scripts
 			subScript = atom.subScript;
 			superScript = atom.superScript;
@@ -298,11 +311,8 @@ namespace SharpTeX
 		#region Helpers
 
 		// Returns true if the current binary operator is not really binary.
-		public static bool	IsNotBinaryOperator( Atom _prevNode ) {
-			if ( _prevNode == null ) {
-				return true;
-			}
-			if ( _prevNode.type == TYPE.kMTMathAtomBinaryOperator || _prevNode.type == TYPE.kMTMathAtomRelation || _prevNode.type == TYPE.kMTMathAtomOpen || _prevNode.type == TYPE.kMTMathAtomPunctuation || _prevNode.type == TYPE.kMTMathAtomLargeOperator ) {
+		public bool	IsNotBinaryOperator() {
+			if ( type == TYPE.kMTMathAtomBinaryOperator || type == TYPE.kMTMathAtomRelation || type == TYPE.kMTMathAtomOpen || type == TYPE.kMTMathAtomPunctuation || type == TYPE.kMTMathAtomLargeOperator ) {
 				return true;
 			}
 
@@ -338,6 +348,19 @@ namespace SharpTeX
 			return null;
 		}
 
+		protected delegate object	DelegateCopyField( FieldInfo _fieldInfo, object _sourceField );
+		protected Atom		Copy( DelegateCopyField _fieldCopier ) {
+			Atom	result = CreateAtomWithType( type, nucleus );
+
+			// Perform a deep copy
+			FieldInfo[]	fields = GetType().GetFields( BindingFlags.NonPublic | BindingFlags.Public );
+			foreach ( FieldInfo field in fields ) {
+				field.SetValue( result, _fieldCopier( field, field.GetValue( this ) ) );
+			}
+
+			return result;
+		}
+
 		#endregion
 
 		#endregion
@@ -354,14 +377,14 @@ namespace SharpTeX
 		public string		leftDelimiter = null;	// An optional delimiter for a fraction on the left.
 		public string		rightDelimiter = null;	// An optional delimiter for a fraction on the right.
 
-		public override Atom	finalized { get
-			{
-				AtomFraction	newFrac = base.finalized;
-						newFrac.numerator = newFrac.numerator.finalized;
-						newFrac.denominator = newFrac.denominator.finalized;
-				return newFrac;
-			}
-		}
+// 		public override Atom	Finalized { get
+// 			{
+// 				AtomFraction	newFrac = base.Finalized;
+// 						newFrac.numerator = newFrac.numerator.Finalized;
+// 						newFrac.denominator = newFrac.denominator.Finalized;
+// 				return newFrac;
+// 			}
+// 		}
 
 		public AtomFraction( bool _hasRule ) : base( TYPE.kMTMathAtomFraction ) {
 			hasRule = _hasRule;
@@ -429,11 +452,11 @@ namespace SharpTeX
 //     return rad;
 // }
 // 
-// - (instancetype)finalized
+// - (instancetype)Finalized
 // {
-//     MTRadical* newRad = [super finalized];
-//     newRad.radicand = newRad.radicand.finalized;
-//     newRad.degree = newRad.degree.finalized;
+//     MTRadical* newRad = [super Finalized];
+//     newRad.radicand = newRad.radicand.Finalized;
+//     newRad.degree = newRad.degree.Finalized;
 //     return newRad;
 // }
 	}
@@ -507,10 +530,10 @@ namespace SharpTeX
 // 			return inner;
 // 		}
 // 
-// 		- (instancetype)finalized
+// 		- (instancetype)Finalized
 // 		{
-// 			MTInner *newInner = [super finalized];
-// 			newInner.innerList = newInner.innerList.finalized;
+// 			MTInner *newInner = [super Finalized];
+// 			newInner.innerList = newInner.innerList.Finalized;
 // 			return newInner;
 // 		}
 	}
@@ -635,6 +658,28 @@ namespace SharpTeX
 
 		public uint					RowsCount		{ get { return (uint) cells.GetLength(0); } }
 		public uint					ColumnsCount	{ get { return (uint) cells.GetLength(1); } }
+
+		public override Atom	Finalized {
+			get {
+				AtomMathTable	result = new AtomMathTable( environment );
+
+				result.alignments = new ColumnAlignment[alignments.Length];
+				alignments.CopyTo( result.alignments, 0 );
+
+				result.cells = new AtomsList[cells.GetLength(0), cells.GetLength(1)];
+				for ( uint rowIndex=0; rowIndex < RowsCount; rowIndex++ ) {
+					for ( uint columnIndex=0; columnIndex < ColumnsCount; columnIndex++ ) {
+						AtomsList	sourceList = cells[rowIndex, columnIndex];
+						result.cells[rowIndex, columnIndex] = sourceList != null ? sourceList.Finalized : null;
+					}
+				}
+
+				result.interColumnSpacing = interRowAdditionalSpacing;
+				result.interRowAdditionalSpacing = interRowAdditionalSpacing;
+
+				return result;
+			}
+		}
 
 		public	AtomMathTable( string _environment ) : base( TYPE.kMTMathAtomTable ) {
 			environment = _environment;
