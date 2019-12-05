@@ -10,7 +10,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SharpLaTeX
+namespace SharpTeX
 {
 	/// <summary>
 	/// Converts a LaTeX-formatted string into a list of atoms used internally

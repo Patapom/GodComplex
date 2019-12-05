@@ -10,7 +10,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SharpLaTeX
+namespace SharpTeX
 {
 	/// <summary>
 	/// Generates an image from a LaTeX expression

@@ -10,7 +10,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SharpLaTeX
+namespace SharpTeX
 {
 	/// <summary>
 	/// An Atom is the basic unit of a math list. Each atom represents a single character or mathematical operator in a list.
@@ -123,7 +123,7 @@ namespace SharpLaTeX
 		#region FIELDS
 
 		public TYPE			type;				// The type of the atom.
-		public string		nucleus = null;		// The nucleus of the atom
+		public string		nucleus = "";		// The nucleus of the atom
 		protected AtomsList	superScript = null;	// An optional superscript.
 		protected AtomsList	subScript = null;	// An optional subscript.
 		public FontStyle	fontStyle;			// The font style to be used for the atom.
@@ -148,7 +148,7 @@ namespace SharpLaTeX
 
 		public void	SetSubScript( AtomsList _value ) {
 		   if ( _value != null && !scriptsAllowed ) {
-				throw new Exception( @"Subscripts not allowed for atom of type %@", typeToText( type ) );
+				throw new Exception( @"Subscripts not allowed for atom of type " + typeToText( type ) );
 			}
 
 			subScript = _value;
@@ -156,7 +156,7 @@ namespace SharpLaTeX
 
 		public void	SetSuperScript( AtomsList _value ) {
 		   if ( _value != null && !scriptsAllowed ) {
-				throw new Exception( @"Superscripts not allowed for atom of type %@", typeToText( type ) );
+				throw new Exception( @"Superscripts not allowed for atom of type " + typeToText( type ) );
 			}
 
 			superScript = _value;
@@ -186,71 +186,82 @@ namespace SharpLaTeX
 
 		#region METHODS
 
- 		public Atom( TYPE _type, string _value ) {
+ 		public Atom( TYPE _type, string _nucleus ) {
  			type = _type;
- 			nucleus = _value;
+ 			nucleus = _nucleus;
  		}
-// 		public Atom( TYPE _type ) {
-// 			type = _type;
-// 		}
-		public Atom( string _nucleus ) {
-			nucleus = _nucleus;
-		}
-		public Atom() {
-		}
+ 		public Atom( TYPE _type ) {
+ 			type = _type;
+ 		}
 
 		/// <summary>
 		/// Returns a string representation of the MTMathAtom
 		/// </summary>
 		public override string ToString() {
-			string	result = nucleus;
-			if ( superScript != null ) {
-				result += @"^{%@}" + superScript.ToString();
-			}
-			if ( subScript != null ) {
-				result += @"_{%@}" + subScript.ToString();
-			}
-			return result;
+			string	str = nucleus;
+			str += AppendSubSuper();
+			return str;
 		}
 
-		public static Atom	CreateAtomWithType( TYPE _type, string _value ) {
-			switch (_type) {
-				case TYPE.kMTMathAtomFraction:
-					return new AtomFraction( true );
-            
-				case TYPE.kMTMathAtomPlaceholder:
-					return new Atom( TYPE.kMTMathAtomPlaceholder, @"\u25A1" );		// A placeholder is created with a white square.
-            
-				case TYPE.kMTMathAtomRadical:
-					return new AtomRadical();
-            
-				case TYPE.kMTMathAtomLargeOperator:
-					return new AtomLargeOperator( _value, limits:YES );				// Default setting of limits is true
-            
-				case TYPE.kMTMathAtomInner:
-					return new AtomInner();
-            
-				case TYPE.kMTMathAtomOverline:
-					return new AtomOverLine();
-            
-				case TYPE.kMTMathAtomUnderline:
-					return new AtomUnderLine();
-            
-				case TYPE.kMTMathAtomAccent:
-					return new AtomAccent( _value );
-            
-				case TYPE.kMTMathAtomSpace:
-					return new AtomSpace( initWithSpace:0 );
-        
-				case TYPE.kMTMathAtomColor:
-					return new AtomColor();
-            
-				case TYPE.kMTMathAtomColorbox:
-					return new AtomColorBox();
-            
-				default:
-					return new Atom( _type, _value );
+		public static Atom	CreateAtomWithType( TYPE _type, string _nucleus ) {
+			switch ( _type ) {
+				case TYPE.kMTMathAtomFraction:		return new AtomFraction( true );
+				case TYPE.kMTMathAtomPlaceholder:	return new Atom( TYPE.kMTMathAtomPlaceholder, @"\u25A1" );		// A placeholder is created with a white square.
+				case TYPE.kMTMathAtomRadical:		return new AtomRadical();
+				case TYPE.kMTMathAtomLargeOperator:	return new AtomLargeOperator( _nucleus, true );					// Default setting of limits is true
+				case TYPE.kMTMathAtomInner:			return new AtomInner();
+				case TYPE.kMTMathAtomOverline:		return new AtomOverLine();
+				case TYPE.kMTMathAtomUnderline:		return new AtomUnderLine();
+				case TYPE.kMTMathAtomAccent:		return new AtomAccent( _nucleus );
+				case TYPE.kMTMathAtomSpace:			return new AtomSpace( 0.0f );
+				case TYPE.kMTMathAtomColor:			return new AtomColor();
+				case TYPE.kMTMathAtomColorbox:		return new AtomColorBox();
+				default:							return new Atom( _type, _nucleus );
 			}
+		}
+
+		public static string	typeToText( TYPE _type ) {
+			switch ( _type ) {
+				case TYPE.kMTMathAtomOrdinary:			return @"Ordinary";
+				case TYPE.kMTMathAtomNumber:			return @"Number";
+				case TYPE.kMTMathAtomVariable:			return @"Variable";
+				case TYPE.kMTMathAtomBinaryOperator:	return @"Binary Operator";
+				case TYPE.kMTMathAtomUnaryOperator:		return @"Unary Operator";
+				case TYPE.kMTMathAtomRelation:			return @"Relation";
+				case TYPE.kMTMathAtomOpen:				return @"Open";
+				case TYPE.kMTMathAtomClose:				return @"Close";
+				case TYPE.kMTMathAtomFraction:			return @"Fraction";
+				case TYPE.kMTMathAtomRadical:			return @"Radical";
+				case TYPE.kMTMathAtomPunctuation:		return @"Punctuation";
+				case TYPE.kMTMathAtomPlaceholder:		return @"Placeholder";
+				case TYPE.kMTMathAtomLargeOperator:		return @"Large Operator";
+				case TYPE.kMTMathAtomInner:				return @"Inner";
+				case TYPE.kMTMathAtomUnderline:			return @"Underline";
+				case TYPE.kMTMathAtomOverline:			return @"Overline";
+				case TYPE.kMTMathAtomAccent:			return @"Accent";
+				case TYPE.kMTMathAtomBoundary:			return @"Boundary";
+				case TYPE.kMTMathAtomSpace:				return @"Space";
+				case TYPE.kMTMathAtomStyle:				return @"Style";
+				case TYPE.kMTMathAtomColor:				return @"Color";
+				case TYPE.kMTMathAtomColorbox:			return @"Colorbox";
+				case TYPE.kMTMathAtomTable:				return @"Table";
+			}
+			return null;
+		}
+
+		/// <summary>
+		/// This is used everywhere to add super/subscripts to the ToString() representation
+		/// </summary>
+		/// <returns></returns>
+		protected string	AppendSubSuper() {
+			string	str = "";
+			if ( superScript != null ) {
+				str += @"^{" + superScript + "}";
+			}
+			if ( subScript != null ) {
+				str += @"_{" + subScript + "}";
+			}
+			return str;
 		}
 
 		/// <summary>
@@ -352,9 +363,7 @@ namespace SharpLaTeX
 			}
 		}
 
-		public AtomFraction( bool _hasRule ) : base() {
-			type = Atom.TYPE.kMTMathAtomFraction;
-			nucleus = @"";	// fractions have no nucleus
+		public AtomFraction( bool _hasRule ) : base( TYPE.kMTMathAtomFraction ) {
 			hasRule = _hasRule;
 		}
 
@@ -370,12 +379,9 @@ namespace SharpLaTeX
 			}
     
 			str += @"{" + numerator + "}{" + denominator + "}";
-			if ( superScript != null ) {
-				str += @"^{" + superScript + "}";
-			}
-			if ( subScript != null ) {
-				str += @"_{" + subScript + "}";
-			}
+
+			str += AppendSubSuper();
+
 			return str;
 		}
 
@@ -398,92 +404,137 @@ namespace SharpLaTeX
 	/// </summary>
 	public class AtomRadical : Atom {
 
-		//// Creates an empty radical
-		//- (instancetype)init NS_DESIGNATED_INITIALIZER;
-		//
-		///// Denotes the term under the square root sign
-		//@property (nonatomic, nullable) MTMathList* radicand;
-		//
-		///// Denotes the degree of the radical, i.e. the value to the top left of the radical sign
-		///// This can be null if there is no degree.
-		//@property (nonatomic, nullable) MTMathList* degree;
+		AtomsList	radicand = null;	// Denotes the term under the square root sign
+		AtomsList	degree = null;		// Denotes the degree of the radical, i.e. the value to the top left of the radical sign
+										// This can be null if there is no degree.
 
+		public	AtomRadical() : base( TYPE.kMTMathAtomRadical ) {
+		}
+
+		public override string ToString() {
+			string	str = @"\\sqrt";
+			if ( degree != null ) {
+				str += "[" + degree + "]";
+			}
+			str += "{" + radicand + "}";
+			str += AppendSubSuper();
+			return str;
+		}
+
+// - (id)copyWithZone:(NSZone *)zone
+// {
+//     MTRadical* rad = [super copyWithZone:zone];
+//     rad.radicand = [self.radicand copyWithZone:zone];
+//     rad.degree = [self.degree copyWithZone:zone];
+//     return rad;
+// }
+// 
+// - (instancetype)finalized
+// {
+//     MTRadical* newRad = [super finalized];
+//     newRad.radicand = newRad.radicand.finalized;
+//     newRad.degree = newRad.degree.finalized;
+//     return newRad;
+// }
 	}
 
 	/// <summary>
 	/// A `MTMathAtom` of type `kMTMathAtomLargeOperator`.
 	/// </summary>
-	public class AtomLargeOperator: Atom {
-		// @interface MTLargeOperator : MTMathAtom
-		// 
-		// /** Designated initializer. Initialize a large operator with the given
-		//  value and setting for limits.
-		//  */
-		// - (instancetype) initWithValue:(NSString*) value limits:(BOOL) limits NS_DESIGNATED_INITIALIZER;
-		// 
-		// /** Indicates whether the limits (if present) should be displayed
-		//  above and below the operator in display mode.  If limits is false
-		//  then the limits (if present) and displayed like a regular subscript/superscript.
-		//  */
-		// @property (nonatomic) BOOL limits;
+	public class AtomLargeOperator : Atom {
 
-}
+		public bool	limits = true;		// Indicates whether the limits (if present) should be displayed above and below the operator in display mode.
+										// If limits is false then the limits (if present) and displayed like a regular subscript/superscript.
+
+		public AtomLargeOperator( string _nucleus, bool _limits ) : base( TYPE.kMTMathAtomLargeOperator, _nucleus ) {
+			limits = _limits;
+		}
+		public AtomLargeOperator( bool _limits ) : this( "", _limits ) {
+		}
+
+	}
 
 	/// <summary>
 	/// An inner atom. This denotes an atom which contains a math list inside it. An inner atom has optional boundaries. Note: Only one boundary may be present, it is not required to have both. 
 	/// </summary>
 	public class	AtomInner : Atom {
 
-// 	// Creates an empty inner
-		// 	- (instancetype)init NS_DESIGNATED_INITIALIZER;
-		// 
-		// 	/// The inner math list
-		// 	@property (nonatomic, nullable) MTMathList* innerList;
-		// 	/// The left boundary atom. This must be a node of type kMTMathAtomBoundary
-		// 	@property (nonatomic, nullable) MTMathAtom* leftBoundary;
-		// 	/// The right boundary atom. This must be a node of type kMTMathAtomBoundary
-		// 	@property (nonatomic, nullable) MTMathAtom* rightBoundary;
+		public AtomsList	innerList = null;		// The inner math list
+		Atom				leftBoundary = null;	// The left boundary atom. This must be a node of type kMTMathAtomBoundary
+		Atom				rightBoundary = null;	// The right boundary atom. This must be a node of type kMTMathAtomBoundary
 
+		public Atom	LeftBoundary {
+			get { return leftBoundary; }
+			set {
+				if ( value != null && value.type != TYPE.kMTMathAtomBoundary ) throw new Exception( "Left boundary must be of type kMTMathAtomBoundary" );
+				leftBoundary = value;
+			}
+		}
+
+		public Atom	RightBoundary {
+			get { return rightBoundary; }
+			set {
+				if ( value != null && value.type != TYPE.kMTMathAtomBoundary ) throw new Exception( "Right boundary must be of type kMTMathAtomBoundary" );
+				rightBoundary = value;
+			}
+		}
+
+		public AtomInner() : base( TYPE.kMTMathAtomInner ) {
+
+		}
+
+		public override string ToString() {
+			string	str = @"\\inner";
+			if ( leftBoundary != null ) {
+				str += "[" + leftBoundary.nucleus + "]";
+			}
+			str += "{" + innerList + "}";
+			if ( rightBoundary != null ) {
+				str += "[" + rightBoundary.nucleus + "]";
+			}
+    
+			str += AppendSubSuper();
+
+			return str;
+		}
+
+// 		- (id)copyWithZone:(NSZone *)zone
+// 		{
+// 			MTInner* inner = [super copyWithZone:zone];
+// 			inner.innerList = [self.innerList copyWithZone:zone];
+// 			inner.leftBoundary = [self.leftBoundary copyWithZone:zone];
+// 			inner.rightBoundary = [self.rightBoundary copyWithZone:zone];
+// 			return inner;
+// 		}
+// 
+// 		- (instancetype)finalized
+// 		{
+// 			MTInner *newInner = [super finalized];
+// 			newInner.innerList = newInner.innerList.finalized;
+// 			return newInner;
+// 		}
 	}
 
 	/// <summary>
 	/// An atom with a line over the contained math list.
 	/// </summary>
 	public class AtomOverLine : Atom {
-
-	// / Creates an empty over
-	// - (instancetype)init NS_DESIGNATED_INITIALIZER;
-	// 
-	// / The inner math list
-	// @property (nonatomic, nullable) MTMathList* innerList;
-
+		public AtomOverLine() : base( TYPE.kMTMathAtomOverline ) {}
 	}
 
 	/// <summary>
 	/// An atom with a line under the contained math list.
 	/// </summary>
 	public class AtomUnderLine : Atom {
-
-// 		/// Creates an empty under
-// 		- (instancetype)init NS_DESIGNATED_INITIALIZER;
-// 
-// 		/// The inner math list
-// 		@property (nonatomic, nullable) MTMathList* innerList;
-
+		public AtomUnderLine() : base( TYPE.kMTMathAtomUnderline ) {}
 	}
 
 	/// <summary>
 	/// An atom with an accent.
 	/// </summary>
 	public class AtomAccent : Atom {
-
-// 		/** Creates a new `MTAccent` with the given value as the accent.
-// 		 */
-// 		- (instancetype)initWithValue:(NSString*) value NS_DESIGNATED_INITIALIZER;
-// 
-// 		/// The mathlist under the accent.
-// 		@property (nonatomic, nullable) MTMathList* innerList;
-
+		public AtomAccent( string _nucleus ) : base( TYPE.kMTMathAtomAccent, _nucleus ) {}
+		public AtomAccent() : base( TYPE.kMTMathAtomAccent ) {}
 	}
 
 	/// <summary>
@@ -493,13 +544,12 @@ namespace SharpLaTeX
 	/// </summary>
 	public class AtomSpace : Atom {
 
-// 		- (instancetype) initWithSpace:(CGFloat) space NS_DESIGNATED_INITIALIZER;
-// 
-// 		/** The amount of space represented by this object in mu units. */
-// 		@property (nonatomic, readonly) CGFloat space;
+		public float	space = 0.0f;
 
+		public AtomSpace( float _space ) : base( TYPE.kMTMathAtomSpace ) {
+			space = _space;
+		}
 	}
-
 
 	/// <summary>
 	/// An atom representing a style change.
@@ -521,15 +571,11 @@ namespace SharpLaTeX
 			kMTLineStyleScriptScript
 		};
 
+		public LineStyle	style;
 
-		// 	Creates a new `MTMathStyle` with the given style.
-		// 		 @param style The style to be applied to the rest of the list.
-		// 		 */
-		// 		- (instancetype) initWithStyle:(MTLineStyle) style NS_DESIGNATED_INITIALIZER;
-		// 
-		// 		/** The style represented by this object.
-		// 		@property (nonatomic, readonly) MTLineStyle style;
-
+		public AtomStyle( LineStyle _style ) : base( TYPE.kMTMathAtomStyle ) {
+			style = _style;
+		}
 	}
 
 	/// <summary>
@@ -538,31 +584,34 @@ namespace SharpLaTeX
 	/// </summary>
 	public class AtomColor : Atom {
 
-		// / Creates an empty color with a nil environment
-		// - (instancetype) init NS_DESIGNATED_INITIALIZER;
-		// 
-		// /** The style represented by this object. */
-		// @property (nonatomic, nullable) NSString* colorString;
-		// 
-		// / The inner math list
-		// @property (nonatomic, nullable) MTMathList* innerList;
+		public string		colorString = "";
+		public AtomsList	innerList = null;
 
+		public	AtomColor( ) : base( TYPE.kMTMathAtomColor ) {
+		}
+
+		public override string ToString() {
+			string	str = @"\\color";
+			str += "{" + colorString + "}{" + innerList + "}";
+			return str;
+		}
 	}
 
 	/// <summary>
 	/// An atom representing an colorbox element.
 	/// @note None of the usual fields of the `MTMathAtom` apply even though this class inherits from `MTMathAtom`. i.e. it is meaningless to have a value in the nucleus, subscript or superscript fields.
 	/// </summary>
-	public class AtomColorBox : Atom {
+	public class AtomColorBox : AtomColor {
 
-		// / Creates an empty color with a nil environment
-		// - (instancetype) init NS_DESIGNATED_INITIALIZER;
-		// 
-		// /** The style represented by this object. */
-		// @property (nonatomic, nullable) NSString* colorString;
-		// 
-		// / The inner math list
-		// @property (nonatomic, nullable) MTMathList* innerList;
+		public	AtomColorBox( ) : base() {
+			type = TYPE.kMTMathAtomColorbox;
+		}
+
+		public override string ToString() {
+			string	str = @"\\colorbox";
+			str += "{" + colorString + "}{" + innerList + "}";
+			return str;
+		}
 	}
 
 	/// <summary>
@@ -572,50 +621,81 @@ namespace SharpLaTeX
 	public class AtomMathTable : Atom {
 
 		public enum ColumnAlignment {
-			/// Align left.
-			kMTColumnAlignmentLeft,
-			/// Align center.
-			kMTColumnAlignmentCenter,
-			/// Align right.
-			kMTColumnAlignmentRight,
+			kMTColumnAlignmentLeft,			// Align left.
+			kMTColumnAlignmentCenter,		// Align center.
+			kMTColumnAlignmentRight,		// Align right.
 		}
 
-// / Creates an empty table with a nil environment
-// - (instancetype)init;
-// 
-// / Creates a table with a given environment
-// - (instancetype)initWithEnvironment:(nullable NSString*) env NS_DESIGNATED_INITIALIZER;
-// 
-// / The alignment for each column (left, right, center). The default alignment
-// / for a column (if not set) is center.
-// @property (nonatomic, nonnull, readonly) NSArray<NSNumber*>* alignments;
-// / The cells in the table as a two dimensional array.
-// @property (nonatomic, nonnull, readonly) NSArray<NSArray<MTMathList*>*>* cells;
-// / The name of the environment that this table denotes.
-// @property (nonatomic, nullable) NSString* environment;
-// 
-// / Spacing between each column in mu units.
-// @property (nonatomic) CGFloat interColumnSpacing;
-// / Additional spacing between rows in jots (one jot is 0.3 times font size).
-// / If the additional spacing is 0, then normal row spacing is used are used.
-// @property (nonatomic) CGFloat interRowAdditionalSpacing;
-// 
-// / Set the value of a given cell. The table is automatically resized to contain this cell.
-// - (void) setCell:(MTMathList*) list forRow:(NSInteger) row column:(NSInteger) column;
-// 
-// / Set the alignment of a particular column. The table is automatically resized to
-// / contain this column and any new columns added have their alignment set to center.
-// - (void) setAlignment:(MTColumnAlignment) alignment forColumn:(NSInteger) column;
-// 
-// / Gets the alignment for a given column. If the alignment is not specified it defaults
-// / to center.
-// - (MTColumnAlignment) getAlignmentForColumn:(NSInteger) column;
-// 
-// / Number of columns in the table.
-// - (NSUInteger) numColumns;
-// 
-// / Number of rows in the table.
-// - (NSUInteger) numRows;
+		public ColumnAlignment[]	alignments = new ColumnAlignment[0];	// The alignment for each column (left, right, center). The default alignment for a column (if not set) is center.
+		public AtomsList[,]			cells = new AtomsList[0,0];				// The cells in the table as a two dimensional array.
+		public string				environment = "";						// The name of the environment that this table denotes.
+		public float				interColumnSpacing;						// Spacing between each column in mu units.
+		public float				interRowAdditionalSpacing;				// Additional spacing between rows in jots (one jot is 0.3 times font size).
+																			// If the additional spacing is 0, then normal row spacing is used are used.
 
+		public uint					RowsCount		{ get { return (uint) cells.GetLength(0); } }
+		public uint					ColumnsCount	{ get { return (uint) cells.GetLength(1); } }
+
+		public	AtomMathTable( string _environment ) : base( TYPE.kMTMathAtomTable ) {
+			environment = _environment;
+		}
+
+		/// <summary>
+		/// Set the value of a given cell. The table is automatically resized to contain this cell.
+		/// </summary>
+		/// <param name="_row"></param>
+		/// <param name="_colum"></param>
+		/// <param name="_value"></param>
+		public void		SetCell( uint _row, uint _colum, AtomsList _value ) {
+			ResizeAtLeast( _row, _colum );
+			cells[_row,_colum] = _value;
+		}
+
+		/// <summary>
+		/// Set the alignment of a particular column. The table is automatically resized to contain this column and any new columns added have their alignment set to center.
+		/// </summary>
+		/// <param name="_column"></param>
+		/// <param name="_alignment"></param>
+		public void		SetAlignment( uint _column, ColumnAlignment _alignment ) {
+			ResizeAtLeast( RowsCount, _column );
+			alignments[_column] = _alignment;
+		}
+
+		/// <summary>
+		/// Gets the alignment for a given column. If the alignment is not specified it defaults to center.
+		/// </summary>
+		/// <param name="_column"></param>
+		/// <returns></returns>
+		public ColumnAlignment	GetAlignment( uint _column ) {
+			return _column < ColumnsCount ? alignments[_column] : ColumnAlignment.kMTColumnAlignmentCenter;
+		}
+
+		void	ResizeAtLeast( uint _rows, uint _colums ) {
+			if ( _rows <= RowsCount && _colums <= ColumnsCount )
+				return;	// Already to size
+
+			if ( _colums > ColumnsCount ) {
+				// Resize columns' alignments and initialize new alignments to "center"
+				ColumnAlignment[]	oldAlignments = alignments;
+				alignments = new ColumnAlignment[_colums];
+				oldAlignments.CopyTo( alignments, 0 );
+				for ( uint columnIndex=(uint) oldAlignments.Length; columnIndex < _colums; columnIndex++ ) {
+					alignments[columnIndex] = ColumnAlignment.kMTColumnAlignmentCenter;
+				}
+			}
+
+			// Resize table
+			uint			oldRowsCount = RowsCount;
+			uint			oldColumnsCount = RowsCount;
+			AtomsList[,]	oldCells = cells;
+
+			cells = new AtomsList[_rows,_colums];
+			Array.Clear( cells, 0, (int) (_rows*_colums) );
+			for ( uint rowIndex=0; rowIndex < oldRowsCount; rowIndex++ ) {
+				for ( uint columnIndex=0; columnIndex < oldColumnsCount; columnIndex++ ) {
+					cells[rowIndex,columnIndex] = oldCells[rowIndex,columnIndex];
+				}
+			}
+		}
 	}
 }
