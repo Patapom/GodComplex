@@ -91,6 +91,13 @@ namespace SharpTeX
 			atoms.Insert( (int) _index, _atom );
 		}
 
+		/// <summary>
+		/// Append the given list to the end of the current list.
+		/// </summary>
+		/// <param name="list">The list to append</param>
+		void	Append( AtomsList list ) {
+			atoms.AddRange( list.atoms );
+		}
 
 		// Create a new math list as a final expression and update atoms by combining like atoms that occur together and converting unary operators to binary operators.
 		// This function does not modify the current list
@@ -225,12 +232,6 @@ namespace SharpTeX
     [_atoms insertObject:atom atIndex:index];
 }
 
-// Append the given list to the end of the current list.
-//  @param list The list to append.
-- (void)append:(MTMathList *)list
-{
-    [_atoms addObjectsFromArray:list.atoms];
-}
 
 			// Removes the last atom from the math list. If there are no atoms in the list this does nothing.
 - (void)removeLastAtom
