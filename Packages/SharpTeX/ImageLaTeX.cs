@@ -43,16 +43,58 @@ namespace SharpTeX
 
 		#endregion
 
+		#region FIELDS
+
+		AtomsList		m_atoms = null;
+		string			m_LaTeX = null;
+		ParseException	m_error = null;
+
+		#endregion
+
 		#region PROPERTIES
 
-// /** The `MTMathList` to render. Setting this will remove any
-//  `latex` that has already been set. If `latex` has been set, this will
-//  return the parsed `MTMathList` if the `latex` parses successfully. Use this
-//  setting if the `MTMathList` has been programmatically constructed, otherwise it
-//  is preferred to use `latex`.
-//  */
-// @property (nonatomic, nullable) MTMathList* mathList;
-// 
+		public string	LaTeX {
+			get { return m_LaTeX; }
+			set {
+				if ( value == m_LaTeX )
+					return;
+
+				m_LaTeX = value;
+				m_error = null;
+				m_atoms = null;
+
+				// Attempt conversion
+				try {
+					m_atoms = LaTeXStringToAtomsList.BuildFromString( m_LaTeX );
+					DisplayAtoms( m_atoms );
+				} catch ( ParseException _e ) {
+					m_error = _e;
+				}
+
+			}
+		}
+
+		/// <summary>
+		/// The `MTMathList` to render. Setting this will remove any `latex` that has already been set. If `latex` has been set, this will return the parsed `MTMathList` if the `latex` parses successfully.
+		/// Use this setting if the `MTMathList` has been programmatically constructed, otherwise it is preferred to use `latex`.
+		/// </summary>
+		public AtomsList		Atoms {
+			get { return m_atoms; }
+			set {
+				if ( value == m_atoms )
+					return;
+
+				m_LaTeX = null;
+				m_atoms = value;
+
+				try {
+					DisplayAtoms( m_atoms );
+				} catch ( Exception _e ) {
+					throw _e;
+				}
+			}
+		}
+
 // /** The latex string to be displayed. Setting this will remove any `mathList` that
 //  has been set. If latex has not been set, this will return the latex output for the
 //  `mathList` that is set.
@@ -82,6 +124,36 @@ namespace SharpTeX
 // 
 // /** The internal display of the MTMathUILabel. This is for advanced use only. */
 // @property (nonatomic, readonly, nullable) MTMathListDisplay* displayList;
+
+		#endregion
+
+		#region METHODS
+
+		public ImageLaTeX() {
+
+// 	self.layer.geometryFlipped = YES;  // For ease of interaction with the CoreText coordinate system.
+//     // default font size
+//     _fontSize = 20;
+//     _contentInsets = MTEdgeInsetsZero;
+//     _labelMode = kMTMathUILabelModeDisplay;
+//     MTFont* font = [MTFontManager fontManager].defaultFont;
+//     self.font = font;
+//     _textAlignment = kMTTextAlignmentLeft;
+//     _displayList = nil;
+//     _displayErrorInline = true;
+//     self.backgroundColor = [MTColor clearColor];
+//     
+//     _textColor = [MTColor blackColor];
+//     _errorLabel = [[MTLabel alloc] init];
+//     _errorLabel.hidden = YES;
+//     _errorLabel.layer.geometryFlipped = YES;
+//     _errorLabel.textColor = [MTColor redColor];
+//     [self addSubview:_errorLabel];
+		}
+
+		void	DisplayAtoms( AtomsList _atoms ) {
+
+		}
 
 		#endregion
     }

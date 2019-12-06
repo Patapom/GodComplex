@@ -143,9 +143,9 @@ namespace SharpTeX
 				} else if ( ch == '}' ) {
 					if ( oneCharOnly ) throw new Exception( @"This should have been handled before" );
 					if ( stop != 0 ) throw new Exception( @"This should have been handled before" );
+
 					// We encountered a closing brace when there is no stop set, that means there was no corresponding opening brace.
 					SetError( ParseException.ErrorType.MTParseErrorMismatchBraces, @"Mismatched braces." );
-					return null;
 
 				} else if ( ch == '\\' ) {
 					// \ means a command
@@ -185,7 +185,6 @@ namespace SharpTeX
 						// this was an unknown command, we flag an error and return
 						// (note setError will not set the error if there is already one, so we flag internal error in the odd case that an _error is not set).
 						SetError( ParseException.ErrorType.MTParseErrorInternalError, @"Internal error" );
-						return null;
 					}
 
 				} else if ( ch == '&' ) {
@@ -302,7 +301,6 @@ namespace SharpTeX
 			if ( !ExpectCharacter( '{' ) ) {
 				// We didn't find an opening brace, so no env found.
 				SetError( ParseException.ErrorType.MTParseErrorCharacterNotFound, @"Missing {" );
-				return null;
 			}
     
 			// Ignore spaces and nonascii.
@@ -324,7 +322,6 @@ namespace SharpTeX
 			if ( !ExpectCharacter( '}' ) ) {
 				// We didn't find an closing brace, so invalid format.
 				SetError( ParseException.ErrorType.MTParseErrorCharacterNotFound, @"Missing }" );
-				return null;
 			}
 			return result;
 		}
@@ -416,7 +413,6 @@ namespace SharpTeX
 			if ( !ExpectCharacter( '{' ) ) {
 				// We didn't find an opening brace, so no env found.
 				SetError( ParseException.ErrorType.MTParseErrorCharacterNotFound, @"Missing {" );
-				return null;
 			}
     
 			// Ignore spaces and nonascii.
@@ -426,7 +422,6 @@ namespace SharpTeX
 			if (!ExpectCharacter( '}' )) {
 				// We didn't find an closing brace, so invalid format.
 				SetError( ParseException.ErrorType.MTParseErrorCharacterNotFound, @"Missing }" );
-				return null;
 			}
 			return env;
 		}
@@ -435,13 +430,12 @@ namespace SharpTeX
 			string delim = ReadDelimiter();
 			if ( delim == null ) {
 				SetError( ParseException.ErrorType.MTParseErrorMissingDelimiter, @"Missing delimiter for \\" + delimiterType );
-				return null;
 			}
 			Atom	boundary = AtomFactory.boundaryAtomForDelimiterName( delim );
 			if ( boundary == null ) {
 				SetError( ParseException.ErrorType.MTParseErrorInvalidDelimiter, @"Invalid delimiter for \\" + delimiterType + ": " + delim );
-				return null;
 			}
+
 			return boundary;
 		}
 
@@ -499,8 +493,8 @@ namespace SharpTeX
 				if ( _currentInnerAtom.RightBoundary == null ) {
 					// A right node would have set the right boundary so we must be missing the right node.
 					SetError( ParseException.ErrorType.MTParseErrorMissingRight, @"Missing \\right" );
-					return null;
 				}
+
 				// reinstate the old inner atom.
 				AtomInner	newInner = _currentInnerAtom;
 				_currentInnerAtom = oldInner;
@@ -540,10 +534,10 @@ namespace SharpTeX
 				mathColorbox.innerList = BuildInternal( true );
 				return mathColorbox;
 
-			} else {
-				SetError( ParseException.ErrorType.MTParseErrorInvalidCommand, @"Invalid command \\" + command );
-				return null;
 			}
+
+			SetError( ParseException.ErrorType.MTParseErrorInvalidCommand, @"Invalid command \\" + command );
+			return null;
 		}
 
 		static Dictionary< string, string[] >	ms_fractionCommands = null;
@@ -559,7 +553,6 @@ namespace SharpTeX
 			if ( command == @"right" ) {
 				if ( _currentInnerAtom == null ) {
 					SetError( ParseException.ErrorType.MTParseErrorMissingLeft, @"Missing \\left" );
-					return null;
 				}
 				_currentInnerAtom.RightBoundary = GetBoundaryAtom( @"right" );
 				if ( _currentInnerAtom.RightBoundary == null ) {
@@ -602,7 +595,6 @@ namespace SharpTeX
 			} else if (command == @"end" ) {
 				if ( _currentEnv == null ) {
 					SetError( ParseException.ErrorType.MTParseErrorMissingBegin, @"Missing \\begin" );
-					return null;
 				}
 				string	env = ReadEnvironment();
 				if ( env == null ) {
@@ -610,7 +602,6 @@ namespace SharpTeX
 				}
 				if ( env != _currentEnv.envName ) {
 					SetError( ParseException.ErrorType.MTParseErrorInvalidEnv, @"Begin environment name " + _currentEnv.envName + " does not match end name: " + env );
-					return null;
 				}
 				// Finish the current environment.
 				_currentEnv.ended = true;
@@ -683,7 +674,6 @@ namespace SharpTeX
 			}
 			if ( !_currentEnv.ended && _currentEnv.envName != null ) {
 				SetError( ParseException.ErrorType.MTParseErrorMissingEnd, @"Missing \\end" );
-				return null;
 			}
 
 			// Collapse list of lists
