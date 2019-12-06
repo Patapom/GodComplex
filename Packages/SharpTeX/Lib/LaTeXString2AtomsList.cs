@@ -20,46 +20,6 @@ namespace SharpTeX
 
 		#region NESTED TYPES
 
-		/// <summary>
-		/// The error encountered when parsing a LaTeX string.
-		/// The `code` in the `NSError` is one of the following indiciating why the LaTeX string could not be parsed.
-		/// </summary>
-		public class ParseError {
-			public enum ErrorType {
-				/// The braces { } do not match.
-				MTParseErrorMismatchBraces = 1,
-				/// A command in the string is not recognized.
-				MTParseErrorInvalidCommand,
-				/// An expected character such as ] was not found.
-				MTParseErrorCharacterNotFound,
-				/// The \left or \right command was not followed by a delimiter.
-				MTParseErrorMissingDelimiter,
-				/// The delimiter following \left or \right was not a valid delimiter.
-				MTParseErrorInvalidDelimiter,
-				/// There is no \right corresponding to the \left command.
-				MTParseErrorMissingRight,
-				/// There is no \left corresponding to the \right command.
-				MTParseErrorMissingLeft,
-				/// The environment given to the \begin command is not recognized
-				MTParseErrorInvalidEnv,
-				/// A command is used which is only valid inside a \begin,\end environment
-				MTParseErrorMissingEnv,
-				/// There is no \begin corresponding to the \end command.
-				MTParseErrorMissingBegin,
-				/// There is no \end corresponding to the \begin command.
-				MTParseErrorMissingEnd,
-				/// The number of columns do not match the environment
-				MTParseErrorInvalidNumColumns,
-				/// Internal error, due to a programming mistake.
-				MTParseErrorInternalError,
-				/// Limit control applied incorrectly
-				MTParseErrorInvalidLimits,
-			}
-
-			public ErrorType	error;
-			public string		message;
-		}
-
 		class	MTEnvProperties {
 
 			public string	envName;
@@ -84,7 +44,7 @@ namespace SharpTeX
 		Atom.FontStyle	_currentFontStyle = Atom.FontStyle.kMTFontStyleDefault;
 		bool			_spacesAllowed = false;
 
-		ParseError		_error = null;		// Contains any error that occurred during parsing.
+//		ParseException		_error = null;		// Contains any error that occurred during parsing.
 
 		#endregion
 
@@ -101,7 +61,7 @@ namespace SharpTeX
 		/// </summary>
 		/// <param name="_LaTeX"></param>
 		public LaTeXStringToAtomsList( string _LaTeX ) {
-
+			_chars = _LaTeX;
 		}
 
 		/// <summary>
@@ -110,13 +70,9 @@ namespace SharpTeX
 		/// <returns></returns>
 		public AtomsList	Build() {
 			AtomsList	list = BuildInternal( false );
-			if ( HasCharacters && _error != null ) {
+			if ( HasCharacters ) {
 				// something went wrong most likely braces mismatched
-				SetError( ParseError.ErrorType.MTParseErrorMismatchBraces );
-				throw new Exception( "Mismatched braces: " + _chars );
-			}
-			if ( _error != null ) {
-				return null;
+				SetError( ParseException.ErrorType.MTParseErrorMismatchBraces, "Mismatched braces: " + _chars );
 			}
     
 			return list;
@@ -134,9 +90,7 @@ namespace SharpTeX
 			AtomsList	list = new AtomsList();
 			Atom		prevAtom = null;
 			while ( HasCharacters ) {
-				if ( _error != null ) {
-					return null;	// If there is an error thus far then bail out.
-				}
+
 				Atom	atom = null;
 				char	ch = GetNextCharacter();
 				if ( oneCharOnly ) {
@@ -190,7 +144,7 @@ namespace SharpTeX
 					if ( oneCharOnly ) throw new Exception( @"This should have been handled before" );
 					if ( stop != 0 ) throw new Exception( @"This should have been handled before" );
 					// We encountered a closing brace when there is no stop set, that means there was no corresponding opening brace.
-					SetError( ParseError.ErrorType.MTParseErrorMismatchBraces, @"Mismatched braces." );
+					SetError( ParseException.ErrorType.MTParseErrorMismatchBraces, @"Mismatched braces." );
 					return null;
 
 				} else if ( ch == '\\' ) {
@@ -199,8 +153,6 @@ namespace SharpTeX
 					AtomsList	done = StopCommand( command, list, stop );
 					if ( done != null ) {
 						return done;
-					} else if ( _error != null ) {
-						return null;
 					}
 					if ( ApplyModifier( command, prevAtom )) {
 						continue;
@@ -232,7 +184,7 @@ namespace SharpTeX
 					if ( atom == null ) {
 						// this was an unknown command, we flag an error and return
 						// (note setError will not set the error if there is already one, so we flag internal error in the odd case that an _error is not set).
-						SetError( ParseError.ErrorType.MTParseErrorInternalError, @"Internal error" );
+						SetError( ParseException.ErrorType.MTParseErrorInternalError, @"Internal error" );
 						return null;
 					}
 
@@ -269,9 +221,9 @@ namespace SharpTeX
 
 			if ( stop > 0 ) {
 				if ( stop == '}' ) {
-					SetError( ParseError.ErrorType.MTParseErrorMismatchBraces, @"Missing closing brace" );	// We did not find a corresponding closing brace.
+					SetError( ParseException.ErrorType.MTParseErrorMismatchBraces, @"Missing closing brace" );	// We did not find a corresponding closing brace.
 				} else {
-					SetError( ParseError.ErrorType.MTParseErrorCharacterNotFound, @"Expected character not found:" + stop );	// we never found our stop character
+					SetError( ParseException.ErrorType.MTParseErrorCharacterNotFound, @"Expected character not found:" + stop );	// we never found our stop character
 				}
 			}
 
@@ -286,19 +238,6 @@ namespace SharpTeX
 		public static AtomsList	BuildFromString( string _LaTeX ) {
 			LaTeXStringToAtomsList	builder = new LaTeXStringToAtomsList( _LaTeX );
 			return builder.Build();
-		}
-
-		/// <summary>
-		/// Construct a math list from a given string. If there is parse error, returns null. The error is returned in the `error` parameter.
-		/// </summary>
-		/// <param name="_LaTeX"></param>
-		/// <param name="_error"></param>
-		/// <returns></returns>
-		public static AtomsList	BuildFromString( string _LaTeX, out ParseError _error ) {
-			LaTeXStringToAtomsList	builder = new LaTeXStringToAtomsList( _LaTeX );
-			AtomsList	output = builder.Build();
-			_error = builder._error;
-			return output;
 		}
 
 // 		/// <summary>
@@ -362,7 +301,7 @@ namespace SharpTeX
 		string	ReadColor() {
 			if ( !ExpectCharacter( '{' ) ) {
 				// We didn't find an opening brace, so no env found.
-				SetError( ParseError.ErrorType.MTParseErrorCharacterNotFound, @"Missing {" );
+				SetError( ParseException.ErrorType.MTParseErrorCharacterNotFound, @"Missing {" );
 				return null;
 			}
     
@@ -384,7 +323,7 @@ namespace SharpTeX
 
 			if ( !ExpectCharacter( '}' ) ) {
 				// We didn't find an closing brace, so invalid format.
-				SetError( ParseError.ErrorType.MTParseErrorCharacterNotFound, @"Missing }" );
+				SetError( ParseException.ErrorType.MTParseErrorCharacterNotFound, @"Missing }" );
 				return null;
 			}
 			return result;
@@ -476,7 +415,7 @@ namespace SharpTeX
 		string	ReadEnvironment() {
 			if ( !ExpectCharacter( '{' ) ) {
 				// We didn't find an opening brace, so no env found.
-				SetError( ParseError.ErrorType.MTParseErrorCharacterNotFound, @"Missing {" );
+				SetError( ParseException.ErrorType.MTParseErrorCharacterNotFound, @"Missing {" );
 				return null;
 			}
     
@@ -486,7 +425,7 @@ namespace SharpTeX
     
 			if (!ExpectCharacter( '}' )) {
 				// We didn't find an closing brace, so invalid format.
-				SetError( ParseError.ErrorType.MTParseErrorCharacterNotFound, @"Missing }" );
+				SetError( ParseException.ErrorType.MTParseErrorCharacterNotFound, @"Missing }" );
 				return null;
 			}
 			return env;
@@ -495,12 +434,12 @@ namespace SharpTeX
 		Atom	GetBoundaryAtom( string delimiterType ) {
 			string delim = ReadDelimiter();
 			if ( delim == null ) {
-				SetError( ParseError.ErrorType.MTParseErrorMissingDelimiter, @"Missing delimiter for \\" + delimiterType );
+				SetError( ParseException.ErrorType.MTParseErrorMissingDelimiter, @"Missing delimiter for \\" + delimiterType );
 				return null;
 			}
 			Atom	boundary = AtomFactory.boundaryAtomForDelimiterName( delim );
 			if ( boundary == null ) {
-				SetError( ParseError.ErrorType.MTParseErrorInvalidDelimiter, @"Invalid delimiter for \\" + delimiterType + ": " + delim );
+				SetError( ParseException.ErrorType.MTParseErrorInvalidDelimiter, @"Invalid delimiter for \\" + delimiterType + ": " + delim );
 				return null;
 			}
 			return boundary;
@@ -559,7 +498,7 @@ namespace SharpTeX
 				_currentInnerAtom.innerList = BuildInternal( false );
 				if ( _currentInnerAtom.RightBoundary == null ) {
 					// A right node would have set the right boundary so we must be missing the right node.
-					SetError( ParseError.ErrorType.MTParseErrorMissingRight, @"Missing \\right" );
+					SetError( ParseException.ErrorType.MTParseErrorMissingRight, @"Missing \\right" );
 					return null;
 				}
 				// reinstate the old inner atom.
@@ -584,7 +523,7 @@ namespace SharpTeX
 				if ( env == null ) {
 					return null;
 				}
-				Atom	table = BuildTable( env, firstList:null, row:false );
+				Atom	table = BuildTable( env, null, false );
 				return table;
 
 			} else if ( command == @"color" ) {
@@ -602,24 +541,24 @@ namespace SharpTeX
 				return mathColorbox;
 
 			} else {
-				SetError( ParseError.ErrorType.MTParseErrorInvalidCommand, @"Invalid command \\" + command );
+				SetError( ParseException.ErrorType.MTParseErrorInvalidCommand, @"Invalid command \\" + command );
 				return null;
 			}
 		}
 
-		static Dictionary< string, string[] >	fractionCommands = null;
+		static Dictionary< string, string[] >	ms_fractionCommands = null;
 		AtomsList	StopCommand( string command, AtomsList list, char stopChar ) {
-			if ( fractionCommands == null ) {
-				fractionCommands = new Dictionary<string, string[]>();
-				fractionCommands.Add( @"over",		new string[] {} );
-				fractionCommands.Add( @"atop",		new string[] {} );
-				fractionCommands.Add( @"choose",	new string[] { @"(", @")" } );
-				fractionCommands.Add( @"brack",		new string[] { @"[", @"]" } );
-				fractionCommands.Add( @"brace",		new string[] { @"{", @"}" } );
+			if ( ms_fractionCommands == null ) {
+				ms_fractionCommands = AtomFactory.BuildDictionaryFromList<string, string[] >(
+											@"over",	new string[] {},
+											@"atop",	new string[] {},
+											@"choose",	new string[] { @"(", @")" },
+											@"brack",	new string[] { @"[", @"]" },
+											@"brace",	new string[] { @"{", @"}" } );
 			}
 			if ( command == @"right" ) {
 				if ( _currentInnerAtom == null ) {
-					SetError( ParseError.ErrorType.MTParseErrorMissingLeft, @"Missing \\left" );
+					SetError( ParseException.ErrorType.MTParseErrorMissingLeft, @"Missing \\left" );
 					return null;
 				}
 				_currentInnerAtom.RightBoundary = GetBoundaryAtom( @"right" );
@@ -629,25 +568,24 @@ namespace SharpTeX
 				// return the list read so far.
 				return list;
 
-			} else if ( fractionCommands.ContainsKey( command ) ) {
+			} else if ( ms_fractionCommands.ContainsKey( command ) ) {
 				AtomFraction	frac = null;
 				if ( command == @"over" ) {
 					frac = new AtomFraction( true );
 				} else {
 					frac = new AtomFraction( false );
 				}
-				string[]	delims = fractionCommands[command];
+				string[]	delims = ms_fractionCommands[command];
 				if ( delims.Length == 2 ) {
 					frac.leftDelimiter = delims[0];
 					frac.rightDelimiter = delims[1];
 				}
 				frac.numerator = list;
 				frac.denominator = BuildInternal( false, stopChar );
-				if ( _error != null ) {
-					return null;
-				}
+
 				AtomsList	fracList = new AtomsList();
 							fracList.AddAtom( frac );
+
 				return fracList;
 
 			} else if ( command == @"\\" || command == @"cr" ) {
@@ -658,12 +596,12 @@ namespace SharpTeX
 
 				} else {
 					// Create a new table with the current list and a default env
-					Atom	table = BuildTable( null, firstList:list, row:true );
+					Atom	table = BuildTable( null, list, true );
 					return new AtomsList( table, null );
 				}
 			} else if (command == @"end" ) {
 				if ( _currentEnv == null ) {
-					SetError( ParseError.ErrorType.MTParseErrorMissingBegin, @"Missing \\begin" );
+					SetError( ParseException.ErrorType.MTParseErrorMissingBegin, @"Missing \\begin" );
 					return null;
 				}
 				string	env = ReadEnvironment();
@@ -671,7 +609,7 @@ namespace SharpTeX
 					return null;
 				}
 				if ( env != _currentEnv.envName ) {
-					SetError( ParseError.ErrorType.MTParseErrorInvalidEnv, @"Begin environment name " + _currentEnv.envName + " does not match end name: " + env );
+					SetError( ParseException.ErrorType.MTParseErrorInvalidEnv, @"Begin environment name " + _currentEnv.envName + " does not match end name: " + env );
 					return null;
 				}
 				// Finish the current environment.
@@ -687,7 +625,7 @@ namespace SharpTeX
 				if ( atom is AtomLargeOperator ) {
 					(atom as AtomLargeOperator).limits = true;
 				} else {
-					SetError( ParseError.ErrorType.MTParseErrorInvalidLimits, @"limits can only be applied to an operator." );
+					SetError( ParseException.ErrorType.MTParseErrorInvalidLimits, @"limits can only be applied to an operator." );
 				}
 				return true;
 
@@ -695,20 +633,17 @@ namespace SharpTeX
 				if ( atom is AtomLargeOperator ) {
 					(atom as AtomLargeOperator).limits = false;
 				} else {
-					SetError( ParseError.ErrorType.MTParseErrorInvalidLimits, @"nolimits can only be applied to an operator." );
+					SetError( ParseException.ErrorType.MTParseErrorInvalidLimits, @"nolimits can only be applied to an operator." );
 				}
 				return true;
 			}
 			return false;
 		}
 
-		void	SetError( ParseError.ErrorType _code, string _message ) {
-			// Only record the first error.
-			if ( _error == null ) {
-				_error = new ParseError() { error = _code, message = _message };
-			}
+		void	SetError( ParseException.ErrorType _code, string _message ) {
+			throw new ParseException( _message, _code );
 		}
-		void	SetError( ParseError.ErrorType _code ) {
+		void	SetError( ParseException.ErrorType _code ) {
 			SetError( _code, null );
 		}
 
@@ -732,6 +667,7 @@ namespace SharpTeX
 					currentCol++;
 				}
 			}
+
 			while ( !_currentEnv.ended && HasCharacters ) {
 				AtomsList	list = BuildInternal( false );
 				if ( list != null ) {
@@ -740,71 +676,90 @@ namespace SharpTeX
 				rows[currentRow].Add( list );
 //				currentCol++;
 				if ( _currentEnv.numRows > currentRow ) {
-					currentRow = _currentEnv.numRows;
+					currentRow = (int) _currentEnv.numRows;
 					rows.Add( new List<AtomsList>() );
 					currentCol = 0;
 				}
 			}
 			if ( !_currentEnv.ended && _currentEnv.envName != null ) {
-				SetError( ParseError.ErrorType.MTParseErrorMissingEnd, @"Missing \\end" );
+				SetError( ParseException.ErrorType.MTParseErrorMissingEnd, @"Missing \\end" );
 				return null;
 			}
-			ParseError	error = null;
-			Atom		table = AtomFactory.TableWithEnvironment( _currentEnv.envName, rows:rows, error:&error );
-			if ( table != null && _error != null ) {
-				_error = error;
-				return null;
+
+			// Collapse list of lists
+			AtomsList[][]	finalRows = new AtomsList[rows.Count][];
+			for ( int rowIndex=0; rowIndex < rows.Count; rowIndex++ ) {
+				List<AtomsList>	row = rows[rowIndex];
+				finalRows[rowIndex] = row.ToArray();
 			}
+
+			Atom	table = AtomFactory.tableWithEnvironment( _currentEnv.envName, finalRows );
 
 			// reinstate the old env.
 			_currentEnv = oldEnv;
+
 			return table;
 		}
 
-		static Dictionary< int, string >	spaceToCommands = null;
+		static Dictionary< int, string >	ms_spaceToCommands =AtomFactory.BuildDictionaryFromList<int, string>(
+							3, @",",
+							4, @">",
+							5, @";",
+							(-3), @"!",
+							18, @"quad",
+							36, @"qquad" );
 		Dictionary< int, string >	SpaceToCommands {
 			get {
-				if ( spaceToCommands == null ) {
-					spaceToCommands = new Dictionary<int, string>();
-					spaceToCommands.Add( 3, @"," );
-					spaceToCommands.Add( 4, @">" );
-					spaceToCommands.Add( 5, @";" );
-					spaceToCommands.Add( (-3), @"!" );
-					spaceToCommands.Add( 18, @"quad" );
-					spaceToCommands.Add( 36, @"qquad" );
-				}
-				return spaceToCommands;
+// 				if ( ms_spaceToCommands == null ) {
+// 					ms_spaceToCommands = AtomFactory.BuildDictionaryFromList<int, string>(
+// 							3, @",",
+// 							4, @">",
+// 							5, @";",
+// 							(-3), @"!",
+// 							18, @"quad",
+// 							36, @"qquad" );
+// 				}
+				return ms_spaceToCommands;
 			}
 		}
 
-		static Dictionary< AtomStyle.LineStyle, string >	styleToCommands = null;
+		static Dictionary< AtomStyle.LineStyle, string >	ms_styleToCommands = null;
 		Dictionary< AtomStyle.LineStyle, string >	StyleToCommands {
 			get {
-				if ( styleToCommands == null ) {
-					styleToCommands = new Dictionary<AtomStyle.LineStyle, string>();
-					styleToCommands.Add( AtomStyle.LineStyle.kMTLineStyleDisplay, @"displaystyle" );
-					styleToCommands.Add( AtomStyle.LineStyle.kMTLineStyleText, @"textstyle" );
-					styleToCommands.Add( AtomStyle.LineStyle.kMTLineStyleScript, @"scriptstyle" );
-					styleToCommands.Add( AtomStyle.LineStyle.kMTLineStyleScriptScript, @"scriptscriptstyle" );
+				if ( ms_styleToCommands == null ) {
+					ms_styleToCommands = AtomFactory.BuildDictionaryFromList< AtomStyle.LineStyle, string >(
+						AtomStyle.LineStyle.kMTLineStyleDisplay, @"displaystyle",
+						AtomStyle.LineStyle.kMTLineStyleText, @"textstyle",
+						AtomStyle.LineStyle.kMTLineStyleScript, @"scriptstyle",
+						AtomStyle.LineStyle.kMTLineStyleScriptScript, @"scriptscriptstyle" );
 				}
-				return styleToCommands;
+				return ms_styleToCommands;
 			}
 		}
 
 		string	DelimToString( Atom delim ) {
-			string	command = AtomFactory.DelimiterNameForBoundaryAtom( delim );
-			if (command == null ) {
+			string	command = AtomFactory.delimiterNameForBoundaryAtom( delim );
+			if ( command == null ) {
 				return @"";
 			}
 
-			string[]	singleChars = new string[] { @"(", @")", @"[", @"]", @"<", @">", @"|", @".", @"/" };
-			if ( singleChars.containsObject( command ) ) {
-				return command;
-			} else if ( command == @"||" ) {
-				return @"\\|"; // special case for ||
-			} else {
-				return @"\\" + command;
+			string[]	singleChars = new string[] {  };
+			switch ( command ) {
+				case @"(":
+				case @")":
+				case @"[":
+				case @"]":
+				case @"<":
+				case @">":
+				case @"|":
+				case @".":
+				case @"/":
+					return command;
+				case @"||":
+					return @"\\|"; // special case for ||
 			}
+
+			return @"\\" + command;
 		}
 
 /*		string	MathListToString( AtomsList ml ) {

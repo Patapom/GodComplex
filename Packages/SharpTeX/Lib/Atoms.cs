@@ -243,7 +243,7 @@ namespace SharpTeX
 			return str;
 		}
 
-		public static Atom	CreateAtomWithType( TYPE _type, string _nucleus ) {
+		public static Atom	Create( TYPE _type, string _nucleus ) {
 			switch ( _type ) {
 				case TYPE.kMTMathAtomFraction:		return new AtomFraction( true );
 				case TYPE.kMTMathAtomPlaceholder:	return new Atom( TYPE.kMTMathAtomPlaceholder, @"\u25A1" );		// A placeholder is created with a white square.
@@ -319,7 +319,7 @@ namespace SharpTeX
 
 		protected delegate object	DelegateCopyField( FieldInfo _fieldInfo, object _sourceField );
 		protected Atom		Copy( DelegateCopyField _fieldCopier ) {
-			Atom	result = CreateAtomWithType( type, nucleus );
+			Atom	result = Create( type, nucleus );
 
 			// Perform a deep copy
 			FieldInfo[]	fields = GetType().GetFields( BindingFlags.NonPublic | BindingFlags.Public );
@@ -328,6 +328,20 @@ namespace SharpTeX
 			}
 
 			return result;
+		}
+
+		public Atom		Copy() {
+			return Copy( ( FieldInfo _fieldInfo, object _fieldValue ) => {
+									if ( _fieldInfo.FieldType == typeof(Atom) ) {
+										Atom	source = _fieldValue as Atom;
+										return source != null ? source.Copy() : null;
+									} else if ( _fieldInfo.FieldType == typeof(AtomsList) ) {
+										AtomsList	source = _fieldValue as AtomsList;
+										return source != null ? source.Copy() : null;
+									}
+
+									return _fieldValue;
+								} );
 		}
 
 		#endregion
@@ -619,7 +633,7 @@ namespace SharpTeX
 	/// An atom representing an table element. This atom is not like other atoms and is not present in TeX. We use it to represent the `\halign` command in TeX with some simplifications. This is used for matrices, equation alignments and other uses of multiline environments.
 	/// The cells in the table are represented as a two dimensional array of `MTMathList` objects. The `MTMathList`s could be empty to denote a missing value in the cell. Additionally an array of alignments indicates how each column will be aligned.
 	/// </summary>
-	public class AtomMathTable : Atom {
+	public class AtomTable : Atom {
 
 		public enum ColumnAlignment {
 			kMTColumnAlignmentLeft,			// Align left.
@@ -636,10 +650,14 @@ namespace SharpTeX
 
 		public uint					RowsCount		{ get { return (uint) cells.GetLength(0); } }
 		public uint					ColumnsCount	{ get { return (uint) cells.GetLength(1); } }
+		public AtomsList			this[uint row, uint column] {
+			get { return cells[row,column]; }
+			set { cells[row,column] = value; }
+		}
 
 		public override Atom	Finalized {
 			get {
-				AtomMathTable	result = new AtomMathTable( environment );
+				AtomTable	result = new AtomTable( environment );
 
 				result.alignments = new ColumnAlignment[alignments.Length];
 				alignments.CopyTo( result.alignments, 0 );
@@ -659,7 +677,7 @@ namespace SharpTeX
 			}
 		}
 
-		public	AtomMathTable( string _environment ) : base( TYPE.kMTMathAtomTable ) {
+		public	AtomTable( string _environment ) : base( TYPE.kMTMathAtomTable ) {
 			environment = _environment;
 		}
 
@@ -691,6 +709,18 @@ namespace SharpTeX
 		/// <returns></returns>
 		public ColumnAlignment	GetAlignment( uint _column ) {
 			return _column < ColumnsCount ? alignments[_column] : ColumnAlignment.kMTColumnAlignmentCenter;
+		}
+
+		/// <summary>
+		/// Inserts a "style atom" for every cell of the table
+		/// </summary>
+		/// <param name="_atom"></param>
+		public void		InsertStyleAtom( Atom _atom ) {
+			for ( uint i = 0; i < RowsCount; i++ ) {
+				for ( uint j = 0; j < ColumnsCount; j++ ) {
+					this[i,j].InsertAtom( 0, _atom );
+				}
+			}
 		}
 
 		void	ResizeAtLeast( uint _rows, uint _colums ) {

@@ -88,7 +88,7 @@ namespace SharpTeX
 		/// @throws NSInvalidArgumentException if the atom is `null`
 		/// </param>
 		/// <param name="_index">The index where the atom is to be inserted. The index should be less than or equal to the number of elements in the math list.</param>
-		public void		InsertAtom( Atom _atom, uint _index ) {
+		public void		InsertAtom( uint _index, Atom _atom ) {
 			if ( _atom == null )
 				throw new Exception( "Invalid atom!" );
 			if ( _atom.type == Atom.TYPE.kMTMathAtomBoundary )
@@ -163,6 +163,16 @@ namespace SharpTeX
 			}
 		}
 
+		public AtomsList	Copy() {
+			// Perform a deep copy
+			AtomsList	result = new AtomsList();
+			foreach ( Atom atom in atoms ) {
+				result.AddAtom( atom.Copy( ) );
+			}
+
+			return result;
+		}
+
 
 /*
 
@@ -189,55 +199,6 @@ namespace SharpTeX
     return list;
 }
 
-// Initializes an empty math list.
-- (instancetype)init
-{
-    self = [super init];
-    if (self) {
-        _atoms = [NSMutableArray array];
-    }
-    return self;
-}
-
-- (bool) isAtomAllowed:(MTMathAtom*) atom
-{
-    return atom.type != kMTMathAtomBoundary;
-}
-
-// Add an atom to the end of the list.
-//  @param atom The atom to be inserted. This cannot be `null` and cannot have the type `kMTMathAtomBoundary`.
-//  @throws NSException if the atom is of type `kMTMathAtomBoundary`
-//  @throws NSInvalidArgumentException if the atom is `null`
-- (void)addAtom:(MTMathAtom *)atom
-{
-    NSParameterAssert(atom);
-    if (![self isAtomAllowed:atom]) {
-        @throw [[NSException alloc] initWithName:@"Error"
-                                          reason:[NSString stringWithFormat:@"Cannot add atom of type %@ in a mathlist", typeToText(atom.type)]
-                                        userInfo:null];
-    }
-    [_atoms addObject:atom];
-}
-
-// Inserts an atom at the given index. If index is already occupied, the objects at index and beyond are 
-//  shifted by adding 1 to their indices to make room.
-//  
-//  @param atom The atom to be inserted. This cannot be `null` and cannot have the type `kMTMathAtomBoundary`.
-//  @param index The index where the atom is to be inserted. The index should be less than or equal to the
-//  number of elements in the math list.
-//  @throws NSException if the atom is of type kMTMathAtomBoundary
-//  @throws NSInvalidArgumentException if the atom is null
-//  @throws NSRangeException if the index is greater than the number of atoms in the math list.
-- (void)insertAtom:(MTMathAtom *)atom atIndex:(NSUInteger) index
-{
-    if (![self isAtomAllowed:atom]) {
-        @throw [[NSException alloc] initWithName:@"Error"
-                                          reason:[NSString stringWithFormat:@"Cannot add atom of type %@ in a mathlist", typeToText(atom.type)]
-                                        userInfo:null];
-    }
-    [_atoms insertObject:atom atIndex:index];
-}
-
 
 			// Removes the last atom from the math list. If there are no atoms in the list this does nothing.
 - (void)removeLastAtom
@@ -259,19 +220,7 @@ namespace SharpTeX
 {
     [_atoms removeObjectsInRange:range];
 }
-
-
-#pragma mark NSCopying
-
-// Makes a deep copy of the list
-- (id)copyWithZone:(NSZone *)zone
-{
-    MTMathList* list = [[[self class] allocWithZone:zone] init];
-    list->_atoms = [[NSMutableArray alloc] initWithArray:self.atoms copyItems:YES];
-    return list;
-}
 */
-
 
 		#endregion
     }
