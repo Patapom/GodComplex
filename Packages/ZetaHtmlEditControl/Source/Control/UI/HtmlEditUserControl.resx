@@ -1,0 +1,1062 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <metadata name="topToolStrip.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <value>17, 17</value>
+  </metadata>
+  <assembly alias="System.Drawing" name="System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+  <data name="topToolStrip.Font" type="System.Drawing.Font, System.Drawing">
+    <value>Tahoma, 11px</value>
+  </data>
+  <data name="undoToolStripButton.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+    <value>
+        iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8
+        YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAD4SURBVDhP1ZHBSsNAEIZTW3ry3IfpxUtRJJuUHvI8y2yu
+        Yj0I3gRBWtgXmM0pLyTiRVsRXWc2YxJpJDnaD4bAzv7/ZPaP/h9a65ME3G1i8EOBe1vmbi6tfjJrxyS8
+        T4zz9N2lgLG0+jnT5YREjyzmyTHghbSGQaJtNZkK8EsZ93lQgE9UV5m2U5E10AVbG/SUMrgWWQOvQCYb
+        ufSq8uKcH7RdfBYMAF9E9pvwiIAPlQnuFBSX0gpkujyVAV6ODgkxGnfHO1Oc+3aMgwxqvB+FapHmuGDx
+        nyt0sdLFjP+Ek/mZTondSLsfNqB13oMY3DMZXXfGeKxE0TfkkrgTysaH1wAAAABJRU5ErkJggg==
+</value>
+  </data>
+  <data name="undoToolStripButton.ImageTransparentColor" type="System.Drawing.Color, System.Drawing">
+    <value>Magenta</value>
+  </data>
+  <data name="undoToolStripButton.Size" type="System.Drawing.Size, System.Drawing">
+    <value>23, 22</value>
+  </data>
+  <data name="undoToolStripButton.Text" xml:space="preserve">
+    <value>Undo</value>
+  </data>
+  <data name="textModulesToolStripItem.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+    <value>
+        iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8
+        YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAACTSURBVDhP7ZDdDYQgEISpwBpM7Mhi7hUS+tQiLMCbwQFZ
+        /5Iz55tfMmFZlhmCe4QQwnyiyXv/0dg5GOpVFtBraIJ1gILaC5uUWiaRvRhjJ5P1JTxQWcBASoTGnKh9
+        MU+DhA2VBvZxucVKk5KYzbW9Nqi0JgJzx2wO2CWCnwzIa7DM4DN7rlk6uvcCQ+16JY3/E+e+QYS/X4w6
+        1JIAAAAASUVORK5CYII=
+</value>
+  </data>
+  <data name="textModulesToolStripItem.ImageTransparentColor" type="System.Drawing.Color, System.Drawing">
+    <value>Magenta</value>
+  </data>
+  <data name="textModulesToolStripItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>29, 22</value>
+  </data>
+  <data name="textModulesToolStripItem.Text" xml:space="preserve">
+    <value>Text modules</value>
+  </data>
+  <data name="toolStripSeparator7.Size" type="System.Drawing.Size, System.Drawing">
+    <value>6, 25</value>
+  </data>
+  <data name="boldToolStripMenuItem.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+    <value>
+        iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8
+        YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAACASURBVDhPYxhcoL6+/k9DQ8N/EA0VIg2ANMMwVIg0MLgM
+        gGFgePwD4jtAXATETFCl2AE2A5Ax0IAZUKXYAbJiEH/VqlXMjY2NvkD+V5g40BAjsGJsAKYIhKFCYADU
+        NA1JrhQqjAmQFFHHAIq8gA0TDESgAnBSRtNEfDQOAGBgAAB9Z71dHIAeXQAAAABJRU5ErkJggg==
+</value>
+  </data>
+  <data name="boldToolStripMenuItem.ImageTransparentColor" type="System.Drawing.Color, System.Drawing">
+    <value>Magenta</value>
+  </data>
+  <data name="boldToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>23, 22</value>
+  </data>
+  <data name="boldToolStripMenuItem.Text" xml:space="preserve">
+    <value>Bold</value>
+  </data>
+  <data name="italicToolStripMenuItem.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+    <value>
+        iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8
+        YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAACVSURBVDhPYxgBoKmpybChoeE3ED+FCpEG6uvrFwA1/wfi
+        bKgQHQHQ9gggbgB6Qx0qRDwAapQC4h9Ap38G0kJQYeIBUGM31O+9UCHiQXt7uyDQ1k9AzT9bWlqkocLE
+        A6DmGpDtQHoOVIh4ANTEBcSvgAb8BdJqUGHiAVBjLsh2IF4NFSINAG29A9T8G0gbQYUGNWBgAADXQEUx
+        kL11KQAAAABJRU5ErkJggg==
+</value>
+  </data>
+  <data name="italicToolStripMenuItem.ImageTransparentColor" type="System.Drawing.Color, System.Drawing">
+    <value>Magenta</value>
+  </data>
+  <data name="italicToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>23, 22</value>
+  </data>
+  <data name="italicToolStripMenuItem.Text" xml:space="preserve">
+    <value>Italic</value>
+  </data>
+  <data name="underlineToolStripButton.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+    <value>
+        iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8
+        YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAABpSURBVDhP7ZBBCsAgDATzCv/QVybkQ+LPevBYaLOweFBC
+        T6VQOrCIY1ZB+XkAVT0QbgeZXzCzE+F2kPmFD1wQH9UxGGuhgit0nSonBhtfqyiyXOkax3LcfYvSzsII
+        HM44tjIX7sLa64hcG2h/5wqUaBAAAAAASUVORK5CYII=
+</value>
+  </data>
+  <data name="underlineToolStripButton.ImageTransparentColor" type="System.Drawing.Color, System.Drawing">
+    <value>Magenta</value>
+  </data>
+  <data name="underlineToolStripButton.Size" type="System.Drawing.Size, System.Drawing">
+    <value>23, 22</value>
+  </data>
+  <data name="underlineToolStripButton.Text" xml:space="preserve">
+    <value>Underline</value>
+  </data>
+  <data name="toolStripSeparator1.Size" type="System.Drawing.Size, System.Drawing">
+    <value>6, 25</value>
+  </data>
+  <data name="fontNameToolStripComboBox.Size" type="System.Drawing.Size, System.Drawing">
+    <value>151, 25</value>
+  </data>
+  <data name="fontNameToolStripComboBox.ToolTipText" xml:space="preserve">
+    <value>Font Name</value>
+  </data>
+  <assembly alias="mscorlib" name="mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <data name="fontSizeToolStripComboBox.AutoSize" type="System.Boolean, mscorlib">
+    <value>False</value>
+  </data>
+  <data name="fontSizeToolStripComboBox.Size" type="System.Drawing.Size, System.Drawing">
+    <value>50, 23</value>
+  </data>
+  <data name="fontSizeToolStripComboBox.ToolTipText" xml:space="preserve">
+    <value>Font Size</value>
+  </data>
+  <data name="toolStripSeparator8.Size" type="System.Drawing.Size, System.Drawing">
+    <value>6, 25</value>
+  </data>
+  <data name="bullettedListToolStripMenuItem.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+    <value>
+        iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8
+        YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAABNSURBVDhPYxg8wKdpR4BP0/aXELwjACTW0NDwHxcGa0IG
+        II1+jTvNQRjEhgoTD7AZgM1mGAZrQgbYvEAxwGvj4AOj0YgdEGXzAAMGBgCAYZ1l2d5K/gAAAABJRU5E
+        rkJggg==
+</value>
+  </data>
+  <data name="bullettedListToolStripMenuItem.ImageTransparentColor" type="System.Drawing.Color, System.Drawing">
+    <value>Magenta</value>
+  </data>
+  <data name="bullettedListToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>23, 22</value>
+  </data>
+  <data name="bullettedListToolStripMenuItem.Text" xml:space="preserve">
+    <value>Unordered list</value>
+  </data>
+  <data name="numberedListToolStripMenuItem.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+    <value>
+        iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8
+        YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAABySURBVDhPYxg8wKdpR71v047/UC4YNDQ0/MeFoUpQAboB
+        JAOKXADSDMNQIRLB//+McAwFeG0cfMC3cccUIP7h07hjAlSI5EBs9qrfaQCkP0KFSAO+9dv0fJq23wbi
+        UqgQaS4AOv0TZdGIBRBl8wADBgYA3jeLce+ZmaQAAAAASUVORK5CYII=
+</value>
+  </data>
+  <data name="numberedListToolStripMenuItem.ImageTransparentColor" type="System.Drawing.Color, System.Drawing">
+    <value>Magenta</value>
+  </data>
+  <data name="numberedListToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>23, 22</value>
+  </data>
+  <data name="numberedListToolStripMenuItem.Text" xml:space="preserve">
+    <value>Ordered list</value>
+  </data>
+  <data name="indentToolStripMenuItem.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+    <value>
+        iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8
+        YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAACKSURBVDhPYxg8oKGh4T8pGKoNAbApwoeh2qgMfBq3v/Ft
+        3PHOr3mnHVQIp8ug0hDgV79Ny7t+p45v0/Yw36Yd/32atn9GNoQgAGlCxz6NO56B5LDZDsJgjTAAtFkb
+        2QVA/NW3eacTVJp4ADTgLTAcPiBrxmszVQG6TYQwVBsCYFOED0O1DX3AwAAAvULUL5zmZPYAAAAASUVO
+        RK5CYII=
+</value>
+  </data>
+  <data name="indentToolStripMenuItem.ImageTransparentColor" type="System.Drawing.Color, System.Drawing">
+    <value>Magenta</value>
+  </data>
+  <data name="indentToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>23, 22</value>
+  </data>
+  <data name="indentToolStripMenuItem.Text" xml:space="preserve">
+    <value>Indent</value>
+  </data>
+  <data name="outdentToolStripMenuItem.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+    <value>
+        iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8
+        YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAACTSURBVDhPYxg8oKGh4T8pGKoNAbApwoeh2qgI/Jp32vk2
+        7njn07j9DVQIDLDZDsJQaQgAafZp2v7Zt2nHf9+m7WHe9Tt1/Oq3aUGlCQOfxh3PIJpRMUgOm+0gDNYI
+        A77NO52AGr5CNEJcAKS1odLEAZAhQP9/AGp8CxUCA7w2UxWg20QIQ7UhADZF+DBU29AHDAwAAqnUL0mE
+        qWMAAAAASUVORK5CYII=
+</value>
+  </data>
+  <data name="outdentToolStripMenuItem.ImageTransparentColor" type="System.Drawing.Color, System.Drawing">
+    <value>Magenta</value>
+  </data>
+  <data name="outdentToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>23, 22</value>
+  </data>
+  <data name="outdentToolStripMenuItem.Text" xml:space="preserve">
+    <value>Outdent</value>
+  </data>
+  <data name="toolStripSeparator2.Size" type="System.Drawing.Size, System.Drawing">
+    <value>6, 25</value>
+  </data>
+  <data name="justifyLeftToolStripButton.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+    <value>
+        iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8
+        YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAABJSURBVDhPYxg8wLdpx38okzwAMqC+vr4BCP4Tg6HaEICu
+        LoBqQQU0dQFUCX5AtzCAKscEdHMBDEO1IQBdXABVih1Q7ALyAAMDANMMpwzwdHMzAAAAAElFTkSuQmCC
+</value>
+  </data>
+  <data name="justifyLeftToolStripButton.ImageTransparentColor" type="System.Drawing.Color, System.Drawing">
+    <value>Magenta</value>
+  </data>
+  <data name="justifyLeftToolStripButton.Size" type="System.Drawing.Size, System.Drawing">
+    <value>23, 22</value>
+  </data>
+  <data name="justifyLeftToolStripButton.Text" xml:space="preserve">
+    <value>Justify left</value>
+  </data>
+  <data name="justifyCenterToolStripButton.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+    <value>
+        iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8
+        YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAABYSURBVDhP1ZDRCQAgCERdsJ2kqdquEDoQydK+6kEgJ3QP
+        6W1KbX2Oe5i52yc5PvD2R8IGwqrBM5AsRMoA6BZrIHOKtAGaPAPkYVIGugVNKwPsQnx2gzuIBn1ziaUG
+        9DmIAAAAAElFTkSuQmCC
+</value>
+  </data>
+  <data name="justifyCenterToolStripButton.ImageTransparentColor" type="System.Drawing.Color, System.Drawing">
+    <value>Magenta</value>
+  </data>
+  <data name="justifyCenterToolStripButton.Size" type="System.Drawing.Size, System.Drawing">
+    <value>23, 22</value>
+  </data>
+  <data name="justifyCenterToolStripButton.Text" xml:space="preserve">
+    <value>Center</value>
+  </data>
+  <data name="justifyRightToolStripButton.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+    <value>
+        iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8
+        YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAABHSURBVDhPYxiawLdpx38oEwEaGhr+E4Pr6+sbsBpACsBp
+        ADYb0TFtXYAOBsYF2GxFxrRzATbbsGH6xAI2m2GYvumAMGBgAACPZqcM3dFCGgAAAABJRU5ErkJggg==
+</value>
+  </data>
+  <data name="justifyRightToolStripButton.ImageTransparentColor" type="System.Drawing.Color, System.Drawing">
+    <value>Magenta</value>
+  </data>
+  <data name="justifyRightToolStripButton.Size" type="System.Drawing.Size, System.Drawing">
+    <value>23, 22</value>
+  </data>
+  <data name="justifyRightToolStripButton.Text" xml:space="preserve">
+    <value>Justify right</value>
+  </data>
+  <data name="toolStripSeparator6.Size" type="System.Drawing.Size, System.Drawing">
+    <value>6, 25</value>
+  </data>
+  <data name="insertTableToolStripMenuItem.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+    <value>
+        iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8
+        YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAACHSURBVDhPrY7tDYAgDETZ0nVInIQZXMB1HMFfyNNCGsW0
+        flzyTC29y4XPijGOhbWQH4JnJKD36GXZA6QM8ySjd87HR+Q0XQNYvuSnBvLvMmm1AA4sMKR5yCBm9s8a
+        6ADkDqg6B+wigOMevFfTHWaDnkljBmg1k1Y5TIRYcKsDZJ+Y3bo2CGEDwulbwooQAHYAAAAASUVORK5C
+        YII=
+</value>
+  </data>
+  <data name="insertTableToolStripMenuItem.ImageTransparentColor" type="System.Drawing.Color, System.Drawing">
+    <value>Magenta</value>
+  </data>
+  <data name="insertTableToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>23, 22</value>
+  </data>
+  <data name="insertTableToolStripMenuItem.Text" xml:space="preserve">
+    <value>Insert table</value>
+  </data>
+  <data name="toolStripSeparator3.Size" type="System.Drawing.Size, System.Drawing">
+    <value>6, 25</value>
+  </data>
+  <data name="foreColorNoneToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>152, 22</value>
+  </data>
+  <data name="foreColorNoneToolStripMenuItem.Text" xml:space="preserve">
+    <value>None</value>
+  </data>
+  <data name="toolStripSeparator4.Size" type="System.Drawing.Size, System.Drawing">
+    <value>149, 6</value>
+  </data>
+  <data name="foreColor01ToolStripMenuItem.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+    <value>
+        iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6
+        JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAACXBIWXMAAAr/AAAK/wE0YpqCAAAALklE
+        QVQ4T2P4//8/RRhMHD169D85GMWAA0AmKXjUgFEDQHg4GkAOhhtAPv7PAABbOlqzzz+p8AAAAABJRU5E
+        rkJggg==
+</value>
+  </data>
+  <data name="foreColor01ToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>152, 22</value>
+  </data>
+  <data name="foreColor01ToolStripMenuItem.Text" xml:space="preserve">
+    <value>Color 1</value>
+  </data>
+  <data name="foreColor02ToolStripMenuItem.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+    <value>
+        iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6
+        JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAACXBIWXMAAAr/AAAK/wE0YpqCAAAALUlE
+        QVQ4T2P4//8/RRhMHD169D85GMUAMJMEPGrAqAEgPBwNIAfDDSAf/2cAAJAafiMVDFqrAAAAAElFTkSu
+        QmCC
+</value>
+  </data>
+  <data name="foreColor02ToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>152, 22</value>
+  </data>
+  <data name="foreColor02ToolStripMenuItem.Text" xml:space="preserve">
+    <value>Color 2</value>
+  </data>
+  <data name="foreColor03ToolStripMenuItem.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+    <value>
+        iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6
+        JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAACXBIWXMAAAr/AAAK/wE0YpqCAAAAL0lE
+        QVQ4T2P4//8/RRhMHD169D85GMWA/weATBLwqAGjBoDwcDSAHAw3gHz8nwEAMv7qI6JiiAUAAAAASUVO
+        RK5CYII=
+</value>
+  </data>
+  <data name="foreColor03ToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>152, 22</value>
+  </data>
+  <data name="foreColor03ToolStripMenuItem.Text" xml:space="preserve">
+    <value>Color 3</value>
+  </data>
+  <data name="foreColor04ToolStripMenuItem.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+    <value>
+        iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6
+        JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAACXBIWXMAAAr/AAAK/wE0YpqCAAAALUlE
+        QVQ4T2P4//8/RRhMHD169D85GMUAqIFE41EDRg0A4eFoADkYbgD5+D8DAERuDaLgeeAsAAAAAElFTkSu
+        QmCC
+</value>
+  </data>
+  <data name="foreColor04ToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>152, 22</value>
+  </data>
+  <data name="foreColor04ToolStripMenuItem.Text" xml:space="preserve">
+    <value>Color 4</value>
+  </data>
+  <data name="foreColor05ToolStripMenuItem.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+    <value>
+        iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6
+        JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAACXBIWXMAAAr/AAAK/wE0YpqCAAAALklE
+        QVQ4T2P4//8/RRhMHD169D85GMWASRcCSMKjBowaAMLD0QByMNwA8vF/BgDpluLTr2AQdgAAAABJRU5E
+        rkJggg==
+</value>
+  </data>
+  <data name="foreColor05ToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>152, 22</value>
+  </data>
+  <data name="foreColor05ToolStripMenuItem.Text" xml:space="preserve">
+    <value>Color 5</value>
+  </data>
+  <data name="foreColor06ToolStripMenuItem.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+    <value>
+        iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6
+        JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAACXBIWXMAAAr/AAAK/wE0YpqCAAAALklE
+        QVQ4T2P4//8/RRhMHD169D85GMUAhg0BJOFRA0YNAOHhaAA5GG4A+fg/AwD4cn6zw+dRQAAAAABJRU5E
+        rkJggg==
+</value>
+  </data>
+  <data name="foreColor06ToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>152, 22</value>
+  </data>
+  <data name="foreColor06ToolStripMenuItem.Text" xml:space="preserve">
+    <value>Color 6</value>
+  </data>
+  <data name="foreColor07ToolStripMenuItem.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+    <value>
+        iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6
+        JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAACXBIWXMAAAr/AAAK/wE0YpqCAAAALklE
+        QVQ4T2P4//8/RRhMHD169D85GMUAhg0fSMKjBowaAMLD0QByMNwA8vF/BgCmK9iz/608CgAAAABJRU5E
+        rkJggg==
+</value>
+  </data>
+  <data name="foreColor07ToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>152, 22</value>
+  </data>
+  <data name="foreColor07ToolStripMenuItem.Text" xml:space="preserve">
+    <value>Color 7</value>
+  </data>
+  <data name="foreColor08ToolStripMenuItem.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+    <value>
+        iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6
+        JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAACXBIWXMAAAr/AAAK/wE0YpqCAAAALklE
+        QVQ4T2P4//8/RRhMHD169D85GMUAhoIDJOFRA0YNAOHhaAA5GG4A+fg/AwCiK5mzWkx2UgAAAABJRU5E
+        rkJggg==
+</value>
+  </data>
+  <data name="foreColor08ToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>152, 22</value>
+  </data>
+  <data name="foreColor08ToolStripMenuItem.Text" xml:space="preserve">
+    <value>Color 8</value>
+  </data>
+  <data name="foreColor09ToolStripMenuItem.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+    <value>
+        iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6
+        JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAACXBIWXMAAAr/AAAK/wE0YpqCAAAALklE
+        QVQ4T2P4//8/RRhMHD169D85GMUABoUEkvCoAaMGgPBwNIAcDDeAfPyfAQCC5DaziACeKAAAAABJRU5E
+        rkJggg==
+</value>
+  </data>
+  <data name="foreColor09ToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>152, 22</value>
+  </data>
+  <data name="foreColor09ToolStripMenuItem.Text" xml:space="preserve">
+    <value>Color 9</value>
+  </data>
+  <data name="foreColor10ToolStripMenuItem.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+    <value>
+        iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6
+        JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAACXBIWXMAAAr/AAAK/wE0YpqCAAAALklE
+        QVQ4T2P4//8/RRhMHD169D85GMWAAoMFJOFRA0YNAOHhaAA5GG4A+fg/AwBAyKKzGGMBvwAAAABJRU5E
+        rkJggg==
+</value>
+  </data>
+  <data name="foreColor10ToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>152, 22</value>
+  </data>
+  <data name="foreColor10ToolStripMenuItem.Text" xml:space="preserve">
+    <value>Color 10</value>
+  </data>
+  <data name="foreColorToolStripMenuItem.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+    <value>
+        iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8
+        YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADVSURBVDhP3Y5Bi4FRGIV9S7aTjY3ID/AnJk3SlJJSQjI7
+        axLSlJKaGhJjYWNpYzH2823mh/glz5zru8pizLjsnHp63/fczumG7lye5y0M9nRWXOGJ2Jo9sNxUFyUV
+        7OzuJgXXGgnRs7uTkgqtNNOiqv3LeObhUjUV+j7FeMHTBVLgUyMVXId7bL1/FRYbsbczJjL2PnoRcVam
+        4EGY4G9ExZ8F7uJl4dP4gPocajOoTKH8DqU3KI6hMIL8EJ5fITeAbB+eupDpwGPLV8GS6wva3PiDlv8D
+        wQudGdiwp0MAAAAASUVORK5CYII=
+</value>
+  </data>
+  <data name="foreColorToolStripMenuItem.ImageTransparentColor" type="System.Drawing.Color, System.Drawing">
+    <value>Magenta</value>
+  </data>
+  <data name="foreColorToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>29, 22</value>
+  </data>
+  <data name="BackColorNoneToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>152, 22</value>
+  </data>
+  <data name="BackColorNoneToolStripMenuItem.Text" xml:space="preserve">
+    <value>None</value>
+  </data>
+  <data name="toolStripSeparator5.Size" type="System.Drawing.Size, System.Drawing">
+    <value>149, 6</value>
+  </data>
+  <data name="BackColor01ToolStripMenuItem.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+    <value>
+        iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6
+        JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAACXBIWXMAAAr/AAAK/wE0YpqCAAAALUlE
+        QVQ4T2P4//8/RRhMHD169D85GMUAqIFE41EDRg0A4eFoADkYbgD5+D8DAERuDaLgeeAsAAAAAElFTkSu
+        QmCC
+</value>
+  </data>
+  <data name="BackColor01ToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>152, 22</value>
+  </data>
+  <data name="BackColor01ToolStripMenuItem.Text" xml:space="preserve">
+    <value>Color 1</value>
+  </data>
+  <data name="BackColor02ToolStripMenuItem.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+    <value>
+        iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6
+        JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAACXBIWXMAAAr/AAAK/wE0YpqCAAAALElE
+        QVQ4T2P4//8/RRhMHD169D85GMUABhLhqAGjBoDgcDSAHAw3gHz8nwEAAKp+I0WDFjwAAAAASUVORK5C
+        YII=
+</value>
+  </data>
+  <data name="BackColor02ToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>152, 22</value>
+  </data>
+  <data name="BackColor02ToolStripMenuItem.Text" xml:space="preserve">
+    <value>Color 2</value>
+  </data>
+  <data name="BackColor03ToolStripMenuItem.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+    <value>
+        iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6
+        JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAACXBIWXMAAAr/AAAK/wE0YpqCAAAALUlE
+        QVQ4T2P4//8/RRhMHD169D85GMUAFGOJwKMGjBoAwsPRAHIw3ADy8X8GACV/DaLhkk6pAAAAAElFTkSu
+        QmCC
+</value>
+  </data>
+  <data name="BackColor03ToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>152, 22</value>
+  </data>
+  <data name="BackColor03ToolStripMenuItem.Text" xml:space="preserve">
+    <value>Color 3</value>
+  </data>
+  <data name="BackColor04ToolStripMenuItem.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+    <value>
+        iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6
+        JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAACXBIWXMAAAr/AAAK/wE0YpqCAAAALUlE
+        QVQ4T2P4//8/RRhMHD169D85GMUAMJMEPGrAqAEgPBwNIAfDDSAf/2cAAJAafiMVDFqrAAAAAElFTkSu
+        QmCC
+</value>
+  </data>
+  <data name="BackColor04ToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>152, 22</value>
+  </data>
+  <data name="BackColor04ToolStripMenuItem.Text" xml:space="preserve">
+    <value>Color 4</value>
+  </data>
+  <data name="BackColor05ToolStripMenuItem.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+    <value>
+        iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6
+        JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAACXBIWXMAAAr/AAAK/wE0YpqCAAAALUlE
+        QVQ4T2P4//8/RRhMHD169D85GMUA7ObjxqMGjBoAwsPRAHIw3ADy8X8GALTvDaIyJnSLAAAAAElFTkSu
+        QmCC
+</value>
+  </data>
+  <data name="BackColor05ToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>152, 22</value>
+  </data>
+  <data name="BackColor05ToolStripMenuItem.Text" xml:space="preserve">
+    <value>Color 5</value>
+  </data>
+  <data name="backColorToolStripMenuItem.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+    <value>
+        iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8
+        YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAE0SURBVDhPYxga4M2saJk3s8IuvZ0V9u3NzLAV/+vrmaBS
+        hMHrORFSQM0PgZr/I+GNRBnyYnaE+JtZoffRNEPwzNCFUGXYwbO5IaJAzXewaobgz1ClmODj5ABhoA03
+        sWiC4zczQy9ClaOCpzN9uICar2HTBMNAl71+Pi1QDKoFAbq7u7lbG+qK384MK8OmEYSBsfD25ZRQCagW
+        VNDQ0JAOxP+BhvS/mxlagUXze1CsQJVjAqDmQpABINzeVNP9ZmZINcKA0I9vZgXKQJViB/X19Y9gBoBw
+        Z1NNO9CQOqABn4EukoMqww7ezA5xnd1W4gHU+BvZkO7m6oY3E6P5oMqwgzczwt2AIf8dGHi3p7dVeAFd
+        8gWIc4C4Cojx2wwCQM1PgVHzF4xnhk1vbW0Vh0rRGjAwAABfJhH3bCPqVAAAAABJRU5ErkJggg==
+</value>
+  </data>
+  <data name="backColorToolStripMenuItem.ImageTransparentColor" type="System.Drawing.Color, System.Drawing">
+    <value>Magenta</value>
+  </data>
+  <data name="backColorToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>29, 22</value>
+  </data>
+  <data name="removeFormattingToolStripMenuItem.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+    <value>
+        iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8
+        YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAEdSURBVDhPtVHNSgMxGIyCFooHzz15sB499HV8D2+SxSw9
+        FhY0Yc+9VtBXEPw59A28SLcJ1JaeFAQtcb7wpS3aQrQ4MOT7mRmSXfGvcMo8WaUdt7+Dzc2zy40noh7x
+        OA0w3UXz30OUmS6ZZ5XS17xKB4XgG3xGs1XmAYGDsEzFUJkenTbXj/FGLtdVWKbCKX2/MMdn6StepwEh
+        w3mAMpNB++KQV0JkWfa2jlLKDsvwd3QFjqtz08S8weMQ4FcRoj64673fwrlPWivLOnsknQHfjcwPmI55
+        f1IURS2IAcz3wBdu1wZc0g7CI/A0CBnYnZGG258BMLyD4Y3ob1DPPxjqA/CVdDxaeYMuzSFsoZ7h3Ka+
+        LMsd1LdRR7MNIcQXu14H8BiNwB4AAAAASUVORK5CYII=
+</value>
+  </data>
+  <data name="removeFormattingToolStripMenuItem.ImageTransparentColor" type="System.Drawing.Color, System.Drawing">
+    <value>Magenta</value>
+  </data>
+  <data name="removeFormattingToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>23, 22</value>
+  </data>
+  <data name="removeFormattingToolStripMenuItem.Text" xml:space="preserve">
+    <value>Remove formatting</value>
+  </data>
+  <data name="topToolStrip.Location" type="System.Drawing.Point, System.Drawing">
+    <value>0, 0</value>
+  </data>
+  <data name="topToolStrip.Size" type="System.Drawing.Size, System.Drawing">
+    <value>943, 25</value>
+  </data>
+  <data name="topToolStrip.TabIndex" type="System.Int32, mscorlib">
+    <value>0</value>
+  </data>
+  <data name="topToolStrip.Text" xml:space="preserve">
+    <value>toolStrip1</value>
+  </data>
+  <data name="&gt;&gt;topToolStrip.Name" xml:space="preserve">
+    <value>topToolStrip</value>
+  </data>
+  <data name="&gt;&gt;topToolStrip.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStrip, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;topToolStrip.Parent" xml:space="preserve">
+    <value>tableLayoutPanel</value>
+  </data>
+  <data name="&gt;&gt;topToolStrip.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="tableLayoutPanel.ColumnCount" type="System.Int32, mscorlib">
+    <value>1</value>
+  </data>
+  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <data name="htmlEditControl.Dock" type="System.Windows.Forms.DockStyle, System.Windows.Forms">
+    <value>Fill</value>
+  </data>
+  <data name="htmlEditControl.Location" type="System.Drawing.Point, System.Drawing">
+    <value>1, 1</value>
+  </data>
+  <data name="htmlEditControl.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
+    <value>0, 0, 0, 0</value>
+  </data>
+  <data name="htmlEditControl.MinimumSize" type="System.Drawing.Size, System.Drawing">
+    <value>20, 20</value>
+  </data>
+  <data name="htmlEditControl.Size" type="System.Drawing.Size, System.Drawing">
+    <value>941, 143</value>
+  </data>
+  <data name="htmlEditControl.TabIndex" type="System.Int32, mscorlib">
+    <value>2</value>
+  </data>
+  <data name="&gt;&gt;htmlEditControl.Name" xml:space="preserve">
+    <value>htmlEditControl</value>
+  </data>
+  <data name="&gt;&gt;htmlEditControl.Type" xml:space="preserve">
+    <value>ZetaHtmlEditControl.UI.EditControlDerives.HtmlEditControl, ZetaHtmlEditControl, Version=1.1.0.4, Culture=neutral, PublicKeyToken=2e2e5ba5da72b6c0</value>
+  </data>
+  <data name="&gt;&gt;htmlEditControl.Parent" xml:space="preserve">
+    <value>panel1</value>
+  </data>
+  <data name="&gt;&gt;htmlEditControl.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="panel1.Dock" type="System.Windows.Forms.DockStyle, System.Windows.Forms">
+    <value>Fill</value>
+  </data>
+  <data name="panel1.Location" type="System.Drawing.Point, System.Drawing">
+    <value>0, 25</value>
+  </data>
+  <data name="panel1.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
+    <value>0, 0, 0, 0</value>
+  </data>
+  <data name="panel1.Padding" type="System.Windows.Forms.Padding, System.Windows.Forms">
+    <value>1, 1, 1, 1</value>
+  </data>
+  <data name="panel1.Size" type="System.Drawing.Size, System.Drawing">
+    <value>943, 145</value>
+  </data>
+  <data name="panel1.TabIndex" type="System.Int32, mscorlib">
+    <value>1</value>
+  </data>
+  <data name="&gt;&gt;panel1.Name" xml:space="preserve">
+    <value>panel1</value>
+  </data>
+  <data name="&gt;&gt;panel1.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Panel, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;panel1.Parent" xml:space="preserve">
+    <value>tableLayoutPanel</value>
+  </data>
+  <data name="&gt;&gt;panel1.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="tableLayoutPanel.Dock" type="System.Windows.Forms.DockStyle, System.Windows.Forms">
+    <value>Fill</value>
+  </data>
+  <data name="tableLayoutPanel.Location" type="System.Drawing.Point, System.Drawing">
+    <value>0, 0</value>
+  </data>
+  <data name="tableLayoutPanel.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
+    <value>0, 0, 0, 0</value>
+  </data>
+  <data name="tableLayoutPanel.RowCount" type="System.Int32, mscorlib">
+    <value>2</value>
+  </data>
+  <data name="tableLayoutPanel.Size" type="System.Drawing.Size, System.Drawing">
+    <value>943, 170</value>
+  </data>
+  <data name="tableLayoutPanel.TabIndex" type="System.Int32, mscorlib">
+    <value>2</value>
+  </data>
+  <data name="&gt;&gt;tableLayoutPanel.Name" xml:space="preserve">
+    <value>tableLayoutPanel</value>
+  </data>
+  <data name="&gt;&gt;tableLayoutPanel.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TableLayoutPanel, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;tableLayoutPanel.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;tableLayoutPanel.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="tableLayoutPanel.LayoutSettings" type="System.Windows.Forms.TableLayoutSettings, System.Windows.Forms">
+    <value>&lt;?xml version="1.0" encoding="utf-16"?&gt;&lt;TableLayoutSettings&gt;&lt;Controls&gt;&lt;Control Name="topToolStrip" Row="0" RowSpan="1" Column="0" ColumnSpan="1" /&gt;&lt;Control Name="panel1" Row="1" RowSpan="1" Column="0" ColumnSpan="1" /&gt;&lt;/Controls&gt;&lt;Columns Styles="Percent,100" /&gt;&lt;Rows Styles="Absolute,25,Percent,100" /&gt;&lt;/TableLayoutSettings&gt;</value>
+  </data>
+  <metadata name="$this.Localizable" type="System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
+    <value>True</value>
+  </metadata>
+  <metadata name="$this.TrayHeight" type="System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
+    <value>62</value>
+  </metadata>
+  <data name="$this.Size" type="System.Drawing.Size, System.Drawing">
+    <value>943, 170</value>
+  </data>
+  <data name="&gt;&gt;undoToolStripButton.Name" xml:space="preserve">
+    <value>undoToolStripButton</value>
+  </data>
+  <data name="&gt;&gt;undoToolStripButton.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripButton, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;textModulesToolStripItem.Name" xml:space="preserve">
+    <value>textModulesToolStripItem</value>
+  </data>
+  <data name="&gt;&gt;textModulesToolStripItem.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripDropDownButton, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;toolStripSeparator7.Name" xml:space="preserve">
+    <value>toolStripSeparator7</value>
+  </data>
+  <data name="&gt;&gt;toolStripSeparator7.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripSeparator, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;boldToolStripMenuItem.Name" xml:space="preserve">
+    <value>boldToolStripMenuItem</value>
+  </data>
+  <data name="&gt;&gt;boldToolStripMenuItem.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripButton, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;italicToolStripMenuItem.Name" xml:space="preserve">
+    <value>italicToolStripMenuItem</value>
+  </data>
+  <data name="&gt;&gt;italicToolStripMenuItem.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripButton, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;underlineToolStripButton.Name" xml:space="preserve">
+    <value>underlineToolStripButton</value>
+  </data>
+  <data name="&gt;&gt;underlineToolStripButton.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripButton, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;toolStripSeparator1.Name" xml:space="preserve">
+    <value>toolStripSeparator1</value>
+  </data>
+  <data name="&gt;&gt;toolStripSeparator1.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripSeparator, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;fontNameToolStripComboBox.Name" xml:space="preserve">
+    <value>fontNameToolStripComboBox</value>
+  </data>
+  <data name="&gt;&gt;fontNameToolStripComboBox.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripComboBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;fontSizeToolStripComboBox.Name" xml:space="preserve">
+    <value>fontSizeToolStripComboBox</value>
+  </data>
+  <data name="&gt;&gt;fontSizeToolStripComboBox.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripComboBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;toolStripSeparator8.Name" xml:space="preserve">
+    <value>toolStripSeparator8</value>
+  </data>
+  <data name="&gt;&gt;toolStripSeparator8.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripSeparator, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;bullettedListToolStripMenuItem.Name" xml:space="preserve">
+    <value>bullettedListToolStripMenuItem</value>
+  </data>
+  <data name="&gt;&gt;bullettedListToolStripMenuItem.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripButton, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;numberedListToolStripMenuItem.Name" xml:space="preserve">
+    <value>numberedListToolStripMenuItem</value>
+  </data>
+  <data name="&gt;&gt;numberedListToolStripMenuItem.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripButton, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;indentToolStripMenuItem.Name" xml:space="preserve">
+    <value>indentToolStripMenuItem</value>
+  </data>
+  <data name="&gt;&gt;indentToolStripMenuItem.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripButton, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;outdentToolStripMenuItem.Name" xml:space="preserve">
+    <value>outdentToolStripMenuItem</value>
+  </data>
+  <data name="&gt;&gt;outdentToolStripMenuItem.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripButton, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;toolStripSeparator2.Name" xml:space="preserve">
+    <value>toolStripSeparator2</value>
+  </data>
+  <data name="&gt;&gt;toolStripSeparator2.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripSeparator, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;justifyLeftToolStripButton.Name" xml:space="preserve">
+    <value>justifyLeftToolStripButton</value>
+  </data>
+  <data name="&gt;&gt;justifyLeftToolStripButton.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripButton, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;justifyCenterToolStripButton.Name" xml:space="preserve">
+    <value>justifyCenterToolStripButton</value>
+  </data>
+  <data name="&gt;&gt;justifyCenterToolStripButton.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripButton, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;justifyRightToolStripButton.Name" xml:space="preserve">
+    <value>justifyRightToolStripButton</value>
+  </data>
+  <data name="&gt;&gt;justifyRightToolStripButton.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripButton, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;toolStripSeparator6.Name" xml:space="preserve">
+    <value>toolStripSeparator6</value>
+  </data>
+  <data name="&gt;&gt;toolStripSeparator6.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripSeparator, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;insertTableToolStripMenuItem.Name" xml:space="preserve">
+    <value>insertTableToolStripMenuItem</value>
+  </data>
+  <data name="&gt;&gt;insertTableToolStripMenuItem.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripButton, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;toolStripSeparator3.Name" xml:space="preserve">
+    <value>toolStripSeparator3</value>
+  </data>
+  <data name="&gt;&gt;toolStripSeparator3.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripSeparator, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;foreColorToolStripMenuItem.Name" xml:space="preserve">
+    <value>foreColorToolStripMenuItem</value>
+  </data>
+  <data name="&gt;&gt;foreColorToolStripMenuItem.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripDropDownButton, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;foreColorNoneToolStripMenuItem.Name" xml:space="preserve">
+    <value>foreColorNoneToolStripMenuItem</value>
+  </data>
+  <data name="&gt;&gt;foreColorNoneToolStripMenuItem.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;toolStripSeparator4.Name" xml:space="preserve">
+    <value>toolStripSeparator4</value>
+  </data>
+  <data name="&gt;&gt;toolStripSeparator4.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripSeparator, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;foreColor01ToolStripMenuItem.Name" xml:space="preserve">
+    <value>foreColor01ToolStripMenuItem</value>
+  </data>
+  <data name="&gt;&gt;foreColor01ToolStripMenuItem.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;foreColor02ToolStripMenuItem.Name" xml:space="preserve">
+    <value>foreColor02ToolStripMenuItem</value>
+  </data>
+  <data name="&gt;&gt;foreColor02ToolStripMenuItem.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;foreColor03ToolStripMenuItem.Name" xml:space="preserve">
+    <value>foreColor03ToolStripMenuItem</value>
+  </data>
+  <data name="&gt;&gt;foreColor03ToolStripMenuItem.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;foreColor04ToolStripMenuItem.Name" xml:space="preserve">
+    <value>foreColor04ToolStripMenuItem</value>
+  </data>
+  <data name="&gt;&gt;foreColor04ToolStripMenuItem.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;foreColor05ToolStripMenuItem.Name" xml:space="preserve">
+    <value>foreColor05ToolStripMenuItem</value>
+  </data>
+  <data name="&gt;&gt;foreColor05ToolStripMenuItem.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;foreColor06ToolStripMenuItem.Name" xml:space="preserve">
+    <value>foreColor06ToolStripMenuItem</value>
+  </data>
+  <data name="&gt;&gt;foreColor06ToolStripMenuItem.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;foreColor07ToolStripMenuItem.Name" xml:space="preserve">
+    <value>foreColor07ToolStripMenuItem</value>
+  </data>
+  <data name="&gt;&gt;foreColor07ToolStripMenuItem.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;foreColor08ToolStripMenuItem.Name" xml:space="preserve">
+    <value>foreColor08ToolStripMenuItem</value>
+  </data>
+  <data name="&gt;&gt;foreColor08ToolStripMenuItem.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;foreColor09ToolStripMenuItem.Name" xml:space="preserve">
+    <value>foreColor09ToolStripMenuItem</value>
+  </data>
+  <data name="&gt;&gt;foreColor09ToolStripMenuItem.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;foreColor10ToolStripMenuItem.Name" xml:space="preserve">
+    <value>foreColor10ToolStripMenuItem</value>
+  </data>
+  <data name="&gt;&gt;foreColor10ToolStripMenuItem.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;backColorToolStripMenuItem.Name" xml:space="preserve">
+    <value>backColorToolStripMenuItem</value>
+  </data>
+  <data name="&gt;&gt;backColorToolStripMenuItem.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripDropDownButton, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;BackColorNoneToolStripMenuItem.Name" xml:space="preserve">
+    <value>BackColorNoneToolStripMenuItem</value>
+  </data>
+  <data name="&gt;&gt;BackColorNoneToolStripMenuItem.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;toolStripSeparator5.Name" xml:space="preserve">
+    <value>toolStripSeparator5</value>
+  </data>
+  <data name="&gt;&gt;toolStripSeparator5.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripSeparator, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;BackColor01ToolStripMenuItem.Name" xml:space="preserve">
+    <value>BackColor01ToolStripMenuItem</value>
+  </data>
+  <data name="&gt;&gt;BackColor01ToolStripMenuItem.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;BackColor02ToolStripMenuItem.Name" xml:space="preserve">
+    <value>BackColor02ToolStripMenuItem</value>
+  </data>
+  <data name="&gt;&gt;BackColor02ToolStripMenuItem.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;BackColor03ToolStripMenuItem.Name" xml:space="preserve">
+    <value>BackColor03ToolStripMenuItem</value>
+  </data>
+  <data name="&gt;&gt;BackColor03ToolStripMenuItem.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;BackColor04ToolStripMenuItem.Name" xml:space="preserve">
+    <value>BackColor04ToolStripMenuItem</value>
+  </data>
+  <data name="&gt;&gt;BackColor04ToolStripMenuItem.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;BackColor05ToolStripMenuItem.Name" xml:space="preserve">
+    <value>BackColor05ToolStripMenuItem</value>
+  </data>
+  <data name="&gt;&gt;BackColor05ToolStripMenuItem.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;removeFormattingToolStripMenuItem.Name" xml:space="preserve">
+    <value>removeFormattingToolStripMenuItem</value>
+  </data>
+  <data name="&gt;&gt;removeFormattingToolStripMenuItem.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripButton, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;$this.Name" xml:space="preserve">
+    <value>HtmlEditUserControl</value>
+  </data>
+  <data name="&gt;&gt;$this.Type" xml:space="preserve">
+    <value>System.Windows.Forms.UserControl, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+</root>

@@ -27,6 +27,7 @@
 			this.buttonGo = new System.Windows.Forms.Button();
 			this.textBoxURL = new System.Windows.Forms.TextBox();
 			this.panelOutput = new System.Windows.Forms.Panel();
+			this.buttonEdit = new System.Windows.Forms.Button();
 			this.SuspendLayout();
 			// 
 			// floatTrackbarControl
@@ -64,16 +65,29 @@
 			this.panelOutput.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
+			this.panelOutput.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
 			this.panelOutput.Location = new System.Drawing.Point(12, 12);
 			this.panelOutput.Name = "panelOutput";
 			this.panelOutput.Size = new System.Drawing.Size(793, 661);
 			this.panelOutput.TabIndex = 4;
+			// 
+			// buttonEdit
+			// 
+			this.buttonEdit.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+			this.buttonEdit.Location = new System.Drawing.Point(933, 147);
+			this.buttonEdit.Name = "buttonEdit";
+			this.buttonEdit.Size = new System.Drawing.Size(75, 23);
+			this.buttonEdit.TabIndex = 5;
+			this.buttonEdit.Text = "Edit";
+			this.buttonEdit.UseVisualStyleBackColor = true;
+			this.buttonEdit.Click += new System.EventHandler(this.buttonEdit_Click);
 			// 
 			// BrainForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1190, 685);
+			this.Controls.Add(this.buttonEdit);
 			this.Controls.Add(this.panelOutput);
 			this.Controls.Add(this.textBoxURL);
 			this.Controls.Add(this.buttonGo);
@@ -93,6 +107,7 @@
 		private System.Windows.Forms.Button buttonGo;
 		private System.Windows.Forms.TextBox textBoxURL;
 		private System.Windows.Forms.Panel panelOutput;
+		private System.Windows.Forms.Button buttonEdit;
 	}
 }
 

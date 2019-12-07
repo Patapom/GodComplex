@@ -31,6 +31,11 @@ namespace Brain2 {
 			panelOutput.BackgroundImage = _bitmap;
 		}
 
+		private void buttonEdit_Click(object sender, EventArgs e) {
+			WebEditorForm	form = new WebEditorForm();
+			form.ShowDialog( this );
+		}
+
 		#endregion
 	}
 }

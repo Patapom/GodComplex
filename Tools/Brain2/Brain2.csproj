@@ -53,9 +53,6 @@
     <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="AxInterop.SHDocVw">
-      <HintPath>.\AxInterop.SHDocVw.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -78,6 +75,12 @@
     <Compile Include="BrainForm.Designer.cs">
       <DependentUpon>BrainForm.cs</DependentUpon>
     </Compile>
+    <None Include="Web Interface\WebEditor_COMError.cs">
+      <SubType>UserControl</SubType>
+    </None>
+    <None Include="Web Interface\WebEditor_COMError.Designer.cs">
+      <DependentUpon>WebEditor_COMError.cs</DependentUpon>
+    </None>
     <Compile Include="Web Interface\WebEditor.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -87,6 +90,12 @@
     <Compile Include="Web Interface\WebPage2Image.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="WebEditorForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="WebEditorForm.Designer.cs">
+      <DependentUpon>WebEditorForm.cs</DependentUpon>
+    </Compile>
     <EmbeddedResource Include="BrainForm.resx">
       <DependentUpon>BrainForm.cs</DependentUpon>
     </EmbeddedResource>
@@ -101,6 +110,12 @@
     </Compile>
     <EmbeddedResource Include="Web Interface\WebEditor.resx">
       <DependentUpon>WebEditor.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Web Interface\WebEditor_COMError.resx">
+      <DependentUpon>WebEditor_COMError.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="WebEditorForm.resx">
+      <DependentUpon>WebEditorForm.cs</DependentUpon>
     </EmbeddedResource>
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -128,26 +143,10 @@
       <Project>{f96cdfd3-8954-4f4f-afb0-2855d98f051b}</Project>
       <Name>Renderer</Name>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <COMReference Include="MSHTML">
-      <Guid>{3050F1C5-98B5-11CF-BB82-00AA00BDCE0B}</Guid>
-      <VersionMajor>4</VersionMajor>
-      <VersionMinor>0</VersionMinor>
-      <Lcid>0</Lcid>
-      <WrapperTool>primary</WrapperTool>
-      <Isolated>False</Isolated>
-      <EmbedInteropTypes>False</EmbedInteropTypes>
-    </COMReference>
-    <COMReference Include="SHDocVw">
-      <Guid>{EAB22AC0-30C1-11CF-A7EB-0000C05BAE0B}</Guid>
-      <VersionMajor>1</VersionMajor>
-      <VersionMinor>1</VersionMinor>
-      <Lcid>0</Lcid>
-      <WrapperTool>tlbimp</WrapperTool>
-      <Isolated>False</Isolated>
-      <EmbedInteropTypes>True</EmbedInteropTypes>
-    </COMReference>
+    <ProjectReference Include="..\..\Packages\ZetaHtmlEditControl\Source\Control\Control.csproj">
+      <Project>{b00ae765-8212-43fd-8e70-768a6c20ee93}</Project>
+      <Name>Control</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

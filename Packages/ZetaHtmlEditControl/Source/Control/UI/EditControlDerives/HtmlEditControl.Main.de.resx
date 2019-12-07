@@ -1,0 +1,421 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <assembly alias="System.Drawing" name="System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+  <data name="textModulesToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>203, 22</value>
+  </data>
+  <data name="textModulesToolStripMenuItem.Text" xml:space="preserve">
+    <value>Textbausteine</value>
+  </data>
+  <data name="textModulesSeparator.Size" type="System.Drawing.Size, System.Drawing">
+    <value>200, 6</value>
+  </data>
+  <data name="boldToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>203, 22</value>
+  </data>
+  <data name="boldToolStripMenuItem.Text" xml:space="preserve">
+    <value>&amp;Fett</value>
+  </data>
+  <data name="italicToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>203, 22</value>
+  </data>
+  <data name="italicToolStripMenuItem.Text" xml:space="preserve">
+    <value>&amp;Kursiv</value>
+  </data>
+  <data name="underlineToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>203, 22</value>
+  </data>
+  <data name="underlineToolStripMenuItem.Text" xml:space="preserve">
+    <value>Unterstreichen</value>
+  </data>
+  <data name="toolStripSeparator1.Size" type="System.Drawing.Size, System.Drawing">
+    <value>200, 6</value>
+  </data>
+  <data name="cutToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>203, 22</value>
+  </data>
+  <data name="cutToolStripMenuItem.Text" xml:space="preserve">
+    <value>&amp;Ausschneiden</value>
+  </data>
+  <data name="copyToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>203, 22</value>
+  </data>
+  <data name="copyToolStripMenuItem.Text" xml:space="preserve">
+    <value>K&amp;opieren</value>
+  </data>
+  <data name="pasteToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>203, 22</value>
+  </data>
+  <data name="pasteToolStripMenuItem.Text" xml:space="preserve">
+    <value>&amp;Einfügen</value>
+  </data>
+  <data name="pasteFromMsWordToolStripItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>203, 22</value>
+  </data>
+  <data name="pasteFromMsWordToolStripItem.Text" xml:space="preserve">
+    <value>Aus Word einfügen</value>
+  </data>
+  <data name="pasteAsTextToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>203, 22</value>
+  </data>
+  <data name="pasteAsTextToolStripMenuItem.Text" xml:space="preserve">
+    <value>Als Text ein&amp;fügen</value>
+  </data>
+  <data name="deleteToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>203, 22</value>
+  </data>
+  <data name="deleteToolStripMenuItem.Text" xml:space="preserve">
+    <value>&amp;Löschen</value>
+  </data>
+  <data name="toolStripSeparator9.Size" type="System.Drawing.Size, System.Drawing">
+    <value>200, 6</value>
+  </data>
+  <data name="insertNewTableToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>259, 22</value>
+  </data>
+  <data name="insertNewTableToolStripMenuItem.Text" xml:space="preserve">
+    <value>Neue Tabelle einfügen</value>
+  </data>
+  <data name="toolStripSeparator13.Size" type="System.Drawing.Size, System.Drawing">
+    <value>256, 6</value>
+  </data>
+  <data name="insertRowBeforeCurrentRowToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>259, 22</value>
+  </data>
+  <data name="insertRowBeforeCurrentRowToolStripMenuItem.Text" xml:space="preserve">
+    <value>Zeile vor aktueller Zeile einfügen</value>
+  </data>
+  <data name="insertColumnBeforeCurrentColumnToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>259, 22</value>
+  </data>
+  <data name="insertColumnBeforeCurrentColumnToolStripMenuItem.Text" xml:space="preserve">
+    <value>Spalte vor aktueller Spalte einfügen</value>
+  </data>
+  <data name="toolStripSeparator10.Size" type="System.Drawing.Size, System.Drawing">
+    <value>256, 6</value>
+  </data>
+  <data name="addRowAfterTheLastTableRowToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>259, 22</value>
+  </data>
+  <data name="addRowAfterTheLastTableRowToolStripMenuItem.Text" xml:space="preserve">
+    <value>Zeile unten einfügen</value>
+  </data>
+  <data name="addColumnAfterTheLastTableColumnToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>259, 22</value>
+  </data>
+  <data name="addColumnAfterTheLastTableColumnToolStripMenuItem.Text" xml:space="preserve">
+    <value>Spalte rechts einfügen</value>
+  </data>
+  <data name="toolStripSeparator11.Size" type="System.Drawing.Size, System.Drawing">
+    <value>256, 6</value>
+  </data>
+  <data name="tablePropertiesToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>259, 22</value>
+  </data>
+  <data name="tablePropertiesToolStripMenuItem.Text" xml:space="preserve">
+    <value>Tabelleneigenschaften</value>
+  </data>
+  <data name="rowPropertiesToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>259, 22</value>
+  </data>
+  <data name="rowPropertiesToolStripMenuItem.Text" xml:space="preserve">
+    <value>Zeileneigenschaften</value>
+  </data>
+  <data name="columnPropertiesToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>259, 22</value>
+  </data>
+  <data name="columnPropertiesToolStripMenuItem.Text" xml:space="preserve">
+    <value>Spalteneigenschaften</value>
+  </data>
+  <data name="cellPropertiesToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>259, 22</value>
+  </data>
+  <data name="cellPropertiesToolStripMenuItem.Text" xml:space="preserve">
+    <value>Zelleneigenschaften</value>
+  </data>
+  <data name="toolStripSeparator12.Size" type="System.Drawing.Size, System.Drawing">
+    <value>256, 6</value>
+  </data>
+  <data name="deleteRowToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>259, 22</value>
+  </data>
+  <data name="deleteRowToolStripMenuItem.Text" xml:space="preserve">
+    <value>Zeile löschen</value>
+  </data>
+  <data name="deleteColumnToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>259, 22</value>
+  </data>
+  <data name="deleteColumnToolStripMenuItem.Text" xml:space="preserve">
+    <value>Spalte löschen</value>
+  </data>
+  <data name="deleteTableToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>259, 22</value>
+  </data>
+  <data name="deleteTableToolStripMenuItem.Text" xml:space="preserve">
+    <value>Tabelle löschen</value>
+  </data>
+  <data name="tableToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>203, 22</value>
+  </data>
+  <data name="tableToolStripMenuItem.Text" xml:space="preserve">
+    <value>Tabelle</value>
+  </data>
+  <data name="toolStripSeparator2.Size" type="System.Drawing.Size, System.Drawing">
+    <value>200, 6</value>
+  </data>
+  <data name="foreColorNoneToolStripMenuItem.Text" xml:space="preserve">
+    <value>Keine</value>
+  </data>
+  <data name="foreColor01ToolStripMenuItem.Text" xml:space="preserve">
+    <value>Farbe 1</value>
+  </data>
+  <data name="foreColor02ToolStripMenuItem.Text" xml:space="preserve">
+    <value>Farbe 2</value>
+  </data>
+  <data name="foreColor03ToolStripMenuItem.Text" xml:space="preserve">
+    <value>Farbe 3</value>
+  </data>
+  <data name="foreColor04ToolStripMenuItem.Text" xml:space="preserve">
+    <value>Farbe 4</value>
+  </data>
+  <data name="foreColor05ToolStripMenuItem.Text" xml:space="preserve">
+    <value>Farbe 5</value>
+  </data>
+  <data name="foreColor06ToolStripMenuItem.Text" xml:space="preserve">
+    <value>Farbe 6</value>
+  </data>
+  <data name="foreColor07ToolStripMenuItem.Text" xml:space="preserve">
+    <value>Farbe 7</value>
+  </data>
+  <data name="foreColor08ToolStripMenuItem.Text" xml:space="preserve">
+    <value>Farbe 8</value>
+  </data>
+  <data name="foreColor09ToolStripMenuItem.Text" xml:space="preserve">
+    <value>Farbe 9</value>
+  </data>
+  <data name="foreColor10ToolStripMenuItem.Text" xml:space="preserve">
+    <value>Farbe 10</value>
+  </data>
+  <data name="foreColorToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>203, 22</value>
+  </data>
+  <data name="foreColorToolStripMenuItem.Text" xml:space="preserve">
+    <value>Schriftfarbe</value>
+  </data>
+  <data name="BackColorNoneToolStripMenuItem.Text" xml:space="preserve">
+    <value>Keine</value>
+  </data>
+  <data name="BackColor01ToolStripMenuItem.Text" xml:space="preserve">
+    <value>Farbe 1</value>
+  </data>
+  <data name="BackColor02ToolStripMenuItem.Text" xml:space="preserve">
+    <value>Farbe 2</value>
+  </data>
+  <data name="BackColor03ToolStripMenuItem.Text" xml:space="preserve">
+    <value>Farbe 3</value>
+  </data>
+  <data name="BackColor04ToolStripMenuItem.Text" xml:space="preserve">
+    <value>Farbe 4</value>
+  </data>
+  <data name="BackColor05ToolStripMenuItem.Text" xml:space="preserve">
+    <value>Farbe 5</value>
+  </data>
+  <data name="backColorToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>203, 22</value>
+  </data>
+  <data name="backColorToolStripMenuItem.Text" xml:space="preserve">
+    <value>Texthervorhebungsfarbe</value>
+  </data>
+  <data name="toolStripSeparator6.Size" type="System.Drawing.Size, System.Drawing">
+    <value>200, 6</value>
+  </data>
+  <data name="justifyLeftToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>203, 22</value>
+  </data>
+  <data name="justifyLeftToolStripMenuItem.Text" xml:space="preserve">
+    <value>&amp;Linksbündig</value>
+  </data>
+  <data name="justifyCenterToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>203, 22</value>
+  </data>
+  <data name="justifyCenterToolStripMenuItem.Text" xml:space="preserve">
+    <value>&amp;Zentriert</value>
+  </data>
+  <data name="justifyRightToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>203, 22</value>
+  </data>
+  <data name="justifyRightToolStripMenuItem.Text" xml:space="preserve">
+    <value>&amp;Rechtsbündig</value>
+  </data>
+  <data name="toolStripSeparator3.Size" type="System.Drawing.Size, System.Drawing">
+    <value>200, 6</value>
+  </data>
+  <data name="bullettedListToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>203, 22</value>
+  </data>
+  <data name="bullettedListToolStripMenuItem.Text" xml:space="preserve">
+    <value>Aufzählungszeichen</value>
+  </data>
+  <data name="numberedListToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>203, 22</value>
+  </data>
+  <data name="numberedListToolStripMenuItem.Text" xml:space="preserve">
+    <value>Nummerierung</value>
+  </data>
+  <data name="indentToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>203, 22</value>
+  </data>
+  <data name="indentToolStripMenuItem.Text" xml:space="preserve">
+    <value>Einzug vergrößern</value>
+  </data>
+  <data name="outdentToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>203, 22</value>
+  </data>
+  <data name="outdentToolStripMenuItem.Text" xml:space="preserve">
+    <value>Einzug verkleinern</value>
+  </data>
+  <data name="toolStripSeparator4.Size" type="System.Drawing.Size, System.Drawing">
+    <value>200, 6</value>
+  </data>
+  <data name="hyperLinkToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>203, 22</value>
+  </data>
+  <data name="hyperLinkToolStripMenuItem.Text" xml:space="preserve">
+    <value>H&amp;yperlink einfügen</value>
+  </data>
+  <data name="toolStripSeparator5.Size" type="System.Drawing.Size, System.Drawing">
+    <value>200, 6</value>
+  </data>
+  <data name="removeFormattingToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>203, 22</value>
+  </data>
+  <data name="removeFormattingToolStripMenuItem.Text" xml:space="preserve">
+    <value>Formatierung entfernen</value>
+  </data>
+  <data name="htmlToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>203, 22</value>
+  </data>
+  <data name="htmlToolStripMenuItem.Text" xml:space="preserve">
+    <value>HTML-Quelltext</value>
+  </data>
+  <data name="contextMenuStrip.Size" type="System.Drawing.Size, System.Drawing">
+    <value>204, 558</value>
+  </data>
+</root>

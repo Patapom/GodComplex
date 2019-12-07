@@ -1,0 +1,38 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2013
+VisualStudioVersion = 12.0.30110.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Control", "Control\Control.csproj", "{B00AE765-8212-43FD-8E70-768A6C20EE93}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test", "Test\Test.csproj", "{3C3B613E-8DFA-4D36-9DE6-EC101F1A6AA8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZetaPad", "ZetaPad\ZetaPad.csproj", "{AE66A7F6-3B16-437B-AE41-29AD5C53B7C1}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{CC3EE8BE-8C75-4C43-AD0C-D404C2A42220}"
+	ProjectSection(SolutionItems) = preProject
+		.nuget\NuGet.Config = .nuget\NuGet.Config
+		.nuget\NuGet.exe = .nuget\NuGet.exe
+		.nuget\NuGet.targets = .nuget\NuGet.targets
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HtmlEditLibrary", "HtmlEditLibrary\HtmlEditLibrary.csproj", "{58A6AA36-6E02-44F7-ACD7-A7FA2045473B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B00AE765-8212-43FD-8E70-768A6C20EE93}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B00AE765-8212-43FD-8E70-768A6C20EE93}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3C3B613E-8DFA-4D36-9DE6-EC101F1A6AA8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3C3B613E-8DFA-4D36-9DE6-EC101F1A6AA8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AE66A7F6-3B16-437B-AE41-29AD5C53B7C1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AE66A7F6-3B16-437B-AE41-29AD5C53B7C1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{58A6AA36-6E02-44F7-ACD7-A7FA2045473B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{58A6AA36-6E02-44F7-ACD7-A7FA2045473B}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
