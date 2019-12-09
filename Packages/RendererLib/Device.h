@@ -41,6 +41,18 @@ public:		// NESTED TYPES
 		U64			GetTimeStamp( Device& _owner );
 	};
 
+	class AdapterOutput {
+	private:
+		friend class Device;
+		IDXGIOutput*				m_output;
+	public:
+		U32							m_adapterIndex;
+		U32							m_outputIndex;
+		HMONITOR					m_outputMonitor;
+		RECT						m_outputRectangle;
+		DXGI_MODE_ROTATION			m_outputRotation;
+	};
+
 private:	// FIELDS
 
 	ID3D11Device*			m_device;
@@ -102,6 +114,8 @@ public:
 	BlendState*				m_pBS_Additive;
 	BlendState*				m_pBS_Max;
 
+	BaseLib::List< BaseLib::List< AdapterOutput > >	m_adapterOutputs;
+
 
 public:	 // PROPERTIES
 
@@ -124,9 +138,17 @@ public:	 // METHODS
 //	~Device();	// Don't declare a destructor since the Device exists as a static singleton instance: in release mode, this implies calling some annoying atexit() function that will yield a link error!
 				// Simply don't forget to call Exit() at the end of your program and that should do the trick...
 
-	bool	Init( HWND _Handle, bool _Fullscreen, bool _sRGB );
-	bool	Init( U32 _Width, U32 _Height, HWND _Handle, bool _Fullscreen, bool _sRGB );
+	bool	Init( HWND _Handle, bool _fullscreen, bool _sRGB );
+	bool	Init( U32 _Width, U32 _Height, HWND _Handle, bool _fullscreen, bool _sRGB );
 	void	Exit();
+
+	// Resizes the internal swap chain and default render targets
+	void	ResizeSwapChain( U32 _width,  U32 _height );
+	void	ResizeSwapChain( U32 _width,  U32 _height, bool _sRGB );
+
+	// Switches to fullscreen
+	//	_targetOutput, an optional output to switch to (only used if _fullscreen = true)
+	void	SwitchFullScreenState( bool _fullscreen, const AdapterOutput* _targetOutput=NULL );
 
 	// Helpers
 	void	ClearRenderTarget( const Texture2D& _Target, const bfloat4& _Color );

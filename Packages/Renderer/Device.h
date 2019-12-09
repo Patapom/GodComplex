@@ -26,6 +26,28 @@ namespace Renderer {
 
 	// Main device class from which everything else is derived
 	public ref class Device {
+	public:
+
+		ref class AdapterOutput {
+		internal:
+			const ::Device::AdapterOutput*	m_pAdapterOutput;
+		public:
+			enum class ROTATION {
+				UNSPECIFIED = 0,
+				IDENTITY = 1,
+				ROTATE_90 = 2,
+				ROTATE_180 = 3,
+				ROTATE_270 = 4,
+			};
+
+			property UInt32						AdapterIndex;
+			property UInt32						OutputIndex;
+			property System::IntPtr				MonitorHandle;		// The HMONITOR associated to this output
+			property System::Drawing::Rectangle	Rectangle;			// The desktop rectangle covered by this output
+			property ROTATION					Rotation;			// Optional rotation specification
+
+		};
+
 	internal:
 
 		::Device*		m_pDevice;
@@ -39,23 +61,15 @@ namespace Renderer {
 		// We keep the list of the last 8 assigned RTVs
 		::ID3D11RenderTargetView**	m_ppRenderTargetViews;
 
+		cli::array< cli::array< AdapterOutput^ >^ >^	m_cachedAdapterOutputs;
+
 	public:
 
-		property void*			NativeDevice {
-			void*		get() { return reinterpret_cast<void*>( m_pDevice ); }
-		}
-
-		property Texture2D^		DefaultTarget {
-			Texture2D^	get() { return m_defaultTarget; }
-		}
-
-		property Texture2D^		DefaultDepthStencil {
-			Texture2D^	get() { return m_defaultDepthStencil; }
-		}
-
-		property Primitive^		ScreenQuad {
-			Primitive^	get() { return m_screenQuad; }
-		}
+		property void*			NativeDevice		{ void* get() { return reinterpret_cast<void*>( m_pDevice ); } }
+		property Texture2D^		DefaultTarget		{ Texture2D^ get() { return m_defaultTarget; } }
+		property Texture2D^		DefaultDepthStencil { Texture2D^ get() { return m_defaultDepthStencil; } }
+		property Primitive^		ScreenQuad			{ Primitive^ get() { return m_screenQuad; } }
+		property cli::array< cli::array< AdapterOutput^ >^ >^	AdapterOutputs	{ cli::array< cli::array< AdapterOutput^ >^ >^ get(); }
 
 		Device() {
 			m_pDevice = new ::Device();
@@ -63,6 +77,7 @@ namespace Renderer {
  			m_defaultDepthStencil = nullptr;
 			m_ppRenderTargetViews = new ::ID3D11RenderTargetView*[8];
 			memset( m_ppRenderTargetViews, 0, 8*sizeof(::ID3D11RenderTargetView*) );
+			m_cachedAdapterOutputs = nullptr;
 		}
 		~Device() {
 //			delete m_pQuad;
@@ -76,6 +91,15 @@ namespace Renderer {
 		void	Exit() {
 			m_pDevice->Exit();
 		}
+
+		// Resizes the internal swap chain and default render targets
+		void	ResizeSwapChain( UInt32 _width, UInt32 _height, bool _sRGB );
+		void	ResizeSwapChain( UInt32 _width, UInt32 _height );
+
+		// Switches to fullscreen
+		//	_targetOutput, an optional output to switch to (only used if _fullscreen = true)
+		void	SwitchFullScreenState( bool _fullscreen, AdapterOutput^ _targetOutput );
+		void	SwitchFullScreenState( bool _fullscreen );
 
 		void	Clear( SharpMath::float4 _clearColor );
 		void	Clear( Texture2D^ _renderTarget, SharpMath::float4 _clearColor );

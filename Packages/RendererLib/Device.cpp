@@ -10,6 +10,7 @@
 Device::Device()
 	: m_device( NULL )
 	, m_deviceContext( NULL )
+	, m_swapChain( NULL )
 	, m_componentsStackTop( NULL )
 	, m_pCurrentMaterial( NULL )
 	, m_pCurrentRasterizerState( NULL )
@@ -37,45 +38,45 @@ int		Device::ComponentsCount() const {
 }
 
 bool	Device::Init( HWND _Handle, bool _Fullscreen, bool _sRGB ) {
-	RECT	Rect = { 0, 0, 0, 0 };
-	if ( !GetWindowRect( _Handle, &Rect ) )
+	RECT	rect = { 0, 0, 0, 0 };
+	if ( !GetWindowRect( _Handle, &rect ) )
 		throw "Failed to retrieve window dimensions to initialize device!";
 	
-	int	Width = Rect.right - Rect.left;
-	int	Height = Rect.bottom - Rect.top;
+	int	width = rect.right - rect.left;
+	int	height = rect.bottom - rect.top;
 
-	return Init( Width, Height, _Handle, _Fullscreen, _sRGB );
+	return Init( width, height, _Handle, _Fullscreen, _sRGB );
 }
 
 bool	Device::Init( U32 _width, U32 _height, HWND _handle, bool _fullscreen, bool _sRGB ) {
 	// Create a swap chain with 2 back buffers
-	DXGI_SWAP_CHAIN_DESC	SwapChainDesc;
+	DXGI_SWAP_CHAIN_DESC	swapChainDesc;
 
 	// Simple output buffer
-	SwapChainDesc.BufferDesc.Width = _width;
-	SwapChainDesc.BufferDesc.Height = _height;
-	SwapChainDesc.BufferDesc.Format = _sRGB ? DXGI_FORMAT_R8G8B8A8_UNORM_SRGB : DXGI_FORMAT_R8G8B8A8_UNORM;
+	swapChainDesc.BufferDesc.Width = _width;
+	swapChainDesc.BufferDesc.Height = _height;
+	swapChainDesc.BufferDesc.Format = _sRGB ? DXGI_FORMAT_R8G8B8A8_UNORM_SRGB : DXGI_FORMAT_R8G8B8A8_UNORM;
 //	SwapChainDesc.BufferDesc.Scaling = DXGI_MODE_SCALING_STRETCHED;
-	SwapChainDesc.BufferDesc.Scaling = DXGI_MODE_SCALING_CENTERED;
-	SwapChainDesc.BufferDesc.RefreshRate.Numerator = 60;
-	SwapChainDesc.BufferDesc.RefreshRate.Denominator = 1;
-	SwapChainDesc.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
-	SwapChainDesc.BufferUsage = DXGI_USAGE_BACK_BUFFER | DXGI_USAGE_RENDER_TARGET_OUTPUT | DXGI_USAGE_SHADER_INPUT;
+	swapChainDesc.BufferDesc.Scaling = DXGI_MODE_SCALING_CENTERED;
+	swapChainDesc.BufferDesc.RefreshRate.Numerator = 60;
+	swapChainDesc.BufferDesc.RefreshRate.Denominator = 1;
+	swapChainDesc.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
+	swapChainDesc.BufferUsage = DXGI_USAGE_BACK_BUFFER | DXGI_USAGE_RENDER_TARGET_OUTPUT | DXGI_USAGE_SHADER_INPUT;
 //	SwapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT | DXGI_USAGE_UNORDERED_ACCESS;
-	SwapChainDesc.BufferCount = 2;
+	swapChainDesc.BufferCount = 2;
 
 	// No multisampling
-	SwapChainDesc.SampleDesc.Count = 1;
-	SwapChainDesc.SampleDesc.Quality = 0;
+	swapChainDesc.SampleDesc.Count = 1;
+	swapChainDesc.SampleDesc.Quality = 0;
 
-	SwapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
-	SwapChainDesc.OutputWindow = _handle;
-	SwapChainDesc.Windowed = !_fullscreen;
-	SwapChainDesc.Flags = 0;
+	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
+	swapChainDesc.OutputWindow = _handle;
+	swapChainDesc.Windowed = !_fullscreen;
+	swapChainDesc.Flags = 0;
 
-	int	FeatureLevelsCount = 2;
+	int	featureLevelsCount = 2;
 	D3D_FEATURE_LEVEL	FeatureLevels[] = { D3D_FEATURE_LEVEL_11_1, D3D_FEATURE_LEVEL_11_0 };		// Support D3D11...
-	D3D_FEATURE_LEVEL	ObtainedFeatureLevel;
+	D3D_FEATURE_LEVEL	obtainedFeatureLevel;
 
 	#if defined(_DEBUG) && !defined(NSIGHT)
 		UINT	debugFlags = D3D11_CREATE_DEVICE_DEBUG;
@@ -88,10 +89,10 @@ bool	Device::Init( U32 _width, U32 _height, HWND _handle, bool _fullscreen, bool
  	if ( !Check(
 		D3D11CreateDeviceAndSwapChain( NULL, D3D_DRIVER_TYPE_HARDWARE, NULL,
 			debugFlags,
-			FeatureLevels, FeatureLevelsCount,
+			FeatureLevels, featureLevelsCount,
 			D3D11_SDK_VERSION,
-			&SwapChainDesc, &m_swapChain,
-			&m_device, &ObtainedFeatureLevel, &m_deviceContext ) )
+			&swapChainDesc, &m_swapChain,
+			&m_device, &obtainedFeatureLevel, &m_deviceContext ) )
 		)
 		return false;
 
@@ -100,13 +101,52 @@ bool	Device::Init( U32 _width, U32 _height, HWND _handle, bool _fullscreen, bool
 	m_swapChain->GetBuffer( 0, __uuidof( ID3D11Texture2D ), (void**) &pDefaultRenderSurface );
 	ASSERT( pDefaultRenderSurface != NULL, "Failed to retrieve default render surface !" );
 
-//	m_pDefaultRenderTarget = new Texture2D( *this, *pDefaultRenderSurface, BaseLib::PF_RGBA8::Descriptor, _sRGB ? BaseLib::COMPONENT_FORMAT::UNORM_sRGB : BaseLib::COMPONENT_FORMAT::UNORM );
 	m_pDefaultRenderTarget = new Texture2D( *this, *pDefaultRenderSurface );
 
 	// Create the default depth stencil buffer
 	m_pDefaultDepthStencil = new Texture2D( *this, _width, _height, 1, 1, BaseLib::PIXEL_FORMAT::R32F, BaseLib::DEPTH_COMPONENT_FORMAT::DEPTH_ONLY );
 
 
+	//////////////////////////////////////////////////////////////////////////
+	// Enumerate adapters & outputs
+	IDXGIFactory*	DXGIFactory;
+	if ( !Check( CreateDXGIFactory(__uuidof(IDXGIFactory), (void**) &DXGIFactory ) ) ) {
+		return false;
+	}
+	U32				adaptersCount = 0;
+	IDXGIAdapter*	adapter = NULL;
+	while ( DXGIFactory->EnumAdapters( adaptersCount++, &adapter ) == S_OK ) {
+		if ( adapter == NULL ) {
+			break;
+		}
+	}
+	m_adapterOutputs.SetCount( adaptersCount );
+
+	for ( U32 adapterIndex=0; adapterIndex < adaptersCount; adapterIndex++ ) {
+		BaseLib::List< AdapterOutput >&	adapterOutputs = m_adapterOutputs[adapterIndex];
+
+		U32				outputIndex = 0;
+		IDXGIOutput*	output = NULL;
+		while ( adapter->EnumOutputs( outputIndex++, &output ) == S_OK ) {
+			if ( output == NULL ) {
+				break;
+			}
+
+			DXGI_OUTPUT_DESC	outputDesc;
+			output->GetDesc( &outputDesc );
+
+			AdapterOutput&	adapterOutput = adapterOutputs.Append();
+			adapterOutput.m_output = output;
+			adapterOutput.m_adapterIndex = adapterIndex;
+			adapterOutput.m_outputIndex = outputIndex-1;
+			adapterOutput.m_outputMonitor = outputDesc.Monitor;
+			adapterOutput.m_outputRotation = outputDesc.Rotation;
+			adapterOutput.m_outputRectangle = outputDesc.DesktopCoordinates;
+		}
+	}
+
+	DXGIFactory->Release();
+ 
 	//////////////////////////////////////////////////////////////////////////
 	// Create default render states
 	m_statesCount = 0;
@@ -340,6 +380,43 @@ void	Device::Exit() {
 	SAFE_DELETE( m_queryFrameBegin );
 	SAFE_DELETE( m_queryFrameEnd );
 	m_performanceQueries.ForEach( ReleaseQueryObject, NULL );
+}
+
+void	Device::ResizeSwapChain( U32 _width,  U32 _height ) {
+	DXGI_SWAP_CHAIN_DESC	desc;
+	m_swapChain->GetDesc( &desc );
+
+	bool	issRGB = desc.BufferDesc.Format == DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+	ResizeSwapChain( _width, _height, issRGB );
+}
+void	Device::ResizeSwapChain( U32 _width,  U32 _height, bool _sRGB ) {
+
+	DXGI_SWAP_CHAIN_DESC	desc;
+	m_swapChain->GetDesc( &desc );
+
+	bool	issRGB = desc.BufferDesc.Format == DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+	if ( _width == desc.BufferDesc.Width && _height == desc.BufferDesc.Height && _sRGB == issRGB ) {
+		return;	// No change
+	}
+
+	// Resize swap chain
+	m_swapChain->ResizeBuffers( 2, _width, _height, _sRGB ? DXGI_FORMAT_R8G8B8A8_UNORM_SRGB : DXGI_FORMAT_R8G8B8A8_UNORM, 0 );
+
+	// Resize the default target
+	ID3D11Texture2D*	pDefaultRenderSurface;
+	m_swapChain->GetBuffer( 0, __uuidof( ID3D11Texture2D ), (void**) &pDefaultRenderSurface );
+	ASSERT( pDefaultRenderSurface != NULL, "Failed to retrieve default render surface !" );
+
+	m_pDefaultRenderTarget->WrapExistingTexture( *pDefaultRenderSurface );
+
+	// Resize the default depth stencil buffer
+	SAFE_DELETE( m_pDefaultDepthStencil );
+	m_pDefaultDepthStencil = new Texture2D( *this, _width, _height, 1, 1, BaseLib::PIXEL_FORMAT::R32F, BaseLib::DEPTH_COMPONENT_FORMAT::DEPTH_ONLY );
+}
+
+void	Device::SwitchFullScreenState( bool _fullscreen, const AdapterOutput* _targetOutput ) {
+	IDXGIOutput*	output = _targetOutput != NULL ? _targetOutput->m_output : NULL;
+	m_swapChain->SetFullscreenState( _fullscreen, _fullscreen ? output : NULL );
 }
 
 void	Device::ClearRenderTarget( const Texture2D& _Target, const bfloat4& _Color )
@@ -604,8 +681,7 @@ void	Device::UnRegisterComponent( Component& _Component )
 		m_componentsStackTop = _Component.m_previous;	// We were the top of the stack !
 }
 
-bool	Device::Check( HRESULT _Result )
-{
+bool	Device::Check( HRESULT _Result ) {
 #if defined(_DEBUG) && defined(GODCOMPLEX)
 	ASSERT( _Result == S_OK, "DX HRESULT Check failed !" );
 	if ( _Result != S_OK )

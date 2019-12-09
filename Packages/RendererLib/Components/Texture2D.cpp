@@ -6,21 +6,7 @@ Texture2D::Texture2D( Device& _device, ID3D11Texture2D& _texture )//, const Base
 	: Component( _device )
 	, m_isCubeMap( false )
 {
-	// Extract info from surface
-	D3D11_TEXTURE2D_DESC	desc;
-	_texture.GetDesc( &desc );
-
-	m_width = desc.Width;
-	m_height = desc.Height;
-	m_arraySize = desc.ArraySize;
-	m_mipLevelsCount = desc.MipLevels;
-	m_format = desc.Format;
-
-	for ( int ShaderStageIndex=0; ShaderStageIndex < 6; ShaderStageIndex++ )
-		m_lastAssignedSlots[ShaderStageIndex] = -1;
-	m_lastAssignedSlotsUAV = -1;
-
-	m_texture = &_texture;
+	WrapExistingTexture( _texture );
 }
 
 Texture2D::Texture2D( Device& _device, U32 _width, U32 _height, int _arraySize, U32 _mipLevelsCount, BaseLib::PIXEL_FORMAT _format, BaseLib::COMPONENT_FORMAT _componentFormat, const void* const* _ppContent, bool _staging, bool _UAV )
@@ -669,6 +655,24 @@ bool	Texture2D::IsCompressedFormat( DXGI_FORMAT _format ) {
 	}
 
 	return false;
+}
+
+void	Texture2D::WrapExistingTexture( ID3D11Texture2D& _texture ) {
+	// Extract info from surface
+	D3D11_TEXTURE2D_DESC	desc;
+	_texture.GetDesc( &desc );
+
+	m_width = desc.Width;
+	m_height = desc.Height;
+	m_arraySize = desc.ArraySize;
+	m_mipLevelsCount = desc.MipLevels;
+	m_format = desc.Format;
+
+	for ( int ShaderStageIndex=0; ShaderStageIndex < 6; ShaderStageIndex++ )
+		m_lastAssignedSlots[ShaderStageIndex] = -1;
+	m_lastAssignedSlotsUAV = -1;
+
+	m_texture = &_texture;
 }
 
 

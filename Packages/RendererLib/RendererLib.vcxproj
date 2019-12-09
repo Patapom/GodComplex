@@ -118,7 +118,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <Lib>
-      <AdditionalDependencies>baselib.lib;d3d11.lib;d3dcompiler.lib;winmm.lib;user32.lib</AdditionalDependencies>
+      <AdditionalDependencies>baselib.lib;d3d11.lib;d3dcompiler.lib;dxgi.lib;winmm.lib;user32.lib</AdditionalDependencies>
     </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -156,7 +156,7 @@
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
     <Lib>
-      <AdditionalDependencies>baselib.lib;d3d11.lib;d3dcompiler.lib;winmm.lib;user32.lib</AdditionalDependencies>
+      <AdditionalDependencies>baselib.lib;d3d11.lib;d3dcompiler.lib;dxgi.lib;winmm.lib;user32.lib</AdditionalDependencies>
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>

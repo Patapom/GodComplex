@@ -10,7 +10,7 @@ void	Renderer::Device::Init( System::IntPtr _windowHandle, bool _fullScreen, boo
 	if ( _windowHandle == IntPtr::Zero )
 		throw gcnew Exception( "Invalid window handle!" );
 	m_pDevice->Exit();
-	if ( !m_pDevice->Init( (HWND) _windowHandle.ToInt32(), _fullScreen, _sRGBRenderTarget ) )
+	if ( !m_pDevice->Init( (HWND) _windowHandle.ToInt64(), _fullScreen, _sRGBRenderTarget ) )
 		throw gcnew Exception( "Failed to initialize the DirectX device with DX11 level!" );
 
 	m_defaultTarget = gcnew Renderer::Texture2D( m_pDevice->DefaultRenderTarget() );
@@ -39,6 +39,43 @@ void	Renderer::Device::Init( System::IntPtr _windowHandle, bool _fullScreen, boo
 
 	ByteBuffer^	buffVertices = VertexPt4::FromArray( vertices );
 	m_screenQuad = gcnew Primitive( this, 4, buffVertices, nullptr, Primitive::TOPOLOGY::TRIANGLE_STRIP, VERTEX_FORMAT::Pt4 );
+}
+
+cli::array< cli::array< Renderer::Device::AdapterOutput^ >^ >^	Renderer::Device::AdapterOutputs::get() {
+	if ( m_cachedAdapterOutputs == nullptr ) {
+		// Cache them all at once
+		m_cachedAdapterOutputs = gcnew cli::array<cli::array<AdapterOutput ^> ^>( m_pDevice->m_adapterOutputs.Count() );
+		for ( UInt32 adapterIndex=0; adapterIndex < m_pDevice->m_adapterOutputs.Count(); adapterIndex++ ) {
+			const BaseLib::List< ::Device::AdapterOutput >&	nativeAdapterOutputs = m_pDevice->m_adapterOutputs[adapterIndex];
+			cli::array<AdapterOutput ^>^					adapterOutputs = gcnew cli::array<AdapterOutput ^>( nativeAdapterOutputs.Count() );
+
+			m_cachedAdapterOutputs[adapterIndex] = adapterOutputs;
+
+			for ( UInt32 outputIndex=0; outputIndex < nativeAdapterOutputs.Count(); outputIndex++ ) {
+				const ::Device::AdapterOutput&	nativeAdapterOutput = nativeAdapterOutputs[outputIndex];
+				adapterOutputs[outputIndex] = gcnew AdapterOutput();
+				adapterOutputs[outputIndex]->m_pAdapterOutput = &nativeAdapterOutput;
+			}
+		}
+	}
+
+	return m_cachedAdapterOutputs;
+}
+
+
+void	Renderer::Device::ResizeSwapChain( UInt32 _width, UInt32 _height, bool _sRGB ) {
+	m_pDevice->ResizeSwapChain( _width, _height, _sRGB );
+}
+void	Renderer::Device::ResizeSwapChain( UInt32 _width, UInt32 _height ) {
+	m_pDevice->ResizeSwapChain( _width, _height );
+}
+
+void	Renderer::Device::SwitchFullScreenState( bool _fullscreen, AdapterOutput^ _targetOutput ) {
+	const ::Device::AdapterOutput*	nativeOutput = _targetOutput != nullptr ? _targetOutput->m_pAdapterOutput : NULL;
+	m_pDevice->SwitchFullScreenState( _fullscreen, nativeOutput );
+}
+void	Renderer::Device::SwitchFullScreenState( bool _fullscreen ) {
+	SwitchFullScreenState( _fullscreen, nullptr );
 }
 
 void	Renderer::Device::Clear( float4 _clearColor ) {
