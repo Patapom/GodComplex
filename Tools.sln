@@ -20,6 +20,9 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MathSphericalHarmonics", "Packages\MathSphericalHarmonics\MathSphericalHarmonics.csproj", "{E96E2072-C7EF-46BB-A3F1-8CF6B26BF019}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Renderer", "Packages\Renderer\Renderer.vcxproj", "{F96CDFD3-8954-4F4F-AFB0-2855D98F051B}"
+	ProjectSection(ProjectDependencies) = postProject
+		{7523DEED-A096-4B6E-B1D9-EDDA85EE6AA6} = {7523DEED-A096-4B6E-B1D9-EDDA85EE6AA6}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RendererLib", "Packages\RendererLib\RendererLib.vcxproj", "{7523DEED-A096-4B6E-B1D9-EDDA85EE6AA6}"
 EndProject

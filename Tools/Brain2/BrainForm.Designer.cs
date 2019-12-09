@@ -12,7 +12,14 @@
 		/// the contents of this method with the code editor.
 		/// </summary>
 		private void InitializeComponent() {
+			this.components = new System.ComponentModel.Container();
+			this.timerDisplay = new System.Windows.Forms.Timer(this.components);
 			this.SuspendLayout();
+			// 
+			// timerDisplay
+			// 
+			this.timerDisplay.Enabled = true;
+			this.timerDisplay.Interval = 10;
 			// 
 			// BrainForm
 			// 
@@ -32,6 +39,8 @@
 		}
 
 		#endregion
+
+		private System.Windows.Forms.Timer timerDisplay;
 	}
 }
 

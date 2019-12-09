@@ -17,21 +17,7 @@ void	Renderer::Device::Init( System::IntPtr _windowHandle, bool _fullScreen, boo
 	m_defaultDepthStencil = gcnew Renderer::Texture2D( m_pDevice->DefaultDepthStencil() );
 
 	// Build the fullscreen quad
-// 	float	pVertices[4*4] = {
-// 		-1.0f, 1.0f, 0.0f, 1.0f,
-// 		-1.0f, -1.0f, 0.0f, 1.0f,
-// 		1.0f, 1.0f, 0.0f, 1.0f,
-// 		1.0f, -1.0f, 0.0f, 1.0f,
-// 	};
-//	::Primitive* pScreenQuad = new Primitive( *m_pDevice, 4, pVertices, 0, NULL, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP, VertexFormatPt4::DESCRIPTOR );
-//	m_screenQuad = gcnew Primitive( pScreenQuad );
-
-	cli::array<VertexPt4>^	vertices = gcnew cli::array<VertexPt4>( 4 ) {
-// 		VertexPt4() { Pt.Set(-1, 1, 0, 1 ) },
-// 		VertexPt4() { Pt.Set(-1, 1, 0, 1 ) },
-// 		VertexPt4() { Pt.Set(-1, 1, 0, 1 ) },
-// 		VertexPt4() { Pt.Set(-1, 1, 0, 1 ) },
-	};
+	cli::array<VertexPt4>^	vertices = gcnew cli::array<VertexPt4>( 4 );
 	vertices[0].Pt.Set( -1, 1, 0, 1 );
 	vertices[1].Pt.Set( -1, -1, 0, 1 );
 	vertices[2].Pt.Set( 1, 1, 0, 1 );
@@ -61,7 +47,6 @@ cli::array< cli::array< Renderer::Device::AdapterOutput^ >^ >^	Renderer::Device:
 
 	return m_cachedAdapterOutputs;
 }
-
 
 void	Renderer::Device::ResizeSwapChain( UInt32 _width, UInt32 _height, bool _sRGB ) {
 	m_pDevice->ResizeSwapChain( _width, _height, _sRGB );
@@ -161,4 +146,22 @@ ImageUtility::ImagesMatrix^	Renderer::Device::DDSCompress( ImageUtility::ImagesM
 	ImageUtility::ImagesMatrix^	result = gcnew ImageUtility::ImagesMatrix();
 	reinterpret_cast< ImageUtilityLib::ImagesMatrix* >( result->NativeObject.ToPointer() )->DDSCompress( *reinterpret_cast< ImageUtilityLib::ImagesMatrix* >( _sourceImage->NativeObject.ToPointer() ), ImageUtilityLib::ImagesMatrix::COMPRESSION_TYPE( _compressionType ), BaseLib::COMPONENT_FORMAT( _componentFormat ), reinterpret_cast< void* >( &m_pDevice->DXDevice() ) );
 	return result;
+}
+
+UInt32	Renderer::Device::AdapterOutput::AdapterIndex::get() {
+	return m_pAdapterOutput->m_adapterIndex;
+}
+UInt32	Renderer::Device::AdapterOutput::OutputIndex::get() {
+	return m_pAdapterOutput->m_outputIndex;
+}
+System::IntPtr	Renderer::Device::AdapterOutput::MonitorHandle::get() {
+	return System::IntPtr( m_pAdapterOutput->m_outputMonitor );
+}
+System::Drawing::Rectangle	Renderer::Device::AdapterOutput::Rectangle::get() {
+	System::Drawing::Rectangle	result( m_pAdapterOutput->m_outputRectangle.left, m_pAdapterOutput->m_outputRectangle.top,
+										1 + m_pAdapterOutput->m_outputRectangle.right - m_pAdapterOutput->m_outputRectangle.left, 1 + m_pAdapterOutput->m_outputRectangle.bottom - m_pAdapterOutput->m_outputRectangle.top );
+	return result;
+}
+Renderer::Device::AdapterOutput::ROTATION	Renderer::Device::AdapterOutput::Rotation::get() {
+	return (ROTATION) m_pAdapterOutput->m_outputRotation;
 }

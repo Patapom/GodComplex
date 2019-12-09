@@ -107,6 +107,7 @@
     </EmbeddedResource>
     <EmbeddedResource Include="BrainForm.resx">
       <DependentUpon>BrainForm.cs</DependentUpon>
+      <SubType>Designer</SubType>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
@@ -156,6 +157,11 @@
       <Project>{b00ae765-8212-43fd-8e70-768a6c20ee93}</Project>
       <Name>HTMLEditControl</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup />
+  <ItemGroup>
+    <Content Include="Shaders\DisplayCube.hlsl" />
+    <Content Include="Shaders\Global.hlsl" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

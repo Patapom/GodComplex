@@ -40,11 +40,11 @@ namespace Renderer {
 				ROTATE_270 = 4,
 			};
 
-			property UInt32						AdapterIndex;
-			property UInt32						OutputIndex;
-			property System::IntPtr				MonitorHandle;		// The HMONITOR associated to this output
-			property System::Drawing::Rectangle	Rectangle;			// The desktop rectangle covered by this output
-			property ROTATION					Rotation;			// Optional rotation specification
+			property UInt32						AdapterIndex	{ UInt32 get(); }
+			property UInt32						OutputIndex		{ UInt32 get(); }
+			property System::IntPtr				MonitorHandle	{ System::IntPtr get(); }				// The HMONITOR associated to this output
+			property System::Drawing::Rectangle	Rectangle		{ System::Drawing::Rectangle get(); }	// The desktop rectangle covered by this output
+			property ROTATION					Rotation		{ ROTATION get(); }						// Optional rotation specification
 
 		};
 

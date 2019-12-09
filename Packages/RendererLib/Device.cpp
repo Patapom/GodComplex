@@ -115,14 +115,16 @@ bool	Device::Init( U32 _width, U32 _height, HWND _handle, bool _fullscreen, bool
 	}
 	U32				adaptersCount = 0;
 	IDXGIAdapter*	adapter = NULL;
-	while ( DXGIFactory->EnumAdapters( adaptersCount++, &adapter ) == S_OK ) {
+	while ( DXGIFactory->EnumAdapters( adaptersCount, &adapter ) == S_OK ) {
 		if ( adapter == NULL ) {
 			break;
 		}
+		adaptersCount++;
 	}
 	m_adapterOutputs.SetCount( adaptersCount );
 
 	for ( U32 adapterIndex=0; adapterIndex < adaptersCount; adapterIndex++ ) {
+		DXGIFactory->EnumAdapters( adapterIndex, &adapter );
 		BaseLib::List< AdapterOutput >&	adapterOutputs = m_adapterOutputs[adapterIndex];
 
 		U32				outputIndex = 0;

@@ -296,7 +296,7 @@ bool	Shader::Use() {
 	m_device.DXContext().GSSetShader( m_pGS, NULL, 0 );
 	m_device.DXContext().PSSetShader( m_pPS, NULL, 0 );
 
-//	m_device.m_pCurrentMaterial = this;
+	m_device.m_pCurrentMaterial = this;
 
 	Unlock();
 

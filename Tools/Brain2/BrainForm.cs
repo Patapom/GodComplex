@@ -16,18 +16,113 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
+using SharpMath;
 using ImageUtility;
 using Renderer;
 
 namespace Brain2 {
 	public partial class BrainForm : Form {
+
+		#region CONSTANTS
+
+		const float	Z_NEAR = 0.1f;
+		const float	Z_FAR = 100.0f;
+
+		#endregion
+
+		#region NESTED TYPES
+
+		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
+		struct CB_Main {
+			public float4		_resolution;
+			public float4		_mouseUV;
+			public float2		_time_DeltaTime;
+		}
+
+		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
+		struct CB_Camera {
+			public float4x4		_camera2World;
+			public float4x4		_world2Camera;
+			public float4x4		_proj2World;
+			public float4x4		_world2Proj;
+			public float4x4		_camera2Proj;
+			public float4x4		_proj2Camera;
+
+// 			public float4		_ZNearFar_Q_Z;
+// 			public float4		_subPixelOffsets;
+		}
+
+		#endregion
+
 		#region FIELDS
 
-		Device		m_device = new Device();
+		Device						m_device = new Device();
+
+		ConstantBuffer< CB_Main >	m_CB_main = null;
+		ConstantBuffer< CB_Camera >	m_CB_camera = null;
+		Shader						m_shader_displayCube = null;
+		Primitive					m_primitiveCube = null;
+
+		DateTime					m_startTime;
+		DateTime					m_lastFrameTime;
 
 		#endregion
 
 		#region METHODS
+
+		/// <summary>
+		/// Main loop
+		/// </summary>
+		/// <param name="sender"></param>
+		/// <param name="e"></param>
+		private void Application_Idle(object sender, EventArgs e) {
+			if ( !Visible || m_device == null )
+				return;
+
+			DateTime	frameTime = DateTime.Now;
+			float		totalTime = (float) (frameTime - m_startTime).TotalSeconds;
+			float		deltaTime = (float) (frameTime - m_lastFrameTime).TotalSeconds;
+			m_lastFrameTime = frameTime;
+
+			m_CB_main.m._resolution.Set( Width, Height, 1.0f / Width, 1.0f / Height );
+			m_CB_main.m._mouseUV.Set( (float) MousePosition.X / Width, (float) MousePosition.Y / Height, 0, 0 );
+			m_CB_main.m._time_DeltaTime.Set( totalTime, deltaTime );
+			m_CB_main.UpdateData();
+
+			// Animate camera
+			float	phi = Mathf.TWOPI * totalTime / 8.0f;	// 8 seconds for a full rotation
+			float	theta = Mathf.HALFPI * (1.0f + 0.25f * Mathf.Sin( Mathf.TWOPI * totalTime / 6.0f ));	// 6 seconds for a full up/down cycle
+			float3	wsTargetPosition = float3.Zero;
+			float3	wsAt = new float3( Mathf.Cos( phi ) * Mathf.Sin( theta ), Mathf.Sin( phi ) * Mathf.Sin( theta ), Mathf.Cos( theta ) );
+			SetCamera( wsTargetPosition - 5.0f * wsAt, wsTargetPosition, float3.UnitY, Mathf.ToRad( 90.0f ) );
+
+			m_device.Clear( float4.Zero );
+			m_device.ClearDepthStencil( m_device.DefaultDepthStencil, 1, 0, true, false );
+
+			//////////////////////////////////////////////////////////////////////////
+			// Display pipo cube
+			if ( m_shader_displayCube.Use() ) {
+				m_device.SetRenderStates( RASTERIZER_STATE.CULL_BACK, DEPTHSTENCIL_STATE.READ_WRITE_DEPTH_LESS, BLEND_STATE.DISABLED );
+				m_device.SetRenderTarget( m_device.DefaultTarget, m_device.DefaultDepthStencil );
+				m_primitiveCube.Render( m_shader_displayCube );
+			}
+
+			m_device.Present( false );
+		}
+
+		void	SetCamera( float3 _wsPosition, float3 _wsTargetPosition, float3 _wsUp, float _FOV ) {
+			m_CB_camera.m._camera2World.BuildRotLeftHanded( _wsPosition, _wsTargetPosition, _wsUp );
+			m_CB_camera.m._camera2Proj.BuildProjectionPerspective( _FOV, (float) Width / Height, Z_NEAR, Z_FAR );
+
+			m_CB_camera.m._proj2Camera = m_CB_camera.m._camera2Proj.Inverse;
+			m_CB_camera.m._world2Camera = m_CB_camera.m._camera2World.Inverse;
+			m_CB_camera.m._proj2World = m_CB_camera.m._proj2Camera * m_CB_camera.m._camera2World;
+			m_CB_camera.m._world2Proj = m_CB_camera.m._world2Camera * m_CB_camera.m._camera2Proj;
+
+			m_CB_camera.UpdateData();
+		}
+
+		#region Init / Exit
 
 		public BrainForm() {
 			InitializeComponent();
@@ -44,6 +139,19 @@ namespace Brain2 {
 				// Create fullscreen windowed device
 				m_device.Init( this.Handle, false, true );
 
+				m_CB_main = new ConstantBuffer<CB_Main>( m_device, 0 );
+				m_CB_camera = new ConstantBuffer<CB_Camera>( m_device, 1 );
+				m_CB_camera.m._camera2World = new float4x4();
+				m_CB_camera.m._camera2Proj = new float4x4();
+
+				// Create primitives and shaders
+				m_shader_displayCube = new Shader( m_device, new System.IO.FileInfo( "./Shaders/DisplayCube.hlsl" ), VERTEX_FORMAT.P3N3, "VS", null, "PS", null );
+
+				BuildCube();
+
+				m_startTime = DateTime.Now;
+				Application.Idle += Application_Idle;
+
 			} catch ( Exception _e ) {
 				MessageBox.Show( "Error when creating D3D device!" + _e.Message, "Error!", MessageBoxButtons.OK, MessageBoxIcon.Error );
 				Application.Exit();
@@ -55,16 +163,111 @@ namespace Brain2 {
 				components.Dispose();
 			}
 			
+			m_primitiveCube.Dispose();
+
+			m_shader_displayCube.Dispose();
+
+			m_CB_main.Dispose();
+			m_CB_camera.Dispose();
+
 			m_device.Dispose();
 
 			base.Dispose(disposing);
 		}
 
-		protected override void OnKeyDown(KeyEventArgs e) {
-			base.OnKeyDown(e);
-			if ( e.KeyCode == Keys.Escape )
-				Close();
+		/// <summary>
+		/// Build the cube primitive
+		/// </summary>
+		void	BuildCube() {
+			float3[]	Normals = new float3[6] {
+				-float3.UnitX,
+				float3.UnitX,
+				-float3.UnitY,
+				float3.UnitY,
+				-float3.UnitZ,
+				float3.UnitZ,
+			};
+
+			float3[]	Tangents = new float3[6] {
+				float3.UnitZ,
+				-float3.UnitZ,
+				float3.UnitX,
+				-float3.UnitX,
+				-float3.UnitX,
+				float3.UnitX,
+			};
+
+			VertexP3N3[]	vertices = new VertexP3N3[6*4];
+			uint[]			indices = new uint[2*6*3];
+
+			for ( int FaceIndex=0; FaceIndex < 6; FaceIndex++ ) {
+				float3	N = Normals[FaceIndex];
+				float3	T = Tangents[FaceIndex];
+				float3	B = N.Cross( T );
+
+				vertices[4*FaceIndex+0] = new VertexP3N3() {
+					P = N - T + B,
+					N = N,
+//					T = T,
+//					B = B,
+//					UV = new float2( 0, 0 )
+				};
+				vertices[4*FaceIndex+1] = new VertexP3N3() {
+					P = N - T - B,
+					N = N,
+// 					T = T,
+// 					B = B,
+// 					UV = new float2( 0, 1 )
+				};
+				vertices[4*FaceIndex+2] = new VertexP3N3() {
+					P = N + T - B,
+					N = N,
+// 					T = T,
+// 					B = B,
+// 					UV = new float2( 1, 1 )
+				};
+				vertices[4*FaceIndex+3] = new VertexP3N3() {
+					P = N + T + B,
+					N = N,
+// 					T = T,
+// 					B = B,
+// 					UV = new float2( 1, 0 )
+				};
+
+				indices[2*3*FaceIndex+0] = (uint) (4*FaceIndex+0);
+				indices[2*3*FaceIndex+1] = (uint) (4*FaceIndex+1);
+				indices[2*3*FaceIndex+2] = (uint) (4*FaceIndex+2);
+				indices[2*3*FaceIndex+3] = (uint) (4*FaceIndex+0);
+				indices[2*3*FaceIndex+4] = (uint) (4*FaceIndex+2);
+				indices[2*3*FaceIndex+5] = (uint) (4*FaceIndex+3);
+			}
+
+			m_primitiveCube = new Primitive( m_device, (uint) vertices.Length, VertexP3N3.FromArray( vertices ), indices, Primitive.TOPOLOGY.TRIANGLE_LIST, VERTEX_FORMAT.P3N3 );
+
+// 			VertexP3N3[]	vertices = new VertexP3N3[4*6];
+// 			uint[]			indices = new uint[6*2*3];
+// 			for ( uint face=0; face < 6; face++ ) {
+// 				float3	N = (1 - 2 * (face & 1)) * new float3( (face >> 1) == 0 ? 1 : 0, (face >> 1) == 1 ? 1 : 0, (face >> 1) == 2 ? 1 : 0 );
+// 				float3	T = (1 - 2 * (face & 1)) * new float3( (face >> 1) == 1 ? 1 : 0, (face >> 1) == 2 ? 1 : 0, (face >> 1) == 0 ? 1 : 0 );
+// 				float3	B = T.Cross( N );
+// 
+// 				for ( uint v=0; v < 4; v++ ) {
+// 					vertices[4*face+v].N = N;
+// 					vertices[4*face+v].P = N + (2.0f*(v & 1)-1) * T + (2.0f*((v >> 1) & 1)-1) * B;
+// 				}
+// 
+// 				indices[3*(2*face+0)+0] = 4*face + 0;
+// 				indices[3*(2*face+0)+1] = 4*face + 1;
+// 				indices[3*(2*face+0)+2] = 4*face + 2;
+// 				indices[3*(2*face+1)+0] = 4*face + 2;
+// 				indices[3*(2*face+1)+1] = 4*face + 1;
+// 				indices[3*(2*face+1)+2] = 4*face + 3;
+// 			}
+// 
+// 			m_primitiveCube = new Primitive( m_device, 6*4, VertexP3N3.FromArray( vertices ), indices, Primitive.TOPOLOGY.TRIANGLE_LIST, VERTEX_FORMAT.P3N3 );
 		}
+
+		#endregion
 
 		#region Monitors Management
 
@@ -112,6 +315,21 @@ namespace Brain2 {
 			// Also retrieve the HMONITOR value
 			POINTSTRUCT	pt = new POINTSTRUCT( _position.X, _position.Y );
 			_hMonitor = MonitorFromPoint( pt, MONITOR_DEFAULTTONEAREST );
+		}
+
+		#endregion
+
+		#region EVENTS
+
+		protected override void OnKeyDown(KeyEventArgs e) {
+			base.OnKeyDown(e);
+			if ( e.KeyCode == Keys.Escape )
+				Close();
+		}
+
+		protected override void OnVisibleChanged(EventArgs e) {
+			base.OnVisibleChanged(e);
+			timerDisplay.Enabled = Visible;
 		}
 
 		#endregion
