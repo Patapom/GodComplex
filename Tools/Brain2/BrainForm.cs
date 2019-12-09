@@ -16,11 +16,14 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
+using ImageUtility;
+using Renderer;
+
 namespace Brain2 {
 	public partial class BrainForm : Form {
 		#region FIELDS
 
-		WebPage2Image	m_webPage2Image;
+		Device		m_device = new Device();
 
 		#endregion
 
@@ -28,21 +31,90 @@ namespace Brain2 {
 
 		public BrainForm() {
 			InitializeComponent();
-			m_webPage2Image = new WebPage2Image( BitmapReady );
+
+			try {
+				// Attempt to retrieve containing monitor
+				IntPtr	hMonitor;
+				Screen	screen;
+				GetMonitorFromPosition( Control.MousePosition, out screen, out hMonitor );
+
+				// Rescale window to fullscreen overlay
+				this.SetDesktopBounds( screen.Bounds.X, screen.Bounds.Y, screen.Bounds.Width, screen.Bounds.Height );
+
+				// Create fullscreen windowed device
+				m_device.Init( this.Handle, false, true );
+
+			} catch ( Exception _e ) {
+				MessageBox.Show( "Error when creating D3D device!" + _e.Message, "Error!", MessageBoxButtons.OK, MessageBoxIcon.Error );
+				Application.Exit();
+			}
 		}
 
-		private void buttonGo_Click(object sender, EventArgs e) {
-			m_webPage2Image.Generate( textBoxURL.Text, (uint) panelOutput.Width );
+		protected override void Dispose(bool disposing) {
+			if( disposing && components != null ) {
+				components.Dispose();
+			}
+			
+			m_device.Dispose();
+
+			base.Dispose(disposing);
 		}
 
-		private void	BitmapReady( Bitmap _bitmap ) {
-			panelOutput.BackgroundImage = _bitmap;
+		protected override void OnKeyDown(KeyEventArgs e) {
+			base.OnKeyDown(e);
+			if ( e.KeyCode == Keys.Escape )
+				Close();
 		}
 
-		private void buttonEdit_Click(object sender, EventArgs e) {
-			WebEditorForm	form = new WebEditorForm();
-			form.ShowDialog( this );
+		#region Monitors Management
+
+		// Code from https://stackoverflow.com/questions/6279076/how-to-use-win32-getmonitorinfo-in-net-c
+
+		[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+		public struct POINTSTRUCT { 
+			public int x;
+			public int y;
+			public POINTSTRUCT(int x, int y) {
+				this.x = x; 
+				this.y = y;
+			} 
+		} 
+
+		const int	MONITOR_DEFAULTTONULL       = 0x00000000;
+		const int	MONITOR_DEFAULTTOPRIMARY    = 0x00000001;
+		const int	MONITOR_DEFAULTTONEAREST    = 0x00000002;
+
+		[System.Runtime.InteropServices.DllImport("User32.dll", ExactSpelling=true)]
+		static extern IntPtr MonitorFromPoint( POINTSTRUCT pt, int flags );
+
+// 		[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential,CharSet=CharSet.Auto, Pack=4)]
+// 		public class MONITORINFOEX { 
+// 			public int     cbSize = System.Runtime.InteropServices.Marshal.SizeOf(typeof(MONITORINFOEX));
+// 			public RECT    rcMonitor = new RECT(); 
+// 			public RECT    rcWork = new RECT(); 
+// 			public int     dwFlags = 0;
+// 			[System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.ByValArray, SizeConst=32)] 
+// 			public char[]  szDevice = new char[32];
+// 		}
+
+		void	GetMonitorFromPosition( Point _position, out Screen _containingScreen, out IntPtr _hMonitor ) {
+			_containingScreen = null;
+			_hMonitor = IntPtr.Zero;
+			foreach ( Screen screen in Screen.AllScreens ) {
+				if ( screen.Bounds.Contains( _position ) ) {
+					_containingScreen = screen;
+					break;
+				}
+			}
+			if ( _containingScreen == null )
+				throw new Exception( "Provided position is not contained by any monitor!" );
+
+			// Also retrieve the HMONITOR value
+			POINTSTRUCT	pt = new POINTSTRUCT( _position.X, _position.Y );
+			_hMonitor = MonitorFromPoint( pt, MONITOR_DEFAULTTONEAREST );
 		}
+
+		#endregion
 
 		#endregion
 	}

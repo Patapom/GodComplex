@@ -69,6 +69,12 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BrainFormTestHTML.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="BrainFormTestHTML.Designer.cs">
+      <DependentUpon>BrainFormTestHTML.cs</DependentUpon>
+    </Compile>
     <Compile Include="BrainForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -96,6 +102,9 @@
     <Compile Include="WebEditorForm.Designer.cs">
       <DependentUpon>WebEditorForm.cs</DependentUpon>
     </Compile>
+    <EmbeddedResource Include="BrainFormTestHTML.resx">
+      <DependentUpon>BrainFormTestHTML.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="BrainForm.resx">
       <DependentUpon>BrainForm.cs</DependentUpon>
     </EmbeddedResource>
