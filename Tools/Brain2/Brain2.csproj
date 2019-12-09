@@ -143,9 +143,9 @@
       <Project>{f96cdfd3-8954-4f4f-afb0-2855d98f051b}</Project>
       <Name>Renderer</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\Packages\ZetaHtmlEditControl\Source\Control\Control.csproj">
+    <ProjectReference Include="..\..\Packages\ZetaHtmlEditControl\Source\Control\HTMLEditControl.csproj">
       <Project>{b00ae765-8212-43fd-8e70-768a6c20ee93}</Project>
-      <Name>Control</Name>
+      <Name>HTMLEditControl</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

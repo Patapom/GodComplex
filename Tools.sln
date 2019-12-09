@@ -71,7 +71,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ImageUtilityLib", "Packages
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Brain2", "Tools\Brain2\Brain2.csproj", "{3CB6F880-CF4A-47F3-BC32-59BA53A60329}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Control", "Packages\ZetaHtmlEditControl\Source\Control\Control.csproj", "{B00AE765-8212-43FD-8E70-768A6C20EE93}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HTMLEditControl", "Packages\ZetaHtmlEditControl\Source\Control\HTMLEditControl.csproj", "{B00AE765-8212-43FD-8E70-768A6C20EE93}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -914,8 +914,8 @@ Global
 		{B00AE765-8212-43FD-8E70-768A6C20EE93}.Profile|Mixed Platforms.Build.0 = Release|Any CPU
 		{B00AE765-8212-43FD-8E70-768A6C20EE93}.Profile|Win32.ActiveCfg = Release|Any CPU
 		{B00AE765-8212-43FD-8E70-768A6C20EE93}.Profile|Win32.Build.0 = Release|Any CPU
-		{B00AE765-8212-43FD-8E70-768A6C20EE93}.Profile|x64.ActiveCfg = Release|Any CPU
-		{B00AE765-8212-43FD-8E70-768A6C20EE93}.Profile|x64.Build.0 = Release|Any CPU
+		{B00AE765-8212-43FD-8E70-768A6C20EE93}.Profile|x64.ActiveCfg = Release|x64
+		{B00AE765-8212-43FD-8E70-768A6C20EE93}.Profile|x64.Build.0 = Release|x64
 		{B00AE765-8212-43FD-8E70-768A6C20EE93}.Profile|x86.ActiveCfg = Release|Any CPU
 		{B00AE765-8212-43FD-8E70-768A6C20EE93}.Profile|x86.Build.0 = Release|Any CPU
 		{B00AE765-8212-43FD-8E70-768A6C20EE93}.Release|Any CPU.ActiveCfg = Release|Any CPU

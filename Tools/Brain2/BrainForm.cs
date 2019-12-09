@@ -1,4 +1,12 @@
-﻿using System;
+﻿// Sources:
+//	https://dotnetbrowser.support.teamdev.com/support/solutions/articles/9000109708-saving-web-page-to-png-image
+//	https://stackoverflow.com/questions/2715385/convert-webpage-to-image-from-asp-net
+//	https://www.codeproject.com/Articles/12629/WYSIWYG-HTML-Editor	<== Old COM issues
+//	https://github.com/UweKeim/ZetaHtmlEditControl	<== Currently used
+//	https://www.telerik.com/support/kb/winforms/details/how-to-embed-chrome-browser-in-a-winforms-application	<== Chrome in Control
+//	https://mkunc.com/2012/02/18/automating-chrome-browser-from-csharp/ <== Driving Chrome Dev Tools
+//
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
