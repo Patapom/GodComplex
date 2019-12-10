@@ -89,6 +89,12 @@
       <DependentUpon>WebEditor_COMError.cs</DependentUpon>
     </None>
     <Compile Include="Fiches\Fiche.cs" />
+    <Compile Include="Forms\FicheEditorForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\FicheEditorForm.Designer.cs">
+      <DependentUpon>FicheEditorForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="Forms\PreferencesForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -116,6 +122,9 @@
     <EmbeddedResource Include="BrainForm.resx">
       <DependentUpon>BrainForm.cs</DependentUpon>
       <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Forms\FicheEditorForm.resx">
+      <DependentUpon>FicheEditorForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Forms\PreferencesForm.resx">
       <DependentUpon>PreferencesForm.cs</DependentUpon>

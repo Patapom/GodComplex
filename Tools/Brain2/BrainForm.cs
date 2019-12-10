@@ -76,6 +76,7 @@ namespace Brain2 {
 
 		// Modeless forms
 		PreferencesForm				m_preferenceForm = null;
+		FicheEditorForm				m_ficheEditorForm = null;
 
 		#endregion
 
@@ -145,6 +146,10 @@ namespace Brain2 {
 				// Create the modeless forms
 				m_preferenceForm = new PreferencesForm( this );
 				m_preferenceForm.RootDBFolderChanged += preferenceForm_RootDBFolderChanged;
+				m_preferenceForm.Visible = false;
+
+				m_ficheEditorForm = new FicheEditorForm( this );
+				m_ficheEditorForm.Visible = false;
 
 				// Parse fiches and load database
 				DirectoryInfo	rootDBFolder = new DirectoryInfo( m_preferenceForm.RootDBFolder );
@@ -222,6 +227,8 @@ namespace Brain2 {
 
 			base.Dispose(disposing);
 		}
+
+		#region Primitives Creation
 
 		/// <summary>
 		/// Build the cube primitive
@@ -317,6 +324,8 @@ namespace Brain2 {
 
 		#endregion
 
+		#endregion
+
 		#region Monitors Management
 
 		// Code from https://stackoverflow.com/questions/6279076/how-to-use-win32-getmonitorinfo-in-net-c
@@ -407,6 +416,12 @@ namespace Brain2 {
 			if ( !Visible )
 				return;	// No change...
 
+			// Also hide any open form
+			if ( m_preferenceForm.Visible )
+				ToggleShowPreferences();
+			if ( m_ficheEditorForm.Visible )
+				ToggleShowFicheEditor();
+
 			Capture = false;
 			Hide();
 		}
@@ -415,6 +430,8 @@ namespace Brain2 {
 			base.OnLostFocus(e);
 			ExitFishing();
 		}
+
+		bool	m_fishing = false;
 
 		/// <summary>
 		/// Enters "fiche fishing"
@@ -440,8 +457,6 @@ namespace Brain2 {
 
 			m_fishing = false;
 		}
-
-		bool	m_fishing = false;
 
 		#endregion
 
@@ -570,7 +585,6 @@ namespace Brain2 {
 			return windowHandles.ToArray();
 		}
 
-
 		void	DispatchMessageToBackgroundWindows( Message m ) {
 
 			StringBuilder	sb = new StringBuilder( 1000 );
@@ -610,21 +624,39 @@ namespace Brain2 {
 
 		}
 
-
 		#endregion
 
-		#region Preferences
+		#region Forms
 
-		void			ToggleShowPreferences() {
-			if ( m_preferenceForm.Visible )
+		void	ToggleShowPreferences() {
+			if ( m_preferenceForm.Visible ) {
 				m_preferenceForm.Hide();
-			else
-				m_preferenceForm.Show( this );
+				return;
+			}
+
+			// Show centered
+			m_preferenceForm.Show( this );
+			m_preferenceForm.Location = this.Location + new Size( (this.Width - m_preferenceForm.Width) / 2, (this.Height - m_preferenceForm.Height) / 2 );
+		}
+
+		void	ToggleShowFicheEditor() {
+			if ( m_ficheEditorForm.Visible ) {
+				m_ficheEditorForm.Hide();
+				return;
+			}
+
+			// Show centered
+			m_ficheEditorForm.Show( this );
+			m_ficheEditorForm.Location = this.Location + new Size( (this.Width - m_ficheEditorForm.Width) / 2, (this.Height - m_ficheEditorForm.Height) / 2 );
 		}
 
 		#endregion
 
 		#region EVENTS
+
+// 		protected override bool ProcessKeyPreview(ref Message m) {
+// 			return base.ProcessKeyPreview(ref m);
+// 		}
 
 		protected override void OnKeyDown(KeyEventArgs e) {
 			base.OnKeyDown(e);
@@ -640,8 +672,12 @@ namespace Brain2 {
 					m_device.ReloadModifiedShaders();
 					break;
 
-				case Keys.F10:
+				case PreferencesForm.SHORTCUT_KEY:
 					ToggleShowPreferences();
+					break;
+
+				case FicheEditorForm.SHORTCUT_KEY:
+					ToggleShowFicheEditor();
 					break;
 
 // @TODO!
@@ -671,6 +707,9 @@ namespace Brain2 {
 		}
 
 		private void notifyIcon_MouseUp(object sender, MouseEventArgs e) {
+			if ( e.Button != MouseButtons.Left )
+				return;
+
 			ShowWindow();
 		}
 
@@ -682,6 +721,10 @@ namespace Brain2 {
 
 		private void preferenceForm_RootDBFolderChanged(object sender, EventArgs e) {
 			m_database.Rebase( new DirectoryInfo( m_preferenceForm.RootDBFolder ) );
+		}
+
+		private void exitToolStripMenuItem_Click(object sender, EventArgs e) {
+			Close();
 		}
 
 		#endregion

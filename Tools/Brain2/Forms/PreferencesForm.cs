@@ -13,6 +13,12 @@ namespace Brain2 {
 
 	public partial class PreferencesForm : Form {
 
+		#region CONSTANTS
+
+		public const Keys	SHORTCUT_KEY = Keys.F10;
+
+		#endregion
+
 		#region FIELDS
 
 		private BrainForm					m_owner;
@@ -25,9 +31,14 @@ namespace Brain2 {
 		public string		RootDBFolder {
 			get { return textBoxDatabaseRoot.Text; }
 			set {
+				if ( value == textBoxDatabaseRoot.Text )
+					return;	// No change...
+
+				// Rebase database folder
 				SetRegKey( "RootDBFolder", value );
 				textBoxDatabaseRoot.Text = value;
 
+				// Notify
 				if ( RootDBFolderChanged != null )
 					RootDBFolderChanged( this, EventArgs.Empty );
 			}
@@ -49,6 +60,26 @@ namespace Brain2 {
 //			string	defaultDBFolder = Path.Combine( Path.GetDirectoryName( Application.ExecutablePath ), "BrainFiches" );
 			string	defaultDBFolder = Path.Combine( Directory.GetCurrentDirectory(), "BrainFiches" );
 			textBoxDatabaseRoot.Text = GetRegKey( "RootDBFolder", defaultDBFolder );
+		}
+
+		// 		protected override bool ProcessKeyPreview(ref Message m) {
+		// 
+		// 			switch ( m. )
+		// 
+		// 			return base.ProcessKeyPreview(ref m);
+		// 		}
+
+		protected override void OnKeyDown(KeyEventArgs e) {
+
+			switch ( e.KeyCode ) {
+				case Keys.Escape:
+				case SHORTCUT_KEY:
+					Hide();
+					break;
+
+			}
+
+			base.OnKeyDown(e);
 		}
 
 		#region Registry
