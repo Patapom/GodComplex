@@ -58,6 +58,14 @@ namespace Brain2 {
 
 		public Guid					GUID { get { return m_GUID; } }
 
+		/// <summary>
+		/// Generates a unique filename for the fiche
+		/// </summary>
+		public string				FileName { get {
+				return m_GUID.ToString() + (m_title != "" ? "." + m_title : "") + ".fiche";
+			}
+		}
+
 		#endregion
 
 		#region METHODS

@@ -15,6 +15,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.IO;
 using System.Runtime.InteropServices;
 
 using SharpMath;
@@ -59,6 +60,10 @@ namespace Brain2 {
 
 		#region FIELDS
 
+		// Database
+		FichesDB					m_database = new FichesDB();
+
+		// Display
 		Device						m_device = new Device();
 
 		ConstantBuffer< CB_Main >	m_CB_main = null;
@@ -133,10 +138,26 @@ namespace Brain2 {
 		public BrainForm() {
 			InitializeComponent();
 
-			m_preferenceForm = new PreferencesForm( this );
-			m_preferenceForm.RootDBFolderChanged += M_preferenceForm_RootDBFolderChanged;
-
 			DEFAULT_OPACITY = this.Opacity;
+
+			try {
+
+				// Create the modeless forms
+				m_preferenceForm = new PreferencesForm( this );
+				m_preferenceForm.RootDBFolderChanged += preferenceForm_RootDBFolderChanged;
+
+				// Parse fiches and load database
+				DirectoryInfo	rootDBFolder = new DirectoryInfo( m_preferenceForm.RootDBFolder );
+				if ( !rootDBFolder.Exists )
+					rootDBFolder.Create();
+
+				m_database.LoadDatabase( rootDBFolder );
+
+			} catch ( Exception _e ) {
+				MessageBox.Show( "Error when craeting forms and loading database!\r\n\n" + _e.Message, "Error!", MessageBoxButtons.OK, MessageBoxIcon.Error );
+				Application.Exit();
+				return;
+			}
 
 			try {
 				// Attempt to retrieve containing monitor
@@ -168,8 +189,9 @@ namespace Brain2 {
 				RegisterHotKey( NativeModifierKeys.Win, Keys.X );
 
 			} catch ( Exception _e ) {
-				MessageBox.Show( "Error when creating D3D device!" + _e.Message, "Error!", MessageBoxButtons.OK, MessageBoxIcon.Error );
+				MessageBox.Show( "Error when creating D3D device!\r\n\n" + _e.Message, "Error!", MessageBoxButtons.OK, MessageBoxIcon.Error );
 				Application.Exit();
+				return;
 			}
 		}
 
@@ -640,8 +662,8 @@ namespace Brain2 {
 			}
 		}
 
-		private void M_preferenceForm_RootDBFolderChanged(object sender, EventArgs e) {
-			RebaseDatabase();
+		private void preferenceForm_RootDBFolderChanged(object sender, EventArgs e) {
+			m_database.Rebase( new DirectoryInfo( m_preferenceForm.RootDBFolder ) );
 		}
 
 		#endregion
