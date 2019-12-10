@@ -54,6 +54,8 @@ namespace Everything {
 			property bool		IsFolder { bool get() { return Everything_IsFolderResult( m_resultIndex ); } }
 			property bool		IsFile { bool get() { return Everything_IsFileResult( m_resultIndex ); } }
 			property String^	PathName { String^ get(); }
+			property String^	FileName { String^ get(); }
+			property String^	FullName { String^ get(); }
 		};
 
 		property static cli::array< Result^ >^	Results {

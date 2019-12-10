@@ -46,7 +46,8 @@ namespace Brain2 {
 			InitializeComponent();
 
 			// Fetch default values from registry
-			string	defaultDBFolder = Path.Combine( Application.ExecutablePath, "BrainFiches" );
+//			string	defaultDBFolder = Path.Combine( Path.GetDirectoryName( Application.ExecutablePath ), "BrainFiches" );
+			string	defaultDBFolder = Path.Combine( Directory.GetCurrentDirectory(), "BrainFiches" );
 			textBoxDatabaseRoot.Text = GetRegKey( "RootDBFolder", defaultDBFolder );
 		}
 

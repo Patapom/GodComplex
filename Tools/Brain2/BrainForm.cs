@@ -148,15 +148,24 @@ namespace Brain2 {
 
 				// Parse fiches and load database
 				DirectoryInfo	rootDBFolder = new DirectoryInfo( m_preferenceForm.RootDBFolder );
-				if ( !rootDBFolder.Exists )
+				if ( !rootDBFolder.Exists ) {
 					rootDBFolder.Create();
+					rootDBFolder.Refresh();
+
+					int	waitCount = 0;
+					while ( !rootDBFolder.Exists ) {
+						System.Threading.Thread.Sleep( 100 );
+						if ( waitCount++ > 10 )	// Wait for a full second
+							throw new Exception( "Failed to create root DB folder \"" + rootDBFolder + "\"! Time elapsed..." );
+					}
+				}
 
 				m_database.LoadDatabase( rootDBFolder );
 
 			} catch ( Exception _e ) {
-				MessageBox.Show( "Error when craeting forms and loading database!\r\n\n" + _e.Message, "Error!", MessageBoxButtons.OK, MessageBoxIcon.Error );
-				Application.Exit();
-				return;
+// 				MessageBox.Show( "Error when creating forms and loading database!\r\n\n" + _e.Message, "Error!", MessageBoxButtons.OK, MessageBoxIcon.Error );
+// 				Close();
+// //				Application.Exit();
 			}
 
 			try {
@@ -190,8 +199,8 @@ namespace Brain2 {
 
 			} catch ( Exception _e ) {
 				MessageBox.Show( "Error when creating D3D device!\r\n\n" + _e.Message, "Error!", MessageBoxButtons.OK, MessageBoxIcon.Error );
-				Application.Exit();
-				return;
+				Close();
+//				Application.Exit();
 			}
 		}
 
@@ -361,7 +370,7 @@ namespace Brain2 {
 		#region Window Modes
 
 		/// <summary>
-		/// 
+		/// Shows the window as a fullscreen overlay where the mouse cursor is standing
 		/// </summary>
 		void	ShowWindow() {
 			bool	mouseInBounds = Bounds.Contains( Control.MousePosition );
@@ -391,7 +400,7 @@ namespace Brain2 {
 		}
 
 		/// <summary>
-		/// 
+		/// Hides the overlay window
 		/// </summary>
 		void	HideWindow() {
 			bool	mouseInBounds = Bounds.Contains( Control.MousePosition );
@@ -606,8 +615,11 @@ namespace Brain2 {
 
 		#region Preferences
 
-		void			EditPreferences() {
-			m_preferenceForm.Show( this );
+		void			ToggleShowPreferences() {
+			if ( m_preferenceForm.Visible )
+				m_preferenceForm.Hide();
+			else
+				m_preferenceForm.Show( this );
 		}
 
 		#endregion
@@ -618,7 +630,10 @@ namespace Brain2 {
 			base.OnKeyDown(e);
 			switch ( e.KeyCode ) {
 				case Keys.Escape:
-					HideWindow();
+					if ( m_preferenceForm.Visible )
+						ToggleShowPreferences();
+					else
+						HideWindow();
 					break;
 
 				case Keys.R:
@@ -626,13 +641,16 @@ namespace Brain2 {
 					break;
 
 				case Keys.F10:
-					EditPreferences();
+					ToggleShowPreferences();
 					break;
 
-				case Keys.Menu:
-					if ( e.Alt )
-						EnterFishing();
-					break;
+// @TODO!
+//	=> Global hook + make entire form transparent so back windows get messages?
+//	=> Or make opaque + forward messages to back windows if possible?
+// 				case Keys.Menu:
+// 					if ( e.Alt )
+// 						EnterFishing();
+// 					break;
 			}
 		}
 

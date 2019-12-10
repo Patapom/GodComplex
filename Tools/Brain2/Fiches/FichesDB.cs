@@ -84,9 +84,9 @@ namespace Brain2 {
 				m_ID2Fiche.Clear();
 
 				// Prepare the Everything query
-				string	everythingQuery = _rootFolder.FullName.Replace( "\\", "/" );
-				if ( !everythingQuery.EndsWith( "/" ) )
-					everythingQuery += "/";
+				string	everythingQuery = "parent:" + _rootFolder.FullName.Replace( "/", "\\" );
+				if ( !everythingQuery.EndsWith( "\\" ) )
+					everythingQuery += "\\";
 				everythingQuery += " .fiche";
 
 				Everything.Search.Result[]	results = null;
@@ -107,7 +107,7 @@ namespace Brain2 {
 							continue;
 
 						// Attempt to read fiche from file
-						FileInfo	file = new FileInfo( result.PathName );
+						FileInfo	file = new FileInfo( result.FullName );
 						if ( !file.Exists )
 							throw new Exception( "Result file \"" + result.PathName + "\" doesn't exist!" );
 
@@ -122,6 +122,7 @@ namespace Brain2 {
 							throw new Exception( "Error reading file \"" + file.FullName + "\"!", _e );
 						}
 
+						// Register valid file
 						try {
 							RegisterFiche( F );
 						} catch ( Exception _e ) {

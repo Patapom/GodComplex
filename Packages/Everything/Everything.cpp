@@ -28,3 +28,12 @@ String^	Everything::Search::Result::PathName::get() {
 	LPCSTR	strValue = Everything_GetResultPathA( m_resultIndex );
 	return	System::Runtime::InteropServices::Marshal::PtrToStringAnsi( System::IntPtr( (void*) strValue ) );
 }
+
+String^	Everything::Search::Result::FileName::get() {
+	LPCSTR	strValue = Everything_GetResultFileNameA( m_resultIndex );
+	return	System::Runtime::InteropServices::Marshal::PtrToStringAnsi( System::IntPtr( (void*) strValue ) );
+}
+
+String^	Everything::Search::Result::FullName::get() {
+	return System::IO::Path::Combine( PathName, FileName );
+}
