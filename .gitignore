@@ -684,3 +684,5 @@ obj
 /.vs
 /Packages/SharpTeX/iosMath-master
 /Packages/SharpTeX/CSharpMath-master
+/Packages/Everything/Everything-SDK/vs
+/Packages/Everything/Everything-SDK/example

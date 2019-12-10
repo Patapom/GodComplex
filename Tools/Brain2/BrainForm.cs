@@ -69,6 +69,9 @@ namespace Brain2 {
 		DateTime					m_startTime;
 		DateTime					m_lastFrameTime;
 
+		// Modeless forms
+		PreferencesForm				m_preferenceForm = null;
+
 		#endregion
 
 		#region METHODS
@@ -129,6 +132,9 @@ namespace Brain2 {
 
 		public BrainForm() {
 			InitializeComponent();
+
+			m_preferenceForm = new PreferencesForm( this );
+			m_preferenceForm.RootDBFolderChanged += M_preferenceForm_RootDBFolderChanged;
 
 			DEFAULT_OPACITY = this.Opacity;
 
@@ -576,6 +582,14 @@ namespace Brain2 {
 
 		#endregion
 
+		#region Preferences
+
+		void			EditPreferences() {
+			m_preferenceForm.Show( this );
+		}
+
+		#endregion
+
 		#region EVENTS
 
 		protected override void OnKeyDown(KeyEventArgs e) {
@@ -587,6 +601,10 @@ namespace Brain2 {
 
 				case Keys.R:
 					m_device.ReloadModifiedShaders();
+					break;
+
+				case Keys.F10:
+					EditPreferences();
 					break;
 
 				case Keys.Menu:
@@ -620,6 +638,10 @@ namespace Brain2 {
 			if ( !this.Bounds.Contains( e.Location ) ) {
 				HideWindow();
 			}
+		}
+
+		private void M_preferenceForm_RootDBFolderChanged(object sender, EventArgs e) {
+			RebaseDatabase();
 		}
 
 		#endregion

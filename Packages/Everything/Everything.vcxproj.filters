@@ -1,0 +1,51 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClInclude Include="Everything.h" />
+    <ClInclude Include="stdafx.h" />
+    <ClInclude Include="Everything-SDK\include\Everything.h">
+      <Filter>Native Library\Sources</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="AssemblyInfo.cpp" />
+    <ClCompile Include="Everything.cpp" />
+    <ClCompile Include="stdafx.cpp" />
+    <ClCompile Include="Everything-SDK\src\Everything.c">
+      <Filter>Native Library\Sources</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Native Library">
+      <UniqueIdentifier>{49b2980c-0bbb-49b0-bcd8-accf2360f23b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Native Library\DLL">
+      <UniqueIdentifier>{ac017482-99b7-461a-8f13-f3b5d04dc33e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Native Library\Sources">
+      <UniqueIdentifier>{0e2c345c-51ef-428c-9698-a4eeafe957b5}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Everything-SDK\dll\Everything32.dll">
+      <Filter>Native Library\DLL</Filter>
+    </None>
+    <None Include="Everything-SDK\dll\Everything64.dll">
+      <Filter>Native Library\DLL</Filter>
+    </None>
+    <None Include="Everything-SDK\src\Everything32.def">
+      <Filter>Native Library\Sources</Filter>
+    </None>
+    <None Include="Everything-SDK\src\Everything64.def">
+      <Filter>Native Library\Sources</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="Everything-SDK\lib\Everything32.lib">
+      <Filter>Native Library\DLL</Filter>
+    </Library>
+    <Library Include="Everything-SDK\lib\Everything64.lib">
+      <Filter>Native Library\DLL</Filter>
+    </Library>
+  </ItemGroup>
+</Project>

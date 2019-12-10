@@ -69,10 +69,11 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="BrainFormTestHTML.cs">
+    <Compile Include="Fiches\FichesDB.cs" />
+    <Compile Include="Forms\BrainFormTestHTML.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="BrainFormTestHTML.Designer.cs">
+    <Compile Include="Forms\BrainFormTestHTML.Designer.cs">
       <DependentUpon>BrainFormTestHTML.cs</DependentUpon>
     </Compile>
     <Compile Include="BrainForm.cs">
@@ -88,6 +89,12 @@
       <DependentUpon>WebEditor_COMError.cs</DependentUpon>
     </None>
     <Compile Include="Fiches\Fiche.cs" />
+    <Compile Include="Forms\PreferencesForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\PreferencesForm.Designer.cs">
+      <DependentUpon>PreferencesForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="Web Interface\WebEditor.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -97,18 +104,21 @@
     <Compile Include="Web Interface\WebPage2Image.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="WebEditorForm.cs">
+    <Compile Include="Forms\WebEditorForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="WebEditorForm.Designer.cs">
+    <Compile Include="Forms\WebEditorForm.Designer.cs">
       <DependentUpon>WebEditorForm.cs</DependentUpon>
     </Compile>
-    <EmbeddedResource Include="BrainFormTestHTML.resx">
+    <EmbeddedResource Include="Forms\BrainFormTestHTML.resx">
       <DependentUpon>BrainFormTestHTML.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="BrainForm.resx">
       <DependentUpon>BrainForm.cs</DependentUpon>
       <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Forms\PreferencesForm.resx">
+      <DependentUpon>PreferencesForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
@@ -125,7 +135,7 @@
     <EmbeddedResource Include="Web Interface\WebEditor_COMError.resx">
       <DependentUpon>WebEditor_COMError.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="WebEditorForm.resx">
+    <EmbeddedResource Include="Forms\WebEditorForm.resx">
       <DependentUpon>WebEditorForm.cs</DependentUpon>
     </EmbeddedResource>
     <None Include="Properties\Settings.settings">
@@ -142,6 +152,10 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\Packages\Everything\Everything.vcxproj">
+      <Project>{ca85f8f3-ad1b-42a8-8121-f7e941078392}</Project>
+      <Name>Everything</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\Packages\ImageUtility\ImageUtility.vcxproj">
       <Project>{6c974ba3-ecba-4436-85cb-218eebb33d53}</Project>
       <Name>ImageUtility</Name>
