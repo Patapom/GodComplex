@@ -87,6 +87,7 @@
     <None Include="Web Interface\WebEditor_COMError.Designer.cs">
       <DependentUpon>WebEditor_COMError.cs</DependentUpon>
     </None>
+    <Compile Include="Fiches\Fiche.cs" />
     <Compile Include="Web Interface\WebEditor.cs">
       <SubType>UserControl</SubType>
     </Compile>

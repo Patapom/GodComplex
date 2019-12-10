@@ -110,7 +110,7 @@ Texture2D::Texture2D( Device& _device, const ImageUtilityLib::ImagesMatrix& _ima
 
 	delete[] subResourceDescriptors;
 
-	// Clear last assignment slots
+	// Clear last assigned slots
 	for ( int ShaderStageIndex=0; ShaderStageIndex < 6; ShaderStageIndex++ )
 		m_lastAssignedSlots[ShaderStageIndex] = ~0U;
 	m_lastAssignedSlotsUAV = ~0U;
@@ -668,11 +668,19 @@ void	Texture2D::WrapExistingTexture( ID3D11Texture2D& _texture ) {
 	m_mipLevelsCount = desc.MipLevels;
 	m_format = desc.Format;
 
-	for ( int ShaderStageIndex=0; ShaderStageIndex < 6; ShaderStageIndex++ )
-		m_lastAssignedSlots[ShaderStageIndex] = -1;
-	m_lastAssignedSlotsUAV = -1;
-
 	m_texture = &_texture;
+
+	// Clear cached data
+	m_cachedSRVs.Clear();
+	m_cachedRTVs.Clear();
+	m_cachedUAVs.Clear();
+	m_cachedDSVs.Clear();
+
+	// Clear last assigned slots
+	for ( int ShaderStageIndex=0; ShaderStageIndex < 6; ShaderStageIndex++ )
+		m_lastAssignedSlots[ShaderStageIndex] = ~0U;
+	m_lastAssignedSlotsUAV = ~0U;
+
 }
 
 

@@ -163,6 +163,7 @@ public:		// METHODS
 	void*	Get( U32 _Key ) const;			// retrieve entry
 	void	Add( U32 _Key, void* _pValue );	// store entry
 	void	Remove( U32 _Key );				// remove entry
+	void	Clear();
 	void	ForEach( VisitorDelegate _pDelegate, void* _pUserData );
 
 private:

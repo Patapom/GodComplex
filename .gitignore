@@ -682,3 +682,5 @@ obj
 /Tests/TestGraphQuery/bin
 /Tests/TestGraphQuery/obj
 /.vs
+/Packages/SharpTeX/iosMath-master
+/Packages/SharpTeX/CSharpMath-master

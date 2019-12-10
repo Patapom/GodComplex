@@ -103,6 +103,20 @@ void	DictionaryU32::Remove( U32 _Key )
 	}
 }
 
+void	DictionaryU32::Clear() {
+	// Clear all linked lists of nodes from each head
+	for ( int HeadIndex=0; HeadIndex < m_SizePOT; HeadIndex++ ) {
+		Node*	pNode = m_ppTable[HeadIndex];
+		while ( pNode != NULL ) {
+			Node*	pOld = pNode;
+			pNode = pNode->pNext;
+			delete pOld;
+		}
+	}
+	// Clear heads
+	memset( m_ppTable, 0, m_SizePOT*sizeof(Node*) );
+}
+
 void	DictionaryU32::ForEach( VisitorDelegate _pDelegate, void* _pUserData )
 {
 	int	EntryIndex = 0;

@@ -99,7 +99,7 @@ bool	Device::Init( U32 _width, U32 _height, HWND _handle, bool _fullscreen, bool
 	// Store the default render target
 	ID3D11Texture2D*	pDefaultRenderSurface;
 	m_swapChain->GetBuffer( 0, __uuidof( ID3D11Texture2D ), (void**) &pDefaultRenderSurface );
-	ASSERT( pDefaultRenderSurface != NULL, "Failed to retrieve default render surface !" );
+	ASSERT( pDefaultRenderSurface != NULL, "Failed to retrieve default render surface!" );
 
 	m_pDefaultRenderTarget = new Texture2D( *this, *pDefaultRenderSurface );
 
@@ -407,7 +407,7 @@ void	Device::ResizeSwapChain( U32 _width,  U32 _height, bool _sRGB ) {
 	// Resize the default target
 	ID3D11Texture2D*	pDefaultRenderSurface;
 	m_swapChain->GetBuffer( 0, __uuidof( ID3D11Texture2D ), (void**) &pDefaultRenderSurface );
-	ASSERT( pDefaultRenderSurface != NULL, "Failed to retrieve default render surface !" );
+	ASSERT( pDefaultRenderSurface != NULL, "Failed to retrieve default render surface!" );
 
 	m_pDefaultRenderTarget->WrapExistingTexture( *pDefaultRenderSurface );
 
