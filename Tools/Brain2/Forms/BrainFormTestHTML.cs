@@ -40,8 +40,8 @@ namespace Brain2 {
 		}
 
 		private void buttonEdit_Click(object sender, EventArgs e) {
-			WebEditorForm	form = new WebEditorForm();
-			form.ShowDialog( this );
+// 			WebEditorForm	form = new WebEditorForm();
+// 			form.ShowDialog( this );
 		}
 
 		#endregion

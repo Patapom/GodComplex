@@ -24,6 +24,8 @@ namespace Brain2 {
 		private BrainForm					m_owner;
 		private Microsoft.Win32.RegistryKey	m_appKey;
 
+		private Size		m_relativeLocation = new Size( -1, -1 );
+
 		#endregion
 
 		#region PROPERTIES
@@ -60,6 +62,27 @@ namespace Brain2 {
 //			string	defaultDBFolder = Path.Combine( Path.GetDirectoryName( Application.ExecutablePath ), "BrainFiches" );
 			string	defaultDBFolder = Path.Combine( Directory.GetCurrentDirectory(), "BrainFiches" );
 			textBoxDatabaseRoot.Text = GetRegKey( "RootDBFolder", defaultDBFolder );
+		}
+
+		public new void	Show() {
+			base.Show();
+			Capture = true;
+
+			if ( m_relativeLocation.Width < 0 ) {
+				// Initial condition => Reset to center
+				m_relativeLocation.Width = (m_owner.Width - Width) / 2;
+				m_relativeLocation.Height = (m_owner.Height - Height) / 2;
+			}
+
+			Point	newLocation = m_owner.Location + m_relativeLocation;
+			newLocation.X = Math.Max( 0, Math.Min( m_owner.Width - Width, newLocation.X ) );
+			newLocation.Y = Math.Max( 0, Math.Min( m_owner.Height - Width, newLocation.Y ) );
+			this.Location = newLocation;
+		}
+
+		public new void Hide() {
+			Capture = false;
+			base.Hide();
 		}
 
 		// 		protected override bool ProcessKeyPreview(ref Message m) {

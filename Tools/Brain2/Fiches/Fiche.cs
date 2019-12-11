@@ -44,6 +44,7 @@ namespace Brain2 {
 		#region FIELDS
 
 		private Guid				m_GUID;
+		private DateTime			m_creationTime = DateTime.Now;
 		public List< Fiche >		m_parents = new List< Fiche >();
 
 		public string				m_title = "";
@@ -62,7 +63,8 @@ namespace Brain2 {
 		/// Generates a unique filename for the fiche
 		/// </summary>
 		public string				FileName { get {
-				return m_GUID.ToString() + (m_title != "" ? "." + m_title : "") + ".fiche";
+//				return m_GUID.ToString() + (m_title != "" ? "." + m_title : "") + ".fiche";
+				return m_GUID.ToString() + ".fiche";
 			}
 		}
 
@@ -83,6 +85,7 @@ namespace Brain2 {
 
 			// Write hierarchy
 			_writer.Write( m_GUID.ToString() );
+			_writer.Write( m_creationTime.ToString() );
 			_writer.Write( (uint) m_parents.Count );
 			foreach ( Fiche parent in m_parents ) {
 				_writer.Write( parent.m_GUID.ToString() );
@@ -116,6 +119,10 @@ namespace Brain2 {
 			string	strGUID	= _reader.ReadString();
 			if ( !Guid.TryParse( strGUID, out m_GUID ) )
 				throw new Exception( "Failed to parse fiche GUID!" );
+
+			string	strCreationTime = _reader.ReadString();
+			if ( !DateTime.TryParse( strCreationTime, out m_creationTime ) )
+				throw new Exception( "Failed to parse fiche creation time!" );
 
 				// We only read the GUIDs while the actual fiches will be processed later
 			uint	parentsCount = _reader.ReadUInt32();

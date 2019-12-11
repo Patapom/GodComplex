@@ -16,7 +16,6 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.IO;
-using System.Runtime.InteropServices;
 
 using SharpMath;
 using ImageUtility;
@@ -36,14 +35,14 @@ namespace Brain2 {
 
 		#region NESTED TYPES
 
-		[StructLayout( LayoutKind.Sequential )]
+		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
 		struct CB_Main {
 			public float4		_resolution;
 			public float4		_mouseUV;
 			public float2		_time_DeltaTime;
 		}
 
-		[StructLayout( LayoutKind.Sequential )]
+		[System.Runtime.InteropServices.StructLayout( System.Runtime.InteropServices.LayoutKind.Sequential )]
 		struct CB_Camera {
 			public float4x4		_camera2World;
 			public float4x4		_world2Camera;
@@ -177,7 +176,7 @@ namespace Brain2 {
 				// Attempt to retrieve containing monitor
 				IntPtr	hMonitor;
 				Screen	screen;
-				GetMonitorFromPosition( Control.MousePosition, out screen, out hMonitor );
+				Interop.GetMonitorFromPosition( Control.MousePosition, out screen, out hMonitor );
 
 				// Rescale window to fullscreen overlay
 				this.SetDesktopBounds( screen.Bounds.X, screen.Bounds.Y, screen.Bounds.Width, screen.Bounds.Height );
@@ -199,8 +198,8 @@ namespace Brain2 {
 				Application.Idle += Application_Idle;
 
 				// Register Win+X to toggle visibility
-//				RegisterHotKey( NativeModifierKeys.Win | NativeModifierKeys.Shift, Keys.X );
-				RegisterHotKey( NativeModifierKeys.Win, Keys.X );
+//				Interop.RegisterHotKey( this, Interop.NativeModifierKeys.Win | NativeModifierKeys.Shift, Keys.X );
+				Interop.RegisterHotKey( this, Interop.NativeModifierKeys.Win, Keys.X );
 
 			} catch ( Exception _e ) {
 				MessageBox.Show( "Error when creating D3D device!\r\n\n" + _e.Message, "Error!", MessageBoxButtons.OK, MessageBoxIcon.Error );
@@ -214,7 +213,7 @@ namespace Brain2 {
 				components.Dispose();
 			}
 			
-			UnregisterHotKey( Handle, 0 );
+			Interop.UnregisterHotKey( Handle, 0 );
 
 			m_primitiveCube.Dispose();
 
@@ -326,62 +325,12 @@ namespace Brain2 {
 
 		#endregion
 
-		#region Monitors Management
-
-		// Code from https://stackoverflow.com/questions/6279076/how-to-use-win32-getmonitorinfo-in-net-c
-
-		[StructLayout(LayoutKind.Sequential)]
-		public struct POINTSTRUCT { 
-			public int x;
-			public int y;
-			public POINTSTRUCT(int x, int y) {
-				this.x = x; 
-				this.y = y;
-			} 
-		} 
-
-		const int	MONITOR_DEFAULTTONULL       = 0x00000000;
-		const int	MONITOR_DEFAULTTOPRIMARY    = 0x00000001;
-		const int	MONITOR_DEFAULTTONEAREST    = 0x00000002;
-
-		[DllImport("User32.dll", ExactSpelling=true)]
-		static extern IntPtr MonitorFromPoint( POINTSTRUCT pt, int flags );
-
-// 		[StructLayout(LayoutKind.Sequential,CharSet=CharSet.Auto, Pack=4)]
-// 		public class MONITORINFOEX { 
-// 			public int     cbSize = Marshal.SizeOf(typeof(MONITORINFOEX));
-// 			public RECT    rcMonitor = new RECT(); 
-// 			public RECT    rcWork = new RECT(); 
-// 			public int     dwFlags = 0;
-// 			[MarshalAs(UnmanagedType.ByValArray, SizeConst=32)] 
-// 			public char[]  szDevice = new char[32];
-// 		}
-
-		void	GetMonitorFromPosition( Point _position, out Screen _containingScreen, out IntPtr _hMonitor ) {
-			_containingScreen = null;
-			_hMonitor = IntPtr.Zero;
-			foreach ( Screen screen in Screen.AllScreens ) {
-				if ( screen.Bounds.Contains( _position ) ) {
-					_containingScreen = screen;
-					break;
-				}
-			}
-			if ( _containingScreen == null )
-				throw new Exception( "Provided position is not contained by any monitor!" );
-
-			// Also retrieve the HMONITOR value
-			POINTSTRUCT	pt = new POINTSTRUCT( _position.X, _position.Y );
-			_hMonitor = MonitorFromPoint( pt, MONITOR_DEFAULTTONEAREST );
-		}
-
-		#endregion
-
 		#region Window Modes
 
 		/// <summary>
 		/// Shows the window as a fullscreen overlay where the mouse cursor is standing
 		/// </summary>
-		void	ShowWindow() {
+		public new void	Show() {
 			bool	mouseInBounds = Bounds.Contains( Control.MousePosition );
 			if ( Visible && mouseInBounds )
 				return;	// No change...
@@ -391,7 +340,7 @@ namespace Brain2 {
 				try {
 					IntPtr	hMonitor;
 					Screen	screen;
-					GetMonitorFromPosition( Control.MousePosition, out screen, out hMonitor );
+					Interop.GetMonitorFromPosition( Control.MousePosition, out screen, out hMonitor );
 
 					// Rescale window to fullscreen overlay
 					this.SetDesktopBounds( screen.Bounds.X, screen.Bounds.Y, screen.Bounds.Width, screen.Bounds.Height );
@@ -404,32 +353,30 @@ namespace Brain2 {
 				}
 			}
 
-			Show();
-			Capture = true;
+			base.Show();
+//			Capture = true;
 		}
 
-		/// <summary>
-		/// Hides the overlay window
-		/// </summary>
-		void	HideWindow() {
-			bool	mouseInBounds = Bounds.Contains( Control.MousePosition );
+		public new void	Hide() {
 			if ( !Visible )
 				return;	// No change...
 
 			// Also hide any open form
-			if ( m_preferenceForm.Visible )
-				ToggleShowPreferences();
-			if ( m_ficheEditorForm.Visible )
-				ToggleShowFicheEditor();
+			HidePreferences();
+			HideFicheEditor();
 
-			Capture = false;
-			Hide();
+//			Capture = false;
+			base.Hide();
 		}
 
 		protected override void OnLostFocus(EventArgs e) {
 			base.OnLostFocus(e);
 			ExitFishing();
 		}
+
+		#endregion
+
+		#region Fishing Mode
 
 		bool	m_fishing = false;
 
@@ -464,30 +411,6 @@ namespace Brain2 {
 
 		// From https://stackoverflow.com/questions/2450373/set-global-hotkeys-using-c-sharp
 
-		private static int WM_HOTKEY = 0x0312;
-		private static int WM_KEYDOWN = 0x0100;
-		private static int WM_KEYUP = 0x0101;
-		private static int WM_SYSKEYDOWN = 0x0104;
-		private static int WM_SYSKEYUP = 0x0105;
-
-		/// <summary>
-		/// The enumeration of possible modifiers.
-		/// </summary>
-		[Flags]
-		public enum NativeModifierKeys : uint {
-			Alt = 1,
-			Control = 2,
-			Shift = 4,
-			Win = 8,
-		}
-		// Registers a hot key with Windows.
-		[DllImport("User32.dll", ExactSpelling=true)]
-		private static extern bool RegisterHotKey(IntPtr hWnd, int id, uint fsModifiers, uint vk);
-
-		// Unregisters the hot key with Windows.
-		[DllImport("User32.dll", ExactSpelling=true)]
-		private static extern bool UnregisterHotKey(IntPtr hWnd, int id);
-
 		/// <summary>
 		/// Overridden to get the notifications.
 		/// </summary>
@@ -495,22 +418,21 @@ namespace Brain2 {
 		protected override void WndProc( ref Message m ) {
 
 			// Check if we got a hot key pressed.
-			if ( m.Msg == WM_HOTKEY ) {
-				// get the keys.
-				Keys				key = (Keys) (((int)m.LParam >> 16) & 0xFFFF);
-				NativeModifierKeys	modifiers = (NativeModifierKeys) ((int)m.LParam & 0xFFFF);
+			if ( m.Msg == Interop.WM_HOTKEY ) {
+				Keys						key = (Keys) (((int)m.LParam >> 16) & 0xFFFF);
+				Interop.NativeModifierKeys	modifiers = (Interop.NativeModifierKeys) ((int)m.LParam & 0xFFFF);
 
 				// Toggle visibility
 				if ( Visible )
-					HideWindow();
+					Hide();
 				else
-					ShowWindow();
+					Show();
 			}
 
 			if ( !m_fishing ) {
 				base.WndProc(ref m);	// Process messages normally
 			} else {
-
+				// In "fishing mode", dispatch messages to background windows
 				switch ( m.Msg ) {
 					case 0x7f:
 					case 0x84:	// (WM_NCHITTEST) hwnd=0xaa1b64 wparam=0x0 lparam=0x34c040e result=0x0
@@ -522,79 +444,32 @@ namespace Brain2 {
 						break;
 				}
 
-//				if ( m.Msg == WM_KEYUP || m.Msg == WM_KEYDOWN || m.Msg == WM_SYSKEYUP || m.Msg == WM_SYSKEYDOWN ) {
-				if ( m.Msg == WM_KEYUP || m.Msg == WM_SYSKEYUP ) {
+//				if ( m.Msg == Interop.WM_KEYUP || m.Msg == Interop.WM_KEYDOWN || m.Msg == Interop.WM_SYSKEYUP || m.Msg == Interop.WM_SYSKEYDOWN ) {
+				if ( m.Msg == Interop.WM_KEYUP || m.Msg == Interop.WM_SYSKEYUP ) {
 					if ( ((Keys) m.WParam.ToInt32()) == Keys.Menu ) {
 						System.Diagnostics.Debug.WriteLine( "========================= EXIT FISHING! =========================" );
 						ExitFishing();
 					}
 				}
 
-//				DefWndProc( ref m );
-
 				DispatchMessageToBackgroundWindows( m );
 			}
-		}
-
-		/// <summary>
-		/// Registers a hot key in the system.
-		/// </summary>
-		/// <param name="modifier">The modifiers that are associated with the hot key.</param>
-		/// <param name="key">The key itself that is associated with the hot key.</param>
-		public void RegisterHotKey( NativeModifierKeys modifier, Keys key ) {
-			if ( !RegisterHotKey( Handle, 0, (uint) modifier, (uint) key ) )
-				throw new InvalidOperationException( "Couldn’t register the hot key." );
 		}
 
 		#endregion
 
 		#region Background Windows Management
 
-		// Code from https://pinvoke.net/default.aspx/user32/EnumWindows.html
-		// and from https://www.experts-exchange.com/questions/24331722/Getting-the-list-of-Open-Window-Handles-in-C.html
-		// and a condescending bit from http://csharphelper.com/blog/2016/08/list-desktop-windows-in-c/
-
-		private delegate bool EnumWindowsCallback(IntPtr hWnd, IntPtr lParam);
-
-		[DllImport("user32.dll")]
-		[return: MarshalAs(UnmanagedType.Bool)]
-		static extern bool EnumWindows(EnumWindowsCallback lpEnumFunc, IntPtr lParam);
-
-		[DllImport("user32.dll", EntryPoint = "EnumDesktopWindows",
-		ExactSpelling = false, CharSet = CharSet.Auto, SetLastError = true)]
-		private static extern bool EnumDesktopWindows(IntPtr hDesktop, EnumWindowsCallback lpEnumCallbackFunction, IntPtr lParam);
-
-		[DllImport("user32.dll", SetLastError = true)]
-		public static extern IntPtr FindWindowEx(IntPtr parentHandle, IntPtr childAfter, string className, IntPtr windowTitle);
- 
-		[DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
-		static extern int GetWindowText(IntPtr hWnd, StringBuilder lpString, int nMaxCount);
- 
-		[DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
-		static extern int GetWindowTextLength(IntPtr hWnd);
-
-		[DllImport("user32.dll")]
-		[return: MarshalAs(UnmanagedType.Bool)]
-		private static extern bool IsWindowVisible(IntPtr hWnd);
-
-		public static IntPtr[]	GetWindowHandles() {    
-			List<IntPtr>	windowHandles = new List<IntPtr>();
-//			EnumWindows( ( IntPtr hWnd, IntPtr lParam ) => { windowHandles.Add( hWnd ); return true; }, IntPtr.Zero );
-			EnumDesktopWindows( IntPtr.Zero, ( IntPtr hWnd, IntPtr lParam ) => { windowHandles.Add( hWnd ); return true; }, IntPtr.Zero );
-			
-			return windowHandles.ToArray();
-		}
-
 		void	DispatchMessageToBackgroundWindows( Message m ) {
 
 			StringBuilder	sb = new StringBuilder( 1000 );
 
-			IntPtr[]	handles = GetWindowHandles();
+			IntPtr[]	handles = Interop.GetWindowHandles();
 			foreach ( IntPtr handle in handles ) {
 				try {
 					if ( handle == Handle )
 						continue;
-					if ( !IsWindowVisible( handle ) )
+					if ( !Interop.IsWindowVisible( handle ) )
 						continue;
 
 // 					int	length = GetWindowTextLength( handle );
@@ -629,21 +504,36 @@ namespace Brain2 {
 		#region Forms
 
 		void	ToggleShowPreferences() {
-			if ( m_preferenceForm.Visible ) {
+			if ( m_preferenceForm.Visible )
+				HidePreferences();
+			else
+				ShowPreferences();
+		}
+		void	HidePreferences() {
+			if ( m_preferenceForm.Visible )
 				m_preferenceForm.Hide();
+		}
+		void	ShowPreferences() {
+			if ( m_preferenceForm.Visible )
 				return;
-			}
 
 			// Show centered
 			m_preferenceForm.Show( this );
-			m_preferenceForm.Location = this.Location + new Size( (this.Width - m_preferenceForm.Width) / 2, (this.Height - m_preferenceForm.Height) / 2 );
 		}
 
 		void	ToggleShowFicheEditor() {
-			if ( m_ficheEditorForm.Visible ) {
+			if ( m_ficheEditorForm.Visible )
+				HideFicheEditor();
+			else
+				ShowFicheEditor();
+		}
+		void	HideFicheEditor() {
+			if ( m_ficheEditorForm.Visible )
 				m_ficheEditorForm.Hide();
+		}
+		void	ShowFicheEditor() {
+			if ( m_ficheEditorForm.Visible )
 				return;
-			}
 
 			// Show centered
 			m_ficheEditorForm.Show( this );
@@ -662,10 +552,7 @@ namespace Brain2 {
 			base.OnKeyDown(e);
 			switch ( e.KeyCode ) {
 				case Keys.Escape:
-					if ( m_preferenceForm.Visible )
-						ToggleShowPreferences();
-					else
-						HideWindow();
+					Hide();
 					break;
 
 				case Keys.R:
@@ -710,12 +597,12 @@ namespace Brain2 {
 			if ( e.Button != MouseButtons.Left )
 				return;
 
-			ShowWindow();
+			Show();
 		}
 
 		private void BrainForm_MouseUp(object sender, MouseEventArgs e) {
 			if ( !this.Bounds.Contains( e.Location ) ) {
-				HideWindow();
+				Hide();
 			}
 		}
 

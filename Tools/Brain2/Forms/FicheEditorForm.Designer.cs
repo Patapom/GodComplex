@@ -23,13 +23,14 @@
 		/// the contents of this method with the code editor.
 		/// </summary>
 		private void InitializeComponent() {
+			System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FicheEditorForm));
 			this.folderBrowserDialog = new System.Windows.Forms.FolderBrowserDialog();
 			this.label1 = new System.Windows.Forms.Label();
 			this.richTextBoxTitle = new System.Windows.Forms.RichTextBox();
 			this.label2 = new System.Windows.Forms.Label();
-			this.webEditor = new ZetaHtmlEditControl.Pom.WebEditor();
 			this.label3 = new System.Windows.Forms.Label();
 			this.richTextBoxTags = new System.Windows.Forms.RichTextBox();
+			this.webEditor = new ZetaHtmlEditControl.Pom.WebEditor();
 			this.SuspendLayout();
 			// 
 			// folderBrowserDialog
@@ -48,11 +49,12 @@
 			// 
 			// richTextBoxTitle
 			// 
+			this.richTextBoxTitle.Enabled = false;
 			this.richTextBoxTitle.Location = new System.Drawing.Point(52, 32);
 			this.richTextBoxTitle.Multiline = false;
 			this.richTextBoxTitle.Name = "richTextBoxTitle";
 			this.richTextBoxTitle.Size = new System.Drawing.Size(632, 26);
-			this.richTextBoxTitle.TabIndex = 1;
+			this.richTextBoxTitle.TabIndex = 0;
 			this.richTextBoxTitle.Text = "";
 			// 
 			// label2
@@ -64,16 +66,6 @@
 			this.label2.Size = new System.Drawing.Size(43, 20);
 			this.label2.TabIndex = 0;
 			this.label2.Text = "Title";
-			// 
-			// webEditor
-			// 
-			this.webEditor.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-			this.webEditor.Location = new System.Drawing.Point(5, 96);
-			this.webEditor.Name = "webEditor";
-			this.webEditor.Size = new System.Drawing.Size(686, 403);
-			this.webEditor.TabIndex = 2;
 			// 
 			// label3
 			// 
@@ -87,6 +79,7 @@
 			// 
 			// richTextBoxTags
 			// 
+			this.richTextBoxTags.Enabled = false;
 			this.richTextBoxTags.Location = new System.Drawing.Point(52, 64);
 			this.richTextBoxTags.Multiline = false;
 			this.richTextBoxTags.Name = "richTextBoxTags";
@@ -94,11 +87,24 @@
 			this.richTextBoxTags.TabIndex = 1;
 			this.richTextBoxTags.Text = "";
 			// 
+			// webEditor
+			// 
+			this.webEditor.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+			this.webEditor.Document = "<p>Click the buttons below to set different texts. German Umlaute: Ä Ö Ü ä ö ü ß." +
+    "</p>";
+			this.webEditor.Location = new System.Drawing.Point(5, 96);
+			this.webEditor.Name = "webEditor";
+			this.webEditor.Size = new System.Drawing.Size(686, 403);
+			this.webEditor.TabIndex = 2;
+			this.webEditor.TempImagesFolder = ((System.IO.DirectoryInfo)(resources.GetObject("webEditor.TempImagesFolder")));
+			// 
 			// FicheEditorForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-			this.BackColor = System.Drawing.SystemColors.ControlDark;
+			this.BackColor = System.Drawing.Color.Gainsboro;
 			this.ClientSize = new System.Drawing.Size(696, 504);
 			this.Controls.Add(this.webEditor);
 			this.Controls.Add(this.richTextBoxTags);
