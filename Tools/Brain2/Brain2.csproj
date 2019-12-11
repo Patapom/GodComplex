@@ -101,12 +101,6 @@
     <Compile Include="Forms\PreferencesForm.Designer.cs">
       <DependentUpon>PreferencesForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="Web Interface\WebEditor.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="Web Interface\WebEditor.Designer.cs">
-      <DependentUpon>WebEditor.cs</DependentUpon>
-    </Compile>
     <Compile Include="Web Interface\WebPage2Image.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -139,9 +133,6 @@
       <DependentUpon>Resources.resx</DependentUpon>
       <DesignTime>True</DesignTime>
     </Compile>
-    <EmbeddedResource Include="Web Interface\WebEditor.resx">
-      <DependentUpon>WebEditor.cs</DependentUpon>
-    </EmbeddedResource>
     <EmbeddedResource Include="Web Interface\WebEditor_COMError.resx">
       <DependentUpon>WebEditor_COMError.cs</DependentUpon>
     </EmbeddedResource>
