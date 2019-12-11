@@ -362,8 +362,8 @@ namespace Brain2 {
 				return;	// No change...
 
 			// Also hide any open form
-			HidePreferences();
-			HideFicheEditor();
+			m_preferenceForm.Hide();
+			m_ficheEditorForm.Hide();
 
 //			Capture = false;
 			base.Hide();
@@ -427,6 +427,11 @@ namespace Brain2 {
 					Hide();
 				else
 					Show();
+
+			} else if ( m.Msg == Interop.WM_KEYDOWN ) {
+				if ( m.HWnd == m_ficheEditorForm.Handle ) {
+					System.Diagnostics.Debug.WriteLine( "Bisou!" );
+				}
 			}
 
 			if ( !m_fishing ) {
@@ -505,39 +510,16 @@ namespace Brain2 {
 
 		void	ToggleShowPreferences() {
 			if ( m_preferenceForm.Visible )
-				HidePreferences();
-			else
-				ShowPreferences();
-		}
-		void	HidePreferences() {
-			if ( m_preferenceForm.Visible )
 				m_preferenceForm.Hide();
-		}
-		void	ShowPreferences() {
-			if ( m_preferenceForm.Visible )
-				return;
-
-			// Show centered
-			m_preferenceForm.Show( this );
+			else
+				m_preferenceForm.Show( this );
 		}
 
 		void	ToggleShowFicheEditor() {
 			if ( m_ficheEditorForm.Visible )
-				HideFicheEditor();
-			else
-				ShowFicheEditor();
-		}
-		void	HideFicheEditor() {
-			if ( m_ficheEditorForm.Visible )
 				m_ficheEditorForm.Hide();
-		}
-		void	ShowFicheEditor() {
-			if ( m_ficheEditorForm.Visible )
-				return;
-
-			// Show centered
-			m_ficheEditorForm.Show( this );
-			m_ficheEditorForm.Location = this.Location + new Size( (this.Width - m_ficheEditorForm.Width) / 2, (this.Height - m_ficheEditorForm.Height) / 2 );
+			else
+				m_ficheEditorForm.Show( this );
 		}
 
 		#endregion
@@ -559,14 +541,6 @@ namespace Brain2 {
 					m_device.ReloadModifiedShaders();
 					break;
 
-				case PreferencesForm.SHORTCUT_KEY:
-					ToggleShowPreferences();
-					break;
-
-				case FicheEditorForm.SHORTCUT_KEY:
-					ToggleShowFicheEditor();
-					break;
-
 // @TODO!
 //	=> Global hook + make entire form transparent so back windows get messages?
 //	=> Or make opaque + forward messages to back windows if possible?
@@ -574,6 +548,12 @@ namespace Brain2 {
 // 					if ( e.Alt )
 // 						EnterFishing();
 // 					break;
+			}
+
+			if ( e.KeyCode == m_preferenceForm.SHORTCUT_KEY ) {
+				ToggleShowPreferences();
+			} else if ( e.KeyCode == m_ficheEditorForm.SHORTCUT_KEY ) {
+				ToggleShowFicheEditor();
 			}
 		}
 

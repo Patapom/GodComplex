@@ -119,6 +119,7 @@
 			this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Show;
 			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
 			this.Text = "PreferencesForm";
+			this.TopMost = true;
 			this.ResumeLayout(false);
 			this.PerformLayout();
 

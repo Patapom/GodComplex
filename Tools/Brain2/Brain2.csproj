@@ -70,12 +70,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Fiches\FichesDB.cs" />
-    <Compile Include="Forms\BrainFormTestHTML.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Forms\BrainFormTestHTML.Designer.cs">
-      <DependentUpon>BrainFormTestHTML.cs</DependentUpon>
-    </Compile>
     <Compile Include="BrainForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -95,6 +89,12 @@
     <Compile Include="Forms\FicheEditorForm.Designer.cs">
       <DependentUpon>FicheEditorForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="Forms\ModelessForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\ModelessForm.Designer.cs">
+      <DependentUpon>ModelessForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="Forms\PreferencesForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -105,15 +105,15 @@
     <Compile Include="Web Interface\WebPage2Image.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <EmbeddedResource Include="Forms\BrainFormTestHTML.resx">
-      <DependentUpon>BrainFormTestHTML.cs</DependentUpon>
-    </EmbeddedResource>
     <EmbeddedResource Include="BrainForm.resx">
       <DependentUpon>BrainForm.cs</DependentUpon>
       <SubType>Designer</SubType>
     </EmbeddedResource>
     <EmbeddedResource Include="Forms\FicheEditorForm.resx">
       <DependentUpon>FicheEditorForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Forms\ModelessForm.resx">
+      <DependentUpon>ModelessForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Forms\PreferencesForm.resx">
       <DependentUpon>PreferencesForm.cs</DependentUpon>
