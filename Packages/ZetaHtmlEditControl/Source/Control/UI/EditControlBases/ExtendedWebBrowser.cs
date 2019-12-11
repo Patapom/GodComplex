@@ -106,7 +106,7 @@
 	        }
 	    }
 
-        internal static IExternalWebServer WebServer
+        public static IExternalWebServer WebServer
 		{
 			get
 			{

@@ -11,7 +11,7 @@
     /// <remarks>
     /// Siehe auch http://connect.microsoft.com/IE/feedback/details/789619/mshtml-dll-of-ie10-still-generates-deprecated-element-tags-attributes
     /// </remarks>
-    internal static class MsHtmlLegacyFromGoodToBadTranslator
+    public static class MsHtmlLegacyFromGoodToBadTranslator
     {
         /*
         IDM_BACKCOLOR : uses FONT element

@@ -5,7 +5,7 @@ namespace ZetaHtmlEditControl.UI.EditControlBases
     using System.Drawing;
     using mshtml;
 
-    internal class HtmlEditHost :
+    public class HtmlEditHost :
         IHTMLEditHost
     {
         // http://www.codeproject.com/Articles/6845/Implementing-snap-to-grid-in-an-MSHTML-based-appli

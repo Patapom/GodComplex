@@ -14,7 +14,7 @@ namespace ZetaHtmlEditControl.Code.Helper
 
 	/////////////////////////////////////////////////////////////////////////
 
-	internal static class PathHelper
+	public static class PathHelper
 	{
 	    #region HTML- and URL-encoding/-decoding.
 	    // ------------------------------------------------------------------

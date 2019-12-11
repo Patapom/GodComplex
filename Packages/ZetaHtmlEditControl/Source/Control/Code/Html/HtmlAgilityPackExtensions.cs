@@ -4,7 +4,7 @@
     using System.Linq;
     using HtmlAgilityPack;
 
-    internal static class HtmlAgilityPackExtensions
+    public static class HtmlAgilityPackExtensions
     {
         /// <summary>
         /// Bugfix-Version, siehe http://stackoverflow.com/questions/7911455/html-agility-pack-removechild-not-behaving-as-expected

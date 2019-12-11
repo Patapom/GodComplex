@@ -3,7 +3,7 @@
     using System;
     using System.Globalization;
 
-    internal static class ConvertHelper
+    public static class ConvertHelper
 	{
         private const NumberStyles FloatNumberStyle =
             NumberStyles.Float |

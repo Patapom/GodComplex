@@ -4,7 +4,7 @@
     using System.Collections.Generic;
     using System.ComponentModel;
 
-    internal static class StringHelper
+    public static class StringHelper
 	{
         private static readonly Dictionary<Enum, string> RecentEnumDescriptions =
             new Dictionary<Enum, string>();

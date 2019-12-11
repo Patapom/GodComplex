@@ -8,7 +8,7 @@
     /// Klasse um auf Inline-CSS-Elemente in einem STYLE-Attribut eines HTML-Tags
     /// sauber zugreifen zu können.
     /// </summary>
-    internal sealed class InlineCssParser
+    public sealed class InlineCssParser
     {
         public InlineCssParser(string rawInlineCss)
         {

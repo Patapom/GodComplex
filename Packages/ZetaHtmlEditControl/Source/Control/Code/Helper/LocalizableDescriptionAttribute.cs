@@ -17,7 +17,7 @@
 		AttributeTargets.All,
 		Inherited = false,
 		AllowMultiple = true)]
-	internal sealed class LocalizableDescriptionAttribute :
+	public sealed class LocalizableDescriptionAttribute :
 		DescriptionAttribute
 	{
 	    #region Public methods.

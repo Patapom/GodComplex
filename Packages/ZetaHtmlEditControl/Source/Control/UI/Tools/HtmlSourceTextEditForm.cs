@@ -7,7 +7,7 @@ namespace ZetaHtmlEditControl.UI.Tools
     using System.Windows.Forms;
     using Code.Configuration;
 
-    internal partial class HtmlSourceTextEditForm :
+    public partial class HtmlSourceTextEditForm :
 		Form
 	{
         private static bool _hasConsolas;
@@ -24,13 +24,13 @@ namespace ZetaHtmlEditControl.UI.Tools
         [Browsable( false )]
 		[EditorBrowsable( EditorBrowsableState.Never )]
 		[DesignerSerializationVisibility( DesignerSerializationVisibility.Hidden )]
-		internal IExternalInformationProvider ExternalInformationProvider
+		public IExternalInformationProvider ExternalInformationProvider
 		{
 			get;
 			set;
 		}
 
-		internal string StoreID
+		public string StoreID
 		{
 			get
 			{

@@ -7,7 +7,7 @@
     using System.Windows.Forms;
     using IDataObject = System.Windows.Forms.IDataObject;
 
-    internal static class HtmlClipboardHelper
+    public static class HtmlClipboardHelper
     {
         [DllImport(@"kernel32.dll", CharSet = CharSet.Auto, ExactSpelling = true, SetLastError = true)]
         private static extern IntPtr GlobalLock(HandleRef handle);
@@ -87,7 +87,7 @@
         /// </summary>
         /// <remarks>Added 2006-06-12, <c>Uwe Keim</c>.</remarks>
         /// <returns></returns>
-        internal static void GetHtmlFromClipboard(
+        public static void GetHtmlFromClipboard(
             out string clipText,
             out byte[] originalBuffer)
         {

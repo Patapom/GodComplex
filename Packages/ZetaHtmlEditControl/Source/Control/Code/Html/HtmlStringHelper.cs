@@ -5,13 +5,13 @@
     using System.Text.RegularExpressions;
     using HtmlAgilityPack;
 
-    internal static class HtmlStringHelper
+    public static class HtmlStringHelper
     {
         /// <summary>
         /// Wenn aus Excel kopiert wird, sind das TABLE-Beginn- und Ende-Tag
         /// jeweils _außerhalb_ vom kopierten Text. Das hier jetzt ergänzen.
         /// </summary>
-        internal static string CheckCompleteHtmlTable(
+        public static string CheckCompleteHtmlTable(
             this string htmlCode)
         {
             if (string.IsNullOrEmpty(htmlCode))
@@ -37,7 +37,7 @@
             }
         }
 
-        internal static string GetBodyFromHtmlCode(
+        public static string GetBodyFromHtmlCode(
             this string htmlCode)
         {
             if (string.IsNullOrEmpty(htmlCode))
@@ -97,7 +97,7 @@
                 RegexOptions.Singleline | RegexOptions.IgnoreCase);
         }
 
-        internal static string GetOnlyTextFromHtmlCode(this string htmlCode)
+        public static string GetOnlyTextFromHtmlCode(this string htmlCode)
         {
             //<br>
             htmlCode = htmlCode.Replace("\r\n", @" ");
@@ -144,7 +144,7 @@
             return htmlCode;
         }
 
-        internal static string AddNewLineToText(string text)
+        public static string AddNewLineToText(string text)
         {
             if (String.IsNullOrEmpty(text))
             {

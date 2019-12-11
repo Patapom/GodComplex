@@ -481,7 +481,7 @@ namespace ZetaHtmlEditControl.UI.EditControlDerives
 
         public event EventHandler UINeedsUpdate;
 
-        internal void FillTextModules(
+        public void FillTextModules(
             ToolStripDropDownItem textModulesToolStripItem)
         {
             checkGetTextModules();

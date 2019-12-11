@@ -14,7 +14,7 @@ namespace ZetaHtmlEditControl.Code.Helper
 	/// <summary>
 	/// Class for scaling an image.
 	/// </summary>
-	internal static class ImageScaler
+	public static class ImageScaler
 	{
 	    #region Scaling.
 	    // ------------------------------------------------------------------

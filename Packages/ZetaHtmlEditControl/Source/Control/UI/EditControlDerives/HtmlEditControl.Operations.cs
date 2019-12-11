@@ -33,7 +33,7 @@
             }
         }
 
-        internal void ExecuteUnderline()
+        public void ExecuteUnderline()
         {
             if (Document != null)
             {
@@ -47,7 +47,7 @@
             if (Document != null) Document.ExecCommand(@"Redo", false, null);
         }
 
-        internal void ExecuteUndo()
+        public void ExecuteUndo()
         {
             if (Document != null) Document.ExecCommand(@"Undo", false, null);
         }
@@ -68,7 +68,7 @@
             }
         }
 
-        internal void ExecuteBold()
+        public void ExecuteBold()
         {
             if (Document != null)
             {
@@ -82,7 +82,7 @@
 
         //commands list
         //https://developer.mozilla.org/en/docs/Rich-Text_Editing_in_Mozilla
-        internal void ExecuteFontSize(string newSize)
+        public void ExecuteFontSize(string newSize)
         {
             if (Document != null)
             {
@@ -91,7 +91,7 @@
             }
         }
 
-        internal void ExecuteFontName(string name)
+        public void ExecuteFontName(string name)
         {
             if (Document != null)
             {
@@ -100,7 +100,7 @@
             }
         }
 
-        internal void ExecuteItalic()
+        public void ExecuteItalic()
         {
             if (Document != null)
             {
@@ -111,22 +111,22 @@
             }
         }
 
-        internal void ExecutePaste()
+        public void ExecutePaste()
         {
             handlePaste(PasteMode.Normal);
         }
 
-        internal void ExecutePasteAsText()
+        public void ExecutePasteAsText()
         {
             handlePaste(PasteMode.Text);
         }
 
-        internal void ExecutePasteFromWord()
+        public void ExecutePasteFromWord()
         {
             handlePaste(PasteMode.MsWord);
         }
 
-        internal void ExecuteShowSource()
+        public void ExecuteShowSource()
         {
             using (var form = new HtmlSourceTextEditForm(DocumentText))
             {
@@ -142,7 +142,7 @@
             }
         }
 
-        internal void ExecuteInsertHyperlink()
+        public void ExecuteInsertHyperlink()
         {
             if (Document != null)
             {
@@ -152,7 +152,7 @@
             }
         }
 
-        internal void ExecuteIndent()
+        public void ExecuteIndent()
         {
             if (Document != null)
             {
@@ -163,7 +163,7 @@
             }
         }
 
-        internal void ExecuteJustifyCenter()
+        public void ExecuteJustifyCenter()
         {
             if (Document != null)
             {
@@ -174,7 +174,7 @@
             }
         }
 
-        internal void ExecuteJustifyLeft()
+        public void ExecuteJustifyLeft()
         {
             if (Document != null)
             {
@@ -185,7 +185,7 @@
             }
         }
 
-        internal void ExecuteJustifyRight()
+        public void ExecuteJustifyRight()
         {
             if (Document != null)
             {
@@ -196,7 +196,7 @@
             }
         }
 
-        internal void ExecuteNumberedList()
+        public void ExecuteNumberedList()
         {
             if (Document != null)
             {
@@ -207,7 +207,7 @@
             }
         }
 
-        internal void ExecuteOutdent()
+        public void ExecuteOutdent()
         {
             if (Document != null)
             {
@@ -218,7 +218,7 @@
             }
         }
 
-        internal void ExecuteBullettedList()
+        public void ExecuteBullettedList()
         {
             if (Document != null)
             {
@@ -228,7 +228,7 @@
             }
         }
 
-        internal void ExecuteCopy()
+        public void ExecuteCopy()
         {
             if (Document != null)
             {
@@ -238,7 +238,7 @@
             }
         }
 
-        internal void ExecuteCut()
+        public void ExecuteCut()
         {
             if (Document != null)
             {
@@ -257,7 +257,7 @@
             }
         }
 
-        internal void ExecuteDelete()
+        public void ExecuteDelete()
         {
             if (Document != null)
             {
@@ -305,7 +305,7 @@
             }
         }
 
-        internal void ExecuteSetBackColor05()
+        public void ExecuteSetBackColor05()
         {
             setBackColor(@"ff00ff");
         }
@@ -471,82 +471,82 @@
             }
         }
 
-        internal void ExecuteSetForeColorNone()
+        public void ExecuteSetForeColorNone()
         {
             setForeColor(MsHtmlLegacyFromBadToGoodTranslator.NoForegroundColor);
         }
 
-        internal void ExecuteSetForeColor01()
+        public void ExecuteSetForeColor01()
         {
             setForeColor(@"c00000");
         }
 
-        internal void ExecuteSetForeColor02()
+        public void ExecuteSetForeColor02()
         {
             setForeColor(@"ff0000");
         }
 
-        internal void ExecuteSetForeColor03()
+        public void ExecuteSetForeColor03()
         {
             setForeColor(@"ffc000");
         }
 
-        internal void ExecuteSetForeColor04()
+        public void ExecuteSetForeColor04()
         {
             setForeColor(@"ffff00");
         }
 
-        internal void ExecuteSetBackColorNone()
+        public void ExecuteSetBackColorNone()
         {
             setBackColor(MsHtmlLegacyFromBadToGoodTranslator.NoBackgroundColor);
         }
 
-        internal void ExecuteSetBackColor02()
+        public void ExecuteSetBackColor02()
         {
             setBackColor(@"00ff00");
         }
 
-        internal void ExecuteSetBackColor03()
+        public void ExecuteSetBackColor03()
         {
             setBackColor(@"00ffff");
         }
 
-        internal void ExecuteSetBackColor04()
+        public void ExecuteSetBackColor04()
         {
             setBackColor(@"ff0000");
         }
 
-        internal void ExecuteSetForeColor05()
+        public void ExecuteSetForeColor05()
         {
             setForeColor(@"92d050");
         }
 
-        internal void ExecuteSetForeColor06()
+        public void ExecuteSetForeColor06()
         {
             setForeColor(@"00b050");
         }
 
-        internal void ExecuteSetForeColor07()
+        public void ExecuteSetForeColor07()
         {
             setForeColor(@"00b0f0");
         }
 
-        internal void ExecuteSetForeColor08()
+        public void ExecuteSetForeColor08()
         {
             setForeColor(@"0070c0");
         }
 
-        internal void ExecuteSetForeColor09()
+        public void ExecuteSetForeColor09()
         {
             setForeColor(@"002060");
         }
 
-        internal void ExecuteSetForeColor10()
+        public void ExecuteSetForeColor10()
         {
             setForeColor(@"7030a0");
         }
 
-        internal void ExecuteSetBackColor01()
+        public void ExecuteSetBackColor01()
         {
             setBackColor(@"ffff00");
         }
@@ -575,7 +575,7 @@
         /// <summary>
         /// Entweder von Auswahl oder von allem.
         /// </summary>
-        internal void ExecuteRemoveFormatting()
+        public void ExecuteRemoveFormatting()
         {
             if (IsTextSelection)
             {

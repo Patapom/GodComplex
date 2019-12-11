@@ -16,7 +16,7 @@
     using Helper;
     using Properties;
 
-    internal sealed class WebServer :
+    public sealed class WebServer :
         IExternalWebServer
     {
         private static readonly Random Random = new Random(Guid.NewGuid().GetHashCode());

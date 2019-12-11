@@ -22,7 +22,7 @@
         [Browsable(false)]
 		[EditorBrowsable(EditorBrowsableState.Never)]
 		[DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-		internal IExternalInformationProvider ExternalInformationProvider
+		public IExternalInformationProvider ExternalInformationProvider
 		{
 			get;
 			set;

@@ -12,7 +12,7 @@ namespace ZetaHtmlEditControl.Code.PInvoke
 
         [ComImport, InterfaceType( ComInterfaceType.InterfaceIsIUnknown ),
 			Guid( @"3050f3f0-98b5-11cf-bb82-00aa00bdce0b" )]
-		internal interface ICustomDoc
+		public interface ICustomDoc
 		{
 			[PreserveSig]
 			void SetUIHandler( IDocHostUIHandler pUIHandler );

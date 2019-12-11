@@ -20,7 +20,7 @@ namespace ZetaHtmlEditControl.Code.Html
             endClean();
         }
 
-        internal string ConvertGetHtml(
+        public string ConvertGetHtml(
             string html,
             Uri baseUri,
             string saveFolderPath,
@@ -145,7 +145,7 @@ namespace ZetaHtmlEditControl.Code.Html
             }
         }
 
-        internal string[] GetContainedImageFileNames(
+        public string[] GetContainedImageFileNames(
             string html,
             string imagesFolderPathPlaceHolder)
         {
@@ -172,7 +172,7 @@ namespace ZetaHtmlEditControl.Code.Html
             }
         }
 
-        internal string ConvertSetHtml(
+        public string ConvertSetHtml(
             string html,
             string saveFolderPath,
             string imagesFolderPathPlaceHolder)
@@ -202,7 +202,7 @@ namespace ZetaHtmlEditControl.Code.Html
                    (saveFolderPath.StartsWith(@"http://") || saveFolderPath.StartsWith(@"https://"));
         }
 
-        internal static ImageInfo[] FindImgs(
+        public static ImageInfo[] FindImgs(
             string htmlCode)
         {
             var r =
@@ -317,7 +317,7 @@ namespace ZetaHtmlEditControl.Code.Html
             _cleanPaths.Clear();
         }
 
-        internal static string GetPathFromFile(
+        public static string GetPathFromFile(
             string s,
             Uri baseUri)
         {
@@ -351,7 +351,7 @@ namespace ZetaHtmlEditControl.Code.Html
             }
         }
 
-        internal class ImageInfo
+        public class ImageInfo
         {
             public string Source { get; set; }
             public int Width { get; set; }

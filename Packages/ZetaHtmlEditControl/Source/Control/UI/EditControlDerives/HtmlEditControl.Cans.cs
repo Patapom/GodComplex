@@ -61,7 +61,7 @@
             get { return (bool)DomDocument.queryCommandValue(@"JustifyRight"); }
         }
 
-        internal bool CanOutdent
+        public bool CanOutdent
         {
             get
             {
@@ -70,7 +70,7 @@
             }
         }
 
-        internal bool CanOrderedList
+        public bool CanOrderedList
         {
             get
             {
@@ -84,7 +84,7 @@
             get { return DomDocument.queryCommandEnabled(@"Undo"); }
         }
 
-        internal bool CanJustifyRight
+        public bool CanJustifyRight
         {
             get
             {
@@ -93,7 +93,7 @@
             }
         }
 
-        internal bool CanRemoveFormatting
+        public bool CanRemoveFormatting
         {
             get
             {
@@ -101,7 +101,7 @@
             }
         }
 
-        internal bool CanJustifyLeft
+        public bool CanJustifyLeft
         {
             get
             {
@@ -110,7 +110,7 @@
             }
         }
 
-        internal bool CanJustifyCenter
+        public bool CanJustifyCenter
         {
             get
             {
@@ -119,7 +119,7 @@
             }
         }
 
-        internal bool CanIndent
+        public bool CanIndent
         {
             get
             {
@@ -128,7 +128,7 @@
             }
         }
 
-        internal bool CanDelete
+        public bool CanDelete
         {
             get
             {
@@ -137,7 +137,7 @@
             }
         }
 
-        internal bool CanPaste
+        public bool CanPaste
         {
             get
             {
@@ -146,7 +146,7 @@
             }
         }
 
-        internal bool CanCopy
+        public bool CanCopy
         {
             get { return Document != null && ((HTMLDocument)Document.DomDocument).queryCommandEnabled(@"Copy"); }
         }
@@ -160,7 +160,7 @@
             }
         }
 
-        internal bool CanItalic
+        public bool CanItalic
         {
             get
             {
@@ -169,7 +169,7 @@
             }
         }
 
-        internal bool CanUnderline
+        public bool CanUnderline
         {
             get
             {
@@ -178,7 +178,7 @@
             }
         }
 
-        internal bool CanBold
+        public bool CanBold
         {
             get
             {
@@ -187,7 +187,7 @@
             }
         }
 
-        internal bool CanChangeFont
+        public bool CanChangeFont
         {
             get
             {
@@ -195,7 +195,7 @@
             }
         }
 
-        internal bool CanBullettedList
+        public bool CanBullettedList
         {
             get
             {
@@ -204,7 +204,7 @@
             }
         }
 
-        internal bool CanForeColor
+        public bool CanForeColor
         {
             get
             {
@@ -213,7 +213,7 @@
             }
         }
 
-        internal bool CanBackColor
+        public bool CanBackColor
         {
             get
             {
@@ -222,7 +222,7 @@
             }
         }
 
-        internal bool CanInsertHyperlink
+        public bool CanInsertHyperlink
         {
             get
             {
@@ -231,7 +231,7 @@
             }
         }
 
-        internal bool CanShowSource
+        public bool CanShowSource
         {
             get { return true; }
         }

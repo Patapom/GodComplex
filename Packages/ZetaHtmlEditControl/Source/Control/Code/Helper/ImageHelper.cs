@@ -6,7 +6,7 @@ namespace ZetaHtmlEditControl.Code.Helper
     using System.Drawing.Imaging;
     using System.IO;
 
-    internal static class ImageHelper
+    public static class ImageHelper
 	{
         #region Miscellaneous methods.
         // ------------------------------------------------------------------
