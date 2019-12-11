@@ -133,6 +133,39 @@ namespace Brain2 {
 			m_CB_camera.UpdateData();
 		}
 
+		#region Fiche Creation
+
+		public void	CreateFiche( IDataObject _data ) {
+			try {
+
+
+
+// Debug formats
+Debug( "_____________________________" );
+Debug( "Listing paste & drop formats:" );
+foreach ( string format in _data.GetFormats() ) {
+	object data = _data.GetData( format );
+	Debug( format + " => " + (data!=null ? data.ToString() : "<null>") );
+}
+Debug( "_____________________________" );
+Hide();
+
+				// Ask factory to create the best fiche for our data
+				Fiche	fiche = Data2Fiche.CreateFiche( _data );
+
+Show();
+
+				// Start edition
+				m_ficheEditorForm.EditedFiche = fiche;
+				m_ficheEditorForm.Show( this );
+
+			} catch ( Exception _e ) {
+				MessageBox( "An error occurred while creating fiche!", _e );
+			}
+		}
+
+		#endregion
+
 		#region Init / Exit
 
 		public BrainForm() {
@@ -200,6 +233,8 @@ namespace Brain2 {
 				// Register Win+X to toggle visibility
 //				Interop.RegisterHotKey( this, Interop.NativeModifierKeys.Win | NativeModifierKeys.Shift, Keys.X );
 				Interop.RegisterHotKey( this, Interop.NativeModifierKeys.Win, Keys.X );
+
+				Focus();
 
 			} catch ( Exception _e ) {
 				MessageBox( "Error when creating D3D device!\r\n\n", _e );
@@ -542,6 +577,12 @@ namespace Brain2 {
 			System.Windows.Forms.MessageBox.Show( _message, "Brain 2", _buttons, _icon );
 		}
 
+		public static void	Debug( string _text ) {
+			System.Diagnostics.Debug.WriteLine( _text );
+		}
+
+		#endregion
+
 		#endregion
 
 		#region EVENTS
@@ -550,11 +591,23 @@ namespace Brain2 {
 // 			return base.ProcessKeyPreview(ref m);
 // 		}
 
+		protected override void OnShown(EventArgs e) {
+			base.OnShown(e);
+			Focus();
+		}
+
 		protected override void OnKeyDown(KeyEventArgs e) {
 			base.OnKeyDown(e);
 			switch ( e.KeyCode ) {
 				case Keys.Escape:
 					Hide();
+					break;
+
+				case Keys.V:
+					if ( e.Control ) {
+//MessageBox( "PASTE!" );
+						CreateFiche( Clipboard.GetDataObject() );
+					}
 					break;
 
 				case Keys.R:
@@ -575,6 +628,8 @@ namespace Brain2 {
 			} else if ( e.KeyCode == m_ficheEditorForm.SHORTCUT_KEY ) {
 				ToggleShowFicheEditor();
 			}
+
+//Debug( e.KeyCode.ToString() );
 		}
 
 		protected override void OnKeyUp(KeyEventArgs e) {
@@ -619,8 +674,41 @@ namespace Brain2 {
 			Close();
 		}
 
+		#region Drag'n Drop
+
+		private void BrainForm_QueryContinueDrag(object sender, QueryContinueDragEventArgs e) {
+			e.Action = DragAction.Continue;
+		}
+
+		private void BrainForm_DragOver(object sender, DragEventArgs e) {
+			e.Effect = e.AllowedEffect;
+		}
+
+		private void BrainForm_DragDrop(object sender, DragEventArgs e) {
+//			e.
+// 			string	formats = "";
+// 			foreach ( string format in e.Data.GetFormats() ) {
+// 				formats += ", " + format;
+// 			}
+// 			MessageBox( "DROP!\r\n" + formats );
+// 
+// 			// Enumerate all formats
+// 			foreach ( string format in e.Data.GetFormats() ) {
+// 				object data = e.Data.GetData( format );
+// 				Debug( format + " => " + (data!=null ? data.ToString() : "<null>") );
+// 			}
+
+			CreateFiche( e.Data );
+		}
+
 		#endregion
 
 		#endregion
+
+		private void BrainForm_GiveFeedback(object sender, GiveFeedbackEventArgs e) {
+		}
+
+		private void BrainForm_DragEnter(object sender, DragEventArgs e) {
+		}
 	}
 }

@@ -8,15 +8,15 @@
     public partial class HtmlEditControl
     {
         public override bool PreProcessMessage( ref Message msg ) {
-			if ( msg.Msg == NativeMethods.WmKeydown ) {
-				switch ( (Keys) msg.WParam ) {
-					case Keys.Escape:
-					case Keys.F5:
-						PreviewKeyDownEventArgs args = new PreviewKeyDownEventArgs( (Keys) msg.WParam );
-						OnPreviewKeyDown( args );
-						return true;
-					}
-			}
+// 			if ( msg.Msg == NativeMethods.WmKeydown ) {
+// 				switch ( (Keys) msg.WParam ) {
+// 					case Keys.Escape:
+// 					case Keys.F5:
+// 						PreviewKeyDownEventArgs args = new PreviewKeyDownEventArgs( (Keys) msg.WParam );
+// 						OnPreviewKeyDown( args );
+// 						return true;
+// 					}
+// 			}
 
             if (DesignMode || HtmlEditorDesignModeManager.IsDesignMode)
 				return base.PreProcessMessage(ref msg);

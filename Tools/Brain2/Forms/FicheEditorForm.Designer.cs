@@ -24,7 +24,6 @@
 		/// </summary>
 		private void InitializeComponent() {
 			System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FicheEditorForm));
-			this.folderBrowserDialog = new System.Windows.Forms.FolderBrowserDialog();
 			this.label1 = new System.Windows.Forms.Label();
 			this.richTextBoxTitle = new System.Windows.Forms.RichTextBox();
 			this.label2 = new System.Windows.Forms.Label();
@@ -32,10 +31,6 @@
 			this.richTextBoxTags = new System.Windows.Forms.RichTextBox();
 			this.webEditor = new ZetaHtmlEditControl.Pom.WebEditor();
 			this.SuspendLayout();
-			// 
-			// folderBrowserDialog
-			// 
-			this.folderBrowserDialog.Description = "Choose a folder for the database of fiches";
 			// 
 			// label1
 			// 
@@ -98,6 +93,7 @@
 			this.webEditor.Name = "webEditor";
 			this.webEditor.Size = new System.Drawing.Size(686, 403);
 			this.webEditor.TabIndex = 2;
+			this.webEditor.Enabled = false;
 			this.webEditor.TempImagesFolder = ((System.IO.DirectoryInfo)(resources.GetObject("webEditor.TempImagesFolder")));
 			this.webEditor.PreviewKeyDown += new System.Windows.Forms.PreviewKeyDownEventHandler(this.webEditor_PreviewKeyDown);
 			// 
@@ -128,7 +124,6 @@
 
 		#endregion
 
-		private System.Windows.Forms.FolderBrowserDialog folderBrowserDialog;
 		private System.Windows.Forms.Label label1;
 		private System.Windows.Forms.RichTextBox richTextBoxTitle;
 		private System.Windows.Forms.Label label2;

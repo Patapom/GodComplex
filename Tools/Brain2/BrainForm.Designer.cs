@@ -51,6 +51,7 @@
 			// 
 			// BrainForm
 			// 
+			this.AllowDrop = true;
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.BackColor = System.Drawing.Color.Black;
@@ -64,6 +65,11 @@
 			this.Text = "Brain #2";
 			this.TopMost = true;
 			this.TransparencyKey = System.Drawing.Color.Transparent;
+			this.DragDrop += new System.Windows.Forms.DragEventHandler(this.BrainForm_DragDrop);
+			this.DragEnter += new System.Windows.Forms.DragEventHandler(this.BrainForm_DragEnter);
+			this.DragOver += new System.Windows.Forms.DragEventHandler(this.BrainForm_DragOver);
+			this.GiveFeedback += new System.Windows.Forms.GiveFeedbackEventHandler(this.BrainForm_GiveFeedback);
+			this.QueryContinueDrag += new System.Windows.Forms.QueryContinueDragEventHandler(this.BrainForm_QueryContinueDrag);
 			this.MouseUp += new System.Windows.Forms.MouseEventHandler(this.BrainForm_MouseUp);
 			this.contextMenuStrip.ResumeLayout(false);
 			this.ResumeLayout(false);

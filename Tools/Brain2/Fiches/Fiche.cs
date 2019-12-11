@@ -75,6 +75,14 @@ namespace Brain2 {
 		public	Fiche() {
 			m_GUID = Guid.NewGuid();
 		}
+		public	Fiche( string _title, string[] _tags, string _HTMLContent ) : this() {
+			m_title = _title;
+			m_HTMLContent = _HTMLContent;
+		}
+
+		public override string ToString() {
+			return (m_title != "" ? m_title : "") + m_GUID + "\r\n" + m_HTMLContent;
+		}
 
 		#region I/O
 

@@ -38,7 +38,12 @@ namespace Brain2 {
 				// Update UI
 				bool	enable = m_fiche != null;
 				richTextBoxTitle.Enabled = enable;
+				richTextBoxTitle.Text = enable ? m_fiche.m_title : "";
+
 				richTextBoxTags.Enabled = enable;
+				richTextBoxTags.Text = enable ? "@TODO: handle parents as tags" : "";
+
+				webEditor.Document = enable ? m_fiche.m_HTMLContent : "<body/>";
 				webEditor.Enabled = enable;
 			}
 		}
@@ -53,59 +58,11 @@ namespace Brain2 {
 //			webEditor.Document = "Pipo!";
 		}
 
-// 		protected override bool ProcessKeyMessage(ref Message m) {
-// 			return base.ProcessKeyMessage(ref m);
-// 		}
-// 
-// 		protected override void DefWndProc(ref Message m) {
-// 			if ( msg.Msg == Interop.WM_KEYDOWN ) {
-// 			}
-// 
-// 			base.DefWndProc(ref m);
-// 		}
-// 
-// 		public override bool PreProcessMessage(ref Message msg) {
-// 
-// 			if ( msg.Msg == Interop.WM_KEYDOWN ) {
-// 				switch ( (Keys) msg.WParam ) {
-// 					case Keys.Escape:
-// 						Hide();
-// 						break;
-// 				}
-// 			}
-// 
-// 			return base.PreProcessMessage(ref msg);
-// 		}
-
 		private void webEditor_PreviewKeyDown(object sender, PreviewKeyDownEventArgs e) {
 			if ( e.KeyCode == Keys.Escape || e.KeyCode == SHORTCUT_KEY ) {
 				Hide();
 			}
 		}
-
-		protected override bool ProcessKeyPreview(ref Message m) {
-			if ( m.Msg == Interop.WM_KEYDOWN ) {
-				Keys	key = (Keys) m.WParam;
-				if ( key == Keys.Escape || key == SHORTCUT_KEY ) {
-					Hide();
-				}
-			}
-
-			return base.ProcessKeyPreview(ref m);
-		}
-
-		// 		protected override void OnKeyDown(KeyEventArgs e) {
-		// 
-		// // 			switch ( e.KeyCode ) {
-		// // 				case Keys.Escape:
-		// // 				case SHORTCUT_KEY:
-		// // 					HideWindow();
-		// // 					break;
-		// // 
-		// // 			}
-		// 
-		// 			base.OnKeyDown(e);
-		// 		}
 
 		#endregion
 
