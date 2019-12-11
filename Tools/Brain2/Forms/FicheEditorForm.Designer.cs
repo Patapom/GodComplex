@@ -99,6 +99,7 @@
 			this.webEditor.Size = new System.Drawing.Size(686, 403);
 			this.webEditor.TabIndex = 2;
 			this.webEditor.TempImagesFolder = ((System.IO.DirectoryInfo)(resources.GetObject("webEditor.TempImagesFolder")));
+			this.webEditor.PreviewKeyDown += new System.Windows.Forms.PreviewKeyDownEventHandler(this.webEditor_PreviewKeyDown);
 			// 
 			// FicheEditorForm
 			// 

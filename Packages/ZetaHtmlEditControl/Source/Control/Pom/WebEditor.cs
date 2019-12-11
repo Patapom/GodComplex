@@ -29,43 +29,42 @@ namespace ZetaHtmlEditControl.Pom {
 
 		#region PROPERTIES
 
-// 		public DirectoryInfo		TempImagesFolder {
-// 			get { return m_tempImagesFolder; }
-// 			set {
-// 				if ( value == null || value == m_tempImagesFolder )
-// 					return;
-// 
-// 				m_tempImagesFolder = value;
-// 
-// 				// Reset document and path
-// 				m_cachedDocument = htmlEditControl.GetDocumentText( m_tempImagesFolder.FullName );
-// 				htmlEditControl.SetDocumentText( m_cachedDocument, m_tempImagesFolder.FullName, true );
-// 			}
-// 		}
-// 
-// 		public string				Document {
-// 			get { 
-// 				m_cachedDocument = htmlEditControl.GetDocumentText( m_tempImagesFolder.FullName );
-// 				return m_cachedDocument;
-// 			}
-// 			set {
-// 				if ( value == null || value == m_cachedDocument )
-// 					return;
-// 
-// 				m_cachedDocument = value;
-// 				htmlEditControl.SetDocumentText( m_cachedDocument, m_tempImagesFolder.FullName, true );
-// 			}
-// 		}
+		public DirectoryInfo		TempImagesFolder {
+			get { return m_tempImagesFolder; }
+			set {
+				if ( value == null || value == m_tempImagesFolder )
+					return;
+
+				m_tempImagesFolder = value;
+
+				// Reset document and path
+				m_cachedDocument = htmlEditControl.GetDocumentText( m_tempImagesFolder.FullName );
+				htmlEditControl.SetDocumentText( m_cachedDocument, m_tempImagesFolder.FullName, true );
+			}
+		}
+
+		public string				Document {
+			get { 
+				m_cachedDocument = htmlEditControl.GetDocumentText( m_tempImagesFolder.FullName );
+				return m_cachedDocument;
+			}
+			set {
+				if ( value == null || value == m_cachedDocument )
+					return;
+
+				m_cachedDocument = value;
+				htmlEditControl.SetDocumentText( m_cachedDocument, m_tempImagesFolder.FullName, true );
+			}
+		}
 
 		#endregion
 
 		#region METHODS
 
 		public WebEditor() {
-			InitializeComponent();
+ 			m_tempImagesFolder = new DirectoryInfo( Directory.GetCurrentDirectory() );
 
-// 			if ( DesignT)
-// 			m_tempImagesFolder = new DirectoryInfo( Directory.GetCurrentDirectory() );
+			InitializeComponent();
 		}
 
 		protected override void OnLoad(EventArgs e) {
@@ -73,7 +72,21 @@ namespace ZetaHtmlEditControl.Pom {
 
 //			htmlEditControl.Configure()
 
-//			Document = @"<P>Click the buttons below to set different texts. German Umlaute: Ä Ö Ü ä ö ü ß.</p>";
+			Document = @"<P>Click the buttons below to set different texts. German Umlaute: Ä Ö Ü ä ö ü ß.</p>";
+		}
+
+		private void htmlEditControl_PreviewKeyDown(object sender, PreviewKeyDownEventArgs e) {
+			OnPreviewKeyDown( e );
+// 			if ( e.KeyCode == Keys.Escape || e.KeyCode == Keys.F5 ) {
+// 				Hide();
+// 			}
+		}
+
+		protected override void OnEnabledChanged(EventArgs e) {
+			toolStrip.Enabled = Enabled;
+//			htmlEditControl.Enabled = Enabled;	// Not supported...
+
+			base.OnEnabledChanged(e);
 		}
 
 		private void toolStripButtonItalic_Click(object sender, EventArgs e) {

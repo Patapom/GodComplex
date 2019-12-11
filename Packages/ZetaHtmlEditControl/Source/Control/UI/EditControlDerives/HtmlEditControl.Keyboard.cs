@@ -7,81 +7,81 @@
 
     public partial class HtmlEditControl
     {
-        public override bool PreProcessMessage(
-            ref Message msg)
-        {
-            if (!DesignMode && !HtmlEditorDesignModeManager.IsDesignMode)
-            {
-                if (msg.Msg == NativeMethods.WmKeydown || msg.Msg == NativeMethods.WmSyskeydown)
-                {
-                    var isShift = (ModifierKeys & Keys.Shift) != 0;
+        public override bool PreProcessMessage( ref Message msg ) {
+			if ( msg.Msg == NativeMethods.WmKeydown ) {
+				switch ( (Keys) msg.WParam ) {
+					case Keys.Escape:
+					case Keys.F5:
+						PreviewKeyDownEventArgs args = new PreviewKeyDownEventArgs( (Keys) msg.WParam );
+						OnPreviewKeyDown( args );
+						return true;
+					}
+			}
 
-                    var key = ((Keys)((int)msg.WParam));
+            if (DesignMode || HtmlEditorDesignModeManager.IsDesignMode)
+				return base.PreProcessMessage(ref msg);
 
-                    var e = new PreviewKeyDownEventArgs(key | ModifierKeys);
+            if (msg.Msg == NativeMethods.WmKeydown || msg.Msg == NativeMethods.WmSyskeydown) {
+                var isShift = (ModifierKeys & Keys.Shift) != 0;
 
-                    // Check all shortcuts that I handle by myself.
-                    if (doHandleShortcutKey(e, false))
+                var key = ((Keys)((int)msg.WParam));
+
+                var e = new PreviewKeyDownEventArgs(key | ModifierKeys);
+
+                // Check all shortcuts that I handle by myself.
+                if ( doHandleShortcutKey(e, false) ) {
+                    return true;
+                } else {
+                    if (key == Keys.Enter)
                     {
-                        return true;
-                    }
-                    else
-                    {
-                        if (key == Keys.Enter)
+                        // 2010-11-02, Uwe Keim:
+                        // Just as in TortoiseSVN dialogs, use Ctrl+Enter as default button.
+                        if (e.Control && !e.Alt && !e.Shift)
                         {
-                            // 2010-11-02, Uwe Keim:
-                            // Just as in TortoiseSVN dialogs, use Ctrl+Enter as default button.
-                            if (e.Control && !e.Alt && !e.Shift)
+                            closeDialogWithOK();
+                            return true;
+                        }
+
+                        if (!e.Alt && !e.Shift && !e.Control)
+                        {
+                            return handleEnterKey();
+                        }
+                        else
+                        {
+                            return false;
+                        }
+                    }
+                    if (key == Keys.Tab)
+                    {
+                        // TAB key.
+                        if (!e.Control && !e.Alt)
+                        {
+                            if (handleTabKeyInsideTable(isShift))
                             {
-                                closeDialogWithOK();
                                 return true;
                             }
-
-                            if (!e.Alt && !e.Shift && !e.Control)
-                            {
-                                return handleEnterKey();
-                            }
                             else
                             {
-                                return false;
-                            }
-                        }
-                        if (key == Keys.Tab)
-                        {
-                            // TAB key.
-                            if (!e.Control && !e.Alt)
-                            {
-                                if (handleTabKeyInsideTable(isShift))
-                                {
-                                    return true;
-                                }
-                                else
-                                {
-                                    // Forward or backward?
-                                    var forward = !isShift;
+                                // Forward or backward?
+                                var forward = !isShift;
 
-                                    var form = FindForm();
-                                    if (form != null)
+                                var form = FindForm();
+                                if (form != null)
+                                {
+                                    var c = form.GetNextControl(this, forward);
+
+                                    while (c != null &&
+                                            c != this &&
+                                            !c.TabStop)
                                     {
-                                        var c = form.GetNextControl(this, forward);
-
-                                        while (c != null &&
-                                               c != this &&
-                                               !c.TabStop)
-                                        {
-                                            c = form.GetNextControl(c, forward);
-                                        }
-
-                                        if (c != null)
-                                        {
-                                            c.Focus();
-                                        }
+                                        c = form.GetNextControl(c, forward);
                                     }
-                                    return false;
+
+                                    if (c != null)
+                                    {
+                                        c.Focus();
+                                    }
                                 }
-                            }
-                            else
-                            {
                                 return false;
                             }
                         }
@@ -89,6 +89,10 @@
                         {
                             return false;
                         }
+                    }
+                    else
+                    {
+                        return false;
                     }
                 }
             }
@@ -233,10 +237,7 @@
             }
         }
 
-        private bool doHandleShortcutKey(
-            PreviewKeyDownEventArgs e,
-            bool onlyCheck)
-        {
+        private bool doHandleShortcutKey( PreviewKeyDownEventArgs e, bool onlyCheck) {
             if (e.KeyCode == Keys.V && e.Control && e.Shift) //v + ctrl + shift
             {
                 if (!onlyCheck)

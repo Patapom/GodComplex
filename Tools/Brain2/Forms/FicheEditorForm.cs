@@ -53,45 +53,59 @@ namespace Brain2 {
 //			webEditor.Document = "Pipo!";
 		}
 
-		public override bool PreProcessMessage(ref Message msg) {
+// 		protected override bool ProcessKeyMessage(ref Message m) {
+// 			return base.ProcessKeyMessage(ref m);
+// 		}
+// 
+// 		protected override void DefWndProc(ref Message m) {
+// 			if ( msg.Msg == Interop.WM_KEYDOWN ) {
+// 			}
+// 
+// 			base.DefWndProc(ref m);
+// 		}
+// 
+// 		public override bool PreProcessMessage(ref Message msg) {
+// 
+// 			if ( msg.Msg == Interop.WM_KEYDOWN ) {
+// 				switch ( (Keys) msg.WParam ) {
+// 					case Keys.Escape:
+// 						Hide();
+// 						break;
+// 				}
+// 			}
+// 
+// 			return base.PreProcessMessage(ref msg);
+// 		}
 
-			if ( msg.Msg == Interop.WM_KEYDOWN ) {
-				switch ( (Keys) msg.WParam ) {
-					case Keys.Escape:
-						Hide();
-						break;
-				}
+		private void webEditor_PreviewKeyDown(object sender, PreviewKeyDownEventArgs e) {
+			if ( e.KeyCode == Keys.Escape || e.KeyCode == SHORTCUT_KEY ) {
+				Hide();
 			}
-
-			return base.PreProcessMessage(ref msg);
 		}
 
 		protected override bool ProcessKeyPreview(ref Message m) {
-
 			if ( m.Msg == Interop.WM_KEYDOWN ) {
-				switch ( (Keys) m.WParam ) {
-					case Keys.Escape:
-// 					case SHORTCUT_KEY:
-						Hide();
-						break;
+				Keys	key = (Keys) m.WParam;
+				if ( key == Keys.Escape || key == SHORTCUT_KEY ) {
+					Hide();
 				}
 			}
 
 			return base.ProcessKeyPreview(ref m);
 		}
 
-// 		protected override void OnKeyDown(KeyEventArgs e) {
-// 
-// // 			switch ( e.KeyCode ) {
-// // 				case Keys.Escape:
-// // 				case SHORTCUT_KEY:
-// // 					HideWindow();
-// // 					break;
-// // 
-// // 			}
-// 
-// 			base.OnKeyDown(e);
-// 		}
+		// 		protected override void OnKeyDown(KeyEventArgs e) {
+		// 
+		// // 			switch ( e.KeyCode ) {
+		// // 				case Keys.Escape:
+		// // 				case SHORTCUT_KEY:
+		// // 					HideWindow();
+		// // 					break;
+		// // 
+		// // 			}
+		// 
+		// 			base.OnKeyDown(e);
+		// 		}
 
 		#endregion
 

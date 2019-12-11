@@ -142,6 +142,7 @@
 			this.htmlEditControl.Name = "htmlEditControl";
 			this.htmlEditControl.Size = new System.Drawing.Size(1069, 339);
 			this.htmlEditControl.TabIndex = 1;
+			this.htmlEditControl.PreviewKeyDown += new System.Windows.Forms.PreviewKeyDownEventHandler(this.htmlEditControl_PreviewKeyDown);
 			// 
 			// WebEditor
 			// 

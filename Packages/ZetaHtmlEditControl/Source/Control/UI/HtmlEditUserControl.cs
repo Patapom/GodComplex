@@ -174,8 +174,7 @@ namespace ZetaHtmlEditControl.UI
         {
             if (!DesignMode && !HtmlEditorDesignModeManager.IsDesignMode)
             {
-                fontNameToolStripComboBox.Enabled =
-                    fontSizeToolStripComboBox.Enabled = htmlEditControl.CanChangeFont;
+                fontNameToolStripComboBox.Enabled = fontSizeToolStripComboBox.Enabled = htmlEditControl.CanChangeFont;
                 boldToolStripMenuItem.Enabled = htmlEditControl.CanBold;
                 italicToolStripMenuItem.Enabled = htmlEditControl.CanItalic;
                 underlineToolStripButton.Enabled = htmlEditControl.CanUnderline;
