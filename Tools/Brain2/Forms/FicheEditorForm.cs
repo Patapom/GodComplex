@@ -53,34 +53,33 @@ namespace Brain2 {
 //			webEditor.Document = "Pipo!";
 		}
 
-// 		public override bool PreProcessMessage(ref Message msg) {
-// 
-// 			if ( msg.Msg == Interop.WM_KEYDOWN ) {
-// 				switch ( (Keys) msg.WParam ) {
-// 					case Keys.Escape:
+		public override bool PreProcessMessage(ref Message msg) {
+
+			if ( msg.Msg == Interop.WM_KEYDOWN ) {
+				switch ( (Keys) msg.WParam ) {
+					case Keys.Escape:
+						Hide();
+						break;
+				}
+			}
+
+			return base.PreProcessMessage(ref msg);
+		}
+
+		protected override bool ProcessKeyPreview(ref Message m) {
+
+			if ( m.Msg == Interop.WM_KEYDOWN ) {
+				switch ( (Keys) m.WParam ) {
+					case Keys.Escape:
 // 					case SHORTCUT_KEY:
-// 						Hide();
-// 						break;
-// 				}
-// 			}
-// 
-// 			return base.PreProcessMessage(ref msg);
-// 		}
-// 
-// 		protected override bool ProcessKeyPreview(ref Message m) {
-// 
-// // 			if ( m.Msg == Brain2.BrainForm.WM_KEYDOWN ) {
-// // 				switch ( (Keys) m.WParam ) {
-// // 					case Keys.Escape:
-// // 					case SHORTCUT_KEY:
-// // 						Hide();
-// // 						break;
-// // 				}
-// // 			}
-// 
-// 			return base.ProcessKeyPreview(ref m);
-// 		}
-// 
+						Hide();
+						break;
+				}
+			}
+
+			return base.ProcessKeyPreview(ref m);
+		}
+
 // 		protected override void OnKeyDown(KeyEventArgs e) {
 // 
 // // 			switch ( e.KeyCode ) {

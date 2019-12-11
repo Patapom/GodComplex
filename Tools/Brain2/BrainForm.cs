@@ -167,7 +167,7 @@ namespace Brain2 {
 				m_database.LoadDatabase( rootDBFolder );
 
 			} catch ( Exception _e ) {
-// 				MessageBox.Show( "Error when creating forms and loading database!\r\n\n" + _e.Message, "Error!", MessageBoxButtons.OK, MessageBoxIcon.Error );
+// 				MessageBox( "Error when creating forms and loading database!\r\n\n", _e );
 // 				Close();
 // //				Application.Exit();
 			}
@@ -202,7 +202,7 @@ namespace Brain2 {
 				Interop.RegisterHotKey( this, Interop.NativeModifierKeys.Win, Keys.X );
 
 			} catch ( Exception _e ) {
-				MessageBox.Show( "Error when creating D3D device!\r\n\n" + _e.Message, "Error!", MessageBoxButtons.OK, MessageBoxIcon.Error );
+				MessageBox( "Error when creating D3D device!\r\n\n", _e );
 				Close();
 //				Application.Exit();
 			}
@@ -349,7 +349,7 @@ namespace Brain2 {
 					this.TopMost = true;
 
 				} catch ( Exception _e ) {
-					MessageBox.Show( "Error while changing window's location and size!" + _e.Message, "Error!", MessageBoxButtons.OK, MessageBoxIcon.Error );
+					MessageBox( "Error while changing window's location and size!", _e );
 				}
 			}
 
@@ -524,6 +524,26 @@ namespace Brain2 {
 
 		#endregion
 
+		#region Helpers
+
+		public static void	MessageBox( string _message, Exception _e ) {
+			MessageBox( _message + _e.Message, MessageBoxIcon.Error );
+		}
+		public static void	MessageBox( string _message ) {
+			MessageBox( _message, MessageBoxIcon.Information );
+		}
+		public static void	MessageBox( string _message, MessageBoxButtons _buttons ) {
+			MessageBox( _message, _buttons, MessageBoxIcon.Information );
+		}
+		public static void	MessageBox( string _message, MessageBoxIcon _icon ) {
+			MessageBox( _message, MessageBoxButtons.OK, _icon );
+		}
+		public static void	MessageBox( string _message, MessageBoxButtons _buttons, MessageBoxIcon _icon ) {
+			System.Windows.Forms.MessageBox.Show( _message, "Brain 2", _buttons, _icon );
+		}
+
+		#endregion
+
 		#region EVENTS
 
 // 		protected override bool ProcessKeyPreview(ref Message m) {
@@ -541,7 +561,7 @@ namespace Brain2 {
 					m_device.ReloadModifiedShaders();
 					break;
 
-// @TODO!
+// @TODO! Fix fishing!
 //	=> Global hook + make entire form transparent so back windows get messages?
 //	=> Or make opaque + forward messages to back windows if possible?
 // 				case Keys.Menu:
@@ -578,6 +598,7 @@ namespace Brain2 {
 				return;
 
 			Show();
+			Focus();
 		}
 
 		private void BrainForm_MouseUp(object sender, MouseEventArgs e) {
@@ -587,7 +608,11 @@ namespace Brain2 {
 		}
 
 		private void preferenceForm_RootDBFolderChanged(object sender, EventArgs e) {
-			m_database.Rebase( new DirectoryInfo( m_preferenceForm.RootDBFolder ) );
+			try {
+				m_database.Rebase( new DirectoryInfo( m_preferenceForm.RootDBFolder ) );
+			} catch ( Exception _e ) {
+				MessageBox( "Some errors occurred while rebasing fiches database!", _e );
+			}
 		}
 
 		private void exitToolStripMenuItem_Click(object sender, EventArgs e) {
