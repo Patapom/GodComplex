@@ -10,9 +10,7 @@
 
     public partial class HtmlEditControl
     {
-        private void handlePaste(
-            PasteMode pasteMode)
-        {
+        private void handlePaste( PasteMode pasteMode ) {
             if (Document != null)
             {
                 var doc = (HTMLDocument)Document.DomDocument;

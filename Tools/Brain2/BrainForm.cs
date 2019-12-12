@@ -452,21 +452,27 @@ Show();
 		/// <param name="m"></param>
 		protected override void WndProc( ref Message m ) {
 
-			// Check if we got a hot key pressed.
-			if ( m.Msg == Interop.WM_HOTKEY ) {
-				Keys						key = (Keys) (((int)m.LParam >> 16) & 0xFFFF);
-				Interop.NativeModifierKeys	modifiers = (Interop.NativeModifierKeys) ((int)m.LParam & 0xFFFF);
+			switch ( m.Msg ) {
+				case Interop.WM_HOTKEY:
+					Keys						key = (Keys) (((int)m.LParam >> 16) & 0xFFFF);
+					Interop.NativeModifierKeys	modifiers = (Interop.NativeModifierKeys) ((int)m.LParam & 0xFFFF);
 
-				// Toggle visibility
-				if ( Visible )
-					Hide();
-				else
-					Show();
+					// Toggle visibility
+					if ( Visible )
+						Hide();
+					else
+						Show();
+					break;
 
-			} else if ( m.Msg == Interop.WM_KEYDOWN ) {
-				if ( m.HWnd == m_ficheEditorForm.Handle ) {
-					System.Diagnostics.Debug.WriteLine( "Bisou!" );
-				}
+				case Interop.WM_KEYDOWN:
+// 					if ( m.HWnd == m_ficheEditorForm.Handle ) {
+// 						System.Diagnostics.Debug.WriteLine( "Bisou!" );
+// 					}
+					break;
+
+				default:
+					System.Diagnostics.Debug.WriteLine( "Message: " + m );
+					break;
 			}
 
 			if ( !m_fishing ) {
@@ -657,7 +663,7 @@ Show();
 		}
 
 		private void BrainForm_MouseUp(object sender, MouseEventArgs e) {
-			if ( !this.Bounds.Contains( e.Location ) ) {
+			if ( !this.Bounds.Contains( Control.MousePosition ) ) {
 				Hide();
 			}
 		}
@@ -685,30 +691,17 @@ Show();
 		}
 
 		private void BrainForm_DragDrop(object sender, DragEventArgs e) {
-//			e.
-// 			string	formats = "";
-// 			foreach ( string format in e.Data.GetFormats() ) {
-// 				formats += ", " + format;
-// 			}
-// 			MessageBox( "DROP!\r\n" + formats );
-// 
-// 			// Enumerate all formats
-// 			foreach ( string format in e.Data.GetFormats() ) {
-// 				object data = e.Data.GetData( format );
-// 				Debug( format + " => " + (data!=null ? data.ToString() : "<null>") );
-// 			}
-
 			CreateFiche( e.Data );
 		}
-
-		#endregion
-
-		#endregion
 
 		private void BrainForm_GiveFeedback(object sender, GiveFeedbackEventArgs e) {
 		}
 
 		private void BrainForm_DragEnter(object sender, DragEventArgs e) {
 		}
+
+		#endregion
+
+		#endregion
 	}
 }

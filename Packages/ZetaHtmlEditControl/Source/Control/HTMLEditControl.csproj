@@ -286,6 +286,9 @@
   <ItemGroup>
     <None Include="Images\ButtonNumberedList.png" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Images\ButtonUnderline.png" />
+  </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

@@ -12,6 +12,7 @@ using System.IO;
 namespace Brain2 {
 
 	public partial class FicheEditorForm : ModelessForm {
+//	public partial class FicheEditorForm : Form {
 
 		#region CONSTANTS
 
@@ -53,6 +54,7 @@ namespace Brain2 {
 		#region METHODS
 
 		public FicheEditorForm( BrainForm _owner ) : base( _owner ) {
+			m_sizeable = true;
 			InitializeComponent();
 
 //			webEditor.Document = "Pipo!";

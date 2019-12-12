@@ -15,13 +15,18 @@ namespace Brain2 {
 
 		#region CONSTANTS
 
+		const int	BORDER_SIZE = 8;
+
 		#endregion
 
 		#region FIELDS
 
-		private BrainForm	m_owner;
+		protected BrainForm	m_owner;
 
-		private Size		m_relativeLocation = new Size( -1, -1 );
+		protected bool		m_sizeable = false;
+		protected int		m_hitArea = Interop.HTCAPTION;
+
+		protected System.Drawing.Size		m_relativeLocation = new System.Drawing.Size( -1, -1 );
 
 		#endregion
 
@@ -84,12 +89,13 @@ namespace Brain2 {
 		}
 
 		protected override void OnLocationChanged(EventArgs e) {
+			if ( Visible ) {
+	 			// Update relative location
+	 			m_relativeLocation.Width = Left - m_owner.Left;
+	 			m_relativeLocation.Height = Top - m_owner.Top;
 
-			// Update relative location
-			m_relativeLocation.Width = Left - m_owner.Left;
-			m_relativeLocation.Height = Top - m_owner.Top;
-
-//			System.Diagnostics.Debug.WriteLine( "Relative location = " + m_relativeLocation );
+//System.Diagnostics.Debug.WriteLine( "Relative location = " + m_relativeLocation );
+			}
 
 			base.OnLocationChanged(e);
 		}
@@ -116,23 +122,46 @@ namespace Brain2 {
 			// From https://stackoverflow.com/questions/1592876/make-a-borderless-form-movable
 			if ( e.Button == MouseButtons.Left ) {
 				Interop.ReleaseCapture();
-				Interop.SendMessage( Handle, Interop.WM_NCLBUTTONDOWN, Interop.HT_CAPTION, 0 );
+				Interop.SendMessage( Handle, Interop.WM_NCLBUTTONDOWN, m_hitArea, 0 );
 			}
 		}
 
-// 		protected override void OnMouseMove(MouseEventArgs e) {
+ 		protected override void OnMouseMove(MouseEventArgs e) {
+
 // 			if ( m_mouseDownButtons == MouseButtons.Left ) {
 // 				// Move form
 // 				Size	delta = new Size( e.Location.X - m_mouseDownPosition.X, e.Location.Y - m_mouseDownPosition.Y );
 // 				this.Location = m_mouseDownFormLocation + delta;
 // 			}
-// 
-// 			base.OnMouseMove(e);
-// 		}
-// 
+
+			m_hitArea = Interop.HTCAPTION;
+			if ( m_sizeable ) {
+				int	borderLeft = e.X < BORDER_SIZE ? 1 : 0;
+				int	borderRight = e.X > Width-BORDER_SIZE ? 2 : 0;
+				int	borderTop = e.Y < BORDER_SIZE ? 4 : 0;
+				int	borderBottom = e.Y > Height-BORDER_SIZE ? 8 : 0;
+
+				switch ( borderLeft | borderRight | borderTop | borderBottom ) {
+					case 1: m_hitArea = Interop.HTLEFT; Cursor = Cursors.SizeWE; break;
+					case 2: m_hitArea = Interop.HTRIGHT; Cursor = Cursors.SizeWE; break;
+					case 4: m_hitArea = Interop.HTTOP; Cursor = Cursors.SizeNS; break;
+					case 8: m_hitArea = Interop.HTBOTTOM; Cursor = Cursors.SizeNS; break;
+
+					case 1 + 4: m_hitArea = Interop.HTTOPLEFT; Cursor = Cursors.SizeNWSE; break;
+					case 1 + 8: m_hitArea = Interop.HTBOTTOMLEFT; Cursor = Cursors.SizeNESW; break;
+					case 2 + 4: m_hitArea = Interop.HTTOPRIGHT; Cursor = Cursors.SizeNESW; break;
+					case 2 + 8: m_hitArea = Interop.HTBOTTOMRIGHT; Cursor = Cursors.SizeNWSE; break;
+
+					default: Cursor = Cursors.Default; break;
+				}
+			}
+
+			base.OnMouseMove(e);
+		}
+
 // 		protected override void OnMouseUp(MouseEventArgs e) {
 // 			base.OnMouseUp(e);
-// 			m_mouseDownButtons = MouseButtons.None;
+// //			m_mouseDownButtons = MouseButtons.None;
 // 		}
 
 		#endregion

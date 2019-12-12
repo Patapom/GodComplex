@@ -150,16 +150,12 @@
             base.Navigate(url);
         }
 
-        protected override void OnDocumentCompleted(
-            WebBrowserDocumentCompletedEventArgs e)
-        {
+        protected override void OnDocumentCompleted( WebBrowserDocumentCompletedEventArgs e) {
             base.OnDocumentCompleted(e);
 
             turnWebBrowserDesignModeOn();
 
-            // This Application.DoEvents() is necessary, 
-            // otherwise the webbrowser gets a 
-            // AccessViolationException, whyever.
+            // This Application.DoEvents() is necessary,  otherwise the webbrowser gets an AccessViolationException, whyever.
             Application.DoEvents();
 
             _documentCompletedCount++;

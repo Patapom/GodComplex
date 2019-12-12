@@ -26,6 +26,7 @@
 			this.toolStrip = new System.Windows.Forms.ToolStrip();
 			this.toolStripButtonBold = new System.Windows.Forms.ToolStripButton();
 			this.toolStripButtonItalic = new System.Windows.Forms.ToolStripButton();
+			this.toolStripButtonUnderline = new System.Windows.Forms.ToolStripButton();
 			this.toolStripButtonLink = new System.Windows.Forms.ToolStripButton();
 			this.toolStripButtonImage = new System.Windows.Forms.ToolStripButton();
 			this.toolStripButtonBulletList = new System.Windows.Forms.ToolStripButton();
@@ -42,6 +43,7 @@
 			this.toolStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.toolStripButtonBold,
             this.toolStripButtonItalic,
+            this.toolStripButtonUnderline,
             this.toolStripButtonLink,
             this.toolStripButtonImage,
             this.toolStripButtonBulletList,
@@ -75,6 +77,18 @@
 			this.toolStripButtonItalic.Text = "toolStripButton2";
 			this.toolStripButtonItalic.ToolTipText = "Italic";
 			this.toolStripButtonItalic.Click += new System.EventHandler(this.toolStripButtonItalic_Click);
+			// 
+			// toolStripButtonUnderline
+			// 
+			this.toolStripButtonUnderline.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+			this.toolStripButtonUnderline.Image = global::ZetaHtmlEditControl.Properties.Resources.ButtonUnderline;
+			this.toolStripButtonUnderline.ImageScaling = System.Windows.Forms.ToolStripItemImageScaling.None;
+			this.toolStripButtonUnderline.ImageTransparentColor = System.Drawing.Color.Magenta;
+			this.toolStripButtonUnderline.Name = "toolStripButtonUnderline";
+			this.toolStripButtonUnderline.Size = new System.Drawing.Size(36, 35);
+			this.toolStripButtonUnderline.Text = "toolStripButton2";
+			this.toolStripButtonUnderline.ToolTipText = "Italic";
+			this.toolStripButtonUnderline.Click += new System.EventHandler(this.toolStripButtonUnderline_Click);
 			// 
 			// toolStripButtonLink
 			// 
@@ -132,6 +146,7 @@
             "Header 4"});
 			this.toolStripComboBoxStyle.Name = "toolStripComboBoxStyle";
 			this.toolStripComboBoxStyle.Size = new System.Drawing.Size(121, 38);
+			this.toolStripComboBoxStyle.SelectedIndexChanged += new System.EventHandler(this.toolStripComboBoxStyle_SelectedIndexChanged);
 			// 
 			// htmlEditControl
 			// 
@@ -140,8 +155,10 @@
 			this.htmlEditControl.Location = new System.Drawing.Point(0, 38);
 			this.htmlEditControl.MinimumSize = new System.Drawing.Size(20, 20);
 			this.htmlEditControl.Name = "htmlEditControl";
+			this.htmlEditControl.ScriptErrorsSuppressed = true;
 			this.htmlEditControl.Size = new System.Drawing.Size(1069, 339);
 			this.htmlEditControl.TabIndex = 1;
+			this.htmlEditControl.UINeedsUpdate += new System.EventHandler(this.htmlEditControl_UINeedsUpdate);
 			this.htmlEditControl.PreviewKeyDown += new System.Windows.Forms.PreviewKeyDownEventHandler(this.htmlEditControl_PreviewKeyDown);
 			// 
 			// WebEditor
@@ -169,5 +186,6 @@
 		private System.Windows.Forms.ToolStripButton toolStripButtonNumberedList;
 		private System.Windows.Forms.ToolStripComboBox toolStripComboBoxStyle;
 		private ZetaHtmlEditControl.UI.EditControlDerives.HtmlEditControl htmlEditControl;
+		private System.Windows.Forms.ToolStripButton toolStripButtonUnderline;
 	}
 }

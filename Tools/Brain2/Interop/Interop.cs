@@ -17,7 +17,16 @@ namespace Brain2 {
 		public const int WM_SYSKEYDOWN = 0x0104;
 		public const int WM_SYSKEYUP = 0x0105;
 
-		public const int HT_CAPTION = 0x2;
+		// https://docs.microsoft.com/en-us/windows/win32/inputdev/wm-nchittest
+		public const int HTCAPTION = 0x2;
+		public const int HTLEFT = 10;
+		public const int HTRIGHT = 11;
+		public const int HTTOP = 12;
+		public const int HTTOPLEFT = 13;
+		public const int HTTOPRIGHT = 14;
+		public const int HTBOTTOM = 15;
+		public const int HTBOTTOMLEFT = 16;
+		public const int HTBOTTOMRIGHT = 17;
 
 		/// <summary>
 		/// The enumeration of possible modifiers.
