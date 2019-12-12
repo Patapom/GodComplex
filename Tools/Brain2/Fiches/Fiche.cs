@@ -48,7 +48,8 @@ namespace Brain2 {
 		public List< Fiche >		m_parents = new List< Fiche >();
 
 		public string				m_title = "";
-		public string				m_HTMLContent = "";
+		public Uri					m_URL = null;
+		public string				m_HTMLContent = null;
 		public List< ChunkBase >	m_chunks = new List< ChunkBase >();
 
 		private Guid[]				m_parentGUIDs = null;
@@ -75,13 +76,16 @@ namespace Brain2 {
 		public	Fiche() {
 			m_GUID = Guid.NewGuid();
 		}
-		public	Fiche( string _title, string[] _tags, string _HTMLContent ) : this() {
+		public	Fiche( string _title, Uri _URL, Fiche[] _tags, string _HTMLContent ) : this() {
 			m_title = _title;
+			if ( _tags != null )
+				m_parents.AddRange( _tags );
+			m_URL = _URL;
 			m_HTMLContent = _HTMLContent;
 		}
 
 		public override string ToString() {
-			return (m_title != "" ? m_title : "") + m_GUID + "\r\n" + m_HTMLContent;
+			return (m_title != "" ? m_title + "\r\n" : "") + m_GUID + "\r\n" + (m_URL != null ? m_URL + "\r\n" : "") + (m_HTMLContent != null ? m_HTMLContent : "<body/>");
 		}
 
 		#region I/O
@@ -101,7 +105,15 @@ namespace Brain2 {
 
 			// Write content
 			_writer.Write( m_title );
-			_writer.Write( m_HTMLContent );
+			_writer.Write( m_URL != null );
+			if ( m_URL != null ) {
+				_writer.Write( true );
+				_writer.Write( m_URL.OriginalString );
+			}
+			if ( m_HTMLContent != null ) {
+				_writer.Write( true );
+				_writer.Write( m_HTMLContent );
+			}
 
 			// Write chunks
 			_writer.Write( (uint) m_chunks.Count );
@@ -144,7 +156,13 @@ namespace Brain2 {
 
 			// Read content
 			m_title = _reader.ReadString();
-			m_HTMLContent = _reader.ReadString();
+			if ( _reader.ReadBoolean() ) {
+				string	strURL = _reader.ReadString();
+				m_URL = new Uri( strURL );
+			}
+			if ( _reader.ReadBoolean() ) {
+				m_HTMLContent = _reader.ReadString();
+			}
 
 			// Read chunks
 			m_chunks.Clear();
@@ -188,6 +206,25 @@ namespace Brain2 {
 		}
 
 		#endregion
+
+		public static string	BuildHTMLDocument( string _title, string _content ) {
+
+			string	template = @"<!DOCTYPE html>
+<html>
+
+<head>
+  <title>@TITLE@</title>
+</head>
+
+<body>
+@CONTENT@
+</body>
+
+</html>";
+
+			string	doc = template.Replace( "@TITLE@", _title ).Replace( "@CONTENT@", _content );
+			return doc;
+		}
 
 		#endregion
 	}

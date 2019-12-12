@@ -7,7 +7,7 @@ namespace Brain2 {
 	/// <summary>
 	/// The fiche factory capable of creating a new fiche from any data source
 	/// </summary>
-	public static class Data2Fiche {
+	public static class FicheFactory {
 
 		#region CONSTANTS
 
@@ -29,10 +29,10 @@ namespace Brain2 {
 			public Fiche CreateFiche( string _format, object _data ) {
 				string	text = _data.ToString();
 				if ( text.StartsWith( "http://" ) || text.StartsWith( "https://" ) )
-					return URLHandler.CreateURLFiche( text );	// Pass
+					return URLHandler.CreateURLFiche( new Uri( text, UriKind.Absolute ) );
 
 				string	HTML = "<body>" + text + "</body>";
-				return new Fiche( text, null, HTML );
+				return new Fiche( text, null, null, HTML );
 			}
 		}
 
@@ -78,21 +78,21 @@ namespace Brain2 {
 				using ( StreamReader R = new StreamReader( S, encoding ) ) {
 					R.Read( URLchars, 0, URLchars.Length );
 				}
-				string	URL = new string( URLchars );
+				Uri	URL = new Uri( new string( URLchars ), UriKind.Absolute );
 
 				return CreateURLFiche( URL );
 			}
 
-			public static Fiche	CreateURLFiche( string _URL ) {
+			public static Fiche	CreateURLFiche( Uri _URL ) {
 				if ( _URL == null )
 					throw new Exception( "Invalid null URL to create fiche!" );
 
 //				string	content = "TODO! " + _URL;
 
-// 				string	content = "<blockquote class=\"twitter-tweet\"><p lang=\"en\" dir=\"ltr\">Appropriate for December. <a href=\"https://t.co/dzNBXmcreS\">pic.twitter.com/dzNBXmcreS</a></p>&mdash; In Otter News (@Otter_News)" +
-// 				"<a href=\"https://twitter.com/Otter_News/status/1204733982149160960?ref_src=twsrc%5Etfw\">December 11, 2019</a></blockquote> <script async src=\"https://platform.twitter.com/widgets.js\" charset=\"utf-8\"></script>";
+				string	content = "<blockquote class=\"twitter-tweet\"><p lang=\"en\" dir=\"ltr\">Appropriate for December. <a href=\"https://t.co/dzNBXmcreS\">pic.twitter.com/dzNBXmcreS</a></p>&mdash; In Otter News (@Otter_News)" +
+				"<a href=\"https://twitter.com/Otter_News/status/1204733982149160960?ref_src=twsrc%5Etfw\">December 11, 2019</a></blockquote> <script async src=\"https://platform.twitter.com/widgets.js\" charset=\"utf-8\"></script>";
 
-string	content = @"<blockquote class=""Tweet h-entry js-tweetIdInfo subject expanded"" cite=""https://twitter.com/Poulin2012/status/1204065818432167937"" data-tweet-id=""1204065818432167937"" data-scribe=""section:subject"">
+/*string	content = @"<blockquote class=""Tweet h-entry js-tweetIdInfo subject expanded"" cite=""https://twitter.com/Poulin2012/status/1204065818432167937"" data-tweet-id=""1204065818432167937"" data-scribe=""section:subject"">
     <div class=""Tweet-header"">
       <a class=""TweetAuthor-avatar  Identity-avatar u-linkBlend"" data-scribe=""element:user_link"" href=""https://twitter.com/Poulin2012"" aria-label=""Alexis Poulin (nom d'utilisateur : Poulin2012)""><img class=""Avatar"" data-scribe=""element:avatar"" data-src-2x=""https://pbs.twimg.com/profile_images/1110858983357771778/aTqqWLFY_bigger.jpg"" alt="""" data-src-1x=""https://pbs.twimg.com/profile_images/1110858983357771778/aTqqWLFY_normal.jpg"" src=""https://pbs.twimg.com/profile_images/1110858983357771778/aTqqWLFY_normal.jpg""></a>
 
@@ -197,8 +197,11 @@ string	content = @"<blockquote class=""Tweet h-entry js-tweetIdInfo subject expa
       </div>
     </div>
   </blockquote>";
+//*/
+				string	title = "dummy title";
 
-				return new Fiche( "Prout", null, "<body>" + content + "</body>" );
+//				return new Fiche( title, _URL, null, Fiche.BuildHTMLDocument( title, content ) );
+				return new Fiche( title, _URL, null, null );
 			}
 		}
 
@@ -212,7 +215,7 @@ string	content = @"<blockquote class=""Tweet h-entry js-tweetIdInfo subject expa
 
 		#region METHODS
 
-		static Data2Fiche() {
+		static FicheFactory() {
 			ms_handlers.Add( new URLHandler() );
 			ms_handlers.Add( new TextHandler() );
 		}

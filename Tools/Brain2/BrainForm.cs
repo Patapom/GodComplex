@@ -151,12 +151,13 @@ Debug( "_____________________________" );
 Hide();
 
 				// Ask factory to create the best fiche for our data
-				Fiche	fiche = Data2Fiche.CreateFiche( _data );
-
-Show();
+				Fiche	fiche = FicheFactory.CreateFiche( _data );
 
 				// Start edition
 				m_ficheEditorForm.EditedFiche = fiche;
+
+Show();
+
 				m_ficheEditorForm.Show( this );
 
 			} catch ( Exception _e ) {

@@ -21,7 +21,7 @@ namespace Brain2 {
 
 		#region FIELDS
 
-		protected BrainForm	m_owner;
+		protected BrainForm	m_owner = null;
 
 		protected bool		m_sizeable = false;
 		protected int		m_hitArea = Interop.HTCAPTION;
@@ -66,6 +66,9 @@ namespace Brain2 {
 // 		}
 
 		protected override void OnShown(EventArgs e) {
+			if ( m_owner == null )
+				return;
+
 //			Capture = true;
 
 			if ( m_relativeLocation.Width < 0 ) {
@@ -89,6 +92,9 @@ namespace Brain2 {
 		}
 
 		protected override void OnLocationChanged(EventArgs e) {
+			if ( m_owner == null )
+				return;
+
 			if ( Visible ) {
 	 			// Update relative location
 	 			m_relativeLocation.Width = Left - m_owner.Left;

@@ -92,8 +92,6 @@
 			this.webEditor.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-			this.webEditor.Document = "<p>Click the buttons below to set different texts. German Umlaute: Ä Ö Ü ä ö ü ß." +
-    "</p>";
 			this.webEditor.Enabled = false;
 			this.webEditor.Location = new System.Drawing.Point(12, 96);
 			this.webEditor.Name = "webEditor";
@@ -106,13 +104,17 @@
 			// 
 			this.richTextBoxURL.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
+			this.richTextBoxURL.BackColor = System.Drawing.SystemColors.ControlLight;
 			this.richTextBoxURL.Enabled = false;
 			this.richTextBoxURL.Location = new System.Drawing.Point(52, 36);
 			this.richTextBoxURL.Multiline = false;
 			this.richTextBoxURL.Name = "richTextBoxURL";
+			this.richTextBoxURL.ReadOnly = true;
 			this.richTextBoxURL.Size = new System.Drawing.Size(960, 26);
 			this.richTextBoxURL.TabIndex = 1;
 			this.richTextBoxURL.Text = "";
+			this.richTextBoxURL.WordWrap = false;
+			this.richTextBoxURL.LinkClicked += new System.Windows.Forms.LinkClickedEventHandler(this.richTextBoxURL_LinkClicked);
 			// 
 			// FicheEditorForm
 			// 

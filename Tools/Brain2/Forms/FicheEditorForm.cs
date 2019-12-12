@@ -11,7 +11,7 @@ using System.IO;
 
 namespace Brain2 {
 
-	public partial class FicheEditorForm : ModelessForm {
+	public partial class FicheEditorForm : Brain2.ModelessForm {
 //	public partial class FicheEditorForm : Form {
 
 		#region CONSTANTS
@@ -41,10 +41,26 @@ namespace Brain2 {
 				richTextBoxTitle.Enabled = enable;
 				richTextBoxTitle.Text = enable ? m_fiche.m_title : "";
 
+				richTextBoxURL.Enabled = enable;
+				richTextBoxURL.Text = enable && m_fiche.m_URL != null ? m_fiche.m_URL.ToString() : "";
+
 				richTextBoxTags.Enabled = enable;
 				richTextBoxTags.Text = enable ? "@TODO: handle parents as tags" : "";
 
-				webEditor.Document = enable ? m_fiche.m_HTMLContent : "<body/>";
+				if ( enable ) {
+					if ( m_fiche.m_HTMLContent != null ) {
+						// Use cached HTML document by default
+						webEditor.Document = m_fiche.m_HTMLContent;
+					} else if ( m_fiche.m_URL != null ) {
+						// Use URL instead
+						webEditor.URL = m_fiche.m_URL;
+					} else {
+						// Setup empty document
+						webEditor.Document = Fiche.BuildHTMLDocument( "Invalid Fiche Content", "Fiche has no content and no source URL!" );
+					}
+				} else {
+					webEditor.Document = Fiche.BuildHTMLDocument( "", "<body/>" );
+				}
 				webEditor.Enabled = enable;
 			}
 		}
@@ -69,6 +85,17 @@ namespace Brain2 {
 		#endregion
 
 		#region EVENTS
+
+		private void richTextBoxURL_LinkClicked(object sender, LinkClickedEventArgs e) {
+			if ( m_fiche == null || m_fiche.m_URL == null )
+				return;
+
+			try {
+				System.Diagnostics.Process.Start( m_fiche.m_URL.AbsoluteUri );
+			} catch ( Exception _e ) {
+				BrainForm.MessageBox( "Failed to open URL \"" + m_fiche.m_URL.AbsoluteUri + "\": ", _e );
+			}
+		}
 
 		#endregion
 	}

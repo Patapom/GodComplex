@@ -69,7 +69,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Fiches\Data2Fiche.cs" />
+    <Compile Include="Fiches\FicheFactory.cs" />
     <Compile Include="Fiches\FichesDB.cs" />
     <Compile Include="BrainForm.cs">
       <SubType>Form</SubType>
