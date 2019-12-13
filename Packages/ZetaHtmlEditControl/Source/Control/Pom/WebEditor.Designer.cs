@@ -159,6 +159,7 @@
 			this.htmlEditControl.Size = new System.Drawing.Size(1069, 339);
 			this.htmlEditControl.TabIndex = 1;
 			this.htmlEditControl.UINeedsUpdate += new System.EventHandler(this.htmlEditControl_UINeedsUpdate);
+			this.htmlEditControl.FileDownload += new System.EventHandler(this.htmlEditControl_FileDownload);
 			this.htmlEditControl.PreviewKeyDown += new System.Windows.Forms.PreviewKeyDownEventHandler(this.htmlEditControl_PreviewKeyDown);
 			// 
 			// WebEditor

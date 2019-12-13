@@ -44,6 +44,7 @@ namespace Everything {
 		//////////////////////////////////////////////////////////////////////////
 		// Results
 		// 
+		[System::Diagnostics::DebuggerDisplayAttribute( "{FullName}" )]
 		ref class	Result {
 			UInt32		m_resultIndex;
 		internal:

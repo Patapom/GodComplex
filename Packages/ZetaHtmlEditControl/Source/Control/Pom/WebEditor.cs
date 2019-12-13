@@ -26,15 +26,11 @@ namespace ZetaHtmlEditControl.Pom {
 
 		#region NESTED TYPES
 
-// 		class Configuration : ZetaHtmlEditControl.Code.Configuration.HtmlEditControlConfiguration {
-// 
-// 		}
-
 		#endregion
 
 		#region FIELDS
 
-		private DirectoryInfo		m_tempImagesFolder;
+		private DirectoryInfo		m_tempImagesFolder = null;
 		private string				m_cachedDocument = null;
 
 		#endregion
@@ -55,19 +51,48 @@ namespace ZetaHtmlEditControl.Pom {
 			}
 		}
 
-		public string				Document {
-			get { 
-				m_cachedDocument = htmlEditControl.GetDocumentText( m_tempImagesFolder.FullName );
-				return m_cachedDocument;
-			}
+		public Uri	URL {
+			get { return htmlEditControl.Url; }
 			set {
-				if ( value == null || value == m_cachedDocument )
+				if ( value == null )//|| !value.IsWellFormedOriginalString() )
+					throw new Exception( "Invalid URL!" );
+
+				htmlEditControl.Url = value;
+			}
+		}
+		public string	Document {
+			get { return htmlEditControl.GetDocumentText( m_tempImagesFolder.FullName ); }
+			set {
+				if ( value == null)
 					return;
 
 				m_cachedDocument = value;
+				htmlEditControl.Url = null;
 				htmlEditControl.SetDocumentText( m_cachedDocument, m_tempImagesFolder.FullName, true );
 			}
 		}
+
+// 		public void	SetDocument( Uri _URL, string _HTMLContent ) {
+// 			if ( _HTMLContent == null)
+// 				return;
+// 
+// 			m_cachedDocument = _HTMLContent;
+// 			htmlEditControl.SetDocumentText( m_cachedDocument, m_tempImagesFolder.FullName, true );
+// 
+// 			if ( _URL != null ) {
+// 				if ( !_URL.IsWellFormedOriginalString() ) {
+// //					throw new Exception( "Shit!" );
+// //					_URL = new Uri( Uri.EscapeUriString( _URL.OriginalString ) );
+// //					_URL = new Uri( _URL.AbsoluteUri );
+// //					_URL = new Uri( "http://www.google.com" );
+// 				}
+// 
+// 				htmlEditControl.Url = _URL;
+// //	htmlEditControl.Navigate( _URL );
+// 			}
+// 		}
+
+		public event EventHandler	DocumentUpdated;
 
 		#endregion
 
@@ -78,9 +103,9 @@ namespace ZetaHtmlEditControl.Pom {
 
 			InitializeComponent();
 
+//			htmlEditControl.GetDocumentText()
 			htmlEditControl.DocumentTitleChanged += HtmlEditControl_DocumentTitleChanged;
 			htmlEditControl.DocumentCompleted += HtmlEditControl_DocumentCompleted;
-			htmlEditControl.TextChanged += HtmlEditControl_TextChanged;
 			toolStripComboBoxStyle.SelectedIndex = 0;
 		}
 
@@ -89,11 +114,18 @@ namespace ZetaHtmlEditControl.Pom {
 		}
 
 		private void HtmlEditControl_DocumentCompleted(object sender, WebBrowserDocumentCompletedEventArgs e) {
-//			throw new NotImplementedException();
+			m_cachedDocument = htmlEditControl.DocumentText;
+
+			// Notify
+			if ( DocumentUpdated != null )
+				DocumentUpdated( this, EventArgs.Empty );
 		}
 
 		private void HtmlEditControl_DocumentTitleChanged(object sender, EventArgs e) {
 //			throw new NotImplementedException();
+		}
+
+		private void htmlEditControl_FileDownload(object sender, EventArgs e) {
 		}
 
 		protected override void OnLoad(EventArgs e) {
