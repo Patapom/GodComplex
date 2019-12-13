@@ -39,21 +39,21 @@ namespace Brain2 {
 				// Update UI
 				bool	enable = m_fiche != null;
 				richTextBoxTitle.Enabled = enable;
-				richTextBoxTitle.Text = enable ? m_fiche.m_title : "";
+				richTextBoxTitle.Text = enable ? m_fiche.Title : "";
 
 				richTextBoxURL.Enabled = enable;
-				richTextBoxURL.Text = enable && m_fiche.m_URL != null ? m_fiche.m_URL.ToString() : "";
+				richTextBoxURL.Text = enable && m_fiche.URL != null ? m_fiche.URL.ToString() : "";
 
 				richTextBoxTags.Enabled = enable;
 				richTextBoxTags.Text = enable ? "@TODO: handle parents as tags" : "";
 
 				if ( enable ) {
-					if ( m_fiche.m_HTMLContent != null ) {
+					if ( m_fiche.HTMLContent != null ) {
 						// Use cached HTML document by default
-						webEditor.Document = m_fiche.m_HTMLContent;
-					} else if ( m_fiche.m_URL != null ) {
+						webEditor.Document = m_fiche.HTMLContent;
+					} else if ( m_fiche.URL != null ) {
 						// Use URL instead
-						webEditor.URL = m_fiche.m_URL;
+						webEditor.URL = m_fiche.URL;
 					} else {
 						// Setup empty document
 						webEditor.Document = Fiche.BuildHTMLDocument( "Invalid Fiche Content", "Fiche has no content and no source URL!" );
@@ -73,7 +73,7 @@ namespace Brain2 {
 			m_sizeable = true;
 			InitializeComponent();
 
-//			webEditor.Document = "Pipo!";
+			webEditor.DocumentUpdated += WebEditor_DocumentUpdated;
 		}
 
 		private void webEditor_PreviewKeyDown(object sender, PreviewKeyDownEventArgs e) {
@@ -87,14 +87,19 @@ namespace Brain2 {
 		#region EVENTS
 
 		private void richTextBoxURL_LinkClicked(object sender, LinkClickedEventArgs e) {
-			if ( m_fiche == null || m_fiche.m_URL == null )
+			if ( m_fiche == null || m_fiche.URL == null )
 				return;
 
 			try {
-				System.Diagnostics.Process.Start( m_fiche.m_URL.AbsoluteUri );
+				System.Diagnostics.Process.Start( m_fiche.URL.AbsoluteUri );
 			} catch ( Exception _e ) {
-				BrainForm.MessageBox( "Failed to open URL \"" + m_fiche.m_URL.AbsoluteUri + "\": ", _e );
+				BrainForm.MessageBox( "Failed to open URL \"" + m_fiche.URL.AbsoluteUri + "\": ", _e );
 			}
+		}
+
+		private void WebEditor_DocumentUpdated(object sender, EventArgs e) {
+			if ( m_fiche != null )
+				m_fiche.HTMLContent = webEditor.Document;	// Update fiche
 		}
 
 		#endregion

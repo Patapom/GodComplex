@@ -151,7 +151,7 @@ Debug( "_____________________________" );
 Hide();
 
 				// Ask factory to create the best fiche for our data
-				Fiche	fiche = FicheFactory.CreateFiche( _data );
+				Fiche	fiche = FicheFactory.CreateFiche( m_database, _data );
 
 				// Start edition
 				m_ficheEditorForm.EditedFiche = fiche;

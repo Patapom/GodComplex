@@ -17,7 +17,7 @@ namespace Brain2 {
 
 		public interface IDataHandler {
 			int		FormatScore( string _formatLowerCase );		// Must return 0 if not supported
-			Fiche	CreateFiche( string _format, object _data );
+			Fiche	CreateFiche( FichesDB _database, string _format, object _data );
 		}
 
 		public class	TextHandler : IDataHandler {
@@ -26,13 +26,13 @@ namespace Brain2 {
 				return _formatLowerCase == "system.string" || _formatLowerCase == "text" ? 1 : 0;
 			}
 
-			public Fiche CreateFiche( string _format, object _data ) {
+			public Fiche CreateFiche( FichesDB _database, string _format, object _data ) {
 				string	text = _data.ToString();
 				if ( text.StartsWith( "http://" ) || text.StartsWith( "https://" ) )
-					return URLHandler.CreateURLFiche( new Uri( text, UriKind.Absolute ) );
+					return URLHandler.CreateURLFiche( _database, null, new Uri( text, UriKind.Absolute ) );
 
 				string	HTML = "<body>" + text + "</body>";
-				return new Fiche( text, null, null, HTML );
+				return new Fiche( _database, text, null, null, HTML );
 			}
 		}
 
@@ -49,7 +49,7 @@ namespace Brain2 {
 				return 0;
 			}
 
-			public Fiche CreateFiche( string _format, object _data ) {
+			public Fiche CreateFiche( FichesDB _database, string _format, object _data ) {
 				MemoryStream	S = _data as MemoryStream;
 				if ( S == null )
 					throw new Exception( "Provided data is not the expected MemoryStream type!" );
@@ -78,14 +78,31 @@ namespace Brain2 {
 				using ( StreamReader R = new StreamReader( S, encoding ) ) {
 					R.Read( URLchars, 0, URLchars.Length );
 				}
-				Uri	URL = new Uri( new string( URLchars ), UriKind.Absolute );
 
-				return CreateURLFiche( URL );
+				string		title = null;
+				string		strURL = new string( URLchars );
+				string[]	URLLines = strURL.Split( '\n' );
+				if ( URLLines.Length > 1 ) {
+					// URL is multi-part: must have a title after the actual link...
+					strURL = URLLines[0];
+					title = URLLines[1];
+				}
+
+				Uri	URL = new Uri( strURL, UriKind.Absolute );
+
+				return CreateURLFiche( _database, title, URL );
 			}
 
-			public static Fiche	CreateURLFiche( Uri _URL ) {
+			public static Fiche	CreateURLFiche( FichesDB _database, string _title, Uri _URL ) {
 				if ( _URL == null )
 					throw new Exception( "Invalid null URL to create fiche!" );
+				if ( !Uri.IsWellFormedUriString( _URL.AbsoluteUri, UriKind.Absolute ) ) {
+					throw new Exception( "Invalid URL to create fiche!" );
+				}
+
+				// Patch any empty title
+				if ( _title == null )
+					_title = "";
 
 //				string	content = "TODO! " + _URL;
 
@@ -198,10 +215,10 @@ namespace Brain2 {
     </div>
   </blockquote>";
 //*/
-				string	title = "dummy title";
+//				string	title = "dummy title";
 
-//				return new Fiche( title, _URL, null, Fiche.BuildHTMLDocument( title, content ) );
-				return new Fiche( title, _URL, null, null );
+//				return new Fiche( _title, _URL, null, Fiche.BuildHTMLDocument( title, content ) );
+				return new Fiche( _database, _title, _URL, null, null );
 			}
 		}
 
@@ -220,7 +237,7 @@ namespace Brain2 {
 			ms_handlers.Add( new TextHandler() );
 		}
 
-		public static Fiche	CreateFiche( System.Windows.Forms.IDataObject _data ) {
+		public static Fiche	CreateFiche( FichesDB _database, System.Windows.Forms.IDataObject _data ) {
 			if ( _data == null )
 				throw new Exception( "Invalid data object!" );
 
@@ -251,7 +268,7 @@ namespace Brain2 {
 			if ( data == null )
 				throw new Exception( "Failed to retrieve drop data for format \"" + bestFormat + "\"!" );
 
-			Fiche	fiche = bestHandler.CreateFiche( bestFormat, data );
+			Fiche	fiche = bestHandler.CreateFiche( _database, bestFormat, data );
 			return fiche;
 		}
 

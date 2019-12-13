@@ -43,22 +43,59 @@ namespace Brain2 {
 
 		#region FIELDS
 
+		private FichesDB			m_ownerDatabase = null;
+
 		private Guid				m_GUID;
 		private DateTime			m_creationTime = DateTime.Now;
-		public List< Fiche >		m_parents = new List< Fiche >();
 
-		public string				m_title = "";
-		public Uri					m_URL = null;
-		public string				m_HTMLContent = null;
-		public List< ChunkBase >	m_chunks = new List< ChunkBase >();
-
+		private List< Fiche >		m_parents = new List< Fiche >();
 		private Guid[]				m_parentGUIDs = null;
+
+		private string				m_title = "";
+		private Uri					m_URL = null;
+		private string				m_HTMLContent = null;
+		private List< ChunkBase >	m_chunks = new List< ChunkBase >();
 
 		#endregion
 
 		#region PROPERTIES
 
 		public Guid					GUID { get { return m_GUID; } }
+
+		public string				Title {
+			get { return m_title; }
+			set {
+				if ( value == null )
+					value = "";
+				if ( value == m_title )
+					return;
+
+				m_title = value;
+				m_ownerDatabase.FicheUpdated( this );
+			}
+		}
+
+		public string				HTMLContent {
+			get { return m_HTMLContent; }
+			set {
+				if ( value == m_HTMLContent )
+					return;
+
+				m_HTMLContent = value;
+				m_ownerDatabase.FicheUpdated( this );
+			}
+		}
+
+		public Uri				URL {
+			get { return m_URL; }
+			set {
+				if ( value == m_URL )
+					return;
+
+				m_URL = value;
+				m_ownerDatabase.FicheUpdated( this );
+			}
+		}
 
 		/// <summary>
 		/// Generates a unique filename for the fiche
@@ -73,10 +110,11 @@ namespace Brain2 {
 
 		#region METHODS
 
-		public	Fiche() {
+		public	Fiche( FichesDB _database ) {
+			m_ownerDatabase = _database;
 			m_GUID = Guid.NewGuid();
 		}
-		public	Fiche( string _title, Uri _URL, Fiche[] _tags, string _HTMLContent ) : this() {
+		public	Fiche( FichesDB _database, string _title, Uri _URL, Fiche[] _tags, string _HTMLContent ) : this( _database ) {
 			m_title = _title;
 			if ( _tags != null )
 				m_parents.AddRange( _tags );
@@ -209,7 +247,8 @@ namespace Brain2 {
 
 		public static string	BuildHTMLDocument( string _title, string _content ) {
 
-			string	template = @"<!DOCTYPE html>
+			string	template =
+@"<!DOCTYPE html>
 <html>
 
 <head>

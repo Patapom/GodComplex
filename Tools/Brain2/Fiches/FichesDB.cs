@@ -111,7 +111,7 @@ namespace Brain2 {
 						if ( !file.Exists )
 							throw new Exception( "Result file \"" + result.PathName + "\" doesn't exist!" );
 
-						Fiche	F = new Fiche();
+						Fiche	F = new Fiche( this );
 						try {
 							using ( FileStream S = file.OpenRead() ) {
 								using ( BinaryReader R = new BinaryReader( S ) ) {
@@ -153,13 +153,35 @@ namespace Brain2 {
 			LoadDatabase( _rootFolder );
 		}
 
-		public void		Write( BinaryWriter _writer ) {
-		}
-
-		public void		Read( BinaryReader _reader ) {
-		}
+// 		public void		Write( BinaryWriter _writer ) {
+// 		}
+// 
+// 		public void		Read( BinaryReader _reader ) {
+// 		}
 
 		#endregion
+
+		/// <summary>
+		/// Used by fiches to notify of a change so the database should act accordingly (e.g. resaving the updated fiche)
+		/// </summary>
+		/// <param name="_fiche"></param>
+		internal void	FicheUpdated( Fiche _fiche ) {
+			if ( _fiche == null )
+				return;
+
+			try {
+				FileInfo	ficheFileName = new FileInfo( _fiche.FileName );
+				using ( FileStream S = ficheFileName.Create() ) {
+					using ( BinaryWriter W = new BinaryWriter( S ) ) {
+						_fiche.Write( W );
+					}
+				}
+
+
+			} catch ( Exception _e ) {
+				BrainForm.Debug( "Failed saving updated fiche \"" + _fiche + "\": " + _e.Message );
+			}
+		}
 
 		#endregion
 	}
