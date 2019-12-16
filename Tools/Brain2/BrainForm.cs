@@ -119,6 +119,10 @@ namespace Brain2 {
 			}
 
 			m_device.Present( false );
+
+			//////////////////////////////////////////////////////////////////////////
+			// Update database
+			m_database.OnIdle();
 		}
 
 		void	SetCamera( float3 _wsPosition, float3 _wsTargetPosition, float3 _wsUp, float _FOV ) {

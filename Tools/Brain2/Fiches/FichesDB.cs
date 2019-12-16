@@ -1,15 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
 
 namespace Brain2 {
 
 	/// <summary>
 	/// The main fiches database
 	/// </summary>
-	public class FichesDB {
+	public class FichesDB : IDisposable {
 
 		#region CONSTANTS
+
+		protected const uint	MAX_WORKING_THREADS_COUNT = 10;
 
 // 		public const uint	SIGNATURE = 0x48434946U;	// 'FICH';
 // 		public const ushort	VERSION_MAJOR = 1;
@@ -19,6 +22,91 @@ namespace Brain2 {
 
 		#region NESTED TYPES
 
+		public abstract class JobBase {
+			protected FichesDB	m_owner;
+
+			protected JobBase( FichesDB _owner ) {
+				m_owner = _owner;
+			}
+
+			public abstract void	Run();
+		}
+
+		protected class		JobLoadChunk : JobBase {
+			public Fiche.ChunkBase	m_caller;
+			public JobLoadChunk( FichesDB _owner, Fiche.ChunkBase _caller ) : base( _owner ) { m_caller = _caller; }
+			public override void	Run() {
+				using ( Stream S = m_owner.RequestFicheStream( m_caller.OwnerFiche, true ) ) {
+					m_caller.Threaded_LoadContent( S );
+				}
+			}
+		}
+
+		protected class		JobSaveFiche : JobBase {
+			public Fiche	m_caller;
+			public JobSaveFiche( FichesDB _owner, Fiche _caller ) : base( _owner ) { m_caller = _caller; }
+			public override void	Run() {
+				using ( Stream S = m_owner.RequestFicheStream( m_caller, true ) ) {
+					using ( BinaryWriter W = new BinaryWriter( S ) ) {
+						m_caller.Write( W );
+					}
+				}
+			}
+		}
+
+		protected class		JobNotify : JobBase {
+			public Action	m_action;
+			public JobNotify( FichesDB _owner, Action _action ) : base( _owner ) { m_action = _action; }
+			public override void	Run() {
+				m_action();
+			}
+		}
+
+		protected class		JobReportError : JobBase {
+			public string	m_error;
+			public JobReportError( FichesDB _owner, string _error ) : base( _owner ) { m_error = _error; }
+			public override void	Run() {
+				m_owner.SyncReportError( m_error );
+			}
+		}
+
+		protected class WorkingThread : IDisposable {
+
+			#region NESTED TYPES
+
+			#endregion
+
+			public FichesDB		m_database = null;
+			public Thread		m_thread = null;
+
+			public WorkingThread( FichesDB _database ) {
+				m_database = _database;
+				m_thread = new Thread( WorkingThreadDelegate );
+				m_thread.IsBackground = true;
+				m_thread.Start( this );
+			}
+			public void Dispose() {
+				m_thread.Abort();
+				m_thread = null;
+			}
+
+			protected static void	WorkingThreadDelegate( object _param ) {
+				WorkingThread	_this = _param as WorkingThread;
+				Thread			thisThread = Thread.CurrentThread;
+
+				while ( true ) {
+					Thread.Sleep( 100 );	// Check for jobs every 1/10 of a second
+
+					lock ( _this.m_database.m_threadedJobs ) {
+						if ( _this.m_database.m_threadedJobs.Peek() != null ) {
+							JobBase	job = _this.m_database.m_threadedJobs.Dequeue();
+							job.Run();
+						}
+					}
+				}
+			}
+		}
+
 		#endregion
 
 		#region FIELDS
@@ -27,6 +115,10 @@ namespace Brain2 {
 
 		private List< Fiche >				m_fiches = new List< Fiche >();
 		private Dictionary< Guid, Fiche >	m_ID2Fiche = new Dictionary<Guid, Fiche>();
+
+		protected WorkingThread[]			m_workingThreads = null;					// Asynchronous workers
+		protected Queue< JobBase >			m_threadedJobs = new Queue<JobBase>();
+		protected Queue< JobBase >			m_mainThreadJobs = new Queue<JobBase>();
 
 		#endregion
 
@@ -38,6 +130,18 @@ namespace Brain2 {
 
 		public	FichesDB() {
 			Fiche.ms_database = this;
+
+			// Create working threads
+			m_workingThreads = new WorkingThread[MAX_WORKING_THREADS_COUNT];
+			for (  uint i=0; i < m_workingThreads.Length; i++ ) {
+				m_workingThreads[i] = new WorkingThread( this );
+			}
+		}
+
+		public void Dispose() {
+			for (  uint i=0; i < m_workingThreads.Length; i++ ) {
+				m_workingThreads[i].Dispose();	// This will abort the threads
+			}
 		}
 
 		void	RegisterFiche( Fiche _fiche ) {
@@ -155,11 +259,62 @@ throw new Exception( "TODO!" );
 // 			LoadDatabase( _rootFolder );
 		}
 
+		/// <summary>
+		/// Processes main thread messages
+		/// </summary>
+		public void	OnIdle() {
+			lock ( m_mainThreadJobs ) {
+				while ( m_mainThreadJobs.Count > 0 ) {
+					m_mainThreadJobs.Dequeue().Run();
+				}
+			}
+		}
+
 		#endregion
 
-		#region Asynchronous & Multithreaded Operations
+		#region Synchronous, Asynchronous & Multithreaded Operations
 
-		internal 
+		/// <summary>
+		/// Ask a thread to perform the load asynchronously (we'll be notified on the main thread when the content is available)
+		/// </summary>
+		/// <param name="_caller"></param>
+		internal void	AsyncLoad( Fiche.ChunkBase _caller ) {
+			// Create a new job and let the loading threads handle it
+			JobLoadChunk	job = new JobLoadChunk( this, _caller );
+			lock ( m_threadedJobs )
+				m_threadedJobs.Enqueue( job );
+		}
+
+		/// <summary>
+		/// Ask a thread to perform the save asynchronously (we'll be notified on the main thread when the content is saved)
+		/// </summary>
+		/// <param name="_caller"></param>
+		internal void	AsyncSave( Fiche _caller ) {
+			// Create a new job and let the loading threads handle it
+			JobSaveFiche	job = new JobSaveFiche( this, _caller );
+			lock ( m_threadedJobs )
+				m_threadedJobs.Enqueue( job );
+		}
+
+		/// <summary>
+		/// Ask the main thread to perform our notification for us
+		/// </summary>
+		/// <param name="_delegate"></param>
+		internal void	SyncNotify( Action _delegate ) {
+			JobNotify	job = new JobNotify( this, _delegate );
+			lock ( m_mainThreadJobs )
+				m_mainThreadJobs.Enqueue( job );
+		}
+
+		/// <summary>
+		/// Ask the main thread to report our error
+		/// </summary>
+		/// <param name="_error"></param>
+		internal void	SyncReportError( string _error ) {
+			JobReportError	job = new JobReportError( this, _error );
+			lock ( m_mainThreadJobs )
+				m_mainThreadJobs.Enqueue( job );
+		}
 
 		/// <summary>
 		/// Internal stream abstraction

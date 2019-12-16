@@ -82,11 +82,11 @@ namespace Brain2 {
 			}
 
 			/// <summary>
-			/// Override this to update the content.
+			/// Override this to load the content.
 			/// </summary>
 			/// <param name="_content"></param>
-			/// <remarks>"this" is locked by the caller thread when this method is called</remarks>
-			protected abstract void		ContentLoaded( byte[] _content );
+			/// <remarks>This method is called from another thread</remarks>
+			internal abstract void		Threaded_LoadContent( Stream _S );
 
 			/// <summary>
 			/// Override this to dispose of the content
@@ -101,86 +101,6 @@ namespace Brain2 {
 			}
 
 			#region Async Loading
-
-			protected const uint	MAX_LOADING_THREADS_COUNT = 10;
-
-			protected class LoadingThread : IDisposable {
-				public FichesDB		m_ficheDB = null;
-				public Thread		m_thread = null;
-
-				public LoadingThread() {
-					m_thread = new Thread( LoadingThreadDelegate );
-					m_thread.IsBackground = true;
-					m_thread.Start( this );
-				}
-				public void Dispose() {
-					m_thread.Abort();
-					m_thread = null;
-				}
-
-				protected static void	LoadingThreadDelegate( object _param ) {
-					LoadingThread	_this = _param as LoadingThread;
-					Thread			thisThread = Thread.CurrentThread;
-
-					while ( true ) {
-						Thread.Sleep( 100 );	// Check for jobs every 1/10 of a second
-
-						lock ( ms_loadingJobs ) {
-							if ( ms_loadingJobs.Peek() != null ) {
-								LoadingJob	job = ms_loadingJobs.Dequeue();
-								job.Run();
-							}
-						}
-					}
-				}
-			}
-
-			protected class		LoadingJob {
-				public ChunkBase	m_caller;
-				public LoadingJob( ChunkBase _caller ) {
-					m_caller = _caller;
-				}
-
-				public void	Run() {
-					using ( Stream S = ms_database.RequestFicheStream( m_caller.OwnerFiche, true ) ) {
-						S.Position = (long) m_caller.m_offset;
-
-						byte[]	content = new byte[m_caller.m_size];
-						S.Read( content, 0, (int) m_caller.m_size );
-
-						lock ( m_caller )
-							m_caller.ContentLoaded( content );
-					}
-				}
-			}
-
-			protected static LoadingThread[]		ms_loadingThreads = null;
-			protected static Queue< LoadingJob >	ms_loadingJobs = new Queue<LoadingJob>();
-
-			protected static void	StartAsyncLoading( ChunkBase _caller ) {
-				if ( ms_loadingThreads == null ) {
-					ms_loadingThreads = new LoadingThread[MAX_LOADING_THREADS_COUNT];
-					for (  uint i=0; i < ms_loadingThreads.Length; i++ ) {
-						ms_loadingThreads[i] = new LoadingThread();
-					}
-				}
-
-				// Create a new job and let the loading threads handle it
-				LoadingJob	job = new LoadingJob( _caller );
-				lock ( ms_loadingJobs ) {
-					ms_loadingJobs.Enqueue( job );
-				}
-			}
-
-			protected static void	KillLoadingThreads() {
-				if ( ms_loadingThreads == null )
-					return;	// Already killed
-
-				for (  uint i=0; i < ms_loadingThreads.Length; i++ ) {
-					ms_loadingThreads[i].Dispose();
-				}
-				ms_loadingThreads = null;
-			}
 
 			#endregion
 		}
@@ -201,7 +121,7 @@ namespace Brain2 {
 				get {
 					if ( m_thumbnail == null ) {
 						// Launch load process & create a placeholder for now...
-						StartAsyncLoading( this );
+						ms_database.AsyncLoad( this );
 						m_thumbnail = new ImageFile( THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT, PIXEL_FORMAT.BGRA8, DEFAULT_PROFILE );
 					}
 
@@ -227,23 +147,28 @@ namespace Brain2 {
 				}
 			}
 
-			protected override void	ContentLoaded( byte[] _content ) {
+			internal override void	Threaded_LoadContent( Stream _S ) {
 				try {
+					_S.Position = (long) m_offset;
+
+					byte[]	content = new byte[m_size];
+					_S.Read( content, 0, (int) m_size );
+
 					// Attempt to read the JPEG file
 					ImageFile	temp = null;
-					using ( NativeByteArray imageContent = new NativeByteArray( _content ) ) {
+					using ( NativeByteArray imageContent = new NativeByteArray( content ) ) {
 						temp = new ImageFile( imageContent, ImageFile.FILE_FORMAT.JPEG );
 					}
 
 					// Replace current thumbnail
 					m_thumbnail.Dispose();
 					m_thumbnail = temp;
-					
+
 					// Notify
-					NotifyContentUpdated();
+					ms_database.SyncNotify( () => { NotifyContentUpdated(); } );
 
 				} catch ( Exception _e ) {
-					BrainForm.DebugMainThread( "An error occurred while attempting to read thumbnail chunk for fiche \"" + m_owner.ToString() + "\": " + _e.Message );
+					ms_database.SyncReportError( "An error occurred while attempting to read thumbnail chunk for fiche \"" + m_owner.ToString() + "\": " + _e.Message );
 				}
 			}
 
@@ -274,7 +199,7 @@ namespace Brain2 {
 				get {
 					if ( m_image == null ) {
 						// Launch load process & create a placeholder for now...
-						StartAsyncLoading( this );
+						ms_database.AsyncLoad( this );
 						m_image = new ImageFile( m_width, m_height, PIXEL_FORMAT.BGRA8, DEFAULT_PROFILE );
 					}
 
@@ -308,23 +233,28 @@ namespace Brain2 {
 				}
 			}
 
-			protected override void	ContentLoaded( byte[] _content ) {
+			internal override void	Threaded_LoadContent( Stream _S ) {
 				try {
+					_S.Position = (long) m_offset;
+
+					byte[]	content = new byte[m_size];
+					_S.Read( content, 0, (int) m_size );
+
 					// Attempt to read the PNG file
 					ImageFile	temp = null;
-					using ( NativeByteArray imageContent = new NativeByteArray( _content ) ) {
+					using ( NativeByteArray imageContent = new NativeByteArray( content ) ) {
 						temp = new ImageFile( imageContent, ImageFile.FILE_FORMAT.PNG );
 					}
 
 					// Replace current image
 					m_image.Dispose();
 					m_image = temp;
-					
+
 					// Notify
-					NotifyContentUpdated();
+					ms_database.SyncNotify( () => { NotifyContentUpdated(); } );
 
 				} catch ( Exception _e ) {
-					BrainForm.DebugMainThread( "An error occurred while attempting to read thumbnail chunk for fiche \"" + m_owner.ToString() + "\": " + _e.Message );
+					ms_database.SyncReportError( "An error occurred while attempting to read image chunk for fiche \"" + m_owner.ToString() + "\": " + _e.Message );
 				}
 			}
 
