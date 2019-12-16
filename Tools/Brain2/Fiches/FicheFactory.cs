@@ -32,7 +32,7 @@ namespace Brain2 {
 					return URLHandler.CreateURLFiche( _database, null, new Uri( text, UriKind.Absolute ) );
 
 				string	HTML = "<body>" + text + "</body>";
-				return new Fiche( _database, text, null, null, HTML );
+				return new Fiche( _database, Fiche.TYPE.EDITABLE_WEBPAGE, text, null, null, HTML );
 			}
 		}
 
@@ -106,8 +106,8 @@ namespace Brain2 {
 
 //				string	content = "TODO! " + _URL;
 
-				string	content = "<blockquote class=\"twitter-tweet\"><p lang=\"en\" dir=\"ltr\">Appropriate for December. <a href=\"https://t.co/dzNBXmcreS\">pic.twitter.com/dzNBXmcreS</a></p>&mdash; In Otter News (@Otter_News)" +
-				"<a href=\"https://twitter.com/Otter_News/status/1204733982149160960?ref_src=twsrc%5Etfw\">December 11, 2019</a></blockquote> <script async src=\"https://platform.twitter.com/widgets.js\" charset=\"utf-8\"></script>";
+// 				string	content = "<blockquote class=\"twitter-tweet\"><p lang=\"en\" dir=\"ltr\">Appropriate for December. <a href=\"https://t.co/dzNBXmcreS\">pic.twitter.com/dzNBXmcreS</a></p>&mdash; In Otter News (@Otter_News)" +
+// 				"<a href=\"https://twitter.com/Otter_News/status/1204733982149160960?ref_src=twsrc%5Etfw\">December 11, 2019</a></blockquote> <script async src=\"https://platform.twitter.com/widgets.js\" charset=\"utf-8\"></script>";
 
 /*string	content = @"<blockquote class=""Tweet h-entry js-tweetIdInfo subject expanded"" cite=""https://twitter.com/Poulin2012/status/1204065818432167937"" data-tweet-id=""1204065818432167937"" data-scribe=""section:subject"">
     <div class=""Tweet-header"">
@@ -218,7 +218,7 @@ namespace Brain2 {
 //				string	title = "dummy title";
 
 //				return new Fiche( _title, _URL, null, Fiche.BuildHTMLDocument( title, content ) );
-				return new Fiche( _database, _title, _URL, null, null );
+				return new Fiche( _database, Fiche.TYPE.ANNOTABLE_WEBPAGE, _title, _URL, null, null );
 			}
 		}
 

@@ -60,7 +60,7 @@ namespace Brain2 {
 		#region FIELDS
 
 		// Database
-		FichesDB					m_database = new FichesDB();
+		FichesDB					m_database;
 
 		// Display
 		Device						m_device = new Device();
@@ -175,6 +175,8 @@ Show();
 			DEFAULT_OPACITY = this.Opacity;
 
 			try {
+
+				m_database = new FichesDB();
 
 				// Create the modeless forms
 				m_preferenceForm = new PreferencesForm( this );
@@ -586,6 +588,10 @@ Show();
 
 		public static void	Debug( string _text ) {
 			System.Diagnostics.Debug.WriteLine( _text );
+		}
+
+		public static void	DebugMainThread( string _text ) {
+//			Form.ReflectMessage()
 		}
 
 		#endregion

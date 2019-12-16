@@ -37,6 +37,7 @@ namespace Brain2 {
 		#region METHODS
 
 		public	FichesDB() {
+			Fiche.ms_database = this;
 		}
 
 		void	RegisterFiche( Fiche _fiche ) {
@@ -111,7 +112,7 @@ namespace Brain2 {
 						if ( !file.Exists )
 							throw new Exception( "Result file \"" + result.PathName + "\" doesn't exist!" );
 
-						Fiche	F = new Fiche( this );
+						Fiche	F = new Fiche();
 						try {
 							using ( FileStream S = file.OpenRead() ) {
 								using ( BinaryReader R = new BinaryReader( S ) ) {
@@ -158,6 +159,22 @@ namespace Brain2 {
 // 
 // 		public void		Read( BinaryReader _reader ) {
 // 		}
+
+		/// <summary>
+		/// Internal stream abstraction
+		/// At the moment the fiches come from individual files but it could be moved to an actual database or remote server if needed...
+		/// NOTE: The caller need to dispose of the stream eventually!
+		/// </summary>
+		/// <param name="_fiche"></param>
+		/// <param name="_readOnly"></param>
+		/// <returns></returns>
+		internal Stream	RequestFicheStream( Fiche _fiche, bool _readOnly ) {
+			FileInfo	ficheFileName = new FileInfo( _fiche.FileName );
+			if ( _readOnly )
+				return ficheFileName.OpenRead();
+			else
+				return ficheFileName.Create();
+		}
 
 		#endregion
 
