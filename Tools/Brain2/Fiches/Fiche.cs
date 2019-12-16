@@ -11,7 +11,7 @@ namespace Brain2 {
 	/// <summary>
 	/// The main fiche class
 	/// </summary>
-	public class Fiche {
+	public class Fiche : IDisposable {
 
 		#region CONSTANTS
 
@@ -24,6 +24,7 @@ namespace Brain2 {
 		#region NESTED TYPES
 
 		public enum STATUS {
+			DISPOSED,			// Disposed, shouldn't be accessed!
 			EMPTY,				// Empty fiche
 			READY,				// Complete fiche
 			CREATING,			// In the process of being created
@@ -40,38 +41,28 @@ namespace Brain2 {
 		public abstract class ChunkBase : IDisposable {
 
 			protected Fiche				m_owner;
-//			protected string			m_type;
 			protected ulong				m_offset;
 			protected uint				m_size;
 
 			public Fiche				OwnerFiche	{ get { return m_owner; } }
 
 			/// <summary>
-			/// Gets the type of the chunk
-			/// </summary>
-// 			public string				Type	{ get { return m_type; } }
-
-			/// <summary>
-			/// Gets the size of the chunk
-			/// </summary>
-			public uint					Size	{ get { return m_size; } }
-
-			/// <summary>
 			/// Returns the chunk's content
-			/// NOTE: Returns a placeholder while content is not available
 			/// </summary>
+			/// <remarks>Should always return a valid placeholder while content is not available</remarks>
 			public abstract object		Content { get; }
 
 			/// <summary>
 			/// Occurs when the content is updated
 			/// </summary>
+			/// <remarks>Can be raised from another thread!</remarks>
 			public event EventHandler	ContentUpdated;
 
 			/// <summary>
 			/// Reads the chunk from a binary stream
 			/// </summary>
 			/// <param name="_reader"></param>
-			protected abstract void		Read( BinaryReader _reader );
+			public abstract void		Read( BinaryReader _reader );
 
 			/// <summary>
 			/// Writes the chunk to a binary stream
@@ -222,11 +213,18 @@ namespace Brain2 {
 
 			}
 
-			protected override void Read(BinaryReader _reader) {
+			public override void Read(BinaryReader _reader) {
+				// Read is performed asynchronously when "Content" is requested
 			}
 
 			public override void Write(BinaryWriter _writer) {
-				throw new NotImplementedException();
+				if ( m_thumbnail == null )
+					throw new Exception( "Attempting to save an ampty thumbnail chunk! Don't create the chunk if it's normal to be empty..." );
+
+				using ( NativeByteArray content = m_thumbnail.Save( ImageFile.FILE_FORMAT.JPEG, ImageFile.SAVE_FLAGS.SF_JPEG_FAST ) ) {
+					byte[]	managedContent = content.AsByteArray;
+					_writer.Write( managedContent );
+				}
 			}
 
 			protected override void	ContentLoaded( byte[] _content ) {
@@ -260,13 +258,82 @@ namespace Brain2 {
 		/// <summary>
 		/// Contains the full web page snapshot
 		/// </summary>
-		public class ChunkWebPageSnapshot {//: ChunkBase {
+		public class ChunkWebPageSnapshot : ChunkBase {
 
-			public const uint	WEBPAGE_WIDTH = 1280;	// Default snapshot width
+			public const uint	DEFAULT_WEBPAGE_WIDTH = 1280;	// Default snapshot width
+			public const uint	DEFAULT_WEBPAGE_HEIGHT = 2071;	// Phi * Width = Golden rectangle 
 
-// 			public ChunkWebPageSnapshot( uint _chunkSize ) : base( _chunkSize ) {
-// 
-// 			}
+			public static readonly ColorProfile	DEFAULT_PROFILE = new ColorProfile( ColorProfile.STANDARD_PROFILE.sRGB );
+
+			private uint		m_width = DEFAULT_WEBPAGE_WIDTH;
+			private uint		m_height = DEFAULT_WEBPAGE_HEIGHT;
+
+			private ImageFile	m_image = null;
+
+			public override object Content {
+				get {
+					if ( m_image == null ) {
+						// Launch load process & create a placeholder for now...
+						StartAsyncLoading( this );
+						m_image = new ImageFile( m_width, m_height, PIXEL_FORMAT.BGRA8, DEFAULT_PROFILE );
+					}
+
+					return m_image;
+				}
+			}
+
+			public ChunkWebPageSnapshot( Fiche _owner, ulong _offset, uint _size ) : base( _owner, _offset, _size ) {
+			}
+
+			public override void Read(BinaryReader _reader) {
+				// Only read image width & height
+				m_width = _reader.ReadUInt32();
+				m_height = _reader.ReadUInt32();
+
+				// The rest of the read is performed asynchronously when "Content" is requested
+			}
+
+			public override void Write(BinaryWriter _writer) {
+				if ( m_image == null )
+					throw new Exception( "Attempting to save an ampty thumbnail chunk! Don't create the chunk if it's normal to be empty..." );
+
+				// Write width & height
+				_writer.Write( m_image.Width );
+				_writer.Write( m_image.Height );
+
+				// Write actual content
+				using ( NativeByteArray content = m_image.Save( ImageFile.FILE_FORMAT.PNG, ImageFile.SAVE_FLAGS.SF_PNG_Z_BEST_COMPRESSION ) ) {
+					byte[]	managedContent = content.AsByteArray;
+					_writer.Write( managedContent );
+				}
+			}
+
+			protected override void	ContentLoaded( byte[] _content ) {
+				try {
+					// Attempt to read the PNG file
+					ImageFile	temp = null;
+					using ( NativeByteArray imageContent = new NativeByteArray( _content ) ) {
+						temp = new ImageFile( imageContent, ImageFile.FILE_FORMAT.PNG );
+					}
+
+					// Replace current image
+					m_image.Dispose();
+					m_image = temp;
+					
+					// Notify
+					NotifyContentUpdated();
+
+				} catch ( Exception _e ) {
+					BrainForm.DebugMainThread( "An error occurred while attempting to read thumbnail chunk for fiche \"" + m_owner.ToString() + "\": " + _e.Message );
+				}
+			}
+
+			protected override void InternalDispose() {
+				if ( m_image != null ) {
+					m_image.Dispose();
+					m_image = null;
+				}
+			}
 		}
 
 		#endregion
@@ -324,7 +391,7 @@ namespace Brain2 {
 			}
 		}
 
-		public Uri				URL {
+		public Uri					URL {
 			get { return m_URL; }
 			set {
 				if ( value == m_URL )
@@ -360,6 +427,12 @@ namespace Brain2 {
 			m_HTMLContent = _HTMLContent;
 		}
 
+		public void Dispose() {
+			foreach ( ChunkBase chunk in m_chunks ) {
+				chunk.Dispose();
+			}
+		}
+
 		public override string ToString() {
 			return (m_title != "" ? m_title + "\r\n" : "") + m_GUID + "\r\n" + (m_URL != null ? m_URL + "\r\n" : "") + (m_HTMLContent != null ? m_HTMLContent : "<body/>");
 		}
@@ -367,41 +440,69 @@ namespace Brain2 {
 		#region I/O
 
 		public void		Write( BinaryWriter _writer ) {
-			_writer.Write( SIGNATURE );
-			_writer.Write( VERSION_MAJOR );
-			_writer.Write( VERSION_MINOR );
+			lock ( this ) {
+				STATUS	oldStatus = m_status;
+				try {
+					if ( m_status != STATUS.READY )
+						throw new Exception( "Can't save while fiche is not ready!" );
 
-			// Write hierarchy
-			_writer.Write( m_GUID.ToString() );
-			_writer.Write( m_creationTime.ToString() );
-			_writer.Write( (uint) m_parents.Count );
-			foreach ( Fiche parent in m_parents ) {
-				_writer.Write( parent.m_GUID.ToString() );
-			}
+					m_status = STATUS.SAVING;	// We lock this so noone can modify it while we're saving, and we're also changing the status in any case
 
-			// Write content
-			_writer.Write( m_type.ToString() );
-			_writer.Write( m_title );
-			_writer.Write( m_URL != null );
-			if ( m_URL != null ) {
-				_writer.Write( true );
-				_writer.Write( m_URL.OriginalString );
-			}
-			if ( m_HTMLContent != null ) {
-				_writer.Write( true );
-				_writer.Write( m_HTMLContent );
-			}
+					_writer.Write( SIGNATURE );
+					_writer.Write( VERSION_MAJOR );
+					_writer.Write( VERSION_MINOR );
 
-			// Write chunks
-			_writer.Write( (uint) m_chunks.Count );
-			foreach ( ChunkBase chunk in m_chunks ) {
-				_writer.Write( chunk.GetType().Name );
-				_writer.Write( chunk.Size );
+					// Write hierarchy
+					_writer.Write( m_GUID.ToString() );
+					_writer.Write( m_creationTime.ToString() );
+					_writer.Write( (uint) m_parents.Count );
+					foreach ( Fiche parent in m_parents ) {
+						_writer.Write( parent.m_GUID.ToString() );
+					}
 
-				chunk.Write( _writer );
+					// Write content
+					_writer.Write( m_type.ToString() );
+					_writer.Write( m_title );
+					_writer.Write( m_URL != null );
+					if ( m_URL != null ) {
+						_writer.Write( true );
+						_writer.Write( m_URL.OriginalString );
+					}
+					if ( m_HTMLContent != null ) {
+						_writer.Write( true );
+						_writer.Write( m_HTMLContent );
+					}
+
+					// Write chunks
+					_writer.Write( (uint) m_chunks.Count );
+					foreach ( ChunkBase chunk in m_chunks ) {
+						_writer.Write( chunk.GetType().Name );
+						_writer.Write( (uint) 0 );
+						ulong	chunkStartOffset = (ulong) _writer.BaseStream.Position;
+
+						chunk.Write( _writer );
+
+						// Go back to write chunk size
+						ulong	chunkEndOffset = (ulong) _writer.BaseStream.Position;
+						uint	chunkSize = (uint) (chunkEndOffset - chunkStartOffset);
+						_writer.BaseStream.Position = (long) (chunkStartOffset - sizeof(ulong));
+						_writer.Write( chunkSize );
+						_writer.BaseStream.Position = (long) chunkEndOffset;
+					}
+				} catch ( Exception _e ) {
+//					BrainForm.Debug( "Error while saving fiche \"" + ToString() + "\": " + _e.Message );
+					throw _e;
+				} finally {
+					m_status = oldStatus;	// Restore status anyway
+				}
 			}
 		}
 
+		/// <summary>
+		/// Reads the fiche's description and HTML content
+		/// </summary>
+		/// <param name="_reader"></param>
+		/// <remarks>Heavy chunks are NOT read and will only be accessible asynchronously</remarks>
 		public void		Read( BinaryReader _reader ) {
 			uint	signature = _reader.ReadUInt32();
 			if ( signature != SIGNATURE )
@@ -451,13 +552,16 @@ namespace Brain2 {
 			for ( uint chunkIndex=0; chunkIndex < chunksCount; chunkIndex++ ) {
 				string		chunkType = _reader.ReadString();
 				uint		chunkLength = _reader.ReadUInt32();
-				ulong		chunkOffsetInStream = (ulong) _reader.BaseStream.Position;
-				ChunkBase	chunk = CreateChunkFromType( chunkType, chunkOffsetInStream, chunkLength );
-// 				if ( chunk != null ) {
-// 					chunk.Read( _reader );
-// 				} else {
-				_reader.BaseStream.Seek( chunkLength, SeekOrigin.Current );	// Just bypass that chunk... :/
-//				}
+				ulong		chunkStartOffset = (ulong) _reader.BaseStream.Position;
+
+				ChunkBase	chunk = CreateChunkFromType( chunkType, chunkStartOffset, chunkLength );
+				if ( chunk != null ) {
+					chunk.Read( _reader );	// Only shallow data will be available, heavy data will be loaded asynchonously
+				}
+
+				// Always jump to chunk's end, whether it read something or not...
+				ulong		chunkEndOffset = chunkStartOffset + chunkLength;
+				_reader.BaseStream.Seek( (long) chunkEndOffset, SeekOrigin.Begin );
 			}
 		}
 
@@ -469,7 +573,7 @@ namespace Brain2 {
 		private ChunkBase	CreateChunkFromType( string _chunkType, ulong _chunkOffset, uint _chunkLength ) {
 			switch ( _chunkType ) {
 				case "ChunkThumbnail": return new ChunkThumbnail( this, _chunkOffset, _chunkLength );
-//				case "ChunkWebPageSnapshot": return new ChunkWebPageSnapshot( this, _chunkOffset, _chunkLength );
+				case "ChunkWebPageSnapshot": return new ChunkWebPageSnapshot( this, _chunkOffset, _chunkLength );
 			}
 
 			return null;

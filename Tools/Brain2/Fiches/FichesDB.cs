@@ -54,27 +54,27 @@ namespace Brain2 {
 
 		#region I/O
 
-		public void	SaveDatabase( DirectoryInfo _rootFolder ) {
-			List< Exception >	errors = new List<Exception>();
-			foreach ( Fiche fiche in m_fiches ) {
-				try {
+// 		public void	SaveDatabase( DirectoryInfo _rootFolder ) {
+// 			List< Exception >	errors = new List<Exception>();
+// 			foreach ( Fiche fiche in m_fiches ) {
+// 				try {
+// 
+// 					string		fileName = fiche.FileName;
+// 					FileInfo	file = new FileInfo( fileName );
+// 					using ( FileStream S = file.Create() )
+// 						using ( BinaryWriter W = new BinaryWriter( S ) )
+// 							fiche.Write( W );
+// 
+// 				} catch ( Exception _e ) {
+// 					errors.Add( _e );
+// 				}
+// 			}
+// 
+// 			if ( errors.Count > 0 )
+// 				throw new Exception( "Errors while saving database:" );
+// 		}
 
-					string		fileName = fiche.FileName;
-					FileInfo	file = new FileInfo( fileName );
-					using ( FileStream S = file.Create() )
-						using ( BinaryWriter W = new BinaryWriter( S ) )
-							fiche.Write( W );
-
-				} catch ( Exception _e ) {
-					errors.Add( _e );
-				}
-			}
-
-			if ( errors.Count > 0 )
-				throw new Exception( "Errors while saving database:" );
-		}
-
-		public void	LoadDatabase( DirectoryInfo _rootFolder ) {
+		public void	LoadFichesDescription( DirectoryInfo _rootFolder ) {
 			try {
 				if ( _rootFolder == null || !_rootFolder.Exists )
 					throw new Exception( "Invalid root folder!" );
@@ -149,16 +149,17 @@ namespace Brain2 {
 			if ( !_rootFolder.Exists )
 				_rootFolder.Create();
 
-			// Save existing database to new folder and reload from there
-			SaveDatabase( _rootFolder );
-			LoadDatabase( _rootFolder );
+throw new Exception( "TODO!" );
+// 			// Save existing database to new folder and reload from there
+// 			SaveDatabase( _rootFolder );
+// 			LoadDatabase( _rootFolder );
 		}
 
-// 		public void		Write( BinaryWriter _writer ) {
-// 		}
-// 
-// 		public void		Read( BinaryReader _reader ) {
-// 		}
+		#endregion
+
+		#region Asynchronous & Multithreaded Operations
+
+		internal 
 
 		/// <summary>
 		/// Internal stream abstraction
@@ -178,6 +179,7 @@ namespace Brain2 {
 
 		#endregion
 
+
 		/// <summary>
 		/// Used by fiches to notify of a change so the database should act accordingly (e.g. resaving the updated fiche)
 		/// </summary>
@@ -193,7 +195,6 @@ namespace Brain2 {
 						_fiche.Write( W );
 					}
 				}
-
 
 			} catch ( Exception _e ) {
 				BrainForm.Debug( "Failed saving updated fiche \"" + _fiche + "\": " + _e.Message );

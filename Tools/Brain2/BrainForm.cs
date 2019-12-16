@@ -175,9 +175,6 @@ Show();
 			DEFAULT_OPACITY = this.Opacity;
 
 			try {
-
-				m_database = new FichesDB();
-
 				// Create the modeless forms
 				m_preferenceForm = new PreferencesForm( this );
 				m_preferenceForm.RootDBFolderChanged += preferenceForm_RootDBFolderChanged;
@@ -200,12 +197,13 @@ Show();
 					}
 				}
 
-				m_database.LoadDatabase( rootDBFolder );
+				m_database = new FichesDB();
+				m_database.LoadFichesDescription( rootDBFolder );
 
 			} catch ( Exception _e ) {
-// 				MessageBox( "Error when creating forms and loading database!\r\n\n", _e );
+ 				MessageBox( "Error when creating forms and loading database!\r\n\n", _e );
 // 				Close();
-// //				Application.Exit();
+//				Application.Exit();
 			}
 
 			try {
