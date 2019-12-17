@@ -69,7 +69,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Fiches\FicheFactory.cs" />
     <Compile Include="Fiches\FichesDB.cs" />
     <Compile Include="BrainForm.cs">
       <SubType>Form</SubType>
@@ -103,6 +102,7 @@
       <DependentUpon>PreferencesForm.cs</DependentUpon>
     </Compile>
     <Compile Include="Interop\Interop.cs" />
+    <Compile Include="Web Interface\WebHelpers.cs" />
     <Compile Include="Web Interface\WebPage2Image.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -167,9 +167,7 @@
       <Name>HTMLEditControl</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Images\" />
-  </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
     <Content Include="Shaders\DisplayCube.hlsl" />
     <Content Include="Shaders\Global.hlsl" />

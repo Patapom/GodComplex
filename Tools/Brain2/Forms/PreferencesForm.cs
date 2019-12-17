@@ -135,8 +135,8 @@ namespace Brain2 {
 						listViewBookmarks.Items.Add( bookmarkItem );
 
 
-
-ImportBookmarksChrome( bookmarkFile );
+if ( bookmarkFile.FullName.IndexOf( "Profile 2" ) != -1 )
+	ImportBookmarksChrome( bookmarkFile );
 
 
 					} catch ( Exception _e ) {
@@ -398,7 +398,7 @@ StringBuilder	sb = new StringBuilder( (int) _reader.BaseStream.Length );
 					JSONObject	rootFolder = value as JSONObject;
 					if ( rootFolder != null ) {
 						// Add a new root folder containing bookmarks
-						bookmarks.Add( new Bookmark( null, rootFolder, bookmarks ) );
+						bookmarks.Add( new Bookmark( m_owner.Database, null, rootFolder, bookmarks ) );
 					}
 				}
 			} catch ( Exception _e ) {
@@ -409,6 +409,12 @@ StringBuilder	sb = new StringBuilder( (int) _reader.BaseStream.Length );
 			int	successfullyImportedBookmarksCounter = 0;
 			foreach ( Bookmark bookmark in bookmarks ) {
 				try {
+					if ( bookmark.m_parent == null )
+						continue;	// Don't create root folders...
+
+					// Reading the fiche property will create it
+					Fiche	F = bookmark.Fiche;
+
 					successfullyImportedBookmarksCounter++;
 				} catch ( Exception _e ) {
 					throw new Exception( "Failed to parse bookmarks!", _e );
@@ -421,14 +427,82 @@ StringBuilder	sb = new StringBuilder( (int) _reader.BaseStream.Length );
 		[System.Diagnostics.DebuggerDisplay( "{m_name} - {m_URL} ({m_GUID})" )]
 		class	Bookmark {
 
+			public enum TYPE {
+				URL,	// An actual bookmark
+				FOLDER,	// Only a folder containing other bookmarks
+				UNKNOWN
+			}
+
+			private FichesDB		m_database;
+
 			public Bookmark			m_parent;
 			public Guid				m_GUID;
 			public DateTime			m_dateAdded;
 			public string			m_name;
 			public Uri				m_URL;
+			public TYPE				m_type = TYPE.UNKNOWN;
 			public List< Bookmark >	m_children = new List<Bookmark>();
 
-			public Bookmark( Bookmark _parent, JSONObject _JSON, List< Bookmark > _bookmarks ) {
+			// Cached fiche
+			private Fiche			m_fiche = null;
+			public Fiche			Fiche {
+				get {
+					if ( m_fiche != null )
+						return m_fiche;	// Use cached version
+
+					// Create the fiche
+					switch ( m_type ) {
+						case Bookmark.TYPE.FOLDER:
+							// Create a "tag" fiche, if it doesn't already exist...
+							m_fiche = m_database.SyncFindOrCreateTagFiche( m_name );
+							break;
+
+						case Bookmark.TYPE.URL:
+							// Create a regular fiche
+							Fiche	existingFiche = null;
+							if ( m_GUID != Guid.Empty ) {
+								existingFiche = m_database.FindFicheByGUID( m_GUID );
+							} else {
+								m_GUID = Guid.NewGuid();
+
+								// Attempt to find the fiche by URL
+								existingFiche = m_database.FindFicheByURL( m_URL );
+								if ( existingFiche == null ) {
+									// Attempt to find a unique fiche with this title (it's okay to have multiple fiches with the same title but we only consider the fiche already exists if there's a single one with this title!)
+									Fiche[]	existingFiches = m_database.FindFichesByTitle( m_name, false );
+									existingFiche = existingFiches.Length == 1 ? existingFiches[0] : null;
+								}
+							}
+
+							if ( existingFiche != null && existingFiche.URL == m_URL ) {
+								break;	// No need to create the fiche as it already exists...
+							}
+
+							// Attempt to retrieve parent fiches
+							List< Fiche >	parents = new List<Fiche>();
+							if ( m_parent != null ) {
+								parents.Add( m_parent.Fiche );	// This should in turn create the parent fiche if it doesn't exist yet
+							}
+							string[]	tags = WebHelpers.ExtractTags( m_name );
+							foreach ( string tag in tags ) {
+								Fiche[]	tagFiches = m_database.FindFichesByTitle( tag, false );
+								if ( tagFiches.Length > 0 )
+									parents.Add( tagFiches[0] );
+							}
+
+							// Create the new fiche
+							m_fiche = m_database.AsyncCreateURLFiche( Fiche.TYPE.REMOTE_ANNOTABLE_WEBPAGE, m_name, m_URL, null );
+							m_fiche.AddTags( parents );
+							m_fiche.GUID = m_GUID;
+							break;
+					}
+
+					return m_fiche;
+				}
+			}
+
+			public Bookmark( FichesDB _database, Bookmark _parent, JSONObject _JSON, List< Bookmark > _bookmarks ) {
+				m_database = _database;
 				m_parent = _parent;
 				if ( _JSON == null || !_JSON.IsDictionary )
 					throw new Exception( "Invalid JSON object type!" );
@@ -444,7 +518,7 @@ StringBuilder	sb = new StringBuilder( (int) _reader.BaseStream.Length );
 							// From https://stackoverflow.com/questions/19074423/how-to-parse-the-date-added-field-in-chrome-bookmarks-file
 							string	strTicks = dictionary[key] as string;
 							long	microseconds;
-							if ( long.TryParse( strTicks, out microseconds ) ) {
+ 							if ( long.TryParse( strTicks, out microseconds ) ) {
 								long	milliseconds = microseconds / 1000;
 								long	seconds = milliseconds / 1000;
 								long	minutes = seconds / 60;
@@ -453,7 +527,7 @@ StringBuilder	sb = new StringBuilder( (int) _reader.BaseStream.Length );
 
 								TimeSpan	delay = new TimeSpan( (int) days, (int) (hours % 24), (int) (minutes % 60), (int) (seconds % 60), (int) (milliseconds % 1000) );
 								m_dateAdded = new DateTime( 1601, 1, 1 ) + delay;
-							}
+ 							}
 							break;
 
 						case "guid":
@@ -468,22 +542,25 @@ StringBuilder	sb = new StringBuilder( (int) _reader.BaseStream.Length );
 
 						case "children":
 							RecurseImportBookmarks( this, dictionary[key] as JSONObject, _bookmarks );
-// 							List< object >	children = dictionary[key] as List<object>;
-// 							foreach ( JSONObject child in children ) {
-// 								if ( child == null )
-// 									continue;
-// 							}
+							break;
+
+						case "type":
+							string	strType = dictionary[key] as string;
+							switch ( strType ) {
+								case "url": m_type = TYPE.URL; break;
+								case "folder": m_type = TYPE.FOLDER; break;
+							}
 							break;
 
 						default:
-							// Try 
+							// Try import children...
 							RecurseImportBookmarks( this, dictionary[key] as JSONObject, _bookmarks );
 							break;
 					}
 				}
 			}
 
-			public static void	RecurseImportBookmarks( Bookmark _parent, JSONObject _object, List< Bookmark > _bookmarks ) {
+			public void	RecurseImportBookmarks( Bookmark _parent, JSONObject _object, List< Bookmark > _bookmarks ) {
 				if ( _object == null )
 					return;
 //					throw new Exception( "Invalid JSON object!" );
@@ -495,8 +572,9 @@ StringBuilder	sb = new StringBuilder( (int) _reader.BaseStream.Length );
 						if ( bookmarkObject == null )
 							continue;	// Can't parse value
 
-						Bookmark	bookmark = new Bookmark( _parent, bookmarkObject, _bookmarks );
+						Bookmark	bookmark = new Bookmark( m_database, _parent, bookmarkObject, _bookmarks );
 						_bookmarks.Add( bookmark );
+						_parent.m_children.Add( bookmark );
 					}
 				} else if ( _object.IsArray ) {
 					List< object >	array = _object.AsArray;
@@ -506,11 +584,12 @@ StringBuilder	sb = new StringBuilder( (int) _reader.BaseStream.Length );
 							continue;	// Can't parse value
 
 						// Each element must be a dictionary of properties for the bookmark
-						Bookmark	bookmark = new Bookmark( _parent, bookmarkObject, _bookmarks );
+						Bookmark	bookmark = new Bookmark( m_database, _parent, bookmarkObject, _bookmarks );
 						_bookmarks.Add( bookmark );
+						_parent.m_children.Add( bookmark );
 					}
-
-				} else if ( _object.m_object is string ) {
+// 
+// 				} else if ( _object.m_object is string ) {
 
 				} else {
 					throw new Exception( "Unsupported JSON object type!" );

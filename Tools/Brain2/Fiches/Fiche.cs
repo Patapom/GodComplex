@@ -11,7 +11,7 @@ namespace Brain2 {
 	/// <summary>
 	/// The main fiche class
 	/// </summary>
-	public class Fiche : IDisposable {
+	public partial class Fiche : IDisposable {
 
 		#region CONSTANTS
 
@@ -33,9 +33,9 @@ namespace Brain2 {
 		}
 
 		public enum TYPE {
-			ANNOTABLE_WEBPAGE,	// Distant URL with immutable HTML content, only annotations, underlining and manual drawing are available
-			EDITABLE_WEBPAGE,	// Local URL with simple editable HTML content
-			LOCAL_FILE,			// Link to a local file with tracking
+			REMOTE_ANNOTABLE_WEBPAGE,	// Remote URL with immutable HTML content, only annotations, underlining and manual drawing are available
+			LOCAL_EDITABLE_WEBPAGE,		// Local URL with simple editable HTML content
+			LOCAL_FILE,					// Link to a local file with tracking
 		}
 
 		public abstract class ChunkBase : IDisposable {
@@ -121,7 +121,7 @@ namespace Brain2 {
 				get {
 					if ( m_thumbnail == null ) {
 						// Launch load process & create a placeholder for now...
-						ms_database.AsyncLoad( this );
+						m_owner.m_database.AsyncLoadChunk( this );
 						m_thumbnail = new ImageFile( THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT, PIXEL_FORMAT.BGRA8, DEFAULT_PROFILE );
 					}
 
@@ -165,10 +165,10 @@ namespace Brain2 {
 					m_thumbnail = temp;
 
 					// Notify
-					ms_database.SyncNotify( () => { NotifyContentUpdated(); } );
+					m_owner.m_database.SyncNotify( () => { NotifyContentUpdated(); } );
 
 				} catch ( Exception _e ) {
-					ms_database.SyncReportError( "An error occurred while attempting to read thumbnail chunk for fiche \"" + m_owner.ToString() + "\": " + _e.Message );
+					m_owner.m_database.SyncReportError( "An error occurred while attempting to read thumbnail chunk for fiche \"" + m_owner.ToString() + "\": " + _e.Message );
 				}
 			}
 
@@ -199,7 +199,7 @@ namespace Brain2 {
 				get {
 					if ( m_image == null ) {
 						// Launch load process & create a placeholder for now...
-						ms_database.AsyncLoad( this );
+						m_owner.m_database.AsyncLoadChunk( this );
 						m_image = new ImageFile( m_width, m_height, PIXEL_FORMAT.BGRA8, DEFAULT_PROFILE );
 					}
 
@@ -251,10 +251,10 @@ namespace Brain2 {
 					m_image = temp;
 
 					// Notify
-					ms_database.SyncNotify( () => { NotifyContentUpdated(); } );
+					m_owner.m_database.SyncNotify( () => { NotifyContentUpdated(); } );
 
 				} catch ( Exception _e ) {
-					ms_database.SyncReportError( "An error occurred while attempting to read image chunk for fiche \"" + m_owner.ToString() + "\": " + _e.Message );
+					m_owner.m_database.SyncReportError( "An error occurred while attempting to read image chunk for fiche \"" + m_owner.ToString() + "\": " + _e.Message );
 				}
 			}
 
@@ -270,15 +270,15 @@ namespace Brain2 {
 
 		#region FIELDS
 
-		internal static FichesDB	ms_database = null;
+		internal FichesDB			m_database = null;
 
 		private Guid				m_GUID;
 		private DateTime			m_creationTime = DateTime.Now;
 
-		private List< Fiche >		m_parents = new List< Fiche >();
-		private Guid[]				m_parentGUIDs = null;
+		private List< Fiche >		m_tags = new List< Fiche >();
+		private Guid[]				m_tagGUIDs = null;
 
-		private TYPE				m_type = TYPE.ANNOTABLE_WEBPAGE;	// Default for fiches built from a URL
+		private TYPE				m_type = TYPE.REMOTE_ANNOTABLE_WEBPAGE;	// Default for fiches built from a URL
 		private string				m_title = "";
 		private Uri					m_URL = null;
 		private string				m_HTMLContent = null;
@@ -291,9 +291,36 @@ namespace Brain2 {
 
 		#region PROPERTIES
 
+		protected FichesDB			Database {
+			get { return m_database; }
+			set {
+				if ( value == m_database )
+					return;
+
+				if ( m_database != null )
+					m_database.UnRegisterFiche( this );
+
+				m_database = value;
+
+				if ( m_database != null )
+					m_database.RegisterFiche( this );
+			}
+		}
+
 		public STATUS				Status { get { lock ( this ) return m_status; } }
 
-		public Guid					GUID { get { return m_GUID; } }
+		public Guid					GUID {
+			get { return m_GUID; }
+			set {
+				if ( value == m_GUID )
+					return;
+
+				Guid	oldGUID = m_GUID;
+				m_GUID = value;
+
+				m_database.FicheGUIDChanged( this, oldGUID );
+			}
+		}
 
 		public TYPE					Type { get {return m_type; } }
 
@@ -305,8 +332,9 @@ namespace Brain2 {
 				if ( value == m_title )
 					return;
 
+				string	oldTitle = m_title;
 				m_title = value;
-				ms_database.FicheUpdated( this );
+				Database.FicheTitleChanged( this, oldTitle );
 			}
 		}
 
@@ -317,7 +345,7 @@ namespace Brain2 {
 					return;
 
 				m_HTMLContent = value;
-				ms_database.FicheUpdated( this );
+				Database.FicheHTMLContentChanged( this );
 			}
 		}
 
@@ -327,8 +355,9 @@ namespace Brain2 {
 				if ( value == m_URL )
 					return;
 
+				Uri	oldURL = m_URL;
 				m_URL = value;
-				ms_database.FicheUpdated( this );
+				Database.FicheURLChanged( this, oldURL );
 			}
 		}
 
@@ -345,16 +374,24 @@ namespace Brain2 {
 
 		#region METHODS
 
-		public	Fiche() {
+		protected	Fiche( FichesDB _database, string _title ) {
 			m_GUID = Guid.NewGuid();
-		}
-		public	Fiche( FichesDB _database, TYPE _type, string _title, Uri _URL, Fiche[] _tags, string _HTMLContent ) : this() {
-			m_type = _type;
 			m_title = _title;
-			if ( _tags != null )
-				m_parents.AddRange( _tags );
+
+			Database = _database;
+		}
+		public	Fiche( FichesDB _database, TYPE _type, string _title, Uri _URL, Fiche[] _tags, string _HTMLContent ) : this( _database, _title ) {
+			m_type = _type;
+			if ( _tags != null ) {
+				AddTags( _tags );
+				m_tags.AddRange( _tags );
+			}
 			m_URL = _URL;
 			m_HTMLContent = _HTMLContent;
+		}
+		public	Fiche( FichesDB _database, BinaryReader _reader ) {
+			Read( _reader );
+			Database = _database;
 		}
 
 		public void Dispose() {
@@ -385,8 +422,8 @@ namespace Brain2 {
 					// Write hierarchy
 					_writer.Write( m_GUID.ToString() );
 					_writer.Write( m_creationTime.ToString() );
-					_writer.Write( (uint) m_parents.Count );
-					foreach ( Fiche parent in m_parents ) {
+					_writer.Write( (uint) m_tags.Count );
+					foreach ( Fiche parent in m_tags ) {
 						_writer.Write( parent.m_GUID.ToString() );
 					}
 
@@ -454,11 +491,11 @@ namespace Brain2 {
 
 				// We only read the GUIDs while the actual fiches will be processed later
 			uint	parentsCount = _reader.ReadUInt32();
-			m_parents.Clear();
-			m_parentGUIDs = new Guid[parentsCount];
+			m_tags.Clear();
+			m_tagGUIDs = new Guid[parentsCount];
 			for ( int parentIndex=0; parentIndex < parentsCount; parentIndex++ ) {
 				strGUID = _reader.ReadString();
-				if ( !Guid.TryParse( strGUID, out m_parentGUIDs[parentIndex] ) )
+				if ( !Guid.TryParse( strGUID, out m_tagGUIDs[parentIndex] ) )
 					throw new Exception( "Failed to parse fiche's parent GUID!" );
 			}
 
@@ -470,7 +507,7 @@ namespace Brain2 {
 			m_title = _reader.ReadString();
 			if ( _reader.ReadBoolean() ) {
 				string	strURL = _reader.ReadString();
-				m_URL = new Uri( strURL );
+				m_URL = WebHelpers.CreateCanonicalURL( strURL );
 			}
 			if ( _reader.ReadBoolean() ) {
 				m_HTMLContent = _reader.ReadString();
@@ -510,19 +547,29 @@ namespace Brain2 {
 		}
 
 		/// <summary>
-		/// Called as a post-process to finally resolve actual parent links after read
+		/// Called as a post-process to finally resolve actual tag links after read
 		/// </summary>
 		/// <param name="_ID2Fiche"></param>
-		public void		ResolveParents( Dictionary< Guid, Fiche > _ID2Fiche ) {
-			m_parents.Clear();
-			foreach ( Guid parentID in m_parentGUIDs ) {
+		public void		ResolveTags( Dictionary< Guid, Fiche > _ID2Fiche ) {
+			m_tags.Clear();
+			foreach ( Guid parentID in m_tagGUIDs ) {
 				Fiche	parent = null;
 				if ( _ID2Fiche.TryGetValue( parentID, out parent ) )
-					m_parents.Add( parent );
+					m_tags.Add( parent );
 			}
 		}
 
 		#endregion
+
+		public void	AddTags( IEnumerable<Fiche> _tags ) {
+			if ( _tags == null )
+				return;
+
+			foreach ( Fiche tag in _tags ) {
+				if ( !m_tags.Contains( tag ) )
+					m_tags.Add( tag );
+			}
+		}
 
 		public static string	BuildHTMLDocument( string _title, string _content ) {
 

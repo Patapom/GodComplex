@@ -79,6 +79,12 @@ namespace Brain2 {
 
 		#endregion
 
+		#region PROPERTIES
+
+		public FichesDB				Database { get { return m_database; } }
+
+		#endregion
+
 		#region METHODS
 
 		/// <summary>
@@ -155,7 +161,7 @@ Debug( "_____________________________" );
 Hide();
 
 				// Ask factory to create the best fiche for our data
-				Fiche	fiche = FicheFactory.CreateFiche( m_database, _data );
+				Fiche	fiche = m_database.CreateFiche( _data );
 
 				// Start edition
 				m_ficheEditorForm.EditedFiche = fiche;
