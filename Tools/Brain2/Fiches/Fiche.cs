@@ -27,7 +27,7 @@ namespace Brain2 {
 			DISPOSED,			// Disposed, shouldn't be accessed!
 			EMPTY,				// Empty fiche
 			READY,				// Complete fiche
-			CREATING,			// In the process of being created
+			UPDATING,			// In the process of being updated
 			SAVING,				// In the process of being saved
 			LOADING,			// In the process of being loaded
 		}
@@ -320,7 +320,8 @@ namespace Brain2 {
 		private Guid				m_GUID;
 		private DateTime			m_creationTime = DateTime.Now;
 
-		private List< Fiche >		m_tags = new List< Fiche >();
+		private List< Fiche >		m_tags2 = new List< Fiche >();
+		private List< Fiche >		m_references = new List< Fiche >();
 		private Guid[]				m_tagGUIDs = null;
 
 		private TYPE				m_type = TYPE.REMOTE_ANNOTABLE_WEBPAGE;	// Default for fiches built from a URL
@@ -416,6 +417,11 @@ namespace Brain2 {
 		}
 
 		/// <summary>
+		/// Returns the amount of fiches that reference this fiche (as a tag)
+		/// </summary>
+		public int					ReferencesCount { get { return m_references.Count; } }
+
+		/// <summary>
 		/// Raised whenever the web page image changed
 		/// </summary>
 		public event EventHandler	WebPageImageChanged;
@@ -438,8 +444,8 @@ namespace Brain2 {
 		public	Fiche( FichesDB _database, TYPE _type, string _title, Uri _URL, Fiche[] _tags, string _HTMLContent ) : this( _database, _title ) {
 			m_type = _type;
 			if ( _tags != null ) {
-				AddTags( _tags );
-				m_tags.AddRange( _tags );
+				foreach ( Fiche tag in _tags )
+					AddTag( tag );
 			}
 			m_URL = _URL;
 			m_HTMLContent = _HTMLContent;
@@ -450,12 +456,17 @@ namespace Brain2 {
 		}
 
 		public void Dispose() {
-			foreach ( ChunkBase chunk in m_chunks ) {
-				chunk.Dispose();
-			}
+			lock ( this ) {
+				foreach ( ChunkBase chunk in m_chunks ) {
+					chunk.Dispose();
+				}
 
-			// This will unregister us from the database
-			Database = null;
+				// This will unregister us from the database
+				Database = null;
+
+				// Change status
+				m_status = STATUS.DISPOSED;
+			}
 		}
 
 		public override string ToString() {
@@ -480,8 +491,8 @@ namespace Brain2 {
 					// Write hierarchy
 					_writer.Write( m_GUID.ToString() );
 					_writer.Write( m_creationTime.ToString() );
-					_writer.Write( (uint) m_tags.Count );
-					foreach ( Fiche parent in m_tags ) {
+					_writer.Write( (uint) m_tags2.Count );
+					foreach ( Fiche parent in m_tags2 ) {
 						_writer.Write( parent.m_GUID.ToString() );
 					}
 
@@ -549,7 +560,9 @@ namespace Brain2 {
 
 				// We only read the GUIDs while the actual fiches will be processed later
 			uint	parentsCount = _reader.ReadUInt32();
-			m_tags.Clear();
+			while ( m_tags2.Count > 0 ) {
+				RemoveTag( m_tags2[0] );
+			}
 			m_tagGUIDs = new Guid[parentsCount];
 			for ( int parentIndex=0; parentIndex < parentsCount; parentIndex++ ) {
 				strGUID = _reader.ReadString();
@@ -595,11 +608,10 @@ namespace Brain2 {
 		/// </summary>
 		/// <param name="_ID2Fiche"></param>
 		public void		ResolveTags( Dictionary< Guid, Fiche > _ID2Fiche ) {
-			m_tags.Clear();
 			foreach ( Guid parentID in m_tagGUIDs ) {
 				Fiche	parent = null;
 				if ( _ID2Fiche.TryGetValue( parentID, out parent ) )
-					m_tags.Add( parent );
+					AddTag( parent );
 			}
 		}
 
@@ -608,22 +620,39 @@ namespace Brain2 {
 		#region Tags Management
 
 		public void	AddTags( IEnumerable<Fiche> _tags ) {
-			if ( _tags == null )
-				throw new Exception( "Invalid list of tags to add!" );
-
 			foreach ( Fiche tag in _tags ) {
-				if ( !m_tags.Contains( tag ) )
-					m_tags.Add( tag );
+				AddTag( tag );
 			}
 		}
 
-		public void	RemoveTags( IEnumerable<Fiche> _tags ) {
-			if ( _tags == null )
-				throw new Exception( "Invalid list of tags to remove!" );
+		public void	AddTag( Fiche _tag ) {
+			if ( m_tags2.Contains( _tag ) )
+				return;	// Already got it!
+			
+			m_tags2.Add( _tag );
+			_tag.AddReference( this );
+		}
 
-			foreach ( Fiche tag in _tags ) {
-				m_tags.Remove( tag );
-			}
+		public void	RemoveTag( Fiche _tag ) {
+			if ( !m_tags2.Contains( _tag ) )
+				return;	// Don't have it!
+			
+			m_tags2.Remove( _tag );
+			_tag.RemoveReference( this );
+		}
+
+		public void	AddReference( Fiche _reference ) {
+			if ( m_references.Contains( _reference ) )
+				return;	// Already got it!
+
+			m_references.Add( _reference );
+		}
+
+		public void	RemoveReference( Fiche _reference ) {
+			if ( !m_references.Contains( _reference ) )
+				return;	// Don't have it!
+
+			m_references.Remove( _reference );
 		}
 
 		#endregion
@@ -676,6 +705,23 @@ namespace Brain2 {
 		}
 
 		#endregion
+
+		/// <summary>
+		/// Locks the fiche in a given status. Used by external workers that will work on the fiche (e.g. update, load, save, etc.)
+		/// </summary>
+		/// <param name="_status">The status to assign to the fiche while the lock is effective</param>
+		/// <param name="_delegate">The delegate that will be called when the lock is effective</param>
+		internal void	Lock( STATUS _status, Action _delegate ) {
+			lock ( this ) {
+				STATUS	oldStatus = m_status;
+				m_status = _status;
+
+				// The worker can work now!
+				_delegate();
+
+				m_status = oldStatus;
+			}
+		}
 
 		private void	NotifyWebPageImageChanged( ChunkWebPageSnapshot _caller ) {
 			if ( WebPageImageChanged != null )

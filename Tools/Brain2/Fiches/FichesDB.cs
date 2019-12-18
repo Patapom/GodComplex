@@ -87,7 +87,7 @@ namespace Brain2 {
 
 				if ( isUnicode ) {
 					if ( (stringLength & 1) != 0 )
-						throw new Exception( "Expected an even size! Apparently not dealing with a unicode string..." );
+						throw new Exception( "Expected an even size! Apparently we're not really dealing with a unicode string..." );
 					stringLength >>= 1;
 				}
 
@@ -107,7 +107,7 @@ namespace Brain2 {
 
 				Uri	URL = WebHelpers.CreateCanonicalURL( strURL );
 
-				return _database.AsyncCreateURLFiche( Fiche.TYPE.REMOTE_ANNOTABLE_WEBPAGE, title, URL, null );
+				return CreateURLFiche( _database, title, URL );
 			}
 
 			public static Fiche	CreateURLFiche( FichesDB _database, string _title, Uri _URL ) {
@@ -129,121 +129,11 @@ namespace Brain2 {
 					tagFiches.Add( tagFiche );
 				}
 
-//				string	content = "TODO! " + _URL;
+//				return new Fiche( _database, Fiche.TYPE.REMOTE_ANNOTABLE_WEBPAGE, _title, _URL, null, null );
+				Fiche	F = _database.AsyncCreateURLFiche( Fiche.TYPE.REMOTE_ANNOTABLE_WEBPAGE, _title, _URL, null );
+						F.AddTags( tagFiches );
 
-// 				string	content = "<blockquote class=\"twitter-tweet\"><p lang=\"en\" dir=\"ltr\">Appropriate for December. <a href=\"https://t.co/dzNBXmcreS\">pic.twitter.com/dzNBXmcreS</a></p>&mdash; In Otter News (@Otter_News)" +
-// 				"<a href=\"https://twitter.com/Otter_News/status/1204733982149160960?ref_src=twsrc%5Etfw\">December 11, 2019</a></blockquote> <script async src=\"https://platform.twitter.com/widgets.js\" charset=\"utf-8\"></script>";
-
-/*string	content = @"<blockquote class=""Tweet h-entry js-tweetIdInfo subject expanded"" cite=""https://twitter.com/Poulin2012/status/1204065818432167937"" data-tweet-id=""1204065818432167937"" data-scribe=""section:subject"">
-    <div class=""Tweet-header"">
-      <a class=""TweetAuthor-avatar  Identity-avatar u-linkBlend"" data-scribe=""element:user_link"" href=""https://twitter.com/Poulin2012"" aria-label=""Alexis Poulin (nom d'utilisateur : Poulin2012)""><img class=""Avatar"" data-scribe=""element:avatar"" data-src-2x=""https://pbs.twimg.com/profile_images/1110858983357771778/aTqqWLFY_bigger.jpg"" alt="""" data-src-1x=""https://pbs.twimg.com/profile_images/1110858983357771778/aTqqWLFY_normal.jpg"" src=""https://pbs.twimg.com/profile_images/1110858983357771778/aTqqWLFY_normal.jpg""></a>
-
-      
-
-
-<div class=""TweetAuthor js-inViewportScribingTarget"" data-scribe=""component:author"">
-  <a class=""TweetAuthor-link Identity u-linkBlend"" data-scribe=""element:user_link"" href=""https://twitter.com/Poulin2012"" aria-label=""Alexis Poulin (nom d'utilisateur : Poulin2012)"">
-    <div class=""TweetAuthor-nameScreenNameContainer"">
-      <span class=""TweetAuthor-decoratedName"">
-        <span class=""TweetAuthor-name Identity-name customisable-highlight"" title=""Alexis Poulin"" data-scribe=""element:name"">Alexis Poulin</span>
-        <span class=""TweetAuthor-verifiedBadge"" data-scribe=""element:verified_badge""><div class=""Icon Icon--verified "" aria-label=""Compte certifié"" title=""Compte certifié"" role=""img""></div>
-<b class=""u-hiddenVisually"">✔</b></span>
-      </span>
-      <span class=""TweetAuthor-screenName Identity-screenName"" title=""@Poulin2012"" data-scribe=""element:screen_name"" dir=""ltr"">@Poulin2012</span>
-    </div>
-  </a>
-</div>
-
-        <div class=""Tweet-brand"">
-          <a href=""https://twitter.com/Poulin2012/status/1204065818432167937"" data-scribe=""element:logo""><span class=""FollowButton-bird""><div class=""Icon Icon--twitter "" aria-label=""Voir sur Twitter"" title=""Voir sur Twitter"" role=""presentation""></div>
-</span></a>
-        </div>
-    </div>
-    <div class=""Tweet-body e-entry-content"" data-scribe=""component:tweet"">
-      
-      <div class=""Tweet-target js-inViewportScribingTarget""></div>
-      <p class=""Tweet-text e-entry-title"" lang=""fr"" dir=""ltr"">A propos de «&nbsp;la haine&nbsp;» qui visiblement en novlangue veut dire «&nbsp;capter des images de violences policières&nbsp;»... <a href=""https://t.co/6W9zbPCuCG"" rel=""nofollow noopener"" dir=""ltr"" data-expanded-url=""https://twitter.com/davduf/status/1204059641413586946"" class=""link customisable"" target=""_blank"" title=""https://twitter.com/davduf/status/1204059641413586946"" data-tweet-id=""1204059641413586946"" data-tweet-item-type=""23"" data-scribe=""element:url""><span class=""u-hiddenVisually"">https://</span>twitter.com/davduf/status/<span class=""u-hiddenVisually"">1204059641413586946&nbsp;</span>…</a></p>
-
-
-
-        <div class=""Tweet-card"">
-<div class=""QuoteTweet"" tabindex=""0"" data-scribe=""section:quote"">
-  <a class=""QuoteTweet-link"" data-tweet-id=""1204059641413586946"" data-tweet-item-type=""23"" href=""https://twitter.com/davduf/status/1204059641413586946"" target=""_blank"" rel=""noopener"">
-    <div class=""QuoteTweet-nonMediaContainer"">
-      
-
-
-<div class=""TweetAuthor js-inViewportScribingTarget TweetAuthor--oneLine"" data-scribe=""component:author"">
-  
-    <div class=""TweetAuthor-nameScreenNameContainer"">
-      <span class=""TweetAuthor-decoratedName"">
-        <span class=""TweetAuthor-name Identity-name customisable-highlight"" title=""David Dufresne"" data-scribe=""element:name"">David Dufresne</span>
-        <span class=""TweetAuthor-verifiedBadge"" data-scribe=""element:verified_badge""><div class=""Icon Icon--verified "" aria-label=""Compte certifié"" title=""Compte certifié"" role=""img""></div>
-<b class=""u-hiddenVisually"">✔</b></span>
-      </span>
-      <span class=""TweetAuthor-screenName Identity-screenName"" title=""@davduf"" data-scribe=""element:screen_name"" dir=""ltr"">@davduf</span>
-    </div>
-  
-</div>
-
-      <div></div>
-      <p class=""QuoteTweet-text e-entry-title"" lang=""fr"" dir=""ltr"">Le sénateur Grand, profitant de la proposition de loi de « Lutte contre la haine »  sur internet (PPL), propose une amande de 15 000 € pour captation d'image de policiers. <span class=""PrettyLink-prefix"">#</span><span class=""PrettyLink-value"">ViolencesPolicières</span> <span class=""PrettyLink-prefix"">#</span><span class=""PrettyLink-value"">LibertédInformer</span><br><br>Source: <span class=""u-hiddenVisually"">http://www.</span>senat.fr/amendements/co<span class=""u-hiddenVisually"">mmissions/2018-2019/645/Amdt_COM-13.html&nbsp;</span>…</p>
-    </div>
-    <div class=""QuotedTweet-media"">
-  
-<article class=""MediaCard
-           
-           customisable-border"" data-scribe=""component:card"" dir=""ltr"">
-  <div class=""MediaCard-media"" data-scribe=""element:photo"">
-
-    <div class=""MediaCard-widthConstraint js-cspForcedStyle"" style=""max-width: 1200px"" data-style=""max-width: 1200px"">
-      <div class=""MediaCard-mediaContainer js-cspForcedStyle MediaCard--roundedBottom"" style=""padding-bottom: 68.9167%"" data-style=""padding-bottom: 68.9167%"">
-        <div class=""MediaCard-mediaAsset NaturalImage"">
-          <img class=""NaturalImage-image"" data-image=""https://pbs.twimg.com/media/ELWt20_W4AAea8q"" data-image-format=""png"" width=""1200"" height=""827"" title=""Voir l'image sur Twitter"" alt=""Voir l'image sur Twitter"" src=""https://pbs.twimg.com/media/ELWt20_W4AAea8q?format=png&amp;name=small"">
-        </div>
-      </div>
-    </div>
-  </div>
-</article>
-
-  
-  
-</div>
-  </a>
-</div>
-</div>
-
-
-      <div class=""TweetInfo"">
-        <div class=""TweetInfo-like"">
-<a class=""TweetInfo-heart"" title=""J'aime"" href=""https://twitter.com/intent/like?tweet_id=1204065818432167937"" data-scribe=""component:actions"">
-  <div data-scribe=""element:heart""><div class=""Icon Icon--heart "" aria-label=""J'aime"" title=""J'aime"" role=""img""></div>
-</div>
-  <span class=""TweetInfo-heartStat"" data-scribe=""element:heart_count"">704</span>
-</a>
-</div>
-        <div class=""TweetInfo-timeGeo"">
-
-<a class=""u-linkBlend u-url customisable-highlight long-permalink"" data-datetime=""2019-12-09T15:50:36+0000"" data-scribe=""element:full_timestamp"" href=""https://twitter.com/Poulin2012/status/1204065818432167937"">
-
-
-
-
-
-
-
-
-<time class=""dt-updated"" datetime=""2019-12-09T15:50:36+0000"" pubdate="""" title=""Heure de publication : 09 décembre 2019 15:50:36 (UTC)"">10:50 - 9 déc. 2019</time></a></div>
-        <div class=""tweet-InformationCircle"" data-scribe=""element:notice""><a href=""https://support.twitter.com/articles/20175256"" class=""Icon Icon--informationCircleWhite js-inViewportScribingTarget"" title=""Informations sur les Publicités Twitter et confidentialité""><span class=""u-hiddenVisually"">Informations sur les Publicités Twitter et confidentialité</span></a>
-</div>
-      </div>
-    </div>
-  </blockquote>";
-//*/
-//				string	title = "dummy title";
-
-//				return new Fiche( _title, _URL, null, Fiche.BuildHTMLDocument( title, content ) );
-				return new Fiche( _database, Fiche.TYPE.REMOTE_ANNOTABLE_WEBPAGE, _title, _URL, null, null );
+				return F;
 			}
 		}
 
@@ -270,19 +160,26 @@ namespace Brain2 {
 				public JobFillFiche( FichesDB _owner, Fiche _fiche ) : base( _owner ) { m_fiche = _fiche; }
 				public override void	Run() {
 					// Request the content asynchronously
-					m_owner.AsyncRenderWebPage( m_fiche.URL, ( string _HTMLContent, ImageUtility.ImageFile _imageWebPage ) => {
-						m_fiche.HTMLContent = _HTMLContent;
+					m_owner.AsyncRenderWebPage( m_fiche.URL,
+						// On success => update content
+						( string _HTMLContent, ImageUtility.ImageFile _imageWebPage ) => {
+							m_fiche.Lock( Fiche.STATUS.UPDATING, () => {
+								m_fiche.HTMLContent = _HTMLContent;
 
-						// Create image chunk
-						m_fiche.CreateImageChunk( _imageWebPage );
+								// Create image chunk
+								m_fiche.CreateImageChunk( _imageWebPage );
 
-						// Create thumbnail
-						m_fiche.CreateThumbnailChunkFromImage( _imageWebPage );
+								// Create thumbnail
+								m_fiche.CreateThumbnailChunkFromImage( _imageWebPage );
 
-						// Request to save the fiche now that it's complete...
-						m_owner.AsyncSave( m_fiche );
-					} );
-
+								// Request to save the fiche now that it's complete...
+								m_owner.AsyncSave( m_fiche );
+							} );
+						},
+						// On error => Log error? Todo?
+						( WebHelpers.WEB_ERROR_TYPE _error, int _errorCode, string _message ) => {
+							throw new Exception( "Handle web errors!" );
+						} );
 				}
 			}
 
@@ -291,7 +188,9 @@ namespace Brain2 {
 				public JobLoadChunk( FichesDB _owner, Fiche.ChunkBase _caller ) : base( _owner ) { m_caller = _caller; }
 				public override void	Run() {
 					using ( Stream S = m_owner.RequestFicheStream( m_caller.OwnerFiche, true ) ) {
-						m_caller.Threaded_LoadContent( S );
+						m_caller.OwnerFiche.Lock( Fiche.STATUS.LOADING, () => {
+							m_caller.Threaded_LoadContent( S );
+						} );
 					}
 				}
 			}
@@ -302,7 +201,9 @@ namespace Brain2 {
 				public override void	Run() {
 					using ( Stream S = m_owner.RequestFicheStream( m_caller, true ) ) {
 						using ( BinaryWriter W = new BinaryWriter( S ) ) {
-							m_caller.Write( W );
+							m_caller.Lock( Fiche.STATUS.SAVING, () => {
+								m_caller.Write( W );
+							} );
 						}
 					}
 				}
@@ -326,10 +227,15 @@ namespace Brain2 {
 
 			public class		JobLoadWebPage : JobBase {
 				public Uri							m_URL;
-				public WebHelpers.WebPageRendered	m_delegate;
-				public JobLoadWebPage( FichesDB _owner, Uri _URL, WebHelpers.WebPageRendered _delegate ) : base( _owner ) { m_URL = _URL; m_delegate = _delegate; }
+				public WebHelpers.WebPageRendered	m_delegateSuccess;
+				public WebHelpers.WebPageError		m_delegateError;
+				public JobLoadWebPage( FichesDB _owner, Uri _URL, WebHelpers.WebPageRendered _onSuccess, WebHelpers.WebPageError _onError ) : base( _owner ) {
+					m_URL = _URL;
+					m_delegateSuccess = _onSuccess;
+					m_delegateError = _onError;
+				}
 				public override void	Run() {
-					WebHelpers.LoadWebPage( m_URL, m_delegate );
+					WebHelpers.LoadWebPage( m_URL, m_delegateSuccess, m_delegateError );
 				}
 			}
 
@@ -376,9 +282,16 @@ namespace Brain2 {
 
 		private List< Fiche >						m_fiches = new List< Fiche >();
 		private Dictionary< Guid, Fiche >			m_GUID2Fiche = new Dictionary<Guid, Fiche>();
+		private Dictionary< Uri, Fiche >			m_URL2Fiche = new Dictionary<Uri, Fiche>();
+
+		// Tags/titles references
 		private Dictionary< string, List< Fiche > >	m_titleCaseSensitive2Fiches = new Dictionary<string, List<Fiche>>();
 		private Dictionary< string, List< Fiche > >	m_titleNoCase2Fiches = new Dictionary<string, List<Fiche>>();
-		private Dictionary< Uri, Fiche >			m_URL2Fiche = new Dictionary<Uri, Fiche>();
+
+		private Dictionary< string, List< Fiche > >	m_t2Fiches = new Dictionary<string, List<Fiche>>();
+		private Dictionary< string, List< Fiche > >	m_ti2Fiches = new Dictionary<string, List<Fiche>>();
+		private Dictionary< string, List< Fiche > >	m_tit2Fiches = new Dictionary<string, List<Fiche>>();
+		private Dictionary< string, List< Fiche > >	m_titl2Fiches = new Dictionary<string, List<Fiche>>();
 
 		// Asynchronous workers & job queues
 		protected WorkingThread[]					m_workingThreads = null;
@@ -448,31 +361,71 @@ namespace Brain2 {
 			return fiches == null ? new Fiche[0] : fiches.ToArray();
 		}
 
-// @TODO: Advanced search => in content, by tag, etc.
+		/// <summary>
+		/// Used for auto-completion
+		/// </summary>
+		/// <param name="_title"></param>
+		/// <returns></returns>
+		public void	FindNearestTagMatches( string _title, List< Fiche > _matches ) {
+			if ( _title == null )
+				throw new Exception( "Invalid title!" );
+
+			// List exact matches first
+			List<Fiche>	results = null;
+			switch ( _title.Length ) {
+				case 0: return;	// Can't process
+				case 1:
+					if ( m_t2Fiches.TryGetValue( _title, out results ) )
+						_matches.AddRange( results );
+					break;
+				case 2:
+					if ( m_ti2Fiches.TryGetValue( _title, out results ) )
+						_matches.AddRange( results );
+					break;
+				case 3:
+					if ( m_tit2Fiches.TryGetValue( _title, out results ) )
+						_matches.AddRange( results );
+					break;
+				case 4:
+					if ( m_titl2Fiches.TryGetValue( _title, out results ) )
+						_matches.AddRange( results );
+					break;
+			}
+
+			// List approximate results
+			if ( _title.Length > 4 ) {
+
+			}
+
+			// Sort results by references count so most used tags are listed first
+			_matches.Sort( ( Fiche x, Fiche y ) => { return x.ReferencesCount < y.ReferencesCount ? -1 : (x.ReferencesCount > y.ReferencesCount ? 1 : 0); } );
+		}
+
+		// @TODO: Advanced search => in content, by tag, etc.
 
 		#endregion
 
 		#region I/O
 
-// 		public void	SaveDatabase( DirectoryInfo _rootFolder ) {
-// 			List< Exception >	errors = new List<Exception>();
-// 			foreach ( Fiche fiche in m_fiches ) {
-// 				try {
-// 
-// 					string		fileName = fiche.FileName;
-// 					FileInfo	file = new FileInfo( fileName );
-// 					using ( FileStream S = file.Create() )
-// 						using ( BinaryWriter W = new BinaryWriter( S ) )
-// 							fiche.Write( W );
-// 
-// 				} catch ( Exception _e ) {
-// 					errors.Add( _e );
-// 				}
-// 			}
-// 
-// 			if ( errors.Count > 0 )
-// 				throw new Exception( "Errors while saving database:" );
-// 		}
+		// 		public void	SaveDatabase( DirectoryInfo _rootFolder ) {
+		// 			List< Exception >	errors = new List<Exception>();
+		// 			foreach ( Fiche fiche in m_fiches ) {
+		// 				try {
+		// 
+		// 					string		fileName = fiche.FileName;
+		// 					FileInfo	file = new FileInfo( fileName );
+		// 					using ( FileStream S = file.Create() )
+		// 						using ( BinaryWriter W = new BinaryWriter( S ) )
+		// 							fiche.Write( W );
+		// 
+		// 				} catch ( Exception _e ) {
+		// 					errors.Add( _e );
+		// 				}
+		// 			}
+		// 
+		// 			if ( errors.Count > 0 )
+		// 				throw new Exception( "Errors while saving database:" );
+		// 		}
 
 		public void	LoadFichesDescription( DirectoryInfo _rootFolder ) {
 			try {
@@ -698,8 +651,8 @@ throw new Exception( "TODO!" );
 		/// </summary>
 		/// <param name="_URL"></param>
 		/// <param name="_delegate"></param>
-		internal void	AsyncRenderWebPage( Uri _URL, WebHelpers.WebPageRendered _delegate ) {
-			WorkingThread.JobLoadWebPage	job = new WorkingThread.JobLoadWebPage( this, _URL, _delegate );
+		internal void	AsyncRenderWebPage( Uri _URL, WebHelpers.WebPageRendered _onSuccess, WebHelpers.WebPageError _onError ) {
+			WorkingThread.JobLoadWebPage	job = new WorkingThread.JobLoadWebPage( this, _URL, _onSuccess, _onError );
 			lock ( m_mainThreadJobs )
 				m_mainThreadJobs.Enqueue( job );
 		}

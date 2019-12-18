@@ -412,13 +412,19 @@ StringBuilder	sb = new StringBuilder( (int) _reader.BaseStream.Length );
 					if ( bookmark.m_parent == null )
 						continue;	// Don't create root folders...
 
-					// Reading the fiche property will create it
+					// Reading the fiche property will create it and create its parent tags as well...
 					Fiche	F = bookmark.Fiche;
 
 					successfullyImportedBookmarksCounter++;
 				} catch ( Exception _e ) {
 					throw new Exception( "Failed to parse bookmarks!", _e );
 				}
+			}
+
+			// Ask the user to rename complex names
+			if ( Bookmark.ms_tooComplexTags.Count > 0 ) {
+				ComplexTagNamesForm	F = new ComplexTagNamesForm( Bookmark.ms_tooComplexTags.ToArray() );
+				F.ShowDialog( this );
 			}
 
 			return successfullyImportedBookmarksCounter;
@@ -443,6 +449,9 @@ StringBuilder	sb = new StringBuilder( (int) _reader.BaseStream.Length );
 			public TYPE				m_type = TYPE.UNKNOWN;
 			public List< Bookmark >	m_children = new List<Bookmark>();
 
+			// List of tags that may be too complex
+			public static List< Fiche >	ms_tooComplexTags = new List<Fiche>();
+
 			// Cached fiche
 			private Fiche			m_fiche = null;
 			public Fiche			Fiche {
@@ -453,8 +462,45 @@ StringBuilder	sb = new StringBuilder( (int) _reader.BaseStream.Length );
 					// Create the fiche
 					switch ( m_type ) {
 						case Bookmark.TYPE.FOLDER:
-							// Create a "tag" fiche, if it doesn't already exist...
-							m_fiche = m_database.SyncFindOrCreateTagFiche( m_name );
+							// Folders are like tags, we will create the tag if it doesn't exist or reference it otherwise
+							if ( m_GUID != Guid.Empty ) {
+								m_fiche = m_database.FindFicheByGUID( m_GUID );
+							} else {
+								m_GUID = Guid.NewGuid();
+							}
+
+							if ( m_fiche == null ) {
+								// Create a "tag" fiche...
+
+								// Check the tag name is not too complex...
+								string		name = m_name;
+								string[]	tagWords = name.Split( ' ' );
+								bool		tooComplex = false;
+								if ( tagWords.Length > 1 ) {
+									name = "";
+									if ( tagWords.Length > 4 )
+										tooComplex = true;	// Starts getting complex!
+									float	averageWordLength = 0;
+									foreach ( string word in tagWords ) {
+										averageWordLength += word.Length;
+										string	alphaNumericalWord = WebHelpers.MakeAlphaNumerical( word );
+										if ( alphaNumericalWord != word )
+											tooComplex = true;	// Invalid characters
+
+										name = "_" + alphaNumericalWord;
+									}
+									name = name.Substring( 1 );	// Remove header '_'
+									averageWordLength /= tagWords.Length;
+									if ( averageWordLength > 8 )
+										tooComplex = true;	// Starts getting complex!
+								}
+
+								m_fiche = m_database.SyncFindOrCreateTagFiche( m_name );
+								m_fiche.GUID = m_GUID;
+
+								if ( tooComplex )
+									ms_tooComplexTags.Add( m_fiche );
+							}
 							break;
 
 						case Bookmark.TYPE.URL:
@@ -493,8 +539,11 @@ StringBuilder	sb = new StringBuilder( (int) _reader.BaseStream.Length );
 							// Create the new fiche
 							m_fiche = m_database.AsyncCreateURLFiche( Fiche.TYPE.REMOTE_ANNOTABLE_WEBPAGE, m_name, m_URL, null );
 
-							if ( parents != null )
-								m_fiche.AddTags( parents );
+							if ( parents != null ) {
+								foreach ( Fiche tag in parents ) {
+									m_fiche.AddTag( tag );
+								}
+							}
 							m_fiche.GUID = m_GUID;
 							break;
 					}
