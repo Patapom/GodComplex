@@ -34,6 +34,8 @@ namespace Brain2 {
 			return tags.ToArray();
 		}
 
+		static readonly string[]	UTMTrackers = new string[] { "utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content" };
+
 		/// <summary>
 		/// Cleans up a URL of garbage and returns a canonical URL
 		/// </summary>
@@ -53,7 +55,23 @@ namespace Brain2 {
 				_URL = _URL.Remove( indexOfFacebookID );
 			}
 
-			return new Uri( _URL, UriKind.Absolute );
+			// Clean up urchin tracking shit (e.g. "www.myurl.com?utm_term=Autofeed&utm_medium=Social&utm_source=Twitter&Echobox=1576707437#xtor=CS3-5083" => "www.myurl.com")
+			// https://en.wikipedia.org/wiki/UTM_parameters
+			foreach ( string UTMTracker in UTMTrackers ) {
+				int	indexOfTracker = _URL.IndexOf( "?" + UTMTracker );
+				if ( indexOfTracker == -1 ) {
+					indexOfTracker = _URL.IndexOf( "&" + UTMTracker );	// Try with a '&' instead
+				}
+				if ( indexOfTracker != -1 ) {
+					_URL = _URL.Remove( indexOfTracker );
+				}
+			}
+
+			Uri	URL = null;
+			if ( !Uri.TryCreate( _URL, UriKind.Absolute, out URL ) )
+				throw new Exception( "URL could not be created from an badly formatted string \"" + URL + "\"!" );
+
+			return URL;
 		}
 
 		/// <summary>

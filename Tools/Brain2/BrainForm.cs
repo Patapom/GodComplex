@@ -161,7 +161,7 @@ Debug( "_____________________________" );
 Hide();
 
 				// Ask factory to create the best fiche for our data
-				Fiche	fiche = m_database.CreateFiche( _data );
+				Fiche	fiche = m_database.CreateFicheFromClipboard( _data );
 
 				// Start edition
 				m_ficheEditorForm.EditedFiche = fiche;
@@ -182,9 +182,19 @@ Show();
 		public BrainForm() {
 			InitializeComponent();
 
+
+
+
+this.TopMost = false;
+
+
+
+
 			DEFAULT_OPACITY = this.Opacity;
 
 			try {
+				m_database = new FichesDB();
+
 				// Create the modeless forms
 				m_preferenceForm = new PreferencesForm( this );
 				m_preferenceForm.RootDBFolderChanged += preferenceForm_RootDBFolderChanged;
@@ -207,7 +217,6 @@ Show();
 					}
 				}
 
-				m_database = new FichesDB();
 				m_database.LoadFichesDescription( rootDBFolder );
 
 			} catch ( Exception _e ) {

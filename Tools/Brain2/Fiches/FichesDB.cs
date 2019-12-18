@@ -1,4 +1,6 @@
-﻿using System;
+﻿#define DEBUG_SINGLE_THREADED
+
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
@@ -46,7 +48,9 @@ namespace Brain2 {
 
 				string	title = text;	// Do better?
 				string	HTML = WebHelpers.BuildHTMLDocument( title, text );
-				return _database.AsyncCreateURLFiche( Fiche.TYPE.LOCAL_EDITABLE_WEBPAGE, text, null, HTML );
+				Fiche	F = _database.SyncCreateFicheDescriptor( Fiche.TYPE.LOCAL_EDITABLE_WEBPAGE, text, null, null, HTML );
+				_database.AsyncSaveFiche( F );
+				return F;
 			}
 		}
 
@@ -129,9 +133,11 @@ namespace Brain2 {
 					tagFiches.Add( tagFiche );
 				}
 
-//				return new Fiche( _database, Fiche.TYPE.REMOTE_ANNOTABLE_WEBPAGE, _title, _URL, null, null );
-				Fiche	F = _database.AsyncCreateURLFiche( Fiche.TYPE.REMOTE_ANNOTABLE_WEBPAGE, _title, _URL, null );
-						F.AddTags( tagFiches );
+				// Create the descriptor
+				Fiche	F = _database.SyncCreateFicheDescriptor( Fiche.TYPE.REMOTE_ANNOTABLE_WEBPAGE, _title, _URL, tagFiches.ToArray(), null );
+
+				// Load the web page and save the fiche when ready
+				_database.AsyncLoadContentAndSaveFiche( F );
 
 				return F;
 			}
@@ -173,7 +179,7 @@ namespace Brain2 {
 								m_fiche.CreateThumbnailChunkFromImage( _imageWebPage );
 
 								// Request to save the fiche now that it's complete...
-								m_owner.AsyncSave( m_fiche );
+								m_owner.AsyncSaveFiche( m_fiche );
 							} );
 						},
 						// On error => Log error? Todo?
@@ -201,6 +207,10 @@ namespace Brain2 {
 				public override void	Run() {
 					using ( Stream S = m_owner.RequestFicheStream( m_caller, true ) ) {
 						using ( BinaryWriter W = new BinaryWriter( S ) ) {
+							// Ensure the fiche is ready so it can be saved
+							if ( m_caller.Status != Fiche.STATUS.READY )
+								throw new Exception( "Can't save while fiche is not ready!" );
+
 							m_caller.Lock( Fiche.STATUS.SAVING, () => {
 								m_caller.Write( W );
 							} );
@@ -263,7 +273,7 @@ namespace Brain2 {
 					Thread.Sleep( 100 );	// Check for jobs every 1/10 of a second
 
 					lock ( _this.m_database.m_threadedJobs ) {
-						if ( _this.m_database.m_threadedJobs.Peek() != null ) {
+						if ( _this.m_database.m_threadedJobs.Count > 0 ) {
 							JobBase	job = _this.m_database.m_threadedJobs.Dequeue();
 							job.Run();
 						}
@@ -315,10 +325,12 @@ namespace Brain2 {
 			m_ficheTypeHandlers.Add( new TextHandler() );
 
 			// Create working threads
-			m_workingThreads = new WorkingThread[MAX_WORKING_THREADS_COUNT];
-			for (  uint i=0; i < m_workingThreads.Length; i++ ) {
-				m_workingThreads[i] = new WorkingThread( this );
-			}
+			#if !DEBUG_SINGLE_THREADED
+				m_workingThreads = new WorkingThread[MAX_WORKING_THREADS_COUNT];
+				for (  uint i=0; i < m_workingThreads.Length; i++ ) {
+					m_workingThreads[i] = new WorkingThread( this );
+				}
+			#endif
 		}
 
 		public void Dispose() {
@@ -518,6 +530,13 @@ throw new Exception( "TODO!" );
 					m_mainThreadJobs.Dequeue().Run();
 				}
 			}
+
+#if DEBUG_SINGLE_THREADED
+	lock ( m_threadedJobs )
+		while ( m_threadedJobs.Count > 0 ) {
+			m_threadedJobs.Dequeue().Run();
+		}
+#endif
 		}
 
 		#endregion
@@ -525,23 +544,15 @@ throw new Exception( "TODO!" );
 		#region Synchronous, Asynchronous & Multithreaded Operations
 
 		/// <summary>
-		/// Ask a thread to perform the creation asynchronously (we'll be notified on the main thread when the content is available)
+		/// Ask a thread to fill the content of the fiche asynchronously (we'll be notified on the main thread when the content is available)
 		/// </summary>
-		/// <param name="_type"></param>
-		/// <param name="_title"></param>
-		/// <param name="_URL"></param>
-		/// <param name="_HTMLContent">Optional HTML content, will be replaced by actual content for remote URLs</param>
+		/// <param name="_fiche"></param>
 		/// <returns>The temporary fiche with only a valid desciptor</returns>
-		internal Fiche	AsyncCreateURLFiche( Fiche.TYPE _type, string _title, Uri _URL, string _HTMLContent ) {
-			Fiche	F = SyncCreateFicheDescriptor( _type, _title, _URL, _HTMLContent );
-
+		internal void	AsyncLoadContentAndSaveFiche( Fiche _fiche ) {
 			// Create a new job and let the threads handle it
-			WorkingThread.JobFillFiche	job = new WorkingThread.JobFillFiche( this, F );
+			WorkingThread.JobFillFiche	job = new WorkingThread.JobFillFiche( this, _fiche );
 			lock ( m_threadedJobs )
 				m_threadedJobs.Enqueue( job );
-
-			// Return the descriptor
-			return F;
 		}
 
 		/// <summary>
@@ -552,9 +563,8 @@ throw new Exception( "TODO!" );
 		/// <param name="_URL"></param>
 		/// <param name="_HTMLContent">Optional HTML content, will be replaced by actual content for remote URLs</param>
 		/// <returns></returns>
-		public Fiche	SyncCreateFicheDescriptor( Fiche.TYPE _type, string _title, Uri _URL, string _HTMLContent ) {
-			Fiche	F = new Fiche( this, _type, _title, _URL, null, _HTMLContent );
-			return F;
+		public Fiche	SyncCreateFicheDescriptor( Fiche.TYPE _type, string _title, Uri _URL, Fiche[] _tags, string _HTMLContent ) {
+			return new Fiche( this, _type, _title, _URL, _tags, _HTMLContent );
 		}
 
 		/// <summary>
@@ -563,7 +573,7 @@ throw new Exception( "TODO!" );
 		/// </summary>
 		/// <param name="_data"></param>
 		/// <returns></returns>
-		public Fiche	CreateFiche( System.Windows.Forms.IDataObject _data ) {
+		public Fiche	CreateFicheFromClipboard( System.Windows.Forms.IDataObject _data ) {
 			if ( _data == null )
 				throw new Exception( "Invalid data object!" );
 
@@ -621,14 +631,14 @@ throw new Exception( "TODO!" );
 			}
 
 			// Create the tag
-			return new Fiche( this, Fiche.TYPE.LOCAL_EDITABLE_WEBPAGE, _tag, null, null, WebHelpers.BuildHTMLDocument( _tag, null ) );
+			return SyncCreateFicheDescriptor( Fiche.TYPE.LOCAL_EDITABLE_WEBPAGE, _tag, null, null, WebHelpers.BuildHTMLDocument( _tag, null ) );
 		}
 
 		/// <summary>
 		/// Ask a thread to perform the save asynchronously (we'll be notified on the main thread when the content is saved)
 		/// </summary>
 		/// <param name="_caller"></param>
-		internal void	AsyncSave( Fiche _caller ) {
+		internal void	AsyncSaveFiche( Fiche _caller ) {
 			// Create a new job and let the loading threads handle it
 			WorkingThread.JobSaveFiche	job = new WorkingThread.JobSaveFiche( this, _caller );
 			lock ( m_threadedJobs )
@@ -653,8 +663,8 @@ throw new Exception( "TODO!" );
 		/// <param name="_delegate"></param>
 		internal void	AsyncRenderWebPage( Uri _URL, WebHelpers.WebPageRendered _onSuccess, WebHelpers.WebPageError _onError ) {
 			WorkingThread.JobLoadWebPage	job = new WorkingThread.JobLoadWebPage( this, _URL, _onSuccess, _onError );
-			lock ( m_mainThreadJobs )
-				m_mainThreadJobs.Enqueue( job );
+			lock ( m_threadedJobs )
+				m_threadedJobs.Enqueue( job );
 		}
 
 
@@ -710,18 +720,40 @@ throw new Exception( "TODO!" );
 			m_GUID2Fiche.Add( _fiche.GUID, _fiche );
 		}
 
+		internal void	FicheCreationDateChanged( Fiche _fiche, DateTime _formerDate ) {
+			if ( _fiche == null )
+				throw new Exception( "Invalid fiche!" );
+
+			// Maybe not useful? Don't know what to do here...
+		}
+
 		internal void	FicheTitleChanged( Fiche _fiche, string _formerTitle ) {
 			if ( _fiche == null )
 				throw new Exception( "Invalid fiche!" );
 
 			// Remove from former lists
 			if ( _formerTitle != null ) {
-				m_titleCaseSensitive2Fiches[_formerTitle].Remove( _fiche );
-				m_titleNoCase2Fiches[_formerTitle.ToLower()].Remove( _fiche );
+				string	formerTitle = _formerTitle;
+				m_titleCaseSensitive2Fiches[formerTitle].Remove( _fiche );
+
+				formerTitle = formerTitle.ToLower();
+				m_titleNoCase2Fiches[formerTitle].Remove( _fiche );
+				if ( formerTitle.Length >= 1 ) {
+					m_t2Fiches[formerTitle.Substring( 0, 1 )].Remove( _fiche );
+					if ( formerTitle.Length >= 2 ) {
+						m_ti2Fiches[formerTitle.Substring( 0, 2 )].Remove( _fiche );
+						if ( formerTitle.Length >= 3 ) {
+							m_tit2Fiches[formerTitle.Substring( 0, 3 )].Remove( _fiche );
+							if ( formerTitle.Length >= 4 ) {
+								m_titl2Fiches[formerTitle.Substring( 0, 4 )].Remove( _fiche );
+							}
+						}
+					}
+				}
 			}
 
 			// Add to new lists
-			string			title = _fiche.Title;
+			string	title = _fiche.Title;
 			if ( title != null ) {
 				List< Fiche >	fiches;
 				if ( !m_titleCaseSensitive2Fiches.TryGetValue( title, out fiches ) )
@@ -732,6 +764,30 @@ throw new Exception( "TODO!" );
 				if ( !m_titleNoCase2Fiches.TryGetValue( title, out fiches ) )
 					m_titleNoCase2Fiches.Add( title, fiches = new List<Fiche>() );
 				fiches.Add( _fiche );
+
+				if ( title.Length >= 1 ) {
+					string	t = title.Substring( 0, 1 );
+					if ( !m_t2Fiches.TryGetValue( t, out fiches ) ) m_t2Fiches.Add( t, fiches = new List<Fiche>() );
+					fiches.Add( _fiche );
+
+					if ( title.Length >= 2 ) {
+						t += title[1];
+						if ( !m_ti2Fiches.TryGetValue( t, out fiches ) ) m_ti2Fiches.Add( t, fiches = new List<Fiche>() );
+						fiches.Add( _fiche );
+
+						if ( title.Length >= 3 ) {
+							t += title[2];
+							if ( !m_tit2Fiches.TryGetValue( t, out fiches ) ) m_tit2Fiches.Add( t, fiches = new List<Fiche>() );
+							fiches.Add( _fiche );
+						}
+
+						if ( title.Length >= 4 ) {
+							t += title[3];
+							if ( !m_titl2Fiches.TryGetValue( t, out fiches ) ) m_titl2Fiches.Add( t, fiches = new List<Fiche>() );
+							fiches.Add( _fiche );
+						}
+					}
+				}
 			}
 		}
 

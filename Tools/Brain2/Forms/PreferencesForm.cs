@@ -487,16 +487,21 @@ StringBuilder	sb = new StringBuilder( (int) _reader.BaseStream.Length );
 										if ( alphaNumericalWord != word )
 											tooComplex = true;	// Invalid characters
 
-										name = "_" + alphaNumericalWord;
+										name += "_" + alphaNumericalWord;
 									}
 									name = name.Substring( 1 );	// Remove header '_'
 									averageWordLength /= tagWords.Length;
-									if ( averageWordLength > 8 )
+									if ( averageWordLength >= 8 )
 										tooComplex = true;	// Starts getting complex!
 								}
 
-								m_fiche = m_database.SyncFindOrCreateTagFiche( m_name );
+								// Create the tag fiche
+								m_fiche = m_database.SyncFindOrCreateTagFiche( name );
 								m_fiche.GUID = m_GUID;
+								m_fiche.CreationTime = m_dateAdded;
+
+								// Save whenever possible
+								m_database.AsyncSaveFiche( m_fiche );
 
 								if ( tooComplex )
 									ms_tooComplexTags.Add( m_fiche );
@@ -537,14 +542,11 @@ StringBuilder	sb = new StringBuilder( (int) _reader.BaseStream.Length );
 							}
 
 							// Create the new fiche
-							m_fiche = m_database.AsyncCreateURLFiche( Fiche.TYPE.REMOTE_ANNOTABLE_WEBPAGE, m_name, m_URL, null );
-
-							if ( parents != null ) {
-								foreach ( Fiche tag in parents ) {
-									m_fiche.AddTag( tag );
-								}
-							}
+							m_fiche = m_database.SyncCreateFicheDescriptor( Fiche.TYPE.REMOTE_ANNOTABLE_WEBPAGE, m_name, m_URL, parents.ToArray(), null );
 							m_fiche.GUID = m_GUID;
+
+							// Asynchronously load content & save the fiche when ready
+							m_database.AsyncLoadContentAndSaveFiche( m_fiche );
 							break;
 					}
 
@@ -588,7 +590,7 @@ StringBuilder	sb = new StringBuilder( (int) _reader.BaseStream.Length );
 
 						case "url":
 							string	strURL = dictionary[key] as string;
-							Uri.TryCreate( strURL, UriKind.Absolute, out m_URL );
+							m_URL = WebHelpers.CreateCanonicalURL( strURL );
 							break;
 
 						case "children":
@@ -617,6 +619,7 @@ StringBuilder	sb = new StringBuilder( (int) _reader.BaseStream.Length );
 //					throw new Exception( "Invalid JSON object!" );
 
 				if ( _object.IsDictionary ) {
+					// Create all bookmark objects in the dictionary
 					Dictionary< string, object >	dictionary = _object.AsDictionary;
 					foreach ( string key in dictionary.Keys ) {
 						JSONObject	bookmarkObject = dictionary[key] as JSONObject;
@@ -628,6 +631,7 @@ StringBuilder	sb = new StringBuilder( (int) _reader.BaseStream.Length );
 						_parent.m_children.Add( bookmark );
 					}
 				} else if ( _object.IsArray ) {
+					// Create all bookmark objects in the array
 					List< object >	array = _object.AsArray;
 					foreach ( object element in array ) {
 						JSONObject	bookmarkObject = element as JSONObject;
@@ -639,9 +643,6 @@ StringBuilder	sb = new StringBuilder( (int) _reader.BaseStream.Length );
 						_bookmarks.Add( bookmark );
 						_parent.m_children.Add( bookmark );
 					}
-// 
-// 				} else if ( _object.m_object is string ) {
-
 				} else {
 					throw new Exception( "Unsupported JSON object type!" );
 				}

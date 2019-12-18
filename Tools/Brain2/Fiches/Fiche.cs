@@ -358,52 +358,74 @@ namespace Brain2 {
 		public Guid					GUID {
 			get { return m_GUID; }
 			set {
-				if ( value == m_GUID )
-					return;
+				Lock( STATUS.UPDATING, () => {
+					if ( value == m_GUID )
+						return;
 
-				Guid	oldGUID = m_GUID;
-				m_GUID = value;
+					Guid	oldGUID = m_GUID;
+					m_GUID = value;
 
-				m_database.FicheGUIDChanged( this, oldGUID );
+					m_database.FicheGUIDChanged( this, oldGUID );
+				} );
 			}
 		}
 
+		public DateTime				CreationTime {
+			get { return m_creationTime; }
+			set {
+				Lock( STATUS.UPDATING, () => {
+					if ( value == m_creationTime )
+						return;
+
+					DateTime	oldCreationTime = m_creationTime;
+					m_creationTime = value;
+
+					m_database.FicheCreationDateChanged( this, oldCreationTime );
+				} );
+			}
+		}
 		public TYPE					Type { get {return m_type; } }
 
 		public string				Title {
 			get { return m_title; }
 			set {
-				if ( value == null )
-					value = "";
-				if ( value == m_title )
-					return;
+				Lock( STATUS.UPDATING, () => {
+					if ( value == null )
+						value = "";
+					if ( value == m_title )
+						return;
 
-				string	oldTitle = m_title;
-				m_title = value;
-				Database.FicheTitleChanged( this, oldTitle );
+					string	oldTitle = m_title;
+					m_title = value;
+					Database.FicheTitleChanged( this, oldTitle );
+				} );
 			}
 		}
 
 		public string				HTMLContent {
 			get { return m_HTMLContent; }
 			set {
-				if ( value == m_HTMLContent )
-					return;
+				Lock( STATUS.UPDATING, () => {
+					if ( value == m_HTMLContent )
+						return;
 
-				m_HTMLContent = value;
-				Database.FicheHTMLContentChanged( this );
+					m_HTMLContent = value;
+					Database.FicheHTMLContentChanged( this );
+				} );
 			}
 		}
 
 		public Uri					URL {
 			get { return m_URL; }
 			set {
-				if ( value == m_URL )
-					return;
+				Lock( STATUS.UPDATING, () => {
+					if ( value == m_URL )
+						return;
 
-				Uri	oldURL = m_URL;
-				m_URL = value;
-				Database.FicheURLChanged( this, oldURL );
+					Uri	oldURL = m_URL;
+					m_URL = value;
+					Database.FicheURLChanged( this, oldURL );
+				} );
 			}
 		}
 
@@ -444,15 +466,15 @@ namespace Brain2 {
 		public	Fiche( FichesDB _database, TYPE _type, string _title, Uri _URL, Fiche[] _tags, string _HTMLContent ) : this( _database, _title ) {
 			m_type = _type;
 			if ( _tags != null ) {
-				foreach ( Fiche tag in _tags )
-					AddTag( tag );
+				AddTags( _tags );
 			}
 			m_URL = _URL;
 			m_HTMLContent = _HTMLContent;
+			m_status = STATUS.READY;
 		}
 		public	Fiche( FichesDB _database, BinaryReader _reader ) {
 			Read( _reader );
-			Database = _database;
+			Database = _database;	// Register afterward so our registration data (e.g. GUID, URL, title, etc.) are ready
 		}
 
 		public void Dispose() {
@@ -476,61 +498,51 @@ namespace Brain2 {
 		#region I/O
 
 		public void		Write( BinaryWriter _writer ) {
-			lock ( this ) {
-				STATUS	oldStatus = m_status;
-				try {
-					if ( m_status != STATUS.READY )
-						throw new Exception( "Can't save while fiche is not ready!" );
+			try {
+				_writer.Write( SIGNATURE );
+				_writer.Write( VERSION_MAJOR );
+				_writer.Write( VERSION_MINOR );
 
-					m_status = STATUS.SAVING;	// We lock this so noone can modify it while we're saving, and we're also changing the status in any case
-
-					_writer.Write( SIGNATURE );
-					_writer.Write( VERSION_MAJOR );
-					_writer.Write( VERSION_MINOR );
-
-					// Write hierarchy
-					_writer.Write( m_GUID.ToString() );
-					_writer.Write( m_creationTime.ToString() );
-					_writer.Write( (uint) m_tags2.Count );
-					foreach ( Fiche parent in m_tags2 ) {
-						_writer.Write( parent.m_GUID.ToString() );
-					}
-
-					// Write content
-					_writer.Write( m_type.ToString() );
-					_writer.Write( m_title );
-					_writer.Write( m_URL != null );
-					if ( m_URL != null ) {
-						_writer.Write( true );
-						_writer.Write( m_URL.OriginalString );
-					}
-					if ( m_HTMLContent != null ) {
-						_writer.Write( true );
-						_writer.Write( m_HTMLContent );
-					}
-
-					// Write chunks
-					_writer.Write( (uint) m_chunks.Count );
-					foreach ( ChunkBase chunk in m_chunks ) {
-						_writer.Write( chunk.GetType().Name );
-						_writer.Write( (uint) 0 );
-						ulong	chunkStartOffset = (ulong) _writer.BaseStream.Position;
-
-						chunk.Write( _writer );
-
-						// Go back to write chunk size
-						ulong	chunkEndOffset = (ulong) _writer.BaseStream.Position;
-						uint	chunkSize = (uint) (chunkEndOffset - chunkStartOffset);
-						_writer.BaseStream.Position = (long) (chunkStartOffset - sizeof(ulong));
-						_writer.Write( chunkSize );
-						_writer.BaseStream.Position = (long) chunkEndOffset;
-					}
-				} catch ( Exception _e ) {
-//					BrainForm.Debug( "Error while saving fiche \"" + ToString() + "\": " + _e.Message );
-					throw _e;
-				} finally {
-					m_status = oldStatus;	// Restore status anyway
+				// Write hierarchy
+				_writer.Write( m_GUID.ToString() );
+				_writer.Write( m_creationTime.ToString() );
+				_writer.Write( (uint) m_tags2.Count );
+				foreach ( Fiche parent in m_tags2 ) {
+					_writer.Write( parent.m_GUID.ToString() );
 				}
+
+				// Write content
+				_writer.Write( m_type.ToString() );
+				_writer.Write( m_title );
+				_writer.Write( m_URL != null );
+				if ( m_URL != null ) {
+					_writer.Write( true );
+					_writer.Write( m_URL.OriginalString );
+				}
+				if ( m_HTMLContent != null ) {
+					_writer.Write( true );
+					_writer.Write( m_HTMLContent );
+				}
+
+				// Write chunks
+				_writer.Write( (uint) m_chunks.Count );
+				foreach ( ChunkBase chunk in m_chunks ) {
+					_writer.Write( chunk.GetType().Name );
+					_writer.Write( (uint) 0 );
+					ulong	chunkStartOffset = (ulong) _writer.BaseStream.Position;
+
+					chunk.Write( _writer );
+
+					// Go back to write chunk size
+					ulong	chunkEndOffset = (ulong) _writer.BaseStream.Position;
+					uint	chunkSize = (uint) (chunkEndOffset - chunkStartOffset);
+					_writer.BaseStream.Position = (long) (chunkStartOffset - sizeof(ulong));
+					_writer.Write( chunkSize );
+					_writer.BaseStream.Position = (long) chunkEndOffset;
+				}
+			} catch ( Exception _e ) {
+//				BrainForm.Debug( "Error while saving fiche \"" + ToString() + "\": " + _e.Message );
+				throw _e;
 			}
 		}
 
@@ -601,6 +613,9 @@ namespace Brain2 {
 				ulong		chunkEndOffset = chunkStartOffset + chunkLength;
 				_reader.BaseStream.Seek( (long) chunkEndOffset, SeekOrigin.Begin );
 			}
+
+			// Fiche is now ready!
+			m_status = STATUS.READY;
 		}
 
 		/// <summary>
