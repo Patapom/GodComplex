@@ -99,10 +99,6 @@ namespace Brain2 {
 					ContentUpdated( this, EventArgs.Empty );
 //					ContentUpdated?.Invoke( this, EventArgs.Empty );
 			}
-
-			#region Async Loading
-
-			#endregion
 		}
 
 		/// <summary>
@@ -130,7 +126,38 @@ namespace Brain2 {
 			}
 
 			public ChunkThumbnail( Fiche _owner, ulong _offset, uint _size ) : base( _owner, _offset, _size ) {
+			}
+			public ChunkThumbnail( Fiche _owner, ImageFile _imageWebPage ) : base( _owner, ~0UL, 0 ) {
+				UpdateFromWebPageImage( _imageWebPage );
+			}
 
+			public void	UpdateFromWebPageImage( ImageFile _imageWebPage ) {
+				if ( _imageWebPage == null )
+					throw new Exception( "Invalid image!" );
+
+				if ( m_thumbnail != null )
+					m_thumbnail.Dispose();
+
+				// Create a tiny thumbnail from the image
+				uint	thumbnailHeight = Mathf.Min( _imageWebPage.Height * THUMBNAIL_WIDTH / _imageWebPage.Width, THUMBNAIL_HEIGHT );	// At most our preferred ratio => we must crop the full page!
+				float	imageRatio = (float) _imageWebPage.Width / THUMBNAIL_WIDTH;
+
+				m_thumbnail = new ImageFile( THUMBNAIL_WIDTH, thumbnailHeight, PIXEL_FORMAT.BGRA8, DEFAULT_PROFILE );
+
+				// Read "height" scanlines
+				float4[]	sourceScanline = new float4[_imageWebPage.Width];
+				float4[]	targetScanline = new float4[THUMBNAIL_WIDTH];
+				for ( uint Y=0; Y < thumbnailHeight; Y++ ) {
+					uint	sourceY = (uint) (imageRatio * Y);
+					_imageWebPage.ReadScanline( sourceY, sourceScanline );
+					for ( uint X=0; X < THUMBNAIL_WIDTH; X++ ) {
+						targetScanline[X] = sourceScanline[(uint) (imageRatio * (X+0.5f))];
+					}
+					m_thumbnail.WriteScanline( Y, targetScanline );
+				}
+
+				// Notify?
+				m_owner.NotifyThumbnailChanged( this );
 			}
 
 			public override void Read(BinaryReader _reader) {
@@ -209,13 +236,31 @@ namespace Brain2 {
 
 			public ChunkWebPageSnapshot( Fiche _owner, ulong _offset, uint _size ) : base( _owner, _offset, _size ) {
 			}
+			public ChunkWebPageSnapshot( Fiche _owner, ImageFile _image ) : base( _owner, ~0UL, 0 ) {
+				UpdateImage( _image );
+			}
+
+			public void	UpdateImage( ImageFile _image ) {
+				if ( _image == null )
+					throw new Exception( "Invalid image!" );
+
+				if ( m_image != null )
+					m_image.Dispose();
+
+				m_image = _image;
+				m_width = m_image.Width;
+				m_height = m_image.Height;
+
+				// Notify?
+				m_owner.NotifyImageChanged( this );
+			}
 
 			public override void Read(BinaryReader _reader) {
 				// Only read image width & height
 				m_width = _reader.ReadUInt32();
 				m_height = _reader.ReadUInt32();
 
-				// The rest of the read is performed asynchronously when "Content" is requested
+				// The rest of the read is performed asynchronously whenever "Content" is accessed
 			}
 
 			public override void Write(BinaryWriter _writer) {
@@ -398,6 +443,9 @@ namespace Brain2 {
 			foreach ( ChunkBase chunk in m_chunks ) {
 				chunk.Dispose();
 			}
+
+			// This will unregister us from the database
+			Database = null;
 		}
 
 		public override string ToString() {
@@ -561,9 +609,11 @@ namespace Brain2 {
 
 		#endregion
 
+		#region Tags Management
+
 		public void	AddTags( IEnumerable<Fiche> _tags ) {
 			if ( _tags == null )
-				return;
+				throw new Exception( "Invalid list of tags to add!" );
 
 			foreach ( Fiche tag in _tags ) {
 				if ( !m_tags.Contains( tag ) )
@@ -571,25 +621,49 @@ namespace Brain2 {
 			}
 		}
 
-		public static string	BuildHTMLDocument( string _title, string _content ) {
+		public void	RemoveTags( IEnumerable<Fiche> _tags ) {
+			if ( _tags == null )
+				throw new Exception( "Invalid list of tags to remove!" );
 
-			string	template =
-@"<!DOCTYPE html>
-<html>
-
-<head>
-  <title>@TITLE@</title>
-</head>
-
-<body>
-@CONTENT@
-</body>
-
-</html>";
-
-			string	doc = template.Replace( "@TITLE@", _title ).Replace( "@CONTENT@", _content );
-			return doc;
+			foreach ( Fiche tag in _tags ) {
+				m_tags.Remove( tag );
+			}
 		}
+
+		#endregion
+
+		#region Chunks Management
+
+		internal T	FindChunkByType<T>() where T : ChunkBase {
+			foreach ( ChunkBase chunk in m_chunks ) {
+				if ( chunk is T )
+					return chunk as T;
+			}
+
+			return null;
+		}
+
+		// Create image chunk
+		internal void	CreateImageChunk( ImageFile _imageWebPage ) {
+			ChunkWebPageSnapshot	chunk = FindChunkByType<ChunkWebPageSnapshot>();
+			if ( chunk == null ) {
+				chunk = new ChunkWebPageSnapshot( this, _imageWebPage );
+			} else {
+				chunk.UpdateImage( _imageWebPage );
+			}
+		}
+
+		// Create thumbnail chunk from the full webpage
+		internal void	CreateThumbnailChunkFromImage( ImageFile _imageWebPage ) {
+			ChunkThumbnail	chunk = FindChunkByType<ChunkThumbnail>();
+			if ( chunk == null ) {
+				chunk = new ChunkThumbnail( this, _imageWebPage );
+			} else {
+				chunk.UpdateFromWebPageImage( _imageWebPage );
+			}
+		}
+
+		#endregion
 
 		#endregion
 	}

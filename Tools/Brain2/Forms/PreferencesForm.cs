@@ -492,7 +492,9 @@ StringBuilder	sb = new StringBuilder( (int) _reader.BaseStream.Length );
 
 							// Create the new fiche
 							m_fiche = m_database.AsyncCreateURLFiche( Fiche.TYPE.REMOTE_ANNOTABLE_WEBPAGE, m_name, m_URL, null );
-							m_fiche.AddTags( parents );
+
+							if ( parents != null )
+								m_fiche.AddTags( parents );
 							m_fiche.GUID = m_GUID;
 							break;
 					}

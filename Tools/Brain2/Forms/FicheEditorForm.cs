@@ -56,10 +56,10 @@ namespace Brain2 {
 						webEditor.URL = m_fiche.URL;
 					} else {
 						// Setup empty document
-						webEditor.Document = Fiche.BuildHTMLDocument( "Invalid Fiche Content", "Fiche has no content and no source URL!" );
+						webEditor.Document = WebHelpers.BuildHTMLDocument( "Invalid Fiche Content", "Fiche has no content and no source URL!" );
 					}
 				} else {
-					webEditor.Document = Fiche.BuildHTMLDocument( "", "<body/>" );
+					webEditor.Document = WebHelpers.BuildHTMLDocument( "", "<body/>" );
 				}
 				webEditor.Enabled = enable;
 			}

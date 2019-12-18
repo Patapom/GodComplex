@@ -45,7 +45,7 @@ namespace Brain2 {
 					return URLHandler.CreateURLFiche( _database, null, WebHelpers.CreateCanonicalURL( text ) );
 
 				string	title = text;	// Do better?
-				string	HTML = Fiche.BuildHTMLDocument( title, text );
+				string	HTML = WebHelpers.BuildHTMLDocument( title, text );
 				return _database.AsyncCreateURLFiche( Fiche.TYPE.LOCAL_EDITABLE_WEBPAGE, text, null, HTML );
 			}
 		}
@@ -270,14 +270,17 @@ namespace Brain2 {
 				public JobFillFiche( FichesDB _owner, Fiche _fiche ) : base( _owner ) { m_fiche = _fiche; }
 				public override void	Run() {
 					// Request the content asynchronously
-					m_owner.AsyncLoadWebPage( m_fiche.URL, ( Fiche _fiche, string _HTMLContent, ImageUtility.ImageFile _imageWebPage ) => {
-						F.HTMLContent = _HTMLContent;
-
-						// Create thumbnail
-						F.CreateThumbnailChunk( _imageWebPage );
+					m_owner.AsyncRenderWebPage( m_fiche.URL, ( string _HTMLContent, ImageUtility.ImageFile _imageWebPage ) => {
+						m_fiche.HTMLContent = _HTMLContent;
 
 						// Create image chunk
-						F.CreateImageChunk( _imageWebPage );
+						m_fiche.CreateImageChunk( _imageWebPage );
+
+						// Create thumbnail
+						m_fiche.CreateThumbnailChunkFromImage( _imageWebPage );
+
+						// Request to save the fiche now that it's complete...
+						m_owner.AsyncSave( m_fiche );
 					} );
 
 				}
@@ -318,6 +321,15 @@ namespace Brain2 {
 				public JobReportError( FichesDB _owner, string _error ) : base( _owner ) { m_error = _error; }
 				public override void	Run() {
 					m_owner.SyncReportError( m_error );
+				}
+			}
+
+			public class		JobLoadWebPage : JobBase {
+				public Uri							m_URL;
+				public WebHelpers.WebPageRendered	m_delegate;
+				public JobLoadWebPage( FichesDB _owner, Uri _URL, WebHelpers.WebPageRendered _delegate ) : base( _owner ) { m_URL = _URL; m_delegate = _delegate; }
+				public override void	Run() {
+					WebHelpers.LoadWebPage( m_URL, m_delegate );
 				}
 			}
 
@@ -436,11 +448,7 @@ namespace Brain2 {
 			return fiches == null ? new Fiche[0] : fiches.ToArray();
 		}
 
-// @TODO: Find content, by tag, 
-
-		#endregion
-
-		#region Fiches Creation
+// @TODO: Advanced search => in content, by tag, etc.
 
 		#endregion
 
@@ -473,8 +481,11 @@ namespace Brain2 {
 
 				m_rootFolder = _rootFolder;
 
-				m_fiches.Clear();
-				m_GUID2Fiche.Clear();
+				// Release all existing fiches first
+				Fiche[]	fiches = m_fiches.ToArray();
+				foreach ( Fiche F in fiches ) {
+					F.Dispose();
+				}
 
 				// Prepare the Everything query
 				string	everythingQuery = "parent:" + _rootFolder.FullName.Replace( "/", "\\" );
@@ -524,6 +535,11 @@ namespace Brain2 {
 
 			} catch ( Exception _e ) {
 				throw new Exception( "An error occurred while loading the database: " + _e.Message, _e );
+			} finally {
+				// Resolve all possible tag fiches given their GUID
+				foreach ( Fiche F in m_fiches ) {
+					F.ResolveTags( m_GUID2Fiche );
+				}
 			}
 		}
 
@@ -652,7 +668,7 @@ throw new Exception( "TODO!" );
 			}
 
 			// Create the tag
-			return new Fiche( this, Fiche.TYPE.LOCAL_EDITABLE_WEBPAGE, _tag, null, null, Fiche.BuildHTMLDocument( _tag, null ) );
+			return new Fiche( this, Fiche.TYPE.LOCAL_EDITABLE_WEBPAGE, _tag, null, null, WebHelpers.BuildHTMLDocument( _tag, null ) );
 		}
 
 		/// <summary>
@@ -676,6 +692,18 @@ throw new Exception( "TODO!" );
 			lock ( m_threadedJobs )
 				m_threadedJobs.Enqueue( job );
 		}
+
+		/// <summary>
+		/// Asks a thread to load a web page and render it to an image asynchronously
+		/// </summary>
+		/// <param name="_URL"></param>
+		/// <param name="_delegate"></param>
+		internal void	AsyncRenderWebPage( Uri _URL, WebHelpers.WebPageRendered _delegate ) {
+			WorkingThread.JobLoadWebPage	job = new WorkingThread.JobLoadWebPage( this, _URL, _delegate );
+			lock ( m_mainThreadJobs )
+				m_mainThreadJobs.Enqueue( job );
+		}
+
 
 		/// <summary>
 		/// Ask the main thread to perform our notification for us
@@ -715,7 +743,7 @@ throw new Exception( "TODO!" );
 
 		#endregion
 
-		#region Fiches Update Handlers
+		#region Fiches Update Handlers (don't call these yourself!)
 
 		internal void	FicheGUIDChanged( Fiche _fiche, Guid _formerGUID ) {
 			if ( _fiche == null )
