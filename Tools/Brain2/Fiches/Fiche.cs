@@ -252,7 +252,7 @@ namespace Brain2 {
 				m_height = m_image.Height;
 
 				// Notify?
-				m_owner.NotifyImageChanged( this );
+				m_owner.NotifyWebPageImageChanged( this );
 			}
 
 			public override void Read(BinaryReader _reader) {
@@ -414,6 +414,16 @@ namespace Brain2 {
 				return m_GUID.ToString() + ".fiche";
 			}
 		}
+
+		/// <summary>
+		/// Raised whenever the web page image changed
+		/// </summary>
+		public event EventHandler	WebPageImageChanged;
+
+		/// <summary>
+		/// Raised whenever the thumbnail changed
+		/// </summary>
+		public event EventHandler	ThumbnailChanged;
 
 		#endregion
 
@@ -581,20 +591,6 @@ namespace Brain2 {
 		}
 
 		/// <summary>
-		/// Creates a chunk from its type name
-		/// </summary>
-		/// <param name="_chunkType"></param>
-		/// <returns></returns>
-		private ChunkBase	CreateChunkFromType( string _chunkType, ulong _chunkOffset, uint _chunkLength ) {
-			switch ( _chunkType ) {
-				case "ChunkThumbnail": return new ChunkThumbnail( this, _chunkOffset, _chunkLength );
-				case "ChunkWebPageSnapshot": return new ChunkWebPageSnapshot( this, _chunkOffset, _chunkLength );
-			}
-
-			return null;
-		}
-
-		/// <summary>
 		/// Called as a post-process to finally resolve actual tag links after read
 		/// </summary>
 		/// <param name="_ID2Fiche"></param>
@@ -643,11 +639,26 @@ namespace Brain2 {
 			return null;
 		}
 
+		/// <summary>
+		/// Creates a chunk from its type name, used by the Read() function to create placeholders
+		/// </summary>
+		/// <param name="_chunkType"></param>
+		/// <returns></returns>
+		private ChunkBase	CreateChunkFromType( string _chunkType, ulong _chunkOffset, uint _chunkLength ) {
+			switch ( _chunkType ) {
+				case "ChunkThumbnail": return new ChunkThumbnail( this, _chunkOffset, _chunkLength );
+				case "ChunkWebPageSnapshot": return new ChunkWebPageSnapshot( this, _chunkOffset, _chunkLength );
+			}
+
+			return null;
+		}
+
 		// Create image chunk
 		internal void	CreateImageChunk( ImageFile _imageWebPage ) {
 			ChunkWebPageSnapshot	chunk = FindChunkByType<ChunkWebPageSnapshot>();
 			if ( chunk == null ) {
 				chunk = new ChunkWebPageSnapshot( this, _imageWebPage );
+				m_chunks.Add( chunk );
 			} else {
 				chunk.UpdateImage( _imageWebPage );
 			}
@@ -658,12 +669,23 @@ namespace Brain2 {
 			ChunkThumbnail	chunk = FindChunkByType<ChunkThumbnail>();
 			if ( chunk == null ) {
 				chunk = new ChunkThumbnail( this, _imageWebPage );
+				m_chunks.Add( chunk );
 			} else {
 				chunk.UpdateFromWebPageImage( _imageWebPage );
 			}
 		}
 
 		#endregion
+
+		private void	NotifyWebPageImageChanged( ChunkWebPageSnapshot _caller ) {
+			if ( WebPageImageChanged != null )
+				WebPageImageChanged( _caller, EventArgs.Empty );
+		}
+
+		private void	NotifyThumbnailChanged( ChunkThumbnail _caller ) {
+			if ( ThumbnailChanged != null )
+				ThumbnailChanged( _caller, EventArgs.Empty );
+		}
 
 		#endregion
 	}
